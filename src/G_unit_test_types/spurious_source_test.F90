@@ -179,7 +179,8 @@ module spurious_source_test
       wp3_on_wp2_zt,   & ! Smoothed wp3 / wp2 on thermo. levels     [m/s]
       Kh_zt,           & ! Eddy diffusivity on thermodynamic levels [m^2/s]
       Kh_zm,           & ! Eddy diffusivity on momentum levels      [m^s/s]
-      invrs_tau_C6_zm, & ! Time-scale tau on m-levs applied to C6 term  [s]
+      invrs_tau_C6sclrflx_zm, & ! Time-scale tau on m-levs applied to C6 term  [s]
+      invrs_tau_C6momflx_zm, &
       tau_max_zm,      & ! Max. allowable eddy dissipation time scale on m-levs [s]
       Skw_zm,          & ! Skewness of w on momentum levels         [-]
       wp2rtp,          & ! <w'^2 r_t'> (thermodynamic levels)    [m^2/s^2 kg/kg]
@@ -767,7 +768,12 @@ module spurious_source_test
              = lin_interpolate_two_points( gr%zm(1,k), z_snd(i), z_snd(i-1), &
                                            Kh_zm_snd(i), Kh_zm_snd(i-1) )
 
-             invrs_tau_C6_zm(1,k) &
+             invrs_tau_C6sclrflx_zm(1,k) &
+             = lin_interpolate_two_points( gr%zm(1,k), z_snd(i), z_snd(i-1), &
+                                           invrs_tau_C6_zm_snd(i), &
+                                           invrs_tau_C6_zm_snd(i-1) )
+
+             invrs_tau_C6momflx_zm(1,k) &
              = lin_interpolate_two_points( gr%zm(1,k), z_snd(i), z_snd(i-1), &
                                            invrs_tau_C6_zm_snd(i), &
                                            invrs_tau_C6_zm_snd(i-1) )
@@ -989,7 +995,7 @@ module spurious_source_test
        call advance_xm_wpxp( nz, 1, sclr_dim, sclr_tol, gr, dt, &
                              sigma_sqd_w, wm_zm, wm_zt, wp2, &
                              Lscale, wp3_on_wp2, wp3_on_wp2_zt, Kh_zt, Kh_zm, &
-                             invrs_tau_C6_zm, tau_max_zm, Skw_zm, wp2rtp, rtpthvp, &
+                             invrs_tau_C6sclrflx_zm, invrs_tau_C6momflx_zm, tau_max_zm, Skw_zm, wp2rtp, rtpthvp, &
                              rtm_forcing, wprtp_forcing, rtm_ref, wp2thlp, &
                              thlpthvp, thlm_forcing, wpthlp_forcing, thlm_ref, &
                              rho_ds_zm, rho_ds_zt, invrs_rho_ds_zm, &

@@ -480,16 +480,18 @@ module advance_xm_wpxp_module
 
     real( kind = core_rknd ), dimension(nz) :: tmp_in
 
+    real( kind = core_rknd ) :: C6mom
+
     ! -------------------- Begin Code --------------------
 
-    !$acc enter data create( C6rt_Skw_fnc, C6thl_Skw_fnc, C7_Skw_fnc, C6_term, Kw6, &
+    !$acc enter data create( C6mom, C6rt_Skw_fnc, C6thl_Skw_fnc, C7_Skw_fnc, C6_term, Kw6, &
     !$acc                 low_lev_effect, high_lev_effect, rtm_old, wprtp_old, thlm_old, &
     !$acc                 wpthlp_old, um_old, upwp_old, vm_old, &
     !$acc                 vpwp_old, lhs_diff_zm, lhs_diff_zt, lhs_ma_zt, lhs_ma_zm, &
     !$acc                 lhs_ta_wprtp, lhs_ta_wpthlp, lhs_ta_wpup, lhs_ta_wpvp, &
     !$acc                 rhs_ta_wprtp, rhs_ta_wpthlp, rhs_ta_wpup, &
     !$acc                 rhs_ta_wpvp, lhs_tp, lhs_ta_xm, lhs_ac_pr2, &
-    !$acc                 lhs_pr1_wprtp, lhs_pr1_wpthlp )
+    !$acc                 lhs_pr1_wprtp, lhs_pr1_wpthlp, lhs_pr1_upwp )
 
     !$acc enter data if( sclr_dim > 0 ) &
     !$acc            create( sclrm_old, wpsclrp_old, lhs_ta_wpsclrp,  &
@@ -739,9 +741,10 @@ module advance_xm_wpxp_module
                               stats_zm, & ! intent(inout)
                               low_lev_effect, high_lev_effect ) ! intent(out)
 
+    C6mom = 2.0_core_rknd
     
     ! Calculate 1st pressure terms for w'r_t', w'thl', and w'sclr'. 
-    call wpxp_term_pr1_lhs( nz, ngrdcol, C6rt_Skw_fnc, C6thl_Skw_fnc, C7_Skw_fnc,         & ! Intent(in)
+    call wpxp_term_pr1_lhs( nz, ngrdcol, C6mom, C6rt_Skw_fnc, C6thl_Skw_fnc, C7_Skw_fnc,  & ! Intent(in)
                             invrs_tau_C6sclrflx_zm, invrs_tau_C6momflx_zm, l_scalar_calc, & ! Intent(in)
                             lhs_pr1_wprtp, lhs_pr1_wpthlp, lhs_pr1_wpsclrp, lhs_pr1_upwp )  ! Intent(out)
     
@@ -1167,7 +1170,7 @@ module advance_xm_wpxp_module
     !$acc                   lhs_ta_wprtp, lhs_ta_wpthlp, lhs_ta_wpup, lhs_ta_wpvp, &
     !$acc                   rhs_ta_wprtp, rhs_ta_wpthlp, rhs_ta_wpup, &
     !$acc                   rhs_ta_wpvp, lhs_tp, lhs_ta_xm, lhs_ac_pr2, &
-    !$acc                   lhs_pr1_wprtp, lhs_pr1_wpthlp )
+    !$acc                   lhs_pr1_wprtp, lhs_pr1_wpthlp, lhs_pr1_upwp )
 
     !$acc exit data if( sclr_dim > 0 ) &
     !$acc           delete( sclrm_old, wpsclrp_old, lhs_ta_wpsclrp,  &
@@ -3136,116 +3139,116 @@ module advance_xm_wpxp_module
       end if
     end if
 
-    call xm_wpxp_clipping_and_stats( nz, ngrdcol, &   ! Intent(in)
-           gr, xm_wpxp_rtm, dt, wp2, rtp2, wm_zt,  &  ! Intent(in)
-           rtm_forcing, rho_ds_zm, rho_ds_zt, &       ! Intent(in)
-           invrs_rho_ds_zm, invrs_rho_ds_zt, &        ! Intent(in)
-           rt_tol**2, rt_tol, rcond, &                ! Intent(in)
-           low_lev_effect, high_lev_effect, &         ! Intent(in)
-           lhs_ma_zt, lhs_ma_zm, lhs_ta_wpxp, &       ! Intent(in)
-           lhs_diff_zm, C7_Skw_fnc, &                 ! Intent(in)
-           lhs_tp, lhs_ta_xm, lhs_pr1_wprtp, &        ! Intent(in)
-           l_implemented, solution(:,:,1),  &         ! Intent(in)
-           tridiag_solve_method, &                    ! Intent(in)
-           l_predict_upwp_vpwp, &                     ! Intent(in)
-           l_upwind_xm_ma, &                          ! Intent(in)
-           l_tke_aniso, &                             ! Intent(in)
-           l_enable_relaxed_clipping, &               ! Intent(in)
-           l_mono_flux_lim_thlm, &
-           l_mono_flux_lim_rtm, &
-           l_mono_flux_lim_um, &
-           l_mono_flux_lim_vm, &
-           l_mono_flux_lim_spikefix, &
-           order_xm_wpxp, order_xp2_xpyp, &           ! Intent(in)
-           order_wp2_wp3, &                           ! Intent(in)
-           stats_metadata, &                          ! Intent(in)
-           stats_zt, stats_zm, stats_sfc, &           ! intent(inout)
-           rtm, rt_tol_mfl, wprtp )                   ! Intent(inout)
-
-    if ( clubb_at_least_debug_level( 0 ) ) then
-       if ( err_code == clubb_fatal_error ) then
-          write(fstderr,*) "rtm monotonic flux limiter:  tridiag failed"
-          return
-       end if
-    end if
-
-    call xm_wpxp_clipping_and_stats( nz, ngrdcol, &   ! Intent(in)
-           gr, xm_wpxp_thlm, dt, wp2, thlp2, wm_zt, & ! Intent(in)
-           thlm_forcing, rho_ds_zm, rho_ds_zt, &      ! Intent(in)
-           invrs_rho_ds_zm, invrs_rho_ds_zt, &        ! Intent(in)
-           thl_tol**2, thl_tol, rcond, &              ! Intent(in)
-           low_lev_effect, high_lev_effect, &         ! Intent(in)
-           lhs_ma_zt, lhs_ma_zm, lhs_ta_wpxp, &       ! Intent(in)
-           lhs_diff_zm, C7_Skw_fnc, &                 ! Intent(in)
-           lhs_tp, lhs_ta_xm, lhs_pr1_wprtp, &        ! Intent(in)
-           l_implemented, solution(:,:,2),  &         ! Intent(in)
-           tridiag_solve_method, &                    ! Intent(in)
-           l_predict_upwp_vpwp, &                     ! Intent(in)
-           l_upwind_xm_ma, &                          ! Intent(in)
-           l_tke_aniso, &                             ! Intent(in)
-           l_enable_relaxed_clipping, &               ! Intent(in)
-           l_mono_flux_lim_thlm, &
-           l_mono_flux_lim_rtm, &
-           l_mono_flux_lim_um, &
-           l_mono_flux_lim_vm, &
-           l_mono_flux_lim_spikefix, &
-           order_xm_wpxp, order_xp2_xpyp, &           ! Intent(in)
-           order_wp2_wp3, &                           ! Intent(in)
-           stats_metadata, &                          ! Intent(in)
-           stats_zt, stats_zm, stats_sfc, &           ! intent(inout)
-           thlm, thl_tol_mfl, wpthlp )                ! Intent(inout)
-
-    if ( clubb_at_least_debug_level( 0 ) ) then
-       if ( err_code == clubb_fatal_error ) then
-          write(fstderr,*) "thlm monotonic flux limiter:  tridiag failed"
-          return
-       end if
-    end if
-
-! ---> h1g, 2010-06-15
-! scalar transport, e.g, droplet and ice number concentration
-! are handled in  " advance_sclrm_Nd_module.F90 "
-#ifdef GFDL
-    do j = 1, 0, 1
-#else
-    do j = 1, sclr_dim, 1
-#endif
-! <--- h1g, 2010-06-15
-      call xm_wpxp_clipping_and_stats( nz, ngrdcol, &               ! Intent(in)
-             gr, xm_wpxp_scalar, dt, wp2, sclrp2(:,:,j), wm_zt, &   ! Intent(in)
-             sclrm_forcing(:,:,j), &                                ! Intent(in)
-             rho_ds_zm, rho_ds_zt, &                                ! Intent(in)
-             invrs_rho_ds_zm, invrs_rho_ds_zt, &                    ! Intent(in)
-             sclr_tol(j)**2, sclr_tol(j), rcond, &                  ! Intent(in)
-             low_lev_effect, high_lev_effect, &                     ! Intent(in)
-             lhs_ma_zt, lhs_ma_zm, lhs_ta_wpxp, &                   ! Intent(in)
-             lhs_diff_zm, C7_Skw_fnc, &                             ! Intent(in)
-             lhs_tp, lhs_ta_xm, lhs_pr1_wprtp, &                    ! Intent(in)
-             l_implemented, solution(:,:,2+j),  &                   ! Intent(in)
-             tridiag_solve_method, &                                ! Intent(in)
-             l_predict_upwp_vpwp, &                                 ! Intent(in)
-             l_upwind_xm_ma, &                                      ! Intent(in)
-             l_tke_aniso, &                                         ! Intent(in)
-             l_enable_relaxed_clipping, &                           ! Intent(in)
-             l_mono_flux_lim_thlm, &
-             l_mono_flux_lim_rtm, &
-             l_mono_flux_lim_um, &
-             l_mono_flux_lim_vm, &
-             l_mono_flux_lim_spikefix, &
-             order_xm_wpxp, order_xp2_xpyp, &                       ! Intent(in)
-             order_wp2_wp3, &                                       ! Intent(in)
-             stats_metadata, &                                      ! Intent(in)
-             stats_zt, stats_zm, stats_sfc, &                       ! intent(inout)
-             sclrm(:,:,j), sclr_tol(j), wpsclrp(:,:,j) )            ! Intent(inout)
-
-      if ( clubb_at_least_debug_level( 0 ) ) then
-         if ( err_code == clubb_fatal_error ) then
-            write(fstderr,*) "sclrm # ", j, "monotonic flux limiter: tridiag failed"
-            return
-         end if
-      end if
-
-    end do ! 1..sclr_dim
+!    call xm_wpxp_clipping_and_stats( nz, ngrdcol, &   ! Intent(in)
+!           gr, xm_wpxp_rtm, dt, wp2, rtp2, wm_zt,  &  ! Intent(in)
+!           rtm_forcing, rho_ds_zm, rho_ds_zt, &       ! Intent(in)
+!           invrs_rho_ds_zm, invrs_rho_ds_zt, &        ! Intent(in)
+!           rt_tol**2, rt_tol, rcond, &                ! Intent(in)
+!           low_lev_effect, high_lev_effect, &         ! Intent(in)
+!           lhs_ma_zt, lhs_ma_zm, lhs_ta_wpxp, &       ! Intent(in)
+!           lhs_diff_zm, C7_Skw_fnc, &                 ! Intent(in)
+!           lhs_tp, lhs_ta_xm, lhs_pr1_wprtp, &        ! Intent(in)
+!           l_implemented, solution(:,:,1),  &         ! Intent(in)
+!           tridiag_solve_method, &                    ! Intent(in)
+!           l_predict_upwp_vpwp, &                     ! Intent(in)
+!           l_upwind_xm_ma, &                          ! Intent(in)
+!           l_tke_aniso, &                             ! Intent(in)
+!           l_enable_relaxed_clipping, &               ! Intent(in)
+!           l_mono_flux_lim_thlm, &
+!           l_mono_flux_lim_rtm, &
+!           l_mono_flux_lim_um, &
+!           l_mono_flux_lim_vm, &
+!           l_mono_flux_lim_spikefix, &
+!           order_xm_wpxp, order_xp2_xpyp, &           ! Intent(in)
+!           order_wp2_wp3, &                           ! Intent(in)
+!           stats_metadata, &                          ! Intent(in)
+!           stats_zt, stats_zm, stats_sfc, &           ! intent(inout)
+!           rtm, rt_tol_mfl, wprtp )                   ! Intent(inout)
+!
+!    if ( clubb_at_least_debug_level( 0 ) ) then
+!       if ( err_code == clubb_fatal_error ) then
+!          write(fstderr,*) "rtm monotonic flux limiter:  tridiag failed"
+!          return
+!       end if
+!    end if
+!
+!    call xm_wpxp_clipping_and_stats( nz, ngrdcol, &   ! Intent(in)
+!           gr, xm_wpxp_thlm, dt, wp2, thlp2, wm_zt, & ! Intent(in)
+!           thlm_forcing, rho_ds_zm, rho_ds_zt, &      ! Intent(in)
+!           invrs_rho_ds_zm, invrs_rho_ds_zt, &        ! Intent(in)
+!           thl_tol**2, thl_tol, rcond, &              ! Intent(in)
+!           low_lev_effect, high_lev_effect, &         ! Intent(in)
+!           lhs_ma_zt, lhs_ma_zm, lhs_ta_wpxp, &       ! Intent(in)
+!           lhs_diff_zm, C7_Skw_fnc, &                 ! Intent(in)
+!           lhs_tp, lhs_ta_xm, lhs_pr1_wprtp, &        ! Intent(in)
+!           l_implemented, solution(:,:,2),  &         ! Intent(in)
+!           tridiag_solve_method, &                    ! Intent(in)
+!           l_predict_upwp_vpwp, &                     ! Intent(in)
+!           l_upwind_xm_ma, &                          ! Intent(in)
+!           l_tke_aniso, &                             ! Intent(in)
+!           l_enable_relaxed_clipping, &               ! Intent(in)
+!           l_mono_flux_lim_thlm, &
+!           l_mono_flux_lim_rtm, &
+!           l_mono_flux_lim_um, &
+!           l_mono_flux_lim_vm, &
+!           l_mono_flux_lim_spikefix, &
+!           order_xm_wpxp, order_xp2_xpyp, &           ! Intent(in)
+!           order_wp2_wp3, &                           ! Intent(in)
+!           stats_metadata, &                          ! Intent(in)
+!           stats_zt, stats_zm, stats_sfc, &           ! intent(inout)
+!           thlm, thl_tol_mfl, wpthlp )                ! Intent(inout)
+!
+!    if ( clubb_at_least_debug_level( 0 ) ) then
+!       if ( err_code == clubb_fatal_error ) then
+!          write(fstderr,*) "thlm monotonic flux limiter:  tridiag failed"
+!          return
+!       end if
+!    end if
+!
+!! ---> h1g, 2010-06-15
+!! scalar transport, e.g, droplet and ice number concentration
+!! are handled in  " advance_sclrm_Nd_module.F90 "
+!#ifdef GFDL
+!    do j = 1, 0, 1
+!#else
+!    do j = 1, sclr_dim, 1
+!#endif
+!! <--- h1g, 2010-06-15
+!      call xm_wpxp_clipping_and_stats( nz, ngrdcol, &               ! Intent(in)
+!             gr, xm_wpxp_scalar, dt, wp2, sclrp2(:,:,j), wm_zt, &   ! Intent(in)
+!             sclrm_forcing(:,:,j), &                                ! Intent(in)
+!             rho_ds_zm, rho_ds_zt, &                                ! Intent(in)
+!             invrs_rho_ds_zm, invrs_rho_ds_zt, &                    ! Intent(in)
+!             sclr_tol(j)**2, sclr_tol(j), rcond, &                  ! Intent(in)
+!             low_lev_effect, high_lev_effect, &                     ! Intent(in)
+!             lhs_ma_zt, lhs_ma_zm, lhs_ta_wpxp, &                   ! Intent(in)
+!             lhs_diff_zm, C7_Skw_fnc, &                             ! Intent(in)
+!             lhs_tp, lhs_ta_xm, lhs_pr1_wprtp, &                    ! Intent(in)
+!             l_implemented, solution(:,:,2+j),  &                   ! Intent(in)
+!             tridiag_solve_method, &                                ! Intent(in)
+!             l_predict_upwp_vpwp, &                                 ! Intent(in)
+!             l_upwind_xm_ma, &                                      ! Intent(in)
+!             l_tke_aniso, &                                         ! Intent(in)
+!             l_enable_relaxed_clipping, &                           ! Intent(in)
+!             l_mono_flux_lim_thlm, &
+!             l_mono_flux_lim_rtm, &
+!             l_mono_flux_lim_um, &
+!             l_mono_flux_lim_vm, &
+!             l_mono_flux_lim_spikefix, &
+!             order_xm_wpxp, order_xp2_xpyp, &                       ! Intent(in)
+!             order_wp2_wp3, &                                       ! Intent(in)
+!             stats_metadata, &                                      ! Intent(in)
+!             stats_zt, stats_zm, stats_sfc, &                       ! intent(inout)
+!             sclrm(:,:,j), sclr_tol(j), wpsclrp(:,:,j) )            ! Intent(inout)
+!
+!      if ( clubb_at_least_debug_level( 0 ) ) then
+!         if ( err_code == clubb_fatal_error ) then
+!            write(fstderr,*) "sclrm # ", j, "monotonic flux limiter: tridiag failed"
+!            return
+!         end if
+!      end if
+!
+!    end do ! 1..sclr_dim
 
 
 !!!!!!!!!!!!!!!!!!!!!! second solve !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -3577,6 +3580,257 @@ module advance_xm_wpxp_module
         end if
       end if
 
+!      ! Predict <u> and <u'w'>, as well as <v> and <v'w'>.
+!      call xm_wpxp_clipping_and_stats( nz, ngrdcol,   & ! Intent(in)
+!            gr, xm_wpxp_um, dt, wp2, up2, wm_zt,      & ! Intent(in)
+!            um_tndcy, rho_ds_zm, rho_ds_zt,           & ! Intent(in)
+!            invrs_rho_ds_zm, invrs_rho_ds_zt,         & ! Intent(in)
+!            w_tol_sqd, w_tol, rcond,                  & ! Intent(in)
+!            low_lev_effect, high_lev_effect,          & ! Intent(in)
+!            lhs_ma_zt, lhs_ma_zm, lhs_ta_wpxp,        & ! Intent(in)
+!            lhs_diff_zm, C7_Skw_fnc,                  & ! Intent(in)
+!            lhs_tp, lhs_ta_xm, lhs_pr1_upwp,          & ! Intent(in)
+!            l_implemented, solution2(:,:,1),          & ! Intent(in)
+!            tridiag_solve_method,                     & ! Intent(in)
+!            l_predict_upwp_vpwp,                      & ! Intent(in)
+!            l_upwind_xm_ma,                           & ! Intent(in)
+!            l_tke_aniso,                              & ! Intent(in)
+!            l_enable_relaxed_clipping,                & ! Intent(in)
+!            l_mono_flux_lim_thlm, &
+!            l_mono_flux_lim_rtm, &
+!            l_mono_flux_lim_um, &
+!            l_mono_flux_lim_vm, &
+!            l_mono_flux_lim_spikefix, &
+!            order_xm_wpxp, order_xp2_xpyp,            & ! Intent(in)
+!            order_wp2_wp3,                            & ! Intent(in)
+!            stats_metadata,                           & ! Intent(in)
+!            stats_zt, stats_zm, stats_sfc,            & ! intent(inout)
+!            um, w_tol, upwp                           ) ! Intent(inout)
+!
+!      if ( clubb_at_least_debug_level( 0 ) ) then
+!        if ( err_code == clubb_fatal_error ) then
+!          write(fstderr,*) "um monotonic flux limiter:  tridiag failed"
+!          return
+!        end if
+!      end if
+!
+!      call xm_wpxp_clipping_and_stats( nz, ngrdcol,   & ! Intent(in)
+!            gr, xm_wpxp_vm, dt, wp2, vp2, wm_zt,      & ! Intent(in)
+!            vm_tndcy, rho_ds_zm, rho_ds_zt,           & ! Intent(in)
+!            invrs_rho_ds_zm, invrs_rho_ds_zt,         & ! Intent(in)
+!            w_tol_sqd, w_tol, rcond,                  & ! Intent(in)
+!            low_lev_effect, high_lev_effect,          & ! Intent(in)
+!            lhs_ma_zt, lhs_ma_zm, lhs_ta_wpxp,        & ! Intent(in)
+!            lhs_diff_zm, C7_Skw_fnc,                  & ! Intent(in)
+!            lhs_tp, lhs_ta_xm, lhs_pr1_upwp,          & ! Intent(in)
+!            l_implemented, solution2(:,:,2),          & ! Intent(in)
+!            tridiag_solve_method,                     & ! Intent(in)
+!            l_predict_upwp_vpwp,                      & ! Intent(in)
+!            l_upwind_xm_ma,                           & ! Intent(in)
+!            l_tke_aniso,                              & ! Intent(in)
+!            l_enable_relaxed_clipping,                & ! Intent(in)
+!            l_mono_flux_lim_thlm, &
+!            l_mono_flux_lim_rtm, &
+!            l_mono_flux_lim_um, &
+!            l_mono_flux_lim_vm, &
+!            l_mono_flux_lim_spikefix, &
+!            order_xm_wpxp, order_xp2_xpyp,            & ! Intent(in)
+!            order_wp2_wp3,                            & ! Intent(in)
+!            stats_metadata,                           & ! Intent(in)
+!            stats_zt, stats_zm, stats_sfc,            & ! intent(inout)
+!            vm, w_tol, vpwp )                           ! Intent(inout)
+!
+!      if ( clubb_at_least_debug_level( 0 ) ) then
+!        if ( err_code == clubb_fatal_error ) then
+!          write(fstderr,*) "vm monotonic flux limiter:  tridiag failed"
+!          return
+!        end if
+!      end if
+!
+!      if ( l_perturbed_wind ) then
+!
+!         call xm_wpxp_clipping_and_stats( nz, ngrdcol,   & ! Intent(in)
+!               gr, xm_wpxp_um, dt, wp2, up2, wm_zt,      & ! Intent(in)
+!               um_tndcy, rho_ds_zm, rho_ds_zt,           & ! Intent(in)
+!               invrs_rho_ds_zm, invrs_rho_ds_zt,         & ! Intent(in)
+!               w_tol_sqd, w_tol, rcond,                  & ! Intent(in)
+!               low_lev_effect, high_lev_effect,          & ! Intent(in)
+!               lhs_ma_zt, lhs_ma_zm, lhs_ta_wpxp,        & ! Intent(in)
+!               lhs_diff_zm, C7_Skw_fnc,                  & ! Intent(in)
+!               lhs_tp, lhs_ta_xm, lhs_pr1_upwp,          & ! Intent(in)
+!               l_implemented, solution2(:,:,3),          & ! Intent(in)
+!               tridiag_solve_method,                     & ! Intent(in)
+!               l_predict_upwp_vpwp,                      & ! Intent(in)
+!               l_upwind_xm_ma,                           & ! Intent(in)
+!               l_tke_aniso,                              & ! Intent(in)
+!               l_enable_relaxed_clipping,                & ! Intent(in)
+!               l_mono_flux_lim_thlm, &
+!               l_mono_flux_lim_rtm, &
+!               l_mono_flux_lim_um, &
+!               l_mono_flux_lim_vm, &
+!               l_mono_flux_lim_spikefix, &
+!               order_xm_wpxp, order_xp2_xpyp,            & ! Intent(in)
+!               order_wp2_wp3,                            & ! Intent(in)
+!               stats_metadata,                           & ! Intent(in)
+!               stats_zt, stats_zm, stats_sfc,            & ! intent(inout)
+!               um_pert, w_tol, upwp_pert                 ) ! Intent(inout)
+!
+!         if ( clubb_at_least_debug_level( 0 ) ) then
+!           if ( err_code == clubb_fatal_error ) then
+!             write(fstderr,*) "um_pert monotonic flux limiter:  tridiag failed"
+!             return
+!           end if
+!         end if
+!
+!         call xm_wpxp_clipping_and_stats( nz, ngrdcol,   & ! Intent(in)
+!               gr, xm_wpxp_vm, dt, wp2, vp2, wm_zt,      & ! Intent(in)
+!               vm_tndcy, rho_ds_zm, rho_ds_zt,           & ! Intent(in)
+!               invrs_rho_ds_zm, invrs_rho_ds_zt,         & ! Intent(in)
+!               w_tol_sqd, w_tol, rcond,                  & ! Intent(in)
+!               low_lev_effect, high_lev_effect,          & ! Intent(in)
+!               lhs_ma_zt, lhs_ma_zm, lhs_ta_wpxp,        & ! Intent(in)
+!               lhs_diff_zm, C7_Skw_fnc,                  & ! Intent(in)
+!               lhs_tp, lhs_ta_xm, lhs_pr1_upwp,          & ! Intent(in)
+!               l_implemented, solution2(:,:,4),          & ! Intent(in)
+!               tridiag_solve_method,                     & ! Intent(in)
+!               l_predict_upwp_vpwp,                      & ! Intent(in)
+!               l_upwind_xm_ma,                           & ! Intent(in)
+!               l_tke_aniso,                              & ! Intent(in)
+!               l_enable_relaxed_clipping,                & ! Intent(in)
+!               l_mono_flux_lim_thlm, &
+!               l_mono_flux_lim_rtm, &
+!               l_mono_flux_lim_um, &
+!               l_mono_flux_lim_vm, &
+!               l_mono_flux_lim_spikefix, &
+!               order_xm_wpxp, order_xp2_xpyp,            & ! Intent(in)
+!               order_wp2_wp3,                            & ! Intent(in)
+!               stats_metadata,                           & ! Intent(in)
+!               stats_zt, stats_zm, stats_sfc,            & ! intent(inout)
+!               vm_pert, w_tol, vpwp_pert )                 ! Intent(inout)
+!
+!         if ( clubb_at_least_debug_level( 0 ) ) then
+!           if ( err_code == clubb_fatal_error ) then
+!             write(fstderr,*) "vm_pert monotonic flux limiter:  tridiag failed"
+!             return
+!           end if
+!         end if
+!
+!      endif ! l_perturbed_wind
+
+    end if ! l_predict_upwp_vpwp
+
+    call xm_wpxp_clipping_and_stats( nz, ngrdcol, &   ! Intent(in)
+           gr, xm_wpxp_rtm, dt, wp2, rtp2, wm_zt,  &  ! Intent(in)
+           rtm_forcing, rho_ds_zm, rho_ds_zt, &       ! Intent(in)
+           invrs_rho_ds_zm, invrs_rho_ds_zt, &        ! Intent(in)
+           rt_tol**2, rt_tol, rcond, &                ! Intent(in)
+           low_lev_effect, high_lev_effect, &         ! Intent(in)
+           lhs_ma_zt, lhs_ma_zm, lhs_ta_wpxp, &       ! Intent(in)
+           lhs_diff_zm, C7_Skw_fnc, &                 ! Intent(in)
+           lhs_tp, lhs_ta_xm, lhs_pr1_wprtp, &        ! Intent(in)
+           l_implemented, solution(:,:,1),  &         ! Intent(in)
+           tridiag_solve_method, &                    ! Intent(in)
+           l_predict_upwp_vpwp, &                     ! Intent(in)
+           l_upwind_xm_ma, &                          ! Intent(in)
+           l_tke_aniso, &                             ! Intent(in)
+           l_enable_relaxed_clipping, &               ! Intent(in)
+           l_mono_flux_lim_thlm, &
+           l_mono_flux_lim_rtm, &
+           l_mono_flux_lim_um, &
+           l_mono_flux_lim_vm, &
+           l_mono_flux_lim_spikefix, &
+           order_xm_wpxp, order_xp2_xpyp, &           ! Intent(in)
+           order_wp2_wp3, &                           ! Intent(in)
+           stats_metadata, &                          ! Intent(in)
+           stats_zt, stats_zm, stats_sfc, &           ! intent(inout)
+           rtm, rt_tol_mfl, wprtp )                   ! Intent(inout)
+
+    if ( clubb_at_least_debug_level( 0 ) ) then
+       if ( err_code == clubb_fatal_error ) then
+          write(fstderr,*) "rtm monotonic flux limiter:  tridiag failed"
+          return
+       end if
+    end if
+
+    call xm_wpxp_clipping_and_stats( nz, ngrdcol, &   ! Intent(in)
+           gr, xm_wpxp_thlm, dt, wp2, thlp2, wm_zt, & ! Intent(in)
+           thlm_forcing, rho_ds_zm, rho_ds_zt, &      ! Intent(in)
+           invrs_rho_ds_zm, invrs_rho_ds_zt, &        ! Intent(in)
+           thl_tol**2, thl_tol, rcond, &              ! Intent(in)
+           low_lev_effect, high_lev_effect, &         ! Intent(in)
+           lhs_ma_zt, lhs_ma_zm, lhs_ta_wpxp, &       ! Intent(in)
+           lhs_diff_zm, C7_Skw_fnc, &                 ! Intent(in)
+           lhs_tp, lhs_ta_xm, lhs_pr1_wprtp, &        ! Intent(in)
+           l_implemented, solution(:,:,2),  &         ! Intent(in)
+           tridiag_solve_method, &                    ! Intent(in)
+           l_predict_upwp_vpwp, &                     ! Intent(in)
+           l_upwind_xm_ma, &                          ! Intent(in)
+           l_tke_aniso, &                             ! Intent(in)
+           l_enable_relaxed_clipping, &               ! Intent(in)
+           l_mono_flux_lim_thlm, &
+           l_mono_flux_lim_rtm, &
+           l_mono_flux_lim_um, &
+           l_mono_flux_lim_vm, &
+           l_mono_flux_lim_spikefix, &
+           order_xm_wpxp, order_xp2_xpyp, &           ! Intent(in)
+           order_wp2_wp3, &                           ! Intent(in)
+           stats_metadata, &                          ! Intent(in)
+           stats_zt, stats_zm, stats_sfc, &           ! intent(inout)
+           thlm, thl_tol_mfl, wpthlp )                ! Intent(inout)
+
+    if ( clubb_at_least_debug_level( 0 ) ) then
+       if ( err_code == clubb_fatal_error ) then
+          write(fstderr,*) "thlm monotonic flux limiter:  tridiag failed"
+          return
+       end if
+    end if
+
+! ---> h1g, 2010-06-15
+! scalar transport, e.g, droplet and ice number concentration
+! are handled in  " advance_sclrm_Nd_module.F90 "
+#ifdef GFDL
+    do j = 1, 0, 1
+#else
+    do j = 1, sclr_dim, 1
+#endif
+! <--- h1g, 2010-06-15
+      call xm_wpxp_clipping_and_stats( nz, ngrdcol, &               ! Intent(in)
+             gr, xm_wpxp_scalar, dt, wp2, sclrp2(:,:,j), wm_zt, &   ! Intent(in)
+             sclrm_forcing(:,:,j), &                                ! Intent(in)
+             rho_ds_zm, rho_ds_zt, &                                ! Intent(in)
+             invrs_rho_ds_zm, invrs_rho_ds_zt, &                    ! Intent(in)
+             sclr_tol(j)**2, sclr_tol(j), rcond, &                  ! Intent(in)
+             low_lev_effect, high_lev_effect, &                     ! Intent(in)
+             lhs_ma_zt, lhs_ma_zm, lhs_ta_wpxp, &                   ! Intent(in)
+             lhs_diff_zm, C7_Skw_fnc, &                             ! Intent(in)
+             lhs_tp, lhs_ta_xm, lhs_pr1_wprtp, &                    ! Intent(in)
+             l_implemented, solution(:,:,2+j),  &                   ! Intent(in)
+             tridiag_solve_method, &                                ! Intent(in)
+             l_predict_upwp_vpwp, &                                 ! Intent(in)
+             l_upwind_xm_ma, &                                      ! Intent(in)
+             l_tke_aniso, &                                         ! Intent(in)
+             l_enable_relaxed_clipping, &                           ! Intent(in)
+             l_mono_flux_lim_thlm, &
+             l_mono_flux_lim_rtm, &
+             l_mono_flux_lim_um, &
+             l_mono_flux_lim_vm, &
+             l_mono_flux_lim_spikefix, &
+             order_xm_wpxp, order_xp2_xpyp, &                       ! Intent(in)
+             order_wp2_wp3, &                                       ! Intent(in)
+             stats_metadata, &                                      ! Intent(in)
+             stats_zt, stats_zm, stats_sfc, &                       ! intent(inout)
+             sclrm(:,:,j), sclr_tol(j), wpsclrp(:,:,j) )            ! Intent(inout)
+
+      if ( clubb_at_least_debug_level( 0 ) ) then
+         if ( err_code == clubb_fatal_error ) then
+            write(fstderr,*) "sclrm # ", j, "monotonic flux limiter: tridiag failed"
+            return
+         end if
+      end if
+
+    end do ! 1..sclr_dim
+
+    if (l_predict_upwp_vpwp) then
       ! Predict <u> and <u'w'>, as well as <v> and <v'w'>.
       call xm_wpxp_clipping_and_stats( nz, ngrdcol,   & ! Intent(in)
             gr, xm_wpxp_um, dt, wp2, up2, wm_zt,      & ! Intent(in)
@@ -3714,8 +3968,7 @@ module advance_xm_wpxp_module
 
       endif ! l_perturbed_wind
 
-    end if ! l_predict_upwp_vpwp
-
+    end if
     !$acc exit data delete( lhs, um_tndcy, vm_tndcy, upwp_forcing, &
     !$acc                 vpwp_forcing, upthvp, vpthvp, upthlp, vpthlp, uprtp, vprtp, &
     !$acc                 tau_C6_zm, upwp_forcing_pert, vpwp_forcing_pert, upthvp_pert, &
@@ -5458,7 +5711,7 @@ module advance_xm_wpxp_module
   end subroutine wpxp_terms_ac_pr2_lhs
 
   !=============================================================================
-  subroutine wpxp_term_pr1_lhs( nz, ngrdcol, C6rt_Skw_fnc, C6thl_Skw_fnc, C7_Skw_fnc, &
+  subroutine wpxp_term_pr1_lhs( nz, ngrdcol, C6mom, C6rt_Skw_fnc, C6thl_Skw_fnc, C7_Skw_fnc, &
                                      invrs_tau_C6sclrflx_zm, invrs_tau_C6momflx_zm, l_scalar_calc, &
                                      lhs_pr1_wprtp, lhs_pr1_wpthlp, &
                                      lhs_pr1_wpsclrp, lhs_pr1_upwp )
@@ -5521,6 +5774,8 @@ module advance_xm_wpxp_module
       lhs_pr1_wpsclrp, & ! LHS coefficient for w'sclr' pressure term 1  [1/s]
       lhs_pr1_upwp
 
+    real( kind = core_rknd ), intent(in) :: C6mom
+
     !--------------------------- Local Variables ---------------------------
     integer :: i, k
 
@@ -5537,7 +5792,8 @@ module advance_xm_wpxp_module
         lhs_pr1_wpthlp(i,k) = C6thl_Skw_fnc(i,k) * invrs_tau_C6sclrflx_zm(i,k)
 
         ! Momentum main diagonals
-        lhs_pr1_upwp(i,k) = C6rt_Skw_fnc(i,k) * invrs_tau_C6momflx_zm(i,k)
+!        lhs_pr1_upwp(i,k) = C6rt_Skw_fnc(i,k) * invrs_tau_C6momflx_zm(i,k)
+        lhs_pr1_upwp(i,k) = C6mom * invrs_tau_C6momflx_zm(i,k)
 
       end do
     end do
