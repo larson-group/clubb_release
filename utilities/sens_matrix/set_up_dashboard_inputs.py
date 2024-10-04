@@ -360,7 +360,8 @@ def setUpInputs():
 
     # Metrics from the global simulation that use the tuner-recommended parameter values
     linSolnNcFilename = \
-         defaultNcFilename
+          'Regional_files/20231211_20x20regs/20sens0707_61_Regional.nc'
+    #     defaultNcFilename
     #    'Regional_files/20degree_CAM_TAUS_202404_DJF/20.0Tuner_20240702_20d_DJF_Regional.nc'
     #    'Regional_files/stephens_20240131/btune_regional_files/b1850.076base.n2th1b_Regional.nc'
     #    'Regional_files/20240409updated/thresp26_Regional.nc'
