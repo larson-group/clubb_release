@@ -6903,7 +6903,7 @@ module clubb_driver
       wpvp2,             & ! w'v'^2 (thermodynamic levels)                  [m^3/s^3]
       ice_supersat_frac    ! ice cloud fraction (thermo. levels)            [-]
 
-    real( kind = core_rknd ), intent(inout), dimension(gr%nzt,sclr_dim) :: &
+    real( kind = core_rknd ), intent(inout), dimension(gr%nzm,sclr_dim) :: &
       sclrpthvp     ! < sclr' th_v' > (momentum levels)   [units vary]
 
     real( kind = core_rknd ), intent(inout), dimension(gr%nzm) ::  &
