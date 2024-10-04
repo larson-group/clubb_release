@@ -845,8 +845,7 @@ module grid_class
     ! thermodynamic grid levels that sandwich the central momentum level.
     ! For more information, see the comments in function interpolated_aztk_imp.
     call calc_zm2zt_weights( nzt, ngrdcol, & ! In
-                             gr )           ! InOut
-
+                             gr )            ! InOut
 
     ! Interpolation Weights: zt grid to zm grid.
     ! The grid index (k) is the index of the level on the momentum (zm) grid.
@@ -860,8 +859,8 @@ module grid_class
     ! the intermediate momentum grid levels that sandwich the central
     ! thermodynamic level.
     ! For more information, see the comments in function interpolated_azmk_imp.
-    call calc_zt2zm_weights( nzm, ngrdcol, & ! In
-                             gr )           ! InOut
+    call calc_zt2zm_weights( nzm, nzt, ngrdcol, & ! In
+                             gr )                 ! InOut
 
     return
   end subroutine setup_grid_heights
@@ -1544,46 +1543,38 @@ module grid_class
     !$acc data copyin( azt, gr, gr%weights_zt2zm, gr%zt, gr%zm ) &
     !$acc      copyout( linear_interpolated_azm )
 
-    !$acc parallel loop gang vector default(present)
-    do i = 1, ngrdcol
-      linear_interpolated_azm(i,1) = azt(i,1)
-    end do
-    !$acc end parallel loop
-
     ! Interpolate the value of a thermodynamic-level variable to the central
     ! momentum level, k, between two successive thermodynamic levels using
     ! linear interpolation.
     !$acc parallel loop gang vector collapse(2) default(present)
     do k = 2, nzm-1
       do i = 1, ngrdcol
-        linear_interpolated_azm(i,k) = gr%weights_zt2zm(i,k,1) &
-                                       * ( azt(i,k) - azt(i,k-1) ) + azt(i,k-1)
+        linear_interpolated_azm(i,k) &
+        = gr%weights_zt2zm(i,k,t_above) * azt(i,k) &
+          + gr%weights_zt2zm(i,k,t_below) * azt(i,k-1)
       end do
     end do
     !$acc end parallel loop
 
+    ! Set the value of the thermodynamic-level variable, azt, at momentum
+    ! level 1.  The name of the variable when interpolated/extended to momentum
+    ! levels is azm.  This is the lower boundary.
     !$acc parallel loop gang vector default(present)
     do i = 1, ngrdcol
+      linear_interpolated_azm(i,1) = azt(i,1)
+    end do
+    !$acc end parallel loop
 
-      ! Set the value of the thermodynamic-level variable, azt, at the lowermost
-      ! level of the model, which is a momentum level.  The name of the variable
-      ! when interpolated/extended to momentum levels is azm.
-      ! Use a linear extension based on the values of azt at levels 1 and 2 to
-      ! find the value of azm at level 1 (the lowermost level in the model).
-      !linear_interpolated_azm(i,1) &
-      !  = ( ( azt(i,2) - azt(i,1) ) / ( gr%zt(i,2) - gr%zt(i,1) ) ) & 
-      !    * ( gr%zm(i,1) - gr%zt(i,1) ) + azt(i,1)
-
-      ! Set the value of the thermodynamic-level variable, azt, at the uppermost
-      ! level of the model, which is a momentum level.  The name of the variable
-      ! when interpolated/extended to momentum levels is azm.
-      ! Use a linear extension based on the values of azt at levels gr%nzt and
-      ! gr%nzt-1 to find the value of azm at level gr%nzm (the uppermost level
-      ! in the model).
+    ! Set the value of the thermodynamic-level variable, azt, at momentum
+    ! level nzm.  The name of the variable when interpolated/extended to
+    ! momentum levels is azm.  This is the upper boundary.
+    ! Use a linear extension based on the values of azt at levels nzt and
+    ! nzt-1 to find the value of azm at level nzm.
+    !$acc parallel loop gang vector default(present)
+    do i = 1, ngrdcol
       linear_interpolated_azm(i,nzm) &
-        = ( ( azt(i,nzt) - azt(i,nzt-1) ) / ( gr%zt(i,nzt) - gr%zt(i,nzt-1) ) ) & 
-          * ( gr%zm(i,nzm) - gr%zt(i,nzt) ) + azt(i,nzt)
-
+      = gr%weights_zt2zm(i,nzm,t_above) * azt(i,nzt) &
+        + gr%weights_zt2zm(i,nzm,t_below) * azt(i,nzt-1)
     end do
     !$acc end parallel loop
 
@@ -1804,7 +1795,7 @@ module grid_class
   end function cubic_interpolated_azm_2D
 
   !=============================================================================
-  subroutine calc_zt2zm_weights( nzm, ngrdcol, &
+  subroutine calc_zt2zm_weights( nzm, nzt, ngrdcol, &
                                  gr ) 
 
     ! Description:
@@ -2013,6 +2004,7 @@ module grid_class
     ! Input Variable
     integer, intent(in) :: &
       nzm, &
+      nzt, &
       ngrdcol
     
     ! Input/Output Variable
@@ -2031,7 +2023,8 @@ module grid_class
                                         / ( gr%zt(i,k) - gr%zt(i,k-1) )
 
         ! Weight of lower thermodynamic level on momentum level.
-        gr%weights_zt2zm(i,k,t_below) = one - gr%weights_zt2zm(i,k,t_above)
+        gr%weights_zt2zm(i,k,t_below) = ( gr%zt(i,k) - gr%zm(i,k) ) &
+                                        / ( gr%zt(i,k) - gr%zt(i,k-1) )
         
       end do
     end do
@@ -2043,9 +2036,10 @@ module grid_class
     do i = 1, ngrdcol
 
       gr%weights_zt2zm(i,1,t_above) = ( gr%zm(i,1) - gr%zt(i,1) ) &
-                                       / ( gr%zt(i,2) - gr%zt(i,1) )
+                                      / ( gr%zt(i,2) - gr%zt(i,1) )
                                         
-      gr%weights_zt2zm(i,1,t_below) = one - gr%weights_zt2zm(i,1,t_above)
+      gr%weights_zt2zm(i,1,t_below) = ( gr%zt(i,2) - gr%zm(i,1) ) &
+                                      / ( gr%zt(i,2) - gr%zt(i,1) )
 
     end do
 
@@ -2055,10 +2049,11 @@ module grid_class
     ! Note:  Variable "factor" will be greater than 1 in this situation.
     do i = 1, ngrdcol
 
-      gr%weights_zt2zm(i,nzm,t_above) = ( gr%zm(i,nzm) - gr%zt(i,nzm-2) ) &
-                                        / ( gr%zt(i,nzm-1) - gr%zt(i,nzm-2) )
+      gr%weights_zt2zm(i,nzm,t_above) = ( gr%zm(i,nzm) - gr%zt(i,nzt-1) ) &
+                                        / ( gr%zt(i,nzt) - gr%zt(i,nzt-1) )
                                         
-      gr%weights_zt2zm(i,nzm,t_below) = one - gr%weights_zt2zm(i,nzm,t_above)
+      gr%weights_zt2zm(i,nzm,t_below) = ( gr%zt(i,nzt) - gr%zm(i,nzm) ) &
+                                        / ( gr%zt(i,nzt) - gr%zt(i,nzt-1) )
 
     end do
 
@@ -2120,8 +2115,9 @@ module grid_class
     !$acc parallel loop gang vector collapse(2) default(present)
     do k = 1, nzt
       do i = 1, ngrdcol
-        linear_interpolated_azt(i,k) = gr%weights_zm2zt(i,k,1) &
-                                       * ( azm(i,k+1) - azm(i,k) ) + azm(i,k)
+        linear_interpolated_azt(i,k) &
+        = gr%weights_zm2zt(i,k,m_above) * azm(i,k+1) &
+          + gr%weights_zm2zt(i,k,m_below) * azm(i,k)
       end do
     end do
     !$acc end parallel loop
@@ -2368,7 +2364,8 @@ module grid_class
                                         / ( gr%zm(i,k+1) - gr%zm(i,k) )
 
         ! Weight of lower momentum level on thermodynamic level.
-        gr%weights_zm2zt(i,k,m_below) = one - gr%weights_zm2zt(i,k,m_above)
+        gr%weights_zm2zt(i,k,m_below) = ( gr%zm(i,k+1) - gr%zt(i,k) ) &
+                                        / ( gr%zm(i,k+1) - gr%zm(i,k) )
         
       end do
     end do
