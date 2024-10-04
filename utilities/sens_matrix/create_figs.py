@@ -51,11 +51,12 @@ def createFigs(metricsNames,
     plot_biasesOrderedArrowFig = True
     plot_threeDotFig = True
     plot_metricsBarChart = True
-    plot_biasesVsSensMagScatterplot = True
-    plot_biasVsDiagnosticScatterplot = True
+    plot_biasesVsDiagnosticScatterplot = True
     plot_dpMin2PtFig = True
     plot_dpMinMatrixScatterFig = False
-    plot_projectionMatrixFig = True
+    plot_projectionMatrixFigs = True
+    plot_biasesVsSensMagScatterplot = True
+    plot_biasesVsSvdScatterplot = True
     plot_paramsCorrArrayFig = True
     plot_sensMatrixAndBiasVecFig = True
 
@@ -72,11 +73,33 @@ def createFigs(metricsNames,
     # I.e., set maskMetricsNames=T for variables that we want to plot.
     maskMetricsNames =   (metricsNames == 'SWCF_4_12') \
                          | (metricsNames == 'SWCF_4_11') \
+                         | (metricsNames == 'SWCF_4_14') \
                          | (metricsNames == 'SWCF_6_14') \
+                         | (metricsNames == 'SWCF_6_17') \
+                         | (metricsNames == 'SWCF_6_1') \
+                         | (metricsNames == 'SWCF_6_5') \
+                         | (metricsNames == 'SWCF_6_12') \
+                         | (metricsNames == 'SWCF_6_10') \
                          | (metricsNames == 'SWCF_2_10') \
                          | (metricsNames == 'SWCF_8_3') \
                          | (metricsNames == 'SWCF_5_7') \
-                         | (metricsNames == 'SWCF_5_16')
+                         | (metricsNames == 'SWCF_5_9') \
+                         | (metricsNames == 'SWCF_5_16') \
+                         | (metricsNames == 'SWCF_1_13') \
+                         | (metricsNames == 'SWCF_1_14') \
+                         | (metricsNames == 'SWCF_1_17') \
+                         | (metricsNames == 'SWCF_6_18') \
+                         | (metricsNames == 'SWCF_4_16') \
+                         | (metricsNames == 'SWCF_6_7') \
+                         | (metricsNames == 'SWCF_9_13') \
+                         | (metricsNames == 'SWCF_9_6') \
+                         | (metricsNames == 'SWCF_9_5') \
+                         | (metricsNames == 'SWCF_6_4') \
+                         | (metricsNames == 'SWCF_6_6') \
+                         | (metricsNames == 'SWCF_5_18') \
+                         | (metricsNames == 'SWCF_5_5') \
+                         | (metricsNames == 'SWCF_1_8') \
+                         | (metricsNames == 'SWCF_1_9')
 
     # Use this line if you want to exclude (blacklist) some variables:
     #maskMetricsNames = (metricsNames != 'SWCF_4_1') & (metricsNames != 'SWCF_4_2')
@@ -247,7 +270,7 @@ def createFigs(metricsNames,
                                           normMetricValsCol,
                                           metricsNames )
 
-    if plot_biasVsDiagnosticScatterplot:
+    if plot_biasesVsDiagnosticScatterplot:
         diagnosticPrefix = "U10"
         biasVsDiagnosticScatterplot = \
         createBiasVsDiagnosticScatterplot(diagnosticPrefix, defaultBiasesCol,
@@ -270,12 +293,39 @@ def createFigs(metricsNames,
 
     if plot_biasesVsSensMagScatterplot:
         print("Creating biasesVsSensMagScatterplot . . .")
-        #    biasesVsSensMagScatterplot = \
-        #    createBiasesVsSensMagScatterplot(normlzdLinplusSensMatrixPoly, defaultBiasesCol,
-        #                                         normMetricValsCol, metricsNames)
         biasesVsSensMagScatterplot = \
-        createBiasesVsSensMagScatterplot(normlzdLinplusSensMatrixPolyMetricsMasked, defaultBiasesColMasked,
-                                         normMetricValsColMasked, metricsNamesMasked)
+            createBiasesVsSensMagScatterplot(normlzdLinplusSensMatrixPoly, defaultBiasesCol,
+                                             normMetricValsCol, metricsNames)
+        #biasesVsSensMagScatterplot = \
+        #createBiasesVsSensMagScatterplot(normlzdLinplusSensMatrixPolyMetricsMasked, defaultBiasesColMasked,
+        #                                 normMetricValsColMasked, metricsNamesMasked)
+
+    if plot_biasesVsSvdScatterplot:
+        print("Creating biasesVsSvdScatterplot . . .")
+
+        # vh = V^T = transpose of right-singular vector matrix, V.
+        normlzdSensMatrixPolyCentered = normlzdSensMatrixPoly - np.mean(normlzdSensMatrixPoly,0)
+        u, s, vh = np.linalg.svd(normlzdLinplusSensMatrixPoly, full_matrices=False)
+
+        RSquaredSvd = np.square(s)/np.sum(np.square(s))
+        print("Variance explained by each SVD component (R**2) = ", RSquaredSvd)
+
+        # Set xCol to first left singular vector
+        xCol = u[:, 0]
+        yCol = u[:, 1]
+        #yCol = -defaultBiasesCol[:, 0] / np.abs(normMetricValsCol[:, 0])
+        metricsNamesNoprefix = np.char.replace(metricsNames, "SWCF_", "")
+
+        biasesVsSvdScatterplot = \
+           createScatterplot(xCol=xCol, yCol=yCol,
+                             colorCol=np.minimum(1,-defaultBiasesCol[:, 0] / np.abs(normMetricValsCol[:, 0])),
+                             pointLabels=metricsNamesNoprefix,
+                             plotTitle="""Regional biases vs. first left singular vector column.""",
+                             xaxisTitle="Left singular vector elements",
+                             yaxisTitle="Regional biases",
+                             showLegend=False, hoverMode="x",
+                             plotWidth=700, plotHeight=500)
+
 
     if False:
         biasesVsSensArrowFig = \
@@ -335,13 +385,13 @@ def createFigs(metricsNames,
                          reversedYAxis = 'reversed',
                          eqnAdd = False)
 
-    if plot_projectionMatrixFig:
+    if plot_projectionMatrixFigs:
         # Create figure that plots color-coded projection matrix plus bias column.
         XT_dot_X_Linplus_inv = np.linalg.inv( XT_dot_X_Linplus )
         fullProjectionMatrix = normlzdLinplusSensMatrixPoly @ XT_dot_X_Linplus_inv @ normlzdLinplusSensMatrixPoly.T
-        print("Leverages")
+        allLeverages = np.diag(fullProjectionMatrix)
         np.set_printoptions(linewidth=200)
-        print(np.diag(fullProjectionMatrix))
+        print("All leverages = ", allLeverages)
         print("Sum of leverages = ", fullProjectionMatrix.trace())
         print("Number of parameters =", len(paramsNames))
         print("A large leverage is > 3p/n, which = ",
@@ -375,6 +425,19 @@ def createFigs(metricsNames,
                          plotTitle='Excerpt of projection matrix, '+matrixDictKeyString,
                          reversedYAxis = 'reversed',
                          eqnAdd = False)
+
+        xCol = allLeverages
+        yCol = np.abs(-defaultBiasesCol[:, 0]) / np.abs(normMetricValsCol[:, 0])
+
+        biasesVsLeveragesScatterplot = \
+           createScatterplot(xCol=xCol, yCol=yCol,
+                             colorCol=yCol,
+                             pointLabels=metricsNames,
+                             plotTitle="""Regional biases vs. leverages.""",
+                             xaxisTitle="Leverages",
+                             yaxisTitle="Regional biases",
+                             showLegend=False, hoverMode="x",
+                             plotWidth=700, plotHeight=500)
 
     if plot_paramsCorrArrayFig:
         matrixDictKeyString = "normlzdLinplusSensMatrixPoly"
@@ -432,14 +495,12 @@ def createFigs(metricsNames,
         dashboardChildren.append(dcc.Graph( id='linplusSensMatrixBarFig', figure=linplusSensMatrixBarFig ))
     if False:
         dashboardChildren.append(dcc.Graph( id='biasLinNlIndivContrbBarFig', figure=biasLinNlIndivContrbBarFig ))
-    if plot_biasesVsSensMagScatterplot:
-        dashboardChildren.append(dcc.Graph( id='biasesVsSensMagScatterplot', figure=biasesVsSensMagScatterplot ))
     if plot_dpMin2PtFig:
         dashboardChildren.append(dcc.Graph( id='dpMin2PtFig', figure=dpMin2PtFig ))
     if False:
         dashboardChildren.append(dcc.Graph( id='biasVsBiasApproxScatterplot', figure=biasVsBiasApproxScatterplot ))
        #config= { 'toImageButtonOptions': { 'scale': 6 } }
-    if plot_biasVsDiagnosticScatterplot:
+    if plot_biasesVsDiagnosticScatterplot:
         dashboardChildren.append(dcc.Graph(id='biasVsDiagnosticScatterplot', figure=biasVsDiagnosticScatterplot ))
     if plot_sensMatrixAndBiasVecFig:
         dashboardChildren.append(dcc.Graph( id='sensMatrixAndBiasVecFig', figure=sensMatrixAndBiasVecFig ))
@@ -449,8 +510,13 @@ def createFigs(metricsNames,
         dashboardChildren.append(dcc.Graph( id='paramsCorrArrayFig', figure=paramsCorrArrayFig ))
     if False:
         dashboardChildren.append(dcc.Graph( id='metricsCorrArrayFig', figure=metricsCorrArrayFig ))
-    if plot_projectionMatrixFig:
+    if plot_projectionMatrixFigs:
         dashboardChildren.append(dcc.Graph( id='projectionMatrixFig', figure=projectionMatrixFig ))
+        dashboardChildren.append(dcc.Graph(id='biasesVsLeveragesScatterplot', figure=biasesVsLeveragesScatterplot))
+    if plot_biasesVsSensMagScatterplot:
+        dashboardChildren.append(dcc.Graph( id='biasesVsSensMagScatterplot', figure=biasesVsSensMagScatterplot ))
+    if plot_biasesVsSvdScatterplot:
+        dashboardChildren.append(dcc.Graph( id='biasesVsSvdScatterplot', figure=biasesVsSvdScatterplot ))
     if plot_threeDotFig:
         dashboardChildren.append(dcc.Graph( id='threeDotFig', figure=threeDotFig ))
     if False:
@@ -622,6 +688,35 @@ def createMatrixPlusColFig( matrix, matIndexLabel, matColLabel,
 
     return ( matrixPlusColFig )
 
+def createScatterplot(xCol, yCol,
+                      colorCol,
+                      pointLabels,
+                      plotTitle,
+                      xaxisTitle,
+                      yaxisTitle,
+                      showLegend, hoverMode,
+                      plotWidth, plotHeight):
+
+    # Helper function that plots a column of length numMetrics (yCol) vs. xCol
+    df = pd.DataFrame({
+                       'col1': xCol,
+                       'col2': yCol,
+                       'col3': colorCol,
+                      }, index=pointLabels )
+    scatterplot = px.scatter(df, x='col1', y='col2',
+                                 text=pointLabels,
+                                 title = plotTitle,
+                                 color = 'col3',
+                                 color_continuous_scale = 'Rainbow')
+    scatterplot.update_traces(textfont_color='black')
+    #scatterplot.update_traces(textfont = dict(color='red'))
+    scatterplot.update_xaxes(title=xaxisTitle)
+    scatterplot.update_yaxes(title=yaxisTitle)
+    scatterplot.update_layout(showlegend=showLegend)
+    scatterplot.update_layout(hovermode=hoverMode)
+    scatterplot.update_layout( width=plotWidth, height=plotHeight  )
+
+    return scatterplot
 
 #def createMetricsBarChart( metricsNames, paramsNames, biases, residBias, sensMatrix, title ):
 def createMetricsBarChart( metricsSensOrdered, metricsNames, paramsNames,
@@ -1759,32 +1854,45 @@ def createDpMinMatrixScatterFig(defaultBiasesCol, normlzdSensMatrixPoly,
     return dpMinMatrixScatterFig
 
 
-def createBiasesVsSensMagScatterplot(normlzdLinplusSensMatrixPoly, defaultBiasesCol,
+def createBiasesVsSensMagScatterplot(normlzdSensMatrixPoly, defaultBiasesCol,
                                      normMetricValsCol, metricsNames):
 
-    # Plot the biases versus sensitivity of each regional metric.
-    #    More specifically, plot the maximum magnitude value of each row of the sensitivity matrix.
-    df = pd.DataFrame({
-    #df = pd.DataFrame({'Max abs normlzd sensitivity': np.max(np.abs(normlzdSensMatrixPoly), axis=1), # max |row elements|
-    #df = pd.DataFrame({'Max abs normlzd sensitivity': np.sum(normlzdWeightedSensMatrixPoly, axis=1), # sum of row elements
-    #df = pd.DataFrame({'Max abs normlzd sensitivity': np.linalg.norm(normlzdWeightedSensMatrixPoly, axis=1), # rms of row elements
-    #df = pd.DataFrame({'Max abs normlzd sensitivity': np.linalg.norm(normlzdSensMatrixPoly, axis=1), # rms of row elements
-    #df = pd.DataFrame({'Max abs normlzd sensitivity':
-    #                    -defaultBiasesCol[:,0]/np.abs(normMetricValsCol[:,0])*np.linalg.norm(normlzdWeightedSensMatrixPoly, axis=1), # sum of row elements
-                       'Max abs normlzd lin+ sensitivity': np.linalg.norm(normlzdLinplusSensMatrixPoly, axis=1), # sum of row elements
-                       'Default biases': np.abs(-defaultBiasesCol[:,0])/np.abs(normMetricValsCol[:,0]),
-    #                   'revised tuning': (-defaultBiasesApproxElastic-defaultBiasesCol)[:,0]/np.abs(normMetricValsCol[:,0])
-                      }, index=metricsNames )
-    #biasesVsSensMagScatterplot = px.scatter(df, x='Max abs normlzd sensitivity', y=df.columns[1:2],
-    #biasesVsSensMagScatterplot = px.scatter(df, x='Max abs normlzd sensitivity', y='default tuning',
-    biasesVsSensMagScatterplot = px.scatter(df, x=['Max abs normlzd lin+ sensitivity'], y='Default biases',
-                                 text=metricsNames,
-                                 title = """Regional biases vs. magnitude of sensitivity.""")
-    biasesVsSensMagScatterplot.update_yaxes(title="Regional biases")
-    biasesVsSensMagScatterplot.update_xaxes(title="Magnitude of sensitivity of regional metrics to parameter changes")
-    biasesVsSensMagScatterplot.update_layout(showlegend=False)
-    biasesVsSensMagScatterplot.update_layout(hovermode="x")
-    biasesVsSensMagScatterplot.update_layout( width=700, height=500  )
+    ## Plot the biases versus sensitivity of each regional metric.
+    ##    More specifically, plot the maximum magnitude value of each row of the sensitivity matrix.
+    #df = pd.DataFrame({
+    ##df = pd.DataFrame({'Max abs normlzd sensitivity': np.max(np.abs(normlzdSensMatrixPoly), axis=1), # max |row elements|
+    ##df = pd.DataFrame({'Max abs normlzd sensitivity': np.sum(normlzdWeightedSensMatrixPoly, axis=1), # sum of row elements
+    ##df = pd.DataFrame({'Max abs normlzd sensitivity': np.linalg.norm(normlzdWeightedSensMatrixPoly, axis=1), # rms of row elements
+    ##df = pd.DataFrame({'Max abs normlzd sensitivity': np.linalg.norm(normlzdSensMatrixPoly, axis=1), # rms of row elements
+    ##df = pd.DataFrame({'Max abs normlzd sensitivity':
+    ##                    -defaultBiasesCol[:,0]/np.abs(normMetricValsCol[:,0])*np.linalg.norm(normlzdWeightedSensMatrixPoly, axis=1), # sum of row elements
+    #                   'Max abs normlzd lin+ sensitivity': np.linalg.norm(normlzdLinplusSensMatrixPoly, axis=1), # sum of row elements
+    #                   'Default biases': np.abs(-defaultBiasesCol[:,0])/np.abs(normMetricValsCol[:,0]),
+    ##                   'revised tuning': (-defaultBiasesApproxElastic-defaultBiasesCol)[:,0]/np.abs(normMetricValsCol[:,0])
+    #                  }, index=metricsNames )
+    ##biasesVsSensMagScatterplot = px.scatter(df, x='Max abs normlzd sensitivity', y=df.columns[1:2],
+    ##biasesVsSensMagScatterplot = px.scatter(df, x='Max abs normlzd sensitivity', y='default tuning',
+    #biasesVsSensMagScatterplot = px.scatter(df, x=['Max abs normlzd lin+ sensitivity'], y='Default biases',
+    #                             text=metricsNames,
+    #                             title = """Regional biases vs. magnitude of sensitivity.""")
+    #biasesVsSensMagScatterplot.update_yaxes(title="Regional biases")
+    #biasesVsSensMagScatterplot.update_xaxes(title="Magnitude of sensitivity of regional metrics to parameter changes")
+    #biasesVsSensMagScatterplot.update_layout(showlegend=False)
+    #biasesVsSensMagScatterplot.update_layout(hovermode="x")
+    #biasesVsSensMagScatterplot.update_layout( width=700, height=500  )
+
+    xCol = np.linalg.norm(normlzdSensMatrixPoly, axis=1)
+    yCol = -defaultBiasesCol[:,0]/np.abs(normMetricValsCol[:,0])
+
+    biasesVsSensMagScatterplot = \
+           createScatterplot(xCol=xCol, yCol=yCol,
+                             colorCol=yCol,
+                             pointLabels=metricsNames,
+                             plotTitle="""Regional biases vs. magnitude of sensitivity.""",
+                             xaxisTitle="Magnitude of sensitivity of regional metrics to parameter changes",
+                             yaxisTitle="Regional biases",
+                             showLegend=False, hoverMode="x",
+                             plotWidth=700, plotHeight=500)
 
     return biasesVsSensMagScatterplot
 
