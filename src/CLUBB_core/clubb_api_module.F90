@@ -520,7 +520,7 @@ contains
     p_in_Pa, rho_zm, rho, exner, &                          ! intent(in)
     rho_ds_zm, rho_ds_zt, invrs_rho_ds_zm, &                ! intent(in)
     invrs_rho_ds_zt, thv_ds_zm, thv_ds_zt, &                ! intent(in) 
-    hydromet, l_mix_rat_hm, &                               ! intent(in)
+    l_mix_rat_hm, &                                         ! intent(in)
     rfrzm, &                                                ! intent(in)
 #ifdef CLUBBND_CAM
     varmu, &                                                ! intent(in)
@@ -630,9 +630,6 @@ contains
       rho_ds_zm,       & ! Dry, static density on momentum levels    [kg/m^3]
       invrs_rho_ds_zm, & ! Inverse dry, static density on momentum levs. [m^3/kg]
       thv_ds_zm          ! Dry, base-state theta_v on momentum levs. [K]
-
-    real( kind = core_rknd ), dimension(gr%nzt,hydromet_dim), intent(in) :: &
-      hydromet           ! Array of hydrometeors                [units vary]
 
     logical, dimension(hydromet_dim), intent(in) :: &
       l_mix_rat_hm   ! if true, then the quantity is a hydrometeor mixing ratio
@@ -881,9 +878,6 @@ contains
       invrs_rho_ds_zm_col, & ! Inverse dry, static density on momentum levs. [m^3/kg]
       thv_ds_zm_col          ! Dry, base-state theta_v on momentum levs. [K]
 
-    real( kind = core_rknd ), dimension(1,gr%nzt,hydromet_dim) :: &
-      hydromet_col           ! Array of hydrometeors                [units vary]
-
 #ifdef CLUBBND_CAM 
     real( kind = core_rknd ), dimension(1) :: & 
       varmu_col 
@@ -1108,8 +1102,6 @@ contains
     thv_ds_zm_col(1,:) = thv_ds_zm
     thv_ds_zt_col(1,:) = thv_ds_zt
     rfrzm_col(1,:) = rfrzm
-    
-    hydromet_col(1,:,:) = hydromet
 
 #ifdef CLUBBND_CAM
     varmu_col(1) = varmu
@@ -1291,7 +1283,7 @@ contains
     !$acc        copy( edsclrm_col )
 
     !$acc data if( hydromet_dim > 0 ) &
-    !$acc      copyin( hydromet_col, wphydrometp_col, wp2hmp_col, rtphmp_zt_col, thlphmp_zt_col, &
+    !$acc      copyin( wphydrometp_col, wp2hmp_col, rtphmp_zt_col, thlphmp_zt_col, &
     !$acc              l_mix_rat_hm )
 
 #ifdef CLUBB_CAM
@@ -1321,7 +1313,7 @@ contains
       p_in_Pa_col, rho_zm_col, rho_col, exner_col, &                          ! intent(in)
       rho_ds_zm_col, rho_ds_zt_col, invrs_rho_ds_zm_col, &                    ! intent(in)
       invrs_rho_ds_zt_col, thv_ds_zm_col, thv_ds_zt_col, &                    ! intent(in)
-      hydromet_col, l_mix_rat_hm, &                                           ! intent(in)
+      l_mix_rat_hm, &                                                         ! intent(in)
       rfrzm_col, &                                                            ! intent(in)
 #ifdef CLUBBND_CAM
       varmu_col, &
@@ -1481,7 +1473,7 @@ contains
     p_in_Pa, rho_zm, rho, exner, &                          ! intent(in)
     rho_ds_zm, rho_ds_zt, invrs_rho_ds_zm, &                ! intent(in)
     invrs_rho_ds_zt, thv_ds_zm, thv_ds_zt, &                ! intent(in) 
-    hydromet, l_mix_rat_hm, &                               ! intent(in)
+    l_mix_rat_hm, &                                         ! intent(in)
     rfrzm, &                                                ! intent(in)
 #ifdef CLUBBND_CAM
     varmu, &                                                ! intent(in)
@@ -1588,9 +1580,6 @@ contains
       rho_ds_zm,       & ! Dry, static density on momentum levels    [kg/m^3]
       invrs_rho_ds_zm, & ! Inv. dry, static density @ momentum levs. [m^3/kg]
       thv_ds_zm          ! Dry, base-state theta_v on momentum levs. [K]
-
-    real( kind = core_rknd ), dimension(ngrdcol,nzt,hydromet_dim), intent(in) :: &
-      hydromet           ! Collection of hydrometeors                [units vary]
 
     logical, dimension(hydromet_dim), intent(in) :: &
       l_mix_rat_hm   ! if true, then the quantity is a hydrometeor mixing ratio
@@ -1880,7 +1869,7 @@ contains
     !$acc        copy( edsclrm )
 
     !$acc data if( hydromet_dim > 0 ) &
-    !$acc      copyin( hydromet, wphydrometp, wp2hmp, rtphmp_zt, thlphmp_zt, &
+    !$acc      copyin( wphydrometp, wp2hmp, rtphmp_zt, thlphmp_zt, &
     !$acc              l_mix_rat_hm )
 
 #ifdef CLUBB_CAM
@@ -1910,7 +1899,7 @@ contains
       p_in_Pa, rho_zm, rho, exner, &                          ! intent(in)
       rho_ds_zm, rho_ds_zt, invrs_rho_ds_zm, &                ! intent(in)
       invrs_rho_ds_zt, thv_ds_zm, thv_ds_zt, &                ! intent(in) 
-      hydromet, l_mix_rat_hm,&                                ! intent(in)
+      l_mix_rat_hm,&                                          ! intent(in)
       rfrzm, &                                                ! intent(in)
 #ifdef CLUBBND_CAM
       varmu, &
@@ -3536,27 +3525,17 @@ contains
   ! stats_end_timestep - Calls statistics to be written to the output format.
   !================================================================================================
 
-  subroutine stats_end_timestep_api( clubb_params, stats_metadata, & 
+  subroutine stats_end_timestep_api( stats_metadata, & 
                                      stats_zt, stats_zm, stats_sfc, &
                                      stats_lh_zt, stats_lh_sfc, &
                                      stats_rad_zt, stats_rad_zm &
-#ifdef NETCDF
-                                     , l_uv_nudge, & ! Unused
-                                     l_tke_aniso, & ! Unused
-                                     l_standard_term_ta & ! Unused
-#endif
-                                      )
+                                   )
 
     use stats_clubb_utilities, only : stats_end_timestep
-
-    use parameter_indices, only: nparams
 
     implicit none
 
     ! Input Variables
-    real( kind = core_rknd ), dimension(nparams), intent(in) :: &
-      clubb_params    ! Array of CLUBB's tunable parameters    [units vary]
-
     type (stats_metadata_type), intent(in) :: &
       stats_metadata
 
@@ -3568,17 +3547,6 @@ contains
       stats_lh_sfc, &
       stats_rad_zt, &
       stats_rad_zm
-
-#ifdef NETCDF
-    logical, intent(in) :: &
-      l_uv_nudge,         & ! For wind speed nudging.
-      l_tke_aniso,        & ! For anisotropic turbulent kinetic energy, i.e.
-                            ! TKE = 1/2 (u'^2 + v'^2 + w'^2)
-      l_standard_term_ta    ! Use the standard discretization for the turbulent advection terms.
-                            ! Setting to .false. means that a_1 and a_3 are pulled outside of the
-                            ! derivative in advance_wp2_wp3_module.F90 and in
-                            ! advance_xp2_xpyp_module.F90.
-#endif
 
     call stats_end_timestep( stats_metadata,      & ! intent(in)
                              stats_zt, stats_zm, stats_sfc,     & ! intent(inout)

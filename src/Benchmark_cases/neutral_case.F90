@@ -18,7 +18,8 @@ module neutral_case
   contains
 
 !----------------------------------------------------------------------
-  subroutine neutral_case_sfclyr( time, z, thlm_sfc, &
+  subroutine neutral_case_sfclyr( time, &
+                                  ! z, thlm_sfc, &
                                   um_sfc, vm_sfc, ubar, &
                                   upwp_sfc, vpwp_sfc, &
                                   wpthlp_sfc, wprtp_sfc, ustar )
@@ -46,8 +47,8 @@ module neutral_case
       time    ! the current time [s]
 
     real( kind = core_rknd ), intent(in) ::  &
-      z,               & ! Height at zt(2)       [m]
-      thlm_sfc,        & ! Theta_l at zt(2)      [K]
+      ! z,               & ! Height at zt(2)       [m]
+      ! thlm_sfc,        & ! Theta_l at zt(2)      [K]
       um_sfc,          & ! um at zt(2)           [m/s]
       vm_sfc,          & ! vm at zt(2)           [m/s]
       ubar

@@ -1583,11 +1583,11 @@ module clubb_driver
     do i = 1, ngrdcol
       call setup_parameters_model_api( T0, ts_nudge, clubb_params(i,iSkw_max_mag) )     ! intent(in)
 
-      call check_clubb_settings_api( nzmax, clubb_params(i,:),       & ! Intent(in)
-                                    l_implemented,       & ! Intent(in)
-                                    l_input_fields,      & ! Intent(in)
-                                    clubb_config_flags,  & ! intent(in)
-                                    err_code_dummy )       ! Intent(out)
+      call check_clubb_settings_api( clubb_params(i,:),       & ! Intent(in)
+                                     l_implemented,           & ! Intent(in)
+                                     l_input_fields,          & ! Intent(in)
+                                     clubb_config_flags,      & ! intent(in)
+                                     err_code_dummy )           ! Intent(out)
     end do
            
     ! Setup grid
@@ -2488,7 +2488,7 @@ module clubb_driver
                p_in_Pa, rho_zm, rho, exner(1,:), &                                  ! Intent(in)
                rho_ds_zm, rho_ds_zt(1,:), invrs_rho_ds_zm, &                        ! Intent(in)
                invrs_rho_ds_zt, thv_ds_zm, thv_ds_zt(1,:), &                        ! Intent(in) 
-               hydromet, hm_metadata%l_mix_rat_hm, &                                ! Intent(in)
+               hm_metadata%l_mix_rat_hm, &                                          ! Intent(in)
                rfrzm, wphydrometp, &                                                ! Intent(in)
                wp2hmp, rtphmp_zt, thlphmp_zt, &                                     ! Intent(in)
                dummy_dx, dummy_dy, &                                                ! Intent(in)
@@ -2690,8 +2690,8 @@ module clubb_driver
                itime, pdf_dim, lh_num_samples, lh_sequence_length, gr%nzt, 1, & ! In
                l_calc_weights_all_levs_itime,                                & ! In
                pdf_params, delta_zm, Lscale,                                 & ! In
-               lh_seed, hm_metadata,                                      & ! In
-               rho_ds_zt,                                                    & ! In
+               lh_seed, hm_metadata,                                         & ! In
+               !rho_ds_zt,                                                    & ! In
                mu_x_1_n, mu_x_2_n, sigma_x_1_n, sigma_x_2_n,                 & ! In
                corr_cholesky_mtx_1, corr_cholesky_mtx_2,                     & ! In
                precip_fracs, silhs_config_flags,                             & ! In
@@ -2702,8 +2702,8 @@ module clubb_driver
                lh_sample_point_weights ) ! Out
        
        
-        call clip_transform_silhs_output_api( gr, gr%nzt, 1, lh_num_samples,           & ! In
-                                              pdf_dim, hydromet_dim, hm_metadata,  & ! In
+        call clip_transform_silhs_output_api( gr%nzt, 1, lh_num_samples,              & ! In
+                                              pdf_dim, hydromet_dim, hm_metadata,     & ! In
                                               X_mixt_comp_all_levs,                   & ! In
                                               X_nl_all_levs,                          & ! Inout
                                               pdf_params, l_use_Ncn_to_Nc,            & ! In
@@ -5584,9 +5584,10 @@ module clubb_driver
     case ( "neutral" )
       l_compute_momentum_flux = .true.
       l_set_sclr_sfc_rtm_thlm = .true.
-      call neutral_case_sfclyr( time_current, z_bot, thlm_bot, & ! Intent(in)
+      call neutral_case_sfclyr( time_current,                  & ! Intent(in)
+                                !  z_bot, thlm_bot,            & ! Intent(in)
                                 um_bot, vm_bot, ubar,          & ! Intent(in)
-                                upwp_sfc, vpwp_sfc, &            ! Intent(out)
+                                upwp_sfc, vpwp_sfc,            & ! Intent(out)
                                 wpthlp_sfc, wprtp_sfc, ustar )   ! Intent(out)
 
     case ( "twp_ice" )
@@ -7546,7 +7547,7 @@ module clubb_driver
     call advance_clubb_core_api( gr_col, gr_col%nzm, gr_col%nzt, ngrdcol,       & ! intent(in)
       l_implemented, dt, fcor_col, sfc_elevation_col,                           & ! intent(in)
       hydromet_dim,                                                             & ! intent(in)
-      sclr_dim, sclr_tol, edsclr_dim, sclr_idx,                             & ! intent(in)
+      sclr_dim, sclr_tol, edsclr_dim, sclr_idx,                                 & ! intent(in)
       thlm_forcing_col, rtm_forcing_col, um_forcing_col, vm_forcing_col,        & ! intent(in)
       sclrm_forcing_col, edsclrm_forcing_col, wprtp_forcing_col,                & ! intent(in)
       wpthlp_forcing_col, rtp2_forcing_col, thlp2_forcing_col,                  & ! intent(in)
@@ -7558,7 +7559,7 @@ module clubb_driver
       p_in_Pa_col, rho_zm_col, rho_col, exner_col,                              & ! intent(in)
       rho_ds_zm_col, rho_ds_zt_col, invrs_rho_ds_zm_col,                        & ! intent(in)
       invrs_rho_ds_zt_col, thv_ds_zm_col, thv_ds_zt_col,                        & ! intent(in)
-      hydromet_col, l_mix_rat_hm,                                               & ! intent(in)
+      l_mix_rat_hm,                                                             & ! intent(in)
       rfrzm_col,                                                                & ! intent(in)
 #ifdef CLUBBND_CAM
       varmu_col,                                                                & ! intent(in)

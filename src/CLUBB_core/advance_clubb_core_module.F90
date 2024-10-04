@@ -141,7 +141,7 @@ module advance_clubb_core_module
                p_in_Pa, rho_zm, rho, exner, &                       ! intent(in)
                rho_ds_zm, rho_ds_zt, invrs_rho_ds_zm, &             ! intent(in)
                invrs_rho_ds_zt, thv_ds_zm, thv_ds_zt, &             ! intent(in)
-               hydromet, l_mix_rat_hm, &                            ! intent(in)
+               l_mix_rat_hm, &                                      ! intent(in)
                rfrzm, &                                             ! intent(in)
 #ifdef CLUBBND_CAM
                varmu, &                                             ! intent(in)
@@ -423,9 +423,6 @@ module advance_clubb_core_module
       rho_ds_zm,       & ! Dry, static density on momentum levels    [kg/m^3]
       invrs_rho_ds_zm, & ! Inverse dry, static density on momentum levs. [m^3/kg]
       thv_ds_zm          ! Dry, base-state theta_v on momentum levs. [K]
-
-    real( kind = core_rknd ), dimension(ngrdcol,nzt,hydromet_dim), intent(in) :: &
-      hydromet           ! Array of hydrometeors                [units vary]
 
     logical, dimension(hydromet_dim), intent(in) :: &
       l_mix_rat_hm   ! if true, then the quantity is a hydrometeor mixing ratio
@@ -1173,7 +1170,6 @@ module advance_clubb_core_module
                                vm, vp2, vpwp, vp3,                          & ! Intent(in)
                                p_in_Pa, exner,                              & ! Intent(in)
                                thv_ds_zm, thv_ds_zt, rtm_ref,               & ! Intent(in)
-                               ! rfrzm, hydromet,                             &
                                wphydrometp,                                 & ! Intent(in)
                                wp2hmp, rtphmp_zt, thlphmp_zt,               & ! Intent(in)
                                sclrm, wpsclrp, sclrp2,                      & ! Intent(in)
@@ -2519,7 +2515,6 @@ module advance_clubb_core_module
                                vm, vp2, vpwp, vp3,                          & ! Intent(in)
                                p_in_Pa, exner,                              & ! Intent(in)
                                thv_ds_zm, thv_ds_zt, rtm_ref,               & ! Intent(in)
-                               ! rfrzm, hydromet,                             &
                                wphydrometp,                                 & ! Intent(in)
                                wp2hmp, rtphmp_zt, thlphmp_zt,               & ! Intent(in)
                                sclrm, wpsclrp, sclrp2,                      & ! Intent(in)
@@ -2953,7 +2948,6 @@ module advance_clubb_core_module
                                  vm, vp2, vpwp, vp3,                      & ! Intent(in)
                                  p_in_Pa, exner,                          & ! Intent(in)
                                  thv_ds_zm, thv_ds_zt, rtm_ref,           & ! Intent(in)
-!                                rfrzm, hydromet,                         &
                                  wphydrometp,                             & ! Intent(in)
                                  wp2hmp, rtphmp_zt, thlphmp_zt,           & ! Intent(in)
                                  sclrm, wpsclrp, sclrp2,                  & ! Intent(in)
@@ -3109,8 +3103,7 @@ module advance_clubb_core_module
       p_in_Pa,   & ! Air pressure (thermodynamic levels)            [Pa]
       exner,     & ! Exner function (thermodynamic levels)          [-]
       thv_ds_zt, & ! Dry, base-state theta_v on thermo. levs.       [K]
-      rtm_ref!,  & ! Initial total water mixing ratio               [kg/kg]
-      !rfrzm        ! Total ice-phase water mixing ratio             [kg/kg]
+      rtm_ref      ! Initial total water mixing ratio               [kg/kg]
 
     real( kind = core_rknd ), dimension(ngrdcol,nzm), intent(in) ::  &
       wprtp,     & ! w' r_t' (momentum levels)                      [(kg/kg)m/s]
@@ -3133,10 +3126,6 @@ module advance_clubb_core_module
       upwp,        & ! u'w'                        [(m/s)^2]
       vp2,         & ! v'^2                        [(m/s)^2]
       vpwp           ! v'w'                        [(m/s)^2]
-
-    ! Hydrometeor variables
-    !real( kind = core_rknd ), dimension(gr%nz,hydromet_dim), intent(in) :: &
-    !hydromet       ! Mean of hydrometeor fields               [units vary]
 
     real( kind = core_rknd ), dimension(ngrdcol,nzt,hydromet_dim), intent(in) :: &
       wp2hmp,      & ! Third-order moment:  < w'^2 hm' >    [(m/s)^2 <hm units>]
@@ -4124,7 +4113,7 @@ module advance_clubb_core_module
   end subroutine pdf_closure_driver
 
   !=============================================================================
-  subroutine check_clubb_settings( nzmax, params,       & ! intent(in)
+  subroutine check_clubb_settings( params,              & ! intent(in)
                                    l_implemented,       & ! intent(in)
                                    l_input_fields,      & ! intent(in)
                                    clubb_config_flags,  & ! intent(in)
@@ -4197,13 +4186,6 @@ module advance_clubb_core_module
       implicit none
 
       !---------------------- Input Variables ----------------------
-
-      ! Grid definition
-      integer, intent(in) :: nzmax  ! Vertical grid levels            [#]
-      !                      Only true when used in a host model
-      !                      CLUBB determines what nzmax should be
-      !                      given zm_init and zm_top when
-      !                      running in standalone mode.
 
       real( kind = core_rknd ), intent(in), dimension(nparams) :: &
         params  ! Including C1, nu1, nu2, etc.
@@ -4877,34 +4859,34 @@ module advance_clubb_core_module
         ! Use the trapezoidal rule to recompute the variables on the stats_zt level
         if ( stats_metadata%iwprtp2 > 0 ) then
           call calc_trapezoid_zt( nzm, nzt, ngrdcol, gr, &
-                                  wprtp2, wprtp2_zm, &
+                                  wprtp2_zm, &
                                   wprtp2 )
         end if
         if ( stats_metadata%iwpthlp2 > 0 ) then
           call calc_trapezoid_zt( nzm, nzt, ngrdcol, gr, &
-                                  wpthlp2, wpthlp2_zm, &
+                                  wpthlp2_zm, &
                                   wpthlp2 )
         end if
         if ( stats_metadata%iwprtpthlp > 0 ) then
           call calc_trapezoid_zt( nzm, nzt, ngrdcol, gr, &
-                                  wprtpthlp, wprtpthlp_zm, &
+                                  wprtpthlp_zm, &
                                   wprtpthlp )
         end if
 
         do sclr = 1, sclr_dim
           if ( stats_metadata%iwpsclrprtp(sclr) > 0 ) then
             call calc_trapezoid_zt( nzm, nzt, ngrdcol, gr, &
-                                    wpsclrprtp(:,:,sclr), wpsclrprtp_zm(:,:,sclr), &
+                                    wpsclrprtp_zm(:,:,sclr), &
                                     wpsclrprtp(:,:,sclr) )
           end if
           if ( stats_metadata%iwpsclrpthlp(sclr) > 0 ) then
             call calc_trapezoid_zt( nzm, nzt, ngrdcol, gr, &
-                                    wpsclrpthlp(:,:,sclr), wpsclrpthlp_zm(:,:,sclr), &
+                                    wpsclrpthlp_zm(:,:,sclr), &
                                     wpsclrpthlp(:,:,sclr) )
           end if
           if ( stats_metadata%iwpsclrp2(sclr) > 0 ) then
             call calc_trapezoid_zt( nzm, nzt, ngrdcol,  gr, &
-                                    wpsclrp2(:,:,sclr), wpsclrp2_zm(:,:,sclr), &
+                                    wpsclrp2_zm(:,:,sclr), &
                                     wpsclrp2(:,:,sclr) )
           end if
           
@@ -4912,19 +4894,19 @@ module advance_clubb_core_module
       end if ! l_stats
 
       call calc_trapezoid_zt( nzm, nzt, ngrdcol, gr, &
-                              cloud_frac, cloud_frac_zm, &
+                              cloud_frac_zm, &
                               cloud_frac )
                               
       call calc_trapezoid_zt( nzm, nzt, ngrdcol, gr, &
-                              ice_supersat_frac, ice_supersat_frac_zm, &
+                              ice_supersat_frac_zm, &
                               ice_supersat_frac )
 
       call calc_trapezoid_zt( nzm, nzt, ngrdcol, gr, &
-                              rcm, rcm_zm, &
+                              rcm_zm, &
                               rcm )
 
       call calc_trapezoid_zt( nzm, nzt, ngrdcol, gr, &
-                              wp2thvp, wp2thvp_zm, &
+                              wp2thvp_zm, &
                               wp2thvp )
 
       ! End of trapezoidal rule
@@ -4984,22 +4966,22 @@ module advance_clubb_core_module
       ! ----------------------- Begin Code -----------------------
 
       ! Use the trapezoidal rule to recompute the variables on the zm level
-      call calc_trapezoid_zm( nzm, nzt, ngrdcol, gr, wpthvp, wpthvp_zt, & ! Intent(in) 
-                              wpthvp )                                    ! Intent(out)
+      call calc_trapezoid_zm( nzm, nzt, ngrdcol, gr, wpthvp_zt, &         ! Intent(in) 
+                              wpthvp )                                    ! Intent(inout)
                          
-      call calc_trapezoid_zm( nzm, nzt, ngrdcol, gr, thlpthvp, thlpthvp_zt, & ! Intent(in)
-                              thlpthvp )                                      ! Intent(out)
+      call calc_trapezoid_zm( nzm, nzt, ngrdcol, gr, thlpthvp_zt, &       ! Intent(in)
+                              thlpthvp )                                  ! Intent(inout)
                          
-      call calc_trapezoid_zm( nzm, nzt, ngrdcol, gr, rtpthvp, rtpthvp_zt, & ! Intent(in)
-                              rtpthvp )                                     ! Intent(out)
+      call calc_trapezoid_zm( nzm, nzt, ngrdcol, gr, rtpthvp_zt, &        ! Intent(in)
+                              rtpthvp )                                   ! Intent(inout)
 
       return
     end subroutine trapezoidal_rule_zm
 
     !-----------------------------------------------------------------------
     subroutine calc_trapezoid_zt( nzm, nzt, ngrdcol, gr, &
-                                  variable_zt, variable_zm, &
-                                  trapezoid_zt )
+                                  variable_zm, &
+                                  variable_zt )
       !
       ! Description:
       !   Function which uses the trapezoidal rule from calculus
@@ -5023,16 +5005,13 @@ module advance_clubb_core_module
         ngrdcol
 
       type (grid), intent(in) :: gr
-      
-      real( kind = core_rknd ), dimension(ngrdcol,nzt), intent(in) :: &
-        variable_zt    ! Variable on the zt grid
 
       real( kind = core_rknd ), dimension(ngrdcol,nzm), intent(in) :: &
         variable_zm    ! Variable on the zm grid
 
-      ! ---------------- Output Variable ----------------
-      real( kind = core_rknd ), dimension(ngrdcol,nzt), intent(out) :: &
-        trapezoid_zt
+      ! ---------------- Input/Output Variable ----------------
+      real( kind = core_rknd ), dimension(ngrdcol,nzt), intent(inout) :: &
+        variable_zt    ! Variable on the zt grid
 
       ! ---------------- Local Variables ----------------
       integer :: i, k ! Loop index
@@ -5043,7 +5022,7 @@ module advance_clubb_core_module
       do k = 1, nzt
         do i = 1, ngrdcol
           ! Trapezoidal rule from calculus
-          trapezoid_zt(i,k) =  0.5_core_rknd * ( variable_zm(i,k+1) + variable_zt(i,k) ) &
+          variable_zt(i,k) =  0.5_core_rknd * ( variable_zm(i,k+1) + variable_zt(i,k) ) &
                                * ( gr%zm(i,k+1) - gr%zt(i,k) ) * gr%invrs_dzt(i,k) &
                                + 0.5_core_rknd * ( variable_zt(i,k) + variable_zm(i,k) ) &
                                  * ( gr%zt(i,k) - gr%zm(i,k) ) * gr%invrs_dzt(i,k)
@@ -5055,8 +5034,8 @@ module advance_clubb_core_module
     end subroutine calc_trapezoid_zt
 
     !-----------------------------------------------------------------------
-    subroutine calc_trapezoid_zm( nzm, nzt, ngrdcol, gr, variable_zm, variable_zt, &
-                                  trapezoid_zm )
+    subroutine calc_trapezoid_zm( nzm, nzt, ngrdcol, gr, variable_zt, &
+                                  variable_zm )
       !
       ! Description:
       !   Function which uses the trapezoidal rule from calculus
@@ -5081,16 +5060,13 @@ module advance_clubb_core_module
         ngrdcol
 
       type (grid), intent(in) :: gr
-      
-      real( kind = core_rknd ), dimension(ngrdcol,nzm), intent(in) :: &
-        variable_zm    ! Variable on the zm grid
 
       real( kind = core_rknd ), dimension(ngrdcol,nzt), intent(in) :: &
         variable_zt    ! Variable on the zt grid
 
-      ! -------------------- Output Variable --------------------
-      real( kind = core_rknd ), intent(out), dimension(ngrdcol,nzm) :: &
-        trapezoid_zm
+      ! -------------------- Input/Output Variable --------------------
+      real( kind = core_rknd ), dimension(ngrdcol,nzm), intent(inout) :: &
+        variable_zm    ! Variable on the zm grid
  
       ! -------------------- Local Variables --------------------
       integer :: i, k ! Loop index
@@ -5099,18 +5075,12 @@ module advance_clubb_core_module
 
       ! Boundary conditions: trapezoidal rule not valid at top zm level, nzmax.
       ! Trapezoidal rule also not used at zm level 1.
-      !$acc parallel loop gang vector default(present) 
-      do i = 1, ngrdcol
-        trapezoid_zm(i,1)   = variable_zm(i,1)
-        trapezoid_zm(i,nzm) = variable_zm(i,nzm)
-      end do
-      !$acc end parallel loop
 
       !$acc parallel loop gang vector collapse(2) default(present)
       do k = 2, nzm-1
         do i = 1, ngrdcol
           ! Trapezoidal rule from calculus
-          trapezoid_zm(i,k) =  0.5_core_rknd * ( variable_zt(i,k) + variable_zm(i,k) ) &
+          variable_zm(i,k) =  0.5_core_rknd * ( variable_zt(i,k) + variable_zm(i,k) ) &
                                * ( gr%zt(i,k) - gr%zm(i,k) ) * gr%invrs_dzm(i,k) &
                                + 0.5_core_rknd * ( variable_zm(i,k) + variable_zt(i,k-1) ) &
                                  * ( gr%zm(i,k) - gr%zt(i,k-1) ) * gr%invrs_dzm(i,k)

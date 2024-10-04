@@ -851,9 +851,9 @@ module advance_microphys_module
 
     ! Now that all precipitating hydrometeors have been advanced, fill holes in
     ! hydromet profiles.
-    call fill_holes_driver( gr, gr%nzt, gr%nzm, dt, hydromet_dim, & ! Intent(in)
+    call fill_holes_driver( gr, gr%nzt, dt, hydromet_dim,         & ! Intent(in)
                             hm_metadata, l_fill_holes_hm,         & ! Intent(in)
-                            rho_ds_zm, rho_ds_zt, exner,          & ! Intent(in)
+                            rho_ds_zt, exner,                     & ! Intent(in)
                             stats_metadata,                       & ! Intent(in)
                             stats_zt,                             & ! intent(inout)
                             thlm_mc, rvm_mc, hydromet )             ! Intent(inout)

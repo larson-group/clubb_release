@@ -659,9 +659,9 @@ module fill_holes
   !-----------------------------------------------------------------------
 
   !-----------------------------------------------------------------------
-  subroutine fill_holes_driver( gr, nzt, nzm, dt, hydromet_dim, hm_metadata, & ! Intent(in)
+  subroutine fill_holes_driver( gr, nzt, dt, hydromet_dim, hm_metadata,      & ! Intent(in)
                                 l_fill_holes_hm,                             & ! Intent(in)
-                                rho_ds_zm, rho_ds_zt, exner,                 & ! Intent(in)
+                                rho_ds_zt, exner,                            & ! Intent(in)
                                 stats_metadata,                              & ! Intent(in)
                                 stats_zt,                                    & ! intent(inout)
                                 thlm_mc, rvm_mc, hydromet )                    ! Intent(inout)
@@ -718,8 +718,7 @@ module fill_holes
 
     integer, intent(in) :: &
       hydromet_dim, &
-      nzt, &
-      nzm
+      nzt
 
     type (hm_metadata_type), intent(in) :: &
       hm_metadata
@@ -729,9 +728,6 @@ module fill_holes
 
     real( kind = core_rknd ), intent(in) ::  &
       dt           ! Timestep         [s]
-
-    real( kind = core_rknd ), dimension(nzm), intent(in) :: &
-      rho_ds_zm    ! Dry, static density on momentum levels   [kg/m^3]
 
     real( kind = core_rknd ), dimension(nzt), intent(in) :: &
       rho_ds_zt, & ! Dry, static density on thermo. levels    [kg/m^3]

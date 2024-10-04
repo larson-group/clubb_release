@@ -145,7 +145,7 @@ contains
     l_calc_weights_all_levs_itime, &
     pdf_params, delta_zm, Lscale, & ! In
     lh_seed, hm_metadata, & ! In
-    rho_ds_zt, & ! In
+    !rho_ds_zt, & ! In
     mu1, mu2, sigma1, sigma2, & ! In
     corr_cholesky_mtx_1, corr_cholesky_mtx_2, & ! In
     precip_fracs, silhs_config_flags, & ! In
@@ -198,8 +198,8 @@ contains
     real( kind = core_rknd ), dimension(nzt), intent(in) :: &
       delta_zm     ! Difference in moment. altitudes    [m]
 
-    real( kind = core_rknd ), dimension(nzt), intent(in) :: &
-      rho_ds_zt    ! Dry, static density on thermo. levels    [kg/m^3]
+    !real( kind = core_rknd ), dimension(nzt), intent(in) :: &
+    !  rho_ds_zt    ! Dry, static density on thermo. levels    [kg/m^3]
 
     real( kind = core_rknd ), dimension(nzt), intent(in) :: &
       Lscale       ! Turbulent Mixing Length  [m]
@@ -255,8 +255,8 @@ contains
     real( kind = core_rknd ), dimension(1,nzt) :: &
       delta_zm_col    ! Difference in moment. altitudes, with column dimension 1    [m]
       
-    real( kind = core_rknd ), dimension(1,nzt) :: &
-      rho_ds_zt_col    ! Dry, static density on thermo. levels, with column dimension 1    [kg/m^3]
+    !real( kind = core_rknd ), dimension(1,nzt) :: &
+    !  rho_ds_zt_col    ! Dry, static density on thermo. levels, with column dimension 1    [kg/m^3]
       
     real( kind = core_rknd ), dimension(1,nzt) :: &
       Lscale_col       ! Turbulent Mixing Length, with column dimension 1  [m]
@@ -285,7 +285,7 @@ contains
     ! -------------- Begin Code --------------
 
     delta_zm_col(1,:)                 = delta_zm
-    rho_ds_zt_col(1,:)                = rho_ds_zt
+    !rho_ds_zt_col(1,:)                = rho_ds_zt
     Lscale_col(1,:)                   = Lscale
     corr_cholesky_mtx_1_col(1,:,:,:)  = corr_cholesky_mtx_1
     corr_cholesky_mtx_2_col(1,:,:,:)  = corr_cholesky_mtx_2
@@ -320,7 +320,7 @@ contains
     l_calc_weights_all_levs_itime, &
     pdf_params, delta_zm, Lscale, & ! In
     lh_seed, hm_metadata, & ! In
-    rho_ds_zt, & ! Unused
+    !rho_ds_zt, & ! In
     mu1, mu2, sigma1, sigma2, & ! In
     corr_cholesky_mtx_1, corr_cholesky_mtx_2, & ! In
     precip_fracs, silhs_config_flags, & ! In
@@ -373,8 +373,8 @@ contains
     real( kind = core_rknd ), dimension(ngrdcol,nzt), intent(in) :: &
       delta_zm     ! Difference in moment. altitudes    [m]
 
-    real( kind = core_rknd ), dimension(ngrdcol,nzt), intent(in) :: &
-      rho_ds_zt    ! Dry, static density on thermo. levels    [kg/m^3]
+    !real( kind = core_rknd ), dimension(ngrdcol,nzt), intent(in) :: &
+    !  rho_ds_zt    ! Dry, static density on thermo. levels    [kg/m^3]
 
     real( kind = core_rknd ), dimension(ngrdcol,nzt), intent(in) :: &
       Lscale       ! Turbulent Mixing Length  [m]
@@ -519,15 +519,15 @@ contains
   ! clip_transform_silhs_output - Computes extra SILHS sample variables, such as rt and thl.
   !================================================================================================
 
-  subroutine clip_transform_silhs_output_api_single_col( gr, &
-                                              nzt, num_samples,                        & ! In
-                                              pdf_dim, hydromet_dim, hm_metadata,  & ! In
-                                              X_mixt_comp_all_levs,                   & ! In
-                                              X_nl_all_levs,                          & ! Inout
-                                              pdf_params, l_use_Ncn_to_Nc,            & ! In
-                                              lh_rt_clipped, lh_thl_clipped,          & ! Out
-                                              lh_rc_clipped, lh_rv_clipped,           & ! Out
-                                              lh_Nc_clipped                           ) ! Out
+  subroutine clip_transform_silhs_output_api_single_col( &
+                                              nzt, num_samples,                   & ! In
+                                              pdf_dim, hydromet_dim, hm_metadata, & ! In
+                                              X_mixt_comp_all_levs,               & ! In
+                                              X_nl_all_levs,                      & ! Inout
+                                              pdf_params, l_use_Ncn_to_Nc,        & ! In
+                                              lh_rt_clipped, lh_thl_clipped,      & ! Out
+                                              lh_rc_clipped, lh_rv_clipped,       & ! Out
+                                              lh_Nc_clipped                       ) ! Out
 
     use grid_class, only: grid ! Type
 
@@ -555,8 +555,6 @@ contains
 
     type (hm_metadata_type), intent(in) :: &
       hm_metadata
-
-    type(grid), intent(in) :: gr
 
     integer, dimension(num_samples,nzt), intent(in) :: &
       X_mixt_comp_all_levs   ! Which component this sample is in (1 or 2)
@@ -613,9 +611,9 @@ contains
                                       
   end subroutine clip_transform_silhs_output_api_single_col
 !=======================================================================================!
-  subroutine clip_transform_silhs_output_api_multi_col( gr, &
-                                              nzt, ngrdcol, num_samples,               & ! In
-                                              pdf_dim, hydromet_dim, hm_metadata,  & ! In
+  subroutine clip_transform_silhs_output_api_multi_col( &
+                                              nzt, ngrdcol, num_samples,              & ! In
+                                              pdf_dim, hydromet_dim, hm_metadata,     & ! In
                                               X_mixt_comp_all_levs,                   & ! In
                                               X_nl_all_levs,                          & ! Inout
                                               pdf_params, l_use_Ncn_to_Nc,            & ! In
@@ -650,8 +648,6 @@ contains
 
     type (hm_metadata_type), intent(in) :: &
       hm_metadata
-
-    type (grid), intent(in) :: gr
 
     integer, dimension(ngrdcol,num_samples,nzt), intent(in) :: &
       X_mixt_comp_all_levs   ! Which component this sample is in (1 or 2)
