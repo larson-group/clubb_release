@@ -295,6 +295,9 @@ module mono_flux_limiter
 
     use constants_clubb, only: &    
         zero_threshold, &
+        zero, &
+        unused_var, &
+        one, &
         eps, &
         fstderr
 
@@ -449,14 +452,22 @@ module mono_flux_limiter
 
     real( kind = core_rknd ) :: &
       max_tmp, &
-      min_tmp
+      min_tmp, &
+      tmp, &
+      invrs_dt
+
+    real( kind = core_rknd ), dimension(ngrdcol,nzm) :: &
+      wpxp_mfl_max_term, &
+      wpxp_mfl_min_term, &
+      wpxp_thresh
 
     !---------------------------- Begin Code ----------------------------
 
     !$acc enter data create( xp2_zt, xm_enter_mfl, xm_without_ta, wpxp_net_adjust, &
     !$acc                    min_x_allowable_lev, max_x_allowable_lev, min_x_allowable, &
     !$acc                    max_x_allowable, wpxp_mfl_max, wpxp_mfl_min, lhs_mfl_xm, &
-    !$acc                    rhs_mfl_xm, l_adjustment_needed, xm_mfl )
+    !$acc                    rhs_mfl_xm, l_adjustment_needed, xm_mfl, &
+    !$acc                    wpxp_mfl_max_term, wpxp_mfl_min_term, wpxp_thresh )
 
     select case( solve_type )
     case ( mono_flux_rtm )  ! rtm/wprtp
@@ -480,7 +491,7 @@ module mono_flux_limiter
        ixm_mfl   = 0
        max_xp2   = 5.0_core_rknd
     end select
-
+    
 
     if ( stats_metadata%l_stats_samp ) then
       !$acc update host( wpxp, xm )
@@ -512,7 +523,8 @@ module mono_flux_limiter
                               stats_zm(i) ) ! intent(inout)
       end do
     endif
-    
+
+    invrs_dt = one / dt
 
     !$acc parallel loop gang vector collapse(2) default(present)
     do k = 1, nzm
@@ -639,6 +651,17 @@ module mono_flux_limiter
     end do
     !$acc end parallel loop
 
+    !$acc parallel loop gang vector collapse(2) default(present)
+    do k = 1, nzm-2
+      do i = 1, ngrdcol
+        wpxp_thresh(i,k)       = invrs_dt * gr%dzt(i,k) &
+                                 * ( xm_without_ta(i,k) - min_x_allowable(i,k) )
+        wpxp_mfl_max_term(i,k) = rho_ds_zt(i,k) * wpxp_thresh(i,k)
+        wpxp_mfl_min_term(i,k) = rho_ds_zt(i,k) * invrs_dt * gr%dzt(i,k) &
+                                 * ( xm_without_ta(i,k) - max_x_allowable(i,k) )
+      end do
+    end do
+
     !$acc parallel loop gang vector default(present)
     do i = 1, ngrdcol
       do k = 1, nzm-2, 1
@@ -649,24 +672,14 @@ module mono_flux_limiter
         ! The fix essentially turns off the monotonic flux limiter for these special cases,
         ! but tests show that it still performs well otherwise and runs stably.
         if ( l_mono_flux_lim_spikefix .and. solve_type == mono_flux_rtm  & 
-           .and. abs( wpxp(i,k) ) > 1 / ( dt * gr%invrs_dzt(i,k) ) &
-           * ( xm_without_ta(i,k) - min_x_allowable(i,k) ) &
-           .and. wpxp(i,k) < 0.0_core_rknd ) then
-          wpxp_mfl_max(i,k+1) = 0.0_core_rknd
-        else
-          wpxp_mfl_max(i,k+1)  &
-          = invrs_rho_ds_zm(i,k+1)  &
-                  * (   ( rho_ds_zt(i,k) / (dt*gr%invrs_dzt(i,k)) )  &
-                        * ( xm_without_ta(i,k) - min_x_allowable(i,k) )  &
-                      + rho_ds_zm(i,k) * wpxp(i,k)  )
-        endif
+             .and. abs( wpxp(i,k) ) > wpxp_thresh(i,k) .and. wpxp(i,k) < 0.0_core_rknd ) then
 
-        ! Find the lower limit for w'x' for a monotonic turbulent flux.
-        wpxp_mfl_min(i,k+1)  &
-        = invrs_rho_ds_zm(i,k+1)  &
-                  * (   ( rho_ds_zt(i,k) / (dt*gr%invrs_dzt(i,k)) )  &
-                        * ( xm_without_ta(i,k) - max_x_allowable(i,k) )  &
-                      + rho_ds_zm(i,k) * wpxp(i,k)  )
+          wpxp_mfl_max(i,k+1) = zero
+
+        else
+          wpxp_mfl_max(i,k+1) = invrs_rho_ds_zm(i,k+1) &
+                                * ( wpxp_mfl_max_term(i,k) + rho_ds_zm(i,k) * wpxp(i,k)  )
+        endif
 
         if ( wpxp(i,k+1) > wpxp_mfl_max(i,k+1) ) then
 
@@ -677,15 +690,24 @@ module mono_flux_limiter
           ! monotonic flux limiter.
           wpxp(i,k+1) = wpxp_mfl_max(i,k+1)
 
-        elseif ( wpxp(i,k+1) < wpxp_mfl_min(i,k+1) ) then
+          ! This value is unneeded for calculation, set to unused_var for stats call
+          wpxp_mfl_min(i,k+1) = unused_var
 
-          ! Determine the net amount of adjustment needed for w'x'.
-          wpxp_net_adjust(i,k+1) = wpxp_mfl_min(i,k+1) - wpxp(i,k+1)
+        else
 
-          ! Reset the value of w'x' to the lower limit allowed by the
-          ! monotonic flux limiter.
-          wpxp(i,k+1) = wpxp_mfl_min(i,k+1)
+          ! Find the lower limit for w'x' for a monotonic turbulent flux.
+          wpxp_mfl_min(i,k+1) = invrs_rho_ds_zm(i,k+1) &
+                                * ( wpxp_mfl_min_term(i,k) + rho_ds_zm(i,k) * wpxp(i,k) )
 
+          if ( wpxp(i,k+1) < wpxp_mfl_min(i,k+1) ) then
+
+            ! Determine the net amount of adjustment needed for w'x'.
+            wpxp_net_adjust(i,k+1) = wpxp_mfl_min(i,k+1) - wpxp(i,k+1)
+
+            ! Reset the value of w'x' to the lower limit allowed by the
+            ! monotonic flux limiter.
+            wpxp(i,k+1) = wpxp_mfl_min(i,k+1)
+          endif
         endif
 
       end do
@@ -928,7 +950,8 @@ module mono_flux_limiter
     !$acc exit data delete( xp2_zt, xm_enter_mfl, xm_without_ta, wpxp_net_adjust, &
     !$acc                   min_x_allowable_lev, max_x_allowable_lev, min_x_allowable, &
     !$acc                   max_x_allowable, wpxp_mfl_max, wpxp_mfl_min, lhs_mfl_xm, &
-    !$acc                   rhs_mfl_xm, l_adjustment_needed, xm_mfl )
+    !$acc                   rhs_mfl_xm, l_adjustment_needed, xm_mfl, &
+    !$acc                   wpxp_mfl_max_term, wpxp_mfl_min_term, wpxp_thresh )
 
     return
     

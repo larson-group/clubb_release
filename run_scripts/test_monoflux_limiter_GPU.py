@@ -45,6 +45,7 @@ source_file        = "../src/CLUBB_core/mono_flux_limiter.F90"
 flags_file         = "../input/tunable_parameters/configurable_model_flags.in"
 
 compile_script     = "../compile/compile.bash"
+clean_script       = "../compile/clean_all.bash"
 run_script         = "./run_scm.bash"
 
 run_case           = "mc3e"     # unstable/noisy case is required
@@ -53,23 +54,14 @@ case_input         = "../input/case_setups/"+run_case+"_model.in"
 
 err_code = 1    # default to error
 
+config_file_backup  = config_file + ".bak"
+source_backup       = source_file + ".bak"
+case_input_backup   = case_input + ".bak"
+flags_backup        = flags_file + ".bak"
 
-
-##################################################################
-#               Backup files to be changed
-##################################################################
-config_file_backup = config_file + ".bak"
-source_backup = source_file + ".bak"
-case_input_backup = case_input + ".bak"
-flags_backup = flags_file + ".bak"
-os.rename(config_file, config_file_backup)
-os.rename(case_input, case_input_backup)
-os.rename(source_file, source_backup)
-os.rename(flags_file, flags_backup)
 
 # This should be called to restore the backups
 def restore_backups():
-
     os.rename(config_file_backup, config_file)
     os.rename(source_backup, source_file)
     os.rename(case_input_backup, case_input)
@@ -86,8 +78,16 @@ signal.signal(signal.SIGINT, signal_handler)    # Handle Ctrl+C (SIGINT)
 signal.signal(signal.SIGTERM, signal_handler)   # Handle termination (SIGTERM)
     
 
-
 try:
+
+    ##################################################################
+    #               Backup files to be changed
+    ##################################################################
+
+    os.rename(config_file, config_file_backup)
+    os.rename(case_input, case_input_backup)
+    os.rename(source_file, source_backup)
+    os.rename(flags_file, flags_backup)
 
     ##################################################################
     #         Modify the source file (mono_flux_limiter.F90)
@@ -122,7 +122,8 @@ try:
             outfile.write(line)
 
 
-    # Compile with the modified config file
+    # Clean then compile with the modified config file
+    process = subprocess.run([clean_script], stdout=subprocess.PIPE, text=True)
     compile_command = [compile_script, "-c", config_file]
     process = subprocess.run(compile_command, stdout=subprocess.PIPE, text=True)
 
@@ -147,6 +148,7 @@ try:
             line = re.sub(r"penta_solve_method\s*=.*", "penta_solve_method = 2", line)          # just for speed
             line = re.sub(r"tridiag_solve_method\s*=.*", "tridiag_solve_method = 2", line)      # just for speed
             line = re.sub(r"l_lh_straight_mc\s*=.*", "l_lh_straight_mc = .true.", line)         # required on GPUs for silhs cases
+            line = re.sub(r"num_standalone_columns\s*=.*", "num_standalone_columns = 16", line) # extra columns = more testing
             outfile.write(line)
 
 
@@ -191,7 +193,7 @@ try:
         print(f"\twere found in the output. This means the flux limited wasn't tested.\n")
     else:
         err_code = 0
-        print(f"\nTEST PASSED: mono_flux_limiter did modify fields, and CPU and GPU results match.\n")
+        print(f"\nTEST PASSED: mono_flux_limiter did modify fields, and CPU results match GPU results.\n")
 
 except Exception as e:
 
