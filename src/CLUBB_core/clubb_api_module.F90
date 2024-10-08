@@ -558,7 +558,8 @@ contains
 #endif
     thlprcp, wprcp, w_up_in_cloud, w_down_in_cloud, &       ! intent(out)
     cloudy_updraft_frac, cloudy_downdraft_frac, &           ! intent(out)
-    rcm_in_layer, cloud_cover, invrs_tau_zm )               ! intent(out)
+    rcm_in_layer, cloud_cover, invrs_tau_zm, &              ! intent(out)
+    Lscale )                                                ! intent(out)
 
     use advance_clubb_core_module, only : advance_clubb_core
 
@@ -831,6 +832,9 @@ contains
     real( kind = core_rknd ), dimension(gr%nzm), intent(out) :: &
       thlprcp    ! thl'rc'              [K kg/kg]
 
+    real( kind = core_rknd ), dimension(gr%nzt), intent(out) :: &
+      Lscale       ! Length scale                          [m]
+
     !!! Output Variable 
     integer, intent(inout) :: err_code_api ! Diagnostic, for if some calculation goes amiss.
 
@@ -1053,6 +1057,11 @@ contains
     logical, intent(in)                 ::  do_liquid_only_in_clubb
 #endif
 
+    real( kind = core_rknd ), dimension(1,gr%nzt) :: & ! 1 because ngrdcol is set to 1
+                                                       ! in the subroutine call to
+                                                       ! advance_clubb_core
+      Lscale_col   ! Length scale                          [m]
+
     !------------------------- Begin Code -------------------------
 
     fcor_col(1) = fcor
@@ -1190,6 +1199,7 @@ contains
     rcm_in_layer_col(1,:) = rcm_in_layer
     cloud_cover_col(1,:) = cloud_cover
     invrs_tau_zm_col(1,:) = invrs_tau_zm
+    Lscale_col(1,:) = Lscale
 
     !$acc data copyin( gr, gr%zm, gr%zt, gr%dzm, gr%dzt, gr%invrs_dzt, gr%invrs_dzm, &
     !$acc              gr%weights_zt2zm, gr%weights_zm2zt, &
@@ -1352,6 +1362,7 @@ contains
       thlprcp_col, wprcp_col, w_up_in_cloud_col, w_down_in_cloud_col, &           ! intent(out)
       cloudy_updraft_frac_col, cloudy_downdraft_frac_col, &                       ! intent(out)
       rcm_in_layer_col, cloud_cover_col, invrs_tau_zm_col, &                      ! intent(out)
+      Lscale_col, &                                                               ! intent(out)
       err_code_api )                                                              ! intent(out)
     
     !$acc end data
@@ -1455,6 +1466,7 @@ contains
 #ifdef GFDL
     RH_crit = RH_crit_col(1,:,:,:)
 #endif
+    Lscale = Lscale_col(1,:)
 
   end subroutine advance_clubb_core_api_single_col
   
@@ -1511,7 +1523,8 @@ contains
 #endif
     thlprcp, wprcp, w_up_in_cloud, w_down_in_cloud, &       ! intent(out)
     cloudy_updraft_frac, cloudy_downdraft_frac, &           ! intent(out)
-    rcm_in_layer, cloud_cover, invrs_tau_zm )               ! intent(out)
+    rcm_in_layer, cloud_cover, invrs_tau_zm, &              ! intent(out)
+    Lscale )                                                ! intent(out)
 
     use advance_clubb_core_module, only : advance_clubb_core
 
@@ -1779,6 +1792,9 @@ contains
     real( kind = core_rknd ), dimension(ngrdcol,nzm), intent(out) :: &
       thlprcp    ! thl'rc'              [K kg/kg]
 
+    real( kind = core_rknd ), dimension(ngrdcol,nzt), intent(out) :: &
+      Lscale     ! Length scale         [m]
+
     integer, intent(inout) :: err_code_api ! Diagnostic, for if some calculation goes amiss.
 
 #ifdef GFDL
@@ -1787,6 +1803,8 @@ contains
       RH_crit  ! critical relative humidity for droplet and ice nucleation
     logical, intent(in)                 ::  do_liquid_only_in_clubb
 #endif
+
+
 
     !$acc data copyin( gr, gr%zm, gr%zt, gr%dzm, gr%dzt, gr%invrs_dzt, gr%invrs_dzm, &
     !$acc              gr%weights_zt2zm, gr%weights_zm2zt, &
@@ -1938,6 +1956,7 @@ contains
       thlprcp, wprcp, w_up_in_cloud, w_down_in_cloud, &       ! intent(out)
       cloudy_updraft_frac, cloudy_downdraft_frac, &           ! intent(out)
       rcm_in_layer, cloud_cover, invrs_tau_zm, &              ! intent(out)
+      Lscale, &                                               ! intent(out)
       err_code_api )                                          ! intent(out)
 
     !$acc end data

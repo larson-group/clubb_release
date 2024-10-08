@@ -180,6 +180,7 @@ module advance_clubb_core_module
                thlprcp, wprcp, w_up_in_cloud, w_down_in_cloud, &    ! intent(out)
                cloudy_updraft_frac, cloudy_downdraft_frac, &        ! intent(out)
                rcm_in_layer, cloud_cover, invrs_tau_zm, &           ! intent(out)
+               Lscale, &                                            ! intent(out)
                err_code_out )                                       ! intent(out)
 
     ! Description:
@@ -624,6 +625,9 @@ module advance_clubb_core_module
     real( kind = core_rknd ), dimension(ngrdcol,nzm), intent(out) :: &
       thlprcp    ! thl'rc'              [K kg/kg]
 
+    real( kind = core_rknd ), dimension(ngrdcol,nzt), intent(out) :: &
+      Lscale          ! Length scale                          [m]
+
 #ifdef GFDL
     ! hlg, 2010-06-16
     real( kind = core_rknd ), intent(inout), dimension(ngrdcol,nzt, min(1,sclr_dim) , 2) :: &
@@ -659,7 +663,6 @@ module advance_clubb_core_module
       wp2rcp       ! w'^2 rc'    [m^2 kg/kg s^2]
 
     real( kind = core_rknd ), dimension(ngrdcol,nzt) :: &
-      Lscale,      & ! Length scale                          [m]
       Lscale_up,   & ! Length scale (upwards component)      [m]
       Lscale_down    ! Length scale (downwards component)    [m]
 
@@ -1505,12 +1508,12 @@ module advance_clubb_core_module
       end do
       !$acc end parallel loop
 
-      tau_zm(:,:) = zt2zm( nzm, nzt, ngrdcol, gr, Lscale(:,:), zero_threshold )
+      Lscale_zm(:,:) = zt2zm( nzm, nzt, ngrdcol, gr, Lscale(:,:), zero_threshold )
           
       !$acc parallel loop gang vector collapse(2) default(present)
       do k = 1, nzm
         do i = 1, ngrdcol
-          tau_zm(i,k) = min( tau_zm(i,k) / sqrt( max( em_min, em(i,k) ) ),  &
+          tau_zm(i,k) = min( Lscale_zm(i,k) / sqrt( max( em_min, em(i,k) ) ),  &
                              clubb_params(i,itaumax) )
         end do
       end do

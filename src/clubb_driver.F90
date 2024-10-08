@@ -520,7 +520,8 @@ module clubb_driver
       Kh_zm     ! Eddy diffusivity coefficient on momentum levels      [m^2/s]
 
     real( kind = core_rknd ), dimension(:,:), allocatable :: &
-      Lscale   ! Length scale                                 [m]
+      Lscale, &          ! Length scale                     [m]
+      Lscale_placeholder ! placeholder for Lscale to give to advance_clubb_core_api call
       
     real( kind = core_rknd ), dimension(:), allocatable :: &
       Lscale_up,      & ! Length scale (upwards component)             [m]
@@ -1735,6 +1736,7 @@ module clubb_driver
 
     allocate( em(1:gr%nzm) )
     allocate( Lscale(1,1:gr%nzt) )
+    allocate( Lscale_placeholder(1,1:gr%nzt) )
     allocate( Lscale_up(1:gr%nzt) )
     allocate( Lscale_down(1:gr%nzt) )
 
@@ -2512,7 +2514,8 @@ module clubb_driver
                Kh_zm, Kh_zt, &                                                      ! intent(out)
                thlprcp, wprcp, w_up_in_cloud, w_down_in_cloud, &                    ! Intent(out)
                cloudy_updraft_frac, cloudy_downdraft_frac, &                        ! Intent(out)
-               rcm_in_layer, cloud_cover, invrs_tau_zm )                            ! Intent(out)
+               rcm_in_layer, cloud_cover, invrs_tau_zm, &                           ! Intent(out)
+               Lscale_placeholder(1,:) )                                            ! Intent(out)
       else
         ! This procedure allows for clubb to be run with multiple columns that are 
         ! derived from the 1st column. The extra columns will only be put through 
@@ -3090,6 +3093,7 @@ module clubb_driver
 
     deallocate( em )
     deallocate( Lscale )
+    deallocate( Lscale_placeholder )
     deallocate( Lscale_up )
     deallocate( Lscale_down )
 
@@ -7119,6 +7123,9 @@ module clubb_driver
       zm_top_col, &
       deltaz_col
 
+    real( kind = core_rknd ), allocatable, dimension(:,:) ::  &
+      Lscale_col              ! Length scale         [m]
+
     integer :: err_code_dummy
 
     character(len=35) :: TimeUnits
@@ -7354,6 +7361,8 @@ module clubb_driver
       allocate(edsclrm_col(ngrdcol,gr_col%nzt,sclr_dim))
 
     end if
+
+    allocate(Lscale_col(gr_col%nzt,ngrdcol))
 
     ! First let's copy all the clubb inout variables to the extra columns
     ! the inouts are saved from call to call, so we only need to copy the first
@@ -7597,7 +7606,8 @@ module clubb_driver
 #endif
       thlprcp_col, wprcp_col, w_up_in_cloud_col, w_down_in_cloud_col,           & ! intent(out)
       cloudy_updraft_frac_col, cloudy_downdraft_frac_col,                       & ! intent(out)
-      rcm_in_layer_col, cloud_cover_col, invrs_tau_zm_col )                       ! intent(out)
+      rcm_in_layer_col, cloud_cover_col, invrs_tau_zm_col,                      & ! intent(out)
+      Lscale_col )                                                                ! intent(out)
     
     !---------------------------------------------------------------------------
     !         Copy first column of output arrays to single column outputs
@@ -7883,6 +7893,8 @@ module clubb_driver
 
     ! Set l_first_call to false to avoid the setup parts next time
     l_first_call = .false.
+
+    deallocate( Lscale_col )
 
   end subroutine advance_clubb_core_standalone_multicol
 
