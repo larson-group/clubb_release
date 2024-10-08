@@ -34,7 +34,7 @@ def main():
     defaultNcFilename, linSolnNcFilename, \
     reglrCoef \
     = \
-        setUpInputs()
+        setUpInputs(beVerbose=False)
 
     # Number of regional metrics
     numMetrics = len(metricsNames)
@@ -220,7 +220,8 @@ def main():
                paramsSolnLin, dnormlzdParamsSolnLin,
                paramsSolnNonlin,
                paramsSolnElastic, dnormlzdParamsSolnElastic,
-               sensNcFilenames, sensNcFilenamesExt, defaultNcFilename)
+               sensNcFilenames, sensNcFilenamesExt, defaultNcFilename,
+               beVerbose=False)
 
 
     return
