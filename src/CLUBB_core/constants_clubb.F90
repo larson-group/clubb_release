@@ -403,6 +403,12 @@ module constants_clubb
     max_mag_correlation = 0.99_core_rknd, &      ! Most correlations use this
     max_mag_correlation_flux = 0.99_core_rknd    ! Special for wprtp and wpthlp
 
+  ! "base" smoothing magnitude before scaling for the respective data structure.
+  ! See https://github.com/larson-group/clubb/issues/965#issuecomment-1119816722
+  ! for a plot on how output behaves with varying min_max_smth_mag
+  real( kind = core_rknd ), parameter, public :: &
+    min_max_smth_mag = 1.0e-9_core_rknd
+
   real( kind = core_rknd ), parameter, public :: &
     cloud_frac_min = 0.005_core_rknd ! Threshold for cloud fractions
 

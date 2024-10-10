@@ -210,7 +210,8 @@ module advance_clubb_core_module
         zero, &
         unused_var, &
         grav, &
-        eps
+        eps, &
+        min_max_smth_mag
 
     use parameter_indices, only: &
         nparams,                 & ! Variable(s)
@@ -850,12 +851,6 @@ module advance_clubb_core_module
 
     logical, parameter :: l_smooth_min_max = .false.  ! whether to apply smooth min 
                                                       ! and max functions
-
-    ! "base" smoothing magnitude before scaling for the respective data structure.
-    ! See https://github.com/larson-group/clubb/issues/965#issuecomment-1119816722
-    ! for a plot on how output behaves with varying min_max_smth_mag
-    real( kind = core_rknd ), parameter :: &
-      min_max_smth_mag = 1.0e-9_core_rknd
 
     real( kind = core_rknd ), dimension(ngrdcol,nzm) :: &
        lhs_splat_wp2    ! LHS coefficient of wp2 splatting term  [1/s]

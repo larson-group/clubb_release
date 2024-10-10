@@ -1310,7 +1310,8 @@ module mixing_length
         two,            &
         em_min,         &
         zero_threshold, &
-        eps
+        eps,            &
+        min_max_smth_mag
 
     use grid_class, only: &
         grid, & ! Type
@@ -1434,12 +1435,6 @@ module mixing_length
     real( kind = core_rknd ) :: &
       C_invrs_tau_N2,             &
       C_invrs_tau_N2_wp2
-
-    ! "base" smoothing magnitude before scaling for the respective data structure.
-    ! See https://github.com/larson-group/clubb/issues/965#issuecomment-1119816722
-    ! for a plot on how output behaves with varying min_max_smth_mag
-    real( kind = core_rknd ), parameter :: &
-      min_max_smth_mag = 1.0e-9_core_rknd
 
     real( kind = core_rknd ), parameter :: &
       heaviside_smth_range = 1.0e-0_core_rknd ! range where Heaviside function is smoothed

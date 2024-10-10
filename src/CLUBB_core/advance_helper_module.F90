@@ -386,7 +386,8 @@ module advance_helper_module
         Rd, &
         ep, &
         one, &
-        zero_threshold
+        zero_threshold, &
+        min_max_smth_mag
 
     use parameters_model, only: &
         T0 ! Variable!
@@ -459,12 +460,6 @@ module advance_helper_module
       brunt_vaisala_freq_clipped
 
     logical, parameter :: l_smooth_min_max = .false. ! whether to apply smooth min and max function
-
-    ! "base" smoothing magnitude before scaling for the respective data structure.
-    ! See https://github.com/larson-group/clubb/issues/965#issuecomment-1119816722
-    ! for a plot on how output behaves with varying min_max_smth_mag
-    real( kind = core_rknd ), parameter :: &
-      min_max_smth_mag = 1.0e-9_core_rknd
 
     integer :: i, k
 
