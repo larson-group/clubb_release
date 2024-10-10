@@ -1,0 +1,138 @@
+commit 47d9dbeb6e2b4e77c8cc0aa98e52f2b2697dd700
+Author: domkesteffen <42725900+domkesteffen@users.noreply.github.com>
+Date:   Tue Oct 8 15:44:11 2024 -0500
+
+    Bindiff script (#1191)
+    
+    Extended verbosity functionality for run_bindiff_all.py
+    CLUBB ticket #1181
+    
+    I added a level system for the verbosity option.
+    Now 0 gives just the general summary at the end,
+    1 is default and gives the same output as the old default,
+    2 is the same as the old `--verbose` option
+
+commit 91a850ea46938fd79250eaada0aef3e4aa5ad30e
+Author: st3113n <110198346+st3113n@users.noreply.github.com>
+Date:   Tue Oct 8 14:21:04 2024 -0500
+
+    add Lscale intent(out) to advance_clubb_core and advance_clubb_core_api (#1190)
+    
+    * add Lscale intent(out) to advance_clubb_core and advance_clubb_core_api
+    
+    * make Lscale one dimensional for call to
+    advance_clubb_core_api_single_col
+    
+    * fix Lscale call in advance_clubb_core_api_single_col
+    
+    * ange Lscale usage in clubb_driver
+    
+    For larson-group/clubb#1166.
+
+commit 89d63edacac2fdf78260a465851405d497fefab7
+Author: vlarson <vlarson@uwm.edu>
+Date:   Tue Oct 8 11:16:03 2024 -0500
+
+    QuadTune: Create SVD plot, start to add checks on global means (unfinished), and start to add capability to include multiple fields (SWCF, LWCF, etc.) in metrics (unfinished).
+    
+    For #910.
+
+commit 7ece9fa5eafbaa094fd23095d704a861c5c902bd
+Author: Gunther Huebler <37674341+huebleruwm@users.noreply.github.com>
+Date:   Mon Oct 7 14:12:21 2024 -0500
+
+    Mono Flux Optimizations  (#1189)
+    
+    * Performance optimizations. This is BIT_CHANGING but not answer changing.
+    
+    * Small bug fix
+    
+    * Fix for uninitialized value in stats call and use of zero over 0.0_core_rknd
+    
+    * Adding new variables to CPU data statements.
+    
+    * Slight improvements to monoflux_test script.
+    
+    * Making monoflux test script test with multiple columns
+    
+    * Renaming and cleanup.
+
+commit 6c01610082f21f5cb13460de2de4d4970351abdc
+Merge: 771412d05 f518cd935
+Author: bmg929 <bmg2@uwm.edu>
+Date:   Fri Oct 4 15:39:09 2024 -0500
+
+    Merge branch 'master' of github.com:larson-group/clubb
+
+commit 771412d05f18e8491fea0cc25314aeea896813cc
+Author: bmg929 <bmg2@uwm.edu>
+Date:   Fri Oct 4 15:35:21 2024 -0500
+
+    I am copying the round-off level changes made to grid weights
+    and grid interpolation functions from the generalized_grid branch
+    over to the master branch. This is being done ahead of merging
+    code from the master over to the generalized_grid branch.
+    
+    This code is necessary to get results in the generalized grid
+    branch bit-for-bit between ascending and descending grid
+    directions when optimization is set to -O0.
+    
+    This change produces changes at the numerical round-off level
+    in the affected calculations, making this commit BIT_CHANGING.
+    
+    Plots show lines overlap for almost all cases besides the most
+    sensitive cases (ARM 97, TWP ICE, etc. -- looking at those
+    shows you how much of a difference a simple numerical round-off
+    can make).
+
+commit f518cd9358682c1866292899417b975694c50fd3
+Author: vlarson <vlarson@uwm.edu>
+Date:   Fri Oct 4 12:50:38 2024 -0500
+
+    QuadTune: Introduce new utility function to create scatterplots and plot first 2 SVD components.
+    
+    For #910.
+
+commit 5cc5bc9697304ab6b15657d35ef5f0efd7531649
+Author: LuisHasenauer <hasenau2@uwm.edu>
+Date:   Fri Oct 4 10:53:42 2024 -0500
+
+    Added requirements.txt for running the sens_matrix_dashboard.
+
+commit d423046c547ffa8af68ce4faa8d77a8476e4f887
+Author: st3113n <110198346+st3113n@users.noreply.github.com>
+Date:   Fri Oct 4 09:08:24 2024 -0500
+
+    refactoring to remove compiler warnings (#1187)
+    
+    * refactor code to remove warnings for exceeding 100 characters per line
+    
+    * remove unused variables
+    
+    * remove unused parameters #1174
+    
+    * fix for the GPU
+    
+    * remove new unused parameters
+    
+    * remove unused dummy arguments
+    
+    * make small changes to reduce compiler warnings
+    
+    * put solve_name back in as input variable to band_solve methods
+    
+    * combine intent in and out parameters from calc_trapezoid_zm and calc_trapezoid_zt to intent inout parameters
+    
+    * remove unused functions init_parameters_999 and sat_vapor_press_ice_*
+    
+    * remove unused dummy arguments
+    
+    * fix merge error
+    
+    * remove unnecessary loop
+
+commit 4bd334221a3e4774de1e962c1f0747dfe7150dc4
+Author: Gunther Huebler <huebler@uwm.edu>
+Date:   Thu Oct 3 19:28:10 2024 -0500
+
+    Small bug fix
