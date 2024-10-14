@@ -105,7 +105,10 @@ def createFigs(metricsNames,
                          | (metricsNames == 'LWCF_6_18') \
                          | (metricsNames == 'LWCF_9_18') \
                          | (metricsNames == 'LWCF_1_7')  \
-                         | (metricsNames == 'LWCF_6_5')
+                         | (metricsNames == 'LWCF_6_5') \
+                         | (metricsNames == 'PRECT_3_3') \
+                         | (metricsNames == 'PRECT_4_1')
+
 
     # Use this line if you want to exclude (blacklist) some variables:
     #maskMetricsNames = (metricsNames != 'SWCF_4_1') & (metricsNames != 'SWCF_4_2')
@@ -1545,7 +1548,9 @@ def createBiasesOrderedArrowFig(metricsSensOrdered, metricsNamesOrdered,
 
     # Plot a black dot for each default-run bias
     biasesOrderMatrix = np.dstack(( -defaultBiasesCol[metricsSensOrdered] )).squeeze()
-    fracBiasesOrderMatrix = np.diagflat(np.reciprocal(np.abs(normMetricValsCol[metricsSensOrdered]))) @ biasesOrderMatrix
+    fracBiasesOrderMatrix = np.diagflat(np.reciprocal(np.abs(normMetricValsCol[metricsSensOrdered]))) \
+                               @ np.expand_dims(np.atleast_1d(biasesOrderMatrix), axis=1)
+    #                           @ biasesOrderMatrix
     df = pd.DataFrame(fracBiasesOrderMatrix,
                       index=metricsNamesOrdered,
                       columns= ['fracDefBias'])

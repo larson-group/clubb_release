@@ -416,7 +416,7 @@ def setUpInputs(beVerbose):
 
     # Comment out if not using 20x20reg files
     varPrefixes = ["SWCF"]
-    #varPrefixes = ["SWCF", "LWCF"]
+    #varPrefixes = ["SWCF", "LWCF", "PRECT"]
     metricsNamesWeightsAndNorms, metricGlobalValsFromFile \
          = setUp_x_MetricsList(varPrefixes , defaultNcFilename)
     # Split up the list above into metric names and the corresponding weights.
@@ -431,11 +431,14 @@ def setUpInputs(beVerbose):
     defaultMetricValsCol = \
         setupDefaultMetricValsCol(metricsNames, defaultNcFilename)
 
-    metricGlobalAvg = np.dot(metricsWeights.T, defaultMetricValsCol)
+    #metricGlobalAvg = np.dot(metricsWeights.T, defaultMetricValsCol)
+    metricGlobalAvgs = np.diag(np.dot(metricsWeights.reshape(-1,len(varPrefixes),order='F').T,
+                                      defaultMetricValsCol.reshape(-1,len(varPrefixes),order='F')))
+    #np.dot(metricsWeights.reshape(-1,2,order='F').T, defaultMetricValsCol.reshape(-1,2,order='F'))
 
-    if not np.isclose(metricGlobalValsFromFile, metricGlobalAvg):
-        print("metricGlobalAvg not equal to metricGlobalValsFromFile")
-    print("metricGlobalAvg =", metricGlobalAvg)
+    if not np.isclose(metricGlobalValsFromFile, metricGlobalAvgs).all():
+        print("metricGlobalAvgs not equal to metricGlobalValsFromFile")
+    print("metricGlobalAvgs =", metricGlobalAvgs)
     print("metricGlobalValsFromFile =", metricGlobalValsFromFile)
     if beVerbose:
         print("defaultMetricValsCol printed as array = ")
@@ -446,8 +449,9 @@ def setUpInputs(beVerbose):
         #print(np.around(defaultMetricValsRolled,2))
 
     (obsMetricValsDict, obsWeightsDict) = \
-        setUp_x_ObsMetricValsDict(varPrefixes, folder_name + "20.0_OBS.nc")
+        setUp_x_ObsMetricValsDict(varPrefixes, folder_name + "20241011_20.0_OBS.nc")
         #setUp_x_ObsMetricValsDict(folder_name + "OBS.nc")
+        #setUp_x_ObsMetricValsDict(varPrefixes, folder_name + "20.0_OBS.nc")
         #setUp_x_ObsMetricValsDict(folder_name + "30.0_OBS.nc")
     #obsMetricValsDict = setUp_x_ObsMetricValsDict("Regional_files/20231211_20x20regs/" + "OBS.nc")
     #obsMetricValsDict = setUp_x_ObsMetricValsDict("Regional_files/20231208runs_30x30/" + "OBS.nc")
@@ -455,29 +459,34 @@ def setUpInputs(beVerbose):
     #obsMetricValsDict = setUp_x_ObsMetricValsDict("Regional_files/stephens_20240131/btune_regional_files/b1850.075plus_Regional.nc")
 
     obsMetricValsCol = setUpObsCol(obsMetricValsDict, metricsNames)
-    obsGlobalAvg = np.dot(metricsWeights.T, obsMetricValsCol)
-    #obsGlobalAvg = np.mean(obsMetricValsCol)
-    print("obsGlobalAvg =", obsGlobalAvg)
+    #obsGlobalAvgMetricsWeights = np.dot(metricsWeights.T, obsMetricValsCol)
+    #obsGlobalAvgUnweighted = np.mean(obsMetricValsCol)
+    #print("obsGlobalAvgMetricsWeights =", obsGlobalAvgMetricsWeights)
 
     if True:
     #if beVerbose:
-        obsWeightsNames = np.array(list(obsWeightsDict.keys()), dtype=str)
-        obsWeightsUnnormlzd = setUpObsCol(obsWeightsDict, obsWeightsNames)
-        obsWeights = obsWeightsUnnormlzd / np.sum(obsWeightsUnnormlzd)
-        #metricsWeights = obsWeights
-        obsWeights = np.vstack([obsWeights] * len(varPrefixes))
-        obsGlobalAvgObsWeights = np.dot(obsWeights.T, obsMetricValsCol)
-        print("obsGlobalAvgObsWeights =", obsGlobalAvgObsWeights)
+        for varPrefix in varPrefixes:
+            keysVarPrefix = [key for key in obsWeightsDict.keys() if varPrefix in key]
+            #obsWeightsNames = np.array(list(obsWeightsDict.keys()), dtype=str)
+            obsWeightsNames = np.array(keysVarPrefix, dtype=str)
+            obsWeightsUnnormlzd = setUpObsCol(obsWeightsDict, obsWeightsNames)
+            obsWeights = obsWeightsUnnormlzd / np.sum(obsWeightsUnnormlzd)
+            #metricsWeights = obsWeights
+            #obsWeights = np.vstack([obsWeights] * len(varPrefixes))
+            metricsNamesVarPrefix = [key for key in obsMetricValsDict.keys() if varPrefix in key]
+            obsMetricValsColVarPrefix = setUpObsCol(obsMetricValsDict, metricsNamesVarPrefix)
+            obsGlobalAvgObsWeights = np.dot(obsWeights.T, obsMetricValsColVarPrefix)
+            print(f"obsGlobalAvgObsWeights for {varPrefix} =", obsGlobalAvgObsWeights)
 
-        #obsMetricValsReshaped = obsMetricValsCol.reshape((9,18))
-        #biasMat = defaultMetricValsReshaped - obsMetricValsReshaped
-        #print("biasMat =")
-        #print(np.around(biasMat,2))
+            #obsMetricValsReshaped = obsMetricValsCol.reshape((9,18))
+            #biasMat = defaultMetricValsReshaped - obsMetricValsReshaped
+            #print("biasMat =")
+            #print(np.around(biasMat,2))
 
-        mse = np.sum(metricsWeights*(defaultMetricValsCol - obsMetricValsCol)**2) \
-               / np.sum(metricsWeights)
-        rmse = np.sqrt(mse)
-        print("rmse between default and obs =", rmse)
+            #mse = np.sum(metricsWeights*(defaultMetricValsCol - obsMetricValsCol)**2) \
+            #   / np.sum(metricsWeights)
+            #rmse = np.sqrt(mse)
+            #print("rmse between default and obs =", rmse)
 
     return (metricsNames, metricsWeights, metricsNorms, \
             obsMetricValsDict, \
@@ -648,7 +657,7 @@ def setUp_x_ObsMetricValsDict(varPrefixes, obsPathAndFilename):
                 #print((varName, varVal))
             # Extract observational weights,
             #     which are effectively numpy scalars (0d arrays)
-            if re.search("^weights_[0-9]+_",varName):
+            if re.search(f"^weights_[0-9]+_[0-9]+_{varPrefix}",varName):
                 weightsEntry = f_obs[varName]
                 weightsVal = weightsEntry[:].data
                 obsWeightsDict[varName] = weightsVal
