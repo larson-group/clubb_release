@@ -77,8 +77,8 @@ class VariableGroup:
         self.time_height = case.time_height
         self.animation = case.animation
         self.priority_vars = priority_vars
-        self.background_rcm = background_rcm
-        self.background_rcm_folder = background_rcm_folder
+        self.bkgrnd_rcm_flag = background_rcm
+        self.bkgrnd_rcm_folder = background_rcm_folder
 
         # Loop over the list self.variable_definitions which is only defined in the subclasses
         # that can be found in the config folder such as VariableGroupBase
@@ -95,48 +95,53 @@ class VariableGroup:
             else:
                 logToFile('\tVariable {} is blacklisted and will therefore not be plotted.'.format(variable))
 
-        if self.background_rcm:
+        if self.bkgrnd_rcm_flag:
             if self.clubb_datasets is not None and len(self.clubb_datasets) != 0:
                 # Extract rcm from the zt NetCDF file. Also extract the time and height values to which the
                 # rcm data points correspond.
-                bkgrnd_rcm = np.squeeze( self.clubb_datasets[self.background_rcm_folder]['zt'].variables['rcm'] )
-                self.altitude_bkgrnd_rcm = np.squeeze( self.clubb_datasets[self.background_rcm_folder]['zt'].variables['altitude'] )
-                time_bkgrnd_rcm = np.squeeze( self.clubb_datasets[self.background_rcm_folder]['zt'].variables['time'] )
+                bkgrnd_rcm = np.squeeze( self.clubb_datasets[self.bkgrnd_rcm_folder]['zt'].variables['rcm'] )
+                self.altitude_bkgrnd_rcm = np.squeeze( self.clubb_datasets[self.bkgrnd_rcm_folder]['zt'].variables['altitude'] )
+                self.time_bkgrnd_rcm = np.squeeze( self.clubb_datasets[self.bkgrnd_rcm_folder]['zt'].variables['time'] )
                 # Find the indices in the rcm data that correspond to the start time and end time requested as the
                 # time-averaging interval for the case, as well as the minimum height and maximum height requested
                 # for the plots.
                 start_time_seconds = 60.0 * self.start_time # self.start_time is in minutes, while time_bkgrnd_rcm is in seconds.
                 end_time_seconds = 60.0 * self.end_time # self.end_time is in minutes, while time_bkgrnd_rcm is in seconds.
-                start_time_idx, end_time_idx = DataReader.__getStartEndIndex__(time_bkgrnd_rcm, start_time_seconds, end_time_seconds)
+                start_time_idx, end_time_idx = DataReader.__getStartEndIndex__(self.time_bkgrnd_rcm, start_time_seconds, end_time_seconds)
                 self.start_alt_idx, self.end_alt_idx = DataReader.__getStartEndIndex__(self.altitude_bkgrnd_rcm, self.height_min_value, self.height_max_value)
-                # Calculate the time-averaged vertical profile of rcm for use as contours in the background of plots
-                # of CLUBB time-averaged vertical profiles of various model fields.
-                nzt = np.shape(bkgrnd_rcm)[1]
-                self.bkgrnd_rcm_tavg = np.zeros(nzt)
-                for z_indx in range(nzt):
-                    lev_sum = 0
-                    count = 0
-                    for t_indx in range(start_time_idx, end_time_idx):
-                        lev_sum = lev_sum + bkgrnd_rcm[t_indx,z_indx]
-                        count = count + 1
-                    self.bkgrnd_rcm_tavg[z_indx] = lev_sum / float(count)
+                if self.animation:
+                    self.bkgrnd_rcm = bkgrnd_rcm
+                else:
+                    # Calculate the time-averaged vertical profile of rcm for use as contours in the background of plots
+                    # of CLUBB time-averaged vertical profiles of various model fields.
+                    nzt = np.shape(bkgrnd_rcm)[1]
+                    self.bkgrnd_rcm = np.zeros(nzt)
+                    for z_indx in range(nzt):
+                        lev_sum = 0
+                        count = 0
+                        for t_indx in range(start_time_idx, end_time_idx):
+                            lev_sum = lev_sum + bkgrnd_rcm[t_indx,z_indx]
+                            count = count + 1
+                        self.bkgrnd_rcm[z_indx] = lev_sum / float(count)
             else:
                 # Set the relevant "output" variables to a value just to have them set.
                 # They will be flagged out of interacting with the code.
-                self.bkgrnd_rcm_tavg = 0
+                self.bkgrnd_rcm = 0
                 self.altitude_bkgrnd_rcm = 0
+                self.time_bkgrnd_rcm = 0
                 self.start_alt_idx = 0
                 self.end_alt_idx = 0
         else:
             # Set the relevant "output" variables to a value just to have them set.
             # They will be flagged out of interacting with the code.
-            self.bkgrnd_rcm_tavg = 0
+            self.bkgrnd_rcm = 0
             self.altitude_bkgrnd_rcm = 0
+            self.time_bkgrnd_rcm = 0
             self.start_alt_idx = 0
             self.end_alt_idx = 0
 
         self.generatePanels()
-        
+
     def addVariable(self, variable_def_dict):
         """
         Given basic details about a variable, this
@@ -428,16 +433,18 @@ class VariableGroup:
                     sci_scale = None
                 if 'centered' in variable.keys():
                     centered = variable['centered']
-            
+
                 if panel_type == Panel.TYPE_TIMEHEIGHT:
                     panel = ContourPanel(plotset, title=title, dependent_title=axis_label, panel_type=panel_type)
                 elif self.animation is not None:
-                    panel = AnimationPanel(plotset, title=title, dependent_title=axis_label, panel_type=panel_type,
-                                           sci_scale=sci_scale, centered=centered)
+                    panel = AnimationPanel(plotset, self.bkgrnd_rcm, self.altitude_bkgrnd_rcm, self.time_bkgrnd_rcm,
+                                           self.start_alt_idx, self.end_alt_idx, panel_type=panel_type, title=title,
+                                           dependent_title=axis_label, sci_scale=sci_scale, centered=centered,
+                                           bkgrnd_rcm_flag=self.bkgrnd_rcm_flag)
                 else:
-                    panel = Panel(plotset, self.bkgrnd_rcm_tavg, self.altitude_bkgrnd_rcm, self.start_alt_idx, self.end_alt_idx,
-                                  title=title, dependent_title=axis_label, panel_type=panel_type, sci_scale=sci_scale,
-                                  centered=centered, background_rcm=self.background_rcm)
+                    panel = Panel(plotset, self.bkgrnd_rcm, self.altitude_bkgrnd_rcm, self.start_alt_idx, self.end_alt_idx,
+                                  panel_type=panel_type, title=title, dependent_title=axis_label, sci_scale=sci_scale,
+                                  centered=centered, bkgrnd_rcm_flag=self.bkgrnd_rcm_flag)
                 self.panels.append(panel)
 
     def __getTitles__(self, variable_def_dict, plotted_models_varname):
@@ -820,7 +827,7 @@ class VariableGroup:
 
     def __getBudgetLines__(self, lines, dataset, model_name="unknown"):
         """
-        Returns a list of Line objects (or 2D objects in case of animations) for a budget plot for each 
+        Returns a list of Line objects (or 2D objects in case of animations) for a budget plot for each
         variable defined in lines
 
         :param lines: A list of line definitions containing the variable names, legend labels etc.

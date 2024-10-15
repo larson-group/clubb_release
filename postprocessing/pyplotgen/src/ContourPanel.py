@@ -47,7 +47,13 @@ class ContourPanel(Panel):
         :param centered: If True, the Panel will be centered around 0.
             Profile plots are usually centered, while budget plots are not.
         """
-        super().__init__(plots, panel_type, title, dependent_title, sci_scale=None, centered=False)
+
+        # Note: Nones added to make contour plots ignore background-rcm option for now
+        #       If, at some point, we want this to work with Contours,
+        #       we would need to modify the super call here and kind of copy the code from Panel
+        #       that handles background-rcm into ContourPanel.
+        super().__init__(plots, bkgrnd_rcm=None, altitude_bkgrnd_rcm=None, start_alt_idx=None, end_alt_idx=None,
+                         panel_type=panel_type, title=title, dependent_title=dependent_title, sci_scale=None, centered=False)
 
     def plot(self, output_folder, casename, replace_images = False, no_legends = True, thin_lines = False,
              alphabetic_id = '', paired_plots = True, image_extension=".png"):

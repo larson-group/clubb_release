@@ -16,6 +16,7 @@ import warnings
 from datetime import datetime
 from textwrap import fill
 
+import matplotlib.colors as mpc
 import matplotlib.pyplot as plt
 import numpy as np
 from cycler import cycler
@@ -38,8 +39,9 @@ class AnimationPanel(Panel):
     For information on the input parameters of this class, please see the documentation for the
     ``__init__()`` method.
     """
-    def __init__(self, plots, panel_type="profile", title="Unnamed panel", dependent_title="dependent variable",
-                 sci_scale = None, centered = False):
+    def __init__(self, plots, bkgrnd_rcm=None, altitude_bkgrnd_rcm=None, time_bkgrnd_rcm=None, start_alt_idx=None, end_alt_idx=None,
+                 panel_type="profile", title="Unnamed panel", dependent_title="dependent variable",
+                 sci_scale = None, centered = False, bkgrnd_rcm_flag = False):
         """
         Creates a new panel
 
@@ -53,13 +55,12 @@ class AnimationPanel(Panel):
             Profile plots are usually centered, while budget plots are not.
         Warning! Arguments `sci_scale` and `centered` are unused here!
         """
-        #copied this from ContourPanel.py ?
-        # Note: 0s added to make animations ignore background-rcm option for now
-        #       If, at some point, we want this to work with animations,
-        #       we would need to modify the super call here and kind of copy the code from Panel
-        #       that handles background-rcm into AnimationPanel
-        super().__init__(plots, 0, 0, 0, 0,
-                         panel_type, title, dependent_title, sci_scale=None, centered=False)
+
+        self.time_bkgrnd_rcm = time_bkgrnd_rcm
+
+        super().__init__(plots, bkgrnd_rcm=bkgrnd_rcm, altitude_bkgrnd_rcm=altitude_bkgrnd_rcm,
+                         start_alt_idx=start_alt_idx, end_alt_idx=end_alt_idx, panel_type=panel_type, title=title,
+                         dependent_title=dependent_title, sci_scale=None, centered=False, bkgrnd_rcm_flag = bkgrnd_rcm_flag)
 
     def plot(self, output_folder, casename, replace_images = False, no_legends = True, thin_lines = False,
              alphabetic_id="", paired_plots = True, image_extension=".png", movie_extension=".mp4"):
@@ -79,12 +80,9 @@ class AnimationPanel(Panel):
         :return: None
         Warning! Argument `replace_images` is unused here!
         """
-        #find tmax and x_dataset
-        #tmax -- # of time steps of shortest simulation
-        #x_dataset = time step list of shortest sim.
         tmax = np.inf ; idx = 0
         sim_lengths=[]
-        for var in self.all_plots:
+        for i,var in enumerate(self.all_plots):
             sim_lengths.append(len(var.x))
             if len(var.x) < tmax:
                 x_dataset=var.x
@@ -114,6 +112,20 @@ class AnimationPanel(Panel):
                     var.data = filtered_data
                     idx+=1
 
+        if self.bkgrnd_rcm_flag:
+            ## Set up rcm contours
+            # Find matching rcm times
+            rcm_time_idcs = []
+            for x in x_dataset*60:
+                rcm_time_idcs.append(np.argmin(np.abs(self.time_bkgrnd_rcm-x)))
+            # Set up colorbar that is constant over all time frames
+            min_rcm_value = self.bkgrnd_rcm.min()
+            max_rcm_value = self.bkgrnd_rcm.max()
+            cmap = plt.get_cmap("gist_yarg")
+            # Modify color map to only use grays
+            cmap = mpc.LinearSegmentedColormap.from_list('Only grays', cmap(np.linspace(0.0, 0.5, 256)))
+            norm = mpc.Normalize(vmin=min_rcm_value, vmax=max_rcm_value)
+            cont_map = plt.cm.ScalarMappable(norm=norm, cmap=cmap)
 
         min_x_value = np.inf ; max_x_value = -1*np.inf  #set large to be overwritten during first pass below
         for t in range(0,tmax):
@@ -253,7 +265,10 @@ class AnimationPanel(Panel):
                 box = ax.get_position()
                 ax.set_position([box.x0, box.y0, box.width * 0.8, box.height])
                 # Put a legend to the right of the current axis
-                ax.legend(loc='center left', bbox_to_anchor=(1, 0.5))
+                if not self.bkgrnd_rcm_flag:
+                    ax.legend(loc='center left', bbox_to_anchor=(1, 0.5))
+                else:
+                    ax.legend(loc='upper right', bbox_to_anchor=(1, 1))
 
             # Fix x-axis
             if min_x_value != 0 and max_x_value != 0:
@@ -272,6 +287,21 @@ class AnimationPanel(Panel):
             xlim = plt.xlim()
             if xlim[0] <= 0 <= xlim[1]:
                 plt.axvline(x=0, color='grey', ls='-')
+
+            # Background rcm contour plot
+            if self.bkgrnd_rcm_flag:
+                num_points = self.end_alt_idx - self.start_alt_idx + 1
+                bkgrnd_rcm_contours = np.eye( num_points )
+                for i in range(num_points):
+                    bkgrnd_rcm_contours[i,:] = self.bkgrnd_rcm[rcm_time_idcs[t], self.start_alt_idx+i]
+                x_vector_contour = np.zeros( num_points )
+                x_diff = xlim[1] - xlim[0]
+                x_interval = x_diff / ( num_points - 1 )
+                for k in range(num_points):
+                    x_vector_contour[k] = xlim[0] + float(k) * x_interval
+                plt.contourf( x_vector_contour, self.altitude_bkgrnd_rcm[self.start_alt_idx:self.end_alt_idx+1],
+                              bkgrnd_rcm_contours, norm=norm, cmap=cmap )
+                plt.gcf().colorbar( cont_map, ax=ax, cmap=cmap, norm=norm, label="rcm [kg/kg]", orientation="vertical" )
 
             # Create folders
             # Because os.mkdir("output") can fail and prevent os.mkdir("output/" + casename) from being called we must
