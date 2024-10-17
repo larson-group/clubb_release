@@ -43,10 +43,13 @@ import sys
 config_file        = "../compile/config/linux_x86_64_nvhpc_gpu_openacc.bash"
 source_file        = "../src/CLUBB_core/mono_flux_limiter.F90"
 flags_file         = "../input/tunable_parameters/configurable_model_flags.in"
+params_file        = "../input/tunable_parameters/tunable_parameters.in"
+multicol_params    = "clubb_params_multi_col.in"
 
 compile_script     = "../compile/compile.bash"
 clean_script       = "../compile/clean_all.bash"
 run_script         = "./run_scm.bash"
+multicol_script    = "./create_multi_col_params.py"
 
 run_case           = "mc3e"     # unstable/noisy case is required
 case_time_final    = "18000"    # corresponds to 60 timesteps for mc3e 
@@ -124,11 +127,10 @@ try:
 
     # Clean then compile with the modified config file
     process = subprocess.run([clean_script], stdout=subprocess.PIPE, text=True)
+    print(process.stdout)
+
     compile_command = [compile_script, "-c", config_file]
     process = subprocess.run(compile_command, stdout=subprocess.PIPE, text=True)
-
-    # Display the output of the compilation
-    print(process.stdout)
 
 
 
@@ -148,7 +150,6 @@ try:
             line = re.sub(r"penta_solve_method\s*=.*", "penta_solve_method = 2", line)          # just for speed
             line = re.sub(r"tridiag_solve_method\s*=.*", "tridiag_solve_method = 2", line)      # just for speed
             line = re.sub(r"l_lh_straight_mc\s*=.*", "l_lh_straight_mc = .true.", line)         # required on GPUs for silhs cases
-            line = re.sub(r"num_standalone_columns\s*=.*", "num_standalone_columns = 16", line) # extra columns = more testing
             outfile.write(line)
 
 
@@ -161,12 +162,19 @@ try:
     # to only report if the GPU results differ from CPU results by more than 10^-n
     # see https://developer.nvidia.com/blog/detecting-divergence-using-pcast-to-compare-gpu-to-cpu-results/
     os.environ["PCAST_COMPARE"] = "abs=10"
-
-    # Run the case with -e, we only care about the stderr output
-    run_command = ["bash", run_script, "-e", run_case]
+    
+    # Create a multicol param 
+    run_command = ["python", multicol_script, "-n 16",                          # use 16 columns
+                                              "-mode", "dup_tweak" ,            # duplicate and tweak initial param values
+                                              "-param_file", params_file,       # location of param file
+                                              "-l_multi_col_output", "false",    # no need for multicol output
+                                              "-out_file", multicol_params ]    # define output file name
     process = subprocess.run(run_command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+    print(process.stderr)
 
-    # Print only errors
+    # Run the case with -e to supress stats, we only care about the stderr output
+    run_command = ["bash", run_script, "-e", run_case, "-p", multicol_params ]
+    process = subprocess.run(run_command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
     print(process.stderr)
 
 

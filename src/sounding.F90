@@ -21,7 +21,7 @@ module sounding
 
   contains
   !------------------------------------------------------------------------
-  subroutine read_sounding( sclr_dim, edsclr_dim, sclr_idx, &
+  subroutine read_sounding( ngrdcol, sclr_dim, edsclr_dim, sclr_idx, &
                             gr, iunit, runtype, p_sfc, zm_init, & 
                             saturation_formula, &
                             l_modify_ic_with_cubic_int, &
@@ -82,6 +82,7 @@ module sounding
 
     !--------------------- Input Variables ---------------------
     integer, intent(in) :: &
+      ngrdcol, &
       sclr_dim, & 
       edsclr_dim
 
@@ -113,7 +114,7 @@ module sounding
       l_modify_ic_with_cubic_int
 
     !--------------------- Output Variables ---------------------
-    real( kind = core_rknd ), intent(out), dimension(gr%nzt) ::  & 
+    real( kind = core_rknd ), intent(out), dimension(ngrdcol,gr%nzt) ::  & 
       thlm,  & ! Liquid water potential temperature    [K]
       rtm,   & ! Total water mixing ratio              [kg/kg]
       um,    & ! u wind component                      [m/s]
@@ -123,7 +124,7 @@ module sounding
       press, & ! Pressure                              [Pa]
       wm       ! Subsidence                            [m/s or Pa/s]
 
-    real( kind = core_rknd ), intent(out) ::  &
+    real( kind = core_rknd ), dimension(ngrdcol), intent(out) ::  &
       rtm_sfc,  & ! Initial surface rtm                [kg/kg]
       thlm_sfc    ! Initial surface thlm               [K]
 
@@ -132,10 +133,10 @@ module sounding
       alt_type, &       ! Type of independent coordinate
       subs_type         ! Type of subsidence
 
-    real( kind = core_rknd ), intent(out), dimension(gr%nzt, sclr_dim) ::  & 
+    real( kind = core_rknd ), intent(out), dimension(ngrdcol, gr%nzt, sclr_dim) ::  & 
       sclrm   ! Passive scalar output      [units vary]
 
-    real( kind = core_rknd ), intent(out), dimension(gr%nzt, edsclr_dim) ::  & 
+    real( kind = core_rknd ), intent(out), dimension(ngrdcol, gr%nzt, edsclr_dim) ::  & 
       edsclrm ! Eddy Passive scalar output [units vary]
 
     !--------------------- Local Variables ---------------------
@@ -168,7 +169,7 @@ module sounding
     type(one_dim_read_var), dimension(sclr_dim) :: &
       sclr_sounding_retVars ! sclr_snd Sounding Profile
 
-    integer :: i, sclr, edsclr, k  ! Loop indices
+    integer :: i, sclr, edsclr, k, k_above  ! Loop indices
 
     integer :: km1, kp1, kp2, k00 ! For mono cubic interpolation
 
@@ -215,13 +216,17 @@ module sounding
       ! sounding namelist is no longer used.
       ! Joshua Fasching April 2009
     end if
+
     ! Read in a passive scalar sounding, if enabled
     if ( sclr_dim > 0 .or. edsclr_dim > 0 ) then
+
       ! Allocate large arrays
       allocate( sclr_snd(nmaxsnd, sclr_max), edsclr_snd(nmaxsnd, sclr_max) )
+
       ! Initialize to zero
       sclr_snd   = 0.0_core_rknd
       edsclr_snd = 0.0_core_rknd
+
       ! Read in SAM-Like <runtype>_sclr_sounding.in and
       !                  <runtype>_edsclr_sounding.in
       if( sclr_dim > 0 ) then
@@ -232,7 +237,9 @@ module sounding
         else
           error stop 'Cannot open <runtype>_sclr_sounding.in file'
         end if
+
       end if
+
       if( edsclr_dim > 0 ) then
         if( l_edsclr_sounding_exists  ) then
           call read_edsclr_sounding_file( edsclr_dim, sclr_idx, iunit, runtype, nmaxsnd, &
@@ -241,6 +248,7 @@ module sounding
           error stop 'Cannot open <runtype>_edsclr_sounding.in file'
         end if
       end if
+
     end if
 
     if ( nlevels > nmaxsnd ) then
@@ -272,20 +280,27 @@ module sounding
       write(fstderr,*) 'First level of input sounding must be z=0'
       error stop 'STOP in read_sounding'
     else
-      um   = u(1)
-      vm   = v(1)
-      ugm  = ug(1)
-      vgm  = vg(1)
-      thlm = theta(1)
-      rtm  = rt(1)
-      press = p_in_Pa(1)
-      wm = subs(1)
+      um(:,:)     = u(1)
+      vm(:,:)     = v(1)
+      ugm(:,:)    = ug(1)
+      vgm(:,:)    = vg(1)
+      thlm(:,:)   = theta(1)
+      rtm(:,:)    = rt(1)
+      press(:,:)  = p_in_Pa(1)
+      wm(:,:)     = subs(1)
+
       if ( sclr_dim > 0 ) then
-        sclrm(1,1:sclr_dim)   = sclr_snd(1,1:sclr_dim)
+        do i = 1, ngrdcol
+          sclrm(i,1,1:sclr_dim)   = sclr_snd(1,1:sclr_dim)
+        end do
       end if
+
       if ( edsclr_dim > 0 ) then
-        edsclrm(1,1:edsclr_dim) = edsclr_snd(1,1:edsclr_dim)
+        do i = 1, ngrdcol
+          edsclrm(i,1,1:edsclr_dim) = edsclr_snd(1,1:edsclr_dim)
+        end do
       end if
+
     end if
 
     if ( clubb_at_least_debug_level( 1 ) ) then
@@ -317,191 +332,193 @@ module sounding
     ! Use linear interpolation from two nearest prescribed grid points
     ! (one above and one below) to initialize mean quantities in the model
     ! Modified 27 May 2005 -dschanen: eliminated the goto in favor of a do while( )
-    do i=1, gr%nzt
-      k=1
-      do while ( z(k) < gr%zt(1,i) )
-        k=k+1
-        if ( k > nlevels ) then
-              write(fstderr,*) 'STOP Not enough sounding data to ',&
-               'initialize grid:'
-              write(fstderr,'(a,f7.1,/a,f7.1)') &
-               '  highest sounding level', z(nlevels),&
-               '  should be higher than highest thermodynamic point',&
-               gr%zt(1,gr%nzt)
-              error stop 'STOP in sounding'
-          exit
-        end if  ! k > nlevels
+    do i = 1, ngrdcol
+      do k=1, gr%nzt
+        k_above=1
+        do while ( z(k_above) < gr%zt(i,k) )
+          k_above=k_above+1
+          if ( k_above > nlevels ) then
+                write(fstderr,*) 'STOP Not enough sounding data to ',&
+                'initialize grid:'
+                write(fstderr,'(a,f7.1,/a,f7.1)') &
+                '  highest sounding level', z(nlevels),&
+                '  should be higher than highest thermodynamic point',&
+                gr%zt(i,gr%nzt)
+                error stop 'STOP in sounding'
+            exit
+          end if  ! k_above > nlevels
 
-        ! situation w/ cubic int. (achieve better numerical solution convergence)
-        if (l_modify_ic_with_cubic_int) then 
-          !use Steffen's monotone cubic interpolation method to obtain
-          !smoothing initial condition profile for convergence test 
-          !note: vertical levels in sounding file need to be not too coarse
-          if ( k == 1 ) then
-            km1 = k
-            k00 = 1
-            kp1 = 2
-            kp2 = 3
-          else if ( k == 2 ) then
-            km1 = 1
-            kp1 = 2
-            kp2 = 3
-            k00 = 1
-          else
-            km1 = k-2
-            kp1 = k
-            kp2 = k+1
-            k00 = k-1
-            !if z(k) reaches at the top level in sounding profile,
-            !then use the nearest levels for interpolation 
-            if ( z(k) >= z(nlevels) ) then
-              km1 = nlevels-2
-              kp1 = nlevels
-              kp2 = nlevels
-              k00 = nlevels-1
-            end if
-          end if
-
-          um(i)    = mono_cubic_interp( gr%zt(1,i), km1, k00, kp1, kp2, z(km1), z(k00), z(kp1), & 
-                                        z(kp2), u(km1), u(k00), u(kp1), u(kp2) )
-          vm(i)    = mono_cubic_interp( gr%zt(1,i), km1, k00, kp1, kp2, z(km1), z(k00), z(kp1), &
-                                        z(kp2), v(km1), v(k00), v(kp1), v(kp2) )
-          ugm(i)   = mono_cubic_interp( gr%zt(1,i), km1, k00, kp1, kp2, z(km1), z(k00), z(kp1), &
-                                        z(kp2), ug(km1), ug(k00), ug(kp1), ug(kp2) )
-          vgm(i)   = mono_cubic_interp( gr%zt(1,i), km1, k00, kp1, kp2, z(km1), z(k00), z(kp1), &
-                                        z(kp2), vg(km1), vg(k00), vg(kp1), vg(kp2) )
-          thlm(i)  = mono_cubic_interp( gr%zt(1,i), km1, k00, kp1, kp2, z(km1), z(k00), z(kp1), &
-                                        z(kp2), theta(km1), theta(k00), theta(kp1), theta(kp2) )
-          rtm(i)   = mono_cubic_interp( gr%zt(1,i), km1, k00, kp1, kp2, z(km1), z(k00), z(kp1), &
-                                        z(kp2), rt(km1), rt(k00), rt(kp1), rt(kp2) )
-          press(i) = mono_cubic_interp( gr%zt(1,i), km1, k00, kp1, kp2, z(km1), z(k00), z(kp1), &
-                                        z(kp2), p_in_Pa(km1), p_in_Pa(k00), p_in_Pa(kp1), &
-                                        p_in_Pa(kp2) )
-          wm(i)    = mono_cubic_interp( gr%zt(1,i), km1, k00, kp1, kp2, z(km1), z(k00), z(kp1), &
-                                        z(kp2), subs(km1), subs(k00), subs(kp1), subs(kp2) )
-
-          if ( trim( runtype ) /= "dycoms2_rf02" ) then 
-            !initial condition for tracers 
-            if ( sclr_dim > 0 ) then
-              do sclr = 1, sclr_dim
-                sclrm(i,sclr) = mono_cubic_interp( gr%zt(1,i), km1, k00, kp1, kp2, & 
-                                                z(km1), z(k00), z(kp1), z(kp2), & 
-                                                sclr_snd(km1,sclr), sclr_snd(k00,sclr), &
-                                                sclr_snd(kp1,sclr), sclr_snd(kp2,sclr) )
-              end do
-            end if
-            if ( edsclr_dim > 0 ) then
-              do edsclr = 1, edsclr_dim
-                edsclrm(i,edsclr) = mono_cubic_interp( gr%zt(1,i), km1, k00, kp1, kp2, & 
-                                                  z(km1), z(k00), z(kp1), z(kp2), & 
-                                                  edsclr_snd(km1,edsclr), edsclr_snd(k00,edsclr), &
-                                                  edsclr_snd(kp1,edsclr), edsclr_snd(kp2,edsclr) )
-              end do
-            end if
-          else 
-            ! DYCOMS2_RF02 case (use the same treatment as in regular situation w/ linear int.) 
-            ugm(i)  = um(i)
-            vgm(i)  = vm(i)
-            ! Passive Scalars
-            ! Change this if they are not equal to theta_l and rt in RF02
-            if ( sclr_idx%iisclr_thl > 0  ) then
-              sclrm(i, sclr_idx%iisclr_thl)   = thlm(i)
-              edsclrm(i, sclr_idx%iisclr_thl) = thlm(i)
-            end if
-            if ( sclr_idx%iisclr_rt > 0 ) then
-              sclrm(i, sclr_idx%iisclr_rt)    = rtm(i)
-              edsclrm(i, sclr_idx%iisclr_rt)  = rtm(i)
-            end if
-          end if  
-
-        else ! default model setup 
-
-          ! Regular situation w/ linear int.
-          IF ( trim( runtype ) /= "dycoms2_rf02" ) THEN
-
-            um(i)   = lin_interpolate_two_points( gr%zt(1,i), z(k), z(k-1), u(k), u(k-1) )
-            vm(i)   = lin_interpolate_two_points( gr%zt(1,i), z(k), z(k-1), v(k), v(k-1) )
-            ugm(i)  = lin_interpolate_two_points( gr%zt(1,i), z(k), z(k-1), ug(k), ug(k-1) )
-            vgm(i)  = lin_interpolate_two_points( gr%zt(1,i), z(k), z(k-1), vg(k), vg(k-1) )
-            thlm(i) = lin_interpolate_two_points( gr%zt(1,i), z(k), z(k-1), theta(k), theta(k-1) )
-            rtm(i)  = lin_interpolate_two_points( gr%zt(1,i), z(k), z(k-1), rt(k), rt(k-1) )
-            press(i) = lin_interpolate_two_points( gr%zt(1,i), z(k), z(k-1), p_in_Pa(k), &
-                                                   p_in_Pa(k-1) )
-            wm(i) = lin_interpolate_two_points( gr%zt(1,i), z(k), z(k-1), subs(k), subs(k-1) )
-
-            if ( sclr_dim > 0 ) then
-              do sclr = 1, sclr_dim
-                sclrm(i,sclr) = lin_interpolate_two_points( gr%zt(1,i), z(k), z(k-1),  & 
-                                      sclr_snd(k,sclr), sclr_snd(k-1,sclr) )
-              end do
-            end if
-            if ( edsclr_dim > 0 ) then
-              do edsclr = 1, edsclr_dim
-                edsclrm(i,edsclr) = lin_interpolate_two_points( gr%zt(1,i), z(k), z(k-1),  & 
-                                        edsclr_snd(k,edsclr), edsclr_snd(k-1,edsclr) )
-              end do
+          ! situation w/ cubic int. (achieve better numerical solution convergence)
+          if (l_modify_ic_with_cubic_int) then 
+            !use Steffen's monotone cubic interpolation method to obtain
+            !smoothing initial condition profile for convergence test 
+            !note: vertical levels in sounding file need to be not too coarse
+            if ( k_above == 1 ) then
+              km1 = k_above
+              k00 = 1
+              kp1 = 2
+              kp2 = 3
+            else if ( k_above == 2 ) then
+              km1 = 1
+              kp1 = 2
+              kp2 = 3
+              k00 = 1
+            else
+              km1 = k_above-2
+              kp1 = k_above
+              kp2 = k_above+1
+              k00 = k_above-1
+              !if z(k_above) reaches at the top level in sounding profile,
+              !then use the nearest levels for interpolation 
+              if ( z(k_above) >= z(nlevels) ) then
+                km1 = nlevels-2
+                kp1 = nlevels
+                kp2 = nlevels
+                k00 = nlevels-1
+              end if
             end if
 
-          ELSE  ! DYCOMS II RF02 case
-  
-            IF ( gr%zt(1,i) < 795.0_core_rknd ) THEN
-              ! (Wyant, et al. 2007, eq 1--4)
-              um(i)   =  3.0_core_rknd + (4.3_core_rknd*gr%zt(1,i))/ &
-                  1000.0_core_rknd ! Known magic number
-              vm(i)   = -9.0_core_rknd + (5.6_core_rknd*gr%zt(1,i))/ &
-                  1000.0_core_rknd ! Known magic number
-              ugm(i)  = um(i)
-              vgm(i)  = vm(i)
-              thlm(i) = 288.3_core_rknd
-              rtm(i)  = (9.45_core_rknd)/g_per_kg ! Known magic number
+            um(i,k)    = mono_cubic_interp( gr%zt(i,k), km1, k00, kp1, kp2, z(km1), z(k00), z(kp1), & 
+                                            z(kp2), u(km1), u(k00), u(kp1), u(kp2) )
+            vm(i,k)    = mono_cubic_interp( gr%zt(i,k), km1, k00, kp1, kp2, z(km1), z(k00), z(kp1), &
+                                            z(kp2), v(km1), v(k00), v(kp1), v(kp2) )
+            ugm(i,k)   = mono_cubic_interp( gr%zt(i,k), km1, k00, kp1, kp2, z(km1), z(k00), z(kp1), &
+                                            z(kp2), ug(km1), ug(k00), ug(kp1), ug(kp2) )
+            vgm(i,k)   = mono_cubic_interp( gr%zt(i,k), km1, k00, kp1, kp2, z(km1), z(k00), z(kp1), &
+                                            z(kp2), vg(km1), vg(k00), vg(kp1), vg(kp2) )
+            thlm(i,k)  = mono_cubic_interp( gr%zt(i,k), km1, k00, kp1, kp2, z(km1), z(k00), z(kp1), &
+                                            z(kp2), theta(km1), theta(k00), theta(kp1), theta(kp2) )
+            rtm(i,k)   = mono_cubic_interp( gr%zt(i,k), km1, k00, kp1, kp2, z(km1), z(k00), z(kp1), &
+                                            z(kp2), rt(km1), rt(k00), rt(kp1), rt(kp2) )
+            press(i,k) = mono_cubic_interp( gr%zt(i,k), km1, k00, kp1, kp2, z(km1), z(k00), z(kp1), &
+                                            z(kp2), p_in_Pa(km1), p_in_Pa(k00), p_in_Pa(kp1), &
+                                          p_in_Pa(kp2) )
+            wm(i,k)    = mono_cubic_interp( gr%zt(i,k), km1, k00, kp1, kp2, z(km1), z(k00), z(kp1), &
+                                            z(kp2), subs(km1), subs(k00), subs(kp1), subs(kp2) )
+
+            if ( trim( runtype ) /= "dycoms2_rf02" ) then 
+              !initial condition for tracers 
+              if ( sclr_dim > 0 ) then
+                do sclr = 1, sclr_dim
+                  sclrm(i,k,sclr) = mono_cubic_interp( gr%zt(i,k), km1, k00, kp1, kp2, & 
+                                                       z(km1), z(k00), z(kp1), z(kp2), & 
+                                                       sclr_snd(km1,sclr), sclr_snd(k00,sclr), &
+                                                       sclr_snd(kp1,sclr), sclr_snd(kp2,sclr) )
+                end do
+              end if
+              if ( edsclr_dim > 0 ) then
+                do edsclr = 1, edsclr_dim
+                  edsclrm(i,k,edsclr) = mono_cubic_interp( gr%zt(i,k), km1, k00, kp1, kp2, & 
+                                                           z(km1), z(k00), z(kp1), z(kp2), & 
+                                                           edsclr_snd(km1,edsclr), edsclr_snd(k00,edsclr), &
+                                                           edsclr_snd(kp1,edsclr), edsclr_snd(kp2,edsclr) )
+                end do
+              end if
+            else 
+              ! DYCOMS2_RF02 case (use the same treatment as in regular situation w/ linear int.) 
+              ugm(i,k)  = um(i,k)
+              vgm(i,k)  = vm(i,k)
               ! Passive Scalars
               ! Change this if they are not equal to theta_l and rt in RF02
               if ( sclr_idx%iisclr_thl > 0  ) then
-                sclrm(i, sclr_idx%iisclr_thl)   = thlm(i)
-                edsclrm(i, sclr_idx%iisclr_thl) = thlm(i)
+                sclrm(i,k, sclr_idx%iisclr_thl)   = thlm(i,k)
+                edsclrm(i,k, sclr_idx%iisclr_thl) = thlm(i,k)
               end if
               if ( sclr_idx%iisclr_rt > 0 ) then
-                sclrm(i, sclr_idx%iisclr_rt)    = rtm(i)
-                edsclrm(i, sclr_idx%iisclr_rt)  = rtm(i)
+                sclrm(i,k, sclr_idx%iisclr_rt)    = rtm(i,k)
+                edsclrm(i,k, sclr_idx%iisclr_rt)  = rtm(i,k)
               end if
-              press(i) = lin_interpolate_two_points( gr%zt(1,i), z(k), z(k-1), &
-                                                     p_in_Pa(k), p_in_Pa(k-1) )
-              wm(i) = lin_interpolate_two_points( gr%zt(1,i), z(k), z(k-1), subs(k), subs(k-1) )
-            ELSE
-              ! (Wyant, et al. 2007, eq 1--4)
-              um(i)   =  3.0_core_rknd + (4.3_core_rknd*gr%zt(1,i))/ &
-                            1000.0_core_rknd ! Known magic number
-              vm(i)   = -9.0_core_rknd + (5.6_core_rknd*gr%zt(1,i))/ &
-                            1000.0_core_rknd ! Known magic number
-              ugm(i)  = um(i)
-              vgm(i)  = vm(i)
-              thlm(i) = 295.0_core_rknd + ( (gr%zt(1,i) - 795.0_core_rknd)** &
-                          (1.0_core_rknd/3.0_core_rknd) ) ! Known magic number
-              rtm(i)  = (  5.0_core_rknd - 3.0_core_rknd  & 
-              * ( 1.0_core_rknd - EXP( (795.0_core_rknd - gr%zt(1,i))/ &
-              500.0_core_rknd ) )  )/g_per_kg ! Known magic number
-              ! Passive Scalars
-              ! Same as above
-              if ( sclr_idx%iisclr_thl > 0  ) then
-                sclrm(i, sclr_idx%iisclr_thl)   = thlm(i)
-                edsclrm(i, sclr_idx%iisclr_thl) = thlm(i)
+            end if  
+
+          else ! default model setup 
+
+            ! Regular situation w/ linear int.
+            IF ( trim( runtype ) /= "dycoms2_rf02" ) THEN
+
+              um(i,k)   = lin_interpolate_two_points( gr%zt(i,k), z(k_above), z(k_above-1), u(k_above), u(k_above-1) )
+              vm(i,k)   = lin_interpolate_two_points( gr%zt(i,k), z(k_above), z(k_above-1), v(k_above), v(k_above-1) )
+              ugm(i,k)  = lin_interpolate_two_points( gr%zt(i,k), z(k_above), z(k_above-1), ug(k_above), ug(k_above-1) )
+              vgm(i,k)  = lin_interpolate_two_points( gr%zt(i,k), z(k_above), z(k_above-1), vg(k_above), vg(k_above-1) )
+              thlm(i,k) = lin_interpolate_two_points( gr%zt(i,k), z(k_above), z(k_above-1), theta(k_above), theta(k_above-1) )
+              rtm(i,k)  = lin_interpolate_two_points( gr%zt(i,k), z(k_above), z(k_above-1), rt(k_above), rt(k_above-1) )
+              press(i,k) = lin_interpolate_two_points( gr%zt(i,k), z(k_above), z(k_above-1), p_in_Pa(k_above), &
+                                                    p_in_Pa(k_above-1) )
+              wm(i,k) = lin_interpolate_two_points( gr%zt(i,k), z(k_above), z(k_above-1), subs(k_above), subs(k_above-1) )
+
+              if ( sclr_dim > 0 ) then
+                do sclr = 1, sclr_dim
+                  sclrm(i,k,sclr) = lin_interpolate_two_points( gr%zt(i,k), z(k_above), z(k_above-1),  & 
+                                        sclr_snd(k_above,sclr), sclr_snd(k_above-1,sclr) )
+                end do
               end if
-              if ( sclr_idx%iisclr_rt > 0 ) then
-                sclrm(i, sclr_idx%iisclr_rt)    = rtm(i)
-                edsclrm(i, sclr_idx%iisclr_rt)  = rtm(i)
+              if ( edsclr_dim > 0 ) then
+                do edsclr = 1, edsclr_dim
+                  edsclrm(i,k,edsclr) = lin_interpolate_two_points( gr%zt(i,k), z(k_above), z(k_above-1),  & 
+                                          edsclr_snd(k_above,edsclr), edsclr_snd(k_above-1,edsclr) )
+                end do
               end if
-              press(i) = lin_interpolate_two_points( gr%zt(1,i), z(k), z(k-1), &
-                                                     p_in_Pa(k), p_in_Pa(k-1) )
-              wm(i) = lin_interpolate_two_points( gr%zt(1,i), z(k), z(k-1), subs(k), subs(k-1) )
-            END IF
-       
-          END IF ! runtype
 
-        end if ! l_modify_ic_with_cubic_int
+            ELSE  ! DYCOMS II RF02 case
+    
+              IF ( gr%zt(i,k) < 795.0_core_rknd ) THEN
+                ! (Wyant, et al. 2007, eq 1--4)
+                um(i,k)   =  3.0_core_rknd + (4.3_core_rknd*gr%zt(i,k))/ &
+                    1000.0_core_rknd ! Known magic number
+                vm(i,k)   = -9.0_core_rknd + (5.6_core_rknd*gr%zt(i,k))/ &
+                    1000.0_core_rknd ! Known magic number
+                ugm(i,k)  = um(i,k)
+                vgm(i,k)  = vm(i,k)
+                thlm(i,k) = 288.3_core_rknd
+                rtm(i,k)  = (9.45_core_rknd)/g_per_kg ! Known magic number
+                ! Passive Scalars
+                ! Change this if they are not equal to theta_l and rt in RF02
+                if ( sclr_idx%iisclr_thl > 0  ) then
+                  sclrm(i,k, sclr_idx%iisclr_thl)   = thlm(i,k)
+                  edsclrm(i,k, sclr_idx%iisclr_thl) = thlm(i,k)
+                end if
+                if ( sclr_idx%iisclr_rt > 0 ) then
+                  sclrm(i,k, sclr_idx%iisclr_rt)    = rtm(i,k)
+                  edsclrm(i,k, sclr_idx%iisclr_rt)  = rtm(i,k)
+                end if
+                press(i,k) = lin_interpolate_two_points( gr%zt(i,k), z(k_above), z(k_above-1), &
+                                                      p_in_Pa(k_above), p_in_Pa(k_above-1) )
+                wm(i,k) = lin_interpolate_two_points( gr%zt(i,k), z(k_above), z(k_above-1), subs(k_above), subs(k_above-1) )
+              ELSE
+                ! (Wyant, et al. 2007, eq 1--4)
+                um(i,k)   =  3.0_core_rknd + (4.3_core_rknd*gr%zt(i,k))/ &
+                              1000.0_core_rknd ! Known magic number
+                vm(i,k)   = -9.0_core_rknd + (5.6_core_rknd*gr%zt(i,k))/ &
+                              1000.0_core_rknd ! Known magic number
+                ugm(i,k)  = um(i,k)
+                vgm(i,k)  = vm(i,k)
+                thlm(i,k) = 295.0_core_rknd + ( (gr%zt(i,k) - 795.0_core_rknd)** &
+                            (1.0_core_rknd/3.0_core_rknd) ) ! Known magic number
+                rtm(i,k)  = (  5.0_core_rknd - 3.0_core_rknd  & 
+                * ( 1.0_core_rknd - EXP( (795.0_core_rknd - gr%zt(i,k))/ &
+                500.0_core_rknd ) )  )/g_per_kg ! Known magic number
+                ! Passive Scalars
+                ! Same as above
+                if ( sclr_idx%iisclr_thl > 0  ) then
+                  sclrm(i,k, sclr_idx%iisclr_thl)   = thlm(i,k)
+                  edsclrm(i,k, sclr_idx%iisclr_thl) = thlm(i,k)
+                end if
+                if ( sclr_idx%iisclr_rt > 0 ) then
+                  sclrm(i,k, sclr_idx%iisclr_rt)    = rtm(i,k)
+                  edsclrm(i,k, sclr_idx%iisclr_rt)  = rtm(i,k)
+                end if
+                press(i,k) = lin_interpolate_two_points( gr%zt(i,k), z(k_above), z(k_above-1), &
+                                                      p_in_Pa(k_above), p_in_Pa(k_above-1) )
+                wm(i,k) = lin_interpolate_two_points( gr%zt(i,k), z(k_above), z(k_above-1), subs(k_above), subs(k_above-1) )
+              END IF
+        
+            END IF ! runtype
 
-      end do ! do while ( z(k) < gr%zt(1,i) )
+          end if ! l_modify_ic_with_cubic_int
 
-    end do   ! i=1, gr%nzt
+        end do ! do while ( z(k) < gr%zt(i,k) )
+
+      end do   ! k=1, gr%nzt
+    end do
 
 
     ! The sounding will be initialized to thermodynamic grid levels successfully
@@ -509,35 +526,38 @@ module sounding
     ! the lowest sounding level (z(1)).  However, it is advantageous to know the
     ! initial surface values of a few variables, as long as the sounding extends
     ! to the surface, which is found at momentum level 1 (at altitude gr%zm(1,1)).
-    if ( gr%zm(1,1) < z(1) ) then
+    do i = 1, ngrdcol
+      if ( gr%zm(i,1) < z(1) ) then
 
-       ! The surface (or model lower boundary) is below the lowest sounding
-       ! level.  Initialize the values of rtm_sfc and thlm_sfc to negative
-       ! values that will be overwritten later.
-       rtm_sfc  = -999.0_core_rknd
-       thlm_sfc = -999.0_core_rknd
+        ! The surface (or model lower boundary) is below the lowest sounding
+        ! level.  Initialize the values of rtm_sfc and thlm_sfc to negative
+        ! values that will be overwritten later.
+        rtm_sfc(i)  = -999.0_core_rknd
+        thlm_sfc(i) = -999.0_core_rknd
 
-    else ! gr%zm(1,1) >= z(1)
+      else ! gr%zm(1,1) >= z(1)
 
-       ! The surface (or model lower boundary) is above the lowest sounding
-       ! level.  Use linear interpolation to find the values of rtm_sfc and
-       ! thlm_sfc.
+        ! The surface (or model lower boundary) is above the lowest sounding
+        ! level.  Use linear interpolation to find the values of rtm_sfc and
+        ! thlm_sfc.
 
-       ! Perform a binary search to find the two sounding levels that the
-       ! surface (gr%zm(1,1)) is found between.  The value returned (idx) is the
-       ! index of the closest value greater than or equal to gr%zm(1,1).
-       idx = binary_search( nlevels, z, gr%zm(1,1) )
+        ! Perform a binary search to find the two sounding levels that the
+        ! surface (gr%zm(1,1)) is found between.  The value returned (idx) is the
+        ! index of the closest value greater than or equal to gr%zm(1,1).
+        idx = binary_search( nlevels, z, gr%zm(i,1) )
 
-       ! The surface is found between sounding levels idx and idx-1.  Find the
-       ! value of rtm_sfc.
-       rtm_sfc = lin_interpolate_two_points( gr%zm(1,1), z(idx), z(idx-1), rt(idx), rt(idx-1) )
+        ! The surface is found between sounding levels idx and idx-1.  Find the
+        ! value of rtm_sfc.
+        rtm_sfc(i) = lin_interpolate_two_points( gr%zm(i,1), z(idx), z(idx-1), &
+                                                 rt(idx), rt(idx-1) )
 
-       ! The surface is found between sounding levels idx and idx-1.  Find the
-       ! value of thlm_sfc.
-       thlm_sfc &
-          = lin_interpolate_two_points( gr%zm(1,1), z(idx), z(idx-1), theta(idx), theta(idx-1) )
+        ! The surface is found between sounding levels idx and idx-1.  Find the
+        ! value of thlm_sfc.
+        thlm_sfc(i) = lin_interpolate_two_points( gr%zm(i,1), z(idx), z(idx-1), &
+                                                  theta(idx), theta(idx-1) )
 
-    end if
+      end if
+    end do
 
     if ( rad_scheme == "bugsrad" ) then
       ! Prepare extended sounding for radiation
@@ -551,6 +571,7 @@ module sounding
                                        sounding_retVars, saturation_formula )   ! Intent(in)
       end if
     end if ! rad_scheme == "bugsrad"
+
     ! Deallocate sounding and scalar sounding profiles.  If this doesn't happen,
     ! then we'll have a memory leak.
     call deallocate_one_dim_vars( n_snd_var, sounding_retVars )

@@ -163,7 +163,7 @@ module latin_hypercube_driver_module
       stats_metadata
 
     ! ---------------- InOut Variables ----------------
-    type(stats), intent(inout) :: &
+    type(stats), dimension(ngrdcol), intent(inout) :: &
       stats_lh_zt, &
       stats_lh_sfc
     
@@ -2542,7 +2542,7 @@ module latin_hypercube_driver_module
       stats_metadata
 
     !------------------------------- InOut Variables -------------------------------
-    type(stats), intent(inout) :: &
+    type(stats), dimension(ngrdcol), intent(inout) :: &
       stats_lh_zt, &
       stats_lh_sfc
 
@@ -2595,7 +2595,7 @@ module latin_hypercube_driver_module
   !      call stat_update_var( stats_metadata%ilh_precip_frac, lh_precip_frac, stats_lh_zt )
         do k = 1, nzt
            call stat_update_var_pt( stats_metadata%ilh_precip_frac, k, lh_precip_frac(k), &
-                                    stats_lh_zt )
+                                    stats_lh_zt(i) )
         enddo ! k = 1, nzt
       end if
 
@@ -2612,7 +2612,7 @@ module latin_hypercube_driver_module
   !      call stat_update_var(stats_metadata%ilh_precip_frac_unweighted,lh_precip_frac,stats_lh_zt)
         do k = 1, nzt
            call stat_update_var_pt( stats_metadata%ilh_precip_frac_unweighted, k, &
-                                    lh_precip_frac(k), stats_lh_zt )
+                                    lh_precip_frac(k), stats_lh_zt(i) )
         enddo ! k = 1, nzt
       end if
 
@@ -2628,7 +2628,7 @@ module latin_hypercube_driver_module
   !      call stat_update_var( stats_metadata%ilh_mixt_frac, lh_mixt_frac, stats_lh_zt )
         do k = 1, nzt
            call stat_update_var_pt( stats_metadata%ilh_mixt_frac, k, lh_mixt_frac(k), &
-                                    stats_lh_zt )
+                                    stats_lh_zt(i) )
         enddo ! k = 1, nzt
       end if
 
@@ -2645,7 +2645,7 @@ module latin_hypercube_driver_module
   !      call stat_update_var( stats_metadata%ilh_mixt_frac_unweighted, lh_mixt_frac, stats_lh_zt )
         do k = 1, nzt
            call stat_update_var_pt( stats_metadata%ilh_mixt_frac_unweighted, k, &
-                                    lh_mixt_frac(k), stats_lh_zt )
+                                    lh_mixt_frac(k), stats_lh_zt(i) )
         enddo ! k = 1, nzt
       end if
 
@@ -2653,7 +2653,7 @@ module latin_hypercube_driver_module
       ! as an integer, but as far as I can tell our current sampling
       ! infrastructure mainly supports sampling real numbers.
       call stat_update_var_pt( stats_metadata%ik_lh_start, 1, &
-                               real( k_lh_start(i), kind=core_rknd ), stats_lh_sfc )
+                               real( k_lh_start(i), kind=core_rknd ), stats_lh_sfc(i) )
 
       if ( allocated( stats_metadata%ilh_samp_frac_category ) ) then
         if ( stats_metadata%ilh_samp_frac_category(1) > 0 ) then
@@ -2704,7 +2704,7 @@ module latin_hypercube_driver_module
   !                                lh_samp_frac(:,icategory), stats_lh_zt )
             do k = 1, nzt
                call stat_update_var_pt( stats_metadata%ilh_samp_frac_category(icategory), k, &
-                                        lh_samp_frac(k,icategory), stats_lh_zt )
+                                        lh_samp_frac(k,icategory), stats_lh_zt(i) )
             enddo ! k = 1, nzt
           end do ! icategory=1, num_importance_categories
 

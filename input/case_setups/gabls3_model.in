@@ -23,9 +23,9 @@ grid_type = 1     ! Select grid type:
 
 ! Evenly-spaced grid (grid_type = 1).
 ! Note:  For this option, both zt_grid_fname and zm_grid_fname must be ''.
-deltaz  = 20.0    ! Distance between grid levels on evenly-spaced grid.      [m]
-zm_init = 0.0 ! Minimum Altitude of lowest momentum level on any grid. [m]
-zm_top = 5000.0 ! Maximum Altitude of highest momentum level on any grid. [m]
+deltaz_nl  = 20.0    ! Distance between grid levels on evenly-spaced grid.      [m]
+zm_init_nl = 0.0 ! Minimum Altitude of lowest momentum level on any grid. [m]
+zm_top_nl = 5000.0 ! Maximum Altitude of highest momentum level on any grid. [m]
 
 ! Stretched grid on thermodynamic levels (grid_type = 2).
 ! Path (from ../run_scripts/) and filename of data file that contains
@@ -46,7 +46,7 @@ year  = 2006  ! Year of model start.
 lat_vals = 51.9711   ! Latitude (0 to 90 for north lat.; 0 to -90 for south lat.) [degrees]
 lon_vals = 4.9267  ! Longitude (0 to 180 for east long.; 0 to -180 for west long.) [degrees]
 
-sfc_elevation = 0.0     ! Elevation of ground level [meters above mean sea level]
+sfc_elevation_nl = 0.0     ! Elevation of ground level [meters above mean sea level]
 
 time_initial = 43200.0       ! Model start time [seconds since midnight on start date]
 time_final   = 129600.0  ! Model end time [seconds since midnight on start date]
@@ -62,7 +62,7 @@ sfctype = 1      ! Select surface scheme (cases without specified surface fluxes
                  !       through a bulk formula that uses the given surface
                  !       temperature (T_sfc) and assumes over ocean.
 
-p_sfc = 1024.4e2        ! Pressure at model base              [Pa]
+p_sfc_nl = 1024.4e2        ! Pressure at model base              [Pa]
 
 fcor = 0.000114566338 ! Coriolis parameter                  [s^-1]
 

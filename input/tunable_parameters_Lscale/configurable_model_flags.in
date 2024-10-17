@@ -69,7 +69,3 @@ l_lh_limit_weights          = .true.
 l_lh_var_frac               = .false.
 l_lh_normalize_weights      = .true.
 /
-
-&configurable_multi_column_nl
-num_standalone_columns = 1
-/

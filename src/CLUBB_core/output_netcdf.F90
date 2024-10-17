@@ -2,7 +2,6 @@
 ! $Id$
 !===============================================================================
 module output_netcdf
-#ifdef NETCDF
 
 ! Description:
 !   Functions and subroutines for writing NetCDF files
@@ -13,7 +12,10 @@ module output_netcdf
 
   implicit none
 
-  public :: open_netcdf_for_writing, write_netcdf, close_netcdf, format_date, first_write
+#ifdef NETCDF
+
+  public :: open_netcdf_for_writing, write_netcdf, close_netcdf, &
+            format_date, first_write, output_multi_col_fields
 
   private :: define_netcdf, write_grid
 
@@ -26,6 +28,7 @@ module output_netcdf
   private ! Default scope
 
   contains
+
 !-------------------------------------------------------------------------------
   subroutine open_netcdf_for_writing( nlat, nlon, fdir, fname, ia, iz, zgrid,  & 
                           day, month, year, lat_vals, lon_vals, & 
@@ -172,6 +175,7 @@ module output_netcdf
     stat = nf90_create( path = trim( fdir )//trim( fname )//'.nc',  & 
                         cmode = NF90_CLOBBER,  & ! overwrite existing file
                         ncid = ncf%iounit )
+
     if ( stat /= NF90_NOERR ) then
       write(unit=fstderr,fmt=*) "Error opening file: ",  & 
         trim( fdir )//trim( fname )//'.nc', & 
@@ -1022,5 +1026,381 @@ module output_netcdf
     return
   end function lchar
 
-#endif /*NETCDF*/
+  subroutine output_multi_col_fields( nzm, nzt, ngrdcol, sclr_dim, edsclr_dim, &
+                                        gr, dt, output_file_prefix, &
+                                        day, month, year, time_initial, &
+                                        um, vm, up3, vp3, rtm, thlm, rtp3, thlp3, wp3, upwp, vpwp, &
+                                        up2, vp2, wprtp, wpthlp, rtp2, thlp2, rtpthlp, wp2, &
+                                        sclrm, sclrp3, wpsclrp, sclrp2, sclrprtp, sclrpthlp, &
+                                        p_in_Pa, exner, rcm, cloud_frac, wp2thvp, wpthvp, rtpthvp, &
+                                        thlpthvp, sclrpthvp, wp2rtp, wp2thlp, wpup2, wpvp2, &
+                                        ice_supersat_frac, uprcp, vprcp, rc_coef_zm, wp4, wp2up2, &
+                                        wp2vp2, um_pert, vm_pert, upwp_pert, vpwp_pert, edsclrm, &
+                                        rcm_in_layer, cloud_cover, w_up_in_cloud, w_down_in_cloud, &
+                                        cloudy_updraft_frac, cloudy_downdraft_frac, wprcp, &
+                                        invrs_tau_zm, Kh_zt, Kh_zm, thlprcp )
+    !
+    ! Description:
+    !   This subroutine outputs netcdf files with multiple columns.
+    !   The dimensions of the variables in the files are:
+    !     (ngrdcol,nzm,time) for ${output_file_prefix}_multi_col_zm.nc
+    !     (ngrdcol,nzt,time) for ${output_file_prefix}_multi_col_zt.nc
+    !
+    ! NOTE:
+    !   Currently most fields are not output, but passed in anyway in case
+    !   they need to be output in the future.
+    !
+    ! References:
+    !   Issue #1033 discusses a precessor procedure which duplicated then 
+    !   output a _multi_col.nc netcdf file similar to the ones this now produces.
+    !   https://github.com/larson-group/clubb/issues/1033
+    !----------------------------------------------------------------------------
+    
+    use netcdf, only: &
+        nf90_create, &
+        nf90_def_dim, &
+        nf90_def_var, &
+        nf90_put_att, &
+        nf90_put_var, &
+        nf90_close, &
+        nf90_open, &
+        NF90_CLOBBER, &
+        NF90_UNLIMITED, &
+        NF90_DOUBLE, &
+        NF90_FLOAT, &
+        NF90_WRITE, &
+        nf90_noerr
+
+    use grid_class, only: &
+    grid
+
+    use clubb_precision, only: &
+      core_rknd, &
+      time_precision
+                                    
+    implicit none     
+
+    type( grid ), intent(in) :: &
+      gr
+
+    integer, intent(in) :: &
+      ngrdcol, &
+      nzt, &
+      nzm, &
+      sclr_dim, &
+      edsclr_dim
+
+    real( kind = core_rknd ), intent(in) :: &
+      dt
+
+    character(len=100) :: &
+      output_file_prefix
+
+    integer, intent(in) ::  & 
+      day, month, year ! Used to define start date the of simulation
+
+    real(kind = time_precision ), intent(in) :: & 
+      time_initial  ! Time of start of simulation     [s]
+
+    ! These are prognostic or are planned to be in the future
+    real( kind = core_rknd ), intent(in), dimension(ngrdcol,nzt) ::  &
+      um,                     & ! eastward grid-mean wind component (thermodynamic levels)   [m/s]
+      vm,                     & ! northward grid-mean wind component (thermodynamic levels)   [m/s]
+      up3,                    & ! u'^3 (thermodynamic levels)                    [m^3/s^3]
+      vp3,                    & ! v'^3 (thermodynamic levels)                    [m^3/s^3]
+      rtm,                    & ! total water mixing ratio, r_t (thermo. levels) [kg/kg]
+      thlm,                   & ! liq. water pot. temp., th_l (thermo. levels)   [K]
+      rtp3,                   & ! r_t'^3 (thermodynamic levels)                  [(kg/kg)^3]
+      thlp3,                  & ! th_l'^3 (thermodynamic levels)                 [K^3]
+      wp3,                    & ! w'^3 (thermodynamic levels)                    [m^3/s^3]
+      p_in_Pa,                & ! Air pressure (thermodynamic levels)       [Pa]
+      exner,                  & ! Exner function (thermodynamic levels)     [-]
+      rcm,                    & ! cloud water mixing ratio, r_c (thermo. levels) [kg/kg]
+      cloud_frac,             & ! cloud fraction (thermodynamic levels)          [-]
+      wp2thvp,                & ! < w'^2 th_v' > (thermodynamic levels)          [m^2/s^2 K]
+      wp2rtp,                 & ! w'^2 rt' (thermodynamic levels)      [m^2/s^2 kg/kg]
+      wp2thlp,                & ! w'^2 thl' (thermodynamic levels)     [m^2/s^2 K]
+      wpup2,                  & ! w'u'^2 (thermodynamic levels)        [m^3/s^3]
+      wpvp2,                  & ! w'v'^2 (thermodynamic levels)        [m^3/s^3]
+      ice_supersat_frac,      & ! ice cloud fraction (thermo. levels)  [-]
+      um_pert,                & ! perturbed <u>       [m/s]
+      vm_pert,                & ! perturbed <v>       [m/s]
+      rcm_in_layer,           & ! rcm within cloud layer                          [kg/kg]
+      cloud_cover,            & ! cloud cover                                     [-]
+      w_up_in_cloud,          & ! Average cloudy updraft velocity       [m/s]
+      w_down_in_cloud,        & ! Average cloudy downdraft velocity     [m/s]
+      cloudy_updraft_frac,    & ! cloudy updraft fraction               [-]
+      cloudy_downdraft_frac,  & ! cloudy downdraft fraction             [-]
+      Kh_zt                     ! Eddy diffusivity coefficient on thermodynamic levels   [m^2/s]
+
+    real( kind = core_rknd ), intent(in), dimension(ngrdcol,nzm) ::  &
+      upwp,                   & ! u'w' (momentum levels)                         [m^2/s^2]
+      vpwp,                   & ! v'w' (momentum levels)                         [m^2/s^2]
+      up2,                    & ! u'^2 (momentum levels)                         [m^2/s^2]
+      vp2,                    & ! v'^2 (momentum levels)                         [m^2/s^2]
+      wprtp,                  & ! w' r_t' (momentum levels)                      [(kg/kg) m/s]
+      wpthlp,                 & ! w'th_l' (momentum levels)                      [(m/s) K]
+      rtp2,                   & ! r_t'^2 (momentum levels)                       [(kg/kg)^2]
+      thlp2,                  & ! th_l'^2 (momentum levels)                      [K^2]
+      rtpthlp,                & ! r_t'th_l' (momentum levels)                    [(kg/kg) K]
+      wp2,                    &  ! w'^2 (momentum levels)                         [m^2/s^2]
+      wpthvp,                 & ! < w' th_v' > (momentum levels)                 [kg/kg K]
+      rtpthvp,                & ! < r_t' th_v' > (momentum levels)               [kg/kg K]
+      thlpthvp,               & ! < th_l' th_v' > (momentum levels)              [K^2]
+      uprcp,                  & ! < u' r_c' > (momentum levels)        [(m/s)(kg/kg)]
+      vprcp,                  & ! < v' r_c' > (momentum levels)        [(m/s)(kg/kg)]
+      rc_coef_zm,             & ! Coef of X'r_c' in Eq. (34) (m-levs.) [K/(kg/kg)]
+      wp4,                    & ! w'^4 (momentum levels)               [m^4/s^4]
+      wp2up2,                 & ! w'^2 u'^2 (momentum levels)          [m^4/s^4]
+      wp2vp2,                 & ! w'^2 v'^2 (momentum levels)          [m^4/s^4]
+      upwp_pert,              & ! perturbed <u'w'>    [m^2/s^2]
+      vpwp_pert,              & ! perturbed <v'w'>    [m^2/s^2] 
+      wprcp,                  & ! w'r_c' (momentum levels)              [(kg/kg) m/s]
+      invrs_tau_zm,           & ! One divided by tau on zm levels       [1/s]
+      Kh_zm,                  & ! Eddy diffusivity coefficient on momentum levels        [m^2/s]
+      thlprcp                   ! thl'rc'              [K kg/kg]
+
+    ! Passive scalar variables
+    real( kind = core_rknd ), intent(in), dimension(ngrdcol,nzt,sclr_dim) :: &
+      sclrm,     & ! Passive scalar mean (thermo. levels) [units vary]
+      sclrp3       ! sclr'^3 (thermodynamic levels)       [{units vary}^3]
+
+    real( kind = core_rknd ), intent(in), dimension(ngrdcol,nzm,sclr_dim) :: &
+      wpsclrp,   & ! w'sclr' (momentum levels)            [{units vary} m/s]
+      sclrp2,    & ! sclr'^2 (momentum levels)            [{units vary}^2]
+      sclrprtp,  & ! sclr'rt' (momentum levels)           [{units vary} (kg/kg)]
+      sclrpthlp, & ! sclr'thl' (momentum levels)          [{units vary} K]
+      sclrpthvp    ! < sclr' th_v' > (momentum levels)   [units vary]
+
+    ! Eddy passive scalar variable
+    real( kind = core_rknd ), intent(in), dimension(ngrdcol,nzt,edsclr_dim) :: &
+      edsclrm   ! Eddy passive scalar grid-mean (thermo. levels)   [units vary]
+
+    !------------------------ Local Variables ------------------------
+
+    integer, save :: &
+      n_calls = 0
+
+    ! Index of zm variables
+    integer, dimension(15), save :: &
+      ind_zm
+
+    ! Index of zt variables
+    integer, dimension(15), save :: &
+      ind_zt
+
+    ! Variables we need to save for the netcdf writing
+    integer, save :: &
+      ncid_zm, &
+      column_id_zm,     vertical_id_zm,     time_id_zm, &
+      column_var_id_zm, vertical_var_id_zm, time_var_id_zm, &
+      ncid_zt, &
+      column_id_zt,     vertical_id_zt,     time_id_zt, &
+      column_var_id_zt, vertical_var_id_zt, time_var_id_zt
+    
+    character(len=100), save :: &
+      multicol_nc_file_zm, &
+      multicol_nc_file_zt
+
+    character(len=35) :: &
+      TimeUnits
+
+    real( kind=time_precision ) :: &
+      time
+
+    integer, dimension(3) :: &
+      var_dim_zm, var_dim_zt
+
+    integer :: i, n, status
+
+    !------------------------ Begin Code ------------------------
+
+    ! If this is the first call, we have to create and define the netcdf files
+    if ( n_calls == 0 ) then
+
+      multicol_nc_file_zm = trim(output_file_prefix) // "_multi_col_zm.nc"
+      multicol_nc_file_zt = trim(output_file_prefix) // "_multi_col_zt.nc"
+
+
+      ! Get a formatted date
+      call format_date( day, month, year, time_initial, & ! intent(in)
+                        TimeUnits ) ! intent(out)
+
+      !=================================== zm file definition ===================================
+
+      ! Create the zm netcdf file
+      status = nf90_create( path = multicol_nc_file_zm,  & 
+                            cmode = NF90_CLOBBER,  & ! overwrite existing file
+                            ncid = ncid_zm )
+
+      ! Define the variable dimensions, columns, altitude, and time
+      status = nf90_def_dim( ncid_zm, 'columns',   ngrdcol,        column_id_zm )
+      status = nf90_def_dim( ncid_zm, 'altitude',  nzm,            vertical_id_zm )
+      status = nf90_def_dim( ncid_zm, 'time',      NF90_UNLIMITED, time_id_zm )
+
+      status = nf90_def_var( ncid_zm, "columns",   NF90_DOUBLE,  (/column_id_zm/),    column_var_id_zm )
+      status = nf90_def_var( ncid_zm, "altitude",  NF90_DOUBLE,  (/vertical_id_zm/),  vertical_var_id_zm )
+      status = nf90_def_var( ncid_zm, "time",      NF90_DOUBLE,  (/time_id_zm/),      time_var_id_zm )
+
+      ! Define the attributes for the time variable
+      status = nf90_put_att( ncid_zm, time_var_id_zm, "cartesian_axis", "T" )
+      status = nf90_put_att( ncid_zm, time_var_id_zm, "units",          TimeUnits )
+      status = nf90_put_att( ncid_zm, time_var_id_zm, "ipositive",      1 )
+      status = nf90_put_att( ncid_zm, time_var_id_zm, "calendar_type", "Gregorian" )
+
+      ! Define the attributes for the column variable
+      status = nf90_put_att( ncid_zm, column_var_id_zm, "cartesian_axis", "X" )
+      status = nf90_put_att( ncid_zm, column_var_id_zm, "units",          "degrees_E" )
+      status = nf90_put_att( ncid_zm, column_var_id_zm, "ipositive",      1 )
+
+      ! Define the attributes for the altitude variable
+      status = nf90_put_att( ncid_zm, vertical_var_id_zm, "cartesian_axis",   "Z" )
+      status = nf90_put_att( ncid_zm, vertical_var_id_zm, "units",            "meters" )
+      status = nf90_put_att( ncid_zm, vertical_var_id_zm, "positive",         "up" )
+      status = nf90_put_att( ncid_zm, vertical_var_id_zm, "ipositive",        1 )
+
+      ! Define the variable dimensions, these are the dimension of the 
+      ! variables we want to save
+      var_dim_zm(1) = column_id_zm
+      var_dim_zm(2) = vertical_id_zm
+      var_dim_zm(3) = time_id_zm
+
+      ! For some reason we need to use an array to enumerate variables
+      do n = 1, size(ind_zm)
+        ind_zm(n) = n
+      end do
+
+      ! Define the zm variables to save
+      status = nf90_def_var( ncid_zm, trim("wpthlp"),      NF90_DOUBLE, var_dim_zm(:), ind_zm(1) )
+      status = nf90_def_var( ncid_zm, trim("wprtp"),       NF90_DOUBLE, var_dim_zm(:), ind_zm(2) )
+      status = nf90_def_var( ncid_zm, trim("wp2"),         NF90_DOUBLE, var_dim_zm(:), ind_zm(3) )
+      status = nf90_def_var( ncid_zm, trim("thlp2"),       NF90_DOUBLE, var_dim_zm(:), ind_zm(4) )
+      status = nf90_def_var( ncid_zm, trim("rtp2"),        NF90_DOUBLE, var_dim_zm(:), ind_zm(5) )
+      status = nf90_def_var( ncid_zm, trim("rtpthlp"),     NF90_DOUBLE, var_dim_zm(:), ind_zm(6) )
+      status = nf90_def_var( ncid_zm, trim("upwp"),        NF90_DOUBLE, var_dim_zm(:), ind_zm(7) )
+      status = nf90_def_var( ncid_zm, trim("vpwp"),        NF90_DOUBLE, var_dim_zm(:), ind_zm(8) )
+      status = nf90_def_var( ncid_zm, trim("up2"),         NF90_DOUBLE, var_dim_zm(:), ind_zm(9) )
+      status = nf90_def_var( ncid_zm, trim("vp2"),         NF90_DOUBLE, var_dim_zm(:), ind_zm(10) )
+
+      ! End definition of file
+      call nf_enddef(ncid_zm)
+
+      !=================================== zt file definition ===================================
+      
+      ! Create the zt netcdf file
+      status = nf90_create( path = multicol_nc_file_zt,  & 
+                            cmode = NF90_CLOBBER,  & ! overwrite existing file
+                            ncid = ncid_zt )
+
+      ! Define the variable dimensions, columns, altitude, and time
+      status = nf90_def_dim( ncid_zt, 'columns',   ngrdcol,        column_id_zt )
+      status = nf90_def_dim( ncid_zt, 'altitude',  nzt,            vertical_id_zt )
+      status = nf90_def_dim( ncid_zt, 'time',      NF90_UNLIMITED, time_id_zt )
+
+      status = nf90_def_var( ncid_zt, "columns",   NF90_DOUBLE,  (/column_id_zt/),    column_var_id_zt )
+      status = nf90_def_var( ncid_zt, "altitude",  NF90_DOUBLE,  (/vertical_id_zt/),  vertical_var_id_zt )
+      status = nf90_def_var( ncid_zt, "time",      NF90_DOUBLE,  (/time_id_zt/),      time_var_id_zt )
+
+      ! Define the attributes for the time variable
+      status = nf90_put_att( ncid_zt, vertical_var_id_zt, "cartesian_axis",   "Z" )
+      status = nf90_put_att( ncid_zt, vertical_var_id_zt, "units",            "meters" )
+      status = nf90_put_att( ncid_zt, vertical_var_id_zt, "positive",         "up" )
+      status = nf90_put_att( ncid_zt, vertical_var_id_zt, "ipositive",        1 )
+
+      ! Define the attributes for the column variable
+      status = nf90_put_att( ncid_zt, column_var_id_zt, "cartesian_axis", "X" )
+      status = nf90_put_att( ncid_zt, column_var_id_zt, "units",          "degrees_E" )
+      status = nf90_put_att( ncid_zt, column_var_id_zt, "ipositive",      1 )
+
+      ! Define the attributes for the altitude variable
+      status = nf90_put_att( ncid_zt, time_var_id_zt, "cartesian_axis", "T" )
+      status = nf90_put_att( ncid_zt, time_var_id_zt, "units",          TimeUnits )
+      status = nf90_put_att( ncid_zt, time_var_id_zt, "ipositive",      1 )
+      status = nf90_put_att( ncid_zt, time_var_id_zt, "calendar_type", "Gregorian" )
+
+
+      ! Define the variable dimensions, these are the dimension of the 
+      ! variables we want to save
+      var_dim_zt(1) = column_id_zt
+      var_dim_zt(2) = vertical_id_zt
+      var_dim_zt(3) = time_id_zt
+
+      ! For some reason we need to use an array to enumerate variables
+      do n = 1, size(ind_zt)
+        ind_zt(n) = n
+      end do
+
+      ! Define the zt variables to save
+      status = nf90_def_var( ncid_zt, trim("wp3"),         NF90_DOUBLE, var_dim_zt(:), ind_zt(1) )
+      status = nf90_def_var( ncid_zt, trim("rcm"),         NF90_DOUBLE, var_dim_zt(:), ind_zt(2) )
+      status = nf90_def_var( ncid_zt, trim("cloud_frac"),  NF90_DOUBLE, var_dim_zt(:), ind_zt(3) )
+      status = nf90_def_var( ncid_zt, trim("rtm"),         NF90_DOUBLE, var_dim_zt(:), ind_zt(4) )
+      status = nf90_def_var( ncid_zt, trim("thlm"),        NF90_DOUBLE, var_dim_zt(:), ind_zt(5) )
+
+      ! End definition of file
+      call nf_enddef(ncid_zt)
+
+      !=================================== end definitions ===================================
+
+      ! Store the data defining vertical levels
+      status = nf90_put_var( ncid_zm, vertical_var_id_zm, gr%zm(1,:) )
+      status = nf90_put_var( ncid_zt, vertical_var_id_zt, gr%zt(1,:)  )
+
+      ! Store the data for the columns, just label each column in order 
+      do i = 1, ngrdcol
+        status = nf90_put_var( ncid_zm, column_var_id_zm, i, start=(/i/) )
+        status = nf90_put_var( ncid_zt, column_var_id_zt, i, start=(/i/) )
+      end do
+
+      ! Close netcdf file
+      status = nf90_close( ncid = ncid_zm )
+      status = nf90_close( ncid = ncid_zt )
+
+    end if
+
+
+    n_calls = n_calls + 1
+
+    !  time = n_calls * dt
+    time = real( n_calls, kind=time_precision ) * real( dt, kind=time_precision )  ! seconds
+
+    ! Open the netcdf files
+    status = nf90_open( path = trim(multicol_nc_file_zm),  & 
+                        mode = NF90_WRITE,  & 
+                        ncid = ncid_zm )
+
+    status = nf90_open( path = trim(multicol_nc_file_zt),  & 
+                        mode = NF90_WRITE,  & 
+                        ncid = ncid_zt )
+
+    ! Update the time variable
+    status = nf90_put_var( ncid_zm, time_var_id_zm,  time,  (/n_calls/) )
+    status = nf90_put_var( ncid_zt, time_var_id_zt,  time,  (/n_calls/) )
+    
+    ! Update the zm variables we want, needs to match the variables we defined 
+    status = nf90_put_var( ncid_zm, ind_zm(1),                wpthlp, (/1,1,n_calls/), (/ngrdcol,nzm,1/) )
+    status = nf90_put_var( ncid_zm, ind_zm(2),                 wprtp, (/1,1,n_calls/), (/ngrdcol,nzm,1/) )
+    status = nf90_put_var( ncid_zm, ind_zm(3),                   wp2, (/1,1,n_calls/), (/ngrdcol,nzm,1/) )
+    status = nf90_put_var( ncid_zm, ind_zm(4),                 thlp2, (/1,1,n_calls/), (/ngrdcol,nzm,1/) )
+    status = nf90_put_var( ncid_zm, ind_zm(5),                  rtp2, (/1,1,n_calls/), (/ngrdcol,nzm,1/) )
+    status = nf90_put_var( ncid_zm, ind_zm(6),               rtpthlp, (/1,1,n_calls/), (/ngrdcol,nzm,1/) )
+    status = nf90_put_var( ncid_zm, ind_zm(7),                  upwp, (/1,1,n_calls/), (/ngrdcol,nzm,1/) )
+    status = nf90_put_var( ncid_zm, ind_zm(8),                  vpwp, (/1,1,n_calls/), (/ngrdcol,nzm,1/) )
+    status = nf90_put_var( ncid_zm, ind_zm(9),                   up2, (/1,1,n_calls/), (/ngrdcol,nzm,1/) )
+    status = nf90_put_var( ncid_zm, ind_zm(10),                  vp2, (/1,1,n_calls/), (/ngrdcol,nzm,1/) )
+
+    ! Update the zt variables we want, needs to match the variables we defined 
+    status = nf90_put_var( ncid_zt, ind_zt(1),                   wp3, (/1,1,n_calls/), (/ngrdcol,nzt,1/) )
+    status = nf90_put_var( ncid_zt, ind_zt(2),                   rcm, (/1,1,n_calls/), (/ngrdcol,nzt,1/) )
+    status = nf90_put_var( ncid_zt, ind_zt(3),            cloud_frac, (/1,1,n_calls/), (/ngrdcol,nzt,1/) )
+    status = nf90_put_var( ncid_zt, ind_zt(4),                   rtm, (/1,1,n_calls/), (/ngrdcol,nzt,1/) )
+    status = nf90_put_var( ncid_zt, ind_zt(5),                  thlm, (/1,1,n_calls/), (/ngrdcol,nzt,1/) )
+
+    ! Close netcdf file
+    status = nf90_close( ncid = ncid_zm )
+    status = nf90_close( ncid = ncid_zt )
+
+  end subroutine output_multi_col_fields
+#endif
+
 end module output_netcdf

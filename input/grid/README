@@ -9,8 +9,8 @@ either momentum levels (*zm_grid.grd files) or thermodynamic levels
 respectively, was selected in the appropriate model.in file.
 
 Note:  To use an evenly-spaced grid, simply select grid_type = 1 in the 
-       appropriate model.in file.  Also enter the grid spacing (deltaz) and
-       the lowest altitude level (zm_init) (found at momentum level 1) in the 
+       appropriate model.in file.  Also enter the grid spacing (deltaz_nl) and
+       the lowest altitude level (zm_init_nl) (found at momentum level 1) in the 
        appropriate model.in file.
 
 The number of entries in the *zm_grid.grd or *zt_grid.grd file needs to match

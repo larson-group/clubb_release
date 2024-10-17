@@ -20,7 +20,7 @@ module stats_clubb_utilities
                          stats_fmt_in, stats_tsamp_in, stats_tout_in, fnamelist, &
                          hydromet_dim, sclr_dim, edsclr_dim, sclr_tol, &
                          hydromet_list, l_mix_rat_hm, &
-                         nzmax, nlon, nlat, gzt, gzm, nnrad_zt, &
+                         nzmax, ngrdcol, nlon, nlat, gzt, gzm, nnrad_zt, &
                          grad_zt, nnrad_zm, grad_zm, day, month, year, &
                          lon_vals, lat_vals, time_current, delt, l_silhs_out_in, &
                          clubb_params, &
@@ -123,14 +123,15 @@ module stats_clubb_utilities
       fnamelist          ! Filename holding the &statsnl
 
     integer, intent(in) :: &
-      nlon, & ! Number of points in the X direction [-]
-      nlat, & ! Number of points in the Y direction [-]
-      nzmax   ! Grid points in the vertical         [-]
+      ngrdcol,  & ! Number of columns
+      nlon,     & ! Number of points in the X direction [-]
+      nlat,     & ! Number of points in the Y direction [-]
+      nzmax       ! Grid points in the vertical         [-]
 
-    real( kind = core_rknd ), intent(in), dimension(nzmax-1) ::  & 
+    real( kind = core_rknd ), intent(in), dimension(ngrdcol,nzmax-1) ::  & 
       gzt       ! Thermodynamic levels           [m]
 
-    real( kind = core_rknd ), intent(in), dimension(nzmax) ::  & 
+    real( kind = core_rknd ), intent(in), dimension(ngrdcol,nzmax) ::  & 
       gzm       ! Momentum levels                [m]
 
     integer, intent(in) :: &
@@ -171,7 +172,7 @@ module stats_clubb_utilities
     logical, intent(in) :: &
       l_silhs_out_in  ! Whether to output SILHS files (stats_lh_zt, stats_lh_sfc)  [boolean]
 
-    real( kind = core_rknd ), dimension(nparams), intent(in) :: &
+    real( kind = core_rknd ), dimension(ngrdcol,nparams), intent(in) :: &
       clubb_params    ! Array of CLUBB's tunable parameters    [units vary]
 
     logical, intent(in) :: &
@@ -186,7 +187,7 @@ module stats_clubb_utilities
     type (stats_metadata_type), intent(inout) :: &
       stats_metadata
 
-    type (stats), intent(inout) :: &
+    type (stats), dimension(ngrdcol), intent(inout) :: &
       stats_zt, &
       stats_zm, &
       stats_sfc, &
@@ -200,7 +201,7 @@ module stats_clubb_utilities
 
     character(len=200) :: fname
 
-    integer :: ivar, ntot, read_status
+    integer :: i, ivar, ntot, read_status
 
     ! Namelist Variables
 
@@ -689,60 +690,63 @@ module stats_clubb_utilities
       return
     end if
 
-    stats_zt%num_output_fields = ntot
-    stats_zt%kk = nzmax - 1
-    stats_zt%ii = nlon
-    stats_zt%jj = nlat
+    ! Allocate and initialize for all columns, but we only write for 1
+    do i = 1, ngrdcol
+      stats_zt(i)%num_output_fields = ntot
+      stats_zt(i)%kk = nzmax - 1
+      stats_zt(i)%ii = nlon
+      stats_zt(i)%jj = nlat
 
-    allocate( stats_zt%z( stats_zt%kk ) )
-    stats_zt%z = gzt
+      allocate( stats_zt(i)%z( stats_zt(i)%kk ) )
+      stats_zt(i)%z = gzt(i,:)
 
-    allocate( stats_zt%accum_field_values( stats_zt%ii, stats_zt%jj, &
-      stats_zt%kk, stats_zt%num_output_fields ) )
-    allocate( stats_zt%accum_num_samples( stats_zt%ii, stats_zt%jj, &
-      stats_zt%kk, stats_zt%num_output_fields ) )
-    allocate( stats_zt%l_in_update( stats_zt%ii, stats_zt%jj, stats_zt%kk, &
-      stats_zt%num_output_fields ) )
-    call stats_zero( stats_zt%ii, stats_zt%jj, stats_zt%kk, stats_zt%num_output_fields, & ! In
-      stats_zt%accum_field_values, stats_zt%accum_num_samples, stats_zt%l_in_update ) ! Out
+      allocate( stats_zt(i)%accum_field_values( stats_zt(i)%ii, stats_zt(i)%jj, &
+        stats_zt(i)%kk, stats_zt(i)%num_output_fields ) )
+      allocate( stats_zt(i)%accum_num_samples( stats_zt(i)%ii, stats_zt(i)%jj, &
+        stats_zt(i)%kk, stats_zt(i)%num_output_fields ) )
+      allocate( stats_zt(i)%l_in_update( stats_zt(i)%ii, stats_zt(i)%jj, stats_zt(i)%kk, &
+        stats_zt(i)%num_output_fields ) )
+      call stats_zero( stats_zt(i)%ii, stats_zt(i)%jj, stats_zt(i)%kk, stats_zt(i)%num_output_fields, & ! In
+        stats_zt(i)%accum_field_values, stats_zt(i)%accum_num_samples, stats_zt(i)%l_in_update ) ! Out
 
-    allocate( stats_zt%file%grid_avg_var( stats_zt%num_output_fields ) )
-    allocate( stats_zt%file%z( stats_zt%kk ) )
+      allocate( stats_zt(i)%file%grid_avg_var( stats_zt(i)%num_output_fields ) )
+      allocate( stats_zt(i)%file%z( stats_zt(i)%kk ) )
+
+      ! Default initialization for array indices for zt
+
+      call stats_init_zt( hydromet_dim, sclr_dim, edsclr_dim, & ! intent(in)
+                          hydromet_list, l_mix_rat_hm,        & ! intent(in)
+                          vars_zt,                            & ! intent(in)
+                          l_error,                            & ! intent(inout)
+                          stats_metadata, stats_zt(i) )            ! intent(inout)
+    end do
 
     fname = trim( stats_metadata%fname_zt )
-
-    ! Default initialization for array indices for zt
-
-    call stats_init_zt( hydromet_dim, sclr_dim, edsclr_dim, & ! intent(in)
-                        hydromet_list, l_mix_rat_hm,        & ! intent(in)
-                        vars_zt,                            & ! intent(in)
-                        l_error,                            & ! intent(inout)
-                        stats_metadata, stats_zt )            ! intent(inout)
 
     if ( stats_metadata%l_grads ) then
 
       ! Open GrADS file
       call open_grads( iunit, fdir, fname,  &  ! In
-                       1, stats_zt%kk, nlat, nlon, stats_zt%z, & ! In 
+                       1, stats_zt(1)%kk, nlat, nlon, stats_zt(1)%z, & ! In 
                        day, month, year, lat_vals, lon_vals, &  ! In
                        time_current+real(stats_metadata%stats_tout,kind=time_precision), & ! In 
-                       stats_metadata, stats_zt%num_output_fields, & ! In
-                       stats_zt%file ) ! intent(inout)
+                       stats_metadata, stats_zt(1)%num_output_fields, & ! In
+                       stats_zt(1)%file ) ! intent(inout)
 
     else ! Open NetCDF file
 #ifdef NETCDF
-      call open_netcdf_for_writing( nlat, nlon, fdir, fname, 1, stats_zt%kk, stats_zt%z, & ! In
+      call open_netcdf_for_writing( nlat, nlon, fdir, fname, 1, stats_zt(1)%kk, stats_zt(1)%z, & ! In
                         day, month, year, lat_vals, lon_vals, & ! In
                         time_current, stats_metadata%stats_tout, & ! In
-                        stats_zt%num_output_fields, & ! In
-                        stats_zt%file ) ! InOut
+                        stats_zt(1)%num_output_fields, & ! In
+                        stats_zt(1)%file ) ! InOut
 
       ! Finalize the variable definitions
-      call first_write( clubb_params, sclr_dim, sclr_tol, & ! intent(in)
+      call first_write( clubb_params(1,:), sclr_dim, sclr_tol, & ! intent(in)
                         l_uv_nudge, & ! intent(in)
                         l_tke_aniso, & ! intent(in)
                         l_standard_term_ta, & ! intent(in)
-                        stats_zt%file ) ! intent(inout)
+                        stats_zt(1)%file ) ! intent(inout)
 
       if ( err_code == clubb_fatal_error ) then
         write(fstderr,*) "Fatal error setting up stats_zt"
@@ -796,31 +800,34 @@ module stats_clubb_utilities
         return
       end if
 
-      stats_lh_zt%num_output_fields = ntot
-      stats_lh_zt%kk = nzmax - 1
-      stats_lh_zt%ii = nlon
-      stats_lh_zt%jj = nlat
+      ! Allocate and initialize for all columns, but we only write for 1
+      do i = 1, ngrdcol
+        stats_lh_zt(i)%num_output_fields = ntot
+        stats_lh_zt(i)%kk = nzmax - 1
+        stats_lh_zt(i)%ii = nlon
+        stats_lh_zt(i)%jj = nlat
 
-      allocate( stats_lh_zt%z( stats_lh_zt%kk ) )
-      stats_lh_zt%z = gzt
+        allocate( stats_lh_zt(i)%z( stats_lh_zt(i)%kk ) )
+        stats_lh_zt(i)%z = gzt(i,:)
 
-      allocate( stats_lh_zt%accum_field_values( stats_lh_zt%ii, stats_lh_zt%jj, &
-        stats_lh_zt%kk, stats_lh_zt%num_output_fields ) )
-      allocate( stats_lh_zt%accum_num_samples( stats_lh_zt%ii, stats_lh_zt%jj, &
-        stats_lh_zt%kk, stats_lh_zt%num_output_fields ) )
-      allocate( stats_lh_zt%l_in_update( stats_lh_zt%ii, stats_lh_zt%jj, stats_lh_zt%kk, &
-        stats_lh_zt%num_output_fields ) )
-      call stats_zero( stats_lh_zt%ii, stats_lh_zt%jj, stats_lh_zt%kk, & ! intent(in)
-        stats_lh_zt%num_output_fields, & ! intent(in)
-        stats_lh_zt%accum_field_values, stats_lh_zt%accum_num_samples, & ! intent(out)
-        stats_lh_zt%l_in_update ) ! intent(out)
+        allocate( stats_lh_zt(i)%accum_field_values( stats_lh_zt(i)%ii, stats_lh_zt(i)%jj, &
+          stats_lh_zt(i)%kk, stats_lh_zt(i)%num_output_fields ) )
+        allocate( stats_lh_zt(i)%accum_num_samples( stats_lh_zt(i)%ii, stats_lh_zt(i)%jj, &
+          stats_lh_zt(i)%kk, stats_lh_zt(i)%num_output_fields ) )
+        allocate( stats_lh_zt(i)%l_in_update( stats_lh_zt(i)%ii, stats_lh_zt(i)%jj, stats_lh_zt(i)%kk, &
+          stats_lh_zt(i)%num_output_fields ) )
+        call stats_zero( stats_lh_zt(i)%ii, stats_lh_zt(i)%jj, stats_lh_zt(i)%kk, & ! intent(in)
+          stats_lh_zt(i)%num_output_fields, & ! intent(in)
+          stats_lh_zt(i)%accum_field_values, stats_lh_zt(i)%accum_num_samples, & ! intent(out)
+          stats_lh_zt(i)%l_in_update ) ! intent(out)
 
-      allocate( stats_lh_zt%file%grid_avg_var( stats_lh_zt%num_output_fields ) )
-      allocate( stats_lh_zt%file%z( stats_lh_zt%kk ) )
+        allocate( stats_lh_zt(i)%file%grid_avg_var( stats_lh_zt(i)%num_output_fields ) )
+        allocate( stats_lh_zt(i)%file%z( stats_lh_zt(i)%kk ) )
 
-      call stats_init_lh_zt( vars_lh_zt,                    & ! intent(in)
-                             l_error,                       & ! intent(inout)
-                             stats_metadata, stats_lh_zt )    ! intent(inout)
+        call stats_init_lh_zt( vars_lh_zt,                    & ! intent(in)
+                              l_error,                       & ! intent(inout)
+                              stats_metadata, stats_lh_zt(i) )    ! intent(inout)
+      end do
 
 
       fname = trim( stats_metadata%fname_lh_zt )
@@ -829,26 +836,26 @@ module stats_clubb_utilities
 
         ! Open GrADS file
         call open_grads( iunit, fdir, fname,  & ! In
-                         1, stats_lh_zt%kk, nlat, nlon, stats_lh_zt%z, & ! In
+                         1, stats_lh_zt(1)%kk, nlat, nlon, stats_lh_zt(1)%z, & ! In
                          day, month, year, lat_vals, lon_vals, &  ! In
                          time_current+real(stats_metadata%stats_tout,kind=time_precision), & ! In 
-                         stats_metadata, stats_lh_zt%num_output_fields, & ! In
-                         stats_lh_zt%file ) ! In/Out
+                         stats_metadata, stats_lh_zt(1)%num_output_fields, & ! In
+                         stats_lh_zt(1)%file ) ! In/Out
 
       else ! Open NetCDF file
 #ifdef NETCDF
-        call open_netcdf_for_writing( nlat, nlon, fdir, fname, 1, stats_lh_zt%kk, &  ! In
-                          stats_lh_zt%z, day, month, year, lat_vals, lon_vals, &  ! In
+        call open_netcdf_for_writing( nlat, nlon, fdir, fname, 1, stats_lh_zt(1)%kk, &  ! In
+                          stats_lh_zt(1)%z, day, month, year, lat_vals, lon_vals, &  ! In
                           time_current, stats_metadata%stats_tout, & ! In
-                          stats_lh_zt%num_output_fields, & ! In
-                          stats_lh_zt%file ) ! InOut
+                          stats_lh_zt(1)%num_output_fields, & ! In
+                          stats_lh_zt(1)%file ) ! InOut
 
         ! Finalize the variable definitions
-        call first_write( clubb_params, sclr_dim, sclr_tol, & ! intent(in)
+        call first_write( clubb_params(1,:), sclr_dim, sclr_tol, & ! intent(in)
                           l_uv_nudge, & ! intent(in)
                           l_tke_aniso, & ! intent(in)
                           l_standard_term_ta, & ! intent(in)
-                          stats_lh_zt%file ) ! intent(inout)
+                          stats_lh_zt(1)%file ) ! intent(inout)
 
         if ( err_code == clubb_fatal_error ) then
           write(fstderr,*) "Fatal error setting up stats_lh_zt"
@@ -879,32 +886,35 @@ module stats_clubb_utilities
         return
       end if
 
-      stats_lh_sfc%num_output_fields = ntot
-      stats_lh_sfc%kk = 1
-      stats_lh_sfc%ii = nlon
-      stats_lh_sfc%jj = nlat
+      ! Allocate and initialize for all columns, but we only write for 1
+      do i = 1, ngrdcol
+        stats_lh_sfc(i)%num_output_fields = ntot
+        stats_lh_sfc(i)%kk = 1
+        stats_lh_sfc(i)%ii = nlon
+        stats_lh_sfc(i)%jj = nlat
 
-      allocate( stats_lh_sfc%z( stats_lh_sfc%kk ) )
-      stats_lh_sfc%z = gzm(1)
+        allocate( stats_lh_sfc(i)%z( stats_lh_sfc(i)%kk ) )
+        stats_lh_sfc(i)%z = gzm(i,1)
 
-      allocate( stats_lh_sfc%accum_field_values( stats_lh_sfc%ii, stats_lh_sfc%jj, &
-        stats_lh_sfc%kk, stats_lh_sfc%num_output_fields ) )
-      allocate( stats_lh_sfc%accum_num_samples( stats_lh_sfc%ii, stats_lh_sfc%jj, &
-        stats_lh_sfc%kk, stats_lh_sfc%num_output_fields ) )
-      allocate( stats_lh_sfc%l_in_update( stats_lh_sfc%ii, stats_lh_sfc%jj, &
-        stats_lh_sfc%kk, stats_lh_sfc%num_output_fields ) )
+        allocate( stats_lh_sfc(i)%accum_field_values( stats_lh_sfc(i)%ii, stats_lh_sfc(i)%jj, &
+          stats_lh_sfc(i)%kk, stats_lh_sfc(i)%num_output_fields ) )
+        allocate( stats_lh_sfc(i)%accum_num_samples( stats_lh_sfc(i)%ii, stats_lh_sfc(i)%jj, &
+          stats_lh_sfc(i)%kk, stats_lh_sfc(i)%num_output_fields ) )
+        allocate( stats_lh_sfc(i)%l_in_update( stats_lh_sfc(i)%ii, stats_lh_sfc(i)%jj, &
+          stats_lh_sfc(i)%kk, stats_lh_sfc(i)%num_output_fields ) )
 
-      call stats_zero( stats_lh_sfc%ii, stats_lh_sfc%jj, stats_lh_sfc%kk, & ! intent(in)
-          stats_lh_sfc%num_output_fields, & ! intent(in)
-          stats_lh_sfc%accum_field_values, & ! intent(out)
-          stats_lh_sfc%accum_num_samples, stats_lh_sfc%l_in_update ) ! intent(out)
+        call stats_zero( stats_lh_sfc(i)%ii, stats_lh_sfc(i)%jj, stats_lh_sfc(i)%kk, & ! intent(in)
+            stats_lh_sfc(i)%num_output_fields, & ! intent(in)
+            stats_lh_sfc(i)%accum_field_values, & ! intent(out)
+            stats_lh_sfc(i)%accum_num_samples, stats_lh_sfc(i)%l_in_update ) ! intent(out)
 
-      allocate( stats_lh_sfc%file%grid_avg_var( stats_lh_sfc%num_output_fields ) )
-      allocate( stats_lh_sfc%file%z( stats_lh_sfc%kk ) )
+        allocate( stats_lh_sfc(i)%file%grid_avg_var( stats_lh_sfc(i)%num_output_fields ) )
+        allocate( stats_lh_sfc(i)%file%z( stats_lh_sfc(i)%kk ) )
 
-      call stats_init_lh_sfc( vars_lh_sfc,                    & ! intent(in)
-                              l_error,                        & ! intent(inout)
-                              stats_metadata, stats_lh_sfc )    ! intent(inout)
+        call stats_init_lh_sfc( vars_lh_sfc,                    & ! intent(in)
+                                l_error,                        & ! intent(inout)
+                                stats_metadata, stats_lh_sfc(i) )    ! intent(inout)
+      end do
 
       fname = trim( stats_metadata%fname_lh_sfc )
 
@@ -912,26 +922,26 @@ module stats_clubb_utilities
 
         ! Open GrADS file
         call open_grads( iunit, fdir, fname,  & ! In
-                         1, stats_lh_sfc%kk, nlat, nlon, stats_lh_sfc%z, & ! In 
+                         1, stats_lh_sfc(1)%kk, nlat, nlon, stats_lh_sfc(1)%z, & ! In 
                          day, month, year, lat_vals, lon_vals, &  ! In
                          time_current+real(stats_metadata%stats_tout,kind=time_precision), & ! In 
-                         stats_metadata, stats_lh_sfc%num_output_fields, & ! In
-                         stats_lh_sfc%file ) ! intent(inout)
+                         stats_metadata, stats_lh_sfc(1)%num_output_fields, & ! In
+                         stats_lh_sfc(1)%file ) ! intent(inout)
 
       else ! Open NetCDF file
 #ifdef NETCDF
-        call open_netcdf_for_writing( nlat, nlon, fdir, fname, 1, stats_lh_sfc%kk, &  ! In
-                          stats_lh_sfc%z, day, month, year, lat_vals, lon_vals, &  ! In
+        call open_netcdf_for_writing( nlat, nlon, fdir, fname, 1, stats_lh_sfc(1)%kk, &  ! In
+                          stats_lh_sfc(1)%z, day, month, year, lat_vals, lon_vals, &  ! In
                           time_current, stats_metadata%stats_tout, & ! In
-                          stats_lh_sfc%num_output_fields, & ! In
-                          stats_lh_sfc%file ) ! InOut
+                          stats_lh_sfc(1)%num_output_fields, & ! In
+                          stats_lh_sfc(1)%file ) ! InOut
 
         ! Finalize the variable definitions
-        call first_write( clubb_params, sclr_dim, sclr_tol, & ! intent(in)
+        call first_write( clubb_params(1,:), sclr_dim, sclr_tol, & ! intent(in)
                           l_uv_nudge, & ! intent(in)
                           l_tke_aniso, & ! intent(in)
                           l_standard_term_ta, & ! intent(in)
-                          stats_lh_sfc%file ) ! intent(inout)
+                          stats_lh_sfc(1)%file ) ! intent(inout)
 
         if ( err_code == clubb_fatal_error ) then
           write(fstderr,*) "Fatal error setting up stats_lh_sfc"
@@ -1118,58 +1128,61 @@ module stats_clubb_utilities
       return
     end if
 
-    stats_zm%num_output_fields = ntot
-    stats_zm%kk = nzmax
-    stats_zm%ii = nlon
-    stats_zm%jj = nlat
+    ! Allocate and initialize for all columns, but we only write for 1
+    do i = 1, ngrdcol
+      stats_zm(i)%num_output_fields = ntot
+      stats_zm(i)%kk = nzmax
+      stats_zm(i)%ii = nlon
+      stats_zm(i)%jj = nlat
 
-    allocate( stats_zm%z( stats_zm%kk ) )
-    stats_zm%z = gzm
+      allocate( stats_zm(i)%z( stats_zm(i)%kk ) )
+      stats_zm(i)%z = gzm(i,:)
 
-    allocate( stats_zm%accum_field_values( stats_zm%ii, stats_zm%jj, &
-      stats_zm%kk, stats_zm%num_output_fields ) )
-    allocate( stats_zm%accum_num_samples( stats_zm%ii, stats_zm%jj, &
-      stats_zm%kk, stats_zm%num_output_fields ) )
-    allocate( stats_zm%l_in_update( stats_zm%ii, stats_zm%jj, stats_zm%kk, &
-      stats_zm%num_output_fields ) )
+      allocate( stats_zm(i)%accum_field_values( stats_zm(i)%ii, stats_zm(i)%jj, &
+        stats_zm(i)%kk, stats_zm(i)%num_output_fields ) )
+      allocate( stats_zm(i)%accum_num_samples( stats_zm(i)%ii, stats_zm(i)%jj, &
+        stats_zm(i)%kk, stats_zm(i)%num_output_fields ) )
+      allocate( stats_zm(i)%l_in_update( stats_zm(i)%ii, stats_zm(i)%jj, stats_zm(i)%kk, &
+        stats_zm(i)%num_output_fields ) )
 
-    call stats_zero( stats_zm%ii, stats_zm%jj, stats_zm%kk, stats_zm%num_output_fields, & ! In
-      stats_zm%accum_field_values, stats_zm%accum_num_samples, stats_zm%l_in_update ) ! intent(out)
+      call stats_zero( stats_zm(i)%ii, stats_zm(i)%jj, stats_zm(i)%kk, stats_zm(i)%num_output_fields, & ! In
+        stats_zm(i)%accum_field_values, stats_zm(i)%accum_num_samples, stats_zm(i)%l_in_update ) ! intent(out)
 
-    allocate( stats_zm%file%grid_avg_var( stats_zm%num_output_fields ) )
-    allocate( stats_zm%file%z( stats_zm%kk ) )
+      allocate( stats_zm(i)%file%grid_avg_var( stats_zm(i)%num_output_fields ) )
+      allocate( stats_zm(i)%file%z( stats_zm(i)%kk ) )
 
-    call stats_init_zm( hydromet_dim, sclr_dim, edsclr_dim, & ! intent(in)
-                        hydromet_list, l_mix_rat_hm,        & ! intent(in)
-                        vars_zm,                            & ! intent(in)
-                        l_error,                            & ! intent(inout)
-                        stats_metadata, stats_zm )            ! intent(inout)
+      call stats_init_zm( hydromet_dim, sclr_dim, edsclr_dim, & ! intent(in)
+                          hydromet_list, l_mix_rat_hm,        & ! intent(in)
+                          vars_zm,                            & ! intent(in)
+                          l_error,                            & ! intent(inout)
+                          stats_metadata, stats_zm(i) )            ! intent(inout)
+    end do
 
     fname = trim( stats_metadata%fname_zm )
     if ( stats_metadata%l_grads ) then
 
       ! Open GrADS files
       call open_grads( iunit, fdir, fname,  & ! In
-                       1, stats_zm%kk, nlat, nlon, stats_zm%z, & ! In
+                       1, stats_zm(1)%kk, nlat, nlon, stats_zm(1)%z, & ! In
                        day, month, year, lat_vals, lon_vals, & ! In
                        time_current+real(stats_metadata%stats_tout,kind=time_precision), & ! In 
-                       stats_metadata, stats_zm%num_output_fields, & ! In
-                       stats_zm%file ) ! intent(inout)
+                       stats_metadata, stats_zm(1)%num_output_fields, & ! In
+                       stats_zm(1)%file ) ! intent(inout)
 
     else ! Open NetCDF file
 #ifdef NETCDF
-      call open_netcdf_for_writing( nlat, nlon, fdir, fname, 1, stats_zm%kk, stats_zm%z, & ! In
+      call open_netcdf_for_writing( nlat, nlon, fdir, fname, 1, stats_zm(1)%kk, stats_zm(1)%z, & ! In
                         day, month, year, lat_vals, lon_vals, & ! In
                         time_current, stats_metadata%stats_tout, & ! In
-                        stats_zm%num_output_fields, & ! In
-                        stats_zm%file ) ! InOut
+                        stats_zm(1)%num_output_fields, & ! In
+                        stats_zm(1)%file ) ! InOut
       
       ! Finalize the variable definitions
-      call first_write( clubb_params, sclr_dim, sclr_tol, & ! intent(in)
+      call first_write( clubb_params(1,:), sclr_dim, sclr_tol, & ! intent(in)
                         l_uv_nudge, & ! intent(in)
                         l_tke_aniso, & ! intent(in)
                         l_standard_term_ta, & ! intent(in)
-                        stats_zm%file ) ! intent(inout)
+                        stats_zm(1)%file ) ! intent(inout)
 
       if ( err_code == clubb_fatal_error ) then
         write(fstderr,*) "Fatal error setting up stats_zm"
@@ -1203,58 +1216,61 @@ module stats_clubb_utilities
         return
       end if
 
-      stats_rad_zt%num_output_fields = ntot
-      stats_rad_zt%kk = nnrad_zt
-      stats_rad_zt%ii = nlon
-      stats_rad_zt%jj = nlat
-      allocate( stats_rad_zt%z( stats_rad_zt%kk ) )
-      stats_rad_zt%z = grad_zt
+      ! Allocate and initialize for all columns, but we only write for 1
+      do i = 1, ngrdcol
+        stats_rad_zt(i)%num_output_fields = ntot
+        stats_rad_zt(i)%kk = nnrad_zt
+        stats_rad_zt(i)%ii = nlon
+        stats_rad_zt(i)%jj = nlat
+        allocate( stats_rad_zt(i)%z( stats_rad_zt(i)%kk ) )
+        stats_rad_zt(i)%z = grad_zt
 
-      allocate( stats_rad_zt%accum_field_values( stats_rad_zt%ii, stats_rad_zt%jj, &
-        stats_rad_zt%kk, stats_rad_zt%num_output_fields ) )
-      allocate( stats_rad_zt%accum_num_samples( stats_rad_zt%ii, stats_rad_zt%jj, &
-        stats_rad_zt%kk, stats_rad_zt%num_output_fields ) )
-      allocate( stats_rad_zt%l_in_update( stats_rad_zt%ii, stats_rad_zt%jj, &
-        stats_rad_zt%kk, stats_rad_zt%num_output_fields ) )
+        allocate( stats_rad_zt(i)%accum_field_values( stats_rad_zt(i)%ii, stats_rad_zt(i)%jj, &
+          stats_rad_zt(i)%kk, stats_rad_zt(i)%num_output_fields ) )
+        allocate( stats_rad_zt(i)%accum_num_samples( stats_rad_zt(i)%ii, stats_rad_zt(i)%jj, &
+          stats_rad_zt(i)%kk, stats_rad_zt(i)%num_output_fields ) )
+        allocate( stats_rad_zt(i)%l_in_update( stats_rad_zt(i)%ii, stats_rad_zt(i)%jj, &
+          stats_rad_zt(i)%kk, stats_rad_zt(i)%num_output_fields ) )
 
-      call stats_zero( stats_rad_zt%ii, stats_rad_zt%jj, stats_rad_zt%kk, & ! intent(in)
-                       stats_rad_zt%num_output_fields, & ! intent(in)
-                       stats_rad_zt%accum_field_values, & ! intent(out)
-                       stats_rad_zt%accum_num_samples, stats_rad_zt%l_in_update )! intent(out)
+        call stats_zero( stats_rad_zt(i)%ii, stats_rad_zt(i)%jj, stats_rad_zt(i)%kk, & ! intent(in)
+                        stats_rad_zt(i)%num_output_fields, & ! intent(in)
+                        stats_rad_zt(i)%accum_field_values, & ! intent(out)
+                        stats_rad_zt(i)%accum_num_samples, stats_rad_zt(i)%l_in_update )! intent(out)
 
-      allocate( stats_rad_zt%file%grid_avg_var( stats_rad_zt%num_output_fields ) )
-      allocate( stats_rad_zt%file%z( stats_rad_zt%kk ) )
+        allocate( stats_rad_zt(i)%file%grid_avg_var( stats_rad_zt(i)%num_output_fields ) )
+        allocate( stats_rad_zt(i)%file%z( stats_rad_zt(i)%kk ) )
 
-      call stats_init_rad_zt( vars_rad_zt,                    & ! intent(in)
-                              l_error,                        & ! intent(inout)
-                              stats_metadata, stats_rad_zt )    ! intent(inout)
+        call stats_init_rad_zt( vars_rad_zt,                    & ! intent(in)
+                                l_error,                        & ! intent(inout)
+                                stats_metadata, stats_rad_zt(i) )    ! intent(inout)
+      end do
 
       fname = trim( stats_metadata%fname_rad_zt )
       if ( stats_metadata%l_grads ) then
 
         ! Open GrADS files
         call open_grads( iunit, fdir, fname,  & ! In
-                         1, stats_rad_zt%kk, nlat, nlon, stats_rad_zt%z, & ! In
+                         1, stats_rad_zt(1)%kk, nlat, nlon, stats_rad_zt(1)%z, & ! In
                          day, month, year, lat_vals, lon_vals, & 
                          time_current+real(stats_metadata%stats_tout, kind=time_precision), & ! In 
-                         stats_metadata, stats_rad_zt%num_output_fields, & ! In
-                         stats_rad_zt%file ) ! In/Out
+                         stats_metadata, stats_rad_zt(1)%num_output_fields, & ! In
+                         stats_rad_zt(1)%file ) ! In/Out
 
       else ! Open NetCDF file
 #ifdef NETCDF
         call open_netcdf_for_writing( nlat, nlon, fdir, fname,  & ! intent(in)
-                          1, stats_rad_zt%kk, stats_rad_zt%z, & ! intent(in)
+                          1, stats_rad_zt(1)%kk, stats_rad_zt(1)%z, & ! intent(in)
                           day, month, year, lat_vals, lon_vals, & ! intent(in)
                           time_current, stats_metadata%stats_tout, & ! intent(in)
-                          stats_rad_zt%num_output_fields, & ! intent(in)
-                          stats_rad_zt%file ) ! intent(inout)
+                          stats_rad_zt(1)%num_output_fields, & ! intent(in)
+                          stats_rad_zt(1)%file ) ! intent(inout)
 
         ! Finalize the variable definitions
-        call first_write( clubb_params, sclr_dim, sclr_tol, & ! intent(in)
+        call first_write( clubb_params(1,:), sclr_dim, sclr_tol, & ! intent(in)
                           l_uv_nudge, & ! intent(in)
                           l_tke_aniso, & ! intent(in)
                           l_standard_term_ta, & ! intent(in)
-                          stats_rad_zt%file ) ! intent(inout)
+                          stats_rad_zt(1)%file ) ! intent(inout)
 
         if ( err_code == clubb_fatal_error ) then
           write(fstderr,*) "Fatal error setting up stats_rad_zt"
@@ -1286,59 +1302,62 @@ module stats_clubb_utilities
         return
       end if
 
-      stats_rad_zm%num_output_fields = ntot
-      stats_rad_zm%kk = nnrad_zm
-      stats_rad_zm%ii = nlon
-      stats_rad_zm%jj = nlat
+      ! Allocate and initialize for all columns, but we only write for 1
+      do i = 1, ngrdcol
+        stats_rad_zm(i)%num_output_fields = ntot
+        stats_rad_zm(i)%kk = nnrad_zm
+        stats_rad_zm(i)%ii = nlon
+        stats_rad_zm(i)%jj = nlat
 
-      allocate( stats_rad_zm%z( stats_rad_zm%kk ) )
-      stats_rad_zm%z = grad_zm
+        allocate( stats_rad_zm(i)%z( stats_rad_zm(i)%kk ) )
+        stats_rad_zm(i)%z = grad_zm
 
-      allocate( stats_rad_zm%accum_field_values( stats_rad_zm%ii, stats_rad_zm%jj, &
-        stats_rad_zm%kk, stats_rad_zm%num_output_fields ) )
-      allocate( stats_rad_zm%accum_num_samples( stats_rad_zm%ii, stats_rad_zm%jj, &
-        stats_rad_zm%kk, stats_rad_zm%num_output_fields ) )
-      allocate( stats_rad_zm%l_in_update( stats_rad_zm%ii, stats_rad_zm%jj, &
-        stats_rad_zm%kk, stats_rad_zm%num_output_fields ) )
+        allocate( stats_rad_zm(i)%accum_field_values( stats_rad_zm(i)%ii, stats_rad_zm(i)%jj, &
+          stats_rad_zm(i)%kk, stats_rad_zm(i)%num_output_fields ) )
+        allocate( stats_rad_zm(i)%accum_num_samples( stats_rad_zm(i)%ii, stats_rad_zm(i)%jj, &
+          stats_rad_zm(i)%kk, stats_rad_zm(i)%num_output_fields ) )
+        allocate( stats_rad_zm(i)%l_in_update( stats_rad_zm(i)%ii, stats_rad_zm(i)%jj, &
+          stats_rad_zm(i)%kk, stats_rad_zm(i)%num_output_fields ) )
 
-      call stats_zero( stats_rad_zm%ii, stats_rad_zm%jj, stats_rad_zm%kk, & ! intent(in)
-                       stats_rad_zm%num_output_fields, & ! intent(in)
-                       stats_rad_zm%accum_field_values, & ! intent(out)
-                       stats_rad_zm%accum_num_samples, stats_rad_zm%l_in_update ) ! intent(out)
+        call stats_zero( stats_rad_zm(i)%ii, stats_rad_zm(i)%jj, stats_rad_zm(i)%kk, & ! intent(in)
+                        stats_rad_zm(i)%num_output_fields, & ! intent(in)
+                        stats_rad_zm(i)%accum_field_values, & ! intent(out)
+                        stats_rad_zm(i)%accum_num_samples, stats_rad_zm(i)%l_in_update ) ! intent(out)
 
-      allocate( stats_rad_zm%file%grid_avg_var( stats_rad_zm%num_output_fields ) )
-      allocate( stats_rad_zm%file%z( stats_rad_zm%kk ) )
+        allocate( stats_rad_zm(i)%file%grid_avg_var( stats_rad_zm(i)%num_output_fields ) )
+        allocate( stats_rad_zm(i)%file%z( stats_rad_zm(i)%kk ) )
 
-      call stats_init_rad_zm( vars_rad_zm,                    & ! intent(in)
-                              l_error,                        & ! intent(inout)
-                              stats_metadata, stats_rad_zm )    ! intent(inout)
+        call stats_init_rad_zm( vars_rad_zm,                    & ! intent(in)
+                                l_error,                        & ! intent(inout)
+                                stats_metadata, stats_rad_zm(i) )    ! intent(inout)
+      end do
 
       fname = trim( stats_metadata%fname_rad_zm )
       if ( stats_metadata%l_grads ) then
 
         ! Open GrADS files
         call open_grads( iunit, fdir, fname,  & ! In
-                         1, stats_rad_zm%kk, nlat, nlon, stats_rad_zm%z, & ! In
+                         1, stats_rad_zm(1)%kk, nlat, nlon, stats_rad_zm(1)%z, & ! In
                          day, month, year, lat_vals, lon_vals, & 
                          time_current+real(stats_metadata%stats_tout,kind=time_precision), & ! In 
-                         stats_metadata, stats_rad_zm%num_output_fields, & ! In
-                         stats_rad_zm%file ) ! In/Out
+                         stats_metadata, stats_rad_zm(1)%num_output_fields, & ! In
+                         stats_rad_zm(1)%file ) ! In/Out
 
       else ! Open NetCDF file
 #ifdef NETCDF
         call open_netcdf_for_writing( nlat, nlon, fdir, fname,  & ! intent(in)
-                          1, stats_rad_zm%kk, stats_rad_zm%z, & ! intent(in)
+                          1, stats_rad_zm(1)%kk, stats_rad_zm(1)%z, & ! intent(in)
                           day, month, year, lat_vals, lon_vals, & ! intent(in)
                           time_current, stats_metadata%stats_tout, & ! intent(in)
-                          stats_rad_zm%num_output_fields, & ! intent(in)
-                          stats_rad_zm%file ) ! intent(inout)
+                          stats_rad_zm(1)%num_output_fields, & ! intent(in)
+                          stats_rad_zm(1)%file ) ! intent(inout)
 
         ! Finalize the variable definitions
-        call first_write( clubb_params, sclr_dim, sclr_tol, & ! intent(in)
+        call first_write( clubb_params(1,:), sclr_dim, sclr_tol, & ! intent(in)
                           l_uv_nudge, & ! intent(in)
                           l_tke_aniso, & ! intent(in)
                           l_standard_term_ta, & ! intent(in)
-                          stats_rad_zm%file ) ! intent(inout)
+                          stats_rad_zm(1)%file ) ! intent(inout)
 
         if ( err_code == clubb_fatal_error ) then
           write(fstderr,*) "Fatal error setting up stats_rad_zm"
@@ -1376,30 +1395,33 @@ module stats_clubb_utilities
 
     end if
 
-    stats_sfc%num_output_fields = ntot
-    stats_sfc%kk = 1
-    stats_sfc%ii = nlon
-    stats_sfc%jj = nlat
+    ! Allocate and initialize for all columns, but we only write for 1
+    do i = 1, ngrdcol
+      stats_sfc(i)%num_output_fields = ntot
+      stats_sfc(i)%kk = 1
+      stats_sfc(i)%ii = nlon
+      stats_sfc(i)%jj = nlat
 
-    allocate( stats_sfc%z( stats_sfc%kk ) )
-    stats_sfc%z = gzm(1)
+      allocate( stats_sfc(i)%z( stats_sfc(i)%kk ) )
+      stats_sfc(i)%z = gzm(i,1)
 
-    allocate( stats_sfc%accum_field_values( stats_sfc%ii, stats_sfc%jj, &
-      stats_sfc%kk, stats_sfc%num_output_fields ) )
-    allocate( stats_sfc%accum_num_samples( stats_sfc%ii, stats_sfc%jj, &
-      stats_sfc%kk, stats_sfc%num_output_fields ) )
-    allocate( stats_sfc%l_in_update( stats_sfc%ii, stats_sfc%jj, &
-      stats_sfc%kk, stats_sfc%num_output_fields ) )
+      allocate( stats_sfc(i)%accum_field_values( stats_sfc(i)%ii, stats_sfc(i)%jj, &
+        stats_sfc(i)%kk, stats_sfc(i)%num_output_fields ) )
+      allocate( stats_sfc(i)%accum_num_samples( stats_sfc(i)%ii, stats_sfc(i)%jj, &
+        stats_sfc(i)%kk, stats_sfc(i)%num_output_fields ) )
+      allocate( stats_sfc(i)%l_in_update( stats_sfc(i)%ii, stats_sfc(i)%jj, &
+        stats_sfc(i)%kk, stats_sfc(i)%num_output_fields ) )
 
-    call stats_zero( stats_sfc%ii, stats_sfc%jj, stats_sfc%kk, stats_sfc%num_output_fields, & ! In
-      stats_sfc%accum_field_values, stats_sfc%accum_num_samples, stats_sfc%l_in_update ) ! out
+      call stats_zero( stats_sfc(i)%ii, stats_sfc(i)%jj, stats_sfc(i)%kk, stats_sfc(i)%num_output_fields, & ! In
+        stats_sfc(i)%accum_field_values, stats_sfc(i)%accum_num_samples, stats_sfc(i)%l_in_update ) ! out
 
-    allocate( stats_sfc%file%grid_avg_var( stats_sfc%num_output_fields ) )
-    allocate( stats_sfc%file%z( stats_sfc%kk ) )
+      allocate( stats_sfc(i)%file%grid_avg_var( stats_sfc(i)%num_output_fields ) )
+      allocate( stats_sfc(i)%file%z( stats_sfc(i)%kk ) )
 
-    call stats_init_sfc( vars_sfc,                    & ! intent(in)
-                         l_error,                     & ! intent(inout)
-                         stats_metadata, stats_sfc )    ! intent(inout)
+      call stats_init_sfc( vars_sfc,                    & ! intent(in)
+                          l_error,                     & ! intent(inout)
+                          stats_metadata, stats_sfc(i) )    ! intent(inout)
+    end do
 
     fname = trim( stats_metadata%fname_sfc )
 
@@ -1407,26 +1429,26 @@ module stats_clubb_utilities
 
       ! Open GrADS files
       call open_grads( iunit, fdir, fname,  & ! In
-                       1, stats_sfc%kk, nlat, nlon, stats_sfc%z, & ! In
+                       1, stats_sfc(1)%kk, nlat, nlon, stats_sfc(1)%z, & ! In
                        day, month, year, lat_vals, lon_vals, & ! In
                        time_current+real(stats_metadata%stats_tout,kind=time_precision), & ! In 
-                       stats_metadata, stats_sfc%num_output_fields, & ! In
-                       stats_sfc%file ) ! In/Out
+                       stats_metadata, stats_sfc(1)%num_output_fields, & ! In
+                       stats_sfc(1)%file ) ! In/Out
 
     else ! Open NetCDF files
 #ifdef NETCDF
-      call open_netcdf_for_writing( nlat, nlon, fdir, fname, 1, stats_sfc%kk, stats_sfc%z, & ! In
+      call open_netcdf_for_writing( nlat, nlon, fdir, fname, 1, stats_sfc(1)%kk, stats_sfc(1)%z, & ! In
                         day, month, year, lat_vals, lon_vals, & ! In
                         time_current, stats_metadata%stats_tout, & ! In
-                        stats_sfc%num_output_fields, & ! In
-                        stats_sfc%file ) ! InOut
+                        stats_sfc(1)%num_output_fields, & ! In
+                        stats_sfc(1)%file ) ! InOut
 
       ! Finalize the variable definitions
-      call first_write( clubb_params, sclr_dim, sclr_tol, & ! intent(in)
+      call first_write( clubb_params(1,:), sclr_dim, sclr_tol, & ! intent(in)
                         l_uv_nudge, & ! intent(in)
                         l_tke_aniso, & ! intent(in)
                         l_standard_term_ta, & ! intent(in)
-                        stats_sfc%file ) ! intent(inout)
+                        stats_sfc(1)%file ) ! intent(inout)
 
       if ( err_code == clubb_fatal_error ) then
         write(fstderr,*) "Fatal error setting up stats_sfc"
@@ -2986,7 +3008,7 @@ module stats_clubb_utilities
   end subroutine stats_accumulate_lh_tend
     
   !-----------------------------------------------------------------------
-  subroutine stats_finalize( stats_metadata, &
+  subroutine stats_finalize( ngrdcol, stats_metadata, &
                              stats_zt, stats_zm, stats_sfc, &
                              stats_lh_zt, stats_lh_sfc, &
                              stats_rad_zt, stats_rad_zm )
@@ -3008,7 +3030,10 @@ module stats_clubb_utilities
 
     implicit none
 
-    type (stats), intent(inout) :: &
+    integer, intent(in) :: &
+      ngrdcol
+
+    type (stats), dimension(ngrdcol), intent(inout) :: &
       stats_zt, &
       stats_zm, &
       stats_sfc, &
@@ -3020,162 +3045,180 @@ module stats_clubb_utilities
     type (stats_metadata_type), intent(inout) :: &
       stats_metadata
 
+    integer :: i
+
     if ( stats_metadata%l_stats .and. stats_metadata%l_netcdf ) then
 #ifdef NETCDF
-      call close_netcdf( stats_zt%file ) ! intent(inout)
-      call close_netcdf( stats_lh_zt%file ) ! intent(inout)
-      call close_netcdf( stats_lh_sfc%file ) ! intent(inout)
-      call close_netcdf( stats_zm%file ) ! intent(inout)
-      call close_netcdf( stats_rad_zt%file ) ! intent(inout)
-      call close_netcdf( stats_rad_zm%file ) ! intent(inout)
-      call close_netcdf( stats_sfc%file ) ! intent(inout)
+
+      ! We only created the files for the first column (see stats_init)
+      ! so we only close for the first column as well
+
+      call close_netcdf( stats_zt(1)%file ) ! intent(inout)
+      call close_netcdf( stats_sfc(1)%file ) ! intent(inout)
+      call close_netcdf( stats_zm(1)%file ) ! intent(inout)
+
+      if ( stats_metadata%l_silhs_out ) then
+        call close_netcdf( stats_lh_zt(1)%file ) ! intent(inout)
+        call close_netcdf( stats_lh_sfc(1)%file ) ! intent(inout)
+      end if
+
+      if ( stats_metadata%l_output_rad_files ) then
+        call close_netcdf( stats_rad_zt(1)%file ) ! intent(inout)
+        call close_netcdf( stats_rad_zm(1)%file ) ! intent(inout)
+      end if
 #else
       error stop "This program was not compiled with netCDF support"
 #endif
     end if
 
+      
     if ( stats_metadata%l_stats ) then
-      ! De-allocate all stats_zt variables
-      if (allocated(stats_zt%z)) then
-        deallocate( stats_zt%z )
 
-        deallocate( stats_zt%accum_field_values )
-        deallocate( stats_zt%accum_num_samples )
-        deallocate( stats_zt%l_in_update )
-
-        deallocate( stats_zt%file%grid_avg_var )
-        deallocate( stats_zt%file%z )
-               
-        ! Check if pointer is allocated to prevent crash in netcdf (ticket 765)
-        if ( allocated( stats_zt%file%lat_vals ) ) then
-          deallocate( stats_zt%file%lat_vals )
-        end if
-        if ( allocated( stats_zt%file%lon_vals ) ) then
-          deallocate( stats_zt%file%lon_vals )
-        end if
-
-      end if
-
-      if ( stats_metadata%l_silhs_out .and. allocated(stats_lh_zt%z) ) then
-        ! De-allocate all stats_lh_zt variables
-        deallocate( stats_lh_zt%z )
-
-        deallocate( stats_lh_zt%accum_field_values )
-        deallocate( stats_lh_zt%accum_num_samples )
-        deallocate( stats_lh_zt%l_in_update )
-
-        deallocate( stats_lh_zt%file%grid_avg_var )
-        deallocate( stats_lh_zt%file%z )
+      do i = 1, ngrdcol
         
-        ! Check if pointer is allocated to prevent crash in netcdf (ticket 765)
-        if ( allocated(stats_lh_zt%file%lat_vals ) ) then
-          deallocate( stats_lh_zt%file%lat_vals )
-        end if
-        if ( allocated(stats_lh_zt%file%lon_vals ) ) then
-          deallocate( stats_lh_zt%file%lon_vals )
-        end if
+        ! De-allocate all stats_zt variables
+        if (allocated(stats_zt(i)%z)) then
+          deallocate( stats_zt(i)%z )
 
-        ! De-allocate all stats_lh_sfc variables
-        deallocate( stats_lh_sfc%z )
+          deallocate( stats_zt(i)%accum_field_values )
+          deallocate( stats_zt(i)%accum_num_samples )
+          deallocate( stats_zt(i)%l_in_update )
 
-        deallocate( stats_lh_sfc%accum_field_values )
-        deallocate( stats_lh_sfc%accum_num_samples )
-        deallocate( stats_lh_sfc%l_in_update )
-
-        deallocate( stats_lh_sfc%file%grid_avg_var )
-        deallocate( stats_lh_sfc%file%z )
-             
-        ! Check if pointer is allocated to prevent crash in netcdf (ticket 765)
-        if ( allocated( stats_lh_sfc%file%lat_vals ) ) then
-          deallocate( stats_lh_sfc%file%lat_vals )
-        end if
-        if ( allocated( stats_lh_sfc%file%lon_vals ) ) then
-          deallocate( stats_lh_sfc%file%lon_vals )
-        end if
-      end if ! l_silhs_out
-
-      ! De-allocate all stats_zm variables
-      if (allocated(stats_zm%z)) then
-        deallocate( stats_zm%z )
-
-        deallocate( stats_zm%accum_field_values )
-        deallocate( stats_zm%accum_num_samples )
-        deallocate( stats_zm%l_in_update )
-
-        deallocate( stats_zm%file%grid_avg_var )
-        deallocate( stats_zm%file%z )
-             
-        ! Check if pointer is allocated to prevent crash in netcdf (ticket 765)
-        if ( allocated( stats_zm%file%lat_vals ) ) then
-          deallocate( stats_zm%file%lat_vals )
-        end if
-        if ( allocated( stats_zm%file%lon_vals ) ) then
-          deallocate( stats_zm%file%lon_vals )
-        end if
-        
-      end if
-
-      if ( stats_metadata%l_output_rad_files ) then
-        ! De-allocate all stats_rad_zt variables
-        if (allocated(stats_rad_zt%z)) then
-          deallocate( stats_rad_zt%z )
-
-          deallocate( stats_rad_zt%accum_field_values )
-          deallocate( stats_rad_zt%accum_num_samples )
-          deallocate( stats_rad_zt%l_in_update )
-
-          deallocate( stats_rad_zt%file%grid_avg_var )
-          deallocate( stats_rad_zt%file%z )
-               
+          deallocate( stats_zt(i)%file%grid_avg_var )
+          deallocate( stats_zt(i)%file%z )
+                
           ! Check if pointer is allocated to prevent crash in netcdf (ticket 765)
-          if ( allocated( stats_rad_zt%file%lat_vals ) ) then
-            deallocate( stats_rad_zt%file%lat_vals )
+          if ( allocated( stats_zt(i)%file%lat_vals ) ) then
+            deallocate( stats_zt(i)%file%lat_vals )
           end if
-          if ( allocated( stats_rad_zt%file%lon_vals ) ) then
-            deallocate( stats_rad_zt%file%lon_vals )
-          end if
-
-          ! De-allocate all stats_rad_zm variables
-          deallocate( stats_rad_zm%z )
-
-          deallocate( stats_rad_zm%accum_field_values )
-          deallocate( stats_rad_zm%accum_num_samples )
-          deallocate( stats_rad_zm%l_in_update )
-
-          deallocate( stats_rad_zm%file%grid_avg_var )
-          deallocate( stats_rad_zm%file%z )
-
-          ! Check if pointer is allocated to prevent crash in netcdf (ticket 765)
-          if ( allocated( stats_rad_zm%file%lat_vals ) ) then
-            deallocate( stats_rad_zm%file%lat_vals )
-          end if
-          if ( allocated( stats_rad_zm%file%lon_vals ) ) then
-            deallocate( stats_rad_zm%file%lon_vals )
+          if ( allocated( stats_zt(i)%file%lon_vals ) ) then
+            deallocate( stats_zt(i)%file%lon_vals )
           end if
 
         end if
 
-      end if ! l_output_rad_files
+        if ( stats_metadata%l_silhs_out .and. allocated(stats_lh_zt(i)%z) ) then
+          ! De-allocate all stats_lh_zt variables
+          deallocate( stats_lh_zt(i)%z )
 
-      ! De-allocate all stats_sfc variables
-      if (allocated(stats_sfc%z)) then
-        deallocate( stats_sfc%z )
+          deallocate( stats_lh_zt(i)%accum_field_values )
+          deallocate( stats_lh_zt(i)%accum_num_samples )
+          deallocate( stats_lh_zt(i)%l_in_update )
 
-        deallocate( stats_sfc%accum_field_values )
-        deallocate( stats_sfc%accum_num_samples )
-        deallocate( stats_sfc%l_in_update )
+          deallocate( stats_lh_zt(i)%file%grid_avg_var )
+          deallocate( stats_lh_zt(i)%file%z )
+          
+          ! Check if pointer is allocated to prevent crash in netcdf (ticket 765)
+          if ( allocated(stats_lh_zt(i)%file%lat_vals ) ) then
+            deallocate( stats_lh_zt(i)%file%lat_vals )
+          end if
+          if ( allocated(stats_lh_zt(i)%file%lon_vals ) ) then
+            deallocate( stats_lh_zt(i)%file%lon_vals )
+          end if
 
-        deallocate( stats_sfc%file%grid_avg_var )
-        deallocate( stats_sfc%file%z )
-      end if
-             
-      ! Check if pointer is allocated to prevent crash in netcdf (ticket 765)
-      if ( allocated( stats_sfc%file%lat_vals ) ) then
-        deallocate( stats_sfc%file%lat_vals )
-      end if
-      if ( allocated( stats_sfc%file%lon_vals ) ) then
-        deallocate( stats_sfc%file%lon_vals )
-      end if
+          ! De-allocate all stats_lh_sfc variables
+          deallocate( stats_lh_sfc(i)%z )
+
+          deallocate( stats_lh_sfc(i)%accum_field_values )
+          deallocate( stats_lh_sfc(i)%accum_num_samples )
+          deallocate( stats_lh_sfc(i)%l_in_update )
+
+          deallocate( stats_lh_sfc(i)%file%grid_avg_var )
+          deallocate( stats_lh_sfc(i)%file%z )
+              
+          ! Check if pointer is allocated to prevent crash in netcdf (ticket 765)
+          if ( allocated( stats_lh_sfc(i)%file%lat_vals ) ) then
+            deallocate( stats_lh_sfc(i)%file%lat_vals )
+          end if
+          if ( allocated( stats_lh_sfc(i)%file%lon_vals ) ) then
+            deallocate( stats_lh_sfc(i)%file%lon_vals )
+          end if
+        end if ! l_silhs_out
+
+        ! De-allocate all stats_zm variables
+        if (allocated(stats_zm(i)%z)) then
+          deallocate( stats_zm(i)%z )
+
+          deallocate( stats_zm(i)%accum_field_values )
+          deallocate( stats_zm(i)%accum_num_samples )
+          deallocate( stats_zm(i)%l_in_update )
+
+          deallocate( stats_zm(i)%file%grid_avg_var )
+          deallocate( stats_zm(i)%file%z )
+              
+          ! Check if pointer is allocated to prevent crash in netcdf (ticket 765)
+          if ( allocated( stats_zm(i)%file%lat_vals ) ) then
+            deallocate( stats_zm(i)%file%lat_vals )
+          end if
+          if ( allocated( stats_zm(i)%file%lon_vals ) ) then
+            deallocate( stats_zm(i)%file%lon_vals )
+          end if
+          
+        end if
+
+        if ( stats_metadata%l_output_rad_files ) then
+          ! De-allocate all stats_rad_zt variables
+          if (allocated(stats_rad_zt(i)%z)) then
+            deallocate( stats_rad_zt(i)%z )
+
+            deallocate( stats_rad_zt(i)%accum_field_values )
+            deallocate( stats_rad_zt(i)%accum_num_samples )
+            deallocate( stats_rad_zt(i)%l_in_update )
+
+            deallocate( stats_rad_zt(i)%file%grid_avg_var )
+            deallocate( stats_rad_zt(i)%file%z )
+                
+            ! Check if pointer is allocated to prevent crash in netcdf (ticket 765)
+            if ( allocated( stats_rad_zt(i)%file%lat_vals ) ) then
+              deallocate( stats_rad_zt(i)%file%lat_vals )
+            end if
+            if ( allocated( stats_rad_zt(i)%file%lon_vals ) ) then
+              deallocate( stats_rad_zt(i)%file%lon_vals )
+            end if
+
+            ! De-allocate all stats_rad_zm variables
+            deallocate( stats_rad_zm(i)%z )
+
+            deallocate( stats_rad_zm(i)%accum_field_values )
+            deallocate( stats_rad_zm(i)%accum_num_samples )
+            deallocate( stats_rad_zm(i)%l_in_update )
+
+            deallocate( stats_rad_zm(i)%file%grid_avg_var )
+            deallocate( stats_rad_zm(i)%file%z )
+
+            ! Check if pointer is allocated to prevent crash in netcdf (ticket 765)
+            if ( allocated( stats_rad_zm(i)%file%lat_vals ) ) then
+              deallocate( stats_rad_zm(i)%file%lat_vals )
+            end if
+            if ( allocated( stats_rad_zm(i)%file%lon_vals ) ) then
+              deallocate( stats_rad_zm(i)%file%lon_vals )
+            end if
+
+          end if
+
+        end if ! l_output_rad_files
+
+        ! De-allocate all stats_sfc variables
+        if (allocated(stats_sfc(i)%z)) then
+          deallocate( stats_sfc(i)%z )
+
+          deallocate( stats_sfc(i)%accum_field_values )
+          deallocate( stats_sfc(i)%accum_num_samples )
+          deallocate( stats_sfc(i)%l_in_update )
+
+          deallocate( stats_sfc(i)%file%grid_avg_var )
+          deallocate( stats_sfc(i)%file%z )
+        end if
+              
+        ! Check if pointer is allocated to prevent crash in netcdf (ticket 765)
+        if ( allocated( stats_sfc(i)%file%lat_vals ) ) then
+          deallocate( stats_sfc(i)%file%lat_vals )
+        end if
+        if ( allocated( stats_sfc(i)%file%lon_vals ) ) then
+          deallocate( stats_sfc(i)%file%lon_vals )
+        end if
+
+      end do
 
       ! De-allocate scalar indices
       if (allocated(stats_metadata%isclrm)) then

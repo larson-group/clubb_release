@@ -27,13 +27,13 @@ grid_type | integer
   1 ==> evenly spaced grid levels, 2 ==> unevenly-spaced thermo. grid levels,
   3 ==> unevenly-spaced momentum grid levels.
 
-deltaz | real, default precision 
+deltaz_nl | real, default precision 
   Distance between grid levels for grid_type = 1 [m].
 
-zm_init | real, default precision 
+zm_init_nl | real, default precision 
   Min Altitude of lowest mom. level on any grid  [m].
 
-zm_top | real, default precision 
+zm_top_nl | real, default precision 
   Max Altitude of highest mom. level on any grid [m].
 
 zt_grid_fname | character
@@ -85,7 +85,7 @@ dt_rad | real, minimum of 12 digits of precision
 T_sfc | real, default precision
   Temperature of underlying surface (e.g. SST) [K].
 
-p_sfc | real, default precision
+p_sfc_nl | real, default precision
   Pressure at model base [Pa].
 
 SE | real, default precision

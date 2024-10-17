@@ -44,11 +44,11 @@ module clubb_model_settings
 !$omp threadprivate(lin_int_buffer)
 
   real( kind = core_rknd ), public ::  & 
-    deltaz,  & ! Change in altitude per grid level     [m]
-    zm_init, & ! Initial point on the momentum grid    [m]
-    zm_top     ! Maximum point on the momentum grid    [m]
+    deltaz_nl,  & ! Change in altitude per grid level     [m]
+    zm_init_nl, & ! Initial point on the momentum grid    [m]
+    zm_top_nl     ! Maximum point on the momentum grid    [m]
 
-!$omp threadprivate(deltaz, zm_init, zm_top)
+!$omp threadprivate(deltaz_nl, zm_init_nl, zm_top_nl)
 
   ! For grid_type 2 or 3 (stretched grid cases)
   character(len=100), public :: & 
@@ -127,9 +127,9 @@ module clubb_model_settings
 
     lin_int_buffer = 0
 
-    deltaz  = 40._core_rknd
-    zm_init = 0._core_rknd
-    zm_top  = 3500._core_rknd
+    deltaz_nl  = 40._core_rknd
+    zm_init_nl = 0._core_rknd
+    zm_top_nl  = 3500._core_rknd
 
     zt_grid_fname = ""
     zm_grid_fname = ""

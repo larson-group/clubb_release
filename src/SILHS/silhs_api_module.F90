@@ -282,6 +282,10 @@ contains
     real( kind = core_rknd ), dimension(1,num_samples,nzt) :: &
       lh_sample_point_weights_col
 
+    type(stats), dimension(1) :: &
+      stats_lh_zt_col, &
+      stats_lh_sfc_col
+
     ! -------------- Begin Code --------------
 
     delta_zm_col(1,:)                 = delta_zm
@@ -293,6 +297,8 @@ contains
     mu2_col(1,:,:)                    = mu2
     sigma1_col(1,:,:)                 = sigma1
     sigma2_col(1,:,:)                 = sigma2
+    stats_lh_zt_col(1)                = stats_lh_zt
+    stats_lh_sfc_col(1)               = stats_lh_sfc
 
     call generate_silhs_sample( &
       iter, pdf_dim, num_samples, sequence_length, nzt, 1, & ! In
@@ -305,7 +311,7 @@ contains
       precip_fracs, silhs_config_flags, & ! In
       vert_decorr_coef, & ! In
       stats_metadata, & ! In
-      stats_lh_zt, stats_lh_sfc, & ! intent(inout)
+      stats_lh_zt_col, stats_lh_sfc_col, & ! intent(inout)
       X_nl_all_levs_col, X_mixt_comp_all_levs_col, & ! Out
       lh_sample_point_weights_col ) ! Out
       
@@ -386,7 +392,7 @@ contains
       hm_metadata
 
     ! InOut Variables
-    type(stats), intent(inout) :: &
+    type(stats), dimension(ngrdcol), intent(inout) :: &
       stats_lh_zt, &
       stats_lh_sfc
 

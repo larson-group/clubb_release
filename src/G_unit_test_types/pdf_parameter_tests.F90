@@ -165,13 +165,20 @@ module pdf_parameter_tests
 
     use parameters_tunable, only: &
         set_default_parameters, & ! Procedure(s)
-        read_parameters
+        init_clubb_params
 
     use mu_sigma_hm_tests, only: &
         produce_seed    ! Procedure(s)
 
     use clubb_precision, only: &
         core_rknd    ! Variable(s)
+
+    use parameter_indices, only: &
+        igamma_coef, &
+        igamma_coefb, &
+        igamma_coefc, &
+        islope_coef_spread_DG_means_w, &
+        ipdf_component_stdev_factor_w
 
     implicit none
 
@@ -548,33 +555,6 @@ module pdf_parameter_tests
                                       ! eliminates spurious drying tendencies at model top
       l_host_applies_sfc_fluxes       ! Use to determine whether a host model has already applied
                                       ! the surface flux, to avoid double counting.
-      
-    real( kind = core_rknd ) :: & 
-      C1, C1b, C1c, C2rt, C2thl, C2rtthl, & 
-      C4, C_uu_shr, C_uu_buoy, C6rt, C6rtb, C6rtc, C6thl, C6thlb, C6thlc, & 
-      C7, C7b, C7c, C8, C8b, C10, & 
-      C11, C11b, C11c, C12, C13, C14, C_wp2_pr_dfsn, C_wp3_pr_tp, &
-      C_wp3_pr_turb, C_wp3_pr_dfsn, C_wp2_splat, & 
-      C6rt_Lscale0, C6thl_Lscale0, C7_Lscale0, wpxp_L_thresh, &
-      c_K, c_K1, nu1, c_K2, nu2, c_K6, nu6, c_K8, nu8,  & 
-      c_K9, nu9, nu10, c_K_hm, c_K_hmb, K_hm_min_coef, nu_hm, &
-      coef_spread_DG_means_rt, coef_spread_DG_means_thl, &
-      gamma_coef, gamma_coefb, gamma_coefc, mu, beta, lmin_coef, &
-      omicron, zeta_vrnce_rat, upsilon_precip_frac_rat, &
-      lambda0_stability_coef, mult_coef, taumin, taumax, Lscale_mu_coef, &
-      Lscale_pert_coef, alpha_corr, Skw_denom_coef, c_K10, c_K10h, &
-      thlp2_rad_coef, thlp2_rad_cloud_frac_thresh, up2_sfc_coef, &
-      Skw_max_mag, xp3_coef_base, xp3_coef_slope, altitude_threshold, &
-      rtp2_clip_coef, C_invrs_tau_bkgnd, C_invrs_tau_sfc, &
-      C_invrs_tau_shear, C_invrs_tau_N2, C_invrs_tau_N2_wp2, &
-      C_invrs_tau_N2_xp2, C_invrs_tau_N2_wpxp, C_invrs_tau_N2_clear_wp3, &
-      C_invrs_tau_wpxp_Ri, C_invrs_tau_wpxp_N2_thresh, &
-      Cx_min, Cx_max, Richardson_num_min, Richardson_num_max, &
-      wpxp_Ri_exp, a3_coef_min, a_const, bv_efold, z_displace
-      
-    real( kind = core_rknd ), dimension(1) :: & 
-      slope_coef_spread_DG_means_w, &
-      pdf_component_stdev_factor_w
 
     integer, parameter :: iunit = 10
 
@@ -584,61 +564,18 @@ module pdf_parameter_tests
     real( kind = core_rknd ), dimension(1,nparams) :: & 
       clubb_params  ! Array of the model constants
 
-
-    ! Set the default tunable parameter values
-    call set_default_parameters( &
-               C1, C1b, C1c, C2rt, C2thl, C2rtthl, &
-               C4, C_uu_shr, C_uu_buoy, C6rt, C6rtb, C6rtc, &
-               C6thl, C6thlb, C6thlc, C7, C7b, C7c, C8, C8b, C10, &
-               C11, C11b, C11c, C12, C13, C14, C_wp2_pr_dfsn, C_wp3_pr_tp, &
-               C_wp3_pr_turb, C_wp3_pr_dfsn, C_wp2_splat, &
-               C6rt_Lscale0, C6thl_Lscale0, C7_Lscale0, wpxp_L_thresh, &
-               c_K, c_K1, nu1, c_K2, nu2, c_K6, nu6, c_K8, nu8, &
-               c_K9, nu9, nu10, c_K_hm, c_K_hmb, K_hm_min_coef, nu_hm, &
-               slope_coef_spread_DG_means_w(1), pdf_component_stdev_factor_w(1), &
-               coef_spread_DG_means_rt, coef_spread_DG_means_thl, &
-               gamma_coef, gamma_coefb, gamma_coefc, mu, beta, lmin_coef, &
-               omicron, zeta_vrnce_rat, upsilon_precip_frac_rat, &
-               lambda0_stability_coef, mult_coef, taumin, taumax, &
-               Lscale_mu_coef, Lscale_pert_coef, alpha_corr, &
-               Skw_denom_coef, c_K10, c_K10h, thlp2_rad_coef, &
-               thlp2_rad_cloud_frac_thresh, up2_sfc_coef, &
-               Skw_max_mag, xp3_coef_base, xp3_coef_slope, &
-               altitude_threshold, rtp2_clip_coef, C_invrs_tau_bkgnd, &
-               C_invrs_tau_sfc, C_invrs_tau_shear, C_invrs_tau_N2, & 
-               C_invrs_tau_N2_wp2, C_invrs_tau_N2_xp2, &
-               C_invrs_tau_N2_wpxp, C_invrs_tau_N2_clear_wp3, &
-               C_invrs_tau_wpxp_Ri, C_invrs_tau_wpxp_N2_thresh, &
-               Cx_min, Cx_max, Richardson_num_min, Richardson_num_max, &
-               wpxp_Ri_exp, a3_coef_min, a_const, bv_efold, z_displace )
+    real( kind = core_rknd ) :: &
+      gamma_coef, &
+      gamma_coefb, &
+      gamma_coefc
 
     ! Read in model parameter values
-    call read_parameters( 1, iunit, namelist_filename, &
-                          C1, C1b, C1c, C2rt, C2thl, C2rtthl, &
-                          C4, C_uu_shr, C_uu_buoy, C6rt, C6rtb, C6rtc, &
-                          C6thl, C6thlb, C6thlc, C7, C7b, C7c, C8, C8b, C10, &
-                          C11, C11b, C11c, C12, C13, C14, C_wp2_pr_dfsn, C_wp3_pr_tp, &
-                          C_wp3_pr_turb, C_wp3_pr_dfsn, C_wp2_splat, &
-                          C6rt_Lscale0, C6thl_Lscale0, C7_Lscale0, wpxp_L_thresh, &
-                          c_K, c_K1, nu1, c_K2, nu2, c_K6, nu6, c_K8, nu8, &
-                          c_K9, nu9, nu10, c_K_hm, c_K_hmb, K_hm_min_coef, nu_hm, &
-                          slope_coef_spread_DG_means_w(1), pdf_component_stdev_factor_w(1), &
-                          coef_spread_DG_means_rt, coef_spread_DG_means_thl, &
-                          gamma_coef, gamma_coefb, gamma_coefc, mu, beta, lmin_coef, &
-                          omicron, zeta_vrnce_rat, upsilon_precip_frac_rat, &
-                          lambda0_stability_coef, mult_coef, taumin, taumax, &
-                          Lscale_mu_coef, Lscale_pert_coef, alpha_corr, &
-                          Skw_denom_coef, c_K10, c_K10h, thlp2_rad_coef, &
-                          thlp2_rad_cloud_frac_thresh, up2_sfc_coef, &
-                          Skw_max_mag, xp3_coef_base, xp3_coef_slope, &
-                          altitude_threshold, rtp2_clip_coef, C_invrs_tau_bkgnd, &
-                          C_invrs_tau_sfc, C_invrs_tau_shear, C_invrs_tau_N2, & 
-                          C_invrs_tau_N2_wp2, C_invrs_tau_N2_xp2, &
-                          C_invrs_tau_N2_wpxp, C_invrs_tau_N2_clear_wp3, &
-                          C_invrs_tau_wpxp_Ri, C_invrs_tau_wpxp_N2_thresh, &
-                          Cx_min, Cx_max, Richardson_num_min, Richardson_num_max, &
-                          wpxp_Ri_exp, a3_coef_min, a_const, bv_efold, z_displace, &
+    call init_clubb_params( 1, iunit, namelist_filename, &
                           clubb_params )
+      
+    gamma_coef  = clubb_params(1,igamma_coef)
+    gamma_coefb = clubb_params(1,igamma_coefb)
+    gamma_coefc = clubb_params(1,igamma_coefc)    
 
     call set_default_clubb_config_flags( iiPDF_type, &
                                          ipdf_call_placement, &
@@ -1587,8 +1524,8 @@ module pdf_parameter_tests
                                       Skw, wprtp(1,:), wpthlp(1,:), upwp(1,:), vpwp(1,:),   &! In
                                       sclrm, sclrp2, wpsclrp,             &! In
                                       gamma_Skw_fnc(1,:),                 &! In
-                                      slope_coef_spread_DG_means_w(1),       &! In
-                                      pdf_component_stdev_factor_w(1),       &! In
+                                      clubb_params(1,islope_coef_spread_DG_means_w),       &! In
+                                      clubb_params(1,ipdf_component_stdev_factor_w),       &! In
                                       Skrt, Skthl, Sku, Skv, Sksclr,      &! I/O
                                       mu_w_1(1,:), mu_w_2(1,:),                     &! Out
                                       mu_rt_1, mu_rt_2,                   &! Out

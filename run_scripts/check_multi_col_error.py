@@ -13,12 +13,12 @@
 #               $configurable_multi_column_nl
 #               num_standalone_columns = # of columns to run
 #
-#        Then clubb_standalone will output the netcdf data to ../output/case_multicol.nc
-#        which should be saved for comparison somewhere (say save_case_multicol.nc). Then make 
+#        Then clubb_standalone will output the netcdf data to ../output/case_multi_col.nc
+#        which should be saved for comparison somewhere (say save_case_multi_col.nc). Then make 
 #        changes to clubb source code, compile and rerun the case with the same number of 
 #        standalone_columns, then compare the output files by calling this script with 
 #
-#           ./check_multicolumn_error.py save_case_multicol.nc ../output/case_multicol.nc
+#           ./check_multicolumn_error.py save_case_multi_col.nc ../output/case_multi_col.nc
 #
 #        It's assumed that the largest single difference of any field, over any timestep/level/column,
 #        will be less than 1.0e-7. For more stable cases like arm and bomex the largest difference is 
@@ -39,7 +39,7 @@ import sys
 field_threshold = 1.0e-7
 
 # Threshold used to determine if the ncfiles are close enough
-abs_error_threshold = 1.0e-7
+abs_error_threshold = 1.0e-10
 
 # Var to set if we find that the files differ significantly
 files_differ = False
@@ -85,17 +85,18 @@ for var in dset0.variables:
 
         # Save max abs diff since it is reused a few times
         max_abs_diff = np.max(abs_diff)
+        avg_abs_diff = np.average(abs_diff)
                      
         # Append the table array with the values we want to print   
         table.append( [ var, 
                         max_abs_diff, 
                         np.max(percent_diff), 
                         np.sum(abs_diff), 
-                        np.average(abs_diff), 
+                        avg_abs_diff, 
                         np.where(abs_diff == max_abs_diff) ] )
 
         # If the largest absolute difference excedes the threshold, then we consider the files different
-        if max_abs_diff > abs_error_threshold:
+        if avg_abs_diff > abs_error_threshold:
             files_differ = True
 
 # Print a very pretty table of the values
@@ -104,11 +105,11 @@ print("\n",tabulate.tabulate(table, headers='firstrow'))
 
 
 if not files_differ:
-    print("\nPASSED: The maximum absolute difference does not excede",abs_error_threshold,"for any field.")
+    print("\nPASSED: The average absolute difference does not excede",abs_error_threshold,"for any field.")
     sys.exit(0)
 else:
     print("\n###############################################################################################")
-    print("WARNING: The maximum absolute difference excedes",abs_error_threshold," for some field(s)!")
+    print("WARNING: The average absolute difference excedes",abs_error_threshold," for some field(s)!")
     print("         It's possible that no error has been introduced, but if the case being compared")
     print("         is arm/bomex/cobra then there is very likely an error.")
     print("###############################################################################################\n")

@@ -515,6 +515,8 @@ module input_netcdf
     ! Close file
     ierr = nf90_close( ncid=ncf%iounit )
 
+      print *, "closing ", ncf%iounit
+
     if ( ierr /= NF90_NOERR ) then
       write(fstderr,*) "Error closing a netCDF file"
       write(fstderr,*) nf90_strerror( ierr )

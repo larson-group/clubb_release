@@ -35,7 +35,7 @@ module parameters_tunable
   ! Default to private
   private
 
-  public :: set_default_parameters, setup_parameters, read_parameters, &
+  public :: set_default_parameters, setup_parameters, init_clubb_params, &
             read_param_minmax, read_param_constraints, &
             adj_low_res_nu, nu_vertical_res_dep
 
@@ -122,7 +122,7 @@ module parameters_tunable
   contains
 
   !=============================================================================
-  subroutine set_default_parameters( &
+  subroutine set_default_parameters( ngrdcol, &
                C1, C1b, C1c, C2rt, C2thl, C2rtthl, &
                C4, C_uu_shr, C_uu_buoy, C6rt, C6rtb, C6rtc, &
                C6thl, C6thlb, C6thlc, C7, C7b, C7c, C8, C8b, C10, &
@@ -150,8 +150,11 @@ module parameters_tunable
 
     implicit none
 
+    integer, intent(in) :: &
+      ngrdcol
+
     ! Output variables
-    real( kind = core_rknd ), intent(out) :: & 
+    real( kind = core_rknd ), dimension(ngrdcol), intent(out) :: & 
       C1, C1b, C1c, C2rt, C2thl, C2rtthl, & 
       C4, C_uu_shr, C_uu_buoy, C6rt, C6rtb, C6rtc, C6thl, C6thlb, C6thlc, & 
       C7, C7b, C7c, C8, C8b, C10, & 
@@ -925,31 +928,7 @@ module parameters_tunable
   end subroutine adj_low_res_nu
 
   !=============================================================================
-  subroutine read_parameters( ngrdcol, iunit, filename, &
-                              C1, C1b, C1c, C2rt, C2thl, C2rtthl, &
-                              C4, C_uu_shr, C_uu_buoy, C6rt, C6rtb, C6rtc, &
-                              C6thl, C6thlb, C6thlc, C7, C7b, C7c, C8, C8b, C10, &
-                              C11, C11b, C11c, C12, C13, C14, C_wp2_pr_dfsn, C_wp3_pr_tp, &
-                              C_wp3_pr_turb, C_wp3_pr_dfsn, C_wp2_splat, &
-                              C6rt_Lscale0, C6thl_Lscale0, C7_Lscale0, wpxp_L_thresh, &
-                              c_K, c_K1, nu1, c_K2, nu2, c_K6, nu6, c_K8, nu8, &
-                              c_K9, nu9, nu10, c_K_hm, c_K_hmb, K_hm_min_coef, nu_hm, &
-                              slope_coef_spread_DG_means_w, pdf_component_stdev_factor_w, &
-                              coef_spread_DG_means_rt, coef_spread_DG_means_thl, &
-                              gamma_coef, gamma_coefb, gamma_coefc, mu, beta, lmin_coef, &
-                              omicron, zeta_vrnce_rat, upsilon_precip_frac_rat, &
-                              lambda0_stability_coef, mult_coef, taumin, taumax, &
-                              Lscale_mu_coef, Lscale_pert_coef, alpha_corr, &
-                              Skw_denom_coef, c_K10, c_K10h, thlp2_rad_coef, &
-                              thlp2_rad_cloud_frac_thresh, up2_sfc_coef, &
-                              Skw_max_mag, xp3_coef_base, xp3_coef_slope, &
-                              altitude_threshold, rtp2_clip_coef, C_invrs_tau_bkgnd, &
-                              C_invrs_tau_sfc, C_invrs_tau_shear, C_invrs_tau_N2, & 
-                              C_invrs_tau_N2_wp2, C_invrs_tau_N2_xp2, &
-                              C_invrs_tau_N2_wpxp, C_invrs_tau_N2_clear_wp3, &
-                              C_invrs_tau_wpxp_Ri, C_invrs_tau_wpxp_N2_thresh, &
-                              Cx_min, Cx_max, Richardson_num_min, Richardson_num_max, &
-                              wpxp_Ri_exp, a3_coef_min, a_const, bv_efold, z_displace, &
+  subroutine init_clubb_params( ngrdcol, iunit, filename, &
                               clubb_params )
 
     ! Description:
@@ -958,19 +937,23 @@ module parameters_tunable
     ! References:
     ! None
     !-----------------------------------------------------------------------
-!    use constants_clubb, only: fstderr ! Constant
 
     implicit none
 
-    ! Input variables
+    !-------------------------- Input variables --------------------------
     integer, intent(in) :: &
       ngrdcol, &
       iunit
 
-    character(len=*), intent(in) :: filename
+    character(len=*), intent(in) :: &
+      filename
 
-    ! Input/Output variables
-    real( kind = core_rknd ), intent(inout) :: & 
+    ! -------------------------- Output Variables --------------------------
+    real( kind = core_rknd ), intent(out), dimension(ngrdcol,nparams) :: &
+      clubb_params
+
+    ! -------------------------- Local Variables --------------------------
+    real( kind = core_rknd ), dimension(ngrdcol) :: & 
       C1, C1b, C1c, C2rt, C2thl, C2rtthl, & 
       C4, C_uu_shr, C_uu_buoy, C6rt, C6rtb, C6rtc, C6thl, C6thlb, C6thlc, & 
       C7, C7b, C7c, C8, C8b, C10, & 
@@ -993,15 +976,6 @@ module parameters_tunable
       C_invrs_tau_wpxp_Ri, C_invrs_tau_wpxp_N2_thresh, &
       Cx_min, Cx_max, Richardson_num_min, Richardson_num_max, &
       wpxp_Ri_exp, a3_coef_min, a_const, bv_efold, z_displace
-
-    ! Output variables
-    real( kind = core_rknd ), intent(out), dimension(ngrdcol,nparams) :: &
-      clubb_params
-
-    ! Local variables
-!    integer :: i
-
-!    logical :: l_error
 
     ! Since we lack a devious way to do this just once, this namelist
     ! must be changed as well when a new parameter is added.
@@ -1031,7 +1005,34 @@ module parameters_tunable
       Cx_min, Cx_max, Richardson_num_min, Richardson_num_max, &
       wpxp_Ri_exp, a3_coef_min, a_const, bv_efold, z_displace
 
-    ! ---- Begin Code ----
+    !-------------------------- Begin Code --------------------------
+
+    ! Set the default tunable parameter values
+    call set_default_parameters( ngrdcol, &
+                C1, C1b, C1c, C2rt, C2thl, C2rtthl, &
+                C4, C_uu_shr, C_uu_buoy, C6rt, C6rtb, C6rtc, &
+                C6thl, C6thlb, C6thlc, C7, C7b, C7c, C8, C8b, C10, &
+                C11, C11b, C11c, C12, C13, C14, C_wp2_pr_dfsn, C_wp3_pr_tp, &
+                C_wp3_pr_turb, C_wp3_pr_dfsn, C_wp2_splat, &
+                C6rt_Lscale0, C6thl_Lscale0, C7_Lscale0, wpxp_L_thresh, &
+                c_K, c_K1, nu1, c_K2, nu2, c_K6, nu6, c_K8, nu8, &
+                c_K9, nu9, nu10, c_K_hm, c_K_hmb, K_hm_min_coef, nu_hm, &
+                slope_coef_spread_DG_means_w, pdf_component_stdev_factor_w, &
+                coef_spread_DG_means_rt, coef_spread_DG_means_thl, &
+                gamma_coef, gamma_coefb, gamma_coefc, mu, beta, lmin_coef, &
+                omicron, zeta_vrnce_rat, upsilon_precip_frac_rat, &
+                lambda0_stability_coef, mult_coef, taumin, taumax, &
+                Lscale_mu_coef, Lscale_pert_coef, alpha_corr, &
+                Skw_denom_coef, c_K10, c_K10h, thlp2_rad_coef, &
+                thlp2_rad_cloud_frac_thresh, up2_sfc_coef, &
+                Skw_max_mag, xp3_coef_base, xp3_coef_slope, &
+                altitude_threshold, rtp2_clip_coef, C_invrs_tau_bkgnd, &
+                C_invrs_tau_sfc, C_invrs_tau_shear, C_invrs_tau_N2, & 
+                C_invrs_tau_N2_wp2, C_invrs_tau_N2_xp2, &
+                C_invrs_tau_N2_wpxp, C_invrs_tau_N2_clear_wp3, &
+                C_invrs_tau_wpxp_Ri, C_invrs_tau_wpxp_N2_thresh, &
+                Cx_min, Cx_max, Richardson_num_min, Richardson_num_max, &
+                wpxp_Ri_exp, a3_coef_min, a_const, bv_efold, z_displace )
 
     ! If the filename is empty, assume we're using a `working' set of
     ! parameters that are set statically here (handy for host models).
@@ -1090,7 +1091,7 @@ module parameters_tunable
 
     return
 
-  end subroutine read_parameters
+  end subroutine init_clubb_params
 
   !=============================================================================
   subroutine read_param_minmax & 
@@ -1696,7 +1697,7 @@ module parameters_tunable
     integer, intent(in) :: &
       ngrdcol
 
-    real( kind = core_rknd ), intent(in) :: & 
+    real( kind = core_rknd ), dimension(ngrdcol), intent(in) :: & 
       C1, C1b, C1c, C2rt, C2thl, C2rtthl, & 
       C4, C_uu_shr, C_uu_buoy, C6rt, C6rtb, C6rtc, C6thl, C6thlb, C6thlc, & 
       C7, C7b, C7c, C8, C8b, C10, & 
@@ -1730,108 +1731,108 @@ module parameters_tunable
     !------------------------- Begin Code -------------------------
 
     do i = 1, ngrdcol
-      clubb_params(i,iC1)      = C1
-      clubb_params(i,iC1b)     = C1b
-      clubb_params(i,iC1c)     = C1c
-      clubb_params(i,iC2rt)    = C2rt
-      clubb_params(i,iC2thl)   = C2thl
-      clubb_params(i,iC2rtthl) = C2rtthl
-      clubb_params(i,iC4)      = C4
-      clubb_params(i,iC_uu_shr) = C_uu_shr
-      clubb_params(i,iC_uu_buoy) = C_uu_buoy
-      clubb_params(i,iC6rt)    = C6rt
-      clubb_params(i,iC6rtb)   = C6rtb
-      clubb_params(i,iC6rtc)   = C6rtc
-      clubb_params(i,iC6thl)   = C6thl
-      clubb_params(i,iC6thlb)  = C6thlb
-      clubb_params(i,iC6thlc)  = C6thlc
-      clubb_params(i,iC7)      = C7
-      clubb_params(i,iC7b)     = C7b
-      clubb_params(i,iC7c)     = C7c
-      clubb_params(i,iC8)      = C8
-      clubb_params(i,iC8b)     = C8b
-      clubb_params(i,iC10)     = C10
-      clubb_params(i,iC11)     = C11
-      clubb_params(i,iC11b)    = C11b
-      clubb_params(i,iC11c)    = C11c
-      clubb_params(i,iC12)     = C12
-      clubb_params(i,iC13)     = C13
-      clubb_params(i,iC14)     = C14
-      clubb_params(i,iC_wp2_pr_dfsn)      = C_wp2_pr_dfsn
-      clubb_params(i,iC_wp3_pr_tp)        = C_wp3_pr_tp
-      clubb_params(i,iC_wp3_pr_turb)      = C_wp3_pr_turb
-      clubb_params(i,iC_wp3_pr_dfsn)      = C_wp3_pr_dfsn
-      clubb_params(i,iC_wp2_splat)        = C_wp2_splat
-      clubb_params(i,iC6rt_Lscale0)       = C6rt_Lscale0
-      clubb_params(i,iC6thl_Lscale0)      = C6thl_Lscale0
-      clubb_params(i,iC7_Lscale0)         = C7_Lscale0
-      clubb_params(i,iwpxp_L_thresh)    = wpxp_L_thresh
-      clubb_params(i,ic_K)       = c_K
-      clubb_params(i,ic_K1)      = c_K1
-      clubb_params(i,inu1)       = nu1
-      clubb_params(i,ic_K2)      = c_K2
-      clubb_params(i,inu2)       = nu2
-      clubb_params(i,ic_K6)      = c_K6
-      clubb_params(i,inu6)       = nu6
-      clubb_params(i,ic_K8)      = c_K8
-      clubb_params(i,inu8)       = nu8
-      clubb_params(i,ic_K9)      = c_K9
-      clubb_params(i,inu9)       = nu9
-      clubb_params(i,inu10)      = nu10
-      clubb_params(i,ic_K_hm)    = c_K_hm
-      clubb_params(i,ic_K_hmb)   = c_K_hmb
-      clubb_params(i,iK_hm_min_coef)   = K_hm_min_coef
-      clubb_params(i,inu_hm)     = nu_hm
-      clubb_params(i,islope_coef_spread_DG_means_w) = slope_coef_spread_DG_means_w
-      clubb_params(i,ipdf_component_stdev_factor_w) = pdf_component_stdev_factor_w
-      clubb_params(i,icoef_spread_DG_means_rt) = coef_spread_DG_means_rt
-      clubb_params(i,icoef_spread_DG_means_thl) = coef_spread_DG_means_thl
-      clubb_params(i,igamma_coef)  = gamma_coef
-      clubb_params(i,igamma_coefb) = gamma_coefb
-      clubb_params(i,igamma_coefc) = gamma_coefc
-      clubb_params(i,imu) = mu
-      clubb_params(i,ibeta) = beta
-      clubb_params(i,ilmin_coef) = lmin_coef
-      clubb_params(i,iomicron) = omicron
-      clubb_params(i,izeta_vrnce_rat) = zeta_vrnce_rat
-      clubb_params(i,iupsilon_precip_frac_rat) = upsilon_precip_frac_rat
-      clubb_params(i,ilambda0_stability_coef) = lambda0_stability_coef
-      clubb_params(i,imult_coef) = mult_coef
-      clubb_params(i,itaumin) = taumin
-      clubb_params(i,itaumax) = taumax
-      clubb_params(i,iLscale_mu_coef) = Lscale_mu_coef
-      clubb_params(i,iLscale_pert_coef) = Lscale_pert_coef
-      clubb_params(i,ialpha_corr) = alpha_corr
-      clubb_params(i,iSkw_denom_coef) = Skw_denom_coef
-      clubb_params(i,ic_K10) = c_K10
-      clubb_params(i,ic_K10h) = c_K10h
-      clubb_params(i,ithlp2_rad_coef) = thlp2_rad_coef
-      clubb_params(i,ithlp2_rad_cloud_frac_thresh) = thlp2_rad_cloud_frac_thresh
-      clubb_params(i,iup2_sfc_coef) = up2_sfc_coef
-      clubb_params(i,iSkw_max_mag) = Skw_max_mag
-      clubb_params(i,ixp3_coef_base) = xp3_coef_base
-      clubb_params(i,ixp3_coef_slope) = xp3_coef_slope
-      clubb_params(i,ialtitude_threshold) = altitude_threshold
-      clubb_params(i,irtp2_clip_coef) = rtp2_clip_coef
-      clubb_params(i,iC_invrs_tau_bkgnd)          = C_invrs_tau_bkgnd
-      clubb_params(i,iC_invrs_tau_sfc)            = C_invrs_tau_sfc
-      clubb_params(i,iC_invrs_tau_shear)          = C_invrs_tau_shear
-      clubb_params(i,iC_invrs_tau_N2)             = C_invrs_tau_N2
-      clubb_params(i,iC_invrs_tau_N2_wp2)         = C_invrs_tau_N2_wp2
-      clubb_params(i,iC_invrs_tau_N2_xp2)         = C_invrs_tau_N2_xp2
-      clubb_params(i,iC_invrs_tau_N2_wpxp)        = C_invrs_tau_N2_wpxp
-      clubb_params(i,iC_invrs_tau_N2_clear_wp3)   = C_invrs_tau_N2_clear_wp3
-      clubb_params(i,iC_invrs_tau_wpxp_Ri)        = C_invrs_tau_wpxp_Ri
-      clubb_params(i,iC_invrs_tau_wpxp_N2_thresh) = C_invrs_tau_wpxp_N2_thresh
-      clubb_params(i,iCx_min) = Cx_min
-      clubb_params(i,iCx_max) = Cx_max
-      clubb_params(i,iRichardson_num_min) = Richardson_num_min
-      clubb_params(i,iRichardson_num_max) = Richardson_num_max
-      clubb_params(i,ia3_coef_min) = a3_coef_min
-      clubb_params(i,ia_const) = a_const
-      clubb_params(i,ibv_efold) = bv_efold
-      clubb_params(i,iwpxp_Ri_exp) = wpxp_Ri_exp
-      clubb_params(i,iz_displace) = z_displace
+      clubb_params(i,iC1)      = C1(i)
+      clubb_params(i,iC1b)     = C1b(i)
+      clubb_params(i,iC1c)     = C1c(i)
+      clubb_params(i,iC2rt)    = C2rt(i)
+      clubb_params(i,iC2thl)   = C2thl(i)
+      clubb_params(i,iC2rtthl) = C2rtthl(i)
+      clubb_params(i,iC4)      = C4(i)
+      clubb_params(i,iC_uu_shr) = C_uu_shr(i)
+      clubb_params(i,iC_uu_buoy) = C_uu_buoy(i)
+      clubb_params(i,iC6rt)    = C6rt(i)
+      clubb_params(i,iC6rtb)   = C6rtb(i)
+      clubb_params(i,iC6rtc)   = C6rtc(i)
+      clubb_params(i,iC6thl)   = C6thl(i)
+      clubb_params(i,iC6thlb)  = C6thlb(i)
+      clubb_params(i,iC6thlc)  = C6thlc(i)
+      clubb_params(i,iC7)      = C7(i)
+      clubb_params(i,iC7b)     = C7b(i)
+      clubb_params(i,iC7c)     = C7c(i)
+      clubb_params(i,iC8)      = C8(i)
+      clubb_params(i,iC8b)     = C8b(i)
+      clubb_params(i,iC10)     = C10(i)
+      clubb_params(i,iC11)     = C11(i)
+      clubb_params(i,iC11b)    = C11b(i)
+      clubb_params(i,iC11c)    = C11c(i)
+      clubb_params(i,iC12)     = C12(i)
+      clubb_params(i,iC13)     = C13(i)
+      clubb_params(i,iC14)     = C14(i)
+      clubb_params(i,iC_wp2_pr_dfsn)      = C_wp2_pr_dfsn(i)
+      clubb_params(i,iC_wp3_pr_tp)        = C_wp3_pr_tp(i)
+      clubb_params(i,iC_wp3_pr_turb)      = C_wp3_pr_turb(i)
+      clubb_params(i,iC_wp3_pr_dfsn)      = C_wp3_pr_dfsn(i)
+      clubb_params(i,iC_wp2_splat)        = C_wp2_splat(i)
+      clubb_params(i,iC6rt_Lscale0)       = C6rt_Lscale0(i)
+      clubb_params(i,iC6thl_Lscale0)      = C6thl_Lscale0(i)
+      clubb_params(i,iC7_Lscale0)         = C7_Lscale0(i)
+      clubb_params(i,iwpxp_L_thresh)    = wpxp_L_thresh(i)
+      clubb_params(i,ic_K)       = c_K(i)
+      clubb_params(i,ic_K1)      = c_K1(i)
+      clubb_params(i,inu1)       = nu1(i)
+      clubb_params(i,ic_K2)      = c_K2(i)
+      clubb_params(i,inu2)       = nu2(i)
+      clubb_params(i,ic_K6)      = c_K6(i)
+      clubb_params(i,inu6)       = nu6(i)
+      clubb_params(i,ic_K8)      = c_K8(i)
+      clubb_params(i,inu8)       = nu8(i)
+      clubb_params(i,ic_K9)      = c_K9(i)
+      clubb_params(i,inu9)       = nu9(i)
+      clubb_params(i,inu10)      = nu10(i)
+      clubb_params(i,ic_K_hm)    = c_K_hm(i)
+      clubb_params(i,ic_K_hmb)   = c_K_hmb(i)
+      clubb_params(i,iK_hm_min_coef)   = K_hm_min_coef(i)
+      clubb_params(i,inu_hm)     = nu_hm(i)
+      clubb_params(i,islope_coef_spread_DG_means_w) = slope_coef_spread_DG_means_w(i)
+      clubb_params(i,ipdf_component_stdev_factor_w) = pdf_component_stdev_factor_w(i)
+      clubb_params(i,icoef_spread_DG_means_rt) = coef_spread_DG_means_rt(i)
+      clubb_params(i,icoef_spread_DG_means_thl) = coef_spread_DG_means_thl(i)
+      clubb_params(i,igamma_coef)  = gamma_coef(i)
+      clubb_params(i,igamma_coefb) = gamma_coefb(i)
+      clubb_params(i,igamma_coefc) = gamma_coefc(i)
+      clubb_params(i,imu) = mu(i)
+      clubb_params(i,ibeta) = beta(i)
+      clubb_params(i,ilmin_coef) = lmin_coef(i)
+      clubb_params(i,iomicron) = omicron(i)
+      clubb_params(i,izeta_vrnce_rat) = zeta_vrnce_rat(i)
+      clubb_params(i,iupsilon_precip_frac_rat) = upsilon_precip_frac_rat(i)
+      clubb_params(i,ilambda0_stability_coef) = lambda0_stability_coef(i)
+      clubb_params(i,imult_coef) = mult_coef(i)
+      clubb_params(i,itaumin) = taumin(i)
+      clubb_params(i,itaumax) = taumax(i)
+      clubb_params(i,iLscale_mu_coef) = Lscale_mu_coef(i)
+      clubb_params(i,iLscale_pert_coef) = Lscale_pert_coef(i)
+      clubb_params(i,ialpha_corr) = alpha_corr(i)
+      clubb_params(i,iSkw_denom_coef) = Skw_denom_coef(i)
+      clubb_params(i,ic_K10) = c_K10(i)
+      clubb_params(i,ic_K10h) = c_K10h(i)
+      clubb_params(i,ithlp2_rad_coef) = thlp2_rad_coef(i)
+      clubb_params(i,ithlp2_rad_cloud_frac_thresh) = thlp2_rad_cloud_frac_thresh(i)
+      clubb_params(i,iup2_sfc_coef) = up2_sfc_coef(i)
+      clubb_params(i,iSkw_max_mag) = Skw_max_mag(i)
+      clubb_params(i,ixp3_coef_base) = xp3_coef_base(i)
+      clubb_params(i,ixp3_coef_slope) = xp3_coef_slope(i)
+      clubb_params(i,ialtitude_threshold) = altitude_threshold(i)
+      clubb_params(i,irtp2_clip_coef) = rtp2_clip_coef(i)
+      clubb_params(i,iC_invrs_tau_bkgnd)          = C_invrs_tau_bkgnd(i)
+      clubb_params(i,iC_invrs_tau_sfc)            = C_invrs_tau_sfc(i)
+      clubb_params(i,iC_invrs_tau_shear)          = C_invrs_tau_shear(i)
+      clubb_params(i,iC_invrs_tau_N2)             = C_invrs_tau_N2(i)
+      clubb_params(i,iC_invrs_tau_N2_wp2)         = C_invrs_tau_N2_wp2(i)
+      clubb_params(i,iC_invrs_tau_N2_xp2)         = C_invrs_tau_N2_xp2(i)
+      clubb_params(i,iC_invrs_tau_N2_wpxp)        = C_invrs_tau_N2_wpxp(i)
+      clubb_params(i,iC_invrs_tau_N2_clear_wp3)   = C_invrs_tau_N2_clear_wp3(i)
+      clubb_params(i,iC_invrs_tau_wpxp_Ri)        = C_invrs_tau_wpxp_Ri(i)
+      clubb_params(i,iC_invrs_tau_wpxp_N2_thresh) = C_invrs_tau_wpxp_N2_thresh(i)
+      clubb_params(i,iCx_min) = Cx_min(i)
+      clubb_params(i,iCx_max) = Cx_max(i)
+      clubb_params(i,iRichardson_num_min) = Richardson_num_min(i)
+      clubb_params(i,iRichardson_num_max) = Richardson_num_max(i)
+      clubb_params(i,ia3_coef_min) = a3_coef_min(i)
+      clubb_params(i,ia_const) = a_const(i)
+      clubb_params(i,ibv_efold) = bv_efold(i)
+      clubb_params(i,iwpxp_Ri_exp) = wpxp_Ri_exp(i)
+      clubb_params(i,iz_displace) = z_displace(i)
     end do
 
     return

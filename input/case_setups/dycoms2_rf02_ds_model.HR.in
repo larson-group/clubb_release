@@ -23,8 +23,8 @@ grid_type = 1     ! Select grid type:
 
 ! Evenly-spaced grid (grid_type = 1).
 ! Note:  For this option, both zt_grid_fname and zm_grid_fname must be ''.
-deltaz  = 10.0    ! Distance between grid levels on evenly-spaced grid.      [m]
-zm_init = 0.0     ! Altitude of lowest momentum level on evenly-spaced grid. [m]
+deltaz_nl  = 10.0    ! Distance between grid levels on evenly-spaced grid.      [m]
+zm_init_nl = 0.0     ! Altitude of lowest momentum level on evenly-spaced grid. [m]
 
 ! Stretched grid on thermodynamic levels (grid_type = 2).
 ! Path (from ../standalone/) and filename of data file that contains
@@ -45,7 +45,7 @@ year  = 2001  ! Year of model start.
 lat_vals = 31.5    ! Latitude (0 to 90 for north lat.; 0 to -90 for south lat.) [degrees]
 lon_vals = -122.0  ! Longitude (0 to 180 for east long.; 0 to -180 for west long.) [degrees]
 
-sfc_elevation = 0.0     ! Elevation of ground level [meters above mean sea level]
+sfc_elevation_nl = 0.0     ! Elevation of ground level [meters above mean sea level]
 
 time_initial = 0.0     ! Model start time [seconds since midnight on start date]
 time_final =  21600.0  ! Model end time [seconds since midnight on start date]
@@ -55,7 +55,7 @@ dt_main    = 5.0    ! Model timestep [s]
 dt_rad = 5.0    ! Closure timestep [s] (must multiply evenly into dt_main).
 
 T_sfc = 292.0       ! Temperature of underlying surface (e.g. SST)           [K]
-p_sfc = 1017.8e2    ! Pressure at model base              [Pa]
+p_sfc_nl = 1017.8e2    ! Pressure at model base              [Pa]
 
 fcor = 7.6e-5      ! Coriolis parameter                  [s^-1]
 T0   = 300.        ! Reference temperature (usually 300) [K]

@@ -22,9 +22,9 @@ grid_type = 1     ! Select grid type:
 
 ! Evenly-spaced grid (grid_type = 1).
 ! Note:  For this option, both zt_grid_fname and zm_grid_fname must be ''.
-deltaz  = 40.0    ! Distance between grid levels on evenly-spaced grid.      [m]
-zm_init = 0.0 ! Minimum Altitude of lowest momentum level on any grid. [m]
-zm_top = 4000.0 ! Maximum Altitude of highest momentum level on any grid. [m]
+deltaz_nl  = 40.0    ! Distance between grid levels on evenly-spaced grid.      [m]
+zm_init_nl = 0.0 ! Minimum Altitude of lowest momentum level on any grid. [m]
+zm_top_nl = 4000.0 ! Maximum Altitude of highest momentum level on any grid. [m]
 
 ! Stretched grid on thermodynamic levels (grid_type = 2).
 ! Path (from ../run_scripts/) and filename of data file that contains
@@ -46,7 +46,7 @@ year  = 2004  ! Year of model start.
 lat_vals = 45.20407  ! Latitude (0 to 90 for north lat.; 0 to -90 for south lat.) [degrees]
 lon_vals = -68.7402  ! Longitude (0 to 180 for east long.; 0 to -180 for west long.) [degrees]
 
-sfc_elevation = 0.0     ! Elevation of ground level [meters above mean sea level]
+sfc_elevation_nl = 0.0     ! Elevation of ground level [meters above mean sea level]
 
 ! The initial data is from the upwind flights, 
 ! which took place at ~1600 GMT (1200 EDT).
@@ -59,7 +59,7 @@ time_final   = 230400.0 ! 48 hour run  ! Model end time [seconds since midnight 
 dt_main    = 60.0   ! Model timestep [s]
 dt_rad = 60.0   ! Radiation timestep [s] 
 
-p_sfc = 977.5e2     ! Pressure at model base              [Pa]
+p_sfc_nl = 977.5e2     ! Pressure at model base              [Pa]
 
 fcor = 1.0349e-4   ! Coriolis parameter                  [s^-1]
 T0   = 300.        ! Reference temperature (usually 300) [K]
