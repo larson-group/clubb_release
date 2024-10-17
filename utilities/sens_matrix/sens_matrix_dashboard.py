@@ -223,7 +223,6 @@ def main():
                sensNcFilenames, sensNcFilenamesExt, defaultNcFilename,
                beVerbose=False)
 
-
     return
 
 
