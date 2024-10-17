@@ -29,6 +29,7 @@ SILHS_PARAMS_FILE="../input/tunable_parameters/silhs_parameters.in"
 CUSTOM_OUTPUT_DIR=""
 GRADS=false		#Determines whether output is NetCDF or GrADS
 FILETYPE_CHANGED=false	#Used to ensure that both filetypes are not inadvertantly specified
+CLUBB_EXECUTABLE_FILE="../bin/clubb_standalone"
 
 # Figure out the directory where the script is located
 scriptPath=`dirname $0`
@@ -62,8 +63,8 @@ run_case()
 	echo "Running $run_case"
 
 	# Run the CLUBB model
-	if [ -e ../bin/clubb_standalone ]; then
-		../bin/clubb_standalone
+	if [ -e $CLUBB_EXECUTABLE_FILE ]; then
+		$CLUBB_EXECUTABLE_FILE
 		CLUBB_EXIT_STATUS=$?
 		if [ $CLUBB_EXIT_STATUS -eq 6 ]; then
 			# The exit status of 6 is used as the success exit status in CLUBB.
@@ -72,7 +73,7 @@ run_case()
 			RESULT=1
 		fi
 	else
-		echo "clubb_standalone not found (did you re-compile?)"
+		echo "${CLUBB_EXECUTABLE_FILE} not found (did you re-compile?)"
 		RESULT=1
 	fi
 
@@ -111,7 +112,7 @@ check_filetype() {
 # Note that we use `"$@"' to let each command-line parameter expand to a
 # separate word. The quotes around `$@' are essential!
 # We need TEMP as the `eval set --' would nuke the return value of getopt.
-TEMP=`getopt -o z:m:l:t:s:p:o:nhe --long zt_grid:,zm_grid:,levels:,timestep_test:,stats:,parameter_file:,output_directory:,performance_test,nightly,netcdf,help,grads \
+TEMP=`getopt -o z:m:l:t:s:p:o:nhe --long zt_grid:,zm_grid:,levels:,timestep_test:,stats:,parameter_file:,output_directory:,clubb_exec_file:,flags_file:,performance_test,nightly,netcdf,help,grads \
      -n 'run_scm.bash' -- "$@"`
 
 if [ $? != 0 ] ; then echo "Terminating..." >&2 ; exit 1 ; fi
@@ -230,6 +231,30 @@ while true ; do
 			FILETYPE_CHANGED=true
 
 			shift;;
+		--clubb_exec_file)
+			clubb_exec_file_tmp=$2
+
+			if [ ! -f $clubb_exec_file_tmp ];
+			then
+				echo "The clubb executable $clubb_exec_file_tmp was not found!"
+				exit 1;
+			else
+				CLUBB_EXECUTABLE_FILE=$clubb_exec_file_tmp
+			fi
+
+			shift 2 ;;
+		--flags_file)
+			flags_file_tmp=$2
+
+			if [ ! -f $flags_file_tmp ];
+			then
+				echo "The flags file $flags_file_tmp was not found!"
+				exit 1;
+			else
+				FLAGS_FILE=$flags_file_tmp
+			fi
+
+			shift 2 ;;
 		-h|--help) # Print the help message
 			echo -e "Usage: run_scm.bash [OPTION]... case_name"
 			echo -e "\t-z, --zt_grid=FILE\t\tThe path to the zt grid file"
@@ -241,7 +266,9 @@ while true ; do
 			echo -e "\t-e, --performance_test\t\tDisable statistics output and set debug"
 			echo -e "\t\t\t\t\tlevel to 0 for performance testing"
 			echo -e "\t-o, --output_directory\t\tSpecify an output directory"
-                        echo -e "\t--netcdf\t\t\tEnable NetCDF output (default)"
+            echo -e "\t--netcdf\t\t\tEnable NetCDF output (default)"
+			echo -e "\t--clubb_exec_file\t\tSet the clubb executable file to use"
+			echo -e "\t--flags_file\t\t\tSet the flags file to use"
 			echo -e "\t--grads\t\t\t\tEnable GRADS output"
 			echo -e "\t\t\t\t\tOutput formats are mutually exclusive"
 			echo -e "\t-h, --help\t\t\tPrints this help message"

@@ -6,3 +6,5 @@ obj/
 postprocessing/pyplotgen/les_and_clubb_benchmark_runs
 
 *.pyc
+
+input/tunable_parameters/*_tmp.in

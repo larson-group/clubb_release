@@ -1,0 +1,12 @@
+{
+    "flag1": {
+        "l_godunov_upwind_wpxp_ta": true,
+        "tridiag_solve_method": 2,
+        "l_diffuse_rtm_and_thlm": true,
+        "penta_solve_method": 2,
+        "saturation_formula": 2
+    },
+    "flag2": {
+        "saturation_formula": 1
+    }
+}

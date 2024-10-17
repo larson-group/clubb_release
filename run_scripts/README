@@ -10,6 +10,22 @@ run_bin_diff_all.bash:
   Compares the output for all cases specified in run_scm_all.bash in 
   two specified directories.
 
+run_bindiff_w_flags.py:
+run_bindiff_w_flags_config_example.json:
+  Test whether two or more branches of CLUBB produce the same answer when various flags are toggled.
+
+  The simplest way to use this script would look like:
+    python3 ./run_bindiff_w_flags.py -b <branch1>,<branch2>
+                                     -f <flag_config_file> -d <destination directory>
+  This would then clone both branches into the <destination directory>.
+  Inputs:
+    1. Two or more branches of CLUBB you want to compare
+    2. JSON configuration file, describing what flags you want to toggle
+    3. Path to directory where the clones should be stored
+
+  Output:
+    1. Text summary of differences found in the output of the branches
+
 run_inputfields.bash: 
   Runs CLUBB with specified prognostic variables from a GrADS or netCDF 
   stats file.
