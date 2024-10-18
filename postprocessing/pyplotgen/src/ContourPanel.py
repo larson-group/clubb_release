@@ -16,6 +16,7 @@ from datetime import datetime
 import logging
 logging.captureWarnings(True)
 
+import matplotlib as mpl
 import matplotlib.pyplot as plt
 import numpy as np
 
@@ -87,7 +88,9 @@ class ContourPanel(Panel):
             y_data = var.y
             c_data = var.data
             x_data, y_data = np.meshgrid(x_data, y_data)
-            cmap = var.colors
+            cmap = mpl.colormaps.get_cmap(var.colors)
+            norm = mpl.colors.Normalize(vmin=-1, vmax=1)
+            cont_map = plt.cm.ScalarMappable(norm=norm, cmap=cmap)
             label = var.label
 
             # Set graph size
@@ -96,8 +99,8 @@ class ContourPanel(Panel):
             # Prevent x-axis label from getting cut off
             # plt.gcf().subplots_adjust(bottom=0.15)
 
-            cs = plt.contourf(x_data, y_data, c_data.T, cmap=cmap)
-            plt.colorbar(cs)
+            plt.contourf(x_data, y_data, c_data.T, levels=cmap.N, norm=norm, cmap=cmap)
+            plt.gcf().colorbar(cont_map, ax=plt.gca(), cmap=cmap, norm=norm, label=self.dependent_title, orientation='vertical')
             plt.title(label + ' - ' + self.title, pad=10)
             plt.xlabel(self.x_title)
             plt.ylabel(self.y_title)
