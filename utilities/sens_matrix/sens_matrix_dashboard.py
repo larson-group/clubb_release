@@ -88,6 +88,7 @@ def main():
     # defaultBiasesCol + prescribedBiasesCol = -fwdFnc_tuned_params  (see objFnc).
     #     This lumps the prescribed-parameter adjustment into defaultBiasesCol.
     # Is it clearer to separate them out???
+    # defaultBiasesCol = default simulation - observations
     defaultBiasesCol = defaultBiasesCol + prescribedBiasesCol
 
     print("Optimizing parameter values . . . ")
@@ -313,7 +314,11 @@ def solveUsingNonlin(metricsNames,
              fwdFnc(scale*dnormlzdParamsSolnNonlin, normlzdSensMatrix, 1*normlzdCurvMatrix, numMetrics) \
              * metricsWeights
 
-    # defaultBiasesApprox = (forward model soln - default soln)
+    # defaultBiasesApproxNonlin = (       forward model soln       - default soln )
+    #                     = ( f0 + df/dp*dp + 0.5d2f/dp2*dp2 -       f0     )
+    # resid = ( y_i - ( f0 + df/dp_i*dp + 0.5d2f/dp2_i*dp2 ) )
+    #       =    ( y_i - f0 )   - ( df/dp_i*dp + 0.5d2f/dp2_i*dp2 )
+    #       = -defaultBiasesCol -     defaultBiasesApproxNonlin
     defaultBiasesApproxNonlin = normlzdWeightedDefaultBiasesApproxNonlin \
                                 * np.reciprocal(metricsWeights) * np.abs(normMetricValsCol)
 

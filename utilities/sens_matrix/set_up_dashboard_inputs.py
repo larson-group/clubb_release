@@ -151,9 +151,9 @@ def setUpInputs(beVerbose):
         #['clubb_altitude_threshold', 0.001, \
         # folder_name + '20_Regional.nc',
         # folder_name + '21_Regional.nc'], \
-        #['clubb_c_invrs_tau_sfc', 1.0, \
-        # folder_name + '6_Regional.nc',
-        # folder_name + '7_Regional.nc'], \
+        ['clubb_c_invrs_tau_sfc', 1.0, \
+         folder_name + '6_Regional.nc',
+         folder_name + '7_Regional.nc'], \
         ['clubb_c_invrs_tau_wpxp_n2_thresh', 1.e3, \
          folder_name + '8_Regional.nc', \
          folder_name + '9_Regional.nc'], \
@@ -580,6 +580,7 @@ def setUpPreliminaries(metricsNames, metricsNorms, \
 
     # Store biases in default simulation
     # defaultBiasesCol = + delta_b
+    #                  =  default simulation - observations
     defaultBiasesCol = np.subtract(defaultMetricValsCol, obsMetricValsCol)
 
     # Based on the default simulation,
