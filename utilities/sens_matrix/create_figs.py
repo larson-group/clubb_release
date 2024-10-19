@@ -48,7 +48,7 @@ def createFigs(metricsNames,
 
     print("Creating plots . . .")
 
-    resid = (-defaultBiasesApproxNonlin - defaultBiasesCol)[:, 0] \
+    normlzdResid = (-defaultBiasesApproxNonlin - defaultBiasesCol)[:, 0] \
             / np.abs(normMetricValsCol[:, 0])
 
     # Use these flags to determine whether or not to create specific plots
@@ -78,7 +78,7 @@ def createFigs(metricsNames,
     # These are the metrics that we want to include in the plots (whitelisted variables).
     # I.e., set whitelistedMetricsMask=T for variables that we want to plot.
     whitelistedMetricsMask =  ( (metricsNames == 'SWCF_4_11') \
-                         #| (metricsNames == 'SWCF_4_12') \
+                         | (metricsNames == 'SWCF_4_1') \
                          #| (metricsNames == 'SWCF_4_14') \
                          | (metricsNames == 'SWCF_6_14') \
                          | (metricsNames == 'SWCF_6_18') \
@@ -109,10 +109,10 @@ def createFigs(metricsNames,
                          #| (metricsNames == 'LWCF_6_18') \
                          #| (metricsNames == 'LWCF_9_18') \
                          #| (metricsNames == 'LWCF_1_7')  \
-                         #| (metricsNames == 'LWCF_6_5') \
+                         | (metricsNames == 'PRECT_9_4') \
                          | (metricsNames == 'PRECT_9_9') \
                          | (metricsNames == 'PRECT_9_8') \
-                         #| (metricsNames == 'PRECT_4_8') \
+                         | (metricsNames == 'PRECT_4_14') \
                          | (metricsNames == 'PRECT_6_7') \
                          | (metricsNames == 'PRECT_6_6') \
                          | (metricsNames == 'PRECT_6_13') \
@@ -279,10 +279,10 @@ def createFigs(metricsNames,
         print("Creating metricsBarChart . . .")
         #    minusNormlzdDefaultBiasesCol = \
         #             -defaultBiasesCol[metricsSensOrder,0]/np.abs(normMetricValsCol[metricsSensOrder,0])
-        #    residBias = (-defaultBiasesApproxNonlin-defaultBiasesCol)[metricsSensOrder,0] \
+        #    normlzdResidBias = (-defaultBiasesApproxNonlin-defaultBiasesCol)[metricsSensOrder,0] \
         #                       / np.abs(normMetricValsCol[metricsSensOrder,0])
         #    metricsBarChart = createMetricsBarChart(metricsNames[metricsSensOrder],paramsNames,
-        #                                            minusNormlzdDefaultBiasesCol, residBias, minusNonlinMatrixDparamsOrdered,
+        #                                            minusNormlzdDefaultBiasesCol, normlzdResidBias, minusNonlinMatrixDparamsOrdered,
         #                                            title='Removal of biases in each metric by each parameter')
         metricsBarChart = createMetricsBarChart(metricsNamesMaskedOrdered, paramsNames,
                                             defaultBiasesColMaskedOrdered, defaultBiasesApproxNonlinMaskedOrdered,
@@ -334,7 +334,7 @@ def createFigs(metricsNames,
             createScatterplot(xCol=xCol, xColLabel='sens',
                               yCol=yCol, yColLabel='bias',
                               colorCol=yCol, colorColLabel='bias',
-                              pointLabels=metricsNames,
+                              pointLabels=metricsNames, pointLabelsHeader='Metric',
                               plotTitle="""Regional biases vs. magnitude of sensitivity.""",
                               xaxisTitle="Magnitude of sensitivity of regional metrics to parameter changes",
                               yaxisTitle="Regional biases",
@@ -342,16 +342,16 @@ def createFigs(metricsNames,
                               plotWidth=700, plotHeight=500)
 
         xCol = np.linalg.norm(normlzdLinplusSensMatrixPoly, axis=1)
-        yCol = resid
+        yCol = normlzdResid
 
         residVsSensMagScatterplot = \
             createScatterplot(xCol=xCol, xColLabel='sens',
-                              yCol=yCol, yColLabel='resid',
-                              colorCol=yCol, colorColLabel='resid',
-                              pointLabels=metricsNames,
-                              plotTitle="""Regional residuals vs. magnitude of sensitivity.""",
+                              yCol=yCol, yColLabel='normlzdResid',
+                              colorCol=yCol, colorColLabel='normlzdResid',
+                              pointLabels=metricsNames, pointLabelsHeader='Metric',
+                              plotTitle="""Regional normalized residuals vs. magnitude of sensitivity.""",
                               xaxisTitle="Magnitude of sensitivity of regional metrics to parameter changes",
-                              yaxisTitle="Regional residuals",
+                              yaxisTitle="Regional normalized residuals",
                               showLegend=False, hoverMode="x",
                               plotWidth=700, plotHeight=500)
 
@@ -390,7 +390,7 @@ def createFigs(metricsNames,
                              yCol=yCol, yColLabel='SV2',
                              colorCol=np.minimum(1,-defaultBiasesCol[:, 0] / np.abs(normMetricValsCol[:, 0])),
                              colorColLabel='bias',
-                             pointLabels=metricsNamesNoprefix,
+                             pointLabels=metricsNamesNoprefix, pointLabelsHeader='Region',
                              plotTitle=("Biases (color) as a function of first and second left singular vector values<br>"\
                                        +"Variance explained by each SVD component (R**2) = <br>"\
                                        +np.array2string(RSquaredSvd)),
@@ -402,9 +402,9 @@ def createFigs(metricsNames,
         residVsSvdScatterplot = \
             createScatterplot(xCol=xCol, xColLabel='SV1',
                               yCol=yCol, yColLabel='SV2',
-                              colorCol=np.minimum(1, resid),
-                              colorColLabel='resid',
-                              pointLabels=metricsNamesNoprefix,
+                              colorCol=np.minimum(1, normlzdResid),
+                              colorColLabel='normlzdResid',
+                              pointLabels=metricsNamesNoprefix, pointLabelsHeader='Region',
                               plotTitle="""Residuals (color) as a function of first and second left singular vector values""",
                               xaxisTitle="First left singular vector values",
                               yaxisTitle="Second left singular vector values",
@@ -519,7 +519,7 @@ def createFigs(metricsNames,
            createScatterplot(xCol=xCol, xColLabel='Lev',
                              yCol=yCol, yColLabel='bias',
                              colorCol=yCol, colorColLabel='bias',
-                             pointLabels=metricsNames,
+                             pointLabels=metricsNames, pointLabelsHeader='Metric',
                              plotTitle="""Regional biases vs. leverages.""",
                              xaxisTitle="Leverages",
                              yaxisTitle="Regional biases",
@@ -536,7 +536,7 @@ def createFigs(metricsNames,
                                  biasesCol=normlzdDefaultBiasesCol,
                                  paramsNames=paramsNames,
                                  plotTitle='cos(angle) among parameters<br>\
-                                           (i.e., X^T*X using columns of sens matrix)<br>'\
+                                           (i.e., X^T*X using debiased columns of sens matrix)<br>'\
                                            +matrixDictKeyString+'<br>' \
                                  )
 
@@ -572,15 +572,14 @@ def createFigs(metricsNames,
 
         # Create scatterplot to look at outliers
         PcaBiplotFig = \
-        createPcaBiplot(normlzdLinplusSensMatrixPoly, defaultBiasesCol, normMetricValsCol,
+        createPcaBiplot(normlzdLinplusSensMatrixPoly, normlzdDefaultBiasesCol,
                         metricsNames, paramsNamesAbbr,
                         xColLabel='SV1', yColLabel='SV2',
-                        colorCol=np.minimum(1, -defaultBiasesCol[:, 0] / np.abs(normMetricValsCol[:, 0])),
+                        colorCol=np.minimum(1, -normlzdDefaultBiasesCol[:, 0]),
                         colorColLabel='bias',
-                        pointLabels=metricsNames,
+                        pointLabels=metricsNames, pointLabelsHeader='Metric',
                         plotTitle=("Biases (color) as a function of first and second left singular vector values<br>" \
-                                   + "Variance explained by each SVD component (R**2) = <br>" \
-                                   + np.array2string(RSquaredSvd)),
+                                   + "Variance explained by each SVD component (R**2) = <br>"),
                         xaxisTitle="First left singular vector values",
                         yaxisTitle="Second left singular vector values",
                         showLegend=False, hoverMode="closest",
@@ -809,7 +808,7 @@ def createMatrixPlusColFig( matrix, matIndexLabel, matColLabel,
 def createScatterplot(xCol, xColLabel,
                       yCol, yColLabel,
                       colorCol, colorColLabel,
-                      pointLabels,
+                      pointLabels, pointLabelsHeader,
                       plotTitle,
                       xaxisTitle,
                       yaxisTitle,
@@ -817,13 +816,19 @@ def createScatterplot(xCol, xColLabel,
                       plotWidth, plotHeight):
 
     # Helper function that plots a column of length numMetrics (yCol) vs. xCol
+    #df = pd.DataFrame({
+    #                   xColLabel: xCol,
+    #                   yColLabel: yCol,
+    #                   colorColLabel: colorCol,
+    #                  }, index=pointLabels )
     df = pd.DataFrame({
                        xColLabel: xCol,
                        yColLabel: yCol,
                        colorColLabel: colorCol,
-                      }, index=pointLabels )
+                       pointLabelsHeader: pointLabels
+                        }, index=pointLabels)
     scatterplot = px.scatter(df, x=xColLabel, y=yColLabel,
-#                                 text=pointLabels,
+                                 hover_data=pointLabelsHeader,
                                  title = plotTitle,
                                  color = colorColLabel,
                                  color_continuous_scale = 'Rainbow')
@@ -857,7 +862,7 @@ def createScatterplot(xCol, xColLabel,
 
     return scatterplot
 
-#def createMetricsBarChart( metricsNames, paramsNames, biases, residBias, sensMatrix, title ):
+#def createMetricsBarChart( metricsNames, paramsNames, biases, normlzdResidBias, sensMatrix, title ):
 def createMetricsBarChart( metricsNames, paramsNames,
                            defaultBiasesCol, defaultBiasesApproxNonlin,
                            normMetricValsCol,
@@ -872,7 +877,7 @@ def createMetricsBarChart( metricsNames, paramsNames,
 
     biases = \
              -defaultBiasesCol/np.abs(normMetricValsCol)
-    residBias = (-defaultBiasesApproxNonlin-defaultBiasesCol) \
+    normlzdResidBias = (-defaultBiasesApproxNonlin-defaultBiasesCol) \
                        / np.abs(normMetricValsCol)
 
     biases = np.reshape(biases, (-1,1))
@@ -899,9 +904,9 @@ def createMetricsBarChart( metricsNames, paramsNames,
         leftEnd  = leftEnd + np.minimum( np.zeros_like(sensCol), sensCol )
 
     # Insert a narrow black horizontal line in each bar to denote the improvement wrought by tuning
-    residBias = np.reshape(residBias, (-1,1))
+    normlzdResidBias = np.reshape(normlzdResidBias, (-1,1))
     barsData.append( go.Bar(name='+ tuning correction',
-                            y=metricsNames, x=-residBias[:,0]+biases[:,0], base=residBias[:,0],
+                            y=metricsNames, x=-normlzdResidBias[:,0]+biases[:,0], base=normlzdResidBias[:,0],
                             orientation="h",
                             width = 0.2,
                             marker_line_color = 'black', marker_color='black', marker_line_width = 2,
@@ -1418,8 +1423,10 @@ def createParamsCorrArrayFig(matrix,
 
     # Create color-coded matrix that displays correlations among parameter vectors
     normlzdSensMatrixConcatBiases = np.hstack((matrix, biasesCol))
-    #normlzdSensMatrixConcatBiases = np.hstack((normlzdWeightedLinplusSensMatrixPoly, -1*normlzdWeightedDefaultBiasesCol))
-    cosAnglesMatrix = calcMatrixAngles( normlzdSensMatrixConcatBiases.T )
+    normlzdSensMatrixConcatBiasesDebiased = normlzdSensMatrixConcatBiases \
+                                            - np.mean(normlzdSensMatrixConcatBiases, axis=0)
+    #cosAnglesMatrix = calcMatrixAngles( normlzdSensMatrixConcatBiases.T )
+    cosAnglesMatrix = calcMatrixAngles( normlzdSensMatrixConcatBiasesDebiased.T )
     roundedCosAnglesMatrix = np.around(cosAnglesMatrix, decimals=2)
     df = pd.DataFrame(roundedCosAnglesMatrix,
                   index=np.concatenate((paramsNames,['bias vector'])),
@@ -2033,7 +2040,7 @@ def createBiasesVsSensMagScatterplot(normlzdSensMatrixPoly,
            createScatterplot(xCol=xCol, xColLabel='sens',
                              yCol=yCol, yColLabel='bias',
                              colorCol=yCol, colorColLabel='bias',
-                             pointLabels=metricsNames,
+                             pointLabels=metricsNames, pointLabelsHeader='Metric',
                              plotTitle="""Regional biases vs. magnitude of sensitivity.""",
                              xaxisTitle="Magnitude of sensitivity of regional metrics to parameter changes",
                              yaxisTitle="Regional biases",
@@ -2140,12 +2147,12 @@ def calcMatrixAngles( matrix ):
     
     return cosAnglesMatrix
 
-def createPcaBiplot(normlzdSensMatrix, defaultBiasesCol, normMetricValsCol,
+def createPcaBiplot(normlzdSensMatrix, normlzdDefaultBiasesCol,
                     metricsNames, paramsNames,
                     xColLabel, yColLabel,
                     colorCol,
                     colorColLabel,
-                    pointLabels,
+                    pointLabels, pointLabelsHeader,
                     plotTitle,
                     xaxisTitle,
                     yaxisTitle,
@@ -2156,46 +2163,41 @@ def createPcaBiplot(normlzdSensMatrix, defaultBiasesCol, normMetricValsCol,
     import numpy as np
 
     from sklearn.decomposition import PCA
-    from sklearn import datasets
-    from sklearn.preprocessing import StandardScaler
 
-    #df = px.data.iris()
-    #features = ['sepal_length', 'sepal_width', 'petal_length', 'petal_width']
-    #X = df[features]
-    #features = paramsNames
+    # The code below is based on https://plotly.com/python/pca-visualization/
+
     df = pd.DataFrame(normlzdSensMatrix, columns=paramsNames)
-    #df['metricsNames'] = metricsNames
-    #df['defaultBiasesCol'] = defaultBiasesCol
-    #X = df[features]
-    #X = df
 
+    df['bias'] = normlzdDefaultBiasesCol
+
+    # Remove the column-mean from each column,
+    #   although the PCA code below seems to do this automatically
+    df = df - df.mean()
+
+    #u, s, vh = np.linalg.svd(df.to_numpy(), full_matrices=False)
+    #np.square(s) / np.sum(np.square(s))
+
+    paramsNamesPlusBias = np.append(paramsNames, 'bias')
 
     pca = PCA(n_components=2)
     components = pca.fit_transform(df)
 
     loadings = pca.components_.T * np.sqrt(pca.explained_variance_)
 
-    #PcaBiplotFig = px.scatter(components,
-    #                          x=0, y=1,
-    #                          text=df['metricsNames'],
-    #                          color=df['defaultBiasesCol'],
-    #                          width=1200, height=1000
-    #                          )
-
     PcaBiplotFig = \
         createScatterplot(xCol=components[:,0], xColLabel=xColLabel,
                           yCol=components[:,1], yColLabel=yColLabel,
                           colorCol=colorCol,
                           colorColLabel=colorColLabel,
-                          pointLabels=pointLabels,
-                          plotTitle=plotTitle,
+                          pointLabels=pointLabels, pointLabelsHeader=pointLabelsHeader,
+                          plotTitle=(plotTitle+np.array2string(pca.explained_variance_ratio_)),
                           xaxisTitle=xaxisTitle,
                           yaxisTitle=yaxisTitle,
                           showLegend=showLegend, hoverMode=hoverMode,
                           plotWidth=plotWidth, plotHeight=plotHeight)
 
     scaleArrowLength = 6
-    for i, paramsName in enumerate(paramsNames):
+    for i, paramsName in enumerate(paramsNamesPlusBias):
         PcaBiplotFig.add_annotation(
             ax=0, ay=0,
             axref="x", ayref="y",
