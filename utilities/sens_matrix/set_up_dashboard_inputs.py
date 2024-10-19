@@ -415,7 +415,7 @@ def setUpInputs(beVerbose):
 
 
     # Comment out if not using 20x20reg files
-    varPrefixes = ["SWCF", "PRECT"]
+    varPrefixes = ["SWCF"]
     #varPrefixes = ["SWCF", "LWCF", "PRECT"]
     metricsNamesWeightsAndNorms, metricGlobalValsFromFile \
          = setUp_x_MetricsList(varPrefixes , defaultNcFilename)

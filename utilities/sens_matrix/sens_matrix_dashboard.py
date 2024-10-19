@@ -93,6 +93,16 @@ def main():
 
     print("Optimizing parameter values . . . ")
 
+    # sValsRatio = a threshold ratio of largest singular value
+    #              to the smallest retained singular value.
+    # If sValsRatio is large enough, then all singular vectors will be kept.
+    # If sValsRatio is 1, then only the first singular vector will be kept.
+    sValsRatio = 800.
+    normlzdSensMatrixPolySvd = \
+        approxMatrixWithSvd(normlzdSensMatrixPoly, sValsRatio, beVerbose=False)
+    normlzdCurvMatrixSvd = \
+        approxMatrixWithSvd(normlzdCurvMatrix, sValsRatio, beVerbose=False)
+
     defaultBiasesApproxNonlin, \
     dnormlzdParamsSolnNonlin, paramsSolnNonlin, \
     dnormlzdParamsSolnLin, paramsSolnLin, \
@@ -101,9 +111,9 @@ def main():
         solveUsingNonlin(metricsNames,
                          metricsWeights, normMetricValsCol, magParamValsRow,
                          defaultParamValsOrigRow,
-                         normlzdSensMatrixPoly, defaultBiasesCol,
+                         normlzdSensMatrixPolySvd, defaultBiasesCol,
                          #normlzdSensMatrixPoly, defaultBiasesCol-prescribedBiasesCol,
-                         normlzdCurvMatrix,
+                         normlzdCurvMatrixSvd,
                          reglrCoef,
                          beVerbose=False)
 
@@ -315,10 +325,10 @@ def solveUsingNonlin(metricsNames,
              * metricsWeights
 
     # defaultBiasesApproxNonlin = (       forward model soln       - default soln )
-    #                     = ( f0 + df/dp*dp + 0.5d2f/dp2*dp2 -       f0     )
-    # resid = ( y_i - ( f0 + df/dp_i*dp + 0.5d2f/dp2_i*dp2 ) )
-    #       =    ( y_i - f0 )   - ( df/dp_i*dp + 0.5d2f/dp2_i*dp2 )
-    #       = -defaultBiasesCol -     defaultBiasesApproxNonlin
+    #                           = ( f0 + df/dp*dp + 0.5d2f/dp2*dp2 -       f0     )
+    # resid = (   y_i - ( f0    +   df/dp_i*dp + 0.5d2f/dp2_i*dp2 )   )
+    #       =   ( y_i -   f0 )  - ( df/dp_i*dp + 0.5d2f/dp2_i*dp2 )
+    #       = -defaultBiasesCol - (   defaultBiasesApproxNonlin   )
     defaultBiasesApproxNonlin = normlzdWeightedDefaultBiasesApproxNonlin \
                                 * np.reciprocal(metricsWeights) * np.abs(normMetricValsCol)
 
@@ -524,6 +534,46 @@ def constructNormlzdCurvMatrix(metricsNames, paramsNames, transformedParamsNames
     return ( normlzdCurvMatrixPoly, normlzdSensMatrixPoly, normlzdConstMatrixPoly, \
              normlzdOrdDparamsMin, normlzdOrdDparamsMax )
 
+
+def approxMatrixWithSvd( matrix , sValsRatio,
+                         beVerbose):
+    """
+    Input: A matrix
+    Output: A possibly lower-rank approximation of the matrix,
+            with a max ratio of singular values specified by sValsRatio.
+    """
+
+
+    import numpy as np
+
+    # vh = V^T = transpose of right-singular vector matrix, V.
+    #  matrix = u @ np.diag(sVals) @ vh = (u * sVals) @ vh
+    u, sVals, vh = np.linalg.svd( matrix, full_matrices=False )
+
+    # Delete the small singular values in order to show just the most important patterns.
+    # After this deletion, store inverse singular values in sValsTrunc
+    sValsTrunc = np.copy(sVals)
+    for idx, sVal in np.ndenumerate(sVals):
+        # If a singular value is much smaller than largest singular value,
+        #     then zero it out.
+        if np.divide(sVals[0],np.maximum(sVal,np.finfo(float).eps)) > sValsRatio:
+            sValsTrunc[idx] = 0.
+
+    if beVerbose:
+        print("\nOriginal singular values =")
+        print(sVals)
+        print("\nsValsTrunc =")
+        print(sValsTrunc)
+
+    matrixApprox = u @ np.diag(sValsTrunc) @ vh
+    #matrixApprox = (u * sVals) @ vh
+
+    if beVerbose:
+        print("\nstd/mean of (matrixApprox-matrix) = ")
+        print(np.std(np.subtract(matrixApprox, matrix))/np.mean(matrix))
+
+    return matrixApprox
+
 #def constructNormlzd2ndOrderTensor(numParams, numMetrics,
 #                                   normlzdCurvMatrix, normlzdSensMatrixPoly, normlzdConstMatrix, corrParam):
 #    '''Constructs a numParams x numMetrics x numParams tensor of second derivatives, d2metrics/dparams1dparams2.
@@ -545,7 +595,6 @@ def constructNormlzdCurvMatrix(metricsNames, paramsNames, transformedParamsNames
 #    # d4 = np.einsum('j,jik,k->i', params, offdiagtensor, params)
 #
 #    return ( normlzd2ndOrderTensor  )
-
 
 def calcNormlzdRadiusCurv(metricsNames, paramsNames, transformedParamsNames, paramsScales,
                           metricsWeights, obsMetricValsCol,
