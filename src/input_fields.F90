@@ -214,13 +214,17 @@ module inputfields
 
 !-----------------------------------------------------------------------
   subroutine stat_fields_reader( gr, timestep, hydromet_dim, hm_metadata, &
-                                 um, upwp, vm, vpwp, up2, vp2, rtm, &
-                                 wprtp, thlm, wpthlp, rtp2, rtp3, &
-                                 thlp2, thlp3, rtpthlp, wp2, wp3, &
+                                 um, upwp, vm, vpwp, &
+                                 up2, vp2, rtm, &
+                                 wprtp, thlm, wpthlp, &
+                                 rtp2, rtp3, &
+                                 thlp2, thlp3, rtpthlp, &
+                                 wp2, wp3, &
                                  p_in_Pa, exner, rcm, cloud_frac, &
                                  wpthvp, wp2thvp, rtpthvp, thlpthvp, &
                                  wp2rtp, wp2thlp, uprcp, vprcp, &
-                                 rc_coef_zm, wp4, wpup2, wpvp2, wp2up2, &
+                                 rc_coef_zm, wp4, wpup2, &
+                                 wpvp2, wp2up2, &
                                  wp2vp2, ice_supersat_frac, &
                                  wm_zt, rho, rho_zm, rho_ds_zm, &
                                  rho_ds_zt, thv_ds_zm, thv_ds_zt, &
@@ -228,9 +232,10 @@ module inputfields
                                  wpthlp_forcing, rtp2_forcing, &
                                  thlp2_forcing, rtpthlp_forcing, &
                                  hydromet, hydrometp2, wphydrometp, &
-                                 Ncm, Nccnm, thvm, em, tau_zm, tau_zt, &
-                                 Kh_zt, Kh_zm, ug, vg, Lscale, &
-                                 Lscale_up, Lscale_down, thlprcp, &
+                                 Ncm, Nccnm, thvm, em, &
+                                 tau_zm, tau_zt, &
+                                 Kh_zt, Kh_zm, ug, vg, &
+                                 thlprcp, &
                                  sigma_sqd_w, sigma_sqd_w_zt, radht, &
                                  pdf_params, pdf_params_zm )
 
@@ -374,9 +379,6 @@ module inputfields
     real( kind = core_rknd ), dimension(gr%nzt), target, intent(inout) :: &
       Nccnm,          & ! Cloud condensation nuclei concentration (COAMPS/MG)  [num/kg]
       thvm,           & ! Virtual potential temperature                        [K]
-      Lscale,         & ! Length scale                                         [m]
-      Lscale_up,      & ! Length scale (upwards component)                     [m]
-      Lscale_down,    & ! Length scale (downwards component)                   [m]
       tau_zt,         & ! Eddy dissipation time scale on thermodynamic levels  [s]
       Kh_zt,          & ! Eddy diffusivity coefficient on thermodynamic levels [m^2/s]
       ug,             & ! u geostrophic wind                                   [m/s]
@@ -572,24 +574,6 @@ module inputfields
       call get_clubb_variable_interpolated &
            ( l_input_thv_ds_zt, stat_files(clubb_zt), "thv_ds_zt", gr%nzt, timestep, &
              gr%zt(1,:), thv_ds_zt, l_read_error )
-
-      l_fatal_error = l_fatal_error .or. l_read_error
-
-      call get_clubb_variable_interpolated &
-           ( l_input_Lscale, stat_files(clubb_zt), "Lscale", gr%nzt, timestep, &
-             gr%zt(1,:), Lscale, l_read_error )
-
-      l_fatal_error = l_fatal_error .or. l_read_error
-
-      call get_clubb_variable_interpolated &
-           ( l_input_Lscale_up, stat_files(clubb_zt), "Lscale_up", gr%nzt, timestep, &
-             gr%zt(1,:), Lscale_up, l_read_error )
-
-      l_fatal_error = l_fatal_error .or. l_read_error
-
-      call get_clubb_variable_interpolated &
-           ( l_input_Lscale_down, stat_files(clubb_zt), "Lscale_down", gr%nzt, timestep, &
-             gr%zt(1,:), Lscale_down, l_read_error )
 
       l_fatal_error = l_fatal_error .or. l_read_error
 
@@ -1268,24 +1252,6 @@ module inputfields
 
       ! rho_zm is in stats_sw
 
-
-      coamps_variables(k)%l_input_var = l_input_Lscale
-      coamps_variables(k)%input_name = "none"
-      coamps_variables(k)%clubb_name = "Lscale"
-
-      k = k + 1
-
-      coamps_variables(k)%l_input_var = l_input_Lscale_up
-      coamps_variables(k)%input_name = "none"
-      coamps_variables(k)%clubb_name = "Lscale_up"
-
-      k = k + 1
-
-      coamps_variables(k)%l_input_var = l_input_Lscale_down
-      coamps_variables(k)%input_name = "none"
-      coamps_variables(k)%clubb_name = "Lscale_down"
-
-      k = k + 1
 
       coamps_variables(k)%l_input_var = l_input_Kh_zt
       coamps_variables(k)%input_name = "kh"
@@ -2050,24 +2016,6 @@ module inputfields
       SAM_variables(k)%l_input_var = l_input_thv_ds_zt
       SAM_variables(k)%clubb_name = "thv_ds_zt"
       SAM_variables(k)%input_name = "none" 
-
-      k = k + 1
-
-      SAM_variables(k)%l_input_var = l_input_Lscale
-      SAM_variables(k)%clubb_name = "Lscale"
-      SAM_variables(k)%input_name = "none"
-
-      k = k + 1
-
-      SAM_variables(k)%l_input_var = l_input_Lscale_up
-      SAM_variables(k)%clubb_name = "Lscale_up"
-      SAM_variables(k)%input_name = "none"
-
-      k = k + 1
-
-      SAM_variables(k)%l_input_var = l_input_Lscale_down
-      SAM_variables(k)%clubb_name = "Lscale_down"
-      SAM_variables(k)%input_name = "none"
 
       k = k + 1
 

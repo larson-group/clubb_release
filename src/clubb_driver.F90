@@ -534,12 +534,9 @@ module clubb_driver
       Kh_zm     ! Eddy diffusivity coefficient on momentum levels      [m^2/s]
 
     real( kind = core_rknd ), dimension(:,:), allocatable :: &
-      Lscale, &          ! Length scale                     [m]
-      Lscale_placeholder ! placeholder for Lscale to give to advance_clubb_core_api call
+      Lscale          ! Length scale                     [m]
       
     real( kind = core_rknd ), dimension(:,:), allocatable :: &
-      Lscale_up,      & ! Length scale (upwards component)             [m]
-      Lscale_down,    & ! Length scale (downwards component)           [m]
       thlprcp,        & ! thl'rc'                                      [K kg/kg]
       sigma_sqd_w,    & ! PDF width parameter (momentum levels)        [-]
       sigma_sqd_w_zt    ! PDF width parameter interpolated to t-levs.  [-]
@@ -1745,9 +1742,6 @@ module clubb_driver
 
     allocate( em(ngrdcol, gr%nzm) )
     allocate( Lscale(ngrdcol, gr%nzt) )
-    allocate( Lscale_placeholder(ngrdcol,gr%nzt) )
-    allocate( Lscale_up(ngrdcol, gr%nzt) )
-    allocate( Lscale_down(ngrdcol, gr%nzt) )
 
     allocate( tau_zm(ngrdcol, gr%nzm) ) ! Eddy dissipation time scale: momentum levels
     allocate( tau_zt(ngrdcol, gr%nzt) ) ! Eddy dissipation time scale: thermo. levels
@@ -1951,8 +1945,6 @@ module clubb_driver
 
     ! Length scale
     Lscale      = zero
-    Lscale_up   = zero
-    Lscale_down = zero
 
     ! Dissipation time
     tau_zm = zero ! Eddy dissipation time scale: momentum levels
@@ -2124,31 +2116,31 @@ module clubb_driver
 
       do i = 1, ngrdcol
         call restart_clubb &
-            ( gr, iunit, runfile, hydromet_dim, hm_metadata,  & ! Intent(in)
-              restart_path_case, time_restart,                   & ! Intent(in)
-              um(i,:), upwp(i,:), vm(i,:), vpwp(i,:), up2(i,:), vp2(i,:), rtm(i,:),            & ! Intent(inout)
-              wprtp(i,:), thlm(i,:), wpthlp(i,:), rtp2(i,:), rtp3(i,:),              & ! Intent(inout)
-              thlp2, thlp3, rtpthlp(i,:), wp2, wp3(i,:),              & ! Intent(inout)
-              p_in_Pa(i,:), exner(i,:), rcm(i,:), cloud_frac(i,:),         & ! Intent(inout)
-              wpthvp(i,:), wp2thvp(i,:), rtpthvp(i,:), thlpthvp(i,:),                & ! Intent(inout)
-              wp2rtp(i,:), wp2thlp(i,:), uprcp(i,:), vprcp(i,:),                     & ! Intent(inout)
-              rc_coef_zm(i,:), wp4(i,:), wpup2(i,:), wpvp2(i,:), wp2up2(i,:),             & ! Intent(inout)
-              wp2vp2(i,:), ice_supersat_frac(i,:),                         & ! Intent(inout)
-              wm_zt(i,:), rho(i,:), rho_zm(i,:), rho_ds_zm(i,:),                     & ! Intent(inout)
-              rho_ds_zt(i,:), thv_ds_zm(i,:), thv_ds_zt(i,:),         & ! Intent(inout)
-              thlm_forcing(i,:), rtm_forcing(i,:), wprtp_forcing(i,:),          & ! Intent(inout)
-              wpthlp_forcing(i,:), rtp2_forcing(i,:),                      & ! Intent(inout)
-              thlp2_forcing(i,:), rtpthlp_forcing(i,:),                    & ! Intent(inout)
-              hydromet(i,:,:), hydrometp2(i,:,:), wphydrometp(i,:,:),                 & ! Intent(inout)
-              Ncm(i,:), Nccnm(i,:), thvm(i,:), em(i,:), tau_zm(i,:), tau_zt(i,:),         & ! Intent(inout)
-              Kh_zt(i,:), Kh_zm(i,:), ug(i,:), vg(i,:), Lscale(i,:),                 & ! Intent(inout)
-              Lscale_up(i,:), Lscale_down(i,:), thlprcp(i,:),                   & ! Intent(inout)
-              sigma_sqd_w(i,:), sigma_sqd_w_zt(i,:), radht(i,:),                & ! Intent(inout)
-              pdf_params, pdf_params_zm,                         & ! Intent(inout)
-              rcm_mc(i,:), rvm_mc(i,:), thlm_mc(i,:),                           & ! Intent(out)
-              wprtp_mc(i,:), wpthlp_mc(i,:), rtp2_mc(i,:),                      & ! Intent(out)
-              thlp2_mc(i,:), rtpthlp_mc(i,:),                              & ! Intent(out)
-              wpthlp_sfc(i), wprtp_sfc(i), upwp_sfc(i), vpwp_sfc(i) )          ! Intent(out)
+            ( gr, iunit, runfile, hydromet_dim, hm_metadata,                       & ! Intent(in)
+              restart_path_case, time_restart,                                     & ! Intent(in)
+              um(i,:), upwp(i,:), vm(i,:), vpwp(i,:), up2(i,:), vp2(i,:), rtm(i,:),& ! Intent(inout)
+              wprtp(i,:), thlm(i,:), wpthlp(i,:), rtp2(i,:), rtp3(i,:),            & ! Intent(inout)
+              thlp2, thlp3, rtpthlp(i,:), wp2, wp3(i,:),                           & ! Intent(inout)
+              p_in_Pa(i,:), exner(i,:), rcm(i,:), cloud_frac(i,:),                 & ! Intent(inout)
+              wpthvp(i,:), wp2thvp(i,:), rtpthvp(i,:), thlpthvp(i,:),              & ! Intent(inout)
+              wp2rtp(i,:), wp2thlp(i,:), uprcp(i,:), vprcp(i,:),                   & ! Intent(inout)
+              rc_coef_zm(i,:), wp4(i,:), wpup2(i,:), wpvp2(i,:), wp2up2(i,:),      & ! Intent(inout)
+              wp2vp2(i,:), ice_supersat_frac(i,:),                                 & ! Intent(inout)
+              wm_zt(i,:), rho(i,:), rho_zm(i,:), rho_ds_zm(i,:),                   & ! Intent(inout)
+              rho_ds_zt(i,:), thv_ds_zm(i,:), thv_ds_zt(i,:),                      & ! Intent(inout)
+              thlm_forcing(i,:), rtm_forcing(i,:), wprtp_forcing(i,:),             & ! Intent(inout)
+              wpthlp_forcing(i,:), rtp2_forcing(i,:),                              & ! Intent(inout)
+              thlp2_forcing(i,:), rtpthlp_forcing(i,:),                            & ! Intent(inout)
+              hydromet(i,:,:), hydrometp2(i,:,:), wphydrometp(i,:,:),              & ! Intent(inout)
+              Ncm(i,:), Nccnm(i,:), thvm(i,:), em(i,:), tau_zm(i,:), tau_zt(i,:),  & ! Intent(inout)
+              Kh_zt(i,:), Kh_zm(i,:), ug(i,:), vg(i,:),                            & ! Intent(inout)
+              thlprcp(i,:),                                                        & ! Intent(inout)
+              sigma_sqd_w(i,:), sigma_sqd_w_zt(i,:), radht(i,:),                   & ! Intent(inout)
+              pdf_params, pdf_params_zm,                                           & ! Intent(inout)
+              rcm_mc(i,:), rvm_mc(i,:), thlm_mc(i,:),                              & ! Intent(out)
+              wprtp_mc(i,:), wpthlp_mc(i,:), rtp2_mc(i,:),                         & ! Intent(out)
+              thlp2_mc(i,:), rtpthlp_mc(i,:),                                      & ! Intent(out)
+              wpthlp_sfc(i), wprtp_sfc(i), upwp_sfc(i), vpwp_sfc(i) )                ! Intent(out)
       end do
  
       ! Calculate invrs_rho_ds_zm and invrs_rho_ds_zt from the values of
@@ -2345,13 +2337,17 @@ module clubb_driver
 
         do i = 1, ngrdcol
           call stat_fields_reader( gr, max( itime_nearest, 1 ), hydromet_dim, hm_metadata, & ! In
-                                  um(i,:), upwp(i,:), vm(i,:), vpwp(i,:), up2(i,:), vp2(i,:), rtm(i,:), & ! Inout
-                                  wprtp(i,:), thlm(i,:), wpthlp(i,:), rtp2(i,:), rtp3(i,:), & ! Inout
-                                  thlp2(i,:), thlp3(i,:), rtpthlp(i,:), wp2(i,:), wp3(i,:), & ! Inout
+                                  um(i,:), upwp(i,:), vm(i,:), vpwp(i,:), & ! Inout
+                                  up2(i,:), vp2(i,:), rtm(i,:), & ! Inout
+                                  wprtp(i,:), thlm(i,:), wpthlp(i,:), & ! Inout
+                                  rtp2(i,:), rtp3(i,:), & ! Inout
+                                  thlp2(i,:), thlp3(i,:), rtpthlp(i,:), & ! Inout
+                                  wp2(i,:), wp3(i,:), & ! Inout
                                   p_in_Pa(i,:), exner(i,:), rcm(i,:), cloud_frac(i,:), & ! Inout
                                   wpthvp(i,:), wp2thvp(i,:), rtpthvp(i,:), thlpthvp(i,:), & ! Inout
                                   wp2rtp(i,:), wp2thlp(i,:), uprcp(i,:), vprcp(i,:), & ! Inout
-                                  rc_coef_zm(i,:), wp4(i,:), wpup2(i,:), wpvp2(i,:), wp2up2(i,:), & ! Inout
+                                  rc_coef_zm(i,:), wp4(i,:), wpup2(i,:), & ! Inout
+                                  wpvp2(i,:), wp2up2(i,:), & ! Inout
                                   wp2vp2(i,:), ice_supersat_frac(i,:), & ! Inout
                                   wm_zt(i,:), rho(i,:), rho_zm(i,:), rho_ds_zm(i,:), & ! Inout
                                   rho_ds_zt(i,:), thv_ds_zm(i,:), thv_ds_zt(i,:), & ! Inout
@@ -2359,9 +2355,10 @@ module clubb_driver
                                   wpthlp_forcing(i,:), rtp2_forcing(i,:), & ! Inout
                                   thlp2_forcing(i,:), rtpthlp_forcing(i,:), & ! Inout
                                   hydromet(i,:,:), hydrometp2(i,:,:), wphydrometp(i,:,:), & ! Inout
-                                  Ncm(i,:), Nccnm(i,:), thvm(i,:), em(i,:), tau_zm(i,:), tau_zt(i,:), & ! Inout
-                                  Kh_zt(i,:), Kh_zm(i,:), ug(i,:), vg(i,:), Lscale(i,:), & ! Inout
-                                  Lscale_up(i,:), Lscale_down(i,:), thlprcp(i,:), & ! Inout
+                                  Ncm(i,:), Nccnm(i,:), thvm(i,:), em(i,:), & ! Inout
+                                  tau_zm(i,:), tau_zt(i,:), & ! Inout
+                                  Kh_zt(i,:), Kh_zm(i,:), ug(i,:), vg(i,:), & ! Inout
+                                  thlprcp(i,:), & ! Inout
                                   sigma_sqd_w(i,:), sigma_sqd_w_zt(i,:), radht(i,:), & ! Inout
                                   pdf_params, pdf_params_zm ) ! Inout
         end do
@@ -2528,7 +2525,7 @@ module clubb_driver
               thlprcp, wprcp, w_up_in_cloud, w_down_in_cloud, &                    ! Intent(out)
               cloudy_updraft_frac, cloudy_downdraft_frac, &                        ! Intent(out)
               rcm_in_layer, cloud_cover, invrs_tau_zm, &                            ! Intent(out)
-              Lscale_placeholder )                                                  ! Intent(out)
+              Lscale )                                                             ! Intent(out)
 
       if ( clubb_at_least_debug_level( 0 ) ) then
         if ( err_code_dummy == clubb_fatal_error ) then
@@ -2636,14 +2633,6 @@ module clubb_driver
         else
            em = one_half * ( wp2 + vp2 + up2 )
         endif
-
-        ! Calculate Lscale on momentum levels and then interpolate back to
-        ! thermodynamic levels.
-        do i = 1, ngrdcol
-          Lscale(i,:) &
-          = max( zm2zt( gr, Kh_zm(i,:) / ( clubb_params(i,ic_K) * sqrt( max( em(i,:), em_min ) ) ) ), &
-                0.01_core_rknd )
-        end do
                
         ! Copy grid dzt to variable with column index as 1
         delta_zm = gr%dzt
@@ -3103,9 +3092,6 @@ module clubb_driver
 
     deallocate( em )
     deallocate( Lscale )
-    deallocate( Lscale_placeholder )
-    deallocate( Lscale_up )
-    deallocate( Lscale_down )
 
     deallocate( tau_zm ) ! Eddy dissipation time scale: momentum levels
     deallocate( tau_zt ) ! Eddy dissipation time scale: thermo. levels
@@ -4532,8 +4518,8 @@ module clubb_driver
                thlp2_forcing, rtpthlp_forcing, & ! Inout
                hydromet, hydrometp2, wphydrometp, & ! Inout
                Ncm, Nccnm, thvm, em, tau_zm, tau_zt, & ! Inout
-               Kh_zt, Kh_zm, ug, vg, Lscale, & ! Inout
-               Lscale_up, Lscale_down, thlprcp, & ! Inout
+               Kh_zt, Kh_zm, ug, vg, & ! Inout
+               thlprcp, & ! Inout
                sigma_sqd_w, sigma_sqd_w_zt, radht, & ! Inout
                pdf_params, pdf_params_zm, & ! Inout
                rcm_mc, rvm_mc, thlm_mc, & ! Out
@@ -4706,9 +4692,6 @@ module clubb_driver
       Kh_zt,          & ! Eddy diffusivity coefficient on thermodynamic levels [m^2/s]
       ug,             & ! u geostrophic wind                                   [m/s]
       vg,             & ! v geostrophic wind                                   [m/s]
-      Lscale,         & ! Length scale                                         [m]
-      Lscale_up,      & ! Length scale (upwards component)                     [m]
-      Lscale_down,    & ! Length scale (downwards component)                   [m]
       sigma_sqd_w_zt, & ! PDF width parameter interpolated to t-levs.          [-]
       radht             ! SW + LW heating rate                                 [K/s]
 
@@ -4935,13 +4918,17 @@ module clubb_driver
 
     ! Read data from stats files
     call stat_fields_reader( gr, timestep, hydromet_dim, hm_metadata, & ! In
-                             um, upwp, vm, vpwp, up2, vp2, rtm, & ! Inout
-                             wprtp, thlm, wpthlp, rtp2, rtp3, & ! Inout
-                             thlp2, thlp3, rtpthlp, wp2, wp3, & ! Inout
+                             um, upwp, vm, vpwp, & ! Inout
+                             up2, vp2, rtm, & ! Inout
+                             wprtp, thlm, wpthlp, & ! Inout
+                             rtp2, rtp3, & ! Inout
+                             thlp2, thlp3, rtpthlp, & ! Inout
+                             wp2, wp3, & ! Inout
                              p_in_Pa, exner, rcm, cloud_frac, & ! Inout
                              wpthvp, wp2thvp, rtpthvp, thlpthvp, & ! Inout
                              wp2rtp, wp2thlp, uprcp, vprcp, & ! Inout
-                             rc_coef_zm, wp4, wpup2, wpvp2, wp2up2, & ! Inout
+                             rc_coef_zm, wp4, wpup2, & ! Inout
+                             wpvp2, wp2up2, & ! Inout
                              wp2vp2, ice_supersat_frac, & ! Inout
                              wm_zt, rho, rho_zm, rho_ds_zm, & ! Inout
                              rho_ds_zt, thv_ds_zm, thv_ds_zt, & ! Inout
@@ -4949,9 +4936,10 @@ module clubb_driver
                              wpthlp_forcing, rtp2_forcing, & ! Inout
                              thlp2_forcing, rtpthlp_forcing, & ! Inout
                              hydromet, hydrometp2, wphydrometp, & ! Inout
-                             Ncm, Nccnm, thvm, em, tau_zm, tau_zt, & ! Inout
-                             Kh_zt, Kh_zm, ug, vg, Lscale, & ! Inout
-                             Lscale_up, Lscale_down, thlprcp, & ! Inout
+                             Ncm, Nccnm, thvm, em, & ! Inout
+                             tau_zm, tau_zt, & ! Inout
+                             Kh_zt, Kh_zm, ug, vg, & ! Inout
+                             thlprcp, & ! Inout
                              sigma_sqd_w, sigma_sqd_w_zt, radht, & ! Inout
                              pdf_params, pdf_params_zm ) ! Inout
 
@@ -6607,6 +6595,3 @@ module clubb_driver
   end subroutine silhs_radiation_driver
 
 end module clubb_driver
-
-
-
