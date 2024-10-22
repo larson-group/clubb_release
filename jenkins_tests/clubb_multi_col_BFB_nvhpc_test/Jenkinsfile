@@ -1,0 +1,31 @@
+pipeline {
+
+  // Carson is the only computer where the config file to run this test exists
+  agent { label 'carson' }
+
+  stages {
+    stage('Clone SysAdmin to tmp') {
+      steps {
+        // The sys_admin repo in this location is kept here, but never modified. Pull in case it's out of date.
+        sh '''git -C /home/pub/jenkins_BFB_test_configs/sys_admin pull'''
+      }
+    }
+    stage('Run Python Test') {
+      steps {
+        // Here we run the run_test.py script with the correct config, both are found in the sys_admin repo
+        sh '''source /etc/profile.d/larson-group.sh
+              module load nvhpc netcdf-fortran
+              python3 /home/pub/jenkins_BFB_test_configs/sys_admin/python_nightly_test_suite/run_test.py -c /home/pub/jenkins_BFB_test_configs/clubb_multi_col_BFB_nvhpc_test/config'''
+      }
+    }
+  }
+  post {
+    failure {
+      script {
+      if ( "${env.JOB_NAME}" ==	"clubb_multi_col_BFB_nvhpc_test" )
+        // This command handles the email on failure feature of the jenkins test. This line is the same on every jenkins test.
+      	emailext(to: 'messnermet@uwm.edu', subject: "${env.JOB_NAME} build ${env.BUILD_NUMBER} has Failed", attachLog: true, body: "${env.JOB_NAME} build ${env.BUILD_NUMBER} has failed. See the attached build log and the build results (${env.BUILD_URL}) for help troubleshooting.")
+      }
+    }
+  }
+}

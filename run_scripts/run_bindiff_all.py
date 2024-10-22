@@ -21,7 +21,7 @@ filePostFix = "_diff{}.log"
 field_threshold = 1.0e-7
 
 # NetCDF file postfixes we want to diff
-nc_data_formats = ["_zm.nc", "_zt.nc", "_sfc.nc"]
+nc_data_formats = ["_zm.nc", "_zt.nc", "_sfc.nc", "_multi_col_zm.nc", "_multi_col_zt.nc"]
 
 # File containing all the case names
 case_file = "RUN_CASES"
