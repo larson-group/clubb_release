@@ -31,7 +31,7 @@ pipeline {
         sh 'python postprocessing/pyplotgen/pyplotgen.py -l -c cpu_* cur_out/cpu_* -o ${commit}_vs_master_$(cat cur_out/commit)'
         sh "ssh carson 'mkdir -p /home/pub/web_plots/clubb_ifort_plots/${branch_name}'"
         sh "scp -r *_vs_* carson:/home/pub/web_plots/clubb_ifort_plots/${branch_name}"
-        sh "ssh carson '/home/pub/web_plots/create_plot_list.py /home/pub/web_plots/clubb_ifort_plots/'"
+        sh "ssh carson '/home/pub/web_plots/generate_plot_directory_page.py /home/pub/web_plots/clubb_ifort_plots/'"
       }
     }
     stage('Update Master Output') {
