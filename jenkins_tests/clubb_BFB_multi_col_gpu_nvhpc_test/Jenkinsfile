@@ -14,14 +14,14 @@ pipeline {
         // Here we run the run_test.py script with the correct config, both are found in the sys_admin repo
         sh '''source /etc/profile.d/larson-group.sh
               module load nvhpc netcdf-fortran
-              python3 /home/pub/jenkins_BFB_test_configs/sys_admin/python_nightly_test_suite/run_test.py -c /home/pub/jenkins_BFB_test_configs/clubb_BFB_multi_col_nvhpc_test_config'''
+              python3 /home/pub/jenkins_BFB_test_configs/sys_admin/python_nightly_test_suite/run_test.py -c /home/pub/jenkins_BFB_test_configs/clubb_BFB_multi_col_gpu_nvhpc_test_config'''
       }
     }
   }
   post {
     failure {
       script {
-      if ( "${env.JOB_NAME}" ==	"clubb_BFB_multi_col_nvhpc_test" )
+      if ( "${env.JOB_NAME}" ==	"clubb_BFB_multi_col_gpu_nvhpc_test" )
         // This command handles the email on failure feature of the jenkins test. This line is the same on every jenkins test.
       	emailext(to: 'messnermet@uwm.edu', subject: "${env.JOB_NAME} build ${env.BUILD_NUMBER} has Failed", attachLog: true, body: "${env.JOB_NAME} build ${env.BUILD_NUMBER} has failed. See the attached build log and the build results (${env.BUILD_URL}) for help troubleshooting.")
       }
