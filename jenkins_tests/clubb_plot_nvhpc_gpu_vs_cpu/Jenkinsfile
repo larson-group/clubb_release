@@ -50,11 +50,11 @@ pipeline {
     }
     stage('Plot') {
       steps {
-        sh 'scp -r carson:/home/pub/clubb_nvhpc_gpu_plots/master/cur_out .'
+        sh 'scp -r carson:/home/pub/web_plots/clubb_nvhpc_gpu_plots/master/cur_out .'
         sh 'python postprocessing/pyplotgen/pyplotgen.py -l -c cpu_* gpu_* cur_out/cpu_* cur_out/gpu_* -o ${commit}_vs_master_$(cat cur_out/commit)'
-        sh "ssh carson 'mkdir -p /home/pub/clubb_nvhpc_gpu_plots/${branch_name}'"
-        sh "scp -r *_vs_* carson:/home/pub/clubb_nvhpc_gpu_plots/${branch_name}"
-        sh "ssh carson '/home/pub/create_plot_list.py /home/pub/clubb_nvhpc_gpu_plots/'"
+        sh "ssh carson 'mkdir -p /home/pub/web_plots/clubb_nvhpc_gpu_plots/${branch_name}'"
+        sh "scp -r *_vs_* carson:/home/pub/web_plots/clubb_nvhpc_gpu_plots/${branch_name}"
+        sh "ssh carson '/home/pub/web_plots/generate_plot_directory_page.py /home/pub/web_plots/clubb_nvhpc_gpu_plots/'"
       }
     }
     stage('Update Master Output') {
@@ -66,25 +66,15 @@ pipeline {
         sh 'mkdir cur_out'
         sh 'mv cpu_* gpu_* cur_out'
         sh 'echo ${commit} > cur_out/commit'
-        sh "ssh carson 'rm -rf /home/pub/clubb_nvhpc_gpu_plots/master/cur_out'"
-        sh 'scp -r cur_out carson:/home/pub/clubb_nvhpc_gpu_plots/master/'
+        sh "ssh carson 'rm -rf /home/pub/web_plots/clubb_nvhpc_gpu_plots/master/cur_out'"
+        sh 'scp -r cur_out carson:/home/pub/web_plots/clubb_nvhpc_gpu_plots/master/'
       }
     }
   }
   post {
-    always {
-      // Certain logical functions like IF statements or TRY-CATCH blocks can only operate while in a script{} block
-      script {
-      // This cleans out the test workspace so the next run has a fresh start
-      // However this only occurs when the test is named clubb_gfortran_build
-      // This is to prevent the branch and copy tests from deleting thier workspaces so they are available for debugging
-      if ( "${env.JOB_NAME}" == "clubb_nvhpc_gpu_vs_cpu_plot" )
-      	cleanWs(cleanWhenAborted: true, cleanWhenFailure: true, cleanWhenSuccess: true, cleanWhenUnstable: true)
-      }
-    }
     failure {
       script {
-      if ( "${env.JOB_NAME}" == "clubb_nvhpc_gpu_vs_cpu_plot" )
+      if ( "${env.JOB_NAME}" == "clubb_plot_nvhpc_gpu_vs_cpu" )
         // This command handles the email on failure feature of the jenkins test. This line is the same on every jenkins test.
       	emailext(to: 'messnermet@uwm.edu', subject: "${env.JOB_NAME} build ${env.BUILD_NUMBER} has Failed", attachLog: true, body: "${env.JOB_NAME} build ${env.BUILD_NUMBER} has failed. See the attached build log and the build results (${env.BUILD_URL}) for help troubleshooting.")
       }
