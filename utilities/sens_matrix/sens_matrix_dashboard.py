@@ -91,6 +91,8 @@ def main():
     # defaultBiasesCol = default simulation - observations
     defaultBiasesCol = defaultBiasesCol + prescribedBiasesCol
 
+    normlzdDefaultBiasesCol = defaultBiasesCol / np.abs(normMetricValsCol)
+
     print("Optimizing parameter values . . . ")
 
     # sValsRatio = a threshold ratio of largest singular value
@@ -111,7 +113,7 @@ def main():
         solveUsingNonlin(metricsNames,
                          metricsWeights, normMetricValsCol, magParamValsRow,
                          defaultParamValsOrigRow,
-                         normlzdSensMatrixPolySvd, defaultBiasesCol,
+                         normlzdSensMatrixPolySvd, normlzdDefaultBiasesCol,
                          #normlzdSensMatrixPoly, defaultBiasesCol-prescribedBiasesCol,
                          normlzdCurvMatrixSvd,
                          reglrCoef,
@@ -149,7 +151,7 @@ def main():
 
     # Check whether the minimizer actually reduces chisqd
     # Initial value of chisqd, which assumes parameter perturbations are zero
-    normlzdDefaultBiasesCol = defaultBiasesCol/np.abs(normMetricValsCol)
+    #normlzdDefaultBiasesCol = defaultBiasesCol/np.abs(normMetricValsCol)
     #normlzdWeightedDefaultBiasesCol = metricsWeights * normlzdDefaultBiasesCol
     chisqdZero = objFnc(np.zeros_like(defaultParamValsOrigRow), \
                         normlzdSensMatrixPoly, normlzdDefaultBiasesCol, metricsWeights, \
@@ -278,7 +280,7 @@ def objFnc(dnormlzdParams, normlzdSensMatrix, normlzdDefaultBiasesCol, metricsWe
 def solveUsingNonlin(metricsNames,
                      metricsWeights, normMetricValsCol, magParamValsRow,
                      defaultParamValsOrigRow,
-                     normlzdSensMatrix, defaultBiasesCol,
+                     normlzdSensMatrix, normlzdDefaultBiasesCol,
                      normlzdCurvMatrix,
                      reglrCoef,
                      beVerbose):
@@ -296,7 +298,7 @@ def solveUsingNonlin(metricsNames,
     lowerBoundsCol =  -defaultParamValsOrigRow[0]/magParamValsRow[0]
 
     # Perform nonlinear optimization
-    normlzdDefaultBiasesCol = defaultBiasesCol/np.abs(normMetricValsCol)
+    #normlzdDefaultBiasesCol = defaultBiasesCol/np.abs(normMetricValsCol)
     #dnormlzdParamsSolnNonlin = minimize(objFnc,x0=np.ones_like(np.transpose(defaultParamValsOrigRow)), \
     dnormlzdParamsSolnNonlin = minimize(objFnc,x0=np.zeros_like(np.transpose(defaultParamValsOrigRow[0])), \
     #dnormlzdParamsSolnNonlin = minimize(objFnc,dnormlzdParamsSoln, \

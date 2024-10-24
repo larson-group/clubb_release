@@ -52,19 +52,20 @@ def createFigs(metricsNames,
             / np.abs(normMetricValsCol[:, 0])
 
     # Use these flags to determine whether or not to create specific plots
-    plot_paramsErrorBarsFig = True
-    plot_biasesOrderedArrowFig = True
-    plot_threeDotFig = True
+    plot_paramsErrorBarsFig = False #True
+    plot_biasesOrderedArrowFig = False #True
+    plot_threeDotFig = False #True
     plot_metricsBarChart = True
     plot_biasesVsDiagnosticScatterplot = False
-    plot_dpMin2PtFig = True
+    plot_dpMin2PtFig = False #True
     plot_dpMinMatrixScatterFig = False
-    plot_projectionMatrixFigs = True
+    plot_projectionMatrixFigs = False
     plot_biasesVsSensMagScatterplot = True
     plot_biasesVsSvdScatterplot = True
     plot_paramsCorrArrayFig = True
     plot_sensMatrixAndBiasVecFig = True
     plot_PcaBiplot = True
+    plot_PcMap = True
 
     # Remove prefixes from CLUBB variable names in order to shorten them
     paramsAbbrv = abbreviateClubbParamsNames(paramsNames)
@@ -77,23 +78,26 @@ def createFigs(metricsNames,
 
     # These are the metrics that we want to include in the plots (whitelisted variables).
     # I.e., set whitelistedMetricsMask=T for variables that we want to plot.
-    whitelistedMetricsMask =  ( (metricsNames == 'SWCF_4_11') \
+    whitelistedMetricsMask =  ( (metricsNames == 'SWCF_4_12') \
                          | (metricsNames == 'SWCF_4_1') \
-                         #| (metricsNames == 'SWCF_4_14') \
+                         | (metricsNames == 'SWCF_2_17') \
                          | (metricsNames == 'SWCF_6_14') \
                          | (metricsNames == 'SWCF_6_18') \
-                         #| (metricsNames == 'SWCF_6_1') \
-                         #| (metricsNames == 'SWCF_6_5') \
+                         | (metricsNames == 'SWCF_6_1') \
+                         | (metricsNames == 'SWCF_6_10') \
                          | (metricsNames == 'SWCF_6_13') \
-                         #| (metricsNames == 'SWCF_6_10') \
-                         #| (metricsNames == 'SWCF_2_10') \
-                         #| (metricsNames == 'SWCF_8_3') \
-                         #| (metricsNames == 'SWCF_5_7') \
-                         #| (metricsNames == 'SWCF_5_9') \
-                         #| (metricsNames == 'SWCF_5_16') \
-                         #| (metricsNames == 'SWCF_1_13') \
-                         #| (metricsNames == 'SWCF_1_14') \
-                         #| (metricsNames == 'SWCF_1_17') \
+                         | (metricsNames == 'SWCF_6_15') \
+                         | (metricsNames == 'SWCF_2_14') \
+                         | (metricsNames == 'SWCF_2_15') \
+                         | (metricsNames == 'SWCF_2_10') \
+                         | (metricsNames == 'SWCF_7_14') \
+                         | (metricsNames == 'SWCF_7_2') \
+                         | (metricsNames == 'SWCF_5_8') \
+                         | (metricsNames == 'SWCF_1_14') \
+                         | (metricsNames == 'SWCF_1_15') \
+                         | (metricsNames == 'SWCF_4_15') \
+                         # | (metricsNames == 'SWCF_5_16') \
+                         # | (metricsNames == 'SWCF_1_13') \
                          #| (metricsNames == 'SWCF_6_18') \
                          #| (metricsNames == 'SWCF_4_16') \
                          #| (metricsNames == 'SWCF_6_7') \
@@ -102,7 +106,6 @@ def createFigs(metricsNames,
                          #| (metricsNames == 'SWCF_9_5') \
                          #| (metricsNames == 'SWCF_6_4') \
                          #| (metricsNames == 'SWCF_6_6') \
-                         | (metricsNames == 'SWCF_4_15') \
                          #| (metricsNames == 'SWCF_5_5') \
                          #| (metricsNames == 'SWCF_1_8') \
                          #| (metricsNames == 'SWCF_1_9') \
@@ -119,7 +122,6 @@ def createFigs(metricsNames,
                          | (metricsNames == 'PRECT_6_14') \
                          | (metricsNames == 'PRECT_4_3') \
                                 )
-
 
     # Use this line if you want to exclude (blacklist) some variables:
     #whitelistedMetricsMask = (metricsNames != 'SWCF_4_1') & (metricsNames != 'SWCF_4_2')
@@ -325,7 +327,11 @@ def createFigs(metricsNames,
     if plot_biasesVsSensMagScatterplot:
         print("Creating biasesVsSensMagScatterplot . . .")
 
-        xCol = np.linalg.norm(normlzdLinplusSensMatrixPoly, axis=1)
+        sensCol = np.linalg.norm(normlzdLinplusSensMatrixPoly, axis=1)
+        # Find the index of the element with the largest magnitude
+        maxSensIdx = np.argmax(sensCol)
+        signSens = np.sign(normlzdLinplusSensMatrixPoly @ normlzdLinplusSensMatrixPoly[maxSensIdx,:].T)
+        xCol = sensCol * signSens
         yCol = -defaultBiasesCol[:,0]/np.abs(normMetricValsCol[:,0])
         #yCol = (-defaultBiasesApproxNonlin - defaultBiasesCol)[:, 0] \
         #       / np.abs(normMetricValsCol[:, 0])
@@ -335,13 +341,13 @@ def createFigs(metricsNames,
                               yCol=yCol, yColLabel='bias',
                               colorCol=yCol, colorColLabel='bias',
                               pointLabels=metricsNames, pointLabelsHeader='Metric',
-                              plotTitle="""Regional biases vs. magnitude of sensitivity.""",
-                              xaxisTitle="Magnitude of sensitivity of regional metrics to parameter changes",
+                              plotTitle="""Regional normalized biases vs. signed magnitude of sensitivity.""",
+                              xaxisTitle="Signed magnitude of sensitivity of regional metrics to parameter changes",
                               yaxisTitle="Regional biases",
-                              showLegend=False, hoverMode="x",
+                              showLegend=False, hoverMode="closest",
                               plotWidth=700, plotHeight=500)
 
-        xCol = np.linalg.norm(normlzdLinplusSensMatrixPoly, axis=1)
+        #xCol = np.linalg.norm(normlzdLinplusSensMatrixPoly, axis=1)
         yCol = normlzdResid
 
         residVsSensMagScatterplot = \
@@ -349,8 +355,8 @@ def createFigs(metricsNames,
                               yCol=yCol, yColLabel='normlzdResid',
                               colorCol=yCol, colorColLabel='normlzdResid',
                               pointLabels=metricsNames, pointLabelsHeader='Metric',
-                              plotTitle="""Regional normalized residuals vs. magnitude of sensitivity.""",
-                              xaxisTitle="Magnitude of sensitivity of regional metrics to parameter changes",
+                              plotTitle="""Regional normalized residuals vs. signed magnitude of sensitivity.""",
+                              xaxisTitle="Signed magnitude of sensitivity of regional metrics to parameter changes",
                               yaxisTitle="Regional normalized residuals",
                               showLegend=False, hoverMode="x",
                               plotWidth=700, plotHeight=500)
@@ -368,16 +374,26 @@ def createFigs(metricsNames,
         print("Creating biasesVsSvdScatterplot . . .")
 
         # vh = V^T = transpose of right-singular vector matrix, V.
-        normlzdSensMatrixPolyCentered = normlzdSensMatrixPoly - np.mean(normlzdSensMatrixPoly,0)
-        u, s, vh = np.linalg.svd(normlzdLinplusSensMatrixPoly, full_matrices=False)
+        #normlzdSensMatrixPolyCentered = normlzdSensMatrixPoly - np.mean(normlzdSensMatrixPoly,0)
+        normlzdLinplusSensMatrixPolyPlusBias = np.hstack((normlzdLinplusSensMatrixPoly,normlzdDefaultBiasesCol))
+        normlzdLinplusSensMatrixPolyPlusBiasCentered = \
+            normlzdLinplusSensMatrixPolyPlusBias - np.mean(normlzdLinplusSensMatrixPolyPlusBias,0)
+        u, s, vh = \
+            np.linalg.svd(normlzdLinplusSensMatrixPolyPlusBiasCentered, full_matrices=False)
 
-        if True:
+        RSquaredSvd = np.square(s) / np.sum(np.square(s))
+        if False:
         #if beVerbose:
-            RSquaredSvd = np.square(s)/np.sum(np.square(s))
             print("Variance explained by each SVD component (R**2) = ", RSquaredSvd)
             print("paramsNames = ", paramsNames)
             print("vh[:,0] = ", vh[:,0])
             print("vh[:,1] = ", vh[:,1])
+            print("u[:,0] = ", u[:, 0])
+            print("u[:,1] = ", u[:, 1])
+            print("s = ", s)
+            print( "eigenvalues = lambda = s**2/(n-1)", s*s/(u.shape[0]-1) )
+            us = u @ np.diag(s)
+            print( "u@s[:,0] = ", us[:,0] )
 
         # Set xCol to first left singular vector
         xCol = u[:, 0]
@@ -408,7 +424,7 @@ def createFigs(metricsNames,
                               plotTitle="""Residuals (color) as a function of first and second left singular vector values""",
                               xaxisTitle="First left singular vector values",
                               yaxisTitle="Second left singular vector values",
-                              showLegend=False, hoverMode="x",
+                              showLegend=False, hoverMode="closest",
                               plotWidth=700, plotHeight=500)
 
     if False:
@@ -523,7 +539,7 @@ def createFigs(metricsNames,
                              plotTitle="""Regional biases vs. leverages.""",
                              xaxisTitle="Leverages",
                              yaxisTitle="Regional biases",
-                             showLegend=False, hoverMode="x",
+                             showLegend=False, hoverMode="closest",
                              plotWidth=700, plotHeight=500)
 
     if plot_paramsCorrArrayFig:
@@ -572,7 +588,7 @@ def createFigs(metricsNames,
 
         # Create scatterplot to look at outliers
         PcaBiplotFig = \
-        createPcaBiplot(normlzdLinplusSensMatrixPoly, normlzdDefaultBiasesCol,
+        createPcaBiplot(normlzdSensMatrixPoly, normlzdDefaultBiasesCol,
                         metricsNames, paramsNamesAbbr,
                         xColLabel='SV1', yColLabel='SV2',
                         colorCol=np.minimum(1, -normlzdDefaultBiasesCol[:, 0]),
@@ -586,6 +602,172 @@ def createFigs(metricsNames,
                         plotWidth=700, plotHeight=500
                         )
 
+    if plot_PcMap:
+
+        print("Creating PcMap . . .")
+
+        import plotly.graph_objects as go
+
+        # Create a base map
+        #PcMapFig = go.Figure(go.Scattergeo(
+        #    lat=[-90, 90],
+        #    lon=[-180, 180])
+        #                   )
+
+        #df = px.data.gapminder().query("year == 2007")
+        #PcMapFig = px.line_geo(df, locations="iso_alpha",
+        #          color="continent" # "continent" is one of the columns of gapminder
+        #          )
+
+
+        # Define the grid
+        #lat_range = range(-90, 90, 20)
+        #lon_range = range(-180, 180, 20)
+
+        # Draw the boxes
+        #for lat in lat_range:
+        #    for lon in lon_range:
+        #        PcMapFig.add_shape(
+        #            type="rect",
+        #            xref="x",
+        #            yref="y",
+        #            x0=lon,
+        #            y0=lat,
+        #            x1=lon + 20,
+        #            y1=lat + 20,
+        #            line=dict(color="black", width=1),
+        #            fillcolor="rgba(0, 0, 255, 0.2)",  # Adjust color as needed
+        #            opacity=1.0
+        #        )
+
+        # Customize the layout
+        #PcMapFig.update_layout(
+        #    title="Colored Grid Over World Map",
+        #    geo=dict(
+        #        scope='world',
+        #        projection_type='equirectangular',
+        #        center=dict(lon=0, lat=0),
+        #        lataxis_range=[-90, 90],  # defines clip height
+        #        lonaxis_range=[-180, 180],
+        #        showland=True,
+        #        landcolor="rgb(217, 217, 217)",
+        #        showcountries=False,
+        #        countrycolor="black"
+        #    )
+        #)
+
+        #PcMapFig.update_layout(height=300,
+        #        margin={"r": 0, "t": 0, "l": 0, "b": 0})
+
+        PcMapFig = go.Figure(go.Scattergeo())
+        #PcMapFig.update_geos(lataxis_showgrid=True, lonaxis_showgrid=True)
+        #PcMapFig.update_layout(height=300, margin={"r": 0, "t": 0, "l": 0, "b": 0})
+
+
+        #PcMapFig.update_layout(xaxis=dict(range=[-180, 180]),
+        #                       yaxis=dict(range=[-90, 90]))
+        PcMapFig.update_layout(xaxis=dict(range=[0, 360]),
+                               yaxis=dict(range=[-90, 90]))
+        PcMapFig.update_xaxes(showgrid=False,
+                              tickmode="linear",
+                              dtick=60, tick0=0)
+        PcMapFig.update_yaxes(showgrid=False,
+                              zeroline=False,
+                              tickmode="linear",
+                              dtick=30, tick0=-90)
+        #PcMapFig.update_layout(xaxis2=dict(side='top',
+        #                                   tickmode='array',
+        #                                   tickvals=np.linspace(start=1,stop=18,num=18)
+        #                                   ))
+        #PcMapFig.add_trace(go.Scatter(x=np.linspace(start=1,stop=18,num=18), y=np.zeros(18), xaxis='x2',
+        #                             visible=False))
+        xBoxNums = np.linspace(start=1,stop=18,num=18).astype(int)
+        for xIdx, xBoxNum in np.ndenumerate(xBoxNums):
+            xPos = int(10+xIdx[0]*20)
+            PcMapFig.add_annotation(x=xPos, yref="paper", y=1.07,
+                text=xBoxNum.astype(str),showarrow=False)
+        yBoxNums = np.linspace(start=1,stop=9,num=9).astype(int)
+        for yIdx, yBoxNum in np.ndenumerate(yBoxNums):
+            yPos = int(80-yIdx[0]*20)
+            PcMapFig.add_annotation(xref="paper", x=1.03,
+                                    y=yPos,
+                text=yBoxNum.astype(str),showarrow=False)
+
+        PcMapFig.update_layout(width=700, height=450)
+        PcMapFig.update_layout(title="SVD 1", title_y=0.9, title_x=0.5)
+
+        #PcMapFig.update_geos(lataxis_range = [-90, 90],
+        #                     lonaxis_range = [-180, 180])
+        PcMapFig.update_geos(lataxis_range = [-90, 90],
+                             lonaxis_range = [0, 360])
+
+        #PcMapFig.update_layout(
+        #     shapes=[
+        #        dict(
+        #            type="rect",
+        #            xref="x2",
+        #            yref="y2",
+        #            x0=0.0,
+        #            y0=0.0,
+        #            x1=30.0,
+        #            y1=30.0,
+        #            fillcolor="red",
+        #            opacity=0.5,
+        #            line=dict(width=0),
+        #        )
+        #    ]
+        #)
+
+        u, s, vh = \
+            np.linalg.svd(normlzdSensMatrixPoly, full_matrices=False)
+
+        uCol0Reshaped = u[:,0].reshape(9,18)
+        normlzdDefaultBiasesReshaped = normlzdDefaultBiasesCol.reshape(9,18)
+        # Shift from 0,360 to -180,180 degrees longitude
+        #normlzdDefaultBiasesShifted = np.roll(normlzdDefaultBiasesReshaped, -9, axis=1)
+
+        lat_range = range(90, -90, -20)
+        #lon_range = range(-180, 180, 20)
+        lon_range = range(0, 360, 20)
+
+        #colorCol = np.copy(uCol0Reshaped)
+        #colorCol = normlzdDefaultBiasesShifted
+        colorCol = normlzdDefaultBiasesReshaped
+        normlzdColorCol = (colorCol - np.min(colorCol)) / \
+                          (np.max(colorCol) - np.min(colorCol))
+
+        for latIdx, lat in np.ndenumerate(lat_range):
+            for lonIdx, lon in np.ndenumerate(lon_range):
+                # 'bluered'
+                color = pc.sample_colorscale('RdBu_r',
+                        normlzdColorCol[latIdx, lonIdx], low=0, high=1)[0]
+                PcMapFig.add_shape(
+                    type="rect",
+                    xref="x",
+                    yref="y",
+                    x0=lon,
+                    y0=lat,
+                    x1=lon+20,
+                    y1=lat-20,
+                    line=dict(color="black", width=1),
+                    fillcolor=color,  # Adjust color as needed
+                    opacity=1.0,
+                    layer="below"
+                )
+
+        PcMapFig.update_geos(showcoastlines=True,
+                             coastlinecolor='black',
+                             coastlinewidth=1,
+                             showlakes=False,
+                             showland=False, #landcolor='rgba(0,0,0,0)',
+                             showocean=False, #oceancolor='rgba(0,0,0,0)',
+                             bgcolor= 'rgba(0,0,0,0)',
+                             lonaxis_showgrid=False,
+                             lataxis_showgrid=False
+                             )
+
+        # color_continuous_scale = 'Rainbow'
+
     external_stylesheets = ['https://codepen.io/chriddyp/pen/bWLwgP.css']
 
     sensMatrixDashboard = dash.Dash(__name__, external_stylesheets=external_stylesheets)
@@ -595,6 +777,8 @@ def createFigs(metricsNames,
 
         html.Div(children=''' ''')]
 
+    if plot_PcMap:
+        dashboardChildren.append(dcc.Graph(id='PcMapFig', figure=PcMapFig))
     if plot_paramsErrorBarsFig:
         dashboardChildren.append(dcc.Graph( id='paramsErrorBarsFig', figure=paramsErrorBarsFig ))
     if plot_biasesOrderedArrowFig:
@@ -957,7 +1141,7 @@ def createBarChart( matrix, index, columns,
                           title = title)
     barChart.update_xaxes(title=xlabel)
     barChart.update_yaxes(title=ylabel)
-    barChart.update_layout(hovermode="closest")
+    barChart.update_layout(hoverMode="closest")
     barChart.update_layout(showlegend=True)
     barChart.update_yaxes(visible=True,zeroline=True,zerolinewidth=1,zerolinecolor='gray') # Plot x axis
     barChart.update_layout( width=width, height=height  )
@@ -2028,7 +2212,7 @@ def createBiasesVsSensMagScatterplot(normlzdSensMatrixPoly,
     #biasesVsSensMagScatterplot.update_yaxes(title="Regional biases")
     #biasesVsSensMagScatterplot.update_xaxes(title="Magnitude of sensitivity of regional metrics to parameter changes")
     #biasesVsSensMagScatterplot.update_layout(showlegend=False)
-    #biasesVsSensMagScatterplot.update_layout(hovermode="x")
+    #biasesVsSensMagScatterplot.update_layout(hovermode="closest")
     #biasesVsSensMagScatterplot.update_layout( width=700, height=500  )
 
     xCol = np.linalg.norm(normlzdSensMatrixPoly, axis=1)
@@ -2044,7 +2228,7 @@ def createBiasesVsSensMagScatterplot(normlzdSensMatrixPoly,
                              plotTitle="""Regional biases vs. magnitude of sensitivity.""",
                              xaxisTitle="Magnitude of sensitivity of regional metrics to parameter changes",
                              yaxisTitle="Regional biases",
-                             showLegend=False, hoverMode="x",
+                             showLegend=False, hoverMode="closest",
                              plotWidth=700, plotHeight=500)
 
     return biasesVsSensMagScatterplot
@@ -2179,9 +2363,22 @@ def createPcaBiplot(normlzdSensMatrix, normlzdDefaultBiasesCol,
 
     paramsNamesPlusBias = np.append(paramsNames, 'bias')
 
-    pca = PCA(n_components=2)
+    #pca = PCA(n_components=2)
+    pca = PCA()
     components = pca.fit_transform(df)
 
+    # Let's relate the contents of pca to a standard SVD.
+    #    See https://stats.stackexchange.com/questions/134282/relationship-between-svd-and-pca-how-to-use-svd-to-perform-pca
+    # If the SVD of the matrix is denoted matrix ~= u*diag(s)*vh, then
+    # components = pca.fit_transform(df) = u@diag(s)
+    # pca.components_ = vh (or first 2 rows of vh)
+    # pca.singular_values_ = s
+    # pca.explained_variance_ = eigenval = lambda = s**2/(numMetrics-1)
+    # pca.explained_variance_ratio_ = RSquaredSvd = np.square(s)/np.sum(np.square(s))
+    # loadings = vh @ s/sqrt(numMetrics-1)
+    # loadings.T @ loadings is orthogonal
+    # loadings @ loadings.T = covariance matrix
+    # covMatrix2corrMatrix( loadings @ loadings.T ) = correlation matrix
     loadings = pca.components_.T * np.sqrt(pca.explained_variance_)
 
     PcaBiplotFig = \
@@ -2196,7 +2393,7 @@ def createPcaBiplot(normlzdSensMatrix, normlzdDefaultBiasesCol,
                           showLegend=showLegend, hoverMode=hoverMode,
                           plotWidth=plotWidth, plotHeight=plotHeight)
 
-    scaleArrowLength = 6
+    scaleArrowLength = len(df.columns)
     for i, paramsName in enumerate(paramsNamesPlusBias):
         PcaBiplotFig.add_annotation(
             ax=0, ay=0,
@@ -2297,7 +2494,7 @@ def oldCode():
 #    vhNormlzdColsFig.update_yaxes(title="Right-singular vector")
 #    vhNormlzdColsFig.update_xaxes(title="Parameter")
 #    vhNormlzdColsFig.layout.legend.title = "Singular vector"
-#    vhNormlzdColsFig.update_layout(hovermode="x")
+#    vhNormlzdColsFig.update_layout(hovermode="closest")
 #    for idx, val in np.ndenumerate(sNormlzd):
 #        vhNormlzdColsFig.data[idx[0]].name = "{}".format(idx[0]+1) + ", " + "{:.2e}".format(val)
 
@@ -2311,7 +2508,7 @@ def oldCode():
 #    uNormlzdColsFig.update_yaxes(title="Left-singular vector")
 #    uNormlzdColsFig.update_xaxes(title="Parameter")
 #    uNormlzdColsFig.layout.legend.title = "Singular vector"
-#    uNormlzdColsFig.update_layout(hovermode="x")
+#    uNormlzdColsFig.update_layout(hovermode="closest")
 #    for idx, val in np.ndenumerate(sNormlzd):
 #        uNormlzdColsFig.data[idx[0]].name = "{}".format(idx[0]+1) + ", " + "{:.2e}".format(val)
 
@@ -2325,7 +2522,7 @@ def oldCode():
 #    uNormlzdWeightedColsFig.update_yaxes(title="Left-singular vector")
 #    uNormlzdWeightedColsFig.update_xaxes(title="Parameter")
 #    uNormlzdWeightedColsFig.layout.legend.title = "Singular vector"
-#    uNormlzdWeightedColsFig.update_layout(hovermode="x")
+#    uNormlzdWeightedColsFig.update_layout(hovermode="closest")
 #    for idx, val in np.ndenumerate(sNormlzdWeighted):
 #        uNormlzdWeightedColsFig.data[idx[0]].name = "{}".format(idx[0]+1) + ", " + "{:.2e}".format(val)
 
@@ -2341,7 +2538,7 @@ def oldCode():
 #    uNormlzdBiasColsFig.update_yaxes(title="uNormlzd dot delta_b")
 #    uNormlzdBiasColsFig.update_xaxes(title="Parameter")
 #    uNormlzdBiasColsFig.layout.legend.title = "Singular vector"
-#    uNormlzdBiasColsFig.update_layout(hovermode="x")
+#    uNormlzdBiasColsFig.update_layout(hovermode="closest")
 #    for idx, val in np.ndenumerate(sNormlzd):
 #        uNormlzdBiasColsFig.data[idx[0]].name = "{}".format(idx[0]+1) + ", " + "{:.2e}".format(val)
     #pdb.set_trace()
@@ -2443,7 +2640,7 @@ def oldCode():
 #    biasesFig.update_yaxes(title="-(Def-Sim) / abs(obs metric value)")
 #    biasesFig.update_xaxes(title="Regional metric")
 #    biasesFig.layout.legend.title = "Default or which approximation"
-#    biasesFig.update_layout(hovermode="x")
+#    biasesFig.update_layout(hovermode="closest")
 #    biasesFig.data[1].name = "fracDefBiasesApprox, " \
 #                         + "{:.2f}".format(weightedBiasMagRatio) \
 #                        + ", {:.2f}".format(BiasMagRatio)

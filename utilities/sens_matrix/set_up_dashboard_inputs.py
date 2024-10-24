@@ -465,7 +465,9 @@ def setUpInputs(beVerbose):
 
     if True:
     #if beVerbose:
-        for varPrefix in varPrefixes:
+        obsGlobalAvgObsWeights = np.zeros(len(varPrefixes))
+        obsGlobalAvgCol = np.empty(shape=[0, 1])
+        for idx, varPrefix in np.ndenumerate(varPrefixes):
             keysVarPrefix = [key for key in obsWeightsDict.keys() if varPrefix in key]
             #obsWeightsNames = np.array(list(obsWeightsDict.keys()), dtype=str)
             obsWeightsNames = np.array(keysVarPrefix, dtype=str)
@@ -475,8 +477,12 @@ def setUpInputs(beVerbose):
             #obsWeights = np.vstack([obsWeights] * len(varPrefixes))
             metricsNamesVarPrefix = [key for key in obsMetricValsDict.keys() if varPrefix in key]
             obsMetricValsColVarPrefix = setUpObsCol(obsMetricValsDict, metricsNamesVarPrefix)
-            obsGlobalAvgObsWeights = np.dot(obsWeights.T, obsMetricValsColVarPrefix)
-            print(f"obsGlobalAvgObsWeights for {varPrefix} =", obsGlobalAvgObsWeights)
+            obsGlobalAvgObsWeights[idx] = np.dot(obsWeights.T, obsMetricValsColVarPrefix)
+            print(f"obsGlobalAvgObsWeights for {varPrefix} =", obsGlobalAvgObsWeights[idx])
+            obsGlobalAvgCol = np.vstack((obsGlobalAvgCol,
+                                           obsGlobalAvgObsWeights[idx]*np.ones((len(obsWeights),1))
+                                            ))
+        metricsNorms = np.copy(obsGlobalAvgCol)
 
             #obsMetricValsReshaped = obsMetricValsCol.reshape((9,18))
             #biasMat = defaultMetricValsReshaped - obsMetricValsReshaped
@@ -487,6 +493,9 @@ def setUpInputs(beVerbose):
             #   / np.sum(metricsWeights)
             #rmse = np.sqrt(mse)
             #print("rmse between default and obs =", rmse)
+
+
+
 
     return (metricsNames, metricsWeights, metricsNorms, \
             obsMetricValsDict, \
@@ -521,7 +530,7 @@ def setUpPreliminaries(metricsNames, metricsNorms, \
     # Set up a normalization vector for metrics, normMetricValsCol.
     # It equals the observed value when metricsNorms has the special value of -999, 
     #     but otherwise it is set manually in metricsNorms itself.
-    normMetricValsCol = metricsNorms
+    normMetricValsCol = np.copy(metricsNorms)
     for idx in np.arange(len(metricsNorms)):
         if np.isclose(metricsNorms[idx],-999.0): 
             normMetricValsCol[idx] = obsMetricValsCol[idx]
