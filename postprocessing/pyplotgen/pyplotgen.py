@@ -51,7 +51,7 @@ class PyPlotGen:
         """
         This creates an instance of PyPlotGen. Each parameter is a command line parameter passed in from the argparser
         below.
-        
+
         :param output_folder: String containing the foldername into which the output files should be put.
         :param clubb_folders: List of foldernames containing CLUBB netcdf files to be plotted.
             Pass a list of folders in with this option.
@@ -174,7 +174,7 @@ class PyPlotGen:
         - Call plot function on the instances
         - Create output folder
         - Generate html page containing plots
-        
+
         :return: None
         """
         logToFileAndConsole('*******************************************')
@@ -217,7 +217,7 @@ class PyPlotGen:
             for case in Case_definitions.CASES_TO_PLOT:
                 all_cases_casenames.append(case["name"])
 
-            logToFileAndConsole( 
+            logToFileAndConsole(
                 "Error:  No cases were plotted.  Please confirm your input folder path,\n"
                 "(i.e. following --sam, --clubb, --e3sm, --wrf, --cam), and confirm that\n"
                 "your netcdf filename matches the expected filename given in\n"
@@ -252,7 +252,7 @@ class PyPlotGen:
 
         :return: None
         """
-                
+
         lowest_output_folder_level = str.split(self.output_folder, '/')[-1]
         pdf_output_path_plus_filename = self.output_folder + '/' + lowest_output_folder_level + '.pdf'
         case_descriptions = {}
@@ -289,7 +289,7 @@ class PyPlotGen:
                 if pdf_filesize < self.pdf_filesize_limit:
                     pdf_too_large = False
                     logToFileAndConsole("PDF output can be found at: file://" + pdf_output_path_plus_filename)
-                    logToFileAndConsole("Printing PDF to the target filesize took " + str(attempted_prints) + 
+                    logToFileAndConsole("Printing PDF to the target filesize took " + str(attempted_prints) +
                                         " attempts to find the right DPI.")
                 else:
                     # output downscaled images to a new folder so that the original quality ones can still be referenced
@@ -299,7 +299,7 @@ class PyPlotGen:
                         pdf_output_path_plus_filename = self.output_folder + '/pyplotgen_output.pdf'
 
                     output_dpi = self.__getDecreasedDpiValue__(output_dpi, pdf_filesize)
-                    logToFileAndConsole("Attempted to print but the file was too large (" + str(pdf_filesize) + 
+                    logToFileAndConsole("Attempted to print but the file was too large (" + str(pdf_filesize) +
                           "MB insead of <" + str(self.pdf_filesize_limit) + "MB). Reducing DPI and trying again.")
                     logToFileAndConsole("Attempting to print pdf with dpi of " + str(output_dpi))
 
@@ -419,7 +419,7 @@ class PyPlotGen:
                                                   wrf_folders=self.wrf_folders, diff_datasets=self.case_diff_datasets,
                                                   plot_r408=self.cgbest, plot_hoc=self.hoc, e3sm_folders=self.e3sm_folders,
                                                   cam_folders=self.cam_folders, time_height=self.time_height,
-                                                  animation=self.animation, samstyle=self.sam_style_budgets, 
+                                                  animation=self.animation, samstyle=self.sam_style_budgets,
                                                   plot_subcolumns=self.plot_subcolumns, lumped_buoy_budgets=self.lumped_buoy_budgets,
                                                   background_rcm=self.background_rcm, image_extension=self.image_extension,
                                                   total_panels_to_plot=0, priority_vars=self.priority_vars)
@@ -523,8 +523,8 @@ class PyPlotGen:
         """
         Returns true if the user requested to plot model output
         that needs to be downloaded
-        
-        :return: True if any of self.les or self.hoc or self.cgbest is True, else False 
+
+        :return: True if any of self.les or self.hoc or self.cgbest is True, else False
         """
         return self.les or self.hoc or self.cgbest
 
@@ -547,7 +547,7 @@ class PyPlotGen:
         else:
             logToFileAndConsole("Benchmark output found in {}.".format(Case_definitions.BENCHMARK_OUTPUT_ROOT))
         logToFileAndConsole('-------------------------------------------')
-       
+
 
 def __convertCasenamesToCaseInstances__(casenames_list):
     """
@@ -656,7 +656,7 @@ def __processArguments__():
                         action="store_true")
     parser.add_argument("-m", "--movies",
                         help="Instead of averaged profiles, plot animations of time steps. Cannot be used with -t, " +
-                             "--pdf, --eps, or --svg. FRAMES_PER_SECOND can be adjusted in " + 
+                             "--pdf, --eps, or --svg. FRAMES_PER_SECOND can be adjusted in " +
                              "config/Style_definitions.py.",
                         action="store", nargs='?', const='mp4', choices=['mp4','avi'])
     parser.add_argument("--bu-morr",
@@ -722,7 +722,7 @@ def __processArguments__():
                         default=[], nargs='+')
     parser.add_argument("--priority-variables", help="Plot only variables with the 'priority' key.",
                         action="store_true")
-    parser.add_argument("--sam-style-budgets", help="Lump together certain CLUBB budget terms so that the relevant " 
+    parser.add_argument("--sam-style-budgets", help="Lump together certain CLUBB budget terms so that the relevant "
                                                     "CLUBB budgets look comparable to SAM's budgets.",
                         action="store_true")
     args = parser.parse_args()
@@ -784,7 +784,7 @@ def __processArguments__():
         raise ValueError('Error: Command line parameters --pdf and --movies cannot be used in conjunction.')
 
     if args.time_height_plots and args.plot_budgets:
-        raise ValueError('Error: Command line parameters --time-height-plots and -b (--plot-budgets) cannot ' 
+        raise ValueError('Error: Command line parameters --time-height-plots and -b (--plot-budgets) cannot '
                          'be used in conjunction.')
 
     if len(args.cases) > 0:

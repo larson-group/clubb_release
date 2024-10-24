@@ -8,7 +8,6 @@ from netCDF4 import Dataset
 from src.Panel import Panel
 from src.VariableGroup import VariableGroup
 
-
 class VariableGroupBase(VariableGroup):
     """
     This is a panel group used for testing the functionality of pyplotgen.
@@ -469,7 +468,7 @@ class VariableGroupBase(VariableGroup):
             {'var_names':
                 {
                 'clubb': ['bv_freq_sqd'],
-                'sam': [],
+                'sam': [self.getBVSqdSamCalc, 'BV_FREQ_SQD'],
                 'coamps': [],
                 'r408': ['bv_freq_sqd'],
                 'hoc': ['bv_freq_sqd'],
@@ -480,6 +479,7 @@ class VariableGroupBase(VariableGroup):
                 'title': 'Brunt-Vaisala frequency squared',
                 'axis_title': 'bv_freq_sqd [$\mathrm{1/s^2}$]',
                 'sci_scale': 0,
+                'sam_calc': self.getBVSqdSamCalc,
             },
             {'var_names':
                 {
@@ -679,7 +679,7 @@ class VariableGroupBase(VariableGroup):
 
         # Call ctor of parent class
         super().__init__(case, clubb_datasets=clubb_datasets, sam_datasets=sam_datasets, sam_benchmark_dataset=sam_benchmark_dataset,
-                         coamps_benchmark_dataset=coamps_benchmark_dataset, wrf_benchmark_dataset=wrf_benchmark_dataset, 
+                         coamps_benchmark_dataset=coamps_benchmark_dataset, wrf_benchmark_dataset=wrf_benchmark_dataset,
                          r408_dataset=r408_dataset, cam_datasets=cam_datasets,
                          hoc_dataset=hoc_dataset, e3sm_datasets=e3sm_datasets, wrf_datasets=wrf_datasets,
                          priority_vars=priority_vars, background_rcm=background_rcm,
@@ -820,9 +820,9 @@ class VariableGroupBase(VariableGroup):
         Calculates Skrt_zt values from sam output using
         the following equation
 
-         sam eqn 
+         sam eqn
             ``RTP3 / (RTP2 + 4e-16)**1.5``
-         coamps eqn 
+         coamps eqn
             ``qtp3 / (qtp2 + 4e-16)**1.5``
             ``rtp3 / (rtp2 + 4e-16)**1.5``
 
@@ -1959,3 +1959,47 @@ class VariableGroupBase(VariableGroup):
 
         return output, z
 
+    def getBVSqdSamCalc(self, dataset_override=None):
+        """
+        This is a "calculate function". Calculate functions are intended to be written by the user in the event that
+        they need a variable that is not output by their atmospheric model. The general format for these functions
+        is:
+            1. Get the proper dataset. This is either passed in as dataset_override, or some benchmark dataset
+            2. Get the equations needed variables from the dataset using ``self.getVarForCalculations()``
+            3. Calculate the new variable
+            4. (optional) If there are multiple valid equations, pick the one that worked using
+               ``self.pickNonZeroOutput()``
+            5. Return the data as (dependent,independent)
+
+        For more information on calculate functions, see the "Creating a new calculated function (for calculated
+        variables)" section of the README.md
+
+        Calculates values of the squared Brunt-Väisälä frequency from sam output using
+        the following equation
+
+        ``N^2 = g/THETAV * dTHETAV/dz``
+        where g is earth's gravitational acceleration constant (9.81 m/s^2)
+        and dTHETAV/dz is the derivative of THETAV w.r.t. height (difference quotient here, for obv reasons)
+
+        :param dataset_override: If passed, this netcdf dataset will be used to gather the data needed to calculate the
+          given variable. if not passed, this function should attempt to find the best source for the data, e.g.
+          the benchmark data for the given model.
+        :return: tuple of numeric lists of the form (dependent_data, independent_data) for the given variable being calculated.
+          Lists will be filled with NaN's if the variable could not be calculated.
+        """
+        # z,z, dataset = self.getVarForCalculations('z', self.sam_benchmark_dataset)
+        dataset = self.sam_benchmark_dataset
+        if dataset_override is not None:
+            dataset = dataset_override
+        thetav, z, dataset = self.getVarForCalculations('THETAV', dataset)
+
+        # Calculate numeical derivative of theta by difference quotient.
+        # Since the difference quotient "eliminates" one array entry,
+        # the derivative array needs to be extended again.
+        # Here, a 0 entry is added at the topmost level
+        tmp = np.diff(thetav)/np.diff(z)
+        dthetav_dz = np.zeros(thetav.shape)
+        dthetav_dz[0:-1] = tmp
+        dthetav_dz[-1] = tmp[-1]
+        bv_sqd = 9.81/thetav * dthetav_dz
+        return bv_sqd, z

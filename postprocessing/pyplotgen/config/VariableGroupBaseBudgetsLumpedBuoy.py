@@ -555,7 +555,7 @@ class VariableGroupBaseBudgetsLumpedBuoy(VariableGroup):
         :param dataset_override: If passed, this netcdf dataset will be used to gather the data needed to calculate the
           given variable. if not passed, this function should attempt to find the best source for the data, e.g.
           the benchmark data for the given model
-        :return: tuple of numeric lists of the form (dependent_data, independent_data) for the given variable being caluclated.
+        :return: tuple of numeric lists of the form (dependent_data, independent_data) for the given variable being calculated.
           Lists will be filled with NaN's if the variable could not be calculated.
         '''
 
@@ -589,7 +589,7 @@ class VariableGroupBaseBudgetsLumpedBuoy(VariableGroup):
         :param dataset_override: If passed, this netcdf dataset will be used to gather the data needed to calculate the
           given variable. if not passed, this function should attempt to find the best source for the data, e.g.
           the benchmark data for the given model
-        :return: tuple of numeric lists of the form (dependent_data, independent_data) for the given variable being caluclated.
+        :return: tuple of numeric lists of the form (dependent_data, independent_data) for the given variable being calculated.
           Lists will be filled with NaN's if the variable could not be calculated.
         '''
         thlm_forcing, indep, dataset = self.getVarForCalculations('thlm_forcing', dataset_override)
@@ -621,7 +621,7 @@ class VariableGroupBaseBudgetsLumpedBuoy(VariableGroup):
         :param dataset_override: If passed, this netcdf dataset will be used to gather the data needed to calculate the
           given variable. if not passed, this function should attempt to find the best source for the data, e.g.
           the benchmark data for the given model
-        :return: tuple of numeric lists of the form (dependent_data, independent_data) for the given variable being caluclated.
+        :return: tuple of numeric lists of the form (dependent_data, independent_data) for the given variable being calculated.
           Lists will be filled with NaN's if the variable could not be calculated.
         '''
         thlm_mfl, indep, dataset = self.getVarForCalculations('thlm_mfl', dataset_override)
@@ -658,7 +658,7 @@ class VariableGroupBaseBudgetsLumpedBuoy(VariableGroup):
         :param dataset_override: If passed, this netcdf dataset will be used to gather the data needed to calculate the
           given variable. if not passed, this function should attempt to find the best source for the data, e.g.
           the benchmark data for the given model
-        :return: tuple of numeric lists of the form (dependent_data, independent_data) for the given variable being caluclated.
+        :return: tuple of numeric lists of the form (dependent_data, independent_data) for the given variable being calculated.
           Lists will be filled with NaN's if the variable could not be calculated.
         '''
         rtm_mfl, indep, dataset = self.getVarForCalculations('rtm_mfl', dataset_override)
@@ -691,7 +691,7 @@ class VariableGroupBaseBudgetsLumpedBuoy(VariableGroup):
         :param dataset_override: If passed, this netcdf dataset will be used to gather the data needed to calculate the
           given variable. if not passed, this function should attempt to find the best source for the data, e.g.
           the benchmark data for the given model
-        :return: tuple of numeric lists of the form (dependent_data, independent_data) for the given variable being caluclated.
+        :return: tuple of numeric lists of the form (dependent_data, independent_data) for the given variable being calculated.
           Lists will be filled with NaN's if the variable could not be calculated.
         '''
         rtm_mc, indep, dataset = self.getVarForCalculations('rtm_mc', dataset_override)
@@ -722,7 +722,7 @@ class VariableGroupBaseBudgetsLumpedBuoy(VariableGroup):
         :param dataset_override: If passed, this netcdf dataset will be used to gather the data needed to calculate the
           given variable. if not passed, this function should attempt to find the best source for the data, e.g.
           the benchmark data for the given model
-        :return: tuple of numeric lists of the form (dependent_data, independent_data) for the given variable being caluclated.
+        :return: tuple of numeric lists of the form (dependent_data, independent_data) for the given variable being calculated.
           Lists will be filled with NaN's if the variable could not be calculated.
         '''
         # z,z, dataset = self.getVarForCalculations('altitude', dataset_override)
@@ -765,7 +765,7 @@ class VariableGroupBaseBudgetsLumpedBuoy(VariableGroup):
         :param dataset_override: If passed, this netcdf dataset will be used to gather the data needed to calculate the
           given variable. if not passed, this function should attempt to find the best source for the data, e.g.
           the benchmark data for the given model
-        :return: tuple of numeric lists of the form (dependent_data, independent_data) for the given variable being caluclated.
+        :return: tuple of numeric lists of the form (dependent_data, independent_data) for the given variable being calculated.
           Lists will be filled with NaN's if the variable could not be calculated.
         '''
         # z,z, dataset = self.getVarForCalculations('altitude', dataset_override)
@@ -825,7 +825,7 @@ class VariableGroupBaseBudgetsLumpedBuoy(VariableGroup):
         :param dataset_override: If passed, this netcdf dataset will be used to gather the data needed to calculate the
           given variable. if not passed, this function should attempt to find the best source for the data, e.g.
           the benchmark data for the given model
-        :return: tuple of numeric lists of the form (dependent_data, independent_data) for the given variable being caluclated.
+        :return: tuple of numeric lists of the form (dependent_data, independent_data) for the given variable being calculated.
           Lists will be filled with NaN's if the variable could not be calculated.
         '''
         # z,z, dataset = self.getVarForCalculations('altitude', dataset_override)
@@ -886,7 +886,7 @@ class VariableGroupBaseBudgetsLumpedBuoy(VariableGroup):
         :param dataset_override: If passed, this netcdf dataset will be used to gather the data needed to calculate the
           given variable. if not passed, this function should attempt to find the best source for the data, e.g.
           the benchmark data for the given model
-        :return: tuple of numeric lists of the form (dependent_data, independent_data) for the given variable being caluclated.
+        :return: tuple of numeric lists of the form (dependent_data, independent_data) for the given variable being calculated.
           Lists will be filled with NaN's if the variable could not be calculated.
         '''
         # z,z, dataset = self.getVarForCalculations('altitude', dataset_override)
@@ -938,7 +938,7 @@ class VariableGroupBaseBudgetsLumpedBuoy(VariableGroup):
         :param dataset_override: If passed, this netcdf dataset will be used to gather the data needed to calculate the
           given variable. if not passed, this function should attempt to find the best source for the data, e.g.
           the benchmark data for the given model
-        :return: tuple of numeric lists of the form (dependent_data, independent_data) for the given variable being caluclated.
+        :return: tuple of numeric lists of the form (dependent_data, independent_data) for the given variable being calculated.
           Lists will be filled with NaN's if the variable could not be calculated.
         '''
         # z,z, dataset = self.getVarForCalculations('altitude', dataset_override)
@@ -990,7 +990,7 @@ class VariableGroupBaseBudgetsLumpedBuoy(VariableGroup):
         :param dataset_override: If passed, this netcdf dataset will be used to gather the data needed to calculate the
           given variable. if not passed, this function should attempt to find the best source for the data, e.g.
           the benchmark data for the given model
-        :return: tuple of numeric lists of the form (dependent_data, independent_data) for the given variable being caluclated.
+        :return: tuple of numeric lists of the form (dependent_data, independent_data) for the given variable being calculated.
           Lists will be filled with NaN's if the variable could not be calculated.
         '''
         # z,z, dataset = self.getVarForCalculations('altitude', dataset_override)
@@ -1034,7 +1034,7 @@ class VariableGroupBaseBudgetsLumpedBuoy(VariableGroup):
         :param dataset_override: If passed, this netcdf dataset will be used to gather the data needed to calculate the
           given variable. if not passed, this function should attempt to find the best source for the data, e.g.
           the benchmark data for the given model
-        :return: tuple of numeric lists of the form (dependent_data, independent_data) for the given variable being caluclated.
+        :return: tuple of numeric lists of the form (dependent_data, independent_data) for the given variable being calculated.
           Lists will be filled with NaN's if the variable could not be calculated.
         '''
         # z,z, dataset = self.getVarForCalculations('altitude', dataset_override)
@@ -1079,7 +1079,7 @@ class VariableGroupBaseBudgetsLumpedBuoy(VariableGroup):
         :param dataset_override: If passed, this netcdf dataset will be used to gather the data needed to calculate the
           given variable. if not passed, this function should attempt to find the best source for the data, e.g.
           the benchmark data for the given model
-        :return: tuple of numeric lists of the form (dependent_data, independent_data) for the given variable being caluclated.
+        :return: tuple of numeric lists of the form (dependent_data, independent_data) for the given variable being calculated.
           Lists will be filled with NaN's if the variable could not be calculated.
         '''
         # z,z, dataset = self.getVarForCalculations('altitude', dataset_override)
@@ -1124,7 +1124,7 @@ class VariableGroupBaseBudgetsLumpedBuoy(VariableGroup):
         :param dataset_override: If passed, this netcdf dataset will be used to gather the data needed to calculate the
           given variable. if not passed, this function should attempt to find the best source for the data, e.g.
           the benchmark data for the given model
-        :return: tuple of numeric lists of the form (dependent_data, independent_data) for the given variable being caluclated.
+        :return: tuple of numeric lists of the form (dependent_data, independent_data) for the given variable being calculated.
           Lists will be filled with NaN's if the variable could not be calculated.
         '''
         # z,z, dataset = self.getVarForCalculations('altitude', dataset_override)
@@ -1172,7 +1172,7 @@ class VariableGroupBaseBudgetsLumpedBuoy(VariableGroup):
         :param dataset_override: If passed, this netcdf dataset will be used to gather the data needed to calculate the
           given variable. if not passed, this function should attempt to find the best source for the data, e.g.
           the benchmark data for the given model
-        :return: tuple of numeric lists of the form (dependent_data, independent_data) for the given variable being caluclated.
+        :return: tuple of numeric lists of the form (dependent_data, independent_data) for the given variable being calculated.
           Lists will be filled with NaN's if the variable could not be calculated.
         '''
         # z,z, dataset = self.getVarForCalculations('altitude', dataset_override)
@@ -1220,7 +1220,7 @@ class VariableGroupBaseBudgetsLumpedBuoy(VariableGroup):
         :param dataset_override: If passed, this netcdf dataset will be used to gather the data needed to calculate the
           given variable. if not passed, this function should attempt to find the best source for the data, e.g.
           the benchmark data for the given model
-        :return: tuple of numeric lists of the form (dependent_data, independent_data) for the given variable being caluclated.
+        :return: tuple of numeric lists of the form (dependent_data, independent_data) for the given variable being calculated.
           Lists will be filled with NaN's if the variable could not be calculated.
         '''
         # z,z, dataset = self.getVarForCalculations('altitude', dataset_override)
@@ -1256,7 +1256,7 @@ class VariableGroupBaseBudgetsLumpedBuoy(VariableGroup):
         :param dataset_override: If passed, this netcdf dataset will be used to gather the data needed to calculate the
           given variable. if not passed, this function should attempt to find the best source for the data, e.g.
           the benchmark data for the given model
-        :return: tuple of numeric lists of the form (dependent_data, independent_data) for the given variable being caluclated.
+        :return: tuple of numeric lists of the form (dependent_data, independent_data) for the given variable being calculated.
           Lists will be filled with NaN's if the variable could not be calculated.
         '''
         # z,z, dataset = self.getVarForCalculations('altitude', dataset_override)
@@ -1298,7 +1298,7 @@ class VariableGroupBaseBudgetsLumpedBuoy(VariableGroup):
         :param dataset_override: If passed, this netcdf dataset will be used to gather the data needed to calculate the
           given variable. if not passed, this function should attempt to find the best source for the data, e.g.
           the benchmark data for the given model
-        :return: tuple of numeric lists of the form (dependent_data, independent_data) for the given variable being caluclated.
+        :return: tuple of numeric lists of the form (dependent_data, independent_data) for the given variable being calculated.
           Lists will be filled with NaN's if the variable could not be calculated.
         '''
         # z,z, dataset = self.getVarForCalculations('altitude', dataset_override)

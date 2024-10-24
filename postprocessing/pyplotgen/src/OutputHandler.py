@@ -76,17 +76,17 @@ def writeFinalErrorLog(errorlog,finalerrorlog):
         procs.append(Lines[i][31:proc_end])
         if "Processing: " in Lines[i]:
             table.append([Lines[i][name_start:-1],Lines[i][0:20],Lines[i][31:proc_end]])
-   
-    table=sorted(table) 
+
+    table=sorted(table)
     proc_nums=[]
     for i in range(len(table)):
         proc_nums.append(table[i][2])
-    
+
     #for i in range(len(table)):
     f2 = open(finalerrorlog,'w')
-   
+
     # write new output file, organized alphabetically according
-    # to test case (ARM, etc.) and then time stamp 
+    # to test case (ARM, etc.) and then time stamp
     written_lines=0
     while procs[written_lines]==procs[0]:
         f2.write(Lines[written_lines])
@@ -115,8 +115,8 @@ def writeFinalErrorLog(errorlog,finalerrorlog):
                     written_lines+=1
     for i in range(written_lines,len(Lines)):
             f2.write(Lines[i])
-   
-    #close new file and remove temp error log 
+
+    #close new file and remove temp error log
     f2.close()
     os.remove(errorlog)
 
@@ -143,6 +143,3 @@ def warnUser(finalerrorlog):
             else:
                 print(Lines[i])
                 break
-
-
- 

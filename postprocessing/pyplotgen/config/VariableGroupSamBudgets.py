@@ -1006,7 +1006,7 @@ class VariableGroupSamBudgets(VariableGroup):
         :param dataset_override: If passed, this netcdf dataset will be used to gather the data needed to calculate the
           given variable. if not passed, this function should attempt to find the best source for the data, e.g.
           the benchmark data for the given model
-        :return: tuple of numeric lists of the form (dependent_data, independent_data) for the given variable being caluclated.
+        :return: tuple of numeric lists of the form (dependent_data, independent_data) for the given variable being calculated.
           Lists will be filled with NaN's if the variable could not be calculated.
         """
         dataset = self.sam_benchmark_dataset
@@ -1060,7 +1060,7 @@ class VariableGroupSamBudgets(VariableGroup):
         :param dataset_override: If passed, this netcdf dataset will be used to gather the data needed to calculate the
           given variable. if not passed, this function should attempt to find the best source for the data, e.g.
           the benchmark data for the given model
-        :return: tuple of numeric lists of the form (dependent_data, independent_data) for the given variable being caluclated.
+        :return: tuple of numeric lists of the form (dependent_data, independent_data) for the given variable being calculated.
           Lists will be filled with NaN's if the variable could not be calculated.
         """
         dataset = self.sam_benchmark_dataset
@@ -1105,7 +1105,7 @@ class VariableGroupSamBudgets(VariableGroup):
         :param dataset_override: If passed, this netcdf dataset will be used to gather the data needed to calculate the
           given variable. if not passed, this function should attempt to find the best source for the data, e.g.
           the benchmark data for the given model
-        :return: tuple of numeric lists of the form (dependent_data, independent_data) for the given variable being caluclated.
+        :return: tuple of numeric lists of the form (dependent_data, independent_data) for the given variable being calculated.
           Lists will be filled with NaN's if the variable could not be calculated.
         """
         dataset = self.sam_benchmark_dataset
@@ -1138,7 +1138,7 @@ class VariableGroupSamBudgets(VariableGroup):
         :param dataset_override: If passed, this netcdf dataset will be used to gather the data needed to calculate the
           given variable. if not passed, this function should attempt to find the best source for the data, e.g.
           the benchmark data for the given model
-        :return: tuple of numeric lists of the form (dependent_data, independent_data) for the given variable being caluclated.
+        :return: tuple of numeric lists of the form (dependent_data, independent_data) for the given variable being calculated.
           Lists will be filled with NaN's if the variable could not be calculated.
         """
         dataset = self.sam_benchmark_dataset
@@ -1178,7 +1178,7 @@ class VariableGroupSamBudgets(VariableGroup):
         :param dataset_override: If passed, this netcdf dataset will be used to gather the data needed to calculate the
           given variable. if not passed, this function should attempt to find the best source for the data, e.g.
           the benchmark data for the given model
-        :return: tuple of numeric lists of the form (dependent_data, independent_data) for the given variable being caluclated.
+        :return: tuple of numeric lists of the form (dependent_data, independent_data) for the given variable being calculated.
           Lists will be filled with NaN's if the variable could not be calculated.
         """
         dataset = self.sam_benchmark_dataset
@@ -1211,7 +1211,7 @@ class VariableGroupSamBudgets(VariableGroup):
         :param dataset_override: If passed, this netcdf dataset will be used to gather the data needed to calculate the
           given variable. if not passed, this function should attempt to find the best source for the data, e.g.
           the benchmark data for the given model
-        :return: tuple of numeric lists of the form (dependent_data, independent_data) for the given variable being caluclated.
+        :return: tuple of numeric lists of the form (dependent_data, independent_data) for the given variable being calculated.
           Lists will be filled with NaN's if the variable could not be calculated.
         """
         dataset = self.sam_benchmark_dataset
@@ -1251,7 +1251,7 @@ class VariableGroupSamBudgets(VariableGroup):
         :param dataset_override: If passed, this netcdf dataset will be used to gather the data needed to calculate the
           given variable. if not passed, this function should attempt to find the best source for the data, e.g.
           the benchmark data for the given model
-        :return: tuple of numeric lists of the form (dependent_data, independent_data) for the given variable being caluclated.
+        :return: tuple of numeric lists of the form (dependent_data, independent_data) for the given variable being calculated.
           Lists will be filled with NaN's if the variable could not be calculated.
         """
         dataset = self.sam_benchmark_dataset
@@ -1284,7 +1284,7 @@ class VariableGroupSamBudgets(VariableGroup):
         :param dataset_override: If passed, this netcdf dataset will be used to gather the data needed to calculate the
           given variable. if not passed, this function should attempt to find the best source for the data, e.g.
           the benchmark data for the given model
-        :return: tuple of numeric lists of the form (dependent_data, independent_data) for the given variable being caluclated.
+        :return: tuple of numeric lists of the form (dependent_data, independent_data) for the given variable being calculated.
           Lists will be filled with NaN's if the variable could not be calculated.
         """
         dataset = self.sam_benchmark_dataset
@@ -1323,7 +1323,7 @@ class VariableGroupSamBudgets(VariableGroup):
         :param dataset_override: If passed, this netcdf dataset will be used to gather the data needed to calculate the
           given variable. if not passed, this function should attempt to find the best source for the data, e.g.
           the benchmark data for the given model
-        :return: tuple of numeric lists of the form (dependent_data, independent_data) for the given variable being caluclated.
+        :return: tuple of numeric lists of the form (dependent_data, independent_data) for the given variable being calculated.
           Lists will be filled with NaN's if the variable could not be calculated.
         """
         dataset = self.sam_benchmark_dataset
@@ -1356,7 +1356,7 @@ class VariableGroupSamBudgets(VariableGroup):
         :param dataset_override: If passed, this netcdf dataset will be used to gather the data needed to calculate the
           given variable. if not passed, this function should attempt to find the best source for the data, e.g.
           the benchmark data for the given model
-        :return: tuple of numeric lists of the form (dependent_data, independent_data) for the given variable being caluclated.
+        :return: tuple of numeric lists of the form (dependent_data, independent_data) for the given variable being calculated.
           Lists will be filled with NaN's if the variable could not be calculated.
         """
         dataset = self.sam_benchmark_dataset
@@ -1395,7 +1395,7 @@ class VariableGroupSamBudgets(VariableGroup):
         :param dataset_override: If passed, this netcdf dataset will be used to gather the data needed to calculate the
           given variable. if not passed, this function should attempt to find the best source for the data, e.g.
           the benchmark data for the given model
-        :return: tuple of numeric lists of the form (dependent_data, independent_data) for the given variable being caluclated.
+        :return: tuple of numeric lists of the form (dependent_data, independent_data) for the given variable being calculated.
           Lists will be filled with NaN's if the variable could not be calculated.
         """
         dataset = self.sam_benchmark_dataset
@@ -1434,7 +1434,7 @@ class VariableGroupSamBudgets(VariableGroup):
         :param dataset_override: If passed, this netcdf dataset will be used to gather the data needed to calculate the
           given variable. if not passed, this function should attempt to find the best source for the data, e.g.
           the benchmark data for the given model
-        :return: tuple of numeric lists of the form (dependent_data, independent_data) for the given variable being caluclated.
+        :return: tuple of numeric lists of the form (dependent_data, independent_data) for the given variable being calculated.
           Lists will be filled with NaN's if the variable could not be calculated.
         """
         dataset = self.sam_benchmark_dataset
@@ -1473,7 +1473,7 @@ class VariableGroupSamBudgets(VariableGroup):
         :param dataset_override: If passed, this netcdf dataset will be used to gather the data needed to calculate the
           given variable. if not passed, this function should attempt to find the best source for the data, e.g.
           the benchmark data for the given model
-        :return: tuple of numeric lists of the form (dependent_data, independent_data) for the given variable being caluclated.
+        :return: tuple of numeric lists of the form (dependent_data, independent_data) for the given variable being calculated.
           Lists will be filled with NaN's if the variable could not be calculated.
         """
         dataset = self.sam_benchmark_dataset
@@ -1511,7 +1511,7 @@ class VariableGroupSamBudgets(VariableGroup):
         :param dataset_override: If passed, this netcdf dataset will be used to gather the data needed to calculate the
           given variable. if not passed, this function should attempt to find the best source for the data, e.g.
           the benchmark data for the given model
-        :return: tuple of numeric lists of the form (dependent_data, independent_data) for the given variable being caluclated.
+        :return: tuple of numeric lists of the form (dependent_data, independent_data) for the given variable being calculated.
           Lists will be filled with NaN's if the variable could not be calculated.
         """
         dataset = self.sam_benchmark_dataset
@@ -1549,7 +1549,7 @@ class VariableGroupSamBudgets(VariableGroup):
         :param dataset_override: If passed, this netcdf dataset will be used to gather the data needed to calculate the
           given variable. if not passed, this function should attempt to find the best source for the data, e.g.
           the benchmark data for the given model
-        :return: tuple of numeric lists of the form (dependent_data, independent_data) for the given variable being caluclated.
+        :return: tuple of numeric lists of the form (dependent_data, independent_data) for the given variable being calculated.
           Lists will be filled with NaN's if the variable could not be calculated.
         """
         dataset = self.sam_benchmark_dataset
@@ -1588,7 +1588,7 @@ class VariableGroupSamBudgets(VariableGroup):
         :param dataset_override: If passed, this netcdf dataset will be used to gather the data needed to calculate the
           given variable. if not passed, this function should attempt to find the best source for the data, e.g.
           the benchmark data for the given model
-        :return: tuple of numeric lists of the form (dependent_data, independent_data) for the given variable being caluclated.
+        :return: tuple of numeric lists of the form (dependent_data, independent_data) for the given variable being calculated.
           Lists will be filled with NaN's if the variable could not be calculated.
         """
         dataset = self.sam_benchmark_dataset
@@ -1621,7 +1621,7 @@ class VariableGroupSamBudgets(VariableGroup):
         :param dataset_override: If passed, this netcdf dataset will be used to gather the data needed to calculate the
           given variable. if not passed, this function should attempt to find the best source for the data, e.g.
           the benchmark data for the given model
-        :return: tuple of numeric lists of the form (dependent_data, independent_data) for the given variable being caluclated.
+        :return: tuple of numeric lists of the form (dependent_data, independent_data) for the given variable being calculated.
           Lists will be filled with NaN's if the variable could not be calculated.
         """
         dataset = self.sam_benchmark_dataset
@@ -1660,7 +1660,7 @@ class VariableGroupSamBudgets(VariableGroup):
         :param dataset_override: If passed, this netcdf dataset will be used to gather the data needed to calculate the
           given variable. if not passed, this function should attempt to find the best source for the data, e.g.
           the benchmark data for the given model
-        :return: tuple of numeric lists of the form (dependent_data, independent_data) for the given variable being caluclated.
+        :return: tuple of numeric lists of the form (dependent_data, independent_data) for the given variable being calculated.
           Lists will be filled with NaN's if the variable could not be calculated.
         """
         dataset = self.sam_benchmark_dataset
@@ -1695,7 +1695,7 @@ class VariableGroupSamBudgets(VariableGroup):
         :param dataset_override: If passed, this netcdf dataset will be used to gather the data needed to calculate the
           given variable. if not passed, this function should attempt to find the best source for the data, e.g.
           the benchmark data for the given model
-        :return: tuple of numeric lists of the form (dependent_data, independent_data) for the given variable being caluclated.
+        :return: tuple of numeric lists of the form (dependent_data, independent_data) for the given variable being calculated.
           Lists will be filled with NaN's if the variable could not be calculated.
         """
         dataset = self.sam_benchmark_dataset
@@ -1731,7 +1731,7 @@ class VariableGroupSamBudgets(VariableGroup):
         :param dataset_override: If passed, this netcdf dataset will be used to gather the data needed to calculate the
           given variable. if not passed, this function should attempt to find the best source for the data, e.g.
           the benchmark data for the given model
-        :return: tuple of numeric lists of the form (dependent_data, independent_data) for the given variable being caluclated.
+        :return: tuple of numeric lists of the form (dependent_data, independent_data) for the given variable being calculated.
           Lists will be filled with NaN's if the variable could not be calculated.
         """
         dataset = self.sam_benchmark_dataset
@@ -1767,7 +1767,7 @@ class VariableGroupSamBudgets(VariableGroup):
         :param dataset_override: If passed, this netcdf dataset will be used to gather the data needed to calculate the
           given variable. if not passed, this function should attempt to find the best source for the data, e.g.
           the benchmark data for the given model
-        :return: tuple of numeric lists of the form (dependent_data, independent_data) for the given variable being caluclated.
+        :return: tuple of numeric lists of the form (dependent_data, independent_data) for the given variable being calculated.
           Lists will be filled with NaN's if the variable could not be calculated.
         """
         dataset = self.sam_benchmark_dataset
@@ -1800,7 +1800,7 @@ class VariableGroupSamBudgets(VariableGroup):
         :param dataset_override: If passed, this netcdf dataset will be used to gather the data needed to calculate the
           given variable. if not passed, this function should attempt to find the best source for the data, e.g.
           the benchmark data for the given model
-        :return: tuple of numeric lists of the form (dependent_data, independent_data) for the given variable being caluclated.
+        :return: tuple of numeric lists of the form (dependent_data, independent_data) for the given variable being calculated.
           Lists will be filled with NaN's if the variable could not be calculated.
         """
         dataset = self.sam_benchmark_dataset
@@ -1838,7 +1838,7 @@ class VariableGroupSamBudgets(VariableGroup):
         :param dataset_override: If passed, this netcdf dataset will be used to gather the data needed to calculate the
           given variable. if not passed, this function should attempt to find the best source for the data, e.g.
           the benchmark data for the given model
-        :return: tuple of numeric lists of the form (dependent_data, independent_data) for the given variable being caluclated.
+        :return: tuple of numeric lists of the form (dependent_data, independent_data) for the given variable being calculated.
           Lists will be filled with NaN's if the variable could not be calculated.
         """
         dataset = self.sam_benchmark_dataset
@@ -1871,7 +1871,7 @@ class VariableGroupSamBudgets(VariableGroup):
         :param dataset_override: If passed, this netcdf dataset will be used to gather the data needed to calculate the
           given variable. if not passed, this function should attempt to find the best source for the data, e.g.
           the benchmark data for the given model
-        :return: tuple of numeric lists of the form (dependent_data, independent_data) for the given variable being caluclated.
+        :return: tuple of numeric lists of the form (dependent_data, independent_data) for the given variable being calculated.
           Lists will be filled with NaN's if the variable could not be calculated.
         """
         dataset = self.sam_benchmark_dataset
@@ -1904,7 +1904,7 @@ class VariableGroupSamBudgets(VariableGroup):
         :param dataset_override: If passed, this netcdf dataset will be used to gather the data needed to calculate the
           given variable. if not passed, this function should attempt to find the best source for the data, e.g.
           the benchmark data for the given model
-        :return: tuple of numeric lists of the form (dependent_data, independent_data) for the given variable being caluclated.
+        :return: tuple of numeric lists of the form (dependent_data, independent_data) for the given variable being calculated.
           Lists will be filled with NaN's if the variable could not be calculated.
         """
         dataset = self.sam_benchmark_dataset
@@ -1937,7 +1937,7 @@ class VariableGroupSamBudgets(VariableGroup):
         :param dataset_override: If passed, this netcdf dataset will be used to gather the data needed to calculate the
           given variable. if not passed, this function should attempt to find the best source for the data, e.g.
           the benchmark data for the given model
-        :return: tuple of numeric lists of the form (dependent_data, independent_data) for the given variable being caluclated.
+        :return: tuple of numeric lists of the form (dependent_data, independent_data) for the given variable being calculated.
           Lists will be filled with NaN's if the variable could not be calculated.
         """
         dataset = self.sam_benchmark_dataset
@@ -1970,7 +1970,7 @@ class VariableGroupSamBudgets(VariableGroup):
         :param dataset_override: If passed, this netcdf dataset will be used to gather the data needed to calculate the
           given variable. if not passed, this function should attempt to find the best source for the data, e.g.
           the benchmark data for the given model
-        :return: tuple of numeric lists of the form (dependent_data, independent_data) for the given variable being caluclated.
+        :return: tuple of numeric lists of the form (dependent_data, independent_data) for the given variable being calculated.
           Lists will be filled with NaN's if the variable could not be calculated.
         """
         dataset = self.sam_benchmark_dataset
@@ -2003,7 +2003,7 @@ class VariableGroupSamBudgets(VariableGroup):
         :param dataset_override: If passed, this netcdf dataset will be used to gather the data needed to calculate the
           given variable. if not passed, this function should attempt to find the best source for the data, e.g.
           the benchmark data for the given model
-        :return: tuple of numeric lists of the form (dependent_data, independent_data) for the given variable being caluclated.
+        :return: tuple of numeric lists of the form (dependent_data, independent_data) for the given variable being calculated.
           Lists will be filled with NaN's if the variable could not be calculated.
         """
         dataset = self.sam_benchmark_dataset
@@ -2036,7 +2036,7 @@ class VariableGroupSamBudgets(VariableGroup):
         :param dataset_override: If passed, this netcdf dataset will be used to gather the data needed to calculate the
           given variable. if not passed, this function should attempt to find the best source for the data, e.g.
           the benchmark data for the given model
-        :return: tuple of numeric lists of the form (dependent_data, independent_data) for the given variable being caluclated.
+        :return: tuple of numeric lists of the form (dependent_data, independent_data) for the given variable being calculated.
           Lists will be filled with NaN's if the variable could not be calculated.
         """
         dataset = self.sam_benchmark_dataset
@@ -2085,7 +2085,7 @@ class VariableGroupSamBudgets(VariableGroup):
         :param dataset_override: If passed, this netcdf dataset will be used to gather the data needed to calculate the
           given variable. if not passed, this function should attempt to find the best source for the data, e.g.
           the benchmark data for the given model
-        :return: tuple of numeric lists of the form (dependent_data, independent_data) for the given variable being caluclated.
+        :return: tuple of numeric lists of the form (dependent_data, independent_data) for the given variable being calculated.
           Lists will be filled with NaN's if the variable could not be calculated.
         """
         dataset = self.sam_benchmark_dataset
@@ -2118,7 +2118,7 @@ class VariableGroupSamBudgets(VariableGroup):
         :param dataset_override: If passed, this netcdf dataset will be used to gather the data needed to calculate the
           given variable. if not passed, this function should attempt to find the best source for the data, e.g.
           the benchmark data for the given model
-        :return: tuple of numeric lists of the form (dependent_data, independent_data) for the given variable being caluclated.
+        :return: tuple of numeric lists of the form (dependent_data, independent_data) for the given variable being calculated.
           Lists will be filled with NaN's if the variable could not be calculated.
 
         This code does not extract W3PRESDFSN, W3PRESSCR, and W3TP directly, but these three variables sum to W3PRES which is extracted here.
@@ -2156,7 +2156,7 @@ class VariableGroupSamBudgets(VariableGroup):
         :param dataset_override: If passed, this netcdf dataset will be used to gather the data needed to calculate the
           given variable. if not passed, this function should attempt to find the best source for the data, e.g.
           the benchmark data for the given model
-        :return: tuple of numeric lists of the form (dependent_data, independent_data) for the given variable being caluclated.
+        :return: tuple of numeric lists of the form (dependent_data, independent_data) for the given variable being calculated.
           Lists will be filled with NaN's if the variable could not be calculated.
         """
         dataset = self.sam_benchmark_dataset
@@ -2189,7 +2189,7 @@ class VariableGroupSamBudgets(VariableGroup):
         :param dataset_override: If passed, this netcdf dataset will be used to gather the data needed to calculate the
           given variable. if not passed, this function should attempt to find the best source for the data, e.g.
           the benchmark data for the given model
-        :return: tuple of numeric lists of the form (dependent_data, independent_data) for the given variable being caluclated.
+        :return: tuple of numeric lists of the form (dependent_data, independent_data) for the given variable being calculated.
           Lists will be filled with NaN's if the variable could not be calculated.
         """
         dataset = self.sam_benchmark_dataset
@@ -2228,7 +2228,7 @@ class VariableGroupSamBudgets(VariableGroup):
         :param dataset_override: If passed, this netcdf dataset will be used to gather the data needed to calculate the
           given variable. if not passed, this function should attempt to find the best source for the data, e.g.
           the benchmark data for the given model
-        :return: tuple of numeric lists of the form (dependent_data, independent_data) for the given variable being caluclated.
+        :return: tuple of numeric lists of the form (dependent_data, independent_data) for the given variable being calculated.
           Lists will be filled with NaN's if the variable could not be calculated.
         """
         dataset = self.sam_benchmark_dataset
@@ -2261,7 +2261,7 @@ class VariableGroupSamBudgets(VariableGroup):
         :param dataset_override: If passed, this netcdf dataset will be used to gather the data needed to calculate the
           given variable. if not passed, this function should attempt to find the best source for the data, e.g.
           the benchmark data for the given model
-        :return: tuple of numeric lists of the form (dependent_data, independent_data) for the given variable being caluclated.
+        :return: tuple of numeric lists of the form (dependent_data, independent_data) for the given variable being calculated.
           Lists will be filled with NaN's if the variable could not be calculated.
         """
         dataset = self.sam_benchmark_dataset
