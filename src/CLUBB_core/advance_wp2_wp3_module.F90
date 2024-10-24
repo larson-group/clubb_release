@@ -4273,7 +4273,7 @@ module advance_wp2_wp3_module
         ! centered discretization in accordance with description and diagram
         ! shown above.
         !$acc parallel loop gang vector collapse(2) default(present)
-        do k = 2, nzt-2, 1
+        do k = 2, nzt-1, 1
           do i = 1, ngrdcol
 
             ! Thermodynamic superdiagonal: [ x wp3(k+1,<t+1>) ]
@@ -4313,43 +4313,6 @@ module advance_wp2_wp3_module
         enddo
         !$acc end parallel loop
 
-        ! Upper Boundary
-        ! The turbulent advection discretization assumes that wp3 has a value
-        ! of 0 at momentum level nzm (which is immediately above thermodynamic
-        ! level nzt).
-        ! The model is presently applying the u.b. condition on the
-        ! 2nd highest thermodynamic level.
-        k = nzt-1
-        !$acc parallel loop gang vector default(present)
-        do i = 1, ngrdcol
-
-          ! Momentum superdiagonal: [ x wp2(k+1,<t+1>) ]
-          lhs_ta_wp3(k_mdiag,i,k) &
-          = + invrs_rho_ds_zt(i,k) * gr%invrs_dzt(i,k) &
-              * rho_ds_zm(i,k+1) * a3_coef(i,k+1) * wp2(i,k+1)
-
-          ! Thermodynamic main diagonal: [ x wp3(k,<t+1>) ]
-          lhs_ta_wp3(k_tdiag,i,k) &
-          = - invrs_rho_ds_zt(i,k) &
-              * gr%invrs_dzt(i,k) &
-                * rho_ds_zm(i,k) * a1_coef(i,k) * wp3_on_wp2(i,k) &
-                * gr%weights_zt2zm(i,k,t_above)
-
-          ! Momentum subdiagonal: [ x wp2(k,<t+1>) ]
-          lhs_ta_wp3(km1_mdiag,i,k) &
-          = - invrs_rho_ds_zt(i,k) * gr%invrs_dzt(i,k) &
-              * rho_ds_zm(i,k) * a3_coef(i,k) * wp2(i,k)
-
-          ! Thermodynamic subdiagonal: [ x wp3(k-1,<t+1>) ]
-          lhs_ta_wp3(km1_tdiag,i,k) &
-          = - invrs_rho_ds_zt(i,k) &
-              * gr%invrs_dzt(i,k) &
-                * rho_ds_zm(i,k) * a1_coef(i,k) * wp3_on_wp2(i,k) &
-                * gr%weights_zt2zm(i,k,t_below)
-
-        enddo
-        !$acc end parallel loop
-
       else ! l_partial_upwind_wp3
 
         ! Partial upwinding of the wp3 turbulent advection term, where the
@@ -4360,7 +4323,7 @@ module advance_wp2_wp3_module
         ! "winds" that converge or diverge around the central thermodynamic
         ! grid level.  Provided by Chris Vogl and Shixuan Zhang.
         !$acc parallel loop gang vector collapse(2) default(present)
-        do k = 2, nzt-2, 1
+        do k = 2, nzt-1, 1
           do i = 1, ngrdcol
 
             ! Thermodynamic superdiagonal: [ x wp3(k+1,<t+1>) ]
@@ -4396,41 +4359,6 @@ module advance_wp2_wp3_module
         enddo
         !$acc end parallel loop
 
-        ! Upper Boundary
-        ! The turbulent advection discretization assumes that wp3 has a value
-        ! of 0 at momentum level nzm (which is immediately above thermodynamic
-        ! level nzt).
-        ! The model is presently applying the u.b. condition on the
-        ! 2nd highest thermodynamic level.
-        k = nzt-1
-        !$acc parallel loop gang vector default(present)
-        do i = 1, ngrdcol
-
-          ! Momentum superdiagonal: [ x wp2(k+1,<t+1>) ]
-          lhs_ta_wp3(k_mdiag,i,k) &
-          = + invrs_rho_ds_zt(i,k) * gr%invrs_dzt(i,k) &
-              * rho_ds_zm(i,k+1) * a3_coef(i,k+1) * wp2(i,k+1)
-
-          ! Thermodynamic main diagonal: [ x wp3(k,<t+1>) ]
-          lhs_ta_wp3(k_tdiag,i,k) &
-          = - invrs_rho_ds_zt(i,k) &
-              * gr%invrs_dzt(i,k) * rho_ds_zt(i,k) &
-              * min( a1_coef(i,k) * wp3_on_wp2(i,k), zero )
-
-          ! Momentum subdiagonal: [ x wp2(k,<t+1>) ]
-          lhs_ta_wp3(km1_mdiag,i,k) &
-          = - invrs_rho_ds_zt(i,k) * gr%invrs_dzt(i,k) &
-              * rho_ds_zm(i,k) * a3_coef(i,k) * wp2(i,k)
-
-          ! Thermodynamic subdiagonal: [ x wp3(k-1,<t+1>) ]
-          lhs_ta_wp3(km1_tdiag,i,k) &
-          = - invrs_rho_ds_zt(i,k) &
-              * gr%invrs_dzt(i,k) * rho_ds_zt(i,k-1) &
-              * max( a1_coef(i,k) * wp3_on_wp2(i,k), zero )
-
-        enddo
-        !$acc end parallel loop
-
       end if ! .not. l_partial_upwind_wp3
 
     else
@@ -4451,7 +4379,7 @@ module advance_wp2_wp3_module
       ! the momentum superdiagonal (k_mdiag) and the momentum subdiagonal
       ! (km1_mdiag).
       !$acc parallel loop gang vector collapse(2) default(present)
-      do k = 2, nzt-2
+      do k = 2, nzt-1
         do i = 1, ngrdcol
 
           ! Thermodynamic superdiagonal: [ x wp3(k+1,<t+1>) ]
@@ -4488,43 +4416,6 @@ module advance_wp2_wp3_module
               * gr%weights_zt2zm(i,k,t_below)
 
         enddo
-      enddo
-      !$acc end parallel loop
-
-      ! Upper Boundary
-      ! The turbulent advection discretization assumes that wp3 has a value
-      ! of 0 at momentum level nzm (which is immediately above thermodynamic
-      ! level nzt).
-      ! The model is presently applying the u.b. condition on the
-      ! 2nd highest thermodynamic level.
-      k = nzt-1
-      !$acc parallel loop gang vector default(present)
-      do i = 1, ngrdcol
-
-        ! Momentum superdiagonal: [ x wp2(k+1,<t+1>) ]
-        lhs_ta_wp3(k_mdiag,i,k) &
-        = + invrs_rho_ds_zt(i,k) * a3_coef_zt(i,k) * gr%invrs_dzt(i,k) &
-            * rho_ds_zm(i,k+1) * wp2(i,k+1)
-
-        ! Thermodynamic main diagonal: [ x wp3(k,<t+1>) ]
-        lhs_ta_wp3(k_tdiag,i,k) &
-        = - invrs_rho_ds_zt(i,k) &
-            * a1_coef_zt(i,k) * gr%invrs_dzt(i,k) &
-            * rho_ds_zm(i,k) * wp3_on_wp2(i,k) &
-            * gr%weights_zt2zm(i,k,t_above)
-
-        ! Momentum subdiagonal: [ x wp2(k,<t+1>) ]
-        lhs_ta_wp3(km1_mdiag,i,k) &
-        = - invrs_rho_ds_zt(i,k) * a3_coef_zt(i,k) * gr%invrs_dzt(i,k) &
-            * rho_ds_zm(i,k) * wp2(i,k)
-
-        ! Thermodynamic subdiagonal: [ x wp3(k-1,<t+1>) ]
-        lhs_ta_wp3(km1_tdiag,i,k) &
-        = - invrs_rho_ds_zt(i,k) &
-            * a1_coef_zt(i,k) * gr%invrs_dzt(i,k) &
-            * rho_ds_zm(i,k) * wp3_on_wp2(i,k) &
-            * gr%weights_zt2zm(i,k,t_below)
-
       enddo
       !$acc end parallel loop
 
