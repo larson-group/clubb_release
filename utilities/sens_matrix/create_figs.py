@@ -10,6 +10,7 @@ import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
 import plotly.figure_factory as ff
+from plotly.subplots import make_subplots
 import plotly.colors as pc
 #import pca
 import dash
@@ -60,12 +61,12 @@ def createFigs(metricsNames,
     plot_dpMin2PtFig = False #True
     plot_dpMinMatrixScatterFig = False
     plot_projectionMatrixFigs = False
-    plot_biasesVsSensMagScatterplot = True
+    plot_biasesVsSensMagScatterplot = False #True
     plot_biasesVsSvdScatterplot = True
-    plot_paramsCorrArrayFig = True
-    plot_sensMatrixAndBiasVecFig = True
+    plot_paramsCorrArrayFig = False #True
+    plot_sensMatrixAndBiasVecFig = False #True
     plot_PcaBiplot = True
-    plot_PcMap = True
+    plot_PcSensMap = True
 
     # Remove prefixes from CLUBB variable names in order to shorten them
     paramsAbbrv = abbreviateClubbParamsNames(paramsNames)
@@ -82,20 +83,20 @@ def createFigs(metricsNames,
                          | (metricsNames == 'SWCF_4_1') \
                          | (metricsNames == 'SWCF_2_17') \
                          | (metricsNames == 'SWCF_6_14') \
-                         | (metricsNames == 'SWCF_6_18') \
-                         | (metricsNames == 'SWCF_6_1') \
-                         | (metricsNames == 'SWCF_6_10') \
-                         | (metricsNames == 'SWCF_6_13') \
-                         | (metricsNames == 'SWCF_6_15') \
-                         | (metricsNames == 'SWCF_2_14') \
-                         | (metricsNames == 'SWCF_2_15') \
-                         | (metricsNames == 'SWCF_2_10') \
-                         | (metricsNames == 'SWCF_7_14') \
-                         | (metricsNames == 'SWCF_7_2') \
-                         | (metricsNames == 'SWCF_5_8') \
-                         | (metricsNames == 'SWCF_1_14') \
-                         | (metricsNames == 'SWCF_1_15') \
-                         | (metricsNames == 'SWCF_4_15') \
+                         #| (metricsNames == 'SWCF_6_18') \
+                         #| (metricsNames == 'SWCF_6_1') \
+                         #| (metricsNames == 'SWCF_6_10') \
+                         #| (metricsNames == 'SWCF_6_13') \
+                         #| (metricsNames == 'SWCF_6_15') \
+                         #| (metricsNames == 'SWCF_2_14') \
+                         #| (metricsNames == 'SWCF_2_15') \
+                         #| (metricsNames == 'SWCF_2_10') \
+                         #| (metricsNames == 'SWCF_7_14') \
+                         #| (metricsNames == 'SWCF_7_2') \
+                         #| (metricsNames == 'SWCF_5_8') \
+                         #| (metricsNames == 'SWCF_1_14') \
+                         #| (metricsNames == 'SWCF_1_15') \
+                         #| (metricsNames == 'SWCF_4_15') \
                          # | (metricsNames == 'SWCF_5_16') \
                          # | (metricsNames == 'SWCF_1_13') \
                          #| (metricsNames == 'SWCF_6_18') \
@@ -602,171 +603,120 @@ def createFigs(metricsNames,
                         plotWidth=700, plotHeight=500
                         )
 
-    if plot_PcMap:
+    if plot_PcSensMap:
 
         print("Creating PcMap . . .")
 
         import plotly.graph_objects as go
 
-        # Create a base map
-        #PcMapFig = go.Figure(go.Scattergeo(
-        #    lat=[-90, 90],
-        #    lon=[-180, 180])
-        #                   )
+        PcMapPanelBias = \
+        createMapPanel(fieldToPlotCol=normlzdDefaultBiasesCol,
+                             plotWidth=500,
+                             plotTitle="normlzdDefaultBiasesCol",
+                             boxSize=20)
 
-        #df = px.data.gapminder().query("year == 2007")
-        #PcMapFig = px.line_geo(df, locations="iso_alpha",
-        #          color="continent" # "continent" is one of the columns of gapminder
-        #          )
+        PcMapPanelParam0 = \
+        createMapPanel(fieldToPlotCol=normlzdSensMatrixPoly[:,0],
+                             plotWidth=500,
+                             plotTitle=f"normlzdSensMatrixPoly[:,{paramsNames[0]}]",
+                             boxSize=20)
 
+        BiasParamsDashboardChildren = [html.Div(children=[
+            dcc.Graph(id="PcMapPanelBias", figure=PcMapPanelBias, style={'display': 'inline-block'}),
+            dcc.Graph(id="PcMapPanelParam0", figure=PcMapPanelParam0, style={'display': 'inline-block'})
+                                       ]) ]
 
-        # Define the grid
-        #lat_range = range(-90, 90, 20)
-        #lon_range = range(-180, 180, 20)
+        paramsIdx = 1
+        while paramsIdx < len(paramsNames):
+            leftFig = \
+            createMapPanel(fieldToPlotCol=normlzdSensMatrixPoly[:, paramsIdx],
+                             plotWidth=500,
+                             plotTitle=f"normlzdSensMatrixPoly[:,{paramsNames[paramsIdx]}]",
+                             boxSize=20)
+            if paramsIdx+1 <= len(paramsNames):
+                rightFig = \
+                createMapPanel(fieldToPlotCol=normlzdSensMatrixPoly[:, paramsIdx+1],
+                             plotWidth=500,
+                             plotTitle=f"normlzdSensMatrixPoly[:,{paramsNames[paramsIdx+1]}]",
+                             boxSize=20)
+            else:
+                rightFig = []
 
-        # Draw the boxes
-        #for lat in lat_range:
-        #    for lon in lon_range:
-        #        PcMapFig.add_shape(
-        #            type="rect",
-        #            xref="x",
-        #            yref="y",
-        #            x0=lon,
-        #            y0=lat,
-        #            x1=lon + 20,
-        #            y1=lat + 20,
-        #            line=dict(color="black", width=1),
-        #            fillcolor="rgba(0, 0, 255, 0.2)",  # Adjust color as needed
-        #            opacity=1.0
-        #        )
+            BiasParamsDashboardChildren.append(html.Div(children=[
+            dcc.Graph(figure=leftFig, style={'display': 'inline-block'}),
+            dcc.Graph(figure=rightFig, style={'display': 'inline-block'})
+                                       ]) )
 
-        # Customize the layout
-        #PcMapFig.update_layout(
-        #    title="Colored Grid Over World Map",
-        #    geo=dict(
-        #        scope='world',
-        #        projection_type='equirectangular',
-        #        center=dict(lon=0, lat=0),
-        #        lataxis_range=[-90, 90],  # defines clip height
-        #        lonaxis_range=[-180, 180],
-        #        showland=True,
-        #        landcolor="rgb(217, 217, 217)",
-        #        showcountries=False,
-        #        countrycolor="black"
-        #    )
-        #)
-
-        #PcMapFig.update_layout(height=300,
-        #        margin={"r": 0, "t": 0, "l": 0, "b": 0})
-
-        PcMapFig = go.Figure(go.Scattergeo())
-        #PcMapFig.update_geos(lataxis_showgrid=True, lonaxis_showgrid=True)
-        #PcMapFig.update_layout(height=300, margin={"r": 0, "t": 0, "l": 0, "b": 0})
-
-
-        #PcMapFig.update_layout(xaxis=dict(range=[-180, 180]),
-        #                       yaxis=dict(range=[-90, 90]))
-        PcMapFig.update_layout(xaxis=dict(range=[0, 360]),
-                               yaxis=dict(range=[-90, 90]))
-        PcMapFig.update_xaxes(showgrid=False,
-                              tickmode="linear",
-                              dtick=60, tick0=0)
-        PcMapFig.update_yaxes(showgrid=False,
-                              zeroline=False,
-                              tickmode="linear",
-                              dtick=30, tick0=-90)
-        #PcMapFig.update_layout(xaxis2=dict(side='top',
-        #                                   tickmode='array',
-        #                                   tickvals=np.linspace(start=1,stop=18,num=18)
-        #                                   ))
-        #PcMapFig.add_trace(go.Scatter(x=np.linspace(start=1,stop=18,num=18), y=np.zeros(18), xaxis='x2',
-        #                             visible=False))
-        xBoxNums = np.linspace(start=1,stop=18,num=18).astype(int)
-        for xIdx, xBoxNum in np.ndenumerate(xBoxNums):
-            xPos = int(10+xIdx[0]*20)
-            PcMapFig.add_annotation(x=xPos, yref="paper", y=1.07,
-                text=xBoxNum.astype(str),showarrow=False)
-        yBoxNums = np.linspace(start=1,stop=9,num=9).astype(int)
-        for yIdx, yBoxNum in np.ndenumerate(yBoxNums):
-            yPos = int(80-yIdx[0]*20)
-            PcMapFig.add_annotation(xref="paper", x=1.03,
-                                    y=yPos,
-                text=yBoxNum.astype(str),showarrow=False)
-
-        PcMapFig.update_layout(width=700, height=450)
-        PcMapFig.update_layout(title="SVD 1", title_y=0.9, title_x=0.5)
-
-        #PcMapFig.update_geos(lataxis_range = [-90, 90],
-        #                     lonaxis_range = [-180, 180])
-        PcMapFig.update_geos(lataxis_range = [-90, 90],
-                             lonaxis_range = [0, 360])
-
-        #PcMapFig.update_layout(
-        #     shapes=[
-        #        dict(
-        #            type="rect",
-        #            xref="x2",
-        #            yref="y2",
-        #            x0=0.0,
-        #            y0=0.0,
-        #            x1=30.0,
-        #            y1=30.0,
-        #            fillcolor="red",
-        #            opacity=0.5,
-        #            line=dict(width=0),
-        #        )
-        #    ]
-        #)
+            paramsIdx += 2
 
         u, s, vh = \
             np.linalg.svd(normlzdSensMatrixPoly, full_matrices=False)
 
-        uCol0Reshaped = u[:,0].reshape(9,18)
-        normlzdDefaultBiasesReshaped = normlzdDefaultBiasesCol.reshape(9,18)
-        # Shift from 0,360 to -180,180 degrees longitude
-        #normlzdDefaultBiasesShifted = np.roll(normlzdDefaultBiasesReshaped, -9, axis=1)
+        PcMapPanelU0 = \
+        createMapPanel(fieldToPlotCol=u[:,0],
+                     plotWidth=500,
+                     plotTitle="SVD 1",
+                     boxSize=20)
 
-        lat_range = range(90, -90, -20)
-        #lon_range = range(-180, 180, 20)
-        lon_range = range(0, 360, 20)
+        PcMapPanelU1 = \
+        createMapPanel(fieldToPlotCol=u[:, 1],
+                             plotWidth=500,
+                             plotTitle="SVD 2",
+                             boxSize=20)
 
-        #colorCol = np.copy(uCol0Reshaped)
-        #colorCol = normlzdDefaultBiasesShifted
-        colorCol = normlzdDefaultBiasesReshaped
-        normlzdColorCol = (colorCol - np.min(colorCol)) / \
-                          (np.max(colorCol) - np.min(colorCol))
+        PcMapPanelU2 = \
+        createMapPanel(fieldToPlotCol=u[:,2],
+                     plotWidth=500,
+                     plotTitle="SVD 3",
+                     boxSize=20)
 
-        for latIdx, lat in np.ndenumerate(lat_range):
-            for lonIdx, lon in np.ndenumerate(lon_range):
-                # 'bluered'
-                color = pc.sample_colorscale('RdBu_r',
-                        normlzdColorCol[latIdx, lonIdx], low=0, high=1)[0]
-                PcMapFig.add_shape(
-                    type="rect",
-                    xref="x",
-                    yref="y",
-                    x0=lon,
-                    y0=lat,
-                    x1=lon+20,
-                    y1=lat-20,
-                    line=dict(color="black", width=1),
-                    fillcolor=color,  # Adjust color as needed
-                    opacity=1.0,
-                    layer="below"
-                )
+        PcMapPanelU3 = \
+        createMapPanel(fieldToPlotCol=u[:, 3],
+                             plotWidth=500,
+                             plotTitle="SVD 4",
+                             boxSize=20)
 
-        PcMapFig.update_geos(showcoastlines=True,
-                             coastlinecolor='black',
-                             coastlinewidth=1,
-                             showlakes=False,
-                             showland=False, #landcolor='rgba(0,0,0,0)',
-                             showocean=False, #oceancolor='rgba(0,0,0,0)',
-                             bgcolor= 'rgba(0,0,0,0)',
-                             lonaxis_showgrid=False,
-                             lataxis_showgrid=False
-                             )
+        U0U3DashboardChildren = [
+            html.Div(children=
+            [dcc.Graph(id="PcMapPanelU0", figure=PcMapPanelU0,
+                      style={'display': 'inline-block'}),
+            dcc.Graph(id="PcMapPanelU1", figure=PcMapPanelU1,
+                      style={'display': 'inline-block'})]
+                                         ),
+            html.Div(children=
+            [dcc.Graph(id="PcMapPanelU2", figure=PcMapPanelU2,
+                       style={'display': 'inline-block'}),
+             dcc.Graph(id="PcMapPanelU3", figure=PcMapPanelU3,
+                       style={'display': 'inline-block'})]
+                     )
+            ]
 
-        # color_continuous_scale = 'Rainbow'
+        #PcMapFig = PcMapPanelU0
+        # Now combine the matrix and column sub-figures into one figure
+        #PcMapFig = make_subplots(
+        #    rows=1, cols=2,
+        #    column_widths=[0.5, 0.5],
+        #    horizontal_spacing=0.1,
+        #    specs=[[{"type": "scattergeo"}, {"type": "scattergeo"}]]
+        #)
+
+        # subplot layouts
+        #https://community.plotly.com/t/how-to-pass-figure-layout-info-into-subplot/72608/2
+        #PcMapFig.add_trace(PcMapPanelU0.data[0], row=1, col=1)
+        #PcMapFig.add_trace(PcMapPanelU1.data[0], row=1, col=2)
+        #PcMapFig.update_layout_images(PcMapPanelU0.layout, row=1, col=1)
+        #PcMapFig.update_layout_images(PcMapPanelU1.layout, row=1, col=2)
+        #PcMapFig.add_scatter(PcMapPanelU0, row=1, col=1)
+        #PcMapFig.add_scatter(PcMapPanelU1, row=1, col=2)
+        ##PcMapFig.update_layout(
+        ##    title_text=plotTitle,
+        ##    height=plotHeight,
+        ##    width= plotWidth,
+        ##    template='plotly_white')
+        ##PcMapFig.update_layout(coloraxis=dict(colorscale='RdBu_r',cmin=-matMaxAbs,cmax=matMaxAbs),
+        ##                                         showlegend=False)
+        ##PcMapFig.update_yaxes( autorange=reversedYAxis, row=1, col=2 )
+        ##PcMapFig.update_yaxes( autorange=reversedYAxis, row=1, col=1 )
 
     external_stylesheets = ['https://codepen.io/chriddyp/pen/bWLwgP.css']
 
@@ -777,8 +727,10 @@ def createFigs(metricsNames,
 
         html.Div(children=''' ''')]
 
-    if plot_PcMap:
-        dashboardChildren.append(dcc.Graph(id='PcMapFig', figure=PcMapFig))
+    if plot_PcSensMap:
+        dashboardChildren.extend(BiasParamsDashboardChildren)
+        dashboardChildren.extend(U0U3DashboardChildren)
+        #dashboardChildren.append(dcc.Graph(id='PcMapFig', figure=PcMapFig))
     if plot_paramsErrorBarsFig:
         dashboardChildren.append(dcc.Graph( id='paramsErrorBarsFig', figure=paramsErrorBarsFig ))
     if plot_biasesOrderedArrowFig:
@@ -842,6 +794,96 @@ def createFigs(metricsNames,
 
     return
 
+def createMapPanel(fieldToPlotCol,
+                     plotWidth,
+                     plotTitle,
+                     boxSize):
+
+    regionalMapPanel = go.Figure(go.Scattergeo())
+
+    # Set boundaries for colored regional boxes
+    regionalMapPanel.update_layout(xaxis=dict(range=[0, 360]),
+                           yaxis=dict(range=[-90, 90]))
+    regionalMapPanel.update_xaxes(showgrid=False,
+                          tickmode="linear",
+                          dtick=60, tick0=0)
+    regionalMapPanel.update_yaxes(showgrid=False,
+                          zeroline=False,
+                          tickmode="linear",
+                          dtick=30, tick0=-90)
+
+    # Calculate number of regions in the east-west (X) and north-south (Y) directions
+    numXBoxes = np.rint(360/boxSize).astype(int) # 18
+    numYBoxes = np.rint(180/boxSize).astype(int) # 9
+
+    # Draw longitudinal regional box number along top of plot
+    xBoxNums = np.linspace(start=1,stop=numXBoxes,num=numXBoxes).astype(int)
+    for xIdx, xBoxNum in np.ndenumerate(xBoxNums):
+        xPos = int(0.5*boxSize+xIdx[0]*boxSize)
+        regionalMapPanel.add_annotation(x=xPos, yref="paper", y=1.1,
+            text=xBoxNum.astype(str),showarrow=False)
+    # Draw latitudinal box number along right-hand side of plot
+    yBoxNums = np.linspace(start=1,stop=numYBoxes,num=numYBoxes).astype(int)
+    for yIdx, yBoxNum in np.ndenumerate(yBoxNums):
+        yPos = int(90-0.5*boxSize-yIdx[0]*boxSize)
+        regionalMapPanel.add_annotation(xref="paper", x=1.04,
+                                y=yPos,
+            text=yBoxNum.astype(str),showarrow=False)
+
+
+    plotHeight = np.rint( plotWidth * (490/700) )
+    regionalMapPanel.update_layout(width=plotWidth, height=plotHeight)
+    #regionalMapPanel.update_layout(width=700, height=450)
+    regionalMapPanel.update_layout(title=plotTitle, title_y=0.9, title_x=0.5)
+
+    # Shift coastal boundaries to correct location on map
+    regionalMapPanel.update_geos(lataxis_range = [-90, 90],
+                         lonaxis_range = [0, 360])
+
+    fieldToPlotMatrix = fieldToPlotCol.reshape(numYBoxes,numXBoxes)
+    # Shift from 0,360 to -180,180 degrees longitude
+    #fieldToPlotMatrix = np.roll(fieldToPlotMatrix, -9, axis=1)
+
+    # Set color scaling for colors of regional boxes
+    normlzdColorCol = (fieldToPlotMatrix - np.min(fieldToPlotMatrix)) / \
+                      (np.max(fieldToPlotMatrix) - np.min(fieldToPlotMatrix))
+
+    # Draw a colored rectangle in each region in layer underneath
+    latRange = range(90, -90, -boxSize)
+    lonRange = range(0, 360, boxSize)
+    for latIdx, lat in np.ndenumerate(latRange):
+        for lonIdx, lon in np.ndenumerate(lonRange):
+            # 'bluered'
+            color = pc.sample_colorscale('RdBu_r',
+                    normlzdColorCol[latIdx, lonIdx], low=0, high=1)[0]
+            regionalMapPanel.add_shape(
+                type="rect",
+                xref="x",
+                yref="y",
+                x0=lon,
+                y0=lat,
+                x1=lon+boxSize,
+                y1=lat-boxSize,
+                line=dict(color="black", width=1),
+                fillcolor=color,
+                opacity=1.0,
+                layer="below"
+            )
+
+    # Draw map of land boundaries in layer on top
+    regionalMapPanel.update_geos(showcoastlines=True,
+                         coastlinecolor='black',
+                         coastlinewidth=1,
+                         showlakes=False,
+                         showland=False,
+                         showocean=False,
+                         bgcolor= 'rgba(0,0,0,0)',
+                         lonaxis_showgrid=False,
+                         lataxis_showgrid=False
+                         )
+
+    return regionalMapPanel
+
 def covMatrix2corrMatrix( covMatrix, returnStd=False ):
 
     # https://gist.github.com/wiso/ce2a9919ded228838703c1c7c7dad13b
@@ -870,7 +912,6 @@ def createMatrixPlusColFig( matrix, matIndexLabel, matColLabel,
     import pandas as pd
     import plotly.figure_factory as ff
     import plotly.express as px
-    from plotly.subplots import make_subplots
     import pdb
 
     # First create a sub-figure that displays color-coded matrix
