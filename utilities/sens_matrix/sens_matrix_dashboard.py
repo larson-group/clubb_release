@@ -5,6 +5,8 @@
 # (To open a web browser on a larson-group computer,
 # login to malan with `ssh -X` and then type `firefox &`.)
 
+import numpy as np
+
 def main():
 
 
@@ -261,6 +263,18 @@ def fwdFnc(dnormlzdParams, normlzdSensMatrix, normlzdCurvMatrix, numMetrics):
 
     return normlzdDefaultBiasesApproxNonlin
 
+# Each regional component of loss function (including squares)
+def lossFncMetrics(dnormlzdParams, normlzdSensMatrix,
+                normlzdDefaultBiasesCol, metricsWeights,
+                normlzdCurvMatrix, numMetrics):
+
+    weightedBiasDiffSqdCol = \
+        np.square( (-normlzdDefaultBiasesCol \
+         - fwdFnc(dnormlzdParams, normlzdSensMatrix, normlzdCurvMatrix, numMetrics) \
+         ) * metricsWeights )
+
+    return weightedBiasDiffSqdCol
+
 # Define objective function that is to be minimized.
 def objFnc(dnormlzdParams, normlzdSensMatrix, normlzdDefaultBiasesCol, metricsWeights,
            normlzdCurvMatrix, reglrCoef, numMetrics):
@@ -268,12 +282,18 @@ def objFnc(dnormlzdParams, normlzdSensMatrix, normlzdDefaultBiasesCol, metricsWe
     import numpy as np
 
     dnormlzdParams = np.atleast_2d(dnormlzdParams).T # convert from 1d row array to 2d column array
-    chisqd = np.linalg.norm( (-normlzdDefaultBiasesCol \
-                              - fwdFnc(dnormlzdParams, normlzdSensMatrix, normlzdCurvMatrix, numMetrics) \
-                             ) * metricsWeights \
-                                , ord=2 \
-                           )**1  \
-                + reglrCoef * np.linalg.norm( dnormlzdParams, ord=1 )
+    weightedBiasDiffSqdCol = \
+        lossFncMetrics(dnormlzdParams, normlzdSensMatrix,
+                    normlzdDefaultBiasesCol, metricsWeights,
+                    normlzdCurvMatrix, numMetrics)
+    #weightedBiasDiffSqdCol = \
+    #    np.square( (-normlzdDefaultBiasesCol \
+    #     - fwdFnc(dnormlzdParams, normlzdSensMatrix, normlzdCurvMatrix, numMetrics) \
+    #     ) * metricsWeights )
+    chisqd = np.sqrt(np.sum(weightedBiasDiffSqdCol)) \
+             + reglrCoef * np.linalg.norm(dnormlzdParams, ord=1)
+    #chisqd = np.linalg.norm( weightedBiasDiffCol, ord=2 )**1  \
+    #            + reglrCoef * np.linalg.norm( dnormlzdParams, ord=1 )
 
     return chisqd
 
