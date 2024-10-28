@@ -19,7 +19,7 @@ from dash import dcc
 from dash import html
 #import dash_html_components as html
 #import fnmatch
-
+from sens_matrix_dashboard import lossFncMetrics
 
 def createFigs(metricsNames,
                paramsNames, transformedParamsNames, paramsScales,
@@ -52,7 +52,7 @@ def createFigs(metricsNames,
     # Use these flags to determine whether or not to create specific plots
     plot_paramsErrorBarsFig = False  #True
     plot_biasesOrderedArrowFig = False  #True
-    plot_threeDotFig = False  #True
+    plot_threeDotFig = True
     plot_metricsBarChart = True
     plot_paramsIncrsBarChart = True
     plot_paramsTotContrbBarChart = False
@@ -62,10 +62,10 @@ def createFigs(metricsNames,
     plot_projectionMatrixFigs = False #True
     plot_biasesVsSensMagScatterplot = False  #True
     plot_biasesVsSvdScatterplot = False #True
-    plot_paramsCorrArrayFig = False  #True
+    plot_paramsCorrArrayFig = True
     plot_sensMatrixAndBiasVecFig = False #True
     plot_PcaBiplot = True
-    plot_PcSensMap = False #True
+    plot_PcSensMap = True
     plot_vhMatrixFig = True
 
     # Remove prefixes from CLUBB variable names in order to shorten them
@@ -139,6 +139,22 @@ def createFigs(metricsNames,
 
     # Use this line if you want to exclude (blacklist) some variables:
     #maskParamsNames = (paramsNames != 'clubb_c_invrs_tau_n2') & (paramsNames != 'clubb_c_k10')
+
+    tunedLossCol = lossFncMetrics(dnormlzdParamsSolnNonlin, normlzdSensMatrixPoly,
+                   normlzdDefaultBiasesCol, metricsWeights,
+                   normlzdCurvMatrix, len(metricsNames))
+
+    defaultLossCol = lossFncMetrics(np.zeros_like(dnormlzdParamsSolnNonlin), normlzdSensMatrixPoly,
+                   normlzdDefaultBiasesCol, metricsWeights,
+                   normlzdCurvMatrix, len(metricsNames))
+
+    tunedLossChange = tunedLossCol - defaultLossCol
+
+    mostImprovedIdxs = np.argpartition(tunedLossChange, 4, axis=0)
+    whitelistedMetricsMask = np.zeros_like(metricsNames, dtype=bool) # Initialize to False
+    whitelistedMetricsMask[mostImprovedIdxs[:4, 0]] = True
+    mostDegradedIdxs = np.argpartition(-tunedLossChange, 4, axis=0)
+    whitelistedMetricsMask[mostDegradedIdxs[:4, 0]] = True
 
     # Use this line if you want to include all params:
     maskParamsNames = (paramsNames != 'noRealParamWouldHaveThisName')
@@ -294,13 +310,14 @@ def createFigs(metricsNames,
 
         print("Creating paramsIncrBarChart . . .")
 
-        absParamsIncrs = np.sum( np.abs(minusNonlinMatrixDparamsOrdered), axis=0 )
+        #absParamsIncrs = np.sum( np.abs(minusNonlinMatrixDparamsOrdered), axis=0 )
+        sumParamsIncrs = np.sum(minusNonlinMatrixDparamsOrdered, axis=0)
 
         paramsIncrsBarChart = \
-            createBarChart(absParamsIncrs, index=paramsNames, columns=["Param contrib"],
+            createBarChart(sumParamsIncrs, index=paramsNames, columns=["Param contrib"],
                            orientation='v',
-                           title="""Parameter contributions to removal of biases <br>
-                                   (=sensMatrix*dParams+0.5*curvMatrix*dParams**2)""",
+                           title="Mean parameter contributions to removal of biases <br>" \
+                                   + "(= column sums of sensMatrix*dParams+0.5*curvMatrix*dParams**2)",
                            xlabel="Parameter", ylabel="Contribution to bias removal",
                            width=800, height=500)
 
@@ -2433,7 +2450,7 @@ def createPcaBiplot(normlzdSensMatrix, normlzdDefaultBiasesCol,
     df['bias'] = normlzdDefaultBiasesCol
 
     # Remove the column-mean from each column,
-    #   although the PCA code below seems to do this automatically
+    #   although the PCA code below seems to do this automatically.
     df = df - df.mean()
 
     #u, s, vh = np.linalg.svd(df.to_numpy(), full_matrices=False)
