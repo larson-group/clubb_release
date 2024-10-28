@@ -57,71 +57,69 @@ def main():
     # Check if folders exist
     paths_exist = os.path.exists(args.dirs[0]) and os.path.exists(args.dirs[1])
 
-    if( paths_exist ):
-
-        if args.verbose>=1:
-            print("Directory 1 is", args.dirs[0])
-            print("Directory 2 is", args.dirs[1])
-
-        # Define difference detection threshold
-        if ( args.threshold is not None ):
-          tot_abs_diff_thresh = args.threshold
-        else:
-          tot_abs_diff_thresh = 0.0
-
-        if args.verbose>=1:
-            print( "Using reporting threshold: ", tot_abs_diff_thresh, "\n" )
-
-        # Create folder in CLUBB output folder
-        if args.fileout:
-            if DEBUG:
-                print("Creating output folder")
-            if not os.path.exists(outFilePath):
-                os.makedirs(outFilePath)
-
-        linux_diff, diff_in_files, file_skipped = find_diffs_in_all_files(args.dirs[0], args.dirs[1], args.fileout, args.verbose, tot_abs_diff_thresh, args.ghostbuster)
-
-        if DEBUG:
-            print(linux_diff, diff_in_files, file_skipped)
-        print("SUMMARY:")
-        if linux_diff:
-            if not diff_in_files:
-                print("Differences detected by linux diff but no differences in the common variables of the netCDF files compared.")
-            else:
-                print("There were differences detected in the common variables in netCDF (*.nc) files.")
-        else:
-            print("Linux diff did not detect any differences in the compared files.")
-        if args.fileout:
-            if diff_in_files:
-                if args.verbose>=1:
-                    print("Output files made and placed in " + outFilePath)
-                if file_skipped:
-                    if args.verbose>=1:
-                        print("The creation of some or all of the output files was skipped because files with the same name already existed. "+
-                              "Use output options 'replace' or 'enumerate' to avoid this issue.")
-            else:
-                if args.verbose>=1:
-                    print("No output files were created in " + outFilePath)
-        if diff_in_files:
-            sys.exit(1)
-
-    else:
+    if not paths_exist:
         print("Chosen directories do not exist. Please input valid directories")
         sys.exit(2)
+
+    if os.path.samefile(args.dirs[0], args.dirs[1]):
+        print("Input paths resolve to the same directory.")
+        sys.exit(2)
+
+    if args.verbose>=1:
+        print("Directory 1 is", args.dirs[0])
+        print("Directory 2 is", args.dirs[1])
+
+    # Define difference detection threshold
+    if ( args.threshold is not None ):
+        tot_abs_diff_thresh = args.threshold
+    else:
+        tot_abs_diff_thresh = 0.0
+
+    if args.verbose>=1:
+        print( "Using reporting threshold: ", tot_abs_diff_thresh, "\n" )
+
+    # Create folder in CLUBB output folder
+    if args.fileout:
+        if DEBUG:
+            print("Creating output folder")
+        if not os.path.exists(outFilePath):
+            os.makedirs(outFilePath)
+
+    linux_diff, diff_in_files, file_skipped = find_diffs_in_all_files(args.dirs[0], args.dirs[1], args.fileout, args.verbose, tot_abs_diff_thresh, args.ghostbuster)
+
+    if DEBUG:
+        print(linux_diff, diff_in_files, file_skipped)
+    print("SUMMARY:")
+    if linux_diff:
+        if not diff_in_files:
+            print("Differences detected by linux diff but no differences in the common variables of the netCDF files compared.")
+        else:
+            print("There were differences detected in the common variables in netCDF (*.nc) files.")
+    else:
+        print("Linux diff did not detect any differences in the compared files.")
+    if args.fileout:
+        if diff_in_files:
+            if args.verbose>=1:
+                print("Output files made and placed in " + outFilePath)
+            if file_skipped:
+                if args.verbose>=1:
+                    print("The creation of some or all of the output files was skipped because files with the same name already existed. "+
+                            "Use output options 'replace' or 'enumerate' to avoid this issue.")
+        else:
+            if args.verbose>=1:
+                print("No output files were created in " + outFilePath)
+    if diff_in_files:
+        sys.exit(1)
+
 
 
 def get_cases(dir1, dir2, verbose):
     # Generate and return a dict of all cases that have files present in the diff folders
     # This dict will have the following structure:
-    # cases = {<case> : <folder_dict>, ...}
-    # where folder_dict is another dict with two entries and the following structure:
-    # folder_dict = {<dir>: [list, of, nc_files], ...}
-    # where dir is either of the passed arguments and
-    # [list, to, nc_files] contains the names of the existing netCDF files for <case> in the same order as nc_data_formats.
-    # The entry will be None if a specific file does not exist.
-    # Example: cases = {'arm': { <dir1>: ['arm_zm.nc', None, None], <dir2>: ['arm_zm.nc', None, None]},
-    #                   'bomex': { <dir1>: ['bomex_zm.nc', 'bomex_zt.nc', 'bomex_sfc.nc']}, <dir2>: ['bomex_zm.nc', 'bomex_zt.nc', 'bomex_sfc.nc']},
-    #                   'wangara': { <dir1>: [None, 'wangara_zt.nc',None]}, <dir2>: ['wangara_zm.nc', None, None]}
+    # cases = {<case> : [file1, file2, ...]}
+    # Example: cases = {'arm': ['arm_zm.nc'] },
+    #                   'bomex': ['bomex_zm.nc', 'bomex_zt.nc', 'bomex_sfc.nc']} },
+    #                   'wangara': ['wangara_zt.nc'] } }
     #
     # Warnings will be printed for each missing file both on the console and in the output files.
     #####################################################################################
@@ -141,87 +139,63 @@ def get_cases(dir1, dir2, verbose):
     # First, open the RUN_CASES file
     with open(os.path.join(scriptPath, case_file)) as file:
         for line in file:
-            if DEBUG:
-                print(line)
-            # Remove white space and the leading "!" in commented out lines
+
+            # Remove leading or trailing white space and the leading "!" in commented out lines
             # since we even want to compare commented out cases!
-            #print(line.strip())
-            case = line.strip()
-            if DEBUG:
-                print(case)
+            case = line.strip().lstrip("!")
+
             # Skip line if empty
             if case == "" or case == "!":
                 if DEBUG:
                     print("continue")
                 continue
-            # "Uncomment case name"
-            if case[0] == "!":
-                if DEBUG:
-                    print("Commented")
-                case = case[1:].strip()
-                if DEBUG:
-                    print(case)
+
             # Skip line if it contains multiple words
             if " " in case or "$" in case:
                 if DEBUG:
                     print("continue")
                 continue
-            if DEBUG:
-                print("Create entry")
-            cases[case] = {dir1: [], dir2: []}
 
-            # We want to compare all cases that have at least one common file in the folders, i.e. add that case to dict cases with a list of comparable files.
+            if DEBUG:
+                print(f"Adding {case} to case list")
+
+            cases[case] = []
+
+            common_files_found = False
+
+            # We want to compare all cases that have at least one common file in the folders, 
+            # i.e. add that case to dict cases with a list of comparable files.
             # Note ANY missing files in a warning (also in log file)
-            if DEBUG:
-                print("iterating")
             for postfix in nc_data_formats:
-                if DEBUG:
-                    print(postfix)
-                ncfname = case+postfix
-                if DEBUG:
-                    print(ncfname)
-                # Check if files exist in either folder
-                # Check dir1
-                if ncfname in dir1_files:
-                    if DEBUG:
-                        print("Exists in " + dir1)
-                    cases[case][dir1].append(ncfname)
-                else:
-                    if DEBUG:
-                        print("Not in " + dir1)
-                    cases[case][dir1].append(None)
-                # Check dir2
-                if ncfname in dir2_files:
-                    if DEBUG:
-                        print("Exists in " + dir2)
-                    cases[case][dir2].append(ncfname)
-                else:
-                    if DEBUG:
-                        print("Not in " + dir2)
-                    cases[case][dir2].append(None)
 
-            # Remove case from list if no FILES exist
-            if not any(cases[case][dir1]) or not any(cases[case][dir2]):
+                ncfname = case+postfix
+
+                # Check if ncfname exists in both folders
+                if ncfname in dir1_files and ncfname in dir2_files:
+                    if DEBUG:
+                        print(ncfname + " exists in " + dir1 + " and " + dir2)
+                    cases[case].append(ncfname)
+                    common_files_found = True
+                else:
+                    if DEBUG:
+                        if ncfname not in dir1_files:
+                            print(f"{ncfname} not in {dir1}")
+                        if ncfname not in dir2_files:
+                            print(f"{ncfname} not in {dir2}")
+
+            # Remove the case if no common files were found 
+            if not common_files_found:
                 if DEBUG:
-                    print("Removing case because no files exist.")
-                    print(cases[case])
+                    print("Removing case because there are no pairs to compare.")
                 del cases[case]
-                if verbose>=2:
-                    print("Warning! No files found for case {}. It will be skipped.".format(case))
-            # Remove case from list if no file PAIRS exist
-            elif not find_comparable_files(cases[case][dir1], cases[case][dir2]):
-                if DEBUG:
-                    print("Removing case because there are no pairs.")
-                    print(cases[case])
-                del cases[case]
-                if verbose>=2:
-                    print("Warning! There are files for case {} but no pairs for comparison were found. It will be skipped.".format(case))
+
+    if DEBUG:
+        print("cases dict :")
+        print("\t", cases)
     if verbose>=1:
         print("\nThe following cases will be compared: {}\n".format(list(cases.keys())))
-    return cases
 
-def find_comparable_files(l1, l2):
-    return any([p1 and p2 for (p1,p2) in zip(l1,l2)])
+    return cases
 
 def find_diffs_in_all_files(dir1, dir2, save_to_file, verbose, thresh, l_ghostbuster):
     # For each case with existing netCDF files in the diff folders:
@@ -261,22 +235,7 @@ def find_diffs_in_all_files(dir1, dir2, save_to_file, verbose, thresh, l_ghostbu
             content += "********************************************************************************************\n"
 
         # Looping over all files associated to <case>
-        for i, postfix in enumerate(nc_data_formats):
-            ncfname = case+postfix
-            if not cases[case][dir1][i]:
-                if verbose>=2:
-                    print(file_missing_msg.format(ncfname, dir1))
-                if save_to_file:
-                    content += file_missing_msg.format(ncfname, dir1)
-            if not cases[case][dir2][i]:
-                if verbose>=2:
-                    print(file_missing_msg.format(ncfname, dir2))
-                if save_to_file:
-                    content += file_missing_msg.format(ncfname, dir2)
-            if not cases[case][dir1][i] or not cases[case][dir2][i]:
-                if verbose>=1:
-                    print(">File {} can not be compared since it does not exist both folders.<".format(ncfname))
-                continue
+        for ncfname in cases[case]:
 
             # Call linux diff command, if it shows a diff, check the netcdf values to confirm
             if( len(subprocess.getoutput("diff " + dir1 + "/" + ncfname + " " + dir2 + "/" + ncfname)) > 0 ):
@@ -286,7 +245,7 @@ def find_diffs_in_all_files(dir1, dir2, save_to_file, verbose, thresh, l_ghostbu
                 if save_to_file:
                     content += ">The linux diff detected differences in " + ncfname + "<\n"
                 # Update diff_in_all_files: if either it or the output of find_diffs_in_common_vars is true, we conclude that there is a difference. The printed messages will elaborate on the specific differences.
-                diff_in_case, new_content = find_diffs_in_common_vars(ncfname, dir1, dir2, save_to_file, verbose, thresh, l_ghostbuster, postfix) or diff_in_case
+                diff_in_case, new_content = find_diffs_in_common_vars(ncfname, dir1, dir2, save_to_file, verbose, thresh, l_ghostbuster) or diff_in_case
                 if verbose>=2:
                     print('')
                 if save_to_file:
@@ -336,7 +295,7 @@ def find_diffs_in_all_files(dir1, dir2, save_to_file, verbose, thresh, l_ghostbu
 
     return (linux_diff, diff_in_all_files, file_skipped)
 
-def find_diffs_in_common_vars( test_file, dir1, dir2, save_to_file, verbose, tot_abs_diff_thresh, l_ghostbuster, postfix ):
+def find_diffs_in_common_vars( test_file, dir1, dir2, save_to_file, verbose, tot_abs_diff_thresh, l_ghostbuster ):
     # This is the integral function of this script!
     # Compare content of one specific pair of files with the same name in each folder:
     # 1. Find the variables that are present in only one of the files
@@ -404,7 +363,7 @@ def find_diffs_in_common_vars( test_file, dir1, dir2, save_to_file, verbose, tot
         # for futureproofing, we will just check all variables with more than 1 dimension.
         if( dset1[var].ndim > 1 and dset2[var].ndim > 1 ):
 
-            if l_ghostbuster and postfix=="_zt.nc":
+            if l_ghostbuster and "_zt.nc" in test_file:
               z_levs_1=dset1[var].shape[1]
               z_levs_2=dset2[var].shape[1]
               if z_levs_1 == z_levs_2:
@@ -414,6 +373,9 @@ def find_diffs_in_common_vars( test_file, dir1, dir2, save_to_file, verbose, tot
                   abs_diff = abs( dset1[var][:,1:z_levs_1-1,:,:] - dset2[var][:,0:z_levs_2-1,:,:] )
                 else:
                   abs_diff = abs( dset1[var][:,0:z_levs_1-1,:,:] - dset2[var][:,1:z_levs_2-1,:,:] )
+            elif "_multi_col_zt.nc" in test_file or "_multi_col_zm.nc" in test_file:
+              # The multi_col outputs currently use (time,nz,ngrdcol)
+              abs_diff = abs( dset1[var][:,:,:] - dset2[var][:,:,:] )
             else:
               abs_diff = abs( dset1[var][:,:,:,:] - dset2[var][:,:,:,:] )
 
@@ -424,7 +386,7 @@ def find_diffs_in_common_vars( test_file, dir1, dir2, save_to_file, verbose, tot
               diff_in_common_vars = True
 
             # Clip fields to ignore tiny values for the % diff
-            if l_ghostbuster and postfix=="_zt.nc":
+            if l_ghostbuster and "_zt.nc" in test_file:
               if z_levs_1 == z_levs_2:
                 field_1_clipped = np.clip( dset1[var][:,1:z_levs_1-1,:,:], a_min = field_threshold, a_max = 9999999.0  )
 #yippee confetti field_2_clipped = np.clip( dset2[var][:,1:z_levs_2-1,:], a_min = field_threshold, a_max = 9999999.0 )
@@ -436,6 +398,10 @@ def find_diffs_in_common_vars( test_file, dir1, dir2, save_to_file, verbose, tot
                 else:
                   field_1_clipped = np.clip( dset1[var][:,0:z_levs_1-1,:,:], a_min = field_threshold, a_max = 9999999.0  )
                   field_2_clipped = np.clip( dset2[var][:,1:z_levs_2-1,:,:], a_min = field_threshold, a_max = 9999999.0 )
+            elif "_multi_col_zt.nc" in test_file or "_multi_col_zm.nc" in test_file:
+              # The multi_col outputs currently use (time,nz,ngrdcol)
+              field_1_clipped = np.clip( dset1[var][:,:,:], a_min = field_threshold, a_max = 9999999.0  )
+              field_2_clipped = np.clip( dset2[var][:,:,:], a_min = field_threshold, a_max = 9999999.0 )
             else:
               field_1_clipped = np.clip( dset1[var][:,:,:,:], a_min = field_threshold, a_max = 9999999.0  )
               field_2_clipped = np.clip( dset2[var][:,:,:,:], a_min = field_threshold, a_max = 9999999.0 )
