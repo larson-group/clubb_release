@@ -88,7 +88,11 @@ module clubb_driver
         w_tol, &
         w_tol_sqd, &
         em_min, &
-        eps
+        eps, &
+        Lv, &
+        kappa, &
+        Cp, &
+        p0
 
     use advance_clubb_core_module, only: &
       advance_clubb_core
@@ -231,7 +235,8 @@ module clubb_driver
         l_soil_veg !------------------------------------------------------ Variable(s)
 
     use soil_vegetation, only: &
-        initialize_soil_veg !--------------------------------------------- Procedure(s)
+        initialize_soil_veg, & !--------------------------------------------- Procedure(s)
+        advance_soil_veg
 
     use parameters_model, only: &
         rtm_min, &
@@ -540,6 +545,11 @@ module clubb_driver
       thlprcp,        & ! thl'rc'                                      [K kg/kg]
       sigma_sqd_w,    & ! PDF width parameter (momentum levels)        [-]
       sigma_sqd_w_zt    ! PDF width parameter interpolated to t-levs.  [-]
+
+    real( kind = core_rknd ), dimension(ngrdcol) :: &
+      deep_soil_T_in_K, &
+      sfc_soil_T_in_K, &
+      veg_T_in_K  
 
     real( kind = core_rknd ), dimension(:,:), allocatable ::  &
       wprcp,                 & ! w'r_c' (momentum levels)              [(kg/kg) m/s]
@@ -884,6 +894,7 @@ module clubb_driver
       p_sfc_nl
 
     real( kind = core_rknd ), dimension(ngrdcol) :: &
+      wpthep, &                 ! Turbulent Flux of equivalent potential temperature   [K]
       sfc_elevation, &
       zm_init, &
       zm_top, &
@@ -1031,7 +1042,7 @@ module clubb_driver
     stats_fmt    = ''
 
     ! Default values for the soil scheme
-    call initialize_soil_veg()
+    call initialize_soil_veg( ngrdcol, deep_soil_T_in_K, sfc_soil_T_in_K, veg_T_in_K )
 
     ! Default values for generic model settings
     call initialize_clubb_model_settings()
@@ -2074,6 +2085,7 @@ module clubb_driver
           rtm_ref, thlm_ref,                                             & ! Intent(inout) 
           um_ref, vm_ref,                                                & ! Intent(inout)
           Ncm, Nc_in_cloud, Nccnm,                                       & ! Intent(inout)
+          deep_soil_T_in_K, sfc_soil_T_in_K, veg_T_in_K,                 & ! Intent(inout)
           sclrm, edsclrm )                                                 ! Intent(out)
 
     if ( clubb_at_least_debug_level( 0 ) ) then
@@ -2136,6 +2148,7 @@ module clubb_driver
               Kh_zt(i,:), Kh_zm(i,:), ug(i,:), vg(i,:),                            & ! Intent(inout)
               thlprcp(i,:),                                                        & ! Intent(inout)
               sigma_sqd_w(i,:), sigma_sqd_w_zt(i,:), radht(i,:),                   & ! Intent(inout)
+              deep_soil_T_in_K(i), sfc_soil_T_in_K(i), veg_T_in_K(i),              & ! Intent(inout)
               pdf_params, pdf_params_zm,                                           & ! Intent(inout)
               rcm_mc(i,:), rvm_mc(i,:), thlm_mc(i,:),                              & ! Intent(out)
               wprtp_mc(i,:), wpthlp_mc(i,:), rtp2_mc(i,:),                         & ! Intent(out)
@@ -2360,6 +2373,7 @@ module clubb_driver
                                   Kh_zt(i,:), Kh_zm(i,:), ug(i,:), vg(i,:), & ! Inout
                                   thlprcp(i,:), & ! Inout
                                   sigma_sqd_w(i,:), sigma_sqd_w_zt(i,:), radht(i,:), & ! Inout
+                                  deep_soil_T_in_K(i), sfc_soil_T_in_K(i), veg_T_in_K(i), & ! Inout
                                   pdf_params, pdf_params_zm ) ! Inout
         end do
 
@@ -2413,7 +2427,7 @@ module clubb_driver
         call prescribe_forcings( sclr_dim, edsclr_dim, sclr_idx, & ! In
                                 gr, dt_main, um(i,:), vm(i,:), thlm(i,:), & ! In
                                 p_in_Pa(i,:), exner(i,:), rho(i,:), rho_zm(i,:), thvm(i,:), & ! In
-                                Frad_SW_up(i,:), Frad_SW_down(i,:), Frad_LW_down(i,:), & ! In
+                                veg_T_in_K(i), & ! In
                                 l_modify_bc_for_cnvg_test, & ! In
                                 clubb_config_flags%saturation_formula, & ! In
                                 stats_metadata, stats_sfc(i), & ! In
@@ -2432,6 +2446,22 @@ module clubb_driver
             write(fstderr,*) "Fatal error in prescribe_forcings:"
             error stop
         end if
+      end if
+
+      !---------------------------------------------------------------
+      ! Compute Surface
+      !---------------------------------------------------------------
+      if ( l_soil_veg ) then
+
+        wpthep = wpthlp_sfc + (Lv/Cp) * ((p0/p_sfc)**kappa) * wprtp_sfc
+
+        call advance_soil_veg( ngrdcol, dt_main, rho_zm(:,1), &
+                               Frad_SW_down(:,1) - Frad_SW_up(:,1), Frad_SW_down(:,1), &
+                               Frad_LW_down(:,1), wpthep, &
+                               deep_soil_T_in_K, sfc_soil_T_in_K, &
+                               veg_T_in_K, &
+                               stats_metadata, &
+                               stats_sfc)
       end if
 
       ! Add microphysical tendencies to rtm_forcing
@@ -3134,6 +3164,7 @@ module clubb_driver
                rtm_ref, thlm_ref, &
                um_ref, vm_ref, &
                Ncm, Nc_in_cloud, Nccnm, &
+               deep_soil_T_in_K, sfc_soil_T_in_K, veg_T_in_K, &
                sclrm, edsclrm )
     ! Description:
     !   Execute the necessary steps for the initialization of the
@@ -3171,13 +3202,6 @@ module clubb_driver
       determine_extended_atmos_bounds !-------------------------------- Procedure(s)
 
     use mpace_a, only: mpace_a_init !---------------------------------- Procedure(s)
-
-    ! Joshua Fasching
-    ! March 2008
-    use soil_vegetation, only: & 
-      sfc_soil_T_in_K, & !--------------------------------------------- Variable(s)
-      deep_soil_T_in_K, &
-      veg_T_in_K
 
     use sponge_layer_damping, only: &
         thlm_sponge_damp_settings,    & !------------------------------ Variable(s)
@@ -3297,6 +3321,11 @@ module clubb_driver
 
     real( kind = core_rknd ), dimension(ngrdcol,gr%nzt), intent(inout) :: &
       Nccnm    ! Cloud condensation nuclei concentration (COAMPS/MG)  [num/kg]
+
+    real( kind = core_rknd ), dimension(ngrdcol), intent(inout) :: &
+      deep_soil_T_in_K, &
+      sfc_soil_T_in_K, &
+      veg_T_in_K
 
     ! Output
     real( kind = core_rknd ), dimension(ngrdcol,gr%nzt,sclr_dim), intent(out) ::  & 
@@ -4521,6 +4550,7 @@ module clubb_driver
                Kh_zt, Kh_zm, ug, vg, & ! Inout
                thlprcp, & ! Inout
                sigma_sqd_w, sigma_sqd_w_zt, radht, & ! Inout
+               deep_soil_T_in_K, sfc_soil_T_in_K, veg_T_in_K, & ! Inout
                pdf_params, pdf_params_zm, & ! Inout
                rcm_mc, rvm_mc, thlm_mc, & ! Out
                wprtp_mc, wpthlp_mc, rtp2_mc, & ! Out
@@ -4701,6 +4731,11 @@ module clubb_driver
       Kh_zm,       & ! Eddy diffusivity coefficient on momentum levels      [m^2/s]
       thlprcp,     & ! thl'rc'                                              [K kg/kg]
       sigma_sqd_w    ! PDF width parameter (momentum levels)                [-]
+
+    real( kind = core_rknd ), intent(inout) :: &
+      deep_soil_T_in_K, &
+      sfc_soil_T_in_K, &
+      veg_T_in_K
 
     type(pdf_parameter), intent(inout) :: &
       pdf_params,    & ! PDF parameters (thermodynamic levels)    [units vary]
@@ -4941,6 +4976,7 @@ module clubb_driver
                              Kh_zt, Kh_zm, ug, vg, & ! Inout
                              thlprcp, & ! Inout
                              sigma_sqd_w, sigma_sqd_w_zt, radht, & ! Inout
+                             deep_soil_T_in_K, sfc_soil_T_in_K, veg_T_in_K, & ! Inout
                              pdf_params, pdf_params_zm ) ! Inout
 
       call get_clubb_variable_interpolated &
@@ -5004,7 +5040,7 @@ module clubb_driver
   subroutine prescribe_forcings( sclr_dim, edsclr_dim, sclr_idx, &
                                  gr, dt, um, vm, thlm, &
                                  p_in_Pa, exner, rho, rho_zm, thvm, &
-                                 Frad_SW_up, Frad_SW_down, Frad_LW_down, &
+                                 veg_T_in_K, &
                                  l_modify_bc_for_cnvg_test, &
                                  saturation_formula, &
                                  stats_metadata, stats_sfc, &
@@ -5024,8 +5060,6 @@ module clubb_driver
     !----------------------------------------------------------------------
 
     ! Modules to be included
-    use soil_vegetation, only:  &
-      l_soil_veg
 
     use grid_class, only: grid ! Type
 
@@ -5046,8 +5080,6 @@ module clubb_driver
       apply_time_dependent_forcings, &
       l_t_dependent, &
       l_ignore_forcings
-
-    use soil_vegetation, only: advance_soil_veg, veg_T_in_K
 
     use array_index, only: &
       sclr_idx_type
@@ -5142,13 +5174,13 @@ module clubb_driver
       p_in_Pa,      & ! Air pressure (thermodynamic levels)                [Pa]
       exner,        & ! Exner function (thermodynamic levels)              [-]
       rho,          & ! Air density on thermodynamic levels                [kg/m^3]
-      thvm             ! Virtual potential temperature                      [K]
+      thvm            ! Virtual potential temperature                      [K]
 
     real( kind = core_rknd ), dimension(gr%nzm), intent(in) :: &
-      rho_zm,       & ! Air density on momentum levels                     [kg/m^3]
-      Frad_SW_up,   & ! SW radiative upwelling flux                        [W/m^2]
-      Frad_SW_down, & ! SW radiative downwelling flux                      [W/m^2]
-      Frad_LW_down    ! LW radiative downwelling flux                      [W/m^2]
+      rho_zm          ! Air density on momentum levels                     [kg/m^3]
+
+    real( kind = core_rknd ), intent(in) :: &
+      veg_T_in_K    
 
     ! Flag to activate modifications on boundary condition for convergence test
     ! (surface fluxes computed at fixed 25 m height).
@@ -5218,8 +5250,7 @@ module clubb_driver
       rho_sfc     ! Density at zm(1)      [kg/m^3]
 
     real( kind = core_rknd ) :: &
-      ustar,          & ! Average value of friction velocity [m/s]
-      soil_heat_flux    ! Soil Heat Flux [W/m^2]
+      ustar    ! Average value of friction velocity [m/s]
 
     ! Flags to help avoid code duplication
     logical :: &
@@ -5664,23 +5695,6 @@ module clubb_driver
       if ( sclr_idx%iisclr_rt > 0 ) wpsclrp(:,sclr_idx%iisclr_rt)   = latent_ht
     end if
 
-    !---------------------------------------------------------------
-    ! Compute Surface
-    !---------------------------------------------------------------
-    if ( l_soil_veg ) then
-      wpthep = wpthlp_sfc + (Lv/Cp) * ((p0/p_sfc)**kappa) * wprtp_sfc
-
-      call advance_soil_veg( dt, rho_zm(1), &
-                             Frad_SW_down(1) - Frad_SW_up(1), Frad_SW_down(1), &
-                             Frad_LW_down(1), wpthep, &
-                             stats_metadata, &
-                             stats_sfc, &
-                             soil_heat_flux )
-    else
-      ! Here the value is undefined
-      soil_heat_flux = -999._core_rknd
-    end if
-
     ! Store values of surface fluxes for statistics
     if ( stats_metadata%l_stats_samp ) then
 
@@ -5705,8 +5719,6 @@ module clubb_driver
       call stat_update_var_pt( stats_metadata%iustar, 1, ustar,  &                    ! intent(in)
                                stats_sfc )                             ! intent(inout)
 
-      call stat_update_var_pt( stats_metadata%isoil_heat_flux, 1, soil_heat_flux, &   ! intent(in)
-                               stats_sfc )                             ! intent(inout)
       call stat_update_var_pt( stats_metadata%iT_sfc, 1, T_sfc, &                     ! intent(in)
                                stats_sfc )                             ! intent(inout)
 

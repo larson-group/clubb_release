@@ -237,6 +237,7 @@ module inputfields
                                  Kh_zt, Kh_zm, ug, vg, &
                                  thlprcp, &
                                  sigma_sqd_w, sigma_sqd_w_zt, radht, &
+                                 deep_soil_T_in_K, sfc_soil_T_in_K, veg_T_in_K, &
                                  pdf_params, pdf_params_zm )
 
 ! Description:
@@ -276,8 +277,6 @@ module inputfields
     use parameters_microphys, only: &
         microphys_scheme, & ! Variable(s)
         l_predict_Nc
-
-    use soil_vegetation, only: deep_soil_T_in_K, sfc_soil_T_in_K, veg_T_in_K
 
     use clubb_precision, only: &
         core_rknd ! Variable(s)
@@ -392,6 +391,11 @@ module inputfields
       em,          & ! Turbulent Kinetic Energy (TKE)                       [m^2/s^2]
       tau_zm,      & ! Eddy dissipation time scale on momentum levels       [s]
       Kh_zm          ! Eddy diffusivity coefficient on momentum levels      [m^2/s]
+    
+    real( kind = core_rknd ), intent(inout) :: &
+      deep_soil_T_in_K, &
+      sfc_soil_T_in_K, &
+      veg_T_in_K
 
     type(pdf_parameter), intent(inout) :: &
       pdf_params,    & ! PDF parameters (thermodynamic levels)    [units vary]

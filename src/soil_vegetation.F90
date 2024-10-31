@@ -8,14 +8,6 @@ module soil_vegetation
 
   public :: advance_soil_veg, initialize_soil_veg
 
-  ! These default values are the values for gabls3
-  real( kind = core_rknd ), public :: &
-    deep_soil_T_in_K, &
-    sfc_soil_T_in_K, &
-    veg_T_in_K       
-
-!$omp threadprivate(deep_soil_T_in_K, sfc_soil_T_in_K, veg_T_in_K)
-
   logical, public :: l_soil_veg
 
 !$omp threadprivate(l_soil_veg)
@@ -25,12 +17,13 @@ module soil_vegetation
   contains
 
   !----------------------------------------------------------------------
-  subroutine advance_soil_veg( dt, rho_sfc, &
+  subroutine advance_soil_veg( ngrdcol, dt, rho_sfc, &
                                Frad_SW_net, Frad_SW_down_sfc, &
                                Frad_LW_down_sfc, wpthep, &
+                               deep_soil_T_in_K, sfc_soil_T_in_K, &
+                               veg_T_in_K, &
                                stats_metadata, &
-                               stats_sfc, &
-                               soil_heat_flux )
+                               stats_sfc )
     !
     !     Description:
     !
@@ -110,10 +103,13 @@ module soil_vegetation
     intrinsic :: sqrt, exp
 
     ! Input variables
-
-    real( kind = core_rknd ), intent(in) :: dt ! Current model timestep (Must be < 60s) [s]
+    integer, intent(in) :: &
+      ngrdcol
 
     real( kind = core_rknd ), intent(in) :: &
+      dt ! Current model timestep (Must be < 60s) [s]
+
+    real( kind = core_rknd ), dimension(ngrdcol), intent(in) :: &
       rho_sfc, &             ! Air density at the surface [kg/m^3]
       Frad_SW_net, &         ! SW Net                     [W/m^3]
       Frad_SW_down_sfc, &    ! SW downwelling flux        [W/m^3]
@@ -122,12 +118,14 @@ module soil_vegetation
 
     type (stats_metadata_type), intent(in) :: &
       stats_metadata
+    
+    real( kind = core_rknd ), dimension(ngrdcol), intent(inout) :: &
+      deep_soil_T_in_K, &
+      sfc_soil_T_in_K, &
+      veg_T_in_K
 
-    type(stats), intent(inout) :: &
+    type(stats), dimension(ngrdcol), intent(inout) :: &
       stats_sfc
-
-    ! Output variable
-    real( kind = core_rknd ), intent(out) :: soil_heat_flux ! Soil Heat flux [W/m^2]
 
     ! Local variables
 
@@ -141,6 +139,11 @@ module soil_vegetation
       d1, &
       veg_heat_flux, &                         
       Frad_LW_up_sfc ! LW upwelling flux [W/m2]
+
+    real( kind = core_rknd ), dimension(ngrdcol) :: &
+      soil_heat_flux ! Soil Heat flux [W/m^2]
+
+    integer :: i
 
     !----------------------------
     !  Soil parameters
@@ -157,47 +160,72 @@ module soil_vegetation
                      365.e0_core_rknd )) ! Known magic number
 
     if ( stats_metadata%l_stats_samp ) then
-      call stat_update_var_pt( stats_metadata%iveg_T_in_K, 1, veg_T_in_K, stats_sfc )
-      call stat_update_var_pt( stats_metadata%isfc_soil_T_in_K, 1, sfc_soil_T_in_K, stats_sfc )
-      call stat_update_var_pt( stats_metadata%ideep_soil_T_in_K, 1, deep_soil_T_in_K, stats_sfc )
+      do i = 1, ngrdcol 
+        call stat_update_var_pt( stats_metadata%iveg_T_in_K, 1, veg_T_in_K(i), stats_sfc(i) )
+        call stat_update_var_pt( stats_metadata%isfc_soil_T_in_K, 1, sfc_soil_T_in_K(i), stats_sfc(i) )
+        call stat_update_var_pt( stats_metadata%ideep_soil_T_in_K, 1, deep_soil_T_in_K(i), stats_sfc(i) )
+      end do
     end if
 
-    Frad_LW_up_sfc = stefan_boltzmann * (veg_T_in_K**4)
+    do i = 1, ngrdcol 
+      Frad_LW_up_sfc = stefan_boltzmann * (veg_T_in_K(i)**4)
 
-    ! Calculate net radiation minus turbulent heat flux
-    veg_heat_flux = Frad_LW_down_sfc - Frad_LW_up_sfc - wpthep * rho_sfc * Cp + Frad_SW_net
+      ! Calculate net radiation minus turbulent heat flux
+      veg_heat_flux = Frad_LW_down_sfc(i) - Frad_LW_up_sfc &
+                      - wpthep(i) * rho_sfc(i) * Cp + Frad_SW_net(i)
 
-    ! Calculate soil heat flux
-    ! Duynkerke (1991) used a coefficient of 3.0 W/m^2*K, not 10.0 W/m^2*K
-    !
-    ! Equation 19 p.328
-    
-    soil_heat_flux = 10.0_core_rknd * ( veg_T_in_K - sfc_soil_T_in_K ) &
-                   + 0.05_core_rknd * Frad_SW_down_sfc ! Known magic number
+      ! Calculate soil heat flux
+      ! Duynkerke (1991) used a coefficient of 3.0 W/m^2*K, not 10.0 W/m^2*K
+      !
+      ! Equation 19 p.328
+      
+      soil_heat_flux(i) = 10.0_core_rknd * ( veg_T_in_K(i) - sfc_soil_T_in_K(i) ) &
+                          + 0.05_core_rknd * Frad_SW_down_sfc(i) ! Known magic number
 
-    ! Update surf veg temp
-    veg_T_in_K = veg_T_in_K + dt * 5.e-5_core_rknd * &
-         ( veg_heat_flux - soil_heat_flux ) ! Known magic number
+      ! Update surf veg temp
+      veg_T_in_K(i) = veg_T_in_K(i) + dt * 5.e-5_core_rknd &
+                      * ( veg_heat_flux - soil_heat_flux(i) ) ! Known magic number
 
-    ! Update soil temp
-    sfc_soil_T_in_K = sfc_soil_T_in_K & 
-      + dt * ( c1 * soil_heat_flux - c2 * ( sfc_soil_T_in_K - deep_soil_T_in_K ) )
+      ! Update soil temp
+      sfc_soil_T_in_K(i) = sfc_soil_T_in_K(i) + dt &
+                           * ( c1 * soil_heat_flux(i) - c2 &
+                                    * ( sfc_soil_T_in_K(i) - deep_soil_T_in_K(i) ) )
 
-    ! Update deep soil temp
-    deep_soil_T_in_K = deep_soil_T_in_K + dt * c3 * soil_heat_flux
+      ! Update deep soil temp
+      deep_soil_T_in_K(i) = deep_soil_T_in_K(i) + dt * c3 * soil_heat_flux(i)
+    end do
+
+    if ( stats_metadata%l_stats_samp ) then
+      do i = 1, ngrdcol
+        call stat_update_var_pt( stats_metadata%isoil_heat_flux, 1, soil_heat_flux(i), & ! intent(in)
+                                  stats_sfc(i) )                                          ! intent(inout)
+      end do
+    end if
 
     return
+
   end subroutine advance_soil_veg
 
   !-----------------------------------------------------------------------------
-  subroutine initialize_soil_veg
+  subroutine initialize_soil_veg( ngrdcol, deep_soil_T_in_K, sfc_soil_T_in_K, veg_T_in_K )
   ! Description:
   !   Sets some default values for the soil scheme
   ! References:
   !   None
   !-----------------------------------------------------------------------------
 
+    use clubb_precision, only: &
+      core_rknd ! Constant
+
     implicit none
+
+    integer, intent(in) :: &
+      ngrdcol
+
+    real( kind = core_rknd ), dimension(ngrdcol), intent(out) :: &
+      deep_soil_T_in_K, &
+      sfc_soil_T_in_K, &
+      veg_T_in_K       
 
     ! ---- Begin Code ----
 
