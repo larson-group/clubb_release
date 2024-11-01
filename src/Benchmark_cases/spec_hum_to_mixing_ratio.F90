@@ -18,7 +18,7 @@ module spec_hum_to_mixing_ratio
   contains
 
   !=============================================================================
-  subroutine flux_spec_hum_to_mixing_ratio( rtm_zm, wpqtp, wprtp )
+  subroutine flux_spec_hum_to_mixing_ratio( ngrdcol, rtm_zm, wpqtp, wprtp )
 
     ! Description:
     ! This subroutine takes a flux given in terms of specific humidity, w'q_t',
@@ -45,22 +45,29 @@ module spec_hum_to_mixing_ratio
     implicit none
 
     ! Input Variables
-    real( kind = core_rknd ), intent(in) ::  &
+    integer, intent(in) :: &
+      ngrdcol
+
+    real( kind = core_rknd ), dimension(ngrdcol), intent(in) ::  &
       rtm_zm, & ! r_tm interpolated to momentum level (k)   [kg/kg]
       wpqtp     ! w'q_t' flux at momentum level (k)         [(kg/kg) m/s]
 
     ! Output Variable
-    real( kind = core_rknd ), intent(out) ::  &
+    real( kind = core_rknd ), dimension(ngrdcol), intent(out) ::  &
       wprtp     ! w'r_t' flux at momentum level (k)         [(kg/kg) m/s]
 
+    integer :: i
+
     ! Solve for flux in terms of total water mixing ratio.
-    wprtp = ( 1.0_core_rknd + rtm_zm )**2 * wpqtp
+    do i = 1, ngrdcol
+      wprtp(i) = ( 1.0_core_rknd + rtm_zm(i) )**2 * wpqtp(i)
+    end do
 
     return
   end subroutine flux_spec_hum_to_mixing_ratio
 
   !=============================================================================
-  subroutine force_spec_hum_to_mixing_ratio( rtm, qtm_forcing, rtm_forcing )
+  subroutine force_spec_hum_to_mixing_ratio( ngrdcol, nzt, rtm, qtm_forcing, rtm_forcing )
 
     ! Description:
     ! This subroutine takes a forcing given in terms of specific humidity,
@@ -80,16 +87,26 @@ module spec_hum_to_mixing_ratio
     implicit none
 
     ! Input Variables
-    real( kind = core_rknd ), intent(in) ::  &
+    integer, intent(in) :: &
+      ngrdcol, &
+      nzt
+
+    real( kind = core_rknd ), dimension(ngrdcol,nzt), intent(in) ::  &
       rtm,        & ! r_tm at thermodynamic level (k)            [kg/kg]
       qtm_forcing   ! d(q_tm)/dt|_f at thermodynamic level (k)   [(kg/kg)/s]
 
     ! Output Variable
-    real( kind = core_rknd ), intent(out) ::  &
+    real( kind = core_rknd ), dimension(ngrdcol,nzt), intent(out) ::  &
       rtm_forcing   ! d(r_tm)/dt|_f at thermodynamic level (k)   [(kg/kg)/s]
 
+    integer :: i, k
+
     ! Solve for forcing in terms of total water mixing ratio.
-    rtm_forcing = ( 1.0_core_rknd + rtm )**2 * qtm_forcing
+    do k = 1, nzt
+      do i = 1, ngrdcol
+        rtm_forcing(i,k) = ( 1.0_core_rknd + rtm(i,k) )**2 * qtm_forcing(i,k)
+      end do
+    end do
 
     return
   end subroutine force_spec_hum_to_mixing_ratio

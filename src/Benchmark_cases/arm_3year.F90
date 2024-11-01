@@ -16,7 +16,7 @@ module arm_3year
   contains
 
   !----------------------------------------------------------------------
-  subroutine arm_3year_sfclyr( time, z, rho_sfc, & 
+  subroutine arm_3year_sfclyr( ngrdcol, time, z, rho_sfc, & 
                                thlm_sfc, ubar,  & 
                                wpthlp_sfc, wprtp_sfc, ustar )
     ! Description:
@@ -47,17 +47,20 @@ module arm_3year
       z0    = 0.035_core_rknd   ! ARM Cu mom. roughness height
 
     ! Input Variables
+    integer, intent(in) :: &
+      ngrdcol
+
     real(kind=time_precision), intent(in) ::  & 
       time      ! Current time        [s]
 
-    real( kind = core_rknd ), intent(in) ::  & 
+    real( kind = core_rknd ), dimension(ngrdcol), intent(in) ::  & 
       z,         & ! Height at zt=2      [s] 
       rho_sfc,   & ! Density at zm=1     [kg/m^3] 
       ubar,      & ! mean sfc wind speed [m/s]
       thlm_sfc     ! thlm at (2)         [m/s]
 
     ! Output variables
-    real( kind = core_rknd ), intent(out) ::  & 
+    real( kind = core_rknd ), dimension(ngrdcol), intent(out) ::  & 
       wpthlp_sfc,   & ! w'th_l' at (1)   [(m K)/s]  
       wprtp_sfc,    & ! w'r_t'(1) at (1) [(m kg)/(s kg)]
       ustar           ! surface friction velocity [m/s]
@@ -65,6 +68,7 @@ module arm_3year
     ! Local variables
     real( kind = core_rknd ) :: bflx, heat_flx, moisture_flx
 
+    integer :: i
     
     !-------------BEGIN CODE--------------
 
@@ -72,18 +76,23 @@ module arm_3year
     call compute_ht_mostr_flux( time, size( time_sfc_given ), &
                                 heat_flx, moisture_flx )
 
-    ! Convert W/m^2 into w'thl' w'rt' units
-    wpthlp_sfc = convert_sens_ht_to_km_s( heat_flx, rho_sfc )     ! (K m/s)
-    wprtp_sfc  = convert_latent_ht_to_m_s( moisture_flx, rho_sfc ) ! (kg m/ kg s)
+    do i = 1, ngrdcol
 
-    ! Compute momentum fluxes using ARM Cu formulae
+      ! Convert W/m^2 into w'thl' w'rt' units
+      wpthlp_sfc(i) = convert_sens_ht_to_km_s( heat_flx, rho_sfc(i) )     ! (K m/s)
+      wprtp_sfc(i)  = convert_latent_ht_to_m_s( moisture_flx, rho_sfc(i) ) ! (kg m/ kg s)
 
-    bflx = grav/thlm_sfc * wpthlp_sfc
+      ! Compute momentum fluxes using ARM Cu formulae
 
-    ! Compute ustar
-    ustar = diag_ustar( z, bflx, ubar, z0 )
+      bflx = grav / thlm_sfc(i) * wpthlp_sfc(i)
+
+      ! Compute ustar
+      ustar(i) = diag_ustar( z(i), bflx, ubar(i), z0 )
+
+    end do
 
     return
+
   end subroutine arm_3year_sfclyr
 
 end module arm_3year

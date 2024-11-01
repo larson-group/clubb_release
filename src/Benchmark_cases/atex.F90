@@ -15,7 +15,7 @@ module atex
   contains
 
   !======================================================================
-  subroutine atex_tndcy( sclr_dim, edsclr_dim, sclr_idx, &
+  subroutine atex_tndcy( ngrdcol, sclr_dim, edsclr_dim, sclr_idx, &
                          gr, time, time_initial, &
                          rtm, &
                          wm_zt, wm_zm, & 
@@ -46,6 +46,7 @@ module atex
     core_rknd
 
   use error_code, only: &
+    clubb_at_least_debug_level, &   ! Procedure
     clubb_fatal_error, &            ! Constant
     err_code                        ! Error indicator
 
@@ -56,6 +57,7 @@ module atex
 
   !--------------------- Input Variables ---------------------
   integer, intent(in) :: &
+    ngrdcol, &
     sclr_dim, & 
     edsclr_dim
 
@@ -68,122 +70,145 @@ module atex
     time,         & ! Current time     [s]
     time_initial ! Initial time     [s]
 
-  real( kind = core_rknd ), intent(in), dimension(gr%nzt) :: & 
+  real( kind = core_rknd ), intent(in), dimension(ngrdcol,gr%nzt) :: & 
     rtm      ! Total water mixing ratio        [kg/kg]
 
   !--------------------- Output Variables ---------------------
-  real( kind = core_rknd ), intent(out), dimension(gr%nzt) :: & 
+  real( kind = core_rknd ), intent(out), dimension(ngrdcol,gr%nzt) :: & 
     wm_zt,        & ! w wind on thermodynamic grid                [m/s]
     thlm_forcing, & ! Liquid water potential temperature tendency [K/s]
     rtm_forcing     ! Total water mixing ratio tendency           [kg/kg/s]
 
-  real( kind = core_rknd ), intent(out), dimension(gr%nzm) :: & 
+  real( kind = core_rknd ), intent(out), dimension(ngrdcol,gr%nzm) :: & 
     wm_zm           ! w wind on momentum grid                     [m/s]
 
-  real( kind = core_rknd ), intent(out), dimension(gr%nzt, sclr_dim) :: & 
+  real( kind = core_rknd ), intent(out), dimension(ngrdcol,gr%nzt, sclr_dim) :: & 
     sclrm_forcing   ! Passive scalar tendency         [units/s]
 
-  real( kind = core_rknd ), intent(out), dimension(gr%nzt, edsclr_dim) :: & 
+  real( kind = core_rknd ), intent(out), dimension(ngrdcol,gr%nzt, edsclr_dim) :: & 
     edsclrm_forcing ! Eddy-passive scalar tendency    [units/s]
 
   ! Internal variables
-  integer :: i
-  real( kind = core_rknd ) :: z_inversion
+  integer :: i, k
+
+  integer, dimension(ngrdcol) :: &
+    z_lev
+
+  real( kind = core_rknd ), dimension(ngrdcol) :: &
+    z_inversion
 
   !--------------------- Begin Code ---------------------
 
   ! Forcings are applied only after t = 5400 s
-  wm_zt = 0._core_rknd
-  wm_zm = 0._core_rknd
+  do k = 1, gr%nzt
+    do i = 1, ngrdcol
+      wm_zt(i,k)        = 0._core_rknd
+      thlm_forcing(i,k) = 0._core_rknd
+      rtm_forcing(i,k)  = 0._core_rknd
+    end do
+  end do
 
-
-  thlm_forcing = 0._core_rknd
-
-  rtm_forcing  = 0._core_rknd
+  do k = 1, gr%nzm
+    do i = 1, ngrdcol
+      wm_zm(i,k) = 0._core_rknd
+    end do
+  end do
 
   if ( time >= time_initial + 5400.0_time_precision ) then
 
-  !  Identify height of 6.5 g/kg moisture level
+    ! Identify height of 6.5 g/kg moisture level
+    do i = 1, ngrdcol
+      z_lev(i) = 1
+      do while ( z_lev(i) <= gr%nzt .and. rtm(i,z_lev(i)) > 6.5e-3_core_rknd )
+        z_lev(i) = z_lev(i) + 1
+      end do
+    end do
 
-     i = 1
-     do while ( i <= gr%nzt .and. rtm(i) > 6.5e-3_core_rknd )
-        i = i + 1
-     end do
-     if ( i == gr%nzt+1 .or. i == 1 ) then
-       write(fstderr,*) "Identification of 6.5 g/kg level failed"
-       write(fstderr,*) "Subroutine: atex_tndcy. File: atex.F"
-       write(fstderr,*) "i = ", i
-       write(fstderr,*) "rtm(i) = ",rtm(i)
-       err_code = clubb_fatal_error
-       return
-     end if
-     z_inversion = gr%zt(1,i-1)
+    if ( clubb_at_least_debug_level(2) ) then
+      do i = 1, ngrdcol
+        if ( z_lev(i) == gr%nzt+1 .or. z_lev(i) == 1 ) then
+          write(fstderr,*) "Identification of 6.5 g/kg level failed"
+          write(fstderr,*) "Subroutine: atex_tndcy. File: atex.F"
+          write(fstderr,*) "k = ", z_lev(i), " i = ", i
+          write(fstderr,*) "rtm(k) = ",rtm(i,z_lev(i))
+          err_code = clubb_fatal_error
+          return
+        end if
+      end do
+    end if
 
-  !          Large scale subsidence
+    do i = 1, ngrdcol
+      z_inversion(i) = gr%zt(i,z_lev(i)-1)
+    end do
 
-     do i = 1, gr%nzt
+    ! Large scale subsidence
+    do i = 1, ngrdcol
+      do k = 1, gr%nzt
 
-        if ( gr%zt(1,i) > 0._core_rknd .and. gr%zt(1,i) <= z_inversion ) then
-           wm_zt(i)  & 
-             = -0.0065_core_rknd * gr%zt(1,i)/z_inversion ! Known magic number
-        else if ( gr%zt(1,i) > z_inversion .and. gr%zt(1,i) <= z_inversion+300._core_rknd ) then
-           wm_zt(i) & 
-             = - 0.0065_core_rknd * ( 1._core_rknd - (gr%zt(1,i)-z_inversion)/&
-                 300._core_rknd ) ! Known magic number
+        if ( gr%zt(i,k) > 0._core_rknd .and. gr%zt(i,k) <= z_inversion(i) ) then
+          wm_zt(i,k) = -0.0065_core_rknd * gr%zt(i,k) / z_inversion(i) ! Known magic number
+        else if ( gr%zt(i,k) > z_inversion(i) .and. gr%zt(i,k) <= z_inversion(i)+300._core_rknd ) then
+          wm_zt(i,k) = - 0.0065_core_rknd * ( 1._core_rknd - (gr%zt(i,k)-z_inversion(i)) &
+                                                             / 300._core_rknd ) ! Known magic number
         else
-           wm_zt(i) = 0._core_rknd
+          wm_zt(i,k) = 0._core_rknd
         end if
 
-     end do
+      end do
+    end do
 
-     wm_zm = zt2zm( gr, wm_zt )
+    wm_zm = zt2zm( gr%nzm, gr%nzt, ngrdcol, gr, wm_zt )
 
-     ! Boundary conditions.
-     wm_zm(1) = 0.0_core_rknd        ! At surface
-     wm_zm(gr%nzm) = 0.0_core_rknd  ! Model top
+    ! Boundary conditions.
+    do i = 1, ngrdcol
+      wm_zm(i,1) = 0.0_core_rknd        ! At surface
+      wm_zm(i,gr%nzm) = 0.0_core_rknd  ! Model top
+    end do
 
-     ! Theta-l tendency
+    ! Theta-l tendency
+    do i = 1, ngrdcol
+      do k = 1, gr%nzt
 
-     do i = 1, gr%nzt
-
-        if ( gr%zt(1,i) > 0._core_rknd .and. gr%zt(1,i) < z_inversion ) then
-           thlm_forcing(i) = -1.1575e-5_core_rknd * ( 3._core_rknd - &
-             gr%zt(1,i)/z_inversion ) ! Known magic number
-        else if ( gr%zt(1,i) > z_inversion .and. gr%zt(1,i) <= z_inversion+300._core_rknd ) then
-           thlm_forcing(i) = -2.315e-5_core_rknd * ( 1._core_rknd - &
-             (gr%zt(1,i)-z_inversion)/300._core_rknd ) ! Known magic number
+        if ( gr%zt(i,k) > 0._core_rknd .and. gr%zt(i,k) < z_inversion(i) ) then
+          ! Known magic number
+          thlm_forcing(i,k) = -1.1575e-5_core_rknd &
+                              * ( 3._core_rknd - gr%zt(i,k)/z_inversion(i) ) 
+        else if ( gr%zt(i,k) > z_inversion(i) .and. gr%zt(i,k) <= z_inversion(i)+300._core_rknd ) then
+          ! Known magic number
+          thlm_forcing(i,k) = -2.315e-5_core_rknd &
+                              * ( 1._core_rknd - (gr%zt(i,k)-z_inversion(i))/300._core_rknd ) 
         else
-           thlm_forcing(i) = 0.0_core_rknd
+          thlm_forcing(i,k) = 0.0_core_rknd
         end if
 
-     end do
-
-     ! Moisture tendency
-     do i = 1, gr%nzt
-
-        if ( gr%zt(1,i) > 0._core_rknd .and. gr%zt(1,i) < z_inversion ) then
-           rtm_forcing(i) = -1.58e-8_core_rknd * ( 1._core_rknd - &
-             gr%zt(1,i)/z_inversion )  ! Brian - known magic number
+        ! Moisture tendency
+        if ( gr%zt(i,k) > 0._core_rknd .and. gr%zt(i,k) < z_inversion(i) ) then
+          ! Brian - known magic number
+          rtm_forcing(i,k) = -1.58e-8_core_rknd * ( 1._core_rknd - gr%zt(i,k)/z_inversion(i) )  
         else
-           rtm_forcing(i) = 0.0_core_rknd       ! Brian
+          ! Brian
+          rtm_forcing(i,k) = 0.0_core_rknd       
         end if
-
-     end do
+      end do
+    end do
 
   end if ! time >= time_initial + 5400.0_core_rknd
 
   ! Test scalars with thetal and rt if desired
-  if ( sclr_idx%iisclr_thl > 0 ) sclrm_forcing(:,sclr_idx%iisclr_thl) = thlm_forcing
-  if ( sclr_idx%iisclr_rt  > 0 ) sclrm_forcing(:,sclr_idx%iisclr_rt)  = rtm_forcing
-
-  if ( sclr_idx%iiedsclr_thl > 0 ) edsclrm_forcing(:,sclr_idx%iiedsclr_thl) = thlm_forcing
-  if ( sclr_idx%iiedsclr_rt  > 0 ) edsclrm_forcing(:,sclr_idx%iiedsclr_rt)  = rtm_forcing
+  do i = 1, ngrdcol
+    do k = 1, gr%nzt
+      if ( sclr_idx%iisclr_thl > 0 ) sclrm_forcing(i,k,sclr_idx%iisclr_thl) = thlm_forcing(i,k)
+      if ( sclr_idx%iisclr_rt  > 0 ) sclrm_forcing(i,k,sclr_idx%iisclr_rt)  = rtm_forcing(i,k)
+      if ( sclr_idx%iiedsclr_thl > 0 ) edsclrm_forcing(i,k,sclr_idx%iiedsclr_thl) = thlm_forcing(i,k)
+      if ( sclr_idx%iiedsclr_rt  > 0 ) edsclrm_forcing(i,k,sclr_idx%iiedsclr_rt)  = rtm_forcing(i,k)
+    end do
+  end do
 
   return
   end subroutine atex_tndcy
 
   !======================================================================
-  subroutine atex_sfclyr( time, ubar, & 
+  subroutine atex_sfclyr( ngrdcol, time, ubar, & 
                           thlm_sfc, rtm_sfc, exner_sfc, & 
                           wpthlp_sfc, wprtp_sfc, ustar, T_sfc )
   ! Description:
@@ -209,17 +234,20 @@ module atex
   implicit none
 
   ! Input variables
+  integer, intent(in) :: &
+    ngrdcol
+
   real(time_precision), intent(in) :: &
     time       ! the current time [s]
 
-  real( kind = core_rknd ), intent(in) ::  &
+  real( kind = core_rknd ), dimension(ngrdcol), intent(in) ::  &
     ubar,    & ! mean sfc wind speed                           [m/s]
     thlm_sfc,& ! theta_l at first model layer                  [K]
     rtm_sfc, & ! Total water mixing ratio at first model layer [kg/kg]
     exner_sfc  ! Exner function                                [-]
 
   ! Output variables
-  real( kind = core_rknd ), intent(out) ::  & 
+  real( kind = core_rknd ), dimension(ngrdcol), intent(out) ::  & 
     wpthlp_sfc,  & ! w'theta_l' surface flux   [(m K)/s]
     wprtp_sfc,   &    ! w'rt' surface flux        [(m kg)/(kg s)]
     ustar,       &
@@ -227,12 +255,15 @@ module atex
     
   ! Local Variable
   real( kind = core_rknd ) :: & 
-    C_10, &      ! Coefficient
     time_frac, & ! Time fraction used for interpolation
+    T_sfc_interp
+
+  real( kind = core_rknd ), dimension(ngrdcol) :: & 
+    C_10, &      ! Coefficient
     adjustment   ! The adjustment for compute_wprtp_sfc
 
   integer :: &
-    before_time, after_time ! The 
+    before_time, after_time, i ! The 
 
   !-----------------BEGIN CODE-----------------------
 
@@ -241,17 +272,21 @@ module atex
   call time_select( time, size(time_sfc_given), time_sfc_given, &
                     before_time, after_time, time_frac )
 
-  T_sfc = linear_interp_factor( time_frac, T_sfc_given(after_time), &
-                                    T_sfc_given(before_time) )
+  T_sfc_interp = linear_interp_factor( time_frac, T_sfc_given(after_time), &
+                                       T_sfc_given(before_time) )
+  do i = 1, ngrdcol
+    C_10(i)       = 0.0013_core_rknd
+    adjustment(i) = 0.0198293_core_rknd
+    ustar(i)      = 0.3_core_rknd
+    T_sfc(i)      = T_sfc_interp
+  end do
 
   ! Compute wpthlp_sfc and wprtp_sfc
+  call compute_wpthlp_sfc( ngrdcol, C_10, ubar, thlm_sfc, T_sfc, exner_sfc, &
+                           wpthlp_sfc ) 
 
-  C_10 = 0.0013_core_rknd
-  ustar = 0.3_core_rknd
-  adjustment = 0.0198293_core_rknd
-
-  wpthlp_sfc = compute_wpthlp_sfc( C_10, ubar, thlm_sfc, T_sfc, exner_sfc )
-  wprtp_sfc = compute_wprtp_sfc( C_10, ubar, rtm_sfc, adjustment )
+  call compute_wprtp_sfc( ngrdcol, C_10, ubar, rtm_sfc, adjustment, &
+                          wprtp_sfc )
 
   return
   end subroutine atex_sfclyr

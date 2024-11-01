@@ -17,7 +17,7 @@ module dycoms2_rf01
   contains
 
   !----------------------------------------------------------------------
-  subroutine dycoms2_rf01_tndcy( gr, sclr_dim, edsclr_dim, sclr_idx, &
+  subroutine dycoms2_rf01_tndcy( ngrdcol, gr, sclr_dim, edsclr_dim, sclr_idx, &
                                  thlm_forcing, rtm_forcing, &
                                  sclrm_forcing, edsclrm_forcing )
 ! Description:
@@ -43,6 +43,7 @@ module dycoms2_rf01
       gr
 
     integer, intent(in) :: &
+      ngrdcol, &
       sclr_dim, & 
       edsclr_dim
 
@@ -50,32 +51,41 @@ module dycoms2_rf01
       sclr_idx
 
     ! Output Variables
-    real( kind = core_rknd ), intent(out), dimension(gr%nzt) ::  & 
+    real( kind = core_rknd ), intent(out), dimension(ngrdcol,gr%nzt) ::  & 
       thlm_forcing,  & ! Liquid water potential temperature tendency  [K/s]
       rtm_forcing      ! Total water mixing ratio tendency            [kg/kg/s]
 
-    real( kind = core_rknd ), intent(out), dimension(gr%nzt, sclr_dim) :: & 
+    real( kind = core_rknd ), intent(out), dimension(ngrdcol,gr%nzt, sclr_dim) :: & 
       sclrm_forcing   ! Passive scalar tendency         [units/s]
 
-    real( kind = core_rknd ), intent(out), dimension(gr%nzt, edsclr_dim) :: & 
+    real( kind = core_rknd ), intent(out), dimension(ngrdcol,gr%nzt, edsclr_dim) :: & 
       edsclrm_forcing ! Eddy-passive scalar tendency    [units/s]
 
-    thlm_forcing = 0._core_rknd
-    rtm_forcing  = 0._core_rknd
+    integer :: i, k
+
+    do k = 1, gr%nzt
+      do i = 1, ngrdcol
+
+        thlm_forcing(i,k) = 0._core_rknd
+        rtm_forcing(i,k)  = 0._core_rknd
 
 
-    ! Test scalars with thetal and rt if desired
-    if ( sclr_idx%iisclr_thl > 0 ) sclrm_forcing(:,sclr_idx%iisclr_thl) = thlm_forcing
-    if ( sclr_idx%iisclr_rt  > 0 ) sclrm_forcing(:,sclr_idx%iisclr_rt)  = rtm_forcing
+        ! Test scalars with thetal and rt if desired
+        if ( sclr_idx%iisclr_thl > 0 ) sclrm_forcing(i,k,sclr_idx%iisclr_thl) = thlm_forcing(i,k)
+        if ( sclr_idx%iisclr_rt  > 0 ) sclrm_forcing(i,k,sclr_idx%iisclr_rt)  = rtm_forcing(i,k)
 
-    if ( sclr_idx%iiedsclr_thl > 0 ) edsclrm_forcing(:,sclr_idx%iiedsclr_thl) = thlm_forcing
-    if ( sclr_idx%iiedsclr_rt  > 0 ) edsclrm_forcing(:,sclr_idx%iiedsclr_rt)  = rtm_forcing
+        if ( sclr_idx%iiedsclr_thl > 0 ) edsclrm_forcing(i,k,sclr_idx%iiedsclr_thl) = thlm_forcing(i,k)
+        if ( sclr_idx%iiedsclr_rt  > 0 ) edsclrm_forcing(i,k,sclr_idx%iiedsclr_rt)  = rtm_forcing(i,k)
+
+      end do
+    end do
 
     return
+
   end subroutine dycoms2_rf01_tndcy
   
   !======================================================================
-  subroutine dycoms2_rf01_sfclyr( time, sfctype, p_sfc,  & 
+  subroutine dycoms2_rf01_sfclyr( ngrdcol, time, sfctype, p_sfc,  & 
                                   exner_sfc, ubar, & 
                                   thlm_sfc, rtm_sfc, rho_sfc, &
                                   saturation_formula, &
@@ -105,11 +115,16 @@ module dycoms2_rf01
   implicit none
 
   ! Input variables
+  integer, intent(in) :: &
+    ngrdcol
+
   real(time_precision), intent(in) :: &
     time ! The current time [s]
+
   integer, intent(in) :: &
     sfctype
-  real( kind = core_rknd ), intent(in) ::  &
+
+  real( kind = core_rknd ), dimension(ngrdcol), intent(in) ::  &
     p_sfc,      & ! Surface pressure                              [Pa]
     exner_sfc, & ! Exner function                                [-]
     ubar,      & ! mean sfc wind speed                           [m/s]
@@ -121,48 +136,64 @@ module dycoms2_rf01
     saturation_formula ! Integer that stores the saturation formula to be used
 
   ! Output variables
-  real( kind = core_rknd ), intent(out) ::  & 
+  real( kind = core_rknd ), dimension(ngrdcol), intent(out) ::  & 
     wpthlp_sfc,  &  ! w'theta_l' surface flux   [(m K)/s]
     wprtp_sfc,   &  ! w'rt' surface flux        [(m kg)/(kg s)]
     ustar,       &
     T_sfc           ! Surface temperature       [K]
     
   ! Local Variable
-  real( kind = core_rknd ), parameter :: & 
-    Cd = 0.0011_core_rknd   ! Coefficient
     
   real( kind = core_rknd ) :: &
     sens_ht, &  ! Sensible heat flux
-    latent_ht, &  ! Latent heat flux
-    time_frac ! The time fraction used for interpolation
+    latent_ht, & ! Latent heat flux
+    time_frac, & ! The time fraction used for interpolation
+    T_sfc_interp
+
+  real( kind = core_rknd ), dimension(ngrdcol) :: &
+    rsat, &
+    Cd   ! Coefficient
 
   integer :: &
-    before_time, after_time ! The times used for interpolation
+    before_time, after_time, i ! The times used for interpolation
 
   !-----------------BEGIN CODE-----------------------
-
-  ustar = 0.25_core_rknd
 
   call time_select( time, size(time_sfc_given), time_sfc_given, &
                     before_time, after_time, time_frac )
 
   sens_ht = linear_interp_factor( time_frac, sens_ht_given(after_time), sens_ht_given(before_time) )
+
   latent_ht = linear_interp_factor( time_frac, latent_ht_given(after_time), &
                                     latent_ht_given(before_time) )
-  T_sfc = linear_interp_factor( time_frac, T_sfc_given(after_time), &
-                                    T_sfc_given(before_time) )
+
+  T_sfc_interp = linear_interp_factor( time_frac, T_sfc_given(after_time), &
+                                       T_sfc_given(before_time) )
 
   ! Compute heat and moisture fluxes
   if ( sfctype == 0 ) then
 
-    wpthlp_sfc = convert_sens_ht_to_km_s( sens_ht, rho_sfc )
-    wprtp_sfc  = convert_latent_ht_to_m_s( latent_ht, rho_sfc )
+    do i = 1, ngrdcol
+      ustar(i) = 0.25_core_rknd
+      T_sfc(i) = T_sfc_interp
+      wpthlp_sfc(i) = convert_sens_ht_to_km_s( sens_ht, rho_sfc(i) )
+      wprtp_sfc(i)  = convert_latent_ht_to_m_s( latent_ht, rho_sfc(i) )
+    end do
 
   else if ( sfctype == 1 ) then
 
-    wpthlp_sfc = compute_wpthlp_sfc( Cd, ubar, thlm_sfc, T_sfc, exner_sfc )
-    wprtp_sfc = compute_wprtp_sfc( Cd, ubar, rtm_sfc, sat_mixrat_liq( p_sfc, &
-                                                                      T_sfc, saturation_formula ) )
+    do i = 1, ngrdcol
+      ustar(i) = 0.25_core_rknd
+      T_sfc(i) = T_sfc_interp
+      Cd(i)    = 0.0011_core_rknd
+      rsat(i)  = sat_mixrat_liq( p_sfc(i), T_sfc(i), saturation_formula )
+    end do
+
+    call compute_wpthlp_sfc( ngrdcol, Cd, ubar, thlm_sfc, T_sfc, exner_sfc, &
+                             wpthlp_sfc ) 
+
+    call compute_wprtp_sfc( ngrdcol, Cd, ubar, rtm_sfc, rsat, &
+                            wprtp_sfc )                                                  
 
   else  ! Undefined value for sfctype
 
@@ -170,7 +201,9 @@ module dycoms2_rf01
     error stop
 
   end if ! sfctype
+
   return
+
   end subroutine dycoms2_rf01_sfclyr
 
 !----------------------------------------------------------------------

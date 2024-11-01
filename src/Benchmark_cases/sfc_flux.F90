@@ -21,7 +21,7 @@ module sfc_flux
   contains
 
 !===============================================================================
-  subroutine compute_momentum_flux( um_sfc, vm_sfc, ubar, ustar, &
+  subroutine compute_momentum_flux( ngrdcol, um_sfc, vm_sfc, ubar, ustar, &
                                     upwp_sfc, vpwp_sfc )
 !
 ! Description:
@@ -35,29 +35,35 @@ module sfc_flux
     implicit none
 
     ! Input
-    real( kind = core_rknd ), intent(in) :: &
+    integer, intent(in) :: &
+      ngrdcol
+
+    real( kind = core_rknd ), dimension(ngrdcol), intent(in) :: &
       um_sfc, & ! u wind at zt(2) [m/s]
       vm_sfc, & ! v wind at zt(2) [m/s]
       ustar,  & ! Surface friction velocity [m/s]
       ubar
 
     ! Output
-    real( kind = core_rknd ), intent(out) :: &
+    real( kind = core_rknd ), dimension(ngrdcol), intent(out) :: &
       upwp_sfc, &  ! Turbulent upward flux of u-momentum [(m/s)^2]
       vpwp_sfc     ! Turbulent upward flux of v-momentum [(m/s)^2]
+
+    integer :: i
 
     ! ---- Begin Code ----
 
     ! Compute momentum fluxes
-
-    upwp_sfc = -um_sfc * ustar**2 / ubar
-    vpwp_sfc = -vm_sfc * ustar**2 / ubar
+    do i = 1, ngrdcol
+      upwp_sfc(i) = -um_sfc(i) * ustar(i)**2 / ubar(i)
+      vpwp_sfc(i) = -vm_sfc(i) * ustar(i)**2 / ubar(i)
+    end do
 
     return
   end subroutine compute_momentum_flux
   
 !===============================================================================
-  real( kind = core_rknd ) function compute_ubar( um_sfc, vm_sfc )
+  subroutine compute_ubar( ngrdcol, um_sfc, vm_sfc, ubar )
 !
 !  Description:
 !    This function determines the value of ubar based on the momentum at 
@@ -74,18 +80,29 @@ module sfc_flux
     intrinsic :: max, sqrt
 
     ! Constant paramter(s)
-    real( kind = core_rknd ), parameter :: ubmin = 0.25_core_rknd ! [m/s]
+    real( kind = core_rknd ), parameter :: &
+      ubmin = 0.25_core_rknd ! [m/s]
 
     ! Input Variable(s)
-    real( kind = core_rknd ), intent(in) :: &
+    integer, intent(in) :: &
+      ngrdcol
+
+    real( kind = core_rknd ), dimension(ngrdcol), intent(in) :: &
       um_sfc, & ! u wind at zt(2) [m/s]
       vm_sfc    ! v wind at zt(2) [m/s]
 
+    real( kind = core_rknd ), dimension(ngrdcol), intent(out) :: &
+      ubar
+
+    integer :: i
+
     ! ---- Begin Code ----
 
-    compute_ubar = max( ubmin, sqrt( um_sfc**2 + vm_sfc**2 ) )
+    do i = 1, ngrdcol
+      ubar(i) = max( ubmin, sqrt( um_sfc(i)**2 + vm_sfc(i)**2 ) )
+    end do
 
-  end function compute_ubar
+  end subroutine compute_ubar
   
 !===============================================================================
   subroutine compute_ht_mostr_flux( time_in, ntimes, &
@@ -163,7 +180,8 @@ module sfc_flux
   end subroutine compute_ht_mostr_flux
 
 !===============================================================================
-  real( kind = core_rknd ) function compute_wpthlp_sfc( Cd, ubar, thlm_sfc, T_sfc, exner_sfc )
+  subroutine compute_wpthlp_sfc( ngrdcol, Cd, ubar, thlm_sfc, T_sfc, exner_sfc, &
+                                 wpthlp_sfc )
 !
 ! Description:
 !   This function determins the surface flux of heat.
@@ -176,23 +194,35 @@ module sfc_flux
     implicit none
 
     ! Intent(in)
-    real( kind = core_rknd ), intent(in) :: &
+    integer, intent(in) ::&
+      ngrdcol
+      
+    real( kind = core_rknd ), dimension(ngrdcol), intent(in) :: &
       Cd,       & ! Coefficient
       ubar,     &
       thlm_sfc, & ! Theta_l at zt(2) [K]
       T_sfc,     & ! Surface temperature [K]
       exner_sfc   ! Exner function at surface [-]
+      
+    real( kind = core_rknd ), dimension(ngrdcol), intent(out) :: &
+      wpthlp_sfc
+
+    integer :: i
 
     ! ---- Begin Code ----
 
-    compute_wpthlp_sfc = -Cd * ubar * ( thlm_sfc - T_sfc / exner_sfc )
+    do i = 1, ngrdcol
+      wpthlp_sfc(i) = -Cd(i) * ubar(i) * ( thlm_sfc(i) - T_sfc(i) / exner_sfc(i) )
+    end do
 
     return
-  end function compute_wpthlp_sfc
+
+  end subroutine compute_wpthlp_sfc
 
 
 !===============================================================================
-  real( kind = core_rknd ) function compute_wprtp_sfc ( Cd, ubar, rtm_sfc, adjustment )
+  subroutine compute_wprtp_sfc ( ngrdcol, Cd, ubar, rtm_sfc, adjustment, &
+                                 wprtp_sfc )
 
 !
 !  Description:
@@ -206,21 +236,32 @@ module sfc_flux
     implicit none
 
     ! Input(s)
-    real( kind = core_rknd ), intent(in) :: &
+    integer, intent(in) :: &
+      ngrdcol
+
+    real( kind = core_rknd ), dimension(ngrdcol), intent(in) :: &
       Cd, &
       ubar, &
       rtm_sfc, &  ! Total Water mixing ratio at zt(2) [kg/kg]
       adjustment
 
+    real( kind = core_rknd ), dimension(ngrdcol), intent(out) :: &
+      wprtp_sfc
+
+    integer :: i
+
     ! ---- Begin Code ----
 
-    compute_wprtp_sfc  = -Cd * ubar * ( rtm_sfc - adjustment )
+    do i = 1, ngrdcol
+      wprtp_sfc(i)  = -Cd(i) * ubar(i) * ( rtm_sfc(i) - adjustment(i) )
+    end do
 
     return
-  end function compute_wprtp_sfc
+
+  end subroutine compute_wprtp_sfc
   
 !===============================================================================
-  subroutine set_sclr_sfc_rtm_thlm ( sclr_dim, edsclr_dim, sclr_idx, &
+  subroutine set_sclr_sfc_rtm_thlm ( ngrdcol, sclr_dim, edsclr_dim, sclr_idx, &
                                      wpthlp_sfc, wprtp_sfc, &
                                      wpsclrp_sfc, wpedsclrp_sfc )
 
@@ -240,39 +281,54 @@ module sfc_flux
 
     !--------------------- Input Variables ---------------------
     integer, intent(in) :: &
+      ngrdcol, &
       sclr_dim, & 
       edsclr_dim
 
     type (sclr_idx_type), intent(in) :: &
       sclr_idx
 
-    real( kind = core_rknd ), intent(in) ::  & 
+    real( kind = core_rknd ), dimension(ngrdcol), intent(in) ::  & 
       wpthlp_sfc, & ! surface thetal flux        [K m/s]
       wprtp_sfc     ! surface moisture flux      [kg/kg m/s]
       
     !--------------------- Output Variables ---------------------
-    real( kind = core_rknd ), intent(out), dimension(sclr_dim) ::  & 
+    real( kind = core_rknd ), intent(out), dimension(ngrdcol,sclr_dim) ::  & 
       wpsclrp_sfc       ! scalar surface flux            [units m/s]
 
-    real( kind = core_rknd ), intent(out), dimension(edsclr_dim) ::  & 
+    real( kind = core_rknd ), intent(out), dimension(ngrdcol,edsclr_dim) ::  & 
       wpedsclrp_sfc     ! eddy-scalar surface flux       [units m/s]
 
-    !--------------------- Locally Variables ---------------------
+    !--------------------- Local Variables ---------------------
 
+    integer :: i, sclr, edsclr
 
     !--------------------- Begin Code ---------------------
     
-    wpsclrp_sfc(:)   = 0.0_core_rknd ! Initialize flux to 0 
-    wpedsclrp_sfc(:) = 0.0_core_rknd ! Initialize flux to 0 
+    do sclr = 1, sclr_dim
+      do i = 1, ngrdcol
+        wpsclrp_sfc(i,sclr)   = 0.0_core_rknd ! Initialize flux to 0 
+      end do
+    end do
 
-    ! Let passive scalars be equal to rt and theta_l for now
-    if ( sclr_idx%iisclr_thl > 0 ) wpsclrp_sfc(sclr_idx%iisclr_thl) = wpthlp_sfc
-    if ( sclr_idx%iisclr_rt  > 0 ) wpsclrp_sfc(sclr_idx%iisclr_rt)  = wprtp_sfc
+    do edsclr = 1, edsclr_dim
+      do i = 1, ngrdcol
+        wpedsclrp_sfc(i,edsclr) = 0.0_core_rknd ! Initialize flux to 0 
+      end do
+    end do
 
-    if ( sclr_idx%iiedsclr_thl > 0 ) wpedsclrp_sfc(sclr_idx%iiedsclr_thl) = wpthlp_sfc
-    if ( sclr_idx%iiedsclr_rt  > 0 ) wpedsclrp_sfc(sclr_idx%iiedsclr_rt)  = wprtp_sfc
+    do i = 1, ngrdcol
+      ! Let passive scalars be equal to rt and theta_l for now
+      if ( sclr_idx%iisclr_thl > 0 ) wpsclrp_sfc(i,sclr_idx%iisclr_thl) = wpthlp_sfc(i)
+      if ( sclr_idx%iisclr_rt  > 0 ) wpsclrp_sfc(i,sclr_idx%iisclr_rt)  = wprtp_sfc(i)
+
+      if ( sclr_idx%iiedsclr_thl > 0 ) wpedsclrp_sfc(i,sclr_idx%iiedsclr_thl) = wpthlp_sfc(i)
+      if ( sclr_idx%iiedsclr_rt  > 0 ) wpedsclrp_sfc(i,sclr_idx%iiedsclr_rt)  = wprtp_sfc(i)
+      
+    end do
 
     return
+
   end subroutine set_sclr_sfc_rtm_thlm
 
  

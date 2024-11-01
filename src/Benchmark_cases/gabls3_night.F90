@@ -16,17 +16,17 @@ module gabls3_night
 
   public :: gabls3_night_sfclyr
 
-  private :: landflx, psi_h, gm1, gh1, fm1, fh1
+  private :: landflx
 
   private
 
   contains
 
   !-----------------------------------------------------------------------
-  subroutine gabls3_night_sfclyr( time, um_sfc, vm_sfc,  &
-                            thlm_sfc, rtm_sfc, lowest_level, & 
-                            upwp_sfc, vpwp_sfc, &
-                            wpthlp_sfc, wprtp_sfc, ustar )
+  subroutine gabls3_night_sfclyr( ngrdcol, time, um_sfc, vm_sfc,  &
+                                  thlm_sfc, rtm_sfc, lowest_level, & 
+                                  upwp_sfc, vpwp_sfc, &
+                                  wpthlp_sfc, wprtp_sfc, ustar )
     ! Description:
     !   This subroutine computes surface fluxes of horizontal momentum,
     !   heat and moisture according to GCSS ATEX specifications
@@ -57,9 +57,13 @@ module gabls3_night
       z0 = 0.15_core_rknd ! Roughness length  [m]
 
     ! Input variables
-    real(kind=time_precision), intent(in) :: time ! Model time [s]
+    integer, intent(in) :: &
+      ngrdcol
 
-    real( kind = core_rknd ), intent(in) ::  & 
+    real(kind=time_precision), intent(in) :: &
+      time ! Model time [s]
+
+    real( kind = core_rknd ), dimension(ngrdcol), intent(in) ::  & 
       um_sfc,       & ! um at zt(2)                     [m/s]
       vm_sfc,       & ! vm at zt(2)                     [m/s]
       thlm_sfc,     & ! Theta_l at zt(2)                [K]
@@ -68,7 +72,7 @@ module gabls3_night
                       ! above-ground gridpoint          [m]
 
     ! Output variables
-    real( kind = core_rknd ), intent(out) ::  & 
+    real( kind = core_rknd ), dimension(ngrdcol), intent(out) ::  & 
       upwp_sfc,    & ! turbulent upward flux of u-momentum  [m^2/s^2]
       vpwp_sfc,    & ! turbulent upward flux of v-momentum  [m^2/s^2]
       wpthlp_sfc,  & ! w'theta_l' surface flux   [(m K)/s]
@@ -77,13 +81,15 @@ module gabls3_night
 
     ! Local Variables
     real( kind = core_rknd ) :: &
-      ubar, & ! Average surface wind speed [m/s]
       qs,   & ! Vapor at height z0
       ts      ! Potential temp. at height z0
 
+    real( kind = core_rknd ), dimension(ngrdcol) :: &
+      ubar   ! Average surface wind speed [m/s]
+
     real( kind = core_rknd ) :: time_frac ! time interpolation factor
 
-    integer :: before_time, after_time
+    integer :: before_time, after_time, i
 
     if( l_t_dependent ) then
 
@@ -100,19 +106,28 @@ module gabls3_night
      
 
       ! Compute heat and moisture fluxes
-      call landflx( thlm_sfc, ts, rtm_sfc, qs, um_sfc, vm_sfc, lowest_level, z0, & ! Intent(in)
-                    wpthlp_sfc, wprtp_sfc, ubar, ustar )                           ! Intent(out)
+      do i = 1, ngrdcol
+        call landflx( thlm_sfc(i), ts, rtm_sfc(i), qs,   & ! Intent(in)
+                      um_sfc(i), vm_sfc(i), lowest_level(i), z0,     & ! Intent(in)
+                      wpthlp_sfc(i), wprtp_sfc(i), ubar(i), ustar(i) )    ! Intent(out)
+      end do
 
       if ( l_input_xpwp_sfc ) then
+
         ! Feed in momentum fluxes
-        upwp_sfc = linear_interp_factor( time_frac, upwp_sfc_given(after_time), &
-                                  upwp_sfc_given(before_time) )
-        vpwp_sfc = linear_interp_factor( time_frac, vpwp_sfc_given(after_time), &
-                                  vpwp_sfc_given(before_time) )
+        do i = 1, ngrdcol
+          upwp_sfc(i) = linear_interp_factor( time_frac, upwp_sfc_given(after_time), &
+                                              upwp_sfc_given(before_time) )
+        end do
+                            
+        do i = 1, ngrdcol        
+          vpwp_sfc(i) = linear_interp_factor( time_frac, vpwp_sfc_given(after_time), &
+                                              vpwp_sfc_given(before_time) )
+        end do
 
       else
         ! Compute momentum fluxes
-        call compute_momentum_flux( um_sfc, vm_sfc, ubar, ustar, & ! Intent(in)
+        call compute_momentum_flux( ngrdcol, um_sfc, vm_sfc, ubar, ustar, & ! Intent(in)
                                     upwp_sfc, vpwp_sfc )           ! Intent(out)
       end if ! l_input_xpwp_sfc
 

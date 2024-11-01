@@ -19,7 +19,7 @@ module arm_97
   contains
 
   !----------------------------------------------------------------------
-  subroutine arm_97_sfclyr( time, z, rho_sfc, & 
+  subroutine arm_97_sfclyr( ngrdcol, time, z, rho_sfc, & 
                             thlm_sfc, ubar,  & 
                             wpthlp_sfc, wprtp_sfc, ustar )
     !       Description:
@@ -55,29 +55,33 @@ module arm_97
       z0    = 0.035_core_rknd   ! ARM Cu mom. roughness height
 
     ! Input Variables
+    integer, intent(in) :: &
+      ngrdcol
+
     real(time_precision), intent(in) ::  & 
       time      ! Current time        [s]
 
-    real( kind = core_rknd ), intent(in) ::  & 
+    real( kind = core_rknd ), dimension(ngrdcol), intent(in) ::  & 
       z,         & ! Height at zt=2      [s] 
       rho_sfc,      & ! Density at zm=1     [kg/m^3] 
       ubar,      & ! mean sfc wind speed [m/s]
       thlm_sfc     ! thlm at (2)         [m/s]
 
     ! Output variables
-    real( kind = core_rknd ), intent(out) ::  & 
+    real( kind = core_rknd ), dimension(ngrdcol), intent(out) ::  & 
       wpthlp_sfc,   & ! w'th_l' at (1)   [(m K)/s]  
       wprtp_sfc,    & ! w'r_t'(1) at (1) [(m kg)/(s kg)]
       ustar           ! surface friction velocity [m/s]
 
     ! Local variables
+
     real( kind = core_rknd ) :: bflx, heat_flx, moisture_flx, time_frac
-    integer :: before_time, after_time
+
+    integer :: before_time, after_time, i
+
     !----------------------------------------------------------------------
-    if( l_t_dependent ) then
-      ! Default initialization
-      heat_flx = 0.0_core_rknd
-      moisture_flx = 0.0_core_rknd
+
+    if ( l_t_dependent ) then
 
       time_frac = -1.0_core_rknd ! Default initialization
 
@@ -89,19 +93,25 @@ module arm_97
       moisture_flx = linear_interp_factor( time_frac, latent_ht_given(after_time), &
                                            latent_ht_given(before_time) )
 
-      ! Convert W/m^2 into w'thl' w'rt' units
-      wpthlp_sfc = convert_sens_ht_to_km_s( heat_flx, rho_sfc )     ! (K m/s)
-      wprtp_sfc  = convert_latent_ht_to_m_s( moisture_flx, rho_sfc ) ! (kg m/ kg s)
+      do i = 1, ngrdcol
 
-      ! Compute momentum fluxes using ARM Cu formulae
+        ! Convert W/m^2 into w'thl' w'rt' units
+        wpthlp_sfc(i) = convert_sens_ht_to_km_s( heat_flx, rho_sfc(i) )     ! (K m/s)
+        wprtp_sfc(i)  = convert_latent_ht_to_m_s( moisture_flx, rho_sfc(i) ) ! (kg m/ kg s)
 
-      bflx = grav/thlm_sfc * wpthlp_sfc
+        ! Compute momentum fluxes using ARM Cu formulae
 
-      ! Compute ustar
-      ustar = diag_ustar( z, bflx, ubar, z0 )
+        bflx = grav / thlm_sfc(i) * wpthlp_sfc(i)
 
-    endif
+        ! Compute ustar
+        ustar(i) = diag_ustar( z(i), bflx, ubar(i), z0 )
+
+      end do
+
+    end if
+
     return
+
   end subroutine arm_97_sfclyr
   !----------------------------------------------------------------------
 end module arm_97

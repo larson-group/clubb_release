@@ -48,7 +48,7 @@ module mpace_a
   contains
 
 !----------------------------------------------------------------------
-  subroutine mpace_a_tndcy( sclr_dim, edsclr_dim, sclr_idx, &
+  subroutine mpace_a_tndcy( ngrdcol, sclr_dim, edsclr_dim, sclr_idx, &
                             gr, time, p_in_Pa, & 
                             wm_zt, wm_zm, thlm_forcing, rtm_forcing, & 
                             um_hoc_grid, vm_hoc_grid, & 
@@ -97,6 +97,7 @@ module mpace_a
 
     !--------------------- Input Variables ---------------------
     integer, intent(in) :: &
+      ngrdcol, &
       sclr_dim, & 
       edsclr_dim
 
@@ -109,23 +110,27 @@ module mpace_a
     real(kind=time_precision), intent(in) ::  & 
       time  ! Current time of simulation      [s]
 
-    real( kind = core_rknd ), dimension(gr%nzt), intent(in) :: & 
+    real( kind = core_rknd ), dimension(ngrdcol,gr%nzt), intent(in) :: & 
       p_in_Pa  ! Pressure                               [Pa]
 
     ! Output Variables
-    real( kind = core_rknd ), dimension(gr%nzt), intent(out) ::  & 
+    real( kind = core_rknd ), dimension(ngrdcol,gr%nzt), intent(out) ::  & 
       wm_zt,        & ! Large-scale vertical motion on t grid   [m/s]
       thlm_forcing, & ! Large-scale thlm tendency               [K/s]
       rtm_forcing     ! Large-scale rtm tendency                [kg/kg/s]
 
-    real( kind = core_rknd ), dimension(gr%nzm), intent(out) ::  & 
+    real( kind = core_rknd ), dimension(ngrdcol,gr%nzm), intent(out) ::  & 
       wm_zm           ! Large-scale vertical motion on m grid   [m/s]
 
-    real( kind = core_rknd ), intent(out), dimension(gr%nzt,sclr_dim) :: & 
+    real( kind = core_rknd ), intent(out), dimension(ngrdcol,gr%nzt,sclr_dim) :: & 
       sclrm_forcing ! Passive scalar LS tendency            [units/s]
 
-    real( kind = core_rknd ), intent(out), dimension(gr%nzt,edsclr_dim) :: & 
+    real( kind = core_rknd ), intent(out), dimension(ngrdcol,gr%nzt,edsclr_dim) :: & 
       edsclrm_forcing ! Eddy-passive scalar forcing         [units/s]
+
+    real( kind = core_rknd ), dimension(ngrdcol,gr%nzt), intent(out) ::  & 
+      um_hoc_grid,       & ! Observed wind, for nudging         [m/s]
+      vm_hoc_grid       ! Observed wind, for nudging         [m/s]
 
     !--------------------- Local Variables ---------------------
 
@@ -152,14 +157,11 @@ module mpace_a
     real( kind = core_rknd ), dimension(file_nlevels) :: vm_column
 
     ! real, dimension(gr%nz) :: omega_hoc_grid
-    real( kind = core_rknd ), dimension(gr%nzt) :: dTdt_hoc_grid
-    real( kind = core_rknd ), dimension(gr%nzt) :: dqdt_hoc_grid
-    real( kind = core_rknd ), dimension(gr%nzt) :: vertT_hoc_grid
-    real( kind = core_rknd ), dimension(gr%nzt) :: vertq_hoc_grid
-
-    real( kind = core_rknd ), dimension(gr%nzt), intent(out) ::  & 
-    um_hoc_grid,       & ! Observed wind, for nudging         [m/s]
-    vm_hoc_grid       ! Observed wind, for nudging         [m/s]
+    real( kind = core_rknd ), dimension(ngrdcol,gr%nzt) :: &
+      dqdt_hoc_grid, &
+      vertT_hoc_grid, &
+      vertq_hoc_grid, &
+      dTdt_hoc_grid
 
     !--------------------- Begin Code ---------------------
    
@@ -168,15 +170,15 @@ module mpace_a
 
     ! Use time_select to get the indexes before and after the specified time
     ! and to get the ratio necessary for interpolation.
-    call time_select(time, file_ntimes, file_times, &
-                     before_time, after_time, ratio)
+    call time_select( time, file_ntimes, file_times, &
+                      before_time, after_time, ratio )
 
     ! Sanity check to ensure that time_times is sorted.
     if( clubb_at_least_debug_level( 1 ) .and. (before_time == -1 .or. after_time == -1) ) then
       write(fstderr,*) "file_times not sorted in mpace_a_tndcy."
     endif 
 
-    do k=1,file_nlevels
+    do k = 1, file_nlevels
 !        omega_column(k) = ratio *			       ! Do linear interpolation in time
 !     .                      (omega_forcing(k,after_time)
 !     .                      -omega_forcing(k,before_time))
@@ -184,30 +186,44 @@ module mpace_a
 
       dTdt_column(k)  = linear_interp_factor( ratio, dTdt_forcing(k, after_time), &
                                               dTdt_forcing(k, before_time) )
+
       dqdt_column(k)  = linear_interp_factor( ratio, dqdt_forcing(k, after_time), &
                                               dqdt_forcing(k, before_time) )
+
       vertT_column(k) = linear_interp_factor( ratio, vertT_forcing(k,after_time), &
                                               vertT_forcing(k,before_time) )
+
       vertq_column(k) = linear_interp_factor( ratio, vertq_forcing(k,after_time), &
                                               vertq_forcing(k,before_time) )
+
       um_column(k)    = linear_interp_factor( ratio, um_obs(k, after_time), um_obs(k, before_time) )
+
       vm_column(k)    = linear_interp_factor( ratio, vm_obs(k, after_time), vm_obs(k, before_time) )
+
     end do
 
 !     Do linear interpolation in space
 !     using zlinterp_fnc
-    dTdt_hoc_grid  = zlinterp_fnc(gr%nzt, file_nlevels, gr%zt(1,:), & 
-                             file_heights,dTdt_column)
-    dqdt_hoc_grid  = zlinterp_fnc(gr%nzt, file_nlevels, gr%zt(1,:), & 
-                             file_heights,dqdt_column)
-    vertT_hoc_grid  = zlinterp_fnc(gr%nzt, file_nlevels, gr%zt(1,:), & 
-                             file_heights,vertT_column)
-    vertq_hoc_grid  = zlinterp_fnc(gr%nzt, file_nlevels, gr%zt(1,:), & 
-                             file_heights,vertq_column)
-    um_hoc_grid  = zlinterp_fnc(gr%nzt, file_nlevels, gr%zt(1,:), & 
-                             file_heights,um_column)
-    vm_hoc_grid  = zlinterp_fnc(gr%nzt, file_nlevels, gr%zt(1,:), & 
-                             file_heights,vm_column)
+    do i = 1, ngrdcol
+
+      dTdt_hoc_grid(i,:)  = zlinterp_fnc( gr%nzt, file_nlevels, gr%zt(i,:), & 
+                                          file_heights, dTdt_column )
+
+      dqdt_hoc_grid(i,:)  = zlinterp_fnc( gr%nzt, file_nlevels, gr%zt(i,:), & 
+                                          file_heights, dqdt_column )
+
+      vertT_hoc_grid(i,:)  = zlinterp_fnc( gr%nzt, file_nlevels, gr%zt(i,:), & 
+                                            file_heights, vertT_column )
+
+      vertq_hoc_grid(i,:)  = zlinterp_fnc( gr%nzt, file_nlevels, gr%zt(i,:), & 
+                                          file_heights, vertq_column )
+
+      um_hoc_grid(i,:)  = zlinterp_fnc( gr%nzt, file_nlevels, gr%zt(i,:), & 
+                                        file_heights, um_column )
+
+      vm_hoc_grid(i,:)  = zlinterp_fnc( gr%nzt, file_nlevels, gr%zt(i,:), & 
+                                        file_heights, vm_column )
+    end do
 
 ! eMFc
 
@@ -215,42 +231,55 @@ module mpace_a
 
 
     ! Compute vertical motion
-    do i=1,gr%nzt
-!          velocity_omega = omega_hoc_grid(i) * 100 / 3600 ! convering mb/hr to Pa/s
-!          wm_zt(i) = -velocity_omega * Rd * thvm(i) / p_in_Pa(i) / grav
-      wm_zt(i) = 0._core_rknd
-! End of Michael Falk's obliteration of omega.
-    end do
+    ! do k = 1, gr%nzt
+    !   do i = 1, ngrdcol
+    !     !  velocity_omega = omega_hoc_grid(k) * 100 / 3600 ! convering mb/hr to Pa/s
+    !     !  wm_zt(i,k) = -velocity_omega * Rd * thvm(i,k) / p_in_Pa(i,k) / grav
+    !   end do
+    ! end do
+    ! End of Michael Falk's obliteration of omega.
 
     ! Interpolation
-    wm_zm = zt2zm( gr, wm_zt )
+    ! no need to interpolate since wm_zt is set to 0 above
+    !wm_zm = zt2zm( gr%nzm, gr%nzt, ngrdcol, gr, wm_zt )
 
     ! Boundary condition
-    wm_zm(1) = 0.0_core_rknd        ! At surface
-    wm_zm(gr%nzm) = 0.0_core_rknd  ! Model top
+    do k = 1, gr%nzm
+      do i = 1, ngrdcol
+        ! wm_zm(i,1) = 0.0_core_rknd        ! At surface
+        ! wm_zm(i,gr%nzm) = 0.0_core_rknd  ! Model top
+        wm_zm(i,k) = 0.0_core_rknd        ! At surface
+      end do
+    end do
 
 
     ! Compute large-scale tendencies
-    do i=1,gr%nzt
-      thlm_forcing(i) = ((dTdt_hoc_grid(i) + vertT_hoc_grid(i)) & 
-                       * ((p_sfc/p_in_Pa(i)) ** (Rd/Cp))) & 
-                       / sec_per_hr ! K/s
-      rtm_forcing(i)  = (dqdt_hoc_grid(i)+vertq_hoc_grid(i)) & 
-       / g_per_kg / sec_per_hr ! g/kg/hr -> kg/kg/s
-    end do
+    do k = 1,gr%nzt
+      do i = 1, ngrdcol
 
-    ! Test scalars with thetal and rt if desired
-    if ( sclr_idx%iisclr_thl > 0 ) sclrm_forcing(:,sclr_idx%iisclr_thl) = thlm_forcing
-    if ( sclr_idx%iisclr_rt  > 0 ) sclrm_forcing(:,sclr_idx%iisclr_rt)  = rtm_forcing
+        wm_zt(i,k) = 0._core_rknd
 
-    if ( sclr_idx%iiedsclr_thl > 0 ) edsclrm_forcing(:,sclr_idx%iiedsclr_thl) = thlm_forcing
-    if ( sclr_idx%iiedsclr_rt  > 0 ) edsclrm_forcing(:,sclr_idx%iiedsclr_rt)  = rtm_forcing
+        thlm_forcing(i,k) = ((dTdt_hoc_grid(i,k) + vertT_hoc_grid(i,k)) & 
+                        * ((p_sfc/p_in_Pa(i,k)) ** (Rd/Cp))) & 
+                        / sec_per_hr ! K/s
+        rtm_forcing(i,k)  = (dqdt_hoc_grid(i,k)+vertq_hoc_grid(i,k)) & 
+        / g_per_kg / sec_per_hr ! g/kg/hr -> kg/kg/s
+
+        ! Test scalars with thetal and rt if desired
+        if ( sclr_idx%iisclr_thl > 0 ) sclrm_forcing(i,k,sclr_idx%iisclr_thl) = thlm_forcing(i,k)
+        if ( sclr_idx%iisclr_rt  > 0 ) sclrm_forcing(i,k,sclr_idx%iisclr_rt)  = rtm_forcing(i,k)
+
+        if ( sclr_idx%iiedsclr_thl > 0 ) edsclrm_forcing(i,k,sclr_idx%iiedsclr_thl) = thlm_forcing(i,k)
+        if ( sclr_idx%iiedsclr_rt  > 0 ) edsclrm_forcing(i,k,sclr_idx%iiedsclr_rt)  = rtm_forcing(i,k)
+
+      end do
+    end do  
 
     return
   end subroutine mpace_a_tndcy
 
 !----------------------------------------------------------------------
-  subroutine mpace_a_sfclyr( time, rho_sfc, & 
+  subroutine mpace_a_sfclyr( ngrdcol, time, rho_sfc, & 
                              wpthlp_sfc, wprtp_sfc, ustar )
 !        Description:
 !          Surface forcing subroutine for mpace_a case.  Written
@@ -278,17 +307,20 @@ module mpace_a
     intrinsic :: max, sqrt, present
 
     ! Input Variables
-    real(kind=time_precision), intent(in) :: & 
-    time     ! current model time           [s]
+    integer, intent(in) :: &
+      ngrdcol
 
-    real( kind = core_rknd ), intent(in)  :: & 
+    real(kind=time_precision), intent(in) :: & 
+      time     ! current model time           [s]
+
+    real( kind = core_rknd ), dimension(ngrdcol), intent(in)  :: & 
     rho_sfc     ! Air density at surface       [kg/m^3]
 
     ! Output Variables
-    real( kind = core_rknd ), intent(out) ::  & 
-    wpthlp_sfc,   & ! w'th_l' at (1)   [(m K)/s]  
-    wprtp_sfc,    & ! w'r_t' at (1)    [(m kg)/(s kg)]
-    ustar           ! surface friction velocity [m/s]
+    real( kind = core_rknd ), dimension(ngrdcol), intent(out) ::  & 
+      wpthlp_sfc,   & ! w'th_l' at (1)   [(m K)/s]  
+      wprtp_sfc,    & ! w'r_t' at (1)    [(m kg)/(s kg)]
+      ustar           ! surface friction velocity [m/s]
 
     ! Local Variables
     real( kind = core_rknd ) :: & 
@@ -296,7 +328,7 @@ module mpace_a
       sensible_heat_flx
 
     integer :: & 
-      before_time, after_time
+      before_time, after_time, i
 
     real( kind = core_rknd ) :: ratio
     !-----------------------------------------------------------------------
@@ -321,14 +353,18 @@ module mpace_a
                                               file_sens_ht(before_time) )
 
     ! Compute heat and moisture fluxes
-    wpthlp_sfc = sensible_heat_flx/(rho_sfc*Cp)
-    wprtp_sfc  = latent_heat_flx/(rho_sfc*Lv)
+    do i = 1, ngrdcol
+      wpthlp_sfc(i) = sensible_heat_flx / ( rho_sfc(i) * Cp )
+      wprtp_sfc(i)  = latent_heat_flx / ( rho_sfc(i) * Lv )
 
-    ! Declare the value of ustar.
-    ustar = 0.25_core_rknd
+      ! Declare the value of ustar.
+      ustar(i) = 0.25_core_rknd
+    end do
 
     return
+
   end subroutine mpace_a_sfclyr
+
 !----------------------------------------------------------------
   subroutine mpace_a_init( iunit, file_path )
 !

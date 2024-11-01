@@ -29,7 +29,7 @@ module time_dependent_input
              finalize_t_dependent_sfc,    &
              read_to_grid                      
 
-  integer, parameter :: nCols = 10 ! Number of columns in the input file
+  integer, parameter :: nforcings = 10 ! Number of columns in the input file
 
   ! Module variables used to describe 
   real( kind = core_rknd ), public, allocatable, dimension(:) :: &
@@ -49,7 +49,7 @@ module time_dependent_input
 !$omp   rtm_sfc_given, CO2_sfc_given,  upwp_sfc_given, vpwp_sfc_given, &
 !$omp   T_sfc_given, wpthlp_sfc_given, wpqtp_sfc_given )
 
-  type(two_dim_read_var), private, dimension(nCols) :: &
+  type(two_dim_read_var), private, dimension(nforcings) :: &
     t_dependent_forcing_data ! Data structure that defines the change in input
                              ! files over time
 !$omp threadprivate( t_dependent_forcing_data )
@@ -86,7 +86,7 @@ module time_dependent_input
   contains
 
   !================================================================================================
-  subroutine initialize_t_dependent_input( iunit, runtype, grid_size, grid, p_in_Pa )
+  subroutine initialize_t_dependent_input( iunit, runtype, nz, grid, p_in_Pa )
     !
     !  Description: 
     !    This subroutine reads in time dependent information about a
@@ -106,17 +106,17 @@ module time_dependent_input
 
     character(len=*), intent(in) :: runtype ! Runtype
 
-    integer, intent(in) :: grid_size ! Size of the model grid
+    integer, intent(in) :: nz ! Size of the model grid
 
-    real( kind = core_rknd ), dimension(grid_size), intent(in) :: grid ! Model grid
+    real( kind = core_rknd ), dimension(nz), intent(in) :: grid ! Model grid
 
-    real( kind = core_rknd ), dimension(grid_size), intent(in) :: p_in_Pa ! Pressure[Pa]
+    real( kind = core_rknd ), dimension(nz), intent(in) :: p_in_Pa ! Pressure[Pa]
 
     ! ----------------- Begin Code --------------------
 
     if ( .not. l_ignore_forcings ) then
       call initialize_t_dependent_forcings &
-                   ( iunit, input_path//trim(runtype)//forcings_path, grid_size, grid, p_in_Pa )
+                   ( iunit, input_path//trim(runtype)//forcings_path, nz, grid, p_in_Pa )
     end if
 
     call initialize_t_dependent_sfc &
@@ -189,105 +189,105 @@ module time_dependent_input
 
     integer ::  &
       dim_size, & ! Number of time-dependent values of a variable to be input into CLUBB 
-      nCols       ! Number of variables with time-dependent input data
+      nforcings       ! Number of variables with time-dependent input data
 
 
     ! ----------------- Begin Code --------------------
 
-    nCols = count_columns( iunit, input_file )
+    nforcings = count_columns( iunit, input_file )
 
-    allocate( retVars(1:nCols) )
+    allocate( retVars(1:nforcings) )
 
     ! Read the surface.in file and store the necessary input information in retVars
-    call read_one_dim_file( iunit, nCols, input_file, retVars )
+    call read_one_dim_file( iunit, nforcings, input_file, retVars )
 
     ! Fill blank values stored as -999.9 using linear interpolation
-    call fill_blanks_one_dim_vars( nCols, retVars )
+    call fill_blanks_one_dim_vars( nforcings, retVars )
 
     ! dim_size is the number of values input for a particular variable
     dim_size = size( retVars(1)%values )
 
     ! Store the data read from the file in each [variable]_sfc_given
     
-    if( get_target_index(nCols, time_name, retVars) > 0 ) then
+    if( get_target_index(nforcings, time_name, retVars) > 0 ) then
       allocate( time_sfc_given(1:dim_size) )
-      time_sfc_given = read_x_profile( nCols, dim_size, time_name, retVars, &
+      time_sfc_given = read_x_profile( nforcings, dim_size, time_name, retVars, &
                                      input_file )
     end if
 
-    if( get_target_index(nCols, latent_ht_name, retVars) > 0 ) then
+    if( get_target_index(nforcings, latent_ht_name, retVars) > 0 ) then
       allocate( latent_ht_given(1:dim_size) )
-      latent_ht_given = read_x_profile( nCols, dim_size, latent_ht_name, retVars, &
+      latent_ht_given = read_x_profile( nforcings, dim_size, latent_ht_name, retVars, &
                                input_file )
     end if
     
-    if( get_target_index(nCols, sens_ht_name, retVars) > 0 ) then
+    if( get_target_index(nforcings, sens_ht_name, retVars) > 0 ) then
       allocate( sens_ht_given(1:dim_size) )
-      sens_ht_given = read_x_profile( nCols, dim_size, sens_ht_name, retVars, &
+      sens_ht_given = read_x_profile( nforcings, dim_size, sens_ht_name, retVars, &
                                input_file )
     end if
     
-    if( get_target_index(nCols, thetal_name, retVars) > 0 ) then
+    if( get_target_index(nforcings, thetal_name, retVars) > 0 ) then
       allocate( thlm_sfc_given(1:dim_size) )
-      thlm_sfc_given = read_x_profile( nCols, dim_size, thetal_name, retVars, &
+      thlm_sfc_given = read_x_profile( nforcings, dim_size, thetal_name, retVars, &
                                      input_file )
     end if
     
-    if( get_target_index(nCols, rt_name, retVars) > 0 ) then
+    if( get_target_index(nforcings, rt_name, retVars) > 0 ) then
       allocate( rtm_sfc_given(1:dim_size) )
-      rtm_sfc_given = read_x_profile( nCols, dim_size, rt_name, retVars, &
+      rtm_sfc_given = read_x_profile( nforcings, dim_size, rt_name, retVars, &
                                     input_file )
     end if
     
     ! As of July 2010, this is only in cobra
-    if( get_target_index(nCols, CO2_umol_name, retVars) > 0 ) then
+    if( get_target_index(nforcings, CO2_umol_name, retVars) > 0 ) then
       allocate( CO2_sfc_given(1:dim_size) )
-      CO2_sfc_given = read_x_profile( nCols, dim_size, CO2_umol_name, retVars, &
+      CO2_sfc_given = read_x_profile( nforcings, dim_size, CO2_umol_name, retVars, &
                                       input_file )
     end if
     
     ! As of July 2010, this is only in gabls3_night
-    if( get_target_index(nCols, upwp_sfc_name, retVars) > 0 ) then
+    if( get_target_index(nforcings, upwp_sfc_name, retVars) > 0 ) then
       allocate( upwp_sfc_given(1:dim_size) )
-      upwp_sfc_given = read_x_profile( nCols, dim_size, upwp_sfc_name, retVars, &
+      upwp_sfc_given = read_x_profile( nforcings, dim_size, upwp_sfc_name, retVars, &
                                       input_file )
     end if
     
     ! As of July 2010, this is only in gabls3_night
-    if( get_target_index(nCols, vpwp_sfc_name, retVars) > 0 ) then
+    if( get_target_index(nforcings, vpwp_sfc_name, retVars) > 0 ) then
       allocate( vpwp_sfc_given(1:dim_size) )
-      vpwp_sfc_given = read_x_profile( nCols, dim_size, vpwp_sfc_name, retVars, &
+      vpwp_sfc_given = read_x_profile( nforcings, dim_size, vpwp_sfc_name, retVars, &
                                       input_file )
     end if
 
     ! As of July 2010, this is only in astex_a209
-    if( get_target_index(nCols, T_sfc_name, retVars) > 0 ) then
+    if( get_target_index(nforcings, T_sfc_name, retVars) > 0 ) then
       allocate( T_sfc_given(1:dim_size) )
-      T_sfc_given = read_x_profile( nCols, dim_size, T_sfc_name, retVars, &
+      T_sfc_given = read_x_profile( nforcings, dim_size, T_sfc_name, retVars, &
                                       input_file )
     end if 
 
 
-    if( get_target_index(nCols, wpthlp_sfc_name, retVars) > 0 ) then
+    if( get_target_index(nforcings, wpthlp_sfc_name, retVars) > 0 ) then
       allocate( wpthlp_sfc_given(1:dim_size) )
-      wpthlp_sfc_given = read_x_profile( nCols, dim_size, wpthlp_sfc_name, &
+      wpthlp_sfc_given = read_x_profile( nforcings, dim_size, wpthlp_sfc_name, &
                                       retVars, input_file )
     end if 
 
-    if( get_target_index(nCols, wpqtp_sfc_name, retVars) > 0 ) then
+    if( get_target_index(nforcings, wpqtp_sfc_name, retVars) > 0 ) then
       allocate( wpqtp_sfc_given(1:dim_size) )
-      wpqtp_sfc_given = read_x_profile( nCols, dim_size, wpqtp_sfc_name, &
+      wpqtp_sfc_given = read_x_profile( nforcings, dim_size, wpqtp_sfc_name, &
                                       retVars, input_file )
     end if
  
     ! Deallocate memory
-    call deallocate_one_dim_vars( nCols, retVars )
+    call deallocate_one_dim_vars( nforcings, retVars )
 
     return 
   end subroutine initialize_t_dependent_sfc
 
   !================================================================================================
-  subroutine initialize_t_dependent_forcings( iunit, input_file, grid_size, grid, p_in_Pa )
+  subroutine initialize_t_dependent_forcings( iunit, input_file, nz, grid, p_in_Pa )
     !
     !  Description: This subroutine reads in a file that details time dependent
     !  input values that vary in two dimensions.
@@ -313,23 +313,23 @@ module time_dependent_input
 
     character(len=*), intent(in) :: input_file ! Path to the input file
 
-    integer, intent(in) :: grid_size  ! Size of Model Grid [-]
+    integer, intent(in) :: nz  ! Size of Model Grid [-]
 
-    real( kind = core_rknd ), intent(in), dimension(grid_size) :: grid ! Altitudes of Grid [m]
+    real( kind = core_rknd ), intent(in), dimension(nz) :: grid ! Altitudes of Grid [m]
 
-    real( kind = core_rknd ), intent(in), dimension(grid_size) :: p_in_Pa ! Pressure [Pa]
+    real( kind = core_rknd ), intent(in), dimension(nz) :: p_in_Pa ! Pressure [Pa]
 
     ! Local Variables
 
     integer :: i, n_f_grid_z, n_f_grid_t
 
-    type(two_dim_read_var), dimension(nCols) :: t_dependent_forcing_data_f_grid
+    type(two_dim_read_var), dimension(nforcings) :: t_dependent_forcing_data_f_grid
 
     ! ----------------- Begin Code --------------------
 
 
     ! Read in the forcing data from the input file
-    call read_two_dim_file( iunit, nCols, input_file, &
+    call read_two_dim_file( iunit, nforcings, input_file, &
                             t_dependent_forcing_data_f_grid, dimension_var )
 
     n_f_grid_z = size( t_dependent_forcing_data_f_grid(1)%values, 1 )
@@ -338,10 +338,10 @@ module time_dependent_input
 
     ! Fill in blanks with linear interpolation. Whole profiles of -999.9 will
     ! remain that way thus marking them blank.
-    call fill_blanks_two_dim_vars( nCols, dimension_var, t_dependent_forcing_data_f_grid )
+    call fill_blanks_two_dim_vars( nforcings, dimension_var, t_dependent_forcing_data_f_grid )
 
-    do i=1, nCols
-      allocate( t_dependent_forcing_data(i)%values(1:grid_size,1:n_f_grid_t) )
+    do i=1, nforcings
+      allocate( t_dependent_forcing_data(i)%values(1:nz,1:n_f_grid_t) )
     end do
 
     select case( t_dependent_forcing_data_f_grid(1)%name )
@@ -362,16 +362,16 @@ module time_dependent_input
 
     ! Interpolate the time dependent input data to the appropriate grid.
 
-    do i=2, nCols
+    do i=2, nforcings
 
       t_dependent_forcing_data(i)%name = t_dependent_forcing_data_f_grid(i)%name
-      t_dependent_forcing_data(i)%values = read_to_grid( nCols, n_f_grid_z, n_f_grid_t, &
-                         grid_size,t_dependent_forcing_data(1)%values(:,1), &
+      t_dependent_forcing_data(i)%values = read_to_grid( nforcings, n_f_grid_z, n_f_grid_t, &
+                         nz,t_dependent_forcing_data(1)%values(:,1), &
                          t_dependent_forcing_data_f_grid, t_dependent_forcing_data(i)%name )
 
     end do
 
-    do i = 1, nCols
+    do i = 1, nforcings
       if ( allocated( t_dependent_forcing_data_f_grid(i)%values ) ) then
         deallocate( t_dependent_forcing_data_f_grid(i)%values )
       end if
@@ -394,7 +394,7 @@ module time_dependent_input
 
     ! ----------------- Begin Code --------------------
 
-    do i=1, nCols
+    do i=1, nforcings
       deallocate( t_dependent_forcing_data(i)%values )
     end do
 
@@ -431,7 +431,7 @@ module time_dependent_input
 
   !================================================================================================
   function read_to_grid( ntwo_dim_vars, dim_size, other_dim_size, &
-                         grid_size, grid, two_dim_vars, target_name ) result(var)
+                         nz, grid, two_dim_vars, target_name ) result(var)
     !
     !  Description: This is a helper function for doing the translation from the
     !  forcing grid to the model grid.
@@ -451,9 +451,9 @@ module time_dependent_input
       ntwo_dim_vars, &
       dim_size, &
       other_dim_size, &
-      grid_size
+      nz
 
-    real( kind = core_rknd ), dimension(grid_size), intent(in) :: &
+    real( kind = core_rknd ), dimension(nz), intent(in) :: &
       grid
 
     type(two_dim_read_var), dimension(ntwo_dim_vars), intent(in) :: &
@@ -464,7 +464,7 @@ module time_dependent_input
 
     real( kind = core_rknd ), dimension(dim_size, other_dim_size) :: temp_var
 
-    real( kind = core_rknd ), dimension(grid_size, other_dim_size) :: var
+    real( kind = core_rknd ), dimension(nz, other_dim_size) :: var
 
     integer i
 
@@ -473,7 +473,7 @@ module time_dependent_input
     temp_var = read_x_table( ntwo_dim_vars,  dim_size, other_dim_size, target_name, two_dim_vars )
 
     do i=1, other_dim_size
-      var(:,i) = zlinterp_fnc( grid_size, dim_size, grid, &
+      var(:,i) = zlinterp_fnc( nz, dim_size, grid, &
                                     two_dim_vars(1)%values(:,i), temp_var(:,i) )
     end do
 
@@ -483,8 +483,9 @@ module time_dependent_input
 
   !================================================================================================
   subroutine apply_time_dependent_forcings( &
+              ngrdcol, nzm, nzt, &
               sclr_dim, edsclr_dim, sclr_idx, &
-              gr, time, grid_size, rtm, rho, exner,  &
+              gr, time, rtm, rho, exner,  &
               thlm_f, rtm_f, um_ref, vm_ref, um_f, vm_f, &
               wm_zt, wm_zm,  ug, vg, &
               sclrm_forcing, edsclrm_forcing )
@@ -534,6 +535,9 @@ module time_dependent_input
 
     !--------------------- Input Variables ---------------------
     integer, intent(in) :: &
+      ngrdcol, &
+      nzm, &
+      nzt, &
       sclr_dim, & 
       edsclr_dim
 
@@ -546,15 +550,13 @@ module time_dependent_input
     real(kind=time_precision), intent(in) :: &
       time ! Model Time [s]
 
-    integer, intent(in) :: grid_size ! Size of the model grid
-
-    real( kind = core_rknd ), dimension(grid_size), intent(in) :: &
+    real( kind = core_rknd ), dimension(ngrdcol,nzt), intent(in) :: &
       exner,   & ! Exner Function                             [-]
       rho,     & ! Air Density                                [kg/m^3]
       rtm        ! Total Water Mixing Ratio                   [kg/kg]
 
     !--------------------- Output Variables ---------------------
-    real( kind = core_rknd ), dimension(grid_size), intent(inout) :: &
+    real( kind = core_rknd ), dimension(ngrdcol,nzt), intent(inout) :: &
       thlm_f, & ! Potential Temperature forcing     [K/s]
       rtm_f,  & ! Total Water Mixing Ration forcing [kg/kg/s]
       um_ref, & ! um reference                      [m/s]
@@ -565,19 +567,19 @@ module time_dependent_input
       ug,     & ! u geostrophic wind                [m/s]
       vg        ! v geostrophic wind                [m/s]
 
-    real( kind = core_rknd ), dimension(grid_size+1), intent(inout) :: &
+    real( kind = core_rknd ), dimension(ngrdcol,nzm), intent(inout) :: &
       wm_zm     ! subsidense on zm grid             [m/s]
 
-    real( kind = core_rknd ), dimension(grid_size, sclr_dim), intent(inout) :: &
+    real( kind = core_rknd ), dimension(ngrdcol,nzt, sclr_dim), intent(inout) :: &
       sclrm_forcing ! Scalar forcing [-]
 
-    real( kind = core_rknd ), dimension(grid_size, edsclr_dim), intent(inout) :: &
+    real( kind = core_rknd ), dimension(ngrdcol,nzt, edsclr_dim), intent(inout) :: &
       edsclrm_forcing ! Edscalar forcing [-]
 
     !--------------------- Local Variables ---------------------
-    integer :: i, j, before_time, after_time
+    integer :: i, k, n, before_time, after_time
 
-    real( kind = core_rknd ), dimension(grid_size) :: temp_array
+    real( kind = core_rknd ), dimension(nzt) :: temp_array
 
     real( kind = core_rknd ) :: time_frac
 
@@ -590,116 +592,200 @@ module time_dependent_input
 
     ! Parse the values in t_dependent_forcing_data for CLUBB compatible forcing
     ! data.
-    do i=2, nCols
+    do n=2, nforcings
 
       temp_array = linear_interp_factor &
-                   ( time_frac, t_dependent_forcing_data(i)%values(:,after_time), &
-                     t_dependent_forcing_data(i)%values(:,before_time) )
+                   ( time_frac, t_dependent_forcing_data(n)%values(:,after_time), &
+                     t_dependent_forcing_data(n)%values(:,before_time) )
 
       ! Check to see if temp_array is an actual profile or a dummy profile
       ! If it is a dummy profile we dont want it to apply itself as it may
       ! overwrite legitimate information from another source.
       if( .not. any( abs(temp_array - (-999.9_core_rknd)) < &
           abs(temp_array + (-999.9_core_rknd)) / 2 * eps ) ) then
-        select case (t_dependent_forcing_data(i)%name)
+          
+        select case (t_dependent_forcing_data(n)%name)
         case(temperature_f_name, theta_f_name, thetal_f_name)
 
-          select case(t_dependent_forcing_data(i)%name)
+          select case(t_dependent_forcing_data(n)%name)
           case(temperature_f_name)
 
-            thlm_f = temp_array / exner
+            do k = 1, nzt
+              do i = 1, ngrdcol
+                thlm_f(i,k) = temp_array(k) / exner(i,k)
+              end do
+            end do
 
           case(theta_f_name)
 
-            thlm_f = temp_array ! I am not sure on the conversion of this
+            do k = 1, nzt
+              do i = 1, ngrdcol
+                thlm_f(i,k) = temp_array(k) ! n am not sure on the conversion of this
+              end do
+            end do
 
           case(thetal_f_name)
 
-            thlm_f = temp_array
+            do k = 1, nzt
+              do i = 1, ngrdcol
+                thlm_f(i,k) = temp_array(k)
+              end do
+            end do
 
           end select
 
-          if ( sclr_idx%iisclr_thl > 0 ) sclrm_forcing(:,sclr_idx%iisclr_thl) = thlm_f
-          if ( sclr_idx%iiedsclr_thl > 0 ) edsclrm_forcing(:,sclr_idx%iiedsclr_thl) = thlm_f
+          if ( sclr_idx%iisclr_thl > 0 ) then
+
+            do k = 1, nzt
+              do i = 1, ngrdcol
+                sclrm_forcing(i,k,sclr_idx%iisclr_thl) = thlm_f(i,k)
+              end do
+            end do
+
+          end if
+
+          if ( sclr_idx%iiedsclr_thl > 0 ) then
+
+            do k = 1, nzt
+              do i = 1, ngrdcol
+                edsclrm_forcing(i,k,sclr_idx%iiedsclr_thl) = thlm_f(i,k)
+              end do
+            end do
+
+          end if
 
         case(rt_f_name, sp_humidity_f_name)
 
-          select case(t_dependent_forcing_data(i)%name)
+          select case(t_dependent_forcing_data(n)%name)
           case(sp_humidity_f_name)
 
-            rtm_f = temp_array * ( 1._core_rknd + rtm )**2
+            do k = 1, nzt
+              do i = 1, ngrdcol
+                rtm_f(i,k) = temp_array(k) * ( 1._core_rknd + rtm(i,k) )**2
+              end do
+            end do
 
           case(rt_f_name )
 
-            rtm_f = temp_array
+            do k = 1, nzt
+              do i = 1, ngrdcol
+                rtm_f(i,k) = temp_array(k)
+              end do
+            end do
 
           end select
 
-          if ( sclr_idx%iisclr_rt  > 0 ) sclrm_forcing(:,sclr_idx%iisclr_rt)  = rtm_f
-          if ( sclr_idx%iiedsclr_rt  > 0 ) edsclrm_forcing(:,sclr_idx%iiedsclr_rt)  = rtm_f
+          if ( sclr_idx%iisclr_rt  > 0 ) then
+            do k = 1, nzt
+              do i = 1, ngrdcol
+                sclrm_forcing(i,k,sclr_idx%iisclr_rt)  = rtm_f(i,k)
+              end do
+            end do
+          end if
+          if ( sclr_idx%iiedsclr_rt  > 0 ) then
+            do k = 1, nzt
+              do i = 1, ngrdcol
+                edsclrm_forcing(i,k,sclr_idx%iiedsclr_rt)  = rtm_f(i,k)
+              end do
+            end do
+          end if
 
 
         case(um_ref_name)
 
-          um_ref = temp_array
+          do k = 1, nzt
+            do i = 1, ngrdcol
+              um_ref(i,k) = temp_array(k)
+            end do
+          end do
 
         case(vm_ref_name)
 
-          vm_ref = temp_array
+          do k = 1, nzt
+            do i = 1, ngrdcol
+              vm_ref(i,k) = temp_array(k)
+            end do
+          end do
 
         case(um_f_name)
 
-          um_f = temp_array
+          do k = 1, nzt
+            do i = 1, ngrdcol
+              um_f(i,k) = temp_array(k)
+            end do
+          end do
 
         case(vm_f_name)
 
-          vm_f = temp_array
+          do k = 1, nzt
+            do i = 1, ngrdcol
+              vm_f(i,k) = temp_array(k)
+            end do
+          end do
 
         case(wm_name, omega_name, omega_mb_hr_name)
 
-          select case(t_dependent_forcing_data(i)%name)
+          select case(t_dependent_forcing_data(n)%name)
           case(wm_name)
 
-            wm_zt = temp_array
+            do k = 1, nzt
+              do i = 1, ngrdcol
+                wm_zt(i,k) = temp_array(k)
+              end do
+            end do
 
           case(omega_name)
 
-            do j=1,grid_size
-              wm_zt(j) = - temp_array(j) / (grav * rho(j))
+            do k = 1, nzt
+              do i = 1, ngrdcol
+                wm_zt(i,k) = - temp_array(k) / (grav * rho(i,k))
+              end do
             end do
 
           case(omega_mb_hr_name)
 
-            do j=1,grid_size
+            do k = 1, nzt
+              temp_array(k) = temp_array(k) * pascal_per_mb / sec_per_hr
+            end do
 
-              temp_array(j) = temp_array(j) * pascal_per_mb / sec_per_hr
+            do k = 1, nzt
+              do i = 1, ngrdcol
 
-              wm_zt(j) = - temp_array(j) / (grav * rho(j))
+                wm_zt(i,k) = - temp_array(k) / (grav * rho(i,k))
 
+              end do
             end do
 
           end select
 
-          wm_zm = zt2zm( gr, wm_zt )
+          wm_zm = zt2zm( nzm, nzt, ngrdcol, gr, wm_zt )
 
         case(ug_name)
 
-          ug = temp_array
+          do k = 1, nzt
+            do i = 1, ngrdcol
+              ug(i,k) = temp_array(k)
+            end do
+          end do
 
         case(vg_name)
 
-          vg = temp_array
+          do k = 1, nzt
+            do i = 1, ngrdcol
+              vg(i,k) = temp_array(k)
+            end do
+          end do
 
         case default
 
-          write(fstderr, *) "Incompatable forcing type: "//t_dependent_forcing_data(i)%name
+          write(fstderr, *) "Incompatable forcing type: "//t_dependent_forcing_data(n)%name
           error stop
 
         end select
 
       end if 
 
-    end do ! 1 .. nCols
+    end do ! 1 .. nforcings
 
     return
   end subroutine apply_time_dependent_forcings

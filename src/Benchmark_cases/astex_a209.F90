@@ -107,7 +107,7 @@ module astex_a209
   end subroutine astex_a209_tndcy
 
   !----------------------------------------------------------------------
-  subroutine astex_a209_sfclyr( time, ubar, rtm, thlm, &
+  subroutine astex_a209_sfclyr( ngrdcol, time, ubar, rtm, thlm, &
                                 lowestlevel, exner_sfc, p_sfc, & 
                                 saturation_formula, &
                                 wpthlp_sfc, wprtp_sfc, ustar, T_sfc )
@@ -149,9 +149,13 @@ module astex_a209
 
     ! Input variables
 
-    real(kind=time_precision), intent(in) :: time     ! Current time
+    integer, intent(in) :: &
+      ngrdcol
 
-    real( kind = core_rknd ), intent(in) ::  & 
+    real(kind=time_precision), intent(in) :: &
+      time     ! Current time
+
+    real( kind = core_rknd ), dimension(ngrdcol), intent(in) ::  & 
       ubar,        & ! Mean sfc wind speed
       rtm,         & ! This is rt at the lowest above-ground model level.  [kg/kg]
       thlm,        & ! This is theta-l at the lowest above-ground model level.  
@@ -165,44 +169,29 @@ module astex_a209
 
     ! Output variables
 
-    real( kind = core_rknd ), intent(out) ::  & 
+    real( kind = core_rknd ), dimension(ngrdcol), intent(out) ::  & 
       wpthlp_sfc,   & ! w'th_l' at (1)   [(m K)/s]  
       wprtp_sfc,    & ! w'r_t'(1) at (1) [(m kg)/(s kg)]
       ustar,        & ! surface friction velocity     [m/s]
       T_sfc           ! Sea surface temperature [K].
 
-
     ! Local variables
     integer :: &
-      before_time, after_time
+      before_time, after_time, i
+
+    real( kind = core_rknd ), dimension(ngrdcol) :: &
+      rsat, &
+      Ch,   & ! This is C_h_20 scaled to the height of the lowest model level.
+      Cq      ! This is C_q_20 scaled to the height of the lowest model level.
 
     real( kind = core_rknd ) :: &
-      Ch,   & ! This is C_h_20 scaled to the height of the lowest model level.
-      Cq,   & ! This is C_q_20 scaled to the height of the lowest model level.
-      time_frac
+      time_frac, &
+      T_sfc_interp
 
     !-----------------BEGIN CODE-------------------------
 
-
-    ! Compute heat and moisture fluxes
-
-    ! (Stevens, et al. 2000, eq 3)
-    ! Modification in case lowest model level isn't at 10 m, from ATEX specification
-    Ch   = C_h_20 * ((log(standard_flux_alt/z0))/(log(lowestlevel/z0))) * &
-           ((log(standard_flux_alt/z0))/(log(lowestlevel/z0)))
-    ! Modification in case lowest model level isn't at 10 m, from ATEX specification
-    Cq   = C_q_20 * ((log(standard_flux_alt/z0))/(log(lowestlevel/z0))) * &
-           ((log(standard_flux_alt/z0))/(log(lowestlevel/z0)))
-
-
     !sensible_heat_flx = 10.0_core_rknd
     !latent_heat_flx = 25.0_core_rknd
-
-
-    T_sfc = 0.0_core_rknd
-
-    ! We set ustar as it is set in rico
-    ustar = 0.155_core_rknd
 
     ! Use time_select to determine the time indexes before and after time
     ! and to calculate the time fraction necessary for linear_interp_factor
@@ -210,11 +199,33 @@ module astex_a209
                 before_time, after_time, time_frac)
 
     ! Interpolate the value for T_sfc based on time.
-    T_sfc = linear_interp_factor( time_frac, T_sfc_given(after_time), &
-                                  T_sfc_given(before_time) )
-   
-    wpthlp_sfc = compute_wpthlp_sfc( Ch, ubar, thlm, T_sfc, exner_sfc )
-    wprtp_sfc  = compute_wprtp_sfc( Cq, ubar, rtm, sat_mixrat_liq(p_sfc,T_sfc,saturation_formula) )
+    T_sfc_interp = linear_interp_factor( time_frac, T_sfc_given(after_time), &
+                                         T_sfc_given(before_time) )
+
+    do i = 1, ngrdcol
+      T_sfc(i) = T_sfc_interp
+
+      ! We set ustar as it is set in rico
+      ustar(i) = 0.155_core_rknd
+
+      rsat(i) = sat_mixrat_liq( p_sfc(i), T_sfc(i), saturation_formula )
+
+      ! (Stevens, et al. 2000, eq 3)
+      ! Modification in case lowest model level isn't at 10 m, from ATEX specification
+      Ch(i)   = C_h_20 * ((log(standard_flux_alt/z0))/(log(lowestlevel(i)/z0))) * &
+            ((log(standard_flux_alt/z0))/(log(lowestlevel(i)/z0)))
+
+      ! Modification in case lowest model level isn't at 10 m, from ATEX specification
+      Cq(i)   = C_q_20 * ((log(standard_flux_alt/z0))/(log(lowestlevel(i)/z0))) * &
+            ((log(standard_flux_alt/z0))/(log(lowestlevel(i)/z0)))
+    end do
+
+    ! Compute heat and moisture fluxes
+    call compute_wpthlp_sfc( ngrdcol, Ch, ubar, thlm, T_sfc, exner_sfc, &
+                             wpthlp_sfc ) 
+
+    call compute_wprtp_sfc( ngrdcol, Cq, ubar, rtm, rsat, &
+                            wprtp_sfc )
 
     !wpthlp_sfc = sensible_heat_flx / ( rho_sfc * Cp )
     !wprtp_sfc  = latent_heat_flx / ( rho_sfc * Lv )
@@ -222,6 +233,7 @@ module astex_a209
     ! Momentum fluxes are computed elsewhere
 
     return
+
   end subroutine astex_a209_sfclyr
 
 end module astex_a209

@@ -18,7 +18,7 @@ module gabls3
   contains
 
   !-----------------------------------------------------------------------
-  subroutine gabls3_sfclyr( ubar, veg_t_in_K, &
+  subroutine gabls3_sfclyr( ngrdcol, ubar, veg_t_in_K, &
                             thlm_sfc, rtm_sfc, lowest_level, exner_sfc, &
                             wpthlp_sfc, wprtp_sfc, ustar )
     !       Description:
@@ -41,17 +41,6 @@ module gabls3
 
     ! Constants
 
-    real( kind = core_rknd ), parameter ::  & 
-     ! ustar = 0.3_core_rknd,
-     ! C_10  = 0.0013_core_rknd, & !ATEX value
-     ! C_10  = 0.013_core_rknd, & ! Fudged value
-     ! C_10  = 0.0049_core_rknd, & ! Fudged value
-     ! C_10  = 0.0039_core_rknd, & ! Fudged value
-      C_10 = 0.00195_core_rknd, &
-     ! C_10 = 0.001_core_rknd, &
-     ! C_10 = 0.003_core_rknd, &
-      z0 = 0.15_core_rknd
-
 !    real, parameter, dimension(25) :: T_sfc_given = &
 !         (/300._core_rknd, 300.8_core_rknd, 300.9_core_rknd, 301._core_rknd, &
 !         300.9_core_rknd, 300.5_core_rknd, 300._core_rknd, 298.5_core_rknd, &
@@ -68,41 +57,66 @@ module gabls3
 !         104400._core_rknd, 108000._core_rknd, 111600._core_rknd, 115200._core_rknd, &
 !         118800._core_rknd, 122400._core_rknd, 126000._core_rknd, 129600._core_rknd/)
 
+    integer, intent(in) :: &
+      ngrdcol
 
-    real( kind = core_rknd ), intent(in) ::  &
+    real( kind = core_rknd ), dimension(ngrdcol), intent(in) ::  &
       ubar,         & ! mean sfc wind speed    [m/s]
+      veg_T_in_K,   & ! Vegetation temperature [K]
       thlm_sfc,     & ! Theta_l at zt(2)       [K]
       rtm_sfc,      & ! rt at zt(2)            [kg/kg]
-      veg_T_in_K,   & ! Vegetation temperature [K]
       lowest_level, & ! gr%zt(1,2)               [m]
       exner_sfc       ! Exner function         [-]
 
     ! Output variables
-    real( kind = core_rknd ), intent(inout):: &
+    real( kind = core_rknd ), dimension(ngrdcol), intent(inout):: &
       wpthlp_sfc,  & ! w'theta_l' surface flux   [(m K)/s]
       wprtp_sfc      ! w'rt' surface flux        [(m kg)/(kg s)]
 
-    real( kind = core_rknd ), intent(out) ::  & 
+    real( kind = core_rknd ), dimension(ngrdcol), intent(out) ::  & 
       ustar          ! surface friction velocity [m/s]
 
     ! Local Variables
-    real( kind = core_rknd ) :: veg_theta_in_K, bflx, offset
+    real( kind = core_rknd ), dimension(ngrdcol) :: &
+      offset, &
+      C_10
+
+    real( kind = core_rknd ), parameter ::  & 
+      z0 = 0.15_core_rknd
+      ! ustar = 0.3_core_rknd,
+      ! C_10  = 0.0013_core_rknd, & !ATEX value
+      ! C_10  = 0.013_core_rknd, & ! Fudged value
+      ! C_10  = 0.0049_core_rknd, & ! Fudged value
+      ! C_10  = 0.0039_core_rknd, & ! Fudged value
+      ! C_10 = 0.001_core_rknd, &
+      ! C_10 = 0.003_core_rknd, &
+
+    real( kind = core_rknd ) :: veg_theta_in_K, bflx
+
+    integer :: i
 
     ! Compute heat and moisture fluxes
+    do i = 1, ngrdcol 
+      offset(i) = 9.9e-3_core_rknd
+      C_10(i)   = 0.00195_core_rknd
+    end do
 
-    veg_theta_in_K = veg_T_in_K / exner_sfc
+    call compute_wpthlp_sfc( ngrdcol, C_10, ubar, thlm_sfc, veg_T_in_K, exner_sfc, &
+                             wpthlp_sfc ) 
 
-    wpthlp_sfc = compute_wpthlp_sfc( C_10, ubar, thlm_sfc, veg_T_in_K, exner_sfc)
-    offset = 9.9e-3_core_rknd
-    wprtp_sfc = compute_wprtp_sfc( C_10, ubar, rtm_sfc, offset ) * &
-       10._core_rknd ! Known magic number
+    call compute_wprtp_sfc( ngrdcol, C_10, ubar, rtm_sfc, offset, &
+                            wprtp_sfc )
   
     ! Compute momentum fluxes
-    bflx = wpthlp_sfc * grav / veg_theta_in_K
-
-    ustar = diag_ustar( lowest_level, bflx, ubar, z0)
+    do i = 1, ngrdcol 
+      wprtp_sfc(i) = wprtp_sfc(i) * 10._core_rknd
+      veg_theta_in_K = veg_T_in_K(i) / exner_sfc(i)
+      bflx = wpthlp_sfc(i) * grav / veg_theta_in_K
+      ustar(i) = diag_ustar( lowest_level(i), bflx, ubar(i), z0)
+    end do
 
     return
+
   end subroutine gabls3_sfclyr
 
 end module gabls3

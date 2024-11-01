@@ -18,7 +18,7 @@ module neutral_case
   contains
 
 !----------------------------------------------------------------------
-  subroutine neutral_case_sfclyr( time, &
+  subroutine neutral_case_sfclyr( ngrdcol, time, &
                                   ! z, thlm_sfc, &
                                   um_sfc, vm_sfc, ubar, &
                                   upwp_sfc, vpwp_sfc, &
@@ -43,10 +43,13 @@ module neutral_case
     implicit none
 
     ! Input Variables
+    integer, intent(in) :: &
+      ngrdcol
+
     real(time_precision), intent(in) ::  & 
       time    ! the current time [s]
 
-    real( kind = core_rknd ), intent(in) ::  &
+    real( kind = core_rknd ), dimension(ngrdcol), intent(in) ::  &
       ! z,               & ! Height at zt(2)       [m]
       ! thlm_sfc,        & ! Theta_l at zt(2)      [K]
       um_sfc,          & ! um at zt(2)           [m/s]
@@ -54,7 +57,7 @@ module neutral_case
       ubar
 
     ! Output variables
-    real( kind = core_rknd ), intent(out) ::  &
+    real( kind = core_rknd ), dimension(ngrdcol), intent(out) ::  &
       upwp_sfc,     &
       vpwp_sfc,     & 
       wpthlp_sfc,   & ! w'th_l' at (1)   [(m K)/s]  
@@ -66,26 +69,32 @@ module neutral_case
 
     ! real( kind = core_rknd ) :: bflx 
 
+    integer :: i
+
 !---- Begin code
 
-    ! Compute heat and moisture fluxes --- turn off heat flux after 3000 s
-    if (time > 80880_time_precision) then
-      wpthlp_sfc = 0.0_core_rknd
-    else
-      wpthlp_sfc = 0.05_core_rknd 
-    end if
+    do i = 1, ngrdcol
 
-    ! No moisture in this case.
-    wprtp_sfc  = 0.0_core_rknd 
+      ! Compute heat and moisture fluxes --- turn off heat flux after 3000 s
+      if (time > 80880_time_precision) then
+        wpthlp_sfc(i) = 0.0_core_rknd
+      else
+        wpthlp_sfc(i) = 0.05_core_rknd 
+      end if
 
-    ! Heat flux in units of (m2/s3) (needed by diag_ustar)
-    !bflx = grav/thlm_sfc * wpthlp_sfc ! grav variable is commented out
+      ! No moisture in this case.
+      wprtp_sfc(i)  = 0.0_core_rknd 
 
-    ! Compute ustar
-    ustar = 0.5_core_rknd !diag_ustar( z, bflx, ubar, z0 )
+      ! Heat flux in units of (m2/s3) (needed by diag_ustar)
+      !bflx = grav/thlm_sfc * wpthlp_sfc ! grav variable is commented out
 
-    call compute_momentum_flux( um_sfc, vm_sfc, ubar, ustar, &
-                              upwp_sfc, vpwp_sfc )
+      ! Compute ustar
+      ustar(i) = 0.5_core_rknd !diag_ustar( z, bflx, ubar, z0 )
+
+    end do
+
+    call compute_momentum_flux( ngrdcol, um_sfc, vm_sfc, ubar, ustar, &
+                                upwp_sfc, vpwp_sfc )
 
     return
   end subroutine neutral_case_sfclyr

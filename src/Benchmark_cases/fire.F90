@@ -21,7 +21,7 @@ module fire
   contains
 
   !======================================================================
-  subroutine fire_sfclyr( time, ubar, p_sfc, & 
+  subroutine fire_sfclyr( ngrdcol, time, ubar, p_sfc, & 
                           thlm_sfc, rtm_sfc, exner_sfc, & 
                           saturation_formula, &
                           wpthlp_sfc, wprtp_sfc, ustar, T_sfc )
@@ -51,10 +51,13 @@ module fire
   implicit none
 
   ! Input Variables
+  integer, intent(in) :: &
+    ngrdcol
+
   real(time_precision), intent(in) :: &
     time   ! current time [s]
 
-  real( kind = core_rknd ), intent(in) ::  & 
+  real( kind = core_rknd ), dimension(ngrdcol), intent(in) ::  & 
     ubar,    & ! mean sfc wind speed                           [m/s]
     p_sfc,    & ! Surface pressure                              [Pa]
     thlm_sfc,& ! theta_l at first model layer                  [K]
@@ -65,19 +68,24 @@ module fire
     saturation_formula ! Integer that stores the saturation formula to be used
 
   ! Output Variables
-  real( kind = core_rknd ), intent(out) ::  & 
+  real( kind = core_rknd ), dimension(ngrdcol), intent(out) ::  & 
     wpthlp_sfc, &   ! surface thetal flux        [K m/s]
     wprtp_sfc,  &   ! surface moisture flux      [kg/kg m/s]
     ustar,      &
     T_sfc           ! Surface temperature        [K]
 
   ! Local Variable
+  real( kind = core_rknd ), dimension(ngrdcol) :: & 
+    rsat, &
+    Cz   ! Coefficient
+
   real( kind = core_rknd ) :: & 
-    Cz, &  ! Coefficient
-    time_frac ! the time fraction used for interpolation
+    time_frac, & ! the time fraction used for interpolation
+    T_sfc_interp
 
   integer :: &
-    before_time, after_time ! the time indexes used for interpolation
+    before_time, after_time, & ! the time indexes used for interpolation
+    i
 
   !--------------BEGIN CODE---------------
 
@@ -86,20 +94,26 @@ module fire
   call time_select( time, size(time_sfc_given), time_sfc_given, &
                     before_time, after_time, time_frac )
 
-  T_sfc = linear_interp_factor( time_frac, T_sfc_given(after_time), &
-                                    T_sfc_given(before_time) )
+  T_sfc_interp = linear_interp_factor( time_frac, T_sfc_given(after_time), &
+                                       T_sfc_given(before_time) )
+
+  do i = 1, ngrdcol
+    T_sfc(i) = T_sfc_interp
+    Cz(i) = 0.0013_core_rknd
+    ustar(i) = 0.3_core_rknd
+
+    rsat(i) = sat_mixrat_liq( p_sfc(i), T_sfc(i), saturation_formula )
+  end do
 
   ! Compute wpthlp_sfc and wprtp_sfc
+  call compute_wpthlp_sfc( ngrdcol, Cz, ubar, thlm_sfc, T_sfc, exner_sfc, &
+                           wpthlp_sfc ) 
 
-  Cz = 0.0013_core_rknd
-
-  ustar = 0.3_core_rknd
-
-  wpthlp_sfc = compute_wpthlp_sfc ( Cz, ubar, thlm_sfc, T_sfc, exner_sfc )
-  wprtp_sfc = compute_wprtp_sfc( Cz, ubar, rtm_sfc, sat_mixrat_liq( p_sfc, T_sfc, &
-                                                                    saturation_formula ) )
+  call compute_wprtp_sfc( ngrdcol, Cz, ubar, rtm_sfc, rsat, &
+                          wprtp_sfc )
 
   return
+
   end subroutine fire_sfclyr
 
 !----------------------------------------------------------------------

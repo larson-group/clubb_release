@@ -26,7 +26,8 @@ module nov11
   contains
 
 !-----------------------------------------------------------------------
-  subroutine nov11_altocu_rtm_adjust( gr, time, time_initial, dt, &
+  subroutine nov11_altocu_rtm_adjust( ngrdcol, gr, &
+                                      time, time_initial, dt, &
                                       rtm )
 
 ! Description:
@@ -54,6 +55,9 @@ module nov11
     type (grid), intent(in) :: gr
 
     ! Input variables
+    integer, intent(in) :: &
+      ngrdcol
+
     real(kind=time_precision), intent(in) :: & 
       time,            & ! Current time          [s]
       time_initial       ! Initial time          [s]
@@ -62,12 +66,12 @@ module nov11
       dt              ! Timestep              [s]
 
     ! Input/Output variables
-    real( kind = core_rknd ), intent(inout), dimension(gr%nzt) :: & 
+    real( kind = core_rknd ), intent(inout), dimension(ngrdcol,gr%nzt) :: & 
       rtm     ! Total water mixing ratio      [kg/kg]
 
     ! Local variables
     integer :: &
-      k       ! Used for iterating over the vertical domain
+      k, i       ! Used for iterating over the vertical domain
 
     ! ---- Begin Code ----
 
@@ -85,9 +89,13 @@ module nov11
          time <  time_initial + 3600.0_time_precision + real(dt,kind=time_precision) ) then
 
       do k = 1, gr%nzt, 1
-        if ( gr%zt(1,k) > ( 2900.0_core_rknd + gr%zm(1,1) ) ) then
-          rtm(k) = 0.89_core_rknd * rtm(k) ! Known magic number
-        end if
+        do i = 1, ngrdcol
+
+          if ( gr%zt(i,k) > ( 2900.0_core_rknd + gr%zm(i,1) ) ) then
+            rtm(i,k) = 0.89_core_rknd * rtm(i,k) ! Known magic number
+          end if
+
+        end do
       end do
 
     end if

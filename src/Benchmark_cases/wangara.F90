@@ -13,7 +13,7 @@ module wangara
 
   contains
 !----------------------------------------------------------------------
-  subroutine wangara_tndcy( gr, sclr_dim, edsclr_dim, sclr_idx, &
+  subroutine wangara_tndcy( ngrdcol, gr, sclr_dim, edsclr_dim, sclr_idx, &
                             wm_zt, wm_zm,  & 
                             thlm_forcing, rtm_forcing, & 
                             sclrm_forcing, edsclrm_forcing )
@@ -41,6 +41,7 @@ module wangara
       gr
 
     integer, intent(in) :: &
+      ngrdcol, &
       sclr_dim, & 
       edsclr_dim
 
@@ -48,41 +49,54 @@ module wangara
       sclr_idx
 
     ! Output Variables
-    real( kind = core_rknd ), intent(out), dimension(gr%nzt) :: & 
+    real( kind = core_rknd ), intent(out), dimension(ngrdcol,gr%nzt) :: & 
       wm_zt,        & ! w wind on thermodynamic grid                [m/s]
       thlm_forcing, & ! Liquid water potential temperature tendency [K/s]
       rtm_forcing     ! Total water mixing ratio tendency           [kg/kg/s]
 
-    real( kind = core_rknd ), intent(out), dimension(gr%nzm) :: &
+    real( kind = core_rknd ), intent(out), dimension(ngrdcol,gr%nzm) :: &
       wm_zm           ! w wind on momentum grid                     [m/s]
 
-    real( kind = core_rknd ), intent(out), dimension(gr%nzt,sclr_dim) :: & 
+    real( kind = core_rknd ), intent(out), dimension(ngrdcol,gr%nzt,sclr_dim) :: & 
       sclrm_forcing ! Passive scalar tendency [units/s]
 
-    real( kind = core_rknd ), intent(out), dimension(gr%nzt,edsclr_dim) :: & 
+    real( kind = core_rknd ), intent(out), dimension(ngrdcol,gr%nzt,edsclr_dim) :: & 
       edsclrm_forcing ! Eddy-passive scalar tendency [units/s]
 
-    ! No large-scale subsidence for now
-    wm_zt = 0.0_core_rknd
-    wm_zm = 0.0_core_rknd
+    integer :: i, k
 
-    ! No large-scale water tendency or cooling
+    do k = 1, gr%nzm
+      do i = 1, ngrdcol
+        wm_zm(i,k) = 0.0_core_rknd
+      end do
+    end do
 
-    rtm_forcing  = 0.0_core_rknd
-    thlm_forcing = 0.0_core_rknd
+    do k = 1, gr%nzt
+      do i = 1, ngrdcol
 
-    ! Test scalars with thetal and rt if desired
-    if ( sclr_idx%iisclr_thl > 0 ) sclrm_forcing(:,sclr_idx%iisclr_thl) = thlm_forcing
-    if ( sclr_idx%iisclr_rt  > 0 ) sclrm_forcing(:,sclr_idx%iisclr_rt)  = rtm_forcing
+        ! No large-scale subsidence for now
+        wm_zt(i,k) = 0.0_core_rknd
 
-    if ( sclr_idx%iiedsclr_thl > 0 ) edsclrm_forcing(:,sclr_idx%iiedsclr_thl) = thlm_forcing
-    if ( sclr_idx%iiedsclr_rt  > 0 ) edsclrm_forcing(:,sclr_idx%iiedsclr_rt)  = rtm_forcing
+        ! No large-scale water tendency or cooling
+
+        rtm_forcing(i,k)  = 0.0_core_rknd
+        thlm_forcing(i,k) = 0.0_core_rknd
+
+        ! Test scalars with thetal and rt if desired
+        if ( sclr_idx%iisclr_thl > 0 ) sclrm_forcing(i,k,sclr_idx%iisclr_thl) = thlm_forcing(i,k)
+        if ( sclr_idx%iisclr_rt  > 0 ) sclrm_forcing(i,k,sclr_idx%iisclr_rt)  = rtm_forcing(i,k)
+
+        if ( sclr_idx%iiedsclr_thl > 0 ) edsclrm_forcing(i,k,sclr_idx%iiedsclr_thl) = thlm_forcing(i,k)
+        if ( sclr_idx%iiedsclr_rt  > 0 ) edsclrm_forcing(i,k,sclr_idx%iiedsclr_rt)  = rtm_forcing(i,k)
+
+      end do
+    end do
 
     return
   end subroutine wangara_tndcy
 
 !----------------------------------------------------------------------
-  subroutine wangara_sfclyr( time, & 
+  subroutine wangara_sfclyr( ngrdcol, time, & 
                              wpthlp_sfc, wprtp_sfc, ustar )
 ! Description:
 !   This subroutine computes surface fluxes of horizontal momentum,
@@ -103,11 +117,14 @@ module wangara
     intrinsic :: mod, max, cos, sqrt, present
 
     ! Input variables
+    integer, intent(in) :: &
+      ngrdcol
+
     real(kind=time_precision), intent(in) ::  & 
       time    ! Current time  [s]
 
     ! Output variables
-    real( kind = core_rknd ), intent(out) ::  & 
+    real( kind = core_rknd ), dimension(ngrdcol), intent(out) ::  & 
       wpthlp_sfc,   & ! w'th_l' at (1)   [(m K)/s]  
       wprtp_sfc,    & ! w'r_t'(1) at (1) [(m kg)/(s kg)]
       ustar           ! surface friction velocity [m/s]
@@ -117,16 +134,11 @@ module wangara
       time_utc, time_est, &
       est_offset ! The offset for Australia EST time [s]
 
+    integer :: i
 
-
-!---------------------BEGIN CODE-------------------------
-
-
-    ! Declare the value of ustar.
-    ustar = 0.13_core_rknd
+    !---------------------BEGIN CODE-------------------------
 
     ! Compute UTC time of the day in seconds
-
     time_utc = mod( time, real( sec_per_day, kind=time_precision ) )
 
     ! Now convert UTC time to Australia EST (local time)
@@ -140,13 +152,20 @@ module wangara
       error stop
     end if
 
-    ! Compute heat and moisture fluxes
+    do i = 1, ngrdcol
 
-    wpthlp_sfc = real(0.18_core_rknd * cos( (real( time_est, kind = core_rknd )-&
-         45000.0_core_rknd)/36000.0_core_rknd * pi ), kind = core_rknd) ! Known magic number
-    wprtp_sfc  = 1.3e-4_core_rknd * wpthlp_sfc ! Known magic number
+      ! Declare the value of ustar.
+      ustar(i) = 0.13_core_rknd
+
+      ! Compute heat and moisture fluxes
+      wpthlp_sfc(i) = real(0.18_core_rknd * cos( (real( time_est, kind = core_rknd )-&
+          45000.0_core_rknd)/36000.0_core_rknd * pi ), kind = core_rknd) ! Known magic number
+      wprtp_sfc(i)  = 1.3e-4_core_rknd * wpthlp_sfc(i) ! Known magic number
+
+    end do
 
     return
+
   end subroutine wangara_sfclyr
 
 !----------------------------------------------------------------------

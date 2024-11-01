@@ -22,7 +22,8 @@ module arm
   contains
 
   !----------------------------------------------------------------------
-  subroutine arm_sfclyr( time, z, rho_sfc, thlm_sfc, ubar,  & 
+  subroutine arm_sfclyr( ngrdcol, time, z, &
+                         thlm_sfc, ubar,  & 
                          wpthlp_sfc, wprtp_sfc, ustar )
 
   !       Description:
@@ -50,21 +51,24 @@ module arm
   ! Constants
   real( kind = core_rknd ), parameter ::  & 
     z0 = 0.035_core_rknd  ! ARM Cu momentum roughness height
+
   integer, parameter :: &
     ntimes = 7
 
   ! Input variables
+  integer, intent(in) :: &
+  ngrdcol
+
   real(kind=time_precision), intent(in) ::  & 
     time            ! Current time          [s]
 
-  real( kind = core_rknd ), intent(in) ::  & 
+  real( kind = core_rknd ), dimension(ngrdcol), intent(in) ::  & 
     z,               & ! Height at zt(2)       [m]
-    rho_sfc,             & ! Density at zm(1)      [kg/m^3]
     thlm_sfc,        & ! Theta_l at zt(2)      [K]
     ubar
 
   ! Output variables
- real( kind = core_rknd ), intent(out) ::  & 
+  real( kind = core_rknd ), dimension(ngrdcol), intent(out) ::  & 
     wpthlp_sfc,  & ! w'theta_l' surface flux   [(m K)/s]
     wprtp_sfc,   & ! w'rt' surface flux        [(m kg)/(kg s)]
     ustar          ! surface friction velocity [m/s]
@@ -73,35 +77,43 @@ module arm
   real( kind = core_rknd ) ::  & 
     heat_flx, moisture_flx, & 
     heat_flx2, moisture_flx2, & 
-    bflx
+    bflx, &
+    rho_sfc ! Density at zm(1)      [kg/m^3]
 
+  integer :: i
 
   !-----------------BEGIN CODE-------------------------
 
   ! Compute heat and moisture fluxes from ARM data in (W/m2)
-   call compute_ht_mostr_flux( time, ntimes, &
-                               heat_flx, moisture_flx )
+  call compute_ht_mostr_flux( time, ntimes, &
+                              heat_flx, moisture_flx )
 
-  ! Compute momentum fluxes
+  rho_sfc = 1.1_core_rknd
 
   ! Convert heat_flx and moisture_flx to natural units
-  heat_flx2     = convert_sens_ht_to_km_s(heat_flx, rho_sfc)    ! (K m/s)
-  moisture_flx2 = convert_latent_ht_to_m_s(moisture_flx, rho_sfc) ! (m/s)
+  heat_flx2     = convert_sens_ht_to_km_s( heat_flx, rho_sfc )    ! (K m/s)
+  moisture_flx2 = convert_latent_ht_to_m_s( moisture_flx, rho_sfc ) ! (m/s)
 
-  ! Heat flux in units of (m2/s3) (needed by diag_ustar)
-  bflx = grav/thlm_sfc * heat_flx2
+  ! Compute momentum fluxes
+  do i = 1, ngrdcol
 
-  ! Surface winds
+    ! Heat flux in units of (m2/s3) (needed by diag_ustar)
+    bflx = grav / thlm_sfc(i) * heat_flx2
 
-  ! Compute ustar
-  ustar = diag_ustar( z, bflx, ubar, z0 )
+    ! Surface winds
 
-  ! Assign fluxes
+    ! Compute ustar
+    ustar(i) = diag_ustar( z(i), bflx, ubar(i), z0 )
 
-  wpthlp_sfc = heat_flx2
-  wprtp_sfc  = moisture_flx2
+    ! Assign fluxes
+
+    wpthlp_sfc(i) = heat_flx2
+    wprtp_sfc(i)  = moisture_flx2
+
+  end do
 
   return
+
   end subroutine arm_sfclyr
 
 end module arm

@@ -15,7 +15,7 @@ module dycoms2_rf02
   contains
 
   !----------------------------------------------------------------------
-  subroutine dycoms2_rf02_tndcy( sclr_dim, edsclr_dim, sclr_idx, &
+  subroutine dycoms2_rf02_tndcy( ngrdcol, sclr_dim, edsclr_dim, sclr_idx, &
                                  gr, wm_zt, wm_zm,    &
                                  thlm_forcing, rtm_forcing,  & 
                                  sclrm_forcing, edsclrm_forcing )
@@ -47,6 +47,7 @@ module dycoms2_rf02
 
     !--------------------- Input Variables ---------------------
     integer, intent(in) :: &
+      ngrdcol, &
       sclr_dim, & 
       edsclr_dim
 
@@ -57,29 +58,28 @@ module dycoms2_rf02
       gr
 
     !--------------------- InOut Variables ---------------------
-    real( kind = core_rknd ), dimension(gr%nzt), intent(inout) :: &
+    real( kind = core_rknd ), dimension(ngrdcol,gr%nzt), intent(inout) :: &
       wm_zt    ! W wind component at thermodynamic levels   [m/s]
 
-    real( kind = core_rknd ), dimension(gr%nzm), intent(inout) :: &
+    real( kind = core_rknd ), dimension(ngrdcol,gr%nzm), intent(inout) :: &
       wm_zm    ! W wind component at momentum levels        [m/s]
 
     !--------------------- Output Variables ---------------------
-    real( kind = core_rknd ), intent(out), dimension(gr%nzt) ::  & 
+    real( kind = core_rknd ), intent(out), dimension(ngrdcol,gr%nzt) ::  & 
       thlm_forcing, & ! theta_l forcing                [K/s]
       rtm_forcing     ! r_t forcing                    [(kg/kg)/s] 
 
-    real( kind = core_rknd ), intent(out), dimension(gr%nzt,sclr_dim) :: & 
+    real( kind = core_rknd ), intent(out), dimension(ngrdcol,gr%nzt,sclr_dim) :: & 
       sclrm_forcing    ! Passive scalar tendency        [units/s]
 
-    real( kind = core_rknd ), intent(out), dimension(gr%nzt,edsclr_dim) :: & 
+    real( kind = core_rknd ), intent(out), dimension(ngrdcol,gr%nzt,edsclr_dim) :: & 
       edsclrm_forcing  ! Eddy-passive scalar tendency   [units/s]
+
+    integer :: i, k
 
     !--------------------- Begin Code ---------------------
 
     ! Enter the final thlm and rtm tendency
-
-    thlm_forcing(1:gr%nzt) = 0.0_core_rknd
-    rtm_forcing(1:gr%nzt) = 0.0_core_rknd
 
     ! Imposed large-scale subsidence at the uppermost level.
     ! CLUBB used a "one-sided" derivative method to compute mean advection at
@@ -87,15 +87,26 @@ module dycoms2_rf02
     ! amounts of various quantities from above the top of the domain, set wm_zt
     ! to 0 at level gr%nz.  To stay consistent, set wm_zm to 0 at level
     ! gr%nz.
-    wm_zt(gr%nzt) = 0.0_core_rknd
-    wm_zm(gr%nzm) = 0.0_core_rknd
+    do i = 1, ngrdcol
+      wm_zt(i,gr%nzt) = 0.0_core_rknd
+      wm_zm(i,gr%nzm) = 0.0_core_rknd
+    end do
 
-    ! Test scalars with thetal and rt if desired
-    if ( sclr_idx%iisclr_thl > 0 ) sclrm_forcing(:,sclr_idx%iisclr_thl) = thlm_forcing
-    if ( sclr_idx%iisclr_rt  > 0 ) sclrm_forcing(:,sclr_idx%iisclr_rt)  = rtm_forcing
+    do k = 1, gr%nzt
+      do i = 1, ngrdcol
 
-    if ( sclr_idx%iiedsclr_thl > 0 ) edsclrm_forcing(:,sclr_idx%iiedsclr_thl) = thlm_forcing
-    if ( sclr_idx%iiedsclr_rt  > 0 ) edsclrm_forcing(:,sclr_idx%iiedsclr_rt)  = rtm_forcing
+        thlm_forcing(i,k) = 0.0_core_rknd
+        rtm_forcing(i,k) = 0.0_core_rknd
+
+        ! Test scalars with thetal and rt if desired
+        if ( sclr_idx%iisclr_thl > 0 ) sclrm_forcing(i,k,sclr_idx%iisclr_thl) = thlm_forcing(i,k)
+        if ( sclr_idx%iisclr_rt  > 0 ) sclrm_forcing(i,k,sclr_idx%iisclr_rt)  = rtm_forcing(i,k)
+
+        if ( sclr_idx%iiedsclr_thl > 0 ) edsclrm_forcing(i,k,sclr_idx%iiedsclr_thl) = thlm_forcing(i,k)
+        if ( sclr_idx%iiedsclr_rt  > 0 ) edsclrm_forcing(i,k,sclr_idx%iiedsclr_rt)  = rtm_forcing(i,k)
+
+      end do
+    end do
 
     return
   end subroutine dycoms2_rf02_tndcy
@@ -103,7 +114,7 @@ module dycoms2_rf02
 
 !----------------------------------------------------------------------
 
-  subroutine dycoms2_rf02_sfclyr( time, wpthlp_sfc, wprtp_sfc, ustar )
+  subroutine dycoms2_rf02_sfclyr( ngrdcol, time, wpthlp_sfc, wprtp_sfc, ustar )
   ! Description:
   !   This subroutine computes surface fluxes of
   !   heat and moisture according to GCSS DYCOMS II RF 02 specifications
@@ -126,11 +137,14 @@ module dycoms2_rf02
 
     implicit none
 
+    integer :: &
+      ngrdcol
+
     real(time_precision), intent(in) :: &
       time ! The current time [s]
 
     ! Output
-    real( kind = core_rknd ), intent(out) ::  & 
+    real( kind = core_rknd ), dimension(ngrdcol), intent(out) ::  & 
       wpthlp_sfc,   & ! w'th_l' at (1)   [(m K)/s]  
       wprtp_sfc,    & ! w'r_t'(1) at (1) [(m kg)/(s kg)]
       ustar           ! surface friction velocity [m/s]
@@ -145,7 +159,7 @@ module dycoms2_rf02
       time_frac ! The time fraction for interpolation
 
     integer :: &
-      before_time, after_time ! The times used for interpolation
+      before_time, after_time, i ! The times used for interpolation
 
     real( kind = core_rknd ), parameter :: &
       rho_sfc = 1.21_core_rknd ! Air density at surface
@@ -157,14 +171,17 @@ module dycoms2_rf02
 
     sens_ht = linear_interp_factor( time_frac, sens_ht_given(after_time), &
                                     sens_ht_given(before_time) )
+                                    
     latent_ht = linear_interp_factor( time_frac, latent_ht_given(after_time), &
                                       latent_ht_given(before_time) )
 
-    ! Declare the value of ustar.
-    ustar = 0.25_core_rknd
+    do i = 1, ngrdcol
+      ! Declare the value of ustar.
+      ustar(i) = 0.25_core_rknd
 
-    wpthlp_sfc = convert_sens_ht_to_km_s( sens_ht, rho_sfc )
-    wprtp_sfc  = convert_latent_ht_to_m_s( latent_ht, rho_sfc )
+      wpthlp_sfc(i) = convert_sens_ht_to_km_s( sens_ht, rho_sfc )
+      wprtp_sfc(i)  = convert_latent_ht_to_m_s( latent_ht, rho_sfc )
+    end do
 
     return
   end subroutine dycoms2_rf02_sfclyr

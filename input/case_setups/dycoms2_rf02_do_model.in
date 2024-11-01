@@ -66,7 +66,7 @@ l_modify_bc_for_cnvg_test = .true. ! Modify surface boundary conditions for conv
 dt_main    = 60.0   ! Model timestep [s]
 dt_rad = 60.0   ! Radiation timestep [s]
 
-T_sfc = 292.0       ! Temperature of underlying surface (e.g. SST)           [K]
+T_sfc_nl = 292.0       ! Temperature of underlying surface (e.g. SST)           [K]
 p_sfc_nl = 1017.8e2    ! Pressure at model base              [Pa]
 
 fcor = 7.6e-5      ! Coriolis parameter                  [s^-1]

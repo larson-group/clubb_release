@@ -14,7 +14,7 @@ module cobra
   contains
 
   !-----------------------------------------------------------------------
-  subroutine cobra_sfclyr( sclr_dim, edsclr_dim, sclr_idx, &
+  subroutine cobra_sfclyr( ngrdcol, sclr_dim, edsclr_dim, sclr_idx, &
                            time, z, rho_sfc, thlm_sfc, ubar, & 
                            wpthlp_sfc, wprtp_sfc, ustar, & 
                            wpsclrp_sfc, wpedsclrp_sfc, T_sfc )
@@ -69,6 +69,7 @@ module cobra
 
   !--------------------- Input Variables ---------------------
   integer, intent(in) :: &
+    ngrdcol, &
     sclr_dim, & 
     edsclr_dim
 
@@ -78,29 +79,29 @@ module cobra
   real(kind=time_precision), intent(in) ::  & 
     time      ! Current time                [s]
 
-  real( kind = core_rknd ), intent(in) :: & 
+  real( kind = core_rknd ), dimension(ngrdcol), intent(in) :: & 
     z,         & ! Elevation at zt=1           [m]
-    rho_sfc,       & ! Air density at surface      [kg/m^3]
+    rho_sfc,   & ! Air density at surface      [kg/m^3]
     thlm_sfc,  & ! Theta_l at zt(1)            [K]
     ubar         ! mean sfc wind speed         [m/s]
 
   !--------------------- Output Variables ---------------------
-  real( kind = core_rknd ), intent(out) ::  & 
+  real( kind = core_rknd ), dimension(ngrdcol), intent(out) ::  & 
     wpthlp_sfc,  & ! w'theta_l' surface flux   [(m K)/s]
     wprtp_sfc,   & ! w'rt' surface flux        [(m kg)/(kg s)]
     ustar,       & ! surface friction velocity [m/s]
     T_sfc          ! Temperature at the surface [K]
 
   ! Output variables
-  real( kind = core_rknd ), intent(out), dimension(sclr_dim) ::  & 
+  real( kind = core_rknd ), intent(out), dimension(ngrdcol,sclr_dim) ::  & 
     wpsclrp_sfc    ! w'sclr' surface flux          [units m/s]
 
-  real( kind = core_rknd ), intent(out), dimension(edsclr_dim) ::  & 
+  real( kind = core_rknd ), intent(out), dimension(ngrdcol,edsclr_dim) ::  & 
     wpedsclrp_sfc  ! w' edsclr' surface flux       [units m/s]
 
   !--------------------- Local Variables ---------------------
   integer :: &
-    before_time, after_time
+    before_time, after_time, i
 
   real( kind = core_rknd ) ::  &  
     heat_flx, moisture_flx, &                 ! [W/m^2]
@@ -118,11 +119,6 @@ module cobra
 
   !--------------------- Begin Code ---------------------
 
-  ! Default Initialization
-  heat_flx = 0.0_core_rknd
-  moisture_flx = 0.0_core_rknd
-  CO2_flx = 0.0_core_rknd
-  CO2_flx2 = 0.0_core_rknd ! Default initialization
 
   ! Compute heat and moisture fluxes from ARM data in (W/m2)
 
@@ -131,50 +127,58 @@ module cobra
   call time_select( time, ntimes, time_sfc_given, &
                     before_time, after_time, time_frac )
 
-  ! Interpolate fluxes
-  heat_flx = linear_interp_factor( time_frac, sens_ht_given(after_time), &
-                                   sens_ht_given(before_time) )
-  moisture_flx = linear_interp_factor( time_frac, latent_ht_given(after_time), &
-                                       latent_ht_given(before_time) )
-  CO2_flx = linear_interp_factor( time_frac, CO2_sfc_given(after_time), &
-                                  CO2_sfc_given(before_time) )
-  T_sfc = linear_interp_factor( time_frac, T_sfc_given(after_time), &
-                                T_sfc_given(before_time) )
+  do i = 1, ngrdcol
+      
+    ! Interpolate fluxes
+    heat_flx = linear_interp_factor( time_frac, sens_ht_given(after_time), &
+                                     sens_ht_given(before_time) )
 
-  ! Convert heat_flx and moisture_flx to natural units
-  heat_flx2     = convert_sens_ht_to_km_s( heat_flx, rho_sfc )    ! (K m/s)
-  moisture_flx2 = convert_latent_ht_to_m_s( moisture_flx, rho_sfc )! (m/s)
+    moisture_flx = linear_interp_factor( time_frac, latent_ht_given(after_time), &
+                                         latent_ht_given(before_time) )
 
-  !       Convert CO2 surface flux to natural units.
-  !       The CO2 flux has been given in units of:  umol/(m^2 s).
-  !       umol stands for micromoles.  The CO2 concentration in
-  !       this code is in units of ppmv, which is also the molar
-  !       mixing ratio times 10^6.
-  !       The units are:  10^6 * [ mol (CO2) / mol (dry air) ].
-  !       w'CO2' = (Flux) * [ M (dry air) / rho (dry air) ];
-  !       where M is the molecular weight of dry air.
-  CO2_flx2 = CO2_flx * ( M_da / rho_sfc )
+    CO2_flx = linear_interp_factor( time_frac, CO2_sfc_given(after_time), &
+                                    CO2_sfc_given(before_time) )
 
-  ! Heat flux in units of (m2/s3) (needed by diag_ustar)
-  bflx = grav/thlm_sfc * heat_flx2
+    T_sfc = linear_interp_factor( time_frac, T_sfc_given(after_time), &
+                                  T_sfc_given(before_time) )
 
-  ! Compute ustar
-  ustar = diag_ustar( z, bflx, ubar, z0 )
+    ! Convert heat_flx and moisture_flx to natural units
+    heat_flx2     = convert_sens_ht_to_km_s( heat_flx, rho_sfc(i) )    ! (K m/s)
+    moisture_flx2 = convert_latent_ht_to_m_s( moisture_flx, rho_sfc(i) )! (m/s)
 
-  ! Assign fluxes
+    !       Convert CO2 surface flux to natural units.
+    !       The CO2 flux has been given in units of:  umol/(m^2 s).
+    !       umol stands for micromoles.  The CO2 concentration in
+    !       this code is in units of ppmv, which is also the molar
+    !       mixing ratio times 10^6.
+    !       The units are:  10^6 * [ mol (CO2) / mol (dry air) ].
+    !       w'CO2' = (Flux) * [ M (dry air) / rho (dry air) ];
+    !       where M is the molecular weight of dry air.
+    CO2_flx2 = CO2_flx * ( M_da / rho_sfc(i) )
 
-  wpthlp_sfc = heat_flx2
-  wprtp_sfc  = moisture_flx2
+    ! Heat flux in units of (m2/s3) (needed by diag_ustar)
+    bflx = grav / thlm_sfc(i) * heat_flx2
 
-  if ( sclr_idx%iisclr_CO2 > 0 ) wpsclrp_sfc(sclr_idx%iisclr_CO2) = CO2_flx2
-  if ( sclr_idx%iisclr_thl > 0 ) wpsclrp_sfc(sclr_idx%iisclr_thl) = wpthlp_sfc
-  if ( sclr_idx%iisclr_rt  > 0 ) wpsclrp_sfc(sclr_idx%iisclr_rt)  = wprtp_sfc
+    ! Compute ustar
+    ustar(i) = diag_ustar( z(i), bflx, ubar(i), z0 )
 
-  if ( sclr_idx%iiedsclr_CO2 > 0 ) wpedsclrp_sfc(sclr_idx%iiedsclr_CO2) = CO2_flx2
-  if ( sclr_idx%iiedsclr_thl > 0 ) wpedsclrp_sfc(sclr_idx%iiedsclr_thl) = wpthlp_sfc
-  if ( sclr_idx%iiedsclr_rt  > 0 ) wpedsclrp_sfc(sclr_idx%iiedsclr_rt)  = wprtp_sfc
+    ! Assign fluxes
+
+    wpthlp_sfc(i) = heat_flx2
+    wprtp_sfc(i)  = moisture_flx2
+
+    if ( sclr_idx%iisclr_CO2 > 0 ) wpsclrp_sfc(i,sclr_idx%iisclr_CO2) = CO2_flx2
+    if ( sclr_idx%iisclr_thl > 0 ) wpsclrp_sfc(i,sclr_idx%iisclr_thl) = wpthlp_sfc(i)
+    if ( sclr_idx%iisclr_rt  > 0 ) wpsclrp_sfc(i,sclr_idx%iisclr_rt)  = wprtp_sfc(i)
+
+    if ( sclr_idx%iiedsclr_CO2 > 0 ) wpedsclrp_sfc(i,sclr_idx%iiedsclr_CO2) = CO2_flx2
+    if ( sclr_idx%iiedsclr_thl > 0 ) wpedsclrp_sfc(i,sclr_idx%iiedsclr_thl) = wpthlp_sfc(i)
+    if ( sclr_idx%iiedsclr_rt  > 0 ) wpedsclrp_sfc(i,sclr_idx%iiedsclr_rt)  = wprtp_sfc(i)
+
+  end do
 
   return
+
   end subroutine cobra_sfclyr
 
 end module cobra

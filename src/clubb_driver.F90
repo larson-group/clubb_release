@@ -266,6 +266,16 @@ module clubb_driver
     use array_index, only: &
         sclr_idx_type !----------------------------------------------- Type(s)
 
+    use parameters_microphys, only: &
+        Nc0_in_cloud, & !----------------------------------------------- Variable(s)
+        microphys_scheme, &
+        sigma_g,              & ! Parameter used in the cloud droplet sedimentation code
+        l_cloud_sed             ! Cloud water sedimentation (K&K or no microphysics)
+
+    
+    use cloud_sed_module, only: &
+        cloud_drop_sed  ! Procedure(s)
+
 #ifdef _OPENMP
     ! Because Fortran I/O is not thread safe, we use this here to
     ! ensure that no model uses the same file number simultaneously
@@ -334,8 +344,9 @@ module clubb_driver
       debug_level     ! Amount of debugging information
 
     real( kind = core_rknd ), dimension(ngrdcol) ::  & 
-      p_sfc,     & ! surface pressure        [Pa]
-      fcor               ! Coriolis parameter            [s^-1]
+      p_sfc,  & ! surface pressure        [Pa]
+      T_sfc,  &
+      fcor      ! Coriolis parameter            [s^-1]
       
     real( kind = core_rknd ) ::  & 
       T0,              & ! Reference Temperature         [K]
@@ -406,8 +417,8 @@ module clubb_driver
       dummy_dy  ! [m]
 
     integer :: &
-      itime, i, j, sclr, edsclr, & ! Local Loop Variables
-      iinit                        ! initial iteration
+      itime, i, j, sclr, & ! Local Loop Variables
+      iinit                ! initial iteration
 
     integer ::  & 
       iunit,           & ! File unit used for I/O
@@ -619,7 +630,6 @@ module clubb_driver
       K_hm    ! Eddy diffusivity coef. for hydrometeors on mom. levs. [m^2 s^-1]
 
     real( kind = core_rknd ) :: &
-      T_sfc,     & ! surface temperature     [K]
       sens_ht,   & ! sensible heat flux      [K m/s]
       latent_ht    ! latent heat flux        [m/s]
 
@@ -891,7 +901,8 @@ module clubb_driver
 
     real( kind = core_rknd ) :: &
       sfc_elevation_nl, &
-      p_sfc_nl
+      p_sfc_nl, &
+      T_sfc_nl
 
     real( kind = core_rknd ), dimension(ngrdcol) :: &
       wpthep, &                 ! Turbulent Flux of equivalent potential temperature   [K]
@@ -907,7 +918,7 @@ module clubb_driver
       day, month, year, lat_vals, lon_vals, sfc_elevation_nl, &
       time_initial, time_final, &
       dt_main, dt_rad, &
-      sfctype, T_sfc, p_sfc_nl, sens_ht, latent_ht, fcor, T0, ts_nudge, &
+      sfctype, T_sfc_nl, p_sfc_nl, sens_ht, latent_ht, fcor, T0, ts_nudge, &
       forcings_file_path, l_t_dependent, l_input_xpwp_sfc, &
       l_ignore_forcings, l_modify_ic_with_cubic_int, &
       l_modify_bc_for_cnvg_test, &
@@ -952,11 +963,8 @@ module clubb_driver
       err_code_dummy ! Host models use an error code that comes out of some API routines, but
                      ! here we have access to the global version
 
-    integer :: & 
-      rc
-
     character(len=100) :: &
-      output_file_prefix
+      output_file_prefix  
 
 !-----------------------------------------------------------------------
     ! Begin code
@@ -966,7 +974,7 @@ module clubb_driver
     ! Pick some default values for model_setting.  Some variables are initialized
     ! at declaration in module clubb_model_settings.
 
-    T_sfc     = 288._core_rknd
+    T_sfc_nl  = 288._core_rknd
     p_sfc_nl  = 1000.e2_core_rknd
     sens_ht   = 0._core_rknd
     latent_ht = 0._core_rknd
@@ -1126,6 +1134,7 @@ module clubb_driver
     zm_init = zm_init_nl
     zm_top = zm_top_nl
     p_sfc = p_sfc_nl
+    T_sfc = T_sfc_nl
 
     sclr_idx%iisclr_thl = iisclr_thl
     sclr_idx%iisclr_rt  = iisclr_rt
@@ -2038,7 +2047,7 @@ module clubb_driver
     if ( clubb_at_least_debug_level( 0 ) ) then
         if ( err_code == clubb_fatal_error ) then
           ! At this point, input fields haven't been set up, so don't clean them up.
-          call cleanup_clubb( l_input_fields=.false., stats_metadata=stats_metadata, gr=gr )
+          call cleanup_clubb( l_input_fields=.false., gr=gr )
           return
         end if
     end if
@@ -2091,7 +2100,7 @@ module clubb_driver
     if ( clubb_at_least_debug_level( 0 ) ) then
         if ( err_code == clubb_fatal_error ) then
             ! At this point, input fields haven't been set up, so don't clean them up.
-            call cleanup_clubb( l_input_fields=.false., stats_metadata=stats_metadata, gr=gr )
+            call cleanup_clubb( l_input_fields=.false., gr=gr )
             return
         end if
     end if
@@ -2292,7 +2301,7 @@ module clubb_driver
 
       write(fstderr,*) "The options l_silhs_rad and l_calc_thlp2_rad are incompatible."
       err_code = clubb_fatal_error
-      call cleanup_clubb( l_input_fields, stats_metadata, gr )
+      call cleanup_clubb( l_input_fields, gr )
       return
 
     end if
@@ -2328,20 +2337,24 @@ module clubb_driver
       
       call cpu_time( time_start ) ! start timer for initial part of main loop
       
-      ! When this time step is over, the time will be time + dt_main
-      ! We use integer timestep for stats_begin_step
-      call stats_begin_timestep( itime, stats_nsamp, stats_nout, & ! Intent(in)
-                                  stats_metadata )                  ! Intent(inout)
+      if ( stats_metadata%l_stats ) then
+        ! When this time step is over, the time will be time + dt_main
+        ! We use integer timestep for stats_begin_step
+        call stats_begin_timestep( itime, stats_nsamp, stats_nout, & ! Intent(in)
+                                    stats_metadata )                  ! Intent(inout)
+      end if
 
-      ! If we're doing an inputfields run, get the values for our
-      ! model arrays from a netCDF or GrADS file.
-      ! Note:  the time of the 1st LES statistical output is time_initial_LES
-      !        plus the time of one LES statistical time step.  For example, a
-      !        LES run that starts at 00:00Z and outputs stats every minute has
-      !        its first statistical output at 00:01Z.  In order to match the
-      !        LES stat output times to CLUBB timesteps, CLUBB's time_current
-      !        + dt_main needs to be passed into subroutine compute_timestep.
       if ( l_input_fields ) then
+
+        ! If we're doing an inputfields run, get the values for our
+        ! model arrays from a netCDF or GrADS file.
+        ! Note:  the time of the 1st LES statistical output is time_initial_LES
+        !        plus the time of one LES statistical time step.  For example, a
+        !        LES run that starts at 00:00Z and outputs stats every minute has
+        !        its first statistical output at 00:01Z.  In order to match the
+        !        LES stat output times to CLUBB timesteps, CLUBB's time_current
+        !        + dt_main needs to be passed into subroutine compute_timestep.
+
         l_restart_input = .false.
         call compute_timestep( &
              iunit, stat_files(1), l_restart_input, &            ! Intent(in)
@@ -2390,11 +2403,11 @@ module clubb_driver
         end if
       end if
 
-      ! Check for NaN values in the model arrays
       if ( clubb_at_least_debug_level( 2 ) ) then
 
         do i = 1, ngrdcol
 
+          ! Check for NaN values in the model arrays
           if ( invalid_model_arrays( gr%nzm, gr%nzt, hydromet_dim, hm_metadata%hydromet_list, &
                                     sclr_dim, edsclr_dim, &
                                     um(i,:), vm(i,:), rtm(i,:), wprtp(i,:), thlm(i,:), wpthlp(i,:), &
@@ -2413,9 +2426,6 @@ module clubb_driver
 
       ! Calculate radiation only once in a while
       l_rad_itime = (mod( itime, floor(dt_rad/dt_main) ) == 0 .or. itime == 1)
-      
-      ! Calculate sample weights separately at all grid levels when radiation is not called
-      l_calc_weights_all_levs_itime = l_calc_weights_all_levs .and. .not. l_rad_itime
 
       ! Calculate thvm for use in prescribe_forcings.
       call calculate_thvm( gr%nzt, ngrdcol, &
@@ -2423,23 +2433,22 @@ module clubb_driver
                            thvm )
 
       ! Set large-scale tendencies and subsidence profiles
-      do i = 1, ngrdcol
-        call prescribe_forcings( sclr_dim, edsclr_dim, sclr_idx, & ! In
-                                gr, dt_main, um(i,:), vm(i,:), thlm(i,:), & ! In
-                                p_in_Pa(i,:), exner(i,:), rho(i,:), rho_zm(i,:), thvm(i,:), & ! In
-                                veg_T_in_K(i), & ! In
-                                l_modify_bc_for_cnvg_test, & ! In
-                                clubb_config_flags%saturation_formula, & ! In
-                                stats_metadata, stats_sfc(i), & ! In
-                                rtm(i,:), wm_zm(i,:), wm_zt(i,:), ug(i,:), vg(i,:), um_ref(i,:), vm_ref(i,:), & ! Inout
-                                thlm_forcing(i,:), rtm_forcing(i,:), um_forcing(i,:), & ! Inout
-                                vm_forcing(i,:), wprtp_forcing(i,:), wpthlp_forcing(i,:), & ! Inout
-                                rtp2_forcing(i,:), thlp2_forcing(i,:), rtpthlp_forcing(i,:), & ! Inout
-                                wpsclrp(i,:,:), sclrm_forcing(i,:,:), edsclrm_forcing(i,:,:), & ! Inout
-                                wpthlp_sfc(i), wprtp_sfc(i), upwp_sfc(i), vpwp_sfc(i), & ! Inout
-                                T_sfc, p_sfc(i), sens_ht, latent_ht, & ! Inout
-                                wpsclrp_sfc(i,:), wpedsclrp_sfc(i,:) ) ! Inout
-      end do
+      call prescribe_forcings( gr, gr%nzm, gr%nzt, ngrdcol, &
+                               sclr_dim, edsclr_dim, sclr_idx, & ! In
+                               dt_main, um, vm, thlm, & ! In
+                               p_in_Pa, exner, rho, rho_zm, thvm, & ! In
+                               veg_T_in_K, & ! In
+                               l_modify_bc_for_cnvg_test, & ! In
+                               clubb_config_flags%saturation_formula, & ! In
+                               stats_metadata, stats_sfc, & ! In
+                               rtm, wm_zm, wm_zt, ug, vg, um_ref, vm_ref, & ! Inout
+                               thlm_forcing, rtm_forcing, um_forcing, & ! Inout
+                               vm_forcing, wprtp_forcing, wpthlp_forcing, & ! Inout
+                               rtp2_forcing, thlp2_forcing, rtpthlp_forcing, & ! Inout
+                               wpsclrp, sclrm_forcing, edsclrm_forcing, & ! Inout
+                               wpthlp_sfc, wprtp_sfc, upwp_sfc, vpwp_sfc, & ! Inout
+                               T_sfc, p_sfc, sens_ht, latent_ht, & ! Inout
+                               wpsclrp_sfc, wpedsclrp_sfc ) ! Inout
 
       if ( clubb_at_least_debug_level( 0 ) ) then
         if ( err_code == clubb_fatal_error ) then
@@ -2493,11 +2502,11 @@ module clubb_driver
         rfrzm = rfrzm + hydromet(:,:,hm_metadata%iirg)
       end if
 
-      rcm_zm    = zt2zm( gr%nzm, gr%nzt, ngrdcol, gr, rcm )
-      radht_zm  = zt2zm( gr%nzm, gr%nzt, ngrdcol, gr, radht )
-
       ! Add effects of radiation on thlp2
       if ( clubb_config_flags%l_calc_thlp2_rad ) then
+
+        rcm_zm    = zt2zm( gr%nzm, gr%nzt, ngrdcol, gr, rcm )
+        radht_zm  = zt2zm( gr%nzm, gr%nzt, ngrdcol, gr, radht )
 
         do i = 1, ngrdcol
           call calculate_thlp2_rad( gr%nzm, rcm_zm(i,:), thlprcp(i,:), radht_zm(i,:), & ! intent(in)
@@ -2569,10 +2578,7 @@ module clubb_driver
       call cpu_time(time_stop)
       time_clubb_advance = time_clubb_advance + time_stop - time_start
       call cpu_time(time_start) ! initialize timer for setup_pdf_parameters
-      
-      wp2_zt = max( zm2zt( gr%nzm, gr%nzt, ngrdcol, gr, wp2 ), w_tol_sqd ) ! Positive definite quantity
 
-      
       if ( .not. trim( microphys_scheme ) == "none" ) then
 
          !!! Setup the PDF parameters.
@@ -2635,6 +2641,9 @@ module clubb_driver
       !----------------------------------------------------------------
 
       if ( lh_microphys_type /= lh_microphys_disabled .or. l_silhs_rad ) then
+      
+        ! Calculate sample weights separately at all grid levels when radiation is not called
+        l_calc_weights_all_levs_itime = l_calc_weights_all_levs .and. .not. l_rad_itime
 
         ! The profile of CLUBB's mixing length, Lscale, is passed into
         ! subroutine generate_silhs_sample for use in calculating the vertical
@@ -2714,8 +2723,6 @@ module clubb_driver
                
 
       end if ! lh_microphys_enabled
-      
-      
 
 #else
       ! Alleviate compiler warnings
@@ -2734,89 +2741,127 @@ module clubb_driver
       ! Compute Microphysics
       !----------------------------------------------------------------
 
-      ! Call microphysics scheme and produce microphysics tendencies.
-      do i = 1, ngrdcol
-        call calc_microphys_scheme_tendcies( gr, dt_main, time_current, &               ! In
-                                pdf_dim, hydromet_dim, runtype, &                       ! In
-                                thlm(i,:), p_in_Pa(i,:), exner(i,:), rho(i,:), rho_zm(i,:), rtm(i,:), &! In
-                                rcm(i,:), cloud_frac(i,:), wm_zt(i,:), wm_zm(i,:), wp2_zt(i,:), &      ! In
-                                hydromet(i,:,:), Nc_in_cloud(i,:), &                                ! In
-                                hm_metadata, &                                       ! In
-                                pdf_params, hydromet_pdf_params(i,:), &                 ! In
-                                precip_fracs, &                                         ! In
-                                X_nl_all_levs(i,:,:,:), X_mixt_comp_all_levs(i,:,:), &  ! In
-                                lh_sample_point_weights(i,:,:), &                       ! In
-                                mu_x_1_n(i,:,:), mu_x_2_n(i,:,:), &                     ! In
-                                sigma_x_1_n(i,:,:), sigma_x_2_n(i,:,:), &               ! In
-                                corr_array_1_n(i,:,:,:), corr_array_2_n(i,:,:,:), &     ! In
-                                lh_rt_clipped(i,:,:), lh_thl_clipped(i,:,:), &          ! In
-                                lh_rc_clipped(i,:,:), lh_rv_clipped(i,:,:), &           ! In
-                                lh_Nc_clipped(i,:,:), &                                 ! In
-                                silhs_config_flags%l_lh_importance_sampling, &          ! In
-                                silhs_config_flags%l_lh_instant_var_covar_src, &        ! In
-                                clubb_config_flags%saturation_formula, &                ! In
-                                stats_metadata, &                                       ! In
-                                stats_zt(i), stats_zm(i), &                                   ! Inout
-                                stats_sfc(i), stats_lh_zt(i), &                               ! Inout
-                                Nccnm(i,:), &                                                ! Inout
-                                hydromet_mc(i,:,:), Ncm_mc(i,:), rcm_mc(i,:), rvm_mc(i,:), &                  ! Out
-                                thlm_mc(i,:), hydromet_vel_zt(i,:,:), &                             ! Out
-                                hydromet_vel_covar_zt_impc(i,:,:), &                           ! Out
-                                hydromet_vel_covar_zt_expc(i,:,:), &                           ! Out
-                                wprtp_mc(i,:), wpthlp_mc(i,:), rtp2_mc(i,:), &                         ! Out
-                                thlp2_mc(i,:), rtpthlp_mc(i,:) )                                  ! Out
-      end do
-
-      ! Measure time in calc_microphys_scheme_tendcies
-      call cpu_time(time_stop)
-      time_microphys_scheme = time_microphys_scheme + time_stop - time_start
-      call cpu_time(time_start) ! initialize timer for advance_microphys
-
-      wp3_zm = zt2zm( gr%nzm, gr%nzt, ngrdcol, gr, wp3 )
-
-      ! Calculate Skw_zm for use in advance_microphys.
-      !$acc data copyin( wp2, wp3_zm, clubb_params ) &
-      !$acc      copyout( Skw_zm )
-      call Skx_func( gr%nzm, ngrdcol, wp2, wp3_zm, &
-                     w_tol, clubb_params, &
-                     Skw_zm )
-      !$acc end data
+      if ( .not. trim( microphys_scheme ) == "none" ) then
       
-      ! This field is smoothed by interpolating to thermodynamic levels and then
-      ! interpolating back to momentum levels.
-      Skw_zm = zt2zm( gr%nzm, gr%nzt, ngrdcol, gr, zm2zt( gr%nzm, gr%nzt, ngrdcol, gr, Skw_zm ) )
+        wp2_zt = max( zm2zt( gr%nzm, gr%nzt, ngrdcol, gr, wp2 ), w_tol_sqd ) ! Positive definite quantity
 
-      ! Advance predictive microphysics fields one model timestep.
-      do i = 1, ngrdcol
-        call advance_microphys( gr, dt_main, time_current,                  & ! In
-                                hydromet_dim, hm_metadata,               & ! In
-                                wm_zt(i,:), wp2(i,:),                                 & ! In
-                                exner(i,:), rho(i,:), rho_zm(i,:), rcm(i,:),          & ! In
-                                cloud_frac(i,:), Kh_zm(i,:), Skw_zm(i,:),                  & ! In
-                                rho_ds_zm(i,:), rho_ds_zt(i,:), invrs_rho_ds_zt(i,:), & ! In
-                                hydromet_mc(i,:,:), Ncm_mc(i,:), Lscale(i,:),           & ! In
-                                hydromet_vel_covar_zt_impc(i,:,:),                 & ! In
-                                hydromet_vel_covar_zt_expc(i,:,:),                 & ! In
-                                clubb_params(i,:), nu_vert_res_dep,                    & ! In
-                                clubb_config_flags%tridiag_solve_method,    & ! In
-                                clubb_config_flags%l_upwind_xm_ma,          & ! In
-                                stats_metadata,                             & ! In
-                                stats_zt(i), stats_zm(i), stats_sfc(i),              & ! Inout
-                                hydromet(i,:,:), hydromet_vel_zt(i,:,:), hydrometp2(i,:,:),      & ! Inout
-                                K_hm(i,:,:), Ncm(i,:), Nc_in_cloud(i,:), rvm_mc(i,:), thlm_mc(i,:),    & ! Inout
-                                wphydrometp(i,:,:), wpNcp(i,:) )                          ! Out
-      end do
+        ! Call microphysics scheme and produce microphysics tendencies.
+        do i = 1, ngrdcol
+          call calc_microphys_scheme_tendcies( gr, dt_main, time_current, &               ! In
+                                  pdf_dim, hydromet_dim, runtype, &                       ! In
+                                  thlm(i,:), p_in_Pa(i,:), exner(i,:), rho(i,:), rho_zm(i,:), rtm(i,:), &! In
+                                  rcm(i,:), cloud_frac(i,:), wm_zt(i,:), wm_zm(i,:), wp2_zt(i,:), &      ! In
+                                  hydromet(i,:,:), Nc_in_cloud(i,:), &                                ! In
+                                  hm_metadata, &                                       ! In
+                                  pdf_params, hydromet_pdf_params(i,:), &                 ! In
+                                  precip_fracs, &                                         ! In
+                                  X_nl_all_levs(i,:,:,:), X_mixt_comp_all_levs(i,:,:), &  ! In
+                                  lh_sample_point_weights(i,:,:), &                       ! In
+                                  mu_x_1_n(i,:,:), mu_x_2_n(i,:,:), &                     ! In
+                                  sigma_x_1_n(i,:,:), sigma_x_2_n(i,:,:), &               ! In
+                                  corr_array_1_n(i,:,:,:), corr_array_2_n(i,:,:,:), &     ! In
+                                  lh_rt_clipped(i,:,:), lh_thl_clipped(i,:,:), &          ! In
+                                  lh_rc_clipped(i,:,:), lh_rv_clipped(i,:,:), &           ! In
+                                  lh_Nc_clipped(i,:,:), &                                 ! In
+                                  silhs_config_flags%l_lh_importance_sampling, &          ! In
+                                  silhs_config_flags%l_lh_instant_var_covar_src, &        ! In
+                                  clubb_config_flags%saturation_formula, &                ! In
+                                  stats_metadata, &                                       ! In
+                                  stats_zt(i), stats_zm(i), &                                   ! Inout
+                                  stats_sfc(i), stats_lh_zt(i), &                               ! Inout
+                                  Nccnm(i,:), &                                                ! Inout
+                                  hydromet_mc(i,:,:), Ncm_mc(i,:), rcm_mc(i,:), rvm_mc(i,:), &                  ! Out
+                                  thlm_mc(i,:), hydromet_vel_zt(i,:,:), &                             ! Out
+                                  hydromet_vel_covar_zt_impc(i,:,:), &                           ! Out
+                                  hydromet_vel_covar_zt_expc(i,:,:), &                           ! Out
+                                  wprtp_mc(i,:), wpthlp_mc(i,:), rtp2_mc(i,:), &                         ! Out
+                                  thlp2_mc(i,:), rtpthlp_mc(i,:) )                                  ! Out
+        end do
 
-      ! Measure time in calc_microphys_scheme_tendcies
-      call cpu_time(time_stop)
-      time_microphys_advance = time_microphys_advance + time_stop - time_start
-      call cpu_time(time_start) ! initialize timer for the end part of the main loop
+        ! Measure time in calc_microphys_scheme_tendcies
+        call cpu_time(time_stop)
+        time_microphys_scheme = time_microphys_scheme + time_stop - time_start
+        call cpu_time(time_start) ! initialize timer for advance_microphys
+
+        wp3_zm = zt2zm( gr%nzm, gr%nzt, ngrdcol, gr, wp3 )
+
+        ! Calculate Skw_zm for use in advance_microphys.
+        !$acc data copyin( wp2, wp3_zm, clubb_params ) &
+        !$acc      copyout( Skw_zm )
+        call Skx_func( gr%nzm, ngrdcol, wp2, wp3_zm, &
+                      w_tol, clubb_params, &
+                      Skw_zm )
+        !$acc end data
+        
+        ! This field is smoothed by interpolating to thermodynamic levels and then
+        ! interpolating back to momentum levels.
+        Skw_zm = zt2zm( gr%nzm, gr%nzt, ngrdcol, gr, zm2zt( gr%nzm, gr%nzt, ngrdcol, gr, Skw_zm ) )
+
+        ! Advance predictive microphysics fields one model timestep.
+        do i = 1, ngrdcol
+          call advance_microphys( gr, dt_main, time_current,                  & ! In
+                                  hydromet_dim, hm_metadata,               & ! In
+                                  wm_zt(i,:), wp2(i,:),                                 & ! In
+                                  exner(i,:), rho(i,:), rho_zm(i,:), rcm(i,:),          & ! In
+                                  cloud_frac(i,:), Kh_zm(i,:), Skw_zm(i,:),                  & ! In
+                                  rho_ds_zm(i,:), rho_ds_zt(i,:), invrs_rho_ds_zt(i,:), & ! In
+                                  hydromet_mc(i,:,:), Ncm_mc(i,:), Lscale(i,:),           & ! In
+                                  hydromet_vel_covar_zt_impc(i,:,:),                 & ! In
+                                  hydromet_vel_covar_zt_expc(i,:,:),                 & ! In
+                                  clubb_params(i,:), nu_vert_res_dep,                    & ! In
+                                  clubb_config_flags%tridiag_solve_method,    & ! In
+                                  clubb_config_flags%l_upwind_xm_ma,          & ! In
+                                  stats_metadata,                             & ! In
+                                  stats_zt(i), stats_zm(i), stats_sfc(i),              & ! Inout
+                                  hydromet(i,:,:), hydromet_vel_zt(i,:,:), hydrometp2(i,:,:),      & ! Inout
+                                  K_hm(i,:,:), Ncm(i,:), Nc_in_cloud(i,:), rvm_mc(i,:), thlm_mc(i,:),    & ! Inout
+                                  wphydrometp(i,:,:), wpNcp(i,:) )                          ! Out
+        end do
+
+        ! Measure time in calc_microphys_scheme_tendcies
+        call cpu_time(time_stop)
+        time_microphys_advance = time_microphys_advance + time_stop - time_start
+        call cpu_time(time_start) ! initialize timer for the end part of the main loop
+        
+        if ( clubb_at_least_debug_level( 0 ) ) then
+            if ( err_code == clubb_fatal_error ) then
+              write(fstderr,*) "Fatal error in advance_microphys:"
+              exit mainloop
+            endif
+        end if
+
+      else
+
+        ! Cloud water sedimentation.
+        if ( l_cloud_sed ) then
+        
+          Ncm = Nc_in_cloud * cloud_frac
+          rcm_mc = zero
+          thlm_mc = zero
+
+          ! Note:  it would be very easy to upscale the cloud water sedimentation
+          !        flux, so we should look into adding an upscaled option.
+          do i = 1, ngrdcol 
+            call cloud_drop_sed( gr, rcm(i,:), Ncm(i,:),      & ! Intent(in)
+                                 rho_zm(i,:), rho(i,:), exner(i,:), sigma_g, & ! Intent(in)
+                                 stats_metadata,              & ! Intent(in)
+                                 stats_zt(i), stats_zm(i),          & ! Intent(inout)
+                                 rcm_mc(i,:), thlm_mc(i,:) )              ! Intent(inout)
+          end do
+
+        endif ! l_cloud_sed
       
-      if ( clubb_at_least_debug_level( 0 ) ) then
-          if ( err_code == clubb_fatal_error ) then
-            write(fstderr,*) "Fatal error in advance_microphys:"
-            exit mainloop
-          endif
+        if ( stats_metadata%l_stats_samp ) then
+
+          Ncm = Nc_in_cloud * cloud_frac
+
+          do i = 1, ngrdcol
+            call stat_update_var( stats_metadata%iNcm, Ncm(i,:), stats_zt(i) )
+            call stat_update_var( stats_metadata%iNc_in_cloud, Nc_in_cloud(i,:), stats_zt(i) )
+          end do
+          
+        endif ! stats_metadata%l_stats_samp
+
       end if
 
       if ( stats_metadata%l_stats_samp ) then
@@ -2837,7 +2882,7 @@ module clubb_driver
       ! Radiation is always called on the first timestep in order to ensure
       ! that the simulation is subject to radiative heating and cooling from
       ! the first timestep.
-      if ( l_rad_itime ) then
+      if ( l_rad_itime .and. trim( rad_scheme ) /= "none" ) then
 
         ! Advance a radiation scheme
         ! With this call ordering, snow and ice water mixing ratio will be
@@ -2879,25 +2924,26 @@ module clubb_driver
         do i = 1, ngrdcol
           call stat_update_var( stats_metadata%iFrad, Frad(i,:), stats_zm(i) )
         end do
-      end if
 
-      ! Update the radiation variables here so they are updated every timestep
-      do i = 1, ngrdcol
-        call update_radiation_variables( gr%nzm, gr%nzt, radht, Frad_SW_up(i,:), Frad_LW_up(i,:), &
-                                         Frad_SW_down(i,:), Frad_LW_down(i,:), &
-                                         stats_metadata, stats_zt(i), stats_zm(i), &
-                                         stats_lh_zt(i), stats_lh_sfc(i), stats_rad_zt(i), &
-                                         stats_rad_zm(i), stats_sfc(i) )
-      end do
+        ! Update the radiation variables here so they are updated every timestep
+        do i = 1, ngrdcol
+          call update_radiation_variables( gr%nzm, gr%nzt, radht, Frad_SW_up(i,:), Frad_LW_up(i,:), &
+                                          Frad_SW_down(i,:), Frad_LW_down(i,:), &
+                                          stats_metadata, stats_zt(i), stats_zm(i), &
+                                          stats_rad_zt(i), stats_rad_zm(i) )
+        end do
+      end if
 
       ! End statistics timestep
       ! Only end stats for the first column of values, this writes the values to file,
       ! but since the stats isn't setup to use multiple columns, it will just attempt
       ! write to the same file
-      call stats_end_timestep( stats_metadata,        & ! intent(in)
-                               stats_zt(1), stats_zm(1), stats_sfc(1), & ! intent(inout)
-                               stats_lh_zt(1), stats_lh_sfc(1),     & ! intent(inout)
-                               stats_rad_zt(1), stats_rad_zm(1)     ) ! intent(inout)
+      if ( stats_metadata%l_stats_last ) then
+        call stats_end_timestep( stats_metadata,        & ! intent(in)
+                                stats_zt(1), stats_zm(1), stats_sfc(1), & ! intent(inout)
+                                stats_lh_zt(1), stats_lh_sfc(1),     & ! intent(inout)
+                                stats_rad_zt(1), stats_rad_zm(1)     ) ! intent(inout)
+      end if
 
 #ifdef NETCDF
       if ( ngrdcol > 1 .and. l_output_multi_col ) then
@@ -2994,7 +3040,7 @@ module clubb_driver
                          stats_rad_zt, stats_rad_zm )
 
     ! Free memory
-    call cleanup_clubb( l_input_fields, stats_metadata, gr )
+    call cleanup_clubb( l_input_fields, gr )
 
     deallocate( um )        ! u wind
     deallocate( vm )        ! v wind
@@ -3321,7 +3367,7 @@ module clubb_driver
 
     real( kind = core_rknd ), dimension(ngrdcol,gr%nzt), intent(inout) :: &
       Nccnm    ! Cloud condensation nuclei concentration (COAMPS/MG)  [num/kg]
-
+    
     real( kind = core_rknd ), dimension(ngrdcol), intent(inout) :: &
       deep_soil_T_in_K, &
       sfc_soil_T_in_K, &
@@ -4407,7 +4453,7 @@ module clubb_driver
 
   !-----------------------------------------------------------------------
 
-  subroutine cleanup_clubb( l_input_fields, stats_metadata, gr )
+  subroutine cleanup_clubb( l_input_fields, gr )
     
     use grid_class, only: &
         grid
@@ -4446,9 +4492,6 @@ module clubb_driver
     use microphys_init_cleanup, only: &
         cleanup_microphys
 
-    use stats_variables, only: &
-      stats_metadata_type
-
 
 #ifdef SILHS
     use parameters_microphys, only: &
@@ -4467,9 +4510,6 @@ module clubb_driver
     ! Input Variables
     logical, intent(in) :: &
       l_input_fields
-
-    type (stats_metadata_type), intent(inout) :: &
-      stats_metadata
       
     ! Output Variables
     type(grid), intent(inout) :: &
@@ -5037,8 +5077,9 @@ module clubb_driver
   end subroutine restart_clubb
 
   !----------------------------------------------------------------------
-  subroutine prescribe_forcings( sclr_dim, edsclr_dim, sclr_idx, &
-                                 gr, dt, um, vm, thlm, &
+  subroutine prescribe_forcings( gr, nzm, nzt, ngrdcol, &
+                                 sclr_dim, edsclr_dim, sclr_idx, &
+                                 dt, um, vm, thlm, &
                                  p_in_Pa, exner, rho, rho_zm, thvm, &
                                  veg_T_in_K, &
                                  l_modify_bc_for_cnvg_test, &
@@ -5151,23 +5192,30 @@ module clubb_driver
       time_current, &
       time_initial
 
+    use soil_vegetation, only: &
+      advance_soil_veg
+
     implicit none
 
     ! Input Variables
     !--------------------- Input Variables ---------------------
     integer, intent(in) :: &
+      nzm, &
+      nzt, &
+      ngrdcol, &
       sclr_dim, & 
       edsclr_dim
 
     type (sclr_idx_type), intent(in) :: &
       sclr_idx
 
-    type (grid), intent(in) :: gr
+    type (grid), intent(in) :: &
+      gr
 
     real(kind=core_rknd), intent(in) :: & 
       dt         ! Model timestep         [s]
 
-    real( kind = core_rknd ), dimension(gr%nzt), intent(in) :: &
+    real( kind = core_rknd ), dimension(ngrdcol,nzt), intent(in) :: &
       um,           & ! eastward grid-mean wind component (thermo. levs.)  [m/s]
       vm,           & ! northward grid-mean wind component (thermo. levs.) [m/s]
       thlm,         & ! liq. water pot. temp., th_l (thermo. levels)       [K]
@@ -5176,10 +5224,10 @@ module clubb_driver
       rho,          & ! Air density on thermodynamic levels                [kg/m^3]
       thvm            ! Virtual potential temperature                      [K]
 
-    real( kind = core_rknd ), dimension(gr%nzm), intent(in) :: &
+    real( kind = core_rknd ), dimension(ngrdcol,gr%nzm), intent(in) :: &
       rho_zm          ! Air density on momentum levels                     [kg/m^3]
 
-    real( kind = core_rknd ), intent(in) :: &
+    real( kind = core_rknd ), dimension(ngrdcol), intent(in) :: &
       veg_T_in_K    
 
     ! Flag to activate modifications on boundary condition for convergence test
@@ -5193,10 +5241,10 @@ module clubb_driver
     type (stats_metadata_type), intent(in) :: &
       stats_metadata
 
-    type (stats), intent(inout)  :: &
+    type (stats), dimension(ngrdcol), intent(inout)  :: &
       stats_sfc        ! stats_sfc
 
-    real( kind = core_rknd ), dimension(gr%nzt), intent(inout) :: &
+    real( kind = core_rknd ), dimension(ngrdcol,nzt), intent(inout) :: &
       rtm,             & ! total water mixing ratio, r_t (thermo. levs.)        [kg/kg]
       wm_zt,           & ! vertical mean wind comp. on thermo. levs             [m/s]
       ug,              & ! u geostrophic wind                                   [m/s]
@@ -5208,7 +5256,7 @@ module clubb_driver
       um_forcing,      & ! eastward wind forcing (thermodynamic levels)         [m/s/s]
       vm_forcing         ! northward wind forcing (thermodynamic levels)        [m/s/s]
 
-    real( kind = core_rknd ), dimension(gr%nzm), intent(inout) :: &
+    real( kind = core_rknd ), dimension(ngrdcol,nzm), intent(inout) :: &
       wm_zm,           & ! vertical mean wind comp. on momentum levs     [m/s]
       wprtp_forcing,   & ! total water turbulent flux forcing (momentum levels) [m*K/s^2]
       wpthlp_forcing,  & ! liq pot temp turb flux forcing (momentum levels)     [m(kg/kg)/s^2]
@@ -5216,41 +5264,37 @@ module clubb_driver
       thlp2_forcing,   & ! liq pot temp variance forcing (momentum levels)      [K^2/s]
       rtpthlp_forcing    ! <r_t'th_l'> covariance forcing (momentum levels)     [K(kg/kg)/s]
 
-    real( kind = core_rknd ), dimension(gr%nzm,sclr_dim), intent(inout) :: &
+    real( kind = core_rknd ), dimension(ngrdcol,nzm,sclr_dim), intent(inout) :: &
       wpsclrp          ! w'sclr' (momentum levels)       [{units vary} m/s]
 
-    real( kind = core_rknd ), dimension(gr%nzt,sclr_dim), intent(inout) :: &
+    real( kind = core_rknd ), dimension(ngrdcol,nzt,sclr_dim), intent(inout) :: &
       sclrm_forcing    ! Passive scalar forcing          [{units vary}/s]
 
-    real( kind = core_rknd ), dimension(gr%nzt,edsclr_dim), intent(inout) :: &
+    real( kind = core_rknd ), dimension(ngrdcol,nzt,edsclr_dim), intent(inout) :: &
       edsclrm_forcing  ! Eddy-diffusion passive scalar forcing    [{units vary}/s]
 
-    real( kind = core_rknd ), intent(inout) :: &
+    real( kind = core_rknd ), dimension(ngrdcol), intent(inout) :: &
       wpthlp_sfc, & ! w' theta_l' at surface   [(m K)/s]
       wprtp_sfc,  & ! w' r_t' at surface       [(kg m)/( kg s)]
       upwp_sfc,   & ! u'w' at surface          [m^2/s^2]
       vpwp_sfc,   & ! v'w' at surface          [m^2/s^2]
       T_sfc,      & ! surface temperature      [K]
-      p_sfc,      & ! surface pressure         [Pa]
+      p_sfc         ! surface pressure         [Pa]
+
+    real( kind = core_rknd ), intent(inout) :: &
       sens_ht,    & ! sensible heat flux       [K m/s]
       latent_ht     ! latent heat flux         [m/s]
 
-    real( kind = core_rknd ), dimension(sclr_dim), intent(inout) :: &
+    real( kind = core_rknd ), dimension(ngrdcol,sclr_dim), intent(inout) :: &
       wpsclrp_sfc      ! Passive scalar flux at surface         [{units vary} m/s]
 
-    real( kind = core_rknd ), dimension(edsclr_dim), intent(inout) :: &
+    real( kind = core_rknd ), dimension(ngrdcol,edsclr_dim), intent(inout) :: &
       wpedsclrp_sfc    ! Eddy-diffusion passive scalar flux at surface [{un vary}m/s]
 
     ! Local Variables
-    real( kind = core_rknd ) :: &
-      wpthep  ! w'theta_e'                [m K/s]
-
-    real( kind = core_rknd ) :: &
-      ubar, &     ! mean sfc wind speed   [m/s]
-      rho_sfc     ! Density at zm(1)      [kg/m^3]
-
-    real( kind = core_rknd ) :: &
-      ustar    ! Average value of friction velocity [m/s]
+    real( kind = core_rknd ), dimension(ngrdcol) :: &
+      ustar,    & ! Average value of friction velocity [m/s]
+      ubar        ! mean sfc wind speed   [m/s]
 
     ! Flags to help avoid code duplication
     logical :: &
@@ -5261,7 +5305,7 @@ module clubb_driver
     ! Variables to store the values at fixed model height
     ! used to calculate surface fluxes in order to implement the
     ! modified boundary conditions for convergence test
-    real( kind = core_rknd ) :: &
+    real( kind = core_rknd ), dimension(ngrdcol) :: &
       um_bot, &
       vm_bot, &
       rtm_bot, &
@@ -5269,6 +5313,8 @@ module clubb_driver
       rho_bot, &
       exner_bot, &
       z_bot
+
+    integer :: i, k, sclr, edsclr
 
 !-----------------------------------------------------------------------
 
@@ -5285,25 +5331,35 @@ module clubb_driver
 
     ! These lines were added to reset the forcing arrays to 0 each iteration.
     ! This was previously done in the <case>_tndcy subroutine.
-    rtm_forcing = zero
-    thlm_forcing = zero
-    wprtp_forcing = zero
-    wpthlp_forcing = zero
-    rtp2_forcing = zero
-    thlp2_forcing = zero
-    rtpthlp_forcing = zero
+    do k = 1, nzt
+      do i = 1, ngrdcol
+        rtm_forcing = zero
+        thlm_forcing = zero
+      end do
+    end do
+
+    do k = 1, nzm
+      do i = 1, ngrdcol
+        wprtp_forcing = zero
+        wpthlp_forcing = zero
+        rtp2_forcing = zero
+        thlp2_forcing = zero
+        rtpthlp_forcing = zero
+      end do
+    end do
 
     if ( l_t_dependent .and. .not. l_ignore_forcings ) then
+
       ! This should include the following:
       ! "cloud_feedback_s6", "cloud_feedback_s6_p2k",
       !   "cloud_feedback_s11", "cloud_feedback_s11_p2k",
       !   "cloud_feedback_s12", "cloud_feedback_s12_p2k",
       !   "gabls3_night", "arm_97", "gabls3", "twp_ice",
       !   "arm", "arm_0003", "arm_3year", "astex_a209", & "cobra".
-
       call apply_time_dependent_forcings( &
+            ngrdcol, gr%nzm, gr%nzt, &
             sclr_dim, edsclr_dim, sclr_idx, & ! In
-            gr, time_current, gr%nzt, rtm, rho, exner, & ! In
+            gr, time_current, rtm, rho, exner, & ! In
             thlm_forcing, rtm_forcing, um_ref, vm_ref, um_forcing, vm_forcing, & ! In/Out
             wm_zt, wm_zm, ug, vg, & ! In/Out
             sclrm_forcing, edsclrm_forcing ) ! In/Out
@@ -5312,23 +5368,25 @@ module clubb_driver
       ! so much sponge damping, which is associated with sawtooth noise
       ! in the cloud_feedback cases.  I don't know how it will affect
       ! the other cases.
-      rtm_forcing(gr%nzt) = zero
-      thlm_forcing(gr%nzt) = zero
+      do i = 1, ngrdcol
+        rtm_forcing(i,nzt) = zero
+        thlm_forcing(i,nzt) = zero
+      end do
       ! End Vince Larson's addition
 
     else ! Legacy method of setting the forcings
 
       select case ( runtype )
 
-!    case ( "astex_a209" ) ! ASTEX Sc case for K & K
-!      call astex_a209_tndcy( sclr_dim, edsclr_dim, sclr_idx, & ! Intent(in)
-!                             wm_zt, wm_zm,  &                      ! Intent(out)
-!                             thlm_forcing, rtm_forcing , &         ! Intent(out)
-!                             sclrm_forcing, edsclrm_forcing )      ! Intent(out)
+      !  case ( "astex_a209" ) ! ASTEX Sc case for K & K
+      !    call astex_a209_tndcy( sclr_dim, edsclr_dim, sclr_idx, & ! Intent(in)
+      !                           wm_zt, wm_zm,  &                      ! Intent(out)
+      !                           thlm_forcing, rtm_forcing , &         ! Intent(out)
+      !                           sclrm_forcing, edsclrm_forcing )      ! Intent(out)
 
       case ( "atex" ) ! ATEX case
 
-        call atex_tndcy( sclr_dim, edsclr_dim, sclr_idx, &      ! Intent(in)
+        call atex_tndcy( ngrdcol, sclr_dim, edsclr_dim, sclr_idx, &      ! Intent(in)
                          gr, time_current, time_initial, &      ! Intent(in)
                          rtm, &                                 ! Intent(in)
                          wm_zt, wm_zm, &                        ! Intent(out)
@@ -5337,32 +5395,37 @@ module clubb_driver
 
       case ( "bomex" ) ! BOMEX Cu case
 
-        call bomex_tndcy( sclr_dim, edsclr_dim, sclr_idx, &     ! Intent(in)
+        call bomex_tndcy( ngrdcol, sclr_dim, edsclr_dim, sclr_idx, &     ! Intent(in)
                           gr, rtm, &                            ! Intent(in)
                           thlm_forcing, rtm_forcing, &          ! Intent(out)
                           sclrm_forcing, edsclrm_forcing )      ! Intent(out)
 
       case ( "dycoms2_rf01" ) ! DYCOMS2 RF01 case
 
-        call dycoms2_rf01_tndcy( gr, sclr_dim, edsclr_dim, sclr_idx, &      ! Intent(in)
-                                 thlm_forcing, rtm_forcing,  &              ! Intent(out)
-                                 sclrm_forcing, edsclrm_forcing )           ! Intent(out)
+        call dycoms2_rf01_tndcy( ngrdcol, gr, sclr_dim, edsclr_dim, sclr_idx, & ! Intent(in)
+                                  thlm_forcing, rtm_forcing,  &                 ! Intent(out)
+                                  sclrm_forcing, edsclrm_forcing )              ! Intent(out)
 
       case ( "dycoms2_rf02" ) ! DYCOMS2 RF02 case
 
-        call dycoms2_rf02_tndcy( sclr_dim, edsclr_dim, sclr_idx, gr, &     ! Intent(in)
-                                 wm_zt, wm_zm,   &                         ! Intent(inout)
-                                 thlm_forcing, rtm_forcing, &              ! Intent(out) 
-                                 sclrm_forcing, edsclrm_forcing )          ! Intent(out)
+        call dycoms2_rf02_tndcy( ngrdcol, sclr_dim, edsclr_dim, sclr_idx, gr, & ! Intent(in)
+                                 wm_zt, wm_zm,   &                              ! Intent(inout)
+                                 thlm_forcing, rtm_forcing, &                   ! Intent(out) 
+                                 sclrm_forcing, edsclrm_forcing )               ! Intent(out)
 
       case ( "fire", "generic" ) ! FIRE Sc case
+
         ! Analytic radiation is computed elsewhere
-        thlm_forcing = 0._core_rknd
-        rtm_forcing = 0._core_rknd
+        do k = 1, gr%nzt
+          do i = 1, ngrdcol
+            thlm_forcing(i,k) = 0._core_rknd
+            rtm_forcing(i,k)  = 0._core_rknd
+          end do
+        end do
 
       case ( "gabls2" ) ! GABLS 2 case
 
-        call gabls2_tndcy( sclr_dim, edsclr_dim, sclr_idx, &      ! Intent(in) 
+        call gabls2_tndcy( ngrdcol, sclr_dim, edsclr_dim, sclr_idx, &      ! Intent(in) 
                            gr, time_current, time_initial,  &     ! Intent(in) 
                            wm_zt, wm_zm, thlm_forcing, &          ! Intent(out)
                            rtm_forcing, &                         ! Intent(out)
@@ -5370,13 +5433,13 @@ module clubb_driver
 
       case ( "lba" )
 
-        call lba_tndcy( sclr_dim, edsclr_dim, sclr_idx, &     ! Intent(in)
-                        gr, thlm_forcing, rtm_forcing, &      ! Intent(out)
-                        sclrm_forcing, edsclrm_forcing )      ! Intent(out)
+        call lba_tndcy( ngrdcol, sclr_dim, edsclr_dim, sclr_idx,  & ! Intent(in)
+                        gr, thlm_forcing, rtm_forcing, &            ! Intent(out)
+                        sclrm_forcing, edsclrm_forcing )            ! Intent(out)
 
       case ( "mpace_a" ) ! mpace_a arctic stratus case
 
-        call mpace_a_tndcy( sclr_dim, edsclr_dim, sclr_idx, &          ! Intent(in) 
+        call mpace_a_tndcy( ngrdcol, sclr_dim, edsclr_dim, sclr_idx, & ! Intent(in) 
                             gr, time_current, p_in_Pa, &               ! Intent(in) 
                             wm_zt, wm_zm, thlm_forcing, rtm_forcing, & ! Intent(out)
                             um_ref, vm_ref, &                          ! Intent(out)
@@ -5384,31 +5447,50 @@ module clubb_driver
 
       case ( "mpace_b" ) ! mpace_b arctic stratus case
 
-        call mpace_b_tndcy( sclr_dim, edsclr_dim, sclr_idx, &          ! Intent(in)
+        call mpace_b_tndcy( ngrdcol, sclr_dim, edsclr_dim, sclr_idx, & ! Intent(in)
                             gr, p_in_Pa, thvm, &                       ! Intent(in)
                             wm_zt, wm_zm, thlm_forcing, rtm_forcing, & ! Intent(out)
                             sclrm_forcing, edsclrm_forcing )           ! Intent(out)
 
       case ( "rico" ) ! RICO case
 
-        call rico_tndcy( sclr_dim, edsclr_dim, sclr_idx, &      ! Intent(in)
-                         gr, rtm, exner, &                      ! Intent(in)
-                         thlm_forcing, rtm_forcing, &           ! Intent(out)   
-                         sclrm_forcing, edsclrm_forcing )       ! Intent(out)
+        call rico_tndcy( ngrdcol, sclr_dim, edsclr_dim, sclr_idx, & ! Intent(in)
+                         gr, rtm, exner, &                          ! Intent(in)
+                         thlm_forcing, rtm_forcing, &               ! Intent(out)   
+                         sclrm_forcing, edsclrm_forcing )           ! Intent(out)
 
       case ( "neutral" )
-            thlm_forcing = 0.0_core_rknd
-            rtm_forcing = 0.0_core_rknd
-            sclrm_forcing = 0.0_core_rknd
-            edsclrm_forcing = 0.0_core_rknd
+
+        do k = 1, gr%nzt
+          do i = 1, ngrdcol
+            thlm_forcing(i,k) = 0.0_core_rknd
+            rtm_forcing(i,k) = 0.0_core_rknd
+          end do
+        end do
+
+        do sclr = 1, sclr_dim
+          do k = 1, gr%nzt
+            do i = 1, ngrdcol
+              sclrm_forcing(i,k,sclr) = 0.0_core_rknd
+            end do
+          end do
+        end do
+
+        do edsclr = 1, edsclr_dim
+          do k = 1, gr%nzt
+            do i = 1, ngrdcol
+              edsclrm_forcing(i,k,edsclr) = 0.0_core_rknd
+            end do
+          end do
+        end do
 
       case ( "wangara" ) ! Wangara dry CBL
 
-        ! compute_momentum
-        call wangara_tndcy( gr, sclr_dim, edsclr_dim, sclr_idx, &     ! Intent(in)
-                            wm_zt, wm_zm,  &                          ! Intent(out) 
-                            thlm_forcing, rtm_forcing, &              ! Intent(out)
-                            sclrm_forcing, edsclrm_forcing )          ! Intent(out)
+          ! compute_momentum
+        call wangara_tndcy( ngrdcol, gr, sclr_dim, edsclr_dim, sclr_idx, &  ! Intent(in)
+                            wm_zt, wm_zm,  &                                ! Intent(out) 
+                            thlm_forcing, rtm_forcing, &                    ! Intent(out)
+                            sclrm_forcing, edsclrm_forcing )                ! Intent(out)
 
       case default
 
@@ -5430,20 +5512,22 @@ module clubb_driver
     ! A new subrutine is added here to derive the physical quantities at
     ! the bottom model level that are used for computing the surface fluxes
     ! (i.e. boundary conditions)
-    call read_surface_var_for_bc( gr, um, vm, rtm, thlm, rho_zm, exner, & ! Intent(in)
+    call read_surface_var_for_bc( gr, ngrdcol,                      & ! Intent
+                                  um, vm, rtm, thlm, rho_zm, exner, & ! Intent(in)
                                   p_sfc, l_modify_bc_for_cnvg_test, & ! Intent(in)
-                                  z_bot, um_bot, vm_bot, rtm_bot, & ! Intent (out)
-                                  thlm_bot, rho_bot, exner_bot ) ! Intent (out)
+                                  z_bot, um_bot, vm_bot, rtm_bot,   & ! Intent (out)
+                                  thlm_bot, rho_bot, exner_bot )      ! Intent (out)
 
     ! Boundary conditions for the second order moments
-
-    ubar = compute_ubar( um_bot, vm_bot )
+    call compute_ubar( ngrdcol, um_bot, vm_bot, &
+                       ubar )
 
     select case ( trim( runtype ) )
 
     case ( "rico" )
+
       l_set_sclr_sfc_rtm_thlm = .true.
-      call rico_sfclyr( time_current, um_bot, vm_bot, thlm_bot, rtm_bot, & ! Intent(in)
+      call rico_sfclyr( ngrdcol, time_current, um_bot, vm_bot, thlm_bot, rtm_bot, & ! Intent(in)
                           ! 299.8_core_rknd K is the RICO T_sfc;
                           ! 101540 Pa is the sfc pressure.
                           !gr%zt(1,2), 299.8_core_rknd, 101540._core_rknd,  &           ! Intent(in)
@@ -5453,22 +5537,27 @@ module clubb_driver
                         wprtp_sfc, ustar, T_sfc )                       ! Intent(out)
 
     case ( "gabls3" )
+
       l_compute_momentum_flux = .true.
-      call gabls3_sfclyr( ubar, veg_T_in_K,      &               ! Intent(in)
+      call gabls3_sfclyr( ngrdcol, ubar, veg_T_in_K,           & ! Intent(in)
                           thlm_bot, rtm_bot, z_bot, exner_bot, & ! Intent(in)
                           wpthlp_sfc, wprtp_sfc, ustar )         ! Intent(out)
 
     case ( "gabls3_night" )
-      call gabls3_night_sfclyr( time_current, um_bot, vm_bot,  & ! Intent(in)
-                          thlm_bot, rtm_bot, z_bot,            & ! Intent(in)
-                          upwp_sfc, vpwp_sfc,                  & ! Intent(out)
-                          wpthlp_sfc, wprtp_sfc, ustar )         ! Intent(out)
+
+      call gabls3_night_sfclyr( ngrdcol, time_current, um_bot, vm_bot,  & ! Intent(in)
+                                thlm_bot, rtm_bot, z_bot,               & ! Intent(in)
+                                upwp_sfc, vpwp_sfc,                     & ! Intent(out)
+                                wpthlp_sfc, wprtp_sfc, ustar )            ! Intent(out)
+
     case ( "jun25_altocu" )
       ! There are no surface momentum or heat fluxes
       ! for the Jun. 25 Altocumulus case.
 
-      ! Ensure ustar is set
-      ustar = 0._core_rknd
+      ! Ensure ustar(i) is set
+      do i = 1, ngrdcol
+        ustar(i) = 0._core_rknd
+      end do
 
       ! Read in time dependent inputs
       call jun25_altocu_read_t_dependent( time_current, &       ! Intent(in)
@@ -5478,18 +5567,20 @@ module clubb_driver
 
       l_compute_momentum_flux = .true.
 
-      call cobra_sfclyr( sclr_dim, edsclr_dim, sclr_idx,  & ! Intent(in)
-                         time_current, z_bot, rho_bot,        & ! Intent(in)
-                         thlm_bot, ubar,                      & ! Intent(in)
-                         wpthlp_sfc, wprtp_sfc, ustar,        & ! Intent(out)
-                         wpsclrp_sfc, wpedsclrp_sfc, T_sfc )    ! Intent(out)
+      call cobra_sfclyr( ngrdcol, sclr_dim, edsclr_dim, sclr_idx, & ! Intent(in)
+                         time_current, z_bot, rho_bot,            & ! Intent(in)
+                         thlm_bot, ubar,                          & ! Intent(in)
+                         wpthlp_sfc, wprtp_sfc, ustar,            & ! Intent(out)
+                         wpsclrp_sfc, wpedsclrp_sfc, T_sfc )        ! Intent(out)
 
     case ( "clex9_nov02" )
       ! There are no surface momentum or heat fluxes
       ! for the CLEX-9: Nov. 02 Altocumulus case.
 
       ! Ensure ustar is set
-      ustar = 0._core_rknd
+      do i = 1, ngrdcol
+        ustar(i) = 0._core_rknd
+      end do
 
       ! Read in time dependent inputs
       call clex9_nov02_read_t_dependent( time_current, &      ! Intent(in)
@@ -5500,25 +5591,30 @@ module clubb_driver
       ! for the CLEX-9: Oct. 14 Altocumulus case.
 
       ! Ensure ustar is set.
-      ustar = 0._core_rknd
+      do i = 1, ngrdcol
+        ustar(i) = 0._core_rknd
+      end do
 
       ! Read in time dependent inputs
       call clex9_oct14_read_t_dependent( time_current, &      ! Intent(in)
                                          sens_ht, latent_ht ) ! Intent(out)
 
     case ( "astex_a209" )
+
       l_compute_momentum_flux = .true.
-      call astex_a209_sfclyr( time_current, ubar, rtm_bot, &    ! Intent(in)
-                          thlm_bot, z_bot, exner_bot, p_sfc, &  ! Intent(in)
-                          saturation_formula,                &  ! Intent(in)
-                          wpthlp_sfc, wprtp_sfc, ustar, T_sfc ) ! Intent(out)
+      call astex_a209_sfclyr( ngrdcol, time_current, ubar, rtm_bot, & ! Intent(in)
+                              thlm_bot, z_bot, exner_bot, p_sfc,    & ! Intent(in)
+                              saturation_formula,                   & ! Intent(in)
+                              wpthlp_sfc, wprtp_sfc, ustar, T_sfc )   ! Intent(out)
 
     case ( "nov11_altocu" )
       ! There are no surface momentum or heat fluxes
       ! for the Nov. 11 Altocumulus case.
 
       ! Ensure ustar is set
-      ustar = 0._core_rknd
+      do i = 1, ngrdcol
+        ustar(i) = 0._core_rknd
+      end do
 
       ! However, the Nov. 11 Altocumulus case has a one-time adjustment
       ! of rtm at t=3600s after the start of the simulation.
@@ -5527,7 +5623,8 @@ module clubb_driver
       ! This subroutine is called here, as the surface momentum/heat fluxes
       ! are called every timestep.
       ! ~EIHoppe/20110104
-      call nov11_altocu_rtm_adjust( gr, time_current, time_initial, dt, & ! (in)
+      call nov11_altocu_rtm_adjust( ngrdcol, gr,                    & ! (in)
+                                    time_current, time_initial, dt, & ! (in)
                                     rtm )                             ! (inout)
 
       ! Read in time dependent inputs
@@ -5535,10 +5632,11 @@ module clubb_driver
                                           sens_ht, latent_ht ) ! Intent(out)
 
     case ( "fire", "generic" )  ! Generic setup, and GCSS FIRE
+
       l_compute_momentum_flux = .true.
       l_set_sclr_sfc_rtm_thlm = .true.
       l_fixed_flux            = .true.
-      call fire_sfclyr( time_current, ubar, p_sfc,           & ! Intent(in)
+      call fire_sfclyr( ngrdcol, time_current, ubar, p_sfc,  & ! Intent(in)
                         thlm_bot, rtm_bot, exner_bot,        & ! Intent(in)
                         saturation_formula,                  & ! Intent(in)
                         wpthlp_sfc, wprtp_sfc, ustar, T_sfc )  ! Intent(out)
@@ -5548,127 +5646,139 @@ module clubb_driver
            "cloud_feedback_s12", "cloud_feedback_s12_p2k", &
            "cgils_s6", "cgils_s6_p2k", "cgils_s11",        &
            "cgils_s11_p2k", "cgils_s12", "cgils_s12_p2k"  ) ! Cloud Feedback cases
+
       l_compute_momentum_flux = .true.
       l_set_sclr_sfc_rtm_thlm = .true.
       l_fixed_flux            = .true.
-      call cloud_feedback_sfclyr( time_current, sfctype,                  & ! Intent(in)
-                                  thlm_bot, rtm_bot, z_bot,               & ! Intent(in)
-                                  ubar, p_sfc, T_sfc,                     & ! Intent(in)
-                                  saturation_formula,                     & ! Intent(in)
-                                  wpthlp_sfc, wprtp_sfc, ustar)             ! Intent(out)
+      call cloud_feedback_sfclyr( ngrdcol, time_current, sfctype, & ! Intent(in)
+                                  thlm_bot, rtm_bot, z_bot,       & ! Intent(in)
+                                  ubar, p_sfc, T_sfc,             & ! Intent(in)
+                                  saturation_formula,             & ! Intent(in)
+                                  wpthlp_sfc, wprtp_sfc, ustar)     ! Intent(out)
 
     case ( "arm" )
+
       l_compute_momentum_flux = .true.
       l_set_sclr_sfc_rtm_thlm = .true.
-      rho_sfc = 1.1_core_rknd
-      call arm_sfclyr( time_current, z_bot, rho_sfc,   & ! Intent(in)
-                        thlm_bot, ubar,                & ! Intent(in)
-                        wpthlp_sfc, wprtp_sfc, ustar )   ! Intent(out)
+      call arm_sfclyr( ngrdcol, time_current, z_bot,    & ! Intent(in)
+                        thlm_bot, ubar,                 & ! Intent(in)
+                        wpthlp_sfc, wprtp_sfc, ustar )    ! Intent(out)
 
     case ( "arm_0003" )
+
       l_compute_momentum_flux = .true.
       l_set_sclr_sfc_rtm_thlm = .true.
-      call arm_0003_sfclyr( time_current, z_bot, rho_bot, & ! Intent(in)
-                            thlm_bot, ubar,               & ! Intent(in)
-                            wpthlp_sfc, wprtp_sfc, ustar )  ! Intent(out)
+      call arm_0003_sfclyr( ngrdcol, time_current, z_bot,   & ! Intent(in)
+                            rho_bot, thlm_bot, ubar,        & ! Intent(in)
+                            wpthlp_sfc, wprtp_sfc, ustar )    ! Intent(out)
+
     case ( "arm_3year" )
-      l_compute_momentum_flux = .true.
-      l_set_sclr_sfc_rtm_thlm = .true.
-      call arm_3year_sfclyr( time_current, z_bot, rho_bot, & ! Intent(in)
-                             thlm_bot, ubar,               & ! Intent(in)
-                             wpthlp_sfc, wprtp_sfc, ustar)   ! Intent(out)
-    case ( "mc3e" )
-      l_compute_momentum_flux = .true.
-      l_set_sclr_sfc_rtm_thlm = .true.
-      call arm_97_sfclyr( time_current, z_bot, rho_bot, & ! Intent(in)
-                          thlm_bot, ubar,               & ! Intent(in)
-                          wpthlp_sfc, wprtp_sfc, ustar )  ! Intent(out)
 
-    case ( "arm_97" )
       l_compute_momentum_flux = .true.
       l_set_sclr_sfc_rtm_thlm = .true.
-      call arm_97_sfclyr( time_current, z_bot, rho_bot, & ! Intent(in)
-                          thlm_bot, ubar,               & ! Intent(in)
-                          wpthlp_sfc, wprtp_sfc, ustar )  ! Intent(out)
+      call arm_3year_sfclyr( ngrdcol, time_current, z_bot, rho_bot, & ! Intent(in)
+                             thlm_bot, ubar,                        & ! Intent(in)
+                             wpthlp_sfc, wprtp_sfc, ustar )           ! Intent(out)
 
+    case ( "arm_97", "mc3e" )
+
+      l_compute_momentum_flux = .true.
+      l_set_sclr_sfc_rtm_thlm = .true.
+      call arm_97_sfclyr( ngrdcol, time_current, z_bot, rho_bot, & ! Intent(in)
+                          thlm_bot, ubar,                        & ! Intent(in)
+                          wpthlp_sfc, wprtp_sfc, ustar )           ! Intent(out)
 
     case ( "atex" )
+
       l_compute_momentum_flux = .true.
       l_set_sclr_sfc_rtm_thlm = .true.
-      call atex_sfclyr( time_current, ubar,          &        ! Intent(in)
+      call atex_sfclyr( ngrdcol, time_current, ubar,  &       ! Intent(in)
                         thlm_bot, rtm_bot, exner_bot, &       ! Intent(in)
                         wpthlp_sfc, wprtp_sfc, ustar, T_sfc ) ! Intent(out)
 
     case ( "bomex" )
+
       l_compute_momentum_flux = .true.
       l_set_sclr_sfc_rtm_thlm = .true.
-      call bomex_sfclyr( time_current, rtm_bot, &       ! Intent(in) 
-                         wpthlp_sfc, wprtp_sfc, ustar ) ! Intent(out)
+      call bomex_sfclyr( ngrdcol, time_current, rtm_bot,  & ! Intent(in) 
+                         wpthlp_sfc, wprtp_sfc, ustar )     ! Intent(out)
 
     case ( "dycoms2_rf01" )
+
       l_compute_momentum_flux = .true.
       l_set_sclr_sfc_rtm_thlm = .true.
-      call dycoms2_rf01_sfclyr( time_current, sfctype, p_sfc,           & ! Intent(in)
+      call dycoms2_rf01_sfclyr( ngrdcol, time_current, sfctype, p_sfc,  & ! Intent(in)
                                 exner_bot, ubar,                        & ! Intent(in)
                                 thlm_bot, rtm_bot, rho_bot,             & ! Intent(in)
                                 saturation_formula,                     & ! Intent(in)
                                 wpthlp_sfc, wprtp_sfc, ustar, T_sfc )     ! Intent(out)
     case ( "dycoms2_rf02" )
+
       l_compute_momentum_flux = .true.
       l_set_sclr_sfc_rtm_thlm = .true.
-      call dycoms2_rf02_sfclyr( time_current, & ! Intent(in)
+      call dycoms2_rf02_sfclyr( ngrdcol, time_current, & ! Intent(in)
                                 wpthlp_sfc, wprtp_sfc, ustar ) ! Intent(out)
 
     case ( "gabls2" )
+
       l_compute_momentum_flux = .true.
       l_set_sclr_sfc_rtm_thlm = .true.
-      call gabls2_sfclyr( time_current, time_initial,             & ! Intent(in)
+      call gabls2_sfclyr( ngrdcol, time_current, time_initial,    & ! Intent(in)
                           z_bot, p_sfc,                           & ! Intent(in)
                           ubar, thlm_bot, rtm_bot, exner_bot,     & ! Intent(in)
                           saturation_formula,                     & ! Intent(in)
                           wpthlp_sfc, wprtp_sfc, ustar, T_sfc )     ! Intent(out)
 
     case ( "lba" )
+
       l_compute_momentum_flux = .true.
       l_set_sclr_sfc_rtm_thlm = .true.
-      call lba_sfclyr( time_current, time_initial, z_bot, &  ! Intent(in)
-                       rho_bot, thlm_bot, ubar, &            ! Intent(in)
-                       wpthlp_sfc, wprtp_sfc, ustar )        ! Intent(out)
+      call lba_sfclyr( ngrdcol, time_current, time_initial, & ! Intent(in)
+                      z_bot, rho_bot, thlm_bot, ubar, &       ! Intent(in)
+                      wpthlp_sfc, wprtp_sfc, ustar )          ! Intent(out)
 
     case ( "mpace_a" )
+
       l_compute_momentum_flux = .true.
       l_set_sclr_sfc_rtm_thlm = .true.
-      call mpace_a_sfclyr( time_current, rho_bot,        & ! Intent(in)
-                            wpthlp_sfc, wprtp_sfc, ustar ) ! Intent(out)
+      call mpace_a_sfclyr( ngrdcol, time_current, rho_bot,  & ! Intent(in)
+                           wpthlp_sfc, wprtp_sfc, ustar )     ! Intent(out)
+
     case ( "mpace_b" )
+      
       l_compute_momentum_flux = .true.
       l_set_sclr_sfc_rtm_thlm = .true.
-      call mpace_b_sfclyr( time_current, rho_bot, &        ! Intent(in)
-                            wpthlp_sfc, wprtp_sfc, ustar ) ! Intent(out)
+      call mpace_b_sfclyr( ngrdcol, time_current, rho_bot, &        ! Intent(in)
+                           wpthlp_sfc, wprtp_sfc, ustar ) ! Intent(out)
 
     case ( "neutral" )
+
       l_compute_momentum_flux = .true.
       l_set_sclr_sfc_rtm_thlm = .true.
-      call neutral_case_sfclyr( time_current,                  & ! Intent(in)
-                                !  z_bot, thlm_bot,            & ! Intent(in)
+      call neutral_case_sfclyr( ngrdcol, time_current,         & ! Intent(in)
+                                !  z_bot(i), thlm_bot(i),      & ! Intent(in)
                                 um_bot, vm_bot, ubar,          & ! Intent(in)
                                 upwp_sfc, vpwp_sfc,            & ! Intent(out)
                                 wpthlp_sfc, wprtp_sfc, ustar )   ! Intent(out)
 
     case ( "twp_ice" )
+
       l_compute_momentum_flux = .true.
       l_set_sclr_sfc_rtm_thlm = .true.
-      call twp_ice_sfclyr( time_current, z_bot, exner_bot, thlm_bot, & ! Intent(in)
-                           ubar, rtm_bot, p_sfc,               &       ! Intent(in)
-                           saturation_formula,                       & ! Intent(in)
-                           wpthlp_sfc, wprtp_sfc, ustar, T_sfc )       ! Intent(out)
+      call twp_ice_sfclyr( ngrdcol, time_current, z_bot, exner_bot, & ! Intent(in)
+                           thlm_bot, ubar, rtm_bot, p_sfc,          & ! Intent(in)
+                           saturation_formula,                      & ! Intent(in)
+                           wpthlp_sfc, wprtp_sfc, ustar, T_sfc )      ! Intent(out)
 
     case ( "wangara" )
+
       l_compute_momentum_flux = .true.
       l_set_sclr_sfc_rtm_thlm = .true.
-      call wangara_sfclyr( time_current, &                 ! Intent(in)
+      call wangara_sfclyr( ngrdcol, time_current, &                 ! Intent(in)
                             wpthlp_sfc, wprtp_sfc, ustar ) ! Intent(out)
+
     case default
+
       write(unit=fstderr,fmt=*)  & 
         "Invalid value of runtype = ", runtype
       error stop
@@ -5677,50 +5787,70 @@ module clubb_driver
 
     ! These have been placed here to help avoid repetition in the cases
     if( l_compute_momentum_flux ) then
-      call compute_momentum_flux( um_bot, vm_bot, ubar, ustar, & ! Intent(in)
+      call compute_momentum_flux( ngrdcol, um_bot, vm_bot, ubar, ustar, & ! Intent(in)
                                   upwp_sfc, vpwp_sfc )           ! Intent(out)
     end if
 
     if( l_set_sclr_sfc_rtm_thlm ) then
-      call set_sclr_sfc_rtm_thlm( sclr_dim, edsclr_dim, sclr_idx, &
+      call set_sclr_sfc_rtm_thlm( ngrdcol, sclr_dim, edsclr_dim, sclr_idx, &
                                   wpthlp_sfc, wprtp_sfc, &      ! Intent(in)
                                   wpsclrp_sfc, wpedsclrp_sfc )  ! Intent(out)
     end if
 
     ! If the surface type is 0, use fixed fluxes
     if ( sfctype == 0 .and. l_fixed_flux ) then
-      wpthlp_sfc = sens_ht
-      wprtp_sfc  = latent_ht
-      if ( sclr_idx%iisclr_thl > 0 ) wpsclrp(:,sclr_idx%iisclr_thl) = sens_ht
-      if ( sclr_idx%iisclr_rt > 0 ) wpsclrp(:,sclr_idx%iisclr_rt)   = latent_ht
+
+      do i = 1, ngrdcol
+        wpthlp_sfc(i) = sens_ht
+        wprtp_sfc(i)  = latent_ht
+      end do
+
+      if ( sclr_idx%iisclr_thl > 0 ) then
+        do k = 1, nzm
+          do i = 1, ngrdcol
+            wpsclrp(i,k,sclr_idx%iisclr_thl) = sens_ht
+          end do
+        end do
+      end if
+
+      if ( sclr_idx%iisclr_rt > 0 ) then
+        do k = 1, nzm
+          do i = 1, ngrdcol
+            wpsclrp(i,k,sclr_idx%iisclr_rt)   = latent_ht
+          end do
+        end do
+      end if
+
     end if
 
     ! Store values of surface fluxes for statistics
     if ( stats_metadata%l_stats_samp ) then
 
-      call stat_update_var_pt( stats_metadata%ish, 1, wpthlp_sfc*rho_zm(1)*Cp,&       ! intent(in)
-                               stats_sfc )                             ! intent(inout)
+      do i = 1, ngrdcol
+        call stat_update_var_pt( stats_metadata%ish, 1, wpthlp_sfc(i)*rho_zm(i,1)*Cp,&       ! intent(in)
+                                 stats_sfc(i) )                             ! intent(inout)
 
-      call stat_update_var_pt( stats_metadata%ilh, 1, wprtp_sfc*rho_zm(1)*Lv, &       ! intent(in)
-                               stats_sfc )                             ! intent(inout)
+        call stat_update_var_pt( stats_metadata%ilh, 1, wprtp_sfc(i)*rho_zm(i,1)*Lv, &       ! intent(in)
+                                 stats_sfc(i) )                             ! intent(inout)
 
-      call stat_update_var_pt( stats_metadata%iwpthlp_sfc, 1, wpthlp_sfc, &           ! intent(in)
-                               stats_sfc )                             ! intent(inout)
+        call stat_update_var_pt( stats_metadata%iwpthlp_sfc, 1, wpthlp_sfc(i), &           ! intent(in)
+                                 stats_sfc(i) )                             ! intent(inout)
 
-      call stat_update_var_pt( stats_metadata%iwprtp_sfc, 1, wprtp_sfc, &             ! intent(in)
-                               stats_sfc )                             ! intent(inout)
+        call stat_update_var_pt( stats_metadata%iwprtp_sfc, 1, wprtp_sfc(i), &             ! intent(in)
+                                 stats_sfc(i) )                             ! intent(inout)
 
-      call stat_update_var_pt( stats_metadata%iupwp_sfc, 1, upwp_sfc, &               ! intent(in)
-                               stats_sfc )                             ! intent(inout)
+        call stat_update_var_pt( stats_metadata%iupwp_sfc, 1, upwp_sfc(i), &               ! intent(in)
+                                 stats_sfc(i) )                             ! intent(inout)
 
-      call stat_update_var_pt( stats_metadata%ivpwp_sfc, 1, vpwp_sfc, &               ! intent(in)
-                               stats_sfc )                             ! intent(inout)
+        call stat_update_var_pt( stats_metadata%ivpwp_sfc, 1, vpwp_sfc(i), &               ! intent(in)
+                                 stats_sfc(i) )                             ! intent(inout)
 
-      call stat_update_var_pt( stats_metadata%iustar, 1, ustar,  &                    ! intent(in)
-                               stats_sfc )                             ! intent(inout)
+        call stat_update_var_pt( stats_metadata%iustar, 1, ustar(i),  &                    ! intent(in)
+                                 stats_sfc(i) )                             ! intent(inout)
 
-      call stat_update_var_pt( stats_metadata%iT_sfc, 1, T_sfc, &                     ! intent(in)
-                               stats_sfc )                             ! intent(inout)
+        call stat_update_var_pt( stats_metadata%iT_sfc, 1, T_sfc(i), &                     ! intent(in)
+                                stats_sfc(i) )                             ! intent(inout)
+      end do
 
     endif
 
@@ -5729,10 +5859,11 @@ module clubb_driver
   end subroutine prescribe_forcings
 
   !-------------------------------------------------------------------------------
-  subroutine read_surface_var_for_bc( gr, um, vm, rtm, thlm, rho_zm, exner, & ! Intent(in)
+  subroutine read_surface_var_for_bc( gr, ngrdcol,                      & ! Intent(in)
+                                      um, vm, rtm, thlm, rho_zm, exner, & ! Intent(in)
                                       p_sfc, l_modify_bc_for_cnvg_test, & ! Intent(in)
-                                      z_bot, um_bot, vm_bot, rtm_bot, & ! Intent (out)
-                                      thlm_bot, rho_bot, exner_bot ) ! Intent (out)
+                                      z_bot, um_bot, vm_bot, rtm_bot,   & ! Intent (out)
+                                      thlm_bot, rho_bot, exner_bot )      ! Intent (out)
 
     ! Description:
     ! Derives the physical quantities at the bottom model level for calculating
@@ -5771,20 +5902,23 @@ module clubb_driver
 
     implicit none
 
+    integer, intent(in) :: &
+      ngrdcol
+
     type (grid), intent(in) :: &
       gr
 
-    real( kind = core_rknd ), dimension(gr%nzt), intent(in) :: &
+    real( kind = core_rknd ), dimension(ngrdcol,gr%nzt), intent(in) :: &
       um,           & ! eastward grid-mean wind component (thermo. levs.)  [m/s]
       vm,           & ! northward grid-mean wind component (thermo. levs.) [m/s]
       rtm,          & ! total water mixing ratio, r_t (thermo. levs.) [kg/kg]
       thlm,         & ! liq. water pot. temp., th_l (thermo. levels)       [K]
       exner           ! Exner function (thermodynamic levels)              [-]
 
-    real( kind = core_rknd ), dimension(gr%nzm), intent(in) :: &
+    real( kind = core_rknd ), dimension(ngrdcol,gr%nzm), intent(in) :: &
       rho_zm          ! Air density on momentum levels [kg/m^3]
 
-    real( kind = core_rknd ), intent(in) :: &
+    real( kind = core_rknd ), dimension(ngrdcol), intent(in) :: &
       p_sfc    ! Surface pressure         [Pa]
 
     logical, intent(in) :: &
@@ -5792,7 +5926,7 @@ module clubb_driver
                                 ! convergence test (surface fluxes computed at fixed 25m height)
 
     ! the variable at a fixed model hight for the derivation of surface fluxes
-    real( kind = core_rknd ), intent(out) :: &
+    real( kind = core_rknd ), dimension(ngrdcol), intent(out) :: &
       z_bot,        & ! height at bottom model level [m]
       um_bot,       & ! um at bottom model level (thermo. levs.) [m/s]
       vm_bot,       & ! vm at bottom model level (thermo. levs.) [m/s]
@@ -5808,27 +5942,30 @@ module clubb_driver
                                    ! height level
 
     ! Local variables
-    real( kind = core_rknd ), dimension(gr%nzt) ::  &
-      z_diff     ! differences of the model hight and the fixed height level
-
-    real( kind = core_rknd ), dimension(gr%nzm) ::  &
+    real( kind = core_rknd ), dimension(ngrdcol,gr%nzm) ::  &
       um_zm,   &
       vm_zm,   &
       exner_zm,&
       rtm_zm,  &
       thlm_zm
 
-    integer :: kk, km1,kp1,kp2,k00
+    integer, dimension(ngrdcol) :: &
+      k_min
+
+    integer :: km1,kp1,kp2,k00, i
 
     if (.not. l_modify_bc_for_cnvg_test) then
+
       ! Default model setup in CLUBB-SCM
-      z_bot     = gr%zt(1,1)
-      um_bot    = um(1)
-      vm_bot    = vm(1)
-      rtm_bot   = rtm(1)
-      thlm_bot  = thlm(1)
-      rho_bot   = rho_zm(1)
-      exner_bot = ( p_sfc / p0 )**kappa
+      do i = 1, ngrdcol
+        z_bot(i)     = gr%zt(i,1)
+        um_bot(i)    = um(i,1)
+        vm_bot(i)    = vm(i,1)
+        rtm_bot(i)   = rtm(i,1)
+        thlm_bot(i)  = thlm(i,1)
+        rho_bot(i)   = rho_zm(i,1)
+        exner_bot(i) = ( p_sfc(i) / p0 )**kappa
+      end do
 
       !write(unit=fstdout, fmt='(a,f10.4)')'Surface fluxes calculated at height
       !of = ', z_bot
@@ -5836,66 +5973,89 @@ module clubb_driver
       !gr%zt(1,2)
       !fstdout constant is commented out
     else
+
       ! Modified option which find the values of physical quantities
       ! at a fixed model height (25m)
-      z_bot  = 25.0_core_rknd !user-specified
+      do i = 1, ngrdcol
+        z_bot(i)  = 25.0_core_rknd !user-specified
 
-      ! find the neareast level to the constant model height
-      z_diff = abs(gr%zt(1,1:gr%nzt) - z_bot )
-      kk     = MINLOC (z_diff, DIM = 1)
+        ! find the neareast level to the constant model height
+        k_min(i) = minloc( abs(gr%zt(i,:) - z_bot(i) ), DIM = 1)
+      end do
 
-      if ( clubb_at_least_debug_level( 1 ) .and. ( (kk < 1) .or. (kk > gr%nzt) ) ) then
-        write(fstderr,*) "Sanity check failed! constant model height is not properly set"
-        write(fstderr,*) "in get_fixed_height_values."
+      if ( clubb_at_least_debug_level( 1 ) ) then
+      
+        do i = 1, ngrdcol
+
+          if ( (k_min(i) < 1) .or. (k_min(i) > gr%nzt) ) then
+            write(fstderr,*) "Sanity check failed! constant model height is not properly set"
+            write(fstderr,*) "in get_fixed_height_values at i = ", i
+          end if
+          
+        end do
+
       end if
 
       if (constant_height_option == 1) then ! option 1 (non-interpolation)
 
-        um_bot    = um(kk)
-        vm_bot    = vm(kk)
-        rtm_bot   = rtm(kk)
-        thlm_bot  = thlm(kk)
-        rho_bot   = rho_zm(kk)
-        exner_bot = exner(kk)
+        do i = 1, ngrdcol
+          um_bot(i)    = um(i,k_min(i))
+          vm_bot(i)    = vm(i,k_min(i))
+          rtm_bot(i)   = rtm(i,k_min(i))
+          thlm_bot(i)  = thlm(i,k_min(i))
+          rho_bot(i)   = rho_zm(i,k_min(i))
+          exner_bot(i) = exner(i,k_min(i))
+        end do
 
       else ! option 2 (interpolation)
 
-        ! use the mono cubic interpolation to get the values
-        if ( kk == 1 ) then
-          km1 = 1
-          k00 = 1
-          kp1 = 2
-          kp2 = 3
-        else
-          km1 = kk-1
-          k00 = kk
-          kp1 = kk+1
-          kp2 = kk+2
-        end if
+        um_zm       = zt2zm( gr%nzm, gr%nzt, ngrdcol, gr, um )
+        vm_zm       = zt2zm( gr%nzm, gr%nzt, ngrdcol, gr, vm )
+        thlm_zm     = zt2zm( gr%nzm, gr%nzt, ngrdcol, gr, thlm)
+        rtm_zm      = zt2zm( gr%nzm, gr%nzt, ngrdcol, gr, rtm )
+        exner_zm    = zt2zm( gr%nzm, gr%nzt, ngrdcol, gr, exner)
 
-        um_zm       = zt2zm( gr, um )
-        vm_zm       = zt2zm( gr, vm )
-        thlm_zm     = zt2zm( gr, thlm)
-        rtm_zm      = zt2zm( gr, rtm )
-        exner_zm    = zt2zm( gr, exner)
-        exner_zm(1) = ( p_sfc / p0 )**kappa
+        do i = 1, ngrdcol
+          exner_zm(i,1) = ( p_sfc(i) / p0 )**kappa
+        end do
 
-        um_bot    = mono_cubic_interp( z_bot, km1, k00, kp1, kp2, &
-                                       gr%zm(1,km1), gr%zm(1,k00), gr%zm(1,kp1), gr%zm(1,kp2), &
-                                       um_zm(km1), um_zm(k00), um_zm(kp1), um_zm(kp2) )
-        vm_bot    = mono_cubic_interp( z_bot, km1, k00, kp1, kp2, &
-                                       gr%zm(1,km1), gr%zm(1,k00), gr%zm(1,kp1), gr%zm(1,kp2), &
-                                       vm_zm(km1), vm_zm(k00), vm_zm(kp1), vm_zm(kp2) )
-        exner_bot = mono_cubic_interp( z_bot, km1, k00, kp1, kp2, &
-                                       gr%zm(1,km1), gr%zm(1,k00), gr%zm(1,kp1), gr%zm(1,kp2), &
-                                       exner_zm(km1), exner_zm(k00), exner_zm(kp1), exner_zm(kp2) )
-        thlm_bot  = mono_cubic_interp( z_bot, km1, k00, kp1, kp2, &
-                                       gr%zm(1,km1), gr%zm(1,k00), gr%zm(1,kp1), gr%zm(1,kp2), &
-                                       thlm_zm(km1), thlm_zm(k00), thlm_zm(kp1), thlm_zm(kp2) )
-        rtm_bot   = mono_cubic_interp( z_bot, km1, k00, kp1, kp2, &
-                                       gr%zm(1,km1), gr%zm(1,k00), gr%zm(1,kp1), gr%zm(1,kp2), &
-                                       rtm_zm(km1), rtm_zm(k00), rtm_zm(kp1), rtm_zm(kp2) )
-        rho_bot   = rho_zm(kk)
+        do i = 1, ngrdcol
+
+          ! use the mono cubic interpolation to get the values
+          if ( k_min(i) == 1 ) then
+            km1 = 1
+            k00 = 1
+            kp1 = 2
+            kp2 = 3
+          else
+            km1 = k_min(i)-1
+            k00 = k_min(i)
+            kp1 = k_min(i)+1
+            kp2 = k_min(i)+2
+          end if
+          
+          rho_bot(i)    = rho_zm(i,k_min(i))
+
+          um_bot(i)    = mono_cubic_interp( z_bot(i), km1, k00, kp1, kp2, &
+                                            gr%zm(i,km1), gr%zm(i,k00), gr%zm(i,kp1), gr%zm(i,kp2), &
+                                            um_zm(i,km1), um_zm(i,k00), um_zm(i,kp1), um_zm(i,kp2) )
+
+          vm_bot(i)    = mono_cubic_interp( z_bot(i), km1, k00, kp1, kp2, &
+                                            gr%zm(i,km1), gr%zm(i,k00), gr%zm(i,kp1), gr%zm(i,kp2), &
+                                            vm_zm(i,km1), vm_zm(i,k00), vm_zm(i,kp1), vm_zm(i,kp2) )
+
+          exner_bot(i) = mono_cubic_interp( z_bot(i), km1, k00, kp1, kp2, &
+                                            gr%zm(i,km1), gr%zm(i,k00), gr%zm(i,kp1), gr%zm(i,kp2), &
+                                            exner_zm(i,km1), exner_zm(i,k00), exner_zm(i,kp1), exner_zm(i,kp2) )
+
+          thlm_bot(i)  = mono_cubic_interp( z_bot(i), km1, k00, kp1, kp2, &
+                                            gr%zm(i,km1), gr%zm(i,k00), gr%zm(i,kp1), gr%zm(i,kp2), &
+                                            thlm_zm(i,km1), thlm_zm(i,k00), thlm_zm(i,kp1), thlm_zm(i,kp2) )
+
+          rtm_bot(i)   = mono_cubic_interp( z_bot(i), km1, k00, kp1, kp2, &
+                                            gr%zm(i,km1), gr%zm(i,k00), gr%zm(i,kp1), gr%zm(i,kp2), &
+                                            rtm_zm(i,km1), rtm_zm(i,k00), rtm_zm(i,kp1), rtm_zm(i,kp2) )
+        end do
 
       end if
 
@@ -5908,6 +6068,7 @@ module clubb_driver
     end if
 
     return
+
   end subroutine read_surface_var_for_bc
 
 !-------------------------------------------------------------------------------
@@ -6263,8 +6424,7 @@ module clubb_driver
   subroutine update_radiation_variables( nzm, nzt, radht, Frad_SW_up, Frad_LW_up, &
                                          Frad_SW_down, Frad_LW_down, &
                                          stats_metadata, stats_zt, stats_zm, &
-                                         stats_lh_zt, stats_lh_sfc, stats_rad_zt, &
-                                         stats_rad_zm, stats_sfc )
+                                         stats_rad_zt, stats_rad_zm )
 
     ! Description:
     !   Updates the radiation variables using the stat_var_update() subroutine.
@@ -6318,11 +6478,8 @@ module clubb_driver
     type (stats), intent(inout)  :: &
       stats_zt,      & ! stats_zt grid
       stats_zm,      & ! stats_zm grid
-      stats_lh_zt,   & ! stats_lh_zt grid
-      stats_lh_sfc,  & ! stats_lh_sfc grid
       stats_rad_zt,  & ! stats_rad_zt grid
-      stats_rad_zm,  & ! stats_rad_zm grid
-      stats_sfc        ! stats_sfc
+      stats_rad_zm     ! stats_rad_zm grid
 
     ! Local Variables
 

@@ -48,7 +48,7 @@ lon_vals = -98.35  ! Longitude (0 to 180 for east long.; 0 to -180 for west long
 
 sfc_elevation_nl = 0.0     ! Elevation of ground level [meters above mean sea level]
 
-T_sfc = 300.
+T_sfc_nl = 300.
 
 l_t_dependent = .true. ! Read values from _surface.in file. Also read
                        ! _forcings.in file if l_ignore_forcings
