@@ -1,0 +1,122 @@
+commit 6536d39b98831758cff149e705fa3605f90ffdf0
+Author: Gunther Huebler <37674341+huebleruwm@users.noreply.github.com>
+Date:   Fri Nov 1 17:12:21 2024 -0500
+
+    Prescribe forcings loop pushing (#1201)
+    
+    * Outputting soil_heat_flux locally.
+    
+    * Adding if statements around things
+    
+    * Pushing some loops down
+    
+    * Merging soil_veg changes
+    
+    * More loop pushes
+    
+    * Merging soil_veg changes
+    
+    * More loop pushes
+    
+    * More loop pushes
+    
+    * Bug fix detected with twp_ice
+    
+    * Pushing loops even more
+    
+    * Pushing loops into compute_wpthlp_sfc and compute_wpthlp_sfc, also making them subroutines.
+    
+    * Removing accidentially committed file.
+    
+    * Fixing merge errors.
+    
+    * Fixing bug that was breaking only dycoms2_rf02_so. It only broke this case since it is the only one that has l_cloud_sed=.true. and microphys_scheme=none
+    
+    * Adding to rad if statement to prevent unneccesary calls.
+    
+    * Moving stats statement for things like rcm_mc and rvm_mc out of the if microphys statement. This is an additional fix to the dycoms2_rf02_so issue.
+    
+    * Chaning T_sfc_calc to T_sfc_interp where it's caluclated with interpolation.
+
+commit 6127c5594dc2a5ce46d584822f805af6aeb79028
+Author: Gunther Huebler <37674341+huebleruwm@users.noreply.github.com>
+Date:   Wed Oct 30 20:26:39 2024 -0500
+
+    BIT_CHANGING bug fix with soil veg (#1200)
+    
+    * Bug fix with soil veg. This is BIT_CHANGING.
+    
+    * Outputting soil_heat_flux locally.
+
+commit 2651012ea532b1d38ef6006d7457571806e34908
+Author: Gunther Huebler <huebler@uwm.edu>
+Date:   Mon Oct 28 15:13:06 2024 -0500
+
+    Small improvements to bindiff script.
+
+commit d7d04ed1c8a65801bfc91bbbe4227ef39f7f7292
+Author: vlarson <vlarson@uwm.edu>
+Date:   Mon Oct 28 13:14:36 2024 -0500
+
+    QuadTune: Break out loss function contributions by metric and plot the metrics with the greatest improvements and degradations.
+    
+    Also plot signed sum of contributions, in order to see how biases affect which parameters are tuned.
+    
+    For #910.
+
+commit e525bd0e3c6333eb4b9945f6fe81d7a9e3cfd3e3
+Author: vlarson <vlarson@uwm.edu>
+Date:   Mon Oct 28 13:14:01 2024 -0500
+
+    QuadTune: Break out loss function contributions by metric and plot the metrics with the greatest improvements and degradations.
+    
+    Also plot signed sum of contributions, in order to see how biases affect which parameters are tuned.
+    
+    For #910.
+
+commit 0bb668e3a21dce9af466abc9f0e747fbb7b36eab
+Author: vlarson <vlarson@uwm.edu>
+Date:   Sat Oct 26 12:38:11 2024 -0500
+
+    QuadTune: Create 2 new plots.
+    
+    1) colored matrix plot of SVD vh matrix; and
+    2) bar chart of importance of parameters
+    
+    For #910.
+
+commit 81fa0e3bef38ab4a734aa95e5f8b4dacb0776743
+Author: vlarson <vlarson@uwm.edu>
+Date:   Fri Oct 25 16:01:18 2024 -0500
+
+    QuadTune: Display maps of the first 4 SVD patterns using dash, rather than make_subplots.
+    
+    Also, show maps of the sensitivity to individual parameters.
+    
+    For #910.
+
+commit abddfa273c6176d1565bffc4f1d8d31a56762347
+Author: domkesteffen <42725900+domkesteffen@users.noreply.github.com>
+Date:   Thu Oct 24 16:35:10 2024 -0500
+
+    Add sam bv calc (#1141)
+    
+    Added calculation function for SAM plots to pyplotgen for Brunt-Väisälä frequency squared
+    CLUBB ticket #1132
+    
+    Calculated by `N2 = g/thetav * dthetav/dz`
+
+commit b8f56bfbb5e2cfffef574401cef020a6971fcbdd
+Author: vlarson <vlarson@uwm.edu>
+Date:   Thu Oct 24 10:51:40 2024 -0500
+
+    QuadTune: 1) Add beginnings of maps of SVD pattern, although this task is unfinished. 2) Normalize all regions by global mean, rather than normalizing each region separately.  3) Make sensitivities signed in sensitivity versus bias scatterplot.
+    
+    For #910.
+
+commit 973f019874667e852ffd406a44a1a92bd9d4f371
+Merge: 9bf49fa97 ec720a8fe
+Author: bmg929 <bmg2@uwm.edu>
+Date:   Thu Oct 24 09:29:30 2024 -0500
+
+    Merge branch 'master' of github.com:larson-group/clubb
