@@ -79,9 +79,12 @@ module bomex
 
     !--------------------- Begin Code ---------------------
 
+    !$acc enter data create( qtm_forcing )
+
     ! Large scale advective moisture tendency
     ! The BOMEX specifications give large-scale advective moisture tendency in
-    ! terms of total water specific humidity.
+    ! terms of total water specific humidity.then
+    !$acc parallel loop gang vector collapse(2) default(present)
     do k = 1, gr%nzt
       do i = 1, ngrdcol
 
@@ -96,6 +99,9 @@ module bomex
           qtm_forcing(i,k) = 0._core_rknd
         end if
 
+        ! Radiative theta-l tendency
+        thlm_forcing(i,k) = 0.0_core_rknd
+
       end do
     end do
 
@@ -104,21 +110,30 @@ module bomex
     call force_spec_hum_to_mixing_ratio( ngrdcol, gr%nzt, rtm, qtm_forcing, rtm_forcing )
 
     ! Test scalars with thetal and rt if desired
-    do k = 1, gr%nzt
-      do i = 1, ngrdcol
-
-        ! Radiative theta-l tendency
-        thlm_forcing(i,k) = 0.0_core_rknd
-
-        if ( sclr_idx%iisclr_thl > 0 ) sclrm_forcing(i,k,sclr_idx%iisclr_thl) = thlm_forcing(i,k)
-        if ( sclr_idx%iisclr_rt  > 0 ) sclrm_forcing(i,k,sclr_idx%iisclr_rt)  = rtm_forcing(i,k)
-
-        if ( sclr_idx%iiedsclr_thl > 0 ) edsclrm_forcing(i,k,sclr_idx%iiedsclr_thl) = thlm_forcing(i,k)
-        if ( sclr_idx%iiedsclr_rt  > 0 ) edsclrm_forcing(i,k,sclr_idx%iiedsclr_rt)  = rtm_forcing(i,k)
+    if ( sclr_dim > 0 ) then
+      !$acc parallel loop gang vector collapse(2) default(present)
+      do k = 1, gr%nzt
+        do i = 1, ngrdcol
+          if ( sclr_idx%iisclr_thl > 0 ) sclrm_forcing(i,k,sclr_idx%iisclr_thl) = thlm_forcing(i,k)
+          if ( sclr_idx%iisclr_rt  > 0 ) sclrm_forcing(i,k,sclr_idx%iisclr_rt)  = rtm_forcing(i,k)
+        end do
       end do
-    end do
+    end if
+
+    if ( edsclr_dim > 0 ) then
+      !$acc parallel loop gang vector collapse(2) default(present)
+      do k = 1, gr%nzt
+        do i = 1, ngrdcol
+          if ( sclr_idx%iiedsclr_thl > 0 ) edsclrm_forcing(i,k,sclr_idx%iiedsclr_thl) = thlm_forcing(i,k)
+          if ( sclr_idx%iiedsclr_rt  > 0 ) edsclrm_forcing(i,k,sclr_idx%iiedsclr_rt)  = rtm_forcing(i,k)
+        end do
+      end do
+    end if
+
+    !$acc exit data delete( qtm_forcing )
 
     return
+
   end subroutine bomex_tndcy
 
 !----------------------------------------------------------------------
@@ -169,28 +184,36 @@ module bomex
       wpqtp_sfc     ! w'q_t' at (1)         [(m kg)/(s kg)]   
 
     real( kind = core_rknd ) :: &
-      time_frac     ! The time fraction used for interpolation.
+      time_frac, &     ! The time fraction used for interpolation.
+      wpthlp_sfc_calc, &  
+      wpqtp_sfc_calc
 
     integer :: before_time, after_time, i ! The time bounds used for interpolation
 
+    !$acc enter data copyin( wpqtp_sfc )
 
     ! Compute heat and moisture fluxes
 
     call time_select( time, size(time_sfc_given), time_sfc_given, &
                       before_time, after_time, time_frac)
 
+    wpthlp_sfc_calc = linear_interp_factor( time_frac, wpthlp_sfc_given(after_time), &
+                                            wpthlp_sfc_given(before_time) )
+
+  ! The BOMEX specifications give surface moisture flux in terms of total water
+  ! specific humidity.
+    wpqtp_sfc_calc  = linear_interp_factor( time_frac, wpqtp_sfc_given(after_time), &
+                                            wpqtp_sfc_given(before_time) )
+
+    !$acc parallel loop gang vector default(present)
     do i = 1, ngrdcol
 
       ! Declare the value of ustar.
       ustar(i) = 0.28_core_rknd
 
-      wpthlp_sfc(i) = linear_interp_factor( time_frac, wpthlp_sfc_given(after_time), &
-                                            wpthlp_sfc_given(before_time) )
+      wpthlp_sfc(i) = wpthlp_sfc_calc
 
-    ! The BOMEX specifications give surface moisture flux in terms of total water
-    ! specific humidity.
-      wpqtp_sfc(i)  = linear_interp_factor( time_frac, wpqtp_sfc_given(after_time), &
-                                            wpqtp_sfc_given(before_time) )
+      wpqtp_sfc(i)  = wpqtp_sfc_calc
     end do
 
 
@@ -198,7 +221,10 @@ module bomex
     ! water mixing ratio.
     call flux_spec_hum_to_mixing_ratio( ngrdcol, rtm_sfc, wpqtp_sfc, wprtp_sfc )
 
+    !$acc exit data delete( wpqtp_sfc )
+
     return
+
   end subroutine bomex_sfclyr
 
 end module bomex

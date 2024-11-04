@@ -585,6 +585,8 @@ module time_dependent_input
 
     !--------------------- Begin Code ---------------------
 
+    !$acc data create( temp_array )
+
     time_frac = -1.0_core_rknd ! Default initialization
 
     call time_select( time, size(dimension_var%values), dimension_var%values, &
@@ -603,6 +605,8 @@ module time_dependent_input
       ! overwrite legitimate information from another source.
       if( .not. any( abs(temp_array - (-999.9_core_rknd)) < &
           abs(temp_array + (-999.9_core_rknd)) / 2 * eps ) ) then
+
+        !$acc update device( temp_array )
           
         select case (t_dependent_forcing_data(n)%name)
         case(temperature_f_name, theta_f_name, thetal_f_name)
@@ -610,6 +614,7 @@ module time_dependent_input
           select case(t_dependent_forcing_data(n)%name)
           case(temperature_f_name)
 
+            !$acc parallel loop gang vector collapse(2) default(present)
             do k = 1, nzt
               do i = 1, ngrdcol
                 thlm_f(i,k) = temp_array(k) / exner(i,k)
@@ -618,6 +623,7 @@ module time_dependent_input
 
           case(theta_f_name)
 
+            !$acc parallel loop gang vector collapse(2) default(present)
             do k = 1, nzt
               do i = 1, ngrdcol
                 thlm_f(i,k) = temp_array(k) ! n am not sure on the conversion of this
@@ -626,6 +632,7 @@ module time_dependent_input
 
           case(thetal_f_name)
 
+            !$acc parallel loop gang vector collapse(2) default(present)
             do k = 1, nzt
               do i = 1, ngrdcol
                 thlm_f(i,k) = temp_array(k)
@@ -636,6 +643,7 @@ module time_dependent_input
 
           if ( sclr_idx%iisclr_thl > 0 ) then
 
+            !$acc parallel loop gang vector collapse(2) default(present)
             do k = 1, nzt
               do i = 1, ngrdcol
                 sclrm_forcing(i,k,sclr_idx%iisclr_thl) = thlm_f(i,k)
@@ -646,6 +654,7 @@ module time_dependent_input
 
           if ( sclr_idx%iiedsclr_thl > 0 ) then
 
+            !$acc parallel loop gang vector collapse(2) default(present)
             do k = 1, nzt
               do i = 1, ngrdcol
                 edsclrm_forcing(i,k,sclr_idx%iiedsclr_thl) = thlm_f(i,k)
@@ -659,6 +668,7 @@ module time_dependent_input
           select case(t_dependent_forcing_data(n)%name)
           case(sp_humidity_f_name)
 
+            !$acc parallel loop gang vector collapse(2) default(present)
             do k = 1, nzt
               do i = 1, ngrdcol
                 rtm_f(i,k) = temp_array(k) * ( 1._core_rknd + rtm(i,k) )**2
@@ -667,6 +677,7 @@ module time_dependent_input
 
           case(rt_f_name )
 
+            !$acc parallel loop gang vector collapse(2) default(present)
             do k = 1, nzt
               do i = 1, ngrdcol
                 rtm_f(i,k) = temp_array(k)
@@ -676,24 +687,31 @@ module time_dependent_input
           end select
 
           if ( sclr_idx%iisclr_rt  > 0 ) then
+
+            !$acc parallel loop gang vector collapse(2) default(present)
             do k = 1, nzt
               do i = 1, ngrdcol
                 sclrm_forcing(i,k,sclr_idx%iisclr_rt)  = rtm_f(i,k)
               end do
             end do
+
           end if
+
           if ( sclr_idx%iiedsclr_rt  > 0 ) then
+
+            !$acc parallel loop gang vector collapse(2) default(present)
             do k = 1, nzt
               do i = 1, ngrdcol
                 edsclrm_forcing(i,k,sclr_idx%iiedsclr_rt)  = rtm_f(i,k)
               end do
             end do
-          end if
 
+          end if
 
         case(um_ref_name)
 
-          do k = 1, nzt
+          !$acc parallel loop gang vector collapse(2) default(present)
+            do k = 1, nzt
             do i = 1, ngrdcol
               um_ref(i,k) = temp_array(k)
             end do
@@ -701,6 +719,7 @@ module time_dependent_input
 
         case(vm_ref_name)
 
+          !$acc parallel loop gang vector collapse(2) default(present)
           do k = 1, nzt
             do i = 1, ngrdcol
               vm_ref(i,k) = temp_array(k)
@@ -709,6 +728,7 @@ module time_dependent_input
 
         case(um_f_name)
 
+          !$acc parallel loop gang vector collapse(2) default(present)
           do k = 1, nzt
             do i = 1, ngrdcol
               um_f(i,k) = temp_array(k)
@@ -717,6 +737,7 @@ module time_dependent_input
 
         case(vm_f_name)
 
+          !$acc parallel loop gang vector collapse(2) default(present)
           do k = 1, nzt
             do i = 1, ngrdcol
               vm_f(i,k) = temp_array(k)
@@ -728,6 +749,7 @@ module time_dependent_input
           select case(t_dependent_forcing_data(n)%name)
           case(wm_name)
 
+            !$acc parallel loop gang vector collapse(2) default(present)
             do k = 1, nzt
               do i = 1, ngrdcol
                 wm_zt(i,k) = temp_array(k)
@@ -736,6 +758,7 @@ module time_dependent_input
 
           case(omega_name)
 
+            !$acc parallel loop gang vector collapse(2) default(present)
             do k = 1, nzt
               do i = 1, ngrdcol
                 wm_zt(i,k) = - temp_array(k) / (grav * rho(i,k))
@@ -744,10 +767,12 @@ module time_dependent_input
 
           case(omega_mb_hr_name)
 
+            !$acc parallel loop gang vector default(present)
             do k = 1, nzt
               temp_array(k) = temp_array(k) * pascal_per_mb / sec_per_hr
             end do
 
+            !$acc parallel loop gang vector collapse(2) default(present)
             do k = 1, nzt
               do i = 1, ngrdcol
 
@@ -762,6 +787,7 @@ module time_dependent_input
 
         case(ug_name)
 
+          !$acc parallel loop gang vector collapse(2) default(present)
           do k = 1, nzt
             do i = 1, ngrdcol
               ug(i,k) = temp_array(k)
@@ -770,6 +796,7 @@ module time_dependent_input
 
         case(vg_name)
 
+          !$acc parallel loop gang vector collapse(2) default(present)
           do k = 1, nzt
             do i = 1, ngrdcol
               vg(i,k) = temp_array(k)
@@ -787,7 +814,10 @@ module time_dependent_input
 
     end do ! 1 .. nforcings
 
+    !$acc end data
+
     return
+
   end subroutine apply_time_dependent_forcings
 
   !================================================================================================

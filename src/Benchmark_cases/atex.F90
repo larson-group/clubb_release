@@ -99,24 +99,13 @@ module atex
 
   !--------------------- Begin Code ---------------------
 
-  ! Forcings are applied only after t = 5400 s
-  do k = 1, gr%nzt
-    do i = 1, ngrdcol
-      wm_zt(i,k)        = 0._core_rknd
-      thlm_forcing(i,k) = 0._core_rknd
-      rtm_forcing(i,k)  = 0._core_rknd
-    end do
-  end do
-
-  do k = 1, gr%nzm
-    do i = 1, ngrdcol
-      wm_zm(i,k) = 0._core_rknd
-    end do
-  end do
+  !$acc enter data create( z_lev, z_inversion )
 
   if ( time >= time_initial + 5400.0_time_precision ) then
 
     ! Identify height of 6.5 g/kg moisture level
+
+    !$acc parallel loop gang vector default(present)
     do i = 1, ngrdcol
       z_lev(i) = 1
       do while ( z_lev(i) <= gr%nzt .and. rtm(i,z_lev(i)) > 6.5e-3_core_rknd )
@@ -125,6 +114,9 @@ module atex
     end do
 
     if ( clubb_at_least_debug_level(2) ) then
+
+      !$acc update host( z_lev, rtm )
+
       do i = 1, ngrdcol
         if ( z_lev(i) == gr%nzt+1 .or. z_lev(i) == 1 ) then
           write(fstderr,*) "Identification of 6.5 g/kg level failed"
@@ -137,11 +129,13 @@ module atex
       end do
     end if
 
+    !$acc parallel loop gang vector default(present)
     do i = 1, ngrdcol
       z_inversion(i) = gr%zt(i,z_lev(i)-1)
     end do
 
     ! Large scale subsidence
+    !$acc parallel loop gang vector collapse(2) default(present)
     do i = 1, ngrdcol
       do k = 1, gr%nzt
 
@@ -160,12 +154,14 @@ module atex
     wm_zm = zt2zm( gr%nzm, gr%nzt, ngrdcol, gr, wm_zt )
 
     ! Boundary conditions.
+    !$acc parallel loop gang vector default(present)
     do i = 1, ngrdcol
-      wm_zm(i,1) = 0.0_core_rknd        ! At surface
+      wm_zm(i,1) = 0.0_core_rknd       ! At surface
       wm_zm(i,gr%nzm) = 0.0_core_rknd  ! Model top
     end do
 
     ! Theta-l tendency
+    !$acc parallel loop gang vector collapse(2) default(present)
     do i = 1, ngrdcol
       do k = 1, gr%nzt
 
@@ -192,19 +188,52 @@ module atex
       end do
     end do
 
+  else 
+
+    ! Forcings are applied only after t = 5400 s
+    !$acc parallel loop gang vector collapse(2) default(present)
+    do k = 1, gr%nzt
+      do i = 1, ngrdcol
+        wm_zt(i,k)        = 0._core_rknd
+        thlm_forcing(i,k) = 0._core_rknd
+        rtm_forcing(i,k)  = 0._core_rknd
+      end do
+    end do
+
+    !$acc parallel loop gang vector collapse(2) default(present)
+    do k = 1, gr%nzm
+      do i = 1, ngrdcol
+        wm_zm(i,k) = 0._core_rknd
+      end do
+    end do
+
   end if ! time >= time_initial + 5400.0_core_rknd
 
-  ! Test scalars with thetal and rt if desired
-  do i = 1, ngrdcol
+  if ( sclr_dim > 0 ) then
+    !$acc parallel loop gang vector collapse(2) default(present)
     do k = 1, gr%nzt
-      if ( sclr_idx%iisclr_thl > 0 ) sclrm_forcing(i,k,sclr_idx%iisclr_thl) = thlm_forcing(i,k)
-      if ( sclr_idx%iisclr_rt  > 0 ) sclrm_forcing(i,k,sclr_idx%iisclr_rt)  = rtm_forcing(i,k)
-      if ( sclr_idx%iiedsclr_thl > 0 ) edsclrm_forcing(i,k,sclr_idx%iiedsclr_thl) = thlm_forcing(i,k)
-      if ( sclr_idx%iiedsclr_rt  > 0 ) edsclrm_forcing(i,k,sclr_idx%iiedsclr_rt)  = rtm_forcing(i,k)
+      do i = 1, ngrdcol
+        ! Test scalars with thetal and rt if desired
+        if ( sclr_idx%iisclr_thl > 0 ) sclrm_forcing(i,k,sclr_idx%iisclr_thl) = thlm_forcing(i,k)
+        if ( sclr_idx%iisclr_rt  > 0 ) sclrm_forcing(i,k,sclr_idx%iisclr_rt)  = rtm_forcing(i,k)
+      end do
     end do
-  end do
+  end if
+
+  if ( edsclr_dim > 0 ) then
+    !$acc parallel loop gang vector collapse(2) default(present)
+    do k = 1, gr%nzt
+      do i = 1, ngrdcol
+        if ( sclr_idx%iiedsclr_thl > 0 ) edsclrm_forcing(i,k,sclr_idx%iiedsclr_thl) = thlm_forcing(i,k)
+        if ( sclr_idx%iiedsclr_rt  > 0 ) edsclrm_forcing(i,k,sclr_idx%iiedsclr_rt)  = rtm_forcing(i,k)
+      end do
+    end do
+  end if
+
+  !$acc exit data delete( z_lev, z_inversion )
 
   return
+
   end subroutine atex_tndcy
 
   !======================================================================
@@ -267,6 +296,8 @@ module atex
 
   !-----------------BEGIN CODE-----------------------
 
+  !$acc enter data create( C_10, adjustment )
+
   ! Interpolate T_sfc from time_dependent_input
 
   call time_select( time, size(time_sfc_given), time_sfc_given, &
@@ -274,6 +305,7 @@ module atex
 
   T_sfc_interp = linear_interp_factor( time_frac, T_sfc_given(after_time), &
                                        T_sfc_given(before_time) )
+                                       
   do i = 1, ngrdcol
     C_10(i)       = 0.0013_core_rknd
     adjustment(i) = 0.0198293_core_rknd
@@ -288,7 +320,10 @@ module atex
   call compute_wprtp_sfc( ngrdcol, C_10, ubar, rtm_sfc, adjustment, &
                           wprtp_sfc )
 
+  !$acc exit data delete( C_10, adjustment )
+
   return
+
   end subroutine atex_sfclyr
 
 !----------------------------------------------------------------------

@@ -71,8 +71,9 @@ module neutral_case
 
     integer :: i
 
-!---- Begin code
+    !---- Begin code
 
+    !$acc parallel loop gang vector default(present)
     do i = 1, ngrdcol
 
       ! Compute heat and moisture fluxes --- turn off heat flux after 3000 s
@@ -97,6 +98,7 @@ module neutral_case
                                 upwp_sfc, vpwp_sfc )
 
     return
+    
   end subroutine neutral_case_sfclyr
 
 end module neutral_case

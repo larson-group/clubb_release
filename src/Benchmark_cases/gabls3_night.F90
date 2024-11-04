@@ -87,9 +87,14 @@ module gabls3_night
     real( kind = core_rknd ), dimension(ngrdcol) :: &
       ubar   ! Average surface wind speed [m/s]
 
-    real( kind = core_rknd ) :: time_frac ! time interpolation factor
+    real( kind = core_rknd ) :: &
+      time_frac, & ! time interpolation factor
+      upwp_sfc_interp, &
+      vpwp_sfc_interp
 
     integer :: before_time, after_time, i
+
+    !$acc enter data create( ubar )
 
     if( l_t_dependent ) then
 
@@ -104,8 +109,8 @@ module gabls3_night
 
       qs = linear_interp_factor( time_frac, rtm_sfc_given(after_time), rtm_sfc_given(before_time) )
      
-
       ! Compute heat and moisture fluxes
+      !$acc parallel loop gang vector default(present)
       do i = 1, ngrdcol
         call landflx( thlm_sfc(i), ts, rtm_sfc(i), qs,   & ! Intent(in)
                       um_sfc(i), vm_sfc(i), lowest_level(i), z0,     & ! Intent(in)
@@ -115,14 +120,16 @@ module gabls3_night
       if ( l_input_xpwp_sfc ) then
 
         ! Feed in momentum fluxes
+        upwp_sfc_interp = linear_interp_factor( time_frac, upwp_sfc_given(after_time), &
+                                            upwp_sfc_given(before_time) )  
+
+        vpwp_sfc_interp = linear_interp_factor( time_frac, vpwp_sfc_given(after_time), &
+                                            vpwp_sfc_given(before_time) )
+
+        !$acc parallel loop gang vector default(present)
         do i = 1, ngrdcol
-          upwp_sfc(i) = linear_interp_factor( time_frac, upwp_sfc_given(after_time), &
-                                              upwp_sfc_given(before_time) )
-        end do
-                            
-        do i = 1, ngrdcol        
-          vpwp_sfc(i) = linear_interp_factor( time_frac, vpwp_sfc_given(after_time), &
-                                              vpwp_sfc_given(before_time) )
+          upwp_sfc(i) = upwp_sfc_interp
+          vpwp_sfc(i) = vpwp_sfc_interp
         end do
 
       else
@@ -133,7 +140,10 @@ module gabls3_night
 
     end if ! l_t_dependent
 
+    !$acc exit data delete( ubar )
+
     return
+
   end subroutine gabls3_night_sfclyr
 
   !-----------------------------------------------------------------------------------------------
@@ -209,6 +219,8 @@ module gabls3_night
   !------------------------------------------------------------------------------------------------
   subroutine landflx( th, ts, qh, qs, uh, vh, h, z0, &
                       shf, lhf, vel, ustar )
+    !$acc routine
+    
     !
     !  Description: landflx.F90 from SAM 6.7.5
     !

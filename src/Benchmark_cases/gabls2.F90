@@ -86,7 +86,9 @@ module gabls2
     ! 93600 seconds = 26 hours of simulation time;
 
     if ( time > (time_initial + 93600._time_precision ) ) then 
+
       ! per GABLS2 specification
+      !$acc parallel loop gang vector collapse(2) default(present)
       do k=1,gr%nzt
         do i = 1, ngrdcol
 
@@ -101,6 +103,7 @@ module gabls2
 
     else
 
+      !$acc parallel loop gang vector collapse(2) default(present)
       do k=1,gr%nzt
         do i = 1, ngrdcol
           wm_zt(i,k) = 0._core_rknd
@@ -112,12 +115,14 @@ module gabls2
     wm_zm = zt2zm( gr%nzm, gr%nzt, ngrdcol, gr, wm_zt )
 
     ! Boundary conditions on vertical motion.
+    !$acc parallel loop gang vector default(present)
     do i = 1, ngrdcol
       wm_zm(i,1) = 0.0_core_rknd        ! At surface
       wm_zm(i,gr%nzm) = 0.0_core_rknd  ! Model top
     end do
 
-    do k=1,gr%nzt
+    !$acc parallel loop gang vector collapse(2) default(present)
+    do k = 1, gr%nzt
       do i = 1, ngrdcol
 
         ! Compute large-scale horizontal temperature advection
@@ -125,15 +130,30 @@ module gabls2
 
         ! Compute large-scale horizontal moisture advection [g/kg/s]
         rtm_forcing(i,k) = 0._core_rknd
-
-        ! Test scalars with thetal and rt if desired
-        if ( sclr_idx%iisclr_thl > 0 ) sclrm_forcing(i,k,sclr_idx%iisclr_thl) = thlm_forcing(i,k)
-        if ( sclr_idx%iisclr_rt  > 0 ) sclrm_forcing(i,k,sclr_idx%iisclr_rt)  = rtm_forcing(i,k)
-
-        if ( sclr_idx%iiedsclr_thl > 0 ) edsclrm_forcing(i,k,sclr_idx%iiedsclr_thl) = thlm_forcing(i,k)
-        if ( sclr_idx%iiedsclr_rt  > 0 ) edsclrm_forcing(i,k,sclr_idx%iiedsclr_rt)  = rtm_forcing(i,k)
+        
       end do
     end do
+
+    if ( sclr_dim > 0 ) then
+      !$acc parallel loop gang vector collapse(2) default(present)
+      do k = 1, gr%nzt
+        do i = 1, ngrdcol
+          ! Test scalars with thetal and rt if desired
+          if ( sclr_idx%iisclr_thl > 0 ) sclrm_forcing(i,k,sclr_idx%iisclr_thl) = thlm_forcing(i,k)
+          if ( sclr_idx%iisclr_rt  > 0 ) sclrm_forcing(i,k,sclr_idx%iisclr_rt)  = rtm_forcing(i,k)
+        end do
+      end do
+    end if
+
+    if ( edsclr_dim > 0 ) then
+      !$acc parallel loop gang vector collapse(2) default(present)
+      do k = 1, gr%nzt
+        do i = 1, ngrdcol
+          if ( sclr_idx%iiedsclr_thl > 0 ) edsclrm_forcing(i,k,sclr_idx%iiedsclr_thl) = thlm_forcing(i,k)
+          if ( sclr_idx%iiedsclr_rt  > 0 ) edsclrm_forcing(i,k,sclr_idx%iiedsclr_rt)  = rtm_forcing(i,k)
+        end do
+      end do
+    end if
 
     return
 
@@ -217,6 +237,8 @@ module gabls2
     integer :: i
 
     ! ---- Begin Code ----
+    
+    !$acc enter data create( rsat, Cz )
 
     ! lowest model level isn't at 10 m,
     ! from ATEX specification (Stevens, et al. 2000, eq 3)
@@ -251,6 +273,7 @@ module gabls2
       T_sfc_calc = 4.4_core_rknd
     end if
 
+    !$acc parallel loop gang vector default(present)
     do i = 1, ngrdcol
 
       Cz(i) = C_10 * ((log( standard_flux_alt/z0 ))/(log( lowest_level(i)/z0 ))) * & 
@@ -267,6 +290,7 @@ module gabls2
     call compute_wprtp_sfc( ngrdcol, Cz, ubar, rtm, rsat, &
                             wprtp_sfc )
 
+    !$acc parallel loop gang vector default(present)
     do i = 1, ngrdcol
 
       ! The latent heat flux at the surface is 2.5% of its potential value
@@ -277,6 +301,8 @@ module gabls2
       bflx  = wpthlp_sfc(i) * grav / sstheta
       ustar(i) = diag_ustar( lowest_level(i), bflx, ubar(i), z0 )
     end do
+
+    !$acc exit data delete( rsat, Cz )
 
     return
 

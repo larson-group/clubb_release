@@ -63,22 +63,36 @@ module dycoms2_rf01
 
     integer :: i, k
 
+    !$acc parallel loop gang vector collapse(2) default(present)
     do k = 1, gr%nzt
       do i = 1, ngrdcol
 
         thlm_forcing(i,k) = 0._core_rknd
         rtm_forcing(i,k)  = 0._core_rknd
 
-
-        ! Test scalars with thetal and rt if desired
-        if ( sclr_idx%iisclr_thl > 0 ) sclrm_forcing(i,k,sclr_idx%iisclr_thl) = thlm_forcing(i,k)
-        if ( sclr_idx%iisclr_rt  > 0 ) sclrm_forcing(i,k,sclr_idx%iisclr_rt)  = rtm_forcing(i,k)
-
-        if ( sclr_idx%iiedsclr_thl > 0 ) edsclrm_forcing(i,k,sclr_idx%iiedsclr_thl) = thlm_forcing(i,k)
-        if ( sclr_idx%iiedsclr_rt  > 0 ) edsclrm_forcing(i,k,sclr_idx%iiedsclr_rt)  = rtm_forcing(i,k)
-
       end do
     end do
+
+    if ( sclr_dim > 0 ) then
+      !$acc parallel loop gang vector collapse(2) default(present)
+      do k = 1, gr%nzt
+        do i = 1, ngrdcol
+          ! Test scalars with thetal and rt if desired
+          if ( sclr_idx%iisclr_thl > 0 ) sclrm_forcing(i,k,sclr_idx%iisclr_thl) = thlm_forcing(i,k)
+          if ( sclr_idx%iisclr_rt  > 0 ) sclrm_forcing(i,k,sclr_idx%iisclr_rt)  = rtm_forcing(i,k)
+        end do
+      end do
+    end if
+
+    if ( edsclr_dim > 0 ) then
+      !$acc parallel loop gang vector collapse(2) default(present)
+      do k = 1, gr%nzt
+        do i = 1, ngrdcol
+          if ( sclr_idx%iiedsclr_thl > 0 ) edsclrm_forcing(i,k,sclr_idx%iiedsclr_thl) = thlm_forcing(i,k)
+          if ( sclr_idx%iiedsclr_rt  > 0 ) edsclrm_forcing(i,k,sclr_idx%iiedsclr_rt)  = rtm_forcing(i,k)
+        end do
+      end do
+    end if
 
     return
 
@@ -159,6 +173,8 @@ module dycoms2_rf01
 
   !-----------------BEGIN CODE-----------------------
 
+  !$acc enter data create( rsat, Cd )
+
   call time_select( time, size(time_sfc_given), time_sfc_given, &
                     before_time, after_time, time_frac )
 
@@ -173,6 +189,7 @@ module dycoms2_rf01
   ! Compute heat and moisture fluxes
   if ( sfctype == 0 ) then
 
+    !$acc parallel loop gang vector default(present)
     do i = 1, ngrdcol
       ustar(i) = 0.25_core_rknd
       T_sfc(i) = T_sfc_interp
@@ -182,6 +199,7 @@ module dycoms2_rf01
 
   else if ( sfctype == 1 ) then
 
+    !$acc parallel loop gang vector default(present)
     do i = 1, ngrdcol
       ustar(i) = 0.25_core_rknd
       T_sfc(i) = T_sfc_interp
@@ -201,6 +219,8 @@ module dycoms2_rf01
     error stop
 
   end if ! sfctype
+
+  !$acc exit data delete( rsat, Cd )
 
   return
 

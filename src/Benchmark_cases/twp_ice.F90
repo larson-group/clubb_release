@@ -93,6 +93,8 @@ module twp_ice
 
     !----------------------------------------------------------------------
 
+    !$acc enter data create( rsat, Ch, Cq )
+
     ! interpolate T_sfc from time_dependent_input
 
     call time_select( time, size(time_sfc_given), time_sfc_given, &
@@ -101,6 +103,7 @@ module twp_ice
     T_sfc_interp = linear_interp_factor( time_frac, T_sfc_given(after_time), &
                                          T_sfc_given(before_time) )
 
+    !$acc parallel loop gang vector default(present)
     do i = 1, ngrdcol
 
       T_sfc(i) = T_sfc_interp
@@ -131,6 +134,8 @@ module twp_ice
   
     call compute_wprtp_sfc( ngrdcol, Cq, ubar, rtm, rsat, &
                             wprtp_sfc )
+
+    !$acc exit data delete( rsat, Ch, Cq )
 
     return
 

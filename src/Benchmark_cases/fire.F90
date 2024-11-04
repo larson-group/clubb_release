@@ -89,6 +89,8 @@ module fire
 
   !--------------BEGIN CODE---------------
 
+  !$acc enter data create( rsat, Cz )
+
   ! Interpolate variables from time_dependent_input
 
   call time_select( time, size(time_sfc_given), time_sfc_given, &
@@ -97,6 +99,7 @@ module fire
   T_sfc_interp = linear_interp_factor( time_frac, T_sfc_given(after_time), &
                                        T_sfc_given(before_time) )
 
+  !$acc parallel loop gang vector default(present)
   do i = 1, ngrdcol
     T_sfc(i) = T_sfc_interp
     Cz(i) = 0.0013_core_rknd
@@ -111,6 +114,8 @@ module fire
 
   call compute_wprtp_sfc( ngrdcol, Cz, ubar, rtm_sfc, rsat, &
                           wprtp_sfc )
+
+  !$acc exit data delete( rsat, Cz )
 
   return
 

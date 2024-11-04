@@ -65,6 +65,7 @@ module lba
 
     !--------------------- Begin Code ---------------------
 
+    !$acc parallel loop gang vector collapse(2) default(present)
     do k = 1, gr%nzt
       do i = 1, ngrdcol
 
@@ -74,15 +75,29 @@ module lba
         ! Large-scale advective moisture tendency
         rtm_forcing(i,k) = 0.0_core_rknd
 
-        ! Test scalars with thetal and rt if desired
-        if ( sclr_idx%iisclr_thl > 0 ) sclrm_forcing(i,k,sclr_idx%iisclr_thl) = thlm_forcing(i,k)
-        if ( sclr_idx%iisclr_rt  > 0 ) sclrm_forcing(i,k,sclr_idx%iisclr_rt)  = rtm_forcing(i,k)
-
-        if ( sclr_idx%iiedsclr_thl > 0 ) edsclrm_forcing(i,k,sclr_idx%iiedsclr_thl) = thlm_forcing(i,k)
-        if ( sclr_idx%iiedsclr_rt  > 0 ) edsclrm_forcing(i,k,sclr_idx%iiedsclr_rt)  = rtm_forcing(i,k)
-
       end do
     end do
+
+    if ( sclr_dim > 0 ) then
+      !$acc parallel loop gang vector collapse(2) default(present)
+      do k = 1, gr%nzt
+        do i = 1, ngrdcol
+          ! Test scalars with thetal and rt if desired
+          if ( sclr_idx%iisclr_thl > 0 ) sclrm_forcing(i,k,sclr_idx%iisclr_thl) = thlm_forcing(i,k)
+          if ( sclr_idx%iisclr_rt  > 0 ) sclrm_forcing(i,k,sclr_idx%iisclr_rt)  = rtm_forcing(i,k)
+        end do
+      end do
+    end if
+
+    if ( edsclr_dim > 0 ) then
+      !$acc parallel loop gang vector collapse(2) default(present)
+      do k = 1, gr%nzt
+        do i = 1, ngrdcol
+          if ( sclr_idx%iiedsclr_thl > 0 ) edsclrm_forcing(i,k,sclr_idx%iiedsclr_thl) = thlm_forcing(i,k)
+          if ( sclr_idx%iiedsclr_rt  > 0 ) edsclrm_forcing(i,k,sclr_idx%iiedsclr_rt)  = rtm_forcing(i,k)
+        end do
+      end do
+    end if
 
     return
   end subroutine lba_tndcy
@@ -154,6 +169,7 @@ module lba
                  real( time,kind=core_rknd)/sec_per_hr) / 5.25_core_rknd ) ) & 
             ), kind = core_rknd ) ! Known magic number
 
+    !$acc parallel loop gang vector default(present)
     do i = 1, ngrdcol
 
       ! Known magic numbers

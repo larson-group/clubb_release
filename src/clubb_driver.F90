@@ -2432,6 +2432,19 @@ module clubb_driver
                            thlm, rtm, rcm, exner, thv_ds_zt, &
                            thvm )
 
+
+      !$acc data copyin( sclr_idx, gr, gr%zt, gr%zm, um, vm, thlm, p_in_Pa, exner, rho, thvm, rho_zm, veg_T_in_K ) &
+      !$acc        copy( rtm, wm_zt, ug, vg, um_ref, vm_ref, thlm_forcing, rtm_forcing, &
+      !$acc              um_forcing, vm_forcing, wm_zm, wprtp_forcing, wpthlp_forcing, &
+      !$acc              rtp2_forcing, thlp2_forcing, rtpthlp_forcing, wpthlp_sfc, &
+      !$acc              wprtp_sfc, upwp_sfc, vpwp_sfc, T_sfc, p_sfc )
+
+      !$acc data if( sclr_dim > 0 ) &
+      !$acc      copy( wpsclrp, sclrm_forcing, wpsclrp_sfc )  
+
+      !$acc data if( edsclr_dim > 0 ) &
+      !$acc      copy( edsclrm_forcing, wpedsclrp_sfc ) 
+
       ! Set large-scale tendencies and subsidence profiles
       call prescribe_forcings( gr, gr%nzm, gr%nzt, ngrdcol, &
                                sclr_dim, edsclr_dim, sclr_idx, & ! In
@@ -2449,6 +2462,10 @@ module clubb_driver
                                wpthlp_sfc, wprtp_sfc, upwp_sfc, vpwp_sfc, & ! Inout
                                T_sfc, p_sfc, sens_ht, latent_ht, & ! Inout
                                wpsclrp_sfc, wpedsclrp_sfc ) ! Inout
+
+      !$acc end data
+      !$acc end data
+      !$acc end data
 
       if ( clubb_at_least_debug_level( 0 ) ) then
         if ( err_code == clubb_fatal_error ) then
@@ -5318,6 +5335,8 @@ module clubb_driver
 
 !-----------------------------------------------------------------------
 
+    !$acc enter data create( um_bot, vm_bot, rtm_bot, thlm_bot, rho_bot, exner_bot, z_bot, ustar, ubar )
+
 !-----------------------------------------------------------------------
 !                    FIND ALL DIAGNOSTIC VARIABLES
 !-----------------------------------------------------------------------
@@ -5331,20 +5350,22 @@ module clubb_driver
 
     ! These lines were added to reset the forcing arrays to 0 each iteration.
     ! This was previously done in the <case>_tndcy subroutine.
+    !$acc parallel loop gang vector collapse(2) default(present)
     do k = 1, nzt
       do i = 1, ngrdcol
-        rtm_forcing = zero
-        thlm_forcing = zero
+        rtm_forcing(i,k)  = zero
+        thlm_forcing(i,k) = zero
       end do
     end do
 
+    !$acc parallel loop gang vector collapse(2) default(present)
     do k = 1, nzm
       do i = 1, ngrdcol
-        wprtp_forcing = zero
-        wpthlp_forcing = zero
-        rtp2_forcing = zero
-        thlp2_forcing = zero
-        rtpthlp_forcing = zero
+        wprtp_forcing(i,k)   = zero
+        wpthlp_forcing(i,k)  = zero
+        rtp2_forcing(i,k)    = zero
+        thlp2_forcing(i,k)   = zero
+        rtpthlp_forcing(i,k) = zero
       end do
     end do
 
@@ -5368,6 +5389,7 @@ module clubb_driver
       ! so much sponge damping, which is associated with sawtooth noise
       ! in the cloud_feedback cases.  I don't know how it will affect
       ! the other cases.
+      !$acc parallel loop gang vector default(present)
       do i = 1, ngrdcol
         rtm_forcing(i,nzt) = zero
         thlm_forcing(i,nzt) = zero
@@ -5416,6 +5438,7 @@ module clubb_driver
       case ( "fire", "generic" ) ! FIRE Sc case
 
         ! Analytic radiation is computed elsewhere
+        !$acc parallel loop gang vector collapse(2) default(present)
         do k = 1, gr%nzt
           do i = 1, ngrdcol
             thlm_forcing(i,k) = 0._core_rknd
@@ -5439,11 +5462,13 @@ module clubb_driver
 
       case ( "mpace_a" ) ! mpace_a arctic stratus case
 
+        !$acc update host( p_in_Pa )
         call mpace_a_tndcy( ngrdcol, sclr_dim, edsclr_dim, sclr_idx, & ! Intent(in) 
                             gr, time_current, p_in_Pa, &               ! Intent(in) 
                             wm_zt, wm_zm, thlm_forcing, rtm_forcing, & ! Intent(out)
                             um_ref, vm_ref, &                          ! Intent(out)
                             sclrm_forcing, edsclrm_forcing )           ! Intent(out)
+        !$acc update device( wm_zt, wm_zm, thlm_forcing, rtm_forcing, um_ref, vm_ref, sclrm_forcing, edsclrm_forcing )
 
       case ( "mpace_b" ) ! mpace_b arctic stratus case
 
@@ -5461,6 +5486,7 @@ module clubb_driver
 
       case ( "neutral" )
 
+        !$acc parallel loop gang vector collapse(2) default(present)
         do k = 1, gr%nzt
           do i = 1, ngrdcol
             thlm_forcing(i,k) = 0.0_core_rknd
@@ -5468,21 +5494,27 @@ module clubb_driver
           end do
         end do
 
-        do sclr = 1, sclr_dim
-          do k = 1, gr%nzt
-            do i = 1, ngrdcol
-              sclrm_forcing(i,k,sclr) = 0.0_core_rknd
+        if ( sclr_dim > 0 ) then
+          !$acc parallel loop gang vector collapse(2) default(present)
+          do sclr = 1, sclr_dim
+            do k = 1, gr%nzt
+              do i = 1, ngrdcol
+                sclrm_forcing(i,k,sclr) = 0.0_core_rknd
+              end do
             end do
           end do
-        end do
+        end if
 
-        do edsclr = 1, edsclr_dim
-          do k = 1, gr%nzt
-            do i = 1, ngrdcol
-              edsclrm_forcing(i,k,edsclr) = 0.0_core_rknd
+        if ( edsclr_dim > 0 ) then
+          !$acc parallel loop gang vector collapse(2) default(present)
+          do edsclr = 1, edsclr_dim
+            do k = 1, gr%nzt
+              do i = 1, ngrdcol
+                edsclrm_forcing(i,k,edsclr) = 0.0_core_rknd
+              end do
             end do
           end do
-        end do
+        end if
 
       case ( "wangara" ) ! Wangara dry CBL
 
@@ -5524,264 +5556,270 @@ module clubb_driver
 
     select case ( trim( runtype ) )
 
-    case ( "rico" )
+      case ( "rico" )
 
-      l_set_sclr_sfc_rtm_thlm = .true.
-      call rico_sfclyr( ngrdcol, time_current, um_bot, vm_bot, thlm_bot, rtm_bot, & ! Intent(in)
-                          ! 299.8_core_rknd K is the RICO T_sfc;
-                          ! 101540 Pa is the sfc pressure.
-                          !gr%zt(1,2), 299.8_core_rknd, 101540._core_rknd,  &           ! Intent(in)
-                        z_bot, p_sfc, exner_bot, &                      ! Intent(in)
-                        saturation_formula, &                           ! Intent(in)
-                        upwp_sfc, vpwp_sfc, wpthlp_sfc, &               ! Intent(out)
-                        wprtp_sfc, ustar, T_sfc )                       ! Intent(out)
+        l_set_sclr_sfc_rtm_thlm = .true.
+        call rico_sfclyr( ngrdcol, time_current, um_bot, vm_bot, thlm_bot, rtm_bot, & ! Intent(in)
+                            ! 299.8_core_rknd K is the RICO T_sfc;
+                            ! 101540 Pa is the sfc pressure.
+                            !gr%zt(1,2), 299.8_core_rknd, 101540._core_rknd,  &           ! Intent(in)
+                          z_bot, p_sfc, exner_bot, &                      ! Intent(in)
+                          saturation_formula, &                           ! Intent(in)
+                          upwp_sfc, vpwp_sfc, wpthlp_sfc, &               ! Intent(out)
+                          wprtp_sfc, ustar, T_sfc )                       ! Intent(out)
 
-    case ( "gabls3" )
+      case ( "gabls3" )
 
-      l_compute_momentum_flux = .true.
-      call gabls3_sfclyr( ngrdcol, ubar, veg_T_in_K,           & ! Intent(in)
-                          thlm_bot, rtm_bot, z_bot, exner_bot, & ! Intent(in)
-                          wpthlp_sfc, wprtp_sfc, ustar )         ! Intent(out)
+        l_compute_momentum_flux = .true.
+        call gabls3_sfclyr( ngrdcol, ubar, veg_T_in_K,           & ! Intent(in)
+                            thlm_bot, rtm_bot, z_bot, exner_bot, & ! Intent(in)
+                            wpthlp_sfc, wprtp_sfc, ustar )         ! Intent(out)
 
-    case ( "gabls3_night" )
+      case ( "gabls3_night" )
 
-      call gabls3_night_sfclyr( ngrdcol, time_current, um_bot, vm_bot,  & ! Intent(in)
-                                thlm_bot, rtm_bot, z_bot,               & ! Intent(in)
-                                upwp_sfc, vpwp_sfc,                     & ! Intent(out)
-                                wpthlp_sfc, wprtp_sfc, ustar )            ! Intent(out)
+        call gabls3_night_sfclyr( ngrdcol, time_current, um_bot, vm_bot,  & ! Intent(in)
+                                  thlm_bot, rtm_bot, z_bot,               & ! Intent(in)
+                                  upwp_sfc, vpwp_sfc,                     & ! Intent(out)
+                                  wpthlp_sfc, wprtp_sfc, ustar )            ! Intent(out)
 
-    case ( "jun25_altocu" )
-      ! There are no surface momentum or heat fluxes
-      ! for the Jun. 25 Altocumulus case.
+      case ( "jun25_altocu" )
+        ! There are no surface momentum or heat fluxes
+        ! for the Jun. 25 Altocumulus case.
 
-      ! Ensure ustar(i) is set
-      do i = 1, ngrdcol
-        ustar(i) = 0._core_rknd
-      end do
+        ! Ensure ustar(i) is set
+        !$acc parallel loop gang vector default(present)
+        do i = 1, ngrdcol
+          ustar(i) = 0._core_rknd
+        end do
 
-      ! Read in time dependent inputs
-      call jun25_altocu_read_t_dependent( time_current, &       ! Intent(in)
-                                          sens_ht, latent_ht )  ! Intent(out)
+        ! Read in time dependent inputs
+        call jun25_altocu_read_t_dependent( time_current, &       ! Intent(in)
+                                            sens_ht, latent_ht )  ! Intent(out)
 
-    case ( "cobra" )
+      case ( "cobra" )
 
-      l_compute_momentum_flux = .true.
+        l_compute_momentum_flux = .true.
 
-      call cobra_sfclyr( ngrdcol, sclr_dim, edsclr_dim, sclr_idx, & ! Intent(in)
-                         time_current, z_bot, rho_bot,            & ! Intent(in)
-                         thlm_bot, ubar,                          & ! Intent(in)
-                         wpthlp_sfc, wprtp_sfc, ustar,            & ! Intent(out)
-                         wpsclrp_sfc, wpedsclrp_sfc, T_sfc )        ! Intent(out)
+        call cobra_sfclyr( ngrdcol, sclr_dim, edsclr_dim, sclr_idx, & ! Intent(in)
+                          time_current, z_bot, rho_bot,            & ! Intent(in)
+                          thlm_bot, ubar,                          & ! Intent(in)
+                          wpthlp_sfc, wprtp_sfc, ustar,            & ! Intent(out)
+                          wpsclrp_sfc, wpedsclrp_sfc, T_sfc )        ! Intent(out)
 
-    case ( "clex9_nov02" )
-      ! There are no surface momentum or heat fluxes
-      ! for the CLEX-9: Nov. 02 Altocumulus case.
+      case ( "clex9_nov02" )
+        ! There are no surface momentum or heat fluxes
+        ! for the CLEX-9: Nov. 02 Altocumulus case.
 
-      ! Ensure ustar is set
-      do i = 1, ngrdcol
-        ustar(i) = 0._core_rknd
-      end do
+        ! Ensure ustar is set
+        !$acc parallel loop gang vector default(present)
+        do i = 1, ngrdcol
+          ustar(i) = 0._core_rknd
+        end do
 
-      ! Read in time dependent inputs
-      call clex9_nov02_read_t_dependent( time_current, &      ! Intent(in)
-                                         sens_ht, latent_ht ) ! Intent(out)
-
-    case ( "clex9_oct14" )
-      ! There are no surface momentum or heat fluxes
-      ! for the CLEX-9: Oct. 14 Altocumulus case.
-
-      ! Ensure ustar is set.
-      do i = 1, ngrdcol
-        ustar(i) = 0._core_rknd
-      end do
-
-      ! Read in time dependent inputs
-      call clex9_oct14_read_t_dependent( time_current, &      ! Intent(in)
-                                         sens_ht, latent_ht ) ! Intent(out)
-
-    case ( "astex_a209" )
-
-      l_compute_momentum_flux = .true.
-      call astex_a209_sfclyr( ngrdcol, time_current, ubar, rtm_bot, & ! Intent(in)
-                              thlm_bot, z_bot, exner_bot, p_sfc,    & ! Intent(in)
-                              saturation_formula,                   & ! Intent(in)
-                              wpthlp_sfc, wprtp_sfc, ustar, T_sfc )   ! Intent(out)
-
-    case ( "nov11_altocu" )
-      ! There are no surface momentum or heat fluxes
-      ! for the Nov. 11 Altocumulus case.
-
-      ! Ensure ustar is set
-      do i = 1, ngrdcol
-        ustar(i) = 0._core_rknd
-      end do
-
-      ! However, the Nov. 11 Altocumulus case has a one-time adjustment
-      ! of rtm at t=3600s after the start of the simulation.
-      ! As the nov11_altocu_tndcy subroutine is now obsolete, this was
-      ! moved to a separate subroutine, nov11_altocu_rtm_adjust.
-      ! This subroutine is called here, as the surface momentum/heat fluxes
-      ! are called every timestep.
-      ! ~EIHoppe/20110104
-      call nov11_altocu_rtm_adjust( ngrdcol, gr,                    & ! (in)
-                                    time_current, time_initial, dt, & ! (in)
-                                    rtm )                             ! (inout)
-
-      ! Read in time dependent inputs
-      call nov11_altocu_read_t_dependent( time_current, &      ! Intent(in)
+        ! Read in time dependent inputs
+        call clex9_nov02_read_t_dependent( time_current, &      ! Intent(in)
                                           sens_ht, latent_ht ) ! Intent(out)
 
-    case ( "fire", "generic" )  ! Generic setup, and GCSS FIRE
+      case ( "clex9_oct14" )
+        ! There are no surface momentum or heat fluxes
+        ! for the CLEX-9: Oct. 14 Altocumulus case.
 
-      l_compute_momentum_flux = .true.
-      l_set_sclr_sfc_rtm_thlm = .true.
-      l_fixed_flux            = .true.
-      call fire_sfclyr( ngrdcol, time_current, ubar, p_sfc,  & ! Intent(in)
-                        thlm_bot, rtm_bot, exner_bot,        & ! Intent(in)
-                        saturation_formula,                  & ! Intent(in)
-                        wpthlp_sfc, wprtp_sfc, ustar, T_sfc )  ! Intent(out)
+        ! Ensure ustar is set.
+        !$acc parallel loop gang vector default(present)
+        do i = 1, ngrdcol
+          ustar(i) = 0._core_rknd
+        end do
 
-    case ( "cloud_feedback_s6", "cloud_feedback_s6_p2k",   &
-           "cloud_feedback_s11", "cloud_feedback_s11_p2k", &
-           "cloud_feedback_s12", "cloud_feedback_s12_p2k", &
-           "cgils_s6", "cgils_s6_p2k", "cgils_s11",        &
-           "cgils_s11_p2k", "cgils_s12", "cgils_s12_p2k"  ) ! Cloud Feedback cases
+        ! Read in time dependent inputs
+        call clex9_oct14_read_t_dependent( time_current, &      ! Intent(in)
+                                          sens_ht, latent_ht ) ! Intent(out)
 
-      l_compute_momentum_flux = .true.
-      l_set_sclr_sfc_rtm_thlm = .true.
-      l_fixed_flux            = .true.
-      call cloud_feedback_sfclyr( ngrdcol, time_current, sfctype, & ! Intent(in)
-                                  thlm_bot, rtm_bot, z_bot,       & ! Intent(in)
-                                  ubar, p_sfc, T_sfc,             & ! Intent(in)
-                                  saturation_formula,             & ! Intent(in)
-                                  wpthlp_sfc, wprtp_sfc, ustar)     ! Intent(out)
+      case ( "astex_a209" )
 
-    case ( "arm" )
+        l_compute_momentum_flux = .true.
+        call astex_a209_sfclyr( ngrdcol, time_current, ubar, rtm_bot, & ! Intent(in)
+                                thlm_bot, z_bot, exner_bot, p_sfc,    & ! Intent(in)
+                                saturation_formula,                   & ! Intent(in)
+                                wpthlp_sfc, wprtp_sfc, ustar, T_sfc )   ! Intent(out)
 
-      l_compute_momentum_flux = .true.
-      l_set_sclr_sfc_rtm_thlm = .true.
-      call arm_sfclyr( ngrdcol, time_current, z_bot,    & ! Intent(in)
-                        thlm_bot, ubar,                 & ! Intent(in)
-                        wpthlp_sfc, wprtp_sfc, ustar )    ! Intent(out)
+      case ( "nov11_altocu" )
+        ! There are no surface momentum or heat fluxes
+        ! for the Nov. 11 Altocumulus case.
 
-    case ( "arm_0003" )
+        ! Ensure ustar is set
+        !$acc parallel loop gang vector default(present)
+        do i = 1, ngrdcol
+          ustar(i) = 0._core_rknd
+        end do
 
-      l_compute_momentum_flux = .true.
-      l_set_sclr_sfc_rtm_thlm = .true.
-      call arm_0003_sfclyr( ngrdcol, time_current, z_bot,   & ! Intent(in)
-                            rho_bot, thlm_bot, ubar,        & ! Intent(in)
-                            wpthlp_sfc, wprtp_sfc, ustar )    ! Intent(out)
+        ! However, the Nov. 11 Altocumulus case has a one-time adjustment
+        ! of rtm at t=3600s after the start of the simulation.
+        ! As the nov11_altocu_tndcy subroutine is now obsolete, this was
+        ! moved to a separate subroutine, nov11_altocu_rtm_adjust.
+        ! This subroutine is called here, as the surface momentum/heat fluxes
+        ! are called every timestep.
+        ! ~EIHoppe/20110104
+        call nov11_altocu_rtm_adjust( ngrdcol, gr,                    & ! (in)
+                                      time_current, time_initial, dt, & ! (in)
+                                      rtm )                             ! (inout)
 
-    case ( "arm_3year" )
+        ! Read in time dependent inputs
+        call nov11_altocu_read_t_dependent( time_current, &      ! Intent(in)
+                                            sens_ht, latent_ht ) ! Intent(out)
 
-      l_compute_momentum_flux = .true.
-      l_set_sclr_sfc_rtm_thlm = .true.
-      call arm_3year_sfclyr( ngrdcol, time_current, z_bot, rho_bot, & ! Intent(in)
-                             thlm_bot, ubar,                        & ! Intent(in)
-                             wpthlp_sfc, wprtp_sfc, ustar )           ! Intent(out)
+      case ( "fire", "generic" )  ! Generic setup, and GCSS FIRE
 
-    case ( "arm_97", "mc3e" )
+        l_compute_momentum_flux = .true.
+        l_set_sclr_sfc_rtm_thlm = .true.
+        l_fixed_flux            = .true.
+        call fire_sfclyr( ngrdcol, time_current, ubar, p_sfc,  & ! Intent(in)
+                          thlm_bot, rtm_bot, exner_bot,        & ! Intent(in)
+                          saturation_formula,                  & ! Intent(in)
+                          wpthlp_sfc, wprtp_sfc, ustar, T_sfc )  ! Intent(out)
 
-      l_compute_momentum_flux = .true.
-      l_set_sclr_sfc_rtm_thlm = .true.
-      call arm_97_sfclyr( ngrdcol, time_current, z_bot, rho_bot, & ! Intent(in)
-                          thlm_bot, ubar,                        & ! Intent(in)
-                          wpthlp_sfc, wprtp_sfc, ustar )           ! Intent(out)
+      case ( "cloud_feedback_s6", "cloud_feedback_s6_p2k",   &
+            "cloud_feedback_s11", "cloud_feedback_s11_p2k", &
+            "cloud_feedback_s12", "cloud_feedback_s12_p2k", &
+            "cgils_s6", "cgils_s6_p2k", "cgils_s11",        &
+            "cgils_s11_p2k", "cgils_s12", "cgils_s12_p2k"  ) ! Cloud Feedback cases
 
-    case ( "atex" )
+        l_compute_momentum_flux = .true.
+        l_set_sclr_sfc_rtm_thlm = .true.
+        l_fixed_flux            = .true.
+        call cloud_feedback_sfclyr( ngrdcol, time_current, sfctype, & ! Intent(in)
+                                    thlm_bot, rtm_bot, z_bot,       & ! Intent(in)
+                                    ubar, p_sfc, T_sfc,             & ! Intent(in)
+                                    saturation_formula,             & ! Intent(in)
+                                    wpthlp_sfc, wprtp_sfc, ustar)     ! Intent(out)
 
-      l_compute_momentum_flux = .true.
-      l_set_sclr_sfc_rtm_thlm = .true.
-      call atex_sfclyr( ngrdcol, time_current, ubar,  &       ! Intent(in)
-                        thlm_bot, rtm_bot, exner_bot, &       ! Intent(in)
-                        wpthlp_sfc, wprtp_sfc, ustar, T_sfc ) ! Intent(out)
+      case ( "arm" )
 
-    case ( "bomex" )
+        l_compute_momentum_flux = .true.
+        l_set_sclr_sfc_rtm_thlm = .true.
+        call arm_sfclyr( ngrdcol, time_current, z_bot,    & ! Intent(in)
+                          thlm_bot, ubar,                 & ! Intent(in)
+                          wpthlp_sfc, wprtp_sfc, ustar )    ! Intent(out)
 
-      l_compute_momentum_flux = .true.
-      l_set_sclr_sfc_rtm_thlm = .true.
-      call bomex_sfclyr( ngrdcol, time_current, rtm_bot,  & ! Intent(in) 
-                         wpthlp_sfc, wprtp_sfc, ustar )     ! Intent(out)
+      case ( "arm_0003" )
 
-    case ( "dycoms2_rf01" )
+        l_compute_momentum_flux = .true.
+        l_set_sclr_sfc_rtm_thlm = .true.
+        call arm_0003_sfclyr( ngrdcol, time_current, z_bot,   & ! Intent(in)
+                              rho_bot, thlm_bot, ubar,        & ! Intent(in)
+                              wpthlp_sfc, wprtp_sfc, ustar )    ! Intent(out)
 
-      l_compute_momentum_flux = .true.
-      l_set_sclr_sfc_rtm_thlm = .true.
-      call dycoms2_rf01_sfclyr( ngrdcol, time_current, sfctype, p_sfc,  & ! Intent(in)
-                                exner_bot, ubar,                        & ! Intent(in)
-                                thlm_bot, rtm_bot, rho_bot,             & ! Intent(in)
-                                saturation_formula,                     & ! Intent(in)
-                                wpthlp_sfc, wprtp_sfc, ustar, T_sfc )     ! Intent(out)
-    case ( "dycoms2_rf02" )
+      case ( "arm_3year" )
 
-      l_compute_momentum_flux = .true.
-      l_set_sclr_sfc_rtm_thlm = .true.
-      call dycoms2_rf02_sfclyr( ngrdcol, time_current, & ! Intent(in)
-                                wpthlp_sfc, wprtp_sfc, ustar ) ! Intent(out)
+        l_compute_momentum_flux = .true.
+        l_set_sclr_sfc_rtm_thlm = .true.
+        call arm_3year_sfclyr( ngrdcol, time_current, z_bot, rho_bot, & ! Intent(in)
+                              thlm_bot, ubar,                        & ! Intent(in)
+                              wpthlp_sfc, wprtp_sfc, ustar )           ! Intent(out)
 
-    case ( "gabls2" )
+      case ( "arm_97", "mc3e" )
 
-      l_compute_momentum_flux = .true.
-      l_set_sclr_sfc_rtm_thlm = .true.
-      call gabls2_sfclyr( ngrdcol, time_current, time_initial,    & ! Intent(in)
-                          z_bot, p_sfc,                           & ! Intent(in)
-                          ubar, thlm_bot, rtm_bot, exner_bot,     & ! Intent(in)
-                          saturation_formula,                     & ! Intent(in)
-                          wpthlp_sfc, wprtp_sfc, ustar, T_sfc )     ! Intent(out)
+        l_compute_momentum_flux = .true.
+        l_set_sclr_sfc_rtm_thlm = .true.
+        call arm_97_sfclyr( ngrdcol, time_current, z_bot, rho_bot, & ! Intent(in)
+                            thlm_bot, ubar,                        & ! Intent(in)
+                            wpthlp_sfc, wprtp_sfc, ustar )           ! Intent(out)
 
-    case ( "lba" )
+      case ( "atex" )
 
-      l_compute_momentum_flux = .true.
-      l_set_sclr_sfc_rtm_thlm = .true.
-      call lba_sfclyr( ngrdcol, time_current, time_initial, & ! Intent(in)
-                      z_bot, rho_bot, thlm_bot, ubar, &       ! Intent(in)
-                      wpthlp_sfc, wprtp_sfc, ustar )          ! Intent(out)
+        l_compute_momentum_flux = .true.
+        l_set_sclr_sfc_rtm_thlm = .true.
+        call atex_sfclyr( ngrdcol, time_current, ubar,  &       ! Intent(in)
+                          thlm_bot, rtm_bot, exner_bot, &       ! Intent(in)
+                          wpthlp_sfc, wprtp_sfc, ustar, T_sfc ) ! Intent(out)
 
-    case ( "mpace_a" )
+      case ( "bomex" )
 
-      l_compute_momentum_flux = .true.
-      l_set_sclr_sfc_rtm_thlm = .true.
-      call mpace_a_sfclyr( ngrdcol, time_current, rho_bot,  & ! Intent(in)
-                           wpthlp_sfc, wprtp_sfc, ustar )     ! Intent(out)
+        l_compute_momentum_flux = .true.
+        l_set_sclr_sfc_rtm_thlm = .true.
+        call bomex_sfclyr( ngrdcol, time_current, rtm_bot,  & ! Intent(in) 
+                          wpthlp_sfc, wprtp_sfc, ustar )     ! Intent(out)
 
-    case ( "mpace_b" )
-      
-      l_compute_momentum_flux = .true.
-      l_set_sclr_sfc_rtm_thlm = .true.
-      call mpace_b_sfclyr( ngrdcol, time_current, rho_bot, &        ! Intent(in)
-                           wpthlp_sfc, wprtp_sfc, ustar ) ! Intent(out)
+      case ( "dycoms2_rf01" )
 
-    case ( "neutral" )
+        l_compute_momentum_flux = .true.
+        l_set_sclr_sfc_rtm_thlm = .true.
+        call dycoms2_rf01_sfclyr( ngrdcol, time_current, sfctype, p_sfc,  & ! Intent(in)
+                                  exner_bot, ubar,                        & ! Intent(in)
+                                  thlm_bot, rtm_bot, rho_bot,             & ! Intent(in)
+                                  saturation_formula,                     & ! Intent(in)
+                                  wpthlp_sfc, wprtp_sfc, ustar, T_sfc )     ! Intent(out)
+      case ( "dycoms2_rf02" )
 
-      l_compute_momentum_flux = .true.
-      l_set_sclr_sfc_rtm_thlm = .true.
-      call neutral_case_sfclyr( ngrdcol, time_current,         & ! Intent(in)
-                                !  z_bot(i), thlm_bot(i),      & ! Intent(in)
-                                um_bot, vm_bot, ubar,          & ! Intent(in)
-                                upwp_sfc, vpwp_sfc,            & ! Intent(out)
-                                wpthlp_sfc, wprtp_sfc, ustar )   ! Intent(out)
+        l_compute_momentum_flux = .true.
+        l_set_sclr_sfc_rtm_thlm = .true.
+        call dycoms2_rf02_sfclyr( ngrdcol, time_current, & ! Intent(in)
+                                  wpthlp_sfc, wprtp_sfc, ustar ) ! Intent(out)
 
-    case ( "twp_ice" )
+      case ( "gabls2" )
 
-      l_compute_momentum_flux = .true.
-      l_set_sclr_sfc_rtm_thlm = .true.
-      call twp_ice_sfclyr( ngrdcol, time_current, z_bot, exner_bot, & ! Intent(in)
-                           thlm_bot, ubar, rtm_bot, p_sfc,          & ! Intent(in)
-                           saturation_formula,                      & ! Intent(in)
-                           wpthlp_sfc, wprtp_sfc, ustar, T_sfc )      ! Intent(out)
+        l_compute_momentum_flux = .true.
+        l_set_sclr_sfc_rtm_thlm = .true.
+        call gabls2_sfclyr( ngrdcol, time_current, time_initial,    & ! Intent(in)
+                            z_bot, p_sfc,                           & ! Intent(in)
+                            ubar, thlm_bot, rtm_bot, exner_bot,     & ! Intent(in)
+                            saturation_formula,                     & ! Intent(in)
+                            wpthlp_sfc, wprtp_sfc, ustar, T_sfc )     ! Intent(out)
 
-    case ( "wangara" )
+      case ( "lba" )
 
-      l_compute_momentum_flux = .true.
-      l_set_sclr_sfc_rtm_thlm = .true.
-      call wangara_sfclyr( ngrdcol, time_current, &                 ! Intent(in)
+        l_compute_momentum_flux = .true.
+        l_set_sclr_sfc_rtm_thlm = .true.
+        call lba_sfclyr( ngrdcol, time_current, time_initial, & ! Intent(in)
+                        z_bot, rho_bot, thlm_bot, ubar, &       ! Intent(in)
+                        wpthlp_sfc, wprtp_sfc, ustar )          ! Intent(out)
+
+      case ( "mpace_a" )
+
+        l_compute_momentum_flux = .true.
+        l_set_sclr_sfc_rtm_thlm = .true.
+        !$acc update host( rho_bot )
+        call mpace_a_sfclyr( ngrdcol, time_current, rho_bot,  & ! Intent(in)
+                             wpthlp_sfc, wprtp_sfc, ustar )     ! Intent(out)
+        !$acc update device( wpthlp_sfc, wprtp_sfc, ustar )
+
+      case ( "mpace_b" )
+        
+        l_compute_momentum_flux = .true.
+        l_set_sclr_sfc_rtm_thlm = .true.
+        call mpace_b_sfclyr( ngrdcol, time_current, rho_bot, &        ! Intent(in)
                             wpthlp_sfc, wprtp_sfc, ustar ) ! Intent(out)
 
-    case default
+      case ( "neutral" )
 
-      write(unit=fstderr,fmt=*)  & 
-        "Invalid value of runtype = ", runtype
-      error stop
+        l_compute_momentum_flux = .true.
+        l_set_sclr_sfc_rtm_thlm = .true.
+        call neutral_case_sfclyr( ngrdcol, time_current,         & ! Intent(in)
+                                  !  z_bot(i), thlm_bot(i),      & ! Intent(in)
+                                  um_bot, vm_bot, ubar,          & ! Intent(in)
+                                  upwp_sfc, vpwp_sfc,            & ! Intent(out)
+                                  wpthlp_sfc, wprtp_sfc, ustar )   ! Intent(out)
+
+      case ( "twp_ice" )
+
+        l_compute_momentum_flux = .true.
+        l_set_sclr_sfc_rtm_thlm = .true.
+        call twp_ice_sfclyr( ngrdcol, time_current, z_bot, exner_bot, & ! Intent(in)
+                            thlm_bot, ubar, rtm_bot, p_sfc,          & ! Intent(in)
+                            saturation_formula,                      & ! Intent(in)
+                            wpthlp_sfc, wprtp_sfc, ustar, T_sfc )      ! Intent(out)
+
+      case ( "wangara" )
+
+        l_compute_momentum_flux = .true.
+        l_set_sclr_sfc_rtm_thlm = .true.
+        call wangara_sfclyr( ngrdcol, time_current, &                 ! Intent(in)
+                              wpthlp_sfc, wprtp_sfc, ustar ) ! Intent(out)
+
+      case default
+
+        write(unit=fstderr,fmt=*)  & 
+          "Invalid value of runtype = ", runtype
+        error stop
 
     end select ! runtype
 
@@ -5800,12 +5838,14 @@ module clubb_driver
     ! If the surface type is 0, use fixed fluxes
     if ( sfctype == 0 .and. l_fixed_flux ) then
 
+      !$acc parallel loop gang vector default(present)
       do i = 1, ngrdcol
         wpthlp_sfc(i) = sens_ht
         wprtp_sfc(i)  = latent_ht
       end do
 
       if ( sclr_idx%iisclr_thl > 0 ) then
+        !$acc parallel loop gang vector collapse(2) default(present)
         do k = 1, nzm
           do i = 1, ngrdcol
             wpsclrp(i,k,sclr_idx%iisclr_thl) = sens_ht
@@ -5814,6 +5854,7 @@ module clubb_driver
       end if
 
       if ( sclr_idx%iisclr_rt > 0 ) then
+        !$acc parallel loop gang vector collapse(2) default(present)
         do k = 1, nzm
           do i = 1, ngrdcol
             wpsclrp(i,k,sclr_idx%iisclr_rt)   = latent_ht
@@ -5825,6 +5866,8 @@ module clubb_driver
 
     ! Store values of surface fluxes for statistics
     if ( stats_metadata%l_stats_samp ) then
+
+      !$acc update host( wpthlp_sfc, rho_zm, wprtp_sfc, upwp_sfc, vpwp_sfc, ustar, T_sfc )
 
       do i = 1, ngrdcol
         call stat_update_var_pt( stats_metadata%ish, 1, wpthlp_sfc(i)*rho_zm(i,1)*Cp,&       ! intent(in)
@@ -5849,13 +5892,15 @@ module clubb_driver
                                  stats_sfc(i) )                             ! intent(inout)
 
         call stat_update_var_pt( stats_metadata%iT_sfc, 1, T_sfc(i), &                     ! intent(in)
-                                stats_sfc(i) )                             ! intent(inout)
+                                 stats_sfc(i) )                             ! intent(inout)
       end do
 
     endif
 
+    !$acc exit data delete( um_bot, vm_bot, rtm_bot, thlm_bot, rho_bot, exner_bot, z_bot, ustar, ubar )
 
     return
+
   end subroutine prescribe_forcings
 
   !-------------------------------------------------------------------------------
@@ -5949,14 +5994,20 @@ module clubb_driver
       rtm_zm,  &
       thlm_zm
 
+    real( kind = core_rknd ) :: &
+      min_val
+
     integer, dimension(ngrdcol) :: &
       k_min
 
-    integer :: km1,kp1,kp2,k00, i
+    integer :: km1,kp1,kp2,k00, i, k
 
-    if (.not. l_modify_bc_for_cnvg_test) then
+    !$acc data create( um_zm, vm_zm, exner_zm, rtm_zm, thlm_zm, k_min )
+
+    if ( .not. l_modify_bc_for_cnvg_test ) then
 
       ! Default model setup in CLUBB-SCM
+      !$acc parallel loop gang vector default(present)
       do i = 1, ngrdcol
         z_bot(i)     = gr%zt(i,1)
         um_bot(i)    = um(i,1)
@@ -5976,14 +6027,25 @@ module clubb_driver
 
       ! Modified option which find the values of physical quantities
       ! at a fixed model height (25m)
+      !$acc parallel loop gang vector default(present)
       do i = 1, ngrdcol
         z_bot(i)  = 25.0_core_rknd !user-specified
 
+        min_val  = abs( gr%zt(i,1) - z_bot(i) )
+        k_min(i) = 1
+
         ! find the neareast level to the constant model height
-        k_min(i) = minloc( abs(gr%zt(i,:) - z_bot(i) ), DIM = 1)
+        do k = 2, gr%nzt
+          if ( abs(gr%zt(i,k) - z_bot(i) ) < min_val ) then
+            min_val  = abs( gr%zt(i,k) - z_bot(i) )
+            k_min(i) = k
+          end if
+        end do
       end do
 
       if ( clubb_at_least_debug_level( 1 ) ) then
+
+        !$acc update host( k_min )
       
         do i = 1, ngrdcol
 
@@ -5998,6 +6060,7 @@ module clubb_driver
 
       if (constant_height_option == 1) then ! option 1 (non-interpolation)
 
+        !$acc parallel loop gang vector default(present)
         do i = 1, ngrdcol
           um_bot(i)    = um(i,k_min(i))
           vm_bot(i)    = vm(i,k_min(i))
@@ -6011,15 +6074,14 @@ module clubb_driver
 
         um_zm       = zt2zm( gr%nzm, gr%nzt, ngrdcol, gr, um )
         vm_zm       = zt2zm( gr%nzm, gr%nzt, ngrdcol, gr, vm )
-        thlm_zm     = zt2zm( gr%nzm, gr%nzt, ngrdcol, gr, thlm)
+        thlm_zm     = zt2zm( gr%nzm, gr%nzt, ngrdcol, gr, thlm )
         rtm_zm      = zt2zm( gr%nzm, gr%nzt, ngrdcol, gr, rtm )
         exner_zm    = zt2zm( gr%nzm, gr%nzt, ngrdcol, gr, exner)
 
+        !$acc parallel loop gang vector default(present)
         do i = 1, ngrdcol
-          exner_zm(i,1) = ( p_sfc(i) / p0 )**kappa
-        end do
 
-        do i = 1, ngrdcol
+          exner_zm(i,1) = ( p_sfc(i) / p0 )**kappa
 
           ! use the mono cubic interpolation to get the values
           if ( k_min(i) == 1 ) then
@@ -6034,7 +6096,7 @@ module clubb_driver
             kp2 = k_min(i)+2
           end if
           
-          rho_bot(i)    = rho_zm(i,k_min(i))
+          rho_bot(i)   = rho_zm(i,k_min(i))
 
           um_bot(i)    = mono_cubic_interp( z_bot(i), km1, k00, kp1, kp2, &
                                             gr%zm(i,km1), gr%zm(i,k00), gr%zm(i,kp1), gr%zm(i,kp2), &
@@ -6066,6 +6128,8 @@ module clubb_driver
       !fstdout constant is commented out
 
     end if
+
+    !$acc end data
 
     return
 

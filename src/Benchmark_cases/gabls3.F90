@@ -95,7 +95,10 @@ module gabls3
 
     integer :: i
 
+    !$acc enter data create( offset, C_10 )
+
     ! Compute heat and moisture fluxes
+    !$acc parallel loop gang vector default(present)
     do i = 1, ngrdcol 
       offset(i) = 9.9e-3_core_rknd
       C_10(i)   = 0.00195_core_rknd
@@ -108,12 +111,15 @@ module gabls3
                             wprtp_sfc )
   
     ! Compute momentum fluxes
+    !$acc parallel loop gang vector default(present)
     do i = 1, ngrdcol 
       wprtp_sfc(i) = wprtp_sfc(i) * 10._core_rknd
       veg_theta_in_K = veg_T_in_K(i) / exner_sfc(i)
       bflx = wpthlp_sfc(i) * grav / veg_theta_in_K
       ustar(i) = diag_ustar( lowest_level(i), bflx, ubar(i), z0)
     end do
+
+    !$acc exit data delete( offset, C_10 )
 
     return
 

@@ -88,6 +88,7 @@ module arm_0003
     call compute_ht_mostr_flux( time, size( time_sfc_given ), &
                                 heat_flx, moisture_flx )
 
+    !$acc parallel loop gang vector default(present)
     do i = 1, ngrdcol         
 
       ! Convert W/m^2 into w'thl' w'rt' units

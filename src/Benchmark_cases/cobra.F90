@@ -111,7 +111,8 @@ module cobra
 
   real( kind = core_rknd ) :: &
     CO2_flx, &
-    CO2_flx2
+    CO2_flx2, &
+    T_sfc_calc
 
   ! COBRA roughness height
   ! real, parameter :: z0 = 0.035_core_rknd  ! ARM momentum roughness height
@@ -126,21 +127,24 @@ module cobra
   ! and the time fraction necessary for linear_interp_factor
   call time_select( time, ntimes, time_sfc_given, &
                     before_time, after_time, time_frac )
-
-  do i = 1, ngrdcol
       
-    ! Interpolate fluxes
-    heat_flx = linear_interp_factor( time_frac, sens_ht_given(after_time), &
-                                     sens_ht_given(before_time) )
+  ! Interpolate fluxes
+  heat_flx = linear_interp_factor( time_frac, sens_ht_given(after_time), &
+                                   sens_ht_given(before_time) )
 
-    moisture_flx = linear_interp_factor( time_frac, latent_ht_given(after_time), &
-                                         latent_ht_given(before_time) )
+  moisture_flx = linear_interp_factor( time_frac, latent_ht_given(after_time), &
+                                       latent_ht_given(before_time) )
 
-    CO2_flx = linear_interp_factor( time_frac, CO2_sfc_given(after_time), &
-                                    CO2_sfc_given(before_time) )
+  CO2_flx = linear_interp_factor( time_frac, CO2_sfc_given(after_time), &
+                                  CO2_sfc_given(before_time) )
 
-    T_sfc = linear_interp_factor( time_frac, T_sfc_given(after_time), &
-                                  T_sfc_given(before_time) )
+  T_sfc_calc = linear_interp_factor( time_frac, T_sfc_given(after_time), &
+                                     T_sfc_given(before_time) )
+
+    !$acc parallel loop gang vector default(present)
+  do i = 1, ngrdcol
+
+    T_sfc(i) = T_sfc_calc
 
     ! Convert heat_flx and moisture_flx to natural units
     heat_flx2     = convert_sens_ht_to_km_s( heat_flx, rho_sfc(i) )    ! (K m/s)
@@ -166,16 +170,25 @@ module cobra
 
     wpthlp_sfc(i) = heat_flx2
     wprtp_sfc(i)  = moisture_flx2
-
-    if ( sclr_idx%iisclr_CO2 > 0 ) wpsclrp_sfc(i,sclr_idx%iisclr_CO2) = CO2_flx2
-    if ( sclr_idx%iisclr_thl > 0 ) wpsclrp_sfc(i,sclr_idx%iisclr_thl) = wpthlp_sfc(i)
-    if ( sclr_idx%iisclr_rt  > 0 ) wpsclrp_sfc(i,sclr_idx%iisclr_rt)  = wprtp_sfc(i)
-
-    if ( sclr_idx%iiedsclr_CO2 > 0 ) wpedsclrp_sfc(i,sclr_idx%iiedsclr_CO2) = CO2_flx2
-    if ( sclr_idx%iiedsclr_thl > 0 ) wpedsclrp_sfc(i,sclr_idx%iiedsclr_thl) = wpthlp_sfc(i)
-    if ( sclr_idx%iiedsclr_rt  > 0 ) wpedsclrp_sfc(i,sclr_idx%iiedsclr_rt)  = wprtp_sfc(i)
-
   end do
+
+  if ( sclr_dim > 0 ) then
+    !$acc parallel loop gang vector default(present)
+    do i = 1, ngrdcol
+      if ( sclr_idx%iisclr_CO2 > 0 ) wpsclrp_sfc(i,sclr_idx%iisclr_CO2) = CO2_flx2
+      if ( sclr_idx%iisclr_thl > 0 ) wpsclrp_sfc(i,sclr_idx%iisclr_thl) = wpthlp_sfc(i)
+      if ( sclr_idx%iisclr_rt  > 0 ) wpsclrp_sfc(i,sclr_idx%iisclr_rt)  = wprtp_sfc(i)
+    end do
+  end if
+
+  if ( edsclr_dim > 0 ) then
+    !$acc parallel loop gang vector default(present)
+    do i = 1, ngrdcol
+      if ( sclr_idx%iiedsclr_CO2 > 0 ) wpedsclrp_sfc(i,sclr_idx%iiedsclr_CO2) = CO2_flx2
+      if ( sclr_idx%iiedsclr_thl > 0 ) wpedsclrp_sfc(i,sclr_idx%iiedsclr_thl) = wpthlp_sfc(i)
+      if ( sclr_idx%iiedsclr_rt  > 0 ) wpedsclrp_sfc(i,sclr_idx%iiedsclr_rt)  = wprtp_sfc(i)
+    end do
+  end if
 
   return
 

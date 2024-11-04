@@ -87,26 +87,42 @@ module dycoms2_rf02
     ! amounts of various quantities from above the top of the domain, set wm_zt
     ! to 0 at level gr%nz.  To stay consistent, set wm_zm to 0 at level
     ! gr%nz.
+    !$acc parallel loop gang vector default(present)
     do i = 1, ngrdcol
       wm_zt(i,gr%nzt) = 0.0_core_rknd
       wm_zm(i,gr%nzm) = 0.0_core_rknd
     end do
 
+    !$acc parallel loop gang vector collapse(2) default(present)
     do k = 1, gr%nzt
       do i = 1, ngrdcol
 
         thlm_forcing(i,k) = 0.0_core_rknd
         rtm_forcing(i,k) = 0.0_core_rknd
 
-        ! Test scalars with thetal and rt if desired
-        if ( sclr_idx%iisclr_thl > 0 ) sclrm_forcing(i,k,sclr_idx%iisclr_thl) = thlm_forcing(i,k)
-        if ( sclr_idx%iisclr_rt  > 0 ) sclrm_forcing(i,k,sclr_idx%iisclr_rt)  = rtm_forcing(i,k)
-
-        if ( sclr_idx%iiedsclr_thl > 0 ) edsclrm_forcing(i,k,sclr_idx%iiedsclr_thl) = thlm_forcing(i,k)
-        if ( sclr_idx%iiedsclr_rt  > 0 ) edsclrm_forcing(i,k,sclr_idx%iiedsclr_rt)  = rtm_forcing(i,k)
-
       end do
     end do
+
+    if ( sclr_dim > 0 ) then
+      !$acc parallel loop gang vector collapse(2) default(present)
+      do k = 1, gr%nzt
+        do i = 1, ngrdcol
+          ! Test scalars with thetal and rt if desired
+          if ( sclr_idx%iisclr_thl > 0 ) sclrm_forcing(i,k,sclr_idx%iisclr_thl) = thlm_forcing(i,k)
+          if ( sclr_idx%iisclr_rt  > 0 ) sclrm_forcing(i,k,sclr_idx%iisclr_rt)  = rtm_forcing(i,k)
+        end do
+      end do
+    end if
+
+    if ( edsclr_dim > 0 ) then
+      !$acc parallel loop gang vector collapse(2) default(present)
+      do k = 1, gr%nzt
+        do i = 1, ngrdcol
+          if ( sclr_idx%iiedsclr_thl > 0 ) edsclrm_forcing(i,k,sclr_idx%iiedsclr_thl) = thlm_forcing(i,k)
+          if ( sclr_idx%iiedsclr_rt  > 0 ) edsclrm_forcing(i,k,sclr_idx%iiedsclr_rt)  = rtm_forcing(i,k)
+        end do
+      end do
+    end if
 
     return
   end subroutine dycoms2_rf02_tndcy
@@ -175,6 +191,7 @@ module dycoms2_rf02
     latent_ht = linear_interp_factor( time_frac, latent_ht_given(after_time), &
                                       latent_ht_given(before_time) )
 
+    !$acc parallel loop gang vector default(present)
     do i = 1, ngrdcol
       ! Declare the value of ustar.
       ustar(i) = 0.25_core_rknd

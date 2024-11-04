@@ -88,6 +88,7 @@ module nov11
     if ( time >= time_initial + 3600.0_time_precision  .and. & 
          time <  time_initial + 3600.0_time_precision + real(dt,kind=time_precision) ) then
 
+      !$acc parallel loop gang vector collapse(2) default(present)
       do k = 1, gr%nzt, 1
         do i = 1, ngrdcol
 

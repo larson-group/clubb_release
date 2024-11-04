@@ -74,10 +74,12 @@ module interpolation
     real( kind = core_rknd ) :: lin_interpolate_two_points
     
     ! Check for valid input
+#ifndef CLUBB_GPU
     if ( abs(height_low - height_high) < 1.0e-12_core_rknd ) then
       write(fstderr,*) "lin_interpolate_two_points: height_high and height_low cannot be equal."
       error stop
     end if
+#endif
 
     ! Compute linear interpolation
 
@@ -113,6 +115,8 @@ module interpolation
   !-------------------------------------------------------------------------------------------------
   function mono_cubic_interp &
     ( z_in, km1, k00, kp1, kp2, zm1, z00, zp1, zp2, fm1, f00, fp1, fp2 ) result ( f_out )
+
+  !$acc routine
 
   ! Description:
   !   Steffen's monotone cubic interpolation method

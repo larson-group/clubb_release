@@ -85,9 +85,12 @@ module rico
 
   !--------------------- Begin Code ---------------------
 
+  !$acc enter data create( qtm_forcing )
+
   ! Compute large-scale horizontal temperature advection
   ! NEW-- "And Radiation"... 15 Dec 2006, Michael Falk
   ! Equations located in 1D models > Set up short composite run on reference site
+  !$acc parallel loop gang vector collapse(2) default(present)
   do k=1,gr%nzt
     do i = 1, ngrdcol
       if (gr%zt(i,k) < 4000._core_rknd ) then
@@ -110,6 +113,7 @@ module rico
 
   ! Compute large-scale horizontal moisture advection [g kg^-1 s^-1]
   ! Equations located in 1D models > Set up short composite run on reference site
+  !$acc parallel loop gang vector collapse(2) default(present)
   do k=1,gr%nzt
     do i = 1, ngrdcol
 
@@ -137,16 +141,28 @@ module rico
   ! total water mixing ratio.
   call force_spec_hum_to_mixing_ratio( ngrdcol, gr%nzt, rtm, qtm_forcing, rtm_forcing )
 
-  ! Test scalars with thetal and rt if desired
-  do k=1,gr%nzt
-    do i = 1, ngrdcol
-      if ( sclr_idx%iisclr_thl > 0 ) sclrm_forcing(i,k,sclr_idx%iisclr_thl) = thlm_forcing(i,k)
-      if ( sclr_idx%iisclr_rt  > 0 ) sclrm_forcing(i,k,sclr_idx%iisclr_rt)  = rtm_forcing(i,k)
-      
-      if ( sclr_idx%iiedsclr_thl > 0 ) edsclrm_forcing(i,k,sclr_idx%iiedsclr_thl) = thlm_forcing(i,k)
-      if ( sclr_idx%iiedsclr_rt  > 0 ) edsclrm_forcing(i,k,sclr_idx%iiedsclr_rt)  = rtm_forcing(i,k)
+  if ( sclr_dim > 0 ) then
+    !$acc parallel loop gang vector collapse(2) default(present)
+    do k = 1, gr%nzt
+      do i = 1, ngrdcol
+        ! Test scalars with thetal and rt if desired
+        if ( sclr_idx%iisclr_thl > 0 ) sclrm_forcing(i,k,sclr_idx%iisclr_thl) = thlm_forcing(i,k)
+        if ( sclr_idx%iisclr_rt  > 0 ) sclrm_forcing(i,k,sclr_idx%iisclr_rt)  = rtm_forcing(i,k)
+      end do
     end do
-  end do
+  end if
+
+  if ( edsclr_dim > 0 ) then
+    !$acc parallel loop gang vector collapse(2) default(present)
+    do k = 1, gr%nzt
+      do i = 1, ngrdcol
+        if ( sclr_idx%iiedsclr_thl > 0 ) edsclrm_forcing(i,k,sclr_idx%iiedsclr_thl) = thlm_forcing(i,k)
+        if ( sclr_idx%iiedsclr_rt  > 0 ) edsclrm_forcing(i,k,sclr_idx%iiedsclr_rt)  = rtm_forcing(i,k)
+      end do
+    end do
+  end if
+
+  !$acc exit data delete( qtm_forcing )
 
   end subroutine rico_tndcy
  !----------------------------------------------------------------------
@@ -251,6 +267,8 @@ module rico
 
     !--------------------BEGIN CODE----------------------------
 
+    !$acc enter data create( rsat, ubar, Cz, Cm, Ch, Cq )
+
     ! interpolate variables from time_dependent_input
 
     call time_select( time, size(time_sfc_given), time_sfc_given, &
@@ -266,6 +284,7 @@ module rico
     call compute_ubar( ngrdcol, um_sfc, vm_sfc, &
                        ubar )
 
+    !$acc parallel loop gang vector default(present)
     do i = 1, ngrdcol
       T_sfc(i) = T_sfc_interp
       ustar(i) = 0.3_core_rknd
@@ -275,6 +294,7 @@ module rico
   ! Compute heat and moisture fluxes
     if (l_use_old_atex) then ! Use ATEX version
 
+      !$acc parallel loop gang vector default(present)
       do i = 1, ngrdcol
 
         ! (Stevens, et al. 2000, eq 3)
@@ -295,6 +315,7 @@ module rico
 
     else ! Use RICO version
 
+      !$acc parallel loop gang vector default(present)
       do i = 1, ngrdcol
 
         ! Modification in case lowest model level isn't at 10 m, from ATEX specification
@@ -320,12 +341,15 @@ module rico
       call compute_wprtp_sfc( ngrdcol, Cq, ubar, rtm, rsat, &
                               wprtp_sfc )
 
+      !$acc parallel loop gang vector default(present)
       do i = 1, ngrdcol
         upwp_sfc(i)   = -um_sfc(i) * Cm(i) * ubar(i)  ! m^2 s^-2
         vpwp_sfc(i)   = -vm_sfc(i) * Cm(i) * ubar(i)  ! m^2 s^-2
       end do
 
     end if
+
+    !$acc exit data delete( rsat, ubar, Cz, Cm, Ch, Cq )
 
     return
 

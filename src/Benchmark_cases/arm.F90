@@ -95,6 +95,7 @@ module arm
   moisture_flx2 = convert_latent_ht_to_m_s( moisture_flx, rho_sfc ) ! (m/s)
 
   ! Compute momentum fluxes
+  !$acc parallel loop gang vector default(present)
   do i = 1, ngrdcol
 
     ! Heat flux in units of (m2/s3) (needed by diag_ustar)

@@ -100,6 +100,7 @@ module cloud_feedback
  
   !--------------BEGIN CODE---------------------
 
+  !$acc enter data create( rsat, Ch, Cq, exner_sfc )
 
   if ( sfctype /= 1 ) then
     error stop "Invalid value for sfctype."
@@ -111,6 +112,7 @@ module cloud_feedback
   T_sfc_interp = linear_interp_factor( time_frac, T_sfc_given(after_time), &
                                        T_sfc_given(before_time) )
 
+  !$acc parallel loop gang vector default(present)
   do i = 1, ngrdcol
 
     ! Calculate exner_sfc based on p_sfc.
@@ -157,6 +159,8 @@ module cloud_feedback
 
   call compute_wprtp_sfc( ngrdcol, Cq, ubar, rtm_sfc, rsat, &
                           wprtp_sfc )
+
+  !$acc exit data delete( rsat, Ch, Cq, exner_sfc )
 
   return
 

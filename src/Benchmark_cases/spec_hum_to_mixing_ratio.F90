@@ -59,6 +59,7 @@ module spec_hum_to_mixing_ratio
     integer :: i
 
     ! Solve for flux in terms of total water mixing ratio.
+    !$acc parallel loop gang vector default(present)
     do i = 1, ngrdcol
       wprtp(i) = ( 1.0_core_rknd + rtm_zm(i) )**2 * wpqtp(i)
     end do
@@ -102,6 +103,7 @@ module spec_hum_to_mixing_ratio
     integer :: i, k
 
     ! Solve for forcing in terms of total water mixing ratio.
+    !$acc parallel loop gang vector collapse(2) default(present)
     do k = 1, nzt
       do i = 1, ngrdcol
         rtm_forcing(i,k) = ( 1.0_core_rknd + rtm(i,k) )**2 * qtm_forcing(i,k)

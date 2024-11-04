@@ -190,6 +190,8 @@ module astex_a209
 
     !-----------------BEGIN CODE-------------------------
 
+    !$acc enter data create( rsat, Ch, Cq )
+
     !sensible_heat_flx = 10.0_core_rknd
     !latent_heat_flx = 25.0_core_rknd
 
@@ -202,6 +204,7 @@ module astex_a209
     T_sfc_interp = linear_interp_factor( time_frac, T_sfc_given(after_time), &
                                          T_sfc_given(before_time) )
 
+    !$acc parallel loop gang vector default(present)
     do i = 1, ngrdcol
       T_sfc(i) = T_sfc_interp
 
@@ -231,6 +234,8 @@ module astex_a209
     !wprtp_sfc  = latent_heat_flx / ( rho_sfc * Lv )
 
     ! Momentum fluxes are computed elsewhere
+
+    !$acc exit data delete( rsat, Ch, Cq )
 
     return
 

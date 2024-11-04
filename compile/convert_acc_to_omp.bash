@@ -27,11 +27,11 @@ find . -type f -exec sed -i "s: default(present)::g" {} \;
 $ACC_TO_OMP_SCRIPT -overwrite-input -async=ignore -no-declare-mapper *.F90
 $ACC_TO_OMP_SCRIPT -overwrite-input -async=ignore -no-declare-mapper CLUBB_core/*.F90
 $ACC_TO_OMP_SCRIPT -overwrite-input -async=ignore -no-declare-mapper SILHS/*.F90
+$ACC_TO_OMP_SCRIPT -overwrite-input -async=ignore -no-declare-mapper Benchmark_cases/*.F90
+
 
 # Remove the extra generated files
-rm -rf *.original *.report *.translated
-rm -rf CLUBB_core/*.original CLUBB_core/*.report CLUBB_core/*.translated
-rm -rf SILHS/*.original SILHS/*.report SILHS/*.translated
+find . -type f \( -name "*.original" -o -name "*.report" -o -name "*.translated" \) -delete
 
 # Replace the scripts usage of "OPENACC2OPENMP_ORIGINAL_OPENMP" for 
 # ifdefs around existing openmp code, with "OPENMP_CPU".

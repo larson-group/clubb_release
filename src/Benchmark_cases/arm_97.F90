@@ -93,6 +93,7 @@ module arm_97
       moisture_flx = linear_interp_factor( time_frac, latent_ht_given(after_time), &
                                            latent_ht_given(before_time) )
 
+      !$acc parallel loop gang vector default(present)
       do i = 1, ngrdcol
 
         ! Convert W/m^2 into w'thl' w'rt' units

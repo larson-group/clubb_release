@@ -54,6 +54,7 @@ module sfc_flux
     ! ---- Begin Code ----
 
     ! Compute momentum fluxes
+    !$acc parallel loop gang vector default(present)
     do i = 1, ngrdcol
       upwp_sfc(i) = -um_sfc(i) * ustar(i)**2 / ubar(i)
       vpwp_sfc(i) = -vm_sfc(i) * ustar(i)**2 / ubar(i)
@@ -98,6 +99,7 @@ module sfc_flux
 
     ! ---- Begin Code ----
 
+    !$acc parallel loop gang vector default(present)
     do i = 1, ngrdcol
       ubar(i) = max( ubmin, sqrt( um_sfc(i)**2 + vm_sfc(i)**2 ) )
     end do
@@ -211,6 +213,7 @@ module sfc_flux
 
     ! ---- Begin Code ----
 
+    !$acc parallel loop gang vector default(present)
     do i = 1, ngrdcol
       wpthlp_sfc(i) = -Cd(i) * ubar(i) * ( thlm_sfc(i) - T_sfc(i) / exner_sfc(i) )
     end do
@@ -252,6 +255,7 @@ module sfc_flux
 
     ! ---- Begin Code ----
 
+    !$acc parallel loop gang vector default(present)
     do i = 1, ngrdcol
       wprtp_sfc(i)  = -Cd(i) * ubar(i) * ( rtm_sfc(i) - adjustment(i) )
     end do
@@ -305,27 +309,35 @@ module sfc_flux
 
     !--------------------- Begin Code ---------------------
     
-    do sclr = 1, sclr_dim
-      do i = 1, ngrdcol
-        wpsclrp_sfc(i,sclr)   = 0.0_core_rknd ! Initialize flux to 0 
-      end do
-    end do
-
-    do edsclr = 1, edsclr_dim
-      do i = 1, ngrdcol
-        wpedsclrp_sfc(i,edsclr) = 0.0_core_rknd ! Initialize flux to 0 
-      end do
-    end do
-
-    do i = 1, ngrdcol
-      ! Let passive scalars be equal to rt and theta_l for now
-      if ( sclr_idx%iisclr_thl > 0 ) wpsclrp_sfc(i,sclr_idx%iisclr_thl) = wpthlp_sfc(i)
-      if ( sclr_idx%iisclr_rt  > 0 ) wpsclrp_sfc(i,sclr_idx%iisclr_rt)  = wprtp_sfc(i)
-
-      if ( sclr_idx%iiedsclr_thl > 0 ) wpedsclrp_sfc(i,sclr_idx%iiedsclr_thl) = wpthlp_sfc(i)
-      if ( sclr_idx%iiedsclr_rt  > 0 ) wpedsclrp_sfc(i,sclr_idx%iiedsclr_rt)  = wprtp_sfc(i)
+    if ( sclr_dim > 0 ) then
       
-    end do
+      !$acc parallel loop gang vector default(present)
+      do sclr = 1, sclr_dim
+        do i = 1, ngrdcol
+          wpsclrp_sfc(i,sclr)   = 0.0_core_rknd ! Initialize flux to 0 
+        end do
+      end do
+
+      !$acc parallel loop gang vector default(present)
+      do i = 1, ngrdcol
+        ! Let passive scalars be equal to rt and theta_l for now
+        if ( sclr_idx%iisclr_thl > 0 ) wpsclrp_sfc(i,sclr_idx%iisclr_thl) = wpthlp_sfc(i)
+        if ( sclr_idx%iisclr_rt  > 0 ) wpsclrp_sfc(i,sclr_idx%iisclr_rt)  = wprtp_sfc(i)
+  
+        if ( sclr_idx%iiedsclr_thl > 0 ) wpedsclrp_sfc(i,sclr_idx%iiedsclr_thl) = wpthlp_sfc(i)
+        if ( sclr_idx%iiedsclr_rt  > 0 ) wpedsclrp_sfc(i,sclr_idx%iiedsclr_rt)  = wprtp_sfc(i)
+      end do
+
+    end if
+
+    if ( edsclr_dim > 0 ) then
+      !$acc parallel loop gang vector default(present)
+      do edsclr = 1, edsclr_dim
+        do i = 1, ngrdcol
+          wpedsclrp_sfc(i,edsclr) = 0.0_core_rknd ! Initialize flux to 0 
+        end do
+      end do
+    end if
 
     return
 
@@ -334,6 +346,7 @@ module sfc_flux
  
 !==============================================================================
   real( kind = core_rknd ) function convert_sens_ht_to_km_s ( sens_ht, rho_sfc )
+  !$acc routine
 
 !   This function converts sensible heat flux in W/m^2 to
 !   natural units of k m/s for the wpthlp_sfc variable.
@@ -360,6 +373,7 @@ module sfc_flux
 
 !==============================================================================
   real( kind = core_rknd ) function convert_latent_ht_to_m_s ( latent_ht, rho_sfc )
+  !$acc routine
 
 !   This function converts latent heat flux in W/m^2 to
 !   natural units of m/s for the wprtp_sfc variable.
