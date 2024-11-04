@@ -361,8 +361,9 @@ def setUpInputs(beVerbose):
 
     # Metrics from the global simulation that use the tuner-recommended parameter values
     linSolnNcFilename = \
-          'Regional_files/20231211_20x20regs/20sens0707_61_Regional.nc'
-    #     defaultNcFilename
+        (
+        #'Regional_files/20231211_20x20regs/20sens0707_61_Regional.nc'
+         defaultNcFilename
     #    'Regional_files/20degree_CAM_TAUS_202404_DJF/20.0Tuner_20240702_20d_DJF_Regional.nc'
     #    'Regional_files/stephens_20240131/btune_regional_files/b1850.076base.n2th1b_Regional.nc'
     #    'Regional_files/20240409updated/thresp26_Regional.nc'
@@ -372,6 +373,7 @@ def setUpInputs(beVerbose):
            #folder_name + 'sens0707_29_Regional.nc'
            # folder_name + 'chrysalis.bmg20220630.sens1107_30.ne30pg2_r05_oECv3_Regional.nc'
 #            folder_name + 'chrysalis.bmg20220630.sens1107_23.ne30pg2_r05_oECv3_Regional.nc'
+         )
 
     # Observed values of our metrics, from, e.g., CERES-EBAF.
     # These observed metrics will be matched as closely as possible by analyzeSensMatrix.
@@ -442,17 +444,25 @@ def setUpInputs(beVerbose):
     print("metricGlobalValsFromFile =", metricGlobalValsFromFile)
     if beVerbose:
         print("defaultMetricValsCol printed as array = ")
-        defaultMetricValsReshaped = defaultMetricValsCol.reshape((9,18))
+        # Calculate number of regions in the east-west (X) and north-south (Y) directions
+        boxSize = 20
+        numXBoxes = np.rint(360 / boxSize).astype(int)  # 18
+        numYBoxes = np.rint(180 / boxSize).astype(int)  # 9
+        defaultMetricValsReshaped = defaultMetricValsCol.reshape((numYBoxes,numXBoxes))
         #defaultMetricValsRolled = np.roll(defaultMetricValsReshaped, -9, axis=1)
         np.set_printoptions( linewidth=200 )
         print(np.around(defaultMetricValsReshaped,2))
         #print(np.around(defaultMetricValsRolled,2))
 
     (obsMetricValsDict, obsWeightsDict) = \
+        (
+        #setUp_x_ObsMetricValsDict(varPrefixes, folder_name + "OBS.nc")
         setUp_x_ObsMetricValsDict(varPrefixes, folder_name + "20241011_20.0_OBS.nc")
         #setUp_x_ObsMetricValsDict(folder_name + "OBS.nc")
         #setUp_x_ObsMetricValsDict(varPrefixes, folder_name + "20.0_OBS.nc")
         #setUp_x_ObsMetricValsDict(folder_name + "30.0_OBS.nc")
+        )
+
     #obsMetricValsDict = setUp_x_ObsMetricValsDict("Regional_files/20231211_20x20regs/" + "OBS.nc")
     #obsMetricValsDict = setUp_x_ObsMetricValsDict("Regional_files/20231208runs_30x30/" + "OBS.nc")
     #obsMetricValsDict = setUp_x_ObsMetricValsDict(folder_name + "OBS.nc")

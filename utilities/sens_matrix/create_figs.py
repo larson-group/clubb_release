@@ -212,7 +212,7 @@ def createFigs(metricsNames,
     curvParamsMatrix = 0.5 * normlzdCurvMatrix * dnormlzdParamsSolnNonlinMatrix ** 2
     #print("Sum rows=", np.sum(-normlzdSensParamsMatrixOrdered-curvParamsMatrixOrdered, axis=1))
     minusNonlinMatrixDparamsOrdered = -1 * curvParamsMatrixOrdered + -1 * normlzdSensParamsMatrixOrdered
-    minusNonlinMatrixDparamsOrderedMa sked = \
+    minusNonlinMatrixDparamsOrderedMasked = \
         minusNonlinMatrixDparamsOrdered[whitelistedMetricsMask[metricsSensOrder]]
     nonlinMatrixDparams = curvParamsMatrix + normlzdSensParamsMatrix
     nonlinMatrixDparamsMasked = nonlinMatrixDparams[whitelistedMetricsMask]
