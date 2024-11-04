@@ -50,7 +50,7 @@ def createFigs(metricsNames,
                    / np.abs(normMetricValsCol[:, 0])
 
     # Use these flags to determine whether or not to create specific plots
-    plot_paramsErrorBarsFig = False  #True
+    plot_paramsErrorBarsFig = True
     plot_biasesOrderedArrowFig = False  #True
     plot_threeDotFig = True
     plot_metricsBarChart = True
@@ -60,7 +60,7 @@ def createFigs(metricsNames,
     plot_dpMin2PtFig = False  #True
     plot_dpMinMatrixScatterFig = False
     plot_projectionMatrixFigs = False #True
-    plot_biasesVsSensMagScatterplot = False  #True
+    plot_biasesVsSensMagScatterplot = True
     plot_biasesVsSvdScatterplot = False #True
     plot_paramsCorrArrayFig = True
     plot_sensMatrixAndBiasVecFig = False #True
@@ -203,15 +203,23 @@ def createFigs(metricsNames,
     ## Form matrix of parameter perturbations, for later multiplication into the sensitivity matrix
     dnormlzdParamsSolnNonlinMatrix = np.ones((len(metricsNames), 1)) @ dnormlzdParamsSolnNonlin.T
     normlzdSensParamsMatrixOrdered = normlzdSensMatrixOrdered * dnormlzdParamsSolnNonlinMatrix
+    normlzdSensParamsMatrix= normlzdSensMatrixPoly * dnormlzdParamsSolnNonlinMatrix
 
     # Create plot showing lumped linear+nonlinear contributions to each metric
     # Form matrix of parameter perturbations, for later multiplication into the sensitivity matrix
     #dnormlzdParamsSolnNonlinMatrix = np.ones((len(metricsNames),1)) @ dnormlzdParamsSolnNonlin.T
     curvParamsMatrixOrdered = 0.5 * normlzdCurvMatrix[metricsSensOrder, :] * dnormlzdParamsSolnNonlinMatrix ** 2
+    curvParamsMatrix = 0.5 * normlzdCurvMatrix * dnormlzdParamsSolnNonlinMatrix ** 2
     #print("Sum rows=", np.sum(-normlzdSensParamsMatrixOrdered-curvParamsMatrixOrdered, axis=1))
     minusNonlinMatrixDparamsOrdered = -1 * curvParamsMatrixOrdered + -1 * normlzdSensParamsMatrixOrdered
-    minusNonlinMatrixDparamsOrderedMasked = \
+    minusNonlinMatrixDparamsOrderedMa sked = \
         minusNonlinMatrixDparamsOrdered[whitelistedMetricsMask[metricsSensOrder]]
+    nonlinMatrixDparams = curvParamsMatrix + normlzdSensParamsMatrix
+    nonlinMatrixDparamsMasked = nonlinMatrixDparams[whitelistedMetricsMask]
+    nonlinMatrixDparamsMasked = nonlinMatrixDparamsMasked \
+                    * ( np.abs(normMetricValsCol[whitelistedMetricsMask]) @ np.ones_like(paramsSolnNonlin.T) ) \
+                    + ( defaultBiasesColMasked + obsMetricValsColMasked ) @ np.ones_like(paramsSolnNonlin.T)
+    #minusNonlinMatrixDparamsMasked = ( defaultBiasesColMasked + obsMetricValsColMasked ) @ np.ones_like(paramsSolnNonlin.T)
 
 
     if plot_paramsErrorBarsFig:
@@ -241,6 +249,8 @@ def createFigs(metricsNames,
         #                          sensNcFilenames, sensNcFilenamesExt, defaultNcFilename)
         threeDotFig = \
             createThreeDotFig(metricsNamesMasked, paramsNamesMasked, transformedParamsNames,
+                              paramsSolnNonlin,
+                              nonlinMatrixDparamsMasked,
                               metricsWeightsMasked, obsMetricValsColMasked, normMetricValsColMasked,
                               magParamValsRowMasked,
                               normlzdCurvMatrixMasked, normlzdSensMatrixPolyMasked, normlzdConstMatrixMasked,
@@ -616,7 +626,8 @@ def createFigs(metricsNames,
         # Create scatterplot to look at outliers
         PcaBiplotFig = \
             createPcaBiplot(normlzdSensMatrixPoly, normlzdDefaultBiasesCol,
-                            metricsNames, paramsNamesAbbr,
+                            paramsNamesAbbr,
+                            whitelistedMetricsMask,
                             xColLabel='SV1', yColLabel='SV2',
                             colorCol=np.minimum(1, -normlzdDefaultBiasesCol[:, 0]),
                             colorColLabel='bias',
@@ -1249,6 +1260,8 @@ def createBarChart(matrix, index, columns,
 
 
 def createThreeDotFig(metricsNames, paramsNames, transformedParamsNames,
+                      paramsSolnNonlin,
+                      nonlinMatrixDparamsMasked,
                       metricsWeights, obsMetricValsCol, normMetricValsCol, magParamValsRow,
                       normlzdCurvMatrix, normlzdSensMatrixPoly, normlzdConstMatrix,
                       normlzdOrdDparamsMin, normlzdOrdDparamsMax,
@@ -1333,6 +1346,17 @@ def createThreeDotFig(metricsNames, paramsNames, transformedParamsNames,
                 go.Scatter(x=paramVals, y=metricVals,
                            mode='markers',
                            marker=dict(color='black', size=16)),
+                row=arrayRow + 1,
+                col=arrayCol + 1
+            )
+
+            # Plot orange symbol at tuned value of (parameter, metric)
+            threeDotFig.add_trace(
+                go.Scatter(x=paramsSolnNonlin[arrayCol,:],
+                           y=[nonlinMatrixDparamsMasked[arrayRow,arrayCol]],
+                           mode='markers',
+                           marker_symbol='x',
+                           marker=dict(color='orange', size=16)),
                 row=arrayRow + 1,
                 col=arrayCol + 1
             )
@@ -2428,7 +2452,8 @@ def calcMatrixAngles(matrix):
 
 
 def createPcaBiplot(normlzdSensMatrix, normlzdDefaultBiasesCol,
-                    metricsNames, paramsNames,
+                    paramsNames,
+                    whitelistedMetricsMask,
                     xColLabel, yColLabel,
                     colorCol,
                     colorColLabel,
@@ -2488,6 +2513,31 @@ def createPcaBiplot(normlzdSensMatrix, normlzdDefaultBiasesCol,
                           showLegend=showLegend, hoverMode=hoverMode,
                           plotWidth=plotWidth, plotHeight=plotHeight)
 
+    print("Whitelisted metrics = ", pointLabels[whitelistedMetricsMask])
+    print("SV1, SV2 = ", components[whitelistedMetricsMask,0:2])
+
+    ## Bold the labels of masked metrics
+    #dfMasked = pd.DataFrame({
+    #    xColLabel: components[whitelistedMetricsMask, 0],
+    #    yColLabel: components[whitelistedMetricsMask, 1],
+    #    colorColLabel: colorCol[whitelistedMetricsMask],
+    #    pointLabelsHeader: pointLabels[whitelistedMetricsMask]
+    #}, index=pointLabels[whitelistedMetricsMask])
+    #normlzdColorCol = (colorCol[whitelistedMetricsMask] - np.min(colorCol)) / \
+    #                  (np.max(colorCol) - np.min(colorCol))
+    #j = 0
+    #for i, row in dfMasked.iterrows():
+    #    PcaBiplotFig.add_annotation(
+    #        x=row[xColLabel],
+    #        y=row[yColLabel],
+    #        text=i,
+    #        font=dict(color=pc.sample_colorscale('Rainbow', normlzdColorCol[j])[0],
+    #                  weight="bold"),
+    #        showarrow=False
+    #    )
+    #    j = j + 1
+
+    # Display arrows to represent loading vectors
     scaleArrowLength = len(df.columns)
     for i, paramsName in enumerate(paramsNamesPlusBias):
         PcaBiplotFig.add_annotation(
@@ -2501,6 +2551,7 @@ def createPcaBiplot(normlzdSensMatrix, normlzdDefaultBiasesCol,
             xanchor="right",
             yanchor="top"
         )
+        # Label each loading vector with a parameter name
         PcaBiplotFig.add_annotation(
             x=scaleArrowLength * loadings[i, 0],
             y=scaleArrowLength * loadings[i, 1],

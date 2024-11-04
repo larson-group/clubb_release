@@ -121,6 +121,10 @@ def main():
                          reglrCoef,
                          beVerbose=False)
 
+    # y_hat_i is the un-normalized, unweighted estimate of tuned metric values
+    y_hat_i = defaultBiasesApproxNonlin + defaultBiasesCol + obsMetricValsCol
+
+
     print("Tuned parameter values (paramsSolnNonlin)")
     for idx in range(0,len(paramsNames)): \
         print("{:33s} {:7.7g}".format(paramsNames[idx], paramsSolnNonlin[idx][0] ) )
@@ -348,9 +352,11 @@ def solveUsingNonlin(metricsNames,
 
     # defaultBiasesApproxNonlin = (       forward model soln       - default soln )
     #                           = ( f0 + df/dp*dp + 0.5d2f/dp2*dp2 -       f0     )
-    # resid = (   y_i - ( f0    +   df/dp_i*dp + 0.5d2f/dp2_i*dp2 )   )
-    #       =   ( y_i -   f0 )  - ( df/dp_i*dp + 0.5d2f/dp2_i*dp2 )
-    #       = -defaultBiasesCol - (   defaultBiasesApproxNonlin   )
+    # residual = (   y_i -                y_hat_i                        )
+    # residual = (   y_i - ( f0    +   df/dp_i*dp + 0.5d2f/dp2_i*dp2 )   )
+    #          =   ( y_i -   f0 )  - ( df/dp_i*dp + 0.5d2f/dp2_i*dp2 )
+    #          = -defaultBiasesCol - (   defaultBiasesApproxNonlin   )
+    #  where f0 = defaultBiasesCol + obsMetricValsCol
     defaultBiasesApproxNonlin = normlzdWeightedDefaultBiasesApproxNonlin \
                                 * np.reciprocal(metricsWeights) * np.abs(normMetricValsCol)
 
