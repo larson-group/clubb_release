@@ -881,7 +881,7 @@ module advance_clubb_core_module
 
     !$acc enter data create( Skw_zm, Skw_zt, thvm, thvm_zm, ddzm_thvm_zm, rtprcp, rcp2, &
     !$acc              ddzt_um, ddzt_vm, ddzt_umvm_sqd, ddzt_umvm_sqd_clipped, &
-    !$acc              wpthlp2, wprtp2, wprtpthlp, wp2rcp, wp3_zm, Lscale, Lscale_up, Lscale_zm, &
+    !$acc              wpthlp2, wprtp2, wprtpthlp, wp2rcp, wp3_zm, Lscale_up, Lscale_zm, &
     !$acc              Lscale_down, em, tau_zm, tau_zt, wp2_zt, thlp2_zt, wpthlp_zt, &
     !$acc              wprtp_zt, rtp2_zt, rtpthlp_zt, up2_zt, vp2_zt, upwp_zt, vpwp_zt, &
     !$acc              Skw_velocity, a3_coef, a3_coef_zt, wp3_on_wp2, wp3_on_wp2_zt, rc_coef, &
@@ -2908,7 +2908,7 @@ module advance_clubb_core_module
     !$acc           delete( wpedsclrp )
 
     !$acc exit data delete( Skw_zm, Skw_zt, thvm, thvm_zm, ddzm_thvm_zm, rtprcp, rcp2, &
-    !$acc                   wpthlp2, wprtp2, wprtpthlp, wp2rcp, wp3_zm, Lscale, Lscale_up, &
+    !$acc                   wpthlp2, wprtp2, wprtpthlp, wp2rcp, wp3_zm, Lscale_up, &
     !$acc                   Lscale_zm, Lscale_down, em, tau_zm, tau_zt, sigma_sqd_w_zt, &
     !$acc                   ddzt_um, ddzt_vm, ddzt_umvm_sqd, ddzt_umvm_sqd_clipped, &
     !$acc                   wp2_zt, thlp2_zt, wpthlp_zt, wprtp_zt, &

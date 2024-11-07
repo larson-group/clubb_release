@@ -1284,9 +1284,7 @@ contains
     !$acc     copyout( rcm_in_layer_col, cloud_cover_col, wprcp_col, w_up_in_cloud_col, &
     !$acc              w_down_in_cloud_col, &
     !$acc              cloudy_updraft_frac_col, cloudy_downdraft_frac_col, invrs_tau_zm_col, &
-    !$acc              Kh_zt_col, &
-    !$acc              Kh_zm_col, &
-    !$acc              thlprcp_col )
+    !$acc              Kh_zt_col, Kh_zm_col, thlprcp_col, Lscale_col )
 
     !$acc data if( sclr_dim > 0 ) &
     !$acc      copyin( sclr_tol, sclrm_forcing_col, wpsclrp_sfc_col ) &
@@ -1880,8 +1878,7 @@ contains
     !$acc              pdf_params_zm%ice_supersat_frac_2 ) &
     !$acc     copyout( rcm_in_layer, cloud_cover, wprcp, w_up_in_cloud, w_down_in_cloud, &
     !$acc              cloudy_updraft_frac, cloudy_downdraft_frac, invrs_tau_zm, Kh_zt, &
-    !$acc              Kh_zm, &
-    !$acc              thlprcp )
+    !$acc              Kh_zm, thlprcp, Lscale )
 
     !$acc data if( sclr_dim > 0 ) &
     !$acc      copyin( sclr_tol, sclrm_forcing, wpsclrp_sfc ) &
