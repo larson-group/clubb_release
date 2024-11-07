@@ -4111,7 +4111,8 @@ module advance_clubb_core_module
   end subroutine pdf_closure_driver
 
   !=============================================================================
-  subroutine check_clubb_settings( params,              & ! intent(in)
+  subroutine check_clubb_settings( ngrdcol,             & ! intent(in)
+                                   params,              & ! intent(in)
                                    l_implemented,       & ! intent(in)
                                    l_input_fields,      & ! intent(in)
                                    clubb_config_flags,  & ! intent(in)
@@ -4185,7 +4186,10 @@ module advance_clubb_core_module
 
       !---------------------- Input Variables ----------------------
 
-      real( kind = core_rknd ), intent(in), dimension(nparams) :: &
+      integer, intent(in) :: &
+        ngrdcol
+
+      real( kind = core_rknd ), intent(in), dimension(ngrdcol,nparams) :: &
         params  ! Including C1, nu1, nu2, etc.
 
       ! Flags
@@ -4221,12 +4225,12 @@ module advance_clubb_core_module
       if ( clubb_at_least_debug_level( 0 ) ) then
 
         if ( clubb_config_flags%l_damp_wp2_using_em .and. &
-           (abs(params(iC1) - params(iC14)) > abs(params(iC1) + params(iC14)) / 2 * eps .or. &
+           ( any(abs(params(:,iC1) - params(:,iC14)) > abs(params(:,iC1) + params(:,iC14)) / 2 * eps) .or. &
              clubb_config_flags%l_stability_correct_tau_zm) ) then
           write(fstderr,*) "l_damp_wp2_using_em = T requires C1=C14 and" &
                             // " l_stability_correct_tau_zm = F"
-          write(fstderr,*) "C1 = ", params(iC1)
-          write(fstderr,*) "C14 = ", params(iC14)
+          write(fstderr,*) "C1 = ", params(:,iC1)
+          write(fstderr,*) "C14 = ", params(:,iC14)
           write(fstderr,*) "l_stability_correct_tau_zm = ", &
                            clubb_config_flags%l_stability_correct_tau_zm
           write(fstderr,*) "Fatal error in check_clubb_settings"
@@ -4501,100 +4505,100 @@ module advance_clubb_core_module
          ! "Fatal error" messages should be uncommented.
 
          ! C1 must have a value of 1
-         if ( params(iC1) > one .or. params(iC1) < one ) then
+         if ( any(params(:,iC1) > one .or. params(:,iC1) < one) ) then
             write(fstderr,*) "When the l_diag_Lscale_from_tau flag is " &
                              // "enabled, C1 must have a value of 1."
-            write(fstderr,*) "C1 = ", params(iC1)
+            write(fstderr,*) "C1 = ", params(:,iC1)
             write(fstderr,*) "Warning in check_clubb_settings"
             !write(fstderr,*) "Fatal error in check_clubb_settings"
             !err_code_out = clubb_fatal_error
          endif ! C1 check
 
          ! C1b must have a value of 1
-         if ( params(iC1b) > one .or. params(iC1b) < one ) then
+         if ( any(params(:,iC1b) > one .or. params(:,iC1b) < one) ) then
             write(fstderr,*) "When the l_diag_Lscale_from_tau flag is " &
                              // "enabled, C1b must have a value of 1."
-            write(fstderr,*) "C1b = ", params(iC1b)
+            write(fstderr,*) "C1b = ", params(:,iC1b)
             write(fstderr,*) "Warning in check_clubb_settings"
             !write(fstderr,*) "Fatal error in check_clubb_settings"
             !err_code_out = clubb_fatal_error
          endif ! C1b check
 
          ! C2rt must have a value of 1
-         if ( params(iC2rt) > one .or. params(iC2rt) < one ) then
+         if ( any(params(:,iC2rt) > one .or. params(:,iC2rt) < one) ) then
             write(fstderr,*) "When the l_diag_Lscale_from_tau flag is " &
                              // "enabled, C2rt must have a value of 1."
-            write(fstderr,*) "C2rt = ", params(iC2rt)
+            write(fstderr,*) "C2rt = ", params(:,iC2rt)
             write(fstderr,*) "Warning in check_clubb_settings"
             !write(fstderr,*) "Fatal error in check_clubb_settings"
             !err_code_out = clubb_fatal_error
          endif ! C2rt check
 
          ! C2thl must have a value of 1
-         if ( params(iC2thl) > one .or. params(iC2thl) < one ) then
+         if ( any(params(:,iC2thl) > one .or. params(:,iC2thl) < one) ) then
             write(fstderr,*) "When the l_diag_Lscale_from_tau flag is " &
                              // "enabled, C2thl must have a value of 1."
-            write(fstderr,*) "C2thl = ", params(iC2thl)
+            write(fstderr,*) "C2thl = ", params(:,iC2thl)
             write(fstderr,*) "Warning in check_clubb_settings"
             !write(fstderr,*) "Fatal error in check_clubb_settings"
             !err_code_out = clubb_fatal_error
          endif ! C2thl check
 
          ! C2rtthl must have a value of 1
-         if ( params(iC2rtthl) > one .or. params(iC2rtthl) < one ) then
+         if ( any(params(:,iC2rtthl) > one .or. params(:,iC2rtthl) < one) ) then
             write(fstderr,*) "When the l_diag_Lscale_from_tau flag is " &
                              // "enabled, C2rtthl must have a value of 1."
-            write(fstderr,*) "C2rtthl = ", params(iC2rtthl)
+            write(fstderr,*) "C2rtthl = ", params(:,iC2rtthl)
             write(fstderr,*) "Warning in check_clubb_settings"
             !write(fstderr,*) "Fatal error in check_clubb_settings"
             !err_code_out = clubb_fatal_error
          endif ! C2rtthl check
 
          ! C6rt must have a value of 1
-         if ( params(iC6rt) > one .or. params(iC6rt) < one ) then
+         if ( any(params(:,iC6rt) > one .or. params(:,iC6rt) < one) ) then
             write(fstderr,*) "When the l_diag_Lscale_from_tau flag is " &
                              // "enabled, C6rt must have a value of 1."
-            write(fstderr,*) "C6rt = ", params(iC6rt)
+            write(fstderr,*) "C6rt = ", params(:,iC6rt)
             write(fstderr,*) "Warning in check_clubb_settings"
             !write(fstderr,*) "Fatal error in check_clubb_settings"
             !err_code_out = clubb_fatal_error
          endif ! C6rt check
 
          ! C6rtb must have a value of 1
-         if ( params(iC6rtb) > one .or. params(iC6rtb) < one ) then
+         if ( any(params(:,iC6rtb) > one .or. params(:,iC6rtb) < one) ) then
             write(fstderr,*) "When the l_diag_Lscale_from_tau flag is " &
                              // "enabled, C6rtb must have a value of 1."
-            write(fstderr,*) "C6rtb = ", params(iC6rtb)
+            write(fstderr,*) "C6rtb = ", params(:,iC6rtb)
             write(fstderr,*) "Warning in check_clubb_settings"
             !write(fstderr,*) "Fatal error in check_clubb_settings"
             !err_code_out = clubb_fatal_error
          endif ! C6rtb check
 
          ! C6thl must have a value of 1
-         if ( params(iC6thl) > one .or. params(iC6thl) < one ) then
+         if ( any(params(:,iC6thl) > one .or. params(:,iC6thl) < one) ) then
             write(fstderr,*) "When the l_diag_Lscale_from_tau flag is " &
                              // "enabled, C6thl must have a value of 1."
-            write(fstderr,*) "C6thl = ", params(iC6thl)
+            write(fstderr,*) "C6thl = ", params(:,iC6thl)
             write(fstderr,*) "Warning in check_clubb_settings"
             !write(fstderr,*) "Fatal error in check_clubb_settings"
             !err_code_out = clubb_fatal_error
          endif ! C6thl check
 
          ! C6thlb must have a value of 1
-         if ( params(iC6thlb) > one .or. params(iC6thlb) < one ) then
+         if ( any(params(:,iC6thlb) > one .or. params(:,iC6thlb) < one) ) then
             write(fstderr,*) "When the l_diag_Lscale_from_tau flag is " &
                              // "enabled, C6thlb must have a value of 1."
-            write(fstderr,*) "C6thlb = ", params(iC6thlb)
+            write(fstderr,*) "C6thlb = ", params(:,iC6thlb)
             write(fstderr,*) "Warning in check_clubb_settings"
             !write(fstderr,*) "Fatal error in check_clubb_settings"
             !err_code_out = clubb_fatal_error
          endif ! C6thlb check
 
          ! C14 must have a value of 1
-         if ( params(iC14) > one .or. params(iC14) < one ) then
+         if ( any(params(:,iC14) > one .or. params(:,iC14) < one) ) then
             write(fstderr,*) "When the l_diag_Lscale_from_tau flag is " &
                              // "enabled, C14 must have a value of 1."
-            write(fstderr,*) "C14 = ", params(iC14)
+            write(fstderr,*) "C14 = ", params(:,iC14)
             write(fstderr,*) "Warning in check_clubb_settings"
             !write(fstderr,*) "Fatal error in check_clubb_settings"
             !err_code_out = clubb_fatal_error
@@ -5443,7 +5447,7 @@ module advance_clubb_core_module
 
 !===============================================================================
   subroutine calculate_thlp2_rad &
-                  ( nzm, rcm_zm, thlprcp, radht_zm, & ! Intent(in)
+                  ( ngrdcol, nzm, rcm_zm, thlprcp, radht_zm, & ! Intent(in)
                     clubb_params,                  & ! Intent(in)
                     thlp2_forcing )                  ! Intent(inout)
 
@@ -5467,43 +5471,45 @@ module advance_clubb_core_module
 
     implicit none
 
-  ! Input Variables
+    ! Input Variables
     integer, intent(in) :: &
+      ngrdcol, &
       nzm                   ! Number of momentum vertical levels             [-]
 
-    real( kind = core_rknd ), dimension(nzm), intent(in) :: &
+    real( kind = core_rknd ), dimension(ngrdcol,nzm), intent(in) :: &
       rcm_zm, &             ! Cloud water mixing ratio on momentum grid      [kg/kg]
       thlprcp, &            ! thl'rc'                                        [K kg/kg]
       radht_zm              ! SW + LW heating rate (on momentum grid)        [K/s]
 
-    real( kind = core_rknd ), dimension(nparams), intent(in) :: &
+    real( kind = core_rknd ), dimension(ngrdcol,nparams), intent(in) :: &
       clubb_params    ! Array of CLUBB's tunable parameters    [units vary]
 
-  ! Input/Output Variables
-    real( kind = core_rknd ), dimension(nzm), intent(inout) :: &
+    ! Input/Output Variables
+    real( kind = core_rknd ), dimension(ngrdcol,nzm), intent(inout) :: &
       thlp2_forcing         ! <th_l'^2> forcing (momentum levels)            [K^2/s]
 
-  ! Local Variables
+    ! Local Variables
     integer :: &
-      k                     ! Loop iterator                                  [-]
+      i, k                     ! Loop iterator                                  [-]
 
-  !----------------------------------------------------------------------
-
+    !----------------------------------------------------------------------
 
     do k = 1, nzm
+      do i = 1, ngrdcol
 
-       if ( rcm_zm(k) > rc_tol ) then
+        if ( rcm_zm(i,k) > rc_tol ) then
 
-          thlp2_forcing(k) &
-          = thlp2_forcing(k) + &
-            clubb_params(ithlp2_rad_coef) * ( two ) * radht_zm(k) / rcm_zm(k) * thlprcp(k)
+          thlp2_forcing(i,k) = thlp2_forcing(i,k) + &
+                             + clubb_params(i,ithlp2_rad_coef) &
+                               * ( two ) * radht_zm(i,k) / rcm_zm(i,k) * thlprcp(i,k)
 
-       end if
+        end if
 
+      end do
     end do
 
-
     return
+
   end subroutine calculate_thlp2_rad
 
 

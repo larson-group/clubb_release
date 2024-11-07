@@ -16,7 +16,7 @@ module hydrostatic_module
   contains
 
 !===============================================================================
-  subroutine hydrostatic( gr, thvm, p_sfc, &
+  subroutine hydrostatic( ngrdcol, gr, thvm, p_sfc, &
                           p_in_Pa, p_in_Pa_zm, &
                           exner, exner_zm, &
                           rho, rho_zm )
@@ -96,34 +96,38 @@ module hydrostatic_module
 
     implicit none
 
-    type (grid), intent(in) :: gr
+    integer, intent(in) :: &
+      ngrdcol
+
+    type (grid), intent(in) :: &
+      gr
 
     ! Input Variables
-    real( kind = core_rknd ), intent(in) :: &
+    real( kind = core_rknd ), dimension(ngrdcol), intent(in) :: &
       p_sfc    ! Pressure at the surface                     [Pa]
 
-    real( kind = core_rknd ), intent(in), dimension(gr%nzt) ::  & 
+    real( kind = core_rknd ), intent(in), dimension(ngrdcol,gr%nzt) ::  & 
       thvm    ! Virtual potential temperature               [K]
 
     ! Output Variables
-    real( kind = core_rknd ), intent(out), dimension(gr%nzt) ::  & 
+    real( kind = core_rknd ), intent(out), dimension(ngrdcol,gr%nzt) ::  & 
       p_in_Pa,    & ! Pressure (thermodynamic levels)         [Pa]
       exner,      & ! Exner function (thermodynamic levels)   [-]
       rho           ! Density (thermodynamic levels)          [kg/m^3]
 
-    real( kind = core_rknd ), intent(out), dimension(gr%nzm) ::  & 
+    real( kind = core_rknd ), intent(out), dimension(ngrdcol,gr%nzm) ::  & 
       p_in_Pa_zm, & ! Pressure on momentum levels             [Pa]
       exner_zm,   & ! Exner function on momentum levels       [-]
       rho_zm        ! Density on momentum levels              [kg/m^3]
 
     !  Local Variables
-    real( kind = core_rknd ), dimension(gr%nzm) ::  &
+    real( kind = core_rknd ), dimension(ngrdcol,gr%nzm) ::  &
       thvm_zm       ! Theta_v interpolated to momentum levels  [K]
 
-    integer :: k
+    integer :: i, k
 
     ! Calculate pressure and exner on both thermodynamic and momentum levels.
-    call init_pressure( gr, thvm, p_sfc, &
+    call init_pressure( ngrdcol, gr, thvm, p_sfc, &
                         p_in_Pa, exner, p_in_Pa_zm, exner_zm )
 
     ! Interpolate thvm from thermodynamic to momentum levels.  Linear
@@ -131,16 +135,20 @@ module hydrostatic_module
     ! linear extension is used.  Since thvm is considered to either be constant
     ! or vary linearly over the depth of a grid level, this interpolation is
     ! consistent with the rest of this code.
-    thvm_zm = zt2zm( gr, thvm )
+    thvm_zm = zt2zm( gr%nzm, gr%nzt, ngrdcol, gr, thvm )
 
     ! Calculate density based on pressure, exner, and thvm.
     do k = 1, gr%nzt
-      rho(k) = p_in_Pa(k) / ( Rd * thvm(k) * exner(k) )
-    enddo
-    do k = 1, gr%nzm
-      rho_zm(k) = p_in_Pa_zm(k) / ( Rd * thvm_zm(k) * exner_zm(k) )
-    enddo
+      do i = 1, ngrdcol
+        rho(i,k) = p_in_Pa(i,k) / ( Rd * thvm(i,k) * exner(i,k) )
+      end do
+    end do
 
+    do k = 1, gr%nzm
+      do i = 1, ngrdcol
+        rho_zm(i,k) = p_in_Pa_zm(i,k) / ( Rd * thvm_zm(i,k) * exner_zm(i,k) )
+      end do
+    end do
 
     return
 

@@ -65,13 +65,15 @@ def duplicate_and_tweak( ngrdcol, parsed_params ):
 
 
 
-def write_multi_col_file( ngrdcol, clubb_params, output_file_name, l_multi_col_output ):
+def write_multi_col_file( ngrdcol, clubb_params, output_file_name, l_multi_col_output, calls_per_out ):
     
     with open(output_file_name, 'w') as file:
     
         file.write(f"&multicol_def\n")
-        file.write(f"ngrdcol = "+str(ngrdcol)+"\n")
-        file.write(f"l_output_multi_col = {'.true.' if l_multi_col_output else '.false.'}\n/\n")
+        file.write(f"ngrdcol = {ngrdcol}\n")
+        file.write(f"l_output_multi_col = {'.true.' if l_multi_col_output else '.false.'}\n")
+        file.write(f"calls_per_out = {calls_per_out}\n")
+        file.write(f"/\n")
 
         file.write(f"&clubb_params_nl\n")
 
@@ -106,15 +108,19 @@ if __name__ == "__main__":
     parser.add_argument( "-mode", type=str, help="Enable or disable l_output_multi_col (True/False)",
                          default = "duplicate" )
 
+    parser.add_argument( "-calls_per_out", type=int, help="Number of timesteps between multi_col output call",
+                         default = 10 )
+
     # Parse the arguments
     args = parser.parse_args()
 
     # Assign parsed arguments to variables
     ngrdcol                 = args.n
     clubb_params_file       = args.param_file
-    l_multi_col_output       = args.l_multi_col_output.lower() == "true"
+    l_multi_col_output      = args.l_multi_col_output.lower() == "true"
     output_file_name        = args.out_file
     param_creation_mode     = args.mode
+    calls_per_out             = args.calls_per_out
     
     if param_creation_mode in [ "duplicate", "dup_tweak" ] and clubb_params_file is None:
         print(f"Defining '-param_file FILE' is required  When using '-mode duplicate'")
@@ -136,7 +142,7 @@ if __name__ == "__main__":
 
     
     # Write the new_clubb_params to output_file_name
-    write_multi_col_file( ngrdcol, new_clubb_params, output_file_name, l_multi_col_output )
+    write_multi_col_file( ngrdcol, new_clubb_params, output_file_name, l_multi_col_output, calls_per_out )
     
     print(f"File '{output_file_name}' has been created")
     print(f"l_output_multi_col is set to '{l_multi_col_output}'")

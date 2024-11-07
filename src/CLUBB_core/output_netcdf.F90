@@ -1027,18 +1027,19 @@ module output_netcdf
   end function lchar
 
   subroutine output_multi_col_fields( nzm, nzt, ngrdcol, sclr_dim, edsclr_dim, &
-                                        gr, dt, output_file_prefix, &
-                                        day, month, year, time_initial, &
-                                        um, vm, up3, vp3, rtm, thlm, rtp3, thlp3, wp3, upwp, vpwp, &
-                                        up2, vp2, wprtp, wpthlp, rtp2, thlp2, rtpthlp, wp2, &
-                                        sclrm, sclrp3, wpsclrp, sclrp2, sclrprtp, sclrpthlp, &
-                                        p_in_Pa, exner, rcm, cloud_frac, wp2thvp, wpthvp, rtpthvp, &
-                                        thlpthvp, sclrpthvp, wp2rtp, wp2thlp, wpup2, wpvp2, &
-                                        ice_supersat_frac, uprcp, vprcp, rc_coef_zm, wp4, wp2up2, &
-                                        wp2vp2, um_pert, vm_pert, upwp_pert, vpwp_pert, edsclrm, &
-                                        rcm_in_layer, cloud_cover, w_up_in_cloud, w_down_in_cloud, &
-                                        cloudy_updraft_frac, cloudy_downdraft_frac, wprcp, &
-                                        invrs_tau_zm, Kh_zt, Kh_zm, thlprcp )
+                                      calls_per_out, l_last_timestep, &
+                                      gr, dt, output_file_prefix, &
+                                      day, month, year, time_initial, &
+                                      um, vm, up3, vp3, rtm, thlm, rtp3, thlp3, wp3, upwp, vpwp, &
+                                      up2, vp2, wprtp, wpthlp, rtp2, thlp2, rtpthlp, wp2, &
+                                      sclrm, sclrp3, wpsclrp, sclrp2, sclrprtp, sclrpthlp, &
+                                      p_in_Pa, exner, rcm, cloud_frac, wp2thvp, wpthvp, rtpthvp, &
+                                      thlpthvp, sclrpthvp, wp2rtp, wp2thlp, wpup2, wpvp2, &
+                                      ice_supersat_frac, uprcp, vprcp, rc_coef_zm, wp4, wp2up2, &
+                                      wp2vp2, um_pert, vm_pert, upwp_pert, vpwp_pert, edsclrm, &
+                                      rcm_in_layer, cloud_cover, w_up_in_cloud, w_down_in_cloud, &
+                                      cloudy_updraft_frac, cloudy_downdraft_frac, wprcp, &
+                                      invrs_tau_zm, Kh_zt, Kh_zm, thlprcp )
     !
     ! Description:
     !   This subroutine outputs netcdf files with multiple columns.
@@ -1088,7 +1089,11 @@ module output_netcdf
       nzt, &
       nzm, &
       sclr_dim, &
-      edsclr_dim
+      edsclr_dim, &
+      calls_per_out
+
+    logical, intent(in) :: &
+      l_last_timestep
 
     real( kind = core_rknd ), intent(in) :: &
       dt
@@ -1211,7 +1216,38 @@ module output_netcdf
     integer, dimension(3) :: &
       var_dim_zm, var_dim_zt
 
-    integer :: i, n, status
+    integer :: i, k, n, status
+    
+    real( kind = core_rknd ), dimension(:,:,:), allocatable, save :: &
+      wpthlp_out, &
+      wprtp_out, &
+      wp2_out, &
+      thlp2_out, &
+      rtp2_out, &
+      rtpthlp_out, &
+      upwp_out, &
+      vpwp_out, &
+      up2_out, &
+      vp2_out
+
+    real( kind = core_rknd ), dimension(:,:,:), allocatable, save :: &
+      wp3_out, &
+      rcm_out, &
+      cloud_frac_out, &
+      rtm_out, &
+      thlm_out
+
+    real( kind = core_rknd ), dimension(:), allocatable, save :: &
+      time_out 
+
+    integer, dimension(ngrdcol) :: &
+      column_list
+
+    integer :: &
+      out_index
+
+    integer, dimension(3) :: &
+      start, count
 
     !------------------------ Begin Code ------------------------
 
@@ -1348,57 +1384,121 @@ module output_netcdf
 
       ! Store the data for the columns, just label each column in order 
       do i = 1, ngrdcol
-        status = nf90_put_var( ncid_zm, column_var_id_zm, i, start=(/i/) )
-        status = nf90_put_var( ncid_zt, column_var_id_zt, i, start=(/i/) )
+        column_list(i) = i
       end do
 
-      ! Close netcdf file
-      status = nf90_close( ncid = ncid_zm )
-      status = nf90_close( ncid = ncid_zt )
+      status = nf90_put_var( ncid_zm, column_var_id_zm, column_list, start=(/1/), count=(/ngrdcol/) )
+      status = nf90_put_var( ncid_zt, column_var_id_zt, column_list, start=(/1/), count=(/ngrdcol/) )
+
+      !=================================== Allocate Output Arrays ===================================
+
+      allocate( wpthlp_out(ngrdcol,nzm,calls_per_out), &
+                wprtp_out(ngrdcol,nzm,calls_per_out), &
+                wp2_out(ngrdcol,nzm,calls_per_out), &
+                thlp2_out(ngrdcol,nzm,calls_per_out), &
+                rtp2_out(ngrdcol,nzm,calls_per_out), &
+                rtpthlp_out(ngrdcol,nzm,calls_per_out), &
+                upwp_out(ngrdcol,nzm,calls_per_out), &
+                vpwp_out(ngrdcol,nzm,calls_per_out), &
+                up2_out(ngrdcol,nzm,calls_per_out), &
+                vp2_out(ngrdcol,nzm,calls_per_out) )
+
+      allocate( wp3_out(ngrdcol,nzt,calls_per_out), &
+                rcm_out(ngrdcol,nzt,calls_per_out), &
+                cloud_frac_out(ngrdcol,nzt,calls_per_out), &
+                rtm_out(ngrdcol,nzt,calls_per_out), &
+                thlm_out(ngrdcol,nzt,calls_per_out) )
+
+      allocate( time_out(calls_per_out) )
+
+      !!$acc enter data create( wpthlp_out, wprtp_out, wp2_out, thlp2_out, rtp2_out, &
+      !!$acc                    rtpthlp_out, upwp_out, vpwp_out, up2_out, vp2_out, wp3_out, &
+      !!$acc                    rcm_out, cloud_frac_out, rtm_out, thlm_out, time_out )
 
     end if
 
+    out_index = mod( n_calls, calls_per_out ) + 1
 
     n_calls = n_calls + 1
 
     !  time = n_calls * dt
     time = real( n_calls, kind=time_precision ) * real( dt, kind=time_precision )  ! seconds
 
-    ! Open the netcdf files
-    status = nf90_open( path = trim(multicol_nc_file_zm),  & 
-                        mode = NF90_WRITE,  & 
-                        ncid = ncid_zm )
+    !!$acc parallel loop gang vector collapse(2) default(present)
+    do k = 1, nzm
+      do i = 1, ngrdcol
+        wpthlp_out(i,k,out_index)   = wpthlp(i,k)
+        wprtp_out(i,k,out_index)    = wprtp(i,k)
+        wp2_out(i,k,out_index)      = wp2(i,k)
+        thlp2_out(i,k,out_index)    = thlp2(i,k)
+        rtp2_out(i,k,out_index)     = rtp2(i,k)
+        rtpthlp_out(i,k,out_index)  = rtpthlp(i,k)
+        upwp_out(i,k,out_index)     = upwp(i,k)
+        vpwp_out(i,k,out_index)     = vpwp(i,k)
+        up2_out(i,k,out_index)      = up2(i,k)
+        vp2_out(i,k,out_index)      = vp2(i,k)
+      end do
+    end do
 
-    status = nf90_open( path = trim(multicol_nc_file_zt),  & 
-                        mode = NF90_WRITE,  & 
-                        ncid = ncid_zt )
+    !!$acc parallel loop gang vector collapse(2) default(present)
+    do k = 1, nzt
+      do i = 1, ngrdcol
+        wp3_out(i,k,out_index)        = wp3(i,k)
+        rcm_out(i,k,out_index)        = rcm(i,k)
+        cloud_frac_out(i,k,out_index) = cloud_frac(i,k)
+        rtm_out(i,k,out_index)        = rtm(i,k)
+        thlm_out(i,k,out_index)       = thlm(i,k)
+      end do
+    end do
 
-    ! Update the time variable
-    status = nf90_put_var( ncid_zm, time_var_id_zm,  time,  (/n_calls/) )
-    status = nf90_put_var( ncid_zt, time_var_id_zt,  time,  (/n_calls/) )
+    time_out(out_index) = time
     
-    ! Update the zm variables we want, needs to match the variables we defined 
-    status = nf90_put_var( ncid_zm, ind_zm(1),                wpthlp, (/1,1,n_calls/), (/ngrdcol,nzm,1/) )
-    status = nf90_put_var( ncid_zm, ind_zm(2),                 wprtp, (/1,1,n_calls/), (/ngrdcol,nzm,1/) )
-    status = nf90_put_var( ncid_zm, ind_zm(3),                   wp2, (/1,1,n_calls/), (/ngrdcol,nzm,1/) )
-    status = nf90_put_var( ncid_zm, ind_zm(4),                 thlp2, (/1,1,n_calls/), (/ngrdcol,nzm,1/) )
-    status = nf90_put_var( ncid_zm, ind_zm(5),                  rtp2, (/1,1,n_calls/), (/ngrdcol,nzm,1/) )
-    status = nf90_put_var( ncid_zm, ind_zm(6),               rtpthlp, (/1,1,n_calls/), (/ngrdcol,nzm,1/) )
-    status = nf90_put_var( ncid_zm, ind_zm(7),                  upwp, (/1,1,n_calls/), (/ngrdcol,nzm,1/) )
-    status = nf90_put_var( ncid_zm, ind_zm(8),                  vpwp, (/1,1,n_calls/), (/ngrdcol,nzm,1/) )
-    status = nf90_put_var( ncid_zm, ind_zm(9),                   up2, (/1,1,n_calls/), (/ngrdcol,nzm,1/) )
-    status = nf90_put_var( ncid_zm, ind_zm(10),                  vp2, (/1,1,n_calls/), (/ngrdcol,nzm,1/) )
 
-    ! Update the zt variables we want, needs to match the variables we defined 
-    status = nf90_put_var( ncid_zt, ind_zt(1),                   wp3, (/1,1,n_calls/), (/ngrdcol,nzt,1/) )
-    status = nf90_put_var( ncid_zt, ind_zt(2),                   rcm, (/1,1,n_calls/), (/ngrdcol,nzt,1/) )
-    status = nf90_put_var( ncid_zt, ind_zt(3),            cloud_frac, (/1,1,n_calls/), (/ngrdcol,nzt,1/) )
-    status = nf90_put_var( ncid_zt, ind_zt(4),                   rtm, (/1,1,n_calls/), (/ngrdcol,nzt,1/) )
-    status = nf90_put_var( ncid_zt, ind_zt(5),                  thlm, (/1,1,n_calls/), (/ngrdcol,nzt,1/) )
+    if ( mod( n_calls, calls_per_out ) == 0 .or. l_last_timestep ) then
 
-    ! Close netcdf file
-    status = nf90_close( ncid = ncid_zm )
-    status = nf90_close( ncid = ncid_zt )
+      !!$acc update host( wpthlp_out, wprtp_out, wp2_out, thlp2_out, rtp2_out, rtpthlp_out, &
+      !!$acc              upwp_out, vpwp_out, up2_out, vp2_out, wp3_out, rcm_out, cloud_frac_out, rtm_out, thlm_out )
+
+      ! Update the time variable
+      status = nf90_put_var( ncid_zm, time_var_id_zm,  &
+                             time_out, (/n_calls-out_index+1/), (/out_index/) )
+                             
+      status = nf90_put_var( ncid_zt, time_var_id_zt,  &
+                             time_out, (/n_calls-out_index+1/), (/out_index/) )
+
+      start = (/       1,   1, n_calls-out_index+1 /)
+      count = (/ ngrdcol, nzm,           out_index /)
+      
+      ! Update the zm variables we want, needs to match the variables we defined 
+      status = nf90_put_var( ncid_zm, ind_zm(1),       wpthlp_out, start, count )
+      status = nf90_put_var( ncid_zm, ind_zm(2),        wprtp_out, start, count )
+      status = nf90_put_var( ncid_zm, ind_zm(3),          wp2_out, start, count )
+      status = nf90_put_var( ncid_zm, ind_zm(4),        thlp2_out, start, count )
+      status = nf90_put_var( ncid_zm, ind_zm(5),         rtp2_out, start, count )
+      status = nf90_put_var( ncid_zm, ind_zm(6),      rtpthlp_out, start, count )
+      status = nf90_put_var( ncid_zm, ind_zm(7),         upwp_out, start, count )
+      status = nf90_put_var( ncid_zm, ind_zm(8),         vpwp_out, start, count )
+      status = nf90_put_var( ncid_zm, ind_zm(9),          up2_out, start, count )
+      status = nf90_put_var( ncid_zm, ind_zm(10),         vp2_out, start, count )
+
+      count = (/ ngrdcol, nzt, out_index /)
+
+      ! Update the zt variables we want, needs to match the variables we defined 
+      status = nf90_put_var( ncid_zt, ind_zt(1),          wp3_out, start, count )
+      status = nf90_put_var( ncid_zt, ind_zt(2),          rcm_out, start, count )
+      status = nf90_put_var( ncid_zt, ind_zt(3),   cloud_frac_out, start, count )
+      status = nf90_put_var( ncid_zt, ind_zt(4),          rtm_out, start, count )
+      status = nf90_put_var( ncid_zt, ind_zt(5),         thlm_out, start, count )
+                        
+    end if
+
+    if ( l_last_timestep ) then
+
+      ! Close netcdf file
+      status = nf90_close( ncid = ncid_zm )
+      status = nf90_close( ncid = ncid_zt )
+
+    end if
 
   end subroutine output_multi_col_fields
 #endif

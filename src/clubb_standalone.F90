@@ -38,7 +38,9 @@ program clubb_standalone
     success_code = 6
 
   integer :: &
-    ngrdcol, iostat
+    ngrdcol, &
+    calls_per_out, &
+    iostat
 
   character(len=13), parameter :: &
     namelist_filename = "clubb.in"  ! Text file containing namelists
@@ -57,13 +59,15 @@ program clubb_standalone
 
   namelist /multicol_def/  & 
     ngrdcol, &
-    l_output_multi_col
+    l_output_multi_col, &
+    calls_per_out
 
   !--------------------------------- Begin Code ---------------------------------
 
-  ! Initialize ngrdcol to 1
+  ! Set default namelist values
   ngrdcol = 1
   l_output_multi_col = .false.
+  calls_per_out = 1
 
   ! Read the namelist for ngrdcol only
   open(unit=iunit, file=namelist_filename, status='old', action='read')
@@ -78,13 +82,13 @@ program clubb_standalone
 
   !Read in model parameter values
   call init_clubb_params( ngrdcol, iunit, namelist_filename, &
-                        clubb_params )
+                          clubb_params )
 
   ! Initialize status of run 
   err_code = clubb_no_error
 
   ! Run the model
-  call run_clubb( ngrdcol, clubb_params, namelist_filename, l_stdout, l_output_multi_col )
+  call run_clubb( ngrdcol, calls_per_out, clubb_params, namelist_filename, l_stdout, l_output_multi_col )
 
   if ( err_code == clubb_fatal_error ) then
     error stop "Fatal error in clubb, check your parameter values and timestep"

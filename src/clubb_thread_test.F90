@@ -85,7 +85,7 @@ program clubb_thread_test
                           clubb_params )
 
     ! Run the model
-    call run_clubb( 1, clubb_params, namelist_filename(iter), l_stdout, l_output_multi_col )
+    call run_clubb( 1, 1, clubb_params, namelist_filename(iter), l_stdout, l_output_multi_col )
 
     err_code_saves(iter) = err_code
 

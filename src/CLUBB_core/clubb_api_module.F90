@@ -196,7 +196,8 @@ module clubb_api_module
     T_in_K2thlm_api => T_in_K2thlm
 
   use advance_clubb_core_module, only: &
-    check_clubb_settings_api => check_clubb_settings
+    check_clubb_settings_api => check_clubb_settings, &
+    calculate_thlp2_rad_api => calculate_thlp2_rad
 
   use parameters_model, only: &
     setup_parameters_model_api =>  setup_parameters_model
@@ -3507,49 +3508,6 @@ contains
       integral_forcing, dt )
 
   end function calculate_spurious_source_api
-
-  !================================================================================================
-  ! calculate_thlp2_rad - Computes the contribution of radiative cooling to thlp2
-  !================================================================================================
-  subroutine calculate_thlp2_rad_api &
-                  ( nz, rcm_zm, thlprcp, radht_zm, & ! Intent(in)
-                    clubb_params,                  & ! Intent(in)
-                    thlp2_forcing )                  ! Intent(inout)
-
-    use clubb_precision, only: &
-        core_rknd                     ! Constant(s)
-
-    use advance_clubb_core_module, only: &
-        calculate_thlp2_rad
-
-    use parameter_indices, only: &
-        nparams
-
-    implicit none
-
-  ! Input Variables
-    integer, intent(in) :: &
-      nz                    ! Number of vertical levels                      [-]
-
-    real( kind = core_rknd ), dimension(nz), intent(in) :: &
-      rcm_zm, &             ! Cloud water mixing ratio on momentum grid      [kg/kg]
-      thlprcp, &            ! thl'rc'                                        [K kg/kg]
-      radht_zm              ! SW + LW heating rate (on momentum grid)        [K/s]
-
-    real( kind = core_rknd ), dimension(nparams), intent(in) :: &
-      clubb_params    ! Array of CLUBB's tunable parameters    [units vary]
-
-  ! Input/Output Variables
-    real( kind = core_rknd ), dimension(nz), intent(inout) :: &
-      thlp2_forcing         ! <th_l'^2> forcing (momentum levels)            [K^2/s]
-  !----------------------------------------------------------------------
-
-    call calculate_thlp2_rad( nz, rcm_zm, thlprcp, radht_zm, & ! intent(in)
-                              clubb_params,                  & ! intent(in)
-                              thlp2_forcing )                  ! intent(inout)
-
-    return
-  end subroutine calculate_thlp2_rad_api
 
   !================================================================================================
   ! update_xp2_mc - Calculates the effects of rain evaporation on rtp2 and thlp2

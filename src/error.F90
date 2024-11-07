@@ -869,10 +869,10 @@ module error
       ! Run the CLUBB model with parameters as input
 
       if ( allocated( model_flags_array ) ) then
-        call run_clubb( 1, params_local, run_file(c_run), l_stdout, l_output_multi_col, &
+        call run_clubb( 1, 1, params_local, run_file(c_run), l_stdout, l_output_multi_col, &
                         model_flags_array(iter,:) )
       else
-        call run_clubb( 1, params_local, run_file(c_run), l_stdout, l_output_multi_col )
+        call run_clubb( 1, 1, params_local, run_file(c_run), l_stdout, l_output_multi_col )
       end if
 
       run_stat(c_run) = err_code

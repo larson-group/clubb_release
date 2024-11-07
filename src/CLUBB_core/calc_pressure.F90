@@ -11,7 +11,7 @@ module calc_pressure
   contains
 
   !=============================================================================
-  subroutine init_pressure( gr, thvm, p_sfc, &
+  subroutine init_pressure( ngrdcol, gr, thvm, p_sfc, &
                             p_in_Pa, exner, p_in_Pa_zm, exner_zm )
 
     ! Description:
@@ -73,41 +73,47 @@ module calc_pressure
 
     implicit none
 
-    type (grid), intent(in) :: gr
+    integer, intent(in) :: &
+      ngrdcol
+
+    type (grid), intent(in) :: &
+      gr
 
     ! Input Variables
-    real( kind = core_rknd ), dimension(gr%nzt), intent(in) :: &
+    real( kind = core_rknd ), dimension(ngrdcol,gr%nzt), intent(in) :: &
       thvm    ! Mean theta_v (thermodynamic levels)                [K]
 
-    real( kind = core_rknd ), intent(in) :: &
+    real( kind = core_rknd ), dimension(ngrdcol), intent(in) :: &
       p_sfc    ! Surface pressure                                   [Pa]
 
     ! Output Variables
-    real( kind = core_rknd ), dimension(gr%nzt), intent(out) :: &
+    real( kind = core_rknd ), dimension(ngrdcol,gr%nzt), intent(out) :: &
       p_in_Pa,    & ! Pressure (thermodynamic levels)        [Pa]
       exner         ! Exner function (thermodynamic levels)  [-]
 
-    real( kind = core_rknd ), dimension(gr%nzm), intent(out) :: &
+    real( kind = core_rknd ), dimension(ngrdcol,gr%nzm), intent(out) :: &
       p_in_Pa_zm, & ! Pressure on momentum levels            [Pa]
       exner_zm      ! Exner function on momentum levels      [-]
 
     ! Local Variables
-    real( kind = core_rknd ), dimension(gr%nzm) :: &
+    real( kind = core_rknd ), dimension(ngrdcol,gr%nzm) :: &
       thvm_zm    ! Mean theta_v interpolated to momentum grid levels  [K]
 
     real( kind = core_rknd ), parameter :: &
       g_ov_Cp = grav / Cp  ! g / Cp  [K/m]
 
-    integer :: k  ! Vertical level index
+    integer :: i, k  ! Vertical level index
 
 
     ! The pressure (and exner) at the lowest momentum level is the surface
     ! pressure (and exner based on the surface pressure).
-    p_in_Pa_zm(1) = p_sfc
-    exner_zm(1) = ( p_sfc / p0 )**kappa
+    do i = 1, ngrdcol
+      p_in_Pa_zm(i,1) = p_sfc(i)
+      exner_zm(i,1)   = ( p_sfc(i) / p0 )**kappa
+    end do
 
     ! Interpolate theta_v to momentum levels.
-    thvm_zm = zt2zm( gr, thvm, zero_threshold )
+    thvm_zm = zt2zm( gr%nzm, gr%nzt, ngrdcol, gr, thvm, zero_threshold )
 
     ! Calculate exner at all other thermodynamic and momentum grid levels.
     ! exner2
@@ -120,67 +126,74 @@ module calc_pressure
 
     ! Calculate exner at thermodynamic level 1 (first thermodynamic grid level
     ! that is above the lower boundary).
-    if ( abs( thvm(1) - thvm_zm(1) ) > epsilon( thvm ) * thvm(1) ) then
+    do i = 1, ngrdcol
+      if ( abs( thvm(i,1) - thvm_zm(i,1) ) > epsilon( thvm ) * thvm(i,1) ) then
 
-       exner(1) &
-       = exner_zm(1) &
-         - g_ov_Cp * ( gr%zt(1,1) - gr%zm(1,1) ) / ( thvm(1) - thvm_zm(1) ) &
-           * log( thvm(1) / thvm_zm(1) )
+        exner(i,1) &
+        = exner_zm(i,1) &
+          - g_ov_Cp * ( gr%zt(i,1) - gr%zm(i,1) ) / ( thvm(i,1) - thvm_zm(i,1) ) &
+            * log( thvm(i,1) / thvm_zm(i,1) )
 
-    else ! thvm(1) = thvm_zm(1)
+      else ! thvm(1) = thvm_zm(1)
 
-       exner(1) = exner_zm(1) - g_ov_Cp * ( gr%zt(1,1) - gr%zm(1,1) ) / thvm(1)
+        exner(i,1) = exner_zm(i,1) - g_ov_Cp * ( gr%zt(i,1) - gr%zm(i,1) ) / thvm(i,1)
 
-    endif
+      endif
+    end do
 
     ! Calculate pressure on thermodynamic levels.
-    p_in_Pa(1) = p0 * exner(1)**(one/kappa)
+    do i = 1, ngrdcol
+      p_in_Pa(i,1) = p0 * exner(i,1)**(one/kappa)
+    end do
 
     ! Loop over all other thermodynamic vertical grid levels.
     do k = 2, gr%nzt, 1
+      do i = 1, ngrdcol
 
-       ! Calculate exner on thermodynamic levels.
-       if ( abs( thvm(k) - thvm(k-1) ) > epsilon( thvm ) * thvm(k) ) then
+        ! Calculate exner on thermodynamic levels.
+        if ( abs( thvm(i,k) - thvm(i,k-1) ) > epsilon( thvm ) * thvm(i,k) ) then
 
-          exner(k) &
-          = exner(k-1) &
-            - g_ov_Cp * ( gr%zt(1,k) - gr%zt(1,k-1) ) / ( thvm(k) - thvm(k-1) ) &
-              * log( thvm(k) / thvm(k-1) )
+            exner(i,k) &
+            = exner(i,k-1) &
+              - g_ov_Cp * ( gr%zt(i,k) - gr%zt(i,k-1) ) / ( thvm(i,k) - thvm(i,k-1) ) &
+                * log( thvm(i,k) / thvm(i,k-1) )
 
-       else ! thvm(k+1) = thvm(k)
+        else ! thvm(k+1) = thvm(k)
 
-          exner(k) = exner(k-1) - g_ov_Cp * ( gr%zt(1,k) - gr%zt(1,k-1) ) / thvm(k)
+            exner(i,k) = exner(i,k-1) - g_ov_Cp * ( gr%zt(i,k) - gr%zt(i,k-1) ) / thvm(i,k)
 
-       endif
+        endif
 
-       ! Calculate pressure on thermodynamic levels.
-       p_in_Pa(k) = p0 * exner(k)**(one/kappa)
+        ! Calculate pressure on thermodynamic levels.
+        p_in_Pa(i,k) = p0 * exner(i,k)**(one/kappa)
 
-    enddo ! k = 2, gr%nzt, 1
+      end do
+    end do
 
     ! Loop over all momentum grid levels.
     do k = 2, gr%nzm, 1
+      do i = 1, ngrdcol
 
        ! Calculate exner on momentum levels.
-       if ( abs( thvm(k-1) - thvm_zm(k) ) > epsilon( thvm ) * thvm(k-1) ) then
+       if ( abs( thvm(i,k-1) - thvm_zm(i,k) ) > epsilon( thvm ) * thvm(i,k-1) ) then
 
-          exner_zm(k) &
-          = exner(k-1) &
-            - g_ov_Cp * ( gr%zm(1,k) - gr%zt(1,k-1) ) / ( thvm_zm(k) - thvm(k-1) ) &
-              * log( thvm_zm(k) / thvm(k-1) )
+          exner_zm(i,k) &
+          = exner(i,k-1) &
+            - g_ov_Cp * ( gr%zm(i,k) - gr%zt(i,k-1) ) / ( thvm_zm(i,k) - thvm(i,k-1) ) &
+              * log( thvm_zm(i,k) / thvm(i,k-1) )
 
        else ! thvm(k) = thvm_zm(k)
 
-          exner_zm(k) &
-          = exner(k-1) - g_ov_Cp * ( gr%zm(1,k) - gr%zt(1,k-1) ) / thvm_zm(k)
+          exner_zm(i,k) &
+          = exner(i,k-1) - g_ov_Cp * ( gr%zm(i,k) - gr%zt(i,k-1) ) / thvm_zm(i,k)
 
        endif
 
        ! Calculate pressure on momentum levels.
-       p_in_Pa_zm(k) = p0 * exner_zm(k)**(one/kappa)
+       p_in_Pa_zm(i,k) = p0 * exner_zm(i,k)**(one/kappa)
 
-    enddo ! k = 2, gr%nzm, 1
-
+      end do 
+    end do
 
     return
 
