@@ -5500,7 +5500,7 @@ module advance_clubb_core_module
         if ( rcm_zm(i,k) > rc_tol ) then
 
           thlp2_forcing(i,k) = thlp2_forcing(i,k) + &
-                             + clubb_params(i,ithlp2_rad_coef) &
+                               clubb_params(i,ithlp2_rad_coef) &
                                * ( two ) * radht_zm(i,k) / rcm_zm(i,k) * thlprcp(i,k)
 
         end if
