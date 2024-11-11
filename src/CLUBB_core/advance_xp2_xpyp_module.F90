@@ -4379,7 +4379,7 @@ module advance_xp2_xpyp_module
           do k = 1, nzm
             do i = 1, ngrdcol
               coef_wprtp2_implicit_zm(i,k) = one_third * beta(i) * a1_coef(i,k) * wp3_on_wp2(i,k)
-              sgn_t_vel_rtp2(i,k) = wp3_on_wp2(i,k)
+              sgn_t_vel_rtp2(i,k) = sign( one, wp3_on_wp2(i,k) )
             end do
           end do
           !$acc end parallel loop
@@ -4473,7 +4473,7 @@ module advance_xp2_xpyp_module
           do k = 1, nzm
             do i = 1, ngrdcol            
               term_wprtp2_explicit_zm(i,k) = wp_coef(i,k) * wprtp(i,k)**2
-              sgn_t_vel_rtp2(i,k)          = wp3_on_wp2(i,k)
+              sgn_t_vel_rtp2(i,k)          = sign( one, wp3_on_wp2(i,k) )
             end do
           end do
           !$acc end parallel loop
@@ -4507,7 +4507,7 @@ module advance_xp2_xpyp_module
           !$acc parallel loop gang vector collapse(2) default(present)
           do k = 1, nzt
             do i = 1, ngrdcol 
-              sgn_t_vel_rtp2_zt(i,k) = wp_coef_zt(i,k)
+              sgn_t_vel_rtp2_zt(i,k) = sign( one, wp_coef_zt(i,k) )
             end do
           end do
           !$acc end parallel loop
@@ -4534,7 +4534,7 @@ module advance_xp2_xpyp_module
           !$acc parallel loop gang vector collapse(2) default(present)
           do k = 1, nzt
             do i = 1, ngrdcol             
-              sgn_t_vel_thlp2(i,k) = wp3_on_wp2(i,k)
+              sgn_t_vel_thlp2(i,k) = sign( one, wp3_on_wp2(i,k) )
             end do
           end do
           !$acc end parallel loop
@@ -4565,7 +4565,7 @@ module advance_xp2_xpyp_module
           !$acc parallel loop gang vector collapse(2) default(present)
           do k = 1, nzt
             do i = 1, ngrdcol 
-              sgn_t_vel_thlp2_zt(i,k) = wp_coef_zt(i,k)
+              sgn_t_vel_thlp2_zt(i,k) = sign( one, wp_coef_zt(i,k) )
             end do
           end do
           !$acc end parallel loop
@@ -4586,7 +4586,7 @@ module advance_xp2_xpyp_module
           do k = 1, nzm
             do i = 1, ngrdcol             
               term_wprtpthlp_explicit_zm(i,k) = wp_coef(i,k) * wprtp(i,k) * wpthlp(i,k)
-              sgn_t_vel_rtpthlp(i,k)          = wp3_on_wp2(i,k)
+              sgn_t_vel_rtpthlp(i,k)          = sign( one, wp3_on_wp2(i,k) )
             end do
           end do
           !$acc end parallel loop
@@ -4618,7 +4618,7 @@ module advance_xp2_xpyp_module
           !$acc parallel loop gang vector collapse(2) default(present)
           do k = 1, nzt
             do i = 1, ngrdcol           
-              sgn_t_vel_rtpthlp_zt(i,k) = wp_coef_zt(i,k)
+              sgn_t_vel_rtpthlp_zt(i,k) = sign( one, wp_coef_zt(i,k) )
             end do
           end do
           !$acc end parallel loop
@@ -4651,7 +4651,7 @@ module advance_xp2_xpyp_module
               do k = 1, nzm
                 do i = 1, ngrdcol
                   term_wpsclrp2_explicit_zm(i,k) = wp_coef(i,k) * wpsclrp(i,k,sclr)**2
-                  sgn_t_vel_sclrp2(i,k)          = wp3_on_wp2(i,k)
+                  sgn_t_vel_sclrp2(i,k)          = sign( one, wp3_on_wp2(i,k) )
                 end do
               end do
               !$acc end parallel loop
@@ -4691,7 +4691,7 @@ module advance_xp2_xpyp_module
               !$acc parallel loop gang vector collapse(2) default(present)
               do k = 1, nzt
                 do i = 1, ngrdcol 
-                  sgn_t_vel_sclrp2_zt(i,k) = wp_coef_zt(i,k)
+                  sgn_t_vel_sclrp2_zt(i,k) = sign( one, wp_coef_zt(i,k) )
                 end do
               end do
               !$acc end parallel loop
@@ -4715,7 +4715,7 @@ module advance_xp2_xpyp_module
               do k = 1, nzm
                 do i = 1, ngrdcol
                   term_wprtpsclrp_explicit_zm(i,k) = wp_coef(i,k) * wpsclrp(i,k,sclr) * wprtp(i,k)
-                  sgn_t_vel_sclrprtp(i,k)          = wp3_on_wp2(i,k)
+                  sgn_t_vel_sclrprtp(i,k)          = sign( one, wp3_on_wp2(i,k) )
                 end do
               end do
               !$acc end parallel loop
@@ -4755,7 +4755,7 @@ module advance_xp2_xpyp_module
               !$acc parallel loop gang vector collapse(2) default(present)
               do k = 1, nzt
                 do i = 1, ngrdcol 
-                  sgn_t_vel_sclrprtp_zt(i,k) = wp_coef_zt(i,k)
+                  sgn_t_vel_sclrprtp_zt(i,k) = sign( one, wp_coef_zt(i,k) )
                 end do
               end do
               !$acc end parallel loop
@@ -4779,7 +4779,7 @@ module advance_xp2_xpyp_module
               do k = 1, nzm
                 do i = 1, ngrdcol               
                   term_wpthlpsclrp_explicit_zm(i,k) = wp_coef(i,k) * wpsclrp(i,k,sclr) * wpthlp(i,k)
-                  sgn_t_vel_sclrpthlp(i,k)          = wp3_on_wp2(i,k)
+                  sgn_t_vel_sclrpthlp(i,k)          = sign( one, wp3_on_wp2(i,k) )
                 end do
               end do
               !$acc end parallel loop
@@ -4819,7 +4819,7 @@ module advance_xp2_xpyp_module
               !$acc parallel loop gang vector collapse(2) default(present)
               do k = 1, nzt
                 do i = 1, ngrdcol               
-                  sgn_t_vel_sclrpthlp_zt(i,k) = wp_coef_zt(i,k)
+                  sgn_t_vel_sclrpthlp_zt(i,k) = sign( one, wp_coef_zt(i,k) )
                 end do
               end do
               !$acc end parallel loop
@@ -5269,7 +5269,7 @@ module advance_xp2_xpyp_module
         !$acc parallel loop gang vector collapse(2) default(present)
         do k = 1, nzm
           do i = 1, ngrdcol        
-            sgn_t_vel_up2(i,k) = wp3_on_wp2(i,k)
+            sgn_t_vel_up2(i,k) = sign( one, wp3_on_wp2(i,k) )
             sgn_t_vel_vp2(i,k) = sgn_t_vel_up2(i,k)
           end do
         end do
