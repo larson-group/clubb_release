@@ -70,7 +70,7 @@ p_sfc_nl = 101407.8     ! (1014.1 mb) Pressure at model base              [Pa]
 !    latent_ht = lhflx / (rho_sfc_flux * Lv) [(m/s) * (kg/kg)]
 !    sens_ht = shflx / (rho_sfc_flux * Cp) [(m/s) * K]
 
-fcor = 4.264e-5     ! Coriolis parameter                  [s^-1]
+fcor_nl = 4.264e-5     ! Coriolis parameter                  [s^-1]
 T0   = 300.         ! Reference temperature (usually 300) [K]
 
 ts_nudge = 7200.    ! Timescale of u/v nudging            [s]

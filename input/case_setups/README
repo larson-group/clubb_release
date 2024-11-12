@@ -94,7 +94,7 @@ SE | real, default precision
 LE | real, default precision
   Fixed surface latent heat flux [kg/kg m/s].
 
-fcor | real, default precision
+fcor_nl | real, default precision
   Coriolis parameter [s^-1].
 
 T0 | real, default precision

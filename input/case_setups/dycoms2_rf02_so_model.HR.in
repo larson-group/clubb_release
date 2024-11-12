@@ -57,7 +57,7 @@ dt_rad = 5.0    ! Closure timestep [s] (must multiply evenly into dt_main).
 T_sfc_nl = 292.0       ! Temperature of underlying surface (e.g. SST)           [K]
 p_sfc_nl = 1017.8e2    ! Pressure at model base              [Pa]
 
-fcor = 7.6e-5      ! Coriolis parameter                  [s^-1]
+fcor_nl = 7.6e-5      ! Coriolis parameter                  [s^-1]
 T0   = 300.        ! Reference temperature (usually 300) [K]
 
 !-- BugsRad related settings -- only used when l_bugsrad = .true.--

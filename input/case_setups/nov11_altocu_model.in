@@ -57,7 +57,7 @@ dt_rad = 60.0   ! Radiation timestep [s]
 
 p_sfc_nl = 695.12e2    ! Pressure at model base              [Pa]
 
-fcor = 0.0e-5      ! Coriolis parameter                  [s^-1]
+fcor_nl = 0.0e-5      ! Coriolis parameter                  [s^-1]
 T0   = 300.        ! Reference temperature (usually 300) [K]
 
 l_t_dependent = .true. ! Read values from _surface.in file. Also read 

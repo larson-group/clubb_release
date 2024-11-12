@@ -904,7 +904,8 @@ module clubb_driver
     real( kind = core_rknd ) :: &
       sfc_elevation_nl, &
       p_sfc_nl, &
-      T_sfc_nl
+      T_sfc_nl, &
+      fcor_nl
 
     real( kind = core_rknd ), dimension(ngrdcol) :: &
       wpthep, &                 ! Turbulent Flux of equivalent potential temperature   [K]
@@ -920,7 +921,7 @@ module clubb_driver
       day, month, year, lat_vals, lon_vals, sfc_elevation_nl, &
       time_initial, time_final, &
       dt_main, dt_rad, &
-      sfctype, T_sfc_nl, p_sfc_nl, sens_ht, latent_ht, fcor, T0, ts_nudge, &
+      sfctype, T_sfc_nl, p_sfc_nl, sens_ht, latent_ht, fcor_nl, T0, ts_nudge, &
       forcings_file_path, l_t_dependent, l_input_xpwp_sfc, &
       l_ignore_forcings, l_modify_ic_with_cubic_int, &
       l_modify_bc_for_cnvg_test, &
@@ -983,7 +984,7 @@ module clubb_driver
     p_sfc_nl  = 1000.e2_core_rknd
     sens_ht   = 0._core_rknd
     latent_ht = 0._core_rknd
-    fcor      = 1.e-4_core_rknd
+    fcor_nl   = 1.e-4_core_rknd
     T0        = 300._core_rknd
     ts_nudge  = 86400._core_rknd
 
@@ -1140,6 +1141,7 @@ module clubb_driver
     zm_top = zm_top_nl
     p_sfc = p_sfc_nl
     T_sfc = T_sfc_nl
+    fcor = fcor_nl
 
     sclr_idx%iisclr_thl = iisclr_thl
     sclr_idx%iisclr_rt  = iisclr_rt
@@ -2527,7 +2529,6 @@ module clubb_driver
           rtp2_forcing(i,k)    = rtp2_forcing(i,k) + rtp2_mc(i,k)
           thlp2_forcing(i,k)   = thlp2_forcing(i,k) + thlp2_mc(i,k)
           rtpthlp_forcing(i,k) = rtpthlp_forcing(i,k) + rtpthlp_mc(i,k)
-
         end do
       end do
 
@@ -2716,8 +2717,7 @@ module clubb_driver
         !$acc data  copyin( hm_metadata ) &
         !$acc      copyout( X_mixt_comp_all_levs, X_nl_all_levs, lh_sample_point_weights, &
         !$acc               lh_rt_clipped, lh_thl_clipped, lh_rc_clipped, lh_rv_clipped, &
-        !$acc               lh_Nc_clipped ) &
-        !$acc async(1)
+        !$acc               lh_Nc_clipped )
 
         call generate_silhs_sample_api( &
                itime, pdf_dim, lh_num_samples, lh_sequence_length, gr%nzt, ngrdcol, & ! In
@@ -2943,7 +2943,7 @@ module clubb_driver
                   exner(i,:), cloud_frac(i,:), ice_supersat_frac(i,:),     & ! In
                   thlm(i,:), rtm(i,:), rcm(i,:), hydromet,       & ! In
                   hm_metadata, stats_metadata, stats_sfc(i),          & ! In
-                  radht, Frad(i,:), Frad_SW_up(i,:), Frad_LW_up(i,:),           & ! Out
+                  radht(i,:), Frad(i,:), Frad_SW_up(i,:), Frad_LW_up(i,:),           & ! Out
                   Frad_SW_down(i,:), Frad_LW_down(i,:) )                     ! Out
           end do
 
@@ -2958,7 +2958,7 @@ module clubb_driver
 
         ! Update the radiation variables here so they are updated every timestep
         do i = 1, ngrdcol
-          call update_radiation_variables( gr%nzm, gr%nzt, radht, Frad_SW_up(i,:), Frad_LW_up(i,:), &
+          call update_radiation_variables( gr%nzm, gr%nzt, radht(i,:), Frad_SW_up(i,:), Frad_LW_up(i,:), &
                                           Frad_SW_down(i,:), Frad_LW_down(i,:), &
                                           stats_metadata, stats_zt(i), stats_zm(i), &
                                           stats_rad_zt(i), stats_rad_zm(i) )

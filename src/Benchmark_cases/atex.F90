@@ -305,7 +305,8 @@ module atex
 
   T_sfc_interp = linear_interp_factor( time_frac, T_sfc_given(after_time), &
                                        T_sfc_given(before_time) )
-                                       
+                
+  !$acc parallel loop gang vector default(present)
   do i = 1, ngrdcol
     C_10(i)       = 0.0013_core_rknd
     adjustment(i) = 0.0198293_core_rknd

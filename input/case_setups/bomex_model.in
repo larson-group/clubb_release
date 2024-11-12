@@ -64,7 +64,7 @@ dt_rad = 60.0   ! Radiation timestep [s]
 
 p_sfc_nl = 1015.e2  ! Pressure at model base              [Pa]
 
-fcor = 0.376e-4 ! Coriolis parameter                  [s^-1]
+fcor_nl = 0.376e-4 ! Coriolis parameter                  [s^-1]
 T0   = 300.     ! Reference temperature (usually 300) [K]
 
 

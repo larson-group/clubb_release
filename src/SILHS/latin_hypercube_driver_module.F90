@@ -294,7 +294,7 @@ module latin_hypercube_driver_module
     
     !$acc data create( rand_pool, X_u_all_levs ) &
     !$acc&     copyin( X_vert_corr, k_lh_start ) &
-    !$acc& async(1)
+    !$acc& 
 
     ! Generate pool of random numbers
     call generate_random_pool( nzt, ngrdcol, pdf_dim, num_samples, d_uniform_extra, & ! Intent(in)
@@ -324,9 +324,9 @@ module latin_hypercube_driver_module
     !$acc&     copyin( pdf_params, precip_fracs, &
     !$acc&             pdf_params%mixt_frac, pdf_params%cloud_frac_1, pdf_params%cloud_frac_2, &
     !$acc&             precip_fracs%precip_frac_1, precip_fracs%precip_frac_2 ) &
-    !$acc& async(3)
+    !$acc& 
     
-    !$acc parallel loop collapse(3) default(present) async(1) wait(3)
+    !$acc parallel loop collapse(3) default(present)  wait(3)
     do k = 1, nzt
       do sample = 1, num_samples 
         do i = 1, ngrdcol
@@ -586,6 +586,19 @@ module latin_hypercube_driver_module
 #endif
 
 #endif
+
+#ifdef SILHS_MULTI_COL_RAND_DUPLICATE
+    !$acc parallel loop gang vector collapse(4) default(present)
+    do i = 2, ngrdcol
+      do p=1, pdf_dim+d_uniform_extra
+        do k = 1, nzt
+          do sample=1, num_samples
+              rand_pool(i,sample,k,p) = rand_pool(1,sample,k,p)
+            end do
+          end do
+        end do
+      end do
+#endif
     
   end subroutine generate_random_pool
 
@@ -715,7 +728,7 @@ module latin_hypercube_driver_module
 
         ! Do a straight Monte Carlo sample without LH or importance sampling.
         
-        !$acc parallel loop collapse(4) default(present) async(1)
+        !$acc parallel loop collapse(4) default(present) 
         do p = 1, pdf_dim+d_uniform_extra
           do k = 1, nzt
             do sample = 1, num_samples
@@ -728,7 +741,7 @@ module latin_hypercube_driver_module
           end do
         end do
 
-        !$acc parallel loop collapse(3) default(present) async(1)
+        !$acc parallel loop collapse(3) default(present) 
         do k = 1, nzt
           do sample = 1, num_samples
             do i = 1, ngrdcol
@@ -811,7 +824,7 @@ module latin_hypercube_driver_module
 
         ! Do a straight Monte Carlo sample without LH or importance sampling.
         
-        !$acc parallel loop collapse(4) default(present) async(1)
+        !$acc parallel loop collapse(4) default(present) 
         do p = 1, pdf_dim+d_uniform_extra
           do k = 1, nzt
             do sample = 1, num_samples
@@ -824,7 +837,7 @@ module latin_hypercube_driver_module
           end do
         end do
 
-        !$acc parallel loop collapse(3) default(present) async(1)
+        !$acc parallel loop collapse(3) default(present) 
         do k = 1, nzt
           do sample = 1, num_samples
             do i = 1, ngrdcol
@@ -1119,7 +1132,7 @@ module latin_hypercube_driver_module
                           X_mixt_comp_all_levs(:,:,:),                  & ! Intent(in)
                           lh_rt_clipped(:,:,:), lh_thl_clipped(:,:,:)   ) ! Intent(out)
     
-    !$acc parallel loop collapse(3) default(present) async(1)
+    !$acc parallel loop collapse(3) default(present) 
     do k = 1, nzt
       do sample = 1, num_samples
         do i = 1, ngrdcol
@@ -1894,10 +1907,10 @@ module latin_hypercube_driver_module
 
     ! ---------------- Begin Code ----------------
     
-    !$acc wait(1) async(2)
+    !$acc wait(1) 
 
     ! Recompute from k_lh_start to nzt-1 for all samples and variates, upward loop
-    !$acc parallel loop collapse(3) default(present) async(1)
+    !$acc parallel loop collapse(3) default(present) 
     do p = 1, pdf_dim + d_uniform_extra                         
       do sample = 1, num_samples
         do i = 1, ngrdcol
@@ -1931,7 +1944,7 @@ module latin_hypercube_driver_module
 
 
     ! Recompute from k_lh_start down to 2 for all samples and variates, downward loop 
-    !$acc parallel loop collapse(3) default(present) async(2)
+    !$acc parallel loop collapse(3) default(present) 
     do p = 1, pdf_dim + d_uniform_extra                        
       do sample = 1, num_samples
         do i = 1, ngrdcol
@@ -1963,7 +1976,7 @@ module latin_hypercube_driver_module
       end do ! 1..num_samples
     end do ! 1..pdf_dim
     
-    !$acc wait(2) async(1)
+    !$acc wait(2) 
 
     return
   end subroutine compute_arb_overlap

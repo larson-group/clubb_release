@@ -57,7 +57,7 @@ dt_rad = 1800.0   ! Radiation timestep [s]
 
 p_sfc_nl = 969.0e2  ! Pressure at model base              [Pa]
 
-fcor = 0.          ! Coriolis parameter                  [s^-1]
+fcor_nl = 0.          ! Coriolis parameter                  [s^-1]
 T0   = 300.        ! Reference temperature (usually 300) [K]
 
 ts_nudge = 7200.   ! Timescale of u/v nudging            [s]

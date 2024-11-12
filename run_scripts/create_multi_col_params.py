@@ -49,7 +49,7 @@ def duplicate_params( ngrdcol, parsed_params ):
 
 # Duplicate the parameters, then change them slightly based
 # on a predefined list and tweaking behavior
-def duplicate_and_tweak( ngrdcol, parsed_params ):
+def duplicate_and_tweak( ngrdcol, parsed_params, mirror=False ):
 
     tweak_list = ['C7', 'C11']
 
@@ -60,6 +60,12 @@ def duplicate_and_tweak( ngrdcol, parsed_params ):
         # in the range initial_param_val*[1/2, 2]
         initial_param_val   = parsed_params[param]
         clubb_params[param] = initial_param_val * np.linspace( 0.5, 2, ngrdcol)
+
+        # If mirror is set we mirror the first half of the parameter set to the last half
+        # This is mainly for testing purposes
+        if mirror:
+            first_half = clubb_params[param][:ngrdcol//2]
+            clubb_params[param][(ngrdcol+1)//2:] = first_half[::-1]
 
     return clubb_params
 
@@ -111,6 +117,9 @@ if __name__ == "__main__":
     parser.add_argument( "-calls_per_out", type=int, help="Number of timesteps between multi_col output call",
                          default = 10 )
 
+    parser.add_argument( "-mirror", type=str, help="mirror param lists",
+                         default = "false" )
+
     # Parse the arguments
     args = parser.parse_args()
 
@@ -120,7 +129,8 @@ if __name__ == "__main__":
     l_multi_col_output      = args.l_multi_col_output.lower() == "true"
     output_file_name        = args.out_file
     param_creation_mode     = args.mode
-    calls_per_out             = args.calls_per_out
+    calls_per_out           = args.calls_per_out
+    mirror                 = args.mirror == "true"
     
     if param_creation_mode in [ "duplicate", "dup_tweak" ] and clubb_params_file is None:
         print(f"Defining '-param_file FILE' is required  When using '-mode duplicate'")
@@ -135,7 +145,7 @@ if __name__ == "__main__":
         new_clubb_params = duplicate_params( ngrdcol, parsed_params )
     elif param_creation_mode == "dup_tweak":
         print(f"Duplicating then tweaking params from '{clubb_params_file}' '{ngrdcol}' times.")
-        new_clubb_params = duplicate_and_tweak( ngrdcol, parsed_params )
+        new_clubb_params = duplicate_and_tweak( ngrdcol, parsed_params, mirror )
     else:
         print(f"Mode '{param_creation_mode}' not recognized")
         exit(1)

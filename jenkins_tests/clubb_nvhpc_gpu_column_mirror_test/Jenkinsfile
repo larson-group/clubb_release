@@ -1,0 +1,67 @@
+pipeline {
+
+  // OpenMP GPU offloading needs compute capability > 70, which currently only carson has
+  agent { label 'carson' }
+  
+  stages {
+    stage('Modify Config Flags') {
+      steps {
+        sh '''sed -i "s:penta_solve_method.*:penta_solve_method = 2:g" input/tunable_parameters/configurable_model_flags.in'''
+        sh '''sed -i "s:tridiag_solve_method.*:tridiag_solve_method = 2:g" input/tunable_parameters/configurable_model_flags.in'''
+        sh '''sed -i "s:lh_straight_mc.*:lh_straight_mc = true:g" input/tunable_parameters/configurable_model_flags.in'''
+        sh '''sed -i "s:time_final.*:time_final = 87600:g" input/case_setups/cobra_model.in'''
+        sh '''sed -i "s:time_final.*:time_final = 90660:g" input/case_setups/arm_97_model.in'''
+        sh '''sed -i "s:time_final.*:time_final = 30000:g" input/case_setups/mc3e_model.in'''
+        sh '''sed -i "s:time_final.*:time_final = 56400:g" input/case_setups/mpace_a_model.in'''
+        sh '''sed -i "s:time_final.*:time_final = 12000:g" input/case_setups/gabls2_model.in'''
+        sh '''sed -i "s:time_final.*:time_final = 55200:g" input/case_setups/gabls3_model.in'''
+        sh '''sed -i "s:time_final.*:time_final = 88400:g" input/case_setups/gabls3_night_model.in'''
+        sh '''sed -i "s:time_final.*:time_final = 70800:g" input/case_setups/twp_ice_model.in'''
+        sh '''sed -i "s:time_final.*:time_final = 12000:g" input/case_setups/astex_a209_model.in'''
+        sh '''sed -i "s:time_final.*:time_final = 60000:g" input/case_setups/cgils_s6_model.in'''
+        sh '''sed -i "s:time_final.*:time_final = 60000:g" input/case_setups/cgils_s11_model.in'''
+        sh '''sed -i "s:time_final.*:time_final = 60000:g" input/case_setups/cgils_s12_model.in'''
+        sh '''sed -i 's:\\(CPPDEFS=".*\\)":\\1 -DSILHS_MULTI_COL_RAND_DUPLICATE":' compile/config/linux_x86_64_nvhpc_gpu_openacc.bash'''
+        sh '''run_scripts/create_multi_col_params.py -n 6 -param_file input/tunable_parameters/tunable_parameters.in -mode dup_tweak -mirror true'''
+      }
+    }
+    stage('Compile GPU_ACC') {
+      steps {
+          sh ''' source /etc/profile.d/larson-group.sh
+                 module load nvhpc netcdf-fortran
+                 compile/compile.bash -c config/linux_x86_64_nvhpc_gpu_openacc.bash'''
+      }
+    }
+    stage('Run GPU_ACC') {
+      steps {
+        sh '''source /etc/profile.d/larson-group.sh
+              module load nvhpc netcdf-fortran
+              run_scripts/run_scm_all.bash -e -p ../clubb_params_multi_col.in'''
+      }
+    }
+    stage('Run Check Script') {
+      steps {
+        sh '''python run_scripts/check_mirrored_multi_col_output.py output'''
+      }
+    }
+  }
+  post {
+    always {
+      // Certain logical functions like IF statements or TRY-CATCH blocks can only operate while in a script{} block
+      script {
+      // This cleans out the test workspace so the next run has a fresh start
+      // However this only occurs when the test is named clubb_gfortran_build
+      // This is to prevent the branch and copy tests from deleting thier workspaces so they are available for debugging
+      if ( "${env.JOB_NAME}" == "clubb_nvhpc_gpu_vs_cpu_diffness" )
+      	cleanWs(cleanWhenAborted: true, cleanWhenFailure: true, cleanWhenSuccess: true, cleanWhenUnstable: true)
+      }
+    }
+    failure {
+      script {
+      if ( "${env.JOB_NAME}" == "clubb_nvhpc_gpu_vs_cpu_diffness" )
+        // This command handles the email on failure feature of the jenkins test. This line is the same on every jenkins test.
+      	emailext(to: 'messnermet@uwm.edu', subject: "${env.JOB_NAME} build ${env.BUILD_NUMBER} has Failed", attachLog: true, body: "${env.JOB_NAME} build ${env.BUILD_NUMBER} has failed. See the attached build log and the build results (${env.BUILD_URL}) for help troubleshooting.")
+      }
+    }
+  }
+}

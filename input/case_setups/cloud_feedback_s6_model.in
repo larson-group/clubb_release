@@ -72,7 +72,7 @@ p_sfc_nl = 101407.8     ! (1014.1 mb) Pressure at model base              [Pa]
 !LE = 0.000042593 ! Using rho_sfc_flux = 1.0 kg/m^3
 !SE = 0.011806494 ! Using rho_sfc_flux = 1.0 kg/m^3
 
-fcor = 4.264e-5     ! Coriolis parameter                  [s^-1]
+fcor_nl = 4.264e-5     ! Coriolis parameter                  [s^-1]
 T0   = 300.         ! Reference temperature (usually 300) [K]
 
 ts_nudge = 7200.    ! Timescale of u/v nudging            [s]

@@ -63,7 +63,7 @@ sfctype = 1      ! Select surface scheme (cases without specified surface fluxes
 
 p_sfc_nl = 1024.4e2        ! Pressure at model base              [Pa]
 
-fcor = 0.000114566338 ! Coriolis parameter                  [s^-1]
+fcor_nl = 0.000114566338 ! Coriolis parameter                  [s^-1]
 
 !T0   = 283.15        ! Reference temperature (usually 300) [K]
 T0    = 300
