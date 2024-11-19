@@ -98,7 +98,9 @@ FIGSIZE = (10,6) # The x,y proportions (in inches) to pass into matplotlib. It's
 # Time-height plot settings
 # An overview of all colormaps available in matplotlib can be found here:
 # https://matplotlib.org/1.4.2/examples/color/colormaps_reference.html
-CONTOUR_CMAP = 'coolwarm' # Default cmap used in matplotlib
+CONTOUR_CMAP_CORR = 'coolwarm' # Default cmap used in matplotlib
+CONTOUR_CMAP_NORMED = 'Oranges' # Default cmap used in matplotlib
+CONTOUR_CMAP_GENERAL = 'Oranges' # Default cmap used in matplotlib
 
 # Animation settings
 ANIM_OUTPUT_FORMAT = 'gif' # or 'mp4'

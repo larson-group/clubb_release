@@ -89,7 +89,21 @@ class ContourPanel(Panel):
             c_data = var.data
             x_data, y_data = np.meshgrid(x_data, y_data)
             cmap = mpl.colormaps.get_cmap(var.colors)
-            norm = mpl.colors.Normalize(vmin=-1, vmax=1)
+            vmin, vmax = c_data.min(), c_data.max()
+            if max(abs(vmin), abs(vmax))>1:
+                # General case: maximum absolute values are larger than 1
+                vmin = round(vmin-.5)
+                vmax = round(vmax+.5)
+                cmap = mpl.colormaps.get_cmap(Style_definitions.CONTOUR_CMAP_GENERAL)
+            elif vmin<0:
+                # (Possible) Correlation case: All values between -1 and 1
+                vmin = -1
+                vmax = 1
+                cmap = mpl.colormaps.get_cmap(Style_definitions.CONTOUR_CMAP_CORR)
+            else:
+                # Small positive values: Do no rounding
+                cmap = mpl.colormaps.get_cmap(Style_definitions.CONTOUR_CMAP_NORMED)
+            norm = mpl.colors.Normalize(vmin=vmin, vmax=vmax)
             cont_map = plt.cm.ScalarMappable(norm=norm, cmap=cmap)
             label = var.label
 

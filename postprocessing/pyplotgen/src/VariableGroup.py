@@ -345,7 +345,7 @@ class VariableGroup:
                             plot = Line(plot_data, z, line_format=line_style, label=line['legend_label'])
                         else:
                             plot = Contour(x_data=z['time'],y_data=z['height'],c_data=plot_data,
-                                           colors=Style_definitions.CONTOUR_CMAP,
+                                           colors=Style_definitions.CONTOUR_CMAP_GENERAL,
                                            label=line['legend_label'], line_format=line_style)
                         all_lines.append(plot)
                         line['calculated'] = True
@@ -731,7 +731,7 @@ class VariableGroup:
             output_contours.extend(contour)
         else:
             contour = Contour(x_data=variable.independent_data['time'], y_data=variable.independent_data['height'],
-                              c_data=variable, colors=Style_definitions.CONTOUR_CMAP, label=label,line_format=line_format)
+                              c_data=variable, colors=Style_definitions.CONTOUR_CMAP_GENERAL, label=label,line_format=line_format)
             output_contours.append(contour)
 
         return output_contours
@@ -793,7 +793,7 @@ class VariableGroup:
                 label_with_offset = label + "_" + str(i+1)
                 data_i = variable.dependent_data[:,:,i]
                 contour = Contour(x_data=variable.independent_data['time'], y_data=variable.independent_data['height'],
-                                  c_data=data_i, colors=Style_definitions.CONTOUR_CMAP, label=label_with_offset,
+                                  c_data=data_i, colors=Style_definitions.CONTOUR_CMAP_GENERAL, label=label_with_offset,
                                   line_format=line_format)
                 output_lines.append(contour)
 
@@ -876,7 +876,7 @@ class VariableGroup:
 
         # Create Contour instance to return
         contour = Contour(x_data=variable.independent_data['time'], y_data=variable.independent_data['height'],
-                          c_data=variable, colors=Style_definitions.CONTOUR_CMAP, label=label)
+                          c_data=variable, colors=Style_definitions.CONTOUR_CMAP_GENERAL, label=label)
         return contour
 
     def getVarForCalculations(self, varname, datasets, conversion_factor=1):
@@ -1039,6 +1039,6 @@ class VariableGroup:
                 variable.trimArray(self.start_time, self.end_time, data=variable.independent_data['time'], axis=0)
                 variable.trimArray(self.height_min_value, self.height_max_value, data=variable.independent_data['height'],axis=1)
                 contour = Contour(x_data=variable.independent_data['time'], y_data=variable.independent_data['height'],
-                              c_data=variable, colors=Style_definitions.CONTOUR_CMAP, label=label,line_format=line_format)
+                              c_data=variable, colors=Style_definitions.CONTOUR_CMAP_GENERAL, label=label,line_format=line_format)
                 output_lines.append(contour)
         return output_lines
