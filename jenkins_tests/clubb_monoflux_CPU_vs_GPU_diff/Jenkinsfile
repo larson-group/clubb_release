@@ -1,28 +1,22 @@
 pipeline {
+
   agent any
+  
   stages {
     stage('Run test_monoflux_limiter_GPU.py') {
       steps {
-        // This dir{} block is used to run the enclosed commands in a specific directory, in this case run_scripts
-        dir('run_scripts') {
-          sh '''source /etc/profile.d/larson-group.sh
-                module load nvhpc netcdf-fortran
-                python test_monoflux_limiter_GPU.py'''
+        lock( "GPU_${env.NODE_NAME}" ) {
+          // This dir{} block is used to run the enclosed commands in a specific directory, in this case run_scripts
+          dir('run_scripts') {
+            sh '''source /etc/profile.d/larson-group.sh
+                  module load nvhpc netcdf-fortran
+                  python test_monoflux_limiter_GPU.py'''
+          }
         }
       }
     }
   }
   post {
-    always {
-      // Certain logical functions like IF statements or TRY-CATCH blocks can only operate while in a script{} block
-      script {
-      // This cleans out the test workspace so the next run has a fresh start
-      // However this only occurs when the test is named clubb_error_handling_gfortran_test
-      // This is to prevent the branch and copy tests from deleting thier workspaces so they are available for debugging
-      if ( "${env.JOB_NAME}" == "clubb_monoflux_CPU_vs_GPU_diff" )
-      	cleanWs(cleanWhenSuccess: true, cleanWhenFailure: true)
-      }
-    }
     failure {
       script {
       if ( "${env.JOB_NAME}" ==	"clubb_monoflux_CPU_vs_GPU_diff" )

@@ -300,6 +300,11 @@ contains
     stats_lh_zt_col(1)                = stats_lh_zt
     stats_lh_sfc_col(1)               = stats_lh_sfc
 
+    !$acc data copyin( precip_fracs, precip_fracs%precip_frac_1, precip_fracs%precip_frac_2, &
+    !$acc              delta_zm_col, Lscale_col, corr_cholesky_mtx_1_col, &
+    !$acc              corr_cholesky_mtx_2_col, mu1_col, mu2_col, sigma1_col, sigma2_col ) &
+    !$acc     copyout( X_nl_all_levs, X_mixt_comp_all_levs, lh_sample_point_weights )
+
     call generate_silhs_sample( &
       iter, pdf_dim, num_samples, sequence_length, nzt, 1, & ! In
       l_calc_weights_all_levs_itime, & ! In
@@ -314,6 +319,8 @@ contains
       stats_lh_zt_col, stats_lh_sfc_col, & ! intent(inout)
       X_nl_all_levs_col, X_mixt_comp_all_levs_col, & ! Out
       lh_sample_point_weights_col ) ! Out
+
+    !$acc end data
       
     X_nl_all_levs = X_nl_all_levs_col(1,:,:,:)
     X_mixt_comp_all_levs = X_mixt_comp_all_levs_col(1,:,:)
@@ -432,6 +439,11 @@ contains
     type (stats_metadata_type), intent(in) :: &
       stats_metadata
     
+    !$acc data copyin( precip_fracs, precip_fracs%precip_frac_1, precip_fracs%precip_frac_2, &
+    !$acc              delta_zm, Lscale, corr_cholesky_mtx_1, &
+    !$acc              corr_cholesky_mtx_2, mu1, mu2, sigma1, sigma2 ) &
+    !$acc     copyout( X_nl_all_levs, X_mixt_comp_all_levs, lh_sample_point_weights )
+
     call generate_silhs_sample( &
       iter, pdf_dim, num_samples, sequence_length, nzt, ngrdcol, & ! In
       l_calc_weights_all_levs_itime, & ! In
@@ -446,6 +458,8 @@ contains
       stats_lh_zt, stats_lh_sfc, & ! intent(inout)
       X_nl_all_levs, X_mixt_comp_all_levs, & ! Out
       lh_sample_point_weights ) ! Out
+
+    !$acc end data
 
   end subroutine generate_silhs_sample_api_multi_col
 
@@ -600,6 +614,13 @@ contains
     X_mixt_comp_all_levs_col(1,:,:) = X_mixt_comp_all_levs
     X_nl_all_levs_col(1,:,:,:)      = X_nl_all_levs
 
+    !$acc data copyin( pdf_params, pdf_params%rt_1, pdf_params%thl_1, & 
+    !$acc              pdf_params%rt_2, pdf_params%thl_2, pdf_params%crt_1, pdf_params%cthl_1, & 
+    !$acc              pdf_params%crt_2, pdf_params%cthl_2, pdf_params%chi_1, pdf_params%chi_2, &
+    !$acc              X_mixt_comp_all_levs_col, X_nl_all_levs_col, hm_metadata ) &
+    !$acc     copyout( lh_rt_clipped_col, lh_thl_clipped_col,  lh_rc_clipped_col, &
+    !$acc              lh_rv_clipped_col, lh_Nc_clipped_col )
+
     call clip_transform_silhs_output( nzt, 1, num_samples,                 & ! In
                                       pdf_dim, hydromet_dim, hm_metadata,  & ! In
                                       X_mixt_comp_all_levs_col,               & ! In
@@ -608,6 +629,7 @@ contains
                                       lh_rt_clipped_col, lh_thl_clipped_col,  & ! Out
                                       lh_rc_clipped_col, lh_rv_clipped_col,   & ! Out
                                       lh_Nc_clipped_col                       ) ! Out
+    !$acc end data
                                       
     lh_rt_clipped     = lh_rt_clipped_col(1,:,:)
     lh_thl_clipped    = lh_thl_clipped_col(1,:,:)
@@ -672,6 +694,13 @@ contains
       lh_rv_clipped,  & ! rv generated from silhs sample points
       lh_Nc_clipped     ! Nc generated from silhs sample points
 
+    !$acc data copyin( pdf_params, pdf_params%rt_1, pdf_params%thl_1, & 
+    !$acc              pdf_params%rt_2, pdf_params%thl_2, pdf_params%crt_1, pdf_params%cthl_1, & 
+    !$acc              pdf_params%crt_2, pdf_params%cthl_2, pdf_params%chi_1, pdf_params%chi_2, &
+    !$acc              X_mixt_comp_all_levs, X_nl_all_levs, hm_metadata ) &
+    !$acc     copyout( lh_rt_clipped, lh_thl_clipped,  lh_rc_clipped, &
+    !$acc              lh_rv_clipped, lh_Nc_clipped )
+
     call clip_transform_silhs_output( nzt, ngrdcol, num_samples,           & ! In
                                       pdf_dim, hydromet_dim, hm_metadata,  & ! In
                                       X_mixt_comp_all_levs,                   & ! In
@@ -680,6 +709,7 @@ contains
                                       lh_rt_clipped, lh_thl_clipped,          & ! Out
                                       lh_rc_clipped, lh_rv_clipped,           & ! Out
                                       lh_Nc_clipped                           ) ! Out
+   !$acc end data
 
   end subroutine clip_transform_silhs_output_api_multi_col
 

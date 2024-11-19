@@ -675,6 +675,7 @@ module pdf_utilities
   !=============================================================================
   elemental function compute_mean_binormal( mu_x_1, mu_x_2, mixt_frac ) &
   result( xm )
+  !$acc routine seq
 
     ! Description:
     ! Computes the overall grid-box mean of a binormal distribution from the

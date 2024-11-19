@@ -197,7 +197,7 @@ module clubb_api_module
 
   use advance_clubb_core_module, only: &
     check_clubb_settings_api => check_clubb_settings, &
-    calculate_thlp2_rad_api => calculate_thlp2_rad
+    calculate_thlp2_rad
 
   use parameters_model, only: &
     setup_parameters_model_api =>  setup_parameters_model
@@ -1981,6 +1981,62 @@ contains
 
 
   end subroutine advance_clubb_core_api_multi_col
+
+  subroutine calculate_thlp2_rad_api( ngrdcol, nzm, nzt, gr, &
+                                      rcm, thlprcp, radht, clubb_params, &
+                                      thlp2_forcing )
+
+    use clubb_precision, only: &
+      core_rknd                     ! Constant(s)
+
+    use parameter_indices, only: &
+      nparams
+
+    use grid_class, only: &
+      grid
+
+    use advance_clubb_core_module, only : &
+      calculate_thlp2_rad
+
+    implicit none
+
+    ! Input Variables
+    integer, intent(in) :: &
+      ngrdcol, &
+      nzm, &
+      nzt
+
+    type( grid ), intent(in) :: &
+      gr
+
+    real( kind = core_rknd ), dimension(ngrdcol,nzt), intent(in) :: &
+      rcm, &             ! Cloud water mixing ratio on momentum grid      [kg/kg]
+      radht              ! SW + LW heating rate (on momentum grid)        [K/s]
+
+    real( kind = core_rknd ), dimension(ngrdcol,nzm), intent(in) :: &
+      thlprcp               ! thl'rc'                                        [K kg/kg]
+
+    real( kind = core_rknd ), dimension(ngrdcol,nparams), intent(in) :: &
+      clubb_params    ! Array of CLUBB's tunable parameters    [units vary]
+
+    ! Input/Output Variables
+    real( kind = core_rknd ), dimension(ngrdcol,nzm), intent(inout) :: &
+      thlp2_forcing         ! <th_l'^2> forcing (momentum levels)            [K^2/s]
+
+    !----------------------------------------------------------------------
+
+    !$acc data copyin( rcm, thlprcp, radht, clubb_params ) &
+    !$acc        copy( thlp2_forcing )
+
+    call calculate_thlp2_rad( ngrdcol, nzm, nzt, gr,              & ! intent(in)
+                              rcm, thlprcp, radht, clubb_params,  & ! intent(in)
+                              thlp2_forcing )                       ! intent(inout)
+
+    !$acc end data
+
+    return
+
+    end subroutine calculate_thlp2_rad_api
 
   !================================================================================================
   ! cleanup_clubb_core_api - Frees memory used by the model.

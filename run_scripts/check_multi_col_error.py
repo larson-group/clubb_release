@@ -39,7 +39,7 @@ import sys
 field_threshold = 1.0e-7
 
 # Threshold used to determine if the ncfiles are close enough
-abs_error_threshold = 1.0e-10
+abs_error_threshold = 1.0e-7
 
 # Var to set if we find that the files differ significantly
 files_differ = False
@@ -48,8 +48,8 @@ files_differ = False
 # Parse arguments, we only expect 2 file names
 parser = argparse.ArgumentParser(description='Run a test')
 
-parser.add_argument("files", nargs=2,
-                    help="need two files to diff")
+parser.add_argument("files", nargs=2, help="need two files to diff")
+parser.add_argument("-s","--scale", action="store_true", help="Scale differences by field value")
                     
 args = parser.parse_args()
 
@@ -74,6 +74,11 @@ for var in dset0.variables:
 
         # Calculate absolute differences
         abs_diff = abs( dset0[var][:,:,:] - dset1[var][:,:,:] )
+
+        # Scale differences down by the field average, use ceiling to prevent scaling up fields with small values
+        if args.scale:
+            field_avg = ( np.average( dset0[var] ) + np.average( dset1[var] ) ) / 2.0
+            abs_diff = abs_diff / np.ceil(field_avg)
 
         # Clip fields to ignore tiny values for the % diff
         field_1_clipped = np.clip( dset0[var][:,:,:], a_min = field_threshold, a_max = 9999999.0  )

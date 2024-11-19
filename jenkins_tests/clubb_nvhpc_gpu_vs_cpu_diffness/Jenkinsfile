@@ -8,8 +8,10 @@ pipeline {
       steps {
         sh '''sed -i "s:penta_solve_method.*:penta_solve_method = 2:g" input/tunable_parameters/configurable_model_flags.in'''
         sh '''sed -i "s:tridiag_solve_method.*:tridiag_solve_method = 2:g" input/tunable_parameters/configurable_model_flags.in'''
-        sh '''sed -i "s:num_standalone_columns.*:num_standalone_columns = 32:g" input/tunable_parameters/configurable_model_flags.in'''
+        sh '''sed -i "s:lh_straight_mc.*:lh_straight_mc = true:g" input/tunable_parameters/configurable_model_flags.in'''
         sh '''sed -i "s:time_final.*:time_final = 87600:g" input/case_setups/cobra_model.in'''
+        sh '''sed -i "s:time_final.*:time_final = 3000:g" input/case_setups/rico_silhs_model.in'''
+        sh '''sed -i "s: -DCUDA::g" compile/config/*'''
         sh '''run_scripts/create_multi_col_params.py -n 32 -param_file input/tunable_parameters/tunable_parameters.in -mode dup_tweak'''
       }
     }
@@ -26,6 +28,7 @@ pipeline {
               module load nvhpc netcdf-fortran
               run_scripts/run_scm.bash -p ../clubb_params_multi_col.in -e arm
               run_scripts/run_scm.bash -p ../clubb_params_multi_col.in -e cobra
+              run_scripts/run_scm.bash -p ../clubb_params_multi_col.in -e rico_silhs
               mv output cpu_output; mkdir output'''
       }
     }
@@ -39,11 +42,14 @@ pipeline {
     }
     stage('Run GPU_ACC') {
       steps {
-        sh '''source /etc/profile.d/larson-group.sh
-              module load nvhpc netcdf-fortran
-              run_scripts/run_scm.bash -p ../clubb_params_multi_col.in -e arm
-              run_scripts/run_scm.bash -p ../clubb_params_multi_col.in -e cobra
-              mv output acc_output; mkdir output'''
+        lock( "GPU_${env.NODE_NAME}" ) {
+          sh '''source /etc/profile.d/larson-group.sh
+                module load nvhpc netcdf-fortran
+                run_scripts/run_scm.bash -p ../clubb_params_multi_col.in -e arm
+                run_scripts/run_scm.bash -p ../clubb_params_multi_col.in -e cobra
+                run_scripts/run_scm.bash -p ../clubb_params_multi_col.in -e rico_silhs
+                mv output acc_output; mkdir output'''
+        }
       }
     }
     stage('Compile GPU_OMP') {
@@ -57,11 +63,14 @@ pipeline {
     }
     stage('Run GPU_OMP') {
       steps {
+        lock( "GPU_${env.NODE_NAME}" ) {
           sh '''source /etc/profile.d/larson-group.sh
               module load nvhpc netcdf-fortran
               run_scripts/run_scm.bash -p ../clubb_params_multi_col.in -e arm
               run_scripts/run_scm.bash -p ../clubb_params_multi_col.in -e cobra
+              run_scripts/run_scm.bash -p ../clubb_params_multi_col.in -e rico_silhs
               mv output omp_output; mkdir output'''
+        }
       }
     }
     stage('Compare CPU vs ACC') {
@@ -70,6 +79,8 @@ pipeline {
         sh '''run_scripts/check_multi_col_error.py cpu_output/arm_multi_col_zt.nc acc_output/arm_multi_col_zt.nc'''
         sh '''run_scripts/check_multi_col_error.py cpu_output/cobra_multi_col_zm.nc acc_output/cobra_multi_col_zm.nc'''
         sh '''run_scripts/check_multi_col_error.py cpu_output/cobra_multi_col_zt.nc acc_output/cobra_multi_col_zt.nc'''
+        sh '''run_scripts/check_multi_col_error.py -s cpu_output/rico_silhs_multi_col_zm.nc acc_output/rico_silhs_multi_col_zm.nc'''
+        sh '''run_scripts/check_multi_col_error.py -s cpu_output/rico_silhs_multi_col_zt.nc acc_output/rico_silhs_multi_col_zt.nc'''
       }
     }
     stage('Compare CPU vs OMP') {
@@ -78,20 +89,12 @@ pipeline {
         sh '''run_scripts/check_multi_col_error.py cpu_output/arm_multi_col_zt.nc omp_output/arm_multi_col_zt.nc'''
         sh '''run_scripts/check_multi_col_error.py cpu_output/cobra_multi_col_zm.nc omp_output/cobra_multi_col_zm.nc'''
         sh '''run_scripts/check_multi_col_error.py cpu_output/cobra_multi_col_zt.nc omp_output/cobra_multi_col_zt.nc'''
+        sh '''run_scripts/check_multi_col_error.py -s cpu_output/rico_silhs_multi_col_zm.nc omp_output/rico_silhs_multi_col_zm.nc'''
+        sh '''run_scripts/check_multi_col_error.py -s cpu_output/rico_silhs_multi_col_zt.nc omp_output/rico_silhs_multi_col_zt.nc'''
       }
     }
   }
   post {
-    always {
-      // Certain logical functions like IF statements or TRY-CATCH blocks can only operate while in a script{} block
-      script {
-      // This cleans out the test workspace so the next run has a fresh start
-      // However this only occurs when the test is named clubb_gfortran_build
-      // This is to prevent the branch and copy tests from deleting thier workspaces so they are available for debugging
-      if ( "${env.JOB_NAME}" == "clubb_nvhpc_gpu_vs_cpu_diffness" )
-      	cleanWs(cleanWhenAborted: true, cleanWhenFailure: true, cleanWhenSuccess: true, cleanWhenUnstable: true)
-      }
-    }
     failure {
       script {
       if ( "${env.JOB_NAME}" == "clubb_nvhpc_gpu_vs_cpu_diffness" )

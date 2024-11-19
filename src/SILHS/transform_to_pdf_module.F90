@@ -122,7 +122,7 @@ module transform_to_pdf_module
     !$acc end data
                           
     
-    !$acc parallel loop collapse(4) default(present) 
+    !$acc parallel loop gang vector collapse(4) default(present) 
     do p = max( hm_metadata%iiPDF_chi, hm_metadata%iiPDF_eta, hm_metadata%iiPDF_w )+1, pdf_dim
       do k = 1, nzt
         do sample = 1, num_samples
@@ -134,7 +134,7 @@ module transform_to_pdf_module
       end do
     end do
     
-    !$acc parallel loop collapse(4) default(present) 
+    !$acc parallel loop gang vector collapse(4) default(present) 
     do p = hm_metadata%iiPDF_Ncn+1, pdf_dim
       do k = 1, nzt 
         do sample = 1, num_samples
@@ -159,7 +159,7 @@ module transform_to_pdf_module
     ! enforced by the clipping of PDF component cloud fraction.
     if ( l_clip_extreme_chi_sample_pts ) then
       
-      !$acc parallel loop collapse(3) default(present) 
+      !$acc parallel loop gang vector collapse(3) default(present) 
       do k = 1, nzt 
         do sample = 1, num_samples
           do i = 1, ngrdcol
@@ -253,7 +253,7 @@ module transform_to_pdf_module
     
     ! ---------------- Begin Code ----------------
     
-    !$acc parallel loop collapse(4) 
+    !$acc parallel loop gang vector collapse(4) 
     do sample = 1, num_samples
       do k = 1, nzt
         do i = 1, ngrdcol
@@ -543,9 +543,7 @@ module transform_to_pdf_module
 
     ! --- Begin Code ---
     
-    !$acc data copyin(Sigma_Cholesky1, Sigma_Cholesky2, mu1, mu2) 
-    
-    !$acc parallel loop collapse(4) default(present)  wait(2)
+    !$acc parallel loop gang vector collapse(4) default(present)
     do  p = 1, pdf_dim
       do sample = 1, num_samples
         do k = 1, nzt
@@ -576,8 +574,6 @@ module transform_to_pdf_module
         end do
       end do
     end do 
-    
-    !$acc end data
 
     return
   end subroutine multiply_Cholesky
@@ -648,11 +644,7 @@ module transform_to_pdf_module
 
     ! ---- Begin Code ----
     
-    !$acc data copyin( rt_1, rt_2, thl_1, thl_2, crt_1, crt_2, cthl_1, cthl_2, mu_chi_1, &
-    !$acc&             mu_chi_2, chi, eta ) &
-    !$acc& 
-    
-    !$acc parallel loop collapse(3) default(present)  wait(2)
+    !$acc parallel loop gang vector collapse(3) default(present)
     do sample = 1, num_samples
       do k = 1, nzt
         do i = 1, ngrdcol
@@ -691,8 +683,6 @@ module transform_to_pdf_module
         end do
       end do
     end do
-    
-    !$acc end data
 
     return
     

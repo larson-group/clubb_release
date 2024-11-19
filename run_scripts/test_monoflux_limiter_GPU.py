@@ -113,8 +113,9 @@ try:
         for line in infile:
 
             # Enable Nvidia PCAST features with (-gpu=redundant) 
+            # Also include math_uniform and nofma to prevent CPU vs GPU divergence as much as possible
             if line.startswith("FFLAGS"):
-                line = line.replace("-acc", "-acc=gpu -gpu=redundant") 
+                line = line.replace("-acc", "-acc=gpu -gpu=redundant,math_uniform,nofma -nofma") 
             
             # SILHS uses a CUDA call that doesn't seem to work with -gpu=redundant
             line = line.replace("-DCUDA", "")

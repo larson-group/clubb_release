@@ -1,7 +1,6 @@
 pipeline {
 
-  // OpenMP GPU offloading needs compute capability > 70, which currently only carson has
-  agent { label 'carson' }
+  agent any
   
   stages {
     stage('Modify Config Flags') {
@@ -34,9 +33,11 @@ pipeline {
     }
     stage('Run GPU_ACC') {
       steps {
-        sh '''source /etc/profile.d/larson-group.sh
-              module load nvhpc netcdf-fortran
-              run_scripts/run_scm_all.bash -e -p ../clubb_params_multi_col.in'''
+        lock( "GPU_${env.NODE_NAME}" ) {
+          sh '''source /etc/profile.d/larson-group.sh
+                module load nvhpc netcdf-fortran
+                run_scripts/run_scm_all.bash -e -p ../clubb_params_multi_col.in'''
+        }
       }
     }
     stage('Run Check Script') {
@@ -46,19 +47,9 @@ pipeline {
     }
   }
   post {
-    always {
-      // Certain logical functions like IF statements or TRY-CATCH blocks can only operate while in a script{} block
-      script {
-      // This cleans out the test workspace so the next run has a fresh start
-      // However this only occurs when the test is named clubb_gfortran_build
-      // This is to prevent the branch and copy tests from deleting thier workspaces so they are available for debugging
-      if ( "${env.JOB_NAME}" == "clubb_nvhpc_gpu_vs_cpu_diffness" )
-      	cleanWs(cleanWhenAborted: true, cleanWhenFailure: true, cleanWhenSuccess: true, cleanWhenUnstable: true)
-      }
-    }
     failure {
       script {
-      if ( "${env.JOB_NAME}" == "clubb_nvhpc_gpu_vs_cpu_diffness" )
+      if ( "${env.JOB_NAME}" == "clubb_nvhpc_gpu_column_mirror_test" )
         // This command handles the email on failure feature of the jenkins test. This line is the same on every jenkins test.
       	emailext(to: 'messnermet@uwm.edu', subject: "${env.JOB_NAME} build ${env.BUILD_NUMBER} has Failed", attachLog: true, body: "${env.JOB_NAME} build ${env.BUILD_NUMBER} has failed. See the attached build log and the build results (${env.BUILD_URL}) for help troubleshooting.")
       }

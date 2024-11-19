@@ -1077,7 +1077,8 @@ module output_netcdf
 
     use clubb_precision, only: &
       core_rknd, &
-      time_precision
+      time_precision, &
+      sp
                                     
     implicit none     
 
@@ -1411,9 +1412,9 @@ module output_netcdf
 
       allocate( time_out(calls_per_out) )
 
-      !!$acc enter data create( wpthlp_out, wprtp_out, wp2_out, thlp2_out, rtp2_out, &
-      !!$acc                    rtpthlp_out, upwp_out, vpwp_out, up2_out, vp2_out, wp3_out, &
-      !!$acc                    rcm_out, cloud_frac_out, rtm_out, thlm_out, time_out )
+      !$acc enter data create( wpthlp_out, wprtp_out, wp2_out, thlp2_out, rtp2_out, &
+      !$acc                    rtpthlp_out, upwp_out, vpwp_out, up2_out, vp2_out, wp3_out, &
+      !$acc                    rcm_out, cloud_frac_out, rtm_out, thlm_out, time_out )
 
     end if
 
@@ -1424,7 +1425,7 @@ module output_netcdf
     !  time = n_calls * dt
     time = real( n_calls, kind=time_precision ) * real( dt, kind=time_precision )  ! seconds
 
-    !!$acc parallel loop gang vector collapse(2) default(present)
+    !$acc parallel loop gang vector collapse(2) default(present)
     do k = 1, nzm
       do i = 1, ngrdcol
         wpthlp_out(i,k,out_index)   = wpthlp(i,k)
@@ -1440,7 +1441,7 @@ module output_netcdf
       end do
     end do
 
-    !!$acc parallel loop gang vector collapse(2) default(present)
+    !$acc parallel loop gang vector collapse(2) default(present)
     do k = 1, nzt
       do i = 1, ngrdcol
         wp3_out(i,k,out_index)        = wp3(i,k)
@@ -1452,12 +1453,11 @@ module output_netcdf
     end do
 
     time_out(out_index) = time
-    
 
     if ( mod( n_calls, calls_per_out ) == 0 .or. l_last_timestep ) then
 
-      !!$acc update host( wpthlp_out, wprtp_out, wp2_out, thlp2_out, rtp2_out, rtpthlp_out, &
-      !!$acc              upwp_out, vpwp_out, up2_out, vp2_out, wp3_out, rcm_out, cloud_frac_out, rtm_out, thlm_out )
+      !$acc update host( wpthlp_out, wprtp_out, wp2_out, thlp2_out, rtp2_out, rtpthlp_out, &
+      !$acc              upwp_out, vpwp_out, up2_out, vp2_out, wp3_out, rcm_out, cloud_frac_out, rtm_out, thlm_out )
 
       ! Update the time variable
       status = nf90_put_var( ncid_zm, time_var_id_zm,  &
@@ -1497,6 +1497,10 @@ module output_netcdf
       ! Close netcdf file
       status = nf90_close( ncid = ncid_zm )
       status = nf90_close( ncid = ncid_zt )
+
+      !$acc exit data delete( wpthlp_out, wprtp_out, wp2_out, thlp2_out, rtp2_out, &
+      !$acc                   rtpthlp_out, upwp_out, vpwp_out, up2_out, vp2_out, wp3_out, &
+      !$acc                   rcm_out, cloud_frac_out, rtm_out, thlm_out, time_out )
 
     end if
 

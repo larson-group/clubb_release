@@ -1,8 +1,6 @@
 pipeline {
 
-  // The GPU tests shouldn't run at the same time as it can cause them to slowdown significantly
-  // the other needs to run on carson, so we will simply reqire that this one doesn't run on carson.
-  agent { label '!carson' }
+  agent any
   
   environment {
     commit      = "${GIT_COMMIT.substring(0, 7)}"
@@ -42,10 +40,12 @@ pipeline {
     }
     stage('Run GPU_ACC') {
       steps {
-        sh '''source /etc/profile.d/larson-group.sh
-              module load nvhpc netcdf-fortran
-              run_scripts/run_scm_all.bash -i
-              mv output gpu_${commit}; mkdir output'''
+        lock( "GPU_${env.NODE_NAME}" ) {
+          sh '''source /etc/profile.d/larson-group.sh
+                module load nvhpc netcdf-fortran
+                run_scripts/run_scm_all.bash -i
+                mv output gpu_${commit}; mkdir output'''
+        }
       }
     }
     stage('Plot') {

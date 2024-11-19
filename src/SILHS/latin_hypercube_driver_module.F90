@@ -203,7 +203,6 @@ module latin_hypercube_driver_module
       rcm_pdf    ! Liquid water mixing ratio          [kg/kg]
       
     real( kind = core_rknd ), dimension(ngrdcol,nzt) :: &
-      Lscale_vert_avg, &  ! 3pt vertical average of Lscale                    [m]
       X_vert_corr         ! Vertical correlations between height levels       [-]
       
     real(kind = core_rknd), dimension(ngrdcol,num_samples,nzt,pdf_dim+d_uniform_extra) :: &
@@ -211,23 +210,8 @@ module latin_hypercube_driver_module
 
     ! ---------------- Begin Code ----------------
 
-    l_error = .false.
-
-    ! Compute rcm_pdf for use within SILHS
-    do i = 1, ngrdcol
-      rcm_pdf(i,:) = compute_mean_binormal( pdf_params%rc_1(i,:), pdf_params%rc_2(i,:), &
-                                       pdf_params%mixt_frac(i,:) )
-    end do
-
-    ! Sanity checks for l_lh_importance_sampling
-    if ( silhs_config_flags%l_lh_importance_sampling .and. sequence_length /= 1 ) then
-      write(fstderr,*) "Cloud weighted sampling requires sequence length be equal to 1."
-      error stop "Fatal error."
-    end if
-
-    !--------------------------------------------------------------
-    ! Latin hypercube sampling
-    !--------------------------------------------------------------
+    !$acc enter data create( X_u_all_levs, k_lh_start, l_in_precip, Sigma_Cholesky1, &
+    !$acc                    Sigma_Cholesky2, cloud_frac, rcm_pdf, X_vert_corr, rand_pool )
         
 #ifdef CLUBB_GPU
     if ( .not. silhs_config_flags%l_lh_straight_mc ) then
@@ -235,15 +219,49 @@ module latin_hypercube_driver_module
     end if
 #endif
 
+    ! Sanity checks for l_lh_importance_sampling
+    if ( silhs_config_flags%l_lh_importance_sampling .and. sequence_length /= 1 ) then
+      write(fstderr,*) "Cloud weighted sampling requires sequence length be equal to 1."
+      error stop "Fatal error."
+    end if
+
+    if ( silhs_config_flags%l_Lscale_vert_avg ) then
+      !do k = 1, nzt, 1
+      !  kp1 = min( k+1, nzt )
+      !  km1 = max( k-1, 1 )
+      !  Lscale_vert_avg(k) = vertical_avg &
+      !                       ( (kp1-km1+1), rho_ds_zt(km1:kp1), &
+      !                         Lscale(km1:kp1), gr%dzt(km1:kp1) )
+      !end do
+      error stop "CLUBB ERROR: l_Lscale_vert_avg has been depricated"
+    end if
+
+    l_error = .false.
+
+    ! Compute rcm_pdf for use within SILHS
+    !$acc parallel loop gang vector collapse(2) default(present)
+    do k = 1, nzt
+      do i = 1, ngrdcol
+        rcm_pdf(i,k) = compute_mean_binormal( pdf_params%rc_1(i,k), pdf_params%rc_2(i,k), &
+                                              pdf_params%mixt_frac(i,k) )
+      end do
+    end do
+
+    !--------------------------------------------------------------
+    ! Latin hypercube sampling
+    !--------------------------------------------------------------
+
     ! Compute k_lh_start, the starting vertical grid level for SILHS sampling
-    k_lh_start(:) = compute_k_lh_start( nzt, ngrdcol, rcm_pdf, pdf_params, &
-                                        silhs_config_flags%l_rcm_in_cloud_k_lh_start, &
-                                        silhs_config_flags%l_random_k_lh_start )
+    call compute_k_lh_start( nzt, ngrdcol, rcm_pdf, pdf_params, &
+                             silhs_config_flags%l_rcm_in_cloud_k_lh_start, &
+                             silhs_config_flags%l_random_k_lh_start, &
+                             k_lh_start )
                                      
     ! Calculate possible Sigma_Cholesky values
     ! Row-wise multiply of the elements of a lower triangular matrix.
+    !$acc parallel loop gang vector collapse(4) default(present)
     do p = 1, pdf_dim
-      do j = 1, p
+      do j = 1, pdf_dim
         do k = 1, nzt
           do i = 1, ngrdcol
             ! Calculate possible Sigma_Cholesky values
@@ -254,32 +272,39 @@ module latin_hypercube_driver_module
       end do
     end do
     
-    ! Determine 3pt vertically averaged Lscale
-    if ( silhs_config_flags%l_Lscale_vert_avg ) then
-      !do k = 1, nzt, 1
-      !  kp1 = min( k+1, nzt )
-      !  km1 = max( k-1, 1 )
-      !  Lscale_vert_avg(k) = vertical_avg &
-      !                       ( (kp1-km1+1), rho_ds_zt(km1:kp1), &
-      !                         Lscale(km1:kp1), gr%dzt(km1:kp1) )
-      !end do
-      error stop "CLUBB ERROR: l_Lscale_vert_avg has been depricated"
-    else
-        Lscale_vert_avg = Lscale 
-    end if
-    
     ! Compute the vertical correlation for arbitrary overlap, using
     !   density weighted 3pt averaged Lscale and the difference in height levels (delta_zm)
-    X_vert_corr(:,:) = exp( -vert_decorr_coef * ( delta_zm(:,:) / Lscale_vert_avg(:,:) ) )
-
     if ( silhs_config_flags%l_max_overlap_in_cloud ) then
-      where ( rcm_pdf > rc_tol )
-        X_vert_corr = one
-      end where
+
+      !$acc parallel loop gang vector collapse(2) default(present)
+      do k = 1, nzt
+        do i = 1, ngrdcol
+          
+          if ( rcm_pdf(i,k) > rc_tol ) then
+            X_vert_corr(i,k) = one
+          else
+            X_vert_corr(i,k) = exp( -vert_decorr_coef * ( delta_zm(i,k) / Lscale(i,k) ) )
+          end if
+          
+        end do
+      end do
+
+    else
+
+      !$acc parallel loop gang vector collapse(2) default(present)
+      do k = 1, nzt
+        do i = 1, ngrdcol
+          X_vert_corr(i,k) = exp( -vert_decorr_coef * ( delta_zm(i,k) / Lscale(i,k) ) )
+        end do
+      end do
+
     end if
     
     ! Assertion check for the vertical correlation
     if ( clubb_at_least_debug_level( 1 ) ) then
+
+      !$acc update host( X_vert_corr )
+
       if ( any( X_vert_corr > one ) .or. any( X_vert_corr < zero ) ) then
         write(fstderr,*) "The vertical correlation in latin_hypercube_driver"// &
           "is not in the correct range"
@@ -290,11 +315,8 @@ module latin_hypercube_driver_module
         end do
         error stop "Fatal error in vertical_overlap_driver"
       end if ! Some correlation isn't between [0,1]
+
     end if ! clubb_at_least_debug_level 1
-    
-    !$acc data create( rand_pool, X_u_all_levs ) &
-    !$acc&     copyin( X_vert_corr, k_lh_start ) &
-    !$acc& 
 
     ! Generate pool of random numbers
     call generate_random_pool( nzt, ngrdcol, pdf_dim, num_samples, d_uniform_extra, & ! Intent(in)
@@ -319,14 +341,7 @@ module latin_hypercube_driver_module
            l_calc_weights_all_levs_itime,                                & ! Intent(in)
            X_u_all_levs, lh_sample_point_weights )                         ! Intent(out)     
            
-    
-    !$acc data create( cloud_frac, l_in_precip ) &
-    !$acc&     copyin( pdf_params, precip_fracs, &
-    !$acc&             pdf_params%mixt_frac, pdf_params%cloud_frac_1, pdf_params%cloud_frac_2, &
-    !$acc&             precip_fracs%precip_frac_1, precip_fracs%precip_frac_2 ) &
-    !$acc& 
-    
-    !$acc parallel loop collapse(3) default(present)  wait(3)
+    !$acc parallel loop gang vector collapse(3) default(present)
     do k = 1, nzt
       do sample = 1, num_samples 
         do i = 1, ngrdcol
@@ -367,8 +382,6 @@ module latin_hypercube_driver_module
         end do
       end do 
     end do
-    
-    
 
     ! Generate LH sample, represented by X_u and X_nl, for level k
     ! Transform the uniformly distributed samples to
@@ -384,8 +397,7 @@ module latin_hypercube_driver_module
      
     
     if ( stats_metadata%l_stats_samp ) then
-      !$acc wait
-      !$acc update host(X_u_all_levs,l_in_precip,lh_sample_point_weights,X_mixt_comp_all_levs) wait
+      !$acc update host(X_u_all_levs,l_in_precip,lh_sample_point_weights,X_mixt_comp_all_levs)
       call stats_accumulate_uniform_lh( nzt, num_samples, ngrdcol, l_in_precip(:,:,:), &
                                         X_mixt_comp_all_levs(:,:,:), &
                                         X_u_all_levs(:,:,:,hm_metadata%iiPDF_chi), pdf_params, &
@@ -395,8 +407,7 @@ module latin_hypercube_driver_module
     end if
 
     if ( l_output_2D_lognormal_dist ) then
-      !$acc wait
-      !$acc update host(X_nl_all_levs) wait
+      !$acc update host(X_nl_all_levs)
       
       ! Eric Raut removed lh_rt and lh_thl from call to output_2D_lognormal_dist_file
       ! because they are no longer generated in generate_silhs_sample.
@@ -408,8 +419,7 @@ module latin_hypercube_driver_module
     end if
     
     if ( l_output_2D_uniform_dist ) then
-      !$acc wait
-      !$acc update host(X_u_all_levs,X_mixt_comp_all_levs,lh_sample_point_weights) wait
+      !$acc update host(X_u_all_levs,X_mixt_comp_all_levs,lh_sample_point_weights)
       do i = 1, ngrdcol
         call output_2D_uniform_dist_file( nzt, num_samples, pdf_dim+2, &
                                           X_u_all_levs(i,:,:,:), &
@@ -421,8 +431,7 @@ module latin_hypercube_driver_module
 
     ! Various nefarious assertion checks
     if ( clubb_at_least_debug_level( 2 ) ) then
-      !$acc wait
-      !$acc update host(X_u_all_levs,X_mixt_comp_all_levs,X_nl_all_levs) wait
+      !$acc update host(X_u_all_levs,X_mixt_comp_all_levs,X_nl_all_levs)
 
       ! Simple assertion check to ensure uniform variates are in the appropriate
       ! range
@@ -454,16 +463,17 @@ module latin_hypercube_driver_module
       end do ! i=1, ngrdcol
 
     end if ! clubb_at_least_debug_level( 2 )
-    
-    !$acc end data
-    !$acc end data
 
     ! Stop the run if an error occurred
     if ( l_error ) then
       error stop "Fatal error in generate_silhs_sample"
     end if
 
+    !$acc exit data delete( X_u_all_levs, k_lh_start, l_in_precip, Sigma_Cholesky1, &
+    !$acc                    Sigma_Cholesky2, cloud_frac, rcm_pdf, X_vert_corr, rand_pool )
+
     return
+
   end subroutine generate_silhs_sample
 !-------------------------------------------------------------------------------
 
@@ -558,8 +568,6 @@ module latin_hypercube_driver_module
     !$acc host_data use_device(rand_pool) 
     r_status = curandGenerate(cu_gen, rand_pool, ngrdcol*num_samples*nzt*(pdf_dim+d_uniform_extra))
     !$acc end host_data
-    !$acc wait
-    
     
 #else
 
@@ -581,7 +589,8 @@ module latin_hypercube_driver_module
     end do
 
 #ifdef CLUBB_GPU
-    ! If we are using the GPU, we need to copy the CPU generated randoms to it
+    ! If we are using the GPU, but generating random numbers on the CPU, then
+    ! we need to copy the CPU generated randoms to the GPU
     !$acc update device( rand_pool )
 #endif
 
@@ -728,7 +737,7 @@ module latin_hypercube_driver_module
 
         ! Do a straight Monte Carlo sample without LH or importance sampling.
         
-        !$acc parallel loop collapse(4) default(present) 
+        !$acc parallel loop gang vector collapse(4) default(present) 
         do p = 1, pdf_dim+d_uniform_extra
           do k = 1, nzt
             do sample = 1, num_samples
@@ -741,7 +750,7 @@ module latin_hypercube_driver_module
           end do
         end do
 
-        !$acc parallel loop collapse(3) default(present) 
+        !$acc parallel loop gang vector collapse(3) default(present) 
         do k = 1, nzt
           do sample = 1, num_samples
             do i = 1, ngrdcol
@@ -824,7 +833,7 @@ module latin_hypercube_driver_module
 
         ! Do a straight Monte Carlo sample without LH or importance sampling.
         
-        !$acc parallel loop collapse(4) default(present) 
+        !$acc parallel loop gang vector collapse(4) default(present) 
         do p = 1, pdf_dim+d_uniform_extra
           do k = 1, nzt
             do sample = 1, num_samples
@@ -837,7 +846,7 @@ module latin_hypercube_driver_module
           end do
         end do
 
-        !$acc parallel loop collapse(3) default(present) 
+        !$acc parallel loop gang vector collapse(3) default(present) 
         do k = 1, nzt
           do sample = 1, num_samples
             do i = 1, ngrdcol
@@ -910,9 +919,10 @@ module latin_hypercube_driver_module
 !-------------------------------------------------------------------------------
 
 !-----------------------------------------------------------------------
-  function compute_k_lh_start( nzt, ngrdcol, rcm_pdf, pdf_params, &
+  subroutine compute_k_lh_start( nzt, ngrdcol, rcm_pdf, pdf_params, &
                                l_rcm_in_cloud_k_lh_start, &
-                               l_random_k_lh_start ) result( k_lh_start )
+                               l_random_k_lh_start, &
+                               k_lh_start )
 
   ! Description:
   !   Determines the starting SILHS sample level
@@ -956,69 +966,124 @@ module latin_hypercube_driver_module
       l_random_k_lh_start          ! k_lh_start found randomly between max rcm and rcm_in_cloud
 
     ! Output Variable
-    integer, dimension(ngrdcol) :: &
+    integer, dimension(ngrdcol), intent(out) :: &
       k_lh_start  ! Starting SILHS sample level
 
     ! Local Variables
-    integer :: &
+    integer, dimension(ngrdcol) :: &
       k_lh_start_rcm_in_cloud, &
       k_lh_start_rcm
 
-    real( kind = core_rknd ), dimension(nzt) :: &
+    real( kind = core_rknd ), dimension(ngrdcol,nzt) :: &
       cloud_frac_pdf
+
+    real( kind = core_rknd ) :: &
+      rcm_in_cloud_max, &
+      rcm_in_cloud, &
+      rcm_max
       
-    integer :: i  ! Loop iterator
+    integer :: i, k  ! Loop iterator
 
   !------------------------------ Begin Code -----------------------------------
 
-    do i = 1, ngrdcol
+    !$acc enter data create( k_lh_start_rcm_in_cloud, k_lh_start_rcm, cloud_frac_pdf )
 
-      if ( l_rcm_in_cloud_k_lh_start .or. l_random_k_lh_start ) then
-        cloud_frac_pdf = compute_mean_binormal( pdf_params%cloud_frac_1(i,:), &
-                                                pdf_params%cloud_frac_2(i,:), &
-                                                pdf_params%mixt_frac(i,:) )
-        if ( any( rcm_pdf(i,:) > zero ) ) then
-           k_lh_start_rcm_in_cloud = maxloc( rcm_pdf(i,:) &
-                                             / max( cloud_frac_pdf(:), cloud_frac_min ), 1 )
-        else
-           ! When clouds aren't found at any level, set k_lh_start_rcm_in_cloud
-           ! to the middle of the vertical domain.
-           k_lh_start_rcm_in_cloud = nzt / 2
-        endif
-      end if
+    if ( l_rcm_in_cloud_k_lh_start .or. l_random_k_lh_start ) then
 
-      if ( .not. l_rcm_in_cloud_k_lh_start .or. l_random_k_lh_start ) then
-        if ( any( rcm_pdf(i,:) > zero ) ) then
-           k_lh_start_rcm = maxloc( rcm_pdf(i,:), 1 )
-        else
-           ! When clouds aren't found at any level, set k_lh_start_rcm to the
-           ! middle of the vertical domain.
-           k_lh_start_rcm = nzt / 2
-        endif
-      end if
+      !$acc parallel loop gang vector collapse(2) default(present)
+      do k = 1, nzt
+        do i = 1, ngrdcol
+          cloud_frac_pdf(i,k) = compute_mean_binormal( pdf_params%cloud_frac_1(i,k), &
+                                                       pdf_params%cloud_frac_2(i,k), &
+                                                       pdf_params%mixt_frac(i,k) )
+        end do
+      end do
 
-      if ( l_random_k_lh_start ) then
-        if ( k_lh_start_rcm_in_cloud == k_lh_start_rcm ) then
-          k_lh_start(i) = k_lh_start_rcm
-        else
-          ! Pick a random height level between k_lh_start_rcm and
-          ! k_lh_start_rcm_in_cloud
-          if ( k_lh_start_rcm_in_cloud > k_lh_start_rcm ) then
-            k_lh_start(i) = rand_integer_in_range( k_lh_start_rcm, k_lh_start_rcm_in_cloud )
-          else if ( k_lh_start_rcm > k_lh_start_rcm_in_cloud ) then
-            k_lh_start(i) = rand_integer_in_range( k_lh_start_rcm_in_cloud, k_lh_start_rcm )
+      !$acc parallel loop gang vector default(present)
+      do i = 1, ngrdcol
+
+        ! Initialize k_lh_start_rcm_in_cloud to nzt/2
+        k_lh_start_rcm_in_cloud(i) = nzt / 2
+        rcm_in_cloud_max = zero
+
+        ! Loop over vertical levels, if any rcm_pdf > 0 then set k_lh_start_rcm_in_cloud
+        ! to the vertical level that results in the maximum value for rcm_in_cloud
+        do k = 1, nzt
+
+          rcm_in_cloud = rcm_pdf(i,k) / max( cloud_frac_pdf(i,k), cloud_frac_min  )
+
+          if ( rcm_in_cloud > rcm_in_cloud_max ) then
+            rcm_in_cloud_max = rcm_in_cloud
+            k_lh_start_rcm_in_cloud(i) = k
           end if
-        end if
-      else if ( l_rcm_in_cloud_k_lh_start ) then
-        k_lh_start(i) = k_lh_start_rcm_in_cloud
-      else ! .not. l_random_k_lh_start .and. .not. l_rcm_in_cloud_k_lh_start
-        k_lh_start(i) = k_lh_start_rcm
-      end if
 
-    end do
+        end do
+
+      end do
+
+    end if
+
+    if ( .not. l_rcm_in_cloud_k_lh_start .or. l_random_k_lh_start ) then
+
+      !$acc parallel loop gang vector default(present)
+      do i = 1, ngrdcol
+
+        ! Initialize k_lh_start_rcm_in_cloud to nzt/2
+        k_lh_start_rcm(i) = nzt / 2
+        rcm_max = zero
+
+        do k = 1, nzt
+          if ( rcm_pdf(i,k) > rcm_max ) then
+            rcm_max = rcm_pdf(i,k)
+            k_lh_start_rcm(i) = k
+          endif
+        end do
+
+      end do
+
+    end if
+
+    if ( l_random_k_lh_start ) then
+
+      !$acc update host( k_lh_start_rcm_in_cloud, k_lh_start_rcm )
+
+      do i = 1, ngrdcol
+
+        ! Pick a random height level between k_lh_start_rcm and k_lh_start_rcm_in_cloud
+        if ( k_lh_start_rcm_in_cloud(i) > k_lh_start_rcm(i) ) then
+          k_lh_start(i) = rand_integer_in_range( k_lh_start_rcm(i), k_lh_start_rcm_in_cloud(i) )
+        else if ( k_lh_start_rcm(i) > k_lh_start_rcm_in_cloud(i) ) then
+          k_lh_start(i) = rand_integer_in_range( k_lh_start_rcm_in_cloud(i), k_lh_start_rcm(i) )
+        else
+          ! k_lh_start_rcm_in_cloud = k_lh_start_rcm(i)
+          k_lh_start(i) = k_lh_start_rcm(i)
+        end if
+          
+      end do
+
+      !$acc update device( k_lh_start )
+
+    else if ( l_rcm_in_cloud_k_lh_start ) then
+
+      !$acc parallel loop gang vector default(present)
+      do i = 1, ngrdcol
+        k_lh_start(i) = k_lh_start_rcm_in_cloud(i)
+      end do
+
+    else ! .not. l_random_k_lh_start .and. .not. l_rcm_in_cloud_k_lh_start
+
+      !$acc parallel loop gang vector default(present)
+      do i = 1, ngrdcol
+        k_lh_start(i) = k_lh_start_rcm(i)
+      end do
+      
+    end if
+
+    !$acc exit data delete( k_lh_start_rcm_in_cloud, k_lh_start_rcm, cloud_frac_pdf )
 
     return
-  end function compute_k_lh_start
+
+  end subroutine compute_k_lh_start
 !-----------------------------------------------------------------------
 
 !-----------------------------------------------------------------------
@@ -1132,7 +1197,7 @@ module latin_hypercube_driver_module
                           X_mixt_comp_all_levs(:,:,:),                  & ! Intent(in)
                           lh_rt_clipped(:,:,:), lh_thl_clipped(:,:,:)   ) ! Intent(out)
     
-    !$acc parallel loop collapse(3) default(present) 
+    !$acc parallel loop gang vector collapse(3) default(present) 
     do k = 1, nzt
       do sample = 1, num_samples
         do i = 1, ngrdcol
@@ -1907,10 +1972,8 @@ module latin_hypercube_driver_module
 
     ! ---------------- Begin Code ----------------
     
-    !$acc wait(1) 
-
     ! Recompute from k_lh_start to nzt-1 for all samples and variates, upward loop
-    !$acc parallel loop collapse(3) default(present) 
+    !$acc parallel loop gang vector collapse(3) default(present) 
     do p = 1, pdf_dim + d_uniform_extra                         
       do sample = 1, num_samples
         do i = 1, ngrdcol
@@ -1944,7 +2007,7 @@ module latin_hypercube_driver_module
 
 
     ! Recompute from k_lh_start down to 2 for all samples and variates, downward loop 
-    !$acc parallel loop collapse(3) default(present) 
+    !$acc parallel loop gang vector collapse(3) default(present) 
     do p = 1, pdf_dim + d_uniform_extra                        
       do sample = 1, num_samples
         do i = 1, ngrdcol
@@ -1975,10 +2038,9 @@ module latin_hypercube_driver_module
         end do
       end do ! 1..num_samples
     end do ! 1..pdf_dim
-    
-    !$acc wait(2) 
 
     return
+
   end subroutine compute_arb_overlap
 
 !-------------------------------------------------------------------------------

@@ -2608,29 +2608,6 @@ module advance_clubb_core_module
       !$acc              pdf_params%cloud_frac_1, pdf_params%cloud_frac_2,  &
       !$acc              pdf_params%mixt_frac, pdf_params%ice_supersat_frac_1, &
       !$acc              pdf_params%ice_supersat_frac_2, &
-      !$acc              pdf_params_zm%w_1, pdf_params_zm%w_2, &
-      !$acc              pdf_params_zm%varnce_w_1, pdf_params_zm%varnce_w_2, &
-      !$acc              pdf_params_zm%rt_1, pdf_params_zm%rt_2, &
-      !$acc              pdf_params_zm%varnce_rt_1, pdf_params_zm%varnce_rt_2,  &
-      !$acc              pdf_params_zm%thl_1, pdf_params_zm%thl_2, &
-      !$acc              pdf_params_zm%varnce_thl_1, pdf_params_zm%varnce_thl_2, &
-      !$acc              pdf_params_zm%corr_w_rt_1, pdf_params_zm%corr_w_rt_2,  &
-      !$acc              pdf_params_zm%corr_w_thl_1, pdf_params_zm%corr_w_thl_2, &
-      !$acc              pdf_params_zm%corr_rt_thl_1, pdf_params_zm%corr_rt_thl_2,&
-      !$acc              pdf_params_zm%alpha_thl, pdf_params_zm%alpha_rt, &
-      !$acc              pdf_params_zm%crt_1, pdf_params_zm%crt_2, pdf_params_zm%cthl_1, &
-      !$acc              pdf_params_zm%cthl_2, pdf_params_zm%chi_1, &
-      !$acc              pdf_params_zm%chi_2, pdf_params_zm%stdev_chi_1, &
-      !$acc              pdf_params_zm%stdev_chi_2, pdf_params_zm%stdev_eta_1, &
-      !$acc              pdf_params_zm%stdev_eta_2, pdf_params_zm%covar_chi_eta_1, &
-      !$acc              pdf_params_zm%covar_chi_eta_2, pdf_params_zm%corr_w_chi_1, &
-      !$acc              pdf_params_zm%corr_w_chi_2, pdf_params_zm%corr_w_eta_1, &
-      !$acc              pdf_params_zm%corr_w_eta_2, pdf_params_zm%corr_chi_eta_1, &
-      !$acc              pdf_params_zm%corr_chi_eta_2, pdf_params_zm%rsatl_1, &
-      !$acc              pdf_params_zm%rsatl_2, pdf_params_zm%rc_1, pdf_params_zm%rc_2, &
-      !$acc              pdf_params_zm%cloud_frac_1, pdf_params_zm%cloud_frac_2,  &
-      !$acc              pdf_params_zm%mixt_frac, pdf_params_zm%ice_supersat_frac_1, &
-      !$acc              pdf_params_zm%ice_supersat_frac_2, &
       !$acc              um, vm, upwp, vpwp, up2, vp2, &
       !$acc              thlm, rtm, wprtp, wpthlp, &
       !$acc              wp2, wp3, rtp2, rtp3, thlp2, thlp3, rtpthlp, &
@@ -2652,6 +2629,31 @@ module advance_clubb_core_module
       !$acc              wp3_zm, wp3_on_wp2, wp3_on_wp2_zt, Skw_velocity, &
       !$acc              w_up_in_cloud, w_down_in_cloud, &
       !$acc              cloudy_updraft_frac, cloudy_downdraft_frac )
+
+      !$acc if( clubb_config_flags%l_call_pdf_closure_twice ) &
+      !$acc update host( pdf_params_zm%w_1, pdf_params_zm%w_2, &
+      !$acc              pdf_params_zm%varnce_w_1, pdf_params_zm%varnce_w_2, &
+      !$acc              pdf_params_zm%rt_1, pdf_params_zm%rt_2, &
+      !$acc              pdf_params_zm%varnce_rt_1, pdf_params_zm%varnce_rt_2,  &
+      !$acc              pdf_params_zm%thl_1, pdf_params_zm%thl_2, &
+      !$acc              pdf_params_zm%varnce_thl_1, pdf_params_zm%varnce_thl_2, &
+      !$acc              pdf_params_zm%corr_w_rt_1, pdf_params_zm%corr_w_rt_2,  &
+      !$acc              pdf_params_zm%corr_w_thl_1, pdf_params_zm%corr_w_thl_2, &
+      !$acc              pdf_params_zm%corr_rt_thl_1, pdf_params_zm%corr_rt_thl_2,&
+      !$acc              pdf_params_zm%alpha_thl, pdf_params_zm%alpha_rt, &
+      !$acc              pdf_params_zm%crt_1, pdf_params_zm%crt_2, pdf_params_zm%cthl_1, &
+      !$acc              pdf_params_zm%cthl_2, pdf_params_zm%chi_1, &
+      !$acc              pdf_params_zm%chi_2, pdf_params_zm%stdev_chi_1, &
+      !$acc              pdf_params_zm%stdev_chi_2, pdf_params_zm%stdev_eta_1, &
+      !$acc              pdf_params_zm%stdev_eta_2, pdf_params_zm%covar_chi_eta_1, &
+      !$acc              pdf_params_zm%covar_chi_eta_2, pdf_params_zm%corr_w_chi_1, &
+      !$acc              pdf_params_zm%corr_w_chi_2, pdf_params_zm%corr_w_eta_1, &
+      !$acc              pdf_params_zm%corr_w_eta_2, pdf_params_zm%corr_chi_eta_1, &
+      !$acc              pdf_params_zm%corr_chi_eta_2, pdf_params_zm%rsatl_1, &
+      !$acc              pdf_params_zm%rsatl_2, pdf_params_zm%rc_1, pdf_params_zm%rc_2, &
+      !$acc              pdf_params_zm%cloud_frac_1, pdf_params_zm%cloud_frac_2,  &
+      !$acc              pdf_params_zm%mixt_frac, pdf_params_zm%ice_supersat_frac_1, &
+      !$acc              pdf_params_zm%ice_supersat_frac_2 )
 
       !$acc update host( sclrm, sclrp2, sclrprtp, sclrpthlp, sclrm_forcing, &
       !$acc              sclrpthvp, wpsclrp, sclrprcp, wp2sclrp, wpsclrp2, &
@@ -4219,6 +4221,10 @@ module advance_clubb_core_module
         write(fstderr,*) "WARNING: The tri-diagonal lapack solver is not GPU accelerated"
         write(fstderr,*) " Set tridiag_solve_method = 2, to use an accelerated tri-diagonal solver"
       end if
+
+      if ( l_input_fields ) then
+        error stop "l_input_fields = .true. not usable when running on GPUs"
+      end if
 #endif
 
       ! Sanity check
@@ -5446,10 +5452,9 @@ module advance_clubb_core_module
     end subroutine set_Lscale_max
 
 !===============================================================================
-  subroutine calculate_thlp2_rad &
-                  ( ngrdcol, nzm, rcm_zm, thlprcp, radht_zm, & ! Intent(in)
-                    clubb_params,                  & ! Intent(in)
-                    thlp2_forcing )                  ! Intent(inout)
+  subroutine calculate_thlp2_rad( ngrdcol, nzm, nzt, gr, & ! Intent(in)
+                                  rcm, thlprcp, radht, clubb_params, & ! Intent(in)
+                                  thlp2_forcing )                  ! Intent(inout)
 
   ! Description:
   !   Computes the contribution of radiative cooling to thlp2
@@ -5469,17 +5474,27 @@ module advance_clubb_core_module
         nparams, & ! Variable(s)
         ithlp2_rad_coef
 
+    use grid_class, only: &
+        grid, &
+        zt2zm
+
     implicit none
 
     ! Input Variables
     integer, intent(in) :: &
-      ngrdcol, &
-      nzm                   ! Number of momentum vertical levels             [-]
+      ngrdcol, &            ! Number of grid columns
+      nzm, &                ! Number of thermod vertical levels              [-]
+      nzt                   ! Number of momentum vertical levels             [-]
+
+    type( grid ), intent(in) :: &
+      gr
+
+    real( kind = core_rknd ), dimension(ngrdcol,nzt), intent(in) :: &
+      rcm, &             ! Cloud water mixing ratio on momentum grid      [kg/kg]
+      radht              ! SW + LW heating rate (on momentum grid)        [K/s]
 
     real( kind = core_rknd ), dimension(ngrdcol,nzm), intent(in) :: &
-      rcm_zm, &             ! Cloud water mixing ratio on momentum grid      [kg/kg]
-      thlprcp, &            ! thl'rc'                                        [K kg/kg]
-      radht_zm              ! SW + LW heating rate (on momentum grid)        [K/s]
+      thlprcp            ! thl'rc'                                        [K kg/kg]
 
     real( kind = core_rknd ), dimension(ngrdcol,nparams), intent(in) :: &
       clubb_params    ! Array of CLUBB's tunable parameters    [units vary]
@@ -5489,24 +5504,36 @@ module advance_clubb_core_module
       thlp2_forcing         ! <th_l'^2> forcing (momentum levels)            [K^2/s]
 
     ! Local Variables
+    real( kind = core_rknd ), dimension(ngrdcol,nzm) :: &
+      rcm_zm, &             ! Cloud water mixing ratio on momentum grid      [kg/kg]
+      radht_zm              ! SW + LW heating rate (on momentum grid)        [K/s]
+
     integer :: &
       i, k                     ! Loop iterator                                  [-]
 
     !----------------------------------------------------------------------
 
+    !$acc enter data create( rcm_zm, radht_zm )
+
+    rcm_zm    = zt2zm( gr%nzm, gr%nzt, ngrdcol, gr, rcm )
+    radht_zm  = zt2zm( gr%nzm, gr%nzt, ngrdcol, gr, radht )
+
+    !$acc parallel loop gang vector collapse(2) default(present)
     do k = 1, nzm
       do i = 1, ngrdcol
 
         if ( rcm_zm(i,k) > rc_tol ) then
 
-          thlp2_forcing(i,k) = thlp2_forcing(i,k) + &
-                               clubb_params(i,ithlp2_rad_coef) &
-                               * ( two ) * radht_zm(i,k) / rcm_zm(i,k) * thlprcp(i,k)
+          thlp2_forcing(i,k) = thlp2_forcing(i,k) &
+                               + clubb_params(i,ithlp2_rad_coef) &
+                                 * ( two ) * radht_zm(i,k) / rcm_zm(i,k) * thlprcp(i,k)
 
         end if
 
       end do
     end do
+
+    !$acc exit data delete( rcm_zm, radht_zm )
 
     return
 

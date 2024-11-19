@@ -463,6 +463,13 @@ module mono_flux_limiter
 
     !---------------------------- Begin Code ----------------------------
 
+    ! These lines synchonize the GPU argument values to the CPU argument values, allowing us 
+    ! to test the divergence of this procedure only, rather than the divergence of the whole code
+    ! MONOFLUX TEST COMMENT DO NOT REMOVE !$acc update device( wpxp, xm, xm_old, wm_zt, &
+    ! MONOFLUX TEST COMMENT DO NOT REMOVE !$acc  xm_forcing, rho_ds_zt, invrs_rho_ds_zt, &
+    ! MONOFLUX TEST COMMENT DO NOT REMOVE !$acc  xp2, rho_ds_zm, invrs_rho_ds_zm, &
+    ! MONOFLUX TEST COMMENT DO NOT REMOVE !$acc  low_lev_effect, high_lev_effect )
+
     !$acc enter data create( xp2_zt, xm_enter_mfl, xm_without_ta, wpxp_net_adjust, &
     !$acc                    min_x_allowable_lev, max_x_allowable_lev, min_x_allowable, &
     !$acc                    max_x_allowable, wpxp_mfl_max, wpxp_mfl_min, lhs_mfl_xm, &

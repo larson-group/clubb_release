@@ -18,12 +18,13 @@ module soil_vegetation
 
   !----------------------------------------------------------------------
   subroutine advance_soil_veg( ngrdcol, dt, rho_sfc, &
-                               Frad_SW_net, Frad_SW_down_sfc, &
-                               Frad_LW_down_sfc, wpthep, &
-                               deep_soil_T_in_K, sfc_soil_T_in_K, &
-                               veg_T_in_K, &
+                               Frad_SW_up_sfc, Frad_SW_down_sfc, &
+                               Frad_LW_down_sfc, &
+                               wpthlp_sfc, wprtp_sfc, p_sfc, &
                                stats_metadata, &
-                               stats_sfc )
+                               stats_sfc, &
+                               deep_soil_T_in_K, sfc_soil_T_in_K, &
+                               veg_T_in_K )
     !
     !     Description:
     !
@@ -81,6 +82,9 @@ module soil_vegetation
     use constants_clubb, only: &
       pi, &
       Cp, &
+      Lv, &
+      kappa, &
+      p0, &
       stefan_boltzmann ! Variable(s)
 
     use stats_type, only: &
@@ -110,22 +114,24 @@ module soil_vegetation
       dt ! Current model timestep (Must be < 60s) [s]
 
     real( kind = core_rknd ), dimension(ngrdcol), intent(in) :: &
-      rho_sfc, &             ! Air density at the surface [kg/m^3]
-      Frad_SW_net, &         ! SW Net                     [W/m^3]
-      Frad_SW_down_sfc, &    ! SW downwelling flux        [W/m^3]
-      Frad_LW_down_sfc, &    ! LW downwelling flux        [W/m^2]
-      wpthep                 ! Turbulent Flux of equivalent potential temperature   [K]
+      rho_sfc, &             ! Air density at the surface   [kg/m^3]
+      Frad_SW_up_sfc, &      ! SW Net                       [W/m^3]
+      Frad_SW_down_sfc, &    ! SW radiative upwelling flux  [W/m^2]
+      Frad_LW_down_sfc, &    ! LW downwelling flux          [W/m^2]
+      wpthlp_sfc, &
+      wprtp_sfc, &
+      p_sfc
 
     type (stats_metadata_type), intent(in) :: &
       stats_metadata
+
+    type(stats), dimension(ngrdcol), intent(inout) :: &
+      stats_sfc
     
     real( kind = core_rknd ), dimension(ngrdcol), intent(inout) :: &
       deep_soil_T_in_K, &
       sfc_soil_T_in_K, &
       veg_T_in_K
-
-    type(stats), dimension(ngrdcol), intent(inout) :: &
-      stats_sfc
 
     ! Local variables
 
@@ -138,12 +144,15 @@ module soil_vegetation
       c3, &  ! coefficient in force restore 3
       d1, &
       veg_heat_flux, &                         
-      Frad_LW_up_sfc ! LW upwelling flux [W/m2]
+      Frad_LW_up_sfc, & ! LW upwelling flux [W/m2]
+      wpthep            ! Turbulent Flux of equivalent potential temperature   [K]
 
     real( kind = core_rknd ), dimension(ngrdcol) :: &
       soil_heat_flux ! Soil Heat flux [W/m^2]
 
     integer :: i
+
+    !--------------------------------- Begin Code ---------------------------------
 
     !----------------------------
     !  Soil parameters
@@ -168,11 +177,14 @@ module soil_vegetation
     end if
 
     do i = 1, ngrdcol 
+    
       Frad_LW_up_sfc = stefan_boltzmann * (veg_T_in_K(i)**4)
+
+      wpthep = wpthlp_sfc(i) + (Lv/Cp) * ((p0/p_sfc(i))**kappa) * wprtp_sfc(i)
 
       ! Calculate net radiation minus turbulent heat flux
       veg_heat_flux = Frad_LW_down_sfc(i) - Frad_LW_up_sfc &
-                      - wpthep(i) * rho_sfc(i) * Cp + Frad_SW_net(i)
+                      - wpthep * rho_sfc(i) * Cp + ( Frad_SW_down_sfc(i) - Frad_SW_up_sfc(i) )
 
       ! Calculate soil heat flux
       ! Duynkerke (1991) used a coefficient of 3.0 W/m^2*K, not 10.0 W/m^2*K
@@ -198,7 +210,7 @@ module soil_vegetation
     if ( stats_metadata%l_stats_samp ) then
       do i = 1, ngrdcol
         call stat_update_var_pt( stats_metadata%isoil_heat_flux, 1, soil_heat_flux(i), & ! intent(in)
-                                  stats_sfc(i) )                                          ! intent(inout)
+                                 stats_sfc(i) )                                          ! intent(inout)
       end do
     end if
 
