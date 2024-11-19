@@ -63,8 +63,8 @@ def createFigs(metricsNames,
     plot_biasesVsSensMagScatterplot = True
     plot_biasesVsSvdScatterplot = True
     plot_paramsCorrArrayFig = True
-    plot_sensMatrixAndBiasVecFig = False #True
-    plot_PcaBiplot = True
+    plot_sensMatrixAndBiasVecFig = True
+    plot_PcaBiplot = False
     plot_PcSensMap = True
     plot_vhMatrixFig = True
 
@@ -151,7 +151,7 @@ def createFigs(metricsNames,
 
     tunedLossChange = tunedLossCol - defaultLossCol
 
-    numImprovedMetrics = 16
+    numImprovedMetrics = 8
     mostImprovedIdxs = np.argpartition(tunedLossChange, numImprovedMetrics, axis=0)
     whitelistedMetricsMask = np.zeros_like(metricsNames, dtype=bool) # Initialize to False
     whitelistedMetricsMask[mostImprovedIdxs[:numImprovedMetrics, 0]] = True
@@ -460,11 +460,11 @@ def createFigs(metricsNames,
         metricsNamesNoprefix = np.char.replace(metricsNames, "SWCF_", "")
 
         biasesVsSvdScatterplot = \
-            createScatterplot(xCol=xCol, xColLabel='SV1',
-                              yCol=yCol, yColLabel='SV2',
+            createScatterplot(xCol=xCol, xColLabel='SV1*bias',
+                              yCol=yCol, yColLabel='SV2*bias',
                               colorCol=tunedLossChange[:,0],
                               #colorCol=np.minimum(1, -normlzdDefaultBiasesCol[:, 0] ),
-                              colorColLabel='bias',
+                              colorColLabel='loss change',
                               pointLabels=metricsNamesNoprefix, pointLabelsHeader='Region',
                               plotTitle=(
                                           "Biases (color) as a function of first and second left singular vector values<br>" \
@@ -694,7 +694,7 @@ def createFigs(metricsNames,
                            boxSize=20)
 
         PcMapPanelParam0 = \
-            createMapPanel(fieldToPlotCol=normlzdSensMatrixPoly[:, 0],
+            createMapPanel(fieldToPlotCol=normlzdLinplusSensMatrixPoly[:, 0],
                            plotWidth=500,
                            plotTitle=f"normlzdSensMatrixPoly[:,{paramsNames[0]}]",
                            boxSize=20)
@@ -707,13 +707,13 @@ def createFigs(metricsNames,
         paramsIdx = 1
         while paramsIdx < len(paramsNames):
             leftFig = \
-                createMapPanel(fieldToPlotCol=normlzdSensMatrixPoly[:, paramsIdx],
+                createMapPanel(fieldToPlotCol=normlzdLinplusSensMatrixPoly[:, paramsIdx],
                                plotWidth=500,
                                plotTitle=f"normlzdSensMatrixPoly[:,{paramsNames[paramsIdx]}]",
                                boxSize=20)
             if paramsIdx + 1 <= len(paramsNames):
                 rightFig = \
-                    createMapPanel(fieldToPlotCol=normlzdSensMatrixPoly[:, paramsIdx + 1],
+                    createMapPanel(fieldToPlotCol=normlzdLinplusSensMatrixPoly[:, paramsIdx + 1],
                                    plotWidth=500,
                                    plotTitle=f"normlzdSensMatrixPoly[:,{paramsNames[paramsIdx + 1]}]",
                                    boxSize=20)
@@ -727,8 +727,20 @@ def createFigs(metricsNames,
 
             paramsIdx += 2
 
+        PcMapPanelTunedLoss = \
+            createMapPanel(fieldToPlotCol=tunedLossChange,
+                           plotWidth=500,
+                           plotTitle="Tuned Loss Change",
+                           boxSize=20)
+
+        BiasParamsDashboardChildren.append(html.Div(children=[
+                dcc.Graph(figure=PcMapPanelTunedLoss, style={'display': 'inline-block'}),
+                dcc.Graph(figure=PcMapPanelTunedLoss, style={'display': 'inline-block'})
+            ]))
+
         u, s, vh = \
-            np.linalg.svd(normlzdSensMatrixPoly, full_matrices=False)
+            np.linalg.svd(normlzdLinplusSensMatrixPoly, full_matrices=False)
+
 
         PcMapPanelU0 = \
             createMapPanel(fieldToPlotCol=u[:, 0],
@@ -742,16 +754,16 @@ def createFigs(metricsNames,
                            plotTitle="SVD 2",
                            boxSize=20)
 
-        PcMapPanelU2 = \
-            createMapPanel(fieldToPlotCol=u[:, 2],
+        PcMapPanelU0bias = \
+            createMapPanel(fieldToPlotCol=u[:, 0]*normlzdDefaultBiasesCol[:,0],
                            plotWidth=500,
-                           plotTitle="SVD 3",
+                           plotTitle="SVD 1 * bias",
                            boxSize=20)
 
-        PcMapPanelU3 = \
-            createMapPanel(fieldToPlotCol=u[:, 3],
+        PcMapPanelU1bias = \
+            createMapPanel(fieldToPlotCol=u[:, 1]*normlzdDefaultBiasesCol[:,0],
                            plotWidth=500,
-                           plotTitle="SVD 4",
+                           plotTitle="SVD 2 * bias",
                            boxSize=20)
 
         U0U3DashboardChildren = [
@@ -762,9 +774,9 @@ def createFigs(metricsNames,
                                 style={'display': 'inline-block'})]
                      ),
             html.Div(children=
-                     [dcc.Graph(id="PcMapPanelU2", figure=PcMapPanelU2,
+                     [dcc.Graph(id="PcMapPanelU0bias", figure=PcMapPanelU0bias,
                                 style={'display': 'inline-block'}),
-                      dcc.Graph(id="PcMapPanelU3", figure=PcMapPanelU3,
+                      dcc.Graph(id="PcMapPanelU1bias", figure=PcMapPanelU1bias,
                                 style={'display': 'inline-block'})]
                      )
         ]
@@ -787,7 +799,7 @@ def createFigs(metricsNames,
         print("Creating SVD vh matrix figure . . .")
 
         u, s, vh = \
-            np.linalg.svd(normlzdSensMatrixPoly, full_matrices=False)
+            np.linalg.svd(normlzdLinplusSensMatrixPoly, full_matrices=False)
 
         #normlzdLinplusSensMatrixPolyPlusBias = \
         #    np.hstack((normlzdLinplusSensMatrixPoly, normlzdDefaultBiasesCol))
