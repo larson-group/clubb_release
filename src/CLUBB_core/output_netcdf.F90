@@ -1027,7 +1027,7 @@ module output_netcdf
   end function lchar
 
   subroutine output_multi_col_fields( nzm, nzt, ngrdcol, sclr_dim, edsclr_dim, &
-                                      calls_per_out, l_last_timestep, &
+                                      calls_per_out, l_output_double_prec, l_last_timestep, &
                                       gr, dt, output_file_prefix, &
                                       day, month, year, time_initial, &
                                       um, vm, up3, vp3, rtm, thlm, rtp3, thlp3, wp3, upwp, vpwp, &
@@ -1058,27 +1058,32 @@ module output_netcdf
     !----------------------------------------------------------------------------
     
     use netcdf, only: &
-        nf90_create, &
-        nf90_def_dim, &
-        nf90_def_var, &
-        nf90_put_att, &
-        nf90_put_var, &
-        nf90_close, &
-        nf90_open, &
-        NF90_CLOBBER, &
-        NF90_UNLIMITED, &
-        NF90_DOUBLE, &
-        NF90_FLOAT, &
-        NF90_WRITE, &
-        nf90_noerr
+      nf90_create, &
+      nf90_def_dim, &
+      nf90_def_var, &
+      nf90_put_att, &
+      nf90_put_var, &
+      nf90_close, &
+      nf90_open, &
+      NF90_CLOBBER, &
+      NF90_UNLIMITED, &
+      NF90_DOUBLE, &
+      NF90_FLOAT, &
+      NF90_INT, &
+      NF90_WRITE, &
+      nf90_noerr
 
     use grid_class, only: &
-    grid
+      grid
 
     use clubb_precision, only: &
       core_rknd, &
       time_precision, &
       sp
+
+    use constants_clubb, only: &
+      one, &
+      zero
                                     
     implicit none     
 
@@ -1094,6 +1099,7 @@ module output_netcdf
       calls_per_out
 
     logical, intent(in) :: &
+      l_output_double_prec, &
       l_last_timestep
 
     real( kind = core_rknd ), intent(in) :: &
@@ -1184,9 +1190,6 @@ module output_netcdf
 
     !------------------------ Local Variables ------------------------
 
-    integer, save :: &
-      n_calls = 0
-
     ! Index of zm variables
     integer, dimension(15), save :: &
       ind_zm
@@ -1219,7 +1222,7 @@ module output_netcdf
 
     integer :: i, k, n, status
     
-    real( kind = core_rknd ), dimension(:,:,:), allocatable, save :: &
+    real( kind = core_rknd ), dimension(:,:), allocatable, save :: &
       wpthlp_out, &
       wprtp_out, &
       wp2_out, &
@@ -1231,33 +1234,47 @@ module output_netcdf
       up2_out, &
       vp2_out
 
-    real( kind = core_rknd ), dimension(:,:,:), allocatable, save :: &
+    real( kind = core_rknd ), dimension(:,:), allocatable, save :: &
       wp3_out, &
       rcm_out, &
       cloud_frac_out, &
       rtm_out, &
       thlm_out
 
-    real( kind = core_rknd ), dimension(:), allocatable, save :: &
-      time_out 
-
     integer, dimension(ngrdcol) :: &
       column_list
 
-    integer :: &
-      out_index
+    integer, save :: &
+      n_calls   = 0, &  ! Number of total calls to this procedure
+      n_outputs = 1, &  ! Number of times netcdf writing has been done
+      n_samples = 0     ! Number of samples since last netcdf write
 
     integer, dimension(3) :: &
-      start, count
+      start
+
+    integer, dimension(2) :: &
+      count
+
+    real( kind = core_rknd ) :: &
+      sample_weight
+
+    integer, save :: &
+        NF90_PREC
 
     !------------------------ Begin Code ------------------------
 
     ! If this is the first call, we have to create and define the netcdf files
     if ( n_calls == 0 ) then
 
+      ! Set either double or single precision
+      if ( l_output_double_prec ) then
+        NF90_PREC = NF90_DOUBLE
+      else
+        NF90_PREC = NF90_FLOAT
+      end if
+
       multicol_nc_file_zm = trim(output_file_prefix) // "_multi_col_zm.nc"
       multicol_nc_file_zt = trim(output_file_prefix) // "_multi_col_zt.nc"
-
 
       ! Get a formatted date
       call format_date( day, month, year, time_initial, & ! intent(in)
@@ -1275,9 +1292,9 @@ module output_netcdf
       status = nf90_def_dim( ncid_zm, 'altitude',  nzm,            vertical_id_zm )
       status = nf90_def_dim( ncid_zm, 'time',      NF90_UNLIMITED, time_id_zm )
 
-      status = nf90_def_var( ncid_zm, "columns",   NF90_DOUBLE,  (/column_id_zm/),    column_var_id_zm )
-      status = nf90_def_var( ncid_zm, "altitude",  NF90_DOUBLE,  (/vertical_id_zm/),  vertical_var_id_zm )
-      status = nf90_def_var( ncid_zm, "time",      NF90_DOUBLE,  (/time_id_zm/),      time_var_id_zm )
+      status = nf90_def_var( ncid_zm, "columns",   NF90_INT,      (/column_id_zm/),    column_var_id_zm )
+      status = nf90_def_var( ncid_zm, "altitude",  NF90_PREC,  (/vertical_id_zm/),  vertical_var_id_zm )
+      status = nf90_def_var( ncid_zm, "time",      NF90_PREC,      (/time_id_zm/),      time_var_id_zm )
 
       ! Define the attributes for the time variable
       status = nf90_put_att( ncid_zm, time_var_id_zm, "cartesian_axis", "T" )
@@ -1302,22 +1319,17 @@ module output_netcdf
       var_dim_zm(2) = vertical_id_zm
       var_dim_zm(3) = time_id_zm
 
-      ! For some reason we need to use an array to enumerate variables
-      do n = 1, size(ind_zm)
-        ind_zm(n) = n
-      end do
-
       ! Define the zm variables to save
-      status = nf90_def_var( ncid_zm, trim("wpthlp"),      NF90_DOUBLE, var_dim_zm(:), ind_zm(1) )
-      status = nf90_def_var( ncid_zm, trim("wprtp"),       NF90_DOUBLE, var_dim_zm(:), ind_zm(2) )
-      status = nf90_def_var( ncid_zm, trim("wp2"),         NF90_DOUBLE, var_dim_zm(:), ind_zm(3) )
-      status = nf90_def_var( ncid_zm, trim("thlp2"),       NF90_DOUBLE, var_dim_zm(:), ind_zm(4) )
-      status = nf90_def_var( ncid_zm, trim("rtp2"),        NF90_DOUBLE, var_dim_zm(:), ind_zm(5) )
-      status = nf90_def_var( ncid_zm, trim("rtpthlp"),     NF90_DOUBLE, var_dim_zm(:), ind_zm(6) )
-      status = nf90_def_var( ncid_zm, trim("upwp"),        NF90_DOUBLE, var_dim_zm(:), ind_zm(7) )
-      status = nf90_def_var( ncid_zm, trim("vpwp"),        NF90_DOUBLE, var_dim_zm(:), ind_zm(8) )
-      status = nf90_def_var( ncid_zm, trim("up2"),         NF90_DOUBLE, var_dim_zm(:), ind_zm(9) )
-      status = nf90_def_var( ncid_zm, trim("vp2"),         NF90_DOUBLE, var_dim_zm(:), ind_zm(10) )
+      status = nf90_def_var( ncid_zm, trim("wpthlp"),      NF90_PREC, var_dim_zm(:), ind_zm(1) )
+      status = nf90_def_var( ncid_zm, trim("wprtp"),       NF90_PREC, var_dim_zm(:), ind_zm(2) )
+      status = nf90_def_var( ncid_zm, trim("wp2"),         NF90_PREC, var_dim_zm(:), ind_zm(3) )
+      status = nf90_def_var( ncid_zm, trim("thlp2"),       NF90_PREC, var_dim_zm(:), ind_zm(4) )
+      status = nf90_def_var( ncid_zm, trim("rtp2"),        NF90_PREC, var_dim_zm(:), ind_zm(5) )
+      status = nf90_def_var( ncid_zm, trim("rtpthlp"),     NF90_PREC, var_dim_zm(:), ind_zm(6) )
+      status = nf90_def_var( ncid_zm, trim("upwp"),        NF90_PREC, var_dim_zm(:), ind_zm(7) )
+      status = nf90_def_var( ncid_zm, trim("vpwp"),        NF90_PREC, var_dim_zm(:), ind_zm(8) )
+      status = nf90_def_var( ncid_zm, trim("up2"),         NF90_PREC, var_dim_zm(:), ind_zm(9) )
+      status = nf90_def_var( ncid_zm, trim("vp2"),         NF90_PREC, var_dim_zm(:), ind_zm(10) )
 
       ! End definition of file
       call nf_enddef(ncid_zm)
@@ -1334,9 +1346,9 @@ module output_netcdf
       status = nf90_def_dim( ncid_zt, 'altitude',  nzt,            vertical_id_zt )
       status = nf90_def_dim( ncid_zt, 'time',      NF90_UNLIMITED, time_id_zt )
 
-      status = nf90_def_var( ncid_zt, "columns",   NF90_DOUBLE,  (/column_id_zt/),    column_var_id_zt )
-      status = nf90_def_var( ncid_zt, "altitude",  NF90_DOUBLE,  (/vertical_id_zt/),  vertical_var_id_zt )
-      status = nf90_def_var( ncid_zt, "time",      NF90_DOUBLE,  (/time_id_zt/),      time_var_id_zt )
+      status = nf90_def_var( ncid_zt, "columns",   NF90_INT,      (/column_id_zt/),    column_var_id_zt )
+      status = nf90_def_var( ncid_zt, "altitude",  NF90_PREC,  (/vertical_id_zt/),  vertical_var_id_zt )
+      status = nf90_def_var( ncid_zt, "time",      NF90_PREC,      (/time_id_zt/),      time_var_id_zt )
 
       ! Define the attributes for the time variable
       status = nf90_put_att( ncid_zt, vertical_var_id_zt, "cartesian_axis",   "Z" )
@@ -1355,24 +1367,18 @@ module output_netcdf
       status = nf90_put_att( ncid_zt, time_var_id_zt, "ipositive",      1 )
       status = nf90_put_att( ncid_zt, time_var_id_zt, "calendar_type", "Gregorian" )
 
-
       ! Define the variable dimensions, these are the dimension of the 
       ! variables we want to save
       var_dim_zt(1) = column_id_zt
       var_dim_zt(2) = vertical_id_zt
       var_dim_zt(3) = time_id_zt
 
-      ! For some reason we need to use an array to enumerate variables
-      do n = 1, size(ind_zt)
-        ind_zt(n) = n
-      end do
-
       ! Define the zt variables to save
-      status = nf90_def_var( ncid_zt, trim("wp3"),         NF90_DOUBLE, var_dim_zt(:), ind_zt(1) )
-      status = nf90_def_var( ncid_zt, trim("rcm"),         NF90_DOUBLE, var_dim_zt(:), ind_zt(2) )
-      status = nf90_def_var( ncid_zt, trim("cloud_frac"),  NF90_DOUBLE, var_dim_zt(:), ind_zt(3) )
-      status = nf90_def_var( ncid_zt, trim("rtm"),         NF90_DOUBLE, var_dim_zt(:), ind_zt(4) )
-      status = nf90_def_var( ncid_zt, trim("thlm"),        NF90_DOUBLE, var_dim_zt(:), ind_zt(5) )
+      status = nf90_def_var( ncid_zt, trim("wp3"),         NF90_PREC, var_dim_zt(:), ind_zt(1) )
+      status = nf90_def_var( ncid_zt, trim("rcm"),         NF90_PREC, var_dim_zt(:), ind_zt(2) )
+      status = nf90_def_var( ncid_zt, trim("cloud_frac"),  NF90_PREC, var_dim_zt(:), ind_zt(3) )
+      status = nf90_def_var( ncid_zt, trim("rtm"),         NF90_PREC, var_dim_zt(:), ind_zt(4) )
+      status = nf90_def_var( ncid_zt, trim("thlm"),        NF90_PREC, var_dim_zt(:), ind_zt(5) )
 
       ! End definition of file
       call nf_enddef(ncid_zt)
@@ -1393,103 +1399,195 @@ module output_netcdf
 
       !=================================== Allocate Output Arrays ===================================
 
-      allocate( wpthlp_out(ngrdcol,nzm,calls_per_out), &
-                wprtp_out(ngrdcol,nzm,calls_per_out), &
-                wp2_out(ngrdcol,nzm,calls_per_out), &
-                thlp2_out(ngrdcol,nzm,calls_per_out), &
-                rtp2_out(ngrdcol,nzm,calls_per_out), &
-                rtpthlp_out(ngrdcol,nzm,calls_per_out), &
-                upwp_out(ngrdcol,nzm,calls_per_out), &
-                vpwp_out(ngrdcol,nzm,calls_per_out), &
-                up2_out(ngrdcol,nzm,calls_per_out), &
-                vp2_out(ngrdcol,nzm,calls_per_out) )
+      allocate( wpthlp_out(ngrdcol,nzm), &
+                wprtp_out(ngrdcol,nzm), &
+                wp2_out(ngrdcol,nzm), &
+                thlp2_out(ngrdcol,nzm), &
+                rtp2_out(ngrdcol,nzm), &
+                rtpthlp_out(ngrdcol,nzm), &
+                upwp_out(ngrdcol,nzm), &
+                vpwp_out(ngrdcol,nzm), &
+                up2_out(ngrdcol,nzm), &
+                vp2_out(ngrdcol,nzm) )
 
-      allocate( wp3_out(ngrdcol,nzt,calls_per_out), &
-                rcm_out(ngrdcol,nzt,calls_per_out), &
-                cloud_frac_out(ngrdcol,nzt,calls_per_out), &
-                rtm_out(ngrdcol,nzt,calls_per_out), &
-                thlm_out(ngrdcol,nzt,calls_per_out) )
-
-      allocate( time_out(calls_per_out) )
+      allocate( wp3_out(ngrdcol,nzt), &
+                rcm_out(ngrdcol,nzt), &
+                cloud_frac_out(ngrdcol,nzt), &
+                rtm_out(ngrdcol,nzt), &
+                thlm_out(ngrdcol,nzt) )
 
       !$acc enter data create( wpthlp_out, wprtp_out, wp2_out, thlp2_out, rtp2_out, &
       !$acc                    rtpthlp_out, upwp_out, vpwp_out, up2_out, vp2_out, wp3_out, &
-      !$acc                    rcm_out, cloud_frac_out, rtm_out, thlm_out, time_out )
+      !$acc                    rcm_out, cloud_frac_out, rtm_out, thlm_out )
 
     end if
 
-    out_index = mod( n_calls, calls_per_out ) + 1
+    ! If there haven't been any samples in this output period yet, zero the output arrays
+    if ( n_samples == 0 ) then
 
-    n_calls = n_calls + 1
+      !$acc parallel loop gang vector collapse(2) default(present)
+      do k = 1, nzm
+        do i = 1, ngrdcol
+          wpthlp_out(i,k)   = zero
+          wprtp_out(i,k)    = zero
+          wp2_out(i,k)      = zero
+          thlp2_out(i,k)    = zero
+          rtp2_out(i,k)     = zero
+          rtpthlp_out(i,k)  = zero
+          upwp_out(i,k)     = zero
+          vpwp_out(i,k)     = zero
+          up2_out(i,k)      = zero
+          vp2_out(i,k)      = zero
+        end do
+      end do
+
+      !$acc parallel loop gang vector collapse(2) default(present)
+      do k = 1, nzt
+        do i = 1, ngrdcol
+          wp3_out(i,k)        = zero
+          rcm_out(i,k)        = zero
+          cloud_frac_out(i,k) = zero
+          rtm_out(i,k)        = zero
+          thlm_out(i,k)       = zero
+        end do
+      end do
+
+    end if
+
+    ! Increment sample count and call count
+    n_samples = n_samples + 1
+    n_calls   = n_calls + 1
 
     !  time = n_calls * dt
     time = real( n_calls, kind=time_precision ) * real( dt, kind=time_precision )  ! seconds
 
+    ! Add the new zm sample
     !$acc parallel loop gang vector collapse(2) default(present)
     do k = 1, nzm
       do i = 1, ngrdcol
-        wpthlp_out(i,k,out_index)   = wpthlp(i,k)
-        wprtp_out(i,k,out_index)    = wprtp(i,k)
-        wp2_out(i,k,out_index)      = wp2(i,k)
-        thlp2_out(i,k,out_index)    = thlp2(i,k)
-        rtp2_out(i,k,out_index)     = rtp2(i,k)
-        rtpthlp_out(i,k,out_index)  = rtpthlp(i,k)
-        upwp_out(i,k,out_index)     = upwp(i,k)
-        vpwp_out(i,k,out_index)     = vpwp(i,k)
-        up2_out(i,k,out_index)      = up2(i,k)
-        vp2_out(i,k,out_index)      = vp2(i,k)
+        wpthlp_out(i,k)   = wpthlp_out(i,k)  + wpthlp(i,k)
+        wprtp_out(i,k)    = wprtp_out(i,k)   + wprtp(i,k)
+        wp2_out(i,k)      = wp2_out(i,k)     + wp2(i,k)
+        thlp2_out(i,k)    = thlp2_out(i,k)   + thlp2(i,k)
+        rtp2_out(i,k)     = rtp2_out(i,k)    + rtp2(i,k)
+        rtpthlp_out(i,k)  = rtpthlp_out(i,k) + rtpthlp(i,k)
+        upwp_out(i,k)     = upwp_out(i,k)    + upwp(i,k)
+        vpwp_out(i,k)     = vpwp_out(i,k)    + vpwp(i,k)
+        up2_out(i,k)      = up2_out(i,k)     + up2(i,k)
+        vp2_out(i,k)      = vp2_out(i,k)     + vp2(i,k)
       end do
     end do
 
+    ! Add the new zt sample
     !$acc parallel loop gang vector collapse(2) default(present)
     do k = 1, nzt
       do i = 1, ngrdcol
-        wp3_out(i,k,out_index)        = wp3(i,k)
-        rcm_out(i,k,out_index)        = rcm(i,k)
-        cloud_frac_out(i,k,out_index) = cloud_frac(i,k)
-        rtm_out(i,k,out_index)        = rtm(i,k)
-        thlm_out(i,k,out_index)       = thlm(i,k)
+        wp3_out(i,k)        = wp3_out(i,k)        + wp3(i,k)
+        rcm_out(i,k)        = rcm_out(i,k)        + rcm(i,k)
+        cloud_frac_out(i,k) = cloud_frac_out(i,k) + cloud_frac(i,k)
+        rtm_out(i,k)        = rtm_out(i,k)        + rtm(i,k)
+        thlm_out(i,k)       = thlm_out(i,k)       + thlm(i,k)
       end do
     end do
 
-    time_out(out_index) = time
-
+    ! Perform a netcdf write every "calls_per_out" timsteps, or if this is the last timestep
     if ( mod( n_calls, calls_per_out ) == 0 .or. l_last_timestep ) then
+
+      ! Calculate the sample weight, simply the inverse of the number of samples
+      sample_weight = one / real( n_samples, kind = core_rknd )
+
+      !$acc parallel loop gang vector collapse(2) default(present)
+      do k = 1, nzm
+        do i = 1, ngrdcol
+          wpthlp_out(i,k)   = sample_weight * wpthlp_out(i,k)  
+          wprtp_out(i,k)    = sample_weight * wprtp_out(i,k)   
+          wp2_out(i,k)      = sample_weight * wp2_out(i,k)     
+          thlp2_out(i,k)    = sample_weight * thlp2_out(i,k)   
+          rtp2_out(i,k)     = sample_weight * rtp2_out(i,k)    
+          rtpthlp_out(i,k)  = sample_weight * rtpthlp_out(i,k) 
+          upwp_out(i,k)     = sample_weight * upwp_out(i,k)    
+          vpwp_out(i,k)     = sample_weight * vpwp_out(i,k)    
+          up2_out(i,k)      = sample_weight * up2_out(i,k)     
+          vp2_out(i,k)      = sample_weight * vp2_out(i,k)     
+        end do
+      end do
+
+      !$acc parallel loop gang vector collapse(2) default(present)
+      do k = 1, nzt
+        do i = 1, ngrdcol
+          wp3_out(i,k)        = sample_weight * wp3_out(i,k)        
+          rcm_out(i,k)        = sample_weight * rcm_out(i,k)        
+          cloud_frac_out(i,k) = sample_weight * cloud_frac_out(i,k) 
+          rtm_out(i,k)        = sample_weight * rtm_out(i,k)        
+          thlm_out(i,k)       = sample_weight * thlm_out(i,k)       
+        end do
+      end do
 
       !$acc update host( wpthlp_out, wprtp_out, wp2_out, thlp2_out, rtp2_out, rtpthlp_out, &
       !$acc              upwp_out, vpwp_out, up2_out, vp2_out, wp3_out, rcm_out, cloud_frac_out, rtm_out, thlm_out )
 
-      ! Update the time variable
-      status = nf90_put_var( ncid_zm, time_var_id_zm,  &
-                             time_out, (/n_calls-out_index+1/), (/out_index/) )
-                             
-      status = nf90_put_var( ncid_zt, time_var_id_zt,  &
-                             time_out, (/n_calls-out_index+1/), (/out_index/) )
+      ! Update the time variables
+      status = nf90_put_var( ncid_zm, time_var_id_zm, time, (/n_outputs/) )  
+      status = nf90_put_var( ncid_zt, time_var_id_zt, time, (/n_outputs/) )
 
-      start = (/       1,   1, n_calls-out_index+1 /)
-      count = (/ ngrdcol, nzm,           out_index /)
+      start = (/ 1, 1, n_outputs /)
       
-      ! Update the zm variables we want, needs to match the variables we defined 
-      status = nf90_put_var( ncid_zm, ind_zm(1),       wpthlp_out, start, count )
-      status = nf90_put_var( ncid_zm, ind_zm(2),        wprtp_out, start, count )
-      status = nf90_put_var( ncid_zm, ind_zm(3),          wp2_out, start, count )
-      status = nf90_put_var( ncid_zm, ind_zm(4),        thlp2_out, start, count )
-      status = nf90_put_var( ncid_zm, ind_zm(5),         rtp2_out, start, count )
-      status = nf90_put_var( ncid_zm, ind_zm(6),      rtpthlp_out, start, count )
-      status = nf90_put_var( ncid_zm, ind_zm(7),         upwp_out, start, count )
-      status = nf90_put_var( ncid_zm, ind_zm(8),         vpwp_out, start, count )
-      status = nf90_put_var( ncid_zm, ind_zm(9),          up2_out, start, count )
-      status = nf90_put_var( ncid_zm, ind_zm(10),         vp2_out, start, count )
+      if ( l_output_double_prec ) then
 
-      count = (/ ngrdcol, nzt, out_index /)
+        count = (/ ngrdcol, nzm /)
 
-      ! Update the zt variables we want, needs to match the variables we defined 
-      status = nf90_put_var( ncid_zt, ind_zt(1),          wp3_out, start, count )
-      status = nf90_put_var( ncid_zt, ind_zt(2),          rcm_out, start, count )
-      status = nf90_put_var( ncid_zt, ind_zt(3),   cloud_frac_out, start, count )
-      status = nf90_put_var( ncid_zt, ind_zt(4),          rtm_out, start, count )
-      status = nf90_put_var( ncid_zt, ind_zt(5),         thlm_out, start, count )
-                        
+        ! Update the zm variables we want, needs to match the variables we defined 
+        status = nf90_put_var( ncid_zm, ind_zm(1),       wpthlp_out, start, count )
+        status = nf90_put_var( ncid_zm, ind_zm(2),        wprtp_out, start, count )
+        status = nf90_put_var( ncid_zm, ind_zm(3),          wp2_out, start, count )
+        status = nf90_put_var( ncid_zm, ind_zm(4),        thlp2_out, start, count )
+        status = nf90_put_var( ncid_zm, ind_zm(5),         rtp2_out, start, count )
+        status = nf90_put_var( ncid_zm, ind_zm(6),      rtpthlp_out, start, count )
+        status = nf90_put_var( ncid_zm, ind_zm(7),         upwp_out, start, count )
+        status = nf90_put_var( ncid_zm, ind_zm(8),         vpwp_out, start, count )
+        status = nf90_put_var( ncid_zm, ind_zm(9),          up2_out, start, count )
+        status = nf90_put_var( ncid_zm, ind_zm(10),         vp2_out, start, count )
+
+        count = (/ ngrdcol, nzt /)
+
+        ! Update the zt variables we want, needs to match the variables we defined 
+        status = nf90_put_var( ncid_zt, ind_zt(1),          wp3_out, start, count )
+        status = nf90_put_var( ncid_zt, ind_zt(2),          rcm_out, start, count )
+        status = nf90_put_var( ncid_zt, ind_zt(3),   cloud_frac_out, start, count )
+        status = nf90_put_var( ncid_zt, ind_zt(4),          rtm_out, start, count )
+        status = nf90_put_var( ncid_zt, ind_zt(5),         thlm_out, start, count )
+
+      else
+
+        count = (/ ngrdcol, nzm /)
+
+        ! Update the zm variables we want, needs to match the variables we defined 
+        status = nf90_put_var( ncid_zm, ind_zm(1),  real(  wpthlp_out, kind=sp), start, count )
+        status = nf90_put_var( ncid_zm, ind_zm(2),  real(   wprtp_out, kind=sp), start, count )
+        status = nf90_put_var( ncid_zm, ind_zm(3),  real(     wp2_out, kind=sp), start, count )
+        status = nf90_put_var( ncid_zm, ind_zm(4),  real(   thlp2_out, kind=sp), start, count )
+        status = nf90_put_var( ncid_zm, ind_zm(5),  real(    rtp2_out, kind=sp), start, count )
+        status = nf90_put_var( ncid_zm, ind_zm(6),  real( rtpthlp_out, kind=sp), start, count )
+        status = nf90_put_var( ncid_zm, ind_zm(7),  real(    upwp_out, kind=sp), start, count )
+        status = nf90_put_var( ncid_zm, ind_zm(8),  real(    vpwp_out, kind=sp), start, count )
+        status = nf90_put_var( ncid_zm, ind_zm(9),  real(     up2_out, kind=sp), start, count )
+        status = nf90_put_var( ncid_zm, ind_zm(10), real(     vp2_out, kind=sp), start, count )
+
+        count = (/ ngrdcol, nzt /)
+
+        ! Update the zt variables we want, needs to match the variables we defined 
+        status = nf90_put_var( ncid_zt, ind_zt(1), real(        wp3_out, kind=sp), start, count )
+        status = nf90_put_var( ncid_zt, ind_zt(2), real(        rcm_out, kind=sp), start, count )
+        status = nf90_put_var( ncid_zt, ind_zt(3), real( cloud_frac_out, kind=sp), start, count )
+        status = nf90_put_var( ncid_zt, ind_zt(4), real(        rtm_out, kind=sp), start, count )
+        status = nf90_put_var( ncid_zt, ind_zt(5), real(       thlm_out, kind=sp), start, count )
+        
+      end if
+        
+      ! Reset the samples counter to 0, and increment the output counter
+      n_samples = 0
+      n_outputs = n_outputs + 1
+
     end if
 
     if ( l_last_timestep ) then
@@ -1500,7 +1598,7 @@ module output_netcdf
 
       !$acc exit data delete( wpthlp_out, wprtp_out, wp2_out, thlp2_out, rtp2_out, &
       !$acc                   rtpthlp_out, upwp_out, vpwp_out, up2_out, vp2_out, wp3_out, &
-      !$acc                   rcm_out, cloud_frac_out, rtm_out, thlm_out, time_out )
+      !$acc                   rcm_out, cloud_frac_out, rtm_out, thlm_out )
 
     end if
 

@@ -709,7 +709,8 @@ module error
     ! Constant Parameters
     logical, parameter :: &
       l_stdout = .false., &
-      l_output_multi_col = .false.
+      l_output_multi_col = .false., &
+      l_output_double_prec = .false.
 
     ! Input Variables
 
@@ -869,10 +870,12 @@ module error
       ! Run the CLUBB model with parameters as input
 
       if ( allocated( model_flags_array ) ) then
-        call run_clubb( 1, 1, params_local, run_file(c_run), l_stdout, l_output_multi_col, &
+        call run_clubb( 1, 1, l_output_multi_col, l_output_double_prec, &
+                        params_local, run_file(c_run), l_stdout, &
                         model_flags_array(iter,:) )
       else
-        call run_clubb( 1, 1, params_local, run_file(c_run), l_stdout, l_output_multi_col )
+        call run_clubb( 1, 1, l_output_multi_col, l_output_double_prec, &
+                        params_local, run_file(c_run), l_stdout )
       end if
 
       run_stat(c_run) = err_code

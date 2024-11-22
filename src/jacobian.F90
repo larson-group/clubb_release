@@ -128,7 +128,9 @@ program jacobian
 
   logical, parameter :: &
     l_stdout = .false., &
-    l_output_multi_col = .false.
+    l_output_multi_col = .false., &
+    l_output_double_prec = .false.
+
 
   ! Namelists
   namelist /jcbn_nml/  & 
@@ -177,7 +179,8 @@ program jacobian
       clubb_params%value(1,i), clubb_params%value(1,i) * delta_factor
   end do
   
-  call run_clubb( 1, 1, clubb_params%value(1,:), 'jacobian.in', l_stdout, l_output_multi_col )
+  call run_clubb( 1, 1, l_output_multi_col, l_output_double_prec, &
+                  clubb_params%value(1,:), 'jacobian.in', l_stdout )
 
   if ( clubb_at_least_debug_level( 0 ) ) then
     if ( err_code == clubb_fatal_error ) then
@@ -274,7 +277,8 @@ program jacobian
     tmp_param = clubb_params%value(1,i)
     clubb_params%value(1,i) = clubb_params%value(1,i) * delta_factor
 
-    call run_clubb( 1, 1, clubb_params%value(1,:), 'jacobian.in', l_stdout, l_output_multi_col )
+    call run_clubb( 1, 1, l_output_multi_col, l_output_double_prec, &
+                    clubb_params%value(1,:), 'jacobian.in', l_stdout )
 
     ! Print a period so the user knows something is happening
     write(unit=fstdout, fmt='(a1)', advance='no') "."

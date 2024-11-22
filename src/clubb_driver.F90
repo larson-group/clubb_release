@@ -42,7 +42,8 @@ module clubb_driver
   contains
 
   !-----------------------------------------------------------------------
-  subroutine run_clubb ( ngrdcol, calls_per_out, clubb_params, runfile, l_stdout, l_output_multi_col, &
+  subroutine run_clubb ( ngrdcol, calls_per_out, l_output_multi_col, l_output_double_prec, &
+                         clubb_params, runfile, l_stdout, &
                          model_flags_array )
     ! Description:
     !   Subprogram to integrate the partial differential equations for pdf
@@ -312,8 +313,9 @@ module clubb_driver
       clubb_params  ! Model parameters, C1, nu2, etc.
 
     logical, intent(in) ::  & 
-      l_stdout,         & ! Whether to print output per timestep
-      l_output_multi_col   ! Determines whether mutlicolumn data is saved
+      l_stdout,             & ! Whether to print output per timestep
+      l_output_multi_col,   & ! Determines whether mutlicolumn data is saved
+      l_output_double_prec    ! Flag to enable double precision
 
     ! Subroutine Arguments (Model Setting)
     character(len=*), intent(in) ::  & 
@@ -3116,7 +3118,7 @@ module clubb_driver
         l_last_timestep = itime == ifinal
 
         call output_multi_col_fields( gr%nzm, gr%nzt, ngrdcol, sclr_dim, edsclr_dim, &
-                                      calls_per_out, l_last_timestep, &
+                                      calls_per_out, l_output_double_prec, l_last_timestep, &
                                       gr, dt_main, output_file_prefix, &
                                       day, month, year, time_initial, &
                                       um, vm, up3, vp3, rtm, thlm, rtp3, thlp3, wp3, upwp, vpwp, &

@@ -168,7 +168,7 @@ try:
     run_command = ["python", multicol_script, "-n 16",                          # use 16 columns
                                               "-mode", "dup_tweak" ,            # duplicate and tweak initial param values
                                               "-param_file", params_file,       # location of param file
-                                              "-l_multi_col_output", "false",    # no need for multicol output
+                                              "-l_multi_col_output", "no",      # no need for multicol output
                                               "-out_file", multicol_params ]    # define output file name
     process = subprocess.run(run_command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
     print(process.stderr)

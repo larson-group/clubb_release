@@ -50,7 +50,8 @@ program clubb_standalone
     l_stdout = .true.
 
   logical :: &
-    l_output_multi_col
+    l_output_multi_col, &
+    l_output_double_prec    ! Flag to enable double precision
 
   character(len=10) :: arg
 
@@ -60,6 +61,7 @@ program clubb_standalone
   namelist /multicol_def/  & 
     ngrdcol, &
     l_output_multi_col, &
+    l_output_double_prec, &
     calls_per_out
 
   !--------------------------------- Begin Code ---------------------------------
@@ -67,6 +69,7 @@ program clubb_standalone
   ! Set default namelist values
   ngrdcol = 1
   l_output_multi_col = .false.
+  l_output_double_prec = .true.
   calls_per_out = 1
 
   ! Read the namelist for ngrdcol only
@@ -88,7 +91,8 @@ program clubb_standalone
   err_code = clubb_no_error
 
   ! Run the model
-  call run_clubb( ngrdcol, calls_per_out, clubb_params, namelist_filename, l_stdout, l_output_multi_col )
+  call run_clubb( ngrdcol, calls_per_out, l_output_multi_col, l_output_double_prec, &
+                  clubb_params, namelist_filename, l_stdout  )
 
   if ( err_code == clubb_fatal_error ) then
     error stop "Fatal error in clubb, check your parameter values and timestep"

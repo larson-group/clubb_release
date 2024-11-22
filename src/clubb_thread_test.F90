@@ -48,7 +48,8 @@ program clubb_thread_test
 
   logical, parameter :: &
     l_stdout = .false., &
-    l_output_multi_col = .false.
+    l_output_multi_col = .false., &
+    l_output_double_prec = .false.
   
   ! Local Variables
   ! Run information
@@ -85,7 +86,8 @@ program clubb_thread_test
                           clubb_params )
 
     ! Run the model
-    call run_clubb( 1, 1, clubb_params, namelist_filename(iter), l_stdout, l_output_multi_col )
+    call run_clubb( 1, 1, l_output_multi_col, l_output_double_prec, &
+                    clubb_params, namelist_filename(iter), l_stdout )
 
     err_code_saves(iter) = err_code
 
