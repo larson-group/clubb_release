@@ -727,15 +727,23 @@ def createFigs(metricsNames,
 
             paramsIdx += 2
 
-        PcMapPanelTunedLoss = \
-            createMapPanel(fieldToPlotCol=tunedLossChange,
+        #print("1e6*defaultLossCol = ", 1e6*np.sort(defaultLossCol[:,0]))
+
+        PcMapPanelDefaultLoss = \
+            createMapPanel(fieldToPlotCol=1e6*defaultLossCol,
                            plotWidth=500,
-                           plotTitle="Tuned Loss Change",
+                           plotTitle="Default Loss (x 1e6)",
+                           boxSize=20)
+
+        PcMapPanelTunedLossChange = \
+            createMapPanel(fieldToPlotCol=1e6*tunedLossChange,
+                           plotWidth=500,
+                           plotTitle="Tuned Loss Change (x 1e6)",
                            boxSize=20)
 
         BiasParamsDashboardChildren.append(html.Div(children=[
-                dcc.Graph(figure=PcMapPanelTunedLoss, style={'display': 'inline-block'}),
-                dcc.Graph(figure=PcMapPanelTunedLoss, style={'display': 'inline-block'})
+                dcc.Graph(figure=PcMapPanelDefaultLoss, style={'display': 'inline-block'}),
+                dcc.Graph(figure=PcMapPanelTunedLossChange, style={'display': 'inline-block'})
             ]))
 
         u, s, vh = \
@@ -953,17 +961,47 @@ def createMapPanel(fieldToPlotCol,
     #fieldToPlotMatrix = np.roll(fieldToPlotMatrix, -9, axis=1)
 
     # Set color scaling for colors of regional boxes
-    normlzdColorCol = (fieldToPlotMatrix - np.min(fieldToPlotMatrix)) / \
+    latRange = range(90, -90, -boxSize)
+    lonRange = range(0, 360, boxSize)
+    normlzdColorMatrix = np.zeros_like(fieldToPlotMatrix)
+    maxField = np.max(fieldToPlotMatrix)
+    minField = np.min(fieldToPlotMatrix)
+    rangeField = np.maximum( np.abs(maxField), np.abs(minField) )
+    # If the data include 0, use a diverging colorscale.
+    # Remap 0 to 0.5 and normalize the data so that
+    #    the data lie within the range [0,1].
+    #if ( False ):
+    if ( maxField > 0) & (minField < 0):
+        colorScale = 'RdBu_r'
+        for latIdx, lat in np.ndenumerate(latRange):
+            for lonIdx, lon in np.ndenumerate(lonRange):
+                normlzdColorMatrix[latIdx, lonIdx] = \
+                    0.5 * fieldToPlotMatrix[latIdx, lonIdx] / rangeField + 0.5
+                #if fieldToPlotMatrix[latIdx][lonIdx] < 0:
+                #    normlzdColorMatrix[latIdx, lonIdx] = \
+                #        0.5 * (fieldToPlotMatrix[latIdx, lonIdx]-minField)/np.abs(minField)
+                #else:
+                #    normlzdColorMatrix[latIdx, lonIdx] = \
+                #        0.5 * fieldToPlotMatrix[latIdx, lonIdx] / maxField + 0.5
+    else:  # Don't use diverging colorscale
+        colorScale = 'rainbow'
+        normlzdColorMatrix = (fieldToPlotMatrix - np.min(fieldToPlotMatrix)) / \
                       (np.max(fieldToPlotMatrix) - np.min(fieldToPlotMatrix))
 
     # Draw a colored rectangle in each region in layer underneath
-    latRange = range(90, -90, -boxSize)
-    lonRange = range(0, 360, boxSize)
+    #print("After setting colorScale, it = ", colorScale)
+    colorIdx = 0
+    colorList = []
     for latIdx, lat in np.ndenumerate(latRange):
         for lonIdx, lon in np.ndenumerate(lonRange):
             # 'bluered'
-            color = pc.sample_colorscale('RdBu_r',
-                                         normlzdColorCol[latIdx, lonIdx], low=0, high=1)[0]
+            colorString = pc.sample_colorscale(colorscale=colorScale,
+                                         samplepoints=normlzdColorMatrix[latIdx, lonIdx],
+                                         low=0, high=1)[0]
+
+            colorList.append([normlzdColorMatrix[latIdx, lonIdx].item(),
+                              colorString])
+
             regionalMapPanel.add_shape(
                 type="rect",
                 xref="x",
@@ -973,10 +1011,13 @@ def createMapPanel(fieldToPlotCol,
                 x1=lon + boxSize,
                 y1=lat - boxSize,
                 line=dict(color="black", width=1),
-                fillcolor=color,
+                #fillcolor=colorList[colorIdx],
+                fillcolor=colorString,
                 opacity=1.0,
                 layer="below"
             )
+
+            colorIdx += 1
 
     # Draw map of land boundaries in layer on top
     regionalMapPanel.update_geos(showcoastlines=True,
@@ -989,6 +1030,43 @@ def createMapPanel(fieldToPlotCol,
                                  lonaxis_showgrid=False,
                                  lataxis_showgrid=False
                                  )
+    # Add colorbar by creating an invisible, fake scatterplot
+    if (colorScale == 'RdBu_r'):
+        if (maxField > np.abs(minField)):
+            tickVals = [0.5 * minField / rangeField + 0.5,
+                        0.25 * minField / rangeField + 0.75,
+                        1.0]
+            tickText = [f"{-maxField:.2f}",
+                        '0.0',
+                        f"{maxField:.2f}"]
+        else:
+            tickVals = [0.0,
+                        0.25 * maxField / rangeField + 0.25,
+                        0.5 * maxField / rangeField + 0.5]
+            tickText = [f"{minField:.2f}",
+                        '0.0',
+                        f"{-minField:.2f}"]
+    else:
+        tickVals = [0.0, 1.0]
+        tickText = ['0', f"{rangeField:.2f}"]
+    colorbar_trace = go.Scatter(x=[None],
+                                y=[None],
+                                mode='markers',
+                                marker=dict(
+                                    #color=fieldToPlotCol,
+                                    color=normlzdColorMatrix.reshape((numYBoxes*numXBoxes,)),
+                                    colorscale=colorScale,
+                                    #colorscale=colorList,
+                                    showscale=True,
+                                    colorbar=dict(thickness=15,
+                                                  tickvals = tickVals,
+                                                  ticktext = tickText
+                                                  )
+                                                  #outlinewidth=0)
+                                )
+                                )
+
+    regionalMapPanel.add_trace(colorbar_trace)
 
     return regionalMapPanel
 

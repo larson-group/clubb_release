@@ -124,7 +124,9 @@ def main():
     # y_hat_i is the un-normalized, unweighted estimate of tuned metric values
     y_hat_i = defaultBiasesApproxNonlin + defaultBiasesCol + obsMetricValsCol
 
-
+    #print("Tuned parameter perturbation values (dnormzldParamsSolnNonlin)")
+    #for idx in range(0,len(paramsNames)): \
+    #    print("{:33s} {:7.7g}".format(paramsNames[idx], dnormlzdParamsSolnNonlin[idx][0] ) )
     print("Tuned parameter values (paramsSolnNonlin)")
     for idx in range(0,len(paramsNames)): \
         print("{:33s} {:7.7g}".format(paramsNames[idx], paramsSolnNonlin[idx][0] ) )
@@ -321,10 +323,13 @@ def solveUsingNonlin(metricsNames,
     # Don't let parameter values go negative
     lowerBoundsCol =  -defaultParamValsOrigRow[0]/magParamValsRow[0]
 
+    #x0TwoYr = np.array([-0.1400083, -0.404022, 0.2203307, -0.9838958, 0.391993, -0.05910007, 1.198831])
+    x0TwoYr = np.array([0.5805136, -0.1447917, -0.2722521, -0.8183079, 0.3150205, -0.4794127, 0.1104284])
     # Perform nonlinear optimization
     #normlzdDefaultBiasesCol = defaultBiasesCol/np.abs(normMetricValsCol)
     #dnormlzdParamsSolnNonlin = minimize(objFnc,x0=np.ones_like(np.transpose(defaultParamValsOrigRow)), \
-    dnormlzdParamsSolnNonlin = minimize(objFnc,x0=np.zeros_like(np.transpose(defaultParamValsOrigRow[0])), \
+    #dnormlzdParamsSolnNonlin = minimize(objFnc,x0=np.zeros_like(np.transpose(defaultParamValsOrigRow[0])), \
+    dnormlzdParamsSolnNonlin = minimize(objFnc,x0=x0TwoYr, \
     #dnormlzdParamsSolnNonlin = minimize(objFnc,dnormlzdParamsSoln, \
                                args=(normlzdSensMatrix, normlzdDefaultBiasesCol, metricsWeights,
                                normlzdCurvMatrix, reglrCoef, numMetrics),\

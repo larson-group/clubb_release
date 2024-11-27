@@ -133,7 +133,9 @@ def setUpInputs(beVerbose):
     #folder_name = 'Regional_files/RG_20240402_sens/thresp26_'
     #folder_name = 'Regional_files/20240614_e3sm_20x20regs/thresp26_'
     #folder_name = 'Regional_files/20231211_20x20regs/sens0707_'
-    folder_name = 'Regional_files/20241022_1yr_20x20regs/20.0sens1022_'
+    #folder_name = 'Regional_files/20241022_1yr_20x20regs/20.0sens1022_'
+    folder_name = 'Regional_files/20241022_2yr_20x20regs_msq/20.0sens1022_'
+    #folder_name = 'Regional_files/20241022_2yr_20x20regs_take3/20.0sens1022_'
     #folder_name = 'Regional_files/20231204_30x30regs/sens0707_'
     #folder_name = 'Regional_files/20240409updated/thresp26_'  # folder where regional netcdf files are stored.
     #folder_name = 'Regional_files/stephens_20240131/btune_regional_files/btune_'  # folder where regional netcdf files are stored.
