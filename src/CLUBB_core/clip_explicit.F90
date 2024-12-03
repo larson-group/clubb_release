@@ -859,13 +859,14 @@ module clip_explicit
   end subroutine clip_covar_level
 
   !=============================================================================
-  subroutine clip_variance( nzm, ngrdcol, solve_type, dt, threshold, &
+  subroutine clip_variance( nzm, ngrdcol, solve_type, dt, threshold_lo, &
                             stats_metadata, &
                             stats_zm, &
-                            xp2 )
+                            xp2, &
+                            threshold_hi )
 
     ! Description:
-    ! Clipping the value of variance x'^2 based on a minimum threshold value.
+    ! Clipping the value of variance x'^2 based on a minimum and (optional) max threshold value.
     ! The threshold value must be greater than or equal to 0.
     !
     ! The values of x'^2 are found on the momentum levels.
@@ -890,6 +891,12 @@ module clip_explicit
         stats_metadata_type
 
     use stats_type, only: stats ! Type
+ 
+    use constants_clubb, only: &
+        fstderr
+
+    use error_code, only: &
+        clubb_at_least_debug_level  ! Procedure
 
     implicit none
 
@@ -898,14 +905,14 @@ module clip_explicit
       nzm, &
       ngrdcol
 
-    integer, intent(in) :: & 
-      solve_type  ! Variable being solved; used for STATS.
+    integer, intent(in) :: &
+      solve_type  ! Variable being solved; used for STATS
 
-    real( kind = core_rknd ), intent(in) :: & 
+    real( kind = core_rknd ), intent(in) :: &
       dt          ! Model timestep; used here for STATS     [s]
 
-    real( kind = core_rknd ), dimension(ngrdcol,nzm), intent(in) :: & 
-      threshold   ! Minimum value of x'^2                   [{x units}^2]
+    real( kind = core_rknd ), dimension(ngrdcol,nzm), intent(in) :: &
+      threshold_lo   ! Minimum value of x'^2                   [{x units}^2]
 
     type (stats_metadata_type), intent(in) :: &
       stats_metadata
@@ -915,8 +922,12 @@ module clip_explicit
       stats_zm
 
     ! -------------------- Output Variable --------------------
-    real( kind = core_rknd ), dimension(ngrdcol,nzm), intent(inout) :: & 
+    real( kind = core_rknd ), dimension(ngrdcol,nzm), intent(inout) :: &
       xp2         ! Variance of x, x'^2 (momentum levels)   [{x units}^2]
+
+    ! -------------------- Optional Input Variables --------------------
+    real( kind = core_rknd ), intent(in), optional :: &
+      threshold_hi   ! Maximum value of x'^2                   [{x units}^2]
 
     ! -------------------- Local Variables --------------------
     integer :: i, k   ! Array index
@@ -926,8 +937,25 @@ module clip_explicit
 
     ! -------------------- Begin Code --------------------
 
-    !$acc data copyin( threshold ) &
+    !$acc data copyin( threshold_lo ) &
     !$acc        copy( xp2 )
+
+    ! If a threshold_hi was passed, check if any element of threshold_lo
+    ! is larger than threshold_hi.
+    ! If so, terminate the program
+    if ( present(threshold_hi) ) then
+      !$acc parallel loop gang vector collapse(2) default(present) copyin(threshold_hi)
+      do k = 1, nzm-1, 1
+        do i = 1, ngrdcol
+          if ( threshold_lo(i,k) > threshold_hi ) then
+            write(fstderr, *) "Error in clip_variance! threshold_lo(",i, ",",k,") =", &
+                              threshold_lo(i,k), ">", threshold_hi, "= threshold_hi. Terminating.."
+            stop
+          end if
+        end do
+      end do
+      !$acc end parallel loop
+    end if
 
     select case ( solve_type )
     case ( clip_wp2 )   ! wp2 clipping budget term
@@ -949,7 +977,7 @@ module clip_explicit
       !$acc update host( xp2 )
       do i = 1, ngrdcol
         call stat_begin_update( nzm, ixp2_cl, xp2(i,:) / dt, & ! intent(in)
-                                stats_zm(i) ) ! intent(inout)
+                                stats_zm(i) )                  ! intent(inout)
       end do
     end if
 
@@ -963,16 +991,38 @@ module clip_explicit
     ! charlass on 09/11/2013: I changed the clipping so that also the surface
     ! level is clipped. I did this because we discovered that there are slightly
     ! negative values in thlp2(1) and rtp2(1) when running quarter_ss case with
-    ! WRF-CLUBB (see wrf:ticket:51#comment:33) 
+    ! WRF-CLUBB (see wrf:ticket:51#comment:33)
     !$acc parallel loop gang vector collapse(2) default(present)
     do k = 1, nzm-1, 1
       do i = 1, ngrdcol
-        if ( xp2(i,k) < threshold(i,k) ) then
-          xp2(i,k) = threshold(i,k)
+        if ( xp2(i,k) < threshold_lo(i,k) ) then
+          if ( clubb_at_least_debug_level(3) ) then
+            write(fstderr, *) "Warning: (solve_type==", solve_type,") xp2 =", xp2(i,k), &
+                             "<", threshold_lo(i,k), " @ k =", k, ". Small values are clipped."
+          end if
+          xp2(i,k) = threshold_lo(i,k)
         end if
       end do
     end do
     !$acc end parallel loop
+
+    ! Optional clipping of large values
+    ! This was added so the <var>_cl budget term also contains the upper clipping contributions
+    if ( present (threshold_hi) ) then
+      !$acc parallel loop gang vector collapse(2) default(present) copyin(threshold_hi)
+      do k = 1, nzm-1, 1
+        do i = 1, ngrdcol
+          if ( xp2(i,k) > threshold_hi ) then
+            xp2(i,k) = threshold_hi
+            if ( clubb_at_least_debug_level(3) ) then
+              write(fstderr, *) "Warning: (solve_type==", solve_type,") xp2 =", xp2(i,k), &
+                               ">", threshold_hi, " @ k =", k, ". Large values are clipped."
+            end if
+          end if
+        end do
+      end do
+      !$acc end parallel loop
+    end if
 
     if ( stats_metadata%l_stats_samp ) then
       !$acc update host( xp2 )
