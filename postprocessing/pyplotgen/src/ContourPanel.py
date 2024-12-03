@@ -18,6 +18,7 @@ logging.captureWarnings(True)
 
 import matplotlib as mpl
 import matplotlib.pyplot as plt
+import matplotlib.ticker as mpt
 import numpy as np
 
 from config import Style_definitions
@@ -90,20 +91,31 @@ class ContourPanel(Panel):
             x_data, y_data = np.meshgrid(x_data, y_data)
             cmap = mpl.colormaps.get_cmap(var.colors)
             vmin, vmax = c_data.min(), c_data.max()
-            if max(abs(vmin), abs(vmax))>1:
-                # General case: maximum absolute values are larger than 1
-                vmin = round(vmin-.5)
-                vmax = round(vmax+.5)
-                cmap = mpl.colormaps.get_cmap(Style_definitions.CONTOUR_CMAP_GENERAL)
-            elif vmin<0:
-                # (Possible) Correlation case: All values between -1 and 1
+            # ticks=None means matplotlib will generate ticks automatically
+            # For non-correlation variables with positive and negative values, we want to create ticks manually
+            # and individually for the positive and negative parts of the colorbar,
+            # in case the orders of magnitude are different
+            ticks = None
+            if "corr" in self.dependent_title.lower() or "corr" in self.title.lower():
+                # Variable is correlation data
+                # -> normalize colormap to [-1;1] and use two-sided colormap
                 vmin = -1
                 vmax = 1
                 cmap = mpl.colormaps.get_cmap(Style_definitions.CONTOUR_CMAP_CORR)
+                norm = mpl.colors.Normalize(vmin=vmin, vmax=vmax)
             else:
-                # Small positive values: Do no rounding
-                cmap = mpl.colormaps.get_cmap(Style_definitions.CONTOUR_CMAP_NORMED)
-            norm = mpl.colors.Normalize(vmin=vmin, vmax=vmax)
+                # Variable is not a correlation
+                if vmin<0 and vmax>0:
+                    # Positive and negative values -> Use two-sided colormap
+                    cmap = mpl.colormaps.get_cmap(Style_definitions.CONTOUR_CMAP_CORR)
+                    norm = mpl.colors.TwoSlopeNorm(vmin=vmin, vcenter=0, vmax=vmax)
+                    # Manually create ticks for the positive and negative part individually,
+                    # then paste them together
+                    ticks = np.append(np.linspace(vmin,0,5), np.linspace(0,vmax,6)[1:])
+                else:
+                    # Only one-sided values -> Use unicolor colormap
+                    cmap = mpl.colormaps.get_cmap(Style_definitions.CONTOUR_CMAP_GENERAL)
+                    norm = mpl.colors.Normalize(vmin=vmin, vmax=vmax)
             cont_map = plt.cm.ScalarMappable(norm=norm, cmap=cmap)
             label = var.label
 
@@ -114,7 +126,10 @@ class ContourPanel(Panel):
             # plt.gcf().subplots_adjust(bottom=0.15)
 
             plt.contourf(x_data, y_data, c_data.T, levels=cmap.N, norm=norm, cmap=cmap)
-            plt.gcf().colorbar(cont_map, ax=plt.gca(), cmap=cmap, norm=norm, label=self.dependent_title, orientation='vertical')
+            # Add colorbar to the current ax (gca)
+            # For details on __getFormatter, see below
+            plt.gcf().colorbar(cont_map, ax=plt.gca(), cmap=cmap, norm=norm, label=self.dependent_title,
+                               orientation='vertical', ticks=ticks, format=ContourPanel.__getFormatter())
             plt.title(label + ' - ' + self.title, pad=10)
             plt.xlabel(self.x_title)
             plt.ylabel(self.y_title)
@@ -146,3 +161,39 @@ class ContourPanel(Panel):
             # Save image file
             plt.savefig(relative_filename+image_extension)
             plt.close()
+
+    @staticmethod
+    def __getFormatter():
+        # Factory for formatter of the colorbar ticks
+        # The "__" means this is a private method that cannot be called from outside.
+        #
+        # If necessary, this factory could receive arguments and use them within the formatting function.
+        # For example, if we wanted to set a limit for exponential notation depending on an input (e.g. the size of the figure):
+        # Define __getFormatter(lim)
+        # We could do the same split as below, and then check the exponent against lim
+        #
+        # This function should return a FuncFormatter (or any type of Formatter) that uses the following function for formatting of the ticks labels.
+        # For more information, see here: https://www.geeksforgeeks.org/matplotlib-ticker-funcformatter-class-in-python/ (viewed 12/03/2024)
+        # Or here: https://matplotlib.org/stable/gallery/ticks/tick-formatters.html (viewed 12/03/2024)
+        def format_func(x,pos):
+            # Use scientific notation for numbers with too many places (too small/too large)
+            num, exp = '{:.3e}'.format(x).split('e')
+            if abs(int(exp)) <=4:
+                # Exponent small enough
+                # -> regular floating point representation, strip all trailing zeros
+                ret = '{:.5f}'.format(x).rstrip('0')
+                if ret.endswith('.'):
+                    # Print at least one decimal place
+                    ret += '0'
+                return ret
+            else:
+                # Very large and very small exponents
+                # -> Use scientific representation with at most 3 decimal places
+                # Strip trailing zeros
+                num = num.rstrip('0')
+                if num.endswith('.'):
+                    # Print at least one decimal place
+                    num += '0'
+                return num+'e'+str(int(exp))
+        # Wrap into Formatter and return
+        return mpt.FuncFormatter(format_func)
