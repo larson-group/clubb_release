@@ -19,7 +19,7 @@ from dash import dcc
 from dash import html
 #import dash_html_components as html
 #import fnmatch
-from sens_matrix_dashboard import lossFncMetrics
+from sens_matrix_dashboard import lossFncMetrics, approxMatrixWithSvd
 
 def createFigs(metricsNames,
                paramsNames, transformedParamsNames, paramsScales,
@@ -46,19 +46,30 @@ def createFigs(metricsNames,
 
     print("Creating plots . . .")
 
+    downloadConfig = {
+        'toImageButtonOptions': {
+            'format': 'png',  # 'svg', 'jpeg', 'webp'
+            'filename': 'plotly',
+            #'width': 800,
+            #'height': 600,
+            'scale': 4  # Increase resolution
+        }
+    }
+
     normlzdResid = (-defaultBiasesApproxNonlin - defaultBiasesCol)[:, 0] \
                    / np.abs(normMetricValsCol[:, 0])
 
     # Use these flags to determine whether or not to create specific plots
-    plot_paramsErrorBarsFig = False #True
+    plot_paramsErrorBarsFig = True
     plot_biasesOrderedArrowFig = False  #True
-    plot_threeDotFig = False #True
+    plot_threeDotFig = True
     plot_metricsBarChart = True
     plot_paramsIncrsBarChart = True
+    plot_paramsAbsIncrsBarChart = True
     plot_paramsTotContrbBarChart = False
     plot_biasesVsDiagnosticScatterplot = False
     plot_dpMin2PtFig = True
-    plot_dpMinMatrixScatterFig = False
+    plot_dpMinMatrixScatterFig = True
     plot_projectionMatrixFigs = False #True
     plot_biasesVsSensMagScatterplot = True
     plot_biasesVsSvdScatterplot = True
@@ -71,6 +82,8 @@ def createFigs(metricsNames,
     # Remove prefixes from CLUBB variable names in order to shorten them
     paramsAbbrv = abbreviateClubbParamsNames(paramsNames)
     paramsAbbrvPlusBias = np.append(paramsAbbrv, 'bias').tolist()
+
+    metricsNamesNoprefix = np.char.replace(metricsNames, "SWCF_", "")
 
     # Create a way to order the metrics by sensitivity, for later use in plots
     metricsSens = np.linalg.norm(normlzdWeightedSensMatrixPoly, axis=1)  # measure of sensitivity of each metric
@@ -323,26 +336,55 @@ def createFigs(metricsNames,
 
         print("Creating paramsIncrBarChart . . .")
 
-        #absParamsIncrs = np.sum( np.abs(minusNonlinMatrixDparamsOrdered), axis=0 )
-        sumParamsIncrs = np.sum(minusNonlinMatrixDparamsOrdered, axis=0)
-        sumParamsIncrsPlusBias = np.append(sumParamsIncrs, np.sum(normlzdDefaultBiasesCol))
+        u, s, vh = \
+            np.linalg.svd(normlzdLinplusSensMatrixPoly,
+                          full_matrices=False)
 
-        paramsNamesPlusBias = np.append(paramsNames, 'bias')
+        sumParamsIncrs = np.mean(minusNonlinMatrixDparamsOrdered, axis=0)
+        calcBias = np.sum( sumParamsIncrs )
+        sumParamsIncrsPlusBiases = np.append(sumParamsIncrs, calcBias)
+        sumParamsIncrsPlusBiases = np.append(sumParamsIncrsPlusBiases, np.mean(normlzdDefaultBiasesCol))
 
-        barColors = np.append( ["blue"]*len(paramsNames), "red" )
-        colorDiscreteMap = dict(zip(paramsNamesPlusBias.tolist(),
-                                    barColors.tolist() ))
+        paramsAbbrvPlusBiases = np.append(paramsAbbrv, 'calc bias')
+        paramsAbbrvPlusBiases = np.append(paramsAbbrvPlusBiases, 'obs bias')
+
+        barColorsPlusObs = np.append( ["blue"]*len(paramsNames), np.array(["orange", "red"]) )
+        colorDiscreteMap = dict(zip(paramsAbbrvPlusBiases,
+                                    barColorsPlusObs.tolist() ))
 
         paramsIncrsBarChart = \
-            createBarChart(sumParamsIncrsPlusBias, index=paramsNamesPlusBias,
+            createBarChart(sumParamsIncrsPlusBiases, index=paramsAbbrvPlusBiases,
                            columns=["Parameter<br>contribution"],
                            orientation='v',
                            colorDiscreteMap=colorDiscreteMap,
                            title="Mean parameter contributions to removal of biases <br>" \
-                                   + "(= column sums of sensMatrix*dParams+0.5*curvMatrix*dParams**2)",
+                                   + "(= column means of sensMatrix*dParams+0.5*curvMatrix*dParams**2)",
                            xlabel="Parameter", ylabel="Contribution to bias removal",
                            width=800, height=500,
                            showLegend=False)
+
+    if plot_paramsIncrsBarChart:
+
+        absParamsIncrs = np.mean( np.abs(minusNonlinMatrixDparamsOrdered), axis=0 )
+        absParamsIncrsPlusBias = np.append(absParamsIncrs, np.mean( np.abs(normlzdDefaultBiasesCol)))
+        absParamsAbbrvPlusBias = np.append(paramsAbbrv, 'abs bias')
+        barColors = np.append( ["blue"]*len(paramsNames), "red" )
+        absColorDiscreteMap = dict(zip(absParamsAbbrvPlusBias.tolist(),
+                                    barColors.tolist()))
+
+        paramsAbsIncrsBarChart = \
+            createBarChart(absParamsIncrsPlusBias, index=absParamsAbbrvPlusBias,
+                           columns=["Parameter<br>contribution"],
+                           orientation='v',
+                           colorDiscreteMap=absColorDiscreteMap,
+                           title="Size of abs parameter contributions <br>" \
+                                   + "(= column means of abs sensMatrix*dParams+0.5*curvMatrix*dParams**2)",
+                           xlabel="Parameter", ylabel="Contribution to bias removal",
+                           width=800, height=500,
+                           showLegend=False)
+
+
+
 
     if False:
         biasLinNlIndivContrbBarFig = \
@@ -398,7 +440,8 @@ def createFigs(metricsNames,
                               colorCol=1e3*np.sign(tunedLossChange[:,0])*np.sqrt(np.sqrt(np.abs(tunedLossChange[:,0]))),
                               colorColLabel='sqrtsqrttunedLossChange',
                               colorScale='Spectral_r',
-                              pointLabels=metricsNames, pointLabelsHeader='Metric',
+                              plotBgColor='lightgrey',
+                              pointLabels=metricsNamesNoprefix, pointLabelsHeader='Metric',
                               plotTitle="""Regional normalized biases vs. signed magnitude of sensitivity.""",
                               xaxisTitle="Signed magnitude of sensitivity of regional metrics to parameter changes",
                               yaxisTitle="Regional biases",
@@ -416,14 +459,15 @@ def createFigs(metricsNames,
                               colorScale='Spectral',
                               #colorCol=normlzdResid, colorColLabel='normlzdResid',
                               #colorScale='Rainbow',
-                              pointLabels=metricsNames, pointLabelsHeader='Metric',
+                              plotBgColor='lightgrey',
+                              pointLabels=metricsNamesNoprefix, pointLabelsHeader='Metric',
                               plotTitle = """Regional normalized biases vs. signed magnitude of sensitivity.""",
                               xaxisTitle = "Signed magnitude of sensitivity of regional metrics to parameter changes",
                               yaxisTitle = "Regional biases",
                               #plotTitle="""Regional normalized residuals vs. signed magnitude of sensitivity.""",
                               #xaxisTitle="Signed magnitude of sensitivity of regional metrics to parameter changes",
                               #yaxisTitle="Regional normalized residuals",
-                              showLegend=False, hoverMode="x",
+                              showLegend=False, hoverMode="closest",
                               plotWidth=700, plotHeight=500)
 
         #biasesVsSensMagScatterplot = \
@@ -470,7 +514,6 @@ def createFigs(metricsNames,
         xCol = u[:, 0] * normlzdDefaultBiasesCol[:,0]
         yCol = u[:, 1] * normlzdDefaultBiasesCol[:,0]
         #yCol = -defaultBiasesCol[:, 0] / np.abs(normMetricValsCol[:, 0])
-        metricsNamesNoprefix = np.char.replace(metricsNames, "SWCF_", "")
 
         biasesVsSvdScatterplot = \
             createScatterplot(xCol=xCol, xColLabel='SV1*bias',
@@ -479,6 +522,7 @@ def createFigs(metricsNames,
                               #colorCol=np.minimum(1, -normlzdDefaultBiasesCol[:, 0] ),
                               colorColLabel='loss change',
                               colorScale='Rainbow',
+                              plotBgColor='lightgrey',
                               pointLabels=metricsNamesNoprefix, pointLabelsHeader='Region',
                               plotTitle=(
                                           "Biases (color) as a function of first and second left singular vector values<br>" \
@@ -500,6 +544,7 @@ def createFigs(metricsNames,
                               #colorCol=np.minimum(1, -defaultBiasesCol[whitelistedMetricsMask, 0] / np.abs(normMetricValsCol[whitelistedMetricsMask, 0])),
                               colorColLabel='loss change',
                               colorScale='Rainbow',
+                              plotBgColor='lightgrey',
                               pointLabels=metricsNamesNoprefix[whitelistedMetricsMask],
                               pointLabelsHeader='Region',
                               plotTitle=(
@@ -516,6 +561,7 @@ def createFigs(metricsNames,
         #                      yCol=yCol, yColLabel='SV2',
         #                      colorCol=np.minimum(1, normlzdResid),
         #                      colorColLabel='normlzdResid',
+        #                      plotBgColor='lightgrey',
         #                      pointLabels=metricsNamesNoprefix, pointLabelsHeader='Region',
         #                      plotTitle="""Residuals (color) as a function of first and second left singular vector values""",
         #                      xaxisTitle="First left singular vector values",
@@ -632,6 +678,7 @@ def createFigs(metricsNames,
                               yCol=yCol, yColLabel='bias',
                               colorCol=yCol, colorColLabel='bias',
                               colorScale='Rainbow',
+                              plotBgColor='lightgrey',
                               pointLabels=metricsNames, pointLabelsHeader='Metric',
                               plotTitle="""Regional biases vs. leverages.""",
                               xaxisTitle="Leverages",
@@ -709,15 +756,23 @@ def createFigs(metricsNames,
                            plotTitle="normlzdDefaultBiasesCol",
                            boxSize=20)
 
+        # Use same color range in residual plot as in bias plot
+        minFieldBias = np.min(normlzdDefaultBiasesCol)
+        maxFieldBias = np.max(normlzdDefaultBiasesCol)
+
         PcMapPanelResid = \
             createMapPanel(fieldToPlotCol=-normlzdResid,
                            plotWidth=500,
                            plotTitle="-normlzdResid",
-                           boxSize=20)
+                           boxSize=20,
+                           minField=minFieldBias,
+                           maxField=maxFieldBias)
 
         BiasParamsDashboardChildren = [html.Div(children=[
-            dcc.Graph(id="PcMapPanelBias", figure=PcMapPanelBias, style={'display': 'inline-block'}),
-            dcc.Graph(id="PcMapPanelResid", figure=PcMapPanelResid, style={'display': 'inline-block'})
+            dcc.Graph(id="PcMapPanelBias", figure=PcMapPanelBias,
+                      style={'display': 'inline-block'}, config=downloadConfig),
+            dcc.Graph(id="PcMapPanelResid", figure=PcMapPanelResid,
+                      style={'display': 'inline-block'}, config=downloadConfig)
         ])]
 
         PcMapPanelDefaultLoss = \
@@ -733,8 +788,10 @@ def createFigs(metricsNames,
                            boxSize=20)
 
         BiasParamsDashboardChildren.append(html.Div(children=[
-                dcc.Graph(figure=PcMapPanelDefaultLoss, style={'display': 'inline-block'}),
-                dcc.Graph(figure=PcMapPanelTunedLossChange, style={'display': 'inline-block'})
+                dcc.Graph(figure=PcMapPanelDefaultLoss, style={'display': 'inline-block'},
+                          config=downloadConfig),
+                dcc.Graph(figure=PcMapPanelTunedLossChange, style={'display': 'inline-block'},
+                          config=downloadConfig)
             ]))
 
 
@@ -758,8 +815,10 @@ def createFigs(metricsNames,
                 rightFig.update_layout(width=plotWidth, height=plotHeight)
 
             BiasParamsDashboardChildren.append(html.Div(children=[
-                dcc.Graph(figure=leftFig, style={'display': 'inline-block'}),
-                dcc.Graph(figure=rightFig, style={'display': 'inline-block'})
+                dcc.Graph(figure=leftFig, style={'display': 'inline-block'},
+                          config=downloadConfig),
+                dcc.Graph(figure=rightFig, style={'display': 'inline-block'},
+                          config=downloadConfig)
             ]))
 
             paramsIdx += 2
@@ -769,6 +828,8 @@ def createFigs(metricsNames,
         u, s, vh = \
             np.linalg.svd(normlzdLinplusSensMatrixPoly, full_matrices=False)
 
+        #u, s, vh = \
+        #    np.linalg.svd(normlzdCurvMatrix, full_matrices=False)
 
         PcMapPanelU0 = \
             createMapPanel(fieldToPlotCol=u[:, 0],
@@ -797,15 +858,21 @@ def createFigs(metricsNames,
         U0U3DashboardChildren = [
             html.Div(children=
                      [dcc.Graph(id="PcMapPanelU0", figure=PcMapPanelU0,
-                                style={'display': 'inline-block'}),
+                                style={'display': 'inline-block'},
+                                config=downloadConfig),
                       dcc.Graph(id="PcMapPanelU1", figure=PcMapPanelU1,
-                                style={'display': 'inline-block'})]
+                                style={'display': 'inline-block'},
+                                config=downloadConfig)
+                      ]
                      ),
             html.Div(children=
                      [dcc.Graph(id="PcMapPanelU0bias", figure=PcMapPanelU0bias,
-                                style={'display': 'inline-block'}),
+                                style={'display': 'inline-block'},
+                                config=downloadConfig),
                       dcc.Graph(id="PcMapPanelU1bias", figure=PcMapPanelU1bias,
-                                style={'display': 'inline-block'})]
+                                style={'display': 'inline-block'},
+                                config=downloadConfig)
+                      ]
                      )
         ]
 
@@ -828,6 +895,9 @@ def createFigs(metricsNames,
 
         u, s, vh = \
             np.linalg.svd(normlzdLinplusSensMatrixPoly, full_matrices=False)
+
+        uCurv, sCurv, vhCurv = \
+            np.linalg.svd(normlzdCurvMatrix, full_matrices=False)
 
         #normlzdLinplusSensMatrixPolyPlusBias = \
         #    np.hstack((normlzdLinplusSensMatrixPoly, normlzdDefaultBiasesCol))
@@ -865,61 +935,95 @@ def createFigs(metricsNames,
         dashboardChildren.extend(U0U3DashboardChildren)
         #dashboardChildren.append(dcc.Graph(id='PcMapFig', figure=PcMapFig))
     if plot_vhMatrixFig:
-        dashboardChildren.append(dcc.Graph(id='vhMatrixFig', figure=vhMatrixFig))
+        dashboardChildren.append(dcc.Graph(id='vhMatrixFig', figure=vhMatrixFig,
+                                           config=downloadConfig))
     if plot_PcaBiplot:
-        dashboardChildren.append(dcc.Graph(id='PcaBiplotFig', figure=PcaBiplotFig))
+        dashboardChildren.append(dcc.Graph(id='PcaBiplotFig', figure=PcaBiplotFig,
+                                           config=downloadConfig))
     if plot_paramsErrorBarsFig:
-        dashboardChildren.append(dcc.Graph(id='paramsErrorBarsFig', figure=paramsErrorBarsFig))
+        dashboardChildren.append(dcc.Graph(id='paramsErrorBarsFig', figure=paramsErrorBarsFig,
+                                           config=downloadConfig))
     if plot_biasesOrderedArrowFig:
-        dashboardChildren.append(dcc.Graph(id='biasesOrderedArrowFig', figure=biasesOrderedArrowFig))
+        dashboardChildren.append(dcc.Graph(id='biasesOrderedArrowFig', figure=biasesOrderedArrowFig,
+                                           config=downloadConfig))
     if plot_metricsBarChart:
-        dashboardChildren.append(dcc.Graph(id='metricsBarChart', figure=metricsBarChart))
+        dashboardChildren.append(dcc.Graph(id='metricsBarChart', figure=metricsBarChart,
+                                           config=downloadConfig))
     if plot_paramsTotContrbBarChart:
-        dashboardChildren.append(dcc.Graph(id='paramsTotContrbBarChart', figure=paramsTotContrbBarChart))
+        dashboardChildren.append(dcc.Graph(id='paramsTotContrbBarChart', figure=paramsTotContrbBarChart,
+                                           config=downloadConfig))
     if plot_paramsIncrsBarChart:
-        dashboardChildren.append(dcc.Graph(id='paramsIncrsBarChart', figure=paramsIncrsBarChart))
+        dashboardChildren.append(dcc.Graph(id='paramsIncrsBarChart', figure=paramsIncrsBarChart,
+                                           config=downloadConfig))
+    if plot_paramsAbsIncrsBarChart:
+        dashboardChildren.append(dcc.Graph(id='paramsAbsIncrsBarChart', figure=paramsAbsIncrsBarChart,
+                                           config=downloadConfig))
     if False:
-        dashboardChildren.append(dcc.Graph(id='linplusSensMatrixBarFig', figure=linplusSensMatrixBarFig))
+        dashboardChildren.append(dcc.Graph(id='linplusSensMatrixBarFig', figure=linplusSensMatrixBarFig,
+                                           config=downloadConfig))
     if False:
-        dashboardChildren.append(dcc.Graph(id='biasLinNlIndivContrbBarFig', figure=biasLinNlIndivContrbBarFig))
+        dashboardChildren.append(dcc.Graph(id='biasLinNlIndivContrbBarFig', figure=biasLinNlIndivContrbBarFig,
+                                           config=downloadConfig))
     if plot_dpMin2PtFig:
-        dashboardChildren.append(dcc.Graph(id='dpMin2PtFig', figure=dpMin2PtFig))
+        dashboardChildren.append(dcc.Graph(id='dpMin2PtFig', figure=dpMin2PtFig,
+                                           config=downloadConfig))
     if False:
-        dashboardChildren.append(dcc.Graph(id='biasVsBiasApproxScatterplot', figure=biasVsBiasApproxScatterplot))
+        dashboardChildren.append(dcc.Graph(id='biasVsBiasApproxScatterplot', figure=biasVsBiasApproxScatterplot,
+                                           config=downloadConfig))
     #config= { 'toImageButtonOptions': { 'scale': 6 } }
     if plot_biasesVsDiagnosticScatterplot:
-        dashboardChildren.append(dcc.Graph(id='biasVsDiagnosticScatterplot', figure=biasVsDiagnosticScatterplot))
+        dashboardChildren.append(dcc.Graph(id='biasVsDiagnosticScatterplot', figure=biasVsDiagnosticScatterplot,
+                                           config=downloadConfig))
     if plot_sensMatrixAndBiasVecFig:
-        dashboardChildren.append(dcc.Graph(id='sensMatrixAndBiasVecFig', figure=sensMatrixAndBiasVecFig))
+        dashboardChildren.append(dcc.Graph(id='sensMatrixAndBiasVecFig', figure=sensMatrixAndBiasVecFig,
+                                           config=downloadConfig))
     if False:
-        dashboardChildren.append(dcc.Graph(id='paramsCorrArrayBiasFig', figure=paramsCorrArrayBiasFig))
+        dashboardChildren.append(dcc.Graph(id='paramsCorrArrayBiasFig', figure=paramsCorrArrayBiasFig,
+                                           config=downloadConfig))
     if plot_paramsCorrArrayFig:
-        dashboardChildren.append(dcc.Graph(id='paramsCorrArrayFig', figure=paramsCorrArrayFig))
+        dashboardChildren.append(dcc.Graph(id='paramsCorrArrayFig', figure=paramsCorrArrayFig,
+                                           config=downloadConfig))
     if False:
-        dashboardChildren.append(dcc.Graph(id='metricsCorrArrayFig', figure=metricsCorrArrayFig))
+        dashboardChildren.append(dcc.Graph(id='metricsCorrArrayFig', figure=metricsCorrArrayFig,
+                                           config=downloadConfig))
     if plot_projectionMatrixFigs:
-        dashboardChildren.append(dcc.Graph(id='projectionMatrixFig', figure=projectionMatrixFig))
-        dashboardChildren.append(dcc.Graph(id='biasesVsLeveragesScatterplot', figure=biasesVsLeveragesScatterplot))
+        dashboardChildren.append(dcc.Graph(id='projectionMatrixFig', figure=projectionMatrixFig,
+                                           config=downloadConfig))
+        dashboardChildren.append(dcc.Graph(id='biasesVsLeveragesScatterplot', figure=biasesVsLeveragesScatterplot,
+                                           config=downloadConfig))
     if plot_biasesVsSensMagScatterplot:
-        dashboardChildren.append(dcc.Graph(id='biasesVsSensMagScatterplot', figure=biasesVsSensMagScatterplot))
-        dashboardChildren.append(dcc.Graph(id='biasVsSensMagResidScatterplot', figure=biasVsSensMagResidScatterplot))
+        dashboardChildren.append(dcc.Graph(id='biasesVsSensMagScatterplot',
+                                           figure=biasesVsSensMagScatterplot,
+                                           config=downloadConfig))
+        dashboardChildren.append(dcc.Graph(id='biasVsSensMagResidScatterplot',
+                                           figure=biasVsSensMagResidScatterplot,
+                                           config=downloadConfig))
     if plot_biasesVsSvdScatterplot:
-        dashboardChildren.append(dcc.Graph(id='biasesVsSvdScatterplot', figure=biasesVsSvdScatterplot))
-        dashboardChildren.append(dcc.Graph(id='residVsSvdScatterplot', figure=residVsSvdScatterplot))
+        dashboardChildren.append(dcc.Graph(id='biasesVsSvdScatterplot', figure=biasesVsSvdScatterplot,
+                                           config=downloadConfig))
+        dashboardChildren.append(dcc.Graph(id='residVsSvdScatterplot', figure=residVsSvdScatterplot,
+                                           config=downloadConfig))
     if plot_threeDotFig:
-        dashboardChildren.append(dcc.Graph(id='threeDotFig', figure=threeDotFig))
+        dashboardChildren.append(dcc.Graph(id='threeDotFig', figure=threeDotFig,
+                                           config=downloadConfig))
     if False:
-        dashboardChildren.append(dcc.Graph(id='biasSensScatterFig', figure=biasSensMatrixScatterFig))
+        dashboardChildren.append(dcc.Graph(id='biasSensScatterFig', figure=biasSensMatrixScatterFig,
+                                           config=downloadConfig))
     if plot_dpMinMatrixScatterFig:
-        dashboardChildren.append(dcc.Graph(id='dpMinMatrixScatterFig', figure=dpMinMatrixScatterFig))
+        dashboardChildren.append(dcc.Graph(id='dpMinMatrixScatterFig', figure=dpMinMatrixScatterFig,
+                                           config=downloadConfig))
     if False:
-        dashboardChildren.append(dcc.Graph(id='maxSensMetricsFig', figure=maxSensMetricsFig))
+        dashboardChildren.append(dcc.Graph(id='maxSensMetricsFig', figure=maxSensMetricsFig,
+                                           config=downloadConfig))
     if False:
-        dashboardChildren.append(dcc.Graph(id='normlzdSensMatrixColsFig', figure=normlzdSensMatrixColsFig))
+        dashboardChildren.append(dcc.Graph(id='normlzdSensMatrixColsFig', figure=normlzdSensMatrixColsFig,
+                                           config=downloadConfig))
     if False:
-        dashboardChildren.append(dcc.Graph(id='normlzdSensMatrixRowsFig', figure=normlzdSensMatrixRowsFig))
+        dashboardChildren.append(dcc.Graph(id='normlzdSensMatrixRowsFig', figure=normlzdSensMatrixRowsFig,
+                                           config=downloadConfig))
     if False:
-        dashboardChildren.append(dcc.Graph(id='biasesVsSensArrowFig', figure=biasesVsSensArrowFig))
+        dashboardChildren.append(dcc.Graph(id='biasesVsSensArrowFig', figure=biasesVsSensArrowFig,
+                                           config=downloadConfig))
 
     print("At end of createFigs . . .")
     ##redundant dcc.Graph( id='biasTotContrbBarFig', figure=biasTotContrbBarFig ),
@@ -934,7 +1038,8 @@ def createFigs(metricsNames,
 def createMapPanel(fieldToPlotCol,
                    plotWidth,
                    plotTitle,
-                   boxSize):
+                   boxSize,
+                   minField=None, maxField=None):
 
     regionalMapPanel = go.Figure(go.Scattergeo())
 
@@ -984,9 +1089,11 @@ def createMapPanel(fieldToPlotCol,
     latRange = range(90, -90, -boxSize)
     lonRange = range(0, 360, boxSize)
     normlzdColorMatrix = np.zeros_like(fieldToPlotMatrix)
-    maxField = np.max(fieldToPlotMatrix)
-    minField = np.min(fieldToPlotMatrix)
+    if minField == None or maxField == None:
+        minField = np.min(fieldToPlotMatrix)
+        maxField = np.max(fieldToPlotMatrix)
     rangeField = np.maximum( np.abs(maxField), np.abs(minField) )
+
     # If the data include 0, use a diverging colorscale.
     # Remap 0 to 0.5 and normalize the data so that
     #    the data lie within the range [0,1].
@@ -1004,20 +1111,21 @@ def createMapPanel(fieldToPlotCol,
                 #    normlzdColorMatrix[latIdx, lonIdx] = \
                 #        0.5 * fieldToPlotMatrix[latIdx, lonIdx] / maxField + 0.5
     else:  # Don't use diverging colorscale
-        colorScale = 'rainbow'
-        normlzdColorMatrix = (fieldToPlotMatrix - np.min(fieldToPlotMatrix)) / \
-                      (np.max(fieldToPlotMatrix) - np.min(fieldToPlotMatrix))
+        colorScale = 'Bluered'
+        normlzdColorMatrix = (fieldToPlotMatrix - minField) / \
+                      (maxField - minField)
 
     # Draw a colored rectangle in each region in layer underneath
     #print("After setting colorScale, it = ", colorScale)
-    colorIdx = 0
+    #colorIdx = 0
     colorList = []
     for latIdx, lat in np.ndenumerate(latRange):
         for lonIdx, lon in np.ndenumerate(lonRange):
             # 'bluered'
             colorString = pc.sample_colorscale(colorscale=colorScale,
                                          samplepoints=normlzdColorMatrix[latIdx, lonIdx],
-                                         low=0, high=1)[0]
+                                         )[0]
+                                         #low = 0, high = 1)[0]
 
             colorList.append([normlzdColorMatrix[latIdx, lonIdx].item(),
                               colorString])
@@ -1037,7 +1145,7 @@ def createMapPanel(fieldToPlotCol,
                 layer="below"
             )
 
-            colorIdx += 1
+            #colorIdx += 1
 
     # Draw map of land boundaries in layer on top
     regionalMapPanel.update_geos(showcoastlines=True,
@@ -1052,20 +1160,32 @@ def createMapPanel(fieldToPlotCol,
                                  )
     # Add colorbar by creating an invisible, fake scatterplot
     if (colorScale == 'RdBu_r'):
-        if (maxField > np.abs(minField)):
-            tickVals = [0.5 * minField / rangeField + 0.5,
-                        0.25 * minField / rangeField + 0.75,
-                        1.0]
-            tickText = [f"{-maxField:.2f}",
-                        '0.0',
-                        f"{maxField:.2f}"]
-        else:
-            tickVals = [0.0,
-                        0.25 * maxField / rangeField + 0.25,
-                        0.5 * maxField / rangeField + 0.5]
-            tickText = [f"{minField:.2f}",
-                        '0.0',
-                        f"{-minField:.2f}"]
+        tickVals = [np.min(normlzdColorMatrix),
+                    0.5*np.min(normlzdColorMatrix)+0.5*np.max(normlzdColorMatrix),
+                    np.max(normlzdColorMatrix)]
+        tickText = [f"{-rangeField:.2f}",
+                    '0.0',
+                    f"{rangeField:.2f}"]
+        #if (maxField > np.abs(minField)):
+        #    #tickVals = [0.5 * minField / rangeField + 0.5,
+        #    #            0.25 * minField / rangeField + 0.75,
+        #    #            1.0]
+        #    tickVals = [0.5 * np.min(fieldToPlotMatrix) / rangeField + 0.5,
+        #                0.25 * np.min(fieldToPlotMatrix) / rangeField + 0.75,
+        #                1.0]
+        #    tickText = [f"{-maxField:.2f}",
+        #                '0.0',
+        #                f"{maxField:.2f}"]
+        #else:
+        #    #tickVals = [0.0,
+        #    #            0.25 * maxField / rangeField + 0.25,
+        #    #            0.5 * maxField / rangeField + 0.5]
+        #    tickVals = [0.0,
+        #                0.25 * np.max(fieldToPlotMatrix) / rangeField + 0.25,
+        #                0.5 * np.max(fieldToPlotMatrix) / rangeField + 0.5]
+        #    tickText = [f"{minField:.2f}",
+        #                '0.0',
+        #                f"{-minField:.2f}"]
     else:
         tickVals = [0.0, 1.0]
         tickText = ['0', f"{rangeField:.2f}"]
@@ -1262,6 +1382,7 @@ def createScatterplot(xCol, xColLabel,
                       yCol, yColLabel,
                       colorCol, colorColLabel,
                       colorScale,
+                      plotBgColor,
                       pointLabels, pointLabelsHeader,
                       plotTitle,
                       xaxisTitle,
@@ -1324,6 +1445,7 @@ def createScatterplot(xCol, xColLabel,
     scatterplot.update_layout(showlegend=showLegend)
     scatterplot.update_layout(hovermode=hoverMode)
     scatterplot.update_layout(width=plotWidth, height=plotHeight)
+    scatterplot.update_layout(plot_bgcolor=plotBgColor)
 
     return scatterplot
 
@@ -2682,6 +2804,7 @@ def createPcaBiplot(normlzdSensMatrix, normlzdDefaultBiasesCol,
                           colorCol=colorCol,
                           colorColLabel=colorColLabel,
                           colorScale='Rainbow',
+                          plotBgColor='lightgrey',
                           pointLabels=pointLabels, pointLabelsHeader=pointLabelsHeader,
                           plotTitle=(plotTitle + np.array2string(pca.explained_variance_ratio_)),
                           xaxisTitle=xaxisTitle,

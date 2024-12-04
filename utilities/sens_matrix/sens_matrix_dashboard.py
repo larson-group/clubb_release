@@ -103,9 +103,9 @@ def main():
     # If sValsRatio is 1, then only the first singular vector will be kept.
     sValsRatio = 800.
     normlzdSensMatrixPolySvd = \
-        approxMatrixWithSvd(normlzdSensMatrixPoly, sValsRatio, beVerbose=False)
+        approxMatrixWithSvd(normlzdSensMatrixPoly, sValsRatio, sValsNumToKeep=None, beVerbose=False)
     normlzdCurvMatrixSvd = \
-        approxMatrixWithSvd(normlzdCurvMatrix, sValsRatio, beVerbose=False)
+        approxMatrixWithSvd(normlzdCurvMatrix, sValsRatio, sValsNumToKeep=None, beVerbose=False)
 
     defaultBiasesApproxNonlin, \
     dnormlzdParamsSolnNonlin, paramsSolnNonlin, \
@@ -324,12 +324,13 @@ def solveUsingNonlin(metricsNames,
     lowerBoundsCol =  -defaultParamValsOrigRow[0]/magParamValsRow[0]
 
     #x0TwoYr = np.array([-0.1400083, -0.404022, 0.2203307, -0.9838958, 0.391993, -0.05910007, 1.198831])
-    x0TwoYr = np.array([0.5805136, -0.1447917, -0.2722521, -0.8183079, 0.3150205, -0.4794127, 0.1104284])
+    #x0TwoYr = np.array([0.5805136, -0.1447917, -0.2722521, -0.8183079, 0.3150205, -0.4794127, 0.1104284])
+    x0TwoYr = np.array([0.5805136, -0.2722521, -0.8183079, 0.3150205, -0.4794127])
     # Perform nonlinear optimization
     #normlzdDefaultBiasesCol = defaultBiasesCol/np.abs(normMetricValsCol)
     #dnormlzdParamsSolnNonlin = minimize(objFnc,x0=np.ones_like(np.transpose(defaultParamValsOrigRow)), \
-    #dnormlzdParamsSolnNonlin = minimize(objFnc,x0=np.zeros_like(np.transpose(defaultParamValsOrigRow[0])), \
-    dnormlzdParamsSolnNonlin = minimize(objFnc,x0=x0TwoYr, \
+    dnormlzdParamsSolnNonlin = minimize(objFnc,x0=np.zeros_like(np.transpose(defaultParamValsOrigRow[0])), \
+    #dnormlzdParamsSolnNonlin = minimize(objFnc,x0=x0TwoYr, \
     #dnormlzdParamsSolnNonlin = minimize(objFnc,dnormlzdParamsSoln, \
                                args=(normlzdSensMatrix, normlzdDefaultBiasesCol, metricsWeights,
                                normlzdCurvMatrix, reglrCoef, numMetrics),\
@@ -568,7 +569,7 @@ def constructNormlzdCurvMatrix(metricsNames, paramsNames, transformedParamsNames
              normlzdOrdDparamsMin, normlzdOrdDparamsMax )
 
 
-def approxMatrixWithSvd( matrix , sValsRatio,
+def approxMatrixWithSvd( matrix , sValsRatio, sValsNumToKeep,
                          beVerbose):
     """
     Input: A matrix
@@ -586,11 +587,16 @@ def approxMatrixWithSvd( matrix , sValsRatio,
     # Delete the small singular values in order to show just the most important patterns.
     # After this deletion, store inverse singular values in sValsTrunc
     sValsTrunc = np.copy(sVals)
-    for idx, sVal in np.ndenumerate(sVals):
-        # If a singular value is much smaller than largest singular value,
-        #     then zero it out.
-        if np.divide(sVals[0],np.maximum(sVal,np.finfo(float).eps)) > sValsRatio:
-            sValsTrunc[idx] = 0.
+    if (sValsNumToKeep == None):
+        for idx, sVal in np.ndenumerate(sVals):
+            # If a singular value is much smaller than largest singular value,
+            #     then zero it out.
+            if np.divide(sVals[0],np.maximum(sVal,np.finfo(float).eps)) > sValsRatio:
+                sValsTrunc[idx] = 0.
+    else:
+        for idx, sVal in np.ndenumerate(sVals):
+            if idx+1 > sValsNumToKeep:
+                sValsTrunc[idx] = 0.
 
     if beVerbose:
         print("\nOriginal singular values =")
