@@ -1841,17 +1841,16 @@ module advance_wp2_wp3_module
                  wpthlp(i,k)**2 / ( thlp2(i,k) * max_mag_correlation_flux**2 ) )
 
           if ( clubb_at_least_debug_level(3) ) then
-            if ( wp2_min_array(i,k) > wp2_max ) then
+            if ( wp2_min_array(i,k) > one ) then
               write(fstderr, *) "Warning: wp2_min_array(", i, ",", k, ") = ", wp2_min_array(i,k), &
-                               "> wp2_max = ", wp2_max, ". ", &
-                               "The threshold value is limited to wp2_max."
+                               "> 1.0. The threshold value is limited to 1.0."
               write(fstderr, *) "Checking inputs:"
               write(fstderr, *) "wprtp = ", wprtp(i,k), ", rtp2 = ", rtp2(i,k)
               write(fstderr, *) "wpthlp = ", wpthlp(i,k), ", thlp2 = ", thlp2(i,k)
             end if
           end if
 
-          wp2_min_array(i,k) = min( wp2_max, wp2_min_array(i,k) )
+          wp2_min_array(i,k) = min( one, wp2_min_array(i,k) )
 
         end do
       end do
