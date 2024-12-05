@@ -19,7 +19,7 @@ from dash import dcc
 from dash import html
 #import dash_html_components as html
 #import fnmatch
-from sens_matrix_dashboard import lossFncMetrics, approxMatrixWithSvd
+from sens_matrix_dashboard import lossFncMetrics, approxMatrixWithSvd, normlzdSemiLinMatrixFnc
 
 def createFigs(metricsNames,
                paramsNames, transformedParamsNames, paramsScales,
@@ -69,7 +69,7 @@ def createFigs(metricsNames,
     plot_paramsTotContrbBarChart = False
     plot_biasesVsDiagnosticScatterplot = False
     plot_dpMin2PtFig = True
-    plot_dpMinMatrixScatterFig = True
+    plot_dpMinMatrixScatterFig = False
     plot_projectionMatrixFigs = False #True
     plot_biasesVsSensMagScatterplot = True
     plot_biasesVsSvdScatterplot = True
@@ -168,7 +168,8 @@ def createFigs(metricsNames,
     mostImprovedIdxs = np.argpartition(tunedLossChange, numImprovedMetrics, axis=0)
     whitelistedMetricsMask = np.zeros_like(metricsNames, dtype=bool) # Initialize to False
     whitelistedMetricsMask[mostImprovedIdxs[:numImprovedMetrics, 0]] = True
-    mostDegradedIdxs = np.argpartition(-tunedLossChange, numImprovedMetrics, axis=0)
+    #mostDegradedIdxs = np.argpartition(-tunedLossChange, numImprovedMetrics, axis=0)
+    mostDegradedIdxs = np.argpartition(-tunedLossCol, numImprovedMetrics, axis=0)
     whitelistedMetricsMask[mostDegradedIdxs[:numImprovedMetrics, 0]] = True
 
     # Use this line if you want to include all params:
@@ -214,22 +215,35 @@ def createFigs(metricsNames,
 
     #    metricsSensOrderMasked = metricsSensOrder[whitelistedMetricsMask]
 
-    normlzdSensMatrixOrdered = normlzdSensMatrixPoly[metricsSensOrder, :]
+    #normlzdSensMatrixOrdered = normlzdSensMatrixPoly[metricsSensOrder, :]
     ## Form matrix of parameter perturbations, for later multiplication into the sensitivity matrix
     dnormlzdParamsSolnNonlinMatrix = np.ones((len(metricsNames), 1)) @ dnormlzdParamsSolnNonlin.T
-    normlzdSensParamsMatrixOrdered = normlzdSensMatrixOrdered * dnormlzdParamsSolnNonlinMatrix
-    normlzdSensParamsMatrix= normlzdSensMatrixPoly * dnormlzdParamsSolnNonlinMatrix
+    #normlzdSensParamsMatrixOrdered = normlzdSensMatrixOrdered * dnormlzdParamsSolnNonlinMatrix
+    #normlzdSensParamsMatrix = normlzdSensMatrixPoly * dnormlzdParamsSolnNonlinMatrix
 
     # Create plot showing lumped linear+nonlinear contributions to each metric
     # Form matrix of parameter perturbations, for later multiplication into the sensitivity matrix
-    #dnormlzdParamsSolnNonlinMatrix = np.ones((len(metricsNames),1)) @ dnormlzdParamsSolnNonlin.T
-    curvParamsMatrixOrdered = 0.5 * normlzdCurvMatrix[metricsSensOrder, :] * dnormlzdParamsSolnNonlinMatrix ** 2
-    curvParamsMatrix = 0.5 * normlzdCurvMatrix * dnormlzdParamsSolnNonlinMatrix ** 2
-    #print("Sum rows=", np.sum(-normlzdSensParamsMatrixOrdered-curvParamsMatrixOrdered, axis=1))
-    minusNonlinMatrixDparamsOrdered = -1 * curvParamsMatrixOrdered + -1 * normlzdSensParamsMatrixOrdered
+    linMatrixDparams = \
+        normlzdSemiLinMatrixFnc(dnormlzdParamsSolnNonlin, normlzdSensMatrixPoly,
+                                np.zeros_like(normlzdCurvMatrix), len(metricsNames)) \
+        * dnormlzdParamsSolnNonlinMatrix
+    curvMatrixDparams = \
+        normlzdSemiLinMatrixFnc(dnormlzdParamsSolnNonlin, np.zeros_like(normlzdSensMatrixPoly),
+                                normlzdCurvMatrix, len(metricsNames)) \
+        * dnormlzdParamsSolnNonlinMatrix
+    nonlinMatrixDparams = linMatrixDparams + curvMatrixDparams
+    #nonlinMatrixDparams = \
+    #    normlzdSemiLinMatrixFnc(dnormlzdParamsSolnNonlin, normlzdSensMatrixPoly,
+    #                            normlzdCurvMatrix, len(metricsNames)) \
+    #    * dnormlzdParamsSolnNonlinMatrix
+    minusNonlinMatrixDparamsOrdered = -nonlinMatrixDparams[metricsSensOrder, :]
+    #curvParamsMatrixOrdered = 0.5 * normlzdCurvMatrix[metricsSensOrder, :] * dnormlzdParamsSolnNonlinMatrix ** 2
+    #curvParamsMatrix = 0.5 * normlzdCurvMatrix * dnormlzdParamsSolnNonlinMatrix ** 2
+    ##print("Sum rows=", np.sum(-normlzdSensParamsMatrixOrdered-curvParamsMatrixOrdered, axis=1))
+    #minusNonlinMatrixDparamsOrdered = -1 * curvParamsMatrixOrdered + -1 * normlzdSensParamsMatrixOrdered
     minusNonlinMatrixDparamsOrderedMasked = \
         minusNonlinMatrixDparamsOrdered[whitelistedMetricsMask[metricsSensOrder]]
-    nonlinMatrixDparams = curvParamsMatrix + normlzdSensParamsMatrix
+    #nonlinMatrixDparams = curvParamsMatrix + normlzdSensParamsMatrix
     nonlinMatrixDparamsMasked = nonlinMatrixDparams[whitelistedMetricsMask]
     nonlinMatrixDparamsMasked = nonlinMatrixDparamsMasked \
                     * ( np.abs(normMetricValsCol[whitelistedMetricsMask]) @ np.ones_like(paramsSolnNonlin.T) ) \
@@ -356,16 +370,18 @@ def createFigs(metricsNames,
             createBarChart(sumParamsIncrsPlusBiases, index=paramsAbbrvPlusBiases,
                            columns=["Parameter<br>contribution"],
                            orientation='v',
+                           barColors=paramsAbbrvPlusBiases,
                            colorDiscreteMap=colorDiscreteMap,
+                           barMode='relative',
                            title="Mean parameter contributions to removal of biases <br>" \
                                    + "(= column means of sensMatrix*dParams+0.5*curvMatrix*dParams**2)",
                            xlabel="Parameter", ylabel="Contribution to bias removal",
                            width=800, height=500,
                            showLegend=False)
 
-    if plot_paramsIncrsBarChart:
+    if plot_paramsAbsIncrsBarChart:
 
-        absParamsIncrs = np.mean( np.abs(minusNonlinMatrixDparamsOrdered), axis=0 )
+        absParamsIncrs = np.mean( np.abs(nonlinMatrixDparams), axis=0 )
         absParamsIncrsPlusBias = np.append(absParamsIncrs, np.mean( np.abs(normlzdDefaultBiasesCol)))
         absParamsAbbrvPlusBias = np.append(paramsAbbrv, 'abs bias')
         barColors = np.append( ["blue"]*len(paramsNames), "red" )
@@ -376,6 +392,8 @@ def createFigs(metricsNames,
             createBarChart(absParamsIncrsPlusBias, index=absParamsAbbrvPlusBias,
                            columns=["Parameter<br>contribution"],
                            orientation='v',
+                           barMode='relative',
+                           barColors=absParamsAbbrvPlusBias,
                            colorDiscreteMap=absColorDiscreteMap,
                            title="Size of abs parameter contributions <br>" \
                                    + "(= column means of abs sensMatrix*dParams+0.5*curvMatrix*dParams**2)",
@@ -383,7 +401,26 @@ def createFigs(metricsNames,
                            width=800, height=500,
                            showLegend=False)
 
+        absParamsLinIncrs = np.mean( np.abs(linMatrixDparams), axis=0 )
+        absParamsLinIncrs = np.reshape(absParamsLinIncrs, (-1, 1))
+        absParamsCurvIncrs = np.mean(np.abs(curvMatrixDparams), axis=0)
+        absParamsCurvIncrs = np.reshape(absParamsCurvIncrs, (-1, 1))
+        absParamsLinCurvIncrs = np.hstack((absParamsLinIncrs, absParamsCurvIncrs))
 
+        paramsAbsLinCurvIncrsBarChart = \
+            createBarChart(absParamsLinCurvIncrs,
+                           index=paramsAbbrv,
+                           columns=['linear', 'nonlinear'],
+                           #columns=paramsAbbrv,
+                           #index=['absParamsLinIncrs', 'absParamsCurvIncrs'],
+                           orientation='v',
+                           barMode='group',
+                           #colorDiscreteMap=absColorDiscreteMap,
+                           title="Size of abs parameter contributions <br>" \
+                                   + "linear vs. nonlinear",
+                           xlabel="Parameter", ylabel="Contribution to bias removal",
+                           width=800, height=500,
+                           showLegend=True)
 
 
     if False:
@@ -687,10 +724,10 @@ def createFigs(metricsNames,
                               plotWidth=700, plotHeight=500)
 
     if plot_paramsCorrArrayFig:
-        matrixDictKeyString = "normlzdSensMatrixPoly"
-        matrixDict = {matrixDictKeyString: normlzdSensMatrixPoly}
-        #matrixDictKeyString = "normlzdLinplusSensMatrixPoly"
-        #matrixDict={matrixDictKeyString:normlzdLinplusSensMatrixPoly}
+        #matrixDictKeyString = "normlzdSensMatrixPoly"
+        #matrixDict = {matrixDictKeyString: normlzdSensMatrixPoly}
+        matrixDictKeyString = "normlzdLinplusSensMatrixPoly"
+        matrixDict={matrixDictKeyString:normlzdLinplusSensMatrixPoly}
         paramsCorrArrayFig = \
             createParamsCorrArrayFig(matrix=matrixDict[matrixDictKeyString],
                                      biasesCol=normlzdDefaultBiasesCol,
@@ -957,6 +994,8 @@ def createFigs(metricsNames,
                                            config=downloadConfig))
     if plot_paramsAbsIncrsBarChart:
         dashboardChildren.append(dcc.Graph(id='paramsAbsIncrsBarChart', figure=paramsAbsIncrsBarChart,
+                                           config=downloadConfig))
+        dashboardChildren.append(dcc.Graph(id='paramsAbsLinCurvIncrsBarChart', figure=paramsAbsLinCurvIncrsBarChart,
                                            config=downloadConfig))
     if False:
         dashboardChildren.append(dcc.Graph(id='linplusSensMatrixBarFig', figure=linplusSensMatrixBarFig,
@@ -1525,8 +1564,10 @@ def createMetricsBarChart(metricsNames, paramsNames,
 
 def createBarChart(matrix, index, columns,
                    #                   barBase,
+                   barColors=None,
                    colorDiscreteMap=None,
                    orientation="v",
+                   barMode=None,
                    title=None,
                    xlabel=None, ylabel=None,
                    width=800, height=500,
@@ -1538,12 +1579,16 @@ def createBarChart(matrix, index, columns,
     df = pd.DataFrame(matrix,
                       index=index,
                       columns=columns)
-    barChart = px.bar(df, x=df.index, y=df.columns,
+    #df.reset_index(inplace=True)
+    barChart = px.bar(df,
+                      x=df.index,
+                      y=df.columns,
                       #base=barBase,
                       #offset=1,
-                      color=index,
+                      color=barColors,
                       color_discrete_map=colorDiscreteMap,
                       orientation=orientation,
+                      barmode=barMode,
                       title=title)
     barChart.update_xaxes(title=xlabel)
     barChart.update_yaxes(title=ylabel)
