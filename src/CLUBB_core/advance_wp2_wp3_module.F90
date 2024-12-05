@@ -59,7 +59,7 @@ module advance_wp2_wp3_module
                               wm_zt, a3_coef, a3_coef_zt, wp3_on_wp2,        & ! intent(in)
                               wpup2, wpvp2, wp2up2, wp2vp2, wp4,             & ! intent(in)
                               wpthvp, wp2thvp, um, vm, upwp, vpwp,           & ! intent(in)
-                              up2, vp2, em, Kh_zm, Kh_zt, invrs_tau_C4_zm,   & ! intent(in)
+                              em, Kh_zm, Kh_zt, invrs_tau_C4_zm,             & ! intent(in)
                               invrs_tau_wp3_zt, invrs_tau_C1_zm, Skw_zm,     & ! intent(in)
                               Skw_zt, rho_ds_zm, rho_ds_zt, invrs_rho_ds_zm, & ! intent(in)
                               invrs_rho_ds_zt, thv_ds_zm,                    & ! intent(in)
@@ -84,7 +84,7 @@ module advance_wp2_wp3_module
                               l_use_wp3_lim_with_smth_Heaviside,             & ! intent(in)
                               stats_metadata,                                & ! intent(in)
                               stats_zt, stats_zm, stats_sfc,                 & ! intent(inout)
-                              wp2, wp3, wp3_zm, wp2_zt )                       ! intent(inout)
+                              up2, vp2, wp2, wp3, wp3_zm, wp2_zt )             ! intent(inout)
 
     ! Description:
     ! Advance w'^2 and w'^3 one timestep.
@@ -216,8 +216,6 @@ module advance_wp2_wp3_module
       wpthvp,            & ! w'th_v' (momentum levels)                 [K m/s]
       upwp,              & ! u'w' (momentum levels)                    [m^2/s^2]
       vpwp,              & ! v'w' (momentum levels)                    [m^2/s^2]
-      up2,               & ! u'^2 (momentum levels)                    [m^2/s^2]
-      vp2,               & ! v'^2 (momentum levels)                    [m^2/s^2]
       em,                & ! Turbulence kinetic energy                 [m^2/s^2]
       Kh_zm,             & ! Eddy diffusivity on momentum levels       [m^2/s]
       invrs_tau_C4_zm,   & ! Inverse time-scale tau on momentum levels         [1/s]
@@ -306,6 +304,8 @@ module advance_wp2_wp3_module
       stats_sfc
 
     real( kind = core_rknd ), dimension(ngrdcol,nzm), intent(inout) :: &
+      up2,  & ! u'^2 (momentum levels)                    [m^2/s^2]
+      vp2,  & ! v'^2 (momentum levels)                    [m^2/s^2]
       wp2,  & ! w'^2 (momentum levels)                    [m^2/s^2]
       wp3_zm  ! w'^3 interpolated to momentum levels      [m^3/s^3]
 
@@ -1025,7 +1025,7 @@ module advance_wp2_wp3_module
                      wm_zm, wm_zt,                                & ! intent(in)
                      sfc_elevation, C11_Skw_fnc,                  & ! intent(in)
                      rho_ds_zm,                                   & ! intent(in)
-                     wprtp, wpthlp, rtp2, thlp2,                  & ! intent(in)
+                     upwp, vpwp, wprtp, wpthlp, rtp2, thlp2,      & ! intent(in)
                      clubb_params,                                & ! intent(in)
                      penta_solve_method,                          & ! intent(in)
                      l_min_wp2_from_corr_wx,                      & ! intent(in)
@@ -1034,7 +1034,7 @@ module advance_wp2_wp3_module
                      l_use_wp3_lim_with_smth_Heaviside,           & ! intent(in)
                      stats_metadata,                              & ! intent(in)
                      stats_zt, stats_zm, stats_sfc,               & ! intent(inout)
-                     wp2, wp3, wp3_zm, wp2_zt )                     ! intent(inout)
+                     up2, vp2, wp2, wp3, wp3_zm, wp2_zt )           ! intent(inout)
 
     if ( l_lmm_stepping ) then
       !$acc parallel loop gang vector collapse(2) default(present)
@@ -1215,7 +1215,7 @@ module advance_wp2_wp3_module
                          wm_zm, wm_zt, &
                          sfc_elevation, C11_Skw_fnc, &
                          rho_ds_zm, &
-                         wprtp, wpthlp, rtp2, thlp2, &
+                         upwp, vpwp, wprtp, wpthlp, rtp2, thlp2, &
                          clubb_params, &
                          penta_solve_method, &
                          l_min_wp2_from_corr_wx, &
@@ -1224,7 +1224,7 @@ module advance_wp2_wp3_module
                          l_use_wp3_lim_with_smth_Heaviside, &
                          stats_metadata, &
                          stats_zt, stats_zm, stats_sfc, &
-                         wp2, wp3, wp3_zm, wp2_zt )
+                         up2, vp2, wp2, wp3, wp3_zm, wp2_zt )
 
     ! Description:
     ! Decompose, and back substitute the matrix for wp2/wp3
@@ -1353,6 +1353,8 @@ module advance_wp2_wp3_module
       rho_ds_zm,       & ! Dry, static density on momentum levels    [kg/m^3]
       wprtp,           & ! Flux of total water mixing ratio          [m/s kg/kg]
       wpthlp,          & ! Flux of liquid water potential temp.      [m/s K]
+      upwp,            & ! Momentum flux of u                        [m^2/s^2]
+      vpwp,            & ! Momentum flux of v                        [m^2/s^2]
       rtp2,            & ! Variance of rt (overall)                  [kg^2/kg^2]
       thlp2              ! Variance of thl (overall)                 [K^2]
 
@@ -1387,6 +1389,8 @@ module advance_wp2_wp3_module
       stats_sfc
 
     real( kind = core_rknd ), dimension(ngrdcol,nzm), intent(inout) :: &
+      up2, &    ! u'^2 (momentum levels)                          [m^2/s^2]
+      vp2, &    ! v'^2 (momentum levels)                          [m^2/s^2]
       wp2,  & ! w'^2 (momentum levels)                            [m^2/s^2]
       wp3_zm  ! w'^3 interpolated to momentum levels              [m^3/s^3]
 
@@ -1554,7 +1558,8 @@ module advance_wp2_wp3_module
       C11_Skw_fnc_zeros     = zero
       C11_Skw_fnc_plus_one  = C11_Skw_fnc + one
 
-      !$acc data copyin( C_uu_shr_zeros, C_uu_shr_plus_one, C11_Skw_fnc_zeros, C11_Skw_fnc_plus_one ) &
+      !$acc data copyin( C_uu_shr_zeros, C_uu_shr_plus_one, C11_Skw_fnc_zeros, &
+      !$acc              C11_Skw_fnc_plus_one ) &
       !$acc      copyout( lhs_wp2_ac_term, lhs_wp2_pr2_term, lhs_wp3_ac_term, lhs_wp3_pr2_term )
       
       ! Note:  To find the contribution of w'^2 term ac, substitute 0 for the
@@ -1576,8 +1581,9 @@ module advance_wp2_wp3_module
       
       ! Note:  To find the contribution of w'^3 term pr2, add 1 to the
       !        C_ll skewness function input to function wp3_terms_ac_pr2_lhs.
-      call wp3_terms_ac_pr2_lhs( nzm, nzt, ngrdcol, gr, C11_Skw_fnc_plus_one, wm_zm,  & ! intent(in)
-                                 lhs_wp3_pr2_term )                                     ! intent(out)
+      call wp3_terms_ac_pr2_lhs( nzm, nzt, ngrdcol, gr,         & ! intent(in)
+                                 C11_Skw_fnc_plus_one, wm_zm,   & ! intent(in)
+                                 lhs_wp3_pr2_term )               ! intent(out)
     
       !$acc end data
 
@@ -1758,7 +1764,7 @@ module advance_wp2_wp3_module
       ! Store previous value for effect of the positive definite scheme
       do i = 1, ngrdcol
         call stat_begin_update( nzm, stats_metadata%iwp2_pd, wp2(i,:) / dt,  & ! intent(in)
-                                stats_zm(i) )                  ! intent(inout)
+                                stats_zm(i) )                                  ! intent(inout)
       end do
     end if
 
@@ -1793,7 +1799,7 @@ module advance_wp2_wp3_module
       ! Store updated value for effect of the positive definite scheme
       do i = 1, ngrdcol
         call stat_end_update( nzm, stats_metadata%iwp2_pd, wp2(i,:) / dt, & ! intent(in)
-                              stats_zm(i) )                     ! intent(inout)
+                              stats_zm(i) )                                 ! intent(inout)
       end do
     end if
 
@@ -1832,13 +1838,17 @@ module advance_wp2_wp3_module
       !
       ! wp2|_min = max( wprtp^2 / ( rtp2 * max_mag_correlation_flux^2 ),
       !                 wpthlp^2 / ( thlp2 * max_mag_correlation_flux^2 ) ).
+      !
+      ! And similarly for upwp and vpwp
       !$acc parallel loop gang vector collapse(2) default(present)
       do k = 1, nzm, 1
         do i = 1, ngrdcol
           wp2_min_array(i,k) &
           = max( w_tol_sqd, &
                  wprtp(i,k)**2 / ( rtp2(i,k) * max_mag_correlation_flux**2 ), &
-                 wpthlp(i,k)**2 / ( thlp2(i,k) * max_mag_correlation_flux**2 ) )
+                 wpthlp(i,k)**2 / ( thlp2(i,k) * max_mag_correlation_flux**2 ), &
+                 upwp(i,k)**2 / ( up2(i,k) * max_mag_correlation_flux**2 ), &
+                 vpwp(i,k)**2 / ( vp2(i,k) * max_mag_correlation_flux**2 ) )
 
           if ( clubb_at_least_debug_level(3) ) then
             if ( wp2_min_array(i,k) > one ) then
@@ -1847,6 +1857,8 @@ module advance_wp2_wp3_module
               write(fstderr, *) "Checking inputs:"
               write(fstderr, *) "wprtp = ", wprtp(i,k), ", rtp2 = ", rtp2(i,k)
               write(fstderr, *) "wpthlp = ", wpthlp(i,k), ", thlp2 = ", thlp2(i,k)
+              write(fstderr, *) "upwp = ", upwp(i,k), ", up2 = ", up2(i,k)
+              write(fstderr, *) "vpwp = ", vpwp(i,k), ", vp2 = ", vp2(i,k)
             end if
           end if
 

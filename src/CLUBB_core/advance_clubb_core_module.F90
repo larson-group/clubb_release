@@ -2096,7 +2096,7 @@ module advance_clubb_core_module
                             wm_zt, a3_coef, a3_coef_zt, wp3_on_wp2,               & ! intent(in)
                             wpup2, wpvp2, wp2up2, wp2vp2, wp4,                    & ! intent(in)
                             wpthvp, wp2thvp, um, vm, upwp, vpwp,                  & ! intent(in)
-                            up2, vp2, em, Kh_zm, Kh_zt, invrs_tau_C4_zm,          & ! intent(in)
+                            em, Kh_zm, Kh_zt, invrs_tau_C4_zm,                    & ! intent(in)
                             invrs_tau_wp3_zt, invrs_tau_C1_zm, Skw_zm,            & ! intent(in)
                             Skw_zt, rho_ds_zm, rho_ds_zt, invrs_rho_ds_zm,        & ! intent(in)
                             invrs_rho_ds_zt, thv_ds_zm,                           & ! intent(in)
@@ -2121,7 +2121,7 @@ module advance_clubb_core_module
                             clubb_config_flags%l_use_wp3_lim_with_smth_Heaviside, & ! intent(in)
                             stats_metadata,                                       & ! intent(in)
                             stats_zt, stats_zm, stats_sfc,                        & ! intent(inout)
-                            wp2, wp3, wp3_zm, wp2_zt )                              ! intent(inout)
+                            up2, vp2, wp2, wp3, wp3_zm, wp2_zt )                    ! intent(inout)
 
       if ( clubb_at_least_debug_level( 0 ) ) then
          if ( err_code == clubb_fatal_error ) then
