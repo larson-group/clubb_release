@@ -477,7 +477,7 @@ module model_flags
     saturation_formula = saturation_flatau
     l_use_precip_frac = .true.
     l_predict_upwp_vpwp = .true.
-    l_min_wp2_from_corr_wx = .true.
+    l_min_wp2_from_corr_wx = .false.
     l_min_xp2_from_corr_wx = .true.
     l_C2_cloud_frac = .false.
     l_diffuse_rtm_and_thlm = .false.
