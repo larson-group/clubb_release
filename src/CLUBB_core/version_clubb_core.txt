@@ -1,0 +1,124 @@
+commit d7b7306c8f0f7a0150cade9a0d73db293ed89524
+Author: domkesteffen <42725900+domkesteffen@users.noreply.github.com>
+Date:   Fri Dec 6 13:43:28 2024 -0600
+
+    Changed default setting of flag l_min_wp2_from_corr_wx to false (#1216)
+    
+    CLUBB ticket #1165
+    
+    BIT_CHANGING
+    Changed default setting in configurable_model_flags.in and model_flags.F90
+    to decrease clipping contribution to `wp2` and increase clipping to `rtp2` and `thl2`.
+
+commit eba3ae9e61fd97b54bee120570aaddb9be1564b7
+Author: vlarson <vlarson@uwm.edu>
+Date:   Thu Dec 5 13:15:33 2024 -0600
+
+    QuadTune: Add bar chart showing linear vs. nonlinear contributions of each parameter.
+    
+    For #910.
+
+commit 7b703667bc54f062406c39e6173dc4083dee7db2
+Author: domkesteffen <42725900+domkesteffen@users.noreply.github.com>
+Date:   Thu Dec 5 12:07:48 2024 -0600
+
+    Added up2 and vp2 to calculation of wp2_min_array (#1215)
+    
+    CLUBB ticket #1165
+    
+    This is BIT_CHANGING for the cases ARM_97, ATEX, CGILS_S6, GABLS3_NIGHT, LBA, MPACE_B, and TWP_ICE out of the priority cases.
+    These lines of code were added since the fields `u`, `v`, `rt`, and `thl`, and their correlations with `w` should be treated equally.
+
+commit 9509e1b7c67cfcd60412b46b3f7b110eb85cc121
+Author: domkesteffen <42725900+domkesteffen@users.noreply.github.com>
+Date:   Wed Dec 4 09:59:01 2024 -0600
+
+    Reduced the upper bound for wp2_min_array to 1.0 (#1214)
+    
+    CLUBB ticket #1165
+    
+    This is BIT_CHANGING for at least the cases ARM_97 and TWP_ICE,
+    and likely any other more non-standard cases.
+    This change will prevent the minimum clipping value for wp2 from exploding when l_min_wp2_from_corr_wx=.true.
+
+commit 7f1ff523d411b020d4b8f71a89668ec8a79a10d9
+Author: vlarson <vlarson@uwm.edu>
+Date:   Wed Dec 4 08:30:34 2024 -0600
+
+    QuadTune: 1) Add bar chart that shows |metric_changes| due to each parameter. 2) Fix colorbars on maps.  3) Allow download of hi-res figures.  4) Make background of scatterplots grey.
+    
+    For #910.
+
+commit afcbd644e18802286f1de588197dde479b2297ea
+Author: domkesteffen <42725900+domkesteffen@users.noreply.github.com>
+Date:   Tue Dec 3 11:39:58 2024 -0600
+
+    Fix pyplotgen timeheight cmaps (#1212)
+    
+    * Fixed time-height plot colormaps
+    CLUBB ticket #1199
+    
+    Added a "quick" fix for time-height plot colormaps when variables are not correlations (i.e. values in [-1;1])
+    Updated VariableGroupCorrelations to include all correlations that are usually output in CLUBB.
+    
+    * Fixed time-height plot colormaps
+    CLUBB ticket #1199
+    
+    Fixed distinction for colormaps in time-height plots and added tick formatter.
+    We now check the labels for the string "corr" to find correlation variables.
+    Otherwise we just use one-sided or two-sided normed colormaps.
+
+commit 7447595af2409f56faa42e4fa915078e13a2cbf1
+Author: domkesteffen <42725900+domkesteffen@users.noreply.github.com>
+Date:   Tue Dec 3 09:19:40 2024 -0600
+
+    Likely non-bit-changing housekeeping (#1213)
+    
+    Non-bit-changing housekeeping regarding wp2 clipping
+    CLUBB ticket #1165
+    
+    Renamed threshold_array -> wp2_min_array
+    Moved upper clipping of wp2 into clip_variance
+    Added warning outputs where wp2 is hard-clipped
+    Added debugging checks to hole-filling and wp2_min_array clipping
+    Some necessary OpenACC-modifications
+
+commit 50fe6be42a8a75a9d62659a64b56a64e8d7bd5a0
+Author: vlarson <vlarson@uwm.edu>
+Date:   Sat Nov 30 09:51:40 2024 -0600
+
+    QuadTune: 1) Change coloring of scatterpoints to represent either loss changes or residuals. 2) Add map of residuals to complement map of bias.
+    
+    For #910.
+
+commit 91d31581a8a77559266dfc2cc76c09ec71366c16
+Author: vlarson <vlarson@uwm.edu>
+Date:   Wed Nov 27 16:57:22 2024 -0600
+
+    QuadTune: Added colorbars to regional map plots.
+    
+    For #910.
+
+commit 8572001d7a87cba485b292f57adfb7abc970e462
+Author: Gunther Huebler <37674341+huebleruwm@users.noreply.github.com>
+Date:   Fri Nov 22 04:21:52 2024 -0600
+
+    Multi col output update (#1211)
+    
+    * Multi_col output update to enable averaging over timesteps and outputting with single precision. This replaces the timestep batched output method used before, which was only noticably faster at low column numbers. This is technically BC (edited during merge, PR no longer BC), because the single precision output will be interpretted as different from the current double precision output.
+    
+    * Small cleanup
+    
+    * Script updates
+    
+    * Script update
+    
+    * Script update
+    
+    * Adding capability to output multi_col as double or single precision using new flag l_output_double_prec.
+    
+    * Removing accidentally added file.
+    
+    * Making new jenkins script run single and double precision tests.
+    
+    * Update to jenkins test
