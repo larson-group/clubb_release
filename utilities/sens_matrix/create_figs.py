@@ -32,7 +32,7 @@ def createFigs(metricsNames,
                normlzdWeightedSensMatrixPoly,
                dnormlzdParamsSolnNonlin,
                defaultParamValsOrigRow,
-               linSolnBiasesCol, normlzdLinplusSensMatrixPoly,
+               normlzdLinSolnBiasesCol, normlzdLinplusSensMatrixPoly,
                paramsSolnLin, dnormlzdParamsSolnLin,
                paramsSolnNonlin,
                paramsSolnElastic, dnormlzdParamsSolnElastic,
@@ -164,6 +164,10 @@ def createFigs(metricsNames,
 
     tunedLossChange = tunedLossCol - defaultLossCol
 
+    linSolnLossCol = np.square( normlzdLinSolnBiasesCol * metricsWeights )
+
+    linSolnLossChange = linSolnLossCol - defaultLossCol
+
     numImprovedMetrics = 8
     mostImprovedIdxs = np.argpartition(tunedLossChange, numImprovedMetrics, axis=0)
     whitelistedMetricsMask = np.zeros_like(metricsNames, dtype=bool) # Initialize to False
@@ -190,7 +194,7 @@ def createFigs(metricsNames,
     defaultBiasesApproxNonlinNoCurvMasked = defaultBiasesApproxNonlinNoCurv[whitelistedMetricsMask]
     defaultBiasesApproxNonlin2xCurvMasked = defaultBiasesApproxNonlin2xCurv[whitelistedMetricsMask]
 
-    linSolnBiasesColMasked = linSolnBiasesCol[whitelistedMetricsMask]
+    normlzdLinSolnBiasesColMasked = normlzdLinSolnBiasesCol[whitelistedMetricsMask]
 
     metricsWeightsMasked = metricsWeights[whitelistedMetricsMask]
 
@@ -294,12 +298,12 @@ def createFigs(metricsNames,
                                         defaultBiasesColMasked, normMetricValsColMasked,
                                         defaultBiasesApproxNonlinNoCurvMasked, defaultBiasesApproxNonlin2xCurvMasked,
                                         defaultBiasesApproxNonlinMasked,
-                                        linSolnBiasesColMasked)
+                                        normlzdLinSolnBiasesColMasked)
         #createBiasesOrderedArrowFig(metricsSensOrder, metricsNamesOrdered,
         #                            defaultBiasesCol, normMetricValsCol,
         #                            defaultBiasesApproxNonlinNoCurv, defaultBiasesApproxNonlin2xCurv,
         #                            defaultBiasesApproxNonlin,
-        #                            linSolnBiasesCol)
+        #                            normlzdLinSolnBiasesCol)
 
 
     # Nota bene on masked ordering:
@@ -787,6 +791,12 @@ def createFigs(metricsNames,
 
         print("Creating PcSensMap . . .")
 
+        # Create a blank figure to fill in any empty spots
+        blankFig = go.Figure()
+        plotWidth = 500
+        plotHeight = np.rint(plotWidth * (490 / 700))
+        blankFig.update_layout(width=plotWidth, height=plotHeight)
+
         PcMapPanelBias = \
             createMapPanel(fieldToPlotCol=normlzdDefaultBiasesCol,
                            plotWidth=500,
@@ -812,14 +822,32 @@ def createFigs(metricsNames,
                       style={'display': 'inline-block'}, config=downloadConfig)
         ])]
 
+        PcMapPanelLinSoln = \
+            createMapPanel(fieldToPlotCol=normlzdLinSolnBiasesCol,
+                           plotWidth=500,
+                           plotTitle="normlzdLinSoln",
+                           boxSize=20,
+                           minField=minFieldBias,
+                           maxField=maxFieldBias)
+
+        BiasParamsDashboardChildren.append(html.Div(children=[
+            dcc.Graph(figure=PcMapPanelLinSoln,
+                      style={'display': 'inline-block'}, config=downloadConfig),
+            dcc.Graph(figure=blankFig,
+                      style={'display': 'inline-block'}, config=downloadConfig)
+        ]))
+
         PcMapPanelDefaultLoss = \
             createMapPanel(fieldToPlotCol=1e3*np.sqrt(defaultLossCol),
                            plotWidth=500,
                            plotTitle="Sqrt Default Loss (x 1e3)",
                            boxSize=20)
 
+        sqrtTunedLossChange = \
+            1e3 * np.sign(tunedLossChange) * np.sqrt(np.abs(tunedLossChange))
+
         PcMapPanelTunedLossChange = \
-            createMapPanel(fieldToPlotCol=1e3*np.sign(tunedLossChange)*np.sqrt(np.abs(tunedLossChange)),
+            createMapPanel(fieldToPlotCol=sqrtTunedLossChange,
                            plotWidth=500,
                            plotTitle="Sqrt Tuned Loss Change (x 1e3)",
                            boxSize=20)
@@ -831,6 +859,24 @@ def createFigs(metricsNames,
                           config=downloadConfig)
             ]))
 
+        # Use same color range in linSolnLoss plot as in tunedLoss plot
+        minFieldBias = np.min(sqrtTunedLossChange)
+        maxFieldBias = np.max(sqrtTunedLossChange)
+
+        PcMapPanelLinSolnLossChange = \
+            createMapPanel(fieldToPlotCol=1e3*np.sign(linSolnLossChange)*np.sqrt(np.abs(linSolnLossChange)),
+                           plotWidth=500,
+                           plotTitle="Sqrt LinSoln Loss Change (x 1e3)",
+                           boxSize=20,
+                           minField=minFieldBias,
+                           maxField=maxFieldBias)
+
+        BiasParamsDashboardChildren.append(html.Div(children=[
+            dcc.Graph(figure=PcMapPanelLinSolnLossChange,
+                      style={'display': 'inline-block'}, config=downloadConfig),
+            dcc.Graph(figure=blankFig,
+                      style={'display': 'inline-block'}, config=downloadConfig)
+        ]))
 
         paramsIdx = 0
         while paramsIdx < len(paramsNames):
@@ -846,10 +892,7 @@ def createFigs(metricsNames,
                                    plotTitle=f"normlzdSensMatrixPoly[:,{paramsNames[paramsIdx + 1]}]",
                                    boxSize=20)
             else:
-                rightFig = go.Figure()
-                plotWidth = 500
-                plotHeight = np.rint(plotWidth * (490 / 700))
-                rightFig.update_layout(width=plotWidth, height=plotHeight)
+                rightFig = blankFig
 
             BiasParamsDashboardChildren.append(html.Div(children=[
                 dcc.Graph(figure=leftFig, style={'display': 'inline-block'},
@@ -2293,7 +2336,7 @@ def createBiasesOrderedArrowFig(metricsSensOrder, metricsNamesOrdered,
                                 defaultBiasesCol, normMetricValsCol,
                                 defaultBiasesApproxNonlinNoCurv, defaultBiasesApproxNonlin2xCurv,
                                 defaultBiasesApproxNonlin,
-                                linSolnBiasesCol):
+                                normlzdLinSolnBiasesCol):
     # Plot a black dot for each default-run bias
     biasesOrderMatrix = np.dstack((-defaultBiasesCol[metricsSensOrder])).squeeze()
     fracBiasesOrderMatrix = np.diagflat(np.reciprocal(np.abs(normMetricValsCol[metricsSensOrder]))) \
@@ -2382,8 +2425,8 @@ def createBiasesOrderedArrowFig(metricsSensOrder, metricsNamesOrdered,
         biasesOrderedArrowFig.add_annotation(
             x=xArrow[i] + gap,  # ith arrow's head
             # ith arrow's head:
-            #y= (-linSolnBiasesCol-defaultBiasesCol)[metricsSensOrder[i],0]/np.abs(normMetricValsCol[metricsSensOrder[i],0]),
-            y=(-linSolnBiasesCol)[metricsSensOrder[i], 0] / np.abs(normMetricValsCol[metricsSensOrder[i], 0]),
+            #y= (-normlzdLinSolnBiasesCol-normlzdDefaultBiasesCol)[metricsSensOrder[i],0], #/np.abs(normMetricValsCol[metricsSensOrder[i],0]),
+            y=(-normlzdLinSolnBiasesCol)[metricsSensOrder[i], 0], # / np.abs(normMetricValsCol[metricsSensOrder[i], 0]),
             ax=xArrow[i] + gap,  # ith arrow's tail
             ay=yArrow[i],  # ith arrow's tail
             xref='x',

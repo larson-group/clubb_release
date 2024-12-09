@@ -237,7 +237,7 @@ def main():
                normlzdWeightedSensMatrixPoly,
                dnormlzdParamsSolnNonlin,
                defaultParamValsOrigRow,
-               linSolnBiasesCol, normlzdLinplusSensMatrixPoly,
+               normlzdLinSolnBiasesCol, normlzdLinplusSensMatrixPoly,
                paramsSolnLin, dnormlzdParamsSolnLin,
                paramsSolnNonlin,
                paramsSolnElastic, dnormlzdParamsSolnElastic,
@@ -357,12 +357,17 @@ def solveUsingNonlin(metricsNames,
              * metricsWeights
 
     # defaultBiasesApproxNonlin = (       forward model soln       - default soln )
+    #                           = ( f0 +      fwdFnc               - default soln )
     #                           = ( f0 + df/dp*dp + 0.5d2f/dp2*dp2 -       f0     )
     # residual = (   y_i -                y_hat_i                        )
     # residual = (   y_i - ( f0    +   df/dp_i*dp + 0.5d2f/dp2_i*dp2 )   )
     #          =   ( y_i -   f0 )  - ( df/dp_i*dp + 0.5d2f/dp2_i*dp2 )
     #          = -defaultBiasesCol - (   defaultBiasesApproxNonlin   )
-    #  where f0 = defaultBiasesCol + obsMetricValsCol
+    #          = -defaultBiasesCol -              fwdFnc
+    #  where f0 = defaultBiasesCol + obsMetricValsCol,
+    #        y_i = obsMetricValsCol.
+    #  linSolnBiases = forward global model soln - obs
+    #                =                    -global_resid
     defaultBiasesApproxNonlin = normlzdWeightedDefaultBiasesApproxNonlin \
                                 * np.reciprocal(metricsWeights) * np.abs(normMetricValsCol)
 
