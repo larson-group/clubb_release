@@ -332,7 +332,7 @@ module diagnose_correlations_module
 !
 !    use grid_class, only: &
 !        gr,  & ! Variable(s)
-!        zm2zt,  & ! Procedure(s)
+!        zm2zt_gpu,  & ! Procedure(s)
 !        zt2zm
 !
 !    use pdf_parameter_module, only:  &

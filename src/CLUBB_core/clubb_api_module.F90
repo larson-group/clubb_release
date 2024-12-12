@@ -179,9 +179,11 @@ module clubb_api_module
   use grid_class, only: &
     ! Interpolate momentum level variables to thermodynamic levels 
     zm2zt_api => zm2zt, &
+    zm2zt_api_gpu => zm2zt_gpu, &
 
     ! Interpolate thermodynamic level variables to momentum levels 
-    zt2zm_api => zt2zm
+    zt2zm_api => zt2zm, &
+    zt2zm_api_gpu => zt2zm_gpu
 
   use saturation, only: &
     ! Used to compute the saturation mixing ratio of liquid water.

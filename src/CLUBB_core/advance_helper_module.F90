@@ -377,7 +377,7 @@ module advance_helper_module
     use grid_class, only: &
         grid, & ! Type
         ddzt,   &  ! Procedure(s)
-        zt2zm
+        zt2zm_gpu
 
     use T_in_K_module, only: &
         thlm2T_in_K ! Procedure
@@ -445,7 +445,7 @@ module advance_helper_module
     !$acc               stat_dry_virtual_zm, ddzt_rtm_zm, ice_supersat_frac_zm )
 
     ddzt_thlm = ddzt( nz, ngrdcol, gr, thlm )
-    thvm_zm   = zt2zm( nz, ngrdcol, gr, thvm, zero_threshold )
+    thvm_zm   = zt2zm_gpu( nz, ngrdcol, gr, thvm, zero_threshold )
     ddzt_thvm = ddzt( nz, ngrdcol, gr, thvm )
 
     ! Dry Brunt-Vaisala frequency
@@ -472,9 +472,9 @@ module advance_helper_module
     end if
 
     T_in_K    = thlm2T_in_K( nz, ngrdcol, thlm, exner, rcm )
-    T_in_K_zm = zt2zm( nz, ngrdcol, gr, T_in_K, zero_threshold )
+    T_in_K_zm = zt2zm_gpu( nz, ngrdcol, gr, T_in_K, zero_threshold )
     rsat      = sat_mixrat_liq( nz, ngrdcol, p_in_Pa, T_in_K, saturation_formula )
-    rsat_zm   = zt2zm( nz, ngrdcol, gr, rsat, zero_threshold )
+    rsat_zm   = zt2zm_gpu( nz, ngrdcol, gr, rsat, zero_threshold )
     ddzt_rsat = ddzt( nz, ngrdcol, gr, rsat )
 
     !$acc parallel loop gang vector collapse(2) default(present)
@@ -485,7 +485,7 @@ module advance_helper_module
     end do
     !$acc end parallel loop
 
-    thm_zm   = zt2zm( nz, ngrdcol, gr, thm, zero_threshold )
+    thm_zm   = zt2zm_gpu( nz, ngrdcol, gr, thm, zero_threshold )
     ddzt_thm = ddzt( nz, ngrdcol, gr, thm )
     ddzt_rtm = ddzt( nz, ngrdcol, gr, rtm )
 
@@ -499,7 +499,7 @@ module advance_helper_module
     !$acc end parallel loop
 
     ddzt_stat_liq    = ddzt( nz, ngrdcol, gr, stat_liq )
-    ddzt_stat_liq_zm = zt2zm( nz, ngrdcol, gr, ddzt_stat_liq)
+    ddzt_stat_liq_zm = zt2zm_gpu( nz, ngrdcol, gr, ddzt_stat_liq)
 
     !$acc parallel loop gang vector collapse(2) default(present)
     do k = 1, nz
@@ -510,8 +510,8 @@ module advance_helper_module
     end do
     !$acc end parallel loop
 
-    stat_dry_virtual_zm = zt2zm( nz, ngrdcol, gr, stat_dry_virtual, zero_threshold )
-    ddzt_rtm_zm         = zt2zm( nz, ngrdcol, gr, ddzt_rtm )
+    stat_dry_virtual_zm = zt2zm_gpu( nz, ngrdcol, gr, stat_dry_virtual, zero_threshold )
+    ddzt_rtm_zm         = zt2zm_gpu( nz, ngrdcol, gr, ddzt_rtm )
 
     !$acc parallel loop gang vector collapse(2) default(present)
     do k = 1, nz
@@ -535,7 +535,7 @@ module advance_helper_module
     end do ! k=1, gr%nz
     !$acc end parallel loop
 
-    ice_supersat_frac_zm = zt2zm( nz, ngrdcol, gr, ice_supersat_frac, zero_threshold )
+    ice_supersat_frac_zm = zt2zm_gpu( nz, ngrdcol, gr, ice_supersat_frac, zero_threshold )
 
     !$acc parallel loop gang vector collapse(2) default(present)
     do k = 1, nz
@@ -588,7 +588,7 @@ module advance_helper_module
     use grid_class, only: &
         grid, & ! Type
         ddzt, & ! Procedure(s)
-        zt2zm, & 
+        zt2zm_gpu, & 
         zm2zt2zm
 
     use constants_clubb, only: &
@@ -737,7 +737,7 @@ module advance_helper_module
 
     invrs_num_div_thresh = one / Richardson_num_divisor_threshold
 
-    Lscale_zm = zt2zm( nz, ngrdcol, gr, Lscale, zero_threshold )
+    Lscale_zm = zt2zm_gpu( nz, ngrdcol, gr, Lscale, zero_threshold )
 
     ! Calculate shear_sqd
     ddzt_um = ddzt( nz, ngrdcol, gr, um )
@@ -1139,7 +1139,7 @@ module advance_helper_module
 
     use grid_class, only:  &
         grid, & ! Type
-        zm2zt
+        zm2zt_gpu
 
     use constants_clubb, only: &
         zero, &
@@ -1189,7 +1189,7 @@ module advance_helper_module
     end do
     !$acc end parallel loop
     
-    brunt_vaisala_freq_splat_smooth = zm2zt( nz, ngrdcol, gr, &
+    brunt_vaisala_freq_splat_smooth = zm2zt_gpu( nz, ngrdcol, gr, &
                                              brunt_vaisala_freq_splat_clipped )
 
     !$acc parallel loop gang vector collapse(2) default(present)

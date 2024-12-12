@@ -273,8 +273,8 @@ module advance_xp3_module
 
     use grid_class, only: &
         grid, & ! Type
-        zm2zt, & ! Procedure(s)
-        zt2zm
+        zm2zt_gpu, & ! Procedure(s)
+        zt2zm_gpu
 
     use constants_clubb, only: &
         one,      & ! Variable(s)
@@ -402,10 +402,10 @@ module advance_xp3_module
     term_ac = zero
 
     ! Interpolate <x> to momentum levels.
-    xm_zm = zt2zm( nz, ngrdcol, gr, xm, zero_threshold )
+    xm_zm = zt2zm_gpu( nz, ngrdcol, gr, xm, zero_threshold )
 
     ! Interpolate <x'^2> to thermodynamic levels.
-    xp2_zt = zm2zt( nz, ngrdcol, gr, xp2, x_tol**2 )  ! Positive definite quantity
+    xp2_zt = zm2zt_gpu( nz, ngrdcol, gr, xp2, x_tol**2 )  ! Positive definite quantity
 
     do k = 2, nz-1, 1
       do i = 1, ngrdcol

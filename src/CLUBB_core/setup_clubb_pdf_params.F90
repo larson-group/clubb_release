@@ -83,8 +83,8 @@ module setup_clubb_pdf_params
 
     use grid_class, only: &
         grid, & ! Type
-        zm2zt, & ! Procedure(s)
-        zt2zm
+        zm2zt_gpu, & ! Procedure(s)
+        zt2zm_gpu
 
     use constants_clubb, only: &
         one,            & ! Constant(s)
@@ -476,7 +476,7 @@ module setup_clubb_pdf_params
     ! Interpolate the overall variance of a hydrometeor, <hm'^2>, to its home on
     ! momentum grid levels.
     do i = 1, hydromet_dim, 1
-      hydrometp2(:,:,i)  = zt2zm( nz, ngrdcol, gr, hydrometp2_zt(:,:,i), zero_threshold )
+      hydrometp2(:,:,i)  = zt2zm_gpu( nz, ngrdcol, gr, hydrometp2_zt(:,:,i), zero_threshold )
       hydrometp2(:,nz,i) = zero
     end do
 
@@ -508,7 +508,7 @@ module setup_clubb_pdf_params
       ! Interpolate the covariances (overall) of w and precipitating
       ! hydrometeors to thermodynamic grid levels.
       do i = 1, hydromet_dim
-        wphydrometp_zt(:,:,i) = zm2zt( nz, ngrdcol, gr, wphydrometp(:,:,i) )
+        wphydrometp_zt(:,:,i) = zm2zt_gpu( nz, ngrdcol, gr, wphydrometp(:,:,i) )
       end do
           
       do j = 1, hydromet_dim
@@ -554,7 +554,7 @@ module setup_clubb_pdf_params
       wpNcnp_zm(:,nz) = zero
 
       ! Interpolate the covariances to thermodynamic grid levels.
-      wpNcnp_zt(:,:) = zm2zt( nz, ngrdcol, gr, wpNcnp_zm(:,:) )
+      wpNcnp_zt(:,:) = zm2zt_gpu( nz, ngrdcol, gr, wpNcnp_zm(:,:) )
 
       ! When the mean value of Ncn is below tolerance value, it is considered
       ! to have a value of 0, and Ncn does not vary over the grid level.  Any
@@ -821,7 +821,7 @@ module setup_clubb_pdf_params
                                      corr_array_2_n(i,:,hm_metadata%iiPDF_chi,hm_metadata%iiPDF_eta) )
         end do
         
-        rtp2_zm_from_chi = zt2zm( nz, ngrdcol, gr, rtp2_zt_from_chi, zero_threshold )
+        rtp2_zm_from_chi = zt2zm_gpu( nz, ngrdcol, gr, rtp2_zt_from_chi, zero_threshold )
       
         ! Switch back to using stat_update_var once the code is generalized
         ! to pass in the number of vertical levels.

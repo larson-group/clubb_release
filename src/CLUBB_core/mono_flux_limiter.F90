@@ -291,7 +291,7 @@ module mono_flux_limiter
 
     use grid_class, only: & 
         grid, & ! Type
-        zm2zt  ! Procedure(s)
+        zm2zt_gpu  ! Procedure(s)
 
     use constants_clubb, only: &    
         zero_threshold, &
@@ -531,7 +531,7 @@ module mono_flux_limiter
     !$acc end parallel loop
 
     ! Interpolate x'^2 to thermodynamic levels.
-    xp2_zt(:,:) = zm2zt( nz, ngrdcol, gr, xp2(:,:) )
+    xp2_zt(:,:) = zm2zt_gpu( nz, ngrdcol, gr, xp2(:,:) )
 
     ! Place an upper limit on xp2_zt.
     ! For purposes of this subroutine, an upper limit has been placed on the

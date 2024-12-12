@@ -242,8 +242,8 @@ module advance_clubb_core_module
 
     use grid_class, only: &
         grid, & ! Type
-        zm2zt,  & ! Procedure(s)
-        zt2zm, &
+        zm2zt_gpu,  & ! Procedure(s)
+        zt2zm_gpu, &
         ddzm, &
         ddzt, &
         zm2zt2zm
@@ -1179,8 +1179,8 @@ module advance_clubb_core_module
 
     ! Interpolate wp3 to momentum levels, and wp2 to thermodynamic levels
     ! and then compute Skw for m & t grid.
-    wp2_zt(:,:) = zm2zt( nz, ngrdcol, gr, wp2(:,:), w_tol_sqd )  ! Positive definite quantity
-    wp3_zm(:,:) = zt2zm( nz, ngrdcol, gr, wp3(:,:) )
+    wp2_zt(:,:) = zm2zt_gpu( nz, ngrdcol, gr, wp2(:,:), w_tol_sqd )  ! Positive definite quantity
+    wp3_zm(:,:) = zt2zm_gpu( nz, ngrdcol, gr, wp3(:,:) )
 
     call Skx_func( nz, ngrdcol, wp2_zt, wp3, &
                    w_tol, clubb_params, &
@@ -1270,12 +1270,12 @@ module advance_clubb_core_module
     end do
     !$acc end parallel loop
 
-    a3_coef_zt(:,:) = zm2zt( nz, ngrdcol, gr, a3_coef(:,:) )
+    a3_coef_zt(:,:) = zm2zt_gpu( nz, ngrdcol, gr, a3_coef(:,:) )
 
     ! Interpolate thlp2, rtp2, and rtpthlp to thermodynamic levels.
-    thlp2_zt(:,:)   = zm2zt( nz, ngrdcol, gr, thlp2(:,:), thl_tol**2 )  ! Positive def. quantity
-    rtp2_zt(:,:)    = zm2zt( nz, ngrdcol, gr, rtp2(:,:), rt_tol**2 )   ! Positive def. quantity
-    rtpthlp_zt(:,:) = zm2zt( nz, ngrdcol, gr, rtpthlp(:,:) )
+    thlp2_zt(:,:)   = zm2zt_gpu( nz, ngrdcol, gr, thlp2(:,:), thl_tol**2 )  ! Positive def. quantity
+    rtp2_zt(:,:)    = zm2zt_gpu( nz, ngrdcol, gr, rtp2(:,:), rt_tol**2 )   ! Positive def. quantity
+    rtpthlp_zt(:,:) = zm2zt_gpu( nz, ngrdcol, gr, rtpthlp(:,:) )
 
     ! Compute wp3 / wp2 on zt levels.  Always use the interpolated value in the
     ! denominator since it's less likely to create spikes
@@ -1301,10 +1301,10 @@ module advance_clubb_core_module
     !$acc end parallel loop
 
     ! Compute wp3_on_wp2 by interpolating wp3_on_wp2_zt
-    wp3_on_wp2(:,:) = zt2zm( nz, ngrdcol, gr, wp3_on_wp2_zt(:,:) )
+    wp3_on_wp2(:,:) = zt2zm_gpu( nz, ngrdcol, gr, wp3_on_wp2_zt(:,:) )
 
     ! Smooth again as above
-    wp3_on_wp2_zt(:,:) = zm2zt( nz, ngrdcol, gr, wp3_on_wp2(:,:) )
+    wp3_on_wp2_zt(:,:) = zm2zt_gpu( nz, ngrdcol, gr, wp3_on_wp2(:,:) )
 
     !----------------------------------------------------------------
     ! Compute thvm
@@ -1335,7 +1335,7 @@ module advance_clubb_core_module
       !$acc end parallel loop
     end if
 
-    sqrt_em_zt(:,:) = zm2zt( nz, ngrdcol, gr, em(:,:), em_min )
+    sqrt_em_zt(:,:) = zm2zt_gpu( nz, ngrdcol, gr, em(:,:), em_min )
 
     !$acc parallel loop gang vector collapse(2) default(present)
     do k = 1, nz
@@ -1381,7 +1381,7 @@ module advance_clubb_core_module
       end do
       !$acc end parallel loop
 
-      tau_zm(:,:) = zt2zm( nz, ngrdcol, gr, Lscale(:,:), zero_threshold )
+      tau_zm(:,:) = zt2zm_gpu( nz, ngrdcol, gr, Lscale(:,:), zero_threshold )
           
       !$acc parallel loop gang vector collapse(2) default(present)
       do k = 1, nz
@@ -1486,7 +1486,7 @@ module advance_clubb_core_module
     end do
     !$acc end parallel loop
 
-    Lscale_zm(:,:) = zt2zm( nz, ngrdcol, gr, Lscale(:,:) )
+    Lscale_zm(:,:) = zt2zm_gpu( nz, ngrdcol, gr, Lscale(:,:) )
 
     !$acc parallel loop gang vector collapse(2) default(present)
     do k = 1, nz
@@ -1594,11 +1594,11 @@ module advance_clubb_core_module
       end do
       !$acc end parallel loop
     else
-      w_1_zm(:,:)        = zt2zm( nz, ngrdcol, gr, pdf_params%w_1(:,:) )
-      w_2_zm(:,:)        = zt2zm( nz, ngrdcol, gr, pdf_params%w_2(:,:) )
-      varnce_w_1_zm(:,:) = zt2zm( nz, ngrdcol, gr, pdf_params%varnce_w_1(:,:) )
-      varnce_w_2_zm(:,:) = zt2zm( nz, ngrdcol, gr, pdf_params%varnce_w_2(:,:) )
-      mixt_frac_zm(:,:)  = zt2zm( nz, ngrdcol, gr, pdf_params%mixt_frac(:,:) )
+      w_1_zm(:,:)        = zt2zm_gpu( nz, ngrdcol, gr, pdf_params%w_1(:,:) )
+      w_2_zm(:,:)        = zt2zm_gpu( nz, ngrdcol, gr, pdf_params%w_2(:,:) )
+      varnce_w_1_zm(:,:) = zt2zm_gpu( nz, ngrdcol, gr, pdf_params%varnce_w_1(:,:) )
+      varnce_w_2_zm(:,:) = zt2zm_gpu( nz, ngrdcol, gr, pdf_params%varnce_w_2(:,:) )
+      mixt_frac_zm(:,:)  = zt2zm_gpu( nz, ngrdcol, gr, pdf_params%mixt_frac(:,:) )
     end if
 
     ! Here we determine if we're using tau_zm or tau_N2_zm, which is tau
@@ -2184,12 +2184,12 @@ module advance_clubb_core_module
                      w_tol, clubb_params, &
                      Skw_zt )
 
-      upwp_zt(:,:) = zm2zt( nz, ngrdcol, gr, upwp(:,:) )
-      vpwp_zt(:,:) = zm2zt( nz, ngrdcol, gr, vpwp(:,:) )
-      up2_zt(:,:)  = zm2zt( nz, ngrdcol, gr, up2(:,:), w_tol_sqd ) ! Positive def. quantity
-      vp2_zt(:,:)  = zm2zt( nz, ngrdcol, gr, vp2(:,:), w_tol_sqd ) ! Positive def. quantity
+      upwp_zt(:,:) = zm2zt_gpu( nz, ngrdcol, gr, upwp(:,:) )
+      vpwp_zt(:,:) = zm2zt_gpu( nz, ngrdcol, gr, vpwp(:,:) )
+      up2_zt(:,:)  = zm2zt_gpu( nz, ngrdcol, gr, up2(:,:), w_tol_sqd ) ! Positive def. quantity
+      vp2_zt(:,:)  = zm2zt_gpu( nz, ngrdcol, gr, vp2(:,:), w_tol_sqd ) ! Positive def. quantity
 
-      thvm_zm(:,:)                   = zt2zm( nz, ngrdcol, gr, thvm(:,:), zero_threshold )
+      thvm_zm(:,:)                   = zt2zm_gpu( nz, ngrdcol, gr, thvm(:,:), zero_threshold )
       ddzm_thvm_zm(:,:)              = ddzm( nz, ngrdcol, gr, thvm_zm(:,:) )
       brunt_vaisala_freq_sqd_zt(:,:) = max( ( grav / thvm(:,:) ) * ddzm_thvm_zm(:,:), zero )
 
@@ -2224,21 +2224,21 @@ module advance_clubb_core_module
                      w_tol, clubb_params, &
                      Skw_zt )
 
-      wpthlp_zt(:,:) = zm2zt( nz, ngrdcol, gr, wpthlp(:,:) )
-      wprtp_zt(:,:)  = zm2zt( nz, ngrdcol, gr, wprtp(:,:) )
-      thlp2_zt(:,:)  = zm2zt( nz, ngrdcol, gr, thlp2(:,:), thl_tol**2 ) ! Positive def. quantity
-      rtp2_zt(:,:)   = zm2zt( nz, ngrdcol, gr, rtp2(:,:), rt_tol**2 )   ! Positive def. quantity
+      wpthlp_zt(:,:) = zm2zt_gpu( nz, ngrdcol, gr, wpthlp(:,:) )
+      wprtp_zt(:,:)  = zm2zt_gpu( nz, ngrdcol, gr, wprtp(:,:) )
+      thlp2_zt(:,:)  = zm2zt_gpu( nz, ngrdcol, gr, thlp2(:,:), thl_tol**2 ) ! Positive def. quantity
+      rtp2_zt(:,:)   = zm2zt_gpu( nz, ngrdcol, gr, rtp2(:,:), rt_tol**2 )   ! Positive def. quantity
 
-      upwp_zt(:,:) = zm2zt( nz, ngrdcol, gr, upwp(:,:) )
-      vpwp_zt(:,:) = zm2zt( nz, ngrdcol, gr, vpwp(:,:) )
-      up2_zt(:,:)  = zm2zt( nz, ngrdcol, gr, up2(:,:), w_tol_sqd ) ! Positive def. quantity
-      vp2_zt(:,:)  = zm2zt( nz, ngrdcol, gr, vp2(:,:), w_tol_sqd ) ! Positive def. quantity
+      upwp_zt(:,:) = zm2zt_gpu( nz, ngrdcol, gr, upwp(:,:) )
+      vpwp_zt(:,:) = zm2zt_gpu( nz, ngrdcol, gr, vpwp(:,:) )
+      up2_zt(:,:)  = zm2zt_gpu( nz, ngrdcol, gr, up2(:,:), w_tol_sqd ) ! Positive def. quantity
+      vp2_zt(:,:)  = zm2zt_gpu( nz, ngrdcol, gr, vp2(:,:), w_tol_sqd ) ! Positive def. quantity
 
       if ( clubb_config_flags%iiPDF_type == iiPDF_ADG1 ) then
 
         ! Use the Larson and Golaz (2005) ansatz for the ADG1 PDF to
         ! calculate <rt'^3>, <thl'^3>, <u'^3>, <v'^3>, and <sclr'^3>.
-        sigma_sqd_w_zt(:,:) = zm2zt( nz, ngrdcol, gr, sigma_sqd_w(:,:), zero_threshold )
+        sigma_sqd_w_zt(:,:) = zm2zt_gpu( nz, ngrdcol, gr, sigma_sqd_w(:,:), zero_threshold )
 
         call xp3_LG_2005_ansatz( nz, ngrdcol, Skw_zt, wpthlp_zt, wp2_zt, &
                                  thlp2_zt, sigma_sqd_w_zt, &
@@ -2262,8 +2262,8 @@ module advance_clubb_core_module
 
         do j = 1, sclr_dim, 1
           
-          wpsclrp_zt(:,:) = zm2zt( nz, ngrdcol, gr, wpsclrp(:,:,j), sclr_tol(j)**2 )
-          sclrp2_zt(:,:)  = zm2zt( nz, ngrdcol, gr, sclrp2(:,:,j), sclr_tol(j)**2 )
+          wpsclrp_zt(:,:) = zm2zt_gpu( nz, ngrdcol, gr, wpsclrp(:,:,j), sclr_tol(j)**2 )
+          sclrp2_zt(:,:)  = zm2zt_gpu( nz, ngrdcol, gr, sclrp2(:,:,j), sclr_tol(j)**2 )
 
           call xp3_LG_2005_ansatz( nz, ngrdcol, Skw_zt, wpsclrp_zt, wp2_zt, &
                                    sclrp2_zt, sigma_sqd_w_zt, &
@@ -2276,7 +2276,7 @@ module advance_clubb_core_module
 
         ! Use a modified form of the Larson and Golaz (2005) ansatz for the
         ! ADG1 PDF to calculate <u'^3> and <v'^3> for another type of PDF.
-        thvm_zm(:,:)                   = zt2zm( nz, ngrdcol, gr, thvm(:,:), zero_threshold )
+        thvm_zm(:,:)                   = zt2zm_gpu( nz, ngrdcol, gr, thvm(:,:), zero_threshold )
         ddzm_thvm_zm(:,:)              = ddzm( nz, ngrdcol, gr, thvm_zm(:,:) )
         brunt_vaisala_freq_sqd_zt(:,:) = max( ( grav / thvm(:,:) ) * ddzm_thvm_zm(:,:), zero )
         
@@ -2328,8 +2328,8 @@ module advance_clubb_core_module
 
         do j = 1, sclr_dim, 1
           
-          wpsclrp_zt(:,:) = zm2zt( nz, ngrdcol, gr, wpsclrp(:,:,j) )
-          sclrp2_zt(:,:)  = zm2zt( nz, ngrdcol, gr, sclrp2(:,:,j), sclr_tol(j)**2 )
+          wpsclrp_zt(:,:) = zm2zt_gpu( nz, ngrdcol, gr, wpsclrp(:,:,j) )
+          sclrp2_zt(:,:)  = zm2zt_gpu( nz, ngrdcol, gr, sclrp2(:,:,j), sclr_tol(j)**2 )
 
           call xp3_LG_2005_ansatz( nz, ngrdcol, Skw_zt(:,:), wpsclrp_zt(:,:), wp2_zt(:,:), &
                                    sclrp2_zt(:,:), xp3_coef_fnc(:,:), &
@@ -2559,27 +2559,27 @@ module advance_clubb_core_module
       end do
 
       if ( stats_metadata%iwpthlp_zt > 0 ) then
-        wpthlp_zt(:,:)  = zm2zt( nz, ngrdcol, gr, wpthlp(:,:) )
+        wpthlp_zt(:,:)  = zm2zt_gpu( nz, ngrdcol, gr, wpthlp(:,:) )
       end if
 
       if ( stats_metadata%iwprtp_zt > 0 ) then
-        wprtp_zt(:,:)   = zm2zt( nz, ngrdcol, gr, wprtp(:,:) )
+        wprtp_zt(:,:)   = zm2zt_gpu( nz, ngrdcol, gr, wprtp(:,:) )
       end if
 
       if ( stats_metadata%iup2_zt > 0 ) then
-        up2_zt(:,:) = zm2zt( nz, ngrdcol, gr, up2(:,:), w_tol_sqd )
+        up2_zt(:,:) = zm2zt_gpu( nz, ngrdcol, gr, up2(:,:), w_tol_sqd )
       end if
 
       if (stats_metadata%ivp2_zt > 0 ) then
-        vp2_zt(:,:) = zm2zt( nz, ngrdcol, gr, vp2(:,:), w_tol_sqd )
+        vp2_zt(:,:) = zm2zt_gpu( nz, ngrdcol, gr, vp2(:,:), w_tol_sqd )
       end if
 
       if ( stats_metadata%iupwp_zt > 0 ) then
-        upwp_zt(:,:) = zm2zt( nz, ngrdcol, gr, upwp(:,:) )
+        upwp_zt(:,:) = zm2zt_gpu( nz, ngrdcol, gr, upwp(:,:) )
       end if
 
       if ( stats_metadata%ivpwp_zt > 0 ) then
-        vpwp_zt(:,:) = zm2zt( nz, ngrdcol, gr, vpwp(:,:) )
+        vpwp_zt(:,:) = zm2zt_gpu( nz, ngrdcol, gr, vpwp(:,:) )
       end if
       
       do i = 1, ngrdcol
@@ -2836,8 +2836,8 @@ module advance_clubb_core_module
 
     use grid_class, only: &
         grid, & ! Type
-        zt2zm, & ! Procedure(s)
-        zm2zt, &
+        zt2zm_gpu, & ! Procedure(s)
+        zm2zt_gpu, &
         zm2zt2zm
 
     use constants_clubb, only: &
@@ -3286,20 +3286,20 @@ module advance_clubb_core_module
     ! compute Skw, Skrt, Skthl, Sku, Skv, and Sksclr for both the momentum and
     ! thermodynamic grid levels.
     !---------------------------------------------------------------------------
-    wp2_zt(:,:)   = zm2zt( nz, ngrdcol, gr, wp2(:,:), w_tol_sqd ) ! Positive definite quantity
-    wp3_zm(:,:)   = zt2zm( nz, ngrdcol, gr, wp3(:,:) )
-    thlp2_zt(:,:) = zm2zt( nz, ngrdcol, gr, thlp2(:,:), thl_tol**2 ) ! Positive definite quantity
-    thlp3_zm(:,:) = zt2zm( nz, ngrdcol, gr, thlp3(:,:) )
-    rtp2_zt(:,:)  = zm2zt( nz, ngrdcol, gr, rtp2(:,:), rt_tol**2 ) ! Positive definite quantity
-    rtp3_zm(:,:)  = zt2zm( nz, ngrdcol, gr, rtp3(:,:) )
-    up2_zt(:,:)   = zm2zt( nz, ngrdcol, gr, up2(:,:), w_tol_sqd ) ! Positive definite quantity
-    up3_zm(:,:)   = zt2zm( nz, ngrdcol, gr, up3(:,:) )
-    vp2_zt(:,:)   = zm2zt( nz, ngrdcol, gr, vp2(:,:), w_tol_sqd ) ! Positive definite quantity
-    vp3_zm(:,:)   = zt2zm( nz, ngrdcol, gr, vp3(:,:) )
+    wp2_zt(:,:)   = zm2zt_gpu( nz, ngrdcol, gr, wp2(:,:), w_tol_sqd ) ! Positive definite quantity
+    wp3_zm(:,:)   = zt2zm_gpu( nz, ngrdcol, gr, wp3(:,:) )
+    thlp2_zt(:,:) = zm2zt_gpu( nz, ngrdcol, gr, thlp2(:,:), thl_tol**2 ) ! Positive definite quantity
+    thlp3_zm(:,:) = zt2zm_gpu( nz, ngrdcol, gr, thlp3(:,:) )
+    rtp2_zt(:,:)  = zm2zt_gpu( nz, ngrdcol, gr, rtp2(:,:), rt_tol**2 ) ! Positive definite quantity
+    rtp3_zm(:,:)  = zt2zm_gpu( nz, ngrdcol, gr, rtp3(:,:) )
+    up2_zt(:,:)   = zm2zt_gpu( nz, ngrdcol, gr, up2(:,:), w_tol_sqd ) ! Positive definite quantity
+    up3_zm(:,:)   = zt2zm_gpu( nz, ngrdcol, gr, up3(:,:) )
+    vp2_zt(:,:)   = zm2zt_gpu( nz, ngrdcol, gr, vp2(:,:), w_tol_sqd ) ! Positive definite quantity
+    vp3_zm(:,:)   = zt2zm_gpu( nz, ngrdcol, gr, vp3(:,:) )
 
     do j = 1, sclr_dim, 1
-      sclrp2_zt(:,:,j) = zm2zt( nz, ngrdcol, gr, sclrp2(:,:,j), sclr_tol(j)**2 ) ! Pos. def. quantity
-      sclrp3_zm(:,:,j) = zt2zm( nz, ngrdcol, gr, sclrp3(:,:,j) )
+      sclrp2_zt(:,:,j) = zm2zt_gpu( nz, ngrdcol, gr, sclrp2(:,:,j), sclr_tol(j)**2 ) ! Pos. def. quantity
+      sclrp3_zm(:,:,j) = zt2zm_gpu( nz, ngrdcol, gr, sclrp3(:,:,j) )
     end do ! i = 1, sclr_dim, 1
 
     call Skx_func( nz, ngrdcol, wp2_zt, wp3, &
@@ -3441,22 +3441,22 @@ module advance_clubb_core_module
 
 
     ! Interpolate the the stats_zt grid
-    sigma_sqd_w_zt(:,:) = zm2zt( nz, ngrdcol, gr, sigma_sqd_w(:,:), zero_threshold )  ! Pos. def. quantity
+    sigma_sqd_w_zt(:,:) = zm2zt_gpu( nz, ngrdcol, gr, sigma_sqd_w(:,:), zero_threshold )  ! Pos. def. quantity
 
     !---------------------------------------------------------------------------
     ! Interpolate thlp2, rtp2, and rtpthlp to thermodynamic levels,
     !---------------------------------------------------------------------------
 
     ! Interpolate variances to the stats_zt grid (statistics and closure)
-    rtp2_zt(:,:)    = zm2zt( nz, ngrdcol, gr, rtp2(:,:), rt_tol**2 )   ! Positive def. quantity
-    thlp2_zt(:,:)   = zm2zt( nz, ngrdcol, gr, thlp2(:,:), thl_tol**2 ) ! Positive def. quantity
-    up2_zt(:,:)     = zm2zt( nz, ngrdcol, gr, up2(:,:), w_tol_sqd )    ! Positive def. quantity
-    vp2_zt(:,:)     = zm2zt( nz, ngrdcol, gr, vp2(:,:), w_tol_sqd )    ! Positive def. quantity
-    wprtp_zt(:,:)   = zm2zt( nz, ngrdcol, gr, wprtp(:,:) )
-    wpthlp_zt(:,:)  = zm2zt( nz, ngrdcol, gr, wpthlp(:,:) )
-    rtpthlp_zt(:,:) = zm2zt( nz, ngrdcol, gr, rtpthlp(:,:) )
-    upwp_zt(:,:)    = zm2zt( nz, ngrdcol, gr, upwp(:,:) )
-    vpwp_zt(:,:)    = zm2zt( nz, ngrdcol, gr, vpwp(:,:) )
+    rtp2_zt(:,:)    = zm2zt_gpu( nz, ngrdcol, gr, rtp2(:,:), rt_tol**2 )   ! Positive def. quantity
+    thlp2_zt(:,:)   = zm2zt_gpu( nz, ngrdcol, gr, thlp2(:,:), thl_tol**2 ) ! Positive def. quantity
+    up2_zt(:,:)     = zm2zt_gpu( nz, ngrdcol, gr, up2(:,:), w_tol_sqd )    ! Positive def. quantity
+    vp2_zt(:,:)     = zm2zt_gpu( nz, ngrdcol, gr, vp2(:,:), w_tol_sqd )    ! Positive def. quantity
+    wprtp_zt(:,:)   = zm2zt_gpu( nz, ngrdcol, gr, wprtp(:,:) )
+    wpthlp_zt(:,:)  = zm2zt_gpu( nz, ngrdcol, gr, wpthlp(:,:) )
+    rtpthlp_zt(:,:) = zm2zt_gpu( nz, ngrdcol, gr, rtpthlp(:,:) )
+    upwp_zt(:,:)    = zm2zt_gpu( nz, ngrdcol, gr, upwp(:,:) )
+    vpwp_zt(:,:)    = zm2zt_gpu( nz, ngrdcol, gr, vpwp(:,:) )
 
     ! Compute skewness velocity for stats output purposes
     if ( stats_metadata%iSkw_velocity > 0 ) then
@@ -3476,15 +3476,15 @@ module advance_clubb_core_module
 
     ! Put passive scalar input on the t grid for the PDF
     do j = 1, sclr_dim
-      wpsclrp_zt(:,:,j)   = zm2zt( nz, ngrdcol, gr, wpsclrp(:,:,j) )
-      sclrp2_zt(:,:,j)    = zm2zt( nz, ngrdcol, gr, sclrp2(:,:,j), sclr_tol(j)**2 ) ! Pos. def. quantity
-      sclrprtp_zt(:,:,j)  = zm2zt( nz, ngrdcol, gr, sclrprtp(:,:,j) )
-      sclrpthlp_zt(:,:,j) = zm2zt( nz, ngrdcol, gr, sclrpthlp(:,:,j) )
+      wpsclrp_zt(:,:,j)   = zm2zt_gpu( nz, ngrdcol, gr, wpsclrp(:,:,j) )
+      sclrp2_zt(:,:,j)    = zm2zt_gpu( nz, ngrdcol, gr, sclrp2(:,:,j), sclr_tol(j)**2 ) ! Pos. def. quantity
+      sclrprtp_zt(:,:,j)  = zm2zt_gpu( nz, ngrdcol, gr, sclrprtp(:,:,j) )
+      sclrpthlp_zt(:,:,j) = zm2zt_gpu( nz, ngrdcol, gr, sclrpthlp(:,:,j) )
     end do ! i = 1, sclr_dim, 1
 
     ! Interpolate hydrometeor mixed moments to momentum levels.
     do j = 1, hydromet_dim
-      wphydrometp_zt(:,:,j) = zm2zt( nz, ngrdcol, gr, wphydrometp(:,:,j) )
+      wphydrometp_zt(:,:,j) = zm2zt_gpu( nz, ngrdcol, gr, wphydrometp(:,:,j) )
     end do ! i = 1, hydromet_dim, 1
 
     call pdf_closure( nz, ngrdcol, sclr_dim, sclr_tol,     & ! intent(in)
@@ -3587,7 +3587,7 @@ module advance_clubb_core_module
       ! the second call to pdf_closure
       do j = 1, sclr_dim
         ! Clip if extrap. causes sclrm_zm to be less than sclr_tol
-        sclrm_zm(:,:,j) = zt2zm( nz, ngrdcol, gr, sclrm(:,:,j), sclr_tol(j) )
+        sclrm_zm(:,:,j) = zt2zm_gpu( nz, ngrdcol, gr, sclrm(:,:,j), sclr_tol(j) )
       end do ! i = 1, sclr_dim
 
       ! Interpolate pressure, p_in_Pa, to momentum levels.
@@ -3595,7 +3595,7 @@ module advance_clubb_core_module
       ! (or model lower boundary) pressure.  Since the surface (or model lower
       ! boundary) is located at momentum level k = 1, the pressure there is
       ! p_sfc, which is p_in_Pa(1).  Thus, p_in_Pa_zm(1) = p_in_Pa(1).
-      p_in_Pa_zm(:,:) = zt2zm( nz, ngrdcol, gr, p_in_Pa(:,:) )
+      p_in_Pa_zm(:,:) = zt2zm_gpu( nz, ngrdcol, gr, p_in_Pa(:,:) )
 
       !$acc parallel loop gang vector default(present)
       do i = 1, ngrdcol
@@ -3616,20 +3616,20 @@ module advance_clubb_core_module
       !$acc end parallel loop
 
       ! Clip if extrapolation at the top level causes rtm_zm to be < rt_tol
-      rtm_zm(:,:) = zt2zm( nz, ngrdcol, gr, rtm(:,:), rt_tol )
+      rtm_zm(:,:) = zt2zm_gpu( nz, ngrdcol, gr, rtm(:,:), rt_tol )
 
         ! Clip if extrapolation at the top level causes thlm_zm to be < thl_tol
-      thlm_zm(:,:) = zt2zm( nz, ngrdcol, gr, thlm(:,:), thl_tol )
+      thlm_zm(:,:) = zt2zm_gpu( nz, ngrdcol, gr, thlm(:,:), thl_tol )
 
       ! Interpolate hydrometeor mixed moments to momentum levels.
       do j = 1, hydromet_dim
-        rtphmp(:,:,j)    = zt2zm( nz, ngrdcol, gr, rtphmp_zt(:,:,j) )
-        thlphmp(:,:,j)   = zt2zm( nz, ngrdcol, gr, thlphmp_zt(:,:,j) )
-        wp2hmp_zm(:,:,j) = zt2zm( nz, ngrdcol, gr, wp2hmp(:,:,j) )
+        rtphmp(:,:,j)    = zt2zm_gpu( nz, ngrdcol, gr, rtphmp_zt(:,:,j) )
+        thlphmp(:,:,j)   = zt2zm_gpu( nz, ngrdcol, gr, thlphmp_zt(:,:,j) )
+        wp2hmp_zm(:,:,j) = zt2zm_gpu( nz, ngrdcol, gr, wp2hmp(:,:,j) )
       end do ! i = 1, hydromet_dim, 1
       
-      um_zm(:,:) = zt2zm( nz, ngrdcol, gr, um(:,:) )
-      vm_zm(:,:) = zt2zm( nz, ngrdcol, gr, vm(:,:) )
+      um_zm(:,:) = zt2zm_gpu( nz, ngrdcol, gr, um(:,:) )
+      vm_zm(:,:) = zt2zm_gpu( nz, ngrdcol, gr, vm(:,:) )
       
       ! pdf_implicit_coefs_terms is only used in the iiPDF_new and iiPDF_new_hybrid closures.
       ! So we only need to initialize our local _zm version if we're working with one of those.
@@ -3695,7 +3695,7 @@ module advance_clubb_core_module
       
       ! Interpolate momentum variables output from the first call to
       ! pdf_closure back to momentum grid.
-      wp4(:,:) = zt2zm( nz, ngrdcol, gr, wp4_zt(:,:), zero_threshold )  ! Pos. def. quantity
+      wp4(:,:) = zt2zm_gpu( nz, ngrdcol, gr, wp4_zt(:,:), zero_threshold )  ! Pos. def. quantity
 
       !$acc parallel loop gang vector default(present)
       do i = 1, ngrdcol
@@ -3714,7 +3714,7 @@ module advance_clubb_core_module
       ! CAM-CLUBB needs cloud water variance thus always compute this
       if ( stats_metadata%ircp2 > 0 ) then
 #endif
-        rcp2(:,:) = zt2zm( nz, ngrdcol, gr, rcp2_zt(:,:), zero_threshold )  ! Pos. def. quantity
+        rcp2(:,:) = zt2zm_gpu( nz, ngrdcol, gr, rcp2_zt(:,:), zero_threshold )  ! Pos. def. quantity
 #ifndef CLUBB_CAM
         !$acc parallel loop gang vector default(present) 
         do i = 1, ngrdcol
@@ -3724,17 +3724,17 @@ module advance_clubb_core_module
       endif
 #endif
 
-      wpthvp(:,:)      = zt2zm( nz, ngrdcol, gr, wpthvp_zt(:,:) )
-      thlpthvp(:,:)    = zt2zm( nz, ngrdcol, gr, thlpthvp_zt(:,:) )
-      rtpthvp(:,:)     = zt2zm( nz, ngrdcol, gr, rtpthvp_zt(:,:) )
-      wprcp(:,:)       = zt2zm( nz, ngrdcol, gr, wprcp_zt(:,:) )
-      rc_coef_zm(:,:)  = zt2zm( nz, ngrdcol, gr, rc_coef(:,:) )
-      rtprcp(:,:)      = zt2zm( nz, ngrdcol, gr, rtprcp_zt(:,:) )
-      thlprcp(:,:)     = zt2zm( nz, ngrdcol, gr, thlprcp_zt(:,:) )
-      uprcp(:,:)       = zt2zm( nz, ngrdcol, gr, uprcp_zt(:,:) )
-      vprcp(:,:)       = zt2zm( nz, ngrdcol, gr, vprcp_zt(:,:) )
-      wp2up2(:,:)      = zt2zm( nz, ngrdcol, gr, wp2up2_zt(:,:) )
-      wp2vp2(:,:)      = zt2zm( nz, ngrdcol, gr, wp2vp2_zt(:,:) )
+      wpthvp(:,:)      = zt2zm_gpu( nz, ngrdcol, gr, wpthvp_zt(:,:) )
+      thlpthvp(:,:)    = zt2zm_gpu( nz, ngrdcol, gr, thlpthvp_zt(:,:) )
+      rtpthvp(:,:)     = zt2zm_gpu( nz, ngrdcol, gr, rtpthvp_zt(:,:) )
+      wprcp(:,:)       = zt2zm_gpu( nz, ngrdcol, gr, wprcp_zt(:,:) )
+      rc_coef_zm(:,:)  = zt2zm_gpu( nz, ngrdcol, gr, rc_coef(:,:) )
+      rtprcp(:,:)      = zt2zm_gpu( nz, ngrdcol, gr, rtprcp_zt(:,:) )
+      thlprcp(:,:)     = zt2zm_gpu( nz, ngrdcol, gr, thlprcp_zt(:,:) )
+      uprcp(:,:)       = zt2zm_gpu( nz, ngrdcol, gr, uprcp_zt(:,:) )
+      vprcp(:,:)       = zt2zm_gpu( nz, ngrdcol, gr, vprcp_zt(:,:) )
+      wp2up2(:,:)      = zt2zm_gpu( nz, ngrdcol, gr, wp2up2_zt(:,:) )
+      wp2vp2(:,:)      = zt2zm_gpu( nz, ngrdcol, gr, wp2vp2_zt(:,:) )
 
       !$acc parallel loop gang vector default(present) 
       do i = 1, ngrdcol 
@@ -3767,8 +3767,8 @@ module advance_clubb_core_module
 
       ! Interpolate passive scalars back onto the m grid
       do j = 1, sclr_dim
-        sclrpthvp(:,:,j)       = zt2zm( nz, ngrdcol, gr, sclrpthvp_zt(:,:,j) )
-        sclrprcp(:,:,j)        = zt2zm( nz, ngrdcol, gr, sclrprcp_zt(:,:,j) )
+        sclrpthvp(:,:,j)       = zt2zm_gpu( nz, ngrdcol, gr, sclrpthvp_zt(:,:,j) )
+        sclrprcp(:,:,j)        = zt2zm_gpu( nz, ngrdcol, gr, sclrprcp_zt(:,:,j) )
 
         !$acc parallel loop gang vector default(present)
         do k = 1, nz
@@ -3809,7 +3809,7 @@ module advance_clubb_core_module
                                 ice_supersat_frac_zm, rcm_zm, wp2thvp_zm,    & ! intent(inout)
                                 wpsclrprtp_zm, wpsclrp2_zm, wpsclrpthlp_zm )   ! intent(inout)
     else ! l_trapezoidal_rule_zt
-      cloud_frac_zm = zt2zm( nz, ngrdcol, gr, cloud_frac )
+      cloud_frac_zm = zt2zm_gpu( nz, ngrdcol, gr, cloud_frac )
       ! Since top momentum level is higher than top thermo. level,
       ! set variables at top momentum level to 0.
       !$acc parallel loop gang vector default(present)
@@ -4561,7 +4561,7 @@ module advance_clubb_core_module
 
       use grid_class, only: &
           grid, & ! Type
-          zt2zm ! Procedure
+          zt2zm_gpu ! Procedure
 
       use pdf_parameter_module, only: &
           pdf_parameter ! Derived data type
@@ -4644,13 +4644,13 @@ module advance_clubb_core_module
       if ( .not. l_call_pdf_closure_twice ) then
 
         ! Interpolate thermodynamic variables to the momentum grid.
-        wprtp2_zm                   = zt2zm( nz, ngrdcol, gr, wprtp2 )
-        wpthlp2_zm                  = zt2zm( nz, ngrdcol, gr, wpthlp2 )
-        wprtpthlp_zm                = zt2zm( nz, ngrdcol, gr, wprtpthlp )
-        cloud_frac_zm               = zt2zm( nz, ngrdcol, gr, cloud_frac )
-        ice_supersat_frac_zm        = zt2zm( nz, ngrdcol, gr, ice_supersat_frac )
-        rcm_zm                      = zt2zm( nz, ngrdcol, gr, rcm )
-        wp2thvp_zm                  = zt2zm( nz, ngrdcol, gr, wp2thvp )
+        wprtp2_zm                   = zt2zm_gpu( nz, ngrdcol, gr, wprtp2 )
+        wpthlp2_zm                  = zt2zm_gpu( nz, ngrdcol, gr, wpthlp2 )
+        wprtpthlp_zm                = zt2zm_gpu( nz, ngrdcol, gr, wprtpthlp )
+        cloud_frac_zm               = zt2zm_gpu( nz, ngrdcol, gr, cloud_frac )
+        ice_supersat_frac_zm        = zt2zm_gpu( nz, ngrdcol, gr, ice_supersat_frac )
+        rcm_zm                      = zt2zm_gpu( nz, ngrdcol, gr, rcm )
+        wp2thvp_zm                  = zt2zm_gpu( nz, ngrdcol, gr, wp2thvp )
 
         ! Since top momentum level is higher than top thermo. level,
         ! set variables at top momentum level to 0.
@@ -4667,9 +4667,9 @@ module advance_clubb_core_module
         !$acc end parallel loop
 
         do sclr = 1, sclr_dim
-          wpsclrprtp_zm(:,:,sclr)   = zt2zm( nz, ngrdcol, gr, wpsclrprtp(:,:,sclr) )
-          wpsclrp2_zm(:,:,sclr)     = zt2zm( nz, ngrdcol, gr, wpsclrp2(:,:,sclr) )
-          wpsclrpthlp_zm(:,:,sclr)  = zt2zm( nz, ngrdcol, gr, wpsclrpthlp(:,:,sclr) )
+          wpsclrprtp_zm(:,:,sclr)   = zt2zm_gpu( nz, ngrdcol, gr, wpsclrprtp(:,:,sclr) )
+          wpsclrp2_zm(:,:,sclr)     = zt2zm_gpu( nz, ngrdcol, gr, wpsclrp2(:,:,sclr) )
+          wpsclrpthlp_zm(:,:,sclr)  = zt2zm_gpu( nz, ngrdcol, gr, wpsclrpthlp(:,:,sclr) )
 
           !$acc parallel loop gang vector default(present)
           do i = 1, ngrdcol
@@ -5298,7 +5298,7 @@ module advance_clubb_core_module
         core_rknd                     ! Constant(s)
 
     use grid_class, only:  &
-        zt2zm                         ! Procedure
+        zt2zm_gpu                         ! Procedure
 
     use constants_clubb, only: &
         two, &
