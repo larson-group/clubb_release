@@ -1749,9 +1749,7 @@ module grid_class
 
     ! ------------------------------ Begin Code ------------------------------
 
-    !$acc data copyin( azm ) &
-    !$acc     copyout( zm2zt2zm ) &
-    !$acc      create( azm_zt )
+    !$acc data create( azm_zt )
 
     ! Interpolate azt to termodynamic levels 
     azm_zt = zm2zt_gpu( nz, ngrdcol, gr, azm )

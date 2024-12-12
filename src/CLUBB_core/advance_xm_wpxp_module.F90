@@ -1798,6 +1798,8 @@ module advance_xm_wpxp_module
       rhs  ! Right-hand side of band diag. matrix. (LAPACK)
 
     !------------------- Local Variables -------------------
+    real( kind = core_rknd ), dimension(ngrdcol,nz) :: & 
+      tmp
 
     real( kind = core_rknd ), dimension(ngrdcol,nz) :: &
         rhs_bp_pr3, & ! Buoyancy production of w'x' and w'x' pressure term 3
@@ -1949,19 +1951,25 @@ module advance_xm_wpxp_module
       ! w'x' term bp is completely explicit; call stat_update_var.
       ! Note:  To find the contribution of w'x' term bp, substitute 0 for the
       !        C_7 skewness function input to function wpxp_terms_bp_pr3_rhs.
-      call wpxp_terms_bp_pr3_rhs( nz, ngrdcol, zero_vector, thv_ds_zm, xpthvp, & ! intent(in)
-                                  rhs_bp )                                       ! intent(out)
+      !$acc data copyin( zero_vector ) copyout( rhs_bp )
+        call wpxp_terms_bp_pr3_rhs( nz, ngrdcol, zero_vector, thv_ds_zm, xpthvp, & ! intent(in)
+                                    rhs_bp )                                       ! intent(out)
+      !$acc end data
                                     
       do i = 1, ngrdcol
         call stat_update_var( iwpxp_bp, rhs_bp(i,:), & ! intent(in)
                               stats_zm(i) )          ! intent(inout)
       end do
 
+      tmp = (one+C7_Skw_fnc)
+
       ! w'x' term pr3 is completely explicit; call stat_update_var.
       ! Note:  To find the contribution of w'x' term pr3, add 1 to the
       !        C_7 skewness function input to function wpxp_terms_bp_pr2_rhs.
-      call wpxp_terms_bp_pr3_rhs( nz, ngrdcol, (one+C7_Skw_fnc), thv_ds_zm, xpthvp, & ! intent(in)
-                                  rhs_pr3 )                                           ! intent(out)
+      !$acc data copyin( tmp ) copyout( rhs_pr3 )
+        call wpxp_terms_bp_pr3_rhs( nz, ngrdcol, tmp, thv_ds_zm, xpthvp, & ! intent(in)
+                                    rhs_pr3 )                                           ! intent(out)
+      !$acc end data
                                   
       do i = 1, ngrdcol
         call stat_update_var( iwpxp_pr3, rhs_pr3(i,:), & ! intent(in)
@@ -4506,6 +4514,9 @@ module advance_xm_wpxp_module
       stats_sfc
 
     !--------------------------- Local Variables ---------------------------
+    real( kind = core_rknd ), dimension(ngrdcol,nz) ::  & 
+      tmp
+
     integer :: & 
       solve_type_cl ! solve_type used for clipping statistics.
 
@@ -4675,16 +4686,21 @@ module advance_xm_wpxp_module
       ! Note:  To find the contribution of w'x' term ac,
       !        substitute 0 for the C_7 skewness function input
       !        to function wpxp_terms_ac_pr2_lhs.
+      !$acc data copyin( zero_vector ) copyout( wpxp_ac )
       call wpxp_terms_ac_pr2_lhs( nz, ngrdcol, zero_vector, & ! intent(in)
                                   wm_zt, gr%invrs_dzm,      & ! intent(in)
                                   wpxp_ac )                   ! intent(out)
+      !$acc end data
 
       ! Note:  To find the contribution of w'x' term pr2,
       !        add 1 to the C_7 skewness function input
       !        to function wpxp_terms_ac_pr2_lhs.
-      call wpxp_terms_ac_pr2_lhs( nz, ngrdcol, (one+C7_Skw_fnc), & ! intent(in)
+      tmp =   (one+C7_Skw_fnc)                                
+      !$acc data copyin( tmp ) copyout( wpxp_pr2 )
+      call wpxp_terms_ac_pr2_lhs( nz, ngrdcol, tmp, & ! intent(in)
                                   wm_zt, gr%invrs_dzm,           & ! intent(in)
                                   wpxp_pr2 )                       ! intent(out)
+      !$acc end data
     
       do i = 1, ngrdcol
 
@@ -5348,9 +5364,6 @@ module advance_xm_wpxp_module
     ! Local Variable
     integer :: i, k    ! Vertical level index
 
-    !$acc data copyin( C7_Skw_fnc, wm_zt, invrs_dzm ) &
-    !$acc     copyout( lhs_ac_pr2 ) 
-
     ! Set lower boundary to 0
     !$acc parallel loop gang vector default(present)
     do i = 1, ngrdcol
@@ -5375,8 +5388,6 @@ module advance_xm_wpxp_module
       lhs_ac_pr2(i,nz) = zero
     end do
     !$acc end parallel loop
-
-    !$acc end data
 
     return
 
@@ -5566,9 +5577,6 @@ module advance_xm_wpxp_module
     
     !---------------------------- Begin Code ----------------------------
 
-    !$acc data copyin( C7_Skw_fnc, thv_ds_zm, xpthvp ) &
-    !$acc     copyout( rhs_bp_pr3 )
-
     ! Set lower boundary to 0
     !$acc parallel loop gang vector default(present)
     do i = 1, ngrdcol
@@ -5588,8 +5596,6 @@ module advance_xm_wpxp_module
     do i = 1, ngrdcol
       rhs_bp_pr3(i,nz) = zero
     end do
-
-    !$acc end data
 
     return
 

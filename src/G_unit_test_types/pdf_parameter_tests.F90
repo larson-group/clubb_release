@@ -1568,9 +1568,7 @@ module pdf_parameter_tests
                                sigma_w_2_sqd(1,:), sigma_rt_1_sqd,            & ! Out
                                sigma_rt_2_sqd, sigma_thl_1_sqd,          & ! Out
                                sigma_thl_2_sqd, mixt_frac(1,:),               & ! Out
-                               pdf_implicit_coefs_terms,                 & ! Out
-                               F_w, F_rt, F_thl, min_F_w, max_F_w,       & ! Out
-                               min_F_rt, max_F_rt, min_F_thl, max_F_thl  ) ! Out
+                               pdf_implicit_coefs_terms  ) ! Out
 
           ! Recalculate <rt'^3> and <thl'^3> just in case Skrt and Skthl needed
           ! to be clipped in new_pdf_driver.
@@ -1613,8 +1611,8 @@ module pdf_parameter_tests
                                       mu_sclr_1, mu_sclr_2,               &! Out
                                       sigma_sclr_1_sqd, sigma_sclr_2_sqd, &! Out
                                       mixt_frac(1,:),                          &! Out
-                                      pdf_implicit_coefs_terms,           &! Out
-                                      F_w, min_F_w, max_F_w               )! Out
+                                      pdf_implicit_coefs_terms, &
+                                      sigma_sqd_w )! Out
 
           ! Recalculate <rt'^3> and <thl'^3> just in case Skrt and Skthl needed
           ! to be clipped in new_pdf_driver.

@@ -233,9 +233,6 @@ module calc_pressure
 
     ! ---------------------------- Begin Code ----------------------------
 
-    !$acc data copyin( thlm, rtm, rcm, exner, thv_ds_zt ) & 
-    !$acc     copyout( thvm )
-
     ! Calculate mean theta_v
     !$acc parallel loop gang vector collapse(2) default(present)
     do k = 1, nz
@@ -245,9 +242,7 @@ module calc_pressure
       end do
     end do
     !$acc end parallel loop
-    
-    !$acc end data
-
+  
     return
 
   end subroutine calculate_thvm

@@ -1748,9 +1748,6 @@ module advance_helper_module
 
     !------------------------- Begin Code -------------------------
 
-    !$acc data copyin( input ) &
-    !$acc     copyout( smth_output )
-
     !$acc parallel loop gang vector collapse(2) default(present)
     do k = 1, nz
       do i = 1, ngrdcol
@@ -1771,8 +1768,6 @@ module advance_helper_module
       end do
     end do
     !$acc end parallel loop
-
-    !$acc end data
 
     return
 
@@ -1859,9 +1854,6 @@ module advance_helper_module
 
     ! ----------------------- Begin Code -----------------------
 
-    !$acc data copyin( gr, gr%invrs_dzm, Km_zm, xm ) &
-    !$acc     copyout( xpwp )
-
     ! Solve for x'w' at all intermediate model levels.
     !$acc parallel loop gang vector collapse(2) default(present)
     do k = 1, nz-1
@@ -1870,8 +1862,6 @@ module advance_helper_module
       end do
     end do
     !$acc end parallel loop
-
-    !$acc end data
 
     return
 

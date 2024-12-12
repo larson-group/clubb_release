@@ -364,9 +364,7 @@ module saturation
 
     ! -------------------- Begin Code --------------------
 
-    !$acc data create(esat) &
-    !$acc      copyin(p_in_Pa,T_in_K), &
-    !$acc      copyout(sat_mixrat_liq_2D)
+    !$acc data create(esat)
 
     ! start_index is an optional argument and 
     ! used for choosing the sub-arrays
@@ -888,7 +886,9 @@ module saturation
     T_in_K_col(1,1) = T_in_K
 
     ! Call 2D version 
+    !$acc data copyin( p_in_Pa_col, T_in_K_col ) copyout( sat_mixrat_ice_col )
     sat_mixrat_ice_col = sat_mixrat_ice_2D( 1, 1, p_in_Pa_col, T_in_K_col, saturation_formula )
+    !$acc end data
 
     ! Copy 2D result into output
     sat_mixrat_ice_k = sat_mixrat_ice_col( 1, 1 )
@@ -955,9 +955,7 @@ module saturation
 
     ! ------------------------ Begin Code ------------------------
 
-    !$acc data create( esat_ice ) &
-    !$acc      copyin( p_in_Pa, T_in_K ) &
-    !$acc      copyout( sat_mixrat_ice_2D ) 
+    !$acc data create( esat_ice )
 
     ! Determine the SVP for the given temperature
     select case ( saturation_formula )

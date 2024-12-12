@@ -3232,6 +3232,7 @@ module advance_xp2_xpyp_module
 
       zeros_vector = zero
 
+      !$acc data copyin( zeros_vector ) copyout( stats_pr1, stats_pr2 )
       call term_pr1( nz, ngrdcol, C4, zeros_vector, xbp2, &
                      wp2, invrs_tau_C4_zm, invrs_tau_C14_zm, &
                      stats_pr1 )
@@ -3239,6 +3240,7 @@ module advance_xp2_xpyp_module
       call term_pr1( nz, ngrdcol, zeros_vector, C14, xbp2, &
                      wp2, invrs_tau_C4_zm, invrs_tau_C14_zm, &
                      stats_pr2 )
+      !$acc end data
 
       do k = 2, nz-1
         do i = 1, ngrdcol
@@ -3602,6 +3604,8 @@ module advance_xp2_xpyp_module
 
       zeros_vector = zero
 
+      !$acc data copyin( zeros_vector ) copyout( stats_tp1, stats_tp2 )
+
       ! Note:  To find the contribution of x'y' term tp1, substitute 0 for all
       !        the xam inputs and the wpxbp input to function term_tp.
       call term_tp_rhs( nz, ngrdcol, zeros_vector, xbm,  & 
@@ -3613,6 +3617,8 @@ module advance_xp2_xpyp_module
       call term_tp_rhs( nz, ngrdcol, xam, zeros_vector,  & 
                         wpxbp, zeros_vector, gr%invrs_dzm, &
                         stats_tp2 )
+
+      !$acc end data
 
       do k = 2, nz-1
         do i = 1, ngrdcol
@@ -5362,9 +5368,6 @@ module advance_xp2_xpyp_module
 
     !------------------------ Begin Code ------------------------
 
-    !$acc data copyin( xam, xbm, wpxbp, wpxap, invrs_dzm ) &
-    !$acc     copyout( rhs )
-
     !$acc parallel loop gang vector collapse(2) default(present)
     do k = 2, nz-1
       do i = 1, ngrdcol
@@ -5373,8 +5376,6 @@ module advance_xp2_xpyp_module
       end do
     end do
     !$acc end parallel loop
-
-    !$acc end data
 
     return
 
@@ -5456,9 +5457,6 @@ module advance_xp2_xpyp_module
     integer :: i, k
 
     !--------------------------- Begin Code ---------------------------
-    
-    !$acc data copyin( Cn, invrs_tau_zm ) &
-    !$acc     copyout( lhs ) 
 
     !$acc parallel loop gang vector default(present)
     do i = 1, ngrdcol
@@ -5476,8 +5474,6 @@ module advance_xp2_xpyp_module
       end do
     end do
     !$acc end parallel loop
-
-    !$acc end data
 
     return
 
@@ -5551,9 +5547,6 @@ module advance_xp2_xpyp_module
 
     !--------------------------- Begin Code ---------------------------
 
-    !$acc data copyin( Cn, invrs_tau_zm ) &
-    !$acc     copyout( rhs ) 
-
     !$acc parallel loop gang vector collapse(2) default(present)
     do k = 1, nz
       do i = 1, ngrdcol
@@ -5561,8 +5554,6 @@ module advance_xp2_xpyp_module
       end do
     end do
     !$acc end parallel loop
-
-    !$acc end data
 
     return
 
@@ -5684,9 +5675,6 @@ module advance_xp2_xpyp_module
 
     !------------------------- Begin Code -------------------------
 
-    !$acc data copyin( xbp2, wp2, invrs_tau_C4_zm, invrs_tau_C14_zm, C4, C14 ) &
-    !$acc      copyout( rhs )
-
     !$acc parallel loop gang vector collapse(2) default(present)
     do k = 2, nz-1
       do i = 1, ngrdcol
@@ -5696,8 +5684,6 @@ module advance_xp2_xpyp_module
       end do
     end do
     !$acc end parallel loop
-
-    !$acc end data
 
     return
 

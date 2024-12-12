@@ -938,6 +938,9 @@ module clubb_driver
     real( kind = core_rknd ), dimension(ngrdcol) :: &
       deltaz_col
 
+    real( kind = core_rknd ), dimension(:,:), allocatable :: &
+      wp3_zm
+
 !-----------------------------------------------------------------------
     ! Begin code
 
@@ -1612,6 +1615,7 @@ module clubb_driver
            lmin, nu_vert_res_dep, err_code_dummy )         ! intent(out)  
 
     ! Allocate and initialize variables
+    allocate( wp3_zm(1,gr%nz) )        ! u wind
 
     allocate( um(1:gr%nz) )        ! u wind
     allocate( vm(1:gr%nz) )        ! v wind
@@ -2415,9 +2419,11 @@ module clubb_driver
       l_calc_weights_all_levs_itime = l_calc_weights_all_levs .and. .not. l_rad_itime
 
       ! Calculate thvm for use in prescribe_forcings.
+      !$acc data copyin( thlm, rtm, rcm, exner, thv_ds_zt ) copyout( thvm )
       call calculate_thvm( gr%nz, 1, &
                            thlm, rtm, rcm, exner, thv_ds_zt, &
                            thvm )
+      !$acc end data
 
       ! Set large-scale tendencies and subsidence profiles
       call prescribe_forcings( sclr_dim, edsclr_dim, sclr_idx, & ! In
@@ -2800,9 +2806,12 @@ module clubb_driver
       call cpu_time(time_start) ! initialize timer for advance_microphys
 
       ! Calculate Skw_zm for use in advance_microphys.
-      call Skx_func( gr%nz, 1, wp2, zt2zm( gr, wp3(1,:) ), &
+      wp3_zm(1,:) = zt2zm( gr, wp3(1,:) )
+      !$acc data copyin( wp2, wp3_zm, clubb_params ) copyout( Skw_zm )
+      call Skx_func( gr%nz, 1, wp2, wp3_zm, &
                      w_tol, clubb_params, &
                      Skw_zm )
+      !$acc end data
       
       ! This field is smoothed by interpolating to thermodynamic levels and then
       ! interpolating back to momentum levels.
@@ -4004,6 +4013,9 @@ module clubb_driver
 
     integer :: k   ! Array index
 
+    real( kind = core_rknd ), dimension(1,gr%nz) ::  &
+      tmp
+
     !--------------------- Begin Code ---------------------
 
     ! The value of rtm at the surface is output from the sounding, as long as
@@ -4211,10 +4223,13 @@ module clubb_driver
     !                   + [ {L_v/(C_p*exner)} - (R_v/R_d) * thv_ds ] * r_c;
     !
     ! where thv_ds is used as a reference value to approximate theta_l.
+    tmp = thm * ( one + ep2 * ( rtm - rcm ) )**kappa
+    !$acc data copyin( thlm, rtm, rcm, exner, tmp ) copyout( thvm )
     call calculate_thvm( gr%nz, 1, &
                          thlm, rtm, rcm, exner, &
-                         thm * ( one + ep2 * ( rtm - rcm ) )**kappa, &
+                         tmp, &
                          thvm )
+    !$acc end data
 
     ! Recompute more accurate initial exner function, pressure, and density
     ! using thvm, which includes the effects of water vapor and cloud water.

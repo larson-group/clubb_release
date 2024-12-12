@@ -227,9 +227,6 @@ module mean_adv
 
     !-------------------------- Begin Code --------------------------
 
-    !$acc data copyin( wm_zt, invrs_dzt, invrs_dzm, weights_zt2zm ) &
-    !$acc      copyout( lhs_ma )
-
     ! Set lower boundary array to 0
     !$acc parallel loop gang vector collapse(2) default(present)
     do i = 1, ngrdcol
@@ -399,8 +396,6 @@ module mean_adv
 
     endif ! l_upwind_xm_ma
 
-    !$acc end data
-
     return
 
   end subroutine term_ma_zt_lhs
@@ -503,9 +498,6 @@ module mean_adv
 
     ! -------------------------- Begin Code --------------------------
 
-    !$acc data copyin( wm_zm, invrs_dzm, weights_zm2zt ) &
-    !$acc      copyout( lhs_ma )
-
     ! Set lower boundary array to 0
     !$acc parallel loop gang vector collapse(2) default(present)
     do i = 1, ngrdcol
@@ -542,8 +534,6 @@ module mean_adv
       end do
     end do
     !$acc end parallel loop
-
-    !$acc end data
 
     return
 

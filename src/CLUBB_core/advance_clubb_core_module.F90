@@ -748,6 +748,9 @@ module advance_clubb_core_module
       thlm700                      
 
     real( kind = core_rknd ), dimension(ngrdcol,nz) :: &
+      tmp
+      
+    real( kind = core_rknd ), dimension(ngrdcol,nz) :: &
       rcm_supersat_adj, & ! Adjustment to rcm due to spurious supersaturation
       rel_humidity        ! Relative humidity after PDF closure [-]
 
@@ -1564,9 +1567,12 @@ module advance_clubb_core_module
       ! when stat_update_var is called for rel_humidity.  ldgrant
       if ( stats_metadata%irel_humidity > 0 ) then
         
+        !$acc data create( tmp ) copyin( p_in_Pa, thlm, exner, rcm ) copyout( rsat )
+        tmp = thlm2T_in_K( nz, ngrdcol, thlm, exner, rcm )
         rsat = sat_mixrat_liq( nz, ngrdcol, p_in_Pa, &
-                               thlm2T_in_K( nz, ngrdcol, thlm, exner, rcm ), &
+                               tmp, &
                                clubb_config_flags%saturation_formula )
+        !$acc end data
 
         ! Recompute rsat and rel_humidity. They might have changed.
         do i = 1, ngrdcol

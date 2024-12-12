@@ -70,9 +70,7 @@ module Skx_module
 
     ! ---- Begin Code ----
 
-    !$acc data copyin( xp2, xp3, clubb_params ) &
-    !$acc      create( Skx_denom_tol ) &
-    !$acc      copyout( Skx )
+    !$acc data create( Skx_denom_tol )
 
     !$acc parallel loop gang vector default(present)
     do i = 1, ngrdcol
@@ -248,9 +246,7 @@ module Skx_module
 
     !-------------------------- Begin Code --------------------------
 
-    !$acc data copyin( Skw_zt, wpxp_zt, wp2_zt, xp2_zt, sigma_sqd_w_zt ) &
-    !$acc      create( Skx_zt, Skx_denom_tol ) &
-    !$acc      copyout( xp3 )
+    !$acc data create( Skx_zt, Skx_denom_tol )
 
     ! Calculate skewness of x using the ansatz of LG05.
     call LG_2005_ansatz( nz, ngrdcol, Skw_zt, wpxp_zt, wp2_zt, &
