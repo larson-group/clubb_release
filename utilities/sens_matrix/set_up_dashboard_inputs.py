@@ -46,7 +46,7 @@ def setUpInputs(beVerbose):
     # The third column is a vector of normalization values for metrics.  
     #   If a value in the 3rd column is set to -999, then the metric is simply normalized by the observed value.
     #   Otherwise, the value in the 3rd column is itself the normalization value for the metric.  
-    metricsNamesWeightsAndNorms = [ \
+    metricsNamesWeightsAndNormsSpecial = [ \
 #                        ['TMQ_RMSE', 1.00, 15.], \
 #                        ['PSL_RMSE', 1.00, 1000.], \
 #                        ['TS_RMSE', 1.00, 15.], \
@@ -56,22 +56,23 @@ def setUpInputs(beVerbose):
                         #['SWCF_RACC', 0.01, 0.2], \
                         #['SWCF_RMSEP', 8.01, 15.], \
                         #['SWCF_RMSE', 0.01, 15.], \
-                        ['RESTOM_GLB', 4.0, 10.], \
-                        ['SWCF_GLB', 16.00, -999], \
-                        ['SWCF_DYCOMS', 4.00, -999], \
-                        ['SWCF_HAWAII', 4.00, -999], \
-                        ['SWCF_VOCAL', 4.00, -999], \
-                        ['SWCF_VOCAL_near', 1.00, -999], \
-                        ['SWCF_LBA', 1.00, -999], \
-                        ['SWCF_WP', 1.00, -999], \
-                        ['SWCF_EP', 1.00, -999], \
-                        ['SWCF_NP', 1.00, -999], \
-                        ['SWCF_SP', 1.00, -999],  \
+                        #['RESTOM_GLB', 4.0, 10.], \
+                        #['RESTOM_GLB', 4.0e-3, -999], \
+                        ['SWCF_GLB', 16.0e-6, -999], \
+                        ['SWCF_DYCOMS', 4.0e-6, -999], \
+                        ['SWCF_HAWAII', 4.00e-6, -999], \
+                        ['SWCF_VOCAL', 4.00e-6, -999], \
+                        ['SWCF_VOCAL_near', 1.00e-6, -999], \
+                        ['SWCF_LBA', 1.00e-6, -999], \
+                        ['SWCF_WP', 1.00e-6, -999], \
+                        ['SWCF_EP', 1.00e-6, -999], \
+                        ['SWCF_NP', 1.00e-6, -999], \
+                        ['SWCF_SP', 1.00e-6, -999],  \
 ##                        ['SWCF_PA', 1.01, -999], \
 #                        ['SWCF_CAF', 1.00, -999], \
-                        ['SWCF_Namibia', 4.00, -999], \
-                        ['SWCF_Namibia_near', 1.00, -999], \
-                        ['LWCF_GLB',1.00, -999], \
+                        ['SWCF_Namibia', 4.00e-6, -999], \
+                        ['SWCF_Namibia_near', 1.00e-6, -999], \
+                        #['LWCF_GLB',1.00e-6, -999], \
 ###                        ['LWCF_DYCOMS', 1.01, -999], \
 ###                        ['LWCF_HAWAII', 1.01, -999], \
 ###                        ['LWCF_VOCAL', 1.01, -999], \
@@ -113,12 +114,11 @@ def setUpInputs(beVerbose):
 #                        ['PRECT_VOCAL', 0.01, -999], \
 
     # Split up the list above into metric names and the corresponding weights.
-    dfMetricsNamesWeightsAndNorms =  \
-        pd.DataFrame( metricsNamesWeightsAndNorms, columns = ['metricsNames', 'metricsWeights', 'metricsNorms'] )
-    metricsNames = dfMetricsNamesWeightsAndNorms[['metricsNames']].to_numpy().astype(str)[:,0]
-    metricsWeights = dfMetricsNamesWeightsAndNorms[['metricsWeights']].to_numpy().astype(float)
-    metricsNorms = dfMetricsNamesWeightsAndNorms[['metricsNorms']].to_numpy().astype(float)
-
+    dfMetricsNamesWeightsAndNormsSpecial =  \
+        pd.DataFrame( metricsNamesWeightsAndNormsSpecial, columns = ['metricsNamesSpecial', 'metricsWeightsSpecial', 'metricsNormsSpecial'] )
+    metricsNamesSpecial = dfMetricsNamesWeightsAndNormsSpecial[['metricsNamesSpecial']].to_numpy().astype(str)[:,0]
+    metricsWeightsSpecial = dfMetricsNamesWeightsAndNormsSpecial[['metricsWeightsSpecial']].to_numpy().astype(float)
+    metricsNormsSpecial = dfMetricsNamesWeightsAndNormsSpecial[['metricsNormsSpecial']].to_numpy().astype(float)
 
 
     # Parameters are tunable model parameters, e.g. clubb_C8.
@@ -365,8 +365,9 @@ def setUpInputs(beVerbose):
     # Metrics from the global simulation that use the tuner-recommended parameter values
     linSolnNcFilename = \
         (
-        #'Regional_files/20231211_20x20regs/20sens0707_61_Regional.nc'
-         defaultNcFilename
+         #defaultNcFilename
+         folder_name + '69_Regional.nc'
+    #    'Regional_files/20231211_20x20regs/20sens0707_61_Regional.nc'
     #    'Regional_files/20degree_CAM_TAUS_202404_DJF/20.0Tuner_20240702_20d_DJF_Regional.nc'
     #    'Regional_files/stephens_20240131/btune_regional_files/b1850.076base.n2th1b_Regional.nc'
     #    'Regional_files/20240409updated/thresp26_Regional.nc'
@@ -381,7 +382,7 @@ def setUpInputs(beVerbose):
     # Observed values of our metrics, from, e.g., CERES-EBAF.
     # These observed metrics will be matched as closely as possible by analyzeSensMatrix.
     # NOTE: PRECT is in the unit of m/s
-    obsMetricValsDict = { \
+    obsMetricValsDictSpecial = { \
     'RESTOM_GLB': 1.5, \
     'SWCF_RACC': 0, \
     'SWCF_RMSEP': 0, \
@@ -418,6 +419,10 @@ def setUpInputs(beVerbose):
     'PSL_CAF': 100941.7890625
         }
 
+    # For special regions, make simulated values a numpy float,
+    #     like the other metrics
+    obsMetricValsDictSpecial = {key: np.float32(value) \
+                for key, value in obsMetricValsDictSpecial.items()}
 
     # Comment out if not using 20x20reg files
     varPrefixes = ["SWCF"]
@@ -429,7 +434,7 @@ def setUpInputs(beVerbose):
         pd.DataFrame( metricsNamesWeightsAndNorms, columns = ['metricsNames', 'metricsWeights', 'metricsNorms'] )
     metricsNames = dfMetricsNamesWeightsAndNorms[['metricsNames']].to_numpy().astype(str)[:,0]
     metricsWeights = dfMetricsNamesWeightsAndNorms[['metricsWeights']].to_numpy().astype(float)
-    metricsNorms = dfMetricsNamesWeightsAndNorms[['metricsNorms']].to_numpy().astype(float)
+    #metricsNorms = dfMetricsNamesWeightsAndNorms[['metricsNorms']].to_numpy().astype(float)
 
 
     # Set up a column vector of metric values from the default simulation
@@ -476,26 +481,25 @@ def setUpInputs(beVerbose):
     #obsGlobalAvgUnweighted = np.mean(obsMetricValsCol)
     #print("obsGlobalAvgMetricsWeights =", obsGlobalAvgMetricsWeights)
 
-    if True:
-    #if beVerbose:
-        obsGlobalAvgObsWeights = np.zeros(len(varPrefixes))
-        obsGlobalAvgCol = np.empty(shape=[0, 1])
-        for idx, varPrefix in np.ndenumerate(varPrefixes):
-            keysVarPrefix = [key for key in obsWeightsDict.keys() if varPrefix in key]
-            #obsWeightsNames = np.array(list(obsWeightsDict.keys()), dtype=str)
-            obsWeightsNames = np.array(keysVarPrefix, dtype=str)
-            obsWeightsUnnormlzd = setUpObsCol(obsWeightsDict, obsWeightsNames)
-            obsWeights = obsWeightsUnnormlzd / np.sum(obsWeightsUnnormlzd)
-            #metricsWeights = obsWeights
-            #obsWeights = np.vstack([obsWeights] * len(varPrefixes))
-            metricsNamesVarPrefix = [key for key in obsMetricValsDict.keys() if varPrefix in key]
-            obsMetricValsColVarPrefix = setUpObsCol(obsMetricValsDict, metricsNamesVarPrefix)
-            obsGlobalAvgObsWeights[idx] = np.dot(obsWeights.T, obsMetricValsColVarPrefix)
-            print(f"obsGlobalAvgObsWeights for {varPrefix} =", obsGlobalAvgObsWeights[idx])
-            obsGlobalAvgCol = np.vstack((obsGlobalAvgCol,
-                                           obsGlobalAvgObsWeights[idx]*np.ones((len(obsWeights),1))
-                                            ))
-        metricsNorms = np.copy(obsGlobalAvgCol)
+    # Set metricsNorms to be a global average
+    obsGlobalAvgObsWeights = np.zeros(len(varPrefixes))
+    obsGlobalAvgCol = np.empty(shape=[0, 1])
+    for idx, varPrefix in np.ndenumerate(varPrefixes):
+        keysVarPrefix = [key for key in obsWeightsDict.keys() if varPrefix in key]
+        #obsWeightsNames = np.array(list(obsWeightsDict.keys()), dtype=str)
+        obsWeightsNames = np.array(keysVarPrefix, dtype=str)
+        obsWeightsUnnormlzd = setUpObsCol(obsWeightsDict, obsWeightsNames)
+        obsWeights = obsWeightsUnnormlzd / np.sum(obsWeightsUnnormlzd)
+        #metricsWeights = obsWeights
+        #obsWeights = np.vstack([obsWeights] * len(varPrefixes))
+        metricsNamesVarPrefix = [key for key in obsMetricValsDict.keys() if varPrefix in key]
+        obsMetricValsColVarPrefix = setUpObsCol(obsMetricValsDict, metricsNamesVarPrefix)
+        obsGlobalAvgObsWeights[idx] = np.dot(obsWeights.T, obsMetricValsColVarPrefix)
+        print(f"obsGlobalAvgObsWeights for {varPrefix} =", obsGlobalAvgObsWeights[idx])
+        obsGlobalAvgCol = np.vstack((obsGlobalAvgCol,
+                                       obsGlobalAvgObsWeights[idx]*np.ones((len(obsWeights),1))
+                                        ))
+    metricsNorms = np.copy(obsGlobalAvgCol)
 
             #obsMetricValsReshaped = obsMetricValsCol.reshape((9,18))
             #biasMat = defaultMetricValsReshaped - obsMetricValsReshaped
@@ -507,10 +511,17 @@ def setUpInputs(beVerbose):
             #rmse = np.sqrt(mse)
             #print("rmse between default and obs =", rmse)
 
+    # The special regions are tacked onto the end of
+    #     the usual metrics vectors
+    numMetricsNoSpecial = len(metricsNames)
 
+    metricsNames = np.append(metricsNames, metricsNamesSpecial)
+    metricsWeights = np.vstack((metricsWeights, metricsWeightsSpecial))
+    metricsNorms = np.vstack((metricsNorms, metricsNormsSpecial))
 
+    obsMetricValsDict.update(obsMetricValsDictSpecial)
 
-    return (metricsNames, metricsWeights, metricsNorms, \
+    return (numMetricsNoSpecial, metricsNames, metricsWeights, metricsNorms, \
             obsMetricValsDict, \
             paramsNames, paramsScales, \
             transformedParamsNames, \

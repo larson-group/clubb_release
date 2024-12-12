@@ -21,7 +21,7 @@ from dash import html
 #import fnmatch
 from sens_matrix_dashboard import lossFncMetrics, approxMatrixWithSvd, normlzdSemiLinMatrixFnc
 
-def createFigs(metricsNames,
+def createFigs(numMetricsNoSpecial, metricsNames,
                paramsNames, transformedParamsNames, paramsScales,
                metricsWeights, obsMetricValsCol, normMetricValsCol, magParamValsRow,
                defaultBiasesCol, defaultBiasesApproxNonlin, defaultBiasesApproxElastic,
@@ -464,13 +464,15 @@ def createFigs(metricsNames,
 
         #sensCol = np.linalg.norm(normlzdLinplusSensMatrixPoly, axis=1)
         sensCol = np.linalg.norm(normlzdSensMatrixPoly, axis=1)
+        curvCol = np.linalg.norm(normlzdCurvMatrix, axis=1)
         # Find the index of the element with the largest magnitude
         maxSensIdx = np.argmax(sensCol)
         signSens = np.sign(normlzdLinplusSensMatrixPoly @ normlzdLinplusSensMatrixPoly[maxSensIdx, :].T)
         xCol = sensCol * signSens
         yCol = -defaultBiasesCol[:, 0] / np.abs(normMetricValsCol[:, 0])
-        #yCol = (-defaultBiasesApproxNonlin - defaultBiasesCol)[:, 0] \
-        #       / np.abs(normMetricValsCol[:, 0])
+        #yCol = curvCol
+        ##yCol = (-defaultBiasesApproxNonlin - defaultBiasesCol)[:, 0] \
+        ##       / np.abs(normMetricValsCol[:, 0])
 
         biasesVsSensMagScatterplot = \
             createScatterplot(xCol=xCol, xColLabel='sens',
@@ -641,7 +643,8 @@ def createFigs(metricsNames,
                                                          plotHeight=1400, plotWidth=1000,
                                                          #plotHeight=2800 displays all 20x20 regions
                                                          printCellText=False,
-                                                         plotTitle='Color-coded normalized sensitivity matrix, ' + matrixDictKeyString,
+                                                         plotTitle='Color-coded normalized sensitivity matrix, '
+                                                                   + matrixDictKeyString,
                                                          reversedYAxis='reversed',
                                                          eqnAdd=True)
 
@@ -731,10 +734,10 @@ def createFigs(metricsNames,
         #matrixDictKeyString = "normlzdSensMatrixPoly"
         #matrixDict = {matrixDictKeyString: normlzdSensMatrixPoly}
         matrixDictKeyString = "normlzdLinplusSensMatrixPoly"
-        matrixDict={matrixDictKeyString:normlzdLinplusSensMatrixPoly}
+        matrixDict={matrixDictKeyString:normlzdLinplusSensMatrixPoly[:numMetricsNoSpecial,:]}
         paramsCorrArrayFig = \
             createParamsCorrArrayFig(matrix=matrixDict[matrixDictKeyString],
-                                     biasesCol=normlzdDefaultBiasesCol,
+                                     biasesCol=normlzdDefaultBiasesCol[:numMetricsNoSpecial,:],
                                      paramsNames=paramsNames,
                                      plotTitle='cos(angle) among parameters<br>\
                                                (i.e., X^T*X using debiased columns of sens matrix)<br>' \
@@ -787,174 +790,22 @@ def createFigs(metricsNames,
                             plotWidth=700, plotHeight=500
                             )
 
+
     if plot_PcSensMap:
 
-        print("Creating PcSensMap . . .")
+        BiasParamsDashboardChildren, U0U3DashboardChildren \
+        = createMapGallery(
+            normlzdDefaultBiasesCol[:numMetricsNoSpecial,:],
+            normlzdResid[:numMetricsNoSpecial],
+            normlzdLinSolnBiasesCol[:numMetricsNoSpecial, :],
+            defaultLossCol[:numMetricsNoSpecial, :],
+            tunedLossChange[:numMetricsNoSpecial, :],
+            linSolnLossChange[:numMetricsNoSpecial, :],
+            normlzdLinplusSensMatrixPoly[:numMetricsNoSpecial, :],
+            paramsNames,
+            downloadConfig,
+            plotWidth=500, boxSize=20)
 
-        # Create a blank figure to fill in any empty spots
-        blankFig = go.Figure()
-        plotWidth = 500
-        plotHeight = np.rint(plotWidth * (490 / 700))
-        blankFig.update_layout(width=plotWidth, height=plotHeight)
-
-        PcMapPanelBias = \
-            createMapPanel(fieldToPlotCol=normlzdDefaultBiasesCol,
-                           plotWidth=500,
-                           plotTitle="normlzdDefaultBiasesCol",
-                           boxSize=20)
-
-        # Use same color range in residual plot as in bias plot
-        minFieldBias = np.min(normlzdDefaultBiasesCol)
-        maxFieldBias = np.max(normlzdDefaultBiasesCol)
-
-        PcMapPanelResid = \
-            createMapPanel(fieldToPlotCol=-normlzdResid,
-                           plotWidth=500,
-                           plotTitle="-normlzdResid",
-                           boxSize=20,
-                           minField=minFieldBias,
-                           maxField=maxFieldBias)
-
-        BiasParamsDashboardChildren = [html.Div(children=[
-            dcc.Graph(id="PcMapPanelBias", figure=PcMapPanelBias,
-                      style={'display': 'inline-block'}, config=downloadConfig),
-            dcc.Graph(id="PcMapPanelResid", figure=PcMapPanelResid,
-                      style={'display': 'inline-block'}, config=downloadConfig)
-        ])]
-
-        PcMapPanelLinSoln = \
-            createMapPanel(fieldToPlotCol=normlzdLinSolnBiasesCol,
-                           plotWidth=500,
-                           plotTitle="normlzdLinSoln",
-                           boxSize=20,
-                           minField=minFieldBias,
-                           maxField=maxFieldBias)
-
-        BiasParamsDashboardChildren.append(html.Div(children=[
-            dcc.Graph(figure=PcMapPanelLinSoln,
-                      style={'display': 'inline-block'}, config=downloadConfig),
-            dcc.Graph(figure=blankFig,
-                      style={'display': 'inline-block'}, config=downloadConfig)
-        ]))
-
-        PcMapPanelDefaultLoss = \
-            createMapPanel(fieldToPlotCol=1e3*np.sqrt(defaultLossCol),
-                           plotWidth=500,
-                           plotTitle="Sqrt Default Loss (x 1e3)",
-                           boxSize=20)
-
-        sqrtTunedLossChange = \
-            1e3 * np.sign(tunedLossChange) * np.sqrt(np.abs(tunedLossChange))
-
-        PcMapPanelTunedLossChange = \
-            createMapPanel(fieldToPlotCol=sqrtTunedLossChange,
-                           plotWidth=500,
-                           plotTitle="Sqrt Tuned Loss Change (x 1e3)",
-                           boxSize=20)
-
-        BiasParamsDashboardChildren.append(html.Div(children=[
-                dcc.Graph(figure=PcMapPanelDefaultLoss, style={'display': 'inline-block'},
-                          config=downloadConfig),
-                dcc.Graph(figure=PcMapPanelTunedLossChange, style={'display': 'inline-block'},
-                          config=downloadConfig)
-            ]))
-
-        # Use same color range in linSolnLoss plot as in tunedLoss plot
-        minFieldBias = np.min(sqrtTunedLossChange)
-        maxFieldBias = np.max(sqrtTunedLossChange)
-
-        PcMapPanelLinSolnLossChange = \
-            createMapPanel(fieldToPlotCol=1e3*np.sign(linSolnLossChange)*np.sqrt(np.abs(linSolnLossChange)),
-                           plotWidth=500,
-                           plotTitle="Sqrt LinSoln Loss Change (x 1e3)",
-                           boxSize=20,
-                           minField=minFieldBias,
-                           maxField=maxFieldBias)
-
-        BiasParamsDashboardChildren.append(html.Div(children=[
-            dcc.Graph(figure=PcMapPanelLinSolnLossChange,
-                      style={'display': 'inline-block'}, config=downloadConfig),
-            dcc.Graph(figure=blankFig,
-                      style={'display': 'inline-block'}, config=downloadConfig)
-        ]))
-
-        paramsIdx = 0
-        while paramsIdx < len(paramsNames):
-            leftFig = \
-                createMapPanel(fieldToPlotCol=normlzdLinplusSensMatrixPoly[:, paramsIdx],
-                               plotWidth=500,
-                               plotTitle=f"normlzdSensMatrixPoly[:,{paramsNames[paramsIdx]}]",
-                               boxSize=20)
-            if paramsIdx + 1 < len(paramsNames):
-                rightFig = \
-                    createMapPanel(fieldToPlotCol=normlzdLinplusSensMatrixPoly[:, paramsIdx + 1],
-                                   plotWidth=500,
-                                   plotTitle=f"normlzdSensMatrixPoly[:,{paramsNames[paramsIdx + 1]}]",
-                                   boxSize=20)
-            else:
-                rightFig = blankFig
-
-            BiasParamsDashboardChildren.append(html.Div(children=[
-                dcc.Graph(figure=leftFig, style={'display': 'inline-block'},
-                          config=downloadConfig),
-                dcc.Graph(figure=rightFig, style={'display': 'inline-block'},
-                          config=downloadConfig)
-            ]))
-
-            paramsIdx += 2
-
-        #print("1e6*defaultLossCol = ", 1e6*np.sort(defaultLossCol[:,0]))
-
-        u, s, vh = \
-            np.linalg.svd(normlzdLinplusSensMatrixPoly, full_matrices=False)
-
-        #u, s, vh = \
-        #    np.linalg.svd(normlzdCurvMatrix, full_matrices=False)
-
-        PcMapPanelU0 = \
-            createMapPanel(fieldToPlotCol=u[:, 0],
-                           plotWidth=500,
-                           plotTitle="SVD 1",
-                           boxSize=20)
-
-        PcMapPanelU1 = \
-            createMapPanel(fieldToPlotCol=u[:, 1],
-                           plotWidth=500,
-                           plotTitle="SVD 2",
-                           boxSize=20)
-
-        PcMapPanelU0bias = \
-            createMapPanel(fieldToPlotCol=u[:, 0]*normlzdDefaultBiasesCol[:,0],
-                           plotWidth=500,
-                           plotTitle="SVD 1 * bias",
-                           boxSize=20)
-
-        PcMapPanelU1bias = \
-            createMapPanel(fieldToPlotCol=u[:, 1]*normlzdDefaultBiasesCol[:,0],
-                           plotWidth=500,
-                           plotTitle="SVD 2 * bias",
-                           boxSize=20)
-
-        U0U3DashboardChildren = [
-            html.Div(children=
-                     [dcc.Graph(id="PcMapPanelU0", figure=PcMapPanelU0,
-                                style={'display': 'inline-block'},
-                                config=downloadConfig),
-                      dcc.Graph(id="PcMapPanelU1", figure=PcMapPanelU1,
-                                style={'display': 'inline-block'},
-                                config=downloadConfig)
-                      ]
-                     ),
-            html.Div(children=
-                     [dcc.Graph(id="PcMapPanelU0bias", figure=PcMapPanelU0bias,
-                                style={'display': 'inline-block'},
-                                config=downloadConfig),
-                      dcc.Graph(id="PcMapPanelU1bias", figure=PcMapPanelU1bias,
-                                style={'display': 'inline-block'},
-                                config=downloadConfig)
-                      ]
-                     )
-        ]
 
         # Now combine the matrix and column sub-figures into one figure
         #PcMapFig = make_subplots(
@@ -973,11 +824,13 @@ def createFigs(metricsNames,
 
         print("Creating SVD vh matrix figure . . .")
 
+        matrixDictKeyString = "normlzdLinplusSensMatrixPoly"
+        matrixDict = {matrixDictKeyString: normlzdLinplusSensMatrixPoly}
         u, s, vh = \
-            np.linalg.svd(normlzdLinplusSensMatrixPoly, full_matrices=False)
+            np.linalg.svd(matrixDict[matrixDictKeyString], full_matrices=False)
 
-        uCurv, sCurv, vhCurv = \
-            np.linalg.svd(normlzdCurvMatrix, full_matrices=False)
+        #uCurv, sCurv, vhCurv = \
+        #    np.linalg.svd(normlzdCurvMatrix, full_matrices=False)
 
         #normlzdLinplusSensMatrixPolyPlusBias = \
         #    np.hstack((normlzdLinplusSensMatrixPoly, normlzdDefaultBiasesCol))
@@ -994,7 +847,7 @@ def createFigs(metricsNames,
             matrix=vh,
             matrixRowLabel=svdLabel,
             matrixColLabel=paramsAbbrv,
-            plotTitle="SVD v^T Matrix",
+            plotTitle="SVD v^T Matrix, " + matrixDictKeyString,
             plotWidth=500,
             plotHeight=500,
             printCellText=True
@@ -1116,6 +969,192 @@ def createFigs(metricsNames,
 
     return
 
+def createMapGallery(
+    normlzdDefaultBiasesCol,
+    normlzdResid,
+    normlzdLinSolnBiasesCol,
+    defaultLossCol,
+    tunedLossChange,
+    linSolnLossChange,
+    normlzdLinplusSensMatrixPoly,
+    paramsNames,
+    downloadConfig,
+    plotWidth, boxSize):
+
+    print("Creating PcSensMap . . .")
+
+    # Create a blank figure to fill in any empty spots
+    blankFig = go.Figure()
+    #plotWidth = 500
+    plotHeight = np.rint(plotWidth * (490 / 700))
+    blankFig.update_layout(width=plotWidth, height=plotHeight)
+
+    PcMapPanelBias = \
+        createMapPanel(fieldToPlotCol=normlzdDefaultBiasesCol,
+                       plotWidth=plotWidth,
+                       plotTitle="normlzdDefaultBiasesCol",
+                       boxSize=boxSize)
+
+    # Use same color range in residual plot as in bias plot
+    minFieldBias = np.min(normlzdDefaultBiasesCol)
+    maxFieldBias = np.max(normlzdDefaultBiasesCol)
+
+    PcMapPanelResid = \
+        createMapPanel(fieldToPlotCol=-normlzdResid,
+                       plotWidth=plotWidth,
+                       plotTitle="-normlzdResid",
+                       boxSize=boxSize,
+                       minField=minFieldBias,
+                       maxField=maxFieldBias)
+
+    BiasParamsDashboardChildren = [html.Div(children=[
+        dcc.Graph(id="PcMapPanelBias", figure=PcMapPanelBias,
+                  style={'display': 'inline-block'}, config=downloadConfig),
+        dcc.Graph(id="PcMapPanelResid", figure=PcMapPanelResid,
+                  style={'display': 'inline-block'}, config=downloadConfig)
+    ])]
+
+    PcMapPanelLinSoln = \
+        createMapPanel(fieldToPlotCol=normlzdLinSolnBiasesCol,
+                       plotWidth=plotWidth,
+                       plotTitle="normlzdLinSoln",
+                       boxSize=boxSize,
+                       minField=minFieldBias,
+                       maxField=maxFieldBias)
+
+    BiasParamsDashboardChildren.append(html.Div(children=[
+        dcc.Graph(figure=PcMapPanelLinSoln,
+                  style={'display': 'inline-block'}, config=downloadConfig),
+        dcc.Graph(figure=blankFig,
+                  style={'display': 'inline-block'}, config=downloadConfig)
+    ]))
+
+    sqrtDefaultLoss = -1e3*np.sqrt(defaultLossCol)
+
+    PcMapPanelDefaultLoss = \
+        createMapPanel(fieldToPlotCol=sqrtDefaultLoss,
+                       plotWidth=plotWidth,
+                       plotTitle="-Sqrt Default Loss (x 1e3)",
+                       boxSize=boxSize)
+
+    # Use same color range in linSolnLoss plot as in tunedLoss plot
+    minFieldBias = np.min(sqrtDefaultLoss)
+    maxFieldBias = np.max(sqrtDefaultLoss)
+
+    sqrtTunedLossChange = \
+        1e3 * np.sign(tunedLossChange) * np.sqrt(np.abs(tunedLossChange))
+
+    PcMapPanelTunedLossChange = \
+        createMapPanel(fieldToPlotCol=sqrtTunedLossChange,
+                       plotWidth=plotWidth,
+                       plotTitle="Sqrt Tuned Loss Change (x 1e3)",
+                       boxSize=boxSize,
+                       minField=minFieldBias,
+                       maxField=maxFieldBias)
+
+    BiasParamsDashboardChildren.append(html.Div(children=[
+            dcc.Graph(figure=PcMapPanelDefaultLoss, style={'display': 'inline-block'},
+                      config=downloadConfig),
+            dcc.Graph(figure=PcMapPanelTunedLossChange, style={'display': 'inline-block'},
+                      config=downloadConfig)
+        ]))
+
+    sqrtLinSolnLossChange = 1e3*np.sign(linSolnLossChange)*np.sqrt(np.abs(linSolnLossChange))
+
+    PcMapPanelLinSolnLossChange = \
+        createMapPanel(fieldToPlotCol=sqrtLinSolnLossChange,
+                       plotWidth=plotWidth,
+                       plotTitle="Sqrt LinSoln Loss Change (x 1e3)",
+                       boxSize=boxSize,
+                       minField=minFieldBias,
+                       maxField=maxFieldBias)
+
+    BiasParamsDashboardChildren.append(html.Div(children=[
+        dcc.Graph(figure=PcMapPanelLinSolnLossChange,
+                  style={'display': 'inline-block'}, config=downloadConfig),
+        dcc.Graph(figure=blankFig,
+                  style={'display': 'inline-block'}, config=downloadConfig)
+    ]))
+
+    paramsIdx = 0
+    while paramsIdx < len(paramsNames):
+        leftFig = \
+            createMapPanel(fieldToPlotCol=normlzdLinplusSensMatrixPoly[:, paramsIdx],
+                           plotWidth=plotWidth,
+                           plotTitle=f"normlzdSensMatrixPoly[:,{paramsNames[paramsIdx]}]",
+                           boxSize=boxSize)
+        if paramsIdx + 1 < len(paramsNames):
+            rightFig = \
+                createMapPanel(fieldToPlotCol=normlzdLinplusSensMatrixPoly[:, paramsIdx + 1],
+                               plotWidth=plotWidth,
+                               plotTitle=f"normlzdSensMatrixPoly[:,{paramsNames[paramsIdx + 1]}]",
+                               boxSize=boxSize)
+        else:
+            rightFig = blankFig
+
+        BiasParamsDashboardChildren.append(html.Div(children=[
+            dcc.Graph(figure=leftFig, style={'display': 'inline-block'},
+                      config=downloadConfig),
+            dcc.Graph(figure=rightFig, style={'display': 'inline-block'},
+                      config=downloadConfig)
+        ]))
+
+        paramsIdx += 2
+
+    #print("1e6*defaultLossCol = ", 1e6*np.sort(defaultLossCol[:,0]))
+
+    u, s, vh = \
+        np.linalg.svd(normlzdLinplusSensMatrixPoly, full_matrices=False)
+
+    #u, s, vh = \
+    #    np.linalg.svd(normlzdCurvMatrix, full_matrices=False)
+
+    PcMapPanelU0 = \
+        createMapPanel(fieldToPlotCol=u[:, 0],
+                       plotWidth=plotWidth,
+                       plotTitle="SVD 1",
+                       boxSize=boxSize)
+
+    PcMapPanelU1 = \
+        createMapPanel(fieldToPlotCol=u[:, 1],
+                       plotWidth=plotWidth,
+                       plotTitle="SVD 2",
+                       boxSize=boxSize)
+
+    PcMapPanelU0bias = \
+        createMapPanel(fieldToPlotCol=u[:, 0]*normlzdDefaultBiasesCol[:,0],
+                       plotWidth=plotWidth,
+                       plotTitle="SVD 1 * bias",
+                       boxSize=boxSize)
+
+    PcMapPanelU1bias = \
+        createMapPanel(fieldToPlotCol=u[:, 1]*normlzdDefaultBiasesCol[:,0],
+                       plotWidth=plotWidth,
+                       plotTitle="SVD 2 * bias",
+                       boxSize=boxSize)
+
+    U0U3DashboardChildren = [
+        html.Div(children=
+                 [dcc.Graph(id="PcMapPanelU0", figure=PcMapPanelU0,
+                            style={'display': 'inline-block'},
+                            config=downloadConfig),
+                  dcc.Graph(id="PcMapPanelU1", figure=PcMapPanelU1,
+                            style={'display': 'inline-block'},
+                            config=downloadConfig)
+                  ]
+                 ),
+        html.Div(children=
+                 [dcc.Graph(id="PcMapPanelU0bias", figure=PcMapPanelU0bias,
+                            style={'display': 'inline-block'},
+                            config=downloadConfig),
+                  dcc.Graph(id="PcMapPanelU1bias", figure=PcMapPanelU1bias,
+                            style={'display': 'inline-block'},
+                            config=downloadConfig)
+                  ]
+                 )
+    ]
+
+    return (BiasParamsDashboardChildren, U0U3DashboardChildren)
 
 def createMapPanel(fieldToPlotCol,
                    plotWidth,
@@ -1179,8 +1218,8 @@ def createMapPanel(fieldToPlotCol,
     # If the data include 0, use a diverging colorscale.
     # Remap 0 to 0.5 and normalize the data so that
     #    the data lie within the range [0,1].
-    #if ( False ):
-    if ( maxField > 0) & (minField < 0):
+    if ( True ):
+    #if ( maxField > 0) & (minField < 0):
         colorScale = 'RdBu_r'
         for latIdx, lat in np.ndenumerate(latRange):
             for lonIdx, lon in np.ndenumerate(lonRange):

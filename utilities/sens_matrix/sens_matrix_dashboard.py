@@ -24,6 +24,7 @@ def main():
     print("Set up inputs . . .")
 
     # The user should input all tuning data into file set_up_dashboard_inputs.py
+    numMetricsNoSpecial, \
     metricsNames, metricsWeights, metricsNorms, \
     obsMetricValsDict, \
     paramsNames, paramsScales, \
@@ -226,7 +227,7 @@ def main():
     #normlzdWeightedLinplusSensMatrixPoly = np.diag(np.transpose(metricsWeights)[0]) \
     #                                          @ normlzdLinplusSensMatrixPoly
 
-    createFigs(metricsNames,
+    createFigs(numMetricsNoSpecial, metricsNames,
                paramsNames, transformedParamsNames, paramsScales,
                metricsWeights, obsMetricValsCol, normMetricValsCol, magParamValsRow,
                defaultBiasesCol, defaultBiasesApproxNonlin, defaultBiasesApproxElastic, 
