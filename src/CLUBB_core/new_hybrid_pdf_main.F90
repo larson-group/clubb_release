@@ -45,8 +45,8 @@ module new_hybrid_pdf_main
                                     mu_sclr_1, mu_sclr_2,               & ! Out
                                     sigma_sclr_1_sqd, sigma_sclr_2_sqd, & ! Out
                                     mixt_frac,                          & ! Out
-                                    pdf_implicit_coefs_terms,           & ! Out
-                                    F_w, min_F_w, max_F_w               ) ! Out
+                                    pdf_implicit_coefs_terms, &
+                                    sigma_sqd_w ) ! Out
                              
 
     ! Description:
@@ -58,7 +58,8 @@ module new_hybrid_pdf_main
 
     use constants_clubb, only: &
         zero,     & ! Constant(s)
-        fstderr
+        fstderr, &
+        one
 
     use new_hybrid_pdf, only: &
         calculate_w_params,          & ! Procedure(s)
@@ -170,13 +171,15 @@ module new_hybrid_pdf_main
     type(implicit_coefs_terms), intent(inout) :: &
       pdf_implicit_coefs_terms    ! Implicit coefs / explicit terms [units vary]
 
-    ! Output only for recording statistics.
-    real( kind = core_rknd ), dimension(ngrdcol,nz), intent(out) :: &
+    real( kind = core_rknd ), dimension(ngrdcol,nz) :: &
+      sigma_sqd_w
+
+    ! Local Variables
+    real( kind = core_rknd ), dimension(ngrdcol,nz) :: &
       F_w,     & ! Parameter for the spread of the PDF component means of w  [-]
       min_F_w, & ! Minimum allowable value of parameter F_w                  [-]
       max_F_w    ! Maximum allowable value of parameter F_w                  [-]
 
-    ! Local Variables
     real( kind = core_rknd ), dimension(nz) :: &
       sigma_w_1, & ! Standard deviation of w (1st PDF component)      [m/s]
       sigma_w_2    ! Standard deviation of w (2nd PDF component)      [m/s]
@@ -663,6 +666,17 @@ module new_hybrid_pdf_main
          = term_wpthlpsclrp_explicit
       endif ! sclr_dim > 0
       
+    end do
+
+    ! The calculation of skewness of rt, thl, u, v, and scalars is hard-wired
+    ! for use with the ADG1 code, which contains the variable sigma_sqd_w.
+    ! In order to use an equivalent expression for these skewnesses using the
+    ! new hybrid PDF (without doing more recoding), set the value of
+    ! sigma_sqd_w to 1 - F_w.
+    do k = 1, nz
+      do i = 1, ngrdcol
+        sigma_sqd_w(i,k) = one - F_w(i,k)
+      end do
     end do
 
     return

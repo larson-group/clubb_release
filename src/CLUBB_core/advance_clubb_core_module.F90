@@ -3207,31 +3207,6 @@ module advance_clubb_core_module
       wp2sclrp_zm,    & ! w'^2 sclr' on momentum grid
       sclrm_zm          ! Passive scalar mean on momentum grid
 
-    ! Output from new PDF for recording statistics.
-    real( kind = core_rknd ), dimension(ngrdcol,nz) :: &
-      F_w,   & ! Parameter for the spread of the PDF component means of w    [-]
-      F_rt,  & ! Parameter for the spread of the PDF component means of rt   [-]
-      F_thl    ! Parameter for the spread of the PDF component means of thl  [-]
-
-    real( kind = core_rknd ), dimension(ngrdcol,nz) :: &
-      min_F_w,   & ! Minimum allowable value of parameter F_w      [-]
-      max_F_w,   & ! Maximum allowable value of parameter F_w      [-]
-      min_F_rt,  & ! Minimum allowable value of parameter F_rt     [-]
-      max_F_rt,  & ! Maximum allowable value of parameter F_rt     [-]
-      min_F_thl, & ! Minimum allowable value of parameter F_thl    [-]
-      max_F_thl    ! Maximum allowable value of parameter F_thl    [-]
-
-    real( kind = core_rknd ), dimension(ngrdcol,nz) :: &
-      F_w_zm,       &
-      F_rt_zm,      &
-      F_thl_zm,     &
-      min_F_w_zm,   &
-      max_F_w_zm,   &
-      min_F_rt_zm,  &
-      max_F_rt_zm,  &
-      min_F_thl_zm, &
-      max_F_thl_zm
-
     type(implicit_coefs_terms) :: &
       pdf_implicit_coefs_terms_zm
 
@@ -3523,10 +3498,6 @@ module advance_clubb_core_module
            uprcp_zt, vprcp_zt,                             & ! intent(out)
            w_up_in_cloud, w_down_in_cloud,                 & ! intent(out)
            cloudy_updraft_frac, cloudy_downdraft_frac,     & ! intent(out)
-           F_w, F_rt, F_thl,                               & ! intent(out)
-           min_F_w, max_F_w,                               & ! intent(out)
-           min_F_rt, max_F_rt,                             & ! intent(out)
-           min_F_thl, max_F_thl,                           & ! intent(out)
            wpsclrprtp, wpsclrp2, sclrpthvp_zt,             & ! intent(out)
            wpsclrpthlp, sclrprcp_zt, wp2sclrp,             & ! intent(out)
            rc_coef                                         ) ! intent(out)
@@ -3538,31 +3509,6 @@ module advance_clubb_core_module
           return
        endif
     endif
-
-    ! Stats output
-    if ( stats_metadata%l_stats_samp .and. l_samp_stats_in_pdf_call ) then
-
-      do i = 1, ngrdcol
-        call stat_update_var( stats_metadata%iF_w, F_w(i,:), & ! intent(in)
-                              stats_zt(i) )   ! intent(inout)
-        call stat_update_var( stats_metadata%iF_rt, F_rt(i,:), & ! intent(in)
-                              stats_zt(i) )     ! intent(inout)
-        call stat_update_var( stats_metadata%iF_thl, F_thl(i,:), & ! intent(in)
-                              stats_zt(i) )       ! intent(inout)
-        call stat_update_var( stats_metadata%imin_F_w, min_F_w(i,:), & ! intent(in)
-                              stats_zt(i) )           ! intent(inout)
-        call stat_update_var( stats_metadata%imax_F_w, max_F_w(i,:), & ! intent(in)
-                              stats_zt(i) )           ! intent(inout)
-        call stat_update_var( stats_metadata%imin_F_rt, min_F_rt(i,:), & ! intent(in)
-                              stats_zt(i) )             ! intent(inout)
-        call stat_update_var( stats_metadata%imax_F_rt, max_F_rt(i,:), & ! intent(in)
-                              stats_zt(i) )             ! intent(inout)
-        call stat_update_var( stats_metadata%imin_F_thl, min_F_thl(i,:), & ! intent(in)
-                              stats_zt(i) )               ! intent(inout)
-        call stat_update_var( stats_metadata%imax_F_thl, max_F_thl(i,:), & ! intent(in)
-                              stats_zt(i) )               ! intent(inout)
-      end do
-    end if
 
     if( l_rtm_nudge ) then
       ! Nudge rtm to prevent excessive drying
@@ -3675,10 +3621,6 @@ module advance_clubb_core_module
              uprcp, vprcp,                                         & ! intent(out)
              w_up_in_cloud_zm, w_down_in_cloud_zm,                 & ! intent(out)
              cloudy_updraft_frac_zm, cloudy_downdraft_frac_zm,     & ! intent(out)
-             F_w_zm, F_rt_zm, F_thl_zm,                            & ! intent(out)
-             min_F_w_zm, max_F_w_zm,                               & ! intent(out)
-             min_F_rt_zm, max_F_rt_zm,                             & ! intent(out)
-             min_F_thl_zm, max_F_thl_zm,                           & ! intent(out)
              wpsclrprtp_zm, wpsclrp2_zm, sclrpthvp,                & ! intent(out)
              wpsclrpthlp_zm, sclrprcp, wp2sclrp_zm,                & ! intent(out)
              rc_coef_zm                                            ) ! intent(out)
