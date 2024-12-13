@@ -290,8 +290,9 @@ module mono_flux_limiter
     !-----------------------------------------------------------------------
 
     use grid_class, only: & 
-        grid, & ! Type
-        zm2zt  ! Procedure(s)
+        grid,  & ! Type
+        zm2zt, & ! Procedure(s)
+        zt2zm
 
     use constants_clubb, only: &    
         zero_threshold, &
@@ -460,6 +461,9 @@ module mono_flux_limiter
       wpxp_mfl_max_term_zt, &
       wpxp_mfl_min_term_zt, &
       wpxp_thresh_term_zt
+
+    real( kind = core_rknd ), dimension(ngrdcol,nzm) :: &
+      wpxp_thresh_term
 
     !---------------------------- Begin Code ----------------------------
 
@@ -669,6 +673,9 @@ module mono_flux_limiter
       end do
     end do
 
+    ! Interpolate wpxp_thresh_term_zt to momentum levels
+    wpxp_thresh_term = zt2zm( nzm, nzt, ngrdcol, gr, wpxp_thresh_term_zt )
+
     !$acc parallel loop gang vector default(present)
     do i = 1, ngrdcol
       do k = 2, nzm-1, 1
@@ -679,7 +686,7 @@ module mono_flux_limiter
         ! The fix essentially turns off the monotonic flux limiter for these special cases,
         ! but tests show that it still performs well otherwise and runs stably.
         if ( l_mono_flux_lim_spikefix .and. solve_type == mono_flux_rtm  & 
-             .and. abs( wpxp(i,k-1) ) > wpxp_thresh_term_zt(i,k-1) &
+             .and. abs( wpxp(i,k-1) ) > wpxp_thresh_term(i,k-1) &
              .and. wpxp(i,k-1) < 0.0_core_rknd ) then
 
           wpxp_mfl_max(i,k) = zero
