@@ -478,7 +478,8 @@ module mono_flux_limiter
     !$acc                    min_x_allowable_lev, max_x_allowable_lev, min_x_allowable, &
     !$acc                    max_x_allowable, wpxp_mfl_max, wpxp_mfl_min, lhs_mfl_xm, &
     !$acc                    rhs_mfl_xm, l_adjustment_needed, xm_mfl, &
-    !$acc                    wpxp_mfl_max_term_zt, wpxp_mfl_min_term_zt, wpxp_thresh_term_zt )
+    !$acc                    wpxp_mfl_max_term_zt, wpxp_mfl_min_term_zt, &
+    !$acc                    wpxp_thresh_term_zt, wpxp_thresh_term )
 
     select case( solve_type )
     case ( mono_flux_rtm )  ! rtm/wprtp
@@ -967,7 +968,8 @@ module mono_flux_limiter
     !$acc                   min_x_allowable_lev, max_x_allowable_lev, min_x_allowable, &
     !$acc                   max_x_allowable, wpxp_mfl_max, wpxp_mfl_min, lhs_mfl_xm, &
     !$acc                   rhs_mfl_xm, l_adjustment_needed, xm_mfl, &
-    !$acc                   wpxp_mfl_max_term_zt, wpxp_mfl_min_term_zt, wpxp_thresh_term_zt )
+    !$acc                   wpxp_mfl_max_term_zt, wpxp_mfl_min_term_zt, &
+    !$acc                   wpxp_thresh_term_zt, wpxp_thresh_term )
 
     return
     
