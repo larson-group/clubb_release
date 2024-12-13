@@ -456,7 +456,7 @@ module mono_flux_limiter
       tmp, &
       invrs_dt
 
-    real( kind = core_rknd ), dimension(ngrdcol,nzm) :: &
+    real( kind = core_rknd ), dimension(ngrdcol,nzt) :: &
       wpxp_mfl_max_term, &
       wpxp_mfl_min_term, &
       wpxp_thresh
@@ -659,7 +659,7 @@ module mono_flux_limiter
     !$acc end parallel loop
 
     !$acc parallel loop gang vector collapse(2) default(present)
-    do k = 1, nzm-2
+    do k = 1, nzt-1
       do i = 1, ngrdcol
         wpxp_thresh(i,k)       = invrs_dt * gr%dzt(i,k) &
                                  * ( xm_without_ta(i,k) - min_x_allowable(i,k) )
@@ -671,7 +671,7 @@ module mono_flux_limiter
 
     !$acc parallel loop gang vector default(present)
     do i = 1, ngrdcol
-      do k = 1, nzm-2, 1
+      do k = 2, nzm-1, 1
  
         ! Find the upper limit for w'x' for a monotonic turbulent flux.
         ! The following "if" statement ensures there are no "spikes" at the top of the column,
@@ -679,41 +679,42 @@ module mono_flux_limiter
         ! The fix essentially turns off the monotonic flux limiter for these special cases,
         ! but tests show that it still performs well otherwise and runs stably.
         if ( l_mono_flux_lim_spikefix .and. solve_type == mono_flux_rtm  & 
-             .and. abs( wpxp(i,k) ) > wpxp_thresh(i,k) .and. wpxp(i,k) < 0.0_core_rknd ) then
+             .and. abs( wpxp(i,k-1) ) > wpxp_thresh(i,k-1) .and. wpxp(i,k-1) < 0.0_core_rknd ) then
 
-          wpxp_mfl_max(i,k+1) = zero
+          wpxp_mfl_max(i,k) = zero
 
         else
-          wpxp_mfl_max(i,k+1) = invrs_rho_ds_zm(i,k+1) &
-                                * ( wpxp_mfl_max_term(i,k) + rho_ds_zm(i,k) * wpxp(i,k)  )
+          wpxp_mfl_max(i,k) = invrs_rho_ds_zm(i,k) &
+                              * ( wpxp_mfl_max_term(i,k-1) + rho_ds_zm(i,k-1) * wpxp(i,k-1) )
         endif
 
-        if ( wpxp(i,k+1) > wpxp_mfl_max(i,k+1) ) then
+        if ( wpxp(i,k) > wpxp_mfl_max(i,k) ) then
 
           ! Determine the net amount of adjustment needed for w'x'.
-          wpxp_net_adjust(i,k+1) = wpxp_mfl_max(i,k+1) - wpxp(i,k+1)
+          wpxp_net_adjust(i,k) = wpxp_mfl_max(i,k) - wpxp(i,k)
 
           ! Reset the value of w'x' to the upper limit allowed by the
           ! monotonic flux limiter.
-          wpxp(i,k+1) = wpxp_mfl_max(i,k+1)
+          wpxp(i,k) = wpxp_mfl_max(i,k)
 
           ! This value is unneeded for calculation, set to unused_var for stats call
-          wpxp_mfl_min(i,k+1) = unused_var
+          wpxp_mfl_min(i,k) = unused_var
 
         else
 
           ! Find the lower limit for w'x' for a monotonic turbulent flux.
-          wpxp_mfl_min(i,k+1) = invrs_rho_ds_zm(i,k+1) &
-                                * ( wpxp_mfl_min_term(i,k) + rho_ds_zm(i,k) * wpxp(i,k) )
+          wpxp_mfl_min(i,k) = invrs_rho_ds_zm(i,k) &
+                              * ( wpxp_mfl_min_term(i,k-1) + rho_ds_zm(i,k-1) * wpxp(i,k-1) )
 
-          if ( wpxp(i,k+1) < wpxp_mfl_min(i,k+1) ) then
+          if ( wpxp(i,k) < wpxp_mfl_min(i,k) ) then
 
             ! Determine the net amount of adjustment needed for w'x'.
-            wpxp_net_adjust(i,k+1) = wpxp_mfl_min(i,k+1) - wpxp(i,k+1)
+            wpxp_net_adjust(i,k) = wpxp_mfl_min(i,k) - wpxp(i,k)
 
             ! Reset the value of w'x' to the lower limit allowed by the
             ! monotonic flux limiter.
-            wpxp(i,k+1) = wpxp_mfl_min(i,k+1)
+            wpxp(i,k) = wpxp_mfl_min(i,k)
+
           endif
         endif
 
