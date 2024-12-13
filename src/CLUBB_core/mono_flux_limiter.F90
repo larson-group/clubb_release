@@ -457,9 +457,9 @@ module mono_flux_limiter
       invrs_dt
 
     real( kind = core_rknd ), dimension(ngrdcol,nzt) :: &
-      wpxp_mfl_max_term, &
-      wpxp_mfl_min_term, &
-      wpxp_thresh
+      wpxp_mfl_max_term_zt, &
+      wpxp_mfl_min_term_zt, &
+      wpxp_thresh_term_zt
 
     !---------------------------- Begin Code ----------------------------
 
@@ -474,7 +474,7 @@ module mono_flux_limiter
     !$acc                    min_x_allowable_lev, max_x_allowable_lev, min_x_allowable, &
     !$acc                    max_x_allowable, wpxp_mfl_max, wpxp_mfl_min, lhs_mfl_xm, &
     !$acc                    rhs_mfl_xm, l_adjustment_needed, xm_mfl, &
-    !$acc                    wpxp_mfl_max_term, wpxp_mfl_min_term, wpxp_thresh )
+    !$acc                    wpxp_mfl_max_term_zt, wpxp_mfl_min_term_zt, wpxp_thresh_term_zt )
 
     select case( solve_type )
     case ( mono_flux_rtm )  ! rtm/wprtp
@@ -661,11 +661,11 @@ module mono_flux_limiter
     !$acc parallel loop gang vector collapse(2) default(present)
     do k = 1, nzt-1
       do i = 1, ngrdcol
-        wpxp_thresh(i,k)       = invrs_dt * gr%dzt(i,k) &
-                                 * ( xm_without_ta(i,k) - min_x_allowable(i,k) )
-        wpxp_mfl_max_term(i,k) = rho_ds_zt(i,k) * wpxp_thresh(i,k)
-        wpxp_mfl_min_term(i,k) = rho_ds_zt(i,k) * invrs_dt * gr%dzt(i,k) &
-                                 * ( xm_without_ta(i,k) - max_x_allowable(i,k) )
+        wpxp_thresh_term_zt(i,k)  = invrs_dt * gr%dzt(i,k) &
+                                    * ( xm_without_ta(i,k) - min_x_allowable(i,k) )
+        wpxp_mfl_max_term_zt(i,k) = rho_ds_zt(i,k) * wpxp_thresh_term_zt(i,k)
+        wpxp_mfl_min_term_zt(i,k) = rho_ds_zt(i,k) * invrs_dt * gr%dzt(i,k) &
+                                    * ( xm_without_ta(i,k) - max_x_allowable(i,k) )
       end do
     end do
 
@@ -679,13 +679,14 @@ module mono_flux_limiter
         ! The fix essentially turns off the monotonic flux limiter for these special cases,
         ! but tests show that it still performs well otherwise and runs stably.
         if ( l_mono_flux_lim_spikefix .and. solve_type == mono_flux_rtm  & 
-             .and. abs( wpxp(i,k-1) ) > wpxp_thresh(i,k-1) .and. wpxp(i,k-1) < 0.0_core_rknd ) then
+             .and. abs( wpxp(i,k-1) ) > wpxp_thresh_term_zt(i,k-1) &
+             .and. wpxp(i,k-1) < 0.0_core_rknd ) then
 
           wpxp_mfl_max(i,k) = zero
 
         else
           wpxp_mfl_max(i,k) = invrs_rho_ds_zm(i,k) &
-                              * ( wpxp_mfl_max_term(i,k-1) + rho_ds_zm(i,k-1) * wpxp(i,k-1) )
+                              * ( wpxp_mfl_max_term_zt(i,k-1) + rho_ds_zm(i,k-1) * wpxp(i,k-1) )
         endif
 
         if ( wpxp(i,k) > wpxp_mfl_max(i,k) ) then
@@ -704,7 +705,7 @@ module mono_flux_limiter
 
           ! Find the lower limit for w'x' for a monotonic turbulent flux.
           wpxp_mfl_min(i,k) = invrs_rho_ds_zm(i,k) &
-                              * ( wpxp_mfl_min_term(i,k-1) + rho_ds_zm(i,k-1) * wpxp(i,k-1) )
+                              * ( wpxp_mfl_min_term_zt(i,k-1) + rho_ds_zm(i,k-1) * wpxp(i,k-1) )
 
           if ( wpxp(i,k) < wpxp_mfl_min(i,k) ) then
 
@@ -959,7 +960,7 @@ module mono_flux_limiter
     !$acc                   min_x_allowable_lev, max_x_allowable_lev, min_x_allowable, &
     !$acc                   max_x_allowable, wpxp_mfl_max, wpxp_mfl_min, lhs_mfl_xm, &
     !$acc                   rhs_mfl_xm, l_adjustment_needed, xm_mfl, &
-    !$acc                   wpxp_mfl_max_term, wpxp_mfl_min_term, wpxp_thresh )
+    !$acc                   wpxp_mfl_max_term_zt, wpxp_mfl_min_term_zt, wpxp_thresh_term_zt )
 
     return
     
