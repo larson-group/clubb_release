@@ -642,7 +642,7 @@ module mono_flux_limiter
 
     ! Find the smallest and largest value of all relevant levels for variable x.
     !$acc parallel loop gang vector collapse(2) default(present)
-    do k = 1, nzt-1
+    do k = 1, nzt
       do i = 1, ngrdcol
 
         low_lev  = max( low_lev_effect(i,k), 1)
@@ -664,7 +664,7 @@ module mono_flux_limiter
     !$acc end parallel loop
 
     !$acc parallel loop gang vector collapse(2) default(present)
-    do k = 1, nzt-1
+    do k = 1, nzt
       do i = 1, ngrdcol
         wpxp_thresh_term_zt(i,k)  = invrs_dt * gr%dzt(i,k) &
                                     * ( xm_without_ta(i,k) - min_x_allowable(i,k) )
