@@ -24,8 +24,10 @@ def main():
     print("Set up inputs . . .")
 
     # The user should input all tuning data into file set_up_dashboard_inputs.py
-    numMetricsNoSpecial, \
-    metricsNames, metricsWeights, metricsNorms, \
+    (numMetricsNoSpecial, \
+    metricsNames,
+    extraMetricsToPlot, \
+    metricsWeights, metricsNorms, \
     obsMetricValsDict, \
     paramsNames, paramsScales, \
     transformedParamsNames, \
@@ -35,7 +37,7 @@ def main():
     prescribedSensNcFilenames, prescribedSensNcFilenamesExt, \
     sensNcFilenames, sensNcFilenamesExt, \
     defaultNcFilename, linSolnNcFilename, \
-    reglrCoef \
+    reglrCoef) \
     = \
         setUpInputs(beVerbose=False)
 
@@ -64,8 +66,8 @@ def main():
     # Also construct a linear sensitivity matrix, dmetrics/dparams.
     normlzdCurvMatrix, normlzdSensMatrixPoly, normlzdConstMatrix, \
     normlzdOrdDparamsMin, normlzdOrdDparamsMax = \
-        constructNormlzdCurvMatrix(metricsNames, paramsNames, transformedParamsNames, \
-                                   metricsWeights, obsMetricValsCol, normMetricValsCol, magParamValsRow, \
+        constructNormlzdSensCurvMatrices(metricsNames, paramsNames, transformedParamsNames, \
+                                   normMetricValsCol, magParamValsRow, \
                                    sensNcFilenames, sensNcFilenamesExt, defaultNcFilename)
 
     # In order to weight certain metrics, multiply each row of normlzdSensMatrixPoly
@@ -76,8 +78,8 @@ def main():
     # The derivatives are normalized by observed metric values and max param values.
     normlzdPrescribedCurvMatrix, normlzdPrescribedSensMatrixPoly, normlzdPrescribedConstMatrix, \
     normlzdPrescribedOrdDparamsMin, normlzdPrescribedOrdDparamsMax = \
-        constructNormlzdCurvMatrix(metricsNames, prescribedParamsNames, prescribedTransformedParamsNames, \
-                                   metricsWeights, obsMetricValsCol, normMetricValsCol, magPrescribedParamValsRow, \
+        constructNormlzdSensCurvMatrices(metricsNames, prescribedParamsNames, prescribedTransformedParamsNames, \
+                                   normMetricValsCol, magPrescribedParamValsRow, \
                                    prescribedSensNcFilenames, prescribedSensNcFilenamesExt, defaultNcFilename)
 
     # This is the prescribed correction to the metrics that appears on the left-hand side of the Taylor equation.
@@ -228,6 +230,7 @@ def main():
     #                                          @ normlzdLinplusSensMatrixPoly
 
     createFigs(numMetricsNoSpecial, metricsNames,
+               extraMetricsToPlot,
                paramsNames, transformedParamsNames, paramsScales,
                metricsWeights, obsMetricValsCol, normMetricValsCol, magParamValsRow,
                defaultBiasesCol, defaultBiasesApproxNonlin, defaultBiasesApproxElastic, 
@@ -403,8 +406,8 @@ def solveUsingNonlin(metricsNames,
            )
 
 
-def constructNormlzdCurvMatrix(metricsNames, paramsNames, transformedParamsNames,
-                               metricsWeights, obsMetricValsCol, normMetricValsCol, magParamValsRow,
+def constructNormlzdSensCurvMatrices(metricsNames, paramsNames, transformedParamsNames,
+                               normMetricValsCol, magParamValsRow,
                                sens1NcFilenames, sens2NcFilenames, defaultNcFilename):
 
     """
@@ -542,7 +545,7 @@ def constructNormlzdCurvMatrix(metricsNames, paramsNames, transformedParamsNames
                         normlzdSens1MetricValsMatrix[arrayRow,arrayCol],
                         normlzdDefaultMetricValsMatrix[arrayRow,arrayCol] ]
             else:
-                print("Sensitivity parameter values are equal to each other or the default value in constructNormlzdCurvMatrix.")
+                print("Sensitivity parameter values are equal to each other or the default value in constructNormlzdSensCurvMatrices.")
                 print("normlzdSens1ParamValsRow=", normlzdSens1ParamValsRow)
                 print("normlzdSens2ParamValsRow=", normlzdSens2ParamValsRow)
                 print("normlzdDefaultParamValsRow=", normlzdDefaultParamValsRow)
@@ -626,7 +629,7 @@ def approxMatrixWithSvd( matrix , sValsRatio, sValsNumToKeep,
 #
 #    normlzdCurvMatrix, normlzdSensMatrixPoly, normlzdConstMatrix, \
 #    normlzdOrdDparamsMin, normlzdOrdDparamsMax = \
-#        constructNormlzdCurvMatrix(metricsNames, paramsNames, transformedParamsNames, \
+#        constructNormlzdSensCurvMatrices(metricsNames, paramsNames, transformedParamsNames, \
 #                                   metricsWeights, obsMetricValsCol, normMetricValsCol, magParamValsRow, \
 #                                   sensNcFilenames, sensNcFilenamesExt, defaultNcFilename)
 #

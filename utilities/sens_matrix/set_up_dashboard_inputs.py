@@ -118,8 +118,13 @@ def setUpInputs(beVerbose):
         pd.DataFrame( metricsNamesWeightsAndNormsSpecial, columns = ['metricsNamesSpecial', 'metricsWeightsSpecial', 'metricsNormsSpecial'] )
     metricsNamesSpecial = dfMetricsNamesWeightsAndNormsSpecial[['metricsNamesSpecial']].to_numpy().astype(str)[:,0]
     metricsWeightsSpecial = dfMetricsNamesWeightsAndNormsSpecial[['metricsWeightsSpecial']].to_numpy().astype(float)
-    metricsNormsSpecial = dfMetricsNamesWeightsAndNormsSpecial[['metricsNormsSpecial']].to_numpy().astype(float)
+    #metricsNormsSpecial = dfMetricsNamesWeightsAndNormsSpecial[['metricsNormsSpecial']].to_numpy().astype(float)
 
+    # These are the metrics that we want to include
+    #      in the metrics bar-chart, 3-dot plot, etc.
+    # They must be a subset of metricsNames
+    # These regions had quadratic terms that prevent improvement by tuning
+    extraMetricsToPlot = np.array(['SWCF_4_2', 'SWCF_2_7', 'SWCF_3_6'])
 
     # Parameters are tunable model parameters, e.g. clubb_C8.
     # The float listed below after the parameter name is a factor that is used below for scaling plots.
@@ -447,7 +452,8 @@ def setUpInputs(beVerbose):
     #np.dot(metricsWeights.reshape(-1,2,order='F').T, defaultMetricValsCol.reshape(-1,2,order='F'))
 
     if not np.isclose(metricGlobalValsFromFile, metricGlobalAvgs).all():
-        print("metricGlobalAvgs not equal to metricGlobalValsFromFile")
+        print("Error: metricGlobalAvgs not equal to metricGlobalValsFromFile")
+    print("The following two global values should be close to each other:")
     print("metricGlobalAvgs =", metricGlobalAvgs)
     print("metricGlobalValsFromFile =", metricGlobalValsFromFile)
     if beVerbose:
@@ -476,7 +482,7 @@ def setUpInputs(beVerbose):
     #obsMetricValsDict = setUp_x_ObsMetricValsDict(folder_name + "OBS.nc")
     #obsMetricValsDict = setUp_x_ObsMetricValsDict("Regional_files/stephens_20240131/btune_regional_files/b1850.075plus_Regional.nc")
 
-    obsMetricValsCol = setUpObsCol(obsMetricValsDict, metricsNames)
+    #obsMetricValsCol = setUpObsCol(obsMetricValsDict, metricsNames)
     #obsGlobalAvgMetricsWeights = np.dot(metricsWeights.T, obsMetricValsCol)
     #obsGlobalAvgUnweighted = np.mean(obsMetricValsCol)
     #print("obsGlobalAvgMetricsWeights =", obsGlobalAvgMetricsWeights)
@@ -517,11 +523,21 @@ def setUpInputs(beVerbose):
 
     metricsNames = np.append(metricsNames, metricsNamesSpecial)
     metricsWeights = np.vstack((metricsWeights, metricsWeightsSpecial))
+    numMetricsSpecial = len(metricsNames) - numMetricsNoSpecial
+    metricsNormsSpecial = obsGlobalAvgObsWeights * np.ones((numMetricsSpecial,1))
     metricsNorms = np.vstack((metricsNorms, metricsNormsSpecial))
 
     obsMetricValsDict.update(obsMetricValsDictSpecial)
 
-    return (numMetricsNoSpecial, metricsNames, metricsWeights, metricsNorms, \
+    # Sanity check: is extraMetricsToPlot a subset of metricsNames?
+    if (np.setdiff1d(extraMetricsToPlot, metricsNames).size != 0):
+        print("One of the metrics names specified in extraMetricsToPlot "
+              "does not appear in metricsNames:")
+        print(np.setdiff1d(extraMetricsToPlot, metricsNames))
+
+    return (numMetricsNoSpecial, metricsNames,
+            extraMetricsToPlot, \
+            metricsWeights, metricsNorms, \
             obsMetricValsDict, \
             paramsNames, paramsScales, \
             transformedParamsNames, \

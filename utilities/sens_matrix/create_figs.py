@@ -22,6 +22,7 @@ from dash import html
 from sens_matrix_dashboard import lossFncMetrics, approxMatrixWithSvd, normlzdSemiLinMatrixFnc
 
 def createFigs(numMetricsNoSpecial, metricsNames,
+               extraMetricsToPlot,
                paramsNames, transformedParamsNames, paramsScales,
                metricsWeights, obsMetricValsCol, normMetricValsCol, magParamValsRow,
                defaultBiasesCol, defaultBiasesApproxNonlin, defaultBiasesApproxElastic,
@@ -46,6 +47,7 @@ def createFigs(numMetricsNoSpecial, metricsNames,
 
     print("Creating plots . . .")
 
+    # Configuration needed to download hi-res images
     downloadConfig = {
         'toImageButtonOptions': {
             'format': 'png',  # 'svg', 'jpeg', 'webp'
@@ -72,7 +74,7 @@ def createFigs(numMetricsNoSpecial, metricsNames,
     plot_dpMinMatrixScatterFig = False
     plot_projectionMatrixFigs = False #True
     plot_biasesVsSensMagScatterplot = True
-    plot_biasesVsSvdScatterplot = True
+    plot_biasesVsSvdScatterplot = False #True
     plot_paramsCorrArrayFig = True
     plot_sensMatrixAndBiasVecFig = True
     plot_PcaBiplot = False
@@ -158,23 +160,43 @@ def createFigs(numMetricsNoSpecial, metricsNames,
                    normlzdDefaultBiasesCol, metricsWeights,
                    normlzdCurvMatrix, len(metricsNames))
 
+    tunedLossColUnweighted = lossFncMetrics(dnormlzdParamsSolnNonlin, normlzdSensMatrixPoly,
+                   normlzdDefaultBiasesCol,
+                   np.average(metricsWeights)*np.ones_like(metricsWeights),
+                   normlzdCurvMatrix, len(metricsNames))
+
     defaultLossCol = lossFncMetrics(np.zeros_like(dnormlzdParamsSolnNonlin), normlzdSensMatrixPoly,
                    normlzdDefaultBiasesCol, metricsWeights,
                    normlzdCurvMatrix, len(metricsNames))
 
+    defaultLossColUnweighted = lossFncMetrics(np.zeros_like(dnormlzdParamsSolnNonlin), normlzdSensMatrixPoly,
+                   normlzdDefaultBiasesCol,
+                   np.average(metricsWeights)*np.ones_like(metricsWeights),
+                   normlzdCurvMatrix, len(metricsNames))
+
     tunedLossChange = tunedLossCol - defaultLossCol
+
+    tunedLossChangeUnweighted = tunedLossColUnweighted - defaultLossColUnweighted
 
     linSolnLossCol = np.square( normlzdLinSolnBiasesCol * metricsWeights )
 
     linSolnLossChange = linSolnLossCol - defaultLossCol
 
-    numImprovedMetrics = 8
+
+
+    numImprovedMetrics = 4
     mostImprovedIdxs = np.argpartition(tunedLossChange, numImprovedMetrics, axis=0)
     whitelistedMetricsMask = np.zeros_like(metricsNames, dtype=bool) # Initialize to False
     whitelistedMetricsMask[mostImprovedIdxs[:numImprovedMetrics, 0]] = True
+    #mostDegradedIdxs = np.argpartition(np.abs(tunedLossChange), numImprovedMetrics, axis=0)
     #mostDegradedIdxs = np.argpartition(-tunedLossChange, numImprovedMetrics, axis=0)
     mostDegradedIdxs = np.argpartition(-tunedLossCol, numImprovedMetrics, axis=0)
-    whitelistedMetricsMask[mostDegradedIdxs[:numImprovedMetrics, 0]] = True
+    #whitelistedMetricsMask[mostDegradedIdxs[:numImprovedMetrics, 0]] = True
+
+    # Loop through extraMetricsToPlot and whitelist them
+    for regionToPlot in extraMetricsToPlot:
+        index = np.where(metricsNames == regionToPlot)[0]
+        whitelistedMetricsMask[index] = True
 
     # Use this line if you want to include all params:
     maskParamsNames = (paramsNames != 'noRealParamWouldHaveThisName')
@@ -474,13 +496,17 @@ def createFigs(numMetricsNoSpecial, metricsNames,
         ##yCol = (-defaultBiasesApproxNonlin - defaultBiasesCol)[:, 0] \
         ##       / np.abs(normMetricValsCol[:, 0])
 
+        sqrtSqrtTunedLossChangeUnweighted = \
+            1e3*np.sign(tunedLossChangeUnweighted[:,0])  \
+               *np.sqrt(np.sqrt(np.abs(tunedLossChangeUnweighted[:,0])))
+
         biasesVsSensMagScatterplot = \
             createScatterplot(xCol=xCol, xColLabel='sens',
                               yCol=yCol, yColLabel='bias',
                               #colorCol=normlzdResid, colorColLabel='resid',
                               #colorScale='Spectral',
                               #colorCol=tunedLossChange[:, 0],
-                              colorCol=1e3*np.sign(tunedLossChange[:,0])*np.sqrt(np.sqrt(np.abs(tunedLossChange[:,0]))),
+                              colorCol=sqrtSqrtTunedLossChangeUnweighted,
                               colorColLabel='sqrtsqrttunedLossChange',
                               colorScale='Spectral_r',
                               plotBgColor='lightgrey',
