@@ -636,8 +636,9 @@ module advance_helper_module
         zm2zt2zm
 
     use constants_clubb, only: &
-        one, &
-        zero
+        one,                &
+        zero,               &
+        min_max_smth_mag
 
     use interpolation, only: &
         linear_interp_factor ! Procedure
@@ -664,12 +665,6 @@ module advance_helper_module
     logical, parameter :: &
       l_Cx_fnc_Richardson_vert_avg = .false.    ! Vertically average Cx_fnc_Richardson over a
                                                 !  distance of Lscale
-
-    ! "base" smoothing magnitude before scaling for the respective data structure.
-    ! See https://github.com/larson-group/clubb/issues/965#issuecomment-1119816722
-    ! for a plot on how output behaves with varying min_max_smth_mag
-    real( kind = core_rknd ), parameter :: &
-      min_max_smth_mag = 1.0e-9_core_rknd
 
     !------------------------------ Input Variables ------------------------------
     integer, intent(in) :: &
@@ -1671,6 +1666,8 @@ module advance_helper_module
 
     implicit none
 
+    ! When calling this function within an acc block, it needs to be declared to the compiler
+    !$acc routine seq
     !----------------------------- Input Variables -----------------------------
     real ( kind = core_rknd ), intent(in) :: &
       input_var1, &       ! Units vary

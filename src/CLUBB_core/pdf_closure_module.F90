@@ -1742,11 +1742,13 @@ module pdf_closure_module
         core_rknd ! Variable(s)
 
     use constants_clubb, only: &
-        zero, one, two, &
+        one, two, &
         ep, Lv, Rd, Cp, &
         chi_tol, &
-        eta_tol, &
-        max_mag_correlation
+        eta_tol
+
+    use pdf_utilities, only: &
+        smooth_corr_quotient
 
     implicit none
 
@@ -1785,14 +1787,18 @@ module pdf_closure_module
       invrs_beta_rsatl_p1
 
     real( kind = core_rknd ), parameter :: &
-      chi_tol_sqd = chi_tol**2, &
-      eta_tol_sqd = eta_tol**2, &
+      denom_thresh = chi_tol*eta_tol, &
       Cp_on_Lv = Cp / Lv
+
+    real( kind = core_rknd ), dimension(ngrdcol, nz) :: &
+      denominator
 
     ! Loop variable
     integer :: k, i
 
     ! ----------- Begin Code -----------
+
+    !$acc enter data create( denominator )
 
     !$acc parallel loop gang vector collapse(2) default(present)
     do k = 1, nz
@@ -1836,44 +1842,27 @@ module pdf_closure_module
         varnce_chi = varnce_rt_term - corr_rt_thl_term + varnce_thl_term
         varnce_eta = varnce_rt_term + corr_rt_thl_term + varnce_thl_term
 
-        ! We need to introduce a threshold value for the variance of chi and eta
-        if ( varnce_chi < chi_tol_sqd .or. varnce_eta < eta_tol_sqd ) then
+        stdev_chi(i,k) = sqrt( varnce_chi )
+        stdev_eta(i,k) = sqrt( varnce_eta )
 
-            if ( varnce_chi < chi_tol_sqd ) then
-                stdev_chi(i,k) = zero  ! Treat chi as a delta function
-            else
-                stdev_chi(i,k) = sqrt( varnce_chi )
-            end if
-
-            if ( varnce_eta < eta_tol_sqd ) then
-                stdev_eta(i,k) = zero  ! Treat eta as a delta function
-            else
-                stdev_eta(i,k) = sqrt( varnce_eta )
-            end if
-
-            corr_chi_eta(i,k) = zero
-
-        else
-
-            stdev_chi(i,k) = sqrt( varnce_chi )
-            stdev_eta(i,k) = sqrt( varnce_eta )
-
-            corr_chi_eta(i,k) = covar_chi_eta(i,k) / ( stdev_chi(i,k) * stdev_eta(i,k) )
-            corr_chi_eta(i,k) = min( max_mag_correlation, &
-                                   max( -max_mag_correlation, corr_chi_eta(i,k) ) )
-
-        end if
+        denominator(i,k) = stdev_chi(i,k) * stdev_eta(i,k)
 
       end do
     end do
     !$acc end parallel loop
 
+    call smooth_corr_quotient( ngrdcol, nz, covar_chi_eta, denominator, denom_thresh, corr_chi_eta )
+
+    !$acc exit data delete( denominator )
+
+    return
+
   end subroutine transform_pdf_chi_eta_component
-  
+
   !=============================================================================
   subroutine calc_wp4_pdf( nz, ngrdcol, &
                            wm, w_1, w_2, &
-                           varnce_w_1, varnce_w_2,    &
+                           varnce_w_1, varnce_w_2, &
                            mixt_frac, &
                            wp4 )
 

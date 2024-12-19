@@ -24,7 +24,8 @@ module pdf_utilities
             calc_corr_eta_x,           &
             calc_corr_rt_x,            &
             calc_corr_thl_x,           &
-            calc_xp2
+            calc_xp2,                  &
+            smooth_corr_quotient
 
   contains
 
@@ -239,6 +240,7 @@ module pdf_utilities
     real( kind = core_rknd ) ::  &
       corr_x_y_n  ! Correlation of x and ln y (ith PDF component) [-]
 
+    !-------------------------------------- Begin Code --------------------------------------
 
     ! Find the correlation of x and ln y for the ith component of the PDF.
     ! When sigma_y = 0 and mu_y > 0, y_sigma2_on_mu2 = 0.  This results in
@@ -266,7 +268,6 @@ module pdf_utilities
     elseif ( corr_x_y_n < -max_mag_correlation ) then
        corr_x_y_n = -max_mag_correlation
     endif
-
 
     return
 
@@ -310,6 +311,7 @@ module pdf_utilities
     real( kind = dp ) ::  &
       corr_x_y_n  ! Correlation of x and ln y (ith PDF component) [-]
 
+    !-------------------------------------- Begin Code --------------------------------------
 
     ! Find the correlation of x and ln y for the ith component of the PDF.
     ! When sigma_y = 0 and mu_y > 0, y_sigma2_on_mu2 = 0.  This results in
@@ -337,7 +339,6 @@ module pdf_utilities
     elseif ( corr_x_y_n < -real( max_mag_correlation, kind = dp ) ) then
        corr_x_y_n = -real( max_mag_correlation, kind = dp )
     endif
-
 
     return
 
@@ -389,6 +390,7 @@ module pdf_utilities
     integer :: &
       j, k  ! Loop iterators
 
+    !-------------------------------------- Begin Code --------------------------------------
 
     ! Find the correlation of x and y for the ith component of the PDF.
     ! When sigma_y = 0 and mu_y > 0, y_sigma2_on_mu2 = 0.  This results in
@@ -478,6 +480,7 @@ module pdf_utilities
     real( kind = core_rknd ) ::  &
       log_arg    ! Input into the ln function    [-]
 
+    !-------------------------------------- Begin Code --------------------------------------
 
     ! Find the correlation of ln x and ln y for the ith component of the PDF.
     ! When sigma_x = 0 and mu_x > 0, x_sigma2_on_mu2 = 0.  This results in
@@ -505,7 +508,6 @@ module pdf_utilities
     elseif ( corr_x_y_n < -max_mag_correlation ) then
        corr_x_y_n = -max_mag_correlation
     endif
-
 
     return
 
@@ -549,11 +551,11 @@ module pdf_utilities
       x_sigma2_on_mu2, & ! Ratio:  sigma_x^2 / mu_x^2 (ith PDF component)   [-]
       y_sigma2_on_mu2    ! Ratio:  sigma_y^2 / mu_y^2 (ith PDF component)   [-]
 
-
     ! Return Variable
     real( kind = dp ) ::  &
       corr_x_y_n  ! Correlation of ln x and ln y (ith PDF component)  [-]
 
+    !-------------------------------------- Begin Code --------------------------------------
 
     ! Find the correlation of ln x and ln y for the ith component of the PDF.
     ! When sigma_x = 0 and mu_x > 0, x_sigma2_on_mu2 = 0.  This results in
@@ -579,7 +581,6 @@ module pdf_utilities
     elseif ( corr_x_y_n < -real( max_mag_correlation, kind = dp ) ) then
        corr_x_y_n = -real( max_mag_correlation, kind = dp )
     endif
-
 
     return
 
@@ -634,6 +635,8 @@ module pdf_utilities
     ! Local variables
     integer :: &
       j, k  ! Loop iterators
+
+    !-------------------------------------- Begin Code --------------------------------------
 
     ! Find the correlation of x and y for the ith component of the PDF.
     ! When sigma_x = 0 and mu_x > 0, x_sigma2_on_mu2 = 0.  This results in
@@ -830,12 +833,14 @@ module pdf_utilities
     !-----------------------------------------------------------------------
 
     use constants_clubb, only: &
-        max_mag_correlation, & ! Variable(s)
-        one, &
-        zero
+        one, &       ! Constant
+        eps
 
     use clubb_precision, only: &
         core_rknd    ! Variable(s)
+
+    use advance_helper_module, only: &
+        smooth_max
 
     implicit none
 
@@ -864,38 +869,43 @@ module pdf_utilities
       corr_x_y_2    ! Correlation of x and y (2nd PDF component)    [-]
 
     ! ---------------- Local Variables ----------------
-    integer :: i, k 
+    integer :: i, k
+
+    real ( kind = core_rknd ), dimension(ngrdcol,nz) :: &
+      numerator, &
+      denominator
+
+    !-------------------------------------- Begin Code --------------------------------------
+
+    !$acc enter data create( numerator, denominator )
 
     !$acc parallel loop gang vector collapse(2) default(present)
     do k = 1, nz
-      do i = 1, ngrdcol 
-        if ( sigma_x_1_sqd(i,k) * sigma_y_1_sqd(i,k) > zero &
-             .or. sigma_x_2_sqd(i,k) * sigma_y_2_sqd(i,k) > zero ) then
+      do i = 1, ngrdcol
 
-           ! Calculate corr_x_y_1 (which also equals corr_x_y_2).
-           corr_x_y_1(i,k) &
-           = ( xpyp(i,k) &
+        numerator(i,k) = xpyp(i,k) &
                - mixt_frac(i,k) * ( mu_x_1(i,k) - xm(i,k) ) * ( mu_y_1(i,k) - ym(i,k) ) &
-               - ( one - mixt_frac(i,k) ) * ( mu_x_2(i,k) - xm(i,k) ) * ( mu_y_2(i,k) - ym(i,k))) &
-             / ( mixt_frac(i,k) * sqrt( sigma_x_1_sqd(i,k) * sigma_y_1_sqd(i,k) ) &
-                 + ( one - mixt_frac(i,k) ) * sqrt( sigma_x_2_sqd(i,k) * sigma_y_2_sqd(i,k) ) )
+               - ( one - mixt_frac(i,k) ) * ( mu_x_2(i,k) - xm(i,k) ) * ( mu_y_2(i,k) - ym(i,k) )
 
-           ! The correlation must fall within the bounds of
-           ! -max_mag_correlation < corr_x_y_1 (= corr_x_y_2) < max_mag_correlation
-           corr_x_y_1(i,k) = max( -max_mag_correlation, &
-                             min( max_mag_correlation, corr_x_y_1(i,k) ) )
+        denominator(i,k) = mixt_frac(i,k) * sqrt( sigma_x_1_sqd(i,k) * sigma_y_1_sqd(i,k) ) &
+                 + ( one - mixt_frac(i,k) ) * sqrt( sigma_x_2_sqd(i,k) * sigma_y_2_sqd(i,k) )
 
-        else ! sigma_x_1^2 * sigma_y_1^2 = 0 and sigma_x_2^2 * sigma_y_2^2 = 0.
+      end do
+    end do
+    !$acc end parallel loop
 
-           ! The correlation is undefined (output as 0).
-           corr_x_y_1(i,k) = zero
+    call smooth_corr_quotient( ngrdcol, nz, numerator, denominator, eps, corr_x_y_1 )
 
-        endif
-        ! Set corr_x_y_2 equal to corr_x_y_1.
+    ! Set corr_x_y_2 equal to corr_x_y_1.
+    !$acc parallel loop gang vector collapse(2) default(present)
+    do k = 1, nz
+      do i = 1, ngrdcol
         corr_x_y_2(i,k) = corr_x_y_1(i,k)
       end do
     end do
     !$acc end parallel loop
+
+    !$acc exit data delete( numerator, denominator )
 
     return
 
@@ -1345,10 +1355,73 @@ module pdf_utilities
        xp2 = zero
     endif
 
-
     return
 
   end function calc_xp2
+
+!===============================================================================
+  subroutine smooth_corr_quotient( ngrdcol, nz, numerator, denominator, denom_thresh, quotient )
+
+    use constants_clubb, only: &
+      max_mag_correlation, & ! Constant(s)
+      min_max_smth_mag
+
+    use clubb_precision, only: &
+        core_rknd  ! Constant
+
+    use advance_helper_module, only: &
+        smooth_max    ! Procedure
+
+    implicit none
+
+    ! ---------------- Input Variables ----------------
+    integer, intent(in) :: &
+      ngrdcol, & ! Number of grid columns
+      nz         ! Number of vertical levels
+
+    real ( kind = core_rknd ), intent(in) :: &
+      denom_thresh
+
+    real ( kind = core_rknd ), dimension(ngrdcol,nz), intent(in) :: &
+      numerator, &
+      denominator
+
+    ! ---------------- Output Variable ----------------
+    real ( kind = core_rknd ), dimension(ngrdcol,nz), intent(out) :: &
+      quotient
+
+    ! ---------------- Local Variables ----------------
+    integer :: i, k
+
+    real ( kind = core_rknd ), dimension(ngrdcol,nz) :: &
+      tmp_denom
+
+    real ( kind = core_rknd ) :: &
+      m
+    !-------------------------------------- Begin Code --------------------------------------
+
+    !$acc enter data create( tmp_denom )
+
+    !$acc parallel loop gang vector collapse(2) default(present)
+    do k = 1, nz
+      do i = 1, ngrdcol
+        ! First smooth_max between abs(num)/.99 and denom
+        tmp_denom(i,k) = smooth_max( abs(numerator(i,k)) / max_mag_correlation, denominator(i,k), &
+                                     min(min_max_smth_mag, denom_thresh) )
+
+        ! Second smooth_max between the result and denom_thresh
+        tmp_denom(i,k) = smooth_max( tmp_denom(i,k), denom_thresh, &
+                                     min(min_max_smth_mag, denom_thresh) )
+        quotient(i,k) = numerator(i,k) / tmp_denom(i,k)
+      end do
+    end do
+    !$acc end parallel loop
+
+    !$acc exit data delete( tmp_denom )
+
+    return
+
+  end subroutine smooth_corr_quotient
 
 !===============================================================================
 
