@@ -109,7 +109,7 @@ module matrix_solver_wrapper
 
     if ( present(rcond) ) then
 
-      !$acc update host( lhs, rhs )
+      !$acc update host( lhs, rhs ) wait
 
       ! Lapack overwrites lhs and rhs, so we'll give it copies of them.
       lhs_copy = lhs
@@ -122,14 +122,14 @@ module matrix_solver_wrapper
                                lhs_copy, rhs_copy,    & ! Intent(inout)
                                dummy_soln, rcond )      ! Intent(out)
 
-      !$acc update device( rcond )
+      !$acc update device( rcond ) wait
 
     end if
 
 
     if ( penta_solve_method == lapack ) then
 
-      !$acc update host( lhs, rhs )
+      !$acc update host( lhs, rhs ) wait
 
       ! Perform LU decomp and solve system (LAPACK)
       call lapack_band_solve( "xm_wpxp", nsup, nsub,  & ! Intent(in) 
@@ -137,7 +137,7 @@ module matrix_solver_wrapper
                               lhs, rhs,               & ! Intent(inout)
                               soln )                    ! Intent(out)
 
-      !$acc update device( soln )
+      !$acc update device( soln ) wait
 
     else if ( penta_solve_method == penta_lu ) then 
 
@@ -227,7 +227,7 @@ module matrix_solver_wrapper
 
     if ( present(rcond) ) then
 
-      !$acc update host( lhs, rhs )
+      !$acc update host( lhs, rhs ) wait
 
       ! Lapack overwrites lhs and rhs, so we'll give it copies of them.
       lhs_copy = lhs
@@ -240,14 +240,14 @@ module matrix_solver_wrapper
                                lhs_copy, rhs_copy,    & ! Intent(inout)
                                dummy_soln, rcond )      ! Intent(out)
 
-      !$acc update device( rcond )
+      !$acc update device( rcond ) wait
 
     end if
 
 
     if ( penta_solve_method == lapack ) then
 
-      !$acc update host( lhs, rhs )
+      !$acc update host( lhs, rhs ) wait
 
       ! Perform LU decomp and solve system (LAPACK)
       call lapack_band_solve( "xm_wpxp", nsup, nsub,  & ! Intent(in) 
@@ -255,7 +255,7 @@ module matrix_solver_wrapper
                               lhs, rhs,               & ! Intent(inout)
                               soln )                    ! Intent(out)
 
-      !$acc update device( soln )
+      !$acc update device( soln ) wait
 
     else if ( penta_solve_method == penta_lu ) then 
 
@@ -441,7 +441,7 @@ module matrix_solver_wrapper
 
     if ( present(rcond) ) then
 
-      !$acc update host( lhs, rhs )
+      !$acc update host( lhs, rhs ) wait
 
       ! Lapack overwrites lhs and rhs, so we'll give it copies of them.
       lhs_copy = lhs
@@ -452,21 +452,21 @@ module matrix_solver_wrapper
                                   lhs_copy, rhs_copy,           & ! Intent(inout)
                                   dummy_soln, rcond )             ! Intent(out)
       
-      !$acc update device( rcond )
+      !$acc update device( rcond ) wait
 
     end if
 
 
     if ( tridiag_solve_method == lapack ) then
 
-      !$acc update host( lhs, rhs )
+      !$acc update host( lhs, rhs ) wait
 
       ! Perform LU decomp and solve system (LAPACK)
       call lapack_tridiag_solve( solve_name, ndim, 1, ngrdcol, & ! Intent(in) 
                                  lhs, rhs,                     & ! Intent(inout)
                                  soln )                          ! Intent(out)
 
-      !$acc update device( soln )
+      !$acc update device( soln ) wait
 
     else if ( tridiag_solve_method == tridiag_lu ) then
 
@@ -549,7 +549,7 @@ module matrix_solver_wrapper
 
     if ( present(rcond) ) then
 
-      !$acc update host( lhs, rhs )
+      !$acc update host( lhs, rhs ) wait
 
       ! Lapack overwrites lhs and rhs, so we'll give it copies of them.
       lhs_copy = lhs
@@ -560,21 +560,21 @@ module matrix_solver_wrapper
                                   lhs_copy, rhs_copy,               & ! Intent(inout)
                                   dummy_soln, rcond )                 ! Intent(out)
       
-      !$acc update device( rcond )
+      !$acc update device( rcond ) wait
 
     end if
 
 
     if ( tridiag_solve_method == lapack ) then
 
-      !$acc update host( lhs, rhs )
+      !$acc update host( lhs, rhs ) wait
 
       ! Perform LU decomp and solve system (LAPACK)
       call lapack_tridiag_solve( solve_name, ndim, nrhs, ngrdcol, & ! Intent(in) 
                                  lhs, rhs,                        & ! Intent(inout)
                                  soln )                             ! Intent(out)
 
-      !$acc update device( soln )
+      !$acc update device( soln ) wait
 
     else if ( tridiag_solve_method == tridiag_lu ) then
 

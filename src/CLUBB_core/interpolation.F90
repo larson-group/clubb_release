@@ -541,7 +541,7 @@ module interpolation
     ! If we've fallen through the k=1,nz-1 loop, we cannot interpolate and
     ! must extrapolate from the bottom or top data level for at least some
     ! of the longitude points.
-    !$acc parallel loop gang vector default(present)
+    !$acc  parallel loop gang vector default(present) async(1) 
     do i = 1, ngrdcol
 
       if ( p_out >= p_mid(i,1) ) then

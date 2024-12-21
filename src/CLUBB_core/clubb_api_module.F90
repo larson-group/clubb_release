@@ -1237,30 +1237,30 @@ contains
     !$acc     copyout( rcm_in_layer_col, cloud_cover_col, wprcp_col, w_up_in_cloud_col, w_down_in_cloud_col, &
     !$acc              cloudy_updraft_frac_col, cloudy_downdraft_frac_col, invrs_tau_zm_col, Kh_zt_col, &
     !$acc              Kh_zm_col, &
-    !$acc              thlprcp_col )
+    !$acc              thlprcp_col ) wait
 
     !$acc data if( sclr_dim > 0 ) &
     !$acc      copyin( sclr_tol, sclrm_forcing_col, wpsclrp_sfc_col ) &
-    !$acc        copy( sclrm_col, wpsclrp_col, sclrp2_col, sclrp3_col, sclrprtp_col, sclrpthlp_col, sclrpthvp_col )
+    !$acc        copy( sclrm_col, wpsclrp_col, sclrp2_col, sclrp3_col, sclrprtp_col, sclrpthlp_col, sclrpthvp_col ) wait
 
     !$acc data if( edsclr_dim > 0 ) &
     !$acc      copyin( wpedsclrp_sfc_col, edsclrm_forcing_col ) &
-    !$acc        copy( edsclrm_col )
+    !$acc        copy( edsclrm_col ) wait
 
     !$acc data if( hydromet_dim > 0 ) &
     !$acc      copyin( hydromet_col, wphydrometp_col, wp2hmp_col, rtphmp_zt_col, thlphmp_zt_col, &
-    !$acc              l_mix_rat_hm )
+    !$acc              l_mix_rat_hm ) wait
 
 #ifdef CLUBB_CAM
-    !$acc data copyout( qclvar_col )
+    !$acc data copyout( qclvar_col ) wait
 #endif
 
 #ifdef CLUBBND_CAM
-    !$acc data copyin( varmu_col )
+    !$acc data copyin( varmu_col ) wait
 #endif
 
 #ifdef GFDL
-    !$acc data if( sclr_dim > 0 ) copy( sclrm_trsport_only )
+    !$acc data if( sclr_dim > 0 ) copy( sclrm_trsport_only ) wait
 #endif
 
     call advance_clubb_core( gr, gr%nz, 1,              &
@@ -1808,30 +1808,30 @@ contains
     !$acc     copyout( rcm_in_layer, cloud_cover, wprcp, w_up_in_cloud, w_down_in_cloud, &
     !$acc              cloudy_updraft_frac, cloudy_downdraft_frac, invrs_tau_zm, Kh_zt, &
     !$acc              Kh_zm, &
-    !$acc              thlprcp )
+    !$acc              thlprcp ) wait
 
     !$acc data if( sclr_dim > 0 ) &
     !$acc      copyin( sclr_tol, sclrm_forcing, wpsclrp_sfc ) &
-    !$acc        copy( sclrm, wpsclrp, sclrp2, sclrp3, sclrprtp, sclrpthlp, sclrpthvp )
+    !$acc        copy( sclrm, wpsclrp, sclrp2, sclrp3, sclrprtp, sclrpthlp, sclrpthvp ) wait
 
     !$acc data if( edsclr_dim > 0 ) &
     !$acc      copyin( wpedsclrp_sfc, edsclrm_forcing ) &
-    !$acc        copy( edsclrm )
+    !$acc        copy( edsclrm ) wait
 
     !$acc data if( hydromet_dim > 0 ) &
     !$acc      copyin( hydromet, wphydrometp, wp2hmp, rtphmp_zt, thlphmp_zt, &
-    !$acc              l_mix_rat_hm )
+    !$acc              l_mix_rat_hm ) wait
 
 #ifdef CLUBB_CAM
-    !$acc data copyout( qclvar )
+    !$acc data copyout( qclvar ) wait
 #endif
 
 #ifdef CLUBBND_CAM
-    !$acc data copyin( varmu )
+    !$acc data copyin( varmu ) wait
 #endif
 
 #ifdef GFDL
-    !$acc data if( sclr_dim > 0 ) copy( sclrm_trsport_only )
+    !$acc data if( sclr_dim > 0 ) copy( sclrm_trsport_only ) wait
 #endif
 
     call advance_clubb_core( gr, nz, ngrdcol, &

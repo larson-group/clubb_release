@@ -416,25 +416,25 @@ module advance_xp2_xpyp_module
     
     !------------------------------ Begin Code ------------------------------
     
-    !$acc enter data create( rtp2_old, thlp2_old, rtpthlp_old, up2_old, vp2_old, &
-    !$acc                    C2sclr_1d, C2rt_1d, C2thl_1d, &
-    !$acc                    C2rtthl_1d, C4_1d, C14_1d, threshold_array, lhs, uv_rhs, &
-    !$acc                    uv_solution, Kw2, Kw9, Kw2_zm, Kw9_zm, rtpthlp_chnge, &
-    !$acc                    lhs_ta_wprtp2, lhs_ta_wpthlp2, &
-    !$acc                    lhs_ta_wprtpthlp, lhs_ta_wpup2, lhs_ta_wpvp2, rhs_ta_wprtp2, &
-    !$acc                    rhs_ta_wpthlp2, rhs_ta_wprtpthlp, rhs_ta_wpup2, rhs_ta_wpvp2, &
-    !$acc                    lhs_diff, lhs_diff_uv, lhs_ma, lhs_dp1, rtm_zm, &
-    !$acc                    lhs_dp1_C4, lhs_dp1_C14 )
+    !$acc  enter data create( rtp2_old, thlp2_old, rtpthlp_old, up2_old, vp2_old, & 
+    !$acc                     C2sclr_1d, C2rt_1d, C2thl_1d, & 
+    !$acc                     C2rtthl_1d, C4_1d, C14_1d, threshold_array, lhs, uv_rhs, & 
+    !$acc                     uv_solution, Kw2, Kw9, Kw2_zm, Kw9_zm, rtpthlp_chnge, & 
+    !$acc                     lhs_ta_wprtp2, lhs_ta_wpthlp2, & 
+    !$acc                     lhs_ta_wprtpthlp, lhs_ta_wpup2, lhs_ta_wpvp2, rhs_ta_wprtp2, & 
+    !$acc                     rhs_ta_wpthlp2, rhs_ta_wprtpthlp, rhs_ta_wpup2, rhs_ta_wpvp2, & 
+    !$acc                     lhs_diff, lhs_diff_uv, lhs_ma, lhs_dp1, rtm_zm, & 
+    !$acc                     lhs_dp1_C4, lhs_dp1_C14 ) async(1) 
 
-    !$acc enter data if( sclr_dim > 0 ) &
-    !$acc      create( sclrp2_old, sclrprtp_old, sclrpthlp_old, sclrprtp_chnge, &
-    !$acc              lhs_ta_wpsclrp2, lhs_ta_wprtpsclrp, lhs_ta_wpthlpsclrp, &
-    !$acc              rhs_ta_wpsclrp2, rhs_ta_wprtpsclrp, rhs_ta_wpthlpsclrp, &
-    !$acc              sclrpthlp_chnge ) 
+    !$acc  enter data if( sclr_dim > 0 ) & 
+    !$acc       create( sclrp2_old, sclrprtp_old, sclrpthlp_old, sclrprtp_chnge, & 
+    !$acc               lhs_ta_wpsclrp2, lhs_ta_wprtpsclrp, lhs_ta_wpthlpsclrp, & 
+    !$acc               rhs_ta_wpsclrp2, rhs_ta_wprtpsclrp, rhs_ta_wpthlpsclrp, & 
+    !$acc               sclrpthlp_chnge ) async(1) 
 
     if ( clubb_at_least_debug_level( 1 ) ) then
 
-      !$acc parallel loop gang vector default(present) reduction(.or.:err_code)
+      !$acc parallel loop gang vector default(present) reduction(.or.:err_code) wait
       do i = 1, ngrdcol
 
         ! Assertion check for C_uu_shr
@@ -461,7 +461,7 @@ module advance_xp2_xpyp_module
 
     ! Use 3 different values of C2 for rtp2, thlp2, rtpthlp.
     if ( l_C2_cloud_frac ) then
-      !$acc parallel loop gang vector collapse(2) default(present)
+      !$acc  parallel loop gang vector collapse(2) default(present) async(1) 
       do k = 1, nz, 1
         do i = 1, ngrdcol
 
@@ -479,7 +479,7 @@ module advance_xp2_xpyp_module
       end do ! k = 1, nz, 1
       !$acc end parallel loop
     else
-      !$acc parallel loop gang vector collapse(2) default(present)
+      !$acc  parallel loop gang vector collapse(2) default(present) async(1) 
       do k = 1, nz
         do i = 1, ngrdcol
           C2rt_1d(i,k)    = clubb_params(i,iC2rt)
@@ -490,7 +490,7 @@ module advance_xp2_xpyp_module
       !$acc end parallel loop
     endif ! l_C2_cloud_frac
 
-    !$acc parallel loop gang vector collapse(2) default(present)
+    !$acc  parallel loop gang vector collapse(2) default(present) async(1) 
     do k = 1, nz
       do i = 1, ngrdcol
         C2sclr_1d(i,k) = clubb_params(i,iC2rt)  ! Use rt value for now
@@ -509,7 +509,7 @@ module advance_xp2_xpyp_module
 
     ! Define the Coefficent of Eddy Diffusivity for the variances
     ! and covariances.
-    !$acc parallel loop gang vector collapse(2) default(present)
+    !$acc  parallel loop gang vector collapse(2) default(present) async(1) 
     do k = 1, nz
       do i = 1, ngrdcol
         ! Kw2 is used for variances and covariances rtp2, thlp2, rtpthlp, and
@@ -531,7 +531,7 @@ module advance_xp2_xpyp_module
 
     if ( l_lmm_stepping ) then
 
-      !$acc parallel loop gang vector collapse(2) default(present)
+      !$acc  parallel loop gang vector collapse(2) default(present) async(1) 
       do k = 1, nz
         do i = 1, ngrdcol
           thlp2_old(i,k)   = thlp2(i,k)
@@ -542,7 +542,7 @@ module advance_xp2_xpyp_module
       !$acc end parallel loop
 
       if ( sclr_dim > 0 ) then
-        !$acc parallel loop gang vector collapse(3) default(present)
+        !$acc  parallel loop gang vector collapse(3) default(present) async(1) 
         do sclr = 1, sclr_dim
           do k = 1, nz
             do i = 1, ngrdcol
@@ -594,7 +594,7 @@ module advance_xp2_xpyp_module
 
         l_single_solve_possible = .true.
 
-        !$acc parallel loop gang vector default(present) reduction(.and.:l_single_solve_possible)
+        !$acc parallel loop gang vector default(present) reduction(.and.:l_single_solve_possible) wait
         do i = 1, ngrdcol
 
           C2rt    = clubb_params(i,iC2rt)
@@ -667,7 +667,7 @@ module advance_xp2_xpyp_module
                            lhs_diff_uv )                                        ! Out
 
     if ( l_lmm_stepping ) then
-      !$acc parallel loop gang vector collapse(2) default(present)
+      !$acc  parallel loop gang vector collapse(2) default(present) async(1) 
       do k = 1, nz
         do i = 1, ngrdcol
           up2_old(i,k) = up2(i,k)
@@ -687,7 +687,7 @@ module advance_xp2_xpyp_module
                        C14_1d, invrs_tau_C14_zm, &
                        lhs_dp1_C14 )
     
-    !$acc parallel loop gang vector collapse(2) default(present)
+    !$acc  parallel loop gang vector collapse(2) default(present) async(1) 
     do k = 2, nz-1
       do i = 1, ngrdcol
         lhs_dp1(i,k) = ( lhs_dp1_C4(i,k) + lhs_dp1_C14(i,k) ) * gamma_over_implicit_ts
@@ -831,7 +831,7 @@ module advance_xp2_xpyp_module
                            uv_rhs, lhs,                      & ! Intent(inout)
                            uv_solution )                       ! Intent(out)
 
-      !$acc parallel loop gang vector collapse(2) default(present)
+      !$acc  parallel loop gang vector collapse(2) default(present) async(1) 
       do k = 1, nz
         do i = 1, ngrdcol
           up2(i,k) = uv_solution(i,k,1)
@@ -841,7 +841,7 @@ module advance_xp2_xpyp_module
       !$acc end parallel loop
 
       if ( l_lmm_stepping ) then
-        !$acc parallel loop gang vector collapse(2) default(present)
+        !$acc  parallel loop gang vector collapse(2) default(present) async(1) 
         do k = 1, nz
           do i = 1, ngrdcol
             up2(i,k) = one_half * ( up2_old(i,k) + up2(i,k) )
@@ -853,8 +853,8 @@ module advance_xp2_xpyp_module
 
       if ( stats_metadata%l_stats_samp ) then
 
-        !$acc update host( up2, lhs_diff_uv, lhs_ta_wpup2, &
-        !$acc              lhs_ma, vp2, lhs_dp1_C4, lhs_dp1_C14 )
+        !$acc  update host( up2, lhs_diff_uv, lhs_ta_wpup2, & 
+        !$acc               lhs_ma, vp2, lhs_dp1_C4, lhs_dp1_C14 ) wait 
 
         do i = 1, ngrdcol
           call xp2_xpyp_implicit_stats( nz, xp2_xpyp_up2, up2(i,:), & !intent(in)
@@ -930,7 +930,7 @@ module advance_xp2_xpyp_module
       ! the minimum of rtp2, the equation becomes:
       !
       ! rtp2|_min = wprtp^2 / ( wp2 * max_mag_correlation_flux^2 ).
-      !$acc parallel loop gang vector collapse(2) default(present)
+      !$acc  parallel loop gang vector collapse(2) default(present) async(1) 
       do k = 1, nz, 1
         do i = 1, ngrdcol
 
@@ -948,7 +948,7 @@ module advance_xp2_xpyp_module
     else
 
       ! Consider only the minimum tolerance threshold value for rtp2.
-      !$acc parallel loop gang vector collapse(2) default(present)
+      !$acc  parallel loop gang vector collapse(2) default(present) async(1) 
       do k = 1, nz, 1
         do i = 1, ngrdcol
           threshold_array(i,k) = rt_tol**2
@@ -973,7 +973,7 @@ module advance_xp2_xpyp_module
       ! This overwrites stats clipping data from clip_variance
       if ( stats_metadata%l_stats_samp ) then
 
-        !$acc update host( rtp2 )
+        !$acc  update host( rtp2 ) wait 
 
         do i = 1, ngrdcol
           call stat_modify( nz, stats_metadata%irtp2_cl, -rtp2(i,:) / dt, & ! intent(in)
@@ -983,7 +983,7 @@ module advance_xp2_xpyp_module
       
       rtm_zm = zt2zm_gpu( nz, ngrdcol, gr, rtm, zero_threshold )
       
-      !$acc parallel loop gang vector collapse(2) default(present)
+      !$acc  parallel loop gang vector collapse(2) default(present) async(1) 
       do k = 1, nz
         do i = 1, ngrdcol
           threshold = max( rt_tol**2, clubb_params(i,irtp2_clip_coef) * rtm_zm(i,k)**2 )
@@ -996,7 +996,7 @@ module advance_xp2_xpyp_module
 
       if ( stats_metadata%l_stats_samp ) then
 
-        !$acc update host( rtp2 )
+        !$acc  update host( rtp2 ) wait 
 
         do i = 1, ngrdcol
           call stat_modify( nz, stats_metadata%irtp2_cl, rtp2(i,:) / dt, & ! intent(in)
@@ -1034,7 +1034,7 @@ module advance_xp2_xpyp_module
       ! the minimum of thlp2, the equation becomes:
       !
       ! thlp2|_min = wpthlp^2 / ( wp2 * max_mag_correlation_flux^2 ).
-      !$acc parallel loop gang vector collapse(2) default(present)
+      !$acc  parallel loop gang vector collapse(2) default(present) async(1) 
       do k = 1, nz, 1
         do i = 1, ngrdcol
           threshold_array(i,k) &
@@ -1052,7 +1052,7 @@ module advance_xp2_xpyp_module
     else
 
       ! Consider only the minimum tolerance threshold value for thlp2.
-      !$acc parallel loop gang vector collapse(2) default(present)
+      !$acc  parallel loop gang vector collapse(2) default(present) async(1) 
       do k = 1, nz, 1
         do i = 1, ngrdcol
           threshold_array(i,k) = thl_tol**2
@@ -1071,7 +1071,7 @@ module advance_xp2_xpyp_module
     ! Clipping for u'^2
 
     ! Clip negative values of up2
-    !$acc parallel loop gang vector collapse(2) default(present)
+    !$acc  parallel loop gang vector collapse(2) default(present) async(1) 
     do k = 1, nz, 1
       do i = 1, ngrdcol
         threshold_array(i,k) = w_tol_sqd
@@ -1087,7 +1087,7 @@ module advance_xp2_xpyp_module
     ! Clip excessively large values of up2
     if ( stats_metadata%l_stats_samp ) then
 
-      !$acc update host( up2 )
+      !$acc  update host( up2 ) wait 
 
       ! Store previous value in order to calculate clipping
       do i = 1, ngrdcol
@@ -1096,7 +1096,7 @@ module advance_xp2_xpyp_module
       end do
     endif
 
-    !$acc parallel loop gang vector collapse(2) default(present)
+    !$acc  parallel loop gang vector collapse(2) default(present) async(1) 
     do k = 1, nz, 1
       do i = 1, ngrdcol
         up2(i,k) = min( up2(i,k), 1000._core_rknd )
@@ -1106,7 +1106,7 @@ module advance_xp2_xpyp_module
 
     if ( stats_metadata%l_stats_samp ) then
 
-      !$acc update host( up2 )
+      !$acc  update host( up2 ) wait 
 
       ! Store final value in order to calculate clipping
       do i = 1, ngrdcol
@@ -1118,7 +1118,7 @@ module advance_xp2_xpyp_module
     ! Clipping for v'^2
 
     ! Clip negative values of vp2
-    !$acc parallel loop gang vector collapse(2) default(present)
+    !$acc  parallel loop gang vector collapse(2) default(present) async(1) 
     do k = 1, nz, 1
       do i = 1, ngrdcol
         threshold_array(i,k) = w_tol_sqd
@@ -1133,7 +1133,7 @@ module advance_xp2_xpyp_module
 
     if ( stats_metadata%l_stats_samp ) then
 
-      !$acc update host( vp2 )
+      !$acc  update host( vp2 ) wait 
 
       ! Store previous value in order to calculate clipping
       do i = 1, ngrdcol
@@ -1142,7 +1142,7 @@ module advance_xp2_xpyp_module
       end do
     end if
     
-    !$acc parallel loop gang vector collapse(2) default(present)
+    !$acc  parallel loop gang vector collapse(2) default(present) async(1) 
     do k = 1, nz, 1
       do i = 1, ngrdcol
         vp2(i,k) = min( vp2(i,k), 1000._core_rknd )
@@ -1152,7 +1152,7 @@ module advance_xp2_xpyp_module
 
     if ( stats_metadata%l_stats_samp ) then
 
-      !$acc update host( vp2 )
+      !$acc  update host( vp2 ) wait 
 
       ! Store final value in order to calculate clipping
       do i = 1, ngrdcol
@@ -1164,7 +1164,7 @@ module advance_xp2_xpyp_module
     ! When selected, apply sponge damping after up2 and vp2 have been advanced.
     if ( up2_vp2_sponge_damp_settings%l_sponge_damping ) then
 
-      !$acc update host( up2, vp2 )
+      !$acc  update host( up2, vp2 ) wait 
 
       if ( stats_metadata%l_stats_samp ) then
         do i = 1, ngrdcol
@@ -1194,7 +1194,7 @@ module advance_xp2_xpyp_module
         end do
       end if
 
-      !$acc update device( up2, vp2 )
+      !$acc  update device( up2, vp2 ) wait 
 
     end if ! up2_vp2_sponge_damp_settings%l_sponge_damping
 
@@ -1251,7 +1251,7 @@ module advance_xp2_xpyp_module
       ! Clipping for sclr'^2
       do sclr = 1, sclr_dim, 1
 
-        !$acc parallel loop gang vector collapse(2) default(present)
+        !$acc  parallel loop gang vector collapse(2) default(present) async(1) 
         do k = 1, nz, 1
           do i = 1, ngrdcol
             threshold_array(i,k) = sclr_tol(sclr)**2
@@ -1278,7 +1278,7 @@ module advance_xp2_xpyp_module
 
         if  ( sclr == sclr_idx%iisclr_rt ) then
           ! Treat this like a variance if we're emulating rt
-          !$acc parallel loop gang vector collapse(2) default(present)
+          !$acc  parallel loop gang vector collapse(2) default(present) async(1) 
           do k = 1, nz, 1
             do i = 1, ngrdcol
               threshold_array(i,k) = sclr_tol(sclr) * rt_tol
@@ -1313,7 +1313,7 @@ module advance_xp2_xpyp_module
       do sclr = 1, sclr_dim, 1
         if ( sclr == sclr_idx%iisclr_thl ) then
           ! As above, but for thl
-          !$acc parallel loop gang vector collapse(2) default(present)
+          !$acc  parallel loop gang vector collapse(2) default(present) async(1) 
           do k = 1, nz, 1
             do i = 1, ngrdcol
               threshold_array(i,k) = sclr_tol(sclr) * thl_tol
@@ -1343,14 +1343,14 @@ module advance_xp2_xpyp_module
 
       if ( err_code == clubb_fatal_error ) then
 
-        !$acc update host( invrs_tau_xp2_zm, invrs_tau_C4_zm, invrs_tau_C14_zm, &
-        !$acc              wm_zm, rtm, wprtp, thlm, wpthlp, wpthvp, um, vm, wp2, &
-        !$acc              wp3, upwp, vpwp, sigma_sqd_w, Kh_zt, rtp2_forcing, &
-        !$acc              thlp2_forcing, rtpthlp_forcing, rho_ds_zm, rho_ds_zt, &
-        !$acc              invrs_rho_ds_zm, thv_ds_zm, wp2_zt, sclrm, wpsclrp, &
-        !$acc              rtp2_old, rtp2, thlp2_old, thlp2, rtpthlp_old, rtpthlp, &
-        !$acc              up2_old, up2, vp2_old, vp2, sclrp2_old, sclrp2, &
-        !$acc              sclrprtp_old, sclrprtp, sclrpthlp_old, sclrpthlp )
+        !$acc  update host( invrs_tau_xp2_zm, invrs_tau_C4_zm, invrs_tau_C14_zm, & 
+        !$acc               wm_zm, rtm, wprtp, thlm, wpthlp, wpthvp, um, vm, wp2, & 
+        !$acc               wp3, upwp, vpwp, sigma_sqd_w, Kh_zt, rtp2_forcing, & 
+        !$acc               thlp2_forcing, rtpthlp_forcing, rho_ds_zm, rho_ds_zt, & 
+        !$acc               invrs_rho_ds_zm, thv_ds_zm, wp2_zt, sclrm, wpsclrp, & 
+        !$acc               rtp2_old, rtp2, thlp2_old, thlp2, rtpthlp_old, rtpthlp, & 
+        !$acc               up2_old, up2, vp2_old, vp2, sclrp2_old, sclrp2, & 
+        !$acc               sclrprtp_old, sclrprtp, sclrpthlp_old, sclrpthlp ) wait 
 
         write(fstderr,*) "Error in advance_xp2_xpyp"
 
@@ -1428,13 +1428,13 @@ module advance_xp2_xpyp_module
     !$acc                    lhs_ta_wprtpthlp, lhs_ta_wpup2, lhs_ta_wpvp2, rhs_ta_wprtp2, &
     !$acc                    rhs_ta_wpthlp2, rhs_ta_wprtpthlp, rhs_ta_wpup2, rhs_ta_wpvp2, &
     !$acc                    lhs_diff, lhs_diff_uv, lhs_ma, lhs_dp1, rtm_zm, &
-    !$acc                    lhs_dp1_C4, lhs_dp1_C14 )
+    !$acc                    lhs_dp1_C4, lhs_dp1_C14 ) wait
 
     !$acc exit data if( sclr_dim > 0 ) &
     !$acc      delete( sclrp2_old, sclrprtp_old, sclrpthlp_old, sclrprtp_chnge, &
     !$acc              lhs_ta_wpsclrp2, lhs_ta_wprtpsclrp, lhs_ta_wpthlpsclrp, &
     !$acc              rhs_ta_wpsclrp2, rhs_ta_wprtpsclrp, rhs_ta_wpthlpsclrp, &
-    !$acc              sclrpthlp_chnge ) 
+    !$acc              sclrpthlp_chnge )  wait
 
     return
 
@@ -1595,16 +1595,16 @@ module advance_xp2_xpyp_module
     
     ! -------- Begin Code --------
 
-    !$acc enter data create( lhs, rhs, solution, lhs_dp1 )
+    !$acc  enter data create( lhs, rhs, solution, lhs_dp1 ) async(1) 
 
-    !$acc enter data if( sclr_dim > 0 ) &
-    !$acc            create( sclrp2_forcing, sclrprtp_forcing, sclrpthlp_forcing )
+    !$acc  enter data if( sclr_dim > 0 ) & 
+    !$acc             create( sclrp2_forcing, sclrprtp_forcing, sclrpthlp_forcing ) async(1) 
 
     call term_dp1_lhs( nz, ngrdcol, &
                        C2x, invrs_tau_xp2_zm, &
                        lhs_dp1 )
 
-    !$acc parallel loop gang vector collapse(2) default(present)
+    !$acc  parallel loop gang vector collapse(2) default(present) async(1) 
     do k = 2, nz-1
       do i = 1, ngrdcol
         lhs_dp1(i,k) = lhs_dp1(i,k) * gamma_over_implicit_ts
@@ -1650,7 +1650,7 @@ module advance_xp2_xpyp_module
       do sclr = 1, sclr_dim
 
         ! Forcing for <sclr'^2>.
-        !$acc parallel loop gang vector collapse(2) default(present)
+        !$acc  parallel loop gang vector collapse(2) default(present) async(1) 
         do k = 1, nz
           do i = 1, ngrdcol
             sclrp2_forcing(i,k) = zero
@@ -1674,7 +1674,7 @@ module advance_xp2_xpyp_module
           ! In this case we're trying to emulate rt'^2 with sclr'rt', so we
           ! handle this as we would a variance, even though generally speaking
           ! the scalar is not rt
-          !$acc parallel loop gang vector collapse(2) default(present)
+          !$acc  parallel loop gang vector collapse(2) default(present) async(1) 
           do k = 1, nz
             do i = 1, ngrdcol
               sclrprtp_forcing(i,k) = rtp2_forcing(i,k)
@@ -1684,7 +1684,7 @@ module advance_xp2_xpyp_module
 
           threshold = rt_tol**2
         else
-          !$acc parallel loop gang vector collapse(2) default(present)
+          !$acc  parallel loop gang vector collapse(2) default(present) async(1) 
           do k = 1, nz
             do i = 1, ngrdcol
               sclrprtp_forcing(i,k) = zero
@@ -1709,7 +1709,7 @@ module advance_xp2_xpyp_module
         if ( sclr == sclr_idx%iisclr_thl ) then
           ! In this case we're trying to emulate thl'^2 with sclr'thl', so we
           ! handle this as we did with sclr_rt, above.
-          !$acc parallel loop gang vector collapse(2) default(present)
+          !$acc  parallel loop gang vector collapse(2) default(present) async(1) 
           do k = 1, nz
             do i = 1, ngrdcol
               sclrpthlp_forcing(i,k) = thlp2_forcing(i,k)
@@ -1719,7 +1719,7 @@ module advance_xp2_xpyp_module
 
           threshold = thl_tol**2
         else
-          !$acc parallel loop gang vector collapse(2) default(present)
+          !$acc  parallel loop gang vector collapse(2) default(present) async(1) 
           do k = 1, nz
             do i = 1, ngrdcol
               sclrpthlp_forcing(i,k) = zero
@@ -1753,7 +1753,7 @@ module advance_xp2_xpyp_module
                           
     if ( l_lmm_stepping ) then
 
-      !$acc parallel loop gang vector collapse(2) default(present)
+      !$acc  parallel loop gang vector collapse(2) default(present) async(1) 
       do k = 1, nz
         do i = 1, ngrdcol
           rtp2(i,k)    = one_half * ( rtp2(i,k)     + solution(i,k,1) )
@@ -1764,7 +1764,7 @@ module advance_xp2_xpyp_module
       !$acc end parallel loop
 
       if ( sclr_dim > 0 ) then
-        !$acc parallel loop gang vector collapse(3) default(present)
+        !$acc  parallel loop gang vector collapse(3) default(present) async(1) 
         do sclr = 1, sclr_dim
           do k = 1, nz
             do i = 1, ngrdcol
@@ -1782,7 +1782,7 @@ module advance_xp2_xpyp_module
       
     else
 
-      !$acc parallel loop gang vector collapse(2) default(present)
+      !$acc  parallel loop gang vector collapse(2) default(present) async(1) 
       do k = 1, nz
         do i = 1, ngrdcol
           rtp2(i,k)    = solution(i,k,1)
@@ -1793,7 +1793,7 @@ module advance_xp2_xpyp_module
       !$acc end parallel loop
 
       if ( sclr_dim > 0 ) then
-        !$acc parallel loop gang vector collapse(3) default(present)
+        !$acc  parallel loop gang vector collapse(3) default(present) async(1) 
         do sclr = 1, sclr_dim
           do k = 1, nz
             do i = 1, ngrdcol
@@ -1810,8 +1810,8 @@ module advance_xp2_xpyp_module
 
     if ( stats_metadata%l_stats_samp ) then
 
-      !$acc update host( rtp2, thlp2, rtpthlp, lhs_dp1, lhs_diff, &
-      !$acc              lhs_ta, lhs_ma )
+      !$acc  update host( rtp2, thlp2, rtpthlp, lhs_dp1, lhs_diff, & 
+      !$acc               lhs_ta, lhs_ma ) wait 
      
       zeros(:) = zero
      
@@ -1834,10 +1834,10 @@ module advance_xp2_xpyp_module
       end do
     end if
 
-    !$acc exit data delete( lhs, rhs, solution, lhs_dp1 )
+    !$acc exit data delete( lhs, rhs, solution, lhs_dp1 ) wait
 
     !$acc exit data if( sclr_dim > 0 ) &
-    !$acc           delete( sclrp2_forcing, sclrprtp_forcing, sclrpthlp_forcing )
+    !$acc           delete( sclrp2_forcing, sclrprtp_forcing, sclrpthlp_forcing ) wait
 
     return
       
@@ -2024,20 +2024,20 @@ module advance_xp2_xpyp_module
       
     !------------------------ Begin Code ------------------------
 
-    !$acc enter data  create( lhs, rhs, threshold, lhs_dp1, rtp2_solution, &
-    !$acc                     thlp2_solution, rtpthlp_solution )
+    !$acc  enter data create( lhs, rhs, threshold, lhs_dp1, rtp2_solution, & 
+    !$acc                      thlp2_solution, rtpthlp_solution ) async(1) 
 
-    !$acc enter data if( sclr_dim > 0 ) &
-    !$acc            create( sclrprtp_solution, sclrpthlp_solution, sclr_solution, &
-    !$acc                    sclr_rhs, sclrp2_forcing, sclrprtp_forcing, sclrpthlp_forcing, &
-    !$acc                    sclrp2_solution )
+    !$acc  enter data if( sclr_dim > 0 ) & 
+    !$acc             create( sclrprtp_solution, sclrpthlp_solution, sclr_solution, & 
+    !$acc                     sclr_rhs, sclrp2_forcing, sclrprtp_forcing, sclrpthlp_forcing, & 
+    !$acc                     sclrp2_solution ) async(1) 
 
     !!!!!***** r_t'^2 *****!!!!!
     call term_dp1_lhs( nz, ngrdcol, &
                        C2rt_1d, invrs_tau_xp2_zm, &
                        lhs_dp1 )
 
-    !$acc parallel loop gang vector collapse(2) default(present)
+    !$acc  parallel loop gang vector collapse(2) default(present) async(1) 
     do k = 2, nz-1
       do i = 1, ngrdcol
         lhs_dp1(i,k) = lhs_dp1(i,k) * gamma_over_implicit_ts
@@ -2067,7 +2067,7 @@ module advance_xp2_xpyp_module
                          rhs, lhs, rtp2_solution )        ! Intent(inout)
                            
     if ( l_lmm_stepping ) then
-      !$acc parallel loop gang vector collapse(2) default(present)
+      !$acc  parallel loop gang vector collapse(2) default(present) async(1) 
       do k = 1, nz
         do i = 1, ngrdcol
           rtp2(i,k) = one_half * ( rtp2(i,k) + rtp2_solution(i,k) )
@@ -2075,7 +2075,7 @@ module advance_xp2_xpyp_module
       end do
       !$acc end parallel loop
     else
-      !$acc parallel loop gang vector collapse(2) default(present)
+      !$acc  parallel loop gang vector collapse(2) default(present) async(1) 
       do k = 1, nz
         do i = 1, ngrdcol
           rtp2(i,k) = rtp2_solution(i,k)
@@ -2086,7 +2086,7 @@ module advance_xp2_xpyp_module
    
     if ( stats_metadata%l_stats_samp ) then
 
-      !$acc update host( rtp2, lhs_dp1, lhs_diff, lhs_ta_wprtp2, lhs_ma )
+      !$acc  update host( rtp2, lhs_dp1, lhs_diff, lhs_ta_wprtp2, lhs_ma ) wait 
 
       zeros(:,:) = zero
       do i = 1, ngrdcol
@@ -2103,7 +2103,7 @@ module advance_xp2_xpyp_module
                        C2thl_1d, invrs_tau_xp2_zm, &
                        lhs_dp1 )
 
-    !$acc parallel loop gang vector collapse(2) default(present)
+    !$acc  parallel loop gang vector collapse(2) default(present) async(1) 
     do k = 2, nz-1
       do i = 1, ngrdcol
         lhs_dp1(i,k) = lhs_dp1(i,k) * gamma_over_implicit_ts
@@ -2134,7 +2134,7 @@ module advance_xp2_xpyp_module
                          rhs, lhs, thlp2_solution )         ! Intent(inout)
                            
     if ( l_lmm_stepping ) then
-      !$acc parallel loop gang vector collapse(2) default(present)
+      !$acc  parallel loop gang vector collapse(2) default(present) async(1) 
       do k = 1, nz
         do i = 1, ngrdcol
           thlp2(i,k) = one_half * ( thlp2(i,k) + thlp2_solution(i,k) )
@@ -2142,7 +2142,7 @@ module advance_xp2_xpyp_module
       end do
       !$acc end parallel loop
     else
-      !$acc parallel loop gang vector collapse(2) default(present)
+      !$acc  parallel loop gang vector collapse(2) default(present) async(1) 
       do k = 1, nz
         do i = 1, ngrdcol
           thlp2(i,k) = thlp2_solution(i,k)
@@ -2153,7 +2153,7 @@ module advance_xp2_xpyp_module
    
     if ( stats_metadata%l_stats_samp ) then
 
-      !$acc update host( thlp2, lhs_dp1, lhs_diff, lhs_ta_wpthlp2, lhs_ma )
+      !$acc  update host( thlp2, lhs_dp1, lhs_diff, lhs_ta_wpthlp2, lhs_ma ) wait 
 
       do i = 1, ngrdcol
         call xp2_xpyp_implicit_stats( nz, xp2_xpyp_thlp2, thlp2(i,:), & !intent(in)
@@ -2169,7 +2169,7 @@ module advance_xp2_xpyp_module
                        C2rtthl_1d, invrs_tau_xp2_zm, &
                        lhs_dp1 )
 
-    !$acc parallel loop gang vector collapse(2) default(present)
+    !$acc  parallel loop gang vector collapse(2) default(present) async(1) 
     do k = 2, nz-1
       do i = 1, ngrdcol
         lhs_dp1(i,k) = lhs_dp1(i,k) * gamma_over_implicit_ts
@@ -2200,7 +2200,7 @@ module advance_xp2_xpyp_module
                          rhs, lhs, rtpthlp_solution )         ! Intent(inout)
                            
     if ( l_lmm_stepping ) then
-      !$acc parallel loop gang vector collapse(2) default(present)
+      !$acc  parallel loop gang vector collapse(2) default(present) async(1) 
       do k = 1, nz
         do i = 1, ngrdcol
           rtpthlp(i,k) = one_half * ( rtpthlp(i,k) + rtpthlp_solution(i,k) )
@@ -2208,7 +2208,7 @@ module advance_xp2_xpyp_module
       end do
       !$acc end parallel loop
     else
-      !$acc parallel loop gang vector collapse(2) default(present)
+      !$acc  parallel loop gang vector collapse(2) default(present) async(1) 
       do k = 1, nz
         do i = 1, ngrdcol
           rtpthlp(i,k) = rtpthlp_solution(i,k)
@@ -2219,7 +2219,7 @@ module advance_xp2_xpyp_module
    
     if ( stats_metadata%l_stats_samp ) then
 
-      !$acc update host( rtpthlp, lhs_dp1, lhs_diff, lhs_ta_wprtpthlp, lhs_ma )
+      !$acc  update host( rtpthlp, lhs_dp1, lhs_diff, lhs_ta_wprtpthlp, lhs_ma ) wait 
 
       do i = 1, ngrdcol
         call xp2_xpyp_implicit_stats( nz, xp2_xpyp_rtpthlp, rtpthlp(i,:), & !intent(in)
@@ -2236,7 +2236,7 @@ module advance_xp2_xpyp_module
                          C2sclr_1d, invrs_tau_xp2_zm, &
                          lhs_dp1 )
       
-      !$acc parallel loop gang vector collapse(2) default(present)
+      !$acc  parallel loop gang vector collapse(2) default(present) async(1) 
       do k = 1, nz
         do i = 1, ngrdcol
           lhs_dp1(i,k) = lhs_dp1(i,k) * gamma_over_implicit_ts
@@ -2379,7 +2379,7 @@ module advance_xp2_xpyp_module
         do sclr = 1, sclr_dim
 
           ! Forcing for <sclr'^2>.
-          !$acc parallel loop gang vector collapse(2) default(present)
+          !$acc  parallel loop gang vector collapse(2) default(present) async(1) 
           do k = 1, nz
             do i = 1, ngrdcol
               sclrp2_forcing(i,k) = zero
@@ -2403,7 +2403,7 @@ module advance_xp2_xpyp_module
             ! In this case we're trying to emulate rt'^2 with sclr'rt', so we
             ! handle this as we would a variance, even though generally speaking
             ! the scalar is not rt
-            !$acc parallel loop gang vector collapse(2) default(present)
+            !$acc  parallel loop gang vector collapse(2) default(present) async(1) 
             do k = 1, nz
               do i = 1, ngrdcol
                 sclrprtp_forcing(i,k) = rtp2_forcing(i,k)
@@ -2413,7 +2413,7 @@ module advance_xp2_xpyp_module
 
             threshold = rt_tol**2
           else
-            !$acc parallel loop gang vector collapse(2) default(present)
+            !$acc  parallel loop gang vector collapse(2) default(present) async(1) 
             do k = 1, nz
               do i = 1, ngrdcol
                 sclrprtp_forcing(i,k) = zero
@@ -2439,7 +2439,7 @@ module advance_xp2_xpyp_module
           if ( sclr == sclr_idx%iisclr_thl ) then
             ! In this case we're trying to emulate thl'^2 with sclr'thl', so we
             ! handle this as we did with sclr_rt, above.
-            !$acc parallel loop gang vector collapse(2) default(present)
+            !$acc  parallel loop gang vector collapse(2) default(present) async(1) 
             do k = 1, nz
               do i = 1, ngrdcol
                 sclrpthlp_forcing(i,k) = thlp2_forcing(i,k)
@@ -2449,7 +2449,7 @@ module advance_xp2_xpyp_module
 
             threshold = thl_tol**2
           else
-            !$acc parallel loop gang vector collapse(2) default(present)
+            !$acc  parallel loop gang vector collapse(2) default(present) async(1) 
             do k = 1, nz
               do i = 1, ngrdcol
                 sclrpthlp_forcing(i,k) = zero
@@ -2481,7 +2481,7 @@ module advance_xp2_xpyp_module
         
         if ( l_lmm_stepping ) then
 
-          !$acc parallel loop gang vector collapse(3) default(present)
+          !$acc  parallel loop gang vector collapse(3) default(present) async(1) 
           do sclr = 1, sclr_dim
             do k = 1, nz
               do i = 1, ngrdcol
@@ -2498,7 +2498,7 @@ module advance_xp2_xpyp_module
 
         else
 
-          !$acc parallel loop gang vector collapse(3) default(present)
+          !$acc  parallel loop gang vector collapse(3) default(present) async(1) 
           do sclr = 1, sclr_dim
             do k = 1, nz
               do i = 1, ngrdcol
@@ -2517,12 +2517,12 @@ module advance_xp2_xpyp_module
     end if
 
     !$acc exit data delete( lhs, rhs, threshold, lhs_dp1, rtp2_solution, &
-    !$acc                     thlp2_solution, rtpthlp_solution )
+    !$acc                     thlp2_solution, rtpthlp_solution ) wait
 
     !$acc exit data if( sclr_dim > 0 ) &
     !$acc           delete( sclrprtp_solution, sclrpthlp_solution, sclr_solution, &
     !$acc                   sclr_rhs, sclrp2_forcing, sclrprtp_forcing, sclrpthlp_forcing, &
-    !$acc                   sclrp2_solution )
+    !$acc                   sclrp2_solution ) wait
 
     return
       
@@ -2602,7 +2602,7 @@ module advance_xp2_xpyp_module
     !---------------- Begin Code -------------------
 
     ! Combine all lhs terms into lhs, should be fully vectorized
-    !$acc parallel loop gang vector collapse(2) default(present)    
+    !$acc  parallel loop gang vector collapse(2) default(present) async(1) 
     do k = 2, nz-1
       do i = 1, ngrdcol
         lhs(1,i,k) = lhs_diff(1,i,k) + lhs_ma(1,i,k) + lhs_ta(1,i,k) * gamma_over_implicit_ts
@@ -2616,7 +2616,7 @@ module advance_xp2_xpyp_module
     !$acc end parallel loop
 
     ! LHS time tendency.
-    !$acc parallel loop gang vector collapse(2) default(present)    
+    !$acc  parallel loop gang vector collapse(2) default(present) async(1) 
     do k =2, nz-1
       do i = 1, ngrdcol
         lhs(2,i,k) = lhs(2,i,k) + (one / dt)
@@ -2631,7 +2631,7 @@ module advance_xp2_xpyp_module
     ! top boundary.  Fixed-point boundary conditions are used for both the
     ! variances and the covariances.
 
-    !$acc parallel loop gang vector default(present)    
+    !$acc  parallel loop gang vector default(present) async(1) 
     do i = 1, ngrdcol
       ! Set the lower boundaries for the first variable
       lhs(1,i,1)  = zero
@@ -3127,7 +3127,7 @@ module advance_xp2_xpyp_module
 
     !----------------------------- Begin Code ----------------------------------
 
-    !$acc enter data create( rhs_pr1, rhs_pr2, rhs_term_tp )
+    !$acc  enter data create( rhs_pr1, rhs_pr2, rhs_term_tp ) async(1) 
 
     select case ( solve_type )
     case ( xp2_xpyp_vp2 )
@@ -3155,7 +3155,7 @@ module advance_xp2_xpyp_module
 
     ! Vertical compression of eddies causes gustiness (increase in up2 and vp2)
     ! Add half the contribution to up2 and half to vp2
-    !$acc parallel loop gang vector collapse(2) default(present)
+    !$acc  parallel loop gang vector collapse(2) default(present) async(1) 
     do k = 2, nz-1
       do i = 1, ngrdcol
         rhs(i,k) = rhs_ta(i,k) + 0.5_core_rknd * lhs_splat_wp2(i,k) * wp2(i,k)
@@ -3182,7 +3182,7 @@ module advance_xp2_xpyp_module
 
     ! Finish RHS calc with vectorizable loop, functions are in source file and should
     ! be inlined with an -O2 or above compiler optimization flag
-    !$acc parallel loop gang vector collapse(2) default(present)
+    !$acc  parallel loop gang vector collapse(2) default(present) async(1) 
     do k = 2, nz-1, 1
       do i = 1, ngrdcol
         
@@ -3211,7 +3211,7 @@ module advance_xp2_xpyp_module
     !$acc end parallel loop
 
     ! RHS time tendency.
-    !$acc parallel loop gang vector collapse(2) default(present)
+    !$acc  parallel loop gang vector collapse(2) default(present) async(1) 
     do k = 2, nz-1
       do i = 1, ngrdcol
         rhs(i,k) = rhs(i,k) + one/dt * xap2(i,k)
@@ -3221,8 +3221,8 @@ module advance_xp2_xpyp_module
     !$acc end parallel loop
     if ( stats_metadata%l_stats_samp ) then
 
-      !$acc update host( rhs_ta, lhs_ta, xap2, xbp2, wp2, invrs_tau_C14_zm, invrs_tau_C4_zm, &
-      !$acc              rhs_pr2, lhs_splat_wp2, rhs_term_tp, lhs_dp1_C14, lhs_dp1_C4 )
+      !$acc  update host( rhs_ta, lhs_ta, xap2, xbp2, wp2, invrs_tau_C14_zm, invrs_tau_C4_zm, & 
+      !$acc               rhs_pr2, lhs_splat_wp2, rhs_term_tp, lhs_dp1_C14, lhs_dp1_C4 ) wait 
 
       ! Statistics: explicit contributions for up2 or vp2.
 
@@ -3232,7 +3232,7 @@ module advance_xp2_xpyp_module
 
       zeros_vector = zero
 
-      !$acc data copyin( zeros_vector ) copyout( stats_pr1, stats_pr2 )
+      !$acc data copyin( zeros_vector ) copyout( stats_pr1, stats_pr2 ) wait
       call term_pr1( nz, ngrdcol, C4, zeros_vector, xbp2, &
                      wp2, invrs_tau_C4_zm, invrs_tau_C14_zm, &
                      stats_pr1 )
@@ -3308,7 +3308,7 @@ module advance_xp2_xpyp_module
     ! set to their respective threshold minimum values at the top boundary.
     ! Fixed-point boundary conditions are used for the variances.
     
-    !$acc parallel loop gang vector default(present)
+    !$acc  parallel loop gang vector default(present) async(1) 
     do i = 1, ngrdcol
       rhs(i,1) = xap2(i,1)
       ! The value of u'^2 or v'^2 at the upper boundary will be set to the
@@ -3317,7 +3317,7 @@ module advance_xp2_xpyp_module
     end do
     !$acc end parallel loop
 
-    !$acc exit data delete( rhs_pr1, rhs_pr2, rhs_term_tp )
+    !$acc exit data delete( rhs_pr1, rhs_pr2, rhs_term_tp ) wait
     
     return
 
@@ -3474,7 +3474,7 @@ module advance_xp2_xpyp_module
 
     !------------------------------ Begin Code ---------------------------------
 
-    !$acc enter data create( rhs_term_tp, rhs_term_dp1, lhs_term_dp1 )
+    !$acc  enter data create( rhs_term_tp, rhs_term_dp1, lhs_term_dp1 ) async(1) 
 
     select case ( solve_type )
     case ( xp2_xpyp_rtp2 )
@@ -3525,7 +3525,7 @@ module advance_xp2_xpyp_module
 
     ! Finish RHS calc with vectorizable loop, functions are in source file and should
     ! be inlined with an -O2 or above compiler optimization flag
-    !$acc parallel loop gang vector collapse(2) default(present)
+    !$acc  parallel loop gang vector collapse(2) default(present) async(1) 
     do k = 2, nz-1
       do i = 1, ngrdcol
         rhs(i,k) = rhs_ta(i,k) + ( one - gamma_over_implicit_ts ) &
@@ -3551,7 +3551,7 @@ module advance_xp2_xpyp_module
     ! Note: <x'y'> forcing includes the effects of microphysics on <x'y'>.
     if ( l_clip_large_neg_mc &
          .and. ( solve_type == xp2_xpyp_rtp2 .or. solve_type == xp2_xpyp_thlp2 ) ) then
-      !$acc parallel loop gang vector collapse(2) default(present)
+      !$acc  parallel loop gang vector collapse(2) default(present) async(1) 
       do k = 2, nz-1
         do i = 1, ngrdcol
 
@@ -3580,7 +3580,7 @@ module advance_xp2_xpyp_module
       end do
       !$acc end parallel loop
     else
-      !$acc parallel loop gang vector collapse(2) default(present)
+      !$acc  parallel loop gang vector collapse(2) default(present) async(1) 
       do k = 2, nz-1
         do i = 1, ngrdcol
           rhs(i,k) = rhs(i,k) + xpyp_forcing(i,k)
@@ -3589,7 +3589,7 @@ module advance_xp2_xpyp_module
       !$acc end parallel loop
     endif 
 
-    !$acc parallel loop gang vector collapse(2) default(present)
+    !$acc  parallel loop gang vector collapse(2) default(present) async(1) 
     do k = 2, nz-1, 1
       do i = 1, ngrdcol
         rhs(i,k) = rhs(i,k) + one/dt * xapxbp(i,k)
@@ -3599,12 +3599,12 @@ module advance_xp2_xpyp_module
 
     if ( stats_metadata%l_stats_samp ) then
 
-      !$acc update host( rhs_ta, lhs_ta, xapxbp, Cn, invrs_tau_zm, xam, rhs_term_tp, &
-      !$acc              xbm, wpxbp, wpxap, xpyp_forcing, rhs_term_dp1, lhs_term_dp1 )
+      !$acc  update host( rhs_ta, lhs_ta, xapxbp, Cn, invrs_tau_zm, xam, rhs_term_tp, & 
+      !$acc               xbm, wpxbp, wpxap, xpyp_forcing, rhs_term_dp1, lhs_term_dp1 ) wait 
 
       zeros_vector = zero
 
-      !$acc data copyin( zeros_vector ) copyout( stats_tp1, stats_tp2 )
+      !$acc data copyin( zeros_vector ) copyout( stats_tp1, stats_tp2 ) wait
 
       ! Note:  To find the contribution of x'y' term tp1, substitute 0 for all
       !        the xam inputs and the wpxbp input to function term_tp.
@@ -3703,14 +3703,14 @@ module advance_xp2_xpyp_module
 
     ! The value of the field at the upper boundary will be set to it's threshold
     ! minimum value, as contained in the variable 'threshold'.
-    !$acc parallel loop gang vector default(present)
+    !$acc  parallel loop gang vector default(present) async(1) 
     do i = 1, ngrdcol
       rhs(i,1) = xapxbp(i,1)
       rhs(i,nz) = threshold
     end do
     !$acc end parallel loop
 
-    !$acc exit data delete( rhs_term_tp, rhs_term_dp1, lhs_term_dp1 )
+    !$acc exit data delete( rhs_term_tp, rhs_term_dp1, lhs_term_dp1 ) wait
 
     return
 
@@ -4003,26 +4003,26 @@ module advance_xp2_xpyp_module
 
     !------------------- Begin Code -------------------
 
-    !$acc enter data create( coef_wprtp2_implicit, term_wprtp2_explicit, &
-    !$acc                 coef_wprtp2_implicit_zm, term_wprtp2_explicit_zm, &
-    !$acc                 coef_wpthlp2_implicit, term_wpthlp2_explicit, &
-    !$acc                 term_wpthlp2_explicit_zm, &
-    !$acc                 coef_wprtpthlp_implicit, term_wprtpthlp_explicit, &
-    !$acc                 coef_wpvp2_implicit_zm, term_wprtpthlp_explicit_zm, &
-    !$acc                 coef_wpup2_implicit, term_wpup2_explicit, coef_wpvp2_implicit, &
-    !$acc                 term_wpvp2_explicit, coef_wpup2_implicit_zm, term_wpup2_explicit_zm, &
-    !$acc                 term_wpvp2_explicit_zm, sgn_t_vel_rtp2, &
-    !$acc                 sgn_t_vel_thlp2, sgn_t_vel_rtpthlp, sgn_t_vel_up2, sgn_t_vel_vp2, & 
-    !$acc                 a1, a1_zt, upwp_zt, vpwp_zt, wprtp_zt, wpthlp_zt, wp_coef, wp_coef_zt )
+    !$acc  enter data create( coef_wprtp2_implicit, term_wprtp2_explicit, & 
+    !$acc                  coef_wprtp2_implicit_zm, term_wprtp2_explicit_zm, & 
+    !$acc                  coef_wpthlp2_implicit, term_wpthlp2_explicit, & 
+    !$acc                  term_wpthlp2_explicit_zm, & 
+    !$acc                  coef_wprtpthlp_implicit, term_wprtpthlp_explicit, & 
+    !$acc                  coef_wpvp2_implicit_zm, term_wprtpthlp_explicit_zm, & 
+    !$acc                  coef_wpup2_implicit, term_wpup2_explicit, coef_wpvp2_implicit, & 
+    !$acc                  term_wpvp2_explicit, coef_wpup2_implicit_zm, term_wpup2_explicit_zm, & 
+    !$acc                  term_wpvp2_explicit_zm, sgn_t_vel_rtp2, & 
+    !$acc                  sgn_t_vel_thlp2, sgn_t_vel_rtpthlp, sgn_t_vel_up2, sgn_t_vel_vp2, & 
+    !$acc                  a1, a1_zt, upwp_zt, vpwp_zt, wprtp_zt, wpthlp_zt, wp_coef, wp_coef_zt ) async(1) 
 
-    !$acc enter data if( sclr_dim > 0 ) &
-    !$acc         create( coef_wpsclrp2_implicit, term_wpsclrp2_explicit, &
-    !$acc                 coef_wpsclrp2_implicit_zm, term_wpsclrp2_explicit_zm, &
-    !$acc                 coef_wprtpsclrp_implicit, term_wprtpsclrp_explicit, &
-    !$acc                 coef_wprtpsclrp_implicit_zm, term_wprtpsclrp_explicit_zm, &
-    !$acc                 coef_wpthlpsclrp_implicit, coef_wpthlpsclrp_implicit_zm, &
-    !$acc                 term_wpthlpsclrp_explicit_zm, sgn_t_vel_sclrp2, sgn_t_vel_sclrprtp, &
-    !$acc                 sgn_t_vel_sclrpthlp, wpsclrp_zt )
+    !$acc  enter data if( sclr_dim > 0 ) & 
+    !$acc          create( coef_wpsclrp2_implicit, term_wpsclrp2_explicit, & 
+    !$acc                  coef_wpsclrp2_implicit_zm, term_wpsclrp2_explicit_zm, & 
+    !$acc                  coef_wprtpsclrp_implicit, term_wprtpsclrp_explicit, & 
+    !$acc                  coef_wprtpsclrp_implicit_zm, term_wprtpsclrp_explicit_zm, & 
+    !$acc                  coef_wpthlpsclrp_implicit, coef_wpthlpsclrp_implicit_zm, & 
+    !$acc                  term_wpthlpsclrp_explicit_zm, sgn_t_vel_sclrp2, sgn_t_vel_sclrprtp, & 
+    !$acc                  sgn_t_vel_sclrpthlp, wpsclrp_zt ) async(1) 
     
     ! Define a_1 (located on momentum levels).
     ! It is a variable that is a function of sigma_sqd_w (where sigma_sqd_w is
@@ -4030,7 +4030,7 @@ module advance_xp2_xpyp_module
     ! advection (ta) terms for the ADG1 PDF.  This will also be used for the
     ! turbulent advection of <u'^2> and <v'^2>, regardless of which PDF type or
     ! turbulent advection option is used.
-    !$acc parallel loop gang vector collapse(2) default(present)
+    !$acc  parallel loop gang vector collapse(2) default(present) async(1) 
     do k = 1, nz
       do i = 1, ngrdcol
         a1(i,k) = one / ( one - sigma_sqd_w(i,k) )
@@ -4042,7 +4042,7 @@ module advance_xp2_xpyp_module
     ! Positive definite quantity
     a1_zt(:,:) = zm2zt_gpu( nz, ngrdcol, gr, a1(:,:), zero_threshold )
 
-    !$acc parallel loop gang vector collapse(2) default(present)
+    !$acc  parallel loop gang vector collapse(2) default(present) async(1) 
     do k = 1, nz
       do i = 1, ngrdcol
         wp_coef(i,k)    = ( one - one_third * beta(i) ) *    a1(i,k)**2 *    wp3_on_wp2(i,k) /    wp2(i,k)
@@ -4061,7 +4061,7 @@ module advance_xp2_xpyp_module
       
       ! These coefficients only need to be set if stats output is on
       if( stats_metadata%l_stats_samp ) then
-        !$acc parallel loop gang vector collapse(2) default(present)
+        !$acc  parallel loop gang vector collapse(2) default(present) async(1) 
         do k = 1, nz
           do i = 1, ngrdcol
             coef_wprtp2_implicit(i,k) = zero
@@ -4074,7 +4074,7 @@ module advance_xp2_xpyp_module
             
       ! The turbulent advection terms are handled entirely explicitly. Thus the LHS
       ! terms can be set to zero.
-      !$acc parallel loop gang vector collapse(3) default(present)
+      !$acc  parallel loop gang vector collapse(3) default(present) async(1) 
       do k = 1, nz
         do i = 1, ngrdcol
           do b = 1, ndiags3
@@ -4087,7 +4087,7 @@ module advance_xp2_xpyp_module
       !$acc end parallel loop
 
       if ( l_scalar_calc ) then
-        !$acc parallel loop gang vector collapse(4) default(present)
+        !$acc  parallel loop gang vector collapse(4) default(present) async(1) 
         do sclr = 1, sclr_dim
           do k = 1, nz
             do i = 1, ngrdcol
@@ -4105,7 +4105,7 @@ module advance_xp2_xpyp_module
       ! The termo-level terms only need to be set if we're not using l_upwind_xpyp_ta,
       ! or if stats output is on
       if ( .not. l_upwind_xpyp_ta .or. stats_metadata%l_stats_samp ) then
-        !$acc parallel loop gang vector collapse(2) default(present)
+        !$acc  parallel loop gang vector collapse(2) default(present) async(1) 
         do k = 1, nz
           do i = 1, ngrdcol
             term_wprtp2_explicit(i,k) = wprtp2(i,k)
@@ -4120,7 +4120,7 @@ module advance_xp2_xpyp_module
       if ( l_upwind_xpyp_ta ) then
         term_wprtp2_explicit_zm(:,:) = zt2zm_gpu( nz, ngrdcol, gr, wprtp2(:,:) )
 
-        !$acc parallel loop gang vector collapse(2) default(present)
+        !$acc  parallel loop gang vector collapse(2) default(present) async(1) 
         do k = 1, nz
           do i = 1, ngrdcol
             sgn_t_vel_rtp2(i,k) = sign(one,term_wprtp2_explicit_zm(i,k)*rtp2(i,k))
@@ -4142,7 +4142,7 @@ module advance_xp2_xpyp_module
       if ( l_upwind_xpyp_ta ) then
         term_wpthlp2_explicit_zm(:,:) = zt2zm_gpu( nz, ngrdcol, gr, wpthlp2(:,:) )
 
-        !$acc parallel loop gang vector collapse(2) default(present)
+        !$acc  parallel loop gang vector collapse(2) default(present) async(1) 
         do k = 1, nz
           do i = 1, ngrdcol
             sgn_t_vel_thlp2(i,k) = sign(one,term_wpthlp2_explicit_zm(i,k)*thlp2(i,k))
@@ -4164,7 +4164,7 @@ module advance_xp2_xpyp_module
       if ( l_upwind_xpyp_ta ) then
         term_wprtpthlp_explicit_zm(:,:) = zt2zm_gpu( nz, ngrdcol, gr, wprtpthlp(:,:) )
 
-        !$acc parallel loop gang vector collapse(2) default(present)
+        !$acc  parallel loop gang vector collapse(2) default(present) async(1) 
         do k = 1, nz
           do i = 1, ngrdcol
             sgn_t_vel_rtpthlp(i,k) = sign(one,term_wprtpthlp_explicit_zm(i,k)*rtpthlp(i,k))
@@ -4191,7 +4191,7 @@ module advance_xp2_xpyp_module
           if ( l_upwind_xpyp_ta ) then
             term_wpsclrp2_explicit_zm(:,:) = zt2zm_gpu( nz, ngrdcol, gr, wpsclrp2(:,:,sclr) )
 
-            !$acc parallel loop gang vector collapse(2) default(present)
+            !$acc  parallel loop gang vector collapse(2) default(present) async(1) 
             do k = 1, nz
               do i = 1, ngrdcol
                 sgn_t_vel_sclrp2(i,k) = sign(one,term_wpsclrp2_explicit_zm(i,k)*sclrp2(i,k,sclr))
@@ -4199,7 +4199,7 @@ module advance_xp2_xpyp_module
             end do
             !$acc end parallel loop
           else
-            !$acc parallel loop gang vector collapse(2) default(present)
+            !$acc  parallel loop gang vector collapse(2) default(present) async(1) 
             do k = 1, nz
               do i = 1, ngrdcol
                 term_wpsclrp2_explicit(i,k) = wpsclrp2(i,k,sclr)
@@ -4224,7 +4224,7 @@ module advance_xp2_xpyp_module
           if ( l_upwind_xpyp_ta ) then
             term_wprtpsclrp_explicit_zm(:,:) = zt2zm_gpu( nz, ngrdcol, gr, wpsclrprtp(:,:,sclr) )
             
-            !$acc parallel loop gang vector collapse(2) default(present)
+            !$acc  parallel loop gang vector collapse(2) default(present) async(1) 
             do k = 1, nz
               do i = 1, ngrdcol
                 sgn_t_vel_sclrprtp(i,k) = sign(one,term_wprtpsclrp_explicit_zm(i,k)*sclrprtp(i,k,sclr))
@@ -4232,7 +4232,7 @@ module advance_xp2_xpyp_module
             end do
             !$acc end parallel loop
           else
-            !$acc parallel loop gang vector collapse(2) default(present)
+            !$acc  parallel loop gang vector collapse(2) default(present) async(1) 
             do k = 1, nz
               do i = 1, ngrdcol
                 term_wprtpsclrp_explicit(i,k) = wpsclrprtp(i,k,sclr)
@@ -4258,7 +4258,7 @@ module advance_xp2_xpyp_module
           if ( l_upwind_xpyp_ta ) then
             term_wpthlpsclrp_explicit_zm(:,:) = zt2zm_gpu( nz, ngrdcol, gr, wpsclrpthlp(:,:,sclr) )
             
-            !$acc parallel loop gang vector collapse(2) default(present)
+            !$acc  parallel loop gang vector collapse(2) default(present) async(1) 
             do k = 1, nz
               do i = 1, ngrdcol
                 sgn_t_vel_sclrpthlp(i,k) = sign(one,term_wpthlpsclrp_explicit_zm(i,k)*sclrpthlp(i,k,sclr))
@@ -4266,7 +4266,7 @@ module advance_xp2_xpyp_module
             end do
             !$acc end parallel loop
           else
-            !$acc parallel loop gang vector collapse(2) default(present)
+            !$acc  parallel loop gang vector collapse(2) default(present) async(1) 
             do k = 1, nz
               do i = 1, ngrdcol
                 term_wpthlpsclrp_explicit(i,k) = wpsclrpthlp(i,k,sclr)
@@ -4304,7 +4304,7 @@ module advance_xp2_xpyp_module
         ! The termodynamic grid level coefficients are only needed if l_upwind_xpyp_ta
         ! is false, or if stats output is on
         if( .not. l_upwind_xpyp_ta .or. stats_metadata%l_stats_samp ) then
-          !$acc parallel loop gang vector collapse(2) default(present)
+          !$acc  parallel loop gang vector collapse(2) default(present) async(1) 
           do k = 1, nz
             do i = 1, ngrdcol
               coef_wprtp2_implicit(i,k)    = one_third * beta(i) * a1_zt(i,k) * wp3_on_wp2_zt(i,k)
@@ -4318,7 +4318,7 @@ module advance_xp2_xpyp_module
         ! Calculate the momentum level coefficients and sign of vertical velocity if
         ! l_upwind_xpyp_ta is true
         if ( l_upwind_xpyp_ta ) then
-          !$acc parallel loop gang vector collapse(2) default(present)
+          !$acc  parallel loop gang vector collapse(2) default(present) async(1) 
           do k = 1, nz
             do i = 1, ngrdcol
               coef_wprtp2_implicit_zm(i,k) = one_third * beta(i) * a1(i,k) * wp3_on_wp2(i,k)
@@ -4342,7 +4342,7 @@ module advance_xp2_xpyp_module
         else
 
           ! Godunov-like method for the vertical discretization of ta term
-          !$acc parallel loop gang vector collapse(2) default(present)
+          !$acc  parallel loop gang vector collapse(2) default(present) async(1) 
           do k = 1, nz
             do i = 1, ngrdcol  
               coef_wprtp2_implicit(i,k)    = one_third * beta(i) * a1_zt(i,k) * wp3_on_wp2_zt(i,k)
@@ -4361,7 +4361,7 @@ module advance_xp2_xpyp_module
 
         ! For ADG1, the LHS turbulent advection terms for 
         ! <w'rt'^2>, <w'thl'^2>, <w'rt'thl'>, and <w'sclr'x'> are all equal
-        !$acc parallel loop gang vector collapse(3) default(present)
+        !$acc  parallel loop gang vector collapse(3) default(present) async(1) 
         do k = 1, nz
           do i = 1, ngrdcol
             do b = 1, ndiags3
@@ -4373,7 +4373,7 @@ module advance_xp2_xpyp_module
         !$acc end parallel loop
 
         if ( l_scalar_calc ) then
-          !$acc parallel loop gang vector collapse(4) default(present)
+          !$acc  parallel loop gang vector collapse(4) default(present) async(1) 
           do sclr = 1, sclr_dim, 1
             do k = 1, nz
               do i = 1, ngrdcol
@@ -4397,7 +4397,7 @@ module advance_xp2_xpyp_module
           wprtp_zt(:,:)  = zm2zt_gpu( nz, ngrdcol, gr, wprtp(:,:) )
           wpthlp_zt(:,:) = zm2zt_gpu( nz, ngrdcol, gr, wpthlp(:,:) )
 
-          !$acc parallel loop gang vector collapse(2) default(present)
+          !$acc  parallel loop gang vector collapse(2) default(present) async(1) 
           do k = 1, nz
             do i = 1, ngrdcol          
               term_wprtp2_explicit(i,k)    = wp_coef_zt(i,k) * wprtp_zt(i,k)**2
@@ -4411,7 +4411,7 @@ module advance_xp2_xpyp_module
         ! Calculate the momentum level terms and sign of vertical velocity if
         ! l_upwind_xpyp_ta is true
         if ( l_upwind_xpyp_ta ) then
-          !$acc parallel loop gang vector collapse(2) default(present)
+          !$acc  parallel loop gang vector collapse(2) default(present) async(1) 
           do k = 1, nz
             do i = 1, ngrdcol            
               term_wprtp2_explicit_zm(i,k) = wp_coef(i,k) * wprtp(i,k)**2
@@ -4439,7 +4439,7 @@ module advance_xp2_xpyp_module
           ! scheme as ( one - one_third * beta ) * a1_zt**2 * wp3_on_wp2_zt / wp2_zt,
           ! and define the xpyp_term_ta_pdf_rhs_godunov subroutine in
           ! turbulent_adv_pdf.F90 to process the calculation using godunov scheme
-          !$acc parallel loop gang vector collapse(2) default(present)
+          !$acc  parallel loop gang vector collapse(2) default(present) async(1) 
           do k = 1, nz
             do i = 1, ngrdcol 
               term_wprtp2_explicit_zm(i,k) = wprtp(i,k)**2
@@ -4460,7 +4460,7 @@ module advance_xp2_xpyp_module
         ! Calculate the momentum level terms and sign of vertical velocity if
         ! l_upwind_xpyp_ta is true
         if ( l_upwind_xpyp_ta ) then
-          !$acc parallel loop gang vector collapse(2) default(present)
+          !$acc  parallel loop gang vector collapse(2) default(present) async(1) 
           do k = 1, nz
             do i = 1, ngrdcol             
               term_wpthlp2_explicit_zm(i,k) = wp_coef(i,k) * wpthlp(i,k)**2
@@ -4485,7 +4485,7 @@ module advance_xp2_xpyp_module
 
           ! Using the godunov upwind scheme for the calculation of RHS
           ! turbulent advection term for <w'thl'^2>.
-          !$acc parallel loop gang vector collapse(2) default(present)
+          !$acc  parallel loop gang vector collapse(2) default(present) async(1) 
           do k = 1, nz
             do i = 1, ngrdcol 
               term_wpthlp2_explicit_zm(i,k) = wpthlp(i,k)**2
@@ -4506,7 +4506,7 @@ module advance_xp2_xpyp_module
         ! Calculate the momentum level terms and sign of vertical velocity if
         ! l_upwind_xpyp_ta is true
         if ( l_upwind_xpyp_ta ) then
-          !$acc parallel loop gang vector collapse(2) default(present)
+          !$acc  parallel loop gang vector collapse(2) default(present) async(1) 
           do k = 1, nz
             do i = 1, ngrdcol             
               term_wprtpthlp_explicit_zm(i,k) = wp_coef(i,k) * wprtp(i,k) * wpthlp(i,k)
@@ -4532,7 +4532,7 @@ module advance_xp2_xpyp_module
           ! Using the godunov upwind scheme for the calculation of RHS
           ! turbulent
           ! advection term for <w'rt'thl'>.
-          !$acc parallel loop gang vector collapse(2) default(present)
+          !$acc  parallel loop gang vector collapse(2) default(present) async(1) 
           do k = 1, nz
             do i = 1, ngrdcol           
               term_wprtpthlp_explicit_zm(i,k) = wprtp(i,k) * wpthlp(i,k)
@@ -4565,7 +4565,7 @@ module advance_xp2_xpyp_module
             ! Calculate the momentum level terms and sign of vertical velocity if
             ! l_upwind_xpyp_ta is true, otherwise just calculate the thermo level terms
             if ( l_upwind_xpyp_ta ) then
-              !$acc parallel loop gang vector collapse(2) default(present)
+              !$acc  parallel loop gang vector collapse(2) default(present) async(1) 
               do k = 1, nz
                 do i = 1, ngrdcol
                   term_wpsclrp2_explicit_zm(i,k) = wp_coef(i,k) * wpsclrp(i,k,sclr)**2
@@ -4574,7 +4574,7 @@ module advance_xp2_xpyp_module
               end do
               !$acc end parallel loop
             else
-              !$acc parallel loop gang vector collapse(2) default(present)
+              !$acc  parallel loop gang vector collapse(2) default(present) async(1) 
               do k = 1, nz
                 do i = 1, ngrdcol
                   term_wpsclrp2_explicit(i,k) = wp_coef_zt(i,k) * wpsclrp_zt(i,k,sclr)**2
@@ -4599,7 +4599,7 @@ module advance_xp2_xpyp_module
               ! Using the godunov upwind scheme for the calculation of RHS
               ! turbulent
               ! advection term for <w'sclr'^2>.
-              !$acc parallel loop gang vector collapse(2) default(present)
+              !$acc  parallel loop gang vector collapse(2) default(present) async(1) 
               do k = 1, nz
                 do i = 1, ngrdcol 
                   term_wpsclrp2_explicit_zm(i,k) = wpsclrp(i,k,sclr)**2
@@ -4623,7 +4623,7 @@ module advance_xp2_xpyp_module
           do sclr = 1, sclr_dim
               
             if ( l_upwind_xpyp_ta ) then
-              !$acc parallel loop gang vector collapse(2) default(present)
+              !$acc  parallel loop gang vector collapse(2) default(present) async(1) 
               do k = 1, nz
                 do i = 1, ngrdcol
                   term_wprtpsclrp_explicit_zm(i,k) = wp_coef(i,k) * wpsclrp(i,k,sclr) * wprtp(i,k)
@@ -4632,7 +4632,7 @@ module advance_xp2_xpyp_module
               end do
               !$acc end parallel loop
             else
-              !$acc parallel loop gang vector collapse(2) default(present)
+              !$acc  parallel loop gang vector collapse(2) default(present) async(1) 
               do k = 1, nz
                 do i = 1, ngrdcol                
                   term_wprtpsclrp_explicit(i,k) &
@@ -4657,7 +4657,7 @@ module advance_xp2_xpyp_module
 
               ! Using the godunov upwind scheme for the calculation of RHS
               ! turbulent advection term for <w'sclr'rt'>.
-              !$acc parallel loop gang vector collapse(2) default(present)
+              !$acc  parallel loop gang vector collapse(2) default(present) async(1) 
               do k = 1, nz
                 do i = 1, ngrdcol 
                   term_wprtpsclrp_explicit_zm(i,k) = wpsclrp(i,k,sclr) * wprtp(i,k) 
@@ -4681,7 +4681,7 @@ module advance_xp2_xpyp_module
           do sclr = 1, sclr_dim
               
             if ( l_upwind_xpyp_ta ) then
-              !$acc parallel loop gang vector collapse(2) default(present)
+              !$acc  parallel loop gang vector collapse(2) default(present) async(1) 
               do k = 1, nz
                 do i = 1, ngrdcol               
                   term_wpthlpsclrp_explicit_zm(i,k) = wp_coef(i,k) * wpsclrp(i,k,sclr) * wpthlp(i,k)
@@ -4690,7 +4690,7 @@ module advance_xp2_xpyp_module
               end do
               !$acc end parallel loop
             else
-              !$acc parallel loop gang vector collapse(2) default(present)
+              !$acc  parallel loop gang vector collapse(2) default(present) async(1) 
               do k = 1, nz
                 do i = 1, ngrdcol                 
                   term_wpthlpsclrp_explicit(i,k) &
@@ -4715,7 +4715,7 @@ module advance_xp2_xpyp_module
 
               ! Using the godunov upwind scheme for the calculation of RHS
               ! turbulent advection term for <w'sclr'thl'>.
-              !$acc parallel loop gang vector collapse(2) default(present)
+              !$acc  parallel loop gang vector collapse(2) default(present) async(1) 
               do k = 1, nz
                 do i = 1, ngrdcol               
                   term_wpthlpsclrp_explicit_zm(i,k) = wpsclrp(i,k,sclr) * wpthlp(i,k)
@@ -5152,7 +5152,7 @@ module advance_xp2_xpyp_module
         ! term_wpvp2_explicit on momentum levels as
         ! coef_wpup2_wpvp2_implicit_zm(i,:), term_wpup2_explicit_zm, and
         ! term_wpvp2_explicit_zm, respectively.
-        !$acc parallel loop gang vector collapse(2) default(present)
+        !$acc  parallel loop gang vector collapse(2) default(present) async(1) 
         do k = 1, nz
           do i = 1, ngrdcol              
             coef_wpup2_implicit_zm(i,k) = one_third * beta(i) * a1(i,k) * wp3_on_wp2(i,k)
@@ -5166,7 +5166,7 @@ module advance_xp2_xpyp_module
         ! For ADG1, the sign of the turbulent velocity is the sign of
         ! <w'^3> / <w'^2>.  For simplicity, the sign of turbulent velocity is
         ! set to wp3_on_wp2.
-        !$acc parallel loop gang vector collapse(2) default(present)
+        !$acc  parallel loop gang vector collapse(2) default(present) async(1) 
         do k = 1, nz
           do i = 1, ngrdcol        
             sgn_t_vel_up2(i,k) = wp3_on_wp2(i,k)
@@ -5184,7 +5184,7 @@ module advance_xp2_xpyp_module
       
         ! Implicit coefficient on <u'^2> or <v'^2> in <w'u'^2> or <w'v'^2>
         ! equation.
-        !$acc parallel loop gang vector collapse(2) default(present)
+        !$acc  parallel loop gang vector collapse(2) default(present) async(1) 
         do k = 1, nz
           do i = 1, ngrdcol        
             coef_wpup2_implicit(i,k) = one_third * beta(i) * a1_zt(i,k) * wp3_on_wp2_zt(i,k)
@@ -5194,7 +5194,7 @@ module advance_xp2_xpyp_module
         !$acc end parallel loop
     
         ! Explicit (RHS) term in <w'u'^2> equation.
-        !$acc parallel loop gang vector collapse(2) default(present)
+        !$acc  parallel loop gang vector collapse(2) default(present) async(1) 
         do k = 1, nz
           do i = 1, ngrdcol
             term_wpup2_explicit(i,k) = wp_coef_zt(i,k) * upwp_zt(i,k)**2
@@ -5216,7 +5216,7 @@ module advance_xp2_xpyp_module
                                  lhs_ta_wpup2 )                           ! Intent(out)
 
       ! The same LHS is used for <w'u'^2> and <w'v'^2>
-      !$acc parallel loop gang vector collapse(3) default(present)
+      !$acc  parallel loop gang vector collapse(3) default(present) async(1) 
       do k = 1, nz
         do i = 1, ngrdcol
           do b = 1, ndiags3
@@ -5250,9 +5250,9 @@ module advance_xp2_xpyp_module
     ! <w'rt'^2>, <w'thl'^2>, and <w'rt'thl'> used in the calcualtion of
     ! the turbulent advection terms
     if ( stats_metadata%l_stats_samp ) then
-      !$acc update host( coef_wprtp2_implicit, term_wprtp2_explicit, &
-      !$acc              coef_wpthlp2_implicit, term_wpthlp2_explicit, &
-      !$acc              coef_wprtpthlp_implicit, term_wprtpthlp_explicit )
+      !$acc  update host( coef_wprtp2_implicit, term_wprtp2_explicit, & 
+      !$acc               coef_wpthlp2_implicit, term_wpthlp2_explicit, & 
+      !$acc               coef_wprtpthlp_implicit, term_wprtpthlp_explicit ) wait 
       do i = 1, ngrdcol
         tmp_in(1) = 0.0_core_rknd
         tmp_in(2:nz) = coef_wprtp2_implicit(i,2:nz)
@@ -5292,7 +5292,7 @@ module advance_xp2_xpyp_module
     !$acc                 term_wpvp2_explicit, coef_wpup2_implicit_zm, term_wpup2_explicit_zm, &
     !$acc                 term_wpvp2_explicit_zm, sgn_t_vel_rtp2, &
     !$acc                 sgn_t_vel_thlp2, sgn_t_vel_rtpthlp, sgn_t_vel_up2, sgn_t_vel_vp2, & 
-    !$acc                 a1, a1_zt, upwp_zt, vpwp_zt, wprtp_zt, wpthlp_zt, wp_coef, wp_coef_zt )
+    !$acc                 a1, a1_zt, upwp_zt, vpwp_zt, wprtp_zt, wpthlp_zt, wp_coef, wp_coef_zt ) wait
 
     !$acc exit data if( sclr_dim > 0 ) &
     !$acc         delete( coef_wpsclrp2_implicit, term_wpsclrp2_explicit, &
@@ -5301,7 +5301,7 @@ module advance_xp2_xpyp_module
     !$acc                 coef_wprtpsclrp_implicit_zm, term_wprtpsclrp_explicit_zm, &
     !$acc                 coef_wpthlpsclrp_implicit, coef_wpthlpsclrp_implicit_zm, &
     !$acc                 term_wpthlpsclrp_explicit_zm, sgn_t_vel_sclrp2, sgn_t_vel_sclrprtp, &
-    !$acc                 sgn_t_vel_sclrpthlp, wpsclrp_zt )
+    !$acc                 sgn_t_vel_sclrpthlp, wpsclrp_zt ) wait
     
     return
                                  
@@ -5368,7 +5368,7 @@ module advance_xp2_xpyp_module
 
     !------------------------ Begin Code ------------------------
 
-    !$acc parallel loop gang vector collapse(2) default(present)
+    !$acc  parallel loop gang vector collapse(2) default(present) async(1) 
     do k = 2, nz-1
       do i = 1, ngrdcol
         rhs(i,k) = - wpxbp(i,k) * invrs_dzm(i,k) * ( xam(i,k+1) - xam(i,k) ) & 
@@ -5458,7 +5458,7 @@ module advance_xp2_xpyp_module
 
     !--------------------------- Begin Code ---------------------------
 
-    !$acc parallel loop gang vector default(present)
+    !$acc  parallel loop gang vector default(present) async(1) 
     do i = 1, ngrdcol
       ! Zero boundary
       lhs(i,1) = zero
@@ -5466,7 +5466,7 @@ module advance_xp2_xpyp_module
     end do
     !$acc end parallel loop
 
-    !$acc parallel loop gang vector collapse(2) default(present)
+    !$acc  parallel loop gang vector collapse(2) default(present) async(1) 
     do k = 2, nz-1
       do i = 1, ngrdcol
         ! Momentum main diagonal: [ x xapxbp(k,<t+1>) ]
@@ -5547,7 +5547,7 @@ module advance_xp2_xpyp_module
 
     !--------------------------- Begin Code ---------------------------
 
-    !$acc parallel loop gang vector collapse(2) default(present)
+    !$acc  parallel loop gang vector collapse(2) default(present) async(1) 
     do k = 1, nz
       do i = 1, ngrdcol
         rhs(i,k) = + Cn(i,k) * invrs_tau_zm(i,k) * threshold
@@ -5675,7 +5675,7 @@ module advance_xp2_xpyp_module
 
     !------------------------- Begin Code -------------------------
 
-    !$acc parallel loop gang vector collapse(2) default(present)
+    !$acc  parallel loop gang vector collapse(2) default(present) async(1) 
     do k = 2, nz-1
       do i = 1, ngrdcol
         rhs(i,k) = + one_third * C4(i) * ( xbp2(i,k) + wp2(i,k) ) * invrs_tau_C4_zm(i,k)  &
@@ -5790,7 +5790,7 @@ module advance_xp2_xpyp_module
     ! use original version of term_pr2
 
     ! As applied to w'2
-    !$acc parallel loop gang vector collapse(2) default(present)
+    !$acc  parallel loop gang vector collapse(2) default(present) async(1) 
     do k = 2, nz-1
       do i = 1, ngrdcol
         rhs_pr2(i,k) = + two_thirds &
@@ -5895,7 +5895,7 @@ module advance_xp2_xpyp_module
 
     if ( stats_metadata%l_stats_samp ) then
 
-      !$acc update host( xp2_np1 )
+      !$acc  update host( xp2_np1 ) wait 
 
       ! Store previous value for effect of the positive definite scheme
       do i = 1, ngrdcol
@@ -5914,7 +5914,7 @@ module advance_xp2_xpyp_module
 
     if ( stats_metadata%l_stats_samp ) then
 
-      !$acc update host( xp2_np1 )
+      !$acc  update host( xp2_np1 ) wait 
 
       ! Store previous value for effect of the positive definite scheme
       do i = 1, ngrdcol

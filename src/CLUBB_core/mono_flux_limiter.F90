@@ -447,10 +447,10 @@ module mono_flux_limiter
 
     !---------------------------- Begin Code ----------------------------
 
-    !$acc enter data create( xp2_zt, xm_enter_mfl, xm_without_ta, wpxp_net_adjust, &
-    !$acc                    min_x_allowable_lev, max_x_allowable_lev, min_x_allowable, &
-    !$acc                    max_x_allowable, wpxp_mfl_max, wpxp_mfl_min, lhs_mfl_xm, &
-    !$acc                    rhs_mfl_xm, l_adjustment_needed, xm_mfl )
+    !$acc  enter data create( xp2_zt, xm_enter_mfl, xm_without_ta, wpxp_net_adjust, & 
+    !$acc                     min_x_allowable_lev, max_x_allowable_lev, min_x_allowable, & 
+    !$acc                     max_x_allowable, wpxp_mfl_max, wpxp_mfl_min, lhs_mfl_xm, & 
+    !$acc                     rhs_mfl_xm, l_adjustment_needed, xm_mfl ) async(1) 
 
     select case( solve_type )
     case ( mono_flux_rtm )  ! rtm/wprtp
@@ -477,7 +477,7 @@ module mono_flux_limiter
 
 
     if ( stats_metadata%l_stats_samp ) then
-      !$acc update host( wpxp, xm )
+      !$acc  update host( wpxp, xm ) wait 
       do i = 1, ngrdcol
         call stat_begin_update( nz, iwpxp_mfl, wpxp(i,:) / dt, & ! intent(in)
                                 stats_zm(i) ) ! intent(inout)
@@ -488,7 +488,7 @@ module mono_flux_limiter
       end do
     endif
     if ( stats_metadata%l_stats_samp .and. solve_type == mono_flux_thlm ) then
-      !$acc update host( xm, xm_old, wpxp )
+      !$acc  update host( xm, xm_old, wpxp ) wait 
       do i = 1, ngrdcol
         tmp_in(1) = 0.0_core_rknd
         tmp_in(2:nz) = xm(i,2:nz)
@@ -502,7 +502,7 @@ module mono_flux_limiter
                               stats_zm(i) ) ! intent(inout)
       end do
     elseif ( stats_metadata%l_stats_samp .and. solve_type == mono_flux_rtm ) then
-      !$acc update host( xm, xm_old, wpxp )
+      !$acc  update host( xm, xm_old, wpxp ) wait 
       do i = 1, ngrdcol
         tmp_in(1) = 0.0_core_rknd
         tmp_in(2:nz) = xm(i,2:nz)
@@ -518,7 +518,7 @@ module mono_flux_limiter
     endif
     
 
-    !$acc parallel loop gang vector collapse(2) default(present)
+    !$acc  parallel loop gang vector collapse(2) default(present) async(1) 
     do k = 1, nz
       do i = 1, ngrdcol
         ! Initialize arrays.
@@ -539,7 +539,7 @@ module mono_flux_limiter
     ! the model code.  The upper limit is a reasonable upper limit.  This is
     ! done to prevent unphysically large standard deviations caused by numerical
     ! instabilities in the x'^2 profile.
-    !$acc parallel loop gang vector collapse(2) default(present)
+    !$acc  parallel loop gang vector collapse(2) default(present) async(1) 
     do k = 1, nz
       do i = 1, ngrdcol
         xp2_zt(i,k) = min( max( xp2_zt(i,k), xp2_threshold ), max_xp2 )
@@ -551,7 +551,7 @@ module mono_flux_limiter
     ! vertical level.  Start from level 2, which is the first level above
     ! the ground (or above the model surface).  This computation needs to be
     ! performed for all vertical levels above the ground (or model surface).
-    !$acc parallel loop gang vector collapse(2) default(present)
+    !$acc  parallel loop gang vector collapse(2) default(present) async(1) 
     do k = 2, nz, 1
       do i = 1, ngrdcol
 
@@ -609,7 +609,7 @@ module mono_flux_limiter
     !$acc end parallel loop
 
     ! Boundary condition on xm_without_ta    
-    !$acc parallel loop gang vector default(present)
+    !$acc  parallel loop gang vector default(present) async(1) 
     do i = 1, ngrdcol
       xm_without_ta(i,1) = xm(i,1)
       min_x_allowable_lev(i,1) = min_x_allowable_lev(i,2)
@@ -625,7 +625,7 @@ module mono_flux_limiter
     ! are not altered.
 
     ! Find the smallest and largest value of all relevant levels for variable x.
-    !$acc parallel loop gang vector collapse(2) default(present)
+    !$acc  parallel loop gang vector collapse(2) default(present) async(1) 
     do k = 2, nz-1
       do i = 1, ngrdcol
 
@@ -647,7 +647,7 @@ module mono_flux_limiter
     end do
     !$acc end parallel loop
 
-    !$acc parallel loop gang vector default(present)
+    !$acc  parallel loop gang vector default(present) async(1) 
     do i = 1, ngrdcol
       do k = 2, nz-1
  
@@ -769,7 +769,7 @@ module mono_flux_limiter
     !$acc end parallel loop
 
     ! Boundary conditions
-    !$acc parallel loop gang vector default(present)
+    !$acc  parallel loop gang vector default(present) async(1) 
     do i = 1, ngrdcol
       min_x_allowable(i,1) = 0._core_rknd
       max_x_allowable(i,1) = 0._core_rknd
@@ -786,8 +786,8 @@ module mono_flux_limiter
     !$acc end parallel loop
 
     if ( stats_metadata%l_stats_samp .and. solve_type == mono_flux_thlm ) then
-      !$acc update host( xm_without_ta, min_x_allowable, wpxp_mfl_min, &
-      !$acc              wpxp_mfl_max, max_x_allowable )
+      !$acc  update host( xm_without_ta, min_x_allowable, wpxp_mfl_min, & 
+      !$acc               wpxp_mfl_max, max_x_allowable ) wait 
       do i = 1, ngrdcol
         tmp_in(1) = 0.0_core_rknd
         tmp_in(2:nz) = xm_without_ta(i,2:nz)
@@ -807,8 +807,8 @@ module mono_flux_limiter
                               stats_zm(i) ) ! intent(inout)
       end do
     elseif ( stats_metadata%l_stats_samp .and. solve_type == mono_flux_rtm ) then
-      !$acc update host( xm_without_ta, min_x_allowable, max_x_allowable,  &
-      !$acc              wpxp_mfl_min, wpxp_mfl_max )
+      !$acc  update host( xm_without_ta, min_x_allowable, max_x_allowable, & 
+      !$acc               wpxp_mfl_min, wpxp_mfl_max ) wait 
       do i = 1, ngrdcol
         tmp_in(1) = 0.0_core_rknd
         tmp_in(2:nz) = xm_without_ta(i,2:nz)
@@ -831,14 +831,14 @@ module mono_flux_limiter
 
     l_any_adjustment_needed = .false.
 
-    !$acc parallel loop gang vector default(present)
+    !$acc  parallel loop gang vector default(present) async(1) 
     do i = 1, ngrdcol
       l_adjustment_needed(i) = .false.
     end do
     !$acc end parallel loop
 
     !$acc parallel loop gang vector collapse(2) default(present) &
-    !$acc          reduction(.or.:l_any_adjustment_needed)
+    !$acc          reduction(.or.:l_any_adjustment_needed) wait
     do i = 1, ngrdcol
       do k = 1, nz
         if ( abs(wpxp_net_adjust(i,k)) > eps ) then
@@ -875,7 +875,7 @@ module mono_flux_limiter
                            xm_mfl )                                          ! intent(out)
 
         ! If an adjustment is for a column
-        !$acc parallel loop gang vector collapse(2) default(present)
+        !$acc  parallel loop gang vector collapse(2) default(present) async(1) 
         do k = 1, nz
           do i = 1, ngrdcol 
             if ( l_adjustment_needed(i) ) then
@@ -896,7 +896,7 @@ module mono_flux_limiter
         ! index (t+1), which is based upon the array of the amounts of w'x'
         ! adjustments.
 
-        !$acc parallel loop gang vector collapse(2) default(present)
+        !$acc  parallel loop gang vector collapse(2) default(present) async(1) 
         do k = 2, nz, 1
           do i = 1, ngrdcol 
 
@@ -920,7 +920,7 @@ module mono_flux_limiter
         !$acc end parallel loop
 
         ! Boundary condition on xm
-        !$acc parallel loop gang vector default(present)
+        !$acc  parallel loop gang vector default(present) async(1) 
         do i = 1, ngrdcol 
           xm(i,1) = xm(i,2)
         end do
@@ -934,7 +934,7 @@ module mono_flux_limiter
       !enddo
 
       !Ensure there are no spikes at the top of the domain
-      !$acc parallel loop gang vector default(present)
+      !$acc  parallel loop gang vector default(present) async(1) 
       do i = 1, ngrdcol 
 
         if (abs( xm(i,nz) - xm_enter_mfl(i,nz) ) > 10._core_rknd * xm_tol) then
@@ -997,7 +997,7 @@ module mono_flux_limiter
     end if
 
     if ( stats_metadata%l_stats_samp ) then
-      !$acc update host( wpxp, xm )
+      !$acc  update host( wpxp, xm ) wait 
       do i = 1, ngrdcol
 
         call stat_end_update( nz, iwpxp_mfl, wpxp(i,:) / dt, & ! intent(in)
@@ -1029,7 +1029,7 @@ module mono_flux_limiter
     !$acc exit data delete( xp2_zt, xm_enter_mfl, xm_without_ta, wpxp_net_adjust, &
     !$acc                   min_x_allowable_lev, max_x_allowable_lev, min_x_allowable, &
     !$acc                   max_x_allowable, wpxp_mfl_max, wpxp_mfl_min, lhs_mfl_xm, &
-    !$acc                   rhs_mfl_xm, l_adjustment_needed, xm_mfl )
+    !$acc                   rhs_mfl_xm, l_adjustment_needed, xm_mfl ) wait
 
     return
     
@@ -1118,7 +1118,7 @@ module mono_flux_limiter
                            l_upwind_xm_ma,                     & ! intent(in)
                            lhs )                                 ! intent(out)
     else
-      !$acc parallel loop gang vector collapse(3) default(present)
+      !$acc  parallel loop gang vector collapse(3) default(present) async(1) 
       do k = 1, nz
         do i = 1, ngrdcol
           do b = 1, ndiags3
@@ -1129,7 +1129,7 @@ module mono_flux_limiter
       !$acc end parallel loop
     endif
 
-    !$acc parallel loop gang vector collapse(2) default(present)
+    !$acc  parallel loop gang vector collapse(2) default(present) async(1) 
     do k = 2, nz, 1
       do i = 1, ngrdcol
         ! LHS xm time tendency.
@@ -1141,7 +1141,7 @@ module mono_flux_limiter
     ! Boundary conditions.
 
     ! Lower boundary
-    !$acc parallel loop gang vector collapse(2) default(present)
+    !$acc  parallel loop gang vector collapse(2) default(present) async(1) 
     do k = 1, nz
       do i = 1, ngrdcol 
         lhs(:,i,1)       = 0.0_core_rknd
@@ -1205,7 +1205,7 @@ module mono_flux_limiter
     ! level k = 1, which is below the model surface, is simply set equal to the
     ! value of xm at level k = 2 after the solve has been completed.
 
-    !$acc parallel loop gang vector collapse(2) default(present)
+    !$acc  parallel loop gang vector collapse(2) default(present) async(1) 
     do k = 2, nz, 1
       do i = 1, ngrdcol
 
@@ -1242,7 +1242,7 @@ module mono_flux_limiter
     ! The value of xm at the lower boundary will remain the same.  However, the
     ! value of xm at the lower boundary gets overwritten after the matrix is
     ! solved for the next timestep, such that xm(1) = xm(2).
-    !$acc parallel loop gang vector default(present)
+    !$acc  parallel loop gang vector default(present) async(1) 
     do i = 1, ngrdcol
       rhs(i,1) = xm_old(i,1)
     end do
@@ -1341,7 +1341,7 @@ module mono_flux_limiter
     end if
 
     ! Boundary condition on xm
-    !$acc parallel loop gang vector default(present)
+    !$acc  parallel loop gang vector default(present) async(1) 
     do i = 1, ngrdcol
       xm(i,1) = xm(i,2)
     end do
@@ -1452,7 +1452,7 @@ module mono_flux_limiter
 
     !------------------------- Begin Code -------------------------
 
-    !$acc enter data create( vert_vel_up, vert_vel_down, w_min )
+    !$acc  enter data create( vert_vel_up, vert_vel_down, w_min ) async(1) 
 
     if ( l_constant_thickness ) then ! thickness is a constant value.
 
@@ -1557,7 +1557,7 @@ module mono_flux_limiter
 
       invrs_dt = 1.0_core_rknd / dt
 
-      !$acc parallel loop gang vector collapse(2) default(present)
+      !$acc  parallel loop gang vector collapse(2) default(present) async(1) 
       do k = 1, nz
         do i = 1, ngrdcol
           w_min(i,k) = gr%dzm(i,k) * invrs_dt
@@ -1577,7 +1577,7 @@ module mono_flux_limiter
                                   vert_vel_down, vert_vel_up ) ! intent(out)
 
       ! The value of w'x' may only be altered between levels 3 and gr%nz-2.
-      !$acc parallel loop gang vector collapse(2) default(present)
+      !$acc  parallel loop gang vector collapse(2) default(present) async(1) 
       do k = 3, nz-2, 1
         do i = 1, ngrdcol
 
@@ -1638,7 +1638,7 @@ module mono_flux_limiter
       ! level through downwards motion (traveling from higher levels to
       ! reach the central thermodynamic level).
 
-      !$acc parallel loop gang vector collapse(2) default(present)
+      !$acc  parallel loop gang vector collapse(2) default(present) async(1) 
       do k = 3, nz-2, 1
         do i = 1, ngrdcol
 
@@ -1699,7 +1699,7 @@ module mono_flux_limiter
     ! Information for levels 1, 2, gr%nz-1, and gr%nz is not needed.
     ! However, set the values at these levels for purposes of not having odd
     ! values in the arrays.
-    !$acc parallel loop gang vector default(present)
+    !$acc  parallel loop gang vector default(present) async(1) 
     do i = 1, ngrdcol
       low_lev_effect(i,1)  = 1
       high_lev_effect(i,1) = 1
@@ -1712,7 +1712,7 @@ module mono_flux_limiter
     end do
     !$acc end parallel loop
 
-    !$acc exit data delete( vert_vel_up, vert_vel_down, w_min )
+    !$acc exit data delete( vert_vel_up, vert_vel_down, w_min ) wait
 
     return
 
@@ -1971,7 +1971,7 @@ module mono_flux_limiter
 
     !------------------------- Begin Code -------------------------
 
-    !$acc enter data create( mean_w_down_1st, mean_w_down_2nd, mean_w_up_1st, mean_w_up_2nd )
+    !$acc  enter data create( mean_w_down_1st, mean_w_down_2nd, mean_w_up_1st, mean_w_up_2nd ) async(1) 
 
     call calc_mean_w_up_down_component( nz, ngrdcol, & ! intent(in)
                                         w_1_zm, varnce_w_1_zm, & ! intent(in)
@@ -1984,7 +1984,7 @@ module mono_flux_limiter
                                         mean_w_down_2nd, mean_w_up_2nd ) ! intent(out)
 
     ! Overall mean of downwards w.
-    !$acc parallel loop gang vector collapse(2) default(present)
+    !$acc  parallel loop gang vector collapse(2) default(present) async(1) 
     do k = 1, nz
       do i = 1, ngrdcol
         mean_w_down(i,k) = mixt_frac_zm(i,k) * mean_w_down_1st(i,k) &
@@ -1994,7 +1994,7 @@ module mono_flux_limiter
     !$acc end parallel loop
 
     ! Overall mean of upwards w.
-    !$acc parallel loop gang vector collapse(2) default(present)
+    !$acc  parallel loop gang vector collapse(2) default(present) async(1) 
     do k = 1, nz
       do i = 1, ngrdcol
         mean_w_up(i,k) = mixt_frac_zm(i,k) * mean_w_up_1st(i,k)  &
@@ -2004,7 +2004,7 @@ module mono_flux_limiter
     !$acc end parallel loop
 
     if ( stats_metadata%l_stats_samp ) then
-      !$acc update host( mean_w_up, mean_w_down )
+      !$acc  update host( mean_w_up, mean_w_down ) wait 
       do i = 1, ngrdcol
          call stat_update_var( stats_metadata%imean_w_up, mean_w_up(i,:), & ! intent(in)
                                stats_zm(i) ) ! intent(inout)
@@ -2014,7 +2014,7 @@ module mono_flux_limiter
       end do
     end if ! stats_metadata%l_stats_samp
 
-    !$acc exit data delete( mean_w_down_1st, mean_w_down_2nd, mean_w_up_1st, mean_w_up_2nd )
+    !$acc exit data delete( mean_w_down_1st, mean_w_down_2nd, mean_w_up_1st, mean_w_up_2nd ) wait
 
     return
 
@@ -2099,7 +2099,7 @@ module mono_flux_limiter
 
     ! Loop over momentum levels from 2 to nz-1.  Levels 1 and nz
     ! are not needed.
-    !$acc parallel loop gang vector collapse(2) default(present)
+    !$acc  parallel loop gang vector collapse(2) default(present) async(1) 
     do k = 2, nz-1
       do i = 1, ngrdcol
       
@@ -2145,7 +2145,7 @@ module mono_flux_limiter
     !$acc end parallel loop
 
     ! Upper and lower levels are not used, set to 0 to besafe and avoid NaN problems
-    !$acc parallel loop gang vector default(present)
+    !$acc  parallel loop gang vector default(present) async(1) 
     do i = 1, ngrdcol
       mean_w_down_i(i,1) = 0.0_core_rknd
       mean_w_up_i(i,1) = 0.0_core_rknd

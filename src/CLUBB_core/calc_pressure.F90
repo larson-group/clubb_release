@@ -234,7 +234,7 @@ module calc_pressure
     ! ---------------------------- Begin Code ----------------------------
 
     ! Calculate mean theta_v
-    !$acc parallel loop gang vector collapse(2) default(present)
+    !$acc parallel loop gang vector collapse(2) default(present) wait
     do k = 1, nz
       do i = 1, ngrdcol
         thvm(i,k) = thlm(i,k) + ep1 * thv_ds_zt(i,k) * rtm(i,k) &

@@ -2544,6 +2544,10 @@ module clubb_driver
         ! To avoid running with multiple columns, set num_standalone_columns=1
         ! in the configurable_multi_column_nl namelist, located in the 
         ! configurable_model_flags.in 
+
+        !stats_metadata%l_stats_samp = .false.
+        !call set_clubb_debug_level( 0 ) ! Intent(in)
+        
         call advance_clubb_core_standalone_multicol( &
                num_standalone_columns, multicol_nc_file, &                          ! Intent(in)
                nzmax, momentum_heights, thermodynamic_heights, &                    ! Intent(in)
@@ -2587,6 +2591,10 @@ module clubb_driver
                thlprcp, wprcp, w_up_in_cloud, w_down_in_cloud, &                    ! Intent(out)
                cloudy_updraft_frac, cloudy_downdraft_frac, &                        ! Intent(out)
                rcm_in_layer, cloud_cover, invrs_tau_zm )                            ! Intent(out)
+
+        !stats_metadata%l_stats_samp = .true.
+        !call set_clubb_debug_level( debug_level ) ! Intent(in)
+
       end if
 
       if ( clubb_at_least_debug_level( 0 ) ) then

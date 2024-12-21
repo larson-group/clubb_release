@@ -403,17 +403,17 @@ module advance_wp2_wp3_module
 
     integer :: k, i, b
 
-    !$acc enter data create( wp2_old, wp3_old, C1_Skw_fnc, C11_Skw_fnc, C16_fnc, C_wp3_pr_tp, &
-    !$acc                    wp3_term_ta_lhs_result, wp3_pr3_lhs, lhs_ta_wp2, &
-    !$acc                    lhs_tp_wp3, lhs_adv_tp_wp3, lhs_pr_tp_wp3, &
-    !$acc                    lhs_ta_wp3, lhs_dp1_wp2, rhs_dp1_wp2, lhs_pr1_wp2, &
-    !$acc                    rhs_pr1_wp2, lhs_pr1_wp3, rhs_pr1_wp3, rhs_bp_pr2_wp2, &
-    !$acc                    rhs_pr_dfsn_wp2, rhs_bp1_pr2_wp3, rhs_pr3_wp2, &
-    !$acc                    rhs_pr3_wp3, rhs_ta_wp3, rhs_pr_turb_wp3, rhs_pr_dfsn_wp3, &
-    !$acc                    lhs_diff_zm, lhs_diff_zt, lhs_diff_zm_crank, lhs_diff_zt_crank, &
-    !$acc                    lhs_ma_zm, lhs_ma_zt, lhs_ac_pr2_wp2, lhs_ac_pr2_wp3, &
-    !$acc                    coef_wp4_implicit_zt, coef_wp4_implicit, a1, a1_zt, &
-    !$acc                    dum_dz, dvm_dz, lhs, rhs, Kw1, Kw8, Kw1_zm, Kw8_zt )
+    !$acc  enter data create( wp2_old, wp3_old, C1_Skw_fnc, C11_Skw_fnc, C16_fnc, C_wp3_pr_tp, & 
+    !$acc                     wp3_term_ta_lhs_result, wp3_pr3_lhs, lhs_ta_wp2, & 
+    !$acc                     lhs_tp_wp3, lhs_adv_tp_wp3, lhs_pr_tp_wp3, & 
+    !$acc                     lhs_ta_wp3, lhs_dp1_wp2, rhs_dp1_wp2, lhs_pr1_wp2, & 
+    !$acc                     rhs_pr1_wp2, lhs_pr1_wp3, rhs_pr1_wp3, rhs_bp_pr2_wp2, & 
+    !$acc                     rhs_pr_dfsn_wp2, rhs_bp1_pr2_wp3, rhs_pr3_wp2, & 
+    !$acc                     rhs_pr3_wp3, rhs_ta_wp3, rhs_pr_turb_wp3, rhs_pr_dfsn_wp3, & 
+    !$acc                     lhs_diff_zm, lhs_diff_zt, lhs_diff_zm_crank, lhs_diff_zt_crank, & 
+    !$acc                     lhs_ma_zm, lhs_ma_zt, lhs_ac_pr2_wp2, lhs_ac_pr2_wp3, & 
+    !$acc                     coef_wp4_implicit_zt, coef_wp4_implicit, a1, a1_zt, & 
+    !$acc                     dum_dz, dvm_dz, lhs, rhs, Kw1, Kw8, Kw1_zm, Kw8_zt ) async(1) 
 
     !-----------------------------------------------------------------------
 
@@ -449,7 +449,7 @@ module advance_wp2_wp3_module
     !    are hardwired.
 
     if ( l_use_C11_Richardson ) then
-      !$acc parallel loop gang vector collapse(2) default(present)
+      !$acc  parallel loop gang vector collapse(2) default(present) async(1) 
       do k = 1, nz
         do i = 1, ngrdcol
           C11_Skw_fnc(i,k) = Cx_fnc_Richardson(i,k)
@@ -458,7 +458,7 @@ module advance_wp2_wp3_module
       !$acc end parallel loop
     else
 
-      !$acc parallel loop gang vector collapse(2) default(present)
+      !$acc  parallel loop gang vector collapse(2) default(present) async(1) 
       do k = 1, nz
         do i = 1, ngrdcol
 
@@ -480,7 +480,7 @@ module advance_wp2_wp3_module
 
     end if ! l_use_C11_Richardson
 
-    !$acc parallel loop gang vector collapse(2) default(present)
+    !$acc  parallel loop gang vector collapse(2) default(present) async(1) 
     do k = 1, nz
       do i = 1, ngrdcol
 
@@ -503,7 +503,7 @@ module advance_wp2_wp3_module
       ! Insert 1/3 here to account for the fact that in the dissipation term, 
       !   (2/3)*em = (2/3)*(1/2)*(wp2+up2+vp2).  Then we can insert wp2, up2,
       !   and vp2 directly into the dissipation subroutines without prefixing them by (1/3).
-      !$acc parallel loop gang vector collapse(2) default(present)
+      !$acc  parallel loop gang vector collapse(2) default(present) async(1) 
       do k = 1, nz
         do i = 1, ngrdcol
           C1_Skw_fnc(i,k) = one_third * C1_Skw_fnc(i,k)
@@ -513,7 +513,7 @@ module advance_wp2_wp3_module
     end if
 
     ! Set C16_fnc based on Richardson_num
-    !$acc parallel loop gang vector collapse(2) default(present)
+    !$acc  parallel loop gang vector collapse(2) default(present) async(1) 
     do k = 1, nz
       do i = 1, ngrdcol
         C16_fnc(i,k) = Cx_fnc_Richardson(i,k)
@@ -523,7 +523,7 @@ module advance_wp2_wp3_module
 
     if ( clubb_at_least_debug_level( 0 ) ) then
 
-      !$acc parallel loop gang vector collapse(2) default(present) reduction(.or.:err_code)
+      !$acc parallel loop gang vector collapse(2) default(present) reduction(.or.:err_code) wait
       do k = 1, nz
         do i = 1, ngrdcol
           ! Assertion check for C11_Skw_fnc
@@ -535,7 +535,7 @@ module advance_wp2_wp3_module
       end do
       !$acc end parallel loop
 
-      !$acc parallel loop gang vector collapse(2) default(present) reduction(.or.:err_code)
+      !$acc parallel loop gang vector collapse(2) default(present) reduction(.or.:err_code) wait
       do k = 1, nz
         do i = 1, ngrdcol
           ! Assertion check for C11_Skw_fnc
@@ -555,7 +555,7 @@ module advance_wp2_wp3_module
 
     if ( stats_metadata%l_stats_samp ) then
 
-      !$acc update host( C11_Skw_fnc, C1_Skw_fnc )
+      !$acc  update host( C11_Skw_fnc, C1_Skw_fnc ) wait 
 
       do i = 1, ngrdcol
         call stat_update_var( stats_metadata%iC11_Skw_fnc, C11_Skw_fnc(i,:), & ! intent(in)
@@ -566,7 +566,7 @@ module advance_wp2_wp3_module
     endif
 
     ! Define the Coefficent of Eddy Diffusivity for the wp2 and wp3.
-    !$acc parallel loop gang vector collapse(2) default(present)
+    !$acc  parallel loop gang vector collapse(2) default(present) async(1) 
     do k = 1, nz
       do i = 1, ngrdcol
 
@@ -624,7 +624,7 @@ module advance_wp2_wp3_module
         ! Define a_1 and a_3 (both are located on momentum levels).
         ! They are variables that are both functions of sigma_sqd_w (where
         ! sigma_sqd_w is located on momentum levels).
-        !$acc parallel loop gang vector collapse(2) default(present)
+        !$acc  parallel loop gang vector collapse(2) default(present) async(1) 
         do k = 1, nz
           do i = 1, ngrdcol
             a1(i,k) = one / ( one - sigma_sqd_w(i,k) )
@@ -641,7 +641,7 @@ module advance_wp2_wp3_module
     endif ! .not. l_explicit_turbulent_adv_wp3
     
     ! Not using pressure term, set to 0
-    !$acc parallel loop gang vector collapse(2) default(present)
+    !$acc  parallel loop gang vector collapse(2) default(present) async(1) 
     do k = 1, nz
       do i = 1, ngrdcol
         rhs_pr3_wp3(i,k) = zero
@@ -650,7 +650,7 @@ module advance_wp2_wp3_module
     !$acc end parallel loop
     
     ! Initiaize some terms to zero
-    !$acc parallel loop gang vector default(present) collapse(3)
+    !$acc  parallel loop gang vector default(present) collapse(3) async(1) 
     do k = 1, nz
       do i = 1, ngrdcol
         do b = 1, ndiags5
@@ -706,7 +706,7 @@ module advance_wp2_wp3_module
     
     ! Calculate RHS eddy diffusion terms for w'2 and w'3
     if ( l_crank_nich_diff ) then
-      !$acc parallel loop gang vector collapse(2) default(present)
+      !$acc  parallel loop gang vector collapse(2) default(present) async(1) 
       do k = 2, nz-1
         do i = 1, ngrdcol
           lhs_diff_zm_crank(1,i,k) = lhs_diff_zm(1,i,k) * one_half
@@ -736,7 +736,7 @@ module advance_wp2_wp3_module
                              lhs_pr1_wp2 )                            ! intent(out)
     end if
                         
-    !$acc parallel loop gang vector default(present)
+    !$acc  parallel loop gang vector default(present) async(1) 
     do i = 1, ngrdcol
       C_wp3_pr_tp(i) = one
     end do
@@ -747,7 +747,7 @@ module advance_wp2_wp3_module
                           wp2, rho_ds_zm, invrs_rho_ds_zt,  & ! intent(in)
                           lhs_adv_tp_wp3 )                    ! intent(out)
 
-    !$acc parallel loop gang vector default(present)
+    !$acc  parallel loop gang vector default(present) async(1) 
     do i = 1, ngrdcol
       C_wp3_pr_tp(i) = -clubb_params(i,iC_wp3_pr_tp)
     end do
@@ -759,7 +759,7 @@ module advance_wp2_wp3_module
                           lhs_pr_tp_wp3 )                     ! intent(out)
                           
     ! Sum contributions to turbulent production from standard term & damping
-    !$acc parallel loop gang vector default(present) collapse(3)
+    !$acc  parallel loop gang vector default(present) collapse(3) async(1) 
     do k = 1, nz
       do i = 1, ngrdcol
         do b = 1, ndiags2
@@ -897,7 +897,7 @@ module advance_wp2_wp3_module
                          l_upwind_xm_ma,                        & ! intent(in)
                          lhs_ma_zt )                              ! intent(out)
 
-    !$acc parallel loop gang vector default(present) collapse(3)
+    !$acc  parallel loop gang vector default(present) collapse(3) async(1) 
     do k = 1, nz
       do i = 1, ngrdcol
         do b = 1, ndiags3
@@ -911,7 +911,7 @@ module advance_wp2_wp3_module
 
       ! Using a Crank-Nicholson time step for diffusion terms
       ! Modify diffusion terms
-      !$acc parallel loop gang vector collapse(2) default(present)
+      !$acc  parallel loop gang vector collapse(2) default(present) async(1) 
       do k = 2, nz - 1
         do i = 1, ngrdcol
           lhs_diff_zm(1,i,k) = lhs_diff_zm(1,i,k) * 0.5_core_rknd
@@ -954,7 +954,7 @@ module advance_wp2_wp3_module
                    lhs )                                                      ! intent(out)
     
     if ( l_lmm_stepping ) then
-      !$acc parallel loop gang vector collapse(2) default(present)
+      !$acc  parallel loop gang vector collapse(2) default(present) async(1) 
       do k = 1, nz
         do i = 1, ngrdcol 
           wp2_old(i,k) = wp2(i,k)
@@ -986,7 +986,7 @@ module advance_wp2_wp3_module
                      wp2, wp3, wp3_zm, wp2_zt )                     ! intent(inout)
 
     if ( l_lmm_stepping ) then
-      !$acc parallel loop gang vector collapse(2) default(present)
+      !$acc  parallel loop gang vector collapse(2) default(present) async(1) 
       do k = 1, nz
         do i = 1, ngrdcol
           wp2(i,k) = one_half * ( wp2_old(i,k) + wp2(i,k) )
@@ -999,7 +999,7 @@ module advance_wp2_wp3_module
     ! When selected, apply sponge damping after wp2 and wp3 have been advanced.
     if ( wp2_sponge_damp_settings%l_sponge_damping ) then
 
-      !$acc update host( wp2 )
+      !$acc  update host( wp2 ) wait 
 
       if ( stats_metadata%l_stats_samp ) then
         do i = 1, ngrdcol
@@ -1020,13 +1020,13 @@ module advance_wp2_wp3_module
         end do
       end if
 
-      !$acc update device( wp2 )
+      !$acc  update device( wp2 ) wait 
 
     end if ! wp2_sponge_damp_settings%l_sponge_damping
 
     if ( wp3_sponge_damp_settings%l_sponge_damping ) then
 
-      !$acc update host( wp3 )
+      !$acc  update host( wp3 ) wait 
 
       if ( stats_metadata%l_stats_samp ) then
         do i = 1, ngrdcol
@@ -1047,23 +1047,23 @@ module advance_wp2_wp3_module
         end do
       end if
 
-      !$acc update device( wp3 )
+      !$acc  update device( wp3 ) wait 
 
     end if ! wp3_sponge_damp_settings%l_sponge_damping
 
     if ( clubb_at_least_debug_level( 0 ) ) then
       if ( err_code == clubb_fatal_error ) then  
 
-        !$acc update host( sfc_elevation, sigma_sqd_w, wm_zm, sfc_elevation, &
-        !$acc              sigma_sqd_w, wm_zm, wm_zt, wpup2, wpvp2, wp2up2, &
-        !$acc              wp2vp2, wp4, wpthvp, wp2thvp, um, vm, upwp, vpwp, &
-        !$acc              up2, vp2, em, Kh_zm, Kh_zt, invrs_tau_C4_zm, &
-        !$acc              invrs_tau_wp3_zt, Skw_zm, Skw_zt, mixt_frac, a3, &
-        !$acc              a3_zt, wp3_on_wp2, invrs_tau_C1_zm, rho_ds_zm, rho_ds_zt, &
-        !$acc              invrs_rho_ds_zm, invrs_rho_ds_zt, radf, thv_ds_zm, thv_ds_zt, &
-        !$acc              Cx_fnc_Richardson, lhs_splat_wp2, lhs_splat_wp3, wprtp, &
-        !$acc              wpthlp, rtp2, thlp2, wp2_zt, wp3_zm, wp2_old, wp2, &
-        !$acc              wp3_old, wp3 )
+        !$acc  update host( sfc_elevation, sigma_sqd_w, wm_zm, sfc_elevation, & 
+        !$acc               sigma_sqd_w, wm_zm, wm_zt, wpup2, wpvp2, wp2up2, & 
+        !$acc               wp2vp2, wp4, wpthvp, wp2thvp, um, vm, upwp, vpwp, & 
+        !$acc               up2, vp2, em, Kh_zm, Kh_zt, invrs_tau_C4_zm, & 
+        !$acc               invrs_tau_wp3_zt, Skw_zm, Skw_zt, mixt_frac, a3, & 
+        !$acc               a3_zt, wp3_on_wp2, invrs_tau_C1_zm, rho_ds_zm, rho_ds_zt, & 
+        !$acc               invrs_rho_ds_zm, invrs_rho_ds_zt, radf, thv_ds_zm, thv_ds_zt, & 
+        !$acc               Cx_fnc_Richardson, lhs_splat_wp2, lhs_splat_wp3, wprtp, & 
+        !$acc               wpthlp, rtp2, thlp2, wp2_zt, wp3_zm, wp2_old, wp2, & 
+        !$acc               wp3_old, wp3 ) wait 
 
         write(fstderr,*) "Error in advance_wp2_wp3"
 
@@ -1142,7 +1142,7 @@ module advance_wp2_wp3_module
     !$acc                   lhs_diff_zm, lhs_diff_zt, lhs_diff_zm_crank, lhs_diff_zt_crank, &
     !$acc                   lhs_ma_zm, lhs_ma_zt, lhs_ac_pr2_wp2, lhs_ac_pr2_wp3, &
     !$acc                   coef_wp4_implicit_zt, coef_wp4_implicit, a1, a1_zt, &
-    !$acc                   dum_dz, dvm_dz, lhs, rhs, Kw1, Kw8, Kw1_zm, Kw8_zt )
+    !$acc                   dum_dz, dvm_dz, lhs, rhs, Kw1, Kw8, Kw1_zm, Kw8_zt ) wait
 
     return
 
@@ -1367,11 +1367,11 @@ module advance_wp2_wp3_module
 
     !------------------------- Begin Code -------------------------
 
-    !$acc enter data create( rhs_save, solut, old_solut, rcond, threshold_array ) 
+    !$acc  enter data create( rhs_save, solut, old_solut, rcond, threshold_array ) async(1) 
 
     ! Save the value of rhs, which will be overwritten with the solution as
     ! part of the solving routine.
-    !$acc parallel loop gang vector collapse(2) default(present)
+    !$acc  parallel loop gang vector collapse(2) default(present) async(1) 
     do k = 1, nz
       do i = 1, ngrdcol
         rhs_save(i,k) = rhs(i,k)
@@ -1401,7 +1401,7 @@ module advance_wp2_wp3_module
 
       ! Est. of the condition number of the w'^2/w^3 LHS matrix
       do i = 1, ngrdcol
-        !$acc update host( rcond )
+        !$acc  update host( rcond ) wait 
         call stat_update_var_pt( stats_metadata%iwp23_matrix_condt_num, 1, one / rcond(i), & ! intent(in) 
                                  stats_sfc(i) )                               ! intent(inout)
       end do
@@ -1420,7 +1420,7 @@ module advance_wp2_wp3_module
     if ( clubb_at_least_debug_level( 0 ) ) then
       if ( err_code == clubb_fatal_error ) then
 
-        !$acc update host( lhs, rhs_save )
+        !$acc  update host( lhs, rhs_save ) wait 
 
         write(fstderr,*) "Error in wp23_solve calling band_solve for wp2_wp3"
         write(fstderr,*) "wp2 & wp3 LU decomp. failed"
@@ -1447,7 +1447,7 @@ module advance_wp2_wp3_module
     end if
 
     ! Copy result into output arrays and clip
-    !$acc parallel loop gang vector collapse(2) default(present)
+    !$acc  parallel loop gang vector collapse(2) default(present) async(1) 
     do k = 1, nz
       do i = 1, ngrdcol
         k_wp3 = 2*k - 1
@@ -1460,10 +1460,10 @@ module advance_wp2_wp3_module
 
     if ( stats_metadata%l_stats_samp ) then
 
-      !$acc update host( wm_zt, lhs_dp1_wp2, wp2, lhs_diff_zm, lhs_ta_wp2, &
-      !$acc              wp3, lhs_ma_zm, lhs_pr1_wp2, lhs_pr1_wp3, lhs_diff_zt, &
-      !$acc              wp3_term_ta_lhs_result, lhs_adv_tp_wp3, lhs_pr_tp_wp3, &
-      !$acc              wp3_pr3_lhs, lhs_ma_zt, C11_Skw_fnc, wm_zm, clubb_params )
+      !$acc  update host( wm_zt, lhs_dp1_wp2, wp2, lhs_diff_zm, lhs_ta_wp2, & 
+      !$acc               wp3, lhs_ma_zm, lhs_pr1_wp2, lhs_pr1_wp3, lhs_diff_zt, & 
+      !$acc               wp3_term_ta_lhs_result, lhs_adv_tp_wp3, lhs_pr_tp_wp3, & 
+      !$acc               wp3_pr3_lhs, lhs_ma_zt, C11_Skw_fnc, wm_zm, clubb_params ) wait 
       
       zero_vector = zero
       zero_vector_ngrdcol = zero
@@ -1471,7 +1471,7 @@ module advance_wp2_wp3_module
       ! Note:  To find the contribution of w'^2 term ac, substitute 0 for the
       !        C_uu_shr input to function wp2_terms_ac_pr2_lhs.
       tmp_ngrdcol = (one+clubb_params(:,iC_uu_shr))
-      !$acc data copyin( zero_vector_ngrdcol, tmp_ngrdcol ) copyout( lhs_wp2_ac_term, lhs_wp2_pr2_term )
+      !$acc data copyin( zero_vector_ngrdcol, tmp_ngrdcol ) copyout( lhs_wp2_ac_term, lhs_wp2_pr2_term ) wait
       call wp2_terms_ac_pr2_lhs( nz, ngrdcol, gr,            & ! intent(in)
                                  zero_vector_ngrdcol, wm_zt, & ! intent(in)
                                  lhs_wp2_ac_term  )            ! intent(out)
@@ -1562,7 +1562,7 @@ module advance_wp2_wp3_module
       ! Note:  To find the contribution of w'^3 term ac, substitute 0 for the
       !        C_ll skewness function input to function wp3_terms_ac_pr2_lhs.
       tmp = (one+C11_Skw_fnc)
-      !$acc data copyin( zero_vector, tmp ) copyout( lhs_wp3_ac_term, lhs_wp3_pr2_term )
+      !$acc data copyin( zero_vector, tmp ) copyout( lhs_wp3_ac_term, lhs_wp3_pr2_term ) wait
       call wp3_terms_ac_pr2_lhs( nz, ngrdcol, gr, zero_vector, wm_zm,   & ! intent(in)
                                  lhs_wp3_ac_term )                        ! intent(out)
       
@@ -1668,7 +1668,7 @@ module advance_wp2_wp3_module
 
     if ( stats_metadata%l_stats_samp ) then
 
-      !$acc update host( wp2 )
+      !$acc  update host( wp2 ) wait 
 
       ! Store previous value for effect of the positive definite scheme
       do i = 1, ngrdcol
@@ -1691,7 +1691,7 @@ module advance_wp2_wp3_module
     ! -dschanen 11 Apr 2011
 
     ! Output to trace if wp2 needs to be capped
-    !$acc parallel loop gang vector collapse(2) default(present)
+    !$acc  parallel loop gang vector collapse(2) default(present) async(1) 
     do k = 1, nz
       do i = 1, ngrdcol
         if ( wp2(i,k) > wp2_max ) then
@@ -1704,7 +1704,7 @@ module advance_wp2_wp3_module
 
     if ( stats_metadata%l_stats_samp ) then
 
-      !$acc update host( wp2 )
+      !$acc  update host( wp2 ) wait 
 
       ! Store updated value for effect of the positive definite scheme
       do i = 1, ngrdcol
@@ -1743,7 +1743,7 @@ module advance_wp2_wp3_module
       !
       ! wp2|_min = max( wprtp^2 / ( rtp2 * max_mag_correlation_flux^2 ),
       !                 wpthlp^2 / ( thlp2 * max_mag_correlation_flux^2 ) ).
-      !$acc parallel loop gang vector collapse(2) default(present)
+      !$acc  parallel loop gang vector collapse(2) default(present) async(1) 
       do k = 1, nz, 1
         do i = 1, ngrdcol
           threshold_array(i,k) &
@@ -1762,7 +1762,7 @@ module advance_wp2_wp3_module
     else
 
       ! Consider only the minimum tolerance threshold value for wp2.
-      !$acc parallel loop gang vector collapse(2) default(present)
+      !$acc  parallel loop gang vector collapse(2) default(present) async(1) 
       do k = 1, nz, 1
         do i = 1, ngrdcol
           threshold_array(i,k) = w_tol_sqd
@@ -1792,7 +1792,7 @@ module advance_wp2_wp3_module
     ! Compute wp3_zm for output purposes
     wp3_zm(:,:) = zt2zm_gpu( nz, ngrdcol, gr, wp3 )
 
-    !$acc exit data delete( rhs_save, solut, old_solut, rcond, threshold_array ) 
+    !$acc exit data delete( rhs_save, solut, old_solut, rcond, threshold_array )  wait
 
     return
 
@@ -1902,7 +1902,7 @@ module advance_wp2_wp3_module
     ! Calculate invrs_dt
     invrs_dt = 1.0_core_rknd / dt
 
-    !$acc parallel loop gang vector collapse(3) default(present)
+    !$acc  parallel loop gang vector collapse(3) default(present) async(1) 
     do k = 1, 2*nz
       do i = 1, ngrdcol
         do b = 1, ndiags5
@@ -1913,7 +1913,7 @@ module advance_wp2_wp3_module
     !$acc end parallel loop
 
     ! Lower boundary for w'3
-    !$acc parallel loop gang vector collapse(2) default(present)
+    !$acc  parallel loop gang vector collapse(2) default(present) async(1) 
     do i = 1, ngrdcol
       do b = 1, ndiags5
         if ( b /= 3 ) then
@@ -1926,7 +1926,7 @@ module advance_wp2_wp3_module
     !$acc end parallel loop
 
     ! Lower boundary for w'2
-    !$acc parallel loop gang vector collapse(2) default(present)
+    !$acc  parallel loop gang vector collapse(2) default(present) async(1) 
     do i = 1, ngrdcol
       do b = 1, ndiags5
         if ( b /= 3 ) then
@@ -1939,7 +1939,7 @@ module advance_wp2_wp3_module
     !$acc end parallel loop
 
     ! Combine terms to calculate non-boundary lhs values
-    !$acc parallel loop gang vector collapse(2) default(present)
+    !$acc  parallel loop gang vector collapse(2) default(present) async(1) 
     do k = 2, nz-1, 1
       do i = 1, ngrdcol
 
@@ -1980,7 +1980,7 @@ module advance_wp2_wp3_module
     end do
     !$acc end parallel loop
 
-    !$acc parallel loop gang vector collapse(2) default(present)
+    !$acc  parallel loop gang vector collapse(2) default(present) async(1) 
     do k = 2, nz-1, 1
       do i = 1, ngrdcol
 
@@ -2020,7 +2020,7 @@ module advance_wp2_wp3_module
     !$acc end parallel loop
 
     ! Upper boundary for w'3
-    !$acc parallel loop gang vector collapse(2) default(present)
+    !$acc  parallel loop gang vector collapse(2) default(present) async(1) 
     do i = 1, ngrdcol
       do b = 1, ndiags5
         if ( b /= 3 ) then
@@ -2033,7 +2033,7 @@ module advance_wp2_wp3_module
     !$acc end parallel loop
 
     ! Upper boundary for w'2
-    !$acc parallel loop gang vector collapse(2) default(present)
+    !$acc  parallel loop gang vector collapse(2) default(present) async(1) 
     do i = 1, ngrdcol
       do b = 1, ndiags5
         if ( b /= 3 ) then
@@ -2056,7 +2056,7 @@ module advance_wp2_wp3_module
       ! https://arxiv.org/pdf/1711.03675v1.pdf#nameddest=url:wp2_pr 
 
       ! Add terms to lhs
-      !$acc parallel loop gang vector collapse(2) default(present)
+      !$acc  parallel loop gang vector collapse(2) default(present) async(1) 
       do k = 2, nz-1
         do i = 1, ngrdcol
           k_wp2 = 2*k
@@ -2069,7 +2069,7 @@ module advance_wp2_wp3_module
     endif
 
     ! Add implicit splatting to wp2
-    !$acc parallel loop gang vector collapse(2) default(present)
+    !$acc  parallel loop gang vector collapse(2) default(present) async(1) 
     do k = 2, nz-1
       do i = 1, ngrdcol
         k_wp2 = 2*k
@@ -2097,7 +2097,7 @@ module advance_wp2_wp3_module
       !        the term more numerically stable.
 
       ! Add terms to lhs
-      !$acc parallel loop gang vector collapse(3) default(present)
+      !$acc  parallel loop gang vector collapse(3) default(present) async(1) 
       do k = 2, nz-1
         do i = 1, ngrdcol
           do b = 1, ndiags5
@@ -2113,7 +2113,7 @@ module advance_wp2_wp3_module
     endif
 
     ! Lower boundary for w'3 at t-level 2
-    !$acc parallel loop gang vector collapse(2) default(present)
+    !$acc  parallel loop gang vector collapse(2) default(present) async(1) 
     do i = 1, ngrdcol
       do b = 1, ndiags5
         if ( b /= 3 ) then
@@ -2329,7 +2329,7 @@ module advance_wp2_wp3_module
     invrs_dt = 1.0_core_rknd / dt
 
     ! Initialize to zero
-    !$acc parallel loop gang vector collapse(2) default(present)
+    !$acc  parallel loop gang vector collapse(2) default(present) async(1) 
     do k = 1, 2*nz
       do i = 1, ngrdcol
         rhs(i,k) = 0.0_core_rknd
@@ -2338,7 +2338,7 @@ module advance_wp2_wp3_module
     !$acc end parallel loop
 
     ! Experimental term from CLUBB TRAC ticket #411
-    !$acc parallel loop gang vector collapse(2) default(present)
+    !$acc  parallel loop gang vector collapse(2) default(present) async(1) 
     do k = 2, nz-1
       do i = 1, ngrdcol
         k_wp3 = 2*k - 1
@@ -2347,7 +2347,7 @@ module advance_wp2_wp3_module
     end do
     !$acc end parallel loop
 
-    !$acc parallel loop gang vector collapse(2) default(present)
+    !$acc  parallel loop gang vector collapse(2) default(present) async(1) 
     do k = 2, nz-1
       do i = 1, ngrdcol
         k_wp2 = 2*k
@@ -2360,7 +2360,7 @@ module advance_wp2_wp3_module
     ! time step.  They are not used for completely implicit diffusion.
     if ( l_crank_nich_diff ) then
       ! Add diffusion terms
-      !$acc parallel loop gang vector collapse(2) default(present)
+      !$acc  parallel loop gang vector collapse(2) default(present) async(1) 
       do k = 2, nz-1
         do i = 1, ngrdcol
           k_wp3 = 2*k - 1
@@ -2391,7 +2391,7 @@ module advance_wp2_wp3_module
     ! +d/dz((K+nu)d/dz(wp3)), but with this flag true, it will be
     ! +d/dz((K+nu)d/dz(wpup2+wpvp2+wp3)).
     if ( l_use_tke_in_wp2_wp3_K_dfsn ) then
-      !$acc parallel loop gang vector collapse(2) default(present)
+      !$acc  parallel loop gang vector collapse(2) default(present) async(1) 
       do k = 2, nz-1
         do i = 1, ngrdcol
           k_wp2 = 2*k
@@ -2403,7 +2403,7 @@ module advance_wp2_wp3_module
       end do
       !$acc end parallel loop
 
-      !$acc parallel loop gang vector collapse(2) default(present)
+      !$acc  parallel loop gang vector collapse(2) default(present) async(1) 
       do k = 2, nz-1
         do i = 1, ngrdcol
           k_wp3 = 2*k - 1
@@ -2419,7 +2419,7 @@ module advance_wp2_wp3_module
     if ( l_tke_aniso ) then
 
       ! Add pressure terms and splat terms
-      !$acc parallel loop gang vector collapse(2) default(present)
+      !$acc  parallel loop gang vector collapse(2) default(present) async(1) 
       do k = 2, nz-1
         do i = 1, ngrdcol
           k_wp2 = 2*k
@@ -2437,7 +2437,7 @@ module advance_wp2_wp3_module
     end if
     
     ! Combine terms
-    !$acc parallel loop gang vector collapse(2) default(present)
+    !$acc  parallel loop gang vector collapse(2) default(present) async(1) 
     do k = 2, nz-1
       do i = 1, ngrdcol
         
@@ -2467,7 +2467,7 @@ module advance_wp2_wp3_module
     !$acc end parallel loop
 
 
-    !$acc parallel loop gang vector collapse(2) default(present)
+    !$acc  parallel loop gang vector collapse(2) default(present) async(1) 
     do k = 2, nz-1
       do i = 1, ngrdcol
 
@@ -2502,7 +2502,7 @@ module advance_wp2_wp3_module
       ! The turbulent advection term is being solved explicitly.
 
       ! Add RHS turbulent advection (ta) terms
-      !$acc parallel loop gang vector collapse(2) default(present)
+      !$acc  parallel loop gang vector collapse(2) default(present) async(1) 
       do k = 2, nz-1
         do i = 1, ngrdcol
           k_wp3 = 2*k - 1
@@ -2521,7 +2521,7 @@ module advance_wp2_wp3_module
         ! The ADG1 PDF is used.
 
         ! Add terms
-        !$acc parallel loop gang vector collapse(2) default(present)
+        !$acc  parallel loop gang vector collapse(2) default(present) async(1) 
         do k = 2, nz-1
           do i = 1, ngrdcol
             k_wp3 = 2*k - 1
@@ -2577,7 +2577,7 @@ module advance_wp2_wp3_module
     ! minimum value of w_tol_sqd.
 
     ! The value of w'^3 at the upper boundary will be set to 0.
-    !$acc parallel loop gang vector default(present)
+    !$acc  parallel loop gang vector default(present) async(1) 
     do i = 1, ngrdcol
       rhs(i,1) = 0.0_core_rknd
       rhs(i,2) = wp2(i,1)
@@ -2592,14 +2592,14 @@ module advance_wp2_wp3_module
     ! --------- Statistics output ---------
     if ( stats_metadata%l_stats_samp ) then
 
-      !$acc update host( thv_ds_zm, wpthvp, thv_ds_zt, wp2thvp, &
-      !$acc              wp2, lhs_diff_zm_crank, up2, vp2, lhs_diff_zm, &
-      !$acc              rhs_pr_dfsn_wp2, lhs_splat_wp2, rhs_pr1_wp2, &
-      !$acc              lhs_pr1_wp2, rhs_dp1_wp2, lhs_dp1_wp2, rhs_pr3_wp2, &
-      !$acc              rhs_ta_wp3, wp3_term_ta_lhs_result, wp3, lhs_ta_wp3, &
-      !$acc              lhs_adv_tp_wp3, lhs_pr_tp_wp3, rhs_pr3_wp3, rhs_pr1_wp3, &
-      !$acc              lhs_pr1_wp3, lhs_splat_wp3, lhs_diff_zt, wpup2, wpvp2, &
-      !$acc              rhs_pr_turb_wp3, rhs_pr_dfsn_wp3, clubb_params )
+      !$acc  update host( thv_ds_zm, wpthvp, thv_ds_zt, wp2thvp, & 
+      !$acc               wp2, lhs_diff_zm_crank, up2, vp2, lhs_diff_zm, & 
+      !$acc               rhs_pr_dfsn_wp2, lhs_splat_wp2, rhs_pr1_wp2, & 
+      !$acc               lhs_pr1_wp2, rhs_dp1_wp2, lhs_dp1_wp2, rhs_pr3_wp2, & 
+      !$acc               rhs_ta_wp3, wp3_term_ta_lhs_result, wp3, lhs_ta_wp3, & 
+      !$acc               lhs_adv_tp_wp3, lhs_pr_tp_wp3, rhs_pr3_wp3, rhs_pr1_wp3, & 
+      !$acc               lhs_pr1_wp3, lhs_splat_wp3, lhs_diff_zt, wpup2, wpvp2, & 
+      !$acc               rhs_pr_turb_wp3, rhs_pr_dfsn_wp3, clubb_params ) wait 
 
       zero_vector = zero
       zero_vector_ngrdcol = zero
@@ -2610,7 +2610,7 @@ module advance_wp2_wp3_module
       tmp_ngrdcol = (one+clubb_params(:,iC_uu_buoy))
       tmp =  ( one + C11_Skw_fnc )
       !$acc data copyin( zero_vector_ngrdcol, tmp_ngrdcol, zero_vector, tmp ) &
-      !$acc     copyout( rhs_bp_wp2, rhs_pr2_wp2, rhs_bp1_wp3, rhs_pr2_wp3 )
+      !$acc     copyout( rhs_bp_wp2, rhs_pr2_wp2, rhs_bp1_wp3, rhs_pr2_wp3 ) wait
       call wp2_terms_bp_pr2_rhs( nz, ngrdcol, zero_vector_ngrdcol,  & ! intent(in)
                                  thv_ds_zm, wpthvp,                 & ! intent(in)
                                  rhs_bp_wp2 )                         ! intent(out)
@@ -2980,7 +2980,7 @@ module advance_wp2_wp3_module
     ! ------------------------ Begin Code ------------------------
 
     ! Set lower boundary to 0
-    !$acc parallel loop gang vector collapse(2) default(present)
+    !$acc  parallel loop gang vector collapse(2) default(present) async(1) 
     do k = 1, ngrdcol
       do i = 1, 2
         lhs_ta_wp2(i,k,1) = zero
@@ -2991,7 +2991,7 @@ module advance_wp2_wp3_module
     !$acc end parallel loop
 
     ! Calculate term at all interior grid levels.
-    !$acc parallel loop gang vector collapse(2) default(present)
+    !$acc  parallel loop gang vector collapse(2) default(present) async(1) 
     do k = 2, nz-1 
       do i = 1, ngrdcol
         ! Thermodynamic superdiagonal: [ x wp3(k+1,<t+1>) ]
@@ -3103,7 +3103,7 @@ module advance_wp2_wp3_module
     ! ------------------------ Begin Code ------------------------
 
     ! Set lower boundary to 0
-    !$acc parallel loop gang vector default(present)
+    !$acc  parallel loop gang vector default(present) async(1) 
     do i = 1, ngrdcol
       lhs_ac_pr2_wp2(i,1) = zero
       ! Set upper boundary to 0
@@ -3112,7 +3112,7 @@ module advance_wp2_wp3_module
     !$acc end parallel loop
 
     ! Calculate term at all interior grid levels.
-    !$acc parallel loop gang vector collapse(2) default(present)
+    !$acc  parallel loop gang vector collapse(2) default(present) async(1) 
     do k = 2, nz-1
       do i = 1, ngrdcol
         ! Momentum main diagonal: [ x wp2(k,<t+1>) ]
@@ -3193,7 +3193,7 @@ module advance_wp2_wp3_module
     ! ------------------ Begin Code ------------------
 
     ! Set lower boundary to 0
-    !$acc parallel loop gang vector default(present)
+    !$acc  parallel loop gang vector default(present) async(1) 
     do i = 1, ngrdcol
       lhs_dp1_wp2(i,1) = zero
       ! Set upper boundary to 0
@@ -3202,7 +3202,7 @@ module advance_wp2_wp3_module
     !$acc end parallel loop
 
     ! Calculate term at all interior grid levels.
-    !$acc parallel loop gang vector collapse(2) default(present)
+    !$acc  parallel loop gang vector collapse(2) default(present) async(1) 
     do k = 2, nz-1
       do i = 1, ngrdcol
         ! Momentum main diagonal: [ x wp2(k,<t+1>) ]
@@ -3288,7 +3288,7 @@ module advance_wp2_wp3_module
     ! --------------------- Begin Code ---------------------
 
     ! Set lower boundary to 0
-    !$acc parallel loop gang vector default(present)
+    !$acc  parallel loop gang vector default(present) async(1) 
     do i = 1, ngrdcol
       lhs_pr1_wp2(i,1) = zero
 
@@ -3298,7 +3298,7 @@ module advance_wp2_wp3_module
     !$acc end parallel loop
 
     ! Calculate term at all interior grid levels.
-    !$acc parallel loop gang vector collapse(2) default(present)
+    !$acc  parallel loop gang vector collapse(2) default(present) async(1) 
     do k = 2, nz-1
       do i = 1, ngrdcol
         ! Momentum main diagonal: [ x wp2(k,<t+1>) ]
@@ -3378,7 +3378,7 @@ module advance_wp2_wp3_module
     ! ------------------ Begin Code ------------------
 
     ! Set lower boundary to 0
-    !$acc parallel loop gang vector default(present)
+    !$acc  parallel loop gang vector default(present) async(1) 
     do i = 1, ngrdcol
       rhs_bp_pr2_wp2(i,1) = zero
       ! Set upper boundary to 0
@@ -3387,7 +3387,7 @@ module advance_wp2_wp3_module
     !$acc end parallel loop
 
     ! Calculate term at all interior grid levels.
-    !$acc parallel loop gang vector collapse(2) default(present)
+    !$acc  parallel loop gang vector collapse(2) default(present) async(1) 
     do k = 2, nz-1
       do i = 1, ngrdcol
         rhs_bp_pr2_wp2(i,k) = + ( one - C_uu_buoy(i) ) * two &
@@ -3476,7 +3476,7 @@ module advance_wp2_wp3_module
     ! -------------------- Begin Code  --------------------
 
     ! Set lower boundary to 0
-    !$acc parallel loop gang vector default(present)
+    !$acc  parallel loop gang vector default(present) async(1) 
     do i = 1, ngrdcol
       rhs_dp1_wp2(i,1) = zero
       ! Set upper boundary to 0
@@ -3486,7 +3486,7 @@ module advance_wp2_wp3_module
 
     ! Calculate term at all interior grid levels.
     if ( l_damp_wp2_using_em ) then
-      !$acc parallel loop gang vector collapse(2) default(present)
+      !$acc  parallel loop gang vector collapse(2) default(present) async(1) 
       do k = 2, nz-1
         do i = 1, ngrdcol
           rhs_dp1_wp2(i,k) = - ( C1_Skw_fnc(i,k) * invrs_tau1m(i,k) ) * ( up2(i,k) + vp2(i,k) )
@@ -3494,7 +3494,7 @@ module advance_wp2_wp3_module
       end do
       !$acc end parallel loop
     else
-      !$acc parallel loop gang vector collapse(2) default(present)
+      !$acc  parallel loop gang vector collapse(2) default(present) async(1) 
       do k = 2, nz-1
         do i = 1, ngrdcol
           rhs_dp1_wp2(i,k) = + ( C1_Skw_fnc(i,k) * invrs_tau1m(i,k) ) * threshold
@@ -3593,7 +3593,7 @@ module advance_wp2_wp3_module
     ! ---------------------Begin Code ---------------------
 
     ! Set lower boundary to 0
-    !$acc parallel loop gang vector default(present)
+    !$acc  parallel loop gang vector default(present) async(1) 
     do i = 1, ngrdcol
       rhs_pr3_wp2(i,1) = zero
       ! Set upper boundary to 0
@@ -3602,7 +3602,7 @@ module advance_wp2_wp3_module
     !$acc end parallel loop
 
     ! Calculate term at all interior grid levels.
-    !$acc parallel loop gang vector collapse(2) default(present)
+    !$acc  parallel loop gang vector collapse(2) default(present) async(1) 
     do k = 2, nz-1
       do i = 1, ngrdcol
 
@@ -3708,7 +3708,7 @@ module advance_wp2_wp3_module
     ! ------------------------ Begin Code ------------------------
     
     ! Set lower bounadry to 0
-    !$acc parallel loop gang vector default(present)
+    !$acc  parallel loop gang vector default(present) async(1) 
     do i = 1, ngrdcol
       rhs_pr1_wp2(i,1) = zero
       ! Set upper boundary to 0
@@ -3717,7 +3717,7 @@ module advance_wp2_wp3_module
     !$acc end parallel loop
 
     ! Calculate term at all interior grid levels.
-    !$acc parallel loop gang vector collapse(2) default(present)
+    !$acc  parallel loop gang vector collapse(2) default(present) async(1) 
     do k = 2, nz-1
       do i = 1, ngrdcol
         rhs_pr1_wp2(i,k) = + ( C4(i) * ( up2(i,k) + vp2(i,k) ) * invrs_tau_C4_zm(i,k) ) / three
@@ -3800,9 +3800,9 @@ module advance_wp2_wp3_module
 
     ! ---------------------- Begin Code ----------------------
 
-    !$acc data create( wpuip2 )
+    !$acc  data create( wpuip2 ) async(1) 
 
-    !$acc parallel loop gang vector collapse(2) default(present)
+    !$acc  parallel loop gang vector collapse(2) default(present) async(1) 
     do k = 1, nz
       do i = 1, ngrdcol
         wpuip2(i,k) = wpup2(i,k) + wpvp2(i,k) + wp3(i,k)
@@ -3810,7 +3810,7 @@ module advance_wp2_wp3_module
     end do
     !$acc end parallel loop
 
-    !$acc parallel loop gang vector default(present)
+    !$acc  parallel loop gang vector default(present) async(1) 
     do i = 1, ngrdcol
       ! Set lower boundary condition
       rhs_pr_dfsn_wp2(i,1) = rhs_pr_dfsn_wp2(i,2)
@@ -3819,7 +3819,7 @@ module advance_wp2_wp3_module
     end do
     !$acc end parallel loop   
 
-    !$acc parallel loop gang vector collapse(2) default(present)
+    !$acc  parallel loop gang vector collapse(2) default(present) async(1) 
     do k = 2, nz-1
       do i = 1, ngrdcol
         rhs_pr_dfsn_wp2(i,k) &
@@ -3956,7 +3956,7 @@ module advance_wp2_wp3_module
     ! ------------------------ Begin Code ------------------------
 
     ! Set term at lower boundary to 0
-    !$acc parallel loop gang vector default(present)
+    !$acc  parallel loop gang vector default(present) async(1) 
     do i = 1, ngrdcol
       do k = 1, 2
         ! Set term at lower boundary to 0
@@ -3969,7 +3969,7 @@ module advance_wp2_wp3_module
     !$acc end parallel loop
 
     ! Calculate term at all interior grid levels.
-    !$acc parallel loop gang vector collapse(2) default(present)
+    !$acc  parallel loop gang vector collapse(2) default(present) async(1) 
     do k = 3, nz-1
       do i = 1, ngrdcol
 
@@ -4150,7 +4150,7 @@ module advance_wp2_wp3_module
     ! ---------------------- Begin Code ----------------------
 
     ! Set lower boundary to 0
-    !$acc parallel loop gang vector collapse(2) default(present)
+    !$acc  parallel loop gang vector collapse(2) default(present) async(1) 
     do k = 1, ngrdcol
       do i = 1, 5
         ! Set lower boundary to 0
@@ -4174,7 +4174,7 @@ module advance_wp2_wp3_module
         ! All portions of the wp3 turbulent advection term for ADG1 use
         ! centered discretization in accordance with description and diagram
         ! shown above.
-        !$acc parallel loop gang vector collapse(2) default(present)
+        !$acc  parallel loop gang vector collapse(2) default(present) async(1) 
         do k = 3, nz-2, 1
           do i = 1, ngrdcol
 
@@ -4222,7 +4222,7 @@ module advance_wp2_wp3_module
         ! The model is presently applying the u.b. condition on the
         ! 2nd highest thermodynamic level.
         k = nz-1
-        !$acc parallel loop gang vector default(present)
+        !$acc  parallel loop gang vector default(present) async(1) 
         do i = 1, ngrdcol
 
           ! Momentum superdiagonal: [ x wp2(k,<t+1>) ]
@@ -4261,7 +4261,7 @@ module advance_wp2_wp3_module
         ! is handled using an "upwind" discretization that also takes into
         ! "winds" that converge or diverge around the central thermodynamic
         ! grid level.  Provided by Chris Vogl and Shixuan Zhang.
-        !$acc parallel loop gang vector collapse(2) default(present)
+        !$acc  parallel loop gang vector collapse(2) default(present) async(1) 
         do k = 3, nz-2, 1
           do i = 1, ngrdcol
 
@@ -4305,7 +4305,7 @@ module advance_wp2_wp3_module
         ! The model is presently applying the u.b. condition on the
         ! 2nd highest thermodynamic level.
         k = nz-1
-        !$acc parallel loop gang vector default(present)
+        !$acc  parallel loop gang vector default(present) async(1) 
         do i = 1, ngrdcol
 
           ! Momentum superdiagonal: [ x wp2(k,<t+1>) ]
@@ -4352,7 +4352,7 @@ module advance_wp2_wp3_module
       ! stabilize w'^3.  On the left-hand side of the equation, this effects
       ! the momentum superdiagonal (k_mdiag) and the momentum subdiagonal
       ! (km1_mdiag).
-      !$acc parallel loop gang vector collapse(2) default(present)
+      !$acc  parallel loop gang vector collapse(2) default(present) async(1) 
       do k = 3, nz-2
         do i = 1, ngrdcol
 
@@ -4400,7 +4400,7 @@ module advance_wp2_wp3_module
       ! The model is presently applying the u.b. condition on the
       ! 2nd highest thermodynamic level.
       k = nz-1
-      !$acc parallel loop gang vector default(present)
+      !$acc  parallel loop gang vector default(present) async(1) 
       do i = 1, ngrdcol
 
         ! Momentum superdiagonal: [ x wp2(k,<t+1>) ]
@@ -4548,7 +4548,7 @@ module advance_wp2_wp3_module
     ! -------------------- Begin Code --------------------
 
     ! Set lower boundary to 0
-    !$acc parallel loop gang vector default(present)
+    !$acc  parallel loop gang vector default(present) async(1) 
     do k = 1, ngrdcol
       do i = 1, 2
       ! Set lower boundary to 0
@@ -4561,7 +4561,7 @@ module advance_wp2_wp3_module
     !$acc end parallel loop
 
     ! Calculate term at all interior grid levels.
-    !$acc parallel loop gang vector collapse(2) default(present)
+    !$acc  parallel loop gang vector collapse(2) default(present) async(1) 
     do k = 3, nz-1
       do i = 1, ngrdcol
         ! Momentum superdiagonal: [ x wp2(k,<t+1>) ]
@@ -4672,7 +4672,7 @@ module advance_wp2_wp3_module
     ! ------------------------ Begin Code ------------------------
 
     ! Set lower boundary to 0
-    !$acc parallel loop gang vector default(present)
+    !$acc  parallel loop gang vector default(present) async(1) 
     do i = 1, ngrdcol
       ! Set lower boundary to 0
       lhs_ac_pr2_wp3(i,1) = zero
@@ -4683,7 +4683,7 @@ module advance_wp2_wp3_module
     !$acc end parallel loop
 
     ! Calculate term at all interior grid levels.
-    !$acc parallel loop gang vector collapse(2) default(present)
+    !$acc  parallel loop gang vector collapse(2) default(present) async(1) 
     do k = 3, nz-1
       do i = 1, ngrdcol
 
@@ -4789,7 +4789,7 @@ module advance_wp2_wp3_module
     ! ---------------------- Begin Code ----------------------
 
     ! Set lower boundary to 0
-    !$acc parallel loop gang vector default(present)
+    !$acc  parallel loop gang vector default(present) async(1) 
     do i = 1, ngrdcol
       ! Set lower boundary to 0
       lhs_pr1_wp3(i,1) = zero
@@ -4801,7 +4801,7 @@ module advance_wp2_wp3_module
 
     ! Calculate term at all interior grid levels.
     if ( l_damp_wp3_Skw_squared ) then
-      !$acc parallel loop gang vector collapse(2) default(present)
+      !$acc  parallel loop gang vector collapse(2) default(present) async(1) 
       do k = 3, nz-1
         do i = 1, ngrdcol
           ! Thermodynamic main diagonal: [ x wp3(k,<t+1>) ]
@@ -4812,7 +4812,7 @@ module advance_wp2_wp3_module
       !$acc end parallel loop
 
     else
-      !$acc parallel loop gang vector collapse(2) default(present)
+      !$acc  parallel loop gang vector collapse(2) default(present) async(1) 
       do k = 3, nz-1
         do i = 1, ngrdcol
           ! Thermodynamic main diagonal: [ x wp3(k,<t+1>) ]
@@ -4912,7 +4912,7 @@ module advance_wp2_wp3_module
     ! ---------------------- Begin Code ----------------------
 
     ! Set lower boundary to 0
-    !$acc parallel loop gang vector default(present)
+    !$acc  parallel loop gang vector default(present) async(1) 
     do i = 1, ngrdcol
       ! Set lower boundary to 0
       rhs_ta_wp3(i,1) = zero
@@ -4923,7 +4923,7 @@ module advance_wp2_wp3_module
     !$acc end parallel loop
 
     ! Calculate term at all interior grid levels.
-    !$acc parallel loop gang vector collapse(2) default(present)
+    !$acc  parallel loop gang vector collapse(2) default(present) async(1) 
     do k = 3, nz
       do i = 1, ngrdcol
         rhs_ta_wp3(i,k) = - invrs_rho_ds_zt(i,k) * gr%invrs_dzt(i,k) &
@@ -4997,7 +4997,7 @@ module advance_wp2_wp3_module
     ! -------------------- Begin Code --------------------
 
     ! Set lower boundary to 0
-    !$acc parallel loop gang vector default(present)
+    !$acc  parallel loop gang vector default(present) async(1) 
     do i = 1, ngrdcol
       ! Set lower boundary to 0
       rhs_bp1_pr2_wp3(i,1) = zero    
@@ -5008,7 +5008,7 @@ module advance_wp2_wp3_module
     !$acc end parallel loop
 
     ! Calculate term at all interior grid levels.
-    !$acc parallel loop gang vector collapse(2) default(present)
+    !$acc  parallel loop gang vector collapse(2) default(present) async(1) 
     do k = 3, nz-1
       do i = 1, ngrdcol
         rhs_bp1_pr2_wp3(i,k) = + ( one - C11_Skw_fnc(i,k) ) &
@@ -5094,7 +5094,7 @@ module advance_wp2_wp3_module
     ! --------------------- Begin Code ---------------------
 
     ! Set lower boundary to 0
-    !$acc parallel loop gang vector default(present)
+    !$acc  parallel loop gang vector default(present) async(1) 
     do i = 1, ngrdcol
       ! Set lower boundary to 0
       rhs_pr_turb_wp3(i,1) = zero
@@ -5106,7 +5106,7 @@ module advance_wp2_wp3_module
 
     if ( .not. l_use_tke_in_wp3_pr_turb_term ) then
 
-      !$acc parallel loop gang vector collapse(2) default(present)
+      !$acc  parallel loop gang vector collapse(2) default(present) async(1) 
       do k = 3, nz-1
         do i = 1, ngrdcol
           rhs_pr_turb_wp3(i,k) &
@@ -5120,7 +5120,7 @@ module advance_wp2_wp3_module
 
     else
 
-      !$acc parallel loop gang vector collapse(2) default(present)
+      !$acc  parallel loop gang vector collapse(2) default(present) async(1) 
       do k = 3, nz-1
         do i = 1, ngrdcol
           rhs_pr_turb_wp3(i,k) &
@@ -5209,9 +5209,9 @@ module advance_wp2_wp3_module
 
     ! ---------------------- Begin Code ----------------------
 
-    !$acc data create( wp2uip2, wp2_uip2 )
+    !$acc  data create( wp2uip2, wp2_uip2 ) async(1) 
 
-    !$acc parallel loop gang vector collapse(2) default(present)
+    !$acc  parallel loop gang vector collapse(2) default(present) async(1) 
     do k = 1, nz
       do i = 1, ngrdcol
         wp2uip2(i,k) = wp2up2(i,k) + wp2vp2(i,k) + wp4(i,k)
@@ -5220,7 +5220,7 @@ module advance_wp2_wp3_module
     end do
     !$acc end parallel loop
 
-    !$acc parallel loop gang vector default(present)
+    !$acc  parallel loop gang vector default(present) async(1) 
     do i = 1, ngrdcol
       ! Set lower boundary condition
       rhs_pr_dfsn_wp3(i,1) = zero
@@ -5230,7 +5230,7 @@ module advance_wp2_wp3_module
     end do
     !$acc end parallel loop
 
-    !$acc parallel loop gang vector collapse(2) default(present)
+    !$acc  parallel loop gang vector collapse(2) default(present) async(1) 
     do k = 3, nz-1
       do i = 1, ngrdcol
         rhs_pr_dfsn_wp3(i,k) &
@@ -5335,7 +5335,7 @@ module advance_wp2_wp3_module
     ! --------------------- Begin Code ---------------------
 
     ! Set lower boundary to 0
-    !$acc parallel loop gang vector default(present)
+    !$acc  parallel loop gang vector default(present) async(1) 
     do i = 1, ngrdcol
       ! Set lower boundary to 0
       rhs_pr1_wp3(i,1) = zero
@@ -5347,7 +5347,7 @@ module advance_wp2_wp3_module
 
     ! Calculate term at all interior grid levels.
     if ( l_damp_wp3_Skw_squared ) then
-      !$acc parallel loop gang vector collapse(2) default(present)
+      !$acc  parallel loop gang vector collapse(2) default(present) async(1) 
       do k = 3, nz-1
         do i = 1, ngrdcol
           rhs_pr1_wp3(i,k) = + ( C8(i) * invrs_tau_wp3_zt(i,k) ) &
@@ -5356,7 +5356,7 @@ module advance_wp2_wp3_module
       end do 
       !$acc end parallel loop
     else
-      !$acc parallel loop gang vector collapse(2) default(present)
+      !$acc  parallel loop gang vector collapse(2) default(present) async(1) 
       do k = 3, nz-1
         do i = 1, ngrdcol
           rhs_pr1_wp3(i,k) = + ( C8(i) * invrs_tau_wp3_zt(i,k) ) &

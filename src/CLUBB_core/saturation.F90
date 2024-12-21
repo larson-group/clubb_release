@@ -89,7 +89,7 @@ module saturation
   ! Wrapped in interface sat_mixrat_liq
   function sat_mixrat_liq_k( p_in_Pa, T_in_K, &
                              saturation_formula )
-!$acc routine seq
+!$acc  routine seq 
   ! Description:
   !   Used to compute the saturation mixing ratio of liquid water.
 
@@ -364,7 +364,7 @@ module saturation
 
     ! -------------------- Begin Code --------------------
 
-    !$acc data create(esat)
+    !$acc  data create(esat) async(1) 
 
     ! start_index is an optional argument and 
     ! used for choosing the sub-arrays
@@ -377,7 +377,7 @@ module saturation
     select case ( saturation_formula )
     case ( saturation_flatau )
 
-      !$acc parallel loop gang vector collapse(2) default(present)
+      !$acc  parallel loop gang vector collapse(2) default(present) async(1) 
       do k = start_index, nz
         do i = 1, ngrdcol
 
@@ -432,7 +432,7 @@ module saturation
 
       ! Using the Bolton 1980 approximations for SVP over vapor
       ! Generally this more computationally expensive than the Flatau polnomial expansion
-      !$acc parallel loop gang vector collapse(2) default(present)
+      !$acc  parallel loop gang vector collapse(2) default(present) async(1) 
       do k = start_index, nz
         do i = 1, ngrdcol
           esat(i,k) = 611.2_core_rknd &
@@ -446,7 +446,7 @@ module saturation
     case ( saturation_gfdl )
 
       ! Using GFDL polynomial approximation for SVP with respect to liquid
-      !$acc parallel loop gang vector collapse(2) default(present)
+      !$acc  parallel loop gang vector collapse(2) default(present) async(1) 
       do k = start_index, nz
         do i = 1, ngrdcol
 
@@ -472,7 +472,7 @@ module saturation
 
     case ( saturation_lookup ) 
 
-      !$acc parallel loop gang vector collapse(2) default(present)
+      !$acc  parallel loop gang vector collapse(2) default(present) async(1) 
       do k = start_index, nz
         do i = 1, ngrdcol
           T_in_K_int = int( anint( T_in_K(i,k) ) )
@@ -494,7 +494,7 @@ module saturation
        
     end select
 
-    !$acc parallel loop gang vector collapse(2) default(present)
+    !$acc  parallel loop gang vector collapse(2) default(present) async(1) 
     do k = start_index, nz
       do i = 1, ngrdcol
 
@@ -886,7 +886,7 @@ module saturation
     T_in_K_col(1,1) = T_in_K
 
     ! Call 2D version 
-    !$acc data copyin( p_in_Pa_col, T_in_K_col ) copyout( sat_mixrat_ice_col )
+    !$acc  data copyin( p_in_Pa_col, T_in_K_col ) copyout( sat_mixrat_ice_col ) async(1) 
     sat_mixrat_ice_col = sat_mixrat_ice_2D( 1, 1, p_in_Pa_col, T_in_K_col, saturation_formula )
     !$acc end data
 
@@ -955,14 +955,14 @@ module saturation
 
     ! ------------------------ Begin Code ------------------------
 
-    !$acc data create( esat_ice )
+    !$acc  data create( esat_ice ) async(1) 
 
     ! Determine the SVP for the given temperature
     select case ( saturation_formula )
     case ( saturation_bolton )
 
       ! Using the Bolton 1980 approximations for SVP over ice
-      !$acc parallel loop gang vector collapse(2) default(present)
+      !$acc  parallel loop gang vector collapse(2) default(present) async(1) 
       do i = 1, ngrdcol
         do k = 1, nz
 
@@ -977,7 +977,7 @@ module saturation
     case ( saturation_flatau )
 
       ! Using the Flatau, et al. polynomial approximation for SVP over ice
-      !$acc parallel loop gang vector collapse(2) default(present)
+      !$acc  parallel loop gang vector collapse(2) default(present) async(1) 
       do i = 1, ngrdcol
         do k = 1, nz
 
@@ -1006,7 +1006,7 @@ module saturation
     case ( saturation_gfdl )
 
       ! Using GFDL polynomial approximation for SVP with respect to ice
-      !$acc parallel loop gang vector collapse(2) default(present)
+      !$acc  parallel loop gang vector collapse(2) default(present) async(1) 
       do i = 1, ngrdcol
         do k = 1, nz
 
@@ -1036,7 +1036,7 @@ module saturation
     end select
 
 
-    !$acc parallel loop gang vector collapse(2) default(present)
+    !$acc  parallel loop gang vector collapse(2) default(present) async(1) 
     do k = 1, nz
       do i = 1, ngrdcol
 

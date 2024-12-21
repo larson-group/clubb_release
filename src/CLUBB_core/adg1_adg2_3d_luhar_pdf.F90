@@ -149,7 +149,7 @@ module adg1_adg2_3d_luhar_pdf
 
     integer :: j  ! Loop index
 
-    !$acc enter data create( w_1_n, w_2_n )
+    !$acc  enter data create( w_1_n, w_2_n ) async(1) 
     
     ! Calculate the mixture fraction and the PDF component means and variances
     ! of w.
@@ -206,7 +206,7 @@ module adg1_adg2_3d_luhar_pdf
        enddo ! i=1, sclr_dim
     endif ! l_scalar_calc
     
-    !$acc exit data delete( w_1_n, w_2_n )
+    !$acc exit data delete( w_1_n, w_2_n ) wait
 
     return
 
@@ -660,7 +660,7 @@ module adg1_adg2_3d_luhar_pdf
 
     !----- Begin Code -----
 
-    !$acc parallel loop gang vector collapse(2) default(present)
+    !$acc  parallel loop gang vector collapse(2) default(present) async(1) 
     do k = 1, nz
        do i = 1, ngrdcol
 
@@ -1115,7 +1115,7 @@ module adg1_adg2_3d_luhar_pdf
       k, i     ! Vertical loop index
 
     !----- Begin Code -----
-    !$acc parallel loop gang vector collapse(2) default(present)
+    !$acc  parallel loop gang vector collapse(2) default(present) async(1) 
     do k = 1, nz
       do i = 1, ngrdcol
 

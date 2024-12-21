@@ -478,18 +478,18 @@ module advance_xm_wpxp_module
 
     ! -------------------- Begin Code --------------------
 
-    !$acc enter data create( C6rt_Skw_fnc, C6thl_Skw_fnc, C7_Skw_fnc, C6_term, Kw6, &
-    !$acc                 low_lev_effect, high_lev_effect, rtm_old, wprtp_old, thlm_old, &
-    !$acc                 wpthlp_old, um_old, upwp_old, vm_old, &
-    !$acc                 vpwp_old, lhs_diff_zm, lhs_diff_zt, lhs_ma_zt, lhs_ma_zm, &
-    !$acc                 lhs_ta_wprtp, lhs_ta_wpthlp, lhs_ta_wpup, lhs_ta_wpvp, &
-    !$acc                 rhs_ta_wprtp, rhs_ta_wpthlp, rhs_ta_wpup, &
-    !$acc                 rhs_ta_wpvp, lhs_tp, lhs_ta_xm, lhs_ac_pr2, &
-    !$acc                 lhs_pr1_wprtp, lhs_pr1_wpthlp )
+    !$acc  enter data create( C6rt_Skw_fnc, C6thl_Skw_fnc, C7_Skw_fnc, C6_term, Kw6, & 
+    !$acc                  low_lev_effect, high_lev_effect, rtm_old, wprtp_old, thlm_old, & 
+    !$acc                  wpthlp_old, um_old, upwp_old, vm_old, & 
+    !$acc                  vpwp_old, lhs_diff_zm, lhs_diff_zt, lhs_ma_zt, lhs_ma_zm, & 
+    !$acc                  lhs_ta_wprtp, lhs_ta_wpthlp, lhs_ta_wpup, lhs_ta_wpvp, & 
+    !$acc                  rhs_ta_wprtp, rhs_ta_wpthlp, rhs_ta_wpup, & 
+    !$acc                  rhs_ta_wpvp, lhs_tp, lhs_ta_xm, lhs_ac_pr2, & 
+    !$acc                  lhs_pr1_wprtp, lhs_pr1_wpthlp ) async(1) 
 
-    !$acc enter data if( sclr_dim > 0 ) &
-    !$acc            create( sclrm_old, wpsclrp_old, lhs_ta_wpsclrp,  &
-    !$acc                    rhs_ta_wpsclrp, lhs_pr1_wpsclrp )
+    !$acc  enter data if( sclr_dim > 0 ) & 
+    !$acc             create( sclrm_old, wpsclrp_old, lhs_ta_wpsclrp, & 
+    !$acc                     rhs_ta_wpsclrp, lhs_pr1_wpsclrp ) async(1) 
 
     l_perturbed_wind = l_predict_upwp_vpwp .and. l_linearize_pbl_winds
 
@@ -524,7 +524,7 @@ module advance_xm_wpxp_module
     ! Save values of predictive fields to be printed in case of crash.
     if ( l_lmm_stepping ) then
       
-      !$acc parallel loop gang vector collapse(2) default(present)
+      !$acc  parallel loop gang vector collapse(2) default(present) async(1) 
       do k = 1, nz
         do i = 1, ngrdcol
           rtm_old(i,k)    = rtm(i,k)
@@ -536,7 +536,7 @@ module advance_xm_wpxp_module
       !$acc end parallel loop
           
       if ( sclr_dim > 0 ) then
-        !$acc parallel loop gang vector collapse(3) default(present)
+        !$acc  parallel loop gang vector collapse(3) default(present) async(1) 
         do j = 1, sclr_dim
           do k = 1, nz
             do i = 1, ngrdcol
@@ -549,7 +549,7 @@ module advance_xm_wpxp_module
       end if ! sclr_dim > 0
        
       if ( l_predict_upwp_vpwp ) then
-        !$acc parallel loop gang vector collapse(2) default(present)
+        !$acc  parallel loop gang vector collapse(2) default(present) async(1) 
         do k = 1, nz
           do i = 1, ngrdcol
             um_old(i,k)   = um(i,k)
@@ -565,7 +565,7 @@ module advance_xm_wpxp_module
 
     if ( .not. l_diag_Lscale_from_tau ) then
 
-      !$acc parallel loop gang vector collapse(2) default(present)
+      !$acc  parallel loop gang vector collapse(2) default(present) async(1) 
       do k = 1, nz
         do i = 1, ngrdcol
 
@@ -586,7 +586,7 @@ module advance_xm_wpxp_module
       end do
       !$acc end parallel loop
 
-      !$acc parallel loop gang vector collapse(2) default(present)
+      !$acc  parallel loop gang vector collapse(2) default(present) async(1) 
       do k = 1, nz
         do i = 1, ngrdcol
     
@@ -619,7 +619,7 @@ module advance_xm_wpxp_module
                              C6thl_Skw_fnc )
 
     else ! l_diag_Lscale_from_tau
-      !$acc parallel loop gang vector collapse(2) default(present)
+      !$acc  parallel loop gang vector collapse(2) default(present) async(1) 
       do k = 1, nz
         do i = 1, ngrdcol
           C6rt_Skw_fnc(i,k)  = clubb_params(i,iC6rt)
@@ -633,7 +633,7 @@ module advance_xm_wpxp_module
     if ( l_use_C7_Richardson ) then
 
       ! New formulation based on Richardson number
-      !$acc parallel loop gang vector collapse(2) default(present)
+      !$acc  parallel loop gang vector collapse(2) default(present) async(1) 
       do k = 1, nz
         do i = 1, ngrdcol
           C7_Skw_fnc(i,k) = Cx_fnc_Richardson(i,k)
@@ -643,7 +643,7 @@ module advance_xm_wpxp_module
 
     else
 
-      !$acc parallel loop gang vector collapse(2) default(present)
+      !$acc  parallel loop gang vector collapse(2) default(present) async(1) 
       do k = 1, nz
         do i = 1, ngrdcol
 
@@ -675,7 +675,7 @@ module advance_xm_wpxp_module
     
     if ( stats_metadata%l_stats_samp ) then
 
-      !$acc update host( C7_Skw_fnc, C6rt_Skw_fnc, C6thl_Skw_fnc )
+      !$acc  update host( C7_Skw_fnc, C6rt_Skw_fnc, C6thl_Skw_fnc ) wait 
 
       do i = 1, ngrdcol
         call stat_update_var( stats_metadata%iC7_Skw_fnc, C7_Skw_fnc(i,:), & ! intent(in)
@@ -690,7 +690,7 @@ module advance_xm_wpxp_module
 
     if ( clubb_at_least_debug_level( 0 ) ) then
       ! Assertion check for C7_Skw_fnc
-      !$acc parallel loop gang vector collapse(2) default(present)  reduction(.or.:err_code)
+      !$acc parallel loop gang vector collapse(2) default(present)  reduction(.or.:err_code) wait
       do k = 1, nz
         do i = 1, ngrdcol
           if ( C7_Skw_fnc(i,k) > one .or. C7_Skw_fnc(i,k) < zero ) then
@@ -710,7 +710,7 @@ module advance_xm_wpxp_module
     ! Kw6 is used for wpthlp and wprtp, which are located on momentum levels.
     ! Kw6 is located on thermodynamic levels.
     ! Kw6 = c_K6 * Kh_zt
-    !$acc parallel loop gang vector collapse(2) default(present)
+    !$acc  parallel loop gang vector collapse(2) default(present) async(1) 
     do k = 1, nz
       do i = 1, ngrdcol
         Kw6(i,k) = clubb_params(i,ic_K6) * Kh_zt(i,k)
@@ -735,7 +735,7 @@ module advance_xm_wpxp_module
                             invrs_tau_C6_zm, l_scalar_calc,                       & ! Intent(in)
                             lhs_pr1_wprtp, lhs_pr1_wpthlp, lhs_pr1_wpsclrp )        ! Intent(out)
     
-    !$acc parallel loop gang vector collapse(2) default(present)
+    !$acc  parallel loop gang vector collapse(2) default(present) async(1) 
     do k = 1, nz
       do i = 1, ngrdcol
         C6_term(i,k) = C6rt_Skw_fnc(i,k) * invrs_tau_C6_zm(i,k)
@@ -744,7 +744,7 @@ module advance_xm_wpxp_module
     !$acc end parallel loop
 
     if ( stats_metadata%l_stats_samp ) then
-      !$acc update host( C6_term )
+      !$acc  update host( C6_term ) wait 
       do i = 1, ngrdcol
         call stat_update_var( stats_metadata%iC6_term, C6_term(i,:), & ! intent(in)
                               stats_zm(i) )           ! intent(inout)
@@ -862,7 +862,7 @@ module advance_xm_wpxp_module
 
     if ( l_lmm_stepping ) then
       
-      !$acc parallel loop gang vector collapse(2) default(present)
+      !$acc  parallel loop gang vector collapse(2) default(present) async(1) 
       do k = 1, nz
         do i = 1, ngrdcol
           thlm(i,k)   = one_half * (   thlm_old(i,k) + thlm(i,k)   )
@@ -874,7 +874,7 @@ module advance_xm_wpxp_module
       !$acc end parallel loop
       
       if ( sclr_dim > 0 ) then
-        !$acc parallel loop gang vector collapse(3) default(present)
+        !$acc  parallel loop gang vector collapse(3) default(present) async(1) 
         do j = 1, sclr_dim
           do k = 1, nz
             do i = 1, ngrdcol
@@ -887,7 +887,7 @@ module advance_xm_wpxp_module
       endif ! sclr_dim > 0
       
       if ( l_predict_upwp_vpwp ) then
-        !$acc parallel loop gang vector collapse(2) default(present)
+        !$acc  parallel loop gang vector collapse(2) default(present) async(1) 
         do k = 1, nz
           do i = 1, ngrdcol
             um(i,k)   = one_half * (   um_old(i,k) +   um(i,k) )
@@ -904,19 +904,19 @@ module advance_xm_wpxp_module
     if ( clubb_at_least_debug_level( 0 ) ) then
       if ( err_code == clubb_fatal_error ) then
 
-        !$acc update host( sigma_sqd_w, wm_zm, wm_zt, wp2, Lscale_zm, wp3_on_wp2, &
-        !$acc              wp3_on_wp2_zt, Kh_zt, Kh_zm, invrs_tau_C6_zm, Skw_zm, &
-        !$acc              wp2rtp, rtpthvp, rtm_forcing, wprtp_forcing, rtm_ref, wp2thlp, &
-        !$acc              thlpthvp, thlm_forcing, wpthlp_forcing, thlm_ref, rho_ds_zm, &
-        !$acc              rho_ds_zt, invrs_rho_ds_zm, invrs_rho_ds_zt, thv_ds_zm, rtp2, &
-        !$acc              thlp2, w_1_zm, w_2_zm, varnce_w_1_zm, varnce_w_2_zm, &
-        !$acc              mixt_frac_zm, em, wp2sclrp, sclrpthvp, &
-        !$acc              sclrm_forcing, sclrp2, exner, rcm, p_in_Pa, thvm, &
-        !$acc              Cx_fnc_Richardson, um_forcing, vm_forcing, ug, vg, &
-        !$acc              wpthvp, fcor, um_ref, vm_ref, up2, vp2, uprcp, vprcp, rc_coef_zm, &
-        !$acc              rtm, wprtp, thlm, wpthlp, sclrm, wpsclrp, um, upwp, vm, vpwp, &
-        !$acc              rtm_old,wprtp_old, thlm_old, wpthlp_old, sclrm_old, wpsclrp_old, &
-        !$acc              um_old, upwp_old, vm_old, vpwp_old )
+        !$acc  update host( sigma_sqd_w, wm_zm, wm_zt, wp2, Lscale_zm, wp3_on_wp2, & 
+        !$acc               wp3_on_wp2_zt, Kh_zt, Kh_zm, invrs_tau_C6_zm, Skw_zm, & 
+        !$acc               wp2rtp, rtpthvp, rtm_forcing, wprtp_forcing, rtm_ref, wp2thlp, & 
+        !$acc               thlpthvp, thlm_forcing, wpthlp_forcing, thlm_ref, rho_ds_zm, & 
+        !$acc               rho_ds_zt, invrs_rho_ds_zm, invrs_rho_ds_zt, thv_ds_zm, rtp2, & 
+        !$acc               thlp2, w_1_zm, w_2_zm, varnce_w_1_zm, varnce_w_2_zm, & 
+        !$acc               mixt_frac_zm, em, wp2sclrp, sclrpthvp, & 
+        !$acc               sclrm_forcing, sclrp2, exner, rcm, p_in_Pa, thvm, & 
+        !$acc               Cx_fnc_Richardson, um_forcing, vm_forcing, ug, vg, & 
+        !$acc               wpthvp, fcor, um_ref, vm_ref, up2, vp2, uprcp, vprcp, rc_coef_zm, & 
+        !$acc               rtm, wprtp, thlm, wpthlp, sclrm, wpsclrp, um, upwp, vm, vpwp, & 
+        !$acc               rtm_old,wprtp_old, thlm_old, wpthlp_old, sclrm_old, wpsclrp_old, & 
+        !$acc               um_old, upwp_old, vm_old, vpwp_old ) wait 
 
         do i = 1, ngrdcol
           call error_prints_xm_wpxp( nz, sclr_dim, gr%zm(i,:), gr%zt(i,:), & ! intent(in) 
@@ -951,7 +951,7 @@ module advance_xm_wpxp_module
 
     if ( rtm_sponge_damp_settings%l_sponge_damping ) then
 
-      !$acc update host( rtm, rtm_ref )
+      !$acc  update host( rtm, rtm_ref ) wait 
 
       if ( stats_metadata%l_stats_samp ) then
         do i = 1, ngrdcol
@@ -976,13 +976,13 @@ module advance_xm_wpxp_module
         end do
       end if
 
-      !$acc update device( rtm )
+      !$acc  update device( rtm ) wait 
 
     endif ! rtm_sponge_damp_settings%l_sponge_damping
 
     if ( thlm_sponge_damp_settings%l_sponge_damping ) then
 
-      !$acc update host( thlm, thlm_ref )
+      !$acc  update host( thlm, thlm_ref ) wait 
 
       if ( stats_metadata%l_stats_samp ) then
         do i = 1, ngrdcol
@@ -1007,7 +1007,7 @@ module advance_xm_wpxp_module
         end do
       end if
 
-      !$acc update device( thlm )
+      !$acc  update device( thlm ) wait 
 
     end if ! thlm_sponge_damp_settings%l_sponge_damping
 
@@ -1015,7 +1015,7 @@ module advance_xm_wpxp_module
 
       if ( uv_sponge_damp_settings%l_sponge_damping ) then
 
-        !$acc update host( um, vm, um_ref, vm_ref )
+        !$acc  update host( um, vm, um_ref, vm_ref ) wait 
 
         if ( stats_metadata%l_stats_samp ) then
           do i = 1, ngrdcol
@@ -1053,7 +1053,7 @@ module advance_xm_wpxp_module
           end do
         end if
 
-      !$acc update device( um, vm )
+      !$acc  update device( um, vm ) wait 
 
       end if ! uv_sponge_damp_settings%l_sponge_damping
 
@@ -1062,7 +1062,7 @@ module advance_xm_wpxp_module
 
         ! Reflect nudging in budget
         if ( stats_metadata%l_stats_samp ) then
-          !$acc update host( um, vm )
+          !$acc  update host( um, vm ) wait 
           do i = 1, ngrdcol
             tmp_in(1) = 0.0_core_rknd
             tmp_in(2:nz) = um(i,2:nz)
@@ -1075,7 +1075,7 @@ module advance_xm_wpxp_module
           end do
         end if
         
-        !$acc parallel loop gang vector collapse(2) default(present)
+        !$acc  parallel loop gang vector collapse(2) default(present) async(1) 
         do k = 1, nz
           do i = 1, ngrdcol
             um(i,k) = um(i,k) - ( ( um(i,k) - um_ref(i,k) ) * (dt/ts_nudge) )
@@ -1086,7 +1086,7 @@ module advance_xm_wpxp_module
 
         ! Reflect nudging in budget
         if ( stats_metadata%l_stats_samp ) then
-          !$acc update host( um, vm )
+          !$acc  update host( um, vm ) wait 
           do i = 1, ngrdcol
             tmp_in(1) = 0.0_core_rknd
             tmp_in(2:nz) = um(i,2:nz)
@@ -1102,7 +1102,7 @@ module advance_xm_wpxp_module
       end if ! l_uv_nudge
 
       if ( stats_metadata%l_stats_samp ) then
-        !$acc update host( um_ref, vm_ref )
+        !$acc  update host( um_ref, vm_ref ) wait 
         do i = 1, ngrdcol
           tmp_in(1) = 0.0_core_rknd
           tmp_in(2:nz) = um_ref(i,2:nz)
@@ -1119,7 +1119,7 @@ module advance_xm_wpxp_module
 
     ! Lower boundary condition on xm
 
-    !$acc parallel loop gang vector default(present)
+    !$acc  parallel loop gang vector default(present) async(1) 
     do i = 1, ngrdcol
       rtm(i,1)  = rtm(i,2)
       thlm(i,1) = thlm(i,2)
@@ -1127,7 +1127,7 @@ module advance_xm_wpxp_module
     !$acc end parallel loop
 
     if ( sclr_dim > 0 ) then
-      !$acc parallel loop gang vector collapse(2) default(present)
+      !$acc  parallel loop gang vector collapse(2) default(present) async(1) 
       do j = 1, sclr_dim
         do i = 1, ngrdcol
           sclrm(i,1,j) = sclrm(i,2,j)
@@ -1137,7 +1137,7 @@ module advance_xm_wpxp_module
     endif
 
     if ( l_predict_upwp_vpwp ) then
-      !$acc parallel loop gang vector default(present)
+      !$acc  parallel loop gang vector default(present) async(1) 
       do i = 1, ngrdcol
         um(i,1) = um(i,2)
         vm(i,1) = vm(i,2)
@@ -1156,11 +1156,11 @@ module advance_xm_wpxp_module
     !$acc                   lhs_ta_wprtp, lhs_ta_wpthlp, lhs_ta_wpup, lhs_ta_wpvp, &
     !$acc                   rhs_ta_wprtp, rhs_ta_wpthlp, rhs_ta_wpup, &
     !$acc                   rhs_ta_wpvp, lhs_tp, lhs_ta_xm, lhs_ac_pr2, &
-    !$acc                   lhs_pr1_wprtp, lhs_pr1_wpthlp )
+    !$acc                   lhs_pr1_wprtp, lhs_pr1_wpthlp ) wait
 
     !$acc exit data if( sclr_dim > 0 ) &
     !$acc           delete( sclrm_old, wpsclrp_old, lhs_ta_wpsclrp,  &
-    !$acc                   rhs_ta_wpsclrp, lhs_pr1_wpsclrp )
+    !$acc                   rhs_ta_wpsclrp, lhs_pr1_wpsclrp ) wait
 
     return
 
@@ -1324,7 +1324,7 @@ module advance_xm_wpxp_module
     invrs_dt = 1.0_core_rknd / dt
 
     ! Lower boundary for xm, lhs(:,1)
-    !$acc parallel loop gang vector default(present)
+    !$acc  parallel loop gang vector default(present) async(1) 
     do i = 1, ngrdcol
       lhs(1,i,1) = 0.0_core_rknd
       lhs(2,i,1) = 0.0_core_rknd
@@ -1335,7 +1335,7 @@ module advance_xm_wpxp_module
     !$acc end parallel loop
 
     ! Lower boundary for w'x', lhs(:,2)
-    !$acc parallel loop gang vector default(present)
+    !$acc  parallel loop gang vector default(present) async(1) 
     do i = 1, ngrdcol
       lhs(1,i,2) = 0.0_core_rknd
       lhs(2,i,2) = 0.0_core_rknd
@@ -1346,7 +1346,7 @@ module advance_xm_wpxp_module
     !$acc end parallel loop
 
     ! Combine xm and w'x' terms into LHS
-    !$acc parallel loop gang vector collapse(2) default(present)
+    !$acc  parallel loop gang vector collapse(2) default(present) async(1) 
     do k = 2, nz
       do i = 1, ngrdcol
 
@@ -1386,7 +1386,7 @@ module advance_xm_wpxp_module
 
     ! Upper boundary for w'x', , lhs(:,2*gr%nz)
     ! These were set in the loop above for simplicity, so they must be set properly here
-    !$acc parallel loop gang vector default(present)
+    !$acc  parallel loop gang vector default(present) async(1) 
     do i = 1, ngrdcol
       lhs(1,i,2*nz) = 0.0_core_rknd
       lhs(2,i,2*nz) = 0.0_core_rknd
@@ -1398,7 +1398,7 @@ module advance_xm_wpxp_module
     
     ! LHS time tendency
     if ( l_iter ) then
-      !$acc parallel loop gang vector collapse(2) default(present)
+      !$acc  parallel loop gang vector collapse(2) default(present) async(1) 
       do k = 2, nz-1
         do i = 1, ngrdcol
           k_wpxp = 2*k 
@@ -1410,7 +1410,7 @@ module advance_xm_wpxp_module
     
     ! Calculate diffusion terms for all thermodynamic grid level
     if ( l_diffuse_rtm_and_thlm ) then
-      !$acc parallel loop gang vector collapse(2) default(present)
+      !$acc  parallel loop gang vector collapse(2) default(present) async(1) 
       do k = 2, nz 
         do i = 1, ngrdcol
           k_xm = 2*k - 1
@@ -1424,7 +1424,7 @@ module advance_xm_wpxp_module
     
     ! Calculate mean advection terms for all momentum grid level
     if ( .not. l_implemented ) then
-      !$acc parallel loop gang vector collapse(2) default(present)
+      !$acc  parallel loop gang vector collapse(2) default(present) async(1) 
       do k = 2, nz 
         do i = 1, ngrdcol
           k_xm = 2*k - 1
@@ -1584,7 +1584,7 @@ module advance_xm_wpxp_module
 
     !------------------- Begin Code -------------------
 
-    !$acc enter data create( Kh_N2_zm, K_zm, K_zt, Kw6_zm, zeros_array )
+    !$acc  enter data create( Kh_N2_zm, K_zm, K_zt, Kw6_zm, zeros_array ) async(1) 
 
     ! Initializations/precalculations
     constant_nu = 0.1_core_rknd
@@ -1632,7 +1632,7 @@ module advance_xm_wpxp_module
                                           l_use_thvm_in_bv_freq,&
                                           Kh_N2_zm )
 
-          !$acc parallel loop gang vector collapse(2) default(present)
+          !$acc  parallel loop gang vector collapse(2) default(present) async(1) 
           do k = 1, nz
             do i = 1, ngrdcol                               
               Kh_N2_zm(i,k) = Kh_zm(i,k) / Kh_N2_zm(i,k)
@@ -1641,7 +1641,7 @@ module advance_xm_wpxp_module
           !$acc end parallel loop
 
         else
-          !$acc parallel loop gang vector collapse(2) default(present)
+          !$acc  parallel loop gang vector collapse(2) default(present) async(1) 
           do k = 1, nz
             do i = 1, ngrdcol
               Kh_N2_zm(i,k) = Kh_zm(i,k)
@@ -1650,7 +1650,7 @@ module advance_xm_wpxp_module
           !$acc end parallel loop
         end if
 
-        !$acc parallel loop gang vector collapse(2) default(present)
+        !$acc  parallel loop gang vector collapse(2) default(present) async(1) 
         do k = 1, nz
           do i = 1, ngrdcol        
             K_zm(i,k) = Kh_N2_zm(i,k) + constant_nu
@@ -1660,7 +1660,7 @@ module advance_xm_wpxp_module
 
         K_zt = zm2zt_gpu( nz, ngrdcol, gr, K_zm, zero_threshold )
 
-        !$acc parallel loop gang vector default(present)
+        !$acc  parallel loop gang vector default(present) async(1) 
         do i = 1, ngrdcol        
           zeros_array(i) = zero
         end do
@@ -1680,7 +1680,7 @@ module advance_xm_wpxp_module
                            lhs_ma_zt )                              ! Intent(out)
     end if    
 
-    !$acc exit data delete( Kh_N2_zm, K_zm, K_zt, Kw6_zm, zeros_array )
+    !$acc exit data delete( Kh_N2_zm, K_zm, K_zt, Kw6_zm, zeros_array ) wait
 
     return
 
@@ -1828,7 +1828,7 @@ module advance_xm_wpxp_module
 
     !------------------- Begin Code -------------------
 
-    !$acc enter data create( rhs_bp_pr3 )
+    !$acc  enter data create( rhs_bp_pr3 ) async(1) 
 
     ! Initialize output array and precalculate the reciprocal of dt
     invrs_dt = 1.0_core_rknd / dt    
@@ -1837,7 +1837,7 @@ module advance_xm_wpxp_module
     call wpxp_terms_bp_pr3_rhs( nz, ngrdcol, C7_Skw_fnc, thv_ds_zm, xpthvp, & ! intent(in)
                                 rhs_bp_pr3 )                                  ! intent(out)
                             
-    !$acc parallel loop gang vector default(present)
+    !$acc  parallel loop gang vector default(present) async(1) 
     do i = 1, ngrdcol
       ! Set lower boundary for xm
       rhs(i,1) = xm(i,1)
@@ -1848,7 +1848,7 @@ module advance_xm_wpxp_module
     !$acc end parallel loop
 
     ! Combine terms to calculate other values, rhs(3) to rhs(gr%nz-2)
-    !$acc parallel loop gang vector collapse(2) default(present)
+    !$acc  parallel loop gang vector collapse(2) default(present) async(1) 
     do k = 2, nz-1
       do i = 1, ngrdcol
 
@@ -1873,7 +1873,7 @@ module advance_xm_wpxp_module
     end do
     !$acc end parallel loop
 
-    !$acc parallel loop gang vector default(present)
+    !$acc  parallel loop gang vector default(present) async(1) 
     do i = 1, ngrdcol
       ! Upper boundary for xm
       rhs(i,2*nz-1) = xm(i,nz) * invrs_dt + xm_forcing(i,nz)
@@ -1885,7 +1885,7 @@ module advance_xm_wpxp_module
 
     ! RHS time tendency.
     if ( l_iter ) then
-      !$acc parallel loop gang vector collapse(2) default(present)
+      !$acc  parallel loop gang vector collapse(2) default(present) async(1) 
       do k = 2, nz-1
         do i = 1, ngrdcol
           k_wpxp = 2*k
@@ -1898,8 +1898,8 @@ module advance_xm_wpxp_module
 
     if ( stats_metadata%l_stats_samp ) then
 
-      !$acc update host( lhs_ta_wpxp, xm, wpxp, xm_forcing, wpxp_forcing, &
-      !$acc              C7_Skw_fnc, xpthvp, thv_ds_zm, lhs_pr1, rhs_ta, rhs )
+      !$acc  update host( lhs_ta_wpxp, xm, wpxp, xm_forcing, wpxp_forcing, & 
+      !$acc               C7_Skw_fnc, xpthvp, thv_ds_zm, lhs_pr1, rhs_ta, rhs ) wait 
 
       zero_vector = zero
 
@@ -1951,7 +1951,7 @@ module advance_xm_wpxp_module
       ! w'x' term bp is completely explicit; call stat_update_var.
       ! Note:  To find the contribution of w'x' term bp, substitute 0 for the
       !        C_7 skewness function input to function wpxp_terms_bp_pr3_rhs.
-      !$acc data copyin( zero_vector ) copyout( rhs_bp )
+      !$acc  data copyin( zero_vector ) copyout( rhs_bp ) async(1) 
         call wpxp_terms_bp_pr3_rhs( nz, ngrdcol, zero_vector, thv_ds_zm, xpthvp, & ! intent(in)
                                     rhs_bp )                                       ! intent(out)
       !$acc end data
@@ -1966,7 +1966,7 @@ module advance_xm_wpxp_module
       ! w'x' term pr3 is completely explicit; call stat_update_var.
       ! Note:  To find the contribution of w'x' term pr3, add 1 to the
       !        C_7 skewness function input to function wpxp_terms_bp_pr2_rhs.
-      !$acc data copyin( tmp ) copyout( rhs_pr3 )
+      !$acc  data copyin( tmp ) copyout( rhs_pr3 ) async(1) 
         call wpxp_terms_bp_pr3_rhs( nz, ngrdcol, tmp, thv_ds_zm, xpthvp, & ! intent(in)
                                     rhs_pr3 )                                           ! intent(out)
       !$acc end data
@@ -2033,7 +2033,7 @@ module advance_xm_wpxp_module
 
     endif ! stats_metadata%l_stats_samp
 
-    !$acc exit data delete( rhs_bp_pr3 )
+    !$acc exit data delete( rhs_bp_pr3 ) wait
 
     return
 
@@ -2220,14 +2220,14 @@ module advance_xm_wpxp_module
 
     !------------------- Begin Code -------------------
 
-    !$acc enter data create( coef_wp2rtp_implicit, term_wp2rtp_explicit, coef_wp2rtp_implicit_zm, &
-    !$acc                 term_wp2rtp_explicit_zm, coef_wp2thlp_implicit, term_wp2thlp_explicit, &
-    !$acc                 coef_wp2thlp_implicit_zm, term_wp2thlp_explicit_zm, &
-    !$acc                 sgn_t_vel_wprtp, sgn_t_vel_wpthlp, &
-    !$acc                 a1, a1_zt )
+    !$acc  enter data create( coef_wp2rtp_implicit, term_wp2rtp_explicit, coef_wp2rtp_implicit_zm, & 
+    !$acc                  term_wp2rtp_explicit_zm, coef_wp2thlp_implicit, term_wp2thlp_explicit, & 
+    !$acc                  coef_wp2thlp_implicit_zm, term_wp2thlp_explicit_zm, & 
+    !$acc                  sgn_t_vel_wprtp, sgn_t_vel_wpthlp, & 
+    !$acc                  a1, a1_zt ) async(1) 
 
-    !$acc enter data if( sclr_dim > 0 ) &
-    !$acc            create( term_wp2sclrp_explicit, term_wp2sclrp_explicit_zm, sgn_t_vel_wpsclrp )
+    !$acc  enter data if( sclr_dim > 0 ) & 
+    !$acc             create( term_wp2sclrp_explicit, term_wp2sclrp_explicit_zm, sgn_t_vel_wpsclrp ) async(1) 
     
     ! Set up the implicit coefficients and explicit terms for turbulent
     ! advection of <w'rt'>, <w'thl'>, and <w'sclr'>.
@@ -2249,7 +2249,7 @@ module advance_xm_wpxp_module
        
       ! The turbulent advection terms are handled entirely explicitly. Thus the LHS
       ! terms can be set to zero.
-      !$acc parallel loop gang vector collapse(3) default(present)
+      !$acc  parallel loop gang vector collapse(3) default(present) async(1) 
       do k = 1, nz
         do i = 1, ngrdcol
           do b = 1, ndiags3
@@ -2261,7 +2261,7 @@ module advance_xm_wpxp_module
       !$acc end parallel loop
        
       if ( l_scalar_calc ) then
-        !$acc parallel loop gang vector default(present) collapse(4)
+        !$acc  parallel loop gang vector default(present) collapse(4) async(1) 
         do sclr = 1, sclr_dim
           do k = 1, nz
             do i = 1, ngrdcol
@@ -2274,7 +2274,7 @@ module advance_xm_wpxp_module
         !$acc end parallel loop
       end if
 
-      !$acc parallel loop gang vector collapse(2) default(present)
+      !$acc  parallel loop gang vector collapse(2) default(present) async(1) 
       do k = 1, nz
         do i = 1, ngrdcol
           term_wp2rtp_explicit(i,k)  = wp2rtp(i,k)
@@ -2303,7 +2303,7 @@ module advance_xm_wpxp_module
                                      
       do sclr = 1, sclr_dim, 1
         
-        !$acc parallel loop gang vector collapse(2) default(present)
+        !$acc  parallel loop gang vector collapse(2) default(present) async(1) 
         do k = 1, nz
           do i = 1, ngrdcol
             term_wp2sclrp_explicit(i,k) = wp2sclrp(i,k,sclr)
@@ -2337,7 +2337,7 @@ module advance_xm_wpxp_module
         ! Calculate a_1.
         ! It is a variable that is a function of sigma_sqd_w (where
         ! sigma_sqd_w is located on momentum levels).
-        !$acc parallel loop gang vector collapse(2) default(present)
+        !$acc  parallel loop gang vector collapse(2) default(present) async(1) 
         do k = 1, nz
           do i = 1, ngrdcol
             a1(i,k) = one / ( one - sigma_sqd_w(i,k) )
@@ -2349,7 +2349,7 @@ module advance_xm_wpxp_module
         ! will be used for the <w'x'> turbulent advection (ta) term.
         a1_zt(:,:) = zm2zt_gpu( nz, ngrdcol, gr, a1, zero_threshold )   ! Positive def. quantity
 
-        !$acc parallel loop gang vector collapse(2) default(present)
+        !$acc  parallel loop gang vector collapse(2) default(present) async(1) 
         do k = 1, nz
           do i = 1, ngrdcol
             coef_wp2rtp_implicit(i,k) = a1_zt(i,k) * wp3_on_wp2_zt(i,k)
@@ -2372,7 +2372,7 @@ module advance_xm_wpxp_module
         else
 
           ! Godunov-like method for the vertical discretization of ta term  
-          !$acc parallel loop gang vector default(present) collapse(2)
+          !$acc  parallel loop gang vector default(present) collapse(2) async(1) 
           do k = 1, nz
             do i = 1, ngrdcol
               coef_wp2rtp_implicit(i,k) = a1_zt(i,k) * wp3_on_wp2_zt(i,k)
@@ -2390,7 +2390,7 @@ module advance_xm_wpxp_module
  
         ! For ADG1, the LHS turbulent advection terms for 
         ! <w'r_t'>, <w'thl'>, <w'sclr'> are all equal
-        !$acc parallel loop gang vector default(present) collapse(3)
+        !$acc  parallel loop gang vector default(present) collapse(3) async(1) 
         do k = 1, nz
           do i = 1, ngrdcol
             do b = 1, ndiags3
@@ -2401,7 +2401,7 @@ module advance_xm_wpxp_module
         !$acc end parallel loop
         
         if ( l_scalar_calc ) then
-          !$acc parallel loop gang vector default(present) collapse(4)
+          !$acc  parallel loop gang vector default(present) collapse(4) async(1) 
           do sclr = 1, sclr_dim
             do k = 1, nz
               do i = 1, ngrdcol
@@ -2415,7 +2415,7 @@ module advance_xm_wpxp_module
         end if
         
         if ( stats_metadata%l_stats_samp ) then
-          !$acc parallel loop gang vector collapse(2) default(present)
+          !$acc  parallel loop gang vector collapse(2) default(present) async(1) 
           do k = 1, nz
             do i = 1, ngrdcol
               term_wp2rtp_explicit(i,k) = zero
@@ -2427,7 +2427,7 @@ module advance_xm_wpxp_module
 
         ! The <w'r_t'>, <w'thl'>, <w'sclr'> turbulent advection terms are entirely implicit.
         ! Set the RHS turbulent advection terms to 0
-        !$acc parallel loop gang vector collapse(2) default(present)
+        !$acc  parallel loop gang vector collapse(2) default(present) async(1) 
         do k = 1, nz
           do i = 1, ngrdcol
             rhs_ta_wprtp(i,k) = zero
@@ -2437,7 +2437,7 @@ module advance_xm_wpxp_module
         !$acc end parallel loop
 
         if ( l_scalar_calc ) then
-          !$acc parallel loop gang vector default(present) collapse(3)
+          !$acc  parallel loop gang vector default(present) collapse(3) async(1) 
           do sclr = 1, sclr_dim
             do k = 1, nz
               do i = 1, ngrdcol
@@ -2452,7 +2452,7 @@ module advance_xm_wpxp_module
             
           ! Predict <u> and <u'w'>, as well as <v> and <v'w'>.
           ! These terms are equal to the <w'r_t'> terms as well in this case
-          !$acc parallel loop gang vector default(present) collapse(3)
+          !$acc  parallel loop gang vector default(present) collapse(3) async(1) 
           do k = 1, nz
             do i = 1, ngrdcol
               do b = 1, ndiags3
@@ -2465,7 +2465,7 @@ module advance_xm_wpxp_module
           
           ! The <w'u'> and <w'v'> turbulent advection terms are entirely implicit.
           ! Set the RHS turbulent advection terms to 0
-          !$acc parallel loop gang vector collapse(2) default(present)
+          !$acc  parallel loop gang vector collapse(2) default(present) async(1) 
           do k = 1, nz
             do i = 1, ngrdcol
               rhs_ta_wpup(i,k) = zero
@@ -2599,8 +2599,8 @@ module advance_xm_wpxp_module
     endif ! l_explicit_turbulent_adv_xpyp
       
     if ( stats_metadata%l_stats_samp ) then
-      !$acc update host( coef_wp2rtp_implicit, term_wp2rtp_explicit, &
-      !$acc              coef_wp2thlp_implicit, term_wp2thlp_explicit )
+      !$acc  update host( coef_wp2rtp_implicit, term_wp2rtp_explicit, & 
+      !$acc               coef_wp2thlp_implicit, term_wp2thlp_explicit ) wait 
       do i = 1, ngrdcol
         tmp_in(1) = 0.0_core_rknd
         tmp_in(2:nz) = coef_wp2rtp_implicit(i,2:nz)
@@ -2622,10 +2622,10 @@ module advance_xm_wpxp_module
     !$acc                 term_wp2rtp_explicit_zm, coef_wp2thlp_implicit, term_wp2thlp_explicit, &
     !$acc                 coef_wp2thlp_implicit_zm, term_wp2thlp_explicit_zm, &
     !$acc                 sgn_t_vel_wprtp, sgn_t_vel_wpthlp, &
-    !$acc                 a1, a1_zt )
+    !$acc                 a1, a1_zt ) wait
 
     !$acc exit data if( sclr_dim > 0 ) &
-    !$acc            delete( term_wp2sclrp_explicit, term_wp2sclrp_explicit_zm, sgn_t_vel_wpsclrp )
+    !$acc            delete( term_wp2sclrp_explicit, term_wp2sclrp_explicit_zm, sgn_t_vel_wpsclrp ) wait
     
   end subroutine calc_xm_wpxp_ta_terms
   
@@ -2945,18 +2945,18 @@ module advance_xm_wpxp_module
 
     ! ------------------- Begin Code -------------------
 
-    !$acc enter data create( lhs, um_tndcy, vm_tndcy, upwp_forcing, &
-    !$acc                 vpwp_forcing, upthvp, vpthvp, upthlp, vpthlp, uprtp, vprtp, &
-    !$acc                 tau_C6_zm, upwp_forcing_pert, vpwp_forcing_pert, upthvp_pert, &
-    !$acc                 vpthvp_pert, upthlp_pert, vpthlp_pert, uprtp_pert, vprtp_pert, &
-    !$acc                 rhs, rhs_save, solution, old_solution, rcond, zeros_vector, &
-    !$acc                 ddzt_um, ddzt_vm, ddzt_um_pert, ddzt_vm_pert )
+    !$acc  enter data create( lhs, um_tndcy, vm_tndcy, upwp_forcing, & 
+    !$acc                  vpwp_forcing, upthvp, vpthvp, upthlp, vpthlp, uprtp, vprtp, & 
+    !$acc                  tau_C6_zm, upwp_forcing_pert, vpwp_forcing_pert, upthvp_pert, & 
+    !$acc                  vpthvp_pert, upthlp_pert, vpthlp_pert, uprtp_pert, vprtp_pert, & 
+    !$acc                  rhs, rhs_save, solution, old_solution, rcond, zeros_vector, & 
+    !$acc                  ddzt_um, ddzt_vm, ddzt_um_pert, ddzt_vm_pert ) async(1) 
 
-    !$acc enter data if( sclr_dim > 0 ) create( wpsclrp_forcing )
+    !$acc  enter data if( sclr_dim > 0 ) create( wpsclrp_forcing ) async(1) 
     
     ! This is initialized solely for the purpose of avoiding a compiler
     ! warning about uninitialized variables.
-    !$acc parallel loop gang vector collapse(2) default(present)
+    !$acc  parallel loop gang vector collapse(2) default(present) async(1) 
     do k = 1, nz
       do i = 1, ngrdcol
         zeros_vector(i,k) = zero
@@ -3009,7 +3009,7 @@ module advance_xm_wpxp_module
 
       ! Set <w'sclr'> forcing to 0 unless unless testing the wpsclrp code
       ! using wprtp or wpthlp (then use wprtp_forcing or wpthlp_forcing).
-      !$acc parallel loop gang vector collapse(2) default(present)
+      !$acc  parallel loop gang vector collapse(2) default(present) async(1) 
       do k = 1, nz
         do i = 1, ngrdcol
           wpsclrp_forcing(i,k,j) = zero
@@ -3039,7 +3039,7 @@ module advance_xm_wpxp_module
 
         ! Only compute the Coriolis term if the model is running on its own,
         ! and is not part of a larger, host model.
-        !$acc parallel loop gang vector collapse(2) default(present)
+        !$acc  parallel loop gang vector collapse(2) default(present) async(1) 
         do k = 1, nz
           do i = 1, ngrdcol
             um_tndcy(i,k) = um_forcing(i,k) - fcor(i) * ( vg(i,k) - vm(i,k) )
@@ -3050,7 +3050,7 @@ module advance_xm_wpxp_module
 
         if ( stats_metadata%l_stats_samp ) then
 
-          !$acc update host( fcor, um_forcing, vm_forcing, vg, ug, vm, um )
+          !$acc  update host( fcor, um_forcing, vm_forcing, vg, ug, vm, um ) wait 
 
           do i = 1, ngrdcol
             ! um or vm term gf is completely explicit; call stat_update_var.
@@ -3087,7 +3087,7 @@ module advance_xm_wpxp_module
 
       else ! implemented in a host model
 
-        !$acc parallel loop gang vector collapse(2) default(present)
+        !$acc  parallel loop gang vector collapse(2) default(present) async(1) 
         do k = 1, nz
           do i = 1, ngrdcol
             um_tndcy(i,k) = zero
@@ -3102,7 +3102,7 @@ module advance_xm_wpxp_module
       ddzt_vm = ddzt( nz, ngrdcol, gr, vm )
 
       ! Add "extra term" and optional Coriolis term for <u'w'> and <v'w'>.
-      !$acc parallel loop gang vector collapse(2) default(present)
+      !$acc  parallel loop gang vector collapse(2) default(present) async(1) 
       do k = 1, nz
         do i = 1, ngrdcol
           upwp_forcing(i,k) = C_uu_shr(i) * wp2(i,k) * ddzt_um(i,k)
@@ -3116,7 +3116,7 @@ module advance_xm_wpxp_module
         ddzt_um_pert = ddzt( nz, ngrdcol, gr, um_pert )
         ddzt_vm_pert = ddzt( nz, ngrdcol, gr, vm_pert )
 
-        !$acc parallel loop gang vector collapse(2) default(present)
+        !$acc  parallel loop gang vector collapse(2) default(present) async(1) 
         do k = 1, nz
           do i = 1, ngrdcol
             upwp_forcing_pert(i,k) = C_uu_shr(i) * wp2(i,k) * ddzt_um_pert(i,k)
@@ -3129,7 +3129,7 @@ module advance_xm_wpxp_module
 
       if ( stats_metadata%l_stats_samp ) then
 
-        !$acc update host( wp2, ddzt_um, ddzt_vm, C_uu_shr )
+        !$acc  update host( wp2, ddzt_um, ddzt_vm, C_uu_shr ) wait 
 
         do i = 1, ngrdcol
           call stat_update_var( stats_metadata%iupwp_pr4, C_uu_shr(i) * wp2(i,:) * ddzt_um(i,:), & ! intent(in)
@@ -3140,7 +3140,7 @@ module advance_xm_wpxp_module
       end if ! stats_metadata%l_stats_samp
 
       ! need tau_C6_zm for these calls
-      !$acc parallel loop gang vector collapse(2) default(present)
+      !$acc  parallel loop gang vector collapse(2) default(present) async(1) 
       do k = 1, nz
         do i = 1, ngrdcol
           tau_C6_zm(i,k) = min ( one / invrs_tau_C6_zm(i,k), tau_max_zm(i,k) )
@@ -3191,7 +3191,7 @@ module advance_xm_wpxp_module
       !         + 200._core_rknd * sign( one, upwp) * sqrt( up2 * rcm**2 )
       !vpthvp = 0.3_core_rknd * ( vpthlp + 200.0_core_rknd * vprtp ) &
       !         + 200._core_rknd * sign( one, vpwp ) * sqrt( vp2 * rcm**2 )
-      !$acc parallel loop gang vector collapse(2) default(present)
+      !$acc  parallel loop gang vector collapse(2) default(present) async(1) 
       do k = 1, nz
         do i = 1, ngrdcol
           upthvp(i,k) = upthlp(i,k) + ep1 * thv_ds_zm(i,k) * uprtp(i,k) &
@@ -3205,7 +3205,7 @@ module advance_xm_wpxp_module
 
       if ( l_perturbed_wind ) then
 
-        !$acc parallel loop gang vector collapse(2) default(present)
+        !$acc  parallel loop gang vector collapse(2) default(present) async(1) 
         do k = 1, nz
           do i = 1, ngrdcol
             upthvp_pert(i,k) = upthlp_pert(i,k) &
@@ -3222,7 +3222,7 @@ module advance_xm_wpxp_module
 
       if ( stats_metadata%l_stats_samp ) then
 
-        !$acc update host( upthlp, uprtp, vpthlp, vprtp, upthvp, vpthvp )
+        !$acc  update host( upthlp, uprtp, vpthlp, vprtp, upthvp, vpthvp ) wait 
 
         do i = 1, ngrdcol
           call stat_update_var( stats_metadata%iupthlp, upthlp(i,:), & ! intent(in)
@@ -3280,7 +3280,7 @@ module advance_xm_wpxp_module
 
     ! Save the value of rhs, which will be overwritten with the solution as
     ! part of the solving routine.
-    !$acc parallel loop gang vector collapse(3) default(present)
+    !$acc  parallel loop gang vector collapse(3) default(present) async(1) 
     do n = 1, nrhs
       do k = 1, 2*nz
         do i = 1, ngrdcol
@@ -3293,7 +3293,7 @@ module advance_xm_wpxp_module
     ! Use the previous solution as an initial guess for the bicgstab method
     if ( penta_solve_method == penta_bicgstab ) then
 
-      !$acc parallel loop gang vector collapse(2) default(present)
+      !$acc  parallel loop gang vector collapse(2) default(present) async(1) 
       do k = 1, nz
         do i = 1, ngrdcol
           old_solution(i,2*k-1,1) = rtm(i,k)
@@ -3304,7 +3304,7 @@ module advance_xm_wpxp_module
       end do
       !$acc end parallel loop
 
-      !$acc parallel loop gang vector collapse(3) default(present)
+      !$acc  parallel loop gang vector collapse(3) default(present) async(1) 
       do j = 1, sclr_dim
         do k = 1, nz
           do i = 1, ngrdcol
@@ -3316,7 +3316,7 @@ module advance_xm_wpxp_module
       !$acc end parallel loop
 
       if ( l_predict_upwp_vpwp ) then
-        !$acc parallel loop gang vector collapse(2) default(present)
+        !$acc  parallel loop gang vector collapse(2) default(present) async(1) 
         do k = 1, nz
           do i = 1, ngrdcol
             old_solution(i,2*k-1,3+sclr_dim) = um(i,k)
@@ -3349,7 +3349,7 @@ module advance_xm_wpxp_module
     if ( clubb_at_least_debug_level( 0 ) ) then
       if ( err_code == clubb_fatal_error ) then
 
-        !$acc update host( gr%zm, gr%zt, lhs, rhs_save )
+        !$acc  update host( gr%zm, gr%zt, lhs, rhs_save ) wait 
          
         write(fstderr,*) "xm & wpxp LU decomp. failed"
         write(fstderr,*) "General xm and wpxp LHS"
@@ -3654,9 +3654,9 @@ module advance_xm_wpxp_module
     !$acc                 tau_C6_zm, upwp_forcing_pert, vpwp_forcing_pert, upthvp_pert, &
     !$acc                 vpthvp_pert, upthlp_pert, vpthlp_pert, uprtp_pert, vprtp_pert, &
     !$acc                 rhs, rhs_save, solution, old_solution, rcond, zeros_vector, &
-    !$acc                 ddzt_um, ddzt_vm, ddzt_um_pert, ddzt_vm_pert )
+    !$acc                 ddzt_um, ddzt_vm, ddzt_um_pert, ddzt_vm_pert ) wait
 
-    !$acc exit data if( sclr_dim > 0 ) delete( wpsclrp_forcing )
+    !$acc exit data if( sclr_dim > 0 ) delete( wpsclrp_forcing ) wait
     
   end subroutine solve_xm_wpxp_with_single_lhs
   
@@ -4561,7 +4561,7 @@ module advance_xm_wpxp_module
 
     ! --------------------------- Begin code ---------------------------
 
-    !$acc enter data create( xm_old, wpxp_pd, xm_pd, wpxp_chnge, xp2_relaxed )
+    !$acc  enter data create( xm_old, wpxp_pd, xm_pd, wpxp_chnge, xp2_relaxed ) async(1) 
 
     select case ( solve_type )
 
@@ -4657,7 +4657,7 @@ module advance_xm_wpxp_module
     end select
     
     ! Copy result into output arrays
-    !$acc parallel loop gang vector collapse(2) default(present)
+    !$acc  parallel loop gang vector collapse(2) default(present) async(1) 
     do k=1, nz
       do i = 1, ngrdcol
 
@@ -4676,17 +4676,17 @@ module advance_xm_wpxp_module
 
     if ( stats_metadata%l_stats_samp ) then
     
-      !$acc update host( wm_zt, rcond, &
-      !$acc              lhs_diff_zm, lhs_ma_zt, lhs_ma_zm, &
-      !$acc              lhs_ta_wpxp, lhs_tp, lhs_ta_xm, &
-      !$acc              lhs_pr1, C7_Skw_fnc, xm, wpxp )
+      !$acc  update host( wm_zt, rcond, & 
+      !$acc               lhs_diff_zm, lhs_ma_zt, lhs_ma_zm, & 
+      !$acc               lhs_ta_wpxp, lhs_tp, lhs_ta_xm, & 
+      !$acc               lhs_pr1, C7_Skw_fnc, xm, wpxp ) wait 
 
       zero_vector(:,:) = 0.0_core_rknd
       
       ! Note:  To find the contribution of w'x' term ac,
       !        substitute 0 for the C_7 skewness function input
       !        to function wpxp_terms_ac_pr2_lhs.
-      !$acc data copyin( zero_vector ) copyout( wpxp_ac )
+      !$acc  data copyin( zero_vector ) copyout( wpxp_ac ) async(1) 
       call wpxp_terms_ac_pr2_lhs( nz, ngrdcol, zero_vector, & ! intent(in)
                                   wm_zt, gr%invrs_dzm,      & ! intent(in)
                                   wpxp_ac )                   ! intent(out)
@@ -4696,7 +4696,7 @@ module advance_xm_wpxp_module
       !        add 1 to the C_7 skewness function input
       !        to function wpxp_terms_ac_pr2_lhs.
       tmp =   (one+C7_Skw_fnc)                                
-      !$acc data copyin( tmp ) copyout( wpxp_pr2 )
+      !$acc  data copyin( tmp ) copyout( wpxp_pr2 ) async(1) 
       call wpxp_terms_ac_pr2_lhs( nz, ngrdcol, tmp, & ! intent(in)
                                   wm_zt, gr%invrs_dzm,           & ! intent(in)
                                   wpxp_pr2 )                       ! intent(out)
@@ -4831,7 +4831,7 @@ module advance_xm_wpxp_module
     ! for the mean field is negative and we're determining total water
     if ( solve_type == xm_wpxp_rtm .and. l_pos_def ) then
 
-      !$acc update host( xm, xm_old, wpxp )
+      !$acc  update host( xm, xm_old, wpxp ) wait 
 
       ! If any xm values are negative and the values at the previous
       ! timestep were all non-negative, then call pos_definite_adj
@@ -4842,7 +4842,7 @@ module advance_xm_wpxp_module
                                xm_pd, wpxp_pd )             ! intent(out)
       end if
 
-      !$acc update device( xm, wpxp, xm_old )
+      !$acc  update device( xm, wpxp, xm_old ) wait 
 
     else
       ! For stats purposes
@@ -4855,7 +4855,7 @@ module advance_xm_wpxp_module
 
     if ( stats_metadata%l_stats_samp ) then
 
-      !$acc update host( xm )
+      !$acc  update host( xm ) wait 
 
       do i = 1, ngrdcol
         call stat_update_var( iwpxp_pd, wpxp_pd(i,1:nz), & ! intent(in)
@@ -4874,7 +4874,7 @@ module advance_xm_wpxp_module
 
       if ( clubb_at_least_debug_level( 3 ) ) then
 
-        !$acc update host( xm )
+        !$acc  update host( xm ) wait 
 
         if ( any( xm < xm_threshold) ) then
           
@@ -4906,7 +4906,7 @@ module advance_xm_wpxp_module
 
       ! Hole filling does not affect the below ground level, perform a blunt clipping
       ! here on that level to prevent small values of xm(1)
-      !$acc parallel loop gang vector default(present)
+      !$acc  parallel loop gang vector default(present) async(1) 
       do i = 1, ngrdcol
         if ( any( xm(i,:) < xm_threshold) ) then
           xm(i,1) = max( xm(i,1), xm_tol )
@@ -4917,7 +4917,7 @@ module advance_xm_wpxp_module
     end if
 
     if ( stats_metadata%l_stats_samp ) then
-      !$acc update host( xm )
+      !$acc  update host( xm ) wait 
       do i = 1, ngrdcol
         call stat_end_update( nz, ixm_cl, xm(i,:) / dt, & ! Intent(in) 
                               stats_zt(i) )                       ! Intent(inout)
@@ -4942,7 +4942,7 @@ module advance_xm_wpxp_module
     if ( l_enable_relaxed_clipping ) then
       if ( solve_type == xm_wpxp_rtm ) then
 
-        !$acc parallel loop gang vector collapse(2) default(present)
+        !$acc  parallel loop gang vector collapse(2) default(present) async(1) 
         do k = 1, nz
           do i = 1, ngrdcol
             xp2_relaxed(i,k) = max( 1e-7_core_rknd , xp2(i,k) )
@@ -4952,7 +4952,7 @@ module advance_xm_wpxp_module
 
       else if ( solve_type == xm_wpxp_thlm ) then
 
-        !$acc parallel loop gang vector collapse(2) default(present)
+        !$acc  parallel loop gang vector collapse(2) default(present) async(1) 
         do k = 1, nz
           do i = 1, ngrdcol
             xp2_relaxed(i,k) = max( 0.01_core_rknd, xp2(i,k) )
@@ -4962,7 +4962,7 @@ module advance_xm_wpxp_module
 
       else ! This includes the passive scalars
 
-        !$acc parallel loop gang vector collapse(2) default(present)
+        !$acc  parallel loop gang vector collapse(2) default(present) async(1) 
         do k = 1, nz
           do i = 1, ngrdcol
             xp2_relaxed(i,k) = max( 1e-7_core_rknd , xp2(i,k) )
@@ -4974,7 +4974,7 @@ module advance_xm_wpxp_module
 
     else  ! Don't relax clipping
 
-      !$acc parallel loop gang vector collapse(2) default(present)
+      !$acc  parallel loop gang vector collapse(2) default(present) async(1) 
       do k = 1, nz
         do i = 1, ngrdcol
           xp2_relaxed(i,k) = xp2(i,k)
@@ -5052,7 +5052,7 @@ module advance_xm_wpxp_module
     !end do
     !!$acc end parallel loop
 
-    !$acc exit data delete( xm_old, wpxp_pd, xm_pd, wpxp_chnge, xp2_relaxed )
+    !$acc exit data delete( xm_old, wpxp_pd, xm_pd, wpxp_chnge, xp2_relaxed ) wait
 
     return
 
@@ -5143,7 +5143,7 @@ module advance_xm_wpxp_module
     integer :: i, k    ! Vertical level index
 
     ! Set lower boundary condition to 0
-    !$acc parallel loop gang vector default(present) 
+    !$acc  parallel loop gang vector default(present) async(1) 
     do i = 1, ngrdcol
       lhs_ta_xm(k_mdiag,i,1)   = zero
       lhs_ta_xm(km1_mdiag,i,1) = zero
@@ -5151,7 +5151,7 @@ module advance_xm_wpxp_module
     !$acc end parallel loop
 
     ! Calculate term at all other grid levels.
-    !$acc parallel loop gang vector collapse(2) default(present)
+    !$acc  parallel loop gang vector collapse(2) default(present) async(1) 
     do k = 2, nz 
       do i = 1, ngrdcol
 
@@ -5249,7 +5249,7 @@ module advance_xm_wpxp_module
     integer :: i, k  ! Vertical level index
 
     ! Set lower boundary to 0
-    !$acc parallel loop gang vector default(present)
+    !$acc  parallel loop gang vector default(present) async(1) 
     do i = 1, ngrdcol
       lhs_tp(1,i,1) = zero
       lhs_tp(2,i,1) = zero
@@ -5257,7 +5257,7 @@ module advance_xm_wpxp_module
     !$acc end parallel loop
 
     ! Calculate term at all interior grid levels.
-    !$acc parallel loop gang vector collapse(2) default(present)
+    !$acc  parallel loop gang vector collapse(2) default(present) async(1) 
     do k = 2, nz-1
       do i = 1, ngrdcol
 
@@ -5272,7 +5272,7 @@ module advance_xm_wpxp_module
     !$acc end parallel loop
 
     ! Set upper boundary to 0
-    !$acc parallel loop gang vector default(present)
+    !$acc  parallel loop gang vector default(present) async(1) 
     do i = 1, ngrdcol
       lhs_tp(1,i,nz) = 0.0_core_rknd
       lhs_tp(2,i,nz) = 0.0_core_rknd
@@ -5365,14 +5365,14 @@ module advance_xm_wpxp_module
     integer :: i, k    ! Vertical level index
 
     ! Set lower boundary to 0
-    !$acc parallel loop gang vector default(present)
+    !$acc  parallel loop gang vector default(present) async(1) 
     do i = 1, ngrdcol
       lhs_ac_pr2(i,1) = zero
     end do
     !$acc end parallel loop
 
     ! Calculate term at all interior grid levels.
-    !$acc parallel loop gang vector collapse(2) default(present)
+    !$acc  parallel loop gang vector collapse(2) default(present) async(1) 
     do k = 2, nz-1
       do i = 1, ngrdcol 
         ! Momentum main diagonal: [ x wpxp(k,<t+1>) ]
@@ -5383,7 +5383,7 @@ module advance_xm_wpxp_module
     !$acc end parallel loop
 
     ! Set upper boundary to 0
-    !$acc parallel loop gang vector default(present)
+    !$acc  parallel loop gang vector default(present) async(1) 
     do i = 1, ngrdcol
       lhs_ac_pr2(i,nz) = zero
     end do
@@ -5460,7 +5460,7 @@ module advance_xm_wpxp_module
 
     !--------------------------- Begin Code ---------------------------
 
-    !$acc parallel loop gang vector collapse(2) default(present)
+    !$acc  parallel loop gang vector collapse(2) default(present) async(1) 
     do k = 2, nz-1
       do i = 1, ngrdcol
 
@@ -5474,7 +5474,7 @@ module advance_xm_wpxp_module
     end do
     !$acc end parallel loop
 
-    !$acc parallel loop gang vector default(present)
+    !$acc  parallel loop gang vector default(present) async(1) 
     do i = 1, ngrdcol
 
       ! Set lower boundary to 0
@@ -5494,7 +5494,7 @@ module advance_xm_wpxp_module
         
     if ( l_scalar_calc ) then
 
-      !$acc parallel loop gang vector collapse(2) default(present)
+      !$acc  parallel loop gang vector collapse(2) default(present) async(1) 
       do k = 2, nz-1
         do i = 1, ngrdcol
 
@@ -5505,7 +5505,7 @@ module advance_xm_wpxp_module
       end do
       !$acc end parallel loop
 
-      !$acc parallel loop gang vector default(present)
+      !$acc  parallel loop gang vector default(present) async(1) 
       do i = 1, ngrdcol
 
         ! Set lower boundary to 0
@@ -5578,13 +5578,13 @@ module advance_xm_wpxp_module
     !---------------------------- Begin Code ----------------------------
 
     ! Set lower boundary to 0
-    !$acc parallel loop gang vector default(present)
+    !$acc  parallel loop gang vector default(present) async(1) 
     do i = 1, ngrdcol
       rhs_bp_pr3(i,1) = zero
     end do
 
     ! Calculate term at all interior grid levels.
-    !$acc parallel loop gang vector collapse(2) default(present)
+    !$acc  parallel loop gang vector collapse(2) default(present) async(1) 
     do k = 2, nz-1
       do i = 1, ngrdcol
         rhs_bp_pr3(i,k) = ( grav / thv_ds_zm(i,k) ) * ( one - C7_Skw_fnc(i,k) ) * xpthvp(i,k)
@@ -5592,7 +5592,7 @@ module advance_xm_wpxp_module
     end do ! k = 2, nz-1
 
     ! Set upper boundary to 0
-    !$acc parallel loop gang vector default(present)
+    !$acc  parallel loop gang vector default(present) async(1) 
     do i = 1, ngrdcol
       rhs_bp_pr3(i,nz) = zero
     end do
@@ -5775,11 +5775,11 @@ module advance_xm_wpxp_module
 
     !---------------------------- Begin Code ----------------------------
 
-    !$acc enter data create( xm_tndcy_wpxp_cl, l_clipping_needed, l_any_clipping_needed )
+    !$acc  enter data create( xm_tndcy_wpxp_cl, l_clipping_needed, l_any_clipping_needed ) async(1) 
 
     l_any_clipping_needed = .false.
 
-    !$acc parallel loop gang vector collapse(2) default(present)
+    !$acc  parallel loop gang vector collapse(2) default(present) async(1) 
     do k = 1, nz
       do i = 1, ngrdcol
         if ( abs( wpxp_chnge(i,k) )  > eps ) then
@@ -5790,7 +5790,7 @@ module advance_xm_wpxp_module
     end do
     !$acc end parallel loop
 
-    !$acc update host( l_any_clipping_needed )
+    !$acc  update host( l_any_clipping_needed ) wait 
 
     if ( .not. l_any_clipping_needed ) then
       return
@@ -5808,7 +5808,7 @@ module advance_xm_wpxp_module
     ! Adjusting xm based on clipping for w'x'.
     ! Loop over all thermodynamic levels between the second-lowest and the
     ! highest.
-    !$acc parallel loop gang vector collapse(2) default(present)
+    !$acc  parallel loop gang vector collapse(2) default(present) async(1) 
     do k = 2, nz
       do i = 1, ngrdcol
         if ( l_clipping_needed(i) ) then
@@ -5821,7 +5821,7 @@ module advance_xm_wpxp_module
 
     if ( stats_metadata%l_stats_samp ) then
 
-      !$acc update host( xm_tndcy_wpxp_cl )
+      !$acc  update host( xm_tndcy_wpxp_cl ) wait 
 
       ! The adjustment to xm due to turbulent advection term clipping
       ! (xm term tacl) is completely explicit; call stat_update_var.
@@ -5831,7 +5831,7 @@ module advance_xm_wpxp_module
       end do
     endif
 
-    !$acc exit data delete( xm_tndcy_wpxp_cl, l_clipping_needed, l_any_clipping_needed )
+    !$acc exit data delete( xm_tndcy_wpxp_cl, l_clipping_needed, l_any_clipping_needed ) wait
 
     return
 
@@ -5879,7 +5879,7 @@ module advance_xm_wpxp_module
     ! Local Variables
     integer :: i, k
     
-    !$acc parallel loop gang vector collapse(2) default(present)
+    !$acc  parallel loop gang vector collapse(2) default(present) async(1) 
     do k = 1, nz
       do i = 1, ngrdcol
         
@@ -5955,12 +5955,12 @@ module advance_xm_wpxp_module
 
     !----------------------------- Begin Code ------------------------------
 
-    !$acc enter data create( ddzt_xm, ddzt_ym )
+    !$acc  enter data create( ddzt_xm, ddzt_ym ) async(1) 
     
     ddzt_xm = ddzt( nz, ngrdcol, gr, xm )
     ddzt_ym = ddzt( nz, ngrdcol, gr, ym )
 
-    !$acc parallel loop gang vector collapse(2) default(present)
+    !$acc  parallel loop gang vector collapse(2) default(present) async(1) 
     do k = 2, nz-1
       do i = 1, ngrdcol
         ypxp(i,k) = ( tau_C6_zm(i,k) / C6x_Skw_fnc(i,k) ) &
@@ -5972,14 +5972,14 @@ module advance_xm_wpxp_module
 
     ! The value of ypxp is irrelevant to the calculations at the upper and
     ! lower boundaries
-    !$acc parallel loop gang vector default(present)
+    !$acc  parallel loop gang vector default(present) async(1) 
     do i = 1, ngrdcol
       ypxp(i,1) = 0.0_core_rknd
       ypxp(i,nz) = 0.0_core_rknd
     end do
     !$acc end parallel loop
 
-    !$acc exit data delete( ddzt_xm, ddzt_ym )
+    !$acc exit data delete( ddzt_xm, ddzt_ym ) wait
               
     return
 

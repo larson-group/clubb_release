@@ -228,7 +228,7 @@ module mean_adv
     !-------------------------- Begin Code --------------------------
 
     ! Set lower boundary array to 0
-    !$acc parallel loop gang vector collapse(2) default(present)
+    !$acc  parallel loop gang vector collapse(2) default(present) async(1) 
     do i = 1, ngrdcol
       do b = 1, ndiags3
         lhs_ma(b,i,1) = 0.0_core_rknd
@@ -240,7 +240,7 @@ module mean_adv
     if ( .not. l_upwind_xm_ma ) then  ! Use centered differencing
 
       ! Most of the interior model; normal conditions.
-      !$acc parallel loop gang vector collapse(2) default(present)
+      !$acc  parallel loop gang vector collapse(2) default(present) async(1) 
       do k = 3, nz-1, 1
         do i = 1, ngrdcol
 
@@ -264,7 +264,7 @@ module mean_adv
       ! derivative d(var_zt)/dz over the model top is set to 0, in order
       ! to stay consistent with the zero-flux boundary condition option
       ! in the eddy diffusion code.
-      !$acc parallel loop gang vector default(present)
+      !$acc  parallel loop gang vector default(present) async(1) 
       do i = 1, ngrdcol
         
         ! Thermodynamic superdiagonal: [ x var_zt(k+1,<t+1>) ]
@@ -285,7 +285,7 @@ module mean_adv
 
       ! Special discretization for zero derivative method, where the
       ! derivative d(var_zt)/dz over the model bottom is set to 0.
-      !$acc parallel loop gang vector default(present)
+      !$acc  parallel loop gang vector default(present) async(1) 
       do i = 1, ngrdcol
         
         ! Thermodynamic superdiagonal: [ x var_zt(k+1,<t+1>) ]
@@ -305,7 +305,7 @@ module mean_adv
     else ! l_upwind_xm_ma == .true.; use "upwind" differencing
 
       ! Most of the interior model; normal conditions.
-      !$acc parallel loop gang vector collapse(2) default(present)
+      !$acc  parallel loop gang vector collapse(2) default(present) async(1) 
       do k = 3, nz-1, 1
         do i = 1, ngrdcol
           if ( wm_zt(i,k) >= zero ) then  ! Mean wind is in upward direction
@@ -337,7 +337,7 @@ module mean_adv
       !$acc end parallel loop
 
       ! Upper Boundary
-      !$acc parallel loop gang vector default(present)
+      !$acc  parallel loop gang vector default(present) async(1) 
       do i = 1, ngrdcol
         if ( wm_zt(i,nz) >= zero ) then  ! Mean wind is in upward direction
 
@@ -366,7 +366,7 @@ module mean_adv
       !$acc end parallel loop
 
       ! Lower Boundary
-      !$acc parallel loop gang vector default(present)
+      !$acc  parallel loop gang vector default(present) async(1) 
       do i = 1, ngrdcol
         if ( wm_zt(i,2) >= zero ) then  ! Mean wind is in upward direction
 
@@ -499,7 +499,7 @@ module mean_adv
     ! -------------------------- Begin Code --------------------------
 
     ! Set lower boundary array to 0
-    !$acc parallel loop gang vector collapse(2) default(present)
+    !$acc  parallel loop gang vector collapse(2) default(present) async(1) 
     do i = 1, ngrdcol
       do b = 1, ndiags3
         lhs_ma(b,i,1) = zero
@@ -508,7 +508,7 @@ module mean_adv
     !$acc end parallel loop
 
     ! Most of the interior model; normal conditions.
-    !$acc parallel loop gang vector collapse(2) default(present)
+    !$acc  parallel loop gang vector collapse(2) default(present) async(1) 
     do k = 2, nz-1, 1
       do i = 1, ngrdcol
         
@@ -527,7 +527,7 @@ module mean_adv
     !$acc end parallel loop
 
     ! Set upper boundary array to 0
-    !$acc parallel loop gang vector collapse(2) default(present)
+    !$acc  parallel loop gang vector collapse(2) default(present) async(1) 
     do i = 1, ngrdcol
       do b = 1, ndiags3
         lhs_ma(b,i,nz) = zero

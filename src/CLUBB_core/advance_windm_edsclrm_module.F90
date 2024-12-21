@@ -280,21 +280,21 @@ module advance_windm_edsclrm_module
 
     ! ------------------------ Begin Code ------------------------
 
-    !$acc enter data create( um_old, vm_old, um_tndcy, vm_tndcy, &
-    !$acc                    upwp_chnge, vpwp_chnge, lhs, rhs, solution, wind_speed, &
-    !$acc                    wind_speed_pert, u_star_sqd, u_star_sqd_pert, &
-    !$acc                    nu_zero, lhs_diff, lhs_ma_zt, Km_zt, Kmh_zt, &
-    !$acc                    Km_zm_p_nu10, xpwp )
+    !$acc  enter data create( um_old, vm_old, um_tndcy, vm_tndcy, & 
+    !$acc                     upwp_chnge, vpwp_chnge, lhs, rhs, solution, wind_speed, & 
+    !$acc                     wind_speed_pert, u_star_sqd, u_star_sqd_pert, & 
+    !$acc                     nu_zero, lhs_diff, lhs_ma_zt, Km_zt, Kmh_zt, & 
+    !$acc                     Km_zm_p_nu10, xpwp ) async(1) 
 
-    !$acc enter data if( edsclr_dim > 0) create( edsclrm_old )
+    !$acc  enter data if( edsclr_dim > 0) create( edsclrm_old ) async(1) 
 
-    !$acc parallel loop gang vector default(present)
+    !$acc  parallel loop gang vector default(present) async(1) 
     do i = 1, ngrdcol
       nu_zero(i) = zero
     end do
     !$acc end parallel loop
     
-    !$acc parallel loop gang vector collapse(2) default(present)
+    !$acc  parallel loop gang vector collapse(2) default(present) async(1) 
     do k = 1, nz
       do i = 1, ngrdcol
         Km_zm_p_nu10(i,k) = Km_zm(i,k) + nu_vert_res_dep%nu10(i)
@@ -310,7 +310,7 @@ module advance_windm_edsclrm_module
                            l_upwind_xm_ma,                          & ! intent(in)
                            lhs_ma_zt )                         ! intent(out)
     else
-      !$acc parallel loop gang vector collapse(3) default(present)
+      !$acc  parallel loop gang vector collapse(3) default(present) async(1) 
       do k = 1, nz
         do i = 1, ngrdcol
           do j = 1, 3
@@ -332,7 +332,7 @@ module advance_windm_edsclrm_module
       
       ! The lower boundary condition needs to be applied here at level 2.
       if ( .not. l_upwind_Kh_dp_term ) then 
-        !$acc parallel loop gang vector default(present)
+        !$acc  parallel loop gang vector default(present) async(1) 
         do i = 1, ngrdcol
           ! Thermodynamic superdiagonal: [ x xm(k+1,<t+1>) ]
           lhs_diff(kp1_tdiag,i,2) = - gr%invrs_dzt(i,2) * invrs_rho_ds_zt(i,2) &
@@ -349,7 +349,7 @@ module advance_windm_edsclrm_module
         end do
         !$acc end parallel loop
       else
-        !$acc parallel loop gang vector default(present)
+        !$acc  parallel loop gang vector default(present) async(1) 
         do i = 1, ngrdcol
           ! Thermodynamic superdiagonal: [ x xm(k+1,<t+1>) ]
           lhs_diff(kp1_tdiag,i,2) = - gr%invrs_dzt(i,2) &
@@ -368,7 +368,7 @@ module advance_windm_edsclrm_module
       end if
 
       if ( l_lmm_stepping ) then
-        !$acc parallel loop gang vector collapse(2) default(present)
+        !$acc  parallel loop gang vector collapse(2) default(present) async(1) 
         do k = 1, nz
           do i = 1, ngrdcol
             um_old(i,k) = um(i,k)
@@ -405,7 +405,7 @@ module advance_windm_edsclrm_module
 
       ! Compute wind speed (use threshold "eps" to prevent divide-by-zero
       ! error).
-      !$acc parallel loop gang vector collapse(2) default(present)
+      !$acc  parallel loop gang vector collapse(2) default(present) async(1) 
       do k = 1, nz
         do i = 1, ngrdcol
           wind_speed(i,k) = max( sqrt( um(i,k)**2 + vm(i,k)**2 ), eps )
@@ -414,7 +414,7 @@ module advance_windm_edsclrm_module
       !$acc end parallel loop
 
       ! Compute u_star_sqd according to the definition of u_star.
-      !$acc parallel loop gang vector default(present)
+      !$acc  parallel loop gang vector default(present) async(1) 
       do i = 1, ngrdcol
         u_star_sqd(i) = sqrt( upwp(i,1)**2 + vpwp(i,1)**2 )
       end do
@@ -452,7 +452,7 @@ module advance_windm_edsclrm_module
 
       ! Solve for x'w' at all intermediate model levels.
       ! A Crank-Nicholson timestep is used.
-      !$acc parallel loop gang vector collapse(2) default(present)
+      !$acc  parallel loop gang vector collapse(2) default(present) async(1) 
       do k = 2, nz-1
         do i = 1, ngrdcol
           upwp(i,k) = -one_half * xpwp(i,k)
@@ -464,7 +464,7 @@ module advance_windm_edsclrm_module
                       Km_zm_p_nu10, vm, &
                       xpwp )
       
-      !$acc parallel loop gang vector collapse(2) default(present)
+      !$acc  parallel loop gang vector collapse(2) default(present) async(1) 
       do k = 2, nz-1
         do i = 1, ngrdcol
           vpwp(i,k) = -one_half * xpwp(i,k)
@@ -475,7 +475,7 @@ module advance_windm_edsclrm_module
       ! A zero-flux boundary condition at the top of the model, d(xm)/dz = 0,
       ! means that x'w' at the top model level is 0,
       ! since x'w' = - K_zm * d(xm)/dz.
-      !$acc parallel loop gang vector default(present)
+      !$acc  parallel loop gang vector default(present) async(1) 
       do i = 1, ngrdcol
         upwp(i,nz) = zero
         vpwp(i,nz) = zero
@@ -511,7 +511,7 @@ module advance_windm_edsclrm_module
       !----------------------------------------------------------------
       ! Update zonal (west-to-east) component of mean wind, um
       !----------------------------------------------------------------
-      !$acc parallel loop gang vector collapse(2) default(present)
+      !$acc  parallel loop gang vector collapse(2) default(present) async(1) 
       do k = 1, nz
         do i = 1, ngrdcol
           um(i,k) = solution(i,k,windm_edsclrm_um)
@@ -522,7 +522,7 @@ module advance_windm_edsclrm_module
       !----------------------------------------------------------------
       ! Update meridional (south-to-north) component of mean wind, vm
       !----------------------------------------------------------------
-      !$acc parallel loop gang vector collapse(2) default(present)
+      !$acc  parallel loop gang vector collapse(2) default(present) async(1) 
       do k = 1, nz
         do i = 1, ngrdcol
           vm(i,k) = solution(i,k,windm_edsclrm_vm)
@@ -532,8 +532,8 @@ module advance_windm_edsclrm_module
 
       if ( stats_metadata%l_stats_samp ) then
 
-        !$acc update host( um, lhs_diff, lhs_ma_zt, invrs_rho_ds_zt, u_star_sqd, &
-        !$acc              rho_ds_zm, wind_speed, vm )
+        !$acc  update host( um, lhs_diff, lhs_ma_zt, invrs_rho_ds_zt, u_star_sqd, & 
+        !$acc               rho_ds_zm, wind_speed, vm ) wait 
 
         do i = 1, ngrdcol
           ! Implicit contributions to um and vm
@@ -558,7 +558,7 @@ module advance_windm_edsclrm_module
       end if ! stats_metadata%l_stats_samp
   
       if ( l_lmm_stepping ) then
-        !$acc parallel loop gang vector collapse(2) default(present)
+        !$acc  parallel loop gang vector collapse(2) default(present) async(1) 
         do k = 1, nz
           do i = 1, ngrdcol
             um(i,k) = one_half * ( um_old(i,k) + um(i,k) )
@@ -570,7 +570,7 @@ module advance_windm_edsclrm_module
 
       if ( uv_sponge_damp_settings%l_sponge_damping ) then
 
-        !$acc update host( um, vm, um_ref, vm_ref )
+        !$acc  update host( um, vm, um_ref, vm_ref ) wait 
         
         ! _sponge_damp_settings and _sponge_damp_profile could potentially vary
         ! from column to column, but there is no column index in those variables.
@@ -617,7 +617,7 @@ module advance_windm_edsclrm_module
           end do
         end if
 
-        !$acc update device( um, vm )
+        !$acc  update device( um, vm ) wait 
 
       end if ! uv_sponge_damp_settings%l_sponge_damping
 
@@ -629,7 +629,7 @@ module advance_windm_edsclrm_module
                       Km_zm_p_nu10, um, &
                       xpwp )
 
-      !$acc parallel loop gang vector collapse(2) default(present)
+      !$acc  parallel loop gang vector collapse(2) default(present) async(1) 
       do k = 2, nz-1
         do i = 1, ngrdcol
           upwp(i,k) = upwp(i,k) - one_half * xpwp(i,k)
@@ -641,7 +641,7 @@ module advance_windm_edsclrm_module
                       Km_zm_p_nu10, vm, &
                       xpwp )
                       
-      !$acc parallel loop gang vector collapse(2) default(present)
+      !$acc  parallel loop gang vector collapse(2) default(present) async(1) 
       do k = 2, nz-1
         do i = 1, ngrdcol
           vpwp(i,k) = vpwp(i,k) - one_half * xpwp(i,k)
@@ -654,7 +654,7 @@ module advance_windm_edsclrm_module
 
         ! Reflect nudging in budget
         if ( stats_metadata%l_stats_samp ) then
-          !$acc update host( um, vm )
+          !$acc  update host( um, vm ) wait 
           do i = 1, ngrdcol
             tmp_in(1) = 0.0_core_rknd
             tmp_in(2:nz) = um(i,2:nz)
@@ -666,7 +666,7 @@ module advance_windm_edsclrm_module
           end do
         end if
 
-        !$acc parallel loop gang vector collapse(2) default(present)
+        !$acc  parallel loop gang vector collapse(2) default(present) async(1) 
         do k = 1, nz
           do i = 1, ngrdcol
             um(i,k) = um(i,k) - ( ( um(i,k) - um_ref(i,k) ) * (dt/ts_nudge) )
@@ -676,7 +676,7 @@ module advance_windm_edsclrm_module
         !$acc end parallel loop
 
         if ( stats_metadata%l_stats_samp ) then
-          !$acc update host( um, vm )
+          !$acc  update host( um, vm ) wait 
           do i = 1, ngrdcol
             tmp_in(1) = 0.0_core_rknd
             tmp_in(2:nz) = um(i,2:nz)
@@ -691,7 +691,7 @@ module advance_windm_edsclrm_module
       end if ! l_uv_nudge
 
       if ( stats_metadata%l_stats_samp ) then
-        !$acc update host( um_ref, vm_ref )
+        !$acc  update host( um_ref, vm_ref ) wait 
         do i = 1, ngrdcol
           tmp_in(1) = 0.0_core_rknd
           tmp_in(2:nz) = um_ref(i,2:nz)
@@ -787,7 +787,7 @@ module advance_windm_edsclrm_module
       ! equation matrices has been solved.  Even though um and vm would sharply
       ! decrease to a value of 0 at the surface, this is done to avoid
       ! confusion on plots of the vertical profiles of um and vm.
-      !$acc parallel loop gang vector default(present)
+      !$acc  parallel loop gang vector default(present) async(1) 
       do i = 1, ngrdcol
         um(i,1) = um(i,2)
         vm(i,1) = vm(i,2)
@@ -810,7 +810,7 @@ module advance_windm_edsclrm_module
 
       ! Compute wind speed (use threshold "eps" to prevent divide-by-zero
       ! error).
-      !$acc parallel loop gang vector collapse(2) default(present)
+      !$acc  parallel loop gang vector collapse(2) default(present) async(1) 
       do k = 1, nz
         do i = 1, ngrdcol
           wind_speed_pert(i,k) = max( sqrt( (um_pert(i,k))**2 + (vm_pert(i,k))**2 ), eps )
@@ -819,7 +819,7 @@ module advance_windm_edsclrm_module
       !$acc end parallel loop
 
       ! Compute u_star_sqd according to the definition of u_star.
-      !$acc parallel loop gang vector default(present)
+      !$acc  parallel loop gang vector default(present) async(1) 
       do i = 1, ngrdcol
         u_star_sqd_pert(i) = sqrt( upwp_pert(i,1)**2 + vpwp_pert(i,1)**2 )
       end do
@@ -857,7 +857,7 @@ module advance_windm_edsclrm_module
                       Km_zm_p_nu10, um_pert, &
                       xpwp )
 
-      !$acc parallel loop gang vector collapse(2) default(present)
+      !$acc  parallel loop gang vector collapse(2) default(present) async(1) 
       do k = 2, nz-1
         do i = 1, ngrdcol
           upwp_pert(i,k) = -one_half * xpwp(i,k)
@@ -869,7 +869,7 @@ module advance_windm_edsclrm_module
                       Km_zm_p_nu10, vm_pert, &
                       xpwp )
       
-      !$acc parallel loop gang vector collapse(2) default(present)
+      !$acc  parallel loop gang vector collapse(2) default(present) async(1) 
       do k = 2, nz-1
         do i = 1, ngrdcol
           vpwp_pert(i,k) = -one_half * xpwp(i,k)
@@ -880,7 +880,7 @@ module advance_windm_edsclrm_module
       ! A zero-flux boundary condition at the top of the model, d(xm)/dz = 0,
       ! means that x'w' at the top model level is 0,
       ! since x'w' = - K_zm * d(xm)/dz.
-      !$acc parallel loop gang vector default(present)
+      !$acc  parallel loop gang vector default(present) async(1) 
       do i = 1, ngrdcol
         upwp_pert(i,nz) = zero
         vpwp_pert(i,nz) = zero
@@ -916,7 +916,7 @@ module advance_windm_edsclrm_module
       !----------------------------------------------------------------
       ! Update zonal (west-to-east) component of mean wind, um
       !----------------------------------------------------------------
-      !$acc parallel loop gang vector collapse(2) default(present)
+      !$acc  parallel loop gang vector collapse(2) default(present) async(1) 
       do k = 1, nz
         do i = 1, ngrdcol
           um_pert(i,k) = solution(i,k,windm_edsclrm_um)
@@ -927,7 +927,7 @@ module advance_windm_edsclrm_module
       !----------------------------------------------------------------
       ! Update meridional (south-to-north) component of mean wind, vm
       !----------------------------------------------------------------
-      !$acc parallel loop gang vector collapse(2) default(present)
+      !$acc  parallel loop gang vector collapse(2) default(present) async(1) 
       do k = 1, nz
         do i = 1, ngrdcol
           vm_pert(i,k) = solution(i,k,windm_edsclrm_vm)
@@ -943,7 +943,7 @@ module advance_windm_edsclrm_module
                       Km_zm_p_nu10, um_pert, &
                       xpwp )
       
-      !$acc parallel loop gang vector collapse(2) default(present)
+      !$acc  parallel loop gang vector collapse(2) default(present) async(1) 
       do k = 2, nz-1
         do i = 1, ngrdcol
           upwp_pert(i,k) = upwp_pert(i,k) - one_half * xpwp(i,k)
@@ -955,7 +955,7 @@ module advance_windm_edsclrm_module
                       Km_zm_p_nu10, vm_pert, &
                       xpwp )
       
-      !$acc parallel loop gang vector collapse(2) default(present)
+      !$acc  parallel loop gang vector collapse(2) default(present) async(1) 
       do k = 2, nz-1
         do i = 1, ngrdcol
           vpwp_pert(i,k) = vpwp_pert(i,k) - one_half * xpwp(i,k)
@@ -1035,7 +1035,7 @@ module advance_windm_edsclrm_module
       ! equation matrices has been solved.  Even though um and vm would sharply
       ! decrease to a value of 0 at the surface, this is done to avoid
       ! confusion on plots of the vertical profiles of um and vm.
-      !$acc parallel loop gang vector default(present)
+      !$acc  parallel loop gang vector default(present) async(1) 
       do i = 1, ngrdcol
         um_pert(i,1) = um_pert(i,2)
         vm_pert(i,1) = vm_pert(i,2)
@@ -1060,7 +1060,7 @@ module advance_windm_edsclrm_module
       ! The lower boundary condition needs to be applied here at level 2.
       if ( .not. l_upwind_Kh_dp_term ) then 
 
-        !$acc parallel loop gang vector default(present)
+        !$acc  parallel loop gang vector default(present) async(1) 
         do i = 1, ngrdcol
           ! Thermodynamic superdiagonal: [ x xm(k+1,<t+1>) ]
           lhs_diff(kp1_tdiag,i,2) = - gr%invrs_dzt(i,2) * invrs_rho_ds_zt(i,2) &
@@ -1079,7 +1079,7 @@ module advance_windm_edsclrm_module
 
       else
 
-        !$acc parallel loop gang vector default(present)
+        !$acc  parallel loop gang vector default(present) async(1) 
         do i = 1, ngrdcol
           ! Thermodynamic superdiagonal: [ x xm(k+1,<t+1>) ]
           lhs_diff(kp1_tdiag,i,2) = - gr%invrs_dzt(i,2) &
@@ -1097,7 +1097,7 @@ module advance_windm_edsclrm_module
       end if
 
       if ( l_lmm_stepping ) then
-        !$acc parallel loop gang vector collapse(3) default(present)
+        !$acc  parallel loop gang vector collapse(3) default(present) async(1) 
         do j = 1, edsclr_dim
           do k = 1, nz
             do i = 1, ngrdcol
@@ -1141,7 +1141,7 @@ module advance_windm_edsclrm_module
                         Km_zm_p_nu10, edsclrm(:,:,edsclr), &
                         xpwp )
 
-        !$acc parallel loop gang vector collapse(2) default(present)
+        !$acc  parallel loop gang vector collapse(2) default(present) async(1) 
         do k = 2, nz-1
           do i = 1, ngrdcol
             wpedsclrp(i,k,edsclr) = -one_half * xpwp(i,k)
@@ -1153,7 +1153,7 @@ module advance_windm_edsclrm_module
       ! A zero-flux boundary condition at the top of the model, d(xm)/dz = 0,
       ! means that x'w' at the top model level is 0,
       ! since x'w' = - K_zm * d(xm)/dz.
-      !$acc parallel loop gang vector collapse(2) default(present)
+      !$acc  parallel loop gang vector collapse(2) default(present) async(1) 
       do j = 1, edsclr_dim
         do i = 1, ngrdcol
           wpedsclrp(i,nz,j) = zero
@@ -1187,7 +1187,7 @@ module advance_windm_edsclrm_module
       !----------------------------------------------------------------
       ! Update Eddy-diff. Passive Scalars
       !----------------------------------------------------------------
-      !$acc parallel loop gang vector collapse(3) default(present)
+      !$acc  parallel loop gang vector collapse(3) default(present) async(1) 
       do j = 1, edsclr_dim
         do k = 1, nz
           do i = 1, ngrdcol
@@ -1198,7 +1198,7 @@ module advance_windm_edsclrm_module
       !$acc end parallel loop
 
       if ( l_lmm_stepping ) then
-        !$acc parallel loop gang vector collapse(3) default(present)
+        !$acc  parallel loop gang vector collapse(3) default(present) async(1) 
         do j = 1, edsclr_dim
           do k = 1, nz
             do i = 1, ngrdcol
@@ -1219,7 +1219,7 @@ module advance_windm_edsclrm_module
                         Kmh_zm, edsclrm(:,:,edsclr), &
                         xpwp )
         
-        !$acc parallel loop gang vector collapse(2) default(present)
+        !$acc  parallel loop gang vector collapse(2) default(present) async(1) 
         do k = 2, nz-1
           do i = 1, ngrdcol
             wpedsclrp(i,k,edsclr) = -one_half * xpwp(i,k)
@@ -1234,7 +1234,7 @@ module advance_windm_edsclrm_module
       ! The value of edsclrm(1) is located below the model surface and does not
       ! effect the rest of the model.  The value of edsclrm(1) is simply set to
       ! the value of edsclrm(2) after the equation matrix has been solved.
-      !$acc parallel loop gang vector collapse(2) default(present)
+      !$acc  parallel loop gang vector collapse(2) default(present) async(1) 
       do edsclr = 1, edsclr_dim
         do i = 1, ngrdcol
           edsclrm(i,1,edsclr) = edsclrm(i,2,edsclr)
@@ -1247,10 +1247,10 @@ module advance_windm_edsclrm_module
     if ( clubb_at_least_debug_level( 0 ) ) then
         if ( err_code == clubb_fatal_error ) then
 
-          !$acc update host( wm_zt, Km_zm, ug, vg, um_ref, vm_ref, wp2, &
-          !$acc              up2, vp2, um_forcing, vm_forcing, edsclrm_forcing, &
-          !$acc              fcor, um_old, um, vm_old, vm, edsclrm_old, &
-          !$acc              edsclrm, upwp, vpwp, wpedsclrp )
+          !$acc  update host( wm_zt, Km_zm, ug, vg, um_ref, vm_ref, wp2, & 
+          !$acc               up2, vp2, um_forcing, vm_forcing, edsclrm_forcing, & 
+          !$acc               fcor, um_old, um, vm_old, vm, edsclrm_old, & 
+          !$acc               edsclrm, upwp, vpwp, wpedsclrp ) wait 
 
           write(fstderr,*) "Error in advance_windm_edsclrm"
 
@@ -1299,9 +1299,9 @@ module advance_windm_edsclrm_module
     !$acc                    upwp_chnge, vpwp_chnge, lhs, rhs, solution, wind_speed, &
     !$acc                    wind_speed_pert, u_star_sqd, u_star_sqd_pert, &
     !$acc                    nu_zero, lhs_diff, lhs_ma_zt, Km_zt, Kmh_zt, &
-    !$acc                    Km_zm_p_nu10, xpwp )
+    !$acc                    Km_zm_p_nu10, xpwp ) wait
 
-    !$acc exit data if( edsclr_dim > 0) delete( edsclrm_old )
+    !$acc exit data if( edsclr_dim > 0) delete( edsclrm_old ) wait
 
     return
 
@@ -2159,7 +2159,7 @@ module advance_windm_edsclrm_module
 
     ! -------------------------- Begin Code --------------------------
 
-    !$acc enter data create( xm_gf, xm_cf )
+    !$acc  enter data create( xm_gf, xm_cf ) async(1) 
 
     ! Initialize variables to 0.
     xm_gf = 0.0_core_rknd
@@ -2178,7 +2178,7 @@ module advance_windm_edsclrm_module
         ixm_cf = stats_metadata%ium_cf
         ixm_f  = stats_metadata%ium_f
         
-        !$acc parallel loop gang vector collapse(2) default(present)
+        !$acc  parallel loop gang vector collapse(2) default(present) async(1) 
         do k = 2, nz
           do i = 1, ngrdcol
             xm_gf(i,k) = - fcor(i) * perp_wind_g(i,k)
@@ -2186,7 +2186,7 @@ module advance_windm_edsclrm_module
         end do
         !$acc end parallel loop
         
-        !$acc parallel loop gang vector collapse(2) default(present)
+        !$acc  parallel loop gang vector collapse(2) default(present) async(1) 
         do k = 2, nz
           do i = 1, ngrdcol
             xm_cf(i,k) = fcor(i) * perp_wind_m(i,k)
@@ -2200,7 +2200,7 @@ module advance_windm_edsclrm_module
         ixm_cf = stats_metadata%ivm_cf
         ixm_f  = stats_metadata%ivm_f
 
-        !$acc parallel loop gang vector collapse(2) default(present)
+        !$acc  parallel loop gang vector collapse(2) default(present) async(1) 
         do k = 2, nz
           do i = 1, ngrdcol
             xm_gf(i,k) = fcor(i) * perp_wind_g(i,k)
@@ -2208,7 +2208,7 @@ module advance_windm_edsclrm_module
         end do
         !$acc end parallel loop
 
-        !$acc parallel loop gang vector collapse(2) default(present)
+        !$acc  parallel loop gang vector collapse(2) default(present) async(1) 
         do k = 2, nz
           do i = 1, ngrdcol
             xm_cf(i,k) = -fcor(i) * perp_wind_m(i,k)
@@ -2222,7 +2222,7 @@ module advance_windm_edsclrm_module
         ixm_cf = 0
         ixm_f = 0
 
-        !$acc parallel loop gang vector collapse(2) default(present)
+        !$acc  parallel loop gang vector collapse(2) default(present) async(1) 
         do k = 2, nz
           do i = 1, ngrdcol
             xm_gf(i,k) = 0._core_rknd
@@ -2233,7 +2233,7 @@ module advance_windm_edsclrm_module
 
       end select
 
-      !$acc parallel loop gang vector collapse(2) default(present)
+      !$acc  parallel loop gang vector collapse(2) default(present) async(1) 
       do k = 2, nz
         do i = 1, ngrdcol
           xm_tndcy(i,k) = xm_gf(i,k) + xm_cf(i,k) + xm_forcing(i,k)
@@ -2243,7 +2243,7 @@ module advance_windm_edsclrm_module
 
       if ( stats_metadata%l_stats_samp ) then
 
-        !$acc update host( xm_gf, xm_cf, xm_forcing )
+        !$acc  update host( xm_gf, xm_cf, xm_forcing ) wait 
 
         do i = 1, ngrdcol
           ! xm term gf is completely explicit; call stat_update_var.
@@ -2262,7 +2262,7 @@ module advance_windm_edsclrm_module
 
     else   ! implemented in a host model.
 
-      !$acc parallel loop gang vector collapse(2) default(present)
+      !$acc  parallel loop gang vector collapse(2) default(present) async(1) 
       do k = 2, nz
         do i = 1, ngrdcol
           xm_tndcy(i,k) = 0.0_core_rknd
@@ -2272,7 +2272,7 @@ module advance_windm_edsclrm_module
 
     endif
 
-    !$acc exit data delete( xm_gf, xm_cf )
+    !$acc exit data delete( xm_gf, xm_cf ) wait
 
     return
 
@@ -2354,7 +2354,7 @@ module advance_windm_edsclrm_module
     invrs_dt = 1.0_core_rknd / dt
 
     ! Set lower boundary, see notes
-    !$acc parallel loop gang vector default(present)
+    !$acc  parallel loop gang vector default(present) async(1) 
     do i = 1, ngrdcol
       lhs(1,i,1) = 0.0_core_rknd
       lhs(2,i,1) = 1.0_core_rknd
@@ -2363,7 +2363,7 @@ module advance_windm_edsclrm_module
     !$acc end parallel loop
 
     ! Add terms to lhs
-    !$acc parallel loop gang vector collapse(2) default(present)
+    !$acc  parallel loop gang vector collapse(2) default(present) async(1) 
     do k = 2, nz
       do i = 1, ngrdcol
         lhs(1,i,k) = 0.5_core_rknd * lhs_diff(1,i,k)
@@ -2380,7 +2380,7 @@ module advance_windm_edsclrm_module
 
     ! LHS mean advection term.
     if ( .not. l_implemented ) then
-      !$acc parallel loop gang vector collapse(2) default(present)
+      !$acc  parallel loop gang vector collapse(2) default(present) async(1) 
       do k = 2, nz-1
         do i = 1, ngrdcol
           lhs(1:3,i,k) = lhs(1:3,i,k) + lhs_ma_zt(:,i,k)
@@ -2393,7 +2393,7 @@ module advance_windm_edsclrm_module
     if ( l_imp_sfc_momentum_flux ) then
 
       ! LHS momentum surface flux.
-      !$acc parallel loop gang vector default(present)
+      !$acc  parallel loop gang vector default(present) async(1) 
       do i = 1, ngrdcol
         lhs(2,i,2) = lhs(2,i,2) + invrs_rho_ds_zt(i,2) * gr%invrs_dzt(i,2) &
                                   * rho_ds_zm(i,1) * ( u_star_sqd(i) / wind_speed(i,2) )
@@ -2518,14 +2518,14 @@ module advance_windm_edsclrm_module
     end select
 
     ! For purposes of the matrix equation, rhs(1) is simply set to 0.
-    !$acc parallel loop gang vector default(present)
+    !$acc  parallel loop gang vector default(present) async(1) 
     do i = 1, ngrdcol
       rhs(i,1) = 0.0_core_rknd
     end do
     !$acc end parallel loop
 
     ! Lower boundary calculation
-    !$acc parallel loop gang vector default(present)
+    !$acc  parallel loop gang vector default(present) async(1) 
     do i = 1, ngrdcol
       rhs(i,2) = 0.5_core_rknd  & 
                  * ( - lhs_diff(2,i,2) * xm(i,2)        &
@@ -2536,7 +2536,7 @@ module advance_windm_edsclrm_module
     !$acc end parallel loop
 
     ! Non-boundary rhs calculation, this is a highly vectorized loop
-    !$acc parallel loop gang vector collapse(2) default(present)
+    !$acc  parallel loop gang vector collapse(2) default(present) async(1) 
     do k = 3, nz-1
       do i = 1, ngrdcol
         rhs(i,k) = 0.5_core_rknd  & 
@@ -2550,7 +2550,7 @@ module advance_windm_edsclrm_module
     !$acc end parallel loop
 
     ! Upper boundary calculation
-    !$acc parallel loop gang vector default(present)
+    !$acc  parallel loop gang vector default(present) async(1) 
     do i = 1, ngrdcol
       rhs(i,nz) = 0.5_core_rknd  & 
                   * ( - lhs_diff(3,i,nz) * xm(i,nz-1)  &
@@ -2562,7 +2562,7 @@ module advance_windm_edsclrm_module
 
     if ( stats_metadata%l_stats_samp .and. ixm_ta > 0 ) then
 
-      !$acc update host( lhs_diff, xm )
+      !$acc  update host( lhs_diff, xm ) wait 
       
       do i = 1, ngrdcol
 
@@ -2602,7 +2602,7 @@ module advance_windm_edsclrm_module
     if ( .not. l_imp_sfc_momentum_flux ) then
 
       ! RHS generalized surface flux.
-      !$acc parallel loop gang vector default(present)
+      !$acc  parallel loop gang vector default(present) async(1) 
       do i = 1, ngrdcol
         rhs(i,2) = rhs(i,2) + invrs_rho_ds_zt(i,2)  &
                               * gr%invrs_dzt(i,2)  &
@@ -2612,7 +2612,7 @@ module advance_windm_edsclrm_module
 
       if ( stats_metadata%l_stats_samp .and. ixm_ta > 0 ) then
 
-        !$acc update host( invrs_rho_ds_zt, rho_ds_zm, xpwp_sfc )
+        !$acc  update host( invrs_rho_ds_zt, rho_ds_zm, xpwp_sfc ) wait 
       
         do i = 1, ngrdcol
           call stat_modify_pt( ixm_ta, 2,  &                    ! intent(in)  

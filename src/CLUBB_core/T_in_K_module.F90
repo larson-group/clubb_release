@@ -137,7 +137,7 @@ module T_in_K_module
 
     ! ---- Begin Code ----
 
-    !$acc parallel loop gang vector collapse(2) default(present)
+    !$acc  parallel loop gang vector collapse(2) default(present) async(1) 
     do k = 1, nz
       do i = 1, ngrdcol
         T_in_K(i,k) = thlm(i,k) * exner(i,k) + Lv * rcm(i,k) / Cp

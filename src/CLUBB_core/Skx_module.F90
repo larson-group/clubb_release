@@ -70,9 +70,9 @@ module Skx_module
 
     ! ---- Begin Code ----
 
-    !$acc data create( Skx_denom_tol )
+    !$acc  data create( Skx_denom_tol ) async(1) 
 
-    !$acc parallel loop gang vector default(present)
+    !$acc  parallel loop gang vector default(present) async(1) 
     do i = 1, ngrdcol
       Skx_denom_tol(i) = clubb_params(i,iSkw_denom_coef) * x_tol**2
     end do
@@ -81,7 +81,7 @@ module Skx_module
     !Skx = xp3 / ( max( xp2, x_tol**two ) )**three_halves
     ! Calculation of skewness to help reduce the sensitivity of this value to
     ! small values of xp2.
-    !$acc parallel loop gang vector collapse(2) default(present)
+    !$acc  parallel loop gang vector collapse(2) default(present) async(1) 
     do k = 1, nz
       do i = 1, ngrdcol
         Skx(i,k) = xp3(i,k) * sqrt( xp2(i,k) + Skx_denom_tol(i) )**(-3)
@@ -94,7 +94,7 @@ module Skx_module
 
     ! I turned clipping on in this local copy since thlp3 and rtp3 are not clipped
     if ( l_clipping_kluge ) then
-      !$acc parallel loop gang vector collapse(2) default(present)
+      !$acc  parallel loop gang vector collapse(2) default(present) async(1) 
       do k = 1, nz
         do i = 1, ngrdcol
           Skx(i,k) = min( max( Skx(i,k), -clubb_params(i,iSkw_max_mag) ), clubb_params(i,iSkw_max_mag) )
@@ -167,7 +167,7 @@ module Skx_module
     ! weberjk, 8-July 2015. Commented this out for now. cgils was failing during some tests.
 
     ! Larson and Golaz (2005) eq. 16
-    !$acc parallel loop gang vector collapse(2) default(present)
+    !$acc  parallel loop gang vector collapse(2) default(present) async(1) 
     do k = 1, nz
       do i = 1, ngrdcol
         nrmlzd_corr_wx = &
@@ -246,14 +246,14 @@ module Skx_module
 
     !-------------------------- Begin Code --------------------------
 
-    !$acc data create( Skx_zt, Skx_denom_tol )
+    !$acc  data create( Skx_zt, Skx_denom_tol ) async(1) 
 
     ! Calculate skewness of x using the ansatz of LG05.
     call LG_2005_ansatz( nz, ngrdcol, Skw_zt, wpxp_zt, wp2_zt, &
                          xp2_zt, clubb_params(:,ibeta), sigma_sqd_w_zt, x_tol, &
                          Skx_zt )
 
-    !$acc parallel loop gang vector default(present)
+    !$acc  parallel loop gang vector default(present) async(1) 
     do i = 1, ngrdcol
       Skx_denom_tol(i) = clubb_params(i,iSkw_denom_coef) * x_tol**2
     end do
@@ -261,7 +261,7 @@ module Skx_module
 
     ! Calculate <x'^3> using the reverse of the special sensitivity reduction
     ! formula in function Skx_func above.
-    !$acc parallel loop gang vector collapse(2) default(present)
+    !$acc  parallel loop gang vector collapse(2) default(present) async(1) 
     do k = 1, nz
       do i = 1, ngrdcol
         xp3(i,k) = Skx_zt(i,k) * ( xp2_zt(i,k) + Skx_denom_tol(i) ) &

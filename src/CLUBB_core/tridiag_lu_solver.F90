@@ -113,9 +113,9 @@ module tridiag_lu_solvers
 
     ! ----------------------- Begin Code -----------------------
        
-    !$acc data create( upper, lower_diag_invrs )
+    !$acc  data create( upper, lower_diag_invrs ) async(1) 
     
-    !$acc kernels
+    !$acc  kernels wait 
     
     lower_diag_invrs(1) = 1.0_core_rknd / lhs(0,1)
     upper(1)            = lower_diag_invrs(1) * lhs(-1,1) 
@@ -178,16 +178,16 @@ module tridiag_lu_solvers
 
     ! ----------------------- Begin Code -----------------------
        
-    !$acc data create( upper, lower_diag_invrs )
+    !$acc  data create( upper, lower_diag_invrs ) async(1) 
     
-    !$acc parallel loop gang vector default(present)
+    !$acc  parallel loop gang vector default(present) async(1) 
     do i = 1, ngrdcol
       lower_diag_invrs(i,1) = 1.0_core_rknd / lhs(0,i,1)
       upper(i,1)            = lower_diag_invrs(i,1) * lhs(-1,i,1) 
     end do
     !$acc end parallel loop
 
-    !$acc parallel loop gang vector default(present)
+    !$acc  parallel loop gang vector default(present) async(1) 
     do i = 1, ngrdcol
       do k = 2, ndim-1
         lower_diag_invrs(i,k) = 1.0_core_rknd / ( lhs(0,i,k) - lhs(1,i,k) * upper(i,k-1)  )
@@ -196,13 +196,13 @@ module tridiag_lu_solvers
     end do
     !$acc end parallel loop
 
-    !$acc parallel loop gang vector default(present)
+    !$acc  parallel loop gang vector default(present) async(1) 
     do i = 1, ngrdcol
       lower_diag_invrs(i,ndim) = 1.0_core_rknd / ( lhs(0,i,ndim) - lhs(1,i,ndim) * upper(i,ndim-1)  )
     end do
     !$acc end parallel loop
 
-    !$acc parallel loop gang vector default(present)
+    !$acc  parallel loop gang vector default(present) async(1) 
     do i = 1, ngrdcol 
 
       soln(i,1)   = lower_diag_invrs(i,1) * rhs(i,1) 
@@ -213,7 +213,7 @@ module tridiag_lu_solvers
     end do
     !$acc end parallel loop
 
-    !$acc parallel loop gang vector default(present)
+    !$acc  parallel loop gang vector default(present) async(1) 
     do i = 1, ngrdcol 
       do k = ndim-1, 1, -1
         soln(i,k) = soln(i,k) - upper(i,k) * soln(i,k+1)
@@ -263,16 +263,16 @@ module tridiag_lu_solvers
 
     ! ----------------------- Begin Code -----------------------
        
-    !$acc data create( upper, lower_diag_invrs )
+    !$acc  data create( upper, lower_diag_invrs ) async(1) 
 
-    !$acc parallel loop gang vector default(present)
+    !$acc  parallel loop gang vector default(present) async(1) 
     do i = 1, ngrdcol
       lower_diag_invrs(i,1) = 1.0_core_rknd / lhs(0,i,1)
       upper(i,1)            = lower_diag_invrs(i,1) * lhs(-1,i,1) 
     end do
     !$acc end parallel loop
 
-    !$acc parallel loop gang vector default(present)
+    !$acc  parallel loop gang vector default(present) async(1) 
     do i = 1, ngrdcol
       do k = 2, ndim-1
         lower_diag_invrs(i,k) = 1.0_core_rknd / ( lhs(0,i,k) - lhs(1,i,k) * upper(i,k-1)  )
@@ -281,13 +281,13 @@ module tridiag_lu_solvers
     end do
     !$acc end parallel loop
 
-    !$acc parallel loop gang vector default(present)
+    !$acc  parallel loop gang vector default(present) async(1) 
     do i = 1, ngrdcol
       lower_diag_invrs(i,ndim) = 1.0_core_rknd / ( lhs(0,i,ndim) - lhs(1,i,ndim) * upper(i,ndim-1)  )
     end do
     !$acc end parallel loop
 
-    !$acc parallel loop gang vector collapse(2) default(present)
+    !$acc  parallel loop gang vector collapse(2) default(present) async(1) 
     do j = 1, nrhs
       do i = 1, ngrdcol 
 
@@ -300,7 +300,7 @@ module tridiag_lu_solvers
     end do
     !$acc end parallel loop
 
-    !$acc parallel loop gang vector collapse(2) default(present)
+    !$acc  parallel loop gang vector collapse(2) default(present) async(1) 
     do j = 1, nrhs
       do i = 1, ngrdcol 
         do k = ndim-1, 1, -1

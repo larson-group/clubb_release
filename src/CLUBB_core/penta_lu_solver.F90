@@ -132,9 +132,9 @@ module penta_lu_solvers
 
     ! ----------------------- Begin Code -----------------------
        
-    !$acc data create( upper_1, upper_2, lower_1, lower_2, lower_diag_invrs )
+    !$acc  data create( upper_1, upper_2, lower_1, lower_2, lower_diag_invrs ) async(1) 
 
-    !$acc parallel loop gang vector default(present)
+    !$acc  parallel loop gang vector default(present) async(1) 
     do i = 1, ngrdcol
       lower_diag_invrs(i,1) = 1.0_core_rknd / lhs(0,i,1)
       upper_1(i,1)          = lower_diag_invrs(i,1) * lhs(-1,i,1) 
@@ -147,7 +147,7 @@ module penta_lu_solvers
     end do
     !$acc end parallel loop
 
-    !$acc parallel loop gang vector default(present)
+    !$acc  parallel loop gang vector default(present) async(1) 
     do i = 1, ngrdcol
       do k = 3, ndim-2
         lower_2(i,k) = lhs(2,i,k)
@@ -162,7 +162,7 @@ module penta_lu_solvers
     end do
     !$acc end parallel loop
 
-    !$acc parallel loop gang vector default(present)
+    !$acc  parallel loop gang vector default(present) async(1) 
     do i = 1, ngrdcol
       lower_2(i,ndim-1) = lhs(2,i,ndim-1)
       lower_1(i,ndim-1) = lhs(1,i,ndim-1) - lower_2(i,ndim-1) * upper_1(i,ndim-3)
@@ -183,7 +183,7 @@ module penta_lu_solvers
     end do
     !$acc end parallel loop
     
-    !$acc parallel loop gang vector default(present)
+    !$acc  parallel loop gang vector default(present) async(1) 
     do i = 1, ngrdcol 
 
       soln(i,1)   = lower_diag_invrs(i,1) * rhs(i,1) 
@@ -197,7 +197,7 @@ module penta_lu_solvers
     end do
     !$acc end parallel loop
 
-    !$acc parallel loop gang vector default(present)
+    !$acc  parallel loop gang vector default(present) async(1) 
     do i = 1, ngrdcol 
       soln(i,ndim-1) = soln(i,ndim-1) - upper_1(i,ndim-1) * soln(i,ndim)
 
@@ -252,9 +252,9 @@ module penta_lu_solvers
 
     ! ----------------------- Begin Code -----------------------
        
-    !$acc data create( upper_1, upper_2, lower_1, lower_2, lower_diag_invrs )
+    !$acc  data create( upper_1, upper_2, lower_1, lower_2, lower_diag_invrs ) async(1) 
 
-    !$acc parallel loop gang vector default(present)
+    !$acc  parallel loop gang vector default(present) async(1) 
     do i = 1, ngrdcol
       lower_diag_invrs(i,1) = 1.0_core_rknd / lhs(0,i,1)
       upper_1(i,1)          = lower_diag_invrs(i,1) * lhs(-1,i,1) 
@@ -267,7 +267,7 @@ module penta_lu_solvers
     end do
     !$acc end parallel loop
 
-    !$acc parallel loop gang vector default(present)
+    !$acc  parallel loop gang vector default(present) async(1) 
     do i = 1, ngrdcol
       do k = 3, ndim-2
         lower_2(i,k) = lhs(2,i,k)
@@ -282,7 +282,7 @@ module penta_lu_solvers
     end do
     !$acc end parallel loop
 
-    !$acc parallel loop gang vector default(present)
+    !$acc  parallel loop gang vector default(present) async(1) 
     do i = 1, ngrdcol
       lower_2(i,ndim-1) = lhs(2,i,ndim-1)
       lower_1(i,ndim-1) = lhs(1,i,ndim-1) - lower_2(i,ndim-1) * upper_1(i,ndim-3)
@@ -303,7 +303,7 @@ module penta_lu_solvers
     end do
     !$acc end parallel loop
 
-    !$acc parallel loop gang vector collapse(2) default(present)
+    !$acc  parallel loop gang vector collapse(2) default(present) async(1) 
     do j = 1, nrhs
       do i = 1, ngrdcol 
 
@@ -319,7 +319,7 @@ module penta_lu_solvers
     end do
     !$acc end parallel loop
 
-    !$acc parallel loop gang vector collapse(2) default(present)
+    !$acc  parallel loop gang vector collapse(2) default(present) async(1) 
     do j = 1, nrhs
       do i = 1, ngrdcol 
         soln(i,ndim-1,j) = soln(i,ndim-1,j) - upper_1(i,ndim-1) * soln(i,ndim,j)
