@@ -1,4 +1,3 @@
-
 module advance_clubb_core_module
 
 ! Description:
@@ -5124,9 +5123,6 @@ module advance_clubb_core_module
 
       ! ------------ Begin code ---------------
 
-      !$acc data copyin( rtm ) &
-      !$acc        copy( rcm ) wait
-
       if ( clubb_at_least_debug_level( 3 ) ) then
 
         !$acc  update host( rcm, rtm ) wait 
@@ -5158,8 +5154,6 @@ module advance_clubb_core_module
         end do
       end do
       !$acc end parallel loop
-
-      !$acc end data
 
       return
     end subroutine clip_rcm
