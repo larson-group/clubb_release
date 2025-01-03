@@ -1,0 +1,95 @@
+commit 673beb053c2f32cc4a92340a492afab4c74f7170
+Author: domkesteffen <42725900+domkesteffen@users.noreply.github.com>
+Date:   Thu Dec 19 16:09:59 2024 -0600
+
+    Fix binormal correlation clipping (#1199)
+    
+    Fixed clipping in binormal correlation calc
+    CLUBB ticket #1164
+    
+    BIT_CHANGING
+    
+    * Implemented new denominator with smooth_max clipping
+    * Created subroutine `smooth_corr_quotient` in pdf_utilities.F90, outsourcing smooth correlation division
+    * This subroutine is used `calc_comp_corrs_binormal` and `transform_pdf_chi_eta_component`
+
+commit cc24b7290a21866963bcb4d5f21f3f0b6115a293
+Author: vlarson <vlarson@uwm.edu>
+Date:   Tue Dec 17 13:38:25 2024 -0600
+
+    QuadTune: Remedy loss function and facilitate plotting of special, non-20x20 regions (DYCOMS, HAWAII, etc.).
+    
+    For #910.
+
+commit ec06720353601ed5d790e7ffa43d8ab28d5512fa
+Author: bmg929 <bmg2@uwm.edu>
+Date:   Mon Dec 16 11:48:19 2024 -0600
+
+    Changing a couple loop limits in mono flux limiter.
+    
+    Results do not change.
+
+commit 7641404dd67426fd141ddffd90000abb5a58520e
+Author: bmg929 <bmg2@uwm.edu>
+Date:   Fri Dec 13 17:39:56 2024 -0600
+
+    I forgot to add the new variable to the Atlantic Coast Conference
+    statements in the previous commit.
+
+commit 2c420dcb69cceaef32bda45193b8dbadc38d1ca2
+Author: bmg929 <bmg2@uwm.edu>
+Date:   Fri Dec 13 17:26:34 2024 -0600
+
+    Within the mono flux limiter, a thermodynamic-level variable needed to
+    be interpolated to momentum levels so it could be directly compared
+    to wpxp.
+    
+    The results of this change are BIT_CHANGING for the ARM 97, MC3E,
+    and TWP-ICE cases.
+
+commit e215a047457743d0a235bd5261b7400aeb580bde
+Author: bmg929 <bmg2@uwm.edu>
+Date:   Fri Dec 13 17:03:03 2024 -0600
+
+    Changed some variable names so that it is clear that, while they contain
+    the word wpxp_, they are actually thermodynamic-level variables.
+    
+    Results are bit-for-bit.
+
+commit 0b6031b8f484c7143e0edf14eb3537f9999be78e
+Author: bmg929 <bmg2@uwm.edu>
+Date:   Fri Dec 13 16:40:41 2024 -0600
+
+    Recoded a loop within the mono flux limiter so that it's written
+    in a more convenient manner to allow for easier coding for
+    generalized gridding.
+    
+    Results are bit-for-bit.
+
+commit 373be4b540b7491d836fb01e39d2d8351fb29365
+Author: vlarson <vlarson@uwm.edu>
+Date:   Thu Dec 12 12:33:42 2024 -0600
+
+    QuadTune: Include special regions (DYCOMS, HAWAII, etc.), in addition to 20x20 regions.  However, the weights are set to epsilon, which wrecks the loss calculation.  This will have to be remedied later.
+    
+    For #910.
+
+commit c807b993dc1b68e4a08f6b40d9b1ca8d3a0c1d03
+Author: vlarson <vlarson@uwm.edu>
+Date:   Mon Dec 9 12:19:47 2024 -0600
+
+    QuadTune: Add map plots of "linSoln" output from global E3SM runs.
+    
+    For #910.
+
+commit d7b7306c8f0f7a0150cade9a0d73db293ed89524
+Author: domkesteffen <42725900+domkesteffen@users.noreply.github.com>
+Date:   Fri Dec 6 13:43:28 2024 -0600
+
+    Changed default setting of flag l_min_wp2_from_corr_wx to false (#1216)
+    
+    CLUBB ticket #1165
+    
+    BIT_CHANGING
+    Changed default setting in configurable_model_flags.in and model_flags.F90
+    to decrease clipping contribution to `wp2` and increase clipping to `rtp2` and `thl2`.
