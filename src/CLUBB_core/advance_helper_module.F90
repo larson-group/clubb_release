@@ -330,9 +330,9 @@ module advance_helper_module
     end do
     !$acc end parallel loop
 
-    !$acc exit data delete( brunt_vaisala_freq_sqd, brunt_vaisala_freq_sqd_mixed, &
-    !$acc                   brunt_vaisala_freq_sqd_moist, brunt_vaisala_freq_sqd_dry, &
-    !$acc                   lambda0_stability ) wait
+    !$acc exit data delete( brunt_vaisala_freq_sqd, brunt_vaisala_freq_sqd_mixed, & 
+    !$acc                   brunt_vaisala_freq_sqd_moist, brunt_vaisala_freq_sqd_dry, & 
+    !$acc                   lambda0_stability ) wait 
 
     return
 
@@ -442,7 +442,7 @@ module advance_helper_module
     !$acc        create( T_in_K, T_in_K_zm, rsat, rsat_zm, thm, thm_zm, ddzt_thlm, & 
     !$acc                ddzt_thm, ddzt_rsat, ddzt_rtm, thvm_zm, ddzt_thvm, stat_dry, & 
     !$acc                stat_liq, ddzt_stat_liq, ddzt_stat_liq_zm, stat_dry_virtual, & 
-    !$acc                stat_dry_virtual_zm, ddzt_rtm_zm, ice_supersat_frac_zm ) async(1) 
+    !$acc                stat_dry_virtual_zm, ddzt_rtm_zm, ice_supersat_frac_zm ) wait 
 
     ddzt_thlm = ddzt( nz, ngrdcol, gr, thlm )
     thvm_zm   = zt2zm_gpu( nz, ngrdcol, gr, thvm, zero_threshold )
@@ -866,12 +866,12 @@ module advance_helper_module
     end do
     !$acc end parallel loop
 
-    !$acc exit data delete( brunt_vaisala_freq_sqd, brunt_vaisala_freq_sqd_mixed, &
-    !$acc                   brunt_vaisala_freq_sqd_dry, brunt_vaisala_freq_sqd_moist, &
-    !$acc                   Cx_fnc_interp, Ri_zm, &
-    !$acc                   ddzt_um, ddzt_vm, shear_sqd, Lscale_zm, &
-    !$acc                   Cx_fnc_Richardson_avg, fnc_Richardson, &
-    !$acc                   fnc_Richardson_clipped, fnc_Richardson_smooth ) wait
+    !$acc exit data delete( brunt_vaisala_freq_sqd, brunt_vaisala_freq_sqd_mixed, & 
+    !$acc                   brunt_vaisala_freq_sqd_dry, brunt_vaisala_freq_sqd_moist, & 
+    !$acc                   Cx_fnc_interp, Ri_zm, & 
+    !$acc                   ddzt_um, ddzt_vm, shear_sqd, Lscale_zm, & 
+    !$acc                   Cx_fnc_Richardson_avg, fnc_Richardson, & 
+    !$acc                   fnc_Richardson_clipped, fnc_Richardson_smooth ) wait 
 
     return
 
@@ -1042,7 +1042,7 @@ module advance_helper_module
       end do
     end do
 
-    !$acc exit data delete( one_half_avg_width, numer_terms, denom_terms ) wait
+    !$acc exit data delete( one_half_avg_width, numer_terms, denom_terms ) wait 
 
     return
 
@@ -1120,7 +1120,7 @@ module advance_helper_module
     end do
     !$acc end parallel loop
 
-    !$acc exit data delete( brunt_vaisala_freq_splat_clipped, brunt_vaisala_freq_splat_smooth ) wait
+    !$acc exit data delete( brunt_vaisala_freq_splat_clipped, brunt_vaisala_freq_splat_smooth ) wait 
 
     return
 
@@ -1201,7 +1201,7 @@ module advance_helper_module
     end do
     !$acc end parallel loop
 
-    !$acc exit data delete( brunt_vaisala_freq_splat_clipped, brunt_vaisala_freq_splat_smooth ) wait
+    !$acc exit data delete( brunt_vaisala_freq_splat_clipped, brunt_vaisala_freq_splat_smooth ) wait 
 
     return
 
@@ -1250,7 +1250,7 @@ module advance_helper_module
     !----------------------------- Begin Code -----------------------------
 
     !$acc  data copyin( input_var2 ) & 
-    !$acc      copyout( output_var ) async(1) 
+    !$acc      copyout( output_var ) wait 
 
     !$acc  parallel loop gang vector collapse(2) default(present) async(1) 
     do k = 1, nz
@@ -1310,7 +1310,7 @@ module advance_helper_module
     !----------------------------- Begin Code -----------------------------
 
     !$acc  data copyin( input_var1 ) & 
-    !$acc      copyout( output_var ) async(1) 
+    !$acc      copyout( output_var ) wait 
 
     !$acc  parallel loop gang vector collapse(2) default(present) async(1) 
     do k = 1, nz
@@ -1370,7 +1370,7 @@ module advance_helper_module
     !----------------------------- Begin Code -----------------------------
 
     !$acc  data copyin( input_var1, input_var2 ) & 
-    !$acc      copyout( output_var ) async(1) 
+    !$acc      copyout( output_var ) wait 
 
     !$acc  parallel loop gang vector collapse(2) default(present) async(1) 
     do k = 1, nz
@@ -1469,7 +1469,7 @@ module advance_helper_module
     !----------------------------- Begin Code -----------------------------
 
     !$acc  data copyin( input_var2 ) & 
-    !$acc      copyout( output_var ) async(1) 
+    !$acc      copyout( output_var ) wait 
 
     !$acc  parallel loop gang vector collapse(2) default(present) async(1) 
     do k = 1, nz
@@ -1529,7 +1529,7 @@ module advance_helper_module
     !----------------------------- Begin Code -----------------------------
 
     !$acc  data copyin( input_var1 ) & 
-    !$acc      copyout( output_var ) async(1) 
+    !$acc      copyout( output_var ) wait 
 
     !$acc  parallel loop gang vector collapse(2) default(present) async(1) 
     do k = 1, nz
@@ -1588,7 +1588,7 @@ module advance_helper_module
     !----------------------------- Begin Code -----------------------------
 
     !$acc  data copyin( input_var1 ) & 
-    !$acc      copyout( output_var ) async(1) 
+    !$acc      copyout( output_var ) wait 
 
     !$acc  parallel loop gang vector default(present) async(1) 
     do i = 1, ngrdcol
@@ -1646,7 +1646,7 @@ module advance_helper_module
     !----------------------------- Begin Code -----------------------------
 
     !$acc  data copyin( input_var1, input_var2 ) & 
-    !$acc      copyout( output_var ) async(1) 
+    !$acc      copyout( output_var ) wait 
 
     !$acc  parallel loop gang vector collapse(2) default(present) async(1) 
     do k = 1, nz

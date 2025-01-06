@@ -1700,23 +1700,23 @@ module pdf_closure_module
 
     end if ! clubb_at_least_debug_level
 
-    !$acc exit data delete( u_1, u_2, varnce_u_1, varnce_u_2, v_1, v_2, &
-    !$acc                   varnce_v_1, varnce_v_2, alpha_u, alpha_v, &
-    !$acc                   corr_u_w_1, corr_u_w_2, corr_v_w_1, corr_v_w_2, &
-    !$acc                   tl1, tl2, sqrt_wp2, Skthl, &
-    !$acc                   Skrt, Sku, Skv, wprcp_contrib_comp_1, wprcp_contrib_comp_2, &
-    !$acc                   wp2rcp_contrib_comp_1, wp2rcp_contrib_comp_2, &
-    !$acc                   rtprcp_contrib_comp_1, rtprcp_contrib_comp_2, &
-    !$acc                   thlprcp_contrib_comp_1, thlprcp_contrib_comp_2, &
-    !$acc                   uprcp_contrib_comp_1, uprcp_contrib_comp_2, &
-    !$acc                   vprcp_contrib_comp_1, vprcp_contrib_comp_2, &
-    !$acc                   rc_1_ice, rc_2_ice, rsatl_1, rsatl_2 ) wait
+    !$acc exit data delete( u_1, u_2, varnce_u_1, varnce_u_2, v_1, v_2, & 
+    !$acc                   varnce_v_1, varnce_v_2, alpha_u, alpha_v, & 
+    !$acc                   corr_u_w_1, corr_u_w_2, corr_v_w_1, corr_v_w_2, & 
+    !$acc                   tl1, tl2, sqrt_wp2, Skthl, & 
+    !$acc                   Skrt, Sku, Skv, wprcp_contrib_comp_1, wprcp_contrib_comp_2, & 
+    !$acc                   wp2rcp_contrib_comp_1, wp2rcp_contrib_comp_2, & 
+    !$acc                   rtprcp_contrib_comp_1, rtprcp_contrib_comp_2, & 
+    !$acc                   thlprcp_contrib_comp_1, thlprcp_contrib_comp_2, & 
+    !$acc                   uprcp_contrib_comp_1, uprcp_contrib_comp_2, & 
+    !$acc                   vprcp_contrib_comp_1, vprcp_contrib_comp_2, & 
+    !$acc                   rc_1_ice, rc_2_ice, rsatl_1, rsatl_2 ) wait 
 
-    !$acc exit data if( sclr_dim > 0 ) &
+    !$acc exit data if( sclr_dim > 0 ) & 
     !$acc           delete( sclr1, sclr2, varnce_sclr1, varnce_sclr2, & 
-    !$acc                   alpha_sclr, corr_sclr_thl_1, corr_sclr_thl_2, &
-    !$acc                   corr_sclr_rt_1, corr_sclr_rt_2, corr_w_sclr_1, &
-    !$acc                   corr_w_sclr_2, Sksclr ) wait
+    !$acc                   alpha_sclr, corr_sclr_thl_1, corr_sclr_thl_2, & 
+    !$acc                   corr_sclr_rt_1, corr_sclr_rt_2, corr_w_sclr_1, & 
+    !$acc                   corr_w_sclr_2, Sksclr ) wait 
 
     return
 
@@ -2614,8 +2614,8 @@ module pdf_closure_module
 
     ! If a grid boxes is above freezing, then the calculation is the 
     ! same as the cloud_frac calculation
-    !$acc parallel loop gang vector collapse(2) default(present) &
-    !$acc          reduction(.or.:l_any_below_freezing) wait
+    !$acc parallel loop gang vector collapse(2) default(present) & 
+    !$acc          reduction(.or.:l_any_below_freezing) async(1) 
     do k = 1, nz
       do i = 1, ngrdcol 
         if ( tl(i,k) > T_freeze_K ) then
@@ -2626,7 +2626,8 @@ module pdf_closure_module
         end if
       end do
     end do
-    !$acc end parallel loop
+    !$acc end parallel loop 
+    !$acc wait
 
     ! If all grid boxes are above freezing, then the calculation is the 
     ! same as the cloud_frac calculation

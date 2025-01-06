@@ -523,7 +523,7 @@ module advance_wp2_wp3_module
 
     if ( clubb_at_least_debug_level( 0 ) ) then
 
-      !$acc parallel loop gang vector collapse(2) default(present) reduction(.or.:err_code) wait
+      !$acc parallel loop gang vector collapse(2) default(present) reduction(.or.:err_code) async(1) 
       do k = 1, nz
         do i = 1, ngrdcol
           ! Assertion check for C11_Skw_fnc
@@ -533,9 +533,10 @@ module advance_wp2_wp3_module
           end if
         end do
       end do
-      !$acc end parallel loop
+      !$acc end parallel loop 
+      !$acc wait
 
-      !$acc parallel loop gang vector collapse(2) default(present) reduction(.or.:err_code) wait
+      !$acc parallel loop gang vector collapse(2) default(present) reduction(.or.:err_code) async(1) 
       do k = 1, nz
         do i = 1, ngrdcol
           ! Assertion check for C11_Skw_fnc
@@ -545,7 +546,8 @@ module advance_wp2_wp3_module
           end if
         end do
       end do
-      !$acc end parallel loop
+      !$acc end parallel loop 
+      !$acc wait
 
       if ( err_code == clubb_fatal_error ) then
         return
@@ -1132,17 +1134,17 @@ module advance_wp2_wp3_module
       end if ! fatal error
     end if
 
-    !$acc exit data delete( wp2_old, wp3_old, C1_Skw_fnc, C11_Skw_fnc, C16_fnc, C_wp3_pr_tp, &
-    !$acc                   wp3_term_ta_lhs_result, wp3_pr3_lhs, lhs_ta_wp2, &
-    !$acc                   lhs_tp_wp3, lhs_adv_tp_wp3, lhs_pr_tp_wp3, &
-    !$acc                   lhs_ta_wp3, lhs_dp1_wp2, rhs_dp1_wp2, lhs_pr1_wp2, &
-    !$acc                   rhs_pr1_wp2, lhs_pr1_wp3, rhs_pr1_wp3, rhs_bp_pr2_wp2, &
-    !$acc                   rhs_pr_dfsn_wp2, rhs_bp1_pr2_wp3, rhs_pr3_wp2, &
-    !$acc                   rhs_pr3_wp3, rhs_ta_wp3, rhs_pr_turb_wp3, rhs_pr_dfsn_wp3, &
-    !$acc                   lhs_diff_zm, lhs_diff_zt, lhs_diff_zm_crank, lhs_diff_zt_crank, &
-    !$acc                   lhs_ma_zm, lhs_ma_zt, lhs_ac_pr2_wp2, lhs_ac_pr2_wp3, &
-    !$acc                   coef_wp4_implicit_zt, coef_wp4_implicit, a1, a1_zt, &
-    !$acc                   dum_dz, dvm_dz, lhs, rhs, Kw1, Kw8, Kw1_zm, Kw8_zt ) wait
+    !$acc exit data delete( wp2_old, wp3_old, C1_Skw_fnc, C11_Skw_fnc, C16_fnc, C_wp3_pr_tp, & 
+    !$acc                   wp3_term_ta_lhs_result, wp3_pr3_lhs, lhs_ta_wp2, & 
+    !$acc                   lhs_tp_wp3, lhs_adv_tp_wp3, lhs_pr_tp_wp3, & 
+    !$acc                   lhs_ta_wp3, lhs_dp1_wp2, rhs_dp1_wp2, lhs_pr1_wp2, & 
+    !$acc                   rhs_pr1_wp2, lhs_pr1_wp3, rhs_pr1_wp3, rhs_bp_pr2_wp2, & 
+    !$acc                   rhs_pr_dfsn_wp2, rhs_bp1_pr2_wp3, rhs_pr3_wp2, & 
+    !$acc                   rhs_pr3_wp3, rhs_ta_wp3, rhs_pr_turb_wp3, rhs_pr_dfsn_wp3, & 
+    !$acc                   lhs_diff_zm, lhs_diff_zt, lhs_diff_zm_crank, lhs_diff_zt_crank, & 
+    !$acc                   lhs_ma_zm, lhs_ma_zt, lhs_ac_pr2_wp2, lhs_ac_pr2_wp3, & 
+    !$acc                   coef_wp4_implicit_zt, coef_wp4_implicit, a1, a1_zt, & 
+    !$acc                   dum_dz, dvm_dz, lhs, rhs, Kw1, Kw8, Kw1_zm, Kw8_zt ) wait 
 
     return
 
@@ -1471,7 +1473,7 @@ module advance_wp2_wp3_module
       ! Note:  To find the contribution of w'^2 term ac, substitute 0 for the
       !        C_uu_shr input to function wp2_terms_ac_pr2_lhs.
       tmp_ngrdcol = (one+clubb_params(:,iC_uu_shr))
-      !$acc data copyin( zero_vector_ngrdcol, tmp_ngrdcol ) copyout( lhs_wp2_ac_term, lhs_wp2_pr2_term ) wait
+      !$acc data copyin( zero_vector_ngrdcol, tmp_ngrdcol ) copyout( lhs_wp2_ac_term, lhs_wp2_pr2_term ) wait 
       call wp2_terms_ac_pr2_lhs( nz, ngrdcol, gr,            & ! intent(in)
                                  zero_vector_ngrdcol, wm_zt, & ! intent(in)
                                  lhs_wp2_ac_term  )            ! intent(out)
@@ -1562,7 +1564,7 @@ module advance_wp2_wp3_module
       ! Note:  To find the contribution of w'^3 term ac, substitute 0 for the
       !        C_ll skewness function input to function wp3_terms_ac_pr2_lhs.
       tmp = (one+C11_Skw_fnc)
-      !$acc data copyin( zero_vector, tmp ) copyout( lhs_wp3_ac_term, lhs_wp3_pr2_term ) wait
+      !$acc data copyin( zero_vector, tmp ) copyout( lhs_wp3_ac_term, lhs_wp3_pr2_term ) wait 
       call wp3_terms_ac_pr2_lhs( nz, ngrdcol, gr, zero_vector, wm_zm,   & ! intent(in)
                                  lhs_wp3_ac_term )                        ! intent(out)
       
@@ -1792,7 +1794,7 @@ module advance_wp2_wp3_module
     ! Compute wp3_zm for output purposes
     wp3_zm(:,:) = zt2zm_gpu( nz, ngrdcol, gr, wp3 )
 
-    !$acc exit data delete( rhs_save, solut, old_solut, rcond, threshold_array )  wait
+    !$acc exit data delete( rhs_save, solut, old_solut, rcond, threshold_array ) wait 
 
     return
 
@@ -2609,8 +2611,8 @@ module advance_wp2_wp3_module
       !        C_uu_buoy input to function wp2_terms_bp_pr2_rhs.
       tmp_ngrdcol = (one+clubb_params(:,iC_uu_buoy))
       tmp =  ( one + C11_Skw_fnc )
-      !$acc data copyin( zero_vector_ngrdcol, tmp_ngrdcol, zero_vector, tmp ) &
-      !$acc     copyout( rhs_bp_wp2, rhs_pr2_wp2, rhs_bp1_wp3, rhs_pr2_wp3 ) wait
+      !$acc data copyin( zero_vector_ngrdcol, tmp_ngrdcol, zero_vector, tmp ) & 
+      !$acc     copyout( rhs_bp_wp2, rhs_pr2_wp2, rhs_bp1_wp3, rhs_pr2_wp3 ) wait 
       call wp2_terms_bp_pr2_rhs( nz, ngrdcol, zero_vector_ngrdcol,  & ! intent(in)
                                  thv_ds_zm, wpthvp,                 & ! intent(in)
                                  rhs_bp_wp2 )                         ! intent(out)

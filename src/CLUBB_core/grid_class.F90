@@ -1515,10 +1515,10 @@ module grid_class
 
     ! ------------------------------ Begin Code ------------------------------
 
-    !$acc data copyin( azt, gr, gr%weights_zt2zm, gr%zt, gr%zm ) &
-    !$acc      copyout( linear_interpolated_azm ) wait
+    !$acc data copyin( azt, gr, gr%weights_zt2zm, gr%zt, gr%zm ) & 
+    !$acc      copyout( linear_interpolated_azm ) wait 
 
-    !$acc parallel loop gang vector default(present) wait
+    !$acc parallel loop gang vector default(present) async(1) 
     do i = 1, ngrdcol
       linear_interpolated_azm(i,1) = azt(i,2)
     end do
@@ -1527,7 +1527,7 @@ module grid_class
     ! Interpolate the value of a thermodynamic-level variable to the central
     ! momentum level, k, between two successive thermodynamic levels using
     ! linear interpolation.
-    !$acc parallel loop gang vector collapse(2) default(present) wait
+    !$acc parallel loop gang vector collapse(2) default(present) async(1) 
     do k = 2, nz-1
       do i = 1, ngrdcol
         linear_interpolated_azm(i,k) = gr%weights_zt2zm(i,k,1) &
@@ -1542,7 +1542,7 @@ module grid_class
     ! Use a linear extension based on the values of azt at levels gr%nz and
     ! gr%nz-1 to find the value of azm at level gr%nz (the uppermost level
     ! in the model).
-    !$acc parallel loop gang vector default(present) wait
+    !$acc parallel loop gang vector default(present) async(1) 
     do i = 1, ngrdcol
       linear_interpolated_azm(i,nz) &
         = ( ( azt(i,nz) - azt(i,nz-1) ) / ( gr%zt(i,nz) - gr%zt(i,nz-1) ) ) & 
@@ -1551,7 +1551,7 @@ module grid_class
     !$acc end parallel loop
 
     if ( present(zm_min) ) then
-      !$acc parallel loop gang vector collapse(2) default(present) copyin(zm_min) wait
+      !$acc parallel loop gang vector collapse(2) default(present) copyin(zm_min) wait 
       do k = 1, nz
         do i = 1, ngrdcol
           linear_interpolated_azm(i,k) = max( linear_interpolated_azm(i,k), zm_min )
@@ -2098,8 +2098,8 @@ module grid_class
 
     ! ------------------------------ Begin Code ------------------------------
 
-    !$acc data copyin( azm, gr, gr%weights_zm2zt, gr%zt, gr%zm ) &
-    !$acc      copyout( linear_interpolated_azt ) wait
+    !$acc data copyin( azm, gr, gr%weights_zm2zt, gr%zt, gr%zm ) & 
+    !$acc      copyout( linear_interpolated_azt ) wait 
 
     ! Set the value of the momentum-level variable, azm, at the lowermost level
     ! of the model (below the model lower boundary), which is a thermodynamic
@@ -2107,7 +2107,7 @@ module grid_class
     ! thermodynamic levels is azt.
     ! Use a linear extension based on the values of azm at levels 1 and 2 to
     ! find the value of azt at level 1 (the lowermost level in the model).
-    !$acc parallel loop gang vector default(present) wait
+    !$acc parallel loop gang vector default(present) async(1) 
     do i = 1, ngrdcol
       linear_interpolated_azt(i,1) &
         = ( ( azm(i,2) - azm(i,1) ) / ( gr%zm(i,2) - gr%zm(i,1) ) ) & 
@@ -2118,7 +2118,7 @@ module grid_class
     ! Interpolate the value of a momentum-level variable to the central
     ! thermodynamic level, k, between two successive momentum levels using
     ! linear interpolation.
-    !$acc parallel loop gang vector collapse(2) default(present) wait
+    !$acc parallel loop gang vector collapse(2) default(present) async(1) 
     do k = 2, nz
       do i = 1, ngrdcol
         linear_interpolated_azt(i,k) = gr%weights_zm2zt(i,k,1) &
@@ -2128,7 +2128,7 @@ module grid_class
     !$acc end parallel loop
 
     if ( present(zt_min) ) then
-      !$acc parallel loop gang vector collapse(2) default(present) copyin(zt_min) wait
+      !$acc parallel loop gang vector collapse(2) default(present) copyin(zt_min) wait 
       do k = 1, nz
         do i = 1, ngrdcol
           linear_interpolated_azt(i,k) = max( linear_interpolated_azt(i,k), zt_min )
@@ -2547,16 +2547,16 @@ module grid_class
     ! Local Variable
     integer :: i, k  ! Grid level loop index
     
-    !$acc data copyin( gr, gr%invrs_dzt, azm ) &
-    !$acc     copyout( gradzm_2D ) wait
+    !$acc data copyin( gr, gr%invrs_dzt, azm ) & 
+    !$acc     copyout( gradzm_2D ) wait 
 
-    !$acc parallel loop gang vector default(present) wait
+    !$acc parallel loop gang vector default(present) async(1) 
     do i = 1, ngrdcol
       gradzm_2D(i,1) = ( azm(i,2) - azm(i,1) ) * gr%invrs_dzt(i,2)
     end do
     !$acc end parallel loop
 
-    !$acc parallel loop gang vector collapse(2) default(present) wait
+    !$acc parallel loop gang vector collapse(2) default(present) async(1) 
     do k = 2, nz
       do i = 1, ngrdcol
         gradzm_2D(i,k) = ( azm(i,k) - azm(i,k-1) ) * gr%invrs_dzt(i,k)
@@ -2641,10 +2641,10 @@ module grid_class
     ! Local Variable
     integer :: i, k  ! Grid level loop index
 
-    !$acc data copyin( gr, gr%invrs_dzm, azt ) &
-    !$acc     copyout( gradzt_2D ) wait
+    !$acc data copyin( gr, gr%invrs_dzm, azt ) & 
+    !$acc     copyout( gradzt_2D ) wait 
 
-    !$acc parallel loop gang vector collapse(2) default(present) wait
+    !$acc parallel loop gang vector collapse(2) default(present) async(1) 
     do k = 2, nz-1
       do i = 1, ngrdcol
         gradzt_2D(i,k) = ( azt(i,k+1) - azt(i,k) ) * gr%invrs_dzm(i,k)
@@ -2652,7 +2652,7 @@ module grid_class
     end do
     !$acc end parallel loop
 
-    !$acc parallel loop gang vector default(present) wait
+    !$acc parallel loop gang vector default(present) async(1) 
     do i = 1, ngrdcol
       gradzt_2D(i,1) = gradzt_2D(i,2)
       gradzt_2D(i,nz) = gradzt_2D(i,nz-1)

@@ -139,7 +139,7 @@ module sigma_sqd_w_module
     end do
     !$acc end parallel loop
 
-    !$acc exit data delete( max_corr_w_x_sqd ) wait
+    !$acc exit data delete( max_corr_w_x_sqd ) wait 
 
     return
 

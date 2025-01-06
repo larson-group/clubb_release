@@ -886,7 +886,7 @@ module saturation
     T_in_K_col(1,1) = T_in_K
 
     ! Call 2D version 
-    !$acc  data copyin( p_in_Pa_col, T_in_K_col ) copyout( sat_mixrat_ice_col ) async(1) 
+    !$acc  data copyin( p_in_Pa_col, T_in_K_col ) copyout( sat_mixrat_ice_col ) wait 
     sat_mixrat_ice_col = sat_mixrat_ice_2D( 1, 1, p_in_Pa_col, T_in_K_col, saturation_formula )
     !$acc end data
 

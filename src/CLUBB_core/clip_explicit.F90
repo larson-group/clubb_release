@@ -416,8 +416,8 @@ module clip_explicit
       endif ! l_linearize_pbl_winds
     end if
 
-    !$acc exit data delete( wprtp_chnge, wpthlp_chnge, upwp_chnge, vpwp_chnge ) wait
-    !$acc exit data if( sclr_dim > 0 ) delete( wpsclrp_chnge ) wait
+    !$acc exit data delete( wprtp_chnge, wpthlp_chnge, upwp_chnge, vpwp_chnge ) wait 
+    !$acc exit data if( sclr_dim > 0 ) delete( wpsclrp_chnge ) wait 
 
     return
   end subroutine clip_covars_denom
@@ -1282,7 +1282,7 @@ module clip_explicit
     end do
     !$acc end parallel loop
 
-    !$acc exit data delete( wp2_zt_cubed, wp3_lim_sqd, zagl_thresh, H_zagl ) wait
+    !$acc exit data delete( wp2_zt_cubed, wp3_lim_sqd, zagl_thresh, H_zagl ) wait 
 
   end subroutine clip_skewness_core
 

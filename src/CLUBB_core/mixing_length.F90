@@ -865,10 +865,10 @@ module mixing_length
 
     end if
 
-    !$acc exit data delete( exp_mu_dzm, invrs_dzm_on_mu, grav_on_thvm, Lv_coef, &
-    !$acc                   entrain_coef, thl_par_j_precalc, rt_par_j_precalc, &
-    !$acc                   tl_par_1, rt_par_1, rsatl_par_1, thl_par_1, dCAPE_dz_1, &
-    !$acc                   s_par_1, rc_par_1, CAPE_incr_1, thv_par_1, tke_i ) wait
+    !$acc exit data delete( exp_mu_dzm, invrs_dzm_on_mu, grav_on_thvm, Lv_coef, & 
+    !$acc                   entrain_coef, thl_par_j_precalc, rt_par_j_precalc, & 
+    !$acc                   tl_par_1, rt_par_1, rsatl_par_1, thl_par_1, dCAPE_dz_1, & 
+    !$acc                   s_par_1, rc_par_1, CAPE_incr_1, thv_par_1, tke_i ) wait 
 
     return
 
@@ -1256,11 +1256,11 @@ module mixing_length
       end if
     end if
 
-    !$acc exit data delete( sign_rtpthlp_zt, Lscale_pert_1, Lscale_pert_2, &
-    !$acc                   thlm_pert_1, thlm_pert_2, rtm_pert_1, rtm_pert_2, &
-    !$acc                   thlm_pert_pos_rt, thlm_pert_neg_rt, rtm_pert_pos_rt, &
-    !$acc                   rtm_pert_neg_rt, &
-    !$acc                   mu_pert_1, mu_pert_2, mu_pert_pos_rt, mu_pert_neg_rt ) wait
+    !$acc exit data delete( sign_rtpthlp_zt, Lscale_pert_1, Lscale_pert_2, & 
+    !$acc                   thlm_pert_1, thlm_pert_2, rtm_pert_1, rtm_pert_2, & 
+    !$acc                   thlm_pert_pos_rt, thlm_pert_neg_rt, rtm_pert_pos_rt, & 
+    !$acc                   rtm_pert_neg_rt, & 
+    !$acc                   mu_pert_1, mu_pert_2, mu_pert_pos_rt, mu_pert_neg_rt ) wait 
 
    return
    
@@ -2113,17 +2113,17 @@ module mixing_length
     end do
     !$acc end parallel loop
 
-    !$acc exit data delete( brunt_freq_pos, brunt_vaisala_freq_sqd_smth, brunt_freq_out_cloud, &
-    !$acc                   smooth_thlm, bvf_thresh, H_invrs_tau_wpxp_N2, ustar, &
-    !$acc                   ddzt_um, ddzt_vm, norm_ddzt_umvm, smooth_norm_ddzt_umvm, &
-    !$acc                   brunt_vaisala_freq_clipped, &
-    !$acc                   ice_supersat_frac_zm, invrs_tau_shear_smooth, &
-    !$acc                   ddzt_umvm_sqd, tmp_calc_ngrdcol ) wait
+    !$acc exit data delete( brunt_freq_pos, brunt_vaisala_freq_sqd_smth, brunt_freq_out_cloud, & 
+    !$acc                   smooth_thlm, bvf_thresh, H_invrs_tau_wpxp_N2, ustar, & 
+    !$acc                   ddzt_um, ddzt_vm, norm_ddzt_umvm, smooth_norm_ddzt_umvm, & 
+    !$acc                   brunt_vaisala_freq_clipped, & 
+    !$acc                   ice_supersat_frac_zm, invrs_tau_shear_smooth, & 
+    !$acc                   ddzt_umvm_sqd, tmp_calc_ngrdcol ) wait 
 
-    !$acc exit data if( l_smooth_min_max .or. l_modify_limiters_for_cnvg_test ) &
-    !$acc           delete( Ri_zm_clipped, ddzt_umvm_sqd_clipped, &
-    !$acc                   tau_zm_unclipped, tau_zt_unclipped, Ri_zm_smooth, em_clipped, &
-    !$acc                   tmp_calc, tmp_calc_max, tmp_calc_min_max ) wait
+    !$acc exit data if( l_smooth_min_max .or. l_modify_limiters_for_cnvg_test ) & 
+    !$acc           delete( Ri_zm_clipped, ddzt_umvm_sqd_clipped, & 
+    !$acc                   tau_zm_unclipped, tau_zt_unclipped, Ri_zm_smooth, em_clipped, & 
+    !$acc                   tmp_calc, tmp_calc_max, tmp_calc_min_max ) wait 
 
     return
     

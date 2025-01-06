@@ -690,7 +690,7 @@ module advance_xm_wpxp_module
 
     if ( clubb_at_least_debug_level( 0 ) ) then
       ! Assertion check for C7_Skw_fnc
-      !$acc parallel loop gang vector collapse(2) default(present)  reduction(.or.:err_code) wait
+      !$acc parallel loop gang vector collapse(2) default(present) reduction(.or.:err_code) async(1) 
       do k = 1, nz
         do i = 1, ngrdcol
           if ( C7_Skw_fnc(i,k) > one .or. C7_Skw_fnc(i,k) < zero ) then
@@ -698,7 +698,8 @@ module advance_xm_wpxp_module
           end if
         end do
       end do
-      !$acc end parallel loop
+      !$acc end parallel loop 
+      !$acc wait
 
       if ( err_code == clubb_fatal_error ) then
         write(fstderr,*) "The C7_Skw_fnc variable is outside the valid range"
@@ -1149,18 +1150,18 @@ module advance_xm_wpxp_module
       !$acc end parallel loop
     endif ! l_predict_upwp_vpwp
 
-    !$acc exit data delete( C6rt_Skw_fnc, C6thl_Skw_fnc, C7_Skw_fnc, C6_term, Kw6, &
-    !$acc                   low_lev_effect, high_lev_effect, rtm_old, wprtp_old, thlm_old, &
-    !$acc                   wpthlp_old, um_old, upwp_old, vm_old, &
-    !$acc                   vpwp_old, lhs_diff_zm, lhs_diff_zt, lhs_ma_zt, lhs_ma_zm, &
-    !$acc                   lhs_ta_wprtp, lhs_ta_wpthlp, lhs_ta_wpup, lhs_ta_wpvp, &
-    !$acc                   rhs_ta_wprtp, rhs_ta_wpthlp, rhs_ta_wpup, &
-    !$acc                   rhs_ta_wpvp, lhs_tp, lhs_ta_xm, lhs_ac_pr2, &
-    !$acc                   lhs_pr1_wprtp, lhs_pr1_wpthlp ) wait
+    !$acc exit data delete( C6rt_Skw_fnc, C6thl_Skw_fnc, C7_Skw_fnc, C6_term, Kw6, & 
+    !$acc                   low_lev_effect, high_lev_effect, rtm_old, wprtp_old, thlm_old, & 
+    !$acc                   wpthlp_old, um_old, upwp_old, vm_old, & 
+    !$acc                   vpwp_old, lhs_diff_zm, lhs_diff_zt, lhs_ma_zt, lhs_ma_zm, & 
+    !$acc                   lhs_ta_wprtp, lhs_ta_wpthlp, lhs_ta_wpup, lhs_ta_wpvp, & 
+    !$acc                   rhs_ta_wprtp, rhs_ta_wpthlp, rhs_ta_wpup, & 
+    !$acc                   rhs_ta_wpvp, lhs_tp, lhs_ta_xm, lhs_ac_pr2, & 
+    !$acc                   lhs_pr1_wprtp, lhs_pr1_wpthlp ) wait 
 
-    !$acc exit data if( sclr_dim > 0 ) &
-    !$acc           delete( sclrm_old, wpsclrp_old, lhs_ta_wpsclrp,  &
-    !$acc                   rhs_ta_wpsclrp, lhs_pr1_wpsclrp ) wait
+    !$acc exit data if( sclr_dim > 0 ) & 
+    !$acc           delete( sclrm_old, wpsclrp_old, lhs_ta_wpsclrp, & 
+    !$acc                   rhs_ta_wpsclrp, lhs_pr1_wpsclrp ) wait 
 
     return
 
@@ -1680,7 +1681,7 @@ module advance_xm_wpxp_module
                            lhs_ma_zt )                              ! Intent(out)
     end if    
 
-    !$acc exit data delete( Kh_N2_zm, K_zm, K_zt, Kw6_zm, zeros_array ) wait
+    !$acc exit data delete( Kh_N2_zm, K_zm, K_zt, Kw6_zm, zeros_array ) wait 
 
     return
 
@@ -1951,7 +1952,7 @@ module advance_xm_wpxp_module
       ! w'x' term bp is completely explicit; call stat_update_var.
       ! Note:  To find the contribution of w'x' term bp, substitute 0 for the
       !        C_7 skewness function input to function wpxp_terms_bp_pr3_rhs.
-      !$acc  data copyin( zero_vector ) copyout( rhs_bp ) async(1) 
+      !$acc  data copyin( zero_vector ) copyout( rhs_bp ) wait 
         call wpxp_terms_bp_pr3_rhs( nz, ngrdcol, zero_vector, thv_ds_zm, xpthvp, & ! intent(in)
                                     rhs_bp )                                       ! intent(out)
       !$acc end data
@@ -1966,7 +1967,7 @@ module advance_xm_wpxp_module
       ! w'x' term pr3 is completely explicit; call stat_update_var.
       ! Note:  To find the contribution of w'x' term pr3, add 1 to the
       !        C_7 skewness function input to function wpxp_terms_bp_pr2_rhs.
-      !$acc  data copyin( tmp ) copyout( rhs_pr3 ) async(1) 
+      !$acc  data copyin( tmp ) copyout( rhs_pr3 ) wait 
         call wpxp_terms_bp_pr3_rhs( nz, ngrdcol, tmp, thv_ds_zm, xpthvp, & ! intent(in)
                                     rhs_pr3 )                                           ! intent(out)
       !$acc end data
@@ -2033,7 +2034,7 @@ module advance_xm_wpxp_module
 
     endif ! stats_metadata%l_stats_samp
 
-    !$acc exit data delete( rhs_bp_pr3 ) wait
+    !$acc exit data delete( rhs_bp_pr3 ) wait 
 
     return
 
@@ -2618,14 +2619,14 @@ module advance_xm_wpxp_module
       end do
     endif
 
-    !$acc exit data delete( coef_wp2rtp_implicit, term_wp2rtp_explicit, coef_wp2rtp_implicit_zm, &
-    !$acc                 term_wp2rtp_explicit_zm, coef_wp2thlp_implicit, term_wp2thlp_explicit, &
-    !$acc                 coef_wp2thlp_implicit_zm, term_wp2thlp_explicit_zm, &
-    !$acc                 sgn_t_vel_wprtp, sgn_t_vel_wpthlp, &
-    !$acc                 a1, a1_zt ) wait
+    !$acc exit data delete( coef_wp2rtp_implicit, term_wp2rtp_explicit, coef_wp2rtp_implicit_zm, & 
+    !$acc                 term_wp2rtp_explicit_zm, coef_wp2thlp_implicit, term_wp2thlp_explicit, & 
+    !$acc                 coef_wp2thlp_implicit_zm, term_wp2thlp_explicit_zm, & 
+    !$acc                 sgn_t_vel_wprtp, sgn_t_vel_wpthlp, & 
+    !$acc                 a1, a1_zt ) wait 
 
-    !$acc exit data if( sclr_dim > 0 ) &
-    !$acc            delete( term_wp2sclrp_explicit, term_wp2sclrp_explicit_zm, sgn_t_vel_wpsclrp ) wait
+    !$acc exit data if( sclr_dim > 0 ) & 
+    !$acc            delete( term_wp2sclrp_explicit, term_wp2sclrp_explicit_zm, sgn_t_vel_wpsclrp ) wait 
     
   end subroutine calc_xm_wpxp_ta_terms
   
@@ -3649,14 +3650,14 @@ module advance_xm_wpxp_module
 
     end if ! l_predict_upwp_vpwp
 
-    !$acc exit data delete( lhs, um_tndcy, vm_tndcy, upwp_forcing, &
-    !$acc                 vpwp_forcing, upthvp, vpthvp, upthlp, vpthlp, uprtp, vprtp, &
-    !$acc                 tau_C6_zm, upwp_forcing_pert, vpwp_forcing_pert, upthvp_pert, &
-    !$acc                 vpthvp_pert, upthlp_pert, vpthlp_pert, uprtp_pert, vprtp_pert, &
-    !$acc                 rhs, rhs_save, solution, old_solution, rcond, zeros_vector, &
-    !$acc                 ddzt_um, ddzt_vm, ddzt_um_pert, ddzt_vm_pert ) wait
+    !$acc exit data delete( lhs, um_tndcy, vm_tndcy, upwp_forcing, & 
+    !$acc                 vpwp_forcing, upthvp, vpthvp, upthlp, vpthlp, uprtp, vprtp, & 
+    !$acc                 tau_C6_zm, upwp_forcing_pert, vpwp_forcing_pert, upthvp_pert, & 
+    !$acc                 vpthvp_pert, upthlp_pert, vpthlp_pert, uprtp_pert, vprtp_pert, & 
+    !$acc                 rhs, rhs_save, solution, old_solution, rcond, zeros_vector, & 
+    !$acc                 ddzt_um, ddzt_vm, ddzt_um_pert, ddzt_vm_pert ) wait 
 
-    !$acc exit data if( sclr_dim > 0 ) delete( wpsclrp_forcing ) wait
+    !$acc exit data if( sclr_dim > 0 ) delete( wpsclrp_forcing ) wait 
     
   end subroutine solve_xm_wpxp_with_single_lhs
   
@@ -4686,7 +4687,7 @@ module advance_xm_wpxp_module
       ! Note:  To find the contribution of w'x' term ac,
       !        substitute 0 for the C_7 skewness function input
       !        to function wpxp_terms_ac_pr2_lhs.
-      !$acc  data copyin( zero_vector ) copyout( wpxp_ac ) async(1) 
+      !$acc  data copyin( zero_vector ) copyout( wpxp_ac ) wait 
       call wpxp_terms_ac_pr2_lhs( nz, ngrdcol, zero_vector, & ! intent(in)
                                   wm_zt, gr%invrs_dzm,      & ! intent(in)
                                   wpxp_ac )                   ! intent(out)
@@ -4696,7 +4697,7 @@ module advance_xm_wpxp_module
       !        add 1 to the C_7 skewness function input
       !        to function wpxp_terms_ac_pr2_lhs.
       tmp =   (one+C7_Skw_fnc)                                
-      !$acc  data copyin( tmp ) copyout( wpxp_pr2 ) async(1) 
+      !$acc  data copyin( tmp ) copyout( wpxp_pr2 ) wait 
       call wpxp_terms_ac_pr2_lhs( nz, ngrdcol, tmp, & ! intent(in)
                                   wm_zt, gr%invrs_dzm,           & ! intent(in)
                                   wpxp_pr2 )                       ! intent(out)
@@ -5052,7 +5053,7 @@ module advance_xm_wpxp_module
     !end do
     !!$acc end parallel loop
 
-    !$acc exit data delete( xm_old, wpxp_pd, xm_pd, wpxp_chnge, xp2_relaxed ) wait
+    !$acc exit data delete( xm_old, wpxp_pd, xm_pd, wpxp_chnge, xp2_relaxed ) wait 
 
     return
 
@@ -5831,7 +5832,7 @@ module advance_xm_wpxp_module
       end do
     endif
 
-    !$acc exit data delete( xm_tndcy_wpxp_cl, l_clipping_needed, l_any_clipping_needed ) wait
+    !$acc exit data delete( xm_tndcy_wpxp_cl, l_clipping_needed, l_any_clipping_needed ) wait 
 
     return
 
@@ -5979,7 +5980,7 @@ module advance_xm_wpxp_module
     end do
     !$acc end parallel loop
 
-    !$acc exit data delete( ddzt_xm, ddzt_ym ) wait
+    !$acc exit data delete( ddzt_xm, ddzt_ym ) wait 
               
     return
 

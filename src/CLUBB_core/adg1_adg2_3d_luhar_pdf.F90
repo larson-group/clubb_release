@@ -206,7 +206,7 @@ module adg1_adg2_3d_luhar_pdf
        enddo ! i=1, sclr_dim
     endif ! l_scalar_calc
     
-    !$acc exit data delete( w_1_n, w_2_n ) wait
+    !$acc exit data delete( w_1_n, w_2_n ) wait 
 
     return
 

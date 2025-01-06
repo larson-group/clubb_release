@@ -1566,7 +1566,7 @@ module advance_clubb_core_module
       ! when stat_update_var is called for rel_humidity.  ldgrant
       if ( stats_metadata%irel_humidity > 0 ) then
         
-        !$acc data create( tmp ) copyin( p_in_Pa, thlm, exner, rcm ) copyout( rsat ) wait
+        !$acc data create( tmp ) copyin( p_in_Pa, thlm, exner, rcm ) copyout( rsat ) wait 
         tmp = thlm2T_in_K( nz, ngrdcol, thlm, exner, rcm )
         rsat = sat_mixrat_liq( nz, ngrdcol, p_in_Pa, &
                                tmp, &
@@ -2747,33 +2747,33 @@ module advance_clubb_core_module
       end do
     end if
 
-    !$acc exit data if( sclr_dim > 0 ) &
-    !$acc           delete( sclrprcp, wp2sclrp, &
-    !$acc                   wpsclrp2, wpsclrprtp, wpsclrpthlp, wpsclrp_zt, sclrp2_zt ) wait
+    !$acc exit data if( sclr_dim > 0 ) & 
+    !$acc           delete( sclrprcp, wp2sclrp, & 
+    !$acc                   wpsclrp2, wpsclrprtp, wpsclrpthlp, wpsclrp_zt, sclrp2_zt ) wait 
 
-    !$acc exit data if( edsclr_dim > 0 ) &
-    !$acc           delete( wpedsclrp ) wait
+    !$acc exit data if( edsclr_dim > 0 ) & 
+    !$acc           delete( wpedsclrp ) wait 
 
-    !$acc exit data delete( Skw_zm, Skw_zt, thvm, thvm_zm, ddzm_thvm_zm, rtprcp, rcp2, &
-    !$acc                   wpthlp2, wprtp2, wprtpthlp, wp2rcp, wp3_zm, Lscale, Lscale_up, &
-    !$acc                   Lscale_zm, Lscale_down, em, tau_zm, tau_zt, sigma_sqd_w_zt, &
-    !$acc                   wp2_zt, thlp2_zt, wpthlp_zt, &
-    !$acc                   wprtp_zt, rtp2_zt, rtpthlp_zt, up2_zt, vp2_zt, upwp_zt, vpwp_zt, &
-    !$acc                   Skw_velocity, a3_coef, a3_coef_zt, wp3_on_wp2, wp3_on_wp2_zt, &
-    !$acc                   rc_coef, Km_zm, Kmh_zm, gamma_Skw_fnc, sigma_sqd_w, sigma_sqd_w_tmp, &
-    !$acc                   sqrt_em_zt, xp3_coef_fnc, w_1_zm, w_2_zm, varnce_w_1_zm, varnce_w_2_zm, &
-    !$acc                   mixt_frac_zm, rcp2_zt, cloud_frac_zm, ice_supersat_frac_zm, rtm_zm, &
-    !$acc                   thlm_zm, rcm_zm, thlm1000, thlm700, &
-    !$acc                   rcm_supersat_adj, stability_correction, invrs_tau_N2_zm, &
-    !$acc                   invrs_tau_C6_zm, invrs_tau_C1_zm, invrs_tau_xp2_zm, invrs_tau_N2_iso, &
-    !$acc                   invrs_tau_C4_zm, invrs_tau_C14_zm, invrs_tau_wp2_zm, invrs_tau_wpxp_zm, &
-    !$acc                   invrs_tau_wp3_zm, invrs_tau_no_N2_zm, invrs_tau_bkgnd, invrs_tau_shear, &
-    !$acc                   invrs_tau_sfc, invrs_tau_zt, invrs_tau_wp3_zt, Cx_fnc_Richardson, &
-    !$acc                   brunt_vaisala_freq_sqd, brunt_vaisala_freq_sqd_mixed, &
-    !$acc                   brunt_vaisala_freq_sqd_dry, brunt_vaisala_freq_sqd_moist, &
-    !$acc                   brunt_vaisala_freq_sqd_splat, &
-    !$acc                   brunt_vaisala_freq_sqd_zt, Ri_zm, Lscale_max, &
-    !$acc                   tau_max_zm, tau_max_zt, mu, lhs_splat_wp2, lhs_splat_wp3 ) wait
+    !$acc exit data delete( Skw_zm, Skw_zt, thvm, thvm_zm, ddzm_thvm_zm, rtprcp, rcp2, & 
+    !$acc                   wpthlp2, wprtp2, wprtpthlp, wp2rcp, wp3_zm, Lscale, Lscale_up, & 
+    !$acc                   Lscale_zm, Lscale_down, em, tau_zm, tau_zt, sigma_sqd_w_zt, & 
+    !$acc                   wp2_zt, thlp2_zt, wpthlp_zt, & 
+    !$acc                   wprtp_zt, rtp2_zt, rtpthlp_zt, up2_zt, vp2_zt, upwp_zt, vpwp_zt, & 
+    !$acc                   Skw_velocity, a3_coef, a3_coef_zt, wp3_on_wp2, wp3_on_wp2_zt, & 
+    !$acc                   rc_coef, Km_zm, Kmh_zm, gamma_Skw_fnc, sigma_sqd_w, sigma_sqd_w_tmp, & 
+    !$acc                   sqrt_em_zt, xp3_coef_fnc, w_1_zm, w_2_zm, varnce_w_1_zm, varnce_w_2_zm, & 
+    !$acc                   mixt_frac_zm, rcp2_zt, cloud_frac_zm, ice_supersat_frac_zm, rtm_zm, & 
+    !$acc                   thlm_zm, rcm_zm, thlm1000, thlm700, & 
+    !$acc                   rcm_supersat_adj, stability_correction, invrs_tau_N2_zm, & 
+    !$acc                   invrs_tau_C6_zm, invrs_tau_C1_zm, invrs_tau_xp2_zm, invrs_tau_N2_iso, & 
+    !$acc                   invrs_tau_C4_zm, invrs_tau_C14_zm, invrs_tau_wp2_zm, invrs_tau_wpxp_zm, & 
+    !$acc                   invrs_tau_wp3_zm, invrs_tau_no_N2_zm, invrs_tau_bkgnd, invrs_tau_shear, & 
+    !$acc                   invrs_tau_sfc, invrs_tau_zt, invrs_tau_wp3_zt, Cx_fnc_Richardson, & 
+    !$acc                   brunt_vaisala_freq_sqd, brunt_vaisala_freq_sqd_mixed, & 
+    !$acc                   brunt_vaisala_freq_sqd_dry, brunt_vaisala_freq_sqd_moist, & 
+    !$acc                   brunt_vaisala_freq_sqd_splat, & 
+    !$acc                   brunt_vaisala_freq_sqd_zt, Ri_zm, Lscale_max, & 
+    !$acc                   tau_max_zm, tau_max_zt, mu, lhs_splat_wp2, lhs_splat_wp3 ) wait 
     
     return
 
@@ -3836,7 +3836,7 @@ module advance_clubb_core_module
       l_spur_supersat = .false.
       
 
-      !$acc parallel loop gang vector collapse(2) default(present) reduction(.or.:l_spur_supersat) wait
+      !$acc parallel loop gang vector collapse(2) default(present) reduction(.or.:l_spur_supersat) async(1) 
       do k = 2, nz
         do i = 1, ngrdcol
           if (rel_humidity(i,k) > 1.0_core_rknd) then
@@ -3846,7 +3846,8 @@ module advance_clubb_core_module
           end if
         end do
       end do
-      !$acc end parallel loop
+      !$acc end parallel loop 
+      !$acc wait
 
       if ( clubb_at_least_debug_level( 1 ) .and. l_spur_supersat ) then
         write(fstderr,*) 'Warning: spurious supersaturation was removed after pdf_closure!'
@@ -3854,29 +3855,29 @@ module advance_clubb_core_module
 
     end if ! l_rcm_supersat_adj
 
-    !$acc exit data delete( wp2_zt,wp3_zm, rtp2_zt,rtp3_zm, thlp2_zt,  thlp3_zm, &
-    !$acc                   wprtp_zt, wpthlp_zt, rtpthlp_zt, up2_zt, up3_zm, &
-    !$acc                   vp2_zt, vp3_zm, upwp_zt, vpwp_zt, gamma_Skw_fnc, &
-    !$acc                   gamma_Skw_fnc_zt,sigma_sqd_w_zt,  Skw_zt, Skw_zm, &
-    !$acc                   Skrt_zt, Skrt_zm, Skthl_zt, Skthl_zm, Sku_zt, &
-    !$acc                   Sku_zm, Skv_zt, Skv_zm, wp2up2_zt, &
-    !$acc                   wp2vp2_zt, wp4_zt, wpthvp_zt, rtpthvp_zt, thlpthvp_zt, &
-    !$acc                   wprcp_zt, rtprcp_zt, thlprcp_zt, uprcp_zt, vprcp_zt, &
-    !$acc                   rsat, rel_humidity, um_zm, vm_zm, T_in_K, sigma_sqd_w_tmp ) wait
+    !$acc exit data delete( wp2_zt,wp3_zm, rtp2_zt,rtp3_zm, thlp2_zt, thlp3_zm, & 
+    !$acc                   wprtp_zt, wpthlp_zt, rtpthlp_zt, up2_zt, up3_zm, & 
+    !$acc                   vp2_zt, vp3_zm, upwp_zt, vpwp_zt, gamma_Skw_fnc, & 
+    !$acc                   gamma_Skw_fnc_zt,sigma_sqd_w_zt, Skw_zt, Skw_zm, & 
+    !$acc                   Skrt_zt, Skrt_zm, Skthl_zt, Skthl_zm, Sku_zt, & 
+    !$acc                   Sku_zm, Skv_zt, Skv_zm, wp2up2_zt, & 
+    !$acc                   wp2vp2_zt, wp4_zt, wpthvp_zt, rtpthvp_zt, thlpthvp_zt, & 
+    !$acc                   wprcp_zt, rtprcp_zt, thlprcp_zt, uprcp_zt, vprcp_zt, & 
+    !$acc                   rsat, rel_humidity, um_zm, vm_zm, T_in_K, sigma_sqd_w_tmp ) wait 
 
-    !$acc exit data if( l_call_pdf_closure_twice ) &
-    !$acc           delete( w_up_in_cloud_zm, wpup2_zm, wpvp2_zm, &
-    !$acc                   w_down_in_cloud_zm, cloudy_updraft_frac_zm,  &
-    !$acc                   cloudy_downdraft_frac_zm, p_in_Pa_zm, exner_zm, &
-    !$acc                   wprtp2_zm, wp2rtp_zm, wpthlp2_zm, &
-    !$acc                   wp2thlp_zm, wprtpthlp_zm, wp2thvp_zm, wp2rcp_zm ) wait
+    !$acc exit data if( l_call_pdf_closure_twice ) & 
+    !$acc           delete( w_up_in_cloud_zm, wpup2_zm, wpvp2_zm, & 
+    !$acc                   w_down_in_cloud_zm, cloudy_updraft_frac_zm, & 
+    !$acc                   cloudy_downdraft_frac_zm, p_in_Pa_zm, exner_zm, & 
+    !$acc                   wprtp2_zm, wp2rtp_zm, wpthlp2_zm, & 
+    !$acc                   wp2thlp_zm, wprtpthlp_zm, wp2thvp_zm, wp2rcp_zm ) wait 
 
-    !$acc exit data if( sclr_dim > 0 ) &
-    !$acc           delete( wpsclrp_zt, sclrp2_zt, sclrp3_zm, sclrprtp_zt, sclrpthlp_zt, &
-    !$acc                   Sksclr_zt, Sksclr_zm, sclrpthvp_zt, sclrprcp_zt, wpsclrprtp_zm, &
-    !$acc                   wpsclrp2_zm, wpsclrpthlp_zm, wp2sclrp_zm, sclrm_zm ) wait
+    !$acc exit data if( sclr_dim > 0 ) & 
+    !$acc           delete( wpsclrp_zt, sclrp2_zt, sclrp3_zm, sclrprtp_zt, sclrpthlp_zt, & 
+    !$acc                   Sksclr_zt, Sksclr_zm, sclrpthvp_zt, sclrprcp_zt, wpsclrprtp_zm, & 
+    !$acc                   wpsclrp2_zm, wpsclrpthlp_zm, wp2sclrp_zm, sclrm_zm ) wait 
 
-    !$acc exit data if( hydromet_dim > 0 ) delete( wphydrometp_zt, wp2hmp_zm, rtphmp, thlphmp ) wait
+    !$acc exit data if( hydromet_dim > 0 ) delete( wphydrometp_zt, wp2hmp_zm, rtphmp, thlphmp ) wait 
 
     return
 
@@ -4960,7 +4961,7 @@ module advance_clubb_core_module
       end do
       !$acc end parallel loop
 
-      !$acc parallel loop gang vector collapse(2) default(present) reduction(.or.:err_code) wait
+      !$acc parallel loop gang vector collapse(2) default(present) reduction(.or.:err_code) async(1) 
       do k = 2, nz-1
         do i = 1, ngrdcol
 
@@ -5043,7 +5044,8 @@ module advance_clubb_core_module
           
         end do
       end do ! k = 2, gr%nz-1, 1
-      !$acc end parallel loop
+      !$acc end parallel loop 
+      !$acc wait
 
       !$acc  parallel loop gang vector default(present) async(1) 
       do i = 1, ngrdcol
@@ -5072,8 +5074,8 @@ module advance_clubb_core_module
         end if
       end if 
 
-      !$acc exit data delete( chi_mean, vert_cloud_frac_upper, &
-      !$acc                   vert_cloud_frac_lower, vert_cloud_frac ) wait
+      !$acc exit data delete( chi_mean, vert_cloud_frac_upper, & 
+      !$acc                   vert_cloud_frac_lower, vert_cloud_frac ) wait 
 
       return
 

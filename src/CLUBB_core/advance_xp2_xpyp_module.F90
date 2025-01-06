@@ -434,7 +434,7 @@ module advance_xp2_xpyp_module
 
     if ( clubb_at_least_debug_level( 1 ) ) then
 
-      !$acc parallel loop gang vector default(present) reduction(.or.:err_code) wait
+      !$acc parallel loop gang vector default(present) reduction(.or.:err_code) async(1) 
       do i = 1, ngrdcol
 
         ! Assertion check for C_uu_shr
@@ -451,7 +451,8 @@ module advance_xp2_xpyp_module
         end if
         
       end do
-      !$acc end parallel loop
+      !$acc end parallel loop 
+      !$acc wait
 
       if ( err_code == clubb_fatal_error ) then
         return
@@ -594,7 +595,7 @@ module advance_xp2_xpyp_module
 
         l_single_solve_possible = .true.
 
-        !$acc parallel loop gang vector default(present) reduction(.and.:l_single_solve_possible) wait
+        !$acc parallel loop gang vector default(present) reduction(.and.:l_single_solve_possible) async(1) 
         do i = 1, ngrdcol
 
           C2rt    = clubb_params(i,iC2rt)
@@ -608,7 +609,8 @@ module advance_xp2_xpyp_module
           end if
 
         end do
-        !$acc end parallel loop
+        !$acc end parallel loop 
+        !$acc wait
 
     else 
 
@@ -1420,21 +1422,21 @@ module advance_xp2_xpyp_module
       endif
     end if
 
-    !$acc exit data delete( rtp2_old, thlp2_old, rtpthlp_old, up2_old, vp2_old, &
-    !$acc                    C2sclr_1d, C2rt_1d, C2thl_1d, &
-    !$acc                    C2rtthl_1d, C4_1d, C14_1d, threshold_array, lhs, uv_rhs, &
-    !$acc                    uv_solution, Kw2, Kw9, Kw2_zm, Kw9_zm, rtpthlp_chnge, &
-    !$acc                    lhs_ta_wprtp2, lhs_ta_wpthlp2, &
-    !$acc                    lhs_ta_wprtpthlp, lhs_ta_wpup2, lhs_ta_wpvp2, rhs_ta_wprtp2, &
-    !$acc                    rhs_ta_wpthlp2, rhs_ta_wprtpthlp, rhs_ta_wpup2, rhs_ta_wpvp2, &
-    !$acc                    lhs_diff, lhs_diff_uv, lhs_ma, lhs_dp1, rtm_zm, &
-    !$acc                    lhs_dp1_C4, lhs_dp1_C14 ) wait
+    !$acc exit data delete( rtp2_old, thlp2_old, rtpthlp_old, up2_old, vp2_old, & 
+    !$acc                    C2sclr_1d, C2rt_1d, C2thl_1d, & 
+    !$acc                    C2rtthl_1d, C4_1d, C14_1d, threshold_array, lhs, uv_rhs, & 
+    !$acc                    uv_solution, Kw2, Kw9, Kw2_zm, Kw9_zm, rtpthlp_chnge, & 
+    !$acc                    lhs_ta_wprtp2, lhs_ta_wpthlp2, & 
+    !$acc                    lhs_ta_wprtpthlp, lhs_ta_wpup2, lhs_ta_wpvp2, rhs_ta_wprtp2, & 
+    !$acc                    rhs_ta_wpthlp2, rhs_ta_wprtpthlp, rhs_ta_wpup2, rhs_ta_wpvp2, & 
+    !$acc                    lhs_diff, lhs_diff_uv, lhs_ma, lhs_dp1, rtm_zm, & 
+    !$acc                    lhs_dp1_C4, lhs_dp1_C14 ) wait 
 
-    !$acc exit data if( sclr_dim > 0 ) &
-    !$acc      delete( sclrp2_old, sclrprtp_old, sclrpthlp_old, sclrprtp_chnge, &
-    !$acc              lhs_ta_wpsclrp2, lhs_ta_wprtpsclrp, lhs_ta_wpthlpsclrp, &
-    !$acc              rhs_ta_wpsclrp2, rhs_ta_wprtpsclrp, rhs_ta_wpthlpsclrp, &
-    !$acc              sclrpthlp_chnge )  wait
+    !$acc exit data if( sclr_dim > 0 ) & 
+    !$acc      delete( sclrp2_old, sclrprtp_old, sclrpthlp_old, sclrprtp_chnge, & 
+    !$acc              lhs_ta_wpsclrp2, lhs_ta_wprtpsclrp, lhs_ta_wpthlpsclrp, & 
+    !$acc              rhs_ta_wpsclrp2, rhs_ta_wprtpsclrp, rhs_ta_wpthlpsclrp, & 
+    !$acc              sclrpthlp_chnge ) wait 
 
     return
 
@@ -1834,10 +1836,10 @@ module advance_xp2_xpyp_module
       end do
     end if
 
-    !$acc exit data delete( lhs, rhs, solution, lhs_dp1 ) wait
+    !$acc exit data delete( lhs, rhs, solution, lhs_dp1 ) wait 
 
-    !$acc exit data if( sclr_dim > 0 ) &
-    !$acc           delete( sclrp2_forcing, sclrprtp_forcing, sclrpthlp_forcing ) wait
+    !$acc exit data if( sclr_dim > 0 ) & 
+    !$acc           delete( sclrp2_forcing, sclrprtp_forcing, sclrpthlp_forcing ) wait 
 
     return
       
@@ -2516,13 +2518,13 @@ module advance_xp2_xpyp_module
 
     end if
 
-    !$acc exit data delete( lhs, rhs, threshold, lhs_dp1, rtp2_solution, &
-    !$acc                     thlp2_solution, rtpthlp_solution ) wait
+    !$acc exit data delete( lhs, rhs, threshold, lhs_dp1, rtp2_solution, & 
+    !$acc                     thlp2_solution, rtpthlp_solution ) wait 
 
-    !$acc exit data if( sclr_dim > 0 ) &
-    !$acc           delete( sclrprtp_solution, sclrpthlp_solution, sclr_solution, &
-    !$acc                   sclr_rhs, sclrp2_forcing, sclrprtp_forcing, sclrpthlp_forcing, &
-    !$acc                   sclrp2_solution ) wait
+    !$acc exit data if( sclr_dim > 0 ) & 
+    !$acc           delete( sclrprtp_solution, sclrpthlp_solution, sclr_solution, & 
+    !$acc                   sclr_rhs, sclrp2_forcing, sclrprtp_forcing, sclrpthlp_forcing, & 
+    !$acc                   sclrp2_solution ) wait 
 
     return
       
@@ -3232,7 +3234,7 @@ module advance_xp2_xpyp_module
 
       zeros_vector = zero
 
-      !$acc data copyin( zeros_vector ) copyout( stats_pr1, stats_pr2 ) wait
+      !$acc data copyin( zeros_vector ) copyout( stats_pr1, stats_pr2 ) wait 
       call term_pr1( nz, ngrdcol, C4, zeros_vector, xbp2, &
                      wp2, invrs_tau_C4_zm, invrs_tau_C14_zm, &
                      stats_pr1 )
@@ -3317,7 +3319,7 @@ module advance_xp2_xpyp_module
     end do
     !$acc end parallel loop
 
-    !$acc exit data delete( rhs_pr1, rhs_pr2, rhs_term_tp ) wait
+    !$acc exit data delete( rhs_pr1, rhs_pr2, rhs_term_tp ) wait 
     
     return
 
@@ -3604,7 +3606,7 @@ module advance_xp2_xpyp_module
 
       zeros_vector = zero
 
-      !$acc data copyin( zeros_vector ) copyout( stats_tp1, stats_tp2 ) wait
+      !$acc data copyin( zeros_vector ) copyout( stats_tp1, stats_tp2 ) wait 
 
       ! Note:  To find the contribution of x'y' term tp1, substitute 0 for all
       !        the xam inputs and the wpxbp input to function term_tp.
@@ -3710,7 +3712,7 @@ module advance_xp2_xpyp_module
     end do
     !$acc end parallel loop
 
-    !$acc exit data delete( rhs_term_tp, rhs_term_dp1, lhs_term_dp1 ) wait
+    !$acc exit data delete( rhs_term_tp, rhs_term_dp1, lhs_term_dp1 ) wait 
 
     return
 
@@ -5282,26 +5284,26 @@ module advance_xp2_xpyp_module
       end do
     end if ! stats_metadata%l_stats_samp
 
-    !$acc exit data delete( coef_wprtp2_implicit, term_wprtp2_explicit, &
-    !$acc                 coef_wprtp2_implicit_zm, term_wprtp2_explicit_zm, &
-    !$acc                 coef_wpthlp2_implicit, term_wpthlp2_explicit, &
-    !$acc                 term_wpthlp2_explicit_zm, &
-    !$acc                 coef_wprtpthlp_implicit, term_wprtpthlp_explicit, &
-    !$acc                 coef_wpvp2_implicit_zm, term_wprtpthlp_explicit_zm, &
-    !$acc                 coef_wpup2_implicit, term_wpup2_explicit, coef_wpvp2_implicit, &
-    !$acc                 term_wpvp2_explicit, coef_wpup2_implicit_zm, term_wpup2_explicit_zm, &
-    !$acc                 term_wpvp2_explicit_zm, sgn_t_vel_rtp2, &
+    !$acc exit data delete( coef_wprtp2_implicit, term_wprtp2_explicit, & 
+    !$acc                 coef_wprtp2_implicit_zm, term_wprtp2_explicit_zm, & 
+    !$acc                 coef_wpthlp2_implicit, term_wpthlp2_explicit, & 
+    !$acc                 term_wpthlp2_explicit_zm, & 
+    !$acc                 coef_wprtpthlp_implicit, term_wprtpthlp_explicit, & 
+    !$acc                 coef_wpvp2_implicit_zm, term_wprtpthlp_explicit_zm, & 
+    !$acc                 coef_wpup2_implicit, term_wpup2_explicit, coef_wpvp2_implicit, & 
+    !$acc                 term_wpvp2_explicit, coef_wpup2_implicit_zm, term_wpup2_explicit_zm, & 
+    !$acc                 term_wpvp2_explicit_zm, sgn_t_vel_rtp2, & 
     !$acc                 sgn_t_vel_thlp2, sgn_t_vel_rtpthlp, sgn_t_vel_up2, sgn_t_vel_vp2, & 
-    !$acc                 a1, a1_zt, upwp_zt, vpwp_zt, wprtp_zt, wpthlp_zt, wp_coef, wp_coef_zt ) wait
+    !$acc                 a1, a1_zt, upwp_zt, vpwp_zt, wprtp_zt, wpthlp_zt, wp_coef, wp_coef_zt ) wait 
 
-    !$acc exit data if( sclr_dim > 0 ) &
-    !$acc         delete( coef_wpsclrp2_implicit, term_wpsclrp2_explicit, &
-    !$acc                 coef_wpsclrp2_implicit_zm, term_wpsclrp2_explicit_zm, &
-    !$acc                 coef_wprtpsclrp_implicit, term_wprtpsclrp_explicit, &
-    !$acc                 coef_wprtpsclrp_implicit_zm, term_wprtpsclrp_explicit_zm, &
-    !$acc                 coef_wpthlpsclrp_implicit, coef_wpthlpsclrp_implicit_zm, &
-    !$acc                 term_wpthlpsclrp_explicit_zm, sgn_t_vel_sclrp2, sgn_t_vel_sclrprtp, &
-    !$acc                 sgn_t_vel_sclrpthlp, wpsclrp_zt ) wait
+    !$acc exit data if( sclr_dim > 0 ) & 
+    !$acc         delete( coef_wpsclrp2_implicit, term_wpsclrp2_explicit, & 
+    !$acc                 coef_wpsclrp2_implicit_zm, term_wpsclrp2_explicit_zm, & 
+    !$acc                 coef_wprtpsclrp_implicit, term_wprtpsclrp_explicit, & 
+    !$acc                 coef_wprtpsclrp_implicit_zm, term_wprtpsclrp_explicit_zm, & 
+    !$acc                 coef_wpthlpsclrp_implicit, coef_wpthlpsclrp_implicit_zm, & 
+    !$acc                 term_wpthlpsclrp_explicit_zm, sgn_t_vel_sclrp2, sgn_t_vel_sclrprtp, & 
+    !$acc                 sgn_t_vel_sclrpthlp, wpsclrp_zt ) wait 
     
     return
                                  

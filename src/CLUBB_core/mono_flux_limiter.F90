@@ -837,8 +837,8 @@ module mono_flux_limiter
     end do
     !$acc end parallel loop
 
-    !$acc parallel loop gang vector collapse(2) default(present) &
-    !$acc          reduction(.or.:l_any_adjustment_needed) wait
+    !$acc parallel loop gang vector collapse(2) default(present) & 
+    !$acc          reduction(.or.:l_any_adjustment_needed) async(1) 
     do i = 1, ngrdcol
       do k = 1, nz
         if ( abs(wpxp_net_adjust(i,k)) > eps ) then
@@ -847,7 +847,8 @@ module mono_flux_limiter
         end if
       end do
     end do
-    !$acc end parallel loop
+    !$acc end parallel loop 
+    !$acc wait
 
     if ( l_any_adjustment_needed ) then
 
@@ -1026,10 +1027,10 @@ module mono_flux_limiter
       end do
     endif
 
-    !$acc exit data delete( xp2_zt, xm_enter_mfl, xm_without_ta, wpxp_net_adjust, &
-    !$acc                   min_x_allowable_lev, max_x_allowable_lev, min_x_allowable, &
-    !$acc                   max_x_allowable, wpxp_mfl_max, wpxp_mfl_min, lhs_mfl_xm, &
-    !$acc                   rhs_mfl_xm, l_adjustment_needed, xm_mfl ) wait
+    !$acc exit data delete( xp2_zt, xm_enter_mfl, xm_without_ta, wpxp_net_adjust, & 
+    !$acc                   min_x_allowable_lev, max_x_allowable_lev, min_x_allowable, & 
+    !$acc                   max_x_allowable, wpxp_mfl_max, wpxp_mfl_min, lhs_mfl_xm, & 
+    !$acc                   rhs_mfl_xm, l_adjustment_needed, xm_mfl ) wait 
 
     return
     
@@ -1712,7 +1713,7 @@ module mono_flux_limiter
     end do
     !$acc end parallel loop
 
-    !$acc exit data delete( vert_vel_up, vert_vel_down, w_min ) wait
+    !$acc exit data delete( vert_vel_up, vert_vel_down, w_min ) wait 
 
     return
 
@@ -2014,7 +2015,7 @@ module mono_flux_limiter
       end do
     end if ! stats_metadata%l_stats_samp
 
-    !$acc exit data delete( mean_w_down_1st, mean_w_down_2nd, mean_w_up_1st, mean_w_up_2nd ) wait
+    !$acc exit data delete( mean_w_down_1st, mean_w_down_2nd, mean_w_up_1st, mean_w_up_2nd ) wait 
 
     return
 

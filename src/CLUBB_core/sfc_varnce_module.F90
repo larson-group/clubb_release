@@ -779,9 +779,9 @@ module sfc_varnce_module
 
     endif ! clubb_at_least_debug_level ( 2 )! Update surface stats
 
-    !$acc exit data delete( uf, depth_pos_wpthlp, min_wp2_sfc_val, &
-    !$acc                   um_sfc_sqd, vm_sfc_sqd, usp2_sfc, vsp2_sfc, &
-    !$acc                   ustar, zeta, wp2_splat_sfc_correction ) wait
+    !$acc exit data delete( uf, depth_pos_wpthlp, min_wp2_sfc_val, & 
+    !$acc                   um_sfc_sqd, vm_sfc_sqd, usp2_sfc, vsp2_sfc, & 
+    !$acc                   ustar, zeta, wp2_splat_sfc_correction ) wait 
 
     return
 

@@ -1295,13 +1295,13 @@ module advance_windm_edsclrm_module
         end if
     end if
 
-    !$acc exit data delete( um_old, vm_old, um_tndcy, vm_tndcy, &
-    !$acc                    upwp_chnge, vpwp_chnge, lhs, rhs, solution, wind_speed, &
-    !$acc                    wind_speed_pert, u_star_sqd, u_star_sqd_pert, &
-    !$acc                    nu_zero, lhs_diff, lhs_ma_zt, Km_zt, Kmh_zt, &
-    !$acc                    Km_zm_p_nu10, xpwp ) wait
+    !$acc exit data delete( um_old, vm_old, um_tndcy, vm_tndcy, & 
+    !$acc                    upwp_chnge, vpwp_chnge, lhs, rhs, solution, wind_speed, & 
+    !$acc                    wind_speed_pert, u_star_sqd, u_star_sqd_pert, & 
+    !$acc                    nu_zero, lhs_diff, lhs_ma_zt, Km_zt, Kmh_zt, & 
+    !$acc                    Km_zm_p_nu10, xpwp ) wait 
 
-    !$acc exit data if( edsclr_dim > 0) delete( edsclrm_old ) wait
+    !$acc exit data if( edsclr_dim > 0) delete( edsclrm_old ) wait 
 
     return
 
@@ -2272,7 +2272,7 @@ module advance_windm_edsclrm_module
 
     endif
 
-    !$acc exit data delete( xm_gf, xm_cf ) wait
+    !$acc exit data delete( xm_gf, xm_cf ) wait 
 
     return
 
