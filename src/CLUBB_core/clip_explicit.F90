@@ -880,10 +880,10 @@ module clip_explicit
     ! None
     !-----------------------------------------------------------------------
 
-    use clubb_precision, only: & 
+    use clubb_precision, only: &
         core_rknd ! Variable(s)
 
-    use stats_type_utilities, only: & 
+    use stats_type_utilities, only: &
         stat_begin_update,  & ! Procedure(s)
         stat_end_update
 
@@ -891,7 +891,7 @@ module clip_explicit
         stats_metadata_type
 
     use stats_type, only: stats ! Type
- 
+
     use constants_clubb, only: &
         fstderr
 
@@ -932,7 +932,7 @@ module clip_explicit
     ! -------------------- Local Variables --------------------
     integer :: i, k   ! Array index
 
-    integer :: & 
+    integer :: &
       ixp2_cl
 
     ! -------------------- Begin Code --------------------

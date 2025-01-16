@@ -669,8 +669,10 @@ subroutine logical_flags_driver( current_date, current_time )
     l_mono_flux_lim_vm,           & ! Flag to turn on monotonic flux limiter for vm
     l_mono_flux_lim_spikefix,     & ! Flag to implement monotonic flux limiter code that
                                     ! eliminates spurious drying tendencies at model top
-    l_host_applies_sfc_fluxes       ! Use to determine whether a host model has already applied
+    l_host_applies_sfc_fluxes,    & ! Use to determine whether a host model has already applied
                                     ! the surface flux, to avoid double counting.
+    l_wp2_fill_holes_tke            ! Turn on additional hole-filling for wp2
+                                    ! that takes TKE from up2 and vp2, if necessary
 
   namelist /configurable_clubb_flags_nl/ &
     iiPDF_type, ipdf_call_placement, penta_solve_method, tridiag_solve_method, &
@@ -688,7 +690,8 @@ subroutine logical_flags_driver( current_date, current_time )
     l_brunt_vaisala_freq_moist, l_use_thvm_in_bv_freq, &
     l_lmm_stepping, l_e3sm_config, l_vary_convect_depth, l_use_tke_in_wp3_pr_turb_term, &
     l_use_tke_in_wp2_wp3_K_dfsn, l_use_wp3_lim_with_smth_Heaviside, &
-    l_smooth_Heaviside_tau_wpxp, l_modify_limiters_for_cnvg_test, l_host_applies_sfc_fluxes
+    l_smooth_Heaviside_tau_wpxp, l_modify_limiters_for_cnvg_test, l_host_applies_sfc_fluxes, &
+    l_wp2_fill_holes_tke
 
   ! ---- Begin Code ----
 
@@ -751,7 +754,8 @@ subroutine logical_flags_driver( current_date, current_time )
                                        l_mono_flux_lim_um, & ! Intent(out)
                                        l_mono_flux_lim_vm, & ! Intent(out)
                                        l_mono_flux_lim_spikefix, & ! Intent(out)
-                                       l_host_applies_sfc_fluxes ) ! Intent(out)
+                                       l_host_applies_sfc_fluxes, & ! Intent(out)
+                                       l_wp2_fill_holes_tke ) ! Intent(out)
 
   ! Determine the current flags
   model_flags_default(1) = l_godunov_upwind_wpxp_ta

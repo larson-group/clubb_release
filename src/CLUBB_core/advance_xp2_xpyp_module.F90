@@ -985,7 +985,7 @@ module advance_xp2_xpyp_module
     ! variance aloft leads to negative samples of total water.
     ! -dschanen 8 Dec 2010
     if ( l_clip_large_rtp2 ) then
-    
+
       ! This overwrites stats clipping data from clip_variance
       if ( stats_metadata%l_stats_samp ) then
 
@@ -996,9 +996,9 @@ module advance_xp2_xpyp_module
                             stats_zm(i) )              ! intent(inout)
         end do
       endif
-      
+
       rtm_zm = zt2zm( nzm, nzt, ngrdcol, gr, rtm, zero_threshold )
-      
+
       !$acc parallel loop gang vector collapse(2) default(present)
       do k = 1, nzm
         do i = 1, ngrdcol
@@ -1019,9 +1019,9 @@ module advance_xp2_xpyp_module
                             stats_zm(i) )             ! intent(inout)
         end do
       endif
-      
+
     end if ! l_clip_large_rtp2
- 
+
 
     ! Clipping for th_l'^2
 

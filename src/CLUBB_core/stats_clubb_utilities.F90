@@ -706,8 +706,10 @@ module stats_clubb_utilities
         stats_zt(i)%kk, stats_zt(i)%num_output_fields ) )
       allocate( stats_zt(i)%l_in_update( stats_zt(i)%ii, stats_zt(i)%jj, stats_zt(i)%kk, &
         stats_zt(i)%num_output_fields ) )
-      call stats_zero( stats_zt(i)%ii, stats_zt(i)%jj, stats_zt(i)%kk, stats_zt(i)%num_output_fields, & ! In
-        stats_zt(i)%accum_field_values, stats_zt(i)%accum_num_samples, stats_zt(i)%l_in_update ) ! Out
+      call stats_zero( stats_zt(i)%ii, stats_zt(i)%jj, stats_zt(i)%kk, & !In
+                       stats_zt(i)%num_output_fields, & ! In
+                       stats_zt(i)%accum_field_values, stats_zt(i)%accum_num_samples, & !Out
+                       stats_zt(i)%l_in_update ) ! Out
 
       allocate( stats_zt(i)%file%grid_avg_var( stats_zt(i)%num_output_fields ) )
       allocate( stats_zt(i)%file%z( stats_zt(i)%kk ) )
@@ -729,14 +731,14 @@ module stats_clubb_utilities
       call open_grads( iunit, fdir, fname,  &  ! In
                        1, stats_zt(1)%kk, nlat, nlon, stats_zt(1)%z, & ! In 
                        day, month, year, lat_vals, lon_vals, &  ! In
-                       time_current+real(stats_metadata%stats_tout,kind=time_precision), & ! In 
+                       time_current+real(stats_metadata%stats_tout,kind=time_precision), & ! In
                        stats_metadata, stats_zt(1)%num_output_fields, & ! In
                        stats_zt(1)%file ) ! intent(inout)
 
     else ! Open NetCDF file
 #ifdef NETCDF
-      call open_netcdf_for_writing( nlat, nlon, fdir, fname, 1, stats_zt(1)%kk, stats_zt(1)%z, & ! In
-                        day, month, year, lat_vals, lon_vals, & ! In
+      call open_netcdf_for_writing( nlat, nlon, fdir, fname, 1, stats_zt(1)%kk, &
+                        stats_zt(1)%z, day, month, year, lat_vals, lon_vals, & ! In
                         time_current, stats_metadata%stats_tout, & ! In
                         stats_zt(1)%num_output_fields, & ! In
                         stats_zt(1)%file ) ! InOut
@@ -814,8 +816,8 @@ module stats_clubb_utilities
           stats_lh_zt(i)%kk, stats_lh_zt(i)%num_output_fields ) )
         allocate( stats_lh_zt(i)%accum_num_samples( stats_lh_zt(i)%ii, stats_lh_zt(i)%jj, &
           stats_lh_zt(i)%kk, stats_lh_zt(i)%num_output_fields ) )
-        allocate( stats_lh_zt(i)%l_in_update( stats_lh_zt(i)%ii, stats_lh_zt(i)%jj, stats_lh_zt(i)%kk, &
-          stats_lh_zt(i)%num_output_fields ) )
+        allocate( stats_lh_zt(i)%l_in_update( stats_lh_zt(i)%ii, stats_lh_zt(i)%jj, &
+          stats_lh_zt(i)%kk, stats_lh_zt(i)%num_output_fields ) )
         call stats_zero( stats_lh_zt(i)%ii, stats_lh_zt(i)%jj, stats_lh_zt(i)%kk, & ! intent(in)
           stats_lh_zt(i)%num_output_fields, & ! intent(in)
           stats_lh_zt(i)%accum_field_values, stats_lh_zt(i)%accum_num_samples, & ! intent(out)
@@ -838,13 +840,13 @@ module stats_clubb_utilities
         call open_grads( iunit, fdir, fname,  & ! In
                          1, stats_lh_zt(1)%kk, nlat, nlon, stats_lh_zt(1)%z, & ! In
                          day, month, year, lat_vals, lon_vals, &  ! In
-                         time_current+real(stats_metadata%stats_tout,kind=time_precision), & ! In 
+                         time_current+real(stats_metadata%stats_tout,kind=time_precision), & ! In
                          stats_metadata, stats_lh_zt(1)%num_output_fields, & ! In
                          stats_lh_zt(1)%file ) ! In/Out
 
       else ! Open NetCDF file
 #ifdef NETCDF
-        call open_netcdf_for_writing( nlat, nlon, fdir, fname, 1, stats_lh_zt(1)%kk, &  ! In
+        call open_netcdf_for_writing( nlat, nlon, fdir, fname, 1, stats_lh_zt(1)%kk, & ! In
                           stats_lh_zt(1)%z, day, month, year, lat_vals, lon_vals, &  ! In
                           time_current, stats_metadata%stats_tout, & ! In
                           stats_lh_zt(1)%num_output_fields, & ! In
@@ -924,7 +926,7 @@ module stats_clubb_utilities
         call open_grads( iunit, fdir, fname,  & ! In
                          1, stats_lh_sfc(1)%kk, nlat, nlon, stats_lh_sfc(1)%z, & ! In 
                          day, month, year, lat_vals, lon_vals, &  ! In
-                         time_current+real(stats_metadata%stats_tout,kind=time_precision), & ! In 
+                         time_current+real(stats_metadata%stats_tout,kind=time_precision), & ! In
                          stats_metadata, stats_lh_sfc(1)%num_output_fields, & ! In
                          stats_lh_sfc(1)%file ) ! intent(inout)
 
@@ -1145,8 +1147,10 @@ module stats_clubb_utilities
       allocate( stats_zm(i)%l_in_update( stats_zm(i)%ii, stats_zm(i)%jj, stats_zm(i)%kk, &
         stats_zm(i)%num_output_fields ) )
 
-      call stats_zero( stats_zm(i)%ii, stats_zm(i)%jj, stats_zm(i)%kk, stats_zm(i)%num_output_fields, & ! In
-        stats_zm(i)%accum_field_values, stats_zm(i)%accum_num_samples, stats_zm(i)%l_in_update ) ! intent(out)
+      call stats_zero( stats_zm(i)%ii, stats_zm(i)%jj, stats_zm(i)%kk, & ! In
+                       stats_zm(i)%num_output_fields, & ! In
+                       stats_zm(i)%accum_field_values, stats_zm(i)%accum_num_samples, & ! Out
+                       stats_zm(i)%l_in_update ) ! Out
 
       allocate( stats_zm(i)%file%grid_avg_var( stats_zm(i)%num_output_fields ) )
       allocate( stats_zm(i)%file%z( stats_zm(i)%kk ) )
@@ -1165,14 +1169,14 @@ module stats_clubb_utilities
       call open_grads( iunit, fdir, fname,  & ! In
                        1, stats_zm(1)%kk, nlat, nlon, stats_zm(1)%z, & ! In
                        day, month, year, lat_vals, lon_vals, & ! In
-                       time_current+real(stats_metadata%stats_tout,kind=time_precision), & ! In 
+                       time_current+real(stats_metadata%stats_tout,kind=time_precision), & ! In
                        stats_metadata, stats_zm(1)%num_output_fields, & ! In
                        stats_zm(1)%file ) ! intent(inout)
 
     else ! Open NetCDF file
 #ifdef NETCDF
-      call open_netcdf_for_writing( nlat, nlon, fdir, fname, 1, stats_zm(1)%kk, stats_zm(1)%z, & ! In
-                        day, month, year, lat_vals, lon_vals, & ! In
+      call open_netcdf_for_writing( nlat, nlon, fdir, fname, 1, stats_zm(1)%kk, & !In
+                        stats_zm(1)%z, day, month, year, lat_vals, lon_vals, & ! In
                         time_current, stats_metadata%stats_tout, & ! In
                         stats_zm(1)%num_output_fields, & ! In
                         stats_zm(1)%file ) ! InOut
@@ -1233,9 +1237,9 @@ module stats_clubb_utilities
           stats_rad_zt(i)%kk, stats_rad_zt(i)%num_output_fields ) )
 
         call stats_zero( stats_rad_zt(i)%ii, stats_rad_zt(i)%jj, stats_rad_zt(i)%kk, & ! intent(in)
-                        stats_rad_zt(i)%num_output_fields, & ! intent(in)
-                        stats_rad_zt(i)%accum_field_values, & ! intent(out)
-                        stats_rad_zt(i)%accum_num_samples, stats_rad_zt(i)%l_in_update )! intent(out)
+                      stats_rad_zt(i)%num_output_fields, & ! intent(in)
+                      stats_rad_zt(i)%accum_field_values, & ! intent(out)
+                      stats_rad_zt(i)%accum_num_samples, stats_rad_zt(i)%l_in_update )! intent(out)
 
         allocate( stats_rad_zt(i)%file%grid_avg_var( stats_rad_zt(i)%num_output_fields ) )
         allocate( stats_rad_zt(i)%file%z( stats_rad_zt(i)%kk ) )
@@ -1252,7 +1256,7 @@ module stats_clubb_utilities
         call open_grads( iunit, fdir, fname,  & ! In
                          1, stats_rad_zt(1)%kk, nlat, nlon, stats_rad_zt(1)%z, & ! In
                          day, month, year, lat_vals, lon_vals, & 
-                         time_current+real(stats_metadata%stats_tout, kind=time_precision), & ! In 
+                         time_current+real(stats_metadata%stats_tout, kind=time_precision), & ! In
                          stats_metadata, stats_rad_zt(1)%num_output_fields, & ! In
                          stats_rad_zt(1)%file ) ! In/Out
 
@@ -1320,9 +1324,9 @@ module stats_clubb_utilities
           stats_rad_zm(i)%kk, stats_rad_zm(i)%num_output_fields ) )
 
         call stats_zero( stats_rad_zm(i)%ii, stats_rad_zm(i)%jj, stats_rad_zm(i)%kk, & ! intent(in)
-                        stats_rad_zm(i)%num_output_fields, & ! intent(in)
-                        stats_rad_zm(i)%accum_field_values, & ! intent(out)
-                        stats_rad_zm(i)%accum_num_samples, stats_rad_zm(i)%l_in_update ) ! intent(out)
+                    stats_rad_zm(i)%num_output_fields, & ! intent(in)
+                    stats_rad_zm(i)%accum_field_values, & ! intent(out)
+                    stats_rad_zm(i)%accum_num_samples, stats_rad_zm(i)%l_in_update ) ! intent(out)
 
         allocate( stats_rad_zm(i)%file%grid_avg_var( stats_rad_zm(i)%num_output_fields ) )
         allocate( stats_rad_zm(i)%file%z( stats_rad_zm(i)%kk ) )
@@ -1339,7 +1343,7 @@ module stats_clubb_utilities
         call open_grads( iunit, fdir, fname,  & ! In
                          1, stats_rad_zm(1)%kk, nlat, nlon, stats_rad_zm(1)%z, & ! In
                          day, month, year, lat_vals, lon_vals, & 
-                         time_current+real(stats_metadata%stats_tout,kind=time_precision), & ! In 
+                         time_current+real(stats_metadata%stats_tout,kind=time_precision), & ! In
                          stats_metadata, stats_rad_zm(1)%num_output_fields, & ! In
                          stats_rad_zm(1)%file ) ! In/Out
 
@@ -1412,8 +1416,10 @@ module stats_clubb_utilities
       allocate( stats_sfc(i)%l_in_update( stats_sfc(i)%ii, stats_sfc(i)%jj, &
         stats_sfc(i)%kk, stats_sfc(i)%num_output_fields ) )
 
-      call stats_zero( stats_sfc(i)%ii, stats_sfc(i)%jj, stats_sfc(i)%kk, stats_sfc(i)%num_output_fields, & ! In
-        stats_sfc(i)%accum_field_values, stats_sfc(i)%accum_num_samples, stats_sfc(i)%l_in_update ) ! out
+      call stats_zero( stats_sfc(i)%ii, stats_sfc(i)%jj, stats_sfc(i)%kk, & ! In
+                       stats_sfc(i)%num_output_fields, & ! In
+                       stats_sfc(i)%accum_field_values, stats_sfc(i)%accum_num_samples, & ! Out
+                       stats_sfc(i)%l_in_update ) ! Out
 
       allocate( stats_sfc(i)%file%grid_avg_var( stats_sfc(i)%num_output_fields ) )
       allocate( stats_sfc(i)%file%z( stats_sfc(i)%kk ) )
@@ -1431,14 +1437,14 @@ module stats_clubb_utilities
       call open_grads( iunit, fdir, fname,  & ! In
                        1, stats_sfc(1)%kk, nlat, nlon, stats_sfc(1)%z, & ! In
                        day, month, year, lat_vals, lon_vals, & ! In
-                       time_current+real(stats_metadata%stats_tout,kind=time_precision), & ! In 
+                       time_current+real(stats_metadata%stats_tout,kind=time_precision), & ! In
                        stats_metadata, stats_sfc(1)%num_output_fields, & ! In
                        stats_sfc(1)%file ) ! In/Out
 
     else ! Open NetCDF files
 #ifdef NETCDF
-      call open_netcdf_for_writing( nlat, nlon, fdir, fname, 1, stats_sfc(1)%kk, stats_sfc(1)%z, & ! In
-                        day, month, year, lat_vals, lon_vals, & ! In
+      call open_netcdf_for_writing( nlat, nlon, fdir, fname, 1, stats_sfc(1)%kk, & ! In
+                        stats_sfc(1)%z, day, month, year, lat_vals, lon_vals, & ! In
                         time_current, stats_metadata%stats_tout, & ! In
                         stats_sfc(1)%num_output_fields, & ! In
                         stats_sfc(1)%file ) ! InOut

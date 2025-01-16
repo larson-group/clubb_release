@@ -7,6 +7,7 @@ module fill_holes
 
   public :: fill_holes_driver, &
             fill_holes_vertical, &
+            fill_holes_wp2_from_horz_tke, &
             hole_filling_hm_one_lev, &
             fill_holes_hydromet, &
             fill_holes_wv, &
@@ -151,7 +152,7 @@ module fill_holes
       end do  
     end do
     !$acc end parallel loop
-    
+
     ! denom_integral does not change throughout the hole filling algorithm
     ! so we can calculate it before hand. This results in unneccesary computations,
     ! but is parallelizable and reduces the cost of the serial k loop
@@ -172,10 +173,10 @@ module fill_holes
         end do
 
         invrs_denom_integral(i,k) = one / rho_k_sum
-      end do  
+      end do
     end do
     !$acc end parallel loop
-    
+
     !$acc parallel loop gang vector default(present)
     do i = 1, ngrdcol
 
@@ -340,12 +341,201 @@ module fill_holes
     end do
     !$acc end parallel loop
     
-    !$acc exit data delete( invrs_denom_integral, field_clipped, denom_integral_global, rho_ds_dz, &
+    !$acc exit data delete( invrs_denom_integral, field_clipped, denom_integral_global, rho_ds_dz,&
     !$acc                   numer_integral_global, field_avg_global, mass_fraction_global )
 
     return
 
   end subroutine fill_holes_vertical
+
+  !===============================================================================
+  subroutine fill_holes_wp2_from_horz_tke( nz, ngrdcol, threshold, &
+                                           lower_hf_level, upper_hf_level, &
+                                           wp2, up2, vp2 )
+
+    ! Description:
+    !   This subroutine clips values of wp2 that are below 'threshold' as much
+    !   as possible (i.e. "fills holes"), but conserves the turbulent kinetic energy
+    !   (up2+vp2+wp2). This prevents clipping from acting as a spurious source.
+    !
+    !   Turbulent kinetic energy at each height level is conserved by reducing up2 and vp2
+    !   by a multiplicative coefficient.
+    !
+    !   This subroutine does not guarantee that the clipped field will exceed
+    !   threshold everywhere; blunt clipping is needed for that.
+    !
+    !   The lowest level (k=1) should not be included, as the hole-filling scheme
+    !   should not alter the set value of 'field' at the surface (for momentum
+    !   level variables), or consider the value of 'field' at a level below the
+    !   surface (for thermodynamic level variables).
+    !
+    !   For momentum level variables only, the hole-filling scheme should not
+    !   alter the set value of 'field' at the upper boundary level (k=nz).
+    !   So for momemtum level variables, call with upper_hf_level=nz-1, and
+    !   for thermodynamic level variables, call with upper_hf_level=nz.
+    !-----------------------------------------------------------------------
+
+    use clubb_precision, only: &
+        core_rknd ! Constant
+
+    use constants_clubb, only: &
+        fstderr, &  ! Constant
+        zero, one
+
+    use error_code, only: &
+        clubb_at_least_debug_level  ! Procedure
+
+    implicit none
+
+    ! --------------------- Input variables ---------------------
+    integer, intent(in) :: &
+      nz, &
+      ngrdcol
+
+    integer, intent(in) :: &
+      lower_hf_level, & ! Lower grid level of global hole-filling range      []
+      upper_hf_level    ! Upper grid level of global hole-filling range      []
+
+    real( kind = core_rknd ), intent(in) :: &
+      threshold  ! A threshold (e.g. w_tol*w_tol) below which field must not
+                 ! fall                           [Units vary; same as field]
+
+    ! --------------------- Input/Output variable ---------------------
+    real( kind = core_rknd ), dimension(ngrdcol,nz), intent(inout) :: &
+      wp2, &    ! The field (here wp2) that contains holes [m^2/s^2]
+      up2, vp2  ! The fields (here up2, vp2) that will be used to fill holes [m^2/s^2]
+
+    ! --------------------- Local Variables ---------------------
+    integer :: &
+      i,             & ! Loop index for column                           []
+      k                ! Loop index for absolute grid level              []
+
+    real( kind = core_rknd ) :: &
+      up2_old, vp2_old, wp2_old, & ! (Debugging) Store old values       [m^2/s^2]
+      tke_x2_old,       &   ! (Debugging) Sum of up2, vp2, wp2              [m^2/s^2]
+      tke_diff,         &   ! Difference in TKE before and after filling    [m^2/s^2]
+      missing_wp2,      &   ! Amount missing from wp2                       [m^2/s^2]
+      up2_avail,        &   ! Amount of tke above threshold in up2          [m^2/s^2]
+      vp2_avail,        &   ! Amount of tke above threshold in vp2          [m^2/s^2]
+      up2_vp2_avail,    &   ! up2_avail + vp2_avail                         [m^2/s^2]
+      ratio                 ! Fraction between missing_wp2 and up2+vp2      []
+
+    logical :: &
+      l_field_below_threshold
+
+    ! --------------------- Begin Code ---------------------
+
+    l_field_below_threshold = .false.
+
+    !$acc parallel loop gang vector collapse(2) default(present) &
+    !$acc          reduction(.or.:l_field_below_threshold)
+    do k = 1, nz
+      do i = 1, ngrdcol
+        if ( wp2(i,k) < threshold ) then
+          l_field_below_threshold = .true.
+        end if
+      end do
+    end do
+    !$acc end parallel loop
+
+    ! If all field values are above the specified threshold, no hole filling is required
+    if ( .not. l_field_below_threshold ) then
+      return
+    end if
+
+    ! For each height level, fill holes in wp2 by taking tke from up2 and vp2
+    !$acc parallel loop gang vector collapse(2) default(present)
+    do i = 1, ngrdcol
+      do k = lower_hf_level, upper_hf_level
+        tke_x2_old = up2(i,k) + vp2(i,k) + wp2(i,k)
+        up2_old = up2(i,k)
+        vp2_old = vp2(i,k)
+        wp2_old = wp2(i,k)
+        ! Check if we have a hole to fill at level k and
+        ! there is buffer TKE in up2 and/or vp2 available
+        if ( wp2(i,k) < threshold .and. ( up2(i,k) > threshold .or. vp2(i,k) > threshold )  ) then
+          ! Size of the hole to fill
+          missing_wp2 = threshold - wp2(i,k) ! > 0
+          ! Calculate available TKE that can be moved to wp2
+          ! At least one of these is strictly > 0
+          up2_avail = max( up2(i,k) - threshold, zero )
+          vp2_avail = max( vp2(i,k) - threshold, zero )
+          up2_vp2_avail = up2_avail + vp2_avail ! > 0
+          if ( missing_wp2 >= up2_vp2_avail ) then
+            ! Not enough TKE available to fill hole
+            ! Take everything up to threshold from up2 and vp2, if possible
+            up2(i,k) = min( up2(i,k), threshold )
+            vp2(i,k) = min( vp2(i,k), threshold )
+            ! Add available TKE to wp2
+            wp2(i,k) = wp2(i,k) + up2_vp2_avail
+          else  ! missing_wp2 < up2_vp2_avail
+            ! We have enough available TKE to fill hole
+            ! Fill
+            wp2(i,k) = threshold
+            ! Remove TKE from up2 and vp2
+            if ( abs(up2_avail) < epsilon(up2_avail) * 1000 ) then
+              ! No TKE available from up2
+              ! up2 stays the same
+              ! Take all from vp2
+              vp2(i,k) = vp2(i,k) - missing_wp2
+            else if ( abs(vp2_avail) < epsilon(up2_avail) * 1000 ) then
+              ! No TKE available from vp2
+              ! Take all from up2
+              up2(i,k) = up2(i,k) - missing_wp2
+              ! vp2 statys the same
+            else
+              ! Calculate portion of up2/vp2 that we want to take away
+              ratio = missing_wp2 / up2_vp2_avail    ! 0 < ratio < 1
+              ! TKE available in both, take according to ratio
+              ! Since we know that there is enough available TKE,
+              ! this reduction will not reduce either variables below threshold
+              up2(i,k) = threshold + up2_avail * ( one - ratio )
+              vp2(i,k) = threshold + vp2_avail * ( one - ratio )
+            end if
+          end if
+        end if
+        if ( clubb_at_least_debug_level(3) ) then
+          ! Check for conservation
+          tke_diff = abs(tke_x2_old - (up2(i,k) + vp2(i,k) + wp2(i,k)))
+          if ( tke_diff > epsilon(tke_diff)*1000 ) then
+            write(fstderr, *) "Warning! fill_holes_wp2_from_horz_tke is not conservative ", &
+                              "at level ", i, k, ". Difference: ", tke_diff
+          end if
+          ! Check the values
+          if ( wp2(i,k) > threshold ) then
+            write(fstderr, *) "Warning in fill_holes_wp2_from_horz_tke! ", &
+                              "Too much TKE added to wp2. old: ", wp2_old, ", new: ", wp2(i,k)
+          end if
+          if ( wp2(i,k) < wp2_old ) then
+            write(fstderr, *) "Warning in fill_holes_wp2_from_horz_tke! wp2 was reduced. ", &
+                              "old: ", wp2_old, ", new: ", wp2(i,k)
+          end if
+          if ( up2(i,k) > up2_old ) then
+            write(fstderr, *) "Warning in fill_holes_wp2_from_horz_tke! up2 increased. old: ", &
+                               up2_old, ", new: ", up2(i,k)
+          end if
+          if ( up2_old <= threshold .and. up2(i,k) < up2_old ) then
+            write(fstderr, *) "Warning in fill_holes_wp2_from_horz_tke! TKE was falsely ", &
+                              "taken from up2. Threshold: ", &
+                              threshold, ", old: ", up2_old, ", new: ", up2(i,k)
+          end if
+          if ( vp2(i,k) > vp2_old ) then
+            write(fstderr, *) "Warning in fill_holes_wp2_from_horz_tke! vp2 increased. old: ", &
+                               vp2_old, ", new: ", vp2(i,k)
+          end if
+          if ( vp2_old <= threshold .and. vp2(i,k) < vp2_old ) then
+            write(fstderr, *) "Warning in fill_holes_wp2_from_horz_tke! TKE was falsely ", &
+                              "taken from vp2. Threshold: ", &
+                              threshold, ", old: ", vp2_old, ", new: ", vp2(i,k)
+          end if
+        end if
+      end do
+    end do
+    !$acc end parallel loop
+
+    return
+
+  end subroutine fill_holes_wp2_from_horz_tke
 
   !===============================================================================
   subroutine hole_filling_hm_one_lev( num_hm_fill, hm_one_lev, & ! Intent(in)

@@ -82,6 +82,7 @@ module advance_wp2_wp3_module
                               l_use_tke_in_wp3_pr_turb_term,                 & ! intent(in)
                               l_use_tke_in_wp2_wp3_K_dfsn,                   & ! intent(in)
                               l_use_wp3_lim_with_smth_Heaviside,             & ! intent(in)
+                              l_wp2_fill_holes_tke,                          & ! intent(in)
                               stats_metadata,                                & ! intent(in)
                               stats_zt, stats_zm, stats_sfc,                 & ! intent(inout)
                               up2, vp2, wp2, wp3, wp3_zm, wp2_zt )             ! intent(inout)
@@ -292,7 +293,9 @@ module advance_wp2_wp3_module
       l_lmm_stepping,             & ! Apply Linear Multistep Method (LMM) Stepping
       l_use_tke_in_wp3_pr_turb_term, & ! Use TKE formulation for wp3 pr_turb term
       l_use_tke_in_wp2_wp3_K_dfsn, & ! Use TKE in eddy diffusion for wp2 and wp3
-      l_use_wp3_lim_with_smth_Heaviside   ! Flag to activate mods on wp3 limiters for conv test
+      l_use_wp3_lim_with_smth_Heaviside, & ! Flag to activate mods on wp3 limiters for conv test
+      l_wp2_fill_holes_tke            ! Turn on additional hole-filling for wp2
+                                      ! that takes TKE from up2 and vp2, if necessary
 
     type (stats_metadata_type), intent(in) :: &
       stats_metadata
@@ -1032,6 +1035,7 @@ module advance_wp2_wp3_module
                      l_tke_aniso,                                 & ! intent(in)
                      l_use_tke_in_wp2_wp3_K_dfsn,                 & ! intent(in)
                      l_use_wp3_lim_with_smth_Heaviside,           & ! intent(in)
+                     l_wp2_fill_holes_tke,                        & ! intent(in)
                      stats_metadata,                              & ! intent(in)
                      stats_zt, stats_zm, stats_sfc,               & ! intent(inout)
                      up2, vp2, wp2, wp3, wp3_zm, wp2_zt )           ! intent(inout)
@@ -1222,6 +1226,7 @@ module advance_wp2_wp3_module
                          l_tke_aniso, &
                          l_use_tke_in_wp2_wp3_K_dfsn, &
                          l_use_wp3_lim_with_smth_Heaviside, &
+                         l_wp2_fill_holes_tke, &
                          stats_metadata, &
                          stats_zt, stats_zm, stats_sfc, &
                          up2, vp2, wp2, wp3, wp3_zm, wp2_zt )
@@ -1270,7 +1275,8 @@ module advance_wp2_wp3_module
         nu_vertical_res_dep    ! Type(s)
 
     use fill_holes, only: &
-        fill_holes_vertical
+        fill_holes_vertical, &  ! Procedure(s)
+        fill_holes_wp2_from_horz_tke
 
     use clip_explicit, only: &
         clip_variance, & ! Procedure(s)
@@ -1284,7 +1290,8 @@ module advance_wp2_wp3_module
         stat_update_var, &
         stat_update_var_pt, &
         stat_end_update, &
-        stat_end_update_pt
+        stat_end_update_pt, &
+        stat_modify
 
     use stats_variables, only: &
         stats_metadata_type
@@ -1377,7 +1384,9 @@ module advance_wp2_wp3_module
       l_tke_aniso,                & ! For anisotropic turbulent kinetic energy, i.e. TKE = 1/2
                                     ! (u'^2 + v'^2 + w'^2)
       l_use_tke_in_wp2_wp3_K_dfsn, & ! Use TKE in eddy diffusion for wp2 and wp3
-      l_use_wp3_lim_with_smth_Heaviside    ! Flag to activate mods on wp3 limiters for conv test
+      l_use_wp3_lim_with_smth_Heaviside, & ! Flag to activate mods on wp3 limiters for conv test
+      l_wp2_fill_holes_tke          ! Turn on additional hole-filling for wp2
+                                    ! that takes TKE from up2 and vp2, if necessary
     
     type (stats_metadata_type), intent(in) :: &
       stats_metadata
@@ -1759,12 +1768,18 @@ module advance_wp2_wp3_module
 
     if ( stats_metadata%l_stats_samp ) then
 
-      !$acc update host( wp2 )
+      !$acc update host( wp2, up2, vp2 )
 
       ! Store previous value for effect of the positive definite scheme
       do i = 1, ngrdcol
         call stat_begin_update( nzm, stats_metadata%iwp2_pd, wp2(i,:) / dt,  & ! intent(in)
                                 stats_zm(i) )                                  ! intent(inout)
+        ! up2_pd and vp2_pd are also modified in a call to pos_definite_variances
+        ! in advance_xp2_xpyp, so we need to use stat_modify here instead of stat_begin_update
+        call stat_modify( nzm, stats_metadata%iup2_pd, -up2(i,:) / dt, &       ! intent(in)
+                          stats_zm(i) )                                        ! intent(inout)
+        call stat_modify( nzm, stats_metadata%ivp2_pd, -vp2(i,:) / dt, &       ! intent(in)
+                          stats_zm(i) )                                        ! intent(inout)
       end do
     end if
 
@@ -1790,16 +1805,25 @@ module advance_wp2_wp3_module
         endif
       endif
 
+      if (l_wp2_fill_holes_tke) then
+        call fill_holes_wp2_from_horz_tke( nzm, ngrdcol, w_tol_sqd, 2, nzm-1, &        !In
+                                           wp2, up2, vp2 )                             !Inout
+      end if
+
     end if ! l_hole_fill wp2
 
     if ( stats_metadata%l_stats_samp ) then
 
-      !$acc update host( wp2 )
+      !$acc update host( wp2, up2, vp2 )
 
       ! Store updated value for effect of the positive definite scheme
       do i = 1, ngrdcol
         call stat_end_update( nzm, stats_metadata%iwp2_pd, wp2(i,:) / dt, & ! intent(in)
                               stats_zm(i) )                                 ! intent(inout)
+        call stat_modify( nzm, stats_metadata%iup2_pd, up2(i,:) / dt, &     ! intent(in)
+                          stats_zm(i) )                                     ! intent(inout)
+        call stat_modify( nzm, stats_metadata%ivp2_pd, vp2(i,:) / dt, &     ! intent(in)
+                          stats_zm(i) )                                     ! intent(inout)
       end do
     end if
 

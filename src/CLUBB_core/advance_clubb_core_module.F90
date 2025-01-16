@@ -2119,6 +2119,7 @@ module advance_clubb_core_module
                             clubb_config_flags%l_use_tke_in_wp3_pr_turb_term,     & ! intent(in)
                             clubb_config_flags%l_use_tke_in_wp2_wp3_K_dfsn,       & ! intent(in)
                             clubb_config_flags%l_use_wp3_lim_with_smth_Heaviside, & ! intent(in)
+                            clubb_config_flags%l_wp2_fill_holes_tke,              & ! intent(in)
                             stats_metadata,                                       & ! intent(in)
                             stats_zt, stats_zm, stats_sfc,                        & ! intent(inout)
                             up2, vp2, wp2, wp3, wp3_zm, wp2_zt )                    ! intent(inout)
@@ -4230,9 +4231,10 @@ module advance_clubb_core_module
       ! Sanity check
       if ( clubb_at_least_debug_level( 0 ) ) then
 
-        if ( clubb_config_flags%l_damp_wp2_using_em .and. &
-           ( any(abs(params(:,iC1) - params(:,iC14)) > abs(params(:,iC1) + params(:,iC14)) / 2 * eps) .or. &
-             clubb_config_flags%l_stability_correct_tau_zm) ) then
+        if ( clubb_config_flags%l_damp_wp2_using_em &
+           .and. ( any( abs(params(:,iC1) - params(:,iC14)) > &
+                        abs(params(:,iC1) + params(:,iC14)) /  2 * eps ) &
+                   .or. clubb_config_flags%l_stability_correct_tau_zm ) ) then
           write(fstderr,*) "l_damp_wp2_using_em = T requires C1=C14 and" &
                             // " l_stability_correct_tau_zm = F"
           write(fstderr,*) "C1 = ", params(:,iC1)

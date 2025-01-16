@@ -894,8 +894,10 @@ module clubb_driver
       l_mono_flux_lim_vm,           & ! Flag to turn on monotonic flux limiter for vm
       l_mono_flux_lim_spikefix,     & ! Flag to implement monotonic flux limiter code that
                                       ! eliminates spurious drying tendencies at model top
-      l_host_applies_sfc_fluxes       ! Use to determine whether a host model has already applied 
+      l_host_applies_sfc_fluxes,    & ! Use to determine whether a host model has already applied 
                                       ! the surface flux, to avoid double counting.
+      l_wp2_fill_holes_tke            ! Turn on additional hole-filling for wp2
+                                      ! that takes TKE from up2 and vp2, if necessary
 
     type(clubb_config_flags_type) :: &
       clubb_config_flags ! Derived type holding all configurable CLUBB flags
@@ -958,7 +960,7 @@ module clubb_driver
       l_modify_limiters_for_cnvg_test, l_enable_relaxed_clipping, &
       l_linearize_pbl_winds, l_mono_flux_lim_thlm, &
       l_mono_flux_lim_rtm, l_mono_flux_lim_um, l_mono_flux_lim_vm, l_mono_flux_lim_spikefix, &
-      l_host_applies_sfc_fluxes
+      l_host_applies_sfc_fluxes, l_wp2_fill_holes_tke
 
     integer :: &
       err_code_dummy ! Host models use an error code that comes out of some API routines, but
@@ -1124,8 +1126,9 @@ module clubb_driver
                                          l_mono_flux_lim_rtm, & ! Intent(out)
                                          l_mono_flux_lim_um, & ! Intent(out)
                                          l_mono_flux_lim_vm, & ! Intent(out)
-                                         l_mono_flux_lim_spikefix, &
-                                         l_host_applies_sfc_fluxes ) ! Intent(out)
+                                         l_mono_flux_lim_spikefix, & ! Intent(out)
+                                         l_host_applies_sfc_fluxes, & ! Intent(out)
+                                         l_wp2_fill_holes_tke ) ! Intent(out)
 
     ! Read namelist file
     open(unit=iunit, file=trim( runfile ), status='old')
@@ -1577,6 +1580,7 @@ module clubb_driver
                                              l_mono_flux_lim_vm, & ! Intent(in)
                                              l_mono_flux_lim_spikefix, & ! Intent(in)
                                              l_host_applies_sfc_fluxes, & ! Intent(in)
+                                             l_wp2_fill_holes_tke, & ! Intent(in)
                                              clubb_config_flags ) ! Intent(out)
 
     ! Printing configurable CLUBB flags Inputs

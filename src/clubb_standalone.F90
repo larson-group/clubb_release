@@ -9,7 +9,7 @@ program clubb_standalone
 !----------------------------------------------------------------------
 
   use clubb_driver, only: run_clubb ! Procedure(s)
-  
+
   use error_code, only: &
         clubb_no_error, &               ! Constants
         clubb_fatal_error, &

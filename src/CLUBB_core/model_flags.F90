@@ -256,8 +256,10 @@ module model_flags
       l_mono_flux_lim_vm,           & ! Flag to turn on monotonic flux limiter for vm
       l_mono_flux_lim_spikefix,     & ! Flag to implement monotonic flux limiter code that 
                                       ! eliminates spurious drying tendencies at model top
-      l_host_applies_sfc_fluxes       ! Use to determine whether a host model has already applied
+      l_host_applies_sfc_fluxes,    & ! Use to determine whether a host model has already applied
                                       ! the surface flux, to avoid double counting.
+      l_wp2_fill_holes_tke            ! Turn on additional hole-filling for wp2
+                                      ! that takes TKE from up2 and vp2, if necessary
 
   end type clubb_config_flags_type
 
@@ -323,7 +325,8 @@ module model_flags
                                              l_mono_flux_lim_um, &
                                              l_mono_flux_lim_vm, &
                                              l_mono_flux_lim_spikefix, &
-                                             l_host_applies_sfc_fluxes )
+                                             l_host_applies_sfc_fluxes, &
+                                             l_wp2_fill_holes_tke )
 
 ! Description:
 !   Sets all CLUBB flags to a default setting.
@@ -462,8 +465,10 @@ module model_flags
       l_mono_flux_lim_vm,           & ! Flag to turn on monotonic flux limiter for vm
       l_mono_flux_lim_spikefix,     & ! Flag to implement monotonic flux limiter code that
                                       ! eliminates spurious drying tendencies at model top
-      l_host_applies_sfc_fluxes       ! Use to determine whether a host model has already applied
+      l_host_applies_sfc_fluxes,    & ! Use to determine whether a host model has already applied
                                       ! the surface flux, to avoid double counting.
+      l_wp2_fill_holes_tke            ! Turn on additional hole-filling for wp2
+                                      ! that takes TKE from up2 and vp2, if necessary
 
 !-----------------------------------------------------------------------
     ! Begin code
@@ -534,6 +539,7 @@ module model_flags
     l_mono_flux_lim_vm = .true.
     l_mono_flux_lim_spikefix = .true.
     l_host_applies_sfc_fluxes = .false.
+    l_wp2_fill_holes_tke = .false.
 
     return
   end subroutine set_default_clubb_config_flags
@@ -599,6 +605,7 @@ module model_flags
                                                  l_mono_flux_lim_vm, &
                                                  l_mono_flux_lim_spikefix, &
                                                  l_host_applies_sfc_fluxes, &
+                                                 l_wp2_fill_holes_tke, &
                                                  clubb_config_flags )
 
 ! Description:
@@ -738,8 +745,10 @@ module model_flags
       l_mono_flux_lim_vm,           & ! Flag to turn on monotonic flux limiter for vm
       l_mono_flux_lim_spikefix,     & ! Flag to implement monotonic flux limiter code that
                                       ! eliminates spurious drying tendencies at model top
-      l_host_applies_sfc_fluxes       ! Use to determine whether a host model has already applied
+      l_host_applies_sfc_fluxes,    & ! Use to determine whether a host model has already applied
                                       ! the surface flux, to avoid double counting.
+      l_wp2_fill_holes_tke            ! Turn on additional hole-filling for wp2
+                                      ! that takes TKE from up2 and vp2, if necessary
 
     ! Output variables
     type(clubb_config_flags_type), intent(out) :: &
@@ -808,7 +817,7 @@ module model_flags
     clubb_config_flags%l_mono_flux_lim_vm = l_mono_flux_lim_vm
     clubb_config_flags%l_mono_flux_lim_spikefix = l_mono_flux_lim_spikefix
     clubb_config_flags%l_host_applies_sfc_fluxes = l_host_applies_sfc_fluxes
-    
+    clubb_config_flags%l_wp2_fill_holes_tke = l_wp2_fill_holes_tke
 
     return
   end subroutine initialize_clubb_config_flags_type
@@ -899,6 +908,7 @@ module model_flags
     write(iunit,*) "l_mono_flux_lim_vm = ",clubb_config_flags%l_mono_flux_lim_um
     write(iunit,*) "l_mono_flux_lim_spikefix = ",clubb_config_flags%l_mono_flux_lim_spikefix
     write(iunit,*) "l_host_applies_sfc_fluxes = ",clubb_config_flags%l_host_applies_sfc_fluxes
+    write(iunit,*) "l_wp2_fill_holes_tke = ",clubb_config_flags%l_wp2_fill_holes_tke
 
     return
   end subroutine print_clubb_config_flags
