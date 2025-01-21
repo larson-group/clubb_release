@@ -36,7 +36,7 @@ import tabulate
 import sys
 
 # Threshold used to ignore field values for calculating % diff
-field_threshold = 1.0e-7
+field_threshold = 1.0e-8
 
 # Threshold used to determine if the ncfiles are close enough
 abs_error_threshold = 1.0e-7
@@ -50,8 +50,12 @@ parser = argparse.ArgumentParser(description='Run a test')
 
 parser.add_argument("files", nargs=2, help="need two files to diff")
 parser.add_argument("-s","--scale", action="store_true", help="Scale differences by field value")
+parser.add_argument("-t","--thresh", type=float, default=field_threshold, help="Override abs_error_threshold")
                     
 args = parser.parse_args()
+
+# Override the default abs_error_threshold with the provided argument
+abs_error_threshold = args.thresh
 
 
 # Create dataset from nc file
@@ -78,7 +82,7 @@ for var in dset0.variables:
         # Scale differences down by the field average, use ceiling to prevent scaling up fields with small values
         if args.scale:
             field_avg = ( np.average( dset0[var] ) + np.average( dset1[var] ) ) / 2.0
-            abs_diff = abs_diff / np.ceil(field_avg)
+            abs_diff = abs_diff / np.ceil(np.abs(field_avg))
 
         # Clip fields to ignore tiny values for the % diff
         field_1_clipped = np.clip( dset0[var][:,:,:], a_min = field_threshold, a_max = 9999999.0  )

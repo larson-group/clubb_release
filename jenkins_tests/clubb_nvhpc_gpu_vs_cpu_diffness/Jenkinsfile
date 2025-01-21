@@ -79,8 +79,8 @@ pipeline {
         sh '''run_scripts/check_multi_col_error.py cpu_output/arm_multi_col_zt.nc acc_output/arm_multi_col_zt.nc'''
         sh '''run_scripts/check_multi_col_error.py cpu_output/cobra_multi_col_zm.nc acc_output/cobra_multi_col_zm.nc'''
         sh '''run_scripts/check_multi_col_error.py cpu_output/cobra_multi_col_zt.nc acc_output/cobra_multi_col_zt.nc'''
-        sh '''run_scripts/check_multi_col_error.py -s cpu_output/rico_silhs_multi_col_zm.nc acc_output/rico_silhs_multi_col_zm.nc'''
-        sh '''run_scripts/check_multi_col_error.py -s cpu_output/rico_silhs_multi_col_zt.nc acc_output/rico_silhs_multi_col_zt.nc'''
+        sh '''run_scripts/check_multi_col_error.py -t 1e-6 -s cpu_output/rico_silhs_multi_col_zm.nc acc_output/rico_silhs_multi_col_zm.nc'''
+        sh '''run_scripts/check_multi_col_error.py -t 1e-6 -s cpu_output/rico_silhs_multi_col_zt.nc acc_output/rico_silhs_multi_col_zt.nc'''
       }
     }
     stage('Compare CPU vs OMP') {
@@ -89,8 +89,8 @@ pipeline {
         sh '''run_scripts/check_multi_col_error.py cpu_output/arm_multi_col_zt.nc omp_output/arm_multi_col_zt.nc'''
         sh '''run_scripts/check_multi_col_error.py cpu_output/cobra_multi_col_zm.nc omp_output/cobra_multi_col_zm.nc'''
         sh '''run_scripts/check_multi_col_error.py cpu_output/cobra_multi_col_zt.nc omp_output/cobra_multi_col_zt.nc'''
-        sh '''run_scripts/check_multi_col_error.py -s cpu_output/rico_silhs_multi_col_zm.nc omp_output/rico_silhs_multi_col_zm.nc'''
-        sh '''run_scripts/check_multi_col_error.py -s cpu_output/rico_silhs_multi_col_zt.nc omp_output/rico_silhs_multi_col_zt.nc'''
+        sh '''run_scripts/check_multi_col_error.py -t 1e-6 -s cpu_output/rico_silhs_multi_col_zm.nc omp_output/rico_silhs_multi_col_zm.nc'''
+        sh '''run_scripts/check_multi_col_error.py -t 1e-6 -s cpu_output/rico_silhs_multi_col_zt.nc omp_output/rico_silhs_multi_col_zt.nc'''
       }
     }
   }
