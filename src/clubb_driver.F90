@@ -768,15 +768,19 @@ module clubb_driver
       nu_vert_res_dep    ! Vertical resolution dependent nu values
   
     integer :: &
-      iiPDF_type,           & ! Selected option for the two-component normal
-                              ! (double Gaussian) PDF type to use for the w, rt,
-                              ! and theta-l (or w, chi, and eta) portion of
-                              ! CLUBB's multivariate, two-component PDF.
-      ipdf_call_placement,  & ! Selected option for the placement of the call to
-                              ! CLUBB's PDF.
-      penta_solve_method,   & ! Option to set the penta-diagonal matrix solving method
-      tridiag_solve_method, & ! Option to set the tri-diagonal matrix solving method
-      saturation_formula      ! Integer that stores the saturation formula to be used
+      iiPDF_type,                     & ! Selected option for the two-component normal
+                                        ! (double Gaussian) PDF type to use for the w, rt,
+                                        ! and theta-l (or w, chi, and eta) portion of
+                                        ! CLUBB's multivariate, two-component PDF.
+      ipdf_call_placement,            & ! Selected option for the placement of the call to
+                                        ! CLUBB's PDF.
+      penta_solve_method,             & ! Option to set the penta-diagonal matrix solving method
+      tridiag_solve_method,           & ! Option to set the tri-diagonal matrix solving method
+      saturation_formula,             & ! Integer that stores the saturation formula to be used
+      interp_from_dycore_grid_method    ! Integer that stores what interpolation technique should
+                                        ! be used to interpolate the values calculated on the 
+                                        ! dycore grid to the physics grid or if no interpolation 
+                                        ! should be used at all
 
     logical :: &
       l_use_precip_frac,            & ! Flag to use precipitation fraction in KK microphysics. The
@@ -942,7 +946,7 @@ module clubb_driver
 
     namelist /configurable_clubb_flags_nl/ &
       iiPDF_type, ipdf_call_placement, penta_solve_method, tridiag_solve_method, &
-      saturation_formula, &
+      saturation_formula, interp_from_dycore_grid_method, &
       l_upwind_xpyp_ta, l_upwind_xm_ma, &
       l_tke_aniso, l_vert_avg_closure, l_standard_term_ta, &
       l_partial_upwind_wp3, l_godunov_upwind_wpxp_ta, l_godunov_upwind_xpyp_ta, &
@@ -1073,6 +1077,7 @@ module clubb_driver
                                          penta_solve_method, & ! Intent(out)
                                          tridiag_solve_method, & ! Intent(out)
                                          saturation_formula, &  ! Intent(out)
+                                         interp_from_dycore_grid_method, & ! Intent(out)
                                          l_use_precip_frac, & ! Intent(out)
                                          l_predict_upwp_vpwp, & ! Intent(out)
                                          l_min_wp2_from_corr_wx, & ! Intent(out)
@@ -1525,6 +1530,7 @@ module clubb_driver
                                              penta_solve_method, & ! Intent(in)
                                              tridiag_solve_method, & ! Intent(in)
                                              saturation_formula, & ! Intent(in)
+                                             interp_from_dycore_grid_method, & ! Intent(in)
                                              l_use_precip_frac, & ! Intent(in)
                                              l_predict_upwp_vpwp, & ! Intent(in)
                                              l_min_wp2_from_corr_wx, & ! Intent(in)
@@ -2096,21 +2102,22 @@ module clubb_driver
     ! Therefore it should be executed prior to a restart. The restart should overwrite
     ! the initial sounding anyway.
     call initialize_clubb( &
-          gr, ngrdcol, iunit, trim( forcings_file_path ), p_sfc, zm_init,         & ! Intent(in)
-          sclr_dim, edsclr_dim, sclr_idx,                                & ! Intent(in)
-          clubb_config_flags,                                            & ! Intent(in)
-          l_modify_ic_with_cubic_int,                                    & ! Intent(in)
-          thlm, rtm, um, vm, ug, vg, wp2, up2, vp2, rcm,  & ! Intent(inout)
-          wm_zt, wm_zm, em, exner,                                  & ! Intent(inout)
-          thvm, p_in_Pa,                                            & ! Intent(inout)
-          rho, rho_zm, rho_ds_zm, rho_ds_zt,                        & ! Intent(inout)
-          invrs_rho_ds_zm, invrs_rho_ds_zt,                              & ! Intent(inout)
-          thv_ds_zm, thv_ds_zt,                                     & ! Intent(inout)
-          rtm_ref, thlm_ref,                                             & ! Intent(inout) 
-          um_ref, vm_ref,                                                & ! Intent(inout)
-          Ncm, Nc_in_cloud, Nccnm,                                       & ! Intent(inout)
-          deep_soil_T_in_K, sfc_soil_T_in_K, veg_T_in_K,                 & ! Intent(inout)
-          sclrm, edsclrm )                                                 ! Intent(out)
+          gr, ngrdcol, iunit, trim( forcings_file_path ), p_sfc, zm_init,  & ! Intent(in)
+          sclr_dim, edsclr_dim, sclr_idx,                                  & ! Intent(in)
+          clubb_config_flags,                                              & ! Intent(in)
+          l_modify_ic_with_cubic_int,                                      & ! Intent(in)
+          interp_from_dycore_grid_method,                                  & ! Intent(in)
+          thlm, rtm, um, vm, ug, vg, wp2, up2, vp2, rcm,                   & ! Intent(inout)
+          wm_zt, wm_zm, em, exner,                                         & ! Intent(inout)
+          thvm, p_in_Pa,                                                   & ! Intent(inout)
+          rho, rho_zm, rho_ds_zm, rho_ds_zt,                               & ! Intent(inout)
+          invrs_rho_ds_zm, invrs_rho_ds_zt,                                & ! Intent(inout)
+          thv_ds_zm, thv_ds_zt,                                            & ! Intent(inout)
+          rtm_ref, thlm_ref,                                               & ! Intent(inout) 
+          um_ref, vm_ref,                                                  & ! Intent(inout)
+          Ncm, Nc_in_cloud, Nccnm,                                         & ! Intent(inout)
+          deep_soil_T_in_K, sfc_soil_T_in_K, veg_T_in_K,                   & ! Intent(inout)
+          sclrm, edsclrm )                                                   ! Intent(out)
 
     if ( clubb_at_least_debug_level( 0 ) ) then
         if ( err_code == clubb_fatal_error ) then
@@ -2535,6 +2542,7 @@ module clubb_driver
                                l_modify_bc_for_cnvg_test, & ! In
                                clubb_config_flags%saturation_formula, & ! In
                                stats_metadata, stats_sfc, & ! In
+                               interp_from_dycore_grid_method, & ! In
                                rtm, wm_zm, wm_zt, ug, vg, um_ref, vm_ref, & ! Inout
                                thlm_forcing, rtm_forcing, um_forcing, & ! Inout
                                vm_forcing, wprtp_forcing, wpthlp_forcing, & ! Inout
@@ -3367,6 +3375,7 @@ module clubb_driver
                sclr_dim, edsclr_dim, sclr_idx, &
                clubb_config_flags, &
                l_modify_ic_with_cubic_int, &
+               interp_from_dycore_grid_method, &
                thlm, rtm, um, vm, ug, vg, wp2, up2, vp2, rcm, &
                wm_zt, wm_zm, em, exner, &
                thvm, p_in_Pa, &
@@ -3493,6 +3502,11 @@ module clubb_driver
     ! requires a special sounding.in file with many additional sounding levels.
     logical, intent(in) :: &
       l_modify_ic_with_cubic_int 
+
+    ! Integer flag to see if forcings should be calculated on a dycore grid and if so, what
+    ! interpolation method should be used to interpolate the values to the physics grid
+    integer, intent(in) :: &
+      interp_from_dycore_grid_method
 
     ! Output
     real( kind = core_rknd ), dimension(ngrdcol,gr%nzt), intent(inout) ::  & 
@@ -5304,6 +5318,7 @@ module clubb_driver
                                  l_modify_bc_for_cnvg_test, &
                                  saturation_formula, &
                                  stats_metadata, stats_sfc, &
+                                 interp_from_dycore_grid_method, &
                                  rtm, wm_zm, wm_zt, ug, vg, um_ref, vm_ref, &
                                  thlm_forcing, rtm_forcing, um_forcing, &
                                  vm_forcing, wprtp_forcing, wpthlp_forcing, &
@@ -5463,6 +5478,9 @@ module clubb_driver
     type (stats), dimension(ngrdcol), intent(inout)  :: &
       stats_sfc        ! stats_sfc
 
+    integer, intent(in) :: &
+      interp_from_dycore_grid_method
+
     real( kind = core_rknd ), dimension(ngrdcol,nzt), intent(inout) :: &
       rtm,             & ! total water mixing ratio, r_t (thermo. levs.)        [kg/kg]
       wm_zt,           & ! vertical mean wind comp. on thermo. levs             [m/s]
@@ -5613,6 +5631,7 @@ module clubb_driver
         call atex_tndcy( ngrdcol, sclr_dim, edsclr_dim, sclr_idx, &      ! Intent(in)
                          gr, time_current, time_initial, &      ! Intent(in)
                          rtm, &                                 ! Intent(in)
+                         interp_from_dycore_grid_method, &      ! Intent(in)
                          wm_zt, wm_zm, &                        ! Intent(out)
                          thlm_forcing, rtm_forcing, &           ! Intent(out)
                          sclrm_forcing, edsclrm_forcing )       ! Intent(out)

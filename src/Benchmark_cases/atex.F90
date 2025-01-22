@@ -18,6 +18,7 @@ module atex
   subroutine atex_tndcy( ngrdcol, sclr_dim, edsclr_dim, sclr_idx, &
                          gr, time, time_initial, &
                          rtm, &
+                         interp_from_dycore_grid_method, &
                          wm_zt, wm_zm, & 
                          thlm_forcing, rtm_forcing, & 
                          sclrm_forcing, edsclrm_forcing )
@@ -72,6 +73,9 @@ module atex
 
   real( kind = core_rknd ), intent(in), dimension(ngrdcol,gr%nzt) :: & 
     rtm      ! Total water mixing ratio        [kg/kg]
+
+  integer, intent(in) :: &
+    interp_from_dycore_grid_method
 
   !--------------------- Output Variables ---------------------
   real( kind = core_rknd ), intent(out), dimension(ngrdcol,gr%nzt) :: & 

@@ -42,6 +42,15 @@ module model_flags
     tridiag_lu      = 2,  & ! Use tridiag_lu solver for 3 banded matrices
     penta_bicgstab  = 3     ! Use bicgstab to solve 5 banded matrices
 
+  ! Options for interp_from_dycore_grid_method, either don't use this setup at all (0) or define
+  ! the interpolation technique to interpolate the values from the dycore grid to the physics grid
+  integer, parameter, public :: &
+    no_interp_from_dycore = 0, & ! no calculation of forcings on dycore grid and interpolation to
+                                 ! the physics grid (default)
+    cons_remapping        = 1    ! uses the remapping method proposed by Ullrich et al. in 
+                                 ! 'Arbitrary-Order Conservative and Consistent Remapping and a 
+                                 !  Theory of Linear Maps: Part II' (Formula (30))
+
   logical, parameter, public ::  & 
     l_pos_def            = .false., & ! Flux limiting positive definite scheme on rtm
     l_hole_fill          = .true.,  & ! Hole filling pos def scheme on wp2,up2,rtp2,etc
@@ -130,15 +139,19 @@ module model_flags
     ! corresponding .in files which would supercede the default values!
     
     integer :: &
-      iiPDF_type,           & ! Selected option for the two-component normal
-                              ! (double Gaussian) PDF type to use for the w, rt,
-                              ! and theta-l (or w, chi, and eta) portion of
-                              ! CLUBB's multivariate, two-component PDF.
-      ipdf_call_placement,  & ! Selected option for the placement of the call to
-                              ! CLUBB's PDF.
-      penta_solve_method,   & ! Option to set the penta-diagonal matrix solving method
-      tridiag_solve_method, & ! Option to set the tri-diagonal matrix solving method
-      saturation_formula      ! Integer that stores the saturation formula to be used
+      iiPDF_type,                     & ! Selected option for the two-component normal
+                                        ! (double Gaussian) PDF type to use for the w, rt,
+                                        ! and theta-l (or w, chi, and eta) portion of
+                                        ! CLUBB's multivariate, two-component PDF.
+      ipdf_call_placement,            & ! Selected option for the placement of the call to
+                                        ! CLUBB's PDF.
+      penta_solve_method,             & ! Option to set the penta-diagonal matrix solving method
+      tridiag_solve_method,           & ! Option to set the tri-diagonal matrix solving method
+      saturation_formula,             & ! Integer that stores the saturation formula to be used
+      interp_from_dycore_grid_method    ! Integer that stores what interpolation technique should
+                                        ! be used to interpolate the values calculated on the 
+                                        ! dycore grid to the physics grid or if no interpolation 
+                                        ! should be used at all
 
     logical :: &
       l_use_precip_frac,            & ! Flag to use precipitation fraction in KK microphysics. The
@@ -271,6 +284,7 @@ module model_flags
                                              penta_solve_method, &
                                              tridiag_solve_method, &
                                              saturation_formula, &
+                                             interp_from_dycore_grid_method, &
                                              l_use_precip_frac, &
                                              l_predict_upwp_vpwp, &
                                              l_min_wp2_from_corr_wx, &
@@ -339,15 +353,19 @@ module model_flags
 
     ! Output variables
     integer, intent(out) :: &
-      iiPDF_type,           & ! Selected option for the two-component normal
-                              ! (double Gaussian) PDF type to use for the w, rt,
-                              ! and theta-l (or w, chi, and eta) portion of
-                              ! CLUBB's multivariate, two-component PDF.
-      ipdf_call_placement,  & ! Selected option for the placement of the call to
-                              ! CLUBB's PDF.
-      penta_solve_method,   & ! Option to set the penta-diagonal matrix solving method
-      tridiag_solve_method, & ! Option to set the tri-diagonal matrix solving method
-      saturation_formula      ! Integer that stores the saturation formula to be used
+      iiPDF_type,                     & ! Selected option for the two-component normal
+                                        ! (double Gaussian) PDF type to use for the w, rt,
+                                        ! and theta-l (or w, chi, and eta) portion of
+                                        ! CLUBB's multivariate, two-component PDF.
+      ipdf_call_placement,            & ! Selected option for the placement of the call to
+                                        ! CLUBB's PDF.
+      penta_solve_method,             & ! Option to set the penta-diagonal matrix solving method
+      tridiag_solve_method,           & ! Option to set the tri-diagonal matrix solving method
+      saturation_formula,             & ! Integer that stores the saturation formula to be used
+      interp_from_dycore_grid_method    ! Integer that stores what interpolation technique should
+                                        ! be used to interpolate the values calculated on the 
+                                        ! dycore grid to the physics grid or if no interpolation 
+                                        ! should be used at all
 
     logical, intent(out) :: &
       l_use_precip_frac,            & ! Flag to use precipitation fraction in KK microphysics. The
@@ -480,6 +498,7 @@ module model_flags
     penta_solve_method = lapack
     tridiag_solve_method = lapack
     saturation_formula = saturation_flatau
+    interp_from_dycore_grid_method = no_interp_from_dycore
     l_use_precip_frac = .true.
     l_predict_upwp_vpwp = .true.
     l_min_wp2_from_corr_wx = .false.
@@ -550,6 +569,7 @@ module model_flags
                                                  penta_solve_method, &
                                                  tridiag_solve_method, &
                                                  saturation_formula, &
+                                                 interp_from_dycore_grid_method, &
                                                  l_use_precip_frac, &
                                                  l_predict_upwp_vpwp, &
                                                  l_min_wp2_from_corr_wx, &
@@ -619,15 +639,19 @@ module model_flags
 
     ! Input variables
     integer, intent(in) :: &
-      iiPDF_type,           & ! Selected option for the two-component normal
-                              ! (double Gaussian) PDF type to use for the w, rt,
-                              ! and theta-l (or w, chi, and eta) portion of
-                              ! CLUBB's multivariate, two-component PDF.
-      ipdf_call_placement,  & ! Selected option for the placement of the call to
-                              ! CLUBB's PDF.
-      penta_solve_method,   & ! Option to set the penta-diagonal matrix solving method
-      tridiag_solve_method, & ! Option to set the tri-diagonal matrix solving method
-      saturation_formula      ! Integer that stores the saturation formula to be used
+      iiPDF_type,                     & ! Selected option for the two-component normal
+                                        ! (double Gaussian) PDF type to use for the w, rt,
+                                        ! and theta-l (or w, chi, and eta) portion of
+                                        ! CLUBB's multivariate, two-component PDF.
+      ipdf_call_placement,            & ! Selected option for the placement of the call to
+                                        ! CLUBB's PDF.
+      penta_solve_method,             & ! Option to set the penta-diagonal matrix solving method
+      tridiag_solve_method,           & ! Option to set the tri-diagonal matrix solving method
+      saturation_formula,             & ! Integer that stores the saturation formula to be used
+      interp_from_dycore_grid_method    ! Integer that stores what interpolation technique should
+                                        ! be used to interpolate the values calculated on the 
+                                        ! dycore grid to the physics grid or if not interpolation 
+                                        ! should be used at all
 
     logical, intent(in) :: &
       l_use_precip_frac,            & ! Flag to use precipitation fraction in KK microphysics. The
@@ -762,6 +786,7 @@ module model_flags
     clubb_config_flags%penta_solve_method = penta_solve_method
     clubb_config_flags%tridiag_solve_method = tridiag_solve_method
     clubb_config_flags%saturation_formula = saturation_formula
+    clubb_config_flags%interp_from_dycore_grid_method = interp_from_dycore_grid_method
     clubb_config_flags%l_use_precip_frac = l_use_precip_frac
     clubb_config_flags%l_predict_upwp_vpwp = l_predict_upwp_vpwp
     clubb_config_flags%l_min_wp2_from_corr_wx = l_min_wp2_from_corr_wx
@@ -848,6 +873,8 @@ module model_flags
     write(iunit,*) "ipdf_call_placement = ", clubb_config_flags%ipdf_call_placement
     write(iunit,*) "penta_solve_method = ", clubb_config_flags%penta_solve_method
     write(iunit,*) "tridiag_solve_method = ", clubb_config_flags%tridiag_solve_method
+    write(iunit,*) "interp_from_dycore_grid_method = ", &
+                    clubb_config_flags%interp_from_dycore_grid_method
     write(iunit,*) "l_use_precip_frac = ", clubb_config_flags%l_use_precip_frac
     write(iunit,*) "l_predict_upwp_vpwp = ", clubb_config_flags%l_predict_upwp_vpwp
     write(iunit,*) "l_min_wp2_from_corr_wx = ", clubb_config_flags%l_min_wp2_from_corr_wx

@@ -427,15 +427,19 @@ module pdf_parameter_tests
     integer :: idx    ! Loop index
   
     integer :: &
-      iiPDF_type,           & ! Selected option for the two-component normal
-                              ! (double Gaussian) PDF type to use for the w, rt,
-                              ! and theta-l (or w, chi, and eta) portion of
-                              ! CLUBB's multivariate, two-component PDF.
-      ipdf_call_placement,  & ! Selected option for the placement of the call to
-                              ! CLUBB's PDF.
-      penta_solve_method,   & ! Option to set the penta-diagonal matrix solving method
-      tridiag_solve_method, & ! Option to set the tri-diagonal matrix solving method
-      saturation_formula      ! Integer that stores the saturation formula to be used
+      iiPDF_type,                      & ! Selected option for the two-component normal
+                                         ! (double Gaussian) PDF type to use for the w, rt,
+                                         ! and theta-l (or w, chi, and eta) portion of
+                                         ! CLUBB's multivariate, two-component PDF.
+      ipdf_call_placement,             & ! Selected option for the placement of the call to
+                                         ! CLUBB's PDF.
+      penta_solve_method,              & ! Option to set the penta-diagonal matrix solving method
+      tridiag_solve_method,            & ! Option to set the tri-diagonal matrix solving method
+      saturation_formula,              & ! Integer that stores the saturation formula to be used
+      interp_from_dycore_grid_method     ! Integer that stores what interpolation technique should
+                                         ! be used to interpolate the values calculated on the 
+                                         ! dycore grid to the physics grid or if no interpolation 
+                                         ! should be used at all
 
     logical :: &
       l_use_precip_frac,            & ! Flag to use precipitation fraction in KK microphysics. The
@@ -584,6 +588,7 @@ module pdf_parameter_tests
                                          penta_solve_method, &
                                          tridiag_solve_method, &
                                          saturation_formula, &
+                                         interp_from_dycore_grid_method, &
                                          l_use_precip_frac, &
                                          l_predict_upwp_vpwp, &
                                          l_min_wp2_from_corr_wx, &
