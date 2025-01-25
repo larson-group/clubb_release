@@ -184,13 +184,14 @@ def createFigs(numMetricsNoSpecial, metricsNames,
 
 
 
-    numImprovedMetrics = 4
+    numImprovedMetrics = 0
     mostImprovedIdxs = np.argpartition(tunedLossChange, numImprovedMetrics, axis=0)
     whitelistedMetricsMask = np.zeros_like(metricsNames, dtype=bool) # Initialize to False
     whitelistedMetricsMask[mostImprovedIdxs[:numImprovedMetrics, 0]] = True
-    #mostDegradedIdxs = np.argpartition(np.abs(tunedLossChange), numImprovedMetrics, axis=0)
-    #mostDegradedIdxs = np.argpartition(-tunedLossChange, numImprovedMetrics, axis=0)
-    mostDegradedIdxs = np.argpartition(-tunedLossCol, numImprovedMetrics, axis=0)
+    #mostDegradedIdxs = np.argpartition(np.abs(tunedLossChangeUnweighted), numImprovedMetrics, axis=0)
+    #mostDegradedIdxs = np.argpartition(-tunedLossChangeUnweighted, numImprovedMetrics, axis=0)
+    #mostDegradedIdxs = np.argpartition(-tunedLossColUnweighted, numImprovedMetrics, axis=0)
+    #mostDegradedIdxs = np.argpartition(-(defaultBiasesCol+defaultBiasesApproxNonlin)/defaultBiasesCol, numImprovedMetrics, axis=0)
     #whitelistedMetricsMask[mostDegradedIdxs[:numImprovedMetrics, 0]] = True
 
     # Loop through extraMetricsToPlot and whitelist them
@@ -203,11 +204,14 @@ def createFigs(numMetricsNoSpecial, metricsNames,
 
     #    #whitelistedMetricsMask = np.logical_not(whitelistedMetricsMask)  # get rid of named elements
     # Apply mask
+
     metricsNamesMasked = np.ma.masked_array(metricsNames, np.logical_not(whitelistedMetricsMask)).compressed()
+    metricsNamesNoprefixMasked = np.ma.masked_array(metricsNamesNoprefix, np.logical_not(whitelistedMetricsMask)).compressed()
     paramsNamesMasked = np.ma.masked_array(paramsNames, np.logical_not(maskParamsNames)).compressed()
     normMetricValsColMasked = normMetricValsCol[whitelistedMetricsMask]
     defaultBiasesColMasked = defaultBiasesCol[whitelistedMetricsMask]
     normlzdDefaultBiasesColMasked = normlzdDefaultBiasesCol[whitelistedMetricsMask]
+    normlzdResidMasked = normlzdResid[whitelistedMetricsMask]
     defaultBiasesApproxNonlinMasked = defaultBiasesApproxNonlin[whitelistedMetricsMask]
     normlzdSensMatrixPolyMasked = normlzdSensMatrixPoly[whitelistedMetricsMask].T[maskParamsNames].T
     normlzdLinplusSensMatrixPolyMetricsMasked = normlzdLinplusSensMatrixPoly[whitelistedMetricsMask]
@@ -233,6 +237,8 @@ def createFigs(numMetricsNoSpecial, metricsNames,
 
     metricsSensMasked = metricsSens[whitelistedMetricsMask]
     metricsSensMaskedOrder = metricsSensMasked.argsort()
+
+    #metricsSensMaskedOrder = np.argsort(np.argsort(extraMetricsToPlot))
 
     metricsNamesMaskedOrdered = metricsNamesMasked[metricsSensMaskedOrder]
     normMetricValsColMaskedOrdered = normMetricValsColMasked[metricsSensMaskedOrder, 0]
@@ -407,6 +413,26 @@ def createFigs(numMetricsNoSpecial, metricsNames,
 
     if plot_paramsAbsIncrsBarChart:
 
+        squaredParamsIncrs = np.mean( np.square(nonlinMatrixDparams), axis=0 )
+        squaredParamsIncrsPlusBias = np.append(squaredParamsIncrs, np.mean( np.square(normlzdDefaultBiasesCol)))
+        squaredParamsAbbrvPlusBias = np.append(paramsAbbrv, 'squared bias')
+        barColors = np.append( ["blue"]*len(paramsNames), "red" )
+        squaredColorDiscreteMap = dict(zip(squaredParamsAbbrvPlusBias.tolist(),
+                                    barColors.tolist()))
+
+        paramsSquaredIncrsBarChart = \
+            createBarChart(squaredParamsIncrsPlusBias, index=squaredParamsAbbrvPlusBias,
+                           columns=["Parameter<br>contribution"],
+                           orientation='v',
+                           barMode='relative',
+                           barColors=squaredParamsAbbrvPlusBias,
+                           colorDiscreteMap=squaredColorDiscreteMap,
+                           title="Size of squared parameter contributions <br>" \
+                                   + "(= column means of squared sensMatrix*dParams+0.5*curvMatrix*dParams**2)",
+                           xlabel="Parameter", ylabel="Contribution to bias removal",
+                           width=800, height=500,
+                           showLegend=False)
+
         absParamsIncrs = np.mean( np.abs(nonlinMatrixDparams), axis=0 )
         absParamsIncrsPlusBias = np.append(absParamsIncrs, np.mean( np.abs(normlzdDefaultBiasesCol)))
         absParamsAbbrvPlusBias = np.append(paramsAbbrv, 'abs bias')
@@ -484,14 +510,15 @@ def createFigs(numMetricsNoSpecial, metricsNames,
     if plot_biasesVsSensMagScatterplot:
         print("Creating biasesVsSensMagScatterplot . . .")
 
-        #sensCol = np.linalg.norm(normlzdLinplusSensMatrixPoly, axis=1)
-        sensCol = np.linalg.norm(normlzdSensMatrixPoly, axis=1)
-        curvCol = np.linalg.norm(normlzdCurvMatrix, axis=1)
+        sensCol = np.linalg.norm(normlzdLinplusSensMatrixPoly, axis=1)
+        #sensCol = np.linalg.norm(normlzdSensMatrixPoly, axis=1)
+        #curvCol = np.linalg.norm(normlzdCurvMatrix, axis=1)
         # Find the index of the element with the largest magnitude
         maxSensIdx = np.argmax(sensCol)
         signSens = np.sign(normlzdLinplusSensMatrixPoly @ normlzdLinplusSensMatrixPoly[maxSensIdx, :].T)
         xCol = sensCol * signSens
-        yCol = -defaultBiasesCol[:, 0] / np.abs(normMetricValsCol[:, 0])
+        #yCol = -defaultBiasesCol[:, 0] / np.abs(normMetricValsCol[:, 0])
+        yCol = -normlzdDefaultBiasesCol[:, 0]
         #yCol = curvCol
         ##yCol = (-defaultBiasesApproxNonlin - defaultBiasesCol)[:, 0] \
         ##       / np.abs(normMetricValsCol[:, 0])
@@ -546,6 +573,38 @@ def createFigs(numMetricsNoSpecial, metricsNames,
         #biasesVsSensMagScatterplot = \
         #createBiasesVsSensMagScatterplot(normlzdLinplusSensMatrixPolyMetricsMasked, defaultBiasesColMasked,
         #                                 normMetricValsColMasked, metricsNamesMasked)
+
+        sensColMasked = np.linalg.norm(normlzdLinplusSensMatrixPolyMetricsMasked, axis=1)
+        # Find the index of the element with the largest magnitude
+        maxSensIdxMasked = np.argmax(sensColMasked)
+        signSensMasked = np.sign(normlzdLinplusSensMatrixPolyMetricsMasked @ normlzdLinplusSensMatrixPolyMetricsMasked[maxSensIdxMasked, :].T)
+        xCol = sensColMasked * signSensMasked
+        yCol = -normlzdDefaultBiasesColMasked[:, 0]
+        #yCol = curvCol
+        ##yCol = (-defaultBiasesApproxNonlin - defaultBiasesCol)[:, 0] \
+        ##       / np.abs(normMetricValsCol[:, 0])
+
+
+        biasVsSensMagMaskedResidScatterplot = \
+            createScatterplot(xCol=xCol, xColLabel='sens',
+                              #yCol=normlzdResid, yColLabel='normlzdResid',
+                              yCol=yCol, yColLabel='bias',
+                              colorCol=normlzdResidMasked, colorColLabel='resid',
+                              colorScale='Spectral',
+                              #colorCol=normlzdResid, colorColLabel='normlzdResid',
+                              #colorScale='Rainbow',
+                              plotBgColor='lightgrey',
+                              pointLabels=metricsNamesNoprefixMasked, pointLabelsHeader='Metric',
+                              plotTitle = """Regional normalized biases vs. signed magnitude of sensitivity.""",
+                              xaxisTitle = "Signed magnitude of sensitivity of regional metrics to parameter changes",
+                              yaxisTitle = "Regional biases",
+                              #plotTitle="""Regional normalized residuals vs. signed magnitude of sensitivity.""",
+                              #xaxisTitle="Signed magnitude of sensitivity of regional metrics to parameter changes",
+                              #yaxisTitle="Regional normalized residuals",
+                              showLegend=False, hoverMode="closest",
+                              plotWidth=700, plotHeight=500)
+
+
 
     if plot_biasesVsSvdScatterplot:
         print("Creating biasesVsSvdScatterplot . . .")
@@ -850,6 +909,12 @@ def createFigs(numMetricsNoSpecial, metricsNames,
 
         print("Creating SVD vh matrix figure . . .")
 
+        #normlzdLinplusSensMatrixPolyDebiased = \
+        #    normlzdLinplusSensMatrixPoly \
+        #       - np.mean(normlzdLinplusSensMatrixPoly, axis=0)
+        #matrixDictKeyString = "normlzdLinplusSensMatrixPolyDebiased"
+        #matrixDict = {matrixDictKeyString: normlzdLinplusSensMatrixPolyDebiased}
+
         matrixDictKeyString = "normlzdLinplusSensMatrixPoly"
         matrixDict = {matrixDictKeyString: normlzdLinplusSensMatrixPoly}
         u, s, vh = \
@@ -915,7 +980,7 @@ def createFigs(numMetricsNoSpecial, metricsNames,
         dashboardChildren.append(dcc.Graph(id='paramsIncrsBarChart', figure=paramsIncrsBarChart,
                                            config=downloadConfig))
     if plot_paramsAbsIncrsBarChart:
-        dashboardChildren.append(dcc.Graph(id='paramsAbsIncrsBarChart', figure=paramsAbsIncrsBarChart,
+        dashboardChildren.append(dcc.Graph(id='paramsSquaredIncrsBarChart', figure=paramsSquaredIncrsBarChart,
                                            config=downloadConfig))
         dashboardChildren.append(dcc.Graph(id='paramsAbsLinCurvIncrsBarChart', figure=paramsAbsLinCurvIncrsBarChart,
                                            config=downloadConfig))
@@ -958,6 +1023,9 @@ def createFigs(numMetricsNoSpecial, metricsNames,
                                            config=downloadConfig))
         dashboardChildren.append(dcc.Graph(id='biasVsSensMagResidScatterplot',
                                            figure=biasVsSensMagResidScatterplot,
+                                           config=downloadConfig))
+        dashboardChildren.append(dcc.Graph(id='biasVsSensMagMaskedResidScatterplot',
+                                           figure=biasVsSensMagMaskedResidScatterplot,
                                            config=downloadConfig))
     if plot_biasesVsSvdScatterplot:
         dashboardChildren.append(dcc.Graph(id='biasesVsSvdScatterplot', figure=biasesVsSvdScatterplot,
@@ -1148,13 +1216,13 @@ def createMapGallery(
                        boxSize=boxSize)
 
     PcMapPanelU0bias = \
-        createMapPanel(fieldToPlotCol=u[:, 0]*normlzdDefaultBiasesCol[:,0],
+        createMapPanel(fieldToPlotCol=-u[:, 0]*normlzdDefaultBiasesCol[:,0],
                        plotWidth=plotWidth,
                        plotTitle="SVD 1 * bias",
                        boxSize=boxSize)
 
     PcMapPanelU1bias = \
-        createMapPanel(fieldToPlotCol=u[:, 1]*normlzdDefaultBiasesCol[:,0],
+        createMapPanel(fieldToPlotCol=-u[:, 1]*normlzdDefaultBiasesCol[:,0],
                        plotWidth=plotWidth,
                        plotTitle="SVD 2 * bias",
                        boxSize=boxSize)
@@ -1865,11 +1933,15 @@ def createThreeDotFig(metricsNames, paramsNames, transformedParamsNames,
             if (arrayCol == 0):  # Insert metrics label only along left edge of plot
                 threeDotFig.update_yaxes(title_text=metricsNames[arrayRow], row=arrayRow + 1, col=arrayCol + 1,
                                          title_font_size=metricsFontSize)
+
             threeDotFig.update_layout(showlegend=False,
                                       title_text="Simulated metric values vs. parameter values",
+                                      title_font_size=paramsFontSize,
                                       height=2500)
 
     threeDotFig.update_xaxes(tickangle=45)  # Put params label at 45-degree angle
+    threeDotFig.update_xaxes(tickfont_size=np.round(0.55*paramsFontSize))
+    threeDotFig.update_yaxes(tickfont_size=np.round(0.55*paramsFontSize))
 
     return (threeDotFig)
 

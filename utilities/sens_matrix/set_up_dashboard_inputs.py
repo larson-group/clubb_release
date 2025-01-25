@@ -47,66 +47,66 @@ def setUpInputs(beVerbose):
     #   If a value in the 3rd column is set to -999, then the metric is simply normalized by the observed value.
     #   Otherwise, the value in the 3rd column is itself the normalization value for the metric.  
     metricsNamesWeightsAndNormsSpecial = [ \
-#                        ['TMQ_RMSE', 1.00, 15.], \
-#                        ['PSL_RMSE', 1.00, 1000.], \
-#                        ['TS_RMSE', 1.00, 15.], \
-#                        ['LHFLX_RMSE', 1.00, 15.], \
-#                        ['SHFLX_RMSE', 1.00, 15.], \
-#                        ['CLDLOW_RMSE', 1.00, 15.], \
-                        #['SWCF_RACC', 0.01, 0.2], \
-                        #['SWCF_RMSEP', 8.01, 15.], \
-                        #['SWCF_RMSE', 0.01, 15.], \
-                        #['RESTOM_GLB', 4.0, 10.], \
-                        #['RESTOM_GLB', 4.0e-3, -999], \
-                        ['SWCF_GLB', 16.0e-6, -999], \
-                        ['SWCF_DYCOMS', 4.0e-6, -999], \
-                        ['SWCF_HAWAII', 4.00e-6, -999], \
-                        ['SWCF_VOCAL', 4.00e-6, -999], \
-                        ['SWCF_VOCAL_near', 1.00e-6, -999], \
-                        ['SWCF_LBA', 1.00e-6, -999], \
-                        ['SWCF_WP', 1.00e-6, -999], \
-                        ['SWCF_EP', 1.00e-6, -999], \
-                        ['SWCF_NP', 1.00e-6, -999], \
-                        ['SWCF_SP', 1.00e-6, -999],  \
-##                        ['SWCF_PA', 1.01, -999], \
-#                        ['SWCF_CAF', 1.00, -999], \
-                        ['SWCF_Namibia', 4.00e-6, -999], \
-                        ['SWCF_Namibia_near', 1.00e-6, -999], \
-                        #['LWCF_GLB',1.00e-6, -999], \
-###                        ['LWCF_DYCOMS', 1.01, -999], \
-###                        ['LWCF_HAWAII', 1.01, -999], \
-###                        ['LWCF_VOCAL', 1.01, -999], \
-##                        ['LWCF_LBA', 1.00, -999], \
-##                       ['LWCF_WP', 1.00, -999], \
-###                        ['LWCF_EP', 1.01, -999], \
-##                        ['LWCF_NP', 1.01, -999], \
-##                        ['LWCF_SP', 1.01, -999], \
-####                        ['LWCF_PA',  1.01, -999], \
-###                        ['LWCF_CAF', 1.01, -999], \
-                        #['PRECT_GLB', 1.00, -999], \
-                        #['PRECT_RACC', 0.01, 1.0], \
-                        #['PRECT_RMSEP', 0.01, 1.0], \
-                        #['PRECT_RMSE', 0.01, 1.0], \
-##                        ['PRECT_LBA', 1.00, -999], \
-##                        ['PRECT_WP', 1.00, -999], \
-###                        ['PRECT_EP', 1.01, -999], \
-###                        ['PRECT_NP', 1.01, -999], \
-###                        ['PRECT_SP', 1.01, -999], \
-####                        ['PRECT_PA', 1.01, -999], \
-##                        ['PRECT_CAF', 1.00, -999], \
-#                        ['PSL_DYCOMS', 1.e0, 1e3], \
-#                        ['PSL_HAWAII', 1.e0, 1e3], \
-#                        ['PSL_VOCAL', 1.e0, 1e3], \
-#                        ['PSL_VOCAL_near', 1.00, 1e3], \
-#                        ['PSL_LBA', 1.e0, 1e3], \
-#                        ['PSL_WP', 1.e0, 1e3], \
-#                        ['PSL_EP', 1.e0, 1e3], \
-#                        ['PSL_NP', 1.e0, 1e3], \
-#                        ['PSL_SP', 1.e0, 1e3],  \
-#                        ['PSL_PA', 1.00, 1e3], \
-#                        ['PSL_CAF', 1.e0, 1e3], \
-##                        ['PSL_Namibia', 1.00, 1e3], \
-##                        ['PSL_Namibia_near', 1.00, 1e3], \
+# #                        ['TMQ_RMSE', 1.00, 15.], \
+# #                        ['PSL_RMSE', 1.00, 1000.], \
+# #                        ['TS_RMSE', 1.00, 15.], \
+# #                        ['LHFLX_RMSE', 1.00, 15.], \
+# #                        ['SHFLX_RMSE', 1.00, 15.], \
+# #                        ['CLDLOW_RMSE', 1.00, 15.], \
+#                         #['SWCF_RACC', 0.01, 0.2], \
+#                         #['SWCF_RMSEP', 8.01, 15.], \
+#                         #['SWCF_RMSE', 0.01, 15.], \
+#                         #['RESTOM_GLB', 4.0, 10.], \
+#                         #['RESTOM_GLB', 4.0e-3, -999], \
+#                         ['SWCF_GLB', 16.0e-6, -999], \
+#                         ['SWCF_DYCOMS', 4.0e-6, -999], \
+#                         ['SWCF_HAWAII', 4.00e-6, -999], \
+#                         ['SWCF_VOCAL', 4.00e-6, -999], \
+#                         ['SWCF_VOCAL_near', 1.00e-6, -999], \
+#                         ['SWCF_LBA', 1.00e-6, -999], \
+#                         ['SWCF_WP', 1.00e-6, -999], \
+#                         ['SWCF_EP', 1.00e-6, -999], \
+#                         ['SWCF_NP', 1.00e-6, -999], \
+#                         ['SWCF_SP', 1.00e-6, -999],  \
+# ##                        ['SWCF_PA', 1.01, -999], \
+# #                        ['SWCF_CAF', 1.00, -999], \
+#                         ['SWCF_Namibia', 4.00e-6, -999], \
+#                         ['SWCF_Namibia_near', 1.00e-6, -999], \
+#                         #['LWCF_GLB',1.00e-6, -999], \
+# ###                        ['LWCF_DYCOMS', 1.01, -999], \
+# ###                        ['LWCF_HAWAII', 1.01, -999], \
+# ###                        ['LWCF_VOCAL', 1.01, -999], \
+# ##                        ['LWCF_LBA', 1.00, -999], \
+# ##                       ['LWCF_WP', 1.00, -999], \
+# ###                        ['LWCF_EP', 1.01, -999], \
+# ##                        ['LWCF_NP', 1.01, -999], \
+# ##                        ['LWCF_SP', 1.01, -999], \
+# ####                        ['LWCF_PA',  1.01, -999], \
+# ###                        ['LWCF_CAF', 1.01, -999], \
+#                         #['PRECT_GLB', 1.00, -999], \
+#                         #['PRECT_RACC', 0.01, 1.0], \
+#                         #['PRECT_RMSEP', 0.01, 1.0], \
+#                         #['PRECT_RMSE', 0.01, 1.0], \
+# ##                        ['PRECT_LBA', 1.00, -999], \
+# ##                        ['PRECT_WP', 1.00, -999], \
+# ###                        ['PRECT_EP', 1.01, -999], \
+# ###                        ['PRECT_NP', 1.01, -999], \
+# ###                        ['PRECT_SP', 1.01, -999], \
+# ####                        ['PRECT_PA', 1.01, -999], \
+# ##                        ['PRECT_CAF', 1.00, -999], \
+# #                        ['PSL_DYCOMS', 1.e0, 1e3], \
+# #                        ['PSL_HAWAII', 1.e0, 1e3], \
+# #                        ['PSL_VOCAL', 1.e0, 1e3], \
+# #                        ['PSL_VOCAL_near', 1.00, 1e3], \
+# #                        ['PSL_LBA', 1.e0, 1e3], \
+# #                        ['PSL_WP', 1.e0, 1e3], \
+# #                        ['PSL_EP', 1.e0, 1e3], \
+# #                        ['PSL_NP', 1.e0, 1e3], \
+# #                        ['PSL_SP', 1.e0, 1e3],  \
+# #                        ['PSL_PA', 1.00, 1e3], \
+# #                        ['PSL_CAF', 1.e0, 1e3], \
+# ##                        ['PSL_Namibia', 1.00, 1e3], \
+# ##                        ['PSL_Namibia_near', 1.00, 1e3], \
                          ]
 
 #                        ['PRECT_DYCOMS', 0.01, -999], \
@@ -123,8 +123,15 @@ def setUpInputs(beVerbose):
     # These are the metrics that we want to include
     #      in the metrics bar-chart, 3-dot plot, etc.
     # They must be a subset of metricsNames
+    #extraMetricsToPlot = np.array(['SWCF_5_9', 'SWCF_8_13', 'SWCF_6_15', 'SWCF_9_5', 'SWCF_3_6', 'SWCF_3_12', 'SWCF_1_6'])
+    extraMetricsToPlot = np.array(['SWCF_6_14', 'SWCF_6_18', 'SWCF_8_13', 'SWCF_6_15', 'SWCF_1_14', 'SWCF_3_6', 'SWCF_1_6'])
+    # 4_8, 8_10
+    # This list omits 9_5:
+    #extraMetricsToPlot = np.array(['SWCF_6_14', 'SWCF_6_18', 'SWCF_8_13', 'SWCF_6_15', 'SWCF_3_6', 'SWCF_1_6', 'SWCF_5_12'])
     # These regions had quadratic terms that prevent improvement by tuning
-    extraMetricsToPlot = np.array(['SWCF_4_2', 'SWCF_2_7', 'SWCF_3_6'])
+    #extraMetricsToPlot = np.array(['SWCF_4_2', 'SWCF_2_7', 'SWCF_3_6'])
+    # Same sensitivity but opposite bias
+    #extraMetricsToPlot = np.array(['SWCF_6_15'])
 
     # Parameters are tunable model parameters, e.g. clubb_C8.
     # The float listed below after the parameter name is a factor that is used below for scaling plots.
@@ -139,8 +146,8 @@ def setUpInputs(beVerbose):
     #folder_name = 'Regional_files/20240614_e3sm_20x20regs/thresp26_'
     #folder_name = 'Regional_files/20231211_20x20regs/sens0707_'
     folder_name = 'Regional_files/20241022_1yr_20x20regs/20.0sens1022_'
-    #folder_name = 'Regional_files/20241022_2yr_20x20regs_msq/20.0sens1022_'
     #folder_name = 'Regional_files/20241022_2yr_20x20regs_take3/20.0sens1022_'
+    #folder_name = 'Regional_files/20241022_2yr_20x20regs_msq/20.0sens1022_'
     #folder_name = 'Regional_files/20231204_30x30regs/sens0707_'
     #folder_name = 'Regional_files/20240409updated/thresp26_'  # folder where regional netcdf files are stored.
     #folder_name = 'Regional_files/stephens_20240131/btune_regional_files/btune_'  # folder where regional netcdf files are stored.

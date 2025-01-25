@@ -364,7 +364,7 @@ def solveUsingNonlin(metricsNames,
     #                           = ( f0 +      fwdFnc               - default soln )
     #                           = ( f0 + df/dp*dp + 0.5d2f/dp2*dp2 -       f0     )
     # residual = (   y_i -                y_hat_i                        )
-    # residual = (   y_i - ( f0    +   df/dp_i*dp + 0.5d2f/dp2_i*dp2 )   )
+    #          = (   y_i - ( f0    +   df/dp_i*dp + 0.5d2f/dp2_i*dp2 )   )
     #          =   ( y_i -   f0 )  - ( df/dp_i*dp + 0.5d2f/dp2_i*dp2 )
     #          = -defaultBiasesCol - (   defaultBiasesApproxNonlin   )
     #          = -defaultBiasesCol -              fwdFnc
