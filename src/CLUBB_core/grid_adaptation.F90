@@ -412,20 +412,17 @@ module grid_adaptation_module
       R_ij  ! matrix to apply to input values for remapping (R_ij)
 
     !--------------------- Begin Code ---------------------
-    !$acc enter data create( remap, i, j, R_ij )
 
     R_ij = remapping_matrix( gr_target, gr_source, &
                              total_idx_rho_lin_spline, rho_lin_spline_vals, &
                              rho_lin_spline_levels )
     ! matrix vector multiplication
-    !$acc parallel loop gang vector collapse(2) default(present)
     do i = 1, gr_target%nzt 
       remap(i) = 0
       do j = 1, gr_source%nzt
         remap(i) = remap(i) + R_ij(i,j)*gr_source_values(j)
       end do
     end do
-    !$acc end parallel loop
 
   end function remap
 
