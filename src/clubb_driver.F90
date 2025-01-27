@@ -277,6 +277,9 @@ module clubb_driver
     use cloud_sed_module, only: &
         cloud_drop_sed  ! Procedure(s)
 
+    use grid_adaptation_module, only: &
+      setup_simple_gr_dycore  ! Procedure(s)
+
 #ifdef _OPENMP
     ! Because Fortran I/O is not thread safe, we use this here to
     ! ensure that no model uses the same file number simultaneously
@@ -975,6 +978,12 @@ module clubb_driver
 
     logical :: &
       l_last_timestep
+
+    type( grid ) :: &
+      dycore_gr ! only set and used, if interp_from_dycore_grid_method > 0
+
+    real( kind = core_rknd ), dimension(:,:), allocatable :: &
+      rho_ds_zm_dycore ! only set and used, if interp_from_dycore_grid_method > 0
 
 !-----------------------------------------------------------------------
     ! Begin code
@@ -1858,6 +1867,17 @@ module clubb_driver
 
     allocate( wpthlp_sfc(ngrdcol), wprtp_sfc(ngrdcol), upwp_sfc(ngrdcol), vpwp_sfc(ngrdcol) )
 
+    if (interp_from_dycore_grid_method > 0) then
+      ! Initialize the dycore grid
+      call setup_simple_gr_dycore( dycore_gr )
+      allocate( rho_ds_zm_dycore(ngrdcol, dycore_gr%nzm) ) ! dry, static density: 
+                                                           ! m-levs of dycore grid
+    else
+      ! if no interpolation should be used, rho_ds_zm_dycore is not needed and we can use a 
+      ! dummy variable
+      allocate( rho_ds_zm_dycore(ngrdcol, 1) ) ! dry, static density: m-levs of dycore grid
+    end if
+
 
     ! Variables for PDF closure scheme
     call init_pdf_params( gr%nzt, ngrdcol, pdf_params )
@@ -2064,6 +2084,8 @@ module clubb_driver
     X_mixt_comp_all_levs = -999
     lh_sample_point_weights = -999._core_rknd
 
+    rho_ds_zm_dycore = zero
+
 
     if ( clubb_at_least_debug_level( 0 ) ) then
         if ( err_code == clubb_fatal_error ) then
@@ -2107,6 +2129,7 @@ module clubb_driver
           clubb_config_flags,                                              & ! Intent(in)
           l_modify_ic_with_cubic_int,                                      & ! Intent(in)
           interp_from_dycore_grid_method,                                  & ! Intent(in)
+          dycore_gr,                                                       & ! Intent(in)
           thlm, rtm, um, vm, ug, vg, wp2, up2, vp2, rcm,                   & ! Intent(inout)
           wm_zt, wm_zm, em, exner,                                         & ! Intent(inout)
           thvm, p_in_Pa,                                                   & ! Intent(inout)
@@ -2117,7 +2140,8 @@ module clubb_driver
           um_ref, vm_ref,                                                  & ! Intent(inout)
           Ncm, Nc_in_cloud, Nccnm,                                         & ! Intent(inout)
           deep_soil_T_in_K, sfc_soil_T_in_K, veg_T_in_K,                   & ! Intent(inout)
-          sclrm, edsclrm )                                                   ! Intent(out)
+          sclrm, edsclrm,                                                  & ! Intent(out)
+          rho_ds_zm_dycore )                                                 ! Intent(out)
 
     if ( clubb_at_least_debug_level( 0 ) ) then
         if ( err_code == clubb_fatal_error ) then
@@ -2543,6 +2567,7 @@ module clubb_driver
                                clubb_config_flags%saturation_formula, & ! In
                                stats_metadata, stats_sfc, & ! In
                                interp_from_dycore_grid_method, & ! In
+                               dycore_gr, rho_ds_zm_dycore, & ! In
                                rtm, wm_zm, wm_zt, ug, vg, um_ref, vm_ref, & ! Inout
                                thlm_forcing, rtm_forcing, um_forcing, & ! Inout
                                vm_forcing, wprtp_forcing, wpthlp_forcing, & ! Inout
@@ -3376,6 +3401,7 @@ module clubb_driver
                clubb_config_flags, &
                l_modify_ic_with_cubic_int, &
                interp_from_dycore_grid_method, &
+               dycore_gr, &
                thlm, rtm, um, vm, ug, vg, wp2, up2, vp2, rcm, &
                wm_zt, wm_zm, em, exner, &
                thvm, p_in_Pa, &
@@ -3386,7 +3412,8 @@ module clubb_driver
                um_ref, vm_ref, &
                Ncm, Nc_in_cloud, Nccnm, &
                deep_soil_T_in_K, sfc_soil_T_in_K, veg_T_in_K, &
-               sclrm, edsclrm )
+               sclrm, edsclrm, &
+               rho_ds_zm_dycore )
     ! Description:
     !   Execute the necessary steps for the initialization of the
     !   CLUBB model run.
@@ -3462,6 +3489,9 @@ module clubb_driver
     use array_index, only: &
       sclr_idx_type
 
+    use grid_adaptation_module, only: &
+      lin_interpolate
+
     implicit none
 
     intrinsic :: min, max, trim, sqrt, size
@@ -3507,6 +3537,9 @@ module clubb_driver
     ! interpolation method should be used to interpolate the values to the physics grid
     integer, intent(in) :: &
       interp_from_dycore_grid_method
+
+    type( grid ), intent(in) :: &
+      dycore_gr  ! only set and used if interp_from_dycore_grid_method > 0
 
     ! Output
     real( kind = core_rknd ), dimension(ngrdcol,gr%nzt), intent(inout) ::  & 
@@ -3561,6 +3594,9 @@ module clubb_driver
 
     real( kind = core_rknd ), dimension(ngrdcol,gr%nzt,edsclr_dim), intent(out) ::  & 
       edsclrm    ! Eddy diffusivity passive scalar [units vary]
+
+    real( kind = core_rknd ), dimension(ngrdcol,dycore_gr%nzm), intent(out) :: &
+      rho_ds_zm_dycore  ! Dry, static density (moment. levs.) on dycore grid  [kg/m^3]
 
     ! Local Variables
 
@@ -4106,6 +4142,15 @@ module clubb_driver
       wp2 = (2.0_core_rknd/3.0_core_rknd) * em
 
     end if ! l_tke_aniso
+
+    ! Initialize the dycore grid rho_ds linear spline approximation
+    if (interp_from_dycore_grid_method > 0) then
+      do i = 1, ngrdcol
+        rho_ds_zm_dycore(i,:) = lin_interpolate( dycore_gr%nzm, gr%nzm, &
+                                                 dycore_gr%zm, gr%zm, &
+                                                 rho_ds_zm(i,:) )
+      end do
+    end if
 
     ! Moved this to be more general -dschanen July 16 2007
     if ( clubb_config_flags%l_uv_nudge .or. uv_sponge_damp_settings%l_sponge_damping ) then
@@ -5319,6 +5364,7 @@ module clubb_driver
                                  saturation_formula, &
                                  stats_metadata, stats_sfc, &
                                  interp_from_dycore_grid_method, &
+                                 dycore_gr, rho_ds_zm_dycore, &
                                  rtm, wm_zm, wm_zt, ug, vg, um_ref, vm_ref, &
                                  thlm_forcing, rtm_forcing, um_forcing, &
                                  vm_forcing, wprtp_forcing, wpthlp_forcing, &
@@ -5481,6 +5527,12 @@ module clubb_driver
     integer, intent(in) :: &
       interp_from_dycore_grid_method
 
+    type( grid ), intent(in) :: &
+      dycore_gr
+
+    real( kind = core_rknd ), dimension(dycore_gr%nzm), intent(in) :: &
+      rho_ds_zm_dycore
+
     real( kind = core_rknd ), dimension(ngrdcol,nzt), intent(inout) :: &
       rtm,             & ! total water mixing ratio, r_t (thermo. levs.)        [kg/kg]
       wm_zt,           & ! vertical mean wind comp. on thermo. levs             [m/s]
@@ -5632,6 +5684,7 @@ module clubb_driver
                          gr, time_current, time_initial, &      ! Intent(in)
                          rtm, &                                 ! Intent(in)
                          interp_from_dycore_grid_method, &      ! Intent(in)
+                         dycore_gr, rho_ds_zm_dycore, &         ! Intent(in)
                          wm_zt, wm_zm, &                        ! Intent(out)
                          thlm_forcing, rtm_forcing, &           ! Intent(out)
                          sclrm_forcing, edsclrm_forcing )       ! Intent(out)

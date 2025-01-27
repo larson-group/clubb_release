@@ -6,6 +6,11 @@ module atex
   !       Contains subroutines for the GCSS ATEX case.
   !----------------------------------------------------------------------
 
+  use clubb_precision, only: core_rknd
+
+  use grid_class, only: &
+    grid ! Type
+  
   implicit none
 
   public :: atex_tndcy, atex_sfclyr
@@ -14,11 +19,61 @@ module atex
 
   contains
 
+  subroutine calc_forcings( ngrdcol, gr, z_inversion, &
+                            thlm_forcing, rtm_forcing )
+
+    implicit none
+
+    !--------------------- Input Variables ---------------------
+    integer, intent(in) :: ngrdcol
+    type (grid), intent(in) :: gr
+    real( kind = core_rknd ), dimension(ngrdcol), intent(in) :: z_inversion
+
+    !--------------------- Output Variables ---------------------
+    real( kind = core_rknd ), intent(out), dimension(ngrdcol,gr%nzt) :: & 
+      thlm_forcing, & ! Liquid water potential temperature tendency [K/s]
+      rtm_forcing     ! Total water mixing ratio tendency           [kg/kg/s]
+
+    !--------------------- Local Variables ---------------------
+    integer :: i, k
+
+    !--------------------- Begin Code ---------------------
+    ! Theta-l tendency
+    !$acc parallel loop gang vector collapse(2) default(present)
+    do i = 1, ngrdcol
+      do k = 1, gr%nzt
+
+        if ( gr%zt(i,k) > 0._core_rknd .and. gr%zt(i,k) < z_inversion(i) ) then
+          ! Known magic number
+          thlm_forcing(i,k) = -1.1575e-5_core_rknd &
+                              * ( 3._core_rknd - gr%zt(i,k)/z_inversion(i) ) 
+        else if ( gr%zt(i,k) > z_inversion(i) .and. gr%zt(i,k) <= z_inversion(i)+300._core_rknd ) then
+          ! Known magic number
+          thlm_forcing(i,k) = -2.315e-5_core_rknd &
+                              * ( 1._core_rknd - (gr%zt(i,k)-z_inversion(i))/300._core_rknd ) 
+        else
+          thlm_forcing(i,k) = 0.0_core_rknd
+        end if
+
+        ! Moisture tendency
+        if ( gr%zt(i,k) > 0._core_rknd .and. gr%zt(i,k) < z_inversion(i) ) then
+          ! Brian - known magic number
+          rtm_forcing(i,k) = -1.58e-8_core_rknd * ( 1._core_rknd - gr%zt(i,k)/z_inversion(i) )  
+        else
+          ! Brian
+          rtm_forcing(i,k) = 0.0_core_rknd       
+        end if
+      end do
+    end do
+
+  end subroutine calc_forcings
+
   !======================================================================
   subroutine atex_tndcy( ngrdcol, sclr_dim, edsclr_dim, sclr_idx, &
                          gr, time, time_initial, &
                          rtm, &
                          interp_from_dycore_grid_method, &
+                         dycore_gr, rho_ds_zm_dycore, &
                          wm_zt, wm_zm, & 
                          thlm_forcing, rtm_forcing, & 
                          sclrm_forcing, edsclrm_forcing )
@@ -53,6 +108,11 @@ module atex
 
   use array_index, only: &
     sclr_idx_type   
+  
+  use grid_adaptation_module, only: &
+    lin_interpolate, check_consistent, &
+    interpolate_forcings, check_mass_conservation, &
+    check_conservation, check_remap_for_consistency
 
   implicit none
 
@@ -77,6 +137,13 @@ module atex
   integer, intent(in) :: &
     interp_from_dycore_grid_method
 
+  type( grid ), intent(in) :: &
+    dycore_gr
+
+  real( kind = core_rknd ), intent(in), dimension(ngrdcol,dycore_gr%nzm) :: & 
+    rho_ds_zm_dycore ! Dry, static density on momentum levels on dycore grid [kg/m^3]
+                     ! use this to assume the exact linear spline as the rho_ds profile
+
   !--------------------- Output Variables ---------------------
   real( kind = core_rknd ), intent(out), dimension(ngrdcol,gr%nzt) :: & 
     wm_zt,        & ! w wind on thermodynamic grid                [m/s]
@@ -92,14 +159,24 @@ module atex
   real( kind = core_rknd ), intent(out), dimension(ngrdcol,gr%nzt, edsclr_dim) :: & 
     edsclrm_forcing ! Eddy-passive scalar tendency    [units/s]
 
-  ! Internal variables
+  !--------------------- Local Variables ---------------------
   integer :: i, k
 
   integer, dimension(ngrdcol) :: &
     z_lev
 
+  integer, dimension(ngrdcol) :: &
+    z_lev_dycore
+
   real( kind = core_rknd ), dimension(ngrdcol) :: &
-    z_inversion
+    z_inversion, z_inversion_dycore
+
+  real( kind = core_rknd ), dimension(ngrdcol,dycore_gr%nzt) :: &
+    thlm_forcing_dycore, & ! Liquid water potential temperature tendency [K/s]
+    rtm_forcing_dycore     ! Total water mixing ratio tendency           [kg/kg/s]
+
+  real( kind = core_rknd ), dimension(ngrdcol,dycore_gr%nzt) :: & 
+    rtm_dycore             ! Total water mixing ratio                      [kg/kg]
 
   !--------------------- Begin Code ---------------------
 
@@ -164,33 +241,86 @@ module atex
       wm_zm(i,gr%nzm) = 0.0_core_rknd  ! Model top
     end do
 
-    ! Theta-l tendency
-    !$acc parallel loop gang vector collapse(2) default(present)
-    do i = 1, ngrdcol
-      do k = 1, gr%nzt
+    if ( interp_from_dycore_grid_method > 0 ) then
 
-        if ( gr%zt(i,k) > 0._core_rknd .and. gr%zt(i,k) < z_inversion(i) ) then
-          ! Known magic number
-          thlm_forcing(i,k) = -1.1575e-5_core_rknd &
-                              * ( 3._core_rknd - gr%zt(i,k)/z_inversion(i) ) 
-        else if ( gr%zt(i,k) > z_inversion(i) .and. gr%zt(i,k) <= z_inversion(i)+300._core_rknd ) then
-          ! Known magic number
-          thlm_forcing(i,k) = -2.315e-5_core_rknd &
-                              * ( 1._core_rknd - (gr%zt(i,k)-z_inversion(i))/300._core_rknd ) 
-        else
-          thlm_forcing(i,k) = 0.0_core_rknd
-        end if
-
-        ! Moisture tendency
-        if ( gr%zt(i,k) > 0._core_rknd .and. gr%zt(i,k) < z_inversion(i) ) then
-          ! Brian - known magic number
-          rtm_forcing(i,k) = -1.58e-8_core_rknd * ( 1._core_rknd - gr%zt(i,k)/z_inversion(i) )  
-        else
-          ! Brian
-          rtm_forcing(i,k) = 0.0_core_rknd       
-        end if
+      do i = 1, ngrdcol
+        rtm_dycore(i,:) = lin_interpolate( dycore_gr%nzt, gr%nzt, &
+                                           dycore_gr%zt, gr%zt, &
+                                           rtm(i,:) )
       end do
-    end do
+
+      ! calculate z_inversion for dycore grid (z_inversion_dycore) with interpolated rtm values on 
+      ! dycore grid
+      !$acc parallel loop gang vector default(present)
+      do i = 1, ngrdcol
+        z_lev_dycore(i) = 1
+        do while ( z_lev_dycore(i) <= dycore_gr%nzt .and. rtm_dycore(i,z_lev_dycore(i)) > 6.5e-3_core_rknd )
+          z_lev_dycore(i) = z_lev_dycore(i) + 1
+        end do
+      end do
+
+      if ( clubb_at_least_debug_level(2) ) then
+
+        !$acc update host( z_lev_dycore, rtm_dycore )
+
+        do i = 1, ngrdcol
+          if ( z_lev_dycore(i) == dycore_gr%nzt+1 .or. z_lev_dycore(i) == 1 ) then
+            write(fstderr,*) "Identification of 6.5 g/kg level failed on dycore grid"
+            write(fstderr,*) "Subroutine: atex_tndcy. File: atex.F"
+            write(fstderr,*) "k = ", z_lev_dycore(i), " i = ", i
+            write(fstderr,*) "rtm_dycore(k) = ",rtm_dycore(i,z_lev_dycore(i))
+            err_code = clubb_fatal_error
+            return
+          end if
+        end do
+      end if
+
+      !$acc parallel loop gang vector default(present)
+      do i = 1, ngrdcol
+        z_inversion_dycore(i) = dycore_gr%zt(i,z_lev_dycore(i)-1)
+      end do
+
+      call calc_forcings( ngrdcol, dycore_gr, z_inversion_dycore, &  ! intent(in)
+                          thlm_forcing_dycore, rtm_forcing_dycore )  ! intent(out)
+
+      call interpolate_forcings( ngrdcol, dycore_gr, gr, &                   ! intent(in)
+                                 dycore_gr%nzm, rho_ds_zm_dycore, &          ! intent(in)
+                                 dycore_gr%zm, &                             ! intent(in)
+                                 thlm_forcing_dycore, rtm_forcing_dycore, &  ! intent(in)
+                                 thlm_forcing, rtm_forcing )                 ! intent(out)
+
+      if ( clubb_at_least_debug_level( 2 ) ) then
+        ! TODO, if grid adjusts, also check over time steps
+
+        do i = 1, ngrdcol
+          ! checks if the mass over the physics and dycore grid is the same
+          call check_mass_conservation( gr, dycore_gr, &                         ! intent(in)
+                                        dycore_gr%nzm, rho_ds_zm_dycore(i,:), &  ! intent(in)
+                                        dycore_gr%zm )                           ! intent(in)
+          ! checks whether the vertical integral of thlm_forcing and rtm_forcing is the same on
+          ! the physics and dycore grid
+          call check_conservation( dycore_gr%nzm, rho_ds_zm_dycore(i,:), &       ! intent(in)
+                                   dycore_gr%zm, &                               ! intent(in)
+                                   gr%nzm, dycore_gr%nzm, &                      ! intent(in)
+                                   gr%zm, dycore_gr%zm, &                        ! intent(in)
+                                   thlm_forcing(i,:), thlm_forcing_dycore(i,:) ) ! intent(in)
+          call check_conservation( dycore_gr%nzm, rho_ds_zm_dycore(i,:), &      ! intent(in)
+                                   dycore_gr%zm, &                              ! intent(in)
+                                   gr%nzm, dycore_gr%nzm, &                     ! intent(in)
+                                   gr%zm, dycore_gr%zm, &                       ! intent(in)
+                                   rtm_forcing(i,:), rtm_forcing_dycore(i,:) )  ! intent(in)
+          call check_remap_for_consistency( dycore_gr, gr, &                        ! intent(in)
+                                            dycore_gr%nzm, rho_ds_zm_dycore(i,:), & ! intent(in)
+                                            dycore_gr%zm )                          ! intent(in)
+        end do
+      end if
+
+    else
+
+      call calc_forcings( ngrdcol, gr, z_inversion, &                ! intent(in)
+                          thlm_forcing, rtm_forcing )                ! intent(out)
+    
+    end if
 
   else 
 
@@ -203,6 +333,16 @@ module atex
         rtm_forcing(i,k)  = 0._core_rknd
       end do
     end do
+
+    if (interp_from_dycore_grid_method > 0 ) then
+      !$acc parallel loop gang vector collapse(2) default(present)
+      do k = 1, dycore_gr%nzt
+        do i = 1, ngrdcol
+          thlm_forcing_dycore(i,k) = 0._core_rknd
+          rtm_forcing_dycore(i,k)  = 0._core_rknd
+        end do
+      end do
+    end if
 
     !$acc parallel loop gang vector collapse(2) default(present)
     do k = 1, gr%nzm
