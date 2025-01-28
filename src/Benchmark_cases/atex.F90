@@ -251,6 +251,7 @@ module atex
 
       ! calculate z_inversion for dycore grid (z_inversion_dycore) with interpolated rtm values on 
       ! dycore grid
+      !$acc parallel loop gang vector default(present)
       do i = 1, ngrdcol
         z_lev_dycore(i) = 1
         do while ( z_lev_dycore(i) <= dycore_gr%nzt .and. rtm_dycore(i,z_lev_dycore(i)) > 6.5e-3_core_rknd )
@@ -272,6 +273,7 @@ module atex
         end do
       end if
 
+      !$acc parallel loop gang vector default(present)
       do i = 1, ngrdcol
         z_inversion_dycore(i) = dycore_gr%zt(i,z_lev_dycore(i)-1)
       end do
