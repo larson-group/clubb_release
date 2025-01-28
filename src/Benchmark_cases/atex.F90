@@ -331,6 +331,7 @@ module atex
     end do
 
     if (interp_from_dycore_grid_method > 0 ) then
+      !$acc parallel loop gang vector collapse(2) default(present)
       do k = 1, dycore_gr%nzt
         do i = 1, ngrdcol
           thlm_forcing_dycore(i,k) = 0._core_rknd
