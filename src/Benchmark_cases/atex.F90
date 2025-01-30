@@ -307,7 +307,8 @@ module atex
                                    gr%nzm, dycore_gr%nzm, &                     ! intent(in)
                                    gr%zm, dycore_gr%zm, &                       ! intent(in)
                                    rtm_forcing(i,:), rtm_forcing_dycore(i,:) )  ! intent(in)
-          call check_remap_for_consistency( dycore_gr, gr, &                        ! intent(in)
+          call check_remap_for_consistency( dycore_gr%nzm, gr%nzm, &                ! intent(in)
+                                            dycore_gr%zm(i,:), gr%zm(i,:), &        ! intent(in)
                                             dycore_gr%nzm, rho_ds_zm_dycore(i,:), & ! intent(in)
                                             dycore_gr%zm )                          ! intent(in)
         end do

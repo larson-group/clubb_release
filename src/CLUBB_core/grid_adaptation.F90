@@ -311,7 +311,8 @@ module grid_adaptation_module
 
   end subroutine check_monotone
 
-  function remapping_matrix( gr_target, gr_source, &
+  function remapping_matrix( nlevel_source, nlevel_target, &
+                             levels_source, levels_target, &
                              total_idx_rho_lin_spline, &
                              rho_lin_spline_vals, &
                              rho_lin_spline_levels )
@@ -322,9 +323,15 @@ module grid_adaptation_module
 
     implicit none
     !--------------------- Input Variables ---------------------
-    type (grid) :: &
-      gr_target, & ! grid where the values should be interpolated to
-      gr_source    ! grid where the given values are currently on
+    integer, intent(in) :: &
+      nlevel_source, & ! number of levels in the target grid
+      nlevel_target    ! number of levels in the source grid
+
+    real( kind = core_rknd ), dimension(nlevel_source), intent(in) :: &
+      levels_source ! the height of the levels in the source grid
+
+    real( kind = core_rknd ), dimension(nlevel_target), intent(in) :: &
+      levels_target ! the height of the levels in the target grid
 
     integer, intent(in) :: &
       total_idx_rho_lin_spline ! number of indices for the linear spline definition arrays
@@ -335,14 +342,14 @@ module grid_adaptation_module
     ! Note: both these arrays need to be sorted from low to high altitude
 
     !--------------------- Local Variables ---------------------
-    real( kind = core_rknd ), dimension(gr_target%nzt,gr_source%nzt) :: &
+    real( kind = core_rknd ), dimension(nlevel_target-1,nlevel_source-1) :: &
       remapping_matrix ! matrix to apply to input values for remapping (R_ij)
 
     integer :: i, j
 
     real( kind = core_rknd ) :: omega_ov, omega_ov_upper, omega_ov_lower
 
-    real( kind = core_rknd ), dimension(gr_target%nzt) :: &
+    real( kind = core_rknd ), dimension(nlevel_target-1) :: &
       omega_ts ! densities of all intervals in the target grid
 
     real( kind = core_rknd ), dimension(2) :: &
@@ -353,11 +360,11 @@ module grid_adaptation_module
     omega_ts = calc_mass_over_grid_intervals( total_idx_rho_lin_spline, &
                                               rho_lin_spline_vals, &
                                               rho_lin_spline_levels, &
-                                              gr_target%nzm, gr_target%zm )
-    do i = 1, gr_target%nzt
-        do j = 1, gr_source%nzt
-            omega_ov_upper = min(gr_target%zt(1,i)+0.5*gr_target%dzt(1,i), gr_source%zt(1,j)+0.5*gr_source%dzt(1,j))
-            omega_ov_lower = max(gr_target%zt(1,i)-0.5*gr_target%dzt(1,i), gr_source%zt(1,j)-0.5*gr_source%dzt(1,j))
+                                              nlevel_target, levels_target )
+    do i = 1, (nlevel_target-1)
+        do j = 1, (nlevel_source-1)
+            omega_ov_upper = min(levels_target(i+1), levels_source(j+1))
+            omega_ov_lower = max(levels_target(i), levels_source(j))
             if (omega_ov_upper > omega_ov_lower) then
                 omega_ov_zm(1) = omega_ov_lower
                 omega_ov_zm(2) = omega_ov_upper
@@ -373,22 +380,29 @@ module grid_adaptation_module
     end do
 
     if ( clubb_at_least_debug_level( 2 ) ) then
-      call check_consistent( remapping_matrix, gr_target%nzt, gr_source%nzt )
-      call check_monotone( remapping_matrix, gr_target%nzt, gr_source%nzt )
+      call check_consistent( remapping_matrix, (nlevel_target-1), (nlevel_source-1) )
+      call check_monotone( remapping_matrix, (nlevel_target-1), (nlevel_source-1) )
     end if
 
   end function remapping_matrix
 
-  function remap( gr_target, gr_source, &
+  function remap( nlevel_source, nlevel_target, &
+                  levels_source, levels_target, &
                   total_idx_rho_lin_spline, rho_lin_spline_vals, &
                   rho_lin_spline_levels, &
                   gr_source_values )
 
     implicit none
     !--------------------- Input Variables ---------------------
-    type (grid) :: &
-      gr_target, & ! grid where the values should be interpolated to
-      gr_source    ! grid where the given values are currently on
+    integer, intent(in) :: &
+      nlevel_source, & ! number of levels in the target grid
+      nlevel_target    ! number of levels in the source grid
+
+    real( kind = core_rknd ), dimension(nlevel_source), intent(in) :: &
+      levels_source ! the height of the levels in the source grid
+
+    real( kind = core_rknd ), dimension(nlevel_target), intent(in) :: &
+      levels_target ! the height of the levels in the target grid
 
     integer, intent(in) :: &
       total_idx_rho_lin_spline ! number of indices for the linear spline definition arrays
@@ -398,28 +412,29 @@ module grid_adaptation_module
       rho_lin_spline_levels  ! altitudes for the given rho values
     ! Note: both these arrays need to be sorted from low to high altitude
 
-    real( kind = core_rknd ), dimension(gr_source%nzt) :: &
+    real( kind = core_rknd ), dimension(nlevel_source-1) :: &
       gr_source_values  ! given values on the gr_source grid that should be interpolated 
                         ! to the gr_target grid
 
     !--------------------- Local Variables ---------------------
-    real( kind = core_rknd ), dimension(gr_target%nzt) :: &
+    real( kind = core_rknd ), dimension(nlevel_target-1) :: &
       remap ! interpolated values with the dimension of gr_target
 
     integer :: i, j
 
-    real( kind = core_rknd ), dimension(gr_target%nzt,gr_source%nzt) :: &
+    real( kind = core_rknd ), dimension(nlevel_target-1,nlevel_source-1) :: &
       R_ij  ! matrix to apply to input values for remapping (R_ij)
 
     !--------------------- Begin Code ---------------------
 
-    R_ij = remapping_matrix( gr_target, gr_source, &
+    R_ij = remapping_matrix( nlevel_source, nlevel_target, &
+                             levels_source, levels_target, &
                              total_idx_rho_lin_spline, rho_lin_spline_vals, &
                              rho_lin_spline_levels )
     ! matrix vector multiplication
-    do i = 1, gr_target%nzt 
+    do i = 1, (nlevel_target-1)
       remap(i) = 0
-      do j = 1, gr_source%nzt
+      do j = 1, (nlevel_source-1)
         remap(i) = remap(i) + R_ij(i,j)*gr_source_values(j)
       end do
     end do
@@ -460,25 +475,36 @@ module grid_adaptation_module
 
     !--------------------- Begin Code ---------------------
     do i=1, ngrdcol
-        thlm_forcing(i,:) = remap( gr_clubb, gr_dycore, &
+        thlm_forcing(i,:) = remap( gr_dycore%nzm, gr_clubb%nzm, &
+                                   gr_dycore%zm(i,:), gr_clubb%zm(i,:), &
                                    total_idx_rho_lin_spline, rho_lin_spline_vals(i,:), &
                                    rho_lin_spline_levels(i,:), &
                                    thlm_forcing_dycore(i,:) )
-        rtm_forcing(i,:) = remap( gr_clubb, gr_dycore, &
+        rtm_forcing(i,:) = remap( gr_dycore%nzm, gr_clubb%nzm, &
+                                  gr_dycore%zm(i,:), gr_clubb%zm(i,:), &
                                   total_idx_rho_lin_spline, rho_lin_spline_vals(i,:), &
                                   rho_lin_spline_levels(i,:), &
                                   rtm_forcing_dycore(i,:) )
     end do
   end subroutine interpolate_forcings
 
-  subroutine check_remap_for_consistency( gr_dycore, gr_clubb, &
+  subroutine check_remap_for_consistency( nlevel_source, nlevel_target, &
+                                          levels_source, levels_target, &
                                           total_idx_rho_lin_spline, &
                                           rho_lin_spline_vals, &
                                           rho_lin_spline_levels )
 
     implicit none
     !--------------------- Input Variables ---------------------
-    type (grid), intent(in) :: gr_dycore, gr_clubb
+    integer, intent(in) :: &
+      nlevel_source, & ! number of levels in the target grid
+      nlevel_target    ! number of levels in the source grid
+
+    real( kind = core_rknd ), dimension(nlevel_source), intent(in) :: &
+      levels_source ! the height of the levels in the source grid
+
+    real( kind = core_rknd ), dimension(nlevel_target), intent(in) :: &
+      levels_target ! the height of the levels in the target grid
 
     integer, intent(in) :: &
       total_idx_rho_lin_spline ! number of indices for the linear spline definition arrays
@@ -489,10 +515,10 @@ module grid_adaptation_module
     ! Note: both these arrays need to be sorted from low to high altitude
 
     !--------------------- Local Variables ---------------------
-    real( kind = core_rknd ), dimension(gr_dycore%nzt) :: &
+    real( kind = core_rknd ), dimension(nlevel_source-1) :: &
       ones
 
-    real( kind = core_rknd ), dimension(gr_clubb%nzt) :: &
+    real( kind = core_rknd ), dimension(nlevel_target-1) :: &
       output_ones
 
     integer :: i, j
@@ -502,11 +528,12 @@ module grid_adaptation_module
     logical :: consistent
 
     !--------------------- Begin Code ---------------------
-    do i = 1, gr_dycore%nzt
+    do i = 1, (nlevel_source-1)
       ones(i) = 1
     end do
 
-    output_ones = remap( gr_clubb, gr_dycore, &
+    output_ones = remap( nlevel_source, nlevel_target, &
+                         levels_source, levels_target, &
                          total_idx_rho_lin_spline, rho_lin_spline_vals, &
                          rho_lin_spline_levels, &
                          ones )
@@ -514,7 +541,7 @@ module grid_adaptation_module
     consistent = .true.
     epsilon = 0.000001
     j = 1
-    do while (consistent .and. j <= gr_clubb%nzt)
+    do while (consistent .and. j <= nlevel_target-1)
       if (abs( output_ones(j) - 1 ) > epsilon) then
         consistent = .false.
       end if
