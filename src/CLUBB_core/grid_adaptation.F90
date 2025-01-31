@@ -382,6 +382,7 @@ module grid_adaptation_module
     if ( clubb_at_least_debug_level( 2 ) ) then
       call check_consistent( remapping_matrix, (nlevel_target-1), (nlevel_source-1) )
       call check_monotone( remapping_matrix, (nlevel_target-1), (nlevel_source-1) )
+      ! TODO add check for conservation from ullrich paper with calc_mass_over grid_intervall
     end if
 
   end function remapping_matrix
@@ -440,6 +441,147 @@ module grid_adaptation_module
     end do
 
   end function remap
+
+  function interpolate_values_zt( ngrdcol, gr_source, gr_target, &
+                                  total_idx_rho_lin_spline, rho_lin_spline_vals, &
+                                  rho_lin_spline_levels, &
+                                  values_source )
+
+    implicit none
+    !--------------------- Input Variables ---------------------
+    integer, intent(in) :: ngrdcol
+
+    type (grid), intent(in) :: gr_source, gr_target
+
+    integer, intent(in) :: &
+      total_idx_rho_lin_spline ! number of indices for the linear spline definition arrays
+
+    real( kind = core_rknd ), dimension(ngrdcol, total_idx_rho_lin_spline), intent(in) :: &
+      rho_lin_spline_vals, & ! rho values at the given altitudes
+      rho_lin_spline_levels  ! altitudes for the given rho values
+    ! Note: both these arrays need to be sorted from low to high altitude
+
+    real( kind = core_rknd ), dimension(ngrdcol, gr_source%nzt), intent(in) :: &
+      values_source ! values given on the source grid
+
+    !--------------------- Output Variables ---------------------
+    real( kind = core_rknd ), dimension(ngrdcol, gr_target%nzt), intent(out) :: &
+      interpolate_values_zt ! interpolated values on target grid
+
+    !--------------------- Local Variables ---------------------
+    integer :: i
+
+    !--------------------- Begin Code ---------------------
+    do i=1, ngrdcol
+        interpolate_values_zt(i,:) = remap( gr_source%nzm, gr_target%nzm, &
+                                            gr_source%zm(i,:), gr_target%zm(i,:), &
+                                            total_idx_rho_lin_spline, rho_lin_spline_vals(i,:), &
+                                            rho_lin_spline_levels(i,:), &
+                                            values_source(i,:) )
+    end do
+  end function interpolate_values_zt
+
+  function interpolate_values_zm( ngrdcol, gr_source, gr_target, &
+                                  total_idx_rho_lin_spline, rho_lin_spline_vals, &
+                                  rho_lin_spline_levels, &
+                                  values_source )
+
+    implicit none
+    !--------------------- Input Variables ---------------------
+    integer, intent(in) :: ngrdcol
+
+    type (grid), intent(in) :: gr_source, gr_target
+
+    integer, intent(in) :: &
+      total_idx_rho_lin_spline ! number of indices for the linear spline definition arrays
+
+    real( kind = core_rknd ), dimension(ngrdcol, total_idx_rho_lin_spline), intent(in) :: &
+      rho_lin_spline_vals, & ! rho values at the given altitudes
+      rho_lin_spline_levels  ! altitudes for the given rho values
+    ! Note: both these arrays need to be sorted from low to high altitude
+
+    real( kind = core_rknd ), dimension(ngrdcol, gr_source%nzm), intent(in) :: &
+      values_source ! values given on the source grid
+
+    !--------------------- Output Variables ---------------------
+    real( kind = core_rknd ), dimension(ngrdcol, gr_target%nzm), intent(out) :: &
+      interpolate_values_zm ! interpolated values on target grid
+
+    !--------------------- Local Variables ---------------------
+    integer :: i
+
+    integer :: &
+      nlevels_source ! number of levels in source grid
+
+    integer :: &
+      nlevels_target ! number of levels in target grid
+
+    real( kind = core_rknd ), dimension(ngrdcol, gr_source%nzt+2) :: &
+      levels_source ! levels on source grid
+
+    real( kind = core_rknd ), dimension(ngrdcol, gr_target%nzt+2) :: &
+      levels_target ! levels on target grid
+
+    !--------------------- Begin Code ---------------------
+    ! since we have the values given on the zm levels, we dont have surrounding zt levels for the first and last level, so we just take the higher, lower zt levels for the first and last zm level and assume that the first and last zm level are the other boundaries for the region below and at the top, so we basically assume that the value given on the first and last zm level arent on the zm level exact but we shift them in our artifiallz cotructed interval in the middle, but this doesnt result in problems regarding conservative, since the method assumes that the value is constant over the whole cell, and so does the vertical integral (as defined in the paper by ullrich etc)
+    
+    nlevels_source = gr_source%nzt+2
+    nlevels_target = gr_target%nzt+2
+    
+    do i=1, ngrdcol
+
+        levels_source(1) = gr_source%zm(i,1)
+        do j=1, gr_source%nzt
+            levels_source(j+1) = gr_source%zt(i,j)
+        end do
+        levels_source(gr_source%nzt+2) = gr_source%zm(i,gr_source%nzm)
+
+        levels_target(1) = gr_target%zm(i,1)
+        do j=1, gr_target%nzt
+            levels_target(j+1) = gr_target%zt(i,j)
+        end do
+        levels_target(gr_target%nzt+2) = gr_target%zm(i,gr_target%nzm)
+
+        interpolate_values_zm(i,:) = remap( nlevels_source, nlevels_target, &
+                                            levels_source, levels_target, &
+                                            total_idx_rho_lin_spline, rho_lin_spline_vals(i,:), &
+                                            rho_lin_spline_levels(i,:), &
+                                            values_source(i,:) )
+    end do
+  end function interpolate_values_zm
+
+  function interpolate_values( ngrdcol, gr_source, gr_target, &
+                               total_idx_rho_lin_spline, rho_lin_spline_vals, &
+                               rho_lin_spline_levels, &
+                               values_source )
+
+    implicit none
+    !--------------------- Input Variables ---------------------
+    integer, intent(in) :: ngrdcol
+
+    type (grid), intent(in) :: gr_source, gr_target
+
+    integer, intent(in) :: &
+      total_idx_rho_lin_spline ! number of indices for the linear spline definition arrays
+
+    real( kind = core_rknd ), dimension(ngrdcol, total_idx_rho_lin_spline), intent(in) :: &
+      rho_lin_spline_vals, & ! rho values at the given altitudes
+      rho_lin_spline_levels  ! altitudes for the given rho values
+    ! Note: both these arrays need to be sorted from low to high altitude
+
+    real( kind = core_rknd ), dimension(ngrdcol, :), intent(in) :: & ! TODO either of size gr_source%nzt or gr_source%nzm (ngrdcol, gr_source%nzt)
+      values_source ! values given on the source grid
+
+    !--------------------- Output Variables ---------------------
+    real( kind = core_rknd ), dimension(ngrdcol, :), intent(out) :: & ! TODO either of size gr_target%nzt or gr_target%nzm (ngrdcol, gr_target%nzt)
+      interpolate_values ! interpolated values on target grid
+
+    !--------------------- Local Variables ---------------------
+    integer :: i
+
+    !--------------------- Begin Code ---------------------
+    ! TODO check wether we have values given on the zm levels or the zt levels and call functions accordingly (interpolate_values_zm, interpolate_values_zt)
+  end function interpolate_values
 
   subroutine interpolate_forcings( ngrdcol, gr_dycore, gr_clubb, &
                                    total_idx_rho_lin_spline, rho_lin_spline_vals, &
@@ -582,6 +724,7 @@ module grid_adaptation_module
     real( kind = core_rknd ), dimension(gr_dycore%nzm-1) :: dycore_mass
 
     !--------------------- Begin Code ---------------------
+    ! TODO needs this function adjustments? and the calls of this function?
     tol = 0.000001
 
     mass = calc_mass_over_grid_intervals( total_idx_rho_lin_spline, rho_lin_spline_vals, &
@@ -644,6 +787,7 @@ module grid_adaptation_module
       dycore_integral
 
     !--------------------- Begin Code ---------------------
+    ! TODO needs this function adjustments? and the calls of this function?
     tol = 0.000001
 
     integral = vertical_integral_conserve_mass( total_idx_rho_lin_spline, rho_lin_spline_vals, &
@@ -724,6 +868,7 @@ module grid_adaptation_module
     logical :: level_found
 
     !--------------------- Begin Code ---------------------
+    ! TODO needs this function adjustments? and the calls of this function?
     tol = 0.000000001
     ! check if highest value of lin spline is higher or equal to highest level of target grid
     if ( (target_zm(target_total_idx) &
@@ -847,6 +992,7 @@ module grid_adaptation_module
       vertical_integral_conserve_mass
 
     !--------------------- Begin Code ---------------------
+    ! TODO needs this function adjustments? and the calls of this function?
 
     ! Initializing vertical_integral_conserve_mass to avoid a compiler warning.
     vertical_integral_conserve_mass = 0.0_core_rknd
