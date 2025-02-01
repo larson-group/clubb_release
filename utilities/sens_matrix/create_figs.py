@@ -62,24 +62,24 @@ def createFigs(numMetricsNoSpecial, metricsNames,
                    / np.abs(normMetricValsCol[:, 0])
 
     # Use these flags to determine whether or not to create specific plots
-    plot_paramsErrorBarsFig = True
+    plot_paramsErrorBarsFig = False #True
     plot_biasesOrderedArrowFig = False  #True
     plot_threeDotFig = True
     plot_metricsBarChart = True
-    plot_paramsIncrsBarChart = True
-    plot_paramsAbsIncrsBarChart = True
+    plot_paramsIncrsBarChart = False #True
+    plot_paramsAbsIncrsBarChart = False #True
     plot_paramsTotContrbBarChart = False
     plot_biasesVsDiagnosticScatterplot = False
-    plot_dpMin2PtFig = True
+    plot_dpMin2PtFig = False #True
     plot_dpMinMatrixScatterFig = False
     plot_projectionMatrixFigs = False #True
     plot_biasesVsSensMagScatterplot = True
     plot_biasesVsSvdScatterplot = False #True
-    plot_paramsCorrArrayFig = True
-    plot_sensMatrixAndBiasVecFig = True
+    plot_paramsCorrArrayFig = False #True
+    plot_sensMatrixAndBiasVecFig = False #True
     plot_PcaBiplot = False
     plot_PcSensMap = True
-    plot_vhMatrixFig = True
+    plot_vhMatrixFig = False #True
 
     # Remove prefixes from CLUBB variable names in order to shorten them
     paramsAbbrv = abbreviateClubbParamsNames(paramsNames)
@@ -375,7 +375,7 @@ def createFigs(numMetricsNoSpecial, metricsNames,
         metricsBarChart = createMetricsBarChart(metricsNamesMaskedOrdered, paramsAbbrv,
                                                 defaultBiasesColMaskedOrdered, defaultBiasesApproxNonlinMaskedOrdered,
                                                 normMetricValsColMaskedOrdered,
-                                                minusNonlinMatrixDparamsOrderedMasked,
+                                                -minusNonlinMatrixDparamsOrderedMasked,
                                                 title='Removal of biases in each metric by each parameter')
 
     if plot_paramsIncrsBarChart:
@@ -518,7 +518,7 @@ def createFigs(numMetricsNoSpecial, metricsNames,
         signSens = np.sign(normlzdLinplusSensMatrixPoly @ normlzdLinplusSensMatrixPoly[maxSensIdx, :].T)
         xCol = sensCol * signSens
         #yCol = -defaultBiasesCol[:, 0] / np.abs(normMetricValsCol[:, 0])
-        yCol = -normlzdDefaultBiasesCol[:, 0]
+        yCol = normlzdDefaultBiasesCol[:, 0]
         #yCol = curvCol
         ##yCol = (-defaultBiasesApproxNonlin - defaultBiasesCol)[:, 0] \
         ##       / np.abs(normMetricValsCol[:, 0])
@@ -551,15 +551,15 @@ def createFigs(numMetricsNoSpecial, metricsNames,
             createScatterplot(xCol=xCol, xColLabel='sens',
                               #yCol=normlzdResid, yColLabel='normlzdResid',
                               yCol=yCol, yColLabel='bias',
-                              colorCol=normlzdResid, colorColLabel='resid',
-                              colorScale='Spectral',
+                              colorCol=-normlzdResid, colorColLabel='Resid<br>Bias',
+                              colorScale='Spectral_r',
                               #colorCol=normlzdResid, colorColLabel='normlzdResid',
                               #colorScale='Rainbow',
                               plotBgColor='lightgrey',
                               pointLabels=metricsNamesNoprefix, pointLabelsHeader='Metric',
                               plotTitle = """Regional normalized biases vs. signed magnitude of sensitivity.""",
                               xaxisTitle = "Signed magnitude of sensitivity of regional metrics to parameter changes",
-                              yaxisTitle = "Regional biases",
+                              yaxisTitle = "Default simulation regional biases",
                               #plotTitle="""Regional normalized residuals vs. signed magnitude of sensitivity.""",
                               #xaxisTitle="Signed magnitude of sensitivity of regional metrics to parameter changes",
                               #yaxisTitle="Regional normalized residuals",
@@ -579,7 +579,7 @@ def createFigs(numMetricsNoSpecial, metricsNames,
         maxSensIdxMasked = np.argmax(sensColMasked)
         signSensMasked = np.sign(normlzdLinplusSensMatrixPolyMetricsMasked @ normlzdLinplusSensMatrixPolyMetricsMasked[maxSensIdxMasked, :].T)
         xCol = sensColMasked * signSensMasked
-        yCol = -normlzdDefaultBiasesColMasked[:, 0]
+        yCol = normlzdDefaultBiasesColMasked[:, 0]
         #yCol = curvCol
         ##yCol = (-defaultBiasesApproxNonlin - defaultBiasesCol)[:, 0] \
         ##       / np.abs(normMetricValsCol[:, 0])
@@ -589,15 +589,15 @@ def createFigs(numMetricsNoSpecial, metricsNames,
             createScatterplot(xCol=xCol, xColLabel='sens',
                               #yCol=normlzdResid, yColLabel='normlzdResid',
                               yCol=yCol, yColLabel='bias',
-                              colorCol=normlzdResidMasked, colorColLabel='resid',
-                              colorScale='Spectral',
+                              colorCol=-normlzdResidMasked, colorColLabel='Resid<br>Bias',
+                              colorScale='Spectral_r',
                               #colorCol=normlzdResid, colorColLabel='normlzdResid',
                               #colorScale='Rainbow',
                               plotBgColor='lightgrey',
                               pointLabels=metricsNamesNoprefixMasked, pointLabelsHeader='Metric',
                               plotTitle = """Regional normalized biases vs. signed magnitude of sensitivity.""",
                               xaxisTitle = "Signed magnitude of sensitivity of regional metrics to parameter changes",
-                              yaxisTitle = "Regional biases",
+                              yaxisTitle = "Default simulation regional biases",
                               #plotTitle="""Regional normalized residuals vs. signed magnitude of sensitivity.""",
                               #xaxisTitle="Signed magnitude of sensitivity of regional metrics to parameter changes",
                               #yaxisTitle="Regional normalized residuals",
@@ -1096,9 +1096,9 @@ def createMapGallery(
     blankFig.update_layout(width=plotWidth, height=plotHeight)
 
     if useLongTitle:
-        plotTitle="Normalized Default Atmospheric-Model Error, normlzdDefaultBiasesCol"
+        plotTitle="Normalized Default Atmospheric-Model Bias, normlzdDefaultBiasesCol"
     else:
-        plotTitle="Normalized Default Atmospheric-Model Error"
+        plotTitle="Normalized Default Atmospheric-Model Bias"
     PcMapPanelBias = \
         createMapPanel(fieldToPlotCol=normlzdDefaultBiasesCol,
                        plotWidth=plotWidth,
@@ -1110,9 +1110,9 @@ def createMapGallery(
     maxFieldBias = np.max(normlzdDefaultBiasesCol)
 
     if useLongTitle:
-        plotTitle="Negative of Normalized Residuals, -normlzdResid"
+        plotTitle="Normalized Residual Bias, -normlzdResid"
     else:
-        plotTitle="Negative of Normalized Residuals"
+        plotTitle="Normalized Residual Bias"
     PcMapPanelResid = \
         createMapPanel(fieldToPlotCol=-normlzdResid,
                        plotWidth=plotWidth,
@@ -1129,9 +1129,9 @@ def createMapGallery(
     ])]
 
     if useLongTitle:
-        plotTitle="Normalized Tuned Atmospheric-Model Error, normlzdLinSolnBiasesCol"
+        plotTitle="Normalized Tuned Atmospheric-Model Bias, normlzdLinSolnBiasesCol"
     else:
-        plotTitle="Normalized Tuned Atmospheric-Model Error"
+        plotTitle="Normalized Tuned Atmospheric-Model Bias"
     PcMapPanelLinSoln = \
         createMapPanel(fieldToPlotCol=normlzdLinSolnBiasesCol,
                        plotWidth=plotWidth,
@@ -1702,17 +1702,31 @@ def createScatterplot(xCol, xColLabel,
     #scatterplot.for_each_trace(lambda t: \
     #    t.update(textfont_color=pc.sample_colorscale('Rainbow', normlzdColorCol[t])[0],
     #             textposition='top center'))
-    scatterplot.update_xaxes(title=xaxisTitle)
-    scatterplot.update_yaxes(title=yaxisTitle)
+    scatterplot.update_xaxes(title=xaxisTitle, zerolinewidth=4)
+    scatterplot.update_yaxes(title=yaxisTitle, zerolinewidth=4)
     scatterplot.update_layout(showlegend=showLegend)
     scatterplot.update_layout(hovermode=hoverMode)
     scatterplot.update_layout(width=plotWidth, height=plotHeight)
     scatterplot.update_layout(plot_bgcolor=plotBgColor)
 
+    scatterplot.add_annotation(
+        xref="paper", yref="paper",
+        x=0.5, y=0.98, xanchor="center", yanchor="top",
+        text="Too dim",
+        font=dict(size=25),
+        showarrow=False
+    )
+    scatterplot.add_annotation(
+        xref="paper", yref="paper",
+        x=0.5, y=0.03, xanchor="center", yanchor="bottom",
+        text="Too bright",
+        font=dict(size=25),
+        showarrow=False
+    )
+
     return scatterplot
 
 
-#def createMetricsBarChart( metricsNames, paramsNames, biases, normlzdResidBias, sensMatrix, title ):
 def createMetricsBarChart(metricsNames, paramsNames,
                           defaultBiasesCol, defaultBiasesApproxNonlin,
                           normMetricValsCol,
@@ -1725,8 +1739,8 @@ def createMetricsBarChart(metricsNames, paramsNames,
     #metricsNames = metricsNames[metricsSensOrder]
 
     biases = \
-        -defaultBiasesCol / np.abs(normMetricValsCol)
-    normlzdResidBias = (-defaultBiasesApproxNonlin - defaultBiasesCol) \
+        defaultBiasesCol / np.abs(normMetricValsCol)
+    normlzdResidBias = -(-defaultBiasesApproxNonlin - defaultBiasesCol) \
                        / np.abs(normMetricValsCol)
 
     biases = np.reshape(biases, (-1, 1))
@@ -1778,9 +1792,24 @@ def createMetricsBarChart(metricsNames, paramsNames,
     metricsBarChart.update_layout(barmode='stack')
     metricsBarChart.update_xaxes(visible=True, zeroline=True, zerolinewidth=4, zerolinecolor='gray')  # Plot y axis
     metricsBarChart.update_layout(width=800, height=200 + 50 * len(metricsNames))
-    metricsBarChart.update_xaxes(title="-Normalized biases")
+    metricsBarChart.update_xaxes(title="Normalized biases")
 
-    #pdb.set_trace()
+    # Add annotation if only SWCF metrics are plotted
+    if np.all(np.char.startswith(metricsNames, "SWCF_")):
+        metricsBarChart.add_annotation(
+            xref="paper", yref="paper",
+            x=0.95,  y=0.15, xanchor="right", yanchor="bottom",
+            text="Too dim",
+            font=dict(size=25),
+            showarrow=False
+        )
+        metricsBarChart.add_annotation(
+            xref="paper", yref="paper",
+            x=0.05, y=0.15, xanchor="left", yanchor="bottom",
+            text="Too bright",
+            font=dict(size=25),
+            showarrow=False
+        )
 
     return metricsBarChart
 
