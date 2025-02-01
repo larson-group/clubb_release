@@ -246,7 +246,7 @@ def main():
                paramsSolnNonlin,
                paramsSolnElastic, dnormlzdParamsSolnElastic,
                sensNcFilenames, sensNcFilenamesExt, defaultNcFilename,
-               beVerbose=False)
+               beVerbose=False,useLongTitle=False)
 
     return
 
@@ -368,6 +368,7 @@ def solveUsingNonlin(metricsNames,
     #          =   ( y_i -   f0 )  - ( df/dp_i*dp + 0.5d2f/dp2_i*dp2 )
     #          = -defaultBiasesCol - (   defaultBiasesApproxNonlin   )
     #          = -defaultBiasesCol -              fwdFnc
+    #          = normlzdResid * abs(normMetricValsCol)
     #  where f0 = defaultBiasesCol + obsMetricValsCol,
     #        y_i = obsMetricValsCol.
     #  linSolnBiases = forward global model soln - obs

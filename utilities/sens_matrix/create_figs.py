@@ -38,7 +38,7 @@ def createFigs(numMetricsNoSpecial, metricsNames,
                paramsSolnNonlin,
                paramsSolnElastic, dnormlzdParamsSolnElastic,
                sensNcFilenames, sensNcFilenamesExt, defaultNcFilename,
-               beVerbose):
+               beVerbose, useLongTitle):
     ##############################################
     #
     #    Create plots
@@ -372,7 +372,7 @@ def createFigs(numMetricsNoSpecial, metricsNames,
         #    metricsBarChart = createMetricsBarChart(metricsNames[metricsSensOrder],paramsNames,
         #                                            minusNormlzdDefaultBiasesCol, normlzdResidBias, minusNonlinMatrixDparamsOrdered,
         #                                            title='Removal of biases in each metric by each parameter')
-        metricsBarChart = createMetricsBarChart(metricsNamesMaskedOrdered, paramsNames,
+        metricsBarChart = createMetricsBarChart(metricsNamesMaskedOrdered, paramsAbbrv,
                                                 defaultBiasesColMaskedOrdered, defaultBiasesApproxNonlinMaskedOrdered,
                                                 normMetricValsColMaskedOrdered,
                                                 minusNonlinMatrixDparamsOrderedMasked,
@@ -820,14 +820,18 @@ def createFigs(numMetricsNoSpecial, metricsNames,
         #matrixDict = {matrixDictKeyString: normlzdSensMatrixPoly}
         matrixDictKeyString = "normlzdLinplusSensMatrixPoly"
         matrixDict={matrixDictKeyString:normlzdLinplusSensMatrixPoly[:numMetricsNoSpecial,:]}
+        if useLongTitle:
+            plotTitle = "cos(angle) among parameters<br>\
+                                               (i.e., X^T*X using debiased columns of sens matrix)<br>" \
+                                               + matrixDictKeyString + "<br>"
+        else:
+            plotTitle = "Correlations among parameters and bias"
         paramsCorrArrayFig = \
             createParamsCorrArrayFig(matrix=matrixDict[matrixDictKeyString],
                                      biasesCol=normlzdDefaultBiasesCol[:numMetricsNoSpecial,:],
-                                     paramsNames=paramsNames,
-                                     plotTitle='cos(angle) among parameters<br>\
-                                               (i.e., X^T*X using debiased columns of sens matrix)<br>' \
-                                               + matrixDictKeyString + '<br>' \
-                                     )
+                                     paramsNames=paramsAbbrv,
+                                     plotTitle=plotTitle,
+                                     plotWidth=500)
 
     if plot_dpMin2PtFig:
         print("Creating dpMin2PtFig . . .")
@@ -887,9 +891,11 @@ def createFigs(numMetricsNoSpecial, metricsNames,
             tunedLossChange[:numMetricsNoSpecial, :],
             linSolnLossChange[:numMetricsNoSpecial, :],
             normlzdLinplusSensMatrixPoly[:numMetricsNoSpecial, :],
-            paramsNames,
+            paramsAbbrv,
             downloadConfig,
+            useLongTitle,
             plotWidth=500, boxSize=20)
+            #plotWidth=500, boxSize=20)
 
 
         # Now combine the matrix and column sub-figures into one figure
@@ -933,12 +939,16 @@ def createFigs(numMetricsNoSpecial, metricsNames,
         svdLabel = np.char.add("SVD ", svdLabel)
         svdLabel = np.char.add(svdLabel, " ")
 
+        if useLongTitle:
+            plotTitle = "SVD v^T Matrix, " + matrixDictKeyString
+        else:
+            plotTitle = "Right singular vector matrix"
         vhMatrixFig = \
         createColoredMatrixFig(
             matrix=vh,
             matrixRowLabel=svdLabel,
             matrixColLabel=paramsAbbrv,
-            plotTitle="SVD v^T Matrix, " + matrixDictKeyString,
+            plotTitle=plotTitle,
             plotWidth=500,
             plotHeight=500,
             printCellText=True
@@ -1071,8 +1081,9 @@ def createMapGallery(
     tunedLossChange,
     linSolnLossChange,
     normlzdLinplusSensMatrixPoly,
-    paramsNames,
+    paramsAbbrv,
     downloadConfig,
+    useLongTitle,
     plotWidth, boxSize):
 
     print("Creating PcSensMap . . .")
@@ -1080,23 +1091,32 @@ def createMapGallery(
     # Create a blank figure to fill in any empty spots
     blankFig = go.Figure()
     #plotWidth = 500
-    plotHeight = np.rint(plotWidth * (490 / 700))
+    #plotHeight = np.rint(plotWidth * (490 / 700))
+    plotHeight = np.rint(plotWidth * (300 / 700))
     blankFig.update_layout(width=plotWidth, height=plotHeight)
 
+    if useLongTitle:
+        plotTitle="Normalized Default Atmospheric-Model Error, normlzdDefaultBiasesCol"
+    else:
+        plotTitle="Normalized Default Atmospheric-Model Error"
     PcMapPanelBias = \
         createMapPanel(fieldToPlotCol=normlzdDefaultBiasesCol,
                        plotWidth=plotWidth,
-                       plotTitle="normlzdDefaultBiasesCol",
+                       plotTitle=plotTitle,
                        boxSize=boxSize)
 
     # Use same color range in residual plot as in bias plot
     minFieldBias = np.min(normlzdDefaultBiasesCol)
     maxFieldBias = np.max(normlzdDefaultBiasesCol)
 
+    if useLongTitle:
+        plotTitle="Negative of Normalized Residuals, -normlzdResid"
+    else:
+        plotTitle="Negative of Normalized Residuals"
     PcMapPanelResid = \
         createMapPanel(fieldToPlotCol=-normlzdResid,
                        plotWidth=plotWidth,
-                       plotTitle="-normlzdResid",
+                       plotTitle=plotTitle,
                        boxSize=boxSize,
                        minField=minFieldBias,
                        maxField=maxFieldBias)
@@ -1108,10 +1128,14 @@ def createMapGallery(
                   style={'display': 'inline-block'}, config=downloadConfig)
     ])]
 
+    if useLongTitle:
+        plotTitle="Normalized Tuned Atmospheric-Model Error, normlzdLinSolnBiasesCol"
+    else:
+        plotTitle="Normalized Tuned Atmospheric-Model Error"
     PcMapPanelLinSoln = \
         createMapPanel(fieldToPlotCol=normlzdLinSolnBiasesCol,
                        plotWidth=plotWidth,
-                       plotTitle="normlzdLinSoln",
+                       plotTitle=plotTitle,
                        boxSize=boxSize,
                        minField=minFieldBias,
                        maxField=maxFieldBias)
@@ -1125,10 +1149,14 @@ def createMapGallery(
 
     sqrtDefaultLoss = -1e3*np.sqrt(defaultLossCol)
 
+    if useLongTitle:
+        plotTitle="-Sqrt Default Loss (x 1e3), sqrtDefaultLoss"
+    else:
+        plotTitle="-Sqrt Default Loss (x 1e3)"
     PcMapPanelDefaultLoss = \
         createMapPanel(fieldToPlotCol=sqrtDefaultLoss,
                        plotWidth=plotWidth,
-                       plotTitle="-Sqrt Default Loss (x 1e3)",
+                       plotTitle=plotTitle,
                        boxSize=boxSize)
 
     # Use same color range in linSolnLoss plot as in tunedLoss plot
@@ -1138,10 +1166,14 @@ def createMapGallery(
     sqrtTunedLossChange = \
         1e3 * np.sign(tunedLossChange) * np.sqrt(np.abs(tunedLossChange))
 
+    if useLongTitle:
+        plotTitle="Signed Sqrt Tuned Loss Change (x 1e3), sqrtTunedLossChange"
+    else:
+        plotTitle="Signed Sqrt Tuned Loss Change (x 1e3)"
     PcMapPanelTunedLossChange = \
         createMapPanel(fieldToPlotCol=sqrtTunedLossChange,
                        plotWidth=plotWidth,
-                       plotTitle="Sqrt Tuned Loss Change (x 1e3)",
+                       plotTitle=plotTitle,
                        boxSize=boxSize,
                        minField=minFieldBias,
                        maxField=maxFieldBias)
@@ -1171,17 +1203,25 @@ def createMapGallery(
     ]))
 
     paramsIdx = 0
-    while paramsIdx < len(paramsNames):
+    while paramsIdx < len(paramsAbbrv):
+        if useLongTitle:
+            plotTitle = f"normlzdLinplusSensMatrixPoly[:,{paramsAbbrv[paramsIdx]}]"
+        else:
+            plotTitle = f"Normalized Sensitivity to {paramsAbbrv[paramsIdx]}"
         leftFig = \
             createMapPanel(fieldToPlotCol=normlzdLinplusSensMatrixPoly[:, paramsIdx],
                            plotWidth=plotWidth,
-                           plotTitle=f"normlzdSensMatrixPoly[:,{paramsNames[paramsIdx]}]",
+                           plotTitle=plotTitle,
                            boxSize=boxSize)
-        if paramsIdx + 1 < len(paramsNames):
+        if paramsIdx + 1 < len(paramsAbbrv):
+            if useLongTitle:
+                plotTitle = f"normlzdLinplusSensMatrixPoly[:,{paramsAbbrv[paramsIdx + 1]}]"
+            else:
+                plotTitle = f"Normalized Sensitivity to {paramsAbbrv[paramsIdx+1]}"
             rightFig = \
                 createMapPanel(fieldToPlotCol=normlzdLinplusSensMatrixPoly[:, paramsIdx + 1],
                                plotWidth=plotWidth,
-                               plotTitle=f"normlzdSensMatrixPoly[:,{paramsNames[paramsIdx + 1]}]",
+                               plotTitle=plotTitle,
                                boxSize=boxSize)
         else:
             rightFig = blankFig
@@ -1287,10 +1327,12 @@ def createMapPanel(fieldToPlotCol,
                                         y=yPos,
                                         text=yBoxNum.astype(str), showarrow=False)
 
-    plotHeight = np.rint(plotWidth * (490 / 700))
+    #plotHeight = np.rint(plotWidth * (490 / 700))
+    plotHeight = np.rint(plotWidth * (370 / 700))
     regionalMapPanel.update_layout(width=plotWidth, height=plotHeight)
     #regionalMapPanel.update_layout(width=700, height=450)
-    regionalMapPanel.update_layout(title=plotTitle, title_y=0.9, title_x=0.5)
+    #regionalMapPanel.update_layout(title=plotTitle, title_y=0.9, title_x=0.5)
+    regionalMapPanel.update_layout(title=plotTitle, title_y=0.98, title_x=0.5)
 
     # Shift coastal boundaries to correct location on map
     regionalMapPanel.update_geos(lataxis_range=[-90, 90],
@@ -1371,7 +1413,8 @@ def createMapPanel(fieldToPlotCol,
                                  showocean=False,
                                  bgcolor='rgba(0,0,0,0)',
                                  lonaxis_showgrid=False,
-                                 lataxis_showgrid=False
+                                 lataxis_showgrid=False,
+                                 domain_x=[0.0, 1.0]
                                  )
     # Add colorbar by creating an invisible, fake scatterplot
     if (colorScale == 'RdBu_r'):
@@ -1422,6 +1465,11 @@ def createMapPanel(fieldToPlotCol,
                                 )
 
     regionalMapPanel.add_trace(colorbar_trace)
+
+    #regionalMapPanel.update_geos(fitbounds="locations")
+
+    #regionalMapPanel.update_layout(margin=dict(l=10, r=10, t=40, b=20))
+    regionalMapPanel.update_layout(margin=dict(l=5, r=5, t=50, b=20))
 
     return regionalMapPanel
 
@@ -1559,9 +1607,7 @@ def createColoredMatrixFig(
         matrix,
         matrixRowLabel, matrixColLabel,
         plotTitle, plotWidth, plotHeight,
-        printCellText
-                            ):
-
+        printCellText):
 
     # Create a figure that displays a color-coded matrix
     roundedMatrix = np.around(matrix, decimals=2)
@@ -1576,7 +1622,8 @@ def createColoredMatrixFig(
         text_auto=printCellText,
         color_continuous_scale=px.colors.diverging.balance
     )
-    coloredMatrixFig.update_xaxes(side="bottom")
+    #coloredMatrixFig.update_xaxes(side="bottom")
+    coloredMatrixFig.update_xaxes(side="top")
     coloredMatrixFig.update_layout(
         title_text=plotTitle,
         title_x=0.5,
@@ -2246,7 +2293,9 @@ def createParamsErrorBarsFig(paramsAbbrv, defaultParamValsOrigRow, paramsScales,
 def createParamsCorrArrayFig(matrix,
                              biasesCol,
                              paramsNames,
-                             plotTitle):
+                             plotTitle,
+                             plotWidth):
+
     # Create color-coded matrix that displays correlations among parameter vectors
     normlzdSensMatrixConcatBiases = np.hstack((matrix, biasesCol))
     normlzdSensMatrixConcatBiasesDebiased = normlzdSensMatrixConcatBiases \
@@ -2270,8 +2319,8 @@ def createParamsCorrArrayFig(matrix,
     paramsCorrArrayFig.update_layout(
         title_text=plotTitle,
         title_x=0.5,
-        width=800,
-        height=700,
+        width=plotWidth,
+        height=plotWidth,
         xaxis_showgrid=False,
         yaxis_showgrid=False,
         xaxis_zeroline=False,
