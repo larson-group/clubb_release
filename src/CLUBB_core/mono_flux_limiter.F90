@@ -443,7 +443,7 @@ module mono_flux_limiter
       ixm_mfl
 
     logical, dimension(ngrdcol) :: &
-      l_adjustment_needed  ! Indicates if we need an adjustment for a column
+      l_xm_adjustment_needed  ! Indicates if we need an adjustment for a column
 
     logical:: &
       l_any_adjustment_needed
@@ -477,7 +477,7 @@ module mono_flux_limiter
     !$acc enter data create( xp2_zt, xm_enter_mfl, xm_without_ta, wpxp_net_adjust, &
     !$acc                    min_x_allowable_lev, max_x_allowable_lev, min_x_allowable, &
     !$acc                    max_x_allowable, wpxp_mfl_max, wpxp_mfl_min, lhs_mfl_xm, &
-    !$acc                    rhs_mfl_xm, l_adjustment_needed, xm_mfl, &
+    !$acc                    rhs_mfl_xm, l_xm_adjustment_needed, xm_mfl, &
     !$acc                    wpxp_mfl_max_term_zt, wpxp_mfl_min_term_zt, &
     !$acc                    wpxp_thresh_term_zt, wpxp_thresh_term )
 
@@ -506,34 +506,35 @@ module mono_flux_limiter
     
 
     if ( stats_metadata%l_stats_samp ) then
-      !$acc update host( wpxp, xm )
+      
+      !$acc update host( wpxp, xm, xm, xm_old, wpxp )
       do i = 1, ngrdcol
         call stat_begin_update( nzm, iwpxp_mfl, wpxp(i,:) / dt, & ! intent(in)
                                 stats_zm(i) ) ! intent(inout)
         call stat_begin_update( nzt, ixm_mfl, xm(i,:) / dt, & ! intent(in)
                                 stats_zt(i) ) ! intent(inout)
       end do
-    endif
-    if ( stats_metadata%l_stats_samp .and. solve_type == mono_flux_thlm ) then
-      !$acc update host( xm, xm_old, wpxp )
-      do i = 1, ngrdcol
-        call stat_update_var( stats_metadata%ithlm_enter_mfl, xm(i,:), & ! intent(in)
-                              stats_zt(i) ) ! intent(inout)
-        call stat_update_var( stats_metadata%ithlm_old, xm_old(i,:), & ! intent(in)
-                              stats_zt(i) ) ! intent(inout)
-        call stat_update_var( stats_metadata%iwpthlp_enter_mfl, wpxp(i,:), & ! intent(in)
-                              stats_zm(i) ) ! intent(inout)
-      end do
-    elseif ( stats_metadata%l_stats_samp .and. solve_type == mono_flux_rtm ) then
-      !$acc update host( xm, xm_old, wpxp )
-      do i = 1, ngrdcol
-        call stat_update_var( stats_metadata%irtm_enter_mfl, xm(i,:), & ! intent(in)
-                              stats_zt(i) ) ! intent(inout)
-        call stat_update_var( stats_metadata%irtm_old, xm_old(i,:), & ! intent(in)
-                              stats_zt(i) ) ! intent(inout)
-        call stat_update_var( stats_metadata%iwprtp_enter_mfl, wpxp(i,:), & ! intent(in)
-                              stats_zm(i) ) ! intent(inout)
-      end do
+
+      if (  solve_type == mono_flux_thlm ) then
+        do i = 1, ngrdcol
+          call stat_update_var( stats_metadata%ithlm_enter_mfl, xm(i,:), & ! intent(in)
+                                stats_zt(i) ) ! intent(inout)
+          call stat_update_var( stats_metadata%ithlm_old, xm_old(i,:), & ! intent(in)
+                                stats_zt(i) ) ! intent(inout)
+          call stat_update_var( stats_metadata%iwpthlp_enter_mfl, wpxp(i,:), & ! intent(in)
+                                stats_zm(i) ) ! intent(inout)
+        end do
+      elseif (  solve_type == mono_flux_rtm ) then
+        do i = 1, ngrdcol
+          call stat_update_var( stats_metadata%irtm_enter_mfl, xm(i,:), & ! intent(in)
+                                stats_zt(i) ) ! intent(inout)
+          call stat_update_var( stats_metadata%irtm_old, xm_old(i,:), & ! intent(in)
+                                stats_zt(i) ) ! intent(inout)
+          call stat_update_var( stats_metadata%iwprtp_enter_mfl, wpxp(i,:), & ! intent(in)
+                                stats_zm(i) ) ! intent(inout)
+        end do
+      endif
+
     endif
 
     invrs_dt = one / dt
@@ -541,17 +542,8 @@ module mono_flux_limiter
     !$acc parallel loop gang vector collapse(2) default(present)
     do k = 1, nzm
       do i = 1, ngrdcol
-        ! Initialize array.
+        ! Initialize arrays
         wpxp_net_adjust(i,k) = 0.0_core_rknd
-      end do
-    end do
-    !$acc end parallel loop
-
-    !$acc parallel loop gang vector collapse(2) default(present)
-    do k = 1, nzt
-      do i = 1, ngrdcol
-        ! Store the value of xm as it enters the mfl
-        xm_enter_mfl(i,k) = xm(i,k)
       end do
     end do
     !$acc end parallel loop
@@ -568,7 +560,12 @@ module mono_flux_limiter
     !$acc parallel loop gang vector collapse(2) default(present)
     do k = 1, nzt
       do i = 1, ngrdcol
+
         xp2_zt(i,k) = min( max( xp2_zt(i,k), xp2_threshold ), max_xp2 )
+
+        ! Store the value of xm as it enters the mfl
+        xm_enter_mfl(i,k) = xm(i,k)
+
       end do
     end do
     !$acc end parallel loop
@@ -577,10 +574,10 @@ module mono_flux_limiter
     ! vertical level.  This computation needs to be performed for all
     ! vertical levels above the ground (or model surface).
     !$acc parallel loop gang vector collapse(2) default(present)
-    do k = 1, nzt, 1
+    do k = 1, nzt
       do i = 1, ngrdcol
 
-        km1 = max( k-1, 1 )
+        !km1 = max( k-1, 1 )
         !kp1 = min( k+1, gr%nz )
 
         ! Most values are found within +/- 2 standard deviations from the mean.
@@ -676,19 +673,23 @@ module mono_flux_limiter
 
     ! Interpolate wpxp_thresh_term_zt to momentum levels
     wpxp_thresh_term = zt2zm( nzm, nzt, ngrdcol, gr, wpxp_thresh_term_zt )
+    
+    l_any_adjustment_needed = .false.
 
-    !$acc parallel loop gang vector default(present)
-    do i = 1, ngrdcol
-      do k = 2, nzm-1, 1
- 
-        ! Find the upper limit for w'x' for a monotonic turbulent flux.
-        ! The following "if" statement ensures there are no "spikes" at the top of the column,
-        ! which can cause unphysical rtm and thlm tendencies over the height of the column.
-        ! The fix essentially turns off the monotonic flux limiter for these special cases,
-        ! but tests show that it still performs well otherwise and runs stably.
+    ! NOTE: This loop first checks if wpxp is outside of the range determined by wpxp_mfl_min 
+    !       and wpxp_mfl_max, and if even a single value is outside that range, we set 
+    !       l_any_adjustment_needed = .true. then perform the calculation later. This is done 
+    !       because the calculation contains a vertical dependency, so it cannot 
+    !       be parallelized, which is slow on GPUs. 
+    !       This initial check CAN be done in parallel though, hence the "collapse(2), so 
+    !       we run this quickly and only perform the slow version if we have to.
+    !$acc parallel loop gang vector collapse(2) default(present) reduction(.or.:l_any_adjustment_needed)
+    do k = 2, nzm-1
+      do i = 1, ngrdcol
+
         if ( l_mono_flux_lim_spikefix .and. solve_type == mono_flux_rtm  & 
-             .and. abs( wpxp(i,k-1) ) > wpxp_thresh_term(i,k-1) &
-             .and. wpxp(i,k-1) < 0.0_core_rknd ) then
+            .and. abs( wpxp(i,k-1) ) > wpxp_thresh_term(i,k-1) &
+            .and. wpxp(i,k-1) < 0.0_core_rknd ) then
 
           wpxp_mfl_max(i,k) = zero
 
@@ -696,18 +697,12 @@ module mono_flux_limiter
           wpxp_mfl_max(i,k) = invrs_rho_ds_zm(i,k) &
                               * ( wpxp_mfl_max_term_zt(i,k-1) + rho_ds_zm(i,k-1) * wpxp(i,k-1) )
         endif
-
+ 
         if ( wpxp(i,k) > wpxp_mfl_max(i,k) ) then
 
-          ! Determine the net amount of adjustment needed for w'x'.
-          wpxp_net_adjust(i,k) = wpxp_mfl_max(i,k) - wpxp(i,k)
-
-          ! Reset the value of w'x' to the upper limit allowed by the
-          ! monotonic flux limiter.
-          wpxp(i,k) = wpxp_mfl_max(i,k)
-
-          ! This value is unneeded for calculation, set to unused_var for stats call
-          wpxp_mfl_min(i,k) = unused_var
+          ! wpxp is above wpxp_mfl_max, we will need to perform the slow vertically
+          ! dependent calculation to ensure correct values
+          l_any_adjustment_needed = .true.
 
         else
 
@@ -715,94 +710,96 @@ module mono_flux_limiter
           wpxp_mfl_min(i,k) = invrs_rho_ds_zm(i,k) &
                               * ( wpxp_mfl_min_term_zt(i,k-1) + rho_ds_zm(i,k-1) * wpxp(i,k-1) )
 
-          if ( wpxp(i,k) < wpxp_mfl_min(i,k) ) then
+          if ( wpxp(i,k) < wpxp_mfl_min(i,k)  ) then
 
-            ! Determine the net amount of adjustment needed for w'x'.
-            wpxp_net_adjust(i,k) = wpxp_mfl_min(i,k) - wpxp(i,k)
-
-            ! Reset the value of w'x' to the lower limit allowed by the
-            ! monotonic flux limiter.
-            wpxp(i,k) = wpxp_mfl_min(i,k)
+            ! wpxp is below wpxp_mfl_min, we will need to perform the slow vertically
+            ! dependent calculation to ensure correct values
+            l_any_adjustment_needed = .true.
 
           endif
+
         endif
 
       end do
     end do
     !$acc end parallel loop
 
-    ! MONOFLUX TEST COMMENT DO NOT REMOVE !$acc compare( wpxp ) 
-    ! MONOFLUX TEST COMMENT DO NOT REMOVE if( any(wpxp_net_adjust /= 0.0) ) write(fstderr,*) "MONOFLUX: wpxp adjusted "
-
-    ! Boundary conditions
-    !$acc parallel loop gang vector default(present)
-    do i = 1, ngrdcol
-
-      min_x_allowable(i,nzt) = 0._core_rknd
-      max_x_allowable(i,nzt) = 0._core_rknd
-
-      wpxp_mfl_min(i,1) = 0._core_rknd
-      wpxp_mfl_max(i,1) = 0._core_rknd
-
-      wpxp_mfl_min(i,nzm) = 0._core_rknd
-      wpxp_mfl_max(i,nzm) = 0._core_rknd
-
-    end do
-    !$acc end parallel loop
-
-    if ( stats_metadata%l_stats_samp .and. solve_type == mono_flux_thlm ) then
-      !$acc update host( xm_without_ta, min_x_allowable, wpxp_mfl_min, &
-      !$acc              wpxp_mfl_max, max_x_allowable )
-      do i = 1, ngrdcol
-        call stat_update_var( stats_metadata%ithlm_without_ta, xm_without_ta(i,:), & ! intent(in)
-                              stats_zt(i) ) ! intent(inout)
-        call stat_update_var( stats_metadata%ithlm_mfl_min, min_x_allowable(i,:), & ! intent(in)
-                              stats_zt(i) ) ! intent(inout)
-        call stat_update_var( stats_metadata%ithlm_mfl_max, max_x_allowable(i,:), & ! intent(in)
-                              stats_zt(i) ) ! intent(inout)
-        call stat_update_var( stats_metadata%iwpthlp_mfl_min, wpxp_mfl_min(i,:), & ! intent(in)
-                              stats_zm(i) ) ! intent(inout)
-        call stat_update_var( stats_metadata%iwpthlp_mfl_max, wpxp_mfl_max(i,:), & ! intent(in)
-                              stats_zm(i) ) ! intent(inout)
-      end do
-    elseif ( stats_metadata%l_stats_samp .and. solve_type == mono_flux_rtm ) then
-      !$acc update host( xm_without_ta, min_x_allowable, max_x_allowable,  &
-      !$acc              wpxp_mfl_min, wpxp_mfl_max )
-      do i = 1, ngrdcol
-        call stat_update_var( stats_metadata%irtm_without_ta, xm_without_ta(i,:), & ! intent(in)
-                              stats_zt(i) ) ! intent(inout)
-        call stat_update_var( stats_metadata%irtm_mfl_min, min_x_allowable(i,:), & ! intent(in)
-                              stats_zt(i) ) ! intent(inout)
-        call stat_update_var( stats_metadata%irtm_mfl_max, max_x_allowable(i,:), & ! intent(in)
-                              stats_zt(i) ) ! intent(inout)
-        call stat_update_var( stats_metadata%iwprtp_mfl_min, wpxp_mfl_min(i,:), & ! intent(in)
-                              stats_zm(i) ) ! intent(inout)
-        call stat_update_var( stats_metadata%iwprtp_mfl_max, wpxp_mfl_max(i,:), & ! intent(in)
-                              stats_zm(i) ) ! intent(inout)
-      end do
-    endif
-
-    l_any_adjustment_needed = .false.
-
-    !$acc parallel loop gang vector default(present)
-    do i = 1, ngrdcol
-      l_adjustment_needed(i) = .false.
-    end do
-    !$acc end parallel loop
-
-    !$acc parallel loop gang vector collapse(2) default(present) &
-    !$acc          reduction(.or.:l_any_adjustment_needed)
-    do i = 1, ngrdcol
-      do k = 1, nzm
-        if ( abs(wpxp_net_adjust(i,k)) > eps ) then
-          l_adjustment_needed(i) = .true.
-          l_any_adjustment_needed = .true.
-        end if
-      end do
-    end do
-    !$acc end parallel loop
-
+    ! If l_any_adjustment_needed = .true. then wpxp must be modified somewhere, and requires  
+    ! a slow vertically dependent loop to compute properly
     if ( l_any_adjustment_needed ) then
+
+      ! Compute wpxp with a vertically dependent calculation
+      !$acc parallel loop gang vector default(present)
+      do i = 1, ngrdcol
+
+        l_xm_adjustment_needed(i) = .false.
+
+        do k = 2, nzm-1, 1
+  
+          ! Find the upper limit for w'x' for a monotonic turbulent flux.
+          ! The following "if" statement ensures there are no "spikes" at the top of the column,
+          ! which can cause unphysical rtm and thlm tendencies over the height of the column.
+          ! The fix essentially turns off the monotonic flux limiter for these special cases,
+          ! but tests show that it still performs well otherwise and runs stably.
+          if ( l_mono_flux_lim_spikefix .and. solve_type == mono_flux_rtm  & 
+              .and. abs( wpxp(i,k-1) ) > wpxp_thresh_term(i,k-1) &
+              .and. wpxp(i,k-1) < 0.0_core_rknd ) then
+
+            wpxp_mfl_max(i,k) = zero
+
+          else
+            wpxp_mfl_max(i,k) = invrs_rho_ds_zm(i,k) &
+                                * ( wpxp_mfl_max_term_zt(i,k-1) + rho_ds_zm(i,k-1) * wpxp(i,k-1) )
+          endif
+
+          if ( wpxp(i,k) > wpxp_mfl_max(i,k) ) then
+
+            ! Determine the net amount of adjustment needed for w'x'.
+            wpxp_net_adjust(i,k) = wpxp_mfl_max(i,k) - wpxp(i,k)
+
+            ! Reset the value of w'x' to the upper limit allowed by the
+            ! monotonic flux limiter.
+            wpxp(i,k) = wpxp_mfl_max(i,k)
+
+            ! This value is unneeded for calculation, set to unused_var for stats call
+            wpxp_mfl_min(i,k) = unused_var
+
+            ! If the amount to adjust wpxp by is greater than eps, we will adjust the xm 
+            ! values in the ith column as well
+            if ( abs(wpxp_net_adjust(i,k)) > eps ) then
+              l_xm_adjustment_needed(i) = .true.
+            end if
+
+          else
+
+            ! Find the lower limit for w'x' for a monotonic turbulent flux.
+            wpxp_mfl_min(i,k) = invrs_rho_ds_zm(i,k) &
+                                * ( wpxp_mfl_min_term_zt(i,k-1) + rho_ds_zm(i,k-1) * wpxp(i,k-1) )
+
+            if ( wpxp(i,k) < wpxp_mfl_min(i,k) ) then
+
+              ! Determine the net amount of adjustment needed for w'x'.
+              wpxp_net_adjust(i,k) = wpxp_mfl_min(i,k) - wpxp(i,k)
+
+              ! Reset the value of w'x' to the lower limit allowed by the
+              ! monotonic flux limiter.
+              wpxp(i,k) = wpxp_mfl_min(i,k)
+
+              ! If the amount to adjust wpxp by is greater than eps, we will adjust the xm 
+              ! values in the ith column as well
+              if ( abs(wpxp_net_adjust(i,k)) > eps ) then
+                l_xm_adjustment_needed(i) = .true.
+              end if
+
+            endif
+          endif
+
+        end do
+      end do
+      !$acc end parallel loop
+
+      ! MONOFLUX TEST COMMENT DO NOT REMOVE !$acc compare( wpxp ) 
+      ! MONOFLUX TEST COMMENT DO NOT REMOVE if( any(wpxp_net_adjust /= 0.0) ) write(fstderr,*) "MONOFLUX: wpxp adjusted "
 
       ! Reset the value of xm to compensate for the change to w'x'.
 
@@ -826,12 +823,12 @@ module mono_flux_limiter
         call mfl_xm_solve( nzt, ngrdcol, solve_type, tridiag_solve_method, & ! intent(in)
                            lhs_mfl_xm, rhs_mfl_xm,                         & ! intent(inout)
                            xm_mfl )                                          ! intent(out)
-
+                           
         ! If an adjustment is for a column
         !$acc parallel loop gang vector collapse(2) default(present)
         do k = 1, nzt
           do i = 1, ngrdcol 
-            if ( l_adjustment_needed(i) ) then
+            if ( l_xm_adjustment_needed(i) ) then
               xm(i,k) = xm_mfl(i,k)
             end if
           end do
@@ -853,7 +850,7 @@ module mono_flux_limiter
         do k = 1, nzt, 1
           do i = 1, ngrdcol 
 
-            if ( l_adjustment_needed(i) ) then  
+            if ( l_xm_adjustment_needed(i) ) then  
 
               ! The rate of change of the adjustment to xm due to the monotonic
               ! flux limiter.
@@ -940,8 +937,54 @@ module mono_flux_limiter
 
     end if
 
+
     if ( stats_metadata%l_stats_samp ) then
-      !$acc update host( wpxp, xm )
+
+      !$acc update host( xm_without_ta, min_x_allowable, wpxp_mfl_min, &
+      !$acc              wpxp_mfl_max, max_x_allowable, wpxp, xm  )
+
+      ! Boundary conditions
+      do i = 1, ngrdcol
+
+        min_x_allowable(i,nzt) = 0._core_rknd
+        max_x_allowable(i,nzt) = 0._core_rknd
+
+        wpxp_mfl_min(i,1) = 0._core_rknd
+        wpxp_mfl_max(i,1) = 0._core_rknd
+
+        wpxp_mfl_min(i,nzm) = 0._core_rknd
+        wpxp_mfl_max(i,nzm) = 0._core_rknd
+
+      end do
+
+      if ( solve_type == mono_flux_thlm ) then
+        do i = 1, ngrdcol
+          call stat_update_var( stats_metadata%ithlm_without_ta, xm_without_ta(i,:), & ! intent(in)
+                                stats_zt(i) ) ! intent(inout)
+          call stat_update_var( stats_metadata%ithlm_mfl_min, min_x_allowable(i,:), & ! intent(in)
+                                stats_zt(i) ) ! intent(inout)
+          call stat_update_var( stats_metadata%ithlm_mfl_max, max_x_allowable(i,:), & ! intent(in)
+                                stats_zt(i) ) ! intent(inout)
+          call stat_update_var( stats_metadata%iwpthlp_mfl_min, wpxp_mfl_min(i,:), & ! intent(in)
+                                stats_zm(i) ) ! intent(inout)
+          call stat_update_var( stats_metadata%iwpthlp_mfl_max, wpxp_mfl_max(i,:), & ! intent(in)
+                                stats_zm(i) ) ! intent(inout)
+        end do
+      elseif (  solve_type == mono_flux_rtm ) then
+        do i = 1, ngrdcol
+          call stat_update_var( stats_metadata%irtm_without_ta, xm_without_ta(i,:), & ! intent(in)
+                                stats_zt(i) ) ! intent(inout)
+          call stat_update_var( stats_metadata%irtm_mfl_min, min_x_allowable(i,:), & ! intent(in)
+                                stats_zt(i) ) ! intent(inout)
+          call stat_update_var( stats_metadata%irtm_mfl_max, max_x_allowable(i,:), & ! intent(in)
+                                stats_zt(i) ) ! intent(inout)
+          call stat_update_var( stats_metadata%iwprtp_mfl_min, wpxp_mfl_min(i,:), & ! intent(in)
+                                stats_zm(i) ) ! intent(inout)
+          call stat_update_var( stats_metadata%iwprtp_mfl_max, wpxp_mfl_max(i,:), & ! intent(in)
+                                stats_zm(i) ) ! intent(inout)
+        end do
+      endif
+
       do i = 1, ngrdcol
 
         call stat_end_update( nzm, iwpxp_mfl, wpxp(i,:) / dt, & ! intent(in)
@@ -962,12 +1005,13 @@ module mono_flux_limiter
                                 stats_zm(i) ) ! intent(inout)
         endif
       end do
+
     endif
 
     !$acc exit data delete( xp2_zt, xm_enter_mfl, xm_without_ta, wpxp_net_adjust, &
     !$acc                   min_x_allowable_lev, max_x_allowable_lev, min_x_allowable, &
     !$acc                   max_x_allowable, wpxp_mfl_max, wpxp_mfl_min, lhs_mfl_xm, &
-    !$acc                   rhs_mfl_xm, l_adjustment_needed, xm_mfl, &
+    !$acc                   rhs_mfl_xm, l_xm_adjustment_needed, xm_mfl, &
     !$acc                   wpxp_mfl_max_term_zt, wpxp_mfl_min_term_zt, &
     !$acc                   wpxp_thresh_term_zt, wpxp_thresh_term )
 
