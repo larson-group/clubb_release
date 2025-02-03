@@ -47,7 +47,8 @@ module atex
           ! Known magic number
           thlm_forcing(i,k) = -1.1575e-5_core_rknd &
                               * ( 3._core_rknd - gr%zt(i,k)/z_inversion(i) ) 
-        else if ( gr%zt(i,k) > z_inversion(i) .and. gr%zt(i,k) <= z_inversion(i)+300._core_rknd ) then
+        else if ( gr%zt(i,k) > z_inversion(i) &
+                  .and. gr%zt(i,k) <= z_inversion(i)+300._core_rknd ) then
           ! Known magic number
           thlm_forcing(i,k) = -2.315e-5_core_rknd &
                               * ( 1._core_rknd - (gr%zt(i,k)-z_inversion(i))/300._core_rknd ) 
@@ -222,7 +223,8 @@ module atex
 
         if ( gr%zt(i,k) > 0._core_rknd .and. gr%zt(i,k) <= z_inversion(i) ) then
           wm_zt(i,k) = -0.0065_core_rknd * gr%zt(i,k) / z_inversion(i) ! Known magic number
-        else if ( gr%zt(i,k) > z_inversion(i) .and. gr%zt(i,k) <= z_inversion(i)+300._core_rknd ) then
+        else if ( gr%zt(i,k) > z_inversion(i) &
+                  .and. gr%zt(i,k) <= z_inversion(i)+300._core_rknd ) then
           wm_zt(i,k) = - 0.0065_core_rknd * ( 1._core_rknd - (gr%zt(i,k)-z_inversion(i)) &
                                                              / 300._core_rknd ) ! Known magic number
         else
@@ -254,7 +256,8 @@ module atex
       !$acc parallel loop gang vector default(present)
       do i = 1, ngrdcol
         z_lev_dycore(i) = 1
-        do while ( z_lev_dycore(i) <= dycore_gr%nzt .and. rtm_dycore(i,z_lev_dycore(i)) > 6.5e-3_core_rknd )
+        do while ( z_lev_dycore(i) <= dycore_gr%nzt &
+                  .and. rtm_dycore(i,z_lev_dycore(i)) > 6.5e-3_core_rknd )
           z_lev_dycore(i) = z_lev_dycore(i) + 1
         end do
       end do
@@ -291,26 +294,33 @@ module atex
         ! TODO, if grid adjusts, also check over time steps
         
         ! checks if the mass over the physics and dycore grid is the same
-        check_mass_conservation_all( ngrdcol, dycore_gr, gr, &           ! intent(in)
-                                     dycore_gr%nzm, rho_ds_zm_dycore, &  ! intent(in)
-                                     dycore_gr%zm )                      ! intent(in)
+        call check_mass_conservation_all( ngrdcol, dycore_gr, gr, &           ! intent(in)
+                                          dycore_gr%nzm, rho_ds_zm_dycore, &  ! intent(in)
+                                          dycore_gr%zm )                      ! intent(in)
 
         ! check if the calculated vertical integral is the same for both grids for the thlm value
-        check_vertical_integral_conservation_all_zt_values( ngrdcol, dycore_gr, gr, &                        ! intent(in)
-                                                            total_idx_rho_lin_spline, rho_lin_spline_vals, & ! intent(in)
-                                                            rho_lin_spline_levels, &                         ! intent(in)
-                                                            thlm_forcing_dycore, thlm_forcing )              ! intent(in)
+        call check_vertical_integral_conservation_all_zt_values( ngrdcol, &             ! intent(in)
+                                                                 dycore_gr, gr, &       ! intent(in)
+                                                                 dycore_gr%nzm, &       ! intent(in)
+                                                                 rho_ds_zm_dycore, &    ! intent(in)
+                                                                 dycore_gr%zm, &        ! intent(in)
+                                                                 thlm_forcing_dycore, & ! intent(in)
+                                                                 thlm_forcing )         ! intent(in)
 
         ! check if the calculated vertical integral is the same for both grids for the rtm value
-        check_vertical_integral_conservation_all_zt_values( ngrdcol, dycore_gr, gr, &                        ! intent(in)
-                                                            total_idx_rho_lin_spline, rho_lin_spline_vals, & ! intent(in)
-                                                            rho_lin_spline_levels, &                         ! intent(in)
-                                                            rtm_forcing_dycore, rtm_forcing )                ! intent(in)
+        call check_vertical_integral_conservation_all_zt_values( ngrdcol, &             ! intent(in)
+                                                                 dycore_gr, gr, &       ! intent(in)
+                                                                 dycore_gr%nzm, &       ! intent(in)
+                                                                 rho_ds_zm_dycore, &    ! intent(in)
+                                                                 dycore_gr%zm, &        ! intent(in)
+                                                                 rtm_forcing_dycore, &  ! intent(in)
+                                                                 rtm_forcing )          ! intent(in)
         
-        ! check if remapping operator fulfills condition for consistency with the grids for zt and zm levels
-        check_remap_for_consistency_all( ngrdcol, dycore_gr, gr, &                        ! intent(in)
-                                         total_idx_rho_lin_spline, rho_lin_spline_vals, & ! intent(in)
-                                         rho_lin_spline_levels )                          ! intent(in)
+        ! check if remapping operator fulfills condition for consistency
+        ! with the grids for zt and zm levels
+        call check_remap_for_consistency_all( ngrdcol, dycore_gr, gr, &            ! intent(in)
+                                              dycore_gr%nzm, rho_ds_zm_dycore, &   ! intent(in)
+                                              dycore_gr%zm )                       ! intent(in)
       end if
 
     else
@@ -366,8 +376,12 @@ module atex
     !$acc parallel loop gang vector collapse(2) default(present)
     do k = 1, gr%nzt
       do i = 1, ngrdcol
-        if ( sclr_idx%iiedsclr_thl > 0 ) edsclrm_forcing(i,k,sclr_idx%iiedsclr_thl) = thlm_forcing(i,k)
-        if ( sclr_idx%iiedsclr_rt  > 0 ) edsclrm_forcing(i,k,sclr_idx%iiedsclr_rt)  = rtm_forcing(i,k)
+        if ( sclr_idx%iiedsclr_thl > 0 ) then
+          edsclrm_forcing(i,k,sclr_idx%iiedsclr_thl) = thlm_forcing(i,k)
+        end if
+        if ( sclr_idx%iiedsclr_rt  > 0 ) then
+          edsclrm_forcing(i,k,sclr_idx%iiedsclr_rt)  = rtm_forcing(i,k)
+        end if
       end do
     end do
   end if
