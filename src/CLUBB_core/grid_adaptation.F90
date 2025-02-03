@@ -18,12 +18,16 @@ module grid_adaptation_module
 
   implicit none
 
-  public :: setup_simple_gr_dycore, lin_interpolate, check_consistent, check_monotone, &
-            remapping_matrix, remap, interpolate_forcings, check_mass_conservation, &
-            check_vertical_integral_conservation, calc_mass_over_grid_intervals, &
-            vertical_integral_conserve_mass, check_remap_for_consistency, &
-            check_mass_conservation_all, check_vertical_integral_conservation_all_zt_values, &
-            check_remap_for_consistency_all, check_conservation
+  public :: setup_simple_gr_dycore, lin_interpolate, &
+            check_conservation, check_consistent, check_monotone, &
+            remapping_matrix, remap, &
+            interpolate_values_zt, interpolate_values_zm, interpolate_forcings, &
+            check_remap_for_consistency, check_remap_for_consistency_all, &
+            check_mass_conservation, check_mass_conservation_all, &
+            check_vertical_integral_conservation, &
+            check_vertical_integral_conservation_all_zt_values, &
+            check_vertical_integral_conservation_all_zm_values, &
+            calc_mass_over_grid_intervals, vertical_integral_conserve_mass
 
   private :: setup_gr
 
@@ -230,7 +234,6 @@ module grid_adaptation_module
 
   end function lin_interpolate
 
-  ! TODO check if function works
   subroutine check_conservation( R_ij, dim1, dim2, &
                                  levels_source, levels_target, &
                                  total_idx_rho_lin_spline, &
@@ -471,7 +474,6 @@ module grid_adaptation_module
 
   end function remapping_matrix
 
-  ! TODO check if this function works
   function remap( nlevel_source, nlevel_target, &
                   levels_source, levels_target, &
                   total_idx_rho_lin_spline, rho_lin_spline_vals, &
@@ -672,25 +674,17 @@ module grid_adaptation_module
       thlm_forcing, & ! Liquid water potential temperature tendency [K/s]
       rtm_forcing     ! Total water mixing ratio tendency           [kg/kg/s]
 
-    !--------------------- Local Variables ---------------------
-    integer :: i
-
     !--------------------- Begin Code ---------------------
-    do i=1, ngrdcol
-        thlm_forcing(i,:) = remap( gr_dycore%nzm, gr_clubb%nzm, &
-                                   gr_dycore%zm(i,:), gr_clubb%zm(i,:), &
-                                   total_idx_rho_lin_spline, rho_lin_spline_vals(i,:), &
-                                   rho_lin_spline_levels(i,:), &
-                                   thlm_forcing_dycore(i,:) )
-        rtm_forcing(i,:) = remap( gr_dycore%nzm, gr_clubb%nzm, &
-                                  gr_dycore%zm(i,:), gr_clubb%zm(i,:), &
-                                  total_idx_rho_lin_spline, rho_lin_spline_vals(i,:), &
-                                  rho_lin_spline_levels(i,:), &
-                                  rtm_forcing_dycore(i,:) )
-    end do
+    thlm_forcing = interpolate_values_zt( ngrdcol, gr_dycore, gr_clubb, &
+                                          total_idx_rho_lin_spline, rho_lin_spline_vals, &
+                                          rho_lin_spline_levels, &
+                                          thlm_forcing_dycore )
+    rtm_forcing = interpolate_values_zt( ngrdcol, gr_dycore, gr_clubb, &
+                                         total_idx_rho_lin_spline, rho_lin_spline_vals, &
+                                         rho_lin_spline_levels, &
+                                         rtm_forcing_dycore )
   end subroutine interpolate_forcings
 
-  ! TODO check if function works
   subroutine check_remap_for_consistency( nlevel_source, nlevel_target, &
                                           levels_source, levels_target, &
                                           total_idx_rho_lin_spline, &
@@ -757,7 +751,6 @@ module grid_adaptation_module
 
   end subroutine check_remap_for_consistency
 
-  ! TODO check if function works
   subroutine check_remap_for_consistency_all( ngrdcol, gr_source, gr_target, &
                                               total_idx_rho_lin_spline, &
                                               rho_lin_spline_vals, &
@@ -819,7 +812,6 @@ module grid_adaptation_module
     end do
   end subroutine check_remap_for_consistency_all
 
-  ! TODO check if function works
   subroutine check_mass_conservation( nlevel_source, nlevel_target, &
                                       levels_source, levels_target, &
                                       total_idx_rho_lin_spline, rho_lin_spline_vals, &
@@ -880,7 +872,6 @@ module grid_adaptation_module
 
   end subroutine check_mass_conservation
 
-  ! TODO check if function works
   subroutine check_mass_conservation_all( ngrdcol, gr_source, gr_target, &
                                           total_idx_rho_lin_spline, rho_lin_spline_vals, &
                                           rho_lin_spline_levels )
@@ -936,7 +927,6 @@ module grid_adaptation_module
 
   end subroutine check_mass_conservation_all
 
-  ! TODO check if function works
   subroutine check_vertical_integral_conservation( total_idx_rho_lin_spline, &
                                                    rho_lin_spline_vals, &
                                                    rho_lin_spline_levels, &
@@ -979,7 +969,6 @@ module grid_adaptation_module
 
     !--------------------- Begin Code ---------------------
     tol = 0.000001
-
     integral_source = vertical_integral_conserve_mass( total_idx_rho_lin_spline, &
                                                        rho_lin_spline_vals, &
                                                        rho_lin_spline_levels, &
@@ -1000,7 +989,6 @@ module grid_adaptation_module
 
   end subroutine check_vertical_integral_conservation
 
-  ! TODO check if function works
   subroutine check_vertical_integral_conservation_all_zt_values( ngrdcol, &
                                                                  gr_source, gr_target, &
                                                                  total_idx_rho_lin_spline, &
@@ -1044,7 +1032,6 @@ module grid_adaptation_module
     end do
   end subroutine check_vertical_integral_conservation_all_zt_values
 
-  ! TODO test if function works
   subroutine check_vertical_integral_conservation_all_zm_values( ngrdcol, &
                                                                  gr_source, gr_target, &
                                                                  total_idx_rho_lin_spline, &
@@ -1107,7 +1094,6 @@ module grid_adaptation_module
     end do
   end subroutine check_vertical_integral_conservation_all_zm_values
 
-  ! TODO check if function works
   function calc_mass_over_grid_intervals( total_idx_lin_spline, &
                                           lin_spline_rho_vals, &
                                           lin_spline_rho_levels, &
@@ -1242,7 +1228,6 @@ module grid_adaptation_module
     return
   end function calc_mass_over_grid_intervals
 
-  ! TODO check if function works
   function vertical_integral_conserve_mass( total_idx_lin_spline, &
                                             lin_spline_rho_vals, &
                                             lin_spline_rho_levels, &
