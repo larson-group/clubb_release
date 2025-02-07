@@ -32,6 +32,12 @@ def setUpInputs(beVerbose):
             findOutliers, findParamsUsingElastic
     from test_analyzeSensMatrix import write_test_netcdf_files
 
+    # Flag for using bootstrap sampling
+    useBootstrap = True
+
+    # Number of metrics to tune on
+    numMetricsToTune = 162
+
     # L1 regularization coefficient, i.e., penalty on param perturbations in objFnc
     # Increase this value to 0.1 or 0.5 or so if you want to reduce 
     # the size of tuned parameter perturbations.
@@ -437,7 +443,7 @@ def setUpInputs(beVerbose):
                 for key, value in obsMetricValsDictSpecial.items()}
 
     # Comment out if not using 20x20reg files
-    varPrefixes = ["SWCF"]
+    varPrefixes = ["SWCF", "PRECT"]
     #varPrefixes = ["SWCF", "LWCF", "PRECT"]
     #numPrefixes = len(varPrefixes)
     metricsNamesWeightsAndNorms, metricGlobalValsFromFile \
@@ -556,7 +562,7 @@ def setUpInputs(beVerbose):
             prescribedSensNcFilenames, prescribedSensNcFilenamesExt, \
             sensNcFilenames, sensNcFilenamesExt, \
             defaultNcFilename, linSolnNcFilename, \
-            reglrCoef)
+            reglrCoef, useBootstrap, numMetricsToTune)
 
 
 def setUpPreliminaries(metricsNames, metricsNorms, \

@@ -39,7 +39,7 @@ def createFigs(numMetricsNoSpecial, metricsNames,
                paramsSolnNonlin,
                paramsSolnElastic, dnormlzdParamsSolnElastic,
                sensNcFilenames, sensNcFilenamesExt, defaultNcFilename,
-               beVerbose, useLongTitle):
+               beVerbose, useLongTitle, param_bounds_boot):
     ##############################################
     #
     #    Create plots
@@ -299,7 +299,7 @@ def createFigs(numMetricsNoSpecial, metricsNames,
                                      paramsLowValsPCBound, paramsHiValsPCBound,
                                      paramsSolnLin, dnormlzdParamsSolnLin,
                                      paramsSolnNonlin, dnormlzdParamsSolnNonlin,
-                                     paramsSolnElastic, dnormlzdParamsSolnElastic)
+                                     paramsSolnElastic, dnormlzdParamsSolnElastic, param_bounds_boot)
 
     if plot_threeDotFig:
         print("Creating threeDotFig . . .")
@@ -2271,7 +2271,7 @@ def createParamsErrorBarsFig(paramsAbbrv, defaultParamValsOrigRow, paramsScales,
                              paramsLowValsPCBound, paramsHiValsPCBound,
                              paramsSolnLin, dnormlzdParamsSolnLin,
                              paramsSolnNonlin, dnormlzdParamsSolnNonlin,
-                             paramsSolnElastic, dnormlzdParamsSolnElastic):
+                             paramsSolnElastic, dnormlzdParamsSolnElastic, param_bounds_boot):
     # Plot box and whiskers plot of optimal parameter values.
     # Multiply in the user-designated scale factors before plotting.
     df = pd.DataFrame(np.hstack(defaultParamValsOrigRow[0, :] * paramsScales),
@@ -2286,6 +2286,24 @@ def createParamsErrorBarsFig(paramsAbbrv, defaultParamValsOrigRow, paramsScales,
         marker=dict(color='black', size=14),
         error_y=dict(color='black', thickness=2, width=10)
     ))
+    if param_bounds_boot is not None:
+        upperBoundBootScaled = param_bounds_boot[0] * paramsScales
+        meadianBootScaled = param_bounds_boot[1] * paramsScales
+        lowerBoundBootScaled = param_bounds_boot[2] * paramsScales
+        paramsErrorBarsFig.add_trace(
+            go.Scatter(
+                x=df.index,
+                y=meadianBootScaled,
+                mode="markers",
+                name="Bootstrap error bars",
+                error_y=dict(
+                    type="data",
+                    symmetric=False,
+                    array=upperBoundBootScaled - meadianBootScaled,
+                    arrayminus=meadianBootScaled - lowerBoundBootScaled
+                )
+            )
+        )
     #paramsErrorBarsFig.add_trace(go.Scatter(x=paramsNames, y=paramsLowValsPCBound[:,0]*paramsScales,
     #                               name=r'$paramsSolnPC - \sigma$',
     #                               line=dict(color='white', width=0), mode='lines', showlegend=False))

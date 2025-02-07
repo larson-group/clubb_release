@@ -1,4 +1,8 @@
 # -*- coding: utf-8 -*-
+import pandas as pd
+from bootstrap_calculations import bootstrap_calculations
+from bootstrap_plots import bootstrap_plots
+
 
 # Run this app with `python3 sens_matrix_dashboard.py` and
 # view the plots at http://127.0.0.1:8050/ in your web browser.
@@ -9,6 +13,8 @@ import numpy as np
 
 def main():
 
+    import matplotlib.pyplot as plt
+    import seaborn as sns
 
     import numpy as np
 
@@ -38,12 +44,14 @@ def main():
     prescribedSensNcFilenames, prescribedSensNcFilenamesExt, \
     sensNcFilenames, sensNcFilenamesExt, \
     defaultNcFilename, linSolnNcFilename, \
-    reglrCoef) \
+    reglrCoef, useBootstrap, numMetricsToTune) \
     = \
         setUpInputs(beVerbose=False)
 
     # Number of regional metrics
     numMetrics = len(metricsNames)
+
+    metricsWeights[numMetricsToTune:] = 1e-12
 
     print("Set up preliminaries . . .")
 
@@ -110,7 +118,40 @@ def main():
         approxMatrixWithSvd(normlzdSensMatrixPoly, sValsRatio, sValsNumToKeep=None, beVerbose=False)
     normlzdCurvMatrixSvd = \
         approxMatrixWithSvd(normlzdCurvMatrix, sValsRatio, sValsNumToKeep=None, beVerbose=False)
+    if useBootstrap:
+        numSamples = 1_000
+        paramsSolnNonlin, residualsFullDataCol, residualsBootstrapMatrix, param_bounds_boot, lossesDrop, lossesFullData, lossesLeftOut, lossesInSample =\
+            bootstrap_calculations(numSamples,
+                                   metricsWeights,
+                                   metricsNames,
+                                   paramsNames,
+                                   numMetrics,
+                                   numMetricsToTune,
+                                   normMetricValsCol,
+                                   magParamValsRow,
+                                   defaultParamValsOrigRow,
+                                   normlzdSensMatrixPolySvd,
+                                   normlzdDefaultBiasesCol,
+                                   normlzdCurvMatrixSvd,
+                                   reglrCoef,
+                                   defaultBiasesCol)
 
+        bootstrap_plots(numSamples,
+                        numMetrics,
+                        numMetricsToTune,
+                        metricsNames,
+                        residualsBootstrapMatrix,
+                        residualsFullDataCol,
+                        defaultBiasesCol,
+                        lossesLeftOut,
+                        lossesInSample,
+                        paramsNames,
+                        paramsSolnNonlin,
+                        lossesDrop,
+                        lossesFullData)
+    else:
+        param_bounds_boot = None
+    # start of non-bootstrap part
     defaultBiasesApproxNonlin, \
     dnormlzdParamsSolnNonlin, paramsSolnNonlin, \
     dnormlzdParamsSolnLin, paramsSolnLin, \
@@ -248,7 +289,7 @@ def main():
                paramsSolnNonlin,
                paramsSolnElastic, dnormlzdParamsSolnElastic,
                sensNcFilenames, sensNcFilenamesExt, defaultNcFilename,
-               beVerbose=False,useLongTitle=False)
+               beVerbose=False,useLongTitle=False, param_bounds_boot=param_bounds_boot)
 
     return
 
