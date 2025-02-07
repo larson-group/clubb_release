@@ -118,7 +118,7 @@ def setUpInputs(beVerbose):
         pd.DataFrame( metricsNamesWeightsAndNormsSpecial, columns = ['metricsNamesSpecial', 'metricsWeightsSpecial', 'metricsNormsSpecial'] )
     metricsNamesSpecial = dfMetricsNamesWeightsAndNormsSpecial[['metricsNamesSpecial']].to_numpy().astype(str)[:,0]
     metricsWeightsSpecial = dfMetricsNamesWeightsAndNormsSpecial[['metricsWeightsSpecial']].to_numpy().astype(float)
-    #metricsNormsSpecial = dfMetricsNamesWeightsAndNormsSpecial[['metricsNormsSpecial']].to_numpy().astype(float)
+    metricsNormsSpecial = dfMetricsNamesWeightsAndNormsSpecial[['metricsNormsSpecial']].to_numpy().astype(float)
 
     # These are the metrics that we want to include
     #      in the metrics bar-chart, 3-dot plot, etc.
@@ -439,6 +439,7 @@ def setUpInputs(beVerbose):
     # Comment out if not using 20x20reg files
     varPrefixes = ["SWCF"]
     #varPrefixes = ["SWCF", "LWCF", "PRECT"]
+    #numPrefixes = len(varPrefixes)
     metricsNamesWeightsAndNorms, metricGlobalValsFromFile \
          = setUp_x_MetricsList(varPrefixes , defaultNcFilename)
     # Split up the list above into metric names and the corresponding weights.
@@ -531,7 +532,6 @@ def setUpInputs(beVerbose):
     metricsNames = np.append(metricsNames, metricsNamesSpecial)
     metricsWeights = np.vstack((metricsWeights, metricsWeightsSpecial))
     numMetricsSpecial = len(metricsNames) - numMetricsNoSpecial
-    metricsNormsSpecial = obsGlobalAvgObsWeights * np.ones((numMetricsSpecial,1))
     metricsNorms = np.vstack((metricsNorms, metricsNormsSpecial))
 
     obsMetricValsDict.update(obsMetricValsDictSpecial)
@@ -542,7 +542,9 @@ def setUpInputs(beVerbose):
               "does not appear in metricsNames:")
         print(np.setdiff1d(extraMetricsToPlot, metricsNames))
 
-    return (numMetricsNoSpecial, metricsNames,
+    return (numMetricsNoSpecial,
+            metricsNames,
+            varPrefixes,
             extraMetricsToPlot, \
             metricsWeights, metricsNorms, \
             obsMetricValsDict, \

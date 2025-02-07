@@ -25,7 +25,8 @@ def main():
 
     # The user should input all tuning data into file set_up_dashboard_inputs.py
     (numMetricsNoSpecial, \
-    metricsNames,
+    metricsNames, \
+    varPrefixes, \
     extraMetricsToPlot, \
     metricsWeights, metricsNorms, \
     obsMetricValsDict, \
@@ -230,6 +231,7 @@ def main():
     #                                          @ normlzdLinplusSensMatrixPoly
 
     createFigs(numMetricsNoSpecial, metricsNames,
+               varPrefixes,
                extraMetricsToPlot,
                paramsNames, transformedParamsNames, paramsScales,
                metricsWeights, obsMetricValsCol, normMetricValsCol, magParamValsRow,

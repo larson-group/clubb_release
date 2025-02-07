@@ -15,13 +15,14 @@ import plotly.colors as pc
 #import pca
 import dash
 from dash import dcc
-#import dash_core_components as dcc
 from dash import html
+#import dash_core_components as dcc
 #import dash_html_components as html
 #import fnmatch
 from sens_matrix_dashboard import lossFncMetrics, approxMatrixWithSvd, normlzdSemiLinMatrixFnc
 
 def createFigs(numMetricsNoSpecial, metricsNames,
+               varPrefixes,
                extraMetricsToPlot,
                paramsNames, transformedParamsNames, paramsScales,
                metricsWeights, obsMetricValsCol, normMetricValsCol, magParamValsRow,
@@ -882,15 +883,18 @@ def createFigs(numMetricsNoSpecial, metricsNames,
 
     if plot_PcSensMap:
 
+        numBoxes = int(numMetricsNoSpecial / len(varPrefixes))
+
+        # This will only plot the first varPrefix.  Need to generalize.
         BiasParamsDashboardChildren, U0U3DashboardChildren \
         = createMapGallery(
-            normlzdDefaultBiasesCol[:numMetricsNoSpecial,:],
-            normlzdResid[:numMetricsNoSpecial],
-            normlzdLinSolnBiasesCol[:numMetricsNoSpecial, :],
-            defaultLossCol[:numMetricsNoSpecial, :],
-            tunedLossChange[:numMetricsNoSpecial, :],
-            linSolnLossChange[:numMetricsNoSpecial, :],
-            normlzdLinplusSensMatrixPoly[:numMetricsNoSpecial, :],
+            normlzdDefaultBiasesCol[:numBoxes,:],
+            normlzdResid[:numBoxes],
+            normlzdLinSolnBiasesCol[:numBoxes, :],
+            defaultLossCol[:numBoxes, :],
+            tunedLossChange[:numBoxes, :],
+            linSolnLossChange[:numBoxes, :],
+            normlzdLinplusSensMatrixPoly[:numBoxes, :],
             paramsAbbrv,
             downloadConfig,
             useLongTitle,
