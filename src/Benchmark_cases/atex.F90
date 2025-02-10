@@ -284,6 +284,8 @@ module atex
       call calc_forcings( ngrdcol, dycore_gr, z_inversion_dycore, &  ! intent(in)
                           thlm_forcing_dycore, rtm_forcing_dycore )  ! intent(out)
 
+      if ( interp_from_dycore_grid_method == 1 ) then
+
       call interpolate_forcings( ngrdcol, dycore_gr, gr, &                   ! intent(in)
                                  dycore_gr%nzm, rho_ds_zm_dycore, &          ! intent(in)
                                  dycore_gr%zm, &                             ! intent(in)
@@ -321,6 +323,11 @@ module atex
         call check_remap_for_consistency_all( ngrdcol, dycore_gr, gr, &            ! intent(in)
                                               dycore_gr%nzm, rho_ds_zm_dycore, &   ! intent(in)
                                               dycore_gr%zm )                       ! intent(in)
+        end if
+      
+      else
+        write(fstderr,*) "There is currently no method implemented for", &
+                         " interp_from_dycore_grid_method=", interp_from_dycore_grid_method
       end if
 
     else

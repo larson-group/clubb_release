@@ -18,6 +18,9 @@ module grid_adaptation_module
 
   implicit none
 
+  real( kind = core_rknd ) ::  &
+        tol = 1.0e-6_core_rknd ! tolerance to check if to real numbers are equal
+
   public :: setup_simple_gr_dycore, lin_interpolate, &
             check_conservation, check_consistent, check_monotone, &
             remapping_matrix, remap, &
@@ -32,7 +35,6 @@ module grid_adaptation_module
   private :: setup_gr
 
   private ! Default Scoping  
-
 
   contains
 
@@ -110,9 +112,16 @@ module grid_adaptation_module
 
   end subroutine setup_gr
 
-  subroutine setup_simple_gr_dycore( gr )
+  subroutine setup_simple_gr_dycore( nlevels, grid_sfc, grid_top, gr )
 
     implicit none
+
+    !--------------------- Input Variables ---------------------
+    integer, intent(in) :: nlevels  ! number of levels the dycore grid should have
+
+    real( kind = core_rknd ) :: &
+        grid_sfc, &    ! grids surface height for the dycore grid
+        grid_top       ! grids highest level for the dycore grid
 
     !--------------------- Output Variables ---------------------
     type (grid), intent(out) :: gr
@@ -146,7 +155,8 @@ module grid_adaptation_module
         zm_init,  & ! Initial grid altitude (momentum level) [m]
         zm_top      ! Maximum grid altitude (momentum level) [m]
 
-    nzmax = 31
+    !nzmax = 31
+    nzmax = nlevels
     grid_type = 1
     zm_grid_fname = ''
     zt_grid_fname = ''
@@ -154,8 +164,10 @@ module grid_adaptation_module
     sfc_elevation = 0.0
     l_implemented = .false.
     deltaz = 132.0
-    zm_init = 0.0
-    zm_top = 3960.0
+    !zm_init = 0.0
+    zm_init = grid_sfc
+    !zm_top = 3960.0
+    zm_top = grid_top
 
     call setup_gr( nzmax, grid_type, &
                    zm_grid_fname, zt_grid_fname, &
@@ -196,11 +208,8 @@ module grid_adaptation_module
       lin_interpolate ! interpolated values with the dimension of gr_interpolate
     integer :: i, k
     logical :: calc_done
-    real( kind = core_rknd ) :: epsilon
 
     !--------------------- Begin Code ---------------------
-
-    epsilon = 0.01
 
     do i = 1, size_interpolate
       calc_done = .false.
@@ -209,7 +218,7 @@ module grid_adaptation_module
       ! then the gr_current value of the closest level is taken
       k = 1
       do while ((.not. calc_done) .and. (k <= size_current))
-        if (abs(interpolate_altitudes(i) - current_altitudes(k)) < epsilon) then
+        if (abs(interpolate_altitudes(i) - current_altitudes(k)) < tol) then
           lin_interpolate(i) = current_values(k)
           calc_done = .true.
         else if (interpolate_altitudes(i) < current_altitudes(k)) then
@@ -269,7 +278,7 @@ module grid_adaptation_module
     !--------------------- Local Variables ---------------------
     integer :: i, j
 
-    real( kind = core_rknd ) :: epsilon, weighted_col_sum
+    real( kind = core_rknd ) :: weighted_col_sum
 
     real( kind = core_rknd ), dimension(dim1) :: &
         Jt ! local weights on the target grid (mass over every grid cell)
@@ -281,7 +290,6 @@ module grid_adaptation_module
 
     !--------------------- Begin Code ---------------------
     conservative = .true.
-    epsilon = 0.000001
 
     Jt = calc_mass_over_grid_intervals( total_idx_rho_lin_spline, &
                                         rho_lin_spline_vals, &
@@ -299,14 +307,14 @@ module grid_adaptation_module
       do i = 1, dim1
         weighted_col_sum = weighted_col_sum + R_ij(i,j) * Jt(i)
       end do
-      if (abs(weighted_col_sum - Js(j)) > epsilon) then
+      if (abs(weighted_col_sum - Js(j)) > tol) then
         conservative = .false.
       end if
       j = j + 1
     end do
 
     if (.not. conservative) then
-      write(*,*) 'remapping operator is not conservative'
+      write(fstderr,*) 'remapping operator is not conservative'
     end if
 
   end subroutine check_conservation
@@ -330,13 +338,12 @@ module grid_adaptation_module
     !--------------------- Local Variables ---------------------
     integer :: i, j
 
-    real( kind = core_rknd ) :: row_sum, epsilon
+    real( kind = core_rknd ) :: row_sum
 
     logical :: consistent
 
     !--------------------- Begin Code ---------------------
     consistent = .true.
-    epsilon = 0.000001
 
     i = 1
     do while (consistent .and. i <= dim1)
@@ -344,14 +351,14 @@ module grid_adaptation_module
       do j = 1, dim2
         row_sum = row_sum + R_ij(i,j)
       end do
-      if (abs(row_sum - 1) > epsilon) then
+      if (abs(row_sum - 1) > tol) then
         consistent = .false.
       end if
       i = i + 1
     end do
 
     if (.not. consistent) then
-      write(*,*) 'remapping operator is not consistent'
+      write(fstderr,*) 'remapping operator is not consistent'
     end if
 
   end subroutine check_consistent
@@ -389,7 +396,7 @@ module grid_adaptation_module
     end do
 
     if (.not. monotone) then
-      write(*,*) 'remapping operator is not monotone'
+      write(fstderr,*) 'remapping operator is not monotone'
     end if
 
   end subroutine check_monotone
@@ -720,8 +727,6 @@ module grid_adaptation_module
 
     integer :: i, j
 
-    real( kind = core_rknd ) :: epsilon
-
     logical :: consistent
 
     !--------------------- Begin Code ---------------------
@@ -736,17 +741,16 @@ module grid_adaptation_module
                          ones )
 
     consistent = .true.
-    epsilon = 0.000001
     j = 1
     do while (consistent .and. j <= nlevel_target-1)
-      if (abs( output_ones(j) - 1 ) > epsilon) then
+      if (abs( output_ones(j) - 1 ) > tol) then
         consistent = .false.
       end if
       j = j + 1
     end do
 
     if (.not. consistent) then
-      write(*,*) 'remap function is not consistent'
+      write(fstderr,*) 'remap function is not consistent'
     end if
 
   end subroutine check_remap_for_consistency
@@ -840,7 +844,6 @@ module grid_adaptation_module
 
     !--------------------- Local Variables ---------------------
     real( kind = core_rknd ) :: &
-      tol, &
       sum_source_mass, &
       sum_target_mass
 
@@ -849,7 +852,6 @@ module grid_adaptation_module
     real( kind = core_rknd ), dimension(nlevel_target-1) :: target_mass
 
     !--------------------- Begin Code ---------------------
-    tol = 0.000001
 
     ! check mass for grid intervals of values at zt levels
     source_mass = calc_mass_over_grid_intervals( total_idx_rho_lin_spline, rho_lin_spline_vals, &
@@ -963,12 +965,10 @@ module grid_adaptation_module
 
     !--------------------- Local Variables ---------------------
     real( kind = core_rknd ) :: &
-      tol, &
       integral_source, &
       integral_target
 
     !--------------------- Begin Code ---------------------
-    tol = 0.000001
     integral_source = vertical_integral_conserve_mass( total_idx_rho_lin_spline, &
                                                        rho_lin_spline_vals, &
                                                        rho_lin_spline_levels, &
@@ -1142,7 +1142,6 @@ module grid_adaptation_module
 
     !--------------------- Local Variables ---------------------
     real( kind = core_rknd ) :: &
-      tol, & ! The difference tolerance for two real numbers to be considered the same
       val_below, & ! The rho value of the level or spline connection point below
       level_below, & ! The altitude of the level or spline connection point below
       mass_over_interval, & ! The total mass over one interval (zm(i) to zm(i+1)) in the grid
@@ -1157,11 +1156,10 @@ module grid_adaptation_module
     logical :: level_found
 
     !--------------------- Begin Code ---------------------
-    tol = 0.000000001
     ! check if highest value of lin spline is higher or equal to highest level of target grid
     if ( (grid_levels(nlevel) &
           - lin_spline_rho_levels(total_idx_lin_spline) ) > tol ) then
-      write(*,*) 'Wrong input: highest level of lin_spline_rho_levels must', &
+      write(fstderr,*) 'Wrong input: highest level of lin_spline_rho_levels must', &
                  ' be higher or equal to highest zm level of grid_levels'
     end if
 
@@ -1175,7 +1173,7 @@ module grid_adaptation_module
         level_found = .true.
       else if ( grid_levels(1) < lin_spline_rho_levels(j) ) then ! j > 1
         if (j <= 1) then
-          write(*,*) 'Wrong input: lowest level of lin_spline_rho_levels must', &
+          write(fstderr,*) 'Wrong input: lowest level of lin_spline_rho_levels must', &
                      ' be lower or equal to lowest zm level of grid_levels'
           call exit(1)
         else
@@ -1406,7 +1404,7 @@ module grid_adaptation_module
 
     ! if the integral is zero, then all gd_norm_y were the same and smaller or equal to min_dens
     ! so in that case we have an equi-distant grid
-    if (integral_before_shift < 1.0e-6_core_rknd) then
+    if (integral_before_shift < tol) then
         ! set to equi-distant grid
         do i = 1, gd_idx
             gd_norm_y(i) = equi_dens
@@ -1424,7 +1422,7 @@ module grid_adaptation_module
         write(fstderr,*) "Warning! The minimum of the normalized function is below min_dens."
       end if
       ! check if the integral of the normalized function is actually num_levels-1
-      if (abs(calc_integral(gd_idx, gd_norm_x, gd_norm_y) - (num_levels-1)) > 0.000001) then
+      if (abs(calc_integral(gd_idx, gd_norm_x, gd_norm_y) - (num_levels-1)) > tol) then
         write(fstderr,*) "Warning! The integral of the normalized function is not num_levels-1."
       end if
     end if
@@ -1502,7 +1500,7 @@ module grid_adaptation_module
             if (area_up_to_prev_x + new_x_area_increment >= desired_area_up_to_ith_level) then
                 A = desired_area_up_to_ith_level - area_up_to_prev_x
                 ! check if gd_norm_y(prev_x_ind+1) == gd_norm_y(prev_x_ind)
-                if (abs(gd_norm_y(prev_x_ind+1) - gd_norm_y(prev_x_ind)) < 1.0e-6_core_rknd) then
+                if (abs(gd_norm_y(prev_x_ind+1) - gd_norm_y(prev_x_ind)) < tol) then
                     ! gd_norm_y(prev_x_ind+1) == gd_norm_y(prev_x_ind)
                     grid_level = A/gd_norm_y(prev_x_ind) + gd_norm_x(prev_x_ind)
                 else
@@ -1581,7 +1579,7 @@ module grid_adaptation_module
 
     !--------------------- Begin Code ---------------------
     ! check if first grid element is grid_sfc
-    if (abs(grid_heights(1) - desired_grid_sfc) > 0.000001) then
+    if (abs(grid_heights(1) - desired_grid_sfc) > tol) then
         write(fstderr,*) "Warning! The first grid level is not correct. It should be the grids", &
                          " surface: ", desired_grid_sfc, " and not ", grid_heights(1)
     end if
@@ -1609,7 +1607,7 @@ module grid_adaptation_module
     end if
 
     ! check if last grid level is grid_top
-    if (abs(grid_heights(desired_num_levels) - desired_grid_top) > 0.000001) then
+    if (abs(grid_heights(desired_num_levels) - desired_grid_top) > tol) then
         write(fstderr,*) "Warning! The last grid level is not correct. It should be the grids", &
                          " top: ", desired_grid_top, " and not ", grid_heights(desired_num_levels)
     end if

@@ -1869,7 +1869,10 @@ module clubb_driver
 
     if (interp_from_dycore_grid_method > 0) then
       ! Initialize the dycore grid
-      call setup_simple_gr_dycore( dycore_gr )
+      call setup_simple_gr_dycore( 31, gr%zm(1,1), gr%zm(1,gr%nzm), dycore_gr ) ! always set to 31
+                                                                                ! since the host
+                                                                                ! model has 31
+                                                                                ! levels
       allocate( rho_ds_zm_dycore(ngrdcol, dycore_gr%nzm) ) ! dry, static density: 
                                                            ! m-levs of dycore grid
     else
@@ -2666,7 +2669,7 @@ module clubb_driver
       ! Call the clubb core api for one column
       call advance_clubb_core_api( &
               gr, gr%nzm, gr%nzt, ngrdcol, &
-              l_implemented, dt_main, fcor, sfc_elevation, &                ! Intent(in)
+              l_implemented, dt_main, fcor, sfc_elevation, &                       ! Intent(in)
               hydromet_dim, &                                                      ! intent(in)
               sclr_dim, sclr_tol, edsclr_dim, sclr_idx, &                          ! intent(in)
               thlm_forcing, rtm_forcing, um_forcing, vm_forcing, &                 ! Intent(in)
@@ -2677,23 +2680,23 @@ module clubb_driver
               wpsclrp_sfc, wpedsclrp_sfc,  &                                       ! Intent(in)
               upwp_sfc_pert, vpwp_sfc_pert, &                                      ! intent(in)
               rtm_ref, thlm_ref, um_ref, vm_ref, ug, vg, &                         ! Intent(in)
-              p_in_Pa, rho_zm, rho, exner, &                                  ! Intent(in)
-              rho_ds_zm, rho_ds_zt, invrs_rho_ds_zm, &                        ! Intent(in)
-              invrs_rho_ds_zt, thv_ds_zm, thv_ds_zt, &                        ! Intent(in) 
+              p_in_Pa, rho_zm, rho, exner, &                                       ! Intent(in)
+              rho_ds_zm, rho_ds_zt, invrs_rho_ds_zm, &                             ! Intent(in)
+              invrs_rho_ds_zt, thv_ds_zm, thv_ds_zt, &                             ! Intent(in) 
               hm_metadata%l_mix_rat_hm, &                                          ! Intent(in)
               rfrzm, wphydrometp, &                                                ! Intent(in)
               wp2hmp, rtphmp_zt, thlphmp_zt, &                                     ! Intent(in)
               dummy_dx, dummy_dy, &                                                ! Intent(in)
-              clubb_params, nu_vert_res_dep, lmin, &                          ! Intent(in)
+              clubb_params, nu_vert_res_dep, lmin, &                               ! Intent(in)
               clubb_config_flags, &                                                ! Intent(in)
               stats_metadata, &                                                    ! Intent(in)
               stats_zt, stats_zm, stats_sfc, &                                     ! intent(inout)
               um, vm, upwp, vpwp, up2, vp2, up3, vp3, &                            ! Intent(inout)
-              thlm, rtm, wprtp, wpthlp, &                                ! Intent(inout)
-              wp2, wp3, rtp2, rtp3, thlp2, thlp3, rtpthlp, &                  ! Intent(inout)
+              thlm, rtm, wprtp, wpthlp, &                                          ! Intent(inout)
+              wp2, wp3, rtp2, rtp3, thlp2, thlp3, rtpthlp, &                       ! Intent(inout)
               sclrm, sclrp2, sclrp3, sclrprtp, sclrpthlp, &                        ! Intent(inout)
               wpsclrp, edsclrm, err_code_dummy, &
-              rcm, cloud_frac, &                                              ! Intent(inout)
+              rcm, cloud_frac, &                                                   ! Intent(inout)
               wpthvp, wp2thvp, rtpthvp, thlpthvp, &                                ! Intent(inout)
               sclrpthvp, &                                                         ! Intent(inout)
               wp2rtp, wp2thlp, uprcp, vprcp, rc_coef_zm, wp4, &                    ! intent(inout)
@@ -2704,7 +2707,7 @@ module clubb_driver
               Kh_zm, Kh_zt, &                                                      ! intent(out)
               thlprcp, wprcp, w_up_in_cloud, w_down_in_cloud, &                    ! Intent(out)
               cloudy_updraft_frac, cloudy_downdraft_frac, &                        ! Intent(out)
-              rcm_in_layer, cloud_cover, invrs_tau_zm, &                            ! Intent(out)
+              rcm_in_layer, cloud_cover, invrs_tau_zm, &                           ! Intent(out)
               Lscale )                                                             ! Intent(out)
 
       if ( clubb_at_least_debug_level( 0 ) ) then
@@ -3444,8 +3447,8 @@ module clubb_driver
 
     use sounding, only: read_sounding !--------------------------------- Procedure(s)
 
-    use time_dependent_input, only: &
-      initialize_t_dependent_input, & !-------------------------------- Procedure(s)
+    use time_dependent_input, only: initialize_t_dependent_input_simple, &
+      initialize_t_dependent_input_from_dycore, & !-------------------- Procedure(s)
       l_t_dependent !-------------------------------------------------- Variable(s)
 
     use extended_atmosphere_module, only: &
@@ -3761,11 +3764,21 @@ module clubb_driver
 
 
 
-    ! Initilize Time Dependant Input
+    ! Initilize Time Dependent Input
 
     if( l_t_dependent ) then
-      call initialize_t_dependent_input &
+      if (interp_from_dycore_grid_method > 0) then
+        call initialize_t_dependent_input_from_dycore ( iunit, runtype, gr%nzt, &
+                                                        gr%zt(1,:), p_in_Pa, &
+                                                        dycore_gr, &
+                                                        interp_from_dycore_grid_method, &
+                                                        gr%nzm, &
+                                                        rho_ds_zm(1,:), &
+                                                        gr%zm(1,:) )
+      else
+        call initialize_t_dependent_input_simple &
                    ( iunit, runtype, gr%nzt, gr%zt(1,:), p_in_Pa )
+      end if
     end if
 
     ! Initialize TKE and other fields as needed
