@@ -1,0 +1,88 @@
+commit adb2c4b1d0d1f187405f733ff704392231fcecc4
+Author: Gunther Huebler <huebler@uwm.edu>
+Date:   Fri Feb 7 16:05:24 2025 -0600
+
+    Swapping the loop order on a few kernels, I found this faster for the nvhpc compiler and it's BFB
+
+commit 112b1d1518ebaad008f69cf0337f2d6466b0ebb0
+Author: LuisHasenauer <hasenau2@uwm.edu>
+Date:   Fri Feb 7 15:39:37 2025 -0600
+
+    QuadTune: Merge in bootstrap sampling
+    
+    @LuisHasenauer added bootstrap sampling code to QuadTune.  Bootstrap calculations are performed if `useBootstrap=T`.  Luis and I checked that the best-fit parameter values and weighted chiSqd are unchanged either with `useBootstrap=T` or `useBootstrap=F`.
+
+commit d969819b327e31310ce38e44303561aab4875728
+Author: vlarson <vlarson@uwm.edu>
+Date:   Fri Feb 7 14:46:17 2025 -0600
+
+    QuadTune: Made plot_PcSensMap work when len(varPrefixes) > 1.
+    
+    For #910.
+
+commit e3707bdb9336e23f2215ba647eb2df43cdab9d9a
+Author: Gunther Huebler <37674341+huebleruwm@users.noreply.github.com>
+Date:   Mon Feb 3 12:17:52 2025 -0600
+
+    Monoflux GPU optimization (#1221)
+    
+    * Making a fast version of the serial loop to check if we even need to perform the slow version at all.
+    
+    * Updates
+    
+    * Final touches to make new version logically the same.
+    
+    * Improving comments and variables names
+
+commit 9fbd3da928e373d8cb9b7108cbe56cc997ba68e8
+Author: vlarson <vlarson@uwm.edu>
+Date:   Sat Feb 1 16:49:41 2025 -0600
+
+    QuadTune: Plot bias instead of negative bias on metricsBarChart and bias-vs-sensitivity plots.
+    
+    For #910.
+
+commit 0159cfd38c725851d8f3e92ea2c0c411fdfb2dee
+Author: vlarson <vlarson@uwm.edu>
+Date:   Sat Feb 1 09:24:20 2025 -0600
+
+    QuadTune: Add useLongTitle option, which adds extra information on the plotted quantity, if desired.
+    
+    For #910.
+
+commit fe762cbcb94c872048986f55c9b4ab5e70ea7ea5
+Author: vlarson <vlarson@uwm.edu>
+Date:   Sat Jan 25 07:24:10 2025 -0600
+
+    QuadTune: On matrix-eqn bar chart, plot only extraMetricsToPlot.  Add sens-bias scatterplot of only extraMetricsToPlot.  In parameter increments bar chart, change absolute values to squares.
+    
+    For #910.
+
+commit 2fbf4c2defd75913f167a34077526832ffbeaff9
+Author: Gunther Huebler <huebler@uwm.edu>
+Date:   Thu Jan 23 16:11:53 2025 -0600
+
+    Slightly relaxing the convergence criteria to fix convergence test.
+
+commit 316180d8b915f47e7ddcf24ecdb81661ee4a2ca2
+Author: Gunther Huebler <37674341+huebleruwm@users.noreply.github.com>
+Date:   Tue Jan 21 14:47:18 2025 -0600
+
+    Finally fixing gpu_diffness test (#1219)
+    
+    * Modifying diffness test to handle fields with < 0 averages and accept an argument as the threshold.
+    
+    * Overwriting correct variable.
+
+commit e430c6b5a72a8a88fa602e13b4cb946d3361895e
+Author: domkesteffen <42725900+domkesteffen@users.noreply.github.com>
+Date:   Thu Jan 16 16:06:31 2025 -0600
+
+    Added new hole-filling method which takes TKE from up2 and vp2 (#1217)
+    
+    Added new hole-filling method which takes TKE from up2 and vp2
+    CLUBB ticket #1165
+    
+    BIT_CHANGING if flag `l_wp2_fill_holes_tke` is set to true
+    Introduced new flag `l_wp2_fill_holes_tke` to turn on new wp2 hole-filling subroutine
+    that takes TKE from up2 and vp2.
