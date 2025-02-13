@@ -1863,6 +1863,188 @@ module clubb_driver
     call init_precip_fracs_api( gr%nzt, ngrdcol, &
                                 precip_fracs )
 
+    call setup_radiation_variables( gr%nzm, lin_int_buffer, &
+                                    extended_atmos_range_size )
+                                    
+    ! Initialize to 0.
+    do k = 1, gr%nzt
+      do i = 1, ngrdcol
+        call init_hydromet_pdf_params( hydromet_pdf_params(i,k) )
+      end do
+    end do
+
+    if ( clubb_at_least_debug_level( 0 ) ) then
+      if ( err_code == clubb_fatal_error ) then
+        ! At this point, input fields haven't been set up, so don't clean them up.
+        call cleanup_clubb( l_input_fields=.false., gr=gr )
+        return
+      end if
+    end if
+
+    ! This special purpose code only applies to tuner runs where the tune_type
+    ! is setup to try all permutations of our model flags
+    if ( present( model_flags_array ) ) then
+      clubb_config_flags%l_godunov_upwind_wpxp_ta = model_flags_array(1)
+      clubb_config_flags%l_godunov_upwind_xpyp_ta = model_flags_array(2)
+      clubb_config_flags%l_upwind_xpyp_ta         = model_flags_array(3)
+      clubb_config_flags%l_upwind_xm_ma           = model_flags_array(4)
+      clubb_config_flags%l_vert_avg_closure       = model_flags_array(5)
+      clubb_config_flags%l_standard_term_ta       = model_flags_array(6)
+      clubb_config_flags%l_tke_aniso              = model_flags_array(7)
+      clubb_config_flags%l_use_cloud_cover        = model_flags_array(8)
+      clubb_config_flags%l_rcm_supersat_adj       = model_flags_array(9)
+
+      if ( clubb_config_flags%l_vert_avg_closure ) then
+        clubb_config_flags%l_trapezoidal_rule_zt    = .true.
+        clubb_config_flags%l_trapezoidal_rule_zm    = .true.
+        clubb_config_flags%l_call_pdf_closure_twice = .true.
+      end if
+    end if
+
+
+#ifdef _OPENMP
+    iunit = omp_get_thread_num( ) + 50 ! Known magic number
+#else
+    iunit = 50
+#endif
+
+    ! Only output radiation files if using a radiation scheme
+    if ( trim( rad_scheme ) == "bugsrad" ) then
+      stats_metadata%l_output_rad_files = .true.
+    end if
+
+#ifdef SILHS
+    if ( lh_microphys_type /= lh_microphys_disabled ) then
+      l_silhs_out = .true.
+    else
+      l_silhs_out = .false.
+    end if
+#else
+    l_silhs_out = .false.
+#endif
+
+    if ( .not. l_restart ) then
+      time_current = time_initial
+      iinit = 1
+    else  ! restart
+      time_current = time_restart
+    end if
+
+    ! Time integration
+    ! Call advance_clubb_core once per each statistics output time
+    ifinal = floor( ( time_final - time_initial ) / real(dt_main, kind=time_precision) )
+
+    ! Setup filenames and variables to set for setfields, if enabled
+    if ( l_input_fields ) then
+      call inputfields_init( iunit, runfile ) ! Intent(in)
+    end if
+
+    ! check to make sure dt_rad is a mutliple of dt_main
+    if ( abs(dt_rad/dt_main - real(floor(dt_rad/dt_main), kind=core_rknd)) &
+          > 1.e-8_core_rknd) then
+      error stop "dt_rad must be a multiple of dt_main"
+    end if
+
+    if ( l_silhs_rad .and. clubb_config_flags%l_calc_thlp2_rad ) then
+
+      write(fstderr,*) "The options l_silhs_rad and l_calc_thlp2_rad are incompatible."
+      err_code = clubb_fatal_error
+      call cleanup_clubb( l_input_fields, gr )
+      return
+
+    end if
+
+    if ( clubb_config_flags%l_calc_thlp2_rad .and. rad_scheme == "none" ) then
+      error stop "The options rad_scheme == none and l_calc_thlp2_rad are incompatible."
+    end if
+
+!$OMP CRITICAL
+    if ( stats_metadata%l_output_rad_files ) then
+
+      ! Initialize statistics output, note that this will allocate/initialize stats variables for all
+      ! columns, but only create the stats files for the first columns
+      call stats_init( iunit, fname_prefix, output_dir, l_stats, & ! In
+                      stats_fmt, stats_tsamp, stats_tout, runfile, & ! In
+                      hydromet_dim, sclr_dim, edsclr_dim, sclr_tol, & ! In
+                      hm_metadata%hydromet_list, hm_metadata%l_mix_rat_hm, & ! In
+                      gr%nzm, ngrdcol, nlon, nlat, gr%zt, gr%zm, total_atmos_dim - 1, & ! In
+                      complete_alt(1:total_atmos_dim), total_atmos_dim, & ! In
+                      complete_momentum(1:total_atmos_dim + 1), day, month, year, & ! In
+                      (/lon_vals/), (/lat_vals/), time_current, dt_main, l_silhs_out,&!In
+                      clubb_params, &
+                      clubb_config_flags%l_uv_nudge, &
+                      clubb_config_flags%l_tke_aniso, &
+                      clubb_config_flags%l_standard_term_ta, &
+                      stats_metadata, & ! In/Out
+                      stats_zt, stats_zm, stats_sfc, & ! In/Out
+                      stats_lh_zt, stats_lh_sfc, & ! In/Out
+                      stats_rad_zt, stats_rad_zm ) ! In/Out
+
+    else
+
+      ! Initialize statistics output, note that this will allocate/initialize stats variables for all
+      ! columns, but only create the stats files for the first columns
+      call stats_init( iunit, fname_prefix, output_dir, l_stats, & ! In
+                      stats_fmt, stats_tsamp, stats_tout, runfile, & ! In
+                      hydromet_dim, sclr_dim, edsclr_dim, sclr_tol, & ! In
+                      hm_metadata%hydromet_list, hm_metadata%l_mix_rat_hm, & ! In
+                      gr%nzm, ngrdcol, nlon, nlat, gr%zt, gr%zm, 0, & ! In
+                      rad_dummy, 0, rad_dummy, day, month, year, & ! In
+                      (/lon_vals/), (/lat_vals/), time_current, dt_main, l_silhs_out,&!In
+                      clubb_params, &
+                      clubb_config_flags%l_uv_nudge, &
+                      clubb_config_flags%l_tke_aniso, &
+                      clubb_config_flags%l_standard_term_ta, &
+                      stats_metadata, & ! In/Out
+                      stats_zt, stats_zm, stats_sfc, & ! In/Out
+                      stats_lh_zt, stats_lh_sfc, & ! In/Out
+                      stats_rad_zt, stats_rad_zm ) ! In/Out
+
+    end if
+!$OMP END CRITICAL
+
+    if ( clubb_at_least_debug_level( 0 ) ) then
+      if ( err_code == clubb_fatal_error ) then
+          write(fstderr,*) "FATAL ERROR in stats_init"
+          error stop
+      end if
+    end if
+
+#ifdef SILHS
+    if ( lh_microphys_type /= lh_microphys_disabled ) then
+
+      ! Setup 2D output of all subcolumns (if enabled)
+      call latin_hypercube_2D_output_api( &
+             fname_prefix, output_dir, stats_metadata%stats_tout, &
+             gr%nzt, pdf_dim, & ! Intent(in)
+             gr%zt, time_initial, lh_num_samples, & ! Intent(in)
+             nlon, nlat, (/lon_vals/), (/lat_vals/), &
+             hm_metadata, &
+             clubb_params(1,:), &
+             sclr_dim, sclr_tol, &
+             clubb_config_flags%l_uv_nudge, &
+             clubb_config_flags%l_tke_aniso, &
+             clubb_config_flags%l_standard_term_ta )    ! Intent(in)
+
+    end if
+#endif /* SILHS */
+
+    stats_nsamp = nint( stats_metadata%stats_tsamp / dt_main )
+    stats_nout = nint( stats_metadata%stats_tout / dt_main )
+
+    !initialize timers    
+    time_loop_init = 0.0_core_rknd
+    time_clubb_advance = 0.0_core_rknd
+    time_clubb_pdf = 0.0_core_rknd
+    time_SILHS = 0.0_core_rknd
+    time_microphys_advance = 0.0_core_rknd
+    time_microphys_scheme = 0.0_core_rknd
+    time_loop_end = 0.0_core_rknd
+    time_output_multi_col = 0.0_core_rknd
+    time_total = 0.0_core_rknd
+    time_stop = 0.0_core_rknd
+    time_start = 0.0_core_rknd
+
     um      = zero          ! u wind
     vm      = zero          ! v wind
     upwp    = zero          ! vertical u momentum flux
@@ -1982,16 +2164,6 @@ module clubb_driver
     ! Hydrometer types
     Nccnm = zero ! CCN concentration (COAMPS/MG)
 
-    if ( hydromet_dim > 0 ) then
-      K_hm = zero ! Eddy diff. coef. for hydromets.: mom. levs.
-      hydromet    = zero
-      hydrometp2  = zero
-      wphydrometp = zero
-      wp2hmp      = zero
-      rtphmp_zt   = zero
-      thlphmp_zt  = zero
-    end if
-
     ! Cloud droplet concentration
     Ncm   = zero
     wpNcp = zero
@@ -2001,35 +2173,6 @@ module clubb_driver
     wprtp_sfc  = zero
     upwp_sfc   = zero
     vpwp_sfc   = zero
-
-    ! Passive scalars
-    if ( sclr_dim > 0 ) then
-      sclrpthvp     = zero
-      wpsclrp_sfc   = zero
-      sclrm         = zero
-      sclrp3        = zero
-      sclrprtp      = zero
-      sclrpthlp     = zero
-      sclrm_forcing = zero
-      wpsclrp       = zero
-
-      do sclr = 1, sclr_dim
-        sclrp2(:,:,sclr) = sclr_tol(sclr)**2
-      end do
-    end if
-
-    if ( edsclr_dim > 0 ) then
-      wpedsclrp_sfc   = zero
-      edsclrm         = zero
-      edsclrm_forcing = zero
-    end if
-
-    ! Initialize to 0.
-    do k = 1, gr%nzt
-      do i = 1, ngrdcol
-        call init_hydromet_pdf_params( hydromet_pdf_params(i,k) )
-      end do
-    end do
     
     ! Initialize to 0.
     rvm_mc  = zero
@@ -2058,33 +2201,36 @@ module clubb_driver
     X_mixt_comp_all_levs = -999
     lh_sample_point_weights = -999._core_rknd
 
+    ! Passive scalars
+    if ( sclr_dim > 0 ) then
+      sclrpthvp     = zero
+      wpsclrp_sfc   = zero
+      sclrm         = zero
+      sclrp3        = zero
+      sclrprtp      = zero
+      sclrpthlp     = zero
+      sclrm_forcing = zero
+      wpsclrp       = zero
 
-    if ( clubb_at_least_debug_level( 0 ) ) then
-        if ( err_code == clubb_fatal_error ) then
-          ! At this point, input fields haven't been set up, so don't clean them up.
-          call cleanup_clubb( l_input_fields=.false., gr=gr )
-          return
-        end if
+      do sclr = 1, sclr_dim
+        sclrp2(:,:,sclr) = sclr_tol(sclr)**2
+      end do
     end if
 
-    ! This special purpose code only applies to tuner runs where the tune_type
-    ! is setup to try all permutations of our model flags
-    if ( present( model_flags_array ) ) then
-      clubb_config_flags%l_godunov_upwind_wpxp_ta = model_flags_array(1)
-      clubb_config_flags%l_godunov_upwind_xpyp_ta = model_flags_array(2)
-      clubb_config_flags%l_upwind_xpyp_ta         = model_flags_array(3)
-      clubb_config_flags%l_upwind_xm_ma           = model_flags_array(4)
-      clubb_config_flags%l_vert_avg_closure       = model_flags_array(5)
-      clubb_config_flags%l_standard_term_ta       = model_flags_array(6)
-      clubb_config_flags%l_tke_aniso              = model_flags_array(7)
-      clubb_config_flags%l_use_cloud_cover        = model_flags_array(8)
-      clubb_config_flags%l_rcm_supersat_adj       = model_flags_array(9)
+    if ( hydromet_dim > 0 ) then
+      K_hm = zero ! Eddy diff. coef. for hydromets.: mom. levs.
+      hydromet    = zero
+      hydrometp2  = zero
+      wphydrometp = zero
+      wp2hmp      = zero
+      rtphmp_zt   = zero
+      thlphmp_zt  = zero
+    end if
 
-      if ( clubb_config_flags%l_vert_avg_closure ) then
-        clubb_config_flags%l_trapezoidal_rule_zt    = .true.
-        clubb_config_flags%l_trapezoidal_rule_zm    = .true.
-        clubb_config_flags%l_call_pdf_closure_twice = .true.
-      end if
+    if ( edsclr_dim > 0 ) then
+      wpedsclrp_sfc   = zero
+      edsclrm         = zero
+      edsclrm_forcing = zero
     end if
 
     ! Deallocate stretched grid altitude arrays
@@ -2113,22 +2259,15 @@ module clubb_driver
           sclrm, edsclrm )                                                 ! Intent(out)
 
     if ( clubb_at_least_debug_level( 0 ) ) then
-        if ( err_code == clubb_fatal_error ) then
-            ! At this point, input fields haven't been set up, so don't clean them up.
-            call cleanup_clubb( l_input_fields=.false., gr=gr )
-            return
-        end if
+      if ( err_code == clubb_fatal_error ) then
+        ! At this point, input fields haven't been set up, so don't clean them up.
+        call cleanup_clubb( l_input_fields=.false., gr=gr )
+        return
+      end if
     end if
 
 
-    if ( .not. l_restart ) then
-
-      time_current = time_initial
-      iinit = 1
-
-    else  ! restart
-
-      time_current = time_restart
+    if ( l_restart ) then
 
       ! Determining what iteration to restart at.
       ! The value is increased by 1 to sychronize with restart data.
@@ -2188,116 +2327,6 @@ module clubb_driver
 
     end if ! ~l_restart
 
-    call setup_radiation_variables( gr%nzm, lin_int_buffer, &
-                                    extended_atmos_range_size )
-
-#ifdef _OPENMP
-    iunit = omp_get_thread_num( ) + 50 ! Known magic number
-#else
-    iunit = 50
-#endif
-
-    ! Only output radiation files if using a radiation scheme
-    if ( trim( rad_scheme ) == "bugsrad" ) then
-      stats_metadata%l_output_rad_files = .true.
-    end if
-
-#ifdef SILHS
-    if ( lh_microphys_type /= lh_microphys_disabled ) then
-      l_silhs_out = .true.
-    else
-      l_silhs_out = .false.
-    end if
-#else
-      l_silhs_out = .false.
-#endif
-
-!$OMP CRITICAL
-    if ( stats_metadata%l_output_rad_files ) then
-
-      ! Initialize statistics output, note that this will allocate/initialize stats variables for all
-      ! columns, but only create the stats files for the first columns
-      call stats_init( iunit, fname_prefix, output_dir, l_stats, & ! In
-                      stats_fmt, stats_tsamp, stats_tout, runfile, & ! In
-                      hydromet_dim, sclr_dim, edsclr_dim, sclr_tol, & ! In
-                      hm_metadata%hydromet_list, hm_metadata%l_mix_rat_hm, & ! In
-                      gr%nzm, ngrdcol, nlon, nlat, gr%zt, gr%zm, total_atmos_dim - 1, & ! In
-                      complete_alt(1:total_atmos_dim), total_atmos_dim, & ! In
-                      complete_momentum(1:total_atmos_dim + 1), day, month, year, & ! In
-                      (/lon_vals/), (/lat_vals/), time_current, dt_main, l_silhs_out,&!In
-                      clubb_params, &
-                      clubb_config_flags%l_uv_nudge, &
-                      clubb_config_flags%l_tke_aniso, &
-                      clubb_config_flags%l_standard_term_ta, &
-                      stats_metadata, & ! In/Out
-                      stats_zt, stats_zm, stats_sfc, & ! In/Out
-                      stats_lh_zt, stats_lh_sfc, & ! In/Out
-                      stats_rad_zt, stats_rad_zm ) ! In/Out
-
-    else
-
-      ! Initialize statistics output, note that this will allocate/initialize stats variables for all
-      ! columns, but only create the stats files for the first columns
-      call stats_init( iunit, fname_prefix, output_dir, l_stats, & ! In
-                      stats_fmt, stats_tsamp, stats_tout, runfile, & ! In
-                      hydromet_dim, sclr_dim, edsclr_dim, sclr_tol, & ! In
-                      hm_metadata%hydromet_list, hm_metadata%l_mix_rat_hm, & ! In
-                      gr%nzm, ngrdcol, nlon, nlat, gr%zt, gr%zm, 0, & ! In
-                      rad_dummy, 0, rad_dummy, day, month, year, & ! In
-                      (/lon_vals/), (/lat_vals/), time_current, dt_main, l_silhs_out,&!In
-                      clubb_params, &
-                      clubb_config_flags%l_uv_nudge, &
-                      clubb_config_flags%l_tke_aniso, &
-                      clubb_config_flags%l_standard_term_ta, &
-                      stats_metadata, & ! In/Out
-                      stats_zt, stats_zm, stats_sfc, & ! In/Out
-                      stats_lh_zt, stats_lh_sfc, & ! In/Out
-                      stats_rad_zt, stats_rad_zm ) ! In/Out
-
-    end if
-!$OMP END CRITICAL
-
-    if ( clubb_at_least_debug_level( 0 ) ) then
-      if ( err_code == clubb_fatal_error ) then
-          write(fstderr,*) "FATAL ERROR in stats_init"
-          error stop
-      end if
-    end if
-
-#ifdef SILHS
-    if ( lh_microphys_type /= lh_microphys_disabled ) then
-
-      ! Setup 2D output of all subcolumns (if enabled)
-      call latin_hypercube_2D_output_api( &
-             fname_prefix, output_dir, stats_metadata%stats_tout, &
-             gr%nzt, pdf_dim, & ! Intent(in)
-             gr%zt, time_initial, lh_num_samples, & ! Intent(in)
-             nlon, nlat, (/lon_vals/), (/lat_vals/), &
-             hm_metadata, &
-             clubb_params(1,:), &
-             sclr_dim, sclr_tol, &
-             clubb_config_flags%l_uv_nudge, &
-             clubb_config_flags%l_tke_aniso, &
-             clubb_config_flags%l_standard_term_ta )    ! Intent(in)
-
-    end if
-#endif /* SILHS */
-
-    ! Time integration
-    ! Call advance_clubb_core once per each statistics output time
-    ifinal = floor( ( time_final - time_initial ) / real(dt_main, kind=time_precision) )
-
-    ! Setup filenames and variables to set for setfields, if enabled
-    if ( l_input_fields ) then
-      call inputfields_init( iunit, runfile ) ! Intent(in)
-    end if
-
-    ! check to make sure dt_rad is a mutliple of dt_main
-    if ( abs(dt_rad/dt_main - real(floor(dt_rad/dt_main), kind=core_rknd)) &
-          > 1.e-8_core_rknd) then
-      error stop "dt_rad must be a multiple of dt_main"
-    end if
-
     if( stats_metadata%l_stats ) then
 
       if ( .not. (( abs(dt_rad/stats_metadata%stats_tout &
@@ -2311,36 +2340,6 @@ module clubb_driver
       end if
 
     end if
-
-    if ( l_silhs_rad .and. clubb_config_flags%l_calc_thlp2_rad ) then
-
-      write(fstderr,*) "The options l_silhs_rad and l_calc_thlp2_rad are incompatible."
-      err_code = clubb_fatal_error
-      call cleanup_clubb( l_input_fields, gr )
-      return
-
-    end if
-
-    if ( clubb_config_flags%l_calc_thlp2_rad .and. rad_scheme == "none" ) then
-
-      error stop "The options rad_scheme == none and l_calc_thlp2_rad are incompatible."
-
-    end if
-    stats_nsamp = nint( stats_metadata%stats_tsamp / dt_main )
-    stats_nout = nint( stats_metadata%stats_tout / dt_main )
-
-    !initialize timers    
-    time_loop_init = 0.0_core_rknd
-    time_clubb_advance = 0.0_core_rknd
-    time_clubb_pdf = 0.0_core_rknd
-    time_SILHS = 0.0_core_rknd
-    time_microphys_advance = 0.0_core_rknd
-    time_microphys_scheme = 0.0_core_rknd
-    time_loop_end = 0.0_core_rknd
-    time_output_multi_col = 0.0_core_rknd
-    time_total = 0.0_core_rknd
-    time_stop = 0.0_core_rknd
-    time_start = 0.0_core_rknd
     
     ! Save time before main loop starts
     call cpu_time( time_start )
