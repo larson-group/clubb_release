@@ -1964,6 +1964,73 @@ module clubb_driver
       end if
     end if
 
+
+    ! Currently initialize_clubb does more than just read in the initial sounding.
+    ! It also includes other important initializations such as um_ref and vm_ref.
+    ! Therefore it should be executed prior to a restart. The restart should overwrite
+    ! the initial sounding anyway.
+    call initialize_clubb( &
+          gr, iunit, trim( forcings_file_path ), p_sfc(1), zm_init(1),         & ! Intent(in)
+          sclr_dim, edsclr_dim, sclr_idx,                                & ! Intent(in)
+          clubb_config_flags,                                            & ! Intent(in)
+          l_modify_ic_with_cubic_int,                                    & ! Intent(in)
+          thlm(1,:), rtm(1,:), um(1,:), vm(1,:), ug(1,:), vg(1,:), wp2(1,:), up2(1,:), vp2(1,:), rcm(1,:),  & ! Intent(inout)
+          wm_zt(1,:), wm_zm(1,:), em(1,:), exner(1,:),                                  & ! Intent(inout)
+          thvm(1,:), p_in_Pa(1,:),                                            & ! Intent(inout)
+          rho(1,:), rho_zm(1,:), rho_ds_zm(1,:), rho_ds_zt(1,:),                        & ! Intent(inout)
+          invrs_rho_ds_zm(1,:), invrs_rho_ds_zt(1,:),                              & ! Intent(inout)
+          thv_ds_zm(1,:), thv_ds_zt(1,:),                                     & ! Intent(inout)
+          rtm_ref(1,:), thlm_ref(1,:),                                             & ! Intent(inout) 
+          um_ref(1,:), vm_ref(1,:),                                                & ! Intent(inout)
+          Ncm(1,:), Nc_in_cloud(1,:), Nccnm(1,:),                                       & ! Intent(inout)
+          deep_soil_T_in_K(1), sfc_soil_T_in_K(1), veg_T_in_K(1),                 & ! Intent(inout)
+          sclrm(1,:,:), edsclrm(1,:,:) )                                                 ! Intent(out)
+
+!$OMP CRITICAL
+    if ( stats_metadata%l_output_rad_files ) then
+
+      ! Initialize statistics output, note that this will allocate/initialize stats variables for all
+      ! columns, but only create the stats files for the first columns
+      call stats_init( iunit, fname_prefix, output_dir, l_stats, & ! In
+                      stats_fmt, stats_tsamp, stats_tout, runfile, & ! In
+                      hydromet_dim, sclr_dim, edsclr_dim, sclr_tol, & ! In
+                      hm_metadata%hydromet_list, hm_metadata%l_mix_rat_hm, & ! In
+                      gr%nzm, ngrdcol, nlon, nlat, gr%zt, gr%zm, total_atmos_dim - 1, & ! In
+                      complete_alt(1:total_atmos_dim), total_atmos_dim, & ! In
+                      complete_momentum(1:total_atmos_dim + 1), day, month, year, & ! In
+                      (/lon_vals/), (/lat_vals/), time_current, dt_main, l_silhs_out,&!In
+                      clubb_params, &
+                      clubb_config_flags%l_uv_nudge, &
+                      clubb_config_flags%l_tke_aniso, &
+                      clubb_config_flags%l_standard_term_ta, &
+                      stats_metadata, & ! In/Out
+                      stats_zt, stats_zm, stats_sfc, & ! In/Out
+                      stats_lh_zt, stats_lh_sfc, & ! In/Out
+                      stats_rad_zt, stats_rad_zm ) ! In/Out
+
+    else
+
+      ! Initialize statistics output, note that this will allocate/initialize stats variables for all
+      ! columns, but only create the stats files for the first columns
+      call stats_init( iunit, fname_prefix, output_dir, l_stats, & ! In
+                      stats_fmt, stats_tsamp, stats_tout, runfile, & ! In
+                      hydromet_dim, sclr_dim, edsclr_dim, sclr_tol, & ! In
+                      hm_metadata%hydromet_list, hm_metadata%l_mix_rat_hm, & ! In
+                      gr%nzm, ngrdcol, nlon, nlat, gr%zt, gr%zm, 0, & ! In
+                      rad_dummy, 0, rad_dummy, day, month, year, & ! In
+                      (/lon_vals/), (/lat_vals/), time_current, dt_main, l_silhs_out,&!In
+                      clubb_params, &
+                      clubb_config_flags%l_uv_nudge, &
+                      clubb_config_flags%l_tke_aniso, &
+                      clubb_config_flags%l_standard_term_ta, &
+                      stats_metadata, & ! In/Out
+                      stats_zt, stats_zm, stats_sfc, & ! In/Out
+                      stats_lh_zt, stats_lh_sfc, & ! In/Out
+                      stats_rad_zt, stats_rad_zm ) ! In/Out
+
+    end if
+!$OMP END CRITICAL
+
 #ifdef SILHS
     if ( lh_microphys_type /= lh_microphys_disabled ) then
 
@@ -1982,6 +2049,20 @@ module clubb_driver
 
     end if
 #endif /* SILHS */
+
+    call setup_radiation_variables( gr%nzm, lin_int_buffer, &
+                                    extended_atmos_range_size )
+
+    if ( clubb_at_least_debug_level( 0 ) ) then
+      if ( err_code == clubb_fatal_error ) then
+        ! At this point, input fields haven't been set up, so don't clean them up.
+        call cleanup_clubb( l_input_fields=.false., gr=gr )
+        return
+      end if
+    end if
+    
+    stats_nsamp = nint( stats_metadata%stats_tsamp / dt_main )
+    stats_nout = nint( stats_metadata%stats_tout / dt_main )
 
     !initialize timers    
     time_loop_init = 0.0_core_rknd
@@ -2003,44 +2084,44 @@ module clubb_driver
 
     do k = 1, gr%nzt
       do i = 1, ngrdcol
-        um(i,k)                     = zero        ! u wind
-        vm(i,k)                     = zero        ! v wind
+        um(i,k)                     = um(1,k)        ! u wind
+        vm(i,k)                     = vm(1,k)        ! v wind
         up3(i,k)                    = zero        ! u'^3
         vp3(i,k)                    = zero        ! v'^3
-        thlm(i,k)                   = zero        ! liquid potential temperature
-        rtm(i,k)                    = zero        ! total water mixing ratio
+        thlm(i,k)                   = thlm(1,k)         ! liquid potential temperature
+        rtm(i,k)                    = rtm(1,k)        ! total water mixing ratio
         w_up_in_cloud(i,k)          = zero
         w_down_in_cloud(i,k)        = zero
         cloudy_updraft_frac(i,k)    = zero
         cloudy_downdraft_frac(i,k)  = zero
         wp3(i,k)                    = zero        ! w'^3
-        p_in_Pa(i,k)                = zero        ! pressure 
-        exner(i,k)                  = zero        ! exner
-        rho(i,k)                    = zero        ! density on thermo. levels
-        rho_ds_zt(i,k)              = zero        ! dry, static density: t-levs
-        invrs_rho_ds_zt(i,k)        = zero        ! inv. dry, static density: t-levs
-        thv_ds_zt(i,k)              = zero        ! dry, base-state theta_v: t-levs
+        p_in_Pa(i,k)                = p_in_Pa(1,k)        ! pressure 
+        exner(i,k)                  = exner(1,k)        ! exner
+        rho(i,k)                    = rho(1,k)        ! density on thermo. levels
+        rho_ds_zt(i,k)              = rho_ds_zt(1,k)         ! dry, static density: t-levs
+        invrs_rho_ds_zt(i,k)        = invrs_rho_ds_zt(1,k)        ! inv. dry, static density: t-levs
+        thv_ds_zt(i,k)              = thv_ds_zt(1,k)        ! dry, base-state theta_v: t-levs
         thlm_forcing(i,k)           = zero        ! thlm large-scale forcing
         rtm_forcing(i,k)            = zero        ! rtm large-scale forcing
         um_forcing(i,k)             = zero        ! u forcing
         vm_forcing(i,k)             = zero        ! v forcing
         um_pert(i,k)                = zero        ! Variables used to track perturbed version of winds.
         vm_pert(i,k)                = zero
-        wm_zt(i,k)                  = zero        ! Imposed large scale w - Thermodynamic levels
-        rcm(i,k)                    = zero
+        wm_zt(i,k)                  = wm_zt(1,k)        ! Imposed large scale w - Thermodynamic levels
+        rcm(i,k)                    = rcm(1,k)
         cloud_frac(i,k)             = zero
         ice_supersat_frac(i,k)      = zero
         rcm_in_layer(i,k)           = zero
         cloud_cover(i,k)            = zero
         sigma_sqd_w_zt(i,k)         = zero        ! PDF width parameter interp. to t-levs.
         wp2_zt(i,k)                 = w_tol_sqd   ! wp2 interpolated to thermo. levels
-        ug(i,k)                     = zero        ! u geostrophic wind
-        vg(i,k)                     = zero        ! v geostrophic wind
-        um_ref(i,k)                 = zero
-        vm_ref(i,k)                 = zero
-        thlm_ref(i,k)               = zero
-        rtm_ref(i,k)                = zero
-        thvm(i,k)                   = zero        ! Virtual potential temperature
+        ug(i,k)                     = ug(1,k)        ! u geostrophic wind
+        vg(i,k)                     = vg(1,k)        ! v geostrophic wind
+        um_ref(i,k)                 = um_ref(1,k)
+        vm_ref(i,k)                 = vm_ref(1,k)
+        thlm_ref(i,k)               = thlm_ref(1,k)
+        rtm_ref(i,k)                = rtm_ref(1,k)
+        thvm(i,k)                   = thvm(1,k)         ! Virtual potential temperature
         radht(i,k)                  = zero        ! Heating rate
         thlp3(i,k)                  = zero
         rtp3(i,k)                   = zero
@@ -2052,8 +2133,9 @@ module clubb_driver
         Kh_zt(i,k)                  = zero        ! Eddy diffusivity coefficient: thermo. levels
         Lscale(i,k)                 = zero
         tau_zt(i,k)                 = zero        ! Eddy dissipation time scale: thermo. levels
-        Nccnm(i,k)                  = zero        ! CCN concentration (COAMPS/MG)
-        Ncm(i,k)                    = zero
+        Nccnm(i,k)                  = Nccnm(1,k)        ! CCN concentration (COAMPS/MG)
+        Ncm(i,k)                    = Ncm(1,k)
+        Nc_in_cloud(i,k)            = Nc_in_cloud(1,k)
         rvm_mc(i,k)                 = zero
         rcm_mc(i,k)                 = zero
         thlm_mc(i,k)                = zero
@@ -2066,19 +2148,19 @@ module clubb_driver
       do i = 1, ngrdcol
         upwp(i,k)             = zero          ! vertical u momentum flux
         vpwp(i,k)             = zero          ! vertical v momentum flux
-        up2(i,k)              = w_tol_sqd     ! u'^2
-        vp2(i,k)              = w_tol_sqd     ! v'^2
+        up2(i,k)              = up2(1,k)     ! u'^2
+        vp2(i,k)              = vp2(1,k)      ! v'^2
         wprtp(i,k)            = zero          ! w'rt'
         wpthlp(i,k)           = zero          ! w'thl'
         wprcp(i,k)            = zero          ! w'rc'
-        wp2(i,k)              = w_tol_sqd     ! w'^2
+        wp2(i,k)              = wp2(1,k)     ! w'^2
         rtp2(i,k)             = rt_tol**2     ! rt'^2
         thlp2(i,k)            = thl_tol**2    ! thl'^2
         rtpthlp(i,k)          = zero          ! rt'thl'
-        rho_zm(i,k)           = zero          ! density on moment. levels
-        rho_ds_zm(i,k)        = zero          ! dry, static density: m-levs
-        invrs_rho_ds_zm(i,k)  = zero          ! inv. dry, static density: m-levs
-        thv_ds_zm(i,k)        = zero          ! dry, base-state theta_v: m-levs
+        rho_zm(i,k)           = rho_zm(1,k)          ! density on moment. levels
+        rho_ds_zm(i,k)        = rho_ds_zm(1,k)          ! dry, static density: m-levs
+        invrs_rho_ds_zm(i,k)  = invrs_rho_ds_zm(1,k)          ! inv. dry, static density: m-levs
+        thv_ds_zm(i,k)        = thv_ds_zm(1,k)          ! dry, base-state theta_v: m-levs
         wprtp_forcing(i,k)    = zero          ! <w'r_t'> forcing 
         wpthlp_forcing(i,k)   = zero          ! <w'th_l'> forcing 
         rtp2_forcing(i,k)     = zero          ! <r_t'^2> forcing 
@@ -2086,7 +2168,7 @@ module clubb_driver
         rtpthlp_forcing(i,k)  = zero          ! <r_t'th_l'> forcing 
         upwp_pert(i,k)        = zero          ! Variables used to track perturbed version of winds.
         vpwp_pert(i,k)        = zero
-        wm_zm(i,k)            = zero          ! Imposed large scale w - Momentum levels
+        wm_zm(i,k)            = wm_zm(1,k)          ! Imposed large scale w - Momentum levels
         invrs_tau_zm(i,k)     = zero
         sigma_sqd_w(i,k)      = zero          ! PDF width parameter (momentum levels)
         Skw_zm(i,k)           = zero          ! Skewness of w on momentum levels
@@ -2106,7 +2188,7 @@ module clubb_driver
         wp2up2(i,k)           = zero          ! w'^2 u'^2
         wp2vp2(i,k)           = zero          ! w'^2 v'^2
         Kh_zm(i,k)            = zero          ! Eddy diffusivity coefficient: momentum levels
-        em(i,k)               = em_min
+        em(i,k)               = em(1,k)
         tau_zm(i,k)           = zero          ! Eddy dissipation time scale: momentum levels
         wpNcp(i,k)            = zero
         wprtp_mc(i,k)         = zero
@@ -2123,6 +2205,9 @@ module clubb_driver
       wprtp_sfc(i)    = zero
       upwp_sfc(i)     = zero
       vpwp_sfc(i)     = zero
+      deep_soil_T_in_K(i) = deep_soil_T_in_K(1)
+      sfc_soil_T_in_K(i) = sfc_soil_T_in_K(1)
+      veg_T_in_K(i) = veg_T_in_K(1) 
     end do
 
     ! Passive scalars
@@ -2131,7 +2216,7 @@ module clubb_driver
       do sclr = 1, sclr_dim
         do k = 1, gr%nzt
           do i = 1, ngrdcol
-            sclrm(i,k,sclr)         = zero
+            sclrm(i,k,sclr)         = sclrm(1,k,sclr)
             sclrm_forcing(i,k,sclr) = zero
             sclrp3(i,k,sclr)        = zero
           end do
@@ -2161,9 +2246,9 @@ module clubb_driver
     if ( edsclr_dim > 0 ) then
 
       do edsclr = 1, edsclr_dim
-        do k = 1, gr%nzm
+        do k = 1, gr%nzt
           do i = 1, ngrdcol
-            edsclrm(i,k,edsclr)         = zero
+            edsclrm(i,k,edsclr)         = edsclrm(1,k,edsclr)
             edsclrm_forcing(i,k,edsclr) = zero
           end do
         end do
@@ -2193,91 +2278,6 @@ module clubb_driver
       wphydrometp = zero
 
     end if
-
-
-    ! Currently initialize_clubb does more than just read in the initial sounding.
-    ! It also includes other important initializations such as um_ref and vm_ref.
-    ! Therefore it should be executed prior to a restart. The restart should overwrite
-    ! the initial sounding anyway.
-    call initialize_clubb( &
-          gr, ngrdcol, iunit, trim( forcings_file_path ), p_sfc, zm_init,         & ! Intent(in)
-          sclr_dim, edsclr_dim, sclr_idx,                                & ! Intent(in)
-          clubb_config_flags,                                            & ! Intent(in)
-          l_modify_ic_with_cubic_int,                                    & ! Intent(in)
-          thlm, rtm, um, vm, ug, vg, wp2, up2, vp2, rcm,  & ! Intent(inout)
-          wm_zt, wm_zm, em, exner,                                  & ! Intent(inout)
-          thvm, p_in_Pa,                                            & ! Intent(inout)
-          rho, rho_zm, rho_ds_zm, rho_ds_zt,                        & ! Intent(inout)
-          invrs_rho_ds_zm, invrs_rho_ds_zt,                              & ! Intent(inout)
-          thv_ds_zm, thv_ds_zt,                                     & ! Intent(inout)
-          rtm_ref, thlm_ref,                                             & ! Intent(inout) 
-          um_ref, vm_ref,                                                & ! Intent(inout)
-          Ncm, Nc_in_cloud, Nccnm,                                       & ! Intent(inout)
-          deep_soil_T_in_K, sfc_soil_T_in_K, veg_T_in_K,                 & ! Intent(inout)
-          sclrm, edsclrm )                                                 ! Intent(out)
-
-    if ( clubb_at_least_debug_level( 0 ) ) then
-      if ( err_code == clubb_fatal_error ) then
-        ! At this point, input fields haven't been set up, so don't clean them up.
-        call cleanup_clubb( l_input_fields=.false., gr=gr )
-        return
-      end if
-    end if
-
-!$OMP CRITICAL
-    if ( stats_metadata%l_output_rad_files ) then
-
-      print *, "l_output_rad_files"
-
-      ! Initialize statistics output, note that this will allocate/initialize stats variables for all
-      ! columns, but only create the stats files for the first columns
-      call stats_init( iunit, fname_prefix, output_dir, l_stats, & ! In
-                      stats_fmt, stats_tsamp, stats_tout, runfile, & ! In
-                      hydromet_dim, sclr_dim, edsclr_dim, sclr_tol, & ! In
-                      hm_metadata%hydromet_list, hm_metadata%l_mix_rat_hm, & ! In
-                      gr%nzm, ngrdcol, nlon, nlat, gr%zt, gr%zm, total_atmos_dim - 1, & ! In
-                      complete_alt(1:total_atmos_dim), total_atmos_dim, & ! In
-                      complete_momentum(1:total_atmos_dim + 1), day, month, year, & ! In
-                      (/lon_vals/), (/lat_vals/), time_current, dt_main, l_silhs_out,&!In
-                      clubb_params, &
-                      clubb_config_flags%l_uv_nudge, &
-                      clubb_config_flags%l_tke_aniso, &
-                      clubb_config_flags%l_standard_term_ta, &
-                      stats_metadata, & ! In/Out
-                      stats_zt, stats_zm, stats_sfc, & ! In/Out
-                      stats_lh_zt, stats_lh_sfc, & ! In/Out
-                      stats_rad_zt, stats_rad_zm ) ! In/Out
-
-    else
-
-      print *, "no l_output_rad_files"
-
-      ! Initialize statistics output, note that this will allocate/initialize stats variables for all
-      ! columns, but only create the stats files for the first columns
-      call stats_init( iunit, fname_prefix, output_dir, l_stats, & ! In
-                      stats_fmt, stats_tsamp, stats_tout, runfile, & ! In
-                      hydromet_dim, sclr_dim, edsclr_dim, sclr_tol, & ! In
-                      hm_metadata%hydromet_list, hm_metadata%l_mix_rat_hm, & ! In
-                      gr%nzm, ngrdcol, nlon, nlat, gr%zt, gr%zm, 0, & ! In
-                      rad_dummy, 0, rad_dummy, day, month, year, & ! In
-                      (/lon_vals/), (/lat_vals/), time_current, dt_main, l_silhs_out,&!In
-                      clubb_params, &
-                      clubb_config_flags%l_uv_nudge, &
-                      clubb_config_flags%l_tke_aniso, &
-                      clubb_config_flags%l_standard_term_ta, &
-                      stats_metadata, & ! In/Out
-                      stats_zt, stats_zm, stats_sfc, & ! In/Out
-                      stats_lh_zt, stats_lh_sfc, & ! In/Out
-                      stats_rad_zt, stats_rad_zm ) ! In/Out
-
-    end if
-!$OMP END CRITICAL
-
-    call setup_radiation_variables( gr%nzm, lin_int_buffer, &
-                                    extended_atmos_range_size )
-    
-    stats_nsamp = nint( stats_metadata%stats_tsamp / dt_main )
-    stats_nout = nint( stats_metadata%stats_tout / dt_main )
 
 
     if ( l_restart ) then
@@ -3376,9 +3376,11 @@ module clubb_driver
 
   end subroutine run_clubb
 
+  
+
   !-----------------------------------------------------------------------
   subroutine initialize_clubb( &
-               gr, ngrdcol, iunit, forcings_file_path, p_sfc, zm_init, &
+               gr, iunit, forcings_file_path, p_sfc, zm_init, &
                sclr_dim, edsclr_dim, sclr_idx, &
                clubb_config_flags, &
                l_modify_ic_with_cubic_int, &
@@ -3417,9 +3419,7 @@ module clubb_driver
     use parameters_radiation, only: radiation_top, rad_scheme !--------- Variable(s)
 
 
-    use grid_class, only: &
-      zm2zt, &   !----------------------------------------------------- Procedure(s)
-      zt2zm
+    use grid_class, only: zm2zt, zt2zm !-------------------------------- Procedure(s)
 
     use sounding, only: read_sounding !--------------------------------- Procedure(s)
 
@@ -3470,25 +3470,19 @@ module clubb_driver
 
     implicit none
 
+    type (grid), intent(in) :: gr
+
     intrinsic :: min, max, trim, sqrt, size
 
     ! Input
-    
-    type (grid), intent(in) :: &
-      gr
-
-    integer, intent(in) :: &
-      ngrdcol
-
-    integer, intent(in) :: &
-      iunit
+    integer, intent(in) :: iunit
 
     character(len=*), intent(in) :: &
       forcings_file_path ! Path to the .dat files containing the forcings
 
-    real( kind = core_rknd ), dimension(ngrdcol), intent(in) :: &
-      p_sfc,   & ! Pressure at the surface        [Pa]
-      zm_init    ! Initial moment. level altitude [m]
+    real( kind = core_rknd ), intent(in) :: &
+      p_sfc,  & ! Pressure at the surface        [Pa]
+      zm_init   ! Initial moment. level altitude [m]
 
     integer, intent(in) :: &
       sclr_dim, & 
@@ -3510,12 +3504,12 @@ module clubb_driver
       l_modify_ic_with_cubic_int 
 
     ! Output
-    real( kind = core_rknd ), dimension(ngrdcol,gr%nzt), intent(inout) ::  & 
+    real( kind = core_rknd ), dimension(1,gr%nzt), intent(inout) ::  & 
       exner,           & ! Exner function (thermodynamic levels)     [-] 
       thvm,            & ! Virtual potential temp. (thermo. levs.)   [K]
       rcm                ! Cloud water mixing ratio (thermo. levs.)  [kg/kg]
 
-    real( kind = core_rknd ), dimension(ngrdcol,gr%nzt), intent(inout) ::  & 
+    real( kind = core_rknd ), dimension(gr%nzt), intent(inout) ::  & 
       thlm,            & ! Grid mean of liquid water pot. temp               [K] 
       rtm,             & ! Grid mean of total water mixing ratio             [kg/kg]
       um,              & ! Grid mean of eastward wind                        [m/s]
@@ -3533,7 +3527,7 @@ module clubb_driver
       rtm_ref,         & ! Initial profile of rtm                            [kg/kg]
       thlm_ref           ! Initial profile of thlm                           [K]
 
-    real( kind = core_rknd ), dimension(ngrdcol,gr%nzm), intent(inout) ::  & 
+    real( kind = core_rknd ), dimension(gr%nzm), intent(inout) ::  & 
       wp2,             & ! Vertical velocity variance (w'^2)                 [m^2/s^2]
       up2,             & ! East-west velocity variance (u'^2)                [m^2/s^2]
       vp2,             & ! North-south velocity variance (v'^2)              [m^2/s^2]
@@ -3544,52 +3538,48 @@ module clubb_driver
       invrs_rho_ds_zm, & ! Inv. dry, static density (m-levs.)                [m^3/kg]
       thv_ds_zm          ! Dry, base-state theta_v (m-levs.)                 [K]
 
-    real( kind = core_rknd ), dimension(ngrdcol,gr%nzt), intent(inout) :: &
+    real( kind = core_rknd ), dimension(gr%nzt), intent(inout) :: &
       Ncm,         & ! Mean cloud droplet conc., <N_c> (thermo. levs.)  [num/kg]
       Nc_in_cloud    ! Mean (in-cloud) cloud droplet concentration      [num/kg]
 
-    real( kind = core_rknd ), dimension(ngrdcol,gr%nzt), intent(inout) :: &
+    real( kind = core_rknd ), dimension(gr%nzt), intent(inout) :: &
       Nccnm    ! Cloud condensation nuclei concentration (COAMPS/MG)  [num/kg]
-    
-    real( kind = core_rknd ), dimension(ngrdcol), intent(inout) :: &
+
+    real( kind = core_rknd ), intent(inout) :: &
       deep_soil_T_in_K, &
       sfc_soil_T_in_K, &
-      veg_T_in_K
+      veg_T_in_K  
 
     ! Output
-    real( kind = core_rknd ), dimension(ngrdcol,gr%nzt,sclr_dim), intent(out) ::  & 
+    real( kind = core_rknd ), dimension(gr%nzt,sclr_dim), intent(out) ::  & 
       sclrm      ! Standard passive scalar [units vary]
 
-    real( kind = core_rknd ), dimension(ngrdcol,gr%nzt,edsclr_dim), intent(out) ::  & 
+    real( kind = core_rknd ), dimension(gr%nzt,edsclr_dim), intent(out) ::  & 
       edsclrm    ! Eddy diffusivity passive scalar [units vary]
 
     ! Local Variables
 
-    real( kind = core_rknd ), dimension(ngrdcol,gr%nzm) ::  & 
+    real( kind = core_rknd ), dimension(gr%nzm) ::  & 
       p_in_Pa_zm ! Pressure on momentum levels  [Pa]
 
-    real( kind = core_rknd ), dimension(ngrdcol) ::  &
-      rtm_sfc,          & ! Surface total water mixing ratio       [kg/kg]
-      thlm_sfc            ! Surface liq. water potential temp.     [K]
-
     real( kind = core_rknd ) ::  &
+      rtm_sfc,          & ! Surface total water mixing ratio       [kg/kg]
+      thlm_sfc,         & ! Surface liq. water potential temp.     [K]
       cloud_top_height, & ! Cloud top altitude in initial profile  [m]
-      em_max              ! Maximum value of initial subgrid TKE   [m^2/s^2]
+      em_max                ! Maximum value of initial subgrid TKE   [m^2/s^2]
 
     character(len=50) :: &
       theta_type, & ! Type of temperature sounding
       alt_type,   & ! Type of altitude sounding
       subs_type     ! Type of large-scale subsidence sounding
 
-    integer :: i, k ! Loop index
+    integer :: k ! Loop index
 
     !---- Begin code ----
 
     ! Read sounding information
-    ! Only use first value of p_sfc and zm_init because sounding files are not configured
-    ! to use multiple columns yet
-    call read_sounding( ngrdcol, sclr_dim, edsclr_dim, sclr_idx, &        ! Intent(in) 
-                        gr, iunit, runtype, p_sfc(1), zm_init(1), &    ! Intent(in) 
+    call read_sounding( sclr_dim, edsclr_dim, sclr_idx, &        ! Intent(in) 
+                        gr, iunit, runtype, p_sfc, zm_init, &    ! Intent(in) 
                         clubb_config_flags%saturation_formula, & ! Intent(in) 
                         l_modify_ic_with_cubic_int, &            ! Intent(in)
                         thlm, theta_type, rtm, um, vm, ug, vg, & ! Intent(out)
@@ -3597,22 +3587,20 @@ module clubb_driver
                         rtm_sfc, thlm_sfc, sclrm, edsclrm )      ! Intent(out)
 
     ! Covert sounding input to CLUBB compatible input
-    call initialize_clubb_variables( ngrdcol, sclr_dim, edsclr_dim, sclr_idx, & ! Intent(in)
-                                    gr, alt_type, theta_type,                 & ! Intent(in)
-                                    p_sfc, rtm_sfc, rtm,                      & ! Intent(in)
-                                    clubb_config_flags%saturation_formula,    & ! Intent(in)
-                                    thlm, p_in_Pa, p_in_Pa_zm,                & ! Intent(inout)
-                                    exner, rho, rho_zm,                       & ! Intent(out)
-                                    rcm, thvm, rho_ds_zm,                     & ! Intent(out)
-                                    rho_ds_zt, invrs_rho_ds_zm,               & ! Intent(out)
-                                    invrs_rho_ds_zt, thv_ds_zm,               & ! Intent(out)
-                                    thv_ds_zt, sclrm, edsclrm )                 ! Intent(out)
+    call initialize_clubb_variables( sclr_dim, edsclr_dim, sclr_idx,          & ! Intent(in)
+                                     gr, alt_type, theta_type,                & ! Intent(in)
+                                     p_sfc, rtm_sfc, rtm,                     & ! Intent(in)
+                                     clubb_config_flags%saturation_formula,   & ! Intent(in)
+                                     thlm, p_in_Pa, p_in_Pa_zm,               & ! Intent(inout)
+                                     exner, rho, rho_zm,                      & ! Intent(out)
+                                     rcm, thvm, rho_ds_zm,                    & ! Intent(out)
+                                     rho_ds_zt, invrs_rho_ds_zm,              & ! Intent(out)
+                                     invrs_rho_ds_zt, thv_ds_zm,              & ! Intent(out)
+                                     thv_ds_zt, sclrm, edsclrm )                ! Intent(out)
 
     if ( trim( rad_scheme ) == "bugsrad" ) then
-      ! Currently clubb does not support different grid heights, use only the first column to
-      ! determine the size of the extended atmosphere
       call determine_extended_atmos_bounds( gr%nzm, gr%zt(1,:),              & ! Intent(in)
-                                          gr%zm(1,:), gr%dzt(1,:), p_in_Pa_zm(1,:), &   ! Intent(in)
+                                          gr%zm(1,:), gr%dzt(1,:), p_in_Pa_zm, &   ! Intent(in)
                                           radiation_top,             &   ! Intent(in)
                                           extended_atmos_bottom_level, & ! Intent(out)
                                           extended_atmos_top_level,    & ! Intent(out)
@@ -3623,44 +3611,41 @@ module clubb_driver
       ! lin_int_buffer et al. are set to zero in clubb_model_settings.
     end if
 
-    do k = 1, gr%nzt
-      do i = 1, ngrdcol
+    ! Determine initial value cloud droplet number concentration when Nc
+    ! is predicted.
+    Nc_in_cloud = Nc0_in_cloud / rho
+    do k = 1, gr%nzt, 1
 
-        ! Determine initial value cloud droplet number concentration when Nc
-        ! is predicted.
-        Nc_in_cloud(i,k) = Nc0_in_cloud / rho(i,k)
+       if ( rcm(1,k) > zero ) then
 
-        if ( rcm(i,k) > zero ) then
+          ! The initial profile at this level is entirely saturated (due to
+          ! constant moisture and temperature over the level).  The level is
+          ! entirely cloudy.
+          Ncm(k) = Nc_in_cloud(k)
 
-            ! The initial profile at this level is entirely saturated (due to
-            ! constant moisture and temperature over the level).  The level is
-            ! entirely cloudy.
-            Ncm(i,k) = Nc_in_cloud(i,k)
+       else ! rcm = 0
 
-        else ! rcm = 0
+          ! The initial profile at this level is entirely unsaturated (due to
+          ! constant moisture and temperature over the level).  The level is
+          ! entirely clear.
+          Ncm(k) = Nc_in_cloud(k) * cloud_frac_min
 
-            ! The initial profile at this level is entirely unsaturated (due to
-            ! constant moisture and temperature over the level).  The level is
-            ! entirely clear.
-            Ncm(i,k) = Nc_in_cloud(i,k) * cloud_frac_min
+       endif
 
-        endif
-
-      end do
-    end do
+    enddo ! k = 1, gr%nzt, 1
 
     select case ( trim( microphys_scheme ) )
 
     case ( "coamps" )
        ! Initialize Nccnm as in COAMPS-LES
-      do k = 1, gr%nzt
-        do i = 1, ngrdcol
-          Nccnm(i,k) = 30.0_core_rknd &
-                       * ( one + exp( -gr%zt(i,k) / 2000.0_core_rknd ) )  &
-                       * cm3_per_m3 / rho(i,k)    ! Known magic number
-        end do
-      end do
-      
+       Nccnm(1:gr%nzt) &
+       = 30.0_core_rknd &
+         * ( one + exp( -gr%zt(1,1:gr%nzt) / 2000.0_core_rknd ) )  &
+         * cm3_per_m3 / rho    ! Known magic number
+    case default
+
+      Nccnm = zero
+
     end select
 
 
@@ -3669,85 +3654,60 @@ module clubb_driver
       !                                   the sounding file
     case ( wm_name )
 
-      wm_zm = zt2zm( gr%nzm, gr%nzt, ngrdcol, gr, wm_zt )
-
-      do i = 1, ngrdcol
-        wm_zm(i,1) = 0.0_core_rknd
-        wm_zm(i,gr%nzm) = 0.0_core_rknd
-      end do
+      wm_zm = zt2zm( gr, wm_zt )
+      wm_zm(1) = 0.0_core_rknd
+      wm_zm(gr%nzm) = 0.0_core_rknd
 
     case ( omega_name )
 
-      do k = 1, gr%nzt
-        do i = 1, ngrdcol
-          wm_zt(i,k) = -wm_zt(i,k) / ( grav * rho(i,k) )
-        end do
+      do k=1,gr%nzt
+        wm_zt(k) = -wm_zt(k) / ( grav*rho(k) )
       end do
 
-      do i = 1, ngrdcol
-        wm_zt(i,gr%nzt) = 0.0_core_rknd
-      end do
+      wm_zt(gr%nzt) = 0.0_core_rknd
 
-      wm_zm = zt2zm( gr%nzm, gr%nzt, ngrdcol, gr, wm_zt )
-
-      do i = 1, ngrdcol
-        wm_zm(i,gr%nzm) = 0.0_core_rknd
-      end do
+      wm_zm = zt2zm( gr, wm_zt )
+      wm_zm(gr%nzm) = 0.0_core_rknd
 
     case default ! This should not happen
 
-      do k = 1, gr%nzt
-        do i = 1, ngrdcol
-          wm_zt(i,k) = 0.0_core_rknd
-        end do
-      end do
-
-      do k = 1, gr%nzm
-        do i = 1, ngrdcol
-          wm_zm(i,k) = 0.0_core_rknd
-        end do
-      end do
+      wm_zt = 0.0_core_rknd
+      wm_zm = 0.0_core_rknd
 
     end select
 
     ! Initialize damping
     if ( thlm_sponge_damp_settings%l_sponge_damping ) then
-      !$acc update( gr%zt, gr%zm )
       call initialize_tau_sponge_damp( gr, gr%nzt, dt_main, gr%zt(1,:), & ! Intent(in)
                                        thlm_sponge_damp_settings, & ! Intent(in)
                                        thlm_sponge_damp_profile )   ! Intent(out)
     endif
 
     if ( rtm_sponge_damp_settings%l_sponge_damping ) then
-      !$acc update( gr%zt, gr%zm )
       call initialize_tau_sponge_damp( gr, gr%nzt, dt_main, gr%zt(1,:), & ! Intent(in)
                                        rtm_sponge_damp_settings, & ! Intent(in)
                                        rtm_sponge_damp_profile )   ! Intent(out)
     endif
 
     if ( uv_sponge_damp_settings%l_sponge_damping ) then
-      !$acc update( gr%zt, gr%zm )
       call initialize_tau_sponge_damp( gr, gr%nzt, dt_main, gr%zt(1,:), & ! Intent(in)
                                        uv_sponge_damp_settings, & ! Intent(in)
                                        uv_sponge_damp_profile )   ! Intent(out)
     endif
 
     if ( wp2_sponge_damp_settings%l_sponge_damping ) then
-      !$acc update( gr%zt, gr%zm )
       call initialize_tau_sponge_damp( gr, gr%nzm, dt_main, gr%zm(1,:), & ! Intent(in)
                                        wp2_sponge_damp_settings, & ! Intent(in)
                                        wp2_sponge_damp_profile )   ! Intent(out)
     endif
 
     if ( wp3_sponge_damp_settings%l_sponge_damping ) then
-      !$acc update( gr%zt, gr%zm )
       call initialize_tau_sponge_damp( gr, gr%nzt, dt_main, gr%zt(1,:), & ! Intent(in)
                                        wp3_sponge_damp_settings, & ! Intent(in)
                                        wp3_sponge_damp_profile )   ! Intent(out)
     endif
 
     if ( up2_vp2_sponge_damp_settings%l_sponge_damping ) then
-      !$acc update( gr%zt, gr%zm )
       call initialize_tau_sponge_damp( gr, gr%nzm, dt_main, gr%zm(1,:), & ! Intent(in)
                                        up2_vp2_sponge_damp_settings, & ! Intent(in)
                                        up2_vp2_sponge_damp_profile )   ! Intent(out)
@@ -3767,115 +3727,147 @@ module clubb_driver
     select case ( trim( runtype ) )
 
       ! Generic case
-    case ( "generic", "arm_97", "twp_ice", "dycoms2_rf02", &
-           "arm_0003", "arm_3year", &
-           "cloud_feedback_s6", "cloud_feedback_s6_p2k",   &
+    case ( "generic" )
+
+      em = 1.0_core_rknd
+      em(gr%nzm) = em_min
+
+      ! GCSS BOMEX
+    case ( "bomex" )
+
+!---> Reduction of initial sounding for stability
+!         do k = 1, gr%nz
+!            em(k) = 1.0_core_rknd - (gr%zm(1,k)/3000.0_core_rknd)
+!            if ( em(k) < em_min ) then
+!               em(k) = em_min
+!            end if
+!         end do
+!         em(1) = em(2)
+!         em(gr%nz) = em(gr%nz-1)
+!<--- End reduction of initial sounding for stability 24 Jan 07
+
+      em(:) = em_min
+
+      ! GCSS ARM
+    case ( "arm" )
+
+!---> Reduction of initial sounding for stability
+!         do k = 1, gr%nz
+!            if ( gr%zm(1,k) < 150.0_core_rknd ) then
+!               em(k) = ( 0.15_core_rknd * (1.0_core_rknd - gr%zm(1,k)/150.0_core_rknd) ) 
+!                       / rho_zm(k)
+!            else
+!               em(k) = em_min
+!            end if
+!         end do
+!         em(1) = em(2)
+!         em(gr%nz) = em(gr%nz-1)
+!<--- End reduction of initial sounding for stability 24 Jan 07
+
+      em(:) = em_min
+
+      ! June 27 1997 ARM case
+    case ( "arm_97" )
+
+      em = 1.0_core_rknd
+      em(gr%nzm) = em_min
+
+      ! twp_ice
+    case ( "twp_ice" )
+
+      em = 1.0_core_rknd
+      em(gr%nzm) = em_min
+
+      ! March 2000 ARM case
+    case ( "arm_0003" )
+
+      em = 1.0_core_rknd
+      em(gr%nzm) = em_min
+
+      ! 3 year ARM case
+    case ( "arm_3year" )
+
+      em = 1.0_core_rknd
+      em(gr%nzm) = em_min
+
+      ! cloud feedback cases
+    case ( "cloud_feedback_s6", "cloud_feedback_s6_p2k",   &
            "cloud_feedback_s11", "cloud_feedback_s11_p2k", &
            "cloud_feedback_s12", "cloud_feedback_s12_p2k" )
 
-      do k = 1, gr%nzm
-        do i = 1, ngrdcol
+      em = 1.0_core_rknd
+      em(gr%nzm) = em_min
 
-          em(i,k) = 1.0_core_rknd
-
-          if ( k == gr%nzm ) then
-            em(i,gr%nzm) = em_min
-          end if
-
-        end do
-      end do
-
-    case ( "bomex", "arm"  )
-
-      do k = 1, gr%nzm
-        do i = 1, ngrdcol
-          em(i,k) = em_min
-        end do
-      end do
-
+      ! ASTEX_A209 case 16 Jul, 2010 kcwhite
     case ( "astex_a209" )
 
       cloud_top_height = 700._core_rknd
       em_max = 1.0_core_rknd
 
-      do k = 1, gr%nzm
-        do i = 1, ngrdcol
-
-          if ( gr%zm(i,k) < cloud_top_height ) then
-            em(i,k) = em_max
-          else
-            em(i,k) = em_min
-          end if
-
-        end do
+      do k=1,gr%nzm
+        if ( gr%zm(1,k) < cloud_top_height ) then
+          em(k) = em_max
+        else
+          em(k) = em_min
+        end if
       end do
+      em(1) = em(2)
+      em(gr%nzm) = em_min
 
-      do i = 1, ngrdcol
-        em(i,1) = em(i,2)
-        em(i,gr%nzm) = em_min
-      end do
-
+      ! GCSS FIRE Sc
     case ( "fire" )
 
       cloud_top_height = 700._core_rknd ! 700 m is the top of the cloud in FIRE
-
-      do k = 1, gr%nzm
-        do i = 1, ngrdcol
-
-          if ( gr%zm(i,k) < cloud_top_height ) then
-            !em(k) = 1._core_rknd
-            em(i,k) = 4.5_core_rknd
-          else
-            em(i,k) = em_min
-          end if
-          
-        end do
+      do k=1,gr%nzm
+        if ( gr%zm(1,k) < cloud_top_height ) then
+          !em(k) = 1._core_rknd
+          em(k) = 4.5_core_rknd
+        else
+          em(k) = em_min
+        end if
       end do
-
-      do i = 1, ngrdcol
-        em(i,1) = em(i,2)
-        em(i,gr%nzm) = em_min
-      end do
+      em(1) = em(2)
+      em(gr%nzm) = em_min
 
       ! GCSS ATEX
     case ( "atex" )
 
-      do k = 1, gr%nzt
-        do i = 1, ngrdcol
-          um(i,k) = max( um(i,k), -8._core_rknd ) ! Known magic number (Stevens, et al. 2001, eq. 1)
-        end do
-      end do
+      um = max( um, -8._core_rknd ) ! Known magic number (Stevens, et al. 2001, eq. 1)
 
-      do k = 1, gr%nzm
-        do i = 1, ngrdcol
-          em(i,k) = em_min
-        end do
-      end do
+!---> Reduction of initial sounding for stability
+!         do k = 1, gr%nz
+!           em(k) = 1.0_core_rknd - (gr%zm(1,k)/3000.0_core_rknd)
+!           if ( em(k) < em_min ) then
+!             em(k) = em_min
+!           end if
+!         end do
+!         em(1) = em(2)
+!         em(gr%nz) = em(gr%nz-1)
+!<--- End reduction of initial sounding for stability 24 Jan 07
+
+      em(:) = em_min
 
       ! GCSS DYCOMS II RF01
     case ( "dycoms2_rf01" )
-
       cloud_top_height = 800._core_rknd ! 800 m is the top of the cloud in RF01
-
-      do k = 1, gr%nzm
-        do i = 1, ngrdcol
-
-          if ( gr%zm(i,k) < cloud_top_height ) then
-            !em(k) = 0.5_core_rknd
-            em(i,k) = 1.1_core_rknd
-          else
-            em(i,k) = em_min
-          end if
-
-        end do
+      do k=1,gr%nzm
+        if ( gr%zm(1,k) < cloud_top_height ) then
+          !em(k) = 0.5_core_rknd
+          em(k) = 1.1_core_rknd
+        else
+          em(k) = em_min
+        end if
       end do
+      em(1) = em(2)
+      em(gr%nzm) = em_min
 
-      do i = 1, ngrdcol
-        em(i,1) = em(i,2)
-        em(i,gr%nzm) = em_min
-      end do
+      ! GCSS DYCOMS II RF02
+    case ( "dycoms2_rf02" )
 
+      em = 1.0_core_rknd
+      em(gr%nzm) = em_min
 
+      ! Brian for Nov. 11 altocumulus case.
     case ( "nov11_altocu" )
 
       ! Vince Larson reduced initial forcing.  4 Nov 2005
@@ -3883,29 +3875,22 @@ module clubb_driver
 !          em = 0.1_core_rknd
       ! 4150 + 2800 m is the top of the cloud in Nov11
       cloud_top_height = 2800._core_rknd + gr%zm(1,1) ! Known magic number
+      do k=1,gr%nzm
+        if ( gr%zm(1,k) < cloud_top_height ) then
 
-      do k = 1, gr%nzm
-        do i = 1, ngrdcol
+          ! Modification by Adam Smith, 08 April 2008
+          ! Reducing the value of em appears to reduce error in the
+          ! updated Nov.11 case
+          em(k) = 0.01_core_rknd
+          ! End of ajsmith4's modification
 
-          if ( gr%zm(i,k) < cloud_top_height ) then
-
-            ! Modification by Adam Smith, 08 April 2008
-            ! Reducing the value of em appears to reduce error in the
-            ! updated Nov.11 case
-            em(i,k) = 0.01_core_rknd
-            ! End of ajsmith4's modification
-
-          else
-            em(i,k) = em_min
-          end if
-
-        end do
+        else
+          em(k) = em_min
+        end if
       end do
-
-      do i = 1, ngrdcol
-        em(i,1) = em(i,2)
-        em(i,gr%nzm) = em_min
-      end do
+      em(1) = em(2)
+      em(gr%nzm) = em_min
+      ! End Vince Larson's change.
 
       ! Adam Smith addition for June 25 altocumulus case.
     case ( "jun25_altocu" )
@@ -3926,15 +3911,13 @@ module clubb_driver
       ! Note: now em_min = 1.5 * w_tol_sqd
       ! Brian Griffin;  Nov. 26, 2008.
       do k = 1, gr%nzm
-        do i = 1, ngrdcol
-          em(i,k) = 0.01_core_rknd
-        end do
+        em(k) = 0.01_core_rknd
       end do
 
-      do i = 1, ngrdcol
-        em(i,1) = em(i,2)
-        em(i,gr%nzm) = em_min
-      end do
+      em(1) = em(2)
+      ! End Vince Larson's change.
+
+      em(gr%nzm) = em_min
 
       ! End of ajsmith4's addition
 
@@ -3946,23 +3929,16 @@ module clubb_driver
 !          em = 0.1_core_rknd
       ! 4150 + 1400 m is the top of the cloud in Nov11
       cloud_top_height = 2200._core_rknd + gr%zm(1,1) ! Known magic number
-
-      do k = 1, gr%nzm
-        do i = 1, ngrdcol
-
-          if ( gr%zm(i,k) < cloud_top_height ) then
-            em(i,k) = 0.01_core_rknd
-          else
-            em(i,k) = em_min
-          end if
-
-        end do
+      do k=1,gr%nzm
+        if ( gr%zm(1,k) < cloud_top_height ) then
+          em(k) = 0.01_core_rknd
+        else
+          em(k) = em_min
+        end if
       end do
-
-      do i = 1, ngrdcol
-        em(i,1) = em(i,2)
-        em(i,gr%nzm) = em_min
-      end do
+      em(1) = em(2)
+      ! End Vince Larson's change.
+      em(gr%nzm) = em_min
 
       ! End of ajsmith4's addition
 
@@ -3970,43 +3946,27 @@ module clubb_driver
     case ( "clex9_oct14" )
 
       ! Vince Larson reduced initial forcing.  4 Nov 2005
-      ! em = 1.0_core_rknd
-      ! em = 0.1_core_rknd
+!          em = 1.0_core_rknd
+!          em = 0.1_core_rknd
       ! 4150 + 1400 m is the top of the cloud in Nov11
       cloud_top_height = 3500._core_rknd + gr%zm(1,1) ! Known magic number
-
-      do k = 1, gr%nzm
-        do i = 1, ngrdcol
-
-          if ( gr%zm(i,k) < cloud_top_height ) then
-            em(:,k) = 0.01_core_rknd
-          else
-            em(:,k) = em_min
-          end if
-        
-        end do
+      do k=1,gr%nzm
+        if ( gr%zm(1,k) < cloud_top_height ) then
+          em(k) = 0.01_core_rknd
+        else
+          em(k) = em_min
+        end if
       end do
-
-      do i = 1, ngrdcol
-        em(i,1) = em(i,2)
-        em(i,gr%nzm) = em_min
-      end do
+      em(1) = em(2)
+      ! End Vince Larson's change.
+      em(gr%nzm) = em_min
 
       ! End of ajsmith4's addition
 
-    case ( "lba", "cobra" )
+    case ( "lba" )
 
-      do k = 1, gr%nzm
-        do i = 1, ngrdcol
-
-          em(i,k) = 0.1_core_rknd
-
-          if ( k == gr%nzm ) then
-            em(i,gr%nzm) = em_min
-          end if
-
-        end do
-      end do
+      em = 0.1_core_rknd
+      em(gr%nzm) = em_min
 
       ! Michael Falk for mpace_a Arctic Stratus case.
     case ( "mpace_a" )
@@ -4014,20 +3974,15 @@ module clubb_driver
       cloud_top_height = 2000._core_rknd
       em_max = 1.0_core_rknd
 
-      do k = 1,gr%nzm
-        do i = 1, ngrdcol
-          if ( gr%zm(i,k) < cloud_top_height ) then
-            em(i,k) = em_max
-          else
-            em(i,k) = em_min
-          end if
-        end do
+      do k=1,gr%nzm
+        if ( gr%zm(1,k) < cloud_top_height ) then
+          em(k) = em_max
+        else
+          em(k) = em_min
+        end if
       end do
-
-      do i = 1, ngrdcol
-        em(i,1) = em(i,2)
-        em(i,gr%nzm) = em_min
-      end do
+      em(1) = em(2)
+      em(gr%nzm) = em_min
 
       call mpace_a_init( iunit, forcings_file_path )
 
@@ -4038,92 +3993,69 @@ module clubb_driver
                                          ! Michael Falk 17 Aug 2006
       em_max = 1.0_core_rknd
 
-      do k = 1, gr%nzm
-        do i = 1, ngrdcol
+      do k=1,gr%nzm
 
-          if ( gr%zm(i,k) < cloud_top_height ) then
-            em(i,k) = em_max
-          else
-            em(i,k) = em_min
-          end if
-
-        enddo
+        if ( gr%zm(1,k) < cloud_top_height ) then
+          em(k) = em_max
+        else
+          em(k) = em_min
+        end if
       enddo
-      
-      do i = 1, ngrdcol
-        em(i,1) = em(i,2)
-        em(i,gr%nzm) = em_min
-      end do
+      em(1) = em(2)
+      em(gr%nzm) = em_min
+
+      ! Brian Griffin for COBRA CO2 case.
+    case ( "cobra" )
+
+      em = 0.1_core_rknd
+      em(gr%nzm) = em_min
 
       ! Michael Falk for RICO tropical cumulus case, 13 Dec 2006
     case ( "rico" )
 
       cloud_top_height = 1500._core_rknd
       em_max = 1.0_core_rknd
-
-      do k = 1, gr%nzm
-        do i = 1, ngrdcol
-          if ( gr%zm(i,k) < cloud_top_height ) then
-            em(i,k) = em_max
-          else
-            em(i,k) = em_min
-          end if
-        enddo
+      do k=1,gr%nzm
+        if ( gr%zm(1,k) < cloud_top_height ) then
+          em(k) = em_max
+        else
+          em(k) = em_min
+        end if
       enddo
 
-      do i = 1, ngrdcol
-        em(i,1) = em(i,2)
-        em(i,gr%nzm) = em_min
-      end do
+      em(1) = em(2)
+      em(gr%nzm) = em_min
 
       ! Michael Falk for GABLS2 case, 29 Dec 2006
     case ( "gabls2" )
 
       cloud_top_height = 800._core_rknd  ! per GABLS2 specifications
       em_max = 0.5_core_rknd
-
-      do k = 1, gr%nzm
-        do i = 1, ngrdcol
-          if ( gr%zm(i,k) < cloud_top_height ) then
-            em(i,k) = em_max * (1._core_rknd - (gr%zm(i,k)/cloud_top_height))
-          else
-            em(i,k) = em_min
-          end if
-        end do
+      do k=1,gr%nzm
+        if ( gr%zm(1,k) < cloud_top_height ) then
+          em(k) = em_max * (1._core_rknd - (gr%zm(1,k)/cloud_top_height))
+        else
+          em(k) = em_min
+        end if
       end do
 
-      do i = 1, ngrdcol
-        em(i,1) = em(i,2)
-        em(i,gr%nzm) = em_min
-      end do
+      em(1) = em(2)
+      em(gr%nzm) = em_min
 
     case ( "gabls3_night" )
-
-      do k = 1, gr%nzm
-        do i = 1, ngrdcol
-          em(i,k) = 1.0_core_rknd
-        end do
-      end do
+      em = 1.0_core_rknd
 
     case ( "gabls3" )
+      em = 1.0_core_rknd
+      em(gr%nzm) = em_min
 
-      do k = 1, gr%nzm
-        do i = 1, ngrdcol
+      veg_T_in_K = 300._core_rknd
+      sfc_soil_T_in_K = 300._core_rknd
+      deep_soil_T_in_K = 288.58_core_rknd
+    
+    case default
 
-          em(i,k) = 1.0_core_rknd
-
-          if ( k == gr%nzm ) then
-            em(i,gr%nzm) = em_min
-          end if
-
-        end do
-      end do
-
-      do i = 1, ngrdcol
-        veg_T_in_K(i) = 300._core_rknd
-        sfc_soil_T_in_K(i) = 300._core_rknd
-        deep_soil_T_in_K(i) = 288.58_core_rknd
-      end do
+      em = em_min
 
     end select
 
@@ -4137,57 +4069,37 @@ module clubb_driver
       ! Evenly divide TKE into its component
       ! contributions (w'^2, u'^2, and v'^2).
 
-      do k = 1, gr%nzm
-        do i = 1, ngrdcol
-          wp2(i,k) = (2.0_core_rknd/3.0_core_rknd) * em(i,k)
-          up2(i,k) = (2.0_core_rknd/3.0_core_rknd) * em(i,k)
-          vp2(i,k) = (2.0_core_rknd/3.0_core_rknd) * em(i,k)
-        end do
-      end do
+      wp2 = (2.0_core_rknd/3.0_core_rknd) * em
+      up2 = (2.0_core_rknd/3.0_core_rknd) * em
+      vp2 = (2.0_core_rknd/3.0_core_rknd) * em
 
     else
 
       ! TKE:  em = (3/2) * w'^2
 
-      do k = 1, gr%nzm
-        do i = 1, ngrdcol
-          wp2(i,k) = (2.0_core_rknd/3.0_core_rknd) * em(i,k)
-        end do
-      end do
+      wp2 = (2.0_core_rknd/3.0_core_rknd) * em
 
     end if ! l_tke_aniso
 
     ! Moved this to be more general -dschanen July 16 2007
     if ( clubb_config_flags%l_uv_nudge .or. uv_sponge_damp_settings%l_sponge_damping ) then
-      do k = 1, gr%nzt
-        do i = 1, ngrdcol
-          um_ref(i,k) = um(i,k) ! Michael Falk addition for nudging code.  27 Sep/1 Nov 2006
-          vm_ref(i,k) = vm(i,k) ! ditto
-        end do
-      end do
+      um_ref = um ! Michael Falk addition for nudging code.  27 Sep/1 Nov 2006
+      vm_ref = vm ! ditto
     end if
 
     if ( thlm_sponge_damp_settings%l_sponge_damping ) then
-      do k = 1, gr%nzt
-        do i = 1, ngrdcol
-          thlm_ref(i,k) = thlm(i,k) ! Added for nudging code
-        end do
-      end do
+      thlm_ref = thlm ! Added for nudging code
     end if
 
     if ( rtm_sponge_damp_settings%l_sponge_damping ) then
-      do k = 1, gr%nzt
-        do i = 1, ngrdcol
-          rtm_ref(i,k)  = rtm(i,k)
-        end do
-      end do
+      rtm_ref  = rtm
     end if
 
     return
   end subroutine initialize_clubb
 
   !-----------------------------------------------------------------------------
-  subroutine initialize_clubb_variables( ngrdcol, sclr_dim, edsclr_dim, sclr_idx, &
+  subroutine initialize_clubb_variables( sclr_dim, edsclr_dim, sclr_idx, &
                                          gr, alt_type, theta_type, &
                                          p_sfc, rtm_sfc, rtm, & !thlm_sfc, &
                                          saturation_formula, &
@@ -4264,7 +4176,6 @@ module clubb_driver
 
     !--------------------- Input Variables ---------------------
     integer, intent(in) :: &
-      ngrdcol, &
       sclr_dim, & 
       edsclr_dim
 
@@ -4277,128 +4188,120 @@ module clubb_driver
       alt_type,   & ! Type of altitude sounding (altitude or pressure)
       theta_type    ! Type of temperature sounding (temp., theta, or theta_l)
 
-    real( kind = core_rknd ), dimension(ngrdcol), intent(in) ::  &
+    real( kind = core_rknd ), intent(in) ::  &
       p_sfc,     & ! Surface pressure                              [Pa]
       rtm_sfc !,& ! Surface total water mixing ratio               [kg/kg]
       !thlm_sfc    ! Surface liquid water potential temperature     [K]
 
-    real( kind = core_rknd ), dimension(ngrdcol,gr%nzt), intent(in) ::  &
+    real( kind = core_rknd ), dimension(1,gr%nzt), intent(in) ::  &
       rtm    ! Total water mixing ratio (thermodynamic levels)    [kg/kg]
 
     integer, intent(in) :: &
       saturation_formula ! Integer that stores the saturation formula to be used
 
     !--------------------- InOut Variables ---------------------
-    real( kind = core_rknd ), dimension(ngrdcol,gr%nzt), intent(inout) ::  &
+    real( kind = core_rknd ), dimension(1,gr%nzt), intent(inout) ::  &
       thlm       ! Liquid water potential temperature (thermo. levs.)  [K] 
 
-    real( kind = core_rknd ), dimension(ngrdcol,gr%nzt), intent(inout) ::  &
+    real( kind = core_rknd ), dimension(gr%nzt), intent(inout) ::  &
       p_in_Pa    ! Pressure (thermodynamic levels)                     [Pa]
 
     !--------------------- Output Variables ---------------------
-    real( kind = core_rknd ), dimension(ngrdcol,gr%nzt), intent(out) ::  &
+    real( kind = core_rknd ), dimension(1,gr%nzt), intent(out) ::  &
       exner,           & ! Exner function (thermodynamic levels)     [-] 
       thvm,            & ! Virtual potential temp. (thermo. levs.)   [K]
       rcm                ! Cloud water mixing ratio (thermo. levs.)  [kg/kg]
 
-    real( kind = core_rknd ), dimension(ngrdcol,gr%nzt), intent(out) ::  &
+    real( kind = core_rknd ), dimension(gr%nzt), intent(out) ::  &
       rho,             & ! Density (thermodynamic levels)            [kg/m^3]
       rho_ds_zt,       & ! Dry, static density (thermodynamic levs.) [kg/m^3]
       invrs_rho_ds_zt, & ! Inverse dry, static density (t-levs.)     [m^3/kg]
       thv_ds_zt          ! Dry, base-state theta_v (thermo. levels)  [K]
 
-    real( kind = core_rknd ), dimension(ngrdcol,gr%nzm), intent(out) ::  &
+    real( kind = core_rknd ), dimension(gr%nzm), intent(out) ::  &
       p_in_Pa_zm,      & ! Pressure (momentum levels)                [Pa]
       rho_zm,          & ! Density on momentum levels                [kg/m^3]
       rho_ds_zm,       & ! Dry, static density (momentum levels)     [kg/m^3]
       invrs_rho_ds_zm, & ! Inverse dry, static density (m-levs.)     [m^3/kg]
       thv_ds_zm          ! Dry, base-state theta_v (momentum levels) [K]
 
-    real( kind = core_rknd ), dimension(ngrdcol,gr%nzt,sclr_dim), intent(inout) ::  & 
+    real( kind = core_rknd ), dimension(gr%nzt,sclr_dim), intent(inout) ::  & 
       sclrm  ! Standard passive scalar           [units vary]
 
-    real( kind = core_rknd ), dimension(ngrdcol,gr%nzt,edsclr_dim), intent(inout) ::  & 
+    real( kind = core_rknd ), dimension(gr%nzt,edsclr_dim), intent(inout) ::  & 
       edsclrm ! Eddy-diffusivity passive scalar   [units vary]
 
     !--------------------- Local Variables ---------------------
-    real( kind = core_rknd ), dimension(ngrdcol) ::  &
+    real( kind = core_rknd ) ::  &
       pd_sfc, & ! Dry surface pressure                [Pa]
       rv_sfc    ! Surface water vapor mixing ratio    [kg/kg]
 
-    real( kind = core_rknd ), dimension(ngrdcol,gr%nzt) ::  &
+    real( kind = core_rknd ), dimension(1,gr%nzt) ::  &
       thm             ! Potential temperature (thermodynamic levels)   [K]
 
-    real( kind = core_rknd ), dimension(ngrdcol,gr%nzt) ::  &
+    real( kind = core_rknd ), dimension(gr%nzt) ::  &
       th_dry,       & ! Dry potential temperature (thermo. levels)     [K]
       p_dry,        & ! Dry air pressure (thermodynamic levels)        [Pa]
       exner_dry,    & ! Exner of dry air (thermodynamic levels)        [-]
       rho_dry         ! Dry air density (thermodynamic levels)         [kg/m^3]
 
-    real( kind = core_rknd ), dimension(ngrdcol,gr%nzm) ::  &
-      tmp, &
-      thm_zm, &
+    real( kind = core_rknd ), dimension(gr%nzm) ::  &
       exner_zm,     & ! Exner on momentum levels                       [-]
       th_dry_zm,    & ! Dry potential temperature on momentum levels   [K]
       p_dry_zm,     & ! Dry air pressure on momentum levels            [Pa]
       exner_dry_zm, & ! Exner of dry air on momentum levels            [-]
       rho_dry_zm      ! Dry air density on momentum levels             [kg/m^3]
 
-    integer :: i, k   ! Array index
+    integer :: k   ! Array index
 
     !--------------------- Begin Code ---------------------
 
     ! The value of rtm at the surface is output from the sounding, as long as
     ! the initial sounding extendeds to the model surface (at gr%zm(1,1)).
-    do i = 1, ngrdcol
+    if ( rtm_sfc < 0.0_core_rknd ) then
+      ! The sounding doesn't extended to the surface, so rtm_sfc is set to a
+      ! negative number.  Use rtm(1) as rv_sfc.
+      rv_sfc = rtm(1,1)
+    else ! rtm_sfc >= 0.0_core_rknd
+      ! The sounding does extended to the surface, so rtm_sfc is the initial value
+      ! of total water mixing ratio at the surface.
+      rv_sfc = rtm_sfc
+    end if
 
-      if ( rtm_sfc(i) < 0.0_core_rknd ) then
-        ! The sounding doesn't extended to the surface, so rtm_sfc is set to a
-        ! negative number.  Use rtm(1) as rv_sfc.
-        rv_sfc(i) = rtm(i,1)
-      else ! rtm_sfc >= 0.0_core_rknd
-        ! The sounding does extended to the surface, so rtm_sfc is the initial value
-        ! of total water mixing ratio at the surface.
-        rv_sfc(i) = rtm_sfc(i)
-      end if
-
-      ! Calculate dry surface pressure from surface pressure and surface water
-      ! vapor mixing ratio, such that p_d = p / [ 1 + (R_v/R_d)*r_v ].
-      pd_sfc(i) = p_sfc(i) / ( one + ep2 * rv_sfc(i) )
-
-    end do
+    ! Calculate dry surface pressure from surface pressure and surface water
+    ! vapor mixing ratio, such that p_d = p / [ 1 + (R_v/R_d)*r_v ].
+    pd_sfc = p_sfc / ( one + ep2 * rv_sfc )
 
     if ( theta_type == temperature_name ) then
 
-      if ( trim( alt_type ) == z_name ) then
+       if ( trim( alt_type ) == z_name ) then
 
-        write(fstderr,*) 'Interpetation of sounding files with z as the ', &
-                          'independent variable and absolute temperature ', &
-                          'as the temperature variable has not been ', &
-                          'implemented.  Either specify pressure as the ', &
-                          'independent variable or thm/thlm as the ', &
-                          'temperature variable.'
-        error stop "Fatal error."
+          write(fstderr,*) 'Interpetation of sounding files with z as the ', &
+                           'independent variable and absolute temperature ', &
+                           'as the temperature variable has not been ', &
+                           'implemented.  Either specify pressure as the ', &
+                           'independent variable or thm/thlm as the ', &
+                           'temperature variable.'
+          error stop "Fatal error."
 
-      elseif ( trim( alt_type ) == pressure_name ) then
+       elseif ( trim( alt_type ) == pressure_name ) then
 
-        ! The variable "thlm" actually contains temperature (in Kelvin) at
-        ! this point.
+          ! The variable "thlm" actually contains temperature (in Kelvin) at
+          ! this point.
 
-        ! Calculate initial potential temperature from temperature and exner.
-        ! Again, the variable "thlm" actually contains temperature before this
-        ! calculation.  After this calculation, the variable "thlm" will
-        ! actually contain potential temperature.
-        do k = 1, gr%nzt, 1
-          do i = 1, ngrdcol
-            thlm(i,k) = thlm(i,k) / ( p_in_Pa(i,k) / p0 )**kappa
-          end do
-        end do
+          ! Calculate initial potential temperature from temperature and exner.
+          ! Again, the variable "thlm" actually contains temperature before this
+          ! calculation.  After this calculation, the variable "thlm" will
+          ! actually contain potential temperature.
+          do k = 1, gr%nzt, 1
+             thlm(1,k) = thlm(1,k) / ( p_in_Pa(k) / p0 )**kappa
+          enddo
 
-      else
+       else
 
-        error stop "Invalid sounding vertical-coordinate variable"
+          error stop "Invalid sounding vertical-coordinate variable"
 
-      endif
+       endif
 
     endif
 
@@ -4434,67 +4337,51 @@ module clubb_driver
     ! pressure and exner from the first call to subroutine hydrostatic.  This
     ! is important to allow the ensuing computation of initial r_c is done as
     ! accurately as possible.
-    do k = 1, gr%nzt
-      do i = 1, ngrdcol
-        thvm(i,k) = thlm(i,k) * ( one + ep1 * ( rtm(i,k) / ( one + rtm(i,k) ) ) )
-      end do
-    end do
+    do k = 1, gr%nzt, 1
+       thvm(1,k) = thlm(1,k) * ( one + ep1 * ( rtm(1,k) / ( one + rtm(1,k) ) ) )
+    enddo
 
     ! Compute approximate pressure, exner, and density using an approximate
     ! value of theta_v.
-    call hydrostatic( ngrdcol, gr, thvm, p_sfc, & ! Intent(in)
-                      p_in_Pa, p_in_Pa_zm,      & ! Intent(out)
-                      exner, exner_zm,          & ! Intent(out)
-                      rho, rho_zm               ) ! Intent(out)
+    call hydrostatic( gr, thvm, p_sfc,     & ! Intent(in)
+                      p_in_Pa, p_in_Pa_zm, & ! Intent(out)
+                      exner, exner_zm,     & ! Intent(out)
+                      rho, rho_zm          ) ! Intent(out)
+
 
     select case( trim( theta_type ) )
 
     case ( theta_name, temperature_name )
 
-      ! The variable "thlm" actually contains potential temperature (theta)
-      ! at this point.
-      do k = 1, gr%nzt
-        do i = 1, ngrdcol
-          thm(i,k) = thlm(i,k)
-        end do
-      end do
+       ! The variable "thlm" actually contains potential temperature (theta)
+       ! at this point.
+       thm(1,:) = thlm(1,:)
 
-      ! Calculate cloud water mixing ratio based on total water mixing ratio
-      ! and saturation mixing ratio, which based total pressure and
-      ! temperature, which is equal to theta * exner.
-      do k = 1, gr%nzt
-        do i = 1, ngrdcol
-          rcm(i,k) &
-          = max( rtm(i,k) &
-                  - sat_mixrat_liq( p_in_Pa(i,k), thm(i,k) * exner(i,k), saturation_formula ), &
-                  zero_threshold )
-        end do
-      end do
+       ! Calculate cloud water mixing ratio based on total water mixing ratio
+       ! and saturation mixing ratio, which based total pressure and
+       ! temperature, which is equal to theta * exner.
+       do k = 1, gr%nzt
+          rcm(1,k) &
+          = max( rtm(1,k) &
+                 - sat_mixrat_liq( p_in_Pa(k), thm(1,k) * exner(1,k), saturation_formula ), &
+                 zero_threshold )
+       enddo
 
-      ! Compute initial theta_l based on the theta profile (currently stored
-      ! in variable thlm) and cloud water mixing ratio (rcm), such that:
-      !  theta_l = theta - [Lv/(Cp*exner)]*rcm.
-      do k = 1, gr%nzt
-        do i = 1, ngrdcol
-          thlm(i,k) = thlm(i,k) - Lv/(Cp*exner(i,k)) * rcm(i,k)
-        end do
-      end do
+       ! Compute initial theta_l based on the theta profile (currently stored
+       ! in variable thlm) and cloud water mixing ratio (rcm), such that:
+       !  theta_l = theta - [Lv/(Cp*exner)]*rcm.
+       do k = 1, gr%nzt
+          thlm(1,k) = thlm(1,k) - Lv/(Cp*exner(1,k)) * rcm(1,k)
+       enddo
 
-      ! Testing of passive scalars
-      if ( sclr_idx%iisclr_thl > 0 ) then
-        do k = 1, gr%nzt
-          do i = 1, ngrdcol
-            sclrm(i,k,sclr_idx%iisclr_thl) = thlm(i,k)
-          end do
-        end do
-      endif
-      if ( sclr_idx%iiedsclr_thl > 0 ) then
-        do k = 1, gr%nzt
-          do i = 1, ngrdcol
-            edsclrm(i,k,sclr_idx%iiedsclr_thl) = thlm(i,k)
-          end do
-        end do
-      endif
+       ! Testing of passive scalars
+       if ( sclr_idx%iisclr_thl > 0 ) then
+          sclrm(:,sclr_idx%iisclr_thl) = thlm(1,:)
+       endif
+       if ( sclr_idx%iiedsclr_thl > 0 ) then
+          edsclrm(:,sclr_idx%iiedsclr_thl) = thlm(1,:)
+       endif
+
 
     case ( thetal_name )
 
@@ -4510,35 +4397,22 @@ module clubb_driver
 
        ! Find mean cloud water mixing ratio.
        do k = 1, gr%nzt, 1
-          do i = 1, ngrdcol
-            ! Compute cloud water mixing ratio using an iterative method.
-            rcm(i,k) = rcm_sat_adj( thlm(i,k), rtm(i,k), p_in_Pa(i,k), exner(i,k), &
-                                    saturation_formula )
-          end do
-       end do
+          ! Compute cloud water mixing ratio using an iterative method.
+          rcm(1,k) = rcm_sat_adj( thlm(1,k), rtm(1,k), p_in_Pa(k), exner(1,k), &
+                                  saturation_formula )
+       enddo
 
        ! Compute initial theta.
-       do k = 1, gr%nzt
-          do i = 1, ngrdcol
-            thm(i,k) = thlm(i,k) + Lv/(Cp*exner(i,k)) * rcm(i,k)
-        end do
-       end do
+       do k = 1, gr%nzt, 1
+          thm(1,k) = thlm(1,k) + Lv/(Cp*exner(1,k)) * rcm(1,k)
+       enddo
 
        ! Testing of passive scalars
        if ( sclr_idx%iisclr_thl > 0 ) then
-          do k = 1, gr%nzt
-            do i = 1, ngrdcol
-              sclrm(i,k,sclr_idx%iisclr_thl) = thlm(i,k)
-            end do
-          end do
+          sclrm(:,sclr_idx%iisclr_thl) = thlm(1,:)
        endif
-
        if ( sclr_idx%iiedsclr_thl > 0 ) then
-          do k = 1, gr%nzt
-            do i = 1, ngrdcol
-              edsclrm(i,k,sclr_idx%iiedsclr_thl) = thlm(i,k)
-            end do
-          end do
+          edsclrm(:,sclr_idx%iiedsclr_thl) = thlm(1,:)
        endif
 
 
@@ -4589,17 +4463,18 @@ module clubb_driver
     !                   + [ {L_v/(C_p*exner)} - (R_v/R_d) * thv_ds ] * r_c;
     !
     ! where thv_ds is used as a reference value to approximate theta_l.
-    call calculate_thvm( gr%nzt, ngrdcol, &
+    call calculate_thvm( gr%nzt, 1, &
                          thlm, rtm, rcm, exner, &
                          thm * ( one + ep2 * ( rtm - rcm ) )**kappa, &
                          thvm )
 
     ! Recompute more accurate initial exner function, pressure, and density
     ! using thvm, which includes the effects of water vapor and cloud water.
-    call hydrostatic( ngrdcol, gr, thvm, p_sfc, & ! Intent(in)
-                      p_in_Pa, p_in_Pa_zm,      &  ! Intent(out)
-                      exner, exner_zm,          &  ! Intent(out)
-                      rho, rho_zm               )  ! Intent(out)
+    call hydrostatic( gr, thvm, p_sfc,     & ! Intent(in)
+                      p_in_Pa, p_in_Pa_zm, &  ! Intent(out)
+                      exner, exner_zm,     &  ! Intent(out)
+                      rho, rho_zm          )  ! Intent(out)
+
 
     !#### Calculate dry, static base-state density for the anelastic ####
     !#### equation set.  Calculate dry pressure from total pressure, ####
@@ -4607,18 +4482,16 @@ module clubb_driver
 
     !!! Calculate dry density on thermodynamic levels
 
-    do k = 1, gr%nzt
-      do i = 1, ngrdcol
+    do k = 1, gr%nzt, 1
 
-        ! Calculate dry pressure from total pressure and water vapor mixing
-        ! ratio, such that:  p_d = p / [ 1 + (R_v/R_d)*r_v ].
-        p_dry(i,k) = p_in_Pa(i,k) / ( one + ep2 * ( rtm(i,k) - rcm(i,k) ) )
+       ! Calculate dry pressure from total pressure and water vapor mixing
+       ! ratio, such that:  p_d = p / [ 1 + (R_v/R_d)*r_v ].
+       p_dry(k) = p_in_Pa(k) / ( one + ep2 * ( rtm(1,k) - rcm(1,k) ) )
 
-        ! Calculate dry exner from dry pressure.
-        exner_dry(i,k) = ( p_dry(i,k) / p0 )**kappa
+       ! Calculate dry exner from dry pressure.
+       exner_dry(k) = ( p_dry(k) / p0 )**kappa
 
-      end do
-    end do
+    enddo
 
     ! Calculate dry potential temperature, theta_d, which is defined as:
     !
@@ -4651,64 +4524,49 @@ module clubb_driver
     ! pressure is used to determine dry exner.  Dividing temperature by dry
     ! exner yields dry theta, which differs by actual theta by a small
     ! amount, which is given by the equations above.
-    do k = 1, gr%nzt
-      do i = 1, ngrdcol
-        th_dry(i,k) = thm(i,k) * ( one + ep2 * ( rtm(i,k) - rcm(i,k) ) )**kappa
-      end do
-    end do
+    do k = 1, gr%nzt, 1
+       th_dry(k) = thm(1,k) * ( one + ep2 * ( rtm(1,k) - rcm(1,k) ) )**kappa
+    enddo
 
     ! Compute dry density using dry pressure, dry exner, and theta_d.
-    do k = 1, gr%nzt
-      do i = 1, ngrdcol
-        rho_dry(i,k) = p_dry(i,k) / ( Rd * th_dry(i,k) * exner_dry(i,k) )
-      end do
-    end do
+    do k = 1, gr%nzt, 1
+       rho_dry(k) = p_dry(k) / ( Rd * th_dry(k) * exner_dry(k) )
+    enddo
 
     !!! Calculate dry density on momentum levels
 
     ! Dry pressure at momentum level k = 1 is the dry pressure at the surface.
-    do i = 1, ngrdcol
-      p_dry_zm(i,1) = pd_sfc(i)
-    end do
+    p_dry_zm(1) = pd_sfc
 
-    tmp(:,:) = zt2zm( gr%nzm, gr%nzt, ngrdcol, gr, rtm(:,:) - rcm(:,:) )
+    do k = 2, gr%nzm, 1
+       ! Calculate dry pressure on momentum levels from total pressure (on
+       ! momentum levels) and water vapor mixing ratio (interpolated to
+       ! momentum levels), such that:  p_d = p / [ 1 + (R_v/R_d)*r_v ].
+       p_dry_zm(k) = p_in_Pa_zm(k) &
+                     / ( one + ep2 * max( zt2zm( gr, rtm(1,:) - rcm(1,:), k ), &
+                                          zero_threshold ) )
+    enddo
 
-    do k = 2, gr%nzm
-      do i = 1, ngrdcol
-
-        ! Calculate dry pressure on momentum levels from total pressure (on
-        ! momentum levels) and water vapor mixing ratio (interpolated to
-        ! momentum levels), such that:  p_d = p / [ 1 + (R_v/R_d)*r_v ].
-        p_dry_zm(i,k) = p_in_Pa_zm(i,k) / ( one + ep2 * max( tmp(i,k), zero_threshold ) )
-      end do
-    end do
-
-    do k = 1, gr%nzm
-      do i = 1, ngrdcol
+    do k = 1, gr%nzm, 1
        ! Calculate dry exner on momentum levels from dry pressure on momentum
        ! levels.
-       exner_dry_zm(i,k) = ( p_dry_zm(i,k) / p0 )**kappa
-      end do
-    end do
-
-    thm_zm(:,:) = zt2zm( gr%nzm, gr%nzt, ngrdcol, gr, thm(:,:) )
+       exner_dry_zm(k) = ( p_dry_zm(k) / p0 )**kappa
+    enddo
 
     ! Calculate theta_d on momentum levels by interpolating theta and water
     ! vapor mixing ratio to momentum levels.
-    do k = 1, gr%nzm
-      do i = 1, ngrdcol
-        th_dry_zm(i,k) = thm_zm(i,k) * ( one + ep2 * max( tmp(i,k), zero_threshold ) )**kappa
-      end do
-    end do
+    do k = 1, gr%nzm, 1
+       th_dry_zm(k) = zt2zm( gr, thm(1,:), k ) &
+                      * ( one + ep2 * max( zt2zm( gr, rtm(1,:) - rcm(1,:), k ), &
+                                           zero_threshold ) )**kappa
+    enddo
 
     ! Compute dry density on momentum levels using dry pressure on momentum
     ! levels, dry exner on momentum levels, and theta_d interpolated to
     ! momentum levels.
-    do k = 1, gr%nzm
-      do i = 1, ngrdcol
-        rho_dry_zm(i,k) = p_dry_zm(i,k) / ( Rd * th_dry_zm(i,k) * exner_dry_zm(i,k) )
-      end do
-    end do
+    do k = 1, gr%nzm, 1
+       rho_dry_zm(k) = p_dry_zm(k) / ( Rd * th_dry_zm(k) * exner_dry_zm(k) )
+    enddo
 
     ! The values of rho_dry and rho_dry_zm that were just calculated are dry
     ! (they do not take into account water vapor or cloud water).  These are
@@ -4741,6 +4599,7 @@ module clubb_driver
     ! Set the values of inverse, dry, static, base-state density.
     invrs_rho_ds_zm = one / rho_ds_zm
     invrs_rho_ds_zt = one / rho_ds_zt
+
 
     return
 
