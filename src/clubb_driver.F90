@@ -3715,7 +3715,7 @@ module clubb_driver
 
     if( l_t_dependent ) then
       call initialize_t_dependent_input &
-                   ( iunit, runtype, gr%nzt, gr%zt(1,:), p_in_Pa )
+                   ( iunit, runtype, gr%nzt, gr%zt(1,:), p_in_Pa(1,:) )
     end if
 
     ! Initialize TKE and other fields as needed
