@@ -1864,9 +1864,6 @@ module clubb_driver
 
     call init_precip_fracs_api( gr%nzt, ngrdcol, &
                                 precip_fracs )
-
-    call setup_radiation_variables( gr%nzm, lin_int_buffer, &
-                                    extended_atmos_range_size )
                                     
     ! Initialize to 0.
     do k = 1, gr%nzt
@@ -1960,51 +1957,6 @@ module clubb_driver
       error stop "The options rad_scheme == none and l_calc_thlp2_rad are incompatible."
     end if
 
-!$OMP CRITICAL
-    if ( stats_metadata%l_output_rad_files ) then
-
-      ! Initialize statistics output, note that this will allocate/initialize stats variables for all
-      ! columns, but only create the stats files for the first columns
-      call stats_init( iunit, fname_prefix, output_dir, l_stats, & ! In
-                      stats_fmt, stats_tsamp, stats_tout, runfile, & ! In
-                      hydromet_dim, sclr_dim, edsclr_dim, sclr_tol, & ! In
-                      hm_metadata%hydromet_list, hm_metadata%l_mix_rat_hm, & ! In
-                      gr%nzm, ngrdcol, nlon, nlat, gr%zt, gr%zm, total_atmos_dim - 1, & ! In
-                      complete_alt(1:total_atmos_dim), total_atmos_dim, & ! In
-                      complete_momentum(1:total_atmos_dim + 1), day, month, year, & ! In
-                      (/lon_vals/), (/lat_vals/), time_current, dt_main, l_silhs_out,&!In
-                      clubb_params, &
-                      clubb_config_flags%l_uv_nudge, &
-                      clubb_config_flags%l_tke_aniso, &
-                      clubb_config_flags%l_standard_term_ta, &
-                      stats_metadata, & ! In/Out
-                      stats_zt, stats_zm, stats_sfc, & ! In/Out
-                      stats_lh_zt, stats_lh_sfc, & ! In/Out
-                      stats_rad_zt, stats_rad_zm ) ! In/Out
-
-    else
-
-      ! Initialize statistics output, note that this will allocate/initialize stats variables for all
-      ! columns, but only create the stats files for the first columns
-      call stats_init( iunit, fname_prefix, output_dir, l_stats, & ! In
-                      stats_fmt, stats_tsamp, stats_tout, runfile, & ! In
-                      hydromet_dim, sclr_dim, edsclr_dim, sclr_tol, & ! In
-                      hm_metadata%hydromet_list, hm_metadata%l_mix_rat_hm, & ! In
-                      gr%nzm, ngrdcol, nlon, nlat, gr%zt, gr%zm, 0, & ! In
-                      rad_dummy, 0, rad_dummy, day, month, year, & ! In
-                      (/lon_vals/), (/lat_vals/), time_current, dt_main, l_silhs_out,&!In
-                      clubb_params, &
-                      clubb_config_flags%l_uv_nudge, &
-                      clubb_config_flags%l_tke_aniso, &
-                      clubb_config_flags%l_standard_term_ta, &
-                      stats_metadata, & ! In/Out
-                      stats_zt, stats_zm, stats_sfc, & ! In/Out
-                      stats_lh_zt, stats_lh_sfc, & ! In/Out
-                      stats_rad_zt, stats_rad_zm ) ! In/Out
-
-    end if
-!$OMP END CRITICAL
-
     if ( clubb_at_least_debug_level( 0 ) ) then
       if ( err_code == clubb_fatal_error ) then
           write(fstderr,*) "FATAL ERROR in stats_init"
@@ -2017,22 +1969,19 @@ module clubb_driver
 
       ! Setup 2D output of all subcolumns (if enabled)
       call latin_hypercube_2D_output_api( &
-             fname_prefix, output_dir, stats_metadata%stats_tout, &
-             gr%nzt, pdf_dim, & ! Intent(in)
-             gr%zt, time_initial, lh_num_samples, & ! Intent(in)
-             nlon, nlat, (/lon_vals/), (/lat_vals/), &
-             hm_metadata, &
-             clubb_params(1,:), &
-             sclr_dim, sclr_tol, &
-             clubb_config_flags%l_uv_nudge, &
-             clubb_config_flags%l_tke_aniso, &
-             clubb_config_flags%l_standard_term_ta )    ! Intent(in)
+              fname_prefix, output_dir, stats_metadata%stats_tout, &
+              gr%nzt, pdf_dim, & ! Intent(in)
+              gr%zt, time_initial, lh_num_samples, & ! Intent(in)
+              nlon, nlat, (/lon_vals/), (/lat_vals/), &
+              hm_metadata, &
+              clubb_params(1,:), &
+              sclr_dim, sclr_tol, &
+              clubb_config_flags%l_uv_nudge, &
+              clubb_config_flags%l_tke_aniso, &
+              clubb_config_flags%l_standard_term_ta )    ! Intent(in)
 
     end if
 #endif /* SILHS */
-
-    stats_nsamp = nint( stats_metadata%stats_tsamp / dt_main )
-    stats_nout = nint( stats_metadata%stats_tout / dt_main )
 
     !initialize timers    
     time_loop_init = 0.0_core_rknd
@@ -2274,6 +2223,61 @@ module clubb_driver
         return
       end if
     end if
+
+!$OMP CRITICAL
+    if ( stats_metadata%l_output_rad_files ) then
+
+      print *, "l_output_rad_files"
+
+      ! Initialize statistics output, note that this will allocate/initialize stats variables for all
+      ! columns, but only create the stats files for the first columns
+      call stats_init( iunit, fname_prefix, output_dir, l_stats, & ! In
+                      stats_fmt, stats_tsamp, stats_tout, runfile, & ! In
+                      hydromet_dim, sclr_dim, edsclr_dim, sclr_tol, & ! In
+                      hm_metadata%hydromet_list, hm_metadata%l_mix_rat_hm, & ! In
+                      gr%nzm, ngrdcol, nlon, nlat, gr%zt, gr%zm, total_atmos_dim - 1, & ! In
+                      complete_alt(1:total_atmos_dim), total_atmos_dim, & ! In
+                      complete_momentum(1:total_atmos_dim + 1), day, month, year, & ! In
+                      (/lon_vals/), (/lat_vals/), time_current, dt_main, l_silhs_out,&!In
+                      clubb_params, &
+                      clubb_config_flags%l_uv_nudge, &
+                      clubb_config_flags%l_tke_aniso, &
+                      clubb_config_flags%l_standard_term_ta, &
+                      stats_metadata, & ! In/Out
+                      stats_zt, stats_zm, stats_sfc, & ! In/Out
+                      stats_lh_zt, stats_lh_sfc, & ! In/Out
+                      stats_rad_zt, stats_rad_zm ) ! In/Out
+
+    else
+
+      print *, "no l_output_rad_files"
+
+      ! Initialize statistics output, note that this will allocate/initialize stats variables for all
+      ! columns, but only create the stats files for the first columns
+      call stats_init( iunit, fname_prefix, output_dir, l_stats, & ! In
+                      stats_fmt, stats_tsamp, stats_tout, runfile, & ! In
+                      hydromet_dim, sclr_dim, edsclr_dim, sclr_tol, & ! In
+                      hm_metadata%hydromet_list, hm_metadata%l_mix_rat_hm, & ! In
+                      gr%nzm, ngrdcol, nlon, nlat, gr%zt, gr%zm, 0, & ! In
+                      rad_dummy, 0, rad_dummy, day, month, year, & ! In
+                      (/lon_vals/), (/lat_vals/), time_current, dt_main, l_silhs_out,&!In
+                      clubb_params, &
+                      clubb_config_flags%l_uv_nudge, &
+                      clubb_config_flags%l_tke_aniso, &
+                      clubb_config_flags%l_standard_term_ta, &
+                      stats_metadata, & ! In/Out
+                      stats_zt, stats_zm, stats_sfc, & ! In/Out
+                      stats_lh_zt, stats_lh_sfc, & ! In/Out
+                      stats_rad_zt, stats_rad_zm ) ! In/Out
+
+    end if
+!$OMP END CRITICAL
+
+    call setup_radiation_variables( gr%nzm, lin_int_buffer, &
+                                    extended_atmos_range_size )
+    
+    stats_nsamp = nint( stats_metadata%stats_tsamp / dt_main )
+    stats_nout = nint( stats_metadata%stats_tout / dt_main )
 
 
     if ( l_restart ) then
@@ -3619,12 +3623,12 @@ module clubb_driver
       ! lin_int_buffer et al. are set to zero in clubb_model_settings.
     end if
 
-    ! Determine initial value cloud droplet number concentration when Nc
-    ! is predicted.
-    Nc_in_cloud = Nc0_in_cloud / rho
+    do k = 1, gr%nzt
+      do i = 1, ngrdcol
 
-    do i = 1, ngrdcol
-      do k = 1, gr%nzt, 1
+        ! Determine initial value cloud droplet number concentration when Nc
+        ! is predicted.
+        Nc_in_cloud(i,k) = Nc0_in_cloud / rho(i,k)
 
         if ( rcm(i,k) > zero ) then
 
@@ -3642,17 +3646,21 @@ module clubb_driver
 
         endif
 
-      end do ! k = 1, gr%nzt, 1
+      end do
     end do
 
     select case ( trim( microphys_scheme ) )
 
     case ( "coamps" )
        ! Initialize Nccnm as in COAMPS-LES
-       Nccnm(:,1:gr%nzt) &
-       = 30.0_core_rknd &
-         * ( one + exp( -gr%zt(:,1:gr%nzt) / 2000.0_core_rknd ) )  &
-         * cm3_per_m3 / rho    ! Known magic number
+      do k = 1, gr%nzt
+        do i = 1, ngrdcol
+          Nccnm(i,k) = 30.0_core_rknd &
+                       * ( one + exp( -gr%zt(i,k) / 2000.0_core_rknd ) )  &
+                       * cm3_per_m3 / rho(i,k)    ! Known magic number
+        end do
+      end do
+      
     end select
 
 
@@ -3662,59 +3670,84 @@ module clubb_driver
     case ( wm_name )
 
       wm_zm = zt2zm( gr%nzm, gr%nzt, ngrdcol, gr, wm_zt )
-      wm_zm(:,1) = 0.0_core_rknd
-      wm_zm(:,gr%nzm) = 0.0_core_rknd
+
+      do i = 1, ngrdcol
+        wm_zm(i,1) = 0.0_core_rknd
+        wm_zm(i,gr%nzm) = 0.0_core_rknd
+      end do
 
     case ( omega_name )
 
-      do k=1,gr%nzt
-        wm_zt(:,k) = -wm_zt(:,k) / ( grav*rho(:,k) )
+      do k = 1, gr%nzt
+        do i = 1, ngrdcol
+          wm_zt(i,k) = -wm_zt(i,k) / ( grav * rho(i,k) )
+        end do
       end do
 
-      wm_zt(:,gr%nzt) = 0.0_core_rknd
+      do i = 1, ngrdcol
+        wm_zt(i,gr%nzt) = 0.0_core_rknd
+      end do
 
       wm_zm = zt2zm( gr%nzm, gr%nzt, ngrdcol, gr, wm_zt )
-      wm_zm(:,gr%nzm) = 0.0_core_rknd
+
+      do i = 1, ngrdcol
+        wm_zm(i,gr%nzm) = 0.0_core_rknd
+      end do
 
     case default ! This should not happen
 
-      wm_zt = 0.0_core_rknd
-      wm_zm = 0.0_core_rknd
+      do k = 1, gr%nzt
+        do i = 1, ngrdcol
+          wm_zt(i,k) = 0.0_core_rknd
+        end do
+      end do
+
+      do k = 1, gr%nzm
+        do i = 1, ngrdcol
+          wm_zm(i,k) = 0.0_core_rknd
+        end do
+      end do
 
     end select
 
     ! Initialize damping
     if ( thlm_sponge_damp_settings%l_sponge_damping ) then
+      !$acc update( gr%zt, gr%zm )
       call initialize_tau_sponge_damp( gr, gr%nzt, dt_main, gr%zt(1,:), & ! Intent(in)
                                        thlm_sponge_damp_settings, & ! Intent(in)
                                        thlm_sponge_damp_profile )   ! Intent(out)
     endif
 
     if ( rtm_sponge_damp_settings%l_sponge_damping ) then
+      !$acc update( gr%zt, gr%zm )
       call initialize_tau_sponge_damp( gr, gr%nzt, dt_main, gr%zt(1,:), & ! Intent(in)
                                        rtm_sponge_damp_settings, & ! Intent(in)
                                        rtm_sponge_damp_profile )   ! Intent(out)
     endif
 
     if ( uv_sponge_damp_settings%l_sponge_damping ) then
+      !$acc update( gr%zt, gr%zm )
       call initialize_tau_sponge_damp( gr, gr%nzt, dt_main, gr%zt(1,:), & ! Intent(in)
                                        uv_sponge_damp_settings, & ! Intent(in)
                                        uv_sponge_damp_profile )   ! Intent(out)
     endif
 
     if ( wp2_sponge_damp_settings%l_sponge_damping ) then
+      !$acc update( gr%zt, gr%zm )
       call initialize_tau_sponge_damp( gr, gr%nzm, dt_main, gr%zm(1,:), & ! Intent(in)
                                        wp2_sponge_damp_settings, & ! Intent(in)
                                        wp2_sponge_damp_profile )   ! Intent(out)
     endif
 
     if ( wp3_sponge_damp_settings%l_sponge_damping ) then
+      !$acc update( gr%zt, gr%zm )
       call initialize_tau_sponge_damp( gr, gr%nzt, dt_main, gr%zt(1,:), & ! Intent(in)
                                        wp3_sponge_damp_settings, & ! Intent(in)
                                        wp3_sponge_damp_profile )   ! Intent(out)
     endif
 
     if ( up2_vp2_sponge_damp_settings%l_sponge_damping ) then
+      !$acc update( gr%zt, gr%zm )
       call initialize_tau_sponge_damp( gr, gr%nzm, dt_main, gr%zm(1,:), & ! Intent(in)
                                        up2_vp2_sponge_damp_settings, & ! Intent(in)
                                        up2_vp2_sponge_damp_profile )   ! Intent(out)
@@ -3734,153 +3767,115 @@ module clubb_driver
     select case ( trim( runtype ) )
 
       ! Generic case
-    case ( "generic" )
-
-      em = 1.0_core_rknd
-      em(:,gr%nzm) = em_min
-
-      ! GCSS BOMEX
-    case ( "bomex" )
-
-!---> Reduction of initial sounding for stability
-!         do k = 1, gr%nz
-!            em(k) = 1.0_core_rknd - (gr%zm(1,k)/3000.0_core_rknd)
-!            if ( em(k) < em_min ) then
-!               em(k) = em_min
-!            end if
-!         end do
-!         em(1) = em(2)
-!         em(gr%nz) = em(gr%nz-1)
-!<--- End reduction of initial sounding for stability 24 Jan 07
-
-      em(:,:) = em_min
-
-      ! GCSS ARM
-    case ( "arm" )
-
-!---> Reduction of initial sounding for stability
-!         do k = 1, gr%nz
-!            if ( gr%zm(1,k) < 150.0_core_rknd ) then
-!               em(k) = ( 0.15_core_rknd * (1.0_core_rknd - gr%zm(1,k)/150.0_core_rknd) ) 
-!                       / rho_zm(k)
-!            else
-!               em(k) = em_min
-!            end if
-!         end do
-!         em(1) = em(2)
-!         em(gr%nz) = em(gr%nz-1)
-!<--- End reduction of initial sounding for stability 24 Jan 07
-
-      em(:,:) = em_min
-
-      ! June 27 1997 ARM case
-    case ( "arm_97" )
-
-      em = 1.0_core_rknd
-      em(:,gr%nzm) = em_min
-
-      ! twp_ice
-    case ( "twp_ice" )
-
-      em = 1.0_core_rknd
-      em(:,gr%nzm) = em_min
-
-      ! March 2000 ARM case
-    case ( "arm_0003" )
-
-      em = 1.0_core_rknd
-      em(:,gr%nzm) = em_min
-
-      ! 3 year ARM case
-    case ( "arm_3year" )
-
-      em = 1.0_core_rknd
-      em(:,gr%nzm) = em_min
-
-      ! cloud feedback cases
-    case ( "cloud_feedback_s6", "cloud_feedback_s6_p2k",   &
+    case ( "generic", "arm_97", "twp_ice", "dycoms2_rf02", &
+           "arm_0003", "arm_3year", &
+           "cloud_feedback_s6", "cloud_feedback_s6_p2k",   &
            "cloud_feedback_s11", "cloud_feedback_s11_p2k", &
            "cloud_feedback_s12", "cloud_feedback_s12_p2k" )
 
-      em = 1.0_core_rknd
-      em(:,gr%nzm) = em_min
+      do k = 1, gr%nzm
+        do i = 1, ngrdcol
 
-      ! ASTEX_A209 case 16 Jul, 2010 kcwhite
+          em(i,k) = 1.0_core_rknd
+
+          if ( k == gr%nzm ) then
+            em(i,gr%nzm) = em_min
+          end if
+
+        end do
+      end do
+
+    case ( "bomex", "arm"  )
+
+      do k = 1, gr%nzm
+        do i = 1, ngrdcol
+          em(i,k) = em_min
+        end do
+      end do
+
     case ( "astex_a209" )
 
       cloud_top_height = 700._core_rknd
       em_max = 1.0_core_rknd
 
-      do i = 1, ngrdcol
-        do k=1,gr%nzm
+      do k = 1, gr%nzm
+        do i = 1, ngrdcol
+
           if ( gr%zm(i,k) < cloud_top_height ) then
             em(i,k) = em_max
           else
             em(i,k) = em_min
           end if
+
         end do
       end do
-      em(:,1) = em(:,2)
-      em(:,gr%nzm) = em_min
 
-      ! GCSS FIRE Sc
+      do i = 1, ngrdcol
+        em(i,1) = em(i,2)
+        em(i,gr%nzm) = em_min
+      end do
+
     case ( "fire" )
 
       cloud_top_height = 700._core_rknd ! 700 m is the top of the cloud in FIRE
-      do i = 1, ngrdcol
-        do k=1,gr%nzm
+
+      do k = 1, gr%nzm
+        do i = 1, ngrdcol
+
           if ( gr%zm(i,k) < cloud_top_height ) then
             !em(k) = 1._core_rknd
             em(i,k) = 4.5_core_rknd
           else
             em(i,k) = em_min
           end if
+          
         end do
       end do
-      em(:,1) = em(:,2)
-      em(:,gr%nzm) = em_min
+
+      do i = 1, ngrdcol
+        em(i,1) = em(i,2)
+        em(i,gr%nzm) = em_min
+      end do
 
       ! GCSS ATEX
     case ( "atex" )
 
-      um = max( um, -8._core_rknd ) ! Known magic number (Stevens, et al. 2001, eq. 1)
+      do k = 1, gr%nzt
+        do i = 1, ngrdcol
+          um(i,k) = max( um(i,k), -8._core_rknd ) ! Known magic number (Stevens, et al. 2001, eq. 1)
+        end do
+      end do
 
-!---> Reduction of initial sounding for stability
-!         do k = 1, gr%nz
-!           em(k) = 1.0_core_rknd - (gr%zm(1,k)/3000.0_core_rknd)
-!           if ( em(k) < em_min ) then
-!             em(k) = em_min
-!           end if
-!         end do
-!         em(1) = em(2)
-!         em(gr%nz) = em(gr%nz-1)
-!<--- End reduction of initial sounding for stability 24 Jan 07
-
-      em(:,:) = em_min
+      do k = 1, gr%nzm
+        do i = 1, ngrdcol
+          em(i,k) = em_min
+        end do
+      end do
 
       ! GCSS DYCOMS II RF01
     case ( "dycoms2_rf01" )
+
       cloud_top_height = 800._core_rknd ! 800 m is the top of the cloud in RF01
-      do i = 1, ngrdcol
-        do k=1,gr%nzm
+
+      do k = 1, gr%nzm
+        do i = 1, ngrdcol
+
           if ( gr%zm(i,k) < cloud_top_height ) then
             !em(k) = 0.5_core_rknd
             em(i,k) = 1.1_core_rknd
           else
             em(i,k) = em_min
           end if
+
         end do
       end do
-      em(:,1) = em(:,2)
-      em(:,gr%nzm) = em_min
 
-      ! GCSS DYCOMS II RF02
-    case ( "dycoms2_rf02" )
+      do i = 1, ngrdcol
+        em(i,1) = em(i,2)
+        em(i,gr%nzm) = em_min
+      end do
 
-      em = 1.0_core_rknd
-      em(:,gr%nzm) = em_min
 
-      ! Brian for Nov. 11 altocumulus case.
     case ( "nov11_altocu" )
 
       ! Vince Larson reduced initial forcing.  4 Nov 2005
@@ -3888,8 +3883,10 @@ module clubb_driver
 !          em = 0.1_core_rknd
       ! 4150 + 2800 m is the top of the cloud in Nov11
       cloud_top_height = 2800._core_rknd + gr%zm(1,1) ! Known magic number
-      do i = 1, ngrdcol
-        do k=1,gr%nzm
+
+      do k = 1, gr%nzm
+        do i = 1, ngrdcol
+
           if ( gr%zm(i,k) < cloud_top_height ) then
 
             ! Modification by Adam Smith, 08 April 2008
@@ -3901,11 +3898,14 @@ module clubb_driver
           else
             em(i,k) = em_min
           end if
+
         end do
       end do
-      em(:,1) = em(:,2)
-      em(:,gr%nzm) = em_min
-      ! End Vince Larson's change.
+
+      do i = 1, ngrdcol
+        em(i,1) = em(i,2)
+        em(i,gr%nzm) = em_min
+      end do
 
       ! Adam Smith addition for June 25 altocumulus case.
     case ( "jun25_altocu" )
@@ -3926,13 +3926,15 @@ module clubb_driver
       ! Note: now em_min = 1.5 * w_tol_sqd
       ! Brian Griffin;  Nov. 26, 2008.
       do k = 1, gr%nzm
-        em(:,k) = 0.01_core_rknd
+        do i = 1, ngrdcol
+          em(i,k) = 0.01_core_rknd
+        end do
       end do
 
-      em(:,1) = em(:,2)
-      ! End Vince Larson's change.
-
-      em(:,gr%nzm) = em_min
+      do i = 1, ngrdcol
+        em(i,1) = em(i,2)
+        em(i,gr%nzm) = em_min
+      end do
 
       ! End of ajsmith4's addition
 
@@ -3944,18 +3946,23 @@ module clubb_driver
 !          em = 0.1_core_rknd
       ! 4150 + 1400 m is the top of the cloud in Nov11
       cloud_top_height = 2200._core_rknd + gr%zm(1,1) ! Known magic number
-      do i = 1, ngrdcol
-        do k=1,gr%nzm
+
+      do k = 1, gr%nzm
+        do i = 1, ngrdcol
+
           if ( gr%zm(i,k) < cloud_top_height ) then
             em(i,k) = 0.01_core_rknd
           else
             em(i,k) = em_min
           end if
+
         end do
       end do
-      em(:,1) = em(:,2)
-      ! End Vince Larson's change.
-      em(:,gr%nzm) = em_min
+
+      do i = 1, ngrdcol
+        em(i,1) = em(i,2)
+        em(i,gr%nzm) = em_min
+      end do
 
       ! End of ajsmith4's addition
 
@@ -3963,29 +3970,43 @@ module clubb_driver
     case ( "clex9_oct14" )
 
       ! Vince Larson reduced initial forcing.  4 Nov 2005
-!          em = 1.0_core_rknd
-!          em = 0.1_core_rknd
+      ! em = 1.0_core_rknd
+      ! em = 0.1_core_rknd
       ! 4150 + 1400 m is the top of the cloud in Nov11
       cloud_top_height = 3500._core_rknd + gr%zm(1,1) ! Known magic number
-      do i = 1, ngrdcol
-        do k=1,gr%nzm
+
+      do k = 1, gr%nzm
+        do i = 1, ngrdcol
+
           if ( gr%zm(i,k) < cloud_top_height ) then
             em(:,k) = 0.01_core_rknd
           else
             em(:,k) = em_min
           end if
+        
         end do
       end do
-      em(:,1) = em(:,2)
-      ! End Vince Larson's change.
-      em(:,gr%nzm) = em_min
+
+      do i = 1, ngrdcol
+        em(i,1) = em(i,2)
+        em(i,gr%nzm) = em_min
+      end do
 
       ! End of ajsmith4's addition
 
-    case ( "lba" )
+    case ( "lba", "cobra" )
 
-      em = 0.1_core_rknd
-      em(:,gr%nzm) = em_min
+      do k = 1, gr%nzm
+        do i = 1, ngrdcol
+
+          em(i,k) = 0.1_core_rknd
+
+          if ( k == gr%nzm ) then
+            em(i,gr%nzm) = em_min
+          end if
+
+        end do
+      end do
 
       ! Michael Falk for mpace_a Arctic Stratus case.
     case ( "mpace_a" )
@@ -3993,17 +4014,20 @@ module clubb_driver
       cloud_top_height = 2000._core_rknd
       em_max = 1.0_core_rknd
 
-      do i = 1, ngrdcol
-        do k=1,gr%nzm
+      do k = 1,gr%nzm
+        do i = 1, ngrdcol
           if ( gr%zm(i,k) < cloud_top_height ) then
-            em(:,k) = em_max
+            em(i,k) = em_max
           else
-            em(:,k) = em_min
+            em(i,k) = em_min
           end if
         end do
       end do
-      em(:,1) = em(:,2)
-      em(:,gr%nzm) = em_min
+
+      do i = 1, ngrdcol
+        em(i,1) = em(i,2)
+        em(i,gr%nzm) = em_min
+      end do
 
       call mpace_a_init( iunit, forcings_file_path )
 
@@ -4014,71 +4038,92 @@ module clubb_driver
                                          ! Michael Falk 17 Aug 2006
       em_max = 1.0_core_rknd
 
-      do i = 1, ngrdcol
-        do k=1,gr%nzm
+      do k = 1, gr%nzm
+        do i = 1, ngrdcol
 
           if ( gr%zm(i,k) < cloud_top_height ) then
-            em(:,k) = em_max
+            em(i,k) = em_max
           else
-            em(:,k) = em_min
+            em(i,k) = em_min
           end if
+
         enddo
       enddo
-      em(:,1) = em(:,2)
-      em(:,gr%nzm) = em_min
-
-      ! Brian Griffin for COBRA CO2 case.
-    case ( "cobra" )
-
-      em = 0.1_core_rknd
-      em(:,gr%nzm) = em_min
+      
+      do i = 1, ngrdcol
+        em(i,1) = em(i,2)
+        em(i,gr%nzm) = em_min
+      end do
 
       ! Michael Falk for RICO tropical cumulus case, 13 Dec 2006
     case ( "rico" )
 
       cloud_top_height = 1500._core_rknd
       em_max = 1.0_core_rknd
-      do i = 1, ngrdcol
-        do k=1,gr%nzm
+
+      do k = 1, gr%nzm
+        do i = 1, ngrdcol
           if ( gr%zm(i,k) < cloud_top_height ) then
-            em(:,k) = em_max
+            em(i,k) = em_max
           else
-            em(:,k) = em_min
+            em(i,k) = em_min
           end if
         enddo
       enddo
 
-      em(:,1) = em(:,2)
-      em(:,gr%nzm) = em_min
+      do i = 1, ngrdcol
+        em(i,1) = em(i,2)
+        em(i,gr%nzm) = em_min
+      end do
 
       ! Michael Falk for GABLS2 case, 29 Dec 2006
     case ( "gabls2" )
 
       cloud_top_height = 800._core_rknd  ! per GABLS2 specifications
       em_max = 0.5_core_rknd
-      do i = 1, ngrdcol
-        do k=1,gr%nzm
+
+      do k = 1, gr%nzm
+        do i = 1, ngrdcol
           if ( gr%zm(i,k) < cloud_top_height ) then
-            em(:,k) = em_max * (1._core_rknd - (gr%zm(i,k)/cloud_top_height))
+            em(i,k) = em_max * (1._core_rknd - (gr%zm(i,k)/cloud_top_height))
           else
-            em(:,k) = em_min
+            em(i,k) = em_min
           end if
         end do
       end do
 
-      em(:,1) = em(:,2)
-      em(:,gr%nzm) = em_min
+      do i = 1, ngrdcol
+        em(i,1) = em(i,2)
+        em(i,gr%nzm) = em_min
+      end do
 
     case ( "gabls3_night" )
-      em = 1.0_core_rknd
+
+      do k = 1, gr%nzm
+        do i = 1, ngrdcol
+          em(i,k) = 1.0_core_rknd
+        end do
+      end do
 
     case ( "gabls3" )
-      em = 1.0_core_rknd
-      em(:,gr%nzm) = em_min
 
-      veg_T_in_K = 300._core_rknd
-      sfc_soil_T_in_K = 300._core_rknd
-      deep_soil_T_in_K = 288.58_core_rknd
+      do k = 1, gr%nzm
+        do i = 1, ngrdcol
+
+          em(i,k) = 1.0_core_rknd
+
+          if ( k == gr%nzm ) then
+            em(i,gr%nzm) = em_min
+          end if
+
+        end do
+      end do
+
+      do i = 1, ngrdcol
+        veg_T_in_K(i) = 300._core_rknd
+        sfc_soil_T_in_K(i) = 300._core_rknd
+        deep_soil_T_in_K(i) = 288.58_core_rknd
+      end do
 
     end select
 
@@ -4092,30 +4137,50 @@ module clubb_driver
       ! Evenly divide TKE into its component
       ! contributions (w'^2, u'^2, and v'^2).
 
-      wp2 = (2.0_core_rknd/3.0_core_rknd) * em
-      up2 = (2.0_core_rknd/3.0_core_rknd) * em
-      vp2 = (2.0_core_rknd/3.0_core_rknd) * em
+      do k = 1, gr%nzm
+        do i = 1, ngrdcol
+          wp2(i,k) = (2.0_core_rknd/3.0_core_rknd) * em(i,k)
+          up2(i,k) = (2.0_core_rknd/3.0_core_rknd) * em(i,k)
+          vp2(i,k) = (2.0_core_rknd/3.0_core_rknd) * em(i,k)
+        end do
+      end do
 
     else
 
       ! TKE:  em = (3/2) * w'^2
 
-      wp2 = (2.0_core_rknd/3.0_core_rknd) * em
+      do k = 1, gr%nzm
+        do i = 1, ngrdcol
+          wp2(i,k) = (2.0_core_rknd/3.0_core_rknd) * em(i,k)
+        end do
+      end do
 
     end if ! l_tke_aniso
 
     ! Moved this to be more general -dschanen July 16 2007
     if ( clubb_config_flags%l_uv_nudge .or. uv_sponge_damp_settings%l_sponge_damping ) then
-      um_ref = um ! Michael Falk addition for nudging code.  27 Sep/1 Nov 2006
-      vm_ref = vm ! ditto
+      do k = 1, gr%nzt
+        do i = 1, ngrdcol
+          um_ref(i,k) = um(i,k) ! Michael Falk addition for nudging code.  27 Sep/1 Nov 2006
+          vm_ref(i,k) = vm(i,k) ! ditto
+        end do
+      end do
     end if
 
     if ( thlm_sponge_damp_settings%l_sponge_damping ) then
-      thlm_ref = thlm ! Added for nudging code
+      do k = 1, gr%nzt
+        do i = 1, ngrdcol
+          thlm_ref(i,k) = thlm(i,k) ! Added for nudging code
+        end do
+      end do
     end if
 
     if ( rtm_sponge_damp_settings%l_sponge_damping ) then
-      rtm_ref  = rtm
+      do k = 1, gr%nzt
+        do i = 1, ngrdcol
+          rtm_ref(i,k)  = rtm(i,k)
+        end do
+      end do
     end if
 
     return
