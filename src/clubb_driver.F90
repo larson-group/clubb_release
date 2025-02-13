@@ -720,6 +720,49 @@ module clubb_driver
       lh_rv_clipped,  & ! rv generated from silhs sample points
       lh_Nc_clipped     ! Nc generated from silhs sample points
 
+    ! Variables used to initialize multi_col version of variables
+    real( kind = core_rknd ), dimension(:), allocatable :: &
+      thlm_init, &
+      rtm_init, &
+      um_init, &
+      vm_init, &
+      ug_init, &
+      vg_init, &
+      wp2_init, &
+      up2_init, &
+      vp2_init, &
+      rcm_init, &
+      wm_zt_init, &
+      wm_zm_init, &
+      em_init, &
+      exner_init, &
+      thvm_init, &
+      p_in_Pa_init, &
+      rho_init, &
+      rho_zm_init, &
+      rho_ds_zm_init, &
+      rho_ds_zt_init, &
+      invrs_rho_ds_zm_init, &
+      invrs_rho_ds_zt_init, &
+      thv_ds_zm_init, &
+      thv_ds_zt_init, &
+      rtm_ref_init, &
+      thlm_ref_init, &
+      um_ref_init, &
+      vm_ref_init, &
+      Ncm_init, &
+      Nc_in_cloud_init, &
+      Nccnm_init
+
+    real( kind = core_rknd ) :: &
+      deep_soil_T_in_K_init, &
+      sfc_soil_T_in_K_init, &
+      veg_T_in_K_init
+
+    real( kind = core_rknd ), dimension(:,:), allocatable :: &
+      sclrm_init, &
+      edsclrm_init
+
     real( kind = core_rknd ), dimension(:,:), allocatable :: &
       Nc_in_cloud        ! Mean (in-cloud) cloud droplet concentration  [num/kg]
 
@@ -1854,6 +1897,40 @@ module clubb_driver
 
     allocate( wpthlp_sfc(ngrdcol), wprtp_sfc(ngrdcol), upwp_sfc(ngrdcol), vpwp_sfc(ngrdcol) )
 
+    allocate( thlm_init(gr%nzt), &
+              rtm_init(gr%nzt), &
+              um_init(gr%nzt), &
+              vm_init(gr%nzt), &
+              ug_init(gr%nzt), &
+              vg_init(gr%nzt), &
+              wp2_init(gr%nzm), &
+              up2_init(gr%nzm), &
+              vp2_init(gr%nzm), &
+              rcm_init(gr%nzt), &
+              wm_zt_init(gr%nzt), &
+              wm_zm_init(gr%nzm), &
+              em_init(gr%nzm), &
+              exner_init(gr%nzt), &
+              thvm_init(gr%nzt), &
+              p_in_Pa_init(gr%nzt), &
+              rho_init(gr%nzt), &
+              rho_zm_init(gr%nzm), &
+              rho_ds_zm_init(gr%nzm), &
+              rho_ds_zt_init(gr%nzt), &
+              invrs_rho_ds_zm_init(gr%nzm), &
+              invrs_rho_ds_zt_init(gr%nzt), &
+              thv_ds_zm_init(gr%nzm), &
+              thv_ds_zt_init(gr%nzt), &
+              rtm_ref_init(gr%nzt), &
+              thlm_ref_init(gr%nzt), &
+              um_ref_init(gr%nzt), &
+              vm_ref_init(gr%nzt), &
+              Ncm_init(gr%nzt), &
+              Nc_in_cloud_init(gr%nzt), &
+              Nccnm_init(gr%nzt), &
+              sclrm_init(gr%nzt,sclr_dim), &
+              edsclrm_init(gr%nzt,edsclr_dim) )
+
 
     ! Variables for PDF closure scheme
     call init_pdf_params( gr%nzt, ngrdcol, pdf_params )
@@ -1970,21 +2047,22 @@ module clubb_driver
     ! Therefore it should be executed prior to a restart. The restart should overwrite
     ! the initial sounding anyway.
     call initialize_clubb( &
-          gr, iunit, trim( forcings_file_path ), p_sfc(1), zm_init(1),         & ! Intent(in)
-          sclr_dim, edsclr_dim, sclr_idx,                                & ! Intent(in)
-          clubb_config_flags,                                            & ! Intent(in)
-          l_modify_ic_with_cubic_int,                                    & ! Intent(in)
-          thlm(1,:), rtm(1,:), um(1,:), vm(1,:), ug(1,:), vg(1,:), wp2(1,:), up2(1,:), vp2(1,:), rcm(1,:),  & ! Intent(inout)
-          wm_zt(1,:), wm_zm(1,:), em(1,:), exner(1,:),                                  & ! Intent(inout)
-          thvm(1,:), p_in_Pa(1,:),                                            & ! Intent(inout)
-          rho(1,:), rho_zm(1,:), rho_ds_zm(1,:), rho_ds_zt(1,:),                        & ! Intent(inout)
-          invrs_rho_ds_zm(1,:), invrs_rho_ds_zt(1,:),                              & ! Intent(inout)
-          thv_ds_zm(1,:), thv_ds_zt(1,:),                                     & ! Intent(inout)
-          rtm_ref(1,:), thlm_ref(1,:),                                             & ! Intent(inout) 
-          um_ref(1,:), vm_ref(1,:),                                                & ! Intent(inout)
-          Ncm(1,:), Nc_in_cloud(1,:), Nccnm(1,:),                                       & ! Intent(inout)
-          deep_soil_T_in_K(1), sfc_soil_T_in_K(1), veg_T_in_K(1),                 & ! Intent(inout)
-          sclrm(1,:,:), edsclrm(1,:,:) )                                                 ! Intent(out)
+          gr, iunit, trim( forcings_file_path ), p_sfc(1), zm_init(1),    & ! Intent(in)
+          sclr_dim, edsclr_dim, sclr_idx,                                 & ! Intent(in)
+          clubb_config_flags,                                             & ! Intent(in)
+          l_modify_ic_with_cubic_int,                                     & ! Intent(in)
+          thlm_init, rtm_init, um_init, vm_init, ug_init, vg_init,        & ! Intent(out)
+          wp2_init, up2_init, vp2_init, rcm_init,                         & ! Intent(out)
+          wm_zt_init, wm_zm_init, em_init, exner_init,                    & ! Intent(out)
+          thvm_init, p_in_Pa_init,                                        & ! Intent(out)
+          rho_init, rho_zm_init, rho_ds_zm_init, rho_ds_zt_init,          & ! Intent(out)
+          invrs_rho_ds_zm_init, invrs_rho_ds_zt_init,                     & ! Intent(out)
+          thv_ds_zm_init, thv_ds_zt_init,                                 & ! Intent(out)
+          rtm_ref_init, thlm_ref_init,                                    & ! Intent(out) 
+          um_ref_init, vm_ref_init,                                       & ! Intent(out)
+          Ncm_init, Nc_in_cloud_init, Nccnm_init,                         & ! Intent(out)
+          deep_soil_T_in_K_init, sfc_soil_T_in_K_init, veg_T_in_K_init,   & ! Intent(out)
+          sclrm_init, edsclrm_init )                                        ! Intent(out)
 
 !$OMP CRITICAL
     if ( stats_metadata%l_output_rad_files ) then
@@ -2060,6 +2138,20 @@ module clubb_driver
         return
       end if
     end if
+
+    if( stats_metadata%l_stats ) then
+
+      if ( .not. (( abs(dt_rad/stats_metadata%stats_tout &
+                        - real(floor(dt_rad/stats_metadata%stats_tout), kind=core_rknd)) &
+            < 1.e-8_core_rknd) .or. &
+         ( abs(stats_metadata%stats_tout/dt_rad &
+               - real(floor(stats_metadata%stats_tout/dt_rad), kind=core_rknd)) &
+            < 1.e-8_core_rknd)) ) then
+        error stop &
+              "dt_rad must be a multiple of stats_tout or stats_tout must be a mulitple of dt_rad"
+      end if
+
+    end if
     
     stats_nsamp = nint( stats_metadata%stats_tsamp / dt_main )
     stats_nout = nint( stats_metadata%stats_tout / dt_main )
@@ -2084,44 +2176,44 @@ module clubb_driver
 
     do k = 1, gr%nzt
       do i = 1, ngrdcol
-        um(i,k)                     = um(1,k)        ! u wind
-        vm(i,k)                     = vm(1,k)        ! v wind
+        um(i,k)                     = um_init(k)        ! u wind
+        vm(i,k)                     = vm_init(k)        ! v wind
         up3(i,k)                    = zero        ! u'^3
         vp3(i,k)                    = zero        ! v'^3
-        thlm(i,k)                   = thlm(1,k)         ! liquid potential temperature
-        rtm(i,k)                    = rtm(1,k)        ! total water mixing ratio
+        thlm(i,k)                   = thlm_init(k)         ! liquid potential temperature
+        rtm(i,k)                    = rtm_init(k)        ! total water mixing ratio
         w_up_in_cloud(i,k)          = zero
         w_down_in_cloud(i,k)        = zero
         cloudy_updraft_frac(i,k)    = zero
         cloudy_downdraft_frac(i,k)  = zero
         wp3(i,k)                    = zero        ! w'^3
-        p_in_Pa(i,k)                = p_in_Pa(1,k)        ! pressure 
-        exner(i,k)                  = exner(1,k)        ! exner
-        rho(i,k)                    = rho(1,k)        ! density on thermo. levels
-        rho_ds_zt(i,k)              = rho_ds_zt(1,k)         ! dry, static density: t-levs
-        invrs_rho_ds_zt(i,k)        = invrs_rho_ds_zt(1,k)        ! inv. dry, static density: t-levs
-        thv_ds_zt(i,k)              = thv_ds_zt(1,k)        ! dry, base-state theta_v: t-levs
+        p_in_Pa(i,k)                = p_in_Pa_init(k)        ! pressure 
+        exner(i,k)                  = exner_init(k)        ! exner
+        rho(i,k)                    = rho_init(k)        ! density on thermo. levels
+        rho_ds_zt(i,k)              = rho_ds_zt_init(k)         ! dry, static density: t-levs
+        invrs_rho_ds_zt(i,k)        = invrs_rho_ds_zt_init(k)        ! inv. dry, static density: t-levs
+        thv_ds_zt(i,k)              = thv_ds_zt_init(k)        ! dry, base-state theta_v: t-levs
         thlm_forcing(i,k)           = zero        ! thlm large-scale forcing
         rtm_forcing(i,k)            = zero        ! rtm large-scale forcing
         um_forcing(i,k)             = zero        ! u forcing
         vm_forcing(i,k)             = zero        ! v forcing
         um_pert(i,k)                = zero        ! Variables used to track perturbed version of winds.
         vm_pert(i,k)                = zero
-        wm_zt(i,k)                  = wm_zt(1,k)        ! Imposed large scale w - Thermodynamic levels
-        rcm(i,k)                    = rcm(1,k)
+        wm_zt(i,k)                  = wm_zt_init(k)        ! Imposed large scale w - Thermodynamic levels
+        rcm(i,k)                    = rcm_init(k)
         cloud_frac(i,k)             = zero
         ice_supersat_frac(i,k)      = zero
         rcm_in_layer(i,k)           = zero
         cloud_cover(i,k)            = zero
         sigma_sqd_w_zt(i,k)         = zero        ! PDF width parameter interp. to t-levs.
         wp2_zt(i,k)                 = w_tol_sqd   ! wp2 interpolated to thermo. levels
-        ug(i,k)                     = ug(1,k)        ! u geostrophic wind
-        vg(i,k)                     = vg(1,k)        ! v geostrophic wind
-        um_ref(i,k)                 = um_ref(1,k)
-        vm_ref(i,k)                 = vm_ref(1,k)
-        thlm_ref(i,k)               = thlm_ref(1,k)
-        rtm_ref(i,k)                = rtm_ref(1,k)
-        thvm(i,k)                   = thvm(1,k)         ! Virtual potential temperature
+        ug(i,k)                     = ug_init(k)        ! u geostrophic wind
+        vg(i,k)                     = vg_init(k)        ! v geostrophic wind
+        um_ref(i,k)                 = um_ref_init(k)
+        vm_ref(i,k)                 = vm_ref_init(k)
+        thlm_ref(i,k)               = thlm_ref_init(k)
+        rtm_ref(i,k)                = rtm_ref_init(k)
+        thvm(i,k)                   = thvm_init(k)         ! Virtual potential temperature
         radht(i,k)                  = zero        ! Heating rate
         thlp3(i,k)                  = zero
         rtp3(i,k)                   = zero
@@ -2133,9 +2225,9 @@ module clubb_driver
         Kh_zt(i,k)                  = zero        ! Eddy diffusivity coefficient: thermo. levels
         Lscale(i,k)                 = zero
         tau_zt(i,k)                 = zero        ! Eddy dissipation time scale: thermo. levels
-        Nccnm(i,k)                  = Nccnm(1,k)        ! CCN concentration (COAMPS/MG)
-        Ncm(i,k)                    = Ncm(1,k)
-        Nc_in_cloud(i,k)            = Nc_in_cloud(1,k)
+        Nccnm(i,k)                  = Nccnm_init(k)        ! CCN concentration (COAMPS/MG)
+        Ncm(i,k)                    = Ncm_init(k)
+        Nc_in_cloud(i,k)            = Nc_in_cloud_init(k)
         rvm_mc(i,k)                 = zero
         rcm_mc(i,k)                 = zero
         thlm_mc(i,k)                = zero
@@ -2148,19 +2240,19 @@ module clubb_driver
       do i = 1, ngrdcol
         upwp(i,k)             = zero          ! vertical u momentum flux
         vpwp(i,k)             = zero          ! vertical v momentum flux
-        up2(i,k)              = up2(1,k)     ! u'^2
-        vp2(i,k)              = vp2(1,k)      ! v'^2
+        up2(i,k)              = up2_init(k)     ! u'^2
+        vp2(i,k)              = vp2_init(k)      ! v'^2
         wprtp(i,k)            = zero          ! w'rt'
         wpthlp(i,k)           = zero          ! w'thl'
         wprcp(i,k)            = zero          ! w'rc'
-        wp2(i,k)              = wp2(1,k)     ! w'^2
+        wp2(i,k)              = wp2_init(k)     ! w'^2
         rtp2(i,k)             = rt_tol**2     ! rt'^2
         thlp2(i,k)            = thl_tol**2    ! thl'^2
         rtpthlp(i,k)          = zero          ! rt'thl'
-        rho_zm(i,k)           = rho_zm(1,k)          ! density on moment. levels
-        rho_ds_zm(i,k)        = rho_ds_zm(1,k)          ! dry, static density: m-levs
-        invrs_rho_ds_zm(i,k)  = invrs_rho_ds_zm(1,k)          ! inv. dry, static density: m-levs
-        thv_ds_zm(i,k)        = thv_ds_zm(1,k)          ! dry, base-state theta_v: m-levs
+        rho_zm(i,k)           = rho_zm_init(k)          ! density on moment. levels
+        rho_ds_zm(i,k)        = rho_ds_zm_init(k)          ! dry, static density: m-levs
+        invrs_rho_ds_zm(i,k)  = invrs_rho_ds_zm_init(k)          ! inv. dry, static density: m-levs
+        thv_ds_zm(i,k)        = thv_ds_zm_init(k)          ! dry, base-state theta_v: m-levs
         wprtp_forcing(i,k)    = zero          ! <w'r_t'> forcing 
         wpthlp_forcing(i,k)   = zero          ! <w'th_l'> forcing 
         rtp2_forcing(i,k)     = zero          ! <r_t'^2> forcing 
@@ -2168,7 +2260,7 @@ module clubb_driver
         rtpthlp_forcing(i,k)  = zero          ! <r_t'th_l'> forcing 
         upwp_pert(i,k)        = zero          ! Variables used to track perturbed version of winds.
         vpwp_pert(i,k)        = zero
-        wm_zm(i,k)            = wm_zm(1,k)          ! Imposed large scale w - Momentum levels
+        wm_zm(i,k)            = wm_zm_init(k)          ! Imposed large scale w - Momentum levels
         invrs_tau_zm(i,k)     = zero
         sigma_sqd_w(i,k)      = zero          ! PDF width parameter (momentum levels)
         Skw_zm(i,k)           = zero          ! Skewness of w on momentum levels
@@ -2188,7 +2280,7 @@ module clubb_driver
         wp2up2(i,k)           = zero          ! w'^2 u'^2
         wp2vp2(i,k)           = zero          ! w'^2 v'^2
         Kh_zm(i,k)            = zero          ! Eddy diffusivity coefficient: momentum levels
-        em(i,k)               = em(1,k)
+        em(i,k)               = em_init(k)
         tau_zm(i,k)           = zero          ! Eddy dissipation time scale: momentum levels
         wpNcp(i,k)            = zero
         wprtp_mc(i,k)         = zero
@@ -2205,9 +2297,9 @@ module clubb_driver
       wprtp_sfc(i)    = zero
       upwp_sfc(i)     = zero
       vpwp_sfc(i)     = zero
-      deep_soil_T_in_K(i) = deep_soil_T_in_K(1)
-      sfc_soil_T_in_K(i) = sfc_soil_T_in_K(1)
-      veg_T_in_K(i) = veg_T_in_K(1) 
+      deep_soil_T_in_K(i) = deep_soil_T_in_K_init
+      sfc_soil_T_in_K(i)  = sfc_soil_T_in_K_init
+      veg_T_in_K(i)       = veg_T_in_K_init
     end do
 
     ! Passive scalars
@@ -2216,7 +2308,7 @@ module clubb_driver
       do sclr = 1, sclr_dim
         do k = 1, gr%nzt
           do i = 1, ngrdcol
-            sclrm(i,k,sclr)         = sclrm(1,k,sclr)
+            sclrm(i,k,sclr)         = sclrm_init(k,sclr)
             sclrm_forcing(i,k,sclr) = zero
             sclrp3(i,k,sclr)        = zero
           end do
@@ -2248,7 +2340,7 @@ module clubb_driver
       do edsclr = 1, edsclr_dim
         do k = 1, gr%nzt
           do i = 1, ngrdcol
-            edsclrm(i,k,edsclr)         = edsclrm(1,k,edsclr)
+            edsclrm(i,k,edsclr)         = edsclrm_init(k,edsclr)
             edsclrm_forcing(i,k,edsclr) = zero
           end do
         end do
@@ -2339,20 +2431,6 @@ module clubb_driver
       invrs_rho_ds_zt = 1.0_core_rknd/rho_ds_zt
 
     end if ! ~l_restart
-
-    if( stats_metadata%l_stats ) then
-
-      if ( .not. (( abs(dt_rad/stats_metadata%stats_tout &
-                        - real(floor(dt_rad/stats_metadata%stats_tout), kind=core_rknd)) &
-            < 1.e-8_core_rknd) .or. &
-         ( abs(stats_metadata%stats_tout/dt_rad &
-               - real(floor(stats_metadata%stats_tout/dt_rad), kind=core_rknd)) &
-            < 1.e-8_core_rknd)) ) then
-        error stop &
-              "dt_rad must be a multiple of stats_tout or stats_tout must be a mulitple of dt_rad"
-      end if
-
-    end if
     
     ! Save time before main loop starts
     call cpu_time( time_start )
@@ -3504,12 +3582,12 @@ module clubb_driver
       l_modify_ic_with_cubic_int 
 
     ! Output
-    real( kind = core_rknd ), dimension(1,gr%nzt), intent(inout) ::  & 
+    real( kind = core_rknd ), dimension(1,gr%nzt), intent(out) ::  & 
       exner,           & ! Exner function (thermodynamic levels)     [-] 
       thvm,            & ! Virtual potential temp. (thermo. levs.)   [K]
       rcm                ! Cloud water mixing ratio (thermo. levs.)  [kg/kg]
 
-    real( kind = core_rknd ), dimension(gr%nzt), intent(inout) ::  & 
+    real( kind = core_rknd ), dimension(gr%nzt), intent(out) ::  & 
       thlm,            & ! Grid mean of liquid water pot. temp               [K] 
       rtm,             & ! Grid mean of total water mixing ratio             [kg/kg]
       um,              & ! Grid mean of eastward wind                        [m/s]
@@ -3527,7 +3605,7 @@ module clubb_driver
       rtm_ref,         & ! Initial profile of rtm                            [kg/kg]
       thlm_ref           ! Initial profile of thlm                           [K]
 
-    real( kind = core_rknd ), dimension(gr%nzm), intent(inout) ::  & 
+    real( kind = core_rknd ), dimension(gr%nzm), intent(out) ::  & 
       wp2,             & ! Vertical velocity variance (w'^2)                 [m^2/s^2]
       up2,             & ! East-west velocity variance (u'^2)                [m^2/s^2]
       vp2,             & ! North-south velocity variance (v'^2)              [m^2/s^2]
@@ -3538,14 +3616,14 @@ module clubb_driver
       invrs_rho_ds_zm, & ! Inv. dry, static density (m-levs.)                [m^3/kg]
       thv_ds_zm          ! Dry, base-state theta_v (m-levs.)                 [K]
 
-    real( kind = core_rknd ), dimension(gr%nzt), intent(inout) :: &
+    real( kind = core_rknd ), dimension(gr%nzt), intent(out) :: &
       Ncm,         & ! Mean cloud droplet conc., <N_c> (thermo. levs.)  [num/kg]
       Nc_in_cloud    ! Mean (in-cloud) cloud droplet concentration      [num/kg]
 
-    real( kind = core_rknd ), dimension(gr%nzt), intent(inout) :: &
+    real( kind = core_rknd ), dimension(gr%nzt), intent(out) :: &
       Nccnm    ! Cloud condensation nuclei concentration (COAMPS/MG)  [num/kg]
 
-    real( kind = core_rknd ), intent(inout) :: &
+    real( kind = core_rknd ), intent(out) :: &
       deep_soil_T_in_K, &
       sfc_soil_T_in_K, &
       veg_T_in_K  
@@ -3719,7 +3797,7 @@ module clubb_driver
 
     if( l_t_dependent ) then
       call initialize_t_dependent_input &
-                   ( iunit, runtype, gr%nzt, gr%zt(1,:), p_in_Pa(1,:) )
+                   ( iunit, runtype, gr%nzt, gr%zt(1,:), p_in_Pa )
     end if
 
     ! Initialize TKE and other fields as needed
