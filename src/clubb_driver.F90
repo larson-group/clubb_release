@@ -420,8 +420,10 @@ module clubb_driver
       dummy_dy  ! [m]
 
     integer :: &
-      itime, i, j, sclr, & ! Local Loop Variables
-      iinit                ! initial iteration
+      itime, &        ! Local Loop Variables
+      i, j, &
+      sclr, edsclr, & 
+      iinit           ! initial iteration
 
     integer ::  & 
       iunit,           & ! File unit used for I/O
@@ -2044,197 +2046,204 @@ module clubb_driver
     time_total = 0.0_core_rknd
     time_stop = 0.0_core_rknd
     time_start = 0.0_core_rknd
-
-    um      = zero          ! u wind
-    vm      = zero          ! v wind
-    upwp    = zero          ! vertical u momentum flux
-    vpwp    = zero          ! vertical v momentum flux
-    up2     = w_tol_sqd     ! u'^2
-    up3     = zero          ! u'^3
-    vp2     = w_tol_sqd     ! v'^2
-    vp3     = zero          ! v'^3
-
-    thlm    = zero          ! liquid potential temperature
-    rtm     = zero          ! total water mixing ratio
-    wprtp   = zero          ! w'rt'
-    wpthlp  = zero          ! w'thl'
-    wp2     = w_tol_sqd     ! w'^2
-    wp3   = zero          ! w'^3
-    rtp2    = rt_tol**2     ! rt'^2
-    thlp2   = thl_tol**2    ! thl'^2
-    rtpthlp = zero          ! rt'thl'
-    wprcp   = zero          ! w'rc'
-    w_up_in_cloud = zero
-    w_down_in_cloud = zero
-    cloudy_updraft_frac = zero
-    cloudy_downdraft_frac = zero
-
-    p_in_Pa= zero           ! pressure 
-    exner = zero            ! exner
-    rho  = zero             ! density on thermo. levels
-    rho_zm  = zero          ! density on moment. levels
-    rho_ds_zm = zero        ! dry, static density: m-levs
-    rho_ds_zt = zero      ! dry, static density: t-levs
-    invrs_rho_ds_zm = zero  ! inv. dry, static density: m-levs
-    invrs_rho_ds_zt = zero  ! inv. dry, static density: t-levs
-    thv_ds_zm = zero        ! dry, base-state theta_v: m-levs
-    thv_ds_zt = zero        ! dry, base-state theta_v: t-levs
-
-    thlm_forcing    = zero  ! thlm large-scale forcing
-    rtm_forcing     = zero  ! rtm large-scale forcing
-    um_forcing      = zero  ! u forcing
-    vm_forcing      = zero  ! v forcing
-    wprtp_forcing   = zero  ! <w'r_t'> forcing 
-    wpthlp_forcing  = zero  ! <w'th_l'> forcing 
-    rtp2_forcing    = zero  ! <r_t'^2> forcing 
-    thlp2_forcing   = zero  ! <th_l'^2> forcing 
-    rtpthlp_forcing = zero  ! <r_t'th_l'> forcing 
-
-    ! Variables used to track perturbed version of winds.
-    um_pert   = zero
-    vm_pert   = zero
-    upwp_pert = zero
-    vpwp_pert = zero
-
-    ! Imposed large scale w
-    wm_zm = zero      ! Momentum levels
-    wm_zt = zero      ! Thermodynamic levels
-
-    ! Cloud water variables
-    rcm               = zero
-    cloud_frac        = zero
-    ice_supersat_frac = zero
-    rcm_in_layer      = zero
-    cloud_cover       = zero
-    invrs_tau_zm      = zero
-
-    sigma_sqd_w    = zero ! PDF width parameter (momentum levels)
-    sigma_sqd_w_zt = zero ! PDF width parameter interp. to t-levs.
-    Skw_zm         = zero ! Skewness of w on momentum levels
-    wp2_zt         = w_tol_sqd ! wp2 interpolated to thermo. levels
-    ug             = zero ! u geostrophic wind
-    vg             = zero ! v geostrophic wind
-    um_ref         = zero
-    vm_ref         = zero
-    thlm_ref       = zero
-    rtm_ref        = zero
-    thvm           = zero ! Virtual potential temperature
-
-    radht = zero ! Heating rate
-    Frad  = zero ! Radiative flux
-    Frad_SW_up = zero
-    Frad_LW_up = zero
-    Frad_SW_down = zero
-    Frad_LW_down = zero
-    thlprcp = zero
-    thlp3   = zero
-    rtp3    = zero
-
-    ! Buoyancy related moments
-    rtpthvp  = zero ! rt'thv'
-    thlpthvp = zero ! thl'thv'
-    wpthvp   = zero ! w'thv'
-    wp2thvp  = zero ! w'^2thv'
-
-    wp2rtp  = zero ! w'^2 rt'
-    wp2thlp = zero ! w'^2 thl'
-    uprcp   = zero ! u'rc'
-    vprcp   = zero ! v'rc'
-    rc_coef_zm = zero ! Coefficient of X'r_c' in Eq. (34)
-    wp4     = zero ! w'^4
-    wpup2   = zero ! w'u'^2
-    wpvp2   = zero ! w'v'^2
-    wp2up2  = zero ! w'^2 u'^2
-    wp2vp2  = zero! w'^2 v'^2
-
-    ! Eddy diffusivity
-    Kh_zt = zero  ! Eddy diffusivity coefficient: thermo. levels
-    Kh_zm = zero  ! Eddy diffusivity coefficient: momentum levels
-
-    ! TKE
-    em = em_min
-
-    ! Length scale
-    Lscale      = zero
-
-    ! Dissipation time
-    tau_zm = zero ! Eddy dissipation time scale: momentum levels
-    tau_zt = zero ! Eddy dissipation time scale: thermo. levels
-
-    ! Hydrometer types
-    Nccnm = zero ! CCN concentration (COAMPS/MG)
-
-    ! Cloud droplet concentration
-    Ncm   = zero
-    wpNcp = zero
-
-    ! Surface fluxes
-    wpthlp_sfc = zero
-    wprtp_sfc  = zero
-    upwp_sfc   = zero
-    vpwp_sfc   = zero
     
-    ! Initialize to 0.
-    rvm_mc  = zero
-    rcm_mc  = zero
-    thlm_mc = zero
-    
-    ! Initialize to 0.
-    wprtp_mc   = zero
-    wpthlp_mc  = zero
-    rtp2_mc    = zero
-    thlp2_mc   = zero
-    rtpthlp_mc = zero
-    rfrzm = zero
-
-    ! Initialize to 0.
-    hydromet_mc = zero
-    Ncm_mc      = zero
-
-    hydromet_vel_zt = zero
-
-    hydromet_vel_covar_zt_impc = zero
-    hydromet_vel_covar_zt_expc = zero
-
     ! Initialize silhs samples to indicate unused status, these are overwritten if silhs is used
     X_nl_all_levs = -999._core_rknd
     X_mixt_comp_all_levs = -999
     lh_sample_point_weights = -999._core_rknd
 
+    do k = 1, gr%nzt
+      do i = 1, ngrdcol
+        um(i,k)                     = zero        ! u wind
+        vm(i,k)                     = zero        ! v wind
+        up3(i,k)                    = zero        ! u'^3
+        vp3(i,k)                    = zero        ! v'^3
+        thlm(i,k)                   = zero        ! liquid potential temperature
+        rtm(i,k)                    = zero        ! total water mixing ratio
+        w_up_in_cloud(i,k)          = zero
+        w_down_in_cloud(i,k)        = zero
+        cloudy_updraft_frac(i,k)    = zero
+        cloudy_downdraft_frac(i,k)  = zero
+        wp3(i,k)                    = zero        ! w'^3
+        p_in_Pa(i,k)                = zero        ! pressure 
+        exner(i,k)                  = zero        ! exner
+        rho(i,k)                    = zero        ! density on thermo. levels
+        rho_ds_zt(i,k)              = zero        ! dry, static density: t-levs
+        invrs_rho_ds_zt(i,k)        = zero        ! inv. dry, static density: t-levs
+        thv_ds_zt(i,k)              = zero        ! dry, base-state theta_v: t-levs
+        thlm_forcing(i,k)           = zero        ! thlm large-scale forcing
+        rtm_forcing(i,k)            = zero        ! rtm large-scale forcing
+        um_forcing(i,k)             = zero        ! u forcing
+        vm_forcing(i,k)             = zero        ! v forcing
+        um_pert(i,k)                = zero        ! Variables used to track perturbed version of winds.
+        vm_pert(i,k)                = zero
+        wm_zt(i,k)                  = zero        ! Imposed large scale w - Thermodynamic levels
+        rcm(i,k)                    = zero
+        cloud_frac(i,k)             = zero
+        ice_supersat_frac(i,k)      = zero
+        rcm_in_layer(i,k)           = zero
+        cloud_cover(i,k)            = zero
+        sigma_sqd_w_zt(i,k)         = zero        ! PDF width parameter interp. to t-levs.
+        wp2_zt(i,k)                 = w_tol_sqd   ! wp2 interpolated to thermo. levels
+        ug(i,k)                     = zero        ! u geostrophic wind
+        vg(i,k)                     = zero        ! v geostrophic wind
+        um_ref(i,k)                 = zero
+        vm_ref(i,k)                 = zero
+        thlm_ref(i,k)               = zero
+        rtm_ref(i,k)                = zero
+        thvm(i,k)                   = zero        ! Virtual potential temperature
+        radht(i,k)                  = zero        ! Heating rate
+        thlp3(i,k)                  = zero
+        rtp3(i,k)                   = zero
+        wp2thvp(i,k)                = zero        ! w'^2thv'
+        wp2rtp(i,k)                 = zero        ! w'^2 rt'
+        wp2thlp(i,k)                = zero        ! w'^2 thl'
+        wpup2(i,k)                  = zero        ! w'u'^2
+        wpvp2(i,k)                  = zero        ! w'v'^2
+        Kh_zt(i,k)                  = zero        ! Eddy diffusivity coefficient: thermo. levels
+        Lscale(i,k)                 = zero
+        tau_zt(i,k)                 = zero        ! Eddy dissipation time scale: thermo. levels
+        Nccnm(i,k)                  = zero        ! CCN concentration (COAMPS/MG)
+        Ncm(i,k)                    = zero
+        rvm_mc(i,k)                 = zero
+        rcm_mc(i,k)                 = zero
+        thlm_mc(i,k)                = zero
+        rfrzm(i,k)                  = zero
+        Ncm_mc(i,k)                 = zero
+      end do
+    end do
+
+    do k = 1, gr%nzm
+      do i = 1, ngrdcol
+        upwp(i,k)             = zero          ! vertical u momentum flux
+        vpwp(i,k)             = zero          ! vertical v momentum flux
+        up2(i,k)              = w_tol_sqd     ! u'^2
+        vp2(i,k)              = w_tol_sqd     ! v'^2
+        wprtp(i,k)            = zero          ! w'rt'
+        wpthlp(i,k)           = zero          ! w'thl'
+        wprcp(i,k)            = zero          ! w'rc'
+        wp2(i,k)              = w_tol_sqd     ! w'^2
+        rtp2(i,k)             = rt_tol**2     ! rt'^2
+        thlp2(i,k)            = thl_tol**2    ! thl'^2
+        rtpthlp(i,k)          = zero          ! rt'thl'
+        rho_zm(i,k)           = zero          ! density on moment. levels
+        rho_ds_zm(i,k)        = zero          ! dry, static density: m-levs
+        invrs_rho_ds_zm(i,k)  = zero          ! inv. dry, static density: m-levs
+        thv_ds_zm(i,k)        = zero          ! dry, base-state theta_v: m-levs
+        wprtp_forcing(i,k)    = zero          ! <w'r_t'> forcing 
+        wpthlp_forcing(i,k)   = zero          ! <w'th_l'> forcing 
+        rtp2_forcing(i,k)     = zero          ! <r_t'^2> forcing 
+        thlp2_forcing(i,k)    = zero          ! <th_l'^2> forcing 
+        rtpthlp_forcing(i,k)  = zero          ! <r_t'th_l'> forcing 
+        upwp_pert(i,k)        = zero          ! Variables used to track perturbed version of winds.
+        vpwp_pert(i,k)        = zero
+        wm_zm(i,k)            = zero          ! Imposed large scale w - Momentum levels
+        invrs_tau_zm(i,k)     = zero
+        sigma_sqd_w(i,k)      = zero          ! PDF width parameter (momentum levels)
+        Skw_zm(i,k)           = zero          ! Skewness of w on momentum levels
+        Frad(i,k)             = zero          ! Radiative flux
+        Frad_SW_up(i,k)       = zero
+        Frad_LW_up(i,k)       = zero
+        Frad_SW_down(i,k)     = zero
+        Frad_LW_down(i,k)     = zero
+        thlprcp(i,k)          = zero
+        rtpthvp(i,k)          = zero          ! rt'thv'
+        thlpthvp(i,k)         = zero          ! thl'thv'
+        wpthvp(i,k)           = zero          ! w'thv'
+        uprcp(i,k)            = zero          ! u'rc'
+        vprcp(i,k)            = zero          ! v'rc'
+        rc_coef_zm(i,k)       = zero          ! Coefficient of X'r_c' in Eq. (34)
+        wp4(i,k)              = zero          ! w'^4
+        wp2up2(i,k)           = zero          ! w'^2 u'^2
+        wp2vp2(i,k)           = zero          ! w'^2 v'^2
+        Kh_zm(i,k)            = zero          ! Eddy diffusivity coefficient: momentum levels
+        em(i,k)               = em_min
+        tau_zm(i,k)           = zero          ! Eddy dissipation time scale: momentum levels
+        wpNcp(i,k)            = zero
+        wprtp_mc(i,k)         = zero
+        wpthlp_mc(i,k)        = zero
+        rtp2_mc(i,k)          = zero
+        thlp2_mc(i,k)         = zero
+        rtpthlp_mc(i,k)       = zero
+      end do
+    end do
+
+    ! Surface fluxes
+    do i = 1, ngrdcol
+      wpthlp_sfc(i)   = zero
+      wprtp_sfc(i)    = zero
+      upwp_sfc(i)     = zero
+      vpwp_sfc(i)     = zero
+    end do
+
     ! Passive scalars
     if ( sclr_dim > 0 ) then
-      sclrpthvp     = zero
-      wpsclrp_sfc   = zero
-      sclrm         = zero
-      sclrp3        = zero
-      sclrprtp      = zero
-      sclrpthlp     = zero
-      sclrm_forcing = zero
-      wpsclrp       = zero
 
       do sclr = 1, sclr_dim
-        sclrp2(:,:,sclr) = sclr_tol(sclr)**2
+        do k = 1, gr%nzt
+          do i = 1, ngrdcol
+            sclrm(i,k,sclr)         = zero
+            sclrm_forcing(i,k,sclr) = zero
+            sclrp3(i,k,sclr)        = zero
+          end do
+        end do
       end do
-    end if
 
-    if ( hydromet_dim > 0 ) then
-      K_hm = zero ! Eddy diff. coef. for hydromets.: mom. levs.
-      hydromet    = zero
-      hydrometp2  = zero
-      wphydrometp = zero
-      wp2hmp      = zero
-      rtphmp_zt   = zero
-      thlphmp_zt  = zero
+      do sclr = 1, sclr_dim
+        do k = 1, gr%nzm
+          do i = 1, ngrdcol
+            sclrpthvp(i,k,sclr) = zero
+            sclrp2(i,k,sclr)    = sclr_tol(sclr)**2
+            sclrprtp(i,k,sclr)  = zero
+            sclrpthlp(i,k,sclr) = zero
+            wpsclrp(i,k,sclr)   = zero
+          end do
+        end do
+      end do
+
+      do sclr = 1, sclr_dim
+        do i = 1, ngrdcol
+          wpsclrp_sfc(i,sclr) = zero
+        end do
+      end do
+
     end if
 
     if ( edsclr_dim > 0 ) then
-      wpedsclrp_sfc   = zero
-      edsclrm         = zero
-      edsclrm_forcing = zero
+
+      do edsclr = 1, edsclr_dim
+        do k = 1, gr%nzm
+          do i = 1, ngrdcol
+            edsclrm(i,k,edsclr)         = zero
+            edsclrm_forcing(i,k,edsclr) = zero
+          end do
+        end do
+      end do
+
+      do edsclr = 1, edsclr_dim
+        do i = 1, ngrdcol
+          wpedsclrp_sfc(i,edsclr)   = zero
+        end do
+      end do
+
     end if
 
-    ! Deallocate stretched grid altitude arrays
-    !deallocate( momentum_heights, thermodynamic_heights )
+    if ( hydromet_dim > 0 ) then
+
+      hydromet    = zero
+      wp2hmp      = zero
+      rtphmp_zt   = zero
+      thlphmp_zt  = zero
+      hydromet_mc = zero
+      hydromet_vel_zt = zero
+      hydromet_vel_covar_zt_impc = zero
+      hydromet_vel_covar_zt_expc = zero
+      
+      K_hm = zero ! Eddy diff. coef. for hydromets.: mom. levs.
+      hydrometp2  = zero
+      wphydrometp = zero
+
+    end if
 
 
     ! Currently initialize_clubb does more than just read in the initial sounding.
@@ -3355,6 +3364,9 @@ module clubb_driver
                 lh_rt_clipped, lh_thl_clipped, lh_rc_clipped, &
                 lh_rv_clipped, lh_Nc_clipped, &
                 X_mixt_comp_all_levs, lh_sample_point_weights, Nc_in_cloud )
+
+    ! Deallocate stretched grid altitude arrays
+    deallocate( momentum_heights, thermodynamic_heights )
 
     return
 
