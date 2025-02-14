@@ -35,7 +35,7 @@ module diag_ustar_module
   !
   real( kind = core_rknd ) function diag_ustar( z, bflx, wnd, z0 ) 
 
-    !$acc routine
+    !$acc routine seq
 
     use constants_clubb, only: vonk, pi ! Variable(s)
 

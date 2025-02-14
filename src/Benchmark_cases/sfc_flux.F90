@@ -346,7 +346,7 @@ module sfc_flux
  
 !==============================================================================
   real( kind = core_rknd ) function convert_sens_ht_to_km_s ( sens_ht, rho_sfc )
-  !$acc routine
+  !$acc routine seq
 
 !   This function converts sensible heat flux in W/m^2 to
 !   natural units of k m/s for the wpthlp_sfc variable.
@@ -373,7 +373,7 @@ module sfc_flux
 
 !==============================================================================
   real( kind = core_rknd ) function convert_latent_ht_to_m_s ( latent_ht, rho_sfc )
-  !$acc routine
+  !$acc routine seq
 
 !   This function converts latent heat flux in W/m^2 to
 !   natural units of m/s for the wprtp_sfc variable.

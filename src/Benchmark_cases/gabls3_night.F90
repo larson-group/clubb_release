@@ -219,7 +219,7 @@ module gabls3_night
   !------------------------------------------------------------------------------------------------
   subroutine landflx( th, ts, qh, qs, uh, vh, h, z0, &
                       shf, lhf, vel, ustar )
-    !$acc routine
+    !$acc routine seq
     
     !
     !  Description: landflx.F90 from SAM 6.7.5
