@@ -78,7 +78,6 @@ module saturation
     18892.55_core_rknd, 19794.07_core_rknd, 20732.262_core_rknd, 21708.352_core_rknd,           &
     22723.592_core_rknd, 23779.273_core_rknd, 24876.709_core_rknd, 26017.258_core_rknd,         &
     27202.3_core_rknd, 28433.256_core_rknd, 29711.578_core_rknd, 31038.766_core_rknd /)
-!$acc declare create( svp_liq_lookup_table )
 
 
   contains
@@ -233,16 +232,16 @@ module saturation
 
 ! <--- h1g
 
-    case ( saturation_lookup ) 
+    ! case ( saturation_lookup ) 
 
-      T_in_K_int = int( anint( T_in_K ) )
+    !   T_in_K_int = int( anint( T_in_K ) )
 
-      ! Since this approximation is only good out to -85 degrees Celsius we
-      ! truncate the result here
-      T_in_K_int = min( max( T_in_K_int, 188 ), 343 )
+    !   ! Since this approximation is only good out to -85 degrees Celsius we
+    !   ! truncate the result here
+    !   T_in_K_int = min( max( T_in_K_int, 188 ), 343 )
 
-      ! Use the lookup table to determine the saturation vapor pressure.
-      esat = svp_liq_lookup_table( T_in_K_int )
+    !   ! Use the lookup table to determine the saturation vapor pressure.
+    !   esat = svp_liq_lookup_table( T_in_K_int )
 
     case default
 
@@ -471,22 +470,22 @@ module saturation
 
 ! <--- h1g
 
-    case ( saturation_lookup ) 
+    ! case ( saturation_lookup ) 
 
-      !$acc parallel loop gang vector collapse(2) default(present)
-      do k = start_index, nz
-        do i = 1, ngrdcol
-          T_in_K_int = int( anint( T_in_K(i,k) ) )
+    !   !$acc parallel loop gang vector collapse(2) default(present)
+    !   do k = start_index, nz
+    !     do i = 1, ngrdcol
+    !       T_in_K_int = int( anint( T_in_K(i,k) ) )
 
-          ! Since this approximation is only good out to -85 degrees Celsius we
-          ! truncate the result here
-          T_in_K_int = min( max( T_in_K_int, 188 ), 343 )
+    !       ! Since this approximation is only good out to -85 degrees Celsius we
+    !       ! truncate the result here
+    !       T_in_K_int = min( max( T_in_K_int, 188 ), 343 )
 
-          ! Use the lookup table to determine the saturation vapor pressure.
-          esat(i,k) = svp_liq_lookup_table( T_in_K_int )
-        end do
-      end do
-      !$acc end parallel loop
+    !       ! Use the lookup table to determine the saturation vapor pressure.
+    !       esat(i,k) = svp_liq_lookup_table( T_in_K_int )
+    !     end do
+    !   end do
+    !   !$acc end parallel loop
 
     case default
 
@@ -587,10 +586,10 @@ module saturation
                                      esat )
 
 ! <--- h1g
-    case ( saturation_lookup ) 
+    ! case ( saturation_lookup ) 
 
-      ! Use the lookup table to determine the saturation vapor pressure.
-      esat = sat_vapor_press_liq_lookup( T_in_K )
+    !   ! Use the lookup table to determine the saturation vapor pressure.
+    !   esat = sat_vapor_press_liq_lookup( T_in_K )
 
     case default
 
