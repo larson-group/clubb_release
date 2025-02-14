@@ -345,11 +345,6 @@ module advance_clubb_core_module
         pvertinterp
 
     use stats_type, only: stats ! Type
-    
-    use pdf_parameter_module, only: &
-      copy_single_pdf_params_to_multi, &
-      copy_multi_pdf_params_to_single, &
-      init_pdf_params
 
     use stats_variables, only: &
       stats_metadata_type
@@ -869,9 +864,6 @@ module advance_clubb_core_module
 
     integer, intent(out) :: &
       err_code_out  ! Error code indicator
-
-    type(pdf_parameter) :: pdf_params_single_col(ngrdcol), &
-                           pdf_params_zm_single_col(ngrdcol)
 
     integer :: advance_order_loop_iter
 
@@ -2732,19 +2724,8 @@ module advance_clubb_core_module
       
       do i = 1, ngrdcol
         
-        ! Allocate arrays in single column versions of pdf_params
-        call init_pdf_params( nzt, 1, pdf_params_single_col(i) )
-        call init_pdf_params( nzm, 1, pdf_params_zm_single_col(i) )
-        
-        ! Copy multicolumn pdf_params to single column version  
-        call copy_multi_pdf_params_to_single( pdf_params, i, &
-                                              pdf_params_single_col(i) )
-                                              
-        call copy_multi_pdf_params_to_single( pdf_params_zm, i, &
-                                              pdf_params_zm_single_col(i) )
-        
         call stats_accumulate( &
-               nzm, nzt, sclr_dim, edsclr_dim,                                            & ! In
+               nzm, nzt, i, sclr_dim, edsclr_dim,                                            & ! In
                gr%invrs_dzm(i,:), gr%zt(i,:), gr%dzm(i,:), gr%dzt(i,:), dt,               & ! In
                um(i,:), vm(i,:), upwp(i,:), vpwp(i,:), up2(i,:), vp2(i,:),                & ! In
                thlm(i,:), rtm(i,:), wprtp(i,:), wpthlp(i,:),                              & ! In
@@ -2773,7 +2754,7 @@ module advance_clubb_core_module
                wp3_zm(i,:), wp3_on_wp2(i,:), wp3_on_wp2_zt(i,:), Skw_velocity(i,:),       & ! In
                w_up_in_cloud(i,:), w_down_in_cloud(i,:),                                  & ! In
                cloudy_updraft_frac(i,:), cloudy_downdraft_frac(i,:),                      & ! In
-               pdf_params_single_col(i), pdf_params_zm_single_col(i),                     & ! In
+               pdf_params, pdf_params_zm,                                                 & ! In
                sclrm(i,:,:), sclrp2(i,:,:),                                               & ! In
                sclrprtp(i,:,:), sclrpthlp(i,:,:), sclrm_forcing(i,:,:), sclrpthvp(i,:,:), & ! In
                wpsclrp(i,:,:), sclrprcp(i,:,:), wp2sclrp(i,:,:), wpsclrp2(i,:,:),         & ! In

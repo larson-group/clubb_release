@@ -1830,7 +1830,7 @@ module stats_clubb_utilities
 
   !----------------------------------------------------------------------
   subroutine stats_accumulate( &
-                     nzm, nzt, sclr_dim, edsclr_dim, &
+                     nzm, nzt, icol, sclr_dim, edsclr_dim, &
                      invrs_dzm, zt, dzm, dzt, dt, &
                      um, vm, upwp, vpwp, up2, vp2, &
                      thlm, rtm, wprtp, wpthlp, &
@@ -1924,7 +1924,8 @@ module stats_clubb_utilities
       nzm, &
       nzt, &
       sclr_dim, &
-      edsclr_dim
+      edsclr_dim, &
+      icol ! The column were accumulating, used for pdf_params
     
     real( kind = core_rknd ), intent(in), dimension(nzm) :: & 
       invrs_dzm, & ! The inverse spacing between thermodynamic grid
@@ -2219,91 +2220,91 @@ module stats_clubb_utilities
                               stats_zt ) ! intent(inout)
       end if
 
-      call stat_update_var( stats_metadata%imixt_frac, pdf_params%mixt_frac(1,:), & ! In
+      call stat_update_var( stats_metadata%imixt_frac, pdf_params%mixt_frac(icol,:), & ! In
                             stats_zt ) ! intent(inout)
-      call stat_update_var( stats_metadata%iw_1, pdf_params%w_1(1,:), & ! In
+      call stat_update_var( stats_metadata%iw_1, pdf_params%w_1(icol,:), & ! In
                             stats_zt ) ! intent(inout)
-      call stat_update_var( stats_metadata%iw_2, pdf_params%w_2(1,:), & ! In
+      call stat_update_var( stats_metadata%iw_2, pdf_params%w_2(icol,:), & ! In
                             stats_zt ) ! intent(inout)
-      call stat_update_var( stats_metadata%ivarnce_w_1, pdf_params%varnce_w_1(1,:), & ! In
+      call stat_update_var( stats_metadata%ivarnce_w_1, pdf_params%varnce_w_1(icol,:), & ! In
                             stats_zt ) ! intent(inout)
-      call stat_update_var( stats_metadata%ivarnce_w_2, pdf_params%varnce_w_2(1,:), & ! In
+      call stat_update_var( stats_metadata%ivarnce_w_2, pdf_params%varnce_w_2(icol,:), & ! In
                             stats_zt ) ! intent(inout)
-      call stat_update_var( stats_metadata%ithl_1, pdf_params%thl_1(1,:), & ! In
+      call stat_update_var( stats_metadata%ithl_1, pdf_params%thl_1(icol,:), & ! In
                             stats_zt ) ! intent(inout)
-      call stat_update_var( stats_metadata%ithl_2, pdf_params%thl_2(1,:), & ! In
+      call stat_update_var( stats_metadata%ithl_2, pdf_params%thl_2(icol,:), & ! In
                             stats_zt ) ! intent(inout)
-      call stat_update_var( stats_metadata%ivarnce_thl_1, pdf_params%varnce_thl_1(1,:), & ! In
+      call stat_update_var( stats_metadata%ivarnce_thl_1, pdf_params%varnce_thl_1(icol,:), & ! In
                             stats_zt ) ! intent(inout)
-      call stat_update_var( stats_metadata%ivarnce_thl_2, pdf_params%varnce_thl_2(1,:), & ! In
+      call stat_update_var( stats_metadata%ivarnce_thl_2, pdf_params%varnce_thl_2(icol,:), & ! In
                             stats_zt ) ! intent(inout)
-      call stat_update_var( stats_metadata%irt_1, pdf_params%rt_1(1,:), & ! In
+      call stat_update_var( stats_metadata%irt_1, pdf_params%rt_1(icol,:), & ! In
                             stats_zt ) ! intent(inout)
-      call stat_update_var( stats_metadata%irt_2, pdf_params%rt_2(1,:), & ! In
+      call stat_update_var( stats_metadata%irt_2, pdf_params%rt_2(icol,:), & ! In
                             stats_zt ) ! intent(inout)
-      call stat_update_var( stats_metadata%ivarnce_rt_1, pdf_params%varnce_rt_1(1,:), & ! In
+      call stat_update_var( stats_metadata%ivarnce_rt_1, pdf_params%varnce_rt_1(icol,:), & ! In
                             stats_zt ) ! intent(inout)
-      call stat_update_var( stats_metadata%ivarnce_rt_2, pdf_params%varnce_rt_2(1,:), & ! In
+      call stat_update_var( stats_metadata%ivarnce_rt_2, pdf_params%varnce_rt_2(icol,:), & ! In
                             stats_zt ) ! intent(inout )
-      call stat_update_var( stats_metadata%irc_1, pdf_params%rc_1(1,:), & ! In
+      call stat_update_var( stats_metadata%irc_1, pdf_params%rc_1(icol,:), & ! In
                             stats_zt ) ! intent(inout)
-      call stat_update_var( stats_metadata%irc_2, pdf_params%rc_2(1,:), & ! In
+      call stat_update_var( stats_metadata%irc_2, pdf_params%rc_2(icol,:), & ! In
                             stats_zt ) ! intent(inout)
-      call stat_update_var( stats_metadata%irsatl_1, pdf_params%rsatl_1(1,:), & ! In
+      call stat_update_var( stats_metadata%irsatl_1, pdf_params%rsatl_1(icol,:), & ! In
                             stats_zt ) ! intent(inout)
-      call stat_update_var( stats_metadata%irsatl_2, pdf_params%rsatl_2(1,:), & ! In
+      call stat_update_var( stats_metadata%irsatl_2, pdf_params%rsatl_2(icol,:), & ! In
                             stats_zt ) ! intent(inout)
-      call stat_update_var( stats_metadata%icloud_frac_1, pdf_params%cloud_frac_1(1,:), & ! In
+      call stat_update_var( stats_metadata%icloud_frac_1, pdf_params%cloud_frac_1(icol,:), & ! In
                             stats_zt ) ! intent(inout)
-      call stat_update_var( stats_metadata%icloud_frac_2, pdf_params%cloud_frac_2(1,:), & ! In
+      call stat_update_var( stats_metadata%icloud_frac_2, pdf_params%cloud_frac_2(icol,:), & ! In
                             stats_zt ) ! intent(inout)
-      call stat_update_var( stats_metadata%ichi_1, pdf_params%chi_1(1,:), & ! In
+      call stat_update_var( stats_metadata%ichi_1, pdf_params%chi_1(icol,:), & ! In
                             stats_zt ) ! intent(inout)
-      call stat_update_var( stats_metadata%ichi_2, pdf_params%chi_2(1,:), & ! In
+      call stat_update_var( stats_metadata%ichi_2, pdf_params%chi_2(icol,:), & ! In
                             stats_zt ) ! intent(inout)
-      call stat_update_var( stats_metadata%istdev_chi_1, pdf_params%stdev_chi_1(1,:), & ! In
+      call stat_update_var( stats_metadata%istdev_chi_1, pdf_params%stdev_chi_1(icol,:), & ! In
                             stats_zt ) ! intent(inout)
-      call stat_update_var( stats_metadata%istdev_chi_2, pdf_params%stdev_chi_2(1,:), & ! In
+      call stat_update_var( stats_metadata%istdev_chi_2, pdf_params%stdev_chi_2(icol,:), & ! In
                             stats_zt ) ! intent(inout)
-      call stat_update_var( stats_metadata%istdev_eta_1, pdf_params%stdev_eta_1(1,:), & ! In
+      call stat_update_var( stats_metadata%istdev_eta_1, pdf_params%stdev_eta_1(icol,:), & ! In
                             stats_zt ) ! intent(inout)
-      call stat_update_var( stats_metadata%istdev_eta_2, pdf_params%stdev_eta_2(1,:), & ! In
+      call stat_update_var( stats_metadata%istdev_eta_2, pdf_params%stdev_eta_2(icol,:), & ! In
                             stats_zt ) ! intent(inout)
-      call stat_update_var( stats_metadata%icovar_chi_eta_1, pdf_params%covar_chi_eta_1(1,:), & ! In
+      call stat_update_var( stats_metadata%icovar_chi_eta_1, pdf_params%covar_chi_eta_1(icol,:), & ! In
                             stats_zt ) ! intent(inout)
-      call stat_update_var( stats_metadata%icovar_chi_eta_2, pdf_params%covar_chi_eta_2(1,:), & ! In
+      call stat_update_var( stats_metadata%icovar_chi_eta_2, pdf_params%covar_chi_eta_2(icol,:), & ! In
                             stats_zt ) ! intent(inout)
-      call stat_update_var( stats_metadata%icorr_w_chi_1, pdf_params%corr_w_chi_1(1,:), & ! In
+      call stat_update_var( stats_metadata%icorr_w_chi_1, pdf_params%corr_w_chi_1(icol,:), & ! In
                             stats_zt ) ! intent(inout)
-      call stat_update_var( stats_metadata%icorr_w_chi_2, pdf_params%corr_w_chi_2(1,:), & ! In
+      call stat_update_var( stats_metadata%icorr_w_chi_2, pdf_params%corr_w_chi_2(icol,:), & ! In
                             stats_zt ) ! intent(inout)
-      call stat_update_var( stats_metadata%icorr_w_eta_1, pdf_params%corr_w_eta_1(1,:), & ! In
+      call stat_update_var( stats_metadata%icorr_w_eta_1, pdf_params%corr_w_eta_1(icol,:), & ! In
                             stats_zt ) ! intent(inout)
-      call stat_update_var( stats_metadata%icorr_w_eta_2, pdf_params%corr_w_eta_2(1,:), & ! In
+      call stat_update_var( stats_metadata%icorr_w_eta_2, pdf_params%corr_w_eta_2(icol,:), & ! In
                             stats_zt ) ! intent(inout)
-      call stat_update_var( stats_metadata%icorr_chi_eta_1, pdf_params%corr_chi_eta_1(1,:), & ! In
+      call stat_update_var( stats_metadata%icorr_chi_eta_1, pdf_params%corr_chi_eta_1(icol,:), & ! In
                             stats_zt ) ! intent(inout)
-      call stat_update_var( stats_metadata%icorr_chi_eta_2, pdf_params%corr_chi_eta_2(1,:), & ! In
+      call stat_update_var( stats_metadata%icorr_chi_eta_2, pdf_params%corr_chi_eta_2(icol,:), & ! In
                             stats_zt ) ! intent(inout)
-      call stat_update_var( stats_metadata%icorr_w_rt_1, pdf_params%corr_w_rt_1(1,:), & ! In
+      call stat_update_var( stats_metadata%icorr_w_rt_1, pdf_params%corr_w_rt_1(icol,:), & ! In
                             stats_zt ) ! intent(inout)
-      call stat_update_var( stats_metadata%icorr_w_rt_2, pdf_params%corr_w_rt_2(1,:), & ! In
+      call stat_update_var( stats_metadata%icorr_w_rt_2, pdf_params%corr_w_rt_2(icol,:), & ! In
                             stats_zt ) ! intent(inout)
-      call stat_update_var( stats_metadata%icorr_w_thl_1, pdf_params%corr_w_thl_1(1,:), & ! In
+      call stat_update_var( stats_metadata%icorr_w_thl_1, pdf_params%corr_w_thl_1(icol,:), & ! In
                             stats_zt ) ! intent(inout)
-      call stat_update_var( stats_metadata%icorr_w_thl_2, pdf_params%corr_w_thl_2(1,:), & ! In
+      call stat_update_var( stats_metadata%icorr_w_thl_2, pdf_params%corr_w_thl_2(icol,:), & ! In
                             stats_zt ) ! intent(inout)
-      call stat_update_var( stats_metadata%icorr_rt_thl_1, pdf_params%corr_rt_thl_1(1,:), & ! In
+      call stat_update_var( stats_metadata%icorr_rt_thl_1, pdf_params%corr_rt_thl_1(icol,:), & ! In
                             stats_zt ) ! intent(inout)
-      call stat_update_var( stats_metadata%icorr_rt_thl_2, pdf_params%corr_rt_thl_2(1,:), & ! In
+      call stat_update_var( stats_metadata%icorr_rt_thl_2, pdf_params%corr_rt_thl_2(icol,:), & ! In
                             stats_zt ) ! intent(inout)
-      call stat_update_var( stats_metadata%icrt_1, pdf_params%crt_1(1,:), & ! In
+      call stat_update_var( stats_metadata%icrt_1, pdf_params%crt_1(icol,:), & ! In
                             stats_zt ) ! intent(inout)
-      call stat_update_var( stats_metadata%icrt_2, pdf_params%crt_2(1,:), & ! In
+      call stat_update_var( stats_metadata%icrt_2, pdf_params%crt_2(icol,:), & ! In
                             stats_zt ) ! intent(inout)
-      call stat_update_var( stats_metadata%icthl_1, pdf_params%cthl_1(1,:), & ! In
+      call stat_update_var( stats_metadata%icthl_1, pdf_params%cthl_1(icol,:), & ! In
                             stats_zt ) ! intent(inout)
-      call stat_update_var( stats_metadata%icthl_2, pdf_params%cthl_2(1,:), & ! In
+      call stat_update_var( stats_metadata%icthl_2, pdf_params%cthl_2(icol,:), & ! In
                             stats_zt ) ! intent(inout)
       call stat_update_var( stats_metadata%iwp2_zt, wp2_zt, & ! In
                             stats_zt ) ! intent(inout)
@@ -2336,17 +2337,17 @@ module stats_clubb_utilities
 
       if ( stats_metadata%ichi > 0 ) then
         ! Determine 's' from Mellor (1977) (extended liquid water)
-        chi(:) = pdf_params%mixt_frac(1,:) * pdf_params%chi_1(1,:) &
-                    + (1.0_core_rknd-pdf_params%mixt_frac(1,:)) * pdf_params%chi_2(1,:)
+        chi(:) = pdf_params%mixt_frac(icol,:) * pdf_params%chi_1(icol,:) &
+                    + (1.0_core_rknd-pdf_params%mixt_frac(icol,:)) * pdf_params%chi_2(icol,:)
         call stat_update_var( stats_metadata%ichi, chi, & ! In
                              stats_zt ) ! In/Out
       end if 
 
       ! Calculate variance of chi
       if ( stats_metadata%ichip2 > 0 ) then
-        chip2 = compute_variance_binormal( chi, pdf_params%chi_1(1,:), pdf_params%chi_2(1,:), &
-                                         pdf_params%stdev_chi_1(1,:), pdf_params%stdev_chi_2(1,:), &
-                                         pdf_params%mixt_frac(1,:) )
+        chip2 = compute_variance_binormal( chi, pdf_params%chi_1(icol,:), pdf_params%chi_2(icol,:), &
+                                         pdf_params%stdev_chi_1(icol,:), pdf_params%stdev_chi_2(icol,:), &
+                                         pdf_params%mixt_frac(icol,:) )
         call stat_update_var( stats_metadata%ichip2, chip2, & ! In
                               stats_zt ) ! In/Out
       end if
@@ -2460,15 +2461,15 @@ module stats_clubb_utilities
                             stats_zm ) ! In/Out
       call stat_update_var( stats_metadata%ithlm_zm, thlm_zm, & ! In
                             stats_zm ) ! In/Out
-      call stat_update_var( stats_metadata%iw_1_zm, pdf_params_zm%w_1(1,:), & ! In
+      call stat_update_var( stats_metadata%iw_1_zm, pdf_params_zm%w_1(icol,:), & ! In
                             stats_zm ) ! In/Out
-      call stat_update_var( stats_metadata%iw_2_zm, pdf_params_zm%w_2(1,:), & ! In
+      call stat_update_var( stats_metadata%iw_2_zm, pdf_params_zm%w_2(icol,:), & ! In
                             stats_zm ) ! In/Out
-      call stat_update_var( stats_metadata%ivarnce_w_1_zm, pdf_params_zm%varnce_w_1(1,:), & ! In
+      call stat_update_var( stats_metadata%ivarnce_w_1_zm, pdf_params_zm%varnce_w_1(icol,:), & ! In
                             stats_zm ) ! In/Out
-      call stat_update_var( stats_metadata%ivarnce_w_2_zm, pdf_params_zm%varnce_w_2(1,:), & ! In
+      call stat_update_var( stats_metadata%ivarnce_w_2_zm, pdf_params_zm%varnce_w_2(icol,:), & ! In
                             stats_zm ) ! In/Out
-      call stat_update_var( stats_metadata%imixt_frac_zm, pdf_params_zm%mixt_frac(1,:), & ! In
+      call stat_update_var( stats_metadata%imixt_frac_zm, pdf_params_zm%mixt_frac(icol,:), & ! In
                             stats_zm ) ! In/Out
 
       if ( sclr_dim > 0 ) then
