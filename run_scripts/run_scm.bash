@@ -30,6 +30,7 @@ CUSTOM_OUTPUT_DIR=""
 GRADS=false		#Determines whether output is NetCDF or GrADS
 FILETYPE_CHANGED=false	#Used to ensure that both filetypes are not inadvertantly specified
 CLUBB_EXECUTABLE_FILE="../bin/clubb_standalone"
+SKIP_RUN=false # This being true does everything but actually run the code
 
 # Figure out the directory where the script is located
 scriptPath=`dirname $0`
@@ -39,47 +40,6 @@ restoreDir=`pwd`
 
 # Change directories to the one the script is located in
 cd $scriptPath
-
-run_case()
-{
-	# Enable G95 runtime option that sets uninitialized memory to a NaN value
-	G95_MEM_INIT="NAN"
-	G95_FPU_INVALID=false
-	export G95_MEM_INIT G95_FPU_INVALID
-
-	# This is a kluge for Fortran compilers that the can't handle comments in
-	# a namelist by using the sed command to remove them.
-	# Since -i is a GNU sed extension the command might be 'gsed' on some systems.
-	sed -i -e 's/\!.*//' $NAMELISTS
-
-        # Remove the variables stats_file, parameter_file, and output_directory
-        # because they are only used in this script, and not in CLUBB.
-        sed -i '/stats_file/d' $NAMELISTS
-        sed -i '/parameter_file/d' $NAMELISTS
-        sed -i '/output_directory/d' $NAMELISTS
-
-
-	# Echo the case name
-	echo "Running $run_case"
-
-	# Run the CLUBB model
-	if [ -e $CLUBB_EXECUTABLE_FILE ]; then
-		$CLUBB_EXECUTABLE_FILE
-		CLUBB_EXIT_STATUS=$?
-		if [ $CLUBB_EXIT_STATUS -eq 6 ]; then
-			# The exit status of 6 is used as the success exit status in CLUBB.
-			RESULT=0
-		else
-			RESULT=1
-		fi
-	else
-		echo "${CLUBB_EXECUTABLE_FILE} not found (did you re-compile?)"
-		RESULT=1
-	fi
-
-	# Remove the namelists
-	rm -f $NAMELISTS
-}
 
 #Notifies the user if two different filetypes have been selected and states which one will
 #be used (both filetypes cannot be used simultaneously)
@@ -112,7 +72,7 @@ check_filetype() {
 # Note that we use `"$@"' to let each command-line parameter expand to a
 # separate word. The quotes around `$@' are essential!
 # We need TEMP as the `eval set --' would nuke the return value of getopt.
-TEMP=`getopt -o z:m:l:t:s:p:o:nhe --long zt_grid:,zm_grid:,levels:,timestep_test:,stats:,parameter_file:,output_directory:,clubb_exec_file:,flags_file:,performance_test,nightly,netcdf,help,grads \
+TEMP=`getopt -o z:m:l:t:s:p:o:nhe --long zt_grid:,zm_grid:,levels:,timestep_test:,stats:,parameter_file:,output_directory:,clubb_exec_file:,flags_file:,performance_test,no_run,nightly,netcdf,help,grads \
      -n 'run_scm.bash' -- "$@"`
 
 if [ $? != 0 ] ; then echo "Terminating..." >&2 ; exit 1 ; fi
@@ -197,6 +157,10 @@ while true ; do
 			shift;;
 		-e|--performance_test)
 			PERFORMANCE_TEST=true
+
+			shift;;
+		--no_run)
+			SKIP_RUN=true
 
 			shift;;
 		-o|--output_directory)
@@ -535,8 +499,23 @@ else
 	cat $stats_file >> $NAMELISTS
 	# Delete that modified model file we just created
 	rm $MOD_MODEL_FILE
+
+	# This is a kluge for Fortran compilers that the can't handle comments in
+	# a namelist by using the sed command to remove them.
+	# Since -i is a GNU sed extension the command might be 'gsed' on some systems.
+	sed -i -e 's/\!.*//' $NAMELISTS
+
+	# Remove the variables stats_file, parameter_file, and output_directory
+	# because they are only used in this script, and not in CLUBB.
+	sed -i '/stats_file/d' $NAMELISTS
+	sed -i '/parameter_file/d' $NAMELISTS
+	sed -i '/output_directory/d' $NAMELISTS
+
 	# And away we go...
-	run_case
+	if [ $SKIP_RUN == false ];
+	then
+		exec ./execute_clubb_standalone.bash
+	fi
 fi
 
 
