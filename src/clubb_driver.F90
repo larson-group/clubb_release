@@ -3585,6 +3585,8 @@ module clubb_driver
     use grid_adaptation_module, only: &
       lin_interpolate
 
+    use constants_clubb, only: fstderr !-------------------------- Variables(s)
+
     implicit none
 
     intrinsic :: min, max, trim, sqrt, size
@@ -3890,7 +3892,17 @@ module clubb_driver
         call initialize_t_dependent_input &
                      ( iunit, runtype, gr%nzt, gr%zt(1,:), p_in_Pa, &
                        remap_from_dycore_grid_method, grid_adaptation_method )
-      end if 
+      end if
+
+    else
+
+      if ( remap_from_dycore_grid_method > 0 .and. trim( runtype ) /= 'atex' ) then
+        write(fstderr,*) 'WARNING! The option remap_from_dycore_grid_method can currently only', &
+                         'be used for cases with forcings from an input file and for the atex', &
+                         'case, so for this case remap_from_dycore_grid_method must be set to 0.'
+        error stop 'For this case remap_from_dycore_grid_method must be set to 0.'
+      end if
+
     end if
     
     ! Initialize TKE and other fields as needed

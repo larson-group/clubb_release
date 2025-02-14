@@ -293,7 +293,6 @@ module atex
                                  thlm_forcing, rtm_forcing )                 ! intent(out)
 
       if ( clubb_at_least_debug_level( 2 ) ) then
-        ! TODO, if grid adjusts, also check over time steps
         
         ! checks if the mass over the physics and dycore grid is the same
         call check_mass_conservation_all( ngrdcol, dycore_gr, gr, &           ! intent(in)
