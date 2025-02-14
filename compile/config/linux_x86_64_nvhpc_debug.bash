@@ -25,7 +25,7 @@ ARCH="-Mcache_align" # -Mcache_align is included for the use of the ACML
 DOUBLE_PRECISION="-r8"
 
 # == Optimization ==
-OPTIMIZE="-O0"
+OPTIMIZE="-O0 -Mstack_arrays"
 
 # == NetCDF Location ==
 #Variable defined in larson-group.sh, see here (https://github.com/larson-group/sys_admin/blob/master/set_larson-group_paths/larson-group.sh)
