@@ -67,7 +67,7 @@ module advance_windm_edsclrm_module
 
     use grid_class, only:  &
         grid, &  ! Type
-        zm2zt
+        zm2zt_gpu
 
     use parameters_model, only:  &
         ts_nudge ! Variable(s)
@@ -321,7 +321,7 @@ module advance_windm_edsclrm_module
 
     if ( .not. l_predict_upwp_vpwp ) then
       
-      Km_zt(:,:) = zm2zt( nzm, nzt, ngrdcol, gr, Km_zm(:,:), zero )
+      Km_zt(:,:) = zm2zt_gpu( nzm, nzt, ngrdcol, gr, Km_zm(:,:), zero )
 
       ! Calculate diffusion terms
       call diffusion_zt_lhs( nzm, nzt, ngrdcol, gr, Km_zm, Km_zt, nu_vert_res_dep%nu10, & ! In
@@ -971,7 +971,7 @@ module advance_windm_edsclrm_module
 
     if ( edsclr_dim > 0 ) then
       
-      Kmh_zt(:,:) = zm2zt( nzm, nzt, ngrdcol, gr, Kmh_zm(:,:), zero )
+      Kmh_zt(:,:) = zm2zt_gpu( nzm, nzt, ngrdcol, gr, Kmh_zm(:,:), zero )
 
       ! Calculate diffusion terms
       call diffusion_zt_lhs( nzm, nzt, ngrdcol, gr, Kmh_zm, Kmh_zt, nu_zero,  & ! intent(in)

@@ -332,8 +332,8 @@ module diagnose_correlations_module
 !
 !    use grid_class, only: &
 !        gr,  & ! Variable(s)
-!        zm2zt,  & ! Procedure(s)
-!        zt2zm
+!        zm2zt_gpu,  & ! Procedure(s)
+!        zt2zm_gpu
 !
 !    use pdf_parameter_module, only:  &
 !        pdf_parameter  ! Type

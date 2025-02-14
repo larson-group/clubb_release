@@ -395,7 +395,7 @@ module advance_helper_module
     use grid_class, only: &
         grid,     & ! Type
         ddzt,     & ! Procedure(s)
-        zt2zm,    &
+        zt2zm_gpu,    &
         zm2zt2zm
 
     use T_in_K_module, only: &
@@ -473,7 +473,7 @@ module advance_helper_module
     !$acc            create( tmp_calc )
 
     ddzt_thlm = ddzt( nzm, nzt, ngrdcol, gr, thlm )
-    thvm_zm = zt2zm( nzm, nzt, ngrdcol, gr, thvm, zero_threshold )
+    thvm_zm = zt2zm_gpu( nzm, nzt, ngrdcol, gr, thvm, zero_threshold )
     ddzt_thvm = ddzt( nzm, nzt, ngrdcol, gr, thvm )
 
     ! Dry Brunt-Vaisala frequency
@@ -500,9 +500,9 @@ module advance_helper_module
     end if
 
     T_in_K = thlm2T_in_K( nzt, ngrdcol, thlm, exner, rcm )
-    T_in_K_zm = zt2zm( nzm, nzt, ngrdcol, gr, T_in_K, zero_threshold )
+    T_in_K_zm = zt2zm_gpu( nzm, nzt, ngrdcol, gr, T_in_K, zero_threshold )
     rsat = sat_mixrat_liq( nzt, ngrdcol, p_in_Pa, T_in_K, saturation_formula )
-    rsat_zm = zt2zm( nzm, nzt, ngrdcol, gr, rsat, zero_threshold )
+    rsat_zm = zt2zm_gpu( nzm, nzt, ngrdcol, gr, rsat, zero_threshold )
     ddzt_rsat = ddzt( nzm, nzt, ngrdcol, gr, rsat )
 
     !$acc parallel loop gang vector collapse(2) default(present)
@@ -513,7 +513,7 @@ module advance_helper_module
     end do
     !$acc end parallel loop
 
-    thm_zm = zt2zm( nzm, nzt, ngrdcol, gr, thm, zero_threshold )
+    thm_zm = zt2zm_gpu( nzm, nzt, ngrdcol, gr, thm, zero_threshold )
     ddzt_thm = ddzt( nzm, nzt, ngrdcol, gr, thm )
     ddzt_rtm = ddzt( nzm, nzt, ngrdcol, gr, rtm )
 
@@ -539,7 +539,7 @@ module advance_helper_module
     end do ! k=1, nzm
     !$acc end parallel loop
 
-    ice_supersat_frac_zm = zt2zm( nzm, nzt, ngrdcol, gr, ice_supersat_frac, zero_threshold )
+    ice_supersat_frac_zm = zt2zm_gpu( nzm, nzt, ngrdcol, gr, ice_supersat_frac, zero_threshold )
 
     !$acc parallel loop gang vector collapse(2) default(present)
     do k = 1, nzm
@@ -632,7 +632,7 @@ module advance_helper_module
     use grid_class, only: &
         grid, & ! Type
         ddzt, & ! Procedure(s)
-        zt2zm, & 
+        zt2zm_gpu, & 
         zm2zt2zm
 
     use constants_clubb, only: &
@@ -1154,7 +1154,7 @@ module advance_helper_module
 
     use grid_class, only:  &
         grid, & ! Type
-        zm2zt
+        zm2zt_gpu
 
     use constants_clubb, only: &
         zero, &
@@ -1207,7 +1207,7 @@ module advance_helper_module
     end do
     !$acc end parallel loop
     
-    brunt_vaisala_freq_splat_clipped_zt = zm2zt( nzm, nzt, ngrdcol, gr, &
+    brunt_vaisala_freq_splat_clipped_zt = zm2zt_gpu( nzm, nzt, ngrdcol, gr, &
                                                  brunt_vaisala_freq_splat_clipped )
 
     !$acc parallel loop gang vector collapse(2) default(present)

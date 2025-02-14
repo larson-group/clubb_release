@@ -1453,8 +1453,8 @@ module advance_xm_wpxp_module
     
     use grid_class, only:  & 
         grid, & ! Type
-        zm2zt, & ! Procedure(s)
-        zt2zm
+        zm2zt_gpu, & ! Procedure(s)
+        zt2zm_gpu
 
     use parameters_tunable, only: &
         nu_vertical_res_dep    ! Type(s)
@@ -1563,7 +1563,7 @@ module advance_xm_wpxp_module
 
     ! Initializations/precalculations
     constant_nu = 0.1_core_rknd
-    Kw6_zm = zt2zm( nzm, nzt, ngrdcol, gr, Kw6, zero_threshold )
+    Kw6_zm = zt2zm_gpu( nzm, nzt, ngrdcol, gr, Kw6, zero_threshold )
 
     ! Calculate turbulent advection terms of xm for all grid levels
     call xm_term_ta_lhs( nzm, nzt, ngrdcol, gr,      & ! Intent(in)
@@ -1621,7 +1621,7 @@ module advance_xm_wpxp_module
         end do
         !$acc end parallel loop
 
-        K_zt = zm2zt( nzm, nzt, ngrdcol, gr, K_zm, zero_threshold )
+        K_zt = zm2zt_gpu( nzm, nzt, ngrdcol, gr, K_zm, zero_threshold )
 
         !$acc parallel loop gang vector default(present)
         do i = 1, ngrdcol        
@@ -2025,8 +2025,8 @@ module advance_xm_wpxp_module
                                     
     use grid_class, only: &
         grid, & ! Type
-        zt2zm,  & ! Procedure(s)
-        zm2zt
+        zt2zm_gpu,  & ! Procedure(s)
+        zm2zt_gpu
 
     use clubb_precision, only: &
         core_rknd  ! Variable(s)
@@ -2311,7 +2311,7 @@ module advance_xm_wpxp_module
 
         ! Interpolate a_1 from momentum levels to thermodynamic levels.  This
         ! will be used for the <w'x'> turbulent advection (ta) term.
-        a1_coef_zt(:,:) = zm2zt( nzm, nzt, ngrdcol, gr, a1_coef, &
+        a1_coef_zt(:,:) = zm2zt_gpu( nzm, nzt, ngrdcol, gr, a1_coef, &
                                  zero_threshold )   ! Positive def. quantity
 
         !$acc parallel loop gang vector collapse(2) default(present)

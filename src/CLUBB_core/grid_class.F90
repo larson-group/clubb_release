@@ -157,7 +157,7 @@ module grid_class
   public :: grid, zt2zm, zm2zt, zt2zm2zt, zm2zt2zm, & 
             ddzm, ddzt, & 
             setup_grid, cleanup_grid, setup_grid_heights, &
-            read_grid_heights, flip
+            read_grid_heights, flip, zt2zm_gpu, zm2zt_gpu
 
   private :: t_above, t_below, m_above, m_below
 
@@ -1541,7 +1541,7 @@ module grid_class
     ! ------------------------------ Begin Code ------------------------------
 
     !$acc data copyin( azt, gr, gr%weights_zt2zm, gr%zt, gr%zm ) &
-    !$acc      copyout( linear_interpolated_azm )
+    !$acc     copyout( linear_interpolated_azm )
 
     ! Interpolate the value of a thermodynamic-level variable to the central
     ! momentum level, k, between two successive thermodynamic levels using
@@ -1593,6 +1593,93 @@ module grid_class
     return
 
   end subroutine linear_interpolated_azm_2D
+  
+  !=============================================================================
+  function zt2zm_gpu( nzm, nzt, ngrdcol, gr, azt, &
+                                         zm_min_in )
+
+    ! Description:
+    ! Function to interpolate a variable located on the thermodynamic grid
+    ! levels (azt) to the momentum grid levels (azm).  This function inputs the
+    ! entire azt array and outputs the results as an azm array.  The
+    ! formulation used is compatible with a stretched (unevenly-spaced) grid.
+    !-----------------------------------------------------------------------
+
+    use clubb_precision, only: &
+        core_rknd  ! Variable(s)
+
+    use interpolation, only: &
+        linear_interp_factor  ! Procedure(s)
+
+    implicit none
+    
+    integer :: &
+      nzm, &
+      nzt, &
+      ngrdcol
+
+    type (grid) :: gr
+
+    ! ------------------------------ Input Variable ------------------------------
+    real( kind = core_rknd ), dimension(ngrdcol,nzt) :: &
+      azt    ! Variable on thermodynamic grid levels    [units vary]
+
+    ! ------------------------------ Return Variable ------------------------------
+    real( kind = core_rknd ), dimension(ngrdcol,nzm) :: &
+      zt2zm_gpu    ! Variable when interp. to momentum levels
+
+    !---------------------------- Optional Input Variable ----------------------------
+    real( kind = core_rknd ), optional :: &
+      zm_min_in
+      
+    ! ------------------------------ Local Variable ------------------------------
+    integer :: i, k  ! Grid level loop index
+
+    real( kind = core_rknd ) :: &
+      zm_min
+
+    ! ------------------------------ Begin Code ------------------------------
+
+    if ( present(zm_min_in) ) then
+      zm_min = zm_min_in
+    else
+      zm_min = -999.0_core_rknd
+    end if
+
+    ! Interpolate the value of a thermodynamic-level variable to the central
+    ! momentum level, k, between two successive thermodynamic levels using
+    ! linear interpolation.
+    !$acc parallel loop gang vector collapse(2) default(present)
+    do k = 2, nzm-1
+      do i = 1, ngrdcol
+        zt2zm_gpu(i,k) = gr%weights_zt2zm(i,k,t_above) * azt(i,k) &
+                         + gr%weights_zt2zm(i,k,t_below) * azt(i,k-1)
+
+        zt2zm_gpu(i,k) = max( zt2zm_gpu(i,k), zm_min )
+      end do
+    end do
+    !$acc end parallel loop
+
+    ! Set the value of the thermodynamic-level variable, azt, at momentum
+    ! level nzm.  The name of the variable when interpolated/extended to
+    ! momentum levels is azm.  This is the upper boundary.
+    ! Use a linear extension based on the values of azt at levels nzt and
+    ! nzt-1 to find the value of azm at level nzm.
+    !$acc parallel loop gang vector default(present)
+    do i = 1, ngrdcol
+
+      zt2zm_gpu(i,1) = max( azt(i,1), zm_min )
+
+      zt2zm_gpu(i,nzm) = gr%weights_zt2zm(i,nzm,t_above) * azt(i,nzt) &
+                         + gr%weights_zt2zm(i,nzm,t_below) * azt(i,nzt-1)
+
+      zt2zm_gpu(i,nzm) = max( zt2zm_gpu(i,nzm), zm_min )
+      
+    end do
+    !$acc end parallel loop
+    return
+
+  end function zt2zm_gpu
 
   !=============================================================================
   function zt2zm2zt( nzm, nzt, ngrdcol, gr, azt, zt_min )
@@ -1639,10 +1726,10 @@ module grid_class
     !$acc data create( azt_zm )
 
     ! Interpolate azt to momentum levels 
-    azt_zm = zt2zm( nzm, nzt, ngrdcol, gr, azt )
+    azt_zm = zt2zm_gpu( nzm, nzt, ngrdcol, gr, azt )
 
-    ! Interpolate back to thermodynamic levels
-    zt2zm2zt = zm2zt( nzm, nzt, ngrdcol, gr, azt_zm, zt_min )
+    ! Interpolate back to termodynamic levels
+    zt2zm2zt = zm2zt_gpu( nzm, nzt, ngrdcol, gr, azt_zm, zt_min )
 
     !$acc end data
 
@@ -1695,10 +1782,10 @@ module grid_class
     !$acc data create( azm_zt )
 
     ! Interpolate azt to termodynamic levels 
-    azm_zt = zm2zt( nzm, nzt, ngrdcol, gr, azm )
+    azm_zt = zm2zt_gpu( nzm, nzt, ngrdcol, gr, azm )
 
     ! Interpolate back to momentum levels
-    zm2zt2zm = zt2zm( nzm, nzt, ngrdcol, gr, azm_zt, zm_min )
+    zm2zt2zm = zt2zm_gpu( nzm, nzt, ngrdcol, gr, azm_zt, zm_min )
 
     !$acc end data
 
@@ -2107,7 +2194,7 @@ module grid_class
     ! ------------------------------ Begin Code ------------------------------
 
     !$acc data copyin( azm, gr, gr%weights_zm2zt, gr%zt, gr%zm ) &
-    !$acc      copyout( linear_interpolated_azt )
+    !$acc     copyout( linear_interpolated_azt )
 
     ! Interpolate the value of a momentum-level variable to the central
     ! thermodynamic level, k, between two successive momentum levels using
@@ -2137,6 +2224,75 @@ module grid_class
     return
 
   end subroutine linear_interpolated_azt_2D
+
+  !=============================================================================
+  function zm2zt_gpu( nzm, nzt, ngrdcol, gr, azm, &
+                      zt_min_in )
+
+    ! Description:
+    ! Function to interpolate a variable located on the momentum grid levels
+    ! (azm) to the thermodynamic grid levels (azt).  This function inputs the
+    ! entire azm array and outputs the results as an azt array.  The formulation
+    ! used is compatible with a stretched (unevenly-spaced) grid.
+    !-----------------------------------------------------------------------
+
+    use clubb_precision, only: &
+        core_rknd  ! Variable(s)
+
+    use interpolation, only: &
+        linear_interp_factor  ! Procedure(s)
+
+    implicit none
+    
+    integer :: &
+      nzm, &
+      nzt, &
+      ngrdcol
+
+    type (grid) :: gr
+
+    ! ------------------------------ Input Variable ------------------------------
+    real( kind = core_rknd ), dimension(ngrdcol,nzm) :: &
+      azm    ! Variable on momentum grid levels    [units vary]
+
+    ! ------------------------------ Output Variable ------------------------------
+    real( kind = core_rknd ), dimension(ngrdcol,nzt) :: &
+      zm2zt_gpu    ! Variable when interp. to thermodynamic levels
+
+    !---------------------------- Optional Input Variable ----------------------------
+    real( kind = core_rknd ), optional :: &
+      zt_min_in
+
+    ! ------------------------------ Local Variable ------------------------------
+    integer :: i, k  ! Grid level loop index
+
+    real( kind = core_rknd ) :: &
+      zt_min
+
+    ! ------------------------------ Begin Code ------------------------------
+
+    if ( present(zt_min_in) ) then
+      zt_min = zt_min_in
+    else
+      zt_min = -999.0_core_rknd
+    end if
+
+    ! Interpolate the value of a momentum-level variable to the central
+    ! thermodynamic level, k, between two successive momentum levels using
+    ! linear interpolation.
+    !$acc parallel loop gang vector collapse(2) default(present)
+    do k = 1, nzt
+      do i = 1, ngrdcol
+        zm2zt_gpu(i,k) = gr%weights_zm2zt(i,k,m_above) * azm(i,k+1) &
+                                       + gr%weights_zm2zt(i,k,m_below) * azm(i,k)
+        zm2zt_gpu(i,k) = max( zm2zt_gpu(i,k), zt_min )
+      end do
+    end do
+    !$acc end parallel loop
+
+    return
+
+  end function zm2zt_gpu
   
   !=============================================================================
   function cubic_interpolated_azt_2D( nzm, nzt, ngrdcol, gr, azm )
@@ -2461,7 +2617,7 @@ module grid_class
     azm_col(1,:) = azm
 
     !$acc data copyin( gr, gr%invrs_dzt, azm_col ) &
-    !$acc      copyout( gradzm_1D_col )
+    !$acc     copyout( gradzm_1D_col )
     gradzm_1D_col = gradzm_2D(gr%nzm, gr%nzt, 1, gr, azm_col)
     !$acc end data
       
@@ -2569,7 +2725,7 @@ module grid_class
     azt_col(1,:) = azt
     
     !$acc data copyin( gr, gr%invrs_dzm, azt_col ) &
-    !$acc      copyout( gradzt_1D_col )
+    !$acc     copyout( gradzt_1D_col )
     gradzt_1D_col = gradzt_2D(gr%nzm, gr%nzt, 1, gr, azt_col)
     !$acc end data
     

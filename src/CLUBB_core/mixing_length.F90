@@ -123,7 +123,7 @@ module mixing_length
 
     use grid_class, only:  &
         grid, & ! Type
-        zm2zt ! Procedure(s)
+        zm2zt_gpu ! Procedure(s)
 
     use numerical_check, only:  &
         length_check ! Procedure(s)
@@ -260,7 +260,7 @@ module mixing_length
     end if
 
     ! Calculate initial turbulent kinetic energy for each grid level
-    tke_i = zm2zt( nzm, nzt, ngrdcol, gr, em )
+    tke_i = zm2zt_gpu( nzm, nzt, ngrdcol, gr, em )
  
     ! Initialize arrays and precalculate values for computational efficiency
     !$acc parallel loop gang vector collapse(2) default(present)
@@ -1315,8 +1315,8 @@ module mixing_length
 
     use grid_class, only: &
         grid, & ! Type
-        zt2zm, &
-        zm2zt, &
+        zt2zm_gpu, &
+        zm2zt_gpu, &
         zm2zt2zm, &
         zt2zm2zt, &
         ddzt
@@ -1589,7 +1589,7 @@ module mixing_length
 
     end if
 
-    ice_supersat_frac_zm = zt2zm( nzm, nzt, ngrdcol, gr, ice_supersat_frac, zero_threshold )
+    ice_supersat_frac_zm = zt2zm_gpu( nzm, nzt, ngrdcol, gr, ice_supersat_frac, zero_threshold )
 
     if ( l_smooth_min_max ) then
 
@@ -1768,7 +1768,7 @@ module mixing_length
       end do
       !$acc end parallel loop
 
-      ice_supersat_frac_zm = zt2zm( nzm, nzt, ngrdcol, gr, ice_supersat_frac, zero_threshold )
+      ice_supersat_frac_zm = zt2zm_gpu( nzm, nzt, ngrdcol, gr, ice_supersat_frac, zero_threshold )
 
 !      !$acc parallel loop gang vector collapse(2) default(present)
 !      do k = 1, nzm
@@ -1933,7 +1933,7 @@ module mixing_length
       tau_zm = smooth_min( nzm, ngrdcol, tau_zm_unclipped, &
                            tau_max_zm, 1.0e3_core_rknd * min_max_smth_mag )
 
-      tau_zt_unclipped = zm2zt( nzm, nzt, ngrdcol, gr, tau_zm )
+      tau_zt_unclipped = zm2zt_gpu( nzm, nzt, ngrdcol, gr, tau_zm )
 
       tau_zt = smooth_min( nzt, ngrdcol, tau_zt_unclipped, &
                            tau_max_zt, 1.0e3_core_rknd * min_max_smth_mag )
@@ -1948,7 +1948,7 @@ module mixing_length
       end do
       !$acc end parallel loop
 
-      tau_zt = zm2zt( nzm, nzt, ngrdcol, gr, tau_zm )
+      tau_zt = zm2zt_gpu( nzm, nzt, ngrdcol, gr, tau_zm )
 
       !$acc parallel loop gang vector collapse(2) default(present)
       do k = 1, nzt
@@ -1960,8 +1960,8 @@ module mixing_length
 
     end if
 
-    invrs_tau_zt     = zm2zt( nzm, nzt, ngrdcol, gr, invrs_tau_zm )
-    invrs_tau_wp3_zt = zm2zt( nzm, nzt, ngrdcol, gr, invrs_tau_wp3_zm )
+    invrs_tau_zt     = zm2zt_gpu( nzm, nzt, ngrdcol, gr, invrs_tau_zm )
+    invrs_tau_wp3_zt = zm2zt_gpu( nzm, nzt, ngrdcol, gr, invrs_tau_wp3_zm )
 
     !$acc parallel loop gang vector collapse(2) default(present)
     do k = 1, nzt

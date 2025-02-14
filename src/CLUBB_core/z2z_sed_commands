@@ -1,0 +1,6 @@
+10824  sed -i "s:zm2zt(\s*nzm,\s*nzt,\s*ngrdcol:zm2zt_gpu( nzm, nzt, ngrdcol:g" *
+10835  sed -i "s:zt2zm(\s*nzm,\s*nzt,\s*ngrdcol:zt2zm_gpu( nzm, nzt, ngrdcol:g" *
+10825  sed -i -E "s:\bzm2zt(,|\s*$):zm2zt_gpu\1:g" *
+10826  sed -i -E "s:\bzt2zm(,|\s*$):zt2zm_gpu\1:g" *
+10828  sed -i "s:zm2zt2zm_gpu:zm2zt2zm:g" *
+10830  sed -i "s:zt2zm2zt_gpu:zt2zm2zt:g" *
