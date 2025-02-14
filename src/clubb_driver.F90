@@ -277,6 +277,10 @@ module clubb_driver
     use cloud_sed_module, only: &
         cloud_drop_sed  ! Procedure(s)
 
+#ifdef GPTL
+    use gptl
+#endif
+
 #ifdef _OPENMP
     ! Because Fortran I/O is not thread safe, we use this here to
     ! ensure that no model uses the same file number simultaneously
@@ -1018,7 +1022,17 @@ module clubb_driver
     logical :: &
       l_last_timestep
 
+    integer :: ret_code
+
 !-----------------------------------------------------------------------
+
+#ifdef GPTL
+    ret_code = GPTLsetoption(GPTLprint_method, GPTLfull_tree)
+    ret_code = GPTLsetoption(GPTLabort_on_error, 1) ! Abort on GPTL error
+    ret_code = GPTLsetoption(GPTLoverhead, 0)       ! Turn off overhead estimate
+    ret_code = GPTLinitialize()                     ! Initialize GPTL
+#endif
+
     ! Begin code
 
     ! Initialize the model run
@@ -2560,15 +2574,23 @@ module clubb_driver
     end if ! ~l_restart
     
     ! Save time before main loop starts
+#ifdef GPTL
+    ret_code = GPTLstart('mainloop')
+#else
     call cpu_time( time_start )
     time_total = time_start
+#endif
 !-------------------------------------------------------------------------------
 !                         Main Time Stepping Loop
 !-------------------------------------------------------------------------------
 
     mainloop: do itime = iinit, ifinal, 1
       
+#ifdef GPTL
+      ret_code = GPTLstart('loop_init')
+#else
       call cpu_time( time_start ) ! start timer for initial part of main loop
+#endif
       
       if ( stats_metadata%l_stats ) then
         ! When this time step is over, the time will be time + dt_main
@@ -2639,7 +2661,7 @@ module clubb_driver
       if ( clubb_at_least_debug_level( 2 ) ) then
 
         !$acc update host( um, vm, rtm, wprtp, thlm, wpthlp, rtp2, thlp2, rtpthlp, wp2, wp3, &
-        !$acc              wp2thvp, rtpthvp, thlpthvp )
+        !$acc             wp2thvp, rtpthvp, thlpthvp )
 
         !$acc if( sclr_dim > 0   ) update host( sclrm )
         !$acc if( edsclr_dim > 0 ) update host( edsclrm )
@@ -2769,11 +2791,16 @@ module clubb_driver
                                       thlp2_forcing )                       ! intent(inout)
 
       end if
-      
+
       ! Measure time in the beginning part of the main loop
+#ifdef GPTL
+      ret_code = GPTLstop('loop_init')
+      ret_code = GPTLstart('advance_clubb_core_api')
+#else   
       call cpu_time(time_stop)      
-      time_loop_init = time_loop_init + time_stop - time_start      
+      time_loop_init = time_loop_init + time_stop - time_start   
       call cpu_time(time_start) ! initialize timer for advance_clubb_core
+#endif
 
       ! Call the clubb core api for one column
       call advance_clubb_core_api( &
@@ -2828,9 +2855,14 @@ module clubb_driver
       end if
 
       ! Measure time in advance_clubb_core
+#ifdef GPTL
+      ret_code = GPTLstop('advance_clubb_core_api')
+      ret_code = GPTLstart('setup_pdf_parameters')
+#else
       call cpu_time(time_stop)
       time_clubb_advance = time_clubb_advance + time_stop - time_start
       call cpu_time(time_start) ! initialize timer for setup_pdf_parameters
+#endif
 
       if ( .not. trim( microphys_scheme ) == "none" ) then
 
@@ -2887,16 +2919,21 @@ module clubb_driver
         end do
         
         !$acc update device( mu_x_1_n, mu_x_2_n, sigma_x_1_n, sigma_x_2_n, corr_array_1_n, corr_array_2_n, &
-        !$acc                corr_cholesky_mtx_1, corr_cholesky_mtx_2 )
+        !$acc               corr_cholesky_mtx_1, corr_cholesky_mtx_2 )
 
         !$acc if( hydromet_dim > 0 ) update device( wp2hmp, rtphmp_zt, thlphmp_zt )
 
       endif ! not microphys_scheme == "none"
       
       ! Measure time in setup_pdf_parameters and hydrometeor_mixed_moments
+#ifdef GPTL
+      ret_code = GPTLstop('setup_pdf_parameters')
+      ret_code = GPTLstart('SILHS')
+#else
       call cpu_time(time_stop)
       time_clubb_pdf = time_clubb_pdf + time_stop - time_start
       call cpu_time(time_start) ! initialize timer for SILHS
+#endif
       
 #ifdef SILHS
       !----------------------------------------------------------------
@@ -2973,7 +3010,7 @@ module clubb_driver
         if ( stats_metadata%l_stats_samp ) then     
 
           !$acc update host( rho_ds_zt, lh_sample_point_weights, X_nl_all_levs, &
-          !$acc              lh_rt_clipped, lh_thl_clipped, lh_rc_clipped, lh_rv_clipped, lh_Nc_clipped )
+          !$acc             lh_rt_clipped, lh_thl_clipped, lh_rc_clipped, lh_rv_clipped, lh_Nc_clipped )
 
           do i = 1, ngrdcol
             call stats_accumulate_lh( &
@@ -2993,10 +3030,14 @@ module clubb_driver
 #endif /* SILHS */
       
       ! Measure time in SILHS
+#ifdef GPTL
+      ret_code = GPTLstop('SILHS')
+      ret_code = GPTLstart('microphys')
+#else
       call cpu_time(time_stop)
       time_SILHS = time_SILHS + time_stop - time_start
-      call cpu_time(time_start) ! initialize timer for calc_microphys_scheme_tendcies
-
+      call cpu_time(time_start) ! initialize timer for calc_microphys_scheme_tendcies and advance_microphys
+#endif
       
       !----------------------------------------------------------------
       ! Compute Microphysics
@@ -3005,16 +3046,16 @@ module clubb_driver
       if ( .not. trim( microphys_scheme ) == "none" ) then
 
         !$acc update host( thlm, p_in_Pa, exner, rho, rho_zm, rtm, rcm, cloud_frac, wm_zt, wm_zm, &
-        !$acc              wp2, wp3, Kh_zm, rho_ds_zm, rho_ds_zt, invrs_rho_ds_zt, &
-        !$acc              X_nl_all_levs, X_mixt_comp_all_levs,  lh_sample_point_weights, mu_x_1_n, mu_x_2_n, &
-        !$acc              sigma_x_1_n, sigma_x_2_n, corr_array_1_n, corr_array_2_n, &
-        !$acc              lh_rt_clipped, lh_thl_clipped, lh_rc_clipped, lh_rv_clipped, lh_Nc_clipped, &
-        !$acc              pdf_params%mixt_frac, pdf_params%chi_1, pdf_params%chi_2, &
-        !$acc              pdf_params%rt_1, pdf_params%rt_2, pdf_params%rc_1, pdf_params%rc_2, &
-        !$acc              pdf_params%thl_1, pdf_params%thl_2, pdf_params%w_1, pdf_params%w_2, &
-        !$acc              pdf_params%cloud_frac_1, pdf_params%cloud_frac_2, pdf_params%cthl_1, pdf_params%cthl_2, &
-        !$acc              pdf_params%crt_1, pdf_params%crt_2, pdf_params%stdev_chi_1, pdf_params%stdev_chi_2, &
-        !$acc              pdf_params%varnce_w_1, pdf_params%varnce_w_2 ) 
+        !$acc             wp2, wp3, Kh_zm, rho_ds_zm, rho_ds_zt, invrs_rho_ds_zt, &
+        !$acc             X_nl_all_levs, X_mixt_comp_all_levs,  lh_sample_point_weights, mu_x_1_n, mu_x_2_n, &
+        !$acc             sigma_x_1_n, sigma_x_2_n, corr_array_1_n, corr_array_2_n, &
+        !$acc             lh_rt_clipped, lh_thl_clipped, lh_rc_clipped, lh_rv_clipped, lh_Nc_clipped, &
+        !$acc             pdf_params%mixt_frac, pdf_params%chi_1, pdf_params%chi_2, &
+        !$acc             pdf_params%rt_1, pdf_params%rt_2, pdf_params%rc_1, pdf_params%rc_2, &
+        !$acc             pdf_params%thl_1, pdf_params%thl_2, pdf_params%w_1, pdf_params%w_2, &
+        !$acc             pdf_params%cloud_frac_1, pdf_params%cloud_frac_2, pdf_params%cthl_1, pdf_params%cthl_2, &
+        !$acc             pdf_params%crt_1, pdf_params%crt_2, pdf_params%stdev_chi_1, pdf_params%stdev_chi_2, &
+        !$acc             pdf_params%varnce_w_1, pdf_params%varnce_w_2 ) 
 
         wp3_zm = zt2zm( gr%nzm, gr%nzt, ngrdcol, gr, wp3 )
 
@@ -3064,12 +3105,6 @@ module clubb_driver
                                   thlp2_mc(i,:), rtpthlp_mc(i,:) )                                  ! Out
         end do
 
-
-        ! Measure time in calc_microphys_scheme_tendcies
-        call cpu_time(time_stop)
-        time_microphys_scheme = time_microphys_scheme + time_stop - time_start
-        call cpu_time(time_start) ! initialize timer for advance_microphys
-
         ! Advance predictive microphysics fields one model timestep.
         do i = 1, ngrdcol
           call advance_microphys( gr, dt_main, time_current,                  & ! In
@@ -3095,11 +3130,6 @@ module clubb_driver
         !$acc update device( rcm_mc, rvm_mc, thlm_mc, wprtp_mc, wpthlp_mc, rtp2_mc, thlp2_mc, rtpthlp_mc )
 
         !$acc if( hydromet_dim > 0 ) update device( wphydrometp )
-
-        ! Measure time in calc_microphys_scheme_tendcies
-        call cpu_time(time_stop)
-        time_microphys_advance = time_microphys_advance + time_stop - time_start
-        call cpu_time(time_start) ! initialize timer for the end part of the main loop
         
         if ( clubb_at_least_debug_level( 0 ) ) then
             if ( err_code == clubb_fatal_error ) then
@@ -3148,6 +3178,16 @@ module clubb_driver
 
       end if
 
+      ! Measure time in calc_microphys_scheme_tendcies
+#ifdef GPTL
+      ret_code = GPTLstop('microphys')
+      ret_code = GPTLstart('loop_end')
+#else
+      call cpu_time(time_stop)
+      time_microphys_advance = time_microphys_advance + time_stop - time_start
+      call cpu_time(time_start) ! initialize timer for the end part of the main loop
+#endif
+
       if ( stats_metadata%l_stats_samp ) then
 
         ! Total microphysical tendency of vapor and cloud water mixing ratios
@@ -3178,7 +3218,7 @@ module clubb_driver
         if ( l_silhs_rad ) then
 
           !$acc update host( rho, rho_zm, p_in_Pa, exner, cloud_frac, ice_supersat_frac, X_nl_all_levs, &
-          !$acc              lh_rt_clipped, lh_thl_clipped, lh_rc_clipped, lh_sample_point_weights )
+          !$acc             lh_rt_clipped, lh_thl_clipped, lh_rc_clipped, lh_sample_point_weights )
 
           do i = 1, ngrdcol
             call silhs_radiation_driver( &
@@ -3251,18 +3291,23 @@ module clubb_driver
       ! This was moved from above to be less confusing to the user,
       ! since before it would appear as though the last timestep
       ! was not executed. -dschanen 19 May 08
-      if ( ( stats_metadata%l_stats_last .or. stats_metadata%l_stats .or. l_output_multi_col ) .and. l_stdout ) then
+      if ( itime == ifinal .and. l_stdout ) then
         write(unit=fstdout,fmt='(a,i8,a,f10.1)') 'iteration = ',  & 
           itime, '; time = ', time_current
       end if
 
       ! Measure time in the end part
+#ifdef GPTL
+      ret_code = GPTLstop('loop_end')
+      ret_code = GPTLstart('output_multi_col')
+#else
       call cpu_time(time_stop)
       time_loop_end = time_loop_end + time_stop - time_start
       call cpu_time(time_start)
+#endif
 
 #ifdef NETCDF
-      if ( ngrdcol > 1 .and. l_output_multi_col ) then
+      if ( l_output_multi_col ) then
 
         l_last_timestep = itime == ifinal
 
@@ -3283,8 +3328,12 @@ module clubb_driver
       end if                      
 #endif
 
+#ifdef GPTL
+      ret_code = GPTLstop('output_multi_col')
+#else
       call cpu_time(time_stop)
       time_output_multi_col = time_output_multi_col + time_stop - time_start
+#endif
     
       if ( clubb_at_least_debug_level( 0 ) ) then
         if ( err_code == clubb_fatal_error ) exit
@@ -3297,13 +3346,19 @@ module clubb_driver
     !$acc end data
     !$acc end data
 
+    ! Measure overall time in the main loop
+#ifdef GPTL
+    ret_code = GPTLstop('mainloop')
+    ret_code = GPTLpr (0)
+    ret_code = GPTLfinalize()
+#else
+    call cpu_time(time_stop)
+    time_total = time_stop - time_total ! subtract previously saved start time 
+#endif
+
     !-------------------------------------------------------------------------------
     !                       End Main Time Stepping Loop
     !-------------------------------------------------------------------------------
-
-    ! Measure overall time in the main loop
-    call cpu_time(time_stop)
-    time_total = time_stop - time_total ! subtract previously saved start time 
     
     ! Check if time budgets sum up
     if ((time_total * (one + timing_tol) < (time_loop_init + time_clubb_advance +  &
