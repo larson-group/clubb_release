@@ -552,10 +552,13 @@ subroutine logical_flags_driver( current_date, current_time )
     penta_solve_method,             & ! Option to set the penta-diagonal matrix solving method
     tridiag_solve_method,           & ! Option to set the tri-diagonal matrix solving method
     saturation_formula,             & ! Integer that stores the saturation formula to be used
-    interp_from_dycore_grid_method    ! Integer that stores what interpolation technique should
-                                      ! be used to interpolate the values calculated on the 
-                                      ! dycore grid to the physics grid or if no interpolation 
+    remap_from_dycore_grid_method,  & ! Integer that stores what remapping technique should
+                                      ! be used to remap the values calculated on the 
+                                      ! dycore grid to the physics grid (to simulate the input
+                                      ! from the host model) or if no remapping 
                                       ! should be used at all
+    grid_adaptation_method            ! Integer that stores how the grid should be adapted every
+                                      ! timestep or if the grid should not be adapted at all
 
   logical :: &
     l_use_precip_frac,            & ! Flag to use precipitation fraction in KK microphysics. The
@@ -680,7 +683,8 @@ subroutine logical_flags_driver( current_date, current_time )
 
   namelist /configurable_clubb_flags_nl/ &
     iiPDF_type, ipdf_call_placement, penta_solve_method, tridiag_solve_method, &
-    saturation_formula, interp_from_dycore_grid_method, &
+    saturation_formula, remap_from_dycore_grid_method, &
+    grid_adaptation_method, &
     l_upwind_xpyp_ta, l_upwind_xm_ma, &
     l_tke_aniso, l_vert_avg_closure, l_standard_term_ta, &
     l_partial_upwind_wp3, l_godunov_upwind_wpxp_ta, l_godunov_upwind_xpyp_ta, &
@@ -704,7 +708,8 @@ subroutine logical_flags_driver( current_date, current_time )
                                        penta_solve_method, & ! Intent(out)
                                        tridiag_solve_method, & ! Intent(out)
                                        saturation_formula, & ! Intent(out)
-                                       interp_from_dycore_grid_method, & ! Intent(out)
+                                       remap_from_dycore_grid_method, & ! Intent(out)
+                                       grid_adaptation_method, & ! Intent(out)
                                        l_use_precip_frac, & ! Intent(out)
                                        l_predict_upwp_vpwp, & ! Intent(out)
                                        l_min_wp2_from_corr_wx, & ! Intent(out)

@@ -21,15 +21,16 @@ module time_dependent_input
   implicit none
 
   public :: finalize_t_dependent_input, time_select, &
-            apply_time_dependent_forcings, initialize_t_dependent_input_simple, &
-            initialize_t_dependent_input_from_dycore
+            apply_time_dependent_forcings, &
+            apply_time_dependent_forcings_from_dycore, &
+            initialize_t_dependent_input
 
   private :: initialize_t_dependent_forcings, &
-             initialize_t_dependent_forcings_from_dycore, &
              finalize_t_dependent_forcings,   & 
              initialize_t_dependent_sfc,  &
              finalize_t_dependent_sfc,    &
-             read_to_grid                      
+             read_to_grid, &
+             apply_time_dependent_forcings_from_array                      
 
   integer, parameter :: nforcings = 10 ! Number of columns in the input file
 
@@ -56,6 +57,13 @@ module time_dependent_input
                              ! files over time
 !$omp threadprivate( t_dependent_forcing_data )
 
+  type(two_dim_read_var), private, dimension(nforcings) :: &
+    t_dependent_forcing_data_f_grid ! Data structure that defines the change in input
+                                    ! files over time but stores the raw file input.
+                                    ! Is only set if we want to adapt grid but dont want to
+                                    ! simulate forcings input from the host model (dycore grid)
+!$omp threadprivate( t_dependent_forcing_data_f_grid )
+
   type(one_dim_read_var), private :: dimension_var ! Data structure that describes other 
                                                    ! dimension of the two_dim_read_var
 
@@ -76,6 +84,11 @@ module time_dependent_input
                                        ! should be ignored for this case.
 !$omp threadprivate( l_ignore_forcings )
 
+  logical, public :: sfc_already_initialized = .false. ! Flag used to determine if the sfc
+                                                       ! variable were already initialized
+!$omp threadprivate( sfc_already_initialized )
+
+
   ! File path constants
   character(len=*), private, parameter :: input_path = "../input/case_setups/"
 
@@ -88,7 +101,9 @@ module time_dependent_input
   contains
 
   !================================================================================================
-  subroutine initialize_t_dependent_input_simple( iunit, runtype, nz, grid, p_in_Pa )
+  subroutine initialize_t_dependent_input( iunit, runtype, nz, grid, p_in_Pa, &
+                                           remap_from_dycore_grid_method, &
+                                           grid_adaptation_method )
     !
     !  Description: 
     !    This subroutine reads in time dependent information about a
@@ -114,79 +129,29 @@ module time_dependent_input
 
     real( kind = core_rknd ), dimension(nz), intent(in) :: p_in_Pa ! Pressure[Pa]
 
+    integer, intent(in) :: &
+      remap_from_dycore_grid_method, &  ! flag that says whether the forcings input should be
+                                        ! simulated from the host model on the dycore grid and
+                                        ! if so what remapping technique should be used to remap
+                                        ! the values from the dycore grid to the physics grid
+      grid_adaptation_method            ! flag that says whether the grid should be adapted over
+                                        ! time and if so, how the grid density function should
+                                        ! be formed
+
     ! ----------------- Begin Code --------------------
 
     if ( .not. l_ignore_forcings ) then
       call initialize_t_dependent_forcings &
-                   ( iunit, input_path//trim(runtype)//forcings_path, nz, grid, p_in_Pa )
+                   ( iunit, input_path//trim(runtype)//forcings_path, nz, grid, p_in_Pa, &
+                     remap_from_dycore_grid_method, grid_adaptation_method )
     end if
 
-    call initialize_t_dependent_sfc &
-                   ( iunit, input_path//trim(runtype)//sfc_path )
-
-  end subroutine initialize_t_dependent_input_simple
-
-  !================================================================================================
-  subroutine initialize_t_dependent_input_from_dycore( iunit, runtype, nz, grid_levels, p_in_Pa, &
-                                                       dycore_gr, interp_from_dycore_grid_method, &
-                                                       total_idx_rho_lin_spline, &
-                                                       rho_lin_spline_vals, &
-                                                       rho_lin_spline_levels )
-    !
-    !  Description: 
-    !    This subroutine reads in time dependent information about a
-    !    case that is stored inside the module, but first interpolates them to the dycore grid,
-    !    to simulate host model.
-    !
-    !  References:
-    !    None
-    !---------------------------------------------------------------------------------
-
-    use clubb_precision, only: &
-      core_rknd ! Variable(s)
-
-    use grid_class, only: grid ! Type
-
-    implicit none
-
-    ! Input Variable(s)
-    integer, intent(in) :: iunit ! File I/O
-
-    character(len=*), intent(in) :: runtype ! Runtype
-
-    integer, intent(in) :: nz ! Size of the model grid
-
-    real( kind = core_rknd ), dimension(nz), intent(in) :: grid_levels ! Model grid
-
-    real( kind = core_rknd ), dimension(nz), intent(in) :: p_in_Pa ! Pressure[Pa]
-
-    type( grid ), intent(in) :: dycore_gr ! only set and used if interp_from_dycore_grid_method > 0
-
-    integer, intent(in) :: interp_from_dycore_grid_method
-
-    integer, intent(in) :: &
-      total_idx_rho_lin_spline ! number of indices for the linear spline definition arrays
-
-    real( kind = core_rknd ), dimension(total_idx_rho_lin_spline), intent(in) :: &
-      rho_lin_spline_vals, & ! rho values at the given altitudes
-      rho_lin_spline_levels  ! altitudes for the given rho values
-    ! Note: both these arrays need to be sorted from low to high altitude
-
-    ! ----------------- Begin Code --------------------
-
-    if ( .not. l_ignore_forcings ) then
-      call initialize_t_dependent_forcings_from_dycore &
-                   ( iunit, input_path//trim(runtype)//forcings_path, nz, grid_levels, p_in_Pa, &
-                     dycore_gr, interp_from_dycore_grid_method, &
-                     total_idx_rho_lin_spline, &
-                     rho_lin_spline_vals, &
-                     rho_lin_spline_levels )
+    if ( .not. sfc_already_initialized ) then
+      call initialize_t_dependent_sfc &
+                     ( iunit, input_path//trim(runtype)//sfc_path )
     end if
 
-    call initialize_t_dependent_sfc &
-                   ( iunit, input_path//trim(runtype)//sfc_path )
-
-  end subroutine initialize_t_dependent_input_from_dycore
+  end subroutine initialize_t_dependent_input
 
   !================================================================================================
   subroutine finalize_t_dependent_input()
@@ -347,11 +312,15 @@ module time_dependent_input
     ! Deallocate memory
     call deallocate_one_dim_vars( nforcings, retVars )
 
+    sfc_already_initialized = .true.
+
     return 
   end subroutine initialize_t_dependent_sfc
 
   !================================================================================================
-  subroutine initialize_t_dependent_forcings( iunit, input_file, nz, grid, p_in_Pa )
+  subroutine initialize_t_dependent_forcings( iunit, input_file, nz, grid, p_in_Pa, &
+                                              remap_from_dycore_grid_method, &
+                                              grid_adaptation_method )
     !
     !  Description: This subroutine reads in a file that details time dependent
     !  input values that vary in two dimensions.
@@ -383,18 +352,27 @@ module time_dependent_input
 
     real( kind = core_rknd ), intent(in), dimension(nz) :: p_in_Pa ! Pressure [Pa]
 
+    integer, intent(in) :: &
+      remap_from_dycore_grid_method, &  ! flag that says whether the forcings input should be
+                                        ! simulated from the host model on the dycore grid and
+                                        ! if so what remapping technique should be used to remap
+                                        ! the values from the dycore grid to the physics grid
+      grid_adaptation_method            ! flag that says whether the grid should be adapted over
+                                        ! time and if so, how the grid density function should
+                                        ! be formed
+
     ! Local Variables
 
     integer :: i, n_f_grid_z, n_f_grid_t
 
-    type(two_dim_read_var), dimension(nforcings) :: t_dependent_forcing_data_f_grid
-
     ! ----------------- Begin Code --------------------
 
-
-    ! Read in the forcing data from the input file
-    call read_two_dim_file( iunit, nforcings, input_file, &
-                            t_dependent_forcing_data_f_grid, dimension_var )
+    if ( .not. allocated(t_dependent_forcing_data_f_grid(1)%values) ) then
+      ! Only read in the forcing data from the input file if they aren't already
+      ! stored in the global variable
+      call read_two_dim_file( iunit, nforcings, input_file, &
+                              t_dependent_forcing_data_f_grid, dimension_var )
+    end if
 
     n_f_grid_z = size( t_dependent_forcing_data_f_grid(1)%values, 1 )
 
@@ -405,7 +383,10 @@ module time_dependent_input
     call fill_blanks_two_dim_vars( nforcings, dimension_var, t_dependent_forcing_data_f_grid )
 
     do i=1, nforcings
-      allocate( t_dependent_forcing_data(i)%values(1:nz,1:n_f_grid_t) )
+      ! Only allocate t_dependent_forcing_data, if it isn't already stored in the global variable
+      if ( .not. allocated(t_dependent_forcing_data(i)%values) ) then
+        allocate( t_dependent_forcing_data(i)%values(1:nz,1:n_f_grid_t) )
+      end if
     end do
 
     select case( t_dependent_forcing_data_f_grid(1)%name )
@@ -435,187 +416,21 @@ module time_dependent_input
 
     end do
 
-    do i = 1, nforcings
-      if ( allocated( t_dependent_forcing_data_f_grid(i)%values ) ) then
-        deallocate( t_dependent_forcing_data_f_grid(i)%values )
-      end if
-    end do
-
-    return
-  end subroutine initialize_t_dependent_forcings
-
-  !================================================================================================
-  subroutine initialize_t_dependent_forcings_from_dycore( iunit, input_file, nz, &
-                                                          grid_levels, p_in_Pa, &
-                                                          dycore_gr, &
-                                                          interp_from_dycore_grid_method, &
-                                                          total_idx_rho_lin_spline, &
-                                                          rho_lin_spline_vals, &
-                                                          rho_lin_spline_levels )
-    !
-    !  Description: This subroutine reads in a file that details time dependent
-    !  input values that vary in two dimensions. It first interpolates the input to a dycore grid, 
-    !  so timulate the host model and then remaps these values to the physics grid using a method
-    !  specified by interp_from_dycore_grid_method.
-    !
-    !-------------------------------------------------------------------------------------
-
-    use input_reader, only: read_two_dim_file, two_dim_read_var, fill_blanks_two_dim_vars
-
-    use input_names, only: &
-      z_name, &
-      pressure_name
-
-    use clubb_precision, only: &
-      core_rknd ! Variable(s)
-
-    use grid_class, only: grid ! Type
-
-    use constants_clubb, only: fstderr  ! Output to error output stream
-
-    use grid_adaptation_module, only: remap, &
-                                      check_mass_conservation, &
-                                      check_vertical_integral_conservation, &
-                                      check_remap_for_consistency
-
-    use error_code, only: &
-      clubb_at_least_debug_level
-
-    implicit none
-
-    ! External
-    intrinsic :: spread
-
-    ! Input Variable(s)
-    integer, intent(in) :: iunit ! File I/O
-
-    character(len=*), intent(in) :: input_file ! Path to the input file
-
-    integer, intent(in) :: nz  ! Size of Model Grid [-]
-
-    real( kind = core_rknd ), intent(in), dimension(nz) :: grid_levels ! Altitudes of Grid [m]
-
-    real( kind = core_rknd ), intent(in), dimension(nz) :: p_in_Pa ! Pressure [Pa]
-
-    type( grid ), intent(in) :: dycore_gr ! only set and used if interp_from_dycore_grid_method > 0
-
-    integer, intent(in) :: interp_from_dycore_grid_method
-
-    integer, intent(in) :: &
-      total_idx_rho_lin_spline ! number of indices for the linear spline definition arrays
-
-    real( kind = core_rknd ), dimension(total_idx_rho_lin_spline), intent(in) :: &
-      rho_lin_spline_vals, & ! rho values at the given altitudes
-      rho_lin_spline_levels  ! altitudes for the given rho values
-    ! Note: both these arrays need to be sorted from low to high altitude
-
-    ! Local Variables
-
-    integer :: i, t, n_f_grid_z, n_f_grid_t
-
-    type(two_dim_read_var), dimension(nforcings) :: t_dependent_forcing_data_f_grid
-
-    real( kind = core_rknd ), dimension(:,:), allocatable :: dycore_forcing_values
-
-    ! ----------------- Begin Code --------------------
-    if ( interp_from_dycore_grid_method > 0 ) then
-
-      ! Read in the forcing data from the input file
-      call read_two_dim_file( iunit, nforcings, input_file, &
-                              t_dependent_forcing_data_f_grid, dimension_var )
-
-      n_f_grid_z = size( t_dependent_forcing_data_f_grid(1)%values, 1 )
-
-      n_f_grid_t = size( dimension_var%values )
-
-      ! Fill in blanks with linear interpolation. Whole profiles of -999.9 will
-      ! remain that way thus marking them blank.
-      call fill_blanks_two_dim_vars( nforcings, dimension_var, t_dependent_forcing_data_f_grid )
-
-      allocate( dycore_forcing_values(1:dycore_gr%nzm,1:n_f_grid_t) )
-      do i=1, nforcings
-        allocate( t_dependent_forcing_data(i)%values(1:nz,1:n_f_grid_t) )
-      end do
-
-      select case( t_dependent_forcing_data_f_grid(1)%name )
-      case( z_name )
-        t_dependent_forcing_data(1)%name = z_name
-        t_dependent_forcing_data(1)%values(:,1:n_f_grid_t) = spread(grid_levels,2,n_f_grid_t)
-
-      case( pressure_name )
-        t_dependent_forcing_data(1)%name = pressure_name
-        t_dependent_forcing_data(1)%values(:,1:n_f_grid_t) = spread(-p_in_Pa, 2, n_f_grid_t )
-        t_dependent_forcing_data_f_grid(1)%values = -t_dependent_forcing_data_f_grid(1)%values
-
-      case default
-        error stop "Incompatible grid type in first element of t_dependent_forcings."
-      end select
-
-      ! Interpolate the time dependent input data to the appropriate grid.
-
-      do i=2, nforcings
-        t_dependent_forcing_data(i)%name = t_dependent_forcing_data_f_grid(i)%name
-        if (t_dependent_forcing_data(1)%name /= z_name) then
-          write(fstderr,*) "Warning! The option to get forcings from the dycore grid and remap ", &
-                           "them to the physics grid should only be used with zm level as ", &
-                           "input, as the dycore is given on the zm levels."
-        else
-          dycore_forcing_values = read_to_grid( nforcings, n_f_grid_z, n_f_grid_t, &
-                                                dycore_gr%nzm, dycore_gr%zm, &
-                                                t_dependent_forcing_data_f_grid, &
-                                                t_dependent_forcing_data(i)%name )
-          do t = 1, n_f_grid_t
-            if (interp_from_dycore_grid_method == 1) then
-              t_dependent_forcing_data(i)%values(:,t) & 
-                                    = remap( dycore_gr%nzm, nz, &
-                                             dycore_gr%zm, t_dependent_forcing_data(1)%values(:,1),&
-                                             total_idx_rho_lin_spline, rho_lin_spline_vals, &
-                                             rho_lin_spline_levels, &
-                                             dycore_forcing_values(:,t) )
-              if ( clubb_at_least_debug_level( 2 ) ) then
-                call check_mass_conservation( dycore_gr%nzm, nz, &
-                                              dycore_gr%zm, &
-                                              t_dependent_forcing_data(1)%values(:,1), &
-                                              total_idx_rho_lin_spline, rho_lin_spline_vals, &
-                                              rho_lin_spline_levels )
-                
-                call check_vertical_integral_conservation( total_idx_rho_lin_spline, &
-                                                           rho_lin_spline_vals, &
-                                                           rho_lin_spline_levels, &
-                                                           dycore_gr%nzm, nz, &
-                                                           dycore_gr%zm, &
-                                                           t_dependent_forcing_data(1)%values(:,1),&
-                                                           dycore_forcing_values(:,t), &
-                                                           t_dependent_forcing_data(i)%values(:,t) )
-
-                call check_remap_for_consistency( dycore_gr%nzm, nz, &
-                                                  dycore_gr%zm, &
-                                                  t_dependent_forcing_data(1)%values(:,1), &
-                                                  total_idx_rho_lin_spline, &
-                                                  rho_lin_spline_vals, &
-                                                  rho_lin_spline_levels )
-              end if
-            else
-              write(fstderr,*) "There is currently no method implemented for ", &
-                               "interp_from_dycore_grid_method=", interp_from_dycore_grid_method
-            end if
-          end do
-        end if
-
-      end do
-
+    if ( remap_from_dycore_grid_method > 0 .or. grid_adaptation_method == 0 ) then
+      ! the array should only be kept in memory, if we want to use grid adaptation
+      ! (grid_adaptation_method > 0) and no simulating forcings input from the host
+      ! model on the dycore grid (remap_from_dycore_grid_method == 0), since then we
+      ! need the raw input from the file during the CLUBB run if the grid changes
       do i = 1, nforcings
         if ( allocated( t_dependent_forcing_data_f_grid(i)%values ) ) then
           deallocate( t_dependent_forcing_data_f_grid(i)%values )
         end if
       end do
-
-      return
-    else
-      write(fstderr,*) "Warning! Thid method should only be used if", &
-                       " interp_from_dycore_grid_method>0."
     end if
-  end subroutine initialize_t_dependent_forcings_from_dycore
+
+    return
+  end subroutine initialize_t_dependent_forcings
+
 
   !================================================================================================
   subroutine finalize_t_dependent_forcings()
@@ -630,6 +445,14 @@ module time_dependent_input
     integer :: i
 
     ! ----------------- Begin Code --------------------
+
+    ! for the case that we use grid adaptation and do not want to simulate the forcings
+    ! input from the host model on the dycore grid, we keep the raw input also in memory
+    do i = 1, nforcings
+      if ( allocated( t_dependent_forcing_data_f_grid(i)%values ) ) then
+        deallocate( t_dependent_forcing_data_f_grid(i)%values )
+      end if
+    end do
 
     do i=1, nforcings
       deallocate( t_dependent_forcing_data(i)%values )
@@ -719,16 +542,17 @@ module time_dependent_input
   end function read_to_grid
 
   !================================================================================================
-  subroutine apply_time_dependent_forcings( &
+  subroutine apply_time_dependent_forcings_from_array( &
               ngrdcol, nzm, nzt, &
               sclr_dim, edsclr_dim, sclr_idx, &
-              gr, time, rtm, rho, exner,  &
+              gr, rtm, rho, exner,  &
+              forcings_array, &
               thlm_f, rtm_f, um_ref, vm_ref, um_f, vm_f, &
               wm_zt, wm_zm,  ug, vg, &
               sclrm_forcing, edsclrm_forcing )
     !
-    !  Description: This subroutine converts the time dependent information stored in
-    !  memory (time_dependent_forcing_data) into the format used by CLUBB.
+    !  Description: This subroutine is a helper subroutine, that takes the forcings
+    !               in a 2D matrix and initializes the forcing variables.
     !
     !---------------------------------------------------------------------------------
 
@@ -762,7 +586,6 @@ module time_dependent_input
       zt2zm   ! Procedure(s)
 
     use clubb_precision, only: &
-      time_precision, &
       core_rknd ! Variable(s)
 
     use array_index, only: &
@@ -784,13 +607,12 @@ module time_dependent_input
     type (grid), intent(in) :: &
       gr
 
-    real(kind=time_precision), intent(in) :: &
-      time ! Model Time [s]
-
     real( kind = core_rknd ), dimension(ngrdcol,nzt), intent(in) :: &
       exner,   & ! Exner Function                             [-]
       rho,     & ! Air Density                                [kg/m^3]
       rtm        ! Total Water Mixing Ratio                   [kg/kg]
+
+    real( kind = core_rknd ), dimension(nforcings,nzt), intent(in) :: forcings_array
 
     !--------------------- Output Variables ---------------------
     real( kind = core_rknd ), dimension(ngrdcol,nzt), intent(inout) :: &
@@ -814,28 +636,19 @@ module time_dependent_input
       edsclrm_forcing ! Edscalar forcing [-]
 
     !--------------------- Local Variables ---------------------
-    integer :: i, k, n, before_time, after_time
+    integer :: i, k, n
 
     real( kind = core_rknd ), dimension(nzt) :: temp_array
-
-    real( kind = core_rknd ) :: time_frac
 
     !--------------------- Begin Code ---------------------
 
     !$acc data create( temp_array )
 
-    time_frac = -1.0_core_rknd ! Default initialization
-
-    call time_select( time, size(dimension_var%values), dimension_var%values, &
-                                 before_time, after_time, time_frac )
-
     ! Parse the values in t_dependent_forcing_data for CLUBB compatible forcing
     ! data.
     do n=2, nforcings
 
-      temp_array = linear_interp_factor &
-                   ( time_frac, t_dependent_forcing_data(n)%values(:,after_time), &
-                     t_dependent_forcing_data(n)%values(:,before_time) )
+      temp_array = forcings_array(n,:)
 
       ! Check to see if temp_array is an actual profile or a dummy profile
       ! If it is a dummy profile we dont want it to apply itself as it may
@@ -1055,7 +868,270 @@ module time_dependent_input
 
     return
 
+  end subroutine apply_time_dependent_forcings_from_array
+
+  !================================================================================================
+  subroutine apply_time_dependent_forcings( &
+              ngrdcol, nzm, nzt, &
+              sclr_dim, edsclr_dim, sclr_idx, &
+              gr, time, rtm, rho, exner,  &
+              thlm_f, rtm_f, um_ref, vm_ref, um_f, vm_f, &
+              wm_zt, wm_zm,  ug, vg, &
+              sclrm_forcing, edsclrm_forcing )
+    !
+    !  Description: This subroutine converts the time dependent information stored in
+    !  memory (time_dependent_forcing_data) into the format used by CLUBB.
+    !
+    !---------------------------------------------------------------------------------
+
+    use interpolation, only: &
+      linear_interp_factor ! Procedure(s)
+
+    use grid_class, only : &
+      grid, & ! Type
+      zt2zm   ! Procedure(s)
+
+    use clubb_precision, only: &
+      time_precision, &
+      core_rknd ! Variable(s)
+
+    use array_index, only: &
+      sclr_idx_type
+
+    implicit none
+
+    !--------------------- Input Variables ---------------------
+    integer, intent(in) :: &
+      ngrdcol, &
+      nzm, &
+      nzt, &
+      sclr_dim, & 
+      edsclr_dim
+
+    type (sclr_idx_type), intent(in) :: &
+      sclr_idx
+
+    type (grid), intent(in) :: &
+      gr
+
+    real(kind=time_precision), intent(in) :: &
+      time ! Model Time [s]
+
+    real( kind = core_rknd ), dimension(ngrdcol,nzt), intent(in) :: &
+      exner,   & ! Exner Function                             [-]
+      rho,     & ! Air Density                                [kg/m^3]
+      rtm        ! Total Water Mixing Ratio                   [kg/kg]
+
+    !--------------------- Output Variables ---------------------
+    real( kind = core_rknd ), dimension(ngrdcol,nzt), intent(inout) :: &
+      thlm_f, & ! Potential Temperature forcing     [K/s]
+      rtm_f,  & ! Total Water Mixing Ration forcing [kg/kg/s]
+      um_ref, & ! um reference                      [m/s]
+      vm_ref, & ! vm reference                      [m/s]
+      um_f,   & ! um tendency                       [m/s/s]
+      vm_f,   & ! vm tendency                       [m/s/s]
+      wm_zt,  & ! subsidence on zt grid             [m/s]
+      ug,     & ! u geostrophic wind                [m/s]
+      vg        ! v geostrophic wind                [m/s]
+
+    real( kind = core_rknd ), dimension(ngrdcol,nzm), intent(inout) :: &
+      wm_zm     ! subsidense on zm grid             [m/s]
+
+    real( kind = core_rknd ), dimension(ngrdcol,nzt, sclr_dim), intent(inout) :: &
+      sclrm_forcing ! Scalar forcing [-]
+
+    real( kind = core_rknd ), dimension(ngrdcol,nzt, edsclr_dim), intent(inout) :: &
+      edsclrm_forcing ! Edscalar forcing [-]
+
+    !--------------------- Local Variables ---------------------
+    integer :: n, before_time, after_time
+
+    real( kind = core_rknd ), dimension(nforcings,nzt) :: forcings_array
+
+    real( kind = core_rknd ) :: time_frac
+
+    !--------------------- Begin Code ---------------------
+
+    time_frac = -1.0_core_rknd ! Default initialization
+
+    call time_select( time, size(dimension_var%values), dimension_var%values, &
+                                 before_time, after_time, time_frac )
+
+    do n = 2, nforcings
+      forcings_array(n,:) = linear_interp_factor &
+                   ( time_frac, t_dependent_forcing_data(n)%values(:,after_time), &
+                     t_dependent_forcing_data(n)%values(:,before_time) )
+    end do
+
+    call apply_time_dependent_forcings_from_array( &
+                                                   ngrdcol, nzm, nzt, &
+                                                   sclr_dim, edsclr_dim, sclr_idx, &
+                                                   gr, rtm, rho, exner,  &
+                                                   forcings_array, &
+                                                   thlm_f, rtm_f, um_ref, vm_ref, um_f, vm_f, &
+                                                   wm_zt, wm_zm,  ug, vg, &
+                                                   sclrm_forcing, edsclrm_forcing )
+
+    return
+
   end subroutine apply_time_dependent_forcings
+
+  !================================================================================================
+  subroutine apply_time_dependent_forcings_from_dycore( &
+              ngrdcol, nzm, nzt, &
+              sclr_dim, edsclr_dim, sclr_idx, &
+              gr, dycore_gr, time, rtm, rho, exner,  &
+              total_idx_rho_lin_spline, rho_lin_spline_vals, &
+              rho_lin_spline_levels, &
+              thlm_f, rtm_f, um_ref, vm_ref, um_f, vm_f, &
+              wm_zt, wm_zm,  ug, vg, &
+              sclrm_forcing, edsclrm_forcing )
+    !
+    !  Description: This subroutine converts the time dependent information stored in
+    !  memory (time_dependent_forcing_data) which was read in to the dycore grid into the format
+    !  used by CLUBB and remaps it to the current physics grid.
+    !
+    !---------------------------------------------------------------------------------
+
+    use interpolation, only: &
+      linear_interp_factor ! Procedure(s)
+
+    use grid_class, only : &
+      grid, & ! Type
+      zt2zm   ! Procedure(s)
+
+    use clubb_precision, only: &
+      time_precision, &
+      core_rknd ! Variable(s)
+
+    use array_index, only: &
+      sclr_idx_type
+
+    use grid_adaptation_module, only: remap, &
+                                      check_mass_conservation, &
+                                      check_vertical_integral_conservation, &
+                                      check_remap_for_consistency
+
+    use error_code, only: &
+      clubb_at_least_debug_level
+
+    implicit none
+
+    !--------------------- Input Variables ---------------------
+    integer, intent(in) :: &
+      ngrdcol, &
+      nzm, &
+      nzt, &
+      sclr_dim, & 
+      edsclr_dim
+
+    type (sclr_idx_type), intent(in) :: &
+      sclr_idx
+
+    type (grid), intent(in) :: &
+      gr, dycore_gr
+
+    real(kind=time_precision), intent(in) :: &
+      time ! Model Time [s]
+
+    real( kind = core_rknd ), dimension(ngrdcol,nzt), intent(in) :: &
+      exner,   & ! Exner Function                             [-]
+      rho,     & ! Air Density                                [kg/m^3]
+      rtm        ! Total Water Mixing Ratio                   [kg/kg]
+
+    integer, intent(in) :: &
+      total_idx_rho_lin_spline ! number of indices for the linear spline definition arrays
+
+    real( kind = core_rknd ), dimension(total_idx_rho_lin_spline), intent(in) :: &
+      rho_lin_spline_vals, & ! rho values at the given altitudes
+      rho_lin_spline_levels  ! altitudes for the given rho values
+    ! Note: both these arrays need to be sorted from low to high altitude
+
+    !--------------------- Output Variables ---------------------
+    real( kind = core_rknd ), dimension(ngrdcol,nzt), intent(inout) :: &
+      thlm_f, & ! Potential Temperature forcing     [K/s]
+      rtm_f,  & ! Total Water Mixing Ration forcing [kg/kg/s]
+      um_ref, & ! um reference                      [m/s]
+      vm_ref, & ! vm reference                      [m/s]
+      um_f,   & ! um tendency                       [m/s/s]
+      vm_f,   & ! vm tendency                       [m/s/s]
+      wm_zt,  & ! subsidence on zt grid             [m/s]
+      ug,     & ! u geostrophic wind                [m/s]
+      vg        ! v geostrophic wind                [m/s]
+
+    real( kind = core_rknd ), dimension(ngrdcol,nzm), intent(inout) :: &
+      wm_zm     ! subsidense on zm grid             [m/s]
+
+    real( kind = core_rknd ), dimension(ngrdcol,nzt, sclr_dim), intent(inout) :: &
+      sclrm_forcing ! Scalar forcing [-]
+
+    real( kind = core_rknd ), dimension(ngrdcol,nzt, edsclr_dim), intent(inout) :: &
+      edsclrm_forcing ! Edscalar forcing [-]
+
+    !--------------------- Local Variables ---------------------
+    integer :: n, before_time, after_time
+
+    real( kind = core_rknd ), dimension(dycore_gr%nzt) :: temp_array_dycore
+
+    real( kind = core_rknd ), dimension(nforcings,nzt) :: forcings_array
+
+    real( kind = core_rknd ) :: time_frac
+
+    !--------------------- Begin Code ---------------------
+    time_frac = -1.0_core_rknd ! Default initialization
+
+    call time_select( time, size(dimension_var%values), dimension_var%values, &
+                                 before_time, after_time, time_frac )
+
+    do n = 2, nforcings
+
+      temp_array_dycore = linear_interp_factor &
+                          ( time_frac, t_dependent_forcing_data(n)%values(:,after_time), &
+                            t_dependent_forcing_data(n)%values(:,before_time) )
+
+      forcings_array(n,:) = remap( dycore_gr%nzm, gr%nzm, &
+                          dycore_gr%zm, gr%zm,&
+                          total_idx_rho_lin_spline, rho_lin_spline_vals, &
+                          rho_lin_spline_levels, &
+                          temp_array_dycore )
+
+      if ( clubb_at_least_debug_level( 2 ) ) then
+        call check_mass_conservation( dycore_gr%nzm, gr%nzm, &
+                                      dycore_gr%zm, &
+                                      gr%zm, &
+                                      total_idx_rho_lin_spline, rho_lin_spline_vals, &
+                                      rho_lin_spline_levels )
+
+        call check_vertical_integral_conservation( total_idx_rho_lin_spline, &
+                                                   rho_lin_spline_vals, &
+                                                   rho_lin_spline_levels, &
+                                                   dycore_gr%nzm, gr%nzm, &
+                                                   dycore_gr%zm, &
+                                                   gr%zm,&
+                                                   temp_array_dycore, &
+                                                   forcings_array(n,:) )
+        
+        call check_remap_for_consistency( dycore_gr%nzm, gr%nzm, &
+                                          dycore_gr%zm, &
+                                          gr%zm, &
+                                          total_idx_rho_lin_spline, &
+                                          rho_lin_spline_vals, &
+                                          rho_lin_spline_levels )
+      end if
+    end do
+
+    call apply_time_dependent_forcings_from_array( &
+                                                   ngrdcol, nzm, nzt, &
+                                                   sclr_dim, edsclr_dim, sclr_idx, &
+                                                   gr, rtm, rho, exner,  &
+                                                   forcings_array, &
+                                                   thlm_f, rtm_f, um_ref, vm_ref, um_f, vm_f, &
+                                                   wm_zt, wm_zm,  ug, vg, &
+                                                   sclrm_forcing, edsclrm_forcing )
+
+    return
+
+  end subroutine apply_time_dependent_forcings_from_dycore
 
   !================================================================================================
   subroutine time_select( time, nvar, time_array, &

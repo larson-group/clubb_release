@@ -383,10 +383,13 @@ module spurious_source_test
       penta_solve_method,             & ! Option to set the penta-diagonal matrix solving method
       tridiag_solve_method,           & ! Option to set the tri-diagonal matrix solving method
       saturation_formula,             & ! Integer that stores the saturation formula to be used
-      interp_from_dycore_grid_method    ! Integer that stores what interpolation technique should
-                                        ! be used to interpolate the values calculated on the 
-                                        ! dycore grid to the physics grid or if no interpolation 
+      remap_from_dycore_grid_method,  & ! Integer that stores what remapping technique should
+                                        ! be used to remap the values calculated on the 
+                                        ! dycore grid to the physics grid (to simulate the input
+                                        ! from the host model) or if no remapping 
                                         ! should be used at all
+      grid_adaptation_method            ! Integer that stores how the grid should be adapted every
+                                        ! timestep or if the grid should not be adapted at all
 
     logical :: &
       l_use_precip_frac,            & ! Flag to use precipitation fraction in KK microphysics. The
@@ -524,7 +527,8 @@ module spurious_source_test
                                          penta_solve_method, &
                                          tridiag_solve_method, &
                                          saturation_formula, &
-                                         interp_from_dycore_grid_method, &
+                                         remap_from_dycore_grid_method, &
+                                         grid_adaptation_method, &
                                          l_use_precip_frac, &
                                          l_predict_upwp_vpwp, &
                                          l_min_wp2_from_corr_wx, &
