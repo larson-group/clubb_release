@@ -422,7 +422,8 @@ module clubb_driver
     integer :: &
       itime, &        ! Local Loop Variables
       i, j, &
-      sclr, edsclr, & 
+      sclr, edsclr, &
+      sample, hm, & 
       iinit           ! initial iteration
 
     integer ::  & 
@@ -1237,6 +1238,10 @@ module clubb_driver
       return
 
     end if
+
+#ifdef _OPENACC
+    if ( l_restart ) stop "l_restart with OpenACC is not enabled"
+#endif
 
     ! Set debug level
     call set_clubb_debug_level( debug_level ) ! Intent(in)
@@ -2168,12 +2173,128 @@ module clubb_driver
     time_total = 0.0_core_rknd
     time_stop = 0.0_core_rknd
     time_start = 0.0_core_rknd
+
+
+    ! These variables are no
+    !sigma_sqd_w_zt         = zero        ! PDF width parameter interp. to t-levs.
+    !sigma_sqd_w            = zero          ! PDF width parameter (momentum levels)
+    !tau_zt                 = zero        ! Eddy dissipation time scale: thermo. levels
+    !tau_zm                 = zero          ! Eddy dissipation time scale: momentum levels
+    Ncm_mc                 = zero
+    Frad                   = zero          ! Radiative flux
+    Frad_SW_up             = zero
+    Frad_LW_up             = zero
+    Frad_SW_down           = zero
+    Frad_LW_down           = zero
+    wpNcp                  = zero
+    do k = 1, gr%nzt
+      do i = 1, ngrdcol
+        Nccnm(i,k)           = Nccnm_init(k)        ! CCN concentration (COAMPS/MG)
+        Ncm(i,k)             = Ncm_init(k)
+        Nc_in_cloud(i,k)     = Nc_in_cloud_init(k)
+        !em                  = em_init(k)
+      end do
+    end do
+
+    !$acc data copyin( gr, gr%zm, gr%zt, gr%dzm, gr%dzt, gr%invrs_dzt, gr%invrs_dzm, &
+    !$acc              gr%weights_zt2zm, gr%weights_zm2zt, &
+    !$acc              nu_vert_res_dep, nu_vert_res_dep%nu2, nu_vert_res_dep%nu9, &
+    !$acc              nu_vert_res_dep%nu1, nu_vert_res_dep%nu8, nu_vert_res_dep%nu10, &
+    !$acc              nu_vert_res_dep%nu6, &
+    !$acc              pdf_params, pdf_params_zm, &
+    !$acc              sclr_idx, clubb_params, hm_metadata, &
+    !$acc              T_sfc, p_sfc, fcor, sfc_elevation, &
+    !$acc              dummy_dx, dummy_dy, &
+    !$acc              pdf_params%w_1, pdf_params%w_2, pdf_params%varnce_w_1, &
+    !$acc              pdf_params%varnce_w_2, pdf_params%mixt_frac, &
+    !$acc              pdf_params_zm%w_1, pdf_params_zm%w_2, pdf_params_zm%varnce_w_1, &
+    !$acc              pdf_params_zm%varnce_w_2, pdf_params_zm%mixt_frac, &
+    !$acc              thlm_init, rtm_init, um_init, vm_init, ug_init, vg_init, &
+    !$acc              wp2_init, up2_init, vp2_init, rcm_init, wm_zt_init, &
+    !$acc              wm_zm_init, em_init, exner_init, thvm_init, p_in_Pa_init, &
+    !$acc              rho_init, rho_zm_init, rho_ds_zm_init, rho_ds_zt_init, &
+    !$acc              invrs_rho_ds_zm_init, invrs_rho_ds_zt_init, thv_ds_zm_init, &
+    !$acc              thv_ds_zt_init, rtm_ref_init, thlm_ref_init, um_ref_init, &
+    !$acc              vm_ref_init ) &
+    !$acc      create( rtm, wm_zt, ug, vg, um_ref, vm_ref, thlm_forcing, rtm_forcing, &
+    !$acc              um_forcing, vm_forcing, wm_zm, wprtp_forcing, wpthlp_forcing, &
+    !$acc              rtp2_forcing, thlp2_forcing, rtpthlp_forcing, wpthlp_sfc, &
+    !$acc              wprtp_sfc, upwp_sfc, vpwp_sfc, &
+    !$acc              deep_soil_T_in_K, sfc_soil_T_in_K, veg_T_in_K, rcm_mc, rvm_mc, &
+    !$acc              thlm_mc, radht, wprtp_mc, wpthlp_mc, rtp2_mc, thlp2_mc, rtpthlp_mc, &
+    !$acc              thlprcp, wprtp, wpthlp, rtp2, thlp2, rtpthlp, &
+    !$acc              wp2, wp3, wp2thvp, rtpthvp, thlpthvp, &
+    !$acc              rho_zm, rho, rho_ds_zm, rho_ds_zt, invrs_rho_ds_zm, &
+    !$acc              invrs_rho_ds_zt, thv_ds_zm, thv_ds_zt, &
+    !$acc              upwp_sfc_pert, vpwp_sfc_pert, rtm_ref, &
+    !$acc              thlm_ref, um, upwp, &
+    !$acc              vm, vpwp, up2, vp2, up3, vp3, thlm, &
+    !$acc              rtp3, thlp3, p_in_Pa, exner, &
+    !$acc              rcm, cloud_frac, wpthvp, wp2rtp, &
+    !$acc              wp2thlp, uprcp, vprcp, rc_coef_zm, wp4, wpup2, wpvp2, &
+    !$acc              wp2up2, wp2vp2, ice_supersat_frac, um_pert, vm_pert, upwp_pert, vpwp_pert, &
+    !$acc              rcm_in_layer, cloud_cover, wprcp, w_up_in_cloud, w_down_in_cloud, cloudy_updraft_frac, &
+    !$acc              cloudy_downdraft_frac, invrs_tau_zm, Kh_zt, Kh_zm, Lscale, &
+    !$acc              X_nl_all_levs, x_mixt_comp_all_levs, lh_sample_point_weights,  &
+    !$acc              lh_rt_clipped, lh_thl_clipped, lh_rc_clipped, lh_rv_clipped, lh_Nc_clipped, &
+    !$acc              mu_x_1_n, mu_x_2_n, sigma_x_1_n, sigma_x_2_n, &
+    !$acc              corr_array_1_n, corr_array_2_n, corr_cholesky_mtx_1, corr_cholesky_mtx_2, &
+    !$acc              rfrzm, thvm, &
+    !$acc              pdf_params%rt_1, pdf_params%rt_2, &
+    !$acc              pdf_params%varnce_rt_1, pdf_params%varnce_rt_2, pdf_params%thl_1, &
+    !$acc              pdf_params%thl_2, pdf_params%varnce_thl_1, pdf_params%varnce_thl_2, &
+    !$acc              pdf_params%corr_w_rt_1, pdf_params%corr_w_rt_2, pdf_params%corr_w_thl_1, &
+    !$acc              pdf_params%corr_w_thl_2, pdf_params%corr_rt_thl_1, pdf_params%corr_rt_thl_2, &
+    !$acc              pdf_params%alpha_thl, pdf_params%alpha_rt, pdf_params%crt_1, pdf_params%crt_2, &
+    !$acc              pdf_params%cthl_1, pdf_params%cthl_2, pdf_params%chi_1, pdf_params%chi_2, &
+    !$acc              pdf_params%stdev_chi_1, pdf_params%stdev_chi_2, pdf_params%stdev_eta_1, &
+    !$acc              pdf_params%stdev_eta_2, pdf_params%covar_chi_eta_1, pdf_params%covar_chi_eta_2, &
+    !$acc              pdf_params%corr_w_chi_1, pdf_params%corr_w_chi_2, pdf_params%corr_w_eta_1, &
+    !$acc              pdf_params%corr_w_eta_2, pdf_params%corr_chi_eta_1, pdf_params%corr_chi_eta_2, &
+    !$acc              pdf_params%rsatl_1, pdf_params%rsatl_2, pdf_params%rc_1, pdf_params%rc_2, &
+    !$acc              pdf_params%cloud_frac_1, pdf_params%cloud_frac_2, &
+    !$acc              pdf_params%ice_supersat_frac_1, pdf_params%ice_supersat_frac_2, &
+    !$acc              pdf_params_zm%rt_1, pdf_params_zm%rt_2, &
+    !$acc              pdf_params_zm%varnce_rt_1, pdf_params_zm%varnce_rt_2, pdf_params_zm%thl_1, &
+    !$acc              pdf_params_zm%thl_2, pdf_params_zm%varnce_thl_1, pdf_params_zm%varnce_thl_2, &
+    !$acc              pdf_params_zm%corr_w_rt_1, pdf_params_zm%corr_w_rt_2, pdf_params_zm%corr_w_thl_1, &
+    !$acc              pdf_params_zm%corr_w_thl_2, pdf_params_zm%corr_rt_thl_1, pdf_params_zm%corr_rt_thl_2, &
+    !$acc              pdf_params_zm%alpha_thl, pdf_params_zm%alpha_rt, pdf_params_zm%crt_1, pdf_params_zm%crt_2, &
+    !$acc              pdf_params_zm%cthl_1, pdf_params_zm%cthl_2, pdf_params_zm%chi_1, pdf_params_zm%chi_2, &
+    !$acc              pdf_params_zm%stdev_chi_1, pdf_params_zm%stdev_chi_2, pdf_params_zm%stdev_eta_1, &
+    !$acc              pdf_params_zm%stdev_eta_2, pdf_params_zm%covar_chi_eta_1, pdf_params_zm%covar_chi_eta_2, &
+    !$acc              pdf_params_zm%corr_w_chi_1, pdf_params_zm%corr_w_chi_2, pdf_params_zm%corr_w_eta_1, &
+    !$acc              pdf_params_zm%corr_w_eta_2, pdf_params_zm%corr_chi_eta_1, pdf_params_zm%corr_chi_eta_2, &
+    !$acc              pdf_params_zm%rsatl_1, pdf_params_zm%rsatl_2, pdf_params_zm%rc_1, pdf_params_zm%rc_2, &
+    !$acc              pdf_params_zm%cloud_frac_1, pdf_params_zm%cloud_frac_2, &
+    !$acc              pdf_params_zm%ice_supersat_frac_1, pdf_params_zm%ice_supersat_frac_2 )
+
+
+    !$acc data if( sclr_dim > 0 ) &
+    !$acc      copyin( sclr_tol ) &
+    !$acc      create( sclrm_forcing, wpsclrp_sfc, sclrm, &
+    !$acc              wpsclrp, sclrp2, sclrp3, sclrprtp, sclrpthlp, sclrpthvp )
+
+    !$acc data if( edsclr_dim > 0 ) &
+    !$acc      create( wpedsclrp_sfc, edsclrm_forcing, edsclrm )
+
+    !$acc data if( hydromet_dim > 0 ) &
+    !$acc      copyin( hm_metadata%l_mix_rat_hm ) &
+    !$acc      create( wphydrometp, wp2hmp, rtphmp_zt, thlphmp_zt )
     
     ! Initialize silhs samples to indicate unused status, these are overwritten if silhs is used
-    X_nl_all_levs = -999._core_rknd
-    X_mixt_comp_all_levs = -999
-    lh_sample_point_weights = -999._core_rknd
+    !$acc parallel loop gang vector collapse(3) default(present)
+    do sample = 1, lh_num_samples
+      do k = 1, gr%nzt
+        do i = 1, ngrdcol
+          X_nl_all_levs(i,k,sample,:)         = -999._core_rknd
+          X_mixt_comp_all_levs(i,k,sample)    = -999
+          lh_sample_point_weights(i,k,sample) = -999._core_rknd
+        end do
+      end do
+    end do
 
+    !$acc parallel loop gang vector collapse(2) default(present)
     do k = 1, gr%nzt
       do i = 1, ngrdcol
         um(i,k)                     = um_init(k)        ! u wind
@@ -2205,8 +2326,6 @@ module clubb_driver
         ice_supersat_frac(i,k)      = zero
         rcm_in_layer(i,k)           = zero
         cloud_cover(i,k)            = zero
-        sigma_sqd_w_zt(i,k)         = zero        ! PDF width parameter interp. to t-levs.
-        wp2_zt(i,k)                 = w_tol_sqd   ! wp2 interpolated to thermo. levels
         ug(i,k)                     = ug_init(k)        ! u geostrophic wind
         vg(i,k)                     = vg_init(k)        ! v geostrophic wind
         um_ref(i,k)                 = um_ref_init(k)
@@ -2224,18 +2343,14 @@ module clubb_driver
         wpvp2(i,k)                  = zero        ! w'v'^2
         Kh_zt(i,k)                  = zero        ! Eddy diffusivity coefficient: thermo. levels
         Lscale(i,k)                 = zero
-        tau_zt(i,k)                 = zero        ! Eddy dissipation time scale: thermo. levels
-        Nccnm(i,k)                  = Nccnm_init(k)        ! CCN concentration (COAMPS/MG)
-        Ncm(i,k)                    = Ncm_init(k)
-        Nc_in_cloud(i,k)            = Nc_in_cloud_init(k)
         rvm_mc(i,k)                 = zero
         rcm_mc(i,k)                 = zero
         thlm_mc(i,k)                = zero
         rfrzm(i,k)                  = zero
-        Ncm_mc(i,k)                 = zero
       end do
     end do
 
+    !$acc parallel loop gang vector collapse(2) default(present)
     do k = 1, gr%nzm
       do i = 1, ngrdcol
         upwp(i,k)             = zero          ! vertical u momentum flux
@@ -2262,13 +2377,6 @@ module clubb_driver
         vpwp_pert(i,k)        = zero
         wm_zm(i,k)            = wm_zm_init(k)          ! Imposed large scale w - Momentum levels
         invrs_tau_zm(i,k)     = zero
-        sigma_sqd_w(i,k)      = zero          ! PDF width parameter (momentum levels)
-        Skw_zm(i,k)           = zero          ! Skewness of w on momentum levels
-        Frad(i,k)             = zero          ! Radiative flux
-        Frad_SW_up(i,k)       = zero
-        Frad_LW_up(i,k)       = zero
-        Frad_SW_down(i,k)     = zero
-        Frad_LW_down(i,k)     = zero
         thlprcp(i,k)          = zero
         rtpthvp(i,k)          = zero          ! rt'thv'
         thlpthvp(i,k)         = zero          ! thl'thv'
@@ -2280,9 +2388,6 @@ module clubb_driver
         wp2up2(i,k)           = zero          ! w'^2 u'^2
         wp2vp2(i,k)           = zero          ! w'^2 v'^2
         Kh_zm(i,k)            = zero          ! Eddy diffusivity coefficient: momentum levels
-        em(i,k)               = em_init(k)
-        tau_zm(i,k)           = zero          ! Eddy dissipation time scale: momentum levels
-        wpNcp(i,k)            = zero
         wprtp_mc(i,k)         = zero
         wpthlp_mc(i,k)        = zero
         rtp2_mc(i,k)          = zero
@@ -2292,11 +2397,12 @@ module clubb_driver
     end do
 
     ! Surface fluxes
+    !$acc parallel loop gang vector default(present)
     do i = 1, ngrdcol
-      wpthlp_sfc(i)   = zero
-      wprtp_sfc(i)    = zero
-      upwp_sfc(i)     = zero
-      vpwp_sfc(i)     = zero
+      wpthlp_sfc(i)       = zero
+      wprtp_sfc(i)        = zero
+      upwp_sfc(i)         = zero
+      vpwp_sfc(i)         = zero
       deep_soil_T_in_K(i) = deep_soil_T_in_K_init
       sfc_soil_T_in_K(i)  = sfc_soil_T_in_K_init
       veg_T_in_K(i)       = veg_T_in_K_init
@@ -2305,6 +2411,7 @@ module clubb_driver
     ! Passive scalars
     if ( sclr_dim > 0 ) then
 
+      !$acc parallel loop gang vector collapse(3) default(present)
       do sclr = 1, sclr_dim
         do k = 1, gr%nzt
           do i = 1, ngrdcol
@@ -2315,6 +2422,7 @@ module clubb_driver
         end do
       end do
 
+      !$acc parallel loop gang vector collapse(3) default(present)
       do sclr = 1, sclr_dim
         do k = 1, gr%nzm
           do i = 1, ngrdcol
@@ -2327,6 +2435,7 @@ module clubb_driver
         end do
       end do
 
+      !$acc parallel loop gang vector collapse(2) default(present)
       do sclr = 1, sclr_dim
         do i = 1, ngrdcol
           wpsclrp_sfc(i,sclr) = zero
@@ -2337,6 +2446,7 @@ module clubb_driver
 
     if ( edsclr_dim > 0 ) then
 
+      !$acc parallel loop gang vector collapse(3) default(present)
       do edsclr = 1, edsclr_dim
         do k = 1, gr%nzt
           do i = 1, ngrdcol
@@ -2346,6 +2456,7 @@ module clubb_driver
         end do
       end do
 
+      !$acc parallel loop gang vector collapse(2) default(present)
       do edsclr = 1, edsclr_dim
         do i = 1, ngrdcol
           wpedsclrp_sfc(i,edsclr)   = zero
@@ -2356,18 +2467,34 @@ module clubb_driver
 
     if ( hydromet_dim > 0 ) then
 
+      !$acc parallel loop gang vector collapse(3) default(present)
+      do hm = 1, hydromet_dim
+        do k = 1, gr%nzt
+          do i = 1, ngrdcol
+            thlphmp_zt(i,k,hm)  = zero
+            rtphmp_zt(i,k,hm)   = zero
+            wp2hmp(i,k,hm)      = zero
+          end do
+        end do
+      end do
+
+      !$acc parallel loop gang vector collapse(3) default(present)
+      do hm = 1, hydromet_dim
+        do k = 1, gr%nzm
+          do i = 1, ngrdcol
+            wphydrometp(i,k,hm) = zero
+          end do
+        end do
+      end do
+
+      ! These are not used in any GPU code yet
       hydromet    = zero
-      wp2hmp      = zero
-      rtphmp_zt   = zero
-      thlphmp_zt  = zero
       hydromet_mc = zero
       hydromet_vel_zt = zero
       hydromet_vel_covar_zt_impc = zero
       hydromet_vel_covar_zt_expc = zero
-      
       K_hm = zero ! Eddy diff. coef. for hydromets.: mom. levs.
       hydrometp2  = zero
-      wphydrometp = zero
 
     end if
 
@@ -2438,78 +2565,6 @@ module clubb_driver
 !-------------------------------------------------------------------------------
 !                         Main Time Stepping Loop
 !-------------------------------------------------------------------------------
-
-    !$acc data copyin( gr, gr%zm, gr%zt, gr%dzm, gr%dzt, gr%invrs_dzt, gr%invrs_dzm, &
-    !$acc              gr%weights_zt2zm, gr%weights_zm2zt, &
-    !$acc              nu_vert_res_dep, nu_vert_res_dep%nu2, nu_vert_res_dep%nu9, &
-    !$acc              nu_vert_res_dep%nu1, nu_vert_res_dep%nu8, nu_vert_res_dep%nu10, &
-    !$acc              nu_vert_res_dep%nu6, &
-    !$acc              pdf_params, pdf_params_zm, &
-    !$acc              sclr_idx, clubb_params, hm_metadata, &
-    !$acc              pdf_params%w_1, pdf_params%w_2, pdf_params%varnce_w_1, &
-    !$acc              pdf_params%varnce_w_2, pdf_params%rt_1, pdf_params%rt_2, &
-    !$acc              pdf_params%varnce_rt_1, pdf_params%varnce_rt_2, pdf_params%thl_1, &
-    !$acc              pdf_params%thl_2, pdf_params%varnce_thl_1, pdf_params%varnce_thl_2, &
-    !$acc              pdf_params%corr_w_rt_1, pdf_params%corr_w_rt_2, pdf_params%corr_w_thl_1, &
-    !$acc              pdf_params%corr_w_thl_2, pdf_params%corr_rt_thl_1, pdf_params%corr_rt_thl_2, &
-    !$acc              pdf_params%alpha_thl, pdf_params%alpha_rt, pdf_params%crt_1, pdf_params%crt_2, &
-    !$acc              pdf_params%cthl_1, pdf_params%cthl_2, pdf_params%chi_1, pdf_params%chi_2, &
-    !$acc              pdf_params%stdev_chi_1, pdf_params%stdev_chi_2, pdf_params%stdev_eta_1, &
-    !$acc              pdf_params%stdev_eta_2, pdf_params%covar_chi_eta_1, pdf_params%covar_chi_eta_2, &
-    !$acc              pdf_params%corr_w_chi_1, pdf_params%corr_w_chi_2, pdf_params%corr_w_eta_1, &
-    !$acc              pdf_params%corr_w_eta_2, pdf_params%corr_chi_eta_1, pdf_params%corr_chi_eta_2, &
-    !$acc              pdf_params%rsatl_1, pdf_params%rsatl_2, pdf_params%rc_1, pdf_params%rc_2, &
-    !$acc              pdf_params%cloud_frac_1, pdf_params%cloud_frac_2, pdf_params%mixt_frac, &
-    !$acc              pdf_params%ice_supersat_frac_1, pdf_params%ice_supersat_frac_2, &
-    !$acc              pdf_params_zm%w_1, pdf_params_zm%w_2, pdf_params_zm%varnce_w_1, &
-    !$acc              pdf_params_zm%varnce_w_2, pdf_params_zm%rt_1, pdf_params_zm%rt_2, &
-    !$acc              pdf_params_zm%varnce_rt_1, pdf_params_zm%varnce_rt_2, pdf_params_zm%thl_1, &
-    !$acc              pdf_params_zm%thl_2, pdf_params_zm%varnce_thl_1, pdf_params_zm%varnce_thl_2, &
-    !$acc              pdf_params_zm%corr_w_rt_1, pdf_params_zm%corr_w_rt_2, pdf_params_zm%corr_w_thl_1, &
-    !$acc              pdf_params_zm%corr_w_thl_2, pdf_params_zm%corr_rt_thl_1, pdf_params_zm%corr_rt_thl_2, &
-    !$acc              pdf_params_zm%alpha_thl, pdf_params_zm%alpha_rt, pdf_params_zm%crt_1, pdf_params_zm%crt_2, &
-    !$acc              pdf_params_zm%cthl_1, pdf_params_zm%cthl_2, pdf_params_zm%chi_1, pdf_params_zm%chi_2, &
-    !$acc              pdf_params_zm%stdev_chi_1, pdf_params_zm%stdev_chi_2, pdf_params_zm%stdev_eta_1, &
-    !$acc              pdf_params_zm%stdev_eta_2, pdf_params_zm%covar_chi_eta_1, pdf_params_zm%covar_chi_eta_2, &
-    !$acc              pdf_params_zm%corr_w_chi_1, pdf_params_zm%corr_w_chi_2, pdf_params_zm%corr_w_eta_1, &
-    !$acc              pdf_params_zm%corr_w_eta_2, pdf_params_zm%corr_chi_eta_1, pdf_params_zm%corr_chi_eta_2, &
-    !$acc              pdf_params_zm%rsatl_1, pdf_params_zm%rsatl_2, pdf_params_zm%rc_1, pdf_params_zm%rc_2, &
-    !$acc              pdf_params_zm%cloud_frac_1, pdf_params_zm%cloud_frac_2, pdf_params_zm%mixt_frac, &
-    !$acc              pdf_params_zm%ice_supersat_frac_1, pdf_params_zm%ice_supersat_frac_2, &
-    !$acc              rtm, wm_zt, ug, vg, um_ref, vm_ref, thlm_forcing, rtm_forcing, &
-    !$acc              um_forcing, vm_forcing, wm_zm, wprtp_forcing, wpthlp_forcing, &
-    !$acc              rtp2_forcing, thlp2_forcing, rtpthlp_forcing, wpthlp_sfc, &
-    !$acc              wprtp_sfc, upwp_sfc, vpwp_sfc, T_sfc, p_sfc, &
-    !$acc              deep_soil_T_in_K, sfc_soil_T_in_K, veg_T_in_K, rcm_mc, rvm_mc, &
-    !$acc              thlm_mc, radht, wprtp_mc, wpthlp_mc, rtp2_mc, thlp2_mc, rtpthlp_mc, &
-    !$acc              thlprcp, wprtp, wpthlp, rtp2, thlp2, rtpthlp, &
-    !$acc              wp2, wp3, wp2thvp, rtpthvp, thlpthvp, fcor, sfc_elevation, &
-    !$acc              rho_zm, rho, rho_ds_zm, rho_ds_zt, invrs_rho_ds_zm, &
-    !$acc              invrs_rho_ds_zt, thv_ds_zm, thv_ds_zt, &
-    !$acc              upwp_sfc_pert, vpwp_sfc_pert, rtm_ref, &
-    !$acc              thlm_ref, dummy_dx, dummy_dy, um, upwp, &
-    !$acc              vm, vpwp, up2, vp2, up3, vp3, thlm, &
-    !$acc              rtp3, thlp3, p_in_Pa, exner, &
-    !$acc              rcm, cloud_frac, wpthvp, wp2rtp, &
-    !$acc              wp2thlp, uprcp, vprcp, rc_coef_zm, wp4, wpup2, wpvp2, &
-    !$acc              wp2up2, wp2vp2, ice_supersat_frac, um_pert, vm_pert, upwp_pert, vpwp_pert, &
-    !$acc              rcm_in_layer, cloud_cover, wprcp, w_up_in_cloud, w_down_in_cloud, cloudy_updraft_frac, &
-    !$acc              cloudy_downdraft_frac, invrs_tau_zm, Kh_zt, Kh_zm, Lscale, &
-    !$acc              X_nl_all_levs, x_mixt_comp_all_levs, lh_sample_point_weights,  &
-    !$acc              lh_rt_clipped, lh_thl_clipped, lh_rc_clipped, lh_rv_clipped, lh_Nc_clipped, &
-    !$acc              mu_x_1_n, mu_x_2_n, sigma_x_1_n, sigma_x_2_n, &
-    !$acc              corr_array_1_n, corr_array_2_n, corr_cholesky_mtx_1, corr_cholesky_mtx_2, &
-    !$acc              rfrzm, thvm  )
-
-    !$acc data if( sclr_dim > 0 ) &
-    !$acc      copyin( sclr_tol, sclrm_forcing, wpsclrp_sfc, sclrm, &
-    !$acc              wpsclrp, sclrp2, sclrp3, sclrprtp, sclrpthlp, sclrpthvp )
-
-    !$acc data if( edsclr_dim > 0 ) &
-    !$acc      copyin( wpedsclrp_sfc, edsclrm_forcing, edsclrm )
-
-    !$acc data if( hydromet_dim > 0 ) &
-    !$acc      copyin( wphydrometp, wp2hmp, rtphmp_zt, thlphmp_zt, hm_metadata%l_mix_rat_hm )
 
     mainloop: do itime = iinit, ifinal, 1
       
@@ -4324,6 +4379,8 @@ module clubb_driver
       rho_dry         ! Dry air density (thermodynamic levels)         [kg/m^3]
 
     real( kind = core_rknd ), dimension(gr%nzm) ::  &
+      tmp, &
+      thm_zm, &
       exner_zm,     & ! Exner on momentum levels                       [-]
       th_dry_zm,    & ! Dry potential temperature on momentum levels   [K]
       p_dry_zm,     & ! Dry air pressure on momentum levels            [Pa]
@@ -4616,13 +4673,13 @@ module clubb_driver
     ! Dry pressure at momentum level k = 1 is the dry pressure at the surface.
     p_dry_zm(1) = pd_sfc
 
+    tmp(:) = zt2zm( gr, rtm(1,:) - rcm(1,:) )
+
     do k = 2, gr%nzm, 1
        ! Calculate dry pressure on momentum levels from total pressure (on
        ! momentum levels) and water vapor mixing ratio (interpolated to
        ! momentum levels), such that:  p_d = p / [ 1 + (R_v/R_d)*r_v ].
-       p_dry_zm(k) = p_in_Pa_zm(k) &
-                     / ( one + ep2 * max( zt2zm( gr, rtm(1,:) - rcm(1,:), k ), &
-                                          zero_threshold ) )
+       p_dry_zm(k) = p_in_Pa_zm(k) / ( one + ep2 * max( tmp(k), zero_threshold ) )
     enddo
 
     do k = 1, gr%nzm, 1
@@ -4631,12 +4688,12 @@ module clubb_driver
        exner_dry_zm(k) = ( p_dry_zm(k) / p0 )**kappa
     enddo
 
+    thm_zm(:) = zt2zm( gr, thm(1,:) )
+
     ! Calculate theta_d on momentum levels by interpolating theta and water
     ! vapor mixing ratio to momentum levels.
     do k = 1, gr%nzm, 1
-       th_dry_zm(k) = zt2zm( gr, thm(1,:), k ) &
-                      * ( one + ep2 * max( zt2zm( gr, rtm(1,:) - rcm(1,:), k ), &
-                                           zero_threshold ) )**kappa
+       th_dry_zm(k) = thm_zm(k) * ( one + ep2 * max( tmp(k), zero_threshold ) )**kappa
     enddo
 
     ! Compute dry density on momentum levels using dry pressure on momentum
