@@ -539,7 +539,7 @@ module model_flags
     l_mono_flux_lim_vm = .true.
     l_mono_flux_lim_spikefix = .true.
     l_host_applies_sfc_fluxes = .false.
-    l_wp2_fill_holes_tke = .false.
+    l_wp2_fill_holes_tke = .true.
 
     return
   end subroutine set_default_clubb_config_flags
