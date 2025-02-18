@@ -3199,15 +3199,21 @@ module clubb_driver
       time_output_multi_col = time_output_multi_col + time_stop - time_start
 
       if ( grid_adaptation_method > 0 .and. modulo(itime, 1) == 0) then
+
         call cpu_time(time_start)
+      
         if ( grid_adaptation_method == 1 ) then
+      
           call calc_grid_dens_func( ngrdcol, gr%nzt, gr%zt, &
                                     Lscale, wp2_zt, &
                                     gr%zm(1,1), gr%zm(1,gr%nzm), &
                                     gr_dens_z, gr_dens_heights )
+      
         else if ( grid_adaptation_method > 1 ) then
+      
           write(fstderr,*) 'There is currently no grid adaptation method implemented for ', &
                            'grid_adaptation_method=', grid_adaptation_method
+        
         end if
 
         call adapt_grid( ngrdcol, gr%nzt, &                                      ! Intent(in)
@@ -3247,6 +3253,7 @@ module clubb_driver
           ! if we want to adapt the grid over time, but don't want to simulate the host model by
           ! getting forcings on the dycore grid, we need to adjust the forcings everytime for the
           ! newly created grid from the raw data in the forcings file
+          ! TODO does this only work with 1D input?
           call initialize_t_dependent_input &
                        ( iunit, runtype, gr%nzt, gr%zt(1,:), p_in_Pa, &
                          remap_from_dycore_grid_method, &
