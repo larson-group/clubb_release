@@ -3891,13 +3891,13 @@ module clubb_driver
         ! attention on how the forcings are read in from object t_dependent_forcing_data
         ! in time_dependent_input
         call initialize_t_dependent_input &
-                   ( iunit, runtype, dycore_gr%nzt, dycore_gr%zt(1,:), p_in_Pa_dycore, &
+                   ( iunit, runtype, dycore_gr%nzt, dycore_gr%zt(1,:), p_in_Pa_dycore(1,:), &
                      remap_from_dycore_grid_method, grid_adaptation_method )
       else
         ! no simulating forcings input from host model on dycore grid
         ! remap_from_dycore_grid_method == 0
         call initialize_t_dependent_input &
-                     ( iunit, runtype, gr%nzt, gr%zt(1,:), p_in_Pa, &
+                     ( iunit, runtype, gr%nzt, gr%zt(1,:), p_in_Pa(1,:), &
                        remap_from_dycore_grid_method, grid_adaptation_method )
       end if
 

@@ -264,8 +264,8 @@ module mixing_length
  
     ! Initialize arrays and precalculate values for computational efficiency
     !$acc parallel loop gang vector collapse(2) default(present)
-    do i = 1, ngrdcol
-      do k = 1, nzt
+    do k = 1, nzt
+      do i = 1, ngrdcol
 
         ! Initialize up and down arrays
         Lscale_up(i,k) = zlmin
@@ -304,8 +304,8 @@ module mixing_length
     ! recursively for a parcel as it ascends
 
     !$acc parallel loop gang vector collapse(2) default(present)
-    do i = 1, ngrdcol  
-      do j = 2, nzt-1
+    do j = 2, nzt-1
+      do i = 1, ngrdcol  
 
         thl_par_j_precalc(i,j) = thlm(i,j) - thlm(i,j-1) * exp_mu_dzm(i,j)  &
                                  - ( thlm(i,j) - thlm(i,j-1) ) * entrain_coef(i,j)
@@ -327,8 +327,8 @@ module mixing_length
 
     ! Calculate initial thl, tl, and rt for parcels at each grid level
     !$acc parallel loop gang vector collapse(2) default(present)
-    do i = 1, ngrdcol
-     do j = 2, nzt
+    do j = 2, nzt
+      do i = 1, ngrdcol
 
         thl_par_1(i,j) = thlm(i,j) - ( thlm(i,j) - thlm(i,j-1) ) * entrain_coef(i,j)
 
@@ -555,8 +555,8 @@ module mixing_length
     ! more than one level. They are used in the equations that calculate thl and rt
     ! recursively for a parcel as it descends
     !$acc parallel loop gang vector collapse(2) default(present)    
-    do i = 1, ngrdcol
-      do j = 1, nzt-1
+    do j = 1, nzt-1
+      do i = 1, ngrdcol
 
         thl_par_j_precalc(i,j) = thlm(i,j) - thlm(i,j+1) * exp_mu_dzm(i,j+1)  &
                                - ( thlm(i,j) - thlm(i,j+1) ) * entrain_coef(i,j+1)
@@ -577,8 +577,8 @@ module mixing_length
 
     ! Calculate initial thl, tl, and rt for parcels at each grid level
     !$acc parallel loop gang vector collapse(2) default(present)    
-    do i = 1, ngrdcol
-      do j = 1, nzt-1
+    do j = 1, nzt-1
+      do i = 1, ngrdcol
 
         thl_par_1(i,j) = thlm(i,j) - ( thlm(i,j) - thlm(i,j+1) )  * entrain_coef(i,j+1)
 

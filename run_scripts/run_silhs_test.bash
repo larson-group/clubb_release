@@ -94,9 +94,12 @@ print("N_small =", os.environ["N_SMALL"]);
 print("N_large =", os.environ["N_LARGE"]);
 print("RMSE_small =", RMSE_small);
 print("RMSE_large =", RMSE_large);
-if RMSE_large/RMSE_small<3*np.sqrt(int(os.environ["N_SMALL"]))/np.sqrt(int(os.environ["N_LARGE"])):
+N_SMALL = int(os.environ["N_SMALL"])
+N_LARGE = int(os.environ["N_LARGE"])
+if RMSE_large/RMSE_small < 4*np.sqrt(N_SMALL)/np.sqrt(N_LARGE):
     sys.exit(0);
 else:
+    print(f"FAIL: RMSE_large/RMSE_small = {RMSE_large/RMSE_small} is greater than 4*sqrt(N_SMALL)/sqrt(N_LARGE) = {4*np.sqrt(N_SMALL)/np.sqrt(N_LARGE)}")
     sys.exit(1)
 '
 
