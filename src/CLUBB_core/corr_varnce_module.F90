@@ -8,8 +8,7 @@ module corr_varnce_module
 
   use error_code, only: &
         clubb_at_least_debug_level, &   ! Procedure
-        clubb_fatal_error, &            ! Constant
-        err_code                        ! Error indicator
+        clubb_fatal_error               ! Constant
 
   implicit none
 
@@ -954,7 +953,8 @@ module corr_varnce_module
 
   !-----------------------------------------------------------------------------
   subroutine assert_corr_symmetric( corr_array_n, & ! intent(in)
-                                    pdf_dim)        ! intent(in)
+                                    pdf_dim, &      ! intent(in)
+                                    err_code )      ! intent(inout)
 
     ! Description:
     !   Asserts that corr_matrix(i,j) == corr_matrix(j,i) for all indeces
@@ -973,6 +973,10 @@ module corr_varnce_module
 
     real( kind = core_rknd ), dimension(pdf_dim, pdf_dim), &
       intent(in) :: corr_array_n ! Normal space correlation array to be checked
+
+    ! Input/Output Variables
+    integer, intent(inout) :: &
+      err_code      ! Error code catching and relaying any errors occurring in this subroutine
 
     ! Local Variables
 

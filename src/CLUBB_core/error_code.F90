@@ -36,17 +36,16 @@ module error_code
     integer, save :: clubb_debug_level = 0
     !$acc declare create(clubb_debug_level)
 
-    integer, public :: err_code = 0;
-
     character(len=35), public :: err_header
 
-!$omp threadprivate(err_code,err_header)
+!$omp threadprivate(err_code, err_header)
 
     ! Error Code Values
     integer, parameter, public :: & 
-        clubb_no_error                 = 0, & 
+        clubb_no_error                 = 0, &
         clubb_fatal_error              = 99
 
+    integer, public :: err_code = clubb_no_error;
     contains
 !-------------------------------------------------------------------------------
 ! Description:

@@ -36,8 +36,8 @@ program jacobian
 
   use error_code, only: &
         clubb_at_least_debug_level,  & ! Procedure
-        err_code,                    & ! Error Indicator
-        clubb_fatal_error              ! Constant
+        clubb_fatal_error,           & ! Constant
+        clubb_no_error
 
   use clubb_model_settings, only: &
     PosInf ! Variable(s)
@@ -114,10 +114,11 @@ program jacobian
   character(len=12), save :: write_format = "(XX(E18.10))"
 
   integer :: &
-    nzt, &        ! Thermo grid levels
-    nzm, &        ! Momentum grid levels
-    alloc_stat, & ! Det. whether array allocation worked
-    i, j, k       ! loop variables
+    nzt, &          ! Thermo grid levels
+    nzm, &          ! Momentum grid levels
+    alloc_stat, &   ! Det. whether array allocation worked
+    i, j, k, &      ! loop variables
+    err_code        ! Error status output of run_clubb
 
   real( kind = core_rknd ) ::  & 
     delta_factor, & ! Factor that tunable parameters are multiplied by
@@ -178,9 +179,10 @@ program jacobian
     write(unit=*,fmt='(a27,2f12.5)') trim( clubb_params%name(i) ),  & 
       clubb_params%value(1,i), clubb_params%value(1,i) * delta_factor
   end do
-  
+
+  err_code = clubb_no_error
   call run_clubb( 1, 1, l_output_multi_col, l_output_double_prec, &
-                  clubb_params%value(1,:), 'jacobian.in', l_stdout )
+                  clubb_params%value(1,:), 'jacobian.in', l_stdout, err_code )
 
   if ( clubb_at_least_debug_level( 0 ) ) then
     if ( err_code == clubb_fatal_error ) then
@@ -277,8 +279,9 @@ program jacobian
     tmp_param = clubb_params%value(1,i)
     clubb_params%value(1,i) = clubb_params%value(1,i) * delta_factor
 
+    err_code = clubb_no_error
     call run_clubb( 1, 1, l_output_multi_col, l_output_double_prec, &
-                    clubb_params%value(1,:), 'jacobian.in', l_stdout )
+                    clubb_params%value(1,:), 'jacobian.in', l_stdout, err_code )
 
     ! Print a period so the user knows something is happening
     write(unit=fstdout, fmt='(a1)', advance='no') "."

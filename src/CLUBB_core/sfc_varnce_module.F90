@@ -14,8 +14,8 @@ module sfc_varnce_module
   !=============================================================================
   subroutine calc_sfc_varnce( nzm, nzt, ngrdcol, sclr_dim, sclr_idx, &
                               gr, dt, sfc_elevation, & 
-                              upwp_sfc, vpwp_sfc, wpthlp, wprtp_sfc, & 
-                              um, vm, Lscale_up, wpsclrp_sfc, & 
+                              upwp_sfc, vpwp_sfc, wpthlp, wprtp_sfc, &
+                              um, vm, Lscale_up, wpsclrp_sfc, &
                               lhs_splat_wp2, tau_zm, &
                               !wp2_splat_sfc, tau_zm_sfc, &
                               l_vary_convect_depth, &
@@ -23,9 +23,10 @@ module sfc_varnce_module
                               a_const, &
                               stats_metadata, &
                               stats_zm, &
-                              wp2, up2, vp2, & 
-                              thlp2, rtp2, rtpthlp, & 
-                              sclrp2, sclrprtp,  sclrpthlp )
+                              wp2, up2, vp2, &
+                              thlp2, rtp2, rtpthlp, &
+                              sclrp2, sclrprtp,  sclrpthlp, &
+                              err_code )
 
     ! Description:
     ! This subroutine computes estimate of the surface thermodynamic and wind
@@ -40,7 +41,7 @@ module sfc_varnce_module
     use grid_class, only: &
         grid
 
-    use parameters_model, only:  & 
+    use parameters_model, only: &
         T0 ! Variable(s)
 
     use constants_clubb, only: &
@@ -60,12 +61,11 @@ module sfc_varnce_module
         fstderr,    &
         wp2_max
 
-    use numerical_check, only: & 
+    use numerical_check, only: &
         sfc_varnce_check ! Procedure
 
     use error_code, only: &
         clubb_at_least_debug_level,  & ! Procedure
-        err_code,                    & ! Error Indicator
         clubb_fatal_error              ! Constant
 
     use array_index, only: &
@@ -74,7 +74,7 @@ module sfc_varnce_module
     use stats_type, only: &
         stats ! Type
 
-    use stats_type_utilities, only: & 
+    use stats_type_utilities, only: &
         stat_end_update_pt,   & ! Procedure(s)
         stat_begin_update_pt, &
         stat_update_var_pt
@@ -119,27 +119,27 @@ module sfc_varnce_module
     type(grid), intent(in) :: &
       gr
 
-    real( kind = core_rknd ) ::  & 
+    real( kind = core_rknd ) :: &
       dt
 
-    real( kind = core_rknd ), dimension(ngrdcol), intent(in) ::  & 
+    real( kind = core_rknd ), dimension(ngrdcol), intent(in) :: &
       sfc_elevation, &
       upwp_sfc,         & ! Surface u momentum flux, <u'w'>|_sfc   [m^2/s^2]
       vpwp_sfc,         & ! Surface v momentum flux, <v'w'>|_sfc   [m^2/s^2]
       wprtp_sfc           ! Surface moisture flux, <w'rt'>|_sfc    [kg/kg m/s]
 
-    real( kind = core_rknd ), dimension(ngrdcol,nzm), intent(in) ::  & 
+    real( kind = core_rknd ), dimension(ngrdcol,nzm), intent(in) ::  &
       wpthlp,        & ! Surface thetal flux, <w'thl'>|_sfc     [K m/s]
-      lhs_splat_wp2, & 
+      lhs_splat_wp2, &
       !wp2_splat,    & ! Tendency of <w'^2> due to splatting of eddies at zm(1) [m^2/s^3]
       tau_zm           ! Turbulent dissipation time at level zm(1)  [s]
 
-    real( kind = core_rknd ), dimension(ngrdcol,nzt), intent(in) ::  & 
+    real( kind = core_rknd ), dimension(ngrdcol,nzt), intent(in) :: &
       um,            & ! Surface u wind component, <u>          [m/s]
       vm,            & ! Surface v wind component, <v>          [m/s]
       Lscale_up        ! Upward component of Lscale at surface  [m]
 
-    real( kind = core_rknd ), dimension(ngrdcol,sclr_dim), intent(in) ::  & 
+    real( kind = core_rknd ), dimension(ngrdcol,sclr_dim), intent(in) :: &
       wpsclrp_sfc    ! Passive scalar flux, <w'sclr'>|_sfc   [units m/s]
 
     logical, intent(in) :: &
@@ -156,8 +156,8 @@ module sfc_varnce_module
     type (stats), intent(inout), dimension(ngrdcol) :: &
       stats_zm
 
-    !-------------------------- Output Variables --------------------------
-    real( kind = core_rknd ), dimension(ngrdcol,nzm), intent(inout) ::  & 
+    !-------------------------- InOut Variables --------------------------
+    real( kind = core_rknd ), dimension(ngrdcol,nzm), intent(inout) :: &
       wp2,     & ! Surface variance of w, <w'^2>|_sfc            [m^2/s^2]
       up2,     & ! Surface variance of u, <u'^2>|_sfc            [m^2/s^2]
       vp2,     & ! Surface variance of v, <v'^2>|_sfc            [m^2/s^2]
@@ -165,18 +165,21 @@ module sfc_varnce_module
       rtp2,    & ! Surface variance of rt, <rt'^2>|_sfc          [(kg/kg)^2]
       rtpthlp    ! Surface covariance of rt and theta-l          [kg K/kg]
 
-    real( kind = core_rknd ), dimension(ngrdcol,nzm,sclr_dim), intent(inout) ::  & 
+    real( kind = core_rknd ), dimension(ngrdcol,nzm,sclr_dim), intent(inout) :: &
       sclrp2,    & ! Surface variance of passive scalar            [units^2]
       sclrprtp,  & ! Surface covariance of pssv scalar and rt  [units kg/kg]
       sclrpthlp    ! Surface covariance of pssv scalar and theta-l [units K]
 
+    integer, intent(inout) :: &
+      err_code      ! Error code catching and relaying any errors occurring in this subroutine
+
     !-------------------------- Local Variables --------------------------
-    real( kind = core_rknd ), dimension(ngrdcol) ::  & 
+    real( kind = core_rknd ), dimension(ngrdcol) :: &
       uf,               & ! Surface friction vel., u*, in older version   [m/s]
       depth_pos_wpthlp, & ! Thickness of the layer near the surface with wpthlp > 0 [m]
       min_wp2_sfc_val     ! Minimum value of wp2_sfc that guarantees  [m^2/s^2]
                           ! correlation of (w,rt) and (w,thl) is within (-1,1)
-      
+
     ! Variables for Andre et al., 1978 parameterization.
     real( kind = core_rknd ), dimension(ngrdcol) :: &
       um_sfc_sqd, & ! Surface value of <u>^2                           [m^2/s^2]
@@ -187,7 +190,7 @@ module sfc_varnce_module
       zeta,       & ! Dimensionless height z_const/Lngth, where z_const = 1 m.  [-]
       wp2_splat_sfc_correction  ! Reduction in wp2_sfc due to splatting [m^2/s^2]
 
-    real( kind = core_rknd ) ::  & 
+    real( kind = core_rknd ) :: &
       ustar2, & ! Square of surface friction velocity, u*       [m^2/s^2]
       wstar     ! Convective velocity, w*                       [m/s]
 
@@ -308,33 +311,33 @@ module sfc_varnce_module
       !         3) The surface correlation of rt & thl is 1.
       ! Brian Griffin; February 2, 2008.
       !$acc parallel loop gang vector default(present)
-      do i = 1, ngrdcol 
+      do i = 1, ngrdcol
         if ( zeta(i) < zero ) then
 
-          thlp2(i,1)   = reduce_coef  & 
-                        * ( wpthlp(i,1)**2 / ustar(i)**2 ) & 
+          thlp2(i,1)   = reduce_coef &
+                        * ( wpthlp(i,1)**2 / ustar(i)**2 ) &
                         * four * ( one - 8.3_core_rknd * zeta(i) )**(-two_thirds)
 
-          rtp2(i,1)    = reduce_coef  & 
-                        * ( wprtp_sfc(i)**2 / ustar(i)**2 ) & 
+          rtp2(i,1)    = reduce_coef &
+                        * ( wprtp_sfc(i)**2 / ustar(i)**2 ) &
                         * four * ( one - 8.3_core_rknd * zeta(i) )**(-two_thirds)
 
-          rtpthlp(i,1) = reduce_coef  & 
-                        * ( wprtp_sfc(i) * wpthlp(i,1) / ustar(i)**2 ) & 
+          rtpthlp(i,1) = reduce_coef &
+                        * ( wprtp_sfc(i) * wpthlp(i,1) / ustar(i)**2 ) &
                         * four * ( one - 8.3_core_rknd * zeta(i) )**(-two_thirds)
 
-          wp2(i,1)    = ( ustar(i)**2 ) & 
+          wp2(i,1)    = ( ustar(i)**2 ) &
                           * ( 1.75_core_rknd + two * (-zeta(i))**(two_thirds) )
 
        else
 
-          thlp2(i,1)   = reduce_coef  & 
+          thlp2(i,1)   = reduce_coef &
                         * four * ( wpthlp(i,1)**2 / ustar(i)**2 )
 
-          rtp2(i,1)    = reduce_coef  & 
+          rtp2(i,1)    = reduce_coef &
                         * four * ( wprtp_sfc(i)**2 / ustar(i)**2 )
 
-          rtpthlp(i,1) = reduce_coef  & 
+          rtpthlp(i,1) = reduce_coef &
                         * four * ( wprtp_sfc(i) * wpthlp(i,1) / ustar(i)**2 )
 
           wp2(i,1)     = 1.75_core_rknd * ustar(i)**2
@@ -344,7 +347,7 @@ module sfc_varnce_module
       !$acc end parallel loop
 
       !$acc parallel loop gang vector default(present)
-      do i = 1, ngrdcol 
+      do i = 1, ngrdcol
         thlp2(i,1) = max( thl_tol**2, thlp2(i,1) )
         rtp2(i,1) = max( rt_tol**2, rtp2(i,1) )
       end do
@@ -356,7 +359,7 @@ module sfc_varnce_module
       ! upward component of mixing length, Lscale_up, at the surface will be
       ! used as z_i.
       !$acc parallel loop gang vector default(present)
-      do i = 1, ngrdcol 
+      do i = 1, ngrdcol
         wstar = ( (one/T0) * grav * wpthlp(i,1) * Lscale_up(i,2) )**(one_third)
 
         ! Andre et al., 1978, Eq. 29.
@@ -387,10 +390,10 @@ module sfc_varnce_module
       ! Add effect of vertical compression of eddies on horizontal gustiness.
       ! First, ensure that wp2 does not make the correlation 
       !   of (w,thl) or (w,rt) outside (-1,1).
-      ! Perhaps in the future we should also ensure that the correlations 
+      ! Perhaps in the future we should also ensure that the correlations
       !   of (w,u) and (w,v) are not outside (-1,1).
       !$acc parallel loop gang vector default(present)
-      do i = 1, ngrdcol 
+      do i = 1, ngrdcol
         min_wp2_sfc_val(i) &
                = max( w_tol_sqd, &
                       wprtp_sfc(i)**2 / ( rtp2(i,1) * max_mag_correlation_flux**2 ), &
@@ -399,10 +402,10 @@ module sfc_varnce_module
       !$acc end parallel loop
 
       !$acc parallel loop gang vector default(present)
-      do i = 1, ngrdcol 
+      do i = 1, ngrdcol
         if ( wp2(i,1) - tau_zm(i,1) * lhs_splat_wp2(i,1) * wp2(i,1) &
              < min_wp2_sfc_val(i) ) then
-        !if ( wp2(i,1) + tau_zm(i,1) * wp2_splat(i,1) < min_wp2_sfc_val(i) ) then 
+        !if ( wp2(i,1) + tau_zm(i,1) * wp2_splat(i,1) < min_wp2_sfc_val(i) ) then
                               ! splatting correction drives wp2 to overly small value
           wp2_splat_sfc_correction(i) = -wp2(i,1) + min_wp2_sfc_val(i)
           wp2(i,1) = min_wp2_sfc_val(i)
@@ -415,7 +418,7 @@ module sfc_varnce_module
       !$acc end parallel loop
 
       !$acc parallel loop gang vector default(present)
-      do i = 1, ngrdcol 
+      do i = 1, ngrdcol
         usp2_sfc(i) = usp2_sfc(i) - 0.5_core_rknd * wp2_splat_sfc_correction(i)
         vsp2_sfc(i) = vsp2_sfc(i) - 0.5_core_rknd * wp2_splat_sfc_correction(i)
       end do
@@ -427,8 +430,8 @@ module sfc_varnce_module
       !                  + <v_s'^2> * [ <v>^2 / ( <u>^2 + <v>^2 ) ];
       ! where <u>^2 + <v>^2 /= 0.
       !$acc parallel loop gang vector default(present)
-      do i = 1, ngrdcol 
-        up2(i,1) = usp2_sfc(i) * ( um_sfc_sqd(i) / max( um_sfc_sqd(i) + vm_sfc_sqd(i) , eps ) )  &
+      do i = 1, ngrdcol
+        up2(i,1) = usp2_sfc(i) * ( um_sfc_sqd(i) / max( um_sfc_sqd(i) + vm_sfc_sqd(i) , eps ) ) &
                    + vsp2_sfc(i) * ( vm_sfc_sqd(i) / max( um_sfc_sqd(i) + vm_sfc_sqd(i) , eps ) )
       end do
       !$acc end parallel loop
@@ -439,8 +442,8 @@ module sfc_varnce_module
       !                  + <u_s'^2> * [ <v>^2 / ( <u>^2 + <v>^2 ) ];
       ! where <u>^2 + <v>^2 /= 0.
       !$acc parallel loop gang vector default(present)
-      do i = 1, ngrdcol 
-        vp2(i,1) = vsp2_sfc(i) * ( um_sfc_sqd(i) / max( um_sfc_sqd(i) + vm_sfc_sqd(i) , eps ) )  &
+      do i = 1, ngrdcol
+        vp2(i,1) = vsp2_sfc(i) * ( um_sfc_sqd(i) / max( um_sfc_sqd(i) + vm_sfc_sqd(i) , eps ) ) &
                    + usp2_sfc(i) * ( vm_sfc_sqd(i) / max( um_sfc_sqd(i) + vm_sfc_sqd(i) , eps ) )
       end do
       !$acc end parallel loop
@@ -465,33 +468,33 @@ module sfc_varnce_module
             ! Brian Griffin; February 2, 2008.
             if ( zeta(i) < zero ) then
 
-              sclrprtp(i,1,sclr)  & 
-              = reduce_coef  & 
-                * ( wpsclrp_sfc(i,sclr) * wprtp_sfc(i) / ustar(i)**2 ) & 
+              sclrprtp(i,1,sclr) &
+              = reduce_coef &
+                * ( wpsclrp_sfc(i,sclr) * wprtp_sfc(i) / ustar(i)**2 ) &
                 * four * ( one - 8.3_core_rknd * zeta(i) )**(-two_thirds)
 
-              sclrpthlp(i,1,sclr)  & 
-              = reduce_coef  & 
-                * ( wpsclrp_sfc(i,sclr) * wpthlp(i,1) / ustar(i)**2 ) & 
+              sclrpthlp(i,1,sclr) &
+              = reduce_coef &
+                * ( wpsclrp_sfc(i,sclr) * wpthlp(i,1) / ustar(i)**2 ) &
                 * four * ( one - 8.3_core_rknd * zeta(i) )**(-two_thirds)
 
-              sclrp2(i,1,sclr)  & 
-              = reduce_coef   & 
-                * ( wpsclrp_sfc(i,sclr)**2 / ustar(i)**2 ) & 
+              sclrp2(i,1,sclr) &
+              = reduce_coef &
+                * ( wpsclrp_sfc(i,sclr)**2 / ustar(i)**2 ) &
                 * four * ( one - 8.3_core_rknd * zeta(i) )**(-two_thirds)
 
             else
 
-              sclrprtp(i,1,sclr)  & 
-              = reduce_coef  & 
+              sclrprtp(i,1,sclr) &
+              = reduce_coef &
                 * four * ( wpsclrp_sfc(i,sclr) * wprtp_sfc(i) / ustar(i)**2 )
 
-              sclrpthlp(i,1,sclr)  & 
-              = reduce_coef  & 
+              sclrpthlp(i,1,sclr) &
+              = reduce_coef &
                 * four * ( wpsclrp_sfc(i,sclr) * wpthlp(i,1) / ustar(i)**2 )
 
-              sclrp2(i,1,sclr)  & 
-              = reduce_coef & 
+              sclrp2(i,1,sclr) &
+              = reduce_coef &
                 * four * ( wpsclrp_sfc(i,sclr)**2 / ustar(i)**2 )
 
             endif
@@ -591,7 +594,7 @@ module sfc_varnce_module
       do i = 1, ngrdcol
         if ( wp2(i,1) - tau_zm(i,1) * lhs_splat_wp2(i,1) * wp2(i,1) &
              < min_wp2_sfc_val(i) ) then
-        !if ( wp2(i,1) + tau_zm(i,1) * wp2_splat(i,1) < min_wp2_sfc_val(i) ) then 
+        !if ( wp2(i,1) + tau_zm(i,1) * wp2_splat(i,1) < min_wp2_sfc_val(i) ) then
                            ! splatting correction drives wp2 to overly small values
           wp2_splat_sfc_correction(i) = -wp2(i,1) + min_wp2_sfc_val(i)
           wp2(i,1) = min_wp2_sfc_val(i)
@@ -744,9 +747,10 @@ module sfc_varnce_module
       !$acc update host( sclrp2, sclrprtp, sclrpthlp ) if ( sclr_dim > 0 )
 
       do i = 1, ngrdcol
-        call sfc_varnce_check( sclr_dim, wp2(i,1), up2(i,1), vp2(i,1),          & ! intent(in)
-                               thlp2(i,1), rtp2(i,1), rtpthlp(i,1),             & ! intent(in)
-                               sclrp2(i,1,:), sclrprtp(i,1,:), sclrpthlp(i,1,:) ) ! intent(in)
+        call sfc_varnce_check( sclr_dim, wp2(i,1), up2(i,1), vp2(i,1),           & ! intent(in)
+                               thlp2(i,1), rtp2(i,1), rtpthlp(i,1),              & ! intent(in)
+                               sclrp2(i,1,:), sclrprtp(i,1,:), sclrpthlp(i,1,:), & ! intent(in)
+                               err_code )                                          ! intent(inout)
       end do
 
       if ( err_code == clubb_fatal_error ) then

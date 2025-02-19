@@ -57,9 +57,10 @@ module pdf_closure_module
                           saturation_formula,                         &
                           stats_metadata,                             &
                           iiPDF_type,                                 &
-                          l_mix_rat_hm,                               & 
+                          l_mix_rat_hm,                               &
                           sigma_sqd_w,                                &
                           pdf_params, pdf_implicit_coefs_terms,       &
+                          err_code,                                   &
                           wpup2, wpvp2,                               &
                           wp2up2, wp2vp2, wp4,                        &
                           wprtp2, wp2rtp,                             &
@@ -121,7 +122,7 @@ module pdf_closure_module
         ipdf_component_stdev_factor_w, &
         islope_coef_spread_DG_means_w
 
-    use pdf_parameter_module, only:  &
+    use pdf_parameter_module, only: &
         pdf_parameter,        & ! Variable Type
         implicit_coefs_terms
 
@@ -150,10 +151,10 @@ module pdf_closure_module
     use model_flags, only: &
         l_explicit_turbulent_adv_xpyp ! Variable(s)
 
-    use numerical_check, only:  & 
+    use numerical_check, only: &
         pdf_closure_check ! Procedure(s)
 
-    use saturation, only:  & 
+    use saturation, only: &
         sat_mixrat_liq, & ! Procedure(s)
         sat_mixrat_ice
 
@@ -162,7 +163,6 @@ module pdf_closure_module
 
     use error_code, only: &
         clubb_at_least_debug_level,  & ! Procedure
-        err_code,                    & ! Error Indicator
         clubb_fatal_error              ! Constant
 
     use stats_variables, only: &
@@ -177,15 +177,15 @@ module pdf_closure_module
       hydromet_dim, & ! Number of hydrometeor species
       sclr_dim        ! Number of passive scalars
       
-    real( kind = core_rknd ), intent(in), dimension(sclr_dim) :: & 
+    real( kind = core_rknd ), intent(in), dimension(sclr_dim) :: &
       sclr_tol          ! Threshold(s) on the passive scalars  [units vary]
 
-    real( kind = core_rknd ), dimension(ngrdcol,nz), intent(in) ::  & 
+    real( kind = core_rknd ), dimension(ngrdcol,nz), intent(in) :: &
       p_in_Pa,     & ! Pressure                                   [Pa]
       exner,       & ! Exner function                             [-]
       thv_ds,      & ! Dry, base-state theta_v (ref. th_l here)   [K]
-      wm,          & ! mean w-wind component (vertical velocity)  [m/s] 
-      wp2,         & ! w'^2                                       [m^2/s^2] 
+      wm,          & ! mean w-wind component (vertical velocity)  [m/s]
+      wp2,         & ! w'^2                                       [m^2/s^2]
       wp3,         & ! w'^3                                       [m^3/s^3]
       Skw,         & ! Skewness of w                              [-]
       Skthl_in,    & ! Skewness of thl                            [-]
@@ -200,7 +200,7 @@ module pdf_closure_module
       wpthlp,      & ! w'th_l'                                    [K(m/s)]
       rtpthlp        ! r_t'th_l'                                  [K(kg/kg)]
 
-    real( kind = core_rknd ), dimension(ngrdcol,nz), intent(in) ::  &
+    real( kind = core_rknd ), dimension(ngrdcol,nz), intent(in) :: &
       um,          & ! Grid-mean eastward wind     [m/s]
       up2,         & ! u'^2                        [(m/s)^2]
       upwp,        & ! u'w'                        [(m/s)^2]
@@ -208,7 +208,7 @@ module pdf_closure_module
       vp2,         & ! v'^2                        [(m/s)^2]
       vpwp           ! v'w'                        [(m/s)^2]
 
-    real( kind = core_rknd ), dimension(ngrdcol,nz, sclr_dim), intent(in) ::  & 
+    real( kind = core_rknd ), dimension(ngrdcol,nz, sclr_dim), intent(in) :: &
       sclrm,       & ! Mean passive scalar        [units vary]
       wpsclrp,     & ! w' sclr'                   [units vary]
       sclrp2,      & ! sclr'^2                    [units vary]
@@ -216,16 +216,16 @@ module pdf_closure_module
       sclrpthlp,   & ! sclr' th_l'                [units vary]
       Sksclr_in      ! Skewness of sclr           [-]
 
-    real( kind = core_rknd ), dimension(ngrdcol,nz), intent(in) ::  &
+    real( kind = core_rknd ), dimension(ngrdcol,nz), intent(in) :: &
       gamma_Skw_fnc    ! Gamma as a function of skewness            [-]
 
 #ifdef  GFDL
     ! critial relative humidity for nucleation
     real( kind = core_rknd ), dimension(ngrdcol, nz, min(1,sclr_dim), 2 ), & ! h1g, 2010-06-15
-       intent(in) ::  & ! h1g, 2010-06-15
+       intent(in) :: & ! h1g, 2010-06-15
        RH_crit     ! critical relative humidity for droplet and ice nucleation
 ! ---> h1g, 2012-06-14
-    logical, intent(in)                 ::  do_liquid_only_in_clubb
+    logical, intent(in) :: do_liquid_only_in_clubb
 ! <--- h1g, 2012-06-14
 #endif
 
@@ -259,14 +259,17 @@ module pdf_closure_module
       ! intent(inout). Otherwise it should be intent(in)
       sigma_sqd_w   ! Width of individual w plumes               [-]
 
-    type(pdf_parameter), intent(inout) :: & 
+    type(pdf_parameter), intent(inout) :: &
       pdf_params     ! pdf paramters         [units vary]
 
     type(implicit_coefs_terms), intent(inout) :: &
       pdf_implicit_coefs_terms    ! Implicit coefs / explicit terms [units vary]
 
+    integer, intent(inout) :: &
+      err_code      ! Error code catching and relaying any errors occurring in this subroutine
+
     !----------------------------- Output Variables -----------------------------
-    real( kind = core_rknd ), dimension(ngrdcol,nz), intent(out) ::  & 
+    real( kind = core_rknd ), dimension(ngrdcol,nz), intent(out) :: &
       wpup2,                 & ! w'u'^2                     [m^3/s^3]
       wpvp2,                 & ! w'v'^2                     [m^3/s^3]
       wp2up2,                & ! w'^2u'^2                   [m^2/s^4]
@@ -294,17 +297,17 @@ module pdf_closure_module
       cloudy_updraft_frac,   & ! cloudy updraft fraction    [-]
       cloudy_downdraft_frac    ! cloudy downdraft fraction  [-]
 
-    real( kind = core_rknd ), dimension(ngrdcol,nz), intent(out) ::  &
+    real( kind = core_rknd ), dimension(ngrdcol,nz), intent(out) :: &
       uprcp,              & ! u' r_c'               [(m kg)/(s kg)]
       vprcp                 ! v' r_c'               [(m kg)/(s kg)]
 
     ! Output (passive scalar variables)
-    real( kind = core_rknd ), intent(out), dimension(ngrdcol,nz,sclr_dim) ::  & 
-      sclrpthvp, & 
-      sclrprcp, & 
-      wpsclrp2, & 
-      wpsclrprtp, & 
-      wpsclrpthlp, & 
+    real( kind = core_rknd ), intent(out), dimension(ngrdcol,nz,sclr_dim) :: &
+      sclrpthvp, &
+      sclrprcp, &
+      wpsclrp2, &
+      wpsclrprtp, &
+      wpsclrpthlp, &
       wp2sclrp
 
     real( kind = core_rknd ), dimension(ngrdcol,nz), intent(out) :: &
@@ -313,7 +316,7 @@ module pdf_closure_module
     !----------------------------- Local Variables -----------------------------
 
     ! Variables that are stored in derived data type pdf_params.
-    real( kind = core_rknd ), dimension(ngrdcol,nz) ::  &
+    real( kind = core_rknd ), dimension(ngrdcol,nz) :: &
       u_1,           & ! Mean of eastward wind (1st PDF component)         [m/s]
       u_2,           & ! Mean of eastward wind (2nd PDF component)         [m/s]
       varnce_u_1,    & ! Variance of u (1st PDF component)             [m^2/s^2]
@@ -338,10 +341,10 @@ module pdf_closure_module
 
     ! Passive scalar local variables
 
-    real( kind = core_rknd ), dimension(ngrdcol,nz,sclr_dim) ::  & 
+    real( kind = core_rknd ), dimension(ngrdcol,nz,sclr_dim) :: &
       sclr1, sclr2,  &
-      varnce_sclr1, varnce_sclr2, & 
-      alpha_sclr,  & 
+      varnce_sclr1, varnce_sclr2, &
+      alpha_sclr,  &
       corr_sclr_thl_1, corr_sclr_thl_2, &
       corr_sclr_rt_1, corr_sclr_rt_2, &
       corr_w_sclr_1, corr_w_sclr_2
@@ -351,7 +354,7 @@ module pdf_closure_module
       l_calc_ice_supersat_frac ! True if we should calculate ice_supersat_frac
 
     ! Quantities needed to predict higher order moments
-    real( kind = core_rknd ), dimension(ngrdcol,nz) ::  & 
+    real( kind = core_rknd ), dimension(ngrdcol,nz) :: &
       tl1, tl2
 
     real( kind = core_rknd ), dimension(ngrdcol,nz) :: &
@@ -385,7 +388,7 @@ module pdf_closure_module
       rc_1_ice, rc_2_ice
     
     ! To test pdf parameters
-    real( kind = core_rknd ), dimension(ngrdcol,nz) ::  &
+    real( kind = core_rknd ), dimension(ngrdcol,nz) :: &
       wm_clubb_pdf,    &
       rtm_clubb_pdf,   &
       thlm_clubb_pdf,  &
@@ -430,7 +433,7 @@ module pdf_closure_module
     !$acc                 rc_1_ice, rc_2_ice, rsatl_1, rsatl_2 )
 
     !$acc enter data if( sclr_dim > 0 ) &
-    !$acc            create( sclr1, sclr2, varnce_sclr1, varnce_sclr2, & 
+    !$acc            create( sclr1, sclr2, varnce_sclr1, varnce_sclr2, &
     !$acc                    alpha_sclr, corr_sclr_thl_1, corr_sclr_thl_2, &
     !$acc                    corr_sclr_rt_1, corr_sclr_rt_2, corr_w_sclr_1, &
     !$acc                    corr_w_sclr_2, Sksclr )
@@ -444,7 +447,7 @@ module pdf_closure_module
 
     ! Initialize to default values to prevent a runtime error
     if ( ( iiPDF_type /= iiPDF_ADG1 ) .and. ( iiPDF_type /= iiPDF_ADG2 ) ) then
-      
+
       do k = 1, nz
         do i = 1, ngrdcol
           pdf_params%alpha_thl(i,k) = one_half
@@ -462,7 +465,7 @@ module pdf_closure_module
           Skv(i,k) = Skv_in(i,k)
         end do
       end do
-      
+
       do sclr = 1, sclr_dim
         do k = 1, nz
           do i = 1, ngrdcol
@@ -494,7 +497,7 @@ module pdf_closure_module
     ! PDF component means and both PDF component variances for each of w, rt,
     ! theta-l, and passive scalar variables.
     if ( iiPDF_type == iiPDF_ADG1 ) then ! use ADG1
-      
+
       call ADG1_pdf_driver( nz, ngrdcol, sclr_dim, sclr_tol,                        & ! In
                             wm, rtm, thlm, um, vm,                                  & ! In
                             wp2, rtp2, thlp2, up2, vp2,                             & ! In
@@ -515,9 +518,9 @@ module pdf_closure_module
                             alpha_u, alpha_v,                                       & ! Out
                             sclr1, sclr2, varnce_sclr1,                             & ! Out
                             varnce_sclr2, alpha_sclr )                                ! Out
-                            
+
     elseif ( iiPDF_type == iiPDF_ADG2 ) then ! use ADG2
-      
+
       call ADG2_pdf_driver( nz, ngrdcol, sclr_dim, sclr_tol,                      & ! In
                             wm, rtm, thlm, wp2, rtp2, thlp2,                      & ! In
                             Skw, wprtp, wpthlp, sqrt_wp2, clubb_params(:,ibeta),  & ! In
@@ -532,19 +535,19 @@ module pdf_closure_module
                             pdf_params%alpha_rt, pdf_params%alpha_thl,            & ! Out
                             sigma_sqd_w, sclr1, sclr2,                            & ! Out
                             varnce_sclr1, varnce_sclr2, alpha_sclr )                ! Out
-                            
+
     elseif ( iiPDF_type == iiPDF_3D_Luhar ) then ! use 3D Luhar
       do i = 1, ngrdcol
         call Luhar_3D_pdf_driver( nz, &
                            wm(i,:), rtm(i,:), thlm(i,:), wp2(i,:), rtp2(i,:), thlp2(i,:), & ! In
                            Skw(i,:), Skrt(i,:), Skthl(i,:), wprtp(i,:), wpthlp(i,:),      & ! In
-                           pdf_params%w_1(i,:), pdf_params%w_2(i,:),                    & ! Out
-                           pdf_params%rt_1(i,:), pdf_params%rt_2(i,:),                  & ! Out
-                           pdf_params%thl_1(i,:), pdf_params%thl_2(i,:),                & ! Out
-                           pdf_params%varnce_w_1(i,:), pdf_params%varnce_w_2(i,:),      & ! Out
-                           pdf_params%varnce_rt_1(i,:), pdf_params%varnce_rt_2(i,:),    & ! Out
-                           pdf_params%varnce_thl_1(i,:), pdf_params%varnce_thl_2(i,:),  & ! Out
-                           pdf_params%mixt_frac(i,:) )                                    ! Out
+                           pdf_params%w_1(i,:), pdf_params%w_2(i,:),                      & ! Out
+                           pdf_params%rt_1(i,:), pdf_params%rt_2(i,:),                    & ! Out
+                           pdf_params%thl_1(i,:), pdf_params%thl_2(i,:),                  & ! Out
+                           pdf_params%varnce_w_1(i,:), pdf_params%varnce_w_2(i,:),        & ! Out
+                           pdf_params%varnce_rt_1(i,:), pdf_params%varnce_rt_2(i,:),      & ! Out
+                           pdf_params%varnce_thl_1(i,:), pdf_params%varnce_thl_2(i,:),    & ! Out
+                           pdf_params%mixt_frac(i,:) )                                      ! Out
       end do
     elseif ( iiPDF_type == iiPDF_new ) then ! use new PDF
       call new_pdf_driver( nz, ngrdcol, wm, rtm, thlm, wp2, rtp2, thlp2,      & ! In
@@ -613,7 +616,7 @@ module pdf_closure_module
                                   pdf_implicit_coefs_terms )                        ! Out
 
     end if ! iiPDF_type
-    
+
     ! Calculate the PDF component correlations of rt and thl.
     call calc_comp_corrs_binormal( nz, ngrdcol,                                           & ! In
                                    rtpthlp, rtm, thlm,                                    & ! In
@@ -657,7 +660,7 @@ module pdf_closure_module
                                      pdf_params%varnce_rt_1, pdf_params%varnce_rt_2,   & ! In
                                      pdf_params%mixt_frac,                             & ! In
                                      pdf_params%corr_w_rt_1, pdf_params%corr_w_rt_2 )    ! Out
-            
+
       ! Calculate the PDF component correlations of w and thl.
       call calc_comp_corrs_binormal( nz, ngrdcol,                                          & ! In
                                      wpthlp, wm, thlm,                                     & ! In
@@ -668,7 +671,7 @@ module pdf_closure_module
                                      pdf_params%mixt_frac,                                 & ! In
                                      pdf_params%corr_w_thl_1, pdf_params%corr_w_thl_2 )      ! Out
     end if
-      
+
     if ( l_scalar_calc ) then
 
       ! Calculate the PDF component correlations of a passive scalar and thl.
@@ -754,21 +757,21 @@ module pdf_closure_module
     call calc_wpxp2_pdf( nz, ngrdcol, &
                          wm, um, pdf_params%w_1, pdf_params%w_2, &
                          u_1, u_2, &
-                         pdf_params%varnce_w_1, pdf_params%varnce_w_2,   &
+                         pdf_params%varnce_w_1, pdf_params%varnce_w_2, &
                          varnce_u_1, varnce_u_2, &
                          corr_u_w_1, corr_u_w_2, &
                          pdf_params%mixt_frac, &
                          wpup2 )
-                         
+
     call calc_wpxp2_pdf( nz, ngrdcol, &
                          wm, vm, pdf_params%w_1, pdf_params%w_2, &
                          v_1, v_2, &
-                         pdf_params%varnce_w_1, pdf_params%varnce_w_2,   &
+                         pdf_params%varnce_w_1, pdf_params%varnce_w_2, &
                          varnce_v_1, varnce_v_2, &
                          corr_v_w_1, corr_v_w_2, &
                          pdf_params%mixt_frac, &
                          wpvp2 )
-    
+
     call calc_wp2xp2_pdf( nz, ngrdcol, &
                           wm, um, pdf_params%w_1, pdf_params%w_2, &
                           u_1, u_2, &
@@ -786,10 +789,10 @@ module pdf_closure_module
                           corr_v_w_1, corr_v_w_2, &
                           pdf_params%mixt_frac, &
                           wp2vp2 )
-                          
+
     call calc_wp4_pdf( nz, ngrdcol, &
                        wm, pdf_params%w_1, pdf_params%w_2, &
-                       pdf_params%varnce_w_1, pdf_params%varnce_w_2,    &
+                       pdf_params%varnce_w_1, pdf_params%varnce_w_2, &
                        pdf_params%mixt_frac, &
                        wp4 )
 
@@ -845,8 +848,8 @@ module pdf_closure_module
                              pdf_params%mixt_frac,                                 &
                              wp2sclrp(:,:,sclr) )
       end do
-      
-      do sclr = 1, sclr_dim 
+
+      do sclr = 1, sclr_dim
         call calc_wpxp2_pdf( nz, ngrdcol, &
                              wm, sclrm(:,:,sclr), pdf_params%w_1, pdf_params%w_2,  &
                              sclr1(:,:,sclr), sclr2(:,:,sclr),                     &
@@ -856,7 +859,7 @@ module pdf_closure_module
                              pdf_params%mixt_frac, &
                              wpsclrp2(:,:,sclr) )
       end do
-       
+
       do sclr = 1, sclr_dim
         call calc_wpxpyp_pdf( nz, ngrdcol, &
                               wm, sclrm(:,:,sclr), rtm, pdf_params%w_1, pdf_params%w_2,  &
@@ -871,7 +874,7 @@ module pdf_closure_module
                               pdf_params%mixt_frac, &
                               wpsclrprtp(:,:,sclr) )
       end do
-        
+
       do sclr = 1, sclr_dim
         call calc_wpxpyp_pdf( nz, ngrdcol, &
                               wm, sclrm(:,:,sclr), thlm, pdf_params%w_1, pdf_params%w_2,   &
@@ -886,7 +889,7 @@ module pdf_closure_module
                               pdf_params%mixt_frac, &
                               wpsclrpthlp(:,:,sclr) )
       end do
-      
+
     end if
 
     ! Compute higher order moments that include theta_v.
@@ -938,7 +941,7 @@ module pdf_closure_module
           pdf_params%rsatl_2(i,:) = sat_mixrat_ice( nz, p_in_Pa(i,:), tl2(i,:) ) &
                                     * RH_crit(i, :, 1, 2)
         endwhere
-        
+
       end do
 
     else ! sclr_dim <= 0  or  do_liquid_only_in_clubb = .T.
@@ -947,7 +950,7 @@ module pdf_closure_module
       pdf_params%rsatl_2 = sat_mixrat_liq( nz, ngrdcol, p_in_Pa, tl2, saturation_formula )
 
     end if !sclr_dim > 0
-      
+
     ! Determine whether to compute ice_supersat_frac. We do not compute
     ! ice_supersat_frac for GFDL (unless do_liquid_only_in_clubb is true),
     ! because liquid and ice are both fed into rtm, ruining the calculation.
@@ -958,7 +961,7 @@ module pdf_closure_module
     end if
 
 #else
-    rsatl_1 = sat_mixrat_liq( nz, ngrdcol, p_in_Pa, tl1, saturation_formula  )
+    rsatl_1 = sat_mixrat_liq( nz, ngrdcol, p_in_Pa, tl1, saturation_formula )
     rsatl_2 = sat_mixrat_liq( nz, ngrdcol, p_in_Pa, tl2, &
                               saturation_formula  ) ! h1g, 2010-06-16 end mod
 
@@ -982,8 +985,8 @@ module pdf_closure_module
                                           pdf_params%stdev_chi_1, pdf_params%stdev_eta_1,   & ! Out
                                           pdf_params%covar_chi_eta_1,                       & ! Out
                                           pdf_params%corr_chi_eta_1 )                         ! Out
-    
-      
+
+
     ! Calculate cloud fraction component for pdf 1
     call calc_liquid_cloud_frac_component( nz, ngrdcol, &
                                            pdf_params%chi_1, pdf_params%stdev_chi_1,    & ! In
@@ -1010,7 +1013,7 @@ module pdf_closure_module
                                           pdf_params%covar_chi_eta_2,                       & ! Out
                                           pdf_params%corr_chi_eta_2 )                         ! Out
 
-      
+
     ! Calculate cloud fraction component for pdf 2
     call calc_liquid_cloud_frac_component( nz, ngrdcol, &
                                            pdf_params%chi_2, pdf_params%stdev_chi_2,    & ! In
@@ -1089,8 +1092,7 @@ module pdf_closure_module
       end do
       !$acc end parallel loop
 
-    else 
-        
+    else
       ! Correlation of w and chi for each component.
       pdf_params%corr_w_chi_1 &
       = calc_corr_chi_x( pdf_params%crt_1, pdf_params%cthl_1, &
@@ -1137,7 +1139,7 @@ module pdf_closure_module
     ! 
     ! Reference:
     ! https://arxiv.org/pdf/1711.03675v1.pdf#nameddest=url:anl_int_buoy_terms
-    
+    !
     ! Calculate the contributions to <w'rc'>, <w'^2 rc'>, <rt'rc'>, and
     ! <thl'rc'> from the 1st PDF component.
     call calc_xprcp_component( nz, ngrdcol,                                          & ! In
@@ -1153,7 +1155,7 @@ module pdf_closure_module
                                rtprcp_contrib_comp_1, thlprcp_contrib_comp_1,        & ! Out
                                uprcp_contrib_comp_1, vprcp_contrib_comp_1 )            ! Out
 
-    call calc_xprcp_component( nz, ngrdcol,                                          & ! In 
+    call calc_xprcp_component( nz, ngrdcol,                                          & ! In
                                wm, rtm, thlm, um, vm, rcm,                           & ! In
                                pdf_params%w_2, pdf_params%rt_2,                      & ! In
                                pdf_params%thl_2, u_2, v_2,                           & ! In
@@ -1166,12 +1168,12 @@ module pdf_closure_module
                                rtprcp_contrib_comp_2, thlprcp_contrib_comp_2,        & ! Out
                                uprcp_contrib_comp_2, vprcp_contrib_comp_2 )            ! Out
 
-    
+
     ! Calculate rc_coef, which is the coefficient on <x'rc'> in the <x'thv'> equation.
     !$acc parallel loop gang vector collapse(2) default(present)
     do k = 1, nz
       do i = 1, ngrdcol
-        
+
         rc_coef(i,k) = Lv / ( exner(i,k) * Cp ) - ep2 * thv_ds(i,k)
 
         ! Calculate <w'rc'>, <w'^2 rc'>, <rt'rc'>, and <thl'rc'>.
@@ -1181,7 +1183,7 @@ module pdf_closure_module
         wp2rcp(i,k) = pdf_params%mixt_frac(i,k) * wp2rcp_contrib_comp_1(i,k) &
                       + ( one - pdf_params%mixt_frac(i,k) ) * wp2rcp_contrib_comp_2(i,k)
 
-        rtprcp(i,k) = pdf_params%mixt_frac(i,k) * rtprcp_contrib_comp_1(i,k) & 
+        rtprcp(i,k) = pdf_params%mixt_frac(i,k) * rtprcp_contrib_comp_1(i,k) &
                       + ( one - pdf_params%mixt_frac(i,k) ) * rtprcp_contrib_comp_2(i,k)
 
         thlprcp(i,k) = pdf_params%mixt_frac(i,k) * thlprcp_contrib_comp_1(i,k) &
@@ -1229,7 +1231,7 @@ module pdf_closure_module
        end do
 
     end if
-    
+
     ! Account for subplume correlation of scalar, theta_v.
     ! See Eqs. A13, A8 from Larson et al. (2002) ``Small-scale...''
     !  where the ``scalar'' in this paper is w.
@@ -1239,7 +1241,7 @@ module pdf_closure_module
       do sclr = 1, sclr_dim
         do k = 1, nz
           do i = 1, ngrdcol
-            
+
             sclrprcp(i,k,sclr) &
             = pdf_params%mixt_frac(i,k) * ( ( sclr1(i,k,sclr) - sclrm(i,k,sclr) ) &
                                             * pdf_params%rc_1(i,k) ) &
@@ -1251,10 +1253,10 @@ module pdf_closure_module
               + ( one - pdf_params%mixt_frac(i,k) ) * corr_sclr_rt_2(i,k,sclr) &
                 * pdf_params%crt_2(i,k) &
                 * sqrt( varnce_sclr2(i,k,sclr) * pdf_params%varnce_rt_2(i,k) ) &
-                * pdf_params%cloud_frac_2(i,k) & 
+                * pdf_params%cloud_frac_2(i,k) &
               - pdf_params%mixt_frac(i,k) * corr_sclr_thl_1(i,k,sclr) * pdf_params%cthl_1(i,k) &
                 * sqrt( varnce_sclr1(i,k,sclr) * pdf_params%varnce_thl_1(i,k) ) &
-                * pdf_params%cloud_frac_1(i,k) & 
+                * pdf_params%cloud_frac_1(i,k) &
               - ( one - pdf_params%mixt_frac(i,k) ) * corr_sclr_thl_2(i,k,sclr) &
                 * pdf_params%cthl_2(i,k) &
                 * sqrt( varnce_sclr2(i,k,sclr) * pdf_params%varnce_thl_2(i,k) ) &
@@ -1262,7 +1264,7 @@ module pdf_closure_module
 
             sclrpthvp(i,k,sclr) = sclrpthlp(i,k,sclr) + ep1*thv_ds(i,k)*sclrprtp(i,k,sclr) &
                              + rc_coef(i,k)*sclrprcp(i,k,sclr)
-                             
+
           end do
         end do
       end do ! sclr=1, sclr_dim
@@ -1270,7 +1272,7 @@ module pdf_closure_module
 
     end if ! l_scalar_calc
 
-      
+
     ! Compute variance of liquid water mixing ratio.
     ! This is not needed for closure.  Statistical Analysis only.
 
@@ -1289,7 +1291,7 @@ module pdf_closure_module
                           + pdf_params%cloud_frac_2(i,k)*pdf_params%stdev_chi_2(i,k)**2 ) &
                     - rcm(i,k)**2
         rcp2(i,k) = max( zero_threshold, rcp2(i,k) )
-        
+
       end do
     end do
     !$acc end parallel loop
@@ -1334,27 +1336,26 @@ module pdf_closure_module
             write(fstderr,*) "Fatal error: pdf_params%thl_1 =", pdf_params%thl_1(1,i), &
                              " < 190K at first grid column and grid level i = ", i
             err_code = clubb_fatal_error
-            return
         end if
         if ( pdf_params%thl_2(1,i) < 190. ) then
             write(fstderr,*) "Fatal error: pdf_params%thl_2 =", pdf_params%thl_2(1,i), &
                              " < 190K at first grid column and grid level i = ", i
             err_code = clubb_fatal_error
-            return
         end if
         if ( pdf_params%thl_1(1,i) > 1000. ) then
             write(fstderr,*) "Fatal error: pdf_params%thl_1 =", pdf_params%thl_1(1,i), &
                              " > 1000K at first grid column and grid level i = ", i
             err_code = clubb_fatal_error
-            return
         end if
         if ( pdf_params%thl_2(1,i) > 1000. ) then
             write(fstderr,*) "Fatal error: pdf_params%thl_2 =", pdf_params%thl_2(1,i), &
                              " > 1000K at first grid column and grid level i = ", i
             err_code = clubb_fatal_error
-            return
         end if
     end do
+    
+    if ( err_code = clubb_fatal_error ) return
+
 #endif /*TUNER*/
 
     if ( clubb_at_least_debug_level( 2 ) ) then
@@ -1390,11 +1391,11 @@ module pdf_closure_module
       !$acc if ( sclr_dim > 0 )
 
       do i = 1, ngrdcol
-          
-        call pdf_closure_check( & 
+
+        call pdf_closure_check( &
                nz, sclr_dim, &
                wp4(i,:), wprtp2(i,:), wp2rtp(i,:), wpthlp2(i,:), & ! intent(in)
-               wp2thlp(i,:), cloud_frac(i,:), rcm(i,:), wpthvp(i,:), wp2thvp(i,:), &  ! intent(in)
+               wp2thlp(i,:), cloud_frac(i,:), rcm(i,:), wpthvp(i,:), wp2thvp(i,:), & ! intent(in)
                rtpthvp(i,:), thlpthvp(i,:), wprcp(i,:), wp2rcp(i,:), & ! intent(in)
                rtprcp(i,:), thlprcp(i,:), rcp2(i,:), wprtpthlp(i,:), & ! intent(in)
                pdf_params%crt_1(i,:), pdf_params%crt_2(i,:), & ! intent(in)
@@ -1402,7 +1403,8 @@ module pdf_closure_module
                pdf_params, & ! intent(in)
                sclrpthvp(i,:,:), sclrprcp(i,:,:), wpsclrp2(i,:,:), & ! intent(in)
                wpsclrprtp(i,:,:), wpsclrpthlp(i,:,:), wp2sclrp(i,:,:), & ! intent(in)
-               stats_metadata ) ! intent(in)
+               stats_metadata, & ! intent(in)
+               err_code ) ! intent(inout)
       end do
     end if
 
@@ -1540,7 +1542,7 @@ module pdf_closure_module
           write(fstderr,*) "wp2sclrp = ", wp2sclrp
         end if
 
-        return  
+        return
 
       end if ! Fatal error
           
@@ -1719,7 +1721,7 @@ module pdf_closure_module
     !$acc                   rc_1_ice, rc_2_ice, rsatl_1, rsatl_2 )
 
     !$acc exit data if( sclr_dim > 0 ) &
-    !$acc           delete( sclr1, sclr2, varnce_sclr1, varnce_sclr2, & 
+    !$acc           delete( sclr1, sclr2, varnce_sclr1, varnce_sclr2, &
     !$acc                   alpha_sclr, corr_sclr_thl_1, corr_sclr_thl_2, &
     !$acc                   corr_sclr_rt_1, corr_sclr_rt_2, corr_w_sclr_1, &
     !$acc                   corr_w_sclr_2, Sksclr )
@@ -1757,7 +1759,7 @@ module pdf_closure_module
       nz          ! Number of vertical level
 
     ! ----------- Input Variables -----------
-    real( kind = core_rknd ), dimension(ngrdcol,nz), intent(in) ::  &
+    real( kind = core_rknd ), dimension(ngrdcol,nz), intent(in) :: &
       tl, &
       rsatl, &
       rt, &
@@ -1765,9 +1767,9 @@ module pdf_closure_module
       varnce_rt, &
       corr_rt_thl, &
       exner
-    
+
     ! ----------- Output Variables -----------
-    real( kind = core_rknd ), dimension(ngrdcol,nz), intent(out) ::  &
+    real( kind = core_rknd ), dimension(ngrdcol,nz), intent(out) :: &
       chi, &            ! s from Lewellen and Yoh 1993 (LY) eqn. 1
       crt, &            ! Coefficients for s'
       cthl, &           ! Coefficients for s'
@@ -1819,18 +1821,18 @@ module pdf_closure_module
         crt(i,k)  = invrs_beta_rsatl_p1
         cthl(i,k) = ( one + beta * rt(i,k) ) * invrs_beta_rsatl_p1**2 &
                     * Cp_on_Lv * beta * rsatl(i,k) * exner(i,k)
-                  
+
       end do
     end do
     !$acc end parallel loop
 
-    ! Calculate covariance, correlation, and standard deviation of 
+    ! Calculate covariance, correlation, and standard deviation of
     ! chi and eta for each component
     ! Include subplume correlation of qt, thl
     !$acc parallel loop gang vector collapse(2) default(present)
     do k = 1, nz
       do i = 1, ngrdcol
-       
+
         varnce_rt_term = crt(i,k)**2 * varnce_rt(i,k)
         varnce_thl_term = cthl(i,k)**2 * varnce_thl(i,k)
 
@@ -1905,7 +1907,7 @@ module pdf_closure_module
       nz          ! Number of vertical level
 
     ! Input Variables
-    real( kind = core_rknd ), dimension(ngrdcol,nz), intent(in) ::  &
+    real( kind = core_rknd ), dimension(ngrdcol,nz), intent(in) :: &
       wm,         & ! Mean of w (overall)                           [m/s]
       w_1,        & ! Mean of w (1st PDF component)                 [m/s]
       w_2,        & ! Mean of w (2nd PDF component)                 [m/s]
@@ -1914,9 +1916,9 @@ module pdf_closure_module
       mixt_frac     ! Mixture fraction                              [-]
 
     ! Output Variable
-    real( kind = core_rknd ), dimension(ngrdcol,nz) ::  & 
+    real( kind = core_rknd ), dimension(ngrdcol,nz) :: &
       wp4    ! <w'^4>                   [m^4/s^4]
-      
+
     ! Local Variables
     integer :: i, k
 
@@ -1927,7 +1929,7 @@ module pdf_closure_module
         ! Calculate <w'^4> by integrating over the PDF.
         wp4(i,k) = mixt_frac(i,k) * ( three * varnce_w_1(i,k)**2 &
                             + six * ( ( w_1(i,k) - wm(i,k) )**2 ) * varnce_w_1(i,k) &
-                            + ( w_1(i,k) - wm(i,k) )**4 ) & 
+                            + ( w_1(i,k) - wm(i,k) )**4 ) &
                    + ( one - mixt_frac(i,k) ) * ( three * varnce_w_2(i,k)**2 &
                                         + six * ( (w_2(i,k) - wm(i,k) )**2 )*varnce_w_2(i,k) &
                                         + ( w_2(i,k) - wm(i,k) )**4 )
@@ -2003,7 +2005,7 @@ module pdf_closure_module
       nz          ! Number of vertical level
 
     ! Input Variables
-    real( kind = core_rknd ), dimension(ngrdcol,nz), intent(in) ::  &
+    real( kind = core_rknd ), dimension(ngrdcol,nz), intent(in) :: &
       wm,         & ! Mean of w (overall)                       [m/s]
       xm,         & ! Mean of x (overall)                       [units vary]
       w_1,        & ! Mean of w (1st PDF component)             [m/s]
@@ -2019,9 +2021,9 @@ module pdf_closure_module
       mixt_frac     ! Mixture fraction                          [-]
 
     ! Output Variable
-    real( kind = core_rknd ), dimension(ngrdcol,nz), intent(out) ::  &
+    real( kind = core_rknd ), dimension(ngrdcol,nz), intent(out) :: &
       wp2xp2        ! <w'^2x'^2>                   [m^2/s^2 (units vary)^2]
-    
+
     ! Local Variable
     integer :: i, k
 
@@ -2057,8 +2059,8 @@ module pdf_closure_module
                              varnce_w_1, varnce_w_2,  &
                              varnce_x_1, varnce_x_2,  &
                              corr_w_x_1, corr_w_x_2,  &
-                             mixt_frac, &
-                             wp2xp ) 
+                             mixt_frac,               &
+                             wp2xp )
 
     ! Description:
     ! Calculates <w'^2 x'> by integrating over the PDF of w and x.  The integral
@@ -2108,7 +2110,7 @@ module pdf_closure_module
       nz          ! Number of vertical level
 
     ! Input Variables
-    real( kind = core_rknd ), dimension(ngrdcol,nz), intent(in) ::  &
+    real( kind = core_rknd ), dimension(ngrdcol,nz), intent(in) :: &
       wm,         & ! Mean of w (overall)                       [m/s]
       xm,         & ! Mean of x (overall)                       [units vary]
       w_1,        & ! Mean of w (1st PDF component)             [m/s]
@@ -2124,7 +2126,7 @@ module pdf_closure_module
       mixt_frac     ! Mixture fraction                          [-]
 
     ! Output Variable
-    real( kind = core_rknd ), dimension(ngrdcol,nz), intent(out) ::  & 
+    real( kind = core_rknd ), dimension(ngrdcol,nz), intent(out) :: &
       wp2xp    ! <w'^2 x'>                   [m^2/s^2 (units vary)]
 
     ! Local Variables
@@ -2159,7 +2161,7 @@ module pdf_closure_module
                              varnce_w_1, varnce_w_2,  &
                              varnce_x_1, varnce_x_2,  &
                              corr_w_x_1, corr_w_x_2,  &
-                             mixt_frac, &
+                             mixt_frac,               &
                              wpxp2 )
 
     ! Description:
@@ -2195,7 +2197,7 @@ module pdf_closure_module
 
     ! References:
     !-----------------------------------------------------------------------
-    
+
     use constants_clubb, only: &
         two,   & ! Variable(s)
         one
@@ -2210,7 +2212,7 @@ module pdf_closure_module
       nz          ! Number of vertical level
 
     ! Input Variables
-    real( kind = core_rknd ), dimension(ngrdcol,nz), intent(in) ::  &
+    real( kind = core_rknd ), dimension(ngrdcol,nz), intent(in) :: &
       wm,         & ! Mean of w (overall)                       [m/s]
       xm,         & ! Mean of x (overall)                       [units vary]
       w_1,        & ! Mean of w (1st PDF component)             [m/s]
@@ -2226,7 +2228,7 @@ module pdf_closure_module
       mixt_frac     ! Mixture fraction                          [-]
 
     ! Return Variable
-    real( kind = core_rknd ), dimension(ngrdcol,nz), intent(out) ::  & 
+    real( kind = core_rknd ), dimension(ngrdcol,nz), intent(out) :: &
       wpxp2    ! <w'x'^2>                   [m/s (units vary)^2]
       
     ! Local Variables
@@ -2326,7 +2328,7 @@ module pdf_closure_module
       nz          ! Number of vertical level
 
     ! Input Variables
-    real( kind = core_rknd ), dimension(ngrdcol,nz), intent(in) ::  &
+    real( kind = core_rknd ), dimension(ngrdcol,nz), intent(in) :: &
       wm,         & ! Mean of w (overall)                          [m/s]
       xm,         & ! Mean of x (overall)                          [x units]
       ym,         & ! Mean of y (overall)                          [y units]
@@ -2351,12 +2353,12 @@ module pdf_closure_module
       mixt_frac     ! Mixture fraction                             [-]
 
     ! Output Variable
-    real( kind = core_rknd ), dimension(ngrdcol,nz) ::  & 
+    real( kind = core_rknd ), dimension(ngrdcol,nz) :: &
       wpxpyp    ! <w'x'y'>                   [m/s (units vary)]
 
     ! Local Variables
     integer :: i, k
-    
+
 
     ! Calculate <w'x'y'> by integrating over the PDF.
     !$acc parallel loop gang vector collapse(2) default(present)
@@ -2510,7 +2512,7 @@ module pdf_closure_module
                       + stdev_chi(i,k) * exp( - one_half * zeta**2 ) * invrs_sqrt_2pi
 
         end if
-        
+
       end do
     end do
     !$acc end parallel loop
@@ -2554,7 +2556,7 @@ module pdf_closure_module
     use clubb_precision, only: &
         core_rknd     ! Precision
 
-    use saturation, only:  & 
+    use saturation, only: &
         sat_mixrat_ice
 
     implicit none
@@ -2620,7 +2622,7 @@ module pdf_closure_module
     end do
     !$acc end parallel loop
 
-    ! If all grid boxes are above freezing, then the calculation is the 
+    ! If all grid boxes are above freezing, then the calculation is the
     ! same as the cloud_frac calculation
     if ( .not. l_any_below_freezing ) then
       return
@@ -2637,9 +2639,9 @@ module pdf_closure_module
 
         if ( tl(i,k) <= T_freeze_K ) then
 
-          ! Temperature is freezing, we must compute chi_at_ice_sat and 
+          ! Temperature is freezing, we must compute chi_at_ice_sat and
           ! calculate the new cloud_frac_component
-          chi_at_ice_sat = crt(i,k) * ( rsat_ice(i,k) - rsatl(i,k) ) 
+          chi_at_ice_sat = crt(i,k) * ( rsat_ice(i,k) - rsatl(i,k) )
 
           if ( ( abs( mean_chi(i,k)-chi_at_ice_sat ) <= eps .and. stdev_chi(i,k) <= chi_tol ) &
            .or. ( mean_chi(i,k)-chi_at_ice_sat < - max_num_stdevs * stdev_chi(i,k) ) ) then
@@ -2662,7 +2664,7 @@ module pdf_closure_module
 
             zeta = (mean_chi(i,k)-chi_at_ice_sat) / stdev_chi(i,k)
 
-            ice_supersat_frac(i,k) = one_half * ( one + erf( zeta * invrs_sqrt_2 )  )
+            ice_supersat_frac(i,k) = one_half * ( one + erf( zeta * invrs_sqrt_2 ) )
 
             rc(i,k) = (mean_chi(i,k)-chi_at_ice_sat) * ice_supersat_frac(i,k) &
                       + stdev_chi(i,k) * exp( - one_half * zeta**2 ) * invrs_sqrt_2pi
@@ -3107,7 +3109,7 @@ module pdf_closure_module
       thlprcp_contrib_comp_i, & ! <thl'rc'> contrib. (ith PDF comp.)  [K(kg/kg)]
       uprcp_contrib_comp_i,   & ! <u'rc'> contrib. (ith PDF comp.)  [m/s(kg/kg)]
       vprcp_contrib_comp_i      ! <v'rc'> contrib. (ith PDF comp.)  [m/s(kg/kg)]
-      
+
     ! Local Variables
     integer :: i, k
 
@@ -3135,7 +3137,7 @@ module pdf_closure_module
         uprcp_contrib_comp_i(i,k) = ( u_i(i,k) - um(i,k) ) * ( rc_i(i,k) - rcm(i,k) )
 
         vprcp_contrib_comp_i(i,k) = ( v_i(i,k) - vm(i,k) ) * ( rc_i(i,k) - rcm(i,k) )
-        
+
       end do
     end do
     !$acc end parallel loop
@@ -3248,9 +3250,9 @@ module pdf_closure_module
       updraft_frac_2, &        ! Fraction of 2nd PDF comp. where w > 0
       downdraft_frac_1, &      ! Fraction of 1st PDF comp. where w < 0
       downdraft_frac_2         ! Fraction of 2nd PDF comp. where w < 0
-      
+
     integer :: i, k
-      
+
     !$acc parallel loop gang vector collapse(2) default(present)
     do k = 1, nz
       do i = 1, ngrdcol
@@ -3354,13 +3356,13 @@ module pdf_closure_module
         = mixt_frac(i,k) * cloud_frac_1(i,k) * downdraft_frac_1 &
           + ( one - mixt_frac(i,k) ) * cloud_frac_2(i,k) * downdraft_frac_2
 
-        ! Calculate the mean vertical velocity found in a cloudy updraft. 
+        ! Calculate the mean vertical velocity found in a cloudy updraft.
         w_up_in_cloud(i,k) &
         = ( mixt_frac(i,k) * cloud_frac_1(i,k) * w_up_1 &
             + ( one - mixt_frac(i,k) ) * cloud_frac_2(i,k) * w_up_2 ) &
           / max( eps, cloudy_updraft_frac(i,k) )
 
-        ! Calculate the mean vertical velocity found in a cloudy downdraft. 
+        ! Calculate the mean vertical velocity found in a cloudy downdraft.
         w_down_in_cloud(i,k) &
         = ( mixt_frac(i,k) * cloud_frac_1(i,k) * w_down_1 &
             + ( one - mixt_frac(i,k) ) * cloud_frac_2(i,k) * w_down_2 ) &

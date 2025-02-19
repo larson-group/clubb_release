@@ -45,10 +45,10 @@ module advance_windm_edsclrm_module
                                     l_linearize_pbl_winds, &
                                     order_xp2_xpyp, order_wp2_wp3, order_windm, &
                                     stats_metadata, &
-                                    stats_zt, stats_zm, stats_sfc, & 
+                                    stats_zt, stats_zm, stats_sfc, &
                                     um, vm, edsclrm, &
                                     upwp, vpwp, wpedsclrp, &
-                                    um_pert, vm_pert, upwp_pert, vpwp_pert )
+                                    um_pert, vm_pert, upwp_pert, vpwp_pert, err_code )
 
     ! Description:
     ! Solves for both mean horizontal wind components, um and vm, and for the
@@ -91,7 +91,6 @@ module advance_windm_edsclrm_module
 
     use error_code, only: &
         clubb_at_least_debug_level,  & ! Procedure
-        err_code,                    & ! Error Indicator
         clubb_fatal_error              ! Constant
 
     use constants_clubb, only:  &
@@ -217,6 +216,9 @@ module advance_windm_edsclrm_module
     real( kind = core_rknd ), dimension(ngrdcol,nzm), intent(inout) :: &
       upwp_pert, & ! perturbed <u'w'> [m^2/s^2]
       vpwp_pert    ! perturbed <v'w'> [m^2/s^2]
+
+    integer, intent(inout) :: &
+      err_code    ! Error code catching and relaying any errors occurring in this subroutine
 
     ! ------------------------ Local Variables ------------------------
     real( kind = core_rknd ), dimension(ngrdcol,nzt) ::  &
@@ -459,7 +461,7 @@ module advance_windm_edsclrm_module
                                 tridiag_solve_method,                           & ! intent(in)
                                 stats_metadata,                                 & ! intent(in)
                                 stats_sfc,                                      & ! intent(inout)
-                                lhs, rhs,                                       & ! intent(inout)
+                                lhs, rhs, err_code,                             & ! intent(inout)
                                 solution )                                        ! intent(out)
 
       ! Check for singular matrices and bad LAPACK arguments
@@ -829,7 +831,7 @@ module advance_windm_edsclrm_module
                               rho_ds_zm, invrs_rho_ds_zt,                 & ! intent(in)
                               l_implemented, l_imp_sfc_momentum_flux,     & ! intent(in)
                               lhs )                                         ! intent(out)
-      
+
       ! Decompose and back substitute for um and vm
       nrhs = 2
       call windm_edsclrm_solve( nzt, ngrdcol, nrhs,                             & ! intent(in)
@@ -837,9 +839,9 @@ module advance_windm_edsclrm_module
                                 tridiag_solve_method,                           & ! intent(in)
                                 stats_metadata,                                 & ! intent(in)
                                 stats_sfc,                                      & ! intent(in)
-                                lhs, rhs,                                       & ! intent(inout)
+                                lhs, rhs, err_code,                             & ! intent(inout)
                                 solution )                                        ! intent(out)
-      
+
       ! Check for singular matrices and bad LAPACK arguments
       if ( clubb_at_least_debug_level( 0 ) ) then
         if ( err_code == clubb_fatal_error ) then
@@ -1058,12 +1060,12 @@ module advance_windm_edsclrm_module
                                 tridiag_solve_method,            & ! intent(in)
                                 stats_metadata,                  & ! intent(in)
                                 stats_sfc,                       & ! intent(inout)
-                                lhs, rhs,                        & ! intent(inout)
+                                lhs, rhs, err_code,              & ! intent(inout)
                                 solution )                         ! intent(out)
-      
+
       if ( clubb_at_least_debug_level( 0 ) ) then
         if ( err_code == clubb_fatal_error ) then
-          write(fstderr,*) "Fatal error solving for eddsclrm"
+          write(fstderr,*) "Fatal error solving for edsclrm"
         end if
       end if
 
@@ -1184,8 +1186,8 @@ module advance_windm_edsclrm_module
                                   ixm_matrix_condt_num, &
                                   tridiag_solve_method, &
                                   stats_metadata, &
-                                  stats_sfc, & 
-                                  lhs, rhs, &
+                                  stats_sfc, &
+                                  lhs, rhs, err_code, &
                                   solution )
 
     ! Description:
@@ -1706,6 +1708,9 @@ module advance_windm_edsclrm_module
     real( kind = core_rknd ), dimension(ngrdcol,nzt,nrhs), intent(inout) :: &
       rhs    ! Right-hand side (explicit) contributions.
 
+    integer, intent(inout) :: &
+      err_code    ! Error code catching and relaying any errors occurring in this subroutine
+
     ! ------------------------ Output variables ------------------------
     real( kind = core_rknd ), dimension(ngrdcol,nzt,nrhs), intent(out) :: &
       solution ! Solution to the system of equations    [units vary]
@@ -1715,15 +1720,15 @@ module advance_windm_edsclrm_module
       rcond ! Estimate of the reciprocal of the condition number on the LHS matrix
 
     integer :: i
-    
+
     ! ------------------------ Begin Code ------------------------
 
     ! Solve tridiagonal system for xm.
     if ( stats_metadata%l_stats_samp .and. ixm_matrix_condt_num > 0 ) then
 
-      call tridiag_solve( "windm_edsclrm", tridiag_solve_method,  & ! Intent(in) 
-                          ngrdcol, nzt, nrhs,                      & ! Intent(in) 
-                          lhs, rhs,                               & ! Intent(inout)
+      call tridiag_solve( "windm_edsclrm", tridiag_solve_method,  & ! Intent(in)
+                          ngrdcol, nzt, nrhs,                     & ! Intent(in)
+                          lhs, rhs, err_code,                     & ! Intent(inout)
                           solution, rcond )                         ! Intent(out)
 
       ! Est. of the condition number of the variance LHS matrix
@@ -1734,9 +1739,9 @@ module advance_windm_edsclrm_module
       end do
     else
 
-      call tridiag_solve( "windm_edsclrm", tridiag_solve_method,  & ! Intent(in) 
-                          ngrdcol, nzt, nrhs,                     & ! Intent(in) 
-                          lhs, rhs,                               & ! Intent(inout)
+      call tridiag_solve( "windm_edsclrm", tridiag_solve_method,  & ! Intent(in)
+                          ngrdcol, nzt, nrhs,                     & ! Intent(in)
+                          lhs, rhs, err_code,                     & ! Intent(inout)
                           solution )                                ! Intent(out)
     end if
 
@@ -1745,13 +1750,13 @@ module advance_windm_edsclrm_module
 
   !=============================================================================
   subroutine windm_edsclrm_implicit_stats( nzm, nzt, solve_type, xm, &
-                                           invrs_dzt, & 
-                                           lhs_diff, lhs_ma_zt, & 
-                                           invrs_rho_ds_zt, u_star_sqd,&
+                                           invrs_dzt, &
+                                           lhs_diff, lhs_ma_zt, &
+                                           invrs_rho_ds_zt, u_star_sqd, &
                                            rho_ds_zm, wind_speed, &
                                            l_imp_sfc_momentum_flux, &
                                            stats_metadata, &
-                                           stats_zt ) 
+                                           stats_zt )
 
     ! Description:
     ! Compute implicit contributions to um and vm
@@ -1759,15 +1764,15 @@ module advance_windm_edsclrm_module
     ! References:
     ! None
     !-----------------------------------------------------------------------
-        
+
     use constants_clubb, only: &
         zero
 
-    use stats_type_utilities, only:  &
+    use stats_type_utilities, only: &
         stat_end_update_pt,  & ! Subroutines
         stat_update_var_pt
 
-    use clubb_precision, only:  & 
+    use clubb_precision, only: &
         core_rknd
 
     use stats_type, only: &
@@ -1782,29 +1787,29 @@ module advance_windm_edsclrm_module
     integer, intent(in) :: &
       nzm, &
       nzt
-    
-    integer, intent(in) :: & 
+
+    integer, intent(in) :: &
       solve_type     ! Desc. of what is being solved for
 
     real( kind = core_rknd ), dimension(nzt), intent(in) :: &
       xm,         & !  Computed value um or vm at <t+1>    [m/s]
       invrs_dzt     ! The inverse spacing between momentum grid levels;
                     ! centered over thermodynamic grid levels.
-      
+
     real( kind = core_rknd ), dimension(3,nzt), intent(in) :: &
       lhs_diff, & ! LHS diffustion terms
       lhs_ma_zt   ! LHS mean advection terms
-      
-    real( kind = core_rknd ), dimension(nzt), intent(in) ::  &
+
+    real( kind = core_rknd ), dimension(nzt), intent(in) :: &
       wind_speed,      & ! wind speed; sqrt(u^2 + v^2)              [m/s]
       invrs_rho_ds_zt    ! Inv. dry, static density at thermo. levels  [m^3/kg]
 
-    real( kind = core_rknd ), dimension(nzm), intent(in) ::  &
+    real( kind = core_rknd ), dimension(nzm), intent(in) :: &
       rho_ds_zm          ! Dry, static density on momentum levels      [kg/m^3]
-      
+
     real( kind = core_rknd ), intent(in) :: &
       u_star_sqd   ! Surface friction velocity, u_star, squared      [m/s]
-      
+
     logical, intent(in) :: &
       l_imp_sfc_momentum_flux  ! Flag for implicit momentum surface fluxes.
 
@@ -1817,7 +1822,7 @@ module advance_windm_edsclrm_module
 
     !---------------------- Local variables ----------------------
     integer :: k, kp1, km1 ! Array indices
-    
+
     real( kind = core_rknd ), dimension(nzt) :: &
       imp_sfc_flux
 

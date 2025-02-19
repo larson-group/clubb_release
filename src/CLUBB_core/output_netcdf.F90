@@ -33,7 +33,7 @@ module output_netcdf
   subroutine open_netcdf_for_writing( nlat, nlon, fdir, fname, ia, iz, zgrid,  & 
                           day, month, year, lat_vals, lon_vals, & 
                           time, dtwrite, nvar, &
-                          ncf, &
+                          ncf, err_code, &
                           nsamp) ! optional
 
 ! Description:
@@ -59,7 +59,6 @@ module output_netcdf
         fstderr ! Variable(s)
 
     use error_code, only: &
-        err_code, &           ! Error Indicator
         clubb_fatal_error     ! Constant
 
     implicit none
@@ -92,6 +91,9 @@ module output_netcdf
 
     ! Input/output Variables
     type (stat_file), intent(inout) :: ncf
+
+    integer, intent(inout) :: &
+      err_code      ! Error code catching and relaying any errors occurring in this subroutine
 
     ! Number of SILHS samples, used only for SILHS sample outputting
     integer, optional, intent(in) :: nsamp
@@ -186,15 +188,16 @@ module output_netcdf
 
     call define_netcdf( ncf%iounit, ncf%nlat, ncf%nlon, ncf%iz, ncf%nsamp, & ! In
                   ncf%day, ncf%month, ncf%year, ncf%time, & ! In
-                  ncf%SampDimId, ncf%LatDimId, ncf%LongDimId, ncf%AltDimId, ncf%TimeDimId, &  ! Out
-                  ncf%SampVarId, ncf%LatVarId, ncf%LongVarId, ncf%AltVarId, ncf%TimeVarId ) ! Out
+                  ncf%SampDimId, ncf%LatDimId, ncf%LongDimId, ncf%AltDimId, ncf%TimeDimId, &! Out
+                  ncf%SampVarId, ncf%LatVarId, ncf%LongVarId, ncf%AltVarId, ncf%TimeVarId, &! Out
+                  err_code )                                                                ! Inout
 
     return
   end subroutine open_netcdf_for_writing
 
 !-------------------------------------------------------------------------------
 
-  subroutine write_netcdf( ncf )
+  subroutine write_netcdf( ncf, err_code )
 
 ! Description:
 !   Writes some data to the NetCDF dataset, but doesn't close it.
@@ -216,7 +219,6 @@ module output_netcdf
         sec_per_min
 
     use error_code, only: &
-        err_code, &           ! Error Indicator
         clubb_fatal_error     ! Constant
 
     use clubb_precision, only: &
@@ -225,6 +227,9 @@ module output_netcdf
     implicit none
 
     type (stat_file), intent(inout) :: ncf    ! The file
+
+    integer, intent(inout) :: &
+      err_code      ! Error code catching and relaying any errors occurring in this subroutine
 
     ! Local Variables
     integer, dimension(:), allocatable :: stat ! Error status
@@ -303,7 +308,8 @@ module output_netcdf
   subroutine define_netcdf( ncid, nlat, nlon, iz, nsamp, &
                             day, month, year, time, & 
                             SampDimId, LatDimId, LongDimId, AltDimId, TimeDimId, &
-                            SampVarId, LatVarId, LongVarId, AltVarId, TimeVarId )
+                            SampVarId, LatVarId, LongVarId, AltVarId, TimeVarId, &
+                            err_code )
 
 ! Description:
 !   Used internally to create a definition for the NetCDF dataset
@@ -329,7 +335,6 @@ module output_netcdf
         fstderr ! Variable(s)
 
     use error_code, only: &
-        err_code, &           ! Error Indicator
         clubb_fatal_error     ! Constant
 
     implicit none
@@ -357,6 +362,10 @@ module output_netcdf
     ! including for SILHS samples if needed
     integer, intent(out) ::  & 
       SampVarId, LatVarId, LongVarId, AltVarId, TimeVarId
+
+    ! Input/Output Variables
+    integer, intent(inout) :: &
+      err_code      ! Error code catching and relaying any errors occurring in this subroutine
 
     ! Local variables
     integer :: stat
@@ -547,7 +556,7 @@ module output_netcdf
                           l_uv_nudge, &
                           l_tke_aniso, &
                           l_standard_term_ta, &
-                          ncf )
+                          ncf, err_code )
 
 ! Description:
 !   Used on the first call to write_nc to finalize definitions
@@ -591,7 +600,6 @@ module output_netcdf
         core_rknd ! Variable(s)
 
     use error_code, only: &
-        err_code, &           ! Error Indicator
         clubb_fatal_error     ! Constant
 
     implicit none
@@ -630,9 +638,12 @@ module output_netcdf
     ! Input/Output Variables
     type (stat_file), intent(inout) :: ncf
 
+    integer, intent(inout) :: &
+      err_code      ! Error code catching and relaying any errors occurring in this subroutine
+
     ! Local Variables
     integer, dimension(:), allocatable :: stat
-    
+
     integer :: netcdf_precision ! Level of precision for netCDF output
 
     integer :: i     ! Array index
@@ -850,14 +861,14 @@ module output_netcdf
 
     deallocate( stat )
 
-    call write_grid( ncf )  ! define lat., long., and grid intent(inout)
+    call write_grid( ncf, err_code )  ! define lat., long., and grid intent(inout)
     ncf%l_defined = .true.
 
     return
   end subroutine first_write
 
 !-------------------------------------------------------------------------------
-  subroutine write_grid( ncf )
+  subroutine write_grid( ncf, err_code )
 
 ! Description:
 !   Writes inforation about latitude, longitude and the grid
@@ -877,7 +888,6 @@ module output_netcdf
         fstderr ! Variable
 
     use error_code, only: &
-        err_code, &         ! Error Indicator
         clubb_fatal_error   ! Constant
 
     implicit none
@@ -885,32 +895,35 @@ module output_netcdf
     ! Input Variable(s)
     type (stat_file), intent(inout) :: ncf
 
+    integer, intent(inout) :: &
+      err_code      ! Error code catching and relaying any errors occurring in this subroutine
+
     integer :: stat
 
     ! ---- Begin Code ----
 
-    stat = nf90_put_var( ncid=ncf%iounit, varid=ncf%AltVarId,  & 
+    stat = nf90_put_var( ncid=ncf%iounit, varid=ncf%AltVarId, &
                          values=ncf%z(ncf%ia:ncf%iz) )
     if ( stat /= NF90_NOERR ) then
-      write(fstderr,*) "Error entering grid: ",  & 
+      write(fstderr,*) "Error entering grid: ", &
         trim( nf90_strerror( stat ) )
       err_code = clubb_fatal_error
       return
     end if
 
-    stat = nf90_put_var( ncid=ncf%iounit, varid=ncf%LongVarId,  & 
+    stat = nf90_put_var( ncid=ncf%iounit, varid=ncf%LongVarId, &
                          values=ncf%lon_vals )
     if ( stat /= NF90_NOERR ) then
-      write(fstderr,*) "Error entering longitude: ",  & 
+      write(fstderr,*) "Error entering longitude: ", &
         trim( nf90_strerror( stat ) )
       err_code = clubb_fatal_error
       return
     end if
 
-    stat = nf90_put_var( ncid=ncf%iounit, varid=ncf%LatVarId,  & 
+    stat = nf90_put_var( ncid=ncf%iounit, varid=ncf%LatVarId, &
                          values=ncf%lat_vals )
     if ( stat /= NF90_NOERR ) then
-      write(fstderr,*) "Error entering latitude: ",  & 
+      write(fstderr,*) "Error entering latitude: ", &
         trim( nf90_strerror( stat ) )
       err_code = clubb_fatal_error
       return
@@ -918,10 +931,10 @@ module output_netcdf
 
     ! Write the SILHS sample indices if samples_of_var allocated
     if ( allocated(ncf%samples_of_var) ) then
-      stat = nf90_put_var( ncid=ncf%iounit, varid=ncf%SampVarId,  &
+      stat = nf90_put_var( ncid=ncf%iounit, varid=ncf%SampVarId, &
                            values=ncf%samp_idx )
       if ( stat /= NF90_NOERR ) then
-        write(fstderr,*) "Error entering grid: ",  &
+        write(fstderr,*) "Error entering grid: ", &
           trim( nf90_strerror( stat ) )
         err_code = clubb_fatal_error
         return
@@ -933,7 +946,7 @@ module output_netcdf
 
 !-------------------------------------------------------------------------------
 
-  subroutine format_date & 
+  subroutine format_date &
              ( day_in, month_in, year_in, time_in, &
                date )
 

@@ -18,8 +18,9 @@ module atex
   subroutine atex_tndcy( ngrdcol, sclr_dim, edsclr_dim, sclr_idx, &
                          gr, time, time_initial, &
                          rtm, &
-                         wm_zt, wm_zm, & 
-                         thlm_forcing, rtm_forcing, & 
+                         err_code, &
+                         wm_zt, wm_zm, &
+                         thlm_forcing, rtm_forcing, &
                          sclrm_forcing, edsclrm_forcing )
   ! Description:
   !   Subroutine to set theta-l and water tendencies for ATEX case
@@ -47,18 +48,17 @@ module atex
 
   use error_code, only: &
     clubb_at_least_debug_level, &   ! Procedure
-    clubb_fatal_error, &            ! Constant
-    err_code                        ! Error indicator
+    clubb_fatal_error               ! Constant
 
   use array_index, only: &
-    sclr_idx_type   
+    sclr_idx_type
 
   implicit none
 
   !--------------------- Input Variables ---------------------
   integer, intent(in) :: &
     ngrdcol, &
-    sclr_dim, & 
+    sclr_dim, &
     edsclr_dim
 
   type (sclr_idx_type), intent(in) :: &
@@ -66,26 +66,30 @@ module atex
 
   type (grid), intent(in) :: gr
 
-  real(kind=time_precision), intent(in) ::  & 
+  real(kind=time_precision), intent(in) :: &
     time,         & ! Current time     [s]
-    time_initial ! Initial time     [s]
+    time_initial    ! Initial time     [s]
 
-  real( kind = core_rknd ), intent(in), dimension(ngrdcol,gr%nzt) :: & 
+  real( kind = core_rknd ), intent(in), dimension(ngrdcol,gr%nzt) :: &
     rtm      ! Total water mixing ratio        [kg/kg]
 
+  !--------------------- InOut Variables ---------------------
+    integer, intent(inout) :: &
+      err_code    ! Error code catching and relaying any errors occurring in this subroutine
+
   !--------------------- Output Variables ---------------------
-  real( kind = core_rknd ), intent(out), dimension(ngrdcol,gr%nzt) :: & 
+  real( kind = core_rknd ), intent(out), dimension(ngrdcol,gr%nzt) :: &
     wm_zt,        & ! w wind on thermodynamic grid                [m/s]
     thlm_forcing, & ! Liquid water potential temperature tendency [K/s]
     rtm_forcing     ! Total water mixing ratio tendency           [kg/kg/s]
 
-  real( kind = core_rknd ), intent(out), dimension(ngrdcol,gr%nzm) :: & 
+  real( kind = core_rknd ), intent(out), dimension(ngrdcol,gr%nzm) :: &
     wm_zm           ! w wind on momentum grid                     [m/s]
 
-  real( kind = core_rknd ), intent(out), dimension(ngrdcol,gr%nzt, sclr_dim) :: & 
+  real( kind = core_rknd ), intent(out), dimension(ngrdcol,gr%nzt, sclr_dim) :: &
     sclrm_forcing   ! Passive scalar tendency         [units/s]
 
-  real( kind = core_rknd ), intent(out), dimension(ngrdcol,gr%nzt, edsclr_dim) :: & 
+  real( kind = core_rknd ), intent(out), dimension(ngrdcol,gr%nzt, edsclr_dim) :: &
     edsclrm_forcing ! Eddy-passive scalar tendency    [units/s]
 
   ! Internal variables
@@ -224,8 +228,10 @@ module atex
     !$acc parallel loop gang vector collapse(2) default(present)
     do k = 1, gr%nzt
       do i = 1, ngrdcol
-        if ( sclr_idx%iiedsclr_thl > 0 ) edsclrm_forcing(i,k,sclr_idx%iiedsclr_thl) = thlm_forcing(i,k)
-        if ( sclr_idx%iiedsclr_rt  > 0 ) edsclrm_forcing(i,k,sclr_idx%iiedsclr_rt)  = rtm_forcing(i,k)
+        if ( sclr_idx%iiedsclr_thl > 0 ) &
+                edsclrm_forcing(i,k,sclr_idx%iiedsclr_thl) = thlm_forcing(i,k)
+        if ( sclr_idx%iiedsclr_rt  > 0 ) &
+                edsclrm_forcing(i,k,sclr_idx%iiedsclr_rt)  = rtm_forcing(i,k)
       end do
     end do
   end if

@@ -266,7 +266,7 @@ module grid_class
   subroutine setup_grid( nzmax, ngrdcol, sfc_elevation, l_implemented,  &
                          grid_type, deltaz, zm_init, zm_top,            &
                          momentum_heights, thermodynamic_heights,       &
-                         gr )
+                         gr, err_code )
 
     ! Description:
     !   Grid Constructor
@@ -282,7 +282,6 @@ module grid_class
 
     use error_code, only: &
         clubb_at_least_debug_level, &   ! Procedure
-        err_code, &                     ! Error indicator
         clubb_fatal_error, &            ! Constant
         err_header                      ! String
 
@@ -335,11 +334,15 @@ module grid_class
     ! If the CLUBB model is running by itself, but is using a stretched grid
     ! entered on momentum levels (grid_type = 3), it needs to use the momentum
     ! level altitudes as input.
-    real( kind = core_rknd ), intent(in), dimension(ngrdcol,nzmax) ::  & 
+    real( kind = core_rknd ), intent(in), dimension(ngrdcol,nzmax) :: &
       momentum_heights    ! Momentum level altitudes (input)      [m]
 
-    real( kind = core_rknd ), intent(in), dimension(ngrdcol,nzmax-1) ::  & 
+    real( kind = core_rknd ), intent(in), dimension(ngrdcol,nzmax-1) :: &
       thermodynamic_heights ! Thermodynamic level altitudes (input) [m]
+
+    ! InOut Variables
+    integer, intent(inout) :: &
+      err_code
 
     ! Local Variables
     integer :: &
@@ -350,7 +353,6 @@ module grid_class
 
     integer :: ierr, & ! Allocation stat
                i, k    ! Loop index
-
 
     ! ---- Begin Code ----
 
@@ -531,15 +533,15 @@ module grid_class
                   gr%nzm, gr%nzt, ngrdcol, & ! intent(in)
                   l_implemented, grid_type,  & ! intent(in)
                   deltaz, zm_init,  & ! intent(in)
-                  momentum_heights(:,begin_height_idx_zm:end_height_idx_zm),  & ! intent(in) 
+                  momentum_heights(:,begin_height_idx_zm:end_height_idx_zm),  & ! intent(in)
                   thermodynamic_heights(:,begin_height_idx_zt:end_height_idx_zt), & ! intent(in)
-                  gr ) ! intent(inout)
+                  gr, err_code ) ! intent(inout)
 
     do i = 1, ngrdcol
       if ( sfc_elevation(i) > gr%zm(i,1) ) then
-        write(fstderr,*) "The altitude of the lowest momentum level, "        &
-                         // "gr%zm(1,1), must be at or above the altitude of "  &
-                         // "the surface, sfc_elevation.  The lowest model "  &
+        write(fstderr,*) err_header, "The altitude of the lowest momentum level, " &
+                         // "gr%zm(1,1), must be at or above the altitude of " &
+                         // "the surface, sfc_elevation.  The lowest model " &
                          // "momentum level cannot be below the surface."
         write(fstderr,*) "Altitude of lowest momentum level =", gr%zm(i,1)
         write(fstderr,*) "Altitude of the surface =", sfc_elevation(i)
@@ -565,7 +567,7 @@ module grid_class
         fstderr  ! Constant(s)
 
     implicit none
-  
+
     type(grid), intent(inout) :: gr
 
     ! Local Variable(s)
@@ -574,10 +576,10 @@ module grid_class
     ! ----- Begin Code -----
 
     ! Allocate memory for grid levels
-    deallocate( gr%zm, gr%zt, & 
+    deallocate( gr%zm, gr%zt, &
                 gr%dzm, gr%dzt, &
-                gr%invrs_dzm, gr%invrs_dzt,  & 
-                gr%weights_zm2zt, gr%weights_zt2zm, & 
+                gr%invrs_dzm, gr%invrs_dzt, &
+                gr%weights_zm2zt, gr%weights_zt2zm, &
                 stat=ierr )
 
     if ( ierr /= 0 ) then
@@ -591,10 +593,10 @@ module grid_class
 
   !=============================================================================
   subroutine setup_grid_heights( nzm, nzt, ngrdcol, &
-                                 l_implemented, grid_type,  & 
-                                 deltaz, zm_init, momentum_heights,  & 
+                                 l_implemented, grid_type, &
+                                 deltaz, zm_init, momentum_heights, &
                                  thermodynamic_heights, &
-                                 gr )
+                                 gr, err_code )
 
     ! Description:
     !   Sets the heights and interpolation weights of the column.
@@ -612,7 +614,6 @@ module grid_class
         core_rknd  ! Variable(s)
 
     use error_code, only: &
-        err_code, &                     ! Error indicator
         clubb_fatal_error, &            ! Constant
         err_header                      ! String
 
@@ -656,11 +657,15 @@ module grid_class
     ! If the CLUBB model is running by itself, but is using a stretched grid
     ! entered on momentum levels (grid_type = 3), it needs to use the momentum
     ! level altitudes as input.
-    real( kind = core_rknd ), intent(in), dimension(ngrdcol,nzm) ::  & 
+    real( kind = core_rknd ), intent(in), dimension(ngrdcol,nzm) :: &
       momentum_heights    ! Momentum level altitudes (input)      [m]
 
-    real( kind = core_rknd ), intent(in), dimension(ngrdcol,nzt) ::  & 
+    real( kind = core_rknd ), intent(in), dimension(ngrdcol,nzt) :: &
       thermodynamic_heights ! Thermodynamic level altitudes (input) [m]
+
+    ! InOut Variables
+    integer, intent(inout) :: &
+      err_code
 
     integer :: k, i
 
@@ -762,9 +767,7 @@ module grid_class
         err_code = clubb_fatal_error
         return
 
-
       endif
-
 
     else
 
@@ -870,7 +873,8 @@ module grid_class
                                 zm_grid_fname, zt_grid_fname, & 
                                 file_unit, &
                                 momentum_heights, & 
-                                thermodynamic_heights )
+                                thermodynamic_heights, &
+                                err_code )
 
     ! Description:
     ! This subroutine is used foremost in cases where the grid_type corresponds
@@ -891,7 +895,6 @@ module grid_class
         core_rknd ! Variable(s)
 
     use error_code, only: &
-        err_code, &                     ! Error indicator
         clubb_fatal_error, &            ! Constant
         err_header                      ! String
 
@@ -919,6 +922,10 @@ module grid_class
 
     integer, intent(in) :: &
       file_unit   ! Unit number for zt_grid_fname & zm_grid_fname (based on the OpenMP thread)
+
+    ! InOut Variables.
+    integer, intent(inout) :: &
+      err_code
 
     ! Output Variables.
 
@@ -985,7 +992,6 @@ module grid_class
         return
       endif
 
-
     elseif ( grid_type == 2 ) then
 
       ! Stretched (unevenly-spaced) grid:  stretched thermodynamic levels.
@@ -1035,7 +1041,7 @@ module grid_class
       ! Check that the number of thermodynamic grid altitudes in the input file
       ! matches the declared number of CLUBB grid levels (nzmax).
       if ( zt_level_count /= nzmax-1 ) then
-        write(fstderr,*)  & 
+        write(fstderr,*) err_header, &
            "The number of thermodynamic grid altitudes " & 
            // "listed in file " // trim(zt_grid_fname)  & 
            // " does not match the number of CLUBB grid " & 
@@ -1058,7 +1064,7 @@ module grid_class
       do k = 1, nzmax-2, 1
         if ( thermodynamic_heights(k+1)  & 
              <= thermodynamic_heights(k) ) then
-          write(fstderr,*)  & 
+          write(fstderr,*) err_header, &
              "The declared thermodynamic level grid " & 
              // "altitudes are not increasing in height " & 
              // "as grid level index increases."
@@ -1075,7 +1081,6 @@ module grid_class
         endif
       enddo
 
-
     elseif ( grid_type == 3 ) then
 
       ! Stretched (unevenly-spaced) grid:  stretched momentum levels.
@@ -1087,7 +1092,7 @@ module grid_class
       ! As a way of error checking, make sure that there isn't any file entry
       ! for thermodynamic level altitudes.
       if ( zt_grid_fname /= '' ) then
-        write(fstderr,*) & 
+        write(fstderr,*) err_header, &
            "Momentum level altitudes have been selected " & 
            // "for use in a stretched (unevenly-spaced) grid. " & 
            // " Please reset zt_grid_fname to ''."
@@ -1122,7 +1127,7 @@ module grid_class
       ! Check that the number of momentum grid altitudes in the input file
       ! matches the declared number of CLUBB grid levels (nzmax).
       if ( zm_level_count /= nzmax ) then
-        write(fstderr,*) & 
+        write(fstderr,*) err_header, &
            "The number of momentum grid altitudes " & 
            // "listed in file " // trim(zm_grid_fname) & 
            // " does not match the number of CLUBB grid " & 
@@ -1145,7 +1150,7 @@ module grid_class
       do k = 2, nzmax, 1
         if ( momentum_heights(k)  & 
              <= momentum_heights(k-1) ) then
-          write(fstderr,*)  & 
+          write(fstderr,*) err_header, &
              "The declared momentum level grid " & 
              // "altitudes are not increasing in height " & 
              // "as grid level index increases."
@@ -1162,9 +1167,7 @@ module grid_class
         endif
       enddo
 
-
     endif
-
 
     ! The purpose of this if statement is to avoid a compiler warning.
     if ( generic_input_item > 0.0_core_rknd ) then
