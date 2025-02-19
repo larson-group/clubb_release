@@ -1847,11 +1847,6 @@ module grid_adaptation_module
     real( kind = core_rknd ), intent(inout), dimension(ngrdcol,gr%nzm) :: &
       upwp_pert, & ! perturbed <u'w'>    [m^2/s^2]
       vpwp_pert    ! perturbed <v'w'>    [m^2/s^2]
-    
-#ifdef GFDL
-    real( kind = core_rknd ), intent(inout), dimension(ngrdcol,gr%nzt,sclr_dim) :: & 
-      sclrm_trsport_only  ! Passive scalar concentration due to pure transport [{units vary}/s]
-#endif
 
     real( kind = core_rknd ), intent(inout), dimension(ngrdcol,gr%nzt,edsclr_dim) :: &
         edsclrm   ! Eddy passive scalar mean (thermo. levels)   [units vary]
@@ -1877,27 +1872,13 @@ module grid_adaptation_module
     real( kind = core_rknd ), dimension(ngrdcol,gr%nzm), intent(inout) :: &
       Kh_zm    ! Eddy diffusivity coefficient on momentum levels        [m^2/s]
 
-#ifdef CLUBB_CAM
-    real( kind = core_rknd), intent(inout), dimension(ngrdcol,gr%nzt) :: &
-      qclvar        ! cloud water variance
-#endif
-
     real( kind = core_rknd ), dimension(ngrdcol,gr%nzm), intent(inout) :: &
       thlprcp    ! thl'rc'              [K kg/kg]
 
     real( kind = core_rknd ), dimension(ngrdcol,gr%nzt), intent(inout) :: &
       Lscale     ! Length scale         [m]
 
-#ifdef GFDL
-    ! hlg, 2010-06-16
-    real( kind = core_rknd ), intent(inout), dimension(ngrdcol,gr%nzt, min(1,sclr_dim) , 2) :: &
-      RH_crit  ! critical relative humidity for droplet and ice nucleation
-#endif
-
     !--------------------- Local Variables ---------------------
-#ifdef GFDL
-    integer :: j
-#endif
     integer :: &
         num_levels, &                ! number of levels the new grid should have
         total_idx_rho_lin_spline, &  ! total number of indices of the rho density
@@ -2020,13 +2001,6 @@ module grid_adaptation_module
                                                  rho_lin_spline_vals, &
                                                  rho_lin_spline_levels, &
                                                  sclrp3(:,:,i) )
-#ifdef GFDL
-          sclrm_trsport_only(:,:,i) = interpolate_values_zt( ngrdcol, gr, new_gr, &
-                                                             total_idx_rho_lin_spline, &
-                                                             rho_lin_spline_vals, &
-                                                             rho_lin_spline_levels, &
-                                                             sclrm_trsport_only(:,:,i) )
-#endif
       end do
       do i = 1, edsclr_dim
           edsclrm_forcing(:,:,i) = interpolate_values_zt( ngrdcol, gr, new_gr, &
@@ -2178,27 +2152,10 @@ module grid_adaptation_module
                                      total_idx_rho_lin_spline, rho_lin_spline_vals, &
                                      rho_lin_spline_levels, &
                                      Kh_zt )
-#ifdef CLUBB_CAM
-      qclvar = interpolate_values_zt( ngrdcol, gr, new_gr, &
-                                      total_idx_rho_lin_spline, rho_lin_spline_vals, &
-                                      rho_lin_spline_levels, &
-                                      qclvar )
-#endif
       Lscale = interpolate_values_zt( ngrdcol, gr, new_gr, &
                                       total_idx_rho_lin_spline, rho_lin_spline_vals, &
                                       rho_lin_spline_levels, &
                                       Lscale )
-#ifdef GFDL
-      do i = 1, min(1,sclr_dim)
-          do j = 1, 2
-              RH_crit(:,:,i,j) = interpolate_values_zt( ngrdcol, gr, new_gr, &
-                                                        total_idx_rho_lin_spline, &
-                                                        rho_lin_spline_vals, &
-                                                        rho_lin_spline_levels, &
-                                                        RH_crit(:,:,i,j) )
-          end do
-      end do
-#endif
 
     
       ! Remap all zm values
