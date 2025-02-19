@@ -170,7 +170,7 @@ module simple_rad_module
 !-------------------------------------------------------------------------------
   subroutine simple_rad( gr, rho, rho_zm, rtm, rcm, exner,  &
                          stats_metadata, &
-                         stats_sfc, &
+                         stats_sfc, err_code, &
                          Frad_LW, radht_LW )
 ! Description:
 !   A simplified radiation driver
@@ -185,7 +185,6 @@ module simple_rad_module
 
     use error_code, only: &
         clubb_at_least_debug_level,  & ! Procedure
-        err_code,                    & ! Error Indicator
         clubb_fatal_error                 ! Constant
 
     use stats_type_utilities, only: stat_update_var_pt ! Procedure(s)
@@ -225,7 +224,7 @@ module simple_rad_module
       rcm,    & ! Cloud water mixing ratio       [kg/kg]
       exner     ! Exner function.                [-]
 
-    real( kind = core_rknd ), intent(in), dimension(gr%nzm) :: & 
+    real( kind = core_rknd ), intent(in), dimension(gr%nzm) :: &
       rho_zm    ! Density on momentum grid       [kg/m^3]
 
     type (stats_metadata_type), intent(in) :: &
@@ -233,16 +232,19 @@ module simple_rad_module
 
     type(stats), intent(inout) :: &
       stats_sfc
-    
+
+    integer, intent(inout) :: &
+      err_code
+
     ! Output Variables
-    real( kind = core_rknd ), intent(out), dimension(gr%nzm) ::  & 
+    real( kind = core_rknd ), intent(out), dimension(gr%nzm) ::  &
       Frad_LW            ! Radiative flux                 [W/m^2]
 
-    real( kind = core_rknd ), intent(out), dimension(gr%nzt) ::  & 
+    real( kind = core_rknd ), intent(out), dimension(gr%nzt) ::  &
       radht_LW           ! Radiative heating rate         [K/s]
 
     ! Local Variables
-    real( kind = core_rknd ), dimension(gr%nzm) ::  & 
+    real( kind = core_rknd ), dimension(gr%nzm) ::  &
       LWP,      & ! Liquid water path
       Heaviside
 

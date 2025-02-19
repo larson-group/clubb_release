@@ -56,7 +56,7 @@ module setup_clubb_pdf_params
                                    Nc_in_cloud, cloud_frac, Kh_zm, &              ! Intent(in)
                                    ice_supersat_frac, hydromet, wphydrometp, &    ! Intent(in)
                                    corr_array_n_cloud, corr_array_n_below, &      ! Intent(in)
-                                   hm_metadata, &                              ! Intent(in)
+                                   hm_metadata, &                                 ! Intent(in)
                                    pdf_params, &                                  ! Intent(in)
                                    clubb_params, &                                ! Intent(in)
                                    iiPDF_type, &                                  ! Intent(in)
@@ -67,7 +67,7 @@ module setup_clubb_pdf_params
                                    l_const_Nc_in_cloud, &                         ! Intent(in)
                                    l_fix_w_chi_eta_correlations, &                ! Intent(in)
                                    stats_metadata, &                              ! Intent(in)
-                                   stats_zt, stats_zm, stats_sfc, &               ! intent(inout)
+                                   stats_zt, stats_zm, stats_sfc, err_code, &     ! intent(inout)
                                    hydrometp2, &                                  ! Intent(out)
                                    mu_x_1_n, mu_x_2_n, &                          ! Intent(out)
                                    sigma_x_1_n, sigma_x_2_n, &                    ! Intent(out)
@@ -145,7 +145,6 @@ module setup_clubb_pdf_params
 
     use error_code, only: &
         clubb_at_least_debug_level, &   ! Procedure
-        err_code, &                     ! Error Indicator
         clubb_fatal_error               ! Constant
 
     use stats_type, only: stats ! Type
@@ -165,10 +164,10 @@ module setup_clubb_pdf_params
       pdf_dim,      & ! Number of variables in the correlation array
       ngrdcol,      & ! Number of grid columns
       hydromet_dim    ! Number of hydrometeor species
-      
+
     type (grid), intent(in) :: gr
 
-    real( kind = core_rknd ), intent(in) ::  &
+    real( kind = core_rknd ), intent(in) :: &
       dt    ! Model timestep                                           [s]
 
     real( kind = core_rknd ), dimension(ngrdcol,nzt), intent(in) :: &
@@ -227,7 +226,9 @@ module setup_clubb_pdf_params
       stats_zt, &
       stats_zm, &
       stats_sfc
-      
+
+    integer, intent(inout) :: &
+      err_code      ! Error code catching and relaying any errors occurring in this subroutine
     !------------------------ Output Variables ------------------------
     real( kind = core_rknd ), dimension(ngrdcol,nzm,hydromet_dim), intent(out) :: &
       hydrometp2    ! Variance of a hydrometeor (overall) (m-levs.)   [units^2]
@@ -268,10 +269,10 @@ module setup_clubb_pdf_params
     real( kind = core_rknd ), dimension(ngrdcol,nzt) :: &
       rcm_pdf      ! Liquid water mixing ratio          [kg/kg]
 
-    real( kind = core_rknd ), dimension(ngrdcol,nzm) ::  &
+    real( kind = core_rknd ), dimension(ngrdcol,nzm) :: &
       wpNcnp_zm    ! Covariance of N_cn and w (momentum levs.)   [(m/s)(num/kg)]
 
-    real( kind = core_rknd ), dimension(ngrdcol,nzt) ::  &
+    real( kind = core_rknd ), dimension(ngrdcol,nzt) :: &
       wpNcnp_zt    ! Covariance of N_cn and w on thermo. levels  [(m/s)(num/kg)]
 
     real( kind = core_rknd ), dimension(ngrdcol,nzt,hydromet_dim) :: &
@@ -386,24 +387,24 @@ module setup_clubb_pdf_params
     ! Otherwise, with l_use_precip_frac enabled and omicron and zeta_vrnce_rat
     ! values that are not 1 and 0, respectively, the PDF shape is a double
     ! delta-lognormal (two independent lognormals in-precip.).
-    
+
     ! Calculate precipitation fraction.
     if ( l_use_precip_frac ) then
-      
+
       call precip_fraction( nzt, ngrdcol, hydromet_dim,                                   & ! In
                 hydromet(:,:,:), cloud_frac(:,:), pdf_params%cloud_frac_1(:,:),           & ! In
-                hm_metadata%l_mix_rat_hm, hm_metadata%l_frozen_hm,                        & ! In 
+                hm_metadata%l_mix_rat_hm, hm_metadata%l_frozen_hm,                        & ! In
                 hm_metadata%hydromet_tol,                                                 & ! In
                 pdf_params%cloud_frac_2(:,:), ice_supersat_frac(:,:),                     & ! In
                 pdf_params%ice_supersat_frac_1(:,:), pdf_params%ice_supersat_frac_2(:,:), & ! In
                 pdf_params%mixt_frac(:,:), clubb_params,                                  & ! In
                 stats_metadata,                                                           & ! In
-                stats_sfc(:),                                                             & ! Inout
+                stats_sfc(:), err_code,                                                   & ! Inout
                 precip_fracs%precip_frac(:,:),                                            & ! Out
                 precip_fracs%precip_frac_1(:,:),                                          & ! Out
                 precip_fracs%precip_frac_2(:,:),                                          & ! Out
                 precip_frac_tol(:) )                                                        ! Out
-      
+
       if ( err_code == clubb_fatal_error ) then
         write(fstderr,*) " in setup_pdf_parameters after calling precip_fraction"
         return
@@ -417,7 +418,7 @@ module setup_clubb_pdf_params
       precip_frac_tol(:) = cloud_frac_min
 
     end if
-    
+
     ! Calculate <N_cn> from Nc_in_cloud, whether Nc_in_cloud is predicted or
     ! based on a prescribed value, and whether the value is constant or varying
     ! over the grid level.
@@ -428,9 +429,9 @@ module setup_clubb_pdf_params
          const_Ncnp2_on_Ncnm2(i,k) = hm_metadata%Ncnp2_on_Ncnm2
         end do
       end do
-       
+
       stdev_const_Ncnp2_on_Ncnm2(:,:) = stdev_L2N( const_Ncnp2_on_Ncnm2(:,:) )
-       
+
     else  ! l_const_Nc_in_cloud
       ! Ncn is constant at each vertical level.
       const_Ncnp2_on_Ncnm2(:,:)       = zero
@@ -439,7 +440,7 @@ module setup_clubb_pdf_params
 
     const_corr_chi_Ncn_n_cloud(:,:) = corr_array_n_cloud( hm_metadata%iiPDF_Ncn,&
                                                           hm_metadata%iiPDF_chi )
-    
+
     call corr_NN2NL( nzt, ngrdcol, & ! intent(in)
                      const_corr_chi_Ncn_n_cloud(:,:), & ! intent(in)
                      stdev_const_Ncnp2_on_Ncnm2(:,:), const_Ncnp2_on_Ncnm2(:,:), & ! intent(in)
@@ -456,7 +457,7 @@ module setup_clubb_pdf_params
     do j = 1, hydromet_dim
        do k = 1, nzt, 1
          do i = 1, ngrdcol
-             
+
             if ( hydromet(i,k,j) >= hm_metadata%hydromet_tol(j) ) then
               ! There is some of the hydrometeor species found at level k.
               ! Calculate the variance (overall) of the hydrometeor.
@@ -467,11 +468,11 @@ module setup_clubb_pdf_params
             else
               hydrometp2_zt(i,k,j) = zero
             end if
-            
+
          end do ! k = 1, nzt, 1
       end do
     end do
-    
+
     ! Interpolate the overall variance of a hydrometeor, <hm'^2>, to its home on
     ! momentum grid levels.
     do i = 1, hydromet_dim, 1
@@ -483,7 +484,7 @@ module setup_clubb_pdf_params
     ! Calculate correlations involving w and Ncn by first calculating the
     ! overall covariance of w and Ncn using the down-gradient approximation.
     if ( l_calc_w_corr ) then
-      
+
       ! Recalculate wm_zt and wp2_zt.  Mean vertical velocity may not be easy to
       ! pass into this subroutine from a host model, and wp2_zt needs to have a
       ! value consistent with the value it had when the PDF parameters involving w
@@ -503,13 +504,13 @@ module setup_clubb_pdf_params
                                                pdf_params%w_1(:,:), pdf_params%w_2(:,:), &
                                                sigma_w_1(:,:), sigma_w_2(:,:), &
                                                pdf_params%mixt_frac(:,:) )
-      
+
       ! Interpolate the covariances (overall) of w and precipitating
       ! hydrometeors to thermodynamic grid levels.
       do i = 1, hydromet_dim
         wphydrometp_zt(:,:,i) = zm2zt( nzm, nzt, ngrdcol, gr, wphydrometp(:,:,i) )
       end do
-          
+
       do j = 1, hydromet_dim
         do k = 1, nzt
           do i = 1, ngrdcol
@@ -519,7 +520,7 @@ module setup_clubb_pdf_params
           end do
         end do
       end do
-      
+
       ! When the mean value of a precipitating hydrometeor is below tolerance
       ! value, it is considered to have a value of 0, and the precipitating
       ! hydrometeor does not vary over the grid level.  Any covariances
@@ -542,9 +543,9 @@ module setup_clubb_pdf_params
            end do ! k = 1, nzt, 1
         end do ! i = 1, hydromet_dim, 1
       end do
-      
+
       Kh_zm_c_K_hm(:,:) = -clubb_params(ic_K_hm) * Kh_zm(:,:)
-      
+
       call calc_xpwp( nzm, nzt, ngrdcol, gr, &
                       Kh_zm_c_K_hm, Ncnm, &
                       wpNcnp_zm )
@@ -566,7 +567,7 @@ module setup_clubb_pdf_params
           end if
         end do ! k = 1, nzt, 1
       end do
-      
+
     end if ! l_calc_w_corr
 
     ! Unpack CLUBB parameters
@@ -578,7 +579,7 @@ module setup_clubb_pdf_params
     !!! -- for each PDF component.
     call compute_mean_stdev( nzt, ngrdcol, hydromet_dim, &
                              hydromet(:,:,:), hydrometp2_zt(:,:,:),         & ! Intent(in)
-                             hm_metadata,                                & ! Intent(in)
+                             hm_metadata,                                   & ! Intent(in)
                              Ncnm(:,:), pdf_params%mixt_frac(:,:),          & ! Intent(in)
                              precip_fracs%precip_frac(:,:),                 & ! Intent(in)
                              precip_fracs%precip_frac_1(:,:),               & ! Intent(in)
@@ -620,7 +621,7 @@ module setup_clubb_pdf_params
                                     mu_x_1_n(:,:,:), mu_x_2_n(:,:,:),       & ! Intent(out)
                                     sigma_x_1_n(:,:,:), sigma_x_2_n(:,:,:) )  ! Intent(out)
 
-    
+
     !!! Calculate the normal space correlations.
     !!! The normal space correlations are the same as the true correlations
     !!! except when at least one of the variables involved is a precipitating
@@ -634,24 +635,24 @@ module setup_clubb_pdf_params
 
           if ( rcm_pdf(i,k) > rc_tol ) then
 
-            call diagnose_correlations( pdf_dim, hm_metadata%iiPDF_w, &  ! In
+            call diagnose_correlations( pdf_dim, hm_metadata%iiPDF_w, &     ! In
                                         corr_array_n_cloud, &               ! In
                                         l_calc_w_corr, &                    ! In
                                         corr_array_1_n(i,k,:,:) )           ! Out
 
-            call diagnose_correlations( pdf_dim, hm_metadata%iiPDF_w, &  ! In
+            call diagnose_correlations( pdf_dim, hm_metadata%iiPDF_w, &     ! In
                                         corr_array_n_cloud, &               ! In
                                         l_calc_w_corr, &                    ! In
                                         corr_array_2_n(i,k,:,:) )           ! Out
 
          else
 
-            call diagnose_correlations( pdf_dim, hm_metadata%iiPDF_w, &  ! In
+            call diagnose_correlations( pdf_dim, hm_metadata%iiPDF_w, &     ! In
                                         corr_array_n_below, &               ! In
                                         l_calc_w_corr, &                    ! In
                                         corr_array_1_n(i,k,:,:) )           ! Out
 
-            call diagnose_correlations( pdf_dim, hm_metadata%iiPDF_w, &  ! In
+            call diagnose_correlations( pdf_dim, hm_metadata%iiPDF_w, &     ! In
                                         corr_array_n_below, &               ! In
                                         l_calc_w_corr, &                    ! In
                                         corr_array_2_n(i,k,:,:) )           ! Out
@@ -660,11 +661,11 @@ module setup_clubb_pdf_params
 
         end do
       end do
-      
+
       do k = 1, nzt, 1
         do i = 1, ngrdcol
           call calc_cholesky_corr_mtx_approx ( &
-                  pdf_dim, hm_metadata%iiPDF_w, &                      ! intent(in)
+                  pdf_dim, hm_metadata%iiPDF_w, &                         ! intent(in)
                   corr_array_1_n(i,k,:,:), &                              ! intent(in)
                   corr_cholesky_mtx_1(i,k,:,:), corr_array_1_n(i,k,:,:) ) ! intent(out)
         end do
@@ -673,17 +674,17 @@ module setup_clubb_pdf_params
       do k = 1, nzt, 1
         do i = 1, ngrdcol
           call calc_cholesky_corr_mtx_approx( &
-                  pdf_dim, hm_metadata%iiPDF_w, &                      ! intent(in)
+                  pdf_dim, hm_metadata%iiPDF_w, &                         ! intent(in)
                   corr_array_2_n(i,k,:,:), &                              ! intent(in)
                   corr_cholesky_mtx_2(i,k,:,:), corr_array_2_n(i,k,:,:) ) ! intent(out)
         end do
       end do
 
     else ! if .not. l_diagnose_correlations
-      
+
       if ( l_fix_w_chi_eta_correlations &
            .and. .not. l_calc_w_corr ) then
-        
+
         ! When the flags are set this way, the correlation matrices do not vary with any vertical
         ! values, and instead are determined entirely by prescribed values. This results in there
         ! being only two unique correlation matrices, one for when the grid box is in cloud
@@ -698,15 +699,15 @@ module setup_clubb_pdf_params
                                                  corr_array_n_cloud, corr_array_n_below,    & ! Out
                                                  corr_array_1_n, corr_array_2_n,            & ! Out
                                                  corr_cholesky_mtx_1, corr_cholesky_mtx_2 )   ! Out
-        
+
       else
-        
+
         ! The correlation matrices can vary with vertical values. So we need to set the 
         ! correlation matrices up for each grid box, then find the Cholesky decomp for each
         ! grid box individually. This is very computationally expensive.
 
-        call comp_corr_norm( nzt, pdf_dim, ngrdcol, hydromet_dim, hm_metadata,        & ! In  
-                             wm_zt(:,:), pdf_params%rc_1(:,:), pdf_params%rc_2(:,:),  & ! In  
+        call comp_corr_norm( nzt, pdf_dim, ngrdcol, hydromet_dim, hm_metadata,        & ! In
+                             wm_zt(:,:), pdf_params%rc_1(:,:), pdf_params%rc_2(:,:),  & ! In
                              pdf_params%mixt_frac(:,:),                               & ! In
                              precip_fracs%precip_frac_1(:,:),                         & ! In
                              precip_fracs%precip_frac_2(:,:),                         & ! In
@@ -720,7 +721,7 @@ module setup_clubb_pdf_params
                              l_calc_w_corr,                                           & ! In
                              l_fix_w_chi_eta_correlations,                            & ! In
                              corr_array_1_n(:,:,:,:), corr_array_2_n(:,:,:,:) )         ! Out
-                             
+
         ! Compute choleksy factorization for the correlation matrix of 1st PDF component
         do k = 1, nzt, 1
           do i = 1, ngrdcol
@@ -729,7 +730,7 @@ module setup_clubb_pdf_params
                                   l_corr_array_scaling )                              ! Out
           end do
         end do
-        
+
         ! Compute choleksy factorization for the correlation matrix of 2nd PDF component
         do k = 1, nzt, 1
           do i = 1, ngrdcol
@@ -738,9 +739,9 @@ module setup_clubb_pdf_params
                                   l_corr_array_scaling )                              ! Out
           end do
         end do
-        
+
       end if
-      
+
     end if ! l_diagnose_correlations
 
     ! hydromet_pdf_params is optional, so if it is not present we simply skip the steps 
@@ -767,7 +768,7 @@ module setup_clubb_pdf_params
     end if
 
     if ( stats_metadata%l_stats_samp ) then
-      
+
       do j = 1, hydromet_dim
         if ( stats_metadata%ihmp2_zt(j) > 0 ) then
           ! Variance (overall) of the hydrometeor, <hm'^2>.
@@ -783,7 +784,7 @@ module setup_clubb_pdf_params
            end do
         end if
       end do
-      
+
       do i = 1, ngrdcol
         call pdf_param_hm_stats( nzt, pdf_dim, hydromet_dim, hm_metadata, & ! intent(in)
                                  hm_1(i,:,:), hm_2(i,:,:), & ! intent(in)
@@ -804,7 +805,7 @@ module setup_clubb_pdf_params
                                     stats_metadata,                         & ! intent(in)
                                     stats_zt(i) )                             ! intent(inout)
       end do
-      
+
       if ( stats_metadata%irtp2_from_chi > 0 ) then
 
         do i = 1, ngrdcol
@@ -813,13 +814,13 @@ module setup_clubb_pdf_params
                                      pdf_params%stdev_eta_1(i,:), pdf_params%stdev_eta_2(i,:), &
                                      pdf_params%rt_1(i,:), pdf_params%rt_2(j,:),               &
                                      pdf_params%crt_1(i,:), pdf_params%crt_2(i,:),             &
-                                     pdf_params%mixt_frac(i,:),                                &   
+                                     pdf_params%mixt_frac(i,:),                                &
                                      corr_array_1_n(i,:,hm_metadata%iiPDF_chi,&
                                                     hm_metadata%iiPDF_eta),                    &
                                      corr_array_2_n(i,:,hm_metadata%iiPDF_chi,&
                                                     hm_metadata%iiPDF_eta) )
         end do
-        
+
         rtp2_zm_from_chi = zt2zm( nzm, nzt, ngrdcol, gr, rtp2_zt_from_chi, zero_threshold )
       
         ! Switch back to using stat_update_var once the code is generalized
@@ -833,7 +834,7 @@ module setup_clubb_pdf_params
                                      stats_zm(i) ) ! intent(inout)
           end do
         end do ! k = 1, nzm, 1
-        
+
       end if
 
       do i = 1, ngrdcol
@@ -879,18 +880,24 @@ module setup_clubb_pdf_params
           end do ! k = 1, nzt, 1
         end if
       end do
-      
+
     end if
 
     if ( clubb_at_least_debug_level( 2 ) ) then
       do k = 1, nzt
         do i = 1, ngrdcol
-          call assert_corr_symmetric( corr_array_1_n(i,k,:,:), pdf_dim) ! intent(in)
-          call assert_corr_symmetric( corr_array_2_n(i,k,:,:), pdf_dim) ! intent(in)
+          call assert_corr_symmetric( corr_array_1_n(i,k,:,:), pdf_dim, &! intent(in)
+                                      err_code )                         ! intent(inout)
+          call assert_corr_symmetric( corr_array_2_n(i,k,:,:), pdf_dim, &! intent(in)
+                                      err_code )                         ! intent(inout)
         end do
       end do
     end if
-    
+
+    if ( err_code == clubb_fatal_error ) then
+      write(fstderr,*) " in setup_pdf_parameters after calling assert_corr_symmetric"
+    end if
+
     return
 
   end subroutine setup_pdf_parameters
@@ -898,7 +905,7 @@ module setup_clubb_pdf_params
   !=============================================================================
   subroutine compute_mean_stdev( nzt, ngrdcol, hydromet_dim,    & ! Intent(in)
                                  hydromet, hydrometp2_zt,       & ! Intent(in)
-                                 hm_metadata,                & ! Intent(in)
+                                 hm_metadata,                   & ! Intent(in)
                                  Ncnm, mixt_frac,               & ! Intent(in)
                                  precip_frac,                   & ! Intent(in)
                                  precip_frac_1,                 & ! Intent(in)
@@ -928,7 +935,7 @@ module setup_clubb_pdf_params
     ! References:
     !-----------------------------------------------------------------------
 
-    use constants_clubb, only:  &
+    use constants_clubb, only: &
         zero     ! Constant(s)
 
     use corr_varnce_module, only: &
@@ -963,11 +970,11 @@ module setup_clubb_pdf_params
       precip_frac_1, & ! Precipitation fraction (1st PDF component)   [-]
       precip_frac_2    ! Precipitation fraction (2nd PDF component)   [-]
 
-    real( kind = core_rknd ), dimension(ngrdcol,nzt), intent(in) :: &  
+    real( kind = core_rknd ), dimension(ngrdcol,nzt), intent(in) :: &
       w_1,         & ! Mean of w (1st PDF component)                  [m/s]
       w_2,         & ! Mean of w (2nd PDF component)                  [m/s]
-      stdev_w_1,  & ! Variance of w (1st PDF component)              [m^2/s^2]
-      stdev_w_2,  & ! Variance of w (2nd PDF component)              [m^2/s^2]
+      stdev_w_1,   & ! Variance of w (1st PDF component)              [m^2/s^2]
+      stdev_w_2,   & ! Variance of w (2nd PDF component)              [m^2/s^2]
       chi_1,       & ! Mean of chi (1st PDF component)                [kg/kg]
       chi_2,       & ! Mean of chi (2nd PDF component)                [kg/kg]
       stdev_chi_1, & ! Standard deviation of chi (1st PDF component)  [kg/kg]
@@ -1124,13 +1131,13 @@ module setup_clubb_pdf_params
     do ivar = hm_metadata%iiPDF_Ncn+1, pdf_dim, 1
 
       hm_idx = pdf2hydromet_idx(ivar,hm_metadata)
-       
+
       call calc_comp_mu_sigma_hm( nzt, ngrdcol,                                      & ! In
                                   hydromet(:,:,hm_idx), hydrometp2_zt(:,:,hm_idx),   & ! In
-                                  hm_metadata%hmp2_ip_on_hmm2_ip(hm_idx),         & ! In
+                                  hm_metadata%hmp2_ip_on_hmm2_ip(hm_idx),            & ! In
                                   mixt_frac(:,:), precip_frac(:,:),                  & ! In
                                   precip_frac_1(:,:), precip_frac_2(:,:),            & ! In
-                                  hm_metadata%hydromet_tol(hm_idx),               & ! In 
+                                  hm_metadata%hydromet_tol(hm_idx),                  & ! In
                                   precip_frac_tol(:),                                & ! In
                                   thl_1(:,:), thl_2(:,:),                            & ! In
                                   omicron, zeta_vrnce_rat,                           & ! In
@@ -1146,10 +1153,10 @@ module setup_clubb_pdf_params
     return
 
   end subroutine compute_mean_stdev
-  
+
   !=============================================================================
   subroutine calc_corr_norm_and_cholesky_factor( nzt, ngrdcol, iiPDF_type, &
-                                                 pdf_dim, hm_metadata, & 
+                                                 pdf_dim, hm_metadata, &
                                                  rc_1, rc_2, &
                                                  corr_array_n_cloud, corr_array_n_below, &
                                                  corr_array_1_n, corr_array_2_n, &
@@ -1166,8 +1173,8 @@ module setup_clubb_pdf_params
     ! References:
     !   https://github.com/larson-group/cam/issues/129#issuecomment-816205563
     !-----------------------------------------------------------------------
-    
-    use constants_clubb, only:  &
+
+    use constants_clubb, only: &
         rc_tol,      &
         zero
 
@@ -1212,7 +1219,7 @@ module setup_clubb_pdf_params
                     ! Gaussian) PDF type to use for the w, rt, and theta-l (or
                     ! w, chi, and eta) portion of CLUBB's multivariate,
                     ! two-component PDF.
-                    
+
     ! Output Variables
     real( kind = core_rknd ), dimension(ngrdcol,nzt,pdf_dim,pdf_dim), intent(out) :: &
       corr_array_1_n,       & ! Corr. array (normal space) of PDF vars. (comp. 1)  [-]
@@ -1226,36 +1233,36 @@ module setup_clubb_pdf_params
       corr_array_below,         & ! General out of cloud corr. matrix
       corr_cholesky_mtx_cloud,  & ! General in cloud Cholesky matrix
       corr_cholesky_mtx_below     ! General out of cloud Cholesky matrix
-      
+
     logical :: &
       l_corr_array_scaling  ! Dummy variable that we need for calling Cholesky_factor
-      
+
     real( kind = core_rknd ), dimension(pdf_dim) :: &
       corr_array_scaling    ! Dummy variable that we need for calling Cholesky_factor
 
     integer :: ivar, jvar, i, k ! Indices
-                                    
+
     !-------------------- Begin Code --------------------
     
     ! Initialize correlation arrays with prescribed values
     corr_array_cloud(:,:) = corr_array_n_cloud(:,:)
     corr_array_below(:,:) = corr_array_n_below(:,:)
-    
+
     ! The ADG1 PDF fixes the correlation of w and rt and the correlation of
     ! w and theta_l to be 0, which means the correlation of w and chi and the
     ! correlation of w and eta must also be 0.
     if ( ( iiPDF_type == iiPDF_ADG1 .or. iiPDF_type == iiPDF_ADG2 &
             .or. iiPDF_type == iiPDF_new_hybrid ) &
           .and. l_follow_ADG1_PDF_standards ) then
-          
+
       corr_array_cloud(hm_metadata%iiPDF_w,hm_metadata%iiPDF_chi) = zero
       corr_array_below(hm_metadata%iiPDF_w,hm_metadata%iiPDF_chi) = zero
-      
+
       corr_array_cloud(hm_metadata%iiPDF_w,hm_metadata%iiPDF_eta) = zero
       corr_array_below(hm_metadata%iiPDF_w,hm_metadata%iiPDF_eta) = zero
-      
+
     end if
-    
+
     ! Ncn is an inherently in-cloud property, so replace out of cloud correlation values
     ! with in cloud ones.
     corr_array_below(hm_metadata%iiPDF_Ncn,hm_metadata%iiPDF_chi) &
@@ -1263,8 +1270,8 @@ module setup_clubb_pdf_params
 
     corr_array_below(hm_metadata%iiPDF_Ncn,hm_metadata%iiPDF_eta) &
       = corr_array_cloud(hm_metadata%iiPDF_Ncn,hm_metadata%iiPDF_eta)
-    
-    
+
+
     ! Estimates the correlation of the natural logarithm of a
     ! hydrometeor species and eta using the correlation of chi and eta and the
     ! correlation of chi and the natural logarithm of the hydrometeor.  This
@@ -1272,35 +1279,35 @@ module setup_clubb_pdf_params
     ! inevitably be decomposed for SILHS purposes. Without this estimation, we
     ! have found that the resulting correlation matrix cannot be decomposed.
     do jvar = hm_metadata%iiPDF_Ncn+1, pdf_dim
-      
+
       corr_array_cloud(jvar,hm_metadata%iiPDF_eta) &
                 = corr_array_cloud(hm_metadata%iiPDF_eta,hm_metadata%iiPDF_chi) &
                   * corr_array_cloud(jvar,hm_metadata%iiPDF_chi)
-      
+
       corr_array_below(jvar,hm_metadata%iiPDF_eta) &
                 = corr_array_below(hm_metadata%iiPDF_eta,hm_metadata%iiPDF_chi) &
                   * corr_array_below(jvar,hm_metadata%iiPDF_chi)
-      
+
     end do
-    
-    ! Calc in cloud Cholesky 
+
+    ! Calc in cloud Cholesky
     call Cholesky_factor( pdf_dim, corr_array_cloud(:,:), & ! In
                           corr_array_scaling, corr_cholesky_mtx_cloud(:,:), &  ! Out
                           l_corr_array_scaling ) ! Out
-                
-    ! Calc out of cloud Cholesky           
+
+    ! Calc out of cloud Cholesky
     call Cholesky_factor( pdf_dim, corr_array_below(:,:), & ! In
                           corr_array_scaling, corr_cholesky_mtx_below(:,:), &  ! Out
                           l_corr_array_scaling ) ! Out
-                          
-    ! Use rc_1 to determine which correlation and Cholesky matrices to assign to 1st PDF 
+
+    ! Use rc_1 to determine which correlation and Cholesky matrices to assign to 1st PDF
     ! Correlation matrices are symmetric, so we copy ij values to ji indices as well
     ! Cholesky matrices are lower triangular, so we only copy those values 
     do ivar = 1, pdf_dim
       do jvar = ivar, pdf_dim
         do k = 1, nzt
           do i = 1, ngrdcol
-            
+
             if ( rc_1(i,k) > rc_tol ) then
               ! Assign in cloud matrices to 1st PDF component
               corr_array_1_n(i,k,jvar,ivar)      = corr_array_cloud(jvar,ivar)
@@ -1312,20 +1319,20 @@ module setup_clubb_pdf_params
               corr_array_1_n(i,k,ivar,jvar)      = corr_array_below(jvar,ivar)
               corr_cholesky_mtx_1(i,k,jvar,ivar) = corr_cholesky_mtx_below(jvar,ivar)
             end if
-            
+
           end do
         end do
       end do
     end do
-            
-    ! Use rc_1 to determine which correlation and Cholesky matrices to assign to 2nd PDF 
+
+    ! Use rc_1 to determine which correlation and Cholesky matrices to assign to 2nd PDF
     ! Correlation matrices are symmetric, so we copy ij values to ji indices as well
     ! Cholesky matrices are lower triangular, so we only copy those values 
     do ivar = 1, pdf_dim
       do jvar = ivar, pdf_dim
         do k = 1, nzt
           do i = 1, ngrdcol
-            
+
             if ( rc_2(i,k) > rc_tol ) then
               ! Assign in cloud matrices to 2nd PDF component
               corr_array_2_n(i,k,jvar,ivar)      = corr_array_cloud(jvar,ivar)
@@ -1337,12 +1344,12 @@ module setup_clubb_pdf_params
               corr_array_2_n(i,k,ivar,jvar)      = corr_array_below(jvar,ivar)
               corr_cholesky_mtx_2(i,k,jvar,ivar) = corr_cholesky_mtx_below(jvar,ivar)
             end if
-            
+
           end do
         end do
       end do
     end do
-    
+
     ! Set upper triangular parts of Cholesky matrices to zero
     do ivar = 1, pdf_dim
       do jvar = 1, ivar-1
@@ -1350,9 +1357,9 @@ module setup_clubb_pdf_params
         corr_cholesky_mtx_2(:,:,jvar,ivar) = zero
       end do
     end do
-  
+
   end subroutine calc_corr_norm_and_cholesky_factor
-  
+
   !=============================================================================
   subroutine comp_corr_norm( nzt, pdf_dim, ngrdcol, hydromet_dim, hm_metadata, &
                              wm_zt, rc_1, rc_2, &
@@ -1374,7 +1381,7 @@ module setup_clubb_pdf_params
     ! References:
     !-----------------------------------------------------------------------
 
-    use constants_clubb, only:  &
+    use constants_clubb, only: &
         Ncn_tol,      &
         one,          &
         zero
@@ -1393,8 +1400,8 @@ module setup_clubb_pdf_params
         hm_metadata_type
 
     use pdf_parameter_module, only: &
-        pdf_parameter  ! Variable(s)    
-        
+        pdf_parameter  ! Variable(s)
+
     use matrix_operations, only: &
         mirror_lower_triangular_matrix
 
@@ -1434,7 +1441,7 @@ module setup_clubb_pdf_params
     intent(in) :: &
       corr_array_n_cloud, & ! Prescribed correlation array in cloud        [-]
       corr_array_n_below    ! Prescribed correlation array below cloud     [-]
-      
+
     type(pdf_parameter), intent(in) :: &
       pdf_params    ! PDF parameters                               [units vary]
 
@@ -1454,7 +1461,7 @@ module setup_clubb_pdf_params
       corr_array_2_n    ! Corr. array (normal space) of PDF vars. (comp. 2)  [-]
 
     !------------------------ Local Variables ------------------------
-    real( kind = core_rknd ), dimension(ngrdcol,nzt,pdf_dim)  :: &
+    real( kind = core_rknd ), dimension(ngrdcol,nzt,pdf_dim) :: &
       corr_w_hm_1_n, & ! Correlation of w and ln hm (1st PDF component) ip   [-]
       corr_w_hm_2_n    ! Correlation of w and ln hm (2nd PDF component) ip   [-]
 
@@ -1580,7 +1587,7 @@ module setup_clubb_pdf_params
                                    corr_array_1_n(:,:,iiPDF_eta,iiPDF_chi), & ! intent(out)
                                    corr_array_2_n(:,:,iiPDF_eta,iiPDF_chi) ) ! intent(out)
     else
-      
+
       ! Preferred, more accurate version.
       do i = 1, ngrdcol
         corr_array_1_n(i,:,iiPDF_eta,iiPDF_chi) = pdf_params%corr_chi_eta_1(i,:)
@@ -1600,17 +1607,16 @@ module setup_clubb_pdf_params
                                corr_array_1_n(:,:,iiPDF_w,iiPDF_chi), & ! intent(out)
                                corr_array_2_n(:,:,iiPDF_w,iiPDF_chi) ) ! intent(out)
     else
-      
+
       ! Preferred, more accurate version.
       do i = 1, ngrdcol
         corr_array_1_n(i,:,iiPDF_w,iiPDF_chi) = pdf_params%corr_w_chi_1(i,:)
         corr_array_2_n(i,:,iiPDF_w,iiPDF_chi) = pdf_params%corr_w_chi_2(i,:)
       end do
       
-    end if 
-                             
+    end if
 
-    ! Correlation of chi (old s) and ln Ncn, corr_array_n_cloud used twice because 
+    ! Correlation of chi (old s) and ln Ncn, corr_array_n_cloud used twice because
     ! Ncn is an inherently in-cloud property.
     call component_corr_x_hm_n_ip( nzt, ngrdcol, & ! intent(in)
                                    rc_1(:,:), & ! intent(in)
@@ -1643,16 +1649,16 @@ module setup_clubb_pdf_params
                                corr_array_1_n(:,:,iiPDF_w,iiPDF_eta), & ! intent(out)
                                corr_array_2_n(:,:,iiPDF_w,iiPDF_eta) ) ! intent(out)
     else
-      
+
       ! Preferred, more accurate version.
       do i = 1, ngrdcol
         corr_array_1_n(i,:,iiPDF_w,iiPDF_chi) = pdf_params%corr_w_chi_1(i,:)
         corr_array_2_n(i,:,iiPDF_w,iiPDF_chi) = pdf_params%corr_w_chi_2(i,:)
       end do
-      
+
     end if 
-    
-    ! Correlation of eta (old t) and ln Ncn, corr_array_n_cloud used twice because 
+
+    ! Correlation of eta (old t) and ln Ncn, corr_array_n_cloud used twice because
     ! Ncn is an inherently in-cloud property.
     call component_corr_x_hm_n_ip( nzt, ngrdcol, & ! intent(in)
                                    rc_1(:,:), & ! intent(in)
@@ -1673,7 +1679,7 @@ module setup_clubb_pdf_params
                                        corr_array_1_n(:,:,jvar,iiPDF_eta), & ! intent(out)
                                        corr_array_2_n(:,:,jvar,iiPDF_eta) ) ! intent(out)
     end do
-    
+
 
     ! Correlation of w and ln Ncn
     call component_corr_w_hm_n_ip( nzt, ngrdcol, & ! intent(in)
@@ -2194,7 +2200,7 @@ module setup_clubb_pdf_params
     ! Brian Griffin; February 2015.
 
     ! References:
-    !----------------------------------------------------------------------- 
+    !-----------------------------------------------------------------------
 
     use constants_clubb, only: &
         four, & ! Constant(s)
@@ -2550,7 +2556,7 @@ module setup_clubb_pdf_params
     ! References:
     !-----------------------------------------------------------------------
 
-    use constants_clubb, only:  &
+    use constants_clubb, only: &
         zero,   &
         rc_tol
 
@@ -2607,7 +2613,7 @@ module setup_clubb_pdf_params
     if ( ( iiPDF_type == iiPDF_ADG1 .or. iiPDF_type == iiPDF_ADG2 &
             .or. iiPDF_type == iiPDF_new_hybrid ) &
           .and. l_follow_ADG1_PDF_standards ) then
-          
+
       corr_w_x_1(:,:) = zero
       corr_w_x_2(:,:) = zero
 
@@ -2644,7 +2650,7 @@ module setup_clubb_pdf_params
                                      corr_chi_eta_NN_cloud, &
                                      corr_chi_eta_NN_below, &
                                      l_limit_corr_chi_eta, &
-                                     corr_chi_eta_1,  &
+                                     corr_chi_eta_1, &
                                      corr_chi_eta_2 )
 
     ! Description:
@@ -2654,7 +2660,7 @@ module setup_clubb_pdf_params
     ! References:
     !-----------------------------------------------------------------------
 
-    use constants_clubb, only:  &
+    use constants_clubb, only: &
         rc_tol, &
         max_mag_correlation
 
@@ -2690,7 +2696,7 @@ module setup_clubb_pdf_params
 
     ! Local Variables
     integer :: i, k
-    
+
     ! Correlation of chi (old s) and eta (old t) in the ith PDF component.
 
     ! The PDF variables chi and eta result from a transformation of the PDF
@@ -2726,8 +2732,8 @@ module setup_clubb_pdf_params
         end if
       end do
     end do
-        
-   
+
+
 
     ! We cannot have a perfect correlation of chi (old s) and eta (old t) if we
     ! plan to decompose this matrix and we don't want the Cholesky_factor code
@@ -2763,7 +2769,7 @@ module setup_clubb_pdf_params
                                        l_calc_w_corr, &
                                        corr_w_hm_1_n, &
                                        corr_w_hm_2_n )
-                                       
+
     ! Description:
     ! Calculates the in-precip correlation of w and the natural logarithm of a
     ! hydrometeor species within the ith PDF component.
@@ -2771,7 +2777,7 @@ module setup_clubb_pdf_params
     ! References:
     !-----------------------------------------------------------------------
 
-    use constants_clubb, only:  &
+    use constants_clubb, only: &
         rc_tol
 
     use clubb_precision, only: &
@@ -2832,7 +2838,7 @@ module setup_clubb_pdf_params
             end if
           end do
         end do
-       
+
     end if ! l_calc_w_corr
 
     return
@@ -2856,7 +2862,7 @@ module setup_clubb_pdf_params
     ! References:
     !-----------------------------------------------------------------------
 
-    use constants_clubb, only:  &
+    use constants_clubb, only: &
         rc_tol
 
     use clubb_precision, only: &
@@ -2909,7 +2915,7 @@ module setup_clubb_pdf_params
   end subroutine component_corr_x_hm_n_ip
 
   !=============================================================================
-  subroutine component_corr_hmx_hmy_n_ip( nzt, ngrdcol, &  
+  subroutine component_corr_hmx_hmy_n_ip( nzt, ngrdcol, &
                                           rc_1, &
                                           rc_2, &
                                           corr_hmx_hmy_n_LL_cloud, &
@@ -2924,7 +2930,7 @@ module setup_clubb_pdf_params
     ! References:
     !-----------------------------------------------------------------------
 
-    use constants_clubb, only:  &
+    use constants_clubb, only: &
         rc_tol
 
     use clubb_precision, only: &
@@ -2952,7 +2958,6 @@ module setup_clubb_pdf_params
 
     ! Local Variable
     integer :: i, k
-    
 
     ! Correlation (in-precip) of the natural logarithms of hydrometeor x and
     ! hydrometeor y in the ith PDF component.
@@ -2970,7 +2975,7 @@ module setup_clubb_pdf_params
         else
           corr_hmx_hmy_2_n(i,k) = corr_hmx_hmy_n_LL_below
         end if
-        
+
       end do
     end do
 
@@ -3050,7 +3055,7 @@ module setup_clubb_pdf_params
     ! References:
     !-----------------------------------------------------------------------
 
-    use constants_clubb, only:  &
+    use constants_clubb, only: &
         Ncn_tol, &  ! Constant(s)
         zero
 
@@ -3110,8 +3115,8 @@ module setup_clubb_pdf_params
     integer :: ivar, hm_idx, k, i  ! Indices
 
     ! Just to avoid typing hm_metadata%iiPDF_x everywhere
-    integer ::  &
-      iiPDF_w,   & 
+    integer ::   &
+      iiPDF_w,   &
       iiPDF_chi, &
       iiPDF_eta, &
       iiPDF_Ncn
@@ -3133,25 +3138,25 @@ module setup_clubb_pdf_params
       mu_x_1_n(:,k,iiPDF_eta) = mu_x_1(:,k,iiPDF_eta)
       mu_x_1_n(:,k,iiPDF_w)   = mu_x_1(:,k,iiPDF_w)
     end do
-      
+
     do k = 1, nzt  
       mu_x_2_n(:,k,iiPDF_chi) = mu_x_2(:,k,iiPDF_chi)
       mu_x_2_n(:,k,iiPDF_eta) = mu_x_2(:,k,iiPDF_eta)
       mu_x_2_n(:,k,iiPDF_w)   = mu_x_2(:,k,iiPDF_w)
     end do
-    
+
     do k = 1, nzt
       sigma_x_1_n(:,k,iiPDF_chi) = sigma_x_1(:,k,iiPDF_chi)
       sigma_x_1_n(:,k,iiPDF_eta) = sigma_x_1(:,k,iiPDF_eta)
       sigma_x_1_n(:,k,iiPDF_w)   = sigma_x_1(:,k,iiPDF_w)
     end do
-      
+
     do k = 1, nzt
       sigma_x_2_n(:,k,iiPDF_chi) = sigma_x_2(:,k,iiPDF_chi)
       sigma_x_2_n(:,k,iiPDF_eta) = sigma_x_2(:,k,iiPDF_eta)
       sigma_x_2_n(:,k,iiPDF_w)   = sigma_x_2(:,k,iiPDF_w)
     end do
-    
+
     !!! Transform the mean and standard deviation to normal space in each PDF
     !!! component for variables that have an assumed lognormal distribution,
     !!! given the mean and standard deviation in each PDF component for those
@@ -3166,7 +3171,7 @@ module setup_clubb_pdf_params
     ! in PDF component 1.
     do k = 1, nzt
       do i = 1, ngrdcol
-        
+
         if ( Ncnm(i,k) >= Ncn_tol ) then
 
            mu_x_1_n(i,k,iiPDF_Ncn) = mean_L2N( mu_x_1(i,k,iiPDF_Ncn), &
@@ -3231,7 +3236,7 @@ module setup_clubb_pdf_params
       ! component 1.
       do k = 1, nzt
         do i = 1, ngrdcol
-          
+
           if ( hm_1(i,k,hm_idx) >= hm_metadata%hydromet_tol(hm_idx) ) then
 
             mu_x_1_n(i,k,ivar) = mean_L2N( mu_x_1(i,k,ivar), &
@@ -3249,7 +3254,7 @@ module setup_clubb_pdf_params
             mu_x_1_n(i,k,ivar) = -huge( mu_x_1(i,k,ivar) )
 
           end if
-          
+
         end do
       end do
 
@@ -3261,7 +3266,7 @@ module setup_clubb_pdf_params
       ! component 2.
       do k = 1, nzt
         do i = 1, ngrdcol
-          
+
           if ( hm_2(i,k,hm_idx) >= hm_metadata%hydromet_tol(hm_idx) ) then
 
             mu_x_2_n(i,k,ivar) = mean_L2N( mu_x_2(i,k,ivar), &
@@ -3279,7 +3284,7 @@ module setup_clubb_pdf_params
             mu_x_2_n(i,k,ivar) = -huge( mu_x_2(i,k,ivar) )
 
           end if
-            
+
         end do
       end do
 
@@ -3293,7 +3298,7 @@ module setup_clubb_pdf_params
     return
 
   end subroutine norm_transform_mean_stdev
-  
+
   !=============================================================================
   subroutine denorm_transform_corr( nzt, ngrdcol, pdf_dim, hm_metadata, &
                                     sigma_x_1_n, sigma_x_2_n, &
@@ -3350,7 +3355,7 @@ module setup_clubb_pdf_params
 
     !--------------------------- Output Variables ---------------------------
     real( kind = core_rknd ), dimension(ngrdcol,nzt,pdf_dim,pdf_dim), &
-    intent(out) :: &
+    intent(out) ::  &
       corr_array_1, & ! Correlation array of PDF vars. (comp. 1)             [-]
       corr_array_2    ! Correlation array of PDF vars. (comp. 2)             [-]
 
@@ -3381,11 +3386,11 @@ module setup_clubb_pdf_params
     ! eta (old t) do not need to be transformed to standard space, since w, chi,
     ! and eta follow assumed normal distributions in each PDF component.  The
     ! normal space correlations between any two of these variables are the same
-    ! as the actual correlations.    
+    ! as the actual correlations.
     corr_array_1(:,:,iiPDF_eta,iiPDF_chi) = corr_array_1_n(:,:,iiPDF_eta,iiPDF_chi)
     corr_array_1(:,:,iiPDF_w,iiPDF_chi)   = corr_array_1_n(:,:,iiPDF_w,iiPDF_chi)
     corr_array_1(:,:,iiPDF_w,iiPDF_eta)   = corr_array_1_n(:,:,iiPDF_w,iiPDF_eta)
-    
+
     corr_array_2(:,:,iiPDF_eta,iiPDF_chi) = corr_array_2_n(:,:,iiPDF_eta,iiPDF_chi)
     corr_array_2(:,:,iiPDF_w,iiPDF_chi)   = corr_array_2_n(:,:,iiPDF_w,iiPDF_chi)
     corr_array_2(:,:,iiPDF_w,iiPDF_eta)   = corr_array_2_n(:,:,iiPDF_w,iiPDF_eta)
@@ -3403,19 +3408,19 @@ module setup_clubb_pdf_params
                      corr_array_1_n(:,:,iiPDF_Ncn,iiPDF_chi), & ! intent(in)
                      sigma_x_1_n(:,:,iiPDF_Ncn), sigma2_on_mu2_ip_1(:,:,iiPDF_Ncn), & ! intent(in)
                      corr_array_1(:,:,iiPDF_Ncn,iiPDF_chi)  ) ! intent(out)
-                        
+
     ! Transform the correlation of eta (old t) and N_cn to standard space in PDF component 1.
     call corr_NN2NL( nzt, ngrdcol, & ! intent(in)
                      corr_array_1_n(:,:,iiPDF_Ncn,iiPDF_eta), & ! intent(in)
                      sigma_x_1_n(:,:,iiPDF_Ncn), sigma2_on_mu2_ip_1(:,:,iiPDF_Ncn), & ! intent(in)
                      corr_array_1(:,:,iiPDF_Ncn,iiPDF_eta) )! intent(out)
- 
+
     ! Transform the correlation of w and N_cn to standard space in PDF component 1.
     call corr_NN2NL( nzt, ngrdcol, & ! intent(in)
                      corr_array_1_n(:,:,iiPDF_Ncn,iiPDF_w), & ! intent(in)
                      sigma_x_1_n(:,:,iiPDF_Ncn), sigma2_on_mu2_ip_1(:,:,iiPDF_Ncn), & ! intent(in)
                      corr_array_1(:,:,iiPDF_Ncn,iiPDF_w)  ) ! intent(out)
- 
+
     ! Transform the correlation of chi (old s) and N_cn to standard space in PDF component 2.
     call corr_NN2NL( nzt, ngrdcol, & ! intent(in)
                      corr_array_2_n(:,:,iiPDF_Ncn,iiPDF_chi), & ! intent(in)
@@ -3427,7 +3432,7 @@ module setup_clubb_pdf_params
                      corr_array_2_n(:,:,iiPDF_Ncn,iiPDF_eta), & ! intent(in)
                      sigma_x_2_n(:,:,iiPDF_Ncn), sigma2_on_mu2_ip_1(:,:,iiPDF_Ncn), & ! intent(in)
                      corr_array_2(:,:,iiPDF_Ncn,iiPDF_eta)  ) ! intent(out)
-                        
+
     ! Transform the correlation of w and N_cn to standard space in PDF component 2.
     call corr_NN2NL( nzt, ngrdcol, & ! intent(in)
                      corr_array_2_n(:,:,iiPDF_Ncn,iiPDF_w), & ! intent(in)
@@ -3590,7 +3595,7 @@ module setup_clubb_pdf_params
     ! References:
     !-----------------------------------------------------------------------
 
-    use constants_clubb, only:  &
+    use constants_clubb, only: &
         one,                 & ! Constant(s)
         zero,                &
         max_mag_correlation, &
@@ -3681,7 +3686,7 @@ module setup_clubb_pdf_params
 
        ! The PDF component 2 correlation is undefined.
        corr_w_hm_2_n = zero
-       
+
 
     elseif ( sigma_w_2 > w_tol .and. sigma_hm_2 > hm_tol ) then
 
@@ -3967,7 +3972,7 @@ module setup_clubb_pdf_params
 !                                corr_array_2(iiPDF_w,iiPDF_chi,:), stats_zt )
           do k = 1, nzt, 1
              call stat_update_var_pt( stats_metadata%icorr_w_chi_2_ca, k, & ! intent(in)
-                                      corr_array_2(k,iiPDF_w,iiPDF_chi), & ! intent(in)
+                                      corr_array_2(k,iiPDF_w,iiPDF_chi),  & ! intent(in)
                                       stats_zt ) ! intent(inout)
           end do ! k = 1, nzt, 1
        end if
@@ -3987,7 +3992,7 @@ module setup_clubb_pdf_params
 !                                corr_array_1(iiPDF_w,iiPDF_eta,:), stats_zt )
           do k = 1, nzt, 1
              call stat_update_var_pt( stats_metadata%icorr_w_eta_1_ca, k, & ! intent(in)
-                                      corr_array_1(k,iiPDF_w,iiPDF_eta), & ! intent(in)
+                                      corr_array_1(k,iiPDF_w,iiPDF_eta),  & ! intent(in)
                                       stats_zt ) ! intent(inout)
           end do ! k = 1, nzt, 1
        end if
@@ -4007,7 +4012,7 @@ module setup_clubb_pdf_params
 !                                corr_array_2(iiPDF_w,iiPDF_eta,:), stats_zt )
           do k = 1, nzt, 1
              call stat_update_var_pt( stats_metadata%icorr_w_eta_2_ca, k, & ! intent(in)
-                                      corr_array_2(k,iiPDF_w,iiPDF_eta), & ! intent(in)
+                                      corr_array_2(k,iiPDF_w,iiPDF_eta),  & ! intent(in)
                                       stats_zt ) ! intent(inout)
           end do ! k = 1, nzt, 1
        end if
@@ -4047,7 +4052,7 @@ module setup_clubb_pdf_params
 !          call stat_update_var( stats_metadata%icorr_w_Ncn_1, &
 !                                corr_array_1(iiPDF_Ncn,iiPDF_w,:), stats_zt )
           do k = 1, nzt, 1
-             call stat_update_var_pt( stats_metadata%icorr_w_Ncn_1, k, & ! intent(in)
+             call stat_update_var_pt( stats_metadata%icorr_w_Ncn_1, k,   & ! intent(in)
                                       corr_array_1(k,iiPDF_Ncn,iiPDF_w), & ! intent(in)
                                       stats_zt ) ! intent(inout)
           end do ! k = 1, nzt, 1
@@ -4058,7 +4063,7 @@ module setup_clubb_pdf_params
 !          call stat_update_var( stats_metadata%icorr_w_Ncn_2, &
 !                                corr_array_2(iiPDF_Ncn,iiPDF_w,:), stats_zt )
           do k = 1, nzt, 1
-             call stat_update_var_pt( stats_metadata%icorr_w_Ncn_2, k, & ! intent(in)
+             call stat_update_var_pt( stats_metadata%icorr_w_Ncn_2, k,   & ! intent(in)
                                       corr_array_2(k,iiPDF_Ncn,iiPDF_w), & ! intent(in)
                                       stats_zt ) ! intent(inout)
           end do ! k = 1, nzt, 1
@@ -4080,7 +4085,7 @@ module setup_clubb_pdf_params
 !                                corr_array_1(iiPDF_eta,iiPDF_chi,:), stats_zt )
           do k = 1, nzt, 1
              call stat_update_var_pt( stats_metadata%icorr_chi_eta_1_ca, k, & ! intent(in)
-                                      corr_array_1(k,iiPDF_eta,iiPDF_chi), & ! intent(in)
+                                      corr_array_1(k,iiPDF_eta,iiPDF_chi),  & ! intent(in)
                                       stats_zt ) ! intent(inout)
           end do ! k = 1, nzt, 1
        end if
@@ -4101,7 +4106,7 @@ module setup_clubb_pdf_params
 !                                corr_array_2(iiPDF_eta,iiPDF_chi,:), stats_zt )
           do k = 1, nzt, 1
              call stat_update_var_pt( stats_metadata%icorr_chi_eta_2_ca, k, & ! intent(in)
-                                      corr_array_2(k,iiPDF_eta,iiPDF_chi), & ! intent(in)
+                                      corr_array_2(k,iiPDF_eta,iiPDF_chi),  & ! intent(in)
                                       stats_zt ) ! intent(inout)
           end do ! k = 1, nzt, 1
        end if
@@ -4141,7 +4146,7 @@ module setup_clubb_pdf_params
 !          call stat_update_var( stats_metadata%icorr_chi_Ncn_1, &
 !                                corr_array_1(iiPDF_Ncn,iiPDF_chi,:), stats_zt )
           do k = 1, nzt, 1 
-             call stat_update_var_pt( stats_metadata%icorr_chi_Ncn_1, k, & ! intent(in)
+             call stat_update_var_pt( stats_metadata%icorr_chi_Ncn_1, k,   & ! intent(in)
                                       corr_array_1(k,iiPDF_Ncn,iiPDF_chi), & ! intent(inout)
                                       stats_zt ) ! intent(in)
           end do ! k = 1, nzt, 1
@@ -4152,7 +4157,7 @@ module setup_clubb_pdf_params
 !          call stat_update_var( stats_metadata%icorr_chi_Ncn_2, &
 !                                corr_array_2(iiPDF_Ncn,iiPDF_chi,:), stats_zt )
           do k = 1, nzt, 1
-             call stat_update_var_pt( stats_metadata%icorr_chi_Ncn_2, k, & ! intent(in)
+             call stat_update_var_pt( stats_metadata%icorr_chi_Ncn_2, k,   & ! intent(in)
                                       corr_array_2(k,iiPDF_Ncn,iiPDF_chi), & ! intent(in)
                                       stats_zt ) ! intent(inout)
           end do ! k = 1, nzt, 1
@@ -4193,7 +4198,7 @@ module setup_clubb_pdf_params
 !          call stat_update_var( stats_metadata%icorr_eta_Ncn_1, &
 !                                corr_array_1(iiPDF_Ncn,iiPDF_eta,:), stats_zt )
           do k = 1, nzt, 1
-             call stat_update_var_pt( stats_metadata%icorr_eta_Ncn_1, k, & ! intent(in)
+             call stat_update_var_pt( stats_metadata%icorr_eta_Ncn_1, k,   & ! intent(in)
                                       corr_array_1(k,iiPDF_Ncn,iiPDF_eta), & ! intent(in)
                                       stats_zt ) ! intent(inout)
           end do ! k = 1, nzt, 1
@@ -4204,7 +4209,7 @@ module setup_clubb_pdf_params
 !          call stat_update_var( stats_metadata%icorr_eta_Ncn_2, &
 !                                corr_array_2(iiPDF_Ncn,iiPDF_eta,:), stats_zt )
           do k = 1, nzt, 1
-             call stat_update_var_pt( stats_metadata%icorr_eta_Ncn_2, k, & ! intent(in)
+             call stat_update_var_pt( stats_metadata%icorr_eta_Ncn_2, k,   & ! intent(in)
                                       corr_array_2(k,iiPDF_Ncn,iiPDF_eta), & ! intent(in)
                                       stats_zt ) ! intent(inout)
           end do ! k = 1, nzt, 1
@@ -4289,7 +4294,7 @@ module setup_clubb_pdf_params
                                     mu_x_1_n, mu_x_2_n, &
                                     sigma_x_1_n, sigma_x_2_n, &
                                     corr_array_1_n, &
-                                    corr_array_2_n, & 
+                                    corr_array_2_n, &
                                     stats_metadata, &
                                     stats_zt )
 
@@ -4546,7 +4551,7 @@ module setup_clubb_pdf_params
 !          call stat_update_var( stats_metadata%icorr_w_Ncn_1_n, &
 !                                corr_array_1_n(iiPDF_Ncn,iiPDF_w,:), stats_zt )
           do k = 1, nzt, 1
-             call stat_update_var_pt( stats_metadata%icorr_w_Ncn_1_n, k, & ! intent(in)
+             call stat_update_var_pt( stats_metadata%icorr_w_Ncn_1_n, k,   & ! intent(in)
                                       corr_array_1_n(k,iiPDF_Ncn,iiPDF_w), & ! intent(in)
                                       stats_zt ) ! intent(inout)
           end do ! k = 1, nzt, 1
@@ -4557,7 +4562,7 @@ module setup_clubb_pdf_params
 !          call stat_update_var( stats_metadata%icorr_w_Ncn_2_n, &
 !                                corr_array_2_n(iiPDF_Ncn,iiPDF_w,:), stats_zt )
           do k = 1, nzt, 1
-             call stat_update_var_pt( stats_metadata%icorr_w_Ncn_2_n, k, & ! intent(in)
+             call stat_update_var_pt( stats_metadata%icorr_w_Ncn_2_n, k,   & ! intent(in)
                                       corr_array_2_n(k,iiPDF_Ncn,iiPDF_w), & ! intent(in)
                                       stats_zt ) ! intent(inout)
           end do ! k = 1, nzt, 1
@@ -4597,7 +4602,7 @@ module setup_clubb_pdf_params
 !                                corr_array_1_n(iiPDF_Ncn,iiPDF_chi,:), &
 !                                stats_zt )
           do k = 1, nzt, 1
-             call stat_update_var_pt( stats_metadata%icorr_chi_Ncn_1_n, k, & ! intent(in)
+             call stat_update_var_pt( stats_metadata%icorr_chi_Ncn_1_n, k,   & ! intent(in)
                                       corr_array_1_n(k,iiPDF_Ncn,iiPDF_chi), & ! intent(in)
                                       stats_zt ) ! intent(inout)
           end do ! k = 1, nzt, 1 
@@ -4609,7 +4614,7 @@ module setup_clubb_pdf_params
 !                                corr_array_2_n(iiPDF_Ncn,iiPDF_chi,:), &
 !                                stats_zt )
           do k = 1, nzt, 1
-             call stat_update_var_pt( stats_metadata%icorr_chi_Ncn_2_n, k, & ! intent(in)
+             call stat_update_var_pt( stats_metadata%icorr_chi_Ncn_2_n, k,   & ! intent(in)
                                       corr_array_2_n(k,iiPDF_Ncn,iiPDF_chi), & ! intent(in)
                                       stats_zt ) ! intent(inout)
           end do ! k = 1, nzt, 1
@@ -4649,7 +4654,7 @@ module setup_clubb_pdf_params
 !                                corr_array_1_n(iiPDF_Ncn,iiPDF_eta,:), &
 !                                stats_zt )
           do k = 1, nzt, 1
-             call stat_update_var_pt( stats_metadata%icorr_eta_Ncn_1_n, k, & ! intent(in)
+             call stat_update_var_pt( stats_metadata%icorr_eta_Ncn_1_n, k,   & ! intent(in)
                                       corr_array_1_n(k,iiPDF_Ncn,iiPDF_eta), & ! intent(in)
                                       stats_zt ) ! intent(inout)
           end do ! k = 1, nzt, 1 
@@ -4661,7 +4666,7 @@ module setup_clubb_pdf_params
 !                                corr_array_2_n(iiPDF_Ncn,iiPDF_eta,:), &
 !                                stats_zt )
           do k = 1, nzt, 1
-             call stat_update_var_pt( stats_metadata%icorr_eta_Ncn_2_n, k, & ! intent(in) 
+             call stat_update_var_pt( stats_metadata%icorr_eta_Ncn_2_n, k,   & ! intent(in) 
                                       corr_array_2_n(k,iiPDF_Ncn,iiPDF_eta), & ! intent(in)
                                       stats_zt ) ! intent(inout)
           end do ! k = 1, nzt, 1
@@ -4712,7 +4717,7 @@ module setup_clubb_pdf_params
 !                        stats_metadata%icorr_hmx_hmy_1_n(hm_idx_jvar,hm_idx_ivar), &
 !                        corr_array_1_n(jvar,ivar,:), stats_zt )
                 do k = 1, nzt, 1
-                   call stat_update_var_pt( & 
+                   call stat_update_var_pt( &
                         stats_metadata%icorr_hmx_hmy_1_n(hm_idx_jvar,hm_idx_ivar), k, & ! intent(in)
                         corr_array_1_n(k,jvar,ivar), & ! intent(in)
                         stats_zt ) ! intent(inout)
@@ -4745,7 +4750,7 @@ module setup_clubb_pdf_params
 
   !=============================================================================
   subroutine pack_hydromet_pdf_params( nzt, ngrdcol,                  & ! In
-                                       hydromet_dim, hm_metadata,  & ! In
+                                       hydromet_dim, hm_metadata,     & ! In
                                        hm_1, hm_2, pdf_dim, mu_x_1,   & ! In
                                        mu_x_2, sigma_x_1, sigma_x_2,  & ! In
                                        corr_array_1, corr_array_2,    & ! In
@@ -4923,7 +4928,7 @@ module setup_clubb_pdf_params
                                             sigma_eta_1, sigma_eta_2,        &
                                             rt_1, rt_2,                      &
                                             crt_1, crt_2,                    &
-                                            mixt_frac,                       &   
+                                            mixt_frac,                       &
                                             corr_chi_eta_1, corr_chi_eta_2 ) &
   result( rtp2_zt_from_chi )
 

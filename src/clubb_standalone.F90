@@ -12,8 +12,7 @@ program clubb_standalone
 
   use error_code, only: &
         clubb_no_error, &               ! Constants
-        clubb_fatal_error, &
-        err_code                        ! Error indicator
+        clubb_fatal_error
 
   use parameter_indices, only: nparams ! Variable(s)
 
@@ -40,7 +39,8 @@ program clubb_standalone
   integer :: &
     ngrdcol, &
     calls_per_out, &
-    iostat
+    iostat, &
+    err_code
 
   character(len=13), parameter :: &
     namelist_filename = "clubb.in"  ! Text file containing namelists
@@ -92,7 +92,7 @@ program clubb_standalone
 
   ! Run the model
   call run_clubb( ngrdcol, calls_per_out, l_output_multi_col, l_output_double_prec, &
-                  clubb_params, namelist_filename, l_stdout  )
+                  clubb_params, namelist_filename, l_stdout, err_code )
 
   if ( err_code == clubb_fatal_error ) then
     error stop "Fatal error in clubb, check your parameter values and timestep"

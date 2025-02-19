@@ -30,7 +30,7 @@ module precipitation_fraction
                               ice_supersat_frac_1, ice_supersat_frac_2, &
                               mixt_frac, clubb_params, &
                               stats_metadata, &
-                              stats_sfc, & 
+                              stats_sfc, err_code, &
                               precip_frac, &
                               precip_frac_1, &
                               precip_frac_2, &
@@ -62,7 +62,6 @@ module precipitation_fraction
 
     use error_code, only: &
         clubb_at_least_debug_level, &   ! Procedure
-        err_code, &                     ! Error Indicator
         clubb_fatal_error               ! Constant
 
     use stats_type, only: &
@@ -108,6 +107,8 @@ module precipitation_fraction
     type (stats), dimension(ngrdcol), intent(inout) :: &
       stats_sfc
 
+    integer, intent(inout) :: &
+      err_code      ! Error code catching and relaying any errors occurring in this subroutine
     !------------------------- Output Variables -------------------------
     real( kind = core_rknd ), dimension(ngrdcol,nzt), intent(out) :: &
       precip_frac,   & ! Precipitation fraction (overall)               [-]
@@ -396,7 +397,8 @@ module precipitation_fraction
         call precip_frac_assert_check( nzt, hydromet_dim, hydromet_tol,                   & ! In
                                        hydromet(j,:,:), mixt_frac(j,:), precip_frac(j,:), & ! In
                                        precip_frac_1(j,:), precip_frac_2(j,:),            & ! In
-                                       precip_frac_tol(j) )                                 ! In
+                                       precip_frac_tol(j),                                & ! In
+                                       err_code )                                           ! Inout
       end do
     endif
 
@@ -1071,7 +1073,8 @@ module precipitation_fraction
   subroutine precip_frac_assert_check( nzt, hydromet_dim, hydromet_tol, &
                                        hydromet, mixt_frac, precip_frac, &
                                        precip_frac_1, precip_frac_2, &
-                                       precip_frac_tol )
+                                       precip_frac_tol, &
+                                       err_code )
 
     ! Description:
     ! Assertion check for the precipitation fraction code.
@@ -1089,7 +1092,6 @@ module precipitation_fraction
         core_rknd  ! Variable(s)
 
     use error_code, only: &
-        err_code, &                     ! Error Indicator
         clubb_fatal_error               ! Constant
 
     implicit none
@@ -1113,6 +1115,10 @@ module precipitation_fraction
 
     real( kind = core_rknd ), intent(in) :: &
       precip_frac_tol    ! Minimum precip. frac. when hydromet. are present  [-]
+
+    ! Input/Output Variables
+    integer, intent(inout) :: &
+      err_code      ! Error code catching and relaying any errors occurring in this subroutine
 
     ! Local Variables
     integer :: k  ! Loop index

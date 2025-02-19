@@ -17,7 +17,6 @@ program clubb_thread_test
   use clubb_driver, only: run_clubb ! Procedure(s)
   
   use error_code, only: &
-        err_code,                    & ! Error Indicator
         clubb_no_error,              & ! Constant
         clubb_fatal_error
 
@@ -59,7 +58,7 @@ program clubb_thread_test
   ! Internal variables
   integer, dimension(ncases) :: err_code_saves
 
-  integer :: iter, iunit
+  integer :: iter, iunit, err_code
 
   !-----------------------------------------------------------------------------
 
@@ -71,9 +70,10 @@ program clubb_thread_test
 
   ! Initialize status of run 
   err_code_saves = clubb_no_error
+  err_code = clubb_no_error
 
   ! Run the model in parallel
-!$omp parallel do default(shared), private(iter, clubb_params, iunit), &
+!$omp parallel do default(shared), private(iter, clubb_params, iunit, err_code), &
 !$omp   shared(err_code_saves)
   do iter = 1, ncases
 #ifdef _OPENMP
@@ -87,7 +87,7 @@ program clubb_thread_test
 
     ! Run the model
     call run_clubb( 1, 1, l_output_multi_col, l_output_double_prec, &
-                    clubb_params, namelist_filename(iter), l_stdout )
+                    clubb_params, namelist_filename(iter), l_stdout, err_code )
 
     err_code_saves(iter) = err_code
 

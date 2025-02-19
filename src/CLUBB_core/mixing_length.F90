@@ -18,6 +18,7 @@ module mixing_length
                                     exner, thv_ds, mu, lmin, &
                                     saturation_formula, &
                                     l_implemented, &
+                                    err_code, &
                                     Lscale, Lscale_up, Lscale_down )
 
     ! Description:
@@ -133,7 +134,6 @@ module mixing_length
 
     use error_code, only: &
         clubb_at_least_debug_level,  & ! Procedure
-        err_code,                    & ! Error Indicator
         clubb_fatal_error              ! Constant
 
     use saturation, only:  &
@@ -182,6 +182,11 @@ module mixing_length
     logical, intent(in) :: &
       l_implemented ! Flag for CLUBB being implemented in a larger model
 
+    !--------------------------------- InOut Variables ---------------------------------
+    integer, intent(inout) :: &
+      err_code      ! Error code catching and relaying any errors occurring in this subroutine
+
+    !--------------------------------- Output Variables ---------------------------------
     real( kind = core_rknd ), dimension(ngrdcol,nzt), intent(out) ::  &
       Lscale,    & ! Mixing length      [m]
       Lscale_up, & ! Mixing length up   [m]
@@ -839,7 +844,8 @@ module mixing_length
       !$acc              thvm, thlm, rtm, em, exner, p_in_Pa, thv_ds )
 
       do i = 1, ngrdcol
-        call length_check( nzt, Lscale(i,:), Lscale_up(i,:), Lscale_down(i,:) ) ! intent(in)
+        call length_check( nzt, Lscale(i,:), Lscale_up(i,:), Lscale_down(i,:), & ! intent(in)
+                           err_code ) ! intent(inout)
       end do
 
       if ( err_code == clubb_fatal_error ) then
@@ -884,7 +890,7 @@ module mixing_length
                                     saturation_formula, &
                                     l_Lscale_plume_centered, &
                                     stats_metadata, &
-                                    stats_zt, &
+                                    stats_zt, err_code, &
                                     Lscale, Lscale_up, Lscale_down)
 
     use constants_clubb, only: &
@@ -917,7 +923,6 @@ module mixing_length
 
     use error_code, only: &
         clubb_at_least_debug_level,  & ! Procedure
-        err_code,                    & ! Error Indicator
         clubb_fatal_error              ! Constant
 
     use constants_clubb, only:  &
@@ -980,6 +985,9 @@ module mixing_length
     !--------------------------------- InOut Variables ---------------------------------
     type (stats), dimension(ngrdcol), intent(inout) :: &
       stats_zt
+
+    integer, intent(inout) :: &
+      err_code      ! Error code catching and relaying any errors occurring in this subroutine
 
     !--------------------------------- Output Variables ---------------------------------
     real( kind = core_rknd ), dimension(ngrdcol,nzt), intent(out) ::  &
@@ -1074,9 +1082,10 @@ module mixing_length
 
       call compute_mixing_length( nzm, nzt, ngrdcol, gr, thvm, thlm_pert_1, & ! In
                                   rtm_pert_1, em, Lscale_max, p_in_Pa,      & ! In
-                                  exner, thv_ds_zt, mu_pert_1, lmin,        & ! In 
+                                  exner, thv_ds_zt, mu_pert_1, lmin,        & ! In
                                   saturation_formula,                       & ! In
                                   l_implemented,                            & ! In
+                                  err_code,                                 & ! InOut
                                   Lscale_pert_1, Lscale_up, Lscale_down )     ! Out
 
       !$acc parallel loop gang vector collapse(2) default(present)
@@ -1105,9 +1114,10 @@ module mixing_length
 
       call compute_mixing_length( nzm, nzt, ngrdcol, gr, thvm, thlm_pert_2, & ! In
                                   rtm_pert_2, em, Lscale_max, p_in_Pa,      & ! In
-                                  exner, thv_ds_zt, mu_pert_2, lmin,        & ! In 
+                                  exner, thv_ds_zt, mu_pert_2, lmin,        & ! In
                                   saturation_formula,                       & ! In
                                   l_implemented,                            & ! In
+                                  err_code,                                 & ! InOut
                                   Lscale_pert_2, Lscale_up, Lscale_down )     ! Out
 
     else if ( l_avg_Lscale .and. l_Lscale_plume_centered ) then
@@ -1176,16 +1186,18 @@ module mixing_length
       ! Call length with perturbed values of thl and rt
       call compute_mixing_length( nzm, nzt, ngrdcol, gr, thvm, thlm_pert_pos_rt, & ! In
                                   rtm_pert_pos_rt, em, Lscale_max, p_in_Pa,      & ! In
-                                  exner, thv_ds_zt, mu_pert_pos_rt, lmin,        & ! In 
+                                  exner, thv_ds_zt, mu_pert_pos_rt, lmin,        & ! In
                                   saturation_formula,                            & ! In
                                   l_implemented,                                 & ! In
+                                  err_code,                                      & ! InOut
                                   Lscale_pert_1, Lscale_up, Lscale_down )          ! Out
 
       call compute_mixing_length( nzm, nzt, ngrdcol, gr, thvm, thlm_pert_neg_rt, & ! In
                                   rtm_pert_neg_rt, em, Lscale_max, p_in_Pa,      & ! In
-                                  exner, thv_ds_zt, mu_pert_neg_rt, lmin,        & ! In 
+                                  exner, thv_ds_zt, mu_pert_neg_rt, lmin,        & ! In
                                   saturation_formula,                            & ! In
                                   l_implemented,                                 & ! In
+                                  err_code,                                      & ! InOut
                                   Lscale_pert_2, Lscale_up, Lscale_down )          ! Out
 
     else
@@ -1222,9 +1234,10 @@ module mixing_length
     ! Diagnose CLUBB's turbulent mixing length scale.
     call compute_mixing_length( nzm, nzt, ngrdcol, gr, thvm, thlm, & ! In
                                 rtm, em, Lscale_max, p_in_Pa,      & ! In
-                                exner, thv_ds_zt, newmu, lmin,     & ! In 
+                                exner, thv_ds_zt, newmu, lmin,     & ! In
                                 saturation_formula,                & ! In
                                 l_implemented,                     & ! In
+                                err_code,                          & ! InOut
                                 Lscale, Lscale_up, Lscale_down )     ! Out
 
     if ( l_avg_Lscale ) then
@@ -1279,7 +1292,7 @@ module mixing_length
                         l_e3sm_config, & ! intent in
                         l_smooth_Heaviside_tau_wpxp, & ! intent in
                         brunt_vaisala_freq_sqd_smth, Ri_zm, & ! intent in
-                        stats_zm, & ! intent inout
+                        stats_zm, err_code, & ! intent inout
                         invrs_tau_zt, invrs_tau_zm, & ! intent out
                         invrs_tau_sfc, invrs_tau_no_N2_zm, invrs_tau_bkgnd, & ! intent out
                         invrs_tau_shear, invrs_tau_N2_iso, & ! intent out
@@ -1341,7 +1354,6 @@ module mixing_length
         iz_displace
 
     use error_code, only: &
-      err_code, &
       clubb_fatal_error, &
       clubb_at_least_debug_level
 
@@ -1397,6 +1409,9 @@ module mixing_length
     !--------------------------- Input/Output Variables ---------------------------
     type (stats), intent(inout), dimension(ngrdcol) :: &
       stats_zm
+
+    integer, intent(inout) :: &
+      err_code      ! Error code catching and relaying any errors occurring in this subroutine
 
     !--------------------------------- Output Variables ---------------------------------
     real( kind = core_rknd ), dimension(ngrdcol,nzm), intent(out) :: &

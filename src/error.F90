@@ -198,11 +198,6 @@ module error
 !-----------------------------------------------------------------------
     use constants_clubb, only: fstderr ! Variable(s)
 
-    use error_code, only: &
-        clubb_at_least_debug_level,  & ! Procedure
-        err_code,                    & ! Error Indicator
-        clubb_fatal_error              ! Constant
-
     use text_writer, only: write_text ! Subroutine(s)
 
     use mt95, only: genrand_real1 ! Procedure
@@ -614,17 +609,6 @@ module error
         real(param_vals_matrix(1,1:ndim)) ), kind = core_rknd)
     l_initialize_sigma = .false.
 
-    ! Note: min_les_clubb_diff is written to deal with undefined and
-    ! invalid values for variations on the initial vector, but that
-    ! algorithm relies on the initial vector being valid.
-
-    if ( clubb_at_least_debug_level( 0 ) ) then
-        if ( err_code == clubb_fatal_error ) then
-          write(fstderr,*) "Initial variable values must be valid."
-          error stop
-        end if
-    end if
-
     ! Save initial error
 
     init_err = cost_fnc_vector(1)
@@ -674,7 +658,6 @@ module error
 
     use error_code, only: &
         clubb_at_least_debug_level,  & ! Procedure
-        err_code,                    & ! Error Indicator
         clubb_no_error,              & ! Constant
         clubb_fatal_error
 
@@ -772,6 +755,8 @@ module error
 
     integer :: underscore_idx ! Used when l_save_all_nc_files = .true.
 
+    integer :: err_code ! Error output of run_clubb
+
     integer, dimension(c_total) ::  & 
       run_stat ! isValid over each model case
 
@@ -854,10 +839,11 @@ module error
     ! model variables are declared threadprivate -dschanen 31 Jan 2007
 
 !$omp parallel do default(none), private(c_run), &
-!$omp   shared(params_local, run_file, run_stat, c_total, model_flags_array, iter)
+!$omp   shared(params_local, run_file, run_stat, c_total, model_flags_array, iter), &
+!$omp   private(err_code)
     do c_run=1, c_total, 1
 
-#ifndef _OPENMP 
+#ifndef _OPENMP
       ! Write a message about which case we're calling if OpenMP is not enabled
       ! Save tuning results in file if specified
       if( l_save_tuning_run ) open(unit=file_unit, file=tuning_filename, &
@@ -865,17 +851,17 @@ module error
       call write_text( "Calling CLUBB with case "//trim( run_file(c_run) ), &
         l_save_tuning_run, file_unit )
       if( l_save_tuning_run ) close(unit=file_unit)
-      
+
 #endif
       ! Run the CLUBB model with parameters as input
 
       if ( allocated( model_flags_array ) ) then
         call run_clubb( 1, 1, l_output_multi_col, l_output_double_prec, &
-                        params_local, run_file(c_run), l_stdout, &
+                        params_local, run_file(c_run), l_stdout, err_code, &
                         model_flags_array(iter,:) )
       else
         call run_clubb( 1, 1, l_output_multi_col, l_output_double_prec, &
-                        params_local, run_file(c_run), l_stdout )
+                        params_local, run_file(c_run), l_stdout, err_code )
       end if
 
       run_stat(c_run) = err_code
@@ -1651,7 +1637,6 @@ module error
     write (str,'(I0.4)') k
     str = adjustl(str)
   end function str
-
 
 end module error
 !-----------------------------------------------------------------------

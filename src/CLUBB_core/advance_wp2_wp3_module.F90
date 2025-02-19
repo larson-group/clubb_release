@@ -85,7 +85,7 @@ module advance_wp2_wp3_module
                               l_wp2_fill_holes_tke,                          & ! intent(in)
                               stats_metadata,                                & ! intent(in)
                               stats_zt, stats_zm, stats_sfc,                 & ! intent(inout)
-                              up2, vp2, wp2, wp3, wp3_zm, wp2_zt )             ! intent(inout)
+                              up2, vp2, wp2, wp3, wp3_zm, wp2_zt, err_code )   ! intent(inout)
 
     ! Description:
     ! Advance w'^2 and w'^3 one timestep.
@@ -184,7 +184,6 @@ module advance_wp2_wp3_module
 
     use error_code, only: &
         clubb_at_least_debug_level,  & ! Procedure
-        err_code,                    & ! Error Indicator
         clubb_fatal_error              ! Constant
 
     use stats_type, only: stats ! Type
@@ -315,6 +314,9 @@ module advance_wp2_wp3_module
     real( kind = core_rknd ), dimension(ngrdcol,nzt), intent(inout) :: &
       wp3,  & ! w'^3 (thermodynamic levels)               [m^3/s^3]
       wp2_zt  ! w'^2 interpolated to thermodyamic levels  [m^2/s^2]
+
+    integer, intent(inout) :: &
+      err_code    ! Error code catching and relaying any errors occurring in this subroutine
 
     ! --------------------------- Local Variables ---------------------------
     real( kind = core_rknd ), dimension(ngrdcol,nzm) :: &
@@ -1038,7 +1040,7 @@ module advance_wp2_wp3_module
                      l_wp2_fill_holes_tke,                        & ! intent(in)
                      stats_metadata,                              & ! intent(in)
                      stats_zt, stats_zm, stats_sfc,               & ! intent(inout)
-                     up2, vp2, wp2, wp3, wp3_zm, wp2_zt )           ! intent(inout)
+                     up2, vp2, wp2, wp3, wp3_zm, wp2_zt, err_code ) ! intent(inout)
 
     if ( l_lmm_stepping ) then
       !$acc parallel loop gang vector collapse(2) default(present)
@@ -1229,7 +1231,7 @@ module advance_wp2_wp3_module
                          l_wp2_fill_holes_tke, &
                          stats_metadata, &
                          stats_zt, stats_zm, stats_sfc, &
-                         up2, vp2, wp2, wp3, wp3_zm, wp2_zt )
+                         up2, vp2, wp2, wp3, wp3_zm, wp2_zt, err_code )
 
     ! Description:
     ! Decompose, and back substitute the matrix for wp2/wp3
@@ -1254,12 +1256,11 @@ module advance_wp2_wp3_module
 
     use error_code, only: &
         clubb_at_least_debug_level,  & ! Procedure
-        err_code,                    & ! Error Indicator
         clubb_fatal_error              ! Constants
 
     use model_flags, only: &
         l_hole_fill                    ! Variable(s)
-      
+
     use clubb_precision, only: &
         core_rknd ! Variable(s)
 
@@ -1407,6 +1408,9 @@ module advance_wp2_wp3_module
       wp3,  & ! w'^3 (thermodynamic levels)                       [m^3/s^3]
       wp2_zt  ! w'^2 interpolated to thermodyamic levels          [m^2/s^2]
 
+    integer, intent(inout) :: &
+      err_code    ! Error code catching and relaying any errors occurring in this subroutine
+
     ! ----------------------- Local Variables -----------------------
     real( kind = core_rknd ), dimension(ngrdcol,2*nzm-1) :: &
       rhs_save    ! Saved RHS of band matrix
@@ -1474,10 +1478,10 @@ module advance_wp2_wp3_module
 
       ! Solve the system and return condition number
       ! Note: When using lapack this can change the answer slightly
-      call band_solve( "wp2_wp3", penta_solve_method, & ! intent(in)
-                       ngrdcol, 2, 2, 2*nzm-1,        & ! intent(in)
-                       lhs, rhs,                      & ! intent(inout)
-                       solut, rcond )                   ! intent(out)
+      call band_solve(  "wp2_wp3", penta_solve_method, & ! intent(in)
+                        ngrdcol, 2, 2, 2*nzm-1,        & ! intent(in)
+                        lhs, rhs, err_code,            & ! intent(inout)
+                        solut, rcond )                   ! intent(out)
 
       ! Est. of the condition number of the w'^2/w^3 LHS matrix
       do i = 1, ngrdcol
@@ -1486,17 +1490,17 @@ module advance_wp2_wp3_module
                                  one / rcond(i), & ! intent(in)
                                  stats_sfc(i) )    ! intent(inout)
       end do
-      
+
     else
 
-      ! Solve the system 
+      ! Solve the system
       call band_solve( "wp2_wp3", penta_solve_method, & ! intent(in)
                        ngrdcol, 2, 2, 2*nzm-1,        & ! intent(in)
-                       lhs, rhs,                      & ! intent(inout)
+                       lhs, rhs, err_code,            & ! intent(inout)
                        solut )                          ! intent(out)
 
     end if
-    
+
     if ( clubb_at_least_debug_level( 0 ) ) then
       if ( err_code == clubb_fatal_error ) then
 
@@ -1545,7 +1549,7 @@ module advance_wp2_wp3_module
       end do
     end do
     !$acc end parallel loop
-    
+
     !$acc parallel loop gang vector collapse(2) default(present)
     do k = 1, nzt
       do i = 1, ngrdcol
@@ -1570,30 +1574,30 @@ module advance_wp2_wp3_module
       !$acc data copyin( C_uu_shr_zeros, C_uu_shr_plus_one, C11_Skw_fnc_zeros, &
       !$acc              C11_Skw_fnc_plus_one ) &
       !$acc      copyout( lhs_wp2_ac_term, lhs_wp2_pr2_term, lhs_wp3_ac_term, lhs_wp3_pr2_term )
-      
+
       ! Note:  To find the contribution of w'^2 term ac, substitute 0 for the
       !        C_uu_shr input to function wp2_terms_ac_pr2_lhs.
       call wp2_terms_ac_pr2_lhs( nzm, nzt, ngrdcol, gr, & ! intent(in)
                                  C_uu_shr_zeros, wm_zt, & ! intent(in)
-                                 lhs_wp2_ac_term )        ! intent(out)
-      
+                                 lhs_wp2_ac_term  )       ! intent(out)
+
       ! Note:  To find the contribution of w'^2 term pr2, add 1 to the
       !        C_uu_shr input to function wp2_terms_ac_pr2_lhs.
       call wp2_terms_ac_pr2_lhs( nzm, nzt, ngrdcol, gr,     & ! intent(in)
                                  C_uu_shr_plus_one, wm_zt,  & ! intent(in)
                                  lhs_wp2_pr2_term )           ! intent(out)
-      
+
       ! Note:  To find the contribution of w'^3 term ac, substitute 0 for the
       !        C_ll skewness function input to function wp3_terms_ac_pr2_lhs.
       call wp3_terms_ac_pr2_lhs( nzm, nzt, ngrdcol, gr, C11_Skw_fnc_zeros, wm_zm, & ! intent(in)
                                  lhs_wp3_ac_term )                                  ! intent(out)
-      
+
       ! Note:  To find the contribution of w'^3 term pr2, add 1 to the
       !        C_ll skewness function input to function wp3_terms_ac_pr2_lhs.
       call wp3_terms_ac_pr2_lhs( nzm, nzt, ngrdcol, gr,         & ! intent(in)
                                  C11_Skw_fnc_plus_one, wm_zm,   & ! intent(in)
                                  lhs_wp3_pr2_term )               ! intent(out)
-    
+
       !$acc end data
 
       do i = 1, ngrdcol

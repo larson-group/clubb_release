@@ -355,7 +355,8 @@ module spurious_source_test
       num_iter = 5    ! Number of different configurations to loop over.
 
     integer :: &
-      num_errors    ! Number of failed parameter sets
+      num_errors,       & ! Number of failed parameter sets
+      err_code_dummy      ! Dummy variable for catching error outputs
 
     real( kind = core_rknd ), parameter :: &
       tol = 1.0e-10_core_rknd    ! Tolerance to determine pass or fail
@@ -983,7 +984,7 @@ module spurious_source_test
                              stats_zt, stats_zm, stats_sfc, &
                              rtm, wprtp, thlm, wpthlp, &
                              sclrm, wpsclrp, um, upwp, vm, vpwp, &
-                             um_pert, vm_pert, upwp_pert, vpwp_pert )
+                             um_pert, vm_pert, upwp_pert, vpwp_pert, err_code_dummy )
 
        ! Calculate the spurious source for rtm
        rtm_flux_top = rho_ds_zm(1,gr%nzm) * wprtp(1,gr%nzm)

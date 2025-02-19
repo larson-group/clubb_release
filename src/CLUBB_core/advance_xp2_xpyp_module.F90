@@ -75,7 +75,7 @@ module advance_xp2_xpyp_module
                                stats_metadata,                            & ! In
                                stats_zt, stats_zm, stats_sfc,             & ! In
                                rtp2, thlp2, rtpthlp, up2, vp2,            & ! Inout
-                               sclrp2, sclrprtp, sclrpthlp)                 ! Inout
+                               sclrp2, sclrprtp, sclrpthlp, err_code )      ! Inout
 
     ! Description:
     ! Prognose scalar variances, scalar covariances, and horizontal turbulence components.
@@ -135,28 +135,28 @@ module advance_xp2_xpyp_module
         nu_vertical_res_dep    ! Type(s)
 
     use grid_class, only: & 
-        grid, & ! Type
-        zm2zt, & ! Procedure(s)
+        grid,   & ! Type
+        zm2zt,  & ! Procedure(s)
         zt2zm
 
     use pdf_parameter_module, only: &
         implicit_coefs_terms    ! Variable Type
 
-    use clubb_precision, only:  & 
+    use clubb_precision, only: &
         core_rknd ! Variable(s)
 
-    use clip_explicit, only: & 
-        clip_covar,  & ! Procedure(s)
-        clip_variance, &
-        clip_sclrp2, &
-        clip_sclrprtp, &
+    use clip_explicit, only: &
+        clip_covar,     & ! Procedure(s)
+        clip_variance,  &
+        clip_sclrp2,    &
+        clip_sclrprtp,  &
         clip_sclrpthlp
 
     use sponge_layer_damping, only: &
         up2_vp2_sponge_damp_settings, & ! Variable(s)
         up2_vp2_sponge_damp_profile,  &
         sponge_damp_xp2                 ! Procedure(s)
-      
+
     use stats_type_utilities, only: &
         stat_begin_update, & ! Procedure(s)
         stat_end_update,   &
@@ -165,7 +165,6 @@ module advance_xp2_xpyp_module
 
     use error_code, only: &
         clubb_at_least_debug_level,  & ! Procedure
-        err_code,                    & ! Error Indicator
         clubb_fatal_error              ! Constants
 
     use stats_variables, only: &
@@ -173,11 +172,11 @@ module advance_xp2_xpyp_module
 
     use array_index, only: &
         sclr_idx_type
-        
-    use mean_adv, only:  & 
+
+    use mean_adv, only: &
         term_ma_zm_lhs      ! Procedure(s)
 
-    use diffusion, only:  & 
+    use diffusion, only: &
         diffusion_zm_lhs    ! Procedure(s)
 
     use stats_type, only: stats ! Type
@@ -191,16 +190,16 @@ module advance_xp2_xpyp_module
       ngrdcol,  & ! Number of grid columns
       sclr_dim    ! Number of passive scalars
 
-    real( kind = core_rknd ), intent(in), dimension(sclr_dim) :: & 
+    real( kind = core_rknd ), intent(in), dimension(sclr_dim) :: &
       sclr_tol          ! Threshold(s) on the passive scalars  [units vary]
-    
+
     type (grid), intent(in) :: &
       gr
 
     type (sclr_idx_type), intent(in) :: &
       sclr_idx
-    
-    real( kind = core_rknd ), intent(in), dimension(ngrdcol,nzm) ::  & 
+
+    real( kind = core_rknd ), intent(in), dimension(ngrdcol,nzm) :: &
       invrs_tau_xp2_zm, & ! Inverse time-scale for xp2 on momentum levels [1/s]
       invrs_tau_C4_zm,  & ! Inverse time-scale for C4 terms on mom. levels [1/s]
       invrs_tau_C14_zm, & ! Inverse time-scale for C14 terms on mom. levels [1/s]
@@ -220,7 +219,7 @@ module advance_xp2_xpyp_module
       thv_ds_zm,        & ! Dry, base-state theta_v on mom. levs. [K]
       wp3_on_wp2          ! Smoothed version of <w'^3>/<w'^2> zm  [m/s]
 
-    real( kind = core_rknd ), intent(in), dimension(ngrdcol,nzt) ::  & 
+    real( kind = core_rknd ), intent(in), dimension(ngrdcol,nzt) :: &
       rtm,              & ! Total water mixing ratio (t-levs)     [kg/kg]
       thlm,             & ! Liquid potential temp. (t-levs)       [K]
       um,               & ! u wind (thermodynamic levels)         [m/s]
@@ -242,16 +241,16 @@ module advance_xp2_xpyp_module
       dt             ! Model timestep                                [s]
 
     ! Passive scalar input
-    real( kind = core_rknd ), intent(in), dimension(ngrdcol,nzt,sclr_dim) ::  & 
+    real( kind = core_rknd ), intent(in), dimension(ngrdcol,nzt,sclr_dim) :: &
       sclrm,       & ! Mean value; pass. scalar (t-levs.) [{sclr units}]
       wpsclrp2,    & ! <w'sclr'^2> (thermodynamic levels) [m/s{sclr units}^2]
       wpsclrprtp,  & ! <w'sclr'r_t'> (thermo. levels)     [m/s{sclr units)kg/kg]
       wpsclrpthlp    ! <w'sclr'th_l'> (thermo. levels)    [m/s{sclr units}K]
 
-    real( kind = core_rknd ), intent(in), dimension(ngrdcol,nzm,sclr_dim) ::  & 
+    real( kind = core_rknd ), intent(in), dimension(ngrdcol,nzm,sclr_dim) :: &
       wpsclrp        ! <w'sclr'> (momentum levels)        [m/s{sclr units}]
 
-    real( kind = core_rknd ), dimension(ngrdcol,nzm), intent(in) :: & 
+    real( kind = core_rknd ), dimension(ngrdcol,nzm), intent(in) :: &
       lhs_splat_wp2  ! LHS coefficient of wp2 splatting term  [1/s]
 
     real( kind = core_rknd ), dimension(ngrdcol,nparams), intent(in) :: &
@@ -310,6 +309,9 @@ module advance_xp2_xpyp_module
     ! Passive scalar output
     real( kind = core_rknd ), intent(inout), dimension(ngrdcol,nzm,sclr_dim) ::  & 
       sclrp2, sclrprtp, sclrpthlp
+
+    integer, intent(inout) :: &
+      err_code    ! Error code catching and relaying any errors occurring in this subroutine
 
     !------------------------------ Local Variables ------------------------------
     real( kind = core_rknd ), dimension(ngrdcol,nzm) ::  &
@@ -624,59 +626,59 @@ module advance_xp2_xpyp_module
         end do
         !$acc end parallel loop
 
-    else 
+    else
 
       l_single_solve_possible = .false.
 
     end if
-                            
+
 
     if ( l_single_solve_possible ) then
-           
+
       ! All left hand side matricies are equal for rtp2, thlp2, rtpthlp, and scalars.
       ! Thus only one solve is neccesary, using combined right hand sides
-      call solve_xp2_xpyp_with_single_lhs( nzm, nzt, ngrdcol, sclr_dim, sclr_tol, gr,       & ! In
-                                           sclr_idx,                                        & ! In
-                                           C2rt_1d, invrs_tau_xp2_zm, rtm, thlm, wprtp,     & ! In
-                                           wpthlp, rtp2_forcing, thlp2_forcing,             & ! In
-                                           rtpthlp_forcing, sclrm, wpsclrp,                 & ! In
-                                           lhs_ta_wprtp2, lhs_ma, lhs_diff,                 & ! In
-                                           rhs_ta_wprtp2, rhs_ta_wpthlp2,                   & ! In
-                                           rhs_ta_wprtpthlp, rhs_ta_wpsclrp2,               & ! In
-                                           rhs_ta_wprtpsclrp, rhs_ta_wpthlpsclrp,           & ! In
-                                           dt, l_scalar_calc, l_lmm_stepping,               & ! In
-                                           tridiag_solve_method,                            & ! In
-                                           stats_metadata,                                  & ! In
-                                           stats_zm, stats_sfc,                             & ! In
-                                           rtp2, thlp2, rtpthlp,                            & ! Out
-                                           sclrp2, sclrprtp, sclrpthlp )                      ! Out
+      call solve_xp2_xpyp_with_single_lhs( nzm, nzt, ngrdcol, sclr_dim, sclr_tol, gr,   & ! In
+                                           sclr_idx,                                    & ! In
+                                           C2rt_1d, invrs_tau_xp2_zm, rtm, thlm, wprtp, & ! In
+                                           wpthlp, rtp2_forcing, thlp2_forcing,         & ! In
+                                           rtpthlp_forcing, sclrm, wpsclrp,             & ! In
+                                           lhs_ta_wprtp2, lhs_ma, lhs_diff,             & ! In
+                                           rhs_ta_wprtp2, rhs_ta_wpthlp2,               & ! In
+                                           rhs_ta_wprtpthlp, rhs_ta_wpsclrp2,           & ! In
+                                           rhs_ta_wprtpsclrp, rhs_ta_wpthlpsclrp,       & ! In
+                                           dt, l_scalar_calc, l_lmm_stepping,           & ! In
+                                           tridiag_solve_method,                        & ! In
+                                           stats_metadata,                              & ! In
+                                           stats_zm, stats_sfc,                         & ! In
+                                           rtp2, thlp2, rtpthlp,                        & ! InOut
+                                           sclrp2, sclrprtp, sclrpthlp, err_code )        ! InOut
     else
-          
+
       ! Left hand sides are potentially different, this requires multiple solves
-      call solve_xp2_xpyp_with_multiple_lhs( nzm, nzt, ngrdcol, sclr_dim, sclr_tol, gr,    & ! In
-                                             sclr_idx,                                     & ! In
-                                             C2rt_1d, C2thl_1d, C2rtthl_1d, C2sclr_1d,     & ! In
-                                             invrs_tau_xp2_zm, rtm, thlm, wprtp, wpthlp,   & ! In
-                                             rtp2_forcing, thlp2_forcing, rtpthlp_forcing, & ! In
-                                             sclrm, wpsclrp,                               & ! In
-                                             lhs_ta_wprtp2, lhs_ta_wpthlp2,                & ! In
-                                             lhs_ta_wprtpthlp, lhs_ta_wpsclrp2,            & ! In
-                                             lhs_ta_wprtpsclrp, lhs_ta_wpthlpsclrp,        & ! In
-                                             lhs_ma, lhs_diff,                             & ! In
-                                             rhs_ta_wprtp2, rhs_ta_wpthlp2,                & ! In
-                                             rhs_ta_wprtpthlp, rhs_ta_wpsclrp2,            & ! In
-                                             rhs_ta_wprtpsclrp, rhs_ta_wpthlpsclrp,        & ! In
-                                             dt, iiPDF_type, l_scalar_calc,                & ! In
-                                             l_lmm_stepping,                               & ! In
-                                             tridiag_solve_method,                         & ! In
-                                             stats_metadata,                               & ! In
-                                             stats_zm, stats_sfc,                          & ! In
-                                             rtp2, thlp2, rtpthlp,                         & ! Out
-                                             sclrp2, sclrprtp, sclrpthlp )                   ! Out
+      call solve_xp2_xpyp_with_multiple_lhs( nzm, nzt, ngrdcol, sclr_dim, sclr_tol, gr,   & ! In
+                                             sclr_idx,                                    & ! In
+                                             C2rt_1d, C2thl_1d, C2rtthl_1d, C2sclr_1d,    & ! In
+                                             invrs_tau_xp2_zm, rtm, thlm, wprtp, wpthlp,  & ! In
+                                             rtp2_forcing, thlp2_forcing, rtpthlp_forcing,& ! In
+                                             sclrm, wpsclrp,                              & ! In
+                                             lhs_ta_wprtp2, lhs_ta_wpthlp2,               & ! In
+                                             lhs_ta_wprtpthlp, lhs_ta_wpsclrp2,           & ! In
+                                             lhs_ta_wprtpsclrp, lhs_ta_wpthlpsclrp,       & ! In
+                                             lhs_ma, lhs_diff,                            & ! In
+                                             rhs_ta_wprtp2, rhs_ta_wpthlp2,               & ! In
+                                             rhs_ta_wprtpthlp, rhs_ta_wpsclrp2,           & ! In
+                                             rhs_ta_wprtpsclrp, rhs_ta_wpthlpsclrp,       & ! In
+                                             dt, iiPDF_type, l_scalar_calc,               & ! In
+                                             l_lmm_stepping,                              & ! In
+                                             tridiag_solve_method,                        & ! In
+                                             stats_metadata,                              & ! In
+                                             stats_zm, stats_sfc,                         & ! In
+                                             rtp2, thlp2, rtpthlp,                        & ! InOut
+                                             sclrp2, sclrprtp, sclrpthlp, err_code )        ! InOut
     end if
 
     !!!!!***** u'^2 / v'^2 *****!!!!!
-      
+
     ! Calculate LHS eddy diffusion term: dissipation term 2 (dp2), for <w'u'^2> and <w'v'^2>
     call diffusion_zm_lhs( nzm, nzt, ngrdcol, gr, Kw9, Kw9_zm, nu_vert_res_dep%nu9, & ! In
                            invrs_rho_ds_zm, rho_ds_zt,                        & ! In
@@ -702,12 +704,12 @@ module advance_xp2_xpyp_module
     call term_dp1_lhs( nzm, ngrdcol, &
                        C14_1d, invrs_tau_C14_zm, &
                        lhs_dp1_C14 )
-    
+
     !$acc parallel loop gang vector collapse(2) default(present)
     do k = 2, nzm-1
       do i = 1, ngrdcol
         lhs_dp1(i,k) = ( lhs_dp1_C4(i,k) + lhs_dp1_C14(i,k) ) * gamma_over_implicit_ts
-      end do       
+      end do
     end do ! k=2..gr%nz-1
     !$acc end parallel loop
 
@@ -733,20 +735,20 @@ module advance_xp2_xpyp_module
                             lhs_ta_wpup2, rhs_ta_wpup2, & ! In
                             lhs_dp1_C4, lhs_dp1_C14, & ! In
                             stats_metadata, & ! In
-                            stats_zm, & ! intent(inout)
+                            stats_zm, & ! InOut
                             uv_rhs(:,:,1) ) ! Out
 
       ! Solve the tridiagonal system
        call xp2_xpyp_solve( nzm, ngrdcol, xp2_xpyp_up2_vp2, 1, & ! Intent(in)
-                            tridiag_solve_method,             & ! Intent(in)
-                            stats_metadata,                   & ! Intent(in)
-                            stats_sfc,                        & ! intent(inout)
-                            uv_rhs, lhs,                      & ! Intent(inout)
-                            uv_solution )                       ! Intent(out)
-      
+                            tridiag_solve_method,              & ! Intent(in)
+                            stats_metadata,                    & ! Intent(in)
+                            stats_sfc,                         & ! intent(inout)
+                            uv_rhs, lhs, err_code,             & ! Intent(inout)
+                            uv_solution )                        ! Intent(out)
+
       up2 = uv_solution(:,:,1)
-         
-      if ( l_lmm_stepping ) then 
+
+      if ( l_lmm_stepping ) then
         up2 = one_half * ( up2_old + up2 )
       end if
 
@@ -756,7 +758,7 @@ module advance_xp2_xpyp_module
                                         gamma_over_implicit_ts*lhs_dp1_C14(i,:), &
                                         gamma_over_implicit_ts*lhs_dp1_C4(i,:), &
                                         lhs_diff_uv(:,i,:), lhs_ta_wpup2(:,i,:), lhs_ma(:,i,:), &
-                                        stats_metadata, & 
+                                        stats_metadata, &
                                         stats_zm(i) ) ! intent(inout)
         end do
       endif
@@ -780,11 +782,11 @@ module advance_xp2_xpyp_module
                             uv_rhs(:,:,1) ) ! Out
 
       ! Solve the tridiagonal system
-      call xp2_xpyp_solve( nzm, ngrdcol, xp2_xpyp_up2_vp2, 1,  & ! Intent(in)
+      call xp2_xpyp_solve( nzm, ngrdcol, xp2_xpyp_up2_vp2, 1, & ! Intent(in)
                            tridiag_solve_method,              & ! Intent(in)
                            stats_metadata,                    & ! Intent(in)
                            stats_sfc,                         & ! intent(inout)
-                           uv_rhs, lhs,                       & ! Intent(inout)
+                           uv_rhs, lhs, err_code,             & ! Intent(inout)
                            uv_solution )                        ! Intent(out)
 
       vp2 = uv_solution(:,:,1)
@@ -841,11 +843,11 @@ module advance_xp2_xpyp_module
 
       ! Solve the tridiagonal system
       call xp2_xpyp_solve( nzm, ngrdcol, xp2_xpyp_up2_vp2, 2, & ! Intent(in)
-                           tridiag_solve_method,             & ! Intent(in)
-                           stats_metadata,                   & ! Intent(in)
-                           stats_sfc,                        & ! Intent(inout)
-                           uv_rhs, lhs,                      & ! Intent(inout)
-                           uv_solution )                       ! Intent(out)
+                           tridiag_solve_method,              & ! Intent(in)
+                           stats_metadata,                    & ! Intent(in)
+                           stats_sfc,                         & ! Intent(inout)
+                           uv_rhs, lhs, err_code,             & ! Intent(inout)
+                           uv_solution )                        ! Intent(out)
 
       !$acc parallel loop gang vector collapse(2) default(present)
       do k = 1, nzm
@@ -1450,12 +1452,12 @@ module advance_xp2_xpyp_module
     !$acc      delete( sclrp2_old, sclrprtp_old, sclrpthlp_old, sclrprtp_chnge, &
     !$acc              lhs_ta_wpsclrp2, lhs_ta_wprtpsclrp, lhs_ta_wpthlpsclrp, &
     !$acc              rhs_ta_wpsclrp2, rhs_ta_wprtpsclrp, rhs_ta_wpthlpsclrp, &
-    !$acc              sclrpthlp_chnge ) 
+    !$acc              sclrpthlp_chnge )
 
     return
 
   end subroutine advance_xp2_xpyp
-  
+
   !============================================================================================
   subroutine solve_xp2_xpyp_with_single_lhs( nzm, nzt, ngrdcol, sclr_dim, sclr_tol, gr, &
                                              sclr_idx, &
@@ -1467,35 +1469,35 @@ module advance_xp2_xpyp_module
                                              rhs_ta_wprtpthlp, rhs_ta_wpsclrp2, &
                                              rhs_ta_wprtpsclrp, rhs_ta_wpthlpsclrp, &
                                              dt, l_scalar_calc, l_lmm_stepping, &
-                                             tridiag_solve_method, & 
+                                             tridiag_solve_method, &
                                              stats_metadata, &
-                                             stats_zm, stats_sfc, & 
+                                             stats_zm, stats_sfc, &
                                              rtp2, thlp2, rtpthlp, &
-                                             sclrp2, sclrprtp, sclrpthlp )
+                                             sclrp2, sclrprtp, sclrpthlp, err_code )
     ! Description:
     !     This subroutine generates a single lhs matrix and multiple rhs matricies, then 
-    !     solves the system. This should only be used when the lhs matrices for 
+    !     solves the system. This should only be used when the lhs matrices for
     !     <w'r_t'>, <w'th_l'>, <w'rt'thl'> ,<w'sclr'^2>, <w'sclr'rt'>,  and <w'sclr'thl'>
     !     are identical. Otherwise multiple lhs matrices and multiple solves are required.
     !
     !     The ADG1 PDF must be in use for this subroutine to have the
     !     potential to be called.
     !----------------------------------------------------------------------------------
-    
+
     use grid_class, only: &
       grid ! Type
-      
-    use clubb_precision, only:  & 
+
+    use clubb_precision, only: &
       core_rknd ! Variable(s)
-      
-    use constants_clubb, only: & 
-      rt_tol, & 
+
+    use constants_clubb, only: &
+      rt_tol, &
       thl_tol, &
       zero, &
       zero_threshold, &
       gamma_over_implicit_ts, &
       one_half
-        
+
     use array_index, only: &
       sclr_idx_type
 
@@ -1506,7 +1508,7 @@ module advance_xp2_xpyp_module
       stats_metadata_type
 
     implicit none
-      
+
     ! -------- Input Variables --------
     integer, intent(in) :: &
       nzm,      & ! Number of momentum vertical levels
@@ -1514,7 +1516,7 @@ module advance_xp2_xpyp_module
       ngrdcol,  & ! Number of grid columns
       sclr_dim    ! Number of passive scalars
 
-    real( kind = core_rknd ), intent(in), dimension(sclr_dim) :: & 
+    real( kind = core_rknd ), intent(in), dimension(sclr_dim) :: &
       sclr_tol          ! Threshold(s) on the passive scalars  [units vary]
 
     type (grid), intent(in) :: &
@@ -1522,8 +1524,8 @@ module advance_xp2_xpyp_module
 
     type (sclr_idx_type), intent(in) :: &
       sclr_idx
-    
-    real( kind = core_rknd ), intent(in), dimension(ngrdcol,nzm) ::  & 
+
+    real( kind = core_rknd ), intent(in), dimension(ngrdcol,nzm) :: &
       C2x,              &
       invrs_tau_xp2_zm, & ! Inverse time-scale for xp2 on momentum levels [1/s]
       wprtp,            & ! <w'r_t'> (momentum levels)            [(m/s)(kg/kg)]
@@ -1532,7 +1534,7 @@ module advance_xp2_xpyp_module
       thlp2_forcing,    & ! <th_l'^2> forcing (momentum levels)   [K^2/s]
       rtpthlp_forcing     ! <r_t'th_l'> forcing (momentum levels) [(kg/kg)K/s]
 
-    real( kind = core_rknd ), intent(in), dimension(ngrdcol,nzt) ::  & 
+    real( kind = core_rknd ), intent(in), dimension(ngrdcol,nzt) :: &
       rtm,              & ! Total water mixing ratio (t-levs)     [kg/kg]
       thlm                ! Liquid potential temp. (t-levs)       [K]
 
@@ -1542,16 +1544,16 @@ module advance_xp2_xpyp_module
 
     real( kind = core_rknd ), intent(in) :: &
       dt             ! Model timestep                                [s]
-      
+
     ! Passive scalar input
-    real( kind = core_rknd ), intent(in), dimension(ngrdcol,nzt,sclr_dim) ::  & 
+    real( kind = core_rknd ), intent(in), dimension(ngrdcol,nzt,sclr_dim) :: &
       sclrm          ! Mean value; pass. scalar (t-levs.) [{sclr units}]
 
-    real( kind = core_rknd ), intent(in), dimension(ngrdcol,nzm,sclr_dim) ::  & 
+    real( kind = core_rknd ), intent(in), dimension(ngrdcol,nzm,sclr_dim) :: &
       wpsclrp        ! <w'sclr'> (momentum levels)        [m/s{sclr units}]
 
-    real( kind = core_rknd ), intent(in), dimension(ndiags3,ngrdcol,nzm) :: & 
-      lhs_ta, &
+    real( kind = core_rknd ), intent(in), dimension(ndiags3,ngrdcol,nzm) :: &
+      lhs_ta,       &
       lhs_diff,     & ! Diffusion contributions to lhs, dissipation term 2
       lhs_ma          ! Mean advection contributions to lhs
 
@@ -1559,7 +1561,7 @@ module advance_xp2_xpyp_module
       rhs_ta_wprtp2,    & ! For <w'rt'^2>
       rhs_ta_wpthlp2,   & ! For <w'thl'^2>
       rhs_ta_wprtpthlp    ! For <w'rt'thl'>
-      
+
     real( kind = core_rknd ), intent(in), dimension(ngrdcol,nzm,sclr_dim) :: &
       rhs_ta_wpsclrp2,      & ! For <w'sclr'^2>
       rhs_ta_wprtpsclrp,    & ! For <w'sclr'rt'><w'sclr'^2><w'sclr'thl'>
@@ -1576,45 +1578,48 @@ module advance_xp2_xpyp_module
     type (stats), dimension(ngrdcol), intent(inout) :: &
       stats_zm, &
       stats_sfc
-    
+
     ! An attribute of (inout) is also needed to import the value of the variances
     ! at the surface.  Brian.  12/18/05.
-    real( kind = core_rknd ), intent(inout), dimension(ngrdcol,nzm) ::  & 
+    real( kind = core_rknd ), intent(inout), dimension(ngrdcol,nzm) :: &
       rtp2,    & ! <r_t'^2>                      [(kg/kg)^2]
       thlp2,   & ! <th_l'^2>                     [K^2]
       rtpthlp    ! <r_t'th_l'>                   [(kg K)/kg]
-      
-    real( kind = core_rknd ), intent(inout), dimension(ngrdcol,nzm,sclr_dim) ::  & 
+
+    real( kind = core_rknd ), intent(inout), dimension(ngrdcol,nzm,sclr_dim) :: &
       sclrp2, sclrprtp, sclrpthlp
-      
+
+    integer, intent(inout) :: &
+      err_code    ! Error code catching and relaying any errors occurring in this subroutine
+
     ! -------- Local Variables --------
-    
-    real( kind = core_rknd ), dimension(ndiags3,ngrdcol,nzm) ::  & 
+
+    real( kind = core_rknd ), dimension(ndiags3,ngrdcol,nzm) :: &
       lhs ! Tridiagonal matrix
-    
+
     real( kind = core_rknd ), dimension(ngrdcol,nzm,3+3*sclr_dim) :: &
       rhs, &
       solution
-      
+
     real( kind = core_rknd ), dimension(ngrdcol,nzm) :: &
       sclrp2_forcing,    & ! <sclr'^2> forcing (momentum levels)    [units vary]
       sclrprtp_forcing,  & ! <sclr'r_t'> forcing (momentum levels)  [units vary]
       sclrpthlp_forcing    ! <sclr'th_l'> forcing (momentum levels) [units vary]
-      
-    real( kind = core_rknd ) :: & 
+
+    real( kind = core_rknd ) :: &
       threshold     ! Minimum value for variances                   [units vary]
-      
+
     ! LHS dissipation term 1 (dp1). An "over-implicit" weighted time 
     ! step is applied to this term (and to pressure term 1 for u'^2 and v'^2).
     ! https://arxiv.org/pdf/1711.03675v1.pdf#nameddest=url:xp2_dp
     real( kind = core_rknd ), dimension(ngrdcol,nzm) :: &
       lhs_dp1   ! LHS dissipation term 1
-      
+
     real( kind = core_rknd ), dimension(nzm) :: &
       zeros
-      
+
     integer :: sclr, k, i
-    
+
     ! -------- Begin Code --------
 
     !$acc enter data create( lhs, rhs, solution, lhs_dp1 )
@@ -1638,7 +1643,7 @@ module advance_xp2_xpyp_module
     call xp2_xpyp_lhs( nzm, ngrdcol, dt,                  & ! In
                        lhs_ta, lhs_ma, lhs_diff, lhs_dp1, & ! In
                        lhs )                                ! Out
-      
+
     ! Calculate rhs matricies
     call xp2_xpyp_rhs( nzm, nzt, ngrdcol, gr, xp2_xpyp_rtp2, dt, & ! In
                        wprtp, wprtp,                        & ! In
@@ -1648,7 +1653,7 @@ module advance_xp2_xpyp_module
                        stats_metadata,                      & ! In
                        stats_zm,                            & ! InOut
                        rhs(:,:,1) )                           ! Out
-                       
+
     call xp2_xpyp_rhs( nzm, nzt, ngrdcol, gr, xp2_xpyp_thlp2, dt, & ! In
                        wpthlp, wpthlp,                            & ! In
                        thlm, thlm, thlp2, thlp2_forcing,          & ! In
@@ -1657,7 +1662,7 @@ module advance_xp2_xpyp_module
                        stats_metadata,                            & ! In
                        stats_zm,                                  & ! InOut
                        rhs(:,:,2) )                                 ! Out
-   
+
     call xp2_xpyp_rhs( nzm, nzt, ngrdcol, gr, xp2_xpyp_rtpthlp, dt, & ! In
                        wprtp, wpthlp,                               & ! In
                        rtm, thlm, rtpthlp, rtpthlp_forcing,         & ! In
@@ -1666,9 +1671,9 @@ module advance_xp2_xpyp_module
                        stats_metadata,                              & ! In
                        stats_zm,                                    & ! InOut
                        rhs(:,:,3) )                                   ! Out
-     
+
     if ( l_scalar_calc ) then
-    
+
       do sclr = 1, sclr_dim
 
         ! Forcing for <sclr'^2>.
@@ -1716,7 +1721,7 @@ module advance_xp2_xpyp_module
 
           threshold = zero_threshold
         endif
-       
+
         call xp2_xpyp_rhs( nzm, nzt, ngrdcol, gr, xp2_xpyp_sclrprtp, dt, & ! In
                            wpsclrp(:,:,sclr), wprtp,                     & ! In
                            sclrm(:,:,sclr), rtm, sclrprtp(:,:,sclr),     & ! In
@@ -1763,16 +1768,17 @@ module advance_xp2_xpyp_module
                            rhs(:,:,3+sclr+2*sclr_dim) )                     ! Out
 
       end do ! 1..sclr_dim
-     
+
     end if
-     
+
     ! Solve multiple rhs with single lhs
     call xp2_xpyp_solve( nzm, ngrdcol, xp2_xpyp_single_lhs, 3+3*sclr_dim, & ! Intent(in)
                          tridiag_solve_method,                            & ! Intent(in)
                          stats_metadata,                                  & ! Intent(in)
-                         stats_sfc,                                       & ! intent(inout)
-                         rhs, lhs, solution )                               ! Intent(inout)
-                          
+                         stats_sfc,                                       & ! Intent(inout)
+                         rhs, lhs, err_code,                              & ! Intent(inout)
+                         solution )                                         ! Intent(out)
+
     if ( l_lmm_stepping ) then
 
       !$acc parallel loop gang vector collapse(2) default(present)
@@ -1801,7 +1807,7 @@ module advance_xp2_xpyp_module
         end do
         !$acc end parallel loop
       endif ! sclr_dim > 0
-      
+
     else
 
       !$acc parallel loop gang vector collapse(2) default(present)
@@ -1827,31 +1833,31 @@ module advance_xp2_xpyp_module
         end do
         !$acc end parallel loop
       endif ! sclr_dim > 0
-      
+
     endif ! l_lmm_stepping
 
     if ( stats_metadata%l_stats_samp ) then
 
       !$acc update host( rtp2, thlp2, rtpthlp, lhs_dp1, lhs_diff, &
       !$acc              lhs_ta, lhs_ma )
-     
+
       zeros(:) = zero
-     
+
       do i = 1, ngrdcol
         call xp2_xpyp_implicit_stats( nzm, xp2_xpyp_rtp2, rtp2(i,:), & !intent(in)
                                       lhs_dp1(i,:), zeros(:), &
                                       lhs_diff(:,i,:), lhs_ta(:,i,:), lhs_ma(:,i,:), &
-                                      stats_metadata, & 
+                                      stats_metadata, &
                                       stats_zm(i) ) ! intent(inout)
         call xp2_xpyp_implicit_stats( nzm, xp2_xpyp_thlp2, thlp2(i,:), & !intent(in)
                                       lhs_dp1(i,:), zeros(:), &
                                       lhs_diff(:,i,:), lhs_ta(:,i,:), lhs_ma(:,i,:), &
-                                      stats_metadata, & 
+                                      stats_metadata, &
                                       stats_zm(i) ) ! intent(inout)
         call xp2_xpyp_implicit_stats( nzm, xp2_xpyp_rtpthlp, rtpthlp(i,:), & !intent(in)
                                       lhs_dp1(i,:), zeros(:), &
                                       lhs_diff(:,i,:), lhs_ta(:,i,:), lhs_ma(:,i,:), &
-                                      stats_metadata, & 
+                                      stats_metadata, &
                                       stats_zm(i) ) ! intent(inout)
       end do
     end if
@@ -1862,9 +1868,9 @@ module advance_xp2_xpyp_module
     !$acc           delete( sclrp2_forcing, sclrprtp_forcing, sclrpthlp_forcing )
 
     return
-      
+
   end subroutine solve_xp2_xpyp_with_single_lhs
-  
+
   !============================================================================================
   subroutine solve_xp2_xpyp_with_multiple_lhs( nzm, nzt, ngrdcol, sclr_dim, sclr_tol, gr, &
                                                sclr_idx, &
@@ -1885,7 +1891,7 @@ module advance_xp2_xpyp_module
                                                stats_metadata, &
                                                stats_zm, stats_sfc, & 
                                                rtp2, thlp2, rtpthlp, &
-                                               sclrp2, sclrprtp, sclrpthlp )
+                                               sclrp2, sclrprtp, sclrpthlp, err_code )
     ! Description:
     !     This subroutine generates different lhs and rhs matrices to solve for.
     !     
@@ -1979,8 +1985,8 @@ module advance_xp2_xpyp_module
       rhs_ta_wprtp2,    & ! For <w'rt'^2>
       rhs_ta_wpthlp2,   & ! For <w'thl'^2>
       rhs_ta_wprtpthlp    ! For <w'rt'thl'>
-        
-    real( kind = core_rknd ), dimension(ndiags3,ngrdcol,nzm,sclr_dim), intent(in) :: & 
+
+    real( kind = core_rknd ), dimension(ndiags3,ngrdcol,nzm,sclr_dim), intent(in) :: &
       lhs_ta_wpsclrp2,    & ! For <w'sclr'^2>
       lhs_ta_wprtpsclrp,  & ! For <w'rt'sclr'>
       lhs_ta_wpthlpsclrp    ! For <w'thl'sclr'>
@@ -1989,7 +1995,7 @@ module advance_xp2_xpyp_module
       rhs_ta_wpsclrp2,    & ! For <w'sclr'^2>
       rhs_ta_wprtpsclrp,  & ! For <w'sclr'rt'>
       rhs_ta_wpthlpsclrp    ! For <w'sclr'thl'>
-      
+
     integer, intent(in) :: &
       tridiag_solve_method  ! Specifier for method to solve tridiagonal systems
 
@@ -1997,7 +2003,7 @@ module advance_xp2_xpyp_module
       stats_metadata
 
     !------------------------ In/Out Variables ------------------------
-    
+
     type (stats), dimension(ngrdcol), intent(inout) :: &
       stats_zm, &
       stats_sfc
@@ -2005,52 +2011,55 @@ module advance_xp2_xpyp_module
     ! Input/Output variables
     ! An attribute of (inout) is also needed to import the value of the variances
     ! at the surface.  Brian.  12/18/05.
-    real( kind = core_rknd ), intent(inout), dimension(ngrdcol,nzm) ::  & 
+    real( kind = core_rknd ), intent(inout), dimension(ngrdcol,nzm) :: &
       rtp2,    & ! <r_t'^2>                      [(kg/kg)^2]
       thlp2,   & ! <th_l'^2>                     [K^2]
       rtpthlp    ! <r_t'th_l'>                   [(kg K)/kg]
-        
-    real( kind = core_rknd ), intent(inout), dimension(ngrdcol,nzm,sclr_dim) ::  & 
+
+    real( kind = core_rknd ), intent(inout), dimension(ngrdcol,nzm,sclr_dim) :: &
       sclrp2, sclrprtp, sclrpthlp
-        
+
+    integer, intent(inout) :: &
+      err_code    ! Error code catching and relaying any errors occurring in this subroutine
+
     !------------------------ Local Variables ------------------------
-      
-    real( kind = core_rknd ), dimension(ndiags3,ngrdcol,nzm) ::  & 
+
+    real( kind = core_rknd ), dimension(ndiags3,ngrdcol,nzm) :: &
       lhs ! Tridiagonal matrix
-      
+
     real( kind = core_rknd ), dimension(ngrdcol,nzm) :: &
       rhs
-        
+
     real( kind = core_rknd ), dimension(ngrdcol,nzm) :: &
       sclrp2_forcing,    & ! <sclr'^2> forcing (momentum levels)    [units vary]
       sclrprtp_forcing,  & ! <sclr'r_t'> forcing (momentum levels)  [units vary]
       sclrpthlp_forcing    ! <sclr'th_l'> forcing (momentum levels) [units vary]
-        
-    real( kind = core_rknd ), dimension(ngrdcol,nzm,3*sclr_dim) ::  & 
+
+    real( kind = core_rknd ), dimension(ngrdcol,nzm,3*sclr_dim) :: &
       sclr_rhs,   & ! RHS vectors of tridiagonal system for the passive scalars
       sclr_solution ! Solution to tridiagonal system for the passive scalars
- 
-    real( kind = core_rknd ) :: & 
+
+    real( kind = core_rknd ) :: &
       threshold     ! Minimum value for variances                   [units vary]
-      
+
     real( kind = core_rknd ), dimension(ngrdcol,nzm) :: &
       lhs_dp1   ! LHS dissipation term 1
-      
-    real( kind = core_rknd ), dimension(ngrdcol,nzm) ::  & 
+
+    real( kind = core_rknd ), dimension(ngrdcol,nzm) :: &
       rtp2_solution,    & ! <r_t'^2>                      [(kg/kg)^2]
       thlp2_solution,   & ! <th_l'^2>                     [K^2]
       rtpthlp_solution    ! <r_t'th_l'>                   [(kg K)/kg]
-        
-    real( kind = core_rknd ), dimension(ngrdcol,nzm,sclr_dim) ::  & 
+
+    real( kind = core_rknd ), dimension(ngrdcol,nzm,sclr_dim) :: &
       sclrp2_solution, &
       sclrprtp_solution, &
       sclrpthlp_solution
-      
-    real( kind = core_rknd ), dimension(ngrdcol,nzm) ::  & 
+
+    real( kind = core_rknd ), dimension(ngrdcol,nzm) :: &
       zeros
-        
+
     integer :: sclr, k, i
-      
+
     !------------------------ Begin Code ------------------------
 
     !$acc enter data  create( lhs, rhs, threshold, lhs_dp1, rtp2_solution, &
@@ -2073,7 +2082,7 @@ module advance_xp2_xpyp_module
       end do
     end do
     !$acc end parallel loop
-      
+
     ! Implicit contributions to term rtp2
     call xp2_xpyp_lhs( nzm, ngrdcol, dt, & ! In
                        lhs_ta_wprtp2, lhs_ma, lhs_diff, lhs_dp1, & ! In
@@ -2087,14 +2096,15 @@ module advance_xp2_xpyp_module
                        stats_metadata, & ! In
                        stats_zm, & ! intent(inout)
                        rhs ) ! Out
-                           
+
     ! Solve the tridiagonal system
     call xp2_xpyp_solve( nzm, ngrdcol, xp2_xpyp_rtp2, 1, & ! Intent(in)
-                         tridiag_solve_method,          & ! Intent(in)
-                         stats_metadata,                & ! Intent(in)
-                         stats_sfc,                     & ! intent(inout)
-                         rhs, lhs, rtp2_solution )        ! Intent(inout)
-                           
+                         tridiag_solve_method,           & ! Intent(in)
+                         stats_metadata,                 & ! Intent(in)
+                         stats_sfc,                      & ! Intent(inout)
+                         rhs, lhs, err_code,             & ! Intent(inout)
+                         rtp2_solution )                   ! Intent(out)
+
     if ( l_lmm_stepping ) then
       !$acc parallel loop gang vector collapse(2) default(present)
       do k = 1, nzm
@@ -2112,7 +2122,7 @@ module advance_xp2_xpyp_module
       end do
       !$acc end parallel loop
     endif ! l_lmm_stepping
-   
+
     if ( stats_metadata%l_stats_samp ) then
 
       !$acc update host( rtp2, lhs_dp1, lhs_diff, lhs_ta_wprtp2, lhs_ma )
@@ -2152,16 +2162,17 @@ module advance_xp2_xpyp_module
                        C2thl_1d, invrs_tau_xp2_zm, thl_tol**2, & ! In
                        lhs_ta_wpthlp2, rhs_ta_wpthlp2, & ! In
                        stats_metadata, & ! In
-                       stats_zm, & ! intent(inout)
+                       stats_zm, & ! InOut
                        rhs ) ! Out
 
     ! Solve the tridiagonal system
-    call xp2_xpyp_solve( nzm, ngrdcol, xp2_xpyp_thlp2, 1,  & ! Intent(in)
+    call xp2_xpyp_solve( nzm, ngrdcol, xp2_xpyp_thlp2, 1, & ! Intent(in)
                          tridiag_solve_method,            & ! Intent(in)
                          stats_metadata,                  & ! Intent(in)
-                         stats_sfc,                       & ! intent(inout)
-                         rhs, lhs, thlp2_solution )         ! Intent(inout)
-                           
+                         stats_sfc,                       & ! Intent(inout)
+                         rhs, lhs, err_code,              & ! Intent(inout)
+                         thlp2_solution )                   ! Intent(out)
+
     if ( l_lmm_stepping ) then
       !$acc parallel loop gang vector collapse(2) default(present)
       do k = 1, nzm
@@ -2179,7 +2190,7 @@ module advance_xp2_xpyp_module
       end do
       !$acc end parallel loop
     endif ! l_lmm_stepping
-   
+
     if ( stats_metadata%l_stats_samp ) then
 
       !$acc update host( thlp2, lhs_dp1, lhs_diff, lhs_ta_wpthlp2, lhs_ma )
@@ -2222,12 +2233,13 @@ module advance_xp2_xpyp_module
                        rhs ) ! Out
 
     ! Solve the tridiagonal system
-    call xp2_xpyp_solve( nzm, ngrdcol, xp2_xpyp_rtpthlp, 1,  & ! Intent(in)
+    call xp2_xpyp_solve( nzm, ngrdcol, xp2_xpyp_rtpthlp, 1, & ! Intent(in)
                          tridiag_solve_method,              & ! Intent(in)
                          stats_metadata,                    & ! Intent(in)
-                         stats_sfc,                         & ! intent(inout)
-                         rhs, lhs, rtpthlp_solution )         ! Intent(inout)
-                           
+                         stats_sfc,                         & ! Intent(inout)
+                         rhs, lhs, err_code,                & ! Intent(inout)
+                         rtpthlp_solution )                   ! Intent(out)
+
     if ( l_lmm_stepping ) then
       !$acc parallel loop gang vector collapse(2) default(present)
       do k = 1, nzm
@@ -2245,7 +2257,7 @@ module advance_xp2_xpyp_module
       end do
       !$acc end parallel loop
     endif ! l_lmm_stepping
-   
+
     if ( stats_metadata%l_stats_samp ) then
 
       !$acc update host( rtpthlp, lhs_dp1, lhs_diff, lhs_ta_wprtpthlp, lhs_ma )
@@ -2254,17 +2266,17 @@ module advance_xp2_xpyp_module
         call xp2_xpyp_implicit_stats( nzm, xp2_xpyp_rtpthlp, rtpthlp(i,:), & !intent(in)
                                       lhs_dp1(i,:), zeros(i,:), &
                                       lhs_diff(:,i,:), lhs_ta_wprtpthlp(:,i,:), lhs_ma(:,i,:), &
-                                      stats_metadata, & 
+                                      stats_metadata, &
                                       stats_zm(i) ) ! intent(inout)
       end do
     end if
-    
+
     if ( l_scalar_calc ) then
 
       call term_dp1_lhs( nzm, ngrdcol, &
                          C2sclr_1d, invrs_tau_xp2_zm, &
                          lhs_dp1 )
-      
+
       !$acc parallel loop gang vector collapse(2) default(present)
       do k = 1, nzm
         do i = 1, ngrdcol
@@ -2298,18 +2310,19 @@ module advance_xp2_xpyp_module
                              rhs ) ! Out
 
           ! Solve the tridiagonal system
-          call xp2_xpyp_solve( nzm, ngrdcol, xp2_xpyp_scalars, 1,      & ! Intent(in)
-                               tridiag_solve_method,                  & ! Intent(in)
-                               stats_metadata,                        & ! Intent(in)
-                               stats_sfc,                             & ! intent(inout)
-                               rhs, lhs, sclrp2_solution(:,:,sclr) )    ! Intent(inout)
-                               
+          call xp2_xpyp_solve( nzm, ngrdcol, xp2_xpyp_scalars, 1, & ! Intent(in)
+                               tridiag_solve_method,              & ! Intent(in)
+                               stats_metadata,                    & ! Intent(in)
+                               stats_sfc,                         & ! intent(inout)
+                               rhs, lhs, err_code,                & ! intent(inout)
+                               sclrp2_solution(:,:,sclr) )          ! Intent(out)
+
           if ( l_lmm_stepping ) then
             sclrp2(:,:,sclr) = one_half * ( sclrp2(:,:,sclr) + sclrp2_solution(:,:,sclr) )
           else
             sclrp2(:,:,sclr) = sclrp2_solution(:,:,sclr)
           endif ! l_lmm_stepping
-      
+
           !!!!!***** sclr'r_t' *****!!!!!
           if ( sclr == sclr_idx%iisclr_rt ) then
              ! In this case we're trying to emulate rt'^2 with sclr'rt', so we
@@ -2321,7 +2334,7 @@ module advance_xp2_xpyp_module
              sclrprtp_forcing(:,:) = zero
              threshold = zero_threshold
           endif
-          
+
           call xp2_xpyp_lhs( nzm, ngrdcol, dt, & ! In
                              lhs_ta_wprtpsclrp(:,:,:,sclr), lhs_ma, lhs_diff, lhs_dp1, & ! In
                              lhs ) ! Out
@@ -2337,18 +2350,19 @@ module advance_xp2_xpyp_module
                              rhs ) ! Out
 
           ! Solve the tridiagonal system
-          call xp2_xpyp_solve( nzm, ngrdcol, xp2_xpyp_scalars, 1,        & ! Intent(in)
-                               tridiag_solve_method,                    & ! Intent(in)
-                               stats_metadata,                          & ! Intent(in)
-                               stats_sfc,                               & ! intent(inout)
-                               rhs, lhs, sclrprtp_solution(:,:,sclr) )    ! Intent(inout)
-                               
+          call xp2_xpyp_solve( nzm, ngrdcol, xp2_xpyp_scalars, 1, & ! Intent(in)
+                               tridiag_solve_method,              & ! Intent(in)
+                               stats_metadata,                    & ! Intent(in)
+                               stats_sfc,                         & ! intent(inout)
+                               rhs, lhs, err_code,                & ! Intent(inout)
+                               sclrprtp_solution(:,:,sclr) )        ! Intent(out)
+
           if ( l_lmm_stepping ) then
             sclrprtp(:,:,sclr) = one_half * ( sclrprtp(:,:,sclr) + sclrprtp_solution(:,:,sclr) )
           else
             sclrprtp(:,:,sclr) = sclrprtp_solution(:,:,sclr)
           endif ! l_lmm_stepping
-      
+
           !!!!!***** sclr'th_l' *****!!!!!
 
           if ( sclr == sclr_idx%iisclr_thl ) then
@@ -2376,18 +2390,19 @@ module advance_xp2_xpyp_module
                              rhs ) ! Out
 
           ! Solve the tridiagonal system
-          call xp2_xpyp_solve( nzm, ngrdcol, xp2_xpyp_scalars, 1,        & ! Intent(in)
-                               tridiag_solve_method,                    & ! Intent(in)
-                               stats_metadata,                          & ! Intent(in)
-                               stats_sfc,                               & ! intent(inout)
-                               rhs, lhs, sclrpthlp_solution(:,:,sclr) )   ! Intent(inout)
-                               
+          call xp2_xpyp_solve( nzm, ngrdcol, xp2_xpyp_scalars, 1, & ! Intent(in)
+                               tridiag_solve_method,              & ! Intent(in)
+                               stats_metadata,                    & ! Intent(in)
+                               stats_sfc,                         & ! intent(inout)
+                               rhs, lhs, err_code,                & ! Intent(inout)
+                               sclrpthlp_solution(:,:,sclr) )       ! Intent(out)
+
           if ( l_lmm_stepping ) then
             sclrpthlp(:,:,sclr) = one_half * ( sclrpthlp(:,:,sclr) + sclrpthlp_solution(:,:,sclr) )
           else
             sclrpthlp(:,:,sclr) = sclrpthlp_solution(:,:,sclr)
           endif ! l_lmm_stepping
-      
+
         enddo ! 1..sclr_dim
 
 
@@ -2452,7 +2467,7 @@ module advance_xp2_xpyp_module
 
             threshold = zero_threshold
           endif
-          
+
           call xp2_xpyp_rhs( nzm, nzt, ngrdcol, gr, xp2_xpyp_sclrprtp, dt, & ! In
                              wpsclrp(:,:,sclr), wprtp, & ! In
                              sclrm(:,:,sclr), rtm, sclrprtp(:,:,sclr), & ! In
@@ -2503,11 +2518,12 @@ module advance_xp2_xpyp_module
 
         ! Solve the tridiagonal system
         call xp2_xpyp_solve( nzm, ngrdcol, xp2_xpyp_scalars, 3*sclr_dim, & ! Intent(in)
-                             tridiag_solve_method,                      & ! Intent(in)
-                             stats_metadata,                            & ! Intent(in)
-                             stats_sfc,                                 & ! intent(inout)
-                             sclr_rhs, lhs, sclr_solution )               ! Intent(inout)
-        
+                             tridiag_solve_method,                       & ! Intent(in)
+                             stats_metadata,                             & ! Intent(in)
+                             stats_sfc,                                  & ! intent(inout)
+                             sclr_rhs, lhs, err_code,                    & ! Intent(inout)
+                             sclr_solution )                               ! Intent(out)
+
         if ( l_lmm_stepping ) then
 
           !$acc parallel loop gang vector collapse(3) default(present)
@@ -2554,7 +2570,7 @@ module advance_xp2_xpyp_module
     !$acc                   sclrp2_solution )
 
     return
-      
+
   end subroutine solve_xp2_xpyp_with_multiple_lhs
 
   !=============================================================================
@@ -2674,10 +2690,11 @@ module advance_xp2_xpyp_module
 
   !=============================================================================
   subroutine xp2_xpyp_solve( nzm, ngrdcol, solve_type, nrhs, &
-                             tridiag_solve_method, & 
+                             tridiag_solve_method, &
                              stats_metadata, &
                              stats_sfc, &
-                             rhs, lhs, xapxbp )
+                             rhs, lhs, err_code, &
+                             xapxbp )
 
     ! Description:
     ! Solve a tridiagonal system
@@ -2689,13 +2706,13 @@ module advance_xp2_xpyp_module
     use constants_clubb, only: &
         one  ! Constant(s)
 
-    use matrix_solver_wrapper, only:  & 
+    use matrix_solver_wrapper, only: &
         tridiag_solve ! Procedure(s)
 
-    use stats_type_utilities, only: & 
+    use stats_type_utilities, only: &
         stat_update_var_pt  ! Procedure(s)
 
-    use stats_variables, only: & 
+    use stats_variables, only: &
         stats_metadata_type
 
     use clubb_precision, only: &
@@ -2712,11 +2729,11 @@ module advance_xp2_xpyp_module
     integer, intent(in) :: &
       nzm, &
       ngrdcol
-      
+
     integer, intent(in) :: &
       nrhs  ! Number of right hand side vectors
 
-    integer, intent(in) ::  & 
+    integer, intent(in) :: &
       solve_type ! Variable(s) description
 
     integer, intent(in) :: &
@@ -2735,6 +2752,9 @@ module advance_xp2_xpyp_module
     real( kind = core_rknd ), dimension(ndiags3,ngrdcol,nzm), intent(inout) :: & 
       lhs  ! Implicit contributions to x variance/covariance term [units vary]
 
+    integer, intent(inout) :: &
+      err_code    ! Error code catching and relaying any errors occurring in this subroutine
+
     ! ---------------------- Output Variables ----------------------
     real( kind = core_rknd ), dimension(ngrdcol,nzm,nrhs), intent(out) ::  & 
       xapxbp ! Computed value of the variable(s) at <t+1> [units vary]
@@ -2749,11 +2769,11 @@ module advance_xp2_xpyp_module
 
     character(len=20) :: &
       solve_type_str ! solve_type in string format for debug output purposes
-      
+
     integer :: i
 
     ! --- Begin Code ---
-    
+
     l_single_lhs_solve = .false.
 
     select case ( solve_type )
@@ -2787,10 +2807,10 @@ module advance_xp2_xpyp_module
     end select
 
     if ( stats_metadata%l_stats_samp .and. ixapxbp_matrix_condt_num > 0 ) then
-      
-      call tridiag_solve( solve_type_str, tridiag_solve_method, & ! Intent(in) 
-                          ngrdcol, nzm, nrhs,                   & ! Intent(in) 
-                          lhs, rhs,                             & ! Intent(inout)
+
+      call tridiag_solve( solve_type_str, tridiag_solve_method, & ! Intent(in)
+                          ngrdcol, nzm, nrhs,                   & ! Intent(in)
+                          lhs, rhs, err_code,                   & ! Intent(inout)
                           xapxbp, rcond )                         ! Intent(out)
 
       if ( l_single_lhs_solve ) then
@@ -2799,31 +2819,31 @@ module advance_xp2_xpyp_module
           call stat_update_var_pt( stats_metadata%irtp2_matrix_condt_num, 1, & ! Intent(in)
                                    one / rcond(i), & ! Intent(in)
                                    stats_sfc(i) )                                ! Intent(inout)
-                                   
+
           call stat_update_var_pt( stats_metadata%ithlp2_matrix_condt_num, 1, & ! Intent(in)
                                    one / rcond(i), & ! Intent(in)
                                    stats_sfc(i) )                                 ! Intent(inout)
-                                   
+
           call stat_update_var_pt( stats_metadata%irtpthlp_matrix_condt_num, 1, & ! Intent(in)
                                    one / rcond(i), & ! Intent(in)
                                    stats_sfc(i) )                                  ! Intent(inout)
         end do
       else
-        
+
         ! Est. of the condition number of the variance LHS matrix
         do i = 1, ngrdcol
           call stat_update_var_pt( ixapxbp_matrix_condt_num, 1, & ! Intent(in)
                                    one / rcond(i), & ! Intent(in)
                                    stats_sfc(i) )                                  ! Intent(inout)
         end do
-                                 
+
       end if
 
     else
-      
+
       call tridiag_solve( solve_type_str, tridiag_solve_method, & ! Intent(in)
-                          ngrdcol, nzm, nrhs,                    & ! Intent(in)
-                          lhs, rhs,                             & ! Intent(inout)
+                          ngrdcol, nzm, nrhs,                   & ! Intent(in)
+                          lhs, rhs, err_code,                   & ! Intent(inout)
                           xapxbp )                                ! Intent(out)
     end if
 
@@ -2845,13 +2865,13 @@ module advance_xp2_xpyp_module
     !   None
     !-----------------------------------------------------------------------
 
-    use stats_type_utilities, only: & 
+    use stats_type_utilities, only: &
         stat_end_update_pt, & ! Procedure(s)
         stat_update_var_pt
 
     use clubb_precision, only: &
         core_rknd ! Variable(s)
-        
+
     use constants_clubb, only: &
         gamma_over_implicit_ts
 
@@ -2866,21 +2886,21 @@ module advance_xp2_xpyp_module
     !----------------------- Input variables -----------------------
     integer, intent(in) :: &
       nzm
-    
-    integer, intent(in) ::  & 
+
+    integer, intent(in) :: &
       solve_type ! Variable(s) description
 
-    real( kind = core_rknd ), dimension(nzm), intent(in) ::  & 
+    real( kind = core_rknd ), dimension(nzm), intent(in) :: &
       xapxbp ! Computed value of the variable at <t+1> [units vary]
-      
-    real( kind = core_rknd ), intent(in), dimension(nzm) ::  & 
+
+    real( kind = core_rknd ), intent(in), dimension(nzm) :: &
       lhs_dp1_C14, & ! LHS dissipation term 1
       lhs_dp1_C4    ! LHS dissipation term 2
-      
-    real( kind = core_rknd ), dimension(ndiags3,nzm), intent(in) :: & 
+
+    real( kind = core_rknd ), dimension(ndiags3,nzm), intent(in) :: &
      lhs_ta     ! Turbulent advection contributions to lhs
 
-    real( kind = core_rknd ), dimension(ndiags3,nzm), intent(in) :: & 
+    real( kind = core_rknd ), dimension(ndiags3,nzm), intent(in) :: &
       lhs_diff, & ! Diffusion contributions to lhs, dissipation term 2
       lhs_ma      ! Mean advection contributions to lhs
 
@@ -2895,11 +2915,11 @@ module advance_xp2_xpyp_module
     integer :: k, kp1, km1 ! Array indices
 
     ! Budget indices
-    integer :: & 
-      ixapxbp_dp1, & 
-      ixapxbp_dp2, & 
-      ixapxbp_ta, & 
-      ixapxbp_ma, & 
+    integer :: &
+      ixapxbp_dp1, &
+      ixapxbp_dp2, &
+      ixapxbp_ta, &
+      ixapxbp_ma, &
       ixapxbp_pr1
 
     !-----------------------Begin Code -----------------------

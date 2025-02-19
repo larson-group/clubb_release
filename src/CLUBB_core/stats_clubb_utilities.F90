@@ -30,7 +30,8 @@ module stats_clubb_utilities
                          stats_metadata, &
                          stats_zt, stats_zm, stats_sfc, &
                          stats_lh_zt, stats_lh_sfc, &
-                         stats_rad_zt, stats_rad_zm )
+                         stats_rad_zt, stats_rad_zm, &
+                         err_code )
     !
     ! Description:
     !   Initializes the statistics saving functionality of the CLUBB model.
@@ -91,7 +92,6 @@ module stats_clubb_utilities
 
     use error_code, only: &
         clubb_at_least_debug_level, &   ! Procedure
-        err_code, &                     ! Error Indicator
         clubb_fatal_error               ! Constant
 
     use stats_type, only: stats ! Type
@@ -196,6 +196,9 @@ module stats_clubb_utilities
       stats_rad_zt, &
       stats_rad_zm
 
+    integer, intent(inout) :: &
+      err_code    ! Error code catching and relaying any errors occurring in this subroutine
+
     ! Local Variables
     logical :: l_error
 
@@ -237,7 +240,7 @@ module stats_clubb_utilities
       vars_rad_zm, & 
       vars_sfc
 
-    ! ---- Begin Code ----
+    ! ------------------- Begin Code -------------------
 
     ! Initialize
     l_error = .false.
@@ -720,7 +723,7 @@ module stats_clubb_utilities
                           hydromet_list, l_mix_rat_hm,        & ! intent(in)
                           vars_zt,                            & ! intent(in)
                           l_error,                            & ! intent(inout)
-                          stats_metadata, stats_zt(i) )            ! intent(inout)
+                          stats_metadata, stats_zt(i) )         ! intent(inout)
     end do
 
     fname = trim( stats_metadata%fname_zt )
@@ -741,14 +744,14 @@ module stats_clubb_utilities
                         stats_zt(1)%z, day, month, year, lat_vals, lon_vals, & ! In
                         time_current, stats_metadata%stats_tout, & ! In
                         stats_zt(1)%num_output_fields, & ! In
-                        stats_zt(1)%file ) ! InOut
+                        stats_zt(1)%file, err_code ) ! InOut
 
       ! Finalize the variable definitions
       call first_write( clubb_params(1,:), sclr_dim, sclr_tol, & ! intent(in)
                         l_uv_nudge, & ! intent(in)
                         l_tke_aniso, & ! intent(in)
                         l_standard_term_ta, & ! intent(in)
-                        stats_zt(1)%file ) ! intent(inout)
+                        stats_zt(1)%file, err_code ) ! intent(inout)
 
       if ( err_code == clubb_fatal_error ) then
         write(fstderr,*) "Fatal error setting up stats_zt"
@@ -827,8 +830,8 @@ module stats_clubb_utilities
         allocate( stats_lh_zt(i)%file%z( stats_lh_zt(i)%kk ) )
 
         call stats_init_lh_zt( vars_lh_zt,                    & ! intent(in)
-                              l_error,                       & ! intent(inout)
-                              stats_metadata, stats_lh_zt(i) )    ! intent(inout)
+                              l_error,                        & ! intent(inout)
+                              stats_metadata, stats_lh_zt(i) )  ! intent(inout)
       end do
 
 
@@ -850,14 +853,14 @@ module stats_clubb_utilities
                           stats_lh_zt(1)%z, day, month, year, lat_vals, lon_vals, &  ! In
                           time_current, stats_metadata%stats_tout, & ! In
                           stats_lh_zt(1)%num_output_fields, & ! In
-                          stats_lh_zt(1)%file ) ! InOut
+                          stats_lh_zt(1)%file, err_code ) ! InOut
 
         ! Finalize the variable definitions
         call first_write( clubb_params(1,:), sclr_dim, sclr_tol, & ! intent(in)
                           l_uv_nudge, & ! intent(in)
                           l_tke_aniso, & ! intent(in)
                           l_standard_term_ta, & ! intent(in)
-                          stats_lh_zt(1)%file ) ! intent(inout)
+                          stats_lh_zt(1)%file, err_code ) ! intent(inout)
 
         if ( err_code == clubb_fatal_error ) then
           write(fstderr,*) "Fatal error setting up stats_lh_zt"
@@ -915,7 +918,7 @@ module stats_clubb_utilities
 
         call stats_init_lh_sfc( vars_lh_sfc,                    & ! intent(in)
                                 l_error,                        & ! intent(inout)
-                                stats_metadata, stats_lh_sfc(i) )    ! intent(inout)
+                                stats_metadata, stats_lh_sfc(i) ) ! intent(inout)
       end do
 
       fname = trim( stats_metadata%fname_lh_sfc )
@@ -936,21 +939,20 @@ module stats_clubb_utilities
                           stats_lh_sfc(1)%z, day, month, year, lat_vals, lon_vals, &  ! In
                           time_current, stats_metadata%stats_tout, & ! In
                           stats_lh_sfc(1)%num_output_fields, & ! In
-                          stats_lh_sfc(1)%file ) ! InOut
+                          stats_lh_sfc(1)%file, err_code ) ! InOut
 
         ! Finalize the variable definitions
         call first_write( clubb_params(1,:), sclr_dim, sclr_tol, & ! intent(in)
                           l_uv_nudge, & ! intent(in)
                           l_tke_aniso, & ! intent(in)
                           l_standard_term_ta, & ! intent(in)
-                          stats_lh_sfc(1)%file ) ! intent(inout)
+                          stats_lh_sfc(1)%file, err_code ) ! intent(inout)
 
         if ( err_code == clubb_fatal_error ) then
           write(fstderr,*) "Fatal error setting up stats_lh_sfc"
           return
         end if
 
-        if ( err_code == clubb_fatal_error ) return
 #else
         error stop "This CLUBB program was not compiled with netCDF support."
 #endif
@@ -1159,7 +1161,7 @@ module stats_clubb_utilities
                           hydromet_list, l_mix_rat_hm,        & ! intent(in)
                           vars_zm,                            & ! intent(in)
                           l_error,                            & ! intent(inout)
-                          stats_metadata, stats_zm(i) )            ! intent(inout)
+                          stats_metadata, stats_zm(i) )         ! intent(inout)
     end do
 
     fname = trim( stats_metadata%fname_zm )
@@ -1179,14 +1181,14 @@ module stats_clubb_utilities
                         stats_zm(1)%z, day, month, year, lat_vals, lon_vals, & ! In
                         time_current, stats_metadata%stats_tout, & ! In
                         stats_zm(1)%num_output_fields, & ! In
-                        stats_zm(1)%file ) ! InOut
+                        stats_zm(1)%file, err_code ) ! InOut
       
       ! Finalize the variable definitions
       call first_write( clubb_params(1,:), sclr_dim, sclr_tol, & ! intent(in)
                         l_uv_nudge, & ! intent(in)
                         l_tke_aniso, & ! intent(in)
                         l_standard_term_ta, & ! intent(in)
-                        stats_zm(1)%file ) ! intent(inout)
+                        stats_zm(1)%file, err_code ) ! intent(inout)
 
       if ( err_code == clubb_fatal_error ) then
         write(fstderr,*) "Fatal error setting up stats_zm"
@@ -1246,7 +1248,7 @@ module stats_clubb_utilities
 
         call stats_init_rad_zt( vars_rad_zt,                    & ! intent(in)
                                 l_error,                        & ! intent(inout)
-                                stats_metadata, stats_rad_zt(i) )    ! intent(inout)
+                                stats_metadata, stats_rad_zt(i) ) ! intent(inout)
       end do
 
       fname = trim( stats_metadata%fname_rad_zt )
@@ -1267,14 +1269,14 @@ module stats_clubb_utilities
                           day, month, year, lat_vals, lon_vals, & ! intent(in)
                           time_current, stats_metadata%stats_tout, & ! intent(in)
                           stats_rad_zt(1)%num_output_fields, & ! intent(in)
-                          stats_rad_zt(1)%file ) ! intent(inout)
+                          stats_rad_zt(1)%file, err_code ) ! intent(inout)
 
         ! Finalize the variable definitions
         call first_write( clubb_params(1,:), sclr_dim, sclr_tol, & ! intent(in)
                           l_uv_nudge, & ! intent(in)
                           l_tke_aniso, & ! intent(in)
                           l_standard_term_ta, & ! intent(in)
-                          stats_rad_zt(1)%file ) ! intent(inout)
+                          stats_rad_zt(1)%file, err_code ) ! intent(inout)
 
         if ( err_code == clubb_fatal_error ) then
           write(fstderr,*) "Fatal error setting up stats_rad_zt"
@@ -1333,7 +1335,7 @@ module stats_clubb_utilities
 
         call stats_init_rad_zm( vars_rad_zm,                    & ! intent(in)
                                 l_error,                        & ! intent(inout)
-                                stats_metadata, stats_rad_zm(i) )    ! intent(inout)
+                                stats_metadata, stats_rad_zm(i) ) ! intent(inout)
       end do
 
       fname = trim( stats_metadata%fname_rad_zm )
@@ -1354,21 +1356,20 @@ module stats_clubb_utilities
                           day, month, year, lat_vals, lon_vals, & ! intent(in)
                           time_current, stats_metadata%stats_tout, & ! intent(in)
                           stats_rad_zm(1)%num_output_fields, & ! intent(in)
-                          stats_rad_zm(1)%file ) ! intent(inout)
+                          stats_rad_zm(1)%file, err_code ) ! intent(inout)
 
         ! Finalize the variable definitions
         call first_write( clubb_params(1,:), sclr_dim, sclr_tol, & ! intent(in)
                           l_uv_nudge, & ! intent(in)
                           l_tke_aniso, & ! intent(in)
                           l_standard_term_ta, & ! intent(in)
-                          stats_rad_zm(1)%file ) ! intent(inout)
+                          stats_rad_zm(1)%file, err_code ) ! intent(inout)
 
         if ( err_code == clubb_fatal_error ) then
           write(fstderr,*) "Fatal error setting up stats_rad_zm"
           return
         end if
 
-        if ( err_code == clubb_fatal_error ) return
 #else
         error stop "This CLUBB program was not compiled with netCDF support."
 #endif
@@ -1425,8 +1426,8 @@ module stats_clubb_utilities
       allocate( stats_sfc(i)%file%z( stats_sfc(i)%kk ) )
 
       call stats_init_sfc( vars_sfc,                    & ! intent(in)
-                          l_error,                     & ! intent(inout)
-                          stats_metadata, stats_sfc(i) )    ! intent(inout)
+                          l_error,                      & ! intent(inout)
+                          stats_metadata, stats_sfc(i) )  ! intent(inout)
     end do
 
     fname = trim( stats_metadata%fname_sfc )
@@ -1447,14 +1448,14 @@ module stats_clubb_utilities
                         stats_sfc(1)%z, day, month, year, lat_vals, lon_vals, & ! In
                         time_current, stats_metadata%stats_tout, & ! In
                         stats_sfc(1)%num_output_fields, & ! In
-                        stats_sfc(1)%file ) ! InOut
+                        stats_sfc(1)%file, err_code ) ! InOut
 
       ! Finalize the variable definitions
       call first_write( clubb_params(1,:), sclr_dim, sclr_tol, & ! intent(in)
                         l_uv_nudge, & ! intent(in)
                         l_tke_aniso, & ! intent(in)
                         l_standard_term_ta, & ! intent(in)
-                        stats_sfc(1)%file ) ! intent(inout)
+                        stats_sfc(1)%file, err_code ) ! intent(inout)
 
       if ( err_code == clubb_fatal_error ) then
         write(fstderr,*) "Fatal error setting up stats_sfc"
@@ -1486,7 +1487,7 @@ module stats_clubb_utilities
     if ( err_code == clubb_fatal_error ) error stop
 
     return
-    
+
   end subroutine stats_init
 
   !-----------------------------------------------------------------------
@@ -1498,7 +1499,7 @@ module stats_clubb_utilities
     ! References:
     !   None
     !-----------------------------------------------------------------------
-    use clubb_precision, only: & 
+    use clubb_precision, only: &
         stat_rknd,   & ! Variable(s)
         stat_nknd
 
@@ -1532,7 +1533,7 @@ module stats_clubb_utilities
     ! References:
     !   None
     !-----------------------------------------------------------------------
-    use clubb_precision, only: & 
+    use clubb_precision, only: &
         stat_rknd,   & ! Variable(s)
         stat_nknd
 
@@ -1614,19 +1615,20 @@ module stats_clubb_utilities
     else
       stats_metadata%l_stats_last = .false.
     end if
-   
+
     return
 
   end subroutine stats_begin_timestep
 
   !-----------------------------------------------------------------------
-  subroutine stats_end_timestep( stats_metadata,  & ! intent(in)
+  subroutine stats_end_timestep( stats_metadata,                & ! intent(in)
                                  stats_zt, stats_zm, stats_sfc, & ! intent(inout)
                                  stats_lh_zt, stats_lh_sfc,     & ! intent(inout)
-                                 stats_rad_zt, stats_rad_zm     & ! intent(inout)
+                                 stats_rad_zt, stats_rad_zm,    & ! intent(inout)
+                                 err_code                       & ! intent(inout)
                                )
 
-    ! Description: 
+    ! Description:
     !   Called when the stats timestep has ended. This subroutine
     !   is responsible for calling statistics to be written to the output
     !   format.
@@ -1654,7 +1656,6 @@ module stats_clubb_utilities
 #endif
 
     use error_code, only : &
-        err_code, &         ! Error Indicator
         clubb_fatal_error   ! Constant
 
     use stats_type, only: stats ! Type
@@ -1673,6 +1674,9 @@ module stats_clubb_utilities
       stats_rad_zt, &
       stats_rad_zm
 
+    integer, intent(inout) :: &
+      err_code  ! Error code catching and relaying any errors occurring in this subroutine
+
     ! External
     intrinsic :: floor
 
@@ -1680,7 +1684,7 @@ module stats_clubb_utilities
 
     logical :: l_error
 
-    ! ---- Begin Code ----
+    ! ------------------- Begin Code -------------------
 
     ! Check if it is time to write to file
 
@@ -1752,40 +1756,40 @@ module stats_clubb_utilities
     if ( clubb_i == stats_zt%ii .and. clubb_j == stats_zt%jj ) then
       ! Write to file
       if ( stats_metadata%l_grads ) then
-        call write_grads( stats_zt%file  ) ! intent(inout)
-        call write_grads( stats_zm%file  ) ! intent(inout)
+        call write_grads( stats_zt%file ) ! intent(inout)
+        call write_grads( stats_zm%file ) ! intent(inout)
         if ( stats_metadata%l_silhs_out ) then
-          call write_grads( stats_lh_zt%file  ) ! intent(inout)
-          call write_grads( stats_lh_sfc%file  ) ! intent(inout)
+          call write_grads( stats_lh_zt%file ) ! intent(inout)
+          call write_grads( stats_lh_sfc%file ) ! intent(inout)
         end if
         if ( stats_metadata%l_output_rad_files ) then
-          call write_grads( stats_rad_zt%file  ) ! intent(inout)
-          call write_grads( stats_rad_zm%file  ) ! intent(inout)
+          call write_grads( stats_rad_zt%file ) ! intent(inout)
+          call write_grads( stats_rad_zm%file ) ! intent(inout)
         end if
-        call write_grads( stats_sfc%file  ) ! intent(inout)
+        call write_grads( stats_sfc%file ) ! intent(inout)
       else ! l_netcdf
 
 #ifdef NETCDF
-        call write_netcdf( stats_zt%file  ) ! intent(inout)
+        call write_netcdf( stats_zt%file, err_code ) ! intent(inout)
 
-        call write_netcdf( stats_zm%file  ) ! intent(inout)
+        call write_netcdf( stats_zm%file, err_code ) ! intent(inout)
 
         if ( stats_metadata%l_silhs_out ) then
 
-          call write_netcdf( stats_lh_zt%file  ) ! intent(inout)
+          call write_netcdf( stats_lh_zt%file, err_code ) ! intent(inout)
 
-          call write_netcdf( stats_lh_sfc%file  ) ! intent(inout)
+          call write_netcdf( stats_lh_sfc%file, err_code ) ! intent(inout)
 
         end if
         if ( stats_metadata%l_output_rad_files ) then
 
-          call write_netcdf( stats_rad_zt%file  ) ! intent(inout)
+          call write_netcdf( stats_rad_zt%file, err_code ) ! intent(inout)
 
-          call write_netcdf( stats_rad_zm%file  ) ! intent(inout)
+          call write_netcdf( stats_rad_zm%file, err_code ) ! intent(inout)
 
         end if
 
-        call write_netcdf( stats_sfc%file  ) ! intent(inout)
+        call write_netcdf( stats_sfc%file, err_code ) ! intent(inout)
             
         if ( err_code == clubb_fatal_error ) return
 #else
@@ -1823,7 +1827,6 @@ module stats_clubb_utilities
         stats_sfc%accum_num_samples, stats_sfc%l_in_update ) ! intent(out)
 
     end if ! clubb_i = stats_zt%ii .and. clubb_j == stats_zt%jj
-
 
     return
   end subroutine stats_end_timestep

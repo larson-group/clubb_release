@@ -115,6 +115,9 @@ module output_2D_samples_module
     character(len=100) :: fname
     integer :: i
 
+    ! Dummy err_code variable catching error output of open_netcdf_for_writing
+    integer :: err_code_dummy
+
     ! ---- Begin Code ----
 
     fname = trim( fname_prefix )//"_lh_sample_points_2D"
@@ -130,16 +133,18 @@ module output_2D_samples_module
     end do
 
 #ifdef NETCDF
-    call open_netcdf_for_writing( nlat, nlon, fdir, fname, 1, nzt, zgrid, &
-                      day, month, year, lat_vals, lon_vals, &
-                      time, dtwrite, n_2D_variables, sample_file, num_samples )
+    call open_netcdf_for_writing( nlat, nlon, fdir, fname, 1, nzt, zgrid, &    ! In
+                      day, month, year, lat_vals, lon_vals, &                  ! In
+                      time, dtwrite, n_2D_variables, &                         ! In
+                      sample_file, err_code_dummy, &                           ! InOut
+                      num_samples )                                            ! In (optional)
 
     ! Finalize the variable definitions
-    call first_write( clubb_params, sclr_dim, sclr_tol, & ! intent(in)
-                      l_uv_nudge, & ! intent(in)
-                      l_tke_aniso, & ! intent(in)
-                      l_standard_term_ta, & ! intent(in)
-                      sample_file ) ! intent(inout)
+    call first_write( clubb_params, sclr_dim, sclr_tol, &       ! intent(in)
+                      l_uv_nudge, &                             ! intent(in)
+                      l_tke_aniso, &                            ! intent(in)
+                      l_standard_term_ta, &                     ! intent(in)
+                      sample_file, err_code_dummy )             ! intent(inout)
 #else
     error stop "This version of CLUBB was not compiled for netCDF output"
 #endif
@@ -183,6 +188,9 @@ module output_2D_samples_module
 
     integer :: sample, j
 
+    ! Dummy err_code variable catching error output of open_netcdf_for_writing
+    integer :: err_code_dummy
+
     ! ---- Begin Code ----
 
     if ( .not. stats_metadata%l_stats_last ) return
@@ -199,7 +207,7 @@ module output_2D_samples_module
     end do
 
 #ifdef NETCDF
-    call write_netcdf( lognormal_sample_file )
+    call write_netcdf( lognormal_sample_file, err_code_dummy )
 #else
     error stop "This version of CLUBB was not compiled for netCDF output"
 #endif
@@ -255,6 +263,9 @@ module output_2D_samples_module
 
     integer :: sample, j, k
 
+    ! Dummy err_code variable catching error output of open_netcdf_for_writing
+    integer :: err_code_dummy
+
     ! ---- Begin Code ----
 
     if ( .not. stats_metadata%l_stats_last ) return
@@ -277,7 +288,7 @@ module output_2D_samples_module
     end do
 
 #ifdef NETCDF
-    call write_netcdf( uniform_sample_file )
+    call write_netcdf( uniform_sample_file, err_code_dummy )
 #else
     error stop "This version of CLUBB was not compiled for netCDF output"
 #endif

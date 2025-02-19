@@ -8,7 +8,6 @@ module matrix_solver_wrapper
 
   use error_code, only: &
     clubb_at_least_debug_level, & ! Procedure
-    err_code,                   & ! Error indicator
     clubb_no_error,             & ! Constant
     clubb_fatal_error
 
@@ -17,9 +16,9 @@ module matrix_solver_wrapper
 
   use model_flags, only: &
     lapack ,        & ! Variable(s)
-    penta_lu ,      & 
+    penta_lu ,      &
     tridiag_lu,     &
-    penta_bicgstab    
+    penta_bicgstab
 
   implicit none
   
@@ -49,10 +48,10 @@ module matrix_solver_wrapper
   subroutine band_solve_single_rhs_multiple_lhs( &
                 solve_name, penta_solve_method, & ! Intent(in)
                 ngrdcol, nsup, nsub, ndim,      & ! Intent(in)
-                lhs, rhs,                       & ! Intent(inout)
+                lhs, rhs, err_code,             & ! Intent(inout)
                 soln, rcond )                     ! Intent(out)
 
-    use lapack_wrap, only:  & 
+    use lapack_wrap, only: &
       lapack_band_solve,  & ! Procedure(s)
       lapack_band_solvex
 
@@ -68,17 +67,20 @@ module matrix_solver_wrapper
     integer, intent(in) :: &
       penta_solve_method
 
-    integer, intent(in) :: & 
+    integer, intent(in) :: &
       ngrdcol,  & ! Number of grid columns
       nsup,     & ! Number of superdiagonals
       nsub,     & ! Number of subdiagonals
       ndim        ! The order of the LHS Matrix, i.e. the # of linear equations
 
-    real( kind = core_rknd ), dimension(nsup+nsub+1,ngrdcol,ndim), intent(inout) ::  & 
+    real( kind = core_rknd ), dimension(nsup+nsub+1,ngrdcol,ndim), intent(inout) :: &
       lhs ! Left hand side
 
-    real( kind = core_rknd ), dimension(ngrdcol,ndim), intent(inout) ::  & 
+    real( kind = core_rknd ), dimension(ngrdcol,ndim), intent(inout) :: &
       rhs ! Right hand side(s)
+
+    integer, intent(inout) :: &
+      err_code      ! Error code catching and relaying any errors occurring in this subroutine
 
     ! ----------------------- Output Variables -----------------------
     real( kind = core_rknd ), dimension(ngrdcol,ndim), intent(out) :: &
@@ -88,14 +90,14 @@ module matrix_solver_wrapper
 
     ! The estimate of the reciprocal condition number of matrix
     ! after equilibration (if done).
-    real( kind = core_rknd ), optional, dimension(ngrdcol), intent(out) ::  & 
+    real( kind = core_rknd ), optional, dimension(ngrdcol), intent(out) :: &
       rcond
 
     ! ----------------------- Local Variables -----------------------
-    real( kind = core_rknd ), dimension(nsup+nsub+1,ngrdcol,ndim) ::  & 
+    real( kind = core_rknd ), dimension(nsup+nsub+1,ngrdcol,ndim) :: &
       lhs_copy ! Copy of left hand side
 
-    real( kind = core_rknd ), dimension(ngrdcol,ndim) ::  & 
+    real( kind = core_rknd ), dimension(ngrdcol,ndim) :: &
       rhs_copy ! Copy of right hand side
 
     real( kind = core_rknd ), dimension(ngrdcol,ndim) :: &
@@ -113,10 +115,10 @@ module matrix_solver_wrapper
 
       ! Perform LU decomp and solve system (LAPACK with diagnostics)
       ! Using dummy_soln, since we only want this routine for diagnostics
-      call lapack_band_solvex( solve_name, nsup, nsub, & ! Intent(in)
-                               ndim, 1, ngrdcol,       & ! Intent(in)
-                               lhs_copy, rhs_copy,     & ! Intent(inout)
-                               dummy_soln, rcond )       ! Intent(out)
+      call lapack_band_solvex( solve_name, nsup, nsub,       & ! Intent(in)
+                               ndim, 1, ngrdcol,             & ! Intent(in)
+                               lhs_copy, rhs_copy, err_code, & ! Intent(inout)
+                               dummy_soln, rcond )             ! Intent(out)
 
       !$acc update device( rcond )
 
@@ -130,7 +132,7 @@ module matrix_solver_wrapper
       ! Perform LU decomp and solve system (LAPACK)
       call lapack_band_solve( solve_name, nsup, nsub,  & ! Intent(in)
                               ndim, 1, ngrdcol,        & ! Intent(in)
-                              lhs, rhs,                & ! Intent(inout)
+                              lhs, rhs, err_code,      & ! Intent(inout)
                               soln )                     ! Intent(out)
 
       !$acc update device( soln )
@@ -160,10 +162,10 @@ module matrix_solver_wrapper
   subroutine band_solve_multiple_rhs_lhs( &
                 solve_name, penta_solve_method,   & ! Intent(in)
                 ngrdcol, nsup, nsub, ndim, nrhs,  & ! Intent(in)
-                lhs, rhs,                         & ! Intent(inout)
+                lhs, rhs, err_code,               & ! Intent(inout)
                 soln, rcond )                       ! Intent(out)
 
-    use lapack_wrap, only:  & 
+    use lapack_wrap, only: &
       lapack_band_solve,  & ! Procedure(s)
       lapack_band_solvex
 
@@ -179,18 +181,21 @@ module matrix_solver_wrapper
     integer, intent(in) :: &
       penta_solve_method
 
-    integer, intent(in) :: & 
+    integer, intent(in) :: &
       ngrdcol,  & ! Number of grid columns
       nsup,     & ! Number of superdiagonals
       nsub,     & ! Number of subdiagonals
       ndim,     & ! The order of the LHS Matrix, i.e. the # of linear equations
       nrhs        ! Number of RHS's to back substitute for
 
-    real( kind = core_rknd ), dimension(nsup+nsub+1,ngrdcol,ndim), intent(inout) ::  & 
+    real( kind = core_rknd ), dimension(nsup+nsub+1,ngrdcol,ndim), intent(inout) :: &
       lhs ! Left hand side
 
-    real( kind = core_rknd ), dimension(ngrdcol,ndim,nrhs), intent(inout) ::  & 
+    real( kind = core_rknd ), dimension(ngrdcol,ndim,nrhs), intent(inout) :: &
       rhs ! Right hand side(s)
+
+    integer, intent(inout) :: &
+      err_code      ! Error code catching and relaying any errors occurring in this subroutine
 
     ! ----------------------- Output Variables -----------------------
     real( kind = core_rknd ), dimension(ngrdcol,ndim,nrhs), intent(out) :: &
@@ -200,14 +205,14 @@ module matrix_solver_wrapper
 
     ! The estimate of the reciprocal condition number of matrix
     ! after equilibration (if done).
-    real( kind = core_rknd ), optional, dimension(ngrdcol), intent(out) ::  & 
+    real( kind = core_rknd ), optional, dimension(ngrdcol), intent(out) :: &
       rcond
 
     ! ----------------------- Local Variables -----------------------
-    real( kind = core_rknd ), dimension(nsup+nsub+1,ngrdcol,ndim) ::  & 
+    real( kind = core_rknd ), dimension(nsup+nsub+1,ngrdcol,ndim) :: &
       lhs_copy ! Copy of left hand side
 
-    real( kind = core_rknd ), dimension(ngrdcol,ndim,nrhs) ::  & 
+    real( kind = core_rknd ), dimension(ngrdcol,ndim,nrhs) :: &
       rhs_copy ! Copy of right hand side
 
     real( kind = core_rknd ), dimension(ngrdcol,ndim,nrhs) :: &
@@ -225,10 +230,10 @@ module matrix_solver_wrapper
 
       ! Perform LU decomp and solve system (LAPACK with diagnostics)
       ! Using dummy_soln, since we only want this routine for diagnostics
-      call lapack_band_solvex( solve_name, nsup, nsub, & ! Intent(in)
-                               ndim, nrhs, ngrdcol,    & ! Intent(in)
-                               lhs_copy, rhs_copy,     & ! Intent(inout)
-                               dummy_soln, rcond )       ! Intent(out)
+      call lapack_band_solvex( solve_name, nsup, nsub,       & ! Intent(in)
+                               ndim, nrhs, ngrdcol,          & ! Intent(in)
+                               lhs_copy, rhs_copy, err_code, & ! Intent(inout)
+                               dummy_soln, rcond )             ! Intent(out)
 
       !$acc update device( rcond )
 
@@ -242,7 +247,7 @@ module matrix_solver_wrapper
       ! Perform LU decomp and solve system (LAPACK)
       call lapack_band_solve( solve_name, nsup, nsub,  & ! Intent(in)
                               ndim, nrhs, ngrdcol,     & ! Intent(in)
-                              lhs, rhs,                & ! Intent(inout)
+                              lhs, rhs, err_code,      & ! Intent(inout)
                               soln )                     ! Intent(out)
 
       !$acc update device( soln )
@@ -278,10 +283,10 @@ module matrix_solver_wrapper
   subroutine tridiag_solve_single_rhs_lhs( &
                 solve_name, tridiag_solve_method, & ! Intent(in)
                 ndim,                             & ! Intent(in)
-                lhs, rhs,                         & ! Intent(inout)
+                lhs, rhs, err_code,               & ! Intent(inout)
                 soln, rcond )                       ! Intent(out)
 
-    use lapack_wrap, only:  & 
+    use lapack_wrap, only: &
       lapack_tridiag_solve,  & ! Procedure(s)
       lapack_tridiag_solvex
 
@@ -297,14 +302,17 @@ module matrix_solver_wrapper
     integer, intent(in) :: &
       tridiag_solve_method
 
-    integer, intent(in) :: & 
+    integer, intent(in) :: &
       ndim        ! The order of the LHS Matrix, i.e. the # of linear equations
 
-    real( kind = core_rknd ), dimension(3,ndim), intent(inout) ::  & 
+    real( kind = core_rknd ), dimension(3,ndim), intent(inout) :: &
       lhs ! Left hand side
 
-    real( kind = core_rknd ), dimension(ndim), intent(inout) ::  & 
+    real( kind = core_rknd ), dimension(ndim), intent(inout) :: &
       rhs ! Right hand side(s)
+
+    integer, intent(inout) :: &
+      err_code      ! Error code catching and relaying any errors occurring in this subroutine
 
     ! ----------------------- Output Variables -----------------------
     real( kind = core_rknd ), dimension(ndim), intent(out) :: &
@@ -314,14 +322,14 @@ module matrix_solver_wrapper
 
     ! The estimate of the reciprocal condition number of matrix
     ! after equilibration (if done).
-    real( kind = core_rknd ), dimension(1), optional, intent(out) ::  & 
+    real( kind = core_rknd ), dimension(1), optional, intent(out) :: &
       rcond
 
     ! ----------------------- Local Variables -----------------------
-    real( kind = core_rknd ), dimension(3,ndim) ::  & 
+    real( kind = core_rknd ), dimension(3,ndim) :: &
       lhs_copy ! Copy of left hand side
 
-    real( kind = core_rknd ), dimension(ndim) ::  & 
+    real( kind = core_rknd ), dimension(ndim) :: &
       rhs_copy ! Copy of right hand side
 
     real( kind = core_rknd ), dimension(ndim) :: &
@@ -336,18 +344,18 @@ module matrix_solver_wrapper
       rhs_copy = rhs
 
       ! Perform LU decomp and solve system (LAPACK with diagnostics)
-      call lapack_tridiag_solvex( solve_name, ndim, 1, 1, & ! Intent(in) 
-                                  lhs_copy, rhs_copy,     & ! Intent(inout)
-                                  dummy_soln, rcond )       ! Intent(out)
+      call lapack_tridiag_solvex( solve_name, ndim, 1, 1, &       ! Intent(in)
+                                  lhs_copy, rhs_copy, err_code, & ! Intent(inout)
+                                  dummy_soln, rcond )             ! Intent(out)
     end if
 
 
     if ( tridiag_solve_method == lapack ) then
 
       ! Perform LU decomp and solve system (LAPACK)
-      call lapack_tridiag_solve( solve_name, ndim, 1, 1, & ! Intent(in) 
-                                 lhs, rhs,               & ! Intent(inout)
-                                 soln )                   ! Intent(out)
+      call lapack_tridiag_solve( solve_name, ndim, 1, 1, & ! Intent(in)
+                                 lhs, rhs, err_code,     & ! Intent(inout)
+                                 soln )                    ! Intent(out)
 
     else if ( tridiag_solve_method == tridiag_lu ) then
 
@@ -375,10 +383,10 @@ module matrix_solver_wrapper
   subroutine tridiag_solve_single_rhs_multiple_lhs( &
                 solve_name, tridiag_solve_method, & ! Intent(in)
                 ngrdcol, ndim,                    & ! Intent(in)
-                lhs, rhs,                         & ! Intent(inout)
+                lhs, rhs, err_code,               & ! Intent(inout)
                 soln, rcond )                       ! Intent(out)
 
-    use lapack_wrap, only:  & 
+    use lapack_wrap, only: &
       lapack_tridiag_solve,  & ! Procedure(s)
       lapack_tridiag_solvex
 
@@ -394,15 +402,18 @@ module matrix_solver_wrapper
     integer, intent(in) :: &
       tridiag_solve_method
 
-    integer, intent(in) :: & 
+    integer, intent(in) :: &
       ngrdcol,  & ! Number of grid columns
       ndim        ! The order of the LHS Matrix, i.e. the # of linear equations
 
-    real( kind = core_rknd ), dimension(3,ngrdcol,ndim), intent(inout) ::  & 
+    real( kind = core_rknd ), dimension(3,ngrdcol,ndim), intent(inout) :: &
       lhs ! Left hand side
 
-    real( kind = core_rknd ), dimension(ngrdcol,ndim), intent(inout) ::  & 
+    real( kind = core_rknd ), dimension(ngrdcol,ndim), intent(inout) :: &
       rhs ! Right hand side(s)
+
+    integer, intent(inout) :: &
+      err_code      ! Error code catching and relaying any errors occurring in this subroutine
 
     ! ----------------------- Output Variables -----------------------
     real( kind = core_rknd ), dimension(ngrdcol,ndim), intent(out) :: &
@@ -412,14 +423,14 @@ module matrix_solver_wrapper
 
     ! The estimate of the reciprocal condition number of matrix
     ! after equilibration (if done).
-    real( kind = core_rknd ), optional, dimension(ngrdcol), intent(out) ::  & 
+    real( kind = core_rknd ), optional, dimension(ngrdcol), intent(out) :: &
       rcond
 
     ! ----------------------- Local Variables -----------------------
-    real( kind = core_rknd ), dimension(3,ngrdcol,ndim) ::  & 
+    real( kind = core_rknd ), dimension(3,ngrdcol,ndim) :: &
       lhs_copy ! Copy of left hand side
 
-    real( kind = core_rknd ), dimension(ngrdcol,ndim) ::  & 
+    real( kind = core_rknd ), dimension(ngrdcol,ndim) :: &
       rhs_copy ! Copy of right hand side
 
     real( kind = core_rknd ), dimension(ngrdcol,ndim) :: &
@@ -436,10 +447,10 @@ module matrix_solver_wrapper
       rhs_copy = rhs
 
       ! Perform LU decomp and solve system (LAPACK with diagnostics)
-      call lapack_tridiag_solvex( solve_name, ndim, 1, ngrdcol, & ! Intent(in) 
-                                  lhs_copy, rhs_copy,           & ! Intent(inout)
+      call lapack_tridiag_solvex( solve_name, ndim, 1, ngrdcol, & ! Intent(in)
+                                  lhs_copy, rhs_copy, err_code, & ! Intent(inout)
                                   dummy_soln, rcond )             ! Intent(out)
-      
+
       !$acc update device( rcond )
 
     end if
@@ -450,8 +461,8 @@ module matrix_solver_wrapper
       !$acc update host( lhs, rhs )
 
       ! Perform LU decomp and solve system (LAPACK)
-      call lapack_tridiag_solve( solve_name, ndim, 1, ngrdcol, & ! Intent(in) 
-                                 lhs, rhs,                     & ! Intent(inout)
+      call lapack_tridiag_solve( solve_name, ndim, 1, ngrdcol, & ! Intent(in)
+                                 lhs, rhs, err_code,           & ! Intent(inout)
                                  soln )                          ! Intent(out)
 
       !$acc update device( soln )
@@ -480,11 +491,11 @@ module matrix_solver_wrapper
   subroutine tridiag_solve_multiple_rhs_lhs( &
                 solve_name, tridiag_solve_method, & ! Intent(in)
                 ngrdcol, ndim, nrhs,              & ! Intent(in)
-                lhs, rhs,                         & ! Intent(inout)
+                lhs, rhs, err_code,               & ! Intent(inout)
                 soln, rcond )                       ! Intent(out)
 
-    use lapack_wrap, only:  & 
-      lapack_tridiag_solve,  & ! Procedure(s)
+    use lapack_wrap, only: &
+      lapack_tridiag_solve, & ! Procedure(s)
       lapack_tridiag_solvex
 
     use tridiag_lu_solvers, only: &
@@ -499,16 +510,19 @@ module matrix_solver_wrapper
     integer, intent(in) :: &
       tridiag_solve_method
 
-    integer, intent(in) :: & 
+    integer, intent(in) :: &
       ngrdcol,  & ! Number of grid columns
       ndim,     & ! The order of the LHS Matrix, i.e. the # of linear equations
       nrhs        ! Number of RHS's to back substitute for
 
-    real( kind = core_rknd ), dimension(3,ngrdcol,ndim), intent(inout) ::  & 
+    real( kind = core_rknd ), dimension(3,ngrdcol,ndim), intent(inout) :: &
       lhs ! Left hand side
 
-    real( kind = core_rknd ), dimension(ngrdcol,ndim,nrhs), intent(inout) ::  & 
+    real( kind = core_rknd ), dimension(ngrdcol,ndim,nrhs), intent(inout) :: &
       rhs ! Right hand side(s)
+
+    integer, intent(inout) :: &
+      err_code      ! Error code catching and relaying any errors occurring in this subroutine
 
     ! ----------------------- Output Variables -----------------------
     real( kind = core_rknd ), dimension(ngrdcol,ndim,nrhs), intent(out) :: &
@@ -518,14 +532,14 @@ module matrix_solver_wrapper
 
     ! The estimate of the reciprocal condition number of matrix
     ! after equilibration (if done).
-    real( kind = core_rknd ), optional, dimension(ngrdcol), intent(out) ::  & 
+    real( kind = core_rknd ), optional, dimension(ngrdcol), intent(out) :: &
       rcond
 
     ! ----------------------- Local Variables -----------------------
-    real( kind = core_rknd ), dimension(3,ngrdcol,ndim) ::  & 
+    real( kind = core_rknd ), dimension(3,ngrdcol,ndim) :: &
       lhs_copy ! Copy of left hand side
 
-    real( kind = core_rknd ), dimension(ngrdcol,ndim,nrhs) ::  & 
+    real( kind = core_rknd ), dimension(ngrdcol,ndim,nrhs) :: &
       rhs_copy ! Copy of right hand side
 
     real( kind = core_rknd ), dimension(ngrdcol,ndim,nrhs) :: &
@@ -542,10 +556,10 @@ module matrix_solver_wrapper
       rhs_copy = rhs
 
       ! Perform LU decomp and solve system (LAPACK with diagnostics)
-      call lapack_tridiag_solvex( solve_name, ndim, nrhs, ngrdcol,  & ! Intent(in) 
-                                  lhs_copy, rhs_copy,               & ! Intent(inout)
+      call lapack_tridiag_solvex( solve_name, ndim, nrhs, ngrdcol,  & ! Intent(in)
+                                  lhs_copy, rhs_copy, err_code,     & ! Intent(inout)
                                   dummy_soln, rcond )                 ! Intent(out)
-      
+
       !$acc update device( rcond )
 
     end if
@@ -556,8 +570,8 @@ module matrix_solver_wrapper
       !$acc update host( lhs, rhs )
 
       ! Perform LU decomp and solve system (LAPACK)
-      call lapack_tridiag_solve( solve_name, ndim, nrhs, ngrdcol, & ! Intent(in) 
-                                 lhs, rhs,                        & ! Intent(inout)
+      call lapack_tridiag_solve( solve_name, ndim, nrhs, ngrdcol, & ! Intent(in)
+                                 lhs, rhs, err_code,              & ! Intent(inout)
                                  soln )                             ! Intent(out)
 
       !$acc update device( soln )
