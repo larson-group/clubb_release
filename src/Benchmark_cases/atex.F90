@@ -73,7 +73,8 @@ module atex
   subroutine atex_tndcy( ngrdcol, sclr_dim, edsclr_dim, sclr_idx, &
                          gr, time, time_initial, &
                          rtm, &
-                         remap_from_dycore_grid_method, &
+                         l_add_dycore_grid, &
+                         grid_remap_method, &
                          dycore_gr, rho_ds_zm_dycore, &
                          wm_zt, wm_zm, & 
                          thlm_forcing, rtm_forcing, & 
@@ -136,7 +137,10 @@ module atex
     rtm      ! Total water mixing ratio        [kg/kg]
 
   integer, intent(in) :: &
-    remap_from_dycore_grid_method
+    grid_remap_method
+
+  logical, intent(in) :: &
+    l_add_dycore_grid
 
   type( grid ), intent(in) :: &
     dycore_gr
@@ -243,7 +247,7 @@ module atex
       wm_zm(i,gr%nzm) = 0.0_core_rknd  ! Model top
     end do
 
-    if ( remap_from_dycore_grid_method > 0 ) then
+    if ( l_add_dycore_grid ) then
 
       do i = 1, ngrdcol
         rtm_dycore(i,:) = lin_interpolate( dycore_gr%nzt, gr%nzt, &
@@ -284,7 +288,7 @@ module atex
       call calc_forcings( ngrdcol, dycore_gr, z_inversion_dycore, &  ! intent(in)
                           thlm_forcing_dycore, rtm_forcing_dycore )  ! intent(out)
 
-      if ( remap_from_dycore_grid_method == 1 ) then
+      if ( grid_remap_method == 1 ) then
 
         call interpolate_forcings( ngrdcol, dycore_gr, gr, &                   ! intent(in)
                                    dycore_gr%nzm, rho_ds_zm_dycore, &          ! intent(in)
@@ -326,7 +330,8 @@ module atex
       
       else
         write(fstderr,*) "There is currently no method implemented for", &
-                         " remap_from_dycore_grid_method=", remap_from_dycore_grid_method
+                         " grid_remap_method=", grid_remap_method
+        error stop 'Invalid option for flag grid_remap_method.'
       end if
 
     else
@@ -348,7 +353,7 @@ module atex
       end do
     end do
 
-    if (remap_from_dycore_grid_method > 0 ) then
+    if ( l_add_dycore_grid ) then
       !$acc parallel loop gang vector collapse(2) default(present)
       do k = 1, dycore_gr%nzt
         do i = 1, ngrdcol

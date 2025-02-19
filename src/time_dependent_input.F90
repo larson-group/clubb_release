@@ -102,8 +102,8 @@ module time_dependent_input
 
   !================================================================================================
   subroutine initialize_t_dependent_input( iunit, runtype, nz, grid, p_in_Pa, &
-                                           remap_from_dycore_grid_method, &
-                                           grid_adaptation_method )
+                                           l_add_dycore_grid, &
+                                           grid_adapt_in_time_method )
     !
     !  Description: 
     !    This subroutine reads in time dependent information about a
@@ -129,21 +129,20 @@ module time_dependent_input
 
     real( kind = core_rknd ), dimension(nz), intent(in) :: p_in_Pa ! Pressure[Pa]
 
+    logical, intent(in) :: &
+      l_add_dycore_grid     ! Flag to set remapping from dycore on or off
+
     integer, intent(in) :: &
-      remap_from_dycore_grid_method, &  ! flag that says whether the forcings input should be
-                                        ! simulated from the host model on the dycore grid and
-                                        ! if so what remapping technique should be used to remap
-                                        ! the values from the dycore grid to the physics grid
-      grid_adaptation_method            ! flag that says whether the grid should be adapted over
-                                        ! time and if so, how the grid density function should
-                                        ! be formed
+      grid_adapt_in_time_method   ! flag that says whether the grid should be adapted over
+                                  ! time and if so, how the grid density function should
+                                  ! be formed
 
     ! ----------------- Begin Code --------------------
 
     if ( .not. l_ignore_forcings ) then
       call initialize_t_dependent_forcings &
                    ( iunit, input_path//trim(runtype)//forcings_path, nz, grid, p_in_Pa, &
-                     remap_from_dycore_grid_method, grid_adaptation_method )
+                     l_add_dycore_grid, grid_adapt_in_time_method )
     end if
 
     if ( .not. sfc_already_initialized ) then
@@ -319,8 +318,8 @@ module time_dependent_input
 
   !================================================================================================
   subroutine initialize_t_dependent_forcings( iunit, input_file, nz, grid, p_in_Pa, &
-                                              remap_from_dycore_grid_method, &
-                                              grid_adaptation_method )
+                                              l_add_dycore_grid, &
+                                              grid_adapt_in_time_method )
     !
     !  Description: This subroutine reads in a file that details time dependent
     !  input values that vary in two dimensions.
@@ -352,14 +351,13 @@ module time_dependent_input
 
     real( kind = core_rknd ), intent(in), dimension(nz) :: p_in_Pa ! Pressure [Pa]
 
+    logical, intent(in) :: &
+      l_add_dycore_grid     ! Flag to set remapping from dycore on or off
+
     integer, intent(in) :: &
-      remap_from_dycore_grid_method, &  ! flag that says whether the forcings input should be
-                                        ! simulated from the host model on the dycore grid and
-                                        ! if so what remapping technique should be used to remap
-                                        ! the values from the dycore grid to the physics grid
-      grid_adaptation_method            ! flag that says whether the grid should be adapted over
-                                        ! time and if so, how the grid density function should
-                                        ! be formed
+      grid_adapt_in_time_method   ! flag that says whether the grid should be adapted over
+                                  ! time and if so, how the grid density function should
+                                  ! be formed
 
     ! Local Variables
 
@@ -416,10 +414,10 @@ module time_dependent_input
 
     end do
 
-    if ( remap_from_dycore_grid_method > 0 .or. grid_adaptation_method == 0 ) then
+    if ( l_add_dycore_grid .or. grid_adapt_in_time_method == 0 ) then
       ! the array should only be kept in memory, if we want to use grid adaptation
-      ! (grid_adaptation_method > 0) and no simulating forcings input from the host
-      ! model on the dycore grid (remap_from_dycore_grid_method == 0), since then we
+      ! (grid_adapt_in_time_method > 0) and no simulating forcings input from the host
+      ! model on the dycore grid (l_add_dycore_grid == .true.), since then we
       ! need the raw input from the file during the CLUBB run if the grid changes
       do i = 1, nforcings
         if ( allocated( t_dependent_forcing_data_f_grid(i)%values ) ) then
@@ -980,7 +978,8 @@ module time_dependent_input
   subroutine apply_time_dependent_forcings_from_dycore( &
               ngrdcol, nzm, nzt, &
               sclr_dim, edsclr_dim, sclr_idx, &
-              gr, dycore_gr, time, rtm, rho, exner,  &
+              gr, dycore_gr, time, rtm, rho, exner, &
+              grid_remap_method, &
               total_idx_rho_lin_spline, rho_lin_spline_vals, &
               rho_lin_spline_levels, &
               thlm_f, rtm_f, um_ref, vm_ref, um_f, vm_f, &
@@ -1015,6 +1014,9 @@ module time_dependent_input
     use error_code, only: &
       clubb_at_least_debug_level
 
+    use constants_clubb, only: &
+      fstderr
+
     implicit none
 
     !--------------------- Input Variables ---------------------
@@ -1040,7 +1042,8 @@ module time_dependent_input
       rtm        ! Total Water Mixing Ratio                   [kg/kg]
 
     integer, intent(in) :: &
-      total_idx_rho_lin_spline ! number of indices for the linear spline definition arrays
+      total_idx_rho_lin_spline, & ! number of indices for the linear spline definition arrays
+      grid_remap_method  ! Integer that specifies what remapping method should be used
 
     real( kind = core_rknd ), dimension(total_idx_rho_lin_spline), intent(in) :: &
       rho_lin_spline_vals, & ! rho values at the given altitudes
@@ -1089,34 +1092,40 @@ module time_dependent_input
                           ( time_frac, t_dependent_forcing_data(n)%values(:,after_time), &
                             t_dependent_forcing_data(n)%values(:,before_time) )
 
-      forcings_array(n,:) = remap( dycore_gr%nzm, gr%nzm, &
-                          dycore_gr%zm, gr%zm,&
-                          total_idx_rho_lin_spline, rho_lin_spline_vals, &
-                          rho_lin_spline_levels, &
-                          temp_array_dycore )
+      if ( grid_remap_method == 1 ) then
+        forcings_array(n,:) = remap( dycore_gr%nzm, gr%nzm, &
+                            dycore_gr%zm, gr%zm,&
+                            total_idx_rho_lin_spline, rho_lin_spline_vals, &
+                            rho_lin_spline_levels, &
+                            temp_array_dycore )
 
-      if ( clubb_at_least_debug_level( 2 ) ) then
-        call check_mass_conservation( dycore_gr%nzm, gr%nzm, &
-                                      dycore_gr%zm, &
-                                      gr%zm, &
-                                      total_idx_rho_lin_spline, rho_lin_spline_vals, &
-                                      rho_lin_spline_levels )
+        if ( clubb_at_least_debug_level( 2 ) ) then
+          call check_mass_conservation( dycore_gr%nzm, gr%nzm, &
+                                        dycore_gr%zm, &
+                                        gr%zm, &
+                                        total_idx_rho_lin_spline, rho_lin_spline_vals, &
+                                        rho_lin_spline_levels )
 
-        call check_vertical_integral_conservation( total_idx_rho_lin_spline, &
-                                                   rho_lin_spline_vals, &
-                                                   rho_lin_spline_levels, &
-                                                   dycore_gr%nzm, gr%nzm, &
-                                                   dycore_gr%zm, &
-                                                   gr%zm,&
-                                                   temp_array_dycore, &
-                                                   forcings_array(n,:) )
-        
-        call check_remap_for_consistency( dycore_gr%nzm, gr%nzm, &
-                                          dycore_gr%zm, &
-                                          gr%zm, &
-                                          total_idx_rho_lin_spline, &
-                                          rho_lin_spline_vals, &
-                                          rho_lin_spline_levels )
+          call check_vertical_integral_conservation( total_idx_rho_lin_spline, &
+                                                     rho_lin_spline_vals, &
+                                                     rho_lin_spline_levels, &
+                                                     dycore_gr%nzm, gr%nzm, &
+                                                     dycore_gr%zm, &
+                                                     gr%zm,&
+                                                     temp_array_dycore, &
+                                                     forcings_array(n,:) )
+
+          call check_remap_for_consistency( dycore_gr%nzm, gr%nzm, &
+                                            dycore_gr%zm, &
+                                            gr%zm, &
+                                            total_idx_rho_lin_spline, &
+                                            rho_lin_spline_vals, &
+                                            rho_lin_spline_levels )
+        end if
+      else
+        write(fstderr,*) 'There is currently no method implemented for grid_remap_method=', &
+                         grid_remap_method, '. Set flag to different value.'
+        error stop 'Invalid value for flag grid_remap_method.'
       end if
     end do
 

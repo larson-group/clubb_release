@@ -33,7 +33,11 @@ module grid_adaptation_module
             calc_mass_over_grid_intervals, vertical_integral_conserve_mass, &
             adapt_grid, calc_grid_dens_func
 
-  private ! Default Scoping  
+  private :: calc_integral, normalize_density, &
+             create_grid_from_normalized_grid_density_func, &
+             check_grid, create_grid_from_grid_density_func
+
+  private ! Default Scoping
 
   contains
 
@@ -100,7 +104,7 @@ module grid_adaptation_module
     call setup_grid_api( nlevels, sfc_elevation, l_implemented, &     ! intent(in)
                          grid_type, deltaz, zm_init, zm_top, &      ! intent(in)
                          momentum_heights, thermodynamic_heights, & ! intent(in)
-                   gr )
+                         gr )
 
   end subroutine setup_simple_gr_dycore
 
@@ -1092,7 +1096,7 @@ module grid_adaptation_module
     if ( (grid_levels(nlevel) &
           - lin_spline_rho_levels(total_idx_lin_spline) ) > tol ) then
       write(fstderr,*) 'Wrong input: highest level of lin_spline_rho_levels must', &
-                 ' be higher or equal to highest zm level of grid_levels'
+                       ' be higher or equal to highest zm level of grid_levels'
       write(fstderr,*) 'Cannot compute the mass to get the remapping operator if the', & 
                        'density function is not defined over the whole grid region'
       error stop 'Cannot compute the remapping operator'
@@ -1109,7 +1113,7 @@ module grid_adaptation_module
       else if ( grid_levels(1) < lin_spline_rho_levels(j) ) then ! j > 1
         if (j <= 1) then
           write(fstderr,*) 'Wrong input: lowest level of lin_spline_rho_levels must', &
-                     ' be lower or equal to lowest zm level of grid_levels'
+                           ' be lower or equal to lowest zm level of grid_levels'
           write(fstderr,*) 'Cannot compute the mass to get the remapping operator if the', & 
                            'density function is not defined over the whole grid region'
           error stop 'Cannot compute the remapping operator'
@@ -1645,6 +1649,7 @@ module grid_adaptation_module
                          sfc_elevation, l_implemented, &
                          hydromet_dim, sclr_dim, edsclr_dim, &
                          thvm, idx_thvm, p_sfc, &
+                         grid_remap_method, &
                          gr, &
                          thlm_forcing, rtm_forcing, um_forcing, vm_forcing, &
                          sclrm_forcing, edsclrm_forcing, wprtp_forcing, &
@@ -1709,6 +1714,9 @@ module grid_adaptation_module
 
     real( kind = core_rknd ), dimension(ngrdcol, idx_thvm), intent(in) ::  &
       thvm
+
+    integer, intent(in) :: &
+      grid_remap_method ! specifies what remapping method should be used
 
     !--------------------- Output Variable ---------------------
 
@@ -1940,429 +1948,433 @@ module grid_adaptation_module
     rho_lin_spline_vals = rho_ds_zm
     rho_lin_spline_levels = gr%zm
 
-
-    ! Remap all zt values
-    thlm_forcing = interpolate_values_zt( ngrdcol, gr, new_gr, &
+    if ( grid_remap_method == 1 ) then
+      ! Remap all zt values
+      thlm_forcing = interpolate_values_zt( ngrdcol, gr, new_gr, &
+                                            total_idx_rho_lin_spline, rho_lin_spline_vals, &
+                                            rho_lin_spline_levels, &
+                                            thlm_forcing )
+      rtm_forcing = interpolate_values_zt( ngrdcol, gr, new_gr, &
+                                           total_idx_rho_lin_spline, rho_lin_spline_vals, &
+                                           rho_lin_spline_levels, &
+                                           rtm_forcing )
+      um_forcing = interpolate_values_zt( ngrdcol, gr, new_gr, &
                                           total_idx_rho_lin_spline, rho_lin_spline_vals, &
                                           rho_lin_spline_levels, &
-                                          thlm_forcing )
-    rtm_forcing = interpolate_values_zt( ngrdcol, gr, new_gr, &
+                                          um_forcing )
+      vm_forcing = interpolate_values_zt( ngrdcol, gr, new_gr, &
+                                          total_idx_rho_lin_spline, rho_lin_spline_vals, &
+                                          rho_lin_spline_levels, &
+                                          vm_forcing )
+      wm_zt = interpolate_values_zt( ngrdcol, gr, new_gr, &
+                                     total_idx_rho_lin_spline, rho_lin_spline_vals, &
+                                     rho_lin_spline_levels, &
+                                     wm_zt )
+      rho = interpolate_values_zt( ngrdcol, gr, new_gr, &
+                                   total_idx_rho_lin_spline, rho_lin_spline_vals, &
+                                   rho_lin_spline_levels, &
+                                   rho )
+      rho_ds_zt = interpolate_values_zt( ngrdcol, gr, new_gr, &
                                          total_idx_rho_lin_spline, rho_lin_spline_vals, &
                                          rho_lin_spline_levels, &
-                                         rtm_forcing )
-    um_forcing = interpolate_values_zt( ngrdcol, gr, new_gr, &
-                                        total_idx_rho_lin_spline, rho_lin_spline_vals, &
-                                        rho_lin_spline_levels, &
-                                        um_forcing )
-    vm_forcing = interpolate_values_zt( ngrdcol, gr, new_gr, &
-                                        total_idx_rho_lin_spline, rho_lin_spline_vals, &
-                                        rho_lin_spline_levels, &
-                                        vm_forcing )
-    wm_zt = interpolate_values_zt( ngrdcol, gr, new_gr, &
-                                   total_idx_rho_lin_spline, rho_lin_spline_vals, &
-                                   rho_lin_spline_levels, &
-                                   wm_zt )
-    rho = interpolate_values_zt( ngrdcol, gr, new_gr, &
-                                 total_idx_rho_lin_spline, rho_lin_spline_vals, &
-                                 rho_lin_spline_levels, &
-                                 rho )
-    rho_ds_zt = interpolate_values_zt( ngrdcol, gr, new_gr, &
-                                       total_idx_rho_lin_spline, rho_lin_spline_vals, &
-                                       rho_lin_spline_levels, &
-                                       rho_ds_zt )
-    invrs_rho_ds_zt = interpolate_values_zt( ngrdcol, gr, new_gr, &
-                                             total_idx_rho_lin_spline, rho_lin_spline_vals, &
-                                             rho_lin_spline_levels, &
-                                             invrs_rho_ds_zt )
-    thv_ds_zt = interpolate_values_zt( ngrdcol, gr, new_gr, &
-                                       total_idx_rho_lin_spline, rho_lin_spline_vals, &
-                                       rho_lin_spline_levels, &
-                                       thv_ds_zt )
-    rfrzm = interpolate_values_zt( ngrdcol, gr, new_gr, &
-                                   total_idx_rho_lin_spline, rho_lin_spline_vals, &
-                                   rho_lin_spline_levels, &
-                                   rfrzm )
-    do i = 1, hydromet_dim
-        wp2hmp(:,:,i) = interpolate_values_zt( ngrdcol, gr, new_gr, &
+                                         rho_ds_zt )
+      invrs_rho_ds_zt = interpolate_values_zt( ngrdcol, gr, new_gr, &
                                                total_idx_rho_lin_spline, rho_lin_spline_vals, &
                                                rho_lin_spline_levels, &
-                                               wp2hmp(:,:,i) )
-        rtphmp_zt(:,:,i) = interpolate_values_zt( ngrdcol, gr, new_gr, &
-                                                  total_idx_rho_lin_spline, rho_lin_spline_vals, &
-                                                  rho_lin_spline_levels, &
-                                                  rtphmp_zt(:,:,i) )
-        thlphmp_zt(:,:,i) = interpolate_values_zt( ngrdcol, gr, new_gr, &
-                                                   total_idx_rho_lin_spline, rho_lin_spline_vals, &
-                                                   rho_lin_spline_levels, &
-                                                   thlphmp_zt(:,:,i) )
-    end do
-    do i = 1, sclr_dim
-        sclrm_forcing(:,:,i) = interpolate_values_zt( ngrdcol, gr, new_gr, &
-                                                      total_idx_rho_lin_spline, &
-                                                      rho_lin_spline_vals, &
-                                                      rho_lin_spline_levels, &
-                                                      sclrm_forcing(:,:,i) )
-        sclrm(:,:,i) = interpolate_values_zt( ngrdcol, gr, new_gr, &
-                                              total_idx_rho_lin_spline, &
-                                              rho_lin_spline_vals, &
-                                              rho_lin_spline_levels, &
-                                              sclrm(:,:,i) )
-        sclrp3(:,:,i) = interpolate_values_zt( ngrdcol, gr, new_gr, &
-                                               total_idx_rho_lin_spline, &
-                                               rho_lin_spline_vals, &
-                                               rho_lin_spline_levels, &
-                                               sclrp3(:,:,i) )
-#ifdef GFDL
-        sclrm_trsport_only(:,:,i) = interpolate_values_zt( ngrdcol, gr, new_gr, &
-                                                           total_idx_rho_lin_spline, &
-                                                           rho_lin_spline_vals, &
-                                                           rho_lin_spline_levels, &
-                                                           sclrm_trsport_only(:,:,i) )
-#endif
-    end do
-    do i = 1, edsclr_dim
-        edsclrm_forcing(:,:,i) = interpolate_values_zt( ngrdcol, gr, new_gr, &
+                                               invrs_rho_ds_zt )
+      thv_ds_zt = interpolate_values_zt( ngrdcol, gr, new_gr, &
+                                         total_idx_rho_lin_spline, rho_lin_spline_vals, &
+                                         rho_lin_spline_levels, &
+                                         thv_ds_zt )
+      rfrzm = interpolate_values_zt( ngrdcol, gr, new_gr, &
+                                     total_idx_rho_lin_spline, rho_lin_spline_vals, &
+                                     rho_lin_spline_levels, &
+                                     rfrzm )
+      do i = 1, hydromet_dim
+          wp2hmp(:,:,i) = interpolate_values_zt( ngrdcol, gr, new_gr, &
+                                                 total_idx_rho_lin_spline, rho_lin_spline_vals, &
+                                                 rho_lin_spline_levels, &
+                                                 wp2hmp(:,:,i) )
+          rtphmp_zt(:,:,i) = interpolate_values_zt( ngrdcol, gr, new_gr, &
+                                                    total_idx_rho_lin_spline, rho_lin_spline_vals, &
+                                                    rho_lin_spline_levels, &
+                                                    rtphmp_zt(:,:,i) )
+          thlphmp_zt(:,:,i) = interpolate_values_zt( ngrdcol, gr, new_gr, &
+                                                     total_idx_rho_lin_spline, rho_lin_spline_vals, &
+                                                     rho_lin_spline_levels, &
+                                                     thlphmp_zt(:,:,i) )
+      end do
+      do i = 1, sclr_dim
+          sclrm_forcing(:,:,i) = interpolate_values_zt( ngrdcol, gr, new_gr, &
                                                         total_idx_rho_lin_spline, &
                                                         rho_lin_spline_vals, &
                                                         rho_lin_spline_levels, &
-                                                        edsclrm_forcing(:,:,i) )
-        edsclrm(:,:,i) = interpolate_values_zt( ngrdcol, gr, new_gr, &
+                                                        sclrm_forcing(:,:,i) )
+          sclrm(:,:,i) = interpolate_values_zt( ngrdcol, gr, new_gr, &
                                                 total_idx_rho_lin_spline, &
                                                 rho_lin_spline_vals, &
                                                 rho_lin_spline_levels, &
-                                                edsclrm(:,:,i) )
-    end do
-    rtm_ref = interpolate_values_zt( ngrdcol, gr, new_gr, &
-                                     total_idx_rho_lin_spline, rho_lin_spline_vals, &
-                                     rho_lin_spline_levels, &
-                                     rtm_ref )
-    thlm_ref = interpolate_values_zt( ngrdcol, gr, new_gr, &
-                                      total_idx_rho_lin_spline, rho_lin_spline_vals, &
-                                      rho_lin_spline_levels, &
-                                      thlm_ref )
-    um_ref = interpolate_values_zt( ngrdcol, gr, new_gr, &
-                                    total_idx_rho_lin_spline, rho_lin_spline_vals, &
-                                    rho_lin_spline_levels, &
-                                    um_ref )
-    vm_ref = interpolate_values_zt( ngrdcol, gr, new_gr, &
-                                    total_idx_rho_lin_spline, rho_lin_spline_vals, &
-                                    rho_lin_spline_levels, &
-                                    vm_ref )
-    ug = interpolate_values_zt( ngrdcol, gr, new_gr, &
-                                total_idx_rho_lin_spline, rho_lin_spline_vals, &
-                                rho_lin_spline_levels, &
-                                ug )
-    vg = interpolate_values_zt( ngrdcol, gr, new_gr, &
-                                total_idx_rho_lin_spline, rho_lin_spline_vals, &
-                                rho_lin_spline_levels, &
-                                vg )
-    um = interpolate_values_zt( ngrdcol, gr, new_gr, &
-                                total_idx_rho_lin_spline, rho_lin_spline_vals, &
-                                rho_lin_spline_levels, &
-                                um )
-    vm = interpolate_values_zt( ngrdcol, gr, new_gr, &
-                                total_idx_rho_lin_spline, rho_lin_spline_vals, &
-                                rho_lin_spline_levels, &
-                                vm )
-    up3 = interpolate_values_zt( ngrdcol, gr, new_gr, &
-                                 total_idx_rho_lin_spline, rho_lin_spline_vals, &
-                                 rho_lin_spline_levels, &
-                                 up3 )
-    vp3 = interpolate_values_zt( ngrdcol, gr, new_gr, &
-                                 total_idx_rho_lin_spline, rho_lin_spline_vals, &
-                                 rho_lin_spline_levels, &
-                                 vp3 )
-    rtm = interpolate_values_zt( ngrdcol, gr, new_gr, &
-                                 total_idx_rho_lin_spline, rho_lin_spline_vals, &
-                                 rho_lin_spline_levels, &
-                                 rtm )
-    thlm = interpolate_values_zt( ngrdcol, gr, new_gr, &
-                                  total_idx_rho_lin_spline, rho_lin_spline_vals, &
-                                  rho_lin_spline_levels, &
-                                  thlm )
-    rtp3 = interpolate_values_zt( ngrdcol, gr, new_gr, &
-                                  total_idx_rho_lin_spline, rho_lin_spline_vals, &
-                                  rho_lin_spline_levels, &
-                                  rtp3 )
-    thlp3 = interpolate_values_zt( ngrdcol, gr, new_gr, &
-                                   total_idx_rho_lin_spline, rho_lin_spline_vals, &
-                                   rho_lin_spline_levels, &
-                                   thlp3 )
-    wp3 = interpolate_values_zt( ngrdcol, gr, new_gr, &
-                                 total_idx_rho_lin_spline, rho_lin_spline_vals, &
-                                 rho_lin_spline_levels, &
-                                 wp3 )
-    ! remap thvm values to new grid, to calculate new p_in_Pa
-    thvm_new_grid = interpolate_values_zt( ngrdcol, gr, new_gr, &
-                                           total_idx_rho_lin_spline, rho_lin_spline_vals, &
-                                           rho_lin_spline_levels, &
-                                           thvm )
-    ! calculate p_in_Pa instead of remapping directly since it can run into problems if for example
-    ! the two highest levels have the same pressure value, which could be happening with the
-    ! remapping, also calculate exner accordingly
-    call init_pressure( ngrdcol, new_gr, thvm_new_grid, p_sfc, &
-                        p_in_Pa, exner, p_in_Pa_zm, exner_zm )
-    rcm = interpolate_values_zt( ngrdcol, gr, new_gr, &
-                                 total_idx_rho_lin_spline, rho_lin_spline_vals, &
-                                 rho_lin_spline_levels, &
-                                 rcm )
-    cloud_frac = interpolate_values_zt( ngrdcol, gr, new_gr, &
+                                                sclrm(:,:,i) )
+          sclrp3(:,:,i) = interpolate_values_zt( ngrdcol, gr, new_gr, &
+                                                 total_idx_rho_lin_spline, &
+                                                 rho_lin_spline_vals, &
+                                                 rho_lin_spline_levels, &
+                                                 sclrp3(:,:,i) )
+#ifdef GFDL
+          sclrm_trsport_only(:,:,i) = interpolate_values_zt( ngrdcol, gr, new_gr, &
+                                                             total_idx_rho_lin_spline, &
+                                                             rho_lin_spline_vals, &
+                                                             rho_lin_spline_levels, &
+                                                             sclrm_trsport_only(:,:,i) )
+#endif
+      end do
+      do i = 1, edsclr_dim
+          edsclrm_forcing(:,:,i) = interpolate_values_zt( ngrdcol, gr, new_gr, &
+                                                          total_idx_rho_lin_spline, &
+                                                          rho_lin_spline_vals, &
+                                                          rho_lin_spline_levels, &
+                                                          edsclrm_forcing(:,:,i) )
+          edsclrm(:,:,i) = interpolate_values_zt( ngrdcol, gr, new_gr, &
+                                                  total_idx_rho_lin_spline, &
+                                                  rho_lin_spline_vals, &
+                                                  rho_lin_spline_levels, &
+                                                  edsclrm(:,:,i) )
+      end do
+      rtm_ref = interpolate_values_zt( ngrdcol, gr, new_gr, &
+                                       total_idx_rho_lin_spline, rho_lin_spline_vals, &
+                                       rho_lin_spline_levels, &
+                                       rtm_ref )
+      thlm_ref = interpolate_values_zt( ngrdcol, gr, new_gr, &
                                         total_idx_rho_lin_spline, rho_lin_spline_vals, &
                                         rho_lin_spline_levels, &
-                                        cloud_frac )
-    wp2thvp = interpolate_values_zt( ngrdcol, gr, new_gr, &
-                                     total_idx_rho_lin_spline, rho_lin_spline_vals, &
-                                     rho_lin_spline_levels, &
-                                     wp2thvp )
-    wp2rtp = interpolate_values_zt( ngrdcol, gr, new_gr, &
+                                        thlm_ref )
+      um_ref = interpolate_values_zt( ngrdcol, gr, new_gr, &
+                                      total_idx_rho_lin_spline, rho_lin_spline_vals, &
+                                      rho_lin_spline_levels, &
+                                      um_ref )
+      vm_ref = interpolate_values_zt( ngrdcol, gr, new_gr, &
+                                      total_idx_rho_lin_spline, rho_lin_spline_vals, &
+                                      rho_lin_spline_levels, &
+                                      vm_ref )
+      ug = interpolate_values_zt( ngrdcol, gr, new_gr, &
+                                  total_idx_rho_lin_spline, rho_lin_spline_vals, &
+                                  rho_lin_spline_levels, &
+                                  ug )
+      vg = interpolate_values_zt( ngrdcol, gr, new_gr, &
+                                  total_idx_rho_lin_spline, rho_lin_spline_vals, &
+                                  rho_lin_spline_levels, &
+                                  vg )
+      um = interpolate_values_zt( ngrdcol, gr, new_gr, &
+                                  total_idx_rho_lin_spline, rho_lin_spline_vals, &
+                                  rho_lin_spline_levels, &
+                                  um )
+      vm = interpolate_values_zt( ngrdcol, gr, new_gr, &
+                                  total_idx_rho_lin_spline, rho_lin_spline_vals, &
+                                  rho_lin_spline_levels, &
+                                  vm )
+      up3 = interpolate_values_zt( ngrdcol, gr, new_gr, &
+                                   total_idx_rho_lin_spline, rho_lin_spline_vals, &
+                                   rho_lin_spline_levels, &
+                                   up3 )
+      vp3 = interpolate_values_zt( ngrdcol, gr, new_gr, &
+                                   total_idx_rho_lin_spline, rho_lin_spline_vals, &
+                                   rho_lin_spline_levels, &
+                                   vp3 )
+      rtm = interpolate_values_zt( ngrdcol, gr, new_gr, &
+                                   total_idx_rho_lin_spline, rho_lin_spline_vals, &
+                                   rho_lin_spline_levels, &
+                                   rtm )
+      thlm = interpolate_values_zt( ngrdcol, gr, new_gr, &
                                     total_idx_rho_lin_spline, rho_lin_spline_vals, &
                                     rho_lin_spline_levels, &
-                                    wp2rtp )
-    wp2thlp = interpolate_values_zt( ngrdcol, gr, new_gr, &
+                                    thlm )
+      rtp3 = interpolate_values_zt( ngrdcol, gr, new_gr, &
+                                    total_idx_rho_lin_spline, rho_lin_spline_vals, &
+                                    rho_lin_spline_levels, &
+                                    rtp3 )
+      thlp3 = interpolate_values_zt( ngrdcol, gr, new_gr, &
                                      total_idx_rho_lin_spline, rho_lin_spline_vals, &
                                      rho_lin_spline_levels, &
-                                     wp2thlp )
-    wpup2 = interpolate_values_zt( ngrdcol, gr, new_gr, &
+                                     thlp3 )
+      wp3 = interpolate_values_zt( ngrdcol, gr, new_gr, &
                                    total_idx_rho_lin_spline, rho_lin_spline_vals, &
                                    rho_lin_spline_levels, &
-                                   wpup2 )
-    wpvp2 = interpolate_values_zt( ngrdcol, gr, new_gr, &
-                                   total_idx_rho_lin_spline, rho_lin_spline_vals, &
-                                   rho_lin_spline_levels, &
-                                   wpvp2 )
-    ice_supersat_frac = interpolate_values_zt( ngrdcol, gr, new_gr, &
-                                               total_idx_rho_lin_spline, rho_lin_spline_vals, &
-                                               rho_lin_spline_levels, &
-                                               ice_supersat_frac )
-    um_pert = interpolate_values_zt( ngrdcol, gr, new_gr, &
-                                     total_idx_rho_lin_spline, rho_lin_spline_vals, &
-                                     rho_lin_spline_levels, &
-                                     um_pert )
-    vm_pert = interpolate_values_zt( ngrdcol, gr, new_gr, &
-                                     total_idx_rho_lin_spline, rho_lin_spline_vals, &
-                                     rho_lin_spline_levels, &
-                                     vm_pert )
-    rcm_in_layer = interpolate_values_zt( ngrdcol, gr, new_gr, &
-                                          total_idx_rho_lin_spline, rho_lin_spline_vals, &
-                                          rho_lin_spline_levels, &
-                                          rcm_in_layer )
-    cloud_cover = interpolate_values_zt( ngrdcol, gr, new_gr, &
-                                         total_idx_rho_lin_spline, rho_lin_spline_vals, &
-                                         rho_lin_spline_levels, &
-                                         cloud_cover )
-    w_up_in_cloud = interpolate_values_zt( ngrdcol, gr, new_gr, &
-                                           total_idx_rho_lin_spline, rho_lin_spline_vals, &
-                                           rho_lin_spline_levels, &
-                                           w_up_in_cloud )
-    w_down_in_cloud = interpolate_values_zt( ngrdcol, gr, new_gr, &
+                                   wp3 )
+      ! remap thvm values to new grid, to calculate new p_in_Pa
+      thvm_new_grid = interpolate_values_zt( ngrdcol, gr, new_gr, &
                                              total_idx_rho_lin_spline, rho_lin_spline_vals, &
                                              rho_lin_spline_levels, &
-                                             w_down_in_cloud )
-    cloudy_updraft_frac = interpolate_values_zt( ngrdcol, gr, new_gr, &
-                                                 total_idx_rho_lin_spline, rho_lin_spline_vals, &
-                                                 rho_lin_spline_levels, &
-                                                 cloudy_updraft_frac )
-    cloudy_downdraft_frac = interpolate_values_zt( ngrdcol, gr, new_gr, &
-                                                   total_idx_rho_lin_spline, rho_lin_spline_vals, &
-                                                   rho_lin_spline_levels, &
-                                                   cloudy_downdraft_frac )
-    Kh_zt = interpolate_values_zt( ngrdcol, gr, new_gr, &
+                                             thvm )
+      ! calculate p_in_Pa instead of remapping directly since it can run into problems if for example
+      ! the two highest levels have the same pressure value, which could be happening with the
+      ! remapping, also calculate exner accordingly
+      call init_pressure( ngrdcol, new_gr, thvm_new_grid, p_sfc, &
+                          p_in_Pa, exner, p_in_Pa_zm, exner_zm )
+      rcm = interpolate_values_zt( ngrdcol, gr, new_gr, &
                                    total_idx_rho_lin_spline, rho_lin_spline_vals, &
                                    rho_lin_spline_levels, &
-                                   Kh_zt )
+                                   rcm )
+      cloud_frac = interpolate_values_zt( ngrdcol, gr, new_gr, &
+                                          total_idx_rho_lin_spline, rho_lin_spline_vals, &
+                                          rho_lin_spline_levels, &
+                                          cloud_frac )
+      wp2thvp = interpolate_values_zt( ngrdcol, gr, new_gr, &
+                                       total_idx_rho_lin_spline, rho_lin_spline_vals, &
+                                       rho_lin_spline_levels, &
+                                       wp2thvp )
+      wp2rtp = interpolate_values_zt( ngrdcol, gr, new_gr, &
+                                      total_idx_rho_lin_spline, rho_lin_spline_vals, &
+                                      rho_lin_spline_levels, &
+                                      wp2rtp )
+      wp2thlp = interpolate_values_zt( ngrdcol, gr, new_gr, &
+                                       total_idx_rho_lin_spline, rho_lin_spline_vals, &
+                                       rho_lin_spline_levels, &
+                                       wp2thlp )
+      wpup2 = interpolate_values_zt( ngrdcol, gr, new_gr, &
+                                     total_idx_rho_lin_spline, rho_lin_spline_vals, &
+                                     rho_lin_spline_levels, &
+                                     wpup2 )
+      wpvp2 = interpolate_values_zt( ngrdcol, gr, new_gr, &
+                                     total_idx_rho_lin_spline, rho_lin_spline_vals, &
+                                     rho_lin_spline_levels, &
+                                     wpvp2 )
+      ice_supersat_frac = interpolate_values_zt( ngrdcol, gr, new_gr, &
+                                                 total_idx_rho_lin_spline, rho_lin_spline_vals, &
+                                                 rho_lin_spline_levels, &
+                                                 ice_supersat_frac )
+      um_pert = interpolate_values_zt( ngrdcol, gr, new_gr, &
+                                       total_idx_rho_lin_spline, rho_lin_spline_vals, &
+                                       rho_lin_spline_levels, &
+                                       um_pert )
+      vm_pert = interpolate_values_zt( ngrdcol, gr, new_gr, &
+                                       total_idx_rho_lin_spline, rho_lin_spline_vals, &
+                                       rho_lin_spline_levels, &
+                                       vm_pert )
+      rcm_in_layer = interpolate_values_zt( ngrdcol, gr, new_gr, &
+                                            total_idx_rho_lin_spline, rho_lin_spline_vals, &
+                                            rho_lin_spline_levels, &
+                                            rcm_in_layer )
+      cloud_cover = interpolate_values_zt( ngrdcol, gr, new_gr, &
+                                           total_idx_rho_lin_spline, rho_lin_spline_vals, &
+                                           rho_lin_spline_levels, &
+                                           cloud_cover )
+      w_up_in_cloud = interpolate_values_zt( ngrdcol, gr, new_gr, &
+                                             total_idx_rho_lin_spline, rho_lin_spline_vals, &
+                                             rho_lin_spline_levels, &
+                                             w_up_in_cloud )
+      w_down_in_cloud = interpolate_values_zt( ngrdcol, gr, new_gr, &
+                                               total_idx_rho_lin_spline, rho_lin_spline_vals, &
+                                               rho_lin_spline_levels, &
+                                               w_down_in_cloud )
+      cloudy_updraft_frac = interpolate_values_zt( ngrdcol, gr, new_gr, &
+                                                   total_idx_rho_lin_spline, rho_lin_spline_vals, &
+                                                   rho_lin_spline_levels, &
+                                                   cloudy_updraft_frac )
+      cloudy_downdraft_frac = interpolate_values_zt( ngrdcol, gr, new_gr, &
+                                                     total_idx_rho_lin_spline, rho_lin_spline_vals, &
+                                                     rho_lin_spline_levels, &
+                                                     cloudy_downdraft_frac )
+      Kh_zt = interpolate_values_zt( ngrdcol, gr, new_gr, &
+                                     total_idx_rho_lin_spline, rho_lin_spline_vals, &
+                                     rho_lin_spline_levels, &
+                                     Kh_zt )
 #ifdef CLUBB_CAM
-    qclvar = interpolate_values_zt( ngrdcol, gr, new_gr, &
-                                    total_idx_rho_lin_spline, rho_lin_spline_vals, &
-                                    rho_lin_spline_levels, &
-                                    qclvar )
+      qclvar = interpolate_values_zt( ngrdcol, gr, new_gr, &
+                                      total_idx_rho_lin_spline, rho_lin_spline_vals, &
+                                      rho_lin_spline_levels, &
+                                      qclvar )
 #endif
-    Lscale = interpolate_values_zt( ngrdcol, gr, new_gr, &
-                                    total_idx_rho_lin_spline, rho_lin_spline_vals, &
-                                    rho_lin_spline_levels, &
-                                    Lscale )
+      Lscale = interpolate_values_zt( ngrdcol, gr, new_gr, &
+                                      total_idx_rho_lin_spline, rho_lin_spline_vals, &
+                                      rho_lin_spline_levels, &
+                                      Lscale )
 #ifdef GFDL
-    do i = 1, min(1,sclr_dim)
-        do j = 1, 2
-            RH_crit(:,:,i,j) = interpolate_values_zt( ngrdcol, gr, new_gr, &
-                                                      total_idx_rho_lin_spline, &
-                                                      rho_lin_spline_vals, &
-                                                      rho_lin_spline_levels, &
-                                                      RH_crit(:,:,i,j) )
-        end do
-    end do
+      do i = 1, min(1,sclr_dim)
+          do j = 1, 2
+              RH_crit(:,:,i,j) = interpolate_values_zt( ngrdcol, gr, new_gr, &
+                                                        total_idx_rho_lin_spline, &
+                                                        rho_lin_spline_vals, &
+                                                        rho_lin_spline_levels, &
+                                                        RH_crit(:,:,i,j) )
+          end do
+      end do
 #endif
 
     
-    ! Remap all zm values
-    wprtp_forcing = interpolate_values_zm( ngrdcol, gr, new_gr, &
-                                           total_idx_rho_lin_spline, rho_lin_spline_vals, &
-                                           rho_lin_spline_levels, &
-                                           wprtp_forcing )
-    wpthlp_forcing = interpolate_values_zm( ngrdcol, gr, new_gr, &
+      ! Remap all zm values
+      wprtp_forcing = interpolate_values_zm( ngrdcol, gr, new_gr, &
+                                             total_idx_rho_lin_spline, rho_lin_spline_vals, &
+                                             rho_lin_spline_levels, &
+                                             wprtp_forcing )
+      wpthlp_forcing = interpolate_values_zm( ngrdcol, gr, new_gr, &
+                                              total_idx_rho_lin_spline, rho_lin_spline_vals, &
+                                              rho_lin_spline_levels, &
+                                              wpthlp_forcing )
+      rtp2_forcing = interpolate_values_zm( ngrdcol, gr, new_gr, &
                                             total_idx_rho_lin_spline, rho_lin_spline_vals, &
                                             rho_lin_spline_levels, &
-                                            wpthlp_forcing )
-    rtp2_forcing = interpolate_values_zm( ngrdcol, gr, new_gr, &
-                                          total_idx_rho_lin_spline, rho_lin_spline_vals, &
-                                          rho_lin_spline_levels, &
-                                          rtp2_forcing )
-    thlp2_forcing = interpolate_values_zm( ngrdcol, gr, new_gr, &
-                                           total_idx_rho_lin_spline, rho_lin_spline_vals, &
-                                           rho_lin_spline_levels, &
-                                           thlp2_forcing )
-    rtpthlp_forcing = interpolate_values_zm( ngrdcol, gr, new_gr, &
+                                            rtp2_forcing )
+      thlp2_forcing = interpolate_values_zm( ngrdcol, gr, new_gr, &
                                              total_idx_rho_lin_spline, rho_lin_spline_vals, &
                                              rho_lin_spline_levels, &
-                                             rtpthlp_forcing )
-    wm_zm = interpolate_values_zm( ngrdcol, gr, new_gr, &
-                                   total_idx_rho_lin_spline, rho_lin_spline_vals, &
-                                   rho_lin_spline_levels, &
-                                   wm_zm )
-    rho_zm = interpolate_values_zm( ngrdcol, gr, new_gr, &
-                                    total_idx_rho_lin_spline, rho_lin_spline_vals, &
-                                    rho_lin_spline_levels, &
-                                    rho_zm )
-    rho_ds_zm = interpolate_values_zm( ngrdcol, gr, new_gr, &
-                                       total_idx_rho_lin_spline, rho_lin_spline_vals, &
-                                       rho_lin_spline_levels, &
-                                       rho_ds_zm )
-    invrs_rho_ds_zm = interpolate_values_zm( ngrdcol, gr, new_gr, &
-                                             total_idx_rho_lin_spline, rho_lin_spline_vals, &
-                                             rho_lin_spline_levels, &
-                                             invrs_rho_ds_zm )
-    thv_ds_zm = interpolate_values_zm( ngrdcol, gr, new_gr, &
-                                       total_idx_rho_lin_spline, rho_lin_spline_vals, &
-                                       rho_lin_spline_levels, &
-                                       thv_ds_zm )
-    do i = 1, hydromet_dim
-        wphydrometp(:,:,i) = interpolate_values_zm( ngrdcol, gr, new_gr, &
-                                                    total_idx_rho_lin_spline, rho_lin_spline_vals, &
-                                                    rho_lin_spline_levels, &
-                                                    wphydrometp(:,:,i) )
-    end do
-    upwp = interpolate_values_zm( ngrdcol, gr, new_gr, &
-                                  total_idx_rho_lin_spline, rho_lin_spline_vals, &
-                                  rho_lin_spline_levels, &
-                                  upwp )
-    vpwp = interpolate_values_zm( ngrdcol, gr, new_gr, &
-                                  total_idx_rho_lin_spline, rho_lin_spline_vals, &
-                                  rho_lin_spline_levels, &
-                                  vpwp )
-    up2 = interpolate_values_zm( ngrdcol, gr, new_gr, &
-                                 total_idx_rho_lin_spline, rho_lin_spline_vals, &
-                                 rho_lin_spline_levels, &
-                                 up2 )
-    vp2 = interpolate_values_zm( ngrdcol, gr, new_gr, &
-                                 total_idx_rho_lin_spline, rho_lin_spline_vals, &
-                                 rho_lin_spline_levels, &
-                                 vp2 )
-    wprtp = interpolate_values_zm( ngrdcol, gr, new_gr, &
-                                   total_idx_rho_lin_spline, rho_lin_spline_vals, &
-                                   rho_lin_spline_levels, &
-                                   wprtp )
-    wpthlp = interpolate_values_zm( ngrdcol, gr, new_gr, &
-                                    total_idx_rho_lin_spline, rho_lin_spline_vals, &
-                                    rho_lin_spline_levels, &
-                                    wpthlp )
-    rtp2 = interpolate_values_zm( ngrdcol, gr, new_gr, &
-                                  total_idx_rho_lin_spline, rho_lin_spline_vals, &
-                                  rho_lin_spline_levels, &
-                                  rtp2 )
-    thlp2 = interpolate_values_zm( ngrdcol, gr, new_gr, &
-                                   total_idx_rho_lin_spline, rho_lin_spline_vals, &
-                                   rho_lin_spline_levels, &
-                                   thlp2 )
-    rtpthlp = interpolate_values_zm( ngrdcol, gr, new_gr, &
-                                     total_idx_rho_lin_spline, rho_lin_spline_vals, &
-                                     rho_lin_spline_levels, &
-                                     rtpthlp )
-    wp2 = interpolate_values_zm( ngrdcol, gr, new_gr, &
-                                 total_idx_rho_lin_spline, rho_lin_spline_vals, &
-                                 rho_lin_spline_levels, &
-                                 wp2 )
-    do i = 1, sclr_dim
-        wpsclrp(:,:,i) = interpolate_values_zm( ngrdcol, gr, new_gr, &
-                                                total_idx_rho_lin_spline, rho_lin_spline_vals, &
-                                                rho_lin_spline_levels, &
-                                                wpsclrp(:,:,i) )
-        sclrp2(:,:,i) = interpolate_values_zm( ngrdcol, gr, new_gr, &
+                                             thlp2_forcing )
+      rtpthlp_forcing = interpolate_values_zm( ngrdcol, gr, new_gr, &
                                                total_idx_rho_lin_spline, rho_lin_spline_vals, &
                                                rho_lin_spline_levels, &
-                                               sclrp2(:,:,i) )
-        sclrprtp(:,:,i) = interpolate_values_zm( ngrdcol, gr, new_gr, &
-                                                 total_idx_rho_lin_spline, rho_lin_spline_vals, &
-                                                 rho_lin_spline_levels, &
-                                                 sclrprtp(:,:,i) )
-        sclrpthlp(:,:,i) = interpolate_values_zm( ngrdcol, gr, new_gr, &
-                                                  total_idx_rho_lin_spline, rho_lin_spline_vals, &
-                                                  rho_lin_spline_levels, &
-                                                  sclrpthlp(:,:,i) )
-        sclrpthvp(:,:,i) = interpolate_values_zm( ngrdcol, gr, new_gr, &
-                                                  total_idx_rho_lin_spline, rho_lin_spline_vals, &
-                                                  rho_lin_spline_levels, &
-                                                  sclrpthvp(:,:,i) )
-    end do
-    wpthvp = interpolate_values_zm( ngrdcol, gr, new_gr, &
-                                    total_idx_rho_lin_spline, rho_lin_spline_vals, &
-                                    rho_lin_spline_levels, &
-                                    wpthvp )
-    rtpthvp = interpolate_values_zm( ngrdcol, gr, new_gr, &
+                                               rtpthlp_forcing )
+      wm_zm = interpolate_values_zm( ngrdcol, gr, new_gr, &
                                      total_idx_rho_lin_spline, rho_lin_spline_vals, &
                                      rho_lin_spline_levels, &
-                                     rtpthvp )
-    thlpthvp = interpolate_values_zm( ngrdcol, gr, new_gr, &
+                                     wm_zm )
+      rho_zm = interpolate_values_zm( ngrdcol, gr, new_gr, &
                                       total_idx_rho_lin_spline, rho_lin_spline_vals, &
                                       rho_lin_spline_levels, &
-                                      thlpthvp )
-    uprcp = interpolate_values_zm( ngrdcol, gr, new_gr, &
-                                   total_idx_rho_lin_spline, rho_lin_spline_vals, &
-                                   rho_lin_spline_levels, &
-                                   uprcp )
-    vprcp = interpolate_values_zm( ngrdcol, gr, new_gr, &
-                                   total_idx_rho_lin_spline, rho_lin_spline_vals, &
-                                   rho_lin_spline_levels, &
-                                   vprcp )
-    rc_coef_zm = interpolate_values_zm( ngrdcol, gr, new_gr, &
-                                        total_idx_rho_lin_spline, rho_lin_spline_vals, &
-                                        rho_lin_spline_levels, &
-                                        rc_coef_zm )
-    wp4 = interpolate_values_zm( ngrdcol, gr, new_gr, &
-                                 total_idx_rho_lin_spline, rho_lin_spline_vals, &
-                                 rho_lin_spline_levels, &
-                                 wp4 )
-    wp2up2 = interpolate_values_zm( ngrdcol, gr, new_gr, &
+                                      rho_zm )
+      rho_ds_zm = interpolate_values_zm( ngrdcol, gr, new_gr, &
+                                         total_idx_rho_lin_spline, rho_lin_spline_vals, &
+                                         rho_lin_spline_levels, &
+                                         rho_ds_zm )
+      invrs_rho_ds_zm = interpolate_values_zm( ngrdcol, gr, new_gr, &
+                                               total_idx_rho_lin_spline, rho_lin_spline_vals, &
+                                               rho_lin_spline_levels, &
+                                               invrs_rho_ds_zm )
+      thv_ds_zm = interpolate_values_zm( ngrdcol, gr, new_gr, &
+                                         total_idx_rho_lin_spline, rho_lin_spline_vals, &
+                                         rho_lin_spline_levels, &
+                                         thv_ds_zm )
+      do i = 1, hydromet_dim
+          wphydrometp(:,:,i) = interpolate_values_zm( ngrdcol, gr, new_gr, &
+                                                      total_idx_rho_lin_spline, rho_lin_spline_vals, &
+                                                      rho_lin_spline_levels, &
+                                                      wphydrometp(:,:,i) )
+      end do
+      upwp = interpolate_values_zm( ngrdcol, gr, new_gr, &
                                     total_idx_rho_lin_spline, rho_lin_spline_vals, &
                                     rho_lin_spline_levels, &
-                                    wp2up2 )
-    wp2vp2 = interpolate_values_zm( ngrdcol, gr, new_gr, &
+                                    upwp )
+      vpwp = interpolate_values_zm( ngrdcol, gr, new_gr, &
                                     total_idx_rho_lin_spline, rho_lin_spline_vals, &
                                     rho_lin_spline_levels, &
-                                    wp2vp2 )
-    upwp_pert = interpolate_values_zm( ngrdcol, gr, new_gr, &
-                                       total_idx_rho_lin_spline, rho_lin_spline_vals, &
-                                       rho_lin_spline_levels, &
-                                       upwp_pert )
-    vpwp_pert = interpolate_values_zm( ngrdcol, gr, new_gr, &
-                                       total_idx_rho_lin_spline, rho_lin_spline_vals, &
-                                       rho_lin_spline_levels, &
-                                       vpwp_pert )
-    wprcp = interpolate_values_zm( ngrdcol, gr, new_gr, &
-                                       total_idx_rho_lin_spline, rho_lin_spline_vals, &
-                                       rho_lin_spline_levels, &
-                                       wprcp )
-    invrs_tau_zm = interpolate_values_zm( ngrdcol, gr, new_gr, &
-                                          total_idx_rho_lin_spline, rho_lin_spline_vals, &
-                                          rho_lin_spline_levels, &
-                                          invrs_tau_zm )
-    Kh_zm = interpolate_values_zm( ngrdcol, gr, new_gr, &
+                                    vpwp )
+      up2 = interpolate_values_zm( ngrdcol, gr, new_gr, &
                                    total_idx_rho_lin_spline, rho_lin_spline_vals, &
                                    rho_lin_spline_levels, &
-                                   Kh_zm )
-    thlprcp = interpolate_values_zm( ngrdcol, gr, new_gr, &
+                                   up2 )
+      vp2 = interpolate_values_zm( ngrdcol, gr, new_gr, &
+                                   total_idx_rho_lin_spline, rho_lin_spline_vals, &
+                                   rho_lin_spline_levels, &
+                                   vp2 )
+      wprtp = interpolate_values_zm( ngrdcol, gr, new_gr, &
                                      total_idx_rho_lin_spline, rho_lin_spline_vals, &
                                      rho_lin_spline_levels, &
-                                     thlprcp )
-
+                                     wprtp )
+      wpthlp = interpolate_values_zm( ngrdcol, gr, new_gr, &
+                                      total_idx_rho_lin_spline, rho_lin_spline_vals, &
+                                      rho_lin_spline_levels, &
+                                      wpthlp )
+      rtp2 = interpolate_values_zm( ngrdcol, gr, new_gr, &
+                                    total_idx_rho_lin_spline, rho_lin_spline_vals, &
+                                    rho_lin_spline_levels, &
+                                    rtp2 )
+      thlp2 = interpolate_values_zm( ngrdcol, gr, new_gr, &
+                                     total_idx_rho_lin_spline, rho_lin_spline_vals, &
+                                     rho_lin_spline_levels, &
+                                     thlp2 )
+      rtpthlp = interpolate_values_zm( ngrdcol, gr, new_gr, &
+                                       total_idx_rho_lin_spline, rho_lin_spline_vals, &
+                                       rho_lin_spline_levels, &
+                                       rtpthlp )
+      wp2 = interpolate_values_zm( ngrdcol, gr, new_gr, &
+                                   total_idx_rho_lin_spline, rho_lin_spline_vals, &
+                                   rho_lin_spline_levels, &
+                                   wp2 )
+      do i = 1, sclr_dim
+          wpsclrp(:,:,i) = interpolate_values_zm( ngrdcol, gr, new_gr, &
+                                                  total_idx_rho_lin_spline, rho_lin_spline_vals, &
+                                                  rho_lin_spline_levels, &
+                                                  wpsclrp(:,:,i) )
+          sclrp2(:,:,i) = interpolate_values_zm( ngrdcol, gr, new_gr, &
+                                                 total_idx_rho_lin_spline, rho_lin_spline_vals, &
+                                                 rho_lin_spline_levels, &
+                                                 sclrp2(:,:,i) )
+          sclrprtp(:,:,i) = interpolate_values_zm( ngrdcol, gr, new_gr, &
+                                                   total_idx_rho_lin_spline, rho_lin_spline_vals, &
+                                                   rho_lin_spline_levels, &
+                                                   sclrprtp(:,:,i) )
+          sclrpthlp(:,:,i) = interpolate_values_zm( ngrdcol, gr, new_gr, &
+                                                    total_idx_rho_lin_spline, rho_lin_spline_vals, &
+                                                    rho_lin_spline_levels, &
+                                                    sclrpthlp(:,:,i) )
+          sclrpthvp(:,:,i) = interpolate_values_zm( ngrdcol, gr, new_gr, &
+                                                    total_idx_rho_lin_spline, rho_lin_spline_vals, &
+                                                    rho_lin_spline_levels, &
+                                                    sclrpthvp(:,:,i) )
+      end do
+      wpthvp = interpolate_values_zm( ngrdcol, gr, new_gr, &
+                                      total_idx_rho_lin_spline, rho_lin_spline_vals, &
+                                      rho_lin_spline_levels, &
+                                      wpthvp )
+      rtpthvp = interpolate_values_zm( ngrdcol, gr, new_gr, &
+                                       total_idx_rho_lin_spline, rho_lin_spline_vals, &
+                                       rho_lin_spline_levels, &
+                                       rtpthvp )
+      thlpthvp = interpolate_values_zm( ngrdcol, gr, new_gr, &
+                                        total_idx_rho_lin_spline, rho_lin_spline_vals, &
+                                        rho_lin_spline_levels, &
+                                        thlpthvp )
+      uprcp = interpolate_values_zm( ngrdcol, gr, new_gr, &
+                                     total_idx_rho_lin_spline, rho_lin_spline_vals, &
+                                     rho_lin_spline_levels, &
+                                     uprcp )
+      vprcp = interpolate_values_zm( ngrdcol, gr, new_gr, &
+                                     total_idx_rho_lin_spline, rho_lin_spline_vals, &
+                                     rho_lin_spline_levels, &
+                                     vprcp )
+      rc_coef_zm = interpolate_values_zm( ngrdcol, gr, new_gr, &
+                                          total_idx_rho_lin_spline, rho_lin_spline_vals, &
+                                          rho_lin_spline_levels, &
+                                          rc_coef_zm )
+      wp4 = interpolate_values_zm( ngrdcol, gr, new_gr, &
+                                   total_idx_rho_lin_spline, rho_lin_spline_vals, &
+                                   rho_lin_spline_levels, &
+                                   wp4 )
+      wp2up2 = interpolate_values_zm( ngrdcol, gr, new_gr, &
+                                      total_idx_rho_lin_spline, rho_lin_spline_vals, &
+                                      rho_lin_spline_levels, &
+                                      wp2up2 )
+      wp2vp2 = interpolate_values_zm( ngrdcol, gr, new_gr, &
+                                      total_idx_rho_lin_spline, rho_lin_spline_vals, &
+                                      rho_lin_spline_levels, &
+                                      wp2vp2 )
+      upwp_pert = interpolate_values_zm( ngrdcol, gr, new_gr, &
+                                         total_idx_rho_lin_spline, rho_lin_spline_vals, &
+                                         rho_lin_spline_levels, &
+                                         upwp_pert )
+      vpwp_pert = interpolate_values_zm( ngrdcol, gr, new_gr, &
+                                         total_idx_rho_lin_spline, rho_lin_spline_vals, &
+                                         rho_lin_spline_levels, &
+                                         vpwp_pert )
+      wprcp = interpolate_values_zm( ngrdcol, gr, new_gr, &
+                                         total_idx_rho_lin_spline, rho_lin_spline_vals, &
+                                         rho_lin_spline_levels, &
+                                         wprcp )
+      invrs_tau_zm = interpolate_values_zm( ngrdcol, gr, new_gr, &
+                                            total_idx_rho_lin_spline, rho_lin_spline_vals, &
+                                            rho_lin_spline_levels, &
+                                            invrs_tau_zm )
+      Kh_zm = interpolate_values_zm( ngrdcol, gr, new_gr, &
+                                     total_idx_rho_lin_spline, rho_lin_spline_vals, &
+                                     rho_lin_spline_levels, &
+                                     Kh_zm )
+      thlprcp = interpolate_values_zm( ngrdcol, gr, new_gr, &
+                                       total_idx_rho_lin_spline, rho_lin_spline_vals, &
+                                       rho_lin_spline_levels, &
+                                       thlprcp )
+    else
+      write(fstderr,*) 'There is no method implemented for grid_remap_method=', &
+                       grid_remap_method, '. Try another integer value.'
+      error stop 'Invalid value for grid_remap_method.'
+    end if
     
     gr = new_gr
   end subroutine adapt_grid

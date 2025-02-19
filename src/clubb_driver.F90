@@ -783,12 +783,10 @@ module clubb_driver
       penta_solve_method,             & ! Option to set the penta-diagonal matrix solving method
       tridiag_solve_method,           & ! Option to set the tri-diagonal matrix solving method
       saturation_formula,             & ! Integer that stores the saturation formula to be used
-      remap_from_dycore_grid_method,  & ! Integer that stores what remapping technique should
-                                        ! be used to remap the values calculated on the 
-                                        ! dycore grid to the physics grid (to simulate the input
-                                        ! from the host model) or if no remapping 
-                                        ! should be used at all
-      grid_adaptation_method            ! Integer that stores how the grid should be adapted every
+      grid_remap_method,              & ! Integer that stores what remapping technique should
+                                        ! be used to remap the values from one grid to another
+                                        ! (starts with 1, so 0 is invalid value for flag)
+      grid_adapt_in_time_method         ! Integer that stores how the grid should be adapted every
                                         ! timestep or if the grid should not be adapted at all
 
     logical :: &
@@ -909,8 +907,9 @@ module clubb_driver
                                       ! eliminates spurious drying tendencies at model top
       l_host_applies_sfc_fluxes,    & ! Use to determine whether a host model has already applied 
                                       ! the surface flux, to avoid double counting.
-      l_wp2_fill_holes_tke            ! Turn on additional hole-filling for wp2
+      l_wp2_fill_holes_tke,         & ! Turn on additional hole-filling for wp2
                                       ! that takes TKE from up2 and vp2, if necessary
+      l_add_dycore_grid               ! Turn on remapping values from a dycore grid
 
     type(clubb_config_flags_type) :: &
       clubb_config_flags ! Derived type holding all configurable CLUBB flags
@@ -955,8 +954,8 @@ module clubb_driver
 
     namelist /configurable_clubb_flags_nl/ &
       iiPDF_type, ipdf_call_placement, penta_solve_method, tridiag_solve_method, &
-      saturation_formula, remap_from_dycore_grid_method, &
-      grid_adaptation_method, &
+      saturation_formula, grid_remap_method, &
+      grid_adapt_in_time_method, &
       l_upwind_xpyp_ta, l_upwind_xm_ma, &
       l_tke_aniso, l_vert_avg_closure, l_standard_term_ta, &
       l_partial_upwind_wp3, l_godunov_upwind_wpxp_ta, l_godunov_upwind_xpyp_ta, &
@@ -974,7 +973,8 @@ module clubb_driver
       l_modify_limiters_for_cnvg_test, l_enable_relaxed_clipping, &
       l_linearize_pbl_winds, l_mono_flux_lim_thlm, &
       l_mono_flux_lim_rtm, l_mono_flux_lim_um, l_mono_flux_lim_vm, l_mono_flux_lim_spikefix, &
-      l_host_applies_sfc_fluxes, l_wp2_fill_holes_tke
+      l_host_applies_sfc_fluxes, l_wp2_fill_holes_tke, &
+      l_add_dycore_grid
 
     integer :: &
       err_code_dummy ! Host models use an error code that comes out of some API routines, but
@@ -987,10 +987,10 @@ module clubb_driver
       l_last_timestep
 
     type( grid ) :: &
-      dycore_gr ! only set and used, if remap_from_dycore_grid_method > 0
+      dycore_gr ! only set and used, if l_add_dycore_grid is .true
 
     real( kind = core_rknd ), dimension(:,:), allocatable :: &
-      rho_ds_zm_dycore ! only set and used, if remap_from_dycore_grid_method > 0
+      rho_ds_zm_dycore ! only set and used, if l_add_dycore_grid is .true
 
     real( kind = core_rknd ), dimension(:), allocatable :: &
       gr_dens_z, &     ! levels at which the grid density heights are given
@@ -1097,8 +1097,8 @@ module clubb_driver
                                          penta_solve_method, & ! Intent(out)
                                          tridiag_solve_method, & ! Intent(out)
                                          saturation_formula, &  ! Intent(out)
-                                         remap_from_dycore_grid_method, & ! Intent(out)
-                                         grid_adaptation_method, & ! Intent(out)
+                                         grid_remap_method, & ! Intent(out)
+                                         grid_adapt_in_time_method, & ! Intent(out)
                                          l_use_precip_frac, & ! Intent(out)
                                          l_predict_upwp_vpwp, & ! Intent(out)
                                          l_min_wp2_from_corr_wx, & ! Intent(out)
@@ -1154,7 +1154,8 @@ module clubb_driver
                                          l_mono_flux_lim_vm, & ! Intent(out)
                                          l_mono_flux_lim_spikefix, & ! Intent(out)
                                          l_host_applies_sfc_fluxes, & ! Intent(out)
-                                         l_wp2_fill_holes_tke ) ! Intent(out)
+                                         l_wp2_fill_holes_tke, & ! Intent(out)
+                                         l_add_dycore_grid ) ! Intent(out)
 
     ! Read namelist file
     open(unit=iunit, file=trim( runfile ), status='old')
@@ -1551,8 +1552,8 @@ module clubb_driver
                                              penta_solve_method, & ! Intent(in)
                                              tridiag_solve_method, & ! Intent(in)
                                              saturation_formula, & ! Intent(in)
-                                             remap_from_dycore_grid_method, & ! Intent(in)
-                                             grid_adaptation_method, & ! Intent(in)
+                                             grid_remap_method, & ! Intent(in)
+                                             grid_adapt_in_time_method, & ! Intent(in)
                                              l_use_precip_frac, & ! Intent(in)
                                              l_predict_upwp_vpwp, & ! Intent(in)
                                              l_min_wp2_from_corr_wx, & ! Intent(in)
@@ -1609,6 +1610,7 @@ module clubb_driver
                                              l_mono_flux_lim_spikefix, & ! Intent(in)
                                              l_host_applies_sfc_fluxes, & ! Intent(in)
                                              l_wp2_fill_holes_tke, & ! Intent(in)
+                                             l_add_dycore_grid, & ! Intent(out)
                                              clubb_config_flags ) ! Intent(out)
 
     ! Printing configurable CLUBB flags Inputs
@@ -1880,7 +1882,7 @@ module clubb_driver
 
     allocate( wpthlp_sfc(ngrdcol), wprtp_sfc(ngrdcol), upwp_sfc(ngrdcol), vpwp_sfc(ngrdcol) )
 
-    if (remap_from_dycore_grid_method > 0) then
+    if ( l_add_dycore_grid ) then
       ! Initialize the dycore grid
       call setup_simple_gr_dycore( 31, gr%zm(1,1), gr%zm(1,gr%nzm), dycore_gr ) ! always set to 31
                                                                                 ! since the host
@@ -1894,7 +1896,7 @@ module clubb_driver
       allocate( rho_ds_zm_dycore(ngrdcol, 1) ) ! dry, static density: m-levs of dycore grid
     end if
 
-    if (grid_adaptation_method > 0) then
+    if (grid_adapt_in_time_method > 0) then
       allocate( gr_dens_z(gr%nzt) )
       allocate( gr_dens_heights(gr%nzt) )
     end if
@@ -2148,8 +2150,8 @@ module clubb_driver
           sclr_dim, edsclr_dim, sclr_idx,                                  & ! Intent(in)
           clubb_config_flags,                                              & ! Intent(in)
           l_modify_ic_with_cubic_int,                                      & ! Intent(in)
-          remap_from_dycore_grid_method,                                   & ! Intent(in)
-          grid_adaptation_method,                                          & ! Intent(in)
+          l_add_dycore_grid,                                               & ! Intent(in)
+          grid_adapt_in_time_method,                                       & ! Intent(in)
           dycore_gr,                                                       & ! Intent(in)
           thlm, rtm, um, vm, ug, vg, wp2, up2, vp2, rcm,                   & ! Intent(inout)
           wm_zt, wm_zm, em, exner,                                         & ! Intent(inout)
@@ -2588,7 +2590,8 @@ module clubb_driver
                                l_modify_bc_for_cnvg_test, & ! In
                                clubb_config_flags%saturation_formula, & ! In
                                stats_metadata, stats_sfc, & ! In
-                               remap_from_dycore_grid_method, & ! In
+                               l_add_dycore_grid, & ! In
+                               grid_remap_method, & ! In
                                gr%nzm, rho_ds_zm(1,:), &
                                gr%zm(1,:), &
                                dycore_gr, rho_ds_zm_dycore, & ! In
@@ -3198,21 +3201,21 @@ module clubb_driver
       call cpu_time(time_stop)
       time_output_multi_col = time_output_multi_col + time_stop - time_start
 
-      if ( grid_adaptation_method > 0 .and. modulo(itime, 1) == 0) then
+      if ( grid_adapt_in_time_method > 0 .and. modulo(itime, 1) == 0) then
 
         call cpu_time(time_start)
       
-        if ( grid_adaptation_method == 1 ) then
+        if ( grid_adapt_in_time_method == 1 ) then
       
           call calc_grid_dens_func( ngrdcol, gr%nzt, gr%zt, &
                                     Lscale, wp2_zt, &
                                     gr%zm(1,1), gr%zm(1,gr%nzm), &
                                     gr_dens_z, gr_dens_heights )
       
-        else if ( grid_adaptation_method > 1 ) then
+        else if ( grid_adapt_in_time_method > 1 ) then
       
           write(fstderr,*) 'There is currently no grid adaptation method implemented for ', &
-                           'grid_adaptation_method=', grid_adaptation_method
+                           'grid_adapt_in_time_method=', grid_adapt_in_time_method
         
         end if
 
@@ -3221,6 +3224,7 @@ module clubb_driver
                          sfc_elevation, l_implemented, &                         ! Intent(in)
                          hydromet_dim, sclr_dim, edsclr_dim, &                   ! Intent(in)
                          thvm, gr%nzt, p_sfc, &                                  ! Intent(in)
+                         grid_remap_method, &                                    ! Intent(in)
                          gr, &                                                   ! Intent(inout)
                          thlm_forcing, rtm_forcing, um_forcing, vm_forcing, &    ! Intent(inout)
                          sclrm_forcing, edsclrm_forcing, wprtp_forcing, &        ! Intent(inout)
@@ -3249,15 +3253,15 @@ module clubb_driver
                          rcm_in_layer, cloud_cover, invrs_tau_zm, &              ! Intent(inout)
                          Lscale )                                                ! Intent(inout)
 
-        if ( remap_from_dycore_grid_method == 0 ) then
+        if ( .not. l_add_dycore_grid ) then
           ! if we want to adapt the grid over time, but don't want to simulate the host model by
           ! getting forcings on the dycore grid, we need to adjust the forcings everytime for the
           ! newly created grid from the raw data in the forcings file
           ! TODO does this only work with 1D input?
           call initialize_t_dependent_input &
                        ( iunit, runtype, gr%nzt, gr%zt(1,:), p_in_Pa, &
-                         remap_from_dycore_grid_method, &
-                         grid_adaptation_method )
+                         l_add_dycore_grid, &
+                         grid_adapt_in_time_method )
         end if
         
         call cpu_time(time_stop)
@@ -3316,7 +3320,7 @@ module clubb_driver
       time_loop_end
     write(unit=fstdout, fmt='(a,f10.4)') 'CLUBB-TIMER time_output_multi_col =  ', &
       time_output_multi_col
-    if ( grid_adaptation_method > 0 ) then
+    if ( grid_adapt_in_time_method > 0 ) then
       write(unit=fstdout, fmt='(a,f10.4)') 'CLUBB-TIMER time_adapt_grid =        ', &
         time_adapt_grid
     end if
@@ -3484,7 +3488,7 @@ module clubb_driver
                 lh_rv_clipped, lh_Nc_clipped, &
                 X_mixt_comp_all_levs, lh_sample_point_weights, Nc_in_cloud )
 
-    if ( grid_adaptation_method > 0 ) then
+    if ( grid_adapt_in_time_method > 0 ) then
       deallocate( gr_dens_z )
       deallocate( gr_dens_heights )
     end if
@@ -3499,8 +3503,8 @@ module clubb_driver
                sclr_dim, edsclr_dim, sclr_idx, &
                clubb_config_flags, &
                l_modify_ic_with_cubic_int, &
-               remap_from_dycore_grid_method, &
-               grid_adaptation_method, &
+               l_add_dycore_grid, &
+               grid_adapt_in_time_method, &
                dycore_gr, &
                thlm, rtm, um, vm, ug, vg, wp2, up2, vp2, rcm, &
                wm_zt, wm_zm, em, exner, &
@@ -3635,17 +3639,16 @@ module clubb_driver
     logical, intent(in) :: &
       l_modify_ic_with_cubic_int 
 
+    logical, intent(in) :: &
+      l_add_dycore_grid ! flag to set remapping from dycore to on or off
+
     integer, intent(in) :: &
-      remap_from_dycore_grid_method, & ! Integer flag to see if forcings should be calculated on
-                                       ! a dycore grid and if so, what interpolation method
-                                       ! should be used to interpolate the values to the
-                                       ! physics grid
-      grid_adaptation_method      ! Integer flag to see if grid should be adapted over time and if
+      grid_adapt_in_time_method   ! Integer flag to see if grid should be adapted over time and if
                                   ! so what parameters should be used to setup the grid
                                   ! density function
 
     type( grid ), intent(in) :: &
-      dycore_gr  ! only set and used if remap_from_dycore_grid_method > 0
+      dycore_gr  ! only set and used if l_add_dycore_grid=.true.
 
     ! Output
     real( kind = core_rknd ), dimension(ngrdcol,gr%nzt), intent(inout) ::  & 
@@ -3869,7 +3872,7 @@ module clubb_driver
     endif
 
     ! Initialize the dycore grid rho_ds linear spline approximation and p_in_Pa for dycore grid
-    if (remap_from_dycore_grid_method > 0) then
+    if ( l_add_dycore_grid ) then
       do i = 1, ngrdcol
         rho_ds_zm_dycore(i,:) = lin_interpolate( dycore_gr%nzm, gr%nzm, &
                                                  dycore_gr%zm, gr%zm, &
@@ -3884,7 +3887,7 @@ module clubb_driver
     
     if( l_t_dependent ) then
 
-      if ( remap_from_dycore_grid_method > 0 ) then
+      if ( l_add_dycore_grid ) then
         ! if we want to simulate the forcings from the host model on the dycore grid,
         ! we first read in all the forcings from the file to the dycore grid and every
         ! timestep remap the results to the current physics grid, so we need to pay
@@ -3892,22 +3895,22 @@ module clubb_driver
         ! in time_dependent_input
         call initialize_t_dependent_input &
                    ( iunit, runtype, dycore_gr%nzt, dycore_gr%zt(1,:), p_in_Pa_dycore(1,:), &
-                     remap_from_dycore_grid_method, grid_adaptation_method )
+                     l_add_dycore_grid, grid_adapt_in_time_method )
       else
         ! no simulating forcings input from host model on dycore grid
-        ! remap_from_dycore_grid_method == 0
+        ! l_add_dycore_grid=.false.
         call initialize_t_dependent_input &
                      ( iunit, runtype, gr%nzt, gr%zt(1,:), p_in_Pa(1,:), &
-                       remap_from_dycore_grid_method, grid_adaptation_method )
+                       l_add_dycore_grid, grid_adapt_in_time_method )
       end if
 
     else
 
-      if ( remap_from_dycore_grid_method > 0 .and. trim( runtype ) /= 'atex' ) then
-        write(fstderr,*) 'WARNING! The option remap_from_dycore_grid_method can currently only', &
-                         'be used for cases with forcings from an input file and for the atex', &
-                         'case, so for this case remap_from_dycore_grid_method must be set to 0.'
-        error stop 'For this case remap_from_dycore_grid_method must be set to 0.'
+      if ( l_add_dycore_grid .and. trim( runtype ) /= 'atex' ) then
+        write(fstderr,*) 'WARNING! The option l_add_dycore_grid=.true. can currently only ', &
+                         'be used for cases with forcings from an input file and for the atex ', &
+                         'case, so for this case l_add_dycore_grid must be set to .false..'
+        error stop 'For this case l_add_dycore_grid must be set to .false..'
       end if
 
     end if
@@ -5498,7 +5501,8 @@ module clubb_driver
                                  l_modify_bc_for_cnvg_test, &
                                  saturation_formula, &
                                  stats_metadata, stats_sfc, &
-                                 remap_from_dycore_grid_method, &
+                                 l_add_dycore_grid, &
+                                 grid_remap_method, &
                                  total_idx_rho_lin_spline, rho_lin_spline_vals, &
                                  rho_lin_spline_levels, &
                                  dycore_gr, rho_ds_zm_dycore, &
@@ -5662,8 +5666,11 @@ module clubb_driver
     type (stats), dimension(ngrdcol), intent(inout)  :: &
       stats_sfc        ! stats_sfc
 
+    logical, intent(in) :: &
+      l_add_dycore_grid
+
     integer, intent(in) :: &
-      remap_from_dycore_grid_method
+      grid_remap_method
 
     integer, intent(in) :: &
       total_idx_rho_lin_spline ! number of indices for the linear spline definition arrays
@@ -5795,7 +5802,7 @@ module clubb_driver
       !   "cloud_feedback_s12", "cloud_feedback_s12_p2k",
       !   "gabls3_night", "arm_97", "gabls3", "twp_ice",
       !   "arm", "arm_0003", "arm_3year", "astex_a209", & "cobra".
-      if ( remap_from_dycore_grid_method > 0 ) then
+      if ( l_add_dycore_grid ) then
         ! if we want to simulate forcings coming in from the host model on the dycore grid,
         ! we have the forcings stored on the dycore grid, so we need to remap them everytime
         ! to the current physics grid
@@ -5803,6 +5810,7 @@ module clubb_driver
                 ngrdcol, gr%nzm, gr%nzt, &
                 sclr_dim, edsclr_dim, sclr_idx, &
                 gr, dycore_gr, time_current, rtm, rho, exner,  &
+                grid_remap_method, &
                 total_idx_rho_lin_spline, rho_lin_spline_vals, &
                 rho_lin_spline_levels, &
                 thlm_forcing, rtm_forcing, um_ref, vm_ref, um_forcing, vm_forcing, &
@@ -5844,7 +5852,8 @@ module clubb_driver
         call atex_tndcy( ngrdcol, sclr_dim, edsclr_dim, sclr_idx, &      ! Intent(in)
                          gr, time_current, time_initial, &      ! Intent(in)
                          rtm, &                                 ! Intent(in)
-                         remap_from_dycore_grid_method, &      ! Intent(in)
+                         l_add_dycore_grid, &                   ! Intent(in)
+                         grid_remap_method, &                   ! Intent(in)
                          dycore_gr, rho_ds_zm_dycore, &         ! Intent(in)
                          wm_zt, wm_zm, &                        ! Intent(out)
                          thlm_forcing, rtm_forcing, &           ! Intent(out)

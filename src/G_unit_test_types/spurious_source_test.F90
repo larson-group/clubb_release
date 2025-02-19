@@ -383,12 +383,10 @@ module spurious_source_test
       penta_solve_method,             & ! Option to set the penta-diagonal matrix solving method
       tridiag_solve_method,           & ! Option to set the tri-diagonal matrix solving method
       saturation_formula,             & ! Integer that stores the saturation formula to be used
-      remap_from_dycore_grid_method,  & ! Integer that stores what remapping technique should
-                                        ! be used to remap the values calculated on the 
-                                        ! dycore grid to the physics grid (to simulate the input
-                                        ! from the host model) or if no remapping 
-                                        ! should be used at all
-      grid_adaptation_method            ! Integer that stores how the grid should be adapted every
+      grid_remap_method,              & ! Integer that stores what remapping technique should
+                                        ! be used to remap the values from one grid to another
+                                        ! (starts at 1, so 0 is an invalid option for this flag)
+      grid_adapt_in_time_method         ! Integer that stores how the grid should be adapted every
                                         ! timestep or if the grid should not be adapted at all
 
     logical :: &
@@ -510,8 +508,9 @@ module spurious_source_test
                                       ! eliminates spurious drying tendencies at model top
       l_host_applies_sfc_fluxes,    & ! Use to determine whether a host model has already applied
                                       ! the surface flux,to avoid double counting.
-      l_wp2_fill_holes_tke            ! Turn on additional hole-filling for wp2
+      l_wp2_fill_holes_tke,         & ! Turn on additional hole-filling for wp2
                                       ! that takes TKE from up2 and vp2, if necessary
+      l_add_dycore_grid               ! Turn on remapping from the dycore grid
 
     integer, parameter :: &
       order_xm_wpxp = 1, &
@@ -527,8 +526,8 @@ module spurious_source_test
                                          penta_solve_method, &
                                          tridiag_solve_method, &
                                          saturation_formula, &
-                                         remap_from_dycore_grid_method, &
-                                         grid_adaptation_method, &
+                                         grid_remap_method, &
+                                         grid_adapt_in_time_method, &
                                          l_use_precip_frac, &
                                          l_predict_upwp_vpwp, &
                                          l_min_wp2_from_corr_wx, &
@@ -584,7 +583,8 @@ module spurious_source_test
                                          l_mono_flux_lim_vm, &
                                          l_mono_flux_lim_spikefix, &
                                          l_host_applies_sfc_fluxes, &
-                                         l_wp2_fill_holes_tke )
+                                         l_wp2_fill_holes_tke, &
+                                         l_add_dycore_grid )
 
     ! Initialize pdf_implicit_coefs_terms
     call init_pdf_implicit_coefs_terms( nzt, 1, sclr_dim, &

@@ -552,12 +552,10 @@ subroutine logical_flags_driver( current_date, current_time )
     penta_solve_method,             & ! Option to set the penta-diagonal matrix solving method
     tridiag_solve_method,           & ! Option to set the tri-diagonal matrix solving method
     saturation_formula,             & ! Integer that stores the saturation formula to be used
-    remap_from_dycore_grid_method,  & ! Integer that stores what remapping technique should
-                                      ! be used to remap the values calculated on the 
-                                      ! dycore grid to the physics grid (to simulate the input
-                                      ! from the host model) or if no remapping 
-                                      ! should be used at all
-    grid_adaptation_method            ! Integer that stores how the grid should be adapted every
+    grid_remap_method,              & ! Integer that stores what remapping technique should
+                                      ! be used to remap values from one grid to another
+                                      ! (starts at 1, so 0 is an invalid value for this flag)
+    grid_adapt_in_time_method         ! Integer that stores how the grid should be adapted every
                                       ! timestep or if the grid should not be adapted at all
 
   logical :: &
@@ -678,13 +676,14 @@ subroutine logical_flags_driver( current_date, current_time )
                                     ! eliminates spurious drying tendencies at model top
     l_host_applies_sfc_fluxes,    & ! Use to determine whether a host model has already applied
                                     ! the surface flux, to avoid double counting.
-    l_wp2_fill_holes_tke            ! Turn on additional hole-filling for wp2
+    l_wp2_fill_holes_tke,         & ! Turn on additional hole-filling for wp2
                                     ! that takes TKE from up2 and vp2, if necessary
+    l_add_dycore_grid               ! Turn on remapping values from the dycore grid
 
   namelist /configurable_clubb_flags_nl/ &
     iiPDF_type, ipdf_call_placement, penta_solve_method, tridiag_solve_method, &
-    saturation_formula, remap_from_dycore_grid_method, &
-    grid_adaptation_method, &
+    saturation_formula, grid_remap_method, &
+    grid_adapt_in_time_method, &
     l_upwind_xpyp_ta, l_upwind_xm_ma, &
     l_tke_aniso, l_vert_avg_closure, l_standard_term_ta, &
     l_partial_upwind_wp3, l_godunov_upwind_wpxp_ta, l_godunov_upwind_xpyp_ta, &
@@ -699,7 +698,7 @@ subroutine logical_flags_driver( current_date, current_time )
     l_lmm_stepping, l_e3sm_config, l_vary_convect_depth, l_use_tke_in_wp3_pr_turb_term, &
     l_use_tke_in_wp2_wp3_K_dfsn, l_use_wp3_lim_with_smth_Heaviside, &
     l_smooth_Heaviside_tau_wpxp, l_modify_limiters_for_cnvg_test, l_host_applies_sfc_fluxes, &
-    l_wp2_fill_holes_tke
+    l_wp2_fill_holes_tke, l_add_dycore_grid
 
   ! ---- Begin Code ----
 
@@ -708,8 +707,8 @@ subroutine logical_flags_driver( current_date, current_time )
                                        penta_solve_method, & ! Intent(out)
                                        tridiag_solve_method, & ! Intent(out)
                                        saturation_formula, & ! Intent(out)
-                                       remap_from_dycore_grid_method, & ! Intent(out)
-                                       grid_adaptation_method, & ! Intent(out)
+                                       grid_remap_method, & ! Intent(out)
+                                       grid_adapt_in_time_method, & ! Intent(out)
                                        l_use_precip_frac, & ! Intent(out)
                                        l_predict_upwp_vpwp, & ! Intent(out)
                                        l_min_wp2_from_corr_wx, & ! Intent(out)
@@ -765,7 +764,8 @@ subroutine logical_flags_driver( current_date, current_time )
                                        l_mono_flux_lim_vm, & ! Intent(out)
                                        l_mono_flux_lim_spikefix, & ! Intent(out)
                                        l_host_applies_sfc_fluxes, & ! Intent(out)
-                                       l_wp2_fill_holes_tke ) ! Intent(out)
+                                       l_wp2_fill_holes_tke, & ! Intent(out)
+                                       l_add_dycore_grid ) ! Intent(out)
 
   ! Determine the current flags
   model_flags_default(1) = l_godunov_upwind_wpxp_ta
