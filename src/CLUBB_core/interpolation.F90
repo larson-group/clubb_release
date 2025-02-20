@@ -12,7 +12,7 @@ module interpolation
 
   public :: lin_interpolate_two_points, binary_search, zlinterp_fnc, & 
     lin_interpolate_on_grid, linear_interp_factor, mono_cubic_interp, plinterp_fnc, &
-    pvertinterp
+    pvertinterp, lin_interp_between_grids
 
   contains
 
@@ -694,5 +694,110 @@ module interpolation
 
     return
   end subroutine lin_interpolate_on_grid
+
+  function lin_interp_between_grids( size_interpolate, size_current, &
+                                     interpolate_altitudes, current_altitudes, &
+                                     current_values )
+    ! interpolates from the values (gr_current_values) on the current grid (gr_current) to the
+    ! gr_interpolate grid
+
+    use constants_clubb, only: fstderr ! Constant
+
+    use error_code, only: &
+        clubb_at_least_debug_level ! Error indicator
+
+    implicit none
+    !--------------------- Input Variables ---------------------
+    integer, intent(in) :: &
+        size_interpolate, &
+        size_current
+
+    real( kind = core_rknd ), dimension(size_interpolate) :: &
+      interpolate_altitudes ! altitudes where the values should be interpolated to
+
+    real( kind = core_rknd ), dimension(size_current) :: &
+      current_altitudes ! altitudes where the given values are currently on
+
+    real( kind = core_rknd ), dimension(size_current) :: &
+      current_values ! given values on the current_altitudes altitudes that should be interpolated 
+                     ! to the interpolate_altitudes altitudes
+
+    !--------------------- Local Variables ---------------------
+    real( kind = core_rknd ), dimension(size_interpolate) :: &
+      lin_interp_between_grids ! interpolated values with the dimension of gr_interpolate
+    
+    integer :: i, k
+    
+    logical :: calc_done
+
+    real( kind = core_rknd ) :: tol
+
+    !--------------------- Begin Code ---------------------
+    tol = 1.0e-6_core_rknd
+
+
+    !-------------------------------------------------------------------------------
+    !
+    ! Assure that the elements are in order so that the interpolation is between 
+    ! the two closest points to the point in question.
+    !
+    !-------------------------------------------------------------------------------
+
+    if ( clubb_at_least_debug_level( 0 ) ) then
+      do i=2,size_current
+        if ( current_altitudes(i) <= current_altitudes(i-1) ) then
+          write(fstderr,*) "current_altitudes must be sorted for lin_interp_between_grids."
+          error stop
+        end if
+      end do
+    end if
+
+    !-------------------------------------------------------------------------------
+    !
+    ! If the point in question is larger than the largest x-value or
+    ! smaller than the smallest x-value, crash.
+    !
+    !-------------------------------------------------------------------------------
+
+    if ( clubb_at_least_debug_level( 0 ) ) then
+        if ( (minval(interpolate_altitudes) < current_altitudes(1)) &
+              .or. (maxval(interpolate_altitudes) > current_altitudes(size_current)) ) then
+          write(fstderr,*) "lin_interp_between_grids: Value out of range"
+          error stop
+        end if
+    end if
+
+
+    do i = 1, size_interpolate
+      calc_done = .false.
+      ! find nearest zt level of gr_current for zt(i) of gr_interpolate grid
+      ! if there is no gr_current zt level above or below the gr_interpolate grid level, 
+      ! then the gr_current value of the closest level is taken
+      k = 1
+      do while ((.not. calc_done) .and. (k <= size_current))
+        if (abs(interpolate_altitudes(i) - current_altitudes(k)) < tol) then
+          lin_interp_between_grids(i) = current_values(k)
+          calc_done = .true.
+        else if (interpolate_altitudes(i) < current_altitudes(k)) then
+          if (k > 1) then
+            lin_interp_between_grids(i) = lin_interpolate_two_points( interpolate_altitudes(i), &
+                                                                      current_altitudes(k), &
+                                                                      current_altitudes(k-1), &
+                                                                      current_values(k), &
+                                                                      current_values(k-1) )
+          else ! k=1
+            lin_interp_between_grids(i) = current_values(1)
+          endif
+          calc_done = .true.
+        endif
+        k = k + 1
+      end do
+      if ((.not. calc_done) .and. (k > size_current)) then
+        lin_interp_between_grids(i) = current_values(size_current)
+        calc_done = .true.
+      endif
+    end do
+
+  end function lin_interp_between_grids
 
 end module interpolation

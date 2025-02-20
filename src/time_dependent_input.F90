@@ -9,7 +9,7 @@ module time_dependent_input
 !    None
 !--------------------------------------------------------------------------------------------------
 
-  use constants_clubb, only: eps
+  use constants_clubb, only: eps, one
 
   use input_reader, only: &
     two_dim_read_var, &
@@ -950,7 +950,7 @@ module time_dependent_input
 
     !--------------------- Begin Code ---------------------
 
-    time_frac = -1.0_core_rknd ! Default initialization
+    time_frac = -one ! Default initialization
 
     call time_select( time, size(dimension_var%values), dimension_var%values, &
                                  before_time, after_time, time_frac )
@@ -978,7 +978,7 @@ module time_dependent_input
   subroutine apply_time_dependent_forcings_from_dycore( &
               ngrdcol, nzm, nzt, &
               sclr_dim, edsclr_dim, sclr_idx, &
-              gr, dycore_gr, time, rtm, rho, exner, &
+              gr, gr_dycore, time, rtm, rho, exner, &
               grid_remap_method, &
               total_idx_rho_lin_spline, rho_lin_spline_vals, &
               rho_lin_spline_levels, &
@@ -1006,7 +1006,7 @@ module time_dependent_input
     use array_index, only: &
       sclr_idx_type
 
-    use grid_adaptation_module, only: remap, &
+    use grid_adaptation_module, only: remap_vals_to_target, &
                                       check_mass_conservation, &
                                       check_vertical_integral_conservation, &
                                       check_remap_for_consistency
@@ -1031,7 +1031,7 @@ module time_dependent_input
       sclr_idx
 
     type (grid), intent(in) :: &
-      gr, dycore_gr
+      gr, gr_dycore
 
     real(kind=time_precision), intent(in) :: &
       time ! Model Time [s]
@@ -1074,14 +1074,14 @@ module time_dependent_input
     !--------------------- Local Variables ---------------------
     integer :: n, before_time, after_time
 
-    real( kind = core_rknd ), dimension(dycore_gr%nzt) :: temp_array_dycore
+    real( kind = core_rknd ), dimension(gr_dycore%nzt) :: temp_array_dycore
 
     real( kind = core_rknd ), dimension(nforcings,nzt) :: forcings_array
 
     real( kind = core_rknd ) :: time_frac
 
     !--------------------- Begin Code ---------------------
-    time_frac = -1.0_core_rknd ! Default initialization
+    time_frac = -one ! Default initialization
 
     call time_select( time, size(dimension_var%values), dimension_var%values, &
                                  before_time, after_time, time_frac )
@@ -1093,15 +1093,16 @@ module time_dependent_input
                             t_dependent_forcing_data(n)%values(:,before_time) )
 
       if ( grid_remap_method == 1 ) then
-        forcings_array(n,:) = remap( dycore_gr%nzm, gr%nzm, &
-                            dycore_gr%zm, gr%zm,&
-                            total_idx_rho_lin_spline, rho_lin_spline_vals, &
-                            rho_lin_spline_levels, &
-                            temp_array_dycore )
+        forcings_array(n,:) = remap_vals_to_target( gr_dycore%nzm, gr%nzm, &
+                                                    gr_dycore%zm, gr%zm,&
+                                                    total_idx_rho_lin_spline, &
+                                                    rho_lin_spline_vals, &
+                                                    rho_lin_spline_levels, &
+                                                    temp_array_dycore )
 
         if ( clubb_at_least_debug_level( 2 ) ) then
-          call check_mass_conservation( dycore_gr%nzm, gr%nzm, &
-                                        dycore_gr%zm, &
+          call check_mass_conservation( gr_dycore%nzm, gr%nzm, &
+                                        gr_dycore%zm, &
                                         gr%zm, &
                                         total_idx_rho_lin_spline, rho_lin_spline_vals, &
                                         rho_lin_spline_levels )
@@ -1109,14 +1110,14 @@ module time_dependent_input
           call check_vertical_integral_conservation( total_idx_rho_lin_spline, &
                                                      rho_lin_spline_vals, &
                                                      rho_lin_spline_levels, &
-                                                     dycore_gr%nzm, gr%nzm, &
-                                                     dycore_gr%zm, &
+                                                     gr_dycore%nzm, gr%nzm, &
+                                                     gr_dycore%zm, &
                                                      gr%zm,&
                                                      temp_array_dycore, &
                                                      forcings_array(n,:) )
 
-          call check_remap_for_consistency( dycore_gr%nzm, gr%nzm, &
-                                            dycore_gr%zm, &
+          call check_remap_for_consistency( gr_dycore%nzm, gr%nzm, &
+                                            gr_dycore%zm, &
                                             gr%zm, &
                                             total_idx_rho_lin_spline, &
                                             rho_lin_spline_vals, &

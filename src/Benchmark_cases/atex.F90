@@ -75,7 +75,7 @@ module atex
                          rtm, &
                          l_add_dycore_grid, &
                          grid_remap_method, &
-                         dycore_gr, rho_ds_zm_dycore, &
+                         gr_dycore, rho_ds_zm_dycore, &
                          err_code, &
                          wm_zt, wm_zm, & 
                          thlm_forcing, rtm_forcing, & 
@@ -109,12 +109,14 @@ module atex
     clubb_fatal_error               ! Constant
 
   use array_index, only: &
-    sclr_idx_type   
+    sclr_idx_type
+
+  use interpolation, only: &
+    lin_interp_between_grids
   
   use grid_adaptation_module, only: &
-    lin_interpolate, &
-    interpolate_forcings, check_mass_conservation_all, &
-    check_remap_for_consistency_all, check_vertical_integral_conservation_all_zt_values
+    remap_forcings, check_mass_conservation_zt_zm, &
+    check_remap_for_consistency_zt_zm, check_vertical_integral_conservation_all_zt_values
 
   implicit none
 
@@ -143,9 +145,9 @@ module atex
     l_add_dycore_grid
 
   type( grid ), intent(in) :: &
-    dycore_gr
+    gr_dycore
 
-  real( kind = core_rknd ), intent(in), dimension(ngrdcol,dycore_gr%nzm) :: & 
+  real( kind = core_rknd ), intent(in), dimension(ngrdcol,gr_dycore%nzm) :: & 
     rho_ds_zm_dycore ! Dry, static density on momentum levels on dycore grid [kg/m^3]
                      ! use this to assume the exact linear spline as the rho_ds profile
 
@@ -180,11 +182,11 @@ module atex
   real( kind = core_rknd ), dimension(ngrdcol) :: &
     z_inversion, z_inversion_dycore
 
-  real( kind = core_rknd ), dimension(ngrdcol,dycore_gr%nzt) :: &
+  real( kind = core_rknd ), dimension(ngrdcol,gr_dycore%nzt) :: &
     thlm_forcing_dycore, & ! Liquid water potential temperature tendency [K/s]
     rtm_forcing_dycore     ! Total water mixing ratio tendency           [kg/kg/s]
 
-  real( kind = core_rknd ), dimension(ngrdcol,dycore_gr%nzt) :: & 
+  real( kind = core_rknd ), dimension(ngrdcol,gr_dycore%nzt) :: & 
     rtm_dycore             ! Total water mixing ratio                      [kg/kg]
 
   !--------------------- Begin Code ---------------------
@@ -254,9 +256,9 @@ module atex
     if ( l_add_dycore_grid ) then
 
       do i = 1, ngrdcol
-        rtm_dycore(i,:) = lin_interpolate( dycore_gr%nzt, gr%nzt, &
-                                           dycore_gr%zt, gr%zt, &
-                                           rtm(i,:) )
+        rtm_dycore(i,:) = lin_interp_between_grids( gr_dycore%nzt, gr%nzt, &
+                                                    gr_dycore%zt, gr%zt, &
+                                                    rtm(i,:) )
       end do
 
       ! calculate z_inversion for dycore grid (z_inversion_dycore) with interpolated rtm values on 
@@ -264,7 +266,7 @@ module atex
       !$acc parallel loop gang vector default(present)
       do i = 1, ngrdcol
         z_lev_dycore(i) = 1
-        do while ( z_lev_dycore(i) <= dycore_gr%nzt &
+        do while ( z_lev_dycore(i) <= gr_dycore%nzt &
                   .and. rtm_dycore(i,z_lev_dycore(i)) > 6.5e-3_core_rknd )
           z_lev_dycore(i) = z_lev_dycore(i) + 1
         end do
@@ -273,7 +275,7 @@ module atex
       if ( clubb_at_least_debug_level(2) ) then
 
         do i = 1, ngrdcol
-          if ( z_lev_dycore(i) == dycore_gr%nzt+1 .or. z_lev_dycore(i) == 1 ) then
+          if ( z_lev_dycore(i) == gr_dycore%nzt+1 .or. z_lev_dycore(i) == 1 ) then
             write(fstderr,*) "Identification of 6.5 g/kg level failed on dycore grid"
             write(fstderr,*) "Subroutine: atex_tndcy. File: atex.F"
             write(fstderr,*) "k = ", z_lev_dycore(i), " i = ", i
@@ -282,54 +284,55 @@ module atex
             return
           end if
         end do
+
       end if
 
       !$acc parallel loop gang vector default(present)
       do i = 1, ngrdcol
-        z_inversion_dycore(i) = dycore_gr%zt(i,z_lev_dycore(i)-1)
+        z_inversion_dycore(i) = gr_dycore%zt(i,z_lev_dycore(i)-1)
       end do
 
-      call calc_forcings( ngrdcol, dycore_gr, z_inversion_dycore, &  ! intent(in)
+      call calc_forcings( ngrdcol, gr_dycore, z_inversion_dycore, &  ! intent(in)
                           thlm_forcing_dycore, rtm_forcing_dycore )  ! intent(out)
 
       if ( grid_remap_method == 1 ) then
 
-        call interpolate_forcings( ngrdcol, dycore_gr, gr, &                   ! intent(in)
-                                   dycore_gr%nzm, rho_ds_zm_dycore, &          ! intent(in)
-                                   dycore_gr%zm, &                             ! intent(in)
-                                   thlm_forcing_dycore, rtm_forcing_dycore, &  ! intent(in)
-                                   thlm_forcing, rtm_forcing )                 ! intent(out)
+        call remap_forcings( ngrdcol, gr_dycore, gr, &                   ! intent(in)
+                             gr_dycore%nzm, rho_ds_zm_dycore, &          ! intent(in)
+                             gr_dycore%zm, &                             ! intent(in)
+                             thlm_forcing_dycore, rtm_forcing_dycore, &  ! intent(in)
+                             thlm_forcing, rtm_forcing )                 ! intent(out)
 
         if ( clubb_at_least_debug_level( 2 ) ) then
 
           ! checks if the mass over the physics and dycore grid is the same
-          call check_mass_conservation_all( ngrdcol, dycore_gr, gr, &           ! intent(in)
-                                            dycore_gr%nzm, rho_ds_zm_dycore, &  ! intent(in)
-                                            dycore_gr%zm )                      ! intent(in)
+          call check_mass_conservation_zt_zm( ngrdcol, gr_dycore, gr, &           ! intent(in)
+                                              gr_dycore%nzm, rho_ds_zm_dycore, &  ! intent(in)
+                                              gr_dycore%zm )                      ! intent(in)
 
           ! check if the calculated vertical integral is the same for both grids for the thlm value
           call check_vertical_integral_conservation_all_zt_values( ngrdcol, &             ! In
-                                                                   dycore_gr, gr, &       ! In
-                                                                   dycore_gr%nzm, &       ! In
+                                                                   gr_dycore, gr, &       ! In
+                                                                   gr_dycore%nzm, &       ! In
                                                                    rho_ds_zm_dycore, &    ! In
-                                                                   dycore_gr%zm, &        ! In
+                                                                   gr_dycore%zm, &        ! In
                                                                    thlm_forcing_dycore, & ! In
                                                                    thlm_forcing )         ! In
 
           ! check if the calculated vertical integral is the same for both grids for the rtm value
           call check_vertical_integral_conservation_all_zt_values( ngrdcol, &             ! In
-                                                                   dycore_gr, gr, &       ! In
-                                                                   dycore_gr%nzm, &       ! In
+                                                                   gr_dycore, gr, &       ! In
+                                                                   gr_dycore%nzm, &       ! In
                                                                    rho_ds_zm_dycore, &    ! In
-                                                                   dycore_gr%zm, &        ! In
+                                                                   gr_dycore%zm, &        ! In
                                                                    rtm_forcing_dycore, &  ! In
                                                                    rtm_forcing )          ! In
 
           ! check if remapping operator fulfills condition for consistency
           ! with the grids for zt and zm levels
-          call check_remap_for_consistency_all( ngrdcol, dycore_gr, gr, &            ! intent(in)
-                                                dycore_gr%nzm, rho_ds_zm_dycore, &   ! intent(in)
-                                                dycore_gr%zm )                       ! intent(in)
+          call check_remap_for_consistency_zt_zm( ngrdcol, gr_dycore, gr, &            ! intent(in)
+                                                  gr_dycore%nzm, rho_ds_zm_dycore, &   ! intent(in)
+                                                  gr_dycore%zm )                       ! intent(in)
         end if
       
       else
@@ -359,7 +362,7 @@ module atex
 
     if ( l_add_dycore_grid ) then
       !$acc parallel loop gang vector collapse(2) default(present)
-      do k = 1, dycore_gr%nzt
+      do k = 1, gr_dycore%nzt
         do i = 1, ngrdcol
           thlm_forcing_dycore(i,k) = 0._core_rknd
           rtm_forcing_dycore(i,k)  = 0._core_rknd

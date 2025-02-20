@@ -987,14 +987,14 @@ module clubb_driver
       l_last_timestep
 
     type( grid ) :: &
-      dycore_gr ! only set and used, if l_add_dycore_grid is .true
+      gr_dycore ! only set and used, if l_add_dycore_grid is .true
 
     real( kind = core_rknd ), dimension(:,:), allocatable :: &
       rho_ds_zm_dycore ! only set and used, if l_add_dycore_grid is .true
 
     real( kind = core_rknd ), dimension(:), allocatable :: &
-      gr_dens_z, &     ! levels at which the grid density heights are given
-      gr_dens_heights  ! grid density heights at the given levels
+      gr_dens_z, &     ! levels at which the grid density is given
+      gr_dens          ! grid density at the given levels in gr_dens_z [# levs/meter]
 
 !-----------------------------------------------------------------------
     ! Begin code
@@ -1889,11 +1889,11 @@ module clubb_driver
 
     if ( l_add_dycore_grid ) then
       ! Initialize the dycore grid
-      call setup_simple_gr_dycore( 31, gr%zm(1,1), gr%zm(1,gr%nzm), dycore_gr ) ! always set to 31
+      call setup_simple_gr_dycore( 31, gr%zm(1,1), gr%zm(1,gr%nzm), gr_dycore ) ! always set to 31
                                                                                 ! since the host
                                                                                 ! model has 31
                                                                                 ! levels
-      allocate( rho_ds_zm_dycore(ngrdcol, dycore_gr%nzm) ) ! dry, static density: 
+      allocate( rho_ds_zm_dycore(ngrdcol, gr_dycore%nzm) ) ! dry, static density: 
                                                            ! m-levs of dycore grid
     else
       ! if no interpolation should be used, rho_ds_zm_dycore is not needed and we can use a 
@@ -1903,7 +1903,7 @@ module clubb_driver
 
     if (grid_adapt_in_time_method > 0) then
       allocate( gr_dens_z(gr%nzt) )
-      allocate( gr_dens_heights(gr%nzt) )
+      allocate( gr_dens(gr%nzt) )
     end if
 
     ! Variables for PDF closure scheme
@@ -2157,7 +2157,7 @@ module clubb_driver
           l_modify_ic_with_cubic_int,                                      & ! Intent(in)
           l_add_dycore_grid,                                               & ! Intent(in)
           grid_adapt_in_time_method,                                       & ! Intent(in)
-          dycore_gr,                                                       & ! Intent(in)
+          gr_dycore,                                                       & ! Intent(in)
           thlm, rtm, um, vm, ug, vg, wp2, up2, vp2, rcm,                   & ! Intent(inout)
           wm_zt, wm_zm, em, exner,                                         & ! Intent(inout)
           thvm, p_in_Pa,                                                   & ! Intent(inout)
@@ -2600,7 +2600,7 @@ module clubb_driver
                                grid_remap_method, & ! In
                                gr%nzm, rho_ds_zm(1,:), &
                                gr%zm(1,:), &
-                               dycore_gr, rho_ds_zm_dycore, & ! In
+                               gr_dycore, rho_ds_zm_dycore, & ! In
                                rtm, wm_zm, wm_zt, ug, vg, um_ref, vm_ref, & ! Inout
                                thlm_forcing, rtm_forcing, um_forcing, & ! Inout
                                vm_forcing, wprtp_forcing, wpthlp_forcing, & ! Inout
@@ -3217,7 +3217,7 @@ module clubb_driver
           call calc_grid_dens_func( ngrdcol, gr%nzt, gr%zt, &
                                     Lscale, wp2_zt, &
                                     gr%zm(1,1), gr%zm(1,gr%nzm), &
-                                    gr_dens_z, gr_dens_heights )
+                                    gr_dens_z, gr_dens )
       
         else if ( grid_adapt_in_time_method > 1 ) then
       
@@ -3227,7 +3227,7 @@ module clubb_driver
         end if
 
         call adapt_grid( ngrdcol, gr%nzt, &                                      ! Intent(in)
-                         gr_dens_z, gr_dens_heights, &                           ! Intent(in)
+                         gr_dens_z, gr_dens, &                                   ! Intent(in)
                          sfc_elevation, l_implemented, &                         ! Intent(in)
                          hydromet_dim, sclr_dim, edsclr_dim, &                   ! Intent(in)
                          thvm, gr%nzt, p_sfc, &                                  ! Intent(in)
@@ -3497,7 +3497,7 @@ module clubb_driver
 
     if ( grid_adapt_in_time_method > 0 ) then
       deallocate( gr_dens_z )
-      deallocate( gr_dens_heights )
+      deallocate( gr_dens )
     end if
 
     return
@@ -3512,7 +3512,7 @@ module clubb_driver
                l_modify_ic_with_cubic_int, &
                l_add_dycore_grid, &
                grid_adapt_in_time_method, &
-               dycore_gr, &
+               gr_dycore, &
                thlm, rtm, um, vm, ug, vg, wp2, up2, vp2, rcm, &
                wm_zt, wm_zm, em, exner, &
                thvm, p_in_Pa, &
@@ -3600,8 +3600,8 @@ module clubb_driver
     use array_index, only: &
       sclr_idx_type
 
-    use grid_adaptation_module, only: &
-      lin_interpolate
+    use interpolation, only: &
+      lin_interp_between_grids
 
     use constants_clubb, only: fstderr !-------------------------- Variables(s)
 
@@ -3655,7 +3655,7 @@ module clubb_driver
                                   ! density function
 
     type( grid ), intent(in) :: &
-      dycore_gr  ! only set and used if l_add_dycore_grid=.true.
+      gr_dycore  ! only set and used if l_add_dycore_grid=.true.
 
     ! Output
     real( kind = core_rknd ), dimension(ngrdcol,gr%nzt), intent(inout) :: &
@@ -3711,7 +3711,7 @@ module clubb_driver
     real( kind = core_rknd ), dimension(ngrdcol,gr%nzt,edsclr_dim), intent(out) :: &
       edsclrm    ! Eddy diffusivity passive scalar [units vary]
 
-    real( kind = core_rknd ), dimension(ngrdcol,dycore_gr%nzm), intent(out) :: &
+    real( kind = core_rknd ), dimension(ngrdcol,gr_dycore%nzm), intent(out) :: &
       rho_ds_zm_dycore  ! Dry, static density (moment. levs.) on dycore grid  [kg/m^3]
 
     ! Local Variables
@@ -3734,7 +3734,7 @@ module clubb_driver
 
     integer :: i, k ! Loop index
 
-    real( kind = core_rknd ), dimension(ngrdcol,dycore_gr%nzt) :: &
+    real( kind = core_rknd ), dimension(ngrdcol,gr_dycore%nzt) :: &
       p_in_Pa_dycore  ! p_in_Pa interpolated to the dycore grid
 
     !---- Begin code ----
@@ -3881,12 +3881,12 @@ module clubb_driver
     ! Initialize the dycore grid rho_ds linear spline approximation and p_in_Pa for dycore grid
     if ( l_add_dycore_grid ) then
       do i = 1, ngrdcol
-        rho_ds_zm_dycore(i,:) = lin_interpolate( dycore_gr%nzm, gr%nzm, &
-                                                 dycore_gr%zm, gr%zm, &
-                                                 rho_ds_zm(i,:) )
-        p_in_Pa_dycore(i,:) = lin_interpolate( dycore_gr%nzt, gr%nzm, &
-                                               dycore_gr%zt, gr%zm, &
-                                               p_in_Pa_zm(i,:) )
+        rho_ds_zm_dycore(i,:) = lin_interp_between_grids( gr_dycore%nzm, gr%nzm, &
+                                                          gr_dycore%zm, gr%zm, &
+                                                          rho_ds_zm(i,:) )
+        p_in_Pa_dycore(i,:) = lin_interp_between_grids( gr_dycore%nzt, gr%nzm, &
+                                                        gr_dycore%zt, gr%zm, &
+                                                        p_in_Pa_zm(i,:) )
       end do
     end if
 
@@ -3901,7 +3901,7 @@ module clubb_driver
         ! attention on how the forcings are read in from object t_dependent_forcing_data
         ! in time_dependent_input
         call initialize_t_dependent_input &
-                   ( iunit, runtype, dycore_gr%nzt, dycore_gr%zt(1,:), p_in_Pa_dycore(1,:), &
+                   ( iunit, runtype, gr_dycore%nzt, gr_dycore%zt(1,:), p_in_Pa_dycore(1,:), &
                      l_add_dycore_grid, grid_adapt_in_time_method )
       else
         ! no simulating forcings input from host model on dycore grid
@@ -5512,7 +5512,7 @@ module clubb_driver
                                  grid_remap_method, &
                                  total_idx_rho_lin_spline, rho_lin_spline_vals, &
                                  rho_lin_spline_levels, &
-                                 dycore_gr, rho_ds_zm_dycore, &
+                                 gr_dycore, rho_ds_zm_dycore, &
                                  rtm, wm_zm, wm_zt, ug, vg, um_ref, vm_ref, &
                                  thlm_forcing, rtm_forcing, um_forcing, &
                                  vm_forcing, wprtp_forcing, wpthlp_forcing, &
@@ -5688,9 +5688,9 @@ module clubb_driver
     ! Note: both these arrays need to be sorted from low to high altitude
 
     type( grid ), intent(in) :: &
-      dycore_gr
+      gr_dycore
 
-    real( kind = core_rknd ), dimension(dycore_gr%nzm), intent(in) :: &
+    real( kind = core_rknd ), dimension(gr_dycore%nzm), intent(in) :: &
       rho_ds_zm_dycore
 
     real( kind = core_rknd ), dimension(ngrdcol,nzt), intent(inout) :: &
@@ -5819,7 +5819,7 @@ module clubb_driver
         call apply_time_dependent_forcings_from_dycore( &
                 ngrdcol, gr%nzm, gr%nzt, &
                 sclr_dim, edsclr_dim, sclr_idx, &
-                gr, dycore_gr, time_current, rtm, rho, exner,  &
+                gr, gr_dycore, time_current, rtm, rho, exner,  &
                 grid_remap_method, &
                 total_idx_rho_lin_spline, rho_lin_spline_vals, &
                 rho_lin_spline_levels, &
@@ -5864,7 +5864,7 @@ module clubb_driver
                          rtm, &                                 ! Intent(in)
                          l_add_dycore_grid, &                   ! Intent(in)
                          grid_remap_method, &                   ! Intent(in)
-                         dycore_gr, rho_ds_zm_dycore, &         ! Intent(in)
+                         gr_dycore, rho_ds_zm_dycore, &         ! Intent(in)
                          err_code, &                            ! Intent(inout)
                          wm_zt, wm_zm, &                        ! Intent(out)
                          thlm_forcing, rtm_forcing, &           ! Intent(out)
