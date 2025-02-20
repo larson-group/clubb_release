@@ -50,11 +50,11 @@ module grid_adaptation_module
     implicit none
 
     !--------------------- Input Variables ---------------------
-    integer, intent(in) :: nlevels  ! number of levels the dycore grid should have
+    integer, intent(in) :: nlevels  ! number of levels the dycore grid should have []
 
     real( kind = core_rknd ) :: &
-        grid_sfc, &    ! grids surface height for the dycore grid
-        grid_top       ! grids highest level for the dycore grid
+        grid_sfc, &    ! grids surface height for the dycore grid [m]
+        grid_top       ! grids highest level for the dycore grid [m]
 
     !--------------------- Output Variables ---------------------
     type (grid), intent(out) :: gr
@@ -124,20 +124,20 @@ module grid_adaptation_module
     integer, intent(in) :: dim1, dim2
 
     real( kind = core_rknd ), dimension(dim1,dim2), intent(in) :: &
-      R_ij  ! matrix to apply to input values for remapping (R_ij)
+      R_ij  ! matrix to apply to input values for remapping (R_ij) []
 
     real( kind = core_rknd ), dimension(dim2+1), intent(in) :: &
-      levels_source ! the height of the levels in the source grid
+      levels_source ! the height of the levels in the source grid [m]
 
     real( kind = core_rknd ), dimension(dim1+1), intent(in) :: &
-      levels_target ! the height of the levels in the target grid
+      levels_target ! the height of the levels in the target grid [m]
 
     integer, intent(in) :: &
-      total_idx_rho_lin_spline ! number of indices for the linear spline definition arrays
+      total_idx_rho_lin_spline ! number of indices for the linear spline definition arrays []
 
     real( kind = core_rknd ), dimension(total_idx_rho_lin_spline), intent(in) :: &
-      rho_lin_spline_vals, & ! rho values at the given altitudes
-      rho_lin_spline_levels  ! altitudes for the given rho values
+      rho_lin_spline_vals, & ! rho values at the given altitudes [kg/m^3]
+      rho_lin_spline_levels  ! altitudes for the given rho values [m]
     ! Note: both these arrays need to be sorted from low to high altitude
 
     !--------------------- Local Variables ---------------------
@@ -146,10 +146,10 @@ module grid_adaptation_module
     real( kind = core_rknd ) :: weighted_col_sum
 
     real( kind = core_rknd ), dimension(dim1) :: &
-        J_t ! local weights on the target grid (mass over every grid cell)
+        J_t ! local weights on the target grid (mass over every grid cell) []
 
     real( kind = core_rknd ), dimension(dim2) :: &
-        J_s ! local weights on the source grid (mass over every grid cell)
+        J_s ! local weights on the source grid (mass over every grid cell) []
 
     logical :: conservative
 
@@ -199,7 +199,7 @@ module grid_adaptation_module
     integer, intent(in) :: dim1, dim2
 
     real( kind = core_rknd ), dimension(dim1,dim2), intent(in) :: &
-      R_ij  ! matrix to apply to input values for remapping (R_ij)
+      R_ij  ! matrix to apply to input values for remapping (R_ij) []
 
     !--------------------- Local Variables ---------------------
     integer :: i, j
@@ -242,7 +242,7 @@ module grid_adaptation_module
     integer, intent(in) :: dim1, dim2
 
     real( kind = core_rknd ), dimension(dim1,dim2), intent(in) :: &
-      R_ij  ! matrix to apply to input values for remapping (R_ij)
+      R_ij  ! matrix to apply to input values for remapping (R_ij) []
 
     !--------------------- Local Variables ---------------------
     integer :: i, j
@@ -282,33 +282,33 @@ module grid_adaptation_module
     implicit none
     !--------------------- Input Variables ---------------------
     integer, intent(in) :: &
-      nlevel_source, & ! number of levels in the target grid
-      nlevel_target    ! number of levels in the source grid
+      nlevel_source, & ! number of levels in the target grid []
+      nlevel_target    ! number of levels in the source grid []
 
     real( kind = core_rknd ), dimension(nlevel_source), intent(in) :: &
-      levels_source ! the height of the levels in the source grid
+      levels_source ! the height of the levels in the source grid [m]
 
     real( kind = core_rknd ), dimension(nlevel_target), intent(in) :: &
-      levels_target ! the height of the levels in the target grid
+      levels_target ! the height of the levels in the target grid [m]
 
     integer, intent(in) :: &
-      total_idx_rho_lin_spline ! number of indices for the linear spline definition arrays
+      total_idx_rho_lin_spline ! number of indices for the linear spline definition arrays []
 
     real( kind = core_rknd ), dimension(total_idx_rho_lin_spline), intent(in) :: &
-      rho_lin_spline_vals, & ! rho values at the given altitudes
-      rho_lin_spline_levels  ! altitudes for the given rho values
+      rho_lin_spline_vals, & ! rho values at the given altitudes [kg/m^3]
+      rho_lin_spline_levels  ! altitudes for the given rho values [m]
     ! Note: both these arrays need to be sorted from low to high altitude
 
     !--------------------- Local Variables ---------------------
     real( kind = core_rknd ), dimension(nlevel_target-1,nlevel_source-1) :: &
-      remapping_matrix ! matrix to apply to input values for remapping (R_ij)
+      remapping_matrix ! matrix to apply to input values for remapping (R_ij) []
 
     integer :: i, j
 
     real( kind = core_rknd ) :: omega_ov, omega_ov_upper, omega_ov_lower
 
     real( kind = core_rknd ), dimension(nlevel_target-1) :: &
-      omega_ts ! densities of all intervals in the target grid
+      omega_ts ! densities of all intervals in the target grid [kg]
 
     real( kind = core_rknd ), dimension(2) :: &
       omega_ov_zm ! helper variable to hold density of the overlap region
@@ -359,21 +359,21 @@ module grid_adaptation_module
     implicit none
     !--------------------- Input Variables ---------------------
     integer, intent(in) :: &
-      nlevel_source, & ! number of levels in the target grid
-      nlevel_target    ! number of levels in the source grid
+      nlevel_source, & ! number of levels in the target grid []
+      nlevel_target    ! number of levels in the source grid []
 
     real( kind = core_rknd ), dimension(nlevel_source), intent(in) :: &
-      levels_source ! the height of the levels in the source grid
+      levels_source ! the height of the levels in the source grid [m]
 
     real( kind = core_rknd ), dimension(nlevel_target), intent(in) :: &
-      levels_target ! the height of the levels in the target grid
+      levels_target ! the height of the levels in the target grid [m]
 
     integer, intent(in) :: &
-      total_idx_rho_lin_spline ! number of indices for the linear spline definition arrays
+      total_idx_rho_lin_spline ! number of indices for the linear spline definition arrays []
 
     real( kind = core_rknd ), dimension(total_idx_rho_lin_spline), intent(in) :: &
-      rho_lin_spline_vals, & ! rho values at the given altitudes
-      rho_lin_spline_levels  ! altitudes for the given rho values
+      rho_lin_spline_vals, & ! rho values at the given altitudes [kg/m^3]
+      rho_lin_spline_levels  ! altitudes for the given rho values [m]
     ! Note: both these arrays need to be sorted from low to high altitude
 
     real( kind = core_rknd ), dimension(nlevel_source-1) :: &
@@ -387,7 +387,7 @@ module grid_adaptation_module
     integer :: i, j
 
     real( kind = core_rknd ), dimension(nlevel_target-1,nlevel_source-1) :: &
-      R_ij  ! matrix to apply to input values for remapping (R_ij)
+      R_ij  ! matrix to apply to input values for remapping (R_ij) []
 
     !--------------------- Begin Code ---------------------
 
@@ -417,11 +417,11 @@ module grid_adaptation_module
     type (grid), intent(in) :: gr_source, gr_target
 
     integer, intent(in) :: &
-      total_idx_rho_lin_spline ! number of indices for the linear spline definition arrays
+      total_idx_rho_lin_spline ! number of indices for the linear spline definition arrays []
 
     real( kind = core_rknd ), dimension(ngrdcol, total_idx_rho_lin_spline), intent(in) :: &
-      rho_lin_spline_vals, & ! rho values at the given altitudes
-      rho_lin_spline_levels  ! altitudes for the given rho values
+      rho_lin_spline_vals, & ! rho values at the given altitudes [kg/m^3]
+      rho_lin_spline_levels  ! altitudes for the given rho values [m]
     ! Note: both these arrays need to be sorted from low to high altitude
 
     real( kind = core_rknd ), dimension(ngrdcol, gr_source%nzt), intent(in) :: &
@@ -457,11 +457,11 @@ module grid_adaptation_module
     type (grid), intent(in) :: gr_source, gr_target
 
     integer, intent(in) :: &
-      total_idx_rho_lin_spline ! number of indices for the linear spline definition arrays
+      total_idx_rho_lin_spline ! number of indices for the linear spline definition arrays []
 
     real( kind = core_rknd ), dimension(ngrdcol, total_idx_rho_lin_spline), intent(in) :: &
-      rho_lin_spline_vals, & ! rho values at the given altitudes
-      rho_lin_spline_levels  ! altitudes for the given rho values
+      rho_lin_spline_vals, & ! rho values at the given altitudes [kg/m^3]
+      rho_lin_spline_levels  ! altitudes for the given rho values [m]
     ! Note: both these arrays need to be sorted from low to high altitude
 
     real( kind = core_rknd ), dimension(ngrdcol, gr_source%nzm), intent(in) :: &
@@ -475,16 +475,16 @@ module grid_adaptation_module
     integer :: i, j
 
     integer :: &
-      nlevels_source ! number of levels in source grid
+      nlevels_source ! number of levels in source grid []
 
     integer :: &
-      nlevels_target ! number of levels in target grid
+      nlevels_target ! number of levels in target grid []
 
     real( kind = core_rknd ), dimension(gr_source%nzt+2) :: &
-      levels_source ! levels on source grid
+      levels_source ! levels on source grid [m]
 
     real( kind = core_rknd ), dimension(gr_target%nzt+2) :: &
-      levels_target ! levels on target grid
+      levels_target ! levels on target grid [m]
 
     !--------------------- Begin Code ---------------------
     ! since we have the values given on the zm levels, we dont have surrounding zt levels for the
@@ -536,11 +536,11 @@ module grid_adaptation_module
     type (grid), intent(in) :: gr_dycore, gr_clubb
 
     integer, intent(in) :: &
-      total_idx_rho_lin_spline ! number of indices for the linear spline definition arrays
+      total_idx_rho_lin_spline ! number of indices for the linear spline definition arrays []
 
     real( kind = core_rknd ), dimension(ngrdcol, total_idx_rho_lin_spline), intent(in) :: &
-      rho_lin_spline_vals, & ! rho values at the given altitudes
-      rho_lin_spline_levels  ! altitudes for the given rho values
+      rho_lin_spline_vals, & ! rho values at the given altitudes [kg/m^3]
+      rho_lin_spline_levels  ! altitudes for the given rho values [m]
     ! Note: both these arrays need to be sorted from low to high altitude
 
     real( kind = core_rknd ), dimension(ngrdcol, gr_dycore%nzt), intent(in) :: &
@@ -572,21 +572,21 @@ module grid_adaptation_module
     implicit none
     !--------------------- Input Variables ---------------------
     integer, intent(in) :: &
-      nlevel_source, & ! number of levels in the target grid
-      nlevel_target    ! number of levels in the source grid
+      nlevel_source, & ! number of levels in the target grid []
+      nlevel_target    ! number of levels in the source grid []
 
     real( kind = core_rknd ), dimension(nlevel_source), intent(in) :: &
-      levels_source ! the height of the levels in the source grid
+      levels_source ! the height of the levels in the source grid [m]
 
     real( kind = core_rknd ), dimension(nlevel_target), intent(in) :: &
-      levels_target ! the height of the levels in the target grid
+      levels_target ! the height of the levels in the target grid [m]
 
     integer, intent(in) :: &
-      total_idx_rho_lin_spline ! number of indices for the linear spline definition arrays
+      total_idx_rho_lin_spline ! number of indices for the linear spline definition arrays []
 
     real( kind = core_rknd ), dimension(total_idx_rho_lin_spline), intent(in) :: &
-      rho_lin_spline_vals, & ! rho values at the given altitudes
-      rho_lin_spline_levels  ! altitudes for the given rho values
+      rho_lin_spline_vals, & ! rho values at the given altitudes [kg/m^3]
+      rho_lin_spline_levels  ! altitudes for the given rho values [m]
     ! Note: both these arrays need to be sorted from low to high altitude
 
     !--------------------- Local Variables ---------------------
@@ -640,21 +640,21 @@ module grid_adaptation_module
     type(grid), intent(in) :: gr_source, gr_target
 
     integer, intent(in) :: &
-      total_idx_rho_lin_spline ! number of indices for the linear spline definition arrays
+      total_idx_rho_lin_spline ! number of indices for the linear spline definition arrays []
 
     real( kind = core_rknd ), dimension(ngrdcol, total_idx_rho_lin_spline), intent(in) :: &
-      rho_lin_spline_vals, & ! rho values at the given altitudes
-      rho_lin_spline_levels  ! altitudes for the given rho values
+      rho_lin_spline_vals, & ! rho values at the given altitudes [kg/m^3]
+      rho_lin_spline_levels  ! altitudes for the given rho values [m]
     ! Note: both these arrays need to be sorted from low to high altitude
 
     !--------------------- Local Variables ---------------------
     integer :: i, j
 
     real( kind = core_rknd ), dimension(gr_source%nzt+2) :: &
-      levels_source ! the height of the levels in the source grid
+      levels_source ! the height of the levels in the source grid [m]
 
     real( kind = core_rknd ), dimension(gr_target%nzt+2) :: &
-      levels_target ! the height of the levels in the target grid
+      levels_target ! the height of the levels in the target grid [m]
 
     !--------------------- Begin Code ---------------------
     do i = 1, ngrdcol
@@ -698,21 +698,21 @@ module grid_adaptation_module
 
     !--------------------- Input Variables ---------------------
     integer, intent(in) :: &
-      nlevel_source, & ! number of levels in the target grid
-      nlevel_target    ! number of levels in the source grid
+      nlevel_source, & ! number of levels in the target grid []
+      nlevel_target    ! number of levels in the source grid []
 
     real( kind = core_rknd ), dimension(nlevel_source), intent(in) :: &
-      levels_source ! the height of the levels in the source grid
+      levels_source ! the height of the levels in the source grid [m]
 
     real( kind = core_rknd ), dimension(nlevel_target), intent(in) :: &
-      levels_target ! the height of the levels in the target grid
+      levels_target ! the height of the levels in the target grid [m]
 
     integer, intent(in) :: &
-      total_idx_rho_lin_spline ! number of indices for the linear spline definition arrays
+      total_idx_rho_lin_spline ! number of indices for the linear spline definition arrays []
 
     real( kind = core_rknd ), dimension(total_idx_rho_lin_spline), intent(in) :: &
-      rho_lin_spline_vals, & ! rho values at the given altitudes
-      rho_lin_spline_levels  ! altitudes for the given rho values
+      rho_lin_spline_vals, & ! rho values at the given altitudes [kg/m^3]
+      rho_lin_spline_levels  ! altitudes for the given rho values [m]
     ! Note: both these arrays need to be sorted from low to high altitude
 
     !--------------------- Local Variables ---------------------
@@ -760,19 +760,19 @@ module grid_adaptation_module
     type( grid ), intent(in) :: gr_source, gr_target
 
     integer, intent(in) :: &
-      total_idx_rho_lin_spline ! number of indices for the linear spline definition arrays
+      total_idx_rho_lin_spline ! number of indices for the linear spline definition arrays []
 
     real( kind = core_rknd ), dimension(ngrdcol, total_idx_rho_lin_spline), intent(in) :: &
-      rho_lin_spline_vals, & ! rho values at the given altitudes
-      rho_lin_spline_levels  ! altitudes for the given rho values
+      rho_lin_spline_vals, & ! rho values at the given altitudes [kg/m^3]
+      rho_lin_spline_levels  ! altitudes for the given rho values [m]
     ! Note: both these arrays need to be sorted from low to high altitude
 
     !--------------------- Local Variables ---------------------
     integer :: i, j
 
-    real( kind = core_rknd ), dimension(gr_source%nzt+2) :: levels_source
+    real( kind = core_rknd ), dimension(gr_source%nzt+2) :: levels_source ! [m]
 
-    real( kind = core_rknd ), dimension(gr_target%nzt+2) :: levels_target
+    real( kind = core_rknd ), dimension(gr_target%nzt+2) :: levels_target ! [m]
 
     !--------------------- Begin Code ---------------------
     do i = 1, ngrdcol
@@ -814,22 +814,22 @@ module grid_adaptation_module
 
     !--------------------- Input Variables ---------------------
     integer, intent(in) :: &
-      total_idx_rho_lin_spline ! number of indices for the linear spline definition arrays
+      total_idx_rho_lin_spline ! number of indices for the linear spline definition arrays []
 
     real( kind = core_rknd ), dimension(total_idx_rho_lin_spline), intent(in) :: &
-      rho_lin_spline_vals, & ! rho values at the given altitudes
-      rho_lin_spline_levels  ! altitudes for the given rho values
+      rho_lin_spline_vals, & ! rho values at the given altitudes [kg/m^3]
+      rho_lin_spline_levels  ! altitudes for the given rho values [m]
     ! Note: both these arrays need to be sorted from low to high altitude
 
     integer, intent(in) :: &
-      nlevel_source, &       ! number of levels of the source grid
-      nlevel_target          ! number of levels of the target grid
+      nlevel_source, &       ! number of levels of the source grid []
+      nlevel_target          ! number of levels of the target grid []
 
     real( kind = core_rknd ), intent(in), dimension(nlevel_source) :: &
-      levels_source           ! altitudes for the source grid
+      levels_source           ! altitudes for the source grid [m]
 
     real( kind = core_rknd ), intent(in), dimension(nlevel_target) :: &
-      levels_target           ! altitudes for the target grid
+      levels_target           ! altitudes for the target grid [m]
 
     real( kind = core_rknd ), intent(in), dimension(nlevel_source-1) :: &
       field_source            ! values for a variable on the source grid
@@ -880,11 +880,11 @@ module grid_adaptation_module
     type(grid), intent(in) :: gr_source, gr_target
 
     integer, intent(in) :: &
-      total_idx_rho_lin_spline ! number of indices for the linear spline definition arrays
+      total_idx_rho_lin_spline ! number of indices for the linear spline definition arrays []
 
     real( kind = core_rknd ), dimension(ngrdcol, total_idx_rho_lin_spline), intent(in) :: &
-      rho_lin_spline_vals, & ! rho values at the given altitudes
-      rho_lin_spline_levels  ! altitudes for the given rho values
+      rho_lin_spline_vals, & ! rho values at the given altitudes [kg/m^3]
+      rho_lin_spline_levels  ! altitudes for the given rho values [m]
     ! Note: both these arrays need to be sorted from low to high altitude
 
     real( kind = core_rknd ), intent(in), dimension(ngrdcol, gr_source%nzt) :: &
@@ -923,11 +923,11 @@ module grid_adaptation_module
     type(grid), intent(in) :: gr_source, gr_target
 
     integer, intent(in) :: &
-      total_idx_rho_lin_spline ! number of indices for the linear spline definition arrays
+      total_idx_rho_lin_spline ! number of indices for the linear spline definition arrays []
 
     real( kind = core_rknd ), dimension(ngrdcol, total_idx_rho_lin_spline), intent(in) :: &
-      rho_lin_spline_vals, & ! rho values at the given altitudes
-      rho_lin_spline_levels  ! altitudes for the given rho values
+      rho_lin_spline_vals, & ! rho values at the given altitudes [kg/m^3]
+      rho_lin_spline_levels  ! altitudes for the given rho values [m]
     ! Note: both these arrays need to be sorted from low to high altitude
 
     real( kind = core_rknd ), intent(in), dimension(ngrdcol, gr_source%nzm) :: &
@@ -940,10 +940,10 @@ module grid_adaptation_module
     integer :: i, j
 
     real( kind = core_rknd ), dimension(gr_source%nzt+2) :: &
-      levels_source ! heights of the levels of the source grid
+      levels_source ! heights of the levels of the source grid [m]
 
     real( kind = core_rknd ), dimension(gr_target%nzt+2) :: &
-      levels_target ! heights of the levels of the target grid
+      levels_target ! heights of the levels of the target grid [m]
 
     !--------------------- Begin Code ---------------------
     do i = 1, ngrdcol
@@ -1003,28 +1003,28 @@ module grid_adaptation_module
 
     !--------------------- Input Variables ---------------------
     integer, intent(in) :: & 
-      total_idx_lin_spline, &  ! The total numer of indices of the spline points
-      nlevel                   ! The total numer of indices of the grid levels
+      total_idx_lin_spline, &  ! The total numer of indices of the spline points []
+      nlevel                   ! The total numer of indices of the grid levels []
 
     real( kind = core_rknd ), dimension(total_idx_lin_spline), intent(in) ::  &
       lin_spline_rho_vals,  &    ! Dry, static density                   [kg/m^3]
-      lin_spline_rho_levels      ! The altitudes of the given rho values
+      lin_spline_rho_levels      ! The altitudes of the given rho values [m]
     ! Note:  The lin_spline_rho_levels and lin_spline_rho_vals need to be arranged from
     !        lowest to highest in altitude
 
     real( kind = core_rknd ), dimension(nlevel), intent(in) :: &
-      grid_levels ! levels of grid over which the masses shoud be calculated
+      grid_levels ! levels of grid over which the masses shoud be calculated [m]
 
     !--------------------- Local Variables ---------------------
     real( kind = core_rknd ) :: &
-      val_below, & ! The rho value of the level or spline connection point below
-      level_below, & ! The altitude of the level or spline connection point below
-      mass_over_interval, & ! The total mass over one interval (zm(i) to zm(i+1)) in the grid
+      val_below, & ! The rho value of the level or spline connection point below [m]
+      level_below, & ! The altitude of the level or spline connection point below [m]
+      mass_over_interval, & ! The total mass over one interval (zm(i) to zm(i+1)) in the grid [kg]
       upper_zm_level_rho
 
     real( kind = core_rknd ), dimension(nlevel-1) :: &
       mass_per_interval ! Array to store the mass of each interval
-                        ! (grid_levels(i) to grid_levels(i+1))
+                        ! (grid_levels(i) to grid_levels(i+1)) [kg]
 
     integer :: i, j
 
@@ -1132,32 +1132,32 @@ module grid_adaptation_module
 
     !--------------------- Input Variables ---------------------
     integer, intent(in) :: & 
-      total_idx_lin_spline  ! The total numer of indices of the spline points
+      total_idx_lin_spline  ! The total numer of indices of the spline points []
 
     real( kind = core_rknd ), dimension(total_idx_lin_spline), intent(in) ::  &
       lin_spline_rho_vals,  &    ! Dry, static density                   [kg/m^3]
-      lin_spline_rho_levels      ! The altitudes of the given rho values
+      lin_spline_rho_levels      ! The altitudes of the given rho values [m]
     ! Note:  The lin_spline_rho_levels and lin_spline_rho_vals need to be arranged from
     !        lowest to highest in altitude
 
     integer, intent(in) :: & 
-      nlevel  ! The total numer of indices for grid_levels
+      nlevel  ! The total numer of indices for grid_levels []
 
     real( kind = core_rknd ), dimension(nlevel-1), intent(in) ::  &
       field      ! The field to be vertically averaged   [Units vary]
 
     real( kind = core_rknd ), dimension(nlevel), intent(in) ::  &
-      grid_levels
+      grid_levels ! [m]
 
     ! Note:  The field and grid_levels points need to be arranged from
     !        lowest to highest in altitude
 
     !--------------------- Local Variables ---------------------
     real( kind = core_rknd ), dimension(nlevel-1) :: &
-      mass_per_interval ! Array to store the mass of each interval of the target_grid
+      mass_per_interval ! Array to store the mass of each interval of the target_grid [kg]
 
     real( kind = core_rknd ) :: &
-      vertical_integral_conserve_mass
+      vertical_integral_conserve_mass ! [kg]
 
     !--------------------- Begin Code ---------------------
     ! Initializing vertical_integral_conserve_mass to avoid a compiler warning.
@@ -1191,10 +1191,10 @@ module grid_adaptation_module
 
     !--------------------- Input Variables ---------------------
     integer, intent(in) :: & 
-      g_idx  ! The total numer of indices of g_x and g_y
+      g_idx  ! The total numer of indices of g_x and g_y []
 
     real( kind = core_rknd ), dimension(g_idx), intent(in) ::  &
-      g_x,  &    ! the x coordinates of the connection points of the piecewise linear function
+      g_x,  &    ! the x coordinates of the connection points of the piecewise linear function [m]
       g_y        ! the y coordinates of the connection points of the piecewise linear function
 
     !--------------------- Local Variables ---------------------
@@ -1234,11 +1234,11 @@ module grid_adaptation_module
 
     !--------------------- Input Variables ---------------------
     integer, intent(in) :: &
-      gr_dens_idx, &   ! number of elements in gr_dens_z and gr_dens
-      num_levels       ! desired number of grid levels
+      gr_dens_idx, &   ! number of elements in gr_dens_z and gr_dens []
+      num_levels       ! desired number of grid levels []
 
     real( kind = core_rknd ), dimension(gr_dens_idx), intent(in) :: &
-      gr_dens_z, & ! the grid density z coordinates
+      gr_dens_z, & ! the grid density z coordinates [m]
       gr_dens      ! the grid density given at the z coordinates [# levs/meter]
       ! gr_dens_z and gr_dens should be ordered from the bottom to the top
 
@@ -1247,22 +1247,22 @@ module grid_adaptation_module
 
     !--------------------- Output Variables ---------------------
     real( kind = core_rknd ), dimension(gr_dens_idx), intent(out) :: &
-      gr_dens_norm_z, & ! the normalized grid density z coordinates
-      gr_dens_norm      ! the normalized grid density values given at the z coordinates
+      gr_dens_norm_z, & ! the normalized grid density z coordinates [m]
+      gr_dens_norm      ! the normalized grid density values given at the z coordinates [# levs/m]
 
     !--------------------- Local Variables ---------------------
     integer :: i
 
     real( kind = core_rknd ) :: &
-      grid_sfc, &               ! the surface height of the grid
-      grid_top, &               ! the highest point of the grid
+      grid_sfc, &               ! the surface height of the grid [m]
+      grid_top, &               ! the highest point of the grid [m]
       delta_s, &                ! delta by which the function first gets shifted,
-                                ! so the minimum of the function is above min_dens
+                                ! so the minimum of the function is above min_dens [m]
       integral_before_shift, &  ! the integral of the shifted density function before normalizing it
-      equi_dens, &              ! the grid density for an equi-distant grid
+      equi_dens, &              ! the grid density for an equi-distant grid [# levs/m]
       factor, &                 ! factor to multiply shifted function with to end up with an
                                 ! integral of num_levels-1
-      h, &                      ! absolut distance from lowest to highest point of the grid
+      h, &                      ! absolut distance from lowest to highest point of the grid [m]
       diff, zero
 
     !--------------------- Begin Code ---------------------
@@ -1331,12 +1331,12 @@ module grid_adaptation_module
 
     !--------------------- Input Variables ---------------------
     integer, intent(in) :: & 
-      gr_dens_norm_idx, &  ! The total numer of indices of gr_dens_norm_z and gr_dens_norm
-      num_levels           ! number of levels the new grid should have
+      gr_dens_norm_idx, &  ! The total numer of indices of gr_dens_norm_z and gr_dens_norm []
+      num_levels           ! number of levels the new grid should have []
 
     real( kind = core_rknd ), dimension(gr_dens_norm_idx), intent(in) ::  &
       gr_dens_norm_z,  &  ! the z coordinates of the connection points of the normalized piecewise
-                          ! linear grid density function
+                          ! linear grid density function [m]
       gr_dens_norm        ! the density values at the given z coordinates of the connection points
                           ! of the normalized piecewise linear grid density function [# levs/meter]
       ! The grid density function needs to be normalized with the number of grid levels num_levels,
@@ -1344,21 +1344,23 @@ module grid_adaptation_module
 
     !--------------------- Output Variable ---------------------
     real( kind = core_rknd ), dimension(num_levels) :: &
-      grid_heights ! the heights of the newly created grid, from bottom to top
+      grid_heights ! the heights of the newly created grid, from bottom to top [m]
 
     !--------------------- Local Variables ---------------------
     integer :: i, &
-               prev_x_ind  ! the index of the last used x coordinate
+               prev_x_ind  ! the index of the last used x coordinate []
 
     real( kind = core_rknd ) :: &
-      grid_sfc, &               ! the surface height of the grid
-      grid_top, &               ! the highest point of the grid
+      grid_sfc, &               ! the surface height of the grid [m]
+      grid_top, &               ! the highest point of the grid  [m]
       area_up_to_prev_x, &      ! the integral of the function up to the last used x coordinate
+                                ! [# levs]
       new_x_area_increment, &   ! integral from grid density function on [prev_x_ind, prev_x_ind+1]
+                                ! [# levs]
       desired_area_up_to_ith_level, & ! the desired area up to the ith grid level, should be exactly
                                       ! i, since the grid density function is normalized so that the
                                       ! integral of the whole function is num_levels-1 and since we
-                                      ! follow the equi-distribution approach
+                                      ! follow the equi-distribution approach [# levs]
       A, grid_level, slope, intercept, p_pq_formula, q_pq_formula
 
     logical :: grid_level_found
@@ -1444,23 +1446,23 @@ module grid_adaptation_module
 
     !--------------------- Input Variables ---------------------
     integer, intent(in) :: &
-      grid_heights_idx, &   ! number of elements in grid_heights
-      desired_num_levels    ! desired number of grid levels
+      grid_heights_idx, &   ! number of elements in grid_heights []
+      desired_num_levels    ! desired number of grid levels []
     ! Note: if everything worked fine, those two integers should be the same
 
     real( kind = core_rknd ), dimension(grid_heights_idx), intent(in) :: &
-      grid_heights ! the grid heights ordered from bottom to top
+      grid_heights ! the grid heights ordered from bottom to top [m]
 
     real( kind = core_rknd ), intent(in) :: &
-      desired_min_dens, &   ! the desired minimum grid density
-      desired_grid_sfc, &   ! desired surface height of the grid
-      desired_grid_top      ! desired top height of the grid
+      desired_min_dens, &   ! the desired minimum grid density [# levs/m]
+      desired_grid_sfc, &   ! desired surface height of the grid [m]
+      desired_grid_top      ! desired top height of the grid [m]
 
     !--------------------- Local Variables ---------------------
     integer :: i
 
     real( kind = core_rknd ) :: &
-      max_dist  ! the maximum distance between two grid levels, depending on desired_min_dens
+      max_dist  ! the maximum distance between two grid levels, depending on desired_min_dens [m]
 
     !--------------------- Begin Code ---------------------
     ! check if first grid element is grid_sfc
@@ -1526,35 +1528,35 @@ module grid_adaptation_module
 
     !--------------------- Input Variables ---------------------
     integer, intent(in) :: & 
-      gr_dens_idx, &  ! total numer of indices of gr_dens_z and gr_dens
-      num_levels      ! number of levels the new grid should have
+      gr_dens_idx, &  ! total numer of indices of gr_dens_z and gr_dens []
+      num_levels      ! number of levels the new grid should have []
 
     real( kind = core_rknd ), intent(in) ::  &
       min_dens  ! the minimum density the new grid should have [# levs/meter]
 
     real( kind = core_rknd ), dimension(gr_dens_idx), intent(in) ::  &
       gr_dens_z,  &   ! the z coordinates of the connection points of the piecewise linear
-                      ! grid density function
+                      ! grid density function [m]
       gr_dens         ! the values of the density function at the given z coordinates of the
                       ! connection points of the piecewise linear grid density function
                       ! [# levs/meter]
 
     !--------------------- Output Variable ---------------------
     real( kind = core_rknd ), dimension(num_levels) :: &
-      grid_heights ! the heights of the newly created grid, from bottom to top
+      grid_heights ! the heights of the newly created grid, from bottom to top [m]
 
     !--------------------- Local Variables ---------------------
     integer :: grid_heights_idx
 
     real( kind = core_rknd ), dimension(gr_dens_idx) ::  &
       gr_dens_norm_z,  &  ! the z coordinates of the connection points of the normalized piecewise
-                          ! linear grid density function
+                          ! linear grid density function [m]
       gr_dens_norm        ! the density at the given z coordinates of the connection points of the
                           ! normalized piecewise linear grid density function [# levs/meter]
 
     real( kind = core_rknd ) ::  &
-      grid_sfc,  &    ! height of the grids surface
-      grid_top        ! height of the top of the grid
+      grid_sfc,  &    ! height of the grids surface [m]
+      grid_top        ! height of the top of the grid [m]
 
     !--------------------- Begin Code ---------------------
     grid_sfc = gr_dens_z(1)
@@ -1640,14 +1642,14 @@ module grid_adaptation_module
       hydromet_dim, &
       sclr_dim, &
       edsclr_dim, &
-      total_idx_density_func, & ! total numer of indices of density_func_z and density_func_dens
+      total_idx_density_func, & ! total numer of indices of density_func_z and density_func_dens []
       idx_thvm   ! numer of indices of thvm
 
     real( kind = core_rknd ), dimension(total_idx_density_func), intent(in) ::  &
       density_func_z,  &   ! the height values of the connection points of the piecewise linear
-                           ! grid density function/profile
+                           ! grid density function/profile [m]
       density_func_dens    ! the density values of the connection points of the piecewise linear
-                           ! grid density function/profile
+                           ! grid density function/profile [# levs/m]
 
     real( kind = core_rknd ), dimension(ngrdcol), intent(in) ::  &
       sfc_elevation, p_sfc
@@ -1822,19 +1824,19 @@ module grid_adaptation_module
 
     !--------------------- Local Variables ---------------------
     integer :: &
-        num_levels, &                ! number of levels the new grid should have
+        num_levels, &                ! number of levels the new grid should have []
         total_idx_rho_lin_spline, &  ! total number of indices of the rho density
-                                     ! piecewise linear function
+                                     ! piecewise linear function []
         grid_type, &
         i
 
     real( kind = core_rknd ) ::  &
-      equi_dens,  &    ! density of the equidistant grid
+      equi_dens,  &    ! density of the equidistant grid [# levs/meter]
       min_dens,   &    ! minimum boundary of the grids density [# levs/meter]
       deltaz
 
     real( kind = core_rknd ), dimension(gr%nzm) ::  &
-      new_gr_zm      ! zm levels for the adapted grid based on the density function
+      new_gr_zm      ! zm levels for the adapted grid based on the density function [m]
 
     real( kind = core_rknd ), dimension(gr%nzt) ::  &
       thermodynamic_heights_placeholder  ! placeholder for the zt levels, but not needed
@@ -2301,19 +2303,19 @@ module grid_adaptation_module
 
     real( kind = core_rknd ), intent(in) ::  &
       grid_sfc, &  ! the grids surface; so the first level in the grid
-                   ! density function has this height
+                   ! density function has this height [m]
       grid_top     ! the grids top; so the last level in the grid
-                   ! density function has this height
+                   ! density function has this height [m]
 
     real( kind = core_rknd ), dimension(ngrdcol, nzt), intent(in) ::  &
-      zt, &      ! levels at which the values are given
+      zt, &      ! levels at which the values are given [m]
       Lscale, &  ! Length scale   [m]
-      wp2_zt     ! w'^2 on thermo. grid
+      wp2_zt     ! w'^2 on thermo. grid [m^2/s^2]
 
     !--------------------- Output Variable ---------------------
     real( kind = core_rknd ), dimension(nzt), intent(out) ::  &
       gr_dens_z,  &    ! the z value coordinates of the connection points of the piecewise linear
-                       ! grid density function
+                       ! grid density function [m]
       gr_dens  ! the values of the connection points of the piecewise linear
                ! grid density function, given on the z values of gr_dens_z [# levs/meter]
 
