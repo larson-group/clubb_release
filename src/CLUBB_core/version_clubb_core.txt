@@ -1,0 +1,86 @@
+commit 0e45d985bab99301c6ca49bbcf69e52109d67550
+Author: domkesteffen <42725900+domkesteffen@users.noreply.github.com>
+Date:   Wed Feb 19 11:48:53 2025 -0600
+
+    Renamed check_res to err_code in numerical_check.F90 for consistency (#1227)
+
+commit c7ac128837133579e64d46c7be3fe907a5d6840d
+Author: domkesteffen <42725900+domkesteffen@users.noreply.github.com>
+Date:   Wed Feb 19 11:16:13 2025 -0600
+
+    Remove err code (#1218)
+    
+    CLUBB ticket #975
+    
+    Module variable `err_code` was removed and replaced by intent(inout) subroutine parameters.
+    
+    Added messages to `error stop`s in `clubb_api_module`
+
+commit 9e59dc4769f9362564a50e74dc1aa8301bf68b34
+Author: domkesteffen <42725900+domkesteffen@users.noreply.github.com>
+Date:   Tue Feb 18 07:06:49 2025 -0600
+
+    Set l_wp2_fill_holes_tke to true by default (#1226)
+    
+    This code change is BIT_CHANGING for extreme cases (e.g. TWP_ICE, LBA, ARM_97).
+    Changed configurable_model_flags.in files and default value in model_flags.F90.
+    
+    For CLUBB ticket #1165.
+
+commit 75cd543bfb7f6754b868dc51af85c200a4395427
+Author: Gunther Huebler <huebler@uwm.edu>
+Date:   Thu Feb 13 16:12:50 2025 -0600
+
+    BIT_CHANGING bug fix that only affects l_t_dependent cases running with multiple columns, I detected this with cgils cases, but I'm not sure how it slipped through initially.
+
+commit adb2c4b1d0d1f187405f733ff704392231fcecc4
+Author: Gunther Huebler <huebler@uwm.edu>
+Date:   Fri Feb 7 16:05:24 2025 -0600
+
+    Swapping the loop order on a few kernels, I found this faster for the nvhpc compiler and it's BFB
+
+commit 112b1d1518ebaad008f69cf0337f2d6466b0ebb0
+Author: LuisHasenauer <hasenau2@uwm.edu>
+Date:   Fri Feb 7 15:39:37 2025 -0600
+
+    QuadTune: Merge in bootstrap sampling
+    
+    @LuisHasenauer added bootstrap sampling code to QuadTune.  Bootstrap calculations are performed if `useBootstrap=T`.  Luis and I checked that the best-fit parameter values and weighted chiSqd are unchanged either with `useBootstrap=T` or `useBootstrap=F`.
+
+commit d969819b327e31310ce38e44303561aab4875728
+Author: vlarson <vlarson@uwm.edu>
+Date:   Fri Feb 7 14:46:17 2025 -0600
+
+    QuadTune: Made plot_PcSensMap work when len(varPrefixes) > 1.
+    
+    For #910.
+
+commit e3707bdb9336e23f2215ba647eb2df43cdab9d9a
+Author: Gunther Huebler <37674341+huebleruwm@users.noreply.github.com>
+Date:   Mon Feb 3 12:17:52 2025 -0600
+
+    Monoflux GPU optimization (#1221)
+    
+    * Making a fast version of the serial loop to check if we even need to perform the slow version at all.
+    
+    * Updates
+    
+    * Final touches to make new version logically the same.
+    
+    * Improving comments and variables names
+
+commit 9fbd3da928e373d8cb9b7108cbe56cc997ba68e8
+Author: vlarson <vlarson@uwm.edu>
+Date:   Sat Feb 1 16:49:41 2025 -0600
+
+    QuadTune: Plot bias instead of negative bias on metricsBarChart and bias-vs-sensitivity plots.
+    
+    For #910.
+
+commit 0159cfd38c725851d8f3e92ea2c0c411fdfb2dee
+Author: vlarson <vlarson@uwm.edu>
+Date:   Sat Feb 1 09:24:20 2025 -0600
+
+    QuadTune: Add useLongTitle option, which adds extra information on the plotted quantity, if desired.
+    
+    For #910.
