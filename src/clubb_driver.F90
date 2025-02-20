@@ -2665,7 +2665,7 @@ module clubb_driver
               thlm, rtm, wprtp, wpthlp, &                                          ! Intent(inout)
               wp2, wp3, rtp2, rtp3, thlp2, thlp3, rtpthlp, &                       ! Intent(inout)
               sclrm, sclrp2, sclrp3, sclrprtp, sclrpthlp, &                        ! Intent(inout)
-              wpsclrp, edsclrm, &                                                  ! Intent(inout)
+              wpsclrp, edsclrm, err_code, &                                        ! Intent(inout)
               rcm, cloud_frac, &                                                   ! Intent(inout)
               wpthvp, wp2thvp, rtpthvp, thlpthvp, &                                ! Intent(inout)
               sclrpthvp, &                                                         ! Intent(inout)
@@ -2678,7 +2678,7 @@ module clubb_driver
               thlprcp, wprcp, w_up_in_cloud, w_down_in_cloud, &                    ! Intent(out)
               cloudy_updraft_frac, cloudy_downdraft_frac, &                        ! Intent(out)
               rcm_in_layer, cloud_cover, invrs_tau_zm, &                           ! Intent(out)
-              Lscale, err_code )                                                   ! Intent(out)
+              Lscale )                                                             ! Intent(out)
 
       if ( clubb_at_least_debug_level( 0 ) ) then
         if ( err_code == clubb_fatal_error ) then
