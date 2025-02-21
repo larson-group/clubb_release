@@ -427,15 +427,20 @@ module pdf_parameter_tests
     integer :: idx    ! Loop index
   
     integer :: &
-      iiPDF_type,           & ! Selected option for the two-component normal
-                              ! (double Gaussian) PDF type to use for the w, rt,
-                              ! and theta-l (or w, chi, and eta) portion of
-                              ! CLUBB's multivariate, two-component PDF.
-      ipdf_call_placement,  & ! Selected option for the placement of the call to
-                              ! CLUBB's PDF.
-      penta_solve_method,   & ! Option to set the penta-diagonal matrix solving method
-      tridiag_solve_method, & ! Option to set the tri-diagonal matrix solving method
-      saturation_formula      ! Integer that stores the saturation formula to be used
+      iiPDF_type,                      & ! Selected option for the two-component normal
+                                         ! (double Gaussian) PDF type to use for the w, rt,
+                                         ! and theta-l (or w, chi, and eta) portion of
+                                         ! CLUBB's multivariate, two-component PDF.
+      ipdf_call_placement,             & ! Selected option for the placement of the call to
+                                         ! CLUBB's PDF.
+      penta_solve_method,              & ! Option to set the penta-diagonal matrix solving method
+      tridiag_solve_method,            & ! Option to set the tri-diagonal matrix solving method
+      saturation_formula,              & ! Integer that stores the saturation formula to be used
+      grid_remap_method,               & ! Integer that stores what remapping technique should
+                                         ! be used to remap the values from one grid to another
+                                         ! (starts at 1, so 0 is an invalid option for this flag)
+      grid_adapt_in_time_method          ! Integer that stores how the grid should be adapted every
+                                         ! timestep or if the grid should not be adapted at all
 
     logical :: &
       l_use_precip_frac,            & ! Flag to use precipitation fraction in KK microphysics. The
@@ -555,8 +560,9 @@ module pdf_parameter_tests
                                       ! eliminates spurious drying tendencies at model top
       l_host_applies_sfc_fluxes,    & ! Use to determine whether a host model has already applied
                                       ! the surface flux, to avoid double counting.
-      l_wp2_fill_holes_tke            ! Turn on additional hole-filling for wp2
+      l_wp2_fill_holes_tke,         & ! Turn on additional hole-filling for wp2
                                       ! that takes TKE from up2 and vp2, if necessary
+      l_add_dycore_grid               ! Turn on remapping from the dycore grid
 
     integer, parameter :: iunit = 10
 
@@ -584,6 +590,8 @@ module pdf_parameter_tests
                                          penta_solve_method, &
                                          tridiag_solve_method, &
                                          saturation_formula, &
+                                         grid_remap_method, &
+                                         grid_adapt_in_time_method, &
                                          l_use_precip_frac, &
                                          l_predict_upwp_vpwp, &
                                          l_min_wp2_from_corr_wx, &
@@ -639,7 +647,8 @@ module pdf_parameter_tests
                                          l_mono_flux_lim_vm, &
                                          l_mono_flux_lim_spikefix, &
                                          l_host_applies_sfc_fluxes, &
-                                         l_wp2_fill_holes_tke )
+                                         l_wp2_fill_holes_tke, &
+                                         l_add_dycore_grid )
 
     iiPDF_type = test_pdf_type
 

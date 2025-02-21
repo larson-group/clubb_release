@@ -42,6 +42,21 @@ module model_flags
     tridiag_lu      = 2,  & ! Use tridiag_lu solver for 3 banded matrices
     penta_bicgstab  = 3     ! Use bicgstab to solve 5 banded matrices
 
+  ! Options for grid_remap_method, define
+  ! the remapping technique to remap the values from one grid to another
+  ! starts at 1, so 0 is an invalid option for this flag
+  integer, parameter, public :: &
+    cons_ullrich_remap    = 1    ! uses the remapping method proposed by Ullrich et al. in 
+                                 ! 'Arbitrary-Order Conservative and Consistent Remapping and a 
+                                 !  Theory of Linear Maps: Part II' (Formula (30))
+
+  ! Options for grid_adapt_in_time_method, either don't use this setup at all (0) or define
+  ! the variables and the way the grid density function is formed
+  integer, parameter, public :: &
+    no_grid_adaptation  = 0, & ! the grid gets initialized once at the start and
+                               ! stays constant over every timestep (default)
+    Lscale_and_wp2      = 1    ! uses Lscale and wp2 to form a grid density function
+
   logical, parameter, public ::  & 
     l_pos_def            = .false., & ! Flux limiting positive definite scheme on rtm
     l_hole_fill          = .true.,  & ! Hole filling pos def scheme on wp2,up2,rtp2,etc
@@ -130,15 +145,20 @@ module model_flags
     ! corresponding .in files which would supercede the default values!
     
     integer :: &
-      iiPDF_type,           & ! Selected option for the two-component normal
-                              ! (double Gaussian) PDF type to use for the w, rt,
-                              ! and theta-l (or w, chi, and eta) portion of
-                              ! CLUBB's multivariate, two-component PDF.
-      ipdf_call_placement,  & ! Selected option for the placement of the call to
-                              ! CLUBB's PDF.
-      penta_solve_method,   & ! Option to set the penta-diagonal matrix solving method
-      tridiag_solve_method, & ! Option to set the tri-diagonal matrix solving method
-      saturation_formula      ! Integer that stores the saturation formula to be used
+      iiPDF_type,                     & ! Selected option for the two-component normal
+                                        ! (double Gaussian) PDF type to use for the w, rt,
+                                        ! and theta-l (or w, chi, and eta) portion of
+                                        ! CLUBB's multivariate, two-component PDF.
+      ipdf_call_placement,            & ! Selected option for the placement of the call to
+                                        ! CLUBB's PDF.
+      penta_solve_method,             & ! Option to set the penta-diagonal matrix solving method
+      tridiag_solve_method,           & ! Option to set the tri-diagonal matrix solving method
+      saturation_formula,             & ! Integer that stores the saturation formula to be used
+      grid_remap_method,              & ! Integer that stores what remapping technique should
+                                        ! be used to remap from one grid to another
+                                        ! (starts at 1, so 0 is an invalid option for this flag)
+      grid_adapt_in_time_method         ! Integer that stores how the grid should be adapted every
+                                        ! timestep or if the grid should not be adapted at all
 
     logical :: &
       l_use_precip_frac,            & ! Flag to use precipitation fraction in KK microphysics. The
@@ -258,8 +278,9 @@ module model_flags
                                       ! eliminates spurious drying tendencies at model top
       l_host_applies_sfc_fluxes,    & ! Use to determine whether a host model has already applied
                                       ! the surface flux, to avoid double counting.
-      l_wp2_fill_holes_tke            ! Turn on additional hole-filling for wp2
+      l_wp2_fill_holes_tke,         & ! Turn on additional hole-filling for wp2
                                       ! that takes TKE from up2 and vp2, if necessary
+      l_add_dycore_grid               ! Turn on remapping values from the dycore grid
 
   end type clubb_config_flags_type
 
@@ -271,6 +292,8 @@ module model_flags
                                              penta_solve_method, &
                                              tridiag_solve_method, &
                                              saturation_formula, &
+                                             grid_remap_method, &
+                                             grid_adapt_in_time_method, &
                                              l_use_precip_frac, &
                                              l_predict_upwp_vpwp, &
                                              l_min_wp2_from_corr_wx, &
@@ -326,7 +349,8 @@ module model_flags
                                              l_mono_flux_lim_vm, &
                                              l_mono_flux_lim_spikefix, &
                                              l_host_applies_sfc_fluxes, &
-                                             l_wp2_fill_holes_tke )
+                                             l_wp2_fill_holes_tke, &
+                                             l_add_dycore_grid )
 
 ! Description:
 !   Sets all CLUBB flags to a default setting.
@@ -339,15 +363,20 @@ module model_flags
 
     ! Output variables
     integer, intent(out) :: &
-      iiPDF_type,           & ! Selected option for the two-component normal
-                              ! (double Gaussian) PDF type to use for the w, rt,
-                              ! and theta-l (or w, chi, and eta) portion of
-                              ! CLUBB's multivariate, two-component PDF.
-      ipdf_call_placement,  & ! Selected option for the placement of the call to
-                              ! CLUBB's PDF.
-      penta_solve_method,   & ! Option to set the penta-diagonal matrix solving method
-      tridiag_solve_method, & ! Option to set the tri-diagonal matrix solving method
-      saturation_formula      ! Integer that stores the saturation formula to be used
+      iiPDF_type,                     & ! Selected option for the two-component normal
+                                        ! (double Gaussian) PDF type to use for the w, rt,
+                                        ! and theta-l (or w, chi, and eta) portion of
+                                        ! CLUBB's multivariate, two-component PDF.
+      ipdf_call_placement,            & ! Selected option for the placement of the call to
+                                        ! CLUBB's PDF.
+      penta_solve_method,             & ! Option to set the penta-diagonal matrix solving method
+      tridiag_solve_method,           & ! Option to set the tri-diagonal matrix solving method
+      saturation_formula,             & ! Integer that stores the saturation formula to be used
+      grid_remap_method,              & ! Integer that stores what remapping technique should
+                                        ! be used to remap from one grid to another
+                                        ! (starts at 1, so 0 is an invalid input)
+      grid_adapt_in_time_method         ! Integer that stores how the grid should be adapted every
+                                        ! timestep or if the grid should not be adapted at all
 
     logical, intent(out) :: &
       l_use_precip_frac,            & ! Flag to use precipitation fraction in KK microphysics. The
@@ -467,8 +496,9 @@ module model_flags
                                       ! eliminates spurious drying tendencies at model top
       l_host_applies_sfc_fluxes,    & ! Use to determine whether a host model has already applied
                                       ! the surface flux, to avoid double counting.
-      l_wp2_fill_holes_tke            ! Turn on additional hole-filling for wp2
+      l_wp2_fill_holes_tke,         & ! Turn on additional hole-filling for wp2
                                       ! that takes TKE from up2 and vp2, if necessary
+      l_add_dycore_grid               ! Turn on remapping from the dycore grid
 
 !-----------------------------------------------------------------------
     ! Begin code
@@ -480,6 +510,8 @@ module model_flags
     penta_solve_method = lapack
     tridiag_solve_method = lapack
     saturation_formula = saturation_flatau
+    grid_remap_method = cons_ullrich_remap
+    grid_adapt_in_time_method = no_grid_adaptation
     l_use_precip_frac = .true.
     l_predict_upwp_vpwp = .true.
     l_min_wp2_from_corr_wx = .false.
@@ -540,6 +572,7 @@ module model_flags
     l_mono_flux_lim_spikefix = .true.
     l_host_applies_sfc_fluxes = .false.
     l_wp2_fill_holes_tke = .true.
+    l_add_dycore_grid = .false.
 
     return
   end subroutine set_default_clubb_config_flags
@@ -550,6 +583,8 @@ module model_flags
                                                  penta_solve_method, &
                                                  tridiag_solve_method, &
                                                  saturation_formula, &
+                                                 grid_remap_method, &
+                                                 grid_adapt_in_time_method, &
                                                  l_use_precip_frac, &
                                                  l_predict_upwp_vpwp, &
                                                  l_min_wp2_from_corr_wx, &
@@ -606,6 +641,7 @@ module model_flags
                                                  l_mono_flux_lim_spikefix, &
                                                  l_host_applies_sfc_fluxes, &
                                                  l_wp2_fill_holes_tke, &
+                                                 l_add_dycore_grid, &
                                                  clubb_config_flags )
 
 ! Description:
@@ -619,15 +655,20 @@ module model_flags
 
     ! Input variables
     integer, intent(in) :: &
-      iiPDF_type,           & ! Selected option for the two-component normal
-                              ! (double Gaussian) PDF type to use for the w, rt,
-                              ! and theta-l (or w, chi, and eta) portion of
-                              ! CLUBB's multivariate, two-component PDF.
-      ipdf_call_placement,  & ! Selected option for the placement of the call to
-                              ! CLUBB's PDF.
-      penta_solve_method,   & ! Option to set the penta-diagonal matrix solving method
-      tridiag_solve_method, & ! Option to set the tri-diagonal matrix solving method
-      saturation_formula      ! Integer that stores the saturation formula to be used
+      iiPDF_type,                     & ! Selected option for the two-component normal
+                                        ! (double Gaussian) PDF type to use for the w, rt,
+                                        ! and theta-l (or w, chi, and eta) portion of
+                                        ! CLUBB's multivariate, two-component PDF.
+      ipdf_call_placement,            & ! Selected option for the placement of the call to
+                                        ! CLUBB's PDF.
+      penta_solve_method,             & ! Option to set the penta-diagonal matrix solving method
+      tridiag_solve_method,           & ! Option to set the tri-diagonal matrix solving method
+      saturation_formula,             & ! Integer that stores the saturation formula to be used
+      grid_remap_method,              & ! Integer that stores what remapping technique should
+                                        ! be used to remap from one grid to another
+                                        ! (starts at 1, so 0 is an invalid option for this flag)
+      grid_adapt_in_time_method         ! Integer that stores how the grid should be adapted every
+                                        ! timestep or if the grid should not be adapted at all
 
     logical, intent(in) :: &
       l_use_precip_frac,            & ! Flag to use precipitation fraction in KK microphysics. The
@@ -747,8 +788,9 @@ module model_flags
                                       ! eliminates spurious drying tendencies at model top
       l_host_applies_sfc_fluxes,    & ! Use to determine whether a host model has already applied
                                       ! the surface flux, to avoid double counting.
-      l_wp2_fill_holes_tke            ! Turn on additional hole-filling for wp2
+      l_wp2_fill_holes_tke,         & ! Turn on additional hole-filling for wp2
                                       ! that takes TKE from up2 and vp2, if necessary
+      l_add_dycore_grid               ! Turn on remapping from the dycore grid
 
     ! Output variables
     type(clubb_config_flags_type), intent(out) :: &
@@ -757,11 +799,21 @@ module model_flags
 !-----------------------------------------------------------------------
     ! Begin code
 
+    if ( grid_remap_method <= 0 ) then
+      error stop 'Invalid value for the flag grid_remap_method. Should be greater or equal to 1.'
+    end if
+
+    if ( grid_adapt_in_time_method > 0 ) then
+      error stop 'The grid adaptation method is not yet ready implemented.'
+    end if
+
     clubb_config_flags%iiPDF_type = iiPDF_type
     clubb_config_flags%ipdf_call_placement = ipdf_call_placement
     clubb_config_flags%penta_solve_method = penta_solve_method
     clubb_config_flags%tridiag_solve_method = tridiag_solve_method
     clubb_config_flags%saturation_formula = saturation_formula
+    clubb_config_flags%grid_remap_method = grid_remap_method
+    clubb_config_flags%grid_adapt_in_time_method = grid_adapt_in_time_method
     clubb_config_flags%l_use_precip_frac = l_use_precip_frac
     clubb_config_flags%l_predict_upwp_vpwp = l_predict_upwp_vpwp
     clubb_config_flags%l_min_wp2_from_corr_wx = l_min_wp2_from_corr_wx
@@ -818,6 +870,7 @@ module model_flags
     clubb_config_flags%l_mono_flux_lim_spikefix = l_mono_flux_lim_spikefix
     clubb_config_flags%l_host_applies_sfc_fluxes = l_host_applies_sfc_fluxes
     clubb_config_flags%l_wp2_fill_holes_tke = l_wp2_fill_holes_tke
+    clubb_config_flags%l_add_dycore_grid = l_add_dycore_grid
 
     return
   end subroutine initialize_clubb_config_flags_type
@@ -848,6 +901,9 @@ module model_flags
     write(iunit,*) "ipdf_call_placement = ", clubb_config_flags%ipdf_call_placement
     write(iunit,*) "penta_solve_method = ", clubb_config_flags%penta_solve_method
     write(iunit,*) "tridiag_solve_method = ", clubb_config_flags%tridiag_solve_method
+    write(iunit,*) "grid_remap_method = ", &
+                    clubb_config_flags%grid_remap_method
+    write(iunit,*) "grid_adapt_in_time_method = ", clubb_config_flags%grid_adapt_in_time_method
     write(iunit,*) "l_use_precip_frac = ", clubb_config_flags%l_use_precip_frac
     write(iunit,*) "l_predict_upwp_vpwp = ", clubb_config_flags%l_predict_upwp_vpwp
     write(iunit,*) "l_min_wp2_from_corr_wx = ", clubb_config_flags%l_min_wp2_from_corr_wx
@@ -909,6 +965,7 @@ module model_flags
     write(iunit,*) "l_mono_flux_lim_spikefix = ",clubb_config_flags%l_mono_flux_lim_spikefix
     write(iunit,*) "l_host_applies_sfc_fluxes = ",clubb_config_flags%l_host_applies_sfc_fluxes
     write(iunit,*) "l_wp2_fill_holes_tke = ",clubb_config_flags%l_wp2_fill_holes_tke
+    write(iunit,*) "l_add_dycore_grid = ",clubb_config_flags%l_add_dycore_grid
 
     return
   end subroutine print_clubb_config_flags

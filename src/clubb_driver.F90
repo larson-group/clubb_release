@@ -277,6 +277,11 @@ module clubb_driver
     use cloud_sed_module, only: &
         cloud_drop_sed  ! Procedure(s)
 
+    use grid_adaptation_module, only: &
+      setup_simple_gr_dycore, calc_grid_dens_func, adapt_grid  ! Procedure(s)
+
+    use time_dependent_input, only: initialize_t_dependent_input ! Procedure(s)
+
 #ifdef _OPENMP
     ! Because Fortran I/O is not thread safe, we use this here to
     ! ensure that no model uses the same file number simultaneously
@@ -741,6 +746,7 @@ module clubb_driver
       time_loop_init,  &	   ! time spent in the beginning part of the main loop [s]
       time_loop_end, &             ! time spent in the end part of the main loop [s]
       time_output_multi_col, &     ! Time spent outputting multi_col data
+      time_adapt_grid, &           ! Time spent adapting the grid and remapping all the values
       time_clubb_advance, &        ! time spent in advance_clubb_core [s]
       time_clubb_pdf, &      	   ! time spent in setup_pdf_parameters 
 				   !	and hydrometeor_mixed_moments [s]
@@ -772,15 +778,20 @@ module clubb_driver
       nu_vert_res_dep    ! Vertical resolution dependent nu values
 
     integer :: &
-      iiPDF_type,           & ! Selected option for the two-component normal
-                              ! (double Gaussian) PDF type to use for the w, rt,
-                              ! and theta-l (or w, chi, and eta) portion of
-                              ! CLUBB's multivariate, two-component PDF.
-      ipdf_call_placement,  & ! Selected option for the placement of the call to
-                              ! CLUBB's PDF.
-      penta_solve_method,   & ! Option to set the penta-diagonal matrix solving method
-      tridiag_solve_method, & ! Option to set the tri-diagonal matrix solving method
-      saturation_formula      ! Integer that stores the saturation formula to be used
+      iiPDF_type,                     & ! Selected option for the two-component normal
+                                        ! (double Gaussian) PDF type to use for the w, rt,
+                                        ! and theta-l (or w, chi, and eta) portion of
+                                        ! CLUBB's multivariate, two-component PDF.
+      ipdf_call_placement,            & ! Selected option for the placement of the call to
+                                        ! CLUBB's PDF.
+      penta_solve_method,             & ! Option to set the penta-diagonal matrix solving method
+      tridiag_solve_method,           & ! Option to set the tri-diagonal matrix solving method
+      saturation_formula,             & ! Integer that stores the saturation formula to be used
+      grid_remap_method,              & ! Integer that stores what remapping technique should
+                                        ! be used to remap the values from one grid to another
+                                        ! (starts with 1, so 0 is invalid value for flag)
+      grid_adapt_in_time_method         ! Integer that stores how the grid should be adapted every
+                                        ! timestep or if the grid should not be adapted at all
 
     logical :: &
       l_use_precip_frac,            & ! Flag to use precipitation fraction in KK microphysics. The
@@ -900,8 +911,9 @@ module clubb_driver
                                       ! eliminates spurious drying tendencies at model top
       l_host_applies_sfc_fluxes,    & ! Use to determine whether a host model has already applied 
                                       ! the surface flux, to avoid double counting.
-      l_wp2_fill_holes_tke            ! Turn on additional hole-filling for wp2
+      l_wp2_fill_holes_tke,         & ! Turn on additional hole-filling for wp2
                                       ! that takes TKE from up2 and vp2, if necessary
+      l_add_dycore_grid               ! Turn on remapping values from a dycore grid
 
     type(clubb_config_flags_type) :: &
       clubb_config_flags ! Derived type holding all configurable CLUBB flags
@@ -946,7 +958,8 @@ module clubb_driver
 
     namelist /configurable_clubb_flags_nl/ &
       iiPDF_type, ipdf_call_placement, penta_solve_method, tridiag_solve_method, &
-      saturation_formula, &
+      saturation_formula, grid_remap_method, &
+      grid_adapt_in_time_method, &
       l_upwind_xpyp_ta, l_upwind_xm_ma, &
       l_tke_aniso, l_vert_avg_closure, l_standard_term_ta, &
       l_partial_upwind_wp3, l_godunov_upwind_wpxp_ta, l_godunov_upwind_xpyp_ta, &
@@ -964,13 +977,24 @@ module clubb_driver
       l_modify_limiters_for_cnvg_test, l_enable_relaxed_clipping, &
       l_linearize_pbl_winds, l_mono_flux_lim_thlm, &
       l_mono_flux_lim_rtm, l_mono_flux_lim_um, l_mono_flux_lim_vm, l_mono_flux_lim_spikefix, &
-      l_host_applies_sfc_fluxes, l_wp2_fill_holes_tke
+      l_host_applies_sfc_fluxes, l_wp2_fill_holes_tke, &
+      l_add_dycore_grid
 
     character(len=100) :: &
       output_file_prefix
 
     logical :: &
       l_last_timestep
+
+    type( grid ) :: &
+      gr_dycore ! only set and used, if l_add_dycore_grid is .true
+
+    real( kind = core_rknd ), dimension(:,:), allocatable :: &
+      rho_ds_zm_dycore ! only set and used, if l_add_dycore_grid is .true
+
+    real( kind = core_rknd ), dimension(:), allocatable :: &
+      gr_dens_z, &     ! levels at which the grid density is given
+      gr_dens          ! grid density at the given levels in gr_dens_z [# levs/meter]
 
 !-----------------------------------------------------------------------
     ! Begin code
@@ -1076,6 +1100,8 @@ module clubb_driver
                                          penta_solve_method, & ! Intent(out)
                                          tridiag_solve_method, & ! Intent(out)
                                          saturation_formula, &  ! Intent(out)
+                                         grid_remap_method, & ! Intent(out)
+                                         grid_adapt_in_time_method, & ! Intent(out)
                                          l_use_precip_frac, & ! Intent(out)
                                          l_predict_upwp_vpwp, & ! Intent(out)
                                          l_min_wp2_from_corr_wx, & ! Intent(out)
@@ -1131,7 +1157,8 @@ module clubb_driver
                                          l_mono_flux_lim_vm, & ! Intent(out)
                                          l_mono_flux_lim_spikefix, & ! Intent(out)
                                          l_host_applies_sfc_fluxes, & ! Intent(out)
-                                         l_wp2_fill_holes_tke ) ! Intent(out)
+                                         l_wp2_fill_holes_tke, & ! Intent(out)
+                                         l_add_dycore_grid ) ! Intent(out)
 
     ! Read namelist file
     open(unit=iunit, file=trim( runfile ), status='old')
@@ -1529,6 +1556,8 @@ module clubb_driver
                                              penta_solve_method, & ! Intent(in)
                                              tridiag_solve_method, & ! Intent(in)
                                              saturation_formula, & ! Intent(in)
+                                             grid_remap_method, & ! Intent(in)
+                                             grid_adapt_in_time_method, & ! Intent(in)
                                              l_use_precip_frac, & ! Intent(in)
                                              l_predict_upwp_vpwp, & ! Intent(in)
                                              l_min_wp2_from_corr_wx, & ! Intent(in)
@@ -1585,6 +1614,7 @@ module clubb_driver
                                              l_mono_flux_lim_spikefix, & ! Intent(in)
                                              l_host_applies_sfc_fluxes, & ! Intent(in)
                                              l_wp2_fill_holes_tke, & ! Intent(in)
+                                             l_add_dycore_grid, & ! Intent(out)
                                              clubb_config_flags ) ! Intent(out)
 
     ! Printing configurable CLUBB flags Inputs
@@ -1857,6 +1887,24 @@ module clubb_driver
 
     allocate( wpthlp_sfc(ngrdcol), wprtp_sfc(ngrdcol), upwp_sfc(ngrdcol), vpwp_sfc(ngrdcol) )
 
+    if ( l_add_dycore_grid ) then
+      ! Initialize the dycore grid
+      call setup_simple_gr_dycore( 31, gr%zm(1,1), gr%zm(1,gr%nzm), gr_dycore ) ! always set to 31
+                                                                                ! since the host
+                                                                                ! model has 31
+                                                                                ! levels
+      allocate( rho_ds_zm_dycore(ngrdcol, gr_dycore%nzm) ) ! dry, static density: 
+                                                           ! m-levs of dycore grid
+    else
+      ! if no interpolation should be used, rho_ds_zm_dycore is not needed and we can use a 
+      ! dummy variable
+      allocate( rho_ds_zm_dycore(ngrdcol, 1) ) ! dry, static density: m-levs of dycore grid
+    end if
+
+    if (grid_adapt_in_time_method > 0) then
+      allocate( gr_dens_z(gr%nzt) )
+      allocate( gr_dens(gr%nzt) )
+    end if
 
     ! Variables for PDF closure scheme
     call init_pdf_params( gr%nzt, ngrdcol, pdf_params )
@@ -2063,6 +2111,8 @@ module clubb_driver
     X_mixt_comp_all_levs = -999
     lh_sample_point_weights = -999._core_rknd
 
+    rho_ds_zm_dycore = zero
+
     ! Check for errors in check_clubb_settings_api and setup_parameters_api
     if ( clubb_at_least_debug_level( 0 ) ) then
         if ( err_code == clubb_fatal_error ) then
@@ -2101,22 +2151,26 @@ module clubb_driver
     ! Therefore it should be executed prior to a restart. The restart should overwrite
     ! the initial sounding anyway.
     call initialize_clubb( &
-          gr, ngrdcol, iunit, trim( forcings_file_path ), p_sfc, zm_init, & ! Intent(in)
-          sclr_dim, edsclr_dim, sclr_idx,                                 & ! Intent(in)
-          clubb_config_flags,                                             & ! Intent(in)
-          l_modify_ic_with_cubic_int,                                     & ! Intent(in)
-          thlm, rtm, um, vm, ug, vg, wp2, up2, vp2, rcm,                  & ! Intent(inout)
-          wm_zt, wm_zm, em, exner,                                        & ! Intent(inout)
-          thvm, p_in_Pa,                                                  & ! Intent(inout)
-          rho, rho_zm, rho_ds_zm, rho_ds_zt,                              & ! Intent(inout)
-          invrs_rho_ds_zm, invrs_rho_ds_zt,                               & ! Intent(inout)
-          thv_ds_zm, thv_ds_zt,                                           & ! Intent(inout)
-          rtm_ref, thlm_ref,                                              & ! Intent(inout)
-          um_ref, vm_ref,                                                 & ! Intent(inout)
-          Ncm, Nc_in_cloud, Nccnm,                                        & ! Intent(inout)
-          deep_soil_T_in_K, sfc_soil_T_in_K, veg_T_in_K,                  & ! Intent(inout)
-          sclrm, edsclrm )                                                  ! Intent(out)
-
+          gr, ngrdcol, iunit, trim( forcings_file_path ), p_sfc, zm_init,  & ! Intent(in)
+          sclr_dim, edsclr_dim, sclr_idx,                                  & ! Intent(in)
+          clubb_config_flags,                                              & ! Intent(in)
+          l_modify_ic_with_cubic_int,                                      & ! Intent(in)
+          l_add_dycore_grid,                                               & ! Intent(in)
+          grid_adapt_in_time_method,                                       & ! Intent(in)
+          gr_dycore,                                                       & ! Intent(in)
+          thlm, rtm, um, vm, ug, vg, wp2, up2, vp2, rcm,                   & ! Intent(inout)
+          wm_zt, wm_zm, em, exner,                                         & ! Intent(inout)
+          thvm, p_in_Pa,                                                   & ! Intent(inout)
+          rho, rho_zm, rho_ds_zm, rho_ds_zt,                               & ! Intent(inout)
+          invrs_rho_ds_zm, invrs_rho_ds_zt,                                & ! Intent(inout)
+          thv_ds_zm, thv_ds_zt,                                            & ! Intent(inout)
+          rtm_ref, thlm_ref,                                               & ! Intent(inout) 
+          um_ref, vm_ref,                                                  & ! Intent(inout)
+          Ncm, Nc_in_cloud, Nccnm,                                         & ! Intent(inout)
+          deep_soil_T_in_K, sfc_soil_T_in_K, veg_T_in_K,                   & ! Intent(inout)
+          sclrm, edsclrm,                                                  & ! Intent(out)
+          rho_ds_zm_dycore )                                                 ! Intent(out)
+    
     if ( clubb_at_least_debug_level( 0 ) ) then
         if ( err_code == clubb_fatal_error ) then
             ! At this point, input fields haven't been set up, so don't clean them up.
@@ -2219,8 +2273,8 @@ module clubb_driver
 !$OMP CRITICAL
     if ( stats_metadata%l_output_rad_files ) then
 
-      ! Initialize statistics output, note that this will allocate/initialize stats variables for all
-      ! columns, but only create the stats files for the first columns
+      ! Initialize statistics output, note that this will allocate/initialize stats
+      ! variables for all columns, but only create the stats files for the first columns
       call stats_init( iunit, fname_prefix, output_dir, l_stats, & ! In
                       stats_fmt, stats_tsamp, stats_tout, runfile, & ! In
                       hydromet_dim, sclr_dim, edsclr_dim, sclr_tol, & ! In
@@ -2241,8 +2295,8 @@ module clubb_driver
 
     else
 
-      ! Initialize statistics output, note that this will allocate/initialize stats variables for all
-      ! columns, but only create the stats files for the first columns
+      ! Initialize statistics output, note that this will allocate/initialize stats
+      ! variables for all columns, but only create the stats files for the first columns
       call stats_init( iunit, fname_prefix, output_dir, l_stats, & ! In
                       stats_fmt, stats_tsamp, stats_tout, runfile, & ! In
                       hydromet_dim, sclr_dim, edsclr_dim, sclr_tol, & ! In
@@ -2344,6 +2398,7 @@ module clubb_driver
     time_microphys_scheme = 0.0_core_rknd
     time_loop_end = 0.0_core_rknd
     time_output_multi_col = 0.0_core_rknd
+    time_adapt_grid = 0.0_core_rknd
     time_total = 0.0_core_rknd
     time_stop = 0.0_core_rknd
     time_start = 0.0_core_rknd
@@ -2531,7 +2586,7 @@ module clubb_driver
       call calculate_thvm( gr%nzt, ngrdcol, &
                            thlm, rtm, rcm, exner, thv_ds_zt, &
                            thvm )
-
+      
       ! Set large-scale tendencies and subsidence profiles
       call prescribe_forcings( gr, gr%nzm, gr%nzt, ngrdcol, &
                                sclr_dim, edsclr_dim, sclr_idx, & ! In
@@ -2541,6 +2596,11 @@ module clubb_driver
                                l_modify_bc_for_cnvg_test, & ! In
                                clubb_config_flags%saturation_formula, & ! In
                                stats_metadata, stats_sfc, & ! In
+                               l_add_dycore_grid, & ! In
+                               grid_remap_method, & ! In
+                               gr%nzm, rho_ds_zm(1,:), &
+                               gr%zm(1,:), &
+                               gr_dycore, rho_ds_zm_dycore, & ! In
                                rtm, wm_zm, wm_zt, ug, vg, um_ref, vm_ref, & ! Inout
                                thlm_forcing, rtm_forcing, um_forcing, & ! Inout
                                vm_forcing, wprtp_forcing, wpthlp_forcing, & ! Inout
@@ -3147,6 +3207,73 @@ module clubb_driver
 
       call cpu_time(time_stop)
       time_output_multi_col = time_output_multi_col + time_stop - time_start
+
+      if ( grid_adapt_in_time_method > 0 .and. modulo(itime, 1) == 0) then
+
+        call cpu_time(time_start)
+      
+        if ( grid_adapt_in_time_method == 1 ) then
+      
+          call calc_grid_dens_func( ngrdcol, gr%nzt, gr%zt, &
+                                    Lscale, wp2_zt, &
+                                    gr%zm(1,1), gr%zm(1,gr%nzm), &
+                                    gr_dens_z, gr_dens )
+      
+        else if ( grid_adapt_in_time_method > 1 ) then
+      
+          write(fstderr,*) 'There is currently no grid adaptation method implemented for ', &
+                           'grid_adapt_in_time_method=', grid_adapt_in_time_method
+        
+        end if
+
+        call adapt_grid( ngrdcol, gr%nzt, &                                      ! Intent(in)
+                         gr_dens_z, gr_dens, &                                   ! Intent(in)
+                         sfc_elevation, l_implemented, &                         ! Intent(in)
+                         hydromet_dim, sclr_dim, edsclr_dim, &                   ! Intent(in)
+                         thvm, gr%nzt, p_sfc, &                                  ! Intent(in)
+                         grid_remap_method, &                                    ! Intent(in)
+                         gr, &                                                   ! Intent(inout)
+                         thlm_forcing, rtm_forcing, um_forcing, vm_forcing, &    ! Intent(inout)
+                         sclrm_forcing, edsclrm_forcing, wprtp_forcing, &        ! Intent(inout)
+                         wpthlp_forcing, rtp2_forcing, thlp2_forcing, &          ! Intent(inout)
+                         rtpthlp_forcing, wm_zm, wm_zt, &                        ! Intent(inout)
+                         rtm_ref, thlm_ref, um_ref, vm_ref, ug, vg, &            ! Intent(inout)
+                         p_in_Pa, rho_zm, rho, exner, &                          ! Intent(inout)
+                         rho_ds_zm, rho_ds_zt, invrs_rho_ds_zm, &                ! Intent(inout)
+                         invrs_rho_ds_zt, thv_ds_zm, thv_ds_zt, &                ! Intent(inout)
+                         rfrzm, wphydrometp, &                                   ! Intent(inout)
+                         wp2hmp, rtphmp_zt, thlphmp_zt, &                        ! Intent(inout)
+                         um, vm, upwp, vpwp, up2, vp2, up3, vp3, &               ! Intent(inout)
+                         thlm, rtm, wprtp, wpthlp, &                             ! Intent(inout)
+                         wp2, wp3, rtp2, rtp3, thlp2, thlp3, rtpthlp, &          ! Intent(inout)
+                         sclrm, sclrp2, sclrp3, sclrprtp, sclrpthlp, &           ! Intent(inout)
+                         wpsclrp, edsclrm, &                                     ! Intent(inout)
+                         rcm, cloud_frac, &                                      ! Intent(inout)
+                         wpthvp, wp2thvp, rtpthvp, thlpthvp, &                   ! Intent(inout)
+                         sclrpthvp, &                                            ! Intent(inout)
+                         wp2rtp, wp2thlp, uprcp, vprcp, rc_coef_zm, wp4, &       ! Intent(inout)
+                         wpup2, wpvp2, wp2up2, wp2vp2, ice_supersat_frac, &      ! Intent(inout)
+                         um_pert, vm_pert, upwp_pert, vpwp_pert, &               ! Intent(inout)
+                         Kh_zm, Kh_zt, &                                         ! Intent(inout)
+                         thlprcp, wprcp, w_up_in_cloud, w_down_in_cloud, &       ! Intent(inout)
+                         cloudy_updraft_frac, cloudy_downdraft_frac, &           ! Intent(inout)
+                         rcm_in_layer, cloud_cover, invrs_tau_zm, &              ! Intent(inout)
+                         Lscale )                                                ! Intent(inout)
+
+        if ( .not. l_add_dycore_grid ) then
+          ! if we want to adapt the grid over time, but don't want to simulate the host model by
+          ! getting forcings on the dycore grid, we need to adjust the forcings everytime for the
+          ! newly created grid from the raw data in the forcings file
+          ! TODO does this only work with 1D input?
+          call initialize_t_dependent_input &
+                       ( iunit, runtype, gr%nzt, gr%zt(1,:), p_in_Pa, &
+                         l_add_dycore_grid, &
+                         grid_adapt_in_time_method )
+        end if
+        
+        call cpu_time(time_stop)
+        time_adapt_grid = time_adapt_grid + time_stop - time_start
+      end if
     
       if ( clubb_at_least_debug_level( 0 ) ) then
         if ( err_code == clubb_fatal_error ) exit
@@ -3170,10 +3297,10 @@ module clubb_driver
     ! Check if time budgets sum up
     if ((time_total * (one + timing_tol) < (time_loop_init + time_clubb_advance +  &
       time_clubb_pdf + time_SILHS + time_microphys_scheme +    &
-      time_microphys_advance + time_loop_end)) .or.                  &
+      time_microphys_advance + time_adapt_grid + time_loop_end)) .or.                  &
       (time_total * (one - timing_tol) > (time_loop_init + time_clubb_advance +    &
       time_clubb_pdf + time_SILHS + time_microphys_scheme +    &
-      time_microphys_advance + time_loop_end))) then
+      time_microphys_advance + time_adapt_grid + time_loop_end))) then
 
       ! print warning to stderror and stdout 
       write(unit=fstderr, fmt='(a)') 'WARNING! Main loop timing budget has errors &
@@ -3200,6 +3327,10 @@ module clubb_driver
       time_loop_end
     write(unit=fstdout, fmt='(a,f10.4)') 'CLUBB-TIMER time_output_multi_col =  ', &
       time_output_multi_col
+    if ( grid_adapt_in_time_method > 0 ) then
+      write(unit=fstdout, fmt='(a,f10.4)') 'CLUBB-TIMER time_adapt_grid =        ', &
+        time_adapt_grid
+    end if
     write(unit=fstdout, fmt='(a,f10.4)') 'CLUBB-TIMER time_total =             ', &
       time_total
 
@@ -3364,6 +3495,11 @@ module clubb_driver
                 lh_rv_clipped, lh_Nc_clipped, &
                 X_mixt_comp_all_levs, lh_sample_point_weights, Nc_in_cloud )
 
+    if ( grid_adapt_in_time_method > 0 ) then
+      deallocate( gr_dens_z )
+      deallocate( gr_dens )
+    end if
+
     return
 
   end subroutine run_clubb
@@ -3374,6 +3510,9 @@ module clubb_driver
                sclr_dim, edsclr_dim, sclr_idx, &
                clubb_config_flags, &
                l_modify_ic_with_cubic_int, &
+               l_add_dycore_grid, &
+               grid_adapt_in_time_method, &
+               gr_dycore, &
                thlm, rtm, um, vm, ug, vg, wp2, up2, vp2, rcm, &
                wm_zt, wm_zm, em, exner, &
                thvm, p_in_Pa, &
@@ -3384,7 +3523,8 @@ module clubb_driver
                um_ref, vm_ref, &
                Ncm, Nc_in_cloud, Nccnm, &
                deep_soil_T_in_K, sfc_soil_T_in_K, veg_T_in_K, &
-               sclrm, edsclrm )
+               sclrm, edsclrm, &
+               rho_ds_zm_dycore )
     ! Description:
     !   Execute the necessary steps for the initialization of the
     !   CLUBB model run.
@@ -3460,6 +3600,11 @@ module clubb_driver
     use array_index, only: &
       sclr_idx_type
 
+    use interpolation, only: &
+      lin_interp_between_grids
+
+    use constants_clubb, only: fstderr !-------------------------- Variables(s)
+
     implicit none
 
     intrinsic :: min, max, trim, sqrt, size
@@ -3500,6 +3645,17 @@ module clubb_driver
     ! requires a special sounding.in file with many additional sounding levels.
     logical, intent(in) :: &
       l_modify_ic_with_cubic_int
+
+    logical, intent(in) :: &
+      l_add_dycore_grid ! flag to set remapping from dycore to on or off
+
+    integer, intent(in) :: &
+      grid_adapt_in_time_method   ! Integer flag to see if grid should be adapted over time and if
+                                  ! so what parameters should be used to setup the grid
+                                  ! density function
+
+    type( grid ), intent(in) :: &
+      gr_dycore  ! only set and used if l_add_dycore_grid=.true.
 
     ! Output
     real( kind = core_rknd ), dimension(ngrdcol,gr%nzt), intent(inout) :: &
@@ -3555,6 +3711,9 @@ module clubb_driver
     real( kind = core_rknd ), dimension(ngrdcol,gr%nzt,edsclr_dim), intent(out) :: &
       edsclrm    ! Eddy diffusivity passive scalar [units vary]
 
+    real( kind = core_rknd ), dimension(ngrdcol,gr_dycore%nzm), intent(out) :: &
+      rho_ds_zm_dycore  ! Dry, static density (moment. levs.) on dycore grid  [kg/m^3]
+
     ! Local Variables
 
     real( kind = core_rknd ), dimension(ngrdcol,gr%nzm) :: &
@@ -3574,6 +3733,9 @@ module clubb_driver
       subs_type     ! Type of large-scale subsidence sounding
 
     integer :: i, k ! Loop index
+
+    real( kind = core_rknd ), dimension(ngrdcol,gr_dycore%nzt) :: &
+      p_in_Pa_dycore  ! p_in_Pa interpolated to the dycore grid
 
     !---- Begin code ----
 
@@ -3614,7 +3776,7 @@ module clubb_driver
     else
       ! lin_int_buffer et al. are set to zero in clubb_model_settings.
     end if
-
+    
     ! Determine initial value cloud droplet number concentration when Nc
     ! is predicted.
     Nc_in_cloud = Nc0_in_cloud / rho
@@ -3716,15 +3878,50 @@ module clubb_driver
                                        up2_vp2_sponge_damp_profile )   ! Intent(out)
     endif
 
-
-
-    ! Initilize Time Dependant Input
-
-    if( l_t_dependent ) then
-      call initialize_t_dependent_input &
-                   ( iunit, runtype, gr%nzt, gr%zt(1,:), p_in_Pa(1,:) )
+    ! Initialize the dycore grid rho_ds linear spline approximation and p_in_Pa for dycore grid
+    if ( l_add_dycore_grid ) then
+      do i = 1, ngrdcol
+        rho_ds_zm_dycore(i,:) = lin_interp_between_grids( gr_dycore%nzm, gr%nzm, &
+                                                          gr_dycore%zm, gr%zm, &
+                                                          rho_ds_zm(i,:) )
+        p_in_Pa_dycore(i,:) = lin_interp_between_grids( gr_dycore%nzt, gr%nzm, &
+                                                        gr_dycore%zt, gr%zm, &
+                                                        p_in_Pa_zm(i,:) )
+      end do
     end if
 
+    ! Initialize Time Dependent Input
+    
+    if( l_t_dependent ) then
+
+      if ( l_add_dycore_grid ) then
+        ! if we want to simulate the forcings from the host model on the dycore grid,
+        ! we first read in all the forcings from the file to the dycore grid and every
+        ! timestep remap the results to the current physics grid, so we need to pay
+        ! attention on how the forcings are read in from object t_dependent_forcing_data
+        ! in time_dependent_input
+        call initialize_t_dependent_input &
+                   ( iunit, runtype, gr_dycore%nzt, gr_dycore%zt(1,:), p_in_Pa_dycore(1,:), &
+                     l_add_dycore_grid, grid_adapt_in_time_method )
+      else
+        ! no simulating forcings input from host model on dycore grid
+        ! l_add_dycore_grid=.false.
+        call initialize_t_dependent_input &
+                     ( iunit, runtype, gr%nzt, gr%zt(1,:), p_in_Pa(1,:), &
+                       l_add_dycore_grid, grid_adapt_in_time_method )
+      end if
+
+    else
+
+      if ( l_add_dycore_grid .and. trim( runtype ) /= 'atex' ) then
+        write(fstderr,*) 'WARNING! The option l_add_dycore_grid=.true. can currently only ', &
+                         'be used for cases with forcings from an input file and for the atex ', &
+                         'case, so for this case l_add_dycore_grid must be set to .false..'
+        error stop 'For this case l_add_dycore_grid must be set to .false..'
+      end if
+
+    end if
+    
     ! Initialize TKE and other fields as needed
 
     select case ( trim( runtype ) )
@@ -4438,7 +4635,7 @@ module clubb_driver
        ! iterative method involving theta_l, r_t, pressure, and exner.  Once
        ! initial r_c is found, initial theta can be found, such that:
        ! theta = theta_l + [Lv/(Cp*exner)]*rcm.
-
+       
        ! Find mean cloud water mixing ratio.
        do k = 1, gr%nzt, 1
           do i = 1, ngrdcol
@@ -5311,6 +5508,11 @@ module clubb_driver
                                  l_modify_bc_for_cnvg_test, &
                                  saturation_formula, &
                                  stats_metadata, stats_sfc, &
+                                 l_add_dycore_grid, &
+                                 grid_remap_method, &
+                                 total_idx_rho_lin_spline, rho_lin_spline_vals, &
+                                 rho_lin_spline_levels, &
+                                 gr_dycore, rho_ds_zm_dycore, &
                                  rtm, wm_zm, wm_zt, ug, vg, um_ref, vm_ref, &
                                  thlm_forcing, rtm_forcing, um_forcing, &
                                  vm_forcing, wprtp_forcing, wpthlp_forcing, &
@@ -5345,6 +5547,7 @@ module clubb_driver
 
     use time_dependent_input, only: &
       apply_time_dependent_forcings, &
+      apply_time_dependent_forcings_from_dycore, &
       l_t_dependent, &
       l_ignore_forcings
 
@@ -5470,6 +5673,26 @@ module clubb_driver
     type (stats), dimension(ngrdcol), intent(inout)  :: &
       stats_sfc        ! stats_sfc
 
+    logical, intent(in) :: &
+      l_add_dycore_grid
+
+    integer, intent(in) :: &
+      grid_remap_method
+
+    integer, intent(in) :: &
+      total_idx_rho_lin_spline ! number of indices for the linear spline definition arrays
+
+    real( kind = core_rknd ), dimension(total_idx_rho_lin_spline), intent(in) :: &
+      rho_lin_spline_vals, & ! rho values at the given altitudes
+      rho_lin_spline_levels  ! altitudes for the given rho values
+    ! Note: both these arrays need to be sorted from low to high altitude
+
+    type( grid ), intent(in) :: &
+      gr_dycore
+
+    real( kind = core_rknd ), dimension(gr_dycore%nzm), intent(in) :: &
+      rho_ds_zm_dycore
+
     real( kind = core_rknd ), dimension(ngrdcol,nzt), intent(inout) :: &
       rtm,             & ! total water mixing ratio, r_t (thermo. levs.)        [kg/kg]
       wm_zt,           & ! vertical mean wind comp. on thermo. levs             [m/s]
@@ -5589,13 +5812,29 @@ module clubb_driver
       !   "cloud_feedback_s12", "cloud_feedback_s12_p2k",
       !   "gabls3_night", "arm_97", "gabls3", "twp_ice",
       !   "arm", "arm_0003", "arm_3year", "astex_a209", & "cobra".
-      call apply_time_dependent_forcings( &
-            ngrdcol, gr%nzm, gr%nzt, &
-            sclr_dim, edsclr_dim, sclr_idx, & ! In
-            gr, time_current, rtm, rho, exner, & ! In
-            thlm_forcing, rtm_forcing, um_ref, vm_ref, um_forcing, vm_forcing, & ! In/Out
-            wm_zt, wm_zm, ug, vg, & ! In/Out
-            sclrm_forcing, edsclrm_forcing ) ! In/Out
+      if ( l_add_dycore_grid ) then
+        ! if we want to simulate forcings coming in from the host model on the dycore grid,
+        ! we have the forcings stored on the dycore grid, so we need to remap them everytime
+        ! to the current physics grid
+        call apply_time_dependent_forcings_from_dycore( &
+                ngrdcol, gr%nzm, gr%nzt, &
+                sclr_dim, edsclr_dim, sclr_idx, &
+                gr, gr_dycore, time_current, rtm, rho, exner,  &
+                grid_remap_method, &
+                total_idx_rho_lin_spline, rho_lin_spline_vals, &
+                rho_lin_spline_levels, &
+                thlm_forcing, rtm_forcing, um_ref, vm_ref, um_forcing, vm_forcing, &
+                wm_zt, wm_zm,  ug, vg, &
+                sclrm_forcing, edsclrm_forcing )
+      else
+        call apply_time_dependent_forcings( &
+              ngrdcol, gr%nzm, gr%nzt, &
+              sclr_dim, edsclr_dim, sclr_idx, & ! In
+              gr, time_current, rtm, rho, exner, & ! In
+              thlm_forcing, rtm_forcing, um_ref, vm_ref, um_forcing, vm_forcing, & ! In/Out
+              wm_zt, wm_zm, ug, vg, & ! In/Out
+              sclrm_forcing, edsclrm_forcing ) ! In/Out
+      end if
 
       ! Vince Larson set forcing to zero at the top point so that we don't need
       ! so much sponge damping, which is associated with sawtooth noise
@@ -5623,6 +5862,9 @@ module clubb_driver
         call atex_tndcy( ngrdcol, sclr_dim, edsclr_dim, sclr_idx, &      ! Intent(in)
                          gr, time_current, time_initial, &      ! Intent(in)
                          rtm, &                                 ! Intent(in)
+                         l_add_dycore_grid, &                   ! Intent(in)
+                         grid_remap_method, &                   ! Intent(in)
+                         gr_dycore, rho_ds_zm_dycore, &         ! Intent(in)
                          err_code, &                            ! Intent(inout)
                          wm_zt, wm_zm, &                        ! Intent(out)
                          thlm_forcing, rtm_forcing, &           ! Intent(out)
@@ -7007,7 +7249,6 @@ module clubb_driver
              radht_samples(isample,:), Frad_samples(isample,:), &                   ! Intent(out)
              Frad_SW_up_samples(isample,:), Frad_LW_up_samples(isample,:), &        ! Intent(out)
              Frad_SW_down_samples(isample,:), Frad_LW_down_samples(isample,:) )     ! Intent(out)
-
     end do
 
     ! Average results
