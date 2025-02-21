@@ -7,31 +7,38 @@ module stats_clubb_utilities
 
   private ! Set Default Scope
 
-  public :: stats_init, stats_begin_timestep, stats_end_timestep, & 
+  public :: stats_init, stats_init_w_diff_output_gr, &
+    stats_begin_timestep, stats_end_timestep, &
+    stats_end_timestep_w_diff_output_gr, &
     stats_accumulate, stats_finalize, stats_accumulate_hydromet, &
     stats_accumulate_lh_tend
 
-  private :: stats_zero, stats_avg, stats_check_num_samples
+  private :: stats_zero, stats_avg, stats_check_num_samples, stats_init_helper, &
+             stats_end_timestep_helper
 
   contains
 
   !-----------------------------------------------------------------------
-  subroutine stats_init( iunit, fname_prefix, fdir, l_stats_in, &
-                         stats_fmt_in, stats_tsamp_in, stats_tout_in, fnamelist, &
-                         hydromet_dim, sclr_dim, edsclr_dim, sclr_tol, &
-                         hydromet_list, l_mix_rat_hm, &
-                         nzmax, ngrdcol, nlon, nlat, gzt, gzm, nnrad_zt, &
-                         grad_zt, nnrad_zm, grad_zm, day, month, year, &
-                         lon_vals, lat_vals, time_current, delt, l_silhs_out_in, &
-                         clubb_params, &
-                         l_uv_nudge, &
-                         l_tke_aniso, &
-                         l_standard_term_ta, &
-                         stats_metadata, &
-                         stats_zt, stats_zm, stats_sfc, &
-                         stats_lh_zt, stats_lh_sfc, &
-                         stats_rad_zt, stats_rad_zm, &
-                         err_code )
+  subroutine stats_init_helper( iunit, fname_prefix, fdir, l_stats_in, &
+                                stats_fmt_in, stats_tsamp_in, stats_tout_in, fnamelist, &
+                                hydromet_dim, sclr_dim, edsclr_dim, sclr_tol, &
+                                hydromet_list, l_mix_rat_hm, &
+                                nzmax, ngrdcol, nlon, nlat, gzt, gzm, nnrad_zt, &
+                                grad_zt, nnrad_zm, grad_zm, day, month, year, &
+                                lon_vals, lat_vals, time_current, delt, l_silhs_out_in, &
+                                clubb_params, &
+                                l_uv_nudge, &
+                                l_tke_aniso, &
+                                l_standard_term_ta, &
+                                l_different_output_grid, &
+                                output_gr_nzm, &
+                                output_gr_zt, &
+                                output_gr_zm, &
+                                stats_metadata, &
+                                stats_zt, stats_zm, stats_sfc, &
+                                stats_lh_zt, stats_lh_sfc, &
+                                stats_rad_zt, stats_rad_zm, &
+                                err_code )
     !
     ! Description:
     !   Initializes the statistics saving functionality of the CLUBB model.
@@ -123,16 +130,32 @@ module stats_clubb_utilities
       fnamelist          ! Filename holding the &statsnl
 
     integer, intent(in) :: &
-      ngrdcol,  & ! Number of columns
-      nlon,     & ! Number of points in the X direction [-]
-      nlat,     & ! Number of points in the Y direction [-]
-      nzmax       ! Grid points in the vertical         [-]
+      ngrdcol,  &      ! Number of columns
+      nlon,     &      ! Number of points in the X direction [-]
+      nlat,     &      ! Number of points in the Y direction [-]
+      nzmax,    &      ! Grid points in the vertical         [-]
+      output_gr_nzm    ! Grid points in the vertical for the grid that gets written to file;
+                       ! can vary from nzmax since output is remapped to dycore grid if
+                       ! we adapt grid and want to simulate forcings from dycore grid,
+                       ! since we need a common grid for all results if the grid is adapted
+                       ! over time, and the dycore grid can have a different number of
+                       ! levels as the physics grid          [-]
 
     real( kind = core_rknd ), intent(in), dimension(ngrdcol,nzmax-1) ::  & 
       gzt       ! Thermodynamic levels           [m]
 
     real( kind = core_rknd ), intent(in), dimension(ngrdcol,nzmax) ::  & 
       gzm       ! Momentum levels                [m]
+
+    real( kind = core_rknd ), intent(in), dimension(ngrdcol,output_gr_nzm-1) ::  & 
+      output_gr_zt  ! Thermodynamic levels of the grid that gets written to file    [m]
+
+    real( kind = core_rknd ), intent(in), dimension(ngrdcol,output_gr_nzm) ::  & 
+      output_gr_zm  ! Momentum levels of the grid that gets written to file         [m]
+    
+    ! Note: output_gr_zt and output_gr_zm are only different from gzt and gzm if we adapt the grid
+    !       over time, since then we need a common grid we can remap all the results to,
+    !       that were calculated on different grids
 
     integer, intent(in) :: &
       nnrad_zt,     & ! Grid points in the radiation grid [count]
@@ -176,13 +199,14 @@ module stats_clubb_utilities
       clubb_params    ! Array of CLUBB's tunable parameters    [units vary]
 
     logical, intent(in) :: &
-      l_uv_nudge,         & ! For wind speed nudging
-      l_tke_aniso,        & ! For anisotropic turbulent kinetic energy, i.e. TKE = 1/2
-                            ! (u'^2 + v'^2 + w'^2)
-      l_standard_term_ta    ! Use the standard discretization for the turbulent advection terms.
-                            ! Setting to .false. means that a_1 and a_3 are pulled outside of the
-                            ! derivative in advance_wp2_wp3_module.F90 and in
-                            ! advance_xp2_xpyp_module.F90.
+      l_uv_nudge,          &   ! For wind speed nudging
+      l_tke_aniso,         &   ! For anisotropic turbulent kinetic energy, i.e. TKE = 1/2
+                               ! (u'^2 + v'^2 + w'^2)
+      l_standard_term_ta,  &   ! Use the standard discretization for the turbulent advection terms.
+                               ! Setting to .false. means that a_1 and a_3 are pulled outside of the
+                               ! derivative in advance_wp2_wp3_module.F90 and in
+                               ! advance_xp2_xpyp_module.F90.
+      l_different_output_grid  ! use different grid to output values to file
 
     type (stats_metadata_type), intent(inout) :: &
       stats_metadata
@@ -731,20 +755,37 @@ module stats_clubb_utilities
     if ( stats_metadata%l_grads ) then
 
       ! Open GrADS file
-      call open_grads( iunit, fdir, fname,  &  ! In
-                       1, stats_zt(1)%kk, nlat, nlon, stats_zt(1)%z, & ! In 
-                       day, month, year, lat_vals, lon_vals, &  ! In
-                       time_current+real(stats_metadata%stats_tout,kind=time_precision), & ! In
-                       stats_metadata, stats_zt(1)%num_output_fields, & ! In
-                       stats_zt(1)%file ) ! intent(inout)
+      if ( l_different_output_grid ) then
+        call open_grads( iunit, fdir, fname,  &  ! In
+                         1, output_gr_nzm-1, nlat, nlon, output_gr_zt(1,:), & ! In 
+                         day, month, year, lat_vals, lon_vals, &  ! In
+                         time_current+real(stats_metadata%stats_tout,kind=time_precision), & ! In
+                         stats_metadata, stats_zt(1)%num_output_fields, & ! In
+                         stats_zt(1)%file ) ! intent(inout)
+      else
+        call open_grads( iunit, fdir, fname,  &  ! In
+                         1, stats_zt(1)%kk, nlat, nlon, stats_zt(1)%z, & ! In 
+                         day, month, year, lat_vals, lon_vals, &  ! In
+                         time_current+real(stats_metadata%stats_tout,kind=time_precision), & ! In
+                         stats_metadata, stats_zt(1)%num_output_fields, & ! In
+                         stats_zt(1)%file ) ! intent(inout)
+      end if
 
     else ! Open NetCDF file
 #ifdef NETCDF
-      call open_netcdf_for_writing( nlat, nlon, fdir, fname, 1, stats_zt(1)%kk, &
-                        stats_zt(1)%z, day, month, year, lat_vals, lon_vals, & ! In
-                        time_current, stats_metadata%stats_tout, & ! In
-                        stats_zt(1)%num_output_fields, & ! In
-                        stats_zt(1)%file, err_code ) ! InOut
+      if ( l_different_output_grid ) then
+        call open_netcdf_for_writing( nlat, nlon, fdir, fname, 1, output_gr_nzm-1, &
+                                      output_gr_zt(1,:), day, month, year, lat_vals, lon_vals, & ! In
+                                      time_current, stats_metadata%stats_tout, & ! In
+                                      stats_zt(1)%num_output_fields, & ! In
+                                      stats_zt(1)%file, err_code ) ! InOut
+      else
+        call open_netcdf_for_writing( nlat, nlon, fdir, fname, 1, stats_zt(1)%kk, &
+                                      stats_zt(1)%z, day, month, year, lat_vals, lon_vals, & ! In
+                                      time_current, stats_metadata%stats_tout, & ! In
+                                      stats_zt(1)%num_output_fields, & ! In
+                                      stats_zt(1)%file, err_code ) ! InOut
+      end if
 
       ! Finalize the variable definitions
       call first_write( clubb_params(1,:), sclr_dim, sclr_tol, & ! intent(in)
@@ -1168,20 +1209,37 @@ module stats_clubb_utilities
     if ( stats_metadata%l_grads ) then
 
       ! Open GrADS files
-      call open_grads( iunit, fdir, fname,  & ! In
-                       1, stats_zm(1)%kk, nlat, nlon, stats_zm(1)%z, & ! In
-                       day, month, year, lat_vals, lon_vals, & ! In
-                       time_current+real(stats_metadata%stats_tout,kind=time_precision), & ! In
-                       stats_metadata, stats_zm(1)%num_output_fields, & ! In
-                       stats_zm(1)%file ) ! intent(inout)
+      if ( l_different_output_grid ) then
+        call open_grads( iunit, fdir, fname,  & ! In
+                         1, output_gr_nzm, nlat, nlon, output_gr_zm(1,:), & ! In
+                         day, month, year, lat_vals, lon_vals, & ! In
+                         time_current+real(stats_metadata%stats_tout,kind=time_precision), & ! In
+                         stats_metadata, stats_zm(1)%num_output_fields, & ! In
+                         stats_zm(1)%file ) ! intent(inout)
+      else
+        call open_grads( iunit, fdir, fname,  & ! In
+                         1, stats_zm(1)%kk, nlat, nlon, stats_zm(1)%z, & ! In
+                         day, month, year, lat_vals, lon_vals, & ! In
+                         time_current+real(stats_metadata%stats_tout,kind=time_precision), & ! In
+                         stats_metadata, stats_zm(1)%num_output_fields, & ! In
+                         stats_zm(1)%file ) ! intent(inout)
+      end if
 
     else ! Open NetCDF file
 #ifdef NETCDF
-      call open_netcdf_for_writing( nlat, nlon, fdir, fname, 1, stats_zm(1)%kk, & !In
-                        stats_zm(1)%z, day, month, year, lat_vals, lon_vals, & ! In
-                        time_current, stats_metadata%stats_tout, & ! In
-                        stats_zm(1)%num_output_fields, & ! In
-                        stats_zm(1)%file, err_code ) ! InOut
+      if ( l_different_output_grid ) then
+        call open_netcdf_for_writing( nlat, nlon, fdir, fname, 1, output_gr_nzm, & !In
+                                      output_gr_zm(1,:), day, month, year, lat_vals, lon_vals, & ! In
+                                      time_current, stats_metadata%stats_tout, & ! In
+                                      stats_zm(1)%num_output_fields, & ! In
+                                      stats_zm(1)%file, err_code ) ! InOut
+      else
+        call open_netcdf_for_writing( nlat, nlon, fdir, fname, 1, stats_zm(1)%kk, & !In
+                                      stats_zm(1)%z, day, month, year, lat_vals, lon_vals, & ! In
+                                      time_current, stats_metadata%stats_tout, & ! In
+                                      stats_zm(1)%num_output_fields, & ! In
+                                      stats_zm(1)%file, err_code ) ! InOut
+      end if
       
       ! Finalize the variable definitions
       call first_write( clubb_params(1,:), sclr_dim, sclr_tol, & ! intent(in)
@@ -1488,7 +1546,372 @@ module stats_clubb_utilities
 
     return
 
+  end subroutine stats_init_helper
+
+  !-----------------------------------------------------------------------
+  subroutine stats_init( iunit, fname_prefix, fdir, l_stats_in, &
+                         stats_fmt_in, stats_tsamp_in, stats_tout_in, fnamelist, &
+                         hydromet_dim, sclr_dim, edsclr_dim, sclr_tol, &
+                         hydromet_list, l_mix_rat_hm, &
+                         nzmax, ngrdcol, nlon, nlat, gzt, gzm, nnrad_zt, &
+                         grad_zt, nnrad_zm, grad_zm, day, month, year, &
+                         lon_vals, lat_vals, time_current, delt, l_silhs_out_in, &
+                         clubb_params, &
+                         l_uv_nudge, &
+                         l_tke_aniso, &
+                         l_standard_term_ta, &
+                         stats_metadata, &
+                         stats_zt, stats_zm, stats_sfc, &
+                         stats_lh_zt, stats_lh_sfc, &
+                         stats_rad_zt, stats_rad_zm, &
+                         err_code )
+    !
+    ! Description:
+    !   Initializes the statistics saving functionality of the CLUBB model.
+    !
+    ! References:
+    !   None
+    !-----------------------------------------------------------------------
+
+    use stats_variables, only: &
+        stats_metadata_type
+
+    use parameter_indices, only: &
+        nparams
+
+    use clubb_precision, only: &
+        time_precision, & ! Constant(s)
+        core_rknd
+
+    use stats_type, only: stats ! Type
+
+    implicit none
+
+    ! Input Variables
+    integer, intent(in) :: iunit  ! File unit for fnamelist
+
+    character(len=*), intent(in) ::  & 
+      fname_prefix, & ! Start of the stats filenames
+      fdir            ! Directory to output to
+
+    logical, intent(in) :: &
+      l_stats_in      ! Stats on? T/F
+
+    character(len=*), intent(in) :: &
+      stats_fmt_in    ! Format of the stats file output
+
+    real( kind = core_rknd ), intent(in) ::  & 
+      stats_tsamp_in,  & ! Sampling interval   [s]
+      stats_tout_in      ! Output interval     [s]
+
+    character(len=*), intent(in) :: &
+      fnamelist          ! Filename holding the &statsnl
+
+    integer, intent(in) :: &
+      ngrdcol,  & ! Number of columns
+      nlon,     & ! Number of points in the X direction [-]
+      nlat,     & ! Number of points in the Y direction [-]
+      nzmax       ! Grid points in the vertical         [-]
+
+    real( kind = core_rknd ), intent(in), dimension(ngrdcol,nzmax-1) ::  & 
+      gzt       ! Thermodynamic levels           [m]
+
+    real( kind = core_rknd ), intent(in), dimension(ngrdcol,nzmax) ::  & 
+      gzm       ! Momentum levels                [m]
+
+    integer, intent(in) :: &
+      nnrad_zt,     & ! Grid points in the radiation grid [count]
+      hydromet_dim, &
+      sclr_dim,     &
+      edsclr_dim
+
+    real( kind = core_rknd ), dimension(sclr_dim), intent(in) :: &
+      sclr_tol
+
+    character(len=10), dimension(hydromet_dim), intent(in) :: & 
+      hydromet_list
+
+    logical, dimension(hydromet_dim), intent(in) :: &
+      l_mix_rat_hm   ! if true, then the quantity is a hydrometeor mixing ratio
+
+    real( kind = core_rknd ), intent(in), dimension(nnrad_zt) :: grad_zt ! Radiation levels [m]
+
+    integer, intent(in) :: nnrad_zm ! Grid points in the radiation grid [count]
+
+    real( kind = core_rknd ), intent(in), dimension(nnrad_zm) :: grad_zm ! Radiation levels [m]
+
+    integer, intent(in) :: day, month, year  ! Time of year
+
+    real( kind = core_rknd ), dimension(nlon), intent(in) ::  & 
+      lon_vals  ! Longitude values [Degrees E]
+
+    real( kind = core_rknd ), dimension(nlat), intent(in) ::  & 
+      lat_vals  ! Latitude values  [Degrees N]
+
+    real( kind = time_precision ), intent(in) ::  & 
+      time_current ! Model time                         [s]
+
+    real( kind = core_rknd ), intent(in) ::  & 
+      delt         ! Timestep (dt_main in CLUBB)         [s]
+
+    logical, intent(in) :: &
+      l_silhs_out_in  ! Whether to output SILHS files (stats_lh_zt, stats_lh_sfc)  [boolean]
+
+    real( kind = core_rknd ), dimension(ngrdcol,nparams), intent(in) :: &
+      clubb_params    ! Array of CLUBB's tunable parameters    [units vary]
+
+    logical, intent(in) :: &
+      l_uv_nudge,         & ! For wind speed nudging
+      l_tke_aniso,        & ! For anisotropic turbulent kinetic energy, i.e. TKE = 1/2
+                            ! (u'^2 + v'^2 + w'^2)
+      l_standard_term_ta    ! Use the standard discretization for the turbulent advection terms.
+                            ! Setting to .false. means that a_1 and a_3 are pulled outside of the
+                            ! derivative in advance_wp2_wp3_module.F90 and in
+                            ! advance_xp2_xpyp_module.F90.
+
+    type (stats_metadata_type), intent(inout) :: &
+      stats_metadata
+
+    type (stats), dimension(ngrdcol), intent(inout) :: &
+      stats_zt, &
+      stats_zm, &
+      stats_sfc, &
+      stats_lh_zt, &
+      stats_lh_sfc, &
+      stats_rad_zt, &
+      stats_rad_zm
+
+    integer, intent(inout) :: &
+      err_code    ! Error code catching and relaying any errors occurring in this subroutine
+
+    ! Local Variables
+    logical :: l_different_output_grid
+
+    integer :: output_gr_nzm_placeholder
+
+    real( kind = core_rknd ), dimension(:,:), allocatable :: &
+      output_gr_zt_placeholder, &
+      output_gr_zm_placeholder
+
+    ! ------------------- Begin Code -------------------
+
+    l_different_output_grid = .false.
+    output_gr_nzm_placeholder = 2
+    allocate( output_gr_zt_placeholder(ngrdcol,output_gr_nzm_placeholder-1) )
+    allocate( output_gr_zm_placeholder(ngrdcol,output_gr_nzm_placeholder) )
+
+    call stats_init_helper( iunit, fname_prefix, fdir, l_stats_in, &
+                            stats_fmt_in, stats_tsamp_in, stats_tout_in, fnamelist, &
+                            hydromet_dim, sclr_dim, edsclr_dim, sclr_tol, &
+                            hydromet_list, l_mix_rat_hm, &
+                            nzmax, ngrdcol, nlon, nlat, gzt, gzm, nnrad_zt, &
+                            grad_zt, nnrad_zm, grad_zm, day, month, year, &
+                            lon_vals, lat_vals, time_current, delt, l_silhs_out_in, &
+                            clubb_params, &
+                            l_uv_nudge, &
+                            l_tke_aniso, &
+                            l_standard_term_ta, &
+                            l_different_output_grid, &
+                            output_gr_nzm_placeholder, &
+                            output_gr_zt_placeholder, &
+                            output_gr_zm_placeholder, &
+                            stats_metadata, &
+                            stats_zt, stats_zm, stats_sfc, &
+                            stats_lh_zt, stats_lh_sfc, &
+                            stats_rad_zt, stats_rad_zm, &
+                            err_code )
+
+    deallocate( output_gr_zt_placeholder )
+    deallocate( output_gr_zm_placeholder )
+
+
   end subroutine stats_init
+
+  !-----------------------------------------------------------------------
+  subroutine stats_init_w_diff_output_gr( iunit, fname_prefix, fdir, l_stats_in, &
+                                          stats_fmt_in, stats_tsamp_in, stats_tout_in, fnamelist, &
+                                          hydromet_dim, sclr_dim, edsclr_dim, sclr_tol, &
+                                          hydromet_list, l_mix_rat_hm, &
+                                          nzmax, ngrdcol, nlon, nlat, gzt, gzm, nnrad_zt, &
+                                          grad_zt, nnrad_zm, grad_zm, day, month, year, &
+                                          lon_vals, lat_vals, time_current, delt, l_silhs_out_in, &
+                                          clubb_params, &
+                                          l_uv_nudge, &
+                                          l_tke_aniso, &
+                                          l_standard_term_ta, &
+                                          output_gr_nzm, &
+                                          output_gr_zt, &
+                                          output_gr_zm, &
+                                          stats_metadata, &
+                                          stats_zt, stats_zm, stats_sfc, &
+                                          stats_lh_zt, stats_lh_sfc, &
+                                          stats_rad_zt, stats_rad_zm, &
+                                          err_code )
+    !
+    ! Description:
+    !   Initializes the statistics saving functionality of the CLUBB model.
+    !
+    ! References:
+    !   None
+    !-----------------------------------------------------------------------
+
+    use stats_variables, only: &
+        stats_metadata_type
+
+    use parameter_indices, only: &
+        nparams
+
+    use clubb_precision, only: &
+        time_precision, & ! Constant(s)
+        core_rknd
+
+    use stats_type, only: stats ! Type
+
+    implicit none
+
+    ! Input Variables
+    integer, intent(in) :: iunit  ! File unit for fnamelist
+
+    character(len=*), intent(in) ::  & 
+      fname_prefix, & ! Start of the stats filenames
+      fdir            ! Directory to output to
+
+    logical, intent(in) :: &
+      l_stats_in      ! Stats on? T/F
+
+    character(len=*), intent(in) :: &
+      stats_fmt_in    ! Format of the stats file output
+
+    real( kind = core_rknd ), intent(in) ::  & 
+      stats_tsamp_in,  & ! Sampling interval   [s]
+      stats_tout_in      ! Output interval     [s]
+
+    character(len=*), intent(in) :: &
+      fnamelist          ! Filename holding the &statsnl
+
+    integer, intent(in) :: &
+      ngrdcol,  &    ! Number of columns
+      nlon,     &    ! Number of points in the X direction [-]
+      nlat,     &    ! Number of points in the Y direction [-]
+      nzmax,    &    ! Grid points in the vertical         [-]
+      output_gr_nzm  ! Grid points in the vertical for the grid that gets written to file;
+                     ! can vary from nzmax since output is remapped to dycore grid if
+                     ! we adapt grid and want to simulate forcings from dycore grid,
+                     ! since we need a common grid for all results if the grid is adapted
+                     ! over time, and the dycore grid can have a different number of
+                     ! levels as the physics grid          [-]
+
+    real( kind = core_rknd ), intent(in), dimension(ngrdcol,nzmax-1) ::  & 
+      gzt       ! Thermodynamic levels           [m]
+
+    real( kind = core_rknd ), intent(in), dimension(ngrdcol,nzmax) ::  & 
+      gzm       ! Momentum levels                [m]
+
+    real( kind = core_rknd ), intent(in), dimension(ngrdcol,output_gr_nzm-1) ::  & 
+      output_gr_zt  ! Thermodynamic levels of the grid that gets written to file    [m]
+
+    real( kind = core_rknd ), intent(in), dimension(ngrdcol,output_gr_nzm) ::  & 
+      output_gr_zm  ! Momentum levels of the grid that gets written to file         [m]
+    
+    ! Note: output_gr_zt and output_gr_zm are only different from gzt and gzm if we adapt the grid
+    !       over time, since then we need a common grid we can remap all the results to,
+    !       that were calculated on different grids
+
+    integer, intent(in) :: &
+      nnrad_zt,     & ! Grid points in the radiation grid [count]
+      hydromet_dim, &
+      sclr_dim,     &
+      edsclr_dim
+
+    real( kind = core_rknd ), dimension(sclr_dim), intent(in) :: &
+      sclr_tol
+
+    character(len=10), dimension(hydromet_dim), intent(in) :: & 
+      hydromet_list
+
+    logical, dimension(hydromet_dim), intent(in) :: &
+      l_mix_rat_hm   ! if true, then the quantity is a hydrometeor mixing ratio
+
+    real( kind = core_rknd ), intent(in), dimension(nnrad_zt) :: grad_zt ! Radiation levels [m]
+
+    integer, intent(in) :: nnrad_zm ! Grid points in the radiation grid [count]
+
+    real( kind = core_rknd ), intent(in), dimension(nnrad_zm) :: grad_zm ! Radiation levels [m]
+
+    integer, intent(in) :: day, month, year  ! Time of year
+
+    real( kind = core_rknd ), dimension(nlon), intent(in) ::  & 
+      lon_vals  ! Longitude values [Degrees E]
+
+    real( kind = core_rknd ), dimension(nlat), intent(in) ::  & 
+      lat_vals  ! Latitude values  [Degrees N]
+
+    real( kind = time_precision ), intent(in) ::  & 
+      time_current ! Model time                         [s]
+
+    real( kind = core_rknd ), intent(in) ::  & 
+      delt         ! Timestep (dt_main in CLUBB)         [s]
+
+    logical, intent(in) :: &
+      l_silhs_out_in  ! Whether to output SILHS files (stats_lh_zt, stats_lh_sfc)  [boolean]
+
+    real( kind = core_rknd ), dimension(ngrdcol,nparams), intent(in) :: &
+      clubb_params    ! Array of CLUBB's tunable parameters    [units vary]
+
+    logical, intent(in) :: &
+      l_uv_nudge,         & ! For wind speed nudging
+      l_tke_aniso,        & ! For anisotropic turbulent kinetic energy, i.e. TKE = 1/2
+                            ! (u'^2 + v'^2 + w'^2)
+      l_standard_term_ta    ! Use the standard discretization for the turbulent advection terms.
+                            ! Setting to .false. means that a_1 and a_3 are pulled outside of the
+                            ! derivative in advance_wp2_wp3_module.F90 and in
+                            ! advance_xp2_xpyp_module.F90.
+
+    type (stats_metadata_type), intent(inout) :: &
+      stats_metadata
+
+    type (stats), dimension(ngrdcol), intent(inout) :: &
+      stats_zt, &
+      stats_zm, &
+      stats_sfc, &
+      stats_lh_zt, &
+      stats_lh_sfc, &
+      stats_rad_zt, &
+      stats_rad_zm
+
+    integer, intent(inout) :: &
+      err_code    ! Error code catching and relaying any errors occurring in this subroutine
+
+    ! Local variables
+    logical :: &
+      l_different_output_grid ! use different grid to output values to file
+
+    ! ------------------- Begin Code -------------------
+
+    l_different_output_grid = .true.
+
+    call stats_init_helper( iunit, fname_prefix, fdir, l_stats_in, &
+                            stats_fmt_in, stats_tsamp_in, stats_tout_in, fnamelist, &
+                            hydromet_dim, sclr_dim, edsclr_dim, sclr_tol, &
+                            hydromet_list, l_mix_rat_hm, &
+                            nzmax, ngrdcol, nlon, nlat, gzt, gzm, nnrad_zt, &
+                            grad_zt, nnrad_zm, grad_zm, day, month, year, &
+                            lon_vals, lat_vals, time_current, delt, l_silhs_out_in, &
+                            clubb_params, &
+                            l_uv_nudge, &
+                            l_tke_aniso, &
+                            l_standard_term_ta, &
+                            l_different_output_grid, &
+                            output_gr_nzm, &
+                            output_gr_zt, &
+                            output_gr_zm, &
+                            stats_metadata, &
+                            stats_zt, stats_zm, stats_sfc, &
+                            stats_lh_zt, stats_lh_sfc, &
+                            stats_rad_zt, stats_rad_zm, &
+                            err_code )
+
+  end subroutine stats_init_w_diff_output_gr
 
   !-----------------------------------------------------------------------
   subroutine stats_zero( ii, jj, kk, nn, &
@@ -1621,12 +2044,17 @@ module stats_clubb_utilities
   end subroutine stats_begin_timestep
 
   !-----------------------------------------------------------------------
-  subroutine stats_end_timestep( stats_metadata,                & ! intent(in)
-                                 stats_zt, stats_zm, stats_sfc, & ! intent(inout)
-                                 stats_lh_zt, stats_lh_sfc,     & ! intent(inout)
-                                 stats_rad_zt, stats_rad_zm,    & ! intent(inout)
-                                 err_code                       & ! intent(inout)
-                               )
+  subroutine stats_end_timestep_helper( stats_metadata,                & ! intent(in)
+                                        l_different_output_grid,       & ! intent(in)
+                                        gr_source, gr_target,          & ! intent(in)
+                                        total_idx_rho_lin_spline,      & ! intent(in)
+                                        rho_lin_spline_vals,           & ! intent(in)
+                                        rho_lin_spline_levels,         & ! intent(in)
+                                        stats_zt, stats_zm, stats_sfc, & ! intent(inout)
+                                        stats_lh_zt, stats_lh_sfc,     & ! intent(inout)
+                                        stats_rad_zt, stats_rad_zm,    & ! intent(inout)
+                                        err_code                       & ! intent(inout)
+                                      )
 
     ! Description:
     !   Called when the stats timestep has ended. This subroutine
@@ -1640,6 +2068,9 @@ module stats_clubb_utilities
     use constants_clubb, only: &
         fstderr ! Constant(s)
 
+    use clubb_precision, only: &
+        core_rknd ! Constant(s)
+
     use stats_variables, only: & 
         stats_metadata_type
 
@@ -1651,7 +2082,8 @@ module stats_clubb_utilities
         clubb_j
 
 #ifdef NETCDF
-    use output_netcdf, only: & 
+    use output_netcdf, only: &
+        write_netcdf_w_diff_output_gr, &
         write_netcdf ! Procedure(s)
 #endif
 
@@ -1660,10 +2092,30 @@ module stats_clubb_utilities
 
     use stats_type, only: stats ! Type
 
+    use grid_class, only: grid ! Type
+
     implicit none
 
     type (stats_metadata_type), intent(in) :: &
       stats_metadata
+
+    logical, intent(in) :: &
+      l_different_output_grid
+
+    integer, intent(in) :: &
+      total_idx_rho_lin_spline ! number of points in the rho spline
+
+    real( kind = core_rknd ), dimension(total_idx_rho_lin_spline), intent(in) :: &
+      rho_lin_spline_vals, &  ! the rho values for constructing the spline for remapping;
+                              ! only used if l_different_output_gr is .true.
+      rho_lin_spline_levels   ! the levels at which the rho values are given;
+                              ! only used if l_different_output_gr is .true.
+
+    type( grid ), intent(in) :: &
+      gr_source, & ! the grid where the values are currently given on;
+                   ! only used if l_different_output_gr is .true.
+      gr_target    ! the grid where the values should be remapped to;
+                   ! only used if l_different_output_gr is .true.
 
     type (stats), intent(inout) :: &
       stats_zt, &
@@ -1731,30 +2183,31 @@ module stats_clubb_utilities
                     stats_zm%accum_field_values ) ! intent(inout)
     if ( stats_metadata%l_silhs_out ) then
       call stats_avg( stats_lh_zt%ii, stats_lh_zt%jj, stats_lh_zt%kk, & ! intent(in)
-         stats_lh_zt%num_output_fields, stats_lh_zt%accum_num_samples, & ! intent(in)
-         stats_lh_zt%accum_field_values ) ! intent(inout)
+                      stats_lh_zt%num_output_fields, stats_lh_zt%accum_num_samples, & ! intent(in)
+                      stats_lh_zt%accum_field_values ) ! intent(inout)
       call stats_avg( stats_lh_sfc%ii, stats_lh_sfc%jj, stats_lh_sfc%kk, & ! intent(in)
-        stats_lh_sfc%num_output_fields, stats_lh_sfc%accum_num_samples, & ! intent(in)
-        stats_lh_sfc%accum_field_values ) ! intent(inout)
+                      stats_lh_sfc%num_output_fields, stats_lh_sfc%accum_num_samples, & ! intent(in)
+                      stats_lh_sfc%accum_field_values ) ! intent(inout)
     end if
     if ( stats_metadata%l_output_rad_files ) then
       call stats_avg( stats_rad_zt%ii, stats_rad_zt%jj, stats_rad_zt%kk, & ! intent(in)
-        stats_rad_zt%num_output_fields, & ! intent(in)
-        stats_rad_zt%accum_num_samples, & ! intent(in)
-        stats_rad_zt%accum_field_values ) ! intent(inout)
+                      stats_rad_zt%num_output_fields, & ! intent(in)
+                      stats_rad_zt%accum_num_samples, & ! intent(in)
+                      stats_rad_zt%accum_field_values ) ! intent(inout)
       call stats_avg( stats_rad_zm%ii, stats_rad_zm%jj, stats_rad_zm%kk, & ! intent(in)
-        stats_rad_zm%num_output_fields, & ! intent(in)
-        stats_rad_zm%accum_num_samples, & ! intent(in)
-        stats_rad_zm%accum_field_values ) ! intent(inout)
+                      stats_rad_zm%num_output_fields, & ! intent(in)
+                      stats_rad_zm%accum_num_samples, & ! intent(in)
+                      stats_rad_zm%accum_field_values ) ! intent(inout)
     end if
     call stats_avg( stats_sfc%ii, stats_sfc%jj, stats_sfc%kk, stats_sfc%num_output_fields, & ! In
-        stats_sfc%accum_num_samples, & ! intent(in)
-        stats_sfc%accum_field_values ) ! intent(inout)
+                    stats_sfc%accum_num_samples, & ! intent(in)
+                    stats_sfc%accum_field_values ) ! intent(inout)
 
     ! Only write to the file and zero out the stats fields if we've reach the horizontal
     ! limits of the domain (this is always true in the single-column case because it's 1x1).
     if ( clubb_i == stats_zt%ii .and. clubb_j == stats_zt%jj ) then
       ! Write to file
+      !write(*,*) 'start writing to file'
       if ( stats_metadata%l_grads ) then
         call write_grads( stats_zt%file ) ! intent(inout)
         call write_grads( stats_zm%file ) ! intent(inout)
@@ -1770,9 +2223,25 @@ module stats_clubb_utilities
       else ! l_netcdf
 
 #ifdef NETCDF
-        call write_netcdf( stats_zt%file, err_code ) ! intent(inout)
+        if ( l_different_output_grid ) then
+          call write_netcdf_w_diff_output_gr( gr_source, gr_target, &      ! Intent(in)
+                                              'zt', &                      ! Intent(in)
+                                              total_idx_rho_lin_spline, &  ! Intent(in)
+                                              rho_lin_spline_vals, &       ! Intent(in)
+                                              rho_lin_spline_levels, &     ! Intent(in)
+                                              stats_zt%file, err_code )    ! Intent(in)
+          
+          call write_netcdf_w_diff_output_gr( gr_source, gr_target, &      ! Intent(in)
+                                              'zm', &                      ! Intent(in)
+                                              total_idx_rho_lin_spline, &  ! Intent(in)
+                                              rho_lin_spline_vals, &       ! Intent(in)
+                                              rho_lin_spline_levels, &     ! Intent(in)
+                                              stats_zm%file, err_code )    ! Intent(in)
+        else
+          call write_netcdf( stats_zt%file, err_code ) ! intent(inout)
 
-        call write_netcdf( stats_zm%file, err_code ) ! intent(inout)
+          call write_netcdf( stats_zm%file, err_code ) ! intent(inout)
+        endif
 
         if ( stats_metadata%l_silhs_out ) then
 
@@ -1790,7 +2259,7 @@ module stats_clubb_utilities
         end if
 
         call write_netcdf( stats_sfc%file, err_code ) ! intent(inout)
-            
+        !write(*,*) 'end write to file'
         if ( err_code == clubb_fatal_error ) return
 #else
         error stop "This program was not compiled with netCDF support"
@@ -1829,7 +2298,184 @@ module stats_clubb_utilities
     end if ! clubb_i = stats_zt%ii .and. clubb_j == stats_zt%jj
 
     return
+  end subroutine stats_end_timestep_helper
+
+  !-----------------------------------------------------------------------
+  subroutine stats_end_timestep( stats_metadata,                & ! intent(in)
+                                 stats_zt, stats_zm, stats_sfc, & ! intent(inout)
+                                 stats_lh_zt, stats_lh_sfc,     & ! intent(inout)
+                                 stats_rad_zt, stats_rad_zm,    & ! intent(inout)
+                                 err_code                       & ! intent(inout)
+                               )
+
+    ! Description:
+    !   Called when the stats timestep has ended. This subroutine
+    !   is responsible for calling statistics to be written to the output
+    !   format.
+    !
+    ! References:
+    !   None
+    !-----------------------------------------------------------------------
+
+    use stats_variables, only: & 
+        stats_metadata_type
+
+    use stats_type, only: stats ! Type
+
+    use grid_class, only: grid ! Type
+
+    use clubb_precision, only: &
+        core_rknd ! Constant(s)
+
+    implicit none
+
+    type (stats_metadata_type), intent(in) :: &
+      stats_metadata
+
+    type (stats), intent(inout) :: &
+      stats_zt, &
+      stats_zm, &
+      stats_sfc, &
+      stats_lh_zt, &
+      stats_lh_sfc, &
+      stats_rad_zt, &
+      stats_rad_zm
+
+    integer, intent(inout) :: &
+      err_code  ! Error code catching and relaying any errors occurring in this subroutine
+
+    ! External
+    intrinsic :: floor
+
+    ! Local Variables
+
+    logical :: l_different_output_grid
+
+    integer :: &
+      total_idx_rho_lin_spline_placeholder ! number of points in the rho spline
+
+    real( kind = core_rknd ), dimension(:), allocatable :: &
+      rho_lin_spline_vals_placeholder, &  ! the rho values for constructing the spline for
+                                          ! remapping; only used if l_different_output_gr is .true.
+      rho_lin_spline_levels_placeholder   ! the levels at which the rho values are given;
+                                          ! only used if l_different_output_gr is .true.
+
+    type( grid ) :: &
+      gr_source_placeholder, & ! the grid where the values are currently given on;
+                               ! only used if l_different_output_gr is .true.
+      gr_target_placeholder    ! the grid where the values should be remapped to;
+                               ! only used if l_different_output_gr is .true.
+
+    ! ------------------- Begin Code -------------------
+    l_different_output_grid = .false.
+    total_idx_rho_lin_spline_placeholder = 1
+
+    allocate( rho_lin_spline_vals_placeholder(total_idx_rho_lin_spline_placeholder) )
+    allocate( rho_lin_spline_levels_placeholder(total_idx_rho_lin_spline_placeholder) )
+
+    call stats_end_timestep_helper( stats_metadata,                               & ! intent(in)
+                                    l_different_output_grid,                      & ! intent(in)
+                                    gr_source_placeholder, gr_target_placeholder, & ! intent(in)
+                                    total_idx_rho_lin_spline_placeholder,         & ! intent(in)
+                                    rho_lin_spline_vals_placeholder,              & ! intent(in)
+                                    rho_lin_spline_levels_placeholder,            & ! intent(in)
+                                    stats_zt, stats_zm, stats_sfc,                & ! intent(inout)
+                                    stats_lh_zt, stats_lh_sfc,                    & ! intent(inout)
+                                    stats_rad_zt, stats_rad_zm,                   & ! intent(inout)
+                                    err_code                                      & ! intent(inout)
+                                  )
+
+    deallocate( rho_lin_spline_vals_placeholder )
+    deallocate( rho_lin_spline_levels_placeholder )
+    
   end subroutine stats_end_timestep
+
+  !-----------------------------------------------------------------------
+  subroutine stats_end_timestep_w_diff_output_gr( stats_metadata,                & ! intent(in)
+                                                  gr_source, gr_target,          & ! intent(in)
+                                                  total_idx_rho_lin_spline,      & ! intent(in)
+                                                  rho_lin_spline_vals,           & ! intent(in)
+                                                  rho_lin_spline_levels,         & ! intent(in)
+                                                  stats_zt, stats_zm, stats_sfc, & ! intent(inout)
+                                                  stats_lh_zt, stats_lh_sfc,     & ! intent(inout)
+                                                  stats_rad_zt, stats_rad_zm,    & ! intent(inout)
+                                                  err_code                       & ! intent(inout)
+                                                )
+
+    ! Description:
+    !   Called when the stats timestep has ended. This subroutine
+    !   is responsible for calling statistics to be written to the output
+    !   format.
+    !
+    ! References:
+    !   None
+    !-----------------------------------------------------------------------
+
+    use stats_variables, only: & 
+        stats_metadata_type
+
+    use stats_type, only: stats ! Type
+
+    use grid_class, only: grid ! Type
+
+    use clubb_precision, only: &
+        core_rknd ! Constant(s)
+
+    implicit none
+
+    type (stats_metadata_type), intent(in) :: &
+      stats_metadata
+
+    integer, intent(in) :: &
+      total_idx_rho_lin_spline ! number of points in the rho spline
+
+    real( kind = core_rknd ), dimension(total_idx_rho_lin_spline), intent(in) :: &
+      rho_lin_spline_vals, &  ! the rho values for constructing the spline for remapping;
+                              ! only used if l_different_output_gr is .true.
+      rho_lin_spline_levels   ! the levels at which the rho values are given;
+                              ! only used if l_different_output_gr is .true.
+
+    type( grid ), intent(in) :: &
+      gr_source, & ! the grid where the values are currently given on;
+                   ! only used if l_different_output_gr is .true.
+      gr_target    ! the grid where the values should be remapped to;
+                   ! only used if l_different_output_gr is .true.
+
+    type (stats), intent(inout) :: &
+      stats_zt, &
+      stats_zm, &
+      stats_sfc, &
+      stats_lh_zt, &
+      stats_lh_sfc, &
+      stats_rad_zt, &
+      stats_rad_zm
+
+    integer, intent(inout) :: &
+      err_code  ! Error code catching and relaying any errors occurring in this subroutine
+
+    ! External
+    intrinsic :: floor
+
+    ! Local Variables
+
+    logical :: l_different_output_grid
+
+    ! ------------------- Begin Code -------------------
+    l_different_output_grid = .true.
+
+    call stats_end_timestep_helper( stats_metadata,                 & ! intent(in)
+                                    l_different_output_grid,        & ! intent(in)
+                                    gr_source, gr_target,           & ! intent(in)
+                                    total_idx_rho_lin_spline,       & ! intent(in)
+                                    rho_lin_spline_vals,            & ! intent(in)
+                                    rho_lin_spline_levels,          & ! intent(in)
+                                    stats_zt, stats_zm, stats_sfc,  & ! intent(inout)
+                                    stats_lh_zt, stats_lh_sfc,      & ! intent(inout)
+                                    stats_rad_zt, stats_rad_zm,     & ! intent(inout)
+                                    err_code                        & ! intent(inout)
+                                  )
+    
+  end subroutine stats_end_timestep_w_diff_output_gr
 
   !----------------------------------------------------------------------
   subroutine stats_accumulate( &

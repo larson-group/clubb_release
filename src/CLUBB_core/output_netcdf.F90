@@ -14,10 +14,11 @@ module output_netcdf
 
 #ifdef NETCDF
 
-  public :: open_netcdf_for_writing, write_netcdf, close_netcdf, &
+  public :: open_netcdf_for_writing, write_netcdf, &
+            write_netcdf_w_diff_output_gr, close_netcdf, &
             format_date, first_write, output_multi_col_fields
 
-  private :: define_netcdf, write_grid
+  private :: define_netcdf, write_grid, write_netcdf_helper
 
   ! Constant parameters
   ! This will truncate all timesteps smaller than 1 mn to a minute for 
@@ -31,10 +32,10 @@ module output_netcdf
 
 !-------------------------------------------------------------------------------
   subroutine open_netcdf_for_writing( nlat, nlon, fdir, fname, ia, iz, zgrid,  & 
-                          day, month, year, lat_vals, lon_vals, & 
-                          time, dtwrite, nvar, &
-                          ncf, err_code, &
-                          nsamp) ! optional
+                                      day, month, year, lat_vals, lon_vals, & 
+                                      time, dtwrite, nvar, &
+                                      ncf, err_code, &
+                                      nsamp ) ! optional
 
 ! Description:
 !   Defines the structure used to reference the file `ncf'
@@ -197,7 +198,13 @@ module output_netcdf
 
 !-------------------------------------------------------------------------------
 
-  subroutine write_netcdf( ncf, err_code )
+  subroutine write_netcdf_helper( l_different_output_grid, &
+                                  gr_source, gr_target, &
+                                  zm_zt, &
+                                  total_idx_rho_lin_spline, &
+                                  rho_lin_spline_vals, &
+                                  rho_lin_spline_levels, &
+                                  ncf, err_code )
 
 ! Description:
 !   Writes some data to the NetCDF dataset, but doesn't close it.
@@ -222,9 +229,36 @@ module output_netcdf
         clubb_fatal_error     ! Constant
 
     use clubb_precision, only: &
+        stat_rknd, &
+        core_rknd, &
         time_precision ! Constant
 
+    use grid_adaptation_module, only: &
+        remap_zm_values, remap_zt_values
+
+    use grid_class, only: grid ! Type
+
     implicit none
+
+    logical, intent(in) :: &
+      l_different_output_grid  ! use different grid to output values to file
+    
+    integer, intent(in) :: &
+      total_idx_rho_lin_spline ! number of points in the rho spline
+
+    real( kind = core_rknd ), dimension(total_idx_rho_lin_spline), intent(in) :: &
+      rho_lin_spline_vals, &  ! the rho values for constructing the spline for remapping;
+                              ! only used if l_different_output_gr is .true.
+      rho_lin_spline_levels   ! the levels at which the rho values are given;
+                             ! only used if l_different_output_gr is .true.
+
+    type( grid ), intent(in) :: &
+      gr_source, & ! the grid where the values are currently given on;
+                   ! only used if l_different_output_gr is .true.
+      gr_target    ! the grid where the values should be remapped to;
+                   ! only used if l_different_output_gr is .true.
+
+    character(len=2), intent(in) :: zm_zt ! whether the file is the zm or zt file
 
     type (stat_file), intent(inout) :: ncf    ! The file
 
@@ -233,11 +267,27 @@ module output_netcdf
 
     ! Local Variables
     integer, dimension(:), allocatable :: stat ! Error status
+
     real(kind=8), dimension(1) :: time         ! Time          [s]
 
-    integer :: i ! Array index
+    real(kind=stat_rknd), dimension(:,:,:,:), allocatable :: &
+      grid_avg_var_diff_gr  ! only needed if l_different_output_grid = .true., to store the
+                            ! remapped values on the output grid
+
+    real(kind=stat_rknd), dimension(:,:,:,:,:), allocatable :: &
+      samples_of_var_diff_gr  ! only needed if l_different_output_grid = .true., to store the
+                              ! remapped values on the output grid
+
+    integer :: i, &     ! Array index
+               samp, lon, lat ! loop vars
 
     ! ---- Begin Code ----
+    ! TODO remove if, for removing compiler warnings about accessing uninitialized objects
+    if ( l_different_output_grid ) then
+      ! TODO is ncf%iz always the count or do I have to take ncf%ia - ncf%iz ?
+      allocate( grid_avg_var_diff_gr(1,ncf%nlon,ncf%nlat,ncf%iz) )
+      allocate( samples_of_var_diff_gr(1,ncf%nsamp,ncf%nlon,ncf%nlat,ncf%iz) )
+    endif
 
     ! If there is no data to write, then return
     if ( ncf%nvar == 0 ) then
@@ -268,17 +318,81 @@ module output_netcdf
     ! Otherwise, if the samples_of_var are allocated, print to 5d
     do i = 1, ncf%nvar, 1
       if ( allocated(ncf%grid_avg_var) ) then
-         stat(i)  &
-         = nf90_put_var( ncid=ncf%iounit, varid=ncf%grid_avg_var(i)%indx,  &
-                         values=ncf%grid_avg_var(i)%ptr(:,:,ncf%ia:ncf%iz),  &
-                         start=(/1,1,1,ncf%ntimes/), &
-                         count=(/ncf%nlon,ncf%nlat,ncf%iz,1/) )
+        if ( l_different_output_grid ) then
+          do lon = 1, ncf%nlon
+            do lat = 1, ncf%nlat
+              if ( zm_zt == 'zm' ) then
+                grid_avg_var_diff_gr(:,lon,lat,:) &
+                  = remap_zm_values( 1, gr_source, gr_target, &
+                                     total_idx_rho_lin_spline, &
+                                     rho_lin_spline_vals, &
+                                     rho_lin_spline_levels, &
+                                     ncf%grid_avg_var(i)%ptr(lon,lat,ncf%ia:gr_source%nzm ) &
+                                    )
+              else if ( zm_zt == 'zt' ) then
+                grid_avg_var_diff_gr(:,lon,lat,:) &
+                  = remap_zt_values( 1, gr_source, gr_target, &
+                                     total_idx_rho_lin_spline, &
+                                     rho_lin_spline_vals, &
+                                     rho_lin_spline_levels, &
+                                     ncf%grid_avg_var(i)%ptr(lon,lat,ncf%ia:gr_source%nzt ) &
+                                    )
+              else
+                error stop 'Invalid value for zm_zt in write_netcdf_helper()'
+              endif
+            end do
+          end do
+          stat(i)  &
+          = nf90_put_var( ncid=ncf%iounit, varid=ncf%grid_avg_var(i)%indx,  &
+                          values=grid_avg_var_diff_gr(1,:,:,:),  &
+                          start=(/1,1,1,ncf%ntimes/), &
+                          count=(/ncf%nlon,ncf%nlat,ncf%iz,1/) )
+        else
+          stat(i)  &
+          = nf90_put_var( ncid=ncf%iounit, varid=ncf%grid_avg_var(i)%indx,  &
+                          values=ncf%grid_avg_var(i)%ptr(:,:,ncf%ia:ncf%iz),  &
+                          start=(/1,1,1,ncf%ntimes/), &
+                          count=(/ncf%nlon,ncf%nlat,ncf%iz,1/) )
+        endif
       elseif ( allocated(ncf%samples_of_var) ) then
-        stat(i)  &
-        = nf90_put_var( ncid=ncf%iounit, varid=ncf%samples_of_var(i)%indx,  &
-                        values=ncf%samples_of_var(i)%ptr(:,:,:,ncf%ia:ncf%iz),  &
-                        start=(/1,1,1,1,ncf%ntimes/), &
-                        count=(/ncf%nsamp,ncf%nlon,ncf%nlat,ncf%iz,1/) )
+        if ( l_different_output_grid ) then
+          do samp = 1, ncf%nsamp
+            do lon = 1, ncf%nlon
+              do lat = 1, ncf%nlat
+                if ( zm_zt == 'zm' ) then
+                  samples_of_var_diff_gr(:,samp,lon,lat,:) &
+                    = remap_zm_values( 1, gr_source, gr_target, &
+                                       total_idx_rho_lin_spline, &
+                                       rho_lin_spline_vals, &
+                                       rho_lin_spline_levels, &
+                                       ncf%samples_of_var(i)%ptr(samp,lon,lat,ncf%ia:gr_source%nzm)&
+                                      )
+                else if ( zm_zt == 'zt' ) then
+                  samples_of_var_diff_gr(:,samp,lon,lat,:) &
+                    = remap_zt_values( 1, gr_source, gr_target, &
+                                       total_idx_rho_lin_spline, &
+                                       rho_lin_spline_vals, &
+                                       rho_lin_spline_levels, &
+                                       ncf%samples_of_var(i)%ptr(samp,lon,lat,ncf%ia:gr_source%nzt) &
+                                      )
+                else
+                  error stop 'Invalid value for zm_zt in write_netcdf_helper()'
+                endif
+              end do
+            end do
+          end do
+          stat(i)  &
+          = nf90_put_var( ncid=ncf%iounit, varid=ncf%samples_of_var(i)%indx,  &
+                          values=samples_of_var_diff_gr(1,:,:,:,:),  &
+                          start=(/1,1,1,1,ncf%ntimes/), &
+                          count=(/ncf%nsamp,ncf%nlon,ncf%nlat,ncf%iz,1/) )
+        else
+          stat(i)  &
+          = nf90_put_var( ncid=ncf%iounit, varid=ncf%samples_of_var(i)%indx,  &
+                          values=ncf%samples_of_var(i)%ptr(:,:,:,ncf%ia:ncf%iz),  &
+                          start=(/1,1,1,1,ncf%ntimes/), &
+                          count=(/ncf%nsamp,ncf%nlon,ncf%nlat,ncf%iz,1/) )
+        endif
       endif
     enddo ! i=1..nvar
 
@@ -301,8 +415,147 @@ module output_netcdf
 
     deallocate( stat )
 
+    ! TODO remove if, for removing compiler warnings about accessing uninitialized objects
+    if ( l_different_output_grid ) then
+      deallocate( grid_avg_var_diff_gr )
+      deallocate( samples_of_var_diff_gr )
+    endif
+
     return
+  end subroutine write_netcdf_helper
+
+  !-------------------------------------------------------------------------------
+
+  subroutine write_netcdf( ncf, err_code )
+
+  ! Description:
+  !   Writes some data to the NetCDF dataset, but doesn't close it.
+  !
+  ! References:
+  !   None   
+  !-------------------------------------------------------------------------------
+
+    use stat_file_module, only: & 
+        stat_file ! Variable
+
+    use grid_class, only: grid ! Type
+
+    use clubb_precision, only: core_rknd
+
+    implicit none
+
+    type (stat_file), intent(inout) :: ncf    ! The file
+
+    integer, intent(inout) :: &
+      err_code      ! Error code catching and relaying any errors occurring in this subroutine
+
+    ! Local Variables
+    logical :: &
+      l_different_output_grid ! use different grid to write values to file
+
+    integer :: &
+      total_idx_rho_lin_spline_placeholder ! number of points in the rho spline
+
+    real( kind = core_rknd ), dimension(:), allocatable :: &
+      rho_lin_spline_vals_placeholder, &  ! the rho values for constructing the spline for
+                                          ! remapping; only used if l_different_output_gr is .true.
+      rho_lin_spline_levels_placeholder   ! the levels at which the rho values are given;
+                                          ! only used if l_different_output_gr is .true.
+
+    type( grid ) :: &
+      gr_source_placeholder, & ! the grid where the values are currently given on;
+                               ! only used if l_different_output_gr is .true.
+      gr_target_placeholder    ! the grid where the values should be remapped to;
+                               ! only used if l_different_output_gr is .true.
+
+    character(len=2) :: zm_zt_placeholder ! whether the file is the zm or zt file
+                                          ! only used if l_different_output_gr is .true.
+
+    ! ---- Begin Code ----
+    l_different_output_grid = .false.
+    zm_zt_placeholder = ''
+    total_idx_rho_lin_spline_placeholder = 1
+
+    allocate( rho_lin_spline_vals_placeholder(total_idx_rho_lin_spline_placeholder) )
+    allocate( rho_lin_spline_levels_placeholder(total_idx_rho_lin_spline_placeholder) )
+
+    call write_netcdf_helper( l_different_output_grid, &
+                              gr_source_placeholder, gr_target_placeholder, &
+                              zm_zt_placeholder, &
+                              total_idx_rho_lin_spline_placeholder, &
+                              rho_lin_spline_vals_placeholder, &
+                              rho_lin_spline_levels_placeholder, &
+                              ncf, err_code )
+     
+    deallocate( rho_lin_spline_vals_placeholder )
+    deallocate( rho_lin_spline_levels_placeholder )
+
   end subroutine write_netcdf
+
+  !-------------------------------------------------------------------------------
+
+  subroutine write_netcdf_w_diff_output_gr( gr_source, gr_target, &
+                                            zm_zt, &
+                                            total_idx_rho_lin_spline, &
+                                            rho_lin_spline_vals, &
+                                            rho_lin_spline_levels, &
+                                            ncf, err_code )
+
+  ! Description:
+  !   Writes some data to the NetCDF dataset, but doesn't close it.
+  !   The data is remapped to the given output grid before it is written to file.
+  !
+  ! References:
+  !   None   
+  !-------------------------------------------------------------------------------
+
+    use stat_file_module, only: & 
+        stat_file ! Variable
+
+    use grid_class, only: grid ! Type
+
+    use clubb_precision, only: core_rknd
+
+    implicit none
+
+    integer, intent(in) :: &
+      total_idx_rho_lin_spline ! number of points in the rho spline
+
+    real( kind = core_rknd ), dimension(total_idx_rho_lin_spline), intent(in) :: &
+      rho_lin_spline_vals, &  ! the rho values for constructing the spline for remapping;
+                              ! only used if l_different_output_gr is .true.
+      rho_lin_spline_levels   ! the levels at which the rho values are given;
+                             ! only used if l_different_output_gr is .true.
+
+    type( grid ), intent(in) :: &
+      gr_source, & ! the grid where the values are currently given on;
+                   ! only used if l_different_output_gr is .true.
+      gr_target    ! the grid where the values should be remapped to;
+                   ! only used if l_different_output_gr is .true.
+
+    character(len=2), intent(in) :: zm_zt ! whether the file is the zm or zt file
+
+    type (stat_file), intent(inout) :: ncf    ! The file
+
+    integer, intent(inout) :: &
+      err_code      ! Error code catching and relaying any errors occurring in this subroutine
+
+    ! Local variables
+    logical :: &
+      l_different_output_grid ! use different grid to write values to file
+
+    ! ---- Begin Code ----
+    l_different_output_grid = .true.
+
+    call write_netcdf_helper( l_different_output_grid, &
+                              gr_source, gr_target, &
+                              zm_zt, &
+                              total_idx_rho_lin_spline, &
+                              rho_lin_spline_vals, &
+                              rho_lin_spline_levels, &
+                              ncf, err_code )
+
+  end subroutine write_netcdf_w_diff_output_gr
 
 !-------------------------------------------------------------------------------
   subroutine define_netcdf( ncid, nlat, nlon, iz, nsamp, &

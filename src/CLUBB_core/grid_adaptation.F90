@@ -2329,7 +2329,7 @@ module grid_adaptation_module
     do i = 1, nzt
         gr_dens_z(i) = zt(1,i)
         if ( wp2_zt(1,i) > threshold ) then
-          gr_dens(i) = Lscale(1,i)
+          gr_dens(i) = 1/Lscale(1,i)
         else
           gr_dens(i) = threshold
         end if

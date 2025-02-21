@@ -60,7 +60,7 @@ module stats_type_utilities
     ! Which grid the variable is located on (e.g., zt, zm, sfc)
     type(stats), target, intent(inout) :: grid_kind
 
-    grid_kind%file%grid_avg_var(var_index)%ptr => grid_kind%accum_field_values(:,:,:,var_index)
+    grid_kind%file%grid_avg_var(var_index)%ptr => grid_kind%accum_field_values(:,:,:,var_index) ! TODO would it make sense to remove that pointer and just say set grid_avg_var everytime we want to write it into the file, since we probaly dont want to change accum_field_Values to the dycore or common grid, since then we loose accuracy that we could just keep by letting CLUBB run completely on the refined physics grid, so grid_avg_var could be different from the accum_field_values, but should store the values that are actually written in the file, so the values from accum_feld_values, just remapped to a different grid, but we probably would need to alloate then the necessary space for the grid_avg_variable here, but we have the dimension with %file%iz... and accum_field_Values, right?
     grid_kind%file%grid_avg_var(var_index)%name = var_name
     grid_kind%file%grid_avg_var(var_index)%description = var_description
     grid_kind%file%grid_avg_var(var_index)%units = var_units

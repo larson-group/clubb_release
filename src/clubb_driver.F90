@@ -147,7 +147,8 @@ module clubb_driver
 
     use stats_clubb_utilities, only: & 
         stats_begin_timestep, stats_end_timestep, & !----------------------- Procedure(s)
-        stats_init
+        stats_end_timestep_w_diff_output_gr, &
+        stats_init, stats_init_w_diff_output_gr
 
     use stats_type_utilities, only: &
         stat_update_var !---------------------------------------------------- Procedure
@@ -987,10 +988,11 @@ module clubb_driver
       l_last_timestep
 
     type( grid ) :: &
-      gr_dycore ! only set and used, if l_add_dycore_grid is .true
+      gr_dycore, & ! only set and used, if l_add_dycore_grid is .true.
+      gr_output
 
     real( kind = core_rknd ), dimension(:,:), allocatable :: &
-      rho_ds_zm_dycore ! only set and used, if l_add_dycore_grid is .true
+      rho_ds_zm_dycore ! only set and used, if l_add_dycore_grid is .true.
 
     real( kind = core_rknd ), dimension(:), allocatable :: &
       gr_dens_z, &     ! levels at which the grid density is given
@@ -1190,6 +1192,9 @@ module clubb_driver
     open(unit=iunit, file=runfile, status='old', action='read')
     read(unit=iunit, nml=configurable_clubb_flags_nl)
     close(unit=iunit)
+
+    ! TODO also use variables for iunit and file and write file in output, and it should be replaced if some file with that name is already there
+    open(unit=42, file='grid_adaptation.txt', status='replace', action='write')
 
     if ( l_vert_avg_closure ) then
       l_trapezoidal_rule_zt    = .true.
@@ -1893,12 +1898,14 @@ module clubb_driver
                                                                                 ! since the host
                                                                                 ! model has 31
                                                                                 ! levels
+      gr_output = gr_dycore
       allocate( rho_ds_zm_dycore(ngrdcol, gr_dycore%nzm) ) ! dry, static density: 
                                                            ! m-levs of dycore grid
     else
       ! if no interpolation should be used, rho_ds_zm_dycore is not needed and we can use a 
       ! dummy variable
       allocate( rho_ds_zm_dycore(ngrdcol, 1) ) ! dry, static density: m-levs of dycore grid
+      gr_output = gr
     end if
 
     if (grid_adapt_in_time_method > 0) then
@@ -2272,47 +2279,103 @@ module clubb_driver
 #endif
 !$OMP CRITICAL
     if ( stats_metadata%l_output_rad_files ) then
-
       ! Initialize statistics output, note that this will allocate/initialize stats
       ! variables for all columns, but only create the stats files for the first columns
-      call stats_init( iunit, fname_prefix, output_dir, l_stats, & ! In
-                      stats_fmt, stats_tsamp, stats_tout, runfile, & ! In
-                      hydromet_dim, sclr_dim, edsclr_dim, sclr_tol, & ! In
-                      hm_metadata%hydromet_list, hm_metadata%l_mix_rat_hm, & ! In
-                      gr%nzm, ngrdcol, nlon, nlat, gr%zt, gr%zm, total_atmos_dim - 1, & ! In
-                      complete_alt(1:total_atmos_dim), total_atmos_dim, & ! In
-                      complete_momentum(1:total_atmos_dim + 1), day, month, year, & ! In
-                      (/lon_vals/), (/lat_vals/), time_current, dt_main, l_silhs_out,&!In
-                      clubb_params, &
-                      clubb_config_flags%l_uv_nudge, &
-                      clubb_config_flags%l_tke_aniso, &
-                      clubb_config_flags%l_standard_term_ta, &
-                      stats_metadata, & ! In/Out
-                      stats_zt, stats_zm, stats_sfc, & ! In/Out
-                      stats_lh_zt, stats_lh_sfc, & ! In/Out
-                      stats_rad_zt, stats_rad_zm, & ! In/Out
-                      err_code ) ! In/Out
+      if ( grid_adapt_in_time_method == 0 .and. .not. l_add_dycore_grid ) then ! TODO or also remap when we do remap from dycore even without grid adaptation?
+
+        call stats_init( iunit, fname_prefix, output_dir, l_stats, & ! In
+                         stats_fmt, stats_tsamp, stats_tout, runfile, & ! In
+                         hydromet_dim, sclr_dim, edsclr_dim, sclr_tol, & ! In
+                         hm_metadata%hydromet_list, hm_metadata%l_mix_rat_hm, & ! In
+                         gr%nzm, ngrdcol, nlon, nlat, gr%zt, gr%zm, total_atmos_dim - 1, & ! In
+                         complete_alt(1:total_atmos_dim), total_atmos_dim, & ! In
+                         complete_momentum(1:total_atmos_dim + 1), day, month, year, & ! In
+                         (/lon_vals/), (/lat_vals/), time_current, dt_main, l_silhs_out,&!In
+                         clubb_params, & ! In
+                         clubb_config_flags%l_uv_nudge, & ! In
+                         clubb_config_flags%l_tke_aniso, & ! In
+                         clubb_config_flags%l_standard_term_ta, & ! In
+                         stats_metadata, & ! In/Out
+                         stats_zt, stats_zm, stats_sfc, & ! In/Out
+                         stats_lh_zt, stats_lh_sfc, & ! In/Out
+                         stats_rad_zt, stats_rad_zm, & ! In/Out
+                         err_code ) ! In/Out
+
+      else
+
+        call stats_init_w_diff_output_gr( iunit, fname_prefix, output_dir, l_stats, & ! In
+                                          stats_fmt, stats_tsamp, stats_tout, runfile, & ! In
+                                          hydromet_dim, sclr_dim, edsclr_dim, sclr_tol, & ! In
+                                          hm_metadata%hydromet_list, & ! In
+                                          hm_metadata%l_mix_rat_hm, & ! In
+                                          gr%nzm, ngrdcol, nlon, nlat, gr%zt, gr%zm, & ! In
+                                          total_atmos_dim - 1, & ! In
+                                          complete_alt(1:total_atmos_dim), total_atmos_dim, & ! In
+                                          complete_momentum(1:total_atmos_dim + 1), & ! In
+                                          day, month, year, & ! In
+                                          (/lon_vals/), (/lat_vals/), time_current, & ! In
+                                          dt_main, l_silhs_out,& !In
+                                          clubb_params, & ! In
+                                          clubb_config_flags%l_uv_nudge, & ! In
+                                          clubb_config_flags%l_tke_aniso, & ! In
+                                          clubb_config_flags%l_standard_term_ta, & ! In
+                                          gr_output%nzm, &
+                                          gr_output%zt, &
+                                          gr_output%zm, &
+                                          stats_metadata, & ! In/Out
+                                          stats_zt, stats_zm, stats_sfc, & ! In/Out
+                                          stats_lh_zt, stats_lh_sfc, & ! In/Out
+                                          stats_rad_zt, stats_rad_zm, & ! In/Out
+                                          err_code ) ! In/Out
+      endif
 
     else
-
       ! Initialize statistics output, note that this will allocate/initialize stats
       ! variables for all columns, but only create the stats files for the first columns
-      call stats_init( iunit, fname_prefix, output_dir, l_stats, & ! In
-                      stats_fmt, stats_tsamp, stats_tout, runfile, & ! In
-                      hydromet_dim, sclr_dim, edsclr_dim, sclr_tol, & ! In
-                      hm_metadata%hydromet_list, hm_metadata%l_mix_rat_hm, & ! In
-                      gr%nzm, ngrdcol, nlon, nlat, gr%zt, gr%zm, 0, & ! In
-                      rad_dummy, 0, rad_dummy, day, month, year, & ! In
-                      (/lon_vals/), (/lat_vals/), time_current, dt_main, l_silhs_out,&!In
-                      clubb_params, &
-                      clubb_config_flags%l_uv_nudge, &
-                      clubb_config_flags%l_tke_aniso, &
-                      clubb_config_flags%l_standard_term_ta, &
-                      stats_metadata, & ! In/Out
-                      stats_zt, stats_zm, stats_sfc, & ! In/Out
-                      stats_lh_zt, stats_lh_sfc, & ! In/Out
-                      stats_rad_zt, stats_rad_zm, & ! In/Out
-                      err_code ) ! In/Out
+      if ( grid_adapt_in_time_method == 0 .and. .not. l_add_dycore_grid ) then ! TODO or also remap when we do remap from dycore even without grid adaptation?
+
+        call stats_init( iunit, fname_prefix, output_dir, l_stats, & ! In
+                         stats_fmt, stats_tsamp, stats_tout, runfile, & ! In
+                         hydromet_dim, sclr_dim, edsclr_dim, sclr_tol, & ! In
+                         hm_metadata%hydromet_list, hm_metadata%l_mix_rat_hm, & ! In
+                         gr%nzm, ngrdcol, nlon, nlat, gr%zt, gr%zm, 0, & ! In
+                         rad_dummy, 0, rad_dummy, day, month, year, & ! In
+                         (/lon_vals/), (/lat_vals/), time_current, dt_main, l_silhs_out,&!In
+                         clubb_params, & ! In
+                         clubb_config_flags%l_uv_nudge, & ! In
+                         clubb_config_flags%l_tke_aniso, & ! In
+                         clubb_config_flags%l_standard_term_ta, & ! In
+                         stats_metadata, & ! In/Out
+                         stats_zt, stats_zm, stats_sfc, & ! In/Out
+                         stats_lh_zt, stats_lh_sfc, & ! In/Out
+                         stats_rad_zt, stats_rad_zm, & ! In/Out
+                         err_code ) ! In/Out
+      
+      else
+
+        call stats_init_w_diff_output_gr( iunit, fname_prefix, output_dir, l_stats, & ! In
+                                          stats_fmt, stats_tsamp, stats_tout, runfile, & ! In
+                                          hydromet_dim, sclr_dim, edsclr_dim, sclr_tol, & ! In
+                                          hm_metadata%hydromet_list, & ! In
+                                          hm_metadata%l_mix_rat_hm, & ! In
+                                          gr%nzm, ngrdcol, nlon, nlat, gr%zt, gr%zm, 0, & ! In
+                                          rad_dummy, 0, rad_dummy, day, month, year, & ! In
+                                          (/lon_vals/), (/lat_vals/), time_current, & ! In
+                                          dt_main, l_silhs_out,& ! In
+                                          clubb_params, & ! In
+                                          clubb_config_flags%l_uv_nudge, & ! In
+                                          clubb_config_flags%l_tke_aniso, & ! In
+                                          clubb_config_flags%l_standard_term_ta, & ! In
+                                          gr_output%nzm, &
+                                          gr_output%zt, &
+                                          gr_output%zm, &
+                                          stats_metadata, & ! In/Out
+                                          stats_zt, stats_zm, stats_sfc, & ! In/Out
+                                          stats_lh_zt, stats_lh_sfc, & ! In/Out
+                                          stats_rad_zt, stats_rad_zm, & ! In/Out
+                                          err_code ) ! In/Out
+
+      endif
 
     end if
 !$OMP END CRITICAL
@@ -2388,6 +2451,8 @@ module clubb_driver
     end if
     stats_nsamp = nint( stats_metadata%stats_tsamp / dt_main )
     stats_nout = nint( stats_metadata%stats_tout / dt_main )
+
+    write (42,*) 0, gr%zm
 
     !initialize timers    
     time_loop_init = 0.0_core_rknd
@@ -3156,10 +3221,27 @@ module clubb_driver
       ! but since the stats isn't setup to use multiple columns, it will just attempt
       ! write to the same file
       if ( stats_metadata%l_stats_last ) then
-        call stats_end_timestep( stats_metadata,                            & ! intent(in)
-                                 stats_zt(1), stats_zm(1), stats_sfc(1),    & ! intent(inout)
-                                 stats_lh_zt(1), stats_lh_sfc(1),           & ! intent(inout)
-                                 stats_rad_zt(1), stats_rad_zm(1), err_code ) ! intent(inout)
+        if ( grid_adapt_in_time_method == 0 .and. .not. l_add_dycore_grid ) then
+          call stats_end_timestep( stats_metadata,                            & ! intent(in)
+                                   stats_zt(1), stats_zm(1), stats_sfc(1),    & ! intent(inout)
+                                   stats_lh_zt(1), stats_lh_sfc(1),           & ! intent(inout)
+                                   stats_rad_zt(1), stats_rad_zm(1), err_code ) ! intent(inout)
+        else
+          call stats_end_timestep_w_diff_output_gr( stats_metadata,   & ! intent(in)
+                                                    gr, gr_output,    & ! intent(in)
+                                                    gr%nzm,           & ! intent(in)
+                                                    rho_ds_zm(1,:),   & ! intent(in)
+                                                    gr%zm(1,:),       & ! intent(in)
+                                                    stats_zt(1),      & ! intent(inout)
+                                                    stats_zm(1),      & ! intent(inout)
+                                                    stats_sfc(1),     & ! intent(inout)
+                                                    stats_lh_zt(1),   & ! intent(inout)
+                                                    stats_lh_sfc(1),  & ! intent(inout)
+                                                    stats_rad_zt(1),  & ! intent(inout)
+                                                    stats_rad_zm(1),  & ! intent(inout)
+                                                    err_code          & ! intent(inout)
+                                                  )
+        endif
       end if
 
       ! Set Time
@@ -3208,8 +3290,13 @@ module clubb_driver
       call cpu_time(time_stop)
       time_output_multi_col = time_output_multi_col + time_stop - time_start
 
-      if ( grid_adapt_in_time_method > 0 .and. modulo(itime, 1) == 0) then
-
+      if ( (grid_adapt_in_time_method > 0) .and. (modulo(itime, 100) == 0) &
+           .and. (stats_metadata%l_stats_last) ) then ! only adapt grid when the average of the last
+                                                      ! iterations was just written to file,
+                                                      ! in order not to change the grid in between
+                                                      ! iterations that get averaged before written
+                                                      ! to file
+        write(*,*) 'adapt grid'
         call cpu_time(time_start)
       
         if ( grid_adapt_in_time_method == 1 ) then
@@ -3259,6 +3346,8 @@ module clubb_driver
                          cloudy_updraft_frac, cloudy_downdraft_frac, &           ! Intent(inout)
                          rcm_in_layer, cloud_cover, invrs_tau_zm, &              ! Intent(inout)
                          Lscale )                                                ! Intent(inout)
+
+        write (42,*)  itime, gr%zm
 
         if ( .not. l_add_dycore_grid ) then
           ! if we want to adapt the grid over time, but don't want to simulate the host model by
@@ -3333,6 +3422,8 @@ module clubb_driver
     end if
     write(unit=fstdout, fmt='(a,f10.4)') 'CLUBB-TIMER time_total =             ', &
       time_total
+
+    close(42)
 
     ! Only end stats for the first column of values, this closes the stats files
     ! but since the stats isn't setup to use multiple columns, it will just attempt
