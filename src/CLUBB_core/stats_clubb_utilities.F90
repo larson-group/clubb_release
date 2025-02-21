@@ -2207,7 +2207,6 @@ module stats_clubb_utilities
     ! limits of the domain (this is always true in the single-column case because it's 1x1).
     if ( clubb_i == stats_zt%ii .and. clubb_j == stats_zt%jj ) then
       ! Write to file
-      !write(*,*) 'start writing to file'
       if ( stats_metadata%l_grads ) then
         call write_grads( stats_zt%file ) ! intent(inout)
         call write_grads( stats_zm%file ) ! intent(inout)
@@ -2259,7 +2258,7 @@ module stats_clubb_utilities
         end if
 
         call write_netcdf( stats_sfc%file, err_code ) ! intent(inout)
-        !write(*,*) 'end write to file'
+        
         if ( err_code == clubb_fatal_error ) return
 #else
         error stop "This program was not compiled with netCDF support"

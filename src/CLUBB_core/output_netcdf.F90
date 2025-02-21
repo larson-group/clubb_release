@@ -282,12 +282,6 @@ module output_netcdf
                samp, lon, lat ! loop vars
 
     ! ---- Begin Code ----
-    ! TODO remove if, for removing compiler warnings about accessing uninitialized objects
-    if ( l_different_output_grid ) then
-      ! TODO is ncf%iz always the count or do I have to take ncf%ia - ncf%iz ?
-      allocate( grid_avg_var_diff_gr(1,ncf%nlon,ncf%nlat,ncf%iz) )
-      allocate( samples_of_var_diff_gr(1,ncf%nsamp,ncf%nlon,ncf%nlat,ncf%iz) )
-    endif
 
     ! If there is no data to write, then return
     if ( ncf%nvar == 0 ) then
@@ -319,6 +313,9 @@ module output_netcdf
     do i = 1, ncf%nvar, 1
       if ( allocated(ncf%grid_avg_var) ) then
         if ( l_different_output_grid ) then
+          if ( .not. allocated(grid_avg_var_diff_gr) ) then
+            allocate( grid_avg_var_diff_gr(1,ncf%nlon,ncf%nlat,ncf%iz) )
+          endif
           do lon = 1, ncf%nlon
             do lat = 1, ncf%nlat
               if ( zm_zt == 'zm' ) then
@@ -356,6 +353,9 @@ module output_netcdf
         endif
       elseif ( allocated(ncf%samples_of_var) ) then
         if ( l_different_output_grid ) then
+          if ( .not. allocated(samples_of_var_diff_gr) ) then
+            allocate( samples_of_var_diff_gr(1,ncf%nsamp,ncf%nlon,ncf%nlat,ncf%iz) )
+          endif
           do samp = 1, ncf%nsamp
             do lon = 1, ncf%nlon
               do lat = 1, ncf%nlat
@@ -415,11 +415,13 @@ module output_netcdf
 
     deallocate( stat )
 
-    ! TODO remove if, for removing compiler warnings about accessing uninitialized objects
-    if ( l_different_output_grid ) then
+    if ( allocated(grid_avg_var_diff_gr) ) then
       deallocate( grid_avg_var_diff_gr )
+    end if
+
+    if ( allocated(samples_of_var_diff_gr) ) then
       deallocate( samples_of_var_diff_gr )
-    endif
+    end if
 
     return
   end subroutine write_netcdf_helper
