@@ -952,8 +952,8 @@ module mono_flux_limiter
       ! Boundary conditions
       do i = 1, ngrdcol
 
-        min_x_allowable(i,nzt) = 0._core_rknd
-        max_x_allowable(i,nzt) = 0._core_rknd
+!        min_x_allowable(i,nzt) = 0._core_rknd
+!        max_x_allowable(i,nzt) = 0._core_rknd
 
         wpxp_mfl_min(i,1) = 0._core_rknd
         wpxp_mfl_max(i,1) = 0._core_rknd
