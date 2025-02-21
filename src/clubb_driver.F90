@@ -155,9 +155,10 @@ module clubb_driver
     use sounding, only: sclr_max !------------------------------------------- Variable(s)
 
     use time_dependent_input, only: &
-        l_t_dependent,    & !------------------------------------------------ Variable(s)
-        l_input_xpwp_sfc, &
-        l_ignore_forcings
+        l_t_dependent,     & !------------------------------------------------ Variable(s)
+        l_input_xpwp_sfc,  &
+        l_ignore_forcings, &
+        l_sfc_already_initialized
 
     use sponge_layer_damping, only: &
         thlm_sponge_damp_settings,    & !------------------------------------ Variable(s)
@@ -1021,6 +1022,8 @@ module clubb_driver
     l_ignore_forcings = .false. 
     l_modify_ic_with_cubic_int = .false.
     l_modify_bc_for_cnvg_test = .false.
+
+    l_sfc_already_initialized = .false.
 
     thlm_sponge_damp_settings%l_sponge_damping = .false.
     rtm_sponge_damp_settings%l_sponge_damping = .false.
