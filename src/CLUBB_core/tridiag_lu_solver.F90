@@ -64,6 +64,10 @@ module tridiag_lu_solvers
   use clubb_precision, only:  &
     core_rknd ! Variable(s)
 
+#ifdef GPTL
+    use gptl
+#endif
+
   implicit none
 
   public :: tridiag_lu_solve
@@ -77,6 +81,8 @@ module tridiag_lu_solvers
   end interface
 
   private ! Default scope
+  
+  integer :: ret_code
 
   contains
 
@@ -181,6 +187,10 @@ module tridiag_lu_solvers
        
     !$acc data create( upper, lower_diag_invrs )
     
+#ifdef GPTL
+    ret_code = GPTLstart('tridiag_lu_solve_single_rhs_multiple_lhs')
+#endif
+
     !$acc parallel loop gang vector default(present)
     do i = 1, ngrdcol
       lower_diag_invrs(i,1) = 1.0_core_rknd / lhs(0,i,1)
@@ -224,6 +234,10 @@ module tridiag_lu_solvers
     end do
     !$acc end parallel loop
 
+#ifdef GPTL
+    ret_code = GPTLstop('tridiag_lu_solve_single_rhs_multiple_lhs')
+#endif
+
     !$acc end data
 
   end subroutine tridiag_lu_solve_single_rhs_multiple_lhs
@@ -266,6 +280,10 @@ module tridiag_lu_solvers
     ! ----------------------- Begin Code -----------------------
        
     !$acc data create( upper, lower_diag_invrs )
+
+#ifdef GPTL
+    ret_code = GPTLstart('tridiag_lu_solve_multiple_rhs_lhs')
+#endif
 
     !$acc parallel loop gang vector default(present)
     do i = 1, ngrdcol
@@ -312,6 +330,10 @@ module tridiag_lu_solvers
       end do
     end do
     !$acc end parallel loop
+
+#ifdef GPTL
+    ret_code = GPTLstop('tridiag_lu_solve_multiple_rhs_lhs')
+#endif
 
     !$acc end data
 

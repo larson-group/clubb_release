@@ -90,6 +90,10 @@ module penta_lu_solvers
   use clubb_precision, only:  &
     core_rknd ! Variable(s)
 
+#ifdef GPTL
+    use gptl
+#endif
+
   implicit none
 
   public :: penta_lu_solve
@@ -102,6 +106,8 @@ module penta_lu_solvers
   end interface
 
   private ! Default scope
+
+  integer :: ret_code
 
   contains
 
@@ -144,6 +150,10 @@ module penta_lu_solvers
     ! ----------------------- Begin Code -----------------------
        
     !$acc data create( upper_1, upper_2, lower_1, lower_2, lower_diag_invrs )
+
+#ifdef GPTL
+    ret_code = GPTLstart('penta_lu_solve_single_rhs_multiple_lhs')
+#endif
 
     !$acc parallel loop gang vector default(present)
     do i = 1, ngrdcol
@@ -219,6 +229,10 @@ module penta_lu_solvers
     end do
     !$acc end parallel loop
 
+#ifdef GPTL
+    ret_code = GPTLstop('penta_lu_solve_single_rhs_multiple_lhs')
+#endif
+
     !$acc end data
 
   end subroutine penta_lu_solve_single_rhs_multiple_lhs
@@ -264,6 +278,10 @@ module penta_lu_solvers
     ! ----------------------- Begin Code -----------------------
        
     !$acc data create( upper_1, upper_2, lower_1, lower_2, lower_diag_invrs )
+
+#ifdef GPTL
+    ret_code = GPTLstart('penta_lu_solve_multiple_rhs_lhs')
+#endif
 
     !$acc parallel loop gang vector default(present)
     do i = 1, ngrdcol
@@ -342,6 +360,10 @@ module penta_lu_solvers
       end do
     end do
     !$acc end parallel loop
+
+#ifdef GPTL
+    ret_code = GPTLstop('penta_lu_solve_multiple_rhs_lhs')
+#endif
 
     !$acc end data
 

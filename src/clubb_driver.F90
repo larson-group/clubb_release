@@ -22,7 +22,13 @@ module clubb_driver
   use mt95, only: &
     genrand_intg
 
+#ifdef MPI
+  use mpi
+#endif
+
   implicit none
+
+  integer :: ierr, rank, size
 
   ! Variables that contains all the statistics
 
@@ -1025,6 +1031,19 @@ module clubb_driver
     integer :: ret_code
 
 !-----------------------------------------------------------------------
+
+#ifdef MPI
+    call MPI_Init(ierr)
+
+    ! Get the rank of the process
+    call MPI_Comm_rank(MPI_COMM_WORLD, rank, ierr)
+
+    ! Get the total number of processes
+    call MPI_Comm_size(MPI_COMM_WORLD, size, ierr)
+
+    ! Print the rank
+    !print *, 'Hello from rank ', rank, ' out of ', size, ' processes.'
+#endif
 
 #ifdef GPTL
     ret_code = GPTLsetoption(GPTLprint_method, GPTLfull_tree)
@@ -2576,10 +2595,9 @@ module clubb_driver
     ! Save time before main loop starts
 #ifdef GPTL
     ret_code = GPTLstart('mainloop')
-#else
+#endif
     call cpu_time( time_start )
     time_total = time_start
-#endif
 !-------------------------------------------------------------------------------
 !                         Main Time Stepping Loop
 !-------------------------------------------------------------------------------
@@ -2588,9 +2606,8 @@ module clubb_driver
       
 #ifdef GPTL
       ret_code = GPTLstart('loop_init')
-#else
-      call cpu_time( time_start ) ! start timer for initial part of main loop
 #endif
+      call cpu_time( time_start ) ! start timer for initial part of main loop
       
       if ( stats_metadata%l_stats ) then
         ! When this time step is over, the time will be time + dt_main
@@ -2796,11 +2813,11 @@ module clubb_driver
 #ifdef GPTL
       ret_code = GPTLstop('loop_init')
       ret_code = GPTLstart('advance_clubb_core_api')
-#else   
+#endif   
       call cpu_time(time_stop)      
       time_loop_init = time_loop_init + time_stop - time_start   
       call cpu_time(time_start) ! initialize timer for advance_clubb_core
-#endif
+
 
       ! Call the clubb core api for one column
       call advance_clubb_core_api( &
@@ -2858,11 +2875,11 @@ module clubb_driver
 #ifdef GPTL
       ret_code = GPTLstop('advance_clubb_core_api')
       ret_code = GPTLstart('setup_pdf_parameters')
-#else
+#endif
       call cpu_time(time_stop)
       time_clubb_advance = time_clubb_advance + time_stop - time_start
       call cpu_time(time_start) ! initialize timer for setup_pdf_parameters
-#endif
+
 
       if ( .not. trim( microphys_scheme ) == "none" ) then
 
@@ -2929,11 +2946,11 @@ module clubb_driver
 #ifdef GPTL
       ret_code = GPTLstop('setup_pdf_parameters')
       ret_code = GPTLstart('SILHS')
-#else
+#endif
       call cpu_time(time_stop)
       time_clubb_pdf = time_clubb_pdf + time_stop - time_start
       call cpu_time(time_start) ! initialize timer for SILHS
-#endif
+
       
 #ifdef SILHS
       !----------------------------------------------------------------
@@ -3033,11 +3050,11 @@ module clubb_driver
 #ifdef GPTL
       ret_code = GPTLstop('SILHS')
       ret_code = GPTLstart('microphys')
-#else
+#endif
       call cpu_time(time_stop)
       time_SILHS = time_SILHS + time_stop - time_start
       call cpu_time(time_start) ! initialize timer for calc_microphys_scheme_tendcies and advance_microphys
-#endif
+
       
       !----------------------------------------------------------------
       ! Compute Microphysics
@@ -3182,11 +3199,11 @@ module clubb_driver
 #ifdef GPTL
       ret_code = GPTLstop('microphys')
       ret_code = GPTLstart('loop_end')
-#else
+#endif
       call cpu_time(time_stop)
       time_microphys_advance = time_microphys_advance + time_stop - time_start
       call cpu_time(time_start) ! initialize timer for the end part of the main loop
-#endif
+
 
       if ( stats_metadata%l_stats_samp ) then
 
@@ -3300,11 +3317,11 @@ module clubb_driver
 #ifdef GPTL
       ret_code = GPTLstop('loop_end')
       ret_code = GPTLstart('output_multi_col')
-#else
+#endif
       call cpu_time(time_stop)
       time_loop_end = time_loop_end + time_stop - time_start
       call cpu_time(time_start)
-#endif
+
 
 #ifdef NETCDF
       if ( l_output_multi_col ) then
@@ -3330,10 +3347,10 @@ module clubb_driver
 
 #ifdef GPTL
       ret_code = GPTLstop('output_multi_col')
-#else
+#endif
       call cpu_time(time_stop)
       time_output_multi_col = time_output_multi_col + time_stop - time_start
-#endif
+
     
       if ( clubb_at_least_debug_level( 0 ) ) then
         if ( err_code == clubb_fatal_error ) exit
@@ -3346,16 +3363,22 @@ module clubb_driver
     !$acc end data
     !$acc end data
 
+
     ! Measure overall time in the main loop
 #ifdef GPTL
     ret_code = GPTLstop('mainloop')
-    ret_code = GPTLpr (0)
+    !ret_code = GPTLpr(rank)
+    ret_code = GPTLpr_summary(MPI_COMM_WORLD)
     ret_code = GPTLfinalize()
-#else
+#endif
     call cpu_time(time_stop)
     time_total = time_stop - time_total ! subtract previously saved start time 
-#endif
 
+
+#ifdef MPI
+    ! Finalize MPI
+    call MPI_Finalize(ierr)
+#endif
     !-------------------------------------------------------------------------------
     !                       End Main Time Stepping Loop
     !-------------------------------------------------------------------------------

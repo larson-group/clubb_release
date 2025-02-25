@@ -3,6 +3,10 @@
 !===============================================================================
 module fill_holes
 
+#ifdef GPTL
+  use gptl
+#endif
+
   implicit none
 
   public :: fill_holes_driver, &
@@ -15,6 +19,8 @@ module fill_holes
             setup_stats_indices
 
   private ! Set Default Scope
+
+  integer :: ret_code
 
   contains
 
@@ -177,6 +183,10 @@ module fill_holes
     end do
     !$acc end parallel loop
 
+#ifdef GPTL
+    ret_code = GPTLstart('fill_holes')
+#endif
+
     !$acc parallel loop gang vector default(present)
     do i = 1, ngrdcol
 
@@ -233,6 +243,10 @@ module fill_holes
 
     end do
     !$acc end parallel loop
+
+#ifdef GPTL
+    ret_code = GPTLstop('fill_holes')
+#endif
 
     l_field_below_threshold = .false.
 

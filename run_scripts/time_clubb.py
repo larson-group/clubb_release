@@ -10,6 +10,35 @@ import sys
 import time
 import socket
 
+def parse_gptl_summary(timing_results, variables):
+    """
+    Parses the timing.summary file and updates timing_results with the mean_time
+    for each variable specified in the variables list.
+
+    Parameters:
+        variables (list): List of variable names to look for.
+        timing_results (dict): Dictionary to be updated with {variable: mean_time}.
+
+    The timing.summary file is expected to have a header line followed by rows 
+    where the first token is the variable name and the fourth token (index 3) is the mean_time.
+    """
+    with open("timing.summary", "r") as f:
+        # Skip the header line
+        header = f.readline()
+        for line in f:
+            tokens = line.split()
+            # Ensure that the line has at least 4 tokens to avoid index errors.
+            if len(tokens) >= 4:
+                var_name = tokens[0]
+                if var_name in variables:
+                    try:
+                        mean_time = float(tokens[3])
+                        ncalls    = float(tokens[1])
+                        timing_results[var_name+"_i"] = mean_time / ncalls
+                    except ValueError:
+                        print(f"Error: Could not convert mean_time '{tokens[3]}' to float for variable '{var_name}'.")
+    return timing_results
+
 def update_time_final(file_path, iterations):
 
     # Patterns to extract values
@@ -87,13 +116,13 @@ def time_clubb_standalone(case: str, ngrdcol: int, mpi: int, srun: int, gpu: boo
 
     timing_results = {}
     timing_results['ngrdcol'] = ngrdcol
+    timing_results['iterations'] = 0.0
     timing_results['total'] = 0.0
     timing_results['compute_i'] = 0.0
     timing_results['baseline'] = 0.0
-    timing_results['clubb_advance'] = 0.0
-    timing_results['output_multi_col'] = 0.0
-    timing_results['mainloop'] = 0.0
-    timing_results['iterations'] = 0.0
+    # timing_results['advance_clubb_core_api'] = 0.0
+    # timing_results['output_multi_col'] = 0.0
+    # timing_results['mainloop'] = 0.0
 
     scriptDir = os.path.dirname(os.path.abspath(__file__))
 
@@ -105,7 +134,7 @@ def time_clubb_standalone(case: str, ngrdcol: int, mpi: int, srun: int, gpu: boo
             elif any('mpich' in os.environ.get(var, '').lower() for var in os.environ):
                 print(" - MPICH is being used.")
                 # --cpu-bind core --mem-bind local     --cpu-bind verbose,list:1:17:33:49
-                run_cmd = f"mpirun -np {min(ngrdcol,mpi)} --cpu-bind core --mem-bind local bash -c \"cd {scriptDir}; set_gpu_rank ./execute_clubb_standalone.bash\""
+                run_cmd = f"mpirun -np {min(ngrdcol,mpi)} --cpu-bind verbose,list:1:17:33:49 bash -c \"cd {scriptDir}; set_gpu_rank ./execute_clubb_standalone.bash\""
             else:
                 print("Neither OpenMPI nor MPICH detected.")
         else:
@@ -140,36 +169,51 @@ def time_clubb_standalone(case: str, ngrdcol: int, mpi: int, srun: int, gpu: boo
     #print(result.stdout)
     #print(result.stderr)
 
-    iterations = 1
-
     proc = 0
-
-    # Parse the timing results and find the last iteration
     for line in result.stdout.split('\n'):
 
         if line.startswith('CLUBB-TIMER time_total'):
 
             main_time = float(clean_float_string(line.split('=')[1].strip()))
             print( f" - task {proc} mainloop time = {main_time}" )
-            timing_results['mainloop'] = max( main_time, timing_results['mainloop'])
             proc += 1
-
-        elif line.startswith('CLUBB-TIMER time_clubb_advance'):
-
-            clubb_advance = float(clean_float_string(line.split('=')[1].strip()))
-            timing_results['clubb_advance'] = max( clubb_advance, timing_results['clubb_advance'])
-
-        elif line.startswith('CLUBB-TIMER time_output_multi_col'):
-
-            output_multi_col = float(clean_float_string(line.split('=')[1].strip()))
-            timing_results['output_multi_col'] = max( output_multi_col, timing_results['output_multi_col'] )
-
         elif "iteration =" in line:
             # Extract the iteration count from the line
             match = re.search(r"iteration\s*=\s*(\d+)", line)
             if match:
-                iterations = int(match.group(1))
-                timing_results['iterations'] = max( iterations, timing_results['iterations'] )
+                timing_results['iterations'] = int(match.group(1))
+
+
+    if os.path.exists("timing.summary"):
+
+        parse_gptl_summary( timing_results, 
+                            [ "mainloop", 
+                              "advance_clubb_core_api",
+                              "output_multi_col",
+                              "penta_lu_solve_multiple_rhs_lhs",
+                              "penta_lu_solve_single_rhs_multiple_lhs",
+                              "tridiag_lu_solve_multiple_rhs_lhs",
+                              "fill_holes"] )
+
+    else:
+        # Parse the timing results and find the last iteration
+        for line in result.stdout.split('\n'):
+
+            if line.startswith('CLUBB-TIMER time_total'):
+
+                main_time = float(clean_float_string(line.split('=')[1].strip()))
+                timing_results['mainloop'] = max( main_time, timing_results['mainloop'])
+                proc += 1
+
+            elif line.startswith('CLUBB-TIMER time_clubb_advance'):
+
+                advance_clubb_core_api = float(clean_float_string(line.split('=')[1].strip()))
+                timing_results['advance_clubb_core_api'] = max( advance_clubb_core_api, timing_results['advance_clubb_core_api'])
+
+            elif line.startswith('CLUBB-TIMER time_output_multi_col'):
+
+                output_multi_col = float(clean_float_string(line.split('=')[1].strip()))
+                timing_results['output_multi_col'] = max( output_multi_col, timing_results['output_multi_col'] )
 
     timing_results['compute_i'] = ( end_time - start_time - timing_results['baseline'] ) / timing_results['iterations']
 
@@ -178,8 +222,8 @@ def time_clubb_standalone(case: str, ngrdcol: int, mpi: int, srun: int, gpu: boo
              --- throughput(ci/s): {timing_results['ngrdcol']/timing_results['compute_i']:.3f}")
 
     # Replace raw times with averages per iteration
-    # if 'clubb_advance' in timing_results:
-    #     timing_results['clubb_advance'] /= float(timing_results['iterations'])
+    # if 'advance_clubb_core_api' in timing_results:
+    #     timing_results['advance_clubb_core_api'] /= float(timing_results['iterations'])
     # if 'output_multi_col' in timing_results:
     #     timing_results['output_multi_col'] /=  float(timing_results['iterations'])
     # if 'mainloop' in timing_results:
@@ -210,8 +254,8 @@ def generate_timing_csv(case: str, ngrdcol_min: int, ngrdcol_max: int, name: str
     file_name = f"{name}_{case}.csv"
     with open(file_name, 'w') as f:
 
-        header = "ngrdcol,iterations,clubb_advance,output_multi_col,mainloop,total,baseline,compute_i"
-        f.write(header + "\n")
+        #header = "ngrdcol,iterations,advance_clubb_core_api,output_multi_col,mainloop,total,baseline,compute_i"
+        #f.write(header + "\n")
 
         ngrdcol = 1 if ngrdcol_min is None else ngrdcol_min
         ngrdcol = max(ngrdcol,mpi,srun)
@@ -262,17 +306,24 @@ def generate_timing_csv(case: str, ngrdcol_min: int, ngrdcol_max: int, name: str
             result = subprocess.run(clubb_in_gen, shell=True, check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
             result = subprocess.run(clean_output, shell=True, check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
+            # Do the timing, record results
             timing_results = time_clubb_standalone(case, ngrdcol, mpi, srun, gpu)
 
-            csv_line  = f"{timing_results.get('ngrdcol')}"
-            csv_line += f",{timing_results.get('iterations')}"
-            csv_line += f",{timing_results.get('clubb_advance')}"
-            csv_line += f",{timing_results.get('output_multi_col')}"
-            csv_line += f",{timing_results.get('mainloop')}"
-            csv_line += f",{timing_results.get('total')}"
-            csv_line += f",{timing_results.get('baseline')}"
-            csv_line += f",{timing_results.get('compute_i')}"
-            f.write(csv_line + "\n")
+            if i == 1:
+                # this is the first call, print the header
+                header = list(timing_results.keys())
+                f.write(",".join(header) + "\n")
+
+            # csv_line  = f"{timing_results.get('ngrdcol')}"
+            # csv_line += f",{timing_results.get('iterations')}"
+            # csv_line += f",{timing_results.get('advance_clubb_core_api')}"
+            # csv_line += f",{timing_results.get('output_multi_col')}"
+            # csv_line += f",{timing_results.get('mainloop')}"
+            # csv_line += f",{timing_results.get('total')}"
+            # csv_line += f",{timing_results.get('baseline')}"
+            # csv_line += f",{timing_results.get('compute_i')}"
+            values = [str(timing_results[key]) for key in header]
+            f.write(",".join(values) + "\n")
 
             i = i + 1
 
