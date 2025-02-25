@@ -36,12 +36,13 @@ def time_clubb_standalone(case: str, ngrdcol: int, mpi: int, srun: int, gpu: boo
 
     timing_results = {}
     timing_results['ngrdcol'] = ngrdcol
+    timing_results['total'] = 0.0
+    timing_results['compute'] = 0.0
+    timing_results['baseline'] = 0.0
     timing_results['clubb_advance'] = 0.0
     timing_results['output_multi_col'] = 0.0
     timing_results['mainloop'] = 0.0
     timing_results['iterations'] = 0.0
-    timing_results['total'] = 0.0
-    timing_results['baseline'] = 0.0
 
     scriptDir = os.path.dirname(os.path.abspath(__file__))
 
@@ -49,10 +50,10 @@ def time_clubb_standalone(case: str, ngrdcol: int, mpi: int, srun: int, gpu: boo
         if gpu:
             if any('openmpi' in os.environ.get(var, '').lower() for var in os.environ):
                 print(" - OpenMPI is being used.")
-                run_cmd = f"mpirun -np {min(ngrdcol,mpi)} --map-by numa bash -c \"cd {scriptDir}; set_gpu_rank ./execute_clubb_standalone.bash\""
+                run_cmd = f"mpirun -np {min(ngrdcol,mpi)} --bind-to hwthread --map-by numa bash -c \"cd {scriptDir}; set_gpu_rank ./execute_clubb_standalone.bash\""
             elif any('mpich' in os.environ.get(var, '').lower() for var in os.environ):
                 print(" - MPICH is being used.")
-                run_cmd = f"mpirun -np {min(ngrdcol,mpi)} --cpu-bind verbose,list:0:16:32:48 bash -c \"cd {scriptDir}; set_gpu_rank ./execute_clubb_standalone.bash\""
+                run_cmd = f"mpirun -np {min(ngrdcol,mpi)} --cpu-bind core --mem-bind local bash -c \"cd {scriptDir}; set_gpu_rank ./execute_clubb_standalone.bash\""
             else:
                 print("Neither OpenMPI nor MPICH detected.")
         else:
@@ -68,17 +69,20 @@ def time_clubb_standalone(case: str, ngrdcol: int, mpi: int, srun: int, gpu: boo
     else:
         run_cmd = f"./execute_clubb_standalone.bash"
 
-    # Get baseline time
+    # Get baseline time, run multiple times to get the best sense of cost
+    calls = 3
     subprocess.run("sed -i.bak 's/time_final\s*=.*/time_final = 0.0/' clubb.in", shell=True, check=True)
     start_time = time.time()
-    result = subprocess.run(run_cmd, shell=True, check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
-    timing_results['baseline'] = time.time() - start_time
+    for _ in range(calls):
+        result = subprocess.run(run_cmd, shell=True, check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+    timing_results['baseline'] = ( time.time() - start_time ) / float( calls )
     subprocess.run("mv clubb.in.bak clubb.in", shell=True, check=True)
 
 
     start_time = time.time()
     result = subprocess.run(run_cmd, shell=True, check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
     timing_results['total'] = time.time() - start_time
+    timing_results['compute'] = time.time() - timing_results['baseline']
     #print(result.stdout)
     #print(result.stderr)
 
@@ -148,7 +152,7 @@ def generate_timing_csv(case: str, ngrdcol_min: int, ngrdcol_max: int, name: str
     file_name = f"{name}_{case}.csv"
     with open(file_name, 'w') as f:
 
-        header = "ngrdcol,adv_cl,multi_col_nc,mainloop,total,iterations,baseline"
+        header = "ngrdcol,adv_cl,multi_col_nc,mainloop,total,iterations,baseline,compute"
         f.write(header + "\n")
 
         ngrdcol = 1 if ngrdcol_min is None else ngrdcol_min
@@ -189,7 +193,7 @@ def generate_timing_csv(case: str, ngrdcol_min: int, ngrdcol_max: int, name: str
 
             csv_line  = f"{timing_results.get('ngrdcol')},{timing_results.get('clubb_advance')},{timing_results.get('output_multi_col')}"
             csv_line += f",{timing_results.get('mainloop')},{timing_results.get('total')},{timing_results.get('iterations')}"
-            csv_line += f",{timing_results.get('baseline')}"
+            csv_line += f",{timing_results.get('baseline')},{timing_results.get('compute')}"
             f.write(csv_line + "\n")
 
             i = i + 1
