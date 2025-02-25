@@ -1217,7 +1217,7 @@ module grid_adaptation_module
   end function calc_integral
 
   subroutine normalize_grid_density( gr_dens_idx, gr_dens_z, gr_dens, &
-                                     min_dens, num_levels, &
+                                     lambda, num_levels, &
                                      gr_dens_norm_z, gr_dens_norm )
 
     ! Description:
@@ -1243,7 +1243,7 @@ module grid_adaptation_module
       ! gr_dens_z and gr_dens should be ordered from the bottom to the top
 
     real( kind = core_rknd ), intent(in) :: &
-      min_dens   ! the desired minimum grid density [# levs/meter]
+      lambda   ! a factor for how close you want to get to an equidistant grid
 
     !--------------------- Output Variables ---------------------
     real( kind = core_rknd ), dimension(gr_dens_idx), intent(out) :: &
@@ -1260,6 +1260,7 @@ module grid_adaptation_module
                                 ! so the minimum of the function is above min_dens [m]
       integral_before_shift, &  ! the integral of the shifted density function before normalizing it
       equi_dens, &              ! the grid density for an equi-distant grid [# levs/m]
+      min_dens, &               ! the minimal grid density [# levs/m]
       factor, &                 ! factor to multiply shifted function with to end up with an
                                 ! integral of num_levels-1
       h, &                      ! absolut distance from lowest to highest point of the grid [m]
@@ -1268,21 +1269,20 @@ module grid_adaptation_module
     !--------------------- Begin Code ---------------------
     grid_sfc = gr_dens_z(1)
     grid_top = gr_dens_z(gr_dens_idx)
-    diff = (min_dens - minval(gr_dens))
     zero = 0.0_core_rknd
     delta_s = maxval([diff, zero])
     h = grid_top - grid_sfc
     equi_dens = (num_levels-1)/h
+    min_dens = lambda*equi_dens
 
-    ! first shift function such that minimum is above min_dens, then shift, so that min_dens is zero
     do i = 1, gr_dens_idx
         gr_dens_norm_z(i) = gr_dens_z(i)
-        gr_dens_norm(i) = gr_dens(i) + delta_s - min_dens
+        gr_dens_norm(i) = gr_dens(i)
     end do
 
     integral_before_shift = calc_integral(gr_dens_idx, gr_dens_norm_z, gr_dens_norm)
 
-    ! if the integral is zero, then all gr_dens_norm were the same and smaller or equal to min_dens
+    ! if the integral is zero, then all gr_dens_norm were 0
     ! so in that case we have an equi-distant grid
     if (integral_before_shift < tol) then
         ! set to equi-distant grid
@@ -1290,9 +1290,9 @@ module grid_adaptation_module
             gr_dens_norm(i) = equi_dens
         end do
     else
-        factor = (num_levels-1-h*min_dens)/integral_before_shift
+        factor = (num_levels-1)*(1-lambda)/integral_before_shift
         do i = 1, gr_dens_idx
-            gr_dens_norm(i) = factor*(gr_dens_norm(i)) + min_dens
+            gr_dens_norm(i) = factor*(gr_dens_norm(i)) + lambda*equi_dens
         end do
     end if
 
@@ -1508,9 +1508,9 @@ module grid_adaptation_module
 
   end subroutine check_grid
 
-  function create_grid_from_grid_density_func( gr_dens_idx, &
+  function create_grid_from_grid_density_func( iunit, itime, gr_dens_idx, &
                                                gr_dens_z, gr_dens, &
-                                               min_dens, &
+                                               lambda, &
                                                num_levels ) &
                                              result (grid_heights)
     ! Description:
@@ -1528,11 +1528,13 @@ module grid_adaptation_module
 
     !--------------------- Input Variables ---------------------
     integer, intent(in) :: & 
+      iunit, &
+      itime, &
       gr_dens_idx, &  ! total numer of indices of gr_dens_z and gr_dens []
       num_levels      ! number of levels the new grid should have []
 
-    real( kind = core_rknd ), intent(in) ::  &
-      min_dens  ! the minimum density the new grid should have [# levs/meter]
+    real( kind = core_rknd ) :: &
+      lambda ! a factor for defining how close you want to get to an equidistant grid
 
     real( kind = core_rknd ), dimension(gr_dens_idx), intent(in) ::  &
       gr_dens_z,  &   ! the z coordinates of the connection points of the piecewise linear
@@ -1558,13 +1560,21 @@ module grid_adaptation_module
       grid_sfc,  &    ! height of the grids surface [m]
       grid_top        ! height of the top of the grid [m]
 
+    real( kind = core_rknd ) ::  &
+      equi_dens, &  ! the density for an equidistant grid          [# levs/meter]
+      min_dens      ! the minimum density the new grid should have [# levs/meter]
+
     !--------------------- Begin Code ---------------------
     grid_sfc = gr_dens_z(1)
     grid_top = gr_dens_z(gr_dens_idx)
+    min_dens = lambda * equi_dens
 
     call normalize_grid_density( gr_dens_idx, gr_dens_z, gr_dens, &
-                                 min_dens, num_levels, &
+                                 lambda, num_levels, &
                                  gr_dens_norm_z, gr_dens_norm )
+
+    write(iunit, *) 'gr_dens_z', itime, gr_dens_norm_z
+    write(iunit, *) 'gr_dens', itime, gr_dens_norm
 
     grid_heights = create_grid_from_normalized_grid_density_func( num_levels, &
                                                                   gr_dens_idx, &
@@ -1588,7 +1598,7 @@ module grid_adaptation_module
   end function create_grid_from_grid_density_func
 
 
-  subroutine adapt_grid( ngrdcol, total_idx_density_func, &
+  subroutine adapt_grid( iunit, itime, ngrdcol, total_idx_density_func, &
                          density_func_z, density_func_dens, &
                          sfc_elevation, l_implemented, &
                          hydromet_dim, sclr_dim, edsclr_dim, &
@@ -1638,6 +1648,8 @@ module grid_adaptation_module
 
     !--------------------- Input Variables ---------------------
     integer, intent(in) :: &
+      iunit, &
+      itime, &
       ngrdcol, &
       hydromet_dim, &
       sclr_dim, &
@@ -1832,7 +1844,6 @@ module grid_adaptation_module
 
     real( kind = core_rknd ) ::  &
       equi_dens,  &    ! density of the equidistant grid [# levs/meter]
-      min_dens,   &    ! minimum boundary of the grids density [# levs/meter]
       deltaz
 
     real( kind = core_rknd ), dimension(gr%nzm) ::  &
@@ -1852,15 +1863,21 @@ module grid_adaptation_module
     real( kind = core_rknd ), dimension(ngrdcol, gr%nzm) ::  &
       p_in_Pa_zm, exner_zm ! just placeholder variables; are only needed for subroutine call
 
+    real( kind = core_rknd ) ::  &
+      lambda ! a factor between 0 and 1 defining how close you want to get to an equidistant grid
+
     !--------------------- Begin Code ---------------------
     ! Setup the new grid
     num_levels = gr%nzm
     equi_dens = (num_levels-1)/(gr%zm(1,gr%nzm) - gr%zm(1,1))
-    min_dens = 0.5*equi_dens ! TODO find better way to determine a good min_dens value
-    new_gr_zm = create_grid_from_grid_density_func( total_idx_density_func, &
+    lambda = 0.5
+    new_gr_zm = create_grid_from_grid_density_func( iunit, &
+                                                    itime, &
+                                                    total_idx_density_func, &
                                                     density_func_z, density_func_dens, &
-                                                    min_dens, &
+                                                    lambda, &
                                                     num_levels )
+
     deltaz = 0.0
     grid_type = 3
     call setup_grid_api( num_levels, sfc_elevation(1), l_implemented, &         ! intent(in)
@@ -2283,6 +2300,7 @@ module grid_adaptation_module
   subroutine calc_grid_dens_func( ngrdcol, nzt, zt, &
                                   Lscale, wp2_zt, &
                                   grid_sfc, grid_top, &
+                                  num_levels, &
                                   gr_dens_z, gr_dens )
     ! Description:
     ! Creates an unnormalized grid density function from Lscale
@@ -2299,7 +2317,8 @@ module grid_adaptation_module
     !--------------------- Input Variables ---------------------
     integer, intent(in) :: & 
       ngrdcol, & 
-      nzt
+      nzt, &
+      num_levels ! the desired number of levels
 
     real( kind = core_rknd ), intent(in) ::  &
       grid_sfc, &  ! the grids surface; so the first level in the grid
@@ -2325,13 +2344,13 @@ module grid_adaptation_module
     real( kind = core_rknd ) :: threshold
 
     !--------------------- Begin Code ---------------------
-    threshold = 0.001
+    threshold = 0.002
     do i = 1, nzt
         gr_dens_z(i) = zt(1,i)
         if ( wp2_zt(1,i) > threshold ) then
           gr_dens(i) = 1/Lscale(1,i)
         else
-          gr_dens(i) = threshold
+          gr_dens(i) = 0.75*(num_levels - 1)/(grid_top - grid_sfc)
         end if
     end do
 

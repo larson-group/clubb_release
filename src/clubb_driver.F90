@@ -434,10 +434,12 @@ module clubb_driver
       iinit                ! initial iteration
 
     integer :: &
-      iunit,           & ! File unit used for I/O
-      hydromet_dim,    & ! Number of hydrometeor species        [#]
-      sclr_dim,        & ! Number of passive scalars            [#]
-      edsclr_dim         ! Number of passive scalars            [#]
+      iunit,                 & ! File unit used for I/O
+      iunit_grid_adaptation, & ! Different file unit for grid_adaptation file, which stores
+                               ! how grid adapts
+      hydromet_dim,          & ! Number of hydrometeor species        [#]
+      sclr_dim,              & ! Number of passive scalars            [#]
+      edsclr_dim               ! Number of passive scalars            [#]
 
     type (sclr_idx_type) :: &
       sclr_idx
@@ -457,7 +459,9 @@ module clubb_driver
     integer :: itime_nearest ! Used for and inputfields run [s]
 
     character(len=150) :: &
-      case_info_file ! The filename for case info
+      case_info_file, &     ! The filename for case info
+      fname_grid_adaptation ! The filename for the grid adaptation file which stores
+                            ! how the grid is adapted
 
     real( kind = core_rknd ), dimension(1) :: rad_dummy ! Dummy variable for radiation levels
 
@@ -1097,6 +1101,9 @@ module clubb_driver
     iunit = 10
 #endif
 
+    iunit_grid_adaptation = iunit + 10
+    fname_grid_adaptation = '../output/grid_adaptation.txt'
+
     call set_default_clubb_config_flags( iiPDF_type, & ! Intent(out)
                                          ipdf_call_placement, & ! Intent(out)
                                          penta_solve_method, & ! Intent(out)
@@ -1193,8 +1200,9 @@ module clubb_driver
     read(unit=iunit, nml=configurable_clubb_flags_nl)
     close(unit=iunit)
 
-    ! TODO also use variables for iunit and file and write file in output, and it should be replaced if some file with that name is already there
-    open(unit=42, file='grid_adaptation.txt', status='replace', action='write')
+    if ( grid_adapt_in_time_method > 0 ) then
+      open(unit=iunit_grid_adaptation, file=fname_grid_adaptation, status='replace', action='write')
+    end if
 
     if ( l_vert_avg_closure ) then
       l_trapezoidal_rule_zt    = .true.
@@ -2452,7 +2460,9 @@ module clubb_driver
     stats_nsamp = nint( stats_metadata%stats_tsamp / dt_main )
     stats_nout = nint( stats_metadata%stats_tout / dt_main )
 
-    write (42,*) 0, gr%zm
+    if ( grid_adapt_in_time_method > 0 ) then
+      write(iunit_grid_adaptation, *) 'g', 0, gr%zm
+    end if
 
     !initialize timers    
     time_loop_init = 0.0_core_rknd
@@ -3304,6 +3314,7 @@ module clubb_driver
           call calc_grid_dens_func( ngrdcol, gr%nzt, gr%zt, &
                                     Lscale, wp2_zt, &
                                     gr%zm(1,1), gr%zm(1,gr%nzm), &
+                                    gr%nzm, &
                                     gr_dens_z, gr_dens )
       
         else if ( grid_adapt_in_time_method > 1 ) then
@@ -3313,7 +3324,7 @@ module clubb_driver
         
         end if
 
-        call adapt_grid( ngrdcol, gr%nzt, &                                      ! Intent(in)
+        call adapt_grid( iunit_grid_adaptation, itime, ngrdcol, gr%nzt, &        ! Intent(in)
                          gr_dens_z, gr_dens, &                                   ! Intent(in)
                          sfc_elevation, l_implemented, &                         ! Intent(in)
                          hydromet_dim, sclr_dim, edsclr_dim, &                   ! Intent(in)
@@ -3347,7 +3358,7 @@ module clubb_driver
                          rcm_in_layer, cloud_cover, invrs_tau_zm, &              ! Intent(inout)
                          Lscale )                                                ! Intent(inout)
 
-        write (42,*)  itime, gr%zm
+        write(iunit_grid_adaptation, *) 'g', itime, gr%zm
 
         if ( .not. l_add_dycore_grid ) then
           ! if we want to adapt the grid over time, but don't want to simulate the host model by
@@ -3423,7 +3434,9 @@ module clubb_driver
     write(unit=fstdout, fmt='(a,f10.4)') 'CLUBB-TIMER time_total =             ', &
       time_total
 
-    close(42)
+    if ( grid_adapt_in_time_method > 0 ) then
+      close(iunit_grid_adaptation)
+    end if
 
     ! Only end stats for the first column of values, this closes the stats files
     ! but since the stats isn't setup to use multiple columns, it will just attempt
