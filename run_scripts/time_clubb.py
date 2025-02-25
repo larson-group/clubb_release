@@ -104,6 +104,7 @@ def time_clubb_standalone(case: str, ngrdcol: int, mpi: int, srun: int, gpu: boo
                 run_cmd = f"mpirun -np {min(ngrdcol,mpi)} --bind-to hwthread --map-by numa bash -c \"cd {scriptDir}; set_gpu_rank ./execute_clubb_standalone.bash\""
             elif any('mpich' in os.environ.get(var, '').lower() for var in os.environ):
                 print(" - MPICH is being used.")
+                # --cpu-bind core --mem-bind local     --cpu-bind verbose,list:1:17:33:49
                 run_cmd = f"mpirun -np {min(ngrdcol,mpi)} --cpu-bind core --mem-bind local bash -c \"cd {scriptDir}; set_gpu_rank ./execute_clubb_standalone.bash\""
             else:
                 print("Neither OpenMPI nor MPICH detected.")
@@ -119,6 +120,8 @@ def time_clubb_standalone(case: str, ngrdcol: int, mpi: int, srun: int, gpu: boo
             run_cmd = f"srun -n {min(ngrdcol,srun)} --cpu-bind=threads --threads-per-core=1 -m block:cyclic bash -c \"cd {scriptDir}; ./execute_clubb_standalone.bash\""
     else:
         run_cmd = f"./execute_clubb_standalone.bash"
+
+    print(f" - run command: {run_cmd}")
 
     # Get baseline time, run multiple times to get the best sense of cost
     calls = 3
@@ -211,12 +214,14 @@ def generate_timing_csv(case: str, ngrdcol_min: int, ngrdcol_max: int, name: str
         f.write(header + "\n")
 
         ngrdcol = 1 if ngrdcol_min is None else ngrdcol_min
+        ngrdcol = max(ngrdcol,mpi,srun)
         timing_results = []
         i = 1
 
-        # Do a quick 1 col run to avoid page faults that throw off the first baseline run
+        # Do a quick 1 col run with 100 timesteps to avoid page faults that throw off the first baseline run
         param_gen = f"python create_multi_col_params.py -l_multi_col_output no -tweak_list {tweak_list} -n 1"
         single_col_run = f"./run_scm.bash -e -p clubb_params_multi_col.in {case}"
+        update_time_final(f"../input/case_setups/{case}_model.in", 100 )
         result = subprocess.run(param_gen, shell=True, check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         result = subprocess.run(single_col_run, shell=True, check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         
@@ -242,9 +247,9 @@ def generate_timing_csv(case: str, ngrdcol_min: int, ngrdcol_max: int, name: str
             # to have more timesteps for better profiling
             if gpu:
                 # Don't increase gpu iterations as much
-                iterations = max(  250 * (10 - np.floor(np.log2(cols_per_thread))), 1000 )
+                iterations = max(  250 * (10 - np.floor(np.log2(cols_per_thread)/2.0)), 1000 )
             else:
-                iterations = max( 1000 * (10 - np.floor(np.log2(cols_per_thread))), 1000 )
+                iterations = max( 1000 * (10 - np.floor(np.log2(cols_per_thread)/2.0)), 1000 )
 
             print(f" - using {int(iterations)} iterations")
             update_time_final(f"../input/case_setups/{case}_model.in", iterations )
