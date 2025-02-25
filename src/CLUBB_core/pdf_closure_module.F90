@@ -1354,7 +1354,7 @@ module pdf_closure_module
         end if
     end do
     
-    if ( err_code = clubb_fatal_error ) return
+    if ( err_code == clubb_fatal_error ) return
 
 #endif /*TUNER*/
 

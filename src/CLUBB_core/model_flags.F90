@@ -803,10 +803,6 @@ module model_flags
       error stop 'Invalid value for the flag grid_remap_method. Should be greater or equal to 1.'
     end if
 
-    !if ( grid_adapt_in_time_method > 0 ) then
-    !  error stop 'The grid adaptation method is not yet ready implemented.'
-    !end if
-
     clubb_config_flags%iiPDF_type = iiPDF_type
     clubb_config_flags%ipdf_call_placement = ipdf_call_placement
     clubb_config_flags%penta_solve_method = penta_solve_method

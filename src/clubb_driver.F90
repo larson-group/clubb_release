@@ -156,9 +156,10 @@ module clubb_driver
     use sounding, only: sclr_max !------------------------------------------- Variable(s)
 
     use time_dependent_input, only: &
-        l_t_dependent,    & !------------------------------------------------ Variable(s)
-        l_input_xpwp_sfc, &
-        l_ignore_forcings
+        l_t_dependent,     & !------------------------------------------------ Variable(s)
+        l_input_xpwp_sfc,  &
+        l_ignore_forcings, &
+        l_sfc_already_initialized
 
     use sponge_layer_damping, only: &
         thlm_sponge_damp_settings,    & !------------------------------------ Variable(s)
@@ -1027,6 +1028,8 @@ module clubb_driver
     l_ignore_forcings = .false. 
     l_modify_ic_with_cubic_int = .false.
     l_modify_bc_for_cnvg_test = .false.
+
+    l_sfc_already_initialized = .false.
 
     thlm_sponge_damp_settings%l_sponge_damping = .false.
     rtm_sponge_damp_settings%l_sponge_damping = .false.
@@ -1907,6 +1910,7 @@ module clubb_driver
                                                                                 ! model has 31
                                                                                 ! levels
       gr_output = gr_dycore
+
       allocate( rho_ds_zm_dycore(ngrdcol, gr_dycore%nzm) ) ! dry, static density: 
                                                            ! m-levs of dycore grid
     else
@@ -1914,6 +1918,7 @@ module clubb_driver
       ! dummy variable
       allocate( rho_ds_zm_dycore(ngrdcol, 1) ) ! dry, static density: m-levs of dycore grid
       gr_output = gr
+
     end if
 
     if (grid_adapt_in_time_method > 0) then
@@ -2800,7 +2805,7 @@ module clubb_driver
               thlm, rtm, wprtp, wpthlp, &                                          ! Intent(inout)
               wp2, wp3, rtp2, rtp3, thlp2, thlp3, rtpthlp, &                       ! Intent(inout)
               sclrm, sclrp2, sclrp3, sclrprtp, sclrpthlp, &                        ! Intent(inout)
-              wpsclrp, edsclrm, &                                                  ! Intent(inout)
+              wpsclrp, edsclrm, err_code, &                                        ! Intent(inout)
               rcm, cloud_frac, &                                                   ! Intent(inout)
               wpthvp, wp2thvp, rtpthvp, thlpthvp, &                                ! Intent(inout)
               sclrpthvp, &                                                         ! Intent(inout)
@@ -2813,7 +2818,7 @@ module clubb_driver
               thlprcp, wprcp, w_up_in_cloud, w_down_in_cloud, &                    ! Intent(out)
               cloudy_updraft_frac, cloudy_downdraft_frac, &                        ! Intent(out)
               rcm_in_layer, cloud_cover, invrs_tau_zm, &                           ! Intent(out)
-              Lscale, err_code )                                                   ! Intent(out)
+              Lscale )                                                             ! Intent(out)
 
       if ( clubb_at_least_debug_level( 0 ) ) then
         if ( err_code == clubb_fatal_error ) then
@@ -3306,7 +3311,6 @@ module clubb_driver
                                                       ! in order not to change the grid in between
                                                       ! iterations that get averaged before written
                                                       ! to file
-        write(*,*) 'adapt grid'
         call cpu_time(time_start)
       
         if ( grid_adapt_in_time_method == 1 ) then

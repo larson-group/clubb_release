@@ -84,10 +84,9 @@ module time_dependent_input
                                        ! should be ignored for this case.
 !$omp threadprivate( l_ignore_forcings )
 
-  logical, public :: sfc_already_initialized = .false. ! Flag used to determine if the sfc
-                                                       ! variable were already initialized
-!$omp threadprivate( sfc_already_initialized )
-
+  logical, public :: l_sfc_already_initialized = .false. ! Flag used to determine if the sfc
+                                                         ! variable were already initialized
+!$omp threadprivate( l_sfc_already_initialized )
 
   ! File path constants
   character(len=*), private, parameter :: input_path = "../input/case_setups/"
@@ -145,7 +144,7 @@ module time_dependent_input
                      l_add_dycore_grid, grid_adapt_in_time_method )
     end if
 
-    if ( .not. sfc_already_initialized ) then
+    if ( .not. l_sfc_already_initialized ) then
       call initialize_t_dependent_sfc &
                      ( iunit, input_path//trim(runtype)//sfc_path )
     end if
@@ -311,7 +310,7 @@ module time_dependent_input
     ! Deallocate memory
     call deallocate_one_dim_vars( nforcings, retVars )
 
-    sfc_already_initialized = .true.
+    l_sfc_already_initialized = .true.
 
     return 
   end subroutine initialize_t_dependent_sfc

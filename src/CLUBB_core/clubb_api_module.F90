@@ -544,7 +544,7 @@ contains
                sclrm_trsport_only,  &  ! h1g, 2010-06-16    ! intent(inout)
 #endif
     sclrp2, sclrp3, sclrprtp, sclrpthlp, &                  ! intent(inout)
-    wpsclrp, edsclrm, &                                     ! intent(inout)
+    wpsclrp, edsclrm, err_code_api, &                       ! intent(inout)
     rcm, cloud_frac, &                                      ! intent(inout)
     wpthvp, wp2thvp, rtpthvp, thlpthvp, &                   ! intent(inout)
     sclrpthvp, &                                            ! intent(inout)
@@ -564,8 +564,7 @@ contains
     thlprcp, wprcp, w_up_in_cloud, w_down_in_cloud, &       ! intent(out)
     cloudy_updraft_frac, cloudy_downdraft_frac, &           ! intent(out)
     rcm_in_layer, cloud_cover, invrs_tau_zm, &              ! intent(out)
-    Lscale, &                                               ! intent(out)
-    err_code_api )                                          ! intent(out)
+    Lscale )                                                ! intent(out)
 
     use advance_clubb_core_module, only : advance_clubb_core
 
@@ -806,6 +805,9 @@ contains
     real( kind = core_rknd ), intent(inout), dimension(gr%nzt,edsclr_dim) :: &
       edsclrm   ! Eddy passive scalar grid-mean (thermo. levels)   [units vary]
 
+    integer, intent(inout) :: err_code_api ! Diagnostic, for if some calculation goes amiss.
+
+    !--------------------------- Output Variables ---------------------------
     ! Variables that need to be output for use in other parts of the CLUBB
     ! code, such as microphysics (rcm, pdf_params), forcings (rcm), and/or
     ! BUGSrad (cloud_cover).
@@ -840,8 +842,6 @@ contains
 
     real( kind = core_rknd ), dimension(gr%nzt), intent(out) :: &
       Lscale       ! Length scale                          [m]
-
-    integer, intent(out) :: err_code_api ! Diagnostic, for if some calculation goes amiss.
 
 #ifdef GFDL
     ! hlg, 2010-06-16
@@ -1068,9 +1068,6 @@ contains
       Lscale_col   ! Length scale                          [m]
 
     !------------------------- Begin Code -------------------------
-
-    ! Initialize err_code_api to "No error"
-    err_code_api = clubb_no_error
 
     fcor_col(1) = fcor
     sfc_elevation_col(1) = sfc_elevation
@@ -1509,7 +1506,7 @@ contains
                sclrm_trsport_only,  &  ! h1g, 2010-06-16    ! intent(inout)
 #endif
     sclrp2, sclrp3, sclrprtp, sclrpthlp, &                  ! intent(inout)
-    wpsclrp, edsclrm, &                                     ! intent(inout)
+    wpsclrp, edsclrm, err_code_api, &                       ! intent(inout)
     rcm, cloud_frac, &                                      ! intent(inout)
     wpthvp, wp2thvp, rtpthvp, thlpthvp, &                   ! intent(inout)
     sclrpthvp, &                                            ! intent(inout)
@@ -1529,8 +1526,7 @@ contains
     thlprcp, wprcp, w_up_in_cloud, w_down_in_cloud, &       ! intent(out)
     cloudy_updraft_frac, cloudy_downdraft_frac, &           ! intent(out)
     rcm_in_layer, cloud_cover, invrs_tau_zm, &              ! intent(out)
-    Lscale, &                                               ! intent(out)
-    err_code_api )                                          ! intent(out)
+    Lscale )                                                ! intent(out)
 
     use advance_clubb_core_module, only : advance_clubb_core
 
@@ -1767,6 +1763,7 @@ contains
     real( kind = core_rknd ), intent(inout), dimension(ngrdcol,nzt,edsclr_dim) :: &
     edsclrm   ! Eddy passive scalar mean (thermo. levels)   [units vary]
 
+    integer, intent(inout) :: err_code_api ! Diagnostic, for if some calculation goes amiss.
 
     !------------------------ Output Variables ------------------------
     real( kind = core_rknd ), intent(out), dimension(ngrdcol,nzt) ::  &
@@ -1800,8 +1797,6 @@ contains
 
     real( kind = core_rknd ), dimension(ngrdcol,nzt), intent(out) :: &
       Lscale     ! Length scale         [m]
-
-    integer, intent(out) :: err_code_api ! Diagnostic, for if some calculation goes amiss.
 
 #ifdef GFDL
     ! hlg, 2010-06-16
@@ -1904,9 +1899,6 @@ contains
 #ifdef GFDL
     !$acc data if( sclr_dim > 0 ) copy( sclrm_trsport_only )
 #endif
-
-    ! Initialize err_code_api to "No error"
-    err_code_api = clubb_no_error
 
     call advance_clubb_core( gr, nzm, nzt, ngrdcol, &         ! intent(in)
       l_implemented, dt, fcor, sfc_elevation,            &    ! intent(in)
