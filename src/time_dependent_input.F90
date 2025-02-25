@@ -821,7 +821,7 @@ module time_dependent_input
   end subroutine apply_time_dependent_forcings
 
   !================================================================================================
-  subroutine time_select( time, nvar, time_array, &
+  subroutine time_select( time_in, nvar, time_array, &
                           before_time, after_time, time_frac )
     !
     ! Description: 
@@ -847,7 +847,7 @@ module time_dependent_input
 
     integer, intent(in) :: nvar                     ! Number of array elements [-]
 
-    real(kind=time_precision), intent(in) :: time   ! Target time              [s]
+    real(kind=time_precision), intent(in) :: time_in   ! Target time              [s]
 
     real( kind = core_rknd ), dimension(nvar), intent(in) :: time_array ! Array of times [s]
 
@@ -861,6 +861,8 @@ module time_dependent_input
       time_frac      ! The fraction representing the point where time
                      ! is located between after_time and before_time [-]
 
+    real(kind=time_precision) :: time   ! Target time              [s]
+
     ! Local Variable(s)
 
     integer :: k
@@ -870,6 +872,11 @@ module time_dependent_input
     ! Default initialization
     before_time = -999
     after_time = -999
+    time = time_in
+    
+    if ( real( time, kind = core_rknd ) > time_array(nvar) ) then
+      time = real( time_array(nvar), kind = time_precision )
+    end if
 
     ! convert time to a real so it has the same precision as the values
     ! in time_array   
@@ -879,15 +886,6 @@ module time_dependent_input
       ! time has been provided. Stop execution.
       write(fstderr,*) "In subroutine time_select:"
       write(fstderr,*) "Selected time is before the first (begin) time"
-      write(fstderr,*) "at which data are available.  Cannot interpolate."
-      error stop
-
-    else if ( real( time, kind = core_rknd ) > time_array(nvar) ) then
-
-      ! If time is greater than the highest value in time_array, an invalid
-      ! time has been provided. Stop execution.
-      write(fstderr,*) "In subroutine time_select:"
-      write(fstderr,*) "Selected time is after the last (end) time"
       write(fstderr,*) "at which data are available.  Cannot interpolate."
       error stop
 

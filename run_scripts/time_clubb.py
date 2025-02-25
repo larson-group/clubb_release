@@ -10,6 +10,57 @@ import sys
 import time
 import socket
 
+def update_time_final(file_path, iterations):
+
+    # Patterns to extract values
+    time_initial_pattern = re.compile(r'time_initial\s*=\s*([0-9.]+)')
+    dt_main_pattern = re.compile(r'dt_main\s*=\s*([0-9.]+)')
+    time_final_pattern = re.compile(r'(time_final\s*=\s*)([0-9.]+)(.*)')
+
+    # Read file content
+    with open(file_path, 'r') as file:
+        lines = file.readlines()
+
+    time_initial = None
+    dt_main = None
+
+    # Parse values
+    for line in lines:
+        if time_initial is None:
+            match = time_initial_pattern.search(line)
+            if match:
+                time_initial = float(match.group(1))
+
+        if dt_main is None:
+            match = dt_main_pattern.search(line)
+            if match:
+                dt_main = float(match.group(1))
+
+        if time_initial is not None and dt_main is not None:
+            break
+
+    if time_initial is None or dt_main is None:
+        raise ValueError("Could not find 'time_initial' or 'dt_main' in the file.")
+
+    # Calculate new time_final
+    new_time_final = time_initial + dt_main * iterations
+
+    # Update the file content
+    updated_lines = []
+    for line in lines:
+        match = time_final_pattern.search(line)
+        if match:
+            new_line = f"{match.group(1)}{new_time_final:.1f}    ! Updated time_final\n"
+            updated_lines.append(new_line)
+        else:
+            updated_lines.append(line)
+
+    # Write updated content back to the file
+    with open(file_path, 'w') as file:
+        file.writelines(updated_lines)
+
+    #print(f"Updated 'time_final' to {new_time_final:.1f} in {file_path}")
+
 def get_git_hash():
     # Get the current git hash of the repository the script is in
     try:
@@ -37,7 +88,7 @@ def time_clubb_standalone(case: str, ngrdcol: int, mpi: int, srun: int, gpu: boo
     timing_results = {}
     timing_results['ngrdcol'] = ngrdcol
     timing_results['total'] = 0.0
-    timing_results['compute'] = 0.0
+    timing_results['compute_i'] = 0.0
     timing_results['baseline'] = 0.0
     timing_results['clubb_advance'] = 0.0
     timing_results['output_multi_col'] = 0.0
@@ -71,7 +122,7 @@ def time_clubb_standalone(case: str, ngrdcol: int, mpi: int, srun: int, gpu: boo
 
     # Get baseline time, run multiple times to get the best sense of cost
     calls = 3
-    subprocess.run("sed -i.bak 's/time_final\s*=.*/time_final = 0.0/' clubb.in", shell=True, check=True)
+    subprocess.run(r"sed -i.bak 's/time_final\s*=.*/time_final = 0.0/' clubb.in", shell=True, check=True)
     start_time = time.time()
     for _ in range(calls):
         result = subprocess.run(run_cmd, shell=True, check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
@@ -81,8 +132,8 @@ def time_clubb_standalone(case: str, ngrdcol: int, mpi: int, srun: int, gpu: boo
 
     start_time = time.time()
     result = subprocess.run(run_cmd, shell=True, check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
-    timing_results['total'] = time.time() - start_time
-    timing_results['compute'] = time.time() - timing_results['baseline']
+    end_time = time.time()
+    timing_results['total'] = end_time - start_time
     #print(result.stdout)
     #print(result.stderr)
 
@@ -117,7 +168,11 @@ def time_clubb_standalone(case: str, ngrdcol: int, mpi: int, srun: int, gpu: boo
                 iterations = int(match.group(1))
                 timing_results['iterations'] = max( iterations, timing_results['iterations'] )
 
-    print(f" --- total: {timing_results['total']} - cols/sec: {timing_results['ngrdcol']/timing_results['total']}")
+    timing_results['compute_i'] = ( end_time - start_time - timing_results['baseline'] ) / timing_results['iterations']
+
+    print(f" --- total: {timing_results['total']:.2f} \
+             --- cols/sec: {timing_results['ngrdcol']/timing_results['total']:.3f} \
+             --- throughput(ci/s): {timing_results['ngrdcol']/timing_results['compute_i']:.3f}")
 
     # Replace raw times with averages per iteration
     # if 'clubb_advance' in timing_results:
@@ -152,7 +207,7 @@ def generate_timing_csv(case: str, ngrdcol_min: int, ngrdcol_max: int, name: str
     file_name = f"{name}_{case}.csv"
     with open(file_name, 'w') as f:
 
-        header = "ngrdcol,adv_cl,multi_col_nc,mainloop,total,iterations,baseline,compute"
+        header = "ngrdcol,iterations,clubb_advance,output_multi_col,mainloop,total,baseline,compute_i"
         f.write(header + "\n")
 
         ngrdcol = 1 if ngrdcol_min is None else ngrdcol_min
@@ -170,16 +225,29 @@ def generate_timing_csv(case: str, ngrdcol_min: int, ngrdcol_max: int, name: str
             print(f"Testing ngrdcol = {ngrdcol}")
             print(f" - tweaking {tweak_list} using the default method (vary together)")
 
-
             if mpi > 0:
-                print(f" - using {min(mpi,ngrdcol)} MPI tasks with {int(np.ceil(ngrdcol/mpi))} column each")
+                cols_per_thread = int(np.ceil(ngrdcol/mpi))
+                print(f" - using {min(mpi,ngrdcol)} MPI tasks with {cols_per_thread} column each")
                 param_gen = f"python create_multi_col_params.py -l_multi_col_output {output_choice} -tweak_list {tweak_list} -n {int(np.ceil(ngrdcol/mpi))}"
             elif srun > 0:
-                print(f" - using {min(srun,ngrdcol)} SRUN tasks with {int(np.ceil(ngrdcol/srun))} column each")
+                cols_per_thread = int(np.ceil(ngrdcol/srun))
+                print(f" - using {min(srun,ngrdcol)} SRUN tasks with {cols_per_thread} column each")
                 param_gen = f"python create_multi_col_params.py -l_multi_col_output {output_choice} -tweak_list {tweak_list} -n {int(np.ceil(ngrdcol/srun))}"
             else:
+                cols_per_thread = 1
                 print(f" - using 1 task with {ngrdcol} column")
                 param_gen = f"python create_multi_col_params.py -l_multi_col_output {output_choice} -tweak_list {tweak_list} -n {ngrdcol}"
+
+            # Increase the number of iterations based on the work per core, we want small amounts of work 
+            # to have more timesteps for better profiling
+            if gpu:
+                # Don't increase gpu iterations as much
+                iterations = max(  250 * (10 - np.floor(np.log2(cols_per_thread))), 1000 )
+            else:
+                iterations = max( 1000 * (10 - np.floor(np.log2(cols_per_thread))), 1000 )
+
+            print(f" - using {int(iterations)} iterations")
+            update_time_final(f"../input/case_setups/{case}_model.in", iterations )
 
             clubb_in_gen = f"./run_scm.bash -e -p clubb_params_multi_col.in --no_run {case}"
             clean_output = f"rm -f ../output/*"
@@ -191,9 +259,14 @@ def generate_timing_csv(case: str, ngrdcol_min: int, ngrdcol_max: int, name: str
 
             timing_results = time_clubb_standalone(case, ngrdcol, mpi, srun, gpu)
 
-            csv_line  = f"{timing_results.get('ngrdcol')},{timing_results.get('clubb_advance')},{timing_results.get('output_multi_col')}"
-            csv_line += f",{timing_results.get('mainloop')},{timing_results.get('total')},{timing_results.get('iterations')}"
-            csv_line += f",{timing_results.get('baseline')},{timing_results.get('compute')}"
+            csv_line  = f"{timing_results.get('ngrdcol')}"
+            csv_line += f",{timing_results.get('iterations')}"
+            csv_line += f",{timing_results.get('clubb_advance')}"
+            csv_line += f",{timing_results.get('output_multi_col')}"
+            csv_line += f",{timing_results.get('mainloop')}"
+            csv_line += f",{timing_results.get('total')}"
+            csv_line += f",{timing_results.get('baseline')}"
+            csv_line += f",{timing_results.get('compute_i')}"
             f.write(csv_line + "\n")
 
             i = i + 1
