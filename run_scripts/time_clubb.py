@@ -32,9 +32,11 @@ def parse_gptl_summary(timing_results, variables):
                 var_name = tokens[0]
                 if var_name in variables:
                     try:
-                        mean_time = float(tokens[3])
                         ncalls    = float(tokens[1])
-                        timing_results[var_name+"_i"] = mean_time / ncalls
+                        nranks    = float(tokens[2])
+                        mean_time = float(tokens[3])
+                        # Normalize by iterations ( iterations = ncalls / nranks )
+                        timing_results[var_name+"_i"] = mean_time / ( ncalls / nranks ) 
                     except ValueError:
                         print(f"Error: Could not convert mean_time '{tokens[3]}' to float for variable '{var_name}'.")
     return timing_results
@@ -265,7 +267,7 @@ def generate_timing_csv(case: str, ngrdcol_min: int, ngrdcol_max: int, name: str
         # Do a quick 1 col run with 100 timesteps to avoid page faults that throw off the first baseline run
         param_gen = f"python create_multi_col_params.py -l_multi_col_output no -tweak_list {tweak_list} -n 1"
         single_col_run = f"./run_scm.bash -e -p clubb_params_multi_col.in {case}"
-        update_time_final(f"../input/case_setups/{case}_model.in", 100 )
+        #update_time_final(f"../input/case_setups/{case}_model.in", 100 )
         result = subprocess.run(param_gen, shell=True, check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         result = subprocess.run(single_col_run, shell=True, check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         
@@ -289,14 +291,14 @@ def generate_timing_csv(case: str, ngrdcol_min: int, ngrdcol_max: int, name: str
 
             # Increase the number of iterations based on the work per core, we want small amounts of work 
             # to have more timesteps for better profiling
-            if gpu:
+            #if gpu:
                 # Don't increase gpu iterations as much
-                iterations = max(  250 * (10 - np.floor(np.log2(cols_per_thread)/2.0)), 1000 )
-            else:
-                iterations = max( 1000 * (10 - np.floor(np.log2(cols_per_thread)/2.0)), 1000 )
+            #    iterations = max(  250 * (10 - np.floor(np.log2(cols_per_thread)/2.0)), 1000 )
+            #else:
+            #    iterations = max( 1000 * (10 - np.floor(np.log2(cols_per_thread)/2.0)), 1000 )
 
-            print(f" - using {int(iterations)} iterations")
-            update_time_final(f"../input/case_setups/{case}_model.in", iterations )
+            #print(f" - using {int(iterations)} iterations")
+            #update_time_final(f"../input/case_setups/{case}_model.in", iterations )
 
             clubb_in_gen = f"./run_scm.bash -e -p clubb_params_multi_col.in --no_run {case}"
             clean_output = f"rm -f ../output/*"
