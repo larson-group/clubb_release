@@ -1904,10 +1904,9 @@ module clubb_driver
 
     if ( l_add_dycore_grid ) then
       ! Initialize the dycore grid
-      call setup_simple_gr_dycore( 31, gr%zm(1,1), gr%zm(1,gr%nzm), gr_dycore ) ! always set to 31
-                                                                                ! since the host
-                                                                                ! model has 31
-                                                                                ! levels
+      call setup_gr_dycore( iunit, ngrdcol, &                 ! Intent(in)
+                            gr%zm(:,1), gr%zm(:,gr%nzm), &    ! Intent(in)
+                            gr_dycore )                       ! Intent(out)
       gr_output = gr_dycore
 
       allocate( rho_ds_zm_dycore(ngrdcol, gr_dycore%nzm) ) ! dry, static density: 

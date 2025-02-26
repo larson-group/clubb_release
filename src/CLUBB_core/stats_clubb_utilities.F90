@@ -739,7 +739,11 @@ module stats_clubb_utilities
                        stats_zt(i)%l_in_update ) ! Out
 
       allocate( stats_zt(i)%file%grid_avg_var( stats_zt(i)%num_output_fields ) )
-      allocate( stats_zt(i)%file%z( stats_zt(i)%kk ) )
+      if ( l_different_output_grid ) then
+        allocate( stats_zt(i)%file%z( output_gr_nzm-1 ) )
+      else
+        allocate( stats_zt(i)%file%z( stats_zt(i)%kk ) )
+      end if
 
       ! Default initialization for array indices for zt
 
@@ -1196,7 +1200,11 @@ module stats_clubb_utilities
                        stats_zm(i)%l_in_update ) ! Out
 
       allocate( stats_zm(i)%file%grid_avg_var( stats_zm(i)%num_output_fields ) )
-      allocate( stats_zm(i)%file%z( stats_zm(i)%kk ) )
+      if ( l_different_output_grid ) then
+        allocate( stats_zm(i)%file%z( output_gr_nzm ) )
+      else
+        allocate( stats_zm(i)%file%z( stats_zm(i)%kk ) )
+      end if
 
       call stats_init_zm( hydromet_dim, sclr_dim, edsclr_dim, & ! intent(in)
                           hydromet_list, l_mix_rat_hm,        & ! intent(in)
@@ -1229,7 +1237,7 @@ module stats_clubb_utilities
 #ifdef NETCDF
       if ( l_different_output_grid ) then
         call open_netcdf_for_writing( nlat, nlon, fdir, fname, 1, output_gr_nzm, & !In
-                                      output_gr_zm(1,:), day, month, year, lat_vals, lon_vals, & ! In
+                                      output_gr_zm(1,:), day, month, year, lat_vals, lon_vals, & !In
                                       time_current, stats_metadata%stats_tout, & ! In
                                       stats_zm(1)%num_output_fields, & ! In
                                       stats_zm(1)%file, err_code ) ! InOut

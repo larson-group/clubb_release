@@ -21,7 +21,7 @@ module grid_adaptation_module
   real( kind = core_rknd ) ::  &
         tol = 1.0e-6_core_rknd ! tolerance to check if to real numbers are equal
 
-  public :: setup_simple_gr_dycore, &
+  public :: setup_simple_gr_dycore, setup_gr_dycore, &
             check_remap_conservation, check_remap_consistency, check_remap_monotonicity, &
             remapping_matrix, remap_vals_to_target, &
             remap_zt_values, remap_zm_values, remap_forcings, &
@@ -107,6 +107,108 @@ module grid_adaptation_module
                          gr )
 
   end subroutine setup_simple_gr_dycore
+
+  subroutine setup_gr_dycore( iunit, ngrdcol, grid_sfc, grid_top, gr )
+
+    use clubb_api_module, only: &
+      setup_grid_api
+
+    use grid_class, only: &
+      read_grid_heights
+
+    use error_code, only: &
+      clubb_fatal_error
+    
+    implicit none
+
+    !--------------------- Input Variables ---------------------
+    integer :: &
+      iunit, &
+      ngrdcol
+    
+    real( kind = core_rknd ), dimension(ngrdcol) :: &
+        grid_sfc, &    ! grids surface height for the dycore grid [m]
+        grid_top       ! grids highest level for the dycore grid [m]
+
+    !--------------------- Output Variables ---------------------
+    type (grid), intent(out) :: gr
+
+    !--------------------- Local Variables ---------------------
+    integer :: i
+    ! If CLUBB is running on it's own, this option determines if it is using:
+    ! 1) an evenly-spaced grid;
+    ! 2) a stretched (unevenly-spaced) grid entered on the thermodynamic grid
+    !    levels (with momentum levels set halfway between thermodynamic levels);
+    !    or
+    ! 3) a stretched (unevenly-spaced) grid entered on the momentum grid levels
+    !    (with thermodynamic levels set halfway between momentum levels).
+    integer :: &
+      grid_type, &
+      err_code, &
+      nzmax, &
+      nlevel
+
+    character(len=32) :: & 
+      zm_grid_fname,  & ! Path and filename of file for momentum level altitudes
+      zt_grid_fname     ! Path and filename of file for thermodynamic level altitudes
+
+    real( kind = core_rknd ), dimension(ngrdcol) ::  &
+        sfc_elevation  ! Elevation of ground level    [m AMSL]
+
+    logical :: l_implemented
+
+    real( kind = core_rknd ), dimension(ngrdcol,73) :: & ! since dycore grid has 73 levels in total
+      momentum_heights      ! Momentum level altitudes (file input)      [m]
+    
+    real( kind = core_rknd ), dimension(ngrdcol,73-1) :: &! since dycore grid has 73 levels in total
+      thermodynamic_heights ! Thermodynamic level altitudes (file input) [m]
+    
+    real( kind = core_rknd ), dimension(ngrdcol) :: &
+      deltaz ! vertical grid spacing [m]
+
+    !--------------------- Begin Code ---------------------
+
+    nzmax = 73 ! since dycore grid has in total 73 levels
+    grid_type = 3
+    zm_grid_fname = '../input/grid/dycore.grd'
+    zt_grid_fname = ''
+
+    do i = 1, ngrdcol
+      call read_grid_heights( nzmax, grid_type, &                 ! Intent(in)
+                              zm_grid_fname, zt_grid_fname, &     ! Intent(in)
+                              iunit, &                            ! Intent(in)
+                              momentum_heights(i,:), &            ! Intent(out)
+                              thermodynamic_heights(i,:), &       ! Intent(out)
+                              err_code )                          ! Intent(inout)
+      sfc_elevation(i) = 0.0_core_rknd
+      deltaz(i) = 0.0_core_rknd
+    end do
+
+    if ( err_code == clubb_fatal_error ) then
+      write(fstderr, *) "Error in read_grid_heights"
+      error stop
+    end if
+
+    nlevel = nzmax
+    do while( momentum_heights(1,nlevel) > grid_top(1) .and. nlevel > 1 )
+
+      nlevel = nlevel - 1
+
+    end do
+
+    do i = 1, ngrdcol
+      momentum_heights(i,nlevel) = grid_top(i)
+    end do
+
+
+    l_implemented = .false.
+
+    call setup_grid_api( nlevel, ngrdcol, sfc_elevation, l_implemented, &   ! intent(in)
+                         grid_type, deltaz, grid_sfc, grid_top, &           ! intent(in)
+                         momentum_heights, thermodynamic_heights, &         ! intent(in)
+                         gr )                                               ! intent(inout)
+
+  end subroutine setup_gr_dycore
 
   subroutine check_remap_conservation( R_ij, dim1, dim2, &
                                        levels_source, levels_target, &
