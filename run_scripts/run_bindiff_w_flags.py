@@ -1,6 +1,9 @@
 """
 Test whether two or more branches of CLUBB produce the same answer when various flags are toggled.
 
+In order to run this script you need to install the dependencies with 
+    pip install -r run_bindiff_w_flags_requirements.txt
+
 The simplest way to use this script would look like:
   python3 ./run_bindiff_w_flags.py -b <branch1>,<branch2>
                                    -f <flag_config_file> -d <destination directory>

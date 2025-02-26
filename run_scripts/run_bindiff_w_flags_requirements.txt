@@ -1,0 +1,4 @@
+gitdb==4.0.12
+GitPython==3.1.43
+simplejson==3.17.2
+smmap==5.0.2
