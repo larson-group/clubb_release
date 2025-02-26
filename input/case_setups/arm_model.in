@@ -5,6 +5,8 @@
 
 ! Model Settings
 
+total_reps = 5
+
 runtype = "arm" ! Case name.
 
 ! For grid_type = 1 nzmax can be any nunber

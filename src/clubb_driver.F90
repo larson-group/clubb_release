@@ -989,7 +989,8 @@ module clubb_driver
       sclr_tol_nl, sclr_dim, iisclr_thl, iisclr_rt, iisclr_CO2, &
       edsclr_dim, iiedsclr_thl, iiedsclr_rt, iiedsclr_CO2, &
       l_rtm_nudge, rtm_min, rtm_nudge_max_altitude, &
-      l_diagnose_correlations, l_calc_w_corr
+      l_diagnose_correlations, l_calc_w_corr, &
+      total_reps
 
 
     namelist /stats_setting/ &
@@ -1028,7 +1029,7 @@ module clubb_driver
     logical :: &
       l_last_timestep
 
-    integer :: ret_code, repitition
+    integer :: ret_code, repitition, total_reps
 
 !-----------------------------------------------------------------------
 
@@ -1051,6 +1052,8 @@ module clubb_driver
     ret_code = GPTLsetoption(GPTLoverhead, 0)       ! Turn off overhead estimate
     ret_code = GPTLinitialize()                     ! Initialize GPTL
 #endif
+
+    total_reps = 1
 
     ! Begin code
 
@@ -2315,7 +2318,9 @@ module clubb_driver
     !$acc      copyin( hm_metadata%l_mix_rat_hm ) &
     !$acc      create( wphydrometp, wp2hmp, rtphmp_zt, thlphmp_zt )
     
-    do repitition = 1, 10
+    do repitition = 1, total_reps
+
+      !print *, "doing rep ", repitition
 
       ! Initialize silhs samples to indicate unused status, these are overwritten if silhs is used
       !$acc parallel loop gang vector collapse(3) default(present)
