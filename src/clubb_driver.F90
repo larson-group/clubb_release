@@ -2210,9 +2210,6 @@ module clubb_driver
     time_stop = 0.0_core_rknd
     time_start = 0.0_core_rknd
 
-    write(unit=fstdout,fmt='(a,i8,a,f10.1)') 'total_runs = ', total_runs
-
-
     ! These variables are no
     !sigma_sqd_w_zt         = zero        ! PDF width parameter interp. to t-levs.
     !sigma_sqd_w            = zero          ! PDF width parameter (momentum levels)
@@ -3429,6 +3426,7 @@ module clubb_driver
       time_output_multi_col
     write(unit=fstdout, fmt='(a,f10.4)') 'CLUBB-TIMER time_total =             ', &
       time_total
+    write(unit=fstdout, fmt='(a,i10)') 'total_runs = ', total_runs
 
     ! Only end stats for the first column of values, this closes the stats files
     ! but since the stats isn't setup to use multiple columns, it will just attempt

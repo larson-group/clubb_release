@@ -33,10 +33,13 @@ def parse_gptl_summary(timing_results, variables):
                 if var_name in variables:
                     try:
                         ncalls    = float(tokens[1])
+                        if var_name == "mainloop":
+                            # The number of mainloop calls is the number of runs
+                            nruns = ncalls
                         nranks    = float(tokens[2])
                         mean_time = float(tokens[3])
                         # Normalize by calls per rank ( ncalls / nranks = calls per rank )
-                        timing_results[var_name+"_c"] = mean_time / ( ncalls / nranks ) 
+                        timing_results[var_name+"_r"] = mean_time / nruns #/ ( ncalls / nranks ) 
                     except ValueError:
                         print(f"Error: Could not convert mean_time '{tokens[3]}' to float for variable '{var_name}'.")
     return timing_results
@@ -118,8 +121,8 @@ def time_clubb_standalone(case: str, ngrdcol: int, mpi: int, srun: int, gpu: boo
 
     timing_results = {}
     timing_results['ngrdcol'] = ngrdcol
-    timing_results['iterations'] = 0.0
-    timing_results['runs'] = 0.0
+    timing_results['iterations'] = 0
+    timing_results['total_runs'] = 0
     timing_results['total'] = 0.0
     timing_results['compute_i'] = 0.0
     timing_results['baseline'] = 0.0
@@ -141,7 +144,7 @@ def time_clubb_standalone(case: str, ngrdcol: int, mpi: int, srun: int, gpu: boo
             else:
                 print("Neither OpenMPI nor MPICH detected.")
         else:
-            run_cmd = f"mpirun -np {min(ngrdcol,mpi)} bash -c \"cd {scriptDir}; ./execute_clubb_standalone.bash\""
+            run_cmd = f"mpirun -np {min(ngrdcol,mpi)} --cpu-bind core bash -c \"cd {scriptDir}; ./execute_clubb_standalone.bash\""
     elif srun > 0:
         if gpu:
             print(" - srun is being used with GPU")
@@ -185,11 +188,13 @@ def time_clubb_standalone(case: str, ngrdcol: int, mpi: int, srun: int, gpu: boo
             match = re.search(r"iteration\s*=\s*(\d+)", line)
             if match:
                 timing_results['iterations'] = int(match.group(1))
-        elif "total_runs =" in line:
+        elif "total_runs" in line:
             # Extract the iteration count from the line
             match = re.search(r"total_runs\s*=\s*(\d+)", line)
             if match:
                 timing_results['total_runs'] = int(match.group(1))
+        #else:
+        #    print(f"unprocessed line:{line}")
 
 
     if os.path.exists("timing.summary"):
@@ -223,7 +228,7 @@ def time_clubb_standalone(case: str, ngrdcol: int, mpi: int, srun: int, gpu: boo
                 output_multi_col = float(clean_float_string(line.split('=')[1].strip()))
                 timing_results['output_multi_col'] = max( output_multi_col, timing_results['output_multi_col'] )
 
-    timing_results['compute_i'] = ( end_time - start_time - timing_results['baseline'] ) \
+    timing_results['compute_i'] = ( timing_results['total'] - timing_results['baseline'] ) \
                                   / ( timing_results['iterations'] * timing_results['total_runs'] )
 
     print(f" --- total: {timing_results['total']:.2f} \
@@ -338,6 +343,7 @@ def generate_timing_csv(case: str, ngrdcol_min: int, ngrdcol_max: int, name: str
             # csv_line += f",{timing_results.get('baseline')}"
             # csv_line += f",{timing_results.get('compute_i')}"
             values = [str(timing_results[key]) for key in header]
+            #print(timing_results)
             f.write(",".join(values) + "\n")
 
             i = i + 1
