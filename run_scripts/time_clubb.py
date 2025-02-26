@@ -36,7 +36,7 @@ def parse_gptl_summary(timing_results, variables):
                         nranks    = float(tokens[2])
                         mean_time = float(tokens[3])
                         # Normalize by calls per rank ( ncalls / nranks = calls per rank )
-                        timing_results[var_name+"_i"] = mean_time / ( ncalls / nranks ) 
+                        timing_results[var_name+"_c"] = mean_time / ( ncalls / nranks ) 
                     except ValueError:
                         print(f"Error: Could not convert mean_time '{tokens[3]}' to float for variable '{var_name}'.")
     return timing_results
@@ -137,7 +137,7 @@ def time_clubb_standalone(case: str, ngrdcol: int, mpi: int, srun: int, gpu: boo
             elif any('mpich' in os.environ.get(var, '').lower() for var in os.environ):
                 print(" - MPICH is being used.")
                 # --cpu-bind core --mem-bind local     --cpu-bind verbose,list:1:17:33:49
-                run_cmd = f"mpirun -np {min(ngrdcol,mpi)} --cpu-bind verbose,list:1:17:33:49 bash -c \"cd {scriptDir}; set_gpu_rank ./execute_clubb_standalone.bash\""
+                run_cmd = f"mpirun -np {min(ngrdcol,mpi)} --cpu-bind core --mem-bind local bash -c \"cd {scriptDir}; set_gpu_rank ./execute_clubb_standalone.bash\""
             else:
                 print("Neither OpenMPI nor MPICH detected.")
         else:
@@ -157,7 +157,7 @@ def time_clubb_standalone(case: str, ngrdcol: int, mpi: int, srun: int, gpu: boo
 
     # Get baseline time, run multiple times to get the best sense of cost
     calls = 3
-    subprocess.run(r"sed -i.bak 's/time_final\s*=.*/time_final = 0.0/' clubb.in", shell=True, check=True)
+    subprocess.run(r"sed -i.bak 's/total_runs\s*=.*/total_runs = 0/' clubb.in", shell=True, check=True)
     start_time = time.time()
     for _ in range(calls):
         result = subprocess.run(run_cmd, shell=True, check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
@@ -296,14 +296,16 @@ def generate_timing_csv(case: str, ngrdcol_min: int, ngrdcol_max: int, name: str
                 print(f" - using 1 task with {ngrdcol} column")
                 param_gen = f"python create_multi_col_params.py -l_multi_col_output {output_choice} -tweak_list {tweak_list} -n {ngrdcol}"
 
-            # Increase the number of iterations based on the work per core, we want small amounts of work 
-            # to have more timesteps for better profiling
+            # Increase the number of runs based on the work per core, we want small amounts of work 
+            # to have more runs for better profiling, but with large amounts of work we want fewer
+            # runs to reduce runtime. We use a base of 5 runs for the GPU that drops off by 1 every
+            # 4x of the problem size, and the CPU starts at 10 runs and drops by 1 every double
             if gpu:
                 # Don't increase gpu runs as much
-                total_runs = int( np.ceil(5 - np.floor(np.log(cols_per_thread)/np.log(4)) ) )
+                total_runs = int( max( 1, np.ceil(5 - np.floor(np.log(cols_per_thread)/np.log(4)) )))
                 #iterations = max(  250 * (10 - np.floor(np.log2(cols_per_thread)/2.0)), 1000 )
             else:
-                total_runs = int( np.ceil(10 - np.floor(np.log(cols_per_thread)/np.log(2)) ) )
+                total_runs = int( max( 1, np.ceil(9 - np.floor(np.log(cols_per_thread)/np.log(2)) )))
                 #iterations = max( 1000 * (10 - np.floor(np.log2(cols_per_thread)/2.0)), 1000 )
 
             print(f" - using {int(total_runs)} total_runs")
