@@ -990,7 +990,7 @@ module clubb_driver
       edsclr_dim, iiedsclr_thl, iiedsclr_rt, iiedsclr_CO2, &
       l_rtm_nudge, rtm_min, rtm_nudge_max_altitude, &
       l_diagnose_correlations, l_calc_w_corr, &
-      total_reps
+      total_runs
 
 
     namelist /stats_setting/ &
@@ -1029,7 +1029,7 @@ module clubb_driver
     logical :: &
       l_last_timestep
 
-    integer :: ret_code, repitition, total_reps
+    integer :: ret_code, run, total_runs
 
 !-----------------------------------------------------------------------
 
@@ -1053,7 +1053,7 @@ module clubb_driver
     ret_code = GPTLinitialize()                     ! Initialize GPTL
 #endif
 
-    total_reps = 1
+    total_runs = 1
 
     ! Begin code
 
@@ -2210,6 +2210,8 @@ module clubb_driver
     time_stop = 0.0_core_rknd
     time_start = 0.0_core_rknd
 
+    write(unit=fstdout,fmt='(a,i8,a,f10.1)') 'total_runs = ', total_runs
+
 
     ! These variables are no
     !sigma_sqd_w_zt         = zero        ! PDF width parameter interp. to t-levs.
@@ -2318,9 +2320,7 @@ module clubb_driver
     !$acc      copyin( hm_metadata%l_mix_rat_hm ) &
     !$acc      create( wphydrometp, wp2hmp, rtphmp_zt, thlphmp_zt )
     
-    do repitition = 1, total_reps
-
-      !print *, "doing rep ", repitition
+    do run = 1, total_runs
 
       ! Initialize silhs samples to indicate unused status, these are overwritten if silhs is used
       !$acc parallel loop gang vector collapse(3) default(present)

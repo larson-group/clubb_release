@@ -5,7 +5,7 @@
 
 ! Model Settings
 
-total_reps = 5
+total_runs = 5
 
 runtype = "arm" ! Case name.
 

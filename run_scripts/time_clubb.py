@@ -35,7 +35,7 @@ def parse_gptl_summary(timing_results, variables):
                         ncalls    = float(tokens[1])
                         nranks    = float(tokens[2])
                         mean_time = float(tokens[3])
-                        # Normalize by iterations ( iterations = ncalls / nranks )
+                        # Normalize by calls per rank ( ncalls / nranks = calls per rank )
                         timing_results[var_name+"_i"] = mean_time / ( ncalls / nranks ) 
                     except ValueError:
                         print(f"Error: Could not convert mean_time '{tokens[3]}' to float for variable '{var_name}'.")
@@ -119,6 +119,7 @@ def time_clubb_standalone(case: str, ngrdcol: int, mpi: int, srun: int, gpu: boo
     timing_results = {}
     timing_results['ngrdcol'] = ngrdcol
     timing_results['iterations'] = 0.0
+    timing_results['runs'] = 0.0
     timing_results['total'] = 0.0
     timing_results['compute_i'] = 0.0
     timing_results['baseline'] = 0.0
@@ -184,6 +185,11 @@ def time_clubb_standalone(case: str, ngrdcol: int, mpi: int, srun: int, gpu: boo
             match = re.search(r"iteration\s*=\s*(\d+)", line)
             if match:
                 timing_results['iterations'] = int(match.group(1))
+        elif "total_runs =" in line:
+            # Extract the iteration count from the line
+            match = re.search(r"total_runs\s*=\s*(\d+)", line)
+            if match:
+                timing_results['total_runs'] = int(match.group(1))
 
 
     if os.path.exists("timing.summary"):
@@ -217,7 +223,8 @@ def time_clubb_standalone(case: str, ngrdcol: int, mpi: int, srun: int, gpu: boo
                 output_multi_col = float(clean_float_string(line.split('=')[1].strip()))
                 timing_results['output_multi_col'] = max( output_multi_col, timing_results['output_multi_col'] )
 
-    timing_results['compute_i'] = ( end_time - start_time - timing_results['baseline'] ) / timing_results['iterations']
+    timing_results['compute_i'] = ( end_time - start_time - timing_results['baseline'] ) \
+                                  / ( timing_results['iterations'] * timing_results['total_runs'] )
 
     print(f" --- total: {timing_results['total']:.2f} \
              --- cols/sec: {timing_results['ngrdcol']/timing_results['total']:.3f} \
@@ -291,13 +298,16 @@ def generate_timing_csv(case: str, ngrdcol_min: int, ngrdcol_max: int, name: str
 
             # Increase the number of iterations based on the work per core, we want small amounts of work 
             # to have more timesteps for better profiling
-            #if gpu:
-                # Don't increase gpu iterations as much
-            #    iterations = max(  250 * (10 - np.floor(np.log2(cols_per_thread)/2.0)), 1000 )
-            #else:
-            #    iterations = max( 1000 * (10 - np.floor(np.log2(cols_per_thread)/2.0)), 1000 )
+            if gpu:
+                # Don't increase gpu runs as much
+                total_runs = int( np.ceil(5 - np.floor(np.log(cols_per_thread)/np.log(4)) ) )
+                #iterations = max(  250 * (10 - np.floor(np.log2(cols_per_thread)/2.0)), 1000 )
+            else:
+                total_runs = int( np.ceil(10 - np.floor(np.log(cols_per_thread)/np.log(2)) ) )
+                #iterations = max( 1000 * (10 - np.floor(np.log2(cols_per_thread)/2.0)), 1000 )
 
-            #print(f" - using {int(iterations)} iterations")
+            print(f" - using {int(total_runs)} total_runs")
+            run_set_cmd = f"sed -i 's:total_runs.*=.*:total_runs={total_runs}:g' clubb.in"
             #update_time_final(f"../input/case_setups/{case}_model.in", iterations )
 
             clubb_in_gen = f"./run_scm.bash -e -p clubb_params_multi_col.in --no_run {case}"
@@ -306,6 +316,7 @@ def generate_timing_csv(case: str, ngrdcol_min: int, ngrdcol_max: int, name: str
             # Generate params, then generate clubb.in (which uses the generated multicol params)
             result = subprocess.run(param_gen, shell=True, check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
             result = subprocess.run(clubb_in_gen, shell=True, check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            result = subprocess.run(run_set_cmd, shell=True, check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
             result = subprocess.run(clean_output, shell=True, check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
             # Do the timing, record results
