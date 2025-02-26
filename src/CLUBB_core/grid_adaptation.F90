@@ -2301,6 +2301,7 @@ module grid_adaptation_module
                                   Lscale, wp2_zt, &
                                   grid_sfc, grid_top, &
                                   num_levels, &
+                                  pdf_params, &
                                   gr_dens_z, gr_dens )
     ! Description:
     ! Creates an unnormalized grid density function from Lscale
@@ -2311,6 +2312,9 @@ module grid_adaptation_module
 
     use clubb_precision, only: &
         core_rknd ! Variable(s)
+
+    use pdf_parameter_module, only:  &
+        pdf_parameter  ! Type
 
     implicit none
 
@@ -2331,6 +2335,9 @@ module grid_adaptation_module
       Lscale, &  ! Length scale   [m]
       wp2_zt     ! w'^2 on thermo. grid [m^2/s^2]
 
+    type(pdf_parameter), intent(in) :: & 
+      pdf_params     ! PDF parameters
+
     !--------------------- Output Variable ---------------------
     real( kind = core_rknd ), dimension(nzt), intent(out) ::  &
       gr_dens_z,  &    ! the z value coordinates of the connection points of the piecewise linear
@@ -2343,8 +2350,14 @@ module grid_adaptation_module
 
     real( kind = core_rknd ) :: threshold
 
+    real( kind = core_rknd ), dimension(nzt) :: &
+      chi   ! The variable 's' in Mellor (1977)    [kg/kg]
+
     !--------------------- Begin Code ---------------------
-    threshold = 0.002
+    chi(:) = pdf_params%mixt_frac(1,:) * pdf_params%chi_1(1,:) &
+                  + ( one - pdf_params%mixt_frac(1,:) ) * pdf_params%chi_2(1,:)
+
+    threshold = 0.001
     do i = 1, nzt
         gr_dens_z(i) = zt(1,i)
         if ( wp2_zt(1,i) > threshold ) then

@@ -1104,9 +1104,6 @@ module clubb_driver
     iunit = 10
 #endif
 
-    iunit_grid_adaptation = iunit + 10
-    fname_grid_adaptation = '../output/grid_adaptation.txt'
-
     call set_default_clubb_config_flags( iiPDF_type, & ! Intent(out)
                                          ipdf_call_placement, & ! Intent(out)
                                          penta_solve_method, & ! Intent(out)
@@ -1202,10 +1199,6 @@ module clubb_driver
     open(unit=iunit, file=runfile, status='old', action='read')
     read(unit=iunit, nml=configurable_clubb_flags_nl)
     close(unit=iunit)
-
-    if ( grid_adapt_in_time_method > 0 ) then
-      open(unit=iunit_grid_adaptation, file=fname_grid_adaptation, status='replace', action='write')
-    end if
 
     if ( l_vert_avg_closure ) then
       l_trapezoidal_rule_zt    = .true.
@@ -1519,6 +1512,12 @@ module clubb_driver
     end if ! clubb_at_least_debug_level( 1 )
 
     !----------------------------------------------------------------------
+
+    iunit_grid_adaptation = iunit + 10
+    fname_grid_adaptation = '../output/'//trim( runtype )//'_grid_adapt.txt'
+    if ( grid_adapt_in_time_method > 0 ) then
+      open(unit=iunit_grid_adaptation, file=fname_grid_adaptation, status='replace', action='write')
+    end if
 
     ! Allocate stretched grid altitude arrays.
     allocate( momentum_heights(ngrdcol,nzmax), &
@@ -3028,7 +3027,7 @@ module clubb_driver
         Skw_zm_smooth = zm2zt2zm( gr%nzm, gr%nzt, ngrdcol, gr, Skw_zm )
 
         wp2_zt = zm2zt( gr%nzm, gr%nzt, ngrdcol, gr, wp2, w_tol_sqd ) ! Positive definite quantity
-      
+
         ! Call microphysics scheme and produce microphysics tendencies.
         do i = 1, ngrdcol
           call calc_microphys_scheme_tendcies( gr, dt_main, time_current, &               ! In
@@ -3305,7 +3304,7 @@ module clubb_driver
       call cpu_time(time_stop)
       time_output_multi_col = time_output_multi_col + time_stop - time_start
 
-      if ( (grid_adapt_in_time_method > 0) .and. (modulo(itime, 100) == 0) &
+      if ( (grid_adapt_in_time_method > 0) .and. (modulo(itime, 30) == 0) &
            .and. (stats_metadata%l_stats_last) ) then ! only adapt grid when the average of the last
                                                       ! iterations was just written to file,
                                                       ! in order not to change the grid in between
@@ -3319,6 +3318,7 @@ module clubb_driver
                                     Lscale, wp2_zt, &
                                     gr%zm(1,1), gr%zm(1,gr%nzm), &
                                     gr%nzm, &
+                                    pdf_params, &
                                     gr_dens_z, gr_dens )
       
         else if ( grid_adapt_in_time_method > 1 ) then
@@ -3374,7 +3374,7 @@ module clubb_driver
                          l_add_dycore_grid, &
                          grid_adapt_in_time_method )
         end if
-        
+
         call cpu_time(time_stop)
         time_adapt_grid = time_adapt_grid + time_stop - time_start
       end if
