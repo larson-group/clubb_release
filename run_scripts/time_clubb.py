@@ -33,7 +33,7 @@ def parse_gptl_summary(timing_results, variables):
                 if var_name in variables:
                     try:
                         ncalls    = float(tokens[1])
-                        if var_name == "mainloop":
+                        if var_name == "acc_data_copyin":
                             # The number of mainloop calls is the number of runs
                             nruns = ncalls
                         nranks    = float(tokens[2])
