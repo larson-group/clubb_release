@@ -15,6 +15,10 @@ module pdf_closure_module
       iiPDF_LY93,       & ! Lewellen and Yoh (1993)
       iiPDF_new_hybrid    ! new hybrid PDF
 
+#ifdef GPTL
+  use gptl
+#endif
+
   implicit none
 
   public :: pdf_closure, &
@@ -25,6 +29,8 @@ module pdf_closure_module
             calc_w_up_in_cloud
 
   private ! Set Default Scope
+
+  integer :: ret_code
 
   contains
 !------------------------------------------------------------------------
@@ -417,6 +423,10 @@ module pdf_closure_module
 
     !----------------------------- Begin Code -----------------------------
 
+#ifdef GPTL
+    ret_code = GPTLstart('acc_data_create')
+#endif
+
     !$acc enter data create( u_1, u_2, varnce_u_1, varnce_u_2, v_1, v_2, &
     !$acc                 varnce_v_1, varnce_v_2, alpha_u, alpha_v, &
     !$acc                 corr_u_w_1, corr_u_w_2, corr_v_w_1, corr_v_w_2, &
@@ -434,6 +444,11 @@ module pdf_closure_module
     !$acc                    alpha_sclr, corr_sclr_thl_1, corr_sclr_thl_2, &
     !$acc                    corr_sclr_rt_1, corr_sclr_rt_2, corr_w_sclr_1, &
     !$acc                    corr_w_sclr_2, Sksclr )
+
+#ifdef GPTL
+    !$acc wait
+    ret_code = GPTLstop('acc_data_create')
+#endif
 
     ! Check whether the passive scalars are present.
     if ( sclr_dim > 0 ) then
@@ -627,6 +642,11 @@ module pdf_closure_module
     if ( iiPDF_type == iiPDF_ADG1 .or. iiPDF_type == iiPDF_ADG2 &
          .or. iiPDF_type == iiPDF_new_hybrid ) then
 
+#ifdef GPTL
+      !$acc wait
+      ret_code = GPTLstart('ik_loops')
+#endif
+
       ! These PDF types define corr_w_rt_1, corr_w_rt_2, corr_w_thl_1, and
       ! corr_w_thl_2 to all have a value of 0, so skip the calculation.
       ! The values of corr_u_w_1, corr_u_w_2, corr_v_w_1, and corr_v_w_2 are
@@ -645,6 +665,11 @@ module pdf_closure_module
         end do
       end do
       !$acc end parallel loop
+
+#ifdef GPTL
+      !$acc wait
+      ret_code = GPTLstop('ik_loops')
+#endif
 
     else
 
@@ -1058,6 +1083,10 @@ module pdf_closure_module
     end if ! l_calc_ice_supersat_frac
 
 
+#ifdef GPTL
+    ret_code = GPTLstart('ik_loops')
+#endif
+
     ! Compute cloud fraction and mean cloud water mixing ratio.
     ! Reference:
     ! https://arxiv.org/pdf/1711.03675v1.pdf#nameddest=url:anl_int_cloud_terms
@@ -1072,6 +1101,11 @@ module pdf_closure_module
       end do
     end do
     !$acc end parallel loop
+
+#ifdef GPTL
+    !$acc wait
+    ret_code = GPTLstop('ik_loops')
+#endif
 
     if ( iiPDF_type == iiPDF_ADG1 .or. iiPDF_type == iiPDF_ADG2 &
          .or. iiPDF_type == iiPDF_new_hybrid ) then
@@ -1800,6 +1834,10 @@ module pdf_closure_module
 
     !$acc enter data create( denominator )
 
+#ifdef GPTL
+    ret_code = GPTLstart('ik_loops')
+#endif
+
     !$acc parallel loop gang vector collapse(2) default(present)
     do k = 1, nz
       do i = 1, ngrdcol
@@ -1850,6 +1888,11 @@ module pdf_closure_module
       end do
     end do
     !$acc end parallel loop
+
+#ifdef GPTL
+    !$acc wait
+    ret_code = GPTLstop('ik_loops')
+#endif
 
     call smooth_corr_quotient( ngrdcol, nz, covar_chi_eta, denominator, denom_thresh, corr_chi_eta )
 

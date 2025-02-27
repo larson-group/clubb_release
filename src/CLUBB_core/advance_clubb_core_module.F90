@@ -98,6 +98,10 @@ module advance_clubb_core_module
       saturation_lookup
                              
 
+#ifdef GPTL
+  use gptl
+#endif
+
   implicit none
 
   public ::  &
@@ -115,6 +119,8 @@ module advance_clubb_core_module
     order_xp2_xpyp = 2, &
     order_wp2_wp3 = 3, &
     order_windm = 4
+
+  integer :: ret_code
 
   contains
 
@@ -871,6 +877,10 @@ module advance_clubb_core_module
 
     !----- Begin Code -----
 
+#ifdef GPTL
+    ret_code = GPTLstart('acc_data_create')
+#endif
+
     !$acc enter data create( Skw_zm, Skw_zt, thvm, thvm_zm, ddzm_thvm_zm, rtprcp, rcp2, &
     !$acc              ddzt_um, ddzt_vm, ddzt_umvm_sqd, ddzt_umvm_sqd_clipped, &
     !$acc              wpthlp2, wprtp2, wprtpthlp, wp2rcp, wp3_zm, Lscale_up, Lscale_zm, &
@@ -898,6 +908,11 @@ module advance_clubb_core_module
 
     !$acc enter data if( edsclr_dim > 0 ) &
     !$acc            create( wpedsclrp )
+
+#ifdef GPTL
+    !$acc wait
+    ret_code = GPTLstop('acc_data_create')
+#endif
 
     if ( clubb_config_flags%l_lmm_stepping ) then
       dt_advance = two * dt
@@ -1045,6 +1060,10 @@ module advance_clubb_core_module
     ! only be used to compute the variance at the surface. -dschanen 8 Sept 2009
     if ( .not. clubb_config_flags%l_host_applies_sfc_fluxes ) then
 
+#ifdef GPTL
+      ret_code = GPTLstart('i_loops')
+#endif
+
       !$acc parallel loop gang vector default(present)
       do i = 1, ngrdcol
         wpthlp(i,1) = wpthlp_sfc(i)
@@ -1062,6 +1081,11 @@ module advance_clubb_core_module
         end do
         !$acc end parallel loop
       endif ! l_linearize_pbl_winds
+
+#ifdef GPTL
+      !$acc wait
+      ret_code = GPTLstop('i_loops')
+#endif
 
       ! Set fluxes for passive scalars (if enabled)
       if ( sclr_dim > 0 ) then

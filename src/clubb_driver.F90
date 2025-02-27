@@ -2231,6 +2231,10 @@ module clubb_driver
       end do
     end do
 
+#ifdef GPTL
+    ret_code = GPTLstart('acc_data_copyin')
+#endif
+
     !$acc data copyin( gr, gr%zm, gr%zt, gr%dzm, gr%dzt, gr%invrs_dzt, gr%invrs_dzm, &
     !$acc              gr%weights_zt2zm, gr%weights_zm2zt, &
     !$acc              nu_vert_res_dep, nu_vert_res_dep%nu2, nu_vert_res_dep%nu9, &
@@ -2317,6 +2321,11 @@ module clubb_driver
     !$acc      copyin( hm_metadata%l_mix_rat_hm ) &
     !$acc      create( wphydrometp, wp2hmp, rtphmp_zt, thlphmp_zt )
     
+#ifdef GPTL
+    ret_code = GPTLstop('acc_data_copyin')
+    ret_code = GPTLstart('runloop')
+#endif
+
     do run = 1, total_runs
 
       ! Initialize silhs samples to indicate unused status, these are overwritten if silhs is used
@@ -3371,7 +3380,9 @@ module clubb_driver
 
     end do
 
+  
 #ifdef GPTL
+    ret_code = GPTLstop('runloop')
     !ret_code = GPTLpr(rank)
     ret_code = GPTLpr_summary(MPI_COMM_WORLD)
     ret_code = GPTLfinalize()

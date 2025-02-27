@@ -200,13 +200,19 @@ def time_clubb_standalone(case: str, ngrdcol: int, mpi: int, srun: int, gpu: boo
     if os.path.exists("timing.summary"):
 
         parse_gptl_summary( timing_results, 
-                            [ "mainloop", 
+                            [ "runloop", 
+                              "mainloop", 
                               "advance_clubb_core_api",
                               "output_multi_col",
                               "penta_lu_solve_multiple_rhs_lhs",
                               "penta_lu_solve_single_rhs_multiple_lhs",
                               "tridiag_lu_solve_multiple_rhs_lhs",
-                              "fill_holes"] )
+                              "fill_holes", 
+                              "i_loops",
+                              "ik_loops",
+                              "acc_data_create",
+                              "acc_data_copyin",
+                            ] )
 
     else:
         # Parse the timing results and find the last iteration

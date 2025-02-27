@@ -10,6 +10,10 @@ module advance_xm_wpxp_module
   ! None
   !-----------------------------------------------------------------------
 
+#ifdef GPTL
+  use gptl
+#endif
+
   implicit none
 
   private ! Default scope
@@ -44,6 +48,8 @@ module advance_xm_wpxp_module
     ndiags2 = 2,  &
     ndiags3 = 3,  &
     ndiags5 = 5
+
+  integer :: ret_code
 
   contains
 
@@ -1319,6 +1325,9 @@ module advance_xm_wpxp_module
     ! Initializations/precalculations
     invrs_dt = 1.0_core_rknd / dt
 
+#ifdef GPTL
+    ret_code = GPTLstart('i_loops')
+#endif
     ! Lower boundary for w'x', lhs(:,:,1)
     !$acc parallel loop gang vector default(present)
     do i = 1, ngrdcol
@@ -1329,6 +1338,12 @@ module advance_xm_wpxp_module
       lhs(5,i,1) = 0.0_core_rknd
     end do
     !$acc end parallel loop
+
+#ifdef GPTL
+    !$acc wait
+    ret_code = GPTLstop('i_loops')
+    ret_code = GPTLstart('ik_loops')
+#endif
 
     ! Combine xm and w'x' terms into LHS
     !$acc parallel loop gang vector collapse(2) default(present)
@@ -1378,6 +1393,11 @@ module advance_xm_wpxp_module
     end do
     !$acc end parallel loop
 
+#ifdef GPTL
+    !$acc wait
+    ret_code = GPTLstop('ik_loops')
+    ret_code = GPTLstart('i_loops')
+#endif
     ! Upper boundary for w'x', lhs(:,:,2*gr%nzm-1)
     ! These were set in the loop above for simplicity, so they must be set properly here
     !$acc parallel loop gang vector default(present)
@@ -1390,6 +1410,11 @@ module advance_xm_wpxp_module
     end do
     !$acc end parallel loop
     
+#ifdef GPTL
+  !$acc wait
+  ret_code = GPTLstop('i_loops')
+#endif
+
     ! LHS time tendency
     if ( l_iter ) then
       !$acc parallel loop gang vector collapse(2) default(present)

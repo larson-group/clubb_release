@@ -235,6 +235,7 @@ module tridiag_lu_solvers
     !$acc end parallel loop
 
 #ifdef GPTL
+    !$acc wait
     ret_code = GPTLstop('tridiag_lu_solve_single_rhs_multiple_lhs')
 #endif
 
@@ -332,6 +333,7 @@ module tridiag_lu_solvers
     !$acc end parallel loop
 
 #ifdef GPTL
+    !$acc wait
     ret_code = GPTLstop('tridiag_lu_solve_multiple_rhs_lhs')
 #endif
 

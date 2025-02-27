@@ -20,12 +20,18 @@ module diffusion
   ! located at momentum grid levels.  The variables are:  wprtp, wpthlp, wp2,
   ! rtp2, thlp2, rtpthlp, up2, vp2, wpsclrp, sclrprtp, sclrpthlp, and sclrp2.
 
+#ifdef GPTL
+  use gptl
+#endif
+
   implicit none
 
   private ! Default Scope
 
   public :: diffusion_zt_lhs, &
             diffusion_zm_lhs
+
+  integer :: ret_code
 
   contains
 
@@ -309,6 +315,10 @@ module diffusion
 
     !$acc data create( lhs_upwind, drhoKdz_zt, K_zm_nu, rho_K_zm_nu, ddzm_rho_K_zm_nu )
 
+#ifdef GPTL
+      ret_code = GPTLstart('ik_loops')
+#endif
+
     !$acc parallel loop gang vector collapse(2) default(present)
     do k = 1, nzm
       do i = 1, ngrdcol
@@ -525,7 +535,12 @@ module diffusion
       end do
       !$acc end parallel loop
 
-    end if 
+    end if
+    
+#ifdef GPTL
+    !$acc wait
+    ret_code = GPTLstop('ik_loops')
+#endif
 
     !$acc end data
 

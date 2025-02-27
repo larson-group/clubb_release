@@ -17,6 +17,10 @@ module mean_adv
   ! located at momentum grid levels.  The variables are:  wprtp, wpthlp, wp2,
   ! rtp2, thlp2, rtpthlp, up2, vp2, wpsclrp, sclrprtp, sclrpthlp, and sclrp2.
 
+#ifdef GPTL
+  use gptl
+#endif
+
   implicit none
 
   private ! Default scope
@@ -26,6 +30,8 @@ module mean_adv
 
   integer, parameter :: &
     ndiags3 = 3
+
+  integer :: ret_code
 
   contains
 
@@ -188,6 +194,10 @@ module mean_adv
 
     !-------------------------- Begin Code --------------------------
 
+#ifdef GPTL
+    ret_code = GPTLstart('ik_loops')
+#endif
+
     if ( .not. l_upwind_xm_ma ) then  ! Use centered differencing
 
       ! Most of the interior model; normal conditions.
@@ -343,6 +353,11 @@ module mean_adv
       !$acc end parallel loop
 
     endif ! l_upwind_xm_ma
+
+#ifdef GPTL
+    !$acc wait
+    ret_code = GPTLstop('ik_loops')
+#endif
 
     return
 

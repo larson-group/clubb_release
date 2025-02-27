@@ -7,6 +7,10 @@ module advance_xp2_xpyp_module
   ! Contains the subroutine advance_xp2_xpyp and ancillary functions.
   !-----------------------------------------------------------------------
 
+#ifdef GPTL
+  use gptl
+#endif
+
   implicit none
 
   public :: advance_xp2_xpyp, &
@@ -43,6 +47,8 @@ module advance_xp2_xpyp_module
     ndiags2 = 2,  &
     ndiags3 = 3,  &
     ndiags5 = 5
+
+  integer :: ret_code
 
   contains
 
@@ -423,6 +429,10 @@ module advance_xp2_xpyp_module
     
     !------------------------------ Begin Code ------------------------------
     
+#ifdef GPTL
+    ret_code = GPTLstart('acc_data_create')
+#endif
+
     !$acc enter data create( rtp2_old, thlp2_old, rtpthlp_old, up2_old, vp2_old, &
     !$acc                    C2sclr_1d, C2rt_1d, C2thl_1d, &
     !$acc                    C2rtthl_1d, C4_1d, C14_1d, threshold_array, lhs, uv_rhs, &
@@ -438,6 +448,11 @@ module advance_xp2_xpyp_module
     !$acc              lhs_ta_wpsclrp2, lhs_ta_wprtpsclrp, lhs_ta_wpthlpsclrp, &
     !$acc              rhs_ta_wpsclrp2, rhs_ta_wprtpsclrp, rhs_ta_wpthlpsclrp, &
     !$acc              sclrpthlp_chnge ) 
+
+#ifdef GPTL
+    !$acc wait
+    ret_code = GPTLstop('acc_data_create')
+#endif
 
     if ( clubb_at_least_debug_level( 1 ) ) then
 
@@ -2624,6 +2639,10 @@ module advance_xp2_xpyp_module
 
     !---------------- Begin Code -------------------
 
+#ifdef GPTL
+    ret_code = GPTLstart('ik_loops')
+#endif
+
     ! Combine all lhs terms into lhs, should be fully vectorized
     !$acc parallel loop gang vector collapse(2) default(present)    
     do k = 2, nzm-1
@@ -2654,6 +2673,12 @@ module advance_xp2_xpyp_module
     ! top boundary.  Fixed-point boundary conditions are used for both the
     ! variances and the covariances.
 
+#ifdef GPTL
+    !$acc wait
+    ret_code = GPTLstop('ik_loops')
+    ret_code = GPTLstart('i_loops')
+#endif
+
     !$acc parallel loop gang vector default(present)    
     do i = 1, ngrdcol
       ! Set the lower boundaries for the first variable
@@ -2667,6 +2692,11 @@ module advance_xp2_xpyp_module
       lhs(3,i,nzm) = zero
     end do
     !$acc end parallel loop
+
+#ifdef GPTL
+    !$acc wait
+    ret_code = GPTLstop('i_loops')
+#endif
 
     return
 

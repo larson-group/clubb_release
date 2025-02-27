@@ -245,6 +245,7 @@ module fill_holes
     !$acc end parallel loop
 
 #ifdef GPTL
+    !$acc wait
     ret_code = GPTLstop('fill_holes')
 #endif
 

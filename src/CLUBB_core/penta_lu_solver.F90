@@ -230,6 +230,7 @@ module penta_lu_solvers
     !$acc end parallel loop
 
 #ifdef GPTL
+    !$acc wait
     ret_code = GPTLstop('penta_lu_solve_single_rhs_multiple_lhs')
 #endif
 
@@ -362,6 +363,7 @@ module penta_lu_solvers
     !$acc end parallel loop
 
 #ifdef GPTL
+    !$acc wait
     ret_code = GPTLstop('penta_lu_solve_multiple_rhs_lhs')
 #endif
 
