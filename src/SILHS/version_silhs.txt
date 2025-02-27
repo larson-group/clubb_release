@@ -1,0 +1,131 @@
+commit 1fcbf0455fe43a2fc873f59afedf92e0824640a4
+Author: domkesteffen <42725900+domkesteffen@users.noreply.github.com>
+Date:   Wed Feb 26 18:11:11 2025 -0600
+
+    Removed renaming operators `=>` from clubb_api_module (#1232)
+    
+    CLUBB ticket #1223
+    
+    The original procedures were renamed to `<name>_api`.
+    Now, the `clubb_api_module` just has a regular `use` and `public` statement for them.
+
+commit cbb9ade398737167875554c7471bcfef6c5afa04
+Author: st3113n <110198346+st3113n@users.noreply.github.com>
+Date:   Wed Feb 26 12:03:32 2025 -0600
+
+    add requirements file for run_bindiff_w_flags script
+
+commit 808fa5089e30e9a5a569f2fda50a334d04d33c71
+Author: bmg929 <bmg2@uwm.edu>
+Date:   Fri Feb 21 15:22:45 2025 -0600
+
+    Should just delete instead of commenting out.
+
+commit 4b242c02eac785410f827436d822838d76951673
+Author: bmg929 <bmg2@uwm.edu>
+Date:   Fri Feb 21 15:20:50 2025 -0600
+
+    Getting rid of a couple of worthless lines of code. It's possible this
+    changes an output stat, making this commit BIT_CHANGING, but not
+    actually answer changing.
+
+commit 236d6123c9d941c1d713c80143f3bd00ff462c95
+Author: st3113n <110198346+st3113n@users.noreply.github.com>
+Date:   Fri Feb 21 14:12:47 2025 -0600
+
+    fix variable l_sfc_already_initialized (#1231)
+
+commit 7783e3a73fe5643538f55dea8418c8adf0d0e4f8
+Author: st3113n <110198346+st3113n@users.noreply.github.com>
+Date:   Thu Feb 20 19:10:34 2025 -0600
+
+    add dycore grid with conservative remapping scheme
+    
+    * add tunable parameter interp_from_dycore_grid_method
+    
+    * add dycore interpolation to atex case with conservative remapping by ullrich
+    
+    * remove new gpu commands
+    
+    * add acc annotation for gpu
+    
+    * remove acc annotation again
+    
+    * add acc annotation for parallel loop
+    
+    * add acc annotations for parallel loop execution
+    
+    * change remapping subroutine to take number of levels and levels as input instead of whole grid object
+    
+    * add more general functions to interpolate
+    
+    * add and refactor functions for remapping values given on zm levels
+    
+    * fix compiler errors and refactoring to stay under 100 chars per line
+    
+    * remove TODOs and used new interpolating function in interpolate_forcings
+    
+    * add functions for adaptive grid generation and grid density function normalization
+    
+    * add conservative ullrich remapping to cases with forcing time dependent inputs
+    
+    * add grid adaptation and flag
+    
+    * clean up and add warning for case when remapping from dycore flag cannot be used
+    
+    * some refactoring
+    
+    * add logical flag for dycore and renamed flags for dycore and grid adaptation
+    
+    * remove ifdefs
+    
+    * refactoring
+    
+    * add units
+    
+    * changed Lscale to inverse
+    
+    ---------
+    
+    Co-authored-by: Steffen Carstensen <steffenc34@icloud.com>
+
+commit 455fbc12e83f4475429afcff526571537f9be66a
+Author: domkesteffen <42725900+domkesteffen@users.noreply.github.com>
+Date:   Thu Feb 20 13:12:53 2025 -0600
+
+    Fixed equality check in pdf_closure_module (#1229)
+    
+    CLUBB ticket #975
+    
+    WRF detected this error. Fixed it.
+
+commit 327bc1e35f9f2f5c9e58dadab76aa8a4452f711b
+Author: domkesteffen <42725900+domkesteffen@users.noreply.github.com>
+Date:   Thu Feb 20 12:14:14 2025 -0600
+
+    Revert clubb api module changes (#1228)
+    
+    * Revert intent changes to err_code_api in clubb_api_module to stay consistent with host models
+    CLUBB ticket #975
+    
+    Reverted changes in advance_clubb_core_api and to corresponding call in run_clubb
+    
+    Since the module variable is not used anywhere anymore, we can also remove it from the module
+
+commit 0e45d985bab99301c6ca49bbcf69e52109d67550
+Author: domkesteffen <42725900+domkesteffen@users.noreply.github.com>
+Date:   Wed Feb 19 11:48:53 2025 -0600
+
+    Renamed check_res to err_code in numerical_check.F90 for consistency (#1227)
+
+commit c7ac128837133579e64d46c7be3fe907a5d6840d
+Author: domkesteffen <42725900+domkesteffen@users.noreply.github.com>
+Date:   Wed Feb 19 11:16:13 2025 -0600
+
+    Remove err code (#1218)
+    
+    CLUBB ticket #975
+    
+    Module variable `err_code` was removed and replaced by intent(inout) subroutine parameters.
+    
+    Added messages to `error stop`s in `clubb_api_module`
