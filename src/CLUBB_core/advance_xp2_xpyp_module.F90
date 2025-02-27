@@ -135,9 +135,9 @@ module advance_xp2_xpyp_module
         nu_vertical_res_dep    ! Type(s)
 
     use grid_class, only: & 
-        grid,   & ! Type
-        zm2zt,  & ! Procedure(s)
-        zt2zm
+        grid,       & ! Type
+        zm2zt_api,  & ! Procedure(s)
+        zt2zm_api
 
     use pdf_parameter_module, only: &
         implicit_coefs_terms    ! Variable Type
@@ -472,7 +472,7 @@ module advance_xp2_xpyp_module
     if ( l_C2_cloud_frac ) then
 
       ! Interpolate cloud_frac to momentum levels.
-      cloud_frac_zm = zt2zm( nzm, nzt, ngrdcol, gr, cloud_frac )
+      cloud_frac_zm = zt2zm_api( nzm, nzt, ngrdcol, gr, cloud_frac )
 
       !$acc parallel loop gang vector collapse(2) default(present)
       do k = 1, nzm, 1
@@ -542,8 +542,8 @@ module advance_xp2_xpyp_module
     end do
     !$acc end parallel loop
 
-    Kw2_zm = zt2zm( nzm, nzt, ngrdcol, gr, Kw2, zero )
-    Kw9_zm = zt2zm( nzm, nzt, ngrdcol, gr, Kw9, zero )
+    Kw2_zm = zt2zm_api( nzm, nzt, ngrdcol, gr, Kw2, zero )
+    Kw9_zm = zt2zm_api( nzm, nzt, ngrdcol, gr, Kw9, zero )
 
     if ( l_lmm_stepping ) then
 
@@ -999,7 +999,7 @@ module advance_xp2_xpyp_module
         end do
       endif
 
-      rtm_zm = zt2zm( nzm, nzt, ngrdcol, gr, rtm, zero_threshold )
+      rtm_zm = zt2zm_api( nzm, nzt, ngrdcol, gr, rtm, zero_threshold )
 
       !$acc parallel loop gang vector collapse(2) default(present)
       do k = 1, nzm
@@ -3798,8 +3798,8 @@ module advance_xp2_xpyp_module
                                          
     use grid_class, only: &
         grid, & ! Type
-        zt2zm,  & ! Procedure(s)
-        zm2zt
+        zt2zm_api,  & ! Procedure(s)
+        zm2zt_api
 
     use clubb_precision, only: &
         core_rknd  ! Variable(s)
@@ -4104,7 +4104,7 @@ module advance_xp2_xpyp_module
     !$acc end parallel loop
 
     ! Interpolate a_1 from the momentum levels to the thermodynamic levels.
-    a1_coef_zt(:,:) = zm2zt( nzm, nzt, ngrdcol, gr, a1_coef(:,:), zero_threshold )
+    a1_coef_zt(:,:) = zm2zt_api( nzm, nzt, ngrdcol, gr, a1_coef(:,:), zero_threshold )
 
     !$acc parallel loop gang vector collapse(2) default(present)
     do k = 1, nzm
@@ -4191,7 +4191,7 @@ module advance_xp2_xpyp_module
         
       ! Interpolate wprtp2 to momentum levels, and calculate the sign of vertical velocity
       if ( l_upwind_xpyp_ta ) then
-        term_wprtp2_explicit_zm(:,:) = zt2zm( nzm, nzt, ngrdcol, gr, wprtp2(:,:) )
+        term_wprtp2_explicit_zm(:,:) = zt2zm_api( nzm, nzt, ngrdcol, gr, wprtp2(:,:) )
 
         !$acc parallel loop gang vector collapse(2) default(present)
         do k = 1, nzm
@@ -4213,7 +4213,7 @@ module advance_xp2_xpyp_module
           
       ! Interpolate wpthlp2 to momentum levels, and calculate the sign of vertical velocity
       if ( l_upwind_xpyp_ta ) then
-        term_wpthlp2_explicit_zm(:,:) = zt2zm( nzm, nzt, ngrdcol, gr, wpthlp2(:,:) )
+        term_wpthlp2_explicit_zm(:,:) = zt2zm_api( nzm, nzt, ngrdcol, gr, wpthlp2(:,:) )
 
         !$acc parallel loop gang vector collapse(2) default(present)
         do k = 1, nzm
@@ -4235,7 +4235,7 @@ module advance_xp2_xpyp_module
                                      
       ! Interpolate wprtpthlp to momentum levels, and calculate the sign of vertical velocity
       if ( l_upwind_xpyp_ta ) then
-        term_wprtpthlp_explicit_zm(:,:) = zt2zm( nzm, nzt, ngrdcol, gr, wprtpthlp(:,:) )
+        term_wprtpthlp_explicit_zm(:,:) = zt2zm_api( nzm, nzt, ngrdcol, gr, wprtpthlp(:,:) )
 
         !$acc parallel loop gang vector collapse(2) default(present)
         do k = 1, nzm
@@ -4262,7 +4262,7 @@ module advance_xp2_xpyp_module
           ! Interpolate wpsclrp2 to momentum levels and calculate the sign of 
           ! vertical velocityif l_upwind_xpyp_ta, otherwise just use wpsclrp2 
           if ( l_upwind_xpyp_ta ) then
-            term_wpsclrp2_explicit_zm(:,:) = zt2zm( nzm, nzt, ngrdcol, gr, wpsclrp2(:,:,sclr) )
+            term_wpsclrp2_explicit_zm(:,:) = zt2zm_api( nzm, nzt, ngrdcol, gr, wpsclrp2(:,:,sclr) )
 
             !$acc parallel loop gang vector collapse(2) default(present)
             do k = 1, nzm
@@ -4295,7 +4295,8 @@ module advance_xp2_xpyp_module
         ! vertical velocityif l_upwind_xpyp_ta, otherwise just use wpsclrprtp 
         do sclr = 1, sclr_dim
           if ( l_upwind_xpyp_ta ) then
-            term_wprtpsclrp_explicit_zm(:,:) = zt2zm( nzm, nzt, ngrdcol, gr, wpsclrprtp(:,:,sclr) )
+            term_wprtpsclrp_explicit_zm(:,:) = zt2zm_api( nzm, nzt, ngrdcol, gr, &
+                                                          wpsclrprtp(:,:,sclr) )
             
             !$acc parallel loop gang vector collapse(2) default(present)
             do k = 1, nzm
@@ -4330,8 +4331,8 @@ module advance_xp2_xpyp_module
         ! vertical velocityif l_upwind_xpyp_ta, otherwise just use wpsclrpthlp 
         do sclr = 1, sclr_dim
           if ( l_upwind_xpyp_ta ) then
-            term_wpthlpsclrp_explicit_zm(:,:) = zt2zm( nzm, nzt, ngrdcol, gr, &
-                                                       wpsclrpthlp(:,:,sclr) )
+            term_wpthlpsclrp_explicit_zm(:,:) = zt2zm_api( nzm, nzt, ngrdcol, gr, &
+                                                           wpsclrpthlp(:,:,sclr) )
             
             !$acc parallel loop gang vector collapse(2) default(present)
             do k = 1, nzm
@@ -4472,8 +4473,8 @@ module advance_xp2_xpyp_module
         ! is false, or if stats output is on
         if( .not. l_upwind_xpyp_ta .or. stats_metadata%l_stats_samp ) then
             
-          wprtp_zt(:,:)  = zm2zt( nzm, nzt, ngrdcol, gr, wprtp(:,:) )
-          wpthlp_zt(:,:) = zm2zt( nzm, nzt, ngrdcol, gr, wpthlp(:,:) )
+          wprtp_zt(:,:)  = zm2zt_api( nzm, nzt, ngrdcol, gr, wprtp(:,:) )
+          wpthlp_zt(:,:) = zm2zt_api( nzm, nzt, ngrdcol, gr, wpthlp(:,:) )
 
           !$acc parallel loop gang vector collapse(2) default(present)
           do k = 1, nzt
@@ -4658,7 +4659,7 @@ module advance_xp2_xpyp_module
           ! Interpolate wpsclrp to thermo levels if not using l_upwind_xpyp_ta
           if ( .not. l_upwind_xpyp_ta ) then
             do sclr = 1, sclr_dim
-              wpsclrp_zt(:,:,sclr) = zm2zt( nzm, nzt, ngrdcol, gr, wpsclrp(:,:,sclr) )
+              wpsclrp_zt(:,:,sclr) = zm2zt_api( nzm, nzt, ngrdcol, gr, wpsclrp(:,:,sclr) )
             end do
           end if
             
@@ -4871,8 +4872,8 @@ module advance_xp2_xpyp_module
         ! Calculate the momentum level terms and sign of vertical velocity if
         ! l_upwind_xpyp_ta is true
         if ( l_upwind_xpyp_ta ) then
-          coef_wprtp2_implicit_zm(:,:) = zt2zm( nzm, nzt, ngrdcol, gr, &
-                                                pdf_implicit_coefs_terms%coef_wprtp2_implicit(:,:) )
+          coef_wprtp2_implicit_zm(:,:) = zt2zm_api( nzm, nzt, ngrdcol, gr, &
+                                               pdf_implicit_coefs_terms%coef_wprtp2_implicit(:,:) )
           sgn_t_vel_rtp2(:,:) = sign(one,coef_wprtp2_implicit_zm(:,:)*rtp2(:,:)*rtp2(:,:))
         end if
 
@@ -4888,8 +4889,8 @@ module advance_xp2_xpyp_module
        ! Calculate the momentum level terms and sign of vertical velocity if
        ! l_upwind_xpyp_ta is true
         if ( l_upwind_xpyp_ta ) then
-          coef_wpthlp2_implicit_zm(:,:) = zt2zm( nzm, nzt, ngrdcol, gr, &
-                                             pdf_implicit_coefs_terms%coef_wpthlp2_implicit(:,:) )
+          coef_wpthlp2_implicit_zm(:,:) = zt2zm_api( nzm, nzt, ngrdcol, gr, &
+                                              pdf_implicit_coefs_terms%coef_wpthlp2_implicit(:,:) )
           sgn_t_vel_thlp2(:,:) = sign(one,coef_wpthlp2_implicit_zm(:,:)*thlp2(:,:)*thlp2(:,:))
         end if
         
@@ -4905,9 +4906,9 @@ module advance_xp2_xpyp_module
         ! Calculate the momentum level terms and sign of vertical velocity if
         ! l_upwind_xpyp_ta is true
         if ( l_upwind_xpyp_ta ) then
-          coef_wprtpthlp_implicit_zm(:,:) = zt2zm( nzm, nzt, ngrdcol, gr, &
+          coef_wprtpthlp_implicit_zm(:,:) = zt2zm_api( nzm, nzt, ngrdcol, gr, &
                                             pdf_implicit_coefs_terms%coef_wprtpthlp_implicit(:,:) )
-          term_wprtpthlp_explicit_zm(:,:) = zt2zm( nzm, nzt, ngrdcol, gr, &
+          term_wprtpthlp_explicit_zm(:,:) = zt2zm_api( nzm, nzt, ngrdcol, gr, &
                                             pdf_implicit_coefs_terms%term_wprtpthlp_explicit(:,:) )
           sgn_t_vel_rtpthlp(:,:) = sign(one, ( coef_wprtpthlp_implicit_zm(:,:) * rtpthlp(:,:) &
                                            + term_wprtpthlp_explicit_zm(:,:) ) * rtpthlp(:,:))
@@ -4971,9 +4972,9 @@ module advance_xp2_xpyp_module
         ! Calculate the momentum level terms and sign of turbulent velocity if
         ! l_upwind_xpyp_ta is true
         if ( l_upwind_xpyp_ta ) then
-          coef_wprtp2_implicit_zm(:,:) = zt2zm( nzm, nzt, ngrdcol, gr, &
+          coef_wprtp2_implicit_zm(:,:) = zt2zm_api( nzm, nzt, ngrdcol, gr, &
                                             pdf_implicit_coefs_terms%coef_wprtp2_implicit(:,:) )
-          term_wprtp2_explicit_zm(:,:) = zt2zm( nzm, nzt, ngrdcol, gr, &
+          term_wprtp2_explicit_zm(:,:) = zt2zm_api( nzm, nzt, ngrdcol, gr, &
                                             pdf_implicit_coefs_terms%term_wprtp2_explicit(:,:) )
           sgn_t_vel_rtp2(:,:) = sign(one, ( coef_wprtp2_implicit_zm(:,:) * rtp2(:,:) &
                                         + term_wprtpthlp_explicit_zm(:,:) ) * rtp2(:,:))
@@ -5005,9 +5006,9 @@ module advance_xp2_xpyp_module
         ! Calculate the momentum level terms and sign of turbulent velocity if
         ! l_upwind_xpyp_ta is true
         if ( l_upwind_xpyp_ta ) then
-          coef_wpthlp2_implicit_zm(:,:) = zt2zm( nzm, nzt, ngrdcol, gr, &
+          coef_wpthlp2_implicit_zm(:,:) = zt2zm_api( nzm, nzt, ngrdcol, gr, &
                                             pdf_implicit_coefs_terms%coef_wpthlp2_implicit(:,:) )
-          term_wpthlp2_explicit_zm(:,:) = zt2zm( nzm, nzt, ngrdcol, gr, &
+          term_wpthlp2_explicit_zm(:,:) = zt2zm_api( nzm, nzt, ngrdcol, gr, &
                                             pdf_implicit_coefs_terms%term_wpthlp2_explicit(:,:) )
           sgn_t_vel_thlp2(:,:) = sign(one, ( coef_wpthlp2_implicit_zm(:,:) * thlp2(:,:) &
                                          + term_wpthlp2_explicit_zm(:,:) ) * thlp2(:,:))
@@ -5039,9 +5040,9 @@ module advance_xp2_xpyp_module
         ! Calculate the momentum level terms and sign of turbulent velocity if
         ! l_upwind_xpyp_ta is true
         if ( l_upwind_xpyp_ta ) then
-          coef_wprtpthlp_implicit_zm(:,:) = zt2zm( nzm, nzt, ngrdcol, gr, &
+          coef_wprtpthlp_implicit_zm(:,:) = zt2zm_api( nzm, nzt, ngrdcol, gr, &
                                             pdf_implicit_coefs_terms%coef_wprtpthlp_implicit(:,:) )
-          term_wprtpthlp_explicit_zm(:,:) = zt2zm( nzm, nzt, ngrdcol, gr, &
+          term_wprtpthlp_explicit_zm(:,:) = zt2zm_api( nzm, nzt, ngrdcol, gr, &
                                             pdf_implicit_coefs_terms%term_wprtpthlp_explicit(:,:) )
           sgn_t_vel_rtpthlp(:,:) = sign(one, ( coef_wprtpthlp_implicit_zm(:,:) * rtpthlp(:,:) &
                                            + term_wprtpthlp_explicit_zm(:,:) ) * rtpthlp(:,:))
@@ -5073,9 +5074,9 @@ module advance_xp2_xpyp_module
         ! Calculate the momentum level terms and sign of turbulent velocity if
         ! l_upwind_xpyp_ta is true
         if ( l_upwind_xpyp_ta ) then
-          coef_wpup2_implicit_zm(:,:) = zt2zm( nzm, nzt, ngrdcol, gr, &
+          coef_wpup2_implicit_zm(:,:) = zt2zm_api( nzm, nzt, ngrdcol, gr, &
                                                pdf_implicit_coefs_terms%coef_wpup2_implicit(:,:) )
-          term_wpup2_explicit_zm(:,:) = zt2zm( nzm, nzt, ngrdcol, gr, &
+          term_wpup2_explicit_zm(:,:) = zt2zm_api( nzm, nzt, ngrdcol, gr, &
                                                pdf_implicit_coefs_terms%term_wpup2_explicit(:,:) )
           sgn_t_vel_up2(:,:) = sign(one, ( coef_wpup2_implicit_zm(:,:) * up2(:,:) &
                                        + term_wpup2_explicit_zm(:,:) ) * up2(:,:))
@@ -5107,9 +5108,9 @@ module advance_xp2_xpyp_module
         ! Calculate the momentum level terms and sign of turbulent velocity if
         ! l_upwind_xpyp_ta is true
         if ( l_upwind_xpyp_ta ) then
-          coef_wpvp2_implicit_zm(:,:) = zt2zm( nzm, nzt, ngrdcol, gr, &
+          coef_wpvp2_implicit_zm(:,:) = zt2zm_api( nzm, nzt, ngrdcol, gr, &
                                                pdf_implicit_coefs_terms%coef_wpvp2_implicit(:,:) )
-          term_wpvp2_explicit_zm(:,:) = zt2zm( nzm, nzt, ngrdcol, gr, &
+          term_wpvp2_explicit_zm(:,:) = zt2zm_api( nzm, nzt, ngrdcol, gr, &
                                                pdf_implicit_coefs_terms%term_wpvp2_explicit(:,:) )
           sgn_t_vel_vp2(:,:) = sign(one, ( coef_wpvp2_implicit_zm(:,:) * vp2(:,:) &
                                        + term_wpvp2_explicit_zm(:,:) ) * vp2(:,:))
@@ -5145,11 +5146,11 @@ module advance_xp2_xpyp_module
             ! Calculate the momentum level terms and sign of turbulent velocity if
             ! l_upwind_xpyp_ta is true
             if ( l_upwind_xpyp_ta ) then
-              coef_wpsclrp2_implicit_zm(:,:) = zt2zm( nzm, nzt, ngrdcol, gr, &
+              coef_wpsclrp2_implicit_zm(:,:) = zt2zm_api( nzm, nzt, ngrdcol, gr, &
                                         pdf_implicit_coefs_terms%coef_wpsclrp2_implicit(:,:,sclr) )
-              term_wpsclrp2_explicit_zm(:,:) = zt2zm( nzm, nzt, ngrdcol, gr, &
+              term_wpsclrp2_explicit_zm(:,:) = zt2zm_api( nzm, nzt, ngrdcol, gr, &
                                         pdf_implicit_coefs_terms%term_wpsclrp2_explicit(:,:,sclr) )
-              sgn_t_vel_sclrp2(:,:) =sign(one, ( coef_wpsclrp2_implicit_zm(:,:) * sclrp2(:,:,sclr) &
+              sgn_t_vel_sclrp2(:,:) =sign(one, ( coef_wpsclrp2_implicit_zm(:,:) * sclrp2(:,:,sclr)&
                                             + term_wpsclrp2_explicit_zm(:,:) ) * sclrp2(:,:,sclr))
             endif
 
@@ -5181,9 +5182,9 @@ module advance_xp2_xpyp_module
             ! Calculate the momentum level terms and sign of turbulent velocity if
             ! l_upwind_xpyp_ta is true
             if ( l_upwind_xpyp_ta ) then
-              coef_wprtpsclrp_implicit_zm(:,:) = zt2zm( nzm, nzt, ngrdcol, gr, &
+              coef_wprtpsclrp_implicit_zm(:,:) = zt2zm_api( nzm, nzt, ngrdcol, gr, &
                                       pdf_implicit_coefs_terms%coef_wprtpsclrp_implicit(:,:,sclr) )
-              term_wprtpsclrp_explicit_zm(:,:) = zt2zm( nzm, nzt, ngrdcol, gr, &
+              term_wprtpsclrp_explicit_zm(:,:) = zt2zm_api( nzm, nzt, ngrdcol, gr, &
                                       pdf_implicit_coefs_terms%term_wprtpsclrp_explicit(:,:,sclr) )
               sgn_t_vel_sclrprtp(:,:) &
                         = sign(one, ( coef_wprtpsclrp_implicit_zm(:,:) * sclrprtp(:,:,sclr) &
@@ -5218,9 +5219,9 @@ module advance_xp2_xpyp_module
             ! Calculate the momentum level terms and sign of turbulent velocity if
             ! l_upwind_xpyp_ta is true
             if ( l_upwind_xpyp_ta ) then
-              coef_wpthlpsclrp_implicit_zm(:,:) = zt2zm( nzm, nzt, ngrdcol, gr, &
+              coef_wpthlpsclrp_implicit_zm(:,:) = zt2zm_api( nzm, nzt, ngrdcol, gr, &
                                     pdf_implicit_coefs_terms%coef_wpthlpsclrp_implicit(:,:,sclr) )
-              term_wpthlpsclrp_explicit_zm(:,:) = zt2zm( nzm, nzt, ngrdcol, gr, &
+              term_wpthlpsclrp_explicit_zm(:,:) = zt2zm_api( nzm, nzt, ngrdcol, gr, &
                                     pdf_implicit_coefs_terms%term_wpthlpsclrp_explicit(:,:,sclr) )
               sgn_t_vel_sclrpthlp(:,:) &
                     = sign(one, ( coef_wpthlpsclrp_implicit_zm(:,:) * sclrpthlp(:,:,sclr) &
@@ -5299,8 +5300,8 @@ module advance_xp2_xpyp_module
         ! Interpolate <u'w'> and <v'w'> from the momentum levels to the
         ! thermodynamic levels.  These will be used for the turbulent
         ! advection terms in each equation.
-        upwp_zt(:,:) = zm2zt( nzm, nzt, ngrdcol, gr, upwp(:,:) )
-        vpwp_zt(:,:) = zm2zt( nzm, nzt, ngrdcol, gr, vpwp(:,:) )
+        upwp_zt(:,:) = zm2zt_api( nzm, nzt, ngrdcol, gr, upwp(:,:) )
+        vpwp_zt(:,:) = zm2zt_api( nzm, nzt, ngrdcol, gr, vpwp(:,:) )
       
         ! Implicit coefficient on <u'^2> or <v'^2> in <w'u'^2> or <w'v'^2>
         ! equation.
@@ -5945,7 +5946,7 @@ module advance_xp2_xpyp_module
     ! Use the hole filling code to make a variance term positive definite
     !-----------------------------------------------------------------------
 
-    use fill_holes, only: fill_holes_vertical
+    use fill_holes, only: fill_holes_vertical_api
     use grid_class, only: grid
     use clubb_precision, only: core_rknd
 
@@ -6024,9 +6025,9 @@ module advance_xp2_xpyp_module
     ! The first pass-through should draw from only two levels on either side
     ! of the hole.
     ! upper_hf_level = nz-1 since we are filling the zm levels
-    call fill_holes_vertical( nzm, ngrdcol, tolerance, 2, nzm-1, & ! In
-                              gr%dzm, rho_ds_zm,            & ! In
-                              xp2_np1 )                       ! InOut
+    call fill_holes_vertical_api( nzm, ngrdcol, tolerance, 2, nzm-1, & ! In
+                                  gr%dzm, rho_ds_zm,                 & ! In
+                                  xp2_np1 )                            ! InOut
 
     if ( stats_metadata%l_stats_samp ) then
 
@@ -6060,7 +6061,7 @@ module advance_xp2_xpyp_module
     use pdf_parameter_module, only: pdf_parameter
 
     use grid_class, only: &
-        zt2zm, &   ! Procedure(s)
+        zt2zm_api, &   ! Procedure(s)
         grid
 
     use constants_clubb, only: &
@@ -6167,7 +6168,7 @@ module advance_xp2_xpyp_module
       end do
     end do
     
-    rtp2_mc = zt2zm( nzm, nzt, ngrdcol, gr, rtp2_mc_zt )
+    rtp2_mc = zt2zm_api( nzm, nzt, ngrdcol, gr, rtp2_mc_zt )
 
     !Include the effects of rain evaporation on thlp2
     do k = 1, nzt
@@ -6186,7 +6187,7 @@ module advance_xp2_xpyp_module
       end do
     end do
     
-    thlp2_mc = zt2zm( nzm, nzt, ngrdcol, gr, thlp2_mc_zt )
+    thlp2_mc = zt2zm_api( nzm, nzt, ngrdcol, gr, thlp2_mc_zt )
 
     ! Include effects of rain evaporation on other moments (wprtp, wpthlp, and 
     ! rtpthlp - added 07/13 rstorer
@@ -6210,9 +6211,9 @@ module advance_xp2_xpyp_module
       end do
     end do
     
-    wprtp_mc    = zt2zm( nzm, nzt, ngrdcol, gr, wprtp_mc_zt )
-    wpthlp_mc   = zt2zm( nzm, nzt, ngrdcol, gr, wpthlp_mc_zt )
-    rtpthlp_mc  = zt2zm( nzm, nzt, ngrdcol, gr, rtpthlp_mc_zt )
+    wprtp_mc    = zt2zm_api( nzm, nzt, ngrdcol, gr, wprtp_mc_zt )
+    wpthlp_mc   = zt2zm_api( nzm, nzt, ngrdcol, gr, wpthlp_mc_zt )
+    rtpthlp_mc  = zt2zm_api( nzm, nzt, ngrdcol, gr, rtpthlp_mc_zt )
     
   end subroutine update_xp2_mc
 

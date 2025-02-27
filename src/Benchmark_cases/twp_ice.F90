@@ -30,7 +30,7 @@ module twp_ice
     !   http://users.monash.edu.au/~ladavies/gcss.html
     !----------------------------------------------------------------------
 
-    use saturation, only: sat_mixrat_liq ! Procedure(s)
+    use saturation, only: sat_mixrat_liq_api ! Procedure(s)
 
     use clubb_precision, only: time_precision, core_rknd ! Variable(s)
 
@@ -123,7 +123,7 @@ module twp_ice
       Cq(i)   = C_q_20 * ((log(standard_flux_alt/z0))/(log(z(i)/z0))) * & 
             ((log(standard_flux_alt/z0))/(log(z(i)/z0)))
 
-      rsat(i) = sat_mixrat_liq( p_sfc(i), T_sfc(i), saturation_formula )
+      rsat(i) = sat_mixrat_liq_api( p_sfc(i), T_sfc(i), saturation_formula )
       !upwp_sfc   = -um_sfc * Cm * ubar  ! m^2 s^-2
       !vpwp_sfc   = -vm_sfc * Cm * ubar  ! m^2 s^-2
     end do

@@ -7,7 +7,7 @@ module stats_sfc_module
 
   private ! Set Default Scope
 
-  public :: stats_init_sfc
+  public :: stats_init_sfc_api
 
   ! Constant parameters
   integer, parameter, public :: nvarmax_sfc = 250  ! Maximum variables allowed
@@ -15,9 +15,9 @@ module stats_sfc_module
   contains
 
 !-----------------------------------------------------------------------
-  subroutine stats_init_sfc( vars_sfc,                    & ! intent(in)
-                             l_error,                     & ! intent(inout)
-                             stats_metadata, stats_sfc )    ! intent(inout)
+  subroutine stats_init_sfc_api( vars_sfc,                    & ! intent(in)
+                                 l_error,                     & ! intent(inout)
+                                 stats_metadata, stats_sfc )    ! intent(inout)
 
 ! Description:
 !   Initializes array indices for stats_sfc
@@ -511,7 +511,7 @@ module stats_sfc_module
 
     return
 
-  end subroutine stats_init_sfc
+  end subroutine stats_init_sfc_api
 
 
 end module stats_sfc_module

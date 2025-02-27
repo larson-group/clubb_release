@@ -24,7 +24,7 @@
 ! Procedures:
 !   assignment(=)
 !     Converts from type genrand_state to genrand_srepr and vice versa.
-!   genrand_init
+!   genrand_init_api
 !     Internal RNG state initialization subroutine accepts either an genrand_intg integer
 !     or a vector as seed or a new state using "put=" returns the present state using
 !     "get=". If it is called with "get=" before being seeded with "put=" returns a state
@@ -48,7 +48,7 @@
 !     Subroutine returns an array or scalar whose elements are random real on the
 !     [0,1[ interval with 53-bit resolution.
 
-! Before using, initialize the state by using genrand_init( put=seed )  
+! Before using, initialize the state by using genrand_init_api( put=seed )  
 
 ! This library is free software.                                  
 ! This library is distributed in the hope that it will be useful, 
@@ -63,7 +63,7 @@ module mt95
   
   implicit none
 
-  public  :: genrand_init, assignment(=)
+  public  :: genrand_init_api, assignment(=)
   public  :: genrand_int32, genrand_int31, genrand_real1
   public  :: genrand_real2, genrand_real3, genrand_res53
   private :: uiadd, uisub, uimlt, uidiv, uimod
@@ -138,11 +138,11 @@ module mt95
     module procedure genrand_dump_state
   end interface assignment( = )
 
-  interface genrand_init
+  interface genrand_init_api
     module procedure init_by_type
     module procedure init_by_scalar
     module procedure init_by_array
-  end interface genrand_init
+  end interface genrand_init_api
 
   interface genrand_int32
     module procedure genrand_int32_0d

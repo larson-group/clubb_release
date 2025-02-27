@@ -31,9 +31,9 @@ module mean_adv
 
   !=============================================================================
   subroutine term_ma_zt_lhs( nzm, nzt, ngrdcol, wm_zt, weights_zt2zm, & ! Intent(in)
-                             invrs_dzt, invrs_dzm,     & ! Intent(in)
-                             l_upwind_xm_ma,           & ! Intent(in)
-                             lhs_ma )                    ! Intent(out)
+                             invrs_dzt, invrs_dzm,                    & ! Intent(in)
+                             l_upwind_xm_ma,                          & ! Intent(in)
+                             lhs_ma )                                   ! Intent(out)
 
     ! Description:
     ! Mean advection of var_zt:  implicit portion of the code.

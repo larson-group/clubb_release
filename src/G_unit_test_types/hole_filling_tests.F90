@@ -230,7 +230,7 @@ module hole_filling_tests
   subroutine fill_holes_hydromet_tests( tol, total_errors )
 
     ! Description:
-    ! Tests the subroutine fill_holes_hydromet on water substance conservation
+    ! Tests the subroutine fill_holes_hydromet_api on water substance conservation
     ! and non-negativity.
     !
     ! Expected number of errors: 2
@@ -242,7 +242,7 @@ module hole_filling_tests
         core_rknd
 
     use fill_holes, only: &
-        fill_holes_hydromet
+        fill_holes_hydromet_api
 
     implicit none
 
@@ -307,9 +307,9 @@ module hole_filling_tests
        print *, "testset_in(:,",i,") = ", testset_in(:,i)
     enddo
 
-    call fill_holes_hydromet( hgt_dim, hm_dim, testset_in, &
-                              l_frozen_hm, l_mix_rat_hm, &
-                              testset_out )
+    call fill_holes_hydromet_api( hgt_dim, hm_dim, testset_in, &
+                                  l_frozen_hm, l_mix_rat_hm, &
+                                  testset_out )
 
     call check_results_hm_filling( hgt_dim, hm_dim, & ! Intent(in)
                                    l_frozen_hm, l_mix_rat_hm, & ! Intent(in)

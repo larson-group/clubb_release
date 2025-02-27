@@ -31,8 +31,8 @@ module bomex
 
 
     use grid_class, only: &
-        zt2zm, & ! Procedure(s)
-        grid     ! Type
+        zt2zm_api, & ! Procedure(s)
+        grid         ! Type
 
     use spec_hum_to_mixing_ratio, only: &
         force_spec_hum_to_mixing_ratio ! Procedure(s)

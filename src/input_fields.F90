@@ -248,7 +248,7 @@ module inputfields
 !-----------------------------------------------------------------------
 
     use grid_class, only: & 
-        zt2zm ! Procedure(s)
+        zt2zm_api ! Procedure(s)
 
     use constants_clubb, only:  &
         rt_tol,    & ! Variable(s)
@@ -2417,11 +2417,11 @@ module inputfields
         ! Use linear interpolation to convert up2 and vp2 from the thermodynamic
         ! grid to the momentum grid. See CLUBB Equations 170 and 171.
         if (l_input_up2) then
-           up2(k) = zt2zm( gr, up2_zt, k )
+           up2(k) = zt2zm_api( gr, up2_zt, k )
         endif
 
         if(l_input_vp2) then
-           vp2(k) = zt2zm( gr, vp2_zt, k )
+           vp2(k) = zt2zm_api( gr, vp2_zt, k )
         endif
 
       enddo

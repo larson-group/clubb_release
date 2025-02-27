@@ -5,11 +5,11 @@ module fill_holes
 
   implicit none
 
-  public :: fill_holes_driver, &
-            fill_holes_vertical, &
+  public :: fill_holes_driver_api, &
+            fill_holes_vertical_api, &
             fill_holes_wp2_from_horz_tke, &
             hole_filling_hm_one_lev, &
-            fill_holes_hydromet, &
+            fill_holes_hydromet_api, &
             fill_holes_wv, &
             clip_hydromet_conc_mvr, &
             setup_stats_indices
@@ -19,10 +19,10 @@ module fill_holes
   contains
 
   !=============================================================================
-  subroutine fill_holes_vertical( nz, ngrdcol, threshold, &
-                                  lower_hf_level, upper_hf_level, &
-                                  dz, rho_ds, &
-                                  field )
+  subroutine fill_holes_vertical_api( nz, ngrdcol, threshold, &
+                                      lower_hf_level, upper_hf_level, &
+                                      dz, rho_ds, &
+                                      field )
 
     ! Description:
     !   This subroutine clips values of 'field' that are below 'threshold' as much
@@ -346,7 +346,7 @@ module fill_holes
 
     return
 
-  end subroutine fill_holes_vertical
+  end subroutine fill_holes_vertical_api
 
   !===============================================================================
   subroutine fill_holes_wp2_from_horz_tke( nz, ngrdcol, threshold, &
@@ -666,9 +666,9 @@ module fill_holes
   !-----------------------------------------------------------------------
 
   !-----------------------------------------------------------------------
-  subroutine fill_holes_hydromet( nzt, hydromet_dim, hydromet, & ! Intent(in)
-                                  l_frozen_hm, l_mix_rat_hm, & ! Intent(in)
-                                  hydromet_filled ) ! Intent(out)
+  subroutine fill_holes_hydromet_api( nzt, hydromet_dim, hydromet, & ! Intent(in)
+                                      l_frozen_hm, l_mix_rat_hm, & ! Intent(in)
+                                      hydromet_filled ) ! Intent(out)
 
   ! Description:
   ! Fills holes between same-phase hydrometeors(i.e. for frozen hydrometeors).
@@ -764,7 +764,7 @@ module fill_holes
     !!! Here we could do the same hole filling for all the liquid phase hydrometeors
 
     return
-  end subroutine fill_holes_hydromet
+  end subroutine fill_holes_hydromet_api
   !-----------------------------------------------------------------------
 
     !-----------------------------------------------------------------------
@@ -849,12 +849,12 @@ module fill_holes
   !-----------------------------------------------------------------------
 
   !-----------------------------------------------------------------------
-  subroutine fill_holes_driver( gr, nzt, dt, hydromet_dim, hm_metadata,      & ! Intent(in)
-                                l_fill_holes_hm,                             & ! Intent(in)
-                                rho_ds_zt, exner,                            & ! Intent(in)
-                                stats_metadata,                              & ! Intent(in)
-                                stats_zt,                                    & ! intent(inout)
-                                thlm_mc, rvm_mc, hydromet )                    ! Intent(inout)
+  subroutine fill_holes_driver_api( gr, nzt, dt, hydromet_dim, hm_metadata,      & ! Intent(in)
+                                    l_fill_holes_hm,                             & ! Intent(in)
+                                    rho_ds_zt, exner,                            & ! Intent(in)
+                                    stats_metadata,                              & ! Intent(in)
+                                    stats_zt,                                    & ! intent(inout)
+                                    thlm_mc, rvm_mc, hydromet )                    ! Intent(inout)
 
   ! Description:
   ! Fills holes between same-phase hydrometeors(i.e. for frozen hydrometeors).
@@ -957,7 +957,7 @@ module fill_holes
     !----------------------- Begin Code -----------------------
 
     ! Start stats output for the _hf variables (changes in the hydromet array
-    ! due to fill_holes_hydromet and fill_holes_vertical)
+    ! due to fill_holes_hydromet_api and fill_holes_vertical_api)
     if ( stats_metadata%l_stats_samp ) then
 
        do i = 1, hydromet_dim
@@ -981,9 +981,10 @@ module fill_holes
     ! level.
     if ( any( hydromet < zero_threshold ) .and. l_fill_holes_hm ) then
 
-       call fill_holes_hydromet( nzt, hydromet_dim, hydromet, & ! Intent(in)
-                                 hm_metadata%l_frozen_hm, hm_metadata%l_mix_rat_hm, & ! Intent(in)
-                                 hydromet_filled ) ! Intent(out)
+       call fill_holes_hydromet_api( nzt, hydromet_dim, hydromet,   & ! Intent(in)
+                                     hm_metadata%l_frozen_hm,       & ! Intent(in)
+                                     hm_metadata%l_mix_rat_hm,      & ! Intent(in)
+                                     hydromet_filled )                ! Intent(out)
 
        hydromet = hydromet_filled
 
@@ -1010,7 +1011,7 @@ module fill_holes
                if ( hydromet(k,i) < zero_threshold ) then
                   write(fstderr,*) trim( hydromet_name ) //" < ", &
                                    zero_threshold, &
-                                   " in fill_holes_driver at k= ", k
+                                   " in fill_holes_driver_api at k= ", k
                endif ! hydromet(k,i) < 0
             enddo ! k = 1, nzt
 
@@ -1036,10 +1037,10 @@ module fill_holes
 
             ! Apply the hole filling algorithm
             ! upper_hf_level = nzt since we are filling the zt levels
-            call fill_holes_vertical( gr%nzt, 1, zero_threshold, & ! In
-                                      1, gr%nzt,                 & ! In
-                                      gr%dzt, rho_ds_zt,         & ! In
-                                      hydromet(:,i) )             ! InOut
+            call fill_holes_vertical_api( gr%nzt, 1, zero_threshold, & ! In
+                                          1, gr%nzt,                 & ! In
+                                          gr%dzt, rho_ds_zt,         & ! In
+                                          hydromet(:,i) )             ! InOut
 
             !$acc end data
 
@@ -1190,7 +1191,7 @@ module fill_holes
 
     return
 
-  end subroutine fill_holes_driver
+  end subroutine fill_holes_driver_api
 
   !=============================================================================
   subroutine clip_hydromet_conc_mvr( nzt, hydromet_dim, hm_metadata,  & ! Intent(in) 

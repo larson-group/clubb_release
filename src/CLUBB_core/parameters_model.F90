@@ -31,12 +31,12 @@ module parameters_model
     rtm_min                = epsilon( rtm_min ), & ! Value below which rtm will be nudged [kg/kg]
     rtm_nudge_max_altitude = 10000._core_rknd      ! Highest altitude at which to nudge rtm [m]
 
-  public :: setup_parameters_model 
+  public :: setup_parameters_model_api
 
   contains
 
 !-------------------------------------------------------------------------------
-  subroutine setup_parameters_model ( T0_in, ts_nudge_in, Skw_max_mag )
+  subroutine setup_parameters_model_api ( T0_in, ts_nudge_in, Skw_max_mag )
 
 ! Description:
 !   Sets parameters to their initial values
@@ -70,7 +70,7 @@ module parameters_model
     ts_nudge = ts_nudge_in
 
     return
-  end subroutine setup_parameters_model
+  end subroutine setup_parameters_model_api
 !-------------------------------------------------------------------------------
 
 end module parameters_model

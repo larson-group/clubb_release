@@ -38,8 +38,8 @@ module mixed_moment_PDF_integrals
     !-----------------------------------------------------------------------
 
     use grid_class, only: &
-        grid, & ! Type
-        zt2zm    ! Procedure(s)
+        grid,       & ! Type
+        zt2zm_api     ! Procedure(s)
 
     use constants_clubb, only: &
         w_tol,   & ! Constant(s)
@@ -403,18 +403,18 @@ module mixed_moment_PDF_integrals
 
           if ( stats_metadata%irtphmp(hm_idx) > 0 ) then
              call stat_update_var( stats_metadata%irtphmp(hm_idx), &
-                                   zt2zm( gr, rtphmp_zt(:,hm_idx) ), stats_zm )
+                                   zt2zm_api( gr, rtphmp_zt(:,hm_idx) ), stats_zm )
           endif ! stats_metadata%irtphmp(hm_idx) > 0
 
           if ( stats_metadata%ithlphmp(hm_idx) > 0 ) then
              call stat_update_var( stats_metadata%ithlphmp(hm_idx), &
-                                   zt2zm( gr, thlphmp_zt(:,hm_idx) ), stats_zm )
+                                   zt2zm_api( gr, thlphmp_zt(:,hm_idx) ), stats_zm )
           endif ! stats_metadata%ithlphmp(hm_idx) > 0
 
           do hmy_idx = hm_idx+1, hydromet_dim, 1
              if ( stats_metadata%ihmxphmyp(hmy_idx,hm_idx) > 0 ) then
                 call stat_update_var( stats_metadata%ihmxphmyp(hmy_idx,hm_idx), &
-                                      zt2zm( gr, hmxphmyp_zt(:,hmy_idx,hm_idx) ), &
+                                      zt2zm_api( gr, hmxphmyp_zt(:,hmy_idx,hm_idx) ), &
                                       stats_zm )
              endif ! stats_metadata%ihmxphmyp(hmy_idx,hm_idx) > 0
           enddo ! hmy_idx = hm_idx+1, hydromet_dim, 1

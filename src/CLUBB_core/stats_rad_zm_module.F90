@@ -8,7 +8,7 @@ module stats_rad_zm_module
 
   private ! Default Scope
 
-  public :: stats_init_rad_zm
+  public :: stats_init_rad_zm_api
 
 ! Constant parameters
   integer, parameter, public :: nvarmax_rad_zm = 250 ! Maximum variables allowed
@@ -16,9 +16,9 @@ module stats_rad_zm_module
   contains
 
 !-----------------------------------------------------------------------
-  subroutine stats_init_rad_zm( vars_rad_zm,                    & ! In
-                                l_error,                        & ! In
-                                stats_metadata, stats_rad_zm )    ! In/Out
+  subroutine stats_init_rad_zm_api( vars_rad_zm,                    & ! In
+                                    l_error,                        & ! In
+                                    stats_metadata, stats_rad_zm )    ! In/Out
 
 !     Description:
 !     Initializes array indices for stats_rad_zm variables
@@ -186,6 +186,6 @@ module stats_rad_zm_module
     end do
 
     return
-  end subroutine stats_init_rad_zm
+  end subroutine stats_init_rad_zm_api
 
 end module stats_rad_zm_module

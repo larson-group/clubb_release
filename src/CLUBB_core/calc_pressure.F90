@@ -57,8 +57,8 @@ module calc_pressure
     !-----------------------------------------------------------------------
 
     use grid_class, only: &
-        grid, & ! Type
-        zt2zm    ! Procedure(s)
+        grid,       & ! Type
+        zt2zm_api     ! Procedure(s)
 
     use constants_clubb, only: &
         one,   & ! 1
@@ -113,7 +113,7 @@ module calc_pressure
     end do
 
     ! Interpolate theta_v to momentum levels.
-    thvm_zm = zt2zm( gr%nzm, gr%nzt, ngrdcol, gr, thvm, zero_threshold )
+    thvm_zm = zt2zm_api( gr%nzm, gr%nzt, ngrdcol, gr, thvm, zero_threshold )
 
     ! Calculate exner at all other thermodynamic and momentum grid levels.
     ! exner2

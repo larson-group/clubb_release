@@ -51,7 +51,7 @@ module estimate_scm_microphys_module
       core_rknd
 
     use grid_class, only: &
-      zt2zm
+      zt2zm_api
 
     use stats_variables, only: &
         stats_metadata_type
@@ -291,11 +291,11 @@ module estimate_scm_microphys_module
              lh_wpthlp_mc_zt, lh_rtpthlp_mc_zt )               ! Intent(out)
 
       ! Convert from the zt grid to the zm grid.
-      lh_rtp2_mc    = zt2zm( gr, lh_rtp2_mc_zt )
-      lh_thlp2_mc   = zt2zm( gr, lh_thlp2_mc_zt )
-      lh_wprtp_mc   = zt2zm( gr, lh_wprtp_mc_zt )
-      lh_wpthlp_mc  = zt2zm( gr, lh_wpthlp_mc_zt )
-      lh_rtpthlp_mc = zt2zm( gr, lh_rtpthlp_mc_zt )
+      lh_rtp2_mc    = zt2zm_api( gr, lh_rtp2_mc_zt )
+      lh_thlp2_mc   = zt2zm_api( gr, lh_thlp2_mc_zt )
+      lh_wprtp_mc   = zt2zm_api( gr, lh_wprtp_mc_zt )
+      lh_wpthlp_mc  = zt2zm_api( gr, lh_wpthlp_mc_zt )
+      lh_rtpthlp_mc = zt2zm_api( gr, lh_rtpthlp_mc_zt )
 
       ! Stats sampling
       if ( stats_metadata%l_stats_samp ) then

@@ -72,7 +72,7 @@ module mpace_a
       grid ! Type
 
     use grid_class, only: &
-      zt2zm ! Procedure(s)
+      zt2zm_api ! Procedure(s)
 
     use interpolation, only: &
       zlinterp_fnc, &   ! Procedure(s)
@@ -241,7 +241,7 @@ module mpace_a
 
     ! Interpolation
     ! no need to interpolate since wm_zt is set to 0 above
-    !wm_zm = zt2zm( gr%nzm, gr%nzt, ngrdcol, gr, wm_zt )
+    !wm_zm = zt2zm_api( gr%nzm, gr%nzt, ngrdcol, gr, wm_zt )
 
     ! Boundary condition
     do k = 1, gr%nzm

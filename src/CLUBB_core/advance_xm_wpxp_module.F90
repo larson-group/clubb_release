@@ -1456,8 +1456,8 @@ module advance_xm_wpxp_module
     
     use grid_class, only:  & 
         grid, & ! Type
-        zm2zt, & ! Procedure(s)
-        zt2zm
+        zm2zt_api, & ! Procedure(s)
+        zt2zm_api
 
     use parameters_tunable, only: &
         nu_vertical_res_dep    ! Type(s)
@@ -1566,7 +1566,7 @@ module advance_xm_wpxp_module
 
     ! Initializations/precalculations
     constant_nu = 0.1_core_rknd
-    Kw6_zm = zt2zm( nzm, nzt, ngrdcol, gr, Kw6, zero_threshold )
+    Kw6_zm = zt2zm_api( nzm, nzt, ngrdcol, gr, Kw6, zero_threshold )
 
     ! Calculate turbulent advection terms of xm for all grid levels
     call xm_term_ta_lhs( nzm, nzt, ngrdcol, gr,      & ! Intent(in)
@@ -1624,7 +1624,7 @@ module advance_xm_wpxp_module
         end do
         !$acc end parallel loop
 
-        K_zt = zm2zt( nzm, nzt, ngrdcol, gr, K_zm, zero_threshold )
+        K_zt = zm2zt_api( nzm, nzt, ngrdcol, gr, K_zm, zero_threshold )
 
         !$acc parallel loop gang vector default(present)
         do i = 1, ngrdcol        
@@ -2030,8 +2030,8 @@ module advance_xm_wpxp_module
 
     use grid_class, only: &
         grid,   & ! Type
-        zt2zm,  & ! Procedure(s)
-        zm2zt
+        zt2zm_api,  & ! Procedure(s)
+        zm2zt_api
 
     use clubb_precision, only: &
         core_rknd  ! Variable(s)
@@ -2316,8 +2316,8 @@ module advance_xm_wpxp_module
 
         ! Interpolate a_1 from momentum levels to thermodynamic levels.  This
         ! will be used for the <w'x'> turbulent advection (ta) term.
-        a1_coef_zt(:,:) = zm2zt( nzm, nzt, ngrdcol, gr, a1_coef, &
-                                 zero_threshold )   ! Positive def. quantity
+        a1_coef_zt(:,:) = zm2zt_api( nzm, nzt, ngrdcol, gr, a1_coef, &
+                                     zero_threshold )   ! Positive def. quantity
 
         !$acc parallel loop gang vector collapse(2) default(present)
         do k = 1, nzt
@@ -4445,7 +4445,7 @@ module advance_xm_wpxp_module
         gamma_over_implicit_ts
 
     use fill_holes, only: &
-        fill_holes_vertical ! Procedure
+        fill_holes_vertical_api ! Procedure
 
     use error_code, only: &
         clubb_at_least_debug_level  ! Procedure
@@ -4971,9 +4971,9 @@ module advance_xm_wpxp_module
       end if
 
       ! upper_hf_level = nz since we are filling the zt levels
-      call fill_holes_vertical( nzt, ngrdcol, xm_threshold, 1, nzt, & ! In
-                                gr%dzt, rho_ds_zt,                 & ! In
-                                xm )                                 ! InOut
+      call fill_holes_vertical_api( nzt, ngrdcol, xm_threshold, 1, nzt, & ! In
+                                    gr%dzt, rho_ds_zt,                 & ! In
+                                    xm )                                 ! InOut
       
     end if
 

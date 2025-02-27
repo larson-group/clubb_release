@@ -124,7 +124,7 @@ module mixing_length
 
     use grid_class, only:  &
         grid, & ! Type
-        zm2zt ! Procedure(s)
+        zm2zt_api ! Procedure(s)
 
     use numerical_check, only:  &
         length_check ! Procedure(s)
@@ -137,7 +137,7 @@ module mixing_length
         clubb_fatal_error              ! Constant
 
     use saturation, only:  &
-        sat_mixrat_liq ! Procedure(s)
+        sat_mixrat_liq_api ! Procedure(s)
 
     implicit none
 
@@ -265,7 +265,7 @@ module mixing_length
     end if
 
     ! Calculate initial turbulent kinetic energy for each grid level
-    tke_i = zm2zt( nzm, nzt, ngrdcol, gr, em )
+    tke_i = zm2zt_api( nzm, nzt, ngrdcol, gr, em )
  
     ! Initialize arrays and precalculate values for computational efficiency
     !$acc parallel loop gang vector collapse(2) default(present)
@@ -355,7 +355,8 @@ module mixing_length
     ! rsatl_par_1(i,3:) = sat_mixrat_liq_acc( nz-2, ngrdcol, p_in_Pa(i,3:), tl_par_1(i,3:) )
     ! since subarray 3:, the start_index is 3 and it is an optional argument
     start_index = 2
-    rsatl_par_1 = sat_mixrat_liq( nzt, ngrdcol, p_in_Pa, tl_par_1, saturation_formula, start_index )
+    rsatl_par_1 = sat_mixrat_liq_api( nzt, ngrdcol, p_in_Pa, tl_par_1, saturation_formula, &
+                                      start_index )
     
     ! Calculate initial dCAPE_dz and CAPE_incr for parcels at each grid level
     !$acc parallel loop gang vector default(present)
@@ -445,7 +446,7 @@ module mixing_length
 
             tl_par_j = thl_par_j*exner(i,j)
 
-            rsatl_par_j = sat_mixrat_liq( p_in_Pa(i,j), tl_par_j, saturation_formula )
+            rsatl_par_j = sat_mixrat_liq_api( p_in_Pa(i,j), tl_par_j, saturation_formula )
 
             tl_par_j_sqd = tl_par_j**2
 
@@ -604,7 +605,8 @@ module mixing_length
     ! rsatl_par_1(i,2:) = sat_mixrat_liq_acc( nz-1, p_in_Pa(i,2:), tl_par_1(i,2:) )
     ! since subarray 2:, the start_index is 2 and it is an optional argument
     start_index = 1
-    rsatl_par_1 = sat_mixrat_liq( nzt, ngrdcol, p_in_Pa, tl_par_1, saturation_formula, start_index )
+    rsatl_par_1 = sat_mixrat_liq_api( nzt, ngrdcol, p_in_Pa, tl_par_1, saturation_formula, &
+                                      start_index )
 
     ! Calculate initial dCAPE_dz and CAPE_incr for parcels at each grid level
     !$acc parallel loop gang vector default(present)
@@ -693,7 +695,7 @@ module mixing_length
 
             tl_par_j = thl_par_j*exner(i,j)
 
-            rsatl_par_j = sat_mixrat_liq( p_in_Pa(i,j), tl_par_j, saturation_formula )
+            rsatl_par_j = sat_mixrat_liq_api( p_in_Pa(i,j), tl_par_j, saturation_formula )
 
             tl_par_j_sqd = tl_par_j**2
 
@@ -1328,8 +1330,8 @@ module mixing_length
 
     use grid_class, only: &
         grid, & ! Type
-        zt2zm, &
-        zm2zt, &
+        zt2zm_api, &
+        zm2zt_api, &
         zm2zt2zm, &
         zt2zm2zt, &
         ddzt
@@ -1604,7 +1606,7 @@ module mixing_length
 
     end if
 
-    ice_supersat_frac_zm = zt2zm( nzm, nzt, ngrdcol, gr, ice_supersat_frac, zero_threshold )
+    ice_supersat_frac_zm = zt2zm_api( nzm, nzt, ngrdcol, gr, ice_supersat_frac, zero_threshold )
 
     if ( l_smooth_min_max ) then
 
@@ -1783,7 +1785,7 @@ module mixing_length
       end do
       !$acc end parallel loop
 
-      ice_supersat_frac_zm = zt2zm( nzm, nzt, ngrdcol, gr, ice_supersat_frac, zero_threshold )
+      ice_supersat_frac_zm = zt2zm_api( nzm, nzt, ngrdcol, gr, ice_supersat_frac, zero_threshold )
 
 !      !$acc parallel loop gang vector collapse(2) default(present)
 !      do k = 1, nzm
@@ -1948,7 +1950,7 @@ module mixing_length
       tau_zm = smooth_min( nzm, ngrdcol, tau_zm_unclipped, &
                            tau_max_zm, 1.0e3_core_rknd * min_max_smth_mag )
 
-      tau_zt_unclipped = zm2zt( nzm, nzt, ngrdcol, gr, tau_zm )
+      tau_zt_unclipped = zm2zt_api( nzm, nzt, ngrdcol, gr, tau_zm )
 
       tau_zt = smooth_min( nzt, ngrdcol, tau_zt_unclipped, &
                            tau_max_zt, 1.0e3_core_rknd * min_max_smth_mag )
@@ -1963,7 +1965,7 @@ module mixing_length
       end do
       !$acc end parallel loop
 
-      tau_zt = zm2zt( nzm, nzt, ngrdcol, gr, tau_zm )
+      tau_zt = zm2zt_api( nzm, nzt, ngrdcol, gr, tau_zm )
 
       !$acc parallel loop gang vector collapse(2) default(present)
       do k = 1, nzt
@@ -1975,8 +1977,8 @@ module mixing_length
 
     end if
 
-    invrs_tau_zt     = zm2zt( nzm, nzt, ngrdcol, gr, invrs_tau_zm )
-    invrs_tau_wp3_zt = zm2zt( nzm, nzt, ngrdcol, gr, invrs_tau_wp3_zm )
+    invrs_tau_zt     = zm2zt_api( nzm, nzt, ngrdcol, gr, invrs_tau_zm )
+    invrs_tau_wp3_zt = zm2zt_api( nzm, nzt, ngrdcol, gr, invrs_tau_wp3_zm )
 
     !$acc parallel loop gang vector collapse(2) default(present)
     do k = 1, nzt

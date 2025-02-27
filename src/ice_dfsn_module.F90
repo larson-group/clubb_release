@@ -74,10 +74,10 @@ module ice_dfsn_module
         core_rknd ! Variable(s)
 
     use saturation, only:  & 
-        sat_mixrat_liq ! Procedure(s)
+        sat_mixrat_liq_api ! Procedure(s)
 
     use T_in_K_module, only: &
-        thlm2T_in_K ! Procedure(s)
+        thlm2T_in_K_api ! Procedure(s)
 
     use stats_type_utilities, only: & 
         stat_update_var
@@ -149,7 +149,7 @@ module ice_dfsn_module
     !---------------------- Begin Code ----------------------
 
     ! Determine absolute temperature
-    T_in_K = thlm2T_in_K( gr%nzt, thlm, exner, rcm )
+    T_in_K = thlm2T_in_K_api( gr%nzt, thlm, exner, rcm )
 
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     !                                                                     !
@@ -217,7 +217,7 @@ module ice_dfsn_module
       IF ( rcm(k) >= 1.0E-5_core_rknd .AND. T_in_K(k) < T_freeze_K ) THEN
 
         ! Find saturation mixing ratio over vapor [kg kg^{-1}]
-        r_s(k) = sat_mixrat_liq( p_in_Pa(k), T_in_K(k), saturation_formula )
+        r_s(k) = sat_mixrat_liq_api( p_in_Pa(k), T_in_K(k), saturation_formula )
 
         ! Saturation vapor pressure over liquid in Pa
         e_s(k) = ( r_s(k)*p_in_Pa(k) ) / ( ep + r_s(k) )

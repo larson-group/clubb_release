@@ -113,7 +113,7 @@ module dycoms2_rf01
   !----------------------------------------------------------------------
   use constants_clubb, only: fstderr ! Variable(s)
 
-  use saturation, only: sat_mixrat_liq ! Variable(s)
+  use saturation, only: sat_mixrat_liq_api ! Variable(s)
 
   use sfc_flux, only: compute_wpthlp_sfc, compute_wprtp_sfc, &
                           convert_sens_ht_to_km_s, convert_latent_ht_to_m_s ! Procedure(s)
@@ -204,7 +204,7 @@ module dycoms2_rf01
       ustar(i) = 0.25_core_rknd
       T_sfc(i) = T_sfc_interp
       Cd(i)    = 0.0011_core_rknd
-      rsat(i)  = sat_mixrat_liq( p_sfc(i), T_sfc(i), saturation_formula )
+      rsat(i)  = sat_mixrat_liq_api( p_sfc(i), T_sfc(i), saturation_formula )
     end do
 
     call compute_wpthlp_sfc( ngrdcol, Cd, ubar, thlm_sfc, T_sfc, exner_sfc, &

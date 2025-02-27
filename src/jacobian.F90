@@ -23,7 +23,7 @@ program jacobian
 
   use parameters_tunable, only:  & 
       params_list,  & ! Variable(s)
-      init_clubb_params ! Procedure(s)
+      init_clubb_params_api ! Procedure(s)
 
   use constants_clubb, only:  & 
       fstdout,  & ! Constant(s) 
@@ -161,12 +161,12 @@ program jacobian
   close( unit=10 )
 
   if ( .not. l_use_standard_vars ) then
-    call init_clubb_params( 1, 10, 'jacobian.in', &
-                          clubb_params%value )
+    call init_clubb_params_api( 1, 10, 'jacobian.in', &
+                                clubb_params%value )
 
   else
-    call init_clubb_params( 1, 10, "", &
-                          clubb_params%value )
+    call init_clubb_params_api( 1, 10, "", &
+                                clubb_params%value )
 
   end if
 

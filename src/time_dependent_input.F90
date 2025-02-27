@@ -580,8 +580,8 @@ module time_dependent_input
       omega_mb_hr_name
 
     use grid_class, only : &
-      grid, & ! Type
-      zt2zm   ! Procedure(s)
+      grid,     & ! Type
+      zt2zm_api   ! Procedure(s)
 
     use clubb_precision, only: &
       core_rknd ! Variable(s)
@@ -831,7 +831,7 @@ module time_dependent_input
 
           end select
 
-          wm_zm = zt2zm( nzm, nzt, ngrdcol, gr, wm_zt )
+          wm_zm = zt2zm_api( nzm, nzt, ngrdcol, gr, wm_zt )
 
         case(ug_name)
 
@@ -886,8 +886,8 @@ module time_dependent_input
       linear_interp_factor ! Procedure(s)
 
     use grid_class, only : &
-      grid, & ! Type
-      zt2zm   ! Procedure(s)
+      grid,     & ! Type
+      zt2zm_api   ! Procedure(s)
 
     use clubb_precision, only: &
       time_precision, &
@@ -996,8 +996,8 @@ module time_dependent_input
       linear_interp_factor ! Procedure(s)
 
     use grid_class, only : &
-      grid, & ! Type
-      zt2zm   ! Procedure(s)
+      grid,     & ! Type
+      zt2zm_api   ! Procedure(s)
 
     use clubb_precision, only: &
       time_precision, &

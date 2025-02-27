@@ -182,10 +182,10 @@ module corr_varnce_module
             hmp2_ip_on_hmm2_ip_slope_type, &
             hmp2_ip_on_hmm2_ip_intrcpt_type, &
             read_correlation_matrix, &
-            setup_corr_varnce_array, &
+            setup_corr_varnce_array_api, &
             assert_corr_symmetric, print_corr_matrix, &
             hm_metadata_type, &
-            init_pdf_hydromet_arrays
+            init_pdf_hydromet_arrays_api
 
 
   private :: get_corr_var_index, def_corr_idx
@@ -498,7 +498,7 @@ module corr_varnce_module
   end function get_corr_var_index
 
   !================================================================================================
-  ! subroutine init_pdf_hydromet_arrays
+  ! subroutine init_pdf_hydromet_arrays_api
   ! 
   ! DESCRIPTION: 
   !     This subroutine intializes the hydromet arrays(iirr, iiNr, etc.) to the values specified by
@@ -546,13 +546,13 @@ module corr_varnce_module
   !     hmp2_ip_on_hmm2_ip_intrcpt_in (hmp2_ip_on_hmm2_ip_intrcpt_type) - Custom intercept values
   ! 
   !================================================================================================
-  subroutine init_pdf_hydromet_arrays( host_dx, host_dy, hydromet_dim,  & ! intent(in)
-                                       iirr, iiNr, iiri, iiNi,          & ! intent(in)
-                                       iirs, iiNs, iirg, iiNg,          & ! intent(in)
-                                       Ncnp2_on_Ncnm2,                  & ! intent(in)
-                                       hm_metadata, pdf_dim,         & ! intent(out)
-                                       hmp2_ip_on_hmm2_ip_slope_in,     & ! optional(in)
-                                       hmp2_ip_on_hmm2_ip_intrcpt_in    ) ! optional(in)
+  subroutine init_pdf_hydromet_arrays_api( host_dx, host_dy, hydromet_dim,  & ! intent(in)
+                                           iirr, iiNr, iiri, iiNi,          & ! intent(in)
+                                           iirs, iiNs, iirg, iiNg,          & ! intent(in)
+                                           Ncnp2_on_Ncnm2,                  & ! intent(in)
+                                           hm_metadata, pdf_dim,         & ! intent(out)
+                                           hmp2_ip_on_hmm2_ip_slope_in,     & ! optional(in)
+                                           hmp2_ip_on_hmm2_ip_intrcpt_in    ) ! optional(in)
   ! Description:
   ! 
   ! Initialization for the hydromet arrays. How the arrays are initialized is
@@ -835,13 +835,13 @@ module corr_varnce_module
 
     return
 
-  end subroutine init_pdf_hydromet_arrays
+  end subroutine init_pdf_hydromet_arrays_api
 
 !===============================================================================
-  subroutine setup_corr_varnce_array( input_file_cloud, input_file_below, &
-                                      pdf_dim, hm_metadata, iunit, &
-                                      l_fix_w_chi_eta_correlations, &
-                                      corr_array_n_cloud, corr_array_n_below )
+  subroutine setup_corr_varnce_array_api( input_file_cloud, input_file_below, &
+                                          pdf_dim, hm_metadata, iunit, &
+                                          l_fix_w_chi_eta_correlations, &
+                                          corr_array_n_cloud, corr_array_n_below )
 
 ! Description:
 !   Setup an array with the x'^2/xm^2 variables on the diagonal and the other
@@ -949,7 +949,7 @@ module corr_varnce_module
 
     return
 
-  end subroutine setup_corr_varnce_array
+  end subroutine setup_corr_varnce_array_api
 
   !-----------------------------------------------------------------------------
   subroutine assert_corr_symmetric( corr_array_n, & ! intent(in)

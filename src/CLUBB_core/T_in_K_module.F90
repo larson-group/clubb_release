@@ -7,13 +7,13 @@ module T_in_K_module
 
   private ! Default scope
 
-  public :: thlm2T_in_K, T_in_K2thlm
+  public :: thlm2T_in_K_api, T_in_K2thlm_api
 
-  interface thlm2T_in_K
+  interface thlm2T_in_K_api
     module procedure thlm2T_in_K_k    ! Works over a single vertical level
     module procedure thlm2T_in_K_1D   ! Works over all vertical levels 
     module procedure thlm2T_in_K_2D   ! Works over all vertical levels and columns
-  end interface thlm2T_in_K
+  end interface thlm2T_in_K_api
 
   contains
 
@@ -149,7 +149,7 @@ module T_in_K_module
   end function thlm2T_in_K_2D
 
 !-------------------------------------------------------------------------------
-  elemental function T_in_K2thlm( T_in_K, exner, rcm )  & 
+  elemental function T_in_K2thlm_api( T_in_K, exner, rcm )  & 
     result( thlm )
 
 ! Description:
@@ -182,7 +182,7 @@ module T_in_K_module
     thlm = ( T_in_K - Lv/Cp * rcm ) / exner 
 
     return
-  end function T_in_K2thlm
+  end function T_in_K2thlm_api
 !-------------------------------------------------------------------------------
 
 end module T_in_K_module

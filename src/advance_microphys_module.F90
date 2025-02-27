@@ -61,7 +61,7 @@ module advance_microphys_module
     !---------------------------------------------------------------------------
 
     use grid_class, only: & 
-        zt2zm    ! Procedure(s)
+        zt2zm_api    ! Procedure(s)
 
     use grid_class, only: grid ! Type
 
@@ -104,7 +104,7 @@ module advance_microphys_module
         stat_update_var_pt
 
     use stats_clubb_utilities, only: &
-        stats_accumulate_hydromet  ! Procedure(s)
+        stats_accumulate_hydromet_api  ! Procedure(s)
 
     use stats_type, only: &
         stats ! Type
@@ -465,7 +465,7 @@ module advance_microphys_module
       ! It is generally a convention in meteorology to show Precipitation Flux
       ! as a positive downward quantity, so the minus (-) sign is necessary.
       call stat_update_var( stats_metadata%iFprec,  & 
-                            max( - ( zt2zm( gr, hydromet(:,iirr) )  & 
+                            max( - ( zt2zm_api( gr, hydromet(:,iirr) )  & 
                                      * hydromet_vel(:,iirr) &
                                      + hydromet_vel_covar(:,iirr) ), &
                                  zero ) &
@@ -486,7 +486,7 @@ module advance_microphys_module
       endif ! microphys_scheme /= "morrison"
 
       call stat_update_var_pt( stats_metadata%irain_flux_sfc, 1, & 
-                               max( - ( zt2zm( gr, hydromet(:,iirr), 1 )  & 
+                               max( - ( zt2zm_api( gr, hydromet(:,iirr), 1 )  & 
                                         * hydromet_vel(1,iirr) &
                                         + hydromet_vel_covar(1,iirr) ), &
                                     zero ) &
@@ -494,14 +494,14 @@ module advance_microphys_module
 
       ! Also store the value of surface rain water mixing ratio.
       call stat_update_var_pt( stats_metadata%irrm_sfc, 1,  & 
-                               ( zt2zm( gr, hydromet(:,iirr), 1 ) ), stats_sfc )
+                               ( zt2zm_api( gr, hydromet(:,iirr), 1 ) ), stats_sfc )
 
     endif ! stats_metadata%l_stats_samp and iirr > 0
 
-    call stats_accumulate_hydromet( gr, hydromet_dim, hm_metadata, &
-                                    hydromet, rho_ds_zt, &
-                                    stats_metadata, &
-                                    stats_zt, stats_sfc )
+    call stats_accumulate_hydromet_api( gr, hydromet_dim, hm_metadata, &
+                                        hydromet, rho_ds_zt, &
+                                        stats_metadata, &
+                                        stats_zt, stats_sfc )
 
     call write_adv_micro_errors( gr, dt, time_current, hydromet_dim, & ! In
                                  wm_zt, wp2, &                         ! In
@@ -547,7 +547,7 @@ module advance_microphys_module
     !-----------------------------------------------------------------------
 
     use grid_class, only: & 
-        zt2zm    ! Procedure(s)
+        zt2zm_api    ! Procedure(s)
 
     use grid_class, only: &
         grid ! Type
@@ -562,7 +562,7 @@ module advance_microphys_module
         calc_xpwp  ! Procedure(s)
 
     use fill_holes, only: &
-        fill_holes_driver,   & ! Procedure(s)
+        fill_holes_driver_api,   & ! Procedure(s)
         setup_stats_indices
 
     use parameters_tunable, only: & 
@@ -768,14 +768,14 @@ module advance_microphys_module
 
        ! Interpolate velocity to the momentum grid for a centered difference
        ! approximation of the sedimenation term.
-       hydromet_vel(:,i) = zt2zm( gr, hydromet_vel_zt(:,i) )
+       hydromet_vel(:,i) = zt2zm_api( gr, hydromet_vel_zt(:,i) )
        hydromet_vel(gr%nzm,i) = zero ! Upper boundary condition
 
        ! Calculate the value of <hm'^2> / <hm>^2.  This will be used to update
        ! <hm'^2> after <hm> has been advanced one model timestep.  This method
        ! is being used because CLUBB does not currently have a predictive
        ! equation for <hm'^2> (hydrometp2).
-       hydromet_zm = zt2zm( gr, hydromet(:,i) )
+       hydromet_zm = zt2zm_api( gr, hydromet(:,i) )
 
        do k = 1, gr%nzm, 1
 
@@ -856,12 +856,12 @@ module advance_microphys_module
 
     ! Now that all precipitating hydrometeors have been advanced, fill holes in
     ! hydromet profiles.
-    call fill_holes_driver( gr, gr%nzt, dt, hydromet_dim,         & ! Intent(in)
-                            hm_metadata, l_fill_holes_hm,         & ! Intent(in)
-                            rho_ds_zt, exner,                     & ! Intent(in)
-                            stats_metadata,                       & ! Intent(in)
-                            stats_zt,                             & ! intent(inout)
-                            thlm_mc, rvm_mc, hydromet )             ! Intent(inout)
+    call fill_holes_driver_api( gr, gr%nzt, dt, hydromet_dim,         & ! Intent(in)
+                                hm_metadata, l_fill_holes_hm,         & ! Intent(in)
+                                rho_ds_zt, exner,                     & ! Intent(in)
+                                stats_metadata,                       & ! Intent(in)
+                                stats_zt,                             & ! intent(inout)
+                                thlm_mc, rvm_mc, hydromet )             ! Intent(inout)
 
     ! Loop over each type of precipitating hydrometeor and calculate hydrometeor
     ! covariances (<w'hm'> and <V_hm'hm'>) and other quantities requiring the
@@ -903,7 +903,7 @@ module advance_microphys_module
        ! ratio of <hm'^2> / <hm>^2 (ratio_hmp2_on_hmm2) that was saved before
        ! hydrometeors were updated.  This method is being used because CLUBB
        ! does not currently have a predictive equation for <hm'^2>.
-       hydromet_zm = max( zt2zm( gr, hydromet(:,i) ), 0.0_core_rknd )
+       hydromet_zm = max( zt2zm_api( gr, hydromet(:,i) ), 0.0_core_rknd )
 
        do k = 1, gr%nzm, 1
           hydrometp2(k,i) = ratio_hmp2_on_hmm2(k,i) * hydromet_zm(k)**2
@@ -934,7 +934,7 @@ module advance_microphys_module
        !!! Calculate the covariance of hydrometeor sedimentation velocity and
        !!! the hydrometeor, < V_hm'h_m' >, by interpolating the thermodynamic
        !!! level results to momentum levels.
-       hydromet_vel_covar(:,i) = zt2zm( gr, hydromet_vel_covar_zt(:,i) )
+       hydromet_vel_covar(:,i) = zt2zm_api( gr, hydromet_vel_covar_zt(:,i) )
 
        ! Boundary conditions for < V_hm'hm' >.
        hydromet_vel_covar(gr%nzm,i) = zero
@@ -1019,7 +1019,7 @@ module advance_microphys_module
     !-----------------------------------------------------------------------
 
     use grid_class, only: & 
-        zt2zm    ! Procedure(s)
+        zt2zm_api    ! Procedure(s)
 
     use grid_class, only: grid ! Type
 
@@ -1654,8 +1654,8 @@ module advance_microphys_module
     !-----------------------------------------------------------------------
 
     use grid_class, only:  & 
-        zm2zt, & ! Procedure(s)
-        zt2zm    ! Procedure(s)
+        zm2zt_api, & ! Procedure(s)
+        zt2zm_api    ! Procedure(s)
 
     use grid_class, only: grid ! Type
 
@@ -1838,7 +1838,7 @@ module advance_microphys_module
     ! Interpolate the implicit component of < V_hm'h_m' >, a momentum-level
     ! variable that is calculated on thermodynamic levels, from thermodynamic
     ! levels to momentum levels.
-    Vhmphmp_impc = zt2zm( gr, Vhmphmp_zt_impc )
+    Vhmphmp_impc = zt2zm_api( gr, Vhmphmp_zt_impc )
 
     ! Reset LHS Matrix for current timestep.
     lhs = zero
@@ -1850,7 +1850,7 @@ module advance_microphys_module
     !        term:  + (1/rho_ds) * d( rho_ds * K_hm * (dh_m/dz) ) / dz.
     ! A Crank-Nicholson time-stepping scheme is used for this term.
     Kh_zm(i,:) = K_hm
-    Kh_zt(i,:) = max( zm2zt(gr,K_hm), 0._core_rknd )
+    Kh_zt(i,:) = max( zm2zt_api(gr,K_hm), 0._core_rknd )
     invrs_rho_ds_zt_col(i,:) = invrs_rho_ds_zt
     rho_ds_zm_col(i,:) = rho_ds_zm
     nu_col(i) = nu
@@ -2006,8 +2006,8 @@ module advance_microphys_module
     !-----------------------------------------------------------------------
 
     use grid_class, only:  & 
-        zt2zm, &    ! Procedure(s)
-        zm2zt
+        zt2zm_api, &    ! Procedure(s)
+        zm2zt_api
 
     use grid_class, only: &
         grid ! Type
@@ -2154,7 +2154,7 @@ module advance_microphys_module
     ! Interpolate the explicit component of < V_hm'h_m' >, a momentum-level
     ! variable that is calculated on thermodynamic levels, from thermodynamic
     ! levels to momentum levels.
-    Vhmphmp_expc = zt2zm( gr, Vhmphmp_zt_expc )
+    Vhmphmp_expc = zt2zm_api( gr, Vhmphmp_zt_expc )
 
     ! Initialize right-hand side vector to 0.
     rhs = zero
@@ -2166,7 +2166,7 @@ module advance_microphys_module
     !        term:  + (1/rho_ds) * d( rho_ds * K_hm * (dh_m/dz) ) / dz.
     ! A Crank-Nicholson time-stepping scheme is used for this term.
     Kh_zm(i,:) = K_hm
-    Kh_zt(i,:) = max( zm2zt(gr,K_hm), zero ) 
+    Kh_zt(i,:) = max( zm2zt_api(gr,K_hm), zero ) 
     invrs_rho_ds_zt_col(i,:) = invrs_rho_ds_zt
     rho_ds_zm_col(i,:) = rho_ds_zm
     nu_col(i) = nu
@@ -3360,7 +3360,7 @@ module advance_microphys_module
     use grid_class, only: grid ! Type
 
     use grid_class, only: & 
-        zt2zm    ! Procedure(s)
+        zt2zm_api    ! Procedure(s)
 
     use parameter_indices, only: &
         nparams,        & ! Variable(s)
@@ -3437,15 +3437,15 @@ module advance_microphys_module
           K_hm(k,h) &
           = clubb_params(ic_K_hm) * Kh_zm(k) &
             * ( sqrt( hydrometp2(k,h) ) &
-                / max( zt2zm( gr, hydromet(:,h), k ), hydromet_tol(h) ) ) &
+                / max( zt2zm_api( gr, hydromet(:,h), k ), hydromet_tol(h) ) ) &
             * ( one + abs( Skw_zm(k) ) ) 
 
           if ( l_use_non_local_diff_fac ) then
              K_gamma(k,h) &
              = one &
                - clubb_params(ic_K_hmb) &
-                 * ( ( max( zt2zm( gr, Lscale(:), k ), 0.0_core_rknd ) &
-                       / max( zt2zm( gr, hydromet(:,h), k ), hydromet_tol(h) ) ) &
+                 * ( ( max( zt2zm_api( gr, Lscale(:), k ), 0.0_core_rknd ) &
+                       / max( zt2zm_api( gr, hydromet(:,h), k ), hydromet_tol(h) ) ) &
                      * ( gr%invrs_dzm(i,k) &
                          * ( hydromet(k,h) - hydromet(km1,h) ) ) )
 

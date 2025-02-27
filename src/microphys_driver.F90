@@ -73,7 +73,7 @@ module microphys_driver
     !-----------------------------------------------------------------------
 
     use grid_class, only: & 
-        zt2zm    ! Procedure(s)
+        zt2zm_api    ! Procedure(s)
 
     use grid_class, only: grid ! Type
 
@@ -107,7 +107,7 @@ module microphys_driver
         ice_dfsn  ! Procedure(s)
 
     use T_in_K_module, only: &
-        thlm2T_in_K  ! Procedure(s)
+        thlm2T_in_K_api  ! Procedure(s)
 
     use gfdl_activation, only: &
         aer_act_clubb_quadrature_Gauss, & ! Procedure(s)
@@ -427,7 +427,7 @@ module microphys_driver
     enddo
 
     ! Calculate T_in_K
-    T_in_K = thlm2T_in_K( gr%nzt, thlm, exner, rcm )
+    T_in_K = thlm2T_in_K_api( gr%nzt, thlm, exner, rcm )
 
     ! Begin by calling Brian Griffin's implementation of the
     ! Khairoutdinov and Kogan microphysics (analytic or local formulas),
@@ -467,20 +467,24 @@ module microphys_driver
       if ( stats_metadata%l_stats_samp ) then
 
         ! Sedimentation velocity for rrm
-        call stat_update_var(stats_metadata%iVrr, zt2zm( gr, hydromet_vel_zt(:,iirr) ), stats_zm)
+        call stat_update_var(stats_metadata%iVrr, &
+                             zt2zm_api( gr, hydromet_vel_zt(:,iirr) ), stats_zm)
 
         ! Sedimentation velocity for Nrm
-        call stat_update_var(stats_metadata%iVNr, zt2zm( gr, hydromet_vel_zt(:,iiNr) ), stats_zm )
+        call stat_update_var(stats_metadata%iVNr, &
+                             zt2zm_api( gr, hydromet_vel_zt(:,iiNr) ), stats_zm )
 
         ! Sedimentation velocity for snow
-        call stat_update_var(stats_metadata%iVrs, zt2zm( gr, hydromet_vel_zt(:,iirs) ), stats_zm )
+        call stat_update_var(stats_metadata%iVrs, &
+                             zt2zm_api( gr, hydromet_vel_zt(:,iirs) ), stats_zm )
 
         ! Sedimentation velocity for pristine ice
-        call stat_update_var( stats_metadata%iVri, zt2zm( gr, hydromet_vel_zt(:,iiri) ), stats_zm )
+        call stat_update_var( stats_metadata%iVri, &
+                              zt2zm_api( gr, hydromet_vel_zt(:,iiri) ), stats_zm )
 
         ! Sedimentation velocity for graupel
         call stat_update_var( stats_metadata%iVrg, &
-                            zt2zm( gr, hydromet_vel_zt(:,iirg) ), stats_zm )
+                              zt2zm_api( gr, hydromet_vel_zt(:,iirg) ), stats_zm )
       endif ! stats_metadata%l_stats_samp
 
     case ( "morrison" )
@@ -589,7 +593,8 @@ module microphys_driver
 
       ! Output rain sedimentation velocity
       if ( stats_metadata%l_stats_samp ) then
-        call stat_update_var(stats_metadata%iVrr, zt2zm( gr, hydromet_vel_zt(:,iirr) ), stats_zm)
+        call stat_update_var(stats_metadata%iVrr, &
+                             zt2zm_api( gr, hydromet_vel_zt(:,iirr) ), stats_zm)
       endif
 
     case ( "khairoutdinov_kogan" )
@@ -700,10 +705,12 @@ module microphys_driver
       if ( stats_metadata%l_stats_samp ) then
 
         ! Sedimentation velocity for rrm
-        call stat_update_var( stats_metadata%iVrr, zt2zm( gr, hydromet_vel_zt(:,iirr) ), stats_zm )
+        call stat_update_var( stats_metadata%iVrr, &
+                              zt2zm_api( gr, hydromet_vel_zt(:,iirr) ), stats_zm )
 
         ! Sedimentation velocity for Nrm
-        call stat_update_var( stats_metadata%iVNr, zt2zm( gr, hydromet_vel_zt(:,iiNr) ), stats_zm )
+        call stat_update_var( stats_metadata%iVNr, &
+                              zt2zm_api( gr, hydromet_vel_zt(:,iiNr) ), stats_zm )
 
       endif ! stats_metadata%l_stats_samp
 

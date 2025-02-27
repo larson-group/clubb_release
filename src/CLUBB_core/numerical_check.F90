@@ -392,9 +392,6 @@ module numerical_check
         clubb_no_error,               & ! Constants
         clubb_fatal_error
 
-    use T_in_K_module, only: &
-        thlm2T_in_K ! Procedure
-
     use constants_clubb, only: &
         fstderr ! Variable
 

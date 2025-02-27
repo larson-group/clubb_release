@@ -504,7 +504,7 @@ module latin_hypercube_driver_module
       
     use mt95, only: &
       genrand_intg, &
-      genrand_init  ! Procedure
+      genrand_init_api  ! Procedure
       
 #if defined(CUDA) && defined(CLUBB_GPU)
     use curand, only: &
@@ -575,7 +575,7 @@ module latin_hypercube_driver_module
     
     ! Intialize generator, this is required every timestep to enable restart runs to 
     ! produce bit-for-bit results
-    call genrand_init( lh_seed )
+    call genrand_init_api( lh_seed )
 
     ! Populate rand_pool with a generator designed for a CPU
     do p=1, pdf_dim+d_uniform_extra

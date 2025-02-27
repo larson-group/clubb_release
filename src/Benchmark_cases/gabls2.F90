@@ -35,7 +35,7 @@ module gabls2
       grid ! Type
 
     use grid_class, only: &
-      zt2zm ! Procedure(s)
+      zt2zm_api ! Procedure(s)
 
     use clubb_precision, only: &
       time_precision, & ! Variable(s)
@@ -112,7 +112,7 @@ module gabls2
       
     end if
 
-    wm_zm = zt2zm( gr%nzm, gr%nzt, ngrdcol, gr, wm_zt )
+    wm_zm = zt2zm_api( gr%nzm, gr%nzt, ngrdcol, gr, wm_zt )
 
     ! Boundary conditions on vertical motion.
     !$acc parallel loop gang vector default(present)
@@ -176,7 +176,7 @@ module gabls2
 
     use constants_clubb, only: Cp, Rd, p0, grav, sec_per_hr ! Variable(s)
 
-    use saturation, only: sat_mixrat_liq ! Procedure(s)
+    use saturation, only: sat_mixrat_liq_api ! Procedure(s)
 
     use clubb_precision, only: time_precision, core_rknd ! Variable(s)
 
@@ -280,7 +280,7 @@ module gabls2
             ((log( standard_flux_alt/z0 ))/(log( lowest_level(i)/z0 ))) ! Modification in case
 
       T_sfc(i) = T_sfc_calc + 273.15_core_rknd
-      rsat(i) = sat_mixrat_liq( p_sfc(i), T_sfc(i), saturation_formula )
+      rsat(i) = sat_mixrat_liq_api( p_sfc(i), T_sfc(i), saturation_formula )
     end do
 
     ! Compute heat and moisture fluxes

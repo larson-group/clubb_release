@@ -34,7 +34,7 @@ module cloud_feedback
 
   use constants_clubb, only: p0, kappa ! Variable(s)
 
-  use saturation, only: sat_mixrat_liq ! Variable(s)
+  use saturation, only: sat_mixrat_liq_api ! Variable(s)
 
   use clubb_precision, only: time_precision, core_rknd ! Variable(s)
 
@@ -128,8 +128,9 @@ module cloud_feedback
     ! wprtp = value_from_forcings_file_in_W_m**2 / ( rho_sfc_flux * Lv )
     ! wpthlp = value_from_forcings_file_in_W_m**2 / ( rho_sfc_flux * Cp )
 
-    !lhflx(1) = 0.001_core_rknd * ubar * rho_sfc_flux * Lv * ( sat_mixrat_liq( p_sfc, T_sfc ) - & 
-    !                                                sat_mixrat_liq( p_sfc, T_in_K ) * 0.8_core_rknd )
+    !lhflx(1) = 0.001_core_rknd * ubar * rho_sfc_flux * Lv * &
+    !           ( sat_mixrat_liq_api( p_sfc, T_sfc ) - & 
+    !             sat_mixrat_liq_api( p_sfc, T_in_K ) * 0.8_core_rknd )
     !shflx(1) = 0.001_core_rknd * ubar * rho_sfc_flux * Cp * ( T_sfc - T_in_K )
 
     ! If this is the S6 case, fudge the values of the fluxes using values from the forcings
@@ -137,7 +138,7 @@ module cloud_feedback
     !    wprtp_sfc = lhflx(1) / ( 1.0_core_rknd * Lv )
     !    wpthlp_sfc = shflx(1) / ( 1.0_core_rknd * Cp )
     !else
-    !    wprtp_sfc = compute_wprtp_sfc( C_10, ubar, rtm_sfc, sat_mixrat_liq( p_sfc, T_sfc ) )
+    !    wprtp_sfc = compute_wprtp_sfc( C_10, ubar, rtm_sfc, sat_mixrat_liq_api( p_sfc, T_sfc ) )
     !    wpthlp_sfc = compute_wpthlp_sfc( C_10, ubar, thlm_sfc, & 
     !                                     T_sfc, exner_sfc )
     !end if
@@ -150,7 +151,7 @@ module cloud_feedback
     Cq(i)   = C_q_20 * ((log(standard_flux_alt/z0))/(log(lowest_level(i)/z0))) * & 
           ((log(standard_flux_alt/z0))/(log(lowest_level(i)/z0)))
 
-    rsat(i) = sat_mixrat_liq( p_sfc(i), T_sfc(i), saturation_formula )
+    rsat(i) = sat_mixrat_liq_api( p_sfc(i), T_sfc(i), saturation_formula )
 
   end do
 

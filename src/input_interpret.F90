@@ -41,7 +41,7 @@ module input_interpret
         fstderr
 
     use saturation, only: &
-        sat_mixrat_liq, & ! Procedure(s)
+        sat_mixrat_liq_api, & ! Procedure(s)
         rcm_sat_adj
 
     use hydrostatic_module, only: &
@@ -155,7 +155,7 @@ module input_interpret
            ! "temperature(k)" at this point in the code.
            do k = 1, nlevels
               rcm(1,k) = &
-                max( rtm(1,k) - sat_mixrat_liq( p_in_Pa(k), theta(1,k), saturation_formula ), &
+                max( rtm(1,k) - sat_mixrat_liq_api( p_in_Pa(k), theta(1,k), saturation_formula ), &
                      zero_threshold )
            enddo
 
@@ -176,8 +176,8 @@ module input_interpret
            ! based on potential temperature, exner, and rtm.
            do k = 1,nlevels
               rcm(1,k) = &
-                max( rtm(1,k) &
-                     - sat_mixrat_liq( p_in_Pa(k), theta(1,k)*exner(1,k), saturation_formula ), &
+                max( rtm(1,k) - sat_mixrat_liq_api( p_in_Pa(k), theta(1,k)*exner(1,k), &
+                                                    saturation_formula ), &
                      zero_threshold )
            enddo
 

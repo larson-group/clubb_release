@@ -7,7 +7,7 @@ module stats_zm_module
 
   private ! Default Scope
 
-  public :: stats_init_zm
+  public :: stats_init_zm_api
 
   ! Constant parameters
   integer, parameter, public :: nvarmax_zm = 350  ! Maximum variables allowed
@@ -15,17 +15,17 @@ module stats_zm_module
   contains
 
 !-----------------------------------------------------------------------
-  subroutine stats_init_zm( hydromet_dim, sclr_dim, edsclr_dim, & ! intent(in)
-                            hydromet_list, l_mix_rat_hm,        & ! intent(in)
-                            vars_zm,                            & ! intent(in)
-                            l_error,                            & ! intent(inout)
-                            stats_metadata, stats_zm )            ! intent(inout)
+  subroutine stats_init_zm_api( hydromet_dim, sclr_dim, edsclr_dim, & ! intent(in)
+                                hydromet_list, l_mix_rat_hm,        & ! intent(in)
+                                vars_zm,                            & ! intent(in)
+                                l_error,                            & ! intent(inout)
+                                stats_metadata, stats_zm )            ! intent(inout)
 
 ! Description:
 !   Initializes array indices for stats_zm
 
 ! Note:
-!   All code that is within subroutine stats_init_zm, including variable
+!   All code that is within subroutine stats_init_zm_api, including variable
 !   allocation code, is not called if l_stats is false.  This subroutine is
 !   called only when l_stats is true.
 
@@ -2518,6 +2518,6 @@ module stats_zm_module
     end do ! i = 1 .. stats_zm%num_output_fields
 
     return
-  end subroutine stats_init_zm
+  end subroutine stats_init_zm_api
 
 end module stats_zm_module

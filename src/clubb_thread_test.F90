@@ -23,7 +23,7 @@ program clubb_thread_test
   use parameter_indices, only: nparams ! Variable(s)
 
   use parameters_tunable, only: &
-      init_clubb_params ! Procedure(s)
+      init_clubb_params_api ! Procedure(s)
 
   use clubb_precision, only: core_rknd ! Variable(s)
 
@@ -82,8 +82,8 @@ program clubb_thread_test
     iunit = 10
 #endif
     ! Read in model parameter values
-    call init_clubb_params( 1, iunit, namelist_filename(iter), &
-                          clubb_params )
+    call init_clubb_params_api( 1, iunit, namelist_filename(iter), &
+                                clubb_params )
 
     ! Run the model
     call run_clubb( 1, 1, l_output_multi_col, l_output_double_prec, &

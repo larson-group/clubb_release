@@ -17,7 +17,7 @@ module read_corr_mtx_test
   ! Included Modules
   use corr_varnce_module, &
     only: read_correlation_matrix, & !Subroutine(s)
-      init_pdf_hydromet_arrays, &
+      init_pdf_hydromet_arrays_api, &
       print_corr_matrix, &
       hm_metadata_type
 
@@ -83,14 +83,14 @@ module read_corr_mtx_test
     end if
 
     ! setup the system under test
-    call init_pdf_hydromet_arrays( one, one, 12,              & ! intent(in)
-                                   5, 6, 7, 8,                & ! intent(in)
-                                   9, 10, 11, 12,             & ! intent(in)
-                                   one,                       & ! intent(in)
-                                   hm_metadata, pdf_dim )    ! intent(out)
+    call init_pdf_hydromet_arrays_api( one, one, 12,              & ! intent(in)
+                                       5, 6, 7, 8,                & ! intent(in)
+                                       9, 10, 11, 12,             & ! intent(in)
+                                       one,                       & ! intent(in)
+                                       hm_metadata, pdf_dim )       ! intent(out)
 
     if ( pdf_dim /= 12 ) then
-      print *, "Error calling init_pdf_hydromet_arrays"
+      print *, "Error calling init_pdf_hydromet_arrays_api"
       print *, "--- pdf_dim expected: 12"
       print *, "--- pdf_dim actual:", pdf_dim
       read_corr_mtx_unit_test = 1 ! Exit Code = 1, Fail

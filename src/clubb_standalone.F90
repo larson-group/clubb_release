@@ -18,7 +18,7 @@ program clubb_standalone
 
   use parameters_tunable, only: &
       set_default_parameters, & ! Procedure(s)
-      init_clubb_params
+      init_clubb_params_api
 
   use clubb_precision, only: core_rknd ! Constant
 
@@ -84,8 +84,8 @@ program clubb_standalone
   allocate( clubb_params(ngrdcol,nparams) )
 
   !Read in model parameter values
-  call init_clubb_params( ngrdcol, iunit, namelist_filename, &
-                          clubb_params )
+  call init_clubb_params_api( ngrdcol, iunit, namelist_filename, &
+                              clubb_params )
 
   ! Initialize status of run 
   err_code = clubb_no_error

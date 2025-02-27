@@ -42,8 +42,8 @@ module morrison_microphys_module
         zero
 
     use T_in_K_module, only: &
-        T_in_K2thlm, & ! Procedure(s)
-        thlm2T_in_K
+        T_in_K2thlm_api, & ! Procedure(s)
+        thlm2T_in_K_api
 
     use model_flags, only: &
         l_evaporate_cold_rcm  ! Flag(s)
@@ -408,7 +408,7 @@ module morrison_microphys_module
 
 
     ! Determine temperature
-    T_in_K = real( thlm2T_in_K( nzt, thlm, exner, rcm ) )
+    T_in_K = real( thlm2T_in_K_api( nzt, thlm, exner, rcm ) )
 
     if ( l_latin_hypercube ) then
       ! Don't use sgs cloud fraction to weight the tendencies
@@ -802,7 +802,7 @@ module morrison_microphys_module
     Ncm_mc = ( real( Ncm_r4, kind = core_rknd ) - Ncm ) / dt
 
     ! Update thetal based on absolute temperature
-    thlm_mc = ( T_in_K2thlm( real( T_in_K, kind = core_rknd ), exner, &
+    thlm_mc = ( T_in_K2thlm_api( real( T_in_K, kind = core_rknd ), exner, &
                 real( rcm_r4, kind = core_rknd ) ) - thlm ) / dt
 
     ! Sedimentation is handled within the Morrison microphysics

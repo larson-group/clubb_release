@@ -37,7 +37,7 @@ module fire
   !   ftp://eos.atmos.washington.edu/pub/breth/papers/1996/GCSS1-Moeng.pdf
   !------------------------------------------------------------------------
 
-  use saturation, only: sat_mixrat_liq ! Procedure(s)
+  use saturation, only: sat_mixrat_liq_api ! Procedure(s)
  
   use sfc_flux, only: compute_wprtp_sfc, compute_wpthlp_sfc
 
@@ -105,7 +105,7 @@ module fire
     Cz(i) = 0.0013_core_rknd
     ustar(i) = 0.3_core_rknd
 
-    rsat(i) = sat_mixrat_liq( p_sfc(i), T_sfc(i), saturation_formula )
+    rsat(i) = sat_mixrat_liq_api( p_sfc(i), T_sfc(i), saturation_formula )
   end do
 
   ! Compute wpthlp_sfc and wprtp_sfc

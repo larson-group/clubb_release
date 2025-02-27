@@ -188,7 +188,7 @@ module rico
     !          RICO: http://www.knmi.nl/samenw/rico/setup3d.html
     !-----------------------------------------------------------------------
 
-    use saturation, only: sat_mixrat_liq ! Procedure(s)
+    use saturation, only: sat_mixrat_liq_api ! Procedure(s)
 
     use sfc_flux, only: compute_ubar, compute_momentum_flux, &
                             compute_wpthlp_sfc, compute_wprtp_sfc
@@ -288,7 +288,7 @@ module rico
     do i = 1, ngrdcol
       T_sfc(i) = T_sfc_interp
       ustar(i) = 0.3_core_rknd
-      rsat(i)  = sat_mixrat_liq( p_sfc(i), T_sfc(i), saturation_formula )
+      rsat(i)  = sat_mixrat_liq_api( p_sfc(i), T_sfc(i), saturation_formula )
     end do
 
   ! Compute heat and moisture fluxes
@@ -335,8 +335,8 @@ module rico
       call compute_wpthlp_sfc( ngrdcol, Ch, ubar, thlm, T_sfc, exner_sfc, &
                                wpthlp_sfc ) 
 
-      !  wprtp_sfc  = -Cz * ubar * ( .01726 - sat_mixrat_liq(p_sfc,T_sfc) ) ! kg kg^-1  m s^-1
-      !  wprtp_sfc  = -Cz * ubar * ( .01626 - sat_mixrat_liq(p_sfc,T_sfc) ) ! kg kg^-1  m s^-1
+      !  wprtp_sfc  = -Cz * ubar * ( .01726 - sat_mixrat_liq_api(p_sfc,T_sfc) ) ! kg kg^-1  m s^-1
+      !  wprtp_sfc  = -Cz * ubar * ( .01626 - sat_mixrat_liq_api(p_sfc,T_sfc) ) ! kg kg^-1  m s^-1
 
       call compute_wprtp_sfc( ngrdcol, Cq, ubar, rtm, rsat, &
                               wprtp_sfc )

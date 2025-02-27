@@ -124,7 +124,7 @@ module grid_class
   !        function from this module.  Interpolations should *not* be handled in
   !        the form of:  ( var_zm(k+1) + var_zm(k) ) / 2; *nor* in the form of:
   !        0.5*( var_zt(k) + var_zt(k-1) ).  Rather, all explicit interpolations
-  !        should call zt2zm or zm2zt; while interpolations for a variable being
+  !        should call zt2zm_api or zm2zt_api; while interpolations for a variable being
   !        solved for implicitly in the code should use gr%weights_zt2zm (which
   !        refers to interp_weights_zt2zm_imp), or gr%weights_zm2zt (which
   !        refers to interp_weights_zm2zt_imp).
@@ -154,7 +154,7 @@ module grid_class
 
   implicit none
 
-  public :: grid, zt2zm, zm2zt, zt2zm2zt, zm2zt2zm, & 
+  public :: grid, zt2zm_api, zm2zt_api, zt2zm2zt, zm2zt2zm, & 
             ddzm, ddzt, & 
             setup_grid, cleanup_grid, setup_grid_heights, &
             read_grid_heights, flip
@@ -200,7 +200,7 @@ module grid_class
     ! These weights are normally used in situations where a
     ! thermodynamic level variable is being solved for implicitly in an equation
     ! and needs to be interpolated to the momentum grid levels.
-                                     weights_zt2zm
+      weights_zt2zm
 
   end type grid
 
@@ -213,7 +213,7 @@ module grid_class
 
   ! Interfaces provided for function overloading
 
-  interface zt2zm
+  interface zt2zm_api
     ! For l_cubic_interp = .true.
     ! This version uses cublic spline interpolation of Stefen (1990).
     !
@@ -227,9 +227,9 @@ module grid_class
     module procedure redirect_interpolated_azm_k    ! Works over a single vertical level
     module procedure redirect_interpolated_azm_1D   ! Works over all vertical levels 
     module procedure redirect_interpolated_azm_2D   ! Works over all vertical levels and columns
-  end interface
+  end interface zt2zm_api
 
-  interface zm2zt
+  interface zm2zt_api
     ! For l_cubic_interp = .true.
     ! This version uses cublic spline interpolation of Stefen (1990).
     !
@@ -243,7 +243,7 @@ module grid_class
     module procedure redirect_interpolated_azt_k    ! Works over a single vertical level
     module procedure redirect_interpolated_azt_1D   ! Works over all vertical levels 
     module procedure redirect_interpolated_azt_2D   ! Works over all vertical levels and columns
-  end interface
+  end interface zm2zt_api
 
   ! Vertical derivative functions
   ! ddzm takes the derivative of a momentum-level variable across the
@@ -1180,7 +1180,7 @@ module grid_class
   end subroutine read_grid_heights
   
   !=============================================================================
-  ! Wrapped in interface zt2zm
+  ! Wrapped in interface zt2zm_api
   function redirect_interpolated_azm_k( gr, azt, k, zm_min )
 
     ! Description:
@@ -1226,7 +1226,7 @@ module grid_class
   end function redirect_interpolated_azm_k
   
   !=============================================================================
-  ! Wrapped in interface zt2zm
+  ! Wrapped in interface zt2zm_api
   function redirect_interpolated_azm_1D( gr, azt, zm_min )
 
     ! Description:
@@ -1274,7 +1274,7 @@ module grid_class
   end function redirect_interpolated_azm_1D
 
   !=============================================================================
-  ! Wrapped in interface zt2zm
+  ! Wrapped in interface zt2zm_api
   function redirect_interpolated_azm_2D( nzm, nzt, ngrdcol, gr, &
                                          azt, zm_min )
 
@@ -1339,7 +1339,7 @@ module grid_class
   end function redirect_interpolated_azm_2D
   
   !=============================================================================
-  ! Wrapped in interface zm2zt
+  ! Wrapped in interface zm2zt_api
   function redirect_interpolated_azt_k( gr, azm, k, zt_min )
 
     ! Description:
@@ -1387,7 +1387,7 @@ module grid_class
   
 
   !=============================================================================
-  ! Wrapped in interface zm2zt
+  ! Wrapped in interface zm2zt_api
   function redirect_interpolated_azt_1D( gr, azm, zt_min )
 
     ! Description:
@@ -1435,7 +1435,7 @@ module grid_class
   end function redirect_interpolated_azt_1D
 
   !=============================================================================
-  ! Wrapped in interface zm2zt
+  ! Wrapped in interface zm2zt_api
   function redirect_interpolated_azt_2D( nzm, nzt, ngrdcol, gr, &
                                          azm, zt_min )
 
@@ -1642,10 +1642,10 @@ module grid_class
     !$acc data create( azt_zm )
 
     ! Interpolate azt to momentum levels 
-    azt_zm = zt2zm( nzm, nzt, ngrdcol, gr, azt )
+    azt_zm = zt2zm_api( nzm, nzt, ngrdcol, gr, azt )
 
     ! Interpolate back to thermodynamic levels
-    zt2zm2zt = zm2zt( nzm, nzt, ngrdcol, gr, azt_zm, zt_min )
+    zt2zm2zt = zm2zt_api( nzm, nzt, ngrdcol, gr, azt_zm, zt_min )
 
     !$acc end data
 
@@ -1698,10 +1698,10 @@ module grid_class
     !$acc data create( azm_zt )
 
     ! Interpolate azt to termodynamic levels 
-    azm_zt = zm2zt( nzm, nzt, ngrdcol, gr, azm )
+    azm_zt = zm2zt_api( nzm, nzt, ngrdcol, gr, azm )
 
     ! Interpolate back to momentum levels
-    zm2zt2zm = zt2zm( nzm, nzt, ngrdcol, gr, azm_zt, zm_min )
+    zm2zt2zm = zt2zm_api( nzm, nzt, ngrdcol, gr, azm_zt, zm_min )
 
     !$acc end data
 

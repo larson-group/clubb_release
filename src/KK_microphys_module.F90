@@ -448,8 +448,8 @@ module KK_microphys_module
     !-----------------------------------------------------------------------
 
     use grid_class, only: &
-        zt2zm,  & ! Procedure(s)
-        grid      ! Type
+        zt2zm_api,  & ! Procedure(s)
+        grid          ! Type
 
     use constants_clubb, only: &
         zero    ! Constant(s)
@@ -937,11 +937,11 @@ module KK_microphys_module
 
        ! Output microphysics tendency terms for
        ! model variances and covariances on momentum levels.
-       wprtp_mc   = zt2zm( gr, wprtp_mc_zt )
-       wpthlp_mc  = zt2zm( gr, wpthlp_mc_zt )
-       rtp2_mc    = zt2zm( gr, rtp2_mc_zt )
-       thlp2_mc   = zt2zm( gr, thlp2_mc_zt )
-       rtpthlp_mc = zt2zm( gr, rtpthlp_mc_zt )
+       wprtp_mc   = zt2zm_api( gr, wprtp_mc_zt )
+       wpthlp_mc  = zt2zm_api( gr, wpthlp_mc_zt )
+       rtp2_mc    = zt2zm_api( gr, rtp2_mc_zt )
+       thlp2_mc   = zt2zm_api( gr, thlp2_mc_zt )
+       rtpthlp_mc = zt2zm_api( gr, rtpthlp_mc_zt )
 
        ! Set values of microphysics tendency terms to 0 at model lower boundary.
        wprtp_mc(1)   = zero
@@ -1026,8 +1026,8 @@ module KK_microphys_module
           ! compared to the < V_rr'r_r' > results used in the code, which are
           ! calculated semi-implicitly.
           call stat_update_var( stats_metadata%iVrrprrp_expcalc, &
-                                zt2zm( gr, Vrrprrp_zt_impc * rrm &
-                                       + Vrrprrp_zt_expc ), stats_zm )
+                                zt2zm_api( gr, Vrrprrp_zt_impc * rrm &
+                                           + Vrrprrp_zt_expc ), stats_zm )
 
        endif
 
@@ -1038,8 +1038,8 @@ module KK_microphys_module
           ! compared to the < V_Nr'N_r' > results used in the code, which are
           ! calculated semi-implicitly.
           call stat_update_var( stats_metadata%iVNrpNrp_expcalc, &
-                                zt2zm( gr, VNrpNrp_zt_impc * Nrm &
-                                       + VNrpNrp_zt_expc ), stats_zm )
+                                zt2zm_api( gr, VNrpNrp_zt_impc * Nrm &
+                                           + VNrpNrp_zt_expc ), stats_zm )
 
        endif
 
@@ -1194,7 +1194,7 @@ module KK_microphys_module
         core_rknd  ! Variable(s)
 
     use saturation, only: &
-        sat_mixrat_liq  ! Procedure(s)
+        sat_mixrat_liq_api  ! Procedure(s)
 
     use constants_clubb, only: &
         Rd,           & ! Constant(s)
@@ -1248,7 +1248,7 @@ module KK_microphys_module
 
     ! Saturation mixing ratio (based on liquid water temperature and
     ! pressure), r_sl = r_s(T_l,p).
-    r_sl = sat_mixrat_liq( p_in_Pa, T_liq_in_K, saturation_formula )
+    r_sl = sat_mixrat_liq_api( p_in_Pa, T_liq_in_K, saturation_formula )
 
     ! Beta(T_l).
     Beta_Tl = (Rd/Rv) * ( Lv / ( Rd * T_liq_in_K ) )  &

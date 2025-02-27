@@ -55,12 +55,12 @@ module clubb_driver
 
     use grid_class, only: &
       read_grid_heights, &   !---------------------------------------------- Procedure(s)
-      zt2zm, &
-      zm2zt, &
+      zt2zm_api, &
+      zm2zt_api, &
       zm2zt2zm
 
     use stats_clubb_utilities, only: &
-        stats_finalize
+        stats_finalize_api
 
     use parameter_indices, only: &
       nparams, ic_K, iSkw_max_mag !------------------------------------------ Variable(s)
@@ -136,8 +136,8 @@ module clubb_driver
     use bugsrad_driver, only: init_radiation !------------------------------- Subroutine
 
     use model_flags, only: &
-        set_default_clubb_config_flags, & !-------------------------------- Procedure(s)
-        initialize_clubb_config_flags_type, &
+        set_default_clubb_config_flags_api, & !-------------------------------- Procedure(s)
+        initialize_clubb_config_flags_type_api, &
         print_clubb_config_flags, &
         clubb_config_flags_type, & !--------------------------------------- Type(s)
         l_silhs_rad, & !--------------------------------------------------- Constants
@@ -146,8 +146,8 @@ module clubb_driver
         saturation_flatau
 
     use stats_clubb_utilities, only: & 
-        stats_begin_timestep, stats_end_timestep, & !----------------------- Procedure(s)
-        stats_init
+        stats_begin_timestep_api, stats_end_timestep, & !----------------------- Procedure(s)
+        stats_init_api
 
     use stats_type_utilities, only: &
         stat_update_var !---------------------------------------------------- Procedure
@@ -1098,70 +1098,70 @@ module clubb_driver
     iunit = 10
 #endif
 
-    call set_default_clubb_config_flags( iiPDF_type, & ! Intent(out)
-                                         ipdf_call_placement, & ! Intent(out)
-                                         penta_solve_method, & ! Intent(out)
-                                         tridiag_solve_method, & ! Intent(out)
-                                         saturation_formula, &  ! Intent(out)
-                                         grid_remap_method, & ! Intent(out)
-                                         grid_adapt_in_time_method, & ! Intent(out)
-                                         l_use_precip_frac, & ! Intent(out)
-                                         l_predict_upwp_vpwp, & ! Intent(out)
-                                         l_min_wp2_from_corr_wx, & ! Intent(out)
-                                         l_min_xp2_from_corr_wx, & ! Intent(out)
-                                         l_C2_cloud_frac, & ! Intent(out)
-                                         l_diffuse_rtm_and_thlm, & ! Intent(out)
-                                         l_stability_correct_Kh_N2_zm, & ! Intent(out)
-                                         l_calc_thlp2_rad, & ! Intent(out)
-                                         l_upwind_xpyp_ta, & ! Intent(out)
-                                         l_upwind_xm_ma, & ! Intent(out)
-                                         l_uv_nudge, & ! Intent(out)
-                                         l_rtm_nudge, & ! Intent(out)
-                                         l_tke_aniso, & ! Intent(out)
-                                         l_vert_avg_closure, & ! Intent(out)
-                                         l_trapezoidal_rule_zt, & ! Intent(out)
-                                         l_trapezoidal_rule_zm, & ! Intent(out)
-                                         l_call_pdf_closure_twice, & ! Intent(out)
-                                         l_standard_term_ta, & ! Intent(out)
-                                         l_partial_upwind_wp3, & ! Intent(out)
-                                         l_godunov_upwind_wpxp_ta, & ! Intent(out)
-                                         l_godunov_upwind_xpyp_ta, & ! Intent(out)
-                                         l_use_cloud_cover, & ! Intent(out)
-                                         l_diagnose_correlations, & ! Intent(out)
-                                         l_calc_w_corr, & ! Intent(out)
-                                         l_const_Nc_in_cloud, & ! Intent(out)
-                                         l_fix_w_chi_eta_correlations, & ! Intent(out)
-                                         l_stability_correct_tau_zm, & ! Intent(out)
-                                         l_damp_wp2_using_em, & ! Intent(out)
-                                         l_do_expldiff_rtm_thlm, & ! Intent(out)
-                                         l_Lscale_plume_centered, & ! Intent(out)
-                                         l_diag_Lscale_from_tau, & ! Intent(out)
-                                         l_use_C7_Richardson, & ! Intent(out)
-                                         l_use_C11_Richardson, & ! Intent(out)
-                                         l_use_shear_Richardson, & ! Intent(out)
-                                         l_brunt_vaisala_freq_moist, & ! Intent(out)
-                                         l_use_thvm_in_bv_freq, & ! Intent(out)
-                                         l_rcm_supersat_adj, & ! Intent(out)
-                                         l_damp_wp3_Skw_squared, & ! Intent(out)
-                                         l_prescribed_avg_deltaz, & ! Intent(out)
-                                         l_lmm_stepping, & ! Intent(out)
-                                         l_e3sm_config, & ! Intent(out)
-                                         l_vary_convect_depth, & ! Intent(out)
-                                         l_use_tke_in_wp3_pr_turb_term, & ! Intent(out)
-                                         l_use_tke_in_wp2_wp3_K_dfsn, & ! Intent(out)
-                                         l_use_wp3_lim_with_smth_Heaviside, & ! Intent(out)
-                                         l_smooth_Heaviside_tau_wpxp, & ! Intent(out)
-                                         l_modify_limiters_for_cnvg_test, & ! Intent(out)
-                                         l_enable_relaxed_clipping, & ! Intent(out)
-                                         l_linearize_pbl_winds, & ! Intent(out)
-                                         l_mono_flux_lim_thlm, & ! Intent(out)
-                                         l_mono_flux_lim_rtm, & ! Intent(out)
-                                         l_mono_flux_lim_um, & ! Intent(out)
-                                         l_mono_flux_lim_vm, & ! Intent(out)
-                                         l_mono_flux_lim_spikefix, & ! Intent(out)
-                                         l_host_applies_sfc_fluxes, & ! Intent(out)
-                                         l_wp2_fill_holes_tke, & ! Intent(out)
-                                         l_add_dycore_grid ) ! Intent(out)
+    call set_default_clubb_config_flags_api( iiPDF_type, & ! Intent(out)
+                                             ipdf_call_placement, & ! Intent(out)
+                                             penta_solve_method, & ! Intent(out)
+                                             tridiag_solve_method, & ! Intent(out)
+                                             saturation_formula, &  ! Intent(out)
+                                             grid_remap_method, & ! Intent(out)
+                                             grid_adapt_in_time_method, & ! Intent(out)
+                                             l_use_precip_frac, & ! Intent(out)
+                                             l_predict_upwp_vpwp, & ! Intent(out)
+                                             l_min_wp2_from_corr_wx, & ! Intent(out)
+                                             l_min_xp2_from_corr_wx, & ! Intent(out)
+                                             l_C2_cloud_frac, & ! Intent(out)
+                                             l_diffuse_rtm_and_thlm, & ! Intent(out)
+                                             l_stability_correct_Kh_N2_zm, & ! Intent(out)
+                                             l_calc_thlp2_rad, & ! Intent(out)
+                                             l_upwind_xpyp_ta, & ! Intent(out)
+                                             l_upwind_xm_ma, & ! Intent(out)
+                                             l_uv_nudge, & ! Intent(out)
+                                             l_rtm_nudge, & ! Intent(out)
+                                             l_tke_aniso, & ! Intent(out)
+                                             l_vert_avg_closure, & ! Intent(out)
+                                             l_trapezoidal_rule_zt, & ! Intent(out)
+                                             l_trapezoidal_rule_zm, & ! Intent(out)
+                                             l_call_pdf_closure_twice, & ! Intent(out)
+                                             l_standard_term_ta, & ! Intent(out)
+                                             l_partial_upwind_wp3, & ! Intent(out)
+                                             l_godunov_upwind_wpxp_ta, & ! Intent(out)
+                                             l_godunov_upwind_xpyp_ta, & ! Intent(out)
+                                             l_use_cloud_cover, & ! Intent(out)
+                                             l_diagnose_correlations, & ! Intent(out)
+                                             l_calc_w_corr, & ! Intent(out)
+                                             l_const_Nc_in_cloud, & ! Intent(out)
+                                             l_fix_w_chi_eta_correlations, & ! Intent(out)
+                                             l_stability_correct_tau_zm, & ! Intent(out)
+                                             l_damp_wp2_using_em, & ! Intent(out)
+                                             l_do_expldiff_rtm_thlm, & ! Intent(out)
+                                             l_Lscale_plume_centered, & ! Intent(out)
+                                             l_diag_Lscale_from_tau, & ! Intent(out)
+                                             l_use_C7_Richardson, & ! Intent(out)
+                                             l_use_C11_Richardson, & ! Intent(out)
+                                             l_use_shear_Richardson, & ! Intent(out)
+                                             l_brunt_vaisala_freq_moist, & ! Intent(out)
+                                             l_use_thvm_in_bv_freq, & ! Intent(out)
+                                             l_rcm_supersat_adj, & ! Intent(out)
+                                             l_damp_wp3_Skw_squared, & ! Intent(out)
+                                             l_prescribed_avg_deltaz, & ! Intent(out)
+                                             l_lmm_stepping, & ! Intent(out)
+                                             l_e3sm_config, & ! Intent(out)
+                                             l_vary_convect_depth, & ! Intent(out)
+                                             l_use_tke_in_wp3_pr_turb_term, & ! Intent(out)
+                                             l_use_tke_in_wp2_wp3_K_dfsn, & ! Intent(out)
+                                             l_use_wp3_lim_with_smth_Heaviside, & ! Intent(out)
+                                             l_smooth_Heaviside_tau_wpxp, & ! Intent(out)
+                                             l_modify_limiters_for_cnvg_test, & ! Intent(out)
+                                             l_enable_relaxed_clipping, & ! Intent(out)
+                                             l_linearize_pbl_winds, & ! Intent(out)
+                                             l_mono_flux_lim_thlm, & ! Intent(out)
+                                             l_mono_flux_lim_rtm, & ! Intent(out)
+                                             l_mono_flux_lim_um, & ! Intent(out)
+                                             l_mono_flux_lim_vm, & ! Intent(out)
+                                             l_mono_flux_lim_spikefix, & ! Intent(out)
+                                             l_host_applies_sfc_fluxes, & ! Intent(out)
+                                             l_wp2_fill_holes_tke, & ! Intent(out)
+                                             l_add_dycore_grid ) ! Intent(out)
 
     ! Read namelist file
     open(unit=iunit, file=trim( runfile ), status='old')
@@ -1554,71 +1554,71 @@ module clubb_driver
     end if
 
     ! Initialize CLUBB configurable flags type
-    call initialize_clubb_config_flags_type( iiPDF_type, & ! Intent(in)
-                                             ipdf_call_placement, & ! Intent(in)
-                                             penta_solve_method, & ! Intent(in)
-                                             tridiag_solve_method, & ! Intent(in)
-                                             saturation_formula, & ! Intent(in)
-                                             grid_remap_method, & ! Intent(in)
-                                             grid_adapt_in_time_method, & ! Intent(in)
-                                             l_use_precip_frac, & ! Intent(in)
-                                             l_predict_upwp_vpwp, & ! Intent(in)
-                                             l_min_wp2_from_corr_wx, & ! Intent(in)
-                                             l_min_xp2_from_corr_wx, & ! Intent(in)
-                                             l_C2_cloud_frac, & ! Intent(in)
-                                             l_diffuse_rtm_and_thlm, & ! Intent(in)
-                                             l_stability_correct_Kh_N2_zm, & ! Intent(in)
-                                             l_calc_thlp2_rad, & ! Intent(in)
-                                             l_upwind_xpyp_ta, & ! Intent(in)
-                                             l_upwind_xm_ma, & ! Intent(in)
-                                             l_uv_nudge, & ! Intent(in)
-                                             l_rtm_nudge, & ! Intent(in)
-                                             l_tke_aniso, & ! Intent(in)
-                                             l_vert_avg_closure, & ! Intent(in)
-                                             l_trapezoidal_rule_zt, & ! Intent(in)
-                                             l_trapezoidal_rule_zm, & ! Intent(in)
-                                             l_call_pdf_closure_twice, & ! Intent(in)
-                                             l_standard_term_ta, & ! Intent(in)
-                                             l_partial_upwind_wp3, & ! Intent(in)
-                                             l_godunov_upwind_wpxp_ta, & ! Intent(in)
-                                             l_godunov_upwind_xpyp_ta, & ! Intent(in)
-                                             l_use_cloud_cover, & ! Intent(in)
-                                             l_diagnose_correlations, & ! Intent(in)
-                                             l_calc_w_corr, & ! Intent(in)
-                                             l_const_Nc_in_cloud, & ! Intent(in)
-                                             l_fix_w_chi_eta_correlations, & ! Intent(in)
-                                             l_stability_correct_tau_zm, & ! Intent(in)
-                                             l_damp_wp2_using_em, & ! Intent(in)
-                                             l_do_expldiff_rtm_thlm, & ! Intent(in)
-                                             l_Lscale_plume_centered, & ! Intent(in)
-                                             l_diag_Lscale_from_tau, & ! Intent(in)
-                                             l_use_C7_Richardson, & ! Intent(in)
-                                             l_use_C11_Richardson, & ! Intent(in)
-                                             l_use_shear_Richardson, & ! Intent(in)
-                                             l_brunt_vaisala_freq_moist, & ! Intent(in)
-                                             l_use_thvm_in_bv_freq, & ! Intent(in)
-                                             l_rcm_supersat_adj, & ! Intent(in)
-                                             l_damp_wp3_Skw_squared, & ! Intent(in)
-                                             l_prescribed_avg_deltaz, & ! Intent(in)
-                                             l_lmm_stepping, & ! Intent(in)
-                                             l_e3sm_config, & ! Intent(in)
-                                             l_vary_convect_depth, & ! Intent(in)
-                                             l_use_tke_in_wp3_pr_turb_term, & ! Intent(in)
-                                             l_use_tke_in_wp2_wp3_K_dfsn, & ! Intent(in)
-                                             l_use_wp3_lim_with_smth_Heaviside, & ! Intent(in)
-                                             l_smooth_Heaviside_tau_wpxp, & ! Intent(in)
-                                             l_modify_limiters_for_cnvg_test, & ! Intent(in)
-                                             l_enable_relaxed_clipping, & ! Intent(in)
-                                             l_linearize_pbl_winds, & ! Intent(in)
-                                             l_mono_flux_lim_thlm, & ! Intent(in)
-                                             l_mono_flux_lim_rtm, & ! Intent(in)
-                                             l_mono_flux_lim_um, & ! Intent(in)
-                                             l_mono_flux_lim_vm, & ! Intent(in)
-                                             l_mono_flux_lim_spikefix, & ! Intent(in)
-                                             l_host_applies_sfc_fluxes, & ! Intent(in)
-                                             l_wp2_fill_holes_tke, & ! Intent(in)
-                                             l_add_dycore_grid, & ! Intent(out)
-                                             clubb_config_flags ) ! Intent(out)
+    call initialize_clubb_config_flags_type_api( iiPDF_type, & ! Intent(in)
+                                                 ipdf_call_placement, & ! Intent(in)
+                                                 penta_solve_method, & ! Intent(in)
+                                                 tridiag_solve_method, & ! Intent(in)
+                                                 saturation_formula, & ! Intent(in)
+                                                 grid_remap_method, & ! Intent(in)
+                                                 grid_adapt_in_time_method, & ! Intent(in)
+                                                 l_use_precip_frac, & ! Intent(in)
+                                                 l_predict_upwp_vpwp, & ! Intent(in)
+                                                 l_min_wp2_from_corr_wx, & ! Intent(in)
+                                                 l_min_xp2_from_corr_wx, & ! Intent(in)
+                                                 l_C2_cloud_frac, & ! Intent(in)
+                                                 l_diffuse_rtm_and_thlm, & ! Intent(in)
+                                                 l_stability_correct_Kh_N2_zm, & ! Intent(in)
+                                                 l_calc_thlp2_rad, & ! Intent(in)
+                                                 l_upwind_xpyp_ta, & ! Intent(in)
+                                                 l_upwind_xm_ma, & ! Intent(in)
+                                                 l_uv_nudge, & ! Intent(in)
+                                                 l_rtm_nudge, & ! Intent(in)
+                                                 l_tke_aniso, & ! Intent(in)
+                                                 l_vert_avg_closure, & ! Intent(in)
+                                                 l_trapezoidal_rule_zt, & ! Intent(in)
+                                                 l_trapezoidal_rule_zm, & ! Intent(in)
+                                                 l_call_pdf_closure_twice, & ! Intent(in)
+                                                 l_standard_term_ta, & ! Intent(in)
+                                                 l_partial_upwind_wp3, & ! Intent(in)
+                                                 l_godunov_upwind_wpxp_ta, & ! Intent(in)
+                                                 l_godunov_upwind_xpyp_ta, & ! Intent(in)
+                                                 l_use_cloud_cover, & ! Intent(in)
+                                                 l_diagnose_correlations, & ! Intent(in)
+                                                 l_calc_w_corr, & ! Intent(in)
+                                                 l_const_Nc_in_cloud, & ! Intent(in)
+                                                 l_fix_w_chi_eta_correlations, & ! Intent(in)
+                                                 l_stability_correct_tau_zm, & ! Intent(in)
+                                                 l_damp_wp2_using_em, & ! Intent(in)
+                                                 l_do_expldiff_rtm_thlm, & ! Intent(in)
+                                                 l_Lscale_plume_centered, & ! Intent(in)
+                                                 l_diag_Lscale_from_tau, & ! Intent(in)
+                                                 l_use_C7_Richardson, & ! Intent(in)
+                                                 l_use_C11_Richardson, & ! Intent(in)
+                                                 l_use_shear_Richardson, & ! Intent(in)
+                                                 l_brunt_vaisala_freq_moist, & ! Intent(in)
+                                                 l_use_thvm_in_bv_freq, & ! Intent(in)
+                                                 l_rcm_supersat_adj, & ! Intent(in)
+                                                 l_damp_wp3_Skw_squared, & ! Intent(in)
+                                                 l_prescribed_avg_deltaz, & ! Intent(in)
+                                                 l_lmm_stepping, & ! Intent(in)
+                                                 l_e3sm_config, & ! Intent(in)
+                                                 l_vary_convect_depth, & ! Intent(in)
+                                                 l_use_tke_in_wp3_pr_turb_term, & ! Intent(in)
+                                                 l_use_tke_in_wp2_wp3_K_dfsn, & ! Intent(in)
+                                                 l_use_wp3_lim_with_smth_Heaviside, & ! Intent(in)
+                                                 l_smooth_Heaviside_tau_wpxp, & ! Intent(in)
+                                                 l_modify_limiters_for_cnvg_test, & ! Intent(in)
+                                                 l_enable_relaxed_clipping, & ! Intent(in)
+                                                 l_linearize_pbl_winds, & ! Intent(in)
+                                                 l_mono_flux_lim_thlm, & ! Intent(in)
+                                                 l_mono_flux_lim_rtm, & ! Intent(in)
+                                                 l_mono_flux_lim_um, & ! Intent(in)
+                                                 l_mono_flux_lim_vm, & ! Intent(in)
+                                                 l_mono_flux_lim_spikefix, & ! Intent(in)
+                                                 l_host_applies_sfc_fluxes, & ! Intent(in)
+                                                 l_wp2_fill_holes_tke, & ! Intent(in)
+                                                 l_add_dycore_grid, & ! Intent(out)
+                                                 clubb_config_flags ) ! Intent(out)
 
     ! Printing configurable CLUBB flags Inputs
     if ( clubb_at_least_debug_level( 1 ) ) then
@@ -2278,51 +2278,51 @@ module clubb_driver
 
       ! Initialize statistics output, note that this will allocate/initialize stats
       ! variables for all columns, but only create the stats files for the first columns
-      call stats_init( iunit, fname_prefix, output_dir, l_stats, & ! In
-                      stats_fmt, stats_tsamp, stats_tout, runfile, & ! In
-                      hydromet_dim, sclr_dim, edsclr_dim, sclr_tol, & ! In
-                      hm_metadata%hydromet_list, hm_metadata%l_mix_rat_hm, & ! In
-                      gr%nzm, ngrdcol, nlon, nlat, gr%zt, gr%zm, total_atmos_dim - 1, & ! In
-                      complete_alt(1:total_atmos_dim), total_atmos_dim, & ! In
-                      complete_momentum(1:total_atmos_dim + 1), day, month, year, & ! In
-                      (/lon_vals/), (/lat_vals/), time_current, dt_main, l_silhs_out,&!In
-                      clubb_params, &
-                      clubb_config_flags%l_uv_nudge, &
-                      clubb_config_flags%l_tke_aniso, &
-                      clubb_config_flags%l_standard_term_ta, &
-                      stats_metadata, & ! In/Out
-                      stats_zt, stats_zm, stats_sfc, & ! In/Out
-                      stats_lh_zt, stats_lh_sfc, & ! In/Out
-                      stats_rad_zt, stats_rad_zm, & ! In/Out
-                      err_code ) ! In/Out
+      call stats_init_api( iunit, fname_prefix, output_dir, l_stats, & ! In
+                           stats_fmt, stats_tsamp, stats_tout, runfile, & ! In
+                           hydromet_dim, sclr_dim, edsclr_dim, sclr_tol, & ! In
+                           hm_metadata%hydromet_list, hm_metadata%l_mix_rat_hm, & ! In
+                           gr%nzm, ngrdcol, nlon, nlat, gr%zt, gr%zm, total_atmos_dim - 1, & ! In
+                           complete_alt(1:total_atmos_dim), total_atmos_dim, & ! In
+                           complete_momentum(1:total_atmos_dim + 1), day, month, year, & ! In
+                           (/lon_vals/), (/lat_vals/), time_current, dt_main, l_silhs_out,&!In
+                           clubb_params, &
+                           clubb_config_flags%l_uv_nudge, &
+                           clubb_config_flags%l_tke_aniso, &
+                           clubb_config_flags%l_standard_term_ta, &
+                           stats_metadata, & ! In/Out
+                           stats_zt, stats_zm, stats_sfc, & ! In/Out
+                           stats_lh_zt, stats_lh_sfc, & ! In/Out
+                           stats_rad_zt, stats_rad_zm, & ! In/Out
+                           err_code ) ! In/Out
 
     else
 
       ! Initialize statistics output, note that this will allocate/initialize stats
       ! variables for all columns, but only create the stats files for the first columns
-      call stats_init( iunit, fname_prefix, output_dir, l_stats, & ! In
-                      stats_fmt, stats_tsamp, stats_tout, runfile, & ! In
-                      hydromet_dim, sclr_dim, edsclr_dim, sclr_tol, & ! In
-                      hm_metadata%hydromet_list, hm_metadata%l_mix_rat_hm, & ! In
-                      gr%nzm, ngrdcol, nlon, nlat, gr%zt, gr%zm, 0, & ! In
-                      rad_dummy, 0, rad_dummy, day, month, year, & ! In
-                      (/lon_vals/), (/lat_vals/), time_current, dt_main, l_silhs_out,&!In
-                      clubb_params, &
-                      clubb_config_flags%l_uv_nudge, &
-                      clubb_config_flags%l_tke_aniso, &
-                      clubb_config_flags%l_standard_term_ta, &
-                      stats_metadata, & ! In/Out
-                      stats_zt, stats_zm, stats_sfc, & ! In/Out
-                      stats_lh_zt, stats_lh_sfc, & ! In/Out
-                      stats_rad_zt, stats_rad_zm, & ! In/Out
-                      err_code ) ! In/Out
+      call stats_init_api( iunit, fname_prefix, output_dir, l_stats, & ! In
+                           stats_fmt, stats_tsamp, stats_tout, runfile, & ! In
+                           hydromet_dim, sclr_dim, edsclr_dim, sclr_tol, & ! In
+                           hm_metadata%hydromet_list, hm_metadata%l_mix_rat_hm, & ! In
+                           gr%nzm, ngrdcol, nlon, nlat, gr%zt, gr%zm, 0, & ! In
+                           rad_dummy, 0, rad_dummy, day, month, year, & ! In
+                           (/lon_vals/), (/lat_vals/), time_current, dt_main, l_silhs_out,&!In
+                           clubb_params, &
+                           clubb_config_flags%l_uv_nudge, &
+                           clubb_config_flags%l_tke_aniso, &
+                           clubb_config_flags%l_standard_term_ta, &
+                           stats_metadata, & ! In/Out
+                           stats_zt, stats_zm, stats_sfc, & ! In/Out
+                           stats_lh_zt, stats_lh_sfc, & ! In/Out
+                           stats_rad_zt, stats_rad_zm, & ! In/Out
+                           err_code ) ! In/Out
 
     end if
 !$OMP END CRITICAL
 
     if ( clubb_at_least_debug_level( 0 ) ) then
       if ( err_code == clubb_fatal_error ) then
-          write(fstderr,*) "FATAL ERROR in stats_init"
+          write(fstderr,*) "FATAL ERROR in stats_init_api"
           error stop
       end if
     end if
@@ -2492,8 +2492,8 @@ module clubb_driver
       if ( stats_metadata%l_stats ) then
         ! When this time step is over, the time will be time + dt_main
         ! We use integer timestep for stats_begin_step
-        call stats_begin_timestep( itime, stats_nsamp, stats_nout, & ! Intent(in)
-                                   stats_metadata )                  ! Intent(inout)
+        call stats_begin_timestep_api( itime, stats_nsamp, stats_nout, & ! Intent(in)
+                                       stats_metadata )                  ! Intent(inout)
       end if
 
       if ( l_input_fields ) then
@@ -2545,8 +2545,8 @@ module clubb_driver
         ! clip wp3 if it is input from inputfields
         ! this helps restrict the skewness of wp3_on_wp2
         if( l_input_wp3 ) then
-          
-            wp2_zt = max( zm2zt( gr%nzm, gr%nzt, ngrdcol, gr, wp2 ), w_tol_sqd ) ! Positive definite quantity
+            ! Positive definite quantity
+            wp2_zt = max( zm2zt_api( gr%nzm, gr%nzt, ngrdcol, gr, wp2 ), w_tol_sqd )
 
             call clip_skewness_core( gr%nzt, ngrdcol, gr, sfc_elevation(:), &
                                     clubb_params(:,iSkw_max_mag), wp2_zt, &
@@ -2937,7 +2937,7 @@ module clubb_driver
         !$acc              pdf_params%crt_1, pdf_params%crt_2, pdf_params%stdev_chi_1, pdf_params%stdev_chi_2, &
         !$acc              pdf_params%varnce_w_1, pdf_params%varnce_w_2 ) 
 
-        wp3_zm = zt2zm( gr%nzm, gr%nzt, ngrdcol, gr, wp3 )
+        wp3_zm = zt2zm_api( gr%nzm, gr%nzt, ngrdcol, gr, wp3 )
 
         ! Calculate Skw_zm for use in advance_microphys.
         !$acc data copyin( wp2, wp3_zm, clubb_params ) copyout( Skw_zm )
@@ -2950,7 +2950,8 @@ module clubb_driver
         ! interpolating back to momentum levels.
         Skw_zm_smooth = zm2zt2zm( gr%nzm, gr%nzt, ngrdcol, gr, Skw_zm )
 
-        wp2_zt = zm2zt( gr%nzm, gr%nzt, ngrdcol, gr, wp2, w_tol_sqd ) ! Positive definite quantity
+        ! Positive definite quantity
+        wp2_zt = zm2zt_api( gr%nzm, gr%nzt, ngrdcol, gr, wp2, w_tol_sqd )
       
         ! Call microphysics scheme and produce microphysics tendencies.
         do i = 1, ngrdcol
@@ -3340,10 +3341,10 @@ module clubb_driver
     ! Only end stats for the first column of values, this closes the stats files
     ! but since the stats isn't setup to use multiple columns, it will just attempt
     ! to close the same file for each column
-    call stats_finalize( ngrdcol, stats_metadata, &
-                         stats_zt, stats_zm, stats_sfc, &
-                         stats_lh_zt, stats_lh_sfc, &
-                         stats_rad_zt, stats_rad_zm )
+    call stats_finalize_api( ngrdcol, stats_metadata, &
+                             stats_zt, stats_zm, stats_sfc, &
+                             stats_lh_zt, stats_lh_sfc, &
+                             stats_rad_zt, stats_rad_zm )
 
     ! Free memory
     call cleanup_clubb( l_input_fields, gr )
@@ -3553,8 +3554,8 @@ module clubb_driver
 
 
     use grid_class, only: &
-      zm2zt, &   !----------------------------------------------------- Procedure(s)
-      zt2zm
+      zm2zt_api, &   !----------------------------------------------------- Procedure(s)
+      zt2zm_api
 
     use sounding, only: read_sounding !--------------------------------- Procedure(s)
 
@@ -3822,7 +3823,7 @@ module clubb_driver
       !                                   the sounding file
     case ( wm_name )
 
-      wm_zm = zt2zm( gr%nzm, gr%nzt, ngrdcol, gr, wm_zt )
+      wm_zm = zt2zm_api( gr%nzm, gr%nzt, ngrdcol, gr, wm_zt )
       wm_zm(:,1) = 0.0_core_rknd
       wm_zm(:,gr%nzm) = 0.0_core_rknd
 
@@ -3834,7 +3835,7 @@ module clubb_driver
 
       wm_zt(:,gr%nzt) = 0.0_core_rknd
 
-      wm_zm = zt2zm( gr%nzm, gr%nzt, ngrdcol, gr, wm_zt )
+      wm_zm = zt2zm_api( gr%nzm, gr%nzt, ngrdcol, gr, wm_zt )
       wm_zm(:,gr%nzm) = 0.0_core_rknd
 
     case default ! This should not happen
@@ -4348,7 +4349,7 @@ module clubb_driver
     use grid_class, only: grid ! Type
 
     use grid_class, only: &
-        zt2zm ! Procedure(s)
+        zt2zm_api ! Procedure(s)
 
     use constants_clubb, only: & ! Constant(s)
         one,   & ! 1
@@ -4382,7 +4383,7 @@ module clubb_driver
         hydrostatic !--------------------------------- Procedure(s)
 
     use saturation, only: &
-        sat_mixrat_liq, & !--------------------------- Procedure(s)
+        sat_mixrat_liq_api, & !--------------------------- Procedure(s)
         rcm_sat_adj
 
     use array_index, only: &
@@ -4597,8 +4598,8 @@ module clubb_driver
         do i = 1, ngrdcol
           rcm(i,k) &
           = max( rtm(i,k) &
-                  - sat_mixrat_liq( p_in_Pa(i,k), thm(i,k) * exner(i,k), saturation_formula ), &
-                  zero_threshold )
+                 - sat_mixrat_liq_api( p_in_Pa(i,k), thm(i,k) * exner(i,k), saturation_formula ), &
+                 zero_threshold )
         end do
       end do
 
@@ -4802,7 +4803,7 @@ module clubb_driver
       p_dry_zm(i,1) = pd_sfc(i)
     end do
 
-    tmp(:,:) = zt2zm( gr%nzm, gr%nzt, ngrdcol, gr, rtm(:,:) - rcm(:,:) )
+    tmp(:,:) = zt2zm_api( gr%nzm, gr%nzt, ngrdcol, gr, rtm(:,:) - rcm(:,:) )
 
     do k = 2, gr%nzm
       do i = 1, ngrdcol
@@ -4822,7 +4823,7 @@ module clubb_driver
       end do
     end do
 
-    thm_zm(:,:) = zt2zm( gr%nzm, gr%nzt, ngrdcol, gr, thm(:,:) )
+    thm_zm(:,:) = zt2zm_api( gr%nzm, gr%nzt, ngrdcol, gr, thm(:,:) )
 
     ! Calculate theta_d on momentum levels by interpolating theta and water
     ! vapor mixing ratio to momentum levels.
@@ -5073,8 +5074,8 @@ module clubb_driver
 
 
     use grid_class, only: &
-        grid, & !------------------------------------------------- Type
-        zt2zm !--------------------------------------------------- Procedure(s)
+        grid,   & !--------------------------------------------------- Type
+        zt2zm_api !--------------------------------------------------- Procedure(s)
 
     use constants_clubb, only: fstderr !-------------------------- Variables(s)
 
@@ -5535,7 +5536,7 @@ module clubb_driver
 
     use grid_class, only: grid ! Type
 
-    use grid_class, only: zt2zm, zm2zt !---------------------- Procedure(s)
+    use grid_class, only: zt2zm_api, zm2zt_api !---------------------- Procedure(s)
 
     use stats_variables, only: &
       stats_metadata_type
@@ -6391,8 +6392,8 @@ module clubb_driver
         grid  ! Type
 
     use grid_class, only: &
-        zt2zm,  & ! Procedure(s)
-        zm2zt
+        zt2zm_api,  & ! Procedure(s)
+        zm2zt_api
 
     use constants_clubb, only: &
         fstderr, & ! Constant
@@ -6530,11 +6531,11 @@ module clubb_driver
 
       else ! option 2 (interpolation)
 
-        um_zm       = zt2zm( gr%nzm, gr%nzt, ngrdcol, gr, um )
-        vm_zm       = zt2zm( gr%nzm, gr%nzt, ngrdcol, gr, vm )
-        thlm_zm     = zt2zm( gr%nzm, gr%nzt, ngrdcol, gr, thlm )
-        rtm_zm      = zt2zm( gr%nzm, gr%nzt, ngrdcol, gr, rtm )
-        exner_zm    = zt2zm( gr%nzm, gr%nzt, ngrdcol, gr, exner)
+        um_zm       = zt2zm_api( gr%nzm, gr%nzt, ngrdcol, gr, um )
+        vm_zm       = zt2zm_api( gr%nzm, gr%nzt, ngrdcol, gr, vm )
+        thlm_zm     = zt2zm_api( gr%nzm, gr%nzt, ngrdcol, gr, thlm )
+        rtm_zm      = zt2zm_api( gr%nzm, gr%nzt, ngrdcol, gr, rtm )
+        exner_zm    = zt2zm_api( gr%nzm, gr%nzt, ngrdcol, gr, exner)
 
         !$acc parallel loop gang vector default(present)
         do i = 1, ngrdcol
@@ -6634,7 +6635,7 @@ module clubb_driver
         clubb_at_least_debug_level, & !-------------------------------- Procedure
         clubb_fatal_error             !-------------------------------- Constant
 
-    use grid_class, only: zt2zm !--------------------------------------- Procedure
+    use grid_class, only: zt2zm_api !--------------------------------------- Procedure
 
     use interpolation, only: binary_search, lin_interpolate_on_grid !--- Procdure(s)
 
@@ -6849,17 +6850,17 @@ module clubb_driver
       end if  ! clubb_at_least_debug_level( 0 )
 
       call compute_bugsrad_radiation &
-           ( gr%zm(1,:), gr%nzm, gr%nzt, lin_int_buffer,   & ! Intent(in)
-             extended_atmos_range_size,                    & ! Intent(in)
-             extended_atmos_bottom_level,                  & ! Intent(in)
-             extended_atmos_top_level,                     & ! Intent(in)
-             amu0,                                         & ! Intent(in)
-             thlm, rcm, rtm, rsm, rim,                     & ! Intent(in)
-             cloud_frac, ice_supersat_frac,                & ! Intent(in)
-             p_in_Pa, zt2zm( gr, p_in_Pa ), exner, rho_zm, & ! Intent(in)
-             radht, Frad,                                  & ! Intent(out)
-             Frad_SW_up, Frad_LW_up,                       & ! Intent(out)
-             Frad_SW_down, Frad_LW_down )                    ! Intent(out)
+           ( gr%zm(1,:), gr%nzm, gr%nzt, lin_int_buffer,       & ! Intent(in)
+             extended_atmos_range_size,                        & ! Intent(in)
+             extended_atmos_bottom_level,                      & ! Intent(in)
+             extended_atmos_top_level,                         & ! Intent(in)
+             amu0,                                             & ! Intent(in)
+             thlm, rcm, rtm, rsm, rim,                         & ! Intent(in)
+             cloud_frac, ice_supersat_frac,                    & ! Intent(in)
+             p_in_Pa, zt2zm_api( gr, p_in_Pa ), exner, rho_zm, & ! Intent(in)
+             radht, Frad,                                      & ! Intent(out)
+             Frad_SW_up, Frad_LW_up,                           & ! Intent(out)
+             Frad_SW_down, Frad_LW_down )                        ! Intent(out)
 
       if ( clubb_at_least_debug_level( 0 ) ) then
 

@@ -162,8 +162,8 @@ module microphys_init_cleanup
     use corr_varnce_module, only: &
         hmp2_ip_on_hmm2_ip_slope_type,      & ! Types
         hmp2_ip_on_hmm2_ip_intrcpt_type,    &
-        hm_metadata_type,                &
-        setup_corr_varnce_array               ! Procedure(s)
+        hm_metadata_type,                   &
+        setup_corr_varnce_array_api           ! Procedure(s)
 
     use pdf_utilities, only: &
         stdev_L2N    ! Procedure(s)
@@ -921,10 +921,10 @@ module microphys_init_cleanup
     corr_file_path_below = corr_input_path//trim( runtype )//below_file_ext
 
     ! Allocate and set the arrays containing the correlations
-    call setup_corr_varnce_array( corr_file_path_cloud, corr_file_path_below, & ! In
-                                  pdf_dim, hm_metadata, iunit,             & ! In
-                                  l_fix_w_chi_eta_correlations,               & ! In
-                                  corr_array_n_cloud, corr_array_n_below )      ! Out
+    call setup_corr_varnce_array_api( corr_file_path_cloud, corr_file_path_below, & ! In
+                                      pdf_dim, hm_metadata, iunit,                & ! In
+                                      l_fix_w_chi_eta_correlations,               & ! In
+                                      corr_array_n_cloud, corr_array_n_below )      ! Out
 
     ! Print the in-cloud and below-cloud actual (real-space) correlation arrays.
     ! This should only be done when zeta_vrnce_rat = 0.  Even when this is true,

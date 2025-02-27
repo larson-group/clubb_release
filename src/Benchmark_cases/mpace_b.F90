@@ -45,7 +45,7 @@ module mpace_b
       grid ! Type
 
     use grid_class, only: &
-      zt2zm ! Procedure(s)
+      zt2zm_api ! Procedure(s)
 
     use clubb_precision, only: &
       core_rknd ! Variable(s)
@@ -115,7 +115,7 @@ module mpace_b
     end do
 
     ! Interpolate
-    wm_zm = zt2zm( gr%nzm, gr%nzt, ngrdcol, gr, wm_zt )
+    wm_zm = zt2zm_api( gr%nzm, gr%nzt, ngrdcol, gr, wm_zt )
 
     ! Boundary conditions
     !$acc parallel loop gang vector default(present)

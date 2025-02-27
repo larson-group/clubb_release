@@ -128,7 +128,7 @@ module nov11
 !----------------------------------------------------------------------
 !
 !
-!    use grid_class, only: zt2zm ! Procedure(s)
+!    use grid_class, only: zt2zm_api ! Procedure(s)
 !
 !    use constants_clubb, only: fstderr ! Variable(s)
 !
@@ -347,7 +347,7 @@ module nov11
 !      wm_zt(1) = wm_zt(2)
 !    end do
 !
-!    wm_zm = zt2zm(wm_zt)
+!    wm_zm = zt2zm_api(wm_zt)
 !
 !    ! Enter the final rtm tendency
 !    do k = 1, gr%nz, 1

@@ -332,8 +332,8 @@ module diagnose_correlations_module
 !
 !    use grid_class, only: &
 !        gr,  & ! Variable(s)
-!        zm2zt,  & ! Procedure(s)
-!        zt2zm
+!        zm2zt_api,  & ! Procedure(s)
+!        zt2zm_api
 !
 !    use pdf_parameter_module, only:  &
 !        pdf_parameter  ! Type
@@ -411,10 +411,10 @@ module diagnose_correlations_module
 !    wpNcnp_zm(nz) = wpNcnp_zm(nz-1)
 !
 !    ! interpolate back to zt-grid
-!    wpchip_zt   = zm2zt(wpchip_zm)
-!    wprrp_zt  = zm2zt(wprrp_zm)
-!    wpNrp_zt  = zm2zt(wpNrp_zm)
-!    wpNcnp_zt = zm2zt(wpNcnp_zm)
+!    wpchip_zt   = zm2zt_api(wpchip_zm)
+!    wprrp_zt  = zm2zt_api(wprrp_zm)
+!    wpNrp_zt  = zm2zt_api(wpNrp_zm)
+!    wpNcnp_zt = zm2zt_api(wpNcnp_zm)
 !
 !  end subroutine approx_w_covar
 

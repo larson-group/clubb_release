@@ -43,8 +43,8 @@ module spurious_source_test
         adj_low_res_nu_api
 
     use grid_class, only: &
-        zm2zt,      &
-        zt2zm
+        zm2zt_api,      &
+        zt2zm_api
 
     use grid_class, only: grid ! Type
 
@@ -70,8 +70,8 @@ module spurious_source_test
 
     use parameters_tunable, only: &
         set_default_parameters, & ! Procedure(s)
-        init_clubb_params, &
-        nu_vertical_res_dep    ! Type(s)
+        init_clubb_params_api,  &
+        nu_vertical_res_dep       ! Type(s)
 
     use advance_helper_module, only: &
         vertical_integral    ! Procedure(s)
@@ -93,7 +93,7 @@ module spurious_source_test
         core_rknd    ! Variable(s)
 
     use model_flags, only: &
-        set_default_clubb_config_flags ! Procedure(s)
+        set_default_clubb_config_flags_api ! Procedure(s)
 
     use stats_type, only: &
         stats ! Type
@@ -519,73 +519,73 @@ module spurious_source_test
       order_wp2_wp3 =3
 
     ! Read in model parameter values
-    call init_clubb_params( 1, iunit, namelist_filename, &
-                          clubb_params )
+    call init_clubb_params_api( 1, iunit, namelist_filename, &
+                                clubb_params )
 
-    call set_default_clubb_config_flags( iiPDF_type, &
-                                         ipdf_call_placement, &
-                                         penta_solve_method, &
-                                         tridiag_solve_method, &
-                                         saturation_formula, &
-                                         grid_remap_method, &
-                                         grid_adapt_in_time_method, &
-                                         l_use_precip_frac, &
-                                         l_predict_upwp_vpwp, &
-                                         l_min_wp2_from_corr_wx, &
-                                         l_min_xp2_from_corr_wx, &
-                                         l_C2_cloud_frac, &
-                                         l_diffuse_rtm_and_thlm, &
-                                         l_stability_correct_Kh_N2_zm, &
-                                         l_calc_thlp2_rad, &
-                                         l_upwind_xpyp_ta, &
-                                         l_upwind_xm_ma, &
-                                         l_uv_nudge, &
-                                         l_rtm_nudge, &
-                                         l_tke_aniso, &
-                                         l_vert_avg_closure, &
-                                         l_trapezoidal_rule_zt, &
-                                         l_trapezoidal_rule_zm, &
-                                         l_call_pdf_closure_twice, &
-                                         l_standard_term_ta, &
-                                         l_partial_upwind_wp3, &
-                                         l_godunov_upwind_wpxp_ta, &
-                                         l_godunov_upwind_xpyp_ta, &
-                                         l_use_cloud_cover, &
-                                         l_diagnose_correlations, &
-                                         l_calc_w_corr, &
-                                         l_const_Nc_in_cloud, &
-                                         l_fix_w_chi_eta_correlations, &
-                                         l_stability_correct_tau_zm, &
-                                         l_damp_wp2_using_em, &
-                                         l_do_expldiff_rtm_thlm, &
-                                         l_Lscale_plume_centered, &
-                                         l_diag_Lscale_from_tau, &
-                                         l_use_C7_Richardson, &
-                                         l_use_C11_Richardson, &
-                                         l_use_shear_Richardson, &
-                                         l_brunt_vaisala_freq_moist, &
-                                         l_use_thvm_in_bv_freq, &
-                                         l_rcm_supersat_adj, &
-                                         l_damp_wp3_Skw_squared, &
-                                         l_prescribed_avg_deltaz, &
-                                         l_lmm_stepping, &
-                                         l_e3sm_config, &
-                                         l_vary_convect_depth, &
-                                         l_use_tke_in_wp3_pr_turb_term, &
-                                         l_use_tke_in_wp2_wp3_K_dfsn, &
-                                         l_use_wp3_lim_with_smth_Heaviside, &
-                                         l_smooth_Heaviside_tau_wpxp, &
-                                         l_modify_limiters_for_cnvg_test, &
-                                         l_enable_relaxed_clipping, &
-                                         l_linearize_pbl_winds, &
-                                         l_mono_flux_lim_thlm, &
-                                         l_mono_flux_lim_rtm, &
-                                         l_mono_flux_lim_um, &
-                                         l_mono_flux_lim_vm, &
-                                         l_mono_flux_lim_spikefix, &
-                                         l_host_applies_sfc_fluxes, &
-                                         l_wp2_fill_holes_tke, &
-                                         l_add_dycore_grid )
+    call set_default_clubb_config_flags_api( iiPDF_type, &
+                                             ipdf_call_placement, &
+                                             penta_solve_method, &
+                                             tridiag_solve_method, &
+                                             saturation_formula, &
+                                             grid_remap_method, &
+                                             grid_adapt_in_time_method, &
+                                             l_use_precip_frac, &
+                                             l_predict_upwp_vpwp, &
+                                             l_min_wp2_from_corr_wx, &
+                                             l_min_xp2_from_corr_wx, &
+                                             l_C2_cloud_frac, &
+                                             l_diffuse_rtm_and_thlm, &
+                                             l_stability_correct_Kh_N2_zm, &
+                                             l_calc_thlp2_rad, &
+                                             l_upwind_xpyp_ta, &
+                                             l_upwind_xm_ma, &
+                                             l_uv_nudge, &
+                                             l_rtm_nudge, &
+                                             l_tke_aniso, &
+                                             l_vert_avg_closure, &
+                                             l_trapezoidal_rule_zt, &
+                                             l_trapezoidal_rule_zm, &
+                                             l_call_pdf_closure_twice, &
+                                             l_standard_term_ta, &
+                                             l_partial_upwind_wp3, &
+                                             l_godunov_upwind_wpxp_ta, &
+                                             l_godunov_upwind_xpyp_ta, &
+                                             l_use_cloud_cover, &
+                                             l_diagnose_correlations, &
+                                             l_calc_w_corr, &
+                                             l_const_Nc_in_cloud, &
+                                             l_fix_w_chi_eta_correlations, &
+                                             l_stability_correct_tau_zm, &
+                                             l_damp_wp2_using_em, &
+                                             l_do_expldiff_rtm_thlm, &
+                                             l_Lscale_plume_centered, &
+                                             l_diag_Lscale_from_tau, &
+                                             l_use_C7_Richardson, &
+                                             l_use_C11_Richardson, &
+                                             l_use_shear_Richardson, &
+                                             l_brunt_vaisala_freq_moist, &
+                                             l_use_thvm_in_bv_freq, &
+                                             l_rcm_supersat_adj, &
+                                             l_damp_wp3_Skw_squared, &
+                                             l_prescribed_avg_deltaz, &
+                                             l_lmm_stepping, &
+                                             l_e3sm_config, &
+                                             l_vary_convect_depth, &
+                                             l_use_tke_in_wp3_pr_turb_term, &
+                                             l_use_tke_in_wp2_wp3_K_dfsn, &
+                                             l_use_wp3_lim_with_smth_Heaviside, &
+                                             l_smooth_Heaviside_tau_wpxp, &
+                                             l_modify_limiters_for_cnvg_test, &
+                                             l_enable_relaxed_clipping, &
+                                             l_linearize_pbl_winds, &
+                                             l_mono_flux_lim_thlm, &
+                                             l_mono_flux_lim_rtm, &
+                                             l_mono_flux_lim_um, &
+                                             l_mono_flux_lim_vm, &
+                                             l_mono_flux_lim_spikefix, &
+                                             l_host_applies_sfc_fluxes, &
+                                             l_wp2_fill_holes_tke, &
+                                             l_add_dycore_grid )
 
     ! Initialize pdf_implicit_coefs_terms
     call init_pdf_implicit_coefs_terms( nzt, 1, sclr_dim, &
@@ -866,10 +866,10 @@ module spurious_source_test
        wm_zm(1,:) = zero
 
        ! Interpolate fields set on momentum levels to thermodynamic levels.
-       wm_zt(1,:) = zm2zt( gr, wm_zm(1,:) )
-       wp3_on_wp2_zt(1,:) = zm2zt( gr, wp3_on_wp2(1,:) )
-       Kh_zt(1,:) = zm2zt( gr, Kh_zm(1,:) )
-       rho_ds_zt(1,:) = zm2zt( gr, rho_ds_zm(1,:) )
+       wm_zt(1,:) = zm2zt_api( gr, wm_zm(1,:) )
+       wp3_on_wp2_zt(1,:) = zm2zt_api( gr, wp3_on_wp2(1,:) )
+       Kh_zt(1,:) = zm2zt_api( gr, Kh_zm(1,:) )
+       rho_ds_zt(1,:) = zm2zt_api( gr, rho_ds_zm(1,:) )
 
        ! Calculate the value of skewness of w (momentum levels).
        Skw_zm(1,:) = wp3_on_wp2(1,:) / sqrt( wp2(1,:) )
@@ -932,7 +932,7 @@ module spurious_source_test
               + ( Lv / ( Cp * exner(1,:) ) - ep2 * 300.0_core_rknd ) * rcm(1,:)
 
        ! Interpolate fields set on thermodynamic levels to momentum levels.
-       thv_ds_zm(1,:) = max( zt2zm( gr, thvm(1,:) ), 0.0_core_rknd )
+       thv_ds_zm(1,:) = max( zt2zm_api( gr, thvm(1,:) ), 0.0_core_rknd )
 
        ! Calculate the vertical integrals of rtm and thlm before the call to
        ! advance_xm_wpxp so that spurious source can be calculated.

@@ -106,8 +106,8 @@ module advance_wp2_wp3_module
     use grid_class, only: &
         grid,  & ! Type
         ddzt,  & ! Procedure
-        zt2zm, & ! Procedure(s)
-        zm2zt, &
+        zt2zm_api, & ! Procedure(s)
+        zm2zt_api, &
         zm2zt2zm
 
     use parameter_indices, only: &
@@ -636,8 +636,8 @@ module advance_wp2_wp3_module
         ! discretization diagram is found in the description section of
         ! function wp3_term_ta_new_pdf_lhs below.  These values are always
         ! positive.
-        coef_wp4_implicit(:,:) = zt2zm( nzm, nzt, ngrdcol, gr, coef_wp4_implicit_zt(:,:), &
-                                        zero_threshold )
+        coef_wp4_implicit(:,:) = zt2zm_api( nzm, nzt, ngrdcol, gr, coef_wp4_implicit_zt(:,:), &
+                                            zero_threshold )
 
         ! Set the value of coef_wp4_implicit to 0 at the lower boundary and at
         ! the upper boundary.  This sets the value of <w'^4> to 0 at the lower
@@ -667,8 +667,8 @@ module advance_wp2_wp3_module
 
         ! Interpolate a_1 from momentum levels to thermodynamic levels.  This
         ! will be used for the w'^3 turbulent advection (ta) term.
-        a1_coef_zt(:,:) = zm2zt( nzm, nzt, ngrdcol, gr, &
-                                 a1_coef(:,:), zero_threshold ) ! Positive def. quantity
+        a1_coef_zt(:,:) = zm2zt_api( nzm, nzt, ngrdcol, gr, &
+                                     a1_coef(:,:), zero_threshold ) ! Positive def. quantity
 
       endif ! iiPDF_type
 
@@ -695,8 +695,8 @@ module advance_wp2_wp3_module
     end do
     !$acc end parallel loop
     
-    Kw1_zm(:,:) = zt2zm( nzm, nzt, ngrdcol, gr, Kw1(:,:), zero )
-    Kw8_zt(:,:) = zm2zt( nzm, nzt, ngrdcol, gr, Kw8(:,:), zero )
+    Kw1_zm(:,:) = zt2zm_api( nzm, nzt, ngrdcol, gr, Kw1(:,:), zero )
+    Kw8_zt(:,:) = zm2zt_api( nzm, nzt, ngrdcol, gr, Kw8(:,:), zero )
     
     ! Experimental term from CLUBB TRAC ticket #411
 
@@ -1242,8 +1242,8 @@ module advance_wp2_wp3_module
 
     use grid_class, only: &
         grid,  & ! Type
-        zm2zt, & ! Function(s)
-        zt2zm
+        zm2zt_api, & ! Function(s)
+        zt2zm_api
 
     use constants_clubb, only: &
         w_tol_sqd,                & ! Variables(s)
@@ -1276,7 +1276,7 @@ module advance_wp2_wp3_module
         nu_vertical_res_dep    ! Type(s)
 
     use fill_holes, only: &
-        fill_holes_vertical, &  ! Procedure(s)
+        fill_holes_vertical_api, &  ! Procedure(s)
         fill_holes_wp2_from_horz_tke
 
     use clip_explicit, only: &
@@ -1797,9 +1797,9 @@ module advance_wp2_wp3_module
 
       ! Use a simple hole filling algorithm
       ! upper_hf_level = nzm-1 since we are filling the zm levels
-      call fill_holes_vertical( nzm, ngrdcol, w_tol_sqd, 2, nzm-1, & ! In
-                                gr%dzm, rho_ds_zm,                 & ! In
-                                wp2 )                                ! InOut
+      call fill_holes_vertical_api( nzm, ngrdcol, w_tol_sqd, 2, nzm-1, & ! In
+                                    gr%dzm, rho_ds_zm,                 & ! In
+                                    wp2 )                                ! InOut
 
       if ( clubb_at_least_debug_level(3) ) then
         wp2_avg_after = vertical_avg(nzm, rho_ds_zm, wp2, gr%dzm)
@@ -1918,7 +1918,7 @@ module advance_wp2_wp3_module
     ! Interpolate w'^2 from momentum levels to thermodynamic levels.
     ! This is used for the clipping of w'^3 according to the value
     ! of Sk_w now that w'^2 and w'^3 have been advanced one timestep.
-    wp2_zt(:,:) = zm2zt( nzm, nzt, ngrdcol, gr, wp2, w_tol_sqd )   ! Positive definite quantity
+    wp2_zt(:,:) = zm2zt_api( nzm, nzt, ngrdcol, gr, wp2, w_tol_sqd )   ! Positive definite quantity
 
     ! Clip w'^3 by limiting skewness.
     call clip_skewness( nzt, ngrdcol, gr, dt, sfc_elevation,  & ! intent(in)
@@ -1929,7 +1929,7 @@ module advance_wp2_wp3_module
                         wp3 )                                   ! intent(inout)
 
     ! Compute wp3_zm for output purposes
-    wp3_zm(:,:) = zt2zm( nzm, nzt, ngrdcol, gr, wp3 )
+    wp3_zm(:,:) = zt2zm_api( nzm, nzt, ngrdcol, gr, wp3 )
 
     !$acc exit data delete( rhs_save, solut, old_solut, rcond, wp2_min_array )
 
@@ -5105,7 +5105,7 @@ module advance_wp2_wp3_module
 
     use grid_class, only: &
         grid, &
-        zm2zt    ! Variable type(s)
+        zm2zt_api    ! Variable type(s)
 
     use constants_clubb, only: & ! Constant(s) 
         grav, & ! Gravitational acceleration [m/s^2]

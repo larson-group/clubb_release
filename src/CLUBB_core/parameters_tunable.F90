@@ -35,7 +35,7 @@ module parameters_tunable
   ! Default to private
   private
 
-  public :: set_default_parameters, setup_parameters, init_clubb_params, &
+  public :: set_default_parameters, setup_parameters, init_clubb_params_api, &
             read_param_minmax, read_param_constraints, &
             adj_low_res_nu, nu_vertical_res_dep
 
@@ -924,8 +924,8 @@ module parameters_tunable
   end subroutine adj_low_res_nu
 
   !=============================================================================
-  subroutine init_clubb_params( ngrdcol, iunit, filename, &
-                              clubb_params )
+  subroutine init_clubb_params_api( ngrdcol, iunit, filename, &
+                                    clubb_params )
 
     ! Description:
     ! Read a namelist containing the model parameters
@@ -1087,7 +1087,7 @@ module parameters_tunable
 
     return
 
-  end subroutine init_clubb_params
+  end subroutine init_clubb_params_api
 
   !=============================================================================
   subroutine read_param_minmax & 

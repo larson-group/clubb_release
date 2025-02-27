@@ -7,8 +7,8 @@ module stats_clubb_utilities
 
   private ! Set Default Scope
 
-  public :: stats_init, stats_begin_timestep, stats_end_timestep, & 
-    stats_accumulate, stats_finalize, stats_accumulate_hydromet, &
+  public :: stats_init_api, stats_begin_timestep_api, stats_end_timestep, & 
+    stats_accumulate, stats_finalize_api, stats_accumulate_hydromet_api, &
     stats_accumulate_lh_tend
 
   private :: stats_zero, stats_avg, stats_check_num_samples
@@ -16,22 +16,22 @@ module stats_clubb_utilities
   contains
 
   !-----------------------------------------------------------------------
-  subroutine stats_init( iunit, fname_prefix, fdir, l_stats_in, &
-                         stats_fmt_in, stats_tsamp_in, stats_tout_in, fnamelist, &
-                         hydromet_dim, sclr_dim, edsclr_dim, sclr_tol, &
-                         hydromet_list, l_mix_rat_hm, &
-                         nzmax, ngrdcol, nlon, nlat, gzt, gzm, nnrad_zt, &
-                         grad_zt, nnrad_zm, grad_zm, day, month, year, &
-                         lon_vals, lat_vals, time_current, delt, l_silhs_out_in, &
-                         clubb_params, &
-                         l_uv_nudge, &
-                         l_tke_aniso, &
-                         l_standard_term_ta, &
-                         stats_metadata, &
-                         stats_zt, stats_zm, stats_sfc, &
-                         stats_lh_zt, stats_lh_sfc, &
-                         stats_rad_zt, stats_rad_zm, &
-                         err_code )
+  subroutine stats_init_api( iunit, fname_prefix, fdir, l_stats_in, &
+                             stats_fmt_in, stats_tsamp_in, stats_tout_in, fnamelist, &
+                             hydromet_dim, sclr_dim, edsclr_dim, sclr_tol, &
+                             hydromet_list, l_mix_rat_hm, &
+                             nzmax, ngrdcol, nlon, nlat, gzt, gzm, nnrad_zt, &
+                             grad_zt, nnrad_zm, grad_zm, day, month, year, &
+                             lon_vals, lat_vals, time_current, delt, l_silhs_out_in, &
+                             clubb_params, &
+                             l_uv_nudge, &
+                             l_tke_aniso, &
+                             l_standard_term_ta, &
+                             stats_metadata, &
+                             stats_zt, stats_zm, stats_sfc, &
+                             stats_lh_zt, stats_lh_sfc, &
+                             stats_rad_zt, stats_rad_zm, &
+                             err_code )
     !
     ! Description:
     !   Initializes the statistics saving functionality of the CLUBB model.
@@ -60,12 +60,12 @@ module stats_clubb_utilities
 #endif
 
     use stats_zm_module, only: &
-        nvarmax_zm, & ! Constant(s)
-        stats_init_zm ! Procedure(s)
+        nvarmax_zm,       & ! Constant(s)
+        stats_init_zm_api   ! Procedure(s)
 
     use stats_zt_module, only: &
-        nvarmax_zt, & ! Constant(s)
-        stats_init_zt ! Procedure(s)
+        nvarmax_zt,       & ! Constant(s)
+        stats_init_zt_api   ! Procedure(s)
 
     use stats_lh_zt_module, only: &
         nvarmax_lh_zt, & ! Constant(s)
@@ -76,16 +76,16 @@ module stats_clubb_utilities
         stats_init_lh_sfc ! Procedure(s)
 
     use stats_rad_zt_module, only: &
-        nvarmax_rad_zt, & ! Constant(s)
-        stats_init_rad_zt ! Procedure(s)
+        nvarmax_rad_zt,       & ! Constant(s)
+        stats_init_rad_zt_api   ! Procedure(s)
 
     use stats_rad_zm_module, only: &
-        nvarmax_rad_zm, & ! Constant(s)
-        stats_init_rad_zm ! Procedure(s)
+        nvarmax_rad_zm,       & ! Constant(s)
+        stats_init_rad_zm_api   ! Procedure(s)
 
     use stats_sfc_module, only: &
-        nvarmax_sfc, & ! Constant(s)
-        stats_init_sfc ! Procedure(s)
+        nvarmax_sfc,      & ! Constant(s)
+        stats_init_sfc_api  ! Procedure(s)
 
     use constants_clubb, only: &
         fstdout, fstderr, var_length ! Constants
@@ -290,7 +290,7 @@ module stats_clubb_utilities
       write(fstderr,*) "Maximum variables allowed for var_rad_zt = ", nvarmax_rad_zt
       write(fstderr,*) "Maximum variables allowed for var_rad_zm = ", nvarmax_rad_zm
       write(fstderr,*) "Maximum variables allowed for var_sfc = ", nvarmax_sfc
-      write(fstderr,*) "stats_init: Error reading stats namelist."
+      write(fstderr,*) "stats_init_api: Error reading stats namelist."
       err_code = clubb_fatal_error
       close(unit=iunit)
       return
@@ -381,7 +381,7 @@ module stats_clubb_utilities
       stats_metadata%l_grads  = .false.
 
     case default
-      write(fstderr,*) "In module stats_clubb_utilities subroutine stats_init: "
+      write(fstderr,*) "In module stats_clubb_utilities subroutine stats_init_api: "
       write(fstderr,*) "Invalid stats output format "//trim( stats_fmt )
       err_code = clubb_fatal_error
       return
@@ -688,7 +688,7 @@ module stats_clubb_utilities
                        "in the stats namelist, or change nvarmax_zt."
       write(fstderr,*) "nvarmax_zt = ", nvarmax_zt
       write(fstderr,*) "number of variables in vars_zt = ", ntot
-      write(fstderr,*) "stats_init:  number of zt statistical variables exceeds limit"
+      write(fstderr,*) "stats_init_api:  number of zt statistical variables exceeds limit"
       err_code = clubb_fatal_error
       return
     end if
@@ -719,11 +719,11 @@ module stats_clubb_utilities
 
       ! Default initialization for array indices for zt
 
-      call stats_init_zt( hydromet_dim, sclr_dim, edsclr_dim, & ! intent(in)
-                          hydromet_list, l_mix_rat_hm,        & ! intent(in)
-                          vars_zt,                            & ! intent(in)
-                          l_error,                            & ! intent(inout)
-                          stats_metadata, stats_zt(i) )         ! intent(inout)
+      call stats_init_zt_api( hydromet_dim, sclr_dim, edsclr_dim, & ! intent(in)
+                              hydromet_list, l_mix_rat_hm,        & ! intent(in)
+                              vars_zt,                            & ! intent(in)
+                              l_error,                            & ! intent(inout)
+                              stats_metadata, stats_zt(i) )         ! intent(inout)
     end do
 
     fname = trim( stats_metadata%fname_zt )
@@ -800,7 +800,7 @@ module stats_clubb_utilities
                          "in the stats namelist, or change nvarmax_lh_zt."
         write(fstderr,*) "nvarmax_lh_zt = ", nvarmax_lh_zt
         write(fstderr,*) "number of variables in vars_lh_zt = ", ntot
-        write(fstderr,*) "stats_init:  number of lh_zt statistical variables exceeds limit"
+        write(fstderr,*) "stats_init_api:  number of lh_zt statistical variables exceeds limit"
         err_code = clubb_fatal_error
         return
       end if
@@ -886,7 +886,7 @@ module stats_clubb_utilities
                          "in the stats namelist, or change nvarmax_lh_sfc."
         write(fstderr,*) "nvarmax_lh_sfc = ", nvarmax_lh_sfc
         write(fstderr,*) "number of variables in vars_lh_sfc = ", ntot
-        write(fstderr,*) "stats_init:  number of lh_sfc statistical variables exceeds limit"
+        write(fstderr,*) "stats_init_api:  number of lh_sfc statistical variables exceeds limit"
         err_code = clubb_fatal_error
         return
       end if
@@ -1127,7 +1127,7 @@ module stats_clubb_utilities
                        "in the stats namelist, or change nvarmax_zm."
       write(fstderr,*) "nvarmax_zm = ", nvarmax_zm
       write(fstderr,*) "number of variables in vars_zm = ", ntot
-      write(fstderr,*) "stats_init:  number of zm statistical variables exceeds limit"
+      write(fstderr,*) "stats_init_api:  number of zm statistical variables exceeds limit"
       err_code = clubb_fatal_error
       return
     end if
@@ -1157,11 +1157,11 @@ module stats_clubb_utilities
       allocate( stats_zm(i)%file%grid_avg_var( stats_zm(i)%num_output_fields ) )
       allocate( stats_zm(i)%file%z( stats_zm(i)%kk ) )
 
-      call stats_init_zm( hydromet_dim, sclr_dim, edsclr_dim, & ! intent(in)
-                          hydromet_list, l_mix_rat_hm,        & ! intent(in)
-                          vars_zm,                            & ! intent(in)
-                          l_error,                            & ! intent(inout)
-                          stats_metadata, stats_zm(i) )         ! intent(inout)
+      call stats_init_zm_api( hydromet_dim, sclr_dim, edsclr_dim, & ! intent(in)
+                              hydromet_list, l_mix_rat_hm,        & ! intent(in)
+                              vars_zm,                            & ! intent(in)
+                              l_error,                            & ! intent(inout)
+                              stats_metadata, stats_zm(i) )         ! intent(inout)
     end do
 
     fname = trim( stats_metadata%fname_zm )
@@ -1217,7 +1217,7 @@ module stats_clubb_utilities
                          "in the stats namelist, or change nvarmax_rad_zt."
         write(fstderr,*) "nvarmax_rad_zt = ", nvarmax_rad_zt
         write(fstderr,*) "number of variables in vars_rad_zt = ", ntot
-        write(fstderr,*) "stats_init:  number of rad_zt statistical variables exceeds limit"
+        write(fstderr,*) "stats_init_api:  number of rad_zt statistical variables exceeds limit"
         err_code = clubb_fatal_error
         return
       end if
@@ -1246,9 +1246,9 @@ module stats_clubb_utilities
         allocate( stats_rad_zt(i)%file%grid_avg_var( stats_rad_zt(i)%num_output_fields ) )
         allocate( stats_rad_zt(i)%file%z( stats_rad_zt(i)%kk ) )
 
-        call stats_init_rad_zt( vars_rad_zt,                    & ! intent(in)
-                                l_error,                        & ! intent(inout)
-                                stats_metadata, stats_rad_zt(i) ) ! intent(inout)
+        call stats_init_rad_zt_api( vars_rad_zt,                    & ! intent(in)
+                                    l_error,                        & ! intent(inout)
+                                    stats_metadata, stats_rad_zt(i) ) ! intent(inout)
       end do
 
       fname = trim( stats_metadata%fname_rad_zt )
@@ -1303,7 +1303,7 @@ module stats_clubb_utilities
                          "in the stats namelist, or change nvarmax_rad_zm."
         write(fstderr,*) "nvarmax_rad_zm = ", nvarmax_rad_zm
         write(fstderr,*) "number of variables in vars_rad_zm = ", ntot
-        write(fstderr,*) "stats_init:  number of rad_zm statistical variables exceeds limit"
+        write(fstderr,*) "stats_init_api:  number of rad_zm statistical variables exceeds limit"
         err_code = clubb_fatal_error
         return
       end if
@@ -1333,9 +1333,9 @@ module stats_clubb_utilities
         allocate( stats_rad_zm(i)%file%grid_avg_var( stats_rad_zm(i)%num_output_fields ) )
         allocate( stats_rad_zm(i)%file%z( stats_rad_zm(i)%kk ) )
 
-        call stats_init_rad_zm( vars_rad_zm,                    & ! intent(in)
-                                l_error,                        & ! intent(inout)
-                                stats_metadata, stats_rad_zm(i) ) ! intent(inout)
+        call stats_init_rad_zm_api( vars_rad_zm,                    & ! intent(in)
+                                    l_error,                        & ! intent(inout)
+                                    stats_metadata, stats_rad_zm(i) ) ! intent(inout)
       end do
 
       fname = trim( stats_metadata%fname_rad_zm )
@@ -1394,7 +1394,7 @@ module stats_clubb_utilities
                        "in the stats namelist, or change nvarmax_sfc."
       write(fstderr,*) "nvarmax_sfc = ", nvarmax_sfc
       write(fstderr,*) "number of variables in vars_sfc = ", ntot
-      write(fstderr,*) "stats_init:  number of sfc statistical variables exceeds limit"
+      write(fstderr,*) "stats_init_api:  number of sfc statistical variables exceeds limit"
       err_code = clubb_fatal_error
       return
 
@@ -1425,9 +1425,9 @@ module stats_clubb_utilities
       allocate( stats_sfc(i)%file%grid_avg_var( stats_sfc(i)%num_output_fields ) )
       allocate( stats_sfc(i)%file%z( stats_sfc(i)%kk ) )
 
-      call stats_init_sfc( vars_sfc,                    & ! intent(in)
-                          l_error,                      & ! intent(inout)
-                          stats_metadata, stats_sfc(i) )  ! intent(inout)
+      call stats_init_sfc_api( vars_sfc,                        & ! intent(in)
+                               l_error,                         & ! intent(inout)
+                               stats_metadata, stats_sfc(i) )     ! intent(inout)
     end do
 
     fname = trim( stats_metadata%fname_sfc )
@@ -1469,7 +1469,7 @@ module stats_clubb_utilities
     ! Check for errors
 
     if ( l_error ) then
-      write(fstderr,*) 'stats_init:  errors found'
+      write(fstderr,*) 'stats_init_api:  errors found'
       err_code = clubb_fatal_error
       return
     endif
@@ -1488,7 +1488,7 @@ module stats_clubb_utilities
 
     return
 
-  end subroutine stats_init
+  end subroutine stats_init_api
 
   !-----------------------------------------------------------------------
   subroutine stats_zero( ii, jj, kk, nn, &
@@ -1573,8 +1573,8 @@ module stats_clubb_utilities
   end subroutine stats_avg
 
   !-----------------------------------------------------------------------
-  subroutine stats_begin_timestep( itime, stats_nsamp, stats_nout, &
-                                   stats_metadata )
+  subroutine stats_begin_timestep_api( itime, stats_nsamp, stats_nout, &
+                                       stats_metadata )
 
     !     Description:
     !       Given the elapsed time, set flags determining specifics such as
@@ -1618,7 +1618,7 @@ module stats_clubb_utilities
 
     return
 
-  end subroutine stats_begin_timestep
+  end subroutine stats_begin_timestep_api
 
   !-----------------------------------------------------------------------
   subroutine stats_end_timestep( stats_metadata,                & ! intent(in)
@@ -1896,7 +1896,7 @@ module stats_clubb_utilities
         pdf_parameter ! Type
 
     use T_in_K_module, only: & 
-        thlm2T_in_K ! Procedure
+        thlm2T_in_K_api ! Procedure
 
     use constants_clubb, only: & 
         rc_tol, fstderr    ! Constant(s)
@@ -2122,7 +2122,7 @@ module stats_clubb_utilities
 
 
       if ( stats_metadata%iT_in_K > 0 .or. stats_metadata%irsati > 0 ) then
-        T_in_K = thlm2T_in_K( nzt, thlm, exner, rcm )
+        T_in_K = thlm2T_in_K_api( nzt, thlm, exner, rcm )
       else
         T_in_K = -999._core_rknd
       end if
@@ -2704,10 +2704,10 @@ module stats_clubb_utilities
     return
   end subroutine stats_accumulate
 !------------------------------------------------------------------------------
-  subroutine stats_accumulate_hydromet( gr, hydromet_dim, hm_metadata, & ! intent(in)
-                                        hydromet, rho_ds_zt,           & ! intent(in)
-                                        stats_metadata,                & ! intent(in)
-                                        stats_zt, stats_sfc )            ! intent(inout)
+  subroutine stats_accumulate_hydromet_api( gr, hydromet_dim, hm_metadata, & ! intent(in)
+                                            hydromet, rho_ds_zt,           & ! intent(in)
+                                            stats_metadata,                & ! intent(in)
+                                            stats_zt, stats_sfc )            ! intent(inout)
 ! Description:
 !   Compute stats related the hydrometeors
 
@@ -2857,7 +2857,7 @@ module stats_clubb_utilities
     end if ! stats_metadata%l_stats_samp
 
     return
-  end subroutine stats_accumulate_hydromet
+  end subroutine stats_accumulate_hydromet_api
 !------------------------------------------------------------------------------
   subroutine stats_accumulate_lh_tend( gr, hydromet_dim, hm_metadata, &
                                        lh_hydromet_mc, lh_Ncm_mc, &
@@ -3017,10 +3017,10 @@ module stats_clubb_utilities
   end subroutine stats_accumulate_lh_tend
     
   !-----------------------------------------------------------------------
-  subroutine stats_finalize( ngrdcol, stats_metadata, &
-                             stats_zt, stats_zm, stats_sfc, &
-                             stats_lh_zt, stats_lh_sfc, &
-                             stats_rad_zt, stats_rad_zm )
+  subroutine stats_finalize_api( ngrdcol, stats_metadata, &
+                                 stats_zt, stats_zm, stats_sfc, &
+                                 stats_lh_zt, stats_lh_sfc, &
+                                 stats_rad_zt, stats_rad_zm )
 
     !     Description:
     !     Close NetCDF files and deallocate scratch space and
@@ -3059,7 +3059,7 @@ module stats_clubb_utilities
     if ( stats_metadata%l_stats .and. stats_metadata%l_netcdf ) then
 #ifdef NETCDF
 
-      ! We only created the files for the first column (see stats_init)
+      ! We only created the files for the first column (see stats_init_api)
       ! so we only close for the first column as well
 
       call close_netcdf( stats_zt(1)%file ) ! intent(inout)
@@ -3298,7 +3298,7 @@ module stats_clubb_utilities
     end if ! l_stats
 
     return
-  end subroutine stats_finalize
+  end subroutine stats_finalize_api
 
 !===============================================================================
 

@@ -24,12 +24,12 @@ module saturation
 
   private  ! Change default so all items private
 
-  public   :: sat_mixrat_liq, sat_mixrat_ice, rcm_sat_adj, sat_vapor_press_liq
+  public   :: sat_mixrat_liq_api, sat_mixrat_ice, rcm_sat_adj, sat_vapor_press_liq
 
-  interface sat_mixrat_liq
+  interface sat_mixrat_liq_api
     module procedure sat_mixrat_liq_k   ! Works over a single vertical level
     module procedure sat_mixrat_liq_2D  ! Works over all vertical levels and columns
-  end interface sat_mixrat_liq
+  end interface sat_mixrat_liq_api
 
   interface sat_mixrat_ice
     module procedure sat_mixrat_ice_k   ! Works over a single vertical level
@@ -84,7 +84,7 @@ module saturation
   contains
 
   !-------------------------------------------------------------------------
-  ! Wrapped in interface sat_mixrat_liq
+  ! Wrapped in interface sat_mixrat_liq_api
   function sat_mixrat_liq_k( p_in_Pa, T_in_K, &
                              saturation_formula )
 !$acc routine seq
@@ -280,7 +280,7 @@ module saturation
   end function sat_mixrat_liq_k
 
   !-------------------------------------------------------------------------
-  !
+  ! Wrapped in interface sat_mixrat_liq_api
   function sat_mixrat_liq_2D( nz, ngrdcol, p_in_Pa, T_in_K, &
                               saturation_formula, &
                               start_index_in )
@@ -1131,8 +1131,8 @@ module saturation
 
       answer = theta &
                - (Lv/(Cp*exner)) &
-               * (MAX( rtm &
-                       - sat_mixrat_liq(p_in_Pa,theta*exner, saturation_formula), zero_threshold ))
+               * (MAX( rtm - sat_mixrat_liq_api(p_in_Pa,theta*exner, saturation_formula), &
+                       zero_threshold ))
 
       if ( ABS(answer - thlm) <= tolerance ) then
         exit
@@ -1158,7 +1158,8 @@ module saturation
       
       error stop "Error in rcm_sat_adj: could not determine rcm"
     else
-      rcm = MAX( rtm - sat_mixrat_liq( p_in_Pa, theta*exner, saturation_formula), zero_threshold )
+      rcm = MAX( rtm - sat_mixrat_liq_api( p_in_Pa, theta*exner, saturation_formula), &
+                 zero_threshold )
       return
     end if
 

@@ -51,9 +51,9 @@ module coamps_microphys_driver_module
     use constants_clubb, only: &
       Cp, Lv, pi, Lf, Ls, Rv, Rd, p0, T_freeze_K, cm3_per_m3, & ! Variable(s)
       fstderr ! Constant(s)
-    use saturation, only: sat_mixrat_liq, sat_mixrat_ice ! Procedure(s)
+    use saturation, only: sat_mixrat_liq_api, sat_mixrat_ice ! Procedure(s)
     use clubb_precision, only: time_precision, core_rknd ! Variable(s)
-    use grid_class, only: zt2zm ! Procedure(s)
+    use grid_class, only: zt2zm_api ! Procedure(s)
 
     use grid_class, only: grid ! Type
 
@@ -67,7 +67,7 @@ module coamps_microphys_driver_module
 
     use parameters_microphys, only: l_graupel, l_ice_microphys ! Variable(s)
 
-    use T_in_K_module, only: thlm2T_in_K ! Procedure(s)
+    use T_in_K_module, only: thlm2T_in_K_api ! Procedure(s)
 
     use stats_type, only: stats ! Type
 
@@ -549,17 +549,17 @@ module coamps_microphys_driver_module
                   + ( Lv /( Cp * exner(1:kk) )* rcm(1:kk) ))
 
       ! Determine absolute temperature
-      T_in_K = real(thlm2T_in_K( gr%nzt, thlm, exner, rcm ))
+      T_in_K = real(thlm2T_in_K_api( gr%nzt, thlm, exner, rcm ))
 
       ! Setup COAMPS verical velocity / mass grid variables
       w3(1,1,1:kk+1) = real(wm_zm(1:kk+1))
 
 
 !     do k=1, kk+1, 1
-!       pr3d(1,1,k)    = zt2zm( p, k )
-!       th2t3d(1,1,k)  = zt2zm( exner, k )
-!       temp3d(1,1,k)  = zt2zm( thm, k ) * th2t3d(1,1,k)
-!       qsatv3d(1,1,k) = sat_mixrat_liq( pr3d(1,1,k), temp3d(1,1,k) )
+!       pr3d(1,1,k)    = zt2zm_api( p, k )
+!       th2t3d(1,1,k)  = zt2zm_api( exner, k )
+!       temp3d(1,1,k)  = zt2zm_api( thm, k ) * th2t3d(1,1,k)
+!       qsatv3d(1,1,k) = sat_mixrat_liq_api( pr3d(1,1,k), temp3d(1,1,k) )
 !       qsati3d(1,1,k) = sat_mixrat_ice( pr3d(1,1,k), temp3d(1,1,k) )
 !     end do
 
@@ -577,7 +577,7 @@ module coamps_microphys_driver_module
       temp3d(1,1,1:kk) = T_in_K(1:kk)
 
       do k=1, kk, 1
-        qsatv3d(1,1,k) = real(sat_mixrat_liq( &
+        qsatv3d(1,1,k) = real(sat_mixrat_liq_api( &
                 real(pr3d(1,1,k), kind = core_rknd), &
                 real(temp3d(1,1,k), kind = core_rknd), saturation_formula ))
         qsati3d(1,1,k) = real(sat_mixrat_ice( &

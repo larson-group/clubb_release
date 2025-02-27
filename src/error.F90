@@ -31,8 +31,8 @@ module error
 
   use parameters_tunable, only:  &
     set_default_parameters, & ! Procedure(s)
-    init_clubb_params, & ! Procedure(s)
-    read_param_minmax, &
+    init_clubb_params_api,  & ! Procedure(s)
+    read_param_minmax,      &
     read_param_constraints
 
   use parameters_tunable, only: &
@@ -337,8 +337,8 @@ module error
       close(unit=iunit)
 
       ! Read in initial constant values
-      call init_clubb_params( 1, iunit, filename, &
-                            clubb_params )
+      call init_clubb_params_api( 1, iunit, filename, &
+                                  clubb_params )
 
       ! Allocate the arrays for the tuning variables
 
@@ -1588,7 +1588,7 @@ module error
 !-----------------------------------------------------------------------
     use constants_clubb, only: fstderr ! Constant
 
-    use mt95, only: genrand_init ! Procedure
+    use mt95, only: genrand_init_api ! Procedure
 
     use mt95, only: genrand_intg ! Constant
 
@@ -1623,7 +1623,7 @@ module error
 
     close(unit=iunit)
 
-    call genrand_init( put=rand_seed )
+    call genrand_init_api( put=rand_seed )
 
     return
   end subroutine read_random_seed

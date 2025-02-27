@@ -97,8 +97,8 @@ contains
     !-----------------------------------------------------------------------
 
     use grid_class, only: &
-        grid,  & ! Type
-        zt2zm, & ! Procedure(s)
+        grid,       & ! Type
+        zt2zm_api,  & ! Procedure(s)
         ddzm
 
     use constants_clubb, only: &
@@ -170,13 +170,13 @@ contains
     ! Define cloud water sedimentation flux on momentum levels.
     do k = 2, gr%nzm-1, 1
 
-       if ( zt2zm( gr, rcm, k )  > zero .AND. zt2zm( gr, Ncm, k ) > zero ) then
+       if ( zt2zm_api( gr, rcm, k )  > zero .AND. zt2zm_api( gr, Ncm, k ) > zero ) then
 
           Fcsed(k) &
           = 1.19E8_core_rknd & 
-            * ( ( three / ( four * pi * rho_lw * zt2zm( gr, Ncm, k ) * rho_zm(k) ) &
+            * ( ( three / ( four * pi * rho_lw * zt2zm_api( gr, Ncm, k ) * rho_zm(k) ) &
                 )**two_thirds ) & 
-            * ( ( rho_zm(k) * zt2zm( gr, rcm, k ) )**(five/three) ) & 
+            * ( ( rho_zm(k) * zt2zm_api( gr, rcm, k ) )**(five/three) ) & 
             * exp( five*( ( log( sigma_g ) )**2 ) ) ! See Ackerman - eq. no. 7
 
        else

@@ -43,7 +43,7 @@ module bugsrad_driver
 
     use clubb_precision, only: dp, core_rknd ! Variable(s)
 
-    use T_in_K_module, only: thlm2T_in_K ! Procedure(s)
+    use T_in_K_module, only: thlm2T_in_K_api ! Procedure(s)
 
     use error_code, only: clubb_at_least_debug_level ! Procedure(s)
 
@@ -161,7 +161,7 @@ module bugsrad_driver
 
     ! Convert theta_l to temperature
 
-    T_in_K(1,1:nzt) = real( thlm2T_in_K( nzt, thlm(1:nzt), exner(1:nzt), rcm(1:nzt) ),kind=dp )
+    T_in_K(1,1:nzt) = real( thlm2T_in_K_api( nzt, thlm(1:nzt), exner(1:nzt), rcm(1:nzt) ),kind=dp )
 
     ! Derive Specific humidity from rc & rt.
     do z = 1, nzt
@@ -258,7 +258,7 @@ module bugsrad_driver
     end do
 
     ! Do a linear interpolation to find playerinmb.  Since this interpolation
-    ! occurs at levels above the top of the CLUBB model, the CLUBB zt2zm function
+    ! occurs at levels above the top of the CLUBB model, the CLUBB zt2zm_api function
     ! or CLUBB weighted averages do not apply.  The variable playerinmb is being
     ! defined on momentum levels above the top of the CLUBB model, which are
     ! being defined here at points half-way inbetween the thermodynamic levels

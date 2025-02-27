@@ -179,7 +179,7 @@ module simple_rad_module
 !-------------------------------------------------------------------------------
 
 
-    use grid_class, only: zt2zm, grid ! Procedure(s)
+    use grid_class, only: zt2zm_api, grid ! Procedure(s)
 
     use constants_clubb, only: fstderr, one, Cp, eps ! Variable(s)
 

@@ -32,7 +32,7 @@ module astex_a209
       grid ! Type
 
     use grid_class, only: &
-      zt2zm ! Procedure(s)
+      zt2zm_api ! Procedure(s)
 
     use clubb_precision, only: &
       core_rknd ! Variable(s)
@@ -82,7 +82,7 @@ module astex_a209
     end do
 
     ! Interpolate to momentum levels
-    wm_zm = zt2zm( gr, wm_zt )
+    wm_zm = zt2zm_api( gr, wm_zt )
 
     ! Boundary conditions on zm
     wm_zm(1) = 0.0_core_rknd        ! At surface
@@ -126,7 +126,7 @@ module astex_a209
 
     use sfc_flux, only: compute_wprtp_sfc, compute_wpthlp_sfc   !Procedure(s)
 
-    use saturation, only: sat_mixrat_liq ! Procedure(s)
+    use saturation, only: sat_mixrat_liq_api ! Procedure(s)
 
     use interpolation, only: linear_interp_factor ! Procedure(s)
 
@@ -211,7 +211,7 @@ module astex_a209
       ! We set ustar as it is set in rico
       ustar(i) = 0.155_core_rknd
 
-      rsat(i) = sat_mixrat_liq( p_sfc(i), T_sfc(i), saturation_formula )
+      rsat(i) = sat_mixrat_liq_api( p_sfc(i), T_sfc(i), saturation_formula )
 
       ! (Stevens, et al. 2000, eq 3)
       ! Modification in case lowest model level isn't at 10 m, from ATEX specification

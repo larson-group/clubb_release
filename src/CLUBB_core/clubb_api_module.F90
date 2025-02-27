@@ -24,7 +24,7 @@ module clubb_api_module
     genrand_state, & ! Internal representation of the RNG state.
     genrand_srepr, & ! Public representation of the RNG state. Should be used to save the RNG state
     genrand_intg, &
-    genrand_init_api => genrand_init
+    genrand_init_api
 
   use clubb_precision, only : &
     time_precision, &
@@ -174,79 +174,79 @@ module clubb_api_module
     stats_metadata_type
 
   use grid_class, only: grid ! Type
-  
-  use grid_class, only: &
-    ! Interpolate momentum level variables to thermodynamic levels 
-    zm2zt_api => zm2zt, &
 
-    ! Interpolate thermodynamic level variables to momentum levels 
-    zt2zm_api => zt2zm
+  use grid_class, only: &
+    ! Interpolate momentum level variables to thermodynamic levels
+    zm2zt_api, &
+
+    ! Interpolate thermodynamic level variables to momentum levels
+    zt2zm_api
 
   use saturation, only: &
     ! Used to compute the saturation mixing ratio of liquid water.
-    sat_mixrat_liq_api => sat_mixrat_liq
+    sat_mixrat_liq_api
 
   use T_in_K_module, only : &
     ! Calculates absolute temperature from liquid water potential
     ! temperature.  (Does not include ice.)
-    thlm2T_in_K_api => thlm2T_in_K, &
+    thlm2T_in_K_api, &
 
-    ! Calculates liquid water potential temperature from absolute temperature 
-    T_in_K2thlm_api => T_in_K2thlm
+    ! Calculates liquid water potential temperature from absolute temperature
+    T_in_K2thlm_api
 
   use advance_clubb_core_module, only: &
-    check_clubb_settings_api => check_clubb_settings, &
+    check_clubb_settings_api, &
     calculate_thlp2_rad
 
   use parameters_model, only: &
-    setup_parameters_model_api =>  setup_parameters_model
+    setup_parameters_model_api
 
   use fill_holes, only : &
-    fill_holes_driver_api => fill_holes_driver, &
-    fill_holes_hydromet_api => fill_holes_hydromet, &
-    fill_holes_vertical_api => fill_holes_vertical
+    fill_holes_driver_api, &
+    fill_holes_hydromet_api, &
+    fill_holes_vertical_api
 
   use stats_rad_zm_module, only : &
-    stats_init_rad_zm_api => stats_init_rad_zm
+    stats_init_rad_zm_api
 
   use stats_rad_zt_module, only : &
-   stats_init_rad_zt_api => stats_init_rad_zt
+   stats_init_rad_zt_api
 
   use stats_zm_module, only : &
-   stats_init_zm_api => stats_init_zm
+   stats_init_zm_api
 
   use stats_zt_module, only : &
-   stats_init_zt_api => stats_init_zt
+   stats_init_zt_api
 
   use stats_sfc_module, only : &
-   stats_init_sfc_api => stats_init_sfc
+   stats_init_sfc_api
 
   use stats_clubb_utilities, only : &
-    stats_begin_timestep_api => stats_begin_timestep
+    stats_begin_timestep_api
 
   use model_flags, only: &
-    initialize_clubb_config_flags_type_api => initialize_clubb_config_flags_type, &
-    set_default_clubb_config_flags_api     => set_default_clubb_config_flags, &
+    initialize_clubb_config_flags_type_api, &
+    set_default_clubb_config_flags_api, &
     saturation_bolton, & ! Constant for Bolton approximations of saturation
     saturation_gfdl,   & ! Constant for the GFDL approximation of saturation
     saturation_flatau, & ! Constant for Flatau approximations of saturation
     saturation_lookup    ! Use a lookup table for mixing length
 
   use corr_varnce_module, only : &
-    setup_corr_varnce_array_api => setup_corr_varnce_array, &
-    init_pdf_hydromet_arrays_api => init_pdf_hydromet_arrays
+    setup_corr_varnce_array_api, &
+    init_pdf_hydromet_arrays_api
 
   use stats_clubb_utilities, only : &
-    stats_accumulate_hydromet_api => stats_accumulate_hydromet, &
-    stats_init_api => stats_init
+    stats_accumulate_hydromet_api, &
+    stats_init_api
 
   use stats_type, only: stats ! Type
 
   use parameters_tunable, only: &
-    init_clubb_params_api => init_clubb_params
+    init_clubb_params_api
 
   use stats_clubb_utilities, only: &
-    stats_finalize_api => stats_finalize
+    stats_finalize_api
 
   implicit none
 
@@ -573,15 +573,15 @@ contains
 
     use model_flags, only: &
         clubb_config_flags_type
-        
+
     use stats_zm_module, only: &
-        stats_init_zm ! Procedure(s)
-        
+        stats_init_zm_api ! Procedure(s)
+
     use stats_zt_module, only: &
-        stats_init_zt
-        
+        stats_init_zt_api
+
     use stats_sfc_module, only: &
-        stats_init_sfc ! Procedure(s)
+        stats_init_sfc_api ! Procedure(s)
 
     use array_index, only: &
       sclr_idx_type
@@ -607,13 +607,13 @@ contains
       sclr_dim,       & ! Number of passive scalars                 [#]
       edsclr_dim        ! Number of eddy-diff. passive scalars      [#]
 
-    real( kind = core_rknd ), intent(in), dimension(sclr_dim) :: & 
+    real( kind = core_rknd ), intent(in), dimension(sclr_dim) :: &
       sclr_tol          ! Threshold(s) on the passive scalars  [units vary]
 
     type (sclr_idx_type), intent(in) :: &
       sclr_idx
 
-    real( kind = core_rknd ), intent(in), dimension(gr%nzt) ::  &
+    real( kind = core_rknd ), intent(in), dimension(gr%nzt) :: &
       thlm_forcing,    & ! liquid potential temp. forcing (thermodynamic levels)    [K/s]
       rtm_forcing,     & ! total water forcing (thermodynamic levels)        [(kg/kg)/s]
       um_forcing,      & ! eastward wind forcing (thermodynamic levels)     [m/s/s]
