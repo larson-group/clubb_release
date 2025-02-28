@@ -7,7 +7,8 @@
         "saturation_formula": 2
     },
     "flag2": {
-        "saturation_formula": 1
+        "saturation_formula": 1,
+        "l_godunov_upwind_xpyp_ta": true
     },
     "flag3": {
         "ipdf_call_placement": 1
@@ -16,82 +17,74 @@
         "iiPDF_type": 7
     },
     "flag5": {
-        "grid_adapt_in_time_method": 1
+        "l_predict_upwp_vpwp": false
     },
     "flag6": {
-        "l_predict_upwp_vpwp": false
+        "l_wp2_fill_holes_tke": false,
+        "l_enable_relaxed_clipping": true,
+        "l_add_dycore_grid": true
     },
     "flag7": {
         "l_diag_Lscale_from_tau": false
     },
     "flag8": {
-        "l_upwind_xpyp_ta": false
-    },
-    "flag9": {
-        "l_godunov_upwind_xpyp_ta": true
-    },
-    "flag10": {
+        "l_upwind_xpyp_ta": false,
         "l_upwind_xm_ma": false
     },
-    "flag11": {
+    "flag9": {
         "l_tke_aniso": false,
         "l_min_wp2_from_corr_wx": true,
         "l_C2_cloud_frac": true,
         "l_stability_correct_tau_zm": true,
         "l_use_C7_Richardson": false
     },
-    "flag12": {
+    "flag10": {
         "l_vert_avg_closure": true,
         "l_use_cloud_cover": true,
         "l_damp_wp3_Skw_squared": false,
         "l_use_C11_Richardson": true,
         "l_min_xp2_from_corr_wx": false
     },
-    "flag13": {
+    "flag11": {
         "l_rcm_supersat_adj": false,
         "l_damp_wp2_using_em": false,
         "l_use_precip_frac": false,
         "l_do_expldiff_rtm_thlm": true,
         "l_use_shear_Richardson": true
     },
-    "flag14": {
+    "flag12": {
         "l_prescribed_avg_deltaz": true,
         "l_stability_correct_Kh_N2_zm": true,
         "l_trapezoidal_rule_zt": true,
         "l_trapezoidal_rule_zm": true,
         "l_call_pdf_closure_twice": true
     },
-    "flag15": {
+    "flag13": {
         "l_Lscale_plume_centered": true,
         "l_brunt_vaisala_freq_moist": true,
         "l_use_thvm_in_bv_freq": true,
         "l_lmm_stepping": true,
         "l_vary_convect_depth": true
     },
-    "flag16": {
+    "flag14": {
         "l_use_tke_in_wp3_pr_turb_term": false,
         "l_use_tke_in_wp2_wp3_K_dfsn": true,
         "l_use_wp3_lim_with_smth_Heaviside": true,
         "l_smooth_Heaviside_tau_wpxp": false,
         "l_modify_limiters_for_cnvg_test": true
     },
-    "flag17": {
+    "flag15": {
         "l_mono_flux_lim_thlm": false,
         "l_mono_flux_lim_rtm": false,
         "l_mono_flux_lim_um": false,
         "l_mono_flux_lim_vm": false,
         "l_mono_flux_lim_spikefix": false
     },
-    "flag18": {
-        "l_wp2_fill_holes_tke": false,
-        "l_enable_relaxed_clipping": true,
-        "l_add_dycore_grid": true
-    },
-    "flag19": {
+    "flag16": {
         "l_standard_term_ta": true,
         "l_partial_upwind_wp3": false
     },
-    "flag20": {
+    "flag17": {
         "l_standard_term_ta": true,
         "l_partial_upwind_wp3": true
     }
