@@ -152,6 +152,7 @@ module penta_lu_solvers
     !$acc data create( upper_1, upper_2, lower_1, lower_2, lower_diag_invrs )
 
 #ifdef GPTL
+    !$acc wait 
     ret_code = GPTLstart('penta_lu_solve_single_rhs_multiple_lhs')
 #endif
 
@@ -281,6 +282,7 @@ module penta_lu_solvers
     !$acc data create( upper_1, upper_2, lower_1, lower_2, lower_diag_invrs )
 
 #ifdef GPTL
+    !$acc wait 
     ret_code = GPTLstart('penta_lu_solve_multiple_rhs_lhs')
 #endif
 

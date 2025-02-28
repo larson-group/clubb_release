@@ -878,6 +878,7 @@ module advance_clubb_core_module
     !----- Begin Code -----
 
 #ifdef GPTL
+    !$acc wait 
     ret_code = GPTLstart('acc_data_create')
 #endif
 
@@ -1061,6 +1062,7 @@ module advance_clubb_core_module
     if ( .not. clubb_config_flags%l_host_applies_sfc_fluxes ) then
 
 #ifdef GPTL
+      !$acc wait 
       ret_code = GPTLstart('i_loops')
 #endif
 
@@ -1310,6 +1312,11 @@ module advance_clubb_core_module
 !      + 6.0_core_rknd*(1.0_core_rknd-sigma_sqd_w)*sigma_sqd_w  &
 !      + (1.0_core_rknd-sigma_sqd_w)*(1.0_core_rknd-sigma_sqd_w)
 
+#ifdef GPTL
+    !$acc wait 
+    ret_code = GPTLstart('ik_loops')
+#endif
+
     ! This is a simplified version of the formula above.
     ! Note:  a3 has been modified because the wp3 turbulent advection term is
     !        now discretized on its own.
@@ -1374,6 +1381,11 @@ module advance_clubb_core_module
     ! Smooth again as above
     wp3_on_wp2_zt(:,:) = zm2zt_gpu( nzm, nzt, ngrdcol, gr, &
                                 wp3_on_wp2(:,:) )
+
+#ifdef GPTL
+    !$acc wait 
+    ret_code = GPTLstop('ik_loops')
+#endif
 
     !----------------------------------------------------------------
     ! Compute thvm
@@ -3455,6 +3467,12 @@ module advance_clubb_core_module
     ! compute Skw, Skrt, Skthl, Sku, Skv, and Sksclr for both the momentum and
     ! thermodynamic grid levels.
     !---------------------------------------------------------------------------
+
+#ifdef GPTL
+    !$acc wait 
+    ret_code = GPTLstart('ik_loops')
+#endif
+
     wp2_zt(:,:)   = zm2zt_gpu( nzm, nzt, ngrdcol, gr, wp2(:,:), &
                            w_tol_sqd ) ! Positive definite quantity
     wp3_zm(:,:)   = zt2zm_gpu( nzm, nzt, ngrdcol, gr, wp3(:,:) )
@@ -3528,6 +3546,11 @@ module advance_clubb_core_module
                      Sksclr_zm(:,:,sclr) )  
                       
     end do ! sclr = 1, sclr_dim, 1
+
+#ifdef GPTL
+    !$acc wait 
+    ret_code = GPTLstop('ik_loops')
+#endif
 
     if ( stats_metadata%l_stats_samp .and. l_samp_stats_in_pdf_call ) then
 

@@ -188,6 +188,7 @@ module tridiag_lu_solvers
     !$acc data create( upper, lower_diag_invrs )
     
 #ifdef GPTL
+    !$acc wait 
     ret_code = GPTLstart('tridiag_lu_solve_single_rhs_multiple_lhs')
 #endif
 
@@ -283,6 +284,7 @@ module tridiag_lu_solvers
     !$acc data create( upper, lower_diag_invrs )
 
 #ifdef GPTL
+    !$acc wait 
     ret_code = GPTLstart('tridiag_lu_solve_multiple_rhs_lhs')
 #endif
 

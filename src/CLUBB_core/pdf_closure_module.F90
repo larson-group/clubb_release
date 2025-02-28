@@ -424,6 +424,7 @@ module pdf_closure_module
     !----------------------------- Begin Code -----------------------------
 
 #ifdef GPTL
+    !$acc wait 
     ret_code = GPTLstart('acc_data_create')
 #endif
 
@@ -642,11 +643,6 @@ module pdf_closure_module
     if ( iiPDF_type == iiPDF_ADG1 .or. iiPDF_type == iiPDF_ADG2 &
          .or. iiPDF_type == iiPDF_new_hybrid ) then
 
-#ifdef GPTL
-      !$acc wait
-      ret_code = GPTLstart('ik_loops')
-#endif
-
       ! These PDF types define corr_w_rt_1, corr_w_rt_2, corr_w_thl_1, and
       ! corr_w_thl_2 to all have a value of 0, so skip the calculation.
       ! The values of corr_u_w_1, corr_u_w_2, corr_v_w_1, and corr_v_w_2 are
@@ -665,11 +661,6 @@ module pdf_closure_module
         end do
       end do
       !$acc end parallel loop
-
-#ifdef GPTL
-      !$acc wait
-      ret_code = GPTLstop('ik_loops')
-#endif
 
     else
 
@@ -1083,10 +1074,6 @@ module pdf_closure_module
     end if ! l_calc_ice_supersat_frac
 
 
-#ifdef GPTL
-    ret_code = GPTLstart('ik_loops')
-#endif
-
     ! Compute cloud fraction and mean cloud water mixing ratio.
     ! Reference:
     ! https://arxiv.org/pdf/1711.03675v1.pdf#nameddest=url:anl_int_cloud_terms
@@ -1102,10 +1089,6 @@ module pdf_closure_module
     end do
     !$acc end parallel loop
 
-#ifdef GPTL
-    !$acc wait
-    ret_code = GPTLstop('ik_loops')
-#endif
 
     if ( iiPDF_type == iiPDF_ADG1 .or. iiPDF_type == iiPDF_ADG2 &
          .or. iiPDF_type == iiPDF_new_hybrid ) then
@@ -1835,6 +1818,7 @@ module pdf_closure_module
     !$acc enter data create( denominator )
 
 #ifdef GPTL
+    !$acc wait 
     ret_code = GPTLstart('ik_loops')
 #endif
 

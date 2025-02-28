@@ -316,6 +316,7 @@ module diffusion
     !$acc data create( lhs_upwind, drhoKdz_zt, K_zm_nu, rho_K_zm_nu, ddzm_rho_K_zm_nu )
 
 #ifdef GPTL
+      !$acc wait 
       ret_code = GPTLstart('ik_loops')
 #endif
 

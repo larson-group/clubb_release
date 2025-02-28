@@ -430,6 +430,7 @@ module advance_xp2_xpyp_module
     !------------------------------ Begin Code ------------------------------
     
 #ifdef GPTL
+    !$acc wait 
     ret_code = GPTLstart('acc_data_create')
 #endif
 
@@ -2640,6 +2641,7 @@ module advance_xp2_xpyp_module
     !---------------- Begin Code -------------------
 
 #ifdef GPTL
+    !$acc wait 
     ret_code = GPTLstart('ik_loops')
 #endif
 

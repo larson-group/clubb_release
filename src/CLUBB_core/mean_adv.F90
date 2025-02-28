@@ -195,6 +195,7 @@ module mean_adv
     !-------------------------- Begin Code --------------------------
 
 #ifdef GPTL
+    !$acc wait 
     ret_code = GPTLstart('ik_loops')
 #endif
 

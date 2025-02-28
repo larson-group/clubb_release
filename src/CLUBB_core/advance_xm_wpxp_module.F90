@@ -1326,6 +1326,7 @@ module advance_xm_wpxp_module
     invrs_dt = 1.0_core_rknd / dt
 
 #ifdef GPTL
+    !$acc wait 
     ret_code = GPTLstart('i_loops')
 #endif
     ! Lower boundary for w'x', lhs(:,:,1)
@@ -1342,7 +1343,7 @@ module advance_xm_wpxp_module
 #ifdef GPTL
     !$acc wait
     ret_code = GPTLstop('i_loops')
-    ret_code = GPTLstart('ik_loops')
+    ret_code = GPTLstart('ik_loops_big')
 #endif
 
     ! Combine xm and w'x' terms into LHS
@@ -1395,7 +1396,7 @@ module advance_xm_wpxp_module
 
 #ifdef GPTL
     !$acc wait
-    ret_code = GPTLstop('ik_loops')
+    ret_code = GPTLstop('ik_loops_big')
     ret_code = GPTLstart('i_loops')
 #endif
     ! Upper boundary for w'x', lhs(:,:,2*gr%nzm-1)
