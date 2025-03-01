@@ -36,7 +36,7 @@ module pdf_closure_module
   ! and GFDL.
   !#######################################################################
   !#######################################################################
-  subroutine pdf_closure( nz, ngrdcol, sclr_dim, sclr_tol,            &
+  subroutine pdf_closure( nz, ngrdcol, sclr_dim, sclr_tol, gr,        &
                           hydromet_dim, p_in_Pa, exner, thv_ds,       &
                           wm, wp2, wp3,                               &
                           Skw, Skthl_in, Skrt_in, Sku_in, Skv_in,     &
@@ -112,6 +112,9 @@ module pdf_closure_module
         eps, &
         w_tol
 
+    use grid_class, only: &
+        grid
+
     use parameters_model, only: &
         mixt_frac_max_mag  ! Variable(s)
 
@@ -179,6 +182,9 @@ module pdf_closure_module
       
     real( kind = core_rknd ), intent(in), dimension(sclr_dim) :: &
       sclr_tol          ! Threshold(s) on the passive scalars  [units vary]
+
+    type( grid ), intent(in) :: &
+      gr
 
     real( kind = core_rknd ), dimension(ngrdcol,nz), intent(in) :: &
       p_in_Pa,     & ! Pressure                                   [Pa]
@@ -961,9 +967,9 @@ module pdf_closure_module
     end if
 
 #else
-    rsatl_1 = sat_mixrat_liq_api( nz, ngrdcol, p_in_Pa, tl1, saturation_formula )
-    rsatl_2 = sat_mixrat_liq_api( nz, ngrdcol, p_in_Pa, tl2, &
-                              saturation_formula  ) ! h1g, 2010-06-16 end mod
+    rsatl_1 = sat_mixrat_liq_api( nz, ngrdcol, gr, p_in_Pa, tl1, saturation_formula  )
+    rsatl_2 = sat_mixrat_liq_api( nz, ngrdcol, gr, p_in_Pa, tl2, &
+                                  saturation_formula  ) ! h1g, 2010-06-16 end mod
 
     !$acc parallel loop gang vector collapse(2) default(present)
     do k = 1, nz

@@ -48,6 +48,7 @@
 ../src/stat_file_utils.F90
 ../src/time_dependent_input.F90
 ../src/extended_atmosphere_module.F90
+../src/generalized_grid_test.F90
 ../src/input_netcdf.F90
 ../src/input_interpret.F90
 ../src/input_fields.F90

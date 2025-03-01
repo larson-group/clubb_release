@@ -415,9 +415,10 @@ module turbulent_adv_pdf
       do k = 2, nzm-1, 1
         do i = 1, ngrdcol
         
-          if ( sgn_turbulent_vel(i,k) > zero ) then
+          if ( gr%grid_dir * sgn_turbulent_vel(i,k) > zero ) then
 
-            ! The "wind" is blowing upward.
+            ! The "wind" is blowing upward for an ascending grid or the "wind"
+            ! is blowing downward for a descending grid.
 
             ! Momentum superdiagonal: [ x xpyp(k+1,<t+1>) ]
             lhs_ta(kp1_mdiag,i,k) = zero
@@ -432,9 +433,10 @@ module turbulent_adv_pdf
              = - invrs_rho_ds_zm(i,k) * gr%invrs_dzt(i,k-1) &
                  * rho_ds_zm(i,k-1) * coef_wpxpyp_implicit_zm(i,k-1)
 
-          else ! sgn_turbulent_vel < 0
+          else ! gr%grid_dir * sgn_turbulent_vel < 0
 
-            ! The "wind" is blowing downward.
+            ! The "wind" is blowing downward for an ascending grid or the "wind"
+            ! is blowing upward for a descending grid.
 
             ! Momentum superdiagonal: [ x xpyp(k+1,<t+1>) ]
             lhs_ta(kp1_mdiag,i,k) &
@@ -549,18 +551,25 @@ module turbulent_adv_pdf
         ! Momentum superdiagonal: [ x xpyp(k+1,<t+1>) ]
         lhs_ta(kp1_mdiag,i,k) = invrs_rho_ds_zm(i,k) * gr%invrs_dzm(i,k) &
                                 * rho_ds_zm(i,k+1) &
-                                * min(0.0_core_rknd,coef_wpxpyp_implicit(i,k))
+                                * gr%grid_dir &
+                                * min( 0.0_core_rknd,&
+                                       gr%grid_dir * coef_wpxpyp_implicit(i,k) )
 
         ! Momentum main diagonal: [ x xpyp(k,<t+1>) ]
         lhs_ta(k_mdiag,i,k) = invrs_rho_ds_zm(i,k) * gr%invrs_dzm(i,k) &
                               * rho_ds_zm(i,k) &
-                              * ( max(0.0_core_rknd,coef_wpxpyp_implicit(i,k)) - &
-                                  min(0.0_core_rknd,coef_wpxpyp_implicit(i,k-1)) )
+                              * gr%grid_dir &
+                              * ( max( 0.0_core_rknd, &
+                                       gr%grid_dir * coef_wpxpyp_implicit(i,k) ) &
+                                  - min( 0.0_core_rknd, &
+                                         gr%grid_dir * coef_wpxpyp_implicit(i,k-1) ) )
 
         ! Momentum subdiagonal: [ x xpyp(k-1,<t+1>) ]
         lhs_ta(km1_mdiag,i,k) = - invrs_rho_ds_zm(i,k) * gr%invrs_dzm(i,k) &
                                   * rho_ds_zm(i,k-1) &
-                                  * max(0.0_core_rknd,coef_wpxpyp_implicit(i,k-1) )
+                                  * gr%grid_dir &
+                                  * max( 0.0_core_rknd, &
+                                         gr%grid_dir * coef_wpxpyp_implicit(i,k-1) )
       end do
     end do
     !$acc end parallel loop
@@ -906,18 +915,20 @@ module turbulent_adv_pdf
       do k = 2, nzm-1, 1
         do i = 1, ngrdcol
 
-          if ( sgn_turbulent_vel(i,k) > zero ) then
+          if ( gr%grid_dir * sgn_turbulent_vel(i,k) > zero ) then
 
-             ! The "wind" is blowing upward.
+             ! The "wind" is blowing upward for an ascending grid or the "wind"
+             ! is blowing downward for a descending grid. 
              rhs_ta(i,k) &
              = - invrs_rho_ds_zm(i,k) &
                  * gr%invrs_dzt(i,k-1) &
                  * ( rho_ds_zm(i,k) * term_wpxpyp_explicit_zm(i,k) &
                      - rho_ds_zm(i,k-1) * term_wpxpyp_explicit_zm(i,k-1) )
 
-          else ! sgn_turbulent_vel < 0
+          else ! gr%grid_dir * sgn_turbulent_vel < 0
 
-             ! The "wind" is blowing downward.
+             ! The "wind" is blowing downward for an ascending grid or the 
+             ! "wind" is blowing upward for a descending grid.
              rhs_ta(i,k) &
              = - invrs_rho_ds_zm(i,k) &
                  * gr%invrs_dzt(i,k) &
@@ -1011,16 +1022,18 @@ module turbulent_adv_pdf
     !$acc parallel loop gang vector collapse(2) default(present)
     do k = 2, nzm-1
       do i = 1, ngrdcol 
-        rhs_ta(i,k) = - invrs_rho_ds_zm(i,k) * gr%invrs_dzm(i,k) &
-                    * ( min(0.0_core_rknd, sgn_turbulent_vel(i,k)) &
-                          * rho_ds_zm(i,k+1) * term_wpxpyp_explicit_zm(i,k+1) &
-                      + max(0.0_core_rknd, sgn_turbulent_vel(i,k)) &   
-                          * rho_ds_zm(i,k)   * term_wpxpyp_explicit_zm(i,k) &
-                      - min(0.0_core_rknd, sgn_turbulent_vel(i,k-1))&
-                          * rho_ds_zm(i,k)   * term_wpxpyp_explicit_zm(i,k) &
-                      - max(0.0_core_rknd, sgn_turbulent_vel(i,k-1)) &
-                          * rho_ds_zm(i,k-1) * term_wpxpyp_explicit_zm(i,k-1) &
-                      )
+        rhs_ta(i,k) &
+        = - invrs_rho_ds_zm(i,k) * gr%invrs_dzm(i,k) &
+            * gr%grid_dir &
+            * ( min( 0.0_core_rknd, gr%grid_dir * sgn_turbulent_vel(i,k) ) &
+                * rho_ds_zm(i,k+1) * term_wpxpyp_explicit_zm(i,k+1) &
+              + max( 0.0_core_rknd, gr%grid_dir * sgn_turbulent_vel(i,k) ) &   
+                * rho_ds_zm(i,k)   * term_wpxpyp_explicit_zm(i,k) &
+              - min( 0.0_core_rknd, gr%grid_dir * sgn_turbulent_vel(i,k-1) ) &
+                * rho_ds_zm(i,k)   * term_wpxpyp_explicit_zm(i,k) &
+              - max( 0.0_core_rknd, gr%grid_dir * sgn_turbulent_vel(i,k-1) ) &
+                * rho_ds_zm(i,k-1) * term_wpxpyp_explicit_zm(i,k-1) &
+              )
       end do
     end do
     !$acc end parallel loop

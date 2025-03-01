@@ -164,6 +164,9 @@ program G_unit_tests
   use smooth_min_max_tests, only: &
       smooth_min_max_tests_driver
 
+  use rev_direction_grid_test, only: &
+      rev_direction_grid_unit_test    ! Procedure
+
   use grid_class, only: grid ! Type
 
   use stats_type, only: stats ! Type
@@ -194,7 +197,8 @@ program G_unit_tests
     l_tuner_tests = .true.,             & ! Flag for the tuner tests
     l_w_up_in_cloud_test = .true.,      & ! Flag for the calc_w_up_in_cloud test
     l_smooth_heaviside_test = .true.,   & ! Flag for the smooth_heaviside test
-    l_smooth_min_max_test = .true.        ! Flag for the smooth_min_max test
+    l_smooth_min_max_test = .true.,     & ! Flag for the smooth_min_max test
+    l_rev_direction_grid_test = .true.    ! Flag for reverse direction grid test
 
   ! Definition of namelist
   namelist /G_unit_namelist/ &
@@ -202,7 +206,7 @@ program G_unit_tests
     l_Nc_Ncn_test, l_read_corr_mtx_test, l_silhs_category_test, &
     l_mu_sigma_hm_tests, l_pdf_parameter_tests, l_spurious_source_test, &
     l_tuner_tests, l_w_up_in_cloud_test, l_smooth_heaviside_test, &
-    l_smooth_min_max_test
+    l_smooth_min_max_test, l_rev_direction_grid_test
 
 
   ! Read namelist file
@@ -301,6 +305,12 @@ program G_unit_tests
   
   if ( l_smooth_min_max_test ) then
      if ( smooth_min_max_tests_driver() /= 0 ) then
+        exit_code = 1
+     endif
+  endif
+
+  if ( l_rev_direction_grid_test ) then
+     if ( rev_direction_grid_unit_test() /= 0 ) then
         exit_code = 1
      endif
   endif

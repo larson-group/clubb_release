@@ -605,7 +605,7 @@ module spurious_source_test
 
     ! Set up the vertical grid.
     call setup_grid_api( nzm, sfc_elevation, l_implemented,  &
-                         grid_type, deltaz, zm_init, zm_top,      &
+                         .true., grid_type, deltaz, zm_init, zm_top, &
                          momentum_heights, thermodynamic_heights, &
                          gr )
 

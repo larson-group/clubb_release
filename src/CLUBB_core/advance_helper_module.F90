@@ -501,7 +501,7 @@ module advance_helper_module
 
     T_in_K = thlm2T_in_K_api( nzt, ngrdcol, thlm, exner, rcm )
     T_in_K_zm = zt2zm_api( nzm, nzt, ngrdcol, gr, T_in_K, zero_threshold )
-    rsat = sat_mixrat_liq_api( nzt, ngrdcol, p_in_Pa, T_in_K, saturation_formula )
+    rsat = sat_mixrat_liq_api( nzt, ngrdcol, gr, p_in_Pa, T_in_K, saturation_formula )
     rsat_zm = zt2zm_api( nzm, nzt, ngrdcol, gr, rsat, zero_threshold )
     ddzt_rsat = ddzt( nzm, nzt, ngrdcol, gr, rsat )
 
@@ -977,14 +977,15 @@ module advance_helper_module
     !$acc parallel loop gang vector collapse(2) default(present)
     do k = 1, nzm
       do i = 1, ngrdcol
-        numer_terms(i,k) = rho_ds_zm(i,k) * gr%dzm(i,k) * var_profile(i,k)
-        denom_terms(i,k) = rho_ds_zm(i,k) * gr%dzm(i,k)
+        numer_terms(i,k) = rho_ds_zm(i,k) * gr%grid_dir * gr%dzm(i,k) &
+                           * var_profile(i,k)
+        denom_terms(i,k) = rho_ds_zm(i,k) * gr%grid_dir * gr%dzm(i,k)
       end do
     end do
 
     ! For every grid level
     !$acc parallel loop gang vector collapse(2) default(present)
-    do k = 1, nzm
+    do k = gr%k_lb_zm, gr%k_ub_zm, gr%grid_dir_indx
       do i = 1, ngrdcol
 
         !-----------------------------------------------------------------------
@@ -1004,23 +1005,25 @@ module advance_helper_module
         !-----------------------------------------------------------------------
 
         ! Determine if k_avg_upper needs to increment
-        do k_avg_upper = k, nzm-1
-          if ( gr%zm(i,k_avg_upper+1) - gr%zm(i,k) > one_half_avg_width(i,k) ) then
+        do k_avg_upper = k, gr%k_ub_zm-gr%grid_dir_indx, gr%grid_dir_indx
+          if ( gr%zm(i,k_avg_upper+gr%grid_dir_indx) - gr%zm(i,k) &
+               > one_half_avg_width(i,k) ) then
             exit
           end if
         end do
 
         ! Determine if k_avg_lower needs to decrement
-        do k_avg_lower = k, 2, -1
-          if ( gr%zm(i,k) - gr%zm(i,k_avg_lower-1) > one_half_avg_width(i,k) ) then
+        do k_avg_lower = k, gr%k_lb_zm+gr%grid_dir_indx, -gr%grid_dir_indx
+          if ( gr%zm(i,k) - gr%zm(i,k_avg_lower-gr%grid_dir_indx) &
+               > one_half_avg_width(i,k) ) then
             exit
           end if
         end do
 
         ! Compute the number of levels below ground to include.
-        if ( k_avg_lower > 1 ) then
+        if ( gr%grid_dir_indx * k_avg_lower > gr%grid_dir_indx * gr%k_lb_zm ) then
 
-          ! k=1, the lowest "real" level, is not included in the average, so no
+          ! k=gr%k_lb_zm, the lowest level, is not included in the average, so no
           ! below-ground levels should be included.
           n_below_ground_levels = 0
 
@@ -1034,16 +1037,18 @@ module advance_helper_module
           ! divided by the distance between vertical levels below ground; the
           ! latter is assumed to be the same as the distance between the first and
           ! second vertical levels.
-          n_below_ground_levels = int( ( one_half_avg_width(i,k)-(gr%zm(i,k)-gr%zm(i,1)) ) / &
-                                      ( gr%zm(i,2)-gr%zm(i,1) ) )
+          n_below_ground_levels &
+          = int( ( one_half_avg_width(i,k) - ( gr%zm(i,k) - gr%zm(i,gr%k_lb_zm) ) ) &
+                 / ( gr%zm(i,gr%k_lb_zm+gr%grid_dir_indx) - gr%zm(i,gr%k_lb_zm) ) )
 
-          numer_integral = n_below_ground_levels * denom_terms(i,1) * var_below_ground_value
-          denom_integral = n_below_ground_levels * denom_terms(i,1)
+          numer_integral = n_below_ground_levels * denom_terms(i,gr%k_lb_zm) &
+                           * var_below_ground_value
+          denom_integral = n_below_ground_levels * denom_terms(i,gr%k_lb_zm)
 
         end if
             
         ! Add numerator and denominator terms for all above-ground levels
-        do k_avg = k_avg_lower, k_avg_upper
+        do k_avg = k_avg_lower, k_avg_upper, gr%grid_dir_indx
 
           numer_integral = numer_integral + numer_terms(i,k_avg)
           denom_integral = denom_integral + denom_terms(i,k_avg)

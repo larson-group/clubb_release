@@ -211,29 +211,29 @@ module sfc_varnce_module
       !$acc update host( wp2, up2, vp2, thlp2, rtp2, rtpthlp )
 
       do i = 1, ngrdcol
-        call stat_begin_update_pt( stats_metadata%ithlp2_sf, 1,      & ! intent(in)
-                                   thlp2(i,1) / dt,   & ! intent(in)
-                                   stats_zm(i) )        ! intent(inout)
+        call stat_begin_update_pt( stats_metadata%ithlp2_sf, gr%k_lb_zm,   & ! intent(in)
+                                   thlp2(i,gr%k_lb_zm) / dt,               & ! intent(in)
+                                   stats_zm(i) )                             ! intent(inout)
 
-        call stat_begin_update_pt( stats_metadata%irtp2_sf, 1,       & ! intent(in)
-                                   rtp2(i,1) / dt,    & ! intent(in)
-                                   stats_zm(i) )        ! intent(inout)
+        call stat_begin_update_pt( stats_metadata%irtp2_sf, gr%k_lb_zm,    & ! intent(in)
+                                   rtp2(i,gr%k_lb_zm) / dt,                & ! intent(in)
+                                   stats_zm(i) )                             ! intent(inout)
 
-        call stat_begin_update_pt( stats_metadata%irtpthlp_sf, 1,    & ! intent(in)
-                                   rtpthlp(i,1) / dt, & ! intent(in)
-                                   stats_zm(i) )        ! intent(inout)
+        call stat_begin_update_pt( stats_metadata%irtpthlp_sf, gr%k_lb_zm, & ! intent(in)
+                                   rtpthlp(i,gr%k_lb_zm) / dt,             & ! intent(in)
+                                   stats_zm(i) )                             ! intent(inout)
 
-        call stat_begin_update_pt( stats_metadata%iup2_sf, 1,        & ! intent(in)
-                                   up2(i,1) / dt,     & ! intent(in)
-                                   stats_zm(i) )        ! intent(inout)
+        call stat_begin_update_pt( stats_metadata%iup2_sf, gr%k_lb_zm,     & ! intent(in)
+                                   up2(i,gr%k_lb_zm) / dt,                 & ! intent(in)
+                                   stats_zm(i) )                             ! intent(inout)
 
-        call stat_begin_update_pt( stats_metadata%ivp2_sf, 1,        & ! intent(in)
-                                   vp2(i,1) / dt,     & ! intent(in)
-                                   stats_zm(i) ) ! intent(inout)
+        call stat_begin_update_pt( stats_metadata%ivp2_sf, gr%k_lb_zm,     & ! intent(in)
+                                   vp2(i,gr%k_lb_zm) / dt,                 & ! intent(in)
+                                   stats_zm(i) )                             ! intent(inout)
 
-        call stat_begin_update_pt( stats_metadata%iwp2_sf, 1,        & ! intent(in)
-                                   wp2(i,1) / dt,     & ! intent(in)
-                                   stats_zm(i) )        ! intent(inout)
+        call stat_begin_update_pt( stats_metadata%iwp2_sf, gr%k_lb_zm,     & ! intent(in)
+                                   wp2(i,gr%k_lb_zm) / dt,                 & ! intent(in)
+                                   stats_zm(i) )                             ! intent(inout)
       end do
     end if
 
@@ -241,14 +241,15 @@ module sfc_varnce_module
     do i = 1, ngrdcol
       ! Find thickness of layer near surface with positive heat flux.
       ! This is used when l_vary_convect_depth=.true. in order to determine wp2.
-      if ( wpthlp(i,1) <= zero ) then
+      if ( wpthlp(i,gr%k_lb_zm) <= zero ) then
          depth_pos_wpthlp(i) = one ! When sfc heat flux is negative, set depth to 1 m.
       else ! When sfc heat flux is positive, march up sounding until wpthlp 1st becomes negative.
-         k = 1
-         do while ( wpthlp(i,k) > zero .and. (gr%zm(i,k)-sfc_elevation(i)) < 1000._core_rknd )
-            k = k + 1
+         k = gr%k_lb_zm
+         do while ( wpthlp(i,k) > zero &
+                    .and. ( gr%zm(i,k) - sfc_elevation(i) ) < 1000._core_rknd )
+            k = k + gr%grid_dir_indx
         end do
-        depth_pos_wpthlp(i) = max( one, gr%zm(i,k)-sfc_elevation(i) )
+        depth_pos_wpthlp(i) = max( one, gr%zm(i,k) - sfc_elevation(i) )
       end if
     end do
     !$acc end parallel loop
@@ -265,8 +266,8 @@ module sfc_varnce_module
       ! Calculate <u>^2 and <v>^2.
       !$acc parallel loop gang vector default(present)
       do i = 1, ngrdcol
-        um_sfc_sqd(i) = um(i,2)**2
-        vm_sfc_sqd(i) = vm(i,2)**2
+        um_sfc_sqd(i) = um(i,gr%k_lb_zt)**2
+        vm_sfc_sqd(i) = vm(i,gr%k_lb_zt)**2
       end do
       !$acc end parallel loop
 
@@ -279,11 +280,11 @@ module sfc_varnce_module
 
       !$acc parallel loop gang vector default(present)
       do i = 1, ngrdcol 
-        if ( abs(wpthlp(i,1)) > eps) then
+        if ( abs( wpthlp(i,gr%k_lb_zm) ) > eps ) then
 
           ! Find Monin-Obukhov Length (Andre et al., 1978, p. 1866).
           Lngth = - ( ustar(i)**3 ) &
-                    / ( 0.35_core_rknd * (one/T0) * grav * wpthlp(i,1) )
+                    / ( 0.35_core_rknd * (one/T0) * grav * wpthlp(i,gr%k_lb_zm) )
 
           ! Find the value of dimensionless height zeta
           ! (Andre et al., 1978, p. 1866).
@@ -314,42 +315,44 @@ module sfc_varnce_module
       do i = 1, ngrdcol
         if ( zeta(i) < zero ) then
 
-          thlp2(i,1)   = reduce_coef &
-                        * ( wpthlp(i,1)**2 / ustar(i)**2 ) &
-                        * four * ( one - 8.3_core_rknd * zeta(i) )**(-two_thirds)
+          thlp2(i,gr%k_lb_zm) &
+          = reduce_coef * ( wpthlp(i,gr%k_lb_zm)**2 / ustar(i)**2 ) & 
+            * four * ( one - 8.3_core_rknd * zeta(i) )**(-two_thirds)
 
-          rtp2(i,1)    = reduce_coef &
-                        * ( wprtp_sfc(i)**2 / ustar(i)**2 ) &
-                        * four * ( one - 8.3_core_rknd * zeta(i) )**(-two_thirds)
+          rtp2(i,gr%k_lb_zm) &
+          = reduce_coef * ( wprtp_sfc(i)**2 / ustar(i)**2 ) & 
+            * four * ( one - 8.3_core_rknd * zeta(i) )**(-two_thirds)
 
-          rtpthlp(i,1) = reduce_coef &
-                        * ( wprtp_sfc(i) * wpthlp(i,1) / ustar(i)**2 ) &
-                        * four * ( one - 8.3_core_rknd * zeta(i) )**(-two_thirds)
+          rtpthlp(i,gr%k_lb_zm) &
+          = reduce_coef * ( wprtp_sfc(i) * wpthlp(i,gr%k_lb_zm) / ustar(i)**2 ) & 
+            * four * ( one - 8.3_core_rknd * zeta(i) )**(-two_thirds)
 
-          wp2(i,1)    = ( ustar(i)**2 ) &
-                          * ( 1.75_core_rknd + two * (-zeta(i))**(two_thirds) )
+          wp2(i,gr%k_lb_zm) &
+          = ( ustar(i)**2 ) & 
+            * ( 1.75_core_rknd + two * (-zeta(i))**(two_thirds) )
 
        else
 
-          thlp2(i,1)   = reduce_coef &
-                        * four * ( wpthlp(i,1)**2 / ustar(i)**2 )
+          thlp2(i,gr%k_lb_zm) &
+          = reduce_coef * four * ( wpthlp(i,gr%k_lb_zm)**2 / ustar(i)**2 )
 
-          rtp2(i,1)    = reduce_coef &
-                        * four * ( wprtp_sfc(i)**2 / ustar(i)**2 )
+          rtp2(i,gr%k_lb_zm) &
+          = reduce_coef * four * ( wprtp_sfc(i)**2 / ustar(i)**2 )
 
-          rtpthlp(i,1) = reduce_coef &
-                        * four * ( wprtp_sfc(i) * wpthlp(i,1) / ustar(i)**2 )
+          rtpthlp(i,gr%k_lb_zm) &
+          = reduce_coef * four * ( wprtp_sfc(i) * wpthlp(i,gr%k_lb_zm) / ustar(i)**2 )
 
-          wp2(i,1)     = 1.75_core_rknd * ustar(i)**2
+          wp2(i,gr%k_lb_zm) &
+          = 1.75_core_rknd * ustar(i)**2
 
         endif
       end do
       !$acc end parallel loop
 
       !$acc parallel loop gang vector default(present)
-      do i = 1, ngrdcol
-        thlp2(i,1) = max( thl_tol**2, thlp2(i,1) )
-        rtp2(i,1) = max( rt_tol**2, rtp2(i,1) )
+      do i = 1, ngrdcol 
+        thlp2(i,gr%k_lb_zm) = max( thl_tol**2, thlp2(i,gr%k_lb_zm) )
+        rtp2(i,gr%k_lb_zm) = max( rt_tol**2, rtp2(i,gr%k_lb_zm) )
       end do
       !$acc end parallel loop
 
@@ -359,8 +362,9 @@ module sfc_varnce_module
       ! upward component of mixing length, Lscale_up, at the surface will be
       ! used as z_i.
       !$acc parallel loop gang vector default(present)
-      do i = 1, ngrdcol
-        wstar = ( (one/T0) * grav * wpthlp(i,1) * Lscale_up(i,2) )**(one_third)
+      do i = 1, ngrdcol 
+        wstar = ( (one/T0) * grav * wpthlp(i,gr%k_lb_zm) &
+                  * Lscale_up(i,gr%k_lb_zt) )**(one_third)
 
         ! Andre et al., 1978, Eq. 29.
         ! Andre et al. (1978) defines horizontal wind surface variances in terms
@@ -371,7 +375,7 @@ module sfc_varnce_module
         ! is 0.  Equation 29 gives the formula for the variance of u_s, which is
         ! <u_s'^2> (usp2_sfc in the code), and the formula for the variance of
         ! v_s, which is <v_s'^2> (vsp2_sfc in the code).
-        if ( wpthlp(i,1) > zero ) then
+        if ( wpthlp(i,gr%k_lb_zm) > zero ) then
 
           usp2_sfc(i) = four * ustar(i)**2 + 0.3_core_rknd * wstar**2
 
@@ -395,24 +399,27 @@ module sfc_varnce_module
       !$acc parallel loop gang vector default(present)
       do i = 1, ngrdcol
         min_wp2_sfc_val(i) &
-               = max( w_tol_sqd, &
-                      wprtp_sfc(i)**2 / ( rtp2(i,1) * max_mag_correlation_flux**2 ), &
-                      wpthlp(i,1)**2 / ( thlp2(i,1) * max_mag_correlation_flux**2 ) )
+        = max( w_tol_sqd, &
+               wprtp_sfc(i)**2 / ( rtp2(i,gr%k_lb_zm) * max_mag_correlation_flux**2 ), &
+               wpthlp(i,gr%k_lb_zm)**2 / ( thlp2(i,gr%k_lb_zm) * max_mag_correlation_flux**2 ) )
       end do
       !$acc end parallel loop
 
       !$acc parallel loop gang vector default(present)
-      do i = 1, ngrdcol
-        if ( wp2(i,1) - tau_zm(i,1) * lhs_splat_wp2(i,1) * wp2(i,1) &
+      do i = 1, ngrdcol 
+        if ( wp2(i,gr%k_lb_zm) - tau_zm(i,gr%k_lb_zm) &
+             * lhs_splat_wp2(i,gr%k_lb_zm) * wp2(i,gr%k_lb_zm) &
              < min_wp2_sfc_val(i) ) then
-        !if ( wp2(i,1) + tau_zm(i,1) * wp2_splat(i,1) < min_wp2_sfc_val(i) ) then
+        !if ( wp2(i,gr%k_lb_zm) + tau_zm(i,gr%k_lb_zm) * wp2_splat(i,gr%k_lb_zm) &
+        !     < min_wp2_sfc_val(i) ) then 
                               ! splatting correction drives wp2 to overly small value
-          wp2_splat_sfc_correction(i) = -wp2(i,1) + min_wp2_sfc_val(i)
-          wp2(i,1) = min_wp2_sfc_val(i)
+          wp2_splat_sfc_correction(i) = -wp2(i,gr%k_lb_zm) + min_wp2_sfc_val(i)
+          wp2(i,gr%k_lb_zm) = min_wp2_sfc_val(i)
         else
-          wp2_splat_sfc_correction(i) = tau_zm(i,1) * lhs_splat_wp2(i,1) * wp2(i,1)
-          !wp2_splat_sfc_correction(i) = tau_zm(i,1) * wp2_splat(i,1)
-          wp2(i,1) = wp2(i,1) + wp2_splat_sfc_correction(i)
+          wp2_splat_sfc_correction(i) &
+          = tau_zm(i,gr%k_lb_zm) * lhs_splat_wp2(i,gr%k_lb_zm) * wp2(i,gr%k_lb_zm)
+          !wp2_splat_sfc_correction(i) = tau_zm(i,gr%k_lb_zm) * wp2_splat(i,gr%k_lb_zm)
+          wp2(i,gr%k_lb_zm) = wp2(i,gr%k_lb_zm) + wp2_splat_sfc_correction(i)
         end if
       end do
       !$acc end parallel loop
@@ -430,9 +437,10 @@ module sfc_varnce_module
       !                  + <v_s'^2> * [ <v>^2 / ( <u>^2 + <v>^2 ) ];
       ! where <u>^2 + <v>^2 /= 0.
       !$acc parallel loop gang vector default(present)
-      do i = 1, ngrdcol
-        up2(i,1) = usp2_sfc(i) * ( um_sfc_sqd(i) / max( um_sfc_sqd(i) + vm_sfc_sqd(i) , eps ) ) &
-                   + vsp2_sfc(i) * ( vm_sfc_sqd(i) / max( um_sfc_sqd(i) + vm_sfc_sqd(i) , eps ) )
+      do i = 1, ngrdcol 
+        up2(i,gr%k_lb_zm) &
+        = usp2_sfc(i) * ( um_sfc_sqd(i) / max( um_sfc_sqd(i) + vm_sfc_sqd(i) , eps ) )  &
+          + vsp2_sfc(i) * ( vm_sfc_sqd(i) / max( um_sfc_sqd(i) + vm_sfc_sqd(i) , eps ) )
       end do
       !$acc end parallel loop
 
@@ -442,9 +450,10 @@ module sfc_varnce_module
       !                  + <u_s'^2> * [ <v>^2 / ( <u>^2 + <v>^2 ) ];
       ! where <u>^2 + <v>^2 /= 0.
       !$acc parallel loop gang vector default(present)
-      do i = 1, ngrdcol
-        vp2(i,1) = vsp2_sfc(i) * ( um_sfc_sqd(i) / max( um_sfc_sqd(i) + vm_sfc_sqd(i) , eps ) ) &
-                   + usp2_sfc(i) * ( vm_sfc_sqd(i) / max( um_sfc_sqd(i) + vm_sfc_sqd(i) , eps ) )
+      do i = 1, ngrdcol 
+        vp2(i,gr%k_lb_zm) &
+        = vsp2_sfc(i) * ( um_sfc_sqd(i) / max( um_sfc_sqd(i) + vm_sfc_sqd(i) , eps ) )  &
+          + usp2_sfc(i) * ( vm_sfc_sqd(i) / max( um_sfc_sqd(i) + vm_sfc_sqd(i) , eps ) )
       end do
       !$acc end parallel loop
 
@@ -468,33 +477,33 @@ module sfc_varnce_module
             ! Brian Griffin; February 2, 2008.
             if ( zeta(i) < zero ) then
 
-              sclrprtp(i,1,sclr) &
-              = reduce_coef &
-                * ( wpsclrp_sfc(i,sclr) * wprtp_sfc(i) / ustar(i)**2 ) &
+              sclrprtp(i,gr%k_lb_zm,sclr)  & 
+              = reduce_coef  & 
+                * ( wpsclrp_sfc(i,sclr) * wprtp_sfc(i) / ustar(i)**2 ) & 
                 * four * ( one - 8.3_core_rknd * zeta(i) )**(-two_thirds)
 
-              sclrpthlp(i,1,sclr) &
-              = reduce_coef &
-                * ( wpsclrp_sfc(i,sclr) * wpthlp(i,1) / ustar(i)**2 ) &
+              sclrpthlp(i,gr%k_lb_zm,sclr)  & 
+              = reduce_coef  & 
+                * ( wpsclrp_sfc(i,sclr) * wpthlp(i,gr%k_lb_zm) / ustar(i)**2 ) & 
                 * four * ( one - 8.3_core_rknd * zeta(i) )**(-two_thirds)
 
-              sclrp2(i,1,sclr) &
-              = reduce_coef &
-                * ( wpsclrp_sfc(i,sclr)**2 / ustar(i)**2 ) &
+              sclrp2(i,gr%k_lb_zm,sclr)  & 
+              = reduce_coef   & 
+                * ( wpsclrp_sfc(i,sclr)**2 / ustar(i)**2 ) & 
                 * four * ( one - 8.3_core_rknd * zeta(i) )**(-two_thirds)
 
             else
 
-              sclrprtp(i,1,sclr) &
-              = reduce_coef &
+              sclrprtp(i,gr%k_lb_zm,sclr)  & 
+              = reduce_coef  & 
                 * four * ( wpsclrp_sfc(i,sclr) * wprtp_sfc(i) / ustar(i)**2 )
 
-              sclrpthlp(i,1,sclr) &
-              = reduce_coef &
-                * four * ( wpsclrp_sfc(i,sclr) * wpthlp(i,1) / ustar(i)**2 )
+              sclrpthlp(i,gr%k_lb_zm,sclr)  & 
+              = reduce_coef  & 
+                * four * ( wpsclrp_sfc(i,sclr) * wpthlp(i,gr%k_lb_zm) / ustar(i)**2 )
 
-              sclrp2(i,1,sclr) &
-              = reduce_coef &
+              sclrp2(i,gr%k_lb_zm,sclr)  & 
+              = reduce_coef & 
                 * four * ( wpsclrp_sfc(i,sclr)**2 / ustar(i)**2 )
 
             endif
@@ -514,11 +523,11 @@ module sfc_varnce_module
         ustar2 = sqrt( upwp_sfc(i) * upwp_sfc(i) + vpwp_sfc(i) * vpwp_sfc(i) )
 
         ! Compute wstar following Andre et al., 1976
-        if ( wpthlp(i,1) > zero ) then
+        if ( wpthlp(i,gr%k_lb_zm) > zero ) then
           if ( .not. l_vary_convect_depth ) then
-             wstar = ( one/T0 * grav * wpthlp(i,1) * z_const )**(one_third)
+             wstar = ( one/T0 * grav * wpthlp(i,gr%k_lb_zm) * z_const )**(one_third)
           else
-             wstar = ( one/T0 * grav * wpthlp(i,1) * 0.2_core_rknd &
+             wstar = ( one/T0 * grav * wpthlp(i,gr%k_lb_zm) * 0.2_core_rknd &
                        * depth_pos_wpthlp(i) )**(one_third)
           end if
         else
@@ -539,9 +548,9 @@ module sfc_varnce_module
       ! Compute estimate for surface second order moments
       !$acc parallel loop gang vector default(present)
       do i = 1, ngrdcol
-        wp2(i,1) = a_const(i) * uf(i)**2
-        up2(i,1) = up2_sfc_coef(i) * a_const(i) * uf(i)**2  ! From Andre, et al. 1978
-        vp2(i,1) = up2_sfc_coef(i) * a_const(i) * uf(i)**2  ! "  "
+        wp2(i,gr%k_lb_zm) = a_const(i) * uf(i)**2
+        up2(i,gr%k_lb_zm) = up2_sfc_coef(i) * a_const(i) * uf(i)**2  ! From Andre, et al. 1978
+        vp2(i,gr%k_lb_zm) = up2_sfc_coef(i) * a_const(i) * uf(i)**2  ! "  "
       end do
       !$acc end parallel loop
 
@@ -553,26 +562,32 @@ module sfc_varnce_module
       if ( .not. l_vary_convect_depth )  then
         !$acc parallel loop gang vector default(present)
         do i = 1, ngrdcol
-          thlp2(i,1)   = 0.4_core_rknd * a_const(i) * ( wpthlp(i,1) / uf(i) )**2
-          rtp2(i,1)    = 0.4_core_rknd * a_const(i) * ( wprtp_sfc(i) / uf(i) )**2
-          rtpthlp(i,1) = 0.2_core_rknd * a_const(i) * ( wpthlp(i,1) / uf(i) ) &
-                                                    * ( wprtp_sfc(i) / uf(i) )
+          thlp2(i,gr%k_lb_zm)   = 0.4_core_rknd * a_const(i) &
+                                  * ( wpthlp(i,gr%k_lb_zm) / uf(i) )**2
+          rtp2(i,gr%k_lb_zm)    = 0.4_core_rknd * a_const(i) &
+                                  * ( wprtp_sfc(i) / uf(i) )**2
+          rtpthlp(i,gr%k_lb_zm) = 0.2_core_rknd * a_const(i) &
+                                  * ( wpthlp(i,gr%k_lb_zm) / uf(i) ) &
+                                  * ( wprtp_sfc(i) / uf(i) )
         end do
         !$acc end parallel loop
       else
         !$acc parallel loop gang vector default(present)
         do i = 1, ngrdcol
-          thlp2(i,1)   = ( wpthlp(i,1) / uf(i) )**2 / ( max_mag_correlation_flux**2 * a_const(i) )
-          rtp2(i,1)    = ( wprtp_sfc(i) / uf(i) )**2 / ( max_mag_correlation_flux**2 * a_const(i) )
-          rtpthlp(i,1) = max_mag_correlation_flux * sqrt( thlp2(i,1) * rtp2(i,1) )
+          thlp2(i,gr%k_lb_zm)   = ( wpthlp(i,gr%k_lb_zm) / uf(i) )**2 &
+                                  / ( max_mag_correlation_flux**2 * a_const(i) )
+          rtp2(i,gr%k_lb_zm)    = ( wprtp_sfc(i) / uf(i) )**2 &
+                                  / ( max_mag_correlation_flux**2 * a_const(i) )
+          rtpthlp(i,gr%k_lb_zm) = max_mag_correlation_flux &
+                                  * sqrt( thlp2(i,gr%k_lb_zm) * rtp2(i,gr%k_lb_zm) )
         end do
         !$acc end parallel loop
       end if
 
       !$acc parallel loop gang vector default(present)
       do i = 1, ngrdcol
-        thlp2(i,1) = max( thl_tol**2, thlp2(i,1) )
-        rtp2(i,1)  = max( rt_tol**2, rtp2(i,1) )
+        thlp2(i,gr%k_lb_zm) = max( thl_tol**2, thlp2(i,gr%k_lb_zm) )
+        rtp2(i,gr%k_lb_zm)  = max( rt_tol**2, rtp2(i,gr%k_lb_zm) )
       end do
       !$acc end parallel loop
 
@@ -584,28 +599,31 @@ module sfc_varnce_module
       !$acc parallel loop gang vector default(present)
       do i = 1, ngrdcol
         min_wp2_sfc_val(i) &
-            = max( w_tol_sqd, &
-                   wprtp_sfc(i)**2 / ( rtp2(i,1) * max_mag_correlation_flux**2 ), &
-                   wpthlp(i,1)**2 / ( thlp2(i,1) * max_mag_correlation_flux**2 ) )
+        = max( w_tol_sqd, &
+               wprtp_sfc(i)**2 / ( rtp2(i,gr%k_lb_zm) * max_mag_correlation_flux**2 ), &
+               wpthlp(i,gr%k_lb_zm)**2 / ( thlp2(i,gr%k_lb_zm) * max_mag_correlation_flux**2 ) )
       end do
       !$acc end parallel loop
 
       !$acc parallel loop gang vector default(present)
       do i = 1, ngrdcol
-        if ( wp2(i,1) - tau_zm(i,1) * lhs_splat_wp2(i,1) * wp2(i,1) &
+        if ( wp2(i,gr%k_lb_zm) &
+             - tau_zm(i,gr%k_lb_zm) * lhs_splat_wp2(i,gr%k_lb_zm) * wp2(i,gr%k_lb_zm) &
              < min_wp2_sfc_val(i) ) then
-        !if ( wp2(i,1) + tau_zm(i,1) * wp2_splat(i,1) < min_wp2_sfc_val(i) ) then
+        !if ( wp2(i,gr%k_lb_zm) + tau_zm(i,gr%k_lb_zm) * wp2_splat(i,gr%k_lb_zm) &
+        !     < min_wp2_sfc_val(i) ) then 
                            ! splatting correction drives wp2 to overly small values
-          wp2_splat_sfc_correction(i) = -wp2(i,1) + min_wp2_sfc_val(i)
-          wp2(i,1) = min_wp2_sfc_val(i)
+          wp2_splat_sfc_correction(i) = -wp2(i,gr%k_lb_zm) + min_wp2_sfc_val(i)
+          wp2(i,gr%k_lb_zm) = min_wp2_sfc_val(i)
         else
-         wp2_splat_sfc_correction(i) = tau_zm(i,1) * lhs_splat_wp2(i,1) * wp2(i,1)
-         !wp2_splat_sfc_correction(i) = tau_zm(i,1) * wp2_splat(i,1)
-         wp2(i,1) = wp2(i,1) + wp2_splat_sfc_correction(i)
+         wp2_splat_sfc_correction(i) &
+         = tau_zm(i,gr%k_lb_zm) * lhs_splat_wp2(i,gr%k_lb_zm) * wp2(i,gr%k_lb_zm)
+         !wp2_splat_sfc_correction(i) = tau_zm(i,gr%k_lb_zm) * wp2_splat(i,gr%k_lb_zm)
+         wp2(i,gr%k_lb_zm) = wp2(i,gr%k_lb_zm) + wp2_splat_sfc_correction(i)
         end if
 
-        up2(i,1) = up2(i,1) - 0.5_core_rknd * wp2_splat_sfc_correction(i)
-        vp2(i,1) = vp2(i,1) - 0.5_core_rknd * wp2_splat_sfc_correction(i)
+        up2(i,gr%k_lb_zm) = up2(i,gr%k_lb_zm) - 0.5_core_rknd * wp2_splat_sfc_correction(i)
+        vp2(i,gr%k_lb_zm) = vp2(i,gr%k_lb_zm) - 0.5_core_rknd * wp2_splat_sfc_correction(i)
       end do
       !$acc end parallel loop
 
@@ -636,26 +654,28 @@ module sfc_varnce_module
             if ( sclr == sclr_idx%iisclr_rt ) then
               ! If we are trying to emulate rt with the scalar, then we
               ! use the variance coefficient from above
-              sclrprtp(i,1,sclr) = 0.4_core_rknd * a_const(i) &
-                                * ( wprtp_sfc(i) / uf(i) ) * ( wpsclrp_sfc(i,sclr) / uf(i) )
+              sclrprtp(i,gr%k_lb_zm,sclr) &
+              = 0.4_core_rknd * a_const(i) &
+                * ( wprtp_sfc(i) / uf(i) ) * ( wpsclrp_sfc(i,sclr) / uf(i) )
             else
-              sclrprtp(i,1,sclr) = 0.2_core_rknd * a_const(i) &
-                                * ( wprtp_sfc(i) / uf(i) ) * ( wpsclrp_sfc(i,sclr) / uf(i) )
+              sclrprtp(i,gr%k_lb_zm,sclr) &
+              = 0.2_core_rknd * a_const(i) &
+                * ( wprtp_sfc(i) / uf(i) ) * ( wpsclrp_sfc(i,sclr) / uf(i) )
             endif
 
             if ( sclr == sclr_idx%iisclr_thl ) then
               ! As above, but for thetal
-              sclrpthlp(i,1,sclr) = 0.4_core_rknd * a_const(i) &
-                                 * ( wpthlp(i,1) / uf(i) ) &
-                                 * ( wpsclrp_sfc(i,sclr) / uf(i) )
+              sclrpthlp(i,gr%k_lb_zm,sclr) &
+              = 0.4_core_rknd * a_const(i) &
+                * ( wpthlp(i,gr%k_lb_zm) / uf(i) ) * ( wpsclrp_sfc(i,sclr) / uf(i) )
             else
-              sclrpthlp(i,1,sclr) = 0.2_core_rknd * a_const(i) &
-                                 * ( wpthlp(i,1) / uf(i) ) &
-                                 * ( wpsclrp_sfc(i,sclr) / uf(i) )
+              sclrpthlp(i,gr%k_lb_zm,sclr) &
+              = 0.2_core_rknd * a_const(i) &
+                * ( wpthlp(i,gr%k_lb_zm) / uf(i) ) * ( wpsclrp_sfc(i,sclr) / uf(i) )
             endif
 
-            sclrp2(i,1,sclr) = sclr_var_coef * a_const(i) &
-                               * ( wpsclrp_sfc(i,sclr) / uf(i) )**2
+            sclrp2(i,gr%k_lb_zm,sclr) &
+            = sclr_var_coef * a_const(i) * ( wpsclrp_sfc(i,sclr) / uf(i) )**2
 
             ! End Vince Larson's change.
 
@@ -670,24 +690,25 @@ module sfc_varnce_module
     ! Clip wp2 at wp2_max, same as in advance_wp2_wp3
     !$acc parallel loop gang vector default(present)
     do i = 1, ngrdcol
-      wp2(i,1) = min( wp2(i,1), wp2_max )
+      wp2(i,gr%k_lb_zm) = min( wp2(i,gr%k_lb_zm), wp2_max )
     end do
     !$acc end parallel loop
 
     !$acc parallel loop gang vector default(present)
     do i = 1, ngrdcol
-      if ( abs(gr%zm(i,1)-sfc_elevation(i)) > abs(gr%zm(i,1)+sfc_elevation(i))*eps/2 ) then
+      if ( abs( gr%zm(i,gr%k_lb_zm) - sfc_elevation(i)) &
+           > abs( gr%zm(i,gr%k_lb_zm) + sfc_elevation(i) )*eps/2 ) then
 
         ! Variances for cases where the lowest level is not at the surface.
         ! Eliminate surface effects on lowest level variances.
-        wp2(i,1)     = w_tol_sqd
-        up2(i,1)     = w_tol_sqd
-        vp2(i,1)     = w_tol_sqd
-        thlp2(i,1)   = thl_tol**2
-        rtp2(i,1)    = rt_tol**2
-        rtpthlp(i,1) = 0.0_core_rknd
+        wp2(i,gr%k_lb_zm)     = w_tol_sqd
+        up2(i,gr%k_lb_zm)     = w_tol_sqd
+        vp2(i,gr%k_lb_zm)     = w_tol_sqd
+        thlp2(i,gr%k_lb_zm)   = thl_tol**2
+        rtp2(i,gr%k_lb_zm)    = rt_tol**2
+        rtpthlp(i,gr%k_lb_zm) = 0.0_core_rknd
 
-      end if ! gr%zm(1,1) == sfc_elevation
+      end if ! gr%zm(1,gr%k_lb_zm) == sfc_elevation
     end do
     !$acc end parallel loop
 
@@ -696,13 +717,14 @@ module sfc_varnce_module
       !$acc parallel loop gang vector collapse(2) default(present)
       do sclr = 1, sclr_dim
         do i = 1, ngrdcol
-          if ( abs(gr%zm(i,1)-sfc_elevation(i)) > abs(gr%zm(i,1)+sfc_elevation(i))*eps/2 ) then
+          if ( abs( gr%zm(i,gr%k_lb_zm) - sfc_elevation(i) ) &
+               > abs( gr%zm(i,gr%k_lb_zm) + sfc_elevation(i) )*eps/2 ) then
             
             ! Variances for cases where the lowest level is not at the surface.
             ! Eliminate surface effects on lowest level variances.
-            sclrp2(i,1,sclr)    = 0.0_core_rknd
-            sclrprtp(i,1,sclr)  = 0.0_core_rknd
-            sclrpthlp(i,1,sclr) = 0.0_core_rknd
+            sclrp2(i,gr%k_lb_zm,sclr)    = 0.0_core_rknd
+            sclrprtp(i,gr%k_lb_zm,sclr)  = 0.0_core_rknd
+            sclrpthlp(i,gr%k_lb_zm,sclr) = 0.0_core_rknd
           end if
         end do
       end do
@@ -713,28 +735,28 @@ module sfc_varnce_module
       !$acc update host( wp2, up2, vp2, thlp2, rtp2, rtpthlp )
 
       do i = 1, ngrdcol
-        call stat_end_update_pt( stats_metadata%ithlp2_sf, 1,    & ! intent(in)
-                                 thlp2(i,1) / dt, & ! intent(in)
+        call stat_end_update_pt( stats_metadata%ithlp2_sf, gr%k_lb_zm,    & ! intent(in)
+                                 thlp2(i,gr%k_lb_zm) / dt, & ! intent(in)
                                  stats_zm(i) )      ! intent(inout)
 
-        call stat_end_update_pt( stats_metadata%irtp2_sf, 1,     & ! intent(in)
-                                 rtp2(i,1) / dt,  & ! intent(in)
+        call stat_end_update_pt( stats_metadata%irtp2_sf, gr%k_lb_zm,     & ! intent(in)
+                                 rtp2(i,gr%k_lb_zm) / dt,  & ! intent(in)
                                  stats_zm(i) )      ! intent(inout)
 
-        call stat_end_update_pt( stats_metadata%irtpthlp_sf, 1,    & ! intent(in)
-                                 rtpthlp(i,1) / dt, & ! intent(in)
+        call stat_end_update_pt( stats_metadata%irtpthlp_sf, gr%k_lb_zm,    & ! intent(in)
+                                 rtpthlp(i,gr%k_lb_zm) / dt, & ! intent(in)
                                  stats_zm(i) )        ! intent(inout)
 
-        call stat_end_update_pt( stats_metadata%iup2_sf, 1,    & ! intent(in)
-                                 up2(i,1) / dt, & ! intent(in)
+        call stat_end_update_pt( stats_metadata%iup2_sf, gr%k_lb_zm,    & ! intent(in)
+                                 up2(i,gr%k_lb_zm) / dt, & ! intent(in)
                                  stats_zm(i) )    ! intent(inout)
 
-        call stat_end_update_pt( stats_metadata%ivp2_sf, 1,    & ! intent(in)
-                                 vp2(i,1) / dt, & ! intent(in)
+        call stat_end_update_pt( stats_metadata%ivp2_sf, gr%k_lb_zm,    & ! intent(in)
+                                 vp2(i,gr%k_lb_zm) / dt, & ! intent(in)
                                  stats_zm(i) )    ! intent(inout)
 
-        call stat_end_update_pt( stats_metadata%iwp2_sf, 1,    & ! intent(in)
-                                 wp2(i,1) / dt, & ! intent(in)
+        call stat_end_update_pt( stats_metadata%iwp2_sf, gr%k_lb_zm,    & ! intent(in)
+                                 wp2(i,gr%k_lb_zm) / dt, & ! intent(in)
                                  stats_zm(i) )    ! intent(inout)
       end do
     end if
@@ -747,10 +769,11 @@ module sfc_varnce_module
       !$acc update host( sclrp2, sclrprtp, sclrpthlp ) if ( sclr_dim > 0 )
 
       do i = 1, ngrdcol
-        call sfc_varnce_check( sclr_dim, wp2(i,1), up2(i,1), vp2(i,1),           & ! intent(in)
-                               thlp2(i,1), rtp2(i,1), rtpthlp(i,1),              & ! intent(in)
-                               sclrp2(i,1,:), sclrprtp(i,1,:), sclrpthlp(i,1,:), & ! intent(in)
-                               err_code )                                          ! intent(inout)
+        call sfc_varnce_check( sclr_dim, wp2(i,gr%k_lb_zm), up2(i,gr%k_lb_zm),             & ! intent(in)
+                               vp2(i,gr%k_lb_zm), thlp2(i,gr%k_lb_zm), rtp2(i,gr%k_lb_zm), & ! intent(in)
+                               rtpthlp(i,gr%k_lb_zm), sclrp2(i,gr%k_lb_zm,:),              & ! intent(in)
+                               sclrprtp(i,gr%k_lb_zm,:), sclrpthlp(i,gr%k_lb_zm,:),        & ! intent(in)
+                               err_code )                                                    ! intent(inout)
       end do
 
       if ( err_code == clubb_fatal_error ) then

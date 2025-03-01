@@ -430,8 +430,8 @@ module mono_flux_limiter
     real( kind = core_rknd ), dimension(ngrdcol,nzt) :: &
       rhs_mfl_xm  ! Right hand side of tridiagonal matrix equation
 
-    integer :: &
-      k, km1, i, j  ! Array indices
+    integer ::  &
+      k, i, j  ! Array indices
 
 !    integer, parameter :: &
 !      num_levs = 10  ! Number of levels above and below level k to look for
@@ -467,6 +467,9 @@ module mono_flux_limiter
 
     real( kind = core_rknd ), dimension(ngrdcol,nzm) :: &
       wpxp_thresh_term
+
+    integer :: &
+      k_zt
 
     !---------------------------- Begin Code ----------------------------
 
@@ -580,9 +583,6 @@ module mono_flux_limiter
     do k = 1, nzt
       do i = 1, ngrdcol
 
-        !km1 = max( k-1, 1 )
-        !kp1 = min( k+1, gr%nz )
-
         ! Most values are found within +/- 2 standard deviations from the mean.
         ! Use +/- 2 standard deviations from the mean as the maximum/minimum
         ! values.
@@ -590,18 +590,6 @@ module mono_flux_limiter
 
         ! Set a minimum on max_dev
         max_dev = max(2.0_core_rknd * sqrt( xp2_zt(i,k) ), xm_tol)
-
-        ! Calculate the contribution of the mean advection term:
-        ! m_adv_term = -wm_zt(k)*d(xm)/dz|_(k).
-        ! Note:  mean advection is not applied to xm at level gr%nzt.
-        !if ( .not. l_implemented .and. k < gr%nzt ) then
-        !   tmp(1:3) = term_ma_zt_lhs( wm_zt(k), gr%invrs_dzt(1,k), k )
-        !   m_adv_term = - tmp(1) * xm(kp1)  &
-        !                - tmp(2) * xm(k)  &
-        !                - tmp(3) * xm(km1)
-        !else
-        !   m_adv_term = 0.0_core_rknd
-        !endif
 
         ! Shut off to avoid using new, possibly corrupt mean advection term
         m_adv_term = 0.0_core_rknd
@@ -645,13 +633,20 @@ module mono_flux_limiter
     do k = 1, nzt
       do i = 1, ngrdcol
 
-        low_lev  = max( low_lev_effect(i,k), 1)
-        high_lev = min( high_lev_effect(i,k), nzt )
+        if ( gr%grid_dir_indx > 0 ) then
+           ! Ascending grid
+           low_lev  = max( low_lev_effect(i,k), gr%k_lb_zt)
+           high_lev = min( high_lev_effect(i,k), gr%k_ub_zt )
+        else
+           ! Descending grid
+           low_lev  = min( low_lev_effect(i,k), gr%k_lb_zt)
+           high_lev = max( high_lev_effect(i,k), gr%k_ub_zt )
+        endif
 
         min_tmp = min_x_allowable_lev(i,low_lev)
         max_tmp = max_x_allowable_lev(i,low_lev)
 
-        do j = low_lev+1, high_lev
+        do j = low_lev+gr%grid_dir_indx, high_lev, gr%grid_dir_indx
           min_tmp = min( min_tmp, min_x_allowable_lev(i,j) )
           max_tmp = max( max_tmp, max_x_allowable_lev(i,j) )
         end do
@@ -666,17 +661,18 @@ module mono_flux_limiter
     !$acc parallel loop gang vector collapse(2) default(present)
     do k = 1, nzt
       do i = 1, ngrdcol
-        wpxp_thresh_term_zt(i,k)  = invrs_dt * gr%dzt(i,k) &
+        wpxp_thresh_term_zt(i,k)  = invrs_dt * gr%grid_dir * gr%dzt(i,k) &
                                     * ( xm_without_ta(i,k) - min_x_allowable(i,k) )
         wpxp_mfl_max_term_zt(i,k) = rho_ds_zt(i,k) * wpxp_thresh_term_zt(i,k)
-        wpxp_mfl_min_term_zt(i,k) = rho_ds_zt(i,k) * invrs_dt * gr%dzt(i,k) &
+        wpxp_mfl_min_term_zt(i,k) = rho_ds_zt(i,k) &
+                                    * invrs_dt * gr%grid_dir * gr%dzt(i,k) &
                                     * ( xm_without_ta(i,k) - max_x_allowable(i,k) )
       end do
     end do
 
     ! Interpolate wpxp_thresh_term_zt to momentum levels
     wpxp_thresh_term = zt2zm_api( nzm, nzt, ngrdcol, gr, wpxp_thresh_term_zt )
-    
+
     l_any_adjustment_needed = .false.
 
     ! NOTE: This loop first checks if wpxp is outside of the range determined by wpxp_mfl_min 
@@ -686,19 +682,37 @@ module mono_flux_limiter
     !       be parallelized, which is slow on GPUs. 
     !       This initial check CAN be done in parallel though, hence the "collapse(2), so 
     !       we run this quickly and only perform the slow version if we have to.
-    !$acc parallel loop gang vector collapse(2) default(present) reduction(.or.:l_any_adjustment_needed)
-    do k = 2, nzm-1
-      do i = 1, ngrdcol
+    !$acc parallel loop gang vector default(present)
+    do i = 1, ngrdcol
+      do k = gr%k_lb_zm+gr%grid_dir_indx, gr%k_ub_zm-gr%grid_dir_indx, gr%grid_dir_indx
 
+        ! Calculate index needed for zt level variables based on grid direction.
+        if ( gr%grid_dir_indx > 0 ) then
+           ! Ascending grid
+           k_zt = k-1
+        else ! gr%grid_dir_indx < 0
+           ! Descending grid
+           k_zt = k
+        endif
+ 
+        ! Find the upper limit for w'x' for a monotonic turbulent flux.
+        ! The following "if" statement ensures there are no "spikes" at the top of the column,
+        ! which can cause unphysical rtm and thlm tendencies over the height of the column.
+        ! The fix essentially turns off the monotonic flux limiter for these special cases,
+        ! but tests show that it still performs well otherwise and runs stably.
         if ( l_mono_flux_lim_spikefix .and. solve_type == mono_flux_rtm  & 
-            .and. abs( wpxp(i,k-1) ) > wpxp_thresh_term(i,k-1) &
-            .and. wpxp(i,k-1) < 0.0_core_rknd ) then
+             .and. abs( wpxp(i,k-gr%grid_dir_indx) ) > wpxp_thresh_term(i,k-gr%grid_dir_indx) &
+             .and. wpxp(i,k-gr%grid_dir_indx) < 0.0_core_rknd ) then
 
           wpxp_mfl_max(i,k) = zero
 
         else
-          wpxp_mfl_max(i,k) = invrs_rho_ds_zm(i,k) &
-                              * ( wpxp_mfl_max_term_zt(i,k-1) + rho_ds_zm(i,k-1) * wpxp(i,k-1) )
+
+          wpxp_mfl_max(i,k) &
+          = invrs_rho_ds_zm(i,k) &
+            * ( wpxp_mfl_max_term_zt(i,k_zt) &
+                + rho_ds_zm(i,k-gr%grid_dir_indx) * wpxp(i,k-gr%grid_dir_indx) )
+
         endif
  
         if ( wpxp(i,k) > wpxp_mfl_max(i,k) ) then
@@ -710,8 +724,10 @@ module mono_flux_limiter
         else
 
           ! Find the lower limit for w'x' for a monotonic turbulent flux.
-          wpxp_mfl_min(i,k) = invrs_rho_ds_zm(i,k) &
-                              * ( wpxp_mfl_min_term_zt(i,k-1) + rho_ds_zm(i,k-1) * wpxp(i,k-1) )
+          wpxp_mfl_min(i,k) &
+          = invrs_rho_ds_zm(i,k) &
+            * ( wpxp_mfl_min_term_zt(i,k_zt) &
+                + rho_ds_zm(i,k-gr%grid_dir_indx) * wpxp(i,k-gr%grid_dir_indx) )
 
           if ( wpxp(i,k) < wpxp_mfl_min(i,k)  ) then
 
@@ -737,7 +753,16 @@ module mono_flux_limiter
 
         l_xm_adjustment_needed(i) = .false.
 
-        do k = 2, nzm-1, 1
+        do k = gr%k_lb_zm+gr%grid_dir_indx, gr%k_ub_zm-gr%grid_dir_indx, gr%grid_dir_indx
+
+          ! Calculate index needed for zt level variables based on grid direction.
+          if ( gr%grid_dir_indx > 0 ) then
+             ! Ascending grid
+             k_zt = k-1
+          else ! gr%grid_dir_indx < 0
+             ! Descending grid
+             k_zt = k
+          endif
   
           ! Find the upper limit for w'x' for a monotonic turbulent flux.
           ! The following "if" statement ensures there are no "spikes" at the top of the column,
@@ -745,14 +770,18 @@ module mono_flux_limiter
           ! The fix essentially turns off the monotonic flux limiter for these special cases,
           ! but tests show that it still performs well otherwise and runs stably.
           if ( l_mono_flux_lim_spikefix .and. solve_type == mono_flux_rtm  & 
-              .and. abs( wpxp(i,k-1) ) > wpxp_thresh_term(i,k-1) &
-              .and. wpxp(i,k-1) < 0.0_core_rknd ) then
+               .and. abs( wpxp(i,k-gr%grid_dir_indx) ) > wpxp_thresh_term(i,k-gr%grid_dir_indx) &
+               .and. wpxp(i,k-gr%grid_dir_indx) < 0.0_core_rknd ) then
 
             wpxp_mfl_max(i,k) = zero
 
           else
-            wpxp_mfl_max(i,k) = invrs_rho_ds_zm(i,k) &
-                                * ( wpxp_mfl_max_term_zt(i,k-1) + rho_ds_zm(i,k-1) * wpxp(i,k-1) )
+
+            wpxp_mfl_max(i,k) &
+            = invrs_rho_ds_zm(i,k) &
+              * ( wpxp_mfl_max_term_zt(i,k_zt) &
+                  + rho_ds_zm(i,k-gr%grid_dir_indx) * wpxp(i,k-gr%grid_dir_indx) )
+
           endif
 
           if ( wpxp(i,k) > wpxp_mfl_max(i,k) ) then
@@ -776,8 +805,10 @@ module mono_flux_limiter
           else
 
             ! Find the lower limit for w'x' for a monotonic turbulent flux.
-            wpxp_mfl_min(i,k) = invrs_rho_ds_zm(i,k) &
-                                * ( wpxp_mfl_min_term_zt(i,k-1) + rho_ds_zm(i,k-1) * wpxp(i,k-1) )
+            wpxp_mfl_min(i,k) &
+            = invrs_rho_ds_zm(i,k) &
+              * ( wpxp_mfl_min_term_zt(i,k_zt) &
+                  + rho_ds_zm(i,k-gr%grid_dir_indx) * wpxp(i,k-gr%grid_dir_indx) )
 
             if ( wpxp(i,k) < wpxp_mfl_min(i,k) ) then
 
@@ -812,10 +843,10 @@ module mono_flux_limiter
         ! values of xm at timestep index (t+1).
 
         ! Set up the left-hand side of the tridiagonal matrix equation.
-        call mfl_xm_lhs( nzm, nzt, ngrdcol, dt, gr%weights_zt2zm, & ! intent(in)
-                         gr%invrs_dzt, gr%invrs_dzm,              & ! intent(in)
-                         wm_zt, l_implemented, l_upwind_xm_ma,    & ! intent(in)
-                         lhs_mfl_xm )                               ! intent(out)
+        call mfl_xm_lhs( nzm, nzt, ngrdcol, dt, gr%weights_zt2zm,    & ! intent(in)
+                         gr%invrs_dzt, gr%invrs_dzm, wm_zt,          & ! intent(in)
+                         l_implemented, l_upwind_xm_ma, gr%grid_dir, & ! intent(in)
+                         lhs_mfl_xm )                                  ! intent(out)
 
         ! Set up the right-hand side of tridiagonal matrix equation.
         call mfl_xm_rhs( nzm, nzt, ngrdcol, dt, xm_old, wpxp, xm_forcing, & ! intent(in)
@@ -823,14 +854,14 @@ module mono_flux_limiter
                          rhs_mfl_xm )                                       ! intent(out)
 
         ! Solve the tridiagonal matrix equation.
-        call mfl_xm_solve( nzt, ngrdcol, solve_type, tridiag_solve_method, & ! intent(in)
-                           lhs_mfl_xm, rhs_mfl_xm, err_code,               & ! intent(inout)
-                           xm_mfl )                                          ! intent(out)
+        call mfl_xm_solve( nzt, ngrdcol, gr, solve_type, tridiag_solve_method, & ! intent(in)
+                           lhs_mfl_xm, rhs_mfl_xm, err_code,                   & ! intent(inout)
+                           xm_mfl )                                              ! intent(out)
                            
         ! If an adjustment is for a column
         !$acc parallel loop gang vector collapse(2) default(present)
         do k = 1, nzt
-          do i = 1, ngrdcol 
+          do i = 1, ngrdcol
             if ( l_xm_adjustment_needed(i) ) then
               xm(i,k) = xm_mfl(i,k)
             end if
@@ -881,14 +912,19 @@ module mono_flux_limiter
       !$acc parallel loop gang vector default(present)
       do i = 1, ngrdcol
 
-        if (abs( xm(i,nzt) - xm_enter_mfl(i,nzt) ) > 10._core_rknd * xm_tol) then
-          dz = gr%zm(i,nzm) - gr%zm(i,nzm-1)
+        if ( abs( xm(i,gr%k_ub_zt) - xm_enter_mfl(i,gr%k_ub_zt) ) &
+             > 10._core_rknd * xm_tol ) then
 
-          xm_density_weighted = rho_ds_zt(i,nzt) &
-                              * (xm(i,nzt) - xm_enter_mfl(i,nzt)) &
-                              * dz
+          dz = gr%zm(i,gr%k_ub_zm) - gr%zm(i,gr%k_ub_zm-gr%grid_dir_indx)
 
-          xm_vert_integral = sum(rho_ds_zt(i,1:nzt-1) * xm(i,1:nzt-1) * gr%dzt(i,1:nzt-1) )
+          xm_density_weighted &
+          = rho_ds_zt(i,gr%k_ub_zt) &
+            * ( xm(i,gr%k_ub_zt) - xm_enter_mfl(i,gr%k_ub_zt) ) * dz
+
+          xm_vert_integral &
+          = sum( rho_ds_zt(i,gr%k_lb_zt:gr%k_ub_zt-gr%grid_dir_indx:gr%grid_dir_indx) &
+                 * xm(i,gr%k_lb_zt:gr%k_ub_zt-gr%grid_dir_indx:gr%grid_dir_indx) &
+                 * gr%grid_dir * gr%dzt(i,gr%k_lb_zt:gr%k_ub_zt-gr%grid_dir_indx:gr%grid_dir_indx) )
 
           !Check to ensure the vertical integral is not zero to avoid a divide
           !by zero error
@@ -899,8 +935,10 @@ module mono_flux_limiter
                              "but it will not conserve xm."
 #endif
             !Remove the spike at the top of the domain
-            xm(i,nzt) = xm_enter_mfl(i,nzt)
+            xm(i,gr%k_ub_zt) = xm_enter_mfl(i,gr%k_ub_zt)
+
           else
+
             xm_adj_coef = xm_density_weighted / xm_vert_integral
 
             !xm_adj_coef can not be smaller than -1
@@ -916,16 +954,16 @@ module mono_flux_limiter
             xm(i,:) = xm(i,:) * (1._core_rknd + xm_adj_coef)
 
             !Remove the spike at the top of the domain
-            xm(i,nzt) = xm_enter_mfl(i,nzt)
+            xm(i,gr%k_ub_zt) = xm_enter_mfl(i,gr%k_ub_zt)
 
             !This code can be uncommented to ensure conservation
-            !if (abs(sum(rho_ds_zt(1:gr%nzt) * xm(1:gr%nzt) / gr%invrs_dzt(1:gr%nzt)) - &
-            !    sum(rho_ds_zt(1:gr%nzt) * xm_enter_mfl(1:gr%nzt) / gr%invrs_dzt(1:gr%nzt)))&
+            !if (abs(sum(rho_ds_zt(i,1:gr%nzt) * xm(i,1:gr%nzt) / gr%invrs_dzt(i,1:gr%nzt)) - & 
+            !    sum(rho_ds_zt(i,1:gr%nzt) * xm_enter_mfl(i,1:gr%nzt) / gr%invrs_dzt(i,1:gr%nzt)))&
             !    > (1000 * xm_tol)) then
             !   write(fstderr,*) "NON-CONSERVATION in MFL", trim( solve_type ), &
-            !      abs(sum(rho_ds_zt(1:gr%nzt) * xm(1:gr%nzt) / gr%invrs_dzt(1:gr%nzt)) - &
-            !       sum(rho_ds_zt(1:gr%nzt) * xm_enter_mfl(1:gr%nzt) / &
-            !              gr%invrs_dzt(1:gr%nzt)))
+            !      abs(sum(rho_ds_zt(i,1:gr%nzt) * xm(i,1:gr%nzt) / gr%invrs_dzt(i,1:gr%nzt)) - &
+            !       sum(rho_ds_zt(i,1:gr%nzt) * xm_enter_mfl(i,1:gr%nzt) / &
+            !              gr%invrs_dzt(i,1:gr%nzt)))
             !
             !   write(fstderr,*) "XM_ENTER_MFL=", xm_enter_mfl
             !   write(fstderr,*) "XM_AFTER_SPIKE_REMOVAL", xm
@@ -952,11 +990,11 @@ module mono_flux_limiter
       ! Boundary conditions
       do i = 1, ngrdcol
 
-        wpxp_mfl_min(i,1) = 0._core_rknd
-        wpxp_mfl_max(i,1) = 0._core_rknd
+        wpxp_mfl_min(i,gr%k_lb_zm) = 0._core_rknd
+        wpxp_mfl_max(i,gr%k_lb_zm) = 0._core_rknd
 
-        wpxp_mfl_min(i,nzm) = 0._core_rknd
-        wpxp_mfl_max(i,nzm) = 0._core_rknd
+        wpxp_mfl_min(i,gr%k_ub_zm) = 0._core_rknd
+        wpxp_mfl_max(i,gr%k_ub_zm) = 0._core_rknd
 
       end do
 
@@ -1025,7 +1063,7 @@ module mono_flux_limiter
   !=============================================================================
   subroutine mfl_xm_lhs( nzm, nzt, ngrdcol, dt, weights_zt2zm, &
                          invrs_dzt, invrs_dzm, & 
-                         wm_zt, l_implemented, l_upwind_xm_ma, &
+                         wm_zt, l_implemented, l_upwind_xm_ma, grid_dir, &
                          lhs )
 
     ! Description:
@@ -1084,6 +1122,9 @@ module mono_flux_limiter
                      ! approximation rather than a centered differencing for turbulent or
                      ! mean advection terms. It affects rtm, thlm, sclrm, um and vm.
 
+    real( kind = core_rknd ), intent(in) :: &
+      grid_dir    ! Grid direction multiplier (+1 = ascending; -1 = descending)
+
     !---------------------------- Output Variables ----------------------------
     real( kind = core_rknd ), dimension(ndiags3,ngrdcol,nzt), intent(out) :: &
       lhs    ! Left hand side of tridiagonal matrix
@@ -1100,7 +1141,7 @@ module mono_flux_limiter
 
       call term_ma_zt_lhs( nzm, nzt, ngrdcol, wm_zt, weights_zt2zm, & ! intent(in)
                            invrs_dzt, invrs_dzm,                    & ! intent(in)
-                           l_upwind_xm_ma,                          & ! intent(in)
+                           l_upwind_xm_ma, grid_dir,                & ! intent(in)
                            lhs )                                      ! intent(out)
 
     else
@@ -1217,7 +1258,7 @@ module mono_flux_limiter
   end subroutine mfl_xm_rhs
 
   !=============================================================================
-  subroutine mfl_xm_solve( nzt, ngrdcol, solve_type, tridiag_solve_method, &
+  subroutine mfl_xm_solve( nzt, ngrdcol, gr, solve_type, tridiag_solve_method, &
                            lhs, rhs, err_code, &
                            xm )
 
@@ -1233,6 +1274,10 @@ module mono_flux_limiter
     ! Subroutine mfl_xm_solve solves the tridiagonal matrix equation for xm at
     ! timestep index (t+1).
 
+    use grid_class, only: &
+        grid, & ! Type(s)
+        flip    ! Procedure(s)
+
     use matrix_solver_wrapper, only: &
         tridiag_solve ! Procedure(s)
 
@@ -1243,6 +1288,9 @@ module mono_flux_limiter
         clubb_at_least_debug_level,  & ! Procedure
         clubb_fatal_error              ! Constant
 
+    use model_flags, only: &
+        l_test_grid_generalization    ! Variable(s)
+
     implicit none
 
     !---------------------------- Input Variables ----------------------------
@@ -1250,6 +1298,9 @@ module mono_flux_limiter
       nzt, &
       ngrdcol
 
+    type( grid ), intent(in) :: &
+      gr
+    
     integer, intent(in) :: &
       solve_type  ! Variables being solved for.
 
@@ -1274,6 +1325,17 @@ module mono_flux_limiter
     character(len=10) :: &
       solve_type_str ! solve_type as a string for debug output purposes
 
+    real( kind = core_rknd ), dimension(ndiags3,ngrdcol,nzt) ::  & 
+      lhs_copy  ! Left hand side of tridiagonal matrix
+
+    real( kind = core_rknd ), dimension(ngrdcol,nzt) ::  &
+      rhs_copy  ! Right hand side of tridiagonal matrix equation
+
+    real( kind = core_rknd ), dimension(ngrdcol,nzt) :: &
+      xm_copy   ! Value of variable being solved for at timestep (t+1)   [units vary]
+
+    integer :: i
+
     !---------------------------- Begin Code ----------------------------
 
     select case( solve_type )
@@ -1285,11 +1347,38 @@ module mono_flux_limiter
       solve_type_str = "scalars"
     end select
 
+    ! Generalized grid test
+    ! This block of code is used when a generalized grid test
+    ! (ascending vs. descending grid) is being performed and
+    ! the grid is arranged in the descending direction.
+    if ( l_test_grid_generalization .and. gr%grid_dir_indx < 0 ) then
+      lhs_copy = lhs
+      rhs_copy = rhs
+      do i = 1, ngrdcol
+        lhs(1,i,:) = flip( lhs_copy(3,i,:), nzt )
+        lhs(2,i,:) = flip( lhs_copy(2,i,:), nzt )
+        lhs(3,i,:) = flip( lhs_copy(1,i,:), nzt )
+        rhs(i,:)   = flip( rhs_copy(i,:), nzt )
+      enddo
+    endif
+
     ! Solve for xm at timestep index (t+1) using the tridiagonal solver.
     call tridiag_solve( solve_type_str, tridiag_solve_method,   & ! Intent(in)
                         ngrdcol, nzt,                           & ! Intent(in)
                         lhs, rhs, err_code,                     & ! Intent(inout)
                         xm )                                      ! Intent(out)
+
+    ! Generalized grid test
+    ! This block of code is used when a generalized grid test
+    ! (ascending vs. descending grid) is being performed and
+    ! the grid is arranged in the descending direction.
+    if ( l_test_grid_generalization .and. gr%grid_dir_indx < 0 ) then
+      xm_copy = xm
+      do i = 1, ngrdcol
+        xm(i,:) = flip( xm_copy(i,:), nzt )
+      enddo
+    endif
+
 
     ! Check for errors
     if ( clubb_at_least_debug_level( 0 ) ) then
@@ -1401,7 +1490,7 @@ module mono_flux_limiter
       dt_all_grid_levs, & ! Running count of amount of time taken to travel [s]
       invrs_dt            ! Inverse of timestep, used to reduce divides     [1/s]
 
-    integer :: k, i, j
+    integer :: k, i, j, j_adj
 
     !------------------------- Begin Code -------------------------
 
@@ -1411,7 +1500,7 @@ module mono_flux_limiter
 
       ! The value of w'x' may only be altered between (momentum)
       ! levels 3 and gr%nzm-2.
-      do k = 2, nzt-2, 1
+      do k = gr%k_lb_zt+gr%grid_dir_indx, gr%k_ub_zt-2*gr%grid_dir_indx, gr%grid_dir_indx
         do i = 1, ngrdcol
           
           ! Compute the number of levels that effect the central thermodynamic
@@ -1420,7 +1509,7 @@ module mono_flux_limiter
 
           ! Start with the index of the thermodynamic level immediately below
           ! the central thermodynamic level.
-          j = k - 1
+          j = k - gr%grid_dir_indx
 
           do ! loop downwards until answer is found.
 
@@ -1435,10 +1524,10 @@ module mono_flux_limiter
              else
 
                 ! The model lower boundary has been reached.
-                if ( j == 1 ) then
+                if ( j == gr%k_lb_zt ) then
 
-                   ! The current thermodynamic level (level 1) is the lowest
-                   ! level that can be considered.
+                   ! The current thermodynamic level (lower boundary) is the
+                   ! lowest level that can be considered.
                    low_lev_effect(i,k) = j
 
                    exit
@@ -1446,7 +1535,7 @@ module mono_flux_limiter
                 else
 
                    ! Increment to the next vertical level down.
-                   j = j - 1
+                   j = j - gr%grid_dir_indx
 
                 end if
 
@@ -1455,18 +1544,18 @@ module mono_flux_limiter
           end do ! downwards loop
           
         end do
-      end do ! k = 2, gr%nzt-2
+      end do ! k = gr%k_lb_zt+gr%grid_dir_indx, gr%k_ub_zt-2*gr%grid_dir_indx, gr%grid_dir_indx
 
       ! Compute the number of levels that effect the central thermodynamic
       ! level through downwards motion (traveling from higher thermodynamic
       ! levels to reach the central thermodynamic level).
 
-      do k = 2, nzt-2, 1
+      do k = gr%k_lb_zt+gr%grid_dir_indx, gr%k_ub_zt-2*gr%grid_dir_indx, gr%grid_dir_indx
         do i = 1, ngrdcol
 
           ! Start with the index of the thermodynamic level immediately above
           ! the central thermodynamic level.
-          j = k + 1
+          j = k + gr%grid_dir_indx
 
           do ! loop upwards until answer is found.
 
@@ -1482,9 +1571,9 @@ module mono_flux_limiter
 
                 ! The highest level that can be considered is thermodynamic
                 ! level gr%nzt.
-                if ( j == nzt ) then
+                if ( j == gr%k_ub_zt ) then
 
-                   ! The current level (level gr%nzt) is the highest level
+                   ! The current level (upper boundary) is the highest level
                    ! that can be considered.
                    high_lev_effect(i,k) = j
 
@@ -1493,7 +1582,7 @@ module mono_flux_limiter
                 else
 
                    ! Increment to the next vertical level up.
-                   j = j + 1
+                   j = j + gr%grid_dir_indx
 
                 end if
 
@@ -1502,7 +1591,7 @@ module mono_flux_limiter
           end do ! upwards loop
 
         end do
-      end do ! k = 2, gr%nzt-2
+      end do ! k = gr%k_lb_zt+gr%grid_dir_indx, gr%k_ub_zt-2*gr%grid_dir_indx, gr%grid_dir_indx
 
     else ! thickness based on vertical velocity and time step length.
 
@@ -1511,7 +1600,7 @@ module mono_flux_limiter
       !$acc parallel loop gang vector collapse(2) default(present)
       do k = 1, nzm
         do i = 1, ngrdcol
-          w_min(i,k) = gr%dzm(i,k) * invrs_dt
+          w_min(i,k) = gr%grid_dir * gr%dzm(i,k) * invrs_dt
         end do
       end do
       !$acc end parallel loop
@@ -1527,10 +1616,9 @@ module mono_flux_limiter
                                   stats_zm, & ! intent(inout)
                                   vert_vel_down_zm, vert_vel_up_zm ) ! intent(out)
 
-      ! The value of w'x' may only be altered between (momentum)
-      ! levels 3 and gr%nzm-2.
+
       !$acc parallel loop gang vector collapse(2) default(present)
-      do k = 2, nzt-2, 1
+      do k = gr%k_lb_zt+gr%grid_dir_indx, gr%k_ub_zt-2*gr%grid_dir_indx, gr%grid_dir_indx
         do i = 1, ngrdcol
 
           ! Compute the number of levels that effect the central thermodynamic
@@ -1542,16 +1630,29 @@ module mono_flux_limiter
 
           ! Start with the index of the thermodynamic level immediately below
           ! the central thermodynamic level.
-          do j = k-1, 1, -1
-
+          do j = k-gr%grid_dir_indx, gr%k_lb_zt, -gr%grid_dir_indx
+             
              low_lev_effect(i,k) = j
 
+             ! Accounting for the offset between thermodynamic and momentum
+             ! level indices depending on an ascending or descending grid
+             ! direction. This is for use with momentum-level variables in
+             ! the following calculation.
+             if ( gr%grid_dir_indx > 0  ) then
+               ! Ascending grid
+               j_adj = j+1
+             else ! gr%grid_dir_indx
+               ! Descending grid
+               j_adj = j
+             endif
+
              ! Continue if there is some component of upwards vertical velocity.
-             if ( vert_vel_up_zm(i,j+1) > 0.0_core_rknd ) then
+             if ( vert_vel_up_zm(i,j_adj) > 0.0_core_rknd ) then
 
                 ! Compute the amount of time it takes to travel one grid level
                 ! upwards:  delta_t = delta_z / vert_vel_up_zm.
-                dt_one_grid_lev =  gr%dzm(i,j+1) / vert_vel_up_zm(i,j+1)
+                dt_one_grid_lev &
+                = gr%grid_dir * gr%dzm(i,j_adj) / vert_vel_up_zm(i,j_adj)
 
                 ! Total time elapsed for crossing all grid levels that have been
                 ! passed, thus far.
@@ -1572,7 +1673,7 @@ module mono_flux_limiter
 
                 ! The current level cannot be considered.  The lowest level that
                 ! can be considered is one-level-above the current level.
-                low_lev_effect(i,k) = j + 1
+                low_lev_effect(i,k) = j + gr%grid_dir_indx
 
                 exit
 
@@ -1581,7 +1682,7 @@ module mono_flux_limiter
           enddo ! downwards loop
 
         end do
-      enddo ! k = 2, gr%nzt-2
+      enddo ! k = gr%k_lb_zt+gr%grid_dir_indx, gr%k_ub_zt-2*gr%grid_dir_indx, gr%grid_dir_indx
       !$acc end parallel loop
 
 
@@ -1590,7 +1691,7 @@ module mono_flux_limiter
       ! levels to reach the central thermodynamic level).
 
       !$acc parallel loop gang vector collapse(2) default(present)
-      do k = 2, nzt-2, 1
+      do k = gr%k_lb_zt+gr%grid_dir_indx, gr%k_ub_zt-2*gr%grid_dir_indx, gr%grid_dir_indx
         do i = 1, ngrdcol
 
           ! Initialize the overall delta t counter to 0.
@@ -1598,12 +1699,24 @@ module mono_flux_limiter
 
           ! Start with the index of the thermodynamic level immediately above
           ! the central thermodynamic level.
-          do j = k+1, nzt   ! Brian: should this be nzt-1?
-
+          do j = k+gr%grid_dir_indx, gr%k_ub_zt, gr%grid_dir_indx
+                 
             high_lev_effect(i,k) = j
 
+            ! Accounting for the offset between thermodynamic and momentum
+            ! level indices depending on an ascending or descending grid
+            ! direction. This is for use with momentum-level variables in
+            ! the following calculation.
+            if ( gr%grid_dir_indx > 0  ) then
+              ! Ascending grid
+              j_adj = j
+            else ! gr%grid_dir_indx
+              ! Descending grid
+              j_adj = j+1
+            endif
+
             ! Continue if there is some component of downwards vertical velocity.
-            if ( vert_vel_down_zm(i,j) < 0.0_core_rknd ) then
+            if ( vert_vel_down_zm(i,j_adj) < 0.0_core_rknd ) then
 
               ! Compute the amount of time it takes to travel one grid level
               ! downwards:  delta_t = - delta_z / vert_vel_down_zm.
@@ -1611,7 +1724,8 @@ module mono_flux_limiter
               !        distance traveled is downwards.  Since vert_vel_down
               !        has a negative value, dt_one_grid_lev will be a
               !        positive value.
-              dt_one_grid_lev = -gr%dzm(i,j) / vert_vel_down_zm(i,j)
+              dt_one_grid_lev &
+              = -gr%grid_dir * gr%dzm(i,j_adj) / vert_vel_down_zm(i,j_adj)
 
               ! Total time elapsed for crossing all grid levels that have been
               ! passed, thus far.
@@ -1632,7 +1746,7 @@ module mono_flux_limiter
 
               ! The current level cannot be considered.  The highest level
               ! that can be considered is one-level-below the current level.
-              high_lev_effect(i,k) = j - 1
+              high_lev_effect(i,k) = j - gr%grid_dir_indx
 
               exit
 
@@ -1641,23 +1755,23 @@ module mono_flux_limiter
           end do  ! upwards loop
 
         end do
-      enddo ! k = 2, gr%nzt-2
+      enddo ! k = gr%k_lb_zt+gr%grid_dir_indx, gr%k_ub_zt-2*gr%grid_dir_indx, gr%grid_dir_indx
       !$acc end parallel loop
 
     end if ! l_constant_thickness
 
 
-    ! Information for levels 1, gr%nzt-1, and gr%nzt is not needed.
-    ! However, set the values at these levels for purposes of not having odd
-    ! values in the arrays.
+    ! Information for levels gr%k_lb_zt, gr%k_ub_zt-gr%grid_dir_indx, and
+    ! gr%k_ub_zt is not needed. However, set the values at these levels for
+    ! purposes of not having odd values in the arrays.
     !$acc parallel loop gang vector default(present)
     do i = 1, ngrdcol
-      low_lev_effect(i,1)  = 1
-      high_lev_effect(i,1) = 1
-      low_lev_effect(i,nzt-1)  = nzt-1
-      high_lev_effect(i,nzt-1) = nzt
-      low_lev_effect(i,nzt)    = nzt
-      high_lev_effect(i,nzt)   = nzt
+      low_lev_effect(i,gr%k_lb_zt)  = gr%k_lb_zt
+      high_lev_effect(i,gr%k_lb_zt) = gr%k_lb_zt
+      low_lev_effect(i,gr%k_ub_zt-gr%grid_dir_indx)  = gr%k_ub_zt-gr%grid_dir_indx
+      high_lev_effect(i,gr%k_ub_zt-gr%grid_dir_indx) = gr%k_ub_zt
+      low_lev_effect(i,gr%k_ub_zt)  = gr%k_ub_zt
+      high_lev_effect(i,gr%k_ub_zt) = gr%k_ub_zt
     end do
     !$acc end parallel loop
 
@@ -2084,7 +2198,7 @@ module mono_flux_limiter
         end if
 
       end do
-    end do ! k = 2, gr%nz
+    end do ! k = 2, gr%nzm-1
     !$acc end parallel loop
 
     ! Upper and lower levels are not used, set to 0 to besafe and avoid NaN problems

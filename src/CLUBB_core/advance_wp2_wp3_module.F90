@@ -767,15 +767,15 @@ module advance_wp2_wp3_module
     
     ! Calculate "over-implicit" pressure terms for w'2 and w'3
     if ( l_tke_aniso ) then
-      call wp2_term_pr1_rhs( nzm, ngrdcol, clubb_params(:,iC4), & ! intent(in)
-                             up2, vp2, invrs_tau_C4_zm,         & ! intent(in)
-                             rhs_pr1_wp2 )                        ! intent(out)
+      call wp2_term_pr1_rhs( nzm, ngrdcol, gr, clubb_params(:,iC4), & ! intent(in)
+                             up2, vp2, invrs_tau_C4_zm,             & ! intent(in)
+                             rhs_pr1_wp2 )                            ! intent(out)
       
       ! Note:  An "over-implicit" weighted time step is applied to the  term.
       !        A weighting factor of greater than 1 may be used to make the
       !        term more numerically stable (see note below for w'^3 RHS
       !        turbulent advection (ta) term).
-      call wp2_term_pr1_lhs( nzm, ngrdcol,                          & ! intent(in)
+      call wp2_term_pr1_lhs( nzm, ngrdcol, gr,                      & ! intent(in)
                              clubb_params(:,iC4), invrs_tau_C4_zm,  & ! intent(in)
                              lhs_pr1_wp2 )                            ! intent(out)
     end if
@@ -814,19 +814,19 @@ module advance_wp2_wp3_module
     !$acc end parallel loop
     
     ! Calculate pressure terms 1 for w'^3
-    call wp3_term_pr1_lhs( nzt, ngrdcol,                              & ! intent(in)
+    call wp3_term_pr1_lhs( nzt, ngrdcol, gr,                          & ! intent(in)
                            clubb_params(:,iC8), clubb_params(:,iC8b), & ! intent(in)
                            invrs_tau_wp3_zt, Skw_zt,                  & ! intent(in)
                            l_damp_wp3_Skw_squared,                    & ! intent(in)
                            lhs_pr1_wp3 )                                ! intent(out)
 
     ! Calculate dissipation terms 1 for w'^2
-    call wp2_term_dp1_lhs( nzm, ngrdcol,                & ! intent(in)
+    call wp2_term_dp1_lhs( nzm, ngrdcol, gr,            & ! intent(in)
                            C1_Skw_fnc, invrs_tau_C1_zm, & ! intent(in)
                            lhs_dp1_wp2 )                  ! intent(out)
 
     ! Calculate buoyancy production of w'^2 and w'^2 pressure term 2
-    call wp2_terms_bp_pr2_rhs( nzm, ngrdcol,                & ! intent(in)
+    call wp2_terms_bp_pr2_rhs( nzm, ngrdcol, gr,            & ! intent(in)
                                clubb_params(:,iC_uu_buoy),  & ! intent(in)
                                thv_ds_zm, wpthvp,           & ! intent(in)
                                rhs_bp_pr2_wp2 )               ! intent(out)
@@ -840,18 +840,18 @@ module advance_wp2_wp3_module
                            rhs_pr3_wp2 )                  ! intent(out)
     
     ! Calculate dissipation terms 1 for w'^2
-    call wp2_term_dp1_rhs( nzm, ngrdcol, C1_Skw_fnc,              & ! intent(in)
+    call wp2_term_dp1_rhs( nzm, ngrdcol, gr, C1_Skw_fnc,          & ! intent(in)
                            invrs_tau_C1_zm, w_tol_sqd, up2, vp2,  & ! intent(in)
                            l_damp_wp2_using_em,                   & ! intent(in)
                            rhs_dp1_wp2 )                            ! intent(out)
 
     ! Calculate buoyancy production of w'^3 and w'^3 pressure term 2
-    call wp3_terms_bp1_pr2_rhs( nzt, ngrdcol, C11_Skw_fnc, & ! intent(in)
-                                thv_ds_zt, wp2thvp,       & ! intent(in)
-                                rhs_bp1_pr2_wp3 )           ! intent(out)
+    call wp3_terms_bp1_pr2_rhs( nzt, ngrdcol, gr, C11_Skw_fnc, & ! intent(in)
+                                thv_ds_zt, wp2thvp,            & ! intent(in)
+                                rhs_bp1_pr2_wp3 )                ! intent(out)
 
     ! Calculate pressure terms 1 for w'^3
-    call wp3_term_pr1_rhs( nzt, ngrdcol,                              & ! intent(in)
+    call wp3_term_pr1_rhs( nzt, ngrdcol, gr,                          & ! intent(in)
                            clubb_params(:,iC8), clubb_params(:,iC8b), & ! intent(in)
                            invrs_tau_wp3_zt, Skw_zt, wp3,             & ! intent(in)
                            l_damp_wp3_Skw_squared,                    & ! intent(in)
@@ -911,7 +911,7 @@ module advance_wp2_wp3_module
     
     ! Compute the explicit portion of the w'^2 and w'^3 equations.
     ! Build the right-hand side vector.
-    call wp23_rhs( nzm, nzt, ngrdcol, dt,                                           & ! intent(in)
+    call wp23_rhs( nzm, nzt, ngrdcol, gr, dt,                                       & ! intent(in)
                    wp3_term_ta_lhs_result,                                          & ! intent(in)
                    lhs_diff_zm, lhs_diff_zt, lhs_diff_zm_crank, lhs_diff_zt_crank,  & ! intent(in)
                    lhs_tp_wp3, lhs_adv_tp_wp3, lhs_pr_tp_wp3,                       & ! intent(in)
@@ -939,7 +939,7 @@ module advance_wp2_wp3_module
     ! Calculated mean advection term for w'3
     call term_ma_zt_lhs( nzm, nzt, ngrdcol, wm_zt, gr%weights_zt2zm, & ! intent(in)
                          gr%invrs_dzt, gr%invrs_dzm,                 & ! intent(in)
-                         l_upwind_xm_ma,                             & ! intent(in)
+                         l_upwind_xm_ma, gr%grid_dir,                & ! intent(in)
                          lhs_ma_zt )                                   ! intent(out)
 
     !$acc parallel loop gang vector default(present) collapse(3)
@@ -1072,7 +1072,7 @@ module advance_wp2_wp3_module
       end if
 
       do i = 1, ngrdcol
-        wp2(i,:) = sponge_damp_xp2( nzm, dt, gr%zm(i,:), wp2(i,:), w_tol_sqd, &
+        wp2(i,:) = sponge_damp_xp2( gr, nzm, dt, gr%zm(i,:), wp2(i,:), w_tol_sqd, &
                                     wp2_sponge_damp_profile )
       end do
 
@@ -1099,7 +1099,7 @@ module advance_wp2_wp3_module
       end if
 
       do i = 1, ngrdcol
-        wp3(i,:) = sponge_damp_xp3( nzm, nzt, dt, gr%zt(i,:), gr%zm(i,:), wp3(i,:), &
+        wp3(i,:) = sponge_damp_xp3( gr, nzm, nzt, dt, gr%zt(i,:), gr%zm(i,:), wp3(i,:), &
                                     wp3_sponge_damp_profile )
       end do
 
@@ -1243,7 +1243,8 @@ module advance_wp2_wp3_module
     use grid_class, only: &
         grid,  & ! Type
         zm2zt_api, & ! Function(s)
-        zt2zm_api
+        zt2zm_api, &
+        flip
 
     use constants_clubb, only: &
         w_tol_sqd,                & ! Variables(s)
@@ -1300,7 +1301,8 @@ module advance_wp2_wp3_module
     use stats_type, only: stats ! Type
 
     use model_flags, only: &
-        penta_bicgstab
+        penta_bicgstab,             & ! Variable(s)
+        l_test_grid_generalization
 
     use advance_helper_module, only: &
         vertical_avg
@@ -1422,6 +1424,13 @@ module advance_wp2_wp3_module
     real( kind = core_rknd ), dimension(ngrdcol) :: &
       rcond  ! Est. of the reciprocal of the condition #
 
+    ! Generalized grid testing
+    real( kind = core_rknd ), dimension(ndiags5,ngrdcol,2*nzm-1) ::  & 
+      lhs_copy    ! Implicit contributions to wp2/wp3 (band diag. matrix)
+      
+    real( kind = core_rknd ), dimension(ngrdcol,2*nzm-1) ::  & 
+      solut_copy  ! Solution to band diagonal system.
+
     real( kind = core_rknd ), dimension(ngrdcol,nzm) :: &
       lhs_wp2_ac_term,  & ! w'^2 term ac, used for stats
       lhs_wp2_pr2_term, & ! w'^2 term pr2, used for stats
@@ -1473,6 +1482,22 @@ module advance_wp2_wp3_module
       end do
     end if
 
+    ! Generalized grid test
+    ! This block of code is used when a generalized grid test
+    ! (ascending vs. descending grid) is being performed and
+    ! the grid is arranged in the descending direction.
+    if ( l_test_grid_generalization .and. gr%grid_dir_indx < 0 ) then
+      lhs_copy = lhs
+      do i = 1, ngrdcol
+        lhs(1,i,:) = flip( lhs_copy(5,i,:), 2*nzm-1 )
+        lhs(2,i,:) = flip( lhs_copy(4,i,:), 2*nzm-1 )
+        lhs(3,i,:) = flip( lhs_copy(3,i,:), 2*nzm-1 )
+        lhs(4,i,:) = flip( lhs_copy(2,i,:), 2*nzm-1 )
+        lhs(5,i,:) = flip( lhs_copy(1,i,:), 2*nzm-1 )
+        rhs(i,:)   = flip( rhs_save(i,:), 2*nzm-1 )
+      enddo
+    endif
+
     ! Solve the system with LAPACK
     if ( stats_metadata%l_stats_samp .and. stats_metadata%iwp23_matrix_condt_num > 0 ) then
 
@@ -1500,6 +1525,17 @@ module advance_wp2_wp3_module
                        solut )                          ! intent(out)
 
     end if
+
+    ! Generalized grid test
+    ! This block of code is used when a generalized grid test
+    ! (ascending vs. descending grid) is being performed and
+    ! the grid is arranged in the descending direction.
+    if ( l_test_grid_generalization .and. gr%grid_dir_indx < 0 ) then
+      solut_copy = solut
+      do i = 1, ngrdcol
+        solut(i,:) = flip( solut_copy(i,:), 2*nzm-1 )
+      enddo
+    endif
 
     if ( clubb_at_least_debug_level( 0 ) ) then
       if ( err_code == clubb_fatal_error ) then
@@ -1797,9 +1833,11 @@ module advance_wp2_wp3_module
 
       ! Use a simple hole filling algorithm
       ! upper_hf_level = nzm-1 since we are filling the zm levels
-      call fill_holes_vertical_api( nzm, ngrdcol, w_tol_sqd, 2, nzm-1, & ! In
-                                    gr%dzm, rho_ds_zm,                 & ! In
-                                    wp2 )                                ! InOut
+      call fill_holes_vertical_api( nzm, ngrdcol, w_tol_sqd,             & ! In
+                                    gr%k_lb_zm + gr%grid_dir_indx,       & ! In
+                                    gr%k_ub_zm - gr%grid_dir_indx,       & ! In
+                                    gr%dzm, rho_ds_zm, gr%grid_dir_indx, & ! In
+                                    wp2 )                                  ! InOut
 
       if ( clubb_at_least_debug_level(3) ) then
         wp2_avg_after = vertical_avg(nzm, rho_ds_zm, wp2, gr%dzm)
@@ -1909,12 +1947,12 @@ module advance_wp2_wp3_module
 
     end if ! l_min_wp2_from_corr_wx
 
-    call clip_variance( nzm, ngrdcol, clip_wp2, dt, wp2_min_array,   & ! intent(in)
-                        stats_metadata,                              & ! intent(in)
-                        stats_zm,                                    & ! intent(inout)
-                        wp2,                                         & ! intent(inout)
-                        wp2_max )                                      ! intent(optional, in)
-
+    call clip_variance( nzm, ngrdcol, gr, clip_wp2, dt, wp2_min_array, & ! intent(in)
+                        stats_metadata,                                & ! intent(in)
+                        stats_zm,                                      & ! intent(inout)
+                        wp2,                                           & ! intent(inout)
+                        wp2_max )                                        ! intent(optional, in)
+  
     ! Interpolate w'^2 from momentum levels to thermodynamic levels.
     ! This is used for the clipping of w'^3 according to the value
     ! of Sk_w now that w'^2 and w'^3 have been advanced one timestep.
@@ -2052,7 +2090,7 @@ module advance_wp2_wp3_module
     end do
     !$acc end parallel loop
 
-    ! Lower boundary for w'2
+    ! Lower (upper) boundary for w'2 on ascending (descending) grid.
     !$acc parallel loop gang vector collapse(2) default(present)
     do i = 1, ngrdcol
       do b = 1, ndiags5
@@ -2065,7 +2103,7 @@ module advance_wp2_wp3_module
     end do
     !$acc end parallel loop
 
-    ! Lower boundary for w'3
+    ! Lower (upper) boundary for w'3 on ascending (descending) grid.
     !$acc parallel loop gang vector collapse(2) default(present)
     do i = 1, ngrdcol
       do b = 1, ndiags5
@@ -2161,7 +2199,7 @@ module advance_wp2_wp3_module
     end do
     !$acc end parallel loop
 
-    ! Upper boundary for w'3
+    ! Upper (lower) boundary for w'3 on ascending (descending) grid.
     !$acc parallel loop gang vector collapse(2) default(present)
     do i = 1, ngrdcol
       do b = 1, ndiags5
@@ -2174,7 +2212,7 @@ module advance_wp2_wp3_module
     end do
     !$acc end parallel loop
 
-    ! Upper boundary for w'2
+    ! Upper (lower) boundary for w'2 on ascending (desceding) grid.
     !$acc parallel loop gang vector collapse(2) default(present)
     do i = 1, ngrdcol
       do b = 1, ndiags5
@@ -2266,7 +2304,7 @@ module advance_wp2_wp3_module
   end subroutine wp23_lhs
 
   !=================================================================================
-  subroutine wp23_rhs( nzm, nzt, ngrdcol, dt, &
+  subroutine wp23_rhs( nzm, nzt, ngrdcol, gr, dt, &
                        wp3_term_ta_lhs_result, &
                        lhs_diff_zm, lhs_diff_zt, lhs_diff_zm_crank, lhs_diff_zt_crank, &
                        lhs_tp_wp3, lhs_adv_tp_wp3, lhs_pr_tp_wp3, &
@@ -2313,6 +2351,9 @@ module advance_wp2_wp3_module
     !           noticeably  impact computational efficiency. See clubb:ticket:834
     !-------------------------------------------------------------------------------
 
+    use grid_class, only: &
+        grid    ! Type(s)
+
     use parameter_indices, only: &
         nparams, & ! Variable(s)
         iC_uu_buoy
@@ -2350,6 +2391,8 @@ module advance_wp2_wp3_module
       nzt, &
       ngrdcol
       
+    type (grid), target, intent(in) :: gr
+
     real( kind = core_rknd ), intent(in) :: &
       dt                 ! Timestep length                           [s]
 
@@ -2433,6 +2476,12 @@ module advance_wp2_wp3_module
 
     ! --------------------- Local Variables ---------------------
     integer :: k, k_wp2, k_wp3, i
+
+    integer :: &
+      rhs_lb_idx_zm, & ! Index of (momentum) lower boundary level in rhs array
+      rhs_lb_idx_zt, & ! Index of (thermodynamic) lower boundary level in rhs array
+      rhs_ub_idx_zt, & ! Index of (thermodynamic) upper boundary level in rhs array
+      rhs_ub_idx_zm    ! Index of (momentum) upper boundary level in rhs array
 
     real( kind = core_rknd ), dimension(ngrdcol,nzm) :: &
       rhs_bp_wp2, &  ! wp2 bouyancy production (stats only)
@@ -2659,12 +2708,24 @@ module advance_wp2_wp3_module
           do i = 1, ngrdcol
             k_wp3 = 2*k
 
-            rhs(i,k_wp3) = rhs(i,k_wp3) + ( one - gamma_over_implicit_ts ) &
-                                          * ( - wp3_term_ta_lhs_result(1,i,k) * wp3(i,k+1) &
-                                              - wp3_term_ta_lhs_result(2,i,k) * wp2(i,k+1) &
-                                              - wp3_term_ta_lhs_result(3,i,k) * wp3(i,k) &
-                                              - wp3_term_ta_lhs_result(4,i,k) * wp2(i,k) &
-                                              - wp3_term_ta_lhs_result(5,i,k) * wp3(i,k-1) )
+            ! Brian -- come up with better method for testing ascending vs descending
+            if ( gr%grid_dir_indx > 0 ) then
+               ! Ascending grid
+               rhs(i,k_wp3) = rhs(i,k_wp3) + ( one - gamma_over_implicit_ts ) &
+                                             * ( - wp3_term_ta_lhs_result(1,i,k) * wp3(i,k+1) &
+                                                 - wp3_term_ta_lhs_result(2,i,k) * wp2(i,k+1) &
+                                                 - wp3_term_ta_lhs_result(3,i,k) * wp3(i,k) &
+                                                 - wp3_term_ta_lhs_result(4,i,k) * wp2(i,k) &
+                                                 - wp3_term_ta_lhs_result(5,i,k) * wp3(i,k-1) )
+            else ! gr%grid_dir_indx < 0
+               ! Descending grid
+               rhs(i,k_wp3) = rhs(i,k_wp3) + ( one - gamma_over_implicit_ts ) &
+                                             * ( - wp3_term_ta_lhs_result(5,i,k) * wp3(i,k-1) &
+                                                 - wp3_term_ta_lhs_result(4,i,k) * wp2(i,k) &
+                                                 - wp3_term_ta_lhs_result(3,i,k) * wp3(i,k) &
+                                                 - wp3_term_ta_lhs_result(2,i,k) * wp2(i,k+1) &
+                                                 - wp3_term_ta_lhs_result(1,i,k) * wp3(i,k+1) )
+            endif
           end do
         end do
         !$acc end parallel loop
@@ -2710,16 +2771,31 @@ module advance_wp2_wp3_module
     ! minimum value of w_tol_sqd.
 
     ! The value of w'^3 at the upper boundary will be set to 0.
+
+    if ( gr%grid_dir_indx > 0 ) then
+       ! Ascending Grid
+       rhs_lb_idx_zm = 1
+       rhs_lb_idx_zt = 2
+       rhs_ub_idx_zt = 2*nzt
+       rhs_ub_idx_zm = 2*nzm-1
+    else
+       ! Descending Grid
+       rhs_lb_idx_zm = 2*nzm-1
+       rhs_lb_idx_zt = 2*nzt
+       rhs_ub_idx_zt = 2
+       rhs_ub_idx_zm = 1
+    endif
+
     !$acc parallel loop gang vector default(present)
     do i = 1, ngrdcol
-      rhs(i,1) = wp2(i,1)
-      rhs(i,2) = 0.0_core_rknd
-
-      rhs(i,2*nzt) = 0.0_core_rknd
-      rhs(i,2*nzm-1) = w_tol_sqd
+      ! Lower Boundary
+      rhs(i,rhs_lb_idx_zm) = wp2(i,gr%k_lb_zm)
+      rhs(i,rhs_lb_idx_zt) = 0.0_core_rknd
+      ! Upper Boundary
+      rhs(i,rhs_ub_idx_zt) = 0.0_core_rknd
+      rhs(i,rhs_ub_idx_zm) = w_tol_sqd
     end do
     !$acc end parallel loop
-
 
     ! --------- Statistics output ---------
     if ( stats_metadata%l_stats_samp ) then
@@ -2744,26 +2820,26 @@ module advance_wp2_wp3_module
       ! w'^2 term bp is completely explicit; call stat_update_var_pt.
       ! Note:  To find the contribution of w'^2 term bp, substitute 0 for the
       !        C_uu_buoy input to function wp2_terms_bp_pr2_rhs.
-      call wp2_terms_bp_pr2_rhs( nzm, ngrdcol, C_uu_buoy_zeros,  & ! intent(in)
-                                 thv_ds_zm, wpthvp,              & ! intent(in)
-                                 rhs_bp_wp2 )                      ! intent(out)
+      call wp2_terms_bp_pr2_rhs( nzm, ngrdcol, gr, C_uu_buoy_zeros, & ! intent(in)
+                                 thv_ds_zm, wpthvp,                 & ! intent(in)
+                                 rhs_bp_wp2 )                         ! intent(out)
 
       ! w'^2 term pr2 has both implicit and explicit components; call
       ! stat_begin_update_pt.  Since stat_begin_update_pt automatically
       ! subtracts the value sent in, reverse the sign on wp2_terms_bp_pr2_rhs.
       ! Note:  To find the contribution of w'^2 term pr2, add 1 to the
       !        C_uu_buoy input to function wp2_terms_bp_pr2_rhs.
-      call wp2_terms_bp_pr2_rhs( nzm, ngrdcol, C_uu_buoy_plus_one,  & ! intent(in)
-                                 thv_ds_zm, wpthvp,                 & ! intent(in)
-                                 rhs_pr2_wp2 )                        ! intent(out)
+      call wp2_terms_bp_pr2_rhs( nzm, ngrdcol, gr, C_uu_buoy_plus_one, & ! intent(in)
+                                 thv_ds_zm, wpthvp,                    & ! intent(in)
+                                 rhs_pr2_wp2 )                           ! intent(out)
 
     
       ! w'^3 term bp is completely explicit; call stat_update_var_pt.
       ! Note:  To find the contribution of w'^3 term bp, substitute 0 for the
       !        C_11 skewness function input to function wp3_terms_bp1_pr2_rhs.
-      call wp3_terms_bp1_pr2_rhs( nzt, ngrdcol, C11_Skw_fnc_zeros,   & ! intent(in)
-                                  thv_ds_zt, wp2thvp,                & ! intent(in)
-                                  rhs_bp1_wp3 )                        ! intent(out)
+      call wp3_terms_bp1_pr2_rhs( nzt, ngrdcol, gr, C11_Skw_fnc_zeros, & ! intent(in)
+                                  thv_ds_zt, wp2thvp,                  & ! intent(in)
+                                  rhs_bp1_wp3 )                          ! intent(out)
 
 
       ! w'^3 term pr2 has both implicit and explicit components; call
@@ -2771,12 +2847,11 @@ module advance_wp2_wp3_module
       ! subtracts the value sent in, reverse the sign on wp3_terms_bp1_pr2_rhs.
       ! Note:  To find the contribution of w'^3 term pr2, add 1 to the
       !        C_11 skewness function input to function wp3_terms_bp1_pr2_rhs.
-      call wp3_terms_bp1_pr2_rhs( nzt, ngrdcol, C11_Skw_fnc_plus_one,   & ! intent(in)
-                                  thv_ds_zt, wp2thvp,                   & ! intent(in)
-                                  rhs_pr2_wp3 )                           ! intent(out)
+      call wp3_terms_bp1_pr2_rhs( nzt, ngrdcol, gr, C11_Skw_fnc_plus_one, & ! intent(in)
+                                  thv_ds_zt, wp2thvp,                     & ! intent(in)
+                                  rhs_pr2_wp3 )                             ! intent(out)
 
       !$acc end data
-
       do i = 1, ngrdcol
         do k = 2, nzm-1
  
@@ -3129,9 +3204,10 @@ module advance_wp2_wp3_module
     !$acc parallel loop gang vector collapse(2) default(present)
     do k = 1, ngrdcol
       do i = 1, 2
-        lhs_ta_wp2(i,k,1) = zero
+        ! Set lower boundary to 0
+        lhs_ta_wp2(i,k,gr%k_lb_zm) = zero
         ! Set upper boundary to 0
-        lhs_ta_wp2(i,k,gr%nzm) = zero
+        lhs_ta_wp2(i,k,gr%k_ub_zm) = zero
       end do
     end do
     !$acc end parallel loop
@@ -3253,9 +3329,10 @@ module advance_wp2_wp3_module
     ! Set lower boundary to 0
     !$acc parallel loop gang vector default(present)
     do i = 1, ngrdcol
-      lhs_ac_pr2_wp2(i,1) = zero
+      ! Set lower boundary to 0
+      lhs_ac_pr2_wp2(i,gr%k_lb_zm) = zero
       ! Set upper boundary to 0
-      lhs_ac_pr2_wp2(i,nzm) = zero
+      lhs_ac_pr2_wp2(i,gr%k_ub_zm) = zero
     end do
     !$acc end parallel loop
 
@@ -3275,7 +3352,7 @@ module advance_wp2_wp3_module
   end subroutine wp2_terms_ac_pr2_lhs
 
   !=============================================================================
-  subroutine wp2_term_dp1_lhs( nzm, ngrdcol, &
+  subroutine wp2_term_dp1_lhs( nzm, ngrdcol, gr, &
                                C1_Skw_fnc, invrs_tau1m, &
                                lhs_dp1_wp2 )
 
@@ -3327,7 +3404,9 @@ module advance_wp2_wp3_module
       nzm, &
       ngrdcol
     
-    real( kind = core_rknd ), dimension(ngrdcol,nzm), intent(in) :: &
+    type (grid), target, intent(in) :: gr
+    
+    real( kind = core_rknd ), dimension(ngrdcol,nzm), intent(in) :: & 
       C1_Skw_fnc, & ! C_1 parameter with Sk_w applied    [-]
       invrs_tau1m   ! Inverse time-scale tau at momentum levels  [1/s]
 
@@ -3343,9 +3422,10 @@ module advance_wp2_wp3_module
     ! Set lower boundary to 0
     !$acc parallel loop gang vector default(present)
     do i = 1, ngrdcol
-      lhs_dp1_wp2(i,1) = zero
+      ! Set lower boundary to 0
+      lhs_dp1_wp2(i,gr%k_lb_zm) = zero
       ! Set upper boundary to 0
-      lhs_dp1_wp2(i,nzm) = zero
+      lhs_dp1_wp2(i,gr%k_ub_zm) = zero
     end do
     !$acc end parallel loop
 
@@ -3365,7 +3445,7 @@ module advance_wp2_wp3_module
   end subroutine wp2_term_dp1_lhs
 
   !=============================================================================
-  subroutine wp2_term_pr1_lhs( nzm, ngrdcol, C4, invrs_tau_C4_zm, &
+  subroutine wp2_term_pr1_lhs( nzm, ngrdcol, gr, C4, invrs_tau_C4_zm, &
                                lhs_pr1_wp2 )
 
     ! Description
@@ -3421,7 +3501,9 @@ module advance_wp2_wp3_module
       nzm, &
       ngrdcol
     
-    real( kind = core_rknd ), dimension(ngrdcol,nzm), intent(in) :: &
+    type (grid), target, intent(in) :: gr
+    
+    real( kind = core_rknd ), dimension(ngrdcol,nzm), intent(in) :: & 
       invrs_tau_C4_zm    ! Inverse time-scale tau at momentum levels  [1/s]
 
     real( kind = core_rknd ), dimension(ngrdcol), intent(in) :: &
@@ -3439,10 +3521,10 @@ module advance_wp2_wp3_module
     ! Set lower boundary to 0
     !$acc parallel loop gang vector default(present)
     do i = 1, ngrdcol
-      lhs_pr1_wp2(i,1) = zero
-
+      ! Set lower boundary to 0
+      lhs_pr1_wp2(i,gr%k_lb_zm) = zero
       ! Set upper boundary to 0
-      lhs_pr1_wp2(i,nzm) = zero
+      lhs_pr1_wp2(i,gr%k_ub_zm) = zero
     end do
     !$acc end parallel loop
 
@@ -3462,7 +3544,7 @@ module advance_wp2_wp3_module
   end subroutine wp2_term_pr1_lhs
 
   !=============================================================================
-  subroutine wp2_terms_bp_pr2_rhs( nzm, ngrdcol, &
+  subroutine wp2_terms_bp_pr2_rhs( nzm, ngrdcol, gr, &
                                    C_uu_buoy, &
                                    thv_ds_zm, wpthvp, &
                                    rhs_bp_pr2_wp2 )
@@ -3511,7 +3593,9 @@ module advance_wp2_wp3_module
       nzm, &
       ngrdcol
     
-    real( kind = core_rknd ), dimension(ngrdcol), intent(in) :: &
+    type (grid), target, intent(in) :: gr
+    
+    real( kind = core_rknd ), dimension(ngrdcol), intent(in) :: & 
       C_uu_buoy    ! Model parameter C_uu_buoy                         [-]
 
     real( kind = core_rknd ), dimension(ngrdcol,nzm), intent(in) :: &
@@ -3530,9 +3614,9 @@ module advance_wp2_wp3_module
     ! Set lower boundary to 0
     !$acc parallel loop gang vector default(present)
     do i = 1, ngrdcol
-      rhs_bp_pr2_wp2(i,1) = zero
+      rhs_bp_pr2_wp2(i,gr%k_lb_zm) = zero
       ! Set upper boundary to 0
-      rhs_bp_pr2_wp2(i,nzm) = zero
+      rhs_bp_pr2_wp2(i,gr%k_ub_zm) = zero
     end do
     !$acc end parallel loop
 
@@ -3551,7 +3635,7 @@ module advance_wp2_wp3_module
   end subroutine wp2_terms_bp_pr2_rhs
 
   !=============================================================================
-  subroutine wp2_term_dp1_rhs( nzm, ngrdcol, C1_Skw_fnc, &
+  subroutine wp2_term_dp1_rhs( nzm, ngrdcol, gr, C1_Skw_fnc, &
                                invrs_tau1m, threshold, up2, vp2, &
                                l_damp_wp2_using_em, &
                                rhs_dp1_wp2 )
@@ -3603,7 +3687,9 @@ module advance_wp2_wp3_module
       nzm, &
       ngrdcol
     
-    real( kind = core_rknd ), dimension(ngrdcol,nzm), intent(in) :: &
+    type (grid), target, intent(in) :: gr
+    
+    real( kind = core_rknd ), dimension(ngrdcol,nzm), intent(in) :: & 
       C1_Skw_fnc,  & ! C_1 parameter with Sk_w applied                  [-]
       invrs_tau1m, & ! Inverse time-scale tau at momentum levels        [1/s]
       up2,         & ! Horizontal (east-west) velocity variance, u'^2   [m^2/s^2]
@@ -3628,9 +3714,9 @@ module advance_wp2_wp3_module
     ! Set lower boundary to 0
     !$acc parallel loop gang vector default(present)
     do i = 1, ngrdcol
-      rhs_dp1_wp2(i,1) = zero
+      rhs_dp1_wp2(i,gr%k_lb_zm) = zero
       ! Set upper boundary to 0
-      rhs_dp1_wp2(i,nzm) = zero
+      rhs_dp1_wp2(i,gr%k_ub_zm) = zero
     end do
     !$acc end parallel loop
 
@@ -3749,9 +3835,9 @@ module advance_wp2_wp3_module
     ! Set lower boundary to 0
     !$acc parallel loop gang vector default(present)
     do i = 1, ngrdcol
-      rhs_pr3_wp2(i,1) = zero
+      rhs_pr3_wp2(i,gr%k_lb_zm) = zero
       ! Set upper boundary to 0
-      rhs_pr3_wp2(i,nzm) = zero
+      rhs_pr3_wp2(i,gr%k_ub_zm) = zero
     end do
     !$acc end parallel loop
 
@@ -3797,7 +3883,7 @@ module advance_wp2_wp3_module
   end subroutine wp2_term_pr3_rhs
 
   !=============================================================================
-  subroutine wp2_term_pr1_rhs( nzm, ngrdcol, C4, &
+  subroutine wp2_term_pr1_rhs( nzm, ngrdcol, gr, C4, &
                                up2, vp2, invrs_tau_C4_zm, &
                                rhs_pr1_wp2 )
 
@@ -3845,7 +3931,9 @@ module advance_wp2_wp3_module
       nzm, &
       ngrdcol
     
-    real( kind = core_rknd ), dimension(ngrdcol), intent(in) :: &
+    type (grid), target, intent(in) :: gr
+    
+    real( kind = core_rknd ), dimension(ngrdcol), intent(in) :: & 
       C4    ! Model parameter C_4                      [-]
 
     real( kind = core_rknd ), dimension(ngrdcol,nzm), intent(in) :: &
@@ -3865,9 +3953,9 @@ module advance_wp2_wp3_module
     ! Set lower bounadry to 0
     !$acc parallel loop gang vector default(present)
     do i = 1, ngrdcol
-      rhs_pr1_wp2(i,1) = zero
+      rhs_pr1_wp2(i,gr%k_lb_zm) = zero
       ! Set upper boundary to 0
-      rhs_pr1_wp2(i,nzm) = zero
+      rhs_pr1_wp2(i,gr%k_ub_zm) = zero
     end do
     !$acc end parallel loop
 
@@ -3981,9 +4069,9 @@ module advance_wp2_wp3_module
     !$acc parallel loop gang vector default(present)
     do i = 1, ngrdcol
       ! Set lower boundary condition
-      rhs_pr_dfsn_wp2(i,1) = rhs_pr_dfsn_wp2(i,2)
+      rhs_pr_dfsn_wp2(i,gr%k_lb_zm) = rhs_pr_dfsn_wp2(i,gr%k_lb_zm+gr%grid_dir_indx)
       ! Set upper boundary to 0
-      rhs_pr_dfsn_wp2(i,nzm) = zero
+      rhs_pr_dfsn_wp2(i,gr%k_ub_zm) = zero
     end do
     !$acc end parallel loop   
 
@@ -4120,9 +4208,9 @@ module advance_wp2_wp3_module
     !$acc parallel loop gang vector default(present)
     do i = 1, ngrdcol
       ! Set term at lower boundary to 0
-      lhs_ta_wp3(:,i,1) = zero
+      lhs_ta_wp3(:,i,gr%k_lb_zt) = zero
       ! Set term at upper boundary to 0
-      lhs_ta_wp3(:,i,nzt) = zero
+      lhs_ta_wp3(:,i,gr%k_ub_zt) = zero
     end do
     !$acc end parallel loop
 
@@ -4316,9 +4404,9 @@ module advance_wp2_wp3_module
     do k = 1, ngrdcol
       do i = 1, 5
         ! Set lower boundary to 0
-        lhs_ta_wp3(i,k,1) = zero
+        lhs_ta_wp3(i,k,gr%k_lb_zt) = zero
         ! Set upper boundary to 0
-        lhs_ta_wp3(i,k,nzt) = zero
+        lhs_ta_wp3(i,k,gr%k_ub_zt) = zero
       end do
     end do
     !$acc end parallel loop
@@ -4608,9 +4696,9 @@ module advance_wp2_wp3_module
     do k = 1, ngrdcol
       do i = 1, 2
         ! Set lower boundary to 0
-        lhs_tp_wp3(i,k,1) = zero
+        lhs_tp_wp3(i,k,gr%k_lb_zt) = zero
         ! Set upper boundary to 0
-        lhs_tp_wp3(i,k,nzt) = zero
+        lhs_tp_wp3(i,k,gr%k_ub_zt) = zero
       end do
     end do
     !$acc end parallel loop
@@ -4734,9 +4822,9 @@ module advance_wp2_wp3_module
     !$acc parallel loop gang vector default(present)
     do i = 1, ngrdcol
       ! Set lower boundary to 0
-      lhs_ac_pr2_wp3(i,1) = zero
+      lhs_ac_pr2_wp3(i,gr%k_lb_zt) = zero
       ! Set upper boundary to 0
-      lhs_ac_pr2_wp3(i,nzt) = zero
+      lhs_ac_pr2_wp3(i,gr%k_ub_zt) = zero
     end do
     !$acc end parallel loop
 
@@ -4759,7 +4847,7 @@ module advance_wp2_wp3_module
   end subroutine wp3_terms_ac_pr2_lhs
 
   !=============================================================================
-  subroutine wp3_term_pr1_lhs( nzt, ngrdcol, &
+  subroutine wp3_term_pr1_lhs( nzt, ngrdcol, gr, & 
                                C8, C8b, &
                                invrs_tau_wp3_zt, Skw_zt, &
                                l_damp_wp3_Skw_squared, &
@@ -4827,7 +4915,9 @@ module advance_wp2_wp3_module
       nzt, &
       ngrdcol
     
-    real( kind = core_rknd ), dimension(ngrdcol,nzt), intent(in) :: &
+    type (grid), target, intent(in) :: gr
+    
+    real( kind = core_rknd ), dimension(ngrdcol,nzt), intent(in) :: & 
       invrs_tau_wp3_zt,  & ! Inverse time-scale tau at thermodynamic levels  [1/s]
       Skw_zt               ! Skewness of w at thermodynamic levels   [-]
 
@@ -4851,9 +4941,9 @@ module advance_wp2_wp3_module
     !$acc parallel loop gang vector default(present)
     do i = 1, ngrdcol
       ! Set lower boundary to 0
-      lhs_pr1_wp3(i,1) = zero
+      lhs_pr1_wp3(i,gr%k_lb_zt) = zero
       ! Set upper boundary to 0
-      lhs_pr1_wp3(i,nzt) = zero
+      lhs_pr1_wp3(i,gr%k_ub_zt) = zero
     end do
     !$acc end parallel loop
 
@@ -4976,9 +5066,9 @@ module advance_wp2_wp3_module
     !$acc parallel loop gang vector default(present)
     do i = 1, ngrdcol
       ! Set lower boundary to 0
-      rhs_ta_wp3(i,1) = zero
+      rhs_ta_wp3(i,gr%k_lb_zt) = zero
       ! Set upper boundary to 0
-      rhs_ta_wp3(i,nzt) = zero
+      rhs_ta_wp3(i,gr%k_ub_zt) = zero
     end do
     !$acc end parallel loop
 
@@ -4997,7 +5087,7 @@ module advance_wp2_wp3_module
   end subroutine wp3_term_ta_explicit_rhs
 
   !=============================================================================
-  subroutine wp3_terms_bp1_pr2_rhs( nzt, ngrdcol, C11_Skw_fnc, &
+  subroutine wp3_terms_bp1_pr2_rhs( nzt, ngrdcol, gr, C11_Skw_fnc, &
                                     thv_ds_zt, wp2thvp, &
                                     rhs_bp1_pr2_wp3 )
 
@@ -5042,7 +5132,9 @@ module advance_wp2_wp3_module
       nzt, &
       ngrdcol
     
-    real( kind = core_rknd ), dimension(ngrdcol,nzt), intent(in) :: &
+    type (grid), target, intent(in) :: gr
+    
+    real( kind = core_rknd ), dimension(ngrdcol,nzt), intent(in) :: & 
       C11_Skw_fnc, & ! C_11 parameter with Sk_w applied         [-]
       thv_ds_zt,   & ! Dry, base-state theta_v at thermo. levs  [K]
       wp2thvp        ! w'^2 th_v'                               [K m^2/s^2]
@@ -5060,9 +5152,9 @@ module advance_wp2_wp3_module
     !$acc parallel loop gang vector default(present)
     do i = 1, ngrdcol
       ! Set lower boundary to 0
-      rhs_bp1_pr2_wp3(i,1) = zero
+      rhs_bp1_pr2_wp3(i,gr%k_lb_zt) = zero
       ! Set upper boundary to 0
-      rhs_bp1_pr2_wp3(i,nzt) = zero
+      rhs_bp1_pr2_wp3(i,gr%k_ub_zt) = zero
     end do
     !$acc end parallel loop
 
@@ -5159,9 +5251,9 @@ module advance_wp2_wp3_module
     !$acc parallel loop gang vector default(present)
     do i = 1, ngrdcol
       ! Set lower boundary to 0
-      rhs_pr_turb_wp3(i,1) = zero
+      rhs_pr_turb_wp3(i,gr%k_lb_zt) = zero
       ! Set upper boundary to 0
-      rhs_pr_turb_wp3(i,nzt) = zero
+      rhs_pr_turb_wp3(i,gr%k_ub_zt) = zero
     end do
     !$acc end parallel loop
 
@@ -5287,9 +5379,9 @@ module advance_wp2_wp3_module
     !$acc parallel loop gang vector default(present)
     do i = 1, ngrdcol
       ! Set lower boundary to 0
-      rhs_pr_dfsn_wp3(i,1) = zero
+      rhs_pr_dfsn_wp3(i,gr%k_lb_zt) = zero
       ! Set upper boundary to 0
-      rhs_pr_dfsn_wp3(i,nzt) = zero
+      rhs_pr_dfsn_wp3(i,gr%k_ub_zt) = zero
     end do
     !$acc end parallel loop
 
@@ -5311,7 +5403,7 @@ module advance_wp2_wp3_module
   end subroutine wp3_term_pr_dfsn_rhs
 
   !=============================================================================
-  subroutine wp3_term_pr1_rhs( nzt, ngrdcol, &
+  subroutine wp3_term_pr1_rhs( nzt, ngrdcol, gr, &
                                C8, C8b, &
                                invrs_tau_wp3_zt, Skw_zt, wp3, &
                                l_damp_wp3_Skw_squared, &
@@ -5374,7 +5466,9 @@ module advance_wp2_wp3_module
       nzt, &
       ngrdcol
     
-    real( kind = core_rknd ), dimension(ngrdcol), intent(in) :: &
+    type (grid), intent(in) :: gr
+    
+    real( kind = core_rknd ), dimension(ngrdcol), intent(in) :: & 
       C8,  & ! Model parameter C_8                        [-]
       C8b    ! Model parameter C_8b                       [-]
 
@@ -5399,9 +5493,9 @@ module advance_wp2_wp3_module
     !$acc parallel loop gang vector default(present)
     do i = 1, ngrdcol
       ! Set lower boundary to 0
-      rhs_pr1_wp3(i,1) = zero
+      rhs_pr1_wp3(i,gr%k_lb_zt) = zero
       ! Set upper boundary to 0
-      rhs_pr1_wp3(i,nzt) = zero
+      rhs_pr1_wp3(i,gr%k_ub_zt) = zero
     end do
     !$acc end parallel loop
 

@@ -2209,8 +2209,8 @@ contains
   !================================================================================================
 
   subroutine setup_grid_heights_api_single_col( &
-    l_implemented, grid_type,  &
-    deltaz, zm_init, momentum_heights,  &
+    l_implemented, l_ascending_grid, &
+    grid_type, deltaz, zm_init, momentum_heights,  &
     gr, thermodynamic_heights )
 
     use grid_class, only: & 
@@ -2230,6 +2230,12 @@ contains
     ! Flag to see if CLUBB is running on it's own,
     ! or if it's implemented as part of a host model.
     logical, intent(in) :: l_implemented
+
+    ! Flag for having the model use its traditional ascending grid (where the
+    ! lowest-numbered grid level is at the surface or model lower boundary).
+    ! When this flag is turned off, a descending grid is used (where the
+    ! lowest-numbered grid level is at the model upper boundary).
+    logical, intent(in) :: l_ascending_grid
 
     ! If CLUBB is running on it's own, this option determines if it is using:
     ! 1) an evenly-spaced grid;
@@ -2290,9 +2296,9 @@ contains
 
     call setup_grid_heights( &
       gr%nzm, gr%nzt, 1, & ! intent(in)
-      l_implemented, grid_type,  & ! intent(in)
-      deltaz_col, zm_init_col, momentum_heights_col,  & ! intent(in)
-      thermodynamic_heights_col, & ! intent(in)
+      l_implemented, l_ascending_grid, & ! intent(in)
+      grid_type, deltaz_col, zm_init_col, & ! intent(in)
+      momentum_heights_col, thermodynamic_heights_col, & ! intent(in)
       gr, err_code_api ) ! intent(inout)
 
     if ( err_code_api == clubb_fatal_error ) error stop "Error in CLUBB calling setup_grid_heights"
@@ -2305,8 +2311,8 @@ contains
 
   subroutine setup_grid_heights_api_multi_col( &
       nzm, nzt, ngrdcol, &
-      l_implemented, grid_type,  &
-      deltaz, zm_init, momentum_heights,  &
+      l_implemented, l_ascending_grid, &
+      grid_type, deltaz, zm_init, momentum_heights,  &
       gr, thermodynamic_heights )
 
     use grid_class, only: & 
@@ -2330,6 +2336,12 @@ contains
     ! Flag to see if CLUBB is running on it's own,
     ! or if it's implemented as part of a host model.
     logical, intent(in) :: l_implemented
+
+    ! Flag for having the model use its traditional ascending grid (where the
+    ! lowest-numbered grid level is at the surface or model lower boundary).
+    ! When this flag is turned off, a descending grid is used (where the
+    ! lowest-numbered grid level is at the model upper boundary).
+    logical, intent(in) :: l_ascending_grid
 
     ! If CLUBB is running on it's own, this option determines if it is using:
     ! 1) an evenly-spaced grid;
@@ -2374,9 +2386,9 @@ contains
 
     call setup_grid_heights( &
       nzm, nzt, ngrdcol, & ! intent(in)
-      l_implemented, grid_type,  & ! intent(in)
-      deltaz, zm_init, momentum_heights,  & ! intent(in)
-      thermodynamic_heights, & ! intent(in)
+      l_implemented, l_ascending_grid, & ! intent(in)
+      grid_type, deltaz, zm_init, & ! intent(in)
+      momentum_heights, thermodynamic_heights, & ! intent(in)
       gr, err_code_api ) ! intent(inout)
 
     if ( err_code_api == clubb_fatal_error ) error stop "Error in CLUBB calling setup_grid_heights"
@@ -2387,7 +2399,7 @@ contains
   ! setup_grid - This subroutine sets up the CLUBB vertical grid for a single column
   !================================================================================================
   subroutine setup_grid_api_single_col( nzmax, sfc_elevation, l_implemented, &
-                                        grid_type, deltaz, zm_init, zm_top, &
+                                        l_ascending_grid, grid_type, deltaz, zm_init, zm_top, &
                                         momentum_heights, thermodynamic_heights, &
                                         gr )
 
@@ -2411,6 +2423,8 @@ contains
       sfc_elevation  ! Elevation of ground level    [m AMSL]
 
     logical, intent(in) :: l_implemented
+    
+    logical, intent(in) :: l_ascending_grid
 
     integer, intent(in) :: grid_type
 
@@ -2454,10 +2468,10 @@ contains
     momentum_heights_col(1,:)       = momentum_heights
     thermodynamic_heights_col(1,:)  = thermodynamic_heights
 
-    call setup_grid( nzmax, 1, sfc_elevation_col, l_implemented,      & ! intent(in)
-                     grid_type, deltaz_col, zm_init_col, zm_top_col,  & ! intent(in)
-                     momentum_heights_col, thermodynamic_heights_col, & ! intent(in)
-                     gr, err_code_api )                                 ! intent(inout)
+    call setup_grid( nzmax, 1, sfc_elevation_col, l_implemented,                       & ! intent(in)
+                     l_ascending_grid, grid_type, deltaz_col, zm_init_col, zm_top_col, & ! intent(in)
+                     momentum_heights_col, thermodynamic_heights_col,                  & ! intent(in)
+                     gr, err_code_api )                                                  ! intent(inout)
 
     if ( err_code_api == clubb_fatal_error ) error stop "Error in CLUBB calling setup_grid"
 
@@ -2467,7 +2481,7 @@ contains
   ! setup_grid - This subroutine sets up the CLUBB vertical grid.
   !================================================================================================
   subroutine setup_grid_api_multi_col( nzmax, ngrdcol, sfc_elevation, l_implemented, &
-                                       grid_type, deltaz, zm_init, zm_top, &
+                                       l_ascending_grid, grid_type, deltaz, zm_init, zm_top, &
                                        momentum_heights, thermodynamic_heights, &
                                        gr )
 
@@ -2492,6 +2506,8 @@ contains
       sfc_elevation  ! Elevation of ground level    [m AMSL]
 
     logical, intent(in) :: l_implemented
+    
+    logical, intent(in) :: l_ascending_grid
 
     integer, intent(in) :: grid_type
 
@@ -2515,10 +2531,10 @@ contains
     ! Initialize err_code_api to "No error"
     err_code_api = clubb_no_error
 
-    call setup_grid( nzmax, ngrdcol, sfc_elevation, l_implemented, & ! intent(in)
-                     grid_type, deltaz, zm_init, zm_top,           & ! intent(in)
-                     momentum_heights, thermodynamic_heights,      & ! intent(in)
-                     gr, err_code_api )                              ! intent(inout)
+    call setup_grid( nzmax, ngrdcol, sfc_elevation, l_implemented,         & ! intent(in)
+                     l_ascending_grid, grid_type, deltaz, zm_init, zm_top, & ! intent(in)
+                     momentum_heights, thermodynamic_heights,              & ! intent(in)
+                     gr, err_code_api )                                      ! intent(inout)
 
     if ( err_code_api == clubb_fatal_error ) error stop "Error in CLUBB calling setup_grid"
 

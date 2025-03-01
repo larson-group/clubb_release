@@ -32,7 +32,7 @@ module mean_adv
   !=============================================================================
   subroutine term_ma_zt_lhs( nzm, nzt, ngrdcol, wm_zt, weights_zt2zm, & ! Intent(in)
                              invrs_dzt, invrs_dzm,                    & ! Intent(in)
-                             l_upwind_xm_ma,                          & ! Intent(in)
+                             l_upwind_xm_ma, grid_dir,                & ! Intent(in)
                              lhs_ma )                                   ! Intent(out)
 
     ! Description:
@@ -178,6 +178,9 @@ module mean_adv
                         ! differencing for turbulent or mean advection terms.
                         ! It affects rtm, thlm, sclrm, um and vm.
 
+    real( kind = core_rknd ), intent(in) :: &
+      grid_dir    ! Grid direction multiplier (+1 = ascending; -1 = descending)
+
     ! -------------------------- Return Variable --------------------------
     real( kind = core_rknd ), dimension(ndiags3,ngrdcol,nzt), intent(out) :: &
       lhs_ma    ! Mean advection contributions to lhs    [1/s]
@@ -208,12 +211,11 @@ module mean_adv
       end do ! k = 2, nzt-1, 1
       !$acc end parallel loop
 
-      ! Upper Boundary
+      ! Upper Boundary for an Ascending Grid
+      ! or Lower Boundary for a Descending Grid.
 
       ! Special discretization for zero derivative method, where the
-      ! derivative d(var_zt)/dz over the model top is set to 0, in order
-      ! to stay consistent with the zero-flux boundary condition option
-      ! in the eddy diffusion code.
+      ! derivative d(var_zt)/dz over the model boundary is set to 0.
       !$acc parallel loop gang vector default(present)
       do i = 1, ngrdcol
         
@@ -230,10 +232,11 @@ module mean_adv
       end do
       !$acc end parallel loop
 
-      ! Lower Boundary
+      ! Lower Boundary for an Ascending Grid
+      ! or Upper Boundary for a Descending Grid.
 
       ! Special discretization for zero derivative method, where the
-      ! derivative d(var_zt)/dz over the model bottom is set to 0.
+      ! derivative d(var_zt)/dz over the model boundary is set to 0.
       !$acc parallel loop gang vector default(present)
       do i = 1, ngrdcol
         
@@ -256,7 +259,11 @@ module mean_adv
       !$acc parallel loop gang vector collapse(2) default(present)
       do k = 2, nzt-1, 1
         do i = 1, ngrdcol
-          if ( wm_zt(i,k) >= zero ) then  ! Mean wind is in upward direction
+          if ( grid_dir * wm_zt(i,k) >= zero ) then
+                  
+             ! Mean wind is in an upward direction and an ascending grid is used
+             ! or mean wind is in a downward direction and a descending grid
+             ! is used.
 
              ! Thermodynamic superdiagonal: [ x var_zt(k+1,<t+1>) ]
              lhs_ma(kp1_tdiag,i,k) = zero
@@ -267,7 +274,11 @@ module mean_adv
              ! Thermodynamic subdiagonal: [ x var_zt(k-1,<t+1>) ]
              lhs_ma(km1_tdiag,i,k) = - wm_zt(i,k) * invrs_dzm(i,k)
              
-          else  ! wm_zt < 0; Mean wind is in downward direction
+          else  ! grid_dir * wm_zt < 0
+
+             ! Mean wind is in a downward direction and an ascending grid is
+             ! used or mean wind is in an upward direction and a descending grid
+             ! is used.
 
              ! Thermodynamic superdiagonal: [ x var_zt(k+1,<t+1>) ]
              lhs_ma(kp1_tdiag,i,k) = + wm_zt(i,k) * invrs_dzm(i,k+1)
@@ -284,10 +295,14 @@ module mean_adv
       end do ! k = 2, nzt-1, 1
       !$acc end parallel loop
 
-      ! Upper Boundary
+      ! Upper Boundary for an Ascending Grid
+      ! or Lower Boundary for a Descending Grid.
       !$acc parallel loop gang vector default(present)
       do i = 1, ngrdcol
-        if ( wm_zt(i,nzt) >= zero ) then  ! Mean wind is in upward direction
+        if ( grid_dir * wm_zt(i,nzt) >= zero ) then
+
+          ! Mean wind is in an upward direction and an ascending grid is used or
+          ! mean wind is in a downward direction and a descending grid is used.
 
           ! Thermodynamic superdiagonal: [ x var_zt(k+1,<t+1>) ]
           lhs_ma(kp1_tdiag,i,nzt) = zero
@@ -298,7 +313,10 @@ module mean_adv
           ! Thermodynamic subdiagonal: [ x var_zt(k-1,<t+1>) ]
           lhs_ma(km1_tdiag,i,nzt) = - wm_zt(i,nzt) * invrs_dzm(i,nzm-1)
 
-        else  ! wm_zt < 0; Mean wind is in downward direction
+        else  ! grid_dir * wm_zt < 0
+
+          ! Mean wind is in a downward direction and an ascending grid is used
+          ! or mean wind is in an upward direction and a descending grid is used
 
           ! Thermodynamic superdiagonal: [ x var_zt(k+1,<t+1>) ]
           lhs_ma(kp1_tdiag,i,nzt) = zero
@@ -309,14 +327,18 @@ module mean_adv
           ! Thermodynamic subdiagonal: [ x var_zt(k-1,<t+1>) ]
           lhs_ma(km1_tdiag,i,nzt) = zero
 
-        end if ! wm_zt > 0
+        end if ! grid_dir * wm_zt > 0
       end do
       !$acc end parallel loop
 
-      ! Lower Boundary
+      ! Lower Boundary for an Ascending Grid
+      ! or Upper Boundary for a Descending Grid.
       !$acc parallel loop gang vector default(present)
       do i = 1, ngrdcol
-        if ( wm_zt(i,1) >= zero ) then  ! Mean wind is in upward direction
+        if ( grid_dir * wm_zt(i,1) >= zero ) then
+
+          ! Mean wind is in an upward direction and an ascending grid is used or
+          ! mean wind is in a downward direction and a descending grid is used.
 
           ! Thermodynamic superdiagonal: [ x var_zt(k+1,<t+1>) ]
           lhs_ma(kp1_tdiag,i,1) = zero
@@ -327,7 +349,10 @@ module mean_adv
           ! Thermodynamic subdiagonal: [ x var_zt(k-1,<t+1>) ]
           lhs_ma(km1_tdiag,i,1) = zero
 
-        else  ! wm_zt < 0; Mean wind is in downward direction
+        else  ! grid_dir * wm_zt < 0
+
+          ! Mean wind is in a downward direction and an ascending grid is used
+          ! or mean wind is in an upward direction and a descending grid is used
 
           ! Thermodynamic superdiagonal: [ x var_zt(k+1,<t+1>) ]
           lhs_ma(kp1_tdiag,i,1) = + wm_zt(i,1) * invrs_dzm(i,2)
@@ -338,7 +363,7 @@ module mean_adv
           ! Thermodynamic subdiagonal: [ x var_zt(k-1,<t+1>) ]
           lhs_ma(km1_tdiag,i,1) = zero
 
-        end if ! wm_zt > 0
+        end if ! grid_dir * wm_zt > 0
       end do
       !$acc end parallel loop
 
@@ -447,7 +472,9 @@ module mean_adv
 
     ! -------------------------- Begin Code --------------------------
 
-    ! Set lower boundary array to 0
+    ! Set boundary array to 0
+    ! This is the Lower Boundary for an Ascending Grid
+    ! or the Upper Boundary for a Descending Grid.
     !$acc parallel loop gang vector collapse(2) default(present)
     do i = 1, ngrdcol
       do b = 1, ndiags3
@@ -475,7 +502,9 @@ module mean_adv
     end do ! k = 2, nzm-1, 1
     !$acc end parallel loop
 
-    ! Set upper boundary array to 0
+    ! Set boundary array to 0
+    ! This is the Upper Boundary for an Ascending Grid
+    ! or the Lower Boundary for a Descending Grid.
     !$acc parallel loop gang vector collapse(2) default(present)
     do i = 1, ngrdcol
       do b = 1, ndiags3

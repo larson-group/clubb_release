@@ -1,4 +1,4 @@
-!-----------------------------------------------------------------------
+!----------------------------------------------------------------------
 ! $Id$
 
 module clubb_driver
@@ -54,22 +54,23 @@ module clubb_driver
     !---------------------------------------------------------------------
 
     use grid_class, only: &
-      read_grid_heights, &   !---------------------------------------------- Procedure(s)
-      zt2zm_api, &
-      zm2zt_api, &
-      zm2zt2zm
+        read_grid_heights, &   !---------------------------------------------- Procedure(s)
+        zt2zm_api, &
+        zm2zt_api, &
+        zm2zt2zm, &
+        flip
 
     use stats_clubb_utilities, only: &
         stats_finalize_api
 
     use parameter_indices, only: &
-      nparams, ic_K, iSkw_max_mag !------------------------------------------ Variable(s)
+        nparams, ic_K, iSkw_max_mag !------------------------------------------ Variable(s)
 
     use numerical_check, only: invalid_model_arrays !------------------------ Procedure(s)
 
     use inputfields, only: &
-      inputfields_init, compute_timestep, stat_fields_reader, & !------------ Procedure(s)
-      l_input_wp3                                                 !---------- Variable(s)
+        inputfields_init, compute_timestep, stat_fields_reader, & !------------ Procedure(s)
+        l_input_wp3                                                 !---------- Variable(s)
 
     use inputfields, only: stat_files
 
@@ -78,8 +79,7 @@ module clubb_driver
         nu_vertical_res_dep !---------------------------- Type(s)
 
     use advance_clubb_core_module, only: &
-      advance_clubb_core   !------------------------------------------------- Procedure(s)
-      
+        advance_clubb_core   !------------------------------------------------- Procedure(s)    
 
     use constants_clubb, only: &
         fstdout, & !--------------------------------------------------------- Constant(s)
@@ -143,7 +143,8 @@ module clubb_driver
         l_silhs_rad, & !--------------------------------------------------- Constants
         l_pos_def, l_hole_fill, &
         l_gamma_Skw, l_byteswap_io, &
-        saturation_flatau
+        saturation_flatau, &
+        l_test_grid_generalization
 
     use stats_clubb_utilities, only: & 
         stats_begin_timestep_api, stats_end_timestep, & !----------------------- Procedure(s)
@@ -278,8 +279,11 @@ module clubb_driver
     use cloud_sed_module, only: &
         cloud_drop_sed  ! Procedure(s)
 
+    use generalized_grid_test, only: &
+        clubb_generalized_grid_testing  ! Procedure(s)
+
     use grid_adaptation_module, only: &
-      setup_simple_gr_dycore, calc_grid_dens_func, adapt_grid  ! Procedure(s)
+        setup_simple_gr_dycore, calc_grid_dens_func, adapt_grid  ! Procedure(s)
 
     use time_dependent_input, only: initialize_t_dependent_input ! Procedure(s)
 
@@ -336,6 +340,9 @@ module clubb_driver
 
     !----------------------------------- Local Variables -----------------------------------
     type(grid), target :: gr
+    ! Brian
+    type(grid), target :: gr_desc
+    ! Remove above
 
     type (stats), dimension(ngrdcol) :: &
       stats_zt,      & ! stats_zt grid
@@ -423,6 +430,10 @@ module clubb_driver
     ! Grid altitude arrays
     real( kind = core_rknd ), dimension(:,:), allocatable :: &
       momentum_heights, thermodynamic_heights ! [m]
+    ! Brian
+    real( kind = core_rknd ), dimension(:,:), allocatable ::  & 
+      momentum_heights_flip, thermodynamic_heights_flip ! [m]
+    ! remove above
 
     ! Dummy dx and dy horizontal grid spacing.
     real( kind = core_rknd ), dimension(ngrdcol) :: &
@@ -1511,16 +1522,31 @@ module clubb_driver
     allocate( momentum_heights(ngrdcol,nzmax), &
               thermodynamic_heights(ngrdcol,nzmax-1) )
 
+    ! Generalized grid test
+    ! This block of code is used when a generalized grid test
+    ! (ascending vs. descending grid) is being performed.
+    if ( l_test_grid_generalization ) then
+      allocate( momentum_heights_flip(ngrdcol,nzmax),  & 
+                thermodynamic_heights_flip(ngrdcol,nzmax-1) )
+    endif
+
     ! Handle the reading of grid altitudes for
     ! stretched (unevenly-spaced) grid options.
     ! Do some simple error checking for all grid options.
     do i = 1, ngrdcol
-      call read_grid_heights( nzmax, grid_type, &                 ! Intent(in)
-                              zm_grid_fname, zt_grid_fname, &     ! Intent(in)
-                              iunit, &                            ! Intent(in)
-                              momentum_heights(i,:), &            ! Intent(out)
-                              thermodynamic_heights(i,:), &       ! Intent(out)
-                              err_code )                          ! Intent(inout)
+      call read_grid_heights( nzmax, grid_type, &             ! Intent(in)
+                              zm_grid_fname, zt_grid_fname, & ! Intent(in)
+                              iunit, &                        ! Intent(in) 
+                              momentum_heights(i,:), &        ! Intent(out)
+                              thermodynamic_heights(i,:), &   ! Intent(out)
+                              err_code )                      ! Intent(inout)
+      ! Generalized grid test
+      ! This block of code is used when a generalized grid test
+      ! (ascending vs. descending grid) is being performed.
+      if ( l_test_grid_generalization ) then
+         momentum_heights_flip(i,:) = flip( momentum_heights(i,:), nzmax )
+         thermodynamic_heights_flip(i,:) = flip( thermodynamic_heights(i,:), nzmax-1 )
+      endif
     end do
 
     if ( err_code == clubb_fatal_error ) then
@@ -1670,9 +1696,19 @@ module clubb_driver
 
     ! Setup grid
     call setup_grid_api( nzmax, ngrdcol, sfc_elevation, l_implemented, & ! intent(in)
-                         grid_type, deltaz, zm_init, zm_top,      & ! intent(in)
-                         momentum_heights, thermodynamic_heights, & ! intent(in)
-                         gr )                                       ! intent(out)
+                         .true., grid_type, deltaz, zm_init, zm_top,   & ! intent(in)
+                         momentum_heights, thermodynamic_heights,      & ! intent(in)
+                         gr )                                            ! intent(out)
+
+    ! Generalized grid test
+    ! This block of code is used when a generalized grid test
+    ! (ascending vs. descending grid) is being performed.
+    if ( l_test_grid_generalization ) then
+      call setup_grid_api( nzmax, ngrdcol, sfc_elevation, l_implemented,      & ! intent(in)
+                           .false., grid_type, deltaz, zm_init, zm_top,       & ! intent(in)
+                           momentum_heights_flip, thermodynamic_heights_flip, & ! intent(in)
+                           gr_desc )                                            ! intent(out)
+    endif
 
     ! Define tunable constant parameters
     call setup_parameters_api( &
@@ -2409,6 +2445,11 @@ module clubb_driver
     ! Save time before main loop starts
     call cpu_time( time_start )
     time_total = time_start
+
+    if ( l_test_grid_generalization ) then
+      write(fstdout,*) "Performing grid generalization test"
+    endif
+
 !-------------------------------------------------------------------------------
 !                         Main Time Stepping Loop
 !-------------------------------------------------------------------------------
@@ -2699,49 +2740,102 @@ module clubb_driver
       time_loop_init = time_loop_init + time_stop - time_start      
       call cpu_time(time_start) ! initialize timer for advance_clubb_core
 
-      ! Call the clubb core api for one column
-      call advance_clubb_core_api( &
-              gr, gr%nzm, gr%nzt, ngrdcol, &
-              l_implemented, dt_main, fcor, sfc_elevation, &                       ! Intent(in)
-              hydromet_dim, &                                                      ! intent(in)
-              sclr_dim, sclr_tol, edsclr_dim, sclr_idx, &                          ! intent(in)
-              thlm_forcing, rtm_forcing, um_forcing, vm_forcing, &                 ! Intent(in)
-              sclrm_forcing, edsclrm_forcing, wprtp_forcing, &                     ! Intent(in)
-              wpthlp_forcing, rtp2_forcing, thlp2_forcing, &                       ! Intent(in)
-              rtpthlp_forcing, wm_zm, wm_zt, &                                     ! Intent(in)
-              wpthlp_sfc, wprtp_sfc, upwp_sfc, vpwp_sfc, p_sfc, &                  ! Intent(in)
-              wpsclrp_sfc, wpedsclrp_sfc, &                                        ! Intent(in)
-              upwp_sfc_pert, vpwp_sfc_pert, &                                      ! intent(in)
-              rtm_ref, thlm_ref, um_ref, vm_ref, ug, vg, &                         ! Intent(in)
-              p_in_Pa, rho_zm, rho, exner, &                                       ! Intent(in)
-              rho_ds_zm, rho_ds_zt, invrs_rho_ds_zm, &                             ! Intent(in)
-              invrs_rho_ds_zt, thv_ds_zm, thv_ds_zt, &                             ! Intent(in) 
-              hm_metadata%l_mix_rat_hm, &                                          ! Intent(in)
-              rfrzm, wphydrometp, &                                                ! Intent(in)
-              wp2hmp, rtphmp_zt, thlphmp_zt, &                                     ! Intent(in)
-              dummy_dx, dummy_dy, &                                                ! Intent(in)
-              clubb_params, nu_vert_res_dep, lmin, &                               ! Intent(in)
-              clubb_config_flags, &                                                ! Intent(in)
-              stats_metadata, &                                                    ! Intent(in)
-              stats_zt, stats_zm, stats_sfc, &                                     ! intent(inout)
-              um, vm, upwp, vpwp, up2, vp2, up3, vp3, &                            ! Intent(inout)
-              thlm, rtm, wprtp, wpthlp, &                                          ! Intent(inout)
-              wp2, wp3, rtp2, rtp3, thlp2, thlp3, rtpthlp, &                       ! Intent(inout)
-              sclrm, sclrp2, sclrp3, sclrprtp, sclrpthlp, &                        ! Intent(inout)
-              wpsclrp, edsclrm, err_code, &                                        ! Intent(inout)
-              rcm, cloud_frac, &                                                   ! Intent(inout)
-              wpthvp, wp2thvp, rtpthvp, thlpthvp, &                                ! Intent(inout)
-              sclrpthvp, &                                                         ! Intent(inout)
-              wp2rtp, wp2thlp, uprcp, vprcp, rc_coef_zm, wp4, &                    ! intent(inout)
-              wpup2, wpvp2, wp2up2, wp2vp2, ice_supersat_frac, &                   ! intent(inout)
-              um_pert, vm_pert, upwp_pert, vpwp_pert, &                            ! intent(inout)
-              pdf_params, pdf_params_zm, &                                         ! Intent(inout)
-              pdf_implicit_coefs_terms, &                                          ! intent(inout)
-              Kh_zm, Kh_zt, &                                                      ! intent(out)
-              thlprcp, wprcp, w_up_in_cloud, w_down_in_cloud, &                    ! Intent(out)
-              cloudy_updraft_frac, cloudy_downdraft_frac, &                        ! Intent(out)
-              rcm_in_layer, cloud_cover, invrs_tau_zm, &                           ! Intent(out)
-              Lscale )                                                             ! Intent(out)
+      if ( l_test_grid_generalization ) then
+
+        ! Generalized grid test
+        ! This block of code is used when a generalized grid test
+        ! (ascending vs. descending grid) is being performed.
+        call clubb_generalized_grid_testing &
+            ( gr, gr_desc, gr%nzm, gr%nzt, ngrdcol, &              ! Intent(in)
+              l_implemented, dt_main, fcor, sfc_elevation, &       ! Intent(in)
+              hydromet_dim, &                                      ! intent(in)
+              sclr_dim, sclr_tol, edsclr_dim, sclr_idx, &          ! intent(in)
+              thlm_forcing, rtm_forcing, um_forcing, vm_forcing, & ! Intent(in)
+              sclrm_forcing, edsclrm_forcing, wprtp_forcing, &     ! Intent(in)
+              wpthlp_forcing, rtp2_forcing, thlp2_forcing, &       ! Intent(in)
+              rtpthlp_forcing, wm_zm, wm_zt, &                     ! Intent(in)
+              wpthlp_sfc, wprtp_sfc, upwp_sfc, vpwp_sfc, p_sfc, &  ! Intent(in)
+              wpsclrp_sfc, wpedsclrp_sfc,  &                       ! Intent(in)
+              upwp_sfc_pert, vpwp_sfc_pert, &                      ! intent(in)
+              rtm_ref, thlm_ref, um_ref, vm_ref, ug, vg, &         ! Intent(in)
+              p_in_Pa, rho_zm, rho, exner, &                       ! Intent(in)
+              rho_ds_zm, rho_ds_zt, invrs_rho_ds_zm, &             ! Intent(in)
+              invrs_rho_ds_zt, thv_ds_zm, thv_ds_zt, &             ! Intent(in) 
+              hm_metadata%l_mix_rat_hm, &                          ! Intent(in)
+              rfrzm, wphydrometp, &                                ! Intent(in)
+              wp2hmp, rtphmp_zt, thlphmp_zt, &                     ! Intent(in)
+              dummy_dx, dummy_dy, &                                ! Intent(in)
+              clubb_params, nu_vert_res_dep, lmin, &               ! Intent(in)
+              clubb_config_flags, &                                ! Intent(in)
+              stats_metadata, &                                    ! Intent(in)
+              stats_zt, stats_zm, stats_sfc, &                     ! intent(inout)
+              um, vm, upwp, vpwp, up2, vp2, up3, vp3, &            ! Intent(inout)
+              thlm, rtm, wprtp, wpthlp, &                          ! Intent(inout)
+              wp2, wp3, rtp2, rtp3, thlp2, thlp3, rtpthlp, &       ! Intent(inout)
+              sclrm, sclrp2, sclrp3, sclrprtp, sclrpthlp, &        ! Intent(inout)
+              wpsclrp, edsclrm, err_code, &                        ! Intent(inout)
+              rcm, cloud_frac, &                                   ! Intent(inout)
+              wpthvp, wp2thvp, rtpthvp, thlpthvp, &                ! Intent(inout)
+              sclrpthvp, &                                         ! Intent(inout)
+              wp2rtp, wp2thlp, uprcp, vprcp, rc_coef_zm, wp4, &    ! intent(inout)
+              wpup2, wpvp2, wp2up2, wp2vp2, ice_supersat_frac, &   ! intent(inout)
+              um_pert, vm_pert, upwp_pert, vpwp_pert, &            ! intent(inout)
+              pdf_params, pdf_params_zm, &                         ! Intent(inout)
+              pdf_implicit_coefs_terms, &                          ! intent(inout)
+              Kh_zm, Kh_zt, &                                      ! intent(out)
+              thlprcp, wprcp, w_up_in_cloud, w_down_in_cloud, &    ! Intent(out)
+              cloudy_updraft_frac, cloudy_downdraft_frac, &        ! Intent(out)
+              rcm_in_layer, cloud_cover, invrs_tau_zm, &           ! Intent(out)
+              Lscale )                                             ! Intent(out)
+
+      else
+
+        ! Normal CLUBB run (with ascending grid)
+        ! Call the clubb core api for one column
+        call advance_clubb_core_api( &
+                gr, gr%nzm, gr%nzt, ngrdcol, &
+                l_implemented, dt_main, fcor, sfc_elevation, &       ! Intent(in)
+                hydromet_dim, &                                      ! intent(in)
+                sclr_dim, sclr_tol, edsclr_dim, sclr_idx, &          ! intent(in)
+                thlm_forcing, rtm_forcing, um_forcing, vm_forcing, & ! Intent(in)
+                sclrm_forcing, edsclrm_forcing, wprtp_forcing, &     ! Intent(in)
+                wpthlp_forcing, rtp2_forcing, thlp2_forcing, &       ! Intent(in)
+                rtpthlp_forcing, wm_zm, wm_zt, &                     ! Intent(in)
+                wpthlp_sfc, wprtp_sfc, upwp_sfc, vpwp_sfc, p_sfc, &  ! Intent(in)
+                wpsclrp_sfc, wpedsclrp_sfc,  &                       ! Intent(in)
+                upwp_sfc_pert, vpwp_sfc_pert, &                      ! intent(in)
+                rtm_ref, thlm_ref, um_ref, vm_ref, ug, vg, &         ! Intent(in)
+                p_in_Pa, rho_zm, rho, exner, &                       ! Intent(in)
+                rho_ds_zm, rho_ds_zt, invrs_rho_ds_zm, &             ! Intent(in)
+                invrs_rho_ds_zt, thv_ds_zm, thv_ds_zt, &             ! Intent(in) 
+                hm_metadata%l_mix_rat_hm, &                          ! Intent(in)
+                rfrzm, wphydrometp, &                                ! Intent(in)
+                wp2hmp, rtphmp_zt, thlphmp_zt, &                     ! Intent(in)
+                dummy_dx, dummy_dy, &                                ! Intent(in)
+                clubb_params, nu_vert_res_dep, lmin, &               ! Intent(in)
+                clubb_config_flags, &                                ! Intent(in)
+                stats_metadata, &                                    ! Intent(in)
+                stats_zt, stats_zm, stats_sfc, &                     ! intent(inout)
+                um, vm, upwp, vpwp, up2, vp2, up3, vp3, &            ! Intent(inout)
+                thlm, rtm, wprtp, wpthlp, &                          ! Intent(inout)
+                wp2, wp3, rtp2, rtp3, thlp2, thlp3, rtpthlp, &       ! Intent(inout)
+                sclrm, sclrp2, sclrp3, sclrprtp, sclrpthlp, &        ! Intent(inout)
+                wpsclrp, edsclrm, err_code, &                        ! Intent(inout)
+                rcm, cloud_frac, &                                   ! Intent(inout)
+                wpthvp, wp2thvp, rtpthvp, thlpthvp, &                ! Intent(inout)
+                sclrpthvp, &                                         ! Intent(inout)
+                wp2rtp, wp2thlp, uprcp, vprcp, rc_coef_zm, wp4, &    ! intent(inout)
+                wpup2, wpvp2, wp2up2, wp2vp2, ice_supersat_frac, &   ! intent(inout)
+                um_pert, vm_pert, upwp_pert, vpwp_pert, &            ! intent(inout)
+                pdf_params, pdf_params_zm, &                         ! Intent(inout)
+                pdf_implicit_coefs_terms, &                          ! intent(inout)
+                Kh_zm, Kh_zt, &                                      ! intent(out)
+                thlprcp, wprcp, w_up_in_cloud, w_down_in_cloud, &    ! Intent(out)
+                cloudy_updraft_frac, cloudy_downdraft_frac, &        ! Intent(out)
+                rcm_in_layer, cloud_cover, invrs_tau_zm, &           ! Intent(out)
+                Lscale )                                             ! Intent(out)
+
+      endif
 
       if ( clubb_at_least_debug_level( 0 ) ) then
         if ( err_code == clubb_fatal_error ) then

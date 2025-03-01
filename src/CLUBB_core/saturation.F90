@@ -281,7 +281,7 @@ module saturation
 
   !-------------------------------------------------------------------------
   ! Wrapped in interface sat_mixrat_liq_api
-  function sat_mixrat_liq_2D( nz, ngrdcol, p_in_Pa, T_in_K, &
+  function sat_mixrat_liq_2D( nz, ngrdcol, gr, p_in_Pa, T_in_K, &
                               saturation_formula, &
                               start_index_in )
   !
@@ -292,10 +292,14 @@ module saturation
   !   Formula from Emanuel 1994, 4.4.14
   !-------------------------------------------------------------------------
 
-    use constants_clubb, only: & 
-      ep  
+    use grid_class, only: &
+        grid
 
-    use constants_clubb, only: T_freeze_K
+    use constants_clubb, only: & 
+        ep  
+
+    use constants_clubb, only: &
+        T_freeze_K
 
     implicit none
 
@@ -303,6 +307,9 @@ module saturation
     integer, intent(in) :: &
       nz, &
       ngrdcol
+
+    type(grid), intent(in) :: &
+      gr
 
     integer, intent(in) :: &
       saturation_formula
@@ -358,7 +365,8 @@ module saturation
       min_T_in_K = 173.15_core_rknd   ! Lowest temperature at which Goff-Gratch is valid [K]
 
     integer :: &
-      start_index
+      start_index, &
+      stop_index
 
     ! -------------------- Begin Code --------------------
 
@@ -369,16 +377,25 @@ module saturation
     ! start_index is an optional argument and 
     ! used for choosing the sub-arrays
     if ( present(start_index_in) ) then
-      start_index = start_index_in
+      if ( gr%grid_dir_indx > 0 ) then
+         ! Ascending grid
+         start_index = start_index_in
+         stop_index  = nz
+      else ! gr%grid_dir_indx
+         ! Descending grid
+         start_index = 1
+         stop_index  = start_index_in
+      endif
     else
       start_index = 1
+      stop_index  = nz
     end if
 
     select case ( saturation_formula )
     case ( saturation_flatau )
 
       !$acc parallel loop gang vector collapse(2) default(present)
-      do k = start_index, nz
+      do k = start_index, stop_index
         do i = 1, ngrdcol
 
           ! Determine deg K - 273.15
@@ -433,7 +450,7 @@ module saturation
       ! Using the Bolton 1980 approximations for SVP over vapor
       ! Generally this more computationally expensive than the Flatau polnomial expansion
       !$acc parallel loop gang vector collapse(2) default(present)
-      do k = start_index, nz
+      do k = start_index, stop_index
         do i = 1, ngrdcol
           esat(i,k) = 611.2_core_rknd &
                       * exp( (17.67_core_rknd *(T_in_K(i,k)-T_freeze_K))  &
@@ -447,7 +464,7 @@ module saturation
 
       ! Using GFDL polynomial approximation for SVP with respect to liquid
       !$acc parallel loop gang vector collapse(2) default(present)
-      do k = start_index, nz
+      do k = start_index, stop_index
         do i = 1, ngrdcol
 
           ! Since the Goff-Gratch approximation is valid only down to -70 degrees Celsius,
@@ -474,7 +491,7 @@ module saturation
     case ( saturation_lookup ) 
 
       !$acc parallel loop gang vector collapse(2) default(present)
-      do k = start_index, nz
+      do k = start_index, stop_index
         do i = 1, ngrdcol
           T_in_K_int = int( anint( T_in_K(i,k) ) )
 
@@ -496,7 +513,7 @@ module saturation
     end select
 
     !$acc parallel loop gang vector collapse(2) default(present)
-    do k = start_index, nz
+    do k = start_index, stop_index
       do i = 1, ngrdcol
 
         ! If esat exceeds the air pressure, then assume esat~=0.5*pressure 

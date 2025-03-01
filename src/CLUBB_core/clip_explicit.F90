@@ -859,7 +859,7 @@ module clip_explicit
   end subroutine clip_covar_level
 
   !=============================================================================
-  subroutine clip_variance( nzm, ngrdcol, solve_type, dt, threshold_lo, &
+  subroutine clip_variance( nzm, ngrdcol, gr, solve_type, dt, threshold_lo, &
                             stats_metadata, &
                             stats_zm, &
                             xp2, &
@@ -880,7 +880,10 @@ module clip_explicit
     ! None
     !-----------------------------------------------------------------------
 
-    use clubb_precision, only: &
+    use grid_class, only: &
+        grid    ! Type
+
+    use clubb_precision, only: & 
         core_rknd ! Variable(s)
 
     use stats_type_utilities, only: &
@@ -905,7 +908,10 @@ module clip_explicit
       nzm, &
       ngrdcol
 
-    integer, intent(in) :: &
+    type (grid), intent(in) :: &
+      gr
+
+    integer, intent(in) :: & 
       solve_type  ! Variable being solved; used for STATS
 
     real( kind = core_rknd ), intent(in) :: &
@@ -993,7 +999,7 @@ module clip_explicit
     ! negative values in thlp2(1) and rtp2(1) when running quarter_ss case with
     ! WRF-CLUBB (see wrf:ticket:51#comment:33)
     !$acc parallel loop gang vector collapse(2) default(present)
-    do k = 1, nzm-1, 1
+    do k = gr%k_lb_zm, gr%k_ub_zm-gr%grid_dir_indx, gr%grid_dir_indx
       do i = 1, ngrdcol
         if ( xp2(i,k) < threshold_lo(i,k) ) then
           if ( clubb_at_least_debug_level(3) ) then

@@ -139,6 +139,11 @@ module model_flags
   logical, parameter, public :: &
      I_sat_sphum = .false.       ! h1g, 2010-06-15
 
+  ! This flag is only enabled when performing a generalized grid
+  ! (ascending vs. descending grid) test.
+  logical, parameter, public :: &
+     l_test_grid_generalization = .false.
+
   ! Derived type to hold all configurable CLUBB flags
   type clubb_config_flags_type
     ! Note that all flags in this data type might also be modified in 

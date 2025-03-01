@@ -343,8 +343,10 @@ module diffusion
       ! k = 1 (bottom level); lower boundary level 
       !$acc parallel loop gang vector default(present)
       do i = 1, ngrdcol
-        lhs_upwind(kp1_tdiag,i,1) = + min( drhoKdz_zt(i,1) , zero ) * gr%invrs_dzm(i,2)  
-        lhs_upwind(k_tdiag,i,1)   = - min( drhoKdz_zt(i,1) , zero ) * gr%invrs_dzm(i,2)
+        lhs_upwind(kp1_tdiag,i,1) &
+         = + gr%grid_dir * min( gr%grid_dir * drhoKdz_zt(i,1) , zero ) * gr%invrs_dzm(i,2)  
+        lhs_upwind(k_tdiag,i,1) &
+        = - gr%grid_dir * min( gr%grid_dir * drhoKdz_zt(i,1) , zero ) * gr%invrs_dzm(i,2)
         lhs_upwind(km1_tdiag,i,1) = zero
       end do
       !$acc end parallel loop
@@ -355,14 +357,17 @@ module diffusion
         do i = 1, ngrdcol
 
           ! Thermodynamic superdiagonal: [ x var_zt(k+1,<t+1>) ]
-          lhs_upwind(kp1_tdiag,i,k) = + min( drhoKdz_zt(i,k) , zero ) * gr%invrs_dzm(i,k+1) 
+          lhs_upwind(kp1_tdiag,i,k) &
+          = + gr%grid_dir * min( gr%grid_dir * drhoKdz_zt(i,k) , zero ) * gr%invrs_dzm(i,k+1) 
           
           ! Thermodynamic main diagonal: [ x var_zt(k,<t+1>) ]
-          lhs_upwind(k_tdiag,i,k)   = - min( drhoKdz_zt(i,k) , zero ) * gr%invrs_dzm(i,k+1) &
-                                      + max( drhoKdz_zt(i,k) , zero ) * gr%invrs_dzm(i,k)
+          lhs_upwind(k_tdiag,i,k) &
+          = - gr%grid_dir * min( gr%grid_dir * drhoKdz_zt(i,k) , zero ) * gr%invrs_dzm(i,k+1) &
+            + gr%grid_dir * max( gr%grid_dir * drhoKdz_zt(i,k) , zero ) * gr%invrs_dzm(i,k)
 
           ! Thermodynamic subdiagonal: [ x var_zt(k-1,<t+1>) ]
-          lhs_upwind(km1_tdiag,i,k) = - max( drhoKdz_zt(i,k) , zero ) * gr%invrs_dzm(i,k)
+          lhs_upwind(km1_tdiag,i,k) &
+          = - gr%grid_dir * max( gr%grid_dir * drhoKdz_zt(i,k) , zero ) * gr%invrs_dzm(i,k)
         
         end do
       end do 
@@ -373,8 +378,10 @@ module diffusion
       !$acc parallel loop gang vector default(present)
       do i = 1, ngrdcol
         lhs_upwind(kp1_tdiag,i,nzt) =  zero 
-        lhs_upwind(k_tdiag,i,nzt)   = + max( drhoKdz_zt(i,nzt) , zero ) * gr%invrs_dzm(i,nzm-1)
-        lhs_upwind(km1_tdiag,i,nzt) = - max( drhoKdz_zt(i,nzt) , zero ) * gr%invrs_dzm(i,nzm-1)
+        lhs_upwind(k_tdiag,i,nzt) &
+        = + gr%grid_dir * max( gr%grid_dir * drhoKdz_zt(i,nzt) , zero ) * gr%invrs_dzm(i,nzm-1)
+        lhs_upwind(km1_tdiag,i,nzt) &
+        = - gr%grid_dir * max( gr%grid_dir * drhoKdz_zt(i,nzt) , zero ) * gr%invrs_dzm(i,nzm-1)
       end do
       !$acc end parallel loop
 
@@ -835,8 +842,10 @@ module diffusion
     ! k = 1 (bottom level); lowere boundary level 
     !$acc parallel loop gang vector default(present)
     do i = 1, ngrdcol
-      lhs_upwind(kp1_mdiag,i,1) = + min( drhoKdz_zm(i,1) , zero ) * gr%invrs_dzt(i,1)
-      lhs_upwind(k_mdiag,i,1)   = - min( drhoKdz_zm(i,1) , zero ) * gr%invrs_dzt(i,1)
+      lhs_upwind(kp1_mdiag,i,1) &
+      = + gr%grid_dir * min( gr%grid_dir * drhoKdz_zm(i,1) , zero ) * gr%invrs_dzt(i,1)
+      lhs_upwind(k_mdiag,i,1) &
+      = - gr%grid_dir * min( gr%grid_dir * drhoKdz_zm(i,1) , zero ) * gr%invrs_dzt(i,1)
       lhs_upwind(km1_mdiag,i,1) = zero
     end do
     !$acc end parallel loop
@@ -846,12 +855,15 @@ module diffusion
     do k = 2, nzm-1, 1
       do i = 1, ngrdcol
         ! Momentum superdiagonal: [ x var_zm(k+1,<t+1>) ]
-        lhs_upwind(kp1_mdiag,i,k) = + min( drhoKdz_zm(i,k) , zero ) * gr%invrs_dzt(i,k)
+        lhs_upwind(kp1_mdiag,i,k) &
+        = + gr%grid_dir * min( gr%grid_dir * drhoKdz_zm(i,k) , zero ) * gr%invrs_dzt(i,k)
         ! Momentum main diagonal: [ x var_zm(k,<t+1>) ]
-        lhs_upwind(k_mdiag,i,k)   = - min( drhoKdz_zm(i,k) , zero ) * gr%invrs_dzt(i,k) &
-                                    + max( drhoKdz_zm(i,k) , zero ) * gr%invrs_dzt(i,k-1)
+        lhs_upwind(k_mdiag,i,k) &
+        = - gr%grid_dir * min( gr%grid_dir * drhoKdz_zm(i,k) , zero ) * gr%invrs_dzt(i,k) &
+          + gr%grid_dir * max( gr%grid_dir * drhoKdz_zm(i,k) , zero ) * gr%invrs_dzt(i,k-1)
         ! Momentum subdiagonal: [ x var_zm(k-1,<t+1>) ]
-        lhs_upwind(km1_mdiag,i,k) = - max( drhoKdz_zm(i,k) , zero ) * gr%invrs_dzt(i,k-1)
+        lhs_upwind(km1_mdiag,i,k) &
+        = - gr%grid_dir * max( gr%grid_dir * drhoKdz_zm(i,k) , zero ) * gr%invrs_dzt(i,k-1)
       end do
     end do
     !$acc end parallel loop
@@ -861,8 +873,10 @@ module diffusion
     !$acc parallel loop gang vector default(present)
     do i = 1, ngrdcol
       lhs_upwind(kp1_mdiag,i,nzm) = zero
-      lhs_upwind(k_mdiag,i,nzm)   = + max( drhoKdz_zm(i,nzm) , zero ) * gr%invrs_dzt(i,nzt)
-      lhs_upwind(km1_mdiag,i,nzm) = - max( drhoKdz_zm(i,nzm) , zero ) * gr%invrs_dzt(i,nzt)
+      lhs_upwind(k_mdiag,i,nzm) &
+      = + gr%grid_dir * max( gr%grid_dir * drhoKdz_zm(i,nzm) , zero ) * gr%invrs_dzt(i,nzt)
+      lhs_upwind(km1_mdiag,i,nzm) &
+      = - gr%grid_dir * max( gr%grid_dir * drhoKdz_zm(i,nzm) , zero ) * gr%invrs_dzt(i,nzt)
     end do
     !$acc end parallel loop
 

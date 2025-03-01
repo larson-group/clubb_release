@@ -102,7 +102,7 @@ module grid_adaptation_module
     momentum_heights(nlevels) = grid_top
 
     call setup_grid_api( nlevels, sfc_elevation, l_implemented, &     ! intent(in)
-                         grid_type, deltaz, zm_init, zm_top, &      ! intent(in)
+                         .true., grid_type, deltaz, zm_init, zm_top, & ! intent(in)
                          momentum_heights, thermodynamic_heights, & ! intent(in)
                          gr )
 
@@ -1864,7 +1864,7 @@ module grid_adaptation_module
     deltaz = 0.0
     grid_type = 3
     call setup_grid_api( num_levels, sfc_elevation(1), l_implemented, &         ! intent(in)
-                         grid_type, deltaz, gr%zm(1,1), gr%zm(1,num_levels), &  ! intent(in)
+                         .true., grid_type, deltaz, gr%zm(1,1), gr%zm(1,num_levels), & ! intent(in)
                          new_gr_zm, thermodynamic_heights_placeholder, &        ! intent(in)
                          new_gr )                                               ! intent(inout)
     

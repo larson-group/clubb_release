@@ -21,7 +21,7 @@ module fill_holes
   !=============================================================================
   subroutine fill_holes_vertical_api( nz, ngrdcol, threshold, &
                                       lower_hf_level, upper_hf_level, &
-                                      dz, rho_ds, &
+                                      dz, rho_ds, grid_dir_indx, &
                                       field )
 
     ! Description:
@@ -75,7 +75,8 @@ module fill_holes
                   
     integer, intent(in) :: & 
       lower_hf_level, & ! Lower grid level of global hole-filling range      []
-      upper_hf_level    ! Upper grid level of global hole-filling range      []
+      upper_hf_level, & ! Upper grid level of global hole-filling range      []
+      grid_dir_indx     ! Grid direction index (+1 ascending; -1 descending)
 
     real( kind = core_rknd ), intent(in) :: & 
       threshold  ! A threshold (e.g. w_tol*w_tol) below which field must not
@@ -92,9 +93,13 @@ module fill_holes
     integer :: & 
       i,             & ! Loop index for column                           []
       k,             & ! Loop index for absolute grid level              []
-      j, &
-      k_start,     & ! Lower grid level of local hole-filling range    []
-      k_end          ! Upper grid level of local hole-filling range    []
+      j,             &
+      start_indx,    &
+      stop_indx,     &
+      start_indx_j,  &
+      stop_indx_j,   &
+      k_start,       & ! Lower grid level of local hole-filling range    []
+      k_end            ! Upper grid level of local hole-filling range    []
 
     real( kind = core_rknd ), dimension(ngrdcol,nz)  ::  & 
       rho_ds_dz,            & ! rho_ds * dz
@@ -153,12 +158,15 @@ module fill_holes
     end do
     !$acc end parallel loop
 
+    start_indx = lower_hf_level + grid_dir_indx * num_hf_draw_points
+    stop_indx  = upper_hf_level - grid_dir_indx * num_hf_draw_points
+
     ! denom_integral does not change throughout the hole filling algorithm
     ! so we can calculate it before hand. This results in unneccesary computations,
     ! but is parallelizable and reduces the cost of the serial k loop
     !$acc parallel loop gang vector collapse(2) default(present)
     do i = 1, ngrdcol
-      do k = lower_hf_level+num_hf_draw_points, upper_hf_level-num_hf_draw_points
+      do k = start_indx, stop_indx, grid_dir_indx
 
         ! This loop and division could be written more compactly as
         ! invrs_denom_integral(i,k) = one / sum(
@@ -168,7 +176,9 @@ module fill_holes
         ! See: https://github.com/larson-group/clubb/issues/1138#issuecomment-1974918151
         rho_k_sum = 0.0_core_rknd
 
-        do j = k - num_hf_draw_points, k + num_hf_draw_points
+        start_indx_j = k - grid_dir_indx * num_hf_draw_points
+        stop_indx_j  = k + grid_dir_indx * num_hf_draw_points
+        do j = start_indx_j, stop_indx_j, grid_dir_indx
           rho_k_sum = rho_k_sum + rho_ds_dz(i,j)
         end do
 
@@ -187,32 +197,36 @@ module fill_holes
       ! iteration potentially changing. We could in theory expose more parallelism in cases 
       ! where there are large enough gaps between vertical levels which need hole-filling,
       ! but levels which require hole-filling are often close or consecutive.
-      do k = lower_hf_level+num_hf_draw_points, upper_hf_level-num_hf_draw_points
+      do k = start_indx, stop_indx, grid_dir_indx
 
-        k_start = k - num_hf_draw_points
-        k_end   = k + num_hf_draw_points
+        k_start = k - grid_dir_indx * num_hf_draw_points
+        k_end   = k + grid_dir_indx * num_hf_draw_points
 
-        if ( any( field(i,k_start:k_end) < threshold ) ) then
+        if ( any( field(i,k_start:k_end:grid_dir_indx) < threshold ) ) then
 
           ! Compute the field's vertical average cenetered at k, which we must conserve,
           ! see description of the vertical_avg function in advance_helper_module
-          field_avg = sum( rho_ds_dz(i,k_start:k_end) * field(i,k_start:k_end) ) &
+          field_avg = sum( rho_ds_dz(i,k_start:k_end:grid_dir_indx) &
+                           * field(i,k_start:k_end:grid_dir_indx) ) &
                       * invrs_denom_integral(i,k)
 
           ! Clip small or negative values from field.
           if ( field_avg >= threshold ) then
             ! We know we can fill in holes completely
-            field_clipped(i,k_start:k_end) = max( threshold, field(i,k_start:k_end) )
+            field_clipped(i,k_start:k_end:grid_dir_indx) &
+            = max( threshold, field(i,k_start:k_end:grid_dir_indx) )
           else
             ! We can only fill in holes partly;
             ! to do so, we remove all mass above threshold.
-            field_clipped(i,k_start:k_end) = min( threshold, field(i,k_start:k_end) )
+            field_clipped(i,k_start:k_end:grid_dir_indx) &
+            = min( threshold, field(i,k_start:k_end:grid_dir_indx) )
           endif
 
           ! Compute the clipped field's vertical integral.
           ! clipped_total_mass >= original_total_mass,
           ! see description of the vertical_avg function in advance_helper_module
-          field_clipped_avg = sum( rho_ds_dz(i,k_start:k_end) * field_clipped(i,k_start:k_end) ) &
+          field_clipped_avg = sum( rho_ds_dz(i,k_start:k_end:grid_dir_indx) &
+                                   * field_clipped(i,k_start:k_end:grid_dir_indx) ) &
                               * invrs_denom_integral(i,k)
 
           ! Avoid divide by zero issues by doing nothing if field_clipped_avg ~= threshold
@@ -223,8 +237,9 @@ module fill_holes
                             / ( field_clipped_avg - threshold )
 
             ! Calculate normalized, filled field
-            field(i,k_start:k_end) = threshold &
-                        + mass_fraction * ( field_clipped(i,k_start:k_end) - threshold )
+            field(i,k_start:k_end:grid_dir_indx) &
+            = threshold &
+              + mass_fraction * ( field_clipped(i,k_start:k_end:grid_dir_indx) - threshold )
           endif
 
         endif
@@ -271,7 +286,7 @@ module fill_holes
 
     !$acc parallel loop gang vector default(present)
     do i = 1, ngrdcol
-      do k = lower_hf_level, upper_hf_level
+      do k = lower_hf_level, upper_hf_level, grid_dir_indx
         numer_integral_global(i) = numer_integral_global(i) + rho_ds_dz(i,k) * field(i,k)
 
         denom_integral_global(i) = denom_integral_global(i) + rho_ds_dz(i,k)
@@ -290,13 +305,13 @@ module fill_holes
       ! Clip small or negative values from field.
       if ( field_avg_global(i) >= threshold ) then
         ! We know we can fill in holes completely
-        field_clipped(i,lower_hf_level:upper_hf_level) &
-        = max( threshold, field(i,lower_hf_level:upper_hf_level) )
+        field_clipped(i,lower_hf_level:upper_hf_level:grid_dir_indx) &
+        = max( threshold, field(i,lower_hf_level:upper_hf_level:grid_dir_indx) )
       else
         ! We can only fill in holes partly;
         ! to do so, we remove all mass above threshold.
-        field_clipped(i,lower_hf_level:upper_hf_level) &
-        = min( threshold, field(i,lower_hf_level:upper_hf_level) )
+        field_clipped(i,lower_hf_level:upper_hf_level:grid_dir_indx) &
+        = min( threshold, field(i,lower_hf_level:upper_hf_level:grid_dir_indx) )
       endif
 
     end do
@@ -306,7 +321,7 @@ module fill_holes
     !$acc parallel loop gang vector default(present)
     do i = 1, ngrdcol
       numer_integral_global(i) = 0.0_core_rknd
-      do k = lower_hf_level, upper_hf_level
+      do k = lower_hf_level, upper_hf_level, grid_dir_indx
         numer_integral_global(i) = numer_integral_global(i) + rho_ds_dz(i,k) * field_clipped(i,k)
       end do  
     end do
@@ -317,7 +332,7 @@ module fill_holes
 
       ! Do not complete calculations or update field values for this 
       ! column if there are no holes that need filling
-      if ( any( field(i,lower_hf_level:upper_hf_level) < threshold ) ) then
+      if ( any( field(i,lower_hf_level:upper_hf_level:grid_dir_indx) < threshold ) ) then
 
         ! Compute the clipped field's vertical integral,
         ! see description of the vertical_avg function in advance_helper_module
@@ -332,9 +347,10 @@ module fill_holes
                                     / ( field_clipped_avg - threshold )
 
           ! Calculate normalized, filled field
-          field(i,lower_hf_level:upper_hf_level) &
-          = threshold + mass_fraction_global(i) &
-                        * ( field_clipped(i,lower_hf_level:upper_hf_level) - threshold )
+          field(i,lower_hf_level:upper_hf_level:grid_dir_indx) &
+          = threshold &
+            + mass_fraction_global(i) &
+              * ( field_clipped(i,lower_hf_level:upper_hf_level:grid_dir_indx) - threshold )
         end if
       end if
 
@@ -1039,8 +1055,8 @@ module fill_holes
             ! upper_hf_level = nzt since we are filling the zt levels
             call fill_holes_vertical_api( gr%nzt, 1, zero_threshold, & ! In
                                           1, gr%nzt,                 & ! In
-                                          gr%dzt, rho_ds_zt,         & ! In
-                                          hydromet(:,i) )             ! InOut
+                                          gr%dzt, rho_ds_zt, 1,      & ! In
+                                          hydromet(:,i) )              ! InOut
 
             !$acc end data
 

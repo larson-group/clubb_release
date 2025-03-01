@@ -1888,8 +1888,8 @@ module advance_microphys_module
     !$acc data copyin( gr, gr%weights_zt2zm, gr%invrs_dzt, gr%invrs_dzm, wm_zt_col ) &
     !$acc      copyout( lhs_ma )
     call term_ma_zt_lhs( gr%nzm, gr%nzt, 1, wm_zt_col, gr%weights_zt2zm, & ! intent(in)
-                         gr%invrs_dzt, gr%invrs_dzm,    & ! intent(in)
-                         l_upwind_xm_ma, &
+                         gr%invrs_dzt, gr%invrs_dzm,  & ! intent(in)
+                         l_upwind_xm_ma, gr%grid_dir, & ! intent(in)
                          lhs_ma(:,:) )
     !$acc end data
 

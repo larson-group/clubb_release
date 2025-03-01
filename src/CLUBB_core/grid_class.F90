@@ -174,6 +174,7 @@ module grid_class
 
     integer :: nzm, & ! Number of momentum levels in the grid
                nzt    ! Number of thermodynamic levels in the grid
+
     !   Note: Fortran 90/95 prevents an allocatable array from appearing
     !   within a derived type.  However, Fortran 2003 does not!!!!!!!!
     real( kind = core_rknd ), allocatable, dimension(:,:) :: &
@@ -192,15 +193,25 @@ module grid_class
       dzt     ! Spcaing between momentum grid levels; centered over
               ! thermodynamic grid levels
 
-    ! These weights are normally used in situations
-    ! where a momentum level variable is being
-    ! solved for implicitly in an equation and
-    ! needs to be interpolated to the thermodynamic grid levels.
-    real( kind = core_rknd ), allocatable, dimension(:,:,:) :: weights_zm2zt, & 
-    ! These weights are normally used in situations where a
-    ! thermodynamic level variable is being solved for implicitly in an equation
-    ! and needs to be interpolated to the momentum grid levels.
-      weights_zt2zm
+    real( kind = core_rknd ), allocatable, dimension(:,:,:) :: &
+      weights_zm2zt, & ! These weights are normally used in situations where a
+                       ! momentum-level variable is being solved for implicitly
+                       ! in an equation and needs to be interpolated to the
+                       ! thermodynamic grid levels.
+      weights_zt2zm    ! These weights are normally used in situations where a
+                       ! thermodynamic-level variable is being solved for
+                       ! implicitly in an equation and needs to be interpolated
+                       ! to the momentum grid levels.
+
+    integer :: &
+      k_lb_zm,       & ! Index of lower boundary level (momentum grid)
+      k_lb_zt,       & ! Index of lower boundary level (thermodynamic grid)
+      k_ub_zm,       & ! Index of upper boundary level (momentum grid)
+      k_ub_zt,       & ! Index of upper boundary level (thermodynamic grid)
+      grid_dir_indx    ! Grid direction index (+1 = ascending; -1 = descending)
+
+    real( kind = core_rknd ) :: &
+      grid_dir    ! Grid direction multiplier (+1 = ascending; -1 = descending)
 
   end type grid
 
@@ -263,9 +274,9 @@ module grid_class
   contains
 
   !=============================================================================
-  subroutine setup_grid( nzmax, ngrdcol, sfc_elevation, l_implemented,  &
-                         grid_type, deltaz, zm_init, zm_top,            &
-                         momentum_heights, thermodynamic_heights,       &
+  subroutine setup_grid( nzmax, ngrdcol, sfc_elevation, l_implemented,         &
+                         l_ascending_grid, grid_type, deltaz, zm_init, zm_top, &
+                         momentum_heights, thermodynamic_heights,              &
                          gr, err_code )
 
     ! Description:
@@ -307,6 +318,12 @@ module grid_class
     ! Flag to see if CLUBB is running on it's own,
     ! or if it's implemented as part of a host model.
     logical, intent(in) :: l_implemented
+
+    ! Flag for having the model use its traditional ascending grid (where the
+    ! lowest-numbered grid level is at the surface or model lower boundary).
+    ! When this flag is turned off, a descending grid is used (where the
+    ! lowest-numbered grid level is at the model upper boundary).
+    logical, intent(in) :: l_ascending_grid
 
     ! If CLUBB is running on it's own, this option determines if it is using:
     ! 1) an evenly-spaced grid;
@@ -395,14 +412,30 @@ module grid_class
 
       else if ( grid_type == 2 ) then! Thermo
 
-        ! Find begin_height_idx_zt (lower bound)
-        k = gr%nzt
+        ! Find begin_height_idx_zt (ascending grid)
+        ! or end_height_idx_zt (descending grid).
+        ! This index is associated with the lower boundary.
+        if ( l_ascending_grid ) then
 
-        do while( thermodynamic_heights(1,k) >= zm_init(1) .and. k > 1 )
+           k = gr%nzt
 
-          k = k - 1
+           do while( thermodynamic_heights(1,k) >= zm_init(1) .and. k > 1 )
 
-        end do
+             k = k - 1
+
+           end do
+
+        else ! descending grid
+
+           k = 1
+
+           do while( thermodynamic_heights(1,k) >= zm_init(1) .and. k < gr%nzt )
+
+             k = k + 1
+
+           end do
+
+        endif
 
         if( thermodynamic_heights(1,k) <= zm_init(1) ) then
 
@@ -412,18 +445,38 @@ module grid_class
 
         else
 
-          begin_height_idx_zt = k
+          if ( l_ascending_grid ) then
+             begin_height_idx_zt = k
+          else ! descending grid
+             end_height_idx_zt = k
+          endif
 
         end if
 
-        ! Find end_height_idx_zt (upper bound)
-        k = gr%nzt
+        ! Find end_height_idx_zt (ascending grid)
+        ! or begin_height_idx_zt (descending grid).
+        ! This index is associated with the upper boundary.
+        if ( l_ascending_grid ) then
 
-        do while( thermodynamic_heights(1,k) > zm_top(1) .and. k > 1 )
+           k = gr%nzt
 
-          k = k - 1
+           do while( thermodynamic_heights(1,k) > zm_top(1) .and. k > 1 )
 
-        end do
+             k = k - 1
+
+           end do
+
+        else ! descending grid
+
+           k = 1
+
+           do while( thermodynamic_heights(1,k) > zm_top(1) .and. k < gr%nzt )
+
+             k = k + 1
+
+           end do
+
+        endif
 
         if( zm_top(1) < thermodynamic_heights(1,k) ) then
 
@@ -433,10 +486,14 @@ module grid_class
 
         else
 
-          end_height_idx_zt = k
+          if ( l_ascending_grid ) then
+             end_height_idx_zt = k
+          else ! descending grid
+             begin_height_idx_zt = k
+          endif
 
           ! Calculate the number of thermodynamic grid levels.
-          gr%nzt = size( thermodynamic_heights(1,begin_height_idx_zt:end_height_idx_zt ) )
+          gr%nzt = size( thermodynamic_heights(1,begin_height_idx_zt:end_height_idx_zt) )
 
           ! Regardless of grid type, the number of thermodynamic grid levels will
           ! always be 1 less than the number of momentum grid levels.
@@ -452,14 +509,30 @@ module grid_class
 
       else if ( grid_type == 3 ) then ! Momentum
 
-        ! Find begin_height_idx_zm (lower bound)
-        k = 1
+        ! Find begin_height_idx_zm (ascending grid)
+        ! or end_height_idx_zm (descending grid).
+        ! This index is associated with the lower boundary.
+        if ( l_ascending_grid ) then
 
-        do while( momentum_heights(1,k) < zm_init(1) .and. k < gr%nzm )
+           k = 1
 
-          k = k + 1
+           do while( momentum_heights(1,k) < zm_init(1) .and. k < gr%nzm )
 
-        end do
+             k = k + 1
+
+           end do
+
+        else ! descending grid
+
+           k = gr%nzm
+
+           do while( momentum_heights(1,k) < zm_init(1) .and. k > 1 )
+
+             k = k - 1
+
+           end do
+
+        endif
 
         if( momentum_heights(1,k) < zm_init(1) ) then
 
@@ -469,20 +542,40 @@ module grid_class
 
         else
 
-          begin_height_idx_zm = k
+          if ( l_ascending_grid ) then
+             begin_height_idx_zm = k
+          else ! descending grid
+             end_height_idx_zm = k
+          endif
 
         end if
 
-        ! Find end_height_idx_zm (lower bound)
-        k = gr%nzm
+        ! Find end_height_idx_zm (ascending grid)
+        ! or begin_height_idx_zm (descending grid).
+        ! This index is associated with the upper boundary.
+        if ( l_ascending_grid ) then
 
-        do while( momentum_heights(1,k) > zm_top(1) .and. k > 1 )
+           k = gr%nzm
 
-          k = k - 1
+           do while( momentum_heights(1,k) > zm_top(1) .and. k > 1 )
 
-        end do
+              k = k - 1
 
-        if( momentum_heights(1,k) > zm_top(1) ) then
+           end do
+
+        else ! descending grid
+
+           k = 1
+
+           do while( momentum_heights(1,k) > zm_top(1) .and. k < gr%nzm )
+
+              k = k + 1
+
+           end do
+
+        endif
+
+        if ( momentum_heights(1,k) > zm_top(1) ) then
 
           write(fstderr,*) err_header, "Stretched zm grid cannot fulfill zm_top requirement"
           err_code = clubb_fatal_error
@@ -490,7 +583,11 @@ module grid_class
 
         else
 
-          end_height_idx_zm = k
+          if ( l_ascending_grid ) then
+             end_height_idx_zm = k
+          else ! descending grid
+             begin_height_idx_zm = k
+          endif
 
           ! Calculate the number of momentum grid levels.
           gr%nzm = size( momentum_heights(1,begin_height_idx_zm:end_height_idx_zm ) )
@@ -531,9 +628,9 @@ module grid_class
     ! interpolation from the momentum/thermodynamic grid
     call setup_grid_heights( &
                   gr%nzm, gr%nzt, ngrdcol, & ! intent(in)
-                  l_implemented, grid_type,  & ! intent(in)
-                  deltaz, zm_init,  & ! intent(in)
-                  momentum_heights(:,begin_height_idx_zm:end_height_idx_zm),  & ! intent(in)
+                  l_implemented, l_ascending_grid, & ! intent(in)
+                  grid_type, deltaz, zm_init, & ! intent(in)
+                  momentum_heights(:,begin_height_idx_zm:end_height_idx_zm),  & ! intent(in) 
                   thermodynamic_heights(:,begin_height_idx_zt:end_height_idx_zt), & ! intent(in)
                   gr, err_code ) ! intent(inout)
 
@@ -593,9 +690,9 @@ module grid_class
 
   !=============================================================================
   subroutine setup_grid_heights( nzm, nzt, ngrdcol, &
-                                 l_implemented, grid_type, &
-                                 deltaz, zm_init, momentum_heights, &
-                                 thermodynamic_heights, &
+                                 l_implemented, l_ascending_grid, &
+                                 grid_type, deltaz, zm_init, &
+                                 momentum_heights, thermodynamic_heights, &
                                  gr, err_code )
 
     ! Description:
@@ -630,6 +727,12 @@ module grid_class
     ! Flag to see if CLUBB is running on it's own,
     ! or if it's implemented as part of a host model.
     logical, intent(in) :: l_implemented
+
+    ! Flag for having the model use its traditional ascending grid (where the
+    ! lowest-numbered grid level is at the surface or model lower boundary).
+    ! When this flag is turned off, a descending grid is used (where the
+    ! lowest-numbered grid level is at the model upper boundary).
+    logical, intent(in) :: l_ascending_grid
 
     ! If CLUBB is running on it's own, this option determines if it is using:
     ! 1) an evenly-spaced grid;
@@ -683,11 +786,19 @@ module grid_class
 
         ! Define momentum level altitudes. The first momentum level is at
         ! altitude zm_init.
-        do k = 1, nzm, 1
-          do i = 1, ngrdcol
-            gr%zm(i,k) = zm_init(i) + real( k-1, kind = core_rknd ) * deltaz(i)
+        if ( l_ascending_grid ) then
+          do k = 1, nzm, 1
+            do i = 1, ngrdcol
+              gr%zm(i,k) = zm_init(i) + real( k-1, kind = core_rknd ) * deltaz(i)
+            end do
           end do
-        end do
+        else ! descending grid
+          do k = 1, nzm, 1
+            do i = 1, ngrdcol
+              gr%zm(i,k) = zm_init(i) + real( nzm-k, kind = core_rknd ) * deltaz(i)
+            end do
+          end do
+        endif
 
         ! Define thermodynamic level altitudes.  Thermodynamic level altitudes
         ! are located at the central altitude levels, exactly halfway between
@@ -728,12 +839,21 @@ module grid_class
           end do
         enddo
         
-        do i = 1, ngrdcol
-          ! The lowest momentum level is at the model lower boundary
-          gr%zm(i,1) = zm_init(i)
-          gr%zm(i,nzm) &
-          = gr%zt(i,nzt) + 0.5_core_rknd * ( gr%zt(i,nzt) - gr%zt(i,nzt-1) )
-        end do
+        if ( l_ascending_grid ) then
+          do i = 1, ngrdcol
+            ! The lowest-indexed momentum level is at the model lower boundary
+            gr%zm(i,1) = zm_init(i)
+            gr%zm(i,nzm) &
+            = gr%zt(i,nzt) + 0.5_core_rknd * ( gr%zt(i,nzt) - gr%zt(i,nzt-1) )
+          end do
+        else ! descending grid
+          do i = 1, ngrdcol
+            ! The highest-indexed momentum level is at the model lower boundary
+            gr%zm(i,nzm) = zm_init(i)
+            gr%zm(i,1) &
+            = gr%zt(i,1) + 0.5_core_rknd * ( gr%zt(i,1) - gr%zt(i,2) )
+          end do
+        endif
 
       elseif ( grid_type == 3 ) then
 
@@ -802,14 +922,25 @@ module grid_class
       end do
     enddo
     
-    do i = 1, ngrdcol
-      ! The grid spacing over the model lower boundary, where zm(i,1) is
-      ! considered to be the "central" level, will be defined to be twice the
-      ! distance between the lowest thermodynamic level and the lowest momentum
-      ! level.
-      gr%dzm(i,1) = 2.0_core_rknd * ( gr%zt(i,1) - gr%zm(i,1) )
-      gr%dzm(i,nzm) = gr%dzm(i,nzm-1)
-    end do
+    if ( l_ascending_grid ) then
+      do i = 1, ngrdcol
+        ! The grid spacing over the model lower boundary, where zm(i,1) is
+        ! considered to be the "central" level, will be defined to be twice the
+        ! distance between the lowest thermodynamic level and the lowest
+        ! momentum level.
+        gr%dzm(i,1) = 2.0_core_rknd * ( gr%zt(i,1) - gr%zm(i,1) )
+        gr%dzm(i,nzm) = gr%dzm(i,nzm-1)
+      end do
+    else ! descending grid
+      do i = 1, ngrdcol
+        ! The grid spacing over the model lower boundary, where zm(i,nzm) is
+        ! considered to be the "central" level, will be defined to be twice the
+        ! distance between the lowest thermodynamic level and the lowest
+        ! momentum level.
+        gr%dzm(i,nzm) = 2.0_core_rknd * ( gr%zm(i,nzm) - gr%zt(i,nzt) )
+        gr%dzm(i,1) = gr%dzm(i,2)
+      end do
+    endif
 
     ! Define dzt, the spacing between momentum grid levels; centered over
     ! thermodynamic grid levels
@@ -834,7 +965,6 @@ module grid_class
         gr%invrs_dzt(i,k) = one / gr%dzt(i,k)
       end do
     enddo
-
 
     ! Interpolation Weights: zm grid to zt grid.
     ! The grid index (k) is the index of the level on the thermodynamic (zt)
@@ -865,7 +995,29 @@ module grid_class
     call calc_zt2zm_weights( nzm, nzt, ngrdcol, & ! In
                              gr )                 ! InOut
 
+    ! Declare the grid indices for the upper and lower boundaries on both the
+    ! momentum and thermodynamic grid levels.
+    if ( l_ascending_grid ) then
+      ! Ascending Grid
+      gr%k_lb_zm       = 1
+      gr%k_lb_zt       = 1
+      gr%k_ub_zm       = nzm
+      gr%k_ub_zt       = nzt
+      gr%grid_dir_indx = 1
+      gr%grid_dir      = one
+    else
+      ! Descending Grid
+      gr%k_lb_zm       = nzm
+      gr%k_lb_zt       = nzt
+      gr%k_ub_zm       = 1
+      gr%k_ub_zt       = 1
+      gr%grid_dir_indx = -1
+      gr%grid_dir      = -one
+    endif
+
+
     return
+
   end subroutine setup_grid_heights
 
   !=============================================================================
@@ -1561,25 +1713,57 @@ module grid_class
 
     ! Set the value of the thermodynamic-level variable, azt, at momentum
     ! level 1.  The name of the variable when interpolated/extended to momentum
-    ! levels is azm.  This is the lower boundary.
-    !$acc parallel loop gang vector default(present)
-    do i = 1, ngrdcol
-      linear_interpolated_azm(i,1) = azt(i,1)
-    end do
-    !$acc end parallel loop
+    ! levels is azm.  This is the lower boundary for an ascending grid and the
+    ! upper boundary for a descending grid.
+    if ( gr%grid_dir_indx == 1 ) then ! ascending grid (lower boundary)
+
+      !$acc parallel loop gang vector default(present)
+      do i = 1, ngrdcol
+        linear_interpolated_azm(i,1) = azt(i,1)
+      end do
+      !$acc end parallel loop
+
+    else ! descending grid (upper boundary)
+
+      ! Use a linear extension based on the values of azt at levels 1 and 2 to
+      ! find the value of azm at level 1.
+
+      !$acc parallel loop gang vector default(present)
+      do i = 1, ngrdcol
+        linear_interpolated_azm(i,1) &
+        = gr%weights_zt2zm(i,1,t_above) * azt(i,2) &
+          + gr%weights_zt2zm(i,1,t_below) * azt(i,1)
+      end do
+      !$acc end parallel loop
+
+    endif
 
     ! Set the value of the thermodynamic-level variable, azt, at momentum
     ! level nzm.  The name of the variable when interpolated/extended to
-    ! momentum levels is azm.  This is the upper boundary.
-    ! Use a linear extension based on the values of azt at levels nzt and
-    ! nzt-1 to find the value of azm at level nzm.
-    !$acc parallel loop gang vector default(present)
-    do i = 1, ngrdcol
-      linear_interpolated_azm(i,nzm) &
-      = gr%weights_zt2zm(i,nzm,t_above) * azt(i,nzt) &
-        + gr%weights_zt2zm(i,nzm,t_below) * azt(i,nzt-1)
-    end do
-    !$acc end parallel loop
+    ! momentum levels is azm.  This is the upper boundary for an ascending grid
+    ! and the lower boundary for a descending grid.
+    if ( gr%grid_dir_indx == 1 ) then ! ascending grid (upper boundary)
+
+      ! Use a linear extension based on the values of azt at levels nzt and
+      ! nzt-1 to find the value of azm at level nzm.
+
+      !$acc parallel loop gang vector default(present)
+      do i = 1, ngrdcol
+        linear_interpolated_azm(i,nzm) &
+        = gr%weights_zt2zm(i,nzm,t_above) * azt(i,nzt) &
+          + gr%weights_zt2zm(i,nzm,t_below) * azt(i,nzt-1)
+      end do
+      !$acc end parallel loop
+
+    else ! descending grid (lower boundary)
+
+      !$acc parallel loop gang vector default(present)
+      do i = 1, ngrdcol
+        linear_interpolated_azm(i,nzm) = azt(i,nzt)
+      end do
+      !$acc end parallel loop
+
+    endif
 
     if ( present(zm_min) ) then
       !$acc parallel loop gang vector collapse(2) default(present) copyin(zm_min)
@@ -1806,15 +1990,15 @@ module grid_class
     ! on the thermodynamic grid levels (azt) to the momentum grid levels (azm).
     ! This function computes a weighting factor for both the upper thermodynamic
     ! level (k) and the lower thermodynamic level (k-1) applied to the central
-    ! momentum level (k).  For the lowermost momentum grid level (k=1), a
-    ! weighting factor for both the thermodynamic level at k=1 and the
-    ! thermodynamic level at k=2 are calculated based on the use of a linear
-    ! extension. Likewise, for the uppermost momentum grid level (k=gr%nzm), a
-    ! weighting factor for both the thermodynamic level at k=gr%nzt and the
-    ! thermodynamic level at k=gr%nzt-1 are calculated based on the use of a
-    ! linear extension.  This function outputs the weighting factors at a single
-    ! momentum grid level (k).  The formulation used is compatible with a
-    ! stretched (unevenly-spaced) grid.  The weights are defined as follows:
+    ! momentum level (k).  For the boundary momentum grid level k=1, a weighting
+    ! factor for both the thermodynamic level at k=1 and the thermodynamic level
+    ! at k=2 are calculated based on the use of a linear extension. Likewise,
+    ! for the boundary momentum grid level k=nzm, a weighting factor for both
+    ! the thermodynamic level at k=nzt and the thermodynamic level at k=nzt-1
+    ! are calculated based on the use of a linear extension.  This function
+    ! outputs the weighting factors at a single momentum grid level (k).  The
+    ! formulation used is compatible with a stretched (unevenly-spaced) grid.
+    ! The weights are defined as follows:
     !
     ! ---var_zt(k)--------------------------------------------- t(k)
     !                       azt_weight(t_above) = factor
@@ -1826,7 +2010,12 @@ module grid_class
     ! zt(k), zm(k), and zt(k-1), respectively.  The letter "t" is used for
     ! thermodynamic levels and the letter "m" is used for momentum levels.
     !
-    ! For all momentum levels 1 < k < gr%nzm:
+    ! NOTE: For an ascending grid, the grid diagram shown above has increasing
+    ! indices with increasing altitude, such that zt(k) > zt(k-1). For a
+    ! descending grid, the grid diagram shown above has increasing indices with
+    ! decreasing altitude, such that zt(k) < zt(k-1).
+    !
+    ! For all momentum levels 1 < k < nzm:
     !
     ! The formula for a linear interpolation is given by:
     !
@@ -1887,7 +2076,11 @@ module grid_class
     !      = 1 - A(k);
     !
     ! which is the same as "1 - factor" for the interpolation to momentum
-    ! level (k+1).  In the code, this interpolation is referenced as
+    ! level (k+1).  This equation can also be rewritten as:
+    !
+    ! B(k) = ( zt(k+1) - zm(k+1) ) / ( zt(k+1) - zt(k) )
+    !
+    ! In the code, this interpolation is referenced as
     ! gr%weights_zt2zm(t_below,mkp1), which can be read as "grid weight in a
     ! zt2zm interpolation of the thermodynamic level below momentum level (k+1)
     ! (applied to momentum level (k+1))".
@@ -1904,21 +2097,25 @@ module grid_class
     !      = 1 - C(k);
     !
     ! which is the same as "1 - factor" for the interpolation to momentum
-    ! level (k).  In the code, this interpolation is referenced as
+    ! level (k).  This equation can also be rewritten as:
+    !
+    ! D(k) = ( zt(k) - zm(k) ) / ( zt(k) - zt(k-1) )
+    !
+    ! In the code, this interpolation is referenced as
     ! gr%weights_zt2zm(t_below,mk), which can be read as "grid weight in a
     ! zt2zm interpolation of the thermodynamic level below momentum level (k)
     ! (applied to momentum level (k))".
     !
     ! Additionally, as long as the central thermodynamic level (k) in the above
-    ! scenario is not the uppermost thermodynamic level or the lowermost
-    ! thermodynamic level (k /= gr%nz-1 and k /= 1), the four weighting factors
-    ! have the following relationships:  A(k) = C(k+1) and B(k) = D(k+1).
+    ! scenario is not a boundary thermodynamic level (k /= nzt and k /= 1), the
+    ! four weighting factors have the following relationships:  A(k) = C(k+1)
+    ! and B(k) = D(k+1).
     !
     !
-    ! Special condition for lowermost grid level, k = 1:
+    ! Special condition for grid level, k = 1:
     !
-    ! The lowermost momentum grid level is below the lowermost thermodynamic
-    ! grid level.  Thus, a linear extension is used at this level.
+    ! The boundary momentum grid level k = 1 is outside the thermodynamic grid
+    ! level k = 1.  Thus, a linear extension is used at this level.
     !
     ! The formula for a linear extension to momentum level k = 1 is given by:
     !
@@ -1941,20 +2138,23 @@ module grid_class
     !
     ! factor = ( zm(k) - zt(k) ) / ( zt(k+1) - zt(k) ).
     !
+    ! Finally, since here k = 1:
+    !
+    ! factor = ( zm(1) - zt(1) ) / ( zt(2) - zt(1) ).
+    !
     ! Due to the fact that a linear extension is being used, the value of factor
-    ! will be less than 0.  The weight of the upper thermodynamic level, which
-    ! is thermodynamic level k = 2, on momentum level k = 1 equals the value of
-    ! factor.  The weight of the lower thermodynamic level, which is
-    ! thermodynamic level k = 1, on momentum level k = 1 equals 1 - factor,
-    ! which is greater than 1.  However, the sum of the weights equals 1.
+    ! will be less than 0.  The weight of thermodynamic level k = 2 on momentum
+    ! level k = 1 equals the value of factor.  The weight of thermodynamic level
+    ! k = 1 on momentum level k = 1 equals 1 - factor, which is greater than 1.
+    ! However, the sum of the weights equals 1.
     !
     !
-    ! Special condition for uppermost grid level, k = gr%nzm:
+    ! Special condition for grid level, k = nzm:
     !
-    ! The uppermost momentum grid level is above the uppermost thermodynamic
-    ! grid level.  Thus, a linear extension is used at this level.
+    ! The boundary momentum grid level k = nzm is outside the thermodynamic grid
+    ! level k = nzt.  Thus, a linear extension is used at this level.
     !
-    ! The formula for a linear extension to momentum level k = gr%nzm
+    ! The formula for a linear extension to momentum level k = nzm
     ! is given by:
     !
     ! var_zt( extend to zm(k) )
@@ -1976,14 +2176,14 @@ module grid_class
     !
     ! factor = ( zm(k) - zt(k-2) ) / ( zt(k-1) - zt(k-2) ).
     !
-    ! Finally, since here k = gr%nzm and gr%nzt = gr%nzm - 1:
+    ! Finally, since here k = nzm and nzt = nzm - 1:
     !
-    ! factor = ( zm(gr%nzm) - zt(gr%nzt-1) ) / ( zt(gr%nzt) - zt(gr%nzt-1) ).
+    ! factor = ( zm(nzm) - zt(nzt-1) ) / ( zt(nzt) - zt(nzt-1) ).
     !
     ! Due to the fact that a linear extension is being used, the value of factor
-    ! will be greater than 1.  The weight of thermodynamic level k = gr%nzt on
-    ! momentum level k = gr%nzm equals the value of factor.  The weight of
-    ! thermodynamic level k = gr%nzt-1 on momentum level k = gr%nzm equals
+    ! will be greater than 1.  The weight of thermodynamic level k = nzt on
+    ! momentum level k = nzm equals the value of factor.  The weight of
+    ! thermodynamic level k = nzt-1 on momentum level k = nzm equals
     ! 1 - factor, which is less than 0.  However, the sum of the two weights
     ! equals 1.
     !
@@ -1991,11 +2191,10 @@ module grid_class
     ! Brian Griffin; September 12, 2008.
     ! Updated for removal of "ghost" thermodynamic level that was below the
     ! surface; July 17, 2023.
+    ! Updated to generalize the grid for both ascending and descending grid
+    ! directions; September 24, 2024.
     !
     !-----------------------------------------------------------------------
-
-    use constants_clubb, only: &
-        one  ! Constant(s)
 
     implicit none
 
@@ -2032,9 +2231,12 @@ module grid_class
       end do
     end do
  
-    ! The bottom model level (1) is formulated differently because the bottom
-    ! momentum level is below the bottom thermodynamic level.  A linear
-    ! extension is required, rather than linear interpolation.
+    ! The setting of the grid interpolation weights for momentum level 1 is
+    ! handled differently because momentum level 1 is outside of thermodynamic
+    ! level 1.  A linear extension to momentum level 1 from thermodynamic levels
+    ! 1 and 2 is required, rather than linear interpolation.
+    ! This is the model lower boundary for an ascending grid and the model upper
+    ! boundary for a descending grid.
     ! Note:  Variable "factor" will be less than 0 in this situation.
     do i = 1, ngrdcol
 
@@ -2046,9 +2248,12 @@ module grid_class
 
     end do
 
-    ! The top model level (gr%nzm) is formulated differently because the top
-    ! momentum level is above the top thermodynamic level.  A linear
-    ! extension is required, rather than linear interpolation.
+    ! The setting of the grid interpolation weights for momentum level nzm is
+    ! handled differently because momentum level nzm is outside of thermodynamic
+    ! level nzt.  A linear extension to momentum level nzm from thermodynamic
+    ! levels nzt and nzt-1 is required, rather than linear interpolation.
+    ! This is the model upper boundary for an ascending grid and the model lower
+    ! boundary for a descending grid.
     ! Note:  Variable "factor" will be greater than 1 in this situation.
     do i = 1, ngrdcol
 
@@ -2243,6 +2448,11 @@ module grid_class
     ! zm(k+1), zt(k), and zm(k), respectively.  The letter "t" is used for
     ! thermodynamic levels and the letter "m" is used for momentum levels.
     !
+    ! NOTE: For an ascending grid, the grid diagram shown above has increasing
+    ! indices with increasing altitude, such that zm(k+1) > zm(k). For a
+    ! descending grid, the grid diagram shown above has increasing indices with
+    ! decreasing altitude, such that zm(k+1) < zm(k).
+    !
     ! The formula for a linear interpolation is given by:
     !
     ! var_zm( interp to zt(k) )
@@ -2302,7 +2512,11 @@ module grid_class
     !      = 1 - A(k);
     !
     ! which is the same as "1 - factor" for the interpolation to thermodynamic
-    ! level (k).  In the code, this interpolation is referenced as
+    ! level (k).  This equation can also be rewritten as:
+    !
+    ! B(k) = ( zm(k+1) - zt(k) ) / ( zm(k+1) - zm(k) ).
+    !
+    ! In the code, this interpolation is referenced as
     ! gr%weights_zm2zt(m_below,tk), which can be read as "grid weight in a
     ! zm2zt interpolation of the momentum level below thermodynamic
     ! level (k) (applied to thermodynamic level (k))".
@@ -2319,7 +2533,11 @@ module grid_class
     !      = 1 - C(k);
     !
     ! which is the same as "1 - factor" for the interpolation to thermodynamic
-    ! level (k-1).  In the code, this interpolation is referenced as
+    ! level (k-1).  The equation can also be rewritten as:
+    !
+    ! D(k) = ( zm(k) - zt(k-1) ) / ( zm(k) - zm(k-1) )
+    !
+    ! In the code, this interpolation is referenced as
     ! gr%weights_zm2zt(m_below,tkm1), which can be read as "grid weight in a
     ! zm2zt interpolation of the momentum level below thermodynamic level (k-1)
     ! (applied to thermodynamic level (k-1))".
@@ -2333,11 +2551,10 @@ module grid_class
     ! Brian Griffin; September 12, 2008.
     ! Updated for removal of "ghost" thermodynamic level that was below the
     ! surface; July 18, 2023.
+    ! Updated to generalize the grid for both ascending and descending grid
+    ! directions; September 24, 2024.
     !
     !-----------------------------------------------------------------------
-
-    use constants_clubb, only: &
-        one  ! Constant(s)
 
     implicit none
 
