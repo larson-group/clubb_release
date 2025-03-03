@@ -24,6 +24,7 @@ def parse_gptl_summary(timing_results, variables):
     """
     with open("timing.summary", "r") as f:
         # Skip the header line
+        nruns = 1
         header = f.readline()
         for line in f:
             tokens = line.split()
@@ -33,9 +34,9 @@ def parse_gptl_summary(timing_results, variables):
                 if var_name in variables:
                     try:
                         ncalls    = float(tokens[1])
-                        if var_name == "acc_data_copyin":
+                        if var_name == "mainloop":
                             # The number of mainloop calls is the number of runs
-                            nruns = ncalls
+                            nruns = ncalls / nranks
                         nranks    = float(tokens[2])
                         mean_time = float(tokens[3])
                         # Normalize by calls per rank ( ncalls / nranks = calls per rank )
