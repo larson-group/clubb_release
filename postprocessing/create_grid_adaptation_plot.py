@@ -29,17 +29,22 @@ def make_grid_adapt_animation_for_file(read_file, write_file, fps=fps_default):
     matrix_z = []
     matrix_dens = []
 
+    restrict_time_frame = False
+    max_time = 600
+
     for line in lines:
         splitted_line = line.split()
         line_id = (splitted_line[0]).strip()
         itime = (line.split()[1]).strip()
         n = len(splitted_line)
         vals = splitted_line[2:n]
-        if line_id == 'gr_dens_z':
-            times.append(int(itime))
-            matrix_z.append([float(val) for val in vals])
-        if line_id == 'gr_dens':
-            matrix_dens.append([float(val) for val in vals])
+        itime = int(itime)
+        if itime <= max_time or not restrict_time_frame:
+            if line_id == 'gr_dens_z':
+                times.append(itime)
+                matrix_z.append([float(val) for val in vals])
+            if line_id == 'gr_dens':
+                matrix_dens.append([float(val) for val in vals])
 
     times = np.array(times)
     matrix_z = np.array(matrix_z)
@@ -74,20 +79,31 @@ def make_grid_adapt_plot_for_file(read_file, write_file):
     
     matrix_grid = []
     times_grid = []
+
+    restrict_time_frame = False
+    restrict_shown_grid_levs = False
+    max_time = 800
+    max_grid_levs = 15
+
     for line in lines:
         splitted_line = line.split()
         is_grid = (splitted_line[0]).strip() == 'g'
         itime = line.split()[1]
-        if is_grid:
-            times_grid.append(float(itime))
-        n = len(splitted_line)
-        grid = splitted_line[2:n]
-        if is_grid:
-            matrix_grid.append([float(level) for level in grid])
+        itime = float(itime)
+        if itime <= max_time or not restrict_time_frame:
+            if is_grid:
+                times_grid.append(itime)
+            n = len(splitted_line)
+            grid = splitted_line[2:n]
+            if is_grid:
+                matrix_grid.append([float(level) for level in grid])
     
     times = np.array(times_grid)
     matrix = np.array(matrix_grid)
-    plt.plot(times, matrix)
+    if restrict_shown_grid_levs:
+        plt.plot(times, matrix[:,0:max_grid_levs])
+    else:
+        plt.plot(times, matrix)
     plt.xlabel('time [min]')
     plt.ylabel('z [m]')
     plt.savefig(write_file)

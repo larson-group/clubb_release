@@ -755,15 +755,14 @@ module interpolation
     !-------------------------------------------------------------------------------
     !
     ! If the point in question is larger than the largest x-value or
-    ! smaller than the smallest x-value, crash.
+    ! smaller than the smallest x-value, give a warning.
     !
     !-------------------------------------------------------------------------------
 
     if ( clubb_at_least_debug_level( 0 ) ) then
         if ( (minval(interpolate_altitudes) < current_altitudes(1)) &
               .or. (maxval(interpolate_altitudes) > current_altitudes(size_current)) ) then
-          write(fstderr,*) "lin_interp_between_grids: Value out of range"
-          error stop
+          write(fstderr,*) "lin_interp_between_grids: Value is out of range. Extrapolating..."
         end if
     end if
 

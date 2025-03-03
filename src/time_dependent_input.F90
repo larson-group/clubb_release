@@ -334,6 +334,9 @@ module time_dependent_input
     use clubb_precision, only: &
       core_rknd ! Variable(s)
 
+    use model_flags, only: &
+      no_grid_adaptation
+
     implicit none
 
     ! External
@@ -413,10 +416,10 @@ module time_dependent_input
 
     end do
 
-    if ( l_add_dycore_grid .or. grid_adapt_in_time_method == 0 ) then
+    if ( l_add_dycore_grid .or. grid_adapt_in_time_method == no_grid_adaptation ) then
       ! the array should only be kept in memory, if we want to use grid adaptation
-      ! (grid_adapt_in_time_method > 0) and no simulating forcings input from the host
-      ! model on the dycore grid (l_add_dycore_grid == .true.), since then we
+      ! (grid_adapt_in_time_method > no_grid_adaptation) and no simulating forcings input from the
+      ! host model on the dycore grid (l_add_dycore_grid == .true.), since then we
       ! need the raw input from the file during the CLUBB run if the grid changes
       do i = 1, nforcings
         if ( allocated( t_dependent_forcing_data_f_grid(i)%values ) ) then
@@ -1005,16 +1008,18 @@ module time_dependent_input
     use array_index, only: &
       sclr_idx_type
 
-    use grid_adaptation_module, only: remap_vals_to_target, &
-                                      check_mass_conservation, &
-                                      check_vertical_integral_conservation, &
-                                      check_remap_for_consistency
+    use grid_adaptation_module, only: &
+      remapping_matrix_zt_values, &
+      remap_vals_to_target
 
     use error_code, only: &
       clubb_at_least_debug_level
 
     use constants_clubb, only: &
       fstderr
+
+    use model_flags, only: &
+      cons_ullrich_remap
 
     implicit none
 
@@ -1044,7 +1049,7 @@ module time_dependent_input
       total_idx_rho_lin_spline, & ! number of indices for the linear spline definition arrays
       grid_remap_method  ! Integer that specifies what remapping method should be used
 
-    real( kind = core_rknd ), dimension(total_idx_rho_lin_spline), intent(in) :: &
+    real( kind = core_rknd ), dimension(ngrdcol,total_idx_rho_lin_spline), intent(in) :: &
       rho_lin_spline_vals, & ! rho values at the given altitudes
       rho_lin_spline_levels  ! altitudes for the given rho values
     ! Note: both these arrays need to be sorted from low to high altitude
@@ -1075,9 +1080,12 @@ module time_dependent_input
 
     real( kind = core_rknd ), dimension(gr_dycore%nzt) :: temp_array_dycore
 
-    real( kind = core_rknd ), dimension(nforcings,nzt) :: forcings_array
+    real( kind = core_rknd ), dimension(1,nforcings,nzt) :: forcings_array
 
     real( kind = core_rknd ) :: time_frac
+
+    ! right now only one forcings profile can be applied, so ngrdcol=1
+    real( kind = core_rknd ), dimension(1,gr%nzt,gr_dycore%nzt) :: R_ij
 
     !--------------------- Begin Code ---------------------
     time_frac = -one ! Default initialization
@@ -1085,43 +1093,36 @@ module time_dependent_input
     call time_select( time, size(dimension_var%values), dimension_var%values, &
                                  before_time, after_time, time_frac )
 
+    if ( grid_remap_method == cons_ullrich_remap ) then
+
+      ! right now only one forcings profile can be applied, so ngrdcol=1
+      call remapping_matrix_zt_values( 1, &                          ! Intent(in)
+                                       gr_dycore, gr, &              ! Intent(in)
+                                       total_idx_rho_lin_spline, &   ! Intent(in)
+                                       rho_lin_spline_vals(1,:), &   ! Intent(in)
+                                       rho_lin_spline_levels(1,:), & ! Intent(in)
+                                       R_ij )                        ! Intent(out)
+    end if
+
     do n = 2, nforcings
 
       temp_array_dycore = linear_interp_factor &
                           ( time_frac, t_dependent_forcing_data(n)%values(:,after_time), &
                             t_dependent_forcing_data(n)%values(:,before_time) )
 
-      if ( grid_remap_method == 1 ) then
-        forcings_array(n,:) = remap_vals_to_target( gr_dycore%nzm, gr%nzm, &
-                                                    gr_dycore%zm, gr%zm,&
-                                                    total_idx_rho_lin_spline, &
-                                                    rho_lin_spline_vals, &
-                                                    rho_lin_spline_levels, &
-                                                    temp_array_dycore )
+      if ( grid_remap_method == cons_ullrich_remap ) then
 
-        if ( clubb_at_least_debug_level( 2 ) ) then
-          call check_mass_conservation( gr_dycore%nzm, gr%nzm, &
-                                        gr_dycore%zm, &
-                                        gr%zm, &
-                                        total_idx_rho_lin_spline, rho_lin_spline_vals, &
-                                        rho_lin_spline_levels )
+        forcings_array(:,n,:) = remap_vals_to_target( 1, &
+                                                      gr_dycore%nzm, &
+                                                      gr%nzm, &
+                                                      gr_dycore%zm(1,:), &
+                                                      gr%zm(1,:), &
+                                                      total_idx_rho_lin_spline, &
+                                                      rho_lin_spline_vals(1,:), &
+                                                      rho_lin_spline_levels(1,:), &
+                                                      temp_array_dycore, &
+                                                      R_ij(1,:,:) )
 
-          call check_vertical_integral_conservation( total_idx_rho_lin_spline, &
-                                                     rho_lin_spline_vals, &
-                                                     rho_lin_spline_levels, &
-                                                     gr_dycore%nzm, gr%nzm, &
-                                                     gr_dycore%zm, &
-                                                     gr%zm,&
-                                                     temp_array_dycore, &
-                                                     forcings_array(n,:) )
-
-          call check_remap_for_consistency( gr_dycore%nzm, gr%nzm, &
-                                            gr_dycore%zm, &
-                                            gr%zm, &
-                                            total_idx_rho_lin_spline, &
-                                            rho_lin_spline_vals, &
-                                            rho_lin_spline_levels )
-        end if
       else
         write(fstderr,*) 'There is currently no method implemented for grid_remap_method=', &
                          grid_remap_method, '. Set flag to different value.'
@@ -1133,7 +1134,7 @@ module time_dependent_input
                                                    ngrdcol, nzm, nzt, &
                                                    sclr_dim, edsclr_dim, sclr_idx, &
                                                    gr, rtm, rho, exner,  &
-                                                   forcings_array, &
+                                                   forcings_array(1,:,:), &
                                                    thlm_f, rtm_f, um_ref, vm_ref, um_f, vm_f, &
                                                    wm_zt, wm_zm,  ug, vg, &
                                                    sclrm_forcing, edsclrm_forcing )

@@ -115,8 +115,11 @@ module atex
     lin_interp_between_grids
   
   use grid_adaptation_module, only: &
-    remap_forcings, check_mass_conservation_zt_zm, &
-    check_remap_for_consistency_zt_zm, check_vertical_integral_conservation_all_zt_values
+    remapping_matrix_zt_values, &
+    remap_vals_to_target
+
+  use model_flags, only: &
+      cons_ullrich_remap
 
   implicit none
 
@@ -188,6 +191,9 @@ module atex
 
   real( kind = core_rknd ), dimension(ngrdcol,gr_dycore%nzt) :: & 
     rtm_dycore             ! Total water mixing ratio                      [kg/kg]
+
+  real( kind = core_rknd ), dimension(ngrdcol,gr%nzt,gr_dycore%nzt) :: &
+    R_ij
 
   !--------------------- Begin Code ---------------------
 
@@ -295,45 +301,33 @@ module atex
       call calc_forcings( ngrdcol, gr_dycore, z_inversion_dycore, &  ! intent(in)
                           thlm_forcing_dycore, rtm_forcing_dycore )  ! intent(out)
 
-      if ( grid_remap_method == 1 ) then
+      if ( grid_remap_method == cons_ullrich_remap ) then
 
-        call remap_forcings( ngrdcol, gr_dycore, gr, &                   ! intent(in)
-                             gr_dycore%nzm, rho_ds_zm_dycore, &          ! intent(in)
-                             gr_dycore%zm, &                             ! intent(in)
-                             thlm_forcing_dycore, rtm_forcing_dycore, &  ! intent(in)
-                             thlm_forcing, rtm_forcing )                 ! intent(out)
+        call remapping_matrix_zt_values( ngrdcol, &           ! Intent(in)
+                                         gr_dycore, gr, &     ! Intent(in)
+                                         gr_dycore%nzm, &     ! Intent(in)
+                                         rho_ds_zm_dycore, &  ! Intent(in)
+                                         gr_dycore%zm, &      ! Intent(in)
+                                         R_ij )               ! Intent(out)
 
-        if ( clubb_at_least_debug_level( 2 ) ) then
+        thlm_forcing = remap_vals_to_target( ngrdcol, &
+                                             gr_dycore%nzm, gr%nzm, &
+                                             gr_dycore%zm, gr%zm, &
+                                             gr_dycore%nzm, &
+                                             rho_ds_zm_dycore, &
+                                             gr_dycore%zm, &
+                                             thlm_forcing_dycore, &
+                                             R_ij )
 
-          ! checks if the mass over the physics and dycore grid is the same
-          call check_mass_conservation_zt_zm( ngrdcol, gr_dycore, gr, &           ! intent(in)
-                                              gr_dycore%nzm, rho_ds_zm_dycore, &  ! intent(in)
-                                              gr_dycore%zm )                      ! intent(in)
+        rtm_forcing = remap_vals_to_target( ngrdcol, &
+                                            gr_dycore%nzm, gr%nzm, &
+                                            gr_dycore%zm, gr%zm, &
+                                            gr_dycore%nzm, &
+                                            rho_ds_zm_dycore, &
+                                            gr_dycore%zm, &
+                                            rtm_forcing_dycore, &
+                                            R_ij )
 
-          ! check if the calculated vertical integral is the same for both grids for the thlm value
-          call check_vertical_integral_conservation_all_zt_values( ngrdcol, &             ! In
-                                                                   gr_dycore, gr, &       ! In
-                                                                   gr_dycore%nzm, &       ! In
-                                                                   rho_ds_zm_dycore, &    ! In
-                                                                   gr_dycore%zm, &        ! In
-                                                                   thlm_forcing_dycore, & ! In
-                                                                   thlm_forcing )         ! In
-
-          ! check if the calculated vertical integral is the same for both grids for the rtm value
-          call check_vertical_integral_conservation_all_zt_values( ngrdcol, &             ! In
-                                                                   gr_dycore, gr, &       ! In
-                                                                   gr_dycore%nzm, &       ! In
-                                                                   rho_ds_zm_dycore, &    ! In
-                                                                   gr_dycore%zm, &        ! In
-                                                                   rtm_forcing_dycore, &  ! In
-                                                                   rtm_forcing )          ! In
-
-          ! check if remapping operator fulfills condition for consistency
-          ! with the grids for zt and zm levels
-          call check_remap_for_consistency_zt_zm( ngrdcol, gr_dycore, gr, &            ! intent(in)
-                                                  gr_dycore%nzm, rho_ds_zm_dycore, &   ! intent(in)
-                                                  gr_dycore%zm )                       ! intent(in)
-        end if
       
       else
         write(fstderr,*) "There is currently no method implemented for", &

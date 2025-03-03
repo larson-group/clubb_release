@@ -88,7 +88,7 @@ module output_netcdf
      time   ! Current time                    [s]
 
     real( kind = core_rknd ), dimension(:), intent(in) ::  & 
-      zgrid  ! The model grid                  [m]
+     zgrid  ! The model grid                  [m]
 
     ! Input/output Variables
     type (stat_file), intent(inout) :: ncf
@@ -234,7 +234,9 @@ module output_netcdf
         time_precision ! Constant
 
     use grid_adaptation_module, only: &
-        remap_zm_values, remap_zt_values
+        remapping_matrix_zm_values, &
+        remapping_matrix_zt_values, &
+        remap_vals_to_target
 
     use grid_class, only: grid ! Type
 
@@ -246,7 +248,7 @@ module output_netcdf
     integer, intent(in) :: &
       total_idx_rho_lin_spline ! number of points in the rho spline
 
-    real( kind = core_rknd ), dimension(total_idx_rho_lin_spline), intent(in) :: &
+    real( kind = core_rknd ), dimension(1,total_idx_rho_lin_spline), intent(in) :: &
       rho_lin_spline_vals, &  ! the rho values for constructing the spline for remapping;
                               ! only used if l_different_output_gr is .true.
       rho_lin_spline_levels   ! the levels at which the rho values are given;
@@ -281,7 +283,27 @@ module output_netcdf
     integer :: i, &     ! Array index
                samp, lon, lat ! loop vars
 
+    real( kind=core_rknd ), dimension(:,:,:), allocatable :: R_ij_zm
+    
+    real( kind=core_rknd ), dimension(:,:,:), allocatable :: R_ij_zt
+
+    real( kind=core_rknd ), dimension(:,:), allocatable :: levels_source_zm_vals
+
+    real( kind=core_rknd ), dimension(:,:), allocatable :: levels_target_zm_vals
+
     ! ---- Begin Code ----
+
+    if ( l_different_output_grid ) then
+      allocate( R_ij_zm(1,gr_target%nzm,gr_source%nzm) )
+      allocate( R_ij_zt(1,gr_target%nzt,gr_source%nzt) )
+      allocate( levels_source_zm_vals(1,gr_source%nzt+2) )
+      allocate( levels_target_zm_vals(1,gr_target%nzt+2) )
+    else
+      allocate( R_ij_zm(1,1,1) )
+      allocate( R_ij_zt(1,1,1) )
+      allocate( levels_source_zm_vals(1,1) )
+      allocate( levels_target_zm_vals(1,1) )
+    end if
 
     ! If there is no data to write, then return
     if ( ncf%nvar == 0 ) then
@@ -308,6 +330,25 @@ module output_netcdf
       return
     end if
 
+    if ( l_different_output_grid ) then
+
+      call remapping_matrix_zm_values( 1, &                          ! Intent(in)
+                                       gr_source, gr_target, &       ! Intent(in)
+                                       total_idx_rho_lin_spline, &   ! Intent(in)
+                                       rho_lin_spline_vals, &        ! Intent(in)
+                                       rho_lin_spline_levels, &      ! Intent(in)
+                                       levels_source_zm_vals, &      ! Intent(out)
+                                       levels_target_zm_vals, &      ! Intent(out)
+                                       R_ij_zm )                     ! Intent(out)
+
+      call remapping_matrix_zt_values( 1, &                            ! Intent(in)
+                                       gr_source, gr_target, &         ! Intent(in)
+                                       total_idx_rho_lin_spline, &     ! Intent(in)
+                                       rho_lin_spline_vals, &          ! Intent(in)
+                                       rho_lin_spline_levels, &        ! Intent(in)
+                                       R_ij_zt )                       ! Intent(out)
+    end if
+
     ! If the grid_avg_var are allocated, then print to 4d netcdf.
     ! Otherwise, if the samples_of_var are allocated, print to 5d
     do i = 1, ncf%nvar, 1
@@ -319,21 +360,29 @@ module output_netcdf
           do lon = 1, ncf%nlon
             do lat = 1, ncf%nlat
               if ( zm_zt == 'zm' ) then
+
                 grid_avg_var_diff_gr(:,lon,lat,:) &
-                  = remap_zm_values( 1, gr_source, gr_target, &
-                                     total_idx_rho_lin_spline, &
-                                     rho_lin_spline_vals, &
-                                     rho_lin_spline_levels, &
-                                     ncf%grid_avg_var(i)%ptr(lon,lat,ncf%ia:gr_source%nzm ) &
-                                    )
+                  = remap_vals_to_target( 1, &
+                                          gr_source%nzt+2, gr_target%nzt+2, &
+                                          levels_source_zm_vals, levels_target_zm_vals, &
+                                          total_idx_rho_lin_spline, &
+                                          rho_lin_spline_vals, &
+                                          rho_lin_spline_levels, &
+                                          ncf%grid_avg_var(i)%ptr(lon,lat,ncf%ia:gr_source%nzm ), &
+                                          R_ij_zm )
+
               else if ( zm_zt == 'zt' ) then
+
                 grid_avg_var_diff_gr(:,lon,lat,:) &
-                  = remap_zt_values( 1, gr_source, gr_target, &
-                                     total_idx_rho_lin_spline, &
-                                     rho_lin_spline_vals, &
-                                     rho_lin_spline_levels, &
-                                     ncf%grid_avg_var(i)%ptr(lon,lat,ncf%ia:gr_source%nzt ) &
-                                    )
+                  = remap_vals_to_target( 1, &
+                                          gr_source%nzm, gr_target%nzm, &
+                                          gr_source%zm, gr_target%zm, &
+                                          total_idx_rho_lin_spline, &
+                                          rho_lin_spline_vals, &
+                                          rho_lin_spline_levels, &
+                                          ncf%grid_avg_var(i)%ptr(lon,lat,ncf%ia:gr_source%nzt ), &
+                                          R_ij_zt )
+
               else
                 error stop 'Invalid value for zm_zt in write_netcdf_helper()'
               endif
@@ -361,20 +410,24 @@ module output_netcdf
               do lat = 1, ncf%nlat
                 if ( zm_zt == 'zm' ) then
                   samples_of_var_diff_gr(:,samp,lon,lat,:) &
-                    = remap_zm_values( 1, gr_source, gr_target, &
-                                       total_idx_rho_lin_spline, &
-                                       rho_lin_spline_vals, &
-                                       rho_lin_spline_levels, &
-                                       ncf%samples_of_var(i)%ptr(samp,lon,lat,ncf%ia:gr_source%nzm)&
-                                      )
+                    = remap_vals_to_target( 1, &
+                                     gr_source%nzt+2, gr_target%nzt+2, &
+                                     levels_source_zm_vals, levels_target_zm_vals, &
+                                     total_idx_rho_lin_spline, &
+                                     rho_lin_spline_vals, &
+                                     rho_lin_spline_levels, &
+                                     ncf%samples_of_var(i)%ptr(samp,lon,lat,ncf%ia:gr_source%nzm), &
+                                     R_ij_zm )
                 else if ( zm_zt == 'zt' ) then
                   samples_of_var_diff_gr(:,samp,lon,lat,:) &
-                    = remap_zt_values( 1, gr_source, gr_target, &
-                                       total_idx_rho_lin_spline, &
-                                       rho_lin_spline_vals, &
-                                       rho_lin_spline_levels, &
-                                       ncf%samples_of_var(i)%ptr(samp,lon,lat,ncf%ia:gr_source%nzt) &
-                                      )
+                    = remap_vals_to_target( 1, &
+                                     gr_source%nzm, gr_target%nzm, &
+                                     gr_source%zm, gr_target%zm, &
+                                     total_idx_rho_lin_spline, &
+                                     rho_lin_spline_vals, &
+                                     rho_lin_spline_levels, &
+                                     ncf%samples_of_var(i)%ptr(samp,lon,lat,ncf%ia:gr_source%nzt), &
+                                     R_ij_zt )
                 else
                   error stop 'Invalid value for zm_zt in write_netcdf_helper()'
                 endif
@@ -422,6 +475,11 @@ module output_netcdf
     if ( allocated(samples_of_var_diff_gr) ) then
       deallocate( samples_of_var_diff_gr )
     end if
+
+    deallocate( R_ij_zm )
+    deallocate( R_ij_zt )
+    deallocate( levels_source_zm_vals )
+    deallocate( levels_target_zm_vals )
 
     return
   end subroutine write_netcdf_helper

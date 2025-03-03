@@ -280,9 +280,19 @@ module clubb_driver
         cloud_drop_sed  ! Procedure(s)
 
     use grid_adaptation_module, only: &
-      setup_simple_gr_dycore, calc_grid_dens_func, adapt_grid  ! Procedure(s)
+      setup_gr_dycore, calc_grid_dens_func, adapt_grid  ! Procedure(s)
 
     use time_dependent_input, only: initialize_t_dependent_input ! Procedure(s)
+
+    use parameter_indices, only: &
+        ibv_efold
+
+    use advance_helper_module, only: &
+        calc_brunt_vaisala_freq_sqd
+
+    use model_flags, only: &
+      no_grid_adaptation, &
+      Lscale_and_wp2
 
 #ifdef _OPENMP
     ! Because Fortran I/O is not thread safe, we use this here to
@@ -431,7 +441,7 @@ module clubb_driver
       dummy_dy  ! [m]
 
     integer :: &
-      itime, i, j, sclr, & ! Local Loop Variables
+      itime, i, j, b, sclr, & ! Local Loop Variables
       iinit                ! initial iteration
 
     integer :: &
@@ -1003,6 +1013,15 @@ module clubb_driver
       gr_dens_z, &     ! levels at which the grid density is given
       gr_dens          ! grid density at the given levels in gr_dens_z [# levs/meter]
 
+    real( kind = core_rknd ), dimension(:,:), allocatable :: &
+       brunt_vaisala_freq_sqd,       & ! Buoyancy frequency squared, N^2              [s^-2]
+       brunt_vaisala_freq_sqd_zt,    & ! Buoyancy frequency squared (on zt grid), N^2 [s^-2]
+       brunt_vaisala_freq_sqd_mixed, & ! A mixture of dry and moist N^2               [s^-2]
+       brunt_vaisala_freq_sqd_dry,   & ! dry N^2                                      [s^-2]
+       brunt_vaisala_freq_sqd_moist, & ! moist N^2                                    [s^-2]
+       brunt_vaisala_freq_sqd_smth     ! Mix between dry and moist N^2 that is
+                                       ! smoothed in the vertical                     [s^-2]
+
 !-----------------------------------------------------------------------
     ! Begin code
 
@@ -1515,7 +1534,7 @@ module clubb_driver
 
     iunit_grid_adaptation = iunit + 10
     fname_grid_adaptation = '../output/'//trim( runtype )//'_grid_adapt.txt'
-    if ( grid_adapt_in_time_method > 0 ) then
+    if ( grid_adapt_in_time_method > no_grid_adaptation ) then
       open(unit=iunit_grid_adaptation, file=fname_grid_adaptation, status='replace', action='write')
     end if
 
@@ -1887,6 +1906,13 @@ module clubb_driver
     allocate( hydromet_vel_covar_zt_impc(ngrdcol, gr%nzt,hydromet_dim) )
     allocate( hydromet_vel_covar_zt_expc(ngrdcol, gr%nzt,hydromet_dim) )
 
+    allocate( brunt_vaisala_freq_sqd(ngrdcol, gr%nzm) )
+    allocate( brunt_vaisala_freq_sqd_zt(ngrdcol, gr%nzt) )
+    allocate( brunt_vaisala_freq_sqd_mixed(ngrdcol, gr%nzm) )
+    allocate( brunt_vaisala_freq_sqd_dry(ngrdcol, gr%nzm) )
+    allocate( brunt_vaisala_freq_sqd_moist(ngrdcol, gr%nzm) )
+    allocate( brunt_vaisala_freq_sqd_smth(ngrdcol, gr%nzm) )
+
 
     allocate( rfrzm(ngrdcol, gr%nzt) )
               
@@ -1919,7 +1945,7 @@ module clubb_driver
 
     end if
 
-    if (grid_adapt_in_time_method > 0) then
+    if (grid_adapt_in_time_method > no_grid_adaptation) then
       allocate( gr_dens_z(gr%nzt) )
       allocate( gr_dens(gr%nzt) )
     end if
@@ -2292,7 +2318,7 @@ module clubb_driver
     if ( stats_metadata%l_output_rad_files ) then
       ! Initialize statistics output, note that this will allocate/initialize stats
       ! variables for all columns, but only create the stats files for the first columns
-      if ( grid_adapt_in_time_method == 0 .and. .not. l_add_dycore_grid ) then ! TODO or also remap when we do remap from dycore even without grid adaptation?
+      if ( grid_adapt_in_time_method == no_grid_adaptation .and. .not. l_add_dycore_grid ) then
 
         call stats_init( iunit, fname_prefix, output_dir, l_stats, & ! In
                          stats_fmt, stats_tsamp, stats_tout, runfile, & ! In
@@ -2343,7 +2369,7 @@ module clubb_driver
     else
       ! Initialize statistics output, note that this will allocate/initialize stats
       ! variables for all columns, but only create the stats files for the first columns
-      if ( grid_adapt_in_time_method == 0 .and. .not. l_add_dycore_grid ) then ! TODO or also remap when we do remap from dycore even without grid adaptation?
+      if ( grid_adapt_in_time_method == no_grid_adaptation .and. .not. l_add_dycore_grid ) then
 
         call stats_init( iunit, fname_prefix, output_dir, l_stats, & ! In
                          stats_fmt, stats_tsamp, stats_tout, runfile, & ! In
@@ -2463,9 +2489,15 @@ module clubb_driver
     stats_nsamp = nint( stats_metadata%stats_tsamp / dt_main )
     stats_nout = nint( stats_metadata%stats_tout / dt_main )
 
-    if ( grid_adapt_in_time_method > 0 ) then
+    if ( grid_adapt_in_time_method > no_grid_adaptation ) then
       write(iunit_grid_adaptation, *) 'g', 0, gr%zm
     end if
+
+    open(unit=iunit_grid_adaptation+10, file='../output/'//trim( runtype )//'_grid.txt', status='replace', action='write')
+    do b = 1, size(gr%zm(1,:))
+        write(iunit_grid_adaptation+10, *) gr%zm(1,b)
+    end do
+    close(unit=iunit_grid_adaptation+10)
 
     !initialize timers    
     time_loop_init = 0.0_core_rknd
@@ -2676,8 +2708,8 @@ module clubb_driver
                                stats_metadata, stats_sfc, & ! In
                                l_add_dycore_grid, & ! In
                                grid_remap_method, & ! In
-                               gr%nzm, rho_ds_zm(1,:), &
-                               gr%zm(1,:), &
+                               gr%nzm, rho_ds_zm, &
+                               gr%zm, &
                                gr_dycore, rho_ds_zm_dycore, & ! In
                                rtm, wm_zm, wm_zt, ug, vg, um_ref, vm_ref, & ! Inout
                                thlm_forcing, rtm_forcing, um_forcing, & ! Inout
@@ -3234,7 +3266,7 @@ module clubb_driver
       ! but since the stats isn't setup to use multiple columns, it will just attempt
       ! write to the same file
       if ( stats_metadata%l_stats_last ) then
-        if ( grid_adapt_in_time_method == 0 .and. .not. l_add_dycore_grid ) then
+        if ( grid_adapt_in_time_method == no_grid_adaptation .and. .not. l_add_dycore_grid ) then
           call stats_end_timestep( stats_metadata,                            & ! intent(in)
                                    stats_zt(1), stats_zm(1), stats_sfc(1),    & ! intent(inout)
                                    stats_lh_zt(1), stats_lh_sfc(1),           & ! intent(inout)
@@ -3303,7 +3335,7 @@ module clubb_driver
       call cpu_time(time_stop)
       time_output_multi_col = time_output_multi_col + time_stop - time_start
 
-      if ( (grid_adapt_in_time_method > 0) .and. (modulo(itime, 30) == 0) &
+      if ( (grid_adapt_in_time_method > no_grid_adaptation) .and. (modulo(itime, 30) == 0) &
            .and. (stats_metadata%l_stats_last) ) then ! only adapt grid when the average of the last
                                                       ! iterations was just written to file,
                                                       ! in order not to change the grid in between
@@ -3311,16 +3343,32 @@ module clubb_driver
                                                       ! to file
         call cpu_time(time_start)
       
-        if ( grid_adapt_in_time_method == 1 ) then
+        if ( grid_adapt_in_time_method == Lscale_and_wp2 ) then
+
+          call calc_brunt_vaisala_freq_sqd( gr%nzm, gr%nzt, ngrdcol, gr, thlm,            & ! In
+                                      exner, rtm, rcm, p_in_Pa, thvm,                     & ! In
+                                      ice_supersat_frac,                                  & ! In
+                                      clubb_config_flags%saturation_formula,              & ! In
+                                      clubb_config_flags%l_brunt_vaisala_freq_moist,      & ! In
+                                      clubb_config_flags%l_use_thvm_in_bv_freq,           & ! In
+                                      clubb_config_flags%l_modify_limiters_for_cnvg_test, & ! In
+                                      clubb_params(:,ibv_efold),                          & ! In
+                                      brunt_vaisala_freq_sqd,                             & ! Out
+                                      brunt_vaisala_freq_sqd_mixed,                       & ! Out
+                                      brunt_vaisala_freq_sqd_dry,                         & ! Out
+                                      brunt_vaisala_freq_sqd_moist,                       & ! Out
+                                      brunt_vaisala_freq_sqd_smth )                         ! Out
       
+          brunt_vaisala_freq_sqd_zt = zm2zt( gr%nzm, gr%nzt, ngrdcol, gr, brunt_vaisala_freq_sqd )
           call calc_grid_dens_func( ngrdcol, gr%nzt, gr%zt, &
                                     Lscale, wp2_zt, &
                                     gr%zm(1,1), gr%zm(1,gr%nzm), &
                                     gr%nzm, &
                                     pdf_params, &
+                                    brunt_vaisala_freq_sqd_zt, &
                                     gr_dens_z, gr_dens )
       
-        else if ( grid_adapt_in_time_method > 1 ) then
+        else
       
           write(fstderr,*) 'There is currently no grid adaptation method implemented for ', &
                            'grid_adapt_in_time_method=', grid_adapt_in_time_method
@@ -3430,14 +3478,14 @@ module clubb_driver
       time_loop_end
     write(unit=fstdout, fmt='(a,f10.4)') 'CLUBB-TIMER time_output_multi_col =  ', &
       time_output_multi_col
-    if ( grid_adapt_in_time_method > 0 ) then
+    if ( grid_adapt_in_time_method > no_grid_adaptation ) then
       write(unit=fstdout, fmt='(a,f10.4)') 'CLUBB-TIMER time_adapt_grid =        ', &
         time_adapt_grid
     end if
     write(unit=fstdout, fmt='(a,f10.4)') 'CLUBB-TIMER time_total =             ', &
       time_total
 
-    if ( grid_adapt_in_time_method > 0 ) then
+    if ( grid_adapt_in_time_method > no_grid_adaptation ) then
       close(iunit_grid_adaptation)
     end if
 
@@ -3602,7 +3650,7 @@ module clubb_driver
                 lh_rv_clipped, lh_Nc_clipped, &
                 X_mixt_comp_all_levs, lh_sample_point_weights, Nc_in_cloud )
 
-    if ( grid_adapt_in_time_method > 0 ) then
+    if ( grid_adapt_in_time_method > no_grid_adaptation ) then
       deallocate( gr_dens_z )
       deallocate( gr_dens )
     end if
@@ -5789,7 +5837,7 @@ module clubb_driver
     integer, intent(in) :: &
       total_idx_rho_lin_spline ! number of indices for the linear spline definition arrays
 
-    real( kind = core_rknd ), dimension(total_idx_rho_lin_spline), intent(in) :: &
+    real( kind = core_rknd ), dimension(ngrdcol,total_idx_rho_lin_spline), intent(in) :: &
       rho_lin_spline_vals, & ! rho values at the given altitudes
       rho_lin_spline_levels  ! altitudes for the given rho values
     ! Note: both these arrays need to be sorted from low to high altitude
