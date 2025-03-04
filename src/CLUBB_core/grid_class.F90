@@ -2813,20 +2813,20 @@ module grid_class
     !-------------------------------------------------------------------------
     
     use clubb_precision, only: &
-        dp ! double precision
+        core_rknd
 
     implicit none
 
     ! Input Variables
     integer, intent(in) :: xdim
 
-    real(kind = dp), dimension(xdim), intent(in) :: x
+    real(kind = core_rknd), dimension(xdim), intent(in) :: x
 
     ! Output Variables
-    real(kind = dp), dimension(xdim) :: flip
+    real(kind = core_rknd), dimension(xdim) :: flip
 
     ! Local Variables
-    real(kind = dp), dimension(xdim) :: tmp
+    real(kind = core_rknd), dimension(xdim) :: tmp
 
     integer :: indx
 

@@ -184,21 +184,29 @@ module bugsrad_driver
        g_per_kg, kind=dp ) !Known magic number
 
     ! Convert and transpose as needed
-    rcil(1,buffer+1:nzt+buffer)            = flip( real( rim(1:nzt),kind=dp ), nzt )
-    rsm_2d(1,buffer+1:nzt+buffer)          = flip( real( rsm(1:nzt),kind=dp ), nzt )
-    rcm_in_cloud_2d(1,buffer+1:nzt+buffer) = flip( real( rcm_in_cloud(1:nzt),kind=dp ), nzt )
-    cloud_frac_2d(1,buffer+1:nzt+buffer)   = flip( real( cloud_frac(1:nzt),kind=dp ), nzt )
-    ice_supersat_frac_2d(1,buffer+1:nzt+buffer) = flip( real( ice_supersat_frac(1:nzt), &
-                                                                   kind=dp ), nzt )
+    rcil(1,buffer+1:nzt+buffer)            = real( flip( rim(1:nzt), nzt ), kind = dp )
+    rsm_2d(1,buffer+1:nzt+buffer)          = real( flip( rsm(1:nzt), nzt ), kind = dp )
+    rcm_in_cloud_2d(1,buffer+1:nzt+buffer) = real( flip( rcm_in_cloud(1:nzt), nzt ), kind = dp )
+    cloud_frac_2d(1,buffer+1:nzt+buffer)   = real( flip( cloud_frac(1:nzt), nzt ), kind = dp )
+    ice_supersat_frac_2d(1,buffer+1:nzt+buffer) = real( flip( ice_supersat_frac(1:nzt), nzt ), &
+                                                        kind = dp )
 
-    T_in_K(1,buffer+1:nzt+buffer) = flip( T_in_K(1,1:nzt), nzt )
+    T_in_K(1,buffer+1:nzt+buffer) = real( flip( real( T_in_K(1,1:nzt), kind = core_rknd ), &
+                                                nzt ), kind = dp )
 
-    sp_humidity(1,buffer+1:nzt+buffer) = flip( sp_humidity(1,1:nzt), nzt )
+    sp_humidity(1,buffer+1:nzt+buffer) = real( flip( real( sp_humidity(1,1:nzt), &
+                                                           kind = core_rknd ), &
+                                                     nzt ), kind = dp )
 
-    p_in_mb(1,(buffer+1):(nzt+buffer))        = flip( p_in_mb(1,1:nzt), nzt )
-    playerinmb(1,(buffer+1):(nzm+buffer)) = flip( playerinmb(1,1:nzm), nzm )
+    p_in_mb(1,(buffer+1):(nzt+buffer)) = real( flip( real( p_in_mb(1,1:nzt), kind = core_rknd ), &
+                                                     nzt ), kind = dp )
+                                          
+    playerinmb(1,(buffer+1):(nzm+buffer)) = real( flip( real( playerinmb(1,1:nzm), &
+                                                              kind = core_rknd ), &
+                                                        nzm ), kind = dp )
 
-    o3l(1,buffer+1:nzt+buffer) = flip( o3l(1,1:nzt), nzt )
+    o3l(1,buffer+1:nzt+buffer) = real( flip( real( o3l(1,1:nzt), kind = core_rknd ), nzt ), &
+                                             kind = dp )
 
     ! Assume these are all zero above the CLUBB profile
     rsm_2d(1,1:buffer)                = 0.0_dp
@@ -225,20 +233,20 @@ module bugsrad_driver
 
     ! Add the extended atmospheric profile above the linear interpolation
     T_in_K(1,1:extended_atmos_range_size) = &
-               flip( real( extended_T_in_K( extended_atmos_bottom_level: &
-                      extended_atmos_top_level ), kind = dp), extended_atmos_range_size )
+               real( flip( extended_T_in_K( extended_atmos_bottom_level: &
+                      extended_atmos_top_level ), extended_atmos_range_size ), kind = dp )
 
     sp_humidity(1,1:extended_atmos_range_size) = &
-               flip( real( extended_sp_hmdty( extended_atmos_bottom_level: &
-                      extended_atmos_top_level ), kind = dp), extended_atmos_range_size )
+               real( flip( extended_sp_hmdty( extended_atmos_bottom_level: &
+                      extended_atmos_top_level ), extended_atmos_range_size ), kind = dp )
 
     o3l(1,1:extended_atmos_range_size) = &
-               flip( real( extended_o3l( extended_atmos_bottom_level: &
-                      extended_atmos_top_level ), kind = dp), extended_atmos_range_size )
+               real( flip( extended_o3l( extended_atmos_bottom_level: &
+                      extended_atmos_top_level ), extended_atmos_range_size ), kind = dp )
 
     p_in_mb(1,1:extended_atmos_range_size) = &
-               flip( real( extended_p_in_mb( extended_atmos_bottom_level: &
-                      extended_atmos_top_level ), kind = dp), extended_atmos_range_size )
+               real( flip( extended_p_in_mb( extended_atmos_bottom_level: &
+                      extended_atmos_top_level ), extended_atmos_range_size ), kind = dp )
 
     ! Do a linear interpolation to produce the levels between the extended
     ! atmospheric levels and the CLUBB levels;
@@ -315,23 +323,23 @@ module bugsrad_driver
 
     ! Michael pointed out that this was a temperature tendency, not a theta_l
     ! tendency.  The 2nd line should fix both.  -dschanen 28 July 2006
-    radht_SW(1:nzt) = real( flip( radht_SW_2d(1,buffer+1:nzt+buffer), nzt ), &
-                      kind = core_rknd ) &
+    radht_SW(1:nzt) = flip( real( radht_SW_2d(1,buffer+1:nzt+buffer), &
+                                  kind = core_rknd ), nzt ) &
                       * ( 1.0_core_rknd / exner(1:nzt) )
 
-    radht_LW(1:nzt) = real( flip( radht_LW_2d(1,buffer+1:nzt+buffer), nzt ), &
-                      kind = core_rknd ) &
+    radht_LW(1:nzt) = flip( real( radht_LW_2d(1,buffer+1:nzt+buffer), &
+                                  kind = core_rknd ), nzt ) &
                       * ( 1.0_core_rknd / exner(1:nzt) )
 
     radht = radht_SW + radht_LW
 
-    Frad_SW_up = real( flip( Frad_uSW(1,buffer+1:nzm+buffer), nzm ), kind = core_rknd )
+    Frad_SW_up = flip( real( Frad_uSW(1,buffer+1:nzm+buffer), kind = core_rknd ), nzm )
 
-    Frad_LW_up = real( flip( Frad_uLW(1,buffer+1:nzm+buffer), nzm ), kind = core_rknd )
+    Frad_LW_up = flip( real( Frad_uLW(1,buffer+1:nzm+buffer), kind = core_rknd ), nzm )
 
-    Frad_SW_down = real( flip( Frad_dSW(1,buffer+1:nzm+buffer), nzm ), kind = core_rknd )
+    Frad_SW_down = flip( real( Frad_dSW(1,buffer+1:nzm+buffer), kind = core_rknd ), nzm )
 
-    Frad_LW_down = real( flip( Frad_dLW(1,buffer+1:nzm+buffer), nzm ), kind = core_rknd )
+    Frad_LW_down = flip( real( Frad_dLW(1,buffer+1:nzm+buffer), kind = core_rknd ), nzm )
 
     Frad_SW(1:nzm) = Frad_SW_up - Frad_SW_down
 
