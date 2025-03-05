@@ -1,3 +1,5 @@
+#!/usr/bin/env/ python3
+# -*- coding: utf-8 -*-
 """
 API Commitment Tests (api_commitment_test.py)
 
@@ -6,6 +8,9 @@ Date: 6/24/14
 
 Edited by: Matt McFadden (mcfadd)
 Date: 6/7/19
+
+Updated to Python 3 and adapted for Jenkins by: Steffen Domke and ChatGPT (OpenAI)
+Date: 2/27/25
 
 This script first creates a string array of every file's name (sans .F90) in the source folder of CLUBB.
 Next, it recursively searches through given folders for files with lines including
@@ -20,9 +25,19 @@ Usage:
 import os
 import sys
 import argparse
+import re
 
+# Search pattern for use statements
+# We want to find all the occurrences of 'use' followed by a CLUBB non-API module name
+# Check that the line is not a comment. i.e. no '!' before 'use' in the same line
+# '{}' will in turn be later replaced by each of CLUBB's module names
+# Check that the character after the module name is one of ',', '!', any whitespace, or a line break
+bannedNamePattern = r'\n[^!\n]*use {}[,\s\n!]'
 
-def findFiles(dir):
+# Whitelist for file extensions that we want to check
+fortranFileExtensions = ('.f', '.f90')
+
+def findFiles(dir, exclude=[]):
     """
     Returns a list of every file in a directory.
 
@@ -33,9 +48,14 @@ def findFiles(dir):
     :return: A list containing all of the files in dir
     """
     result = []
-    subdirs = [x[0] for x in os.walk(dir)]
+    # Find all subdirectories within the host model folder that do not have any of the excluded foldernames in their path
+    # e.g. if we want to exclude all of ['CLUBB', 'SILHS'], then 'SAM/UTIL/SRC' is fine, but 'SAM/SRC/CLUBB' is not
+    subdirs = [x[0] for x in os.walk(dir) if not any([e in x[0]+'/' for e in exclude])]
+    # Iterate through subdirectories
     for subdir in subdirs:
-        files = os.walk(subdir).next()[2]
+        # Get all files within that subfolder
+        files = next(os.walk(subdir))[2]
+        # If it is an actual file, combine foldername and filename and append to result
         if len(files) > 0:
             for file in files:
                 result.append(subdir + "/" + file)
@@ -53,14 +73,11 @@ def arrayOfFileNames(files):
     for filename in files:
         # It's not clubb_api_module is it?
         if not ("clubb_api_module.F90" in filename):
-            # Ends with .F90? Remove that extension only
-            if filename.endswith(".F90"):
-                filename = filename.replace(".F90", "")
-            elif filename.endswith(".f90"):
-                filename = filename.replace(".f90", "")
+            # Ends with .F90? -> Remove that extension from the name
+            if filename.lower().endswith('.f90'):
+                filename = filename.rsplit('.',maxsplit=1)[0]
             # Remove directory tree
-            directories = filename.split("/")
-            filename = directories[len(directories) - 1]
+            filename = filename.rsplit('/', maxsplit=1)[1]
             # Add to return array
             result.append(filename)
     return result
@@ -75,26 +92,24 @@ def checkForStrings(bannedNames, file):
     :return: A list of the strings found in the file
     """
     foundNames = []
-    for bannedName in bannedNames:
-        openFile = open(file, "r")
-        if any([
-            "use " + bannedName + "," in openFile.read(),
-            "use " + bannedName + " " in openFile.read(),
-            "use " + bannedName + "\n" in openFile.read(),
-            "use " + bannedName + "\t" in openFile.read(),
-            "use " + bannedName + "!" in openFile.read(),
-            "USE " + bannedName + "," in openFile.read(),
-            "USE " + bannedName + " " in openFile.read(),
-            "USE " + bannedName + "\n" in openFile.read(),
-            "USE " + bannedName + "\t" in openFile.read(),
-            "USE " + bannedName + "!" in openFile.read(),
-        ]):
-            foundNames.append("use " + bannedName)
-
-        openFile.close()
+    with open(file, 'r') as f:
+        try:
+            # Read file content line by line
+            content = f.read().lower()
+            # Iterate through all CLUBB modules except the API module
+            for moduleName in bannedNames:
+                # Search for use pattern with moduleName inserted
+                res = re.search(bannedNamePattern.format(moduleName), content)
+                # If found, append to results
+                if res:
+                    print("Found: Module ", moduleName, ' in file ', file)
+                    foundNames.append("use " + moduleName)
+        except Exception as e:
+            print('Read error for file ', file)
+            print(str(e))
+            return foundNames
 
     return foundNames
-
 
 def printErrors(errorDictionary, excludedDirectories):
     """
@@ -106,7 +121,7 @@ def printErrors(errorDictionary, excludedDirectories):
     """
     for file in errorDictionary:
         if not any(e in file for e in excludedDirectories):
-            print "An API error occurred in ", file, errorDictionary[file]
+            print("An API error occurred in ", file, errorDictionary[file])
 
 
 def printCpuOutput(errorDictionary, excludedDirectories):
@@ -118,30 +133,27 @@ def printCpuOutput(errorDictionary, excludedDirectories):
     :return: None
     """
     modulesUsedSet = set()
-    modulesUsedList = []
 
     # Check for excluded directories
     for file in errorDictionary:
         if not any(e in file for e in excludedDirectories):
             for error in errorDictionary[file]:
-                modulesUsedSet.add(error.split(" ")[1])
+                modulesUsedSet.add(file+ ": " + error.split(" ")[1])
 
     # Add set to a list to be sorted
-    for module in modulesUsedSet:
-        modulesUsedList.append(module)
-    modulesUsedList.sort()
+    modulesUsedList = sorted(modulesUsedSet)
 
     # print list
     for finalModule in modulesUsedList:
-        print finalModule
+        print(finalModule)
 
 
-def main(clubbSrcDirectory, searchDirectory, excludedDirectories, cpuMode):
+def main(clubbSrcDirectory, searchObjs, excludedDirectories, cpuMode):
     """
     Main, see header for description.
 
     :param clubbSrcDirectory: The clubb source directory
-    :param searchDirectory: The directory to search in
+    :param searchObjs: The directories and files to search in
     :param excludedDirectories: The directories to exclude
     :param cpuMode: If true prints output in cpu mode
     :return: None
@@ -158,15 +170,27 @@ def main(clubbSrcDirectory, searchDirectory, excludedDirectories, cpuMode):
     bannedNames = arrayOfFileNames(files)
 
     # Find all the files in the search directory.
-    searchFiles = findFiles(searchDirectory)
+    searchFiles = []
+    for o in searchObjs:
+        if os.path.exists(o):
+            if os.path.isdir(o):
+                searchFiles.extend(findFiles(o, excludedDirectories))
+            elif os.path.isfile(o):
+                searchFiles.append(o)
+            else:
+                print('Error. Given path ', o, 'is neither a folder nor a file.' )
+        else:
+            print('Error. Given path ', o, ' does not exist.')
 
     # Do any of them contain an offending line?
     errorDictionary = {}  # All of the files in the host model and their modules which call CLUBB
 
     for file in searchFiles:
-        foundFiles = checkForStrings(bannedNames, file)
-        if len(foundFiles) > 0:
-            errorDictionary[file] = foundFiles
+        # Only check fortran source code files
+        if file.lower().endswith(fortranFileExtensions):
+            foundFiles = checkForStrings(bannedNames, file)
+            if len(foundFiles) > 0:
+                errorDictionary[file] = foundFiles
 
     # Print out the errors, if any.
     if len(errorDictionary) > 0:
@@ -174,16 +198,18 @@ def main(clubbSrcDirectory, searchDirectory, excludedDirectories, cpuMode):
             printCpuOutput(errorDictionary, excludedDirectories)
         else:
             printErrors(errorDictionary, excludedDirectories)
+        print("Test failed.")
         sys.exit(1)
     else:
-        print "Test was successful."
+        print("Test was successful.")
+        sys.exit(0)
 
 
 if __name__ == "__main__":
     # parse the command line arguments
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    parser.add_argument('clubbSrcDir', help="clubb source directory")
-    parser.add_argument('searchDir', help="directory to search in")
+    parser.add_argument('clubbSrcDir', help="clubb source directory", nargs=1)
+    parser.add_argument('searchObjs', help="directory or file to search in", nargs='*')
     parser.add_argument('-cpu', help="print cpu readable output", dest='cpuMode', required=False, action='store_true')
     parser.add_argument('--exclude-dir', help="list of directories to exclude", dest='excludeDir', required=False,
                         nargs='+', default=[])
@@ -191,4 +217,4 @@ if __name__ == "__main__":
     args = parser.parse_args(sys.argv[1:])
 
     # call the main function
-    main(args.clubbSrcDir, args.searchDir, args.excludeDir, args.cpuMode)
+    main(args.clubbSrcDir[0], args.searchObjs, args.excludeDir, args.cpuMode)
