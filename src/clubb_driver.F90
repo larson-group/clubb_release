@@ -7131,65 +7131,89 @@ module clubb_driver
         rad_zt_dim = (nzm-1)+lin_int_buffer+extended_atmos_range_size
         rad_zm_dim = (nzm-1)+lin_int_buffer+extended_atmos_range_size+1
 
-        call stat_update_var( stats_metadata%iT_in_K_rad, real( flip(T_in_K(1,:), rad_zt_dim),&
-                 kind = core_rknd ), stats_rad_zt )
+        call stat_update_var( stats_metadata%iT_in_K_rad, &
+                              flip( real( T_in_K(1,:), kind = core_rknd ), rad_zt_dim ), &
+                              stats_rad_zt )
 
-        call stat_update_var( stats_metadata%ircil_rad, real( flip(rcil(1,:), rad_zt_dim), &
-                 kind = core_rknd  ), stats_rad_zt )
+        call stat_update_var( stats_metadata%ircil_rad, &
+                              flip( real( rcil(1,:), kind = core_rknd ), rad_zt_dim ), &
+                              stats_rad_zt )
 
-        call stat_update_var( stats_metadata%io3l_rad, real( flip(o3l(1,:), rad_zt_dim), &
-                 kind = core_rknd  ), stats_rad_zt )
+        call stat_update_var( stats_metadata%io3l_rad, &
+                              flip( real( o3l(1,:), kind = core_rknd ), rad_zt_dim ), &
+                              stats_rad_zt )
 
-        call stat_update_var( stats_metadata%irsm_rad, real( flip(rsm_2d(1,:), rad_zt_dim), &
-                 kind = core_rknd  ), stats_rad_zt )
+        call stat_update_var( stats_metadata%irsm_rad, &
+                              flip( real( rsm_2d(1,:), kind = core_rknd ), rad_zt_dim ), &
+                              stats_rad_zt )
 
         call stat_update_var( stats_metadata%ircm_in_cloud_rad, &
-          real( flip(rcm_in_cloud_2d(1,:), rad_zt_dim), kind = core_rknd  ), stats_rad_zt )
+                              flip( real( rcm_in_cloud_2d(1,:), kind = core_rknd ), &
+                                    rad_zt_dim ), stats_rad_zt )
 
         call stat_update_var( stats_metadata%icloud_frac_rad, &
-          real( flip(cloud_frac_2d(1,:), rad_zt_dim), kind = core_rknd  ), stats_rad_zt )
+                              flip( real( cloud_frac_2d(1,:), kind = core_rknd ), &
+                                    rad_zt_dim ), stats_rad_zt )
         
         call stat_update_var( stats_metadata%iice_supersat_frac_rad, &
-          real( flip(ice_supersat_frac_2d(1,:), rad_zt_dim), kind = core_rknd  ), stats_rad_zt )
+                              flip( real( ice_supersat_frac_2d(1,:), kind = core_rknd ), &
+                                    rad_zt_dim ), stats_rad_zt )
 
-        call stat_update_var( stats_metadata%iradht_rad, real(flip((radht_SW_2d(1,:) + &
-               radht_LW_2d(1,:)), rad_zt_dim), kind = core_rknd  ), stats_rad_zt )
+        call stat_update_var( stats_metadata%iradht_rad, &
+                              flip( real( radht_SW_2d(1,:) + radht_LW_2d(1,:), &
+                                          kind = core_rknd ), rad_zt_dim ), stats_rad_zt )
 
         call stat_update_var( stats_metadata%iradht_LW_rad, &
-          real( flip(radht_LW_2d(1,:), rad_zt_dim), kind = core_rknd  ),stats_rad_zt )
+                              flip( real( radht_LW_2d(1,:), kind = core_rknd ), rad_zt_dim ), &
+                              stats_rad_zt )
 
         call stat_update_var( stats_metadata%ip_in_mb_rad, &
-          real( flip(p_in_mb(1,:), rad_zt_dim), kind = core_rknd  ), stats_rad_zt )
+                              flip( real( p_in_mb(1,:), kind = core_rknd ), rad_zt_dim ), &
+                              stats_rad_zt )
 
         call stat_update_var( stats_metadata%isp_humidity_rad, &
-          real( flip(sp_humidity(1,:), rad_zt_dim), kind = core_rknd  ), stats_rad_zt )
+                              flip( real( sp_humidity(1,:), kind = core_rknd ), rad_zt_dim ), &
+                              stats_rad_zt )
 
-        call stat_update_var( stats_metadata%iFrad_SW_rad, real( flip((Frad_uSW(1,:) - &
-             Frad_dSW(1,:)), rad_zm_dim), kind = core_rknd  ), stats_rad_zm )
+        call stat_update_var( stats_metadata%iFrad_SW_rad, &
+                              flip( real( Frad_uSW(1,:) - Frad_dSW(1,:), kind = core_rknd ), &
+                                    rad_zm_dim ), stats_rad_zm )
 
-        call stat_update_var( stats_metadata%iFrad_LW_rad, real( flip((Frad_uLW(1,:) - &
-             Frad_dLW(1,:)), rad_zm_dim), kind = core_rknd ), stats_rad_zm )
+        call stat_update_var( stats_metadata%iFrad_LW_rad, &
+                              flip( real( Frad_uLW(1,:) - Frad_dLW(1,:), kind = core_rknd ), &
+                                    rad_zm_dim ), stats_rad_zm )
 
         call stat_update_var( stats_metadata%iFrad_SW_up_rad, &
-             real( flip(Frad_uSW(1,:), rad_zm_dim), kind = core_rknd ), stats_rad_zm )
+                              flip( real( Frad_uSW(1,:), kind = core_rknd ), rad_zm_dim ), &
+                              stats_rad_zm )
 
-        call stat_update_var( stats_metadata%iFrad_LW_up_rad, real( flip(Frad_uLW(1,:), &
-             rad_zm_dim), kind = core_rknd ), stats_rad_zm )
+        call stat_update_var( stats_metadata%iFrad_LW_up_rad, &
+                              flip( real( Frad_uLW(1,:), kind = core_rknd ), rad_zm_dim ), &
+                              stats_rad_zm )
 
-        call stat_update_var( stats_metadata%iFrad_SW_down_rad, real( flip(Frad_dSW(1,:), &
-             rad_zm_dim), kind = core_rknd ), stats_rad_zm )
+        call stat_update_var( stats_metadata%iFrad_SW_down_rad, &
+                              flip( real( Frad_dSW(1,:), kind = core_rknd ), rad_zm_dim ), &
+                              stats_rad_zm )
 
-        call stat_update_var( stats_metadata%iFrad_LW_down_rad, real( flip(Frad_dLW(1,:), &
-             rad_zm_dim), kind = core_rknd ), stats_rad_zm )
+        call stat_update_var( stats_metadata%iFrad_LW_down_rad, &
+                              flip( real( Frad_dLW(1,:), kind = core_rknd ), rad_zm_dim ), &
+                              stats_rad_zm )
 
-        call stat_update_var( stats_metadata%ifdswcl, real( flip(fdswcl(1,:), rad_zm_dim), &
-             kind = core_rknd ), stats_rad_zm )
-        call stat_update_var( stats_metadata%ifuswcl, real( flip(fuswcl(1,:), rad_zm_dim), &
-             kind = core_rknd ), stats_rad_zm )
-        call stat_update_var( stats_metadata%ifdlwcl, real( flip(fdlwcl(1,:), rad_zm_dim), &
-             kind = core_rknd ), stats_rad_zm )
-        call stat_update_var( stats_metadata%ifulwcl, real( flip(fulwcl(1,:), rad_zm_dim), &
-             kind = core_rknd ), stats_rad_zm )
+        call stat_update_var( stats_metadata%ifdswcl, &
+                              flip( real( fdswcl(1,:), kind = core_rknd ), rad_zm_dim ), &
+                              stats_rad_zm )
+
+        call stat_update_var( stats_metadata%ifuswcl, &
+                              flip( real( fuswcl(1,:), kind = core_rknd ), rad_zm_dim ), &
+                              stats_rad_zm )
+
+        call stat_update_var( stats_metadata%ifdlwcl, &
+                              flip( real( fdlwcl(1,:), kind = core_rknd ), rad_zm_dim ), &
+                              stats_rad_zm )
+
+        call stat_update_var( stats_metadata%ifulwcl, &
+                              flip( real( fulwcl(1,:), kind = core_rknd ), rad_zm_dim ), &
+                              stats_rad_zm )
 
       end if ! l_output_rad_files
 
