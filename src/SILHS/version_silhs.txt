@@ -1,0 +1,222 @@
+commit 73cc3cbd6b18b700918d2130db73eb11dab81c25
+Author: bmg929 <bmg2@uwm.edu>
+Date:   Tue Mar 4 20:55:16 2025 -0600
+
+    There were some flips inside the stats code for BUGSrad that required
+    some restructuring around kind transformation statements.
+
+commit 4c5fa8ce8f53dd868b93cd477e50d8f23bfd9fd8
+Author: bmg929 <bmg2@uwm.edu>
+Date:   Tue Mar 4 19:57:09 2025 -0600
+
+    Hopefully this helps the cpu vs. gpu tests.
+
+commit 0f3bc9f46f93fdd7932e6b047510c77a1c719b17
+Author: bmg929 <bmg2@uwm.edu>
+Date:   Tue Mar 4 18:37:06 2025 -0600
+
+    Fixed a compiling issue with CAM-CLUBB.
+
+commit cc33f55d9a7eed6e9fe34130b3b218187950692f
+Merge: 1c06485d4 e3a6f7750
+Author: bmg929 <bmg2@uwm.edu>
+Date:   Tue Mar 4 14:30:29 2025 -0600
+
+    Merge branch 'master' of github.com:larson-group/clubb
+
+commit 1c06485d4a34378726c7734f4d34bce3b294695d
+Author: bmg929 <bmg2@uwm.edu>
+Date:   Tue Mar 4 14:27:49 2025 -0600
+
+    I changed the variable type within grid function flip from dp to
+    core_rknd. I then needed to make some changes to BUGSrad driver
+    to compensate. The "dp" issue was discovered when WRF-CLUBB
+    wouldn't compile because of it (discrepancy between dp and core_rknd
+    in WRF-CLUBB that caused compilation errors for calls to flip
+    from advance_xm_wpxp, etc.)
+
+commit e3a6f7750467b5a221ac952479648c047f28bbb1
+Merge: be901594b fe14f38dc
+Author: pickett <larsongroupgithub@gmail.com>
+Date:   Mon Mar 3 23:01:28 2025 -0600
+
+    Autoupdated clubb's morrison using sam's morrison
+
+commit fe14f38dc4183053649f580f02e2f8c540c2f06a
+Author: bmg929 <bmg2@uwm.edu>
+Date:   Mon Mar 3 10:13:12 2025 -0600
+
+    Updated calls to some CLUBB subroutines in the wake of recent CLUBB
+    commits.
+
+commit be901594bb8e40f6b634f35f1488c0e5f9022e8f
+Author: Brian Griffin <31553422+bmg929@users.noreply.github.com>
+Date:   Sat Mar 1 10:38:42 2025 -0600
+
+    Generalized grid (#1230)
+    
+    * Added the necessary grid variables to the grid type (they're hardwired
+    for an Ascending Grid for now).
+    
+    I also made the necessary changes, using those new variables, to
+    advance_wp2_wp3_module.F90.
+    
+    * Added code to generalize advance_xm_wpxp_module.F90.
+    
+    * Updated some of the boundary conditions for generalization in
+    grid_class.F90.
+    
+    * Developing a unit test for CLUBB's grid functions.
+    
+    * Adding the ability to toggle on or off the reverse direction grid test.
+    
+    * Updating for development of a unit test comparing the ascending
+    and descending grids.
+    
+    * I updated the generalized grid unit test to complete testing on all
+    the variables within the grid derived type for both the ascending
+    and descending grid directions.
+    
+    * I updated the code to work symmetrically for an ascending and
+    descending grid for the zm2zt and zt2zm functions.
+    
+    This commit, as well as the previous commit, is BIT_CHANGING.
+    
+    * Updated to improve notes and comments in grid_class.F90 and to
+    enhance the reverse grid unit tests.
+    
+    * Got rid of the compiler warnings in the new reverse direction
+    grid unit test.
+    
+    * Updating the reverse grid unit tests so some random perturbations
+    are added to the grid heights when they are declared either on
+    the thermodynamic grid or on the momentum grid.
+    
+    * Made some changes where the fstdout stream is exclusively used
+    and added some print statements.
+    
+    * Mean advection has been modified for generalized directional gridding
+    and a test of the calls to mean advection has been added to the
+    reverse direction unit test.
+    
+    * Updating diffusion so results are bit-for-bit identical between using
+    an ascending grid and using a descending grid at -O0 optimization.
+    
+    This now works for both standard diffusion and also diffusion with the
+    l_upwind_Kh_dp_term flag turned on.
+    
+    * I forgot to add the zm diffusion test, but the results are the same --
+    all pass!
+    
+    * I have completed the unit tests for the PDF turbulent advection
+    subroutines and modified the appropriate sections of code so
+    that ascending and descending grids produce a bit-for-bit match
+    wiht -O0 optimization.
+    
+    * Updated code for producing a bit-for-bit match (on -O0 optimization)
+    when comparing ascending grid direction against descending grid
+    direction for advance_wp2_wp3.
+    
+    * The check for the LHS of advance_xp2_xpyp now passes.
+    
+    * The ascending vs. descending bit-for-bit test (wiht optimization
+    set to -O0) now passes for advance_xp2_xpyp.
+    
+    * I have successfully generalized the grid for advance_windm_edscrlm.
+    Ascending and descending runs now produce bit-for-bit results to
+    each other under -O0 optimization with the default flag
+    configuration.
+    
+    * Fixing the ascending vs. descending grid test for advance_windm_edsclrm
+    for the case where l_imp_sfc_momentum_flux is set to false.
+    
+    * Only perform check when l_predict_upwp_vpwp is turned off.
+    
+    * This commit makes an ascending vs. descending test work for all
+    cases for advance_xm_wpxp when the mono flux limiter is turned off.
+    
+    * The ascending vs. descending grid tests are finally working with
+    the monotonic flux limiter turned on (default settings).
+    
+    * Removed some commented-out prints that I accidentally added during
+    the last commit.
+    
+    * Updating positive_definite_module.F90 so that it works for
+    ascending vs. descending grids.
+    
+    * The ascending vs. descending grid generalization test now works for
+    the Lscale_up portion of mixing length.
+    
+    * The ascending vs. descending grid generalization now works successfully
+    for Lscale_down.
+    
+    * Lscale is now generalized for ascending vs. descending gridding.
+    
+    * Updated for generalizing sfc_varnce_module
+    
+    * Updating advance_clubb_core_module for grid generalization.
+    
+    * With this commit, the ascending vs. descending grid tests works
+    by calling advance_clubb_core twice from clubb_driver. They
+    produce bit-for-bit results on -O0 optimization for all intent(inout)
+    and intent(out) variables found in the call to advance_clubb_core.
+    This has only been tested for the default flag configuration.
+    
+    * I am updating the ascending vs. descending grid test to check
+    both pdf_params and pdf_params_zm.
+    
+    * I added pdf_implicit_coefs_terms and the sclr and edsclr family
+    of variables to the list of variables that are checked after coming
+    out of the calls to advance_clubb_core in the ascending vs. descending
+    bit-for-bit grid test.
+    
+    * I added an improved display for the print messages for
+    the ascending vs. descending grid test.
+    
+    * I moved the generalized grid test to its own file, which is called
+    from run_clubb.
+    
+    * I removed much of the junk and clutter from the code. It had been
+    added over time for local tests of ascending vs. descending grid
+    types.
+    
+    * Adding the l_generalized_grid_test flag to the code.
+    
+    * I needed to alter the monotonic flux limiter that I just merged
+    in from the master branch so that the ascending vs. descending
+    grid generalization test works once again.
+    
+    * Updated a piece of code in the solve routine for the monotonic
+    flux limiter for the grid generalization test.
+    
+    * Clarified some comments
+    
+    * I added a Jenkins file for the new clubb_generalized_vertical_grid_test,
+    which performs a run comparing ascending and descending grids with -O0
+    optimization and expects bit-for-bit results.
+    
+    * The l_rev_direction_grid_test (part of the G unit tests) needs to be
+    compiled specially with -O0 optimization. Thus, I will set the flag
+    to run this test to .false. by default. A special Jenkins test will
+    be made to compile with the correct optimization and run only this
+    particular test.
+    
+    * I updated the generalized vertical grid Jenkins test to turn off
+    sponge damping (thlm and rtm sponge damping) in the case files
+    for the CGILS S6, S11, and S12 cases.
+    
+    * Caught a stats bug I had previously introduced for the um_ta and vm_ta
+    stats terms when l_predict_upwp_vpwp is turned off.
+
+commit 1aa85b79b7b4ba6d4c3ebf6de228f884ed5f30a5
+Author: bmg929 <bmg2@uwm.edu>
+Date:   Fri Feb 28 10:46:26 2025 -0600
+
+    Regrouped to decrease the total number of runs.
+
+commit 97516ee5ba8fdaacf484c04aa71a590a43989482
+Author: bmg929 <bmg2@uwm.edu>
+Date:   Fri Feb 28 01:15:38 2025 -0600
+
+    Added a .json file for run_bindiff_w_flags that checks most of
+    the core flags in configurable_model_flags, sectioned into 20 groups.
