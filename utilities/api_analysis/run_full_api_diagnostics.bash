@@ -139,10 +139,10 @@ echo ""
 #cat $clubbStandaloneTxt
 #echo ""
 
-#echo "###Testing CLUBB_core's API Commitment###"
-#python api_commitment_test.py -cpu CLUBB_core CLUBB_core > $clubbCoreTxt
+echo "###Testing CLUBB_core's API Commitment###"
+python api_commitment_test.py -cpu CLUBB_core CLUBB_core > $clubbCoreTxt
 #cat $clubbCoreTxt
-#echo ""
+echo ""
 
 echo "###Testing SAM's API Commitment###"
 python api_commitment_test.py -cpu CLUBB_core $samDir --exclude-dir CLUBB SILHS > $samTxt
@@ -189,7 +189,8 @@ echo "###Testing API Commitment###"
 # Since 0 means success, any sum value greater than 0 means one of the three scripts found an issue
 # The details can be found in the output of the scripts above.
 echo ""
-if [[ $standaloneExit+$samExit+$camExit+$wrfExit > 0 ]] ; then
+
+if [[ $samExit+$camExit+$wrfExit -gt 0 ]] ; then
    echo "#########################################################"
    echo "######ERROR: A host model is circumventing the API.######"
    echo "#########################################################"
