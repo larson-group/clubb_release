@@ -2266,8 +2266,8 @@ module advance_clubb_core_module
       do edsclr=1,edsclr_dim
         ! upper_hf_level = nzt since we are filling the zt levels
         call fill_holes_vertical_api( nzt, ngrdcol, zero_threshold, 1, nzt, & ! In
-                                      gr%dzt, rho_ds_zt,                    & ! In
-                                      edsclrm(:,:,edsclr) )                    ! InOut
+                                      gr%dzt, rho_ds_zt, gr%grid_dir_indx,  & ! In
+                                      edsclrm(:,:,edsclr) )                   ! InOut
       enddo
 #endif
 
