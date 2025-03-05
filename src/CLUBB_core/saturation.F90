@@ -371,7 +371,7 @@ module saturation
     ! -------------------- Begin Code --------------------
 
     !$acc data create(esat) &
-    !$acc      copyin(p_in_Pa,T_in_K), &
+    !$acc      copyin(gr,p_in_Pa,T_in_K), &
     !$acc      copyout(sat_mixrat_liq_2D)
 
     ! start_index is an optional argument and 
