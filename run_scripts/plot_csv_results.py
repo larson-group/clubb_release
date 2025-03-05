@@ -12,7 +12,7 @@ from dash.dependencies import Input, Output, ALL
 from dash.exceptions import PreventUpdate
 import pyperclip
 
-# Functions safe to use in the custom plot 
+# Functions safe to use in the custom plot
 safe_functions = {
     "abs": abs,
     "max": max,
@@ -21,9 +21,9 @@ safe_functions = {
     "ceil": np.ceil,
     "floor": np.floor,
     "sqrt": np.sqrt,
-    "log": np.log,  
-    "log2": np.log2, 
-    "log10": np.log10, 
+    "log": np.log,
+    "log2": np.log2,
+    "log10": np.log10,
     "exp": np.exp,
     "sin": np.sin,
     "cos": np.cos,
@@ -43,7 +43,7 @@ def get_shared_variables(csv_files):
                 variable_sets[file] = set(variables)
         except Exception as e:
             print(f"Error reading {file}: {e}")
-    
+
     if not variable_sets:
         return [], variable_sets
 
@@ -61,12 +61,12 @@ def group_files_by_case(csv_files):
         if match:
             filename, case = match.groups()
             cases[case][filename] = file
-    
+
     # Sort the filenames within each case
     sorted_cases = {}
     for case, files in cases.items():
         sorted_cases[case] = dict(sorted(files.items(), key=lambda item: natural_key(item[0])))
-    
+
     return sorted_cases
 
 def evaluate_function(func, df):
@@ -99,11 +99,11 @@ def launch_dash_app(grouped_files, shared_variables):
     app = Dash(__name__)
     app.title = "Dynamic Plotter"
 
-    plot_style = { "margin-bottom": "2%", 
-                   "border": "1px solid black", 
+    plot_style = { "margin-bottom": "2%",
+                   "border": "1px solid black",
                    "padding": "1%",
                    "width": "calc(100% - 35px)",
-                   "height": "calc(33% - 20px)", 
+                   "height": "calc(33% - 20px)",
                    "align-items": "center" }
 
     app.layout = html.Div([
@@ -136,7 +136,7 @@ def launch_dash_app(grouped_files, shared_variables):
                             ],
                             # Default select the first two files in the first group only
                             value=[
-                                f"{case}/{filename}" 
+                                f"{case}/{filename}"
                                 for filename in list(files.keys())[:2]
                             ] if i == 0 and files else []
                         )
@@ -149,7 +149,7 @@ def launch_dash_app(grouped_files, shared_variables):
             dcc.Dropdown(
                 id="variable-dropdown",
                 options=[{"label": var, "value": var} for var in shared_variables],
-                value="total",
+                value="compute_i",
                 style={"margin-bottom": "20px"}
             ),
             html.Button(
@@ -157,7 +157,31 @@ def launch_dash_app(grouped_files, shared_variables):
                 id="copy-csv-button",
                 n_clicks=0,
                 style={"margin-top": "10px", "padding": "10px", "background-color": "#4CAF50", "color": "white", "border": "none", "cursor": "pointer"}
-            )
+            ),
+            html.Div([
+                html.Label("x-axis:", style={"margin-right": "10px"}),
+                dcc.RadioItems(
+                    id="x-axis-scale",
+                    options=[
+                        {"label": "Linear", "value": "linear"},
+                        {"label": "Log", "value": "log"}
+                    ],
+                    value="log",
+                    inline=True,
+                )
+            ], style={"display": "flex", "align-items": "center", "margin-top": "10px"}),
+            html.Div([
+                html.Label("y-axis:", style={"margin-right": "10px"}),
+                dcc.RadioItems(
+                    id="y-axis-scale",
+                    options=[
+                        {"label": "Linear", "value": "linear"},
+                        {"label": "Log", "value": "log"}
+                    ],
+                    value="linear",
+                    inline=True,
+                )
+            ], style={"display": "flex", "align-items": "center", "margin-top": "10px"}),
         ], style={
             "width": "20%",
             "padding": "10px",
@@ -171,11 +195,15 @@ def launch_dash_app(grouped_files, shared_variables):
     ], style={"display": "flex"})
 
     @app.callback(
-        Output("plot-raw", "figure"),
-        [Input({"type": "file-checkbox", "case": ALL}, "value"),
-         Input("variable-dropdown", "value")]
+    Output("plot-raw", "figure"),
+        [
+            Input({"type": "file-checkbox", "case": ALL}, "value"),
+            Input("variable-dropdown", "value"),
+            Input("x-axis-scale", "value"),
+            Input("y-axis-scale", "value")
+        ]
     )
-    def update_raw_plot(selected_files, selected_variable):
+    def update_raw_plot(selected_files, selected_variable, xaxis_scale, yaxis_scale):
         flat_files = [item.split("/") for sublist in selected_files for item in sublist]
         combined_df = pd.DataFrame()
         for case, filename in flat_files:
@@ -184,14 +212,20 @@ def launch_dash_app(grouped_files, shared_variables):
                 temp_df["Source"] = f"{case}/{filename}"
                 combined_df = pd.concat([combined_df, temp_df])
         fig = px.line(combined_df, x="ngrdcol", y=selected_variable, color="Source")
+        fig.update_layout( xaxis=dict(type=xaxis_scale))
+        fig.update_layout( yaxis=dict(type=yaxis_scale))
         return plot_with_enhancements(fig, f"{selected_variable} vs. Number of Grid Columns (Raw Values)")
 
     @app.callback(
-        Output("plot-columns-per-second", "figure"),
-        [Input({"type": "file-checkbox", "case": ALL}, "value"),
-         Input("variable-dropdown", "value")]
+    Output("plot-columns-per-second", "figure"),
+        [
+            Input({"type": "file-checkbox", "case": ALL}, "value"),
+            Input("variable-dropdown", "value"),
+            Input("x-axis-scale", "value"),
+            Input("y-axis-scale", "value")  
+        ]
     )
-    def update_columns_per_second_plot(selected_files, selected_variable):
+    def update_columns_per_second_plot(selected_files, selected_variable, xaxis_scale, yaxis_scale):
         flat_files = [item.split("/") for sublist in selected_files for item in sublist]
         combined_df = pd.DataFrame()
         for case, filename in flat_files:
@@ -201,15 +235,20 @@ def launch_dash_app(grouped_files, shared_variables):
                 temp_df["Columns per Second"] = temp_df["ngrdcol"] / temp_df[selected_variable]
                 combined_df = pd.concat([combined_df, temp_df])
         fig = px.line(combined_df, x="ngrdcol", y="Columns per Second", color="Source")
+        fig.update_layout( xaxis=dict(type=xaxis_scale))
+        fig.update_layout( yaxis=dict(type=yaxis_scale))
         return plot_with_enhancements(fig, "Columns per Second vs. Number of Grid Columns")
 
     @app.callback(
     Output("plot-custom", "figure"),
-    [
-        Input({"type": "file-checkbox", "case": ALL}, "value"),
-        Input("custom-function", "value")]
+        [
+            Input({"type": "file-checkbox", "case": ALL}, "value"),
+            Input("custom-function", "value"),
+            Input("x-axis-scale", "value"),
+            Input("y-axis-scale", "value")  
+        ]
     )
-    def update_custom_plot(selected_files, custom_function):
+    def update_custom_plot(selected_files, custom_function, xaxis_scale, yaxis_scale):
         if not selected_files or not custom_function:
             return px.scatter(title="Enter a custom function and select CSV files")
 
@@ -232,14 +271,18 @@ def launch_dash_app(grouped_files, shared_variables):
             return px.scatter(title="No valid data for the custom function")
 
         fig = px.line(combined_df, x="ngrdcol", y="Custom Function", color="Source")
-        return plot_with_enhancements(fig, "Custom Function vs. Number of Grid Columns") 
+        fig.update_layout( xaxis=dict(type=xaxis_scale))
+        fig.update_layout( yaxis=dict(type=yaxis_scale))
+        return plot_with_enhancements(fig, "Custom Function vs. Number of Grid Columns")
 
     @app.callback(
     Output("copy-csv-button", "children"),  # Update button text to confirm copy
-    [
-        Input("copy-csv-button", "n_clicks"),
-        Input({"type": "file-checkbox", "case": ALL}, "value"),
-        Input("variable-dropdown", "value") ]
+        [
+            Input("copy-csv-button", "n_clicks"),
+            Input({"type": "file-checkbox", "case": ALL}, "value"),
+            Input("variable-dropdown", "value"),
+            Input("x-axis-scale", "value")
+        ]
     )
     def copy_csv_to_clipboard(n_clicks, selected_files, selected_variable):
         if not n_clicks or not selected_files:
@@ -288,8 +331,8 @@ def launch_dash_app(grouped_files, shared_variables):
         except Exception as e:
             print(f"Error copying to clipboard: {e}")
             return "Copy Failed"
-        
-    app.run_server(debug=True)
+
+    app.run_server(debug=True,port=8051)
 
 if __name__ == "__main__":
     import argparse
@@ -307,16 +350,16 @@ if __name__ == "__main__":
     if not shared_variables:
         print("No shared variables found across the CSV files.")
         print("Variable presence per file:")
-        
+
         # Get all unique variables across files
         all_variables = set.union(*variable_sets.values()) if variable_sets else set()
-        
+
         # Report missing variables for each file
         for file, variables in variable_sets.items():
             missing_vars = all_variables - variables
             if missing_vars:
                 print(f"{file} is missing the variables: {', '.join(sorted(missing_vars))}")
-        
+
         exit(1)
 
     launch_dash_app(grouped_files, shared_variables)
