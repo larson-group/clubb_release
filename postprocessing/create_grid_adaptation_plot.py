@@ -71,6 +71,7 @@ def make_grid_adapt_animation_for_file(read_file, write_file, fps=fps_default):
         data_list.append(np.array([[times[i], *matrix_z[i,:]], [times[i], *matrix_dens[i,:]]]))
     animation = DataVideoClip(data_list, data_to_frame, fps=fps)
     animation.write_videofile(write_file)
+    plt.clf()
 
 
 def make_grid_adapt_plot_for_file(read_file, write_file):
