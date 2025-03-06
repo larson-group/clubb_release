@@ -1478,7 +1478,7 @@ module stats_clubb_utilities
 
     return
 
-  end subroutine stats_init
+  end subroutine stats_init_api
 
   !-----------------------------------------------------------------------
   subroutine stats_zero( ii, jj, kk, nn, &
