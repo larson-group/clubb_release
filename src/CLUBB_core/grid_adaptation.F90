@@ -21,7 +21,8 @@ module grid_adaptation_module
   public :: setup_gr_dycore, &
             remapping_matrix_zm_values, remapping_matrix_zt_values, &
             remap_vals_to_target, &
-            adapt_grid, calc_grid_dens_func
+            adapt_grid, calc_grid_dens_func, &
+            clean_up_grid_adaptation_module
 
   private :: check_remap_conservation, check_remap_consistency, check_remap_monotonicity, &
              remapping_matrix, remap_vals_to_target_helper, &
@@ -30,14 +31,22 @@ module grid_adaptation_module
              check_vertical_integral_conservation, &
              check_remapped_val_for_monotonicity, &
              calc_mass_over_grid_intervals, vertical_integral_conserve_mass, &
-             calc_integral, normalize_grid_density, &
+             calc_integral, create_fixed_min_gr_dens_func, &
+             normalize_min_grid_density, normalize_grid_density, &
              create_grid_from_normalized_grid_density_func, &
-             check_grid, create_grid_from_grid_density_func
+             create_grid_from_grid_density_func, check_grid
 
   private ! Default Scoping
 
   real( kind = core_rknd ) ::  &
         tol = 1.0e-6_core_rknd ! tolerance to check if to real numbers are equal
+
+  integer :: &
+    fixed_min_gr_dens_idx ! number of elements in the vertical axis of fixed_min_gr_dens
+
+  real( kind = core_rknd ), dimension(:,:), allocatable :: &
+    fixed_min_gr_dens_z, &  ! z coordinates of the piecewise linear function [m]
+    fixed_min_gr_dens       ! density values given at the z coordinates [# levs/m]
 
   contains
 
@@ -81,7 +90,8 @@ module grid_adaptation_module
       grid_type, &
       err_code, &
       nzmax, &
-      nlevel
+      nlevel, &
+      level_min
 
     character(len=32) :: & 
       zm_grid_fname,  & ! Path and filename of file for momentum level altitudes
@@ -103,7 +113,7 @@ module grid_adaptation_module
 
     !--------------------- Begin Code ---------------------
 
-    nzmax = 73 ! since dycore grid has in total 73 levels
+    nzmax = 73 ! since dycore grid has in total 73 (zm) levels
     grid_type = 3
     zm_grid_fname = '../input/grid/dycore.grd'
     zt_grid_fname = ''
@@ -135,9 +145,20 @@ module grid_adaptation_module
       momentum_heights(i,nlevel) = grid_top(i)
     end do
 
+    level_min = nlevel
+    do while( momentum_heights(1,level_min) > grid_sfc(1) .and. level_min > 1 )
+
+      level_min = level_min - 1
+
+    end do
+
+    do i = 1, ngrdcol
+      momentum_heights(i,level_min) = grid_sfc(i)
+    end do
+
 
     l_implemented = .false.
-
+    
     call setup_grid_api( nlevel, ngrdcol, sfc_elevation, l_implemented, &   ! intent(in)
                          grid_type, deltaz, grid_sfc, grid_top, &           ! intent(in)
                          momentum_heights, thermodynamic_heights, &         ! intent(in)
@@ -1103,15 +1124,12 @@ module grid_adaptation_module
 
   end function calc_integral
 
-  subroutine normalize_grid_density( gr_dens_idx, gr_dens_z, gr_dens, &
-                                     lambda, num_levels, &
-                                     gr_dens_norm_z, gr_dens_norm )
+  subroutine create_fixed_min_gr_dens_func( iunit, ngrdcol, &
+                                            grid_sfc, grid_top )
 
     ! Description:
-    ! Takes the linear piecewise grid density function (gr_dens_z, gr_dens) each of size
-    ! gr_dens_idx and normalizes this density, such that the integral is the
-    ! number of desired grid levels (num_levels) -1 and the minimum is above the minimal
-    ! density (min_dens)
+    ! Creates and allocates the fixed minimum grid density function from the given dycore grid.
+    ! Takes the dycore inverse grid distance between zm levels.
 
     ! References:
     ! None
@@ -1121,80 +1139,313 @@ module grid_adaptation_module
 
     !--------------------- Input Variables ---------------------
     integer, intent(in) :: &
-      gr_dens_idx, &   ! number of elements in gr_dens_z and gr_dens []
-      num_levels       ! desired number of grid levels []
+      iunit, &
+      ngrdcol
 
-    real( kind = core_rknd ), dimension(gr_dens_idx), intent(in) :: &
+    real( kind = core_rknd ), intent(in) :: &
+      grid_sfc, & ! altitude of the grids surface
+      grid_top    ! altitude of the grids top
+
+    !--------------------- Local Variables ---------------------
+    integer :: i, j
+
+    type( grid ) :: gr_dycore
+
+    real( kind = core_rknd ), dimension(ngrdcol) :: &
+      grid_sfc_arr, &
+      grid_top_arr
+
+    !--------------------- Begin Code ---------------------
+    if ( (.not. allocated( fixed_min_gr_dens_z )) .or. (.not. allocated( fixed_min_gr_dens )) ) then
+      do i = 1, ngrdcol
+        grid_sfc_arr(i) = grid_sfc
+        grid_top_arr(i) = grid_top
+      end do
+      ! Initialize the dycore grid to use as a profile for minimum grid density function
+      call setup_gr_dycore( iunit, ngrdcol, &              ! Intent(in)
+                            grid_sfc_arr, grid_top_arr, &  ! Intent(in)
+                            gr_dycore )                    ! Intent(out)
+      fixed_min_gr_dens_idx = gr_dycore%nzt+2
+    end if
+
+    if ( .not. allocated( fixed_min_gr_dens_z ) ) then
+      allocate( fixed_min_gr_dens_z(ngrdcol,gr_dycore%nzt+2) )
+      do i = 1, ngrdcol
+        fixed_min_gr_dens_z(i,1) = grid_sfc
+        do j = 1, gr_dycore%nzt
+          fixed_min_gr_dens_z(i,j+1) = gr_dycore%zt(i,j)
+        end do
+        fixed_min_gr_dens_z(i,gr_dycore%nzt+2) = grid_top
+      end do
+    end if
+
+    if ( .not. allocated( fixed_min_gr_dens ) ) then
+      allocate( fixed_min_gr_dens(ngrdcol,gr_dycore%nzt+2) )
+      do i = 1, ngrdcol
+        ! use linear extrapolation to calculate points on the outer zm levels
+        fixed_min_gr_dens(i,1) = gr_dycore%invrs_dzt(i,1) &
+                                 + (fixed_min_gr_dens_z(i,1) - gr_dycore%zt(i,1)) &
+                                   /(gr_dycore%zt(i,2) - gr_dycore%zt(i,1)) &
+                                    *(gr_dycore%invrs_dzt(i,2) - gr_dycore%invrs_dzt(i,1))
+
+        if ( clubb_at_least_debug_level( 2 ) ) then
+          if ( fixed_min_gr_dens(i,1) <= 0 ) then
+            error stop 'Initial minimum grid density function needs to be positive.'
+          end if
+        end if
+        
+        do j = 1, gr_dycore%nzt
+          fixed_min_gr_dens(i,j+1) = gr_dycore%invrs_dzt(i,j)
+          if ( clubb_at_least_debug_level( 2 ) ) then
+            if ( fixed_min_gr_dens(i,j+1) <= 0 ) then
+              error stop 'Initial minimum grid density function needs to be positive.'
+            end if
+          end if
+        end do
+
+        ! use linear extrapolation to calculate points on the outer zm levels
+        fixed_min_gr_dens(i,gr_dycore%nzt+2) = gr_dycore%invrs_dzt(i,gr_dycore%nzt-1) &
+                                               + (fixed_min_gr_dens_z(i,gr_dycore%nzt+2) &
+                                                  - gr_dycore%zt(i,gr_dycore%nzt-1)) &
+                                                 /(gr_dycore%zt(i,gr_dycore%nzt) &
+                                                   - gr_dycore%zt(i,gr_dycore%nzt-1)) &
+                                                  *(gr_dycore%invrs_dzt(i,gr_dycore%nzt) &
+                                                    - gr_dycore%invrs_dzt(i,gr_dycore%nzt-1))
+
+        if ( clubb_at_least_debug_level( 2 ) ) then
+          if ( fixed_min_gr_dens(i,gr_dycore%nzt+2) <= 0 ) then
+            error stop 'Initial minimum grid density function needs to be positive.'
+          end if
+        end if
+
+      end do
+    end if
+    
+  end subroutine create_fixed_min_gr_dens_func
+
+  subroutine normalize_min_grid_density( ngrdcol, &
+                                         min_gr_dens_idx, &
+                                         min_gr_dens_z, min_gr_dens, &
+                                         lambda, num_levels, &
+                                         min_gr_dens_norm_z, min_gr_dens_norm )
+
+    ! Description:
+    ! Takes the initial minimum grid density function and normalizes it.
+    ! Normalized means in this case, that the integral over
+    ! the grid region is between 0 (excluded) and num_levels-1 (included). What value
+    ! should be taken inbetween is controlled with lambda.
+
+    ! References:
+    ! None
+    !-----------------------------------------------------------------------
+
+    implicit none
+
+    !--------------------- Input Variables ---------------------
+    integer, intent(in) :: &
+      ngrdcol, &
+      min_gr_dens_idx  ! number of levels in min_gr_dens_z
+
+    real( kind = core_rknd ), dimension(ngrdcol,min_gr_dens_idx), intent(in) :: &
+      min_gr_dens_z, &  ! z coordinates of the piecewise linear minimum grid density function [m]
+      min_gr_dens       ! density values given at the z coordintas [# levs/m]
+
+    real( kind = core_rknd ), intent(in) :: &
+      lambda      ! number between 0 (excluded) and 1 (included) used as an adjustable factor
+
+    integer, intent(in) :: &
+      num_levels  ! number of wanted grid levels for the new grid
+
+    !--------------------- Output Variables ---------------------
+    real( kind = core_rknd ), dimension(ngrdcol,min_gr_dens_idx), intent(out) :: &
+      min_gr_dens_norm_z, & ! the normalized minimal grid density z coordinates [m]
+      min_gr_dens_norm      ! the normalized minimal grid density values given at
+                            ! the z coordinates [# levs/m]
+
+    !--------------------- Local Variables ---------------------
+    integer :: i, j
+
+    real( kind = core_rknd ) :: &
+      integral, &
+      norm_factor
+
+    !--------------------- Begin Code ---------------------
+    ! check if lambda is in (0,1]
+    if ( lambda <= 0.0_core_rknd .or. lambda > one ) then
+      error stop 'lambda needs to be between 0 (excluded) and 1 (included)'
+    end if
+
+    do i = 1, ngrdcol
+      ! calculate factor to normalize minimum grid density function
+      integral = calc_integral( min_gr_dens_idx, min_gr_dens_z(i,:), min_gr_dens(i,:) )
+      norm_factor = lambda*(num_levels - 1)/integral
+
+      ! normalize minimum grid density function with norm_factor and copy z coordinates
+      do j = 1, (min_gr_dens_idx)
+        min_gr_dens_norm_z(i,j) = min_gr_dens_z(i,j)
+        min_gr_dens_norm(i,j) = norm_factor*min_gr_dens(i,j)
+      end do
+    end do
+
+    if ( clubb_at_least_debug_level( 2 ) ) then
+
+      ! check if integral is lambda*(n-1) as wanted
+      integral = calc_integral(min_gr_dens_idx, min_gr_dens_norm_z, min_gr_dens_norm)
+      if ( abs(integral - (lambda*(num_levels-1))) > tol ) then
+        write(fstderr,*) 'Warning! Integral in normalize_min_grid_density', &
+                         ' should be something different.'
+        error stop 'Something went wrong, integral is different than it should be.'
+      end if
+
+      ! check if normalized function is always >0
+      do i = 1, ngrdcol
+        do j = 1, min_gr_dens_idx
+          if ( min_gr_dens_norm(i,j) <= 0.0_core_rknd ) then
+            error stop 'Minimum grid density function in needs to be positive.'
+          end if
+        end do
+      end do
+
+    end if
+    
+  end subroutine normalize_min_grid_density
+
+  subroutine normalize_grid_density( ngrdcol, &
+                                     gr_dens_idx, &
+                                     gr_dens_z, gr_dens, &
+                                     min_gr_dens_norm, &
+                                     lambda, num_levels, &
+                                     gr_dens_norm_z, gr_dens_norm )
+
+    ! Description:
+    ! Takes the linear piecewise grid density function (gr_dens_z, gr_dens) each of size
+    ! gr_dens_idx and normalizes this density, such that the integral is the
+    ! number of desired grid levels (num_levels)-1 and the minimum is above the minimal
+    ! density function (gr_dens_z,min_gr_dens_norm)
+
+    ! Note: The minimum grid density function needs to be normalized before with
+    !       normalize_min_grid_density using it here.
+
+    ! Note: The initial grid density function needs to be non-negative.
+
+    ! References:
+    ! None
+    !-----------------------------------------------------------------------
+
+    use interpolation, only: &
+      zlinterp_fnc
+
+    implicit none
+
+    !--------------------- Input Variables ---------------------
+    integer, intent(in) :: &
+      ngrdcol, &
+      gr_dens_idx, &           ! number of elements in gr_dens_z, gr_dens, min_gr_dens_norm_z
+                               ! and min_gr_dens_norm []
+      num_levels               ! desired number of grid levels []
+
+    real( kind = core_rknd ), dimension(ngrdcol,gr_dens_idx), intent(in) :: &
       gr_dens_z, & ! the grid density z coordinates [m]
       gr_dens      ! the grid density given at the z coordinates [# levs/meter]
       ! gr_dens_z and gr_dens should be ordered from the bottom to the top
+
+    real( kind = core_rknd ), dimension(ngrdcol,gr_dens_idx), intent(in) :: &
+      min_gr_dens_norm  ! the minimum grid density given at the z coordinates of gr_dens_z
+                        ! [# levs/meter]
+      ! min_gr_dens_norm should be ordered from the bottom to the top
+      ! Note: min_gr_dens_norm should be given on the gr_dens_z altitudes
 
     real( kind = core_rknd ), intent(in) :: &
       lambda   ! a factor for how close you want to get to an equidistant grid
 
     !--------------------- Output Variables ---------------------
-    real( kind = core_rknd ), dimension(gr_dens_idx), intent(out) :: &
+    real( kind = core_rknd ), dimension(ngrdcol,gr_dens_idx), intent(out) :: &
       gr_dens_norm_z, & ! the normalized grid density z coordinates [m]
       gr_dens_norm      ! the normalized grid density values given at the z coordinates [# levs/m]
 
     !--------------------- Local Variables ---------------------
-    integer :: i
+    integer :: i, j
 
     real( kind = core_rknd ) :: &
-      grid_sfc, &               ! the surface height of the grid [m]
-      grid_top, &               ! the highest point of the grid [m]
-      delta_s, &                ! delta by which the function first gets shifted,
-                                ! so the minimum of the function is above min_dens [m]
-      integral_before_shift, &  ! the integral of the shifted density function before normalizing it
-      equi_dens, &              ! the grid density for an equi-distant grid [# levs/m]
-      min_dens, &               ! the minimal grid density [# levs/m]
-      factor, &                 ! factor to multiply shifted function with to end up with an
-                                ! integral of num_levels-1
-      h, &                      ! absolut distance from lowest to highest point of the grid [m]
-      diff, zero
+      integral_gr_dens, &
+      integral_min_gr_dens, &
+      integral_test, &
+      norm_factor, &
+      shift, &
+      grid_sfc, &
+      grid_top
 
     !--------------------- Begin Code ---------------------
-    grid_sfc = gr_dens_z(1)
-    grid_top = gr_dens_z(gr_dens_idx)
-    zero = 0.0_core_rknd
-    delta_s = maxval([diff, zero])
-    h = grid_top - grid_sfc
-    equi_dens = (num_levels-1)/h
-    min_dens = lambda*equi_dens
+    do i = 1, ngrdcol
+      ! copy z coordinates and shift initial function down, such that lowest point is zero
+      do j = 1, gr_dens_idx
+        gr_dens_norm_z(i,j) = gr_dens_z(i,j)
+        ! if grid density profile is too noise consider removing this shift and just
+        ! copy value instead
+        gr_dens_norm(i,j) = gr_dens(i,j) - minval(gr_dens(i,:))
+      end do
 
-    do i = 1, gr_dens_idx
-        gr_dens_norm_z(i) = gr_dens_z(i)
-        gr_dens_norm(i) = gr_dens(i)
+      ! calculate integrals and check
+      integral_gr_dens = calc_integral( gr_dens_idx, gr_dens_norm_z(i,:), gr_dens_norm(i,:) )
+      integral_min_gr_dens = calc_integral( gr_dens_idx, &
+                                            gr_dens_norm_z(i,:), min_gr_dens_norm(i,:) )
+
+      if ( abs(integral_min_gr_dens - (lambda*(num_levels-1))) > tol ) then
+        write(fstderr,*) 'Warning! The minimum grid density function has not the correct integral.'
+        error stop 'Normalize the minimum grid density function before using it.'
+      end if
+
+      if ( integral_gr_dens < 1.0e-8 ) then
+        ! this happens if initial grid density function was constant
+        ! in that case we get the normalized minimum grid density function shifted,
+        ! such that the inetgral condition is fulfilled
+
+        ! calculate shift value
+        grid_sfc = gr_dens_norm_z(1,1)
+        grid_top = gr_dens_norm_z(1,gr_dens_idx)
+        shift = (num_levels-1 - integral_min_gr_dens)/(grid_top - grid_sfc)
+
+        ! normalize function
+        do j = 1, gr_dens_idx
+          gr_dens_norm(i,j) = min_gr_dens_norm(i,j) + shift
+        end do
+
+      else
+        ! calculate factor for normalization
+        norm_factor = (num_levels-1 - integral_min_gr_dens)/integral_gr_dens
+
+        ! normalize function
+        do j = 1, gr_dens_idx
+          gr_dens_norm(i,j) = norm_factor*gr_dens_norm(i,j) + min_gr_dens_norm(i,j)
+        end do
+
+      end if
+
+      ! run checks
+      if ( clubb_at_least_debug_level( 2 ) ) then
+
+        ! check if integral is (n-1) as wanted
+        integral_test = calc_integral( gr_dens_idx, gr_dens_norm_z(i,:), gr_dens_norm(i,:) )
+        if ( abs(integral_test - (num_levels-1)) > tol ) then
+          write(fstderr,*) 'Warning! Integral in normalize_grid_density', &
+                           ' should be something different.'
+          error stop 'Something went wrong, integral is different than it should be.'
+        end if
+
+        ! check if normalized function is always >=minimum_density
+        do j = 1, gr_dens_idx
+          if ( gr_dens_norm(i,j) < min_gr_dens_norm(i,j) ) then
+            write(fstderr,*) 'Normalized function was below minimum grid density function.' 
+            write(fstderr,*) 'Normalized minimum grid density function is ', &
+                              min_gr_dens_norm(i,j), &
+                             ' while normalized grid density function is ', gr_dens_norm(i,j)
+            error stop 'Normalized function should be above or equal to the minimum density.'
+          end if
+        end do
+      
+      end if
+
     end do
-
-    integral_before_shift = calc_integral(gr_dens_idx, gr_dens_norm_z, gr_dens_norm)
-
-    ! if the integral is zero, then all gr_dens_norm were 0
-    ! so in that case we have an equi-distant grid
-    if (integral_before_shift < tol) then
-        ! set to equi-distant grid
-        do i = 1, gr_dens_idx
-            gr_dens_norm(i) = equi_dens
-        end do
-    else
-        factor = (num_levels-1)*(1-lambda)/integral_before_shift
-        do i = 1, gr_dens_idx
-            gr_dens_norm(i) = factor*(gr_dens_norm(i)) + lambda*equi_dens
-        end do
-    end if
-
-    if ( clubb_at_least_debug_level( 2 ) ) then
-      ! check if minimum of function is actually bigger or equal to min_dens
-      if ((minval(gr_dens_norm) + tol) < min_dens) then
-        write(fstderr,*) "WARNING! The minimum of the normalized function is below min_dens."
-        error stop 'Something went wrong with calculating the normalized function...'
-      end if
-      ! check if the integral of the normalized function is actually num_levels-1
-      if (abs(calc_integral(gr_dens_idx, gr_dens_norm_z, gr_dens_norm) - (num_levels-1)) > tol) then
-        write(fstderr,*) "WARNING! The integral of the normalized function is not num_levels-1."
-        error stop 'Something went wrong with calculating the normalized function...'
-      end if
-    end if
 
   end subroutine normalize_grid_density
 
@@ -1317,9 +1568,147 @@ module grid_adaptation_module
     return
 
   end function create_grid_from_normalized_grid_density_func
-  
+
+  function create_grid_from_grid_density_func( ngrdcol, &
+                                               iunit, itime, &
+                                               gr_dens_idx, &
+                                               gr_dens_z, gr_dens, &
+                                               lambda, &
+                                               num_levels ) &
+                                             result (grid_heights)
+    ! Description:
+    ! Creates the grid from some unnormalized  minimum density function and the unnormalized
+    ! grid density function following the equidistribution principle.
+
+    ! References:
+    ! None
+    !-----------------------------------------------------------------------
+
+    use clubb_precision, only: &
+      core_rknd ! Variable(s)
+
+    use interpolation, only: &
+      zlinterp_fnc
+
+    implicit none
+
+    !--------------------- Input Variables ---------------------
+    integer, intent(in) :: & 
+      ngrdcol, &
+      iunit, &
+      itime, &
+      gr_dens_idx, &     ! total numer of indices of gr_dens_z and gr_dens []
+      num_levels         ! number of levels the new grid should have []
+
+    real( kind = core_rknd ) :: &
+      lambda ! a factor for defining how close you want to get to an equidistant grid
+
+    real( kind = core_rknd ), dimension(ngrdcol,gr_dens_idx), intent(in) ::  &
+      gr_dens_z,  &   ! the z coordinates of the connection points of the piecewise linear
+                      ! grid density function [m]
+      gr_dens         ! the values of the density function at the given z coordinates of the
+                      ! connection points of the piecewise linear grid density function
+                      ! [# levs/meter]
+
+    !--------------------- Output Variable ---------------------
+    real( kind = core_rknd ), dimension(ngrdcol,num_levels) :: &
+      grid_heights ! the heights of the newly created grid, from bottom to top [m]
+
+    !--------------------- Local Variables ---------------------
+    integer :: grid_heights_idx, i, j
+
+    real( kind = core_rknd ), dimension(ngrdcol,gr_dens_idx) ::  &
+      min_gr_dens_z,  &  ! the z coordinates of the connection points of the normalized
+                         ! piecewise linear grid density function [m]
+      min_gr_dens        ! the density at the given z coordinates of the connection points
+                         ! of the normalized piecewise linear grid density function
+                         ! [# levs/meter]
+
+    real( kind = core_rknd ), dimension(ngrdcol,gr_dens_idx) ::  &
+      min_gr_dens_norm_z,  &  ! the z coordinates of the connection points of the normalized
+                              ! piecewise linear grid density function [m]
+      min_gr_dens_norm        ! the density at the given z coordinates of the connection points
+                              ! of the normalized piecewise linear grid density function
+                              ! [# levs/meter]
+
+    real( kind = core_rknd ), dimension(ngrdcol,gr_dens_idx) ::  &
+      gr_dens_norm_z,  &  ! the z coordinates of the connection points of the normalized piecewise
+                          ! linear grid density function [m]
+      gr_dens_norm        ! the density at the given z coordinates of the connection points of the
+                          ! normalized piecewise linear grid density function [# levs/meter]
+
+    real( kind = core_rknd ) ::  &
+      grid_sfc,  &    ! height of the grids surface [m]
+      grid_top        ! height of the top of the grid [m]
+
+    !--------------------- Begin Code ---------------------
+    grid_sfc = gr_dens_z(1,1)
+    grid_top = gr_dens_z(1,gr_dens_idx)
+
+    call create_fixed_min_gr_dens_func( iunit+1, ngrdcol, &
+                                        grid_sfc, grid_top )
+
+    ! set the minimum grid density profile to be the linear piecewise function of the
+    ! original minimum grid density function evaluated at the current grid levels
+    ! this way the function can be executed with all checks and works out exactly
+    do i = 1, ngrdcol
+      do j = 1, gr_dens_idx
+        min_gr_dens_z(i,j) = gr_dens_z(i,j)
+      end do
+      min_gr_dens(i,:) = zlinterp_fnc( gr_dens_idx, fixed_min_gr_dens_idx, &
+                                       gr_dens_z(i,:), fixed_min_gr_dens_z(i,:), &
+                                       fixed_min_gr_dens(i,:) )
+    end do
+
+    ! normalize the minimum grid density function
+    call normalize_min_grid_density( ngrdcol, &                        ! Intent(in)
+                                     gr_dens_idx, &                    ! Intent(in)
+                                     min_gr_dens_z, min_gr_dens, &     ! Intent(in)
+                                     lambda, num_levels, &             ! Intent(in)
+                                     min_gr_dens_norm_z, &             ! Intent(out)
+                                     min_gr_dens_norm )                ! Intent(out)
+
+    ! normalize the grid density function with the normalized minimum grid density function
+    call normalize_grid_density( ngrdcol, &                               ! Intent(in)
+                                 gr_dens_idx, &                           ! Intent(in)
+                                 gr_dens_z, gr_dens, &                    ! Intent(in)
+                                 min_gr_dens_norm, &                      ! Intent(in)
+                                 lambda, num_levels, &                    ! Intent(in)
+                                 gr_dens_norm_z, gr_dens_norm )           ! Intent(out)
+
+    write(iunit, *) 'gr_dens_z', itime, gr_dens_norm_z
+    write(iunit, *) 'gr_dens', itime, gr_dens_norm
+
+    ! create grid from normalized grid density function
+    do i = 1, ngrdcol
+      grid_heights(i,:) = create_grid_from_normalized_grid_density_func( num_levels, &
+                                                                         gr_dens_idx, &
+                                                                         gr_dens_norm_z(i,:), &
+                                                                         gr_dens_norm(i,:) )
+    end do
+
+    if ( clubb_at_least_debug_level( 2 ) ) then
+
+        grid_heights_idx = size(grid_heights)/ngrdcol ! counts the scalar values
+
+        do i = 1, ngrdcol
+          call check_grid( grid_heights_idx, grid_heights(i,:), &            ! Intent(in)
+                           num_levels, &                                     ! Intent(in)
+                           gr_dens_idx, &                                    ! Intent(in)
+                           min_gr_dens_norm_z(i,:), min_gr_dens_norm(i,:), & ! Intent(in)
+                           grid_sfc, grid_top )                              ! Intent(in)
+        end do
+
+    end if 
+
+    return
+
+  end function create_grid_from_grid_density_func
+
   subroutine check_grid( grid_heights_idx, grid_heights, &
-                         desired_num_levels, desired_min_dens, &
+                         desired_num_levels, &
+                         desired_min_dens_idx, &
+                         desired_min_dens_z, desired_min_dens, &
                          desired_grid_sfc, desired_grid_top )
 
     ! Description:
@@ -1329,27 +1718,36 @@ module grid_adaptation_module
     ! None
     !-----------------------------------------------------------------------
 
+    use interpolation, only: &
+      zlinterp_fnc
+
     implicit none
 
     !--------------------- Input Variables ---------------------
     integer, intent(in) :: &
-      grid_heights_idx, &   ! number of elements in grid_heights []
-      desired_num_levels    ! desired number of grid levels []
+      grid_heights_idx, &      ! number of elements in grid_heights []
+      desired_min_dens_idx, &  ! number of elements in desired_min_dens_z and desired_min_dens []
+      desired_num_levels       ! desired number of grid levels []
     ! Note: if everything worked fine, those two integers should be the same
 
     real( kind = core_rknd ), dimension(grid_heights_idx), intent(in) :: &
       grid_heights ! the grid heights ordered from bottom to top [m]
 
+    real( kind = core_rknd ), dimension(desired_min_dens_idx), intent(in) :: &
+      desired_min_dens_z, & ! the z coordinates of the piecewise linear desired minimum grid
+                            ! density function [m]
+      desired_min_dens      ! the density values on the given z coordinates [# levs/m]
+
     real( kind = core_rknd ), intent(in) :: &
-      desired_min_dens, &   ! the desired minimum grid density [# levs/m]
       desired_grid_sfc, &   ! desired surface height of the grid [m]
       desired_grid_top      ! desired top height of the grid [m]
 
     !--------------------- Local Variables ---------------------
-    integer :: i
+    integer :: j, k
 
-    real( kind = core_rknd ) :: &
-      max_dist  ! the maximum distance between two grid levels, depending on desired_min_dens [m]
+    real( kind = core_rknd ) :: min_desired_min_dens
+
+    real( kind = core_rknd ), dimension(desired_num_levels) :: desired_min_dens_on_new_gr
 
     !--------------------- Begin Code ---------------------
     ! check if first grid element is grid_sfc
@@ -1359,20 +1757,43 @@ module grid_adaptation_module
         error stop 'Something went wrong with generating the grid'
     end if
 
-    max_dist = one/desired_min_dens
-
-    do i = 1, (grid_heights_idx-1)
+    do j = 1, (grid_heights_idx-1)
         ! check if grid heights are getting bigger
-        if (grid_heights(i) >= grid_heights(i+1)) then
+        if (grid_heights(j) >= grid_heights(j+1)) then
             write(fstderr,*) "WARNING! The grid levels are not in the right order. ", &
                              "They should get bigger with the index."
             error stop 'Something went wrong with generating the grid'
         end if
+
         ! check if grid fulfills min_dens
-        if ((grid_heights(i+1) - grid_heights(i)) > max_dist + tol) then
+        ! find minimal min_dens in grid cell
+        ! check if minimum is in cell or on the boundaries
+        ! first check values in interval
+        min_desired_min_dens = maxval(desired_min_dens_z)
+        do k = 1, desired_min_dens_idx
+          if ( (desired_min_dens_z(k) > grid_heights(j)) &
+               .and. (desired_min_dens_z(k) < grid_heights(j+1)) ) then
+            if ( desired_min_dens(k) < min_desired_min_dens ) then
+              min_desired_min_dens = desired_min_dens(k)
+            end if
+          end if
+        end do
+
+        ! then if maximum is on boundary
+        desired_min_dens_on_new_gr = zlinterp_fnc( desired_num_levels, desired_min_dens_idx, &
+                                                   grid_heights, desired_min_dens_z, &
+                                                   desired_min_dens )
+        if ( desired_min_dens_on_new_gr(j) < min_desired_min_dens ) then
+          min_desired_min_dens = desired_min_dens_on_new_gr(j)
+        end if
+        if ( desired_min_dens_on_new_gr(j+1) < min_desired_min_dens ) then
+          min_desired_min_dens = desired_min_dens_on_new_gr(j+1)
+        end if
+
+        if ((grid_heights(j+1) - grid_heights(j)) > one/(min_desired_min_dens) + tol) then
             write(fstderr,*) "WARNING! The grid has a distance=", &
-                             (grid_heights(i+1) - grid_heights(i)), &
-                             " which is bigger than the max_dist=", max_dist, &
+                             (grid_heights(j+1) - grid_heights(j)), &
+                             " which is bigger than the max_dist=", one/(min_desired_min_dens), &
                              "that is defined by min_dens."
             error stop 'Something went wrong with generating the grid'
         end if
@@ -1394,96 +1815,6 @@ module grid_adaptation_module
     end if
 
   end subroutine check_grid
-
-  function create_grid_from_grid_density_func( iunit, itime, gr_dens_idx, &
-                                               gr_dens_z, gr_dens, &
-                                               lambda, &
-                                               num_levels ) &
-                                             result (grid_heights)
-    ! Description:
-    ! Creates the grid from the unnormalized grid density function following the equi-distribution
-    ! principle.
-
-    ! References:
-    ! None
-    !-----------------------------------------------------------------------
-
-    use clubb_precision, only: &
-        core_rknd ! Variable(s)
-
-    implicit none
-
-    !--------------------- Input Variables ---------------------
-    integer, intent(in) :: & 
-      iunit, &
-      itime, &
-      gr_dens_idx, &  ! total numer of indices of gr_dens_z and gr_dens []
-      num_levels      ! number of levels the new grid should have []
-
-    real( kind = core_rknd ) :: &
-      lambda ! a factor for defining how close you want to get to an equidistant grid
-
-    real( kind = core_rknd ), dimension(gr_dens_idx), intent(in) ::  &
-      gr_dens_z,  &   ! the z coordinates of the connection points of the piecewise linear
-                      ! grid density function [m]
-      gr_dens         ! the values of the density function at the given z coordinates of the
-                      ! connection points of the piecewise linear grid density function
-                      ! [# levs/meter]
-
-    !--------------------- Output Variable ---------------------
-    real( kind = core_rknd ), dimension(num_levels) :: &
-      grid_heights ! the heights of the newly created grid, from bottom to top [m]
-
-    !--------------------- Local Variables ---------------------
-    integer :: grid_heights_idx
-
-    real( kind = core_rknd ), dimension(gr_dens_idx) ::  &
-      gr_dens_norm_z,  &  ! the z coordinates of the connection points of the normalized piecewise
-                          ! linear grid density function [m]
-      gr_dens_norm        ! the density at the given z coordinates of the connection points of the
-                          ! normalized piecewise linear grid density function [# levs/meter]
-
-    real( kind = core_rknd ) ::  &
-      grid_sfc,  &    ! height of the grids surface [m]
-      grid_top        ! height of the top of the grid [m]
-
-    real( kind = core_rknd ) ::  &
-      equi_dens, &  ! the density for an equidistant grid          [# levs/meter]
-      min_dens      ! the minimum density the new grid should have [# levs/meter]
-
-    !--------------------- Begin Code ---------------------
-    grid_sfc = gr_dens_z(1)
-    grid_top = gr_dens_z(gr_dens_idx)
-    min_dens = lambda * equi_dens
-
-    call normalize_grid_density( gr_dens_idx, gr_dens_z, gr_dens, &
-                                 lambda, num_levels, &
-                                 gr_dens_norm_z, gr_dens_norm )
-
-    write(iunit, *) 'gr_dens_z', itime, gr_dens_norm_z
-    write(iunit, *) 'gr_dens', itime, gr_dens_norm
-
-    grid_heights = create_grid_from_normalized_grid_density_func( num_levels, &
-                                                                  gr_dens_idx, &
-                                                                  gr_dens_norm_z, &
-                                                                  gr_dens_norm )
-
-    ! TODO how to read may change if we incorporate ngrdcol!,
-    ! TODO since size does not work then, but should be size/ngrdcol?,
-    ! TODO since all columns should have same number of grid levels?
-    !grid_heights_idx = shape(grid_heights)
-    grid_heights_idx = size(grid_heights) ! counts the scalar values
-
-    if ( clubb_at_least_debug_level( 2 ) ) then
-        call check_grid( grid_heights_idx, grid_heights, &
-                         num_levels, min_dens, &
-                         grid_sfc, grid_top )
-    end if 
-
-    return
-
-  end function create_grid_from_grid_density_func
-
 
   subroutine adapt_grid( iunit, itime, ngrdcol, total_idx_density_func, &
                          density_func_z, density_func_dens, &
@@ -1733,13 +2064,15 @@ module grid_adaptation_module
         i
 
     real( kind = core_rknd ) ::  &
-      equi_dens,  &    ! density of the equidistant grid [# levs/meter]
+      equi_dens   ! density of the equidistant grid [# levs/meter]
+
+    real( kind = core_rknd ), dimension(ngrdcol) ::  &
       deltaz
 
-    real( kind = core_rknd ), dimension(gr%nzm) ::  &
+    real( kind = core_rknd ), dimension(ngrdcol,gr%nzm) ::  &
       new_gr_zm      ! zm levels for the adapted grid based on the density function [m]
 
-    real( kind = core_rknd ), dimension(gr%nzt) ::  &
+    real( kind = core_rknd ), dimension(ngrdcol,gr%nzt) ::  &
       thermodynamic_heights_placeholder  ! placeholder for the zt levels, but not needed
 
     real( kind = core_rknd ), dimension(ngrdcol, gr%nzm) ::  &
@@ -1773,17 +2106,21 @@ module grid_adaptation_module
     equi_dens = (num_levels-1)/(gr%zm(1,gr%nzm) - gr%zm(1,1))
     !lambda = 0.5
     lambda = 0.01
-    new_gr_zm = create_grid_from_grid_density_func( iunit, &
-                                                    itime, &
+
+    new_gr_zm = create_grid_from_grid_density_func( ngrdcol, &
+                                                    iunit, itime, &
                                                     total_idx_density_func, &
                                                     density_func_z, density_func_dens, &
                                                     lambda, &
                                                     num_levels )
 
-    deltaz = 0.0
+    do i = 1, ngrdcol
+      deltaz(i) = 0.0_core_rknd
+    end do
     grid_type = 3
-    call setup_grid_api( num_levels, sfc_elevation(1), l_implemented, &         ! intent(in)
-                         grid_type, deltaz, gr%zm(1,1), gr%zm(1,num_levels), &  ! intent(in)
+
+    call setup_grid_api( num_levels, ngrdcol, sfc_elevation, l_implemented, &   ! intent(in)
+                         grid_type, deltaz, gr%zm(:,1), gr%zm(:,num_levels), &  ! intent(in)
                          new_gr_zm, thermodynamic_heights_placeholder, &        ! intent(in)
                          new_gr )                                               ! intent(inout)
 
@@ -2621,6 +2958,7 @@ module grid_adaptation_module
     end if
     
     gr = new_gr
+
   end subroutine adapt_grid
 
   subroutine calc_grid_dens_func( ngrdcol, nzt, zt, &
@@ -2727,7 +3065,129 @@ module grid_adaptation_module
         gr_dens_z(nzt) = grid_top
     end if
 
+    !gr_dens = moving_average( nzt, &
+    !                          gr_dens_z, gr_dens )
+
   end subroutine calc_grid_dens_func
+
+  subroutine clean_up_grid_adaptation_module()
+
+    implicit none
+
+    if ( allocated( fixed_min_gr_dens ) ) then
+      deallocate( fixed_min_gr_dens )
+    end if
+
+    if ( allocated( fixed_min_gr_dens_z ) ) then
+      deallocate( fixed_min_gr_dens_z )
+    end if
+
+  end subroutine
+
+  function moving_average( nz, &
+                           gr_dens_z, gr_dens )
+
+    ! Description:
+    ! Applies a moving average filter to the given function
+
+    ! References:
+    ! None
+    !-----------------------------------------------------------------------
+
+    use clubb_precision, only: &
+        core_rknd ! Variable(s)
+
+    implicit none
+
+    !--------------------- Input Variables ---------------------
+    integer, intent(in) :: & 
+      nz
+
+    real( kind = core_rknd ), dimension(nz), intent(in) ::  &
+      gr_dens_z, & ! the z value coordinates of the connection points of the piecewise linear
+                   ! grid density function [m]
+      gr_dens  ! the values of the connection points of the piecewise linear
+               ! grid density function, given on the z values of gr_dens_z [# levs/meter]
+
+    !--------------------- Output Variable ---------------------
+    real( kind = core_rknd ), dimension(nz) ::  &
+      moving_average ! the smoothed values of the connection points of the piecewise linear
+                     ! grid density function, given on the z values of gr_dens_z [# levs/meter]
+
+    !--------------------- Local Variables ---------------------
+    integer :: &
+      window_size, &
+      start_index_full_window, &
+      end_index_full_window, &
+      k, j
+
+    real( kind = core_rknd ) :: &
+      avg, &
+      sum_weights, &
+      weight_for_middle_point ! a weight for the point in the middle
+
+    real( kind = core_rknd ), dimension(:), allocatable :: &
+      weights ! the weights for one filter, changes for each point
+
+    !--------------------- Begin Code ---------------------
+    window_size = 3 ! needs to be uneven, so on both sides equally many points are
+                    ! taking into consideration
+
+    allocate( weights(window_size) )
+
+    weight_for_middle_point = 0.5 ! needs to be betweeen [0,1]
+
+    
+    start_index_full_window = (window_size-1)/2 + 1 ! is how many points on each side are
+                                                    ! taking into consideration
+
+    end_index_full_window = nz - (window_size-1)/2  ! is how many points on each side are
+                                                    ! taking into consideration
+
+    ! just copy values where no full window is available
+    do k = 1, start_index_full_window - 1
+      moving_average(k) = gr_dens(k)
+    end do
+
+    do k = end_index_full_window+1, nz
+      moving_average(k) = gr_dens(k)
+    end do
+
+    do k = start_index_full_window, end_index_full_window
+      
+      do j = k-(window_size-1)/2, k+(window_size-1)/2
+
+        weights(j-(k-(window_size-1)/2)+1) = 0.0_core_rknd
+        if ( j /= k ) then
+          ! so we are not on the middle point of the current filter
+          weights(j-(k-(window_size-1)/2)+1) = 1/abs( gr_dens_z(k) - gr_dens_z(j) )
+        end if
+
+      end do
+
+      ! normalize weights
+      sum_weights = sum( weights )
+      do j = k-(window_size-1)/2, k+(window_size-1)/2
+        weights(j-(k-(window_size-1)/2)+1) = (1-weight_for_middle_point)/sum_weights * weights(j-(k-(window_size-1)/2)+1)
+      end do
+
+      weights((window_size-1)/2 + 1) = weight_for_middle_point
+      
+      if ( (sum(weights) - one) > tol ) then
+        error stop 'Sum of weights in moving_average must be 1.0.'
+      end if
+
+      ! apply weighted moving average filter
+      avg = 0.0_core_rknd
+      do j = k-(window_size-1)/2, k+(window_size-1)/2
+        avg = avg + weights(j-(k-(window_size-1)/2)+1) * gr_dens(j)
+      end do
+      moving_average(k) = avg
+    end do
+
+    deallocate( weights )
+
+  end function
 !===============================================================================
 
 end module grid_adaptation_module

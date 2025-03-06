@@ -280,7 +280,8 @@ module clubb_driver
         cloud_drop_sed  ! Procedure(s)
 
     use grid_adaptation_module, only: &
-      setup_gr_dycore, calc_grid_dens_func, adapt_grid  ! Procedure(s)
+      setup_gr_dycore, calc_grid_dens_func, adapt_grid, &
+      clean_up_grid_adaptation_module  ! Procedure(s)
 
     use time_dependent_input, only: initialize_t_dependent_input ! Procedure(s)
 
@@ -3653,6 +3654,8 @@ module clubb_driver
     if ( grid_adapt_in_time_method > no_grid_adaptation ) then
       deallocate( gr_dens_z )
       deallocate( gr_dens )
+
+      call clean_up_grid_adaptation_module()
     end if
 
     return
