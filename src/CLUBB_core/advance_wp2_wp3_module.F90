@@ -1604,7 +1604,7 @@ module advance_wp2_wp3_module
       !$acc update host( wm_zt, lhs_dp1_wp2, wp2, lhs_diff_zm, lhs_ta_wp2, &
       !$acc              wp3, lhs_ma_zm, lhs_pr1_wp2, lhs_pr1_wp3, lhs_diff_zt, &
       !$acc              wp3_term_ta_lhs_result, lhs_adv_tp_wp3, lhs_pr_tp_wp3, &
-      !$acc              wp3_pr3_lhs, lhs_ma_zt, C11_Skw_fnc, wm_zm, clubb_params )
+      !$acc              wp3_pr3_lhs, lhs_ma_zt, C11_Skw_fnc, wm_zm, gr, clubb_params )
 
       C_uu_shr_zeros        = zero
       C_uu_shr_plus_one     = clubb_params(:,iC_uu_shr) + one
@@ -2810,7 +2810,7 @@ module advance_wp2_wp3_module
       !$acc              rhs_ta_wp3, wp3_term_ta_lhs_result, wp3, lhs_ta_wp3, &
       !$acc              lhs_adv_tp_wp3, lhs_pr_tp_wp3, rhs_pr3_wp3, rhs_pr1_wp3, &
       !$acc              lhs_pr1_wp3, lhs_splat_wp3, lhs_diff_zt, wpup2, wpvp2, &
-      !$acc              rhs_pr_turb_wp3, rhs_pr_dfsn_wp3, clubb_params, C11_Skw_fnc )
+      !$acc              rhs_pr_turb_wp3, rhs_pr_dfsn_wp3, gr, clubb_params, C11_Skw_fnc )
 
       C_uu_buoy_zeros       = zero
       C_uu_buoy_plus_one    = clubb_params(:,iC_uu_buoy) + one
