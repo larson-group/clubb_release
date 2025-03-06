@@ -6,13 +6,13 @@ pipeline {
         sh 'utilities/api_analysis/run_full_api_diagnostics.bash'
       }
     }
-    stage('Display Tables') {
-      steps {
-        // These display the tables the script produces
-        sh 'cat utilities/api_analysis/log/apiCommitmentTable.txt'
-        sh 'cat utilities/api_analysis/log/usageAnalyzerTable.txt'
-      }
-    }
+//    stage('Display Tables') {
+//      steps {
+//        // These display the tables the script produces
+//        sh 'cat utilities/api_analysis/log/apiCommitmentTable.txt'
+//        sh 'cat utilities/api_analysis/log/usageAnalyzerTable.txt'
+//      }
+//    }
   }
   post {
     always {

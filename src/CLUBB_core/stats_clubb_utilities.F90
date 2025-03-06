@@ -272,14 +272,16 @@ module stats_clubb_utilities
     ! Reads list of variables that should be output to GrADS/NetCDF (namelist &statsnl)
 
     open(unit=iunit, file=fnamelist)
-    read(unit=iunit, nml=statsnl, iostat=read_status, end=100)
+    read(unit=iunit, nml=statsnl, iostat=read_status)
     if ( read_status /= 0 ) then
+      write(fstderr,*) "stats_init: Error reading stats namelist."
+      write(fstderr,*) "Read error code", read_status
       if ( read_status > 0 ) then
         write(fstderr,*) "Error reading stats namelist in file ",  &
                          trim( fnamelist )
       else ! Read status < 0
         write(fstderr,*) "End of file marker reached while reading stats namelist in file ", &
-          trim( fnamelist )
+                         trim( fnamelist )
       end if
       write(fstderr,*) "One cause is having more statistical variables ",  &
                        "listed in the namelist for var_zt, var_zm, or ",  &
@@ -1476,19 +1478,7 @@ module stats_clubb_utilities
 
     return
 
-    ! If namelist was not found in input file, turn off statistics
-
-    100 continue
-    write(fstderr,*) 'Error with statsnl, statistics is turned off'
-    stats_metadata%l_stats       = .false.
-    stats_metadata%l_stats_samp  = .false.
-    stats_metadata%l_stats_last  = .false.
-
-    if ( err_code == clubb_fatal_error ) error stop
-
-    return
-
-  end subroutine stats_init_api
+  end subroutine stats_init
 
   !-----------------------------------------------------------------------
   subroutine stats_zero( ii, jj, kk, nn, &

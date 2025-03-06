@@ -1,3 +1,5 @@
+#!/usr/bin/env/ python3
+# -*- coding: utf-8 -*-
 """
 Usage Analyzer (usage_analyzer.py)
 
@@ -22,32 +24,25 @@ import datetime
 fontSize = 12  # Controls the general font of the output table
 fontSizeReduced = 7  # Controls the font of the parent modules in the table
 
+# Whitelist for file extensions that we want to check
+fortranFileExtensions = ('.f', '.f90')
 
 # Represents a module in FORTRAN and contains lists of objects which represent the various
 # subroutines, functions, variables, and derived types which are in that module.
 # For now, programs are treated as Modules. In the future this could be split up or
 # this class could be renamed to Container - or something similar.
 class Module:
-    name = ""  # The name of the module (module [name])
-    subroutines = list()  # Every subroutine definition found in the module
-    functions = list()  # Every function definition found in the module
-    variables = list()  # Every variable found in the module (including those in subroutines)
-    derivedTypes = list()  # Every derived type defined (not referenced, that's a variable) in the module
-    uses = list()  # every use statment in the module ([0.. ] use someMod, only : someVarsOrFunctions)
-    startLine = -1  # The line number containing "module [name]"
-    endLine = -1  # The line number with "end module [name]"
-
     # Module Constructor
     # Initializes Variables
-    def __init__(self, name, subroutines, functions, variables, derivedTypes, uses, startLine, endLine):
-        self.name = name
-        self.subroutines = subroutines
-        self.functions = functions
-        self.variables = variables
-        self.derivedTypes = derivedTypes
-        self.uses = uses
-        self.startLine = startLine
-        self.endLine = endLine
+    def __init__(self, name='', subroutines=[], functions=[], variables=[], derivedTypes=[], uses=[], startLine=-1, endLine=-1):
+        self.name = name                    # The name of the module (module [name])
+        self.subroutines = subroutines      # Every subroutine definition found in the module
+        self.functions = functions          # Every function definition found in the module
+        self.variables = variables          # Every variable found in the module (including those in subroutines)
+        self.derivedTypes = derivedTypes    # Every derived type defined (not referenced, that's a variable) in the module
+        self.uses = uses                    # every use statment in the module ([0.. ] use someMod, only : someVarsOrFunctions)
+        self.startLine = startLine          # The line number containing "module [name]"
+        self.endLine = endLine              # The line number with "end module [name]"
 
     # Some explanation here for those unfamiliar with the following three instance functions:
     # In Python (like many other OOP languages), objects that are defined (rather than the ones like "String"
@@ -60,7 +55,10 @@ class Module:
 
     # Comparator function overridden for custom object
     def __eq__(self, other):
-        return self.name == other.name
+        if isinstance(other, Module):
+            return self.name == other.name
+        else:
+            return False
 
     # Negative comparator function overridden for custom object
     def __ne__(self, other):
@@ -70,33 +68,33 @@ class Module:
     def __hash__(self):
         return hash(self.name)
 
+    # Represent function overridden. Defines how the object represents itself when using "print element".
+    def __repr_(self):
+        return self.name
 
 # Represents a variable, function, subroutine, or derived type in FORTRAN
 # It would have been unnecessary code to make all four sseparateclasses
 # in a dynamically typed programming language like Python. If this were a 
 # statically typed language, like c++, each element should have its own class.
 class Element:
-    name = ""  # The name of the element (subroutine [name])
-    uses = list()  # The use statements found between the startLine and endLine of the element
-    startLine = -1  # The line number where the element begins in the FORTRAN code
-    endLine = -1  # The line number where the element ends
-
     # (For variables, startLine == endLine, regardless of & continuations)
     # Element Constructor
     # Initializes Variables
-    def __init__(self, name, uses, startLine, endLine):
-        self.name = name
-        self.uses = uses
-        self.startLine = startLine
-        self.endLine = endLine
+    def __init__(self, name='', uses=[], startLine=-1, endLine=-1):
+        self.name = name                # The name of the element (subroutine [name])
+        self.uses = uses                # The use statements found between the startLine and endLine of the element
+        self.startLine = startLine      # The line number where the element begins in the FORTRAN code
+        self.endLine = endLine          # The line number where the element ends
 
     # The following three functions are explained in the Module definition above.
     # Comparator function overridden for custom object
     def __eq__(self, other):
         if isinstance(other, Element):
             return self.name == other.name
-        else:
+        elif isinstance(other, str):
             return self.name == other
+        else:
+            return False
 
     # Negative comparator function overridden for custom object
     def __ne__(self, other):
@@ -113,25 +111,24 @@ class Element:
 
 # Represents a use statement in FORTRAN (use [name], only : [elements])
 class Use:
-    name = ""               # The name of the use statment (use [name], only : [elements])
-    elements = list()       # The "used" elements. It is worthwhile to mention here that this is a list of
-                            # Strings, not of Elements. In other words, elementInstance.name == element[n].
-    parentElement = ""      # The name of the function, subroutine, or module which this use is contained in
-                            # (In that order of precedence.)
     # Use Constructor
     # Initializes Variables
-    def __init__(self, name, elements, parentElement):
-        self.name = name
-        self.elements = elements
-        self.parentElement = parentElement
+    def __init__(self, name='', elements=[], parentElement=''):
+        self.name = name                        # The name of the use statment (use [name], only : [elements])
+        self.elements = elements                # The "used" elements. It is worthwhile to mention here that this is a list of
+                                                # Strings, not of Elements. In other words, elementInstance.name == element[n].
+        self.parentElement = parentElement      # The name of the function, subroutine, or module which this use is contained in
+                                                # (In that order of precedence.)
 
     # The following three functions are explained in the Module definition above.
     # Comparator function overridden for custom object
     def __eq__(self, other):
         if isinstance(other, Use):
             return self.name == other.name
-        else:
+        elif isinstance(other, str):
             return self.name == other
+        else:
+            return False
 
     # Negative comparator function overridden for custom object
     def __ne__(self, other):
@@ -157,89 +154,91 @@ class Use:
 # it came from.
 def parseModulesInFile(filename):
     # Take in the entire file at once (small enough text files to not matter)
-    lines = [line.strip().lower() for line in open(filename)]
-    
+    lines = []
+    i = 1
+    with open(filename, "r") as f:
+        try:
+            for line in f:
+                lines.append(line.strip().lower())
+                i = i+1
+        except Exception as e:
+            print("Read error in ", filename, ", line ", i)
+            print("Read error in ", filename)
+            print(str(e))
+
     # Setup some data to be used as the function parses
     retModules = list() # The modules found in the current file. Return Value.
-    
+
     # Each data type that is currently being parsed is stored temporarily.
     # This is done to eliminate the need of accessor methods in the objects, which could result
     # in nasty "This object is only half complete!" bugs.
     # I will list the corresponding instance variable each temp variable below relates to.
     moduleName = ""                 # module.name
     moduleStart = -1                # module.startLine
-    moduleEnd = -1                  # module.endLine
     moduleSubroutines = list()      # module.subroutines
     moduleFunctions = list()        # module.functions
     moduleVariables = list()        # module.variables
     moduleUses = list()             # module.uses
     moduleDerivedTypes = list()     # module.derivedTypes
-    
+
     subroutineName = ""             # element.name
     subroutineUses = list()         # element.uses
     subroutineStart = -1            # element.startLine
-    subroutineEnd = -1              # element.endLine
-    
+
     functionName = ""               # element.name
     functionUses = list()           # element.uses
     functionStart = -1              # element.startLine
-    functionEnd = -1                # element.endLine
-    
+
     # Derived Types can't "use" in FORTRAN
     derivedTypeName = ""            # element.name
     derivedTypeStart = -1           # element.startLine
-    derivedTypeEnd = -1             # element.endLine
-    
+
     # Variables are found and created on the spot
-    
+
     # Go through every line in the current file
-    for n in range(0, len(lines)):
-    
+    for n in range(len(lines)):
+
         lines[n] = lines[n].split("!")[0]  # remove any comments
-        
+
         # Parsing Use Statements
         # For anyone not familiar with regex, the "^\s*use" means
         # "match any number of spaces at the start of the line
         # that come before the word 'use'"
         if re.match(r"^\s*use", lines[n], re.IGNORECASE):                   # Found a Use statement!
-            if functionStart != -1 and functionEnd == -1:                   # If the use is in a function,
+            if functionStart != -1:                                         # If the use is in a function,
                 functionUses.append(parseUse(n, lines, functionName))       # add it to the current function's use list
-            elif subroutineStart != -1 and subroutineEnd == -1:             # If the use is in a subroutine,
+            elif subroutineStart != -1:                                     # If the use is in a subroutine,
                 subroutineUses.append(parseUse(n, lines, subroutineName))   # add it to the current subroutine's use list
             else:                                                           # If it's not in a function or subroutine, it must be in a module
                 moduleUses.append(parseUse(n, lines, moduleName))           # Add it the current module's use list
-                
+
         # Parsing Variables
         # This regex is "match any number of spaces at the start of the line that come before a variable type, a space, and not preceding 'function'."
         if re.match(r"^\s*((integer)|(character)|(logical)|(real)|(type(?=(\(|\s*\())))(?!\sfunction)", lines[n], re.IGNORECASE): # Found a Variable!
             if not lines[n-1].split("!")[0].strip().endswith("&"):                              # If the line before doesn't end with a &
                 for variable in getContinuousLine(n, lines).split("::")[-1].split(","):         # merge the &'s and split on ","
                     moduleVariables.append(Element(variable.split("=")[0].strip(), None, n, n)) # Take left of "=" and add the variable to the module's variable list
-        
+
         # Parsing Derived Types
         if re.match(r"^\s*type(?!(\(|\s*\())", lines[n], re.IGNORECASE):  # Oh Look, a Derived Type is declared!
             derivedTypeStart = n                                          # Get the startLine number
             derivedTypeName = lines[n].split(" ")[-1].strip()             # The name is everything on the line after the first space
-            
+
         if re.match(r"^\s*end\stype\s",lines[n], re.IGNORECASE):          # The derived type is done being declared.
-            derivedTypeEnd = n                                                                           # Get the endLine number
-            moduleDerivedTypes.append(Element(derivedTypeName, None, derivedTypeStart, derivedTypeEnd))  # Add the derived types to the module's derivedType list
+            moduleDerivedTypes.append(Element(derivedTypeName, None, derivedTypeStart, n))  # Add the derived types to the module's derivedType list
             derivedTypeName = ""  # Reset the derived type temp vars
             derivedTypeStart = -1
-            derivedTypeEnd = -1
-        
+
         # Parsing Functions
         if re.match(r"^\s*((?!end)\b.*)function\s", lines[n], re.IGNORECASE):  # Function being declared
             functionStart = n                                                  # Get the line number
             functionName = lines[n].partition("function")[-1].split("(")[0].split("&")[0].strip()  # the name is everything after "function" and before "("
 
         if re.match(r"^\s*end\sfunction", lines[n], re.IGNORECASE):  # End Function
-            functionEnd = n  # Get the line number
-            moduleFunctions.append(Element(functionName, functionUses, functionStart, functionEnd))  # Add the function to the module's function list
+            moduleFunctions.append(Element(functionName, functionUses, functionStart, n))  # Add the function to the module's function list
             functionName = ""  # Reset the derived type temp vars
             functionUses = list()
             functionStart = -1
-            functionEnd = -1
 
         # Parsing Subroutines, almost identical to functions
         if re.match(r"^\s*subroutine\s", lines[n], re.IGNORECASE):  # Subroutine Start
@@ -247,12 +246,10 @@ def parseModulesInFile(filename):
             subroutineName = lines[n].partition("subroutine")[-1].split("(")[0].split("&")[0].strip()
 
         if re.match(r"^\s*end\ssubroutine", lines[n], re.IGNORECASE):  # Subroutine End
-            subroutineEnd = n
-            moduleSubroutines.append(Element(subroutineName, subroutineUses, subroutineStart, subroutineEnd))
+            moduleSubroutines.append(Element(subroutineName, subroutineUses, subroutineStart, n))
             subroutineName = ""
             subroutineUses = list()
             subroutineStart = -1
-            subroutineEnd = -1
 
         # Parsing Modules
         if re.match(r"^\s*(module|program)\s", lines[n], re.IGNORECASE):  # Module Start
@@ -260,13 +257,11 @@ def parseModulesInFile(filename):
             moduleName = re.split("module|program", lines[n])[-1].strip()  # The name is what follows "module"
 
         if re.match(r"^\s*end\s(module|program)\s", lines[n], re.IGNORECASE):  # Module End
-            moduleEnd = n                                                      # Get the line number
             retModules.append(Module(moduleName, moduleSubroutines, moduleFunctions,
                                      moduleVariables, moduleDerivedTypes, moduleUses, moduleStart,
-                                     moduleEnd))  # Add the module to the list of modules being returned
-            moduleName = ""                       # Reset the module temp vars
+                                     n))            # Add the module to the list of modules being returned
+            moduleName = ""                         # Reset the module temp vars
             moduleStart = -1
-            moduleEnd = -1
             moduleSubroutines = list()
             moduleFunctions = list()
             moduleVariables = list()
@@ -283,9 +278,9 @@ def parseApiModule(filename):
     lines = [line.strip().lower() for line in open(filename)]
     # Some temp data
     modulePublics = list()
-    for n in range(0, len(lines)):  # Go through every line
-        if re.match(r"^\s*public", lines[n], re.IGNORECASE):  # until a public declaration is found
-            currentLine = getContinuousLine(n, lines)  # Fold away any &'d lines to one long line
+    for n in range(len(lines)):                                                       # Go through every line
+        if re.match(r"^\s*public", lines[n], re.IGNORECASE):                          # until a public declaration is found
+            currentLine = getContinuousLine(n, lines)                                 # Fold away any &'d lines to one long line
             currentLine = currentLine.replace("public", "").replace(" ", "").strip()  # Remove public and external spaces from the line
             for subroutine in currentLine.split(","):                                 # Make an array around the commas
                 modulePublics.append(Element(subroutine, None, n, n))                 # Add each resultant element to the moudule's subroutine list
@@ -356,7 +351,7 @@ def findFiles(dir):
     subdirs = [x[0] for x in
                os.walk(dir)]  # Walk through each directory (including the given) and find subdirectories recursively
     for subdir in subdirs:  # Go through each subdirectory (including this one)
-        currentFiles = os.walk(subdir).next()[2]  # Add the found files to a list
+        currentFiles = next(os.walk(subdir))[2]  # Add the found files to a list
         if (len(currentFiles) > 0):  # If files were found
             for file in currentFiles:  # go through each file
                 foundFiles.append(subdir + "/" + file)  # Add its location and the filename to the returned files list
@@ -382,7 +377,7 @@ def makeTable(apiModule, samModules, wrfModules, camModules):
        temp_line = []
        if not isinstance(apiElement, str):  # Add it to the table's leftmost column
             temp_line.append(apiElement.name)
-       else:  
+       else:
             temp_line.append(apiElement)
        for hostModel in hostModels:  # Go through each hostModel
             elementsFound = set()  # Hold all of the elements found
@@ -404,43 +399,46 @@ def makeTable(apiModule, samModules, wrfModules, camModules):
             if len(elementsFound) == 0:  # If no elements have been found
                 temp_line.append(" ")
             else:  # otherwise
-                temp_line.extend(elementsFound)    
+                temp_line.extend(elementsFound)
        table.append(temp_line)
     return table  # Return it
 
 
 # Prints the -h menu
 def printHelpMenu():
-    print ""
-    print "Cross references how one module (like an API) is used by three other groups of modules (Like SAM, WRF, and CAM)."
-    print "Example Usage: python thisProgram.py path/to/api.F90 path/to/host1 path/to/host2 path/to/host3 > output.html"
-    print ""
-    print "This program can also display information about a file."
-    print "Example Usage: python thisProgram.py path/to/file.F90"
-    print ""
+    print()
+    print("Cross references how one module (like an API) is used by three other groups of modules (Like SAM, WRF, and CAM).")
+    print("Example Usage: python thisProgram.py path/to/api.F90 path/to/host1 path/to/host2 path/to/host3 > output.html")
+    print()
+    print("This program can also display information about a file.")
+    print("Example Usage: python thisProgram.py path/to/file.F90")
+    print()
 
 
 # Runs the program
 def main():
     # If only one file is given as an arg, print out what is found in it (debugging purposes)
     if len(sys.argv) == 2:
+        if not sys.argv[1].endswith(fortranFileExtensions):
+            print('Error! Listed file is not a fortran source file.')
+            sys.exit(1)
         baseModule = parseModulesInFile(sys.argv[1]).pop()
-        print baseModule.name, baseModule.startLine, baseModule.endLine
-        print "subroutines: "
+        print(baseModule.name, baseModule.startLine, baseModule.endLine)
+        print("subroutines: ")
         for subroutine in baseModule.subroutines:
-            print subroutine.name, subroutine.startLine, subroutine.endLine
+            print(subroutine.name, subroutine.startLine, subroutine.endLine)
             for use in subroutine.uses:
-                print "    ", use.name, "only: ", ", ".join(use.elements)
-        print "functions: "
+                print("    ", use.name, "only: ", ", ".join(use.elements))
+        print("functions: ")
         for function in baseModule.functions:
-            print function.name
+            print(function.name)
             for use in function.uses:
-                print "    ", use.name, "only: ", ", ".join(use.elements)
-        print "variables: ", ([str(variable.name) for variable in baseModule.variables])
-        print "derivedTypes: ", ([str(derivedType.name) for derivedType in baseModule.derivedTypes])
-        print "uses:"
+                print("    ", use.name, "only: ", ", ".join(use.elements))
+        print("variables: ", ([str(variable.name) for variable in baseModule.variables]))
+        print("derivedTypes: ", ([str(derivedType.name) for derivedType in baseModule.derivedTypes]))
+        print("uses:")
         for use in baseModule.uses:
-            print use.name, "only: ", ", ".join(use.elements)
+            print(use.name, "only: ", ", ".join(use.elements))
     # If the expected arguments are given
     elif len(sys.argv) == 5:
         samModules = list()
@@ -448,13 +446,16 @@ def main():
         camModules = list()
         apiModule = parseApiModule(sys.argv[1])  # Parse the API
         for file in findFiles(sys.argv[2]):  # Parse SAM
-            samModules.extend(parseModulesInFile(file))
+            if file.lower().endswith(fortranFileExtensions):
+                samModules.extend(parseModulesInFile(file))
         for file in findFiles(sys.argv[3]):  # parse WRF
-            wrfModules.extend(parseModulesInFile(file))
+            if file.lower().endswith(fortranFileExtensions):
+                wrfModules.extend(parseModulesInFile(file))
         for file in findFiles(sys.argv[4]):  # parse CAM
-            camModules.extend(parseModulesInFile(file))
-        print datetime.datetime.now()
-        print tabulate(makeTable(apiModule, samModules, wrfModules, camModules), headers='firstrow', tablefmt='grid') # print the table
+            if file.lower().endswith(fortranFileExtensions):
+                camModules.extend(parseModulesInFile(file))
+        print(datetime.datetime.now())
+        print(tabulate(makeTable(apiModule, samModules, wrfModules, camModules), headers='firstrow', tablefmt='grid')) # print the table
     else:
         raise IOError("An error occurred processing the given arguments.")
 
@@ -468,4 +469,4 @@ if __name__ == "__main__":
         else:
             main()
     except IOError:
-        print "An error occurred processing the given arguments."
+        print("An error occurred processing the given arguments.")
