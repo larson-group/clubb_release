@@ -1488,6 +1488,7 @@ module advance_wp2_wp3_module
     ! the grid is arranged in the descending direction.
     if ( l_test_grid_generalization .and. gr%grid_dir_indx < 0 ) then
       lhs_copy = lhs
+      !$acc parallel loop gang vector default(present)
       do i = 1, ngrdcol
         lhs(1,i,:) = flip( lhs_copy(5,i,:), 2*nzm-1 )
         lhs(2,i,:) = flip( lhs_copy(4,i,:), 2*nzm-1 )
@@ -1496,6 +1497,7 @@ module advance_wp2_wp3_module
         lhs(5,i,:) = flip( lhs_copy(1,i,:), 2*nzm-1 )
         rhs(i,:)   = flip( rhs_save(i,:), 2*nzm-1 )
       enddo
+      !$acc end parallel loop
     endif
 
     ! Solve the system with LAPACK
@@ -1532,9 +1534,11 @@ module advance_wp2_wp3_module
     ! the grid is arranged in the descending direction.
     if ( l_test_grid_generalization .and. gr%grid_dir_indx < 0 ) then
       solut_copy = solut
+      !$acc parallel loop gang vector default(present)
       do i = 1, ngrdcol
         solut(i,:) = flip( solut_copy(i,:), 2*nzm-1 )
       enddo
+      !$acc end parallel loop
     endif
 
     if ( clubb_at_least_debug_level( 0 ) ) then

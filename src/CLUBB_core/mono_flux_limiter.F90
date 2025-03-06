@@ -1354,12 +1354,14 @@ module mono_flux_limiter
     if ( l_test_grid_generalization .and. gr%grid_dir_indx < 0 ) then
       lhs_copy = lhs
       rhs_copy = rhs
+      !$acc parallel loop gang vector default(present)
       do i = 1, ngrdcol
         lhs(1,i,:) = flip( lhs_copy(3,i,:), nzt )
         lhs(2,i,:) = flip( lhs_copy(2,i,:), nzt )
         lhs(3,i,:) = flip( lhs_copy(1,i,:), nzt )
         rhs(i,:)   = flip( rhs_copy(i,:), nzt )
       enddo
+      !$acc end parallel loop
     endif
 
     ! Solve for xm at timestep index (t+1) using the tridiagonal solver.
@@ -1374,9 +1376,11 @@ module mono_flux_limiter
     ! the grid is arranged in the descending direction.
     if ( l_test_grid_generalization .and. gr%grid_dir_indx < 0 ) then
       xm_copy = xm
+      !$acc parallel loop gang vector default(present)
       do i = 1, ngrdcol
         xm(i,:) = flip( xm_copy(i,:), nzt )
       enddo
+      !$acc end parallel loop
     endif
 
 

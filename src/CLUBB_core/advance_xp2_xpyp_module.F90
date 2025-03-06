@@ -2839,14 +2839,20 @@ module advance_xp2_xpyp_module
     if ( l_test_grid_generalization .and. gr%grid_dir_indx < 0 ) then
       lhs_copy = lhs
       rhs_copy = rhs
+      !$acc parallel loop gang vector default(present)
       do i = 1, ngrdcol
         lhs(1,i,:) = flip( lhs_copy(3,i,:), nzm )
         lhs(2,i,:) = flip( lhs_copy(2,i,:), nzm )
         lhs(3,i,:) = flip( lhs_copy(1,i,:), nzm )
+      enddo
+      !$acc end parallel loop
+      !$acc parallel loop gang vector collapse(2) default(present)
+      do i = 1, ngrdcol
         do j = 1, nrhs
            rhs(i,:,j) = flip( rhs_copy(i,:,j), nzm )
         enddo
       enddo
+      !$acc end parallel loop
     endif
 
     if ( stats_metadata%l_stats_samp .and. ixapxbp_matrix_condt_num > 0 ) then
@@ -2896,11 +2902,13 @@ module advance_xp2_xpyp_module
     ! the grid is arranged in the descending direction.
     if ( l_test_grid_generalization .and. gr%grid_dir_indx < 0 ) then
       xapxbp_copy = xapxbp
+      !$acc parallel loop gang vector collapse(2) default(present)
       do i = 1, ngrdcol
         do j = 1, nrhs
            xapxbp(i,:,j) = flip( xapxbp_copy(i,:,j), nzm )
         enddo
       enddo
+      !$acc end parallel loop
     endif
 
     return

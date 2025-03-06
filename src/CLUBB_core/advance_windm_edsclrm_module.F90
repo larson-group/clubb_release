@@ -1734,14 +1734,20 @@ module advance_windm_edsclrm_module
     if ( l_test_grid_generalization .and. gr%grid_dir_indx < 0 ) then
       lhs_copy = lhs
       rhs_copy = rhs
+      !$acc parallel loop gang vector default(present)
       do i = 1, ngrdcol
         lhs(1,i,:) = flip( lhs_copy(3,i,:), nzt )
         lhs(2,i,:) = flip( lhs_copy(2,i,:), nzt )
         lhs(3,i,:) = flip( lhs_copy(1,i,:), nzt )
+      enddo
+      !$acc end parallel loop
+      !$acc parallel loop gang vector collapse(2) default(present)
+      do i = 1, ngrdcol
         do j = 1, nrhs
            rhs(i,:,j) = flip( rhs_copy(i,:,j), nzt )
         enddo
       enddo
+      !$acc end parallel loop
     endif
 
     ! Solve tridiagonal system for xm.
@@ -1772,11 +1778,13 @@ module advance_windm_edsclrm_module
     ! the grid is arranged in the descending direction.
     if ( l_test_grid_generalization .and. gr%grid_dir_indx < 0 ) then
       solution_copy = solution
+      !$acc parallel loop gang vector collapse(2) default(present)
       do i = 1, ngrdcol
         do j = 1, nrhs
            solution(i,:,j) = flip( solution_copy(i,:,j), nzt )
         enddo
       enddo
+      !$acc end parallel loop
     endif
 
     return

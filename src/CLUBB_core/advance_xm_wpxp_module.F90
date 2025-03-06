@@ -4397,16 +4397,22 @@ module advance_xm_wpxp_module
     if ( l_test_grid_generalization .and. gr%grid_dir_indx < 0 ) then
       lhs_copy = lhs
       rhs_copy = rhs
+      !$acc parallel loop gang vector default(present)
       do i = 1, ngrdcol
         lhs(1,i,:) = flip( lhs_copy(5,i,:), 2*nzm-1 )
         lhs(2,i,:) = flip( lhs_copy(4,i,:), 2*nzm-1 )
         lhs(3,i,:) = flip( lhs_copy(3,i,:), 2*nzm-1 )
         lhs(4,i,:) = flip( lhs_copy(2,i,:), 2*nzm-1 )
         lhs(5,i,:) = flip( lhs_copy(1,i,:), 2*nzm-1 )
+      enddo
+      !$acc end parallel loop
+      !$acc parallel loop gang vector collapse(2) default(present)
+      do i = 1, ngrdcol
         do ivar = 1, nrhs
           rhs(i,:,ivar) = flip( rhs_copy(i,:,ivar), 2*nzm-1 )
         enddo
       enddo
+      !$acc end parallel loop
     endif
 
     ! Solve the system
@@ -4421,11 +4427,13 @@ module advance_xm_wpxp_module
     ! the grid is arranged in the descending direction.
     if ( l_test_grid_generalization .and. gr%grid_dir_indx < 0 ) then
       solution_copy = solution
+      !$acc parallel loop gang vector collapse(2) default(present)
       do i = 1, ngrdcol
         do ivar = 1, nrhs
           solution(i,:,ivar) = flip( solution_copy(i,:,ivar), 2*nzm-1 )
         enddo
       enddo
+      !$acc end parallel loop
     endif
 
     if ( clubb_at_least_debug_level( 0 ) ) then
