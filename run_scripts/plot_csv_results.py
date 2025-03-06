@@ -11,6 +11,8 @@ from collections import defaultdict
 from dash.dependencies import Input, Output, ALL
 from dash.exceptions import PreventUpdate
 import pyperclip
+from scipy.optimize import minimize
+
 
 # Functions safe to use in the custom plot
 safe_functions = {
@@ -32,6 +34,89 @@ safe_functions = {
     "e": np.e,
     "np": np
 }
+
+def model_cpu_time(ngrdcol, runtime, params ):
+
+    L = len(runtime)
+
+    N_cores = 128
+    N_vsize = 256
+    N_prec  = 32
+
+    d = 0
+    b = runtime[d] - ( runtime[d+1] - runtime[d] ) / ( ngrdcol[d+1] - ngrdcol[d] ) * ngrdcol[d]
+
+    T_s = runtime[np.where(ngrdcol == N_cores)] - b
+    T_v = runtime[np.where(ngrdcol == N_vsize*N_cores/N_prec)] - b
+
+    N_s = np.ceil( ngrdcol / N_cores ) % ( N_vsize / N_prec )
+    N_v = np.floor( ngrdcol / ( N_cores * N_vsize / N_prec ) )
+
+    f = b + T_s * N_s + T_v * N_v
+
+    o, k, c = params
+    #p = 1 + c / (1 + np.exp(-k * (ngrdcol - o)))
+    p = c * np.log( np.log( np.exp(k*(ngrdcol-o)) + 1 ) + 1 ) + 1
+
+    #print(p)
+    #print(ngrdcol)
+
+    T_cpu = p * f
+
+    return T_cpu
+
+
+def objective(params, ngrdcol, runtime):
+
+    T_cpu = model_cpu_time(ngrdcol, runtime, params)
+
+    #N = np.where( ngrdcol == 4096 )[0][0]
+    #rms_error = np.sqrt( np.mean( ngrdcol[0:N] / runtime[0:N] - ngrdcol[0:N] / T_cpu[0:N] )**2 )
+    rms_error = np.sqrt( np.mean( ( ngrdcol / runtime - ngrdcol / T_cpu )**2 ) )
+
+    return rms_error
+
+def model_throughput(df, column_name):
+
+    ngrdcol = df["ngrdcol"].values  # Access ngrdcol if needed
+    runtime = df[column_name].values  # Convert selected column to numpy array
+
+
+    initial_guess = [2500, 0.002, 1.2]
+    result = minimize(objective, initial_guess, args=(ngrdcol, runtime), method='Nelder-Mead')
+    #print(result)
+    o_tuned, k_tuned, c_tuned = result.x
+
+    print(f"Tuned parameters: o={o_tuned}, k={k_tuned}, c={c_tuned}")
+    print(f"Final RMS Error: {result.fun}")
+
+    params = [ o_tuned, k_tuned, c_tuned ]
+    #params = [ 1756, .002, 1.13 ]
+    T_cpu = model_cpu_time(ngrdcol, runtime, params)
+
+
+    # L = len(runtime)
+
+    # N_cores = 128
+    # N_vsize = 256
+    # N_prec  = 64
+
+    # d = 0
+    # b = runtime[d] - ( runtime[d+1] - runtime[d] ) / ( ngrdcol[d+1] - ngrdcol[d] ) * ngrdcol[d]
+
+    # T_s = runtime[np.where(ngrdcol == N_cores)] - b
+    # T_v = runtime[np.where(ngrdcol == N_vsize*N_cores/N_prec)] - b
+
+    # N_s = np.ceil( ngrdcol / N_cores ) % ( N_vsize / N_prec )
+    # N_v = np.floor( ngrdcol / ( N_cores * N_vsize / N_prec ) )
+
+    # f = b + T_s * N_s + T_v * N_v
+
+    # T_cpu = runtime / f
+
+
+    return pd.Series(T_cpu, index=df.index)
+
 
 def get_shared_variables(csv_files):
     variable_sets = {}
@@ -110,6 +195,7 @@ def launch_dash_app(grouped_files, shared_variables):
         html.Div([
             html.Div(dcc.Graph(id="plot-columns-per-second"), style=plot_style),
             html.Div(dcc.Graph(id="plot-raw"), style=plot_style),
+            html.Div(dcc.Graph(id="fit-plot"), style=plot_style),
             html.Div([
                 dcc.Graph(id="plot-custom"),
                 dcc.Input(
@@ -123,7 +209,7 @@ def launch_dash_app(grouped_files, shared_variables):
         ], style={"flex": "1", "padding-right": "10px", "align-items": "center"}),
 
         html.Div([
-            html.H4("Select CSV files to include:"),
+            html.H4("Select CSV files to display:"),
             html.Div([
                 html.Details(
                     [
@@ -182,6 +268,12 @@ def launch_dash_app(grouped_files, shared_variables):
                     inline=True,
                 )
             ], style={"display": "flex", "align-items": "center", "margin-top": "10px"}),
+            html.Button(
+                "Fit",
+                id="fit-function-button",
+                n_clicks=0,
+                style={"margin-top": "10px", "padding": "10px", "background-color": "#4CAF50", "color": "white", "border": "none", "cursor": "pointer"}
+            ),
         ], style={
             "width": "20%",
             "padding": "10px",
@@ -280,8 +372,7 @@ def launch_dash_app(grouped_files, shared_variables):
         [
             Input("copy-csv-button", "n_clicks"),
             Input({"type": "file-checkbox", "case": ALL}, "value"),
-            Input("variable-dropdown", "value"),
-            Input("x-axis-scale", "value")
+            Input("variable-dropdown", "value")
         ]
     )
     def copy_csv_to_clipboard(n_clicks, selected_files, selected_variable):
@@ -331,6 +422,43 @@ def launch_dash_app(grouped_files, shared_variables):
         except Exception as e:
             print(f"Error copying to clipboard: {e}")
             return "Copy Failed"
+
+    @app.callback(
+    Output("fit-plot", "figure"),
+        [
+            Input("fit-function-button", "n_clicks"),
+            Input({"type": "file-checkbox", "case": ALL}, "value"),
+            Input("variable-dropdown", "value"),
+            Input("x-axis-scale", "value"),
+            Input("y-axis-scale", "value")  
+        ]
+    )
+    def update_fit_plot(n_clicks, selected_files, selected_variable, xaxis_scale, yaxis_scale):
+
+        flat_files = [item.split("/") for sublist in selected_files for item in sublist]
+        combined_df = pd.DataFrame()
+
+        for case, filename in flat_files:
+            if case in data and filename in data[case] and selected_variable in data[case][filename].columns:
+
+                temp_df = data[case][filename][["ngrdcol", selected_variable]].copy()
+                temp_df["Name"] = f"{case}/{filename}"
+                temp_df["Columns per Second"] = temp_df["ngrdcol"] / temp_df[selected_variable]
+                combined_df = pd.concat([combined_df, temp_df])
+
+                # Apply model_throughput to the selected variable and add it as "_dup"
+                temp_df_dup = temp_df.copy()
+                temp_df_dup[selected_variable] = model_throughput(temp_df, selected_variable)
+                temp_df_dup["Columns per Second"] = temp_df_dup["ngrdcol"] / temp_df_dup[selected_variable]
+                temp_df_dup["Name"] = f"{case}/{filename}_model"
+                combined_df = pd.concat([combined_df, temp_df_dup])
+
+        fig = px.line(combined_df, x="ngrdcol", y="Columns per Second", color="Name")
+        #fig = px.line(combined_df, x="ngrdcol", y=selected_variable, color="Name")
+
+        fig.update_layout( xaxis=dict(type=xaxis_scale))
+        fig.update_layout( yaxis=dict(type=yaxis_scale))
+        return plot_with_enhancements(fig, f"{selected_variable} vs. Number of Grid Columns (Raw Values)")
 
     app.run_server(debug=True,port=8051)
 
