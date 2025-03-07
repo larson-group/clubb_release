@@ -1,17 +1,17 @@
 ! $Id$
 &G_unit_namelist
 ! G_unit_tests settings
-l_KK_unit_tests = .false.           ! Flag for KK integrals tests
-l_corr_cholesky_mtx_tests = .false. ! Flag for corr_cholesky_mtx_tests
-l_hole_filling_tests = .false.      ! Flag for hole filling tests
-l_Nc_Ncn_test = .false.             ! Flag for Nc-Ncn Equations tests
-l_read_corr_mtx_test = .false.      ! Flag for correlation matrix test
-l_silhs_category_test = .false.     ! Flag for SILHS category test
-l_mu_sigma_hm_tests = .false.       ! Flag for hydrometeor mu/sigma tests
-l_pdf_parameter_tests = .false.     ! Flag for PDF parameter tests
-l_spurious_source_test = .false.    ! Flag for spurious source test
-l_tuner_tests = .false.             ! Flag for PDF parameter tests
-l_smooth_heaviside_test = .false.   ! Flag for the smooth_heaviside test
-l_smooth_min_max_test = .false.     ! Flag for the smooth_min_max test
+l_KK_unit_tests = .true.            ! Flag for KK integrals tests
+l_corr_cholesky_mtx_tests = .true.  ! Flag for corr_cholesky_mtx_tests
+l_hole_filling_tests = .true.       ! Flag for hole filling tests
+l_Nc_Ncn_test = .true.              ! Flag for Nc-Ncn Equations tests
+l_read_corr_mtx_test = .true.       ! Flag for correlation matrix test
+l_silhs_category_test = .true.      ! Flag for SILHS category test
+l_mu_sigma_hm_tests = .true.        ! Flag for hydrometeor mu/sigma tests
+l_pdf_parameter_tests = .true.      ! Flag for PDF parameter tests
+l_spurious_source_test = .true.     ! Flag for spurious source test
+l_tuner_tests = .true.              ! Flag for PDF parameter tests
+l_smooth_heaviside_test = .true.    ! Flag for the smooth_heaviside test
+l_smooth_min_max_test = .true.      ! Flag for the smooth_min_max test
 l_rev_direction_grid_test = .false. ! Flag for reverse direction grid test
 /
