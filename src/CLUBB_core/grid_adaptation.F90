@@ -54,11 +54,9 @@ module grid_adaptation_module
 
   subroutine setup_gr_dycore( iunit, ngrdcol, grid_sfc, grid_top, gr )
 
-    use clubb_api_module, only: &
-      setup_grid_api
-
     use grid_class, only: &
-      read_grid_heights
+      read_grid_heights, &
+      setup_grid
 
     use error_code, only: &
       clubb_fatal_error
@@ -159,10 +157,14 @@ module grid_adaptation_module
 
     l_implemented = .false.
     
-    call setup_grid_api( nlevel, ngrdcol, sfc_elevation, l_implemented, &   ! intent(in)
-                         grid_type, deltaz, grid_sfc, grid_top, &           ! intent(in)
-                         momentum_heights, thermodynamic_heights, &         ! intent(in)
-                         gr )                                               ! intent(inout)
+    call setup_grid( nlevel, ngrdcol, sfc_elevation, l_implemented, &   ! intent(in)
+                     grid_type, deltaz, grid_sfc, grid_top, &           ! intent(in)
+                     momentum_heights, thermodynamic_heights, &         ! intent(in)
+                     gr, err_code )                                     ! intent(inout)
+
+    if ( err_code == clubb_fatal_error ) then
+      error stop "Error in CLUBB calling setup_grid"
+    end if
 
   end subroutine setup_gr_dycore
 
@@ -1854,16 +1856,19 @@ module grid_adaptation_module
     !-----------------------------------------------------------------------
 
     use clubb_precision, only: &
-        core_rknd ! Variable(s)
+      core_rknd ! Variable(s)
     
-    use clubb_api_module, only: &
-      setup_grid_api
+    use grid_class, only: &
+      setup_grid
 
     use calc_pressure, only: &
-        init_pressure    ! Procedure(s)
+      init_pressure    ! Procedure(s)
 
     use model_flags, only: &
       cons_ullrich_remap
+
+    use error_code, only: &
+      clubb_fatal_error
 
     implicit none
 
@@ -2061,6 +2066,7 @@ module grid_adaptation_module
         total_idx_rho_lin_spline, &  ! total number of indices of the rho density
                                      ! piecewise linear function []
         grid_type, &
+        err_code, &
         i
 
     real( kind = core_rknd ) ::  &
@@ -2119,10 +2125,14 @@ module grid_adaptation_module
     end do
     grid_type = 3
 
-    call setup_grid_api( num_levels, ngrdcol, sfc_elevation, l_implemented, &   ! intent(in)
-                         grid_type, deltaz, gr%zm(:,1), gr%zm(:,num_levels), &  ! intent(in)
-                         new_gr_zm, thermodynamic_heights_placeholder, &        ! intent(in)
-                         new_gr )                                               ! intent(inout)
+    call setup_grid( num_levels, ngrdcol, sfc_elevation, l_implemented, &   ! intent(in)
+                     grid_type, deltaz, gr%zm(:,1), gr%zm(:,num_levels), &  ! intent(in)
+                     new_gr_zm, thermodynamic_heights_placeholder, &        ! intent(in)
+                     new_gr, err_code )                                     ! intent(inout)
+
+    if ( err_code == clubb_fatal_error ) then
+      error stop "Error in CLUBB calling setup_grid"
+    end if
 
     ! Set the density values to use for interpolation for mass calculation
     total_idx_rho_lin_spline = gr%nzm
