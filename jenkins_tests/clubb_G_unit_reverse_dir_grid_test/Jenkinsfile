@@ -39,7 +39,7 @@ pipeline {
     }
     failure {
       script {
-      if ( "${env.JOB_NAME}" == "clubb_generalized_vertical_grid_test" )
+      if ( "${env.JOB_NAME}" == "clubb_G_unit_reverse_dir_grid_test" )
         // This command handles the email on failure feature of the jenkins test. This line is the same on every jenkins test.
       	emailext(to: 'messnermet@uwm.edu', subject: "${env.JOB_NAME} build ${env.BUILD_NUMBER} has Failed", attachLog: true, body: "${env.JOB_NAME} build ${env.BUILD_NUMBER} has failed. See the attached build log and the build results (${env.BUILD_URL}) for help troubleshooting.")
       }
