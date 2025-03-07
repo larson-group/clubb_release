@@ -682,7 +682,7 @@ module mono_flux_limiter
     !       be parallelized, which is slow on GPUs. 
     !       This initial check CAN be done in parallel though, hence the "collapse(2), so 
     !       we run this quickly and only perform the slow version if we have to.
-    !$acc parallel loop gang vector default(present)
+    !$acc parallel loop gang vector collapse(2) default(present) reduction(.or.:l_any_adjustment_needed)
     do i = 1, ngrdcol
       do k = gr%k_lb_zm+gr%grid_dir_indx, gr%k_ub_zm-gr%grid_dir_indx, gr%grid_dir_indx
 
