@@ -4,7 +4,7 @@ import os
 import pandas as pd
 import re
 from glob import glob
-from dash import Dash, dcc, html, Input, Output
+from dash import Dash, dcc, html, Input, Output, State, dash_table
 import plotly.express as px
 import numpy as np
 from collections import defaultdict
@@ -12,7 +12,6 @@ from dash.dependencies import Input, Output, ALL
 from dash.exceptions import PreventUpdate
 import pyperclip
 from scipy.optimize import minimize
-
 
 # Functions safe to use in the custom plot
 safe_functions = {
@@ -35,16 +34,16 @@ safe_functions = {
     "np": np
 }
 
-def model_cpu_time(ngrdcol, runtime, params ):
+def model_cpu_time(ngrdcol, runtime, params, N_cores, N_vsize, N_prec, cp_func, b_d):
 
     L = len(runtime)
 
-    N_cores = 128
-    N_vsize = 256
-    N_prec  = 32
+    # N_cores = 128
+    # N_vsize = 256
+    # N_prec  = 32
 
-    d = 0
-    b = runtime[d] - ( runtime[d+1] - runtime[d] ) / ( ngrdcol[d+1] - ngrdcol[d] ) * ngrdcol[d]
+    b = runtime[b_d] - ( runtime[b_d+1] - runtime[b_d] ) \
+                       / ( ngrdcol[b_d+1] - ngrdcol[b_d] ) * ngrdcol[b_d]
 
     T_s = runtime[np.where(ngrdcol == N_cores)] - b
     T_v = runtime[np.where(ngrdcol == N_vsize*N_cores/N_prec)] - b
@@ -55,44 +54,63 @@ def model_cpu_time(ngrdcol, runtime, params ):
     f = b + T_s * N_s + T_v * N_v
 
     o, k, c = params
-    #p = 1 + c / (1 + np.exp(-k * (ngrdcol - o)))
-    p = c * np.log( np.log( np.exp(k*(ngrdcol-o)) + 1 ) + 1 ) + 1
 
-    #print(p)
-    #print(ngrdcol)
+    if cp_func == "sigmoid":
+        p = 1 + c / (1 + np.exp(-k * (ngrdcol - o)))
+    elif cp_func == "loglog":
+        p = c * np.log( np.log( np.exp(k*(ngrdcol-o)) + 1 ) + 1 ) + 1
+    else:
+        p = 1
 
     T_cpu = p * f
 
     return T_cpu
 
 
-def objective(params, ngrdcol, runtime):
+def objective(params, ngrdcol, runtime, N_cores, N_vsize, N_prec, cp_func, b_derivative=0):
 
-    T_cpu = model_cpu_time(ngrdcol, runtime, params)
+    T_cpu = model_cpu_time(ngrdcol, runtime, params, N_cores, N_vsize, N_prec, cp_func, b_derivative)
 
     #N = np.where( ngrdcol == 4096 )[0][0]
     #rms_error = np.sqrt( np.mean( ngrdcol[0:N] / runtime[0:N] - ngrdcol[0:N] / T_cpu[0:N] )**2 )
-    rms_error = np.sqrt( np.mean( ( ngrdcol / runtime - ngrdcol / T_cpu )**2 ) )
+    rms_error = np.sqrt( np.mean( ( ngrdcol / runtime - ngrdcol / T_cpu )**2 ) ) / ( np.max(ngrdcol / runtime) - np.min(ngrdcol / runtime) )
 
     return rms_error
 
-def model_throughput(df, column_name):
+
+def model_throughput(df, column_name, N_cores, N_vsize, N_prec):
 
     ngrdcol = df["ngrdcol"].values  # Access ngrdcol if needed
     runtime = df[column_name].values  # Convert selected column to numpy array
 
 
     initial_guess = [2500, 0.002, 1.2]
-    result = minimize(objective, initial_guess, args=(ngrdcol, runtime), method='Nelder-Mead')
-    #print(result)
-    o_tuned, k_tuned, c_tuned = result.x
 
-    print(f"Tuned parameters: o={o_tuned}, k={k_tuned}, c={c_tuned}")
-    print(f"Final RMS Error: {result.fun}")
+    cache_pen_funcs = [ "loglog", "sigmoid" ]
+    cache_pen_best = None
+    b_derivative_best = 0
+    rms_min = None
+    params_opt = None
 
-    params = [ o_tuned, k_tuned, c_tuned ]
+    for b_derivative in [0,1,2,3,4]:
+        for cp_func in cache_pen_funcs:
+
+            result = minimize(objective, initial_guess, args=(ngrdcol, runtime, N_cores, N_vsize, N_prec, cp_func, b_derivative), method='Nelder-Mead')
+            o_tuned, k_tuned, c_tuned = result.x
+            rms_error = result.fun
+
+            if rms_min is None or rms_error < rms_min:
+                cache_pen_best = cp_func
+                b_derivative_best = b_derivative
+                rms_min = rms_error
+                params_opt = [ o_tuned, k_tuned, c_tuned ]
+
+
+    #print(f"Tuned parameters: o={o_tuned}, k={k_tuned}, c={c_tuned}")
+    #print(f"Final RMS Error: {rms_error}")
+
     #params = [ 1756, .002, 1.13 ]
-    T_cpu = model_cpu_time(ngrdcol, runtime, params)
+    T_cpu = model_cpu_time(ngrdcol, runtime, params_opt, N_cores, N_vsize, N_prec, cache_pen_best, b_derivative_best)
 
 
     # L = len(runtime)
@@ -114,8 +132,16 @@ def model_throughput(df, column_name):
 
     # T_cpu = runtime / f
 
+    params_dict = {
+        "o": params_opt[0],
+        "k": params_opt[1],
+        "c": params_opt[2], 
+        "cp_func": cache_pen_best, 
+        "b_der": b_derivative_best, 
+        "rms_error" : rms_error
+    }
 
-    return pd.Series(T_cpu, index=df.index)
+    return pd.Series(T_cpu, index=df.index), params_dict
 
 
 def get_shared_variables(csv_files):
@@ -190,12 +216,30 @@ def launch_dash_app(grouped_files, shared_variables):
                    "width": "calc(100% - 35px)",
                    "height": "calc(33% - 20px)",
                    "align-items": "center" }
-
+                   
     app.layout = html.Div([
         html.Div([
             html.Div(dcc.Graph(id="plot-columns-per-second"), style=plot_style),
             html.Div(dcc.Graph(id="plot-raw"), style=plot_style),
-            html.Div(dcc.Graph(id="fit-plot"), style=plot_style),
+            html.Div([
+                dcc.Graph(id="fit-plot"), 
+                dcc.Store(id='table-data-store', data=[]),
+                dash_table.DataTable(
+                    id='dynamic-table',
+                    columns=[
+                        {'name': 'Name', 'id': 'name'},
+                        {'name': 'c', 'id': 'c_val'},
+                        {'name': 'k', 'id': 'k_val'},
+                        {'name': 'o', 'id': 'o_val'},
+                        {'name': 'Derivative for Baseline', 'id': 'b_der_val'},
+                        {'name': 'Cache Penalty Function', 'id': 'cp_func'},
+                        {'name': 'RMS Error (spead normalized)', 'id': 'rms_error'}
+                    ],
+                    data=[],  # Initial empty table
+                    editable=True,
+                    row_deletable=False  # Allows deleting rows directly
+                ),
+            ], style=plot_style),
             html.Div([
                 dcc.Graph(id="plot-custom"),
                 dcc.Input(
@@ -220,17 +264,17 @@ def launch_dash_app(grouped_files, shared_variables):
                                 {"label": filename, "value": f"{case}/{filename}"}
                                 for filename in files.keys()
                             ],
-                            # Default select the first two files in the first group only
                             value=[
                                 f"{case}/{filename}"
                                 for filename in list(files.keys())[:2]
                             ] if i == 0 and files else []
                         )
                     ],
-                    open=(i == 0)  # Default expand the first group only
+                    open=(i == 0)
                 )
                 for i, (case, files) in enumerate(grouped_files.items())
             ], style={"margin-bottom": "20px"}),
+
             html.H4("Select variable to plot:"),
             dcc.Dropdown(
                 id="variable-dropdown",
@@ -238,12 +282,14 @@ def launch_dash_app(grouped_files, shared_variables):
                 value="compute_i",
                 style={"margin-bottom": "20px"}
             ),
+
             html.Button(
                 "Copy CSV Data to Clipboard",
                 id="copy-csv-button",
                 n_clicks=0,
                 style={"margin-top": "10px", "padding": "10px", "background-color": "#4CAF50", "color": "white", "border": "none", "cursor": "pointer"}
             ),
+
             html.Div([
                 html.Label("x-axis:", style={"margin-right": "10px"}),
                 dcc.RadioItems(
@@ -256,6 +302,7 @@ def launch_dash_app(grouped_files, shared_variables):
                     inline=True,
                 )
             ], style={"display": "flex", "align-items": "center", "margin-top": "10px"}),
+
             html.Div([
                 html.Label("y-axis:", style={"margin-right": "10px"}),
                 dcc.RadioItems(
@@ -268,12 +315,29 @@ def launch_dash_app(grouped_files, shared_variables):
                     inline=True,
                 )
             ], style={"display": "flex", "align-items": "center", "margin-top": "10px"}),
-            html.Button(
-                "Fit",
-                id="fit-function-button",
-                n_clicks=0,
-                style={"margin-top": "10px", "padding": "10px", "background-color": "#4CAF50", "color": "white", "border": "none", "cursor": "pointer"}
-            ),
+
+            # New div for the fit button and input fields
+            html.Div([
+                html.Label("Fit Function Variables:", style={"font-weight": "bold", "margin-bottom": "5px"}),
+
+                # Stack inputs vertically
+                html.Div([
+                    html.Label("Total Cores:"),
+                    dcc.Input(id="N_cores", type="number", value=128, style={"width": "60%"}),
+                    html.Label("Vector Length:", style={"margin-top": "5px"}),
+                    dcc.Input(id="N_vsize", type="number", value=256, style={"width": "60%"}),
+                    html.Label("Floating Point Precision:", style={"margin-top": "5px"}),
+                    dcc.Input(id="N_prec", type="number", value=64, style={"width": "60%"}),
+                ], style={"display": "flex", "flex-direction": "column", "gap": "5px", "margin-bottom": "10px"}),
+
+                html.Button(
+                    "Fit",
+                    id="fit-function-button",
+                    n_clicks=0,
+                    style={"padding": "10px", "background-color": "#4CAF50", "color": "white", "border": "none", "cursor": "pointer"}
+                ),
+            ], style={"margin-top": "10px", "padding": "10px", "border": "1px solid #000", "background-color": "#f9f9f9"}),
+
         ], style={
             "width": "20%",
             "padding": "10px",
@@ -285,6 +349,13 @@ def launch_dash_app(grouped_files, shared_variables):
             "z-index": "1000"
         })
     ], style={"display": "flex"})
+
+    @app.callback(
+        Output('dynamic-table', 'data'),
+        Input('table-data-store', 'data')
+    )
+    def update_table(data):
+        return data
 
     @app.callback(
     Output("plot-raw", "figure"),
@@ -318,6 +389,7 @@ def launch_dash_app(grouped_files, shared_variables):
         ]
     )
     def update_columns_per_second_plot(selected_files, selected_variable, xaxis_scale, yaxis_scale):
+
         flat_files = [item.split("/") for sublist in selected_files for item in sublist]
         combined_df = pd.DataFrame()
         for case, filename in flat_files:
@@ -341,6 +413,7 @@ def launch_dash_app(grouped_files, shared_variables):
         ]
     )
     def update_custom_plot(selected_files, custom_function, xaxis_scale, yaxis_scale):
+
         if not selected_files or not custom_function:
             return px.scatter(title="Enter a custom function and select CSV files")
 
@@ -376,6 +449,7 @@ def launch_dash_app(grouped_files, shared_variables):
         ]
     )
     def copy_csv_to_clipboard(n_clicks, selected_files, selected_variable):
+
         if not n_clicks or not selected_files:
             raise PreventUpdate
 
@@ -424,19 +498,31 @@ def launch_dash_app(grouped_files, shared_variables):
             return "Copy Failed"
 
     @app.callback(
-    Output("fit-plot", "figure"),
+        [
+            Output("fit-plot", "figure"),
+            Output('table-data-store', 'data')
+        ],
         [
             Input("fit-function-button", "n_clicks"),
+            Input("N_cores", "value"),
+            Input("N_vsize", "value"),
+            Input("N_prec", "value"),
             Input({"type": "file-checkbox", "case": ALL}, "value"),
             Input("variable-dropdown", "value"),
             Input("x-axis-scale", "value"),
             Input("y-axis-scale", "value")  
-        ]
+        ],
+        [   State('table-data-store', 'data') ],
     )
-    def update_fit_plot(n_clicks, selected_files, selected_variable, xaxis_scale, yaxis_scale):
+    def update_fit_plot(n_clicks, N_cores, N_vsize, N_prec, selected_files, selected_variable, xaxis_scale, yaxis_scale, table_data):
+        
+        if n_clicks == 0 or not selected_files:
+            raise PreventUpdate
 
         flat_files = [item.split("/") for sublist in selected_files for item in sublist]
         combined_df = pd.DataFrame()
+
+        table_data = []
 
         for case, filename in flat_files:
             if case in data and filename in data[case] and selected_variable in data[case][filename].columns:
@@ -448,17 +534,27 @@ def launch_dash_app(grouped_files, shared_variables):
 
                 # Apply model_throughput to the selected variable and add it as "_dup"
                 temp_df_dup = temp_df.copy()
-                temp_df_dup[selected_variable] = model_throughput(temp_df, selected_variable)
+                temp_df_dup[selected_variable], params_dict = model_throughput(temp_df, selected_variable, N_cores, N_vsize, N_prec)
                 temp_df_dup["Columns per Second"] = temp_df_dup["ngrdcol"] / temp_df_dup[selected_variable]
                 temp_df_dup["Name"] = f"{case}/{filename}_model"
                 combined_df = pd.concat([combined_df, temp_df_dup])
+
+                table_data.append({ "name": f"{case}/{filename}", 
+                                    "c_val": f"{params_dict.get("c"):.3f}", 
+                                    "k_val": f"{params_dict.get("k"):.3e}", 
+                                    "o_val": f"{params_dict.get("o"):.3f}",
+                                    "cp_func": params_dict.get("cp_func"),
+                                    "b_der_val": params_dict.get("b_der"),
+                                    "rms_error": params_dict.get("rms_error")
+                                  })
 
         fig = px.line(combined_df, x="ngrdcol", y="Columns per Second", color="Name")
         #fig = px.line(combined_df, x="ngrdcol", y=selected_variable, color="Name")
 
         fig.update_layout( xaxis=dict(type=xaxis_scale))
         fig.update_layout( yaxis=dict(type=yaxis_scale))
-        return plot_with_enhancements(fig, f"{selected_variable} vs. Number of Grid Columns (Raw Values)")
+        fig = plot_with_enhancements(fig, f"{selected_variable} vs. Number of Grid Columns (Raw Values)")
+        return fig.to_dict(), table_data
 
     app.run_server(debug=True,port=8051)
 
