@@ -3438,6 +3438,7 @@ module clubb_driver
     write(unit=fstdout, fmt='(a,f10.4)') 'CLUBB-TIMER time_total =             ', &
       time_total
     write(unit=fstdout, fmt='(a,i10)') 'total_runs = ', total_runs
+    write(unit=fstdout, fmt='(a,i10)') 'nz levels = ', gr%nzm
 
     ! Only end stats for the first column of values, this closes the stats files
     ! but since the stats isn't setup to use multiple columns, it will just attempt

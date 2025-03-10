@@ -123,6 +123,7 @@ def time_clubb_standalone(case: str, ngrdcol: int, mpi: int, srun: int, gpu: boo
     timing_results = {}
     timing_results['ngrdcol'] = ngrdcol
     timing_results['iterations'] = 0
+    timing_results['nz'] = 0
     timing_results['total_runs'] = 0
     timing_results['total'] = 0.0
     timing_results['compute_i'] = 0.0
@@ -189,6 +190,11 @@ def time_clubb_standalone(case: str, ngrdcol: int, mpi: int, srun: int, gpu: boo
             match = re.search(r"iteration\s*=\s*(\d+)", line)
             if match:
                 timing_results['iterations'] = int(match.group(1))
+        elif "nz levels =" in line:
+            # Extract the iteration count from the line
+            match = re.search(r"nz levels\s*=\s*(\d+)", line)
+            if match:
+                timing_results['nz'] = int(match.group(1))
         elif "total_runs" in line:
             # Extract the iteration count from the line
             match = re.search(r"total_runs\s*=\s*(\d+)", line)
@@ -360,9 +366,18 @@ def generate_timing_csv(case: str, ngrdcol_min: int, ngrdcol_max: int, name: str
             #elif ngrdcol >= 64:
             #    # Increase by a factor of sqrt(2) each time now
             #    ngrdcol = round( math.sqrt(2)**(i+5) )
+            # elif ngrdcol >= 32768:
+            #     ngrdcol = 65536
+            # elif ngrdcol >= 16384:
+            #     ngrdcol += 4096
+            # elif ngrdcol >= 8192:
+            #     ngrdcol += 1024
+            # elif ngrdcol >= 4096:
+            #     ngrdcol += 256
             else:
                 # Double up to 64 columns
                 ngrdcol = 2*ngrdcol
+                #ngrdcol += 128
 
             ngrdcol = min( ngrdcol, ngrdcol_max )
 
