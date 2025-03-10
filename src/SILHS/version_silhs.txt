@@ -1,0 +1,77 @@
+commit 4ad28abbf7c6d9da74b5dc738f63a79ede657e1c
+Author: bmg929 <bmg2@uwm.edu>
+Date:   Fri Mar 7 16:45:23 2025 -0600
+
+    I discovered that I inadvertently change an $acc statement that
+    is found in the monotonic flux limiter (why is it ALWAYS the
+    monotonic flux limiter?) back in be90159. In this commit, I am
+    setting the $acc statement back to what it is supposed to be.
+
+commit 62529da84f1d4a64ad33c0da7549a43025d045c9
+Author: bmg929 <bmg2@uwm.edu>
+Date:   Fri Mar 7 14:51:14 2025 -0600
+
+    I forgot to update the test name in the Jenkinsfile.
+
+commit 9a6ea30fe782b73edf356a7c126a7a3d71e53452
+Author: bmg929 <bmg2@uwm.edu>
+Date:   Fri Mar 7 14:22:47 2025 -0600
+
+    I accidentally committed G_unit_tests.in as part of my previous commit.
+    I didn't want to do that. This commits reverts the previous commit
+    for only that file.
+
+commit bd0d4f70434d41cb4d5237f05587b5edf875d520
+Author: bmg929 <bmg2@uwm.edu>
+Date:   Fri Mar 7 14:20:27 2025 -0600
+
+    Added a special G unit Jenkins test for the Reverse Direction
+    Grid Unit Test. This test is different than the other G unit tests
+    because it requires a special compilation at -O0 optimization.
+
+commit c226fa8c4bf5d9977ad208e18f57779e5711ff5d
+Author: bmg929 <bmg2@uwm.edu>
+Date:   Fri Mar 7 11:06:51 2025 -0600
+
+    Revert "I have no idea if it's appropriate to include gr in this statment,"
+    
+    This reverts commit d2b125b12117d18474f2093b40e3e575a93422e7.
+
+commit d2b125b12117d18474f2093b40e3e575a93422e7
+Author: bmg929 <bmg2@uwm.edu>
+Date:   Wed Mar 5 19:03:36 2025 -0600
+
+    I have no idea if it's appropriate to include gr in this statment,
+    but I'm just basically throwing dung at the wall at this point.
+    We'll see what sticks.
+
+commit 1177fba4274d8f16cea53d41888955c18fd0c7dd
+Author: bmg929 <bmg2@uwm.edu>
+Date:   Wed Mar 5 18:12:40 2025 -0600
+
+    Fixed a bug
+
+commit b5fa3c21417c33f00328c1369b95be2014b3e6ea
+Merge: 892097df8 d824f948f
+Author: bmg929 <bmg2@uwm.edu>
+Date:   Wed Mar 5 18:06:43 2025 -0600
+
+    Merge branch 'master' of github.com:larson-group/clubb
+
+commit 892097df87f38b5899c7f25e8c337433133cd4cf
+Author: bmg929 <bmg2@uwm.edu>
+Date:   Wed Mar 5 18:05:50 2025 -0600
+
+    Added some missing acc parallel statments around some the loops
+    I added to the code for the grid generalization test.
+
+commit d824f948f8e24cead121bd6aba06192beab0ded7
+Author: domkesteffen <42725900+domkesteffen@users.noreply.github.com>
+Date:   Wed Mar 5 14:37:28 2025 -0600
+
+    Fixed Jenkins api_commitment_test (#1236)
+    
+    CLUBB ticket sys_admin#836
+    
+    Fixed logical evaluation at the end of the bash script
+    Commented out the table outputs in the Jenkins file because they don't work and nobody would look at them anyways
