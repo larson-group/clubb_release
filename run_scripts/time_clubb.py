@@ -128,9 +128,9 @@ def time_clubb_standalone(case: str, ngrdcol: int, mpi: int, srun: int, gpu: boo
     timing_results['total'] = 0.0
     timing_results['compute_i'] = 0.0
     timing_results['baseline'] = 0.0
-    # timing_results['advance_clubb_core_api'] = 0.0
-    # timing_results['output_multi_col'] = 0.0
-    # timing_results['mainloop'] = 0.0
+    timing_results['advance_clubb_core_api'] = 0.0
+    timing_results['output_multi_col'] = 0.0
+    timing_results['mainloop'] = 0.0
 
     scriptDir = os.path.dirname(os.path.abspath(__file__))
 
@@ -146,7 +146,8 @@ def time_clubb_standalone(case: str, ngrdcol: int, mpi: int, srun: int, gpu: boo
             else:
                 print("Neither OpenMPI nor MPICH detected.")
         else:
-            run_cmd = f"mpirun -np {min(ngrdcol,mpi)} --cpu-bind core bash -c \"cd {scriptDir}; ./execute_clubb_standalone.bash\""
+            #run_cmd = f"mpirun -np {min(ngrdcol,mpi)} --cpu-bind core bash -c \"cd {scriptDir}; ./execute_clubb_standalone.bash\""
+            run_cmd = f"mpirun -np {min(ngrdcol,mpi)} bash -c \"cd {scriptDir};  ./execute_clubb_standalone.bash\""
     elif srun > 0:
         if gpu:
             print(" - srun is being used with GPU")
