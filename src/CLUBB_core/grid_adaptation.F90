@@ -3178,7 +3178,8 @@ module grid_adaptation_module
       ! normalize weights
       sum_weights = sum( weights )
       do j = k-(window_size-1)/2, k+(window_size-1)/2
-        weights(j-(k-(window_size-1)/2)+1) = (1-weight_for_middle_point)/sum_weights * weights(j-(k-(window_size-1)/2)+1)
+        weights(j-(k-(window_size-1)/2)+1) = (1-weight_for_middle_point)/sum_weights &
+                                             * weights(j-(k-(window_size-1)/2)+1)
       end do
 
       weights((window_size-1)/2 + 1) = weight_for_middle_point

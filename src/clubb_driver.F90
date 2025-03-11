@@ -2201,6 +2201,7 @@ module clubb_driver
           clubb_config_flags,                                              & ! Intent(in)
           l_modify_ic_with_cubic_int,                                      & ! Intent(in)
           l_add_dycore_grid,                                               & ! Intent(in)
+          grid_remap_method,                                               & ! Intent(in)
           grid_adapt_in_time_method,                                       & ! Intent(in)
           gr_dycore,                                                       & ! Intent(in)
           thlm, rtm, um, vm, ug, vg, wp2, up2, vp2, rcm,                   & ! Intent(inout)
@@ -3412,7 +3413,7 @@ module clubb_driver
 
         write(iunit_grid_adaptation, *) 'g', itime, gr%zm
 
-        if ( .not. l_add_dycore_grid ) then
+        if ( .not. l_add_dycore_grid .and. l_t_dependent ) then
           ! if we want to adapt the grid over time, but don't want to simulate the host model by
           ! getting forcings on the dycore grid, we need to adjust the forcings everytime for the
           ! newly created grid from the raw data in the forcings file
@@ -3669,6 +3670,7 @@ module clubb_driver
                clubb_config_flags, &
                l_modify_ic_with_cubic_int, &
                l_add_dycore_grid, &
+               grid_remap_method, &
                grid_adapt_in_time_method, &
                gr_dycore, &
                thlm, rtm, um, vm, ug, vg, wp2, up2, vp2, rcm, &
@@ -3753,7 +3755,8 @@ module clubb_driver
       core_rknd !------------------------------------------------------ Variable(s)
 
     use model_flags, only: &
-      clubb_config_flags_type
+      clubb_config_flags_type, &
+      cons_ullrich_remap
 
     use array_index, only: &
       sclr_idx_type
@@ -3808,6 +3811,7 @@ module clubb_driver
       l_add_dycore_grid ! flag to set remapping from dycore to on or off
 
     integer, intent(in) :: &
+      grid_remap_method, &        ! Integer flag to set how values should be remapped
       grid_adapt_in_time_method   ! Integer flag to see if grid should be adapted over time and if
                                   ! so what parameters should be used to setup the grid
                                   ! density function
@@ -4072,10 +4076,19 @@ module clubb_driver
     else
 
       if ( l_add_dycore_grid .and. trim( runtype ) /= 'atex' ) then
-        write(fstderr,*) 'WARNING! The option l_add_dycore_grid=.true. can currently only ', &
-                         'be used for cases with forcings from an input file and for the atex ', &
-                         'case, so for this case l_add_dycore_grid must be set to .false..'
-        error stop 'For this case l_add_dycore_grid must be set to .false..'
+        if ( grid_remap_method /= cons_ullrich_remap .or. trim( runtype ) /= 'gabls2' ) then
+          ! works for gabls2 since forcings are just set to 0, so it doesn't make any difference
+          ! if we first set the forcings on dycore grid to zero and then remap to the physics
+          ! grid or if we just directly set the forcings on the physics grid to 0,
+          ! at least if remapping scheme is consistent
+          ! (which is the case for ullrich remapping scheme (method 1))
+          write(fstderr,*) 'WARNING! The option l_add_dycore_grid=.true. or ', &
+                           'grid_adapt_in_time_method>0 can currently only ', &
+                           'be used for cases with forcings from an input file and for the atex ', &
+                           'case, so for this case l_add_dycore_grid must be set to .false. ', &
+                           'and grid_adapt_in_time_method=0'
+          error stop 'Flags have to be changed like mentioned.'
+        end if
       end if
 
     end if
