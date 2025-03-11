@@ -38,7 +38,8 @@ module error_code
 
     ! Error Code Values
     integer, parameter, public :: & 
-        clubb_no_error                 = 0, &
+        clubb_no_error                 = 0,  &
+        clubb_generalized_grd_test_err = 50, &
         clubb_fatal_error              = 99
 
     character(len=35), public :: err_header

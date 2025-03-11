@@ -117,9 +117,10 @@ module clubb_driver
         init_pdf_implicit_coefs_terms
 
     use error_code, only: &
-        clubb_at_least_debug_level,  & ! ------------------------------------ Procedures
-        set_clubb_debug_level,       &
-        clubb_fatal_error,           & ! ------------------------------------ Constant
+        clubb_at_least_debug_level,     & ! --------------------------------- Procedures
+        set_clubb_debug_level,          &
+        clubb_fatal_error,              & ! --------------------------------- Constant
+        clubb_generalized_grd_test_err, &
         clubb_no_error
 
     use clubb_precision, only: time_precision, core_rknd !------------------- Constants
@@ -2787,6 +2788,13 @@ module clubb_driver
               cloudy_updraft_frac, cloudy_downdraft_frac, &        ! Intent(out)
               rcm_in_layer, cloud_cover, invrs_tau_zm, &           ! Intent(out)
               Lscale )                                             ! Intent(out)
+
+        if ( clubb_at_least_debug_level( 0 ) ) then
+          if ( err_code == clubb_generalized_grd_test_err ) then
+            write(fstderr,*) "Mismatch in generalized grid test; Stopping run"
+            exit mainloop
+          endif
+        endif
 
       else
 

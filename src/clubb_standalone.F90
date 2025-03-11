@@ -11,8 +11,12 @@ program clubb_standalone
   use clubb_driver, only: run_clubb ! Procedure(s)
 
   use error_code, only: &
-        clubb_no_error, &               ! Constants
-        clubb_fatal_error
+      clubb_no_error, &                 ! Constants
+      clubb_generalized_grd_test_err, &
+      clubb_fatal_error
+
+  use model_flags, only: &
+      l_test_grid_generalization
 
   use parameter_indices, only: nparams ! Variable(s)
 
@@ -94,11 +98,24 @@ program clubb_standalone
   call run_clubb( ngrdcol, calls_per_out, l_output_multi_col, l_output_double_prec, &
                   clubb_params, namelist_filename, l_stdout, err_code )
 
-  if ( err_code == clubb_fatal_error ) then
-    error stop "Fatal error in clubb, check your parameter values and timestep"
-  else
-    write(fstderr,*) "Program exited normally"
-    call exit(success_code)
-  end if 
+  if ( .not. l_test_grid_generalization ) then
+    ! Normal CLUBB run
+    if ( err_code == clubb_fatal_error ) then
+      error stop "Fatal error in clubb, check your parameter values and timestep"
+    else
+      write(fstderr,*) "Program exited normally"
+      call exit(success_code)
+    end if
+  else ! l_test_grid_generalization
+    ! CLUBB grid generalization test
+    ! A different success or error return is required
+    if ( err_code == clubb_generalized_grd_test_err ) then
+      error stop "Error in generalized grid test; check the error messages"
+    else
+      write(fstderr,*) "Generalized grid test passed"
+      call exit(success_code)
+    end if
+  endif
+
 
 end program clubb_standalone

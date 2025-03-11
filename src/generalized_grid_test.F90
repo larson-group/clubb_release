@@ -86,6 +86,8 @@ module generalized_grid_test
         stats_metadata_type
 
     use error_code, only: &
+        clubb_generalized_grd_test_err, &
+        clubb_no_error, &
         clubb_fatal_error
 
     implicit none
@@ -848,6 +850,29 @@ module generalized_grid_test
               Lscale )                                             ! Intent(out)
 
 
+      ! In the case of a fatal error during the 1st call (ascending grid) to 
+      ! advance_clubb_core_api, reset the error code.
+      !
+      ! Otherwise, a mismatch between the ascending grid and the descending grid
+      ! will be caused by the fact that the 2nd call to advance_clubb_core_api
+      ! will be returned from right away because err_code is already set to 
+      ! clubb_fatal_error upon entering advance_clubb_core_api. Thus, there
+      ! likely won't be as many variables calculated during the descending call
+      ! as there were during the ascending call. This causes a mismatch and a
+      ! false failure of the generalized grid test.
+      !
+      ! In the case of a fatal error, as long as the generalized grid code is
+      ! working properly, the fatal error will occur in the exact same spot
+      ! in the call to the descending grid. The fatal error code will be output
+      ! (and not overwritten this time) and that will cause the code to exit
+      ! the run and stop. However, the results between the ascending grid and
+      ! the descending grid will still match.
+      if ( err_code == clubb_fatal_error ) then
+         ! Reset error code
+         err_code = clubb_no_error
+      endif
+
+
       ! Call advance_clubb_core_api for the descending grid direction
       ! All variables with a vertical dimension should be "flip" variables
       ! in this call.
@@ -1500,13 +1525,13 @@ module generalized_grid_test
       endif ! sclr_dim > 0
 
 
-      ! Print a message and stop the run if there are any dicrepanices found
+      ! Print a message and stop the run if there are any discrepanices found
       if ( l_differences ) then
          ! Stop the run and exit
          print *, "##################################################"
          print *, "Discrepancy found in ascending vs. descending grid" &
                   // " direction test. Please see messages listed above."
-         err_code = clubb_fatal_error
+         err_code = clubb_generalized_grd_test_err
       endif ! l_differences
 
 
