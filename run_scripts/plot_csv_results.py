@@ -42,14 +42,17 @@ def model_cpu_time(ngrdcol, runtime, params, N_cores, N_vsize, N_prec, cp_func, 
     # N_vsize = 256
     # N_prec  = 32
 
+    cols_per_core = ngrdcol / N_cores
+    flops_per_vop = N_vsize / N_prec
+
     b = runtime[b_d] - ( runtime[b_d+1] - runtime[b_d] ) \
                        / ( ngrdcol[b_d+1] - ngrdcol[b_d] ) * ngrdcol[b_d]
 
-    T_s = runtime[np.where(ngrdcol == N_cores)] - b
-    T_v = runtime[np.where(ngrdcol == N_vsize*N_cores/N_prec)] - b
+    T_s = runtime[np.where(cols_per_core == 1)] - b
+    T_v = runtime[np.where(cols_per_core == flops_per_vop)] - b
 
-    N_s = np.ceil( ngrdcol / N_cores ) % ( N_vsize / N_prec )
-    N_v = np.floor( ngrdcol / ( N_cores * N_vsize / N_prec ) )
+    N_s = np.ceil( cols_per_core ) % ( flops_per_vop )
+    N_v = np.floor( cols_per_core / ( flops_per_vop ) )
 
     f = b + T_s * N_s + T_v * N_v
 
@@ -59,6 +62,8 @@ def model_cpu_time(ngrdcol, runtime, params, N_cores, N_vsize, N_prec, cp_func, 
         p = 1 + c / (1 + np.exp(-k * (ngrdcol - o)))
     elif cp_func == "loglog":
         p = c * np.log( np.log( np.exp(k*(ngrdcol-o)) + 1 ) + 1 ) + 1
+    elif cp_func == "sqrtlog":
+        p = c * np.sqrt( np.log( np.exp(k*(ngrdcol-o)) + 1 ) ) + 1
     else:
         p = 1
 
@@ -86,13 +91,13 @@ def model_throughput(df, column_name, N_cores, N_vsize, N_prec):
 
     initial_guess = [2500, 0.002, 1.2]
 
-    cache_pen_funcs = [ "loglog", "sigmoid" ]
+    cache_pen_funcs = [ "loglog", "sigmoid", "sqrtlog" ]
     cache_pen_best = None
     b_derivative_best = 0
     rms_min = None
     params_opt = None
 
-    for b_derivative in [0,1,2,3,4]:
+    for b_derivative in [0,1,2]:
         for cp_func in cache_pen_funcs:
 
             result = minimize(objective, initial_guess, args=(ngrdcol, runtime, N_cores, N_vsize, N_prec, cp_func, b_derivative), method='Nelder-Mead')
