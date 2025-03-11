@@ -161,6 +161,22 @@ def get_shared_variables(csv_files):
     shared_vars = sorted(set.intersection(*variable_sets.values())) if variable_sets.values() else []
     return shared_vars, variable_sets
 
+def get_all_variables(csv_files):
+    variable_sets = {}
+    all_variables = set()
+    
+    for file in csv_files:
+        try:
+            with open(file, 'r') as f:
+                header = f.readline().strip()
+                variables = header.split(",")[1:]
+                variable_sets[file] = set(variables)
+                all_variables.update(variables)
+        except Exception as e:
+            print(f"Error reading {file}: {e}")
+
+    return sorted(all_variables), variable_sets
+
 def natural_key(string):
     """Helper function to split a string into a list of numbers and text for natural sorting."""
     return [int(part) if part.isdigit() else part for part in re.split(r'(\d+)', string)]
@@ -202,7 +218,7 @@ def plot_with_enhancements(fig, title):
     fig.update_yaxes(showline=True, linewidth=1, linecolor="black", mirror=True)
     return fig
 
-def launch_dash_app(grouped_files, shared_variables):
+def launch_dash_app(grouped_files, all_variables):
     data = {case: {filename: pd.read_csv(filepath, comment="#") for filename, filepath in files.items()} for case, files in grouped_files.items()}
     x_min = min(df["ngrdcol"].min() for case_data in data.values() for df in case_data.values())
     x_max = max(df["ngrdcol"].max() for case_data in data.values() for df in case_data.values())
@@ -278,7 +294,7 @@ def launch_dash_app(grouped_files, shared_variables):
             html.H4("Select variable to plot:"),
             dcc.Dropdown(
                 id="variable-dropdown",
-                options=[{"label": var, "value": var} for var in shared_variables],
+                options=[{"label": var, "value": var} for var in all_variables],
                 value="compute_i",
                 style={"margin-bottom": "20px"}
             ),
@@ -371,9 +387,11 @@ def launch_dash_app(grouped_files, shared_variables):
         combined_df = pd.DataFrame()
         for case, filename in flat_files:
             if case in data and filename in data[case] and selected_variable in data[case][filename].columns:
-                temp_df = data[case][filename][["ngrdcol", selected_variable]].copy()
-                temp_df["Source"] = f"{case}/{filename}"
-                combined_df = pd.concat([combined_df, temp_df])
+                df = data[case][filename]
+                if selected_variable in df.columns:  # Check before accessing
+                    temp_df = data[case][filename][["ngrdcol", selected_variable]].copy()
+                    temp_df["Source"] = f"{case}/{filename}"
+                    combined_df = pd.concat([combined_df, temp_df])
         fig = px.line(combined_df, x="ngrdcol", y=selected_variable, color="Source")
         fig.update_layout( xaxis=dict(type=xaxis_scale))
         fig.update_layout( yaxis=dict(type=yaxis_scale))
@@ -394,10 +412,12 @@ def launch_dash_app(grouped_files, shared_variables):
         combined_df = pd.DataFrame()
         for case, filename in flat_files:
             if case in data and filename in data[case] and selected_variable in data[case][filename].columns:
-                temp_df = data[case][filename][["ngrdcol", selected_variable]].copy()
-                temp_df["Source"] = f"{case}/{filename}"
-                temp_df["Columns per Second"] = temp_df["ngrdcol"] / temp_df[selected_variable]
-                combined_df = pd.concat([combined_df, temp_df])
+                df = data[case][filename]
+                if selected_variable in df.columns:  # Check before accessing
+                    temp_df = data[case][filename][["ngrdcol", selected_variable]].copy()
+                    temp_df["Source"] = f"{case}/{filename}"
+                    temp_df["Columns per Second"] = temp_df["ngrdcol"] / temp_df[selected_variable]
+                    combined_df = pd.concat([combined_df, temp_df])
         fig = px.line(combined_df, x="ngrdcol", y="Columns per Second", color="Source")
         fig.update_layout( xaxis=dict(type=xaxis_scale))
         fig.update_layout( yaxis=dict(type=yaxis_scale))
@@ -540,12 +560,12 @@ def launch_dash_app(grouped_files, shared_variables):
                 combined_df = pd.concat([combined_df, temp_df_dup])
 
                 table_data.append({ "name": f"{case}/{filename}", 
-                                    "c_val": f"{params_dict.get("c"):.3f}", 
-                                    "k_val": f"{params_dict.get("k"):.3e}", 
-                                    "o_val": f"{params_dict.get("o"):.3f}",
-                                    "cp_func": params_dict.get("cp_func"),
-                                    "b_der_val": params_dict.get("b_der"),
-                                    "rms_error": params_dict.get("rms_error")
+                                    "c_val": f"{params_dict.get('c'):.3f}", 
+                                    "k_val": f"{params_dict.get('k'):.3e}", 
+                                    "o_val": f"{params_dict.get('o'):.3f}",
+                                    "cp_func": params_dict.get('cp_func'),
+                                    "b_der_val": params_dict.get('b_der'),
+                                    "rms_error": params_dict.get('rms_error')
                                   })
 
         fig = px.line(combined_df, x="ngrdcol", y="Columns per Second", color="Name")
@@ -567,23 +587,26 @@ if __name__ == "__main__":
     csv_files = glob(os.path.join(args.dir, "*.csv"))
     grouped_files = group_files_by_case(csv_files)
 
-    shared_variables, variable_sets = get_shared_variables(
+    # shared_variables, variable_sets = get_shared_variables(
+    #     [file for files in grouped_files.values() for file in files.values()]
+    # )
+    all_variables, variable_sets = get_all_variables(
         [file for files in grouped_files.values() for file in files.values()]
     )
 
-    if not shared_variables:
-        print("No shared variables found across the CSV files.")
-        print("Variable presence per file:")
+    # if not shared_variables:
+    #     print("No shared variables found across the CSV files.")
+    #     print("Variable presence per file:")
 
-        # Get all unique variables across files
-        all_variables = set.union(*variable_sets.values()) if variable_sets else set()
+    #     # Get all unique variables across files
+    #     all_variables = set.union(*variable_sets.values()) if variable_sets else set()
 
-        # Report missing variables for each file
-        for file, variables in variable_sets.items():
-            missing_vars = all_variables - variables
-            if missing_vars:
-                print(f"{file} is missing the variables: {', '.join(sorted(missing_vars))}")
+    #     # Report missing variables for each file
+    #     for file, variables in variable_sets.items():
+    #         missing_vars = all_variables - variables
+    #         if missing_vars:
+    #             print(f"{file} is missing the variables: {', '.join(sorted(missing_vars))}")
 
-        exit(1)
+    #     exit(1)
 
-    launch_dash_app(grouped_files, shared_variables)
+    launch_dash_app(grouped_files, all_variables)
