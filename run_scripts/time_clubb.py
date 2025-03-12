@@ -45,6 +45,7 @@ def parse_gptl_summary(timing_results, variables):
                         print(f"Error: Could not convert mean_time '{tokens[3]}' to float for variable '{var_name}'.")
     return timing_results
 
+
 def update_time_final(file_path, iterations):
 
     # Patterns to extract values
@@ -124,6 +125,7 @@ def time_clubb_standalone(case: str, ngrdcol: int, mpi: int, srun: int, gpu: boo
     timing_results['ngrdcol'] = ngrdcol
     timing_results['iterations'] = 0
     timing_results['nz'] = 0
+    timing_results['tasks'] = max(mpi,srun,1)
     timing_results['total_runs'] = 0
     timing_results['total'] = 0.0
     timing_results['compute_i'] = 0.0
@@ -260,7 +262,9 @@ def time_clubb_standalone(case: str, ngrdcol: int, mpi: int, srun: int, gpu: boo
     return timing_results
     
 
-def generate_timing_csv(case: str, ngrdcol_min: int, ngrdcol_max: int, name: str, mpi: int, srun: int, gpu: bool, output: bool):
+def generate_timing_csv( case: str, ngrdcol_min: int, ngrdcol_max: int, 
+                         name: str, mpi: int, srun: int, gpu: bool, 
+                         output: bool, high_res: bool ):
     """
     Run CLUBB standalone simulations and save results to a CSV file.
 
@@ -268,6 +272,8 @@ def generate_timing_csv(case: str, ngrdcol_min: int, ngrdcol_max: int, name: str
     :param ngrdcol_max: The maximum number of grid columns.
     :param name: The output file name prefix.
     """
+
+    tasks = max(1,mpi,srun)
 
     if output:
         output_choice = "single"
@@ -285,8 +291,7 @@ def generate_timing_csv(case: str, ngrdcol_min: int, ngrdcol_max: int, name: str
         #header = "ngrdcol,iterations,advance_clubb_core_api,output_multi_col,mainloop,total,baseline,compute_i"
         #f.write(header + "\n")
 
-        ngrdcol = 1 if ngrdcol_min is None else ngrdcol_min
-        ngrdcol = max(ngrdcol,mpi,srun)
+        ngrdcol = tasks if ngrdcol_min is None else ngrdcol_min
         timing_results = []
         i = 1
 
@@ -302,18 +307,9 @@ def generate_timing_csv(case: str, ngrdcol_min: int, ngrdcol_max: int, name: str
             print(f"Testing ngrdcol = {ngrdcol}")
             print(f" - tweaking {tweak_list} using the default method (vary together)")
 
-            if mpi > 0:
-                cols_per_thread = int(np.ceil(ngrdcol/mpi))
-                print(f" - using {min(mpi,ngrdcol)} MPI tasks with {cols_per_thread} column each")
-                param_gen = f"python create_multi_col_params.py -l_multi_col_output {output_choice} -tweak_list {tweak_list} -n {int(np.ceil(ngrdcol/mpi))}"
-            elif srun > 0:
-                cols_per_thread = int(np.ceil(ngrdcol/srun))
-                print(f" - using {min(srun,ngrdcol)} SRUN tasks with {cols_per_thread} column each")
-                param_gen = f"python create_multi_col_params.py -l_multi_col_output {output_choice} -tweak_list {tweak_list} -n {int(np.ceil(ngrdcol/srun))}"
-            else:
-                cols_per_thread = 1
-                print(f" - using 1 task with {ngrdcol} column")
-                param_gen = f"python create_multi_col_params.py -l_multi_col_output {output_choice} -tweak_list {tweak_list} -n {ngrdcol}"
+            cols_per_task = int(np.ceil(ngrdcol/tasks))
+            print(f" - using {tasks} tasks with {cols_per_task} column each")
+            param_gen = f"python create_multi_col_params.py -l_multi_col_output {output_choice} -tweak_list {tweak_list} -n {cols_per_task}"
 
             # Increase the number of runs based on the work per core, we want small amounts of work 
             # to have more runs for better profiling, but with large amounts of work we want fewer
@@ -321,11 +317,11 @@ def generate_timing_csv(case: str, ngrdcol_min: int, ngrdcol_max: int, name: str
             # 4x of the problem size, and the CPU starts at 10 runs and drops by 1 every double
             if gpu:
                 # Don't increase gpu runs as much
-                total_runs = int( max( 1, np.ceil(5 - np.floor(np.log(cols_per_thread)/np.log(4)) )))
-                #iterations = max(  250 * (10 - np.floor(np.log2(cols_per_thread)/2.0)), 1000 )
+                total_runs = int( max( 1, np.ceil(5 - np.floor(np.log(cols_per_task)/np.log(4)) )))
+                #iterations = max(  250 * (10 - np.floor(np.log2(cols_per_task)/2.0)), 1000 )
             else:
-                total_runs = int( max( 1, np.ceil(9 - np.floor(np.log(cols_per_thread)/np.log(2)) )))
-                #iterations = max( 1000 * (10 - np.floor(np.log2(cols_per_thread)/2.0)), 1000 )
+                total_runs = int( max( 1, np.ceil(9 - np.floor(np.log(cols_per_task)/np.log(2)) )))
+                #iterations = max( 1000 * (10 - np.floor(np.log2(cols_per_task)/2.0)), 1000 )
 
             print(f" - using {int(total_runs)} total_runs")
             run_set_cmd = f"sed -i 's:total_runs.*=.*:total_runs={total_runs}:g' clubb.in"
@@ -348,37 +344,33 @@ def generate_timing_csv(case: str, ngrdcol_min: int, ngrdcol_max: int, name: str
                 header = list(timing_results.keys())
                 f.write(",".join(header) + "\n")
 
-            # csv_line  = f"{timing_results.get('ngrdcol')}"
-            # csv_line += f",{timing_results.get('iterations')}"
-            # csv_line += f",{timing_results.get('advance_clubb_core_api')}"
-            # csv_line += f",{timing_results.get('output_multi_col')}"
-            # csv_line += f",{timing_results.get('mainloop')}"
-            # csv_line += f",{timing_results.get('total')}"
-            # csv_line += f",{timing_results.get('baseline')}"
-            # csv_line += f",{timing_results.get('compute_i')}"
             values = [str(timing_results[key]) for key in header]
-            #print(timing_results)
             f.write(",".join(values) + "\n")
 
             i = i + 1
 
             if ngrdcol == ngrdcol_max:
                 break
-            #elif ngrdcol >= 64:
-            #    # Increase by a factor of sqrt(2) each time now
-            #    ngrdcol = round( math.sqrt(2)**(i+5) )
-            # elif ngrdcol >= 32768:
-            #     ngrdcol = 65536
-            # elif ngrdcol >= 16384:
-            #     ngrdcol += 4096
-            # elif ngrdcol >= 8192:
-            #     ngrdcol += 1024
-            # elif ngrdcol >= 4096:
-            #     ngrdcol += 256
+            
+            if high_res:
+
+                # if ngrdcol >= 32768:
+                #     ngrdcol = 2*ngrdcol
+                # elif ngrdcol >= 16384:
+                #     ngrdcol += 4096
+                if cols_per_task >= 32:
+                    ngrdcol = 2*ngrdcol
+                elif cols_per_task >= 16:
+                    ngrdcol += 2*tasks
+                else:
+                    ngrdcol += tasks
             else:
+                # if ngrdcol >= 64:
+                #     # Increase by a factor of sqrt(2) each time now
+                #     ngrdcol = round( math.sqrt(2)**(i+5) )
+                # else
                 # Double up to 64 columns
                 ngrdcol = 2*ngrdcol
-                #ngrdcol += 128
 
             ngrdcol = min( ngrdcol, ngrdcol_max )
 
@@ -420,6 +412,7 @@ if __name__ == "__main__":
     parser.add_argument("-srun", type=int, required=False, default=0, help="The number of mpi tasks to distribute across.")
     parser.add_argument("-gpu", action='store_true', help="Whether or not to use the GPU.")
     parser.add_argument("-output", action='store_true', help="Runs with multicol output.")
+    parser.add_argument("-high_res", action='store_true', help="Increases columns slower rather than double each time.")
 
     # Parse arguments
     args = parser.parse_args()
@@ -438,5 +431,6 @@ if __name__ == "__main__":
             mpi=args.mpi,
             srun=args.srun,
             gpu=args.gpu,
-            output=args.output
+            output=args.output,
+            high_res=args.high_res
         )
