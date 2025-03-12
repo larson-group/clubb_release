@@ -34,7 +34,21 @@ safe_functions = {
     "np": np
 }
 
-def model_cpu_time(ngrdcol, runtime, params, N_cores, N_vsize, N_prec, cp_func, b_d):
+TABLE_COLUMNS = [
+    {"name": "Name", "id": "name"},
+    {"name": "T_v", "id": "T_v_val"},
+    {"name": "T_r", "id": "T_r_val"},
+    {"name": "m", "id": "m_val"},
+    {"name": "b", "id": "b_val"},
+    {"name": "b_est", "id": "b_est_val"},
+    {"name": "c", "id": "c_val"},
+    {"name": "k", "id": "k_val"},
+    {"name": "o", "id": "o_val"},
+    {"name": "Cache Pen Func", "id": "cp_func"},
+    {"name": "RMSE (spead norm)", "id": "rms_error"},
+]
+
+def model_cpu_time(ngrdcol, runtime, params, N_cores, N_vsize, N_prec, cp_func):
 
     L = len(runtime)
 
@@ -45,18 +59,20 @@ def model_cpu_time(ngrdcol, runtime, params, N_cores, N_vsize, N_prec, cp_func, 
     cols_per_core = ngrdcol / N_cores
     flops_per_vop = N_vsize / N_prec
 
-    b = runtime[b_d] - ( runtime[b_d+1] - runtime[b_d] ) \
-                       / ( ngrdcol[b_d+1] - ngrdcol[b_d] ) * ngrdcol[b_d]
+    #o, k, c, T_r, T_v, b = params
+    o, k, c, b = params
 
-    T_s = runtime[np.where(cols_per_core == 1)] - b
+    # b = runtime[b_d] - ( runtime[b_d+1] - runtime[b_d] ) \
+    #                    / ( ngrdcol[b_d+1] - ngrdcol[b_d] ) * ngrdcol[b_d]
+
+    T_r = runtime[np.where(cols_per_core == 1)] - b
     T_v = runtime[np.where(cols_per_core == flops_per_vop)] - b
 
     N_s = np.ceil( cols_per_core ) % ( flops_per_vop )
     N_v = np.floor( cols_per_core / ( flops_per_vop ) )
 
-    f = b + T_s * N_s + T_v * N_v
+    f = b + T_r * N_s + T_v * N_v
 
-    o, k, c = params
 
     if cp_func == "sigmoid":
         p = 1 + c / (1 + np.exp(-k * (ngrdcol - o)))
@@ -72,9 +88,9 @@ def model_cpu_time(ngrdcol, runtime, params, N_cores, N_vsize, N_prec, cp_func, 
     return T_cpu
 
 
-def objective(params, ngrdcol, runtime, N_cores, N_vsize, N_prec, cp_func, b_derivative=0):
+def objective(params, ngrdcol, runtime, N_cores, N_vsize, N_prec, cp_func ):
 
-    T_cpu = model_cpu_time(ngrdcol, runtime, params, N_cores, N_vsize, N_prec, cp_func, b_derivative)
+    T_cpu = model_cpu_time(ngrdcol, runtime, params, N_cores, N_vsize, N_prec, cp_func )
 
     #N = np.where( ngrdcol == 4096 )[0][0]
     #rms_error = np.sqrt( np.mean( ngrdcol[0:N] / runtime[0:N] - ngrdcol[0:N] / T_cpu[0:N] )**2 )
@@ -88,34 +104,39 @@ def model_throughput(df, column_name, N_cores, N_vsize, N_prec):
     ngrdcol = df["ngrdcol"].values  # Access ngrdcol if needed
     runtime = df[column_name].values  # Convert selected column to numpy array
 
+    b_guess = runtime[0] - ( runtime[1] - runtime[0] ) \
+                           / ( ngrdcol[1] - ngrdcol[0] ) * ngrdcol[0]
 
-    initial_guess = [2500, 0.002, 1.2]
+    #initial_guess = [2500, 0.002, 1.2, 0.0, 0.0, b_guess]
+    initial_guess = [2500, 0.002, 1.2, b_guess]
 
     cache_pen_funcs = [ "loglog", "sigmoid", "sqrtlog" ]
     cache_pen_best = None
-    b_derivative_best = 0
     rms_min = None
     params_opt = None
 
-    for b_derivative in [0,1,2]:
-        for cp_func in cache_pen_funcs:
+    for cp_func in cache_pen_funcs:
 
-            result = minimize(objective, initial_guess, args=(ngrdcol, runtime, N_cores, N_vsize, N_prec, cp_func, b_derivative), method='Nelder-Mead')
-            o_tuned, k_tuned, c_tuned = result.x
-            rms_error = result.fun
+        result = minimize(  objective, initial_guess, 
+                            args=(ngrdcol, runtime, N_cores, N_vsize, N_prec, cp_func), 
+                            method='Nelder-Mead')
 
-            if rms_min is None or rms_error < rms_min:
-                cache_pen_best = cp_func
-                b_derivative_best = b_derivative
-                rms_min = rms_error
-                params_opt = [ o_tuned, k_tuned, c_tuned ]
+        #o_tuned, k_tuned, c_tuned, T_s_tuned, T_v_tuned, b_tuned = result.x
+        rms_error = result.fun
+
+        #print(result)
+
+        if rms_min is None or rms_error < rms_min:
+            cache_pen_best = cp_func
+            rms_min = rms_error
+            params_opt = result.x
 
 
     #print(f"Tuned parameters: o={o_tuned}, k={k_tuned}, c={c_tuned}")
     #print(f"Final RMS Error: {rms_error}")
 
     #params = [ 1756, .002, 1.13 ]
-    T_cpu = model_cpu_time(ngrdcol, runtime, params_opt, N_cores, N_vsize, N_prec, cache_pen_best, b_derivative_best)
+    T_cpu = model_cpu_time(ngrdcol, runtime, params_opt, N_cores, N_vsize, N_prec, cache_pen_best)
 
 
     # L = len(runtime)
@@ -127,22 +148,35 @@ def model_throughput(df, column_name, N_cores, N_vsize, N_prec):
     # d = 0
     # b = runtime[d] - ( runtime[d+1] - runtime[d] ) / ( ngrdcol[d+1] - ngrdcol[d] ) * ngrdcol[d]
 
-    # T_s = runtime[np.where(ngrdcol == N_cores)] - b
+    # T_r = runtime[np.where(ngrdcol == N_cores)] - b
     # T_v = runtime[np.where(ngrdcol == N_vsize*N_cores/N_prec)] - b
 
     # N_s = np.ceil( ngrdcol / N_cores ) % ( N_vsize / N_prec )
     # N_v = np.floor( ngrdcol / ( N_cores * N_vsize / N_prec ) )
 
-    # f = b + T_s * N_s + T_v * N_v
+    # f = b + T_r * N_s + T_v * N_v
 
     # T_cpu = runtime / f
 
+    cols_per_core = ngrdcol / N_cores
+    flops_per_vop = N_vsize / N_prec
+
+    b = params_opt[3]
+    T_r = runtime[np.where(cols_per_core == 1)] - b
+    T_v = runtime[np.where(cols_per_core == flops_per_vop)] - b
+
+    b_est = runtime[0] - ( runtime[1] - runtime[0] ) / ( ngrdcol[1] - ngrdcol[0] ) * ngrdcol[0]
+
     params_dict = {
-        "o": params_opt[0],
-        "k": params_opt[1],
-        "c": params_opt[2], 
+        "o_val": params_opt[0],
+        "k_val": params_opt[1],
+        "c_val": params_opt[2], 
+        "T_v_val": T_v[0], 
+        "T_r_val": T_r[0], 
+        "b_val": b, 
+        "b_est_val": b_est, 
         "cp_func": cache_pen_best, 
-        "b_der": b_derivative_best, 
+        #"b_der": b_derivative_best, 
         "rms_error" : rms_error
     }
 
@@ -247,15 +281,7 @@ def launch_dash_app(grouped_files, all_variables):
                 dcc.Store(id='table-data-store', data=[]),
                 dash_table.DataTable(
                     id='dynamic-table',
-                    columns=[
-                        {'name': 'Name', 'id': 'name'},
-                        {'name': 'c', 'id': 'c_val'},
-                        {'name': 'k', 'id': 'k_val'},
-                        {'name': 'o', 'id': 'o_val'},
-                        {'name': 'Derivative for Baseline', 'id': 'b_der_val'},
-                        {'name': 'Cache Penalty Function', 'id': 'cp_func'},
-                        {'name': 'RMS Error (spead normalized)', 'id': 'rms_error'}
-                    ],
+                    columns=TABLE_COLUMNS,
                     data=[],  # Initial empty table
                     editable=True,
                     row_deletable=False  # Allows deleting rows directly
@@ -564,14 +590,19 @@ def launch_dash_app(grouped_files, all_variables):
                 temp_df_dup["Name"] = f"{case}/{filename}_model"
                 combined_df = pd.concat([combined_df, temp_df_dup])
 
-                table_data.append({ "name": f"{case}/{filename}", 
-                                    "c_val": f"{params_dict.get('c'):.3f}", 
-                                    "k_val": f"{params_dict.get('k'):.3e}", 
-                                    "o_val": f"{params_dict.get('o'):.3f}",
-                                    "cp_func": params_dict.get('cp_func'),
-                                    "b_der_val": params_dict.get('b_der'),
-                                    "rms_error": params_dict.get('rms_error')
-                                  })
+                # table_data.append({ "name": f"{case}/{filename}", 
+                #                     "c_val": f"{params_dict.get('c'):.3f}", 
+                #                     "k_val": f"{params_dict.get('k'):.3e}", 
+                #                     "o_val": f"{params_dict.get('o'):.3f}",
+                #                     "cp_func": params_dict.get('cp_func'),
+                #                     "b_der_val": params_dict.get('b_der'),
+                #                     "rms_error": params_dict.get('rms_error')
+                #                   })
+                table_data.append({
+                    col["id"]: f"{params_dict.get(col['id']):.3e}" if isinstance(params_dict.get(col["id"]), (int, float)) else params_dict.get(col["id"])
+                    for col in TABLE_COLUMNS
+                })
+                table_data[-1]["name"] = f"{case}/{filename}"
 
         fig = px.line(combined_df, x="ngrdcol", y="Columns per Second", color="Name")
         #fig = px.line(combined_df, x="ngrdcol", y=selected_variable, color="Name")
