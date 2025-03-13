@@ -200,14 +200,14 @@ def run_clubb_model_for_all_flag_settings(args, abs_path_to_dirs, flag_files):
 
     for _, flag_file in flag_files.items():
         if args.verbose == 0:
-            opt_kwargs = {"stdout": subprocess.DEVNULL}
+            opt_kwargs = {}
         else:
             opt_kwargs = {}
 
         print(f"\nRunning cases for {flag_file} ...")
         abs_clubb_path = f"{abs_path_to_dirs}"
         if args.central_run_script:
-            subprocess.call(
+            result = subprocess.run(
                 [
                     f"./run_scm_all.bash",
                     *flags_to_add,
@@ -218,10 +218,14 @@ def run_clubb_model_for_all_flag_settings(args, abs_path_to_dirs, flag_files):
                     "--flags_file",
                     f"{abs_clubb_path}/input/tunable_parameters/{flag_file}",
                 ],
+                stdout = subprocess.PIPE,
+                stderr = subprocess.STDOUT,
+                universal_newlines = True,
                 **opt_kwargs,
             )
+            print(result.stdout)
         else:
-            subprocess.call(
+            result = subprocess.run(
                 [
                     f"{abs_clubb_path}/run_scripts/run_scm_all.bash",
                     *flags_to_add,
@@ -232,8 +236,12 @@ def run_clubb_model_for_all_flag_settings(args, abs_path_to_dirs, flag_files):
                     "--flags_file",
                     f"{abs_clubb_path}/input/tunable_parameters/{flag_file}",
                 ],
+                stdout = subprocess.PIPE,
+                stderr = subprocess.STDOUT,
+                universal_newlines = True,
                 **opt_kwargs,
             )
+            print(result.stdout)
 
 
 def main():
