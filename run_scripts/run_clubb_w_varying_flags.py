@@ -22,6 +22,7 @@ The code then gets run with all the different flag files.
 """
 
 import shutil
+import sys
 import os
 import re
 import subprocess
@@ -200,6 +201,7 @@ def run_clubb_model_for_all_flag_settings(args, abs_path_to_dirs, flag_files):
     flag_exit_codes = [-999 for indx in range(len(flag_files.values()))]
 
     # Run every case in CLUBB for each flag file
+    print(f"\nRunning CLUBB for {len(flag_files.values())} total flag files")
     indx = -1
     for _, flag_file in flag_files.items():
         print(f"\nRunning cases for {flag_file} ...")
@@ -271,6 +273,11 @@ def main():
     exit_code = run_clubb_model_for_all_flag_settings(
         args, abs_destination_dir_path, flag_file_names
     )
+
+    if exit_code == 0:
+        print(f"\nCLUBB run was successful for all cases and all files")
+    else:
+        print(f"\nThere was a failure in the CLUBB run")
 
     sys.exit(exit_code)
 
