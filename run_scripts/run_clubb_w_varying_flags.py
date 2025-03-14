@@ -78,15 +78,12 @@ def get_cli_args():
            + "Otherwise the script from the corresponding clones is taken.",
     )
     parser.add_argument(
-        "-v",
-        "--verbose",
-        action="store",
-        type=int,
-        default=0,
-        help="Choose level of verbosity for outputs, i.e. what is printed to console.\n"
-           + "0: Output just a summary.\n"
-           + "1: Default. Add summarized results for each file.\n"
-           + "2: Add tables with detailed numerical differences in common variables for each file.",
+        "-g",
+        "--gg-test",
+        action="store_true",
+        default=False,
+        help="A grid generalization test is being performed. Keep stats output files "
+           + "to a minimal size",
     )
     parser.add_argument(
         "-f",
@@ -198,14 +195,16 @@ def run_clubb_model_for_all_flag_settings(args, abs_path_to_dirs, flag_files):
     elif args.short_cases:
         flags_to_add.append("--short-cases")
 
-    for _, flag_file in flag_files.items():
-        if args.verbose == 0:
-            opt_kwargs = {}
-        else:
-            opt_kwargs = {}
+    # Initialize the flag_exit_code array.
+    flag_exit_codes = []
+    flag_exit_codes = [-999 for indx in range(len(flag_files.values()))]
 
+    # Run every case in CLUBB for each flag file
+    indx = -1
+    for _, flag_file in flag_files.items():
         print(f"\nRunning cases for {flag_file} ...")
         abs_clubb_path = f"{abs_path_to_dirs}"
+        indx = indx + 1
         if args.central_run_script:
             result = subprocess.run(
                 [
@@ -220,10 +219,10 @@ def run_clubb_model_for_all_flag_settings(args, abs_path_to_dirs, flag_files):
                 ],
                 stdout = subprocess.PIPE,
                 stderr = subprocess.STDOUT,
-                universal_newlines = True,
-                **opt_kwargs,
+                universal_newlines = True
             )
             print(result.stdout)
+            flag_exit_codes[indx] = result.returncode
         else:
             result = subprocess.run(
                 [
@@ -238,10 +237,13 @@ def run_clubb_model_for_all_flag_settings(args, abs_path_to_dirs, flag_files):
                 ],
                 stdout = subprocess.PIPE,
                 stderr = subprocess.STDOUT,
-                universal_newlines = True,
-                **opt_kwargs,
+                universal_newlines = True
             )
             print(result.stdout)
+            flag_exit_codes[indx] = result.returncode
+
+    exit_code = max(flag_exit_codes)
+    return exit_code
 
 
 def main():
@@ -266,9 +268,11 @@ def main():
         abs_destination_dir_path, flags_to_change, flag_file_names
     )
 
-    run_clubb_model_for_all_flag_settings(
+    exit_code = run_clubb_model_for_all_flag_settings(
         args, abs_destination_dir_path, flag_file_names
     )
+
+    sys.exit(exit_code)
 
 
 if __name__ == "__main__":
