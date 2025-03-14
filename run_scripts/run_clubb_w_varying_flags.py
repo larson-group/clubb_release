@@ -196,13 +196,6 @@ def run_clubb_model_for_all_flag_settings(args, abs_path_to_dirs, flag_files):
     elif args.short_cases:
         flags_to_add.append("--short-cases")
 
-    # For a generalized grid test, greatly reduce or eliminate stats output.
-    # Otherwise, use the standard stats file.
-    if args.gg_test:
-        stats_file = "tuning_stats.in"
-    else:
-        stats_file = "standard_stats.in"
-
     # Initialize the flag_exit_code array.
     flag_exit_codes = []
     flag_exit_codes = [-999 for indx in range(len(flag_files.values()))]
@@ -225,8 +218,6 @@ def run_clubb_model_for_all_flag_settings(args, abs_path_to_dirs, flag_files):
                     f"{abs_clubb_path}/output/{flag_file.split('.')[0]}",
                     "--flags_file",
                     f"{abs_clubb_path}/input/tunable_parameters/{flag_file}",
-                    "--stats",
-                    f"{abs_clubb_path}/input/stats/{stats_file}",
                 ],
                 stdout = subprocess.PIPE,
                 stderr = subprocess.STDOUT,
@@ -245,8 +236,6 @@ def run_clubb_model_for_all_flag_settings(args, abs_path_to_dirs, flag_files):
                     f"{abs_clubb_path}/output/{flag_file.split('.')[0]}",
                     "--flags_file",
                     f"{abs_clubb_path}/input/tunable_parameters/{flag_file}",
-                    "--stats",
-                    f"{abs_clubb_path}/input/stats/{stats_file}",
                 ],
                 stdout = subprocess.PIPE,
                 stderr = subprocess.STDOUT,
