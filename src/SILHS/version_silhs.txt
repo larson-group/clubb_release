@@ -1,0 +1,92 @@
+commit e4aa2c379ef53a757d44d3674c70e75b2536aa46
+Author: bmg929 <bmg2@uwm.edu>
+Date:   Fri Mar 14 08:19:29 2025 -0500
+
+    Revert "When the run_clubb_w_varying_flags.py script is running a generalized"
+    
+    This reverts commit 02f49f2feca508a3bdc6f881673d23f576add971.
+    
+    This commit was problematic and is no longer necessary in light of
+    commit 78cba21.
+
+commit 78cba21967b128a4aa8c7107164c9d80aaee7e43
+Author: bmg929 <bmg2@uwm.edu>
+Date:   Fri Mar 14 08:13:58 2025 -0500
+
+    Updating the Jenkinsfile for the CLUBB generalized vertical grid test
+    so we can truly turn off all stats.
+
+commit 02f49f2feca508a3bdc6f881673d23f576add971
+Author: bmg929 <bmg2@uwm.edu>
+Date:   Fri Mar 14 01:13:50 2025 -0500
+
+    When the run_clubb_w_varying_flags.py script is running a generalized
+    vertical grid test, use a stats file that has a greatly reduced number
+    of stats. Stats aren't important for this test. We don't want to eat
+    up too much storage space or waste extra time with stats.
+
+commit 1ae402390b203de58866e57af503d9641df0c421
+Author: bmg929 <bmg2@uwm.edu>
+Date:   Thu Mar 13 21:01:47 2025 -0500
+
+    Changing the generalized vertical grid Jenkins test to use the new
+    run_clubb_w_varying_flags.py python script instead of the traditional
+    run_scm_all.bash.
+
+commit fd6d3ca5c2e22280c5faffe4e79307f3956f17c9
+Author: bmg929 <bmg2@uwm.edu>
+Date:   Thu Mar 13 20:42:36 2025 -0500
+
+    I added some helpful print statements and imported "sys" for the
+    sys.exit statement.
+
+commit 25168201548b7ac24d9a4b58a1b55f742479755e
+Author: bmg929 <bmg2@uwm.edu>
+Date:   Thu Mar 13 19:14:16 2025 -0500
+
+    I am setting the exit_code for the python script to be based on
+    what is passed out from the bash script for the set of
+    run_scm_all.bash commands for each flag grouping. It any flag test
+    fails, the overall exit code from the test will also be set to
+    a fail result.
+
+commit 108815d5afea2ebd26c3611c760288b9e56e454c
+Author: bmg929 <bmg2@uwm.edu>
+Date:   Thu Mar 13 10:38:27 2025 -0500
+
+    One of the previous issues with this python script is that it
+    suppressed the output of the bash script it was running
+    (run_scm_all.bash). It is important to see what cases successfully
+    ran and what cases failed. I have altered the script so that
+    it doesn't suppress the output of run_scm_all.bash.
+    
+    Note: the output from the bash script won't be printed to output
+    until all the cases in run_scm_all.bash have been run to completion.
+
+commit 9cbf31890998651dc6a36c32990fc9e8771b4d7c
+Author: bmg929 <bmg2@uwm.edu>
+Date:   Wed Mar 12 21:11:16 2025 -0500
+
+    I added a stripped down version of the run_bindiff_w_flags.py script
+    that simply reads in the JSON file and runs CLUBB with all the different
+    flag setting groups listed. It stores the flag files and the model
+    output in the working directory. It does not do anything fancy like
+    checkout the git repository and compile or compare results.
+
+commit b01f0e8e8f1ed4635a6c8cbef0f0a730351305b2
+Author: bmg929 <bmg2@uwm.edu>
+Date:   Tue Mar 11 17:12:02 2025 -0500
+
+    The generalized grid test should not output a clubb fatal error when it
+    fails. Rather, they should output a unique error code specific to their
+    failure. Otherwise, failures due to numerical instability, etc., will
+    be confused as generalized grid failures in the Jenkins tests.
+
+commit 4ad28abbf7c6d9da74b5dc738f63a79ede657e1c
+Author: bmg929 <bmg2@uwm.edu>
+Date:   Fri Mar 7 16:45:23 2025 -0600
+
+    I discovered that I inadvertently change an $acc statement that
+    is found in the monotonic flux limiter (why is it ALWAYS the
+    monotonic flux limiter?) back in be90159. In this commit, I am
+    setting the $acc statement back to what it is supposed to be.
