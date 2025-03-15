@@ -79,7 +79,7 @@ def createFigs(numMetricsNoSpecial, metricsNames,
     plot_paramsCorrArrayFig = False #True
     plot_sensMatrixAndBiasVecFig = False #True
     plot_PcaBiplot = False
-    plot_PcSensMap = True
+    plot_PcSensMap = False #True
     plot_vhMatrixFig = False #True
 
     # Remove prefixes from CLUBB variable names in order to shorten them
@@ -542,6 +542,7 @@ def createFigs(numMetricsNoSpecial, metricsNames,
                               plotTitle="""Regional normalized biases vs. signed magnitude of sensitivity.""",
                               xaxisTitle="Signed magnitude of sensitivity of regional metrics to parameter changes",
                               yaxisTitle="Regional biases",
+                              panelLabel="",
                               showLegend=False, hoverMode="closest",
                               plotWidth=700, plotHeight=500)
 
@@ -558,14 +559,16 @@ def createFigs(numMetricsNoSpecial, metricsNames,
                               #colorScale='Rainbow',
                               plotBgColor='lightgrey',
                               pointLabels=metricsNamesNoprefix, pointLabelsHeader='Metric',
-                              plotTitle = """Regional normalized biases vs. signed magnitude of sensitivity.""",
-                              xaxisTitle = "Signed magnitude of sensitivity of regional metrics to parameter changes",
+                              plotTitle = """Regional normalized biases vs.<br>     signed magnitude of sensitivity""",
+                              xaxisTitle = "Signed magnitude of sensitivity<br>     of regional metrics to parameter changes",
                               yaxisTitle = "Default simulation regional biases",
+                              panelLabel="(a)",
                               #plotTitle="""Regional normalized residuals vs. signed magnitude of sensitivity.""",
                               #xaxisTitle="Signed magnitude of sensitivity of regional metrics to parameter changes",
                               #yaxisTitle="Regional normalized residuals",
                               showLegend=False, hoverMode="closest",
-                              plotWidth=700, plotHeight=500)
+                              plotWidth=600, plotHeight=500)
+                              #plotWidth = 700, plotHeight = 500)
 
         #biasesVsSensMagScatterplot = \
         #    createBiasesVsSensMagScatterplot(normlzdLinplusSensMatrixPoly,
@@ -596,14 +599,15 @@ def createFigs(numMetricsNoSpecial, metricsNames,
                               #colorScale='Rainbow',
                               plotBgColor='lightgrey',
                               pointLabels=metricsNamesNoprefixMasked, pointLabelsHeader='Metric',
-                              plotTitle = """Regional normalized biases vs. signed magnitude of sensitivity.""",
-                              xaxisTitle = "Signed magnitude of sensitivity of regional metrics to parameter changes",
+                              plotTitle = """Selected Points: Regional normalized biases vs.<br>     signed magnitude of sensitivity""",
+                              xaxisTitle = "Signed magnitude of sensitivity<br>     of regional metrics to parameter changes",
                               yaxisTitle = "Default simulation regional biases",
+                              panelLabel="(b)",
                               #plotTitle="""Regional normalized residuals vs. signed magnitude of sensitivity.""",
                               #xaxisTitle="Signed magnitude of sensitivity of regional metrics to parameter changes",
                               #yaxisTitle="Regional normalized residuals",
                               showLegend=False, hoverMode="closest",
-                              plotWidth=700, plotHeight=500)
+                              plotWidth=600, plotHeight=500)
 
 
 
@@ -659,6 +663,7 @@ def createFigs(numMetricsNoSpecial, metricsNames,
                                           + np.array2string(RSquaredSvd)),
                               xaxisTitle="First left singular vector values",
                               yaxisTitle="Second left singular vector values",
+                              panelLabel="",
                               showLegend=False, hoverMode="closest",
                               plotWidth=700, plotHeight=500)
 
@@ -682,6 +687,7 @@ def createFigs(numMetricsNoSpecial, metricsNames,
                                       + np.array2string(RSquaredSvd)),
                               xaxisTitle="First left singular vector values",
                               yaxisTitle="Second left singular vector values",
+                              panelLabel="",
                               showLegend=False, hoverMode="closest",
                               plotWidth=700, plotHeight=500)
 
@@ -695,6 +701,7 @@ def createFigs(numMetricsNoSpecial, metricsNames,
         #                      plotTitle="""Residuals (color) as a function of first and second left singular vector values""",
         #                      xaxisTitle="First left singular vector values",
         #                      yaxisTitle="Second left singular vector values",
+        #                      panelLabel="",
         #                      showLegend=False, hoverMode="closest",
         #                      plotWidth=700, plotHeight=500)
 
@@ -813,6 +820,7 @@ def createFigs(numMetricsNoSpecial, metricsNames,
                               plotTitle="""Regional biases vs. leverages.""",
                               xaxisTitle="Leverages",
                               yaxisTitle="Regional biases",
+                              panelLabel="",
                               showLegend=False, hoverMode="closest",
                               plotWidth=700, plotHeight=500)
 
@@ -1653,6 +1661,7 @@ def createScatterplot(xCol, xColLabel,
                       plotTitle,
                       xaxisTitle,
                       yaxisTitle,
+                      panelLabel,
                       showLegend, hoverMode,
                       plotWidth, plotHeight):
     # Helper function that plots a column of length numMetrics (yCol) vs. xCol
@@ -1673,7 +1682,6 @@ def createScatterplot(xCol, xColLabel,
     }, index=pointLabels)
     scatterplot = px.scatter(df, x=xColLabel, y=yColLabel,
                              hover_data=pointLabelsHeader,
-                             title=plotTitle,
                              color=colorColLabel,
                              color_continuous_scale=colorScale,
                              color_continuous_midpoint=0,
@@ -1706,8 +1714,13 @@ def createScatterplot(xCol, xColLabel,
     #scatterplot.for_each_trace(lambda t: \
     #    t.update(textfont_color=pc.sample_colorscale('Rainbow', normlzdColorCol[t])[0],
     #             textposition='top center'))
-    scatterplot.update_xaxes(title=xaxisTitle, zerolinewidth=4)
-    scatterplot.update_yaxes(title=yaxisTitle, zerolinewidth=4)
+    scatterplot.update_xaxes(title=xaxisTitle, title_font=dict(size=16), zerolinewidth=4)
+    scatterplot.update_yaxes(title=yaxisTitle, title_font = dict(size=16), zerolinewidth=4)
+    #scatterplot.update_layout(title_font_size=24)
+    scatterplot.update_layout(title={'text': plotTitle,
+                                     'font_size': 20,
+                                     'x': 0.5, 'xanchor': 'center',
+                                     'y': 0.95, 'yanchor': 'bottom'})
     scatterplot.update_layout(showlegend=showLegend)
     scatterplot.update_layout(hovermode=hoverMode)
     scatterplot.update_layout(width=plotWidth, height=plotHeight)
@@ -1717,14 +1730,21 @@ def createScatterplot(xCol, xColLabel,
         xref="paper", yref="paper",
         x=0.5, y=0.98, xanchor="center", yanchor="top",
         text="Too dim",
-        font=dict(size=25),
+        font=dict(size=18),
         showarrow=False
     )
     scatterplot.add_annotation(
         xref="paper", yref="paper",
         x=0.5, y=0.03, xanchor="center", yanchor="bottom",
         text="Too bright",
-        font=dict(size=25),
+        font=dict(size=18),
+        showarrow=False
+    )
+    scatterplot.add_annotation(
+        xref="paper", yref="paper",
+        x=0.0, y=1.0, xanchor="left", yanchor="bottom",
+        text=panelLabel,
+        font=dict(size=18),
         showarrow=False
     )
 
@@ -3134,6 +3154,7 @@ def createPcaBiplot(normlzdSensMatrix, normlzdDefaultBiasesCol,
                           plotTitle=(plotTitle + np.array2string(pca.explained_variance_ratio_)),
                           xaxisTitle=xaxisTitle,
                           yaxisTitle=yaxisTitle,
+                          panelLabel="",
                           showLegend=showLegend, hoverMode=hoverMode,
                           plotWidth=plotWidth, plotHeight=plotHeight)
 

@@ -119,7 +119,7 @@ def main():
     normlzdCurvMatrixSvd = \
         approxMatrixWithSvd(normlzdCurvMatrix, sValsRatio, sValsNumToKeep=None, beVerbose=False)
     if useBootstrap:
-        numSamples = 1_000
+        numSamples = 2
         paramsSolnNonlin, residualsFullDataCol, residualsBootstrapMatrix, param_bounds_boot, lossesDrop, lossesFullData, lossesLeftOut, lossesInSample =\
             bootstrap_calculations(numSamples,
                                    metricsWeights,
@@ -589,10 +589,13 @@ def constructNormlzdSensCurvMatrices(metricsNames, paramsNames, transformedParam
                         normlzdSens1MetricValsMatrix[arrayRow,arrayCol],
                         normlzdDefaultMetricValsMatrix[arrayRow,arrayCol] ]
             else:
-                print("Sensitivity parameter values are equal to each other or the default value in constructNormlzdSensCurvMatrices.")
-                print("normlzdSens1ParamValsRow=", normlzdSens1ParamValsRow)
-                print("normlzdSens2ParamValsRow=", normlzdSens2ParamValsRow)
-                print("normlzdDefaultParamValsRow=", normlzdDefaultParamValsRow)
+                print("Error: Sensitivity parameter values are equal to each other or the default value in constructNormlzdSensCurvMatrices.")
+                print( "normlzdSens1ParamValsRow=   ",
+                      np.array2string(normlzdSens1ParamValsRow, formatter={'float_kind': lambda x: f"{x:12.8f}"}) )
+                print( "normlzdSens2ParamValsRow=   ",
+                      np.array2string(normlzdSens2ParamValsRow, formatter={'float_kind': lambda x: f"{x:12.8f}"}) )
+                print( "normlzdDefaultParamValsRow= ",
+                      np.array2string(normlzdDefaultParamValsRow, formatter={'float_kind': lambda x: f"{x:12.8f}"}) )
                 pdb.set_trace()
                 quit()
 

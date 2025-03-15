@@ -33,7 +33,7 @@ def setUpInputs(beVerbose):
     from test_analyzeSensMatrix import write_test_netcdf_files
 
     # Flag for using bootstrap sampling
-    useBootstrap = True
+    useBootstrap = False
 
     # Number of metrics to tune on
     numMetricsToTune = 162
@@ -130,7 +130,7 @@ def setUpInputs(beVerbose):
     #      in the metrics bar-chart, 3-dot plot, etc.
     # They must be a subset of metricsNames
     #extraMetricsToPlot = np.array(['SWCF_5_9', 'SWCF_8_13', 'SWCF_6_15', 'SWCF_9_5', 'SWCF_3_6', 'SWCF_3_12', 'SWCF_1_6'])
-    extraMetricsToPlot = np.array(['SWCF_6_14', 'SWCF_6_18', 'SWCF_8_13', 'SWCF_6_15', 'SWCF_1_14', 'SWCF_3_6', 'SWCF_1_6'])
+    extraMetricsToPlot = np.array(['SWCF_6_14', 'SWCF_6_18', 'SWCF_8_13', 'SWCF_6_15', 'SWCF_1_14', 'SWCF_3_6', 'SWCF_1_6', 'SWCF_3_14', 'SWCF_6_2', 'SWCF_8_10', 'SWCF_5_9'])
     # 4_8, 8_10
     # This list omits 9_5:
     #extraMetricsToPlot = np.array(['SWCF_6_14', 'SWCF_6_18', 'SWCF_8_13', 'SWCF_6_15', 'SWCF_3_6', 'SWCF_1_6', 'SWCF_5_12'])
@@ -443,7 +443,7 @@ def setUpInputs(beVerbose):
                 for key, value in obsMetricValsDictSpecial.items()}
 
     # Comment out if not using 20x20reg files
-    varPrefixes = ["SWCF", "PRECT"]
+    varPrefixes = ["SWCF"]
     #varPrefixes = ["SWCF", "LWCF", "PRECT"]
     #numPrefixes = len(varPrefixes)
     metricsNamesWeightsAndNorms, metricGlobalValsFromFile \

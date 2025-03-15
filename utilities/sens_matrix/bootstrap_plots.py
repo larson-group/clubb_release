@@ -32,7 +32,8 @@ def bootstrap_plots(numSamples,
         plt.legend()
         plt.tight_layout()
         plt.savefig(f"Outputs/{folderName}/biases/{metricsNames[i]}_distribution.png", dpi=300)
-        plt.show()
+        #plt.show()
+        plt.close('all')
 
     # PCA to 1 component
     pca = PCA(n_components=1)
@@ -126,7 +127,8 @@ def bootstrap_plots(numSamples,
         plt.title(f"mean: {np.mean(paramSample):.2g}, std: {np.std(paramSample):.2g}")
         plt.tight_layout()
         plt.savefig(f"Outputs/{folderName}/params/{paramsNames[i]}_distribution.png", dpi=300)
-        plt.show()
+        #plt.show()
+        plt.close('all')
 
     # Generate a scatter plot for every pair of parameters
     paramSamplesDf = pd.DataFrame(data=paramsSolnNonlin[:, :, 0], columns=paramsNames)
