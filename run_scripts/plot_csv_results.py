@@ -39,7 +39,7 @@ gpu_model_columns = [
     {"name": "m", "id": "m_val"},
     {"name": "b", "id": "b_val"},
     {"name": "b_est", "id": "b_est_val"},
-    {"name": "RMSE (spead norm)", "id": "rms_error"},
+    {"name": "RMSE (abs '%' diff)", "id": "rms_error"},
 ]
 
 cpu_model_columns = [
@@ -52,7 +52,7 @@ cpu_model_columns = [
     {"name": "k", "id": "k_val"},
     {"name": "o", "id": "o_val"},
     {"name": "Cache Pen Func", "id": "cp_func"},
-    {"name": "RMSE (spead norm)", "id": "rms_error"},
+    {"name": "RMSE (abs '%' diff)", "id": "rms_error"},
 ]
 
 vcpu_model_columns = [
@@ -65,7 +65,7 @@ vcpu_model_columns = [
     {"name": "k", "id": "k_val"},
     {"name": "o", "id": "o_val"},
     {"name": "Cache Pen Func", "id": "cp_func"},
-    {"name": "RMSE (spead norm)", "id": "rms_error"},
+    {"name": "RMSE (abs '%' diff)", "id": "rms_error"},
 ]
 
 def model_vcpu_time(ngrdcol, runtime, params, N_cores, N_vsize, N_prec, cp_func):
@@ -117,21 +117,62 @@ def model_cpu_time(ngrdcol, runtime, params, N_cores, N_vsize, N_prec, cp_func):
     return T_cpu
 
 
+def model_gpu_time(ngrdcol, runtime, params, N_cores, N_vsize, N_prec):
+
+    m, b = params
+
+    f = b + m * ngrdcol
+
+    T_gpu = f
+
+    return T_gpu
+
+
 def vcpu_objective(params, ngrdcol, runtime, N_cores, N_vsize, N_prec, cp_func ):
 
     T_cpu = model_vcpu_time(ngrdcol, runtime, params, N_cores, N_vsize, N_prec, cp_func )
 
-    rms_error = np.sqrt( np.mean( ( ngrdcol / runtime - ngrdcol / T_cpu )**2 ) ) \
-                / ( np.max(ngrdcol / runtime) - np.min(ngrdcol / runtime) )
+    # rms_error = np.sqrt( np.mean( ( ngrdcol / runtime - ngrdcol / T_cpu )**2 ) ) \
+    #             / ( np.max(ngrdcol / runtime) - np.min(ngrdcol / runtime) )
+
+    cps = ngrdcol / runtime
+    cps_model = ngrdcol / T_cpu
+
+    rms_error = np.sqrt( np.mean( ( ( cps - cps_model ) / cps * 100 )**2 ) )
 
     return rms_error
+
     
 def cpu_objective(params, ngrdcol, runtime, N_cores, N_vsize, N_prec, cp_func ):
 
     T_cpu = model_cpu_time(ngrdcol, runtime, params, N_cores, N_vsize, N_prec, cp_func )
 
-    rms_error = np.sqrt( np.mean( ( ngrdcol / runtime - ngrdcol / T_cpu )**2 ) ) \
-                / ( np.max(ngrdcol / runtime) - np.min(ngrdcol / runtime) )
+    # rms_error = np.sqrt( np.mean( ( ngrdcol / runtime - ngrdcol / T_cpu )**2 ) ) \
+    #             / ( np.max(ngrdcol / runtime) - np.min(ngrdcol / runtime) )
+
+    cols_per_core = ngrdcol / N_cores
+    flops_per_vop = N_vsize / N_prec
+
+    cps = ngrdcol / runtime
+    cps_model = ngrdcol / T_cpu
+
+    abs_percent_diff = ( cps - cps_model ) / cps
+
+    rms_error = np.sqrt( np.mean( ( abs_percent_diff[np.where(cols_per_core % flops_per_vop == 0)] * 100 )**2 ) )
+
+    return rms_error
+
+
+def gpu_objective(params, ngrdcol, runtime, N_cores, N_vsize, N_prec ):
+
+    T_gpu = model_gpu_time(ngrdcol, runtime, params, N_cores, N_vsize, N_prec )
+
+    cps = ngrdcol / runtime
+    cps_model = ngrdcol / T_gpu
+
+    abs_percent_diff = ( cps - cps_model ) / cps
+
+    rms_error = np.sqrt( np.mean( ( abs_percent_diff[np.where(ngrdcol >= 10000)] * 100 )**2 ) )
 
     return rms_error
 
@@ -149,7 +190,7 @@ def model_throughputs(df, column_name, N_cores, N_vsize, N_prec, model_version):
         b_est = runtime[0] - ( runtime[1] - runtime[0] ) / ( ngrdcol[1] - ngrdcol[0] ) * ngrdcol[0]
         initial_guess = [b_est, 2500, 0.002, 1.2]
 
-        cache_pen_funcs = [ "loglog", "sigmoid", "sqrtlog" ]
+        cache_pen_funcs = [ "loglog", "sigmoid" ]
         cache_pen_best = None
         rms_min = None
         params_opt = None
@@ -173,18 +214,18 @@ def model_throughputs(df, column_name, N_cores, N_vsize, N_prec, model_version):
         cols_per_core = ngrdcol / N_cores
         flops_per_vop = N_vsize / N_prec
 
-        b = params_opt[3]
+        b = params_opt[0]
         T_r = runtime[np.where(cols_per_core == 1)] - b
         T_v = runtime[np.where(cols_per_core == flops_per_vop)] - b
 
         fit_params = {
-            "o_val": params_opt[0],
-            "k_val": params_opt[1],
-            "c_val": params_opt[2], 
-            "T_v_val": T_v[0], 
-            "T_r_val": T_r[0], 
+            "o_val": params_opt[1],
+            "k_val": params_opt[2],
+            "c_val": params_opt[3], 
             "b_val": b, 
             "b_est_val": b_est, 
+            "T_v_val": T_v[0], 
+            "T_r_val": T_r[0], 
             "cp_func": cache_pen_best, 
             "rms_error" : rms_error
         }
@@ -198,7 +239,7 @@ def model_throughputs(df, column_name, N_cores, N_vsize, N_prec, model_version):
 
         initial_guess = [m_est, b_est, 2500, 0.002, 1.2]
 
-        cache_pen_funcs = [ "loglog", "sigmoid", "sqrtlog" ]
+        cache_pen_funcs = [ "loglog", "sigmoid"]
         cache_pen_best = None
         rms_min = None
         params_opt = None
@@ -222,9 +263,6 @@ def model_throughputs(df, column_name, N_cores, N_vsize, N_prec, model_version):
         cols_per_core = ngrdcol / N_cores
         flops_per_vop = N_vsize / N_prec
 
-        b = params_opt[3]
-        m = runtime[np.where(cols_per_core == 1)] - b
-
         fit_params = {
             "m_val": params_opt[0], 
             "m_est_val": m_est, 
@@ -239,6 +277,33 @@ def model_throughputs(df, column_name, N_cores, N_vsize, N_prec, model_version):
 
     #============================== GPU Model ==============================
 
+    if model_version == "gpu":
+
+        b_est = runtime[-2] - ( runtime[-1] - runtime[-2] ) / ( ngrdcol[-1] - ngrdcol[-2] ) * ngrdcol[-2]
+        m_est = ( runtime[-1] - runtime[-2] ) / ( ngrdcol[-1] - ngrdcol[-2] )
+
+        initial_guess = [.1, .01]
+
+        rms_min = None
+        params_opt = None
+
+
+        result = minimize(  gpu_objective, initial_guess, 
+                            args=(ngrdcol, runtime, N_cores, N_vsize, N_prec), 
+                            method='Nelder-Mead')
+
+        rms_error = result.fun
+        params_opt = result.x
+
+        T_cpu = model_gpu_time(ngrdcol, runtime, params_opt, N_cores, N_vsize, N_prec)
+
+        fit_params = {
+            "m_val": params_opt[0], 
+            "m_est_val": m_est, 
+            "b_val": params_opt[1], 
+            "b_est_val": b_est, 
+            "rms_error" : rms_error
+        }
 
 
     return pd.Series(T_cpu, index=df.index), fit_params
@@ -319,9 +384,8 @@ def plot_with_enhancements(fig, title):
     return fig
 
 def launch_dash_app(grouped_files, all_variables):
+
     data = {case: {filename: pd.read_csv(filepath, comment="#") for filename, filepath in files.items()} for case, files in grouped_files.items()}
-    x_min = min(df["ngrdcol"].min() for case_data in data.values() for df in case_data.values())
-    x_max = max(df["ngrdcol"].max() for case_data in data.values() for df in case_data.values())
 
     app = Dash(__name__)
     app.title = "Dynamic Plotter"
@@ -339,9 +403,7 @@ def launch_dash_app(grouped_files, all_variables):
             html.Div(dcc.Graph(id="plot-raw"), style=plot_style),
             html.Div([
                 dcc.Graph(id="fit-plot"), 
-                dcc.Store(id='cpu-table-data', data=[]),
-                dcc.Store(id='vcpu-table-data', data=[]),
-                dcc.Store(id='gpu-table-data', data=[]),
+                html.Label("Vector CPU Model"),
                 dash_table.DataTable(
                     id='vcpu-param-table',
                     columns=vcpu_model_columns,
@@ -349,6 +411,7 @@ def launch_dash_app(grouped_files, all_variables):
                     editable=True,
                     row_deletable=False  # Allows deleting rows directly
                 ),
+                html.Label("Simple CPU Model"),
                 dash_table.DataTable(
                     id='cpu-param-table',
                     columns=cpu_model_columns,
@@ -356,6 +419,7 @@ def launch_dash_app(grouped_files, all_variables):
                     editable=True,
                     row_deletable=False  # Allows deleting rows directly
                 ),
+                html.Label("GPU Model"),
                 dash_table.DataTable(
                     id='gpu-param-table',
                     columns=gpu_model_columns,
@@ -446,8 +510,17 @@ def launch_dash_app(grouped_files, all_variables):
 
                 # Stack inputs vertically
                 html.Div([
-                    #html.Label("Total Cores:"),
-                    #dcc.Input(id="N_cores", type="number", value=128, style={"width": "60%"}),
+                    dcc.RadioItems(
+                        id="fit-plot-mode",
+                        options=[
+                            {"label": "Time", "value": "time"},
+                            {"label": "Cols per Sec", "value": "cps"}
+                        ],
+                        value="time",
+                        inline=True,
+                    ),
+                    html.Label("Total Cores:"),
+                    dcc.Input(id="N_cores", type="number", value=128, style={"width": "60%"}),
                     html.Label("Vector Length:", style={"margin-top": "5px"}),
                     dcc.Input(id="N_vsize", type="number", value=256, style={"width": "60%"}),
                     html.Label("Floating Point Precision:", style={"margin-top": "5px"}),
@@ -627,17 +700,17 @@ def launch_dash_app(grouped_files, all_variables):
         ],
         [
             Input("fit-function-button", "n_clicks"),
-            #Input("N_cores", "value"),
+            Input("N_cores", "value"),
             Input("N_vsize", "value"),
             Input("N_prec", "value"),
             Input({"type": "file-checkbox", "case": ALL}, "value"),
             Input("variable-dropdown", "value"),
             Input("x-axis-scale", "value"),
-            Input("y-axis-scale", "value")  
+            Input("y-axis-scale", "value"),
+            Input("fit-plot-mode", "value")
         ],
-        [   State('cpu-table-data', 'data') ],
     )
-    def update_fit_plot(n_clicks, N_vsize, N_prec, selected_files, selected_variable, xaxis_scale, yaxis_scale, table_data):
+    def update_fit_plot(n_clicks, N_cores, N_vsize, N_prec, selected_files, selected_variable, xaxis_scale, yaxis_scale, plot_mode):
         
         if n_clicks == 0 or not selected_files:
             raise PreventUpdate
@@ -652,61 +725,70 @@ def launch_dash_app(grouped_files, all_variables):
         for case, filename in flat_files:
             if case in data and filename in data[case] and selected_variable in data[case][filename].columns:
 
-                temp_df = data[case][filename][["ngrdcol", selected_variable]].copy()
-                temp_df["Name"] = f"{case}/{filename}"
-                temp_df["Columns per Second"] = temp_df["ngrdcol"] / temp_df[selected_variable]
-                combined_df = pd.concat([combined_df, temp_df])
+                original_df = data[case][filename][["ngrdcol", selected_variable]].copy()
+                original_df["Name"] = f"{case}/{filename}"
+                original_df["Columns per Second"] = original_df["ngrdcol"] / original_df[selected_variable]
+
+                combined_df = pd.concat([combined_df, original_df])
                 
                 # Assume each entry was run with same numbe rof columns
-                N_cores = 128 #data[case][filename]["tasks"][0]
+                #N_cores = 128 #data[case][filename]["tasks"][0]
 
                 # Apply model_throughput to the selected variable and add it as "_dup"
-                temp_df_dup = temp_df.copy()
+                #temp_df_dup = temp_df.copy()
+                vcpu_df = original_df.copy()
+                cpu_df = original_df.copy()
+                gpu_df = original_df.copy()
                 
+                if any(gpu_name in filename for gpu_name in ["A100", "V100", "H100"]):
+
+                    gpu_df[selected_variable], gpu_params = model_throughputs(gpu_df, selected_variable, N_cores, N_vsize, N_prec, "gpu")
+                    gpu_df["Columns per Second"] = gpu_df["ngrdcol"] / gpu_df[selected_variable]
+                    gpu_df["Name"] = f"{case}/{filename}_gmodel"
+
+                    gpu_table_data.append({
+                        col["id"]: f"{gpu_params.get(col['id']):.3e}" if isinstance(gpu_params.get(col["id"]), (int, float)) else gpu_params.get(col["id"])
+                        for col in cpu_model_columns
+                    })
+                    gpu_table_data[-1]["name"] = f"{case}/{filename}"
+
+                    combined_df = pd.concat([combined_df, gpu_df])
+
+                else:
+
+                    vcpu_df[selected_variable], vcpu_params = model_throughputs(vcpu_df, selected_variable, N_cores, N_vsize, N_prec, "vcpu")
+                    vcpu_df["Columns per Second"] = vcpu_df["ngrdcol"] / vcpu_df[selected_variable]
+                    vcpu_df["Name"] = f"{case}/{filename}_vmodel"
+
+                    vcpu_table_data.append({
+                        col["id"]: f"{vcpu_params.get(col['id']):.3e}" if isinstance(vcpu_params.get(col["id"]), (int, float)) else vcpu_params.get(col["id"])
+                        for col in vcpu_model_columns
+                    })
+                    vcpu_table_data[-1]["name"] = f"{case}/{filename}"
 
 
-                temp_df_dup[selected_variable], vcpu_params = model_throughputs(temp_df_dup, selected_variable, N_cores, N_vsize, N_prec, "vcpu")
+                    cpu_df[selected_variable], cpu_params = model_throughputs(cpu_df, selected_variable, N_cores, N_vsize, N_prec, "cpu")
+                    cpu_df["Columns per Second"] = cpu_df["ngrdcol"] / cpu_df[selected_variable]
+                    cpu_df["Name"] = f"{case}/{filename}_cmodel"
 
-                vcpu_table_data.append({
-                    col["id"]: f"{vcpu_params.get(col['id']):.3e}" if isinstance(vcpu_params.get(col["id"]), (int, float)) else vcpu_params.get(col["id"])
-                    for col in vcpu_model_columns
-                })
-                vcpu_table_data[-1]["name"] = f"{case}/{filename}"
+                    cpu_table_data.append({
+                        col["id"]: f"{cpu_params.get(col['id']):.3e}" if isinstance(cpu_params.get(col["id"]), (int, float)) else cpu_params.get(col["id"])
+                        for col in cpu_model_columns
+                    })
+                    cpu_table_data[-1]["name"] = f"{case}/{filename}"
 
-
-
-                temp_df_dup[selected_variable], cpu_params = model_throughputs(temp_df_dup, selected_variable, N_cores, N_vsize, N_prec, "cpu")
-
-                cpu_table_data.append({
-                    col["id"]: f"{cpu_params.get(col['id']):.3e}" if isinstance(cpu_params.get(col["id"]), (int, float)) else cpu_params.get(col["id"])
-                    for col in cpu_model_columns
-                })
-                cpu_table_data[-1]["name"] = f"{case}/{filename}"
-
-
-
-                # temp_df_dup[selected_variable], gpu_params = model_throughputs(temp_df_dup, selected_variable, N_cores, N_vsize, N_prec, "cpu")
-
-                # gpu_table_data.append({
-                #     col["id"]: f"{gpu_params.get(col['id']):.3e}" if isinstance(gpu_params.get(col["id"]), (int, float)) else gpu_params.get(col["id"])
-                #     for col in cpu_model_columns
-                # })
-                # gpu_table_data[-1]["name"] = f"{case}/{filename}"
-
-
-                temp_df_dup["Columns per Second"] = temp_df_dup["ngrdcol"] / temp_df_dup[selected_variable]
-                temp_df_dup["Name"] = f"{case}/{filename}_model"
-                combined_df = pd.concat([combined_df, temp_df_dup])
+                    combined_df = pd.concat([combined_df, vcpu_df, cpu_df])
                 
-
-        fig = px.line(combined_df, x="ngrdcol", y="Columns per Second", color="Name")
-        #fig = px.line(combined_df, x="ngrdcol", y=selected_variable, color="Name")
+        if plot_mode == "cps":
+            fig = px.line(combined_df, x="ngrdcol", y="Columns per Second", color="Name")
+        else:
+            fig = px.line(combined_df, x="ngrdcol", y=selected_variable, color="Name")
 
         fig.update_layout( xaxis=dict(type=xaxis_scale))
         fig.update_layout( yaxis=dict(type=yaxis_scale))
         fig = plot_with_enhancements(fig, f"{selected_variable} vs. Number of Grid Columns (Raw Values)")
 
-        return fig.to_dict(), vcpu_table_data, cpu_table_data, cpu_table_data
+        return fig.to_dict(), vcpu_table_data, cpu_table_data, gpu_table_data
 
     app.run_server(debug=True,port=8051)
 
@@ -740,5 +822,7 @@ if __name__ == "__main__":
     #             print(f"{file} is missing the variables: {', '.join(sorted(missing_vars))}")
 
     #     exit(1)
+
+    #print(grouped_files)
 
     launch_dash_app(grouped_files, all_variables)
