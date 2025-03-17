@@ -34,7 +34,7 @@ OPTIMIZE="-O2 -Mstack_arrays"
 NETCDF="$(nf-config --prefix)"
 
 # == Linking Flags ==
-LDFLAGS="$ARCH -L$NETCDF/lib -lnetcdff $LAPACK -acc -Mcuda"
+LDFLAGS="$ARCH -L$NETCDF/lib -lnetcdff $LAPACK -acc -cuda"
 
 FFLAGS="$ARCH $OPTIMIZE $DEBUG -Mbackslash -Mstandard -Kieee -acc -Minfo=accel"
 

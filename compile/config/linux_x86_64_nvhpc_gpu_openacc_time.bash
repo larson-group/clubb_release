@@ -36,7 +36,7 @@ GPTL="$NCAR_ROOT_GPTL"
 
 # == Linking Flags ==
 # For gptl: -lgptlf -lgptl -L/opt/cray/pe/perftools/23.09.0/lib64/libunwind -lunwind
-LDFLAGS="$ARCH -L$NETCDF/lib -L$GPTL/lib -lnetcdff $LAPACK -acc -Mcuda -lgptlf -lgptl -L/opt/cray/pe/perftools/23.09.0/lib64/libunwind -lunwind"
+LDFLAGS="$ARCH -L$NETCDF/lib -L$GPTL/lib -lnetcdff $LAPACK -acc -cuda -lgptlf -lgptl -L/opt/cray/pe/perftools/23.09.0/lib64/libunwind -lunwind"
 
 FFLAGS="$ARCH $OPTIMIZE $DEBUG -Mbackslash -Mstandard -Kieee -acc -Minfo=accel"
 
