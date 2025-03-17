@@ -157,9 +157,7 @@ module grid_class
   public :: grid, zt2zm, zm2zt, zt2zm2zt, zm2zt2zm, & 
             ddzm, ddzt, & 
             setup_grid, cleanup_grid, setup_grid_heights, &
-            read_grid_heights, flip, zt2zm_gpu, zm2zt_gpu
-
-  private :: t_above, t_below, m_above, m_below
+            read_grid_heights, flip, zt2zm_gpu, zm2zt_gpu, t_above, t_below, m_above, m_below
 
   private ! Default Scoping
 

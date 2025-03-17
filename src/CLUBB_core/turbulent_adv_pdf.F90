@@ -15,6 +15,10 @@ module turbulent_adv_pdf
   ! References:
   !-------------------------------------------------------------------------
 
+#ifdef GPTL
+  use gptl
+#endif
+
   implicit none
 
   public :: xpyp_term_ta_pdf_lhs,         &
@@ -26,6 +30,8 @@ module turbulent_adv_pdf
 
   integer, parameter :: &
     ndiags3 = 3
+    
+  integer :: ret_code
 
   contains
 
@@ -377,6 +383,11 @@ module turbulent_adv_pdf
     end do
     !$acc end parallel loop
 
+#ifdef GPTL
+    !$acc wait 
+    ret_code = GPTLstart('ik_loops_big')
+#endif
+
     if ( .not. l_upwind_xpyp_turbulent_adv ) then
 
       ! Centered discretization.
@@ -456,6 +467,11 @@ module turbulent_adv_pdf
       !$acc end parallel loop
 
     endif
+
+#ifdef GPTL
+    !$acc wait
+    ret_code = GPTLstop('ik_loops_big')
+#endif
 
     ! Set upper boundary array to 
     !$acc parallel loop gang vector collapse(2) default(present)

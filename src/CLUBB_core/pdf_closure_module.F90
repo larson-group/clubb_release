@@ -990,6 +990,11 @@ module pdf_closure_module
     l_calc_ice_supersat_frac = .true.
 #endif
 
+#ifdef GPTL
+    !$acc wait 
+    ret_code = GPTLstart('ik_loops_big')
+#endif
+
     call transform_pdf_chi_eta_component( nz, ngrdcol, &
                                           tl1, pdf_params%rsatl_1, pdf_params%rt_1, exner,  & ! In
                                           pdf_params%varnce_thl_1, pdf_params%varnce_rt_1,  & ! In
@@ -1073,6 +1078,10 @@ module pdf_closure_module
 
     end if ! l_calc_ice_supersat_frac
 
+#ifdef GPTL
+    !$acc wait
+    ret_code = GPTLstop('ik_loops_big')
+#endif
 
     ! Compute cloud fraction and mean cloud water mixing ratio.
     ! Reference:
@@ -1155,6 +1164,11 @@ module pdf_closure_module
     ! Reference:
     ! https://arxiv.org/pdf/1711.03675v1.pdf#nameddest=url:anl_int_buoy_terms
     
+#ifdef GPTL
+    !$acc wait 
+    ret_code = GPTLstart('ik_loops_big')
+#endif
+
     ! Calculate the contributions to <w'rc'>, <w'^2 rc'>, <rt'rc'>, and
     ! <thl'rc'> from the 1st PDF component.
     call calc_xprcp_component( nz, ngrdcol,                                          & ! In
@@ -1247,6 +1261,11 @@ module pdf_closure_module
 
     end if
     
+#ifdef GPTL
+    !$acc wait
+    ret_code = GPTLstop('ik_loops_big')
+#endif
+
     ! Account for subplume correlation of scalar, theta_v.
     ! See Eqs. A13, A8 from Larson et al. (2002) ``Small-scale...''
     !  where the ``scalar'' in this paper is w.
@@ -1817,11 +1836,6 @@ module pdf_closure_module
 
     !$acc enter data create( denominator )
 
-#ifdef GPTL
-    !$acc wait 
-    ret_code = GPTLstart('ik_loops')
-#endif
-
     !$acc parallel loop gang vector collapse(2) default(present)
     do k = 1, nz
       do i = 1, ngrdcol
@@ -1872,11 +1886,6 @@ module pdf_closure_module
       end do
     end do
     !$acc end parallel loop
-
-#ifdef GPTL
-    !$acc wait
-    ret_code = GPTLstop('ik_loops')
-#endif
 
     call smooth_corr_quotient( ngrdcol, nz, covar_chi_eta, denominator, denom_thresh, corr_chi_eta )
 

@@ -10,7 +10,7 @@ import sys
 import time
 import socket
 
-def parse_gptl_summary(timing_results, variables):
+def parse_gptl_summary(timing_results):
     """
     Parses the timing.summary file and updates timing_results with the mean_time
     for each variable specified in the variables list.
@@ -26,12 +26,22 @@ def parse_gptl_summary(timing_results, variables):
         # Skip the header line
         nruns = 1
         header = f.readline()
+        list_started = False
+
         for line in f:
+
             tokens = line.split()
-            # Ensure that the line has at least 4 tokens to avoid index errors.
-            if len(tokens) >= 4:
-                var_name = tokens[0]
-                if var_name in variables:
+
+            # Start reading variables after "name" line
+            if len(tokens) > 1 and tokens[0] == "name":
+                list_started = True
+                continue
+
+            if list_started:
+                # Ensure that the line has at least 4 tokens to avoid index errors.
+                if len(tokens) >= 4:
+                    var_name = tokens[0]
+                    #if var_name in variables:
                     try:
                         ncalls    = float(tokens[1])
                         if var_name == "mainloop":
@@ -43,6 +53,7 @@ def parse_gptl_summary(timing_results, variables):
                         timing_results[var_name+"_r"] = mean_time / nruns #/ ( ncalls / nranks ) 
                     except ValueError:
                         print(f"Error: Could not convert mean_time '{tokens[3]}' to float for variable '{var_name}'.")
+
     return timing_results
 
 
@@ -209,20 +220,20 @@ def time_clubb_standalone(case: str, ngrdcol: int, mpi: int, srun: int, gpu: boo
 
     if os.path.exists("timing.summary"):
 
-        parse_gptl_summary( timing_results, 
-                            [ "runloop", 
-                              "mainloop", 
-                              "advance_clubb_core_api",
-                              "output_multi_col",
-                              "penta_lu_solve_multiple_rhs_lhs",
-                              "penta_lu_solve_single_rhs_multiple_lhs",
-                              "tridiag_lu_solve_multiple_rhs_lhs",
-                              "fill_holes", 
-                              "i_loops",
-                              "ik_loops",
-                              "acc_data_create",
-                              "acc_data_copyin",
-                            ] )
+        parse_gptl_summary( timing_results ) #, 
+                            # [ "runloop", 
+                            #   "mainloop", 
+                            #   "advance_clubb_core_api",
+                            #   "output_multi_col",
+                            #   "penta_lu_solve_multiple_rhs_lhs",
+                            #   "penta_lu_solve_single_rhs_multiple_lhs",
+                            #   "tridiag_lu_solve_multiple_rhs_lhs",
+                            #   "fill_holes", 
+                            #   "i_loops",
+                            #   "ik_loops",
+                            #   "acc_data_create",
+                            #   "acc_data_copyin",
+                            # ] )
 
     else:
         # Parse the timing results and find the last iteration
@@ -311,12 +322,13 @@ def generate_timing_csv( case: str, ngrdcol_min: int, ngrdcol_max: int,
             print(f" - using {tasks} tasks with {cols_per_task} column each")
             param_gen = f"python create_multi_col_params.py -l_multi_col_output {output_choice} -tweak_list {tweak_list} -n {cols_per_task}"
 
-            # Increase the number of runs based on the work per core, we want small amounts of work 
+            # Increase the number of runs based on the work per task, we want small amounts of work 
             # to have more runs for better profiling, but with large amounts of work we want fewer
             # runs to reduce runtime. We use a base of 5 runs for the GPU that drops off by 1 every
             # 4x of the problem size, and the CPU starts at 10 runs and drops by 1 every double
             if gpu:
                 # Don't increase gpu runs as much
+                #total_runs = 1
                 total_runs = int( max( 1, np.ceil(5 - np.floor(np.log(cols_per_task)/np.log(4)) )))
                 #iterations = max(  250 * (10 - np.floor(np.log2(cols_per_task)/2.0)), 1000 )
             else:

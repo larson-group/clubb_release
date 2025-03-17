@@ -3019,7 +3019,8 @@ module advance_clubb_core_module
         grid, & ! Type
         zt2zm_gpu, & ! Procedure(s)
         zm2zt_gpu, &
-        zm2zt2zm
+        zm2zt2zm, &
+        t_above, t_below, m_above, m_below
 
     use constants_clubb, only: &
         one_half,       & ! Variable(s)
@@ -3048,7 +3049,7 @@ module advance_clubb_core_module
         nparams,         & ! Variable(s)
         igamma_coef,     &
         igamma_coefb,    &
-        igamma_coefc
+        igamma_coefc, iSkw_denom_coef
 
     use pdf_closure_module, only: &
         pdf_closure ! Procedure(s)
@@ -3435,6 +3436,9 @@ module advance_clubb_core_module
 
     integer :: i, k, j, sclr
 
+    real( kind = core_rknd ), dimension(ngrdcol) :: &
+      Skx_denom_tol
+
     !-------------------------------------- Begin Code --------------------------------------
 
     !$acc enter data create( wp2_zt,wp3_zm, rtp2_zt,rtp3_zm, thlp2_zt,  thlp3_zm, &
@@ -3445,7 +3449,7 @@ module advance_clubb_core_module
     !$acc                    Sku_zm, Skv_zt, Skv_zm, wp2up2_zt, &
     !$acc                    wp2vp2_zt, wp4_zt, wpthvp_zt, rtpthvp_zt, thlpthvp_zt, &
     !$acc                    wprcp_zt, rtprcp_zt, thlprcp_zt, uprcp_zt, vprcp_zt, &
-    !$acc                    rsat, rel_humidity, um_zm, vm_zm, T_in_K, sigma_sqd_w_tmp )
+    !$acc                    rsat, rel_humidity, um_zm, vm_zm, T_in_K, sigma_sqd_w_tmp, Skx_denom_tol )
 
     !$acc enter data if( l_call_pdf_closure_twice ) &
     !$acc            create( w_up_in_cloud_zm, wpup2_zm, wpvp2_zm, &
@@ -3468,25 +3472,40 @@ module advance_clubb_core_module
     ! thermodynamic grid levels.
     !---------------------------------------------------------------------------
 
-#ifdef GPTL
+    #ifdef GPTL
     !$acc wait 
+    !ret_code = GPTLstart('interp_and_skx')
     ret_code = GPTLstart('ik_loops')
 #endif
 
     wp2_zt(:,:)   = zm2zt_gpu( nzm, nzt, ngrdcol, gr, wp2(:,:), &
                            w_tol_sqd ) ! Positive definite quantity
+
     wp3_zm(:,:)   = zt2zm_gpu( nzm, nzt, ngrdcol, gr, wp3(:,:) )
+
+
     thlp2_zt(:,:) = zm2zt_gpu( nzm, nzt, ngrdcol, gr, thlp2(:,:), &
                            thl_tol**2 ) ! Positive definite quantity
+    
+
     thlp3_zm(:,:) = zt2zm_gpu( nzm, nzt, ngrdcol, gr, thlp3(:,:) )
+    
+
     rtp2_zt(:,:)  = zm2zt_gpu( nzm, nzt, ngrdcol, gr, rtp2(:,:), &
                            rt_tol**2 ) ! Positive definite quantity
+
     rtp3_zm(:,:)  = zt2zm_gpu( nzm, nzt, ngrdcol, gr, rtp3(:,:) )
+
+
     up2_zt(:,:)   = zm2zt_gpu( nzm, nzt, ngrdcol, gr, up2(:,:), &
                            w_tol_sqd ) ! Positive definite quantity
+
     up3_zm(:,:)   = zt2zm_gpu( nzm, nzt, ngrdcol, gr, up3(:,:) )
+
+
     vp2_zt(:,:)   = zm2zt_gpu( nzm, nzt, ngrdcol, gr, vp2(:,:), &
-                           w_tol_sqd ) ! Positive definite quantity
+                          w_tol_sqd ) ! Positive definite quantity
+
     vp3_zm(:,:)   = zt2zm_gpu( nzm, nzt, ngrdcol, gr, vp3(:,:) )
 
     do sclr = 1, sclr_dim, 1
@@ -3501,7 +3520,8 @@ module advance_clubb_core_module
                    
     call Skx_func( nzm, ngrdcol, wp2, wp3_zm, &
                    w_tol, clubb_params, &
-                   Skw_zm )    
+                   Skw_zm ) 
+ 
                    
     call Skx_func( nzt, ngrdcol, thlp2_zt, thlp3, &
                    thl_tol, clubb_params, &
@@ -3510,6 +3530,7 @@ module advance_clubb_core_module
     call Skx_func( nzm, ngrdcol, thlp2, thlp3_zm, &
                    thl_tol, clubb_params, &
                    Skthl_zm )  
+
                    
     call Skx_func( nzt, ngrdcol, rtp2_zt, rtp3, &
                    rt_tol, clubb_params, &
@@ -3517,11 +3538,11 @@ module advance_clubb_core_module
                    
     call Skx_func( nzm, ngrdcol, rtp2, rtp3_zm, &
                    rt_tol, clubb_params, &
-                   Skrt_zm )   
+                   Skrt_zm )    
                    
     call Skx_func( nzt, ngrdcol, up2_zt, up3, &
                    w_tol, clubb_params, &
-                   Sku_zt )   
+                   Sku_zt ) 
                                       
     call Skx_func( nzm, ngrdcol, up2, up3_zm, &
                    w_tol, clubb_params, &
@@ -3533,7 +3554,7 @@ module advance_clubb_core_module
                    
     call Skx_func( nzm, ngrdcol, vp2, vp3_zm, &
                    w_tol, clubb_params, &
-                   Skv_zm )      
+                   Skv_zm )  
 
     do sclr = 1, sclr_dim
       
@@ -3547,8 +3568,159 @@ module advance_clubb_core_module
                       
     end do ! sclr = 1, sclr_dim, 1
 
+
+    ! !$acc parallel loop gang vector collapse(2) default(present) async(1) 
+    ! do k = 2, nzm-1
+    !   do i = 1, ngrdcol
+    !     vp3_zm(i,k) = gr%weights_zt2zm(i,k,t_above) * vp3(i,k) &
+    !                      + gr%weights_zt2zm(i,k,t_below) * vp3(i,k-1)
+
+    !     vp3_zm(i,k) = max( vp3_zm(i,k), -999.0_core_rknd )
+        
+
+    !     up3_zm(i,k) = gr%weights_zt2zm(i,k,t_above) * up3(i,k) &
+    !                      + gr%weights_zt2zm(i,k,t_below) * up3(i,k-1)
+
+    !     up3_zm(i,k) = max( up3_zm(i,k), -999.0_core_rknd )
+        
+
+    !     rtp3_zm(i,k) = gr%weights_zt2zm(i,k,t_above) * rtp3(i,k) &
+    !                      + gr%weights_zt2zm(i,k,t_below) * rtp3(i,k-1)
+
+    !     rtp3_zm(i,k) = max( rtp3_zm(i,k), -999.0_core_rknd )
+        
+
+    !     thlp3_zm(i,k) = gr%weights_zt2zm(i,k,t_above) * thlp3(i,k) &
+    !                      + gr%weights_zt2zm(i,k,t_below) * thlp3(i,k-1)
+
+    !     thlp3_zm(i,k) = max( thlp3_zm(i,k), -999.0_core_rknd )
+        
+
+    !     wp3_zm(i,k) = gr%weights_zt2zm(i,k,t_above) * wp3(i,k) &
+    !                      + gr%weights_zt2zm(i,k,t_below) * wp3(i,k-1)
+
+    !     wp3_zm(i,k) = max( wp3_zm(i,k), -999.0_core_rknd )
+    !   end do
+    ! end do
+
+    ! !$acc parallel loop gang vector collapse(2) default(present) async(1) 
+    ! do k = 1, nzt
+    !   do i = 1, ngrdcol
+    !     vp2_zt(i,k) = gr%weights_zm2zt(i,k,m_above) * vp2(i,k+1) &
+    !                   + gr%weights_zm2zt(i,k,m_below) * vp2(i,k)
+    !     vp2_zt(i,k) = max( vp2_zt(i,k), w_tol_sqd )
+        
+    !     up2_zt(i,k) = gr%weights_zm2zt(i,k,m_above) * up2(i,k+1) &
+    !                   + gr%weights_zm2zt(i,k,m_below) * up2(i,k)
+    !     up2_zt(i,k) = max( up2_zt(i,k), w_tol_sqd )
+        
+    !     rtp2_zt(i,k) = gr%weights_zm2zt(i,k,m_above) * rtp2(i,k+1) &
+    !                   + gr%weights_zm2zt(i,k,m_below) * rtp2(i,k)
+    !     rtp2_zt(i,k) = max( rtp2_zt(i,k), rt_tol**2 )
+        
+    !     wp2_zt(i,k) = gr%weights_zm2zt(i,k,m_above) * wp2(i,k+1) &
+    !                   + gr%weights_zm2zt(i,k,m_below) * wp2(i,k)
+    !     wp2_zt(i,k) = max( wp2_zt(i,k), w_tol_sqd )
+        
+    !     wp2_zt(i,k) = gr%weights_zm2zt(i,k,m_above) * wp2(i,k+1) &
+    !                   + gr%weights_zm2zt(i,k,m_below) * wp2(i,k)
+    !     wp2_zt(i,k) = max( wp2_zt(i,k), w_tol_sqd )
+    !   end do
+    ! end do
+
+    ! !$acc parallel loop gang vector default(present) async(1) 
+    ! do i = 1, ngrdcol
+
+    !   vp3_zm(i,1) = max( vp3(i,1), -999.0_core_rknd )
+
+    !   vp3_zm(i,nzm) = gr%weights_zt2zm(i,nzm,t_above) * vp3(i,nzt) &
+    !                      + gr%weights_zt2zm(i,nzm,t_below) * vp3(i,nzt-1)
+
+    !   vp3_zm(i,nzm) = max( vp3_zm(i,nzm), -999.0_core_rknd )
+      
+
+    !   up3_zm(i,1) = max( up3(i,1), -999.0_core_rknd )
+
+    !   up3_zm(i,nzm) = gr%weights_zt2zm(i,nzm,t_above) * up3(i,nzt) &
+    !                      + gr%weights_zt2zm(i,nzm,t_below) * up3(i,nzt-1)
+
+    !   up3_zm(i,nzm) = max( up3_zm(i,nzm), -999.0_core_rknd )
+      
+
+    !   rtp3_zm(i,1) = max( rtp3(i,1), -999.0_core_rknd )
+
+    !   rtp3_zm(i,nzm) = gr%weights_zt2zm(i,nzm,t_above) * rtp3(i,nzt) &
+    !                      + gr%weights_zt2zm(i,nzm,t_below) * rtp3(i,nzt-1)
+
+    !   rtp3_zm(i,nzm) = max( rtp3_zm(i,nzm), -999.0_core_rknd )
+      
+
+    !   thlp3_zm(i,1) = max( thlp3(i,1), -999.0_core_rknd )
+
+    !   thlp3_zm(i,nzm) = gr%weights_zt2zm(i,nzm,t_above) * thlp3(i,nzt) &
+    !                      + gr%weights_zt2zm(i,nzm,t_below) * thlp3(i,nzt-1)
+
+    !   thlp3_zm(i,nzm) = max( thlp3_zm(i,nzm), -999.0_core_rknd )
+      
+
+    !   wp3_zm(i,1) = max( wp3(i,1), -999.0_core_rknd )
+
+    !   wp3_zm(i,nzm) = gr%weights_zt2zm(i,nzm,t_above) * wp3(i,nzt) &
+    !                      + gr%weights_zt2zm(i,nzm,t_below) * wp3(i,nzt-1)
+
+    !   wp3_zm(i,nzm) = max( wp3_zm(i,nzm), -999.0_core_rknd )
+      
+    ! end do
+    ! !$acc end parallel loop
+
+
+    ! !$acc parallel loop gang vector collapse(2) default(present) async(1) 
+    ! do k = 1, nzm
+    !   do i = 1, ngrdcol
+    !     Skx_denom_tol(i) = clubb_params(i,iSkw_denom_coef) * w_tol**2
+    !     Skv_zm(i,k) = vp3_zm(i,k) * sqrt( vp2(i,k) + Skx_denom_tol(i) )**(-3)
+
+        
+    !     Skx_denom_tol(i) = clubb_params(i,iSkw_denom_coef) * w_tol**2
+    !     Sku_zm(i,k) = up3_zm(i,k) * sqrt( up2(i,k) + Skx_denom_tol(i) )**(-3)
+
+        
+    !     Skx_denom_tol(i) = clubb_params(i,iSkw_denom_coef) * rt_tol**2
+    !     Skrt_zm(i,k) = rtp3_zm(i,k) * sqrt( rtp2(i,k) + Skx_denom_tol(i) )**(-3)
+
+        
+    !     Skx_denom_tol(i) = clubb_params(i,iSkw_denom_coef) * thl_tol**2
+    !     Skthl_zt(i,k) = thlp3(i,k) * sqrt( thlp2_zt(i,k) + Skx_denom_tol(i) )**(-3)
+
+        
+    !     Skx_denom_tol(i) = clubb_params(i,iSkw_denom_coef) * w_tol**2
+    !     Skw_zm(i,k) = wp3_zm(i,k) * sqrt( wp2(i,k) + Skx_denom_tol(i) )**(-3)
+    !   end do
+    ! end do  
+    
+    ! !$acc parallel loop gang vector collapse(2) default(present) async(1) 
+    ! do k = 1, nzt
+    !   do i = 1, ngrdcol
+    !     Skx_denom_tol(i) = clubb_params(i,iSkw_denom_coef) * w_tol**2
+    !     Skv_zt(i,k) = vp3(i,k) * sqrt( vp2_zt(i,k) + Skx_denom_tol(i) )**(-3)
+
+    !     Skx_denom_tol(i) = clubb_params(i,iSkw_denom_coef) * w_tol**2
+    !     Sku_zt(i,k) = up3(i,k) * sqrt( up2_zt(i,k) + Skx_denom_tol(i) )**(-3)
+
+    !     Skx_denom_tol(i) = clubb_params(i,iSkw_denom_coef) * rt_tol**2
+    !     Skrt_zt(i,k) = rtp3(i,k) * sqrt( rtp2_zt(i,k) + Skx_denom_tol(i) )**(-3)
+
+    !     Skx_denom_tol(i) = clubb_params(i,iSkw_denom_coef) * thl_tol**2
+    !     Skthl_zt(i,k) = thlp3(i,k) * sqrt( thlp2_zt(i,k) + Skx_denom_tol(i) )**(-3)
+
+    !     Skx_denom_tol(i) = clubb_params(i,iSkw_denom_coef) * w_tol**2
+    !     Skw_zt(i,k) = wp3(i,k) * sqrt( wp2_zt(i,k) + Skx_denom_tol(i) )**(-3)
+    !   end do
+    ! end do  
+
 #ifdef GPTL
     !$acc wait 
+    !ret_code = GPTLstop('interp_and_skx')
     ret_code = GPTLstop('ik_loops')
 #endif
 
@@ -4121,7 +4293,7 @@ module advance_clubb_core_module
     !$acc                   Sku_zm, Skv_zt, Skv_zm, wp2up2_zt, &
     !$acc                   wp2vp2_zt, wp4_zt, wpthvp_zt, rtpthvp_zt, thlpthvp_zt, &
     !$acc                   wprcp_zt, rtprcp_zt, thlprcp_zt, uprcp_zt, vprcp_zt, &
-    !$acc                   rsat, rel_humidity, um_zm, vm_zm, T_in_K, sigma_sqd_w_tmp )
+    !$acc                   rsat, rel_humidity, um_zm, vm_zm, T_in_K, sigma_sqd_w_tmp, Skx_denom_tol )
 
     !$acc exit data if( l_call_pdf_closure_twice ) &
     !$acc           delete( w_up_in_cloud_zm, wpup2_zm, wpvp2_zm, &
