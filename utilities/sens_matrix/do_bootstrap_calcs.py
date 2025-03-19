@@ -14,7 +14,7 @@ def bootstrap_calculations(numSamples,
                            normlzdCurvMatrix,
                            reglrCoef,
                            defaultBiasesCol):
-    from sens_matrix_dashboard import solveUsingNonlin, lossFncMetrics, fwdFnc
+    from quadtune_driver import solveUsingNonlin, lossFncMetrics, fwdFnc
     # In order to do sampling with replacement of the metrics we sample the corresponding indices with replacement
     metricsSampleIdxMatrix = np.random.randint(0, numMetricsToTune, size=(numSamples, numMetricsToTune))
     paramsSolnNonlin = np.zeros((numSamples, len(paramsNames), 1))

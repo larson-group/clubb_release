@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Run this app with `python3 sens_matrix_dashboard.py` and
+# Run this app with `python3 quadtune_driver.py` and
 # view the plots at http://127.0.0.1:8050/ in your web browser.
 # (To open a web browser on a larson-group computer,
 # login to malan with `ssh -X` and then type `firefox &`.)

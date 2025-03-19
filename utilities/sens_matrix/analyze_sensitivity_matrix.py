@@ -105,7 +105,7 @@ def analyzeSensMatrix(metricsNames, paramsNames, transformedParamsNames,
     import netCDF4
     import pdb
     from sklearn.preprocessing import normalize
-    from set_up_dashboard_inputs import setupDefaultParamVectors, \
+    from set_up_inputs import setupDefaultParamVectors, \
                                         setupDefaultMetricValsCol
 
     if ( len(paramsNames) != len(sensNcFilenames)   ):

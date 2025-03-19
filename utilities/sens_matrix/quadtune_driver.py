@@ -1,10 +1,10 @@
 # -*- coding: utf-8 -*-
 import pandas as pd
-from bootstrap_calculations import bootstrap_calculations
-from bootstrap_plots import bootstrap_plots
+from do_bootstrap_calcs import bootstrap_calculations
+from create_bootstrap_figs import bootstrap_plots
 
 
-# Run this app with `python3 sens_matrix_dashboard.py` and
+# Run this app with `python3 quadtune_driver.py` and
 # view the plots at http://127.0.0.1:8050/ in your web browser.
 # (To open a web browser on a larson-group computer,
 # login to malan with `ssh -X` and then type `firefox &`.)
@@ -18,18 +18,18 @@ def main():
 
     import numpy as np
 
-    from set_up_dashboard_inputs \
+    from set_up_inputs \
         import setUpInputs, \
                setUpPreliminaries, \
                setupDefaultMetricValsCol
 
-    from create_figs import createFigs
+    from create_nonbootstrap_figs import createFigs
 
 
 
     print("Set up inputs . . .")
 
-    # The user should input all tuning data into file set_up_dashboard_inputs.py
+    # The user should input all tuning data into file set_up_inputs.py
     (numMetricsNoSpecial, \
     metricsNames, \
     varPrefixes, \
@@ -469,8 +469,8 @@ def constructNormlzdSensCurvMatrices(metricsNames, paramsNames, transformedParam
     #import matplotlib.pyplot as plt
     import pdb
 
-    from set_up_dashboard_inputs import setupSensArrays
-    from set_up_dashboard_inputs import setupDefaultParamVectors, \
+    from set_up_inputs import setupSensArrays
+    from set_up_inputs import setupDefaultParamVectors, \
                                         setupDefaultMetricValsCol
     from scipy.interpolate import UnivariateSpline
 
@@ -703,9 +703,9 @@ def calcNormlzdRadiusCurv(metricsNames, paramsNames, transformedParamsNames, par
     import matplotlib.pyplot as plt
     import pdb
 
-    from set_up_dashboard_inputs import setupDefaultParamVectors, \
+    from set_up_inputs import setupDefaultParamVectors, \
                                            setupSensArrays
-    from set_up_dashboard_inputs import setupDefaultMetricValsCol
+    from set_up_inputs import setupDefaultMetricValsCol
 
     if ( len(paramsNames) != len(sensNcFilenames)   ):
         print("Number of parameters must equal number of netcdf files.")

@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Run this app with `python3 sens_matrix_dashboard.py` and
+# Run this app with `python3 quadtune_driver.py` and
 # view the plots at http://127.0.0.1:8050/ in your web browser.
 # (To open a web browser on a larson-group computer,
 # login to malan with `ssh -X` and then type `firefox &`.)
@@ -19,7 +19,7 @@ from dash import html
 #import dash_core_components as dcc
 #import dash_html_components as html
 #import fnmatch
-from sens_matrix_dashboard import lossFncMetrics, approxMatrixWithSvd, normlzdSemiLinMatrixFnc
+from quadtune_driver import lossFncMetrics, approxMatrixWithSvd, normlzdSemiLinMatrixFnc
 
 def createFigs(numMetricsNoSpecial, metricsNames,
                varPrefixes,
@@ -69,16 +69,16 @@ def createFigs(numMetricsNoSpecial, metricsNames,
     plot_metricsBarChart = True
     plot_paramsIncrsBarChart = True
     plot_paramsAbsIncrsBarChart = True
-    plot_paramsTotContrbBarChart = False
-    plot_biasesVsDiagnosticScatterplot = False
+    plot_paramsTotContrbBarChart = True
+    plot_biasesVsDiagnosticScatterplot = True
     plot_dpMin2PtFig = True
-    plot_dpMinMatrixScatterFig = False
+    plot_dpMinMatrixScatterFig = True
     plot_projectionMatrixFigs = True
     plot_biasesVsSensMagScatterplot = True
     plot_biasesVsSvdScatterplot = True
     plot_paramsCorrArrayFig = True
     plot_sensMatrixAndBiasVecFig = True
-    plot_PcaBiplot = False
+    plot_PcaBiplot = True
     plot_PcSensMap = True
     plot_vhMatrixFig = True
 
@@ -498,7 +498,7 @@ def createFigs(numMetricsNoSpecial, metricsNames,
                                               metricsNames)
 
     if plot_biasesVsDiagnosticScatterplot:
-        diagnosticPrefix = ["U10", "U10"]
+        diagnosticPrefix = ["U10"] # Doesn't work if try two prefixes, e.g., ["U10", "SWCF"]
         biasVsDiagnosticScatterplot = \
             createBiasVsDiagnosticScatterplot(diagnosticPrefix, defaultBiasesCol,
                                               normMetricValsCol,
@@ -982,7 +982,7 @@ def createFigs(numMetricsNoSpecial, metricsNames,
     sensMatrixDashboard = dash.Dash(__name__, external_stylesheets=external_stylesheets)
 
     dashboardChildren = [
-        html.H1(children='Sensitivity matrix diagnostics'),
+        html.H1(children='QuadTune diagnostics'),
 
         html.Div(children=''' ''')]
 
@@ -1969,8 +1969,8 @@ def createThreeDotFig(metricsNames, paramsNames, transformedParamsNames,
     #import matplotlib.pyplot as plt
     import pdb
 
-    from set_up_dashboard_inputs import setupSensArrays
-    from set_up_dashboard_inputs import setupDefaultParamVectors, \
+    from set_up_inputs import setupSensArrays
+    from set_up_inputs import setupDefaultParamVectors, \
         setupDefaultMetricValsCol
     from scipy.interpolate import UnivariateSpline
 
@@ -2192,7 +2192,7 @@ def calcParamsBounds(metricsNames, paramsNames, transformedParamsNames,
     #import matplotlib.pyplot as plt
     import pdb
 
-    from set_up_dashboard_inputs import setupDefaultParamVectors, \
+    from set_up_inputs import setupDefaultParamVectors, \
         setupDefaultMetricValsCol, setupSensArrays
 
     if (len(paramsNames) != len(sensNcFilenames)):
@@ -2446,7 +2446,7 @@ def calcParamsBoundsHelper(metricsNames, paramsNames, transformedParamsNames,
     #import matplotlib.pyplot as plt
     import pdb
 
-    from set_up_dashboard_inputs import setupSensArrays
+    from set_up_inputs import setupSensArrays
     #from set_up_dashboard_inputs import setupDefaultMetricValsCol
 
     # Based on the numParams sensitivity simulations,
@@ -3172,7 +3172,7 @@ def createBiasVsBiasApproxScatterplot(defaultBiasesApproxNonlin, defaultBiasesCo
 def createBiasVsDiagnosticScatterplot(diagnosticPrefix, defaultBiasesCol,
                                       normMetricValsCol,
                                       defaultNcFilename):
-    from set_up_dashboard_inputs import setUp_x_MetricsList, \
+    from set_up_inputs import setUp_x_MetricsList, \
         setupDefaultMetricValsCol
 
     diagnosticNamesWeightsAndNorms, dfdiagnosticMetricGlobalVal = setUp_x_MetricsList(diagnosticPrefix,
@@ -3191,12 +3191,12 @@ def createBiasVsDiagnosticScatterplot(diagnosticPrefix, defaultBiasesCol,
     # Each column tells us how all metrics vary with a single parameter.
     biasDiagnosticMatrix = np.concatenate((diagnosticValsCol,
                                            (-defaultBiasesCol / np.abs(normMetricValsCol))), axis=1)
-    biasAndDiagnosticNames = [diagnosticPrefix, "bias"]
+    biasAndDiagnosticNames = [diagnosticPrefix[0], "bias"]
     #biasAndParamsNames = np.append(["bias", "bias_approx_pc"], paramsNames)
     df = pd.DataFrame(biasDiagnosticMatrix,
                       index=diagnosticNames,
                       columns=biasAndDiagnosticNames)
-    biasVsDiagnosticScatterplot = px.scatter(df, x=diagnosticPrefix, y="bias",
+    biasVsDiagnosticScatterplot = px.scatter(df, x=diagnosticPrefix[0], y="bias",
                                              text=diagnosticNames, title="Bias vs diagnostic")
     #biasSensDirMatrixOneOneLine = px.line(df, x="bias", y="bias")
     #biasSensDirMatrixOneMOneLine = px.line(df, x="bias", y=-df.loc[:,"bias"])
@@ -3206,7 +3206,7 @@ def createBiasVsDiagnosticScatterplot(diagnosticPrefix, defaultBiasesCol,
     #biasVsDiagnosticScatterplot.add_trace(go.Scatter(x=biasRange, y=biasRange, fill='tozeroy',
     #                           name='Region of improvement', mode='none',
     #                           fillcolor='rgba(253,253,150,0.7)'))
-    biasVsDiagnosticScatterplot.update_xaxes(title=diagnosticPrefix)
+    biasVsDiagnosticScatterplot.update_xaxes(title=diagnosticPrefix[0])
     biasVsDiagnosticScatterplot.update_yaxes(title="-defaultBiasesCol/obs")
     biasVsDiagnosticScatterplot.update_traces(textposition='top center')
     biasVsDiagnosticScatterplot.update_yaxes(visible=True, zeroline=True, zerolinewidth=2,
