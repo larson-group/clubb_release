@@ -217,7 +217,8 @@ module advance_clubb_core_module
         unused_var, &
         grav, &
         eps, &
-        min_max_smth_mag
+        min_max_smth_mag, &
+        pi
 
     use parameter_indices, only: &
         nparams,                 & ! Variable(s)
@@ -874,6 +875,21 @@ module advance_clubb_core_module
     integer :: advance_order_loop_iter
 
     integer :: smth_type = 2  ! Used for Lscale_width_vert_avg
+
+
+    ! integer :: nbin = 50
+
+    ! integer :: &
+    !   ibin 
+
+    ! real( kind = core_rknd ) :: &
+    !   sigma, wlarge, xx, yy, sum_wa, yy_init
+
+    ! real( kind = core_rknd ) :: &
+    !   wa, zz, invrs_coef1, invrs_coef2
+
+    ! real( kind = core_rknd ), dimension(ngrdcol,nzm) :: &
+    !   ww
 
     !----- Begin Code -----
 
@@ -2307,6 +2323,46 @@ module advance_clubb_core_module
      endif ! advance_order_loop_iter
 
     enddo ! advance_order_loop_iter = 1, 4, 1
+
+
+! #ifdef GPTL
+!     !$acc wait 
+!     ret_code = GPTLstart('subgrid_mean_updraft')
+! #endif
+
+!     !$acc parallel loop gang vector collapse(2) default(present) async(1)
+!     do k = 1, nzm
+!       do i = 1, ngrdcol
+
+!         sigma = max(0.001_core_rknd, rho_zm(i,k))
+!         wlarge = wm_zm(i,k)
+!         xx = 6._core_rknd * sigma / nbin
+
+!         invrs_coef1 = -1. / (2*sigma**2)
+!         invrs_coef2 = +1. / (sigma*sqrt(2*pi))
+
+!         yy_init = wlarge - 3._core_rknd*sigma + 0.5*xx
+!         sum_wa = zero
+
+!         !$acc loop reduction(+:sum_wa) independent
+!         do ibin = 1, nbin
+
+!           yy = yy_init + (ibin-1)*xx
+!           zz = yy * invrs_coef2 * xx * exp( invrs_coef1 * (yy-wlarge)**2 ) 
+
+!           sum_wa = sum_wa + max( zz, zero )
+
+!         end do
+
+!         ww(i,k) = max( sum_wa, 0.001_core_rknd )
+
+!       end do
+!     end do
+
+! #ifdef GPTL
+!     !$acc wait 
+!     ret_code = GPTLstop('subgrid_mean_updraft')
+! #endif
 
     !----------------------------------------------------------------
     ! Advance or otherwise calculate <thl'^3>, <rt'^3>, and
