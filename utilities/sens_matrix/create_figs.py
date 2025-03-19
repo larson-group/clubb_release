@@ -67,8 +67,8 @@ def createFigs(numMetricsNoSpecial, metricsNames,
     plot_biasesOrderedArrowFig = False  #True
     plot_threeDotFig = True
     plot_metricsBarChart = True
-    plot_paramsIncrsBarChart = False #True
-    plot_paramsAbsIncrsBarChart = False #True
+    plot_paramsIncrsBarChart = True
+    plot_paramsAbsIncrsBarChart = True
     plot_paramsTotContrbBarChart = False
     plot_biasesVsDiagnosticScatterplot = False
     plot_dpMin2PtFig = False #True
@@ -345,7 +345,7 @@ def createFigs(numMetricsNoSpecial, metricsNames,
         paramsTotContrbBarChart = \
             createBarChart(minusNonlinMatrixDparamsOrdered.T, index=paramsNames, columns=metricsNamesOrdered,
                            orientation='v',
-                           title="""Linear + nonlinear contributions to removal of biases <br>
+                           plotTitle="""Linear + nonlinear contributions to removal of biases <br>
                                    (dMetrics=sensMatrix*dParams)""",
                            xlabel="Parameter", ylabel="Contribution to bias removal",
                            width=800, height=500)
@@ -356,7 +356,7 @@ def createFigs(numMetricsNoSpecial, metricsNames,
                            columns=metricsNamesOrdered,
                            #                barBase = np.zeros_like(paramsScales),
                            orientation='v',
-                           title="""Contributions to columns of linplus sensitivity matrix""",
+                           plotTitle="""Contributions to columns of linplus sensitivity matrix""",
                            xlabel="Parameter", ylabel="Contribution to column",
                            width=800, height=500)
 
@@ -377,7 +377,7 @@ def createFigs(numMetricsNoSpecial, metricsNames,
                                                 defaultBiasesColMaskedOrdered, defaultBiasesApproxNonlinMaskedOrdered,
                                                 normMetricValsColMaskedOrdered,
                                                 -minusNonlinMatrixDparamsOrderedMasked,
-                                                title='Removal of biases in each metric by each parameter')
+                                                plotTitle='Removal of biases in each metric by each parameter')
 
     if plot_paramsIncrsBarChart:
 
@@ -399,6 +399,12 @@ def createFigs(numMetricsNoSpecial, metricsNames,
         colorDiscreteMap = dict(zip(paramsAbbrvPlusBiases,
                                     barColorsPlusObs.tolist() ))
 
+        if useLongTitle:
+            plotTitle = "Mean parameter contributions to removal of biases <br>" \
+                                   + "(= column means of sensMatrix*dParams+0.5*curvMatrix*dParams**2)"
+        else:
+            plotTitle = "Mean parameter contributions to removal of biases"
+
         paramsIncrsBarChart = \
             createBarChart(sumParamsIncrsPlusBiases, index=paramsAbbrvPlusBiases,
                            columns=["Parameter<br>contribution"],
@@ -406,10 +412,9 @@ def createFigs(numMetricsNoSpecial, metricsNames,
                            barColors=paramsAbbrvPlusBiases,
                            colorDiscreteMap=colorDiscreteMap,
                            barMode='relative',
-                           title="Mean parameter contributions to removal of biases <br>" \
-                                   + "(= column means of sensMatrix*dParams+0.5*curvMatrix*dParams**2)",
+                           plotTitle=plotTitle,
                            xlabel="Parameter", ylabel="Contribution to bias removal",
-                           width=800, height=500,
+                           width=600, height=450,
                            showLegend=False)
 
     if plot_paramsAbsIncrsBarChart:
@@ -421,6 +426,12 @@ def createFigs(numMetricsNoSpecial, metricsNames,
         squaredColorDiscreteMap = dict(zip(squaredParamsAbbrvPlusBias.tolist(),
                                     barColors.tolist()))
 
+        if useLongTitle:
+            plotTitle="Squared parameter contributions <br>" \
+                                   + "(= column means of squared senspMatrix*dParams+0.5*curvMatrix*dParams**2)"
+        else:
+            plotTitle = "Squared parameter contributions to bias removal"
+
         paramsSquaredIncrsBarChart = \
             createBarChart(squaredParamsIncrsPlusBias, index=squaredParamsAbbrvPlusBias,
                            columns=["Parameter<br>contribution"],
@@ -428,10 +439,9 @@ def createFigs(numMetricsNoSpecial, metricsNames,
                            barMode='relative',
                            barColors=squaredParamsAbbrvPlusBias,
                            colorDiscreteMap=squaredColorDiscreteMap,
-                           title="Size of squared parameter contributions <br>" \
-                                   + "(= column means of squared sensMatrix*dParams+0.5*curvMatrix*dParams**2)",
+                           plotTitle=plotTitle,
                            xlabel="Parameter", ylabel="Contribution to bias removal",
-                           width=800, height=500,
+                           width=600, height=450,
                            showLegend=False)
 
         absParamsIncrs = np.mean( np.abs(nonlinMatrixDparams), axis=0 )
@@ -448,7 +458,7 @@ def createFigs(numMetricsNoSpecial, metricsNames,
                            barMode='relative',
                            barColors=absParamsAbbrvPlusBias,
                            colorDiscreteMap=absColorDiscreteMap,
-                           title="Size of abs parameter contributions <br>" \
+                           plotTitle="Size of abs parameter contributions <br>" \
                                    + "(= column means of abs sensMatrix*dParams+0.5*curvMatrix*dParams**2)",
                            xlabel="Parameter", ylabel="Contribution to bias removal",
                            width=800, height=500,
@@ -469,7 +479,7 @@ def createFigs(numMetricsNoSpecial, metricsNames,
                            orientation='v',
                            barMode='group',
                            #colorDiscreteMap=absColorDiscreteMap,
-                           title="Size of abs parameter contributions <br>" \
+                           plotTitle="Size of abs parameter contributions <br>" \
                                    + "linear vs. nonlinear",
                            xlabel="Parameter", ylabel="Contribution to bias removal",
                            width=800, height=500,
@@ -857,7 +867,7 @@ def createFigs(numMetricsNoSpecial, metricsNames,
     #       #               barBase = np.zeros(numMetrics),
     #                      #barBase = -defaultBiasesCol[metricsSensOrder]/np.abs(normMetricValsCol[metricsSensOrder]) @ np.ones((1,len(paramsNames))),
     #                      orientation = 'v',
-    #                      title="""Linear + nonlinear contributions to removal of biases <br>
+    #                      plotTitle="""Linear + nonlinear contributions to removal of biases <br>
     #                               (dMetrics=sensMatrix*dParams)""",
     #                      xlabel="Regional metric", ylabel="Contribution to bias removal",
     #                      width=800, height=500 )
@@ -1110,12 +1120,14 @@ def createMapGallery(
     if useLongTitle:
         plotTitle="Normalized Default Atmospheric-Model Bias, normlzdDefaultBiasesCol"
     else:
-        plotTitle="Normalized Default Atmospheric-Model Bias"
+        plotTitle="Normalized Default Global-Model Bias"
     PcMapPanelBias = \
         createMapPanel(fieldToPlotCol=normlzdDefaultBiasesCol,
                        plotWidth=plotWidth,
                        plotTitle=plotTitle,
-                       boxSize=boxSize)
+                       boxSize=boxSize,
+                       colorScale='RdBu_r',
+                       panelLabel='(a)')
 
     # Use same color range in residual plot as in bias plot
     minFieldBias = np.min(normlzdDefaultBiasesCol)
@@ -1124,14 +1136,16 @@ def createMapGallery(
     if useLongTitle:
         plotTitle="Normalized Residual Bias, -normlzdResid"
     else:
-        plotTitle="Normalized Residual Bias"
+        plotTitle="QuadTune Prediction of Normalized Residual Bias"
     PcMapPanelResid = \
         createMapPanel(fieldToPlotCol=-normlzdResid,
                        plotWidth=plotWidth,
                        plotTitle=plotTitle,
                        boxSize=boxSize,
+                       colorScale='RdBu_r',
                        minField=minFieldBias,
-                       maxField=maxFieldBias)
+                       maxField=maxFieldBias,
+                       panelLabel='(b)')
 
     BiasParamsDashboardChildren = [html.Div(children=[
         dcc.Graph(id="PcMapPanelBias", figure=PcMapPanelBias,
@@ -1143,14 +1157,16 @@ def createMapGallery(
     if useLongTitle:
         plotTitle="Normalized Tuned Atmospheric-Model Bias, normlzdLinSolnBiasesCol"
     else:
-        plotTitle="Normalized Tuned Atmospheric-Model Bias"
+        plotTitle="Normalized Global-Model Bias After Tuning"
     PcMapPanelLinSoln = \
         createMapPanel(fieldToPlotCol=normlzdLinSolnBiasesCol,
                        plotWidth=plotWidth,
                        plotTitle=plotTitle,
                        boxSize=boxSize,
+                       colorScale='RdBu_r',
                        minField=minFieldBias,
-                       maxField=maxFieldBias)
+                       maxField=maxFieldBias,
+                       panelLabel='(c)')
 
     BiasParamsDashboardChildren.append(html.Div(children=[
         dcc.Graph(figure=PcMapPanelLinSoln,
@@ -1169,7 +1185,9 @@ def createMapGallery(
         createMapPanel(fieldToPlotCol=sqrtDefaultLoss,
                        plotWidth=plotWidth,
                        plotTitle=plotTitle,
-                       boxSize=boxSize)
+                       boxSize=boxSize,
+                       colorScale='RdBu_r',
+                       panelLabel='')
 
     # Use same color range in linSolnLoss plot as in tunedLoss plot
     minFieldBias = np.min(sqrtDefaultLoss)
@@ -1187,8 +1205,11 @@ def createMapGallery(
                        plotWidth=plotWidth,
                        plotTitle=plotTitle,
                        boxSize=boxSize,
+                       colorScale='PRGn_r',
+                       #colorScale='BrBG_r',
                        minField=minFieldBias,
-                       maxField=maxFieldBias)
+                       maxField=maxFieldBias,
+                       panelLabel='')
 
     BiasParamsDashboardChildren.append(html.Div(children=[
             dcc.Graph(figure=PcMapPanelDefaultLoss, style={'display': 'inline-block'},
@@ -1204,8 +1225,10 @@ def createMapGallery(
                        plotWidth=plotWidth,
                        plotTitle="Sqrt LinSoln Loss Change (x 1e3)",
                        boxSize=boxSize,
+                       colorScale='RdBu_r',
                        minField=minFieldBias,
-                       maxField=maxFieldBias)
+                       maxField=maxFieldBias,
+                       panelLabel='')
 
     BiasParamsDashboardChildren.append(html.Div(children=[
         dcc.Graph(figure=PcMapPanelLinSolnLossChange,
@@ -1220,21 +1243,41 @@ def createMapGallery(
             plotTitle = f"normlzdLinplusSensMatrixPoly[:,{paramsAbbrv[paramsIdx]}]"
         else:
             plotTitle = f"Normalized Sensitivity to {paramsAbbrv[paramsIdx]}"
+        if paramsAbbrv[paramsIdx] == 'n2_thres':
+            panelLabel = '(a)'
+        elif paramsAbbrv[paramsIdx] == 'n2':
+            panelLabel = '(b)'
+        elif paramsAbbrv[paramsIdx] == 'c8':
+            panelLabel = '(c)'
+        else:
+            panelLabel = ''
         leftFig = \
             createMapPanel(fieldToPlotCol=normlzdLinplusSensMatrixPoly[:, paramsIdx],
                            plotWidth=plotWidth,
                            plotTitle=plotTitle,
-                           boxSize=boxSize)
+                           boxSize=boxSize,
+                           colorScale='RdBu_r',
+                           panelLabel=panelLabel)
         if paramsIdx + 1 < len(paramsAbbrv):
             if useLongTitle:
                 plotTitle = f"normlzdLinplusSensMatrixPoly[:,{paramsAbbrv[paramsIdx + 1]}]"
             else:
                 plotTitle = f"Normalized Sensitivity to {paramsAbbrv[paramsIdx+1]}"
+            if paramsAbbrv[paramsIdx+1] == 'n2_thres':
+                panelLabel = '(a)'
+            elif paramsAbbrv[paramsIdx+1] == 'n2':
+                panelLabel = '(b)'
+            elif paramsAbbrv[paramsIdx+1] == 'c8':
+                panelLabel = '(c)'
+            else:
+                panelLabel = ''
             rightFig = \
                 createMapPanel(fieldToPlotCol=normlzdLinplusSensMatrixPoly[:, paramsIdx + 1],
                                plotWidth=plotWidth,
                                plotTitle=plotTitle,
-                               boxSize=boxSize)
+                               boxSize=boxSize,
+                               colorScale='RdBu_r',
+                               panelLabel=panelLabel)
         else:
             rightFig = blankFig
 
@@ -1255,29 +1298,40 @@ def createMapGallery(
     #u, s, vh = \
     #    np.linalg.svd(normlzdCurvMatrix, full_matrices=False)
 
+    # Explained variance
+    # https://stats.stackexchange.com/questions/171539/percentage-of-variation-in-each-column-explained-by-each-svd-mode
+    RSquaredSvd1 = np.square(s[0]) / np.sum(np.square(s))
+    RSquaredSvd2 = np.square(s[1]) / np.sum(np.square(s))
+
     PcMapPanelU0 = \
         createMapPanel(fieldToPlotCol=u[:, 0],
                        plotWidth=plotWidth,
                        plotTitle="SVD 1",
-                       boxSize=boxSize)
+                       boxSize=boxSize,
+                       colorScale='RdBu_r',
+                       RsqdString=f",    <i>R</i><sup>2</sup> = {RSquaredSvd1:.2f}")
 
     PcMapPanelU1 = \
         createMapPanel(fieldToPlotCol=u[:, 1],
                        plotWidth=plotWidth,
                        plotTitle="SVD 2",
-                       boxSize=boxSize)
+                       boxSize=boxSize,
+                       colorScale='RdBu_r',
+                       RsqdString=f",    <i>R</i><sup>2</sup> = {RSquaredSvd2:.2f}")
 
     PcMapPanelU0bias = \
         createMapPanel(fieldToPlotCol=-u[:, 0]*normlzdDefaultBiasesCol[:,0],
                        plotWidth=plotWidth,
                        plotTitle="SVD 1 * bias",
-                       boxSize=boxSize)
+                       boxSize=boxSize,
+                       colorScale='RdBu_r')
 
     PcMapPanelU1bias = \
         createMapPanel(fieldToPlotCol=-u[:, 1]*normlzdDefaultBiasesCol[:,0],
                        plotWidth=plotWidth,
                        plotTitle="SVD 2 * bias",
-                       boxSize=boxSize)
+                       boxSize=boxSize,
+                       colorScale='RdBu_r')
 
     U0U3DashboardChildren = [
         html.Div(children=
@@ -1306,7 +1360,9 @@ def createMapPanel(fieldToPlotCol,
                    plotWidth,
                    plotTitle,
                    boxSize,
-                   minField=None, maxField=None):
+                   colorScale='RdBu_r',
+                   minField=None, maxField=None,
+                   panelLabel='', RsqdString=''):
 
     regionalMapPanel = go.Figure(go.Scattergeo())
 
@@ -1344,7 +1400,16 @@ def createMapPanel(fieldToPlotCol,
     regionalMapPanel.update_layout(width=plotWidth, height=plotHeight)
     #regionalMapPanel.update_layout(width=700, height=450)
     #regionalMapPanel.update_layout(title=plotTitle, title_y=0.9, title_x=0.5)
-    regionalMapPanel.update_layout(title=plotTitle, title_y=0.98, title_x=0.5)
+    regionalMapPanel.update_layout(title=plotTitle + RsqdString,
+                                   title_y=0.9, title_yanchor='bottom',
+                                   title_x=0.45, title_xanchor='center')
+    regionalMapPanel.add_annotation(
+        xref="paper", yref="paper",
+        x=-0.01, y=1.02, xanchor="right", yanchor="bottom",
+        text=panelLabel,
+        font=dict(size=17),
+        showarrow=False
+    )
 
     # Shift coastal boundaries to correct location on map
     regionalMapPanel.update_geos(lataxis_range=[-90, 90],
@@ -1368,7 +1433,7 @@ def createMapPanel(fieldToPlotCol,
     #    the data lie within the range [0,1].
     if ( True ):
     #if ( maxField > 0) & (minField < 0):
-        colorScale = 'RdBu_r'
+        #colorScale = 'RdBu_r'
         for latIdx, lat in np.ndenumerate(latRange):
             for lonIdx, lon in np.ndenumerate(lonRange):
                 normlzdColorMatrix[latIdx, lonIdx] = \
@@ -1379,10 +1444,11 @@ def createMapPanel(fieldToPlotCol,
                 #else:
                 #    normlzdColorMatrix[latIdx, lonIdx] = \
                 #        0.5 * fieldToPlotMatrix[latIdx, lonIdx] / maxField + 0.5
-    else:  # Don't use diverging colorscale
-        colorScale = 'Bluered'
-        normlzdColorMatrix = (fieldToPlotMatrix - minField) / \
-                      (maxField - minField)
+    #else:  # Don't use diverging colorscale
+    #    #colorScale = 'Bluered'
+    #    colorScale = 'Aggrnyl'
+    #    normlzdColorMatrix = (fieldToPlotMatrix - minField) / \
+    #                  (maxField - minField)
 
     # Draw a colored rectangle in each region in layer underneath
     #print("After setting colorScale, it = ", colorScale)
@@ -1429,7 +1495,8 @@ def createMapPanel(fieldToPlotCol,
                                  domain_x=[0.0, 1.0]
                                  )
     # Add colorbar by creating an invisible, fake scatterplot
-    if (colorScale == 'RdBu_r'):
+    #if (colorScale == 'RdBu_r'):
+    if (True):
         tickVals = [np.min(normlzdColorMatrix),
                     0.5*np.min(normlzdColorMatrix)+0.5*np.max(normlzdColorMatrix),
                     np.max(normlzdColorMatrix)]
@@ -1744,7 +1811,7 @@ def createScatterplot(xCol, xColLabel,
         xref="paper", yref="paper",
         x=0.0, y=1.0, xanchor="left", yanchor="bottom",
         text=panelLabel,
-        font=dict(size=18),
+        font=dict(size=17),
         showarrow=False
     )
 
@@ -1755,7 +1822,7 @@ def createMetricsBarChart(metricsNames, paramsNames,
                           defaultBiasesCol, defaultBiasesApproxNonlin,
                           normMetricValsCol,
                           sensMatrix,
-                          title):
+                          plotTitle):
     import plotly.graph_objects as go
     import numpy as np
     import pdb
@@ -1812,26 +1879,27 @@ def createMetricsBarChart(metricsNames, paramsNames,
     metricsBarChart = go.Figure(data=barsData)
 
     # Change the bar mode
-    metricsBarChart.update_layout(title=title)
+    metricsBarChart.update_layout(title=plotTitle, title_font_size=20,
+                                  title_x=0.45, title_xanchor='center', title_y=0.85, title_yanchor='bottom')
     metricsBarChart.update_layout(barmode='stack')
     metricsBarChart.update_xaxes(visible=True, zeroline=True, zerolinewidth=4, zerolinecolor='gray')  # Plot y axis
-    metricsBarChart.update_layout(width=800, height=200 + 50 * len(metricsNames))
-    metricsBarChart.update_xaxes(title="Normalized biases")
+    metricsBarChart.update_layout(width=700, height=200 + 50 * len(metricsNames))
+    metricsBarChart.update_xaxes(title="Normalized biases", title_font_size=16)
 
     # Add annotation if only SWCF metrics are plotted
     if np.all(np.char.startswith(metricsNames, "SWCF_")):
         metricsBarChart.add_annotation(
             xref="paper", yref="paper",
-            x=0.95,  y=0.15, xanchor="right", yanchor="bottom",
+            x=0.97,  y=0.15, xanchor="right", yanchor="bottom",
             text="Too dim",
-            font=dict(size=25),
+            font=dict(size=20),
             showarrow=False
         )
         metricsBarChart.add_annotation(
             xref="paper", yref="paper",
             x=0.05, y=0.15, xanchor="left", yanchor="bottom",
             text="Too bright",
-            font=dict(size=25),
+            font=dict(size=20),
             showarrow=False
         )
 
@@ -1844,7 +1912,7 @@ def createBarChart(matrix, index, columns,
                    colorDiscreteMap=None,
                    orientation="v",
                    barMode=None,
-                   title=None,
+                   plotTitle=None,
                    xlabel=None, ylabel=None,
                    width=800, height=500,
                    showLegend=True):
@@ -1865,9 +1933,10 @@ def createBarChart(matrix, index, columns,
                       color_discrete_map=colorDiscreteMap,
                       orientation=orientation,
                       barmode=barMode,
-                      title=title)
+                      title=plotTitle)
     barChart.update_xaxes(title=xlabel)
     barChart.update_yaxes(title=ylabel)
+    barChart.update_layout(title_x=0.5, title_xanchor='center', title_y=0.82, title_yanchor='bottom')
     barChart.update_layout(hovermode="closest")
     barChart.update_layout(showlegend=showLegend)
     barChart.update_yaxes(visible=True, zeroline=True, zerolinewidth=1, zerolinecolor='gray')  # Plot x axis
@@ -2036,9 +2105,9 @@ def createThreeDotFig(metricsNames, paramsNames, transformedParamsNames,
 
             threeDotFig.update_layout(showlegend=False,
                                       title_text="Simulated metric values vs. parameter values",
-                                      title_font_size=paramsFontSize,
+                                      title_font_size=metricsFontSize,
+                                      title_x=0.5, title_xanchor='center',
                                       height=2500)
-
     threeDotFig.update_xaxes(tickangle=45)  # Put params label at 45-degree angle
     threeDotFig.update_xaxes(tickfont_size=np.round(0.55*paramsFontSize))
     threeDotFig.update_yaxes(tickfont_size=np.round(0.55*paramsFontSize))
