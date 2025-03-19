@@ -3528,7 +3528,7 @@ module advance_clubb_core_module
     ! thermodynamic grid levels.
     !---------------------------------------------------------------------------
 
-    #ifdef GPTL
+#ifdef GPTL
     !$acc wait 
     !ret_code = GPTLstart('interp_and_skx')
     ret_code = GPTLstart('ik_loops')
