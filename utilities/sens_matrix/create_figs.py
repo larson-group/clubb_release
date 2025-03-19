@@ -63,24 +63,24 @@ def createFigs(numMetricsNoSpecial, metricsNames,
                    / np.abs(normMetricValsCol[:, 0])
 
     # Use these flags to determine whether or not to create specific plots
-    plot_paramsErrorBarsFig = False #True
-    plot_biasesOrderedArrowFig = False  #True
+    plot_paramsErrorBarsFig = True
+    plot_biasesOrderedArrowFig = True
     plot_threeDotFig = True
     plot_metricsBarChart = True
     plot_paramsIncrsBarChart = True
     plot_paramsAbsIncrsBarChart = True
     plot_paramsTotContrbBarChart = False
     plot_biasesVsDiagnosticScatterplot = False
-    plot_dpMin2PtFig = False #True
+    plot_dpMin2PtFig = True
     plot_dpMinMatrixScatterFig = False
-    plot_projectionMatrixFigs = False #True
+    plot_projectionMatrixFigs = True
     plot_biasesVsSensMagScatterplot = True
-    plot_biasesVsSvdScatterplot = False #True
-    plot_paramsCorrArrayFig = False #True
-    plot_sensMatrixAndBiasVecFig = False #True
+    plot_biasesVsSvdScatterplot = True
+    plot_paramsCorrArrayFig = True
+    plot_sensMatrixAndBiasVecFig = True
     plot_PcaBiplot = False
-    plot_PcSensMap = False #True
-    plot_vhMatrixFig = False #True
+    plot_PcSensMap = True
+    plot_vhMatrixFig = True
 
     # Remove prefixes from CLUBB variable names in order to shorten them
     paramsAbbrv = abbreviateClubbParamsNames(paramsNames)
@@ -1969,7 +1969,7 @@ def createThreeDotFig(metricsNames, paramsNames, transformedParamsNames,
     #import matplotlib.pyplot as plt
     import pdb
 
-    from analyze_sensitivity_matrix import setupSensArrays
+    from set_up_dashboard_inputs import setupSensArrays
     from set_up_dashboard_inputs import setupDefaultParamVectors, \
         setupDefaultMetricValsCol
     from scipy.interpolate import UnivariateSpline
@@ -2192,9 +2192,8 @@ def calcParamsBounds(metricsNames, paramsNames, transformedParamsNames,
     #import matplotlib.pyplot as plt
     import pdb
 
-    from analyze_sensitivity_matrix import setupSensArrays, calcSvdInvrs, calcParamsSoln
     from set_up_dashboard_inputs import setupDefaultParamVectors, \
-        setupDefaultMetricValsCol
+        setupDefaultMetricValsCol, setupSensArrays
 
     if (len(paramsNames) != len(sensNcFilenames)):
         print("Number of parameters must equal number of netcdf files.")
@@ -2269,6 +2268,167 @@ def calcParamsBounds(metricsNames, paramsNames, transformedParamsNames,
 
     return (paramsLowValsPCBound, paramsHiValsPCBound)
 
+def calcSvdInvrs(normlzdWeightedSensMatrix, sValsRatio,
+                 beVerbose):
+    """
+    Input: sensitivity matrix
+    Output: singular value decomposition of sensitivity matrix
+        and related quantities, like the inverse of the SVD.
+    """
+
+
+    import numpy as np
+    import sys
+    import pdb
+
+    # vh = V^T = transpose of right-singular vector matrix, V.
+    u, s, vh = np.linalg.svd(normlzdWeightedSensMatrix, full_matrices=False)
+
+    if beVerbose:
+        print("\nSingular values =")
+        print(s)
+
+        print("\nvh =")
+        print(vh)
+
+        print("\nu =")
+        print(u)
+
+    sValsTrunc = s
+
+    sValsTrunc[sValsTrunc < 1e-10] = -1
+
+    if beVerbose:
+        print("\nTruncated Singular values =")
+        print(sValsTrunc)
+
+    sValsTruncInv = np.reciprocal(sValsTrunc)
+
+    sValsTruncInv[sValsTruncInv < 0] = 0
+
+    if beVerbose:
+        print("\nInverse truncated singular values =")
+        print(sValsTruncInv)
+
+    svdInvrs = np.transpose(vh) @ np.diag(sValsTruncInv) @ np.transpose(u)
+
+    # Assertion check: is svdInvrs truly the inverse of normlzdWeightedSensMatrix?
+    numParams = normlzdWeightedSensMatrix.shape[1] # = number of columns
+    if not np.all( np.isclose(np.identity(numParams), svdInvrs @ normlzdWeightedSensMatrix, \
+                      rtol=2e-6 , atol=2e-6 ) ):
+        print("\nsvdInvrs @ normlzdWeightedSensMatrix =")
+        print(svdInvrs @ normlzdWeightedSensMatrix)
+        #sys.exit("\nError: svdInvrs is not the inverse of normlzdWeightedSensMatrix")
+        print("\nError: svdInvrs is not the inverse of normlzdWeightedSensMatrix")
+
+    if beVerbose:
+        print("\nSVD inverse =")
+        print(svdInvrs)
+
+    # Delete the small singular values in order to show just the most important patterns.
+    # After this deletion, store inverse singular values in sValsInvPC.
+    # Syntax: (a_truncated = a[0:a.size-2] lops off the last two elements of `a`.)
+    # sValsInvPC[0:sValsTruncInv.size-2] = sValsTruncInv[0:sValsTruncInv.size-2]
+    sValsInvPC = np.zeros_like(sValsTruncInv)
+    for idx, val in np.ndenumerate(sValsTruncInv):
+        # If a singular value is much smaller than largest singular value, then zero it out.
+        if val/sValsTruncInv[0] > sValsRatio:
+            sValsInvPC[idx] = 0.
+        else:
+            sValsInvPC[idx] = sValsTruncInv[idx]
+
+    if beVerbose:
+        print("\nsValsInvPC =")
+        print(sValsInvPC)
+
+    #pdb.set_trace()
+
+    svdInvrsPC = np.transpose(vh) @ np.diag(sValsInvPC) @ np.transpose(u)
+
+    # eigVals, eigVecs = np.linalg.eig(np.transpose(normlzdWeightedSensMatrix) @ normlzdWeightedSensMatrix)
+
+    #print("\neigVals =")
+    #print(eigVals)
+
+    #print("\neigVecs = ")
+    #print(eigVecs)
+
+    return ( svdInvrs, svdInvrsPC, sValsTruncInv, sValsInvPC, vh, u, s )
+
+
+def calcParamsSoln(svdInvrsNormlzdWeighted, metricsWeights, magParamValsRow, \
+                   sensMatrix, normlzdWeightedSensMatrix, \
+                   obsMetricValsCol, normMetricValsCol, defaultBiasesCol, defaultParamValsOrigRow, \
+                   sValsTruncInvNormlzdWeighted, vhNormlzdWeighted, \
+                   numParams, paramsNames, transformedParamsNames ):
+
+    import numpy as np
+    import pdb
+    import sys
+
+    # Calculate solution using transformed SVD matrix.  However, dparamsSoln is not normalized.
+    # dnormlzdParamsSoln = dparamsSoln / ( normalizing param value from default simulation
+    #                                       (or sens sim if default param value is zero.) )
+    dnormlzdParamsSoln = svdInvrsNormlzdWeighted @ \
+                      ( metricsWeights * (-defaultBiasesCol) / np.abs(normMetricValsCol) )
+                      #( metricsWeights * (-defaultBiasesCol) / np.abs(obsMetricValsCol) )
+    # Unnormalized parameter value perturbations from the default values, delta_p
+    dparamsSoln = dnormlzdParamsSoln * np.transpose(magParamValsRow)
+    # defaultBiasesApprox = (forward model soln - default soln)
+    defaultBiasesApprox = ( normlzdWeightedSensMatrix @ dnormlzdParamsSoln ) \
+                          * np.reciprocal(metricsWeights) * np.abs(normMetricValsCol)
+                          #* np.reciprocal(metricsWeights) * np.abs(obsMetricValsCol)
+
+    # As a check, do an alternative calculation of defaultBiasesApprox based on
+    #    the unnormalized, unweighted sensitivity matrix:
+    defaultBiasesApproxAlt = sensMatrix @ dparamsSoln
+    if ( not np.all( np.isclose(defaultBiasesApproxAlt, defaultBiasesApprox) ) ):
+        print("\ndefaultBiasesApprox as computed from sensMatrix =")
+        print(defaultBiasesApproxAlt)
+        print("\ndefaultBiasesApprox as computed from normlzdWeightedSensMatrix =")
+        print(defaultBiasesApprox)
+        sys.exit("\nError: Two calculations of defaultBiasesApprox do not agree.")
+
+    # Do we want defaultParamValsOrigRow or defaultParamValsRow in this line??:
+    paramsSoln = np.transpose(defaultParamValsOrigRow) + dparamsSoln
+    # Create matrix whose columns are the columns of v divided by singular values
+    #    (see 15.4.18 of Numerical Recipes)
+    dparamsErrMatrix = np.transpose(vhNormlzdWeighted) * sValsTruncInvNormlzdWeighted
+    # Create a column vector which contains the standard deviation of error for each parameter
+    #    difference
+    dparamsErrStdNormlzd = np.sqrt( np.reshape( np.sum( dparamsErrMatrix * dparamsErrMatrix, axis=1 ), (-1, 1)) )
+    # Rescale errors by parameter magnitude scales
+    dparamsErrStd = dparamsErrStdNormlzd * np.transpose(magParamValsRow)
+    # Do an alternative calculation for the error bars based on normal equations.
+    # Follow Section 15.4.1 of Numerical Recipes
+    covar_matrix = np.linalg.inv( normlzdWeightedSensMatrix.T @ normlzdWeightedSensMatrix )
+    dparamsErrStdNormlzdCov = np.sqrt( covar_matrix.diagonal() )
+    dparamsErrStdCov = dparamsErrStdNormlzdCov * np.transpose(magParamValsRow)
+
+    dparamsLowVals = dparamsSoln - dparamsErrStd
+    paramsLowVals = np.transpose(defaultParamValsOrigRow) + dparamsLowVals
+    dparamsHiVals = dparamsSoln + dparamsErrStd
+    paramsHiVals = np.transpose(defaultParamValsOrigRow) + dparamsHiVals
+    defaultBiasesApproxLowVals = sensMatrix @ dparamsLowVals
+    defaultBiasesApproxHiVals = sensMatrix @ dparamsHiVals
+
+    #pdb.set_trace()
+    # Transform some variables from [-inf,inf] back to [0,inf] range
+    for idx in np.arange(numParams):
+        paramName = paramsNames[idx]
+        if paramName in transformedParamsNames:
+            #paramsSoln[idx,0] = 1.0-np.exp(-paramsSoln[idx,0])
+            # The equation below means:
+            # param_transformed_updated = delta_param_transformed + param_transformed_orig
+            #    where param_transformed_orig = log( param_untransformed_orig )
+            paramsSoln[idx,0] = np.exp(dparamsSoln[idx,0]) * defaultParamValsOrigRow[0,idx]
+            dparamsSoln[idx,0] = paramsSoln[idx,0] - defaultParamValsOrigRow[0,idx]
+            paramsLowVals[idx,0] = np.exp(dparamsLowVals[idx,0]) * defaultParamValsOrigRow[0,idx]
+            paramsHiVals[idx,0] = np.exp(dparamsHiVals[idx,0]) * defaultParamValsOrigRow[0,idx]
+
+    return (paramsSoln, paramsLowVals, paramsHiVals, dparamsSoln, dnormlzdParamsSoln, \
+            defaultBiasesApprox, defaultBiasesApproxLowVals, defaultBiasesApproxHiVals)
+
 
 def calcParamsBoundsHelper(metricsNames, paramsNames, transformedParamsNames,
                            metricsWeights, obsMetricValsCol, normMetricValsCol,
@@ -2286,9 +2446,8 @@ def calcParamsBoundsHelper(metricsNames, paramsNames, transformedParamsNames,
     #import matplotlib.pyplot as plt
     import pdb
 
-    from analyze_sensitivity_matrix import setupSensArrays, \
-        constructSensMatrix, calcSvdInvrs, calcParamsSoln
-    from set_up_dashboard_inputs import setupDefaultMetricValsCol
+    from set_up_dashboard_inputs import setupSensArrays
+    #from set_up_dashboard_inputs import setupDefaultMetricValsCol
 
     # Based on the numParams sensitivity simulations,
     #    set up a row vector of modified parameter values.
@@ -2343,6 +2502,113 @@ def calcParamsBoundsHelper(metricsNames, paramsNames, transformedParamsNames,
     #pdb.set_trace()
 
     return (defaultBiasesCol, sensMatrix, normlzdWeightedSensMatrix)
+
+def constructSensMatrix(sensMetricValsMatrix, sensParamValsRow,
+                        defaultMetricValsMatrix, defaultParamValsRow,
+                        defaultMetricValsCol,
+                        magParamValsRow,
+                        obsMetricValsCol, normMetricValsCol,
+                        numMetrics, numParams,
+                        beVerbose):
+    """
+    Inputs: Metric and parameter values from default and sensitivity simulations,
+        and from observations.
+    Output: A sensitivity matrix listing the partial derivatives dmetric/dparam.
+    """
+
+    import numpy as np
+    import sys
+    import pdb
+
+    # Matrix of metric values from default simulation
+    # Each column in the matrix is repeated numParams times, for later multiplication
+    #defaultMetricValsMatrix = defaultMetricValsCol @ np.ones((1,numParams))
+
+    #print("\ndefaultMetricValsMatrix =")
+    #print(defaultMetricValsMatrix)
+
+    # Sensitivity simulation metrics minus default simulation metrics
+    #pdb.set_trace()
+    dmetricsMatrix = np.subtract(sensMetricValsMatrix, defaultMetricValsMatrix)
+
+    if beVerbose:
+        print("\ndmetricsMatrix =")
+        print(dmetricsMatrix)
+
+    # Perturbation parameter values
+    dparamsRow = np.subtract(sensParamValsRow, defaultParamValsRow)
+
+    if beVerbose:
+        print("\ndparamsRow =")
+        print(dparamsRow)
+
+    # Make sure that the parameter values from sensitivity simulations
+    #    are actually different than the ones from the default simulation:
+    if np.any( np.isclose(dparamsRow, np.zeros((1,numParams))) ):
+        print("\ndparamsRow =")
+        print(dparamsRow)
+        sys.exit("Error: A sensitivity simulation has left its 'changed' parameter at the default value.")
+
+    #print("\nreciprocal of dparamsRow")
+    #print(np.reciprocal(dparamsRow))
+
+    # Matrix of inverse perturbation parameter values.
+    # Used for forming sensitivity derivatives.
+    invrsDparamsMatrix = np.ones((numMetrics,1)) @ np.reciprocal(dparamsRow)
+
+    #print("\ninvrsDparamsMatrix =")
+    #print(invrsDparamsMatrix)
+
+    # Sensitivity matrix of derivatives, dmetrics/dparams.
+    # sensMatrix is not normalized or weighted by any factor.
+    sensMatrix = dmetricsMatrix * invrsDparamsMatrix
+
+    if beVerbose:
+        print("\nsensMatrix =")
+        print(sensMatrix)
+
+    # Store biases in default simulation
+    # defaultBiasesCol = + delta_b
+    defaultBiasesCol = np.subtract(defaultMetricValsCol, obsMetricValsCol)
+
+
+    if beVerbose:
+        print("\ndefaultBiasesCol =")
+        print(defaultBiasesCol)
+
+    # Matrix of inverse biases.
+    # Used for forming normalized sensitivity derivatives.
+    #pdb.set_trace()
+    #invrsObsMatrix = np.reciprocal(np.abs(obsMetricValsCol)) @ np.ones((1,numParams))
+    invrsObsMatrix = np.reciprocal(np.abs(normMetricValsCol)) @ np.ones((1,numParams))
+
+#    if beVerbose:
+#        print("\ninvrsBiasesMatrix =")
+#        print(invrsObsMatrix)
+
+    # Form matrix of default parameter values, for later normalization of the sensitivity matrix
+    magParamValsMatrix = np.ones((numMetrics,1)) @ magParamValsRow
+
+#    if beVerbose:
+#        print("\nmagParamValsMatrix =")
+#        print(magParamValsMatrix)
+
+    # Sensitivity matrix, normalized by obs and parameter values, but not weighted
+    normlzdSensMatrix = sensMatrix * invrsObsMatrix * magParamValsMatrix
+
+    # Matrix of inverse biases.
+    # Used for forming sensitivity matrix normalized by biases, not observed values.
+    invrsBiasesMatrix = np.reciprocal(np.abs(defaultBiasesCol)) @ np.ones((1,numParams))
+
+    # Sensitivity matrix, normalized by obs and parameter values, but not weighted
+    biasNormlzdSensMatrix = sensMatrix * invrsBiasesMatrix * magParamValsMatrix
+
+    if beVerbose:
+        print("\nnormlzdSensMatrix =")
+        print(normlzdSensMatrix)
+
+    return  (defaultBiasesCol, sensMatrix, normlzdSensMatrix, biasNormlzdSensMatrix)
+
 
 
 def abbreviateClubbParamsNames(paramsNames):

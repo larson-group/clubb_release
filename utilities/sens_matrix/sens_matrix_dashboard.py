@@ -469,7 +469,7 @@ def constructNormlzdSensCurvMatrices(metricsNames, paramsNames, transformedParam
     #import matplotlib.pyplot as plt
     import pdb
 
-    from analyze_sensitivity_matrix import setupSensArrays
+    from set_up_dashboard_inputs import setupSensArrays
     from set_up_dashboard_inputs import setupDefaultParamVectors, \
                                         setupDefaultMetricValsCol
     from scipy.interpolate import UnivariateSpline
@@ -703,7 +703,7 @@ def calcNormlzdRadiusCurv(metricsNames, paramsNames, transformedParamsNames, par
     import matplotlib.pyplot as plt
     import pdb
 
-    from analyze_sensitivity_matrix import setupDefaultParamVectors, \
+    from set_up_dashboard_inputs import setupDefaultParamVectors, \
                                            setupSensArrays
     from set_up_dashboard_inputs import setupDefaultMetricValsCol
 

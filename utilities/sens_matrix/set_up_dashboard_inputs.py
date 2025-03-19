@@ -27,9 +27,6 @@ def setUpInputs(beVerbose):
 #    from plotly.figure_factory import create_quiver
     from itertools import chain
 
-    from analyze_sensitivity_matrix import \
-            analyzeSensMatrix, \
-            findOutliers, findParamsUsingElastic
     from test_analyzeSensMatrix import write_test_netcdf_files
 
     # Flag for using bootstrap sampling
@@ -829,6 +826,75 @@ def setupDefaultParamVectors(paramsNames, transformedParamsNames,
     f_defaultMetricsParams.close()
 
     return (defaultParamValsRow, defaultParamValsOrigRow)
+
+
+def setupSensArrays(metricsNames, paramsNames, transformedParamsNames,
+                    numMetrics, numParams,
+                    sensNcFilenames,
+                    beVerbose):
+    """
+    Input: List of filenames, one per each sensitivity simulation.
+    Output: Row vector of modified parameter values from sensitivity simulations.
+            Matrix of metrics, where each column corresponds to
+                a single sensitivity simulation.
+    """
+
+    import numpy as np
+    import netCDF4
+
+    # Create row vector size numParams containing
+    # parameter values from sensitivity simulations
+    sensParamValsOrigRow = np.zeros((1, numParams))
+    # This variable contains transformed parameter values,
+    #    if transformedParamsNames is non-empty:
+    sensParamValsRow = np.zeros((1, numParams))
+    for idx in np.arange(numParams):
+        paramName = paramsNames[idx]
+        # Read netcdf file with changed parameter values from all sensitivity simulations.
+        f_sensParams = netCDF4.Dataset(sensNcFilenames[idx], 'r')
+        # Assume each metric is stored as length-1 array, rather than scalar.
+        #   Hence the "[0]" at the end is needed.
+        sensParamValsOrigRow[0, idx] = f_sensParams.variables[paramName][0]
+        # Transform [0,1] variable to extend over range [0,infinity]
+        if paramName in transformedParamsNames:
+            # sensParamValsRow[0,idx] = -np.log(1-sensParamValsRow[0,idx])
+            sensParamValsRow[0, idx] = np.log(sensParamValsOrigRow[0, idx])
+        else:
+            sensParamValsRow[0, idx] = sensParamValsOrigRow[0, idx]
+        f_sensParams.close()
+
+    # sensParamValsRow = np.array([[2., 4.]])
+
+    if beVerbose:
+        print("\nsensParamValsOrigRow =")
+        print(sensParamValsOrigRow)
+        print("\nsensParamValsRow =")
+        print(sensParamValsRow)
+
+    # numMetrics x numParams matrix of metric values
+    # from sensitivity simulations
+    sensMetricValsMatrix = np.zeros((numMetrics, numParams))
+    for col in np.arange(numParams):
+        f_sens = netCDF4.Dataset(sensNcFilenames[col], 'r')
+        for row in np.arange(numMetrics):
+            metricName = metricsNames[row]
+            sensMetricValsMatrix[row, col] = f_sens.variables[metricName][0]
+            # if (metricName[0:3] == 'PSL'):  # subtract 9e4 from sea-level pressure for better scaling
+            #    sensMetricValsMatrix[row,col] = f_sens.variables[metricName][0] - 9.e4
+            #    print("metricName[0:3]=", metricName[0:3])
+            #    print("sensMetricValsMatrix=", sensMetricValsMatrix[row][col])
+            # else:
+            #    sensMetricValsMatrix[row,col] = f_sens.variables[metricName][0]
+        f_sens.close()
+
+    # sensMetricValsMatrix = np.array([[1., 2.], [3., 4.]])
+
+    if beVerbose:
+        print("\nsensMetricValsMatrix =")
+        print(sensMetricValsMatrix)
+
+    return (sensMetricValsMatrix, sensParamValsRow, sensParamValsOrigRow)
+
 
 def setupDefaultMetricValsCol(metricsNames, defaultNcFilename):
     """
