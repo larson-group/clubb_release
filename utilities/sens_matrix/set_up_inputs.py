@@ -129,6 +129,7 @@ def setUpInputs(beVerbose):
     #extraMetricsToPlot = np.array(['SWCF_5_9', 'SWCF_8_13', 'SWCF_6_15', 'SWCF_9_5', 'SWCF_3_6', 'SWCF_3_12', 'SWCF_1_6'])
     #extraMetricsToPlot = np.array(['SWCF_6_14', 'SWCF_6_18', 'SWCF_8_13', 'SWCF_6_15', 'SWCF_1_14', 'SWCF_3_6', 'SWCF_1_6', 'SWCF_3_14', 'SWCF_6_2', 'SWCF_8_10', 'SWCF_5_9'])
     extraMetricsToPlot = np.array(['SWCF_6_14', 'SWCF_6_18', 'SWCF_8_13', 'SWCF_3_14', 'SWCF_1_14', 'SWCF_3_6', 'SWCF_1_6'])
+    #extraMetricsToPlot = np.array(['PSL_6_14', 'PSL_6_18', 'PSL_8_13', 'PSL_3_14', 'PSL_1_14', 'PSL_3_6', 'PSL_1_6'])
     # 4_8, 8_10
     # This list omits 9_5:
     #extraMetricsToPlot = np.array(['SWCF_6_14', 'SWCF_6_18', 'SWCF_8_13', 'SWCF_6_15', 'SWCF_3_6', 'SWCF_1_6', 'SWCF_5_12'])
@@ -136,6 +137,30 @@ def setUpInputs(beVerbose):
     #extraMetricsToPlot = np.array(['SWCF_4_2', 'SWCF_2_7', 'SWCF_3_6'])
     # Same sensitivity but opposite bias
     #extraMetricsToPlot = np.array(['SWCF_6_15'])
+
+
+
+    # Use these flags to determine whether or not to create specific plots
+    createPlotType = {
+        'paramsErrorBarsFig': True,
+        'biasesOrderedArrowFig': True,
+        'threeDotFig': True,
+        'metricsBarChart': True,
+        'paramsIncrsBarChart': True,
+        'paramsAbsIncrsBarChart': True,
+        'paramsTotContrbBarChart': True,
+        'biasesVsDiagnosticScatterplot': True,
+        'dpMin2PtFig': True,
+        'dpMinMatrixScatterFig': True,
+        'projectionMatrixFigs': True,
+        'biasesVsSensMagScatterplot': True,
+        'biasesVsSvdScatterplot': True,
+        'paramsCorrArrayFig': True,
+        'sensMatrixAndBiasVecFig': True,
+        'PcaBiplot': True,
+        'PcSensMap': True,
+        'vhMatrixFig': True,
+    }
 
     # Parameters are tunable model parameters, e.g. clubb_C8.
     # The float listed below after the parameter name is a factor that is used below for scaling plots.
@@ -465,7 +490,7 @@ def setUpInputs(beVerbose):
 
     if not np.isclose(metricGlobalValsFromFile, metricGlobalAvgs).all():
         print("Error: metricGlobalAvgs not equal to metricGlobalValsFromFile")
-    print("The following two global values should be close to each other:")
+    print("\nThe following two global values should be close to each other:")
     print("metricGlobalAvgs =", metricGlobalAvgs)
     print("metricGlobalValsFromFile =", metricGlobalValsFromFile)
     if beVerbose:
@@ -501,7 +526,9 @@ def setUpInputs(beVerbose):
 
     # Set metricsNorms to be a global average
     obsGlobalAvgObsWeights = np.zeros(len(varPrefixes))
+    obsGlobalStdObsWeights = np.zeros(len(varPrefixes))
     obsGlobalAvgCol = np.empty(shape=[0, 1])
+    obsGlobalStdCol = np.empty(shape=[0, 1])
     for idx, varPrefix in np.ndenumerate(varPrefixes):
         keysVarPrefix = [key for key in obsWeightsDict.keys() if varPrefix in key]
         #obsWeightsNames = np.array(list(obsWeightsDict.keys()), dtype=str)
@@ -512,12 +539,22 @@ def setUpInputs(beVerbose):
         #obsWeights = np.vstack([obsWeights] * len(varPrefixes))
         metricsNamesVarPrefix = [key for key in obsMetricValsDict.keys() if varPrefix in key]
         obsMetricValsColVarPrefix = setUpObsCol(obsMetricValsDict, metricsNamesVarPrefix)
+        obsGlobalStdObsWeights[idx] = np.std(obsMetricValsColVarPrefix)
         obsGlobalAvgObsWeights[idx] = np.dot(obsWeights.T, obsMetricValsColVarPrefix)
+        # For sea-level pressure, the global avg is too large to serve as a representative normalization
+        if varPrefix == 'PSL':
+            obsGlobalAvgObsWeights[idx] = 1e-3 * obsGlobalAvgObsWeights[idx]
         print(f"obsGlobalAvgObsWeights for {varPrefix} =", obsGlobalAvgObsWeights[idx])
         obsGlobalAvgCol = np.vstack((obsGlobalAvgCol,
                                        obsGlobalAvgObsWeights[idx]*np.ones((len(obsWeights),1))
                                         ))
+        obsGlobalStdCol = np.vstack((obsGlobalStdCol,
+                                     obsGlobalStdObsWeights[idx] * np.ones((len(obsWeights), 1))
+                                     ))
+    # Warning: Using a global average as the constant weight produces little normalized
+    #     sensitivity for PSL
     metricsNorms = np.copy(obsGlobalAvgCol)
+    #metricsNorms = np.copy(obsGlobalStdCol)
 
             #obsMetricValsReshaped = obsMetricValsCol.reshape((9,18))
             #biasMat = defaultMetricValsReshaped - obsMetricValsReshaped
@@ -549,7 +586,7 @@ def setUpInputs(beVerbose):
     return (numMetricsNoSpecial,
             metricsNames,
             varPrefixes,
-            extraMetricsToPlot, \
+            extraMetricsToPlot, createPlotType, \
             metricsWeights, metricsNorms, \
             obsMetricValsDict, \
             paramsNames, paramsScales, \

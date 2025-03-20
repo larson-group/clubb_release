@@ -39,6 +39,7 @@ def createFigs(numMetricsNoSpecial, metricsNames,
                paramsSolnNonlin,
                paramsSolnElastic, dnormlzdParamsSolnElastic,
                sensNcFilenames, sensNcFilenamesExt, defaultNcFilename,
+               createPlotType,
                beVerbose, useLongTitle, param_bounds_boot):
     ##############################################
     #
@@ -61,26 +62,6 @@ def createFigs(numMetricsNoSpecial, metricsNames,
 
     normlzdResid = (-defaultBiasesApproxNonlin - defaultBiasesCol)[:, 0] \
                    / np.abs(normMetricValsCol[:, 0])
-
-    # Use these flags to determine whether or not to create specific plots
-    plot_paramsErrorBarsFig = True
-    plot_biasesOrderedArrowFig = True
-    plot_threeDotFig = True
-    plot_metricsBarChart = True
-    plot_paramsIncrsBarChart = True
-    plot_paramsAbsIncrsBarChart = True
-    plot_paramsTotContrbBarChart = True
-    plot_biasesVsDiagnosticScatterplot = True
-    plot_dpMin2PtFig = True
-    plot_dpMinMatrixScatterFig = True
-    plot_projectionMatrixFigs = True
-    plot_biasesVsSensMagScatterplot = True
-    plot_biasesVsSvdScatterplot = True
-    plot_paramsCorrArrayFig = True
-    plot_sensMatrixAndBiasVecFig = True
-    plot_PcaBiplot = True
-    plot_PcSensMap = True
-    plot_vhMatrixFig = True
 
     # Remove prefixes from CLUBB variable names in order to shorten them
     paramsAbbrv = abbreviateClubbParamsNames(paramsNames)
@@ -199,6 +180,11 @@ def createFigs(numMetricsNoSpecial, metricsNames,
     for regionToPlot in extraMetricsToPlot:
         index = np.where(metricsNames == regionToPlot)[0]
         whitelistedMetricsMask[index] = True
+    if np.all(whitelistedMetricsMask == False):
+        print('\033[31m'
+              + '\n\nERROR: there are no whitelisted metrics to plot!'
+              + '\nCheck whether your list of extraMetricsToPlot is compatible with varPrefixes.\n\n'
+              + '\033[0m')
 
     # Use this line if you want to include all params:
     maskParamsNames = (paramsNames != 'noRealParamWouldHaveThisName')
@@ -284,7 +270,7 @@ def createFigs(numMetricsNoSpecial, metricsNames,
     #minusNonlinMatrixDparamsMasked = ( defaultBiasesColMasked + obsMetricValsColMasked ) @ np.ones_like(paramsSolnNonlin.T)
 
 
-    if plot_paramsErrorBarsFig:
+    if createPlotType['paramsErrorBarsFig']:
         print("Creating paramsErrorBarsFig . . .")
         # Calculate symmetric error bars on fitted parameter values,
         #    based on difference in sensitivity matrix, i.e., based on size of nonlinear terms.
@@ -301,7 +287,7 @@ def createFigs(numMetricsNoSpecial, metricsNames,
                                      paramsSolnNonlin, dnormlzdParamsSolnNonlin,
                                      paramsSolnElastic, dnormlzdParamsSolnElastic, param_bounds_boot)
 
-    if plot_threeDotFig:
+    if createPlotType['threeDotFig']:
         print("Creating threeDotFig . . .")
         #    threeDotFig = \
         #        createThreeDotFig(metricsNames, paramsNames, transformedParamsNames,
@@ -320,7 +306,7 @@ def createFigs(numMetricsNoSpecial, metricsNames,
                               normlzdOrdDparamsMinMasked, normlzdOrdDparamsMaxMasked,
                               sensNcFilenamesMasked, sensNcFilenamesExtMasked, defaultNcFilename)
 
-    if plot_biasesOrderedArrowFig:
+    if createPlotType['biasesOrderedArrowFig']:
         print("Creating biasesOrderedArrowFig . . .")
         biasesOrderedArrowFig = \
             createBiasesOrderedArrowFig(metricsSensMaskedOrder, metricsNamesMaskedOrdered,
@@ -341,7 +327,7 @@ def createFigs(numMetricsNoSpecial, metricsNames,
     # metricsNamesMasked[metricsSensMaskedOrder]
     # metricsNames[whitelistedMetricsMask] gives the same list, but in a different order
 
-    if plot_paramsTotContrbBarChart:
+    if createPlotType['paramsTotContrbBarChart']:
         paramsTotContrbBarChart = \
             createBarChart(minusNonlinMatrixDparamsOrdered.T, index=paramsNames, columns=metricsNamesOrdered,
                            orientation='v',
@@ -364,7 +350,7 @@ def createFigs(numMetricsNoSpecial, metricsNames,
         metricsCorrArrayFig = createCorrArrayFig(normlzdLinplusSensMatrixPoly, metricsNames,
                                                  title='cos(angle) among metrics (i.e., rows of sens matrix)')
 
-    if plot_metricsBarChart:
+    if createPlotType['metricsBarChart']:
         print("Creating metricsBarChart . . .")
         #    minusNormlzdDefaultBiasesCol = \
         #             -defaultBiasesCol[metricsSensOrder,0]/np.abs(normMetricValsCol[metricsSensOrder,0])
@@ -379,7 +365,7 @@ def createFigs(numMetricsNoSpecial, metricsNames,
                                                 -minusNonlinMatrixDparamsOrderedMasked,
                                                 plotTitle='Removal of biases in each metric by each parameter')
 
-    if plot_paramsIncrsBarChart:
+    if createPlotType['paramsIncrsBarChart']:
 
         print("Creating paramsIncrBarChart . . .")
 
@@ -417,7 +403,7 @@ def createFigs(numMetricsNoSpecial, metricsNames,
                            width=600, height=450,
                            showLegend=False)
 
-    if plot_paramsAbsIncrsBarChart:
+    if createPlotType['paramsAbsIncrsBarChart']:
 
         squaredParamsIncrs = np.mean( np.square(nonlinMatrixDparams), axis=0 )
         squaredParamsIncrsPlusBias = np.append(squaredParamsIncrs, np.mean( np.square(normlzdDefaultBiasesCol)))
@@ -497,11 +483,19 @@ def createFigs(numMetricsNoSpecial, metricsNames,
                                               normMetricValsCol,
                                               metricsNames)
 
-    if plot_biasesVsDiagnosticScatterplot:
-        diagnosticPrefix = ["U10"] # Doesn't work if try two prefixes, e.g., ["U10", "SWCF"]
+    if createPlotType['biasesVsDiagnosticScatterplot']:
+
+        diagnosticPrefix = ['PSL'] # Doesn't work if try two prefixes, e.g., ["U10", "SWCF"]
+        biasPrefix = 'SWCF'
+        # Use np.char.find to find the indices where the search string, biasPrefix, is present
+        biasPrefixIdxs = np.char.find(metricsNames, biasPrefix) >= 0
+        # Select the relevant elements from defaultBiasesCol
+        defaultBiasesColToPlot = defaultBiasesCol[biasPrefixIdxs]
+        normMetricValsColToPlot = normMetricValsCol[biasPrefixIdxs]
+
         biasVsDiagnosticScatterplot = \
-            createBiasVsDiagnosticScatterplot(diagnosticPrefix, defaultBiasesCol,
-                                              normMetricValsCol,
+            createBiasVsDiagnosticScatterplot(diagnosticPrefix, defaultBiasesColToPlot,
+                                              normMetricValsColToPlot,
                                               defaultNcFilename)
 
     if False:
@@ -509,7 +503,7 @@ def createFigs(numMetricsNoSpecial, metricsNames,
             createBiasSensMatrixScatterFig(defaultBiasesCol, defaultBiasesApproxElastic,
                                            normMetricValsCol, metricsNames)
 
-    if plot_dpMinMatrixScatterFig:
+    if createPlotType['dpMinMatrixScatterFig']:
         dpMinMatrixScatterFig = \
             createDpMinMatrixScatterFig(defaultBiasesCol, normlzdSensMatrixPoly,
                                         normMetricValsCol, metricsNames)
@@ -518,7 +512,7 @@ def createFigs(numMetricsNoSpecial, metricsNames,
         maxSensMetricsFig = \
             createMaxSensMetricsFig(normlzdSensMatrixPoly, metricsNames)
 
-    if plot_biasesVsSensMagScatterplot:
+    if createPlotType['biasesVsSensMagScatterplot']:
         print("Creating biasesVsSensMagScatterplot . . .")
 
         sensCol = np.linalg.norm(normlzdLinplusSensMatrixPoly, axis=1)
@@ -621,7 +615,7 @@ def createFigs(numMetricsNoSpecial, metricsNames,
 
 
 
-    if plot_biasesVsSvdScatterplot:
+    if createPlotType['biasesVsSvdScatterplot']:
         print("Creating biasesVsSvdScatterplot . . .")
 
         # vh = V^T = transpose of right-singular vector matrix, V.
@@ -731,7 +725,7 @@ def createFigs(numMetricsNoSpecial, metricsNames,
             createNormlzdSensMatrixRowsFig(normlzdSensMatrixPoly,
                                            metricsNames, paramsNames)
 
-    if plot_sensMatrixAndBiasVecFig:
+    if createPlotType['sensMatrixAndBiasVecFig']:
         print("Creating sensMatrixAndBiasVecFig . . .")
         # Create figure that shows the sensitivity matrix and bias column, both color coded.
         matrixDictKeyString = "normlzdLinplusSensMatrixPoly"
@@ -774,7 +768,7 @@ def createFigs(numMetricsNoSpecial, metricsNames,
                                                         reversedYAxis='reversed',
                                                         eqnAdd=False)
 
-    if plot_projectionMatrixFigs:
+    if createPlotType['projectionMatrixFigs']:
         # Create figure that plots color-coded projection matrix plus bias column.
         XT_dot_X_Linplus_inv = np.linalg.inv(XT_dot_X_Linplus)
         fullProjectionMatrix = normlzdLinplusSensMatrixPoly @ XT_dot_X_Linplus_inv @ normlzdLinplusSensMatrixPoly.T
@@ -834,7 +828,7 @@ def createFigs(numMetricsNoSpecial, metricsNames,
                               showLegend=False, hoverMode="closest",
                               plotWidth=700, plotHeight=500)
 
-    if plot_paramsCorrArrayFig:
+    if createPlotType['paramsCorrArrayFig']:
         #matrixDictKeyString = "normlzdSensMatrixPoly"
         #matrixDict = {matrixDictKeyString: normlzdSensMatrixPoly}
         matrixDictKeyString = "normlzdLinplusSensMatrixPoly"
@@ -852,7 +846,7 @@ def createFigs(numMetricsNoSpecial, metricsNames,
                                      plotTitle=plotTitle,
                                      plotWidth=500)
 
-    if plot_dpMin2PtFig:
+    if createPlotType['dpMin2PtFig']:
         print("Creating dpMin2PtFig . . .")
         #    dpMin2PtFig = \
         #    createDpMin2PtFig( normlzdLinplusSensMatrixPoly, defaultBiasesCol,
@@ -872,7 +866,7 @@ def createFigs(numMetricsNoSpecial, metricsNames,
     #                      xlabel="Regional metric", ylabel="Contribution to bias removal",
     #                      width=800, height=500 )
 
-    if plot_PcaBiplot:
+    if createPlotType['PcaBiplot']:
         print("Creating PcaBiplotFig . . .")
 
         paramsNamesAbbr = np.char.replace(paramsNames, 'clubb_', '')
@@ -899,7 +893,7 @@ def createFigs(numMetricsNoSpecial, metricsNames,
                             )
 
 
-    if plot_PcSensMap:
+    if createPlotType['PcSensMap']:
 
         numBoxes = int(numMetricsNoSpecial / len(varPrefixes))
 
@@ -933,7 +927,7 @@ def createFigs(numMetricsNoSpecial, metricsNames,
         #PcMapFig.add_trace(PcMapPanelU0.data[0], row=1, col=1)
         #PcMapFig.add_trace(PcMapPanelU1.data[0], row=1, col=2)
 
-    if plot_vhMatrixFig:
+    if createPlotType['vhMatrixFig']:
 
         print("Creating SVD vh matrix figure . . .")
 
@@ -986,32 +980,32 @@ def createFigs(numMetricsNoSpecial, metricsNames,
 
         html.Div(children=''' ''')]
 
-    if plot_PcSensMap:
+    if createPlotType['PcSensMap']:
         dashboardChildren.extend(BiasParamsDashboardChildren)
         dashboardChildren.extend(U0U3DashboardChildren)
         #dashboardChildren.append(dcc.Graph(id='PcMapFig', figure=PcMapFig))
-    if plot_vhMatrixFig:
+    if createPlotType['vhMatrixFig']:
         dashboardChildren.append(dcc.Graph(id='vhMatrixFig', figure=vhMatrixFig,
                                            config=downloadConfig))
-    if plot_PcaBiplot:
+    if createPlotType['PcaBiplot']:
         dashboardChildren.append(dcc.Graph(id='PcaBiplotFig', figure=PcaBiplotFig,
                                            config=downloadConfig))
-    if plot_paramsErrorBarsFig:
+    if createPlotType['paramsErrorBarsFig']:
         dashboardChildren.append(dcc.Graph(id='paramsErrorBarsFig', figure=paramsErrorBarsFig,
                                            config=downloadConfig))
-    if plot_biasesOrderedArrowFig:
+    if createPlotType['biasesOrderedArrowFig']:
         dashboardChildren.append(dcc.Graph(id='biasesOrderedArrowFig', figure=biasesOrderedArrowFig,
                                            config=downloadConfig))
-    if plot_metricsBarChart:
+    if createPlotType['metricsBarChart']:
         dashboardChildren.append(dcc.Graph(id='metricsBarChart', figure=metricsBarChart,
                                            config=downloadConfig))
-    if plot_paramsTotContrbBarChart:
+    if createPlotType['paramsTotContrbBarChart']:
         dashboardChildren.append(dcc.Graph(id='paramsTotContrbBarChart', figure=paramsTotContrbBarChart,
                                            config=downloadConfig))
-    if plot_paramsIncrsBarChart:
+    if createPlotType['paramsIncrsBarChart']:
         dashboardChildren.append(dcc.Graph(id='paramsIncrsBarChart', figure=paramsIncrsBarChart,
                                            config=downloadConfig))
-    if plot_paramsAbsIncrsBarChart:
+    if createPlotType['paramsAbsIncrsBarChart']:
         dashboardChildren.append(dcc.Graph(id='paramsSquaredIncrsBarChart', figure=paramsSquaredIncrsBarChart,
                                            config=downloadConfig))
         dashboardChildren.append(dcc.Graph(id='paramsAbsLinCurvIncrsBarChart', figure=paramsAbsLinCurvIncrsBarChart,
@@ -1022,34 +1016,34 @@ def createFigs(numMetricsNoSpecial, metricsNames,
     if False:
         dashboardChildren.append(dcc.Graph(id='biasLinNlIndivContrbBarFig', figure=biasLinNlIndivContrbBarFig,
                                            config=downloadConfig))
-    if plot_dpMin2PtFig:
+    if createPlotType['dpMin2PtFig']:
         dashboardChildren.append(dcc.Graph(id='dpMin2PtFig', figure=dpMin2PtFig,
                                            config=downloadConfig))
     if False:
         dashboardChildren.append(dcc.Graph(id='biasVsBiasApproxScatterplot', figure=biasVsBiasApproxScatterplot,
                                            config=downloadConfig))
     #config= { 'toImageButtonOptions': { 'scale': 6 } }
-    if plot_biasesVsDiagnosticScatterplot:
+    if createPlotType['biasesVsDiagnosticScatterplot']:
         dashboardChildren.append(dcc.Graph(id='biasVsDiagnosticScatterplot', figure=biasVsDiagnosticScatterplot,
                                            config=downloadConfig))
-    if plot_sensMatrixAndBiasVecFig:
+    if createPlotType['sensMatrixAndBiasVecFig']:
         dashboardChildren.append(dcc.Graph(id='sensMatrixAndBiasVecFig', figure=sensMatrixAndBiasVecFig,
                                            config=downloadConfig))
     if False:
         dashboardChildren.append(dcc.Graph(id='paramsCorrArrayBiasFig', figure=paramsCorrArrayBiasFig,
                                            config=downloadConfig))
-    if plot_paramsCorrArrayFig:
+    if createPlotType['paramsCorrArrayFig']:
         dashboardChildren.append(dcc.Graph(id='paramsCorrArrayFig', figure=paramsCorrArrayFig,
                                            config=downloadConfig))
     if False:
         dashboardChildren.append(dcc.Graph(id='metricsCorrArrayFig', figure=metricsCorrArrayFig,
                                            config=downloadConfig))
-    if plot_projectionMatrixFigs:
+    if createPlotType['projectionMatrixFigs']:
         dashboardChildren.append(dcc.Graph(id='projectionMatrixFig', figure=projectionMatrixFig,
                                            config=downloadConfig))
         dashboardChildren.append(dcc.Graph(id='biasesVsLeveragesScatterplot', figure=biasesVsLeveragesScatterplot,
                                            config=downloadConfig))
-    if plot_biasesVsSensMagScatterplot:
+    if createPlotType['biasesVsSensMagScatterplot']:
         dashboardChildren.append(dcc.Graph(id='biasesVsSensMagScatterplot',
                                            figure=biasesVsSensMagScatterplot,
                                            config=downloadConfig))
@@ -1059,18 +1053,18 @@ def createFigs(numMetricsNoSpecial, metricsNames,
         dashboardChildren.append(dcc.Graph(id='biasVsSensMagMaskedResidScatterplot',
                                            figure=biasVsSensMagMaskedResidScatterplot,
                                            config=downloadConfig))
-    if plot_biasesVsSvdScatterplot:
+    if createPlotType['biasesVsSvdScatterplot']:
         dashboardChildren.append(dcc.Graph(id='biasesVsSvdScatterplot', figure=biasesVsSvdScatterplot,
                                            config=downloadConfig))
         dashboardChildren.append(dcc.Graph(id='residVsSvdScatterplot', figure=residVsSvdScatterplot,
                                            config=downloadConfig))
-    if plot_threeDotFig:
+    if createPlotType['threeDotFig']:
         dashboardChildren.append(dcc.Graph(id='threeDotFig', figure=threeDotFig,
                                            config=downloadConfig))
     if False:
         dashboardChildren.append(dcc.Graph(id='biasSensScatterFig', figure=biasSensMatrixScatterFig,
                                            config=downloadConfig))
-    if plot_dpMinMatrixScatterFig:
+    if createPlotType['dpMinMatrixScatterFig']:
         dashboardChildren.append(dcc.Graph(id='dpMinMatrixScatterFig', figure=dpMinMatrixScatterFig,
                                            config=downloadConfig))
     if False:
@@ -3172,6 +3166,7 @@ def createBiasVsBiasApproxScatterplot(defaultBiasesApproxNonlin, defaultBiasesCo
 def createBiasVsDiagnosticScatterplot(diagnosticPrefix, defaultBiasesCol,
                                       normMetricValsCol,
                                       defaultNcFilename):
+
     from set_up_inputs import setUp_x_MetricsList, \
         setupDefaultMetricValsCol
 
@@ -3493,8 +3488,8 @@ def createPcaBiplot(normlzdSensMatrix, normlzdDefaultBiasesCol,
                           showLegend=showLegend, hoverMode=hoverMode,
                           plotWidth=plotWidth, plotHeight=plotHeight)
 
-    print("Whitelisted metrics = ", pointLabels[whitelistedMetricsMask])
-    print("SV1, SV2 = ", components[whitelistedMetricsMask,0:2])
+    #print("Whitelisted metrics = ", pointLabels[whitelistedMetricsMask])
+    #print("SV1, SV2 = ", components[whitelistedMetricsMask,0:2])
 
     ## Bold the labels of masked metrics
     #dfMasked = pd.DataFrame({

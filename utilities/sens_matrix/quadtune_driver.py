@@ -33,7 +33,7 @@ def main():
     (numMetricsNoSpecial, \
     metricsNames, \
     varPrefixes, \
-    extraMetricsToPlot, \
+    extraMetricsToPlot, createPlotType, \
     metricsWeights, metricsNorms, \
     obsMetricValsDict, \
     paramsNames, paramsScales, \
@@ -289,6 +289,7 @@ def main():
                paramsSolnNonlin,
                paramsSolnElastic, dnormlzdParamsSolnElastic,
                sensNcFilenames, sensNcFilenamesExt, defaultNcFilename,
+               createPlotType,
                beVerbose=False,useLongTitle=False, param_bounds_boot=param_bounds_boot)
 
     return
