@@ -11,23 +11,16 @@ This includes assigning variables for input netcdf filenames,
 and setting regional metric weights and observed values of parameters.
 """
 
+import numpy as np
+import pandas as pd
+from re import search, match
+import netCDF4
+import sys
+
 
 def setUpInputs(beVerbose):
 
-#    import dash
-#    import dash_core_components as dcc
-#    import dash_html_components as html
-#    import plotly.express as px
-#    import plotly.graph_objects as go
-    import pandas as pd
 
-    import numpy as np
-    import pdb
-    import sklearn
-#    from plotly.figure_factory import create_quiver
-    from itertools import chain
-
-    from test_analyzeSensMatrix import write_test_netcdf_files
 
     # Flag for using bootstrap sampling
     useBootstrap = False
@@ -39,6 +32,30 @@ def setUpInputs(beVerbose):
     # Increase this value to 0.1 or 0.5 or so if you want to reduce 
     # the size of tuned parameter perturbations.
     reglrCoef = 0.0
+
+
+    # Use these flags to determine whether or not to create specific plots
+    createPlotType = {
+        'paramsErrorBarsFig': True,
+        'biasesOrderedArrowFig': True,
+        'threeDotFig': True,
+        'metricsBarChart': True,
+        'paramsIncrsBarChart': True,
+        'paramsAbsIncrsBarChart': True,
+        'paramsTotContrbBarChart': True,
+        'biasesVsDiagnosticScatterplot': True,
+        'dpMin2PtFig': True,
+        'dpMinMatrixScatterFig': True,
+        'projectionMatrixFigs': True,
+        'biasesVsSensMagScatterplot': True,
+        'biasesVsSvdScatterplot': True,
+        'paramsCorrArrayFig': True,
+        'sensMatrixAndBiasVecFig': True,
+        'PcaBiplot': True,
+        'PcSensMap': True,
+        'vhMatrixFig': True,
+    }
+
 
     # Metrics are observed quantities that we want a tuned simulation to match.
     #    The first column is the metric name.
@@ -123,7 +140,7 @@ def setUpInputs(beVerbose):
     metricsWeightsSpecial = dfMetricsNamesWeightsAndNormsSpecial[['metricsWeightsSpecial']].to_numpy().astype(float)
     metricsNormsSpecial = dfMetricsNamesWeightsAndNormsSpecial[['metricsNormsSpecial']].to_numpy().astype(float)
 
-    # These are the metrics that we want to include
+    # These are some metrics that we want to include
     #      in the metrics bar-chart, 3-dot plot, etc.
     # They must be a subset of metricsNames
     #extraMetricsToPlot = np.array(['SWCF_5_9', 'SWCF_8_13', 'SWCF_6_15', 'SWCF_9_5', 'SWCF_3_6', 'SWCF_3_12', 'SWCF_1_6'])
@@ -140,28 +157,6 @@ def setUpInputs(beVerbose):
 
 
 
-    # Use these flags to determine whether or not to create specific plots
-    createPlotType = {
-        'paramsErrorBarsFig': True,
-        'biasesOrderedArrowFig': True,
-        'threeDotFig': True,
-        'metricsBarChart': True,
-        'paramsIncrsBarChart': True,
-        'paramsAbsIncrsBarChart': True,
-        'paramsTotContrbBarChart': True,
-        'biasesVsDiagnosticScatterplot': True,
-        'dpMin2PtFig': True,
-        'dpMinMatrixScatterFig': True,
-        'projectionMatrixFigs': True,
-        'biasesVsSensMagScatterplot': True,
-        'biasesVsSvdScatterplot': True,
-        'paramsCorrArrayFig': True,
-        'sensMatrixAndBiasVecFig': True,
-        'PcaBiplot': True,
-        'PcSensMap': True,
-        'vhMatrixFig': True,
-    }
-
     # Parameters are tunable model parameters, e.g. clubb_C8.
     # The float listed below after the parameter name is a factor that is used below for scaling plots.
     #   It is not a weight and doesn't affect optimized values; it just makes the plots more readable.
@@ -169,19 +164,18 @@ def setUpInputs(beVerbose):
     #    up and in the other, it is perturbed down.
     #    The output from each sensitivity simulation is expected to be stored in its own netcdf file.
     #    Each netcdf file contains metric values and parameter values for a single simulation.
+    folder_name = 'Regional_files/20241022_1yr_20x20regs/20.0sens1022_'
+    #folder_name = 'Regional_files/20241022_2yr_20x20regs_take3/20.0sens1022_'
+    #folder_name = 'Regional_files/20241022_2yr_20x20regs_msq/20.0sens1022_'
+    #folder_name = 'Regional_files/20231211_20x20regs/sens0707_'
+    #folder_name = 'Regional_files/20231204_30x30regs/sens0707_'
     #folder_name = 'Regional_files/20degree_CAM_TAUS_202404_DJF/20.0thresp26_'
     #folder_name = 'Regional_files/30degree_CAM_TAUS_202404/30.0thresp26_'
     #folder_name = 'Regional_files/RG_20240402_sens/thresp26_'
     #folder_name = 'Regional_files/20240614_e3sm_20x20regs/thresp26_'
-    #folder_name = 'Regional_files/20231211_20x20regs/sens0707_'
-    folder_name = 'Regional_files/20241022_1yr_20x20regs/20.0sens1022_'
-    #folder_name = 'Regional_files/20241022_2yr_20x20regs_take3/20.0sens1022_'
-    #folder_name = 'Regional_files/20241022_2yr_20x20regs_msq/20.0sens1022_'
-    #folder_name = 'Regional_files/20231204_30x30regs/sens0707_'
-    #folder_name = 'Regional_files/20240409updated/thresp26_'  # folder where regional netcdf files are stored.
-    #folder_name = 'Regional_files/stephens_20240131/btune_regional_files/btune_'  # folder where regional netcdf files are stored.
-    #folder_name = 'Regional_files/20230910/'  # folder where regional netcdf files are stored.
-    #folder_name = 'Regional_files/20221120_2yr/'  # folder where regional netcdf files are stored.
+    #folder_name = 'Regional_files/20240409updated/thresp26_'
+    #folder_name = 'Regional_files/stephens_20240131/btune_regional_files/btune_'
+
     paramsNamesScalesAndFilenames = [ \
         ['clubb_c8', 1.0, \
          folder_name + '14_Regional.nc', \
@@ -420,6 +414,107 @@ def setUpInputs(beVerbose):
 #            folder_name + 'chrysalis.bmg20220630.sens1107_23.ne30pg2_r05_oECv3_Regional.nc'
          )
 
+    # Comment out if not using 20x20reg files
+    varPrefixes = ["SWCF"]
+    #varPrefixes = ["SWCF", "LWCF", "PRECT"]
+    #numPrefixes = len(varPrefixes)
+    metricsNamesWeightsAndNorms, metricGlobalValsFromFile \
+         = setUp_x_MetricsList(varPrefixes , defaultNcFilename)
+    # Split up the list above into metric names and the corresponding weights.
+    dfMetricsNamesWeightsAndNorms =  \
+        pd.DataFrame( metricsNamesWeightsAndNorms, columns = ['metricsNames', 'metricsWeights', 'metricsNorms'] )
+    metricsNames = dfMetricsNamesWeightsAndNorms[['metricsNames']].to_numpy().astype(str)[:,0]
+    metricsWeights = dfMetricsNamesWeightsAndNorms[['metricsWeights']].to_numpy().astype(float)
+    #metricsNorms = dfMetricsNamesWeightsAndNorms[['metricsNorms']].to_numpy().astype(float)
+
+
+    metricsNamesNoprefix = np.char.replace(metricsNames, "SWCF_", "")
+
+    # Set up a column vector of metric values from the default simulation
+    defaultMetricValsCol = \
+        setupDefaultMetricValsCol(metricsNames, defaultNcFilename)
+
+    #metricGlobalAvg = np.dot(metricsWeights.T, defaultMetricValsCol)
+    metricGlobalAvgs = np.diag(np.dot(metricsWeights.reshape(-1,len(varPrefixes),order='F').T,
+                                      defaultMetricValsCol.reshape(-1,len(varPrefixes),order='F')))
+    #np.dot(metricsWeights.reshape(-1,2,order='F').T, defaultMetricValsCol.reshape(-1,2,order='F'))
+
+    if not np.isclose(metricGlobalValsFromFile, metricGlobalAvgs).all():
+        print("Error: metricGlobalAvgs not equal to metricGlobalValsFromFile")
+    print("\nThe following two global values should be close to each other:")
+    print("metricGlobalAvgs =", metricGlobalAvgs)
+    print("metricGlobalValsFromFile =", metricGlobalValsFromFile)
+    if beVerbose:
+        print("defaultMetricValsCol printed as array = ")
+        # Calculate number of regions in the east-west (X) and north-south (Y) directions
+        boxSize = 20
+        numXBoxes = np.rint(360 / boxSize).astype(int)  # 18
+        numYBoxes = np.rint(180 / boxSize).astype(int)  # 9
+        defaultMetricValsReshaped = defaultMetricValsCol.reshape((numYBoxes,numXBoxes))
+        #defaultMetricValsRolled = np.roll(defaultMetricValsReshaped, -9, axis=1)
+        np.set_printoptions( linewidth=200 )
+        print(np.around(defaultMetricValsReshaped,2))
+        #print(np.around(defaultMetricValsRolled,2))
+
+    (obsMetricValsDict, obsWeightsDict) = \
+        (
+        setUp_x_ObsMetricValsDict(varPrefixes, folder_name + "20241011_20.0_OBS.nc")
+        #setUp_x_ObsMetricValsDict(varPrefixes, folder_name + "20.0_OBS.nc")
+        #setUp_x_ObsMetricValsDict(varPrefixes, folder_name + "30.0_OBS.nc")
+        #setUp_x_ObsMetricValsDict(varPrefixes, "Regional_files/stephens_20240131/btune_regional_files/b1850.075plus_Regional.nc")
+        )
+
+    # Set metricsNorms to be a global average
+    obsGlobalAvgObsWeights = np.zeros(len(varPrefixes))
+    obsGlobalStdObsWeights = np.zeros(len(varPrefixes))
+    obsGlobalAvgCol = np.empty(shape=[0, 1])
+    obsGlobalStdCol = np.empty(shape=[0, 1])
+    for idx, varPrefix in np.ndenumerate(varPrefixes):
+        keysVarPrefix = [key for key in obsWeightsDict.keys() if varPrefix in key]
+        #obsWeightsNames = np.array(list(obsWeightsDict.keys()), dtype=str)
+        obsWeightsNames = np.array(keysVarPrefix, dtype=str)
+        obsWeightsUnnormlzd = setUpObsCol(obsWeightsDict, obsWeightsNames)
+        obsWeights = obsWeightsUnnormlzd / np.sum(obsWeightsUnnormlzd)
+        #metricsWeights = obsWeights
+        #obsWeights = np.vstack([obsWeights] * len(varPrefixes))
+        metricsNamesVarPrefix = [key for key in obsMetricValsDict.keys() if varPrefix in key]
+        obsMetricValsColVarPrefix = setUpObsCol(obsMetricValsDict, metricsNamesVarPrefix)
+        obsGlobalStdObsWeights[idx] = np.std(obsMetricValsColVarPrefix)
+        obsGlobalAvgObsWeights[idx] = np.dot(obsWeights.T, obsMetricValsColVarPrefix)
+        # For sea-level pressure, the global avg is too large to serve as a representative normalization
+        if varPrefix == 'PSL':
+            obsGlobalAvgObsWeights[idx] = 1e-3 * obsGlobalAvgObsWeights[idx]
+        print(f"obsGlobalAvgObsWeights for {varPrefix} =", obsGlobalAvgObsWeights[idx])
+        obsGlobalAvgCol = np.vstack((obsGlobalAvgCol,
+                                       obsGlobalAvgObsWeights[idx]*np.ones((len(obsWeights),1))
+                                        ))
+        obsGlobalStdCol = np.vstack((obsGlobalStdCol,
+                                     obsGlobalStdObsWeights[idx] * np.ones((len(obsWeights), 1))
+                                     ))
+    # Warning: Using a global average as the constant weight produces little normalized
+    #     sensitivity for PSL
+    metricsNorms = np.copy(obsGlobalAvgCol)
+    #metricsNorms = np.copy(obsGlobalStdCol)
+
+    #obsMetricValsReshaped = obsMetricValsCol.reshape((9,18))
+    #biasMat = defaultMetricValsReshaped - obsMetricValsReshaped
+    #print("biasMat =")
+    #print(np.around(biasMat,2))
+
+    #mse = np.sum(metricsWeights*(defaultMetricValsCol - obsMetricValsCol)**2) \
+    #   / np.sum(metricsWeights)
+    #rmse = np.sqrt(mse)
+    #print("rmse between default and obs =", rmse)
+
+    # The special regions are tacked onto the end of
+    #     the usual metrics vectors
+    numMetricsNoSpecial = len(metricsNames)
+
+    metricsNames = np.append(metricsNames, metricsNamesSpecial)
+    metricsWeights = np.vstack((metricsWeights, metricsWeightsSpecial))
+    numMetricsSpecial = len(metricsNames) - numMetricsNoSpecial
+    metricsNorms = np.vstack((metricsNorms, metricsNormsSpecial))
+
     # Observed values of our metrics, from, e.g., CERES-EBAF.
     # These observed metrics will be matched as closely as possible by analyzeSensMatrix.
     # NOTE: PRECT is in the unit of m/s
@@ -465,116 +560,6 @@ def setUpInputs(beVerbose):
     obsMetricValsDictSpecial = {key: np.float32(value) \
                 for key, value in obsMetricValsDictSpecial.items()}
 
-    # Comment out if not using 20x20reg files
-    varPrefixes = ["SWCF"]
-    #varPrefixes = ["SWCF", "LWCF", "PRECT"]
-    #numPrefixes = len(varPrefixes)
-    metricsNamesWeightsAndNorms, metricGlobalValsFromFile \
-         = setUp_x_MetricsList(varPrefixes , defaultNcFilename)
-    # Split up the list above into metric names and the corresponding weights.
-    dfMetricsNamesWeightsAndNorms =  \
-        pd.DataFrame( metricsNamesWeightsAndNorms, columns = ['metricsNames', 'metricsWeights', 'metricsNorms'] )
-    metricsNames = dfMetricsNamesWeightsAndNorms[['metricsNames']].to_numpy().astype(str)[:,0]
-    metricsWeights = dfMetricsNamesWeightsAndNorms[['metricsWeights']].to_numpy().astype(float)
-    #metricsNorms = dfMetricsNamesWeightsAndNorms[['metricsNorms']].to_numpy().astype(float)
-
-
-    # Set up a column vector of metric values from the default simulation
-    defaultMetricValsCol = \
-        setupDefaultMetricValsCol(metricsNames, defaultNcFilename)
-
-    #metricGlobalAvg = np.dot(metricsWeights.T, defaultMetricValsCol)
-    metricGlobalAvgs = np.diag(np.dot(metricsWeights.reshape(-1,len(varPrefixes),order='F').T,
-                                      defaultMetricValsCol.reshape(-1,len(varPrefixes),order='F')))
-    #np.dot(metricsWeights.reshape(-1,2,order='F').T, defaultMetricValsCol.reshape(-1,2,order='F'))
-
-    if not np.isclose(metricGlobalValsFromFile, metricGlobalAvgs).all():
-        print("Error: metricGlobalAvgs not equal to metricGlobalValsFromFile")
-    print("\nThe following two global values should be close to each other:")
-    print("metricGlobalAvgs =", metricGlobalAvgs)
-    print("metricGlobalValsFromFile =", metricGlobalValsFromFile)
-    if beVerbose:
-        print("defaultMetricValsCol printed as array = ")
-        # Calculate number of regions in the east-west (X) and north-south (Y) directions
-        boxSize = 20
-        numXBoxes = np.rint(360 / boxSize).astype(int)  # 18
-        numYBoxes = np.rint(180 / boxSize).astype(int)  # 9
-        defaultMetricValsReshaped = defaultMetricValsCol.reshape((numYBoxes,numXBoxes))
-        #defaultMetricValsRolled = np.roll(defaultMetricValsReshaped, -9, axis=1)
-        np.set_printoptions( linewidth=200 )
-        print(np.around(defaultMetricValsReshaped,2))
-        #print(np.around(defaultMetricValsRolled,2))
-
-    (obsMetricValsDict, obsWeightsDict) = \
-        (
-        #setUp_x_ObsMetricValsDict(varPrefixes, folder_name + "OBS.nc")
-        setUp_x_ObsMetricValsDict(varPrefixes, folder_name + "20241011_20.0_OBS.nc")
-        #setUp_x_ObsMetricValsDict(folder_name + "OBS.nc")
-        #setUp_x_ObsMetricValsDict(varPrefixes, folder_name + "20.0_OBS.nc")
-        #setUp_x_ObsMetricValsDict(folder_name + "30.0_OBS.nc")
-        )
-
-    #obsMetricValsDict = setUp_x_ObsMetricValsDict("Regional_files/20231211_20x20regs/" + "OBS.nc")
-    #obsMetricValsDict = setUp_x_ObsMetricValsDict("Regional_files/20231208runs_30x30/" + "OBS.nc")
-    #obsMetricValsDict = setUp_x_ObsMetricValsDict(folder_name + "OBS.nc")
-    #obsMetricValsDict = setUp_x_ObsMetricValsDict("Regional_files/stephens_20240131/btune_regional_files/b1850.075plus_Regional.nc")
-
-    #obsMetricValsCol = setUpObsCol(obsMetricValsDict, metricsNames)
-    #obsGlobalAvgMetricsWeights = np.dot(metricsWeights.T, obsMetricValsCol)
-    #obsGlobalAvgUnweighted = np.mean(obsMetricValsCol)
-    #print("obsGlobalAvgMetricsWeights =", obsGlobalAvgMetricsWeights)
-
-    # Set metricsNorms to be a global average
-    obsGlobalAvgObsWeights = np.zeros(len(varPrefixes))
-    obsGlobalStdObsWeights = np.zeros(len(varPrefixes))
-    obsGlobalAvgCol = np.empty(shape=[0, 1])
-    obsGlobalStdCol = np.empty(shape=[0, 1])
-    for idx, varPrefix in np.ndenumerate(varPrefixes):
-        keysVarPrefix = [key for key in obsWeightsDict.keys() if varPrefix in key]
-        #obsWeightsNames = np.array(list(obsWeightsDict.keys()), dtype=str)
-        obsWeightsNames = np.array(keysVarPrefix, dtype=str)
-        obsWeightsUnnormlzd = setUpObsCol(obsWeightsDict, obsWeightsNames)
-        obsWeights = obsWeightsUnnormlzd / np.sum(obsWeightsUnnormlzd)
-        #metricsWeights = obsWeights
-        #obsWeights = np.vstack([obsWeights] * len(varPrefixes))
-        metricsNamesVarPrefix = [key for key in obsMetricValsDict.keys() if varPrefix in key]
-        obsMetricValsColVarPrefix = setUpObsCol(obsMetricValsDict, metricsNamesVarPrefix)
-        obsGlobalStdObsWeights[idx] = np.std(obsMetricValsColVarPrefix)
-        obsGlobalAvgObsWeights[idx] = np.dot(obsWeights.T, obsMetricValsColVarPrefix)
-        # For sea-level pressure, the global avg is too large to serve as a representative normalization
-        if varPrefix == 'PSL':
-            obsGlobalAvgObsWeights[idx] = 1e-3 * obsGlobalAvgObsWeights[idx]
-        print(f"obsGlobalAvgObsWeights for {varPrefix} =", obsGlobalAvgObsWeights[idx])
-        obsGlobalAvgCol = np.vstack((obsGlobalAvgCol,
-                                       obsGlobalAvgObsWeights[idx]*np.ones((len(obsWeights),1))
-                                        ))
-        obsGlobalStdCol = np.vstack((obsGlobalStdCol,
-                                     obsGlobalStdObsWeights[idx] * np.ones((len(obsWeights), 1))
-                                     ))
-    # Warning: Using a global average as the constant weight produces little normalized
-    #     sensitivity for PSL
-    metricsNorms = np.copy(obsGlobalAvgCol)
-    #metricsNorms = np.copy(obsGlobalStdCol)
-
-            #obsMetricValsReshaped = obsMetricValsCol.reshape((9,18))
-            #biasMat = defaultMetricValsReshaped - obsMetricValsReshaped
-            #print("biasMat =")
-            #print(np.around(biasMat,2))
-
-            #mse = np.sum(metricsWeights*(defaultMetricValsCol - obsMetricValsCol)**2) \
-            #   / np.sum(metricsWeights)
-            #rmse = np.sqrt(mse)
-            #print("rmse between default and obs =", rmse)
-
-    # The special regions are tacked onto the end of
-    #     the usual metrics vectors
-    numMetricsNoSpecial = len(metricsNames)
-
-    metricsNames = np.append(metricsNames, metricsNamesSpecial)
-    metricsWeights = np.vstack((metricsWeights, metricsWeightsSpecial))
-    numMetricsSpecial = len(metricsNames) - numMetricsNoSpecial
-    metricsNorms = np.vstack((metricsNorms, metricsNormsSpecial))
-
     obsMetricValsDict.update(obsMetricValsDictSpecial)
 
     # Sanity check: is extraMetricsToPlot a subset of metricsNames?
@@ -584,7 +569,7 @@ def setUpInputs(beVerbose):
         print(np.setdiff1d(extraMetricsToPlot, metricsNames))
 
     return (numMetricsNoSpecial,
-            metricsNames,
+            metricsNames, metricsNamesNoprefix,
             varPrefixes,
             extraMetricsToPlot, createPlotType, \
             metricsWeights, metricsNorms, \
@@ -600,19 +585,19 @@ def setUpInputs(beVerbose):
             reglrCoef, useBootstrap, numMetricsToTune)
 
 
-def setUpPreliminaries(metricsNames, metricsNorms, \
-                       obsMetricValsDict, \
-                       paramsNames, transformedParamsNames, \
-                       prescribedParamsNames, prescribedParamValsRow, \
-                       prescribedTransformedParamsNames, \
-                       sensNcFilenames, \
-                       defaultNcFilename \
-                      ):
+def setUpColAndRowVectors(metricsNames, metricsNorms, \
+                          obsMetricValsDict, \
+                          paramsNames, transformedParamsNames, \
+                          prescribedParamsNames, prescribedParamValsRow, \
+                          prescribedTransformedParamsNames, \
+                          sensNcFilenames, \
+                          defaultNcFilename \
+                          ):
 
-    import numpy as np
-    import pdb
-    import netCDF4
-    import sys
+
+
+
+
 
     # Set up a column vector of observed metrics
     obsMetricValsCol = setUpObsCol(obsMetricValsDict, metricsNames)
@@ -734,9 +719,9 @@ def setUp_x_ObsMetricValsDict(varPrefixes, obsPathAndFilename):
     Output: Dictionary of observations.
     """
 
-    import numpy as np
-    import netCDF4
-    import re
+
+
+
 
     # Read netcdf file with metrics and parameters from default simulation
     f_obs = netCDF4.Dataset(obsPathAndFilename, 'r')
@@ -749,7 +734,7 @@ def setUp_x_ObsMetricValsDict(varPrefixes, obsPathAndFilename):
         #print(varName)
         #         or re.search("^LWCF_[0-9]+_",varName):
         for varPrefix in varPrefixes:
-            if re.search(f"^{varPrefix}_[0-9]+_",varName):
+            if search(f"^{varPrefix}_[0-9]+_",varName):
                 #and not "MSWCF" in varName
                 varEntry = f_obs[varName]
                 varVal = varEntry[:].data[:][0]
@@ -757,7 +742,7 @@ def setUp_x_ObsMetricValsDict(varPrefixes, obsPathAndFilename):
                 #print((varName, varVal))
             # Extract observational weights,
             #     which are effectively numpy scalars (0d arrays)
-            if re.search(f"^weights_[0-9]+_[0-9]+_{varPrefix}",varName):
+            if search(f"^weights_[0-9]+_[0-9]+_{varPrefix}",varName):
                 weightsEntry = f_obs[varName]
                 weightsVal = weightsEntry[:].data
                 obsWeightsDict[varName] = weightsVal
@@ -777,9 +762,7 @@ def setUp_x_MetricsList(varPrefixes, defPathAndFilename):
     Output: List of 20x20reg metric values.
     """
 
-    import numpy as np
-    import netCDF4
-    import re
+
 
     # Read netcdf file with metrics and parameters from default simulation
     f_def = netCDF4.Dataset(defPathAndFilename, 'r')
@@ -788,7 +771,7 @@ def setUp_x_MetricsList(varPrefixes, defPathAndFilename):
     for varPrefix in varPrefixes:
         for varName in f_def.variables:
             #print(varName)
-            if re.match("^numb_[0-9]+_[0-9]+",varName):
+            if match("^numb_[0-9]+_[0-9]+",varName):
                 areaWeightEntry = f_def[varName]
                 areaWeightVal = areaWeightEntry[:].data[:][0]
                 varFullString = varName.replace("numb", varPrefix)
@@ -814,8 +797,8 @@ def setUpObsCol(obsMetricValsDict, metricsNames):
     Output: A column vector of observed metrics
     """
 
-    import numpy as np
-    import pdb 
+
+
 
     # Number of metrics
     numMetrics = len(metricsNames)
@@ -838,8 +821,8 @@ def setupDefaultParamVectors(paramsNames, transformedParamsNames,
     Output: Row vector of default-sim parameter values.
     """
 
-    import numpy as np
-    import netCDF4
+
+
 
     # Read netcdf file with metrics and parameters from default simulation
     f_defaultMetricsParams = netCDF4.Dataset(defaultNcFilename, 'r')
@@ -864,6 +847,20 @@ def setupDefaultParamVectors(paramsNames, transformedParamsNames,
 
     return (defaultParamValsRow, defaultParamValsOrigRow)
 
+def abbreviateParamsNames(paramsNames):
+    """
+    Abbreviate parameter names so that they fit on plots.
+    This is handled manually with the lines of code below.
+    """
+
+    paramsAbbrv = np.char.replace(paramsNames, 'clubb_', '')
+    paramsAbbrv = np.char.replace(paramsAbbrv, 'c_invrs_tau_', '')
+    paramsAbbrv = np.char.replace(paramsAbbrv, 'wpxp_n2', 'n2')
+    paramsAbbrv = np.char.replace(paramsAbbrv, 'altitude', 'alt')
+    paramsAbbrv = np.char.replace(paramsAbbrv, 'threshold', 'thres')
+    paramsAbbrv = np.char.replace(paramsAbbrv, 'thresh', 'thres')
+
+    return paramsAbbrv
 
 def setupSensArrays(metricsNames, paramsNames, transformedParamsNames,
                     numMetrics, numParams,
@@ -876,8 +873,8 @@ def setupSensArrays(metricsNames, paramsNames, transformedParamsNames,
                 a single sensitivity simulation.
     """
 
-    import numpy as np
-    import netCDF4
+
+
 
     # Create row vector size numParams containing
     # parameter values from sensitivity simulations
@@ -939,8 +936,8 @@ def setupDefaultMetricValsCol(metricsNames, defaultNcFilename):
     Output: Column vector of default-sim metrics.
     """
 
-    import numpy as np
-    import netCDF4
+
+
 
     # Number of metrics
     numMetrics = len(metricsNames)

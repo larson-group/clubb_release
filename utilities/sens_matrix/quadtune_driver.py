@@ -20,7 +20,7 @@ def main():
 
     from set_up_inputs \
         import setUpInputs, \
-               setUpPreliminaries, \
+               setUpColAndRowVectors, \
                setupDefaultMetricValsCol
 
     from create_nonbootstrap_figs import createFigs
@@ -29,22 +29,22 @@ def main():
 
     print("Set up inputs . . .")
 
-    # The user should input all tuning data into file set_up_inputs.py
-    (numMetricsNoSpecial, \
-    metricsNames, \
-    varPrefixes, \
-    extraMetricsToPlot, createPlotType, \
-    metricsWeights, metricsNorms, \
-    obsMetricValsDict, \
-    paramsNames, paramsScales, \
-    transformedParamsNames, \
-    prescribedParamsNames, prescribedParamsScales, \
-    prescribedTransformedParamsNames, \
-    prescribedParamValsRow, \
-    prescribedSensNcFilenames, prescribedSensNcFilenamesExt, \
-    sensNcFilenames, sensNcFilenamesExt, \
-    defaultNcFilename, linSolnNcFilename, \
-    reglrCoef, useBootstrap, numMetricsToTune) \
+    # The user should input all tuning configuration info into file set_up_inputs.py
+    (numMetricsNoSpecial,
+     metricsNames, metricsNamesNoprefix,
+     varPrefixes,
+     extraMetricsToPlot, createPlotType,
+     metricsWeights, metricsNorms,
+     obsMetricValsDict,
+     paramsNames, paramsScales,
+     transformedParamsNames,
+     prescribedParamsNames, prescribedParamsScales,
+     prescribedTransformedParamsNames,
+     prescribedParamValsRow,
+     prescribedSensNcFilenames, prescribedSensNcFilenamesExt,
+     sensNcFilenames, sensNcFilenamesExt,
+     defaultNcFilename, linSolnNcFilename,
+     reglrCoef, useBootstrap, numMetricsToTune) \
     = \
         setUpInputs(beVerbose=False)
 
@@ -61,14 +61,14 @@ def main():
     magParamValsRow, \
     dnormlzdPrescribedParams, \
     magPrescribedParamValsRow, \
-    = setUpPreliminaries(metricsNames, metricsNorms,
-                           obsMetricValsDict,
-                           paramsNames, transformedParamsNames,
-                           prescribedParamsNames, prescribedParamValsRow,
-                           prescribedTransformedParamsNames,
-                           sensNcFilenames,
-                           defaultNcFilename
-                          )
+    = setUpColAndRowVectors(metricsNames, metricsNorms,
+                            obsMetricValsDict,
+                            paramsNames, transformedParamsNames,
+                            prescribedParamsNames, prescribedParamValsRow,
+                            prescribedTransformedParamsNames,
+                            sensNcFilenames,
+                            defaultNcFilename
+                            )
 
     # Construct numMetrics x numParams matrix of second derivatives, d2metrics/dparams2.
     #     The derivatives are normalized by observed metric values and max param values.
@@ -271,7 +271,7 @@ def main():
     #normlzdWeightedLinplusSensMatrixPoly = np.diag(np.transpose(metricsWeights)[0]) \
     #                                          @ normlzdLinplusSensMatrixPoly
 
-    createFigs(numMetricsNoSpecial, metricsNames,
+    createFigs(numMetricsNoSpecial, metricsNames, metricsNamesNoprefix,
                varPrefixes,
                extraMetricsToPlot,
                paramsNames, transformedParamsNames, paramsScales,

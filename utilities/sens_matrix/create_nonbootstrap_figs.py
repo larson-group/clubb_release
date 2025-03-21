@@ -6,22 +6,36 @@
 # login to malan with `ssh -X` and then type `firefox &`.)
 
 import numpy as np
+from scipy.optimize import minimize
+from sklearn.preprocessing import normalize
+from sklearn.decomposition import PCA
+
 import pandas as pd
+
 import plotly.express as px
 import plotly.graph_objects as go
 import plotly.figure_factory as ff
 from plotly.subplots import make_subplots
 import plotly.colors as pc
-#import pca
 import dash
 from dash import dcc
 from dash import html
+# Some older versions of python require these older dash libraries
 #import dash_core_components as dcc
 #import dash_html_components as html
-#import fnmatch
-from quadtune_driver import lossFncMetrics, approxMatrixWithSvd, normlzdSemiLinMatrixFnc
 
-def createFigs(numMetricsNoSpecial, metricsNames,
+import sys
+
+
+
+#######################################################################################################
+#
+#    Create the diagnostic plots that do *not* require a bootstrap ensemble of parameter/metric values,
+#        but rather require only one set of parameters/metric values.
+#
+########################################################################################################
+
+def createFigs(numMetricsNoSpecial, metricsNames, metricsNamesNoprefix,
                varPrefixes,
                extraMetricsToPlot,
                paramsNames, transformedParamsNames, paramsScales,
@@ -41,11 +55,9 @@ def createFigs(numMetricsNoSpecial, metricsNames,
                sensNcFilenames, sensNcFilenamesExt, defaultNcFilename,
                createPlotType,
                beVerbose, useLongTitle, param_bounds_boot):
-    ##############################################
-    #
-    #    Create plots
-    #
-    ##############################################
+
+    from set_up_inputs import abbreviateParamsNames
+    from quadtune_driver import lossFncMetrics, normlzdSemiLinMatrixFnc
 
     print("Creating plots . . .")
 
@@ -64,10 +76,7 @@ def createFigs(numMetricsNoSpecial, metricsNames,
                    / np.abs(normMetricValsCol[:, 0])
 
     # Remove prefixes from CLUBB variable names in order to shorten them
-    paramsAbbrv = abbreviateClubbParamsNames(paramsNames)
-    paramsAbbrvPlusBias = np.append(paramsAbbrv, 'bias').tolist()
-
-    metricsNamesNoprefix = np.char.replace(metricsNames, "SWCF_", "")
+    paramsAbbrv = abbreviateParamsNames(paramsNames)
 
     # Create a way to order the metrics by sensitivity, for later use in plots
     metricsSens = np.linalg.norm(normlzdWeightedSensMatrixPoly, axis=1)  # measure of sensitivity of each metric
@@ -75,58 +84,67 @@ def createFigs(numMetricsNoSpecial, metricsNames,
     metricsSensOrder = metricsSens.argsort()
     metricsNamesOrdered = metricsNames[metricsSensOrder]  # list of metrics names, ordered from least to most sensitive
 
-    # These are the metrics that we want to include in the plots (whitelisted variables).
+    # Estimated loss function values in the global simulation upon tuning.
+    tunedLossCol = lossFncMetrics(dnormlzdParamsSolnNonlin, normlzdSensMatrixPoly,
+                   normlzdDefaultBiasesCol, metricsWeights,
+                   normlzdCurvMatrix, len(metricsNames))
+
+    tunedLossColUnweighted = lossFncMetrics(dnormlzdParamsSolnNonlin, normlzdSensMatrixPoly,
+                   normlzdDefaultBiasesCol,
+                   np.average(metricsWeights)*np.ones_like(metricsWeights),
+                   normlzdCurvMatrix, len(metricsNames))
+
+    # Loss function values in the default-parameter global simulation.
+    defaultLossCol = lossFncMetrics(np.zeros_like(dnormlzdParamsSolnNonlin), normlzdSensMatrixPoly,
+                   normlzdDefaultBiasesCol, metricsWeights,
+                   normlzdCurvMatrix, len(metricsNames))
+
+    defaultLossColUnweighted = lossFncMetrics(np.zeros_like(dnormlzdParamsSolnNonlin), normlzdSensMatrixPoly,
+                   normlzdDefaultBiasesCol,
+                   np.average(metricsWeights)*np.ones_like(metricsWeights),
+                   normlzdCurvMatrix, len(metricsNames))
+
+    # Estimate how the loss function value changes with tuning in each region.
+    tunedLossChange = tunedLossCol - defaultLossCol
+
+    tunedLossChangeUnweighted = tunedLossColUnweighted - defaultLossColUnweighted
+
+    linSolnLossCol = np.square( normlzdLinSolnBiasesCol * metricsWeights )
+
+    linSolnLossChange = linSolnLossCol - defaultLossCol
+
+    # The whitelisted variables are the metrics that we want to include in the plots.
     # I.e., set whitelistedMetricsMask=T for variables that we want to plot.
-    whitelistedMetricsMask = ((metricsNames == 'SWCF_4_12') \
-                              | (metricsNames == 'SWCF_4_1') \
-                              | (metricsNames == 'SWCF_2_17') \
-                              | (metricsNames == 'SWCF_6_14') \
-                              #| (metricsNames == 'SWCF_6_18') \
-                              #| (metricsNames == 'SWCF_6_1') \
-                              #| (metricsNames == 'SWCF_6_10') \
-                              #| (metricsNames == 'SWCF_6_13') \
-                              #| (metricsNames == 'SWCF_6_15') \
-                              #| (metricsNames == 'SWCF_2_14') \
-                              #| (metricsNames == 'SWCF_2_15') \
-                              #| (metricsNames == 'SWCF_2_10') \
-                              #| (metricsNames == 'SWCF_7_14') \
-                              #| (metricsNames == 'SWCF_7_2') \
-                              #| (metricsNames == 'SWCF_5_8') \
-                              #| (metricsNames == 'SWCF_1_14') \
-                              #| (metricsNames == 'SWCF_1_15') \
-                              #| (metricsNames == 'SWCF_4_15') \
-                              # | (metricsNames == 'SWCF_5_16') \
-                              # | (metricsNames == 'SWCF_1_13') \
-                              #| (metricsNames == 'SWCF_6_18') \
-                              #| (metricsNames == 'SWCF_4_16') \
-                              #| (metricsNames == 'SWCF_6_7') \
-                              #| (metricsNames == 'SWCF_9_13') \
-                              #| (metricsNames == 'SWCF_9_6') \
-                              #| (metricsNames == 'SWCF_9_5') \
-                              #| (metricsNames == 'SWCF_6_4') \
-                              #| (metricsNames == 'SWCF_6_6') \
-                              #| (metricsNames == 'SWCF_5_5') \
-                              #| (metricsNames == 'SWCF_1_8') \
-                              #| (metricsNames == 'SWCF_1_9') \
-                              #| (metricsNames == 'LWCF_6_18') \
-                              #| (metricsNames == 'LWCF_9_18') \
-                              #| (metricsNames == 'LWCF_1_7')  \
-                              | (metricsNames == 'PRECT_9_4') \
-                              | (metricsNames == 'PRECT_9_9') \
-                              | (metricsNames == 'PRECT_9_8') \
-                              | (metricsNames == 'PRECT_4_14') \
-                              | (metricsNames == 'PRECT_6_7') \
-                              | (metricsNames == 'PRECT_6_6') \
-                              | (metricsNames == 'PRECT_6_13') \
-                              | (metricsNames == 'PRECT_6_14') \
-                              | (metricsNames == 'PRECT_4_3') \
-                              )
+    whitelistedMetricsMask = np.zeros_like(metricsNames, dtype=bool) # Initialize to False
+
+    # Let's include some metrics in the plots below
+    #     based on how much the loss function is improved in each region by tuning.
+    numImprovedMetrics = 0  # Number of most-improved metrics to include in plots
+    mostImprovedIdxs = np.argpartition(tunedLossChange, numImprovedMetrics, axis=0)
+    whitelistedMetricsMask[mostImprovedIdxs[:numImprovedMetrics, 0]] = True
+    # One could also include some regions that are degraded.
+    #mostDegradedIdxs = np.argpartition(np.abs(tunedLossChangeUnweighted), numImprovedMetrics, axis=0)
+    #mostDegradedIdxs = np.argpartition(-tunedLossChangeUnweighted, numImprovedMetrics, axis=0)
+    #mostDegradedIdxs = np.argpartition(-tunedLossColUnweighted, numImprovedMetrics, axis=0)
+    #mostDegradedIdxs = np.argpartition(-(defaultBiasesCol+defaultBiasesApproxNonlin)/defaultBiasesCol, numImprovedMetrics, axis=0)
+    #whitelistedMetricsMask[mostDegradedIdxs[:numImprovedMetrics, 0]] = True
+
+    # Loop through extraMetricsToPlot and append them to the whitelist.
+    for regionToPlot in extraMetricsToPlot:
+        index = np.where(metricsNames == regionToPlot)[0]
+        whitelistedMetricsMask[index] = True
 
     # Use this line if you want to exclude (blacklist) some variables:
     #whitelistedMetricsMask = (metricsNames != 'SWCF_4_1') & (metricsNames != 'SWCF_4_2')
 
     # Use this line if you want to include all metrics:
     #whitelistedMetricsMask = (metricsNames != 'noRealMetricWouldHaveThisName')
+
+    if np.all(whitelistedMetricsMask == False):
+        print('\033[31m'
+              + '\n\nERROR: there are no whitelisted metrics to plot!'
+              + '\nCheck whether your list of extraMetricsToPlot is compatible with varPrefixes.\n\n'
+              + '\033[0m')
 
     # These are the params that we want to include in the plots (whitelisted variables).
     # I.e., set maskParamsNames=T for variables that we want to plot.
@@ -138,59 +156,9 @@ def createFigs(numMetricsNoSpecial, metricsNames,
     # Use this line if you want to exclude (blacklist) some variables:
     #maskParamsNames = (paramsNames != 'clubb_c_invrs_tau_n2') & (paramsNames != 'clubb_c_k10')
 
-    tunedLossCol = lossFncMetrics(dnormlzdParamsSolnNonlin, normlzdSensMatrixPoly,
-                   normlzdDefaultBiasesCol, metricsWeights,
-                   normlzdCurvMatrix, len(metricsNames))
-
-    tunedLossColUnweighted = lossFncMetrics(dnormlzdParamsSolnNonlin, normlzdSensMatrixPoly,
-                   normlzdDefaultBiasesCol,
-                   np.average(metricsWeights)*np.ones_like(metricsWeights),
-                   normlzdCurvMatrix, len(metricsNames))
-
-    defaultLossCol = lossFncMetrics(np.zeros_like(dnormlzdParamsSolnNonlin), normlzdSensMatrixPoly,
-                   normlzdDefaultBiasesCol, metricsWeights,
-                   normlzdCurvMatrix, len(metricsNames))
-
-    defaultLossColUnweighted = lossFncMetrics(np.zeros_like(dnormlzdParamsSolnNonlin), normlzdSensMatrixPoly,
-                   normlzdDefaultBiasesCol,
-                   np.average(metricsWeights)*np.ones_like(metricsWeights),
-                   normlzdCurvMatrix, len(metricsNames))
-
-    tunedLossChange = tunedLossCol - defaultLossCol
-
-    tunedLossChangeUnweighted = tunedLossColUnweighted - defaultLossColUnweighted
-
-    linSolnLossCol = np.square( normlzdLinSolnBiasesCol * metricsWeights )
-
-    linSolnLossChange = linSolnLossCol - defaultLossCol
-
-
-
-    numImprovedMetrics = 0
-    mostImprovedIdxs = np.argpartition(tunedLossChange, numImprovedMetrics, axis=0)
-    whitelistedMetricsMask = np.zeros_like(metricsNames, dtype=bool) # Initialize to False
-    whitelistedMetricsMask[mostImprovedIdxs[:numImprovedMetrics, 0]] = True
-    #mostDegradedIdxs = np.argpartition(np.abs(tunedLossChangeUnweighted), numImprovedMetrics, axis=0)
-    #mostDegradedIdxs = np.argpartition(-tunedLossChangeUnweighted, numImprovedMetrics, axis=0)
-    #mostDegradedIdxs = np.argpartition(-tunedLossColUnweighted, numImprovedMetrics, axis=0)
-    #mostDegradedIdxs = np.argpartition(-(defaultBiasesCol+defaultBiasesApproxNonlin)/defaultBiasesCol, numImprovedMetrics, axis=0)
-    #whitelistedMetricsMask[mostDegradedIdxs[:numImprovedMetrics, 0]] = True
-
-    # Loop through extraMetricsToPlot and whitelist them
-    for regionToPlot in extraMetricsToPlot:
-        index = np.where(metricsNames == regionToPlot)[0]
-        whitelistedMetricsMask[index] = True
-    if np.all(whitelistedMetricsMask == False):
-        print('\033[31m'
-              + '\n\nERROR: there are no whitelisted metrics to plot!'
-              + '\nCheck whether your list of extraMetricsToPlot is compatible with varPrefixes.\n\n'
-              + '\033[0m')
-
     # Use this line if you want to include all params:
     maskParamsNames = (paramsNames != 'noRealParamWouldHaveThisName')
 
-    #    #whitelistedMetricsMask = np.logical_not(whitelistedMetricsMask)  # get rid of named elements
-    # Apply mask
 
     metricsNamesMasked = np.ma.masked_array(metricsNames, np.logical_not(whitelistedMetricsMask)).compressed()
     metricsNamesNoprefixMasked = np.ma.masked_array(metricsNamesNoprefix, np.logical_not(whitelistedMetricsMask)).compressed()
@@ -223,6 +191,12 @@ def createFigs(numMetricsNoSpecial, metricsNames,
     sensNcFilenamesExtMasked = np.ma.masked_array(sensNcFilenamesExt, np.logical_not(maskParamsNames)).compressed()
 
     metricsSensMasked = metricsSens[whitelistedMetricsMask]
+
+    # Nota bene on masked ordering:
+    # if metricsNamesOrdered = metricsNames[metricsSensOrder], then
+    # metricsNamesOrdered[whitelistedMetricsMask[metricsSensOrder]] gives the same list and order as
+    # metricsNamesMasked[metricsSensMaskedOrder]
+    # metricsNames[whitelistedMetricsMask] gives the same list, but in a different order
     metricsSensMaskedOrder = metricsSensMasked.argsort()
 
     #metricsSensMaskedOrder = np.argsort(np.argsort(extraMetricsToPlot))
@@ -289,12 +263,7 @@ def createFigs(numMetricsNoSpecial, metricsNames,
 
     if createPlotType['threeDotFig']:
         print("Creating threeDotFig . . .")
-        #    threeDotFig = \
-        #        createThreeDotFig(metricsNames, paramsNames, transformedParamsNames,
-        #                          metricsWeights, obsMetricValsCol, normMetricValsCol, magParamValsRow,
-        #                          normlzdCurvMatrix, normlzdSensMatrixPoly, normlzdConstMatrix,
-        #                          normlzdOrdDparamsMin, normlzdOrdDparamsMax,
-        #                          sensNcFilenames, sensNcFilenamesExt, defaultNcFilename)
+
         threeDotFig = \
             createThreeDotFig(metricsNamesMasked, paramsNamesMasked, transformedParamsNames,
                               paramsAbbrv,
@@ -314,18 +283,8 @@ def createFigs(numMetricsNoSpecial, metricsNames,
                                         defaultBiasesApproxNonlinNoCurvMasked, defaultBiasesApproxNonlin2xCurvMasked,
                                         defaultBiasesApproxNonlinMasked,
                                         normlzdLinSolnBiasesColMasked)
-        #createBiasesOrderedArrowFig(metricsSensOrder, metricsNamesOrdered,
-        #                            defaultBiasesCol, normMetricValsCol,
-        #                            defaultBiasesApproxNonlinNoCurv, defaultBiasesApproxNonlin2xCurv,
-        #                            defaultBiasesApproxNonlin,
-        #                            normlzdLinSolnBiasesCol)
 
 
-    # Nota bene on masked ordering:
-    # if metricsNamesOrdered = metricsNames[metricsSensOrder], then
-    # metricsNamesOrdered[whitelistedMetricsMask[metricsSensOrder]] gives the same list and order as
-    # metricsNamesMasked[metricsSensMaskedOrder]
-    # metricsNames[whitelistedMetricsMask] gives the same list, but in a different order
 
     if createPlotType['paramsTotContrbBarChart']:
         paramsTotContrbBarChart = \
@@ -1550,7 +1509,7 @@ def createMapPanel(fieldToPlotCol,
 def covMatrix2corrMatrix(covMatrix, returnStd=False):
     # https://gist.github.com/wiso/ce2a9919ded228838703c1c7c7dad13b
 
-    import numpy as np
+
 
     stdVector = np.sqrt(np.diag(covMatrix))
     stdMatrixInv = np.diag(1.0 / stdVector)
@@ -1569,9 +1528,9 @@ def createMatrixPlusColFig(matrix, matIndexLabel, matColLabel,
                            eqnAdd=False):
     '''Creates a figure that displays a color-coded matrix and an accompanying column vector.'''
 
-    import numpy as np
-    import pandas as pd
-    import plotly.express as px
+
+
+
 
     # First create a sub-figure that displays color-coded matrix
     matSubfig = \
@@ -1817,9 +1776,9 @@ def createMetricsBarChart(metricsNames, paramsNames,
                           normMetricValsCol,
                           sensMatrix,
                           plotTitle):
-    import plotly.graph_objects as go
-    import numpy as np
-    import pdb
+
+
+
 
     #metricsNames = metricsNames[metricsSensOrder]
 
@@ -1910,9 +1869,9 @@ def createBarChart(matrix, index, columns,
                    xlabel=None, ylabel=None,
                    width=800, height=500,
                    showLegend=True):
-    import plotly.express as px
-    import plotly.graph_objects as go
-    import pandas as pd
+
+
+
 
     df = pd.DataFrame(matrix,
                       index=index,
@@ -1955,18 +1914,17 @@ def createThreeDotFig(metricsNames, paramsNames, transformedParamsNames,
     The matrix is nondimensionalized by the observed values of metrics
     and maximum values of parameters.
     """
-    import numpy as np
-    from plotly.subplots import make_subplots
-    import plotly.graph_objects as go
-    import sys
-    import netCDF4
-    #import matplotlib.pyplot as plt
-    import pdb
+
+
+
+
+    
+
+
 
     from set_up_inputs import setupSensArrays
     from set_up_inputs import setupDefaultParamVectors, \
         setupDefaultMetricValsCol
-    from scipy.interpolate import UnivariateSpline
 
     #    if ( len(paramsNames) != len(sens1NcFilenames)   ):
     #        print("Number of parameters must equal number of netcdf files.")
@@ -2110,11 +2068,11 @@ def createThreeDotFig(metricsNames, paramsNames, transformedParamsNames,
 
 
 def createCorrArrayFig(matrix, indexLabels, title):
-    import numpy as np
-    import pandas as pd
-    import plotly.figure_factory as ff
-    import plotly.express as px
-    import pdb
+
+
+
+
+
 
     cosAnglesMatrix = calcMatrixAngles(matrix)
     #cosAnglesMatrix = np.copy( matrix )
@@ -2167,7 +2125,6 @@ def createCorrArrayFig(matrix, indexLabels, title):
         template='plotly_white'
     )
 
-    #pdb.set_trace()
 
     return (corrArrayFig)
 
@@ -2180,11 +2137,11 @@ def calcParamsBounds(metricsNames, paramsNames, transformedParamsNames,
     Calculate the maximum parameter perturbations based on the non-linearity of the global model
     simulation.
     """
-    import numpy as np
-    import sys
-    import netCDF4
-    #import matplotlib.pyplot as plt
-    import pdb
+
+
+    
+
+
 
     from set_up_inputs import setupDefaultParamVectors, \
         setupDefaultMetricValsCol, setupSensArrays
@@ -2258,7 +2215,6 @@ def calcParamsBounds(metricsNames, paramsNames, transformedParamsNames,
     paramsLowValsPCBound = defaultParamValsOrigRow.T - 0.5 * np.abs(dparamsSolnPCBound)
     paramsHiValsPCBound = defaultParamValsOrigRow.T + 0.5 * np.abs(dparamsSolnPCBound)
 
-    #pdb.set_trace()
 
     return (paramsLowValsPCBound, paramsHiValsPCBound)
 
@@ -2271,9 +2227,9 @@ def calcSvdInvrs(normlzdWeightedSensMatrix, sValsRatio,
     """
 
 
-    import numpy as np
-    import sys
-    import pdb
+
+
+
 
     # vh = V^T = transpose of right-singular vector matrix, V.
     u, s, vh = np.linalg.svd(normlzdWeightedSensMatrix, full_matrices=False)
@@ -2335,7 +2291,7 @@ def calcSvdInvrs(normlzdWeightedSensMatrix, sValsRatio,
         print("\nsValsInvPC =")
         print(sValsInvPC)
 
-    #pdb.set_trace()
+
 
     svdInvrsPC = np.transpose(vh) @ np.diag(sValsInvPC) @ np.transpose(u)
 
@@ -2356,9 +2312,9 @@ def calcParamsSoln(svdInvrsNormlzdWeighted, metricsWeights, magParamValsRow, \
                    sValsTruncInvNormlzdWeighted, vhNormlzdWeighted, \
                    numParams, paramsNames, transformedParamsNames ):
 
-    import numpy as np
-    import pdb
-    import sys
+
+
+
 
     # Calculate solution using transformed SVD matrix.  However, dparamsSoln is not normalized.
     # dnormlzdParamsSoln = dparamsSoln / ( normalizing param value from default simulation
@@ -2406,7 +2362,6 @@ def calcParamsSoln(svdInvrsNormlzdWeighted, metricsWeights, magParamValsRow, \
     defaultBiasesApproxLowVals = sensMatrix @ dparamsLowVals
     defaultBiasesApproxHiVals = sensMatrix @ dparamsHiVals
 
-    #pdb.set_trace()
     # Transform some variables from [-inf,inf] back to [0,inf] range
     for idx in np.arange(numParams):
         paramName = paramsNames[idx]
@@ -2434,14 +2389,12 @@ def calcParamsBoundsHelper(metricsNames, paramsNames, transformedParamsNames,
     Calculate the maximum parameter perturbations based on the non-linearity of the global model
     simulation.
     """
-    import numpy as np
-    import sys
-    import netCDF4
-    #import matplotlib.pyplot as plt
-    import pdb
+
+    
+
+
 
     from set_up_inputs import setupSensArrays
-    #from set_up_dashboard_inputs import setupDefaultMetricValsCol
 
     # Based on the numParams sensitivity simulations,
     #    set up a row vector of modified parameter values.
@@ -2493,7 +2446,7 @@ def calcParamsBoundsHelper(metricsNames, paramsNames, transformedParamsNames,
     #                        numParams, paramsNames,
     #                        transformedParamsNames )
 
-    #pdb.set_trace()
+
 
     return (defaultBiasesCol, sensMatrix, normlzdWeightedSensMatrix)
 
@@ -2510,9 +2463,9 @@ def constructSensMatrix(sensMetricValsMatrix, sensParamValsRow,
     Output: A sensitivity matrix listing the partial derivatives dmetric/dparam.
     """
 
-    import numpy as np
-    import sys
-    import pdb
+
+
+
 
     # Matrix of metric values from default simulation
     # Each column in the matrix is repeated numParams times, for later multiplication
@@ -2522,7 +2475,6 @@ def constructSensMatrix(sensMetricValsMatrix, sensParamValsRow,
     #print(defaultMetricValsMatrix)
 
     # Sensitivity simulation metrics minus default simulation metrics
-    #pdb.set_trace()
     dmetricsMatrix = np.subtract(sensMetricValsMatrix, defaultMetricValsMatrix)
 
     if beVerbose:
@@ -2572,7 +2524,6 @@ def constructSensMatrix(sensMetricValsMatrix, sensParamValsRow,
 
     # Matrix of inverse biases.
     # Used for forming normalized sensitivity derivatives.
-    #pdb.set_trace()
     #invrsObsMatrix = np.reciprocal(np.abs(obsMetricValsCol)) @ np.ones((1,numParams))
     invrsObsMatrix = np.reciprocal(np.abs(normMetricValsCol)) @ np.ones((1,numParams))
 
@@ -2602,19 +2553,6 @@ def constructSensMatrix(sensMetricValsMatrix, sensParamValsRow,
         print(normlzdSensMatrix)
 
     return  (defaultBiasesCol, sensMatrix, normlzdSensMatrix, biasNormlzdSensMatrix)
-
-
-
-def abbreviateClubbParamsNames(paramsNames):
-    paramsAbbrv = np.char.replace(paramsNames, 'clubb_', '')
-    paramsAbbrv = np.char.replace(paramsAbbrv, 'c_invrs_tau_', '')
-    paramsAbbrv = np.char.replace(paramsAbbrv, 'wpxp_n2', 'n2')
-    paramsAbbrv = np.char.replace(paramsAbbrv, 'altitude', 'alt')
-    paramsAbbrv = np.char.replace(paramsAbbrv, 'threshold', 'thres')
-    paramsAbbrv = np.char.replace(paramsAbbrv, 'thresh', 'thres')
-
-    return paramsAbbrv
-
 
 def createParamsErrorBarsFig(paramsAbbrv, defaultParamValsOrigRow, paramsScales,
                              paramsLowValsPCBound, paramsHiValsPCBound,
@@ -2738,15 +2676,11 @@ def minimize2ptDp(metricsNames, normMetricValsCol,
     # reglrCoef,
     # beVerbose):
 
-    import numpy as np
-    # import pdb
-    from scipy.optimize import minimize
 
-    # from scipy.optimize import Bounds
+
+    #from scipy.optimize import Bounds
 
     numMetrics = len(metricsNames)
-
-    # pdb.set_trace()
 
     # Don't let parameter values go negative
     # lowerBoundsCol =  -defaultParamValsOrigRow[0]/magParamValsRow[0]
@@ -2894,7 +2828,6 @@ def createNormlzdSensMatrixColsFig(defaultBiasesCol, normlzdSensMatrixPoly,
     normlzdSensMatrixColsFig.update_xaxes(title="Regional metric")
     normlzdSensMatrixColsFig.layout.legend.title = "Parameter"
     normlzdSensMatrixColsFig.update_layout(hovermode="closest")
-    #pdb.set_trace()
 
     return normlzdSensMatrixColsFig
 
@@ -3051,7 +2984,7 @@ def createBiasesOrderedArrowFig(metricsSensOrder, metricsNamesOrdered,
     #biasesOrderedArrowFig.add_trace(go.Scatter(x=xArrow, y=yArrow,
     #                      name='Region of improvement', mode='markers',
     #                       marker=dict(color='green', size=14)))
-    #pdb.set_trace()
+
 
     #biasesOrderedArrowFig.write_image('biasesOrderedArrowFig.png', scale=6)
 
@@ -3402,9 +3335,9 @@ def calcMatrixVectorAngles(matrix, row):
     '''Calculate cos(angle) between one row of a matrix and all rows of the same matrix.
        Returns a column vector, with length equal to the number of rows in the matrix.'''
 
-    import sklearn
 
-    normed_matrix = sklearn.preprocessing.normalize(matrix, axis=1, norm='l2')
+
+    normed_matrix = normalize(matrix, axis=1, norm='l2')
 
     cosAngles = normed_matrix @ normed_matrix[row, :].T
 
@@ -3414,9 +3347,8 @@ def calcMatrixVectorAngles(matrix, row):
 def calcMatrixAngles(matrix):
     '''Calculate cos(angle) among all rows of the same matrix.'''
 
-    import sklearn
 
-    normed_matrix = sklearn.preprocessing.normalize(matrix, axis=1, norm='l2')
+    normed_matrix = normalize(matrix, axis=1, norm='l2')
 
     cosAnglesMatrix = normed_matrix @ normed_matrix.T
 
@@ -3436,9 +3368,9 @@ def createPcaBiplot(normlzdSensMatrix, normlzdDefaultBiasesCol,
                     showLegend, hoverMode,
                     plotWidth, plotHeight
                     ):
-    import numpy as np
 
-    from sklearn.decomposition import PCA
+
+
 
     # The code below is based on https://plotly.com/python/pca-visualization/
 
@@ -3538,9 +3470,6 @@ def createPcaBiplot(normlzdSensMatrix, normlzdDefaultBiasesCol,
             font=dict(size=14, weight="bold")
         )
 
-    #from pca import pca
-    #import pdb
-
     # https://plotly.com/python/pca-visualization/
 
     # reduce the data towards 2 PCs
@@ -3572,7 +3501,6 @@ def createPcaBiplot(normlzdSensMatrix, normlzdDefaultBiasesCol,
     #PcaBiplotFig, ax = model.biplot(n_feat=paramsNames.size+1)
     #fig, ax = model.biplot(n_feat=paramsNames.size)
 
-    #pdb.set_trace()
 
     return PcaBiplotFig
 
@@ -3658,7 +3586,7 @@ def oldCode():
     #    uNormlzdBiasColsFig.update_layout(hovermode="closest")
     #    for idx, val in np.ndenumerate(sNormlzd):
     #        uNormlzdBiasColsFig.data[idx[0]].name = "{}".format(idx[0]+1) + ", " + "{:.2e}".format(val)
-    #pdb.set_trace()
+
 
     # Plot the residual*sensitivity vs. bias*sensitivity
     # The goal is to separate out which regional are amenable to tuning
@@ -3680,7 +3608,6 @@ def oldCode():
 
     # Plot the relative biases versus sensitivity of each regional metric.
     #    More specifically, plot the maximum magnitude value of each row of the sensitivity matrix.
-    #pdb.set_trace()
     relBiasNumerator = np.abs(-defaultBiasesApproxElastic - defaultBiasesCol)[:, 0] / np.abs(normMetricValsCol[:, 0])
     relBiasDenom = np.maximum(0.02, np.abs(-defaultBiasesCol[:, 0] / np.abs(normMetricValsCol[:, 0])))
     df = pd.DataFrame(
