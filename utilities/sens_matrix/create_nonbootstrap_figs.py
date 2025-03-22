@@ -37,7 +37,7 @@ import sys
 
 def createFigs(numMetricsNoSpecial, metricsNames, metricsNamesNoprefix,
                varPrefixes,
-               extraMetricsToPlot,
+               highlightedMetricsToPlot,
                paramsNames, transformedParamsNames, paramsScales,
                metricsWeights, obsMetricValsCol, normMetricValsCol, magParamValsRow,
                defaultBiasesCol, defaultBiasesApproxNonlin, defaultBiasesApproxElastic,
@@ -55,8 +55,13 @@ def createFigs(numMetricsNoSpecial, metricsNames, metricsNamesNoprefix,
                sensNcFilenames, sensNcFilenamesExt, defaultNcFilename,
                createPlotType,
                beVerbose, useLongTitle, param_bounds_boot):
-
-    from set_up_inputs import abbreviateParamsNames
+    """
+    Create figures for display on a plotly dash dashboard.
+    The figures are based on a single optimal parameter set,
+    rather than a bootstrap ensemble of parameter sets.
+    """
+    
+    from config import abbreviateParamsNames
     from quadtune_driver import lossFncMetrics, normlzdSemiLinMatrixFnc
 
     print("Creating plots . . .")
@@ -129,8 +134,8 @@ def createFigs(numMetricsNoSpecial, metricsNames, metricsNamesNoprefix,
     #mostDegradedIdxs = np.argpartition(-(defaultBiasesCol+defaultBiasesApproxNonlin)/defaultBiasesCol, numImprovedMetrics, axis=0)
     #whitelistedMetricsMask[mostDegradedIdxs[:numImprovedMetrics, 0]] = True
 
-    # Loop through extraMetricsToPlot and append them to the whitelist.
-    for regionToPlot in extraMetricsToPlot:
+    # Loop through highlightedMetricsToPlot and append them to the whitelist.
+    for regionToPlot in highlightedMetricsToPlot:
         index = np.where(metricsNames == regionToPlot)[0]
         whitelistedMetricsMask[index] = True
 
@@ -143,7 +148,7 @@ def createFigs(numMetricsNoSpecial, metricsNames, metricsNamesNoprefix,
     if np.all(whitelistedMetricsMask == False):
         print('\033[31m'
               + '\n\nERROR: there are no whitelisted metrics to plot!'
-              + '\nCheck whether your list of extraMetricsToPlot is compatible with varPrefixes.\n\n'
+              + '\nCheck whether your list of highlightedMetricsToPlot is compatible with varPrefixes.\n\n'
               + '\033[0m')
 
     # These are the params that we want to include in the plots (whitelisted variables).
@@ -199,7 +204,7 @@ def createFigs(numMetricsNoSpecial, metricsNames, metricsNamesNoprefix,
     # metricsNames[whitelistedMetricsMask] gives the same list, but in a different order
     metricsSensMaskedOrder = metricsSensMasked.argsort()
 
-    #metricsSensMaskedOrder = np.argsort(np.argsort(extraMetricsToPlot))
+    #metricsSensMaskedOrder = np.argsort(np.argsort(highlightedMetricsToPlot))
 
     metricsNamesMaskedOrdered = metricsNamesMasked[metricsSensMaskedOrder]
     normMetricValsColMaskedOrdered = normMetricValsColMasked[metricsSensMaskedOrder, 0]
@@ -1060,6 +1065,7 @@ def createMapGallery(
     downloadConfig,
     useLongTitle,
     plotWidth, boxSize):
+    """Create a set of global maps for display on plotly dash."""
 
     print("Creating PcSensMap . . .")
 
@@ -1316,6 +1322,7 @@ def createMapPanel(fieldToPlotCol,
                    colorScale='RdBu_r',
                    minField=None, maxField=None,
                    panelLabel='', RsqdString=''):
+    """Create a single global map that displays a field at the resolution of the tile."""
 
     regionalMapPanel = go.Figure(go.Scattergeo())
 
@@ -1507,9 +1514,9 @@ def createMapPanel(fieldToPlotCol,
 
 
 def covMatrix2corrMatrix(covMatrix, returnStd=False):
-    # https://gist.github.com/wiso/ce2a9919ded228838703c1c7c7dad13b
-
-
+    """Convert a covariance matrix to a correlation matrix, following
+    https://gist.github.com/wiso/ce2a9919ded228838703c1c7c7dad13b
+    """
 
     stdVector = np.sqrt(np.diag(covMatrix))
     stdMatrixInv = np.diag(1.0 / stdVector)
@@ -1526,9 +1533,10 @@ def createMatrixPlusColFig(matrix, matIndexLabel, matColLabel,
                            printCellText,
                            plotTitle, reversedYAxis=None,
                            eqnAdd=False):
-    '''Creates a figure that displays a color-coded matrix and an accompanying column vector.'''
-
-
+    """
+    Creates a figure that displays a color-coded matrix and an accompanying column vector
+    that stands beside it.  Optionally, an equals sign can be interposed to form a matrix eqn.
+    """
 
 
 

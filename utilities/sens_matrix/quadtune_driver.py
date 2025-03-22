@@ -18,10 +18,11 @@ def main():
 
     import numpy as np
 
+    from config import setUpInputs
     from set_up_inputs \
-        import setUpInputs, \
-               setUpColAndRowVectors, \
+        import setUpColAndRowVectors, \
                setupDefaultMetricValsCol
+
 
     from create_nonbootstrap_figs import createFigs
 
@@ -33,7 +34,7 @@ def main():
     (numMetricsNoSpecial,
      metricsNames, metricsNamesNoprefix,
      varPrefixes,
-     extraMetricsToPlot, createPlotType,
+     highlightedMetricsToPlot, createPlotType,
      metricsWeights, metricsNorms,
      obsMetricValsDict,
      paramsNames, paramsScales,
@@ -273,7 +274,7 @@ def main():
 
     createFigs(numMetricsNoSpecial, metricsNames, metricsNamesNoprefix,
                varPrefixes,
-               extraMetricsToPlot,
+               highlightedMetricsToPlot,
                paramsNames, transformedParamsNames, paramsScales,
                metricsWeights, obsMetricValsCol, normMetricValsCol, magParamValsRow,
                defaultBiasesCol, defaultBiasesApproxNonlin, defaultBiasesApproxElastic, 
