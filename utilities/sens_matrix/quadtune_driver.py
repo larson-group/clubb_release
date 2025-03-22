@@ -1,7 +1,12 @@
 # -*- coding: utf-8 -*-
-import pandas as pd
-from do_bootstrap_calcs import bootstrap_calculations
-from create_bootstrap_figs import bootstrap_plots
+import numpy as np
+from scipy.optimize import minimize
+from scipy.optimize import Bounds
+from scipy.interpolate import UnivariateSpline
+from sklearn import linear_model
+
+import matplotlib.pyplot as plt
+
 
 
 # Run this app with `python3 quadtune_driver.py` and
@@ -9,14 +14,13 @@ from create_bootstrap_figs import bootstrap_plots
 # (To open a web browser on a larson-group computer,
 # login to malan with `ssh -X` and then type `firefox &`.)
 
-import numpy as np
-
 def main():
-
-    import matplotlib.pyplot as plt
-    import seaborn as sns
-
-    import numpy as np
+    """
+    Main driver for QuadTune.
+    It calls routines to feeds in input configuration data,
+    find optimal parameter values, and
+    create diagnostic plots.
+    """
 
     from config import setUpInputs
     from set_up_inputs \
@@ -25,7 +29,8 @@ def main():
 
 
     from create_nonbootstrap_figs import createFigs
-
+    from create_bootstrap_figs import bootstrap_plots
+    from do_bootstrap_calcs import bootstrap_calculations
 
 
     print("Set up inputs . . .")
@@ -44,7 +49,7 @@ def main():
      prescribedParamValsRow,
      prescribedSensNcFilenames, prescribedSensNcFilenamesExt,
      sensNcFilenames, sensNcFilenamesExt,
-     defaultNcFilename, linSolnNcFilename,
+     defaultNcFilename, globTunedNcFilename,
      reglrCoef, useBootstrap, numMetricsToTune) \
     = \
         setUpInputs(beVerbose=False)
@@ -183,8 +188,6 @@ def main():
     #print("defaultBiasesApproxElastic = ", defaultBiasesApproxElastic)
     #print("defaultBiasesApproxElasticCheck = ", defaultBiasesApproxElasticCheck)
 
-    #pdb.set_trace()
-
     # Estimate non-linearity of the global model to perturbations in parameter values.
     # To do so, calculate radius of curvature of the three points from the default simulation
     #   and the two sensitivity simulations.
@@ -229,26 +232,26 @@ def main():
 
     # Set up a column vector of metric values from the global simulation based on optimized
     #     parameter values.
-    linSolnMetricValsCol = setupDefaultMetricValsCol(metricsNames, linSolnNcFilename)
+    globTunedMetricValsCol = setupDefaultMetricValsCol(metricsNames, globTunedNcFilename)
 
     # Store biases in default simulation, ( global_model - obs )
-    linSolnBiasesCol = np.subtract(linSolnMetricValsCol, obsMetricValsCol)
-    #linSolnBiasesCol = linSolnBiasesCol + prescribedBiasesCol
+    globTunedBiasesCol = np.subtract(globTunedMetricValsCol, obsMetricValsCol)
+    #globTunedBiasesCol = globTunedBiasesCol + prescribedBiasesCol
 
     # Check whether the minimizer actually reduces chisqd
     # Initial value of chisqd, which assumes parameter perturbations are zero
-    normlzdLinSolnBiasesCol = linSolnBiasesCol/np.abs(normMetricValsCol)
-    chisqdLinSolnMin = objFnc(np.zeros_like(defaultParamValsOrigRow), \
-                        normlzdSensMatrixPoly, normlzdLinSolnBiasesCol, metricsWeights, \
+    normlzdGlobTunedBiasesCol = globTunedBiasesCol/np.abs(normMetricValsCol)
+    chisqdGlobTunedMin = objFnc(np.zeros_like(defaultParamValsOrigRow), \
+                        normlzdSensMatrixPoly, normlzdGlobTunedBiasesCol, metricsWeights, \
                         normlzdCurvMatrix, reglrCoef, numMetrics)
 
-    print("chisqdLinSolnMinRatio =", chisqdLinSolnMin/chisqdZero)
+    print("chisqdGlobTunedMinRatio =", chisqdGlobTunedMin/chisqdZero)
 
-    chisqdUnweightedLinSolnMin = objFnc(np.zeros_like(defaultParamValsOrigRow), \
-                        normlzdSensMatrixPoly, normlzdLinSolnBiasesCol, np.ones_like(metricsWeights), \
+    chisqdUnweightedGlobTunedMin = objFnc(np.zeros_like(defaultParamValsOrigRow), \
+                        normlzdSensMatrixPoly, normlzdGlobTunedBiasesCol, np.ones_like(metricsWeights), \
                         normlzdCurvMatrix, reglrCoef, numMetrics)
 
-    print("chisqdUnweightedLinSolnMinRatio =", chisqdUnweightedLinSolnMin/chisqdUnweightedZero)
+    print("chisqdUnweightedGlobTunedMinRatio =", chisqdUnweightedGlobTunedMin/chisqdUnweightedZero)
     print("-----------------------------------------------------")
 
     ##############################################
@@ -285,7 +288,7 @@ def main():
                normlzdWeightedSensMatrixPoly,
                dnormlzdParamsSolnNonlin,
                defaultParamValsOrigRow,
-               normlzdLinSolnBiasesCol, normlzdLinplusSensMatrixPoly,
+               normlzdGlobTunedBiasesCol, normlzdLinplusSensMatrixPoly,
                paramsSolnLin, dnormlzdParamsSolnLin,
                paramsSolnNonlin,
                paramsSolnElastic, dnormlzdParamsSolnElastic,
@@ -295,10 +298,8 @@ def main():
 
     return
 
-
-# Calculate semi-linear matrix, sensMatrix + curvMatrix*dp, for use in forward solution
 def normlzdSemiLinMatrixFnc(dnormlzdParams, normlzdSensMatrix, normlzdCurvMatrix, numMetrics):
-    import numpy as np
+    """Calculate semi-linear matrix, sensMatrix + curvMatrix*dp, for use in forward solution"""
 
     normlzdSemiLinMatrix = \
         normlzdSensMatrix \
@@ -306,9 +307,8 @@ def normlzdSemiLinMatrixFnc(dnormlzdParams, normlzdSensMatrix, normlzdCurvMatrix
 
     return normlzdSemiLinMatrix
 
-# Calculate forward nonlinear solution, normalized but not weighted
 def fwdFnc(dnormlzdParams, normlzdSensMatrix, normlzdCurvMatrix, numMetrics):
-    import numpy as np
+    """Calculate forward nonlinear solution, normalized but not weighted"""
 
     normlzdDefaultBiasesApproxNonlin = \
         normlzdSemiLinMatrixFnc(dnormlzdParams, normlzdSensMatrix, normlzdCurvMatrix, numMetrics) @ dnormlzdParams
@@ -318,10 +318,10 @@ def fwdFnc(dnormlzdParams, normlzdSensMatrix, normlzdCurvMatrix, numMetrics):
 
     return normlzdDefaultBiasesApproxNonlin
 
-# Each regional component of loss function (including squares)
 def lossFncMetrics(dnormlzdParams, normlzdSensMatrix,
                 normlzdDefaultBiasesCol, metricsWeights,
                 normlzdCurvMatrix, numMetrics):
+    """Each regional component of loss function (including squares)"""
 
     weightedBiasDiffSqdCol = \
         np.square( (-normlzdDefaultBiasesCol \
@@ -330,11 +330,9 @@ def lossFncMetrics(dnormlzdParams, normlzdSensMatrix,
 
     return weightedBiasDiffSqdCol
 
-# Define objective function that is to be minimized.
 def objFnc(dnormlzdParams, normlzdSensMatrix, normlzdDefaultBiasesCol, metricsWeights,
            normlzdCurvMatrix, reglrCoef, numMetrics):
-
-    import numpy as np
+    """Define objective function (a.k.a. loss function) that is to be minimized."""
 
     dnormlzdParams = np.atleast_2d(dnormlzdParams).T # convert from 1d row array to 2d column array
     weightedBiasDiffSqdCol = \
@@ -359,15 +357,10 @@ def solveUsingNonlin(metricsNames,
                      normlzdCurvMatrix,
                      reglrCoef,
                      beVerbose):
-
-    import numpy as np
-    import pdb
-    from scipy.optimize import minimize
-    from scipy.optimize import Bounds
+    """Find optimal parameter values by minimizing quartic loss function"""
 
     numMetrics = len(metricsNames)
 
-    #pdb.set_trace()
 
     # Don't let parameter values go negative
     lowerBoundsCol =  -defaultParamValsOrigRow[0]/magParamValsRow[0]
@@ -405,6 +398,7 @@ def solveUsingNonlin(metricsNames,
              fwdFnc(scale*dnormlzdParamsSolnNonlin, normlzdSensMatrix, 1*normlzdCurvMatrix, numMetrics) \
              * metricsWeights
 
+    # Relationship between QuadTune variable names and math symbols:
     # defaultBiasesApproxNonlin = (       forward model soln       - default soln )
     #                           = ( f0 +      fwdFnc               - default soln )
     #                           = ( f0 + df/dp*dp + 0.5d2f/dp2*dp2 -       f0     )
@@ -416,7 +410,7 @@ def solveUsingNonlin(metricsNames,
     #          = normlzdResid * abs(normMetricValsCol)
     #  where f0 = defaultBiasesCol + obsMetricValsCol,
     #        y_i = obsMetricValsCol.
-    #  linSolnBiases = forward global model soln - obs
+    #  globTunedBiases = forward global model soln - obs
     #                =                    -global_resid
     defaultBiasesApproxNonlin = normlzdWeightedDefaultBiasesApproxNonlin \
                                 * np.reciprocal(metricsWeights) * np.abs(normMetricValsCol)
@@ -455,7 +449,6 @@ def solveUsingNonlin(metricsNames,
 def constructNormlzdSensCurvMatrices(metricsNames, paramsNames, transformedParamsNames,
                                normMetricValsCol, magParamValsRow,
                                sens1NcFilenames, sens2NcFilenames, defaultNcFilename):
-
     """
     For nonlinear 2nd-order term of Taylor series: 0.5*dp^2*d2m/dp2+...,
     construct a numMetrics x numParams matrix of 2nd-order derivatives, d2m/dp2.
@@ -463,18 +456,12 @@ def constructNormlzdSensCurvMatrices(metricsNames, paramsNames, transformedParam
     The matrix is nondimensionalized by the observed values of metrics
     and maximum values of parameters.
     """
-    import numpy as np
-    from plotly.subplots import make_subplots
-    import plotly.graph_objects as go
-    import sys
-    import netCDF4
-    #import matplotlib.pyplot as plt
-    import pdb
+
 
     from set_up_inputs import setupSensArrays
     from set_up_inputs import setupDefaultParamVectors, \
                                         setupDefaultMetricValsCol
-    from scipy.interpolate import UnivariateSpline
+
 
     if ( len(paramsNames) != len(sens1NcFilenames)   ):
         print("Number of parameters does not equal number of netcdf files.")
@@ -635,9 +622,6 @@ def approxMatrixWithSvd( matrix , sValsRatio, sValsNumToKeep,
             with a max ratio of singular values specified by sValsRatio.
     """
 
-
-    import numpy as np
-
     # vh = V^T = transpose of right-singular vector matrix, V.
     #  matrix = u @ np.diag(sVals) @ vh = (u * sVals) @ vh
     u, sVals, vh = np.linalg.svd( matrix, full_matrices=False )
@@ -696,14 +680,10 @@ def approxMatrixWithSvd( matrix , sValsRatio, sValsNumToKeep,
 def calcNormlzdRadiusCurv(metricsNames, paramsNames, transformedParamsNames, paramsScales,
                           metricsWeights, obsMetricValsCol,
                           sensNcFilenames, sensNcFilenamesExt, defaultNcFilename):
-
     """
     Calculate radius of curvature of output from 2 sensitivity simulations plus the default
     simulation.
     """
-    import numpy as np
-    import matplotlib.pyplot as plt
-    import pdb
 
     from set_up_inputs import setupDefaultParamVectors, \
                                            setupSensArrays
@@ -818,12 +798,12 @@ def calcNormlzdRadiusCurv(metricsNames, paramsNames, transformedParamsNames, par
 
 def findOutliers(normlzdSensMatrix, normlzdWeightedSensMatrix, \
                  defaultBiasesCol, normMetricValsCol, magParamValsRow, defaultParamValsOrigRow):
+    """Find outliers in bias-senstivity scatterplot based on the RANSAC method."""
 
-    import numpy as np
-    from sklearn import linear_model
-    import pdb
 
-#    ransac = linear_model.RANSACRegressor(max_trials=1000,random_state=0,
+
+
+    #    ransac = linear_model.RANSACRegressor(max_trials=1000,random_state=0,
 #                                          base_estimator=linear_model.LinearRegression(), residual_threshold=None)
 #    ransac.fit(normlzdSensMatrix, -defaultBiasesCol / np.abs(normMetricValsCol) )
 #    defaultBiasesApproxRansac = ransac.predict(normlzdSensMatrix) * np.abs(normMetricValsCol)
@@ -874,15 +854,14 @@ def findParamsUsingElastic(normlzdSensMatrix, normlzdWeightedSensMatrix, \
                  magParamValsRow, defaultParamValsOrigRow, \
                  normlzdCurvMatrix,
                  beVerbose):
+    """Do linear regression with L1 (lasso or elastic net) regularization"""
 
-    import numpy as np
-    from sklearn.linear_model import Lasso, LassoCV
-    import pdb
+
 
     #regr = ElasticNet(fit_intercept=True, random_state=0, tol=1e-10, l1_ratio=0.5, alpha=0.01)
-    #regr =Lasso(fit_intercept=True, random_state=0, tol=1e-10, alpha=0.01) # don't fit intercept!;use line below
-    regr = Lasso(fit_intercept=False, random_state=0, tol=1e-10, alpha=0.01)
-    #regr = LassoCV(fit_intercept=True, random_state=0, eps=1e-5, tol=1e-10, cv=metricsWeights.size)
+    #regr =linear_model.Lasso(fit_intercept=True, random_state=0, tol=1e-10, alpha=0.01) # don't fit intercept!;use line below
+    regr = linear_model.Lasso(fit_intercept=False, random_state=0, tol=1e-10, alpha=0.01)
+    #regr = linear_model.LassoCV(fit_intercept=True, random_state=0, eps=1e-5, tol=1e-10, cv=metricsWeights.size)
     #print( "alpha_ = ", regr.alpha_ )
     regr.fit(normlzdWeightedSensMatrix, -metricsWeights * defaultBiasesCol / np.abs(normMetricValsCol) )
     #regr.fit(normlzdSensMatrix, -defaultBiasesCol / np.abs(normMetricValsCol) )

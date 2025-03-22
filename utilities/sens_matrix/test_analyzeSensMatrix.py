@@ -162,7 +162,7 @@ def test_2x2_C8transformed():
     import numpy as np
     import pdb
     from analyze_sensitivity_matrix \
-        import analyzeSensMatrix, plotNormlzdSensMatrix, calcLinSolnDiff
+        import analyzeSensMatrix, plotNormlzdSensMatrix, calcGlobTunedDiff
 
     # The metrics are observed quantities that we want a tuned simulation to match.
     #    The order of metricNames determines the order of rows in sensMatrix.
@@ -205,25 +205,25 @@ def test_2x2_C8transformed():
 
     # For the purpose of this unit test, assume that the atmospheric model is indeed linear and
     #   reproduces the observations exactly.
-    linSolnNcFilename = obsNcFilename
+    globTunedNcFilename = obsNcFilename
 
     # See if the solution based on a linear combination of the SVD-calculated parameter values
     #    matches what we expect.
-    linSolnBias = calcLinSolnDiff(linSolnNcFilename, defaultNcFilename,
+    globTunedBias = calcGlobTunedDiff(globTunedNcFilename, defaultNcFilename,
                                   metricsNames)
 
     # Check whether the expected answer for the fake data
     #    has been calculated correctly.
 # This broke when I fed defaultBiasesOrigApprox out of analyzeSensMatrix.
-    if np.all( np.isclose( linSolnBias, defaultBiasesApprox, \
+    if np.all( np.isclose( globTunedBias, defaultBiasesApprox, \
                                rtol=1e-4, atol=1e-4 ) ):
         print("\nPassed test.")
     else:
-        print("\nlinSolnBias = ")
-        print(linSolnBias)
+        print("\nglobTunedBias = ")
+        print(globTunedBias)
         print("\ndefaultBiasesApprox = ")
         print(defaultBiasesApprox)
-        print("\nError: linSolnBias should equal defaultBiasesApprox, but it does not.")
+        print("\nError: globTunedBias should equal defaultBiasesApprox, but it does not.")
         assert False
 
     print("\n Reached the end of function test_2x2_C8transformed in test harness.")

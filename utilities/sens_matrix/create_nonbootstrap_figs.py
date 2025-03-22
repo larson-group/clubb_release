@@ -48,7 +48,7 @@ def createFigs(numMetricsNoSpecial, metricsNames, metricsNamesNoprefix,
                normlzdWeightedSensMatrixPoly,
                dnormlzdParamsSolnNonlin,
                defaultParamValsOrigRow,
-               normlzdLinSolnBiasesCol, normlzdLinplusSensMatrixPoly,
+               normlzdGlobTunedBiasesCol, normlzdLinplusSensMatrixPoly,
                paramsSolnLin, dnormlzdParamsSolnLin,
                paramsSolnNonlin,
                paramsSolnElastic, dnormlzdParamsSolnElastic,
@@ -114,9 +114,10 @@ def createFigs(numMetricsNoSpecial, metricsNames, metricsNamesNoprefix,
 
     tunedLossChangeUnweighted = tunedLossColUnweighted - defaultLossColUnweighted
 
-    linSolnLossCol = np.square( normlzdLinSolnBiasesCol * metricsWeights )
+    # The loss from a global simulation that uses the optimal parameter values recommended by QuadTune
+    globTunedLossCol = np.square( normlzdGlobTunedBiasesCol * metricsWeights )
 
-    linSolnLossChange = linSolnLossCol - defaultLossCol
+    globTunedLossChange = globTunedLossCol - defaultLossCol
 
     # The whitelisted variables are the metrics that we want to include in the plots.
     # I.e., set whitelistedMetricsMask=T for variables that we want to plot.
@@ -180,7 +181,7 @@ def createFigs(numMetricsNoSpecial, metricsNames, metricsNamesNoprefix,
     defaultBiasesApproxNonlinNoCurvMasked = defaultBiasesApproxNonlinNoCurv[whitelistedMetricsMask]
     defaultBiasesApproxNonlin2xCurvMasked = defaultBiasesApproxNonlin2xCurv[whitelistedMetricsMask]
 
-    normlzdLinSolnBiasesColMasked = normlzdLinSolnBiasesCol[whitelistedMetricsMask]
+    normlzdGlobTunedBiasesColMasked = normlzdGlobTunedBiasesCol[whitelistedMetricsMask]
 
     metricsWeightsMasked = metricsWeights[whitelistedMetricsMask]
 
@@ -287,7 +288,7 @@ def createFigs(numMetricsNoSpecial, metricsNames, metricsNamesNoprefix,
                                         defaultBiasesColMasked, normMetricValsColMasked,
                                         defaultBiasesApproxNonlinNoCurvMasked, defaultBiasesApproxNonlin2xCurvMasked,
                                         defaultBiasesApproxNonlinMasked,
-                                        normlzdLinSolnBiasesColMasked)
+                                        normlzdGlobTunedBiasesColMasked)
 
 
 
@@ -866,10 +867,10 @@ def createFigs(numMetricsNoSpecial, metricsNames, metricsNamesNoprefix,
         = createMapGallery(
             normlzdDefaultBiasesCol[:numBoxes,:],
             normlzdResid[:numBoxes],
-            normlzdLinSolnBiasesCol[:numBoxes, :],
+            normlzdGlobTunedBiasesCol[:numBoxes, :],
             defaultLossCol[:numBoxes, :],
             tunedLossChange[:numBoxes, :],
-            linSolnLossChange[:numBoxes, :],
+            globTunedLossChange[:numBoxes, :],
             normlzdLinplusSensMatrixPoly[:numBoxes, :],
             paramsAbbrv,
             downloadConfig,
@@ -1056,10 +1057,10 @@ def createFigs(numMetricsNoSpecial, metricsNames, metricsNamesNoprefix,
 def createMapGallery(
     normlzdDefaultBiasesCol,
     normlzdResid,
-    normlzdLinSolnBiasesCol,
+    normlzdGlobTunedBiasesCol,
     defaultLossCol,
     tunedLossChange,
-    linSolnLossChange,
+    globTunedLossChange,
     normlzdLinplusSensMatrixPoly,
     paramsAbbrv,
     downloadConfig,
@@ -1114,11 +1115,11 @@ def createMapGallery(
     ])]
 
     if useLongTitle:
-        plotTitle="Normalized Tuned Atmospheric-Model Bias, normlzdLinSolnBiasesCol"
+        plotTitle="Normalized Tuned Atmospheric-Model Bias, normlzdGlobTunedBiasesCol"
     else:
         plotTitle="Normalized Global-Model Bias After Tuning"
-    PcMapPanelLinSoln = \
-        createMapPanel(fieldToPlotCol=normlzdLinSolnBiasesCol,
+    PcMapPanelGlobTuned = \
+        createMapPanel(fieldToPlotCol=normlzdGlobTunedBiasesCol,
                        plotWidth=plotWidth,
                        plotTitle=plotTitle,
                        boxSize=boxSize,
@@ -1128,7 +1129,7 @@ def createMapGallery(
                        panelLabel='(c)')
 
     BiasParamsDashboardChildren.append(html.Div(children=[
-        dcc.Graph(figure=PcMapPanelLinSoln,
+        dcc.Graph(figure=PcMapPanelGlobTuned,
                   style={'display': 'inline-block'}, config=downloadConfig),
         dcc.Graph(figure=blankFig,
                   style={'display': 'inline-block'}, config=downloadConfig)
@@ -1148,7 +1149,7 @@ def createMapGallery(
                        colorScale='RdBu_r',
                        panelLabel='')
 
-    # Use same color range in linSolnLoss plot as in tunedLoss plot
+    # Use same color range in globTunedLoss plot as in tunedLoss plot
     minFieldBias = np.min(sqrtDefaultLoss)
     maxFieldBias = np.max(sqrtDefaultLoss)
 
@@ -1177,12 +1178,12 @@ def createMapGallery(
                       config=downloadConfig)
         ]))
 
-    sqrtLinSolnLossChange = 1e3*np.sign(linSolnLossChange)*np.sqrt(np.abs(linSolnLossChange))
+    sqrtGlobTunedLossChange = 1e3*np.sign(globTunedLossChange)*np.sqrt(np.abs(globTunedLossChange))
 
-    PcMapPanelLinSolnLossChange = \
-        createMapPanel(fieldToPlotCol=sqrtLinSolnLossChange,
+    PcMapPanelGlobTunedLossChange = \
+        createMapPanel(fieldToPlotCol=sqrtGlobTunedLossChange,
                        plotWidth=plotWidth,
-                       plotTitle="Sqrt LinSoln Loss Change (x 1e3)",
+                       plotTitle="Sqrt GlobTuned Loss Change (x 1e3)",
                        boxSize=boxSize,
                        colorScale='RdBu_r',
                        minField=minFieldBias,
@@ -1190,7 +1191,7 @@ def createMapGallery(
                        panelLabel='')
 
     BiasParamsDashboardChildren.append(html.Div(children=[
-        dcc.Graph(figure=PcMapPanelLinSolnLossChange,
+        dcc.Graph(figure=PcMapPanelGlobTunedLossChange,
                   style={'display': 'inline-block'}, config=downloadConfig),
         dcc.Graph(figure=blankFig,
                   style={'display': 'inline-block'}, config=downloadConfig)
@@ -1322,7 +1323,7 @@ def createMapPanel(fieldToPlotCol,
                    colorScale='RdBu_r',
                    minField=None, maxField=None,
                    panelLabel='', RsqdString=''):
-    """Create a single global map that displays a field at the resolution of the tile."""
+    """Create a single global map that displays a field at the resolution of the tiles."""
 
     regionalMapPanel = go.Figure(go.Scattergeo())
 
@@ -1514,7 +1515,8 @@ def createMapPanel(fieldToPlotCol,
 
 
 def covMatrix2corrMatrix(covMatrix, returnStd=False):
-    """Convert a covariance matrix to a correlation matrix, following
+    """
+    Convert a covariance matrix to a correlation matrix, following
     https://gist.github.com/wiso/ce2a9919ded228838703c1c7c7dad13b
     """
 
@@ -1534,7 +1536,7 @@ def createMatrixPlusColFig(matrix, matIndexLabel, matColLabel,
                            plotTitle, reversedYAxis=None,
                            eqnAdd=False):
     """
-    Creates a figure that displays a color-coded matrix and an accompanying column vector
+    Create a figure that displays a color-coded matrix and an accompanying column vector
     that stands beside it.  Optionally, an equals sign can be interposed to form a matrix eqn.
     """
 
@@ -1648,6 +1650,9 @@ def createColoredMatrixFig(
         matrixRowLabel, matrixColLabel,
         plotTitle, plotWidth, plotHeight,
         printCellText):
+    """
+    Create a matrix with colored elements.  Each element has a number printed in it.
+    """
 
     # Create a figure that displays a color-coded matrix
     roundedMatrix = np.around(matrix, decimals=2)
@@ -1692,6 +1697,10 @@ def createScatterplot(xCol, xColLabel,
                       panelLabel,
                       showLegend, hoverMode,
                       plotWidth, plotHeight):
+    """
+    Create a scatterplot, possibly with annotations for the points.
+    """
+
     # Helper function that plots a column of length numMetrics (yCol) vs. xCol
     #df = pd.DataFrame({
     #                   xColLabel: xCol,
@@ -1784,9 +1793,9 @@ def createMetricsBarChart(metricsNames, paramsNames,
                           normMetricValsCol,
                           sensMatrix,
                           plotTitle):
-
-
-
+    """
+    A horizontal bar chart that visualizes a matrix equation.
+    """
 
     #metricsNames = metricsNames[metricsSensOrder]
 
@@ -1877,7 +1886,9 @@ def createBarChart(matrix, index, columns,
                    xlabel=None, ylabel=None,
                    width=800, height=500,
                    showLegend=True):
-
+    """
+    Create a simple bar chart with vertical bars.
+    """
 
 
 
@@ -1916,19 +1927,11 @@ def createThreeDotFig(metricsNames, paramsNames, transformedParamsNames,
                       normlzdOrdDparamsMin, normlzdOrdDparamsMax,
                       sens1NcFilenames, sens2NcFilenames, defaultNcFilename):
     """
-    For nonlinear 2nd-order term of Taylor series: 0.5*dp^2*d2m/dp2+...,
-    construct a numMetrics x numParams matrix of 2nd-order derivatives, d2m/dp2.
-    Each row is a different metric.  Each column is a different parameter.
-    The matrix is nondimensionalized by the observed values of metrics
-    and maximum values of parameters.
+    Draw a 3-dot plot of metric field value vs. parameter value, for each metric and parameter.
+    The 3 dots represent the two one-at-a-time sensitivity runs and the default run.
+    A blue parabola passes through the three dots.
+    An orange x-mark denotes the tuner-recommended value of the parameter.
     """
-
-
-
-
-    
-
-
 
     from set_up_inputs import setupSensArrays
     from set_up_inputs import setupDefaultParamVectors, \
@@ -2076,11 +2079,9 @@ def createThreeDotFig(metricsNames, paramsNames, transformedParamsNames,
 
 
 def createCorrArrayFig(matrix, indexLabels, title):
-
-
-
-
-
+    """
+    Display colored correlation matrix.
+    """
 
     cosAnglesMatrix = calcMatrixAngles(matrix)
     #cosAnglesMatrix = np.copy( matrix )
@@ -2146,11 +2147,6 @@ def calcParamsBounds(metricsNames, paramsNames, transformedParamsNames,
     simulation.
     """
 
-
-    
-
-
-
     from set_up_inputs import setupDefaultParamVectors, \
         setupDefaultMetricValsCol, setupSensArrays
 
@@ -2211,12 +2207,12 @@ def calcParamsBounds(metricsNames, paramsNames, transformedParamsNames,
     paramsSolnPC, paramsLowValsPC, paramsHiValsPC, dparamsSolnPCBound, dnormlzdParamsSolnPC, \
         defaultBiasesApproxPC, defaultBiasesApproxLowValsPC, \
         defaultBiasesApproxHiValsPC = \
-        calcParamsSoln(svdInvrsNormlzdWeightedPC, metricsWeights, magParamValsRow, \
-                       sensMatrixDiff, normlzdWeightedSensMatrixDiff, \
+        calcParamsSoln(svdInvrsNormlzdWeightedPC, metricsWeights, magParamValsRow,
+                       sensMatrixDiff, normlzdWeightedSensMatrixDiff,
                        obsMetricValsCol, normMetricValsCol, defaultBiasesCol,
-                       defaultParamValsOrigRow, \
+                       defaultParamValsOrigRow,
                        sValsTruncInvNormlzdWeightedPC,
-                       vhNormlzdWeighted, \
+                       vhNormlzdWeighted,
                        numParams, paramsNames,
                        transformedParamsNames)
 
@@ -2319,10 +2315,9 @@ def calcParamsSoln(svdInvrsNormlzdWeighted, metricsWeights, magParamValsRow, \
                    obsMetricValsCol, normMetricValsCol, defaultBiasesCol, defaultParamValsOrigRow, \
                    sValsTruncInvNormlzdWeighted, vhNormlzdWeighted, \
                    numParams, paramsNames, transformedParamsNames ):
-
-
-
-
+    """
+    Find error bars on parameter values based on SVD of linearized tuning problem.
+    """
 
     # Calculate solution using transformed SVD matrix.  However, dparamsSoln is not normalized.
     # dnormlzdParamsSoln = dparamsSoln / ( normalizing param value from default simulation
@@ -2398,10 +2393,6 @@ def calcParamsBoundsHelper(metricsNames, paramsNames, transformedParamsNames,
     simulation.
     """
 
-    
-
-
-
     from set_up_inputs import setupSensArrays
 
     # Based on the numParams sensitivity simulations,
@@ -2468,7 +2459,7 @@ def constructSensMatrix(sensMetricValsMatrix, sensParamValsRow,
     """
     Inputs: Metric and parameter values from default and sensitivity simulations,
         and from observations.
-    Output: A sensitivity matrix listing the partial derivatives dmetric/dparam.
+    Output: A sensitivity matrix listing the partial derivatives dmetric_i/dparam_j.
     """
 
 
@@ -2567,6 +2558,10 @@ def createParamsErrorBarsFig(paramsAbbrv, defaultParamValsOrigRow, paramsScales,
                              paramsSolnLin, dnormlzdParamsSolnLin,
                              paramsSolnNonlin, dnormlzdParamsSolnNonlin,
                              paramsSolnElastic, dnormlzdParamsSolnElastic, param_bounds_boot):
+    """
+    Create a fig that plots optimal parameter values plus error bars on those parameters.
+    """
+
     # Plot box and whiskers plot of optimal parameter values.
     # Multiply in the user-designated scale factors before plotting.
     df = pd.DataFrame(np.hstack(defaultParamValsOrigRow[0, :] * paramsScales),
@@ -2641,6 +2636,9 @@ def createParamsCorrArrayFig(matrix,
                              paramsNames,
                              plotTitle,
                              plotWidth):
+    """
+    Create colored matrix that shows the correlations among parameters.
+    """
 
     # Create color-coded matrix that displays correlations among parameter vectors
     normlzdSensMatrixConcatBiases = np.hstack((matrix, biasesCol))
@@ -2863,7 +2861,7 @@ def createBiasesOrderedArrowFig(metricsSensOrder, metricsNamesOrdered,
                                 defaultBiasesCol, normMetricValsCol,
                                 defaultBiasesApproxNonlinNoCurv, defaultBiasesApproxNonlin2xCurv,
                                 defaultBiasesApproxNonlin,
-                                normlzdLinSolnBiasesCol):
+                                normlzdGlobTunedBiasesCol):
     # Plot a black dot for each default-run bias
     biasesOrderMatrix = np.dstack((-defaultBiasesCol[metricsSensOrder])).squeeze()
     fracBiasesOrderMatrix = np.diagflat(np.reciprocal(np.abs(normMetricValsCol[metricsSensOrder]))) \
@@ -2952,8 +2950,8 @@ def createBiasesOrderedArrowFig(metricsSensOrder, metricsNamesOrdered,
         biasesOrderedArrowFig.add_annotation(
             x=xArrow[i] + gap,  # ith arrow's head
             # ith arrow's head:
-            #y= (-normlzdLinSolnBiasesCol-normlzdDefaultBiasesCol)[metricsSensOrder[i],0], #/np.abs(normMetricValsCol[metricsSensOrder[i],0]),
-            y=(-normlzdLinSolnBiasesCol)[metricsSensOrder[i], 0], # / np.abs(normMetricValsCol[metricsSensOrder[i], 0]),
+            #y= (-normlzdGlobTunedBiasesCol-normlzdDefaultBiasesCol)[metricsSensOrder[i],0], #/np.abs(normMetricValsCol[metricsSensOrder[i],0]),
+            y=(-normlzdGlobTunedBiasesCol)[metricsSensOrder[i], 0], # / np.abs(normMetricValsCol[metricsSensOrder[i], 0]),
             ax=xArrow[i] + gap,  # ith arrow's tail
             ay=yArrow[i],  # ith arrow's tail
             xref='x',
@@ -3323,8 +3321,11 @@ def createBiasesVsSensArrowFig(normlzdWeightedSensMatrixPoly, defaultBiasesCol,
 
 
 def createMaxSensMetricsFig(normlzdSensMatrixPoly, metricsNames):
-    # Plot the sensitivity of each regional metric.
-    #    More specifically, plot the maximum magnitude value of each row of the sensitivity matrix.
+    """
+    Plot the sensitivity of each regional metric.
+        More specifically, plot the maximum magnitude value of each row of the sensitivity matrix.
+    """
+
     df = pd.DataFrame(np.max(np.abs(normlzdSensMatrixPoly), axis=1),  # max of absolute val of each row
                       index=metricsNames,
                       columns=['Max abs normlzd sensitivity'])
@@ -3340,10 +3341,10 @@ def createMaxSensMetricsFig(normlzdSensMatrixPoly, metricsNames):
 
 
 def calcMatrixVectorAngles(matrix, row):
-    '''Calculate cos(angle) between one row of a matrix and all rows of the same matrix.
-       Returns a column vector, with length equal to the number of rows in the matrix.'''
-
-
+    """
+    Calculate cos(angle) between one specified row of a matrix and all rows of the same matrix.
+    Returns a column vector, with length equal to the number of rows in the matrix.
+    """
 
     normed_matrix = normalize(matrix, axis=1, norm='l2')
 
@@ -3353,7 +3354,10 @@ def calcMatrixVectorAngles(matrix, row):
 
 
 def calcMatrixAngles(matrix):
-    '''Calculate cos(angle) among all rows of the same matrix.'''
+    """
+    Calculate cos(angle) among all rows of the same matrix.
+    Return a matrix of cosines.
+    """
 
 
     normed_matrix = normalize(matrix, axis=1, norm='l2')
@@ -3376,7 +3380,11 @@ def createPcaBiplot(normlzdSensMatrix, normlzdDefaultBiasesCol,
                     showLegend, hoverMode,
                     plotWidth, plotHeight
                     ):
-
+    """
+    Create PCA biplot.
+    The first and second SVD component of each metric is plotted as a scatterpoint.
+    Vectors showing the variability of each parameter are overlaid.
+    """
 
 
 
@@ -3526,15 +3534,15 @@ def oldCode():
     # Calculate the global-model bias relative to the default-sim bias.
     # This is unweighted and hence is not necessarily less than one.
     # defaultBiasesApprox = J*delta_p = ( fwd - def )
-    # numerator = ( linSoln - def ) + ( def - obs ) = ( linSoln - obs )
-    #linSolnBias = ( linSolnBiasesCol + defaultBiasesCol )
+    # numerator = ( globTuned - def ) + ( def - obs ) = ( globTuned - obs )
+    #globTunedBias = ( globTunedBiasesCol + defaultBiasesCol )
     # defaultBiasesCol = delta_b = ( default - obs ) = denominator
-    #linSolnBiasMagRatio = np.linalg.norm(linSolnBias/np.abs(normMetricValsCol))**2 / \
+    #globTunedBiasMagRatio = np.linalg.norm(globTunedBias/np.abs(normMetricValsCol))**2 / \
     #                      np.linalg.norm(defaultBiasesCol/np.abs(normMetricValsCol))**2
 
     # weightedBiasLin = metricsWeights * ( lin - obs ) = numerator
-    #weightedBiasLinSoln = metricsWeights * ( linSolnBiasesCol + defaultBiasesCol ) / np.abs(normMetricValsCol)
-    #weightedBiasLinSolnMagRatio = np.linalg.norm(weightedBiasLinSoln)**2 / np.linalg.norm(normlzdMDeltaB)**2
+    #weightedBiasGlobTuned = metricsWeights * ( globTunedBiasesCol + defaultBiasesCol ) / np.abs(normMetricValsCol)
+    #weightedBiasGlobTunedMagRatio = np.linalg.norm(weightedBiasGlobTuned)**2 / np.linalg.norm(normlzdMDeltaB)**2
 
     # Plot each column of right-singular vector matrix, V.
     #    rightSingVectorNums = (np.arange(paramsNames.shape[0])+1).astype(str)
@@ -3680,7 +3688,7 @@ def oldCode():
     #                          #defaultBiasesApproxElastic,
     #                          defaultBiasesApproxElasticNonlin,
     #                          defaultBiasesApproxNonlin,
-    #                          linSolnBiasesCol
+    #                          globTunedBiasesCol
     #                         )).squeeze()
     #    fracBiasesMatrix = np.diagflat(np.reciprocal(np.abs(normMetricValsCol))) @ biasesMatrix
     #    df = pd.DataFrame(fracBiasesMatrix,
@@ -3690,7 +3698,7 @@ def oldCode():
     #                            'fracDefBiasesApproxPC',
     #                            'fracDefBiasesApproxElasticNonlin',
     #                            'fracDefBiasesApproxNonlin',
-    #                            'fracLinSolnBiasesCol'
+    #                            'fracGlobTunedBiasesCol'
     #                           ])
     #    biasesFig = px.line(df, x=df.index, y=df.columns,
     #              title = """Fractional biases of default simulation and approximations thereof.<br>
@@ -3711,9 +3719,9 @@ def oldCode():
     #    biasesFig.data[4].name = "fracDefBiasesApproxNonlin, " \
     #                         + "{:.2f}".format(-99) \
     #                         + ", {:.2f}".format(-99)
-    #    biasesFig.data[5].name = "fracLinSolnBiasesCol, " \
-    #                          + "{:.2f}".format(weightedBiasLinSolnMagRatio) \
-    #                          + ", {:.2f}".format(linSolnBiasMagRatio)
+    #    biasesFig.data[5].name = "fracGlobTunedBiasesCol, " \
+    #                          + "{:.2f}".format(weightedBiasGlobTunedMagRatio) \
+    #                          + ", {:.2f}".format(globTunedBiasMagRatio)
     #
 
     df = pd.DataFrame(-1 * normlzdSensParamsMatrixOrdered,

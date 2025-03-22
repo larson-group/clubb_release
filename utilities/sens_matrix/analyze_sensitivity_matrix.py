@@ -32,7 +32,7 @@ def main():
 
     # Metrics from simulation that use the SVD-recommended parameter values
     # Here, we use default simulation just as a placeholder.
-    linSolnNcFilename = \
+    globTunedNcFilename = \
         'default.nc' #'/home/vlarson/canopy/scripts/anvil.c689c7e.repeatbmg_flux.ne30_ne30_GLBmean.nc'
 
     # This is a list of one netcdf file per each sensitivity simulation.
@@ -80,7 +80,7 @@ def main():
 
     # See if new global simulation output based on a linear combination
     #    of the SVD-calculated parameter values matches what we expect.
-    linSolnDiff = calcLinSolnDiff(linSolnNcFilename, defaultNcFilename,
+    globTunedDiff = calcGlobTunedDiff(globTunedNcFilename, defaultNcFilename,
                                   metricsNames)
 
     # Create a heatmap plot that allows us to visualize the normalized sensitivity matrix
@@ -736,7 +736,7 @@ def plotNormlzdSensMatrix(normlzdSensMatrix, metricsNames, paramsNames):
     plt.pause(1)
 
 
-def calcLinSolnDiff(linSolnNcFilename, defaultNcFilename,
+def calcGlobTunedDiff(globTunedNcFilename, defaultNcFilename,
                     metricsNames):
 
     import numpy as np
@@ -758,23 +758,23 @@ def calcLinSolnDiff(linSolnNcFilename, defaultNcFilename,
     f_default.close()
 
     # Read netcdf file with metrics and parameters from default simulation
-    f_linSoln = netCDF4.Dataset(linSolnNcFilename, 'r')
+    f_globTuned = netCDF4.Dataset(globTunedNcFilename, 'r')
     # Set up column vector of numMetrics elements containing
     # metric values from simulation that uses SVD-recommended parameter values
-    linSolnMetricValsCol = np.zeros((numMetrics,1))
+    globTunedMetricValsCol = np.zeros((numMetrics,1))
     for idx in np.arange(numMetrics):
         metricName = metricsNames[idx]
         # Assume each metric is stored as length-1 array, rather than scalar.
         #   Hence the "[0]" at the end is needed.
-        linSolnMetricValsCol[idx] = f_linSoln.variables[metricName][0]
-    f_linSoln.close()
+        globTunedMetricValsCol[idx] = f_globTuned.variables[metricName][0]
+    f_globTuned.close()
 
-    linSolnDiff = linSolnMetricValsCol - defaultMetricValsCol
+    globTunedDiff = globTunedMetricValsCol - defaultMetricValsCol
 
-    print("\nlinSolnDiff")
-    print(linSolnDiff)
+    print("\nglobTunedDiff")
+    print(globTunedDiff)
 
-    return linSolnDiff
+    return globTunedDiff
 
 def findOutliers(normlzdSensMatrix, normlzdWeightedSensMatrix, \
                  defaultBiasesCol, normMetricValsCol, magParamValsRow, defaultParamValsOrigRow):

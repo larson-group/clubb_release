@@ -401,7 +401,7 @@ def setUpInputs(beVerbose):
 #        '20220903/anvil.bmg20220630.sens723_1.ne30pg2_r05_oECv3_Regional.nc'
 
     # Metrics from the global simulation that use the tuner-recommended parameter values
-    linSolnNcFilename = \
+    globTunedNcFilename = \
         (
          #defaultNcFilename
          folder_name + '69_Regional.nc'
@@ -410,7 +410,7 @@ def setUpInputs(beVerbose):
     #    'Regional_files/stephens_20240131/btune_regional_files/b1850.076base.n2th1b_Regional.nc'
     #    'Regional_files/20240409updated/thresp26_Regional.nc'
     # 'Regional_files/stephens_20230920/117.f2c.taus_new_base_latest_mods6e_Regional.nc'
-    #linSolnNcFilename = \
+    #globTunedNcFilename = \
     #       folder_name + 'sens0707_25_Regional.nc'
            #folder_name + 'sens0707_29_Regional.nc'
            # folder_name + 'chrysalis.bmg20220630.sens1107_30.ne30pg2_r05_oECv3_Regional.nc'
@@ -584,7 +584,7 @@ def setUpInputs(beVerbose):
             prescribedParamValsRow, \
             prescribedSensNcFilenames, prescribedSensNcFilenamesExt, \
             sensNcFilenames, sensNcFilenamesExt, \
-            defaultNcFilename, linSolnNcFilename, \
+            defaultNcFilename, globTunedNcFilename, \
             reglrCoef, useBootstrap, numMetricsToTune)
 
 def abbreviateParamsNames(paramsNames):

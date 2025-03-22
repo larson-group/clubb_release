@@ -147,14 +147,10 @@ def setUpColAndRowVectors(metricsNames, metricsNorms,
 
 def setUp_x_ObsMetricValsDict(varPrefixes, obsPathAndFilename):
     """
-    This is intended for the case in which 20x20deg fields are used.
+    This is intended for the case in which the metrics are tiles that cover the globe, not custom regions.
     Input: Filename containing observed values of metrics.
     Output: Dictionary of observations.
     """
-
-
-
-
 
     # Read netcdf file with metrics and parameters from default simulation
     f_obs = netCDF4.Dataset(obsPathAndFilename, 'r')
@@ -190,12 +186,10 @@ def setUp_x_ObsMetricValsDict(varPrefixes, obsPathAndFilename):
 
 def setUp_x_MetricsList(varPrefixes, defPathAndFilename):
     """
-    This is intended for the case in which 20x20deg fields are used.
-    Input: Filename of default run.
+    This is intended for the case in which the metrics are tiles that cover the globe, not custom regions.
+    Input: Filename of default simulation.
     Output: List of 20x20reg metric values.
     """
-
-
 
     # Read netcdf file with metrics and parameters from default simulation
     f_def = netCDF4.Dataset(defPathAndFilename, 'r')
@@ -230,9 +224,6 @@ def setUpObsCol(obsMetricValsDict, metricsNames):
     Output: A column vector of observed metrics
     """
 
-
-
-
     # Number of metrics
     numMetrics = len(metricsNames)
 
@@ -251,11 +242,8 @@ def setupDefaultParamVectors(paramsNames, transformedParamsNames,
                         defaultNcFilename):
     """
     Input: Filename containing default-simulation metrics and parameters.
-    Output: Row vector of default-sim parameter values.
+    Output: Row vector of default-simulation parameter values.
     """
-
-
-
 
     # Read netcdf file with metrics and parameters from default simulation
     f_defaultMetricsParams = netCDF4.Dataset(defaultNcFilename, 'r')
@@ -288,12 +276,9 @@ def setupSensArrays(metricsNames, paramsNames, transformedParamsNames,
     """
     Input: List of filenames, one per each sensitivity simulation.
     Output: Row vector of modified parameter values from sensitivity simulations.
-            Matrix of metrics, where each column corresponds to
+            Sensitivity matrix of regional metrics to parameter values, where each column corresponds to
                 a single sensitivity simulation.
     """
-
-
-
 
     # Create row vector size numParams containing
     # parameter values from sensitivity simulations
@@ -354,9 +339,6 @@ def setupDefaultMetricValsCol(metricsNames, defaultNcFilename):
     Input: Filename containing default-simulation metrics.
     Output: Column vector of default-sim metrics.
     """
-
-
-
 
     # Number of metrics
     numMetrics = len(metricsNames)

@@ -6,20 +6,16 @@
 # login to malan with `ssh -X` and then type `firefox &`.)
 
 """
-Specify input data to quadtune_driver.
+In this file, users may specify input data to quadtune_driver.
 This includes assigning filenames for input netcdf files,
-and setting regional metric weights and observed values of parameters.
+regional metric weights, and observed values of parameters.
 """
 
 import numpy as np
 import pandas as pd
 
 
-
-
-
 def setUpInputs(beVerbose):
-
     from set_up_inputs import (
         setUp_x_MetricsList,
         setupDefaultMetricValsCol, setUp_x_ObsMetricValsDict,
@@ -36,7 +32,6 @@ def setUpInputs(beVerbose):
     # Increase this value to 0.1 or 0.5 or so if you want to reduce 
     # the size of tuned parameter perturbations.
     reglrCoef = 0.0
-
 
     # Use these flags to determine whether or not to create specific plots
     createPlotType = {
@@ -60,7 +55,6 @@ def setUpInputs(beVerbose):
         'vhMatrixFig': True,
     }
 
-
     # Metrics are observed quantities that we want a tuned simulation to match.
     #    The first column is the metric name.
     #    The order of metricNames determines the order of rows in sensMatrix.
@@ -71,29 +65,30 @@ def setUpInputs(beVerbose):
     #   If a value in the 3rd column is set to -999, then the metric is simply normalized by the observed value.
     #   Otherwise, the value in the 3rd column is itself the normalization value for the metric.  
     metricsNamesWeightsAndNormsCustom = \
-    [
-#                         ['RESTOM_GLB', 4.0, 10.], \
-#                         ['SWCF_GLB', 16.0e-6, -999], \
-#                         ['SWCF_DYCOMS', 4.0e-6, -999], \
-#                         ['SWCF_HAWAII', 4.00e-6, -999], \
-#                         ['SWCF_VOCAL', 4.00e-6, -999], \
-#                         ['SWCF_VOCAL_near', 1.00e-6, -999], \
-#                         ['SWCF_LBA', 1.00e-6, -999], \
-#                         ['SWCF_WP', 1.00e-6, -999], \
-#                         ['SWCF_EP', 1.00e-6, -999], \
-#                         ['SWCF_NP', 1.00e-6, -999], \
-#                         ['SWCF_SP', 1.00e-6, -999],  \
-#                         ['SWCF_PA', 1.01, -999], \
-#                         ['SWCF_CAF', 1.00, -999], \
-#                         ['SWCF_Namibia', 4.00e-6, -999], \
-#                         ['SWCF_Namibia_near', 1.00e-6, -999], \
-#                         ['LWCF_GLB',1.00e-6, -999], \
-    ]
+        [
+            #                         ['RESTOM_GLB', 4.0, 10.], \
+            #                         ['SWCF_GLB', 16.0e-6, -999], \
+            #                         ['SWCF_DYCOMS', 4.0e-6, -999], \
+            #                         ['SWCF_HAWAII', 4.00e-6, -999], \
+            #                         ['SWCF_VOCAL', 4.00e-6, -999], \
+            #                         ['SWCF_VOCAL_near', 1.00e-6, -999], \
+            #                         ['SWCF_LBA', 1.00e-6, -999], \
+            #                         ['SWCF_WP', 1.00e-6, -999], \
+            #                         ['SWCF_EP', 1.00e-6, -999], \
+            #                         ['SWCF_NP', 1.00e-6, -999], \
+            #                         ['SWCF_SP', 1.00e-6, -999],  \
+            #                         ['SWCF_PA', 1.01, -999], \
+            #                         ['SWCF_CAF', 1.00, -999], \
+            #                         ['SWCF_Namibia', 4.00e-6, -999], \
+            #                         ['SWCF_Namibia_near', 1.00e-6, -999], \
+            #                         ['LWCF_GLB',1.00e-6, -999], \
+        ]
 
     # Split up the list above into metric names and the corresponding weights.
-    dfMetricsNamesWeightsAndNormsCustom =  \
-        pd.DataFrame( metricsNamesWeightsAndNormsCustom, columns = ['metricsNamesCustom', 'metricsWeightsCustom', 'metricsNormsCustom'] )
-    metricsNamesCustom = dfMetricsNamesWeightsAndNormsCustom[['metricsNamesCustom']].to_numpy().astype(str)[:,0]
+    dfMetricsNamesWeightsAndNormsCustom = \
+        pd.DataFrame(metricsNamesWeightsAndNormsCustom,
+                     columns=['metricsNamesCustom', 'metricsWeightsCustom', 'metricsNormsCustom'])
+    metricsNamesCustom = dfMetricsNamesWeightsAndNormsCustom[['metricsNamesCustom']].to_numpy().astype(str)[:, 0]
     metricsWeightsCustom = dfMetricsNamesWeightsAndNormsCustom[['metricsWeightsCustom']].to_numpy().astype(float)
     metricsNormsCustom = dfMetricsNamesWeightsAndNormsCustom[['metricsNormsCustom']].to_numpy().astype(float)
 
@@ -102,7 +97,6 @@ def setUpInputs(beVerbose):
     # They must be a subset of metricsNames
     highlightedMetricsToPlot = np.array(['SWCF_6_14', 'SWCF_6_18', 'SWCF_8_13',
                                          'SWCF_3_14', 'SWCF_1_14', 'SWCF_3_6', 'SWCF_1_6'])
-
 
     # Parameters are tunable model parameters, e.g. clubb_C8.
     # The float listed below after the parameter name is a factor that is used below for scaling plots.
@@ -114,36 +108,36 @@ def setUpInputs(beVerbose):
     folder_name = 'Regional_files/20241022_1yr_20x20regs/20.0sens1022_'
 
     paramsNamesScalesAndFilenames = \
-    [
-        ['clubb_c8', 1.0,
-         folder_name + '14_Regional.nc',
-         folder_name + '15_Regional.nc'],
-        ['clubb_c_invrs_tau_n2', 1.0,
-         folder_name + '10_Regional.nc',
-         folder_name + '11_Regional.nc'],
-        ['clubb_c_invrs_tau_sfc', 1.0,
-         folder_name + '6_Regional.nc',
-         folder_name + '7_Regional.nc'],
-        ['clubb_c_invrs_tau_wpxp_n2_thresh', 1.e3,
-         folder_name + '8_Regional.nc',
-         folder_name + '9_Regional.nc'],
-        ['clubb_c_invrs_tau_n2_wp2', 1.0,
-         folder_name + '4_Regional.nc',
-         folder_name + '5_Regional.nc'],
-    ]
+        [
+            ['clubb_c8', 1.0,
+             folder_name + '14_Regional.nc',
+             folder_name + '15_Regional.nc'],
+            ['clubb_c_invrs_tau_n2', 1.0,
+             folder_name + '10_Regional.nc',
+             folder_name + '11_Regional.nc'],
+            ['clubb_c_invrs_tau_sfc', 1.0,
+             folder_name + '6_Regional.nc',
+             folder_name + '7_Regional.nc'],
+            ['clubb_c_invrs_tau_wpxp_n2_thresh', 1.e3,
+             folder_name + '8_Regional.nc',
+             folder_name + '9_Regional.nc'],
+            ['clubb_c_invrs_tau_n2_wp2', 1.0,
+             folder_name + '4_Regional.nc',
+             folder_name + '5_Regional.nc'],
+        ]
 
     # Split up the above list into parameter names, scales, and filenames.
-    dfparamsNamesScalesAndFilenames =  \
-        pd.DataFrame( paramsNamesScalesAndFilenames,
-                          columns = ['paramsNames', 'paramsScales',
-                                     'sensNcFilenames', 'sensNcFilenamesExt'] )
-                                     #'sensNcFilenamesExt', 'sensNcFilenames'] )
-    paramsNames = dfparamsNamesScalesAndFilenames[['paramsNames']].to_numpy().astype(str)[:,0]
+    dfparamsNamesScalesAndFilenames = \
+        pd.DataFrame(paramsNamesScalesAndFilenames,
+                     columns=['paramsNames', 'paramsScales',
+                              'sensNcFilenames', 'sensNcFilenamesExt'])
+    # 'sensNcFilenamesExt', 'sensNcFilenames'] )
+    paramsNames = dfparamsNamesScalesAndFilenames[['paramsNames']].to_numpy().astype(str)[:, 0]
     # Extract scaling factors of parameter values from user-defined list paramsNamesScalesAndFilenames.
     # The scaling is not used for any calculations, but it allows us to avoid plotting very large or small values.
-    paramsScales = dfparamsNamesScalesAndFilenames[['paramsScales']].to_numpy().astype(float)[:,0]
-    sensNcFilenames = dfparamsNamesScalesAndFilenames[['sensNcFilenames']].to_numpy().astype(str)[:,0]
-    sensNcFilenamesExt = dfparamsNamesScalesAndFilenames[['sensNcFilenamesExt']].to_numpy().astype(str)[:,0]
+    paramsScales = dfparamsNamesScalesAndFilenames[['paramsScales']].to_numpy().astype(float)[:, 0]
+    sensNcFilenames = dfparamsNamesScalesAndFilenames[['sensNcFilenames']].to_numpy().astype(str)[:, 0]
+    sensNcFilenamesExt = dfparamsNamesScalesAndFilenames[['sensNcFilenamesExt']].to_numpy().astype(str)[:, 0]
 
     # Below we designate the subset of paramsNames that vary from [0,1] (e.g., C5)
     #    and hence will be transformed to [0,infinity] in order to make
@@ -151,56 +145,58 @@ def setUpInputs(beVerbose):
     transformedParamsNames = np.array([''])
 
     prescribedParamsNamesScalesAndValues = \
-                [
-                    #['clubb_c11b', 1.0, 0.5,
-                    #  folder_name + 'clubb_c11bm_Regional.nc',
-                    #  folder_name + 'clubb_c11bp_Regional.nc'],
-                ]
+        [
+            # ['clubb_c11b', 1.0, 0.5,
+            #  folder_name + 'clubb_c11bm_Regional.nc',
+            #  folder_name + 'clubb_c11bp_Regional.nc'],
+        ]
     # Split up the above list into parameter names, scales, and filenames.
-    dfprescribedParamsNamesScalesAndValues =  \
-        pd.DataFrame( prescribedParamsNamesScalesAndValues,
-                          columns = ['prescribedParamsNames', 
-                                     'prescribedParamsScales',
-                                     'prescribedParamVals',
-                                     'prescribedSensNcFilenames', 'prescribedSensNcFilenamesExt'
-                                    ]
-                    )
-    prescribedParamsNames = dfprescribedParamsNamesScalesAndValues[['prescribedParamsNames']].to_numpy().astype(str)[:,0]
+    dfprescribedParamsNamesScalesAndValues = \
+        pd.DataFrame(prescribedParamsNamesScalesAndValues,
+                     columns=['prescribedParamsNames',
+                              'prescribedParamsScales',
+                              'prescribedParamVals',
+                              'prescribedSensNcFilenames', 'prescribedSensNcFilenamesExt'
+                              ]
+                     )
+    prescribedParamsNames = dfprescribedParamsNamesScalesAndValues[['prescribedParamsNames']].to_numpy().astype(str)[:,
+                            0]
     # Extract scaling factors of parameter values from user-defined list paramsNamesScalesAndFilenames.
     # The scaling is not used for any calculations, but it allows us to avoid plotting very large or small values.
-    prescribedParamsScales = dfprescribedParamsNamesScalesAndValues[['prescribedParamsScales']].to_numpy().astype(float)[:,0]
-    prescribedParamVals = dfprescribedParamsNamesScalesAndValues[['prescribedParamVals']].to_numpy().astype(float)[:,0]
+    prescribedParamsScales = dfprescribedParamsNamesScalesAndValues[['prescribedParamsScales']].to_numpy().astype(
+        float)[:, 0]
+    prescribedParamVals = dfprescribedParamsNamesScalesAndValues[['prescribedParamVals']].to_numpy().astype(float)[:, 0]
     prescribedParamValsRow = prescribedParamVals
-    prescribedSensNcFilenames = dfprescribedParamsNamesScalesAndValues[['prescribedSensNcFilenames']].to_numpy().astype(str)[:,0]
-    prescribedSensNcFilenamesExt = dfprescribedParamsNamesScalesAndValues[['prescribedSensNcFilenamesExt']].to_numpy().astype(str)[:,0]
+    prescribedSensNcFilenames = dfprescribedParamsNamesScalesAndValues[['prescribedSensNcFilenames']].to_numpy().astype(
+        str)[:, 0]
+    prescribedSensNcFilenamesExt = dfprescribedParamsNamesScalesAndValues[
+                                       ['prescribedSensNcFilenamesExt']].to_numpy().astype(str)[:, 0]
     prescribedTransformedParamsNames = np.array([''])
-
 
     # Netcdf file containing metric and parameter values from the default simulation
     defaultNcFilename = \
         (
-        folder_name + '1_Regional.nc'
-    )
+                folder_name + '1_Regional.nc'
+        )
 
     # Metrics from the global simulation that uses the tuner-recommended parameter values
-    linSolnNcFilename = \
+    globTunedNcFilename = \
         (
-         folder_name + '69_Regional.nc'
-         # defaultNcFilename
-    )
+                folder_name + '69_Regional.nc'
+            # defaultNcFilename
+        )
 
     # Comment out if not using 20x20reg files
     varPrefixes = ["SWCF"]
-    #varPrefixes = ["SWCF", "LWCF", "PRECT"]
+    # varPrefixes = ["SWCF", "LWCF", "PRECT"]
     metricsNamesWeightsAndNorms, metricGlobalValsFromFile \
-         = setUp_x_MetricsList(varPrefixes , defaultNcFilename)
+        = setUp_x_MetricsList(varPrefixes, defaultNcFilename)
     # Split up the list above into metric names and the corresponding weights.
-    dfMetricsNamesWeightsAndNorms =  \
-        pd.DataFrame( metricsNamesWeightsAndNorms, columns = ['metricsNames', 'metricsWeights', 'metricsNorms'] )
-    metricsNames = dfMetricsNamesWeightsAndNorms[['metricsNames']].to_numpy().astype(str)[:,0]
+    dfMetricsNamesWeightsAndNorms = \
+        pd.DataFrame(metricsNamesWeightsAndNorms, columns=['metricsNames', 'metricsWeights', 'metricsNorms'])
+    metricsNames = dfMetricsNamesWeightsAndNorms[['metricsNames']].to_numpy().astype(str)[:, 0]
     metricsWeights = dfMetricsNamesWeightsAndNorms[['metricsWeights']].to_numpy().astype(float)
-    #metricsNorms = dfMetricsNamesWeightsAndNorms[['metricsNorms']].to_numpy().astype(float)
-
+    # metricsNorms = dfMetricsNamesWeightsAndNorms[['metricsNorms']].to_numpy().astype(float)
 
     metricsNamesNoprefix = np.char.replace(metricsNames, "SWCF_", "")
 
@@ -208,8 +204,8 @@ def setUpInputs(beVerbose):
     defaultMetricValsCol = \
         setupDefaultMetricValsCol(metricsNames, defaultNcFilename)
 
-    metricGlobalAvgs = np.diag(np.dot(metricsWeights.reshape(-1,len(varPrefixes),order='F').T,
-                                      defaultMetricValsCol.reshape(-1,len(varPrefixes),order='F')))
+    metricGlobalAvgs = np.diag(np.dot(metricsWeights.reshape(-1, len(varPrefixes), order='F').T,
+                                      defaultMetricValsCol.reshape(-1, len(varPrefixes), order='F')))
 
     if not np.isclose(metricGlobalValsFromFile, metricGlobalAvgs).all():
         print("Error: metricGlobalAvgs not equal to metricGlobalValsFromFile")
@@ -222,16 +218,16 @@ def setUpInputs(beVerbose):
         boxSize = 20
         numXBoxes = np.rint(360 / boxSize).astype(int)  # 18
         numYBoxes = np.rint(180 / boxSize).astype(int)  # 9
-        defaultMetricValsReshaped = defaultMetricValsCol.reshape((numYBoxes,numXBoxes))
-        #defaultMetricValsRolled = np.roll(defaultMetricValsReshaped, -9, axis=1)
-        np.set_printoptions( linewidth=200 )
-        print(np.around(defaultMetricValsReshaped,2))
-        #print(np.around(defaultMetricValsRolled,2))
+        defaultMetricValsReshaped = defaultMetricValsCol.reshape((numYBoxes, numXBoxes))
+        # defaultMetricValsRolled = np.roll(defaultMetricValsReshaped, -9, axis=1)
+        np.set_printoptions(linewidth=200)
+        print(np.around(defaultMetricValsReshaped, 2))
+        # print(np.around(defaultMetricValsRolled,2))
 
     (obsMetricValsDict, obsWeightsDict) = \
         (
-        setUp_x_ObsMetricValsDict(varPrefixes, folder_name + "20241011_20.0_OBS.nc")
-    )
+            setUp_x_ObsMetricValsDict(varPrefixes, folder_name + "20241011_20.0_OBS.nc")
+        )
 
     # Set metricsNorms to be a global average
     obsGlobalAvgObsWeights = np.zeros(len(varPrefixes))
@@ -240,12 +236,12 @@ def setUpInputs(beVerbose):
     obsGlobalStdCol = np.empty(shape=[0, 1])
     for idx, varPrefix in np.ndenumerate(varPrefixes):
         keysVarPrefix = [key for key in obsWeightsDict.keys() if varPrefix in key]
-        #obsWeightsNames = np.array(list(obsWeightsDict.keys()), dtype=str)
+        # obsWeightsNames = np.array(list(obsWeightsDict.keys()), dtype=str)
         obsWeightsNames = np.array(keysVarPrefix, dtype=str)
         obsWeightsUnnormlzd = setUpObsCol(obsWeightsDict, obsWeightsNames)
         obsWeights = obsWeightsUnnormlzd / np.sum(obsWeightsUnnormlzd)
-        #metricsWeights = obsWeights
-        #obsWeights = np.vstack([obsWeights] * len(varPrefixes))
+        # metricsWeights = obsWeights
+        # obsWeights = np.vstack([obsWeights] * len(varPrefixes))
         metricsNamesVarPrefix = [key for key in obsMetricValsDict.keys() if varPrefix in key]
         obsMetricValsColVarPrefix = setUpObsCol(obsMetricValsDict, metricsNamesVarPrefix)
         obsGlobalStdObsWeights[idx] = np.std(obsMetricValsColVarPrefix)
@@ -255,25 +251,25 @@ def setUpInputs(beVerbose):
             obsGlobalAvgObsWeights[idx] = 1e-3 * obsGlobalAvgObsWeights[idx]
         print(f"obsGlobalAvgObsWeights for {varPrefix} =", obsGlobalAvgObsWeights[idx])
         obsGlobalAvgCol = np.vstack((obsGlobalAvgCol,
-                                       obsGlobalAvgObsWeights[idx]*np.ones((len(obsWeights),1))
-                                        ))
+                                     obsGlobalAvgObsWeights[idx] * np.ones((len(obsWeights), 1))
+                                     ))
         obsGlobalStdCol = np.vstack((obsGlobalStdCol,
                                      obsGlobalStdObsWeights[idx] * np.ones((len(obsWeights), 1))
                                      ))
     # Warning: Using a global average as the constant weight produces little normalized
     #     sensitivity for PSL
     metricsNorms = np.copy(obsGlobalAvgCol)
-    #metricsNorms = np.copy(obsGlobalStdCol)
+    # metricsNorms = np.copy(obsGlobalStdCol)
 
-    #obsMetricValsReshaped = obsMetricValsCol.reshape((9,18))
-    #biasMat = defaultMetricValsReshaped - obsMetricValsReshaped
-    #print("biasMat =")
-    #print(np.around(biasMat,2))
+    # obsMetricValsReshaped = obsMetricValsCol.reshape((9,18))
+    # biasMat = defaultMetricValsReshaped - obsMetricValsReshaped
+    # print("biasMat =")
+    # print(np.around(biasMat,2))
 
-    #mse = np.sum(metricsWeights*(defaultMetricValsCol - obsMetricValsCol)**2) \
+    # mse = np.sum(metricsWeights*(defaultMetricValsCol - obsMetricValsCol)**2) \
     #   / np.sum(metricsWeights)
-    #rmse = np.sqrt(mse)
-    #print("rmse between default and obs =", rmse)
+    # rmse = np.sqrt(mse)
+    # print("rmse between default and obs =", rmse)
 
     # The special regions are tacked onto the end of
     #     the usual metrics vectors
@@ -286,47 +282,52 @@ def setUpInputs(beVerbose):
     # Observed values of our metrics, from, e.g., CERES-EBAF.
     # These observed metrics will be matched as closely as possible by analyzeSensMatrix.
     # NOTE: PRECT is in the unit of m/s
-    obsMetricValsDictCustom = { \
-    'RESTOM_GLB': 1.5, \
-    'SWCF_RACC': 0, \
-    'SWCF_RMSEP': 0, \
-    'SWCF_RMSE': 0, 'TMQ_RMSE': 0, 'PSL_RMSE': 0, 'TS_RMSE': 0, 'LHFLX_RMSE': 0, 'SHFLX_RMSE': 0, 'CLDLOW_RMSE': 0, \
-    'LWCF_GLB': 28.008, 'PRECT_GLB': 0.000000031134259, 'SWCF_GLB': -45.81, 'TMQ_GLB': 24.423, \
-    'LWCF_DYCOMS': 19.36681938, 'PRECT_DYCOMS':0.000000007141516, 'SWCF_DYCOMS': -63.49394226, 'TMQ_DYCOMS':20.33586884,\
-    'LWCF_LBA': 43.83245087, 'PRECT_LBA':0.000000063727875, 'SWCF_LBA': -55.10041809, 'TMQ_LBA': 44.27890396,\
-    'LWCF_HAWAII': 23.6855, 'PRECT_HAWAII':0.00000002087774, 'SWCF_HAWAII': -33.1536, 'TMQ_HAWAII': 32.4904,\
-    'LWCF_WP': 54.5056, 'PRECT_WP':0.000000077433568, 'SWCF_WP': -62.3644, 'TMQ_WP':50.5412,\
-    'LWCF_EP': 33.42149734, 'PRECT_EP': 0.000000055586694, 'SWCF_EP': -51.79394531, 'TMQ_EP':44.34251404,\
-    'LWCF_NP': 26.23941231, 'PRECT_NP':0.000000028597503, 'SWCF_NP': -50.92364502, 'TMQ_NP':12.72111988,\
-    'LWCF_SP': 31.96141052, 'PRECT_SP':0.000000034625369, 'SWCF_SP': -70.26461792, 'TMQ_SP':10.95032024,\
-    'LWCF_PA': 47.32126999, 'PRECT_PA':0.000000075492694, 'SWCF_PA': -78.27433014, 'TMQ_PA':47.25967789,\
-    'LWCF_CAF': 43.99757003784179687500, 'PRECT_CAF':0.000000042313699, 'SWCF_CAF': -52.50243378, 'TMQ_CAF':36.79592514,\
-    'LWCF_VOCAL': 43.99757004, 'PRECT_VOCAL':0.000000001785546, 'SWCF_VOCAL': -77.26232147, 'TMQ_VOCAL':17.59922791, \
-    'LWCF_VOCAL_near': 15.4783, 'PRECT_VOCAL_near':0.0000000037719, 'SWCF_VOCAL_near': -58.4732, 'TMQ_VOCAL_near': 14.9315, \
-    'LWCF_Namibia': 12.3294, 'PRECT_Namibia':0.00000000177636 , 'SWCF_Namibia': -66.9495, 'TMQ_Namibia': 24.4823, \
-    'LWCF_Namibia_near': 10.904, 'PRECT_Namibia_near':0.00000000238369 , 'SWCF_Namibia_near': -36.1216, 'TMQ_Namibia_near': 17.5188, \
-    'PRECT_RACC': 0, \
-    'PRECT_RMSEP': 0, \
-    'PRECT_RMSE': 0, \
-    'PSL_DYCOMS': 101868.515625, \
-    'PSL_HAWAII': 101656.578125, \
-    'PSL_VOCAL': 101668.703125, \
-    'PSL_VOCAL_near': 101766.8203125, \
-    'PSL_Namibia_near': 101741.7265625, \
-    'PSL_Namibia far': 101550.6640625, \
-    'PSL_LBA': 101052.40625, \
-    'PSL_WP':  100909.4140625, \
-    'PSL_EP':  101116.875, \
-    'PSL_SP':  100021.4921875, \
-    'PSL_NP':  101314.546875, \
-    'PSL_PA':  100990.25, \
-    'PSL_CAF': 100941.7890625
-        }
+    obsMetricValsDictCustom = {
+        'RESTOM_GLB': 1.5,
+        'SWCF_RACC': 0,
+        'SWCF_RMSEP': 0,
+        'SWCF_RMSE': 0, 'TMQ_RMSE': 0, 'PSL_RMSE': 0, 'TS_RMSE': 0, 'LHFLX_RMSE': 0, 'SHFLX_RMSE': 0, 'CLDLOW_RMSE': 0,
+        'LWCF_GLB': 28.008, 'PRECT_GLB': 0.000000031134259, 'SWCF_GLB': -45.81, 'TMQ_GLB': 24.423,
+        'LWCF_DYCOMS': 19.36681938, 'PRECT_DYCOMS': 0.000000007141516, 'SWCF_DYCOMS': -63.49394226,
+        'TMQ_DYCOMS': 20.33586884,
+        'LWCF_LBA': 43.83245087, 'PRECT_LBA': 0.000000063727875, 'SWCF_LBA': -55.10041809, 'TMQ_LBA': 44.27890396,
+        'LWCF_HAWAII': 23.6855, 'PRECT_HAWAII': 0.00000002087774, 'SWCF_HAWAII': -33.1536, 'TMQ_HAWAII': 32.4904,
+        'LWCF_WP': 54.5056, 'PRECT_WP': 0.000000077433568, 'SWCF_WP': -62.3644, 'TMQ_WP': 50.5412,
+        'LWCF_EP': 33.42149734, 'PRECT_EP': 0.000000055586694, 'SWCF_EP': -51.79394531, 'TMQ_EP': 44.34251404,
+        'LWCF_NP': 26.23941231, 'PRECT_NP': 0.000000028597503, 'SWCF_NP': -50.92364502, 'TMQ_NP': 12.72111988,
+        'LWCF_SP': 31.96141052, 'PRECT_SP': 0.000000034625369, 'SWCF_SP': -70.26461792, 'TMQ_SP': 10.95032024,
+        'LWCF_PA': 47.32126999, 'PRECT_PA': 0.000000075492694, 'SWCF_PA': -78.27433014, 'TMQ_PA': 47.25967789,
+        'LWCF_CAF': 43.99757003784179687500, 'PRECT_CAF': 0.000000042313699, 'SWCF_CAF': -52.50243378,
+        'TMQ_CAF': 36.79592514,
+        'LWCF_VOCAL': 43.99757004, 'PRECT_VOCAL': 0.000000001785546, 'SWCF_VOCAL': -77.26232147,
+        'TMQ_VOCAL': 17.59922791,
+        'LWCF_VOCAL_near': 15.4783, 'PRECT_VOCAL_near': 0.0000000037719, 'SWCF_VOCAL_near': -58.4732,
+        'TMQ_VOCAL_near': 14.9315,
+        'LWCF_Namibia': 12.3294, 'PRECT_Namibia': 0.00000000177636, 'SWCF_Namibia': -66.9495, 'TMQ_Namibia': 24.4823,
+        'LWCF_Namibia_near': 10.904, 'PRECT_Namibia_near': 0.00000000238369, 'SWCF_Namibia_near': -36.1216,
+        'TMQ_Namibia_near': 17.5188,
+        'PRECT_RACC': 0,
+        'PRECT_RMSEP': 0,
+        'PRECT_RMSE': 0,
+        'PSL_DYCOMS': 101868.515625,
+        'PSL_HAWAII': 101656.578125,
+        'PSL_VOCAL': 101668.703125,
+        'PSL_VOCAL_near': 101766.8203125,
+        'PSL_Namibia_near': 101741.7265625,
+        'PSL_Namibia far': 101550.6640625,
+        'PSL_LBA': 101052.40625,
+        'PSL_WP': 100909.4140625,
+        'PSL_EP': 101116.875,
+        'PSL_SP': 100021.4921875,
+        'PSL_NP': 101314.546875,
+        'PSL_PA': 100990.25,
+        'PSL_CAF': 100941.7890625
+    }
 
     # For special regions, make simulated values a numpy float,
     #     like the other metrics
     obsMetricValsDictCustom = {key: np.float32(value) \
-                for key, value in obsMetricValsDictCustom.items()}
+                               for key, value in obsMetricValsDictCustom.items()}
 
     obsMetricValsDict.update(obsMetricValsDictCustom)
 
@@ -349,8 +350,9 @@ def setUpInputs(beVerbose):
             prescribedParamValsRow,
             prescribedSensNcFilenames, prescribedSensNcFilenamesExt,
             sensNcFilenames, sensNcFilenamesExt,
-            defaultNcFilename, linSolnNcFilename,
+            defaultNcFilename, globTunedNcFilename,
             reglrCoef, useBootstrap, numMetricsToTune)
+
 
 def abbreviateParamsNames(paramsNames):
     """
@@ -366,4 +368,3 @@ def abbreviateParamsNames(paramsNames):
     paramsAbbrv = np.char.replace(paramsAbbrv, 'thresh', 'thres')
 
     return paramsAbbrv
-
