@@ -1,0 +1,83 @@
+commit b1e6e895ca45b2170bc75489232af169397b99d8
+Author: vlarson <vlarson@uwm.edu>
+Date:   Fri Mar 21 11:50:52 2025 -0500
+
+    QuadTune: Move import statements to top of file.  Move abbreviateParamsNames to set_up_inputs.  Neaten source code a bit.
+    
+    For #910.
+
+commit eb8cc04963e2d22f2568e0bd517cb3c381edbfa1
+Author: vlarson <vlarson@uwm.edu>
+Date:   Thu Mar 20 12:46:25 2025 -0500
+
+    QuadTune: Set plot-type flags in set_up_inputs.py and then feed them into create_nonbootstrap_figs.py.
+    
+    For #910.
+
+commit dc67b8c820712a1ea7b4cb9c1bf86a648ce08ee6
+Author: vlarson <vlarson@uwm.edu>
+Date:   Wed Mar 19 11:07:14 2025 -0500
+
+    QuadTune: Rename files.
+    
+    For #910.
+
+commit 10b86f1f478d76bb38a0aaebc7e5fefde504908c
+Author: vlarson <vlarson@uwm.edu>
+Date:   Wed Mar 19 10:17:51 2025 -0500
+
+    QuadTune: Remove dependence of QuadTune code on file analyze_sensitivity_matrix.py.
+    This required copying some functions from analyze_sensitivity_matrix.py to other files.
+    
+    For #910.
+
+commit bad478764e6262238f36f902bb45c437b49ee3de
+Author: vlarson <vlarson@uwm.edu>
+Date:   Wed Mar 19 08:18:00 2025 -0500
+
+    QuadTune: Improve plot titles, add (a), (b), (c) to subpanels, etc.
+    
+    For #910.
+
+commit 0dc4761ff2d0f0c95b3f103b0112d63a2048cc97
+Author: vlarson <vlarson@uwm.edu>
+Date:   Sat Mar 15 11:34:01 2025 -0500
+
+    QuadTune: Shut off bootstrap fig display, set useBootstrap=F, and improved fonts on scatterplots.
+    
+    For #910.
+
+commit e4aa2c379ef53a757d44d3674c70e75b2536aa46
+Author: bmg929 <bmg2@uwm.edu>
+Date:   Fri Mar 14 08:19:29 2025 -0500
+
+    Revert "When the run_clubb_w_varying_flags.py script is running a generalized"
+    
+    This reverts commit 02f49f2feca508a3bdc6f881673d23f576add971.
+    
+    This commit was problematic and is no longer necessary in light of
+    commit 78cba21.
+
+commit 78cba21967b128a4aa8c7107164c9d80aaee7e43
+Author: bmg929 <bmg2@uwm.edu>
+Date:   Fri Mar 14 08:13:58 2025 -0500
+
+    Updating the Jenkinsfile for the CLUBB generalized vertical grid test
+    so we can truly turn off all stats.
+
+commit 02f49f2feca508a3bdc6f881673d23f576add971
+Author: bmg929 <bmg2@uwm.edu>
+Date:   Fri Mar 14 01:13:50 2025 -0500
+
+    When the run_clubb_w_varying_flags.py script is running a generalized
+    vertical grid test, use a stats file that has a greatly reduced number
+    of stats. Stats aren't important for this test. We don't want to eat
+    up too much storage space or waste extra time with stats.
+
+commit 1ae402390b203de58866e57af503d9641df0c421
+Author: bmg929 <bmg2@uwm.edu>
+Date:   Thu Mar 13 21:01:47 2025 -0500
+
+    Changing the generalized vertical grid Jenkins test to use the new
+    run_clubb_w_varying_flags.py python script instead of the traditional
+    run_scm_all.bash.
