@@ -2206,7 +2206,7 @@ module clubb_driver
           thv_ds_zm, thv_ds_zt,                                            & ! Intent(inout)
           rtm_ref, thlm_ref,                                               & ! Intent(inout) 
           um_ref, vm_ref,                                                  & ! Intent(inout)
-          Ncm, Nc_in_cloud, Nccnm,                                         & ! Intent(inout)
+          Ncm, Nc_in_cloud, Nccnm, err_code,                               & ! Intent(inout)
           deep_soil_T_in_K, sfc_soil_T_in_K, veg_T_in_K,                   & ! Intent(inout)
           sclrm, edsclrm,                                                  & ! Intent(out)
           rho_ds_zm_dycore )                                                 ! Intent(out)
@@ -3240,6 +3240,14 @@ module clubb_driver
 
         end if ! l_silhs_rad
 
+        if ( clubb_at_least_debug_level( 0 ) ) then
+          if ( err_code == clubb_fatal_error ) then
+            write(fstderr, *) "Fatal error in radiation, " &
+                              // "check your parameter values and timestep"
+            exit mainloop
+          end if
+        end if
+
       end if ! mod( itime, floor(dt_rad/dt_main) ) == 0 .or. itime == 1
 
       if ( stats_metadata%l_stats_samp ) then
@@ -3627,7 +3635,7 @@ module clubb_driver
                thv_ds_zm, thv_ds_zt, &
                rtm_ref, thlm_ref, &
                um_ref, vm_ref, &
-               Ncm, Nc_in_cloud, Nccnm, &
+               Ncm, Nc_in_cloud, Nccnm, err_code, &
                deep_soil_T_in_K, sfc_soil_T_in_K, veg_T_in_K, &
                sclrm, edsclrm, &
                rho_ds_zm_dycore )
@@ -3710,6 +3718,9 @@ module clubb_driver
       lin_interp_between_grids
 
     use constants_clubb, only: fstderr !-------------------------- Variables(s)
+
+    use error_code, only: &
+        clubb_fatal_error
 
     implicit none
 
@@ -3804,6 +3815,9 @@ module clubb_driver
 
     real( kind = core_rknd ), dimension(ngrdcol,gr%nzt), intent(inout) :: &
       Nccnm    ! Cloud condensation nuclei concentration (COAMPS/MG)  [num/kg]
+
+    integer, intent(inout) :: &
+      err_code
     
     real( kind = core_rknd ), dimension(ngrdcol), intent(inout) :: &
       deep_soil_T_in_K, &
@@ -4023,7 +4037,9 @@ module clubb_driver
         write(fstderr,*) 'WARNING! The option l_add_dycore_grid=.true. can currently only ', &
                          'be used for cases with forcings from an input file and for the atex ', &
                          'case, so for this case l_add_dycore_grid must be set to .false..'
-        error stop 'For this case l_add_dycore_grid must be set to .false..'
+        err_code = clubb_fatal_error
+        write(fstderr,*) 'For this case l_add_dycore_grid must be set to .false..'
+        return
       end if
 
     end if
@@ -7040,7 +7056,7 @@ module clubb_driver
     if ( clubb_at_least_debug_level( 0 ) ) then
         if ( err_code == clubb_fatal_error ) then
             write(fstderr,*) "Fatal error in advance_clubb_radiation:"
-            error stop
+            return
         end if
     end if
 
@@ -7410,7 +7426,7 @@ module clubb_driver
     if ( clubb_at_least_debug_level( 0 ) ) then
         if ( err_code == clubb_fatal_error ) then
           write(fstderr,*) "Fatal error in silhs_radiation_driver:"
-          error stop
+          return
         end if
     end if
 

@@ -12,7 +12,7 @@ module interpolation
 
   public :: lin_interpolate_two_points, binary_search, zlinterp_fnc, & 
     lin_interpolate_on_grid, linear_interp_factor, mono_cubic_interp, plinterp_fnc, &
-    pvertinterp, lin_interp_between_grids
+    lin_interp_between_grids
 
   contains
 
@@ -500,94 +500,6 @@ module interpolation
 
     return
   end function zlinterp_fnc
-
-  !-------------------------------------------------------------------------------
-  subroutine pvertinterp( nz, ngrdcol, &
-                          p_mid, p_out, input_var, &
-                          interp_var )
-     
-    implicit none
-    
-    !------------------------ Input Variables ------------------------
-    integer , intent(in)  :: &
-      nz, &
-      ngrdcol
-
-    real( kind = core_rknd ), dimension(ngrdcol,nz), intent(in)  :: &
-      p_mid,      & ! input level pressure levels
-      input_var     ! input  array
-
-    real( kind = core_rknd ), intent(in)  :: &
-      p_out         ! output pressure level
-
-    !------------------------ Output Variables ------------------------
-    real( kind = core_rknd ), dimension(ngrdcol), intent(out) :: &
-      interp_var    ! output array (interpolated)   
-    
-    !------------------------ Local Variables ------------------------
-    integer :: &
-      i, k,   & ! Loop indices
-      k_upper    ! Level indices for interpolation
-
-    real( kind = core_rknd ) :: &
-      dpu,  & ! upper level pressure difference
-      dpl     ! lower level pressure difference
-
-    logical :: &
-      l_found,  & ! true if input levels found   	
-      l_error     ! true if error     
-
-    !------------------------ Begin Code ------------------------
-    
-    ! Initialize index array and logical flags
-    l_error = .false.
-
-    ! If we've fallen through the k=1,nz-1 loop, we cannot interpolate and
-    ! must extrapolate from the bottom or top data level for at least some
-    ! of the longitude points.
-    !$acc parallel loop gang vector default(present)
-    do i = 1, ngrdcol
-
-      if ( p_out >= p_mid(i,1) ) then
-
-        interp_var(i) = input_var(i,1)
-
-      elseif ( p_out <= p_mid(i,nz) ) then
-
-        interp_var(i) = input_var(i,nz)
-
-      else
-
-        l_found = .false.
-        k_upper = 1
-
-        ! Store level indices for interpolation.
-        ! If all indices for this level have been found,
-        ! do the interpolation
-        do k = 1, nz-1
-          if ( p_mid(i,k) > p_out .and. p_out >= p_mid(i,k+1) ) then
-            l_found = .true.
-            k_upper = k
-            exit
-          end if
-        end do
-
-        if ( .not. l_found ) then
-          l_error = .true.
-        end if
-
-        dpu = p_mid(i,k_upper) - p_out
-        dpl = p_out - p_mid(i,k_upper+1)
-        interp_var(i) = ( input_var(i,k_upper)*dpl + input_var(i,k_upper+1)*dpu ) &
-                        / ( dpl + dpu )
-      end if
-
-    end do
-    !$acc end parallel loop
-     
-    return
-
-  end subroutine pvertinterp
 
 !-------------------------------------------------------------------------------
   subroutine lin_interpolate_on_grid & 

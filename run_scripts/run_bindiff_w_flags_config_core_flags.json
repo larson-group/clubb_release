@@ -22,6 +22,7 @@
     "flag6": {
         "l_wp2_fill_holes_tke": false,
         "l_enable_relaxed_clipping": true,
+        "l_min_xp2_from_corr_wx": false,
         "l_add_dycore_grid": true
     },
     "flag7": {
@@ -42,8 +43,7 @@
         "l_vert_avg_closure": true,
         "l_use_cloud_cover": true,
         "l_damp_wp3_Skw_squared": false,
-        "l_use_C11_Richardson": true,
-        "l_min_xp2_from_corr_wx": false
+        "l_use_C11_Richardson": true
     },
     "flag11": {
         "l_rcm_supersat_adj": false,
@@ -74,7 +74,6 @@
         "l_modify_limiters_for_cnvg_test": true
     },
     "flag15": {
-        "l_mono_flux_lim_thlm": false,
         "l_mono_flux_lim_rtm": false,
         "l_mono_flux_lim_um": false,
         "l_mono_flux_lim_vm": false,

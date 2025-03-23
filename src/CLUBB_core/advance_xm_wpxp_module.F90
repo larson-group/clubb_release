@@ -1981,10 +1981,10 @@ module advance_xm_wpxp_module
           !        contribution from "over-implicit" weighted time step for LHS
           !        turbulent advection (ta) term).
           call stat_modify_pt( iwpxp_ta, k, & ! intent(in)
-                               + ( one - gamma_over_implicit_ts ) &
-                                 * ( - lhs_ta_wpxp(1,i,k) * wpxp(i,k+1) &
-                                     - lhs_ta_wpxp(2,i,k) * wpxp(i,k) &
-                                     - lhs_ta_wpxp(3,i,k) * wpxp(i,k-1) ), & ! intent(in)
+               + ( one - gamma_over_implicit_ts ) &
+                 * ( - lhs_ta_wpxp(2-gr%grid_dir_indx,i,k) * wpxp(i,k+gr%grid_dir_indx) &
+                     - lhs_ta_wpxp(2,i,k) * wpxp(i,k) &
+                     - lhs_ta_wpxp(2+gr%grid_dir_indx,i,k) * wpxp(i,k-gr%grid_dir_indx) ), &
                                stats_zm(i) ) ! intent(inout)
 
           ! w'x' term pr1 is normally completely implicit.  However, there is a
@@ -4855,15 +4855,15 @@ module advance_xm_wpxp_module
         ! Finalize implicit contributions for xm
         do k = 1, nzt
 
-          km1 = max( k-1, 1 )
-          kp1 = min( k+1, nzt )
+          km1 = max( k-gr%grid_dir_indx, 1 )
+          kp1 = min( k+gr%grid_dir_indx, nzt )
 
           ! xm term ma is completely implicit; call stat_update_var_pt.
           if ( .not. l_implemented ) then
             call stat_update_var_pt( ixm_ma, k, & ! intent(in)
-                (-lhs_ma_zt(3,i,k)) * xm(i,km1) & 
+                (-lhs_ma_zt(2+gr%grid_dir_indx,i,k)) * xm(i,km1) & 
               + (-lhs_ma_zt(2,i,k)) * xm(i,k) & 
-              + (-lhs_ma_zt(1,i,k)) * xm(i,kp1), & ! intent(in)
+              + (-lhs_ma_zt(2-gr%grid_dir_indx,i,k)) * xm(i,kp1), & ! intent(in)
                 stats_zt(i) ) ! intent(inout)
           end if
 
@@ -4872,7 +4872,7 @@ module advance_xm_wpxp_module
           ! xm term ta is completely implicit; call stat_update_var_pt.
           call stat_update_var_pt( ixm_ta, k, & ! intent(in)
               (-lhs_ta_xm(2,i,k)) * wpxp(i,k) & 
-            + (-lhs_ta_xm(1,i,k)) * wpxp(i,kp1), & ! intent(in)
+            + (-lhs_ta_xm(1,i,k)) * wpxp(i,k+1), & ! intent(in)
               stats_zt(i) ) ! intent(inout)
 
         enddo ! xm loop: 1..nzt
@@ -4883,28 +4883,28 @@ module advance_xm_wpxp_module
         ! levels 2 through nz-1.
         do k = 2, nzm-1
 
-          km1 = max( k-1, 1 )
-          kp1 = min( k+1, nzm )
+          km1 = max( k-gr%grid_dir_indx, 1 )
+          kp1 = min( k+gr%grid_dir_indx, nzm )
 
           ! Finalize implicit contributions for wpxp
 
           ! w'x' term ma is completely implicit; call stat_update_var_pt.
           call stat_update_var_pt( iwpxp_ma, k, & ! intent(in)
-              (-lhs_ma_zm(3,i,k)) * wpxp(i,km1) & 
+              (-lhs_ma_zm(2+gr%grid_dir_indx,i,k)) * wpxp(i,km1) & 
             + (-lhs_ma_zm(2,i,k)) * wpxp(i,k) & 
-            + (-lhs_ma_zm(1,i,k)) * wpxp(i,kp1), & ! intent(in)
+            + (-lhs_ma_zm(2-gr%grid_dir_indx,i,k)) * wpxp(i,kp1), & ! intent(in)
               stats_zm(i) ) ! intent(inout)
 
 
             call stat_end_update_pt( iwpxp_ta, k, & ! intent(in)
-                (-gamma_over_implicit_ts*lhs_ta_wpxp(3,i,k)) * wpxp(i,km1) & 
+                (-gamma_over_implicit_ts*lhs_ta_wpxp(2+gr%grid_dir_indx,i,k)) * wpxp(i,km1) & 
               + (-gamma_over_implicit_ts*lhs_ta_wpxp(2,i,k)) * wpxp(i,k) & 
-              + (-gamma_over_implicit_ts*lhs_ta_wpxp(1,i,k)) * wpxp(i,kp1), & ! intent(in)
+              + (-gamma_over_implicit_ts*lhs_ta_wpxp(2-gr%grid_dir_indx,i,k)) * wpxp(i,kp1), &
                 stats_zm(i) ) ! intent(inout)
 
           ! w'x' term tp is completely implicit; call stat_update_var_pt.
           call stat_update_var_pt( iwpxp_tp, k, & ! intent(in)
-              (-lhs_tp(2,i,k)) * xm(i,km1) & 
+              (-lhs_tp(2,i,k)) * xm(i,k-1) & 
             + (-lhs_tp(1,i,k)) * xm(i,k), & ! intent(in)
               stats_zm(i) ) ! intent(inout)
 
@@ -4931,9 +4931,9 @@ module advance_xm_wpxp_module
 
           ! w'x' term dp1 is completely implicit; call stat_update_var_pt.
           call stat_update_var_pt( iwpxp_dp1, k, & ! intent(in)
-              (-lhs_diff_zm(3,i,k)) * wpxp(i,km1) & 
+              (-lhs_diff_zm(2+gr%grid_dir_indx,i,k)) * wpxp(i,km1) & 
             + (-lhs_diff_zm(2,i,k)) * wpxp(i,k) & 
-            + (-lhs_diff_zm(1,i,k)) * wpxp(i,kp1), & ! intent(in)
+            + (-lhs_diff_zm(2-gr%grid_dir_indx,i,k)) * wpxp(i,kp1), & ! intent(in)
               stats_zm(i) ) ! intent(inout)
 
         end do ! wpxp loop: 2..nzm-1

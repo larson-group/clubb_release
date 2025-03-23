@@ -1914,40 +1914,62 @@ module advance_windm_edsclrm_module
 
     ! Finalize implicit contributions for xm
 
-    do k = 1, nzt-1, 1
+    ! Lower boundary conditions
+    k   = gr%k_lb_zt
+    kp1 = k+gr%grid_dir_indx
 
-      km1 = max( k-1, 1 )
-      kp1 = min( k+1, nzt )
+    ! xm mean advection
+    ! xm term ma is completely implicit; call stat_update_var_pt.
+    call stat_update_var_pt( ixm_ma, k, & ! intent(in)
+           - lhs_ma_zt(2,k) * xm(k)     &
+           - lhs_ma_zt(2-gr%grid_dir_indx,k) * xm(kp1),  & ! intent(in)
+            stats_zt )                    ! intent(inout)
+
+    ! xm turbulent transport (implicit component)
+    ! xm term ta has both implicit and explicit components;
+    ! call stat_end_update_pt.
+    call stat_end_update_pt( ixm_ta, k,               & ! intent(in)
+           + ( - 0.5_core_rknd * lhs_diff(2,k)        &
+               + imp_sfc_flux(k) ) * xm(k)            &         
+           - 0.5_core_rknd * lhs_diff(2-gr%grid_dir_indx,k) * xm(kp1), & ! intent(in) 
+         stats_zt )                                     ! intent(inout)
+
+
+    ! Interior domain
+    do k = 2, nzt-1, 1
+
+      km1 = k-gr%grid_dir_indx
+      kp1 = k+gr%grid_dir_indx
 
       ! xm mean advection
       ! xm term ma is completely implicit; call stat_update_var_pt.
       call stat_update_var_pt( ixm_ma, k, & ! intent(in)
-             - lhs_ma_zt(3,k) * xm(km1)   &
+             - lhs_ma_zt(2+gr%grid_dir_indx,k) * xm(km1)   &
              - lhs_ma_zt(2,k) * xm(k)     &
-             - lhs_ma_zt(1,k) * xm(kp1),  & ! intent(in)
+             - lhs_ma_zt(2-gr%grid_dir_indx,k) * xm(kp1),  & ! intent(in)
               stats_zt )                    ! intent(inout)
 
       ! xm turbulent transport (implicit component)
       ! xm term ta has both implicit and explicit components;
       ! call stat_end_update_pt.
       call stat_end_update_pt( ixm_ta, k,               & ! intent(in)
-             - 0.5_core_rknd * lhs_diff(3,k) * xm(km1)  &
+             - 0.5_core_rknd * lhs_diff(2+gr%grid_dir_indx,k) * xm(km1) &
              + ( - 0.5_core_rknd * lhs_diff(2,k)        &
                  + imp_sfc_flux(k) ) * xm(k)               &         
-             - 0.5_core_rknd * lhs_diff(1,k) * xm(kp1), & ! intent(in) 
+             - 0.5_core_rknd * lhs_diff(2-gr%grid_dir_indx,k) * xm(kp1), & ! intent(in) 
            stats_zt )                                     ! intent(inout)
 
     enddo
 
 
     ! Upper boundary conditions
-    k   = nzt
-    km1 = max( k-1, 1 )
+    k   = gr%k_ub_zt
+    km1 = k-gr%grid_dir_indx
 
     ! xm mean advection
     ! xm term ma is completely implicit; call stat_update_var_pt.
     call stat_update_var_pt( ixm_ma, k, & ! intent(in)
-           - lhs_ma_zt(3,k) * xm(km1)   &
+           - lhs_ma_zt(2+gr%grid_dir_indx,k) * xm(km1)   &
            - lhs_ma_zt(2,k) * xm(k),    & ! intent(in)
             stats_zt )                    ! intent(inout)
 
@@ -1955,7 +1977,7 @@ module advance_windm_edsclrm_module
     ! xm term ta has both implicit and explicit components;
     ! call stat_end_update_pt.
     call stat_end_update_pt( ixm_ta, k,               & ! intent(in)
-           - 0.5_core_rknd * lhs_diff(3,k) * xm(km1)  &
+           - 0.5_core_rknd * lhs_diff(2+gr%grid_dir_indx,k) * xm(km1)  &
            + ( - 0.5_core_rknd * lhs_diff(2,k)        &
                + imp_sfc_flux(k) ) * xm(k),              & ! intent(in)
            stats_zt )                                   ! intent(inout)

@@ -754,7 +754,7 @@ module advance_xp2_xpyp_module
 
       if ( stats_metadata%l_stats_samp ) then
         do i = 1, ngrdcol
-          call xp2_xpyp_implicit_stats( nzm, xp2_xpyp_up2, up2(i,:), & !intent(in)
+          call xp2_xpyp_implicit_stats( nzm, xp2_xpyp_up2, gr, up2(i,:), & !intent(in)
                                         gamma_over_implicit_ts*lhs_dp1_C14(i,:), &
                                         gamma_over_implicit_ts*lhs_dp1_C4(i,:), &
                                         lhs_diff_uv(:,i,:), lhs_ta_wpup2(:,i,:), lhs_ma(:,i,:), &
@@ -797,7 +797,7 @@ module advance_xp2_xpyp_module
 
       if ( stats_metadata%l_stats_samp ) then
         do i = 1, ngrdcol
-          call xp2_xpyp_implicit_stats( nzm, xp2_xpyp_vp2, vp2(i,:), & !intent(in)
+          call xp2_xpyp_implicit_stats( nzm, xp2_xpyp_vp2, gr, vp2(i,:), & !intent(in)
                                         gamma_over_implicit_ts*lhs_dp1_C14(i,:), &
                                         gamma_over_implicit_ts*lhs_dp1_C4(i,:), &
                                         lhs_diff_uv(:,i,:), lhs_ta_wpvp2(:,i,:), lhs_ma(:,i,:), &
@@ -875,13 +875,13 @@ module advance_xp2_xpyp_module
         !$acc              lhs_ma, vp2, lhs_dp1_C4, lhs_dp1_C14 )
 
         do i = 1, ngrdcol
-          call xp2_xpyp_implicit_stats( nzm, xp2_xpyp_up2, up2(i,:), & !intent(in)
+          call xp2_xpyp_implicit_stats( nzm, xp2_xpyp_up2, gr, up2(i,:), & !intent(in)
                                         gamma_over_implicit_ts*lhs_dp1_C14(i,:), &
                                         gamma_over_implicit_ts*lhs_dp1_C4(i,:), &
                                         lhs_diff_uv(:,i,:), lhs_ta_wpup2(:,i,:), lhs_ma(:,i,:), &
                                         stats_metadata, & 
                                         stats_zm(i) ) ! intent(inout)
-          call xp2_xpyp_implicit_stats( nzm, xp2_xpyp_vp2, vp2(i,:), & !intent(in)
+          call xp2_xpyp_implicit_stats( nzm, xp2_xpyp_vp2, gr, vp2(i,:), & !intent(in)
                                         gamma_over_implicit_ts*lhs_dp1_C14(i,:), &
                                         gamma_over_implicit_ts*lhs_dp1_C4(i,:), &
                                         lhs_diff_uv(:,i,:), lhs_ta_wpup2(:,i,:), lhs_ma(:,i,:), &
@@ -1845,17 +1845,17 @@ module advance_xp2_xpyp_module
       zeros(:) = zero
 
       do i = 1, ngrdcol
-        call xp2_xpyp_implicit_stats( nzm, xp2_xpyp_rtp2, rtp2(i,:), & !intent(in)
+        call xp2_xpyp_implicit_stats( nzm, xp2_xpyp_rtp2, gr, rtp2(i,:), & !intent(in)
                                       lhs_dp1(i,:), zeros(:), &
                                       lhs_diff(:,i,:), lhs_ta(:,i,:), lhs_ma(:,i,:), &
                                       stats_metadata, &
                                       stats_zm(i) ) ! intent(inout)
-        call xp2_xpyp_implicit_stats( nzm, xp2_xpyp_thlp2, thlp2(i,:), & !intent(in)
+        call xp2_xpyp_implicit_stats( nzm, xp2_xpyp_thlp2, gr, thlp2(i,:), & !intent(in)
                                       lhs_dp1(i,:), zeros(:), &
                                       lhs_diff(:,i,:), lhs_ta(:,i,:), lhs_ma(:,i,:), &
                                       stats_metadata, &
                                       stats_zm(i) ) ! intent(inout)
-        call xp2_xpyp_implicit_stats( nzm, xp2_xpyp_rtpthlp, rtpthlp(i,:), & !intent(in)
+        call xp2_xpyp_implicit_stats( nzm, xp2_xpyp_rtpthlp, gr, rtpthlp(i,:), & !intent(in)
                                       lhs_dp1(i,:), zeros(:), &
                                       lhs_diff(:,i,:), lhs_ta(:,i,:), lhs_ma(:,i,:), &
                                       stats_metadata, &
@@ -2130,7 +2130,7 @@ module advance_xp2_xpyp_module
 
       zeros(:,:) = zero
       do i = 1, ngrdcol
-        call xp2_xpyp_implicit_stats( nzm, xp2_xpyp_rtp2, rtp2(i,:), & !intent(in)
+        call xp2_xpyp_implicit_stats( nzm, xp2_xpyp_rtp2, gr, rtp2(i,:), & !intent(in)
                                       lhs_dp1(i,:), zeros(i,:), &
                                       lhs_diff(:,i,:), lhs_ta_wprtp2(:,i,:), lhs_ma(:,i,:), &
                                       stats_metadata, & 
@@ -2197,7 +2197,7 @@ module advance_xp2_xpyp_module
       !$acc update host( thlp2, lhs_dp1, lhs_diff, lhs_ta_wpthlp2, lhs_ma )
 
       do i = 1, ngrdcol
-        call xp2_xpyp_implicit_stats( nzm, xp2_xpyp_thlp2, thlp2(i,:), & !intent(in)
+        call xp2_xpyp_implicit_stats( nzm, xp2_xpyp_thlp2, gr, thlp2(i,:), & !intent(in)
                                       lhs_dp1(i,:), zeros(i,:), &
                                       lhs_diff(:,i,:), lhs_ta_wpthlp2(:,i,:), lhs_ma(:,i,:), &
                                       stats_metadata, & 
@@ -2264,7 +2264,7 @@ module advance_xp2_xpyp_module
       !$acc update host( rtpthlp, lhs_dp1, lhs_diff, lhs_ta_wprtpthlp, lhs_ma )
 
       do i = 1, ngrdcol
-        call xp2_xpyp_implicit_stats( nzm, xp2_xpyp_rtpthlp, rtpthlp(i,:), & !intent(in)
+        call xp2_xpyp_implicit_stats( nzm, xp2_xpyp_rtpthlp, gr, rtpthlp(i,:), & !intent(in)
                                       lhs_dp1(i,:), zeros(i,:), &
                                       lhs_diff(:,i,:), lhs_ta_wprtpthlp(:,i,:), lhs_ma(:,i,:), &
                                       stats_metadata, &
@@ -2915,7 +2915,7 @@ module advance_xp2_xpyp_module
   end subroutine xp2_xpyp_solve
 
   !=============================================================================
-  subroutine xp2_xpyp_implicit_stats( nzm, solve_type, xapxbp, & !intent(in)
+  subroutine xp2_xpyp_implicit_stats( nzm, solve_type, gr, xapxbp, & !intent(in)
                                       lhs_dp1_C14, lhs_dp1_C4, &
                                       lhs_diff, lhs_ta, lhs_ma, &
                                       stats_metadata, &
@@ -2928,6 +2928,9 @@ module advance_xp2_xpyp_module
     ! References:
     !   None
     !-----------------------------------------------------------------------
+
+    use grid_class, only: &
+        grid
 
     use stats_type_utilities, only: &
         stat_end_update_pt, & ! Procedure(s)
@@ -2953,6 +2956,9 @@ module advance_xp2_xpyp_module
 
     integer, intent(in) :: &
       solve_type ! Variable(s) description
+
+    type( grid ), intent(in) :: &
+      gr
 
     real( kind = core_rknd ), dimension(nzm), intent(in) :: &
       xapxbp ! Computed value of the variable at <t+1> [units vary]
@@ -3035,8 +3041,8 @@ module advance_xp2_xpyp_module
 
     do k = 2, nzm-1
 
-      km1 = max( k-1, 1 )
-      kp1 = min( k+1, nzm )
+      km1 = max( k-gr%grid_dir_indx, 1 )
+      kp1 = min( k+gr%grid_dir_indx, nzm )
 
       ! x'y' term dp1 has both implicit and explicit components;
       ! call stat_end_update_pt.
@@ -3046,24 +3052,24 @@ module advance_xp2_xpyp_module
 
       ! x'y' term dp2 is completely implicit; call stat_update_var_pt.
       call stat_update_var_pt( ixapxbp_dp2, k, &            ! Intent(in)
-                                 (-lhs_diff(3,k)) * xapxbp(km1) & ! Intent(in)
-                               + (-lhs_diff(2,k)) * xapxbp(k) & 
-                               + (-lhs_diff(1,k)) * xapxbp(kp1), &
+             (-lhs_diff(2+gr%grid_dir_indx,k)) * xapxbp(km1) & ! Intent(in)
+           + (-lhs_diff(2,k)) * xapxbp(k) & 
+           + (-lhs_diff(2-gr%grid_dir_indx,k)) * xapxbp(kp1), &
                                stats_zm )                   ! Intent(inout)
 
       ! x'y' term ta has both implicit and explicit components;
       ! call stat_end_update_pt.
       call stat_end_update_pt( ixapxbp_ta, k, &              ! Intent(in)
-                               (-gamma_over_implicit_ts * lhs_ta(3,k)) * xapxbp(km1) &  ! Intent(in)
-                             + (-gamma_over_implicit_ts * lhs_ta(2,k)) * xapxbp(k) &  
-                             + (-gamma_over_implicit_ts * lhs_ta(1,k)) * xapxbp(kp1), &
-                             stats_zm )                    ! Intent(inout)
+             (-gamma_over_implicit_ts * lhs_ta(2+gr%grid_dir_indx,k)) * xapxbp(km1) & ! Intent(in)
+           + (-gamma_over_implicit_ts * lhs_ta(2,k)) * xapxbp(k) &  
+           + (-gamma_over_implicit_ts * lhs_ta(2-gr%grid_dir_indx,k)) * xapxbp(kp1), &
+                               stats_zm )                    ! Intent(inout)
 
       ! x'y' term ma is completely implicit; call stat_update_var_pt.
       call stat_update_var_pt( ixapxbp_ma, k, &              ! Intent(in)
-                                 (-lhs_ma(3,k)) * xapxbp(km1) &  ! Intent(in)
-                               + (-lhs_ma(2,k)) * xapxbp(k) & 
-                               + (-lhs_ma(1,k)) * xapxbp(kp1), &
+             (-lhs_ma(2+gr%grid_dir_indx,k)) * xapxbp(km1) & ! Intent(in)
+           + (-lhs_ma(2,k)) * xapxbp(k) & 
+           + (-lhs_ma(2-gr%grid_dir_indx,k)) * xapxbp(kp1), &
                                stats_zm )                    ! Intent(inout)
 
       ! x'y' term pr1 has both implicit and explicit components;
@@ -3288,10 +3294,12 @@ module advance_xp2_xpyp_module
     do k = 2, nzm-1, 1
       do i = 1, ngrdcol
         
-        rhs(i,k) = rhs(i,k) + ( one - gamma_over_implicit_ts ) &
-                             * ( - lhs_ta(1,i,k) * xap2(i,k+1) &
-                                 - lhs_ta(2,i,k) * xap2(i,k) &
-                                 - lhs_ta(3,i,k) * xap2(i,k-1) )
+        rhs(i,k) &
+        = rhs(i,k) &
+          + ( one - gamma_over_implicit_ts ) &
+            * ( - lhs_ta(2-gr%grid_dir_indx,i,k) * xap2(i,k+gr%grid_dir_indx) &
+                - lhs_ta(2,i,k) * xap2(i,k) &
+                - lhs_ta(2+gr%grid_dir_indx,i,k) * xap2(i,k-gr%grid_dir_indx) )
 
         ! RHS turbulent production (tp) term.
         ! https://arxiv.org/pdf/1711.03675v1.pdf#nameddest=url:up2_pr 
@@ -3358,10 +3366,10 @@ module advance_xp2_xpyp_module
                                      stats_zm(i) )          ! Intent(inout)
 
           call stat_modify_pt( ixapxbp_ta, k,  &          ! Intent(in)
-                               + ( one - gamma_over_implicit_ts )  & ! Intent(in)
-                                 * ( - lhs_ta(1,i,k) * xap2(i,k+1) &
-                                     - lhs_ta(2,i,k) * xap2(i,k) &
-                                     - lhs_ta(3,i,k) * xap2(i,k-1) ), &
+               + ( one - gamma_over_implicit_ts )  & ! Intent(in)
+                 * ( - lhs_ta(2-gr%grid_dir_indx,i,k) * xap2(i,k+gr%grid_dir_indx) &
+                     - lhs_ta(2,i,k) * xap2(i,k) &
+                     - lhs_ta(2+gr%grid_dir_indx,i,k) * xap2(i,k-gr%grid_dir_indx) ), &
                                stats_zm(i) )                 ! Intent(inout)
 
           if ( ixapxbp_pr1 > 0 ) then
@@ -3636,10 +3644,12 @@ module advance_xp2_xpyp_module
     !$acc parallel loop gang vector collapse(2) default(present)
     do k = 2, nzm-1
       do i = 1, ngrdcol
-        rhs(i,k) = rhs_ta(i,k) + ( one - gamma_over_implicit_ts ) &
-                             * ( - lhs_ta(1,i,k) * xapxbp(i,k+1) &
-                                 - lhs_ta(2,i,k) * xapxbp(i,k) &
-                                 - lhs_ta(3,i,k) * xapxbp(i,k-1) )
+        rhs(i,k) &
+        = rhs_ta(i,k) &
+          + ( one - gamma_over_implicit_ts ) &
+            * ( - lhs_ta(2-gr%grid_dir_indx,i,k) * xapxbp(i,k+gr%grid_dir_indx) &
+                - lhs_ta(2,i,k) * xapxbp(i,k) &
+                - lhs_ta(2+gr%grid_dir_indx,i,k) * xapxbp(i,k-gr%grid_dir_indx) )
 
         ! RHS turbulent production (tp) term.
         rhs(i,k) = rhs(i,k) + rhs_term_tp(i,k)
@@ -3742,10 +3752,10 @@ module advance_xp2_xpyp_module
                                      stats_zm(i) )       ! Intent(inout)
 
           call stat_modify_pt( ixapxbp_ta, k, &             ! Intent(in)
-                               + ( one - gamma_over_implicit_ts ) & ! Intent(in)
-                                 * ( - lhs_ta(1,i,k) * xapxbp(i,k+1) &
-                                     - lhs_ta(2,i,k) * xapxbp(i,k) &
-                                     - lhs_ta(3,i,k) * xapxbp(i,k-1) ), &
+               + ( one - gamma_over_implicit_ts ) & ! Intent(in)
+                 * ( - lhs_ta(2-gr%grid_dir_indx,i,k) * xapxbp(i,k+gr%grid_dir_indx) &
+                     - lhs_ta(2,i,k) * xapxbp(i,k) &
+                     - lhs_ta(2+gr%grid_dir_indx,i,k) * xapxbp(i,k-gr%grid_dir_indx) ), &
                                stats_zm(i) )                   ! Intent(inout)
 
           ! x'y' term dp1 has both implicit and explicit components; call
@@ -5038,7 +5048,7 @@ module advance_xp2_xpyp_module
           term_wprtp2_explicit_zm(:,:) = zt2zm_api( nzm, nzt, ngrdcol, gr, &
                                             pdf_implicit_coefs_terms%term_wprtp2_explicit(:,:) )
           sgn_t_vel_rtp2(:,:) = sign(one, ( coef_wprtp2_implicit_zm(:,:) * rtp2(:,:) &
-                                        + term_wprtpthlp_explicit_zm(:,:) ) * rtp2(:,:))
+                                        + term_wprtp2_explicit_zm(:,:) ) * rtp2(:,:))
         endif
 
         ! Calculate the LHS turbulent advection term for <w'rt'^2>

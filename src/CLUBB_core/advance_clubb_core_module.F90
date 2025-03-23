@@ -339,9 +339,6 @@ module advance_clubb_core_module
         smooth_max, &
         calc_Ri_zm
 
-    use interpolation, only: &
-        pvertinterp
-
     use stats_type, only: stats ! Type
     
     use pdf_parameter_module, only: &
@@ -2239,11 +2236,11 @@ module advance_clubb_core_module
 
       if ( edsclr_dim > 1 .and. clubb_config_flags%l_do_expldiff_rtm_thlm ) then
 
-        call pvertinterp( nzt, ngrdcol,                     & ! intent(in)
+        call pvertinterp( nzt, ngrdcol, gr,                 & ! intent(in)
                           p_in_Pa, 70000.0_core_rknd, thlm, & ! intent(in)
                           thlm700 )                           ! intent(out)
 
-        call pvertinterp( nzt, ngrdcol,                       & ! intent(in)
+        call pvertinterp( nzt, ngrdcol, gr,                   & ! intent(in)
                           p_in_Pa, 100000.0_core_rknd, thlm,  & ! intent(in)
                           thlm1000 )                            ! intent(out)
 
@@ -3757,10 +3754,11 @@ module advance_clubb_core_module
 
       !$acc parallel loop gang vector default(present)
       do i = 1, ngrdcol
-        p_in_Pa_zm(i,1) = p_sfc(i)
+        p_in_Pa_zm(i,gr%k_lb_zm) = p_sfc(i)
 
         ! Clip pressure if the extrapolation leads to a negative value of pressure
-        p_in_Pa_zm(i,nzm) = max( p_in_Pa_zm(i,nzm), 0.5_core_rknd*p_in_Pa(i,nzt) )
+        p_in_Pa_zm(i,gr%k_ub_zm) &
+        = max( p_in_Pa_zm(i,gr%k_ub_zm), 0.5_core_rknd * p_in_Pa(i,gr%k_ub_zt) )
       end do
       !$acc end parallel loop
 
@@ -4971,10 +4969,14 @@ module advance_clubb_core_module
       !   ldgrant June 2009
       !--------------------------------------------------------------------
 
-      use grid_class, only: grid
+      use constants_clubb, only: &
+          one_half
+
+      use grid_class, only: &
+          grid
 
       use clubb_precision, only: &
-        core_rknd ! Variable(s)
+          core_rknd ! Variable(s)
 
       implicit none
 
@@ -5014,10 +5016,14 @@ module advance_clubb_core_module
 
           ! Trapezoidal rule from calculus
           variable_zt(i,k) &
-          = 0.5_core_rknd * ( variable_zm(i,k_zmp1) + variable_zt(i,k) ) &
-            * ( gr%zm(i,k_zmp1) - gr%zt(i,k) ) * gr%invrs_dzt(i,k) &
-            + 0.5_core_rknd * ( variable_zt(i,k) + variable_zm(i,k_zm) ) &
-              * ( gr%zt(i,k) - gr%zm(i,k_zm) ) * gr%invrs_dzt(i,k)
+          = one_half &
+            * ( variable_zm(i,k_zmp1) + variable_zt(i,k) ) &
+            * ( gr%zm(i,k_zmp1) - gr%zt(i,k) ) &
+            * gr%grid_dir * gr%invrs_dzt(i,k) &
+            + one_half &
+              * ( variable_zt(i,k) + variable_zm(i,k_zm) ) &
+              * ( gr%zt(i,k) - gr%zm(i,k_zm) ) &
+              * gr%grid_dir * gr%invrs_dzt(i,k)
 
         end do
       end do ! k = gr%k_lb_zt, gr%k_ub_zt, gr%grid_dir_indx
@@ -5039,7 +5045,11 @@ module advance_clubb_core_module
       !   ldgrant Feb. 2010
       !--------------------------------------------------------------------
 
-      use grid_class, only: grid
+      use constants_clubb, only: &
+          one_half
+
+      use grid_class, only: &
+          grid
 
       use clubb_precision, only: &
           core_rknd ! Variable(s)
@@ -5085,10 +5095,14 @@ module advance_clubb_core_module
 
           ! Trapezoidal rule from calculus
           variable_zm(i,k) &
-          = 0.5_core_rknd * ( variable_zt(i,k_zt) + variable_zm(i,k) ) &
-            * ( gr%zt(i,k_zt) - gr%zm(i,k) ) * gr%invrs_dzm(i,k) &
-            + 0.5_core_rknd * ( variable_zm(i,k) + variable_zt(i,k_ztm1) ) &
-              * ( gr%zm(i,k) - gr%zt(i,k_ztm1) ) * gr%invrs_dzm(i,k)
+          = one_half &
+            * ( variable_zt(i,k_zt) + variable_zm(i,k) ) &
+            * ( gr%zt(i,k_zt) - gr%zm(i,k) ) &
+            * gr%grid_dir * gr%invrs_dzm(i,k) &
+            + one_half &
+              * ( variable_zm(i,k) + variable_zt(i,k_ztm1) ) &
+              * ( gr%zm(i,k) - gr%zt(i,k_ztm1) ) &
+              * gr%grid_dir * gr%invrs_dzm(i,k)
 
         end do
       end do 
@@ -5471,7 +5485,105 @@ module advance_clubb_core_module
       return
     end subroutine set_Lscale_max
 
-!===============================================================================
+  !-------------------------------------------------------------------------------
+  subroutine pvertinterp( nzt, ngrdcol, gr, &
+                          p_mid, p_out, input_var, &
+                          interp_var )
+
+    use grid_class, only: &
+        grid    ! Type(s)
+
+    use clubb_precision, only: &
+        core_rknd
+     
+    implicit none
+    
+    !------------------------ Input Variables ------------------------
+    integer , intent(in)  :: &
+      nzt, &
+      ngrdcol
+
+    type( grid ), intent(in) :: &
+      gr
+
+    real( kind = core_rknd ), dimension(ngrdcol,nzt), intent(in)  :: &
+      p_mid,      & ! input level pressure levels
+      input_var     ! input  array
+
+    real( kind = core_rknd ), intent(in)  :: &
+      p_out         ! output pressure level
+
+    !------------------------ Output Variables ------------------------
+    real( kind = core_rknd ), dimension(ngrdcol), intent(out) :: &
+      interp_var    ! output array (interpolated)   
+    
+    !------------------------ Local Variables ------------------------
+    integer :: &
+      i, k,   & ! Loop indices
+      k_upper    ! Level indices for interpolation
+
+    real( kind = core_rknd ) :: &
+      dpu,  & ! upper level pressure difference
+      dpl     ! lower level pressure difference
+
+    logical :: &
+      l_found,  & ! true if input levels found   	
+      l_error     ! true if error     
+
+    !------------------------ Begin Code ------------------------
+    
+    ! Initialize index array and logical flags
+    l_error = .false.
+
+    ! If we've fallen through the k=1,nz-1 loop, we cannot interpolate and
+    ! must extrapolate from the bottom or top data level for at least some
+    ! of the longitude points.
+    !$acc parallel loop gang vector default(present)
+    do i = 1, ngrdcol
+
+      if ( p_out >= p_mid(i,gr%k_lb_zt) ) then
+
+        interp_var(i) = input_var(i,gr%k_lb_zt)
+
+      elseif ( p_out <= p_mid(i,gr%k_ub_zt) ) then
+
+        interp_var(i) = input_var(i,gr%k_ub_zt)
+
+      else
+
+        l_found = .false.
+        k_upper = 1
+
+        ! Store level indices for interpolation.
+        ! If all indices for this level have been found,
+        ! do the interpolation
+        do k = gr%k_lb_zt, gr%k_ub_zt-gr%grid_dir_indx, gr%grid_dir_indx
+          if ( p_mid(i,k) > p_out .and. p_out >= p_mid(i,k+gr%grid_dir_indx) ) then
+            l_found = .true.
+            k_upper = k
+            exit
+          end if
+        end do
+
+        if ( .not. l_found ) then
+          l_error = .true.
+        end if
+
+        dpu = p_mid(i,k_upper) - p_out
+        dpl = p_out - p_mid(i,k_upper+gr%grid_dir_indx)
+        interp_var(i) = ( input_var(i,k_upper)*dpl &
+                          + input_var(i,k_upper+gr%grid_dir_indx)*dpu ) &
+                        / ( dpl + dpu )
+      end if
+
+    end do
+    !$acc end parallel loop
+     
+    return
+
+  end subroutine pvertinterp
+
+  !=============================================================================
   subroutine calculate_thlp2_rad( ngrdcol, nzm, nzt, gr, & ! Intent(in)
                                   rcm, thlprcp, radht, clubb_params, & ! Intent(in)
                                   thlp2_forcing )                  ! Intent(inout)

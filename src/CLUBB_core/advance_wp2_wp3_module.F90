@@ -474,15 +474,10 @@ module advance_wp2_wp3_module
     !    are hardwired.
 
     if ( l_use_C11_Richardson ) then
-      ! Note: C11_Skw_fnc is a thermodynamic-level variable, but
-      !       Cx_fnc_Richardson is a momentum-level variable.
-      !$acc parallel loop gang vector collapse(2) default(present)
-      do k = 1, nzt
-        do i = 1, ngrdcol
-          C11_Skw_fnc(i,k) = Cx_fnc_Richardson(i,k+1)
-        end do
-      end do
-      !$acc end parallel loop
+
+      C11_Skw_fnc = zm2zt_api( nzm, nzt, ngrdcol, gr, Cx_fnc_Richardson, &
+                               zero_threshold )
+
     else
 
       !$acc parallel loop gang vector collapse(2) default(present)
@@ -1645,8 +1640,8 @@ module advance_wp2_wp3_module
         ! Finalize implicit contributions for wp2
         do k = 2, nzm-1
 
-          km1 = max( k-1, 1 )
-          kp1 = min( k+1, nzm )
+          km1 = max( k-gr%grid_dir_indx, 1 )
+          kp1 = min( k+gr%grid_dir_indx, nzm )
 
           ! w'^2 term dp1 has both implicit and explicit components;
           ! Note:  An "over-implicit" weighted time step is applied to this term.
@@ -1664,29 +1659,29 @@ module advance_wp2_wp3_module
           ! completely implicit; call stat_update_var_pt.
           if ( l_crank_nich_diff .or. l_use_tke_in_wp2_wp3_K_dfsn ) then
              call stat_end_update_pt( stats_metadata%iwp2_dp2, k,  & ! intent(in)
-                - lhs_diff_zm(3,i,k) * wp2(i,km1)   & 
+                - lhs_diff_zm(2+gr%grid_dir_indx,i,k) * wp2(i,km1)   & 
                 - lhs_diff_zm(2,i,k) * wp2(i,k)     & 
-                - lhs_diff_zm(1,i,k) * wp2(i,kp1),  & ! intent(in)
+                - lhs_diff_zm(2-gr%grid_dir_indx,i,k) * wp2(i,kp1),  & ! intent(in)
                   stats_zm(i) )                       ! intent(inout)
           else
              call stat_update_var_pt( stats_metadata%iwp2_dp2, k,  & ! intent(in)
-                - lhs_diff_zm(3,i,k) * wp2(i,km1)   & 
+                - lhs_diff_zm(2+gr%grid_dir_indx,i,k) * wp2(i,km1)   & 
                 - lhs_diff_zm(2,i,k) * wp2(i,k)     & 
-                - lhs_diff_zm(1,i,k) * wp2(i,kp1),  & ! intent(in)
+                - lhs_diff_zm(2-gr%grid_dir_indx,i,k) * wp2(i,kp1),  & ! intent(in)
                   stats_zm(i) )                       ! intent(inout)
           endif
 
           ! w'^2 term ta is completely implicit; call stat_update_var_pt.
           call stat_update_var_pt( stats_metadata%iwp2_ta, k,      & ! intent(in)
-               (- lhs_ta_wp2(2,i,k)) * wp3(i,km1)     & 
+               (- lhs_ta_wp2(2,i,k)) * wp3(i,k-1)     & 
              + (- lhs_ta_wp2(1,i,k)) * wp3(i,k),      & ! intent(in)
              stats_zm(i) )                              ! intent(inout)
 
           ! w'^2 term ma is completely implicit; call stat_update_var_pt.
           call stat_update_var_pt( stats_metadata%iwp2_ma, k,  & ! intent(in)
-             - lhs_ma_zm(3,i,k) * wp2(i,km1)    & 
+             - lhs_ma_zm(2+gr%grid_dir_indx,i,k) * wp2(i,km1)  & 
              - lhs_ma_zm(2,i,k) * wp2(i,k)      & 
-             - lhs_ma_zm(1,i,k) * wp2(i,kp1),   & ! intent(in)
+             - lhs_ma_zm(2-gr%grid_dir_indx,i,k) * wp2(i,kp1), & ! intent(in)
               stats_zm(i) )                       ! intent(inout)
               
           ! w'^2 term ac is completely implicit; call stat_update_var_pt.
@@ -1719,8 +1714,8 @@ module advance_wp2_wp3_module
       do i = 1, ngrdcol
         do k = 2, nzt-1, 1
 
-          km1 = max( k-1, 1 )
-          kp1 = min( k+1, nzt )
+          km1 = max( k-gr%grid_dir_indx, 1 )
+          kp1 = min( k+gr%grid_dir_indx, nzt )
 
           ! w'^3 term pr1 has both implicit and explicit components; 
           ! Note:  An "over-implicit" weighted time step is applied to this term.
@@ -1738,26 +1733,26 @@ module advance_wp2_wp3_module
           ! completely implicit; call stat_update_var_pt.
           if ( l_crank_nich_diff .or. l_use_tke_in_wp2_wp3_K_dfsn ) then
              call stat_end_update_pt( stats_metadata%iwp3_dp1, k,  & ! intent(in)
-                - lhs_diff_zt(3,i,k) * wp3(i,km1)   & 
+                - lhs_diff_zt(2+gr%grid_dir_indx,i,k) * wp3(i,km1)   & 
                 - lhs_diff_zt(2,i,k) * wp3(i,k)     & 
-                - lhs_diff_zt(1,i,k) * wp3(i,kp1),  & ! intent(in)
+                - lhs_diff_zt(2-gr%grid_dir_indx,i,k) * wp3(i,kp1),  & ! intent(in)
                 stats_zt(i) )                         ! intent(inout)
           else
              call stat_update_var_pt( stats_metadata%iwp3_dp1, k,  & ! intent(in)
-                - lhs_diff_zt(3,i,k) * wp3(i,km1)   & 
+                - lhs_diff_zt(2+gr%grid_dir_indx,i,k) * wp3(i,km1)   & 
                 - lhs_diff_zt(2,i,k) * wp3(i,k)     & 
-                - lhs_diff_zt(1,i,k) * wp3(i,kp1),  & ! intent(in)
+                - lhs_diff_zt(2-gr%grid_dir_indx,i,k) * wp3(i,kp1),  & ! intent(in)
                 stats_zt(i) )                         ! intent(inout)
           endif
 
           ! w'^3 term ta has both implicit and explicit components; 
           ! call stat_end_update_pt.
           call stat_end_update_pt( stats_metadata%iwp3_ta, k,                     & ! intent(in)
-           - gamma_over_implicit_ts * wp3_term_ta_lhs_result(5,i,k) * wp3(i,km1)  & 
+           - gamma_over_implicit_ts * wp3_term_ta_lhs_result(5,i,k) * wp3(i,k-1)  & 
            - gamma_over_implicit_ts * wp3_term_ta_lhs_result(4,i,k) * wp2(i,k)    & 
            - gamma_over_implicit_ts * wp3_term_ta_lhs_result(3,i,k) * wp3(i,k)    & 
-           - gamma_over_implicit_ts * wp3_term_ta_lhs_result(2,i,k) * wp2(i,kp1)  & 
-           - gamma_over_implicit_ts * wp3_term_ta_lhs_result(1,i,k) * wp3(i,kp1), & ! intent(in)
+           - gamma_over_implicit_ts * wp3_term_ta_lhs_result(2,i,k) * wp2(i,k+1)  & 
+           - gamma_over_implicit_ts * wp3_term_ta_lhs_result(1,i,k) * wp3(i,k+1), & ! intent(in)
            stats_zt(i) )                                                            ! intent(inout)
 
           ! w'^3 term tp has both implicit and explicit components; 
@@ -1767,30 +1762,30 @@ module advance_wp2_wp3_module
           !        advection (ta) term).
           call stat_end_update_pt( stats_metadata%iwp3_tp, k,               & ! intent(in)
              - gamma_over_implicit_ts * lhs_adv_tp_wp3(2,i,k) * wp2(i,k)    & 
-             - gamma_over_implicit_ts * lhs_adv_tp_wp3(1,i,k) * wp2(i,kp1), & ! intent(in)
+             - gamma_over_implicit_ts * lhs_adv_tp_wp3(1,i,k) * wp2(i,k+1), & ! intent(in)
              stats_zt(i) )                                                    ! intent(inout)
 
           ! w'^3 term pr_tp same as above tp term but opposite sign.
           call stat_end_update_pt( stats_metadata%iwp3_pr_tp, k,           & ! intent(in)
              - gamma_over_implicit_ts * lhs_pr_tp_wp3(2,i,k) * wp2(i,k)    &
-             - gamma_over_implicit_ts * lhs_pr_tp_wp3(1,i,k) * wp2(i,kp1), & ! intent(in)
+             - gamma_over_implicit_ts * lhs_pr_tp_wp3(1,i,k) * wp2(i,k+1), & ! intent(in)
              stats_zt(i) )                                                   ! intent(inout)
 
           ! w'^3 pressure term 3 (pr3) has both implicit and explicit components;
           ! call stat_end_update_pt
           call stat_end_update_pt( stats_metadata%iwp3_pr3, k, & ! intent(in)
-           - wp3_pr3_lhs(5,i,k) * wp3(i,km1)    &
+           - wp3_pr3_lhs(5,i,k) * wp3(i,k-1)    &
            - wp3_pr3_lhs(4,i,k) * wp2(i,k)      &
            - wp3_pr3_lhs(3,i,k) * wp3(i,k)      &
-           - wp3_pr3_lhs(2,i,k) * wp2(i,kp1)    &
-           - wp3_pr3_lhs(1,i,k) * wp3(i,kp1),   & ! intent(in)
+           - wp3_pr3_lhs(2,i,k) * wp2(i,k+1)    &
+           - wp3_pr3_lhs(1,i,k) * wp3(i,k+1),   & ! intent(in)
              stats_zt(i) )                        ! intent(inout)
 
           ! w'^3 term ma is completely implicit; call stat_update_var_pt.
           call stat_update_var_pt( stats_metadata%iwp3_ma, k,  & ! intent(in)
-             - lhs_ma_zt(3,i,k) * wp3(i,km1)    & 
+             - lhs_ma_zt(2+gr%grid_dir_indx,i,k) * wp3(i,km1)  & 
              - lhs_ma_zt(2,i,k) * wp3(i,k)      & 
-             - lhs_ma_zt(1,i,k) * wp3(i,kp1),   & ! intent(in)
+             - lhs_ma_zt(2-gr%grid_dir_indx,i,k) * wp3(i,kp1), & ! intent(in)
              stats_zt(i) )                        ! intent(inout)
 
           ! w'^3 term ac is completely implicit; call stat_update_var_pt.
@@ -2545,10 +2540,11 @@ module advance_wp2_wp3_module
       do k = 2, nzm-1
         do i = 1, ngrdcol
           k_wp2 = 2*k - 1
-          rhs(i,k_wp2) = rhs(i,k_wp2) &
-                         - lhs_diff_zm_crank(3,i,k) * wp2(i,k-1) &
-                         - lhs_diff_zm_crank(2,i,k) * wp2(i,k) &
-                         - lhs_diff_zm_crank(1,i,k) * wp2(i,k+1)
+          rhs(i,k_wp2) &
+          = rhs(i,k_wp2) &
+            - lhs_diff_zm_crank(2+gr%grid_dir_indx,i,k) * wp2(i,k-gr%grid_dir_indx) &
+            - lhs_diff_zm_crank(2,i,k) * wp2(i,k) &
+            - lhs_diff_zm_crank(2-gr%grid_dir_indx,i,k) * wp2(i,k+gr%grid_dir_indx)
         end do
       end do
       !$acc end parallel loop
@@ -2557,10 +2553,11 @@ module advance_wp2_wp3_module
       do k = 2, nzt-1
         do i = 1, ngrdcol
           k_wp3 = 2*k
-          rhs(i,k_wp3) = rhs(i,k_wp3) &
-                         - lhs_diff_zt_crank(3,i,k) * wp3(i,k-1) &
-                         - lhs_diff_zt_crank(2,i,k) * wp3(i,k) &
-                         - lhs_diff_zt_crank(1,i,k) * wp3(i,k+1)
+          rhs(i,k_wp3) &
+          = rhs(i,k_wp3) &
+            - lhs_diff_zt_crank(2+gr%grid_dir_indx,i,k) * wp3(i,k-gr%grid_dir_indx) &
+            - lhs_diff_zt_crank(2,i,k) * wp3(i,k) &
+            - lhs_diff_zt_crank(2-gr%grid_dir_indx,i,k) * wp3(i,k+gr%grid_dir_indx)
         end do
       end do
       !$acc end parallel loop
@@ -2581,10 +2578,13 @@ module advance_wp2_wp3_module
       do k = 2, nzm-1
         do i = 1, ngrdcol
           k_wp2 = 2*k - 1
-          rhs(i,k_wp2) = rhs(i,k_wp2) &
-                         - lhs_diff_zm(3,i,k) * ( up2(i,k-1) + vp2(i,k-1) ) &
-                         - lhs_diff_zm(2,i,k) * ( up2(i,k)   + vp2(i,k) ) &
-                         - lhs_diff_zm(1,i,k) * ( up2(i,k+1) + vp2(i,k+1) )
+          rhs(i,k_wp2) &
+          = rhs(i,k_wp2) &
+            - lhs_diff_zm(2+gr%grid_dir_indx,i,k) &
+              * ( up2(i,k-gr%grid_dir_indx) + vp2(i,k-gr%grid_dir_indx) ) &
+            - lhs_diff_zm(2,i,k) * ( up2(i,k)   + vp2(i,k) ) &
+            - lhs_diff_zm(2-gr%grid_dir_indx,i,k) &
+              * ( up2(i,k+gr%grid_dir_indx) + vp2(i,k+gr%grid_dir_indx) )
         end do
       end do
       !$acc end parallel loop
@@ -2593,10 +2593,13 @@ module advance_wp2_wp3_module
       do k = 2, nzt-1
         do i = 1, ngrdcol
           k_wp3 = 2*k
-          rhs(i,k_wp3) = rhs(i,k_wp3) &
-                         - lhs_diff_zt(3,i,k) * ( wpup2(i,k-1) + wpvp2(i,k-1) ) &
-                         - lhs_diff_zt(2,i,k) * ( wpup2(i,k)   + wpvp2(i,k) ) &
-                         - lhs_diff_zt(1,i,k) * ( wpup2(i,k+1) + wpvp2(i,k+1) )
+          rhs(i,k_wp3) &
+          = rhs(i,k_wp3) &
+            - lhs_diff_zt(2+gr%grid_dir_indx,i,k) &
+              * ( wpup2(i,k-gr%grid_dir_indx) + wpvp2(i,k-gr%grid_dir_indx) ) &
+            - lhs_diff_zt(2,i,k) * ( wpup2(i,k)   + wpvp2(i,k) ) &
+            - lhs_diff_zt(2+gr%grid_dir_indx,i,k) &
+              * ( wpup2(i,k+gr%grid_dir_indx) + wpvp2(i,k+gr%grid_dir_indx) )
         end do
       end do
       !$acc end parallel loop
@@ -2869,10 +2872,10 @@ module advance_wp2_wp3_module
           ! will not be called.
           if ( l_crank_nich_diff ) then
             call stat_begin_update_pt( stats_metadata%iwp2_dp2, k,   & ! intent(in)
-              lhs_diff_zm_crank(3,i,k) * wp2(i,k-1)   &  
+              lhs_diff_zm_crank(2+gr%grid_dir_indx,i,k) * wp2(i,k-gr%grid_dir_indx)  &  
             + lhs_diff_zm_crank(2,i,k) * wp2(i,k)     & 
-            + lhs_diff_zm_crank(1,i,k) * wp2(i,k+1),  & ! intent(in)
-              stats_zm(i) )                             ! intent(out)
+            + lhs_diff_zm_crank(2-gr%grid_dir_indx,i,k) * wp2(i,k+gr%grid_dir_indx), & ! intent(in)
+                                       stats_zm(i) )                   ! intent(out)
           endif
 
           ! w'^2 term dp2 and w'^3 term dp1 have both implicit and explicit 
@@ -2880,10 +2883,12 @@ module advance_wp2_wp3_module
           ! call stat_begin_update_pt.
           if ( l_use_tke_in_wp2_wp3_K_dfsn ) then
             call stat_begin_update_pt( stats_metadata%iwp2_dp2, k, &
-                       + lhs_diff_zm(3,i,k) * ( up2(i,k-1) + vp2(i,k-1) )  &
-                       + lhs_diff_zm(2,i,k) * ( up2(i,k)   + vp2(i,k)   )  &
-                       + lhs_diff_zm(1,i,k) * ( up2(i,k+1) + vp2(i,k+1) ), &
-                         stats_zm(i) )
+            + lhs_diff_zm(2+gr%grid_dir_indx,i,k) &
+              * ( up2(i,k-gr%grid_dir_indx) + vp2(i,k-gr%grid_dir_indx) ) &
+            + lhs_diff_zm(2,i,k) * ( up2(i,k)   + vp2(i,k)   )  &
+            + lhs_diff_zm(2-gr%grid_dir_indx,i,k) &
+              * ( up2(i,k+gr%grid_dir_indx) + vp2(i,k+gr%grid_dir_indx) ), &
+                                       stats_zm(i) )
           endif
 
           ! w'^2 term bp is completely explicit; call stat_update_var_pt.
@@ -3081,9 +3086,9 @@ module advance_wp2_wp3_module
             ! Crank-Nicholson diffusion is not selected, the stat_begin_update_pt 
             ! will not be called.
             call stat_begin_update_pt( stats_metadata%iwp3_dp1, k,      & ! intent(in)
-                                       lhs_diff_zt(3,i,k) * wp3(i,k-1)  & 
-                                     + lhs_diff_zt(2,i,k) * wp3(i,k)    & 
-                                     + lhs_diff_zt(1,i,k) * wp3(i,k+1), & ! intent(in)
+                 lhs_diff_zt(2+gr%grid_dir_indx,i,k) * wp3(i,k-gr%grid_dir_indx)  & 
+               + lhs_diff_zt(2,i,k) * wp3(i,k)    & 
+               + lhs_diff_zt(2-gr%grid_dir_indx,i,k) * wp3(i,k+gr%grid_dir_indx), & ! intent(in)
                                        stats_zt(i) )                      ! intent(out)
           endif
 
@@ -3092,10 +3097,12 @@ module advance_wp2_wp3_module
           ! call stat_begin_update_pt.
           if ( l_use_tke_in_wp2_wp3_K_dfsn ) then
             call stat_begin_update_pt( stats_metadata%iwp3_dp1, k, &
-                       + lhs_diff_zt(3,i,k) * ( wpup2(i,k-1) + wpvp2(i,k-1) ) &
-                       + lhs_diff_zt(2,i,k) * ( wpup2(i,k)   + wpvp2(i,k)   ) &
-                       + lhs_diff_zt(1,i,k) * ( wpup2(i,k+1) + wpvp2(i,k+1) ), &
-                         stats_zt(i) )
+               + lhs_diff_zt(2+gr%grid_dir_indx,i,k) &
+                 * ( wpup2(i,k-gr%grid_dir_indx) + wpvp2(i,k-gr%grid_dir_indx) ) &
+               + lhs_diff_zt(2,i,k) * ( wpup2(i,k) + wpvp2(i,k) ) &
+               + lhs_diff_zt(2-gr%grid_dir_indx,i,k) &
+                 * ( wpup2(i,k+gr%grid_dir_indx) + wpvp2(i,k+gr%grid_dir_indx) ), &
+                                       stats_zt(i) )
           endif
                     
           ! Experimental bouyancy term
@@ -4485,7 +4492,9 @@ module advance_wp2_wp3_module
             lhs_ta_wp3(kp1_tdiag,i,k) &
             = + invrs_rho_ds_zt(i,k) &
                 * gr%invrs_dzt(i,k) * rho_ds_zt(i,k+1) &
-                * min( a1_coef(i,k+1) * wp3_on_wp2(i,k+1), zero )
+                * gr%grid_dir &
+                * min( gr%grid_dir * a1_coef(i,k+1) * wp3_on_wp2(i,k+1), &
+                       zero )
 
             ! Momentum superdiagonal: [ x wp2(k+1,<t+1>) ]
             lhs_ta_wp3(k_mdiag,i,k) &
@@ -4496,8 +4505,11 @@ module advance_wp2_wp3_module
             lhs_ta_wp3(k_tdiag,i,k) &
             = + invrs_rho_ds_zt(i,k) &
                 * gr%invrs_dzt(i,k) * rho_ds_zt(i,k) &
-                * ( max( a1_coef(i,k+1) * wp3_on_wp2(i,k+1), zero ) &
-                    - min( a1_coef(i,k) * wp3_on_wp2(i,k), zero ) )
+                * gr%grid_dir &
+                * ( max( gr%grid_dir * a1_coef(i,k+1) * wp3_on_wp2(i,k+1), &
+                         zero ) &
+                    - min( gr%grid_dir * a1_coef(i,k) * wp3_on_wp2(i,k), &
+                           zero ) )
 
             ! Momentum subdiagonal: [ x wp2(k,<t+1>) ]
             lhs_ta_wp3(km1_mdiag,i,k) &
@@ -4508,7 +4520,9 @@ module advance_wp2_wp3_module
             lhs_ta_wp3(km1_tdiag,i,k) &
             = - invrs_rho_ds_zt(i,k) &
                 * gr%invrs_dzt(i,k) * rho_ds_zt(i,k-1) &
-                * max( a1_coef(i,k) * wp3_on_wp2(i,k), zero )
+                * gr%grid_dir &
+                * max( gr%grid_dir * a1_coef(i,k) * wp3_on_wp2(i,k), &
+                       zero )
 
           enddo
         enddo

@@ -725,7 +725,7 @@ module generalized_grid_test
          pdf_params_zm_flip%ice_supersat_frac_1(i,:) = flip( pdf_params_zm%ice_supersat_frac_1(i,:), nzm )
          pdf_params_zm_flip%ice_supersat_frac_2(i,:) = flip( pdf_params_zm%ice_supersat_frac_2(i,:), nzm )
 
-         ! pdf_implicit_coefs_term
+         ! pdf_implicit_coefs_terms
          pdf_implicit_coefs_terms_flip%coef_wp4_implicit(i,:) &
             = flip( pdf_implicit_coefs_terms%coef_wp4_implicit(i,:), nzt )
          pdf_implicit_coefs_terms_flip%coef_wp2rtp_implicit(i,:) & 
@@ -766,21 +766,21 @@ module generalized_grid_test
             = flip( pdf_implicit_coefs_terms%term_wpvp2_explicit(i,:), nzt )
          if ( sclr_dim > 0 ) then
             do sclr = 1, sclr_dim
-               pdf_implicit_coefs_terms%coef_wp2sclrp_implicit(i,:,sclr) &
+               pdf_implicit_coefs_terms_flip%coef_wp2sclrp_implicit(i,:,sclr) &
                   = flip( pdf_implicit_coefs_terms%coef_wp2sclrp_implicit(i,:,sclr), nzt )
-               pdf_implicit_coefs_terms%term_wp2sclrp_explicit(i,:,sclr) &
+               pdf_implicit_coefs_terms_flip%term_wp2sclrp_explicit(i,:,sclr) &
                   = flip( pdf_implicit_coefs_terms%term_wp2sclrp_explicit(i,:,sclr), nzt )
-               pdf_implicit_coefs_terms%coef_wpsclrp2_implicit(i,:,sclr) &
+               pdf_implicit_coefs_terms_flip%coef_wpsclrp2_implicit(i,:,sclr) &
                   = flip( pdf_implicit_coefs_terms%coef_wpsclrp2_implicit(i,:,sclr), nzt )
-               pdf_implicit_coefs_terms%term_wpsclrp2_explicit(i,:,sclr) &
+               pdf_implicit_coefs_terms_flip%term_wpsclrp2_explicit(i,:,sclr) &
                   = flip( pdf_implicit_coefs_terms%term_wpsclrp2_explicit(i,:,sclr), nzt )
-               pdf_implicit_coefs_terms%coef_wprtpsclrp_implicit(i,:,sclr) &
+               pdf_implicit_coefs_terms_flip%coef_wprtpsclrp_implicit(i,:,sclr) &
                   = flip( pdf_implicit_coefs_terms%coef_wprtpsclrp_implicit(i,:,sclr), nzt )
-               pdf_implicit_coefs_terms%term_wprtpsclrp_explicit(i,:,sclr) &
+               pdf_implicit_coefs_terms_flip%term_wprtpsclrp_explicit(i,:,sclr) &
                   = flip( pdf_implicit_coefs_terms%term_wprtpsclrp_explicit(i,:,sclr), nzt )
-               pdf_implicit_coefs_terms%coef_wpthlpsclrp_implicit(i,:,sclr) &
+               pdf_implicit_coefs_terms_flip%coef_wpthlpsclrp_implicit(i,:,sclr) &
                   = flip( pdf_implicit_coefs_terms%coef_wpthlpsclrp_implicit(i,:,sclr), nzt )
-               pdf_implicit_coefs_terms%term_wpthlpsclrp_explicit(i,:,sclr) &
+               pdf_implicit_coefs_terms_flip%term_wpthlpsclrp_explicit(i,:,sclr) &
                   = flip( pdf_implicit_coefs_terms%term_wpthlpsclrp_explicit(i,:,sclr), nzt )
             enddo
          endif ! sclr_dim > 0
