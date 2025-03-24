@@ -776,6 +776,16 @@ def calcGlobTunedDiff(globTunedNcFilename, defaultNcFilename,
 
     return globTunedDiff
 
+    # Sample call to findOutliers:
+    ## Find outliers by use of the ransac algorithm
+    #outlier_mask, defaultBiasesApproxRansac, normlzdWeightedDefaultBiasesApproxRansac, \
+    #dnormlzdParamsSolnRansac, paramsSolnRansac = \
+    #    findOutliers(normlzdSensMatrix, normlzdWeightedSensMatrix, \
+    #                 defaultBiasesCol, normMetricValsCol, magParamValsRow, defaultParamValsOrigRow)
+    #print( "ransac_outliers = ", metricsNames[outlier_mask] )
+    #print( "ransac_inliers = ", metricsNames[~outlier_mask] )
+    ##pdb.set_trace()
+
 def findOutliers(normlzdSensMatrix, normlzdWeightedSensMatrix, \
                  defaultBiasesCol, normMetricValsCol, magParamValsRow, defaultParamValsOrigRow):
 

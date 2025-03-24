@@ -15,7 +15,7 @@ import numpy as np
 import pandas as pd
 
 
-def setUpInputs(beVerbose):
+def setUpConfig(beVerbose):
     from set_up_inputs import (
         setUp_x_MetricsList,
         setupDefaultMetricValsCol, setUp_x_ObsMetricValsDict,
@@ -23,7 +23,8 @@ def setUpInputs(beVerbose):
     )
 
     # Flag for using bootstrap sampling
-    useBootstrap = False
+    doBootstrapSampling = False
+    numBootstrapSamples = 2
 
     # Number of metrics to tune on
     numMetricsToTune = 162
@@ -332,7 +333,7 @@ def setUpInputs(beVerbose):
     obsMetricValsDict.update(obsMetricValsDictCustom)
 
     # Sanity check: is highlightedMetricsToPlot a subset of metricsNames?
-    if (np.setdiff1d(highlightedMetricsToPlot, metricsNames).size != 0):
+    if np.setdiff1d(highlightedMetricsToPlot, metricsNames).size != 0:
         print("One of the metrics names specified in highlightedMetricsToPlot "
               "does not appear in metricsNames:")
         print(np.setdiff1d(highlightedMetricsToPlot, metricsNames))
@@ -351,7 +352,7 @@ def setUpInputs(beVerbose):
             prescribedSensNcFilenames, prescribedSensNcFilenamesExt,
             sensNcFilenames, sensNcFilenamesExt,
             defaultNcFilename, globTunedNcFilename,
-            reglrCoef, useBootstrap, numMetricsToTune)
+            reglrCoef, doBootstrapSampling, numBootstrapSamples, numMetricsToTune)
 
 
 def abbreviateParamsNames(paramsNames):

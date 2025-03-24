@@ -1,4 +1,10 @@
 # -*- coding: utf-8 -*-
+
+# Run this app with `python3 quadtune_driver.py` and
+# view the plots at http://127.0.0.1:8050/ in your web browser.
+# (To open a web browser on a larson-group computer,
+# login to malan with `ssh -X` and then type `firefox &`.)
+
 import numpy as np
 from scipy.optimize import minimize
 from scipy.optimize import Bounds
@@ -6,13 +12,6 @@ from scipy.interpolate import UnivariateSpline
 from sklearn import linear_model
 
 import matplotlib.pyplot as plt
-
-
-
-# Run this app with `python3 quadtune_driver.py` and
-# view the plots at http://127.0.0.1:8050/ in your web browser.
-# (To open a web browser on a larson-group computer,
-# login to malan with `ssh -X` and then type `firefox &`.)
 
 def main():
     """
@@ -22,7 +21,7 @@ def main():
     create diagnostic plots.
     """
 
-    from config import setUpInputs
+    from config import setUpConfig
     from set_up_inputs \
         import setUpColAndRowVectors, \
                setupDefaultMetricValsCol
@@ -50,13 +49,16 @@ def main():
      prescribedSensNcFilenames, prescribedSensNcFilenamesExt,
      sensNcFilenames, sensNcFilenamesExt,
      defaultNcFilename, globTunedNcFilename,
-     reglrCoef, useBootstrap, numMetricsToTune) \
+     reglrCoef, doBootstrapSampling, numBootstrapSamples, numMetricsToTune) \
     = \
-        setUpInputs(beVerbose=False)
+        setUpConfig(beVerbose=False)
 
     # Number of regional metrics
     numMetrics = len(metricsNames)
 
+    # We apply a tiny weight to the final metrics.
+    #    Those metrics will appear in the diagnostics
+    #    but their errors will not be accounted for in tuning.
     metricsWeights[numMetricsToTune:] = 1e-12
 
     print("Set up preliminaries . . .")
@@ -107,7 +109,7 @@ def main():
 
     # defaultBiasesCol + prescribedBiasesCol = -fwdFnc_tuned_params  (see objFnc).
     #     This lumps the prescribed-parameter adjustment into defaultBiasesCol.
-    # Is it clearer to separate them out???
+    #        but it may be clearer to separate them out.
     # defaultBiasesCol = default simulation - observations
     defaultBiasesCol = defaultBiasesCol + prescribedBiasesCol
 
@@ -124,10 +126,16 @@ def main():
         approxMatrixWithSvd(normlzdSensMatrixPoly, sValsRatio, sValsNumToKeep=None, beVerbose=False)
     normlzdCurvMatrixSvd = \
         approxMatrixWithSvd(normlzdCurvMatrix, sValsRatio, sValsNumToKeep=None, beVerbose=False)
-    if useBootstrap:
-        numSamples = 2
+
+    #######################################################################################################
+    #
+    # Calculate an ensemble of parameter values by doing bootstrap sampling of the regional metrics.
+    #
+    #######################################################################################################
+
+    if doBootstrapSampling:
         paramsSolnNonlin, residualsFullDataCol, residualsBootstrapMatrix, param_bounds_boot, lossesDrop, lossesFullData, lossesLeftOut, lossesInSample =\
-            bootstrap_calculations(numSamples,
+        bootstrap_calculations(numBootstrapSamples,
                                    metricsWeights,
                                    metricsNames,
                                    paramsNames,
@@ -142,7 +150,7 @@ def main():
                                    reglrCoef,
                                    defaultBiasesCol)
 
-        bootstrap_plots(numSamples,
+        bootstrap_plots(numBootstrapSamples,
                         numMetrics,
                         numMetricsToTune,
                         metricsNames,
@@ -157,7 +165,13 @@ def main():
                         lossesFullData)
     else:
         param_bounds_boot = None
-    # start of non-bootstrap part
+
+    ########################################
+    #
+    # Resume non-bootstrap calculations
+    #
+    #########################################
+
     defaultBiasesApproxNonlin, \
     dnormlzdParamsSolnNonlin, paramsSolnNonlin, \
     dnormlzdParamsSolnLin, paramsSolnLin, \
@@ -183,32 +197,8 @@ def main():
         print("{:33s} {:7.7g}".format(paramsNames[idx], paramsSolnNonlin[idx][0] ) )
 
 
-    #defaultBiasesApproxElasticCheck = ( normlzdWeightedSensMatrixPoly @ dnormlzdParamsSolnElastic ) \
-    #                        * np.reciprocal(metricsWeights) * np.abs(normMetricValsCol)
-    #print("defaultBiasesApproxElastic = ", defaultBiasesApproxElastic)
-    #print("defaultBiasesApproxElasticCheck = ", defaultBiasesApproxElasticCheck)
-
-    # Estimate non-linearity of the global model to perturbations in parameter values.
-    # To do so, calculate radius of curvature of the three points from the default simulation
-    #   and the two sensitivity simulations.
-    #calcNormlzdRadiusCurv(metricsNames, paramsNames, transformedParamsNames, paramsScales,
-    #                      metricsWeights, obsMetricValsCol,
-    #                      sensNcFilenames, sensNcFilenamesExt, defaultNcFilename)
-
-
-    ## Find outliers by use of the ransac algorithm
-    #outlier_mask, defaultBiasesApproxRansac, normlzdWeightedDefaultBiasesApproxRansac, \
-    #dnormlzdParamsSolnRansac, paramsSolnRansac = \
-    #    findOutliers(normlzdSensMatrix, normlzdWeightedSensMatrix, \
-    #                 defaultBiasesCol, normMetricValsCol, magParamValsRow, defaultParamValsOrigRow)
-    #print( "ransac_outliers = ", metricsNames[outlier_mask] )
-    #print( "ransac_inliers = ", metricsNames[~outlier_mask] )
-    ##pdb.set_trace()
-
-
     # Check whether the minimizer actually reduces chisqd
     # Initial value of chisqd, which assumes parameter perturbations are zero
-    #normlzdDefaultBiasesCol = defaultBiasesCol/np.abs(normMetricValsCol)
     #normlzdWeightedDefaultBiasesCol = metricsWeights * normlzdDefaultBiasesCol
     chisqdZero = objFnc(np.zeros_like(defaultParamValsOrigRow), \
                         normlzdSensMatrixPoly, normlzdDefaultBiasesCol, metricsWeights, \
@@ -268,6 +258,10 @@ def main():
                      magParamValsRow, defaultParamValsOrigRow,
                      normlzdCurvMatrix,
                      beVerbose=False)
+    #defaultBiasesApproxElasticCheck = ( normlzdWeightedSensMatrixPoly @ dnormlzdParamsSolnElastic ) \
+    #                        * np.reciprocal(metricsWeights) * np.abs(normMetricValsCol)
+    #print("defaultBiasesApproxElastic = ", defaultBiasesApproxElastic)
+    #print("defaultBiasesApproxElasticCheck = ", defaultBiasesApproxElasticCheck)
 
     normlzdLinplusSensMatrixPoly = normlzdSemiLinMatrixFnc(
                                         dnormlzdParamsSolnNonlin, normlzdSensMatrixPoly,
@@ -889,10 +883,6 @@ def findParamsUsingElastic(normlzdSensMatrix, normlzdWeightedSensMatrix, \
 
     return (defaultBiasesApproxElastic, defaultBiasesApproxElasticNonlin, \
             dnormlzdParamsSolnElastic, paramsSolnElastic)
-
-
-
-
 
 
 
