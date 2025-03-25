@@ -258,96 +258,90 @@ app.layout = html.Div([
 ], style={'width': '97%', 'margin': 'auto', 'font-family': 'Arial, sans-serif'})
 
 
-# Step 4: Define callback to update graph when SP/HP are toggled
+# Helper function to create precision traces
+def make_precision_traces(df, prec, peak_perf, mem_bw, color):
+
+    knee_ai = peak_perf / mem_bw
+    min_ai, max_ai = 1e-6, 1e3
+
+    mem_x  = [min_ai, knee_ai]
+    mem_y  = [1e-12 * min_ai * mem_bw, 1e-12 * peak_perf]
+    comp_x = [knee_ai, max_ai]
+    comp_y = [1e-12 * peak_perf, 1e-12 * peak_perf]
+
+    mask = (df[f'AI ({prec})'] > 0) & (df[f'Achieved Performance ({prec})'] > 0)
+    ai = df.loc[mask, f'AI ({prec})']
+    perf = df.loc[mask, f'Achieved Performance ({prec})']
+    kernel_names = df.loc[mask, 'Kernel Name']
+    kernel_times = df.loc[mask, 'Average Duration (s)']
+
+    avg_ai = ai.mean()
+    avg_perf = perf.mean()
+
+    total_time = kernel_times.sum()
+    weighted_avg_ai = (ai * kernel_times).sum() / total_time
+    weighted_avg_perf = (perf * kernel_times).sum() / total_time
+
+    traces = [
+        go.Scatter(
+            x=ai, y=perf, mode='markers', name=f'{prec} Kernels',
+            marker=dict(color=color, symbol='circle', size=8),
+            text=kernel_names,
+            hovertemplate=(
+                "Kernel: %{text}<br>AI: %{x:.3f} FLOPs/Byte"
+                "<br>Performance: %{y:.3e} FLOPs/s<extra></extra>"
+            )
+        ),
+        go.Scatter(
+            x=[avg_ai], y=[avg_perf], mode='markers', name=f'{prec} Average',
+            marker=dict(color='green', symbol='star', size=15),
+            hovertemplate=(
+                "{prec} Average<br>AI: %{x:.3f} FLOPs/Byte"
+                "<br>Performance: %{y:.3e} FLOPs/s<extra></extra>"
+            )
+        ),
+        go.Scatter(
+            x=[weighted_avg_ai], y=[weighted_avg_perf], mode='markers', name=f'{prec} Average (Runtime-Weighted)',
+            marker=dict(color='red', symbol='star', size=15),
+            hovertemplate=(
+                "{prec} Average (Weighted by Runtime)<br>AI: %{x:.3f} FLOPs/Byte"
+                "<br>Performance: %{y:.3e} FLOPs/s<extra></extra>"
+            )
+        ),
+        go.Scatter(
+            x=mem_x, y=mem_y, mode='lines', name=f"{prec} Memory ({mem_bw * 1e-9:.0f} GB/s)",
+            line=dict(color=color, width=2, dash='dash'),
+            hovertemplate=f"{prec} memory-bound: {mem_bw:.3e} * AI<extra></extra>"
+        ),
+        go.Scatter(
+            x=comp_x, y=comp_y, mode='lines', name=f"{prec} Compute (Peak {peak_perf * 1e-12:.2f} TFLOP/s)",
+            line=dict(color=color, width=2, dash='solid'),
+            hovertemplate=f"{prec} compute-bound: {peak_perf:.3e} FLOPs/s<extra></extra>"
+        )
+    ]
+
+    return traces
+
+# Callback definition simplified
 @app.callback(
     dash.dependencies.Output('roofline-graph', 'figure'),
     [dash.dependencies.Input('precision-checklist', 'value')]
 )
 def update_roofline(selected_precisions):
 
-    # Kernel metadata
-    kernel_names = df['Kernel Name']
-    kernel_times = df['Average Duration (s)']
-
-    # Final arrays
-    dp_ai = df['AI (DP)'];    dp_perf = df['Achieved Performance (DP)']
-    sp_ai = df['AI (SP)'];    sp_perf = df['Achieved Performance (SP)']
-    hp_ai = df['AI (HP)'];    hp_perf = df['Achieved Performance (HP)']
-
-    # Compute the "knee" point (AI where compute = memory limit) for each precision&#8203;:contentReference[oaicite:14]{index=14}
-    dp_knee_AI = peak_dp / peak_mem_bandwidth
-    sp_knee_AI = peak_sp / peak_mem_bandwidth
-    hp_knee_AI = peak_hp / peak_mem_bandwidth
-
-    # Choose a small AI for line start and a max AI for line end (cover data range)
-    min_ai = 1e-6#max(1e-3, df[['AI (DP)','AI (SP)','AI (HP)']].min().min())  # smallest non-zero AI in data or ~1e-3
-    max_ai = 1e3#max(df[['AI (DP)','AI (SP)','AI (HP)']].max().max(), hp_knee_AI * 10)  # max data AI or a bit beyond HP knee
-    # (Using hp_knee*10 ensures we show some flat portion even if data AI is low&#8203;:contentReference[oaicite:15]{index=15})
-
-    # Generate coordinates for each precision's roofline:
-    # Memory-bound segment: from min_ai to AI_knee (P = BW * AI)
-    # Compute-bound segment: from AI_knee to max_ai (P = peak compute)
-    dp_mem_x  = [min_ai, dp_knee_AI];         dp_mem_y  = [1e-12 * min_ai * peak_mem_bandwidth, 1e-12 * peak_dp]
-    dp_comp_x = [dp_knee_AI, max_ai];         dp_comp_y = [1e-12 * peak_dp, 1e-12 * peak_dp]
-    sp_mem_x  = [min_ai, sp_knee_AI];         sp_mem_y  = [1e-12 * min_ai * peak_mem_bandwidth, 1e-12 * peak_sp]
-    sp_comp_x = [sp_knee_AI, max_ai];         sp_comp_y = [1e-12 * peak_sp, 1e-12 * peak_sp]
-    hp_mem_x  = [min_ai, hp_knee_AI];         hp_mem_y  = [1e-12 * min_ai * peak_mem_bandwidth, 1e-12 * peak_hp]
-    hp_comp_x = [hp_knee_AI, max_ai];         hp_comp_y = [1e-12 * peak_hp, 1e-12 * peak_hp]
-
     traces = []
 
-    # If HP selected, add HP points and roofline
+    # DP is default if no selection
     if 'DP' in selected_precisions or len(selected_precisions) == 0:
-      traces.extend([
-          go.Scatter(x=dp_ai, y=dp_perf, mode='markers', name='DP Kernels',
-                    marker=dict(color='blue', symbol='circle', size=8),
-                    text=kernel_names,
-                    hovertemplate=("Kernel: %{text}<br>AI: %{x:.3f} FLOPs/Byte"
-                                    "<br>Performance: %{y:.3e} FLOPs/s<extra></extra>")),
-          go.Scatter(x=dp_mem_x, y=dp_mem_y, mode='lines', name=f"DP Memory (1555 GB/s)",
-                    line=dict(color='blue', width=2, dash='dash'),
-                    hovertemplate="DP memory-bound: 1.555e12 * AI<extra></extra>"),
-          go.Scatter(x=dp_comp_x, y=dp_comp_y, mode='lines', name=f"DP Compute (Peak 9.75 TFLOP/s)",
-                    line=dict(color='blue', width=2, dash='solid'),
-                    hovertemplate="DP compute-bound: 9.75e12 FLOPs/s<extra></extra>")
-      ])
+        traces += make_precision_traces( df, 'DP', peak_dp, peak_mem_bandwidth, 'blue' )
 
-    # If SP selected, add SP points and roofline
     if 'SP' in selected_precisions:
-        # Filter out any zero values (if any) before plotting on log scale
-        sp_mask = (sp_ai > 0) & (sp_perf > 0)
-        traces.extend([
-            go.Scatter(x=sp_ai[sp_mask], y=sp_perf[sp_mask], mode='markers', name='SP Kernels',
-                       marker=dict(color='orange', symbol='square', size=7),
-                       text=kernel_names[sp_mask],
-                       hovertemplate=("Kernel: %{text}<br>AI: %{x:.3f} FLOPs/Byte"
-                                      "<br>Performance: %{y:.3e} FLOPs/s<extra></extra>")),
-            go.Scatter(x=sp_mem_x, y=sp_mem_y, mode='lines', name=f"SP Memory (1555 GB/s)",
-                       line=dict(color='orange', width=2, dash='dash'),
-                       hovertemplate="SP memory-bound: 1.555e12 * AI<extra></extra>"),
-            go.Scatter(x=sp_comp_x, y=sp_comp_y, mode='lines', name=f"SP Compute (Peak 19.5 TFLOP/s)",
-                       line=dict(color='orange', width=2, dash='solid'),
-                       hovertemplate="SP compute-bound: 1.95e13 FLOPs/s<extra></extra>")
-        ])
+        traces += make_precision_traces( df, 'SP', peak_sp, peak_mem_bandwidth, 'orange' )
 
-    # If HP selected, add HP points and roofline
     if 'HP' in selected_precisions:
-        hp_mask = (hp_ai > 0) & (hp_perf > 0)
-        traces.extend([
-            go.Scatter(x=hp_ai[hp_mask], y=hp_perf[hp_mask], mode='markers', name='HP Kernels',
-                       marker=dict(color='green', symbol='triangle-up', size=7),
-                       text=kernel_names[hp_mask],
-                       hovertemplate=("Kernel: %{text}<br>AI: %{x:.3f} FLOPs/Byte"
-                                      "<br>Performance: %{y:.3e} FLOPs/s<extra></extra>")),
-            go.Scatter(x=hp_mem_x, y=hp_mem_y, mode='lines', name=f"HP Memory (1555 GB/s)",
-                       line=dict(color='green', width=2, dash='dash'),
-                       hovertemplate="HP memory-bound: 1.555e12 * AI<extra></extra>"),
-            go.Scatter(x=hp_comp_x, y=hp_comp_y, mode='lines', name=f"HP Compute (Peak 312 TFLOP/s)",
-                       line=dict(color='green', width=2, dash='solid'),
-                       hovertemplate="HP compute-bound: 3.12e14 FLOPs/s<extra></extra>")
-        ])
+        traces += make_precision_traces( df, 'HP', peak_hp, peak_mem_bandwidth, 'green' )
 
-    # Return the updated figure with the selected traces
+    # Return final figure
     return {
         'data': traces,
         'layout': go.Layout(
@@ -358,6 +352,7 @@ def update_roofline(selected_precisions):
             hovermode="closest"
         )
     }
+
 
 @app.callback(
     dash.dependencies.Output('dp-ai-histogram', 'figure'),
