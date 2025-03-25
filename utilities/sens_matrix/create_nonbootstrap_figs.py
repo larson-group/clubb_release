@@ -25,7 +25,7 @@ from dash import html
 #import dash_html_components as html
 
 import sys
-
+from re import match
 
 
 #######################################################################################################
@@ -452,8 +452,10 @@ def createFigs(numMetricsNoSpecial, metricsNames, metricsNamesNoprefix,
 
         diagnosticPrefix = ['PSL'] # Doesn't work if try two prefixes, e.g., ["U10", "SWCF"]
         biasPrefix = 'SWCF'
-        # Use np.char.find to find the indices where the search string, biasPrefix, is present
-        biasPrefixIdxs = np.char.find(metricsNames, biasPrefix) >= 0
+        # Find the indices where the search string, biasPrefix, is present
+        #     *and* the index represents a tile metric, not a custom metric.
+        #biasPrefixIdxs = np.char.find(metricsNames, biasPrefix) >= 0
+        biasPrefixIdxs = np.array([bool(match(biasPrefix+"_[0-9]+_[0-9]+", item)) for item in metricsNames])
         # Select the relevant elements from defaultBiasesCol
         defaultBiasesColToPlot = defaultBiasesCol[biasPrefixIdxs]
         normMetricValsColToPlot = normMetricValsCol[biasPrefixIdxs]

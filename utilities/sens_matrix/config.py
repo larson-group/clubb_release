@@ -67,22 +67,22 @@ def setUpConfig(beVerbose):
     #   Otherwise, the value in the 3rd column is itself the normalization value for the metric.  
     metricsNamesWeightsAndNormsCustom = \
         [
-            #                         ['RESTOM_GLB', 4.0, 10.], \
-            #                         ['SWCF_GLB', 16.0e-6, -999], \
-            #                         ['SWCF_DYCOMS', 4.0e-6, -999], \
-            #                         ['SWCF_HAWAII', 4.00e-6, -999], \
-            #                         ['SWCF_VOCAL', 4.00e-6, -999], \
-            #                         ['SWCF_VOCAL_near', 1.00e-6, -999], \
-            #                         ['SWCF_LBA', 1.00e-6, -999], \
-            #                         ['SWCF_WP', 1.00e-6, -999], \
-            #                         ['SWCF_EP', 1.00e-6, -999], \
-            #                         ['SWCF_NP', 1.00e-6, -999], \
-            #                         ['SWCF_SP', 1.00e-6, -999],  \
-            #                         ['SWCF_PA', 1.01, -999], \
-            #                         ['SWCF_CAF', 1.00, -999], \
-            #                         ['SWCF_Namibia', 4.00e-6, -999], \
-            #                         ['SWCF_Namibia_near', 1.00e-6, -999], \
-            #                         ['LWCF_GLB',1.00e-6, -999], \
+            #                         ['RESTOM_GLB', 4.0, 10.],
+            #                         ['SWCF_GLB', 16.0e-6, -999],
+            #                         ['SWCF_DYCOMS', 4.0e-6, -999],
+            #                         ['SWCF_HAWAII', 4.00e-6, -999],
+            #                         ['SWCF_VOCAL', 4.00e-6, -999],
+            #                         ['SWCF_VOCAL_near', 1.00e-6, -999],
+            #                         ['SWCF_LBA', 1.00e-6, -999],
+            #                         ['SWCF_WP', 1.00e-6, -999],
+            #                         ['SWCF_EP', 1.00e-6, -999],
+            #                         ['SWCF_NP', 1.00e-6, -999],
+            #                         ['SWCF_SP', 1.00e-6, -999],
+            #                         ['SWCF_PA', 1.01, -999],
+            #                         ['SWCF_CAF', 1.00, -999],
+            #                         ['SWCF_Namibia', 4.00e-6, -999],
+            #                         ['SWCF_Namibia_near', 1.00e-6, -999],
+            #                         ['LWCF_GLB',1.00e-6, -999],
         ]
 
     # Split up the list above into metric names and the corresponding weights.
@@ -199,8 +199,6 @@ def setUpConfig(beVerbose):
     metricsWeights = dfMetricsNamesWeightsAndNorms[['metricsWeights']].to_numpy().astype(float)
     # metricsNorms = dfMetricsNamesWeightsAndNorms[['metricsNorms']].to_numpy().astype(float)
 
-    metricsNamesNoprefix = np.char.replace(metricsNames, "SWCF_", "")
-
     # Set up a column vector of metric values from the default simulation
     defaultMetricValsCol = \
         setupDefaultMetricValsCol(metricsNames, defaultNcFilename)
@@ -225,9 +223,10 @@ def setUpConfig(beVerbose):
         print(np.around(defaultMetricValsReshaped, 2))
         # print(np.around(defaultMetricValsRolled,2))
 
+    # Read observed values of regional metrics on regular tiled grid into a Python dictionary
     (obsMetricValsDict, obsWeightsDict) = \
         (
-            setUp_x_ObsMetricValsDict(varPrefixes, folder_name + "20241011_20.0_OBS.nc")
+            setUp_x_ObsMetricValsDict(varPrefixes, suffix="_[0-9]+_", obsPathAndFilename=folder_name + "20241011_20.0_OBS.nc")
         )
 
     # Set metricsNorms to be a global average
@@ -280,56 +279,24 @@ def setUpConfig(beVerbose):
     metricsWeights = np.vstack((metricsWeights, metricsWeightsCustom))
     metricsNorms = np.vstack((metricsNorms, metricsNormsCustom))
 
+    metricsNamesNoprefix = np.char.replace(metricsNames, "SWCF_", "")
+
+
+
     # Observed values of our metrics, from, e.g., CERES-EBAF.
     # These observed metrics will be matched as closely as possible by analyzeSensMatrix.
     # NOTE: PRECT is in the unit of m/s
-    obsMetricValsDictCustom = {
-        'RESTOM_GLB': 1.5,
-        'SWCF_RACC': 0,
-        'SWCF_RMSEP': 0,
-        'SWCF_RMSE': 0, 'TMQ_RMSE': 0, 'PSL_RMSE': 0, 'TS_RMSE': 0, 'LHFLX_RMSE': 0, 'SHFLX_RMSE': 0, 'CLDLOW_RMSE': 0,
-        'LWCF_GLB': 28.008, 'PRECT_GLB': 0.000000031134259, 'SWCF_GLB': -45.81, 'TMQ_GLB': 24.423,
-        'LWCF_DYCOMS': 19.36681938, 'PRECT_DYCOMS': 0.000000007141516, 'SWCF_DYCOMS': -63.49394226,
-        'TMQ_DYCOMS': 20.33586884,
-        'LWCF_LBA': 43.83245087, 'PRECT_LBA': 0.000000063727875, 'SWCF_LBA': -55.10041809, 'TMQ_LBA': 44.27890396,
-        'LWCF_HAWAII': 23.6855, 'PRECT_HAWAII': 0.00000002087774, 'SWCF_HAWAII': -33.1536, 'TMQ_HAWAII': 32.4904,
-        'LWCF_WP': 54.5056, 'PRECT_WP': 0.000000077433568, 'SWCF_WP': -62.3644, 'TMQ_WP': 50.5412,
-        'LWCF_EP': 33.42149734, 'PRECT_EP': 0.000000055586694, 'SWCF_EP': -51.79394531, 'TMQ_EP': 44.34251404,
-        'LWCF_NP': 26.23941231, 'PRECT_NP': 0.000000028597503, 'SWCF_NP': -50.92364502, 'TMQ_NP': 12.72111988,
-        'LWCF_SP': 31.96141052, 'PRECT_SP': 0.000000034625369, 'SWCF_SP': -70.26461792, 'TMQ_SP': 10.95032024,
-        'LWCF_PA': 47.32126999, 'PRECT_PA': 0.000000075492694, 'SWCF_PA': -78.27433014, 'TMQ_PA': 47.25967789,
-        'LWCF_CAF': 43.99757003784179687500, 'PRECT_CAF': 0.000000042313699, 'SWCF_CAF': -52.50243378,
-        'TMQ_CAF': 36.79592514,
-        'LWCF_VOCAL': 43.99757004, 'PRECT_VOCAL': 0.000000001785546, 'SWCF_VOCAL': -77.26232147,
-        'TMQ_VOCAL': 17.59922791,
-        'LWCF_VOCAL_near': 15.4783, 'PRECT_VOCAL_near': 0.0000000037719, 'SWCF_VOCAL_near': -58.4732,
-        'TMQ_VOCAL_near': 14.9315,
-        'LWCF_Namibia': 12.3294, 'PRECT_Namibia': 0.00000000177636, 'SWCF_Namibia': -66.9495, 'TMQ_Namibia': 24.4823,
-        'LWCF_Namibia_near': 10.904, 'PRECT_Namibia_near': 0.00000000238369, 'SWCF_Namibia_near': -36.1216,
-        'TMQ_Namibia_near': 17.5188,
-        'PRECT_RACC': 0,
-        'PRECT_RMSEP': 0,
-        'PRECT_RMSE': 0,
-        'PSL_DYCOMS': 101868.515625,
-        'PSL_HAWAII': 101656.578125,
-        'PSL_VOCAL': 101668.703125,
-        'PSL_VOCAL_near': 101766.8203125,
-        'PSL_Namibia_near': 101741.7265625,
-        'PSL_Namibia far': 101550.6640625,
-        'PSL_LBA': 101052.40625,
-        'PSL_WP': 100909.4140625,
-        'PSL_EP': 101116.875,
-        'PSL_SP': 100021.4921875,
-        'PSL_NP': 101314.546875,
-        'PSL_PA': 100990.25,
-        'PSL_CAF': 100941.7890625
-    }
+    (obsMetricValsDictCustom, obsWeightsDictCustom) = \
+        (
+            setUp_x_ObsMetricValsDict(metricsNamesCustom, suffix="", obsPathAndFilename=folder_name + "20241011_20.0_OBS.nc")
+        )
 
-    # For special regions, make simulated values a numpy float,
+    # For custom regions, make simulated values a numpy float,
     #     like the other metrics
-    obsMetricValsDictCustom = {key: np.float32(value) \
-                               for key, value in obsMetricValsDictCustom.items()}
+    #obsMetricValsDictCustom = {key: np.float32(value) \
+    #                           for key, value in obsMetricValsDictCustom.items()}
 
+    # Add obs of custom metrics to obs dictionary
     obsMetricValsDict.update(obsMetricValsDictCustom)
 
     # Sanity check: is highlightedMetricsToPlot a subset of metricsNames?

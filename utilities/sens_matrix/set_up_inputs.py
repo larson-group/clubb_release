@@ -145,7 +145,7 @@ def setUpColAndRowVectors(metricsNames, metricsNorms,
            )
 
 
-def setUp_x_ObsMetricValsDict(varPrefixes, obsPathAndFilename):
+def setUp_x_ObsMetricValsDict(varPrefixes, suffix="", obsPathAndFilename=""):
     """
     This is intended for the case in which the metrics are tiles that cover the globe, not custom regions.
     Input: Filename containing observed values of metrics.
@@ -163,7 +163,8 @@ def setUp_x_ObsMetricValsDict(varPrefixes, obsPathAndFilename):
         #print(varName)
         #         or re.search("^LWCF_[0-9]+_",varName):
         for varPrefix in varPrefixes:
-            if search(f"^{varPrefix}_[0-9]+_",varName):
+            #if search(f"^{varPrefix}_[0-9]+_", varName):
+            if search(f"^{varPrefix}{suffix}",varName):
                 #and not "MSWCF" in varName
                 varEntry = f_obs[varName]
                 varVal = varEntry[:].data[:][0]
