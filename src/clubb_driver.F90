@@ -442,8 +442,11 @@ module clubb_driver
       dummy_dy  ! [m]
 
     integer :: &
-      itime, i, j, sclr, & ! Local Loop Variables
-      iinit                ! initial iteration
+      itime, &        ! Local Loop Variables
+      i, j, &
+      sclr, edsclr, &
+      sample, hm, & 
+      iinit           ! initial iteration
 
     integer :: &
       iunit,           & ! File unit used for I/O
@@ -739,6 +742,50 @@ module clubb_driver
       lh_rc_clipped,  & ! rc generated from silhs sample points
       lh_rv_clipped,  & ! rv generated from silhs sample points
       lh_Nc_clipped     ! Nc generated from silhs sample points
+
+    ! Variables used to initialize multi_col version of variables
+    real( kind = core_rknd ), dimension(:), allocatable :: &
+      thlm_init, &
+      rtm_init, &
+      um_init, &
+      vm_init, &
+      ug_init, &
+      vg_init, &
+      wp2_init, &
+      up2_init, &
+      vp2_init, &
+      rcm_init, &
+      wm_zt_init, &
+      wm_zm_init, &
+      em_init, &
+      exner_init, &
+      thvm_init, &
+      p_in_Pa_init, &
+      rho_init, &
+      rho_zm_init, &
+      rho_ds_zm_init, &
+      rho_ds_zt_init, &
+      invrs_rho_ds_zm_init, &
+      invrs_rho_ds_zt_init, &
+      thv_ds_zm_init, &
+      thv_ds_zt_init, &
+      rtm_ref_init, &
+      thlm_ref_init, &
+      um_ref_init, &
+      vm_ref_init, &
+      Ncm_init, &
+      Nc_in_cloud_init, &
+      Nccnm_init, &
+      rho_ds_zm_dycore_init
+
+    real( kind = core_rknd ), dimension(1) :: &
+      deep_soil_T_in_K_init, &
+      sfc_soil_T_in_K_init, &
+      veg_T_in_K_init
+
+    real( kind = core_rknd ), dimension(:,:), allocatable :: &
+      sclrm_init, &
+      edsclrm_init
 
     real( kind = core_rknd ), dimension(:,:), allocatable :: &
       Nc_in_cloud        ! Mean (in-cloud) cloud droplet concentration  [num/kg]
@@ -1237,6 +1284,10 @@ module clubb_driver
       return
 
     end if
+
+#ifdef _OPENACC
+    if ( l_restart ) stop "l_restart with OpenACC is not enabled"
+#endif
 
     ! Set debug level
     call set_clubb_debug_level( debug_level ) ! Intent(in)
@@ -1927,13 +1978,48 @@ module clubb_driver
 
     allocate( wpthlp_sfc(ngrdcol), wprtp_sfc(ngrdcol), upwp_sfc(ngrdcol), vpwp_sfc(ngrdcol) )
 
+    allocate( thlm_init(gr%nzt), &
+              rtm_init(gr%nzt), &
+              um_init(gr%nzt), &
+              vm_init(gr%nzt), &
+              ug_init(gr%nzt), &
+              vg_init(gr%nzt), &
+              wp2_init(gr%nzm), &
+              up2_init(gr%nzm), &
+              vp2_init(gr%nzm), &
+              rcm_init(gr%nzt), &
+              wm_zt_init(gr%nzt), &
+              wm_zm_init(gr%nzm), &
+              em_init(gr%nzm), &
+              exner_init(gr%nzt), &
+              thvm_init(gr%nzt), &
+              p_in_Pa_init(gr%nzt), &
+              rho_init(gr%nzt), &
+              rho_zm_init(gr%nzm), &
+              rho_ds_zm_init(gr%nzm), &
+              rho_ds_zt_init(gr%nzt), &
+              invrs_rho_ds_zm_init(gr%nzm), &
+              invrs_rho_ds_zt_init(gr%nzt), &
+              thv_ds_zm_init(gr%nzm), &
+              thv_ds_zt_init(gr%nzt), &
+              rtm_ref_init(gr%nzt), &
+              thlm_ref_init(gr%nzt), &
+              um_ref_init(gr%nzt), &
+              vm_ref_init(gr%nzt), &
+              Ncm_init(gr%nzt), &
+              Nc_in_cloud_init(gr%nzt), &
+              Nccnm_init(gr%nzt), &
+              sclrm_init(gr%nzt,sclr_dim), &
+              edsclrm_init(gr%nzt,edsclr_dim) )
+
     if ( l_add_dycore_grid ) then
       ! Initialize the dycore grid
       call setup_simple_gr_dycore( 31, gr%zm(1,1), gr%zm(1,gr%nzm), gr_dycore ) ! always set to 31
                                                                                 ! since the host
                                                                                 ! model has 31
                                                                                 ! levels
-      allocate( rho_ds_zm_dycore(ngrdcol, gr_dycore%nzm) ) ! dry, static density: 
+      allocate( rho_ds_zm_dycore_init(gr_dycore%nzm), &
+                rho_ds_zm_dycore(ngrdcol, gr_dycore%nzm) ) ! dry, static density: 
                                                            ! m-levs of dycore grid
     else
       ! if no interpolation should be used, rho_ds_zm_dycore is not needed and we can use a 
@@ -1955,211 +2041,20 @@ module clubb_driver
 
     call init_precip_fracs_api( gr%nzt, ngrdcol, &
                                 precip_fracs )
-
-    um      = zero          ! u wind
-    vm      = zero          ! v wind
-    upwp    = zero          ! vertical u momentum flux
-    vpwp    = zero          ! vertical v momentum flux
-    up2     = w_tol_sqd     ! u'^2
-    up3     = zero          ! u'^3
-    vp2     = w_tol_sqd     ! v'^2
-    vp3     = zero          ! v'^3
-
-    thlm    = zero          ! liquid potential temperature
-    rtm     = zero          ! total water mixing ratio
-    wprtp   = zero          ! w'rt'
-    wpthlp  = zero          ! w'thl'
-    wp2     = w_tol_sqd     ! w'^2
-    wp3   = zero          ! w'^3
-    rtp2    = rt_tol**2     ! rt'^2
-    thlp2   = thl_tol**2    ! thl'^2
-    rtpthlp = zero          ! rt'thl'
-    wprcp   = zero          ! w'rc'
-    w_up_in_cloud = zero
-    w_down_in_cloud = zero
-    cloudy_updraft_frac = zero
-    cloudy_downdraft_frac = zero
-
-    p_in_Pa= zero           ! pressure 
-    exner = zero            ! exner
-    rho  = zero             ! density on thermo. levels
-    rho_zm  = zero          ! density on moment. levels
-    rho_ds_zm = zero        ! dry, static density: m-levs
-    rho_ds_zt = zero      ! dry, static density: t-levs
-    invrs_rho_ds_zm = zero  ! inv. dry, static density: m-levs
-    invrs_rho_ds_zt = zero  ! inv. dry, static density: t-levs
-    thv_ds_zm = zero        ! dry, base-state theta_v: m-levs
-    thv_ds_zt = zero        ! dry, base-state theta_v: t-levs
-
-    thlm_forcing    = zero  ! thlm large-scale forcing
-    rtm_forcing     = zero  ! rtm large-scale forcing
-    um_forcing      = zero  ! u forcing
-    vm_forcing      = zero  ! v forcing
-    wprtp_forcing   = zero  ! <w'r_t'> forcing 
-    wpthlp_forcing  = zero  ! <w'th_l'> forcing 
-    rtp2_forcing    = zero  ! <r_t'^2> forcing 
-    thlp2_forcing   = zero  ! <th_l'^2> forcing 
-    rtpthlp_forcing = zero  ! <r_t'th_l'> forcing 
-
-    ! Variables used to track perturbed version of winds.
-    um_pert   = zero
-    vm_pert   = zero
-    upwp_pert = zero
-    vpwp_pert = zero
-
-    ! Imposed large scale w
-    wm_zm = zero      ! Momentum levels
-    wm_zt = zero      ! Thermodynamic levels
-
-    ! Cloud water variables
-    rcm               = zero
-    cloud_frac        = zero
-    ice_supersat_frac = zero
-    rcm_in_layer      = zero
-    cloud_cover       = zero
-    invrs_tau_zm      = zero
-
-    sigma_sqd_w    = zero ! PDF width parameter (momentum levels)
-    sigma_sqd_w_zt = zero ! PDF width parameter interp. to t-levs.
-    Skw_zm         = zero ! Skewness of w on momentum levels
-    wp2_zt         = w_tol_sqd ! wp2 interpolated to thermo. levels
-    ug             = zero ! u geostrophic wind
-    vg             = zero ! v geostrophic wind
-    um_ref         = zero
-    vm_ref         = zero
-    thlm_ref       = zero
-    rtm_ref        = zero
-    thvm           = zero ! Virtual potential temperature
-
-    radht = zero ! Heating rate
-    Frad  = zero ! Radiative flux
-    Frad_SW_up = zero
-    Frad_LW_up = zero
-    Frad_SW_down = zero
-    Frad_LW_down = zero
-    thlprcp = zero
-    thlp3   = zero
-    rtp3    = zero
-
-    ! Buoyancy related moments
-    rtpthvp  = zero ! rt'thv'
-    thlpthvp = zero ! thl'thv'
-    wpthvp   = zero ! w'thv'
-    wp2thvp  = zero ! w'^2thv'
-
-    wp2rtp  = zero ! w'^2 rt'
-    wp2thlp = zero ! w'^2 thl'
-    uprcp   = zero ! u'rc'
-    vprcp   = zero ! v'rc'
-    rc_coef_zm = zero ! Coefficient of X'r_c' in Eq. (34)
-    wp4     = zero ! w'^4
-    wpup2   = zero ! w'u'^2
-    wpvp2   = zero ! w'v'^2
-    wp2up2  = zero ! w'^2 u'^2
-    wp2vp2  = zero! w'^2 v'^2
-
-    ! Eddy diffusivity
-    Kh_zt = zero  ! Eddy diffusivity coefficient: thermo. levels
-    Kh_zm = zero  ! Eddy diffusivity coefficient: momentum levels
-
-    ! TKE
-    em = em_min
-
-    ! Length scale
-    Lscale      = zero
-
-    ! Dissipation time
-    tau_zm = zero ! Eddy dissipation time scale: momentum levels
-    tau_zt = zero ! Eddy dissipation time scale: thermo. levels
-
-    ! Hydrometer types
-    Nccnm = zero ! CCN concentration (COAMPS/MG)
-
-    if ( hydromet_dim > 0 ) then
-      K_hm = zero ! Eddy diff. coef. for hydromets.: mom. levs.
-      hydromet    = zero
-      hydrometp2  = zero
-      wphydrometp = zero
-      wp2hmp      = zero
-      rtphmp_zt   = zero
-      thlphmp_zt  = zero
-    end if
-
-    ! Cloud droplet concentration
-    Ncm   = zero
-    wpNcp = zero
-
-    ! Surface fluxes
-    wpthlp_sfc = zero
-    wprtp_sfc  = zero
-    upwp_sfc   = zero
-    vpwp_sfc   = zero
-
-    ! Passive scalars
-    if ( sclr_dim > 0 ) then
-      sclrpthvp     = zero
-      wpsclrp_sfc   = zero
-      sclrm         = zero
-      sclrp3        = zero
-      sclrprtp      = zero
-      sclrpthlp     = zero
-      sclrm_forcing = zero
-      wpsclrp       = zero
-
-      do sclr = 1, sclr_dim
-        sclrp2(:,:,sclr) = sclr_tol(sclr)**2
-      end do
-    end if
-
-    if ( edsclr_dim > 0 ) then
-      wpedsclrp_sfc   = zero
-      edsclrm         = zero
-      edsclrm_forcing = zero
-    end if
-
+                                    
     ! Initialize to 0.
     do k = 1, gr%nzt
       do i = 1, ngrdcol
         call init_hydromet_pdf_params( hydromet_pdf_params(i,k) )
       end do
     end do
-    
-    ! Initialize to 0.
-    rvm_mc  = zero
-    rcm_mc  = zero
-    thlm_mc = zero
-    
-    ! Initialize to 0.
-    wprtp_mc   = zero
-    wpthlp_mc  = zero
-    rtp2_mc    = zero
-    thlp2_mc   = zero
-    rtpthlp_mc = zero
-    rfrzm = zero
 
-    ! Initialize to 0.
-    hydromet_mc = zero
-    Ncm_mc      = zero
-
-    hydromet_vel_zt = zero
-
-    hydromet_vel_covar_zt_impc = zero
-    hydromet_vel_covar_zt_expc = zero
-
-    ! Initialize silhs samples to indicate unused status, these are overwritten if silhs is used
-    X_nl_all_levs = -999._core_rknd
-    X_mixt_comp_all_levs = -999
-    lh_sample_point_weights = -999._core_rknd
-
-    rho_ds_zm_dycore = zero
-
-    ! Check for errors in check_clubb_settings_api and setup_parameters_api
     if ( clubb_at_least_debug_level( 0 ) ) then
-        if ( err_code == clubb_fatal_error ) then
-          ! At this point, input fields haven't been set up, so don't clean them up.
-          call cleanup_clubb( l_input_fields=.false., gr=gr )
-          return
-        end if
+      if ( err_code == clubb_fatal_error ) then
+        ! At this point, input fields haven't been set up, so don't clean them up.
+        call cleanup_clubb( l_input_fields=.false., gr=gr )
+        return
+      end if
     end if
 
     ! This special purpose code only applies to tuner runs where the tune_type
@@ -2182,52 +2077,546 @@ module clubb_driver
       end if
     end if
 
-    ! Deallocate stretched grid altitude arrays
-    !deallocate( momentum_heights, thermodynamic_heights )
+
+#ifdef _OPENMP
+    iunit = omp_get_thread_num( ) + 50 ! Known magic number
+#else
+    iunit = 50
+#endif
+
+    ! Only output radiation files if using a radiation scheme
+    if ( trim( rad_scheme ) == "bugsrad" ) then
+      stats_metadata%l_output_rad_files = .true.
+    end if
+
+#ifdef SILHS
+    if ( lh_microphys_type /= lh_microphys_disabled ) then
+      l_silhs_out = .true.
+    else
+      l_silhs_out = .false.
+    end if
+#else
+    l_silhs_out = .false.
+#endif
+
+    if ( .not. l_restart ) then
+      time_current = time_initial
+      iinit = 1
+    else  ! restart
+      time_current = time_restart
+    end if
+
+    ! Time integration
+    ! Call advance_clubb_core once per each statistics output time
+    ifinal = floor( ( time_final - time_initial ) / real(dt_main, kind=time_precision) )
+
+    ! Setup filenames and variables to set for setfields, if enabled
+    if ( l_input_fields ) then
+      call inputfields_init( iunit, runfile ) ! Intent(in)
+    end if
+
+    ! check to make sure dt_rad is a mutliple of dt_main
+    if ( abs(dt_rad/dt_main - real(floor(dt_rad/dt_main), kind=core_rknd)) &
+          > 1.e-8_core_rknd) then
+      error stop "dt_rad must be a multiple of dt_main"
+    end if
+
+    if ( l_silhs_rad .and. clubb_config_flags%l_calc_thlp2_rad ) then
+
+      write(fstderr,*) "The options l_silhs_rad and l_calc_thlp2_rad are incompatible."
+      err_code = clubb_fatal_error
+      call cleanup_clubb( l_input_fields, gr )
+      return
+
+    end if
+
+    if ( clubb_config_flags%l_calc_thlp2_rad .and. rad_scheme == "none" ) then
+      error stop "The options rad_scheme == none and l_calc_thlp2_rad are incompatible."
+    end if
+
+    if ( clubb_at_least_debug_level( 0 ) ) then
+      if ( err_code == clubb_fatal_error ) then
+          write(fstderr,*) "FATAL ERROR in stats_init"
+          error stop
+      end if
+    end if
 
 
     ! Currently initialize_clubb does more than just read in the initial sounding.
     ! It also includes other important initializations such as um_ref and vm_ref.
     ! Therefore it should be executed prior to a restart. The restart should overwrite
     ! the initial sounding anyway.
+    ! NOTE: initialize_clubb has the capability to be run on the whole 2D arrays we have
+    !       but there is no difference in the initializations between columns at the 
+    !       moment, so we pass in a value of "1" for ngrdcol and use these _init
+    !       arrays that are then copied to the 2D versions. This reduces the time 
+    !       spent in this routine and allows us to avoid large CPU to GPU data 
+    !       transfers since we need only copy these 1D _init variables in.
     call initialize_clubb( &
-          gr, ngrdcol, iunit, trim( forcings_file_path ), p_sfc, zm_init,  & ! Intent(in)
-          sclr_dim, edsclr_dim, sclr_idx,                                  & ! Intent(in)
-          clubb_config_flags,                                              & ! Intent(in)
-          l_modify_ic_with_cubic_int,                                      & ! Intent(in)
-          l_add_dycore_grid,                                               & ! Intent(in)
-          grid_adapt_in_time_method,                                       & ! Intent(in)
-          gr_dycore,                                                       & ! Intent(in)
-          thlm, rtm, um, vm, ug, vg, wp2, up2, vp2, rcm,                   & ! Intent(inout)
-          wm_zt, wm_zm, em, exner,                                         & ! Intent(inout)
-          thvm, p_in_Pa,                                                   & ! Intent(inout)
-          rho, rho_zm, rho_ds_zm, rho_ds_zt,                               & ! Intent(inout)
-          invrs_rho_ds_zm, invrs_rho_ds_zt,                                & ! Intent(inout)
-          thv_ds_zm, thv_ds_zt,                                            & ! Intent(inout)
-          rtm_ref, thlm_ref,                                               & ! Intent(inout) 
-          um_ref, vm_ref,                                                  & ! Intent(inout)
-          Ncm, Nc_in_cloud, Nccnm, err_code,                               & ! Intent(inout)
-          deep_soil_T_in_K, sfc_soil_T_in_K, veg_T_in_K,                   & ! Intent(inout)
-          sclrm, edsclrm,                                                  & ! Intent(out)
-          rho_ds_zm_dycore )                                                 ! Intent(out)
-    
+          gr, 1, iunit, trim( forcings_file_path ), p_sfc(1), zm_init(1), & ! Intent(in)
+          sclr_dim, edsclr_dim, sclr_idx,                                 & ! Intent(in)
+          clubb_config_flags,                                             & ! Intent(in)
+          l_modify_ic_with_cubic_int,                                     & ! Intent(in)
+          l_add_dycore_grid,                                              & ! Intent(in)
+          grid_adapt_in_time_method,                                      & ! Intent(in)
+          gr_dycore,                                                      & ! Intent(in)
+          thlm_init, rtm_init, um_init, vm_init, ug_init, vg_init,        & ! Intent(out)
+          wp2_init, up2_init, vp2_init, rcm_init,                         & ! Intent(out)
+          wm_zt_init, wm_zm_init, em_init, exner_init,                    & ! Intent(out)
+          thvm_init, p_in_Pa_init,                                        & ! Intent(out)
+          rho_init, rho_zm_init, rho_ds_zm_init, rho_ds_zt_init,          & ! Intent(out)
+          invrs_rho_ds_zm_init, invrs_rho_ds_zt_init,                     & ! Intent(out)
+          thv_ds_zm_init, thv_ds_zt_init,                                 & ! Intent(out)
+          rtm_ref_init, thlm_ref_init,                                    & ! Intent(out) 
+          um_ref_init, vm_ref_init,                                       & ! Intent(out)
+          Ncm_init, Nc_in_cloud_init, Nccnm_init, err_code,               & ! Intent(out)
+          deep_soil_T_in_K_init, sfc_soil_T_in_K_init, veg_T_in_K_init,   & ! Intent(out)
+          sclrm_init, edsclrm_init,                                       & ! Intent(out)
+          rho_ds_zm_dycore_init )                                           ! Intent(out)
+
+!$OMP CRITICAL
+    if ( stats_metadata%l_output_rad_files ) then
+
+      ! Initialize statistics output, note that this will allocate/initialize stats variables for all
+      ! columns, but only create the stats files for the first columns
+      call stats_init_api( iunit, fname_prefix, output_dir, l_stats, & ! In
+                      stats_fmt, stats_tsamp, stats_tout, runfile, & ! In
+                      hydromet_dim, sclr_dim, edsclr_dim, sclr_tol, & ! In
+                      hm_metadata%hydromet_list, hm_metadata%l_mix_rat_hm, & ! In
+                      gr%nzm, ngrdcol, nlon, nlat, gr%zt, gr%zm, total_atmos_dim - 1, & ! In
+                      complete_alt(1:total_atmos_dim), total_atmos_dim, & ! In
+                      complete_momentum(1:total_atmos_dim + 1), day, month, year, & ! In
+                      (/lon_vals/), (/lat_vals/), time_current, dt_main, l_silhs_out,&!In
+                      clubb_params, &
+                      clubb_config_flags%l_uv_nudge, &
+                      clubb_config_flags%l_tke_aniso, &
+                      clubb_config_flags%l_standard_term_ta, &
+                      stats_metadata, & ! In/Out
+                      stats_zt, stats_zm, stats_sfc, & ! In/Out
+                      stats_lh_zt, stats_lh_sfc, & ! In/Out
+                      stats_rad_zt, stats_rad_zm, & ! In/Out
+                      err_code ) ! In/Out
+
+    else
+
+      ! Initialize statistics output, note that this will allocate/initialize stats variables for all
+      ! columns, but only create the stats files for the first columns
+      call stats_init_api( iunit, fname_prefix, output_dir, l_stats, & ! In
+                      stats_fmt, stats_tsamp, stats_tout, runfile, & ! In
+                      hydromet_dim, sclr_dim, edsclr_dim, sclr_tol, & ! In
+                      hm_metadata%hydromet_list, hm_metadata%l_mix_rat_hm, & ! In
+                      gr%nzm, ngrdcol, nlon, nlat, gr%zt, gr%zm, 0, & ! In
+                      rad_dummy, 0, rad_dummy, day, month, year, & ! In
+                      (/lon_vals/), (/lat_vals/), time_current, dt_main, l_silhs_out,&!In
+                      clubb_params, &
+                      clubb_config_flags%l_uv_nudge, &
+                      clubb_config_flags%l_tke_aniso, &
+                      clubb_config_flags%l_standard_term_ta, &
+                      stats_metadata, & ! In/Out
+                      stats_zt, stats_zm, stats_sfc, & ! In/Out
+                      stats_lh_zt, stats_lh_sfc, & ! In/Out
+                      stats_rad_zt, stats_rad_zm, & ! In/Out
+                      err_code ) ! In/Out
+
+    end if
+!$OMP END CRITICAL
+
+#ifdef SILHS
+    if ( lh_microphys_type /= lh_microphys_disabled ) then
+
+      ! Setup 2D output of all subcolumns (if enabled)
+      call latin_hypercube_2D_output_api( &
+              fname_prefix, output_dir, stats_metadata%stats_tout, &
+              gr%nzt, pdf_dim, & ! Intent(in)
+              gr%zt, time_initial, lh_num_samples, & ! Intent(in)
+              nlon, nlat, (/lon_vals/), (/lat_vals/), &
+              hm_metadata, &
+              clubb_params(1,:), &
+              sclr_dim, sclr_tol, &
+              clubb_config_flags%l_uv_nudge, &
+              clubb_config_flags%l_tke_aniso, &
+              clubb_config_flags%l_standard_term_ta )    ! Intent(in)
+
+    end if
+#endif /* SILHS */
+
+    call setup_radiation_variables( gr%nzm, lin_int_buffer, &
+                                    extended_atmos_range_size )
+
     if ( clubb_at_least_debug_level( 0 ) ) then
-        if ( err_code == clubb_fatal_error ) then
-            ! At this point, input fields haven't been set up, so don't clean them up.
-            call cleanup_clubb( l_input_fields=.false., gr=gr )
-            return
-        end if
+      if ( err_code == clubb_fatal_error ) then
+        ! At this point, input fields haven't been set up, so don't clean them up.
+        call cleanup_clubb( l_input_fields=.false., gr=gr )
+        return
+      end if
     end if
 
+    if( stats_metadata%l_stats ) then
 
-    if ( .not. l_restart ) then
+      if ( .not. (( abs(dt_rad/stats_metadata%stats_tout &
+                        - real(floor(dt_rad/stats_metadata%stats_tout), kind=core_rknd)) &
+            < 1.e-8_core_rknd) .or. &
+         ( abs(stats_metadata%stats_tout/dt_rad &
+               - real(floor(stats_metadata%stats_tout/dt_rad), kind=core_rknd)) &
+            < 1.e-8_core_rknd)) ) then
+        error stop &
+              "dt_rad must be a multiple of stats_tout or stats_tout must be a mulitple of dt_rad"
+      end if
 
-      time_current = time_initial
-      iinit = 1
+    end if
+    
+    stats_nsamp = nint( stats_metadata%stats_tsamp / dt_main )
+    stats_nout = nint( stats_metadata%stats_tout / dt_main )
 
-    else  ! restart
+    !initialize timers    
+    time_loop_init = 0.0_core_rknd
+    time_clubb_advance = 0.0_core_rknd
+    time_clubb_pdf = 0.0_core_rknd
+    time_SILHS = 0.0_core_rknd
+    time_microphys_advance = 0.0_core_rknd
+    time_microphys_scheme = 0.0_core_rknd
+    time_loop_end = 0.0_core_rknd
+    time_output_multi_col = 0.0_core_rknd
+    time_adapt_grid = 0.0_core_rknd
+    time_total = 0.0_core_rknd
+    time_stop = 0.0_core_rknd
+    time_start = 0.0_core_rknd
 
-      time_current = time_restart
+
+    ! These variables are not used on the GPU and the commented out ones
+    ! are not used at all beyond being initialized
+    !sigma_sqd_w_zt         = zero        ! PDF width parameter interp. to t-levs.
+    !sigma_sqd_w            = zero          ! PDF width parameter (momentum levels)
+    !tau_zt                 = zero        ! Eddy dissipation time scale: thermo. levels
+    !tau_zm                 = zero          ! Eddy dissipation time scale: momentum levels
+    Ncm_mc                 = zero
+    Frad                   = zero          ! Radiative flux
+    Frad_SW_up             = zero
+    Frad_LW_up             = zero
+    Frad_SW_down           = zero
+    Frad_LW_down           = zero
+    wpNcp                  = zero
+    do k = 1, gr%nzt
+      do i = 1, ngrdcol
+        Nccnm(i,k)           = Nccnm_init(k)        ! CCN concentration (COAMPS/MG)
+        Ncm(i,k)             = Ncm_init(k)
+        Nc_in_cloud(i,k)     = Nc_in_cloud_init(k)
+        !em                  = em_init(k)
+      end do
+    end do
+
+    !$acc data copyin( gr, gr%zm, gr%zt, gr%dzm, gr%dzt, gr%invrs_dzt, gr%invrs_dzm, &
+    !$acc              gr%weights_zt2zm, gr%weights_zm2zt, &
+    !$acc              nu_vert_res_dep, nu_vert_res_dep%nu2, nu_vert_res_dep%nu9, &
+    !$acc              nu_vert_res_dep%nu1, nu_vert_res_dep%nu8, nu_vert_res_dep%nu10, &
+    !$acc              nu_vert_res_dep%nu6, &
+    !$acc              pdf_params, pdf_params_zm, &
+    !$acc              sclr_idx, clubb_params, hm_metadata, &
+    !$acc              T_sfc, p_sfc, fcor, sfc_elevation, &
+    !$acc              dummy_dx, dummy_dy, &
+    !$acc              pdf_params%w_1, pdf_params%w_2, pdf_params%varnce_w_1, &
+    !$acc              pdf_params%varnce_w_2, pdf_params%mixt_frac, &
+    !$acc              pdf_params_zm%w_1, pdf_params_zm%w_2, pdf_params_zm%varnce_w_1, &
+    !$acc              pdf_params_zm%varnce_w_2, pdf_params_zm%mixt_frac, &
+    !$acc              thlm_init, rtm_init, um_init, vm_init, ug_init, vg_init, &
+    !$acc              wp2_init, up2_init, vp2_init, rcm_init, wm_zt_init, &
+    !$acc              wm_zm_init, em_init, exner_init, thvm_init, p_in_Pa_init, &
+    !$acc              rho_init, rho_zm_init, rho_ds_zm_init, rho_ds_zt_init, &
+    !$acc              invrs_rho_ds_zm_init, invrs_rho_ds_zt_init, thv_ds_zm_init, &
+    !$acc              thv_ds_zt_init, rtm_ref_init, thlm_ref_init, um_ref_init, &
+    !$acc              vm_ref_init, rho_ds_zm_dycore_init ) &
+    !$acc      create( rtm, wm_zt, ug, vg, um_ref, vm_ref, thlm_forcing, rtm_forcing, &
+    !$acc              um_forcing, vm_forcing, wm_zm, wprtp_forcing, wpthlp_forcing, &
+    !$acc              rtp2_forcing, thlp2_forcing, rtpthlp_forcing, wpthlp_sfc, &
+    !$acc              wprtp_sfc, upwp_sfc, vpwp_sfc, &
+    !$acc              deep_soil_T_in_K, sfc_soil_T_in_K, veg_T_in_K, rcm_mc, rvm_mc, &
+    !$acc              thlm_mc, radht, wprtp_mc, wpthlp_mc, rtp2_mc, thlp2_mc, rtpthlp_mc, &
+    !$acc              thlprcp, wprtp, wpthlp, rtp2, thlp2, rtpthlp, &
+    !$acc              wp2, wp3, wp2thvp, rtpthvp, thlpthvp, &
+    !$acc              rho_zm, rho, rho_ds_zm, rho_ds_zt, invrs_rho_ds_zm, &
+    !$acc              invrs_rho_ds_zt, thv_ds_zm, thv_ds_zt, &
+    !$acc              upwp_sfc_pert, vpwp_sfc_pert, rtm_ref, &
+    !$acc              thlm_ref, um, upwp, &
+    !$acc              vm, vpwp, up2, vp2, up3, vp3, thlm, &
+    !$acc              rtp3, thlp3, p_in_Pa, exner, &
+    !$acc              rcm, cloud_frac, wpthvp, wp2rtp, &
+    !$acc              wp2thlp, uprcp, vprcp, rc_coef_zm, wp4, wpup2, wpvp2, &
+    !$acc              wp2up2, wp2vp2, ice_supersat_frac, um_pert, vm_pert, upwp_pert, vpwp_pert, &
+    !$acc              rcm_in_layer, cloud_cover, wprcp, w_up_in_cloud, w_down_in_cloud, cloudy_updraft_frac, &
+    !$acc              cloudy_downdraft_frac, invrs_tau_zm, Kh_zt, Kh_zm, Lscale, &
+    !$acc              X_nl_all_levs, x_mixt_comp_all_levs, lh_sample_point_weights,  &
+    !$acc              lh_rt_clipped, lh_thl_clipped, lh_rc_clipped, lh_rv_clipped, lh_Nc_clipped, &
+    !$acc              mu_x_1_n, mu_x_2_n, sigma_x_1_n, sigma_x_2_n, &
+    !$acc              corr_array_1_n, corr_array_2_n, corr_cholesky_mtx_1, corr_cholesky_mtx_2, &
+    !$acc              rfrzm, thvm, rho_ds_zm_dycore, &
+    !$acc              pdf_params%rt_1, pdf_params%rt_2, &
+    !$acc              pdf_params%varnce_rt_1, pdf_params%varnce_rt_2, pdf_params%thl_1, &
+    !$acc              pdf_params%thl_2, pdf_params%varnce_thl_1, pdf_params%varnce_thl_2, &
+    !$acc              pdf_params%corr_w_rt_1, pdf_params%corr_w_rt_2, pdf_params%corr_w_thl_1, &
+    !$acc              pdf_params%corr_w_thl_2, pdf_params%corr_rt_thl_1, pdf_params%corr_rt_thl_2, &
+    !$acc              pdf_params%alpha_thl, pdf_params%alpha_rt, pdf_params%crt_1, pdf_params%crt_2, &
+    !$acc              pdf_params%cthl_1, pdf_params%cthl_2, pdf_params%chi_1, pdf_params%chi_2, &
+    !$acc              pdf_params%stdev_chi_1, pdf_params%stdev_chi_2, pdf_params%stdev_eta_1, &
+    !$acc              pdf_params%stdev_eta_2, pdf_params%covar_chi_eta_1, pdf_params%covar_chi_eta_2, &
+    !$acc              pdf_params%corr_w_chi_1, pdf_params%corr_w_chi_2, pdf_params%corr_w_eta_1, &
+    !$acc              pdf_params%corr_w_eta_2, pdf_params%corr_chi_eta_1, pdf_params%corr_chi_eta_2, &
+    !$acc              pdf_params%rsatl_1, pdf_params%rsatl_2, pdf_params%rc_1, pdf_params%rc_2, &
+    !$acc              pdf_params%cloud_frac_1, pdf_params%cloud_frac_2, &
+    !$acc              pdf_params%ice_supersat_frac_1, pdf_params%ice_supersat_frac_2, &
+    !$acc              pdf_params_zm%rt_1, pdf_params_zm%rt_2, &
+    !$acc              pdf_params_zm%varnce_rt_1, pdf_params_zm%varnce_rt_2, pdf_params_zm%thl_1, &
+    !$acc              pdf_params_zm%thl_2, pdf_params_zm%varnce_thl_1, pdf_params_zm%varnce_thl_2, &
+    !$acc              pdf_params_zm%corr_w_rt_1, pdf_params_zm%corr_w_rt_2, pdf_params_zm%corr_w_thl_1, &
+    !$acc              pdf_params_zm%corr_w_thl_2, pdf_params_zm%corr_rt_thl_1, pdf_params_zm%corr_rt_thl_2, &
+    !$acc              pdf_params_zm%alpha_thl, pdf_params_zm%alpha_rt, pdf_params_zm%crt_1, pdf_params_zm%crt_2, &
+    !$acc              pdf_params_zm%cthl_1, pdf_params_zm%cthl_2, pdf_params_zm%chi_1, pdf_params_zm%chi_2, &
+    !$acc              pdf_params_zm%stdev_chi_1, pdf_params_zm%stdev_chi_2, pdf_params_zm%stdev_eta_1, &
+    !$acc              pdf_params_zm%stdev_eta_2, pdf_params_zm%covar_chi_eta_1, pdf_params_zm%covar_chi_eta_2, &
+    !$acc              pdf_params_zm%corr_w_chi_1, pdf_params_zm%corr_w_chi_2, pdf_params_zm%corr_w_eta_1, &
+    !$acc              pdf_params_zm%corr_w_eta_2, pdf_params_zm%corr_chi_eta_1, pdf_params_zm%corr_chi_eta_2, &
+    !$acc              pdf_params_zm%rsatl_1, pdf_params_zm%rsatl_2, pdf_params_zm%rc_1, pdf_params_zm%rc_2, &
+    !$acc              pdf_params_zm%cloud_frac_1, pdf_params_zm%cloud_frac_2, &
+    !$acc              pdf_params_zm%ice_supersat_frac_1, pdf_params_zm%ice_supersat_frac_2 )
+
+
+    !$acc data if( sclr_dim > 0 ) &
+    !$acc      copyin( sclr_tol ) &
+    !$acc      create( sclrm_forcing, wpsclrp_sfc, sclrm, &
+    !$acc              wpsclrp, sclrp2, sclrp3, sclrprtp, sclrpthlp, sclrpthvp )
+
+    !$acc data if( edsclr_dim > 0 ) &
+    !$acc      create( wpedsclrp_sfc, edsclrm_forcing, edsclrm )
+
+    !$acc data if( hydromet_dim > 0 ) &
+    !$acc      copyin( hm_metadata%l_mix_rat_hm ) &
+    !$acc      create( wphydrometp, wp2hmp, rtphmp_zt, thlphmp_zt )
+    
+    ! Initialize silhs samples to indicate unused status, these are overwritten if silhs is used
+    !$acc parallel loop gang vector collapse(3) default(present)
+    do sample = 1, lh_num_samples
+      do k = 1, gr%nzt
+        do i = 1, ngrdcol
+          X_nl_all_levs(i,sample,k,:)         = -999._core_rknd
+          X_mixt_comp_all_levs(i,sample,k)    = -999
+          lh_sample_point_weights(i,sample,k) = -999._core_rknd
+        end do
+      end do
+    end do
+
+    !$acc parallel loop gang vector collapse(2) default(present)
+    do k = 1, gr%nzt
+      do i = 1, ngrdcol
+        um(i,k)                     = um_init(k)        ! u wind
+        vm(i,k)                     = vm_init(k)        ! v wind
+        up3(i,k)                    = zero        ! u'^3
+        vp3(i,k)                    = zero        ! v'^3
+        thlm(i,k)                   = thlm_init(k)         ! liquid potential temperature
+        rtm(i,k)                    = rtm_init(k)        ! total water mixing ratio
+        w_up_in_cloud(i,k)          = zero
+        w_down_in_cloud(i,k)        = zero
+        cloudy_updraft_frac(i,k)    = zero
+        cloudy_downdraft_frac(i,k)  = zero
+        wp3(i,k)                    = zero        ! w'^3
+        p_in_Pa(i,k)                = p_in_Pa_init(k)        ! pressure 
+        exner(i,k)                  = exner_init(k)        ! exner
+        rho(i,k)                    = rho_init(k)        ! density on thermo. levels
+        rho_ds_zt(i,k)              = rho_ds_zt_init(k)         ! dry, static density: t-levs
+        invrs_rho_ds_zt(i,k)        = invrs_rho_ds_zt_init(k)        ! inv. dry, static density: t-levs
+        thv_ds_zt(i,k)              = thv_ds_zt_init(k)        ! dry, base-state theta_v: t-levs
+        thlm_forcing(i,k)           = zero        ! thlm large-scale forcing
+        rtm_forcing(i,k)            = zero        ! rtm large-scale forcing
+        um_forcing(i,k)             = zero        ! u forcing
+        vm_forcing(i,k)             = zero        ! v forcing
+        um_pert(i,k)                = zero        ! Variables used to track perturbed version of winds.
+        vm_pert(i,k)                = zero
+        wm_zt(i,k)                  = wm_zt_init(k)        ! Imposed large scale w - Thermodynamic levels
+        rcm(i,k)                    = rcm_init(k)
+        cloud_frac(i,k)             = zero
+        ice_supersat_frac(i,k)      = zero
+        rcm_in_layer(i,k)           = zero
+        cloud_cover(i,k)            = zero
+        ug(i,k)                     = ug_init(k)        ! u geostrophic wind
+        vg(i,k)                     = vg_init(k)        ! v geostrophic wind
+        um_ref(i,k)                 = um_ref_init(k)
+        vm_ref(i,k)                 = vm_ref_init(k)
+        thlm_ref(i,k)               = thlm_ref_init(k)
+        rtm_ref(i,k)                = rtm_ref_init(k)
+        thvm(i,k)                   = thvm_init(k)         ! Virtual potential temperature
+        radht(i,k)                  = zero        ! Heating rate
+        thlp3(i,k)                  = zero
+        rtp3(i,k)                   = zero
+        wp2thvp(i,k)                = zero        ! w'^2thv'
+        wp2rtp(i,k)                 = zero        ! w'^2 rt'
+        wp2thlp(i,k)                = zero        ! w'^2 thl'
+        wpup2(i,k)                  = zero        ! w'u'^2
+        wpvp2(i,k)                  = zero        ! w'v'^2
+        Kh_zt(i,k)                  = zero        ! Eddy diffusivity coefficient: thermo. levels
+        Lscale(i,k)                 = zero
+        rvm_mc(i,k)                 = zero
+        rcm_mc(i,k)                 = zero
+        thlm_mc(i,k)                = zero
+        rfrzm(i,k)                  = zero
+      end do
+    end do
+
+    !$acc parallel loop gang vector collapse(2) default(present)
+    do k = 1, gr%nzm
+      do i = 1, ngrdcol
+        upwp(i,k)             = zero          ! vertical u momentum flux
+        vpwp(i,k)             = zero          ! vertical v momentum flux
+        up2(i,k)              = up2_init(k)     ! u'^2
+        vp2(i,k)              = vp2_init(k)      ! v'^2
+        wprtp(i,k)            = zero          ! w'rt'
+        wpthlp(i,k)           = zero          ! w'thl'
+        wprcp(i,k)            = zero          ! w'rc'
+        wp2(i,k)              = wp2_init(k)     ! w'^2
+        rtp2(i,k)             = rt_tol**2     ! rt'^2
+        thlp2(i,k)            = thl_tol**2    ! thl'^2
+        rtpthlp(i,k)          = zero          ! rt'thl'
+        rho_zm(i,k)           = rho_zm_init(k)          ! density on moment. levels
+        rho_ds_zm(i,k)        = rho_ds_zm_init(k)          ! dry, static density: m-levs
+        invrs_rho_ds_zm(i,k)  = invrs_rho_ds_zm_init(k)          ! inv. dry, static density: m-levs
+        thv_ds_zm(i,k)        = thv_ds_zm_init(k)          ! dry, base-state theta_v: m-levs
+        wprtp_forcing(i,k)    = zero          ! <w'r_t'> forcing 
+        wpthlp_forcing(i,k)   = zero          ! <w'th_l'> forcing 
+        rtp2_forcing(i,k)     = zero          ! <r_t'^2> forcing 
+        thlp2_forcing(i,k)    = zero          ! <th_l'^2> forcing 
+        rtpthlp_forcing(i,k)  = zero          ! <r_t'th_l'> forcing 
+        upwp_pert(i,k)        = zero          ! Variables used to track perturbed version of winds.
+        vpwp_pert(i,k)        = zero
+        wm_zm(i,k)            = wm_zm_init(k)          ! Imposed large scale w - Momentum levels
+        invrs_tau_zm(i,k)     = zero
+        thlprcp(i,k)          = zero
+        rtpthvp(i,k)          = zero          ! rt'thv'
+        thlpthvp(i,k)         = zero          ! thl'thv'
+        wpthvp(i,k)           = zero          ! w'thv'
+        uprcp(i,k)            = zero          ! u'rc'
+        vprcp(i,k)            = zero          ! v'rc'
+        rc_coef_zm(i,k)       = zero          ! Coefficient of X'r_c' in Eq. (34)
+        wp4(i,k)              = zero          ! w'^4
+        wp2up2(i,k)           = zero          ! w'^2 u'^2
+        wp2vp2(i,k)           = zero          ! w'^2 v'^2
+        Kh_zm(i,k)            = zero          ! Eddy diffusivity coefficient: momentum levels
+        wprtp_mc(i,k)         = zero
+        wpthlp_mc(i,k)        = zero
+        rtp2_mc(i,k)          = zero
+        thlp2_mc(i,k)         = zero
+        rtpthlp_mc(i,k)       = zero
+      end do
+    end do
+
+    ! Surface fluxes
+    !$acc parallel loop gang vector default(present)
+    do i = 1, ngrdcol
+      wpthlp_sfc(i)       = zero
+      wprtp_sfc(i)        = zero
+      upwp_sfc(i)         = zero
+      vpwp_sfc(i)         = zero
+      deep_soil_T_in_K(i) = deep_soil_T_in_K_init(1)
+      sfc_soil_T_in_K(i)  = sfc_soil_T_in_K_init(1)
+      veg_T_in_K(i)       = veg_T_in_K_init(1)
+    end do
+
+    ! Passive scalars
+    if ( sclr_dim > 0 ) then
+
+      !$acc parallel loop gang vector collapse(3) default(present)
+      do sclr = 1, sclr_dim
+        do k = 1, gr%nzt
+          do i = 1, ngrdcol
+            sclrm(i,k,sclr)         = sclrm_init(k,sclr)
+            sclrm_forcing(i,k,sclr) = zero
+            sclrp3(i,k,sclr)        = zero
+          end do
+        end do
+      end do
+
+      !$acc parallel loop gang vector collapse(3) default(present)
+      do sclr = 1, sclr_dim
+        do k = 1, gr%nzm
+          do i = 1, ngrdcol
+            sclrpthvp(i,k,sclr) = zero
+            sclrp2(i,k,sclr)    = sclr_tol(sclr)**2
+            sclrprtp(i,k,sclr)  = zero
+            sclrpthlp(i,k,sclr) = zero
+            wpsclrp(i,k,sclr)   = zero
+          end do
+        end do
+      end do
+
+      !$acc parallel loop gang vector collapse(2) default(present)
+      do sclr = 1, sclr_dim
+        do i = 1, ngrdcol
+          wpsclrp_sfc(i,sclr) = zero
+        end do
+      end do
+
+    end if
+
+    if ( edsclr_dim > 0 ) then
+
+      !$acc parallel loop gang vector collapse(3) default(present)
+      do edsclr = 1, edsclr_dim
+        do k = 1, gr%nzt
+          do i = 1, ngrdcol
+            edsclrm(i,k,edsclr)         = edsclrm_init(k,edsclr)
+            edsclrm_forcing(i,k,edsclr) = zero
+          end do
+        end do
+      end do
+
+      !$acc parallel loop gang vector collapse(2) default(present)
+      do edsclr = 1, edsclr_dim
+        do i = 1, ngrdcol
+          wpedsclrp_sfc(i,edsclr)   = zero
+        end do
+      end do
+
+    end if
+
+    if ( hydromet_dim > 0 ) then
+
+      !$acc parallel loop gang vector collapse(3) default(present)
+      do hm = 1, hydromet_dim
+        do k = 1, gr%nzt
+          do i = 1, ngrdcol
+            thlphmp_zt(i,k,hm)  = zero
+            rtphmp_zt(i,k,hm)   = zero
+            wp2hmp(i,k,hm)      = zero
+          end do
+        end do
+      end do
+
+      !$acc parallel loop gang vector collapse(3) default(present)
+      do hm = 1, hydromet_dim
+        do k = 1, gr%nzm
+          do i = 1, ngrdcol
+            wphydrometp(i,k,hm) = zero
+          end do
+        end do
+      end do
+
+      ! These are not used in any GPU code yet
+      hydromet    = zero
+      hydromet_mc = zero
+      hydromet_vel_zt = zero
+      hydromet_vel_covar_zt_impc = zero
+      hydromet_vel_covar_zt_expc = zero
+      K_hm = zero ! Eddy diff. coef. for hydromets.: mom. levs.
+      hydrometp2  = zero
+
+    end if
+
+    if ( l_add_dycore_grid ) then
+      !$acc parallel loop gang vector collapse(2) default(present)
+      do k = 1, gr_dycore%nzm
+        do i = 1, ngrdcol
+          rho_ds_zm_dycore(i,k) = rho_ds_zm_dycore_init(k)
+        end do
+      end do
+    end if
+
+    if ( l_restart ) then
 
       ! Determining what iteration to restart at.
       ! The value is increased by 1 to sychronize with restart data.
@@ -2286,162 +2675,6 @@ module clubb_driver
       invrs_rho_ds_zt = 1.0_core_rknd/rho_ds_zt
 
     end if ! ~l_restart
-
-    call setup_radiation_variables( gr%nzm, lin_int_buffer, &
-                                    extended_atmos_range_size )
-
-#ifdef _OPENMP
-    iunit = omp_get_thread_num( ) + 50 ! Known magic number
-#else
-    iunit = 50
-#endif
-
-    ! Only output radiation files if using a radiation scheme
-    if ( trim( rad_scheme ) == "bugsrad" ) then
-      stats_metadata%l_output_rad_files = .true.
-    end if
-
-#ifdef SILHS
-    if ( lh_microphys_type /= lh_microphys_disabled ) then
-      l_silhs_out = .true.
-    else
-      l_silhs_out = .false.
-    end if
-#else
-      l_silhs_out = .false.
-#endif
-!$OMP CRITICAL
-    if ( stats_metadata%l_output_rad_files ) then
-
-      ! Initialize statistics output, note that this will allocate/initialize stats
-      ! variables for all columns, but only create the stats files for the first columns
-      call stats_init_api( iunit, fname_prefix, output_dir, l_stats, & ! In
-                           stats_fmt, stats_tsamp, stats_tout, runfile, & ! In
-                           hydromet_dim, sclr_dim, edsclr_dim, sclr_tol, & ! In
-                           hm_metadata%hydromet_list, hm_metadata%l_mix_rat_hm, & ! In
-                           gr%nzm, ngrdcol, nlon, nlat, gr%zt, gr%zm, total_atmos_dim - 1, & ! In
-                           complete_alt(1:total_atmos_dim), total_atmos_dim, & ! In
-                           complete_momentum(1:total_atmos_dim + 1), day, month, year, & ! In
-                           (/lon_vals/), (/lat_vals/), time_current, dt_main, l_silhs_out,&!In
-                           clubb_params, &
-                           clubb_config_flags%l_uv_nudge, &
-                           clubb_config_flags%l_tke_aniso, &
-                           clubb_config_flags%l_standard_term_ta, &
-                           stats_metadata, & ! In/Out
-                           stats_zt, stats_zm, stats_sfc, & ! In/Out
-                           stats_lh_zt, stats_lh_sfc, & ! In/Out
-                           stats_rad_zt, stats_rad_zm, & ! In/Out
-                           err_code ) ! In/Out
-
-    else
-
-      ! Initialize statistics output, note that this will allocate/initialize stats
-      ! variables for all columns, but only create the stats files for the first columns
-      call stats_init_api( iunit, fname_prefix, output_dir, l_stats, & ! In
-                           stats_fmt, stats_tsamp, stats_tout, runfile, & ! In
-                           hydromet_dim, sclr_dim, edsclr_dim, sclr_tol, & ! In
-                           hm_metadata%hydromet_list, hm_metadata%l_mix_rat_hm, & ! In
-                           gr%nzm, ngrdcol, nlon, nlat, gr%zt, gr%zm, 0, & ! In
-                           rad_dummy, 0, rad_dummy, day, month, year, & ! In
-                           (/lon_vals/), (/lat_vals/), time_current, dt_main, l_silhs_out,&!In
-                           clubb_params, &
-                           clubb_config_flags%l_uv_nudge, &
-                           clubb_config_flags%l_tke_aniso, &
-                           clubb_config_flags%l_standard_term_ta, &
-                           stats_metadata, & ! In/Out
-                           stats_zt, stats_zm, stats_sfc, & ! In/Out
-                           stats_lh_zt, stats_lh_sfc, & ! In/Out
-                           stats_rad_zt, stats_rad_zm, & ! In/Out
-                           err_code ) ! In/Out
-
-    end if
-!$OMP END CRITICAL
-
-    if ( clubb_at_least_debug_level( 0 ) ) then
-      if ( err_code == clubb_fatal_error ) then
-          write(fstderr,*) "FATAL ERROR in stats_init_api"
-          error stop
-      end if
-    end if
-
-#ifdef SILHS
-    if ( lh_microphys_type /= lh_microphys_disabled ) then
-
-      ! Setup 2D output of all subcolumns (if enabled)
-      call latin_hypercube_2D_output_api( &
-             fname_prefix, output_dir, stats_metadata%stats_tout, &
-             gr%nzt, pdf_dim, & ! Intent(in)
-             gr%zt, time_initial, lh_num_samples, & ! Intent(in)
-             nlon, nlat, (/lon_vals/), (/lat_vals/), &
-             hm_metadata, &
-             clubb_params(1,:), &
-             sclr_dim, sclr_tol, &
-             clubb_config_flags%l_uv_nudge, &
-             clubb_config_flags%l_tke_aniso, &
-             clubb_config_flags%l_standard_term_ta )    ! Intent(in)
-
-    end if
-#endif /* SILHS */
-
-    ! Time integration
-    ! Call advance_clubb_core once per each statistics output time
-    ifinal = floor( ( time_final - time_initial ) / real(dt_main, kind=time_precision) )
-
-    ! Setup filenames and variables to set for setfields, if enabled
-    if ( l_input_fields ) then
-      call inputfields_init( iunit, runfile ) ! Intent(in)
-    end if
-
-    ! check to make sure dt_rad is a mutliple of dt_main
-    if ( abs(dt_rad/dt_main - real(floor(dt_rad/dt_main), kind=core_rknd)) &
-          > 1.e-8_core_rknd) then
-      error stop "dt_rad must be a multiple of dt_main"
-    end if
-
-    if( stats_metadata%l_stats ) then
-
-      if ( .not. (( abs(dt_rad/stats_metadata%stats_tout &
-                        - real(floor(dt_rad/stats_metadata%stats_tout), kind=core_rknd)) &
-            < 1.e-8_core_rknd) .or. &
-         ( abs(stats_metadata%stats_tout/dt_rad &
-               - real(floor(stats_metadata%stats_tout/dt_rad), kind=core_rknd)) &
-            < 1.e-8_core_rknd)) ) then
-        error stop &
-              "dt_rad must be a multiple of stats_tout or stats_tout must be a mulitple of dt_rad"
-      end if
-
-    end if
-
-    if ( l_silhs_rad .and. clubb_config_flags%l_calc_thlp2_rad ) then
-
-      write(fstderr,*) "The options l_silhs_rad and l_calc_thlp2_rad are incompatible."
-      err_code = clubb_fatal_error
-      call cleanup_clubb( l_input_fields, gr )
-      return
-
-    end if
-
-    if ( clubb_config_flags%l_calc_thlp2_rad .and. rad_scheme == "none" ) then
-
-      error stop "The options rad_scheme == none and l_calc_thlp2_rad are incompatible."
-
-    end if
-    stats_nsamp = nint( stats_metadata%stats_tsamp / dt_main )
-    stats_nout = nint( stats_metadata%stats_tout / dt_main )
-
-    !initialize timers    
-    time_loop_init = 0.0_core_rknd
-    time_clubb_advance = 0.0_core_rknd
-    time_clubb_pdf = 0.0_core_rknd
-    time_SILHS = 0.0_core_rknd
-    time_microphys_advance = 0.0_core_rknd
-    time_microphys_scheme = 0.0_core_rknd
-    time_loop_end = 0.0_core_rknd
-    time_output_multi_col = 0.0_core_rknd
-    time_adapt_grid = 0.0_core_rknd
-    time_total = 0.0_core_rknd
-    time_stop = 0.0_core_rknd
-    time_start = 0.0_core_rknd
     
     ! Save time before main loop starts
     call cpu_time( time_start )
@@ -2454,78 +2687,6 @@ module clubb_driver
 !-------------------------------------------------------------------------------
 !                         Main Time Stepping Loop
 !-------------------------------------------------------------------------------
-
-    !$acc data copyin( gr, gr%zm, gr%zt, gr%dzm, gr%dzt, gr%invrs_dzt, gr%invrs_dzm, &
-    !$acc              gr%weights_zt2zm, gr%weights_zm2zt, &
-    !$acc              nu_vert_res_dep, nu_vert_res_dep%nu2, nu_vert_res_dep%nu9, &
-    !$acc              nu_vert_res_dep%nu1, nu_vert_res_dep%nu8, nu_vert_res_dep%nu10, &
-    !$acc              nu_vert_res_dep%nu6, &
-    !$acc              pdf_params, pdf_params_zm, &
-    !$acc              sclr_idx, clubb_params, hm_metadata, &
-    !$acc              pdf_params%w_1, pdf_params%w_2, pdf_params%varnce_w_1, &
-    !$acc              pdf_params%varnce_w_2, pdf_params%rt_1, pdf_params%rt_2, &
-    !$acc              pdf_params%varnce_rt_1, pdf_params%varnce_rt_2, pdf_params%thl_1, &
-    !$acc              pdf_params%thl_2, pdf_params%varnce_thl_1, pdf_params%varnce_thl_2, &
-    !$acc              pdf_params%corr_w_rt_1, pdf_params%corr_w_rt_2, pdf_params%corr_w_thl_1, &
-    !$acc              pdf_params%corr_w_thl_2, pdf_params%corr_rt_thl_1, pdf_params%corr_rt_thl_2, &
-    !$acc              pdf_params%alpha_thl, pdf_params%alpha_rt, pdf_params%crt_1, pdf_params%crt_2, &
-    !$acc              pdf_params%cthl_1, pdf_params%cthl_2, pdf_params%chi_1, pdf_params%chi_2, &
-    !$acc              pdf_params%stdev_chi_1, pdf_params%stdev_chi_2, pdf_params%stdev_eta_1, &
-    !$acc              pdf_params%stdev_eta_2, pdf_params%covar_chi_eta_1, pdf_params%covar_chi_eta_2, &
-    !$acc              pdf_params%corr_w_chi_1, pdf_params%corr_w_chi_2, pdf_params%corr_w_eta_1, &
-    !$acc              pdf_params%corr_w_eta_2, pdf_params%corr_chi_eta_1, pdf_params%corr_chi_eta_2, &
-    !$acc              pdf_params%rsatl_1, pdf_params%rsatl_2, pdf_params%rc_1, pdf_params%rc_2, &
-    !$acc              pdf_params%cloud_frac_1, pdf_params%cloud_frac_2, pdf_params%mixt_frac, &
-    !$acc              pdf_params%ice_supersat_frac_1, pdf_params%ice_supersat_frac_2, &
-    !$acc              pdf_params_zm%w_1, pdf_params_zm%w_2, pdf_params_zm%varnce_w_1, &
-    !$acc              pdf_params_zm%varnce_w_2, pdf_params_zm%rt_1, pdf_params_zm%rt_2, &
-    !$acc              pdf_params_zm%varnce_rt_1, pdf_params_zm%varnce_rt_2, pdf_params_zm%thl_1, &
-    !$acc              pdf_params_zm%thl_2, pdf_params_zm%varnce_thl_1, pdf_params_zm%varnce_thl_2, &
-    !$acc              pdf_params_zm%corr_w_rt_1, pdf_params_zm%corr_w_rt_2, pdf_params_zm%corr_w_thl_1, &
-    !$acc              pdf_params_zm%corr_w_thl_2, pdf_params_zm%corr_rt_thl_1, pdf_params_zm%corr_rt_thl_2, &
-    !$acc              pdf_params_zm%alpha_thl, pdf_params_zm%alpha_rt, pdf_params_zm%crt_1, pdf_params_zm%crt_2, &
-    !$acc              pdf_params_zm%cthl_1, pdf_params_zm%cthl_2, pdf_params_zm%chi_1, pdf_params_zm%chi_2, &
-    !$acc              pdf_params_zm%stdev_chi_1, pdf_params_zm%stdev_chi_2, pdf_params_zm%stdev_eta_1, &
-    !$acc              pdf_params_zm%stdev_eta_2, pdf_params_zm%covar_chi_eta_1, pdf_params_zm%covar_chi_eta_2, &
-    !$acc              pdf_params_zm%corr_w_chi_1, pdf_params_zm%corr_w_chi_2, pdf_params_zm%corr_w_eta_1, &
-    !$acc              pdf_params_zm%corr_w_eta_2, pdf_params_zm%corr_chi_eta_1, pdf_params_zm%corr_chi_eta_2, &
-    !$acc              pdf_params_zm%rsatl_1, pdf_params_zm%rsatl_2, pdf_params_zm%rc_1, pdf_params_zm%rc_2, &
-    !$acc              pdf_params_zm%cloud_frac_1, pdf_params_zm%cloud_frac_2, pdf_params_zm%mixt_frac, &
-    !$acc              pdf_params_zm%ice_supersat_frac_1, pdf_params_zm%ice_supersat_frac_2, &
-    !$acc              rtm, wm_zt, ug, vg, um_ref, vm_ref, thlm_forcing, rtm_forcing, &
-    !$acc              um_forcing, vm_forcing, wm_zm, wprtp_forcing, wpthlp_forcing, &
-    !$acc              rtp2_forcing, thlp2_forcing, rtpthlp_forcing, wpthlp_sfc, &
-    !$acc              wprtp_sfc, upwp_sfc, vpwp_sfc, T_sfc, p_sfc, &
-    !$acc              deep_soil_T_in_K, sfc_soil_T_in_K, veg_T_in_K, rcm_mc, rvm_mc, &
-    !$acc              thlm_mc, radht, wprtp_mc, wpthlp_mc, rtp2_mc, thlp2_mc, rtpthlp_mc, &
-    !$acc              thlprcp, wprtp, wpthlp, rtp2, thlp2, rtpthlp, &
-    !$acc              wp2, wp3, wp2thvp, rtpthvp, thlpthvp, fcor, sfc_elevation, &
-    !$acc              rho_zm, rho, rho_ds_zm, rho_ds_zt, invrs_rho_ds_zm, &
-    !$acc              invrs_rho_ds_zt, thv_ds_zm, thv_ds_zt, &
-    !$acc              upwp_sfc_pert, vpwp_sfc_pert, rtm_ref, &
-    !$acc              thlm_ref, dummy_dx, dummy_dy, um, upwp, &
-    !$acc              vm, vpwp, up2, vp2, up3, vp3, thlm, &
-    !$acc              rtp3, thlp3, p_in_Pa, exner, &
-    !$acc              rcm, cloud_frac, wpthvp, wp2rtp, &
-    !$acc              wp2thlp, uprcp, vprcp, rc_coef_zm, wp4, wpup2, wpvp2, &
-    !$acc              wp2up2, wp2vp2, ice_supersat_frac, um_pert, vm_pert, upwp_pert, vpwp_pert, &
-    !$acc              rcm_in_layer, cloud_cover, wprcp, w_up_in_cloud, w_down_in_cloud, cloudy_updraft_frac, &
-    !$acc              cloudy_downdraft_frac, invrs_tau_zm, Kh_zt, Kh_zm, Lscale, &
-    !$acc              X_nl_all_levs, x_mixt_comp_all_levs, lh_sample_point_weights,  &
-    !$acc              lh_rt_clipped, lh_thl_clipped, lh_rc_clipped, lh_rv_clipped, lh_Nc_clipped, &
-    !$acc              mu_x_1_n, mu_x_2_n, sigma_x_1_n, sigma_x_2_n, &
-    !$acc              corr_array_1_n, corr_array_2_n, corr_cholesky_mtx_1, corr_cholesky_mtx_2, &
-    !$acc              rfrzm, thvm  )
-
-    !$acc data if( sclr_dim > 0 ) &
-    !$acc      copyin( sclr_tol, sclrm_forcing, wpsclrp_sfc, sclrm, &
-    !$acc              wpsclrp, sclrp2, sclrp3, sclrprtp, sclrpthlp, sclrpthvp )
-
-    !$acc data if( edsclr_dim > 0 ) &
-    !$acc      copyin( wpedsclrp_sfc, edsclrm_forcing, edsclrm )
-
-    !$acc data if( hydromet_dim > 0 ) &
-    !$acc      copyin( wphydrometp, wp2hmp, rtphmp_zt, thlphmp_zt, hm_metadata%l_mix_rat_hm )
 
     mainloop: do itime = iinit, ifinal, 1
       
@@ -3609,6 +3770,9 @@ module clubb_driver
                 lh_rv_clipped, lh_Nc_clipped, &
                 X_mixt_comp_all_levs, lh_sample_point_weights, Nc_in_cloud )
 
+    ! Deallocate stretched grid altitude arrays
+    deallocate( momentum_heights, thermodynamic_heights )
+    
     if ( grid_adapt_in_time_method > 0 ) then
       deallocate( gr_dens_z )
       deallocate( gr_dens )
@@ -3931,6 +4095,11 @@ module clubb_driver
        = 30.0_core_rknd &
          * ( one + exp( -gr%zt(:,1:gr%nzt) / 2000.0_core_rknd ) ) &
          * cm3_per_m3 / rho    ! Known magic number
+
+    case default
+
+      Nccnm = zero
+
     end select
 
 
@@ -4395,6 +4564,10 @@ module clubb_driver
       sfc_soil_T_in_K = 300._core_rknd
       deep_soil_T_in_K = 288.58_core_rknd
 
+    case default
+
+      em = em_min
+
     end select
 
     ! End Initialize TKE and other fields as needed
@@ -4423,14 +4596,21 @@ module clubb_driver
     if ( clubb_config_flags%l_uv_nudge .or. uv_sponge_damp_settings%l_sponge_damping ) then
       um_ref = um ! Michael Falk addition for nudging code.  27 Sep/1 Nov 2006
       vm_ref = vm ! ditto
+    else
+      um_ref = zero
+      vm_ref = zero
     end if
 
     if ( thlm_sponge_damp_settings%l_sponge_damping ) then
       thlm_ref = thlm ! Added for nudging code
+    else
+      thlm_ref = zero
     end if
 
     if ( rtm_sponge_damp_settings%l_sponge_damping ) then
-      rtm_ref  = rtm
+      rtm_ref = rtm
+    else
+      rtm_ref = zero
     end if
 
     return
