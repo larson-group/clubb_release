@@ -2381,11 +2381,12 @@ module clubb_driver
 
 
     !$acc data if( sclr_dim > 0 ) &
-    !$acc      copyin( sclr_tol ) &
+    !$acc      copyin( sclr_tol, sclrm_init ) &
     !$acc      create( sclrm_forcing, wpsclrp_sfc, sclrm, &
     !$acc              wpsclrp, sclrp2, sclrp3, sclrprtp, sclrpthlp, sclrpthvp )
 
     !$acc data if( edsclr_dim > 0 ) &
+    !$acc      copyin( edsclrm_init ) &
     !$acc      create( wpedsclrp_sfc, edsclrm_forcing, edsclrm )
 
     !$acc data if( hydromet_dim > 0 ) &
