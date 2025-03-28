@@ -2324,6 +2324,7 @@ module clubb_driver
     !$acc              rho_init, rho_zm_init, rho_ds_zm_init, rho_ds_zt_init, &
     !$acc              invrs_rho_ds_zm_init, invrs_rho_ds_zt_init, thv_ds_zm_init, &
     !$acc              thv_ds_zt_init, rtm_ref_init, thlm_ref_init, um_ref_init, &
+    !$acc              deep_soil_T_in_K_init, sfc_soil_T_in_K_init, veg_T_in_K_init, &
     !$acc              vm_ref_init, rho_ds_zm_dycore_init ) &
     !$acc      create( rtm, wm_zt, ug, vg, um_ref, vm_ref, thlm_forcing, rtm_forcing, &
     !$acc              um_forcing, vm_forcing, wm_zm, wprtp_forcing, wpthlp_forcing, &
