@@ -1145,7 +1145,7 @@ module clubb_driver
     stats_fmt    = ''
 
     ! Default values for the soil scheme
-    call initialize_soil_veg( ngrdcol, deep_soil_T_in_K, sfc_soil_T_in_K, veg_T_in_K )
+    call initialize_soil_veg( 1, deep_soil_T_in_K_init, sfc_soil_T_in_K_init, veg_T_in_K_init )
 
     ! Default values for generic model settings
     call initialize_clubb_model_settings()
@@ -2024,7 +2024,8 @@ module clubb_driver
     else
       ! if no interpolation should be used, rho_ds_zm_dycore is not needed and we can use a 
       ! dummy variable
-      allocate( rho_ds_zm_dycore(ngrdcol, 1) ) ! dry, static density: m-levs of dycore grid
+      allocate( rho_ds_zm_dycore_init(1), &
+                rho_ds_zm_dycore(ngrdcol, 1) ) ! dry, static density: m-levs of dycore grid
     end if
 
     if (grid_adapt_in_time_method > 0) then
@@ -3300,7 +3301,7 @@ module clubb_driver
         ! Cloud water sedimentation.
         if ( l_cloud_sed ) then
 
-          !$acc update host( cloud_frac )
+          !$acc update host( cloud_frac, rcm, rho_zm, rho, exner )
         
           Ncm = Nc_in_cloud * cloud_frac
           rcm_mc = zero
@@ -4179,6 +4180,8 @@ module clubb_driver
                                                         gr_dycore%zt, gr%zm, &
                                                         p_in_Pa_zm(i,:) )
       end do
+    else
+      rho_ds_zm_dycore = zero
     end if
 
     ! Initialize Time Dependent Input
