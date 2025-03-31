@@ -10,6 +10,10 @@ read_dir = '../output'
 file_ending = '_grid_adapt.txt'
 fps_default = 4
 
+
+#read_dir = '/home/carstensen/comp_out/dycore_adapt_from_dycore'
+#utput_dir_default = read_dir
+
 def processArguments():
     parser = argparse.ArgumentParser()
     parser.add_argument("-o", "--output-dir", help="Directory where the files should bewritten to.",
@@ -58,7 +62,8 @@ def make_grid_adapt_animation_for_file(read_file, write_file, fps=fps_default):
         ax.plot(d[1][1:n], d[0][1:n], lw = 3)
         ax.set_ylim(matrix_z[0,0], matrix_z[-1,-1])
         ax.set_xlim(matrix_dens.min(), matrix_dens.max())
-        ax.set_title(f"t={int(round(d[0][0]))}min")
+        #ax.set_title(f"t={int(round(d[0][0]))}min")
+        ax.set_title(f"it={int(round(d[0][0]))}")
         
         fig.canvas.draw()
         buf = fig.canvas.tostring_rgb()
@@ -105,7 +110,8 @@ def make_grid_adapt_plot_for_file(read_file, write_file):
         plt.plot(times, matrix[:,0:max_grid_levs])
     else:
         plt.plot(times, matrix)
-    plt.xlabel('time [min]')
+    #plt.xlabel('time [min]')
+    plt.xlabel('iteration')
     plt.ylabel('z [m]')
     plt.savefig(write_file)
     plt.clf()
@@ -115,7 +121,7 @@ def make_all_plots_and_anim(args):
     for filename in os.listdir(read_dir):
         if filename.endswith(file_ending):
             read_file = read_dir + '/' + filename
-            write_file_plot = output_dir + '/' + filename.split('.')[0] + '.svg'
+            write_file_plot = output_dir + '/' + filename.split('.')[0] + '.png'
             write_file_anim = output_dir + '/' + filename.split('.')[0] + '.mp4'
             make_grid_adapt_plot_for_file(read_file, write_file_plot)
             if args.anim:

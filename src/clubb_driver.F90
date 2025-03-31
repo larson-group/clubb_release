@@ -57,6 +57,7 @@ module clubb_driver
       read_grid_heights, &   !---------------------------------------------- Procedure(s)
       zt2zm, &
       zm2zt, &
+      ddzt, &
       zm2zt2zm
 
     use stats_clubb_utilities, only: &
@@ -579,6 +580,7 @@ module clubb_driver
       Kh_zm     ! Eddy diffusivity coefficient on momentum levels      [m^2/s]
 
     real( kind = core_rknd ), dimension(:,:), allocatable :: &
+      Lscale_zm, &
       Lscale          ! Length scale                     [m]
       
     real( kind = core_rknd ), dimension(:,:), allocatable :: &
@@ -946,6 +948,12 @@ module clubb_driver
       zm_init, &
       zm_top, &
       deltaz
+
+    real( kind = core_rknd ), dimension(:,:), allocatable :: &
+       ddzt_um,                      & ! Vertical derivative of um                    [s^-1]
+       ddzt_vm,                      & ! Vertical derivative of vm                    [s^-1]
+       ddzt_umvm_sqd                   ! Squared vertical norm of derivative of
+                                       ! mean horizontal wind speed                   [s^-2]
 
     ! Definition of namelists
     namelist /model_setting/ &
@@ -1843,6 +1851,7 @@ module clubb_driver
 
     allocate( em(ngrdcol, gr%nzm) )
     allocate( Lscale(ngrdcol, gr%nzt) )
+    allocate( Lscale_zm(ngrdcol, gr%nzm) )
 
     allocate( tau_zm(ngrdcol, gr%nzm) ) ! Eddy dissipation time scale: momentum levels
     allocate( tau_zt(ngrdcol, gr%nzt) ) ! Eddy dissipation time scale: thermo. levels
@@ -1914,6 +1923,9 @@ module clubb_driver
     allocate( brunt_vaisala_freq_sqd_moist(ngrdcol, gr%nzm) )
     allocate( brunt_vaisala_freq_sqd_smth(ngrdcol, gr%nzm) )
 
+    allocate( ddzt_um(ngrdcol, gr%nzm) )
+    allocate( ddzt_vm(ngrdcol, gr%nzm) )
+    allocate( ddzt_umvm_sqd(ngrdcol, gr%nzm) )
 
     allocate( rfrzm(ngrdcol, gr%nzt) )
               
@@ -1947,8 +1959,8 @@ module clubb_driver
     end if
 
     if (grid_adapt_in_time_method > no_grid_adaptation) then
-      allocate( gr_dens_z(gr%nzt) )
-      allocate( gr_dens(gr%nzt) )
+      allocate( gr_dens_z(gr%nzm) )
+      allocate( gr_dens(gr%nzm) )
     end if
 
     ! Variables for PDF closure scheme
@@ -2072,6 +2084,7 @@ module clubb_driver
 
     ! Length scale
     Lscale      = zero
+    Lscale_zm   = zero
 
     ! Dissipation time
     tau_zm = zero ! Eddy dissipation time scale: momentum levels
@@ -3337,7 +3350,11 @@ module clubb_driver
       call cpu_time(time_stop)
       time_output_multi_col = time_output_multi_col + time_stop - time_start
 
-      if ( (grid_adapt_in_time_method > no_grid_adaptation) .and. (modulo(itime, 30) == 0) &
+      if ( (grid_adapt_in_time_method > no_grid_adaptation) &
+           .and. (modulo(itime, 120) == 0 .or. itime == 5) & ! == 5 since this is the first time
+                                                             ! values are written to file, so
+                                                             ! this is to ensure that CLUBB
+                                                             ! starts with a grid adaptation
            .and. (stats_metadata%l_stats_last) ) then ! only adapt grid when the average of the last
                                                       ! iterations was just written to file,
                                                       ! in order not to change the grid in between
@@ -3360,10 +3377,23 @@ module clubb_driver
                                       brunt_vaisala_freq_sqd_dry,                         & ! Out
                                       brunt_vaisala_freq_sqd_moist,                       & ! Out
                                       brunt_vaisala_freq_sqd_smth )                         ! Out
-      
-          brunt_vaisala_freq_sqd_zt = zm2zt( gr%nzm, gr%nzt, ngrdcol, gr, brunt_vaisala_freq_sqd )
-          call calc_grid_dens_func( ngrdcol, gr%nzt, gr%zt, &
-                                    Lscale, wp2_zt, &
+
+          Lscale_zm = zt2zm( gr%nzm, gr%nzt, ngrdcol, gr, Lscale )
+          ! Calculate the norm of the vertical derivative of the mean horizontal wind speed
+          ! To feed into the calculation of the Richardson number Ri_zm
+          ddzt_um = ddzt( gr%nzm, gr%nzt, ngrdcol, gr, um )
+          ddzt_vm = ddzt( gr%nzm, gr%nzt, ngrdcol, gr, vm )
+
+          !$acc parallel loop gang vector collapse(2) default(present)
+          do k = 1, gr%nzm
+            do i = 1, ngrdcol
+              ddzt_umvm_sqd(i,k) = ddzt_um(i,k)**2 + ddzt_vm(i,k)**2
+            end do
+          end do
+          call calc_grid_dens_func( ngrdcol, gr%nzm, gr%zm, &
+                                    gr, &
+                                    Lscale_zm, wp2, &
+                                    ddzt_umvm_sqd, &
                                     gr%zm(1,1), gr%zm(1,gr%nzm), &
                                     gr%nzm, &
                                     pdf_params, &
@@ -3377,7 +3407,7 @@ module clubb_driver
         
         end if
 
-        call adapt_grid( iunit_grid_adaptation, itime, ngrdcol, gr%nzt, &        ! Intent(in)
+        call adapt_grid( iunit_grid_adaptation, itime, ngrdcol, gr%nzm, &        ! Intent(in)
                          gr_dens_z, gr_dens, &                                   ! Intent(in)
                          sfc_elevation, l_implemented, &                         ! Intent(in)
                          hydromet_dim, sclr_dim, edsclr_dim, &                   ! Intent(in)
@@ -3629,6 +3659,11 @@ module clubb_driver
 
     deallocate( em )
     deallocate( Lscale )
+    deallocate( Lscale_zm )
+
+    deallocate( ddzt_um )
+    deallocate( ddzt_vm )
+    deallocate( ddzt_umvm_sqd )
 
     deallocate( tau_zm ) ! Eddy dissipation time scale: momentum levels
     deallocate( tau_zt ) ! Eddy dissipation time scale: thermo. levels

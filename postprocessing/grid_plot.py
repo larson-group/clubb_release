@@ -70,16 +70,21 @@ def get_cli_args():
 
 
 def read_heights(grid_file_paths):
+    max_height = 0
     heights = []
     for grid_file_path in grid_file_paths:
         heights_tmp = []
         with open(grid_file_path, "r") as grid_file:
+            line_str_format = ''
             for line in grid_file:
-                heights_tmp.append(str(round(float(line), DECIMAL_PLACES_ACCURACY)))
+                line_str_format = str(round(float(line), DECIMAL_PLACES_ACCURACY))
+                heights_tmp.append(line_str_format)
+            if float(line_str_format) > max_height:
+                max_height = float(line_str_format)
         heights.append(heights_tmp)
-    return heights
+    return heights, max_height
 
-def create_tikz(heights_matrix, png_output_file, tikz_output_file, names):
+def create_tikz(heights_matrix, max_height, png_output_file, tikz_output_file, names):
     heights_intersected = set(heights_matrix[0])
     for heights in heights_matrix:
         heights_intersected = heights_intersected.intersection(set(heights))
@@ -90,7 +95,7 @@ def create_tikz(heights_matrix, png_output_file, tikz_output_file, names):
 
     for j, heights in enumerate(heights_matrix):
         dist_between_grids = 0 if j == 0 else 0.1
-        heights_scaled = [float(height)/(float(heights[len(heights)-1])/(ABSOLUT_PIC_HEIGHT-surface_height)) + surface_height for height in heights]
+        heights_scaled = [float(height)/(max_height/(ABSOLUT_PIC_HEIGHT-surface_height)) + surface_height for height in heights]
 
         tikz.rectangle((j*absolut_grid_width + j*dist_between_grids, 0), absolut_grid_width, surface_height, options='gray!30', action='filldraw')
         #tikz.node((ABSOLUT_GRIDS_WIDTH + 1, surface_height), text=f"Surface", options='fill=white')
@@ -114,7 +119,8 @@ def create_tikz(heights_matrix, png_output_file, tikz_output_file, names):
             #if i > 0:
             #    line_height_zm = tikz.line((12, heights_scaled[i-1]), (12, height_scaled), options="|-|", action="draw")
             #    tikz.node(line_height_zm.midpoint(), text=f"${heights[i] - heights[i-1]}$", options='fill=white')
-        tikz.node((line_zm.midpoint().x, line_zm.midpoint().y + 1), text=names[j])
+        scaled_max_height = max_height/(max_height/(ABSOLUT_PIC_HEIGHT-surface_height)) + surface_height
+        tikz.node((line_zm.midpoint().x, scaled_max_height + 1), text=names[j])
 
 
     if len(png_output_file) > 0:
@@ -131,8 +137,8 @@ def create_tikz(heights_matrix, png_output_file, tikz_output_file, names):
 
 def main():
     args = get_cli_args()
-    heights_matrix = read_heights(args.grid_files)
-    create_tikz(heights_matrix, args.png, args.tikz, args.grid_names)
+    heights_matrix, max_height = read_heights(args.grid_files)
+    create_tikz(heights_matrix, max_height, args.png, args.tikz, args.grid_names)
     
 
 
