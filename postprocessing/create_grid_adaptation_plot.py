@@ -31,7 +31,9 @@ def make_grid_adapt_animation_for_file(read_file, write_file, fps=fps_default):
 
     times = []
     matrix_z = []
+    matrix_min_z = []
     matrix_dens = []
+    matrix_min_dens = []
 
     restrict_time_frame = False
     max_time = 600
@@ -49,17 +51,24 @@ def make_grid_adapt_animation_for_file(read_file, write_file, fps=fps_default):
                 matrix_z.append([float(val) for val in vals])
             if line_id == 'gr_dens':
                 matrix_dens.append([float(val) for val in vals])
+            if line_id == 'min_gr_dens_z':
+                matrix_min_z.append([float(val) for val in vals])
+            if line_id == 'min_gr_dens':
+                matrix_min_dens.append([float(val) for val in vals])
 
     times = np.array(times)
     matrix_z = np.array(matrix_z)
+    matrix_min_z = np.array(matrix_min_z)
     matrix_dens = np.array(matrix_dens)
+    matrix_min_dens = np.array(matrix_min_dens)
 
     n = times.shape[0]
     fig, ax = plt.subplots()
 
     def data_to_frame(d):
         ax.clear()
-        ax.plot(d[1][1:n], d[0][1:n], lw = 3)
+        ax.plot(d[1][1:n+4], d[0][1:n+4], lw = 3)
+        ax.plot(d[1][n+4:2*n+8], d[0][n+4:2*n+8], lw = 1, linestyle='dashed')
         ax.set_ylim(matrix_z[0,0], matrix_z[-1,-1])
         ax.set_xlim(matrix_dens.min(), matrix_dens.max())
         #ax.set_title(f"t={int(round(d[0][0]))}min")
@@ -73,7 +82,7 @@ def make_grid_adapt_animation_for_file(read_file, write_file, fps=fps_default):
     
     data_list = []
     for i in range(n):
-        data_list.append(np.array([[times[i], *matrix_z[i,:]], [times[i], *matrix_dens[i,:]]]))
+        data_list.append(np.array([[times[i], *matrix_z[i,:], *matrix_min_z[i,:]], [times[i], *matrix_dens[i,:], *matrix_min_dens[i,:]]]))
     animation = DataVideoClip(data_list, data_to_frame, fps=fps)
     animation.write_videofile(write_file)
     plt.clf()

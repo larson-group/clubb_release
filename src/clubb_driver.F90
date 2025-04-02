@@ -3397,7 +3397,7 @@ module clubb_driver
                                     gr%zm(1,1), gr%zm(1,gr%nzm), &
                                     gr%nzm, &
                                     pdf_params, &
-                                    brunt_vaisala_freq_sqd_zt, &
+                                    brunt_vaisala_freq_sqd, &
                                     gr_dens_z, gr_dens )
       
         else

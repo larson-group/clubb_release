@@ -1904,6 +1904,8 @@ module grid_adaptation_module
 
     write(iunit, *) 'gr_dens_z', itime, gr_dens_norm_z
     write(iunit, *) 'gr_dens', itime, gr_dens_norm
+    write(iunit, *) 'min_gr_dens_z', itime, min_gr_dens_norm_z
+    write(iunit, *) 'min_gr_dens', itime, min_gr_dens_norm
 
     ! create grid from normalized grid density function
     do i = 1, ngrdcol
@@ -3309,6 +3311,7 @@ module grid_adaptation_module
     !threshold = 0.1
     do k = 1, nzm
         gr_dens_z(k) = zm(1,k)
+        gr_dens(k) = 0.0_core_rknd
         if ( wp2(1,k) > threshold ) then
           !gr_dens(k) = 1.0/(Lscale(1,k)+10.0) + 3.0/(gr_dens_z(k)+20.0)
           !gr_dens(k) = 1.0/(Lscale(1,k)+10.0)! + 10.0/(gr_dens_z(k)+1.0) ! +20 before ! if we just use this condition, then at least some of the resuts in some of the timeframes show better results (e.g. wp3 in 0-500 or 1000-2000)
@@ -3319,11 +3322,11 @@ module grid_adaptation_module
         end if
         gr_dens(k) = gr_dens(k) + 2.0/1000.0 * exp(100 * chi_zm(k))
 
-        gr_dens(k) = gr_dens(k) &
-                     + 1.0e2_core_rknd*maxval([0.0_core_rknd,(brunt_vaisala_freq_sqd(1,k))])
-        !gr_dens(k) = gr_dens(k) + 4.0/(gr_dens_z(k)+1.0)
-        gr_dens(k) = gr_dens(k) &
-                     + 2.0e1_core_rknd*maxval([0.0_core_rknd,(ddzt_umvm_sqd(1,k))])
+        !gr_dens(k) = gr_dens(k) &
+        !             + 1.0e2_core_rknd*maxval([0.0_core_rknd,(brunt_vaisala_freq_sqd(1,k))])
+        !gr_dens(k) = gr_dens(k) + 0.05/(gr_dens_z(k)+1.0)
+        !gr_dens(k) = gr_dens(k) &
+        !             + 2.0e1_core_rknd*maxval([0.0_core_rknd,(ddzt_umvm_sqd(1,k))])
         !gr_dens(k) = gr_dens(k) + 4.0/(gr_dens_z(k)+1.0)
 
 
