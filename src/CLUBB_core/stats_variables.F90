@@ -1135,6 +1135,9 @@ module stats_variables
     integer, allocatable, dimension(:) :: & 
        iwpedsclrp ! eddy sclr'(1)w'
 
+    integer :: &
+      igrid_density = 0 ! the grid density to adapt the grid
+
 
     !====================================================================
     !                         RAD ZT Indices

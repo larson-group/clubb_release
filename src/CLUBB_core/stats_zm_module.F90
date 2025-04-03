@@ -2377,6 +2377,14 @@ module stats_zm_module
              var_units="(K kg/kg)/s", l_silhs=.false., grid_kind=stats_zm )
         k = k + 1
 
+      case ('grid_density')
+        stats_metadata%igrid_density = k
+        call stat_assign( var_index=stats_metadata%igrid_density, var_name="grid_density", &
+             var_description="grid_density, Grid density to create new grid", &
+             var_units="1/m", l_silhs=.false., &
+             grid_kind=stats_zm )
+        k = k + 1
+
       case ( 'sclrprtp' )
         do sclr = 1, sclr_dim, 1
           write( sclr_idx, * ) sclr

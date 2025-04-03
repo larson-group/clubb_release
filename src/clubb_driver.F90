@@ -3276,6 +3276,62 @@ module clubb_driver
         end do
       end if
 
+      ! calculate grid density for grid adaptation
+      if ( grid_adapt_in_time_method > no_grid_adaptation &
+           .or. clubb_at_least_debug_level( 2 ) ) then
+
+        if ( grid_adapt_in_time_method == Lscale_and_wp2 ) then
+
+          call calc_brunt_vaisala_freq_sqd( gr%nzm, gr%nzt, ngrdcol, gr, thlm,            & ! In
+                                      exner, rtm, rcm, p_in_Pa, thvm,                     & ! In
+                                      ice_supersat_frac,                                  & ! In
+                                      clubb_config_flags%saturation_formula,              & ! In
+                                      clubb_config_flags%l_brunt_vaisala_freq_moist,      & ! In
+                                      clubb_config_flags%l_use_thvm_in_bv_freq,           & ! In
+                                      clubb_config_flags%l_modify_limiters_for_cnvg_test, & ! In
+                                      clubb_params(:,ibv_efold),                          & ! In
+                                      brunt_vaisala_freq_sqd,                             & ! Out
+                                      brunt_vaisala_freq_sqd_mixed,                       & ! Out
+                                      brunt_vaisala_freq_sqd_dry,                         & ! Out
+                                      brunt_vaisala_freq_sqd_moist,                       & ! Out
+                                      brunt_vaisala_freq_sqd_smth )                         ! Out
+
+          Lscale_zm = zt2zm( gr%nzm, gr%nzt, ngrdcol, gr, Lscale )
+          ! Calculate the norm of the vertical derivative of the mean horizontal wind speed
+          ! To feed into the calculation of the Richardson number Ri_zm
+          ddzt_um = ddzt( gr%nzm, gr%nzt, ngrdcol, gr, um )
+          ddzt_vm = ddzt( gr%nzm, gr%nzt, ngrdcol, gr, vm )
+
+          !$acc parallel loop gang vector collapse(2) default(present)
+          do k = 1, gr%nzm
+            do i = 1, ngrdcol
+              ddzt_umvm_sqd(i,k) = ddzt_um(i,k)**2 + ddzt_vm(i,k)**2
+            end do
+          end do
+          call calc_grid_dens_func( ngrdcol, gr%nzm, gr%zm, &
+                                    gr, &
+                                    Lscale_zm, wp2, &
+                                    ddzt_umvm_sqd, &
+                                    gr%zm(1,1), gr%zm(1,gr%nzm), &
+                                    gr%nzm, &
+                                    pdf_params, &
+                                    brunt_vaisala_freq_sqd, &
+                                    gr_dens_z, gr_dens )
+      
+        else
+      
+          write(fstderr,*) 'There is currently no grid adaptation method implemented for ', &
+                           'grid_adapt_in_time_method=', grid_adapt_in_time_method
+        
+        end if
+
+        if ( stats_metadata%l_stats_samp ) then
+          do i = 1, ngrdcol
+            call stat_update_var( stats_metadata%igrid_density, gr_dens, stats_zm(i) )
+          end do
+        endif
+      endif
+
       ! End statistics timestep
       ! Only end stats for the first column of values, this writes the values to file,
       ! but since the stats isn't setup to use multiple columns, it will just attempt
@@ -3361,51 +3417,6 @@ module clubb_driver
                                                       ! iterations that get averaged before written
                                                       ! to file
         call cpu_time(time_start)
-      
-        if ( grid_adapt_in_time_method == Lscale_and_wp2 ) then
-
-          call calc_brunt_vaisala_freq_sqd( gr%nzm, gr%nzt, ngrdcol, gr, thlm,            & ! In
-                                      exner, rtm, rcm, p_in_Pa, thvm,                     & ! In
-                                      ice_supersat_frac,                                  & ! In
-                                      clubb_config_flags%saturation_formula,              & ! In
-                                      clubb_config_flags%l_brunt_vaisala_freq_moist,      & ! In
-                                      clubb_config_flags%l_use_thvm_in_bv_freq,           & ! In
-                                      clubb_config_flags%l_modify_limiters_for_cnvg_test, & ! In
-                                      clubb_params(:,ibv_efold),                          & ! In
-                                      brunt_vaisala_freq_sqd,                             & ! Out
-                                      brunt_vaisala_freq_sqd_mixed,                       & ! Out
-                                      brunt_vaisala_freq_sqd_dry,                         & ! Out
-                                      brunt_vaisala_freq_sqd_moist,                       & ! Out
-                                      brunt_vaisala_freq_sqd_smth )                         ! Out
-
-          Lscale_zm = zt2zm( gr%nzm, gr%nzt, ngrdcol, gr, Lscale )
-          ! Calculate the norm of the vertical derivative of the mean horizontal wind speed
-          ! To feed into the calculation of the Richardson number Ri_zm
-          ddzt_um = ddzt( gr%nzm, gr%nzt, ngrdcol, gr, um )
-          ddzt_vm = ddzt( gr%nzm, gr%nzt, ngrdcol, gr, vm )
-
-          !$acc parallel loop gang vector collapse(2) default(present)
-          do k = 1, gr%nzm
-            do i = 1, ngrdcol
-              ddzt_umvm_sqd(i,k) = ddzt_um(i,k)**2 + ddzt_vm(i,k)**2
-            end do
-          end do
-          call calc_grid_dens_func( ngrdcol, gr%nzm, gr%zm, &
-                                    gr, &
-                                    Lscale_zm, wp2, &
-                                    ddzt_umvm_sqd, &
-                                    gr%zm(1,1), gr%zm(1,gr%nzm), &
-                                    gr%nzm, &
-                                    pdf_params, &
-                                    brunt_vaisala_freq_sqd, &
-                                    gr_dens_z, gr_dens )
-      
-        else
-      
-          write(fstderr,*) 'There is currently no grid adaptation method implemented for ', &
-                           'grid_adapt_in_time_method=', grid_adapt_in_time_method
-        
-        end if
 
         call adapt_grid( iunit_grid_adaptation, itime, ngrdcol, gr%nzm, &        ! Intent(in)
                          gr_dens_z, gr_dens, &                                   ! Intent(in)
