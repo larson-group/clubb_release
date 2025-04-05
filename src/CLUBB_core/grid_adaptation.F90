@@ -1578,30 +1578,6 @@ module grid_adaptation_module
                                          common_grid, gr_dens_new_z, &
                                          gr_dens_new )
 
-      ! calculate mean of gr_dens_old_interp and gr_dens_new_interp to shift functions to mean 0
-      mean_gr_dens_old_interp = 0
-      mean_gr_dens_new_interp = 0
-      do k = 1, j
-        mean_gr_dens_old_interp = mean_gr_dens_old_interp + gr_dens_old_interp(k)
-        mean_gr_dens_new_interp = mean_gr_dens_new_interp + gr_dens_new_interp(k)
-      end do
-      mean_gr_dens_old_interp = mean_gr_dens_old_interp/j
-      mean_gr_dens_new_interp = mean_gr_dens_new_interp/j
-
-      ! shift both functions to mean 0
-      do k = 1, j
-        gr_dens_old_interp(k) = gr_dens_old_interp(k) - mean_gr_dens_old_interp
-        gr_dens_new_interp(k) = gr_dens_new_interp(k) - mean_gr_dens_new_interp
-      end do
-
-      ! shift up again, such that both still have the same mean, but all values are >=0
-      do k = 1, j
-        gr_dens_old_interp(k) = gr_dens_old_interp(k) &
-                                + minval([gr_dens_old_interp, gr_dens_new_interp])
-        gr_dens_new_interp(k) = gr_dens_new_interp(k) &
-                                + minval([gr_dens_old_interp, gr_dens_new_interp])
-      end do
-
       ! take average absolute squared distance as measure
       sum = 0
       do k = 1, j
@@ -2348,10 +2324,8 @@ module grid_adaptation_module
     ! Setup the new grid
     num_levels = gr%nzm
     equi_dens = (num_levels-1)/(gr%zm(1,gr%nzm) - gr%zm(1,1))
-    !threshold = 1.5e-3
-    threshold = 0.0_core_rknd
-    lambda = 0.6
-    !lambda = 0.01
+    threshold = 4.0e-6
+    lambda = 0.5
 
     ! Allocate and set gr_dens_old_global if not already allocated
     if ( .not. allocated( gr_dens_old_global ) ) then
@@ -3293,13 +3267,21 @@ module grid_adaptation_module
     !--------------------- Local Variables ---------------------
     integer :: k
 
-    real( kind = core_rknd ) :: threshold
+    real( kind = core_rknd ) :: &
+      threshold, &
+      inv_alt_norm_factor, &
+      chi_norm_factor, &
+      brunt_vaisala_norm_factor
 
     real( kind = core_rknd ), dimension(nzm-1) :: &
       chi   ! The variable 's' in Mellor (1977)    [kg/kg]
 
     real( kind = core_rknd ), dimension(nzm) :: &
-      chi_zm   ! The variable 's' in Mellor (1977) given on zm levels    [kg/kg]
+      chi_zm, &   ! The variable 's' in Mellor (1977) given on zm levels    [kg/kg]
+      inv_alt_term, &
+      chi_term, &
+      brunt_vaisala_term, &
+      Lscale_term
 
     !--------------------- Begin Code ---------------------
     chi(:) = pdf_params%mixt_frac(1,:) * pdf_params%chi_1(1,:) &
@@ -3307,48 +3289,48 @@ module grid_adaptation_module
 
     chi_zm = zt2zm( gr, chi )
 
-    threshold = 0.001
-    !threshold = 0.1
+    ! set each refinement criterion term
     do k = 1, nzm
-        gr_dens_z(k) = zm(1,k)
-        gr_dens(k) = 0.0_core_rknd
-        if ( wp2(1,k) > threshold ) then
-          !gr_dens(k) = 1.0/(Lscale(1,k)+10.0) + 3.0/(gr_dens_z(k)+20.0)
-          !gr_dens(k) = 1.0/(Lscale(1,k)+10.0)! + 10.0/(gr_dens_z(k)+1.0) ! +20 before ! if we just use this condition, then at least some of the resuts in some of the timeframes show better results (e.g. wp3 in 0-500 or 1000-2000)
-          gr_dens(k) = 1.0/(Lscale(1,k)+10.0)
-        
-        else
-          gr_dens(k) = 0.0_core_rknd*(num_levels - 1)/(grid_top - grid_sfc) ! 0.1 before
-        end if
-        gr_dens(k) = gr_dens(k) + 2.0/1000.0 * exp(100 * chi_zm(k))
+      gr_dens_z(k) = zm(1,k)
+      inv_alt_term(k) = 1/(gr_dens_z(k) + 100)
+      chi_term(k) = exp(1000 * chi_zm(k))/(gr_dens_z(k) + 5000.0)
+      brunt_vaisala_term(k) = maxval([0.0_core_rknd,(brunt_vaisala_freq_sqd(1,k))]) &
+                              / ( (maxval([0.0_core_rknd,(ddzt_umvm_sqd(1,k))]) + 1.0e-5) &
+                                  * (gr_dens_z(k) + 20) ) ! the 20 was 100 before...
 
-        !gr_dens(k) = gr_dens(k) &
-        !             + 1.0e2_core_rknd*maxval([0.0_core_rknd,(brunt_vaisala_freq_sqd(1,k))])
-        !gr_dens(k) = gr_dens(k) + 0.05/(gr_dens_z(k)+1.0)
-        !gr_dens(k) = gr_dens(k) &
-        !             + 2.0e1_core_rknd*maxval([0.0_core_rknd,(ddzt_umvm_sqd(1,k))])
-        !gr_dens(k) = gr_dens(k) + 4.0/(gr_dens_z(k)+1.0)
-
-
-
-        !gr_dens(k) = gr_dens(k) &
-        !             + 2.0e5_core_rknd*maxval([0.0_core_rknd,(brunt_vaisala_freq_sqd(1,k))**2])
     end do
 
-    !do k = 1, nzm
-    !    gr_dens_z(k) = zm(1,k)
-    !    gr_dens(k) = 1.0/10.0 * exp(100 * chi_zm(k))
-    !end do
+    ! calculate noramlization factors, so each refinement criterion has same magnitude
+    !inv_alt_norm_factor = 1/calc_integral( nzm, zm(1,:), inv_alt_term )
+    !chi_norm_factor = 1/calc_integral( nzm, zm(1,:), chi_term )
+    !brunt_vaisala_norm_factor = 1/calc_integral( nzm, zm(1,:), brunt_vaisala_term )
 
-    !threshold = 0.001
-    !do i = 1, nzm
-    !    gr_dens_z(i) = zm(1,i)f
-    !    if ( wp2(1,i) > threshold ) then
-    !      gr_dens(i) = 1/Lscale(1,i)
-    !    else
-    !      gr_dens(i) = 0.75*(num_levels - 1)/(grid_top - grid_sfc)
-    !    end if
-    !end do
+    threshold = 0.001
+    do k = 1, nzm
+        
+        if ( wp2(1,k) > threshold ) then
+          
+          Lscale_term(k) = 1/(Lscale(1,k)+10.0) ! 0.1/ ...3000
+        
+        else
+          Lscale_term(k) = 0.0_core_rknd
+        end if
+
+        !gr_dens(k) = 0.2 * inv_alt_norm_factor * inv_alt_term(k) &              ! 0.2
+        !             + 0.5 * chi_norm_factor * chi_term(k) &                    ! 0.5
+        !             + 0.3 * brunt_vaisala_norm_factor * brunt_vaisala_term(k)  ! 0.3
+
+        gr_dens(k) = 5.0 * Lscale_term(k) &
+                     + 3.0 * inv_alt_term(k) & 
+                     + 400.0 * chi_term(k) &
+                     + 1.0 * brunt_vaisala_term(k)
+
+        ! cond0: only adapt every 80 iteration -> reduces noise and shows some good results, but cond4 looks better
+        ! cond1: brunt_vaisala/2 and ddzt_umvm*2 adapt every 80th iteration -> results were worse than before
+        ! cond2: ddzt_umvm*2 adapt every 80th iteration -> results were worse than before
+        ! cond3: gr_dens(k) = gr_dens(k) + 0.5/(gr_dens_z(k)+1.0) adapt every 80th iteration -> results were a bit worse than before but noise was reduced for lwp, but more noise in wp2
+        ! cond4: gr_dens(k) = gr_dens(k) + 0.05/(gr_dens_z(k)+1.0) adapt every 120th iteration -> !!!
+    end do
 
     if (gr_dens_z(1) > grid_sfc) then
         gr_dens_z(1) = grid_sfc
@@ -3362,8 +3344,6 @@ module grid_adaptation_module
     gr_dens = moving_average( nzm, &
                               gr_dens_z, gr_dens )
     end do
-        
-    
 
   end subroutine calc_grid_dens_func
 
@@ -3508,116 +3488,116 @@ module grid_adaptation_module
   !end subroutine calc_grid_dens_func
 
   ! optimized for astex case
-  subroutine calc_grid_dens_func_old( ngrdcol, nzt, zt, &
-                                      Lscale, wp2_zt, &
-                                      grid_sfc, grid_top, &
-                                      num_levels, &
-                                      pdf_params, &
-                                      brunt_vaisala_freq_sqd_zt, &
-                                      gr_dens_z, gr_dens )
-    ! Description:
-    ! Creates an unnormalized grid density function from Lscale
-
-    ! References:
-    ! None
-    !-----------------------------------------------------------------------
-
-    use clubb_precision, only: &
-        core_rknd ! Variable(s)
-
-    use pdf_parameter_module, only:  &
-        pdf_parameter  ! Type
-
-    implicit none
-
-    !--------------------- Input Variables ---------------------
-    integer, intent(in) :: & 
-      ngrdcol, & 
-      nzt, &
-      num_levels ! the desired number of levels
-
-    real( kind = core_rknd ), intent(in) ::  &
-      grid_sfc, &  ! the grids surface; so the first level in the grid
-                   ! density function has this height [m]
-      grid_top     ! the grids top; so the last level in the grid
-                   ! density function has this height [m]
-
-    real( kind = core_rknd ), dimension(ngrdcol, nzt), intent(in) ::  &
-      zt, &      ! levels at which the values are given [m]
-      Lscale, &  ! Length scale   [m]
-      wp2_zt     ! w'^2 on thermo. grid [m^2/s^2]
-
-    real( kind = core_rknd ), dimension(ngrdcol, nzt), intent(in) ::  &
-      brunt_vaisala_freq_sqd_zt
-
-    type(pdf_parameter), intent(in) :: & 
-      pdf_params     ! PDF parameters
-
-    !--------------------- Output Variable ---------------------
-    real( kind = core_rknd ), dimension(nzt), intent(out) ::  &
-      gr_dens_z,  &    ! the z value coordinates of the connection points of the piecewise linear
-                       ! grid density function [m]
-      gr_dens  ! the values of the connection points of the piecewise linear
-               ! grid density function, given on the z values of gr_dens_z [# levs/meter]
-
-    !--------------------- Local Variables ---------------------
-    integer :: k
-
-    real( kind = core_rknd ) :: threshold
-
-    real( kind = core_rknd ), dimension(nzt) :: &
-      chi   ! The variable 's' in Mellor (1977)    [kg/kg]
-
-    !--------------------- Begin Code ---------------------
-    !lambda = 0.01
-    !lambda = 0.5
-    chi(:) = pdf_params%mixt_frac(1,:) * pdf_params%chi_1(1,:) &
-                  + ( one - pdf_params%mixt_frac(1,:) ) * pdf_params%chi_2(1,:)
-
-    threshold = 0.001
-    do k = 1, nzt
-        gr_dens_z(k) = zt(1,k)
-        if ( wp2_zt(1,k) > threshold ) then
-          !gr_dens(k) = 1.0/(Lscale(1,k)+10.0) + 3.0/(gr_dens_z(k)+20.0)
-          gr_dens(k) = 1.0/(Lscale(1,k)+10.0) + 4.0/(gr_dens_z(k)+1.0) ! +20 before
-        else
-          gr_dens(k) = 0.0_core_rknd*(num_levels - 1)/(grid_top - grid_sfc) ! 0.1 before
-        end if
-        gr_dens(k) = gr_dens(k) + 2.0/1000.0 * exp(100 * chi(k))
-        !gr_dens(k) = gr_dens(k) &
-        !             + 2.0e5_core_rknd*maxval([0.0_core_rknd,(brunt_vaisala_freq_sqd_zt(1,k))**2])
-        gr_dens(k) = gr_dens(k) &
-                     + 1.0e2_core_rknd*1.0/3.0e-4*maxval([0.0_core_rknd,(brunt_vaisala_freq_sqd_zt(1,k))**2])
-    end do
-
-    !do k = 1, nzt
-    !    gr_dens_z(k) = zt(1,k)
-    !    gr_dens(k) = 1.0/10.0 * exp(100 * chi(k))
-    !end do
-
-    !threshold = 0.001
-    !do i = 1, nzt
-    !    gr_dens_z(i) = zt(1,i)
-    !    if ( wp2_zt(1,i) > threshold ) then
-    !      gr_dens(i) = 1/Lscale(1,i)
-    !    else
-    !      gr_dens(i) = 0.75*(num_levels - 1)/(grid_top - grid_sfc)
-    !    end if
-    !end do
-
-    ! TODO find better way to ensure grid density function goes to zm(1) and zm(n)
-    if (gr_dens_z(1) > grid_sfc) then
-        gr_dens_z(1) = grid_sfc
-    end if
-
-    if (gr_dens_z(nzt) < grid_top) then
-        gr_dens_z(nzt) = grid_top
-    end if
-
-    gr_dens = moving_average( nzt, &
-                              gr_dens_z, gr_dens )
-
-  end subroutine calc_grid_dens_func_old
+  !subroutine calc_grid_dens_func_old( ngrdcol, nzt, zt, &
+  !                                    Lscale, wp2_zt, &
+  !                                    grid_sfc, grid_top, &
+  !                                    num_levels, &
+  !                                    pdf_params, &
+  !                                    brunt_vaisala_freq_sqd_zt, &
+  !                                    gr_dens_z, gr_dens )
+  !  ! Description:
+  !  ! Creates an unnormalized grid density function from Lscale
+!
+  !  ! References:
+  !  ! None
+  !  !-----------------------------------------------------------------------
+!
+  !  use clubb_precision, only: &
+  !      core_rknd ! Variable(s)
+!
+  !  use pdf_parameter_module, only:  &
+  !      pdf_parameter  ! Type
+!
+  !  implicit none
+!
+  !  !--------------------- Input Variables ---------------------
+  !  integer, intent(in) :: & 
+  !    ngrdcol, & 
+  !    nzt, &
+  !    num_levels ! the desired number of levels
+!
+  !  real( kind = core_rknd ), intent(in) ::  &
+  !    grid_sfc, &  ! the grids surface; so the first level in the grid
+  !                 ! density function has this height [m]
+  !    grid_top     ! the grids top; so the last level in the grid
+  !                 ! density function has this height [m]
+!
+  !  real( kind = core_rknd ), dimension(ngrdcol, nzt), intent(in) ::  &
+  !    zt, &      ! levels at which the values are given [m]
+  !    Lscale, &  ! Length scale   [m]
+  !    wp2_zt     ! w'^2 on thermo. grid [m^2/s^2]
+!
+  !  real( kind = core_rknd ), dimension(ngrdcol, nzt), intent(in) ::  &
+  !    brunt_vaisala_freq_sqd_zt
+!
+  !  type(pdf_parameter), intent(in) :: & 
+  !    pdf_params     ! PDF parameters
+!
+  !  !--------------------- Output Variable ---------------------
+  !  real( kind = core_rknd ), dimension(nzt), intent(out) ::  &
+  !    gr_dens_z,  &    ! the z value coordinates of the connection points of the piecewise linear
+  !                     ! grid density function [m]
+  !    gr_dens  ! the values of the connection points of the piecewise linear
+  !             ! grid density function, given on the z values of gr_dens_z [# levs/meter]
+!
+  !  !--------------------- Local Variables ---------------------
+  !  integer :: k
+!
+  !  real( kind = core_rknd ) :: threshold
+!
+  !  real( kind = core_rknd ), dimension(nzt) :: &
+  !    chi   ! The variable 's' in Mellor (1977)    [kg/kg]
+!
+  !  !--------------------- Begin Code ---------------------
+  !  !lambda = 0.01
+  !  !lambda = 0.5
+  !  chi(:) = pdf_params%mixt_frac(1,:) * pdf_params%chi_1(1,:) &
+  !                + ( one - pdf_params%mixt_frac(1,:) ) * pdf_params%chi_2(1,:)
+!
+  !  threshold = 0.001
+  !  do k = 1, nzt
+  !      gr_dens_z(k) = zt(1,k)
+  !      if ( wp2_zt(1,k) > threshold ) then
+  !        !gr_dens(k) = 1.0/(Lscale(1,k)+10.0) + 3.0/(gr_dens_z(k)+20.0)
+  !        gr_dens(k) = 1.0/(Lscale(1,k)+10.0) + 4.0/(gr_dens_z(k)+1.0) ! +20 before
+  !      else
+  !        gr_dens(k) = 0.0_core_rknd*(num_levels - 1)/(grid_top - grid_sfc) ! 0.1 before
+  !      end if
+  !      gr_dens(k) = gr_dens(k) + 2.0/1000.0 * exp(100 * chi(k))
+  !      !gr_dens(k) = gr_dens(k) &
+  !      !             + 2.0e5_core_rknd*maxval([0.0_core_rknd,(brunt_vaisala_freq_sqd_zt(1,k))**2])
+  !      gr_dens(k) = gr_dens(k) &
+  !                   + 1.0e2_core_rknd*1.0/3.0e-4*maxval([0.0_core_rknd,(brunt_vaisala_freq_sqd_zt(1,k))**2])
+  !  end do
+!
+  !  !do k = 1, nzt
+  !  !    gr_dens_z(k) = zt(1,k)
+  !  !    gr_dens(k) = 1.0/10.0 * exp(100 * chi(k))
+  !  !end do
+!
+  !  !threshold = 0.001
+  !  !do i = 1, nzt
+  !  !    gr_dens_z(i) = zt(1,i)
+  !  !    if ( wp2_zt(1,i) > threshold ) then
+  !  !      gr_dens(i) = 1/Lscale(1,i)
+  !  !    else
+  !  !      gr_dens(i) = 0.75*(num_levels - 1)/(grid_top - grid_sfc)
+  !  !    end if
+  !  !end do
+!
+  !  ! TODO find better way to ensure grid density function goes to zm(1) and zm(n)
+  !  if (gr_dens_z(1) > grid_sfc) then
+  !      gr_dens_z(1) = grid_sfc
+  !  end if
+!
+  !  if (gr_dens_z(nzt) < grid_top) then
+  !      gr_dens_z(nzt) = grid_top
+  !  end if
+!
+  !  gr_dens = moving_average( nzt, &
+  !                            gr_dens_z, gr_dens )
+!
+  !end subroutine calc_grid_dens_func_old
 
   subroutine clean_up_grid_adaptation_module()
 

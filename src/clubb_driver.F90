@@ -934,6 +934,10 @@ module clubb_driver
                                       ! that takes TKE from up2 and vp2, if necessary
       l_add_dycore_grid               ! Turn on remapping values from a dycore grid
 
+    logical :: &
+      l_first_write_to_file  ! whether this is the first time data gets written
+                             ! to the netcdf file or not
+
     type(clubb_config_flags_type) :: &
       clubb_config_flags ! Derived type holding all configurable CLUBB flags
 
@@ -950,10 +954,10 @@ module clubb_driver
       deltaz
 
     real( kind = core_rknd ), dimension(:,:), allocatable :: &
-       ddzt_um,                      & ! Vertical derivative of um                    [s^-1]
-       ddzt_vm,                      & ! Vertical derivative of vm                    [s^-1]
-       ddzt_umvm_sqd                   ! Squared vertical norm of derivative of
-                                       ! mean horizontal wind speed                   [s^-2]
+      ddzt_um,                      & ! Vertical derivative of um                    [s^-1]
+      ddzt_vm,                      & ! Vertical derivative of vm                    [s^-1]
+      ddzt_umvm_sqd                   ! Squared vertical norm of derivative of
+                                      ! mean horizontal wind speed                   [s^-2]
 
     ! Definition of namelists
     namelist /model_setting/ &
@@ -1113,6 +1117,8 @@ module clubb_driver
     sclr_idx%iiedsclr_CO2 = -1
 
     l_use_Ncn_to_Nc = .true.
+
+    l_first_write_to_file = .true.
 
     ! Pick some default values for stats_setting; other variables are set in
     ! module stats_variables
@@ -3277,8 +3283,7 @@ module clubb_driver
       end if
 
       ! calculate grid density for grid adaptation
-      if ( grid_adapt_in_time_method > no_grid_adaptation &
-           .or. clubb_at_least_debug_level( 2 ) ) then
+      if ( grid_adapt_in_time_method > no_grid_adaptation ) then
 
         if ( grid_adapt_in_time_method == Lscale_and_wp2 ) then
 
@@ -3407,15 +3412,15 @@ module clubb_driver
       time_output_multi_col = time_output_multi_col + time_stop - time_start
 
       if ( (grid_adapt_in_time_method > no_grid_adaptation) &
-           .and. (modulo(itime, 120) == 0 .or. itime == 5) & ! == 5 since this is the first time
-                                                             ! values are written to file, so
-                                                             ! this is to ensure that CLUBB
-                                                             ! starts with a grid adaptation
+           .and. (modulo(itime, 120) == 0 .or. l_first_write_to_file) & 
            .and. (stats_metadata%l_stats_last) ) then ! only adapt grid when the average of the last
                                                       ! iterations was just written to file,
                                                       ! in order not to change the grid in between
                                                       ! iterations that get averaged before written
                                                       ! to file
+
+        l_first_write_to_file = .false.
+
         call cpu_time(time_start)
 
         call adapt_grid( iunit_grid_adaptation, itime, ngrdcol, gr%nzm, &        ! Intent(in)
@@ -3452,7 +3457,6 @@ module clubb_driver
                          rcm_in_layer, cloud_cover, invrs_tau_zm, &              ! Intent(inout)
                          Lscale )                                                ! Intent(inout)
 
-        write(iunit_grid_adaptation, *) 'g', itime, gr%zm
 
         if ( .not. l_add_dycore_grid .and. l_t_dependent ) then
           ! if we want to adapt the grid over time, but don't want to simulate the host model by
@@ -3467,6 +3471,10 @@ module clubb_driver
 
         call cpu_time(time_stop)
         time_adapt_grid = time_adapt_grid + time_stop - time_start
+      end if
+
+      if ( grid_adapt_in_time_method > no_grid_adaptation ) then
+        write(iunit_grid_adaptation, *) 'g', itime, gr%zm
       end if
     
       if ( clubb_at_least_debug_level( 0 ) ) then
