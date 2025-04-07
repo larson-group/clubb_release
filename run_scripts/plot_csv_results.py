@@ -45,7 +45,7 @@ gpu_model_columns = [
 cpu_model_columns = [
     {"name": "Name", "id": "name"},
     {"name": "m", "id": "m_val"},
-    {"name": "m_est", "id": "m_val"},
+    {"name": "m_est", "id": "m_est_val"},
     {"name": "b", "id": "b_val"},
     {"name": "b_est", "id": "b_est_val"},
     {"name": "c", "id": "c_val"},
@@ -99,12 +99,14 @@ fit_plot_div_style = {
 
 graph_style = {"width": "100%", "height": "100%"}
 
-def model_vcpu_time(ngrdcol, runtime, params, N_cores, N_vsize, N_prec, cp_func):
+cache_pen_funcs = [ "loglog" ] #, "sigmoid", "sqrtlog" ]
 
-    cols_per_core = ngrdcol / N_cores
+def model_vcpu_time(ngrdcol, runtime, params, N_tasks, N_vsize, N_prec, N_vlevs, cp_func):
+
+    cols_per_core = ngrdcol / N_tasks
     flops_per_vop = N_vsize / N_prec
 
-    b, o, k, c = params
+    b, c, k, o = params
 
     T_r = runtime[np.where(cols_per_core == 1)] - b
     T_v = runtime[np.where(cols_per_core == flops_per_vop)] - b
@@ -114,12 +116,14 @@ def model_vcpu_time(ngrdcol, runtime, params, N_cores, N_vsize, N_prec, cp_func)
 
     f = b + T_r * N_s + T_v * N_v
 
+    problem_size = (ngrdcol * N_vlevs / 1000.0) * (N_prec / 64)
+
     if cp_func == "sigmoid":
-        p = 1 + c / (1 + np.exp(-k * (ngrdcol - o)))
+        p = 1 + c / (1 + np.exp(-k * (problem_size - o)))
     elif cp_func == "loglog":
-        p = c * np.log( np.log( np.exp(k*(ngrdcol-o)) + 1 ) + 1 ) + 1
+        p =  c * np.log(np.log( np.exp((problem_size - o)) + 1 ) + 1 ) + 1
     elif cp_func == "sqrtlog":
-        p = c * np.sqrt( np.log( np.exp(k*(ngrdcol-o)) + 1 ) ) + 1
+        p = c * np.sqrt( np.log( np.exp(k*(problem_size - o)) + 1 ) ) + 1
     else:
         p = 1
 
@@ -128,18 +132,20 @@ def model_vcpu_time(ngrdcol, runtime, params, N_cores, N_vsize, N_prec, cp_func)
     return T_cpu
 
 
-def model_cpu_time(ngrdcol, runtime, params, N_cores, N_vsize, N_prec, cp_func):
+def model_cpu_time(ngrdcol, runtime, params, N_tasks, N_vsize, N_prec, N_vlevs, cp_func):
 
-    m, b, o, k, c = params
+    m, b, c, k, o = params
 
     f = b + m * ngrdcol
 
+    problem_size = (ngrdcol * N_vlevs / 1000.0) * (N_prec / 64)
+
     if cp_func == "sigmoid":
-        p = 1 + c / (1 + np.exp(-k * (ngrdcol - o)))
+        p = 1 + c / (1 + np.exp(-k * (problem_size - o )))
     elif cp_func == "loglog":
-        p = c * np.log( np.log( np.exp(k*(ngrdcol-o)) + 1 ) + 1 ) + 1
+        p =  c * np.log(np.log( np.exp((problem_size - o)) + 1 ) + 1 ) + 1
     elif cp_func == "sqrtlog":
-        p = c * np.sqrt( np.log( np.exp(k*(ngrdcol-o)) + 1 ) ) + 1
+        p = c * np.sqrt( np.log( np.exp(k*(problem_size - o)) + 1 ) ) + 1
     else:
         p = 1
 
@@ -148,7 +154,7 @@ def model_cpu_time(ngrdcol, runtime, params, N_cores, N_vsize, N_prec, cp_func):
     return T_cpu
 
 
-def model_gpu_time(ngrdcol, runtime, params, N_cores, N_vsize, N_prec):
+def model_gpu_time(ngrdcol, runtime, params, N_tasks, N_vsize, N_prec):
 
     m, b = params
 
@@ -159,9 +165,9 @@ def model_gpu_time(ngrdcol, runtime, params, N_cores, N_vsize, N_prec):
     return T_gpu
 
 
-def vcpu_objective(params, ngrdcol, runtime, N_cores, N_vsize, N_prec, cp_func ):
+def vcpu_objective(params, ngrdcol, runtime, N_tasks, N_vsize, N_prec, N_vlevs, cp_func ):
 
-    T_cpu = model_vcpu_time(ngrdcol, runtime, params, N_cores, N_vsize, N_prec, cp_func )
+    T_cpu = model_vcpu_time(ngrdcol, runtime, params, N_tasks, N_vsize, N_prec, N_vlevs, cp_func )
 
     # rms_error = np.sqrt( np.mean( ( ngrdcol / runtime - ngrdcol / T_cpu )**2 ) ) \
     #             / ( np.max(ngrdcol / runtime) - np.min(ngrdcol / runtime) )
@@ -174,14 +180,14 @@ def vcpu_objective(params, ngrdcol, runtime, N_cores, N_vsize, N_prec, cp_func )
     return rms_error
 
     
-def cpu_objective(params, ngrdcol, runtime, N_cores, N_vsize, N_prec, cp_func ):
+def cpu_objective(params, ngrdcol, runtime, N_tasks, N_vsize, N_prec, N_vlevs, cp_func ):
 
-    T_cpu = model_cpu_time(ngrdcol, runtime, params, N_cores, N_vsize, N_prec, cp_func )
+    T_cpu = model_cpu_time(ngrdcol, runtime, params, N_tasks, N_vsize, N_prec, N_vlevs, cp_func )
 
     # rms_error = np.sqrt( np.mean( ( ngrdcol / runtime - ngrdcol / T_cpu )**2 ) ) \
     #             / ( np.max(ngrdcol / runtime) - np.min(ngrdcol / runtime) )
 
-    cols_per_core = ngrdcol / N_cores
+    cols_per_core = ngrdcol / N_tasks
     flops_per_vop = N_vsize / N_prec
 
     cps = ngrdcol / runtime
@@ -194,9 +200,9 @@ def cpu_objective(params, ngrdcol, runtime, N_cores, N_vsize, N_prec, cp_func ):
     return rms_error
 
 
-def gpu_objective(params, ngrdcol, runtime, N_cores, N_vsize, N_prec ):
+def gpu_objective(params, ngrdcol, runtime, N_tasks, N_vsize, N_prec ):
 
-    T_gpu = model_gpu_time(ngrdcol, runtime, params, N_cores, N_vsize, N_prec )
+    T_gpu = model_gpu_time(ngrdcol, runtime, params, N_tasks, N_vsize, N_prec )
 
     cps = ngrdcol / runtime
     cps_model = ngrdcol / T_gpu
@@ -210,7 +216,7 @@ def gpu_objective(params, ngrdcol, runtime, N_cores, N_vsize, N_prec ):
     return rms_error
 
 
-def model_throughputs(df, column_name, N_cores, N_vsize, N_prec, model_version):
+def model_throughputs(df, column_name, N_tasks, N_vsize, N_prec, N_vlevs, model_version):
 
     ngrdcol = df["ngrdcol"].values  # Access ngrdcol if needed
     runtime = df[column_name].values  # Convert selected column to numpy array
@@ -221,9 +227,9 @@ def model_throughputs(df, column_name, N_cores, N_vsize, N_prec, model_version):
     if model_version == "vcpu":
 
         b_est = runtime[0] - ( runtime[1] - runtime[0] ) / ( ngrdcol[1] - ngrdcol[0] ) * ngrdcol[0]
-        initial_guess = [b_est, 2500, 0.002, 1.2]
 
-        cache_pen_funcs = [ "loglog", "sigmoid" ]
+        initial_guess = [b_est, 3.0, 0.02, 300]
+
         cache_pen_best = None
         rms_min = None
         params_opt = None
@@ -231,7 +237,7 @@ def model_throughputs(df, column_name, N_cores, N_vsize, N_prec, model_version):
         for cp_func in cache_pen_funcs:
 
             result = minimize(  vcpu_objective, initial_guess, 
-                                args=(ngrdcol, runtime, N_cores, N_vsize, N_prec, cp_func), 
+                                args=(ngrdcol, runtime, N_tasks, N_vsize, N_prec, N_vlevs, cp_func), 
                                 method='Nelder-Mead')
 
             rms_error = result.fun
@@ -242,9 +248,9 @@ def model_throughputs(df, column_name, N_cores, N_vsize, N_prec, model_version):
                 params_opt = result.x
 
 
-        T_cpu = model_vcpu_time(ngrdcol, runtime, params_opt, N_cores, N_vsize, N_prec, cache_pen_best)
+        T_cpu = model_vcpu_time(ngrdcol, runtime, params_opt, N_tasks, N_vsize, N_prec, N_vlevs, cache_pen_best)
 
-        cols_per_core = ngrdcol / N_cores
+        cols_per_core = ngrdcol / N_tasks
         flops_per_vop = N_vsize / N_prec
 
         b = params_opt[0]
@@ -252,9 +258,9 @@ def model_throughputs(df, column_name, N_cores, N_vsize, N_prec, model_version):
         T_v = runtime[np.where(cols_per_core == flops_per_vop)] - b
 
         fit_params = {
-            "o_val": params_opt[1],
+            "c_val": params_opt[1],
             "k_val": params_opt[2],
-            "c_val": params_opt[3], 
+            "o_val": params_opt[3], 
             "b_val": b, 
             "b_est_val": b_est, 
             "T_v_val": T_v[0], 
@@ -268,11 +274,10 @@ def model_throughputs(df, column_name, N_cores, N_vsize, N_prec, model_version):
     if model_version == "cpu":
 
         b_est = runtime[0] - ( runtime[1] - runtime[0] ) / ( ngrdcol[1] - ngrdcol[0] ) * ngrdcol[0]
-        m_est = ( runtime[1] - runtime[0] ) / ( ngrdcol[1] - ngrdcol[0] )
+        m_est = ( runtime[3] - b_est ) / ( ngrdcol[3] )
 
-        initial_guess = [m_est, b_est, 2500, 0.002, 1.2]
+        initial_guess = [m_est, b_est, 3.0, 0.02, 300]
 
-        cache_pen_funcs = [ "loglog", "sigmoid"]
         cache_pen_best = None
         rms_min = None
         params_opt = None
@@ -280,7 +285,7 @@ def model_throughputs(df, column_name, N_cores, N_vsize, N_prec, model_version):
         for cp_func in cache_pen_funcs:
 
             result = minimize(  cpu_objective, initial_guess, 
-                                args=(ngrdcol, runtime, N_cores, N_vsize, N_prec, cp_func), 
+                                args=(ngrdcol, runtime, N_tasks, N_vsize, N_prec, N_vlevs, cp_func), 
                                 method='Nelder-Mead')
 
             rms_error = result.fun
@@ -291,19 +296,21 @@ def model_throughputs(df, column_name, N_cores, N_vsize, N_prec, model_version):
                 params_opt = result.x
 
 
-        T_cpu = model_cpu_time(ngrdcol, runtime, params_opt, N_cores, N_vsize, N_prec, cache_pen_best)
+        T_cpu = model_cpu_time(ngrdcol, runtime, params_opt, N_tasks, N_vsize, N_prec, N_vlevs, cache_pen_best)
 
-        cols_per_core = ngrdcol / N_cores
+        cols_per_core = ngrdcol / N_tasks
         flops_per_vop = N_vsize / N_prec
+
+        #params_opt = np.exp( params_opt_scaled )
 
         fit_params = {
             "m_val": params_opt[0], 
             "m_est_val": m_est, 
             "b_val": params_opt[1], 
             "b_est_val": b_est, 
-            "o_val": params_opt[2],
+            "c_val": params_opt[2],
             "k_val": params_opt[3],
-            "c_val": params_opt[4], 
+            "o_val": params_opt[4], 
             "cp_func": cache_pen_best, 
             "rms_error" : rms_error
         }
@@ -322,13 +329,13 @@ def model_throughputs(df, column_name, N_cores, N_vsize, N_prec, model_version):
 
 
         result = minimize(  gpu_objective, initial_guess, 
-                            args=(ngrdcol, runtime, N_cores, N_vsize, N_prec), 
+                            args=(ngrdcol, runtime, N_tasks, N_vsize, N_prec), 
                             method='Nelder-Mead')
 
         rms_error = result.fun
         params_opt = result.x
 
-        T_cpu = model_gpu_time(ngrdcol, runtime, params_opt, N_cores, N_vsize, N_prec)
+        T_cpu = model_gpu_time(ngrdcol, runtime, params_opt, N_tasks, N_vsize, N_prec)
 
         fit_params = {
             "m_val": params_opt[0], 
@@ -547,11 +554,11 @@ def launch_dash_app(grouped_files, all_variables):
                             {"label": "Time", "value": "time"},
                             {"label": "Cols per Sec", "value": "cps"}
                         ],
-                        value="time",
+                        value="cps",
                         inline=True,
                     ),
-                    html.Label("Total Cores:"),
-                    dcc.Input(id="N_cores", type="number", value=128, style={"width": "60%"}),
+                    #html.Label("Total Cores:"),
+                    #dcc.Input(id="N_tasks", type="number", value=128, style={"width": "60%"}),
                     html.Label("Vector Length:", style={"margin-top": "5px"}),
                     dcc.Input(id="N_vsize", type="number", value=256, style={"width": "60%"}),
                     html.Label("Floating Point Precision:", style={"margin-top": "5px"}),
@@ -743,7 +750,7 @@ def launch_dash_app(grouped_files, all_variables):
         ],
         [
             Input("fit-function-button", "n_clicks"),
-            Input("N_cores", "value"),
+            #Input("N_tasks", "value"),
             Input("N_vsize", "value"),
             Input("N_prec", "value"),
             Input({"type": "file-checkbox", "case": ALL}, "value"),
@@ -753,7 +760,7 @@ def launch_dash_app(grouped_files, all_variables):
             Input("fit-plot-mode", "value")
         ],
     )
-    def update_fit_plot(n_clicks, N_cores, N_vsize, N_prec, selected_files, selected_variable, xaxis_scale, yaxis_scale, plot_mode):
+    def update_fit_plot(n_clicks, N_vsize, N_prec, selected_files, selected_variable, xaxis_scale, yaxis_scale, plot_mode):
         
         if n_clicks == 0 or not selected_files:
             raise PreventUpdate
@@ -774,8 +781,9 @@ def launch_dash_app(grouped_files, all_variables):
 
                 combined_df = pd.concat([combined_df, original_df])
                 
-                # Assume each entry was run with same numbe rof columns
-                N_cores = data[case][filename]["tasks"][0]
+                # Get the number of cores used 
+                N_tasks = data[case][filename]["tasks"][0]
+                N_vlevs = data[case][filename]["nz"][0]
 
                 # Apply model_throughput to the selected variable and add it as "_dup"
                 #temp_df_dup = temp_df.copy()
@@ -785,7 +793,7 @@ def launch_dash_app(grouped_files, all_variables):
                 
                 if any(gpu_name in filename for gpu_name in ["A100", "V100", "H100"]):
 
-                    gpu_df[selected_variable], gpu_params = model_throughputs(gpu_df, selected_variable, N_cores, N_vsize, N_prec, "gpu")
+                    gpu_df[selected_variable], gpu_params = model_throughputs(gpu_df, selected_variable, N_tasks, N_vsize, N_prec, N_vlevs, "gpu")
                     gpu_df["Columns per Second"] = gpu_df["ngrdcol"] / gpu_df[selected_variable]
                     gpu_df["Name"] = f"{case}/{filename}_gmodel"
 
@@ -799,7 +807,7 @@ def launch_dash_app(grouped_files, all_variables):
 
                 else:
 
-                    vcpu_df[selected_variable], vcpu_params = model_throughputs(vcpu_df, selected_variable, N_cores, N_vsize, N_prec, "vcpu")
+                    vcpu_df[selected_variable], vcpu_params = model_throughputs(vcpu_df, selected_variable, N_tasks, N_vsize, N_prec, N_vlevs, "vcpu")
                     vcpu_df["Columns per Second"] = vcpu_df["ngrdcol"] / vcpu_df[selected_variable]
                     vcpu_df["Name"] = f"{case}/{filename}_vmodel"
 
@@ -810,7 +818,7 @@ def launch_dash_app(grouped_files, all_variables):
                     vcpu_table_data[-1]["name"] = f"{case}/{filename}"
 
 
-                    cpu_df[selected_variable], cpu_params = model_throughputs(cpu_df, selected_variable, N_cores, N_vsize, N_prec, "cpu")
+                    cpu_df[selected_variable], cpu_params = model_throughputs(cpu_df, selected_variable, N_tasks, N_vsize, N_prec, N_vlevs, "cpu")
                     cpu_df["Columns per Second"] = cpu_df["ngrdcol"] / cpu_df[selected_variable]
                     cpu_df["Name"] = f"{case}/{filename}_cmodel"
 
