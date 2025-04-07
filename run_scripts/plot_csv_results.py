@@ -68,6 +68,37 @@ vcpu_model_columns = [
     {"name": "RMSE (abs '%' diff)", "id": "rms_error"},
 ]
 
+
+plot_div_style = {
+    "margin-bottom": "2%",
+    "border": "1px solid black",
+    "padding": "1%",
+    "width": "auto",              
+    "maxWidth": "100%",           # Prevent overflow
+    "height": "35%",             # Let it fill available vertical space
+    "flexGrow": 1,                # Tell flex layout to expand this div if space allows
+    "minWidth": 0,                # Prevent layout overflow in flexbox
+    "display": "flex",            # Optional, useful if you're aligning internal content
+    "flexDirection": "column",    # Keeps label/table below the graph
+    "alignItems": "center"
+}
+
+fit_plot_div_style = {
+    "margin-bottom": "2%",
+    "border": "1px solid black",
+    "padding": "1%",
+    "width": "auto",              
+    "maxWidth": "100%",           # Prevent overflow
+    "height": "60%",             # Let it fill available vertical space
+    "flexGrow": 1,                # Tell flex layout to expand this div if space allows
+    "minWidth": 0,                # Prevent layout overflow in flexbox
+    "display": "flex",            # Optional, useful if you're aligning internal content
+    "flexDirection": "column",    # Keeps label/table below the graph
+    "alignItems": "left"
+}
+
+graph_style = {"width": "100%", "height": "100%"}
+
 def model_vcpu_time(ngrdcol, runtime, params, N_cores, N_vsize, N_prec, cp_func):
 
     cols_per_core = ngrdcol / N_cores
@@ -170,9 +201,11 @@ def gpu_objective(params, ngrdcol, runtime, N_cores, N_vsize, N_prec ):
     cps = ngrdcol / runtime
     cps_model = ngrdcol / T_gpu
 
-    abs_percent_diff = ( cps - cps_model ) / cps
+    #abs_percent_diff = ( cps - cps_model ) / cps
+    #rms_error = np.sqrt( np.mean( ( abs_percent_diff[np.where(ngrdcol >= 10000)] * 100 )**2 ) )
 
-    rms_error = np.sqrt( np.mean( ( abs_percent_diff[np.where(ngrdcol >= 10000)] * 100 )**2 ) )
+    abs_diff = np.abs( cps - cps_model )
+    rms_error = np.sqrt( np.mean( abs_diff**2 ) )
 
     return rms_error
 
@@ -389,20 +422,13 @@ def launch_dash_app(grouped_files, all_variables):
 
     app = Dash(__name__)
     app.title = "Dynamic Plotter"
-
-    plot_style = { "margin-bottom": "2%",
-                   "border": "1px solid black",
-                   "padding": "1%",
-                   "width": "auto",
-                   "height": "auto",
-                   "align-items": "center" }
                    
     app.layout = html.Div([
         html.Div([
-            html.Div(dcc.Graph(id="plot-columns-per-second"), style=plot_style),
-            html.Div(dcc.Graph(id="plot-raw"), style=plot_style),
+            html.Div(dcc.Graph(id="plot-columns-per-second", config={"responsive": True}, style=graph_style), style=plot_div_style),
+            html.Div(dcc.Graph(id="plot-raw", config={"responsive": True}, style=graph_style), style=plot_div_style),
             html.Div([
-                dcc.Graph(id="fit-plot"), 
+                dcc.Graph(id="fit-plot", config={"responsive": True}, style=graph_style), 
                 html.Label("Vector CPU Model"),
                 dash_table.DataTable(
                     id='vcpu-param-table',
@@ -427,9 +453,9 @@ def launch_dash_app(grouped_files, all_variables):
                     editable=True,
                     row_deletable=False  # Allows deleting rows directly
                 ),
-            ], style=plot_style),
+            ], style=fit_plot_div_style),
             html.Div([
-                dcc.Graph(id="plot-custom"),
+                dcc.Graph(id="plot-custom", config={"responsive": True}, style=graph_style),
                 dcc.Input(
                     id="custom-function",
                     type="text",
@@ -437,8 +463,13 @@ def launch_dash_app(grouped_files, all_variables):
                     debounce=True,
                     style={"width": "30%", "margin-top": "10px", "text-align": "center"}
                 ),
-            ], style=plot_style),
-        ], style={"flex": "1", "padding-right": "10px", "align-items": "center"}),
+            ], style=plot_div_style),
+        ], style={  "flex": "1", 
+                    "padding-right": "10px", 
+                    "align-items": "center",
+                    "width": "auto",
+                    "height": "auto" }
+        ),
 
         html.Div([
             html.H4("Select CSV files to display:"),
@@ -545,7 +576,7 @@ def launch_dash_app(grouped_files, all_variables):
             "background-color": "white",
             "z-index": "1000"
         })
-    ], style={"display": "flex"})
+    ], style={"display": "flex", "flexDirection": "row", "width": "100%", "height": "100vh"})
 
     @app.callback(
     Output("plot-raw", "figure"),
@@ -567,8 +598,12 @@ def launch_dash_app(grouped_files, all_variables):
                     temp_df["Source"] = f"{case}/{filename}"
                     combined_df = pd.concat([combined_df, temp_df])
         fig = px.line(combined_df, x="ngrdcol", y=selected_variable, color="Source")
-        fig.update_layout( xaxis=dict(type=xaxis_scale))
-        fig.update_layout( yaxis=dict(type=yaxis_scale))
+        fig.update_layout(
+            xaxis=dict(type=xaxis_scale),
+            yaxis=dict(type=yaxis_scale),
+            autosize=True,
+            uirevision='constant'
+        )
         return plot_with_enhancements(fig, f"Runtime of '{selected_variable}' vs. Number of Grid Columns")
 
     @app.callback(
@@ -593,8 +628,12 @@ def launch_dash_app(grouped_files, all_variables):
                     temp_df["Columns per Second"] = temp_df["ngrdcol"] / temp_df[selected_variable]
                     combined_df = pd.concat([combined_df, temp_df])
         fig = px.line(combined_df, x="ngrdcol", y="Columns per Second", color="Source")
-        fig.update_layout( xaxis=dict(type=xaxis_scale))
-        fig.update_layout( yaxis=dict(type=yaxis_scale))
+        fig.update_layout(
+            xaxis=dict(type=xaxis_scale),
+            yaxis=dict(type=yaxis_scale),
+            autosize=True,
+            uirevision='constant'
+        )
         return plot_with_enhancements(fig, f"Throughput (ngrdcol/{selected_variable}) vs. Number of Grid Columns")
 
     @app.callback(
@@ -630,8 +669,12 @@ def launch_dash_app(grouped_files, all_variables):
             return px.scatter(title="No valid data for the custom function")
 
         fig = px.line(combined_df, x="ngrdcol", y="Custom Function", color="Source")
-        fig.update_layout( xaxis=dict(type=xaxis_scale))
-        fig.update_layout( yaxis=dict(type=yaxis_scale))
+        fig.update_layout(
+            xaxis=dict(type=xaxis_scale),
+            yaxis=dict(type=yaxis_scale),
+            autosize=True,
+            uirevision='constant'
+        )
         return plot_with_enhancements(fig, "Custom Function vs. Number of Grid Columns")
 
     @app.callback(
@@ -732,7 +775,7 @@ def launch_dash_app(grouped_files, all_variables):
                 combined_df = pd.concat([combined_df, original_df])
                 
                 # Assume each entry was run with same numbe rof columns
-                #N_cores = 128 #data[case][filename]["tasks"][0]
+                N_cores = data[case][filename]["tasks"][0]
 
                 # Apply model_throughput to the selected variable and add it as "_dup"
                 #temp_df_dup = temp_df.copy()
@@ -784,13 +827,17 @@ def launch_dash_app(grouped_files, all_variables):
         else:
             fig = px.line(combined_df, x="ngrdcol", y=selected_variable, color="Name")
 
-        fig.update_layout( xaxis=dict(type=xaxis_scale))
-        fig.update_layout( yaxis=dict(type=yaxis_scale))
+        fig.update_layout(
+            xaxis=dict(type=xaxis_scale),
+            yaxis=dict(type=yaxis_scale),
+            autosize=True,
+            uirevision='constant'
+        )
         fig = plot_with_enhancements(fig, f"{selected_variable} vs. Number of Grid Columns (Raw Values)")
 
         return fig.to_dict(), vcpu_table_data, cpu_table_data, gpu_table_data
 
-    app.run_server(debug=True,port=8051)
+    app.run(debug=True,port=8051)
 
 if __name__ == "__main__":
     import argparse
