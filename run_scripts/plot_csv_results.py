@@ -99,7 +99,21 @@ fit_plot_div_style = {
 
 graph_style = {"width": "100%", "height": "100%"}
 
-cache_pen_funcs = [ "loglog" ] #, "sigmoid", "sqrtlog" ]
+
+def loglog( c, k, o, x ):
+    return c * np.log(np.log( np.exp(k*(x - o)) + 1 ) + 1 ) + 1
+
+def sigmoid( c, k, o, x ):
+    return 1 + c / (1 + np.exp(-k * (x - o)))
+
+def sqrtlog( c, k, o, x ):
+    return c * np.sqrt( np.log( np.exp(k*(x - o)) + 1 ) ) + 1
+
+def logsig( c, k, o, x ):
+    return  1 + ( np.log(np.log( np.exp(c*(x - o)) + 1 ) + 1 ) + 1 ) / (1 + np.exp(-k * x + o ))
+
+cache_pen_funcs = [ logsig, loglog ] #, "sigmoid", "sqrtlog" ]
+
 
 def model_vcpu_time(ngrdcol, runtime, params, N_tasks, N_vsize, N_prec, N_vlevs, cp_func):
 
@@ -118,16 +132,7 @@ def model_vcpu_time(ngrdcol, runtime, params, N_tasks, N_vsize, N_prec, N_vlevs,
 
     problem_size = (ngrdcol * N_vlevs / 1000.0) * (N_prec / 64)
 
-    if cp_func == "sigmoid":
-        p = 1 + c / (1 + np.exp(-k * (problem_size - o)))
-    elif cp_func == "loglog":
-        p =  c * np.log(np.log( np.exp((problem_size - o)) + 1 ) + 1 ) + 1
-    elif cp_func == "sqrtlog":
-        p = c * np.sqrt( np.log( np.exp(k*(problem_size - o)) + 1 ) ) + 1
-    else:
-        p = 1
-
-    T_cpu = p * f
+    T_cpu = cp_func( c, k, o, problem_size )  * f
 
     return T_cpu
 
@@ -140,16 +145,7 @@ def model_cpu_time(ngrdcol, runtime, params, N_tasks, N_vsize, N_prec, N_vlevs, 
 
     problem_size = (ngrdcol * N_vlevs / 1000.0) * (N_prec / 64)
 
-    if cp_func == "sigmoid":
-        p = 1 + c / (1 + np.exp(-k * (problem_size - o )))
-    elif cp_func == "loglog":
-        p =  c * np.log(np.log( np.exp((problem_size - o)) + 1 ) + 1 ) + 1
-    elif cp_func == "sqrtlog":
-        p = c * np.sqrt( np.log( np.exp(k*(problem_size - o)) + 1 ) ) + 1
-    else:
-        p = 1
-
-    T_cpu = p * f
+    T_cpu = cp_func( c, k, o, problem_size ) * f
 
     return T_cpu
 
@@ -195,7 +191,8 @@ def cpu_objective(params, ngrdcol, runtime, N_tasks, N_vsize, N_prec, N_vlevs, c
 
     abs_percent_diff = ( cps - cps_model ) / cps
 
-    rms_error = np.sqrt( np.mean( ( abs_percent_diff[np.where(cols_per_core % flops_per_vop == 0)] * 100 )**2 ) )
+    rms_error = np.sqrt( np.mean( abs_percent_diff**2 ) )
+    #rms_error = np.sqrt( np.mean( ( abs_percent_diff[np.where(cols_per_core % flops_per_vop == 0)] * 100 )**2 ) )
 
     return rms_error
 
@@ -228,7 +225,7 @@ def model_throughputs(df, column_name, N_tasks, N_vsize, N_prec, N_vlevs, model_
 
         b_est = runtime[0] - ( runtime[1] - runtime[0] ) / ( ngrdcol[1] - ngrdcol[0] ) * ngrdcol[0]
 
-        initial_guess = [b_est, 3.0, 0.02, 300]
+        initial_guess = [b_est, 3.0, 0, 250]
 
         cache_pen_best = None
         rms_min = None
@@ -265,7 +262,7 @@ def model_throughputs(df, column_name, N_tasks, N_vsize, N_prec, N_vlevs, model_
             "b_est_val": b_est, 
             "T_v_val": T_v[0], 
             "T_r_val": T_r[0], 
-            "cp_func": cache_pen_best, 
+            "cp_func": cache_pen_best.__name__, 
             "rms_error" : rms_error
         }
 
@@ -274,9 +271,14 @@ def model_throughputs(df, column_name, N_tasks, N_vsize, N_prec, N_vlevs, model_
     if model_version == "cpu":
 
         b_est = runtime[0] - ( runtime[1] - runtime[0] ) / ( ngrdcol[1] - ngrdcol[0] ) * ngrdcol[0]
-        m_est = ( runtime[3] - b_est ) / ( ngrdcol[3] )
 
-        initial_guess = [m_est, b_est, 3.0, 0.02, 300]
+        cols_per_core = ngrdcol / N_tasks
+        flops_per_vop = N_vsize / N_prec
+        first_vpoint = np.where(cols_per_core == flops_per_vop)[0][0]
+
+        m_est = ( runtime[first_vpoint] - b_est ) / ( ngrdcol[3] )
+
+        initial_guess = [m_est, b_est, 3.0, 0, 250]
 
         cache_pen_best = None
         rms_min = None
@@ -298,11 +300,6 @@ def model_throughputs(df, column_name, N_tasks, N_vsize, N_prec, N_vlevs, model_
 
         T_cpu = model_cpu_time(ngrdcol, runtime, params_opt, N_tasks, N_vsize, N_prec, N_vlevs, cache_pen_best)
 
-        cols_per_core = ngrdcol / N_tasks
-        flops_per_vop = N_vsize / N_prec
-
-        #params_opt = np.exp( params_opt_scaled )
-
         fit_params = {
             "m_val": params_opt[0], 
             "m_est_val": m_est, 
@@ -311,7 +308,7 @@ def model_throughputs(df, column_name, N_tasks, N_vsize, N_prec, N_vlevs, model_
             "c_val": params_opt[2],
             "k_val": params_opt[3],
             "o_val": params_opt[4], 
-            "cp_func": cache_pen_best, 
+            "cp_func": cache_pen_best.__name__, 
             "rms_error" : rms_error
         }
 
@@ -819,6 +816,13 @@ def launch_dash_app(grouped_files, all_variables):
 
 
                     cpu_df[selected_variable], cpu_params = model_throughputs(cpu_df, selected_variable, N_tasks, N_vsize, N_prec, N_vlevs, "cpu")
+                    
+                    # Remove the non vector points
+                    # cols_per_core = cpu_df["ngrdcol"] / N_tasks
+                    # flops_per_vop = N_vsize / N_prec
+                    # mask = cpu_df["ngrdcol"]/N_tasks % flops_per_vop != 0
+                    # cpu_df = cpu_df[~mask].copy()
+
                     cpu_df["Columns per Second"] = cpu_df["ngrdcol"] / cpu_df[selected_variable]
                     cpu_df["Name"] = f"{case}/{filename}_cmodel"
 
@@ -827,6 +831,7 @@ def launch_dash_app(grouped_files, all_variables):
                         for col in cpu_model_columns
                     })
                     cpu_table_data[-1]["name"] = f"{case}/{filename}"
+
 
                     combined_df = pd.concat([combined_df, vcpu_df, cpu_df])
                 
