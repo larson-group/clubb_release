@@ -23,7 +23,7 @@ module precipitation_fraction
   contains
 
   !=============================================================================
-  subroutine precip_fraction( nzt, ngrdcol, hydromet_dim, &
+  subroutine precip_fraction( gr, nzt, ngrdcol, hydromet_dim, &
                               hydromet, cloud_frac, cloud_frac_1, &
                               l_mix_rat_hm, l_frozen_hm, hydromet_tol, &
                               cloud_frac_2, ice_supersat_frac, &
@@ -50,6 +50,9 @@ module precipitation_fraction
         cloud_frac_min, &
         fstderr
 
+    use grid_class, only: &
+        grid    ! Type(s)
+
     use parameter_indices, only: &
         nparams, & ! Variable(s)
         iupsilon_precip_frac_rat
@@ -73,6 +76,9 @@ module precipitation_fraction
     implicit none
 
     !------------------------- Input Variables -------------------------
+    type(grid), intent(in) :: &
+      gr    ! Grid type variable
+
     integer, intent(in) :: &
       nzt,          & ! Number of model thermodynamic vertical grid levels
       ngrdcol,      & ! Number of grid columns
@@ -161,20 +167,22 @@ module precipitation_fraction
     if ( any( l_frozen_hm ) ) then
       
       ! Ice microphysics included.
-      precip_frac(:,nzt) = max( cloud_frac(:,nzt), ice_supersat_frac(:,nzt) )
+      precip_frac(:,gr%k_ub_zt) = max( cloud_frac(:,gr%k_ub_zt), &
+                                       ice_supersat_frac(:,gr%k_ub_zt) )
       
-      do k = nzt-1, 1, -1
-        precip_frac(:,k) = max( precip_frac(:,k+1), cloud_frac(:,k), &
-                                ice_supersat_frac(:,k) )
+      do k = gr%k_ub_zt-gr%grid_dir_indx, gr%k_lb_zt, -gr%grid_dir_indx
+        precip_frac(:,k) = max( precip_frac(:,k+gr%grid_dir_indx), &
+                                cloud_frac(:,k), ice_supersat_frac(:,k) )
       end do
       
     else
       
       ! Warm microphysics.
-      precip_frac(:,nzt) = cloud_frac(:,nzt)
+      precip_frac(:,gr%k_ub_zt) = cloud_frac(:,gr%k_ub_zt)
       
-      do k = nzt-1, 1, -1
-        precip_frac(:,k) = max( precip_frac(:,k+1), cloud_frac(:,k) )
+      do k = gr%k_ub_zt-gr%grid_dir_indx, gr%k_lb_zt, -gr%grid_dir_indx
+        precip_frac(:,k) = max( precip_frac(:,k+gr%grid_dir_indx), &
+                                cloud_frac(:,k) )
       end do
       
     end if
@@ -222,7 +230,7 @@ module precipitation_fraction
 
       ! Calculatate precip_frac_1 and precip_frac_2 based on the greatest
       ! weighted cloud_frac_1 at or above a grid level.
-      call component_precip_frac_weighted( nzt, ngrdcol, hydromet_dim, & ! In
+      call component_precip_frac_weighted( gr, nzt, ngrdcol, hydromet_dim, & ! In
                                            l_frozen_hm, hydromet_tol, & ! In
                                            hydromet(:,:,:), precip_frac(:,:), & ! In
                                            cloud_frac_1(:,:), cloud_frac_2(:,:), & ! In
@@ -318,9 +326,8 @@ module precipitation_fraction
     ! compared to what it would have been using precip_frac_tol.  In the event
     ! that multiple hydrometeor mixing ratios violate the check, the code is set
     ! up so that precip_frac_i is increased based on the highest hm_i.
-    
 
-   do ivar = 1, hydromet_dim
+    do ivar = 1, hydromet_dim
       if ( l_mix_rat_hm(ivar) ) then
         do k = 1, nzt
           do j = 1, ngrdcol
@@ -407,7 +414,7 @@ module precipitation_fraction
   end subroutine precip_fraction
 
   !=============================================================================
-  subroutine component_precip_frac_weighted( nzt, ngrdcol, hydromet_dim, &
+  subroutine component_precip_frac_weighted( gr, nzt, ngrdcol, hydromet_dim, &
                                              l_frozen_hm, hydromet_tol, &
                                              hydromet, precip_frac, &
                                              cloud_frac_1, cloud_frac_2, &
@@ -438,12 +445,18 @@ module precipitation_fraction
         one,  & ! Constant(s)
         zero
 
+    use grid_class, only: &
+        grid
+
     use clubb_precision, only: &
         core_rknd  ! Variable(s)
 
     implicit none
 
     ! Input Variables
+    type(grid), intent(in) :: &
+      gr    ! Grid type variable
+
     integer, intent(in) :: &
       nzt,          & ! Number of model thermodynamic vertical grid levels
       ngrdcol,      & ! Number of grid columns
@@ -500,26 +513,26 @@ module precipitation_fraction
       ! Ice microphysics included.
 
       ! Weighted precipitation fraction in PDF component 1.
-      weighted_pfrac_1(:,nzt) &
-      = max( mixt_frac(:,nzt) * cloud_frac_1(:,nzt), &
-             mixt_frac(:,nzt) * ice_supersat_frac_1(:,nzt) )
+      weighted_pfrac_1(:,gr%k_ub_zt) &
+      = max( mixt_frac(:,gr%k_ub_zt) * cloud_frac_1(:,gr%k_ub_zt), &
+             mixt_frac(:,gr%k_ub_zt) * ice_supersat_frac_1(:,gr%k_ub_zt) )
 
       ! Weighted precipitation fraction in PDF component 2.
-      weighted_pfrac_2(:,nzt) &
-      = max( ( one - mixt_frac(:,nzt) ) * cloud_frac_2(:,nzt), &
-             ( one - mixt_frac(:,nzt) ) * ice_supersat_frac_2(:,nzt) )
+      weighted_pfrac_2(:,gr%k_ub_zt) &
+      = max( ( one - mixt_frac(:,gr%k_ub_zt) ) * cloud_frac_2(:,gr%k_ub_zt), &
+             ( one - mixt_frac(:,gr%k_ub_zt) ) * ice_supersat_frac_2(:,gr%k_ub_zt) )
              
-      do k = nzt, 1, -1
+      do k = gr%k_ub_zt-gr%grid_dir_indx, gr%k_lb_zt, -gr%grid_dir_indx
         do j = 1, ngrdcol
           ! Weighted precipitation fraction in PDF component 1.
           weighted_pfrac_1(j,k) &
-          = max( weighted_pfrac_1(j,k+1), &
+          = max( weighted_pfrac_1(j,k+gr%grid_dir_indx), &
                  mixt_frac(j,k) * cloud_frac_1(j,k), &
                  mixt_frac(j,k) * ice_supersat_frac_1(j,k) )
 
           ! Weighted precipitation fraction in PDF component 2.
           weighted_pfrac_2(j,k) &
-          = max( weighted_pfrac_2(j,k+1), &
+          = max( weighted_pfrac_2(j,k+gr%grid_dir_indx), &
                  ( one - mixt_frac(j,k) ) * cloud_frac_2(j,k), &
                  ( one - mixt_frac(j,k) ) * ice_supersat_frac_2(j,k) )
         end do
@@ -528,24 +541,26 @@ module precipitation_fraction
       
     else
       
-       ! Warm microphysics.
+      ! Warm microphysics.
 
-       ! Weighted precipitation fraction in PDF component 1.
-       weighted_pfrac_1(:,nzt) = mixt_frac(:,nzt) * cloud_frac_1(:,nzt)
+      ! Weighted precipitation fraction in PDF component 1.
+      weighted_pfrac_1(:,gr%k_ub_zt) &
+      = mixt_frac(:,gr%k_ub_zt) * cloud_frac_1(:,gr%k_ub_zt)
 
-       ! Weighted precipitation fraction in PDF component 2.
-       weighted_pfrac_2(:,nzt) = ( one - mixt_frac(:,nzt) ) * cloud_frac_2(:,nzt)
+      ! Weighted precipitation fraction in PDF component 2.
+      weighted_pfrac_2(:,gr%k_ub_zt) &
+      = ( one - mixt_frac(:,gr%k_ub_zt) ) * cloud_frac_2(:,gr%k_ub_zt)
        
-      do k = nzt, 1, -1
+      do k = gr%k_ub_zt-gr%grid_dir_indx, gr%k_lb_zt, -gr%grid_dir_indx
         do j = 1, ngrdcol
           ! Weighted precipitation fraction in PDF component 1.
           weighted_pfrac_1(j,k) &
-          = max( weighted_pfrac_1(j,k+1), &
+          = max( weighted_pfrac_1(j,k+gr%grid_dir_indx), &
                  mixt_frac(j,k) * cloud_frac_1(j,k) )
 
           ! Weighted precipitation fraction in PDF component 2.
           weighted_pfrac_2(j,k) &
-          = max( weighted_pfrac_2(j,k+1), &
+          = max( weighted_pfrac_2(j,k+gr%grid_dir_indx), &
                  ( one - mixt_frac(j,k) ) * cloud_frac_2(j,k) )
         end do
       end do

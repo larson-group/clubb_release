@@ -28,8 +28,8 @@ module latin_hypercube_driver_module
   subroutine generate_silhs_sample( &
                iter, pdf_dim, num_samples, sequence_length, nzt, ngrdcol, & ! intent(in)
                l_calc_weights_all_levs_itime, &                            ! intent(in)
-               pdf_params, delta_zm, Lscale, &                             ! intent(in)
-               lh_seed, hm_metadata, &                                  ! intent(in)
+               gr, pdf_params, delta_zm, Lscale, &                         ! intent(in)
+               lh_seed, hm_metadata, &                                     ! intent(in)
                !rho_ds_zt, &
                mu1, mu2, sigma1, sigma2, &                                 ! intent(in)
                corr_cholesky_mtx_1, corr_cholesky_mtx_2, &                 ! intent(in)
@@ -47,6 +47,9 @@ module latin_hypercube_driver_module
 ! References:
 ! https://arxiv.org/pdf/1711.03675v1.pdf#nameddest=url:overview_silhs
 !-------------------------------------------------------------------------------
+
+    use grid_class, only: &
+        grid    ! Type(s)
 
     use transform_to_pdf_module, only: &
       transform_uniform_samples_to_pdf      ! Procedure
@@ -117,6 +120,9 @@ module latin_hypercube_driver_module
       sequence_length, & ! nt_repeat/num_samples; number of timesteps before sequence repeats
       nzt,             & ! Number of thermodynamic vertical model levels
       ngrdcol            ! Number of grid columns
+
+    type(grid), intent(in) :: &
+      gr    ! Grid variable type
 
     type(pdf_parameter), intent(in) :: &
       pdf_params ! PDF parameters       [units vary]
@@ -252,7 +258,7 @@ module latin_hypercube_driver_module
     !--------------------------------------------------------------
 
     ! Compute k_lh_start, the starting vertical grid level for SILHS sampling
-    call compute_k_lh_start( nzt, ngrdcol, rcm_pdf, pdf_params, &
+    call compute_k_lh_start( gr, nzt, ngrdcol, rcm_pdf, pdf_params, &
                              silhs_config_flags%l_rcm_in_cloud_k_lh_start, &
                              silhs_config_flags%l_random_k_lh_start, &
                              k_lh_start )
@@ -283,7 +289,8 @@ module latin_hypercube_driver_module
           if ( rcm_pdf(i,k) > rc_tol ) then
             X_vert_corr(i,k) = one
           else
-            X_vert_corr(i,k) = exp( -vert_decorr_coef * ( delta_zm(i,k) / Lscale(i,k) ) )
+            X_vert_corr(i,k) &
+            = exp( -vert_decorr_coef * ( gr%grid_dir * delta_zm(i,k) / Lscale(i,k) ) )
           end if
           
         end do
@@ -294,7 +301,8 @@ module latin_hypercube_driver_module
       !$acc parallel loop gang vector collapse(2) default(present)
       do k = 1, nzt
         do i = 1, ngrdcol
-          X_vert_corr(i,k) = exp( -vert_decorr_coef * ( delta_zm(i,k) / Lscale(i,k) ) )
+          X_vert_corr(i,k) &
+          = exp( -vert_decorr_coef * ( gr%grid_dir * delta_zm(i,k) / Lscale(i,k) ) )
         end do
       end do
 
@@ -320,8 +328,8 @@ module latin_hypercube_driver_module
 
     ! Generate pool of random numbers
     call generate_random_pool( nzt, ngrdcol, pdf_dim, num_samples, d_uniform_extra, & ! Intent(in)
-                               lh_seed,                                            & ! Intent(in)
-                               rand_pool )                                           ! Intent(out)
+                               lh_seed, gr,                                         & ! Intent(in)
+                               rand_pool )                                            ! Intent(out)
 
     ! Generate all uniform samples, based on the rand pool
     call generate_all_uniform_samples( &
@@ -479,7 +487,7 @@ module latin_hypercube_driver_module
 
 !-------------------------------------------------------------------------------
   subroutine generate_random_pool( nzt, ngrdcol, pdf_dim, num_samples, d_uniform_extra, &
-                                   lh_seed, &
+                                   lh_seed, gr, &
                                    rand_pool )
   ! Description:
   !     This subroutine populates rand_pool with random numbers. There are
@@ -495,7 +503,10 @@ module latin_hypercube_driver_module
   !
   ! Author: Gunther Huebler
   !----------------------------------------------------------------------------
-    
+
+    use grid_class, only: &
+        grid    ! Type(s)
+
     use clubb_precision, only: &
       core_rknd      ! Constant     
     
@@ -529,6 +540,9 @@ module latin_hypercube_driver_module
                           
     integer( kind = genrand_intg ), intent(in) :: &
       lh_seed
+
+    type(grid), intent(in) :: &
+      gr    ! Grid variable type
       
     ! ------------------- Output Variables -------------------
 
@@ -579,7 +593,7 @@ module latin_hypercube_driver_module
 
     ! Populate rand_pool with a generator designed for a CPU
     do p=1, pdf_dim+d_uniform_extra
-      do k = 1, nzt
+      do k = gr%k_lb_zt, gr%k_ub_zt, gr%grid_dir_indx
         do sample=1, num_samples
           do i = 1, ngrdcol
             rand_pool(i,sample,k,p) = rand_uniform_real()
@@ -919,10 +933,10 @@ module latin_hypercube_driver_module
 !-------------------------------------------------------------------------------
 
 !-----------------------------------------------------------------------
-  subroutine compute_k_lh_start( nzt, ngrdcol, rcm_pdf, pdf_params, &
-                               l_rcm_in_cloud_k_lh_start, &
-                               l_random_k_lh_start, &
-                               k_lh_start )
+  subroutine compute_k_lh_start( gr, nzt, ngrdcol, rcm_pdf, pdf_params, &
+                                 l_rcm_in_cloud_k_lh_start, &
+                                 l_random_k_lh_start, &
+                                 k_lh_start )
 
   ! Description:
   !   Determines the starting SILHS sample level
@@ -932,6 +946,9 @@ module latin_hypercube_driver_module
   !-----------------------------------------------------------------------
 
     ! Included Modules
+    use grid_class, only: &
+        grid    ! Type(s)
+
     use clubb_precision, only: &
       core_rknd      ! Constant
 
@@ -951,6 +968,9 @@ module latin_hypercube_driver_module
     implicit none
 
     ! Input Variables
+    type(grid), intent(in) :: &
+      gr    ! Grid variable type
+
     integer, intent(in) :: &
       nzt, &   ! Number of vertical levels
       ngrdcol ! Number of grid columns
@@ -1004,6 +1024,11 @@ module latin_hypercube_driver_module
 
         ! Initialize k_lh_start_rcm_in_cloud to nzt/2
         k_lh_start_rcm_in_cloud(i) = nzt / 2
+        ! Use the same level with a descending grid as would be used
+        ! with an ascending grid.
+        if ( gr%grid_dir_indx < 0 ) then
+           k_lh_start_rcm_in_cloud(i) = nzt - k_lh_start_rcm_in_cloud(i) + 1
+        endif
         rcm_in_cloud_max = zero
 
         ! Loop over vertical levels, if any rcm_pdf > 0 then set k_lh_start_rcm_in_cloud
@@ -1030,6 +1055,11 @@ module latin_hypercube_driver_module
 
         ! Initialize k_lh_start_rcm_in_cloud to nzt/2
         k_lh_start_rcm(i) = nzt / 2
+        ! Use the same level with a descending grid as would be used
+        ! with an ascending grid.
+        if ( gr%grid_dir_indx < 0 ) then
+           k_lh_start_rcm(i) = nzt - k_lh_start_rcm(i) + 1
+        endif
         rcm_max = zero
 
         do k = 1, nzt
@@ -1058,6 +1088,14 @@ module latin_hypercube_driver_module
           ! k_lh_start_rcm_in_cloud = k_lh_start_rcm(i)
           k_lh_start(i) = k_lh_start_rcm(i)
         end if
+
+        ! Keep the randomized index when the grid direction is descending
+        ! to be the same level when the grid direction is ascending for
+        ! purposes of comparison.
+        if ( gr%grid_dir_indx < 0 ) then
+          k_lh_start(i) &
+          = k_lh_start_rcm_in_cloud(i) + k_lh_start_rcm(i) - k_lh_start(i)
+        endif
           
       end do
 

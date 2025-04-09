@@ -391,7 +391,7 @@ module setup_clubb_pdf_params
     ! Calculate precipitation fraction.
     if ( l_use_precip_frac ) then
 
-      call precip_fraction( nzt, ngrdcol, hydromet_dim,                                   & ! In
+      call precip_fraction( gr, nzt, ngrdcol, hydromet_dim,                               & ! In
                 hydromet(:,:,:), cloud_frac(:,:), pdf_params%cloud_frac_1(:,:),           & ! In
                 hm_metadata%l_mix_rat_hm, hm_metadata%l_frozen_hm,                        & ! In
                 hm_metadata%hydromet_tol,                                                 & ! In
@@ -477,7 +477,7 @@ module setup_clubb_pdf_params
     ! momentum grid levels.
     do i = 1, hydromet_dim, 1
       hydrometp2(:,:,i) = zt2zm_api( nzm, nzt, ngrdcol, gr, hydrometp2_zt(:,:,i), zero_threshold )
-      hydrometp2(:,nzm,i) = zero
+      hydrometp2(:,gr%k_ub_zm,i) = zero
     end do
 
 

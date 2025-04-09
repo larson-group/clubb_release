@@ -143,7 +143,7 @@ contains
   subroutine generate_silhs_sample_api_single_col( &
     iter, pdf_dim, num_samples, sequence_length, nzt, & ! In
     l_calc_weights_all_levs_itime, &
-    pdf_params, delta_zm, Lscale, & ! In
+    gr, pdf_params, delta_zm, Lscale, & ! In
     lh_seed, hm_metadata, & ! In
     !rho_ds_zt, & ! In
     mu1, mu2, sigma1, sigma2, & ! In
@@ -154,6 +154,9 @@ contains
     stats_lh_zt, stats_lh_sfc, & ! intent(inout)
     X_nl_all_levs, X_mixt_comp_all_levs, & ! Out
     lh_sample_point_weights ) ! Out
+
+    use grid_class, only: &
+        grid   ! Type(s)
 
     use latin_hypercube_driver_module, only : &
       generate_silhs_sample
@@ -191,6 +194,9 @@ contains
       num_samples,     & ! Number of samples per variable
       sequence_length, & ! nt_repeat/num_samples; number of timesteps before sequence repeats.
       nzt                ! Number of vertical model levels
+
+    type(grid), intent(in) :: &
+      gr    ! Grid variable type
 
     type(pdf_parameter), intent(in) :: &
       pdf_params ! PDF parameters       [units vary]
@@ -308,7 +314,7 @@ contains
     call generate_silhs_sample( &
       iter, pdf_dim, num_samples, sequence_length, nzt, 1, & ! In
       l_calc_weights_all_levs_itime, & ! In
-      pdf_params, delta_zm_col, Lscale_col, & ! In
+      gr, pdf_params, delta_zm_col, Lscale_col, & ! In
       lh_seed, hm_metadata, & ! In
       !rho_ds_zt_col, & ! Unused
       mu1_col, mu2_col, sigma1_col, sigma2_col, & ! In
@@ -331,7 +337,7 @@ contains
   subroutine generate_silhs_sample_api_multi_col( &
     iter, pdf_dim, num_samples, sequence_length, nzt, ngrdcol, & ! In
     l_calc_weights_all_levs_itime, &
-    pdf_params, delta_zm, Lscale, & ! In
+    gr, pdf_params, delta_zm, Lscale, & ! In
     lh_seed, hm_metadata, & ! In
     !rho_ds_zt, & ! In
     mu1, mu2, sigma1, sigma2, & ! In
@@ -342,6 +348,9 @@ contains
     stats_lh_zt, stats_lh_sfc, & ! intent(inout)
     X_nl_all_levs, X_mixt_comp_all_levs, & ! Out
     lh_sample_point_weights ) ! Out
+
+    use grid_class, only: &
+        grid    ! Type(s)
 
     use latin_hypercube_driver_module, only : generate_silhs_sample
 
@@ -379,6 +388,9 @@ contains
       sequence_length, & ! nt_repeat/num_samples; number of timesteps before sequence repeats.
       nzt,             & ! Number of vertical model levels
       ngrdcol            ! Number of grid columns
+
+    type(grid), intent(in) :: &
+      gr    ! Grid variable type
 
     type(pdf_parameter), intent(in) :: &
       pdf_params ! PDF parameters       [units vary]
@@ -447,7 +459,7 @@ contains
     call generate_silhs_sample( &
       iter, pdf_dim, num_samples, sequence_length, nzt, ngrdcol, & ! In
       l_calc_weights_all_levs_itime, & ! In
-      pdf_params, delta_zm, Lscale, & ! In
+      gr, pdf_params, delta_zm, Lscale, & ! In
       lh_seed, hm_metadata, & ! In
       !rho_ds_zt, &
       mu1, mu2, sigma1, sigma2, & ! In

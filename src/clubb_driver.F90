@@ -100,7 +100,6 @@ module clubb_driver
         p0
 
     use clubb_api_module, only: &
-        setup_pdf_parameters_api, &
         precipitation_fractions, &
         init_precip_fracs_api, &
         advance_clubb_core_api, &
@@ -187,18 +186,11 @@ module clubb_driver
     use parameters_microphys, only: &
       lh_microphys_type,     & !--------------------------------------------- Variable(s)
       lh_microphys_disabled, &
-      lh_seed,               &
       microphys_scheme,      &
-      lh_num_samples,        &
-      lh_sequence_length
+      lh_num_samples
       
     use silhs_api_module, only: &
-      generate_silhs_sample_api, & !----------------------------------------- Procedure(s)
-      clip_transform_silhs_output_api, &
       latin_hypercube_2D_output_api
-
-    use latin_hypercube_driver_module, only: &
-      stats_accumulate_lh
 
     use latin_hypercube_arrays, only: &
       cleanup_latin_hypercube_arrays !-------------------------------------- Procedure(s)
@@ -247,14 +239,11 @@ module clubb_driver
         rtm_min, &
         rtm_nudge_max_altitude
 
+    use pdf_hydromet_microphys_wrapper, only: &
+        pdf_hydromet_microphys_prep    ! Procedure(s)
+
     use corr_varnce_module, only: &
         hm_metadata_type !------------------------------------------- Type(s)    
-
-    use setup_clubb_pdf_params, only: &
-        setup_pdf_parameters    !----------------------------------------- Procedure(s)
-
-    use mixed_moment_PDF_integrals, only: &
-        hydrometeor_mixed_moments    !------------------------------------ Procedure(s)
 
     use hydromet_pdf_parameter_module, only: &
         hydromet_pdf_parameter,   & !------------------------------------- Type(s)
@@ -281,7 +270,8 @@ module clubb_driver
         cloud_drop_sed  ! Procedure(s)
 
     use generalized_grid_test, only: &
-        clubb_generalized_grid_testing  ! Procedure(s)
+        clubb_generalized_grid_testing, & ! Procedure(s)
+        silhs_generalized_grid_testing
 
     use grid_adaptation_module, only: &
         setup_simple_gr_dycore, calc_grid_dens_func, adapt_grid  ! Procedure(s)
@@ -308,7 +298,10 @@ module clubb_driver
 
     !----------------------------------- Constant Parameters -----------------------------------
     logical, parameter :: &
-      l_implemented = .false.
+      l_implemented = .false. ! CLUBB is not being run inside of a host model
+
+    logical, parameter :: &
+      l_ascending_grid = .true. ! CLUBB runs with an ascending grid by default
 
     logical, parameter :: &
       l_write_to_file = .true. ! If true, will write case information to a file
@@ -385,11 +378,6 @@ module clubb_driver
     logical :: &
       l_restart,      & ! Flag for restarting from GrADS file
       l_input_fields    ! Whether to set model variables from a file
-
-    logical :: l_use_Ncn_to_Nc ! Whether to call Ncn_to_Nc (.true.) or not (.false.);
-                               ! Ncn_to_Nc might cause problems with the MG microphysics 
-                               ! since the changes made here (Nc-tendency) are not fed into 
-                               ! the microphysics
 
     ! Flag for interpolating the sounding profile with Steffen's monotone cubic 
     ! method to obtain smoother initial condition profile, which is found to be 
@@ -819,13 +807,7 @@ module clubb_driver
     ! allowed tolerance for the timing budget check
     real( kind = core_rknd ) , parameter ::  timing_tol = 0.01_core_rknd
 
-    logical, parameter :: &
-      l_calc_weights_all_levs = .false. ! .false. if all time steps use the same weights at all grid
-                                        ! levels
-    
     logical :: &
-      l_calc_weights_all_levs_itime, & ! .true. if we calculate sample weights separately at all 
-                                       ! grid levels at the current time step
       l_rad_itime                      ! .true. if we calculate radiation at the current time step
 
     type(silhs_config_flags_type) :: &
@@ -1136,8 +1118,6 @@ module clubb_driver
     sclr_idx%iiedsclr_thl = -1
     sclr_idx%iiedsclr_rt  = -1
     sclr_idx%iiedsclr_CO2 = -1
-
-    l_use_Ncn_to_Nc = .true.
 
     ! Pick some default values for stats_setting; other variables are set in
     ! module stats_variables
@@ -1747,19 +1727,19 @@ module clubb_driver
                                    err_code )             ! Intent(inout)
 
     ! Setup grid
-    call setup_grid_api( nzmax, ngrdcol, sfc_elevation, l_implemented, & ! intent(in)
-                         .true., grid_type, deltaz, zm_init, zm_top,   & ! intent(in)
-                         momentum_heights, thermodynamic_heights,      & ! intent(in)
-                         gr )                                            ! intent(out)
+    call setup_grid_api( nzmax, ngrdcol, sfc_elevation, l_implemented,         & ! intent(in)
+                         l_ascending_grid, grid_type, deltaz, zm_init, zm_top, & ! intent(in)
+                         momentum_heights, thermodynamic_heights,              & ! intent(in)
+                         gr )                                                    ! intent(out)
 
     ! Generalized grid test
     ! This block of code is used when a generalized grid test
     ! (ascending vs. descending grid) is being performed.
     if ( l_test_grid_generalization ) then
-      call setup_grid_api( nzmax, ngrdcol, sfc_elevation, l_implemented,      & ! intent(in)
-                           .false., grid_type, deltaz, zm_init, zm_top,       & ! intent(in)
-                           momentum_heights_flip, thermodynamic_heights_flip, & ! intent(in)
-                           gr_desc )                                            ! intent(out)
+      call setup_grid_api( nzmax, ngrdcol, sfc_elevation, l_implemented,                 & ! in
+                           (.not. l_ascending_grid), grid_type, deltaz, zm_init, zm_top, & ! in
+                           momentum_heights_flip, thermodynamic_heights_flip,            & ! in
+                           gr_desc )                                                       ! out
     endif
 
     ! Define tunable constant parameters
@@ -2905,7 +2885,54 @@ module clubb_driver
       time_loop_init = time_loop_init + time_stop - time_start      
       call cpu_time(time_start) ! initialize timer for advance_clubb_core
 
-      if ( l_test_grid_generalization ) then
+      if ( .not. l_test_grid_generalization ) then
+
+        ! Normal CLUBB run (with ascending grid)
+        ! Call the clubb core api for one column
+        call advance_clubb_core_api( &
+                gr, gr%nzm, gr%nzt, ngrdcol, &
+                l_implemented, dt_main, fcor, sfc_elevation, &       ! Intent(in)
+                hydromet_dim, &                                      ! intent(in)
+                sclr_dim, sclr_tol, edsclr_dim, sclr_idx, &          ! intent(in)
+                thlm_forcing, rtm_forcing, um_forcing, vm_forcing, & ! Intent(in)
+                sclrm_forcing, edsclrm_forcing, wprtp_forcing, &     ! Intent(in)
+                wpthlp_forcing, rtp2_forcing, thlp2_forcing, &       ! Intent(in)
+                rtpthlp_forcing, wm_zm, wm_zt, &                     ! Intent(in)
+                wpthlp_sfc, wprtp_sfc, upwp_sfc, vpwp_sfc, p_sfc, &  ! Intent(in)
+                wpsclrp_sfc, wpedsclrp_sfc,  &                       ! Intent(in)
+                upwp_sfc_pert, vpwp_sfc_pert, &                      ! intent(in)
+                rtm_ref, thlm_ref, um_ref, vm_ref, ug, vg, &         ! Intent(in)
+                p_in_Pa, rho_zm, rho, exner, &                       ! Intent(in)
+                rho_ds_zm, rho_ds_zt, invrs_rho_ds_zm, &             ! Intent(in)
+                invrs_rho_ds_zt, thv_ds_zm, thv_ds_zt, &             ! Intent(in) 
+                hm_metadata%l_mix_rat_hm, &                          ! Intent(in)
+                rfrzm, wphydrometp, &                                ! Intent(in)
+                wp2hmp, rtphmp_zt, thlphmp_zt, &                     ! Intent(in)
+                dummy_dx, dummy_dy, &                                ! Intent(in)
+                clubb_params, nu_vert_res_dep, lmin, &               ! Intent(in)
+                clubb_config_flags, &                                ! Intent(in)
+                stats_metadata, &                                    ! Intent(in)
+                stats_zt, stats_zm, stats_sfc, &                     ! intent(inout)
+                um, vm, upwp, vpwp, up2, vp2, up3, vp3, &            ! Intent(inout)
+                thlm, rtm, wprtp, wpthlp, &                          ! Intent(inout)
+                wp2, wp3, rtp2, rtp3, thlp2, thlp3, rtpthlp, &       ! Intent(inout)
+                sclrm, sclrp2, sclrp3, sclrprtp, sclrpthlp, &        ! Intent(inout)
+                wpsclrp, edsclrm, err_code, &                        ! Intent(inout)
+                rcm, cloud_frac, &                                   ! Intent(inout)
+                wpthvp, wp2thvp, rtpthvp, thlpthvp, &                ! Intent(inout)
+                sclrpthvp, &                                         ! Intent(inout)
+                wp2rtp, wp2thlp, uprcp, vprcp, rc_coef_zm, wp4, &    ! intent(inout)
+                wpup2, wpvp2, wp2up2, wp2vp2, ice_supersat_frac, &   ! intent(inout)
+                um_pert, vm_pert, upwp_pert, vpwp_pert, &            ! intent(inout)
+                pdf_params, pdf_params_zm, &                         ! Intent(inout)
+                pdf_implicit_coefs_terms, &                          ! intent(inout)
+                Kh_zm, Kh_zt, &                                      ! intent(out)
+                thlprcp, wprcp, w_up_in_cloud, w_down_in_cloud, &    ! Intent(out)
+                cloudy_updraft_frac, cloudy_downdraft_frac, &        ! Intent(out)
+                rcm_in_layer, cloud_cover, invrs_tau_zm, &           ! Intent(out)
+                Lscale )                                             ! Intent(out)
+
+      else ! l_test_grid_generalization
 
         ! Generalized grid test
         ! This block of code is used when a generalized grid test
@@ -2960,53 +2987,6 @@ module clubb_driver
           endif
         endif
 
-      else
-
-        ! Normal CLUBB run (with ascending grid)
-        ! Call the clubb core api for one column
-        call advance_clubb_core_api( &
-                gr, gr%nzm, gr%nzt, ngrdcol, &
-                l_implemented, dt_main, fcor, sfc_elevation, &       ! Intent(in)
-                hydromet_dim, &                                      ! intent(in)
-                sclr_dim, sclr_tol, edsclr_dim, sclr_idx, &          ! intent(in)
-                thlm_forcing, rtm_forcing, um_forcing, vm_forcing, & ! Intent(in)
-                sclrm_forcing, edsclrm_forcing, wprtp_forcing, &     ! Intent(in)
-                wpthlp_forcing, rtp2_forcing, thlp2_forcing, &       ! Intent(in)
-                rtpthlp_forcing, wm_zm, wm_zt, &                     ! Intent(in)
-                wpthlp_sfc, wprtp_sfc, upwp_sfc, vpwp_sfc, p_sfc, &  ! Intent(in)
-                wpsclrp_sfc, wpedsclrp_sfc,  &                       ! Intent(in)
-                upwp_sfc_pert, vpwp_sfc_pert, &                      ! intent(in)
-                rtm_ref, thlm_ref, um_ref, vm_ref, ug, vg, &         ! Intent(in)
-                p_in_Pa, rho_zm, rho, exner, &                       ! Intent(in)
-                rho_ds_zm, rho_ds_zt, invrs_rho_ds_zm, &             ! Intent(in)
-                invrs_rho_ds_zt, thv_ds_zm, thv_ds_zt, &             ! Intent(in) 
-                hm_metadata%l_mix_rat_hm, &                          ! Intent(in)
-                rfrzm, wphydrometp, &                                ! Intent(in)
-                wp2hmp, rtphmp_zt, thlphmp_zt, &                     ! Intent(in)
-                dummy_dx, dummy_dy, &                                ! Intent(in)
-                clubb_params, nu_vert_res_dep, lmin, &               ! Intent(in)
-                clubb_config_flags, &                                ! Intent(in)
-                stats_metadata, &                                    ! Intent(in)
-                stats_zt, stats_zm, stats_sfc, &                     ! intent(inout)
-                um, vm, upwp, vpwp, up2, vp2, up3, vp3, &            ! Intent(inout)
-                thlm, rtm, wprtp, wpthlp, &                          ! Intent(inout)
-                wp2, wp3, rtp2, rtp3, thlp2, thlp3, rtpthlp, &       ! Intent(inout)
-                sclrm, sclrp2, sclrp3, sclrprtp, sclrpthlp, &        ! Intent(inout)
-                wpsclrp, edsclrm, err_code, &                        ! Intent(inout)
-                rcm, cloud_frac, &                                   ! Intent(inout)
-                wpthvp, wp2thvp, rtpthvp, thlpthvp, &                ! Intent(inout)
-                sclrpthvp, &                                         ! Intent(inout)
-                wp2rtp, wp2thlp, uprcp, vprcp, rc_coef_zm, wp4, &    ! intent(inout)
-                wpup2, wpvp2, wp2up2, wp2vp2, ice_supersat_frac, &   ! intent(inout)
-                um_pert, vm_pert, upwp_pert, vpwp_pert, &            ! intent(inout)
-                pdf_params, pdf_params_zm, &                         ! Intent(inout)
-                pdf_implicit_coefs_terms, &                          ! intent(inout)
-                Kh_zm, Kh_zt, &                                      ! intent(out)
-                thlprcp, wprcp, w_up_in_cloud, w_down_in_cloud, &    ! Intent(out)
-                cloudy_updraft_frac, cloudy_downdraft_frac, &        ! Intent(out)
-                rcm_in_layer, cloud_cover, invrs_tau_zm, &           ! Intent(out)
-                Lscale )                                             ! Intent(out)
-
       endif
 
       if ( clubb_at_least_debug_level( 0 ) ) then
@@ -3021,164 +3001,71 @@ module clubb_driver
       time_clubb_advance = time_clubb_advance + time_stop - time_start
       call cpu_time(time_start) ! initialize timer for setup_pdf_parameters
 
-      if ( .not. trim( microphys_scheme ) == "none" ) then
+      if ( .not. l_test_grid_generalization ) then
 
-        !$acc update host( cloud_frac, Kh_zm, ice_supersat_frac )
+         ! Call CLUBB's hydrometeor PDF subroutines for cases that use the PDF
+         ! for microphysics (either upscaled microphysics or SILHS).
+         call pdf_hydromet_microphys_prep &
+              ( gr, ngrdcol, pdf_dim, hydromet_dim,              & ! In
+                itime, dt_main, vert_decorr_coef,                & ! In
+                Nc_in_cloud, cloud_frac, ice_supersat_frac,      & ! In
+                rho_ds_zt, Lscale, Kh_zm, hydromet, wphydrometp, & ! In
+                corr_array_n_cloud, corr_array_n_below,          & ! In
+                hm_metadata, pdf_params, clubb_params,           & ! In
+                clubb_config_flags, silhs_config_flags,          & ! In
+                l_rad_itime, stats_metadata,                     & ! In
+                stats_zt, stats_zm, stats_sfc,                   & ! In/Out
+                stats_lh_zt, stats_lh_sfc, err_code,             & ! In/Out
+                time_clubb_pdf, time_stop, time_start,           & ! In/Out
+                hydrometp2,                                      & ! Out
+                mu_x_1_n, mu_x_2_n,                              & ! Out
+                sigma_x_1_n, sigma_x_2_n,                        & ! Out
+                corr_array_1_n, corr_array_2_n,                  & ! Out
+                corr_cholesky_mtx_1, corr_cholesky_mtx_2,        & ! Out
+                precip_fracs,                                    & ! In/Out
+                rtphmp_zt, thlphmp_zt, wp2hmp,                   & ! Out
+                X_nl_all_levs, X_mixt_comp_all_levs,             & ! Out
+                lh_sample_point_weights,                         & ! Out
+                lh_rt_clipped, lh_thl_clipped, lh_rc_clipped,    & ! Out
+                lh_rv_clipped, lh_Nc_clipped,                    & ! Out
+                hydromet_pdf_params )                              ! Optional(out)
 
-        !$acc if( hydromet_dim > 0 ) update host( wphydrometp )
+      else ! l_test_grid_generalization
 
-         !!! Setup the PDF parameters.
-        call setup_pdf_parameters( gr, gr%nzm, gr%nzt, ngrdcol, pdf_dim, hydromet_dim, dt_main, & ! In
-                                   Nc_in_cloud, cloud_frac, Kh_zm,                              & ! In
-                                   ice_supersat_frac, hydromet, wphydrometp,                    & ! In
-                                   corr_array_n_cloud, corr_array_n_below,                      & ! In
-                                   hm_metadata,                                                 & ! In
-                                   pdf_params,                                                  & ! In
-                                   clubb_params,                                                & ! In
-                                   clubb_config_flags%iiPDF_type,                               & ! In
-                                   l_use_precip_frac,                                           & ! In
-                                   clubb_config_flags%l_predict_upwp_vpwp,                      & ! In
-                                   clubb_config_flags%l_diagnose_correlations,                  & ! In
-                                   clubb_config_flags%l_calc_w_corr,                            & ! In
-                                   clubb_config_flags%l_const_Nc_in_cloud,                      & ! In
-                                   clubb_config_flags%l_fix_w_chi_eta_correlations,             & ! In
-                                   stats_metadata,                                              & ! In
-                                   stats_zt, stats_zm, stats_sfc, err_code,                     & ! In/Out
-                                   hydrometp2,                                                  & ! Out
-                                   mu_x_1_n, mu_x_2_n,                                          & ! Out
-                                   sigma_x_1_n, sigma_x_2_n,                                    & ! Out
-                                   corr_array_1_n, corr_array_2_n,                              & ! Out
-                                   corr_cholesky_mtx_1, corr_cholesky_mtx_2,                    & ! Out
-                                   precip_fracs,                                                & ! In/Out
-                                   hydromet_pdf_params )                                          ! Optional(out)
+         call silhs_generalized_grid_testing &
+              ( gr, gr_desc, ngrdcol, pdf_dim, hydromet_dim,     & ! In
+                itime, dt_main, vert_decorr_coef,                & ! In
+                Nc_in_cloud, cloud_frac, ice_supersat_frac,      & ! In
+                rho_ds_zt, Lscale, Kh_zm, hydromet, wphydrometp, & ! In
+                corr_array_n_cloud, corr_array_n_below,          & ! In
+                hm_metadata, pdf_params, clubb_params,           & ! In
+                clubb_config_flags, silhs_config_flags,          & ! In
+                l_rad_itime, stats_metadata,                     & ! In
+                stats_zt, stats_zm, stats_sfc,                   & ! In/Out
+                stats_lh_zt, stats_lh_sfc, err_code,             & ! In/Out
+                time_clubb_pdf, time_stop, time_start,           & ! In/Out
+                hydrometp2,                                      & ! Out
+                mu_x_1_n, mu_x_2_n,                              & ! Out
+                sigma_x_1_n, sigma_x_2_n,                        & ! Out
+                corr_array_1_n, corr_array_2_n,                  & ! Out
+                corr_cholesky_mtx_1, corr_cholesky_mtx_2,        & ! Out
+                precip_fracs,                                    & ! In/Out
+                rtphmp_zt, thlphmp_zt, wp2hmp,                   & ! Out
+                X_nl_all_levs, X_mixt_comp_all_levs,             & ! Out
+                lh_sample_point_weights,                         & ! Out
+                lh_rt_clipped, lh_thl_clipped, lh_rc_clipped,    & ! Out
+                lh_rv_clipped, lh_Nc_clipped,                    & ! Out
+                hydromet_pdf_params )                              ! Optional(out)
 
-        ! Error check after setup_pdf_parameters
-        if ( clubb_at_least_debug_level( 0 ) ) then
-          if ( err_code == clubb_fatal_error ) then
-            write(fstderr,*) "Fatal error after setup_pdf_parameters_api"
-            exit mainloop
-          end if
+      endif
+
+      ! Error check after pdf_hydromet_microphys_prep
+      if ( clubb_at_least_debug_level( 0 ) ) then
+        if ( err_code == clubb_fatal_error ) then
+          write(fstderr,*) "Fatal error after pdf_hydromet_microphys_prep"
+          exit mainloop
         end if
-
-        ! Calculate < rt'hm' >, < thl'hm' >, and < w'^2 hm' >.
-        do i = 1, ngrdcol
-         call hydrometeor_mixed_moments( gr, gr%nzt, pdf_dim, hydromet_dim,                 & ! In
-                                         hydromet(i,:,:), hm_metadata,                      & ! In
-                                         mu_x_1_n(i,:,:), mu_x_2_n(i,:,:),                  & ! In
-                                         sigma_x_1_n(i,:,:), sigma_x_2_n(i,:,:),            & ! In
-                                         corr_array_1_n(i,:,:,:), corr_array_2_n(i,:,:,:),  & ! In
-                                         pdf_params, hydromet_pdf_params(i,:),              & ! In
-                                         precip_fracs,                                      & ! In
-                                         stats_metadata,                                    & ! In
-                                         stats_zt(i), stats_zm(i),                          & ! In/Out
-                                         rtphmp_zt(i,:,:), thlphmp_zt(i,:,:), wp2hmp(i,:,:) ) ! Out
-        end do
-
-        !$acc update device( mu_x_1_n, mu_x_2_n, sigma_x_1_n, sigma_x_2_n, corr_array_1_n, corr_array_2_n, &
-        !$acc                corr_cholesky_mtx_1, corr_cholesky_mtx_2 )
-
-        !$acc if( hydromet_dim > 0 ) update device( wp2hmp, rtphmp_zt, thlphmp_zt )
-
-      endif ! not microphys_scheme == "none"
-      
-      ! Measure time in setup_pdf_parameters and hydrometeor_mixed_moments
-      call cpu_time(time_stop)
-      time_clubb_pdf = time_clubb_pdf + time_stop - time_start
-      call cpu_time(time_start) ! initialize timer for SILHS
-      
-#ifdef SILHS
-      !----------------------------------------------------------------
-      ! Compute subcolumns if enabled
-      !----------------------------------------------------------------
-
-      if ( lh_microphys_type /= lh_microphys_disabled .or. l_silhs_rad ) then
-      
-        ! Calculate sample weights separately at all grid levels when radiation is not called
-        l_calc_weights_all_levs_itime = l_calc_weights_all_levs .and. .not. l_rad_itime
-
-        ! The profile of CLUBB's mixing length, Lscale, is passed into
-        ! subroutine generate_silhs_sample for use in calculating the vertical
-        ! correlation coefficient.  Rather than output Lscale directly, its
-        ! value can be calculated from other fields that are already output from
-        ! subroutine advance_clubb_core.  The equation relating Lscale to eddy
-        ! diffusivity is:
-        !
-        ! Kh = c_K * Lscale * sqrt( TKE ).
-        !
-        ! Kh is available, TKE can be calculated from wp2, up2, and vp2, all of
-        ! which are available, and c_K is easily extracted from CLUBB's tunable
-        ! parameters.  The equation for Lscale is:
-        !
-        ! Lscale = Kh / ( c_K * sqrt( TKE ) ).
-        !
-        ! Since Kh and TKE are output on momentum grid levels, the resulting
-        ! calculation of Lscale is also found on momentum levels.  It needs to
-        ! be interpolated back to thermodynamic (midpoint) grid levels for
-        ! further use.
-
-        ! Calculate TKE
-        ! em is calculated but never used??
-        ! if ( .not. clubb_config_flags%l_tke_aniso ) then
-        !   ! tke is assumed to be 3/2 of wp2
-        !   do k = 1, gr%nzm
-        !     do i = 1, ngrdcol
-        !       em(i,k) = three_halves * wp2(i,k)
-        !     end do
-        !   end do
-        ! else
-        !   do k = 1, gr%nzm
-        !     do i = 1, ngrdcol
-        !       em(i,k) = one_half * ( wp2(i,k) + vp2(i,k) + up2(i,k) )
-        !     end do
-        !   end do
-        ! endif
-
-        call generate_silhs_sample_api( &
-               itime, pdf_dim, lh_num_samples, lh_sequence_length, gr%nzt, ngrdcol, & ! In
-               l_calc_weights_all_levs_itime,                                & ! In
-               pdf_params, gr%dzt, Lscale,                                  & ! In
-               lh_seed, hm_metadata,                                         & ! In
-               !rho_ds_zt,                                                    & ! In
-               mu_x_1_n, mu_x_2_n, sigma_x_1_n, sigma_x_2_n,                 & ! In
-               corr_cholesky_mtx_1, corr_cholesky_mtx_2,                     & ! In
-               precip_fracs, silhs_config_flags,                             & ! In
-               vert_decorr_coef,                                             & ! In
-               stats_metadata,                                               & ! In
-               stats_lh_zt, stats_lh_sfc,                                    & ! InOut
-               X_nl_all_levs, X_mixt_comp_all_levs,                          & ! Out
-               lh_sample_point_weights ) ! Out
-
-
-        call clip_transform_silhs_output_api( gr%nzt, ngrdcol, lh_num_samples,        & ! In
-                                              pdf_dim, hydromet_dim, hm_metadata,     & ! In
-                                              X_mixt_comp_all_levs,                   & ! In
-                                              X_nl_all_levs,                          & ! Inout
-                                              pdf_params, l_use_Ncn_to_Nc,            & ! In
-                                              lh_rt_clipped, lh_thl_clipped,          & ! Out
-                                              lh_rc_clipped, lh_rv_clipped,           & ! Out
-                                              lh_Nc_clipped                           ) ! Out
-
-        if ( stats_metadata%l_stats_samp ) then     
-
-          !$acc update host( rho_ds_zt, lh_sample_point_weights, X_nl_all_levs, &
-          !$acc              lh_rt_clipped, lh_thl_clipped, lh_rc_clipped, lh_rv_clipped, lh_Nc_clipped )
-
-          do i = 1, ngrdcol
-            call stats_accumulate_lh( &
-                  gr, gr%nzt, lh_num_samples, pdf_dim, rho_ds_zt(i,:),     & ! In
-                  hydromet_dim, hm_metadata,                               & ! In
-                  lh_sample_point_weights(i,:,:),  X_nl_all_levs(i,:,:,:), & ! In
-                  lh_rt_clipped(i,:,:), lh_thl_clipped(i,:,:),             & ! In
-                  lh_rc_clipped(i,:,:), lh_rv_clipped(i,:,:),              & ! In
-                  lh_Nc_clipped(i,:,:),                                    & ! In
-                  stats_metadata,                                          & ! In
-                  stats_lh_zt(i), stats_lh_sfc(i) )                          ! intent(inout)
-          end do
-        end if
-
-      end if ! lh_microphys_enabled
-
-#endif /* SILHS */
+      end if
 
       ! Measure time in SILHS
       call cpu_time(time_stop)

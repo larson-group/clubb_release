@@ -41,6 +41,7 @@
 ../src/microphys_init_cleanup.F90
 ../src/microphys_interface.inc
 ../src/mixed_moment_PDF_integrals.F90
+../src/pdf_hydromet_microphys_wrapper.F90
 ../src/quicksort.F90
 ../src/simple_rad_module.F90
 ../src/soil_vegetation.F90

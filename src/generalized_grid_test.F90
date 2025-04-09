@@ -1,13 +1,17 @@
+
+!===============================================================================
 module generalized_grid_test
 
   implicit none
 
-  public :: clubb_generalized_grid_testing
+  public :: clubb_generalized_grid_testing, &
+            silhs_generalized_grid_testing
+
   private :: check_flipped_results 
 
   contains
 
-  !-----------------------------------------------------------------------
+  !=============================================================================
   subroutine clubb_generalized_grid_testing &
              ( gr, gr_desc, nzm, nzt, ngrdcol, &                          ! Intent(in)
                l_implemented, dt, fcor, sfc_elevation, &                  ! Intent(in)
@@ -155,10 +159,10 @@ module generalized_grid_test
       varmu 
 #endif 
 
-    real( kind = core_rknd ), dimension(ngrdcol,nzm, hydromet_dim), intent(in) :: &
+    real( kind = core_rknd ), dimension(ngrdcol,nzm,hydromet_dim), intent(in) :: &
       wphydrometp    ! Covariance of w and a hydrometeor   [(m/s) <hm units>]
 
-    real( kind = core_rknd ), dimension(ngrdcol,nzt, hydromet_dim), intent(in) :: &
+    real( kind = core_rknd ), dimension(ngrdcol,nzt,hydromet_dim), intent(in) :: &
       wp2hmp,      & ! Third moment: <w'^2> * <hydro.'>    [(m/s)^2 <hm units>]
       rtphmp_zt,   & ! Covariance of rt and a hydrometeor  [(kg/kg) <hm units>]
       thlphmp_zt     ! Covariance of thl and a hydrometeor [K <hm units>]
@@ -382,10 +386,10 @@ module generalized_grid_test
       invrs_rho_ds_zm_flip, & ! Inv. dry, static density @ momentum levs. [m^3/kg]
       thv_ds_zm_flip          ! Dry, base-state theta_v on momentum levs. [K]
 
-    real( kind = core_rknd ), dimension(ngrdcol,nzm, hydromet_dim) :: &
+    real( kind = core_rknd ), dimension(ngrdcol,nzm,hydromet_dim) :: &
       wphydrometp_flip    ! Covariance of w and a hydrometeor   [(m/s) <hm units>]
 
-    real( kind = core_rknd ), dimension(ngrdcol,nzt, hydromet_dim) :: &
+    real( kind = core_rknd ), dimension(ngrdcol,nzt,hydromet_dim) :: &
       wp2hmp_flip,      & ! Third moment: <w'^2> * <hydro.'>    [(m/s)^2 <hm units>]
       rtphmp_zt_flip,   & ! Covariance of rt and a hydrometeor  [(kg/kg) <hm units>]
       thlphmp_zt_flip     ! Covariance of thl and a hydrometeor [K <hm units>]
@@ -525,6 +529,13 @@ module generalized_grid_test
     logical :: l_differences = .false.
 
 
+      ! Allocate space and initialize flipped pdf parameter terms
+      call init_pdf_params( gr%nzt, ngrdcol, pdf_params_flip )
+      call init_pdf_params( gr%nzm, ngrdcol, pdf_params_zm_flip )
+
+      call init_pdf_implicit_coefs_terms( gr%nzt, ngrdcol, sclr_dim, &   ! Intent(in)
+                                          pdf_implicit_coefs_terms_flip ) ! Intent(out)
+
       ! Set up "flipped" variables for call to descending grid.
       do i = 1, ngrdcol
 
@@ -619,13 +630,6 @@ module generalized_grid_test
             rtphmp_zt_flip(i,:,hm_idx) = flip( rtphmp_zt(i,:,hm_idx), nzt )
             thlphmp_zt_flip(i,:,hm_idx) = flip( thlphmp_zt(i,:,hm_idx), nzt )
          enddo ! hm_idx = 1, hydromet_dim
-
-         ! Allocate space and initialize flipped pdf parameter terms
-         call init_pdf_params( gr%nzt, ngrdcol, pdf_params_flip )
-         call init_pdf_params( gr%nzm, ngrdcol, pdf_params_zm_flip )
-
-         call init_pdf_implicit_coefs_terms( gr%nzt, ngrdcol, sclr_dim, &   ! Intent(in)
-                                             pdf_implicit_coefs_terms_flip ) ! Intent(out)
 
          ! pdf_params
          pdf_params_flip%w_1(i,:) = flip( pdf_params%w_1(i,:), nzt )
@@ -1539,7 +1543,719 @@ module generalized_grid_test
 
   end subroutine clubb_generalized_grid_testing
 
-  !-----------------------------------------------------------------------------
+  !=============================================================================
+  subroutine silhs_generalized_grid_testing &
+             ( gr, gr_desc, ngrdcol, pdf_dim, hydromet_dim,     & ! In
+               itime, dt_main, vert_decorr_coef,                & ! In
+               Nc_in_cloud, cloud_frac, ice_supersat_frac,      & ! In
+               rho_ds_zt, Lscale, Kh_zm, hydromet, wphydrometp, & ! In
+               corr_array_n_cloud, corr_array_n_below,          & ! In
+               hm_metadata, pdf_params, clubb_params,           & ! In
+               clubb_config_flags, silhs_config_flags,          & ! In
+               l_rad_itime, stats_metadata,                     & ! In
+               stats_zt, stats_zm, stats_sfc,                   & ! In/Out
+               stats_lh_zt, stats_lh_sfc, err_code,             & ! In/Out
+               time_clubb_pdf, time_stop, time_start,           & ! In/Out
+               hydrometp2,                                      & ! Out
+               mu_x_1_n, mu_x_2_n,                              & ! Out
+               sigma_x_1_n, sigma_x_2_n,                        & ! Out
+               corr_array_1_n, corr_array_2_n,                  & ! Out
+               corr_cholesky_mtx_1, corr_cholesky_mtx_2,        & ! Out
+               precip_fracs,                                    & ! In/Out
+               rtphmp_zt, thlphmp_zt, wp2hmp,                   & ! Out
+               X_nl_all_levs, X_mixt_comp_all_levs,             & ! Out
+               lh_sample_point_weights,                         & ! Out
+               lh_rt_clipped, lh_thl_clipped, lh_rc_clipped,    & ! Out
+               lh_rv_clipped, lh_Nc_clipped,                    & ! Out
+               hydromet_pdf_params )                              ! Optional(out)
+
+    use grid_class, only: &
+        grid, & ! Type(s)
+        flip    ! Procedure(s)
+
+    use pdf_hydromet_microphys_wrapper, only: &
+        pdf_hydromet_microphys_prep    ! Procedure(s)
+
+    use pdf_parameter_module, only: &
+        pdf_parameter,   & ! Type(s)
+        init_pdf_params    ! Procedure(s)
+
+    use hydromet_pdf_parameter_module, only: &
+        hydromet_pdf_parameter,   & ! Type(s)
+        precipitation_fractions,  & ! Procedure(s)
+        init_hydromet_pdf_params
+
+    use corr_varnce_module, only: &
+        hm_metadata_type    ! Type(s)
+
+    use model_flags, only: &
+        clubb_config_flags_type, & ! Type(s)
+        l_silhs_rad                ! Variable(s)
+
+    use parameters_silhs, only: &
+        silhs_config_flags_type    ! Types(s)
+
+    use stats_type, only: &
+        stats ! Type(s)
+
+    use stats_variables, only: &
+        stats_metadata_type    ! Type(s)
+
+#ifdef SILHS
+    use parameters_microphys, only: &
+        lh_num_samples    ! Variable(s)
+#endif /*SILHS*/
+
+    use parameter_indices, only: &
+        nparams    ! Variable(s)
+
+    use parameters_microphys, only: &
+        microphys_scheme    ! Variable(s)
+
+#ifdef SILHS
+    use parameters_microphys, only: &
+        lh_microphys_type,     & ! Variable(s)
+        lh_microphys_disabled, &
+        lh_num_samples
+#endif /*SILHS*/
+
+    use clubb_api_module, only: &
+        init_precip_fracs_api    ! Procedure(s)
+
+    use error_code, only: &
+        clubb_generalized_grd_test_err, &
+        clubb_no_error, &
+        clubb_fatal_error
+
+    use clubb_precision, only: &
+        core_rknd    ! Variable(s)
+
+    implicit none
+
+    ! Input Variables
+    type (grid), intent(in) :: &
+      gr,      & ! Grid variable type for ascending grid
+      gr_desc    ! Grid variable type for descending grid
+
+    integer, intent(in) :: &
+      ngrdcol,      & ! Number of grid columns
+      pdf_dim,      & ! Number of variables in the correlation array
+      hydromet_dim, & ! Number of hydrometeor species
+      itime
+
+    real( kind = core_rknd ), intent(in) :: &
+      dt_main,          & ! Model timestep                              [s]
+      vert_decorr_coef    ! Empirically defined de-correlation constant [-]
+
+    real( kind = core_rknd ), dimension(ngrdcol,gr%nzt), intent(in) :: &
+      Nc_in_cloud,       & ! Mean (in-cloud) cloud droplet conc.       [num/kg]
+      cloud_frac,        & ! Cloud fraction                            [-]
+      ice_supersat_frac, & ! Ice supersaturation fraction              [-]
+      rho_ds_zt,         & ! Dry, base-state density on thermo. levs.  [kg/m^3]
+      Lscale               ! Turbulent Mixing Length                   [m]
+
+    real( kind = core_rknd ), dimension(ngrdcol,gr%nzm), intent(in) :: &
+      Kh_zm                ! Eddy diffusivity coef. on momentum levels [m^2/s]
+
+    real( kind = core_rknd ), dimension(ngrdcol,gr%nzt,hydromet_dim), intent(in) :: &
+      hydromet       ! Mean of hydrometeor, hm (overall) (t-levs.) [units]
+
+    real( kind = core_rknd ), dimension(ngrdcol,gr%nzm,hydromet_dim), intent(in) :: &
+      wphydrometp    ! Covariance < w'h_m' > (momentum levels)     [(m/s)units]
+
+    real( kind = core_rknd ), dimension(pdf_dim,pdf_dim), intent(in) :: &
+      corr_array_n_cloud, & ! Prescribed normal space corr. array in cloud  [-]
+      corr_array_n_below    ! Prescribed normal space corr. array below cl. [-]
+
+    type (hm_metadata_type), intent(in) :: &
+      hm_metadata
+
+    type(pdf_parameter), intent(in) :: &
+      pdf_params    ! PDF parameters                               [units vary]
+
+    real( kind = core_rknd ), dimension(nparams), intent(in) :: &
+      clubb_params    ! Array of CLUBB's tunable parameters    [units vary]
+
+    type(clubb_config_flags_type), intent(in) :: &
+      clubb_config_flags ! Derived type holding all configurable CLUBB flags
+
+    type(silhs_config_flags_type), intent(in) :: &
+      silhs_config_flags
+
+    logical, intent(in) :: &
+      l_rad_itime
+
+    type (stats_metadata_type), intent(in) :: &
+      stats_metadata
+
+    ! Input/Output Variables
+    type (stats), dimension(ngrdcol), intent(inout) :: &
+      stats_zt, &
+      stats_zm, &
+      stats_sfc, &
+      stats_lh_zt, &
+      stats_lh_sfc
+
+    integer, intent(inout) :: &
+      err_code      ! Error code catching and relaying any errors
+
+    real( kind = core_rknd ), intent(inout) :: &
+      time_clubb_pdf, & ! time spent in setup_pdf_parameters and hydrometeor_mixed_moments [s]
+      time_start,     & ! help variables to measure the time [s]
+      time_stop         ! help variables to measure the time [s]
+
+    ! Output Variables
+    real( kind = core_rknd ), dimension(ngrdcol,gr%nzm,hydromet_dim), intent(out) :: &
+      hydrometp2    ! Variance of a hydrometeor (overall) (m-levs.)   [units^2]
+
+    real( kind = core_rknd ), dimension(ngrdcol,gr%nzt,pdf_dim), intent(out) :: &
+      mu_x_1_n,    & ! Mean array (normal space): PDF vars. (comp. 1) [un. vary]
+      mu_x_2_n,    & ! Mean array (normal space): PDF vars. (comp. 2) [un. vary]
+      sigma_x_1_n, & ! Std. dev. array (normal space): PDF vars (comp. 1) [u.v.]
+      sigma_x_2_n    ! Std. dev. array (normal space): PDF vars (comp. 2) [u.v.]
+
+    real( kind = core_rknd ), dimension(ngrdcol,gr%nzt,pdf_dim,pdf_dim), intent(out) :: &
+      corr_array_1_n, & ! Corr. array (normal space) of PDF vars. (comp. 1)  [-]
+      corr_array_2_n    ! Corr. array (normal space) of PDF vars. (comp. 2)  [-]
+
+    real( kind = core_rknd ), dimension(ngrdcol,gr%nzt,pdf_dim,pdf_dim), intent(out) :: &
+      corr_cholesky_mtx_1, & ! Transposed corr. cholesky matrix, 1st comp. [-]
+      corr_cholesky_mtx_2    ! Transposed corr. cholesky matrix, 2nd comp. [-]
+
+    ! This is only an output, but it contains allocated arrays, so we need to treat it as inout
+    type(precipitation_fractions), intent(inout) :: &
+      precip_fracs           ! Precipitation fractions      [-]
+
+    real( kind = core_rknd ), dimension(ngrdcol,gr%nzt,hydromet_dim), intent(out) :: &
+      wp2hmp,     & ! Higher-order mixed moment:  < w'^2 hm' > [(m/s)^2<hm un.>]
+      rtphmp_zt,  & ! Covariance of rt and hm (on t-levs.)     [(kg/kg)<hm un.>]
+      thlphmp_zt    ! Covariance of thl and hm (on t-levs.)    [K<hm units>]
+
+    real( kind = core_rknd ), dimension(ngrdcol,lh_num_samples,gr%nzt,pdf_dim), intent(out) :: &
+      X_nl_all_levs ! Sample that is transformed ultimately to normal-lognormal
+
+    integer, dimension(ngrdcol,lh_num_samples,gr%nzt), intent(out) :: &
+      X_mixt_comp_all_levs ! Which mixture component we're in
+
+    real( kind = core_rknd ), dimension(ngrdcol,lh_num_samples,gr%nzt), intent(out) :: &
+      lh_sample_point_weights
+
+    real( kind = core_rknd ), dimension(ngrdcol,lh_num_samples,gr%nzt), intent(out) :: &
+      lh_rt_clipped,  & ! rt generated from silhs sample points
+      lh_thl_clipped, & ! thl generated from silhs sample points
+      lh_rc_clipped,  & ! rc generated from silhs sample points
+      lh_rv_clipped,  & ! rv generated from silhs sample points
+      lh_Nc_clipped     ! Nc generated from silhs sample points
+
+    type(hydromet_pdf_parameter), dimension(ngrdcol,gr%nzt), optional, intent(out) :: &
+      hydromet_pdf_params    ! Hydrometeor PDF parameters        [units vary]
+
+    ! Local Variables
+    real( kind = core_rknd ), dimension(ngrdcol,gr%nzt) :: &
+      Nc_in_cloud_flip,       & ! Mean (in-cloud) cloud droplet conc.       [num/kg]
+      cloud_frac_flip,        & ! Cloud fraction                            [-]
+      ice_supersat_frac_flip, & ! Ice supersaturation fraction              [-]
+      rho_ds_zt_flip,         & ! Dry, base-state density on thermo. levs.  [kg/m^3]
+      Lscale_flip               ! Turbulent Mixing Length                   [m]
+
+    real( kind = core_rknd ), dimension(ngrdcol,gr%nzm) :: &
+      Kh_zm_flip                ! Eddy diffusivity coef. on momentum levels [m^2/s]
+
+    real( kind = core_rknd ), dimension(ngrdcol,gr%nzt,hydromet_dim) :: &
+      hydromet_flip       ! Mean of hydrometeor, hm (overall) (t-levs.) [units]
+
+    real( kind = core_rknd ), dimension(ngrdcol,gr%nzm,hydromet_dim) :: &
+      wphydrometp_flip    ! Covariance < w'h_m' > (momentum levels)     [(m/s)units]
+
+    type(pdf_parameter) :: &
+      pdf_params_flip    ! PDF parameters                               [units vary]
+
+    type (stats_metadata_type) :: &
+      stats_metadata_flip
+
+    real( kind = core_rknd ), dimension(ngrdcol,gr%nzm,hydromet_dim) :: &
+      hydrometp2_flip    ! Variance of a hydrometeor (overall) (m-levs.)   [units^2]
+
+    real( kind = core_rknd ), dimension(ngrdcol,gr%nzt,pdf_dim) :: &
+      mu_x_1_n_flip,    & ! Mean array (normal space): PDF vars. (comp. 1) [un. vary]
+      mu_x_2_n_flip,    & ! Mean array (normal space): PDF vars. (comp. 2) [un. vary]
+      sigma_x_1_n_flip, & ! Std. dev. array (normal space): PDF vars (comp. 1) [u.v.]
+      sigma_x_2_n_flip    ! Std. dev. array (normal space): PDF vars (comp. 2) [u.v.]
+
+    real( kind = core_rknd ), dimension(ngrdcol,gr%nzt,pdf_dim,pdf_dim) :: &
+      corr_array_1_n_flip, & ! Corr. array (normal space) of PDF vars. (comp. 1)  [-]
+      corr_array_2_n_flip    ! Corr. array (normal space) of PDF vars. (comp. 2)  [-]
+
+    real( kind = core_rknd ), dimension(ngrdcol,gr%nzt,pdf_dim,pdf_dim) :: &
+      corr_cholesky_mtx_1_flip, & ! Transposed corr. cholesky matrix, 1st comp. [-]
+      corr_cholesky_mtx_2_flip    ! Transposed corr. cholesky matrix, 2nd comp. [-]
+
+    type(precipitation_fractions) :: &
+      precip_fracs_flip           ! Precipitation fractions      [-]
+
+    real( kind = core_rknd ), dimension(ngrdcol,gr%nzt,hydromet_dim) :: &
+      wp2hmp_flip,     & ! Higher-order mixed moment:  < w'^2 hm' > [(m/s)^2<hm un.>]
+      rtphmp_zt_flip,  & ! Covariance of rt and hm (on t-levs.)     [(kg/kg)<hm un.>]
+      thlphmp_zt_flip    ! Covariance of thl and hm (on t-levs.)    [K<hm units>]
+
+    real( kind = core_rknd ), dimension(ngrdcol,lh_num_samples,gr%nzt,pdf_dim) :: &
+      X_nl_all_levs_flip ! Sample that is transformed ultimately to normal-lognormal
+
+    integer, dimension(ngrdcol,lh_num_samples,gr%nzt) :: &
+      X_mixt_comp_all_levs_flip ! Which mixture component we're in
+
+    real( kind = core_rknd ), dimension(ngrdcol,lh_num_samples,gr%nzt) :: &
+      lh_sample_point_weights_flip
+
+    real( kind = core_rknd ), dimension(ngrdcol,lh_num_samples,gr%nzt) :: &
+      lh_rt_clipped_flip,  & ! rt generated from silhs sample points
+      lh_thl_clipped_flip, & ! thl generated from silhs sample points
+      lh_rc_clipped_flip,  & ! rc generated from silhs sample points
+      lh_rv_clipped_flip,  & ! rv generated from silhs sample points
+      lh_Nc_clipped_flip     ! Nc generated from silhs sample points
+
+    type(hydromet_pdf_parameter), dimension(ngrdcol,gr%nzt) :: &
+      hydromet_pdf_params_flip    ! Hydrometeor PDF parameters        [units vary]
+
+    integer :: k, i, hm_idx, hm_indx, pdf_idx, pdf_indx, sample  ! Loop indices
+
+    logical :: l_differences = .false.
+
+
+      ! Allocate space and initialize flipped pdf parameter terms
+      call init_pdf_params( gr%nzt, ngrdcol, pdf_params_flip )
+
+      ! Allocate space and initialize flipped precipitation fraction terms
+      call init_precip_fracs_api( gr%nzt, ngrdcol, &
+                                  precip_fracs_flip )
+                                    
+      ! Initialize hydromet_pdf_params_flip to 0.
+      do k = 1, gr%nzt
+        do i = 1, ngrdcol
+          call init_hydromet_pdf_params( hydromet_pdf_params_flip(i,k) )
+        end do
+      end do
+
+      ! Set up "flipped" variables for call to descending grid.
+      do i = 1, ngrdcol
+
+         Nc_in_cloud_flip(i,:) = flip( Nc_in_cloud(i,:), gr%nzt )
+         cloud_frac_flip(i,:) = flip( cloud_frac(i,:), gr%nzt )
+         ice_supersat_frac_flip(i,:) = flip( ice_supersat_frac(i,:), gr%nzt )
+         rho_ds_zt_flip(i,:) = flip( rho_ds_zt(i,:), gr%nzt )
+         Lscale_flip(i,:) = flip( Lscale(i,:), gr%nzt )
+         Kh_zm_flip(i,:) = flip( Kh_zm(i,:), gr%nzm )
+
+         ! Hydrometeor variables
+         do hm_idx = 1, hydromet_dim         
+            hydromet_flip(i,:,hm_idx) = flip( hydromet(i,:,hm_idx), gr%nzt )
+            wphydrometp_flip(i,:,hm_idx) = flip( wphydrometp(i,:,hm_idx), gr%nzm )
+         enddo ! hm_idx = 1, hydromet_dim         
+
+         ! pdf_params
+         pdf_params_flip%w_1(i,:) = flip( pdf_params%w_1(i,:), gr%nzt )
+         pdf_params_flip%w_2(i,:) = flip( pdf_params%w_2(i,:), gr%nzt )
+         pdf_params_flip%varnce_w_1(i,:) = flip( pdf_params%varnce_w_1(i,:), gr%nzt )
+         pdf_params_flip%varnce_w_2(i,:) = flip( pdf_params%varnce_w_2(i,:), gr%nzt )
+         pdf_params_flip%rt_1(i,:) = flip( pdf_params%rt_1(i,:), gr%nzt )
+         pdf_params_flip%rt_2(i,:) = flip( pdf_params%rt_2(i,:), gr%nzt )
+         pdf_params_flip%varnce_rt_1(i,:) = flip( pdf_params%varnce_rt_1(i,:), gr%nzt )
+         pdf_params_flip%varnce_rt_2(i,:) = flip( pdf_params%varnce_rt_2(i,:), gr%nzt )
+         pdf_params_flip%thl_1(i,:) = flip( pdf_params%thl_1(i,:), gr%nzt )
+         pdf_params_flip%thl_2(i,:) = flip( pdf_params%thl_2(i,:), gr%nzt )
+         pdf_params_flip%varnce_thl_1(i,:) = flip( pdf_params%varnce_thl_1(i,:), gr%nzt )
+         pdf_params_flip%varnce_thl_2(i,:) = flip( pdf_params%varnce_thl_2(i,:), gr%nzt )
+         pdf_params_flip%corr_w_rt_1(i,:) = flip( pdf_params%corr_w_rt_1(i,:), gr%nzt )
+         pdf_params_flip%corr_w_rt_2(i,:) = flip( pdf_params%corr_w_rt_2(i,:), gr%nzt )
+         pdf_params_flip%corr_w_thl_1(i,:) = flip( pdf_params%corr_w_thl_1(i,:), gr%nzt )
+         pdf_params_flip%corr_w_thl_2(i,:) = flip( pdf_params%corr_w_thl_2(i,:), gr%nzt )
+         pdf_params_flip%corr_rt_thl_1(i,:) = flip( pdf_params%corr_rt_thl_1(i,:), gr%nzt )
+         pdf_params_flip%corr_rt_thl_2(i,:) = flip( pdf_params%corr_rt_thl_2(i,:), gr%nzt )
+         pdf_params_flip%alpha_thl(i,:) = flip( pdf_params%alpha_thl(i,:), gr%nzt )
+         pdf_params_flip%alpha_rt(i,:) = flip( pdf_params%alpha_rt(i,:), gr%nzt )
+         pdf_params_flip%crt_1(i,:) = flip( pdf_params%crt_1(i,:), gr%nzt )
+         pdf_params_flip%crt_2(i,:) = flip( pdf_params%crt_2(i,:), gr%nzt )
+         pdf_params_flip%cthl_1(i,:) = flip( pdf_params%cthl_1(i,:), gr%nzt )
+         pdf_params_flip%cthl_2(i,:) = flip( pdf_params%cthl_2(i,:), gr%nzt )
+         pdf_params_flip%chi_1(i,:) = flip( pdf_params%chi_1(i,:), gr%nzt )
+         pdf_params_flip%chi_2(i,:) = flip( pdf_params%chi_2(i,:), gr%nzt )
+         pdf_params_flip%stdev_chi_1(i,:) = flip( pdf_params%stdev_chi_1(i,:), gr%nzt )
+         pdf_params_flip%stdev_chi_2(i,:) = flip( pdf_params%stdev_chi_2(i,:), gr%nzt )
+         pdf_params_flip%stdev_eta_1(i,:) = flip( pdf_params%stdev_eta_1(i,:), gr%nzt )
+         pdf_params_flip%stdev_eta_2(i,:) = flip( pdf_params%stdev_eta_2(i,:), gr%nzt )
+         pdf_params_flip%covar_chi_eta_1(i,:) = flip( pdf_params%covar_chi_eta_1(i,:), gr%nzt )
+         pdf_params_flip%covar_chi_eta_2(i,:) = flip( pdf_params%covar_chi_eta_2(i,:), gr%nzt )
+         pdf_params_flip%corr_w_chi_1(i,:) = flip( pdf_params%corr_w_chi_1(i,:), gr%nzt )
+         pdf_params_flip%corr_w_chi_2(i,:) = flip( pdf_params%corr_w_chi_2(i,:), gr%nzt )
+         pdf_params_flip%corr_w_eta_1(i,:) = flip( pdf_params%corr_w_eta_1(i,:), gr%nzt )
+         pdf_params_flip%corr_w_eta_2(i,:) = flip( pdf_params%corr_w_eta_2(i,:), gr%nzt )
+         pdf_params_flip%corr_chi_eta_1(i,:) = flip( pdf_params%corr_chi_eta_1(i,:), gr%nzt )
+         pdf_params_flip%corr_chi_eta_2(i,:) = flip( pdf_params%corr_chi_eta_2(i,:), gr%nzt )
+         pdf_params_flip%rsatl_1(i,:) = flip( pdf_params%rsatl_1(i,:), gr%nzt )
+         pdf_params_flip%rsatl_2(i,:) = flip( pdf_params%rsatl_2(i,:), gr%nzt )
+         pdf_params_flip%rc_1(i,:) = flip( pdf_params%rc_1(i,:), gr%nzt )
+         pdf_params_flip%rc_2(i,:) = flip( pdf_params%rc_2(i,:), gr%nzt )
+         pdf_params_flip%cloud_frac_1(i,:) = flip( pdf_params%cloud_frac_1(i,:), gr%nzt )
+         pdf_params_flip%cloud_frac_2(i,:) = flip( pdf_params%cloud_frac_2(i,:), gr%nzt )
+         pdf_params_flip%mixt_frac(i,:) = flip( pdf_params%mixt_frac(i,:), gr%nzt )
+         pdf_params_flip%ice_supersat_frac_1(i,:) &
+         = flip( pdf_params%ice_supersat_frac_1(i,:), gr%nzt )
+         pdf_params_flip%ice_supersat_frac_2(i,:) &
+         = flip( pdf_params%ice_supersat_frac_2(i,:), gr%nzt )
+
+      enddo ! i = 1, ngrdcol
+
+      ! Set statistical sampling to false for descending grid to avoid
+      ! the error from having too many statistical samples.
+      stats_metadata_flip%l_stats_samp = .false.
+
+
+      ! Call pdf_hydromet_microphys_prep for the ascending grid direction
+      call pdf_hydromet_microphys_prep &
+           ( gr, ngrdcol, pdf_dim, hydromet_dim,              & ! In
+             itime, dt_main, vert_decorr_coef,                & ! In
+             Nc_in_cloud, cloud_frac, ice_supersat_frac,      & ! In
+             rho_ds_zt, Lscale, Kh_zm, hydromet, wphydrometp, & ! In
+             corr_array_n_cloud, corr_array_n_below,          & ! In
+             hm_metadata, pdf_params, clubb_params,           & ! In
+             clubb_config_flags, silhs_config_flags,          & ! In
+             l_rad_itime, stats_metadata,                     & ! In
+             stats_zt, stats_zm, stats_sfc,                   & ! In/Out
+             stats_lh_zt, stats_lh_sfc, err_code,             & ! In/Out
+             time_clubb_pdf, time_stop, time_start,           & ! In/Out
+             hydrometp2,                                      & ! Out
+             mu_x_1_n, mu_x_2_n,                              & ! Out
+             sigma_x_1_n, sigma_x_2_n,                        & ! Out
+             corr_array_1_n, corr_array_2_n,                  & ! Out
+             corr_cholesky_mtx_1, corr_cholesky_mtx_2,        & ! Out
+             precip_fracs,                                    & ! In/Out
+             rtphmp_zt, thlphmp_zt, wp2hmp,                   & ! Out
+             X_nl_all_levs, X_mixt_comp_all_levs,             & ! Out
+             lh_sample_point_weights,                         & ! Out
+             lh_rt_clipped, lh_thl_clipped, lh_rc_clipped,    & ! Out
+             lh_rv_clipped, lh_Nc_clipped,                    & ! Out
+             hydromet_pdf_params )                              ! Optional(out)
+
+
+      ! In the case of a fatal error during the 1st call (ascending grid) to 
+      ! pdf_hydromet_microphys_prep, reset the error code.
+      !
+      ! Otherwise, a mismatch between the ascending grid and the descending grid
+      ! will be caused by the fact that the 2nd call to pdf_hydromet_microphys_prep
+      ! will be returned from right away because err_code is already set to 
+      ! clubb_fatal_error upon entering pdf_hydromet_microphys_prep. Thus, there
+      ! likely won't be as many variables calculated during the descending call
+      ! as there were during the ascending call. This causes a mismatch and a
+      ! false failure of the generalized grid test.
+      !
+      ! In the case of a fatal error, as long as the generalized grid code is
+      ! working properly, the fatal error will occur in the exact same spot
+      ! in the call to the descending grid. The fatal error code will be output
+      ! (and not overwritten this time) and that will cause the code to exit
+      ! the run and stop. However, the results between the ascending grid and
+      ! the descending grid will still match.
+      if ( err_code == clubb_fatal_error ) then
+         ! Reset error code
+         err_code = clubb_no_error
+      endif
+
+
+      ! Call pdf_hydromet_microphys_prep for the descending grid direction
+      ! All variables with a vertical dimension should be "flip" variables
+      ! in this call.
+      call pdf_hydromet_microphys_prep &
+           ( gr_desc, ngrdcol, pdf_dim, hydromet_dim,         & ! In
+             itime, dt_main, vert_decorr_coef,                & ! In
+             Nc_in_cloud_flip, cloud_frac_flip, ice_supersat_frac_flip, & ! In
+             rho_ds_zt_flip, Lscale_flip, Kh_zm_flip, hydromet_flip, wphydrometp_flip, & ! In
+             corr_array_n_cloud, corr_array_n_below,          & ! In
+             hm_metadata, pdf_params_flip, clubb_params,      & ! In
+             clubb_config_flags, silhs_config_flags,          & ! In
+             l_rad_itime, stats_metadata_flip,                & ! In
+             stats_zt, stats_zm, stats_sfc,                   & ! In/Out
+             stats_lh_zt, stats_lh_sfc, err_code,             & ! In/Out
+             time_clubb_pdf, time_stop, time_start,           & ! In/Out
+             hydrometp2_flip,                                 & ! Out
+             mu_x_1_n_flip, mu_x_2_n_flip,                    & ! Out
+             sigma_x_1_n_flip, sigma_x_2_n_flip,              & ! Out
+             corr_array_1_n_flip, corr_array_2_n_flip,        & ! Out
+             corr_cholesky_mtx_1_flip, corr_cholesky_mtx_2_flip, & ! Out
+             precip_fracs_flip,                               & ! In/Out
+             rtphmp_zt_flip, thlphmp_zt_flip, wp2hmp_flip,    & ! Out
+             X_nl_all_levs_flip, X_mixt_comp_all_levs_flip,   & ! Out
+             lh_sample_point_weights_flip,                    & ! Out
+             lh_rt_clipped_flip, lh_thl_clipped_flip, lh_rc_clipped_flip,    & ! Out
+             lh_rv_clipped_flip, lh_Nc_clipped_flip,          & ! Out
+             hydromet_pdf_params_flip )                         ! Optional(out)
+
+
+      ! Compare the ascending grid variables to the descending grid variables
+      if ( .not. trim( microphys_scheme ) == "none" ) then
+
+         ! The variables that are output from the calls to setup_pdf_parameters
+         ! and hydrometeor_mixed_moments only have assigned values when a
+         ! microphysics scheme is in use. Thus, only run this check when that
+         ! is the case.
+         do pdf_idx = 1, pdf_dim
+            ! mu_x_1_n
+            call check_flipped_results( "mu_x_1_n", mu_x_1_n(:,:,pdf_idx), &
+                                        mu_x_1_n_flip(:,:,pdf_idx), &
+                                        gr%nzt, ngrdcol, &
+                                        l_differences )
+            ! mu_x_2_n
+            call check_flipped_results( "mu_x_2_n", mu_x_2_n(:,:,pdf_idx), &
+                                        mu_x_2_n_flip(:,:,pdf_idx), &
+                                        gr%nzt, ngrdcol, &
+                                        l_differences )
+            ! sigma_x_1_n
+            call check_flipped_results( "sigma_x_1_n", sigma_x_1_n(:,:,pdf_idx), &
+                                        sigma_x_1_n_flip(:,:,pdf_idx), &
+                                        gr%nzt, ngrdcol, &
+                                        l_differences )
+            ! sigma_x_2_n
+            call check_flipped_results( "sigma_x_2_n", sigma_x_2_n(:,:,pdf_idx), &
+                                        sigma_x_2_n_flip(:,:,pdf_idx), &
+                                        gr%nzt, ngrdcol, &
+                                        l_differences )
+            do pdf_indx = 1, pdf_dim
+               ! corr_array_1_n
+               call check_flipped_results( "corr_array_1_n", &
+                                           corr_array_1_n(:,:,pdf_idx,pdf_indx), &
+                                           corr_array_1_n_flip(:,:,pdf_idx,pdf_indx), &
+                                           gr%nzt, ngrdcol, &
+                                           l_differences )
+               ! corr_array_1_n
+               call check_flipped_results( "corr_array_2_n", &
+                                           corr_array_2_n(:,:,pdf_idx,pdf_indx), &
+                                           corr_array_2_n_flip(:,:,pdf_idx,pdf_indx), &
+                                           gr%nzt, ngrdcol, &
+                                           l_differences )
+               ! corr_cholesky_mtx_1
+               call check_flipped_results( "corr_cholesky_mtx_1", &
+                                           corr_cholesky_mtx_1(:,:,pdf_idx,pdf_indx), &
+                                           corr_cholesky_mtx_1_flip(:,:,pdf_idx,pdf_indx), &
+                                           gr%nzt, ngrdcol, &
+                                           l_differences )
+               ! corr_cholesky_mtx_2
+               call check_flipped_results( "corr_cholesky_mtx_2", &
+                                           corr_cholesky_mtx_2(:,:,pdf_idx,pdf_indx), &
+                                           corr_cholesky_mtx_2_flip(:,:,pdf_idx,pdf_indx), &
+                                           gr%nzt, ngrdcol, &
+                                           l_differences )
+            enddo ! pdf_indx = 1, pdf_dim
+         enddo ! pdf_idx = 1, pdf_dim
+
+         do hm_idx = 1, hydromet_dim
+            ! hydrometp2
+            call check_flipped_results( "hydrometp2", hydrometp2(:,:,hm_idx), &
+                                        hydrometp2_flip(:,:,hm_idx), &
+                                        gr%nzm, ngrdcol, &
+                                        l_differences )
+         enddo ! hm_idx = 1, hydromet_dim
+
+         ! precip_fracs
+         call check_flipped_results( "precip_fracs%precip_frac", precip_fracs%precip_frac, &
+                                     precip_fracs_flip%precip_frac, gr%nzt, ngrdcol, &
+                                     l_differences )
+         call check_flipped_results( "precip_fracs%precip_frac_1", precip_fracs%precip_frac_1, &
+                                     precip_fracs_flip%precip_frac_1, gr%nzt, ngrdcol, &
+                                     l_differences )
+         call check_flipped_results( "precip_fracs%precip_frac_2", precip_fracs%precip_frac_2, &
+                                     precip_fracs_flip%precip_frac_2, gr%nzt, ngrdcol, &
+                                     l_differences )
+
+         ! hydromet_pdf_params
+         do hm_idx = 1, hydromet_dim
+            call check_flipped_results( "hydromet_pdf_params%hm_1", &
+                                        hydromet_pdf_params%hm_1(hm_idx), &
+                                        hydromet_pdf_params_flip%hm_1(hm_idx), &
+                                        gr%nzt, ngrdcol, &
+                                        l_differences )
+            call check_flipped_results( "hydromet_pdf_params%hm_2", &
+                                        hydromet_pdf_params%hm_2(hm_idx), &
+                                        hydromet_pdf_params_flip%hm_2(hm_idx), &
+                                        gr%nzt, ngrdcol, &
+                                        l_differences )
+            call check_flipped_results( "hydromet_pdf_params%mu_hm_1", &
+                                        hydromet_pdf_params%mu_hm_1(hm_idx), &
+                                        hydromet_pdf_params_flip%mu_hm_1(hm_idx), &
+                                        gr%nzt, ngrdcol, &
+                                        l_differences )
+            call check_flipped_results( "hydromet_pdf_params%mu_hm_2", &
+                                        hydromet_pdf_params%mu_hm_2(hm_idx), &
+                                        hydromet_pdf_params_flip%mu_hm_2(hm_idx), &
+                                        gr%nzt, ngrdcol, &
+                                        l_differences )
+            call check_flipped_results( "hydromet_pdf_params%sigma_hm_1", &
+                                        hydromet_pdf_params%sigma_hm_1(hm_idx), &
+                                        hydromet_pdf_params_flip%sigma_hm_1(hm_idx), &
+                                        gr%nzt, ngrdcol, &
+                                        l_differences )
+            call check_flipped_results( "hydromet_pdf_params%sigma_hm_2", &
+                                        hydromet_pdf_params%sigma_hm_2(hm_idx), &
+                                        hydromet_pdf_params_flip%sigma_hm_2(hm_idx), &
+                                        gr%nzt, ngrdcol, &
+                                        l_differences )
+            call check_flipped_results( "hydromet_pdf_params%corr_w_hm_1", &
+                                        hydromet_pdf_params%corr_w_hm_1(hm_idx), &
+                                        hydromet_pdf_params_flip%corr_w_hm_1(hm_idx), &
+                                        gr%nzt, ngrdcol, &
+                                        l_differences )
+            call check_flipped_results( "hydromet_pdf_params%corr_w_hm_2", &
+                                        hydromet_pdf_params%corr_w_hm_2(hm_idx), &
+                                        hydromet_pdf_params_flip%corr_w_hm_2(hm_idx), &
+                                        gr%nzt, ngrdcol, &
+                                        l_differences )
+            call check_flipped_results( "hydromet_pdf_params%corr_chi_hm_1", &
+                                        hydromet_pdf_params%corr_chi_hm_1(hm_idx), &
+                                        hydromet_pdf_params_flip%corr_chi_hm_1(hm_idx), &
+                                        gr%nzt, ngrdcol, &
+                                        l_differences )
+            call check_flipped_results( "hydromet_pdf_params%corr_chi_hm_2", &
+                                        hydromet_pdf_params%corr_chi_hm_2(hm_idx), &
+                                        hydromet_pdf_params_flip%corr_chi_hm_2(hm_idx), &
+                                        gr%nzt, ngrdcol, &
+                                        l_differences )
+            call check_flipped_results( "hydromet_pdf_params%corr_eta_hm_1", &
+                                        hydromet_pdf_params%corr_eta_hm_1(hm_idx), &
+                                        hydromet_pdf_params_flip%corr_eta_hm_1(hm_idx), &
+                                        gr%nzt, ngrdcol, &
+                                        l_differences )
+            call check_flipped_results( "hydromet_pdf_params%corr_eta_hm_2", &
+                                        hydromet_pdf_params%corr_eta_hm_2(hm_idx), &
+                                        hydromet_pdf_params_flip%corr_eta_hm_2(hm_idx), &
+                                        gr%nzt, ngrdcol, &
+                                        l_differences )
+            do hm_indx = 1, hydromet_dim
+               call check_flipped_results( "hydromet_pdf_params%corr_hmx_hmy_1", &
+                                           hydromet_pdf_params%corr_hmx_hmy_1(hm_idx,hm_indx), &
+                                           hydromet_pdf_params_flip%corr_hmx_hmy_1(hm_idx,hm_indx),&
+                                           gr%nzt, ngrdcol, &
+                                           l_differences )
+               call check_flipped_results( "hydromet_pdf_params%corr_hmx_hmy_2", &
+                                           hydromet_pdf_params%corr_hmx_hmy_2(hm_idx,hm_indx), &
+                                           hydromet_pdf_params_flip%corr_hmx_hmy_2(hm_idx,hm_indx),&
+                                           gr%nzt, ngrdcol, &
+                                           l_differences )
+            enddo ! hm_indx = 1, hydromet_dim
+         enddo ! hm_idx = 1, hydromet_dim
+         call check_flipped_results( "hydromet_pdf_params%mu_Ncn_1", &
+                                     hydromet_pdf_params%mu_Ncn_1, &
+                                     hydromet_pdf_params_flip%mu_Ncn_1, &
+                                     gr%nzt, ngrdcol, &
+                                     l_differences )
+         call check_flipped_results( "hydromet_pdf_params%mu_Ncn_2", &
+                                     hydromet_pdf_params%mu_Ncn_2, &
+                                     hydromet_pdf_params_flip%mu_Ncn_2, &
+                                     gr%nzt, ngrdcol, &
+                                     l_differences )
+         call check_flipped_results( "hydromet_pdf_params%sigma_Ncn_1", &
+                                     hydromet_pdf_params%sigma_Ncn_1, &
+                                     hydromet_pdf_params_flip%sigma_Ncn_1, &
+                                     gr%nzt, ngrdcol, &
+                                     l_differences )
+         call check_flipped_results( "hydromet_pdf_params%sigma_Ncn_2", &
+                                     hydromet_pdf_params%sigma_Ncn_2, &
+                                     hydromet_pdf_params_flip%sigma_Ncn_2, &
+                                     gr%nzt, ngrdcol, &
+                                     l_differences )
+
+         do hm_idx = 1, hydromet_dim
+            ! rtphmp_zt
+            call check_flipped_results( "rtphmp_zt", rtphmp_zt(:,:,hm_idx), &
+                                        rtphmp_zt_flip(:,:,hm_idx), &
+                                        gr%nzt, ngrdcol, &
+                                        l_differences )
+            ! thlphmp_zt
+            call check_flipped_results( "thlphmp_zt", thlphmp_zt(:,:,hm_idx), &
+                                        thlphmp_zt_flip(:,:,hm_idx), &
+                                        gr%nzt, ngrdcol, &
+                                        l_differences )
+            ! wp2hmp
+            call check_flipped_results( "wp2hmp", wp2hmp(:,:,hm_idx), &
+                                        wp2hmp_flip(:,:,hm_idx), &
+                                        gr%nzt, ngrdcol, &
+                                        l_differences )
+         enddo ! hm_idx = 1, hydromet_dim
+
+      endif ! .not. trim( microphys_scheme ) == "none"
+
+#ifdef SILHS
+      if ( lh_microphys_type /= lh_microphys_disabled .or. l_silhs_rad ) then
+
+         ! The variables that are output from the calls to
+         ! generate_silhs_sample_api and clip_transform_silhs_output_api only
+         ! have assigned values when SILHS is in use. Thus, only run this check
+         ! when that is the case.
+         do sample = 1, lh_num_samples
+            ! X_nl_all_levs
+            do pdf_idx = 1, pdf_dim
+               call check_flipped_results( "X_nl_all_levs", &
+                                           X_nl_all_levs(:,sample,:,pdf_idx), &
+                                           X_nl_all_levs_flip(:,sample,:,pdf_idx), &
+                                           gr%nzt, ngrdcol, &
+                                           l_differences )
+            enddo ! pdf_idx = 1, pdf_dim
+            ! X_mixt_comp_all_levs
+            call check_flipped_results( "X_mixt_comp_all_levs", &
+                                        real( X_mixt_comp_all_levs(:,sample,:), &
+                                              kind = core_rknd ), &
+                                        real( X_mixt_comp_all_levs_flip(:,sample,:), &
+                                              kind = core_rknd ), &
+                                        gr%nzt, ngrdcol, &
+                                        l_differences )
+            ! lh_sample_point_weights
+            call check_flipped_results( "lh_sample_point_weights", &
+                                        lh_sample_point_weights(:,sample,:), &
+                                        lh_sample_point_weights_flip(:,sample,:), &
+                                        gr%nzt, ngrdcol, &
+                                        l_differences )
+            ! lh_rt_clipped
+            call check_flipped_results( "lh_rt_clipped", lh_rt_clipped(:,sample,:), &
+                                        lh_rt_clipped_flip(:,sample,:), &
+                                        gr%nzt, ngrdcol, &
+                                        l_differences )
+            ! lh_thl_clipped
+            call check_flipped_results( "lh_thl_clipped", lh_thl_clipped(:,sample,:), &
+                                        lh_thl_clipped_flip(:,sample,:), &
+                                        gr%nzt, ngrdcol, &
+                                        l_differences )
+            ! lh_rc_clipped
+            call check_flipped_results( "lh_rc_clipped", lh_rc_clipped(:,sample,:), &
+                                        lh_rc_clipped_flip(:,sample,:), &
+                                        gr%nzt, ngrdcol, &
+                                        l_differences )
+            ! lh_rv_clipped
+            call check_flipped_results( "lh_rv_clipped", lh_rv_clipped(:,sample,:), &
+                                        lh_rv_clipped_flip(:,sample,:), &
+                                        gr%nzt, ngrdcol, &
+                                        l_differences )
+            ! lh_Nc_clipped
+            call check_flipped_results( "lh_Nc_clipped", lh_Nc_clipped(:,sample,:), &
+                                        lh_Nc_clipped_flip(:,sample,:), &
+                                        gr%nzt, ngrdcol, &
+                                        l_differences )
+         enddo ! sample = 1, lh_num_samples
+
+      endif ! lh_microphys_type /= lh_microphys_disabled .or. l_silhs_rad
+#endif /*SILHS*/
+      
+
+      ! Print a message and stop the run if there are any discrepanices found
+      if ( l_differences ) then
+         ! Stop the run and exit
+         print *, "##################################################"
+         print *, "Discrepancy found in SILHS ascending vs. descending grid" &
+                  // " direction test. Please see messages listed above."
+         err_code = clubb_generalized_grd_test_err
+      endif ! l_differences
+
+
+      return
+
+  end subroutine silhs_generalized_grid_testing
+
+  !=============================================================================
   subroutine check_flipped_results( varname, var, var_flip, nz, ngrdcol, &
                                     l_differences )
 
@@ -1596,5 +2312,6 @@ module generalized_grid_test
 
   end subroutine check_flipped_results
 
+!===============================================================================
 
 end module generalized_grid_test

@@ -8,7 +8,10 @@
     },
     "flag2": {
         "saturation_formula": 1,
-        "l_godunov_upwind_xpyp_ta": true
+        "l_godunov_upwind_xpyp_ta": true,
+	"l_lh_importance_sampling": false,
+	"l_random_k_lh_start": true,
+	"l_max_overlap_in_cloud": false
     },
     "flag3": {
         "ipdf_call_placement": 1
@@ -23,14 +26,18 @@
         "l_wp2_fill_holes_tke": false,
         "l_enable_relaxed_clipping": true,
         "l_min_xp2_from_corr_wx": false,
-        "l_add_dycore_grid": true
+        "l_add_dycore_grid": true,
+	"l_lh_straight_mc": true
     },
     "flag7": {
         "l_diag_Lscale_from_tau": false
     },
     "flag8": {
         "l_upwind_xpyp_ta": false,
-        "l_upwind_xm_ma": false
+        "l_upwind_xm_ma": false,
+	"l_lh_clustered_sampling": false,
+	"l_lh_instant_var_covar_src": false,
+	"l_lh_limit_weights": false
     },
     "flag9": {
         "l_tke_aniso": false,
@@ -43,7 +50,8 @@
         "l_vert_avg_closure": true,
         "l_use_cloud_cover": true,
         "l_damp_wp3_Skw_squared": false,
-        "l_use_C11_Richardson": true
+        "l_use_C11_Richardson": true,
+	"l_rcm_in_cloud_k_lh_start": false
     },
     "flag11": {
         "l_rcm_supersat_adj": false,
@@ -81,10 +89,12 @@
     },
     "flag16": {
         "l_standard_term_ta": true,
-        "l_partial_upwind_wp3": false
+        "l_partial_upwind_wp3": false,
+	"l_lh_var_frac": true
     },
     "flag17": {
         "l_standard_term_ta": true,
-        "l_partial_upwind_wp3": true
+        "l_partial_upwind_wp3": true,
+	"l_lh_normalize_weights": false
     }
 }
