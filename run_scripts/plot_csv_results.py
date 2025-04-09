@@ -12,6 +12,7 @@ from dash.dependencies import Input, Output, ALL
 from dash.exceptions import PreventUpdate
 import pyperclip
 from scipy.optimize import minimize
+from sklearn.utils import resample
 
 # Functions safe to use in the custom plot
 safe_functions = {
@@ -148,7 +149,6 @@ def model_cpu_time(ngrdcol, runtime, params, N_tasks, N_vsize, N_prec, N_vlevs, 
 
     avg_array_size_MB = ngrdcol * N_vlevs * (N_prec/8) / 2**20
  
-    T_cpu =  m * ngrdcol * cp_func( c, k, o, avg_array_size_MB )  + b
     T_cpu =  ( m * ngrdcol + b ) * cp_func( c, k, o, avg_array_size_MB )
 
     return T_cpu
@@ -271,7 +271,10 @@ def model_throughputs(df, column_name, N_tasks, N_vsize, N_prec, N_vlevs, model_
 
         m_est = ( runtime[first_vpoint] - b_est ) / ( ngrdcol[3] )
 
+        # m, b, c, k, o
         initial_guess = [m_est, b_est, 1.0, 1.0, 1.0]
+
+        #bounds = [ (0,3), (0,3), (1e-6,3), (1e-6,3), (1e-6,3), ]
 
         cache_pen_best = None
         rms_min = None
@@ -279,28 +282,78 @@ def model_throughputs(df, column_name, N_tasks, N_vsize, N_prec, N_vlevs, model_
 
         for cp_func in cache_pen_funcs:
 
-            result = minimize(  cpu_objective, initial_guess, 
-                                args=(ngrdcol, runtime, N_tasks, N_vsize, N_prec, N_vlevs, cp_func), 
-                                method='BFGS')
+
+            print(f" -- cpu fit for filename with {cp_func.__name__}")
+
+            # result = minimize(  cpu_objective, initial_guess, 
+            #                     args=(ngrdcol, runtime, N_tasks, N_vsize, N_prec, N_vlevs, cp_func), 
+            #                     method='BFGS')
+
+            n_bootstrap = 10
+            param_list = []
+
+            # Loop over bootstrap iterations
+            for i in range(n_bootstrap):
+                # Resample indices (with replacement) from your data
+                indices = np.random.choice(len(runtime), size=len(runtime), replace=True)
+                
+                # Create bootstrap samples of your input and target arrays
+                ngrdcol_sample = ngrdcol[indices]
+                runtime_sample = runtime[indices]
+
+                # Minimize using the resampled data
+                result = minimize(
+                    cpu_objective,
+                    initial_guess,
+                    args=(ngrdcol_sample, runtime_sample, N_tasks, N_vsize, N_prec, N_vlevs, cp_func),
+                    method='BFGS'
+                    #method='L-BFGS-B'
+                    #bounds = bounds
+                )
+
+                param_list.append(result.x)
+                
+                # if result.success:
+                #     print(f"bootstrap {i} passed")
+                #     print(ngrdcol_sample, runtime_sample)
+                #     param_list.append(result.x)
+                # else:
+                #     print(f"bootstrap {i} failed")
+                #     print(ngrdcol_sample, runtime_sample)
+
+            # Convert list to NumPy array
+            param_array = np.array(param_list)
+
+            # Compute quantiles (e.g., 2.5%, 50%, 97.5%)
+            lower = np.percentile(param_array, 2.5, axis=0)
+            median = np.percentile(param_array, 50, axis=0)
+            upper = np.percentile(param_array, 97.5, axis=0)
+
+            # Print results
+            for i, (l, m, u) in enumerate(zip(lower, median, upper)):
+                print(f"Parameter {i}: {m:.4g} (95% CI: {l:.4g} – {u:.4g})")
+
 
             rms_error = result.fun
 
             if rms_min is None or rms_error < rms_min:
                 cache_pen_best = cp_func
                 rms_min = rms_error
-                params_opt = result.x
+                #params_opt = result.x
+                params_opt = median
+
 
 
         T_cpu = model_cpu_time(ngrdcol, runtime, params_opt, N_tasks, N_vsize, N_prec, N_vlevs, cache_pen_best)
 
         fit_params = {
-            "m_val": params_opt[0], 
+            "m_val": f"{params_opt[0]:.3e} (-{lower[0]:.3e}, +{upper[0]:.3e})", 
             "m_est_val": m_est, 
-            "b_val": params_opt[1], 
+            "b_val": f"{params_opt[1]:.3e} (-{lower[1]:.3e}, +{upper[1]:.3e})", 
             "b_est_val": b_est, 
-            "c_val": params_opt[2],
-            "k_val": params_opt[3],
-            "o_val": params_opt[4], 
+            "c_val": f"{params_opt[2]:.3e} (-{lower[2]:.3e}, +{upper[2]:.3e})", 
+            "k_val": f"{params_opt[3]:.3e} (-{lower[3]:.3e}, +{upper[3]:.3e})", 
+            "o_val": f"{params_opt[4]:.3e} (-{lower[4]:.3e}, +{upper[4]:.3e})",  
             "cp_func": cache_pen_best.__name__, 
             "rms_error" : rms_error
         }
