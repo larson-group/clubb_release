@@ -112,7 +112,14 @@ def sqrtlog( c, k, o, x ):
 def logsig( c, k, o, x ):
     return  1 + ( np.log(np.log( np.exp(c*(x - o)) + 1 ) + 1 ) + 1 ) / (1 + np.exp(-k * x + o ))
 
-cache_pen_funcs = [ logsig, loglog ] #, "sigmoid", "sqrtlog" ]
+def logcosh( c, k, o, x ):
+    return np.where(
+        x < o,
+        1,
+        c * np.log(np.log(np.cosh(k * (x - o))) + 1) + 1
+    )
+
+cache_pen_funcs = [ logcosh ]#, loglog ] #, "sigmoid", "sqrtlog" ]
 
 
 def model_vcpu_time(ngrdcol, runtime, params, N_tasks, N_vsize, N_prec, N_vlevs, cp_func):
@@ -128,11 +135,9 @@ def model_vcpu_time(ngrdcol, runtime, params, N_tasks, N_vsize, N_prec, N_vlevs,
     N_s = np.ceil( cols_per_core ) % ( flops_per_vop )
     N_v = np.floor( cols_per_core / ( flops_per_vop ) )
 
-    f = b + T_r * N_s + T_v * N_v
+    avg_array_size_MB = ngrdcol * N_vlevs * (N_prec/8) / 2**20
 
-    problem_size = (ngrdcol * N_vlevs / 1000.0) * (N_prec / 64)
-
-    T_cpu = cp_func( c, k, o, problem_size )  * f
+    T_cpu = ( T_r * N_s + T_v * N_v ) * cp_func( c, k, o, avg_array_size_MB ) + b
 
     return T_cpu
 
@@ -141,11 +146,10 @@ def model_cpu_time(ngrdcol, runtime, params, N_tasks, N_vsize, N_prec, N_vlevs, 
 
     m, b, c, k, o = params
 
-    f = b + m * ngrdcol
-
-    problem_size = (ngrdcol * N_vlevs / 1000.0) * (N_prec / 64)
-
-    T_cpu = cp_func( c, k, o, problem_size ) * f
+    avg_array_size_MB = ngrdcol * N_vlevs * (N_prec/8) / 2**20
+ 
+    T_cpu =  m * ngrdcol * cp_func( c, k, o, avg_array_size_MB )  + b
+    T_cpu =  ( m * ngrdcol + b ) * cp_func( c, k, o, avg_array_size_MB )
 
     return T_cpu
 
@@ -165,13 +169,12 @@ def vcpu_objective(params, ngrdcol, runtime, N_tasks, N_vsize, N_prec, N_vlevs, 
 
     T_cpu = model_vcpu_time(ngrdcol, runtime, params, N_tasks, N_vsize, N_prec, N_vlevs, cp_func )
 
-    # rms_error = np.sqrt( np.mean( ( ngrdcol / runtime - ngrdcol / T_cpu )**2 ) ) \
-    #             / ( np.max(ngrdcol / runtime) - np.min(ngrdcol / runtime) )
-
     cps = ngrdcol / runtime
     cps_model = ngrdcol / T_cpu
 
-    rms_error = np.sqrt( np.mean( ( ( cps - cps_model ) / cps * 100 )**2 ) )
+    abs_percent_diff = 100 * ( cps - cps_model ) / cps
+
+    rms_error = np.sqrt( np.mean( abs_percent_diff**2 ) )
 
     return rms_error
 
@@ -180,19 +183,12 @@ def cpu_objective(params, ngrdcol, runtime, N_tasks, N_vsize, N_prec, N_vlevs, c
 
     T_cpu = model_cpu_time(ngrdcol, runtime, params, N_tasks, N_vsize, N_prec, N_vlevs, cp_func )
 
-    # rms_error = np.sqrt( np.mean( ( ngrdcol / runtime - ngrdcol / T_cpu )**2 ) ) \
-    #             / ( np.max(ngrdcol / runtime) - np.min(ngrdcol / runtime) )
-
-    cols_per_core = ngrdcol / N_tasks
-    flops_per_vop = N_vsize / N_prec
-
     cps = ngrdcol / runtime
     cps_model = ngrdcol / T_cpu
 
-    abs_percent_diff = ( cps - cps_model ) / cps
+    abs_percent_diff = 100 * ( cps - cps_model ) / cps
 
     rms_error = np.sqrt( np.mean( abs_percent_diff**2 ) )
-    #rms_error = np.sqrt( np.mean( ( abs_percent_diff[np.where(cols_per_core % flops_per_vop == 0)] * 100 )**2 ) )
 
     return rms_error
 
@@ -203,9 +199,6 @@ def gpu_objective(params, ngrdcol, runtime, N_tasks, N_vsize, N_prec ):
 
     cps = ngrdcol / runtime
     cps_model = ngrdcol / T_gpu
-
-    #abs_percent_diff = ( cps - cps_model ) / cps
-    #rms_error = np.sqrt( np.mean( ( abs_percent_diff[np.where(ngrdcol >= 10000)] * 100 )**2 ) )
 
     abs_diff = np.abs( cps - cps_model )
     rms_error = np.sqrt( np.mean( abs_diff**2 ) )
@@ -225,7 +218,7 @@ def model_throughputs(df, column_name, N_tasks, N_vsize, N_prec, N_vlevs, model_
 
         b_est = runtime[0] - ( runtime[1] - runtime[0] ) / ( ngrdcol[1] - ngrdcol[0] ) * ngrdcol[0]
 
-        initial_guess = [b_est, 3.0, 0, 250]
+        initial_guess = [b_est, 1.0, 1.0, 1.0]
 
         cache_pen_best = None
         rms_min = None
@@ -235,7 +228,7 @@ def model_throughputs(df, column_name, N_tasks, N_vsize, N_prec, N_vlevs, model_
 
             result = minimize(  vcpu_objective, initial_guess, 
                                 args=(ngrdcol, runtime, N_tasks, N_vsize, N_prec, N_vlevs, cp_func), 
-                                method='Nelder-Mead')
+                                method='BFGS')
 
             rms_error = result.fun
 
@@ -278,7 +271,7 @@ def model_throughputs(df, column_name, N_tasks, N_vsize, N_prec, N_vlevs, model_
 
         m_est = ( runtime[first_vpoint] - b_est ) / ( ngrdcol[3] )
 
-        initial_guess = [m_est, b_est, 3.0, 0, 250]
+        initial_guess = [m_est, b_est, 1.0, 1.0, 1.0]
 
         cache_pen_best = None
         rms_min = None
@@ -288,7 +281,7 @@ def model_throughputs(df, column_name, N_tasks, N_vsize, N_prec, N_vlevs, model_
 
             result = minimize(  cpu_objective, initial_guess, 
                                 args=(ngrdcol, runtime, N_tasks, N_vsize, N_prec, N_vlevs, cp_func), 
-                                method='Nelder-Mead')
+                                method='BFGS')
 
             rms_error = result.fun
 
@@ -787,6 +780,9 @@ def launch_dash_app(grouped_files, all_variables):
                 vcpu_df = original_df.copy()
                 cpu_df = original_df.copy()
                 gpu_df = original_df.copy()
+
+                if "_sp_" in filename:
+                    N_prec = 32
                 
                 if any(gpu_name in filename for gpu_name in ["A100", "V100", "H100"]):
 
