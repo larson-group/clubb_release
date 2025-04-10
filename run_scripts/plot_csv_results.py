@@ -1,5 +1,6 @@
 #!/bin/python3
 
+import argparse
 import os
 import pandas as pd
 import re
@@ -13,6 +14,14 @@ from dash.exceptions import PreventUpdate
 import pyperclip
 from scipy.optimize import minimize
 from sklearn.utils import resample
+from random import random
+
+def f4(x):
+    s = f"{x:.4g}"  # General format (switches to sci notation if needed)
+    if "e+00" in s or "e-00" in s:
+        # Replace e±00 with nothing
+        s = s.replace("e+00", "").replace("e-00", "")
+    return s
 
 # Functions safe to use in the custom plot
 safe_functions = {
@@ -40,20 +49,20 @@ gpu_model_columns = [
     {"name": "m", "id": "m_val"},
     {"name": "b", "id": "b_val"},
     {"name": "b_est", "id": "b_est_val"},
-    {"name": "RMSE (abs '%' diff)", "id": "rms_error"},
+    {"name": "RMSE", "id": "rms_error"},
 ]
 
 cpu_model_columns = [
     {"name": "Name", "id": "name"},
     {"name": "m", "id": "m_val"},
-    {"name": "m_est", "id": "m_est_val"},
+    #{"name": "m_est", "id": "m_est_val"},
     {"name": "b", "id": "b_val"},
-    {"name": "b_est", "id": "b_est_val"},
+    #{"name": "b_est", "id": "b_est_val"},
     {"name": "c", "id": "c_val"},
     {"name": "k", "id": "k_val"},
     {"name": "o", "id": "o_val"},
     {"name": "Cache Pen Func", "id": "cp_func"},
-    {"name": "RMSE (abs '%' diff)", "id": "rms_error"},
+    {"name": "RMSE", "id": "rms_error"},
 ]
 
 vcpu_model_columns = [
@@ -61,12 +70,12 @@ vcpu_model_columns = [
     {"name": "T_v", "id": "T_v_val"},
     {"name": "T_r", "id": "T_r_val"},
     {"name": "b", "id": "b_val"},
-    {"name": "b_est", "id": "b_est_val"},
+    #{"name": "b_est", "id": "b_est_val"},
     {"name": "c", "id": "c_val"},
     {"name": "k", "id": "k_val"},
     {"name": "o", "id": "o_val"},
     {"name": "Cache Pen Func", "id": "cp_func"},
-    {"name": "RMSE (abs '%' diff)", "id": "rms_error"},
+    {"name": "RMSE", "id": "rms_error"},
 ]
 
 
@@ -100,6 +109,9 @@ fit_plot_div_style = {
 
 graph_style = {"width": "100%", "height": "100%"}
 
+cpu_param_scale = [ 1e-4, 1e-2, 1.0, 1.0, 1.0 ]
+vcpu_param_scale = [ 1e-2, 1.0, 1.0, 1.0 ]
+gpu_param_scale = [ 1.0, 1.0 ]
 
 def loglog( c, k, o, x ):
     return c * np.log(np.log( np.exp(k*(x - o)) + 1 ) + 1 ) + 1
@@ -128,7 +140,7 @@ def model_vcpu_time(ngrdcol, runtime, params, N_tasks, N_vsize, N_prec, N_vlevs,
     cols_per_core = ngrdcol / N_tasks
     flops_per_vop = N_vsize / N_prec
 
-    b, c, k, o = params
+    b, c, k, o = vcpu_param_scale * params
 
     T_r = runtime[np.where(cols_per_core == 1)] - b
     T_v = runtime[np.where(cols_per_core == flops_per_vop)] - b
@@ -145,7 +157,7 @@ def model_vcpu_time(ngrdcol, runtime, params, N_tasks, N_vsize, N_prec, N_vlevs,
 
 def model_cpu_time(ngrdcol, runtime, params, N_tasks, N_vsize, N_prec, N_vlevs, cp_func):
 
-    m, b, c, k, o = params
+    m, b, c, k, o = cpu_param_scale * params
 
     avg_array_size_MB = ngrdcol * N_vlevs * (N_prec/8) / 2**20
  
@@ -156,7 +168,7 @@ def model_cpu_time(ngrdcol, runtime, params, N_tasks, N_vsize, N_prec, N_vlevs, 
 
 def model_gpu_time(ngrdcol, runtime, params, N_tasks, N_vsize, N_prec):
 
-    m, b = params
+    m, b = gpu_param_scale * params
 
     f = b + m * ngrdcol
 
@@ -218,7 +230,9 @@ def model_throughputs(df, column_name, N_tasks, N_vsize, N_prec, N_vlevs, model_
 
         b_est = runtime[0] - ( runtime[1] - runtime[0] ) / ( ngrdcol[1] - ngrdcol[0] ) * ngrdcol[0]
 
-        initial_guess = [b_est, 1.0, 1.0, 1.0]
+        initial_guess = np.array( [b_est, 1.0, 1.0, 1.0] ) / np.array( vcpu_param_scale )
+
+        bounds = [ (0,None), (0,None), (0,None), (0,None) ]
 
         cache_pen_best = None
         rms_min = None
@@ -228,7 +242,9 @@ def model_throughputs(df, column_name, N_tasks, N_vsize, N_prec, N_vlevs, model_
 
             result = minimize(  vcpu_objective, initial_guess, 
                                 args=(ngrdcol, runtime, N_tasks, N_vsize, N_prec, N_vlevs, cp_func), 
-                                method='BFGS')
+                                #method='BFGS'
+                                method='L-BFGS-B',
+                                bounds = bounds)
 
             rms_error = result.fun
 
@@ -242,6 +258,8 @@ def model_throughputs(df, column_name, N_tasks, N_vsize, N_prec, N_vlevs, model_
 
         cols_per_core = ngrdcol / N_tasks
         flops_per_vop = N_vsize / N_prec
+
+        params_opt = params_opt * vcpu_param_scale
 
         b = params_opt[0]
         T_r = runtime[np.where(cols_per_core == 1)] - b
@@ -269,12 +287,9 @@ def model_throughputs(df, column_name, N_tasks, N_vsize, N_prec, N_vlevs, model_
         flops_per_vop = N_vsize / N_prec
         first_vpoint = np.where(cols_per_core == flops_per_vop)[0][0]
 
-        m_est = ( runtime[first_vpoint] - b_est ) / ( ngrdcol[3] )
+        m_est = ( runtime[first_vpoint] - b_est ) / ( ngrdcol[first_vpoint] )
 
-        # m, b, c, k, o
-        initial_guess = [m_est, b_est, 1.0, 1.0, 1.0]
-
-        #bounds = [ (0,3), (0,3), (1e-6,3), (1e-6,3), (1e-6,3), ]
+        bounds = [ (0,None), (0,None), (0,None), (0,None), (0,None) ]
 
         cache_pen_best = None
         rms_min = None
@@ -282,80 +297,43 @@ def model_throughputs(df, column_name, N_tasks, N_vsize, N_prec, N_vlevs, model_
 
         for cp_func in cache_pen_funcs:
 
-
             print(f" -- cpu fit for filename with {cp_func.__name__}")
 
-            # result = minimize(  cpu_objective, initial_guess, 
-            #                     args=(ngrdcol, runtime, N_tasks, N_vsize, N_prec, N_vlevs, cp_func), 
-            #                     method='BFGS')
+            # m, b, c, k, o
+            initial_guess = np.array( [m_est, b_est, 2*random(), 2*random(), 2*random()] ) / np.array( cpu_param_scale )
 
-            n_bootstrap = 10
-            param_list = []
-
-            # Loop over bootstrap iterations
-            for i in range(n_bootstrap):
-                # Resample indices (with replacement) from your data
-                indices = np.random.choice(len(runtime), size=len(runtime), replace=True)
-                
-                # Create bootstrap samples of your input and target arrays
-                ngrdcol_sample = ngrdcol[indices]
-                runtime_sample = runtime[indices]
-
-                # Minimize using the resampled data
-                result = minimize(
-                    cpu_objective,
-                    initial_guess,
-                    args=(ngrdcol_sample, runtime_sample, N_tasks, N_vsize, N_prec, N_vlevs, cp_func),
-                    method='BFGS'
-                    #method='L-BFGS-B'
-                    #bounds = bounds
-                )
-
-                param_list.append(result.x)
-                
-                # if result.success:
-                #     print(f"bootstrap {i} passed")
-                #     print(ngrdcol_sample, runtime_sample)
-                #     param_list.append(result.x)
-                # else:
-                #     print(f"bootstrap {i} failed")
-                #     print(ngrdcol_sample, runtime_sample)
-
-            # Convert list to NumPy array
-            param_array = np.array(param_list)
-
-            # Compute quantiles (e.g., 2.5%, 50%, 97.5%)
-            lower = np.percentile(param_array, 2.5, axis=0)
-            median = np.percentile(param_array, 50, axis=0)
-            upper = np.percentile(param_array, 97.5, axis=0)
-
-            # Print results
-            for i, (l, m, u) in enumerate(zip(lower, median, upper)):
-                print(f"Parameter {i}: {m:.4g} (95% CI: {l:.4g} – {u:.4g})")
-
+            # Minimize using the resampled data
+            result = minimize(
+                cpu_objective,
+                initial_guess,
+                args=(ngrdcol, runtime, N_tasks, N_vsize, N_prec, N_vlevs, cp_func),
+                #method='BFGS'
+                method='L-BFGS-B',
+                bounds = bounds
+            )
 
             rms_error = result.fun
 
             if rms_min is None or rms_error < rms_min:
                 cache_pen_best = cp_func
                 rms_min = rms_error
-                #params_opt = result.x
-                params_opt = median
-
+                params_opt = result.x
 
 
         T_cpu = model_cpu_time(ngrdcol, runtime, params_opt, N_tasks, N_vsize, N_prec, N_vlevs, cache_pen_best)
 
+        params_opt = params_opt * cpu_param_scale
+
         fit_params = {
-            "m_val": f"{params_opt[0]:.3e} (-{lower[0]:.3e}, +{upper[0]:.3e})", 
-            "m_est_val": m_est, 
-            "b_val": f"{params_opt[1]:.3e} (-{lower[1]:.3e}, +{upper[1]:.3e})", 
-            "b_est_val": b_est, 
-            "c_val": f"{params_opt[2]:.3e} (-{lower[2]:.3e}, +{upper[2]:.3e})", 
-            "k_val": f"{params_opt[3]:.3e} (-{lower[3]:.3e}, +{upper[3]:.3e})", 
-            "o_val": f"{params_opt[4]:.3e} (-{lower[4]:.3e}, +{upper[4]:.3e})",  
+            "m_val": params_opt[0],
+            #"m_est_val": m_est, 
+            "b_val": params_opt[1], 
+            #"b_est_val": b_est, 
+            "c_val": params_opt[2], 
+            "k_val": params_opt[3], 
+            "o_val": params_opt[4], 
             "cp_func": cache_pen_best.__name__, 
-            "rms_error" : rms_error
+            "rms_error" : rms_min
         }
 
     #============================== GPU Model ==============================
@@ -365,20 +343,26 @@ def model_throughputs(df, column_name, N_tasks, N_vsize, N_prec, N_vlevs, model_
         b_est = runtime[-2] - ( runtime[-1] - runtime[-2] ) / ( ngrdcol[-1] - ngrdcol[-2] ) * ngrdcol[-2]
         m_est = ( runtime[-1] - runtime[-2] ) / ( ngrdcol[-1] - ngrdcol[-2] )
 
-        initial_guess = [.1, .01]
+        initial_guess = np.array( [m_est, b_est] ) / np.array( gpu_param_scale )
+
+        bounds = [ (0,None), (0,None) ]
 
         rms_min = None
         params_opt = None
 
-
-        result = minimize(  gpu_objective, initial_guess, 
+        result = minimize(  gpu_objective, 
+                            initial_guess, 
                             args=(ngrdcol, runtime, N_tasks, N_vsize, N_prec), 
-                            method='Nelder-Mead')
+                            method='Nelder-Mead' )
+                            #method='L-BFGS-B',
+                            #bounds = bounds )
 
         rms_error = result.fun
         params_opt = result.x
 
         T_cpu = model_gpu_time(ngrdcol, runtime, params_opt, N_tasks, N_vsize, N_prec)
+
+        params_opt = gpu_param_scale * params_opt
 
         fit_params = {
             "m_val": params_opt[0], 
@@ -466,7 +450,7 @@ def plot_with_enhancements(fig, title):
     fig.update_yaxes(showline=True, linewidth=1, linecolor="black", mirror=True)
     return fig
 
-def launch_dash_app(grouped_files, all_variables):
+def launch_dash_app(dir_name, grouped_files, all_variables):
 
     data = {case: {filename: pd.read_csv(filepath, comment="#") for filename, filepath in files.items()} for case, files in grouped_files.items()}
 
@@ -548,7 +532,7 @@ def launch_dash_app(grouped_files, all_variables):
             dcc.Dropdown(
                 id="variable-dropdown",
                 options=[{"label": var, "value": var} for var in all_variables],
-                value="compute_i",
+                value = "mainloop_r" if "_gptl" in dir_name else "compute_i",
                 style={"margin-bottom": "20px"}
             ),
 
@@ -829,7 +813,6 @@ def launch_dash_app(grouped_files, all_variables):
                 N_vlevs = data[case][filename]["nz"][0]
 
                 # Apply model_throughput to the selected variable and add it as "_dup"
-                #temp_df_dup = temp_df.copy()
                 vcpu_df = original_df.copy()
                 cpu_df = original_df.copy()
                 gpu_df = original_df.copy()
@@ -902,7 +885,7 @@ def launch_dash_app(grouped_files, all_variables):
     app.run(debug=True,port=8051)
 
 if __name__ == "__main__":
-    import argparse
+    
     parser = argparse.ArgumentParser(description="Plot shared variables across multiple CSV files.")
     parser.add_argument("-dir", required=True, help="Directory to look for .csv files.")
     args = parser.parse_args()
@@ -910,28 +893,8 @@ if __name__ == "__main__":
     csv_files = glob(os.path.join(args.dir, "*.csv"))
     grouped_files = group_files_by_case(csv_files)
 
-    # shared_variables, variable_sets = get_shared_variables(
-    #     [file for files in grouped_files.values() for file in files.values()]
-    # )
     all_variables, variable_sets = get_all_variables(
         [file for files in grouped_files.values() for file in files.values()]
     )
 
-    # if not shared_variables:
-    #     print("No shared variables found across the CSV files.")
-    #     print("Variable presence per file:")
-
-    #     # Get all unique variables across files
-    #     all_variables = set.union(*variable_sets.values()) if variable_sets else set()
-
-    #     # Report missing variables for each file
-    #     for file, variables in variable_sets.items():
-    #         missing_vars = all_variables - variables
-    #         if missing_vars:
-    #             print(f"{file} is missing the variables: {', '.join(sorted(missing_vars))}")
-
-    #     exit(1)
-
-    #print(grouped_files)
-
-    launch_dash_app(grouped_files, all_variables)
+    launch_dash_app(args.dir,grouped_files, all_variables)
