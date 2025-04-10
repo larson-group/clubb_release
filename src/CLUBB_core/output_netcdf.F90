@@ -204,6 +204,7 @@ module output_netcdf
                                   total_idx_rho_lin_spline, &
                                   rho_lin_spline_vals, &
                                   rho_lin_spline_levels, &
+                                  p_sfc, &
                                   ncf, err_code )
 
 ! Description:
@@ -261,6 +262,9 @@ module output_netcdf
                    ! only used if l_different_output_gr is .true.
 
     character(len=2), intent(in) :: zm_zt ! whether the file is the zm or zt file
+
+    real( kind = core_rknd ), dimension(1), intent(in) :: &
+      p_sfc
 
     type (stat_file), intent(inout) :: ncf    ! The file
 
@@ -355,6 +359,7 @@ module output_netcdf
       if ( allocated(ncf%grid_avg_var) ) then
         if ( l_different_output_grid ) then
           if ( .not. allocated(grid_avg_var_diff_gr) ) then
+            ! TODO is ncf%iz always the count or do I have to take ncf%ia - ncf%iz ?
             allocate( grid_avg_var_diff_gr(1,ncf%nlon,ncf%nlat,ncf%iz) )
           endif
           do lon = 1, ncf%nlon
@@ -369,7 +374,7 @@ module output_netcdf
                                           rho_lin_spline_vals, &
                                           rho_lin_spline_levels, &
                                           ncf%grid_avg_var(i)%ptr(lon,lat,ncf%ia:gr_source%nzm ), &
-                                          R_ij_zm )
+                                          R_ij_zm, p_sfc )
 
               else if ( zm_zt == 'zt' ) then
 
@@ -381,7 +386,7 @@ module output_netcdf
                                           rho_lin_spline_vals, &
                                           rho_lin_spline_levels, &
                                           ncf%grid_avg_var(i)%ptr(lon,lat,ncf%ia:gr_source%nzt ), &
-                                          R_ij_zt )
+                                          R_ij_zt, p_sfc )
 
               else
                 error stop 'Invalid value for zm_zt in write_netcdf_helper()'
@@ -403,6 +408,7 @@ module output_netcdf
       elseif ( allocated(ncf%samples_of_var) ) then
         if ( l_different_output_grid ) then
           if ( .not. allocated(samples_of_var_diff_gr) ) then
+            ! TODO is ncf%iz always the count or do I have to take ncf%ia - ncf%iz ?
             allocate( samples_of_var_diff_gr(1,ncf%nsamp,ncf%nlon,ncf%nlat,ncf%iz) )
           endif
           do samp = 1, ncf%nsamp
@@ -417,7 +423,7 @@ module output_netcdf
                                      rho_lin_spline_vals, &
                                      rho_lin_spline_levels, &
                                      ncf%samples_of_var(i)%ptr(samp,lon,lat,ncf%ia:gr_source%nzm), &
-                                     R_ij_zm )
+                                     R_ij_zm, p_sfc )
                 else if ( zm_zt == 'zt' ) then
                   samples_of_var_diff_gr(:,samp,lon,lat,:) &
                     = remap_vals_to_target( 1, &
@@ -427,7 +433,7 @@ module output_netcdf
                                      rho_lin_spline_vals, &
                                      rho_lin_spline_levels, &
                                      ncf%samples_of_var(i)%ptr(samp,lon,lat,ncf%ia:gr_source%nzt), &
-                                     R_ij_zt )
+                                     R_ij_zt, p_sfc )
                 else
                   error stop 'Invalid value for zm_zt in write_netcdf_helper()'
                 endif
@@ -531,10 +537,14 @@ module output_netcdf
     character(len=2) :: zm_zt_placeholder ! whether the file is the zm or zt file
                                           ! only used if l_different_output_gr is .true.
 
+    real( kind = core_rknd ), dimension(1) :: &
+      p_sfc_placeholder
+
     ! ---- Begin Code ----
     l_different_output_grid = .false.
     zm_zt_placeholder = ''
     total_idx_rho_lin_spline_placeholder = 1
+    p_sfc_placeholder = -99999.0
 
     allocate( rho_lin_spline_vals_placeholder(total_idx_rho_lin_spline_placeholder) )
     allocate( rho_lin_spline_levels_placeholder(total_idx_rho_lin_spline_placeholder) )
@@ -545,6 +555,7 @@ module output_netcdf
                               total_idx_rho_lin_spline_placeholder, &
                               rho_lin_spline_vals_placeholder, &
                               rho_lin_spline_levels_placeholder, &
+                              p_sfc_placeholder, &
                               ncf, err_code )
      
     deallocate( rho_lin_spline_vals_placeholder )
@@ -559,6 +570,7 @@ module output_netcdf
                                             total_idx_rho_lin_spline, &
                                             rho_lin_spline_vals, &
                                             rho_lin_spline_levels, &
+                                            p_sfc, &
                                             ncf, err_code )
 
   ! Description:
@@ -595,6 +607,9 @@ module output_netcdf
 
     character(len=2), intent(in) :: zm_zt ! whether the file is the zm or zt file
 
+    real( kind = core_rknd ), dimension(1), intent(in) :: &
+      p_sfc
+
     type (stat_file), intent(inout) :: ncf    ! The file
 
     integer, intent(inout) :: &
@@ -613,6 +628,7 @@ module output_netcdf
                               total_idx_rho_lin_spline, &
                               rho_lin_spline_vals, &
                               rho_lin_spline_levels, &
+                              p_sfc, &
                               ncf, err_code )
 
   end subroutine write_netcdf_w_diff_output_gr

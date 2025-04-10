@@ -984,6 +984,7 @@ module time_dependent_input
               grid_remap_method, &
               total_idx_rho_lin_spline, rho_lin_spline_vals, &
               rho_lin_spline_levels, &
+              p_sfc, &
               thlm_f, rtm_f, um_ref, vm_ref, um_f, vm_f, &
               wm_zt, wm_zm,  ug, vg, &
               sclrm_forcing, edsclrm_forcing )
@@ -1054,6 +1055,9 @@ module time_dependent_input
       rho_lin_spline_levels  ! altitudes for the given rho values
     ! Note: both these arrays need to be sorted from low to high altitude
 
+    real( kind = core_rknd ), dimension(ngrdcol), intent(in) :: &
+      p_sfc
+
     !--------------------- Output Variables ---------------------
     real( kind = core_rknd ), dimension(ngrdcol,nzt), intent(inout) :: &
       thlm_f, & ! Potential Temperature forcing     [K/s]
@@ -1121,7 +1125,7 @@ module time_dependent_input
                                                       rho_lin_spline_vals(1,:), &
                                                       rho_lin_spline_levels(1,:), &
                                                       temp_array_dycore, &
-                                                      R_ij(1,:,:) )
+                                                      R_ij(1,:,:), p_sfc(1) )
 
       else
         write(fstderr,*) 'There is currently no method implemented for grid_remap_method=', &

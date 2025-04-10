@@ -21,7 +21,9 @@ module grid_adaptation_module
   public :: setup_gr_dycore, &
             remapping_matrix_zm_values, remapping_matrix_zt_values, &
             remap_vals_to_target, &
+            normalize_grid_density, &
             adapt_grid, calc_grid_dens_func, &
+            calc_grid_dens_func_complete, &
             clean_up_grid_adaptation_module
 
   private :: check_remap_conservation, check_remap_consistency, check_remap_monotonicity, &
@@ -32,14 +34,17 @@ module grid_adaptation_module
              check_remapped_val_for_monotonicity, &
              calc_mass_over_grid_intervals, vertical_integral_conserve_mass, &
              calc_integral, create_fixed_min_gr_dens_func, &
-             normalize_min_grid_density, normalize_grid_density, &
+             normalize_min_grid_density, normalize_grid_density_helper, &
              create_grid_from_normalized_grid_density_func, &
              create_grid_from_grid_density_func, check_grid
 
   private ! Default Scoping
 
-  real( kind = core_rknd ) ::  &
-        tol = 1.0e-6_core_rknd ! tolerance to check if to real numbers are equal
+  real( kind = core_rknd ), parameter ::  &
+    tol = 1.0e-6_core_rknd ! tolerance to check if to real numbers are equal
+
+  !real( kind = core_rknd ), parameter :: &
+  !  lambda = 0.3
 
   integer :: &
     fixed_min_gr_dens_idx ! number of elements in the vertical axis of fixed_min_gr_dens
@@ -56,6 +61,47 @@ module grid_adaptation_module
 
   real( kind = core_rknd ), dimension(:,:), allocatable :: &
     gr_dens_old_z_global ! grid density altitudes from adaptation step before [m]
+
+  integer :: &
+    Lscale_counter
+
+  real( kind = core_rknd ), dimension(:), allocatable :: &
+    cumulative_Lscale ! cumulative Lscale sum [m]
+
+
+  ! TODO remove those three variables
+  integer :: &
+    max_history_Lscale = 1000
+
+  integer :: &
+    ind_Lscale_history
+
+  real( kind = core_rknd ), dimension(:,:), allocatable :: &
+    Lscale_history ! Lscale values of the last iterations [m]
+
+
+
+
+
+  real(core_rknd), parameter ::  D0_0                    =  0.0_core_rknd
+ real(core_rknd), parameter ::  D1EM14                  =  1.0e-14_core_rknd
+ real(core_rknd), parameter ::  D0_125                  =  0.125_core_rknd
+ real(core_rknd), parameter ::  D0_1875                 =  0.1875_core_rknd
+ real(core_rknd), parameter ::  D0_25                   =  0.25_core_rknd
+ real(core_rknd), parameter ::  D0_5                    =  0.5_core_rknd
+ real(core_rknd), parameter ::  D1_0                    =  1.0_core_rknd
+ real(core_rknd), parameter ::  D1_5                    =  1.5_core_rknd
+ real(core_rknd), parameter ::  D2_0                    =  2.0_core_rknd
+ real(core_rknd), parameter ::  D3_0                    =  3.0_core_rknd
+ real(core_rknd), parameter ::  D4_0                    =  4.0_core_rknd
+ real(core_rknd), parameter ::  D5_0                    =  5.0_core_rknd
+ real(core_rknd), parameter ::  D8_0                    =  8.0_core_rknd
+ real(core_rknd), parameter ::  D12_0                   = 12.0_core_rknd
+
+
+
+
+
 
   contains
 
@@ -594,7 +640,10 @@ module grid_adaptation_module
                                  rho_lin_spline_vals, &
                                  rho_lin_spline_levels, &
                                  source_values, &
-                                 R_ij )
+                                 R_ij, p_sfc )
+
+    use constants_clubb, only: &
+      grav
     
     implicit none
     !--------------------- Input Variables ---------------------
@@ -624,21 +673,104 @@ module grid_adaptation_module
     real( kind = core_rknd ), dimension(ngrdcol,nlevel_target-1,nlevel_source-1), intent(in) :: &
       R_ij
 
+    real( kind = core_rknd ), dimension(ngrdcol), intent(in) :: &
+      p_sfc
+
     !--------------------- Output Variable ---------------------
     real( kind = core_rknd ), dimension(ngrdcol,nlevel_target-1) :: &
+      remap_vals_to_target_flipped, &
       remap_vals_to_target ! remapped values with the dimension of the target grid
 
     !--------------------- Local Variables ---------------------
-    integer :: i
+    integer :: i, k
+
+    real( kind = core_rknd ), dimension(ngrdcol,nlevel_source-1) :: &
+      mass_on_source_cells
+
+    real( kind = core_rknd ), dimension(ngrdcol,nlevel_target-1) :: &
+      mass_on_target_cells
+
+    real( kind = core_rknd ), dimension(ngrdcol,nlevel_source) :: &
+      pressure_levels_source
+
+    real( kind = core_rknd ), dimension(ngrdcol,nlevel_target) :: &
+      pressure_levels_target
+
+    real( kind = core_rknd ), dimension(ngrdcol,nlevel_source-1) :: &
+      source_values_flipped
 
     !--------------------- Begin Code ---------------------
-    remap_vals_to_target = remap_vals_to_target_helper( ngrdcol, &
-                                                        nlevel_source-1, &
-                                                        nlevel_target-1, &
-                                                        source_values, &
-                                                        R_ij )
+    !p_sfc = 1029.e2
+    do i = 1, ngrdcol
+      mass_on_source_cells(i,:) = calc_mass_over_grid_intervals( total_idx_rho_lin_spline, &
+                                                                 rho_lin_spline_vals, &
+                                                                 rho_lin_spline_levels, &
+                                                                 nlevel_source, levels_source )
+      mass_on_target_cells(i,:) = calc_mass_over_grid_intervals( total_idx_rho_lin_spline, &
+                                                                 rho_lin_spline_vals, &
+                                                                 rho_lin_spline_levels, &
+                                                                 nlevel_target, levels_target )
 
-    if ( clubb_at_least_debug_level( 2 ) ) then
+      ! TODO check if grid need to start at 0, if p_sfc is given for 0 and we set lowest level to p_sfc
+      pressure_levels_source(i,nlevel_source) = p_sfc(i)
+      do k = 2, nlevel_source
+        pressure_levels_source(i,nlevel_source-k+1) = pressure_levels_source(i,nlevel_source-k+2) - mass_on_source_cells(i,k-1)*grav
+      end do
+
+      ! TODO check if grid need to start at 0, if p_sfc is given for 0 and we set lowest level to p_sfc
+      pressure_levels_target(i,nlevel_target) = p_sfc(i)
+      do k = 2, nlevel_target
+        pressure_levels_target(i,nlevel_target-k+1) = pressure_levels_target(i,nlevel_target-k+2) - mass_on_target_cells(i,k-1)*grav
+      end do
+
+      do k = 1, nlevel_source-1
+        source_values_flipped(i,k) = source_values(i,nlevel_source-k)
+      end do
+
+      call map1_ppm( nlevel_source-1,   pressure_levels_source(i,:),   source_values_flipped(i,:),  &
+                   nlevel_target-1,   pressure_levels_target(i,:),   remap_vals_to_target_flipped(i,:), &
+                         0, 0, 1, 1, 1,                         &
+                         1, 1, 1, 0, 3)
+
+      do k = 1, nlevel_target-1
+        remap_vals_to_target(i,k) = remap_vals_to_target_flipped(i,nlevel_target-k)
+      end do
+    end do
+
+    
+    
+    !call map1_ppm( nlevel_source-1,   levels_source,   source_values,  &
+    !               nlevel_target-1,   levels_target,   remap_vals_to_target, &
+    !                     0, 0, 1, 1, 1,                         &
+    !                     1, 1, 1, 0, 3)
+
+    ! TODO flip source_values and after remapping remap_vals_to_target
+    !do i = 1, ngrdcol
+    !  do k = 1, nlevel_source-1
+    !    source_values_flipped(i,k) = source_values(i,nlevel_source-k)
+    !  end do
+    !end do
+
+    !call map1_ppm( nlevel_source-1,   pressure_levels_source,   source_values_flipped,  &
+    !               nlevel_target-1,   pressure_levels_target,   remap_vals_to_target_flipped, &
+    !                     0, 0, 1, 1, 1,                         &
+    !                     1, 1, 1, 0, 3)
+    !
+    !do i = 1, ngrdcol
+    !  do k = 1, nlevel_target-1
+    !    remap_vals_to_target(i,k) = remap_vals_to_target_flipped(i,nlevel_target-k)
+    !  end do
+    !end do
+
+    !write(*,*) 'source values: ', source_values
+    !write(*,*) 'target values: ', remap_vals_to_target
+    !remap_vals_to_target = remap_vals_to_target_helper( ngrdcol, &
+    !                                                    nlevel_source-1, &
+    !                                                    nlevel_target-1, &
+    !                                                    source_values, &
+    !                                                    R_ij )
+
+    if ( clubb_at_least_debug_level( 2 ) .and. .true. ) then ! TODO build check in again
       do i = 1, ngrdcol
         ! check conservation
         call check_vertical_integral_conservation( total_idx_rho_lin_spline, &                ! In
@@ -650,14 +782,16 @@ module grid_adaptation_module
                                                    remap_vals_to_target(i,:) )                ! In
 
         ! check consistency
+        ! TODO adjust for ppm remapping
         call check_remap_consistency_w_vals( nlevel_source-1, nlevel_target-1, &            ! In
                                              R_ij(i,:,:) )                                  ! In
 
         ! check monotonicity
-        call check_remapped_val_for_monotonicity( 1, &                                   ! In
-                                                  nlevel_source-1, nlevel_target-1, &    ! In
-                                                  source_values(i,:), &                  ! In
-                                                  remap_vals_to_target(i,:) )            ! In
+        ! TODO check to what degree ppm should be monotone
+        !call check_remapped_val_for_monotonicity( 1, &                                   ! In
+        !                                          nlevel_source-1, nlevel_target-1, &    ! In
+        !                                          source_values(i,:), &                  ! In
+        !                                          remap_vals_to_target(i,:) )            ! In
       end do
     end if
 
@@ -1321,12 +1455,12 @@ module grid_adaptation_module
     
   end subroutine normalize_min_grid_density
 
-  subroutine normalize_grid_density( ngrdcol, &
-                                     gr_dens_idx, &
-                                     gr_dens_z, gr_dens, &
-                                     min_gr_dens_norm, &
-                                     lambda, num_levels, &
-                                     gr_dens_norm_z, gr_dens_norm )
+  subroutine normalize_grid_density_helper( ngrdcol, &
+                                            gr_dens_idx, &
+                                            gr_dens_z, gr_dens, &
+                                            min_gr_dens_norm, &
+                                            lambda, num_levels, &
+                                            gr_dens_norm_z, gr_dens_norm )
 
     ! Description:
     ! Takes the linear piecewise grid density function (gr_dens_z, gr_dens) each of size
@@ -1438,7 +1572,7 @@ module grid_adaptation_module
         ! check if integral is (n-1) as wanted
         integral_test = calc_integral( gr_dens_idx, gr_dens_norm_z(i,:), gr_dens_norm(i,:) )
         if ( abs(integral_test - (num_levels-1)) > tol ) then
-          write(fstderr,*) 'Warning! Integral in normalize_grid_density', &
+          write(fstderr,*) 'Warning! Integral in normalize_grid_density_helper', &
                            ' should be something different.'
           error stop 'Something went wrong, integral is different than it should be.'
         end if
@@ -1459,17 +1593,17 @@ module grid_adaptation_module
 
     end do
 
-  end subroutine normalize_grid_density
+  end subroutine normalize_grid_density_helper
 
-  function decide_if_grid_adapt( ngrdcol, &
-                                 gr_dens_old_idx, &
-                                 gr_dens_old_z, &
-                                 gr_dens_old, &
-                                 gr_dens_new_idx, &
-                                 gr_dens_new_z, &
-                                 gr_dens_new, &
-                                 threshold ) &
-                               result (l_adapt_grid)
+  function decide_if_grid_adapt_helper( ngrdcol, &
+                                        gr_dens_old_idx, &
+                                        gr_dens_old_z, &
+                                        gr_dens_old, &
+                                        gr_dens_new_idx, &
+                                        gr_dens_new_z, &
+                                        gr_dens_new, &
+                                        threshold ) &
+                                      result (l_adapt_grid)
     ! Description:
     ! Checks how different the two density functions are and returns depending on the threshold
     ! if the grid should be adapted or not.
@@ -1587,9 +1721,11 @@ module grid_adaptation_module
       write(*,*) 'threshold: ', threshold
       if ( sum/j > threshold ) then
         l_adapt_grid_tmp = .true.
+      else
+        write(*,*) '-----------------not adapted'
       end if
 
-      ! take maximum absolute distance as measure
+      !! take maximum absolute distance as measure
       !max_dist = abs( gr_dens_old_interp(1) - gr_dens_new_interp(1) )
       !do k = 2, j
       !  if ( abs( gr_dens_old_interp(k) - gr_dens_new_interp(k) ) > max_dist ) then
@@ -1601,7 +1737,7 @@ module grid_adaptation_module
       !  l_adapt_grid_tmp = .true.
       !end if
 
-      ! take average weighted squared distance as measure
+      !! take average weighted squared distance as measure
       !sum = 0
       !do k = 1, j
       !  sum = sum + ( (gr_dens_old_interp(k) - gr_dens_new_interp(k)) &
@@ -1620,6 +1756,64 @@ module grid_adaptation_module
 
       l_adapt_grid(i) = l_adapt_grid_tmp
     end do
+
+    return
+
+  end function decide_if_grid_adapt_helper
+
+  function decide_if_grid_adapt( ngrdcol, &
+                                 gr_dens_new_idx, &
+                                 gr_dens_new_z, &
+                                 gr_dens_new, &
+                                 threshold ) &
+                               result (l_adapt_grid)
+    ! Description:
+    ! Checks how different the two density functions are and returns depending on the threshold
+    ! if the grid should be adapted or not.
+
+    ! References:
+    ! None
+    !-----------------------------------------------------------------------
+
+    use clubb_precision, only: &
+        core_rknd ! Variable(s)
+
+    use interpolation, only: &
+        zlinterp_fnc
+
+    implicit none
+
+    !--------------------- Input Variables ---------------------
+    integer, intent(in) :: &
+      ngrdcol, &
+      gr_dens_new_idx     ! The total numer of indices of gr_dens_new_z
+                          ! and gr_dens_new []
+
+    real( kind = core_rknd ), dimension(ngrdcol, gr_dens_new_idx), intent(in) ::  &
+      gr_dens_new_z,  &  ! the z coordinates of the connection points of the
+                         ! piecewise linear grid density function from the current adaptation
+                         ! step [m]
+      gr_dens_new        ! the density values at the given z coordinates of the connection
+                         ! points of the piecewise linear grid density
+                         ! function from the current adaptation step [# levs/meter]
+
+    real( kind = core_rknd ), intent(in) ::  &
+      threshold   ! threshold which decides if grid should be adapted or not []
+
+    !--------------------- Output Variable ---------------------
+    logical, dimension(ngrdcol) :: &
+      l_adapt_grid ! true or false, whether grid should be adapted or not
+
+    !--------------------- Begin Code ---------------------
+
+    l_adapt_grid = decide_if_grid_adapt_helper( ngrdcol, &
+                                                gr_dens_old_idx_global, &
+                                                gr_dens_old_z_global, &
+                                                gr_dens_old_global, &
+                                                gr_dens_new_idx, &
+                                                gr_dens_new_z, &
+                                                gr_dens_new, &
+                                                threshold )    
 
     return
 
@@ -1715,6 +1909,7 @@ module grid_adaptation_module
                     ! identify the right solution - use pq formula to get solutions
                     grid_level = -1*p_pq_formula/2 + sqrt((p_pq_formula/2)**2 - q_pq_formula)
 
+                    ! TODO maybe set grid_level directly to gr_dens_norm_z if it is the same with tol
                     if ( ( grid_level < gr_dens_norm_z(prev_x_ind) &
                            .and. (gr_dens_norm_z(prev_x_ind) - grid_level) > tol ) &
                          .or. &
@@ -1751,6 +1946,121 @@ module grid_adaptation_module
     return
 
   end function create_grid_from_normalized_grid_density_func
+
+  subroutine normalize_grid_density( ngrdcol, &
+                                     iunit, itime, &
+                                     gr_dens_idx, &
+                                     gr_dens_z, gr_dens, &
+                                     lambda, &
+                                     num_levels, &
+                                     norm_min_grid_dens, &
+                                     norm_grid_dens )
+    ! Description:
+    ! Creates the grid from some unnormalized  minimum density function and the unnormalized
+    ! grid density function following the equidistribution principle.
+
+    ! References:
+    ! None
+    !-----------------------------------------------------------------------
+
+    use clubb_precision, only: &
+      core_rknd ! Variable(s)
+
+    use interpolation, only: &
+      zlinterp_fnc
+
+    implicit none
+
+    !--------------------- Input Variables ---------------------
+    integer, intent(in) :: & 
+      ngrdcol, &
+      iunit, &
+      itime, &
+      gr_dens_idx, &     ! total numer of indices of gr_dens_z and gr_dens []
+      num_levels         ! number of levels the new grid should have []
+
+    real( kind = core_rknd ) :: &
+      lambda   ! a factor for defining how close you want to get to an equidistant grid
+
+    real( kind = core_rknd ), dimension(ngrdcol,gr_dens_idx), intent(in) ::  &
+      gr_dens_z,  &   ! the z coordinates of the connection points of the piecewise linear
+                      ! grid density function [m]
+      gr_dens         ! the values of the density function at the given z coordinates of the
+                      ! connection points of the piecewise linear grid density function
+                      ! [# levs/meter]
+
+    !--------------------- Output Variable ---------------------
+    real( kind = core_rknd ), dimension(ngrdcol,gr_dens_idx), intent(out) :: &
+      norm_min_grid_dens, & ! the density at the given z coordinates of the connection points
+                            ! of the normalized piecewise linear grid density function
+                            ! [# levs/meter]
+      norm_grid_dens        ! the density at the given z coordinates of the connection points of the
+                            ! normalized piecewise linear grid density function [# levs/meter]
+
+    !--------------------- Local Variables ---------------------
+    integer :: grid_heights_idx, i, j
+
+    real( kind = core_rknd ), dimension(ngrdcol,gr_dens_idx) ::  &
+      min_gr_dens        ! the density at the given z coordinates of the connection points
+                         ! of the normalized piecewise linear grid density function
+                         ! [# levs/meter]
+
+    ! TODO remove this variable
+    real( kind = core_rknd ), dimension(ngrdcol,gr_dens_idx) ::  &
+      min_gr_dens_norm_z      ! the z coordinates of the connection points of the normalized
+                              ! piecewise linear grid density function [m]
+
+    ! TODO remove this variable
+    real( kind = core_rknd ), dimension(ngrdcol,gr_dens_idx) ::  &
+      gr_dens_norm_z      ! the z coordinates of the connection points of the normalized piecewise
+                          ! linear grid density function [m]
+
+    real( kind = core_rknd ) ::  &
+      grid_sfc,  &    ! height of the grids surface [m]
+      grid_top        ! height of the top of the grid [m]
+
+    !--------------------- Begin Code ---------------------
+    grid_sfc = gr_dens_z(1,1)
+    grid_top = gr_dens_z(1,gr_dens_idx)
+
+    call create_fixed_min_gr_dens_func( iunit+1, ngrdcol, &
+                                        grid_sfc, grid_top )
+
+    ! set the minimum grid density profile to be the linear piecewise function of the
+    ! original minimum grid density function evaluated at the current grid levels
+    ! this way the function can be executed with all checks and works out exactly
+    do i = 1, ngrdcol
+      min_gr_dens(i,:) = zlinterp_fnc( gr_dens_idx, fixed_min_gr_dens_idx, &
+                                       gr_dens_z(i,:), fixed_min_gr_dens_z(i,:), &
+                                       fixed_min_gr_dens(i,:) )
+    end do
+
+    ! TODO remove min_gr_dens_norm_z as output in normalize_min_grid_density
+    ! normalize the minimum grid density function
+    call normalize_min_grid_density( ngrdcol, &                        ! Intent(in)
+                                     gr_dens_idx, &                    ! Intent(in)
+                                     gr_dens_z, min_gr_dens, &         ! Intent(in)
+                                     lambda, num_levels, &             ! Intent(in)
+                                     min_gr_dens_norm_z, &             ! Intent(out)
+                                     norm_min_grid_dens )              ! Intent(out)
+
+    ! TODO remove gr_dens_norm_z as output in normalize_grid_density_helper
+    ! normalize the grid density function with the normalized minimum grid density function
+    call normalize_grid_density_helper( ngrdcol, &                               ! Intent(in)
+                                        gr_dens_idx, &                           ! Intent(in)
+                                        gr_dens_z, gr_dens, &                    ! Intent(in)
+                                        norm_min_grid_dens, &                    ! Intent(in)
+                                        lambda, num_levels, &                    ! Intent(in)
+                                        gr_dens_norm_z, norm_grid_dens )         ! Intent(out)
+
+    write(iunit, *) 'gr_dens_z', itime, gr_dens_norm_z
+    write(iunit, *) 'gr_dens', itime, norm_grid_dens
+    write(iunit, *) 'min_gr_dens_z', itime, min_gr_dens_norm_z
+    write(iunit, *) 'min_gr_dens', itime, norm_min_grid_dens
+
+    return
+
+  end subroutine normalize_grid_density
 
   subroutine create_grid_from_grid_density_func( ngrdcol, &
                                                  iunit, itime, &
@@ -1858,25 +2168,25 @@ module grid_adaptation_module
                                      min_gr_dens_norm )                ! Intent(out)
 
     ! normalize the grid density function with the normalized minimum grid density function
-    call normalize_grid_density( ngrdcol, &                               ! Intent(in)
-                                 gr_dens_idx, &                           ! Intent(in)
-                                 gr_dens_z, gr_dens, &                    ! Intent(in)
-                                 min_gr_dens_norm, &                      ! Intent(in)
-                                 lambda, num_levels, &                    ! Intent(in)
-                                 gr_dens_norm_z, gr_dens_norm )           ! Intent(out)
+    call normalize_grid_density_helper( ngrdcol, &                               ! Intent(in)
+                                        gr_dens_idx, &                           ! Intent(in)
+                                        gr_dens_z, gr_dens, &                    ! Intent(in)
+                                        min_gr_dens_norm, &                      ! Intent(in)
+                                        lambda, num_levels, &                    ! Intent(in)
+                                        gr_dens_norm_z, gr_dens_norm )           ! Intent(out)
 
     ! decide if grid should be adapted or not
     if ( .not. allocated( gr_dens_old_z_global ) .and. .not. allocated( gr_dens_old_global ) ) then
       error stop 'gr_dens_old_z_global and gr_dens_old_global were not allocated...'
     end if
-    l_adapt_grid = decide_if_grid_adapt( ngrdcol, &
-                                         gr_dens_old_idx_global, &
-                                         gr_dens_old_z_global, &
-                                         gr_dens_old_global, &
-                                         gr_dens_idx, &
-                                         gr_dens_norm_z, &
-                                         gr_dens_norm, &
-                                         threshold )
+    l_adapt_grid = decide_if_grid_adapt_helper( ngrdcol, &
+                                                gr_dens_old_idx_global, &
+                                                gr_dens_old_z_global, &
+                                                gr_dens_old_global, &
+                                                gr_dens_idx, &
+                                                gr_dens_norm_z, &
+                                                gr_dens_norm, &
+                                                threshold )
 
     write(iunit, *) 'gr_dens_z', itime, gr_dens_norm_z
     write(iunit, *) 'gr_dens', itime, gr_dens_norm
@@ -2278,7 +2588,7 @@ module grid_adaptation_module
                                      ! piecewise linear function []
         grid_type, &
         err_code, &
-        i
+        i, k
 
     real( kind = core_rknd ) ::  &
       equi_dens   ! density of the equidistant grid [# levs/meter]
@@ -2320,12 +2630,19 @@ module grid_adaptation_module
 
     logical, dimension(ngrdcol) :: l_adapt_grid
 
+    real( kind = core_rknd ), dimension(1,10) ::  &
+      input_test, output_test
+
     !--------------------- Begin Code ---------------------
     ! Setup the new grid
     num_levels = gr%nzm
     equi_dens = (num_levels-1)/(gr%zm(1,gr%nzm) - gr%zm(1,1))
+    ! lalala
+    !threshold = 3.0e-6
     threshold = 4.0e-6
-    lambda = 0.5
+    !threshold = 5.0e-6
+    lambda = 0.00000000000000000001
+    lambda = 0.3
 
     ! Allocate and set gr_dens_old_global if not already allocated
     if ( .not. allocated( gr_dens_old_global ) ) then
@@ -2355,6 +2672,7 @@ module grid_adaptation_module
     end do
     grid_type = 3
 
+    ! TODOlala adjust for ngrdcol > 1
     if ( l_adapt_grid(1) ) then
       call setup_grid( num_levels, ngrdcol, sfc_elevation, l_implemented, &   ! intent(in)
                        grid_type, deltaz, gr%zm(:,1), gr%zm(:,num_levels), &  ! intent(in)
@@ -2365,10 +2683,29 @@ module grid_adaptation_module
         error stop "Error in CLUBB calling setup_grid"
       end if
 
+      Lscale_counter = 0
+      do k = 1, gr%nzm
+        cumulative_Lscale(k) = 0.0_core_rknd
+      end do
+
       ! Set the density values to use for interpolation for mass calculation
       total_idx_rho_lin_spline = gr%nzm
       rho_lin_spline_vals = rho_ds_zm
       rho_lin_spline_levels = gr%zm
+
+      !write(*,*) 'input ppm: ', thlm_forcing
+
+
+
+      !call map1_ppm( num_levels,   gr%zm(1,:),   thlm_forcing,  num_levels,   new_gr%zm(1,:),   output_test,                &
+      !                   0, 0, 1, 1, 1,                         &
+      !                   1, 1, 1, 0, 3)
+
+      !call map1_ppm( 10,   \[0, 1, 3, 4, 5, 8, 10, 20, 30, 50\],   \[0.5, 0.8, 0.9, 1.2, 1.5, 1.7, 2.0, 1.0, 0.8, 1.0\],  10,   \[0, 0.5, 1, 1.5, 3, 5, 8, 17, 25, 50\],   output_test,                &
+      !                   0, 0, 1, 1, 1,                         &
+      !                   1, 1, 1, 0, 3)
+
+      !write(*,*) 'output ppm: ', output_test
 
       call remapping_matrix_zm_values( ngrdcol, &                                      ! Intent(in)
                                        gr, new_gr, &                                   ! Intent(in)
@@ -2395,7 +2732,7 @@ module grid_adaptation_module
                                              rho_lin_spline_vals, &
                                              rho_lin_spline_levels, &
                                              thlm_forcing, &
-                                             R_ij_zt )
+                                             R_ij_zt, p_sfc )
         rtm_forcing = remap_vals_to_target( ngrdcol, &
                                             gr%nzm, new_gr%nzm, &
                                             gr%zm, new_gr%zm, &
@@ -2403,7 +2740,7 @@ module grid_adaptation_module
                                             rho_lin_spline_vals, &
                                             rho_lin_spline_levels, &
                                             rtm_forcing, &
-                                            R_ij_zt )
+                                            R_ij_zt, p_sfc )
         um_forcing = remap_vals_to_target( ngrdcol, &
                                            gr%nzm, new_gr%nzm, &
                                            gr%zm, new_gr%zm, &
@@ -2411,7 +2748,7 @@ module grid_adaptation_module
                                            rho_lin_spline_vals, &
                                            rho_lin_spline_levels, &
                                            um_forcing, &
-                                           R_ij_zt )
+                                           R_ij_zt, p_sfc )
         vm_forcing = remap_vals_to_target( ngrdcol, &
                                            gr%nzm, new_gr%nzm, &
                                            gr%zm, new_gr%zm, &
@@ -2419,7 +2756,7 @@ module grid_adaptation_module
                                            rho_lin_spline_vals, &
                                            rho_lin_spline_levels, &
                                            vm_forcing, &
-                                           R_ij_zt )
+                                           R_ij_zt, p_sfc )
         wm_zt = remap_vals_to_target( ngrdcol, &
                                       gr%nzm, new_gr%nzm, &
                                       gr%zm, new_gr%zm, &
@@ -2427,7 +2764,7 @@ module grid_adaptation_module
                                       rho_lin_spline_vals, &
                                       rho_lin_spline_levels, &
                                       wm_zt, &
-                                      R_ij_zt )
+                                      R_ij_zt, p_sfc )
         rho = remap_vals_to_target( ngrdcol, &
                                     gr%nzm, new_gr%nzm, &
                                     gr%zm, new_gr%zm, &
@@ -2435,7 +2772,7 @@ module grid_adaptation_module
                                     rho_lin_spline_vals, &
                                     rho_lin_spline_levels, &
                                     rho, &
-                                    R_ij_zt )
+                                    R_ij_zt, p_sfc )
         rho_ds_zt = remap_vals_to_target( ngrdcol, &
                                           gr%nzm, new_gr%nzm, &
                                           gr%zm, new_gr%zm, &
@@ -2443,7 +2780,7 @@ module grid_adaptation_module
                                           rho_lin_spline_vals, &
                                           rho_lin_spline_levels, &
                                           rho_ds_zt, &
-                                          R_ij_zt )
+                                          R_ij_zt, p_sfc )
         invrs_rho_ds_zt = remap_vals_to_target( ngrdcol, &
                                                 gr%nzm, new_gr%nzm, &
                                                 gr%zm, new_gr%zm, &
@@ -2451,7 +2788,7 @@ module grid_adaptation_module
                                                 rho_lin_spline_vals, &
                                                 rho_lin_spline_levels, &
                                                 invrs_rho_ds_zt, &
-                                                R_ij_zt )
+                                                R_ij_zt, p_sfc )
         thv_ds_zt = remap_vals_to_target( ngrdcol, &
                                           gr%nzm, new_gr%nzm, &
                                           gr%zm, new_gr%zm, &
@@ -2459,7 +2796,7 @@ module grid_adaptation_module
                                           rho_lin_spline_vals, &
                                           rho_lin_spline_levels, &
                                           thv_ds_zt, &
-                                          R_ij_zt )
+                                          R_ij_zt, p_sfc )
         rfrzm = remap_vals_to_target( ngrdcol, &
                                       gr%nzm, new_gr%nzm, &
                                       gr%zm, new_gr%zm, &
@@ -2467,7 +2804,7 @@ module grid_adaptation_module
                                       rho_lin_spline_vals, &
                                       rho_lin_spline_levels, &
                                       rfrzm, &
-                                      R_ij_zt )
+                                      R_ij_zt, p_sfc )
         do i = 1, hydromet_dim
             wp2hmp(:,:,i) = remap_vals_to_target( ngrdcol, &
                                                   gr%nzm, new_gr%nzm, &
@@ -2476,7 +2813,7 @@ module grid_adaptation_module
                                                   rho_lin_spline_vals, &
                                                   rho_lin_spline_levels, &
                                                   wp2hmp(:,:,i), &
-                                                  R_ij_zt )
+                                                  R_ij_zt, p_sfc )
             rtphmp_zt(:,:,i) = remap_vals_to_target( ngrdcol, &
                                                      gr%nzm, new_gr%nzm, &
                                                      gr%zm, new_gr%zm, &
@@ -2484,7 +2821,7 @@ module grid_adaptation_module
                                                      rho_lin_spline_vals, &
                                                      rho_lin_spline_levels, &
                                                      rtphmp_zt(:,:,i), &
-                                                     R_ij_zt )
+                                                     R_ij_zt, p_sfc )
             thlphmp_zt(:,:,i) = remap_vals_to_target( ngrdcol, &
                                                       gr%nzm, new_gr%nzm, &
                                                       gr%zm, new_gr%zm, &
@@ -2492,7 +2829,7 @@ module grid_adaptation_module
                                                       rho_lin_spline_vals, &
                                                       rho_lin_spline_levels, &
                                                       thlphmp_zt(:,:,i), &
-                                                      R_ij_zt )
+                                                      R_ij_zt, p_sfc )
         end do
         do i = 1, sclr_dim
             sclrm_forcing(:,:,i) = remap_vals_to_target( ngrdcol, &
@@ -2502,7 +2839,7 @@ module grid_adaptation_module
                                                          rho_lin_spline_vals, &
                                                          rho_lin_spline_levels, &
                                                          sclrm_forcing(:,:,i), &
-                                                         R_ij_zt )
+                                                         R_ij_zt, p_sfc )
             sclrm(:,:,i) = remap_vals_to_target( ngrdcol, &
                                                  gr%nzm, new_gr%nzm, &
                                                  gr%zm, new_gr%zm, &
@@ -2510,7 +2847,7 @@ module grid_adaptation_module
                                                  rho_lin_spline_vals, &
                                                  rho_lin_spline_levels, &
                                                  sclrm(:,:,i), &
-                                                 R_ij_zt )
+                                                 R_ij_zt, p_sfc )
             sclrp3(:,:,i) = remap_vals_to_target( ngrdcol, &
                                                   gr%nzm, new_gr%nzm, &
                                                   gr%zm, new_gr%zm, &
@@ -2518,7 +2855,7 @@ module grid_adaptation_module
                                                   rho_lin_spline_vals, &
                                                   rho_lin_spline_levels, &
                                                   sclrp3(:,:,i), &
-                                                  R_ij_zt )
+                                                  R_ij_zt, p_sfc )
         end do
         do i = 1, edsclr_dim
             edsclrm_forcing(:,:,i) = remap_vals_to_target( ngrdcol, &
@@ -2528,7 +2865,7 @@ module grid_adaptation_module
                                                            rho_lin_spline_vals, &
                                                            rho_lin_spline_levels, &
                                                            edsclrm_forcing(:,:,i), &
-                                                           R_ij_zt )
+                                                           R_ij_zt, p_sfc )
             edsclrm(:,:,i) = remap_vals_to_target( ngrdcol, &
                                                    gr%nzm, new_gr%nzm, &
                                                    gr%zm, new_gr%zm, &
@@ -2536,7 +2873,7 @@ module grid_adaptation_module
                                                    rho_lin_spline_vals, &
                                                    rho_lin_spline_levels, &
                                                    edsclrm(:,:,i), &
-                                                   R_ij_zt )
+                                                   R_ij_zt, p_sfc )
         end do
         rtm_ref = remap_vals_to_target( ngrdcol, &
                                         gr%nzm, new_gr%nzm, &
@@ -2545,7 +2882,7 @@ module grid_adaptation_module
                                         rho_lin_spline_vals, &
                                         rho_lin_spline_levels, &
                                         rtm_ref, &
-                                        R_ij_zt )
+                                        R_ij_zt, p_sfc )
         thlm_ref = remap_vals_to_target( ngrdcol, &
                                          gr%nzm, new_gr%nzm, &
                                          gr%zm, new_gr%zm, &
@@ -2553,7 +2890,7 @@ module grid_adaptation_module
                                          rho_lin_spline_vals, &
                                          rho_lin_spline_levels, &
                                          thlm_ref, &
-                                         R_ij_zt )
+                                         R_ij_zt, p_sfc )
         um_ref = remap_vals_to_target( ngrdcol, &
                                        gr%nzm, new_gr%nzm, &
                                        gr%zm, new_gr%zm, &
@@ -2561,7 +2898,7 @@ module grid_adaptation_module
                                        rho_lin_spline_vals, &
                                        rho_lin_spline_levels, &
                                        um_ref, &
-                                       R_ij_zt )
+                                       R_ij_zt, p_sfc )
         vm_ref = remap_vals_to_target( ngrdcol, &
                                        gr%nzm, new_gr%nzm, &
                                        gr%zm, new_gr%zm, &
@@ -2569,7 +2906,7 @@ module grid_adaptation_module
                                        rho_lin_spline_vals, &
                                        rho_lin_spline_levels, &
                                        vm_ref, &
-                                       R_ij_zt )
+                                       R_ij_zt, p_sfc )
         ug = remap_vals_to_target( ngrdcol, &
                                    gr%nzm, new_gr%nzm, &
                                    gr%zm, new_gr%zm, &
@@ -2577,7 +2914,7 @@ module grid_adaptation_module
                                    rho_lin_spline_vals, &
                                    rho_lin_spline_levels, &
                                    ug, &
-                                   R_ij_zt )
+                                   R_ij_zt, p_sfc )
         vg = remap_vals_to_target( ngrdcol, &
                                    gr%nzm, new_gr%nzm, &
                                    gr%zm, new_gr%zm, &
@@ -2585,7 +2922,7 @@ module grid_adaptation_module
                                    rho_lin_spline_vals, &
                                    rho_lin_spline_levels, &
                                    vg, &
-                                   R_ij_zt )
+                                   R_ij_zt, p_sfc )
         um = remap_vals_to_target( ngrdcol, &
                                    gr%nzm, new_gr%nzm, &
                                    gr%zm, new_gr%zm, &
@@ -2593,7 +2930,7 @@ module grid_adaptation_module
                                    rho_lin_spline_vals, &
                                    rho_lin_spline_levels, &
                                    um, &
-                                   R_ij_zt )
+                                   R_ij_zt, p_sfc )
         vm = remap_vals_to_target( ngrdcol, &
                                    gr%nzm, new_gr%nzm, &
                                    gr%zm, new_gr%zm, &
@@ -2601,7 +2938,7 @@ module grid_adaptation_module
                                    rho_lin_spline_vals, &
                                    rho_lin_spline_levels, &
                                    vm, &
-                                   R_ij_zt )
+                                   R_ij_zt, p_sfc )
         up3 = remap_vals_to_target( ngrdcol, &
                                     gr%nzm, new_gr%nzm, &
                                     gr%zm, new_gr%zm, &
@@ -2609,7 +2946,7 @@ module grid_adaptation_module
                                     rho_lin_spline_vals, &
                                     rho_lin_spline_levels, &
                                     up3, &
-                                    R_ij_zt )
+                                    R_ij_zt, p_sfc )
         vp3 = remap_vals_to_target( ngrdcol, &
                                     gr%nzm, new_gr%nzm, &
                                     gr%zm, new_gr%zm, &
@@ -2617,7 +2954,7 @@ module grid_adaptation_module
                                     rho_lin_spline_vals, &
                                     rho_lin_spline_levels, &
                                     vp3, &
-                                    R_ij_zt )
+                                    R_ij_zt, p_sfc )
         rtm = remap_vals_to_target( ngrdcol, &
                                     gr%nzm, new_gr%nzm, &
                                     gr%zm, new_gr%zm, &
@@ -2625,7 +2962,7 @@ module grid_adaptation_module
                                     rho_lin_spline_vals, &
                                     rho_lin_spline_levels, &
                                     rtm, &
-                                    R_ij_zt )
+                                    R_ij_zt, p_sfc )
         thlm = remap_vals_to_target( ngrdcol, &
                                      gr%nzm, new_gr%nzm, &
                                      gr%zm, new_gr%zm, &
@@ -2633,7 +2970,7 @@ module grid_adaptation_module
                                      rho_lin_spline_vals, &
                                      rho_lin_spline_levels, &
                                      thlm, &
-                                     R_ij_zt )
+                                     R_ij_zt, p_sfc )
         rtp3 = remap_vals_to_target( ngrdcol, &
                                      gr%nzm, new_gr%nzm, &
                                      gr%zm, new_gr%zm, &
@@ -2641,7 +2978,7 @@ module grid_adaptation_module
                                      rho_lin_spline_vals, &
                                      rho_lin_spline_levels, &
                                      rtp3, &
-                                     R_ij_zt )
+                                     R_ij_zt, p_sfc )
         thlp3 = remap_vals_to_target( ngrdcol, &
                                       gr%nzm, new_gr%nzm, &
                                       gr%zm, new_gr%zm, &
@@ -2649,7 +2986,7 @@ module grid_adaptation_module
                                       rho_lin_spline_vals, &
                                       rho_lin_spline_levels, &
                                       thlp3, &
-                                      R_ij_zt )
+                                      R_ij_zt, p_sfc )
         wp3 = remap_vals_to_target( ngrdcol, &
                                     gr%nzm, new_gr%nzm, &
                                     gr%zm, new_gr%zm, &
@@ -2657,7 +2994,7 @@ module grid_adaptation_module
                                     rho_lin_spline_vals, &
                                     rho_lin_spline_levels, &
                                     wp3, &
-                                    R_ij_zt )
+                                    R_ij_zt, p_sfc )
         ! remap thvm values to new grid, to calculate new p_in_Pa
         thvm_new_grid = remap_vals_to_target( ngrdcol, &
                                               gr%nzm, new_gr%nzm, &
@@ -2666,7 +3003,7 @@ module grid_adaptation_module
                                               rho_lin_spline_vals, &
                                               rho_lin_spline_levels, &
                                               thvm, &
-                                              R_ij_zt )
+                                              R_ij_zt, p_sfc )
         ! calculate p_in_Pa instead of remapping directly since it can run into problems if for
         ! example the two highest levels have the same pressure value, which could be happening with
         ! the remapping, also calculate exner accordingly
@@ -2679,7 +3016,7 @@ module grid_adaptation_module
                                     rho_lin_spline_vals, &
                                     rho_lin_spline_levels, &
                                     rcm, &
-                                    R_ij_zt )
+                                    R_ij_zt, p_sfc )
         cloud_frac = remap_vals_to_target( ngrdcol, &
                                            gr%nzm, new_gr%nzm, &
                                            gr%zm, new_gr%zm, &
@@ -2687,7 +3024,7 @@ module grid_adaptation_module
                                            rho_lin_spline_vals, &
                                            rho_lin_spline_levels, &
                                            cloud_frac, &
-                                           R_ij_zt )
+                                           R_ij_zt, p_sfc )
         wp2thvp = remap_vals_to_target( ngrdcol, &
                                         gr%nzm, new_gr%nzm, &
                                         gr%zm, new_gr%zm, &
@@ -2695,7 +3032,7 @@ module grid_adaptation_module
                                         rho_lin_spline_vals, &
                                         rho_lin_spline_levels, &
                                         wp2thvp, &
-                                        R_ij_zt )
+                                        R_ij_zt, p_sfc )
         wp2rtp = remap_vals_to_target( ngrdcol, &
                                        gr%nzm, new_gr%nzm, &
                                        gr%zm, new_gr%zm, &
@@ -2703,7 +3040,7 @@ module grid_adaptation_module
                                        rho_lin_spline_vals, &
                                        rho_lin_spline_levels, &
                                        wp2rtp, &
-                                       R_ij_zt )
+                                       R_ij_zt, p_sfc )
         wp2thlp = remap_vals_to_target( ngrdcol, &
                                         gr%nzm, new_gr%nzm, &
                                         gr%zm, new_gr%zm, &
@@ -2711,7 +3048,7 @@ module grid_adaptation_module
                                         rho_lin_spline_vals, &
                                         rho_lin_spline_levels, &
                                         wp2thlp, &
-                                        R_ij_zt )
+                                        R_ij_zt, p_sfc )
         wpup2 = remap_vals_to_target( ngrdcol, &
                                       gr%nzm, new_gr%nzm, &
                                       gr%zm, new_gr%zm, &
@@ -2719,7 +3056,7 @@ module grid_adaptation_module
                                       rho_lin_spline_vals, &
                                       rho_lin_spline_levels, &
                                       wpup2, &
-                                      R_ij_zt )
+                                      R_ij_zt, p_sfc )
         wpvp2 = remap_vals_to_target( ngrdcol, &
                                       gr%nzm, new_gr%nzm, &
                                       gr%zm, new_gr%zm, &
@@ -2727,7 +3064,7 @@ module grid_adaptation_module
                                       rho_lin_spline_vals, &
                                       rho_lin_spline_levels, &
                                       wpvp2, &
-                                      R_ij_zt )
+                                      R_ij_zt, p_sfc )
         ice_supersat_frac = remap_vals_to_target( ngrdcol, &
                                                   gr%nzm, new_gr%nzm, &
                                                   gr%zm, new_gr%zm, &
@@ -2735,7 +3072,7 @@ module grid_adaptation_module
                                                   rho_lin_spline_vals, &
                                                   rho_lin_spline_levels, &
                                                   ice_supersat_frac, &
-                                                  R_ij_zt )
+                                                  R_ij_zt, p_sfc )
         um_pert = remap_vals_to_target( ngrdcol, &
                                         gr%nzm, new_gr%nzm, &
                                         gr%zm, new_gr%zm, &
@@ -2743,7 +3080,7 @@ module grid_adaptation_module
                                         rho_lin_spline_vals, &
                                         rho_lin_spline_levels, &
                                         um_pert, &
-                                        R_ij_zt )
+                                        R_ij_zt, p_sfc )
         vm_pert = remap_vals_to_target( ngrdcol, &
                                         gr%nzm, new_gr%nzm, &
                                         gr%zm, new_gr%zm, &
@@ -2751,7 +3088,7 @@ module grid_adaptation_module
                                         rho_lin_spline_vals, &
                                         rho_lin_spline_levels, &
                                         vm_pert, &
-                                        R_ij_zt )
+                                        R_ij_zt, p_sfc )
         rcm_in_layer = remap_vals_to_target( ngrdcol, &
                                              gr%nzm, new_gr%nzm, &
                                              gr%zm, new_gr%zm, &
@@ -2759,7 +3096,7 @@ module grid_adaptation_module
                                              rho_lin_spline_vals, &
                                              rho_lin_spline_levels, &
                                              rcm_in_layer, &
-                                             R_ij_zt )
+                                             R_ij_zt, p_sfc )
         cloud_cover = remap_vals_to_target( ngrdcol, &
                                             gr%nzm, new_gr%nzm, &
                                             gr%zm, new_gr%zm, &
@@ -2767,7 +3104,7 @@ module grid_adaptation_module
                                             rho_lin_spline_vals, &
                                             rho_lin_spline_levels, &
                                             cloud_cover, &
-                                            R_ij_zt )
+                                            R_ij_zt, p_sfc )
         w_up_in_cloud = remap_vals_to_target( ngrdcol, &
                                               gr%nzm, new_gr%nzm, &
                                               gr%zm, new_gr%zm, &
@@ -2775,7 +3112,7 @@ module grid_adaptation_module
                                               rho_lin_spline_vals, &
                                               rho_lin_spline_levels, &
                                               w_up_in_cloud, &
-                                              R_ij_zt )
+                                              R_ij_zt, p_sfc )
         w_down_in_cloud = remap_vals_to_target( ngrdcol, &
                                                 gr%nzm, new_gr%nzm, &
                                                 gr%zm, new_gr%zm, &
@@ -2783,7 +3120,7 @@ module grid_adaptation_module
                                                 rho_lin_spline_vals, &
                                                 rho_lin_spline_levels, &
                                                 w_down_in_cloud, &
-                                                R_ij_zt )
+                                                R_ij_zt, p_sfc )
         cloudy_updraft_frac = remap_vals_to_target( ngrdcol, &
                                                     gr%nzm, new_gr%nzm, &
                                                     gr%zm, new_gr%zm, &
@@ -2791,7 +3128,7 @@ module grid_adaptation_module
                                                     rho_lin_spline_vals, &
                                                     rho_lin_spline_levels, &
                                                     cloudy_updraft_frac, &
-                                                    R_ij_zt )
+                                                    R_ij_zt, p_sfc )
         cloudy_downdraft_frac = remap_vals_to_target( ngrdcol, &
                                                       gr%nzm, new_gr%nzm, &
                                                       gr%zm, new_gr%zm, &
@@ -2799,7 +3136,7 @@ module grid_adaptation_module
                                                       rho_lin_spline_vals, &
                                                       rho_lin_spline_levels, &
                                                       cloudy_downdraft_frac, &
-                                                      R_ij_zt )
+                                                      R_ij_zt, p_sfc )
         Kh_zt = remap_vals_to_target( ngrdcol, &
                                       gr%nzm, new_gr%nzm, &
                                       gr%zm, new_gr%zm, &
@@ -2807,7 +3144,7 @@ module grid_adaptation_module
                                       rho_lin_spline_vals, &
                                       rho_lin_spline_levels, &
                                       Kh_zt, &
-                                      R_ij_zt )
+                                      R_ij_zt, p_sfc )
         Lscale = remap_vals_to_target( ngrdcol, &
                                        gr%nzm, new_gr%nzm, &
                                        gr%zm, new_gr%zm, &
@@ -2815,7 +3152,7 @@ module grid_adaptation_module
                                        rho_lin_spline_vals, &
                                        rho_lin_spline_levels, &
                                        Lscale, &
-                                       R_ij_zt )
+                                       R_ij_zt, p_sfc )
 
 
         ! Remap all zm values
@@ -2827,7 +3164,7 @@ module grid_adaptation_module
                                               rho_lin_spline_vals, &
                                               rho_lin_spline_levels, &
                                               wprtp_forcing, &
-                                              R_ij_zm )
+                                              R_ij_zm, p_sfc )
         wpthlp_forcing = remap_vals_to_target( ngrdcol, &
                                                gr%nzt+2, new_gr%nzt+2, &
                                                levels_source_zm_vals, &
@@ -2836,7 +3173,7 @@ module grid_adaptation_module
                                                rho_lin_spline_vals, &
                                                rho_lin_spline_levels, &
                                                wpthlp_forcing, &
-                                               R_ij_zm )
+                                               R_ij_zm, p_sfc )
         rtp2_forcing = remap_vals_to_target( ngrdcol, &
                                              gr%nzt+2, new_gr%nzt+2, &
                                              levels_source_zm_vals, &
@@ -2845,7 +3182,7 @@ module grid_adaptation_module
                                              rho_lin_spline_vals, &
                                              rho_lin_spline_levels, &
                                              rtp2_forcing, &
-                                             R_ij_zm )
+                                             R_ij_zm, p_sfc )
         thlp2_forcing = remap_vals_to_target( ngrdcol, &
                                               gr%nzt+2, new_gr%nzt+2, &
                                               levels_source_zm_vals, &
@@ -2854,7 +3191,7 @@ module grid_adaptation_module
                                               rho_lin_spline_vals, &
                                               rho_lin_spline_levels, &
                                               thlp2_forcing, &
-                                              R_ij_zm )
+                                              R_ij_zm, p_sfc )
         rtpthlp_forcing = remap_vals_to_target( ngrdcol, &
                                                 gr%nzt+2, new_gr%nzt+2, &
                                                 levels_source_zm_vals, &
@@ -2863,7 +3200,7 @@ module grid_adaptation_module
                                                 rho_lin_spline_vals, &
                                                 rho_lin_spline_levels, &
                                                 rtpthlp_forcing, &
-                                                R_ij_zm )
+                                                R_ij_zm, p_sfc )
         wm_zm = remap_vals_to_target( ngrdcol, &
                                       gr%nzt+2, new_gr%nzt+2, &
                                       levels_source_zm_vals, &
@@ -2872,7 +3209,7 @@ module grid_adaptation_module
                                       rho_lin_spline_vals, &
                                       rho_lin_spline_levels, &
                                       wm_zm, &
-                                      R_ij_zm )
+                                      R_ij_zm, p_sfc )
         rho_zm = remap_vals_to_target( ngrdcol, &
                                        gr%nzt+2, new_gr%nzt+2, &
                                        levels_source_zm_vals, &
@@ -2881,7 +3218,7 @@ module grid_adaptation_module
                                        rho_lin_spline_vals, &
                                        rho_lin_spline_levels, &
                                        rho_zm, &
-                                       R_ij_zm )
+                                       R_ij_zm, p_sfc )
         rho_ds_zm = remap_vals_to_target( ngrdcol, &
                                           gr%nzt+2, new_gr%nzt+2, &
                                           levels_source_zm_vals, &
@@ -2890,7 +3227,7 @@ module grid_adaptation_module
                                           rho_lin_spline_vals, &
                                           rho_lin_spline_levels, &
                                           rho_ds_zm, &
-                                          R_ij_zm )
+                                          R_ij_zm, p_sfc )
         invrs_rho_ds_zm = remap_vals_to_target( ngrdcol, &
                                                 gr%nzt+2, new_gr%nzt+2, &
                                                 levels_source_zm_vals, &
@@ -2899,7 +3236,7 @@ module grid_adaptation_module
                                                 rho_lin_spline_vals, &
                                                 rho_lin_spline_levels, &
                                                 invrs_rho_ds_zm, &
-                                                R_ij_zm )
+                                                R_ij_zm, p_sfc )
         thv_ds_zm = remap_vals_to_target( ngrdcol, &
                                           gr%nzt+2, new_gr%nzt+2, &
                                           levels_source_zm_vals, &
@@ -2908,7 +3245,7 @@ module grid_adaptation_module
                                           rho_lin_spline_vals, &
                                           rho_lin_spline_levels, &
                                           thv_ds_zm, &
-                                          R_ij_zm )
+                                          R_ij_zm, p_sfc )
         do i = 1, hydromet_dim
             wphydrometp(:,:,i) = remap_vals_to_target( ngrdcol, &
                                                        gr%nzt+2, new_gr%nzt+2, &
@@ -2918,7 +3255,7 @@ module grid_adaptation_module
                                                        rho_lin_spline_vals, &
                                                        rho_lin_spline_levels, &
                                                        wphydrometp(:,:,i), &
-                                                       R_ij_zm )
+                                                       R_ij_zm, p_sfc )
         end do
         upwp = remap_vals_to_target( ngrdcol, &
                                      gr%nzt+2, new_gr%nzt+2, &
@@ -2928,7 +3265,7 @@ module grid_adaptation_module
                                      rho_lin_spline_vals, &
                                      rho_lin_spline_levels, &
                                      upwp, &
-                                     R_ij_zm )
+                                     R_ij_zm, p_sfc )
         vpwp = remap_vals_to_target( ngrdcol, &
                                      gr%nzt+2, new_gr%nzt+2, &
                                      levels_source_zm_vals, &
@@ -2937,7 +3274,7 @@ module grid_adaptation_module
                                      rho_lin_spline_vals, &
                                      rho_lin_spline_levels, &
                                      vpwp, &
-                                     R_ij_zm )
+                                     R_ij_zm, p_sfc )
         up2 = remap_vals_to_target( ngrdcol, &
                                     gr%nzt+2, new_gr%nzt+2, &
                                     levels_source_zm_vals, &
@@ -2946,7 +3283,7 @@ module grid_adaptation_module
                                     rho_lin_spline_vals, &
                                     rho_lin_spline_levels, &
                                     up2, &
-                                    R_ij_zm )
+                                    R_ij_zm, p_sfc )
         vp2 = remap_vals_to_target( ngrdcol, &
                                     gr%nzt+2, new_gr%nzt+2, &
                                     levels_source_zm_vals, &
@@ -2955,7 +3292,7 @@ module grid_adaptation_module
                                     rho_lin_spline_vals, &
                                     rho_lin_spline_levels, &
                                     vp2, &
-                                    R_ij_zm )
+                                    R_ij_zm, p_sfc )
         wprtp = remap_vals_to_target( ngrdcol, &
                                       gr%nzt+2, new_gr%nzt+2, &
                                       levels_source_zm_vals, &
@@ -2964,7 +3301,7 @@ module grid_adaptation_module
                                       rho_lin_spline_vals, &
                                       rho_lin_spline_levels, &
                                       wprtp, &
-                                      R_ij_zm )
+                                      R_ij_zm, p_sfc )
         wpthlp = remap_vals_to_target( ngrdcol, &
                                        gr%nzt+2, new_gr%nzt+2, &
                                        levels_source_zm_vals, &
@@ -2973,7 +3310,7 @@ module grid_adaptation_module
                                        rho_lin_spline_vals, &
                                        rho_lin_spline_levels, &
                                        wpthlp, &
-                                       R_ij_zm )
+                                       R_ij_zm, p_sfc )
         rtp2 = remap_vals_to_target( ngrdcol, &
                                      gr%nzt+2, new_gr%nzt+2, &
                                      levels_source_zm_vals, &
@@ -2982,7 +3319,7 @@ module grid_adaptation_module
                                      rho_lin_spline_vals, &
                                      rho_lin_spline_levels, &
                                      rtp2, &
-                                     R_ij_zm )
+                                     R_ij_zm, p_sfc )
         thlp2 = remap_vals_to_target( ngrdcol, &
                                       gr%nzt+2, new_gr%nzt+2, &
                                       levels_source_zm_vals, &
@@ -2991,7 +3328,7 @@ module grid_adaptation_module
                                       rho_lin_spline_vals, &
                                       rho_lin_spline_levels, &
                                       thlp2, &
-                                      R_ij_zm )
+                                      R_ij_zm, p_sfc )
         rtpthlp = remap_vals_to_target( ngrdcol, &
                                         gr%nzt+2, new_gr%nzt+2, &
                                         levels_source_zm_vals, &
@@ -3000,7 +3337,7 @@ module grid_adaptation_module
                                         rho_lin_spline_vals, &
                                         rho_lin_spline_levels, &
                                         rtpthlp, &
-                                        R_ij_zm )
+                                        R_ij_zm, p_sfc )
         wp2 = remap_vals_to_target( ngrdcol, &
                                     gr%nzt+2, new_gr%nzt+2, &
                                     levels_source_zm_vals, &
@@ -3009,7 +3346,7 @@ module grid_adaptation_module
                                     rho_lin_spline_vals, &
                                     rho_lin_spline_levels, &
                                     wp2, &
-                                    R_ij_zm )
+                                    R_ij_zm, p_sfc )
         do i = 1, sclr_dim
             wpsclrp(:,:,i) = remap_vals_to_target( ngrdcol, &
                                                    gr%nzt+2, new_gr%nzt+2, &
@@ -3019,7 +3356,7 @@ module grid_adaptation_module
                                                    rho_lin_spline_vals, &
                                                    rho_lin_spline_levels, &
                                                    wpsclrp(:,:,i), &
-                                                   R_ij_zm )
+                                                   R_ij_zm, p_sfc )
             sclrp2(:,:,i) = remap_vals_to_target( ngrdcol, &
                                                   gr%nzt+2, new_gr%nzt+2, &
                                                   levels_source_zm_vals, &
@@ -3028,7 +3365,7 @@ module grid_adaptation_module
                                                   rho_lin_spline_vals, &
                                                   rho_lin_spline_levels, &
                                                   sclrp2(:,:,i), &
-                                                  R_ij_zm )
+                                                  R_ij_zm, p_sfc )
             sclrprtp(:,:,i) = remap_vals_to_target( ngrdcol, &
                                                     gr%nzt+2, new_gr%nzt+2, &
                                                     levels_source_zm_vals, &
@@ -3037,7 +3374,7 @@ module grid_adaptation_module
                                                     rho_lin_spline_vals, &
                                                     rho_lin_spline_levels, &
                                                     sclrprtp(:,:,i), &
-                                                    R_ij_zm )
+                                                    R_ij_zm, p_sfc )
             sclrpthlp(:,:,i) = remap_vals_to_target( ngrdcol, &
                                                      gr%nzt+2, new_gr%nzt+2, &
                                                      levels_source_zm_vals, &
@@ -3046,7 +3383,7 @@ module grid_adaptation_module
                                                      rho_lin_spline_vals, &
                                                      rho_lin_spline_levels, &
                                                      sclrpthlp(:,:,i), &
-                                                     R_ij_zm )
+                                                     R_ij_zm, p_sfc )
             sclrpthvp(:,:,i) = remap_vals_to_target( ngrdcol, &
                                                      gr%nzt+2, new_gr%nzt+2, &
                                                      levels_source_zm_vals, &
@@ -3055,7 +3392,7 @@ module grid_adaptation_module
                                                      rho_lin_spline_vals, &
                                                      rho_lin_spline_levels, &
                                                      sclrpthvp(:,:,i), &
-                                                     R_ij_zm )
+                                                     R_ij_zm, p_sfc )
         end do
         wpthvp = remap_vals_to_target( ngrdcol, &
                                        gr%nzt+2, new_gr%nzt+2, &
@@ -3065,7 +3402,7 @@ module grid_adaptation_module
                                        rho_lin_spline_vals, &
                                        rho_lin_spline_levels, &
                                        wpthvp, &
-                                       R_ij_zm )
+                                       R_ij_zm, p_sfc )
         rtpthvp = remap_vals_to_target( ngrdcol, &
                                         gr%nzt+2, new_gr%nzt+2, &
                                         levels_source_zm_vals, &
@@ -3074,7 +3411,7 @@ module grid_adaptation_module
                                         rho_lin_spline_vals, &
                                         rho_lin_spline_levels, &
                                         rtpthvp, &
-                                        R_ij_zm )
+                                        R_ij_zm, p_sfc )
         thlpthvp = remap_vals_to_target( ngrdcol, &
                                          gr%nzt+2, new_gr%nzt+2, &
                                          levels_source_zm_vals, &
@@ -3083,7 +3420,7 @@ module grid_adaptation_module
                                          rho_lin_spline_vals, &
                                          rho_lin_spline_levels, &
                                          thlpthvp, &
-                                         R_ij_zm )
+                                         R_ij_zm, p_sfc )
         uprcp = remap_vals_to_target( ngrdcol, &
                                       gr%nzt+2, new_gr%nzt+2, &
                                       levels_source_zm_vals, &
@@ -3092,7 +3429,7 @@ module grid_adaptation_module
                                       rho_lin_spline_vals, &
                                       rho_lin_spline_levels, &
                                       uprcp, &
-                                      R_ij_zm )
+                                      R_ij_zm, p_sfc )
         vprcp = remap_vals_to_target( ngrdcol, &
                                       gr%nzt+2, new_gr%nzt+2, &
                                       levels_source_zm_vals, &
@@ -3101,7 +3438,7 @@ module grid_adaptation_module
                                       rho_lin_spline_vals, &
                                       rho_lin_spline_levels, &
                                       vprcp, &
-                                      R_ij_zm )
+                                      R_ij_zm, p_sfc )
         rc_coef_zm = remap_vals_to_target( ngrdcol, &
                                            gr%nzt+2, new_gr%nzt+2, &
                                            levels_source_zm_vals, &
@@ -3110,7 +3447,7 @@ module grid_adaptation_module
                                            rho_lin_spline_vals, &
                                            rho_lin_spline_levels, &
                                            rc_coef_zm, &
-                                           R_ij_zm )
+                                           R_ij_zm, p_sfc )
         wp4 = remap_vals_to_target( ngrdcol, &
                                     gr%nzt+2, new_gr%nzt+2, &
                                     levels_source_zm_vals, &
@@ -3119,7 +3456,7 @@ module grid_adaptation_module
                                     rho_lin_spline_vals, &
                                     rho_lin_spline_levels, &
                                     wp4, &
-                                    R_ij_zm )
+                                    R_ij_zm, p_sfc )
         wp2up2 = remap_vals_to_target( ngrdcol, &
                                        gr%nzt+2, new_gr%nzt+2, &
                                        levels_source_zm_vals, &
@@ -3128,7 +3465,7 @@ module grid_adaptation_module
                                        rho_lin_spline_vals, &
                                        rho_lin_spline_levels, &
                                        wp2up2, &
-                                       R_ij_zm )
+                                       R_ij_zm, p_sfc )
         wp2vp2 = remap_vals_to_target( ngrdcol, &
                                        gr%nzt+2, new_gr%nzt+2, &
                                        levels_source_zm_vals, &
@@ -3137,7 +3474,7 @@ module grid_adaptation_module
                                        rho_lin_spline_vals, &
                                        rho_lin_spline_levels, &
                                        wp2vp2, &
-                                       R_ij_zm )
+                                       R_ij_zm, p_sfc )
         upwp_pert = remap_vals_to_target( ngrdcol, &
                                           gr%nzt+2, new_gr%nzt+2, &
                                           levels_source_zm_vals, &
@@ -3146,7 +3483,7 @@ module grid_adaptation_module
                                           rho_lin_spline_vals, &
                                           rho_lin_spline_levels, &
                                           upwp_pert, &
-                                          R_ij_zm )
+                                          R_ij_zm, p_sfc )
         vpwp_pert = remap_vals_to_target( ngrdcol, &
                                           gr%nzt+2, new_gr%nzt+2, &
                                           levels_source_zm_vals, &
@@ -3155,7 +3492,7 @@ module grid_adaptation_module
                                           rho_lin_spline_vals, &
                                           rho_lin_spline_levels, &
                                           vpwp_pert, &
-                                          R_ij_zm )
+                                          R_ij_zm, p_sfc )
         wprcp = remap_vals_to_target( ngrdcol, &
                                       gr%nzt+2, new_gr%nzt+2, &
                                       levels_source_zm_vals, &
@@ -3164,7 +3501,7 @@ module grid_adaptation_module
                                       rho_lin_spline_vals, &
                                       rho_lin_spline_levels, &
                                       wprcp, &
-                                      R_ij_zm )
+                                      R_ij_zm, p_sfc )
         invrs_tau_zm = remap_vals_to_target( ngrdcol, &
                                              gr%nzt+2, new_gr%nzt+2, &
                                              levels_source_zm_vals, &
@@ -3173,7 +3510,7 @@ module grid_adaptation_module
                                              rho_lin_spline_vals, &
                                              rho_lin_spline_levels, &
                                              invrs_tau_zm, &
-                                             R_ij_zm )
+                                             R_ij_zm, p_sfc )
         Kh_zm = remap_vals_to_target( ngrdcol, &
                                       gr%nzt+2, new_gr%nzt+2, &
                                       levels_source_zm_vals, &
@@ -3182,7 +3519,7 @@ module grid_adaptation_module
                                       rho_lin_spline_vals, &
                                       rho_lin_spline_levels, &
                                       Kh_zm, &
-                                      R_ij_zm )
+                                      R_ij_zm, p_sfc )
         thlprcp = remap_vals_to_target( ngrdcol, &
                                         gr%nzt+2, new_gr%nzt+2, &
                                         levels_source_zm_vals, &
@@ -3191,7 +3528,7 @@ module grid_adaptation_module
                                         rho_lin_spline_vals, &
                                         rho_lin_spline_levels, &
                                         thlprcp, &
-                                        R_ij_zm )
+                                        R_ij_zm, p_sfc )
       else
         write(fstderr,*) 'There is no method implemented for grid_remap_method=', &
                          grid_remap_method, '. Try another integer value.'
@@ -3203,15 +3540,338 @@ module grid_adaptation_module
 
   end subroutine adapt_grid
 
+  ! TODO rename to calc_grid_dens
+  subroutine calc_grid_dens_func_complete( ngrdcol, nzm, zm, &
+                                           gr, &
+                                           gr_dycore, &
+                                           um, vm, &
+                                           Lscale_zt, wp2, &
+                                           !grid_sfc, grid_top, &
+                                           num_levels, &
+                                           pdf_params, &
+                                           thlm,                  & ! In
+                                           exner, rtm, rcm, p_in_Pa, thvm,                     & ! In
+                                           ice_supersat_frac,                                  & ! In
+                                           bv_efold, &
+                                           clubb_config_flags, &
+                                           gr_dens_z, gr_dens, &
+                                           inv_alt_term, lscale_term, &
+                                           lscale_term_time_avg, &
+                                           chi_term, brunt_vaisala_term )
+    ! Description:
+    ! Creates an unnormalized grid density function from Lscale
+
+    ! References:
+    ! None
+    !-----------------------------------------------------------------------
+
+    use clubb_precision, only: &
+        core_rknd ! Variable(s)
+
+    use pdf_parameter_module, only:  &
+        pdf_parameter  ! Type
+
+    use grid_class, only: &
+        zt2zm, &
+        ddzt
+
+    use model_flags, only: &
+      clubb_config_flags_type
+
+    use advance_helper_module, only: &
+        calc_brunt_vaisala_freq_sqd
+
+    implicit none
+
+    !--------------------- Input Variables ---------------------
+    integer, intent(in) :: & 
+      ngrdcol, & 
+      nzm, &
+      num_levels ! the desired number of levels
+
+    real( kind = core_rknd ), dimension(ngrdcol,nzm-1), intent(in) :: &
+      thvm,   & ! Virtual potential temperature                        [K]
+      exner,      & ! Exner function (thermodynamic levels)       [-]
+      rtm,     & ! total water mixing ratio, r_t (thermo. levels) [kg/kg]
+      thlm,    & ! liq. water pot. temp., th_l (thermo. levels)   [K]
+      rcm,      & ! cloud water mixing ratio, r_c (thermo. levels) [kg/kg]
+      p_in_Pa,      & ! w'^3 (thermodynamic levels)                    [m^3/s^3]
+      ice_supersat_frac ! w'^3 (momentum levels)                    [m^3/s^3]
+
+    real( kind = core_rknd ), dimension(ngrdcol), intent(in) :: &
+      bv_efold
+
+    type(clubb_config_flags_type), intent(in) :: &
+      clubb_config_flags ! Derived type holding all configurable CLUBB flags
+
+    type( grid ), intent(in) :: &
+      gr, &
+      gr_dycore
+
+    
+
+    !real( kind = core_rknd ), intent(in) ::  &
+    !  grid_sfc, &  ! the grids surface; so the first level in the grid
+    !               ! density function has this height [m]
+    !  grid_top     ! the grids top; so the last level in the grid
+    !               ! density function has this height [m]
+
+    real( kind = core_rknd ), dimension(ngrdcol, nzm-1), intent(in) ::  &
+      um, vm, &
+      Lscale_zt  ! Length scale   [m]
+
+    real( kind = core_rknd ), dimension(ngrdcol, nzm), intent(in) ::  &
+      zm, &      ! levels at which the values are given [m]
+      wp2     ! w'^2 on thermo. grid [m^2/s^2]
+
+    type(pdf_parameter), intent(in) :: & 
+      pdf_params     ! PDF parameters
+
+    !--------------------- Output Variable ---------------------
+    real( kind = core_rknd ), dimension(nzm), intent(out) ::  &
+      gr_dens_z,  &    ! the z value coordinates of the connection points of the piecewise linear
+                       ! grid density function [m]
+      gr_dens  ! the values of the connection points of the piecewise linear
+               ! grid density function, given on the z values of gr_dens_z [# levs/meter]
+
+    real( kind = core_rknd ), dimension(nzm), intent(out) :: &
+      inv_alt_term, &
+      chi_term, &
+      brunt_vaisala_term, &
+      lscale_term, &
+      lscale_term_time_avg
+
+    !--------------------- Local Variables ---------------------
+    real( kind = core_rknd ) ::  &
+      grid_sfc, &  ! the grids surface; so the first level in the grid
+                   ! density function has this height [m]
+      grid_top     ! the grids top; so the last level in the grid
+                   ! density function has this height [m]
+
+    real( kind = core_rknd ), dimension(nzm) :: &
+      lscale_term_dycore, &
+      chi_zm   ! The variable 's' in Mellor (1977) given on zm levels    [kg/kg]
+
+    integer :: k, l, i
+
+    real( kind = core_rknd ) :: &
+      threshold, &
+      inv_alt_norm_factor, &
+      chi_norm_factor, &
+      brunt_vaisala_norm_factor
+
+    real( kind = core_rknd ), dimension(nzm-1) :: &
+      chi   ! The variable 's' in Mellor (1977)    [kg/kg]
+
+    real( kind = core_rknd ), dimension(ngrdcol, nzm) ::  &
+      ddzt_um, &
+      ddzt_vm, &
+      ddzt_umvm_sqd, &
+      Lscale, &  ! Length scale   [m]
+      brunt_vaisala_freq_sqd,       & ! Buoyancy frequency squared, N^2              [s^-2]
+      brunt_vaisala_freq_sqd_zt,    & ! Buoyancy frequency squared (on zt grid), N^2 [s^-2]
+      brunt_vaisala_freq_sqd_mixed, & ! A mixture of dry and moist N^2               [s^-2]
+      brunt_vaisala_freq_sqd_dry,   & ! dry N^2                                      [s^-2]
+      brunt_vaisala_freq_sqd_moist, & ! moist N^2                                    [s^-2]
+      brunt_vaisala_freq_sqd_smth     ! Mix between dry and moist N^2 that is
+                                       ! smoothed in the vertical                     [s^-2]
+
+    !--------------------- Begin Code ---------------------
+    grid_sfc = gr%zm(1,1)
+    grid_top = gr%zm(1,nzm)
+    
+
+
+    Lscale = zt2zm( gr%nzm, gr%nzt, ngrdcol, gr, Lscale_zt )
+
+    ! Calculate the norm of the vertical derivative of the mean horizontal wind speed
+    ! To feed into the calculation of the Richardson number Ri_zm
+    ddzt_um = ddzt( gr%nzm, gr%nzt, ngrdcol, gr, um )
+    ddzt_vm = ddzt( gr%nzm, gr%nzt, ngrdcol, gr, vm )
+    !$acc parallel loop gang vector collapse(2) default(present)
+    do k = 1, gr%nzm
+      do i = 1, ngrdcol
+        ddzt_umvm_sqd(i,k) = ddzt_um(i,k)**2 + ddzt_vm(i,k)**2
+      end do
+    end do
+
+    chi(:) = pdf_params%mixt_frac(1,:) * pdf_params%chi_1(1,:) &
+                  + ( one - pdf_params%mixt_frac(1,:) ) * pdf_params%chi_2(1,:)
+    chi_zm = zt2zm( gr, chi )
+
+    call calc_brunt_vaisala_freq_sqd( gr%nzm, gr%nzt, ngrdcol, gr, thlm,                  & ! In
+                                      exner, rtm, rcm, p_in_Pa, thvm,                     & ! In
+                                      ice_supersat_frac,                                  & ! In
+                                      clubb_config_flags%saturation_formula,              & ! In
+                                      clubb_config_flags%l_brunt_vaisala_freq_moist,      & ! In
+                                      clubb_config_flags%l_use_thvm_in_bv_freq,           & ! In
+                                      clubb_config_flags%l_modify_limiters_for_cnvg_test, & ! In
+                                      bv_efold,                          & ! In
+                                      brunt_vaisala_freq_sqd,                             & ! Out
+                                      brunt_vaisala_freq_sqd_mixed,                       & ! Out
+                                      brunt_vaisala_freq_sqd_dry,                         & ! Out
+                                      brunt_vaisala_freq_sqd_moist,                       & ! Out
+                                      brunt_vaisala_freq_sqd_smth )                         ! Out
+
+    call calc_grid_dens_helper( ngrdcol, nzm, zm, &
+                                    Lscale, wp2, &
+                                    chi_zm, &
+                                    brunt_vaisala_freq_sqd, &
+                                    ddzt_umvm_sqd, &
+                                    grid_sfc, grid_top, &
+                                    num_levels, &
+                                    gr_dens_z, gr_dens, &
+                                    inv_alt_term, lscale_term, &
+                                    lscale_term_time_avg, &
+                                    chi_term, brunt_vaisala_term )
+
+  end subroutine calc_grid_dens_func_complete
+
+  subroutine calc_grid_dens_helper( ngrdcol, nzm, zm, &
+                                    Lscale, wp2, &
+                                    chi, &
+                                    brunt_vaisala_freq_sqd, &
+                                    ddzt_umvm_sqd, &
+                                    grid_sfc, grid_top, &
+                                    num_levels, &
+                                    gr_dens_z, gr_dens, &
+                                    inv_alt_term, lscale_term, &
+                                    lscale_term_time_avg, &
+                                    chi_term, brunt_vaisala_term )
+    ! Description:
+    ! Creates an unnormalized grid density function
+
+    ! References:
+    ! None
+    !-----------------------------------------------------------------------
+
+    use clubb_precision, only: &
+        core_rknd ! Variable(s)
+
+    implicit none
+
+    !--------------------- Input Variables ---------------------
+    integer, intent(in) :: & 
+      ngrdcol, & 
+      nzm, &
+      num_levels ! the desired number of levels
+
+    real( kind = core_rknd ), intent(in) ::  &
+      grid_sfc, &  ! the grids surface; so the first level in the grid
+                   ! density function has this height [m]
+      grid_top     ! the grids top; so the last level in the grid
+                   ! density function has this height [m]
+
+    real( kind = core_rknd ), dimension(ngrdcol, nzm), intent(in) ::  &
+      zm, &      ! levels at which the values are given [m]
+      Lscale, &  ! Length scale   [m]
+      ddzt_umvm_sqd, &
+      brunt_vaisala_freq_sqd, &
+      wp2     ! w'^2 on thermo. grid [m^2/s^2]
+
+    real( kind = core_rknd ), dimension(nzm), intent(in) ::  &
+      chi ! The variable 's' in Mellor (1977) given on zm levels    [kg/kg]
+
+    !--------------------- Output Variable ---------------------
+    ! TODO mazbe remove gr_dens_z, since it should be the same as the zm that was handed in?
+    real( kind = core_rknd ), dimension(nzm), intent(out) ::  &
+      gr_dens_z,  &    ! the z value coordinates of the connection points of the piecewise linear
+                       ! grid density function [m]
+      gr_dens  ! the values of the connection points of the piecewise linear
+               ! grid density function, given on the z values of gr_dens_z [# levs/meter]
+
+    real( kind = core_rknd ), dimension(nzm), intent(out) :: &
+      inv_alt_term, &
+      chi_term, &
+      brunt_vaisala_term, &
+      lscale_term, &
+      lscale_term_time_avg
+
+    !--------------------- Local Variables ---------------------
+    real( kind = core_rknd ), dimension(nzm) :: &
+      lscale_term_dycore
+
+    integer :: k, l
+
+    real( kind = core_rknd ) :: &
+      threshold, &
+      inv_alt_norm_factor, &
+      chi_norm_factor, &
+      brunt_vaisala_norm_factor
+
+    !--------------------- Begin Code ---------------------
+    if ( .not. allocated( cumulative_Lscale ) ) then
+      allocate( cumulative_Lscale(nzm) )
+      Lscale_counter = 0
+      do k = 1, nzm
+        cumulative_Lscale(k) = 0.0_core_rknd
+      end do
+    end if
+
+    Lscale_counter = Lscale_counter + 1
+
+    threshold = 0.001
+    ! set each refinement criterion term
+    do k = 1, nzm
+      gr_dens_z(k) = zm(1,k)
+      inv_alt_term(k) = 1/(gr_dens_z(k) + 100)
+      if ( wp2(1,k) > threshold ) then
+        lscale_term(k) = 1/(Lscale(1,k)+10.0) ! 0.1/ ...3000
+      else
+        lscale_term(k) = 0.0_core_rknd
+      end if
+
+      cumulative_Lscale(k) = cumulative_Lscale(k) + lscale_term(k)
+      lscale_term_time_avg(k) = cumulative_Lscale(k) / Lscale_counter
+
+      chi_term(k) = exp(1000 * chi(k))/(gr_dens_z(k) + 1000.0) ! + 1000, was 100 before
+      brunt_vaisala_term(k) = maxval([0.0_core_rknd,(brunt_vaisala_freq_sqd(1,k))]) &
+                              / ( (maxval([0.0_core_rknd,(ddzt_umvm_sqd(1,k))]) + 1.0e-5) &
+                                  * (gr_dens_z(k) + 20) ) ! the 20 was 100 before...
+
+    end do
+   
+
+    do k = 1, nzm
+
+
+        gr_dens(k) = 15.0 * lscale_term_time_avg(k) &
+                     + 1.0 * inv_alt_term(k) & !40
+                     + 100.0 * chi_term(k) &
+                     + 0.0 * brunt_vaisala_term(k)
+
+    end do
+
+    ! TODO remove this?
+    if (gr_dens_z(1) > grid_sfc) then
+        gr_dens_z(1) = grid_sfc
+    end if
+
+    if (gr_dens_z(nzm) < grid_top) then
+        gr_dens_z(nzm) = grid_top
+    end if
+
+    do k = 1, 3
+      gr_dens = moving_average( nzm, &
+                                gr_dens_z, gr_dens )
+    end do
+
+  end subroutine calc_grid_dens_helper
+
+  ! TODO remove function
   subroutine calc_grid_dens_func( ngrdcol, nzm, zm, &
                                   gr, &
+                                  gr_dycore, &
                                   Lscale, wp2, &
                                   ddzt_umvm_sqd, &
                                   grid_sfc, grid_top, &
                                   num_levels, &
                                   pdf_params, &
                                   brunt_vaisala_freq_sqd, &
-                                  gr_dens_z, gr_dens )
+                                  gr_dens_z, gr_dens, &
+                                  inv_alt_term, lscale_term, &
+                                  lscale_term_time_avg, &
+                                  chi_term, brunt_vaisala_term )
     ! Description:
     ! Creates an unnormalized grid density function from Lscale
 
@@ -3232,7 +3892,8 @@ module grid_adaptation_module
 
     !--------------------- Input Variables ---------------------
     type( grid ) :: &
-      gr
+      gr, &
+      gr_dycore
 
     integer, intent(in) :: & 
       ngrdcol, & 
@@ -3264,8 +3925,19 @@ module grid_adaptation_module
       gr_dens  ! the values of the connection points of the piecewise linear
                ! grid density function, given on the z values of gr_dens_z [# levs/meter]
 
+    real( kind = core_rknd ), dimension(nzm), intent(out) :: &
+      inv_alt_term, &
+      chi_term, &
+      brunt_vaisala_term, &
+      lscale_term, &
+      lscale_term_time_avg
+
     !--------------------- Local Variables ---------------------
-    integer :: k
+    real( kind = core_rknd ), dimension(nzm) :: &
+      lscale_term_dycore, &
+      chi_zm   ! The variable 's' in Mellor (1977) given on zm levels    [kg/kg]
+
+    integer :: k, l
 
     real( kind = core_rknd ) :: &
       threshold, &
@@ -3277,53 +3949,116 @@ module grid_adaptation_module
       chi   ! The variable 's' in Mellor (1977)    [kg/kg]
 
     real( kind = core_rknd ), dimension(nzm) :: &
-      chi_zm, &   ! The variable 's' in Mellor (1977) given on zm levels    [kg/kg]
-      inv_alt_term, &
-      chi_term, &
-      brunt_vaisala_term, &
-      Lscale_term
+      Lscale_history_sum
 
     !--------------------- Begin Code ---------------------
+    if ( .not. allocated( cumulative_Lscale ) ) then
+      allocate( cumulative_Lscale(nzm) )
+      Lscale_counter = 0
+      do k = 1, nzm
+        cumulative_Lscale(k) = 0.0_core_rknd
+      end do
+    end if
+
+    if ( .not. allocated( Lscale_history ) ) then
+      allocate( Lscale_history(max_history_Lscale,nzm) )
+      ind_Lscale_history = 1
+      do l = 1, max_history_Lscale
+        do k = 1, nzm
+          Lscale_history(l,k) = 0.0_core_rknd
+        end do
+      end do
+    end if
+
     chi(:) = pdf_params%mixt_frac(1,:) * pdf_params%chi_1(1,:) &
                   + ( one - pdf_params%mixt_frac(1,:) ) * pdf_params%chi_2(1,:)
 
     chi_zm = zt2zm( gr, chi )
 
+    threshold = 0.001
+    Lscale_counter = Lscale_counter + 1
+
     ! set each refinement criterion term
     do k = 1, nzm
       gr_dens_z(k) = zm(1,k)
       inv_alt_term(k) = 1/(gr_dens_z(k) + 100)
-      chi_term(k) = exp(1000 * chi_zm(k))/(gr_dens_z(k) + 5000.0)
+      if ( wp2(1,k) > threshold ) then
+        lscale_term(k) = 1/(Lscale(1,k)+10.0) ! 0.1/ ...3000
+      else
+        lscale_term(k) = 0.0_core_rknd
+      end if
+
+      cumulative_Lscale(k) = cumulative_Lscale(k) + lscale_term(k)
+      lscale_term_time_avg(k) = cumulative_Lscale(k) / Lscale_counter
+
+      ! TODO remap to common grid before writing to array
+      !Lscale_history(mod(ind_Lscale_history,max_history_Lscale)+1, k) = lscale_term(k)
+      !Lscale_history_sum = sum(Lscale_history,dim=1)
+      !lscale_term_time_avg(k) = Lscale_history_sum(k) / max_history_Lscale
+
+      chi_term(k) = exp(1000 * chi_zm(k))/(gr_dens_z(k) + 1000.0) ! + 1000, was 100 before
       brunt_vaisala_term(k) = maxval([0.0_core_rknd,(brunt_vaisala_freq_sqd(1,k))]) &
                               / ( (maxval([0.0_core_rknd,(ddzt_umvm_sqd(1,k))]) + 1.0e-5) &
                                   * (gr_dens_z(k) + 20) ) ! the 20 was 100 before...
 
     end do
 
+    ! build time average for lscale_term
+    ! TODO instead of map1_ppm use remap_vals_to_target function
+    
+    !call map1_ppm( nzm-1,   zm,   lscale_term,  &
+    !               gr_dycore%nzm-1,   gr_dycore%zm,   lscale_term_dycore, &
+    !                     0, 0, 1, 1, 1,                         &
+    !                     1, 1, 1, 0, 3)
+    !do k = 1, nzm
+    !  Lscale_history(mod(ind_Lscale_history,max_history_Lscale)+1, k) = lscale_term_dycore(k)
+    !end do
+!
+    !ind_Lscale_history = ind_Lscale_history + 1
+    !!Lscale_history_sum = sum(Lscale_history,dim=1)
+    !call map1_ppm( gr_dycore%nzm-1,   gr_dycore%zm,   sum(Lscale_history,dim=1),  &
+    !               nzm-1,   zm,   Lscale_history_sum, &
+    !                     0, 0, 1, 1, 1,                         &
+    !                     1, 1, 1, 0, 3)
+!
+    !do k = 1, nzm
+    !  lscale_term_time_avg(k) = Lscale_history_sum(k) / max_history_Lscale
+    !end do
+
     ! calculate noramlization factors, so each refinement criterion has same magnitude
     !inv_alt_norm_factor = 1/calc_integral( nzm, zm(1,:), inv_alt_term )
     !chi_norm_factor = 1/calc_integral( nzm, zm(1,:), chi_term )
     !brunt_vaisala_norm_factor = 1/calc_integral( nzm, zm(1,:), brunt_vaisala_term )
 
-    threshold = 0.001
     do k = 1, nzm
-        
-        if ( wp2(1,k) > threshold ) then
-          
-          Lscale_term(k) = 1/(Lscale(1,k)+10.0) ! 0.1/ ...3000
-        
-        else
-          Lscale_term(k) = 0.0_core_rknd
-        end if
-
+    
         !gr_dens(k) = 0.2 * inv_alt_norm_factor * inv_alt_term(k) &              ! 0.2
         !             + 0.5 * chi_norm_factor * chi_term(k) &                    ! 0.5
         !             + 0.3 * brunt_vaisala_norm_factor * brunt_vaisala_term(k)  ! 0.3
 
-        gr_dens(k) = 5.0 * Lscale_term(k) &
-                     + 3.0 * inv_alt_term(k) & 
-                     + 400.0 * chi_term(k) &
-                     + 1.0 * brunt_vaisala_term(k)
+        ! lololo
+        !gr_dens(k) = 5.0 * lscale_term(k) &
+        !             + 3.0 * inv_alt_term(k) & 
+        !             + 40.0 * chi_term(k) &
+        !             + 1.0 * brunt_vaisala_term(k)
+
+        !do l = 1, 1
+        !  lscale_term = moving_average( nzm, &
+        !                                gr_dens_z, lscale_term )
+        !end do
+
+        ! !!!!!!! those coefficients work good !!!!
+        !gr_dens(k) = 15.0 * lscale_term_time_avg(k) &
+        !             + 1.0 * inv_alt_term(k) & 
+        !             + 100.0 * chi_term(k) &
+        !             + 0.0 * brunt_vaisala_term(k)
+
+        gr_dens(k) = 15.0 * lscale_term_time_avg(k) &
+                     + 1.0 * inv_alt_term(k) & !40
+                     + 100.0 * chi_term(k) &
+                     + 0.0 * brunt_vaisala_term(k)
+
+        !gr_dens(k) = lscale_term_time_avg(k)
 
         ! cond0: only adapt every 80 iteration -> reduces noise and shows some good results, but cond4 looks better
         ! cond1: brunt_vaisala/2 and ddzt_umvm*2 adapt every 80th iteration -> results were worse than before
@@ -3341,8 +4076,8 @@ module grid_adaptation_module
     end if
 
     do k = 1, 3
-    gr_dens = moving_average( nzm, &
-                              gr_dens_z, gr_dens )
+      gr_dens = moving_average( nzm, &
+                                gr_dens_z, gr_dens )
     end do
 
   end subroutine calc_grid_dens_func
@@ -3619,6 +4354,10 @@ module grid_adaptation_module
       deallocate( gr_dens_old_z_global )
     end if
 
+    if ( allocated( cumulative_Lscale ) ) then
+      deallocate( cumulative_Lscale )
+    end if
+
   end subroutine
 
   function moving_average( nz, &
@@ -3726,6 +4465,655 @@ module grid_adaptation_module
     deallocate( weights )
 
   end function
+
+!----------------------------------------------------------------------- 
+!BOP
+! !ROUTINE:  kmppm --- Perform piecewise parabolic method in vertical
+!
+! !INTERFACE:
+ subroutine kmppm(dm, a4, itot, lmt)
+
+! !USES:
+ implicit none
+
+! !INPUT PARAMETERS:
+      real(core_rknd), intent(in)::     dm(*)     ! ??????
+      integer, intent(in) ::     itot      ! Total Longitudes
+      integer, intent(in) ::     lmt       ! 0: Standard PPM constraint
+                                           ! 1: Improved full monotonicity constraint (Lin)
+                                           ! 2: Positive definite constraint
+                                           ! 3: do nothing (return immediately)
+
+! !INPUT/OUTPUT PARAMETERS:
+      real(core_rknd), intent(inout) :: a4(4,*)   ! ???????
+                                           ! AA <-- a4(1,i)
+                                           ! AL <-- a4(2,i)
+                                           ! AR <-- a4(3,i)
+                                           ! A6 <-- a4(4,i)
+
+! !DESCRIPTION:
+!
+!    Writes a standard set of data to the history buffer. 
+!
+! !REVISION HISTORY: 
+!    00.04.24   Lin       Last modification
+!    01.03.26   Sawyer    Added ProTeX documentation
+!    02.04.04   Sawyer    Incorporated newest FVGCM version
+!
+!EOP
+!-----------------------------------------------------------------------
+!BOC
+!
+! !LOCAL VARIABLES:
+
+      real(core_rknd)       r12
+      parameter (r12 = D1_0/D12_0)
+
+      real(core_rknd) qmp
+      integer i
+      real(core_rknd) da1, da2, a6da
+      real(core_rknd) fmin
+
+! Developer: S.-J. Lin, NASA-GSFC
+! Last modified: Apr 24, 2000
+
+      if ( lmt == 3 ) return
+
+      if(lmt == 0) then
+! Standard PPM constraint
+      do i=1,itot
+      if(dm(i) == D0_0) then
+         a4(2,i) = a4(1,i)
+         a4(3,i) = a4(1,i)
+         a4(4,i) = D0_0
+      else
+         da1  = a4(3,i) - a4(2,i)
+         da2  = da1**2
+         a6da = a4(4,i)*da1
+         if(a6da < -da2) then
+            a4(4,i) = D3_0*(a4(2,i)-a4(1,i))
+            a4(3,i) = a4(2,i) - a4(4,i)
+         elseif(a6da > da2) then
+            a4(4,i) = D3_0*(a4(3,i)-a4(1,i))
+            a4(2,i) = a4(3,i) - a4(4,i)
+         endif
+      endif
+      enddo
+
+      elseif (lmt == 1) then
+
+! Improved full monotonicity constraint (Lin)
+! Note: no need to provide first guess of A6 <-- a4(4,i)
+      do i=1, itot
+           qmp = D2_0*dm(i)
+         a4(2,i) = a4(1,i)-sign(min(abs(qmp),abs(a4(2,i)-a4(1,i))), qmp)
+         a4(3,i) = a4(1,i)+sign(min(abs(qmp),abs(a4(3,i)-a4(1,i))), qmp)
+         a4(4,i) = D3_0*( D2_0*a4(1,i) - (a4(2,i)+a4(3,i)) )
+      enddo
+
+      elseif (lmt == 2) then
+
+! Positive definite constraint
+      do i=1,itot
+      if( abs(a4(3,i)-a4(2,i)) < -a4(4,i) ) then
+      fmin = a4(1,i)+D0_25*(a4(3,i)-a4(2,i))**2/a4(4,i)+a4(4,i)*r12
+         if( fmin < D0_0 ) then
+         if(a4(1,i)<a4(3,i) .and. a4(1,i)<a4(2,i)) then
+            a4(3,i) = a4(1,i)
+            a4(2,i) = a4(1,i)
+            a4(4,i) = D0_0
+         elseif(a4(3,i) > a4(2,i)) then
+            a4(4,i) = D3_0*(a4(2,i)-a4(1,i))
+            a4(3,i) = a4(2,i) - a4(4,i)
+         else
+            a4(4,i) = D3_0*(a4(3,i)-a4(1,i))
+            a4(2,i) = a4(3,i) - a4(4,i)
+         endif
+         endif
+      endif
+      enddo
+
+      endif
+
+      return
+!EOC
+ end subroutine kmppm
+!-----------------------------------------------------------------------
+
+!----------------------------------------------------------------------- 
+!BOP
+! !ROUTINE:  steepz --- Calculate attributes for PPM
+!
+! !INTERFACE:
+ subroutine steepz(i1, i2, km, a4, df2, dm, dq, dp, d4)
+
+! !USES:
+   implicit none
+
+! !INPUT PARAMETERS:
+      integer, intent(in) :: km                   ! Total levels
+      integer, intent(in) :: i1                   ! Starting longitude
+      integer, intent(in) :: i2                   ! Finishing longitude
+      real(core_rknd), intent(in) ::  dp(i1:i2,km)       ! grid size
+      real(core_rknd), intent(in) ::  dq(i1:i2,km)       ! backward diff of q
+      real(core_rknd), intent(in) ::  d4(i1:i2,km)       ! backward sum:  dp(k)+ dp(k-1) 
+      real(core_rknd), intent(in) :: df2(i1:i2,km)       ! first guess mismatch
+      real(core_rknd), intent(in) ::  dm(i1:i2,km)       ! monotonic mismatch
+
+! !INPUT/OUTPUT PARAMETERS:
+      real(core_rknd), intent(inout) ::  a4(4,i1:i2,km)  ! first guess/steepened
+
+!
+! !DESCRIPTION:
+!   This is complicated stuff related to the Piecewise Parabolic Method
+!   and I need to read the Collela/Woodward paper before documenting
+!   thoroughly.
+!
+! !REVISION HISTORY: 
+!   ??.??.??    Lin?       Creation
+!   01.03.26    Sawyer     Added ProTeX documentation
+!
+!EOP
+!-----------------------------------------------------------------------
+!BOC
+!
+! !LOCAL VARIABLES:
+      integer i, k
+      real(core_rknd) alfa(i1:i2,km)
+      real(core_rknd)    f(i1:i2,km)
+      real(core_rknd)  rat(i1:i2,km)
+      real(core_rknd)  dg2
+
+! Compute ratio of dq/dp
+      do k=2,km
+         do i=i1,i2
+            rat(i,k) = dq(i,k-1) / d4(i,k)
+         enddo
+      enddo
+
+! Compute F
+      do k=2,km-1
+         do i=i1,i2
+            f(i,k) = (rat(i,k+1) - rat(i,k))                             &
+                     / ( dp(i,k-1)+dp(i,k)+dp(i,k+1) )
+         enddo
+      enddo
+
+      do k=3,km-2
+         do i=i1,i2
+         if(f(i,k+1)*f(i,k-1)<D0_0 .and. df2(i,k)/=D0_0) then
+            dg2 = (f(i,k+1)-f(i,k-1))*((dp(i,k+1)-dp(i,k-1))**2          &
+                   + d4(i,k)*d4(i,k+1) )
+            alfa(i,k) = max(D0_0, min(D0_5, -D0_1875*dg2/df2(i,k))) 
+         else
+            alfa(i,k) = D0_0
+         endif
+         enddo
+      enddo
+
+      do k=4,km-2
+         do i=i1,i2
+            a4(2,i,k) = (D1_0-alfa(i,k-1)-alfa(i,k)) * a4(2,i,k) +         &
+                        alfa(i,k-1)*(a4(1,i,k)-dm(i,k))    +             &
+                        alfa(i,k)*(a4(1,i,k-1)+dm(i,k-1))
+         enddo
+      enddo
+
+      return
+!EOC
+ end subroutine steepz
+!----------------------------------------------------------------------- 
+
+!----------------------------------------------------------------------- 
+!BOP
+! !ROUTINE:  ppm2m --- Piecewise parabolic method for fields
+!
+! !INTERFACE:
+ subroutine ppm2m(a4, delp, km, i1, i2, iv, kord)
+
+! !USES:
+ implicit none
+
+! !INPUT PARAMETERS:
+ integer, intent(in):: iv      ! iv =-1: winds
+                               ! iv = 0: positive definite scalars
+                               ! iv = 1: others
+ integer, intent(in):: i1      ! Starting longitude
+ integer, intent(in):: i2      ! Finishing longitude
+ integer, intent(in):: km      ! vertical dimension
+ integer, intent(in):: kord    ! Order (or more accurately method no.):
+                               ! 
+ real (core_rknd), intent(in):: delp(i1:i2,km)     ! layer pressure thickness
+
+! !INPUT/OUTPUT PARAMETERS:
+ real (core_rknd), intent(inout):: a4(4,i1:i2,km)  ! Interpolated values
+
+! !DESCRIPTION:
+!
+!   Perform the piecewise parabolic method 
+! 
+! !REVISION HISTORY: 
+!   ??.??.??    Lin        Creation
+!   02.04.04    Sawyer     Newest release from FVGCM
+!   02.04.23    Sawyer     Incorporated minor algorithmic change to 
+!                          maintain CAM zero diffs (see comments inline)
+! 
+!EOP
+!-----------------------------------------------------------------------
+!BOC
+!
+! !LOCAL VARIABLES:
+! local arrays:
+      real(core_rknd)  dc(i1:i2,km)
+      real(core_rknd)  h2(i1:i2,km)
+      real(core_rknd) delq(i1:i2,km)
+      real(core_rknd) df2(i1:i2,km)
+      real(core_rknd) d4(i1:i2,km)
+
+! local scalars:
+      real(core_rknd) fac
+      real(core_rknd) a1, a2, c1, c2, c3, d1, d2
+      real(core_rknd) qmax, qmin, cmax, cmin
+      real(core_rknd) qm, dq, tmp
+
+      integer i, k, km1, lmt
+      real(core_rknd) qmp, pmp
+      real(core_rknd) lac
+      integer it
+
+      km1 = km - 1
+       it = i2 - i1 + 1
+
+      do k=2,km
+         do i=i1,i2
+            delq(i,k-1) =   a4(1,i,k) - a4(1,i,k-1)
+              d4(i,k  ) = delp(i,k-1) + delp(i,k)
+         enddo
+      enddo
+
+      do k=2,km1
+         do i=i1,i2
+            c1  = (delp(i,k-1)+D0_5*delp(i,k))/d4(i,k+1)
+            c2  = (delp(i,k+1)+D0_5*delp(i,k))/d4(i,k)
+            tmp = delp(i,k)*(c1*delq(i,k) + c2*delq(i,k-1)) /      &
+                                    (d4(i,k)+delp(i,k+1))
+            qmax = max(a4(1,i,k-1),a4(1,i,k),a4(1,i,k+1)) - a4(1,i,k)
+            qmin = a4(1,i,k) - min(a4(1,i,k-1),a4(1,i,k),a4(1,i,k+1))
+            dc(i,k) = sign(min(abs(tmp),qmax,qmin), tmp)
+            df2(i,k) = tmp
+         enddo
+      enddo
+
+!****6***0*********0*********0*********0*********0*********0**********72
+! 4th order interpolation of the provisional cell edge value
+!****6***0*********0*********0*********0*********0*********0**********72
+
+      do k=3,km1
+      do i=i1,i2
+      c1 = delq(i,k-1)*delp(i,k-1) / d4(i,k)
+      a1 = d4(i,k-1) / (d4(i,k) + delp(i,k-1))
+      a2 = d4(i,k+1) / (d4(i,k) + delp(i,k))
+      a4(2,i,k) = a4(1,i,k-1) + c1 + D2_0/(d4(i,k-1)+d4(i,k+1)) *    &
+                ( delp(i,k)*(c1*(a1 - a2)+a2*dc(i,k-1)) -          &
+                                delp(i,k-1)*a1*dc(i,k  ) )
+      enddo
+      enddo
+
+      call steepz(i1, i2, km, a4, df2, dc, delq, delp, d4)
+
+! Area preserving cubic with 2nd deriv. = 0 at the boundaries
+! Top
+      do i=i1,i2
+      d1 = delp(i,1)
+      d2 = delp(i,2)
+      qm = (d2*a4(1,i,1)+d1*a4(1,i,2)) / (d1+d2)
+      dq = D2_0*(a4(1,i,2)-a4(1,i,1)) / (d1+d2)
+      c1 = D4_0*(a4(2,i,3)-qm-d2*dq) / ( d2*(D2_0*d2*d2+d1*(d2+D3_0*d1)) )
+      c3 = dq - D0_5*c1*(d2*(D5_0*d1+d2)-D3_0*d1**2)
+      a4(2,i,2) = qm - D0_25*c1*d1*d2*(d2+D3_0*d1)
+      a4(2,i,1) = d1*(D2_0*c1*d1**2-c3) + a4(2,i,2)
+      dc(i,1) =  a4(1,i,1) - a4(2,i,1)
+! No over- and undershoot condition
+      cmax = max(a4(1,i,1), a4(1,i,2))
+      cmin = min(a4(1,i,1), a4(1,i,2))
+      a4(2,i,2) = max(cmin,a4(2,i,2))
+      a4(2,i,2) = min(cmax,a4(2,i,2))
+      enddo
+
+      if( iv == 0 ) then
+         do i=i1,i2
+!
+! WS: 02.04.23  Algorithmic difference with FVGCM.  FVGCM does this:
+!
+!!!            a4(2,i,1) = a4(1,i,1)
+!!!            a4(3,i,1) = a4(1,i,1)
+!
+!     CAM does this:
+!
+            a4(2,i,1) = max(D0_0,a4(2,i,1))
+            a4(2,i,2) = max(D0_0,a4(2,i,2))
+         enddo
+      elseif ( iv == -1 ) then
+! Winds:
+        if( km > 32 ) then
+          do i=i1,i2
+! More dampping: top layer as the sponge
+             a4(2,i,1) = a4(1,i,1)
+             a4(3,i,1) = a4(1,i,1)
+          enddo
+        else
+          do i=i1,i2
+             if( a4(1,i,1)*a4(2,i,1) <=  D0_0 ) then
+                 a4(2,i,1) = D0_0
+             else
+                 a4(2,i,1) = sign(min(abs(a4(1,i,1)),    &
+                                      abs(a4(2,i,1))),   &
+                                          a4(1,i,1)  )
+            endif
+          enddo
+        endif
+      endif
+
+! Bottom
+! Area preserving cubic with 2nd deriv. = 0 at the surface
+      do i=i1,i2
+         d1 = delp(i,km)
+         d2 = delp(i,km1)
+         qm = (d2*a4(1,i,km)+d1*a4(1,i,km1)) / (d1+d2)
+         dq = D2_0*(a4(1,i,km1)-a4(1,i,km)) / (d1+d2)
+         c1 = (a4(2,i,km1)-qm-d2*dq) / (d2*(D2_0*d2*d2+d1*(d2+D3_0*d1)))
+         c3 = dq - D2_0*c1*(d2*(D5_0*d1+d2)-D3_0*d1**2)
+         a4(2,i,km) = qm - c1*d1*d2*(d2+D3_0*d1)
+         a4(3,i,km) = d1*(D8_0*c1*d1**2-c3) + a4(2,i,km)
+         dc(i,km) = a4(3,i,km) -  a4(1,i,km)
+! No over- and under-shoot condition
+         cmax = max(a4(1,i,km), a4(1,i,km1))
+         cmin = min(a4(1,i,km), a4(1,i,km1))
+         a4(2,i,km) = max(cmin,a4(2,i,km))
+         a4(2,i,km) = min(cmax,a4(2,i,km))
+      enddo
+
+! Enforce constraint at the surface
+
+      if ( iv == 0 ) then
+! Positive definite scalars:
+           do i=i1,i2
+              a4(3,i,km) = max(D0_0, a4(3,i,km))
+           enddo
+      elseif ( iv == -1 ) then
+! Winds:
+           do i=i1,i2
+              if( a4(1,i,km)*a4(3,i,km) <=  D0_0 ) then
+                  a4(3,i,km) = D0_0
+              else
+                  a4(3,i,km) = sign( min(abs(a4(1,i,km)),   &
+                                         abs(a4(3,i,km))),  &
+                                             a4(1,i,km)  )
+              endif
+           enddo
+      endif
+
+      do k=1,km1
+         do i=i1,i2
+            a4(3,i,k) = a4(2,i,k+1)
+         enddo
+      enddo
+ 
+! f(s) = AL + s*[(AR-AL) + A6*(1-s)]         ( 0 <= s  <= 1 )
+ 
+! Top 2 and bottom 2 layers always use monotonic mapping
+      do k=1,2
+         do i=i1,i2
+            a4(4,i,k) = D3_0*(D2_0*a4(1,i,k) - (a4(2,i,k)+a4(3,i,k)))
+         enddo
+         call kmppm(dc(i1,k), a4(1,i1,k), it, 0)
+      enddo
+
+      if(kord >= 7) then
+!****6***0*********0*********0*********0*********0*********0**********72
+! Huynh's 2nd constraint
+!****6***0*********0*********0*********0*********0*********0**********72
+      do k=2, km1
+         do i=i1,i2
+! Method#1
+!           h2(i,k) = delq(i,k) - delq(i,k-1)
+! Method#2
+!           h2(i,k) = D2_0*(dc(i,k+1)/delp(i,k+1) - dc(i,k-1)/delp(i,k-1))
+!    &               / ( delp(i,k)+D0_5*(delp(i,k-1)+delp(i,k+1)) )
+!    &               * delp(i,k)**2
+! Method#3
+            h2(i,k) = dc(i,k+1) - dc(i,k-1)
+         enddo
+      enddo
+
+      if( kord == 7 ) then
+         fac = D1_5           ! original quasi-monotone
+      else
+         fac = D0_125         ! full monotone
+      endif
+
+      do k=3, km-2
+        do i=i1,i2
+! Right edges
+!        qmp   = a4(1,i,k) + D2_0*delq(i,k-1)
+!        lac   = a4(1,i,k) + fac*h2(i,k-1) + D0_5*delq(i,k-1)
+!
+         pmp   = D2_0*dc(i,k)
+         qmp   = a4(1,i,k) + pmp
+         lac   = a4(1,i,k) + fac*h2(i,k-1) + dc(i,k)
+         qmin  = min(a4(1,i,k), qmp, lac)
+         qmax  = max(a4(1,i,k), qmp, lac)
+         a4(3,i,k) = min(max(a4(3,i,k), qmin), qmax)
+! Left  edges
+!        qmp   = a4(1,i,k) - D2_0*delq(i,k)
+!        lac   = a4(1,i,k) + fac*h2(i,k+1) - D0_5*delq(i,k)
+!
+         qmp   = a4(1,i,k) - pmp
+         lac   = a4(1,i,k) + fac*h2(i,k+1) - dc(i,k)
+         qmin  = min(a4(1,i,k), qmp, lac)
+         qmax  = max(a4(1,i,k), qmp, lac)
+         a4(2,i,k) = min(max(a4(2,i,k), qmin), qmax)
+! Recompute A6
+         a4(4,i,k) = D3_0*(D2_0*a4(1,i,k) - (a4(2,i,k)+a4(3,i,k)))
+        enddo
+! Additional constraint to prevent negatives when kord=7
+         if (iv == 0 .and. kord == 7) then
+             call kmppm(dc(i1,k), a4(1,i1,k), it, 2)
+         endif
+      enddo
+
+      else
+ 
+         lmt = kord - 3
+         lmt = max(0, lmt)
+         if (iv == 0) lmt = min(2, lmt)
+
+      do k=3, km-2
+      if( kord /= 4) then
+         do i=i1,i2
+            a4(4,i,k) = D3_0*(D2_0*a4(1,i,k) - (a4(2,i,k)+a4(3,i,k)))
+         enddo
+      endif
+         call kmppm(dc(i1,k), a4(1,i1,k), it, lmt)
+      enddo
+      endif
+
+      do k=km1,km
+         do i=i1,i2
+            a4(4,i,k) = D3_0*(D2_0*a4(1,i,k) - (a4(2,i,k)+a4(3,i,k)))
+         enddo
+         call kmppm(dc(i1,k), a4(1,i1,k), it, 0)
+      enddo
+
+      return
+!EOC
+ end subroutine ppm2m
+!-----------------------------------------------------------------------
+
+  !----------------------------------------------------------------------- 
+  !BOP
+  ! !ROUTINE:  map1_ppm --- Piecewise parabolic mapping, variant 1
+  !
+  ! !INTERFACE:
+  subroutine map1_ppm( km,   pe1,   q1,  kn,   pe2,   q2,                &
+                         ng_s, ng_n, itot, i1, i2,                         &
+                         j, jfirst, jlast, iv, kord)
+
+        implicit none
+
+  ! !INPUT PARAMETERS:
+        integer, intent(in) :: i1                ! Starting longitude
+        integer, intent(in) :: i2                ! Finishing longitude
+        integer, intent(in) :: itot              ! Total latitudes
+        integer, intent(in) :: iv                ! Mode: 0 ==  constituents  1 == ???
+        integer, intent(in) :: kord              ! Method order
+        integer, intent(in) :: j                 ! Current latitude
+        integer, intent(in) :: jfirst            ! Starting latitude
+        integer, intent(in) :: jlast             ! Finishing latitude
+        integer, intent(in) :: ng_s              ! Ghosted latitudes south
+        integer, intent(in) :: ng_n              ! Ghosted latitudes north
+        integer, intent(in) :: km                ! Original vertical dimension
+        integer, intent(in) :: kn                ! Target vertical dimension
+
+        real( core_rknd ), intent(in) ::  pe1(itot,km+1)  ! pressure at layer edges 
+                                                 ! (from model top to bottom surface)
+                                                 ! in the original vertical coordinate
+        real( core_rknd ), intent(in) ::  pe2(itot,kn+1)  ! pressure at layer edges 
+                                                 ! (from model top to bottom surface)
+                                                 ! in the new vertical coordinate
+        real( core_rknd ), intent(in) ::  q1(itot,jfirst-ng_s:jlast+ng_n,km) ! Field input
+
+  ! !INPUT/OUTPUT PARAMETERS:
+        real( core_rknd ), intent(inout)::  q2(itot,jfirst-ng_s:jlast+ng_n,kn) ! Field output
+
+  ! !DESCRIPTION:
+  !
+  !     Perform piecewise parabolic method on a given latitude    
+  ! IV = 0: constituents
+  ! pe1: pressure at layer edges (from model top to bottom surface)
+  !      in the original vertical coordinate
+  ! pe2: pressure at layer edges (from model top to bottom surface)
+  !      in the new vertical coordinate
+  !
+  ! !REVISION HISTORY: 
+  !    00.04.24   Lin       Last modification
+  !    01.03.26   Sawyer    Added ProTeX documentation
+  !    02.04.04   Sawyer    incorporated latest FVGCM version
+  !    02.06.20   Sawyer    made Q2 inout since the args for Q1/Q2 same
+  !    03.07.22   Parks     Cleaned main loop, removed gotos
+  !    05.05.25   Sawyer    Merged CAM and GEOS5 versions
+  !
+  !EOP
+  !-----------------------------------------------------------------------
+  !BOC
+  !
+  ! !LOCAL VARIABLES:
+        real(core_rknd)       r3, r23
+        parameter (r3 = D1_0/D3_0, r23 = D2_0/D3_0)
+        real(core_rknd)   dp1(i1:i2,km)
+        real(core_rknd)  q4(4,i1:i2,km)
+
+        integer i, k, kk, kl, k0(i1:i2,0:kn+1), k0found
+        real(core_rknd)    pl, pr, qsum, qsumk(i1:i2,kn), delp, esl
+
+        do k=1,km
+           do i=i1,i2
+               dp1(i,k) = pe1(i,k+1) - pe1(i,k)
+              q4(1,i,k) = q1(i,j,k)
+           enddo
+        enddo
+
+  ! Mapping
+
+  ! Compute vertical subgrid distribution
+        call ppm2m( q4, dp1, km, i1, i2, iv, kord )
+
+  ! For each pe2(i,k), determine lowest pe1 interval = smallest k0 (= k0(i,k))
+  !   such that pe1(i,k0) <= pe2(i,k) <= pe1(i,k0+1)
+  !   Note that pe2(i,1)==pe1(i,1) and pe2(i,kn+1)==pe1(i,kn+1)
+  !   Note also that pe1, pe2 are assumed to be monotonically increasing
+  !#if defined( UNICOSMP ) || defined ( NEC_SX )
+  !      do kk = km, 1, -1
+  !         do k = 1, kn+1
+  !!dir$ prefervector
+  !            do i = i1, i2
+  !               if (pe2(i,k) <= pe1(i,kk+1)) then
+  !                  k0(i,k) = kk
+  !                  write(*,*) 'kk: ', kk
+  !               endif
+  !            enddo
+  !         enddo
+  !      enddo
+  !#else
+        do i = i1, i2
+           k0(i,0) = 1
+           do k = 1, kn+1
+              k0found = -1
+              do kk = k0(i,k-1), km
+                 if (pe2(i,k) <= pe1(i,kk+1)) then
+                    k0(i,k) = kk
+                    k0found = kk
+                    exit
+                 endif
+              enddo
+              if (k0found .lt. 0) then
+                 write(fstderr,*) 'mapz error - k0found i j k (kk,pe1,pe2) = ',   &
+                    k0found, i, j, k, (kk,pe1(i,kk),pe2(i,kk),kk=1,km+1)
+                 !call endrun('MAPZ_MODULE')
+                 return
+              endif
+           enddo
+        enddo
+  !#endif
+  ! Interpolate
+        do k = 1, kn
+
+  ! Prepare contribution between pe1(i,ko(i,k)+1) and pe1(i,k0(i,k+1))
+           qsumk(:,k) = D0_0
+           do i = i1, i2
+              do kl = k0(i,k)+1, k0(i,k+1)-1
+                 qsumk(i,k) = qsumk(i,k) + dp1(i,kl)*q4(1,i,kl)
+              enddo
+           enddo
+
+           do i = i1, i2
+              kk = k0(i,k)
+  ! Consider contribution between pe1(i,kk) and pe2(i,k)
+              pl = (pe2(i,k)-pe1(i,kk)) / dp1(i,kk)
+  ! Check to see if pe2(i,k+1) and pe2(i,k) are in same pe1 interval
+              if (k0(i,k+1) == k0(i,k)) then
+                 pr = (pe2(i,k+1)-pe1(i,kk)) / dp1(i,kk)
+                 q2(i,j,k) = q4(2,i,kk) + D0_5*(q4(4,i,kk)+q4(3,i,kk)-q4(2,i,kk))  &
+                    *(pr+pl) - q4(4,i,kk)*r3*(pr*(pr+pl)+pl**2)
+              else
+  ! Consider contribution between pe2(i,k) and pe1(i,kk+1)
+                 qsum = (pe1(i,kk+1)-pe2(i,k))*(q4(2,i,kk)+D0_5*(q4(4,i,kk)+       &
+                    q4(3,i,kk)-q4(2,i,kk))*(D1_0+pl)-q4(4,i,kk)*                    &
+                    (r3*(D1_0+pl*(D1_0+pl))))
+  ! Next consider contribution between pe1(i,kk+1) and pe1(i,k0(i,k+1))
+                 qsum = qsum + qsumk(i,k)
+  ! Now consider contribution between pe1(i,k0(i,k+1)) and pe2(i,k+1)
+                 kl = k0(i,k+1)
+                 delp = pe2(i,k+1)-pe1(i,kl)
+                 esl = delp / dp1(i,kl)
+                 qsum = qsum + delp*(q4(2,i,kl)+D0_5*esl*                          &
+                    (q4(3,i,kl)-q4(2,i,kl)+q4(4,i,kl)*(D1_0-r23*esl)))
+                 q2(i,j,k) = qsum / ( pe2(i,k+1) - pe2(i,k) )
+              endif
+           enddo
+        enddo
+
+        return
+  !EOC
+  end subroutine map1_ppm
+!----------------------------------------------------------------------- 
+
+
+
+
+
+
+
 !===============================================================================
 
 end module grid_adaptation_module

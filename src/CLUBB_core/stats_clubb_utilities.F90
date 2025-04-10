@@ -2058,6 +2058,7 @@ module stats_clubb_utilities
                                         total_idx_rho_lin_spline,      & ! intent(in)
                                         rho_lin_spline_vals,           & ! intent(in)
                                         rho_lin_spline_levels,         & ! intent(in)
+                                        p_sfc,                         & ! intent(in)
                                         stats_zt, stats_zm, stats_sfc, & ! intent(inout)
                                         stats_lh_zt, stats_lh_sfc,     & ! intent(inout)
                                         stats_rad_zt, stats_rad_zm,    & ! intent(inout)
@@ -2124,6 +2125,9 @@ module stats_clubb_utilities
                    ! only used if l_different_output_gr is .true.
       gr_target    ! the grid where the values should be remapped to;
                    ! only used if l_different_output_gr is .true.
+
+    real( kind = core_rknd ), dimension(1), intent(in) :: &
+      p_sfc
 
     type (stats), intent(inout) :: &
       stats_zt, &
@@ -2236,14 +2240,16 @@ module stats_clubb_utilities
                                               total_idx_rho_lin_spline, &  ! Intent(in)
                                               rho_lin_spline_vals, &       ! Intent(in)
                                               rho_lin_spline_levels, &     ! Intent(in)
-                                              stats_zt%file, err_code )    ! Intent(in)
+                                              p_sfc, &
+                                              stats_zt%file, err_code )    ! Intent(inout)
           
           call write_netcdf_w_diff_output_gr( gr_source, gr_target, &      ! Intent(in)
                                               'zm', &                      ! Intent(in)
                                               total_idx_rho_lin_spline, &  ! Intent(in)
                                               rho_lin_spline_vals, &       ! Intent(in)
                                               rho_lin_spline_levels, &     ! Intent(in)
-                                              stats_zm%file, err_code )    ! Intent(in)
+                                              p_sfc, &
+                                              stats_zm%file, err_code )    ! Intent(inout)
         else
           call write_netcdf( stats_zt%file, err_code ) ! intent(inout)
 
@@ -2373,9 +2379,13 @@ module stats_clubb_utilities
       gr_target_placeholder    ! the grid where the values should be remapped to;
                                ! only used if l_different_output_gr is .true.
 
+    real( kind = core_rknd ), dimension(1) :: &
+      p_sfc_placeholder
+
     ! ------------------- Begin Code -------------------
     l_different_output_grid = .false.
     total_idx_rho_lin_spline_placeholder = 1
+    p_sfc_placeholder = -9999.0
 
     allocate( rho_lin_spline_vals_placeholder(total_idx_rho_lin_spline_placeholder) )
     allocate( rho_lin_spline_levels_placeholder(total_idx_rho_lin_spline_placeholder) )
@@ -2386,6 +2396,7 @@ module stats_clubb_utilities
                                     total_idx_rho_lin_spline_placeholder,         & ! intent(in)
                                     rho_lin_spline_vals_placeholder,              & ! intent(in)
                                     rho_lin_spline_levels_placeholder,            & ! intent(in)
+                                    p_sfc_placeholder,                            & ! intent(in)
                                     stats_zt, stats_zm, stats_sfc,                & ! intent(inout)
                                     stats_lh_zt, stats_lh_sfc,                    & ! intent(inout)
                                     stats_rad_zt, stats_rad_zm,                   & ! intent(inout)
@@ -2403,6 +2414,7 @@ module stats_clubb_utilities
                                                   total_idx_rho_lin_spline,      & ! intent(in)
                                                   rho_lin_spline_vals,           & ! intent(in)
                                                   rho_lin_spline_levels,         & ! intent(in)
+                                                  p_sfc,                         & ! intent(in)
                                                   stats_zt, stats_zm, stats_sfc, & ! intent(inout)
                                                   stats_lh_zt, stats_lh_sfc,     & ! intent(inout)
                                                   stats_rad_zt, stats_rad_zm,    & ! intent(inout)
@@ -2448,6 +2460,9 @@ module stats_clubb_utilities
       gr_target    ! the grid where the values should be remapped to;
                    ! only used if l_different_output_gr is .true.
 
+    real( kind = core_rknd ), dimension(1), intent(in) :: &
+      p_sfc
+
     type (stats), intent(inout) :: &
       stats_zt, &
       stats_zm, &
@@ -2476,6 +2491,7 @@ module stats_clubb_utilities
                                     total_idx_rho_lin_spline,       & ! intent(in)
                                     rho_lin_spline_vals,            & ! intent(in)
                                     rho_lin_spline_levels,          & ! intent(in)
+                                    p_sfc,                          & ! intent(in)
                                     stats_zt, stats_zm, stats_sfc,  & ! intent(inout)
                                     stats_lh_zt, stats_lh_sfc,      & ! intent(inout)
                                     stats_rad_zt, stats_rad_zm,     & ! intent(inout)

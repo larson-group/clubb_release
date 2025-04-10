@@ -76,6 +76,7 @@ module atex
                          l_add_dycore_grid, &
                          grid_remap_method, &
                          gr_dycore, rho_ds_zm_dycore, &
+                         p_sfc, &
                          err_code, &
                          wm_zt, wm_zm, & 
                          thlm_forcing, rtm_forcing, & 
@@ -153,6 +154,9 @@ module atex
   real( kind = core_rknd ), intent(in), dimension(ngrdcol,gr_dycore%nzm) :: & 
     rho_ds_zm_dycore ! Dry, static density on momentum levels on dycore grid [kg/m^3]
                      ! use this to assume the exact linear spline as the rho_ds profile
+
+  real(kind=time_precision), dimension(ngrdcol), intent(in) :: &
+    p_sfc
 
   !--------------------- InOut Variables ---------------------
     integer, intent(inout) :: &
@@ -317,7 +321,7 @@ module atex
                                              rho_ds_zm_dycore, &
                                              gr_dycore%zm, &
                                              thlm_forcing_dycore, &
-                                             R_ij )
+                                             R_ij, p_sfc )
 
         rtm_forcing = remap_vals_to_target( ngrdcol, &
                                             gr_dycore%nzm, gr%nzm, &
@@ -326,7 +330,7 @@ module atex
                                             rho_ds_zm_dycore, &
                                             gr_dycore%zm, &
                                             rtm_forcing_dycore, &
-                                            R_ij )
+                                            R_ij, p_sfc )
 
       
       else
