@@ -283,16 +283,13 @@ module clubb_driver
     use grid_adaptation_module, only: &
       setup_gr_dycore, calc_grid_dens_func, &
       normalize_grid_density, adapt_grid, &
-      calc_grid_dens_func_complete, &
+      calc_grid_dens, &
       clean_up_grid_adaptation_module  ! Procedure(s)
 
     use time_dependent_input, only: initialize_t_dependent_input ! Procedure(s)
 
     use parameter_indices, only: &
         ibv_efold
-
-    use advance_helper_module, only: &
-        calc_brunt_vaisala_freq_sqd
 
     use model_flags, only: &
       no_grid_adaptation, &
@@ -1036,15 +1033,6 @@ module clubb_driver
       brunt_term, &
       norm_min_grid_dens, &
       norm_grid_dens
-
-    real( kind = core_rknd ), dimension(:,:), allocatable :: &
-       brunt_vaisala_freq_sqd,       & ! Buoyancy frequency squared, N^2              [s^-2]
-       brunt_vaisala_freq_sqd_zt,    & ! Buoyancy frequency squared (on zt grid), N^2 [s^-2]
-       brunt_vaisala_freq_sqd_mixed, & ! A mixture of dry and moist N^2               [s^-2]
-       brunt_vaisala_freq_sqd_dry,   & ! dry N^2                                      [s^-2]
-       brunt_vaisala_freq_sqd_moist, & ! moist N^2                                    [s^-2]
-       brunt_vaisala_freq_sqd_smth     ! Mix between dry and moist N^2 that is
-                                       ! smoothed in the vertical                     [s^-2]
 
     real( kind = core_rknd ) :: &
       lambda
@@ -1935,13 +1923,6 @@ module clubb_driver
     ! <V_hm'hm'> = <V_hm'hm'>|_impc * <hm> + <V_hm'hm'>|_expc.
     allocate( hydromet_vel_covar_zt_impc(ngrdcol, gr%nzt,hydromet_dim) )
     allocate( hydromet_vel_covar_zt_expc(ngrdcol, gr%nzt,hydromet_dim) )
-
-    allocate( brunt_vaisala_freq_sqd(ngrdcol, gr%nzm) )
-    allocate( brunt_vaisala_freq_sqd_zt(ngrdcol, gr%nzt) )
-    allocate( brunt_vaisala_freq_sqd_mixed(ngrdcol, gr%nzm) )
-    allocate( brunt_vaisala_freq_sqd_dry(ngrdcol, gr%nzm) )
-    allocate( brunt_vaisala_freq_sqd_moist(ngrdcol, gr%nzm) )
-    allocate( brunt_vaisala_freq_sqd_smth(ngrdcol, gr%nzm) )
 
     allocate( ddzt_um(ngrdcol, gr%nzm) )
     allocate( ddzt_vm(ngrdcol, gr%nzm) )
@@ -3310,63 +3291,20 @@ module clubb_driver
 !
       !  if ( grid_adapt_in_time_method == Lscale_and_wp2 ) then
 
-          !call calc_brunt_vaisala_freq_sqd( gr%nzm, gr%nzt, ngrdcol, gr, thlm,            & ! In
-          !                            exner, rtm, rcm, p_in_Pa, thvm,                     & ! In
-          !                            ice_supersat_frac,                                  & ! In
-          !                            clubb_config_flags%saturation_formula,              & ! In
-          !                            clubb_config_flags%l_brunt_vaisala_freq_moist,      & ! In
-          !                            clubb_config_flags%l_use_thvm_in_bv_freq,           & ! In
-          !                            clubb_config_flags%l_modify_limiters_for_cnvg_test, & ! In
-          !                            clubb_params(:,ibv_efold),                          & ! In
-          !                            brunt_vaisala_freq_sqd,                             & ! Out
-          !                            brunt_vaisala_freq_sqd_mixed,                       & ! Out
-          !                            brunt_vaisala_freq_sqd_dry,                         & ! Out
-          !                            brunt_vaisala_freq_sqd_moist,                       & ! Out
-          !                            brunt_vaisala_freq_sqd_smth )                         ! Out
-!
-          !Lscale_zm = zt2zm( gr%nzm, gr%nzt, ngrdcol, gr, Lscale )
-          !! Calculate the norm of the vertical derivative of the mean horizontal wind speed
-          !! To feed into the calculation of the Richardson number Ri_zm
-          !ddzt_um = ddzt( gr%nzm, gr%nzt, ngrdcol, gr, um )
-          !ddzt_vm = ddzt( gr%nzm, gr%nzt, ngrdcol, gr, vm )
-!
-          !!$acc parallel loop gang vector collapse(2) default(present)
-          !do k = 1, gr%nzm
-          !  do i = 1, ngrdcol
-          !    ddzt_umvm_sqd(i,k) = ddzt_um(i,k)**2 + ddzt_vm(i,k)**2
-          !  end do
-          !end do
-          !call calc_grid_dens_func( ngrdcol, gr%nzm, gr%zm, &
-          !                          gr, &
-          !                          gr_dycore, &
-          !                          Lscale_zm, wp2, &
-          !                          ddzt_umvm_sqd, &
-          !                          gr%zm(1,1), gr%zm(1,gr%nzm), &
-          !                          gr%nzm, &
-          !                          pdf_params, &
-          !                          brunt_vaisala_freq_sqd, &
-          !                          gr_dens_z, gr_dens, &
-          !                          alt_term, lscale_term, &
-          !                          lscale_term_time_avg, &
-          !                          chi_term, brunt_term )
-
-
-          call calc_grid_dens_func_complete( ngrdcol, gr%nzm, gr%zm, &
-                                           gr, &
-                                           gr_dycore, &
-                                           um, vm, &
-                                           Lscale, wp2, &
-                                           gr%nzm, &
-                                           pdf_params, &
-                                           thlm,                  & ! In
-                                           exner, rtm, rcm, p_in_Pa, thvm,                     & ! In
-                                           ice_supersat_frac,                                  & ! In
-                                           clubb_params(:,ibv_efold), &
-                                           clubb_config_flags, &
-                                           gr_dens_z, gr_dens, &
-                                           alt_term, lscale_term, &
-                                           lscale_term_time_avg, &
-                                           chi_term, brunt_term )
+          ! TODO also stop time here for adaptation until normaizatyion or decide if adapt
+          call calc_grid_dens( ngrdcol, gr, &
+                               um, vm, &
+                               Lscale, wp2, &
+                               pdf_params, &
+                               thlm, exner, rtm, &
+                               rcm, p_in_Pa, thvm, &
+                               ice_supersat_frac, &
+                               clubb_params(:,ibv_efold), &
+                               clubb_config_flags, &
+                               gr_dens_z, gr_dens, &
+                               alt_term, lscale_term, &
+                               lscale_term_time_avg, &
+                               chi_term, brunt_term )
         !else
       !
         !  write(fstderr,*) 'There is currently no grid adaptation method implemented for ', &
@@ -3399,6 +3337,8 @@ module clubb_driver
             call stat_update_var( stats_metadata%ibrunt_term, brunt_term, stats_zm(i) )
           end do
         endif
+
+
       !endif
 
       ! End statistics timestep
@@ -3492,7 +3432,8 @@ module clubb_driver
         ! TODO replace itime with time_current, since itime is only iteration and time_current is actual time...
 
         call adapt_grid( iunit_grid_adaptation, itime, ngrdcol, gr%nzm, &        ! Intent(in)
-                         gr_dens_z, gr_dens, &                                   ! Intent(in)
+                         gr%zm, norm_grid_dens, &                               ! Intent(in)
+                         gr%zm, norm_min_grid_dens, &
                          sfc_elevation, l_implemented, &                         ! Intent(in)
                          hydromet_dim, sclr_dim, edsclr_dim, &                   ! Intent(in)
                          thvm, gr%nzt, p_sfc, &                                  ! Intent(in)

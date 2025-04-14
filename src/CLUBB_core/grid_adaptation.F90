@@ -23,7 +23,7 @@ module grid_adaptation_module
             remap_vals_to_target, &
             normalize_grid_density, &
             adapt_grid, calc_grid_dens_func, &
-            calc_grid_dens_func_complete, &
+            calc_grid_dens, &
             clean_up_grid_adaptation_module
 
   private :: check_remap_conservation, check_remap_consistency, check_remap_monotonicity, &
@@ -2062,6 +2062,114 @@ module grid_adaptation_module
 
   end subroutine normalize_grid_density
 
+  subroutine create_grid_from_normalized_grid_density( ngrdcol, &
+                                                       gr_dens_norm_idx, &
+                                                       gr_dens_norm_z, gr_dens_norm, &
+                                                       min_gr_dens_norm_z, min_gr_dens_norm, &
+                                                       num_levels, &
+                                                       threshold, &
+                                                       grid_heights, &
+                                                       l_adapt_grid )
+    ! Description:
+    ! Creates the grid from some unnormalized  minimum density function and the unnormalized
+    ! grid density function following the equidistribution principle.
+
+    ! References:
+    ! None
+    !-----------------------------------------------------------------------
+
+    use clubb_precision, only: &
+      core_rknd ! Variable(s)
+
+    use interpolation, only: &
+      zlinterp_fnc
+
+    implicit none
+
+    !--------------------- Input Variables ---------------------
+    integer, intent(in) :: & 
+      ngrdcol, &
+      gr_dens_norm_idx, &     ! total numer of indices of gr_dens_z and gr_dens []
+      num_levels         ! number of levels the new grid should have []
+
+    real( kind = core_rknd ), intent(in) :: &
+      threshold ! threshold which decides if grid should be adapted or not
+
+    real( kind = core_rknd ), dimension(ngrdcol,gr_dens_norm_idx), intent(in) ::  &
+      min_gr_dens_norm_z,  & 
+      min_gr_dens_norm,  & 
+      gr_dens_norm_z,  &   ! the z coordinates of the connection points of the piecewise linear
+                      ! grid density function [m]
+      gr_dens_norm         ! the values of the density function at the given z coordinates of the
+                      ! connection points of the piecewise linear grid density function
+                      ! [# levs/meter]
+
+    !--------------------- Output Variable ---------------------
+    real( kind = core_rknd ), dimension(ngrdcol,num_levels), intent(out) :: &
+      grid_heights ! the heights of the newly created grid, from bottom to top [m]
+
+    logical, dimension(ngrdcol), intent(out) :: &
+      l_adapt_grid ! whether the grid should be adapted or not
+
+    !--------------------- Local Variables ---------------------
+    integer :: grid_heights_idx, i, j
+
+    real( kind = core_rknd ) ::  &
+      grid_sfc,  &    ! height of the grids surface [m]
+      grid_top        ! height of the top of the grid [m]
+
+    !--------------------- Begin Code --------------------- ! TODO fofo
+    grid_sfc = gr_dens_norm_z(1,1)
+    grid_top = gr_dens_norm_z(1,gr_dens_norm_idx)
+
+    ! decide if grid should be adapted or not
+    if ( .not. allocated( gr_dens_old_z_global ) .and. .not. allocated( gr_dens_old_global ) ) then
+      error stop 'gr_dens_old_z_global and gr_dens_old_global were not allocated...'
+    end if
+    l_adapt_grid = decide_if_grid_adapt_helper( ngrdcol, &
+                                                gr_dens_old_idx_global, &
+                                                gr_dens_old_z_global, &
+                                                gr_dens_old_global, &
+                                                gr_dens_norm_idx, &
+                                                gr_dens_norm_z, &
+                                                gr_dens_norm, &
+                                                threshold )
+
+    ! create grid from normalized grid density function
+    do i = 1, ngrdcol
+      if ( l_adapt_grid(i) ) then
+        ! store new normalized grid density as old grid density for next adaptation iteration
+        gr_dens_old_z_global(i,:) = gr_dens_norm_z(i,:)
+        gr_dens_old_global(i,:) = gr_dens_norm(i,:)
+        ! only create grid if it should actually be adapted
+        grid_heights(i,:) = create_grid_from_normalized_grid_density_func( num_levels, &
+                                                                           gr_dens_norm_idx, &
+                                                                           gr_dens_norm_z(i,:), &
+                                                                           gr_dens_norm(i,:) )
+      end if
+    end do
+
+    if ( clubb_at_least_debug_level( 2 ) ) then
+
+        grid_heights_idx = size(grid_heights, 2)
+
+        do i = 1, ngrdcol
+          if ( l_adapt_grid(i) ) then
+            ! only check if grid was actually adapted
+            call check_grid( grid_heights_idx, grid_heights(i,:), &            ! Intent(in)
+                             num_levels, &                                     ! Intent(in)
+                             gr_dens_norm_idx, &                                    ! Intent(in)
+                             min_gr_dens_norm_z(i,:), min_gr_dens_norm(i,:), & ! Intent(in)
+                             grid_sfc, grid_top )                              ! Intent(in)
+          end if
+        end do
+
+    end if 
+
+    return
+
+  end subroutine create_grid_from_normalized_grid_density
+
   subroutine create_grid_from_grid_density_func( ngrdcol, &
                                                  iunit, itime, &
                                                  gr_dens_idx, &
@@ -2339,7 +2447,419 @@ module grid_adaptation_module
 
   end subroutine check_grid
 
-  subroutine adapt_grid( iunit, itime, ngrdcol, total_idx_density_func, &
+  subroutine adapt_grid( iunit, itime, ngrdcol, gr_dens_norm_idx, &
+                         gr_dens_norm_z, gr_dens_norm, &
+                         min_gr_dens_norm_z, min_gr_dens_norm, &
+                         sfc_elevation, l_implemented, &
+                         hydromet_dim, sclr_dim, edsclr_dim, &
+                         thvm, idx_thvm, p_sfc, &
+                         grid_remap_method, &
+                         gr, &
+                         thlm_forcing, rtm_forcing, um_forcing, vm_forcing, &
+                         sclrm_forcing, edsclrm_forcing, wprtp_forcing, &
+                         wpthlp_forcing, rtp2_forcing, thlp2_forcing, &
+                         rtpthlp_forcing, wm_zm, wm_zt, &
+                         rtm_ref, thlm_ref, um_ref, vm_ref, ug, vg, &
+                         p_in_Pa, rho_zm, rho, exner, &
+                         rho_ds_zm, rho_ds_zt, invrs_rho_ds_zm, &
+                         invrs_rho_ds_zt, thv_ds_zm, thv_ds_zt, &
+                         rfrzm, wphydrometp, &
+                         wp2hmp, rtphmp_zt, thlphmp_zt, &
+                         um, vm, upwp, vpwp, up2, vp2, up3, vp3, &
+                         thlm, rtm, wprtp, wpthlp, &
+                         wp2, wp3, rtp2, rtp3, thlp2, thlp3, rtpthlp, &
+                         sclrm, sclrp2, sclrp3, sclrprtp, sclrpthlp, &
+                         wpsclrp, edsclrm, &
+                         rcm, cloud_frac, &
+                         wpthvp, wp2thvp, rtpthvp, thlpthvp, &
+                         sclrpthvp, &
+                         wp2rtp, wp2thlp, uprcp, vprcp, rc_coef_zm, wp4, &
+                         wpup2, wpvp2, wp2up2, wp2vp2, ice_supersat_frac, &
+                         um_pert, vm_pert, upwp_pert, vpwp_pert, &
+                         Kh_zm, Kh_zt, &
+                         thlprcp, wprcp, w_up_in_cloud, w_down_in_cloud, &
+                         cloudy_updraft_frac, cloudy_downdraft_frac, &
+                         rcm_in_layer, cloud_cover, invrs_tau_zm, &
+                         Lscale )
+    ! Description:
+    ! Adapts the grid based on the density function and interpolates all values to the new grid.
+    !-----------------------------------------------------------------------
+
+    use clubb_precision, only: &
+      core_rknd ! Variable(s)
+    
+    use grid_class, only: &
+      setup_grid
+
+    use calc_pressure, only: &
+      init_pressure    ! Procedure(s)
+
+    use model_flags, only: &
+      cons_ullrich_remap
+
+    use error_code, only: &
+      clubb_fatal_error
+
+    implicit none
+
+    !--------------------- Input Variables ---------------------
+    integer, intent(in) :: &
+      iunit, &
+      itime, &
+      ngrdcol, &
+      hydromet_dim, &
+      sclr_dim, &
+      edsclr_dim, &
+      gr_dens_norm_idx, & ! total numer of indices of density_func_z and density_func_dens []
+      idx_thvm   ! numer of indices of thvm
+
+    real( kind = core_rknd ), dimension(gr_dens_norm_idx), intent(in) ::  &
+      min_gr_dens_norm_z, min_gr_dens_norm, &
+      gr_dens_norm_z,  &   ! the height values of the connection points of the piecewise linear
+                           ! grid density function/profile [m]
+      gr_dens_norm    ! the density values of the connection points of the piecewise linear
+                           ! grid density function/profile [# levs/m]
+
+    real( kind = core_rknd ), dimension(ngrdcol), intent(in) ::  &
+      sfc_elevation, p_sfc
+
+    logical, intent(in) :: l_implemented
+
+    real( kind = core_rknd ), dimension(ngrdcol, idx_thvm), intent(in) ::  &
+      thvm
+
+    integer, intent(in) :: &
+      grid_remap_method ! specifies what remapping method should be used
+
+    !--------------------- Output Variable ---------------------
+
+    !--------------------- In/Out Variable ---------------------
+    type( grid ), intent(inout) :: gr
+
+    real( kind = core_rknd ), intent(inout), dimension(ngrdcol,gr%nzt) ::  &
+      thlm_forcing,    & ! theta_l forcing (thermodynamic levels)    [K/s]
+      rtm_forcing,     & ! r_t forcing (thermodynamic levels)        [(kg/kg)/s]
+      um_forcing,      & ! u wind forcing (thermodynamic levels)     [m/s/s]
+      vm_forcing,      & ! v wind forcing (thermodynamic levels)     [m/s/s]
+      wm_zt,           & ! w mean wind component on thermo. levels   [m/s]
+      rho,             & ! Air density on thermodynamic levels       [kg/m^3]
+      rho_ds_zt,       & ! Dry, static density on thermo. levels     [kg/m^3]
+      invrs_rho_ds_zt, & ! Inv. dry, static density @ thermo. levs.  [m^3/kg]
+      thv_ds_zt,       & ! Dry, base-state theta_v on thermo. levs.  [K]
+      rfrzm              ! Total ice-phase water mixing ratio        [kg/kg]
+
+    real( kind = core_rknd ), intent(inout), dimension(ngrdcol,gr%nzm) ::  &
+      wprtp_forcing,   & ! <w'r_t'> forcing (momentum levels)    [m*K/s^2]
+      wpthlp_forcing,  & ! <w'th_l'> forcing (momentum levels)   [m*(kg/kg)/s^2]
+      rtp2_forcing,    & ! <r_t'^2> forcing (momentum levels)    [(kg/kg)^2/s]
+      thlp2_forcing,   & ! <th_l'^2> forcing (momentum levels)   [K^2/s]
+      rtpthlp_forcing, & ! <r_t'th_l'> forcing (momentum levels) [K*(kg/kg)/s]
+      wm_zm,           & ! w mean wind component on momentum levels  [m/s]
+      rho_zm,          & ! Air density on momentum levels            [kg/m^3]
+      rho_ds_zm,       & ! Dry, static density on momentum levels    [kg/m^3]
+      invrs_rho_ds_zm, & ! Inv. dry, static density @ momentum levs. [m^3/kg]
+      thv_ds_zm          ! Dry, base-state theta_v on momentum levs. [K]
+
+    real( kind = core_rknd ), dimension(ngrdcol,gr%nzm, hydromet_dim), intent(inout) :: &
+      wphydrometp    ! Covariance of w and a hydrometeor   [(m/s) <hm units>]
+
+    real( kind = core_rknd ), dimension(ngrdcol,gr%nzt, hydromet_dim), intent(inout) :: &
+      wp2hmp,      & ! Third moment: <w'^2> * <hydro.'>    [(m/s)^2 <hm units>]
+      rtphmp_zt,   & ! Covariance of rt and a hydrometeor  [(kg/kg) <hm units>]
+      thlphmp_zt     ! Covariance of thl and a hydrometeor [K <hm units>]
+
+    ! Passive scalar variables
+    real( kind = core_rknd ), intent(inout), dimension(ngrdcol,gr%nzt,sclr_dim) :: &
+      sclrm_forcing    ! Passive scalar forcing         [{units vary}/s]
+
+    ! Eddy passive scalar variables
+    real( kind = core_rknd ), intent(inout), dimension(ngrdcol,gr%nzt,edsclr_dim) :: &
+      edsclrm_forcing  ! Eddy passive scalar forcing    [{units vary}/s]
+
+    ! Reference profiles (used for nudging, sponge damping, and Coriolis effect)
+    real( kind = core_rknd ), dimension(ngrdcol,gr%nzt), intent(inout) ::  &
+      rtm_ref,  & ! Initial total water mixing ratio             [kg/kg]
+      thlm_ref, & ! Initial liquid water potential temperature   [K]
+      um_ref,   & ! Initial u wind; Michael Falk                 [m/s]
+      vm_ref,   & ! Initial v wind; Michael Falk                 [m/s]
+      ug,       & ! u geostrophic wind                           [m/s]
+      vg          ! v geostrophic wind                           [m/s]
+
+    ! These are prognostic or are planned to be in the future
+    real( kind = core_rknd ), intent(inout), dimension(ngrdcol,gr%nzt) ::  &
+      um,      & ! u mean wind component (thermodynamic levels)   [m/s]
+      vm,      & ! v mean wind component (thermodynamic levels)   [m/s]
+      up3,     & ! u'^3 (thermodynamic levels)                    [m^3/s^3]
+      vp3,     & ! v'^3 (thermodynamic levels)                    [m^3/s^3]
+      rtm,     & ! total water mixing ratio, r_t (thermo. levels) [kg/kg]
+      thlm,    & ! liq. water pot. temp., th_l (thermo. levels)   [K]
+      rtp3,    & ! r_t'^3 (thermodynamic levels)                  [(kg/kg)^3]
+      thlp3,   & ! th_l'^3 (thermodynamic levels)                 [K^3]
+      wp3        ! w'^3 (thermodynamic levels)                    [m^3/s^3]
+
+    real( kind = core_rknd ), intent(inout), dimension(ngrdcol,gr%nzm) ::  &
+      upwp,    & ! u'w' (momentum levels)                         [m^2/s^2]
+      vpwp,    & ! v'w' (momentum levels)                         [m^2/s^2]
+      up2,     & ! u'^2 (momentum levels)                         [m^2/s^2]
+      vp2,     & ! v'^2 (momentum levels)                         [m^2/s^2]
+      wprtp,   & ! w' r_t' (momentum levels)                      [(kg/kg) m/s]
+      wpthlp,  & ! w' th_l' (momentum levels)                     [(m/s) K]
+      rtp2,    & ! r_t'^2 (momentum levels)                       [(kg/kg)^2]
+      thlp2,   & ! th_l'^2 (momentum levels)                      [K^2]
+      rtpthlp, & ! r_t' th_l' (momentum levels)                   [(kg/kg) K]
+      wp2        ! w'^2 (momentum levels)                         [m^2/s^2]
+
+    ! Passive scalar variables
+    real( kind = core_rknd ), intent(inout), dimension(ngrdcol,gr%nzt,sclr_dim) :: &
+      sclrm,     & ! Passive scalar mean (thermo. levels) [units vary]
+      sclrp3       ! sclr'^3 (thermodynamic levels)       [{units vary}^3]
+
+    real( kind = core_rknd ), intent(inout), dimension(ngrdcol,gr%nzm,sclr_dim) :: &
+      wpsclrp,   & ! w'sclr' (momentum levels)            [{units vary} m/s]
+      sclrp2,    & ! sclr'^2 (momentum levels)            [{units vary}^2]
+      sclrprtp,  & ! sclr'rt' (momentum levels)           [{units vary} (kg/kg)]
+      sclrpthlp    ! sclr'thl' (momentum levels)          [{units vary} K]
+
+    real( kind = core_rknd ), intent(inout), dimension(ngrdcol,gr%nzt) ::  &
+      p_in_Pa, & ! Air pressure (thermodynamic levels)       [Pa]
+      exner      ! Exner function (thermodynamic levels)     [-]
+
+    real( kind = core_rknd ), intent(inout), dimension(ngrdcol,gr%nzt) ::  &
+      rcm,        & ! cloud water mixing ratio, r_c (thermo. levels) [kg/kg]
+      cloud_frac, & ! cloud fraction (thermodynamic levels)          [-]
+      wp2thvp       ! < w'^2 th_v' > (thermodynamic levels)          [m^2/s^2 K]
+
+    real( kind = core_rknd ), intent(inout), dimension(ngrdcol,gr%nzm) ::  &
+      wpthvp,     & ! < w' th_v' > (momentum levels)                 [kg/kg K]
+      rtpthvp,    & ! < r_t' th_v' > (momentum levels)               [kg/kg K]
+      thlpthvp      ! < th_l' th_v' > (momentum levels)              [K^2]
+
+    real( kind = core_rknd ), intent(inout), dimension(ngrdcol,gr%nzm,sclr_dim) :: &
+      sclrpthvp     ! < sclr' th_v' > (momentum levels)   [units vary]
+
+    real( kind = core_rknd ), intent(inout), dimension(ngrdcol,gr%nzt) ::  &
+      wp2rtp,            & ! w'^2 rt' (thermodynamic levels)      [m^2/s^2 kg/kg]
+      wp2thlp,           & ! w'^2 thl' (thermodynamic levels)     [m^2/s^2 K]
+      wpup2,             & ! w'u'^2 (thermodynamic levels)        [m^3/s^3]
+      wpvp2,             & ! w'v'^2 (thermodynamic levels)        [m^3/s^3]
+      ice_supersat_frac    ! ice cloud fraction (thermo. levels)  [-]
+
+    real( kind = core_rknd ), intent(inout), dimension(ngrdcol,gr%nzm) ::  &
+      uprcp,             & ! < u' r_c' > (momentum levels)        [(m/s)(kg/kg)]
+      vprcp,             & ! < v' r_c' > (momentum levels)        [(m/s)(kg/kg)]
+      rc_coef_zm,        & ! Coef of X'r_c' in Eq. (34) (m-levs.) [K/(kg/kg)]
+      wp4,               & ! w'^4 (momentum levels)               [m^4/s^4]
+      wp2up2,            & ! w'^2 u'^2 (momentum levels)          [m^4/s^4]
+      wp2vp2               ! w'^2 v'^2 (momentum levels)          [m^4/s^4]
+
+    ! Variables used to track perturbed version of winds.
+    real( kind = core_rknd ), intent(inout), dimension(ngrdcol,gr%nzt) :: &
+      um_pert,   & ! perturbed <u>       [m/s]
+      vm_pert      ! perturbed <v>       [m/s]
+
+    real( kind = core_rknd ), intent(inout), dimension(ngrdcol,gr%nzm) :: &
+      upwp_pert, & ! perturbed <u'w'>    [m^2/s^2]
+      vpwp_pert    ! perturbed <v'w'>    [m^2/s^2]
+
+    real( kind = core_rknd ), intent(inout), dimension(ngrdcol,gr%nzt,edsclr_dim) :: &
+        edsclrm   ! Eddy passive scalar mean (thermo. levels)   [units vary]
+
+    real( kind = core_rknd ), intent(inout), dimension(ngrdcol,gr%nzt) ::  &
+      rcm_in_layer, & ! rcm in cloud layer                              [kg/kg]
+      cloud_cover     ! cloud cover                                     [-]
+
+    ! Variables that need to be output for use in host models
+    real( kind = core_rknd ), intent(inout), dimension(ngrdcol,gr%nzm) ::  &
+      wprcp,                 & ! w'r_c' (momentum levels)              [(kg/kg) m/s]
+      invrs_tau_zm             ! One divided by tau on zm levels       [1/s]
+
+    real( kind = core_rknd ), intent(inout), dimension(ngrdcol,gr%nzt) ::  &
+      w_up_in_cloud,         & ! Average cloudy updraft velocity       [m/s]
+      w_down_in_cloud,       & ! Average cloudy downdraft velocity     [m/s]
+      cloudy_updraft_frac,   & ! cloudy updraft fraction               [-]
+      cloudy_downdraft_frac    ! cloudy downdraft fraction             [-]
+
+    real( kind = core_rknd ), dimension(ngrdcol,gr%nzt), intent(inout) :: &
+      Kh_zt    ! Eddy diffusivity coefficient on thermodynamic levels   [m^2/s]
+
+    real( kind = core_rknd ), dimension(ngrdcol,gr%nzm), intent(inout) :: &
+      Kh_zm    ! Eddy diffusivity coefficient on momentum levels        [m^2/s]
+
+    real( kind = core_rknd ), dimension(ngrdcol,gr%nzm), intent(inout) :: &
+      thlprcp    ! thl'rc'              [K kg/kg]
+
+    real( kind = core_rknd ), dimension(ngrdcol,gr%nzt), intent(inout) :: &
+      Lscale     ! Length scale         [m]
+
+    !--------------------- Local Variables ---------------------
+    integer :: &
+        num_levels, &                ! number of levels the new grid should have []
+        total_idx_rho_lin_spline, &  ! total number of indices of the rho density
+                                     ! piecewise linear function []
+        grid_type, &
+        err_code, &
+        i, k
+
+    real( kind = core_rknd ) ::  &
+      equi_dens   ! density of the equidistant grid [# levs/meter]
+
+    real( kind = core_rknd ), dimension(ngrdcol) ::  &
+      deltaz
+
+    real( kind = core_rknd ), dimension(ngrdcol,gr%nzm) ::  &
+      new_gr_zm      ! zm levels for the adapted grid based on the density function [m]
+
+    real( kind = core_rknd ), dimension(ngrdcol,gr%nzt) ::  &
+      thermodynamic_heights_placeholder  ! placeholder for the zt levels, but not needed
+
+    real( kind = core_rknd ), dimension(ngrdcol, gr%nzm) ::  &
+      rho_lin_spline_vals, &
+      rho_lin_spline_levels
+    
+    type( grid ) :: new_gr
+
+    real( kind = core_rknd ), dimension(ngrdcol, gr%nzt) ::  &
+      thvm_new_grid
+
+    real( kind = core_rknd ), dimension(ngrdcol, gr%nzm) ::  &
+      p_in_Pa_zm, exner_zm ! just placeholder variables; are only needed for subroutine call
+
+    real( kind = core_rknd ) ::  &
+      lambda, & ! a factor between 0 and 1 defining how close you want to get to an equidistant grid
+      threshold ! some threshold to decide wether grid should be adapted or not
+
+    real( kind = core_rknd ), dimension(gr%nzm,gr%nzm) :: &
+      R_ij_zm
+
+    real( kind = core_rknd ), dimension(gr%nzt,gr%nzt) :: &
+      R_ij_zt
+
+    real( kind=core_rknd ), dimension(ngrdcol,gr%nzt+2) :: levels_source_zm_vals
+
+    real( kind=core_rknd ), dimension(ngrdcol,gr%nzt+2) :: levels_target_zm_vals
+
+    logical, dimension(ngrdcol) :: l_adapt_grid
+
+    real( kind = core_rknd ), dimension(1,10) ::  &
+      input_test, output_test
+
+    !--------------------- Begin Code ---------------------
+    ! Setup the new grid
+    num_levels = gr%nzm
+    equi_dens = (num_levels-1)/(gr%zm(1,gr%nzm) - gr%zm(1,1))
+    ! lalala
+    !threshold = 3.0e-6
+    threshold = 4.0e-6
+    !threshold = 5.0e-6
+    !threshold = 6.0e-6
+    !threshold = 7.0e-6
+    
+    !threshold = 8.0e-6
+    !threshold = 9.0e-6
+    !threshold = 1.0e-5
+    !threshold = 2.0e-5
+    !lambda = 0.00000000000000000001
+    !lambda = 0.3
+
+    ! Allocate and set gr_dens_old_global if not already allocated
+    if ( .not. allocated( gr_dens_old_global ) ) then
+      gr_dens_old_idx_global = gr%nzm
+      allocate( gr_dens_old_global(ngrdcol,gr%nzm) )
+      gr_dens_old_global = gr%invrs_dzm
+    end if
+
+    if ( .not. allocated( gr_dens_old_z_global ) ) then
+      allocate( gr_dens_old_z_global(ngrdcol,gr%nzm) )
+      gr_dens_old_z_global = gr%zm
+    end if
+
+    !call create_grid_from_grid_density_func( ngrdcol, &
+    !                                         iunit, itime, &
+    !                                         total_idx_density_func, &
+    !                                         density_func_z, density_func_dens, &
+    !                                         lambda, &
+    !                                         num_levels, &
+    !                                         threshold, &
+    !                                         new_gr_zm, &
+    !                                         l_adapt_grid )
+
+    call create_grid_from_normalized_grid_density( ngrdcol, &
+                                                   gr_dens_norm_idx, &
+                                                   gr_dens_norm_z, gr_dens_norm, &
+                                                   min_gr_dens_norm_z, min_gr_dens_norm, &
+                                                   num_levels, &
+                                                   threshold, &
+                                                   new_gr_zm, &
+                                                   l_adapt_grid )
+    
+
+    do i = 1, ngrdcol
+      deltaz(i) = 0.0_core_rknd
+    end do
+    grid_type = 3
+
+    ! TODOlala adjust for ngrdcol > 1
+    if ( l_adapt_grid(1) ) then
+      call setup_grid( num_levels, ngrdcol, sfc_elevation, l_implemented, &   ! intent(in)
+                       grid_type, deltaz, gr%zm(:,1), gr%zm(:,num_levels), &  ! intent(in)
+                       new_gr_zm, thermodynamic_heights_placeholder, &        ! intent(in)
+                       new_gr, err_code )                                     ! intent(inout)
+
+      if ( err_code == clubb_fatal_error ) then
+        error stop "Error in CLUBB calling setup_grid"
+      end if
+
+      Lscale_counter = 0
+      do k = 1, gr%nzm
+        cumulative_Lscale(k) = 0.0_core_rknd
+      end do
+
+      ! Set the density values to use for interpolation for mass calculation
+      total_idx_rho_lin_spline = gr%nzm
+      rho_lin_spline_vals = rho_ds_zm
+      rho_lin_spline_levels = gr%zm
+
+      call remap_all_clubb_core_vals( ngrdcol, total_idx_rho_lin_spline, &
+                                      rho_lin_spline_vals, rho_lin_spline_levels, &
+                                      l_implemented, &
+                                      hydromet_dim, sclr_dim, edsclr_dim, &
+                                      thvm, idx_thvm, p_sfc, &
+                                      grid_remap_method, &
+                                      gr, new_gr, &
+                                      thlm_forcing, rtm_forcing, um_forcing, vm_forcing, &
+                                      sclrm_forcing, edsclrm_forcing, wprtp_forcing, &
+                                      wpthlp_forcing, rtp2_forcing, thlp2_forcing, &
+                                      rtpthlp_forcing, wm_zm, wm_zt, &
+                                      rtm_ref, thlm_ref, um_ref, vm_ref, ug, vg, &
+                                      p_in_Pa, rho_zm, rho, exner, &
+                                      rho_ds_zm, rho_ds_zt, invrs_rho_ds_zm, &
+                                      invrs_rho_ds_zt, thv_ds_zm, thv_ds_zt, &
+                                      rfrzm, wphydrometp, &
+                                      wp2hmp, rtphmp_zt, thlphmp_zt, &
+                                      um, vm, upwp, vpwp, up2, vp2, up3, vp3, &
+                                      thlm, rtm, wprtp, wpthlp, &
+                                      wp2, wp3, rtp2, rtp3, thlp2, thlp3, rtpthlp, &
+                                      sclrm, sclrp2, sclrp3, sclrprtp, sclrpthlp, &
+                                      wpsclrp, edsclrm, &
+                                      rcm, cloud_frac, &
+                                      wpthvp, wp2thvp, rtpthvp, thlpthvp, &
+                                      sclrpthvp, &
+                                      wp2rtp, wp2thlp, uprcp, vprcp, rc_coef_zm, wp4, &
+                                      wpup2, wpvp2, wp2up2, wp2vp2, ice_supersat_frac, &
+                                      um_pert, vm_pert, upwp_pert, vpwp_pert, &
+                                      Kh_zm, Kh_zt, &
+                                      thlprcp, wprcp, w_up_in_cloud, w_down_in_cloud, &
+                                      cloudy_updraft_frac, cloudy_downdraft_frac, &
+                                      rcm_in_layer, cloud_cover, invrs_tau_zm, &
+                                      Lscale )
+
+      
+      gr = new_gr
+    end if
+
+  end subroutine adapt_grid
+
+  subroutine adapt_grid_old( iunit, itime, ngrdcol, total_idx_density_func, &
                          density_func_z, density_func_dens, &
                          sfc_elevation, l_implemented, &
                          hydromet_dim, sclr_dim, edsclr_dim, &
@@ -3538,28 +4058,1117 @@ module grid_adaptation_module
       gr = new_gr
     end if
 
-  end subroutine adapt_grid
+  end subroutine adapt_grid_old
 
-  ! TODO rename to calc_grid_dens
-  subroutine calc_grid_dens_func_complete( ngrdcol, nzm, zm, &
-                                           gr, &
-                                           gr_dycore, &
-                                           um, vm, &
-                                           Lscale_zt, wp2, &
-                                           !grid_sfc, grid_top, &
-                                           num_levels, &
-                                           pdf_params, &
-                                           thlm,                  & ! In
-                                           exner, rtm, rcm, p_in_Pa, thvm,                     & ! In
-                                           ice_supersat_frac,                                  & ! In
-                                           bv_efold, &
-                                           clubb_config_flags, &
-                                           gr_dens_z, gr_dens, &
-                                           inv_alt_term, lscale_term, &
-                                           lscale_term_time_avg, &
-                                           chi_term, brunt_vaisala_term )
+  subroutine remap_all_clubb_core_vals( ngrdcol, total_idx_rho_lin_spline, &
+                                        rho_lin_spline_vals, rho_lin_spline_levels, &
+                                        l_implemented, &
+                                        hydromet_dim, sclr_dim, edsclr_dim, &
+                                        thvm, idx_thvm, p_sfc, &
+                                        grid_remap_method, &
+                                        gr, new_gr, &
+                                        thlm_forcing, rtm_forcing, um_forcing, vm_forcing, &
+                                        sclrm_forcing, edsclrm_forcing, wprtp_forcing, &
+                                        wpthlp_forcing, rtp2_forcing, thlp2_forcing, &
+                                        rtpthlp_forcing, wm_zm, wm_zt, &
+                                        rtm_ref, thlm_ref, um_ref, vm_ref, ug, vg, &
+                                        p_in_Pa, rho_zm, rho, exner, &
+                                        rho_ds_zm, rho_ds_zt, invrs_rho_ds_zm, &
+                                        invrs_rho_ds_zt, thv_ds_zm, thv_ds_zt, &
+                                        rfrzm, wphydrometp, &
+                                        wp2hmp, rtphmp_zt, thlphmp_zt, &
+                                        um, vm, upwp, vpwp, up2, vp2, up3, vp3, &
+                                        thlm, rtm, wprtp, wpthlp, &
+                                        wp2, wp3, rtp2, rtp3, thlp2, thlp3, rtpthlp, &
+                                        sclrm, sclrp2, sclrp3, sclrprtp, sclrpthlp, &
+                                        wpsclrp, edsclrm, &
+                                        rcm, cloud_frac, &
+                                        wpthvp, wp2thvp, rtpthvp, thlpthvp, &
+                                        sclrpthvp, &
+                                        wp2rtp, wp2thlp, uprcp, vprcp, rc_coef_zm, wp4, &
+                                        wpup2, wpvp2, wp2up2, wp2vp2, ice_supersat_frac, &
+                                        um_pert, vm_pert, upwp_pert, vpwp_pert, &
+                                        Kh_zm, Kh_zt, &
+                                        thlprcp, wprcp, w_up_in_cloud, w_down_in_cloud, &
+                                        cloudy_updraft_frac, cloudy_downdraft_frac, &
+                                        rcm_in_layer, cloud_cover, invrs_tau_zm, &
+                                        Lscale )
     ! Description:
-    ! Creates an unnormalized grid density function from Lscale
+    ! Adapts the grid based on the density function and interpolates all values to the new grid.
+    !-----------------------------------------------------------------------
+
+    use clubb_precision, only: &
+      core_rknd ! Variable(s)
+    
+    use grid_class, only: &
+      setup_grid
+
+    use calc_pressure, only: &
+      init_pressure    ! Procedure(s)
+
+    use model_flags, only: &
+      cons_ullrich_remap
+
+    use error_code, only: &
+      clubb_fatal_error
+
+    implicit none
+
+    !--------------------- Input Variables ---------------------
+    integer, intent(in) :: &
+      ngrdcol, &
+      hydromet_dim, &
+      sclr_dim, &
+      edsclr_dim, &
+      total_idx_rho_lin_spline, &  ! total number of indices of the rho density
+                                   ! piecewise linear function []
+      idx_thvm   ! numer of indices of thvm
+
+    real( kind = core_rknd ), dimension(ngrdcol, total_idx_rho_lin_spline), intent(in) ::  &
+      rho_lin_spline_vals, &
+      rho_lin_spline_levels
+    
+    ! TODO rename to gr_source and gr_target?
+    type( grid ), intent(in) :: &
+      gr, &
+      new_gr
+
+    real( kind = core_rknd ), dimension(ngrdcol), intent(in) ::  &
+      p_sfc
+
+    logical, intent(in) :: l_implemented
+
+    real( kind = core_rknd ), dimension(ngrdcol, idx_thvm), intent(in) ::  &
+      thvm
+
+    integer, intent(in) :: &
+      grid_remap_method ! specifies what remapping method should be used
+
+    !--------------------- Output Variable ---------------------
+
+    !--------------------- In/Out Variable ---------------------
+    real( kind = core_rknd ), intent(inout), dimension(ngrdcol,gr%nzt) ::  &
+      thlm_forcing,    & ! theta_l forcing (thermodynamic levels)    [K/s]
+      rtm_forcing,     & ! r_t forcing (thermodynamic levels)        [(kg/kg)/s]
+      um_forcing,      & ! u wind forcing (thermodynamic levels)     [m/s/s]
+      vm_forcing,      & ! v wind forcing (thermodynamic levels)     [m/s/s]
+      wm_zt,           & ! w mean wind component on thermo. levels   [m/s]
+      rho,             & ! Air density on thermodynamic levels       [kg/m^3]
+      rho_ds_zt,       & ! Dry, static density on thermo. levels     [kg/m^3]
+      invrs_rho_ds_zt, & ! Inv. dry, static density @ thermo. levs.  [m^3/kg]
+      thv_ds_zt,       & ! Dry, base-state theta_v on thermo. levs.  [K]
+      rfrzm              ! Total ice-phase water mixing ratio        [kg/kg]
+
+    real( kind = core_rknd ), intent(inout), dimension(ngrdcol,gr%nzm) ::  &
+      wprtp_forcing,   & ! <w'r_t'> forcing (momentum levels)    [m*K/s^2]
+      wpthlp_forcing,  & ! <w'th_l'> forcing (momentum levels)   [m*(kg/kg)/s^2]
+      rtp2_forcing,    & ! <r_t'^2> forcing (momentum levels)    [(kg/kg)^2/s]
+      thlp2_forcing,   & ! <th_l'^2> forcing (momentum levels)   [K^2/s]
+      rtpthlp_forcing, & ! <r_t'th_l'> forcing (momentum levels) [K*(kg/kg)/s]
+      wm_zm,           & ! w mean wind component on momentum levels  [m/s]
+      rho_zm,          & ! Air density on momentum levels            [kg/m^3]
+      rho_ds_zm,       & ! Dry, static density on momentum levels    [kg/m^3]
+      invrs_rho_ds_zm, & ! Inv. dry, static density @ momentum levs. [m^3/kg]
+      thv_ds_zm          ! Dry, base-state theta_v on momentum levs. [K]
+
+    real( kind = core_rknd ), dimension(ngrdcol,gr%nzm, hydromet_dim), intent(inout) :: &
+      wphydrometp    ! Covariance of w and a hydrometeor   [(m/s) <hm units>]
+
+    real( kind = core_rknd ), dimension(ngrdcol,gr%nzt, hydromet_dim), intent(inout) :: &
+      wp2hmp,      & ! Third moment: <w'^2> * <hydro.'>    [(m/s)^2 <hm units>]
+      rtphmp_zt,   & ! Covariance of rt and a hydrometeor  [(kg/kg) <hm units>]
+      thlphmp_zt     ! Covariance of thl and a hydrometeor [K <hm units>]
+
+    ! Passive scalar variables
+    real( kind = core_rknd ), intent(inout), dimension(ngrdcol,gr%nzt,sclr_dim) :: &
+      sclrm_forcing    ! Passive scalar forcing         [{units vary}/s]
+
+    ! Eddy passive scalar variables
+    real( kind = core_rknd ), intent(inout), dimension(ngrdcol,gr%nzt,edsclr_dim) :: &
+      edsclrm_forcing  ! Eddy passive scalar forcing    [{units vary}/s]
+
+    ! Reference profiles (used for nudging, sponge damping, and Coriolis effect)
+    real( kind = core_rknd ), dimension(ngrdcol,gr%nzt), intent(inout) ::  &
+      rtm_ref,  & ! Initial total water mixing ratio             [kg/kg]
+      thlm_ref, & ! Initial liquid water potential temperature   [K]
+      um_ref,   & ! Initial u wind; Michael Falk                 [m/s]
+      vm_ref,   & ! Initial v wind; Michael Falk                 [m/s]
+      ug,       & ! u geostrophic wind                           [m/s]
+      vg          ! v geostrophic wind                           [m/s]
+
+    ! These are prognostic or are planned to be in the future
+    real( kind = core_rknd ), intent(inout), dimension(ngrdcol,gr%nzt) ::  &
+      um,      & ! u mean wind component (thermodynamic levels)   [m/s]
+      vm,      & ! v mean wind component (thermodynamic levels)   [m/s]
+      up3,     & ! u'^3 (thermodynamic levels)                    [m^3/s^3]
+      vp3,     & ! v'^3 (thermodynamic levels)                    [m^3/s^3]
+      rtm,     & ! total water mixing ratio, r_t (thermo. levels) [kg/kg]
+      thlm,    & ! liq. water pot. temp., th_l (thermo. levels)   [K]
+      rtp3,    & ! r_t'^3 (thermodynamic levels)                  [(kg/kg)^3]
+      thlp3,   & ! th_l'^3 (thermodynamic levels)                 [K^3]
+      wp3        ! w'^3 (thermodynamic levels)                    [m^3/s^3]
+
+    real( kind = core_rknd ), intent(inout), dimension(ngrdcol,gr%nzm) ::  &
+      upwp,    & ! u'w' (momentum levels)                         [m^2/s^2]
+      vpwp,    & ! v'w' (momentum levels)                         [m^2/s^2]
+      up2,     & ! u'^2 (momentum levels)                         [m^2/s^2]
+      vp2,     & ! v'^2 (momentum levels)                         [m^2/s^2]
+      wprtp,   & ! w' r_t' (momentum levels)                      [(kg/kg) m/s]
+      wpthlp,  & ! w' th_l' (momentum levels)                     [(m/s) K]
+      rtp2,    & ! r_t'^2 (momentum levels)                       [(kg/kg)^2]
+      thlp2,   & ! th_l'^2 (momentum levels)                      [K^2]
+      rtpthlp, & ! r_t' th_l' (momentum levels)                   [(kg/kg) K]
+      wp2        ! w'^2 (momentum levels)                         [m^2/s^2]
+
+    ! Passive scalar variables
+    real( kind = core_rknd ), intent(inout), dimension(ngrdcol,gr%nzt,sclr_dim) :: &
+      sclrm,     & ! Passive scalar mean (thermo. levels) [units vary]
+      sclrp3       ! sclr'^3 (thermodynamic levels)       [{units vary}^3]
+
+    real( kind = core_rknd ), intent(inout), dimension(ngrdcol,gr%nzm,sclr_dim) :: &
+      wpsclrp,   & ! w'sclr' (momentum levels)            [{units vary} m/s]
+      sclrp2,    & ! sclr'^2 (momentum levels)            [{units vary}^2]
+      sclrprtp,  & ! sclr'rt' (momentum levels)           [{units vary} (kg/kg)]
+      sclrpthlp    ! sclr'thl' (momentum levels)          [{units vary} K]
+
+    real( kind = core_rknd ), intent(inout), dimension(ngrdcol,gr%nzt) ::  &
+      p_in_Pa, & ! Air pressure (thermodynamic levels)       [Pa]
+      exner      ! Exner function (thermodynamic levels)     [-]
+
+    real( kind = core_rknd ), intent(inout), dimension(ngrdcol,gr%nzt) ::  &
+      rcm,        & ! cloud water mixing ratio, r_c (thermo. levels) [kg/kg]
+      cloud_frac, & ! cloud fraction (thermodynamic levels)          [-]
+      wp2thvp       ! < w'^2 th_v' > (thermodynamic levels)          [m^2/s^2 K]
+
+    real( kind = core_rknd ), intent(inout), dimension(ngrdcol,gr%nzm) ::  &
+      wpthvp,     & ! < w' th_v' > (momentum levels)                 [kg/kg K]
+      rtpthvp,    & ! < r_t' th_v' > (momentum levels)               [kg/kg K]
+      thlpthvp      ! < th_l' th_v' > (momentum levels)              [K^2]
+
+    real( kind = core_rknd ), intent(inout), dimension(ngrdcol,gr%nzm,sclr_dim) :: &
+      sclrpthvp     ! < sclr' th_v' > (momentum levels)   [units vary]
+
+    real( kind = core_rknd ), intent(inout), dimension(ngrdcol,gr%nzt) ::  &
+      wp2rtp,            & ! w'^2 rt' (thermodynamic levels)      [m^2/s^2 kg/kg]
+      wp2thlp,           & ! w'^2 thl' (thermodynamic levels)     [m^2/s^2 K]
+      wpup2,             & ! w'u'^2 (thermodynamic levels)        [m^3/s^3]
+      wpvp2,             & ! w'v'^2 (thermodynamic levels)        [m^3/s^3]
+      ice_supersat_frac    ! ice cloud fraction (thermo. levels)  [-]
+
+    real( kind = core_rknd ), intent(inout), dimension(ngrdcol,gr%nzm) ::  &
+      uprcp,             & ! < u' r_c' > (momentum levels)        [(m/s)(kg/kg)]
+      vprcp,             & ! < v' r_c' > (momentum levels)        [(m/s)(kg/kg)]
+      rc_coef_zm,        & ! Coef of X'r_c' in Eq. (34) (m-levs.) [K/(kg/kg)]
+      wp4,               & ! w'^4 (momentum levels)               [m^4/s^4]
+      wp2up2,            & ! w'^2 u'^2 (momentum levels)          [m^4/s^4]
+      wp2vp2               ! w'^2 v'^2 (momentum levels)          [m^4/s^4]
+
+    ! Variables used to track perturbed version of winds.
+    real( kind = core_rknd ), intent(inout), dimension(ngrdcol,gr%nzt) :: &
+      um_pert,   & ! perturbed <u>       [m/s]
+      vm_pert      ! perturbed <v>       [m/s]
+
+    real( kind = core_rknd ), intent(inout), dimension(ngrdcol,gr%nzm) :: &
+      upwp_pert, & ! perturbed <u'w'>    [m^2/s^2]
+      vpwp_pert    ! perturbed <v'w'>    [m^2/s^2]
+
+    real( kind = core_rknd ), intent(inout), dimension(ngrdcol,gr%nzt,edsclr_dim) :: &
+        edsclrm   ! Eddy passive scalar mean (thermo. levels)   [units vary]
+
+    real( kind = core_rknd ), intent(inout), dimension(ngrdcol,gr%nzt) ::  &
+      rcm_in_layer, & ! rcm in cloud layer                              [kg/kg]
+      cloud_cover     ! cloud cover                                     [-]
+
+    ! Variables that need to be output for use in host models
+    real( kind = core_rknd ), intent(inout), dimension(ngrdcol,gr%nzm) ::  &
+      wprcp,                 & ! w'r_c' (momentum levels)              [(kg/kg) m/s]
+      invrs_tau_zm             ! One divided by tau on zm levels       [1/s]
+
+    real( kind = core_rknd ), intent(inout), dimension(ngrdcol,gr%nzt) ::  &
+      w_up_in_cloud,         & ! Average cloudy updraft velocity       [m/s]
+      w_down_in_cloud,       & ! Average cloudy downdraft velocity     [m/s]
+      cloudy_updraft_frac,   & ! cloudy updraft fraction               [-]
+      cloudy_downdraft_frac    ! cloudy downdraft fraction             [-]
+
+    real( kind = core_rknd ), dimension(ngrdcol,gr%nzt), intent(inout) :: &
+      Kh_zt    ! Eddy diffusivity coefficient on thermodynamic levels   [m^2/s]
+
+    real( kind = core_rknd ), dimension(ngrdcol,gr%nzm), intent(inout) :: &
+      Kh_zm    ! Eddy diffusivity coefficient on momentum levels        [m^2/s]
+
+    real( kind = core_rknd ), dimension(ngrdcol,gr%nzm), intent(inout) :: &
+      thlprcp    ! thl'rc'              [K kg/kg]
+
+    real( kind = core_rknd ), dimension(ngrdcol,gr%nzt), intent(inout) :: &
+      Lscale     ! Length scale         [m]
+
+    !--------------------- Local Variables ---------------------
+    integer :: i
+
+    real( kind = core_rknd ), dimension(ngrdcol, gr%nzt) ::  &
+      thvm_new_grid
+
+    real( kind = core_rknd ), dimension(ngrdcol, gr%nzm) ::  &
+      p_in_Pa_zm, exner_zm ! just placeholder variables; are only needed for subroutine call
+
+    real( kind = core_rknd ), dimension(gr%nzm,gr%nzm) :: &
+      R_ij_zm
+
+    real( kind = core_rknd ), dimension(gr%nzt,gr%nzt) :: &
+      R_ij_zt
+
+    real( kind=core_rknd ), dimension(ngrdcol,gr%nzt+2) :: levels_source_zm_vals
+
+    real( kind=core_rknd ), dimension(ngrdcol,gr%nzt+2) :: levels_target_zm_vals
+
+    !--------------------- Begin Code ---------------------
+
+      call remapping_matrix_zm_values( ngrdcol, &                                      ! Intent(in)
+                                       gr, new_gr, &                                   ! Intent(in)
+                                       total_idx_rho_lin_spline, &                     ! Intent(in)
+                                       rho_lin_spline_vals, &                          ! Intent(in)
+                                       rho_lin_spline_levels, &                        ! Intent(in)
+                                       levels_source_zm_vals, levels_target_zm_vals, & ! Intent(out)
+                                       R_ij_zm )                                       ! Intent(out)
+
+      call remapping_matrix_zt_values( ngrdcol, &                     ! Intent(in)
+                                       gr, new_gr, &                  ! Intent(in)
+                                       total_idx_rho_lin_spline, &    ! Intent(in)
+                                       rho_lin_spline_vals, &         ! Intent(in)
+                                       rho_lin_spline_levels, &       ! Intent(in)
+                                       R_ij_zt )                      ! Intent(out)
+
+      ! integrate grid_remap_method into remap_vals_to_target function
+      if ( grid_remap_method == cons_ullrich_remap ) then
+
+        ! Remap all zt values
+        thlm_forcing = remap_vals_to_target( ngrdcol, &
+                                             gr%nzm, new_gr%nzm, &
+                                             gr%zm, new_gr%zm, &
+                                             total_idx_rho_lin_spline, &
+                                             rho_lin_spline_vals, &
+                                             rho_lin_spline_levels, &
+                                             thlm_forcing, &
+                                             R_ij_zt, p_sfc )
+        rtm_forcing = remap_vals_to_target( ngrdcol, &
+                                            gr%nzm, new_gr%nzm, &
+                                            gr%zm, new_gr%zm, &
+                                            total_idx_rho_lin_spline, &
+                                            rho_lin_spline_vals, &
+                                            rho_lin_spline_levels, &
+                                            rtm_forcing, &
+                                            R_ij_zt, p_sfc )
+        um_forcing = remap_vals_to_target( ngrdcol, &
+                                           gr%nzm, new_gr%nzm, &
+                                           gr%zm, new_gr%zm, &
+                                           total_idx_rho_lin_spline, &
+                                           rho_lin_spline_vals, &
+                                           rho_lin_spline_levels, &
+                                           um_forcing, &
+                                           R_ij_zt, p_sfc )
+        vm_forcing = remap_vals_to_target( ngrdcol, &
+                                           gr%nzm, new_gr%nzm, &
+                                           gr%zm, new_gr%zm, &
+                                           total_idx_rho_lin_spline, &
+                                           rho_lin_spline_vals, &
+                                           rho_lin_spline_levels, &
+                                           vm_forcing, &
+                                           R_ij_zt, p_sfc )
+        wm_zt = remap_vals_to_target( ngrdcol, &
+                                      gr%nzm, new_gr%nzm, &
+                                      gr%zm, new_gr%zm, &
+                                      total_idx_rho_lin_spline, &
+                                      rho_lin_spline_vals, &
+                                      rho_lin_spline_levels, &
+                                      wm_zt, &
+                                      R_ij_zt, p_sfc )
+        rho = remap_vals_to_target( ngrdcol, &
+                                    gr%nzm, new_gr%nzm, &
+                                    gr%zm, new_gr%zm, &
+                                    total_idx_rho_lin_spline, &
+                                    rho_lin_spline_vals, &
+                                    rho_lin_spline_levels, &
+                                    rho, &
+                                    R_ij_zt, p_sfc )
+        rho_ds_zt = remap_vals_to_target( ngrdcol, &
+                                          gr%nzm, new_gr%nzm, &
+                                          gr%zm, new_gr%zm, &
+                                          total_idx_rho_lin_spline, &
+                                          rho_lin_spline_vals, &
+                                          rho_lin_spline_levels, &
+                                          rho_ds_zt, &
+                                          R_ij_zt, p_sfc )
+        invrs_rho_ds_zt = remap_vals_to_target( ngrdcol, &
+                                                gr%nzm, new_gr%nzm, &
+                                                gr%zm, new_gr%zm, &
+                                                total_idx_rho_lin_spline, &
+                                                rho_lin_spline_vals, &
+                                                rho_lin_spline_levels, &
+                                                invrs_rho_ds_zt, &
+                                                R_ij_zt, p_sfc )
+        thv_ds_zt = remap_vals_to_target( ngrdcol, &
+                                          gr%nzm, new_gr%nzm, &
+                                          gr%zm, new_gr%zm, &
+                                          total_idx_rho_lin_spline, &
+                                          rho_lin_spline_vals, &
+                                          rho_lin_spline_levels, &
+                                          thv_ds_zt, &
+                                          R_ij_zt, p_sfc )
+        rfrzm = remap_vals_to_target( ngrdcol, &
+                                      gr%nzm, new_gr%nzm, &
+                                      gr%zm, new_gr%zm, &
+                                      total_idx_rho_lin_spline, &
+                                      rho_lin_spline_vals, &
+                                      rho_lin_spline_levels, &
+                                      rfrzm, &
+                                      R_ij_zt, p_sfc )
+        do i = 1, hydromet_dim
+            wp2hmp(:,:,i) = remap_vals_to_target( ngrdcol, &
+                                                  gr%nzm, new_gr%nzm, &
+                                                  gr%zm, new_gr%zm, &
+                                                  total_idx_rho_lin_spline, &
+                                                  rho_lin_spline_vals, &
+                                                  rho_lin_spline_levels, &
+                                                  wp2hmp(:,:,i), &
+                                                  R_ij_zt, p_sfc )
+            rtphmp_zt(:,:,i) = remap_vals_to_target( ngrdcol, &
+                                                     gr%nzm, new_gr%nzm, &
+                                                     gr%zm, new_gr%zm, &
+                                                     total_idx_rho_lin_spline, &
+                                                     rho_lin_spline_vals, &
+                                                     rho_lin_spline_levels, &
+                                                     rtphmp_zt(:,:,i), &
+                                                     R_ij_zt, p_sfc )
+            thlphmp_zt(:,:,i) = remap_vals_to_target( ngrdcol, &
+                                                      gr%nzm, new_gr%nzm, &
+                                                      gr%zm, new_gr%zm, &
+                                                      total_idx_rho_lin_spline, &
+                                                      rho_lin_spline_vals, &
+                                                      rho_lin_spline_levels, &
+                                                      thlphmp_zt(:,:,i), &
+                                                      R_ij_zt, p_sfc )
+        end do
+        do i = 1, sclr_dim
+            sclrm_forcing(:,:,i) = remap_vals_to_target( ngrdcol, &
+                                                         gr%nzm, new_gr%nzm, &
+                                                         gr%zm, new_gr%zm, &
+                                                         total_idx_rho_lin_spline, &
+                                                         rho_lin_spline_vals, &
+                                                         rho_lin_spline_levels, &
+                                                         sclrm_forcing(:,:,i), &
+                                                         R_ij_zt, p_sfc )
+            sclrm(:,:,i) = remap_vals_to_target( ngrdcol, &
+                                                 gr%nzm, new_gr%nzm, &
+                                                 gr%zm, new_gr%zm, &
+                                                 total_idx_rho_lin_spline, &
+                                                 rho_lin_spline_vals, &
+                                                 rho_lin_spline_levels, &
+                                                 sclrm(:,:,i), &
+                                                 R_ij_zt, p_sfc )
+            sclrp3(:,:,i) = remap_vals_to_target( ngrdcol, &
+                                                  gr%nzm, new_gr%nzm, &
+                                                  gr%zm, new_gr%zm, &
+                                                  total_idx_rho_lin_spline, &
+                                                  rho_lin_spline_vals, &
+                                                  rho_lin_spline_levels, &
+                                                  sclrp3(:,:,i), &
+                                                  R_ij_zt, p_sfc )
+        end do
+        do i = 1, edsclr_dim
+            edsclrm_forcing(:,:,i) = remap_vals_to_target( ngrdcol, &
+                                                           gr%nzm, new_gr%nzm, &
+                                                           gr%zm, new_gr%zm, &
+                                                           total_idx_rho_lin_spline, &
+                                                           rho_lin_spline_vals, &
+                                                           rho_lin_spline_levels, &
+                                                           edsclrm_forcing(:,:,i), &
+                                                           R_ij_zt, p_sfc )
+            edsclrm(:,:,i) = remap_vals_to_target( ngrdcol, &
+                                                   gr%nzm, new_gr%nzm, &
+                                                   gr%zm, new_gr%zm, &
+                                                   total_idx_rho_lin_spline, &
+                                                   rho_lin_spline_vals, &
+                                                   rho_lin_spline_levels, &
+                                                   edsclrm(:,:,i), &
+                                                   R_ij_zt, p_sfc )
+        end do
+        rtm_ref = remap_vals_to_target( ngrdcol, &
+                                        gr%nzm, new_gr%nzm, &
+                                        gr%zm, new_gr%zm, &
+                                        total_idx_rho_lin_spline, &
+                                        rho_lin_spline_vals, &
+                                        rho_lin_spline_levels, &
+                                        rtm_ref, &
+                                        R_ij_zt, p_sfc )
+        thlm_ref = remap_vals_to_target( ngrdcol, &
+                                         gr%nzm, new_gr%nzm, &
+                                         gr%zm, new_gr%zm, &
+                                         total_idx_rho_lin_spline, &
+                                         rho_lin_spline_vals, &
+                                         rho_lin_spline_levels, &
+                                         thlm_ref, &
+                                         R_ij_zt, p_sfc )
+        um_ref = remap_vals_to_target( ngrdcol, &
+                                       gr%nzm, new_gr%nzm, &
+                                       gr%zm, new_gr%zm, &
+                                       total_idx_rho_lin_spline, &
+                                       rho_lin_spline_vals, &
+                                       rho_lin_spline_levels, &
+                                       um_ref, &
+                                       R_ij_zt, p_sfc )
+        vm_ref = remap_vals_to_target( ngrdcol, &
+                                       gr%nzm, new_gr%nzm, &
+                                       gr%zm, new_gr%zm, &
+                                       total_idx_rho_lin_spline, &
+                                       rho_lin_spline_vals, &
+                                       rho_lin_spline_levels, &
+                                       vm_ref, &
+                                       R_ij_zt, p_sfc )
+        ug = remap_vals_to_target( ngrdcol, &
+                                   gr%nzm, new_gr%nzm, &
+                                   gr%zm, new_gr%zm, &
+                                   total_idx_rho_lin_spline, &
+                                   rho_lin_spline_vals, &
+                                   rho_lin_spline_levels, &
+                                   ug, &
+                                   R_ij_zt, p_sfc )
+        vg = remap_vals_to_target( ngrdcol, &
+                                   gr%nzm, new_gr%nzm, &
+                                   gr%zm, new_gr%zm, &
+                                   total_idx_rho_lin_spline, &
+                                   rho_lin_spline_vals, &
+                                   rho_lin_spline_levels, &
+                                   vg, &
+                                   R_ij_zt, p_sfc )
+        um = remap_vals_to_target( ngrdcol, &
+                                   gr%nzm, new_gr%nzm, &
+                                   gr%zm, new_gr%zm, &
+                                   total_idx_rho_lin_spline, &
+                                   rho_lin_spline_vals, &
+                                   rho_lin_spline_levels, &
+                                   um, &
+                                   R_ij_zt, p_sfc )
+        vm = remap_vals_to_target( ngrdcol, &
+                                   gr%nzm, new_gr%nzm, &
+                                   gr%zm, new_gr%zm, &
+                                   total_idx_rho_lin_spline, &
+                                   rho_lin_spline_vals, &
+                                   rho_lin_spline_levels, &
+                                   vm, &
+                                   R_ij_zt, p_sfc )
+        up3 = remap_vals_to_target( ngrdcol, &
+                                    gr%nzm, new_gr%nzm, &
+                                    gr%zm, new_gr%zm, &
+                                    total_idx_rho_lin_spline, &
+                                    rho_lin_spline_vals, &
+                                    rho_lin_spline_levels, &
+                                    up3, &
+                                    R_ij_zt, p_sfc )
+        vp3 = remap_vals_to_target( ngrdcol, &
+                                    gr%nzm, new_gr%nzm, &
+                                    gr%zm, new_gr%zm, &
+                                    total_idx_rho_lin_spline, &
+                                    rho_lin_spline_vals, &
+                                    rho_lin_spline_levels, &
+                                    vp3, &
+                                    R_ij_zt, p_sfc )
+        rtm = remap_vals_to_target( ngrdcol, &
+                                    gr%nzm, new_gr%nzm, &
+                                    gr%zm, new_gr%zm, &
+                                    total_idx_rho_lin_spline, &
+                                    rho_lin_spline_vals, &
+                                    rho_lin_spline_levels, &
+                                    rtm, &
+                                    R_ij_zt, p_sfc )
+        thlm = remap_vals_to_target( ngrdcol, &
+                                     gr%nzm, new_gr%nzm, &
+                                     gr%zm, new_gr%zm, &
+                                     total_idx_rho_lin_spline, &
+                                     rho_lin_spline_vals, &
+                                     rho_lin_spline_levels, &
+                                     thlm, &
+                                     R_ij_zt, p_sfc )
+        rtp3 = remap_vals_to_target( ngrdcol, &
+                                     gr%nzm, new_gr%nzm, &
+                                     gr%zm, new_gr%zm, &
+                                     total_idx_rho_lin_spline, &
+                                     rho_lin_spline_vals, &
+                                     rho_lin_spline_levels, &
+                                     rtp3, &
+                                     R_ij_zt, p_sfc )
+        thlp3 = remap_vals_to_target( ngrdcol, &
+                                      gr%nzm, new_gr%nzm, &
+                                      gr%zm, new_gr%zm, &
+                                      total_idx_rho_lin_spline, &
+                                      rho_lin_spline_vals, &
+                                      rho_lin_spline_levels, &
+                                      thlp3, &
+                                      R_ij_zt, p_sfc )
+        wp3 = remap_vals_to_target( ngrdcol, &
+                                    gr%nzm, new_gr%nzm, &
+                                    gr%zm, new_gr%zm, &
+                                    total_idx_rho_lin_spline, &
+                                    rho_lin_spline_vals, &
+                                    rho_lin_spline_levels, &
+                                    wp3, &
+                                    R_ij_zt, p_sfc )
+        ! remap thvm values to new grid, to calculate new p_in_Pa
+        thvm_new_grid = remap_vals_to_target( ngrdcol, &
+                                              gr%nzm, new_gr%nzm, &
+                                              gr%zm, new_gr%zm, &
+                                              total_idx_rho_lin_spline, &
+                                              rho_lin_spline_vals, &
+                                              rho_lin_spline_levels, &
+                                              thvm, &
+                                              R_ij_zt, p_sfc )
+        ! calculate p_in_Pa instead of remapping directly since it can run into problems if for
+        ! example the two highest levels have the same pressure value, which could be happening with
+        ! the remapping, also calculate exner accordingly
+        call init_pressure( ngrdcol, new_gr, thvm_new_grid, p_sfc, &
+                            p_in_Pa, exner, p_in_Pa_zm, exner_zm )
+        rcm = remap_vals_to_target( ngrdcol, &
+                                    gr%nzm, new_gr%nzm, &
+                                    gr%zm, new_gr%zm, &
+                                    total_idx_rho_lin_spline, &
+                                    rho_lin_spline_vals, &
+                                    rho_lin_spline_levels, &
+                                    rcm, &
+                                    R_ij_zt, p_sfc )
+        cloud_frac = remap_vals_to_target( ngrdcol, &
+                                           gr%nzm, new_gr%nzm, &
+                                           gr%zm, new_gr%zm, &
+                                           total_idx_rho_lin_spline, &
+                                           rho_lin_spline_vals, &
+                                           rho_lin_spline_levels, &
+                                           cloud_frac, &
+                                           R_ij_zt, p_sfc )
+        wp2thvp = remap_vals_to_target( ngrdcol, &
+                                        gr%nzm, new_gr%nzm, &
+                                        gr%zm, new_gr%zm, &
+                                        total_idx_rho_lin_spline, &
+                                        rho_lin_spline_vals, &
+                                        rho_lin_spline_levels, &
+                                        wp2thvp, &
+                                        R_ij_zt, p_sfc )
+        wp2rtp = remap_vals_to_target( ngrdcol, &
+                                       gr%nzm, new_gr%nzm, &
+                                       gr%zm, new_gr%zm, &
+                                       total_idx_rho_lin_spline, &
+                                       rho_lin_spline_vals, &
+                                       rho_lin_spline_levels, &
+                                       wp2rtp, &
+                                       R_ij_zt, p_sfc )
+        wp2thlp = remap_vals_to_target( ngrdcol, &
+                                        gr%nzm, new_gr%nzm, &
+                                        gr%zm, new_gr%zm, &
+                                        total_idx_rho_lin_spline, &
+                                        rho_lin_spline_vals, &
+                                        rho_lin_spline_levels, &
+                                        wp2thlp, &
+                                        R_ij_zt, p_sfc )
+        wpup2 = remap_vals_to_target( ngrdcol, &
+                                      gr%nzm, new_gr%nzm, &
+                                      gr%zm, new_gr%zm, &
+                                      total_idx_rho_lin_spline, &
+                                      rho_lin_spline_vals, &
+                                      rho_lin_spline_levels, &
+                                      wpup2, &
+                                      R_ij_zt, p_sfc )
+        wpvp2 = remap_vals_to_target( ngrdcol, &
+                                      gr%nzm, new_gr%nzm, &
+                                      gr%zm, new_gr%zm, &
+                                      total_idx_rho_lin_spline, &
+                                      rho_lin_spline_vals, &
+                                      rho_lin_spline_levels, &
+                                      wpvp2, &
+                                      R_ij_zt, p_sfc )
+        ice_supersat_frac = remap_vals_to_target( ngrdcol, &
+                                                  gr%nzm, new_gr%nzm, &
+                                                  gr%zm, new_gr%zm, &
+                                                  total_idx_rho_lin_spline, &
+                                                  rho_lin_spline_vals, &
+                                                  rho_lin_spline_levels, &
+                                                  ice_supersat_frac, &
+                                                  R_ij_zt, p_sfc )
+        um_pert = remap_vals_to_target( ngrdcol, &
+                                        gr%nzm, new_gr%nzm, &
+                                        gr%zm, new_gr%zm, &
+                                        total_idx_rho_lin_spline, &
+                                        rho_lin_spline_vals, &
+                                        rho_lin_spline_levels, &
+                                        um_pert, &
+                                        R_ij_zt, p_sfc )
+        vm_pert = remap_vals_to_target( ngrdcol, &
+                                        gr%nzm, new_gr%nzm, &
+                                        gr%zm, new_gr%zm, &
+                                        total_idx_rho_lin_spline, &
+                                        rho_lin_spline_vals, &
+                                        rho_lin_spline_levels, &
+                                        vm_pert, &
+                                        R_ij_zt, p_sfc )
+        rcm_in_layer = remap_vals_to_target( ngrdcol, &
+                                             gr%nzm, new_gr%nzm, &
+                                             gr%zm, new_gr%zm, &
+                                             total_idx_rho_lin_spline, &
+                                             rho_lin_spline_vals, &
+                                             rho_lin_spline_levels, &
+                                             rcm_in_layer, &
+                                             R_ij_zt, p_sfc )
+        cloud_cover = remap_vals_to_target( ngrdcol, &
+                                            gr%nzm, new_gr%nzm, &
+                                            gr%zm, new_gr%zm, &
+                                            total_idx_rho_lin_spline, &
+                                            rho_lin_spline_vals, &
+                                            rho_lin_spline_levels, &
+                                            cloud_cover, &
+                                            R_ij_zt, p_sfc )
+        w_up_in_cloud = remap_vals_to_target( ngrdcol, &
+                                              gr%nzm, new_gr%nzm, &
+                                              gr%zm, new_gr%zm, &
+                                              total_idx_rho_lin_spline, &
+                                              rho_lin_spline_vals, &
+                                              rho_lin_spline_levels, &
+                                              w_up_in_cloud, &
+                                              R_ij_zt, p_sfc )
+        w_down_in_cloud = remap_vals_to_target( ngrdcol, &
+                                                gr%nzm, new_gr%nzm, &
+                                                gr%zm, new_gr%zm, &
+                                                total_idx_rho_lin_spline, &
+                                                rho_lin_spline_vals, &
+                                                rho_lin_spline_levels, &
+                                                w_down_in_cloud, &
+                                                R_ij_zt, p_sfc )
+        cloudy_updraft_frac = remap_vals_to_target( ngrdcol, &
+                                                    gr%nzm, new_gr%nzm, &
+                                                    gr%zm, new_gr%zm, &
+                                                    total_idx_rho_lin_spline, &
+                                                    rho_lin_spline_vals, &
+                                                    rho_lin_spline_levels, &
+                                                    cloudy_updraft_frac, &
+                                                    R_ij_zt, p_sfc )
+        cloudy_downdraft_frac = remap_vals_to_target( ngrdcol, &
+                                                      gr%nzm, new_gr%nzm, &
+                                                      gr%zm, new_gr%zm, &
+                                                      total_idx_rho_lin_spline, &
+                                                      rho_lin_spline_vals, &
+                                                      rho_lin_spline_levels, &
+                                                      cloudy_downdraft_frac, &
+                                                      R_ij_zt, p_sfc )
+        Kh_zt = remap_vals_to_target( ngrdcol, &
+                                      gr%nzm, new_gr%nzm, &
+                                      gr%zm, new_gr%zm, &
+                                      total_idx_rho_lin_spline, &
+                                      rho_lin_spline_vals, &
+                                      rho_lin_spline_levels, &
+                                      Kh_zt, &
+                                      R_ij_zt, p_sfc )
+        Lscale = remap_vals_to_target( ngrdcol, &
+                                       gr%nzm, new_gr%nzm, &
+                                       gr%zm, new_gr%zm, &
+                                       total_idx_rho_lin_spline, &
+                                       rho_lin_spline_vals, &
+                                       rho_lin_spline_levels, &
+                                       Lscale, &
+                                       R_ij_zt, p_sfc )
+
+
+        ! Remap all zm values
+        wprtp_forcing = remap_vals_to_target( ngrdcol, &
+                                              gr%nzt+2, new_gr%nzt+2, &
+                                              levels_source_zm_vals, &
+                                              levels_target_zm_vals, &
+                                              total_idx_rho_lin_spline, &
+                                              rho_lin_spline_vals, &
+                                              rho_lin_spline_levels, &
+                                              wprtp_forcing, &
+                                              R_ij_zm, p_sfc )
+        wpthlp_forcing = remap_vals_to_target( ngrdcol, &
+                                               gr%nzt+2, new_gr%nzt+2, &
+                                               levels_source_zm_vals, &
+                                               levels_target_zm_vals, &
+                                               total_idx_rho_lin_spline, &
+                                               rho_lin_spline_vals, &
+                                               rho_lin_spline_levels, &
+                                               wpthlp_forcing, &
+                                               R_ij_zm, p_sfc )
+        rtp2_forcing = remap_vals_to_target( ngrdcol, &
+                                             gr%nzt+2, new_gr%nzt+2, &
+                                             levels_source_zm_vals, &
+                                             levels_target_zm_vals, &
+                                             total_idx_rho_lin_spline, &
+                                             rho_lin_spline_vals, &
+                                             rho_lin_spline_levels, &
+                                             rtp2_forcing, &
+                                             R_ij_zm, p_sfc )
+        thlp2_forcing = remap_vals_to_target( ngrdcol, &
+                                              gr%nzt+2, new_gr%nzt+2, &
+                                              levels_source_zm_vals, &
+                                              levels_target_zm_vals, &
+                                              total_idx_rho_lin_spline, &
+                                              rho_lin_spline_vals, &
+                                              rho_lin_spline_levels, &
+                                              thlp2_forcing, &
+                                              R_ij_zm, p_sfc )
+        rtpthlp_forcing = remap_vals_to_target( ngrdcol, &
+                                                gr%nzt+2, new_gr%nzt+2, &
+                                                levels_source_zm_vals, &
+                                                levels_target_zm_vals, &
+                                                total_idx_rho_lin_spline, &
+                                                rho_lin_spline_vals, &
+                                                rho_lin_spline_levels, &
+                                                rtpthlp_forcing, &
+                                                R_ij_zm, p_sfc )
+        wm_zm = remap_vals_to_target( ngrdcol, &
+                                      gr%nzt+2, new_gr%nzt+2, &
+                                      levels_source_zm_vals, &
+                                      levels_target_zm_vals, &
+                                      total_idx_rho_lin_spline, &
+                                      rho_lin_spline_vals, &
+                                      rho_lin_spline_levels, &
+                                      wm_zm, &
+                                      R_ij_zm, p_sfc )
+        rho_zm = remap_vals_to_target( ngrdcol, &
+                                       gr%nzt+2, new_gr%nzt+2, &
+                                       levels_source_zm_vals, &
+                                       levels_target_zm_vals, &
+                                       total_idx_rho_lin_spline, &
+                                       rho_lin_spline_vals, &
+                                       rho_lin_spline_levels, &
+                                       rho_zm, &
+                                       R_ij_zm, p_sfc )
+        rho_ds_zm = remap_vals_to_target( ngrdcol, &
+                                          gr%nzt+2, new_gr%nzt+2, &
+                                          levels_source_zm_vals, &
+                                          levels_target_zm_vals, &
+                                          total_idx_rho_lin_spline, &
+                                          rho_lin_spline_vals, &
+                                          rho_lin_spline_levels, &
+                                          rho_ds_zm, &
+                                          R_ij_zm, p_sfc )
+        invrs_rho_ds_zm = remap_vals_to_target( ngrdcol, &
+                                                gr%nzt+2, new_gr%nzt+2, &
+                                                levels_source_zm_vals, &
+                                                levels_target_zm_vals, &
+                                                total_idx_rho_lin_spline, &
+                                                rho_lin_spline_vals, &
+                                                rho_lin_spline_levels, &
+                                                invrs_rho_ds_zm, &
+                                                R_ij_zm, p_sfc )
+        thv_ds_zm = remap_vals_to_target( ngrdcol, &
+                                          gr%nzt+2, new_gr%nzt+2, &
+                                          levels_source_zm_vals, &
+                                          levels_target_zm_vals, &
+                                          total_idx_rho_lin_spline, &
+                                          rho_lin_spline_vals, &
+                                          rho_lin_spline_levels, &
+                                          thv_ds_zm, &
+                                          R_ij_zm, p_sfc )
+        do i = 1, hydromet_dim
+            wphydrometp(:,:,i) = remap_vals_to_target( ngrdcol, &
+                                                       gr%nzt+2, new_gr%nzt+2, &
+                                                       levels_source_zm_vals, &
+                                                       levels_target_zm_vals, &
+                                                       total_idx_rho_lin_spline, &
+                                                       rho_lin_spline_vals, &
+                                                       rho_lin_spline_levels, &
+                                                       wphydrometp(:,:,i), &
+                                                       R_ij_zm, p_sfc )
+        end do
+        upwp = remap_vals_to_target( ngrdcol, &
+                                     gr%nzt+2, new_gr%nzt+2, &
+                                     levels_source_zm_vals, &
+                                     levels_target_zm_vals, &
+                                     total_idx_rho_lin_spline, &
+                                     rho_lin_spline_vals, &
+                                     rho_lin_spline_levels, &
+                                     upwp, &
+                                     R_ij_zm, p_sfc )
+        vpwp = remap_vals_to_target( ngrdcol, &
+                                     gr%nzt+2, new_gr%nzt+2, &
+                                     levels_source_zm_vals, &
+                                     levels_target_zm_vals, &
+                                     total_idx_rho_lin_spline, &
+                                     rho_lin_spline_vals, &
+                                     rho_lin_spline_levels, &
+                                     vpwp, &
+                                     R_ij_zm, p_sfc )
+        up2 = remap_vals_to_target( ngrdcol, &
+                                    gr%nzt+2, new_gr%nzt+2, &
+                                    levels_source_zm_vals, &
+                                    levels_target_zm_vals, &
+                                    total_idx_rho_lin_spline, &
+                                    rho_lin_spline_vals, &
+                                    rho_lin_spline_levels, &
+                                    up2, &
+                                    R_ij_zm, p_sfc )
+        vp2 = remap_vals_to_target( ngrdcol, &
+                                    gr%nzt+2, new_gr%nzt+2, &
+                                    levels_source_zm_vals, &
+                                    levels_target_zm_vals, &
+                                    total_idx_rho_lin_spline, &
+                                    rho_lin_spline_vals, &
+                                    rho_lin_spline_levels, &
+                                    vp2, &
+                                    R_ij_zm, p_sfc )
+        wprtp = remap_vals_to_target( ngrdcol, &
+                                      gr%nzt+2, new_gr%nzt+2, &
+                                      levels_source_zm_vals, &
+                                      levels_target_zm_vals, &
+                                      total_idx_rho_lin_spline, &
+                                      rho_lin_spline_vals, &
+                                      rho_lin_spline_levels, &
+                                      wprtp, &
+                                      R_ij_zm, p_sfc )
+        wpthlp = remap_vals_to_target( ngrdcol, &
+                                       gr%nzt+2, new_gr%nzt+2, &
+                                       levels_source_zm_vals, &
+                                       levels_target_zm_vals, &
+                                       total_idx_rho_lin_spline, &
+                                       rho_lin_spline_vals, &
+                                       rho_lin_spline_levels, &
+                                       wpthlp, &
+                                       R_ij_zm, p_sfc )
+        rtp2 = remap_vals_to_target( ngrdcol, &
+                                     gr%nzt+2, new_gr%nzt+2, &
+                                     levels_source_zm_vals, &
+                                     levels_target_zm_vals, &
+                                     total_idx_rho_lin_spline, &
+                                     rho_lin_spline_vals, &
+                                     rho_lin_spline_levels, &
+                                     rtp2, &
+                                     R_ij_zm, p_sfc )
+        thlp2 = remap_vals_to_target( ngrdcol, &
+                                      gr%nzt+2, new_gr%nzt+2, &
+                                      levels_source_zm_vals, &
+                                      levels_target_zm_vals, &
+                                      total_idx_rho_lin_spline, &
+                                      rho_lin_spline_vals, &
+                                      rho_lin_spline_levels, &
+                                      thlp2, &
+                                      R_ij_zm, p_sfc )
+        rtpthlp = remap_vals_to_target( ngrdcol, &
+                                        gr%nzt+2, new_gr%nzt+2, &
+                                        levels_source_zm_vals, &
+                                        levels_target_zm_vals, &
+                                        total_idx_rho_lin_spline, &
+                                        rho_lin_spline_vals, &
+                                        rho_lin_spline_levels, &
+                                        rtpthlp, &
+                                        R_ij_zm, p_sfc )
+        wp2 = remap_vals_to_target( ngrdcol, &
+                                    gr%nzt+2, new_gr%nzt+2, &
+                                    levels_source_zm_vals, &
+                                    levels_target_zm_vals, &
+                                    total_idx_rho_lin_spline, &
+                                    rho_lin_spline_vals, &
+                                    rho_lin_spline_levels, &
+                                    wp2, &
+                                    R_ij_zm, p_sfc )
+        do i = 1, sclr_dim
+            wpsclrp(:,:,i) = remap_vals_to_target( ngrdcol, &
+                                                   gr%nzt+2, new_gr%nzt+2, &
+                                                   levels_source_zm_vals, &
+                                                   levels_target_zm_vals, &
+                                                   total_idx_rho_lin_spline, &
+                                                   rho_lin_spline_vals, &
+                                                   rho_lin_spline_levels, &
+                                                   wpsclrp(:,:,i), &
+                                                   R_ij_zm, p_sfc )
+            sclrp2(:,:,i) = remap_vals_to_target( ngrdcol, &
+                                                  gr%nzt+2, new_gr%nzt+2, &
+                                                  levels_source_zm_vals, &
+                                                  levels_target_zm_vals, &
+                                                  total_idx_rho_lin_spline, &
+                                                  rho_lin_spline_vals, &
+                                                  rho_lin_spline_levels, &
+                                                  sclrp2(:,:,i), &
+                                                  R_ij_zm, p_sfc )
+            sclrprtp(:,:,i) = remap_vals_to_target( ngrdcol, &
+                                                    gr%nzt+2, new_gr%nzt+2, &
+                                                    levels_source_zm_vals, &
+                                                    levels_target_zm_vals, &
+                                                    total_idx_rho_lin_spline, &
+                                                    rho_lin_spline_vals, &
+                                                    rho_lin_spline_levels, &
+                                                    sclrprtp(:,:,i), &
+                                                    R_ij_zm, p_sfc )
+            sclrpthlp(:,:,i) = remap_vals_to_target( ngrdcol, &
+                                                     gr%nzt+2, new_gr%nzt+2, &
+                                                     levels_source_zm_vals, &
+                                                     levels_target_zm_vals, &
+                                                     total_idx_rho_lin_spline, &
+                                                     rho_lin_spline_vals, &
+                                                     rho_lin_spline_levels, &
+                                                     sclrpthlp(:,:,i), &
+                                                     R_ij_zm, p_sfc )
+            sclrpthvp(:,:,i) = remap_vals_to_target( ngrdcol, &
+                                                     gr%nzt+2, new_gr%nzt+2, &
+                                                     levels_source_zm_vals, &
+                                                     levels_target_zm_vals, &
+                                                     total_idx_rho_lin_spline, &
+                                                     rho_lin_spline_vals, &
+                                                     rho_lin_spline_levels, &
+                                                     sclrpthvp(:,:,i), &
+                                                     R_ij_zm, p_sfc )
+        end do
+        wpthvp = remap_vals_to_target( ngrdcol, &
+                                       gr%nzt+2, new_gr%nzt+2, &
+                                       levels_source_zm_vals, &
+                                       levels_target_zm_vals, &
+                                       total_idx_rho_lin_spline, &
+                                       rho_lin_spline_vals, &
+                                       rho_lin_spline_levels, &
+                                       wpthvp, &
+                                       R_ij_zm, p_sfc )
+        rtpthvp = remap_vals_to_target( ngrdcol, &
+                                        gr%nzt+2, new_gr%nzt+2, &
+                                        levels_source_zm_vals, &
+                                        levels_target_zm_vals, &
+                                        total_idx_rho_lin_spline, &
+                                        rho_lin_spline_vals, &
+                                        rho_lin_spline_levels, &
+                                        rtpthvp, &
+                                        R_ij_zm, p_sfc )
+        thlpthvp = remap_vals_to_target( ngrdcol, &
+                                         gr%nzt+2, new_gr%nzt+2, &
+                                         levels_source_zm_vals, &
+                                         levels_target_zm_vals, &
+                                         total_idx_rho_lin_spline, &
+                                         rho_lin_spline_vals, &
+                                         rho_lin_spline_levels, &
+                                         thlpthvp, &
+                                         R_ij_zm, p_sfc )
+        uprcp = remap_vals_to_target( ngrdcol, &
+                                      gr%nzt+2, new_gr%nzt+2, &
+                                      levels_source_zm_vals, &
+                                      levels_target_zm_vals, &
+                                      total_idx_rho_lin_spline, &
+                                      rho_lin_spline_vals, &
+                                      rho_lin_spline_levels, &
+                                      uprcp, &
+                                      R_ij_zm, p_sfc )
+        vprcp = remap_vals_to_target( ngrdcol, &
+                                      gr%nzt+2, new_gr%nzt+2, &
+                                      levels_source_zm_vals, &
+                                      levels_target_zm_vals, &
+                                      total_idx_rho_lin_spline, &
+                                      rho_lin_spline_vals, &
+                                      rho_lin_spline_levels, &
+                                      vprcp, &
+                                      R_ij_zm, p_sfc )
+        rc_coef_zm = remap_vals_to_target( ngrdcol, &
+                                           gr%nzt+2, new_gr%nzt+2, &
+                                           levels_source_zm_vals, &
+                                           levels_target_zm_vals, &
+                                           total_idx_rho_lin_spline, &
+                                           rho_lin_spline_vals, &
+                                           rho_lin_spline_levels, &
+                                           rc_coef_zm, &
+                                           R_ij_zm, p_sfc )
+        wp4 = remap_vals_to_target( ngrdcol, &
+                                    gr%nzt+2, new_gr%nzt+2, &
+                                    levels_source_zm_vals, &
+                                    levels_target_zm_vals, &
+                                    total_idx_rho_lin_spline, &
+                                    rho_lin_spline_vals, &
+                                    rho_lin_spline_levels, &
+                                    wp4, &
+                                    R_ij_zm, p_sfc )
+        wp2up2 = remap_vals_to_target( ngrdcol, &
+                                       gr%nzt+2, new_gr%nzt+2, &
+                                       levels_source_zm_vals, &
+                                       levels_target_zm_vals, &
+                                       total_idx_rho_lin_spline, &
+                                       rho_lin_spline_vals, &
+                                       rho_lin_spline_levels, &
+                                       wp2up2, &
+                                       R_ij_zm, p_sfc )
+        wp2vp2 = remap_vals_to_target( ngrdcol, &
+                                       gr%nzt+2, new_gr%nzt+2, &
+                                       levels_source_zm_vals, &
+                                       levels_target_zm_vals, &
+                                       total_idx_rho_lin_spline, &
+                                       rho_lin_spline_vals, &
+                                       rho_lin_spline_levels, &
+                                       wp2vp2, &
+                                       R_ij_zm, p_sfc )
+        upwp_pert = remap_vals_to_target( ngrdcol, &
+                                          gr%nzt+2, new_gr%nzt+2, &
+                                          levels_source_zm_vals, &
+                                          levels_target_zm_vals, &
+                                          total_idx_rho_lin_spline, &
+                                          rho_lin_spline_vals, &
+                                          rho_lin_spline_levels, &
+                                          upwp_pert, &
+                                          R_ij_zm, p_sfc )
+        vpwp_pert = remap_vals_to_target( ngrdcol, &
+                                          gr%nzt+2, new_gr%nzt+2, &
+                                          levels_source_zm_vals, &
+                                          levels_target_zm_vals, &
+                                          total_idx_rho_lin_spline, &
+                                          rho_lin_spline_vals, &
+                                          rho_lin_spline_levels, &
+                                          vpwp_pert, &
+                                          R_ij_zm, p_sfc )
+        wprcp = remap_vals_to_target( ngrdcol, &
+                                      gr%nzt+2, new_gr%nzt+2, &
+                                      levels_source_zm_vals, &
+                                      levels_target_zm_vals, &
+                                      total_idx_rho_lin_spline, &
+                                      rho_lin_spline_vals, &
+                                      rho_lin_spline_levels, &
+                                      wprcp, &
+                                      R_ij_zm, p_sfc )
+        invrs_tau_zm = remap_vals_to_target( ngrdcol, &
+                                             gr%nzt+2, new_gr%nzt+2, &
+                                             levels_source_zm_vals, &
+                                             levels_target_zm_vals, &
+                                             total_idx_rho_lin_spline, &
+                                             rho_lin_spline_vals, &
+                                             rho_lin_spline_levels, &
+                                             invrs_tau_zm, &
+                                             R_ij_zm, p_sfc )
+        Kh_zm = remap_vals_to_target( ngrdcol, &
+                                      gr%nzt+2, new_gr%nzt+2, &
+                                      levels_source_zm_vals, &
+                                      levels_target_zm_vals, &
+                                      total_idx_rho_lin_spline, &
+                                      rho_lin_spline_vals, &
+                                      rho_lin_spline_levels, &
+                                      Kh_zm, &
+                                      R_ij_zm, p_sfc )
+        thlprcp = remap_vals_to_target( ngrdcol, &
+                                        gr%nzt+2, new_gr%nzt+2, &
+                                        levels_source_zm_vals, &
+                                        levels_target_zm_vals, &
+                                        total_idx_rho_lin_spline, &
+                                        rho_lin_spline_vals, &
+                                        rho_lin_spline_levels, &
+                                        thlprcp, &
+                                        R_ij_zm, p_sfc )
+      else
+        write(fstderr,*) 'There is no method implemented for grid_remap_method=', &
+                         grid_remap_method, '. Try another integer value.'
+        error stop 'Invalid value for grid_remap_method.'
+      end if
+
+  end subroutine remap_all_clubb_core_vals
+
+  subroutine calc_grid_dens( ngrdcol, gr, &
+                             um, vm, &
+                             Lscale_zt, wp2, &
+                             pdf_params, &
+                             thlm, exner, rtm, &
+                             rcm, p_in_Pa, thvm, &
+                             ice_supersat_frac, &
+                             bv_efold, &
+                             clubb_config_flags, &
+                             gr_dens_z, gr_dens, &
+                             alt_term, Lscale_term, &
+                             Lscale_term_time_avg, &
+                             chi_term, brunt_term )
+    ! Description:
+    ! Calculate the necessary variables and then construct grid density from them.
 
     ! References:
     ! None
@@ -3572,120 +5181,96 @@ module grid_adaptation_module
         pdf_parameter  ! Type
 
     use grid_class, only: &
-        zt2zm, &
+        zt2zm, & ! Procedures
         ddzt
 
     use model_flags, only: &
-      clubb_config_flags_type
+        clubb_config_flags_type  ! Type
 
     use advance_helper_module, only: &
-        calc_brunt_vaisala_freq_sqd
+        calc_brunt_vaisala_freq_sqd ! Procedure
 
     implicit none
 
     !--------------------- Input Variables ---------------------
     integer, intent(in) :: & 
-      ngrdcol, & 
-      nzm, &
-      num_levels ! the desired number of levels
+      ngrdcol
+        
+    type( grid ), intent(in) :: &
+      gr
+    
+    real( kind = core_rknd ), dimension(ngrdcol,gr%nzt), intent(in) :: &
+      Lscale_zt,         &  ! Length scale   [m]
+      um,                & ! eastward grid-mean wind component (thermo. levs.)  [m/s]
+      vm,                & ! northward grid-mean wind component (thermo. levs.) [m/s]
+      thvm,              & ! Virtual potential temperature                        [K]
+      exner,             & ! Exner function (thermodynamic levels)       [-]
+      rtm,               & ! total water mixing ratio, r_t (thermo. levels) [kg/kg]
+      thlm,              & ! liq. water pot. temp., th_l (thermo. levels)   [K]
+      rcm,               & ! cloud water mixing ratio, r_c (thermo. levels) [kg/kg]
+      p_in_Pa,           & ! w'^3 (thermodynamic levels)                    [m^3/s^3]
+      ice_supersat_frac    ! w'^3 (momentum levels)                    [m^3/s^3]
 
-    real( kind = core_rknd ), dimension(ngrdcol,nzm-1), intent(in) :: &
-      thvm,   & ! Virtual potential temperature                        [K]
-      exner,      & ! Exner function (thermodynamic levels)       [-]
-      rtm,     & ! total water mixing ratio, r_t (thermo. levels) [kg/kg]
-      thlm,    & ! liq. water pot. temp., th_l (thermo. levels)   [K]
-      rcm,      & ! cloud water mixing ratio, r_c (thermo. levels) [kg/kg]
-      p_in_Pa,      & ! w'^3 (thermodynamic levels)                    [m^3/s^3]
-      ice_supersat_frac ! w'^3 (momentum levels)                    [m^3/s^3]
+    real( kind = core_rknd ), dimension(ngrdcol, gr%nzm), intent(in) ::  &
+      wp2                  ! w'^2 on thermo. grid [m^2/s^2]
 
     real( kind = core_rknd ), dimension(ngrdcol), intent(in) :: &
-      bv_efold
-
-    type(clubb_config_flags_type), intent(in) :: &
-      clubb_config_flags ! Derived type holding all configurable CLUBB flags
-
-    type( grid ), intent(in) :: &
-      gr, &
-      gr_dycore
-
-    
-
-    !real( kind = core_rknd ), intent(in) ::  &
-    !  grid_sfc, &  ! the grids surface; so the first level in the grid
-    !               ! density function has this height [m]
-    !  grid_top     ! the grids top; so the last level in the grid
-    !               ! density function has this height [m]
-
-    real( kind = core_rknd ), dimension(ngrdcol, nzm-1), intent(in) ::  &
-      um, vm, &
-      Lscale_zt  ! Length scale   [m]
-
-    real( kind = core_rknd ), dimension(ngrdcol, nzm), intent(in) ::  &
-      zm, &      ! levels at which the values are given [m]
-      wp2     ! w'^2 on thermo. grid [m^2/s^2]
+      bv_efold             ! Control parameter for inverse e-folding of cloud fraction
+                           ! in the mixed Brunt Vaisala frequency  [-]
 
     type(pdf_parameter), intent(in) :: & 
-      pdf_params     ! PDF parameters
+      pdf_params           ! PDF parameters
+
+    type(clubb_config_flags_type), intent(in) :: &
+      clubb_config_flags   ! Derived type holding all configurable CLUBB flags
 
     !--------------------- Output Variable ---------------------
-    real( kind = core_rknd ), dimension(nzm), intent(out) ::  &
+    real( kind = core_rknd ), dimension(gr%nzm), intent(out) ::  &
       gr_dens_z,  &    ! the z value coordinates of the connection points of the piecewise linear
                        ! grid density function [m]
       gr_dens  ! the values of the connection points of the piecewise linear
                ! grid density function, given on the z values of gr_dens_z [# levs/meter]
 
-    real( kind = core_rknd ), dimension(nzm), intent(out) :: &
-      inv_alt_term, &
+    ! TODO add descriptions and units
+    real( kind = core_rknd ), dimension(gr%nzm), intent(out) :: &
+      alt_term, &
+      Lscale_term, &
+      Lscale_term_time_avg, &
       chi_term, &
-      brunt_vaisala_term, &
-      lscale_term, &
-      lscale_term_time_avg
+      brunt_term
 
     !--------------------- Local Variables ---------------------
-    real( kind = core_rknd ) ::  &
-      grid_sfc, &  ! the grids surface; so the first level in the grid
-                   ! density function has this height [m]
-      grid_top     ! the grids top; so the last level in the grid
-                   ! density function has this height [m]
+    integer :: k, i
 
-    real( kind = core_rknd ), dimension(nzm) :: &
-      lscale_term_dycore, &
-      chi_zm   ! The variable 's' in Mellor (1977) given on zm levels    [kg/kg]
+    real( kind = core_rknd ), dimension(gr%nzt) :: &
+      chi_zt   ! The variable 's' in Mellor (1977)    [kg/kg]
 
-    integer :: k, l, i
-
-    real( kind = core_rknd ) :: &
-      threshold, &
-      inv_alt_norm_factor, &
-      chi_norm_factor, &
-      brunt_vaisala_norm_factor
-
-    real( kind = core_rknd ), dimension(nzm-1) :: &
-      chi   ! The variable 's' in Mellor (1977)    [kg/kg]
-
-    real( kind = core_rknd ), dimension(ngrdcol, nzm) ::  &
-      ddzt_um, &
-      ddzt_vm, &
-      ddzt_umvm_sqd, &
-      Lscale, &  ! Length scale   [m]
+    real( kind = core_rknd ), dimension(ngrdcol, gr%nzm) ::  &
+      Lscale,                       & ! Length scale                                 [m]
+      ddzt_um,                      & ! Vertical derivative of um                    [s^-1]
+      ddzt_vm,                      & ! Vertical derivative of vm                    [s^-1]
+      ddzt_umvm_sqd,                & ! Squared vertical norm of derivative of
+                                      ! mean horizontal wind speed                   [s^-2]
       brunt_vaisala_freq_sqd,       & ! Buoyancy frequency squared, N^2              [s^-2]
       brunt_vaisala_freq_sqd_zt,    & ! Buoyancy frequency squared (on zt grid), N^2 [s^-2]
       brunt_vaisala_freq_sqd_mixed, & ! A mixture of dry and moist N^2               [s^-2]
       brunt_vaisala_freq_sqd_dry,   & ! dry N^2                                      [s^-2]
       brunt_vaisala_freq_sqd_moist, & ! moist N^2                                    [s^-2]
       brunt_vaisala_freq_sqd_smth     ! Mix between dry and moist N^2 that is
-                                       ! smoothed in the vertical                     [s^-2]
+                                      ! smoothed in the vertical                     [s^-2]
+
+    real( kind = core_rknd ), dimension(gr%nzm) :: &
+      chi   ! The variable 's' in Mellor (1977)    [kg/kg]
 
     !--------------------- Begin Code ---------------------
-    grid_sfc = gr%zm(1,1)
-    grid_top = gr%zm(1,nzm)
-    
 
+    ! Calculate variables needed for the refinement criterions:
+    ! Lscale, chi, ddzt_umvm_sqd, brunt_vaisala_freq_sqd
 
+    ! Calculate Lscale
     Lscale = zt2zm( gr%nzm, gr%nzt, ngrdcol, gr, Lscale_zt )
 
-    ! Calculate the norm of the vertical derivative of the mean horizontal wind speed
-    ! To feed into the calculation of the Richardson number Ri_zm
+    ! Calculate ddzt_umvm_sqd
     ddzt_um = ddzt( gr%nzm, gr%nzt, ngrdcol, gr, um )
     ddzt_vm = ddzt( gr%nzm, gr%nzt, ngrdcol, gr, vm )
     !$acc parallel loop gang vector collapse(2) default(present)
@@ -3695,10 +5280,12 @@ module grid_adaptation_module
       end do
     end do
 
-    chi(:) = pdf_params%mixt_frac(1,:) * pdf_params%chi_1(1,:) &
+    ! Calculate chi
+    chi_zt(:) = pdf_params%mixt_frac(1,:) * pdf_params%chi_1(1,:) &
                   + ( one - pdf_params%mixt_frac(1,:) ) * pdf_params%chi_2(1,:)
-    chi_zm = zt2zm( gr, chi )
+    chi = zt2zm( gr, chi_zt )
 
+    ! Calculate brunt_vaisala_freq_sqd
     call calc_brunt_vaisala_freq_sqd( gr%nzm, gr%nzt, ngrdcol, gr, thlm,                  & ! In
                                       exner, rtm, rcm, p_in_Pa, thvm,                     & ! In
                                       ice_supersat_frac,                                  & ! In
@@ -3706,40 +5293,38 @@ module grid_adaptation_module
                                       clubb_config_flags%l_brunt_vaisala_freq_moist,      & ! In
                                       clubb_config_flags%l_use_thvm_in_bv_freq,           & ! In
                                       clubb_config_flags%l_modify_limiters_for_cnvg_test, & ! In
-                                      bv_efold,                          & ! In
+                                      bv_efold,                                           & ! In
                                       brunt_vaisala_freq_sqd,                             & ! Out
                                       brunt_vaisala_freq_sqd_mixed,                       & ! Out
                                       brunt_vaisala_freq_sqd_dry,                         & ! Out
                                       brunt_vaisala_freq_sqd_moist,                       & ! Out
                                       brunt_vaisala_freq_sqd_smth )                         ! Out
 
-    call calc_grid_dens_helper( ngrdcol, nzm, zm, &
-                                    Lscale, wp2, &
-                                    chi_zm, &
-                                    brunt_vaisala_freq_sqd, &
-                                    ddzt_umvm_sqd, &
-                                    grid_sfc, grid_top, &
-                                    num_levels, &
-                                    gr_dens_z, gr_dens, &
-                                    inv_alt_term, lscale_term, &
-                                    lscale_term_time_avg, &
-                                    chi_term, brunt_vaisala_term )
+    ! Calculate the grid density from Lscale, chi, ddzt_umvm_sqd and brunt_vaisala_freq_sqd
+    call calc_grid_dens_helper( ngrdcol, gr%nzm, gr%zm, &
+                                Lscale, wp2, &
+                                chi, &
+                                brunt_vaisala_freq_sqd, &
+                                ddzt_umvm_sqd, &
+                                gr_dens_z, gr_dens, &
+                                alt_term, Lscale_term, &
+                                Lscale_term_time_avg, &
+                                chi_term, brunt_term )
 
-  end subroutine calc_grid_dens_func_complete
+  end subroutine calc_grid_dens
 
   subroutine calc_grid_dens_helper( ngrdcol, nzm, zm, &
                                     Lscale, wp2, &
                                     chi, &
                                     brunt_vaisala_freq_sqd, &
                                     ddzt_umvm_sqd, &
-                                    grid_sfc, grid_top, &
-                                    num_levels, &
                                     gr_dens_z, gr_dens, &
-                                    inv_alt_term, lscale_term, &
-                                    lscale_term_time_avg, &
-                                    chi_term, brunt_vaisala_term )
+                                    alt_term, Lscale_term, &
+                                    Lscale_term_time_avg, &
+                                    chi_term, brunt_term )
     ! Description:
-    ! Creates an unnormalized grid density function
+    ! Calculates the non-normalized grid density from Lscale, chi,
+    ! ddzt_umvm_sqd and brunt_vaisala_freq_sqd.
 
     ! References:
     ! None
@@ -3753,21 +5338,15 @@ module grid_adaptation_module
     !--------------------- Input Variables ---------------------
     integer, intent(in) :: & 
       ngrdcol, & 
-      nzm, &
-      num_levels ! the desired number of levels
-
-    real( kind = core_rknd ), intent(in) ::  &
-      grid_sfc, &  ! the grids surface; so the first level in the grid
-                   ! density function has this height [m]
-      grid_top     ! the grids top; so the last level in the grid
-                   ! density function has this height [m]
+      nzm
 
     real( kind = core_rknd ), dimension(ngrdcol, nzm), intent(in) ::  &
-      zm, &      ! levels at which the values are given [m]
-      Lscale, &  ! Length scale   [m]
-      ddzt_umvm_sqd, &
-      brunt_vaisala_freq_sqd, &
-      wp2     ! w'^2 on thermo. grid [m^2/s^2]
+      zm,                     & ! levels at which the values are given         [m]
+      Lscale,                 & ! Length scale                                 [m]
+      wp2,                    & ! w'^2 on thermo. grid                         [m^2/s^2]
+      brunt_vaisala_freq_sqd, & ! Buoyancy frequency squared, N^2              [s^-2]
+      ddzt_umvm_sqd             ! Squared vertical norm of derivative of
+                                ! mean horizontal wind speed                   [s^-2]
 
     real( kind = core_rknd ), dimension(nzm), intent(in) ::  &
       chi ! The variable 's' in Mellor (1977) given on zm levels    [kg/kg]
@@ -3780,26 +5359,22 @@ module grid_adaptation_module
       gr_dens  ! the values of the connection points of the piecewise linear
                ! grid density function, given on the z values of gr_dens_z [# levs/meter]
 
+    ! TODO add description and units
     real( kind = core_rknd ), dimension(nzm), intent(out) :: &
-      inv_alt_term, &
+      alt_term, &
+      Lscale_term, &
+      Lscale_term_time_avg, &
       chi_term, &
-      brunt_vaisala_term, &
-      lscale_term, &
-      lscale_term_time_avg
+      brunt_term
 
     !--------------------- Local Variables ---------------------
-    real( kind = core_rknd ), dimension(nzm) :: &
-      lscale_term_dycore
-
-    integer :: k, l
+    integer :: k
 
     real( kind = core_rknd ) :: &
-      threshold, &
-      inv_alt_norm_factor, &
-      chi_norm_factor, &
-      brunt_vaisala_norm_factor
+      wp2_threshold   ! threshold for wp2 whether Lscale is used or not [m^2/s^2]
 
     !--------------------- Begin Code ---------------------
+    ! Prepare cumulative_Lscale to use for time averaged Lscale
     if ( .not. allocated( cumulative_Lscale ) ) then
       allocate( cumulative_Lscale(nzm) )
       Lscale_counter = 0
@@ -3810,47 +5385,48 @@ module grid_adaptation_module
 
     Lscale_counter = Lscale_counter + 1
 
-    threshold = 0.001
-    ! set each refinement criterion term
+    wp2_threshold = 0.001
+
+    ! Calculate each refinement criterion term
     do k = 1, nzm
       gr_dens_z(k) = zm(1,k)
-      inv_alt_term(k) = 1/(gr_dens_z(k) + 100)
-      if ( wp2(1,k) > threshold ) then
-        lscale_term(k) = 1/(Lscale(1,k)+10.0) ! 0.1/ ...3000
+
+      ! Calculate alt_term
+      alt_term(k) = 1/(gr_dens_z(k) + 100)
+
+      ! Calculate Lscale_term
+      if ( wp2(1,k) > wp2_threshold ) then
+        Lscale_term(k) = 1/(Lscale(1,k)+10.0) ! 0.1/ ...3000
       else
-        lscale_term(k) = 0.0_core_rknd
+        Lscale_term(k) = 0.0_core_rknd
       end if
 
-      cumulative_Lscale(k) = cumulative_Lscale(k) + lscale_term(k)
-      lscale_term_time_avg(k) = cumulative_Lscale(k) / Lscale_counter
+      ! Calculate time averaged Lscale_term, by dividing the cumulative sum by
+      ! the number of elements in that sum
+      ! (if the grid is adapted this cumulative sum and the counter are set back to 0)
+      cumulative_Lscale(k) = cumulative_Lscale(k) + Lscale_term(k)
+      Lscale_term_time_avg(k) = cumulative_Lscale(k) / Lscale_counter
 
+      ! Calculate chi_term
       chi_term(k) = exp(1000 * chi(k))/(gr_dens_z(k) + 1000.0) ! + 1000, was 100 before
-      brunt_vaisala_term(k) = maxval([0.0_core_rknd,(brunt_vaisala_freq_sqd(1,k))]) &
-                              / ( (maxval([0.0_core_rknd,(ddzt_umvm_sqd(1,k))]) + 1.0e-5) &
-                                  * (gr_dens_z(k) + 20) ) ! the 20 was 100 before...
+
+      ! Calculate brunt_term using also ddzt_umvm_sqd
+      ! TODO maybe split into more variables to make more readable?
+      brunt_term(k) = maxval([0.0_core_rknd,(brunt_vaisala_freq_sqd(1,k))]) &
+                      / ( (maxval([0.0_core_rknd,(ddzt_umvm_sqd(1,k))]) + 1.0e-5) &
+                          * (gr_dens_z(k) + 20) ) ! the 20 was 100 before...
 
     end do
    
-
+    ! Weigh each term to get the final density as sum of the individual terms
     do k = 1, nzm
-
-
-        gr_dens(k) = 15.0 * lscale_term_time_avg(k) &
-                     + 1.0 * inv_alt_term(k) & !40
+        gr_dens(k) = 15.0 * Lscale_term_time_avg(k) &
+                     + 1.0 * alt_term(k) & !40
                      + 100.0 * chi_term(k) &
-                     + 0.0 * brunt_vaisala_term(k)
-
+                     + 0.0 * brunt_term(k)
     end do
 
-    ! TODO remove this?
-    if (gr_dens_z(1) > grid_sfc) then
-        gr_dens_z(1) = grid_sfc
-    end if
-
-    if (gr_dens_z(nzm) < grid_top) then
-        gr_dens_z(nzm) = grid_top
-    end if
-
+    ! Smooth the grid density
     do k = 1, 3
       gr_dens = moving_average( nzm, &
                                 gr_dens_z, gr_dens )
@@ -4955,9 +6531,9 @@ module grid_adaptation_module
   ! !ROUTINE:  map1_ppm --- Piecewise parabolic mapping, variant 1
   !
   ! !INTERFACE:
-  subroutine map1_ppm( km,   pe1,   q1,  kn,   pe2,   q2,                &
-                         ng_s, ng_n, itot, i1, i2,                         &
-                         j, jfirst, jlast, iv, kord)
+  subroutine map1_ppm( km, pe1, q1, kn, pe2, q2, &
+                       ng_s, ng_n, itot, i1, i2, &
+                       j, jfirst, jlast, iv, kord )
 
         implicit none
 
@@ -5018,13 +6594,12 @@ module grid_adaptation_module
 
         do k=1,km
            do i=i1,i2
-               dp1(i,k) = pe1(i,k+1) - pe1(i,k)
+              dp1(i,k) = pe1(i,k+1) - pe1(i,k)
               q4(1,i,k) = q1(i,j,k)
            enddo
         enddo
 
   ! Mapping
-
   ! Compute vertical subgrid distribution
         call ppm2m( q4, dp1, km, i1, i2, iv, kord )
 
@@ -5065,6 +6640,7 @@ module grid_adaptation_module
            enddo
         enddo
   !#endif
+
   ! Interpolate
         do k = 1, kn
 
