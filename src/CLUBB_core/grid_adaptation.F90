@@ -22,7 +22,7 @@ module grid_adaptation_module
             remapping_matrix_zm_values, remapping_matrix_zt_values, &
             remap_vals_to_target, &
             normalize_grid_density, &
-            adapt_grid, calc_grid_dens_func, &
+            adapt_grid, &
             calc_grid_dens, &
             clean_up_grid_adaptation_module
 
@@ -63,10 +63,18 @@ module grid_adaptation_module
     gr_dens_old_z_global ! grid density altitudes from adaptation step before [m]
 
   integer :: &
-    Lscale_counter
+    Lscale_counter, &
+    brunt_counter, &
+    chi_counter
 
   real( kind = core_rknd ), dimension(:), allocatable :: &
     cumulative_Lscale ! cumulative Lscale sum [m]
+
+  real( kind = core_rknd ), dimension(:), allocatable :: &
+    cumulative_brunt ! cumulative brunt term sum [m]
+
+  real( kind = core_rknd ), dimension(:), allocatable :: &
+    cumulative_chi ! cumulative chi term sum [m]
 
 
   ! TODO remove those three variables
@@ -1724,6 +1732,13 @@ module grid_adaptation_module
       do k = 1, j
         sum = sum + ( gr_dens_old_interp(k) - gr_dens_new_interp(k) )**2/gr_dens_old_interp(k)
       end do
+
+      ! other option for grid adaptation trigger
+      ! TODO remove again if it doesnt work
+      sum = 0
+      do k = 1, j
+        sum = sum + ( gr_dens_old_interp(k) - gr_dens_new_interp(k) )**2/gr_dens_old_interp(k)**2
+      end do
       
       
       write(*,*) 'difference: ', sum/j
@@ -2779,6 +2794,9 @@ module grid_adaptation_module
     threshold = 6.0e-4 !!!!
     threshold = 7.0e-4 !!!!!!!!!!
     threshold = 6.5e-4 !!!!!!!!!!!!!!
+    
+    ! trigger threshold
+    threshold = 5.0e-3
 
     ! Allocate and set gr_dens_old_global if not already allocated
     if ( .not. allocated( gr_dens_old_global ) ) then
@@ -2829,8 +2847,12 @@ module grid_adaptation_module
       end if
 
       Lscale_counter = 0
+      brunt_counter = 0
+      chi_counter = 0
       do k = 1, gr%nzm
         cumulative_Lscale(k) = 0.0_core_rknd
+        cumulative_brunt(k) = 0.0_core_rknd
+        cumulative_chi(k) = 0.0_core_rknd
       end do
 
       ! Set the density values to use for interpolation for mass calculation
@@ -5185,7 +5207,10 @@ module grid_adaptation_module
                              gr_dens_z, gr_dens, &
                              alt_term, Lscale_term, &
                              Lscale_term_time_avg, &
-                             chi_term, brunt_term )
+                             chi_term, &
+                             chi_term_time_avg, &
+                             brunt_term, &
+                             brunt_term_time_avg )
     ! Description:
     ! Calculate the necessary variables and then construct grid density from them.
 
@@ -5255,6 +5280,8 @@ module grid_adaptation_module
       alt_term, &
       Lscale_term, &
       Lscale_term_time_avg, &
+      chi_term_time_avg, &
+      brunt_term_time_avg, &
       chi_term, &
       brunt_term
 
@@ -5328,7 +5355,10 @@ module grid_adaptation_module
                                 gr_dens_z, gr_dens, &
                                 alt_term, Lscale_term, &
                                 Lscale_term_time_avg, &
-                                chi_term, brunt_term )
+                                chi_term, &
+                                chi_term_time_avg, &
+                                brunt_term, &
+                                brunt_term_time_avg )
 
   end subroutine calc_grid_dens
 
@@ -5340,7 +5370,10 @@ module grid_adaptation_module
                                     gr_dens_z, gr_dens, &
                                     alt_term, Lscale_term, &
                                     Lscale_term_time_avg, &
-                                    chi_term, brunt_term )
+                                    chi_term, &
+                                    chi_term_time_avg, &
+                                    brunt_term, &
+                                    brunt_term_time_avg )
     ! Description:
     ! Calculates the non-normalized grid density from Lscale, chi,
     ! ddzt_umvm_sqd and brunt_vaisala_freq_sqd.
@@ -5383,6 +5416,8 @@ module grid_adaptation_module
       alt_term, &
       Lscale_term, &
       Lscale_term_time_avg, &
+      chi_term_time_avg, &
+      brunt_term_time_avg, &
       chi_term, &
       brunt_term
 
@@ -5391,6 +5426,9 @@ module grid_adaptation_module
 
     real( kind = core_rknd ) :: &
       wp2_threshold   ! threshold for wp2 whether Lscale is used or not [m^2/s^2]
+
+    real( kind = core_rknd ), dimension(nzm) :: &
+      wp2_term
 
     !--------------------- Begin Code ---------------------
     ! Prepare cumulative_Lscale to use for time averaged Lscale
@@ -5401,8 +5439,26 @@ module grid_adaptation_module
         cumulative_Lscale(k) = 0.0_core_rknd
       end do
     end if
-
     Lscale_counter = Lscale_counter + 1
+
+    if ( .not. allocated( cumulative_brunt ) ) then
+      allocate( cumulative_brunt(nzm) )
+      brunt_counter = 0
+      do k = 1, nzm
+        cumulative_brunt(k) = 0.0_core_rknd
+      end do
+    end if
+    brunt_counter = brunt_counter + 1
+
+    if ( .not. allocated( cumulative_chi ) ) then
+      allocate( cumulative_chi(nzm) )
+      chi_counter = 0
+      do k = 1, nzm
+        cumulative_chi(k) = 0.0_core_rknd
+      end do
+    end if
+    chi_counter = chi_counter + 1
+
 
     wp2_threshold = 0.001
 
@@ -5411,38 +5467,48 @@ module grid_adaptation_module
       gr_dens_z(k) = zm(1,k)
 
       ! Calculate alt_term
-      alt_term(k) = 1/(gr_dens_z(k) + 100)
+      alt_term(k) = 1/(gr_dens_z(k) + 100) ! 100
 
       ! Calculate Lscale_term
       if ( wp2(1,k) > wp2_threshold ) then
         Lscale_term(k) = 1/(Lscale(1,k)+10.0) ! 0.1/ ...3000
+        brunt_term(k) = maxval([0.0_core_rknd,(brunt_vaisala_freq_sqd(1,k))]) &
+                      / ( (maxval([0.0_core_rknd,(ddzt_umvm_sqd(1,k))]) + 1.0e-5) &
+                          * (gr_dens_z(k) + 20) ) ! the 20 was 100 before...
       else
         Lscale_term(k) = 0.0_core_rknd
+        brunt_term(k) = 0.0_core_rknd
       end if
-
-      ! Calculate time averaged Lscale_term, by dividing the cumulative sum by
-      ! the number of elements in that sum
-      ! (if the grid is adapted this cumulative sum and the counter are set back to 0)
-      cumulative_Lscale(k) = cumulative_Lscale(k) + Lscale_term(k)
-      Lscale_term_time_avg(k) = cumulative_Lscale(k) / Lscale_counter
 
       ! Calculate chi_term
       chi_term(k) = exp(1000 * chi(k))/(gr_dens_z(k) + 1000.0) ! + 1000, was 100 before
 
       ! Calculate brunt_term using also ddzt_umvm_sqd
       ! TODO maybe split into more variables to make more readable?
-      brunt_term(k) = maxval([0.0_core_rknd,(brunt_vaisala_freq_sqd(1,k))]) &
-                      / ( (maxval([0.0_core_rknd,(ddzt_umvm_sqd(1,k))]) + 1.0e-5) &
-                          * (gr_dens_z(k) + 20) ) ! the 20 was 100 before...
+      !brunt_term(k) = maxval([0.0_core_rknd,(brunt_vaisala_freq_sqd(1,k))]) &
+      !                / ( (maxval([0.0_core_rknd,(ddzt_umvm_sqd(1,k))]) + 1.0e-5) &
+      !                    * (gr_dens_z(k) + 20) ) ! the 20 was 100 before...
 
+      ! Calculate time averaged Lscale_term, by dividing the cumulative sum by
+      ! the number of elements in that sum
+      ! (if the grid is adapted this cumulative sum and the counter are set back to 0)
+      cumulative_Lscale(k) = cumulative_Lscale(k) + Lscale_term(k)
+      cumulative_chi(k) = cumulative_chi(k) + chi_term(k)
+      cumulative_brunt(k) = cumulative_brunt(k) + brunt_term(k)
+
+      Lscale_term_time_avg(k) = cumulative_Lscale(k) / Lscale_counter
+      chi_term_time_avg(k) = cumulative_chi(k) / chi_counter
+      brunt_term_time_avg(k) = cumulative_brunt(k) / brunt_counter
+    
     end do
    
     ! Weigh each term to get the final density as sum of the individual terms
     do k = 1, nzm
-        gr_dens(k) = 15.0 * Lscale_term_time_avg(k) &
-                     + 1.0 * alt_term(k) & !40
-                     + 100.0 * chi_term(k) &
-                     + 0.0 * brunt_term(k)
+        ! ref crit
+        gr_dens(k) = 0.0 * Lscale_term_time_avg(k) & ! 15
+                     + 3.0 * alt_term(k) & ! 1.0
+                     + 100.0 * chi_term_time_avg(k) &
+                     + 7.5 * brunt_term_time_avg(k) ! 7.5
     end do
 
     ! Smooth the grid density
@@ -5454,231 +5520,231 @@ module grid_adaptation_module
   end subroutine calc_grid_dens_helper
 
   ! TODO remove function
-  subroutine calc_grid_dens_func( ngrdcol, nzm, zm, &
-                                  gr, &
-                                  gr_dycore, &
-                                  Lscale, wp2, &
-                                  ddzt_umvm_sqd, &
-                                  grid_sfc, grid_top, &
-                                  num_levels, &
-                                  pdf_params, &
-                                  brunt_vaisala_freq_sqd, &
-                                  gr_dens_z, gr_dens, &
-                                  inv_alt_term, lscale_term, &
-                                  lscale_term_time_avg, &
-                                  chi_term, brunt_vaisala_term )
-    ! Description:
-    ! Creates an unnormalized grid density function from Lscale
-
-    ! References:
-    ! None
-    !-----------------------------------------------------------------------
-
-    use clubb_precision, only: &
-        core_rknd ! Variable(s)
-
-    use pdf_parameter_module, only:  &
-        pdf_parameter  ! Type
-
-    use grid_class, only: &
-        zt2zm
-
-    implicit none
-
-    !--------------------- Input Variables ---------------------
-    type( grid ) :: &
-      gr, &
-      gr_dycore
-
-    integer, intent(in) :: & 
-      ngrdcol, & 
-      nzm, &
-      num_levels ! the desired number of levels
-
-    real( kind = core_rknd ), intent(in) ::  &
-      grid_sfc, &  ! the grids surface; so the first level in the grid
-                   ! density function has this height [m]
-      grid_top     ! the grids top; so the last level in the grid
-                   ! density function has this height [m]
-
-    real( kind = core_rknd ), dimension(ngrdcol, nzm), intent(in) ::  &
-      zm, &      ! levels at which the values are given [m]
-      Lscale, &  ! Length scale   [m]
-      ddzt_umvm_sqd, &
-      wp2     ! w'^2 on thermo. grid [m^2/s^2]
-
-    real( kind = core_rknd ), dimension(ngrdcol, nzm), intent(in) ::  &
-      brunt_vaisala_freq_sqd
-
-    type(pdf_parameter), intent(in) :: & 
-      pdf_params     ! PDF parameters
-
-    !--------------------- Output Variable ---------------------
-    real( kind = core_rknd ), dimension(nzm), intent(out) ::  &
-      gr_dens_z,  &    ! the z value coordinates of the connection points of the piecewise linear
-                       ! grid density function [m]
-      gr_dens  ! the values of the connection points of the piecewise linear
-               ! grid density function, given on the z values of gr_dens_z [# levs/meter]
-
-    real( kind = core_rknd ), dimension(nzm), intent(out) :: &
-      inv_alt_term, &
-      chi_term, &
-      brunt_vaisala_term, &
-      lscale_term, &
-      lscale_term_time_avg
-
-    !--------------------- Local Variables ---------------------
-    real( kind = core_rknd ), dimension(nzm) :: &
-      lscale_term_dycore, &
-      chi_zm   ! The variable 's' in Mellor (1977) given on zm levels    [kg/kg]
-
-    integer :: k, l
-
-    real( kind = core_rknd ) :: &
-      threshold, &
-      inv_alt_norm_factor, &
-      chi_norm_factor, &
-      brunt_vaisala_norm_factor
-
-    real( kind = core_rknd ), dimension(nzm-1) :: &
-      chi   ! The variable 's' in Mellor (1977)    [kg/kg]
-
-    real( kind = core_rknd ), dimension(nzm) :: &
-      Lscale_history_sum
-
-    !--------------------- Begin Code ---------------------
-    if ( .not. allocated( cumulative_Lscale ) ) then
-      allocate( cumulative_Lscale(nzm) )
-      Lscale_counter = 0
-      do k = 1, nzm
-        cumulative_Lscale(k) = 0.0_core_rknd
-      end do
-    end if
-
-    if ( .not. allocated( Lscale_history ) ) then
-      allocate( Lscale_history(max_history_Lscale,nzm) )
-      ind_Lscale_history = 1
-      do l = 1, max_history_Lscale
-        do k = 1, nzm
-          Lscale_history(l,k) = 0.0_core_rknd
-        end do
-      end do
-    end if
-
-    chi(:) = pdf_params%mixt_frac(1,:) * pdf_params%chi_1(1,:) &
-                  + ( one - pdf_params%mixt_frac(1,:) ) * pdf_params%chi_2(1,:)
-
-    chi_zm = zt2zm( gr, chi )
-
-    threshold = 0.001
-    Lscale_counter = Lscale_counter + 1
-
-    ! set each refinement criterion term
-    do k = 1, nzm
-      gr_dens_z(k) = zm(1,k)
-      inv_alt_term(k) = 1/(gr_dens_z(k) + 100)
-      if ( wp2(1,k) > threshold ) then
-        lscale_term(k) = 1/(Lscale(1,k)+10.0) ! 0.1/ ...3000
-      else
-        lscale_term(k) = 0.0_core_rknd
-      end if
-
-      cumulative_Lscale(k) = cumulative_Lscale(k) + lscale_term(k)
-      lscale_term_time_avg(k) = cumulative_Lscale(k) / Lscale_counter
-
-      ! TODO remap to common grid before writing to array
-      !Lscale_history(mod(ind_Lscale_history,max_history_Lscale)+1, k) = lscale_term(k)
-      !Lscale_history_sum = sum(Lscale_history,dim=1)
-      !lscale_term_time_avg(k) = Lscale_history_sum(k) / max_history_Lscale
-
-      chi_term(k) = exp(1000 * chi_zm(k))/(gr_dens_z(k) + 1000.0) ! + 1000, was 100 before
-      brunt_vaisala_term(k) = maxval([0.0_core_rknd,(brunt_vaisala_freq_sqd(1,k))]) &
-                              / ( (maxval([0.0_core_rknd,(ddzt_umvm_sqd(1,k))]) + 1.0e-5) &
-                                  * (gr_dens_z(k) + 20) ) ! the 20 was 100 before...
-
-    end do
-
-    ! build time average for lscale_term
-    ! TODO instead of map1_ppm use remap_vals_to_target function
-    
-    !call map1_ppm( nzm-1,   zm,   lscale_term,  &
-    !               gr_dycore%nzm-1,   gr_dycore%zm,   lscale_term_dycore, &
-    !                     0, 0, 1, 1, 1,                         &
-    !                     1, 1, 1, 0, 3)
-    !do k = 1, nzm
-    !  Lscale_history(mod(ind_Lscale_history,max_history_Lscale)+1, k) = lscale_term_dycore(k)
-    !end do
-!
-    !ind_Lscale_history = ind_Lscale_history + 1
-    !!Lscale_history_sum = sum(Lscale_history,dim=1)
-    !call map1_ppm( gr_dycore%nzm-1,   gr_dycore%zm,   sum(Lscale_history,dim=1),  &
-    !               nzm-1,   zm,   Lscale_history_sum, &
-    !                     0, 0, 1, 1, 1,                         &
-    !                     1, 1, 1, 0, 3)
-!
-    !do k = 1, nzm
-    !  lscale_term_time_avg(k) = Lscale_history_sum(k) / max_history_Lscale
-    !end do
-
-    ! calculate noramlization factors, so each refinement criterion has same magnitude
-    !inv_alt_norm_factor = 1/calc_integral( nzm, zm(1,:), inv_alt_term )
-    !chi_norm_factor = 1/calc_integral( nzm, zm(1,:), chi_term )
-    !brunt_vaisala_norm_factor = 1/calc_integral( nzm, zm(1,:), brunt_vaisala_term )
-
-    do k = 1, nzm
-    
-        !gr_dens(k) = 0.2 * inv_alt_norm_factor * inv_alt_term(k) &              ! 0.2
-        !             + 0.5 * chi_norm_factor * chi_term(k) &                    ! 0.5
-        !             + 0.3 * brunt_vaisala_norm_factor * brunt_vaisala_term(k)  ! 0.3
-
-        ! lololo
-        !gr_dens(k) = 5.0 * lscale_term(k) &
-        !             + 3.0 * inv_alt_term(k) & 
-        !             + 40.0 * chi_term(k) &
-        !             + 1.0 * brunt_vaisala_term(k)
-
-        !do l = 1, 1
-        !  lscale_term = moving_average( nzm, &
-        !                                gr_dens_z, lscale_term )
-        !end do
-
-        ! !!!!!!! those coefficients work good !!!!
-        !gr_dens(k) = 15.0 * lscale_term_time_avg(k) &
-        !             + 1.0 * inv_alt_term(k) & 
-        !             + 100.0 * chi_term(k) &
-        !             + 0.0 * brunt_vaisala_term(k)
-
-        gr_dens(k) = 15.0 * lscale_term_time_avg(k) &
-                     + 1.0 * inv_alt_term(k) & !40
-                     + 100.0 * chi_term(k) &
-                     + 0.0 * brunt_vaisala_term(k)
-
-        !gr_dens(k) = lscale_term_time_avg(k)
-
-        ! cond0: only adapt every 80 iteration -> reduces noise and shows some good results, but cond4 looks better
-        ! cond1: brunt_vaisala/2 and ddzt_umvm*2 adapt every 80th iteration -> results were worse than before
-        ! cond2: ddzt_umvm*2 adapt every 80th iteration -> results were worse than before
-        ! cond3: gr_dens(k) = gr_dens(k) + 0.5/(gr_dens_z(k)+1.0) adapt every 80th iteration -> results were a bit worse than before but noise was reduced for lwp, but more noise in wp2
-        ! cond4: gr_dens(k) = gr_dens(k) + 0.05/(gr_dens_z(k)+1.0) adapt every 120th iteration -> !!!
-    end do
-
-    if (gr_dens_z(1) > grid_sfc) then
-        gr_dens_z(1) = grid_sfc
-    end if
-
-    if (gr_dens_z(nzm) < grid_top) then
-        gr_dens_z(nzm) = grid_top
-    end if
-
-    do k = 1, 3
-      gr_dens = moving_average( nzm, &
-                                gr_dens_z, gr_dens )
-    end do
-
-  end subroutine calc_grid_dens_func
-
-  ! gabls2 case v1
   !subroutine calc_grid_dens_func( ngrdcol, nzm, zm, &
+  !                                gr, &
+  !                                gr_dycore, &
+  !                                Lscale, wp2, &
+  !                                ddzt_umvm_sqd, &
+  !                                grid_sfc, grid_top, &
+  !                                num_levels, &
+  !                                pdf_params, &
+  !                                brunt_vaisala_freq_sqd, &
+  !                                gr_dens_z, gr_dens, &
+  !                                inv_alt_term, lscale_term, &
+  !                                lscale_term_time_avg, &
+  !                                chi_term, brunt_vaisala_term )
+  !  ! Description:
+  !  ! Creates an unnormalized grid density function from Lscale
+!
+  !  ! References:
+  !  ! None
+  !  !-----------------------------------------------------------------------
+!
+  !  use clubb_precision, only: &
+  !      core_rknd ! Variable(s)
+!
+  !  use pdf_parameter_module, only:  &
+  !      pdf_parameter  ! Type
+!
+  !  use grid_class, only: &
+  !      zt2zm
+!
+  !  implicit none
+!
+  !  !--------------------- Input Variables ---------------------
+  !  type( grid ) :: &
+  !    gr, &
+  !    gr_dycore
+!
+  !  integer, intent(in) :: & 
+  !    ngrdcol, & 
+  !    nzm, &
+  !    num_levels ! the desired number of levels
+!
+  !  real( kind = core_rknd ), intent(in) ::  &
+  !    grid_sfc, &  ! the grids surface; so the first level in the grid
+  !                 ! density function has this height [m]
+  !    grid_top     ! the grids top; so the last level in the grid
+  !                 ! density function has this height [m]
+!
+  !  real( kind = core_rknd ), dimension(ngrdcol, nzm), intent(in) ::  &
+  !    zm, &      ! levels at which the values are given [m]
+  !    Lscale, &  ! Length scale   [m]
+  !    ddzt_umvm_sqd, &
+  !    wp2     ! w'^2 on thermo. grid [m^2/s^2]
+!
+  !  real( kind = core_rknd ), dimension(ngrdcol, nzm), intent(in) ::  &
+  !    brunt_vaisala_freq_sqd
+!
+  !  type(pdf_parameter), intent(in) :: & 
+  !    pdf_params     ! PDF parameters
+!
+  !  !--------------------- Output Variable ---------------------
+  !  real( kind = core_rknd ), dimension(nzm), intent(out) ::  &
+  !    gr_dens_z,  &    ! the z value coordinates of the connection points of the piecewise linear
+  !                     ! grid density function [m]
+  !    gr_dens  ! the values of the connection points of the piecewise linear
+  !             ! grid density function, given on the z values of gr_dens_z [# levs/meter]
+!
+  !  real( kind = core_rknd ), dimension(nzm), intent(out) :: &
+  !    inv_alt_term, &
+  !    chi_term, &
+  !    brunt_vaisala_term, &
+  !    lscale_term, &
+  !    lscale_term_time_avg
+!
+  !  !--------------------- Local Variables ---------------------
+  !  real( kind = core_rknd ), dimension(nzm) :: &
+  !    lscale_term_dycore, &
+  !    chi_zm   ! The variable 's' in Mellor (1977) given on zm levels    [kg/kg]
+!
+  !  integer :: k, l
+!
+  !  real( kind = core_rknd ) :: &
+  !    threshold, &
+  !    inv_alt_norm_factor, &
+  !    chi_norm_factor, &
+  !    brunt_vaisala_norm_factor
+!
+  !  real( kind = core_rknd ), dimension(nzm-1) :: &
+  !    chi   ! The variable 's' in Mellor (1977)    [kg/kg]
+!
+  !  real( kind = core_rknd ), dimension(nzm) :: &
+  !    Lscale_history_sum
+!
+  !  !--------------------- Begin Code ---------------------
+  !  if ( .not. allocated( cumulative_Lscale ) ) then
+  !    allocate( cumulative_Lscale(nzm) )
+  !    Lscale_counter = 0
+  !    do k = 1, nzm
+  !      cumulative_Lscale(k) = 0.0_core_rknd
+  !    end do
+  !  end if
+!
+  !  if ( .not. allocated( Lscale_history ) ) then
+  !    allocate( Lscale_history(max_history_Lscale,nzm) )
+  !    ind_Lscale_history = 1
+  !    do l = 1, max_history_Lscale
+  !      do k = 1, nzm
+  !        Lscale_history(l,k) = 0.0_core_rknd
+  !      end do
+  !    end do
+  !  end if
+!
+  !  chi(:) = pdf_params%mixt_frac(1,:) * pdf_params%chi_1(1,:) &
+  !                + ( one - pdf_params%mixt_frac(1,:) ) * pdf_params%chi_2(1,:)
+!
+  !  chi_zm = zt2zm( gr, chi )
+!
+  !  threshold = 0.001
+  !  Lscale_counter = Lscale_counter + 1
+!
+  !  ! set each refinement criterion term
+  !  do k = 1, nzm
+  !    gr_dens_z(k) = zm(1,k)
+  !    inv_alt_term(k) = 1/(gr_dens_z(k) + 100)
+  !    if ( wp2(1,k) > threshold ) then
+  !      lscale_term(k) = 1/(Lscale(1,k)+10.0) ! 0.1/ ...3000
+  !    else
+  !      lscale_term(k) = 0.0_core_rknd
+  !    end if
+!
+  !    cumulative_Lscale(k) = cumulative_Lscale(k) + lscale_term(k)
+  !    lscale_term_time_avg(k) = cumulative_Lscale(k) / Lscale_counter
+!
+  !    ! TODO remap to common grid before writing to array
+  !    !Lscale_history(mod(ind_Lscale_history,max_history_Lscale)+1, k) = lscale_term(k)
+  !    !Lscale_history_sum = sum(Lscale_history,dim=1)
+  !    !lscale_term_time_avg(k) = Lscale_history_sum(k) / max_history_Lscale
+!
+  !    chi_term(k) = exp(1000 * chi_zm(k))/(gr_dens_z(k) + 1000.0) ! + 1000, was 100 before
+  !    brunt_vaisala_term(k) = maxval([0.0_core_rknd,(brunt_vaisala_freq_sqd(1,k))]) &
+  !                            / ( (maxval([0.0_core_rknd,(ddzt_umvm_sqd(1,k))]) + 1.0e-5) &
+  !                                * (gr_dens_z(k) + 20) ) ! the 20 was 100 before...
+!
+  !  end do
+!
+  !  ! build time average for lscale_term
+  !  ! TODO instead of map1_ppm use remap_vals_to_target function
+  !  
+  !  !call map1_ppm( nzm-1,   zm,   lscale_term,  &
+  !  !               gr_dycore%nzm-1,   gr_dycore%zm,   lscale_term_dycore, &
+  !  !                     0, 0, 1, 1, 1,                         &
+  !  !                     1, 1, 1, 0, 3)
+  !  !do k = 1, nzm
+  !  !  Lscale_history(mod(ind_Lscale_history,max_history_Lscale)+1, k) = lscale_term_dycore(k)
+  !  !end do
+!!
+  !  !ind_Lscale_history = ind_Lscale_history + 1
+  !  !!Lscale_history_sum = sum(Lscale_history,dim=1)
+  !  !call map1_ppm( gr_dycore%nzm-1,   gr_dycore%zm,   sum(Lscale_history,dim=1),  &
+  !  !               nzm-1,   zm,   Lscale_history_sum, &
+  !  !                     0, 0, 1, 1, 1,                         &
+  !  !                     1, 1, 1, 0, 3)
+!!
+  !  !do k = 1, nzm
+  !  !  lscale_term_time_avg(k) = Lscale_history_sum(k) / max_history_Lscale
+  !  !end do
+!
+  !  ! calculate noramlization factors, so each refinement criterion has same magnitude
+  !  !inv_alt_norm_factor = 1/calc_integral( nzm, zm(1,:), inv_alt_term )
+  !  !chi_norm_factor = 1/calc_integral( nzm, zm(1,:), chi_term )
+  !  !brunt_vaisala_norm_factor = 1/calc_integral( nzm, zm(1,:), brunt_vaisala_term )
+!
+  !  do k = 1, nzm
+  !  
+  !      !gr_dens(k) = 0.2 * inv_alt_norm_factor * inv_alt_term(k) &              ! 0.2
+  !      !             + 0.5 * chi_norm_factor * chi_term(k) &                    ! 0.5
+  !      !             + 0.3 * brunt_vaisala_norm_factor * brunt_vaisala_term(k)  ! 0.3
+!
+  !      ! lololo
+  !      !gr_dens(k) = 5.0 * lscale_term(k) &
+  !      !             + 3.0 * inv_alt_term(k) & 
+  !      !             + 40.0 * chi_term(k) &
+  !      !             + 1.0 * brunt_vaisala_term(k)
+!
+  !      !do l = 1, 1
+  !      !  lscale_term = moving_average( nzm, &
+  !      !                                gr_dens_z, lscale_term )
+  !      !end do
+!
+  !      ! !!!!!!! those coefficients work good !!!!
+  !      !gr_dens(k) = 15.0 * lscale_term_time_avg(k) &
+  !      !             + 1.0 * inv_alt_term(k) & 
+  !      !             + 100.0 * chi_term(k) &
+  !      !             + 0.0 * brunt_vaisala_term(k)
+!
+  !      gr_dens(k) = 15.0 * lscale_term_time_avg(k) &
+  !                   + 1.0 * inv_alt_term(k) &
+  !                   + 100.0 * chi_term(k) &
+  !                   + 0.0 * brunt_vaisala_term(k)
+!
+  !      !gr_dens(k) = lscale_term_time_avg(k)
+!
+  !      ! cond0: only adapt every 80 iteration -> reduces noise and shows some good results, but cond4 looks better
+  !      ! cond1: brunt_vaisala/2 and ddzt_umvm*2 adapt every 80th iteration -> results were worse than before
+  !      ! cond2: ddzt_umvm*2 adapt every 80th iteration -> results were worse than before
+  !      ! cond3: gr_dens(k) = gr_dens(k) + 0.5/(gr_dens_z(k)+1.0) adapt every 80th iteration -> results were a bit worse than before but noise was reduced for lwp, but more noise in wp2
+  !      ! cond4: gr_dens(k) = gr_dens(k) + 0.05/(gr_dens_z(k)+1.0) adapt every 120th iteration -> !!!
+  !  end do
+!
+  !  if (gr_dens_z(1) > grid_sfc) then
+  !      gr_dens_z(1) = grid_sfc
+  !  end if
+!
+  !  if (gr_dens_z(nzm) < grid_top) then
+  !      gr_dens_z(nzm) = grid_top
+  !  end if
+!
+  !  do k = 1, 3
+  !    gr_dens = moving_average( nzm, &
+  !                              gr_dens_z, gr_dens )
+  !  end do
+!
+  !end subroutine calc_grid_dens_func
+!
+  !! gabls2 case v1
+  !!subroutine calc_grid_dens_func( ngrdcol, nzm, zm, &
   !                                gr, &
   !                                Lscale, wp2, &
   !                                ddzt_umvm_sqd, &
@@ -5951,6 +6017,14 @@ module grid_adaptation_module
 
     if ( allocated( cumulative_Lscale ) ) then
       deallocate( cumulative_Lscale )
+    end if
+
+    if ( allocated( cumulative_brunt ) ) then
+      deallocate( cumulative_brunt )
+    end if
+
+    if ( allocated( cumulative_chi ) ) then
+      deallocate( cumulative_chi )
     end if
 
   end subroutine

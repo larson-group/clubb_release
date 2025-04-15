@@ -181,7 +181,8 @@ vars_zm =
 'invrs_tau_xp2_zm', 'invrs_tau_wp2_zm', 'invrs_tau_wpxp_zm', 'invrs_tau_wp3_zm',
 'invrs_tau_no_N2_zm', 'invrs_tau_bkgnd', 'invrs_tau_sfc', 'invrs_tau_shear', 'Ri_zm',
 'grid_density', 'alt_term', 'lscale_term', 'chi_term', 'brunt_term',
-'lscale_term_time_avg', 'norm_min_grid_dens', 'norm_grid_dens',
+'lscale_term_time_avg', 'chi_term_time_avg', 'brunt_term_time_avg', 
+'norm_min_grid_dens', 'norm_grid_dens',
 ''
 
 vars_rad_zt =

@@ -2418,10 +2418,28 @@ module stats_zm_module
              grid_kind=stats_zm )
         k = k + 1
 
+      case ('chi_term_time_avg')
+        stats_metadata%ichi_term_time_avg = k
+        call stat_assign( var_index=stats_metadata%ichi_term_time_avg, &
+             var_name="chi_term_time_avg", &
+             var_description="chi_term_time_avg, time averaged chi term of the grid density",&
+             var_units="1/m", l_silhs=.false., &
+             grid_kind=stats_zm )
+        k = k + 1
+
       case ('brunt_term')
         stats_metadata%ibrunt_term = k
         call stat_assign( var_index=stats_metadata%ibrunt_term, var_name="brunt_term", &
              var_description="brunt_term, Brunt-Vaisala Frequency term of the grid density", &
+             var_units="1/m", l_silhs=.false., &
+             grid_kind=stats_zm )
+        k = k + 1
+
+      case ('brunt_term_time_avg')
+        stats_metadata%ibrunt_term_time_avg = k
+        call stat_assign( var_index=stats_metadata%ibrunt_term_time_avg, &
+             var_name="brunt_term_time_avg", &
+             var_description="brunt_term_time_avg, time averaged brunt term of the grid density",&
              var_units="1/m", l_silhs=.false., &
              grid_kind=stats_zm )
         k = k + 1

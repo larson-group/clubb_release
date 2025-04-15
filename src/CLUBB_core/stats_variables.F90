@@ -1141,7 +1141,9 @@ module stats_variables
       ilscale_term = 0,            & ! the Lscale term of the grid density
       ilscale_term_time_avg = 0,   & ! the time averaged Lscale term of the grid density
       ichi_term = 0,               & ! the chi term of the grid density
+      ichi_term_time_avg = 0,   & ! the time averaged Lscale term of the grid density
       ibrunt_term = 0,             & ! the brunt-vaisala term of the grid density
+      ibrunt_term_time_avg = 0,   & ! the time averaged Lscale term of the grid density
       inorm_min_grid_dens = 0,     & ! the brunt-vaisala term of the grid density
       inorm_grid_dens = 0            ! the brunt-vaisala term of the grid density
 

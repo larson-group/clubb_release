@@ -281,7 +281,7 @@ module clubb_driver
         cloud_drop_sed  ! Procedure(s)
 
     use grid_adaptation_module, only: &
-      setup_gr_dycore, calc_grid_dens_func, &
+      setup_gr_dycore, &
       normalize_grid_density, adapt_grid, &
       calc_grid_dens, &
       clean_up_grid_adaptation_module  ! Procedure(s)
@@ -1030,7 +1030,9 @@ module clubb_driver
       lscale_term, &
       lscale_term_time_avg, &
       chi_term, &
+      chi_term_time_avg, &
       brunt_term, &
+      brunt_term_time_avg, &
       norm_min_grid_dens, &
       norm_grid_dens
 
@@ -1966,6 +1968,8 @@ module clubb_driver
       allocate( alt_term(gr%nzm) )
       allocate( lscale_term(gr%nzm) )
       allocate( lscale_term_time_avg(gr%nzm) )
+      allocate( chi_term_time_avg(gr%nzm) )
+      allocate( brunt_term_time_avg(gr%nzm) )
       allocate( norm_min_grid_dens(gr%nzm) )
       allocate( norm_grid_dens(gr%nzm) )
       allocate( chi_term(gr%nzm) )
@@ -3304,7 +3308,10 @@ module clubb_driver
                                gr_dens_z, gr_dens, &
                                alt_term, lscale_term, &
                                lscale_term_time_avg, &
-                               chi_term, brunt_term )
+                               chi_term, &
+                               chi_term_time_avg, &
+                               brunt_term, &
+                               brunt_term_time_avg )
         !else
       !
         !  write(fstderr,*) 'There is currently no grid adaptation method implemented for ', &
@@ -3330,6 +3337,10 @@ module clubb_driver
             call stat_update_var( stats_metadata%ialt_term, alt_term, stats_zm(i) )
             call stat_update_var( stats_metadata%ilscale_term, lscale_term, stats_zm(i) )
             call stat_update_var( stats_metadata%ilscale_term_time_avg, lscale_term_time_avg, &
+                                  stats_zm(i) )
+            call stat_update_var( stats_metadata%ichi_term_time_avg, chi_term_time_avg, &
+                                  stats_zm(i) )
+            call stat_update_var( stats_metadata%ibrunt_term_time_avg, brunt_term_time_avg, &
                                   stats_zm(i) )
             call stat_update_var( stats_metadata%inorm_min_grid_dens, norm_min_grid_dens, &
                                   stats_zm(i) )
@@ -3728,7 +3739,9 @@ module clubb_driver
       deallocate( norm_min_grid_dens )
       deallocate( norm_grid_dens )
       deallocate( chi_term )
+      deallocate( chi_term_time_avg )
       deallocate( brunt_term )
+      deallocate( brunt_term_time_avg )
 
       call clean_up_grid_adaptation_module()
     !end if
