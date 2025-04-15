@@ -3313,6 +3313,8 @@ module clubb_driver
         !end if
 
         lambda = 0.3
+        lambda = 0.5
+        lambda = 0.4
         call normalize_grid_density( ngrdcol, &
                                      iunit_grid_adaptation, itime, &
                                      gr%nzm, &

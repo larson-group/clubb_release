@@ -1717,6 +1717,15 @@ module grid_adaptation_module
       do k = 1, j
         sum = sum + ( gr_dens_old_interp(k) - gr_dens_new_interp(k) )**2
       end do
+
+      ! other option for grid adaptation trigger
+      ! TODO remove again if it doesnt work
+      sum = 0
+      do k = 1, j
+        sum = sum + ( gr_dens_old_interp(k) - gr_dens_new_interp(k) )**2/gr_dens_old_interp(k)
+      end do
+      
+      
       write(*,*) 'difference: ', sum/j
       write(*,*) 'threshold: ', threshold
       if ( sum/j > threshold ) then
@@ -2748,18 +2757,28 @@ module grid_adaptation_module
     num_levels = gr%nzm
     equi_dens = (num_levels-1)/(gr%zm(1,gr%nzm) - gr%zm(1,1))
     ! lalala
-    !threshold = 3.0e-6
-    threshold = 4.0e-6
-    !threshold = 5.0e-6
+    !threshold = 0.0
+    !threshold = 4.0e-6
+    
+    !threshold = 5.0e-6   !!
     !threshold = 6.0e-6
     !threshold = 7.0e-6
     
-    !threshold = 8.0e-6
+    !threshold = 8.0e-6   !!!
+    
     !threshold = 9.0e-6
     !threshold = 1.0e-5
     !threshold = 2.0e-5
+
     !lambda = 0.00000000000000000001
     !lambda = 0.3
+
+    !threshold = 1.0e-3
+    threshold = 5.0e-4 !!!!!
+    threshold = 4.0e-4
+    threshold = 6.0e-4 !!!!
+    threshold = 7.0e-4 !!!!!!!!!!
+    threshold = 6.5e-4 !!!!!!!!!!!!!!
 
     ! Allocate and set gr_dens_old_global if not already allocated
     if ( .not. allocated( gr_dens_old_global ) ) then
