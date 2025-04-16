@@ -13,40 +13,14 @@ from dash.dependencies import Input, Output, ALL
 from dash.exceptions import PreventUpdate
 import pyperclip
 from scipy.optimize import minimize
-from sklearn.utils import resample
-from random import random
+import warnings
+from itertools import chain
 
-def f4(x):
-    s = f"{x:.4g}"  # General format (switches to sci notation if needed)
-    if "e+00" in s or "e-00" in s:
-        # Replace e±00 with nothing
-        s = s.replace("e+00", "").replace("e-00", "")
-    return s
-
-# Functions safe to use in the custom plot
-safe_functions = {
-    "abs": abs,
-    "max": max,
-    "min": min,
-    "round": round,
-    "ceil": np.ceil,
-    "floor": np.floor,
-    "sqrt": np.sqrt,
-    "log": np.log,
-    "log2": np.log2,
-    "log10": np.log10,
-    "exp": np.exp,
-    "sin": np.sin,
-    "cos": np.cos,
-    "tan": np.tan,
-    "pi": np.pi,
-    "e": np.e,
-    "np": np
-}
-
+# ======================================== Table Definitions ========================================
 gpu_model_columns = [
     {"name": "Name", "id": "name"},
     {"name": "m", "id": "m_val"},
+    {"name": "m_est", "id": "m_est_val"},
     {"name": "b", "id": "b_val"},
     {"name": "b_est", "id": "b_est_val"},
     {"name": "RMSE", "id": "rms_error"},
@@ -57,7 +31,7 @@ gpu_batched_model_columns = [
     {"name": "m_ik", "id": "m_ik_val"},
     {"name": "m_k", "id": "m_k_val"},
     {"name": "b", "id": "b_val"},
-    {"name": "b_est", "id": "b_est_val"},
+    #{"name": "b_est", "id": "b_est_val"},
     {"name": "RMSE", "id": "rms_error"},
 ]
 
@@ -88,6 +62,7 @@ vcpu_model_columns = [
 ]
 
 
+# ======================================== Reused html styles ========================================
 plot_div_style = {
     "margin-bottom": "2%",
     "border": "1px solid black",
@@ -118,35 +93,50 @@ fit_plot_div_style = {
 
 graph_style = {"width": "100%", "height": "100%"}
 
-cpu_param_scale = [ 1e-4, 1e-2, 1.0, 1.0, 1.0 ]
-vcpu_param_scale = [ 1e-2, 1.0, 1.0, 1.0 ]
-gpu_param_scale = [ 1.0, 1.0 ]
-gpu_batched_param_scale = [ 1.0, 1.0, 1.0 ]
 
+# ======================================== Cache penalty functions ========================================
 def loglog( c, k, o, x ):
+    warnings.filterwarnings("ignore", category=RuntimeWarning)
     return c * np.log(np.log( np.exp(k*(x - o)) + 1 ) + 1 ) + 1
 
 def sigmoid( c, k, o, x ):
+    warnings.filterwarnings("ignore", category=RuntimeWarning)
     return 1 + c / (1 + np.exp(-k * (x - o)))
 
 def sqrtlog( c, k, o, x ):
+    warnings.filterwarnings("ignore", category=RuntimeWarning)
     return c * np.sqrt( np.log( np.exp(k*(x - o)) + 1 ) ) + 1
 
 def logsig( c, k, o, x ):
+    warnings.filterwarnings("ignore", category=RuntimeWarning)
     return  1 + ( np.log(np.log( np.exp(c*(x - o)) + 1 ) + 1 ) + 1 ) / (1 + np.exp(-k * x + o ))
 
 def logcosh( c, k, o, x ):
+    warnings.filterwarnings("ignore", category=RuntimeWarning)
     return np.where(
         x < o,
         1,
         c * np.log(np.log(np.cosh(k * (x - o))) + 1) + 1
     )
 
-cache_pen_funcs = [ logcosh ]#, loglog ] #, "sigmoid", "sqrtlog" ]
+#cache_pen_funcs = [ loglog, logcosh, sigmoid, sqrtlog ]
+cache_pen_funcs = {
+    "loglog": loglog,
+    "logcosh": logcosh,
+    "sigmoid": sigmoid,
+    "sqrtlog": sqrtlog
+}
 
+# ======================================== VCPU ========================================
 
-def model_vcpu_time(ngrdcol, runtime, params, N_tasks, N_vsize, N_prec, N_vlevs, cp_func):
+vcpu_param_scale = [ 1e-2, 1.0, 1.0, 1.0 ]
 
+def vcpu_objective(params, ngrdcol, runtime, N_tasks, N_vsize, N_prec, N_vlevs, cp_func ):
+    _, rms_error = model_vcpu_time(params, ngrdcol, runtime, N_tasks, N_vsize, N_prec, N_vlevs, cp_func )
+    return rms_error
+def model_vcpu_time(params, ngrdcol, runtime, N_tasks, N_vsize, N_prec, N_vlevs, cp_func):
+
+    # Model time
     cols_per_core = ngrdcol / N_tasks
     flops_per_vop = N_vsize / N_prec
 
@@ -160,100 +150,99 @@ def model_vcpu_time(ngrdcol, runtime, params, N_tasks, N_vsize, N_prec, N_vlevs,
 
     avg_array_size_MB = ngrdcol * N_vlevs * (N_prec/8) / 2**20
 
-    T_cpu = ( T_r * N_s + T_v * N_v ) * cp_func( c, k, o, avg_array_size_MB ) + b
+    T_vcpu = ( T_r * N_s + T_v * N_v ) * cp_func( c, k, o, avg_array_size_MB ) + b
 
-    return T_cpu
+    # Calculate error
+    cps = ngrdcol / runtime
+    cps_model = ngrdcol / T_vcpu
+
+    abs_percent_diff = 100 * ( cps - cps_model ) / cps
+    abs_diff = np.abs( cps - cps_model )
+
+    rms_error = np.sqrt( np.mean( abs_diff**2 ) )
+
+    return T_vcpu, rms_error
 
 
-def model_cpu_time(ngrdcol, runtime, params, N_tasks, N_vsize, N_prec, N_vlevs, cp_func):
+# ======================================== CPU ========================================
 
+cpu_param_scale = [ 1e-4, 1e-2, 1.0, 1.0, 1.0 ]
+
+def cpu_objective(params, ngrdcol, runtime, N_tasks, N_vsize, N_prec, N_vlevs, cp_func ):
+    _, rms_error = model_cpu_time(params, ngrdcol, runtime, N_tasks, N_vsize, N_prec, N_vlevs, cp_func )
+    return rms_error
+def model_cpu_time(params, ngrdcol, runtime, N_tasks, N_vsize, N_prec, N_vlevs, cp_func):
+
+    # Model time
     m, b, c, k, o = cpu_param_scale * params
 
     avg_array_size_MB = ngrdcol * N_vlevs * (N_prec/8) / 2**20
  
     T_cpu =  ( m * ngrdcol + b ) * cp_func( c, k, o, avg_array_size_MB )
 
-    return T_cpu
+    # Calculate error
+    cps = ngrdcol / runtime
+    cps_model = ngrdcol / T_cpu
+
+    abs_percent_diff = 100 * ( cps - cps_model ) / cps
+    abs_diff = np.abs( cps - cps_model )
+
+    rms_error = np.sqrt( np.mean( abs_diff**2 ) )
+
+    return T_cpu, rms_error
 
 
-def model_gpu_time(ngrdcol, runtime, params, N_tasks, N_vsize, N_prec, N_vlevs):
+# ======================================== GPU ========================================
+
+gpu_param_scale = [ 1.0, 1.0 ]
+
+def gpu_objective(params, ngrdcol, runtime, N_tasks, N_vsize, N_prec, N_vlevs ):
+    _, rms_error = model_gpu_time(params, ngrdcol, runtime, N_tasks, N_vsize, N_prec, N_vlevs )
+    return rms_error
+def model_gpu_time(params, ngrdcol, runtime, N_tasks, N_vsize, N_prec, N_vlevs):
 
     m, b = gpu_param_scale * params
 
-    f = b + m * ngrdcol * N_vlevs
+    f = b + m * ngrdcol
 
     T_gpu = f
 
-    return T_gpu
+    # Calculate error
+    cps = ngrdcol / runtime
+    cps_model = ngrdcol / T_gpu
 
-def model_gpu_batched_time(ngrdcol, runtime, params, N_tasks, N_vsize, N_prec, N_vlevs):
+    abs_diff = np.abs( cps - cps_model )
+    rms_error = np.sqrt( np.mean( abs_diff**2 ) )
+
+    return T_gpu, rms_error
+
+
+# ======================================== Batched GPU ========================================
+
+gpu_batched_param_scale = [ 1.0, 1.0, 1.0 ]
+
+def gpu_batched_objective(params, ngrdcol, runtime, N_tasks, N_vsize, N_prec, N_vlevs ):
+    _, rms_error = model_gpu_batched_time(params, ngrdcol, runtime, N_tasks, N_vsize, N_prec, N_vlevs )
+    return rms_error
+def model_gpu_batched_time(params, ngrdcol, runtime, N_tasks, N_vsize, N_prec, N_vlevs):
 
     m_ik, m_k, b = gpu_batched_param_scale * params
 
     f = m_ik * ngrdcol * N_vlevs + m_k * N_vlevs + b
 
-    T_gpu = f
+    T_bgpu = f
 
-    return T_gpu
-
-
-def vcpu_objective(params, ngrdcol, runtime, N_tasks, N_vsize, N_prec, N_vlevs, cp_func ):
-
-    T_cpu = model_vcpu_time(ngrdcol, runtime, params, N_tasks, N_vsize, N_prec, N_vlevs, cp_func )
-
+    # Calculate error
     cps = ngrdcol / runtime
-    cps_model = ngrdcol / T_cpu
-
-    abs_percent_diff = 100 * ( cps - cps_model ) / cps
-
-    rms_error = np.sqrt( np.mean( abs_percent_diff**2 ) )
-
-    return rms_error
-
-    
-def cpu_objective(params, ngrdcol, runtime, N_tasks, N_vsize, N_prec, N_vlevs, cp_func ):
-
-    T_cpu = model_cpu_time(ngrdcol, runtime, params, N_tasks, N_vsize, N_prec, N_vlevs, cp_func )
-
-    cps = ngrdcol / runtime
-    cps_model = ngrdcol / T_cpu
-
-    abs_percent_diff = 100 * ( cps - cps_model ) / cps
-
-    rms_error = np.sqrt( np.mean( abs_percent_diff**2 ) )
-
-    return rms_error
-
-
-def gpu_objective(params, ngrdcol, runtime, N_tasks, N_vsize, N_prec, N_vlevs ):
-
-    T_gpu = model_gpu_time(ngrdcol, runtime, params, N_tasks, N_vsize, N_prec, N_vlevs )
-
-    cps = ngrdcol / runtime
-    cps_model = ngrdcol / T_gpu
+    cps_model = ngrdcol / T_bgpu
 
     abs_diff = np.abs( cps - cps_model )
     rms_error = np.sqrt( np.mean( abs_diff**2 ) )
 
-    return rms_error
-
-def gpu_batched_objective(params, ngrdcol, runtime, N_tasks, N_vsize, N_prec, N_vlevs ):
-
-    T_gpu = model_gpu_batched_time(ngrdcol, runtime, params, N_tasks, N_vsize, N_prec, N_vlevs )
-
-    cps = ngrdcol / runtime
-    cps_model = ngrdcol / T_gpu
-
-    abs_diff = np.abs( cps - cps_model )
-    rms_error = np.sqrt( np.mean( abs_diff**2 ) )
-
-    return rms_error
+    return T_bgpu, rms_error
 
 
-def model_throughputs(ngrdcol, runtime, N_tasks, N_vsize, N_prec, N_vlevs, model_version):
-
-    #ngrdcol = df["ngrdcol"].values  # Access ngrdcol if needed
-    #runtime = df[column_name].values  # Convert selected column to numpy array
+def model_throughputs(ngrdcol, runtime, N_tasks, N_vsize, N_prec, N_vlevs, model_version, selected_cp_funcs=None):
 
 
     #============================== VCPU Model ==============================
@@ -270,7 +259,11 @@ def model_throughputs(ngrdcol, runtime, N_tasks, N_vsize, N_prec, N_vlevs, model
         rms_min = None
         params_opt = None
 
-        for cp_func in cache_pen_funcs:
+        for name in selected_cp_funcs:
+
+            cp_func = cache_pen_funcs[name]
+
+            print(f" - trying cache pen: {cp_func.__name__}")
 
             result = minimize(  vcpu_objective, initial_guess, 
                                 args=(ngrdcol, runtime, N_tasks, N_vsize, N_prec, N_vlevs, cp_func), 
@@ -279,6 +272,7 @@ def model_throughputs(ngrdcol, runtime, N_tasks, N_vsize, N_prec, N_vlevs, model
                                 bounds = bounds)
 
             rms_error = result.fun
+            print(f" -- rms_error = {rms_error}")
 
             if rms_min is None or rms_error < rms_min:
                 cache_pen_best = cp_func
@@ -286,7 +280,7 @@ def model_throughputs(ngrdcol, runtime, N_tasks, N_vsize, N_prec, N_vlevs, model
                 params_opt = result.x
 
 
-        T_cpu = model_vcpu_time(ngrdcol, runtime, params_opt, N_tasks, N_vsize, N_prec, N_vlevs, cache_pen_best)
+        T_cpu, _ = model_vcpu_time(params_opt, ngrdcol, runtime, N_tasks, N_vsize, N_prec, N_vlevs, cache_pen_best)
 
         cols_per_core = ngrdcol / N_tasks
         flops_per_vop = N_vsize / N_prec
@@ -327,14 +321,15 @@ def model_throughputs(ngrdcol, runtime, N_tasks, N_vsize, N_prec, N_vlevs, model
         rms_min = None
         params_opt = None
 
-        for cp_func in cache_pen_funcs:
+        for name in selected_cp_funcs:
 
-            print(f" -- cpu fit for filename with {cp_func.__name__}")
+            cp_func = cache_pen_funcs[name]
+
+            print(f" - trying cache pen: {cp_func.__name__}")
 
             # m, b, c, k, o
-            initial_guess = np.array( [m_est, b_est, 2*random(), 2*random(), 2*random()] ) / np.array( cpu_param_scale )
+            initial_guess = np.array( [m_est, b_est, 1.0, 1.0, 1.0] ) / np.array( cpu_param_scale )
 
-            # Minimize using the resampled data
             result = minimize(
                 cpu_objective,
                 initial_guess,
@@ -345,6 +340,7 @@ def model_throughputs(ngrdcol, runtime, N_tasks, N_vsize, N_prec, N_vlevs, model
             )
 
             rms_error = result.fun
+            print(f" -- rms_error = {rms_error}")
 
             if rms_min is None or rms_error < rms_min:
                 cache_pen_best = cp_func
@@ -352,15 +348,15 @@ def model_throughputs(ngrdcol, runtime, N_tasks, N_vsize, N_prec, N_vlevs, model
                 params_opt = result.x
 
 
-        T_cpu = model_cpu_time(ngrdcol, runtime, params_opt, N_tasks, N_vsize, N_prec, N_vlevs, cache_pen_best)
+        T_cpu, _ = model_cpu_time(params_opt, ngrdcol, runtime, N_tasks, N_vsize, N_prec, N_vlevs, cache_pen_best)
 
         params_opt = params_opt * cpu_param_scale
 
         fit_params = {
             "m_val": params_opt[0],
-            #"m_est_val": m_est, 
+            "m_est_val": m_est, 
             "b_val": params_opt[1], 
-            #"b_est_val": b_est, 
+            "b_est_val": b_est, 
             "c_val": params_opt[2], 
             "k_val": params_opt[3], 
             "o_val": params_opt[4], 
@@ -392,7 +388,7 @@ def model_throughputs(ngrdcol, runtime, N_tasks, N_vsize, N_prec, N_vlevs, model
         rms_error = result.fun
         params_opt = result.x
 
-        T_cpu = model_gpu_time(ngrdcol, runtime, params_opt, N_tasks, N_vsize, N_prec, N_vlevs)
+        T_cpu, _ = model_gpu_time(params_opt, ngrdcol, runtime, N_tasks, N_vsize, N_prec, N_vlevs)
 
         params_opt = gpu_param_scale * params_opt
 
@@ -428,7 +424,7 @@ def model_throughputs(ngrdcol, runtime, N_tasks, N_vsize, N_prec, N_vlevs, model
         rms_error = result.fun
         params_opt = result.x
 
-        T_cpu = model_gpu_batched_time( ngrdcol, runtime, params_opt, N_tasks, N_vsize, N_prec, N_vlevs )
+        T_cpu, _ = model_gpu_batched_time( params_opt, ngrdcol, runtime, N_tasks, N_vsize, N_prec, N_vlevs )
 
         params_opt = gpu_batched_param_scale * params_opt
 
@@ -444,134 +440,96 @@ def model_throughputs(ngrdcol, runtime, N_tasks, N_vsize, N_prec, N_vlevs, model
     return T_cpu, fit_params
 
 
-def get_shared_variables(csv_files):
-    variable_sets = {}
-    for file in csv_files:
-        try:
-            with open(file, 'r') as f:
-                header = f.readline().strip()
-                variables = header.split(",")[1:]
-                variable_sets[file] = set(variables)
-        except Exception as e:
-            print(f"Error reading {file}: {e}")
-
-    if not variable_sets:
-        return [], variable_sets
-
-    shared_vars = sorted(set.intersection(*variable_sets.values())) if variable_sets.values() else []
-    return shared_vars, variable_sets
-
-def get_all_variables(csv_files):
-    variable_sets = {}
-    all_variables = set()
-    
-    for file in csv_files:
-        try:
-            with open(file, 'r') as f:
-                header = f.readline().strip()
-                variables = header.split(",")[1:]
-                variable_sets[file] = set(variables)
-                all_variables.update(variables)
-        except Exception as e:
-            print(f"Error reading {file}: {e}")
-
-    return sorted(all_variables), variable_sets
-
-def natural_key(string):
-    """Helper function to split a string into a list of numbers and text for natural sorting."""
-    return [int(part) if part.isdigit() else part for part in re.split(r'(\d+)', string)]
-
-def group_files_by_case(csv_files):
-    cases = defaultdict(dict)
-    for file in csv_files:
-        match = re.match(r"^(.*)_(\w+)\.csv$", os.path.basename(file))
-        if match:
-            filename, case = match.groups()
-            cases[case][filename] = file
-
-    # Sort the filenames within each case
-    sorted_cases = {}
-    for case, files in cases.items():
-        sorted_cases[case] = dict(sorted(files.items(), key=lambda item: natural_key(item[0])))
-
-    return sorted_cases
-
-def evaluate_function(func, df):
-    try:
-        local_vars = {col: df[col] for col in df.columns}
-        return eval(func, {"__builtins__": None}, {**local_vars, **safe_functions})
-    except Exception as e:
-        print(f"Error evaluating function '{func}': {e}")
-        return None
-
-def plot_with_enhancements(fig, title):
-    fig.update_traces(mode="lines+markers")
-    fig.update_layout(
-        title=title,
-        xaxis=dict(showgrid=True, gridcolor="lightgray"),
-        yaxis=dict(showgrid=True, gridcolor="lightgray", zeroline=True, range=[0, None]),
-        margin=dict(l=10, r=10, t=30, b=10),
-        paper_bgcolor="white",
-        plot_bgcolor="white",
-    )
-    fig.update_xaxes(showline=True, linewidth=1, linecolor="black", mirror=True)
-    fig.update_yaxes(showline=True, linewidth=1, linecolor="black", mirror=True)
-    return fig
-
 def launch_dash_app(dir_name, grouped_files, all_variables):
 
     data = {case: {filename: pd.read_csv(filepath, comment="#") for filename, filepath in files.items()} for case, files in grouped_files.items()}
 
     app = Dash(__name__)
     app.title = "Dynamic Plotter"
-                   
+                
     app.layout = html.Div([
+
+        # ======================================== Plots ========================================
         html.Div([
-            html.Div(dcc.Graph(id="plot-columns-per-second", config={"responsive": True}, style=graph_style), style=plot_div_style),
-            html.Div(dcc.Graph(id="plot-raw", config={"responsive": True}, style=graph_style), style=plot_div_style),
+
+            # Columns per second plot
+            html.Div(dcc.Graph(id="plot-columns-per-second", style=graph_style), style=plot_div_style),
+
+            # Time plot
+            html.Div(dcc.Graph(id="plot-raw", style=graph_style), style=plot_div_style),
+
+            # Fit plot
             html.Div([
-                dcc.Graph(id="fit-plot", config={"responsive": True}, style=graph_style), 
-                html.Label("Vector CPU Model"),
-                dash_table.DataTable(
-                    id='vcpu-param-table',
-                    columns=vcpu_model_columns,
-                    data=[],  # Initial empty table
-                    editable=True,
-                    row_deletable=False  # Allows deleting rows directly
-                ),
-                html.Label("Simple CPU Model"),
-                dash_table.DataTable(
-                    id='cpu-param-table',
-                    columns=cpu_model_columns,
-                    data=[],  # Initial empty table
-                    editable=True,
-                    row_deletable=False  # Allows deleting rows directly
-                ),
-                html.Label("GPU Model"),
-                dash_table.DataTable(
-                    id='gpu-param-table',
-                    columns=gpu_model_columns,
-                    data=[],  # Initial empty table
-                    editable=True,
-                    row_deletable=False  # Allows deleting rows directly
-                ),
+
+                # Plot
+                dcc.Graph(id="fit-plot", style=graph_style), 
+
+                # VCPU table
+                html.Div([
+                    html.Label("Vector CPU Model"),
+                    dash_table.DataTable(
+                        id='vcpu-param-table',
+                        columns=vcpu_model_columns,
+                        style_cell={'textAlign': 'center', "whiteSpace": "pre-line"},
+                        data=[],  # Initial empty table
+                        editable=True,
+                        row_deletable=False  # Allows deleting rows directly
+                    ),
+                ], style={"margin-bottom": "20px"}),
+
+                # CPU table
+                html.Div([
+                    html.Label("Simple CPU Model"),
+                    dash_table.DataTable(
+                        id='cpu-param-table',
+                        columns=cpu_model_columns,
+                        style_cell={'textAlign': 'center', "whiteSpace": "pre-line"},
+                        data=[],  # Initial empty table
+                        editable=True,
+                        row_deletable=False  # Allows deleting rows directly
+                    ),
+                ], style={"margin-bottom": "20px"}),
+                
+                # GPU table
+                html.Div([
+                    html.Label("GPU Model"),
+                    dash_table.DataTable(
+                        id='gpu-param-table',
+                        columns=gpu_model_columns,
+                        style_cell={'textAlign': 'center', "whiteSpace": "pre-line"},
+                        data=[],  # Initial empty table
+                        editable=True,
+                        row_deletable=False  # Allows deleting rows directly
+                    ),
+                ], style={"margin-bottom": "20px"}),
+
             ], style=fit_plot_div_style),
+
+            # Batched fit plot
             html.Div([
-                dcc.Graph(id="fit-plot-batched", config={"responsive": True}, style=graph_style), 
+
+                # Plot
+                dcc.Graph(id="fit-plot-batched", style=graph_style), 
+
+                # Table plot
                 html.Label("GPU Model"),
                 dash_table.DataTable(
                     id='gpu-batched-param-table',
                     columns=gpu_batched_model_columns,
-                    style_cell={
-                        "whiteSpace": "pre-line",  # or "normal"
-                    },
+                    style_cell={'textAlign': 'center', "whiteSpace": "pre-line"},
                     data=[],  # Initial empty table
                     editable=True,
                     row_deletable=False  # Allows deleting rows directly
                 ),
             ], style=fit_plot_div_style),
+
+            # Custom function plot
             html.Div([
-                dcc.Graph(id="plot-custom", config={"responsive": True}, style=graph_style),
+
+                # Plot
+                dcc.Graph(id="plot-custom", style=graph_style),
+
+                # Custom function input
                 dcc.Input(
                     id="custom-function",
                     type="text",
@@ -579,15 +537,21 @@ def launch_dash_app(dir_name, grouped_files, all_variables):
                     debounce=True,
                     style={"width": "30%", "margin-top": "10px", "text-align": "center"}
                 ),
+
             ], style=plot_div_style),
+
         ], style={  "flex": "1", 
                     "padding-right": "10px", 
                     "align-items": "center",
                     "width": "auto",
-                    "height": "auto" }
+                    "height": "fit-content" }
         ),
 
+
+        # ======================================== Controls ========================================
         html.Div([
+
+            # File selection
             html.H4("Select CSV files to display:"),
             html.Div([
                 html.Details(
@@ -610,6 +574,7 @@ def launch_dash_app(dir_name, grouped_files, all_variables):
                 for i, (case, files) in enumerate(grouped_files.items())
             ], style={"margin-bottom": "20px"}),
 
+            # Variable selection
             html.H4("Select variable to plot:"),
             dcc.Dropdown(
                 id="variable-dropdown",
@@ -618,6 +583,7 @@ def launch_dash_app(dir_name, grouped_files, all_variables):
                 style={"margin-bottom": "20px"}
             ),
 
+            # Clipboard copy 
             html.Button(
                 "Copy CSV Data to Clipboard",
                 id="copy-csv-button",
@@ -625,6 +591,7 @@ def launch_dash_app(dir_name, grouped_files, all_variables):
                 style={"margin-top": "10px", "padding": "10px", "background-color": "#4CAF50", "color": "white", "border": "none", "cursor": "pointer"}
             ),
 
+            # x-axis scale 
             html.Div([
                 html.Label("x-axis:", style={"margin-right": "10px"}),
                 dcc.RadioItems(
@@ -638,6 +605,7 @@ def launch_dash_app(dir_name, grouped_files, all_variables):
                 )
             ], style={"display": "flex", "align-items": "center", "margin-top": "10px"}),
 
+            # y-axis scale 
             html.Div([
                 html.Label("y-axis:", style={"margin-right": "10px"}),
                 dcc.RadioItems(
@@ -651,35 +619,72 @@ def launch_dash_app(dir_name, grouped_files, all_variables):
                 )
             ], style={"display": "flex", "align-items": "center", "margin-top": "10px"}),
 
-            # New div for the fit button and input fields
+            # Fit function controls
             html.Div([
-                html.Label("Fit Function Variables:", style={"font-weight": "bold", "margin-bottom": "5px"}),
-
-                # Stack inputs vertically
+                
                 html.Div([
-                    dcc.RadioItems(
-                        id="fit-plot-mode",
-                        options=[
-                            {"label": "Time", "value": "time"},
-                            {"label": "Cols per Sec", "value": "cps"}
-                        ],
-                        value="cps",
-                        inline=True,
+                    html.Label("Fit Function Variables:", style={"font-weight": "bold"}),
+                ], style={"margin-bottom": "8px"}),
+
+                html.Div([
+
+                    # Time / cps choice
+                    html.Div([
+                        dcc.RadioItems(
+                            id="fit-plot-mode",
+                            options=[
+                                {"label": "Time", "value": "time"},
+                                {"label": "Cols per Sec", "value": "cps"}
+                            ],
+                            value="cps",
+                            inline=True,
+                        ),
+                    ], style={"margin-bottom": "8px"}),
+
+                    # Cache pen func choice
+                    html.Div([
+                        html.Details(
+                            [
+                                html.Summary("cache penalty functions"),
+                                dcc.Checklist(
+                                    id={"type": "cp_func_checkbox"},
+                                    options=[
+                                        {"label": name, "value": name}
+                                        for name in cache_pen_funcs
+                                    ],
+                                    value=list(cache_pen_funcs),
+                                    labelStyle={"display": "inline-block", "width": "25%"}  # 2 columns
+                                )
+                            ],
+                            open=True
+                        )
+                    ], style={"margin-bottom": "8px"}),
+
+
+                    html.Div([
+                        html.Label("Vector Length: ", style={"margin-top": "5px"}),
+                        dcc.Input(id="N_vsize", type="number", value=256, style={"width": "20%"}),
+                    ], style={"margin-bottom": "8px"}),
+
+                    # Fit button
+                    html.Button(
+                        "Fit",
+                        id="fit-function-button",
+                        n_clicks=0,
+                        style={"padding": "10px", "background-color": "#4CAF50", "color": "white", "border": "none", "cursor": "pointer"}
                     ),
-                    #html.Label("Total Cores:"),
-                    #dcc.Input(id="N_tasks", type="number", value=128, style={"width": "60%"}),
-                    html.Label("Vector Length:", style={"margin-top": "5px"}),
-                    dcc.Input(id="N_vsize", type="number", value=256, style={"width": "60%"}),
-                    html.Label("Floating Point Precision:", style={"margin-top": "5px"}),
-                    dcc.Input(id="N_prec", type="number", value=64, style={"width": "60%"}),
+
+                    # Batched fit button
+                    html.Button(
+                        "Fit Batched",
+                        id="fit-batched-function-button",
+                        n_clicks=0,
+                        style={"padding": "10px", "background-color": "#4CAF50", "color": "white", "border": "none", "cursor": "pointer"}
+                    ),
+
                 ], style={"display": "flex", "flex-direction": "column", "gap": "5px", "margin-bottom": "10px"}),
 
-                html.Button(
-                    "Fit",
-                    id="fit-function-button",
-                    n_clicks=0,
-                    style={"padding": "10px", "background-color": "#4CAF50", "color": "white", "border": "none", "cursor": "pointer"}
-                ),
+
             ], style={"margin-top": "10px", "padding": "10px", "border": "1px solid #000", "background-color": "#f9f9f9"}),
 
         ], style={
@@ -690,10 +695,25 @@ def launch_dash_app(dir_name, grouped_files, all_variables):
             "top": "0",
             "height": "fit-content",
             "background-color": "white",
-            "z-index": "1000"
         })
-    ], style={"display": "flex", "flexDirection": "row", "width": "100%", "height": "100vh"})
+    ], style={"display": "flex", "flexDirection": "row", "width": "100%", "height": "auto"})
 
+
+    def plot_with_enhancements(fig, title):
+        fig.update_traces(mode="lines+markers")
+        fig.update_layout(
+            title=title,
+            xaxis=dict(showgrid=True, gridcolor="lightgray"),
+            yaxis=dict(showgrid=True, gridcolor="lightgray", zeroline=True, range=[0, None]),
+            margin=dict(l=10, r=10, t=30, b=10),
+            paper_bgcolor="white",
+            plot_bgcolor="white",
+        )
+        fig.update_xaxes(showline=True, linewidth=1, linecolor="black", mirror=True)
+        fig.update_yaxes(showline=True, linewidth=1, linecolor="black", mirror=True)
+        return fig
+
+    # ======================================== Time plot ========================================
     @app.callback(
     Output("plot-raw", "figure"),
         [
@@ -704,6 +724,13 @@ def launch_dash_app(dir_name, grouped_files, all_variables):
         ]
     )
     def update_raw_plot(selected_files, selected_variable, xaxis_scale, yaxis_scale):
+
+        # Flatten the list of lists into a single list of selected filenames
+        selected_flat = list(chain.from_iterable(selected_files))
+
+        if not selected_flat:
+            raise PreventUpdate
+
         flat_files = [item.split("/") for sublist in selected_files for item in sublist]
         combined_df = pd.DataFrame()
         for case, filename in flat_files:
@@ -722,6 +749,8 @@ def launch_dash_app(dir_name, grouped_files, all_variables):
         )
         return plot_with_enhancements(fig, f"Runtime of '{selected_variable}' vs. Number of Grid Columns")
 
+
+    # ======================================== CPS plot ========================================
     @app.callback(
     Output("plot-columns-per-second", "figure"),
         [
@@ -732,6 +761,12 @@ def launch_dash_app(dir_name, grouped_files, all_variables):
         ]
     )
     def update_columns_per_second_plot(selected_files, selected_variable, xaxis_scale, yaxis_scale):
+
+        # Flatten the list of lists into a single list of selected filenames
+        selected_flat = list(chain.from_iterable(selected_files))
+
+        if not selected_flat:
+            raise PreventUpdate
 
         flat_files = [item.split("/") for sublist in selected_files for item in sublist]
         combined_df = pd.DataFrame()
@@ -752,6 +787,38 @@ def launch_dash_app(dir_name, grouped_files, all_variables):
         )
         return plot_with_enhancements(fig, f"Throughput (ngrdcol/{selected_variable}) vs. Number of Grid Columns")
 
+
+    # ======================================== Custom function plot ========================================
+
+    # Functions safe to use in the custom plot
+    safe_functions = {
+        "abs": abs,
+        "max": max,
+        "min": min,
+        "round": round,
+        "ceil": np.ceil,
+        "floor": np.floor,
+        "sqrt": np.sqrt,
+        "log": np.log,
+        "log2": np.log2,
+        "log10": np.log10,
+        "exp": np.exp,
+        "sin": np.sin,
+        "cos": np.cos,
+        "tan": np.tan,
+        "pi": np.pi,
+        "e": np.e,
+        "np": np
+    }
+    
+    def evaluate_function(func, df):
+        try:
+            local_vars = {col: df[col] for col in df.columns}
+            return eval(func, {"__builtins__": None}, {**local_vars, **safe_functions})
+        except Exception as e:
+            print(f"Error evaluating function '{func}': {e}")
+            return None
+            
     @app.callback(
     Output("plot-custom", "figure"),
         [
@@ -762,6 +829,12 @@ def launch_dash_app(dir_name, grouped_files, all_variables):
         ]
     )
     def update_custom_plot(selected_files, custom_function, xaxis_scale, yaxis_scale):
+
+        # Flatten the list of lists into a single list of selected filenames
+        selected_flat = list(chain.from_iterable(selected_files))
+
+        if not selected_flat:
+            raise PreventUpdate
 
         if not selected_files or not custom_function:
             return px.scatter(title="Enter a custom function and select CSV files")
@@ -793,12 +866,14 @@ def launch_dash_app(dir_name, grouped_files, all_variables):
         )
         return plot_with_enhancements(fig, "Custom Function vs. Number of Grid Columns")
 
+
+    # ======================================== Copy button function ========================================
     @app.callback(
     Output("copy-csv-button", "children"),  # Update button text to confirm copy
         [
             Input("copy-csv-button", "n_clicks"),
-            Input({"type": "file-checkbox", "case": ALL}, "value"),
-            Input("variable-dropdown", "value")
+            State({"type": "file-checkbox", "case": ALL}, "value"),
+            State("variable-dropdown", "value")
         ]
     )
     def copy_csv_to_clipboard(n_clicks, selected_files, selected_variable):
@@ -850,6 +925,9 @@ def launch_dash_app(dir_name, grouped_files, all_variables):
             print(f"Error copying to clipboard: {e}")
             return "Copy Failed"
 
+
+
+    # ======================================== Fit plot ========================================
     @app.callback(
         [
             Output("fit-plot", "figure"),
@@ -860,16 +938,16 @@ def launch_dash_app(dir_name, grouped_files, all_variables):
         [
             Input("fit-function-button", "n_clicks"),
             #Input("N_tasks", "value"),
-            Input("N_vsize", "value"),
-            Input("N_prec", "value"),
-            Input({"type": "file-checkbox", "case": ALL}, "value"),
+            State("N_vsize", "value"),
+            State({"type": "file-checkbox", "case": ALL}, "value"),
             Input("variable-dropdown", "value"),
             Input("x-axis-scale", "value"),
             Input("y-axis-scale", "value"),
-            Input("fit-plot-mode", "value")
+            Input("fit-plot-mode", "value"),
+            State({"type": "cp_func_checkbox"}, "value"),
         ],
     )
-    def update_fit_plot(n_clicks, N_vsize, N_prec, selected_files, selected_variable, xaxis_scale, yaxis_scale, plot_mode):
+    def update_fit_plot(n_clicks, N_vsize, selected_files, selected_variable, xaxis_scale, yaxis_scale, plot_mode, selected_cp_funcs):
         
         if n_clicks == 0 or not selected_files:
             raise PreventUpdate
@@ -897,24 +975,27 @@ def launch_dash_app(dir_name, grouped_files, all_variables):
                 # Apply model_throughput to the selected variable and add it as "_dup"
                 vcpu_df = original_df.copy()
                 cpu_df = original_df.copy()
-                gpu_df = original_df.copy()
+                gpu_model_df = original_df.copy()
 
                 if "_sp_" in filename:
                     N_prec = 32
+                else:
+                    N_prec = 64
                 
                 if any(gpu_name in filename for gpu_name in ["A100", "V100", "H100"]):
 
-                    T_gpu, gpu_params = model_throughputs(  gpu_df["ngrdcol"].values, 
-                                                            gpu_df[selected_variable].values, 
+                    print(f"modeling {filename} with gpu")
+                    T_gpu, gpu_params = model_throughputs(  gpu_model_df["ngrdcol"].values, 
+                                                            gpu_model_df[selected_variable].values, 
                                                             N_tasks, 
                                                             N_vsize, 
                                                             N_prec, 
                                                             N_vlevs, 
                                                             "gpu")
 
-                    gpu_df[selected_variable] = T_gpu
-                    gpu_df["Columns per Second"] = gpu_df["ngrdcol"] / gpu_df[selected_variable]
-                    gpu_df["Name"] = f"{filename}_gmodel"
+                    gpu_model_df[selected_variable] = T_gpu
+                    gpu_model_df["Columns per Second"] = gpu_model_df["ngrdcol"] / gpu_model_df[selected_variable]
+                    gpu_model_df["Name"] = f"{filename}_gmodel"
 
                     gpu_table_data.append({
                         col["id"]: f"{gpu_params.get(col['id']):.3e}" if isinstance(gpu_params.get(col["id"]), (int, float)) else gpu_params.get(col["id"])
@@ -922,17 +1003,19 @@ def launch_dash_app(dir_name, grouped_files, all_variables):
                     })
                     gpu_table_data[-1]["name"] = f"{case}/{filename}"
 
-                    combined_df = pd.concat([combined_df, gpu_df])
+                    combined_df = pd.concat([combined_df, gpu_model_df])
 
                 else:
 
+                    print(f"modeling {filename} with vcpu")
                     T_vcpu, vcpu_params = model_throughputs( vcpu_df["ngrdcol"].values, 
                                                              vcpu_df[selected_variable].values, 
                                                              N_tasks, 
                                                              N_vsize, 
                                                              N_prec, 
                                                              N_vlevs, 
-                                                             "vcpu" )
+                                                             "vcpu",
+                                                             selected_cp_funcs )
 
                     vcpu_df[selected_variable] = T_vcpu
                     vcpu_df["Columns per Second"] = vcpu_df["ngrdcol"] / vcpu_df[selected_variable]
@@ -945,19 +1028,15 @@ def launch_dash_app(dir_name, grouped_files, all_variables):
                     vcpu_table_data[-1]["name"] = f"{case}/{filename}"
 
 
+                    print(f"modeling {filename} with cpu")
                     T_cpu, cpu_params = model_throughputs( cpu_df["ngrdcol"].values, 
                                                            cpu_df[selected_variable].values, 
                                                            N_tasks, 
                                                            N_vsize, 
                                                            N_prec, 
                                                            N_vlevs, 
-                                                           "cpu")
-                    
-                    # Remove the non vector points
-                    # cols_per_core = cpu_df["ngrdcol"] / N_tasks
-                    # flops_per_vop = N_vsize / N_prec
-                    # mask = cpu_df["ngrdcol"]/N_tasks % flops_per_vop != 0
-                    # cpu_df = cpu_df[~mask].copy()
+                                                           "cpu",
+                                                           selected_cp_funcs)
                     
                     cpu_df[selected_variable] = T_cpu
                     cpu_df["Columns per Second"] = cpu_df["ngrdcol"] / cpu_df[selected_variable]
@@ -990,6 +1069,8 @@ def launch_dash_app(dir_name, grouped_files, all_variables):
 
         return fig.to_dict(), vcpu_table_data, cpu_table_data, gpu_table_data
 
+
+    # ======================================== Batched fit plot ========================================
     @app.callback(
         [
             Output("fit-plot-batched", "figure"),
@@ -998,18 +1079,18 @@ def launch_dash_app(dir_name, grouped_files, all_variables):
             Output('gpu-batched-param-table', 'data'),
         ],
         [
-            Input("fit-function-button", "n_clicks"),
+            Input("fit-batched-function-button", "n_clicks"),
             #Input("N_tasks", "value"),
-            Input("N_vsize", "value"),
-            Input("N_prec", "value"),
-            Input({"type": "file-checkbox", "case": ALL}, "value"),
+            State("N_vsize", "value"),
+            State({"type": "file-checkbox", "case": ALL}, "value"),
             Input("variable-dropdown", "value"),
             Input("x-axis-scale", "value"),
             Input("y-axis-scale", "value"),
             Input("fit-plot-mode", "value")
         ],
+        prevent_initial_call=True
     )
-    def update_fit_plot_batched(n_clicks, N_vsize, N_prec, selected_files, selected_variable, xaxis_scale, yaxis_scale, plot_mode):
+    def update_fit_plot_batched(n_clicks, N_vsize, selected_files, selected_variable, xaxis_scale, yaxis_scale, plot_mode):
         
         if n_clicks == 0 or not selected_files:
             raise PreventUpdate
@@ -1040,10 +1121,10 @@ def launch_dash_app(dir_name, grouped_files, all_variables):
                 if "_sp_" in filename:
                     N_prec = 32
 
-                if filenames == "":
-                    filenames = f"{case}/{filename}"
-                else:
-                    filenames = filenames + f"\n{case}/{filename}"
+                # if filenames == "":
+                #     filenames = f"{case}/{filename}"
+                # else:
+                #     filenames = filenames + f"\n{case}/{filename}"
                 
 
         T_gpu, gpu_params = model_throughputs(  ngrdcols, 
@@ -1054,11 +1135,11 @@ def launch_dash_app(dir_name, grouped_files, all_variables):
                                                 N_vlevs, 
                                                 "gpu_batched")
 
-        gpu_batched_table_data.append({
-            col["id"]: f"{gpu_params.get(col['id']):.3e}" if isinstance(gpu_params.get(col["id"]), (int, float)) else gpu_params.get(col["id"])
-            for col in gpu_batched_model_columns
-        })
-        gpu_batched_table_data[-1]["name"] = filenames
+        # gpu_batched_table_data.append({
+        #     col["id"]: f"{gpu_params.get(col['id']):.3e}" if isinstance(gpu_params.get(col["id"]), (int, float)) else gpu_params.get(col["id"])
+        #     for col in gpu_batched_model_columns
+        # })
+        # gpu_batched_table_data[-1]["name"] = filenames
 
         start_idx = 0
         for case, filename in flat_files:
@@ -1071,17 +1152,35 @@ def launch_dash_app(dir_name, grouped_files, all_variables):
                 grid_boxes = original_df["ngrdcol"] * data[case][filename]["nz"]
                 
                 original_df["Grid Boxes"] = grid_boxes
+                original_df["Columns per Second"] = original_df["ngrdcol"] / original_df[selected_variable]
                 original_df["Grid Boxes per Second"] = grid_boxes / original_df[selected_variable]
 
-                gpu_df = original_df.copy()
+                gpu_model_df = original_df.copy()
 
                 end_idx = start_idx + len(original_df["ngrdcol"])
-                gpu_df[selected_variable] = T_gpu[start_idx:end_idx]
+                gpu_model_df[selected_variable] = T_gpu[start_idx:end_idx]
 
-                gpu_df["Grid Boxes per Second"] = grid_boxes / gpu_df[selected_variable]
-                gpu_df["Name"] = f"{filename}_gmodel"
+                gpu_model_df["Grid Boxes per Second"] = grid_boxes / gpu_model_df[selected_variable]
+                gpu_model_df["Columns per Second"] = gpu_model_df["ngrdcol"] / gpu_model_df[selected_variable]
+                gpu_model_df["Name"] = f"{filename}_gmodel"
 
-                combined_df = pd.concat([combined_df, original_df, gpu_df])
+                combined_df = pd.concat([combined_df, original_df, gpu_model_df])
+
+                # Calculate RMS for specific model
+                cps = original_df["ngrdcol"] / original_df[selected_variable]
+                cps_model = gpu_model_df["ngrdcol"] / gpu_model_df[selected_variable]
+
+                abs_diff = np.abs( cps - cps_model )
+                rms_error = np.sqrt( np.mean( abs_diff**2 ) )
+
+                gpu_params["rms_error"] = rms_error
+
+                # Update table
+                gpu_batched_table_data.append({
+                    col["id"]: f"{gpu_params.get(col['id']):.3e}" if isinstance(gpu_params.get(col["id"]), (int, float)) else gpu_params.get(col["id"])
+                    for col in gpu_batched_model_columns
+                })
+                gpu_batched_table_data[-1]["name"] = f"{filename}"
 
                 start_idx = end_idx
 
@@ -1104,7 +1203,64 @@ def launch_dash_app(dir_name, grouped_files, all_variables):
 
         return fig.to_dict(), gpu_batched_table_data
 
+
+    # ======================================== App run ========================================
     app.run(debug=True,port=8051)
+
+
+
+# ======================================== Main / helper functions ========================================
+def get_shared_variables(csv_files):
+    variable_sets = {}
+    for file in csv_files:
+        try:
+            with open(file, 'r') as f:
+                header = f.readline().strip()
+                variables = header.split(",")[1:]
+                variable_sets[file] = set(variables)
+        except Exception as e:
+            print(f"Error reading {file}: {e}")
+
+    if not variable_sets:
+        return [], variable_sets
+
+    shared_vars = sorted(set.intersection(*variable_sets.values())) if variable_sets.values() else []
+    return shared_vars, variable_sets
+
+def get_all_variables(csv_files):
+    variable_sets = {}
+    all_variables = set()
+    
+    for file in csv_files:
+        try:
+            with open(file, 'r') as f:
+                header = f.readline().strip()
+                variables = header.split(",")[1:]
+                variable_sets[file] = set(variables)
+                all_variables.update(variables)
+        except Exception as e:
+            print(f"Error reading {file}: {e}")
+
+    return sorted(all_variables), variable_sets
+
+def natural_key(string):
+    """Helper function to split a string into a list of numbers and text for natural sorting."""
+    return [int(part) if part.isdigit() else part for part in re.split(r'(\d+)', string)]
+
+def group_files_by_case(csv_files):
+    cases = defaultdict(dict)
+    for file in csv_files:
+        match = re.match(r"^(.*)_(\w+)\.csv$", os.path.basename(file))
+        if match:
+            filename, case = match.groups()
+            cases[case][filename] = file
+
+    # Sort the filenames within each case
+    sorted_cases = {}
+    for case, files in cases.items():
+        sorted_cases[case] = dict(sorted(files.items(), key=lambda item: natural_key(item[0])))
+
+    return sorted_cases
 
 if __name__ == "__main__":
     
