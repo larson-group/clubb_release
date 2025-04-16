@@ -1721,17 +1721,17 @@ module grid_adaptation_module
                                          gr_dens_new )
 
       ! take average absolute squared distance as measure
-      sum = 0
-      do k = 1, j
-        sum = sum + ( gr_dens_old_interp(k) - gr_dens_new_interp(k) )**2
-      end do
+      !sum = 0
+      !do k = 1, j
+      !  sum = sum + ( gr_dens_old_interp(k) - gr_dens_new_interp(k) )**2
+      !end do
 
       ! other option for grid adaptation trigger
       ! TODO remove again if it doesnt work
-      sum = 0
-      do k = 1, j
-        sum = sum + ( gr_dens_old_interp(k) - gr_dens_new_interp(k) )**2/gr_dens_old_interp(k)
-      end do
+      !sum = 0
+      !do k = 1, j
+      !  sum = sum + ( gr_dens_old_interp(k) - gr_dens_new_interp(k) )**2/gr_dens_old_interp(k)
+      !end do
 
       ! other option for grid adaptation trigger
       ! TODO remove again if it doesnt work
@@ -2796,7 +2796,9 @@ module grid_adaptation_module
     threshold = 6.5e-4 !!!!!!!!!!!!!!
     
     ! trigger threshold
-    threshold = 5.0e-3
+    threshold = 5.0e-3   !!!!!!!!!!!!!!!!!!!!!
+    threshold = 6.0e-3
+    !threshold = 7.0e-3
 
     ! Allocate and set gr_dens_old_global if not already allocated
     if ( .not. allocated( gr_dens_old_global ) ) then
@@ -5474,7 +5476,7 @@ module grid_adaptation_module
         Lscale_term(k) = 1/(Lscale(1,k)+10.0) ! 0.1/ ...3000
         brunt_term(k) = maxval([0.0_core_rknd,(brunt_vaisala_freq_sqd(1,k))]) &
                       / ( (maxval([0.0_core_rknd,(ddzt_umvm_sqd(1,k))]) + 1.0e-5) &
-                          * (gr_dens_z(k) + 20) ) ! the 20 was 100 before...
+                          * (gr_dens_z(k) + 100) ) ! the 20 was 100 before...
       else
         Lscale_term(k) = 0.0_core_rknd
         brunt_term(k) = 0.0_core_rknd
