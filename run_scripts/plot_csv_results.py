@@ -1118,9 +1118,6 @@ def launch_dash_app(dir_name, grouped_files, all_variables):
                 runtimes = np.concatenate( [runtimes, np.array( data[case][filename][selected_variable] )] )
                 ngrdcols = np.concatenate( [ngrdcols, np.array( data[case][filename]["ngrdcol"] )] )
 
-                if "_sp_" in filename:
-                    N_prec = 32
-
                 # if filenames == "":
                 #     filenames = f"{case}/{filename}"
                 # else:
@@ -1144,6 +1141,11 @@ def launch_dash_app(dir_name, grouped_files, all_variables):
         start_idx = 0
         for case, filename in flat_files:
             if case in data and filename in data[case] and selected_variable in data[case][filename].columns:
+
+                if "_sp_" in filename:
+                    N_prec = 32
+                else:
+                    N_prec = 64
 
                 original_df = data[case][filename][["ngrdcol", selected_variable]].copy()
                 original_df["Name"] = f"{filename}"
