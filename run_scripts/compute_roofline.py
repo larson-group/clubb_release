@@ -563,4 +563,4 @@ def update_efficiency_plot(x_bin_num, y_bin_num, selected_precisions):
 
 # Step 5: Launch the Dash app server (opens the dashboard in a web browser)
 if __name__ == '__main__':
-    app.run_server(debug=True)
+    app.run(debug=True)
