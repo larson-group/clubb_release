@@ -374,6 +374,7 @@ module output_netcdf
                                           rho_lin_spline_vals, &
                                           rho_lin_spline_levels, &
                                           ncf%grid_avg_var(i)%ptr(lon,lat,ncf%ia:gr_source%nzm ), &
+                                          1, &  ! TODO replace by named variable
                                           R_ij_zm, p_sfc )
 
               else if ( zm_zt == 'zt' ) then
@@ -386,6 +387,7 @@ module output_netcdf
                                           rho_lin_spline_vals, &
                                           rho_lin_spline_levels, &
                                           ncf%grid_avg_var(i)%ptr(lon,lat,ncf%ia:gr_source%nzt ), &
+                                          1, & ! TODO replace by named variable
                                           R_ij_zt, p_sfc )
 
               else
@@ -423,6 +425,7 @@ module output_netcdf
                                      rho_lin_spline_vals, &
                                      rho_lin_spline_levels, &
                                      ncf%samples_of_var(i)%ptr(samp,lon,lat,ncf%ia:gr_source%nzm), &
+                                     1, & ! TODO replace by named variable (iv_other)
                                      R_ij_zm, p_sfc )
                 else if ( zm_zt == 'zt' ) then
                   samples_of_var_diff_gr(:,samp,lon,lat,:) &
@@ -433,6 +436,7 @@ module output_netcdf
                                      rho_lin_spline_vals, &
                                      rho_lin_spline_levels, &
                                      ncf%samples_of_var(i)%ptr(samp,lon,lat,ncf%ia:gr_source%nzt), &
+                                     1, & ! TODO replace by named variable
                                      R_ij_zt, p_sfc )
                 else
                   error stop 'Invalid value for zm_zt in write_netcdf_helper()'

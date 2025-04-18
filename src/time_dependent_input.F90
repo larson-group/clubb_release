@@ -1125,6 +1125,7 @@ module time_dependent_input
                                                       rho_lin_spline_vals(1,:), &
                                                       rho_lin_spline_levels(1,:), &
                                                       temp_array_dycore, &
+                                                      1, & ! TODO replace by named variable
                                                       R_ij(1,:,:), p_sfc(1) )
 
       else

@@ -321,6 +321,7 @@ module atex
                                              rho_ds_zm_dycore, &
                                              gr_dycore%zm, &
                                              thlm_forcing_dycore, &
+                                             1, & ! TODO replace by named variable
                                              R_ij, p_sfc )
 
         rtm_forcing = remap_vals_to_target( ngrdcol, &
@@ -330,6 +331,7 @@ module atex
                                             rho_ds_zm_dycore, &
                                             gr_dycore%zm, &
                                             rtm_forcing_dycore, &
+                                            1, & ! TODO replace by named variable
                                             R_ij, p_sfc )
 
       
