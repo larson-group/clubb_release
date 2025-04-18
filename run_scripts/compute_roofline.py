@@ -4,7 +4,7 @@ import numpy as np
 import subprocess
 import pandas as pd
 import dash
-from dash import dcc, html
+from dash import Dash, dcc, html
 import plotly.graph_objs as go
 
 
@@ -201,61 +201,122 @@ df = df[
 ]
 
 
-
-
 # Step 3: Initialize Dash app and layout
-app = dash.Dash(__name__)
+app = Dash(
+        __name__,
+        requests_pathname_prefix='/roofline/',
+        routes_pathname_prefix='/roofline/'
+)
+
 app.layout = html.Div([
-    html.H3("GPU Roofline Analysis (A100)", style={'padding-bottom': '10px'}),
-    dcc.Checklist(
-        id='precision-checklist',
-        options=[
-            {'label': html.Span('Double-Precision (FP64)', style={'padding-right': '20px'}), 'value': 'DP'},
-            {'label': html.Span('Single-Precision (FP32)', style={'padding-right': '20px'}), 'value': 'SP'},
-            {'label': html.Span('Half-Precision (FP16)', style={'padding-right': '20px'}), 'value': 'HP'}
-        ],
-        value=['DP'],
-        inline=True,
-        style={'padding-bottom': '10px'}
-    ),
-
+    
+    # Main container that centers each card
     html.Div([
-        dcc.Graph(id='roofline-graph'),
-    ], style={
-        'border': '1px solid #ccc',
-        'padding': '10px',
-        'margin-bottom': '10px',
-        'border-radius': '5px'
-    }),
 
-    html.Div([
-        dcc.Graph(id='dp-ai-histogram'),
+        html.H3("GPU Roofline Analysis (A100)", style={'padding-bottom': '10px'}),
+
+        dcc.Checklist(
+            id='precision-checklist',
+            options=[
+                {'label': html.Span('Double-Precision (FP64)', style={'padding-right': '20px'}), 'value': 'DP'},
+                {'label': html.Span('Single-Precision (FP32)', style={'padding-right': '20px'}), 'value': 'SP'},
+                {'label': html.Span('Half-Precision (FP16)', style={'padding-right': '20px'}), 'value': 'HP'}
+            ],
+            value=['DP'],
+            inline=True,
+            style={'padding-bottom': '10px'}
+        ),
+
+
+        # Roofline plot
+        html.Div(
+            dcc.Graph(
+                id='roofline-graph',
+                style={'width': '100%', 'height': '100%'},
+                config={'responsive': True}
+            ),
+            style={
+                'height': '35vh',
+                'width': '75%',
+                'maxWidth': '1200px',
+                'border': '1px solid black',
+                'padding': '1%',
+                'margin-bottom': '2%',
+                'border-radius': '5px'
+            }
+        ),
+
+        # Histogram plot
         html.Div([
-            html.Label('Histogram x_bin_num:', style={'padding-right': '10px'}),
-            dcc.Input(id='histogram-x-bin-num', type='number', value=50, min=1, step=1)
-        ], style={'padding-top': '10px', 'display': 'flex', 'align-items': 'center'}),
-    ], style={
-        'border': '1px solid #ccc',
-        'padding': '10px',
-        'margin-bottom': '10px',
-        'border-radius': '5px'
-    }),
+            dcc.Graph(
+                id='dp-ai-histogram',
+                style={'width': '100%', 'height': '100%'},
+                config={'responsive': True}
+            ),
+            html.Div([
+                html.Label('Histogram x_bin_num:', style={'padding-right': '10px'}),
+                dcc.Input(id='histogram-x-bin-num', type='number', value=50, min=1, step=1)
+            ], style={
+                'display': 'flex',
+                'justify-content': 'center',
+                'align-items': 'center',
+                'margin-top': '10px'
+            })
+        ], style={
+            'height': '35vh',
+            'width': '75%',
+            'maxWidth': '1200px',
+            'border': '1px solid black',
+            'padding': '1%',
+            'margin-bottom': '2%',
+            'border-radius': '5px',
+            'display': 'flex',
+            'flexDirection': 'column'
+        }),
 
-    html.Div([
-        dcc.Graph(id='efficiency-plot'),
+        # Efficiency plot
         html.Div([
-            html.Label('Heatmap x_bin_num:', style={'padding-right': '10px'}),
-            dcc.Input(id='heatmap-x-bin-num', type='number', value=10, min=1, step=1),
-            html.Label('Heatmap y_bin_num:', style={'padding': '0 10px 0 20px'}),
-            dcc.Input(id='heatmap-y-bin-num', type='number', value=10, min=1, step=1)
-        ], style={'padding-top': '10px', 'display': 'flex', 'align-items': 'center'}),
-    ], style={
-        'border': '1px solid #ccc',
-        'padding': '10px',
-        'margin-bottom': '10px',
-        'border-radius': '5px'
-    }),
-], style={'width': '97%', 'margin': 'auto', 'font-family': 'Arial, sans-serif'})
+            dcc.Graph(
+                id='efficiency-plot',
+                style={'width': '100%', 'flex': '1 1 auto'},
+                config={'responsive': True}
+            ),
+            html.Div([
+                html.Label('Heatmap x_bin_num:', style={'padding-right': '10px'}),
+                dcc.Input(id='heatmap-x-bin-num', type='number', value=10, min=1, step=1),
+                html.Label('Heatmap y_bin_num:', style={'padding': '0 10px 0 20px'}),
+                dcc.Input(id='heatmap-y-bin-num', type='number', value=10, min=1, step=1)
+            ], style={
+                'display': 'flex',
+                'justify-content': 'center',
+                'align-items': 'center',
+                'margin-top': '10px'
+            })
+        ], style={
+            'height': '35vh',
+            'width': '75%',
+            'maxWidth': '1200px',
+            'border': '1px solid black',
+            'padding': '1%',
+            'margin-bottom': '2%',
+            'border-radius': '5px',
+            'display': 'flex',
+            'flexDirection': 'column'
+        })
+
+    ], style={  # outer container
+        'display': 'flex',
+        'flexDirection': 'column',
+        'alignItems': 'center',
+        'width': '100%'
+    })
+
+], style={ 
+    'font-family': 'Arial, sans-serif',
+    'width': '100%',
+    'margin': 'auto'
+})
+
 
 
 # Helper function to create precision traces
@@ -563,4 +624,4 @@ def update_efficiency_plot(x_bin_num, y_bin_num, selected_precisions):
 
 # Step 5: Launch the Dash app server (opens the dashboard in a web browser)
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(host="0.0.0.0",debug=True)

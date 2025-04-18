@@ -444,7 +444,13 @@ def launch_dash_app(dir_name, grouped_files, all_variables):
 
     data = {case: {filename: pd.read_csv(filepath, comment="#") for filename, filepath in files.items()} for case, files in grouped_files.items()}
 
-    app = Dash(__name__)
+    #app = Dash(__name__)
+    app = Dash(
+            __name__,
+            requests_pathname_prefix='/plots/',
+            routes_pathname_prefix='/plots/'
+    )
+
     app.title = "Dynamic Plotter"
                 
     app.layout = html.Div([
@@ -1123,6 +1129,8 @@ def launch_dash_app(dir_name, grouped_files, all_variables):
                 # else:
                 #     filenames = filenames + f"\n{case}/{filename}"
                 
+        # Currently used for gpu modelling, default to 64
+        N_prec = 64
 
         T_gpu, gpu_params = model_throughputs(  ngrdcols, 
                                                 runtimes, 
@@ -1141,11 +1149,6 @@ def launch_dash_app(dir_name, grouped_files, all_variables):
         start_idx = 0
         for case, filename in flat_files:
             if case in data and filename in data[case] and selected_variable in data[case][filename].columns:
-
-                if "_sp_" in filename:
-                    N_prec = 32
-                else:
-                    N_prec = 64
 
                 original_df = data[case][filename][["ngrdcol", selected_variable]].copy()
                 original_df["Name"] = f"{filename}"
@@ -1207,7 +1210,7 @@ def launch_dash_app(dir_name, grouped_files, all_variables):
 
 
     # ======================================== App run ========================================
-    app.run(debug=True,port=8051)
+    app.run(host="0.0.0.0",debug=True,port=8051)
 
 
 
