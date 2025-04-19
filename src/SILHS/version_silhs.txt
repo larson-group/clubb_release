@@ -1,0 +1,212 @@
+commit e25ec88b5e538d090d1d634e3602cf637a24251c
+Author: Vincent Larson <vlarson@users.noreply.github.com>
+Date:   Mon Apr 14 12:51:00 2025 -0500
+
+    Add a blank line to README in order to note BIT_CHANGING:969bc4aa2a1db2664c0f92b98d2df5544c554c32
+    
+    However, the change is only to stats output, not the answer itself.   See https://github.com/larson-group/clubb/issues/1170#issuecomment-2802019464.
+
+commit 2f9bef63460fadecdb3f3679ef29d18beafba72e
+Author: Brian Griffin <31553422+bmg929@users.noreply.github.com>
+Date:   Wed Apr 9 08:15:47 2025 -0500
+
+    Clubb silhs gg (#1239)
+    
+    * I added new subroutine pdf_hydromet_microphys_prep to encompass
+    the code that calls the hydrometeor PDF and then ultimately
+    handles the setup of SILHS sample points when SILHS is in use.
+    
+    * Placeholder subroutine for SILHS grid generalization test.
+    
+    * I have now connected the new subroutine to run_clubb. The results
+    for all cases match bit-for-bit to the previous revision.
+    
+    * Cleaning up from the refactoring of the hydrometeor PDF and SILHS
+    code into a wrapper subroutine.
+    
+    * I'm moving pdf_hydromet_microphys_prep to its own file to avoid
+    circular dependency once it finally needs to be called from the
+    generalized grid test code soon.
+    
+    * Added some code to the SILHS generalized grid test.
+    
+    * Changes to make this a fully functioning grid generalization test
+    for the part of the microphysics code that encompasses
+    setup_pdf_parameters and hydrometeor_mixed_moments.
+    
+    * I have completed the code for the SILHS generalized grid test.
+    
+    * I generalized precipitation fraction for ascending vs. descending grid.
+    
+    * Fixing a bug that I noticed in the precipitation fraction calculation
+    when the component precip frac calculation was set to option 1
+    (which is currently not the default).
+    
+    * The code should now be successfully grid-generalized for SILHS.
+    The ascending vs descending grid test should work now for all cases.
+    
+    * Updating the core flags .json file to change some of the SILHS flags.
+    
+    * I moved the call to advance_clubb_core_api (the default run option)
+    to the top of the "if" block, ahead of the grid generalization test
+    option that is now in the "else" block.
+    
+    * Adding a new, hardwired constant flag called l_ascending_grid and
+    setting it to true in clubb_driver.F90.
+    
+    * Keeping lines under 100 characters in length.
+    
+    * Making it so the ascending vs. descending grid tests pass for the
+    l_lh_random_start flag.
+
+commit 3cd302b61f93039796aa0b1c8cfda1005c3926b2
+Author: Gunther Huebler <huebler@uwm.edu>
+Date:   Fri Mar 28 19:02:18 2025 -0500
+
+    Removing accidentally added file.
+
+commit 84d6d6251e99a62c6eeb6253dbf3f49c87a207c7
+Author: Gunther Huebler <huebler@uwm.edu>
+Date:   Fri Mar 28 19:01:54 2025 -0500
+
+    Third hotfix of the day. This last change teased out a sneaky potentially fatal bug for cases using l_cloud_sed=.true., making this a BIT_CHANGING fix. Also need to include BIT_CHANGING:13ad3cfe7872df2fe91250265f4a81baa621a882 because that was a fix to a fatal bug in some cases. Also including some other small fixes that weren't breaking any tests, but might've caused problems in the future.
+
+commit 9c51ff7531cfb93015cf6eea5b4604a0277a680b
+Author: Gunther Huebler <huebler@uwm.edu>
+Date:   Fri Mar 28 11:59:11 2025 -0500
+
+    Second hot fix for more _init variables that need to be copied in. RESOLVED:ed9ae72a5eb28dbc036dd3e14b9312eea840feac
+
+commit 13ad3cfe7872df2fe91250265f4a81baa621a882
+Author: Gunther Huebler <huebler@uwm.edu>
+Date:   Fri Mar 28 03:20:57 2025 -0500
+
+    Hot fix to GPU code. These _init variables need to be copied to the GPU
+
+commit ed9ae72a5eb28dbc036dd3e14b9312eea840feac
+Author: Gunther Huebler <37674341+huebleruwm@users.noreply.github.com>
+Date:   Thu Mar 27 16:02:35 2025 -0500
+
+    Clubb driver upgrades (#1225)
+    
+    * Moving stuff around in preparation for preparation for GPUization
+    
+    * Small modifications, adding explicit loops
+    
+    * Small bug fix and explicit loop additions
+    
+    * Removing ngrdcol dimension from initialize_clubb, essentially reverting changes.
+    
+    * Removing array slicing by using local variables of nzm/nzt dim
+    
+    * GPUization of initialization variables
+    
+    * Removing need for single_col versions of the pdf_params, this (weirdly) saves a huge amount of runtime
+    
+    * Adding comment
+    
+    * Adding 2D version of various routines, including initialize_clubb, but only calling initialize_clubb with 1 column.
+    
+    * Fixes to make work with latest clubb changes
+    
+    * Merging with master
+
+commit 951970e2ee87a3431ce44ce41bb880aac66ac8b8
+Author: vlarson <vlarson@uwm.edu>
+Date:   Tue Mar 25 09:00:16 2025 -0500
+
+    QuadTune: Read in obs for custom metrics automatically from obs file.
+    
+    For #910.
+
+commit 6efe77bfc4e96b91f34aa4fd966aa39965f9b30f
+Author: vlarson <vlarson@uwm.edu>
+Date:   Mon Mar 24 09:05:14 2025 -0500
+
+    QuadTune: Rename "setUpInputs" to "setUpConfig".  Rename other variables.  Improve comments in quadtune_driver.py.
+    
+    For #910.
+
+commit 969bc4aa2a1db2664c0f92b98d2df5544c554c32
+Author: Brian Griffin <31553422+bmg929@users.noreply.github.com>
+Date:   Sat Mar 22 23:39:40 2025 -0500
+
+    Clubb test correct gg (#1237)
+    
+    * Updated the generalized vertical grid test to use the
+    run_bindiff_w_flags_config_core_flags.json file, which performs
+    18 overall flag configuration file tests and includes almost
+    every configurable model flag found in CLUBB core.
+    
+    * Fixed a bug. This was caught by running the new hybrid PDF after
+    compiling with the gfortran debug compiler script.
+    
+    * The CLUBB code requires l_min_xp2_from_corr_wx and
+    l_enable_relaxed_clipping to always have opposite values.
+    
+    * Finally fixing the bug where Cx_fnc_Richardson needs to be interpolated
+    to thermodynamic levels in order to be used as C11_Skw_fnc.
+    
+    * I fixed an issue with the generalized grid when the expldiff of rtm
+    and thlm is enabled.
+    
+    * The variable gr now needs to be passed into subroutine pvertinterp
+    (which was formerly found in interpolation.F90) in order to generalize
+    the grid. This created a circular dependency, for grid_class references
+    interpolation, and now interpolation needed to reference grid_class
+    in order to use type grid. This road block prevented the model from
+    compiling. I moved subroutine pvertinterp to advance_clubb_core in
+    order to solve the problem.
+    
+    * Moving the flag required editing the delimiters.
+    
+    * I fixed a bug in the generalized grid test code that was resulting
+    in pdf_implicit_coefs_terms scalar variables not being read in
+    correctly for the flipped (descending) grid.
+    
+    * Improved some error handling in clubb_driver.F90
+    
+    * Fixed an issue where ascending and descending grids were producing
+    results that were not bit-for-bit to each other where centered
+    discretization was used. The issue occurred because 3 or more terms
+    were being added together in opposite orders between ascending and
+    descending grids. This fix ensures terms are added in the same order.
+    
+    * Commiting changes to keep calculation order the same for additions
+    involving at least 3 terms from different vertical levels between
+    ascending and descending grids.`
+    
+    * I removed bugs that were causing failures of the bit-for-bit
+    matching test (at -O0 optimization) between ascending and descending
+    grids. This group of fixes related to the code that calls pdf_closure
+    twice and calls the trapezoidal rule code.
+    
+    * I have fixed the ascending vs. descending grid error for the situation
+    where l_partial_upwind_wp3 is enabled.
+    
+    * I am removing the flag setting of l_mono_flux_lim_thlm to .false.
+    in flag group 15 of the ascending vs. descending grid tests.
+    
+    Problem: Removing the constraints on thlm was causing one case (MC3E)
+    to blow up with a floating point exception in Morrison microphysics.
+    The issue was that a spike caused an extremely cold temperature to be
+    found. There is a line of code that takes the difference between
+    freezing/melting point temperature (273.15 K) and the temperature
+    at the grid level or sample point, multiplies it by constant, and then
+    takes EXP to that product. The large difference between temperature
+    and freezing/melting point, owing to the spike, caused a numerical
+    overflow to occur and the case to fail with a FPE.
+    
+    Solution: There isn't any relevant code found in the monotonic flux
+    limiter that doesn't get tested if l_mono_flux_lim_thlm remains at
+    a setting of .true. The other parts of conditionals are covered
+    by setting l_mono_flux_lim_rtm to .false. The only parts of the
+    code unique to l_mono_flux_lim_thlm are the recording of stats
+    related directly to thlm. Thus, it makes sense to keep
+    l_mono_flux_lim_thlm set to .true. for the stability of the run
+    while turning off the other monotonic flux limiter flags.
+    
+    * Updated the code to use break or return when clubb fatal error is
+    encountered, which is more consistent with the way CLUBB does business
+    now, then simply Fortran stop in place. This also allows the generalized
+    grid test to finally pass for all cases and all flag sets.
