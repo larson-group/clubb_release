@@ -21,11 +21,12 @@ module rev_direction_grid_test
         fstdout
 
     use clubb_api_module, only: &
-        grid,           & ! Type(s)
-        setup_grid_api, & ! Procedure(s)
-        zt2zm_api,      &
-        zm2zt_api,      &
-        core_rknd         ! Variable(s)
+        grid,               & ! Type(s)
+        setup_grid_api,     & ! Procedure(s)
+        zt2zm_api,          &
+        zm2zt_api,          &
+        adj_low_res_nu_api, &
+        core_rknd             ! Variable(s)
 
     use mean_adv, only: &
         term_ma_zt_lhs, & ! Procedure(s)
@@ -40,6 +41,13 @@ module rev_direction_grid_test
         xpyp_term_ta_pdf_lhs_godunov, &
         xpyp_term_ta_pdf_rhs,         &
         xpyp_term_ta_pdf_rhs_godunov
+
+    use parameter_indices, only: &
+        nparams    ! Variable(s)
+
+    use parameters_tunable, only: &
+        init_clubb_params_api, & ! Procedure(s)
+        nu_vertical_res_dep      ! Type(s)
 
     implicit none
 
@@ -176,6 +184,22 @@ module rev_direction_grid_test
       l_upwind_xm_ma,              & ! Flag for upwind (zt) mean advection
       l_upwind_xpyp_turbulent_adv    ! Flag for upwind (zm pdf) turbulent advection
 
+    integer, parameter :: iunit = 10
+
+    character(len=13), parameter :: &
+      namelist_filename = ""
+
+    real( kind = core_rknd ), dimension(1,nparams) :: & 
+      clubb_params  ! Array of the model constants
+
+    ! Flag for using prescribed avg_deltaz in adj_low_res_nu
+    logical, parameter :: &
+      l_prescribed_avg_deltaz = .false.
+
+    type(nu_vertical_res_dep) :: &
+      nu_vert_res_dep_ascend,  & ! Vertical resolution dependent nu (ascending)
+      nu_vert_res_dep_descend    ! Vertical resolution dependent nu (descending)
+  
     integer :: &
       rev_direction_grid_unit_test
 
@@ -198,6 +222,10 @@ module rev_direction_grid_test
     ! This value will remain at 0 if all tests are successful.
     rev_direction_grid_unit_test = 0
 
+    ! Read in model parameter values for the call to adj_low_res_nu
+    call init_clubb_params_api( 1, iunit, namelist_filename, &
+                                clubb_params )
+      
     ! Loop over each grid type
     do grid_type = 1, 3, 1
 
@@ -760,6 +788,16 @@ module rev_direction_grid_test
                                           rho_ds_zm_flip, & ! In
                                           rhs_ta_godunov_descend ) ! Out
 
+       ! adj_low_res_nu (called from within setup_parameters in CLUBB)
+       call adj_low_res_nu_api( gr_ascending, grid_type, deltaz, & ! Intent(in)
+                                clubb_params(1,:),               & ! Intent(in)
+                                l_prescribed_avg_deltaz,         & ! Intent(in)
+                                nu_vert_res_dep_ascend )           ! Intent(out)
+       call adj_low_res_nu_api( gr_descending, grid_type, deltaz, & ! Intent(in)
+                                clubb_params(1,:),                & ! Intent(in)
+                                l_prescribed_avg_deltaz,          & ! Intent(in)
+                                nu_vert_res_dep_descend )           ! Intent(out)
+
        ! Compare the symmetry of the results -- zt level variables
        do k = 1, nzt
           ! term_ma_zt_lhs (centered differencing)
@@ -1148,6 +1186,85 @@ module rev_direction_grid_test
              rev_direction_grid_unit_test = rev_direction_grid_unit_test + 1
           endif
        enddo
+
+       ! Compare results for nu_vert_res_dep between ascending and descending grids.
+       ! % nu1
+       if ( abs( nu_vert_res_dep_ascend%nu1(1) &
+                 - nu_vert_res_dep_descend%nu1(1) ) > zero ) then
+          write(fstdout,*) "The results of nu_vert_res_dep for nu1 are not symmetric " &
+                           // "between the ascending and descending grids."
+          write(fstdout,*) "Ascending grid nu_vert_res_dep nu1 = ", &
+                           nu_vert_res_dep_ascend%nu1(1)
+          write(fstdout,*) "Descending grid nu_vert_res_dep nu1 = ", &
+                           nu_vert_res_dep_descend%nu1(1)
+          rev_direction_grid_unit_test = rev_direction_grid_unit_test + 1
+       endif
+       ! % nu2
+       if ( abs( nu_vert_res_dep_ascend%nu2(1) &
+                 - nu_vert_res_dep_descend%nu2(1) ) > zero ) then
+          write(fstdout,*) "The results of nu_vert_res_dep for nu2 are not symmetric " &
+                           // "between the ascending and descending grids."
+          write(fstdout,*) "Ascending grid nu_vert_res_dep nu2 = ", &
+                           nu_vert_res_dep_ascend%nu2(1)
+          write(fstdout,*) "Descending grid nu_vert_res_dep nu2 = ", &
+                           nu_vert_res_dep_descend%nu2(1)
+          rev_direction_grid_unit_test = rev_direction_grid_unit_test + 1
+       endif
+       ! % nu6
+       if ( abs( nu_vert_res_dep_ascend%nu6(1) &
+                 - nu_vert_res_dep_descend%nu6(1) ) > zero ) then
+          write(fstdout,*) "The results of nu_vert_res_dep for nu6 are not symmetric " &
+                           // "between the ascending and descending grids."
+          write(fstdout,*) "Ascending grid nu_vert_res_dep nu6 = ", &
+                           nu_vert_res_dep_ascend%nu6(1)
+          write(fstdout,*) "Descending grid nu_vert_res_dep nu6 = ", &
+                           nu_vert_res_dep_descend%nu6(1)
+          rev_direction_grid_unit_test = rev_direction_grid_unit_test + 1
+       endif
+       ! % nu8
+       if ( abs( nu_vert_res_dep_ascend%nu8(1) &
+                 - nu_vert_res_dep_descend%nu8(1) ) > zero ) then
+          write(fstdout,*) "The results of nu_vert_res_dep for nu8 are not symmetric " &
+                           // "between the ascending and descending grids."
+          write(fstdout,*) "Ascending grid nu_vert_res_dep nu8 = ", &
+                           nu_vert_res_dep_ascend%nu8(1)
+          write(fstdout,*) "Descending grid nu_vert_res_dep nu8 = ", &
+                           nu_vert_res_dep_descend%nu8(1)
+          rev_direction_grid_unit_test = rev_direction_grid_unit_test + 1
+       endif
+       ! % nu9
+       if ( abs( nu_vert_res_dep_ascend%nu9(1) &
+                 - nu_vert_res_dep_descend%nu9(1) ) > zero ) then
+          write(fstdout,*) "The results of nu_vert_res_dep for nu9 are not symmetric " &
+                           // "between the ascending and descending grids."
+          write(fstdout,*) "Ascending grid nu_vert_res_dep nu9 = ", &
+                           nu_vert_res_dep_ascend%nu9(1)
+          write(fstdout,*) "Descending grid nu_vert_res_dep nu9 = ", &
+                           nu_vert_res_dep_descend%nu9(1)
+          rev_direction_grid_unit_test = rev_direction_grid_unit_test + 1
+       endif
+       ! % nu10
+       if ( abs( nu_vert_res_dep_ascend%nu10(1) &
+                 - nu_vert_res_dep_descend%nu10(1) ) > zero ) then
+          write(fstdout,*) "The results of nu_vert_res_dep for nu10 are not symmetric " &
+                           // "between the ascending and descending grids."
+          write(fstdout,*) "Ascending grid nu_vert_res_dep nu10 = ", &
+                           nu_vert_res_dep_ascend%nu10(1)
+          write(fstdout,*) "Descending grid nu_vert_res_dep nu10 = ", &
+                           nu_vert_res_dep_descend%nu10(1)
+          rev_direction_grid_unit_test = rev_direction_grid_unit_test + 1
+       endif
+       ! % nu_hm
+       if ( abs( nu_vert_res_dep_ascend%nu_hm(1) &
+                 - nu_vert_res_dep_descend%nu_hm(1) ) > zero ) then
+          write(fstdout,*) "The results of nu_vert_res_dep for nu_hm are not symmetric " &
+                           // "between the ascending and descending grids."
+          write(fstdout,*) "Ascending grid nu_vert_res_dep nu_hm = ", &
+                           nu_vert_res_dep_ascend%nu_hm(1)
+          write(fstdout,*) "Descending grid nu_vert_res_dep nu_hm = ", &
+                           nu_vert_res_dep_descend%nu_hm(1)
+          rev_direction_grid_unit_test = rev_direction_grid_unit_test + 1
+       endif
 
        ! Deallocate gr variables
        ! (They are allocated during the call to setup_grid_api).
