@@ -16,52 +16,6 @@ from scipy.optimize import minimize
 import warnings
 from itertools import chain
 
-# ======================================== Table Definitions ========================================
-gpu_model_columns = [
-    {"name": "Name", "id": "name"},
-    {"name": "m", "id": "m_val"},
-    {"name": "m_est", "id": "m_est_val"},
-    {"name": "b", "id": "b_val"},
-    {"name": "b_est", "id": "b_est_val"},
-    {"name": "RMSE", "id": "rms_error"},
-]
-
-gpu_batched_model_columns = [
-    {"name": "Name", "id": "name"},
-    {"name": "m_ik", "id": "m_ik_val"},
-    {"name": "m_k", "id": "m_k_val"},
-    {"name": "b", "id": "b_val"},
-    #{"name": "b_est", "id": "b_est_val"},
-    {"name": "RMSE", "id": "rms_error"},
-]
-
-cpu_model_columns = [
-    {"name": "Name", "id": "name"},
-    {"name": "m", "id": "m_val"},
-    #{"name": "m_est", "id": "m_est_val"},
-    {"name": "b", "id": "b_val"},
-    #{"name": "b_est", "id": "b_est_val"},
-    {"name": "c", "id": "c_val"},
-    {"name": "k", "id": "k_val"},
-    {"name": "o", "id": "o_val"},
-    {"name": "Cache Pen Func", "id": "cp_func"},
-    {"name": "RMSE", "id": "rms_error"},
-]
-
-vcpu_model_columns = [
-    {"name": "Name", "id": "name"},
-    {"name": "T_v", "id": "T_v_val"},
-    {"name": "T_r", "id": "T_r_val"},
-    {"name": "b", "id": "b_val"},
-    #{"name": "b_est", "id": "b_est_val"},
-    {"name": "c", "id": "c_val"},
-    {"name": "k", "id": "k_val"},
-    {"name": "o", "id": "o_val"},
-    {"name": "Cache Pen Func", "id": "cp_func"},
-    {"name": "RMSE", "id": "rms_error"},
-]
-
-
 # ======================================== Reused html styles ========================================
 plot_div_style = {
     "margin-bottom": "2%",
@@ -129,6 +83,20 @@ cache_pen_funcs = {
 
 # ======================================== VCPU ========================================
 
+vcpu_model_columns = [
+    {"name": "Name", "id": "name"},
+    {"name": "T_v", "id": "T_v_val"},
+    {"name": "T_r", "id": "T_r_val"},
+    {"name": "b", "id": "b_val"},
+    #{"name": "b_est", "id": "b_est_val"},
+    {"name": "c", "id": "c_val"},
+    {"name": "k", "id": "k_val"},
+    {"name": "o", "id": "o_val"},
+    {"name": "Cache Pen Func", "id": "cp_func"},
+    {"name": "RMSE", "id": "rms_error"},
+]
+
+
 vcpu_param_scale = [ 1e-2, 1.0, 1.0, 1.0 ]
 
 def vcpu_objective(params, ngrdcol, runtime, N_tasks, N_vsize, N_prec, N_vlevs, cp_func ):
@@ -166,6 +134,19 @@ def model_vcpu_time(params, ngrdcol, runtime, N_tasks, N_vsize, N_prec, N_vlevs,
 
 # ======================================== CPU ========================================
 
+cpu_model_columns = [
+    {"name": "Name", "id": "name"},
+    {"name": "m", "id": "m_val"},
+    #{"name": "m_est", "id": "m_est_val"},
+    {"name": "b", "id": "b_val"},
+    #{"name": "b_est", "id": "b_est_val"},
+    {"name": "c", "id": "c_val"},
+    {"name": "k", "id": "k_val"},
+    {"name": "o", "id": "o_val"},
+    {"name": "Cache Pen Func", "id": "cp_func"},
+    {"name": "RMSE", "id": "rms_error"},
+]
+
 cpu_param_scale = [ 1e-4, 1e-2, 1.0, 1.0, 1.0 ]
 
 def cpu_objective(params, ngrdcol, runtime, N_tasks, N_vsize, N_prec, N_vlevs, cp_func ):
@@ -194,6 +175,16 @@ def model_cpu_time(params, ngrdcol, runtime, N_tasks, N_vsize, N_prec, N_vlevs, 
 
 # ======================================== GPU ========================================
 
+gpu_model_columns = [
+    {"name": "Name", "id": "name"},
+    {"name": "m", "id": "m_val"},
+    {"name": "m_est", "id": "m_est_val"},
+    {"name": "b", "id": "b_val"},
+    {"name": "b_est", "id": "b_est_val"},
+    {"name": "RMSE", "id": "rms_error"},
+]
+
+
 gpu_param_scale = [ 1.0, 1.0 ]
 
 def gpu_objective(params, ngrdcol, runtime, N_tasks, N_vsize, N_prec, N_vlevs ):
@@ -203,9 +194,7 @@ def model_gpu_time(params, ngrdcol, runtime, N_tasks, N_vsize, N_prec, N_vlevs):
 
     m, b = gpu_param_scale * params
 
-    f = b + m * ngrdcol
-
-    T_gpu = f
+    T_gpu = b + m * ngrdcol
 
     # Calculate error
     cps = ngrdcol / runtime
@@ -219,18 +208,24 @@ def model_gpu_time(params, ngrdcol, runtime, N_tasks, N_vsize, N_prec, N_vlevs):
 
 # ======================================== Batched GPU ========================================
 
-gpu_batched_param_scale = [ 1.0, 1.0, 1.0 ]
+gpu_batched_model_columns = [
+    {"name": "Name", "id": "name"},
+    {"name": "m_ik", "id": "m_ik_val"},
+    {"name": "m_k", "id": "m_k_val"},
+    {"name": "b", "id": "b_val"},
+    #{"name": "b_est", "id": "b_est_val"},
+    {"name": "d", "id": "d_val"},
+    {"name": "RMSE", "id": "rms_error"},
+]
 
-def gpu_batched_objective(params, ngrdcol, runtime, N_tasks, N_vsize, N_prec, N_vlevs ):
-    _, rms_error = model_gpu_batched_time(params, ngrdcol, runtime, N_tasks, N_vsize, N_prec, N_vlevs )
+def gpu_batched_objective(params, param_scale, ngrdcol, runtime, N_tasks, N_vsize, N_prec, N_vlevs ):
+    _, rms_error = model_gpu_batched_time(params, param_scale, ngrdcol, runtime, N_tasks, N_vsize, N_prec, N_vlevs )
     return rms_error
-def model_gpu_batched_time(params, ngrdcol, runtime, N_tasks, N_vsize, N_prec, N_vlevs):
+def model_gpu_batched_time(params, param_scale, ngrdcol, runtime, N_tasks, N_vsize, N_prec, N_vlevs):
 
-    m_ik, m_k, b = gpu_batched_param_scale * params
+    m_ik, m_k, b = param_scale * params
 
-    f = m_ik * ngrdcol * N_vlevs + m_k * N_vlevs + b
-
-    T_bgpu = f
+    T_bgpu = m_ik * ngrdcol * N_vlevs + m_k * N_vlevs + b
 
     # Calculate error
     cps = ngrdcol / runtime
@@ -405,34 +400,37 @@ def model_throughputs(ngrdcol, runtime, N_tasks, N_vsize, N_prec, N_vlevs, model
     if model_version == "gpu_batched":
 
         b_est = runtime[-2] - ( runtime[-1] - runtime[-2] ) / ( ngrdcol[-1] - ngrdcol[-2] ) * ngrdcol[-2]
-        m_est = ( runtime[-1] - runtime[-2] ) / ( ngrdcol[-1] - ngrdcol[-2] )
+        m_ik_est = ( runtime[-1] - runtime[-2] ) / ( ngrdcol[-1] - ngrdcol[-2] ) * ( 1 / N_vlevs[-1])
+        m_k_est = b_est / N_vlevs[-1]
+        #d_est = 100000.0
 
-        initial_guess = np.array( [m_est, m_est, b_est] ) / np.array( gpu_batched_param_scale )
+        initial_guess = [ m_ik_est , m_k_est, b_est ]
 
-        bounds = [ (0,None), (0,None), (0,None) ]
+        param_scale = np.abs( initial_guess )
+        bounds = [ (0,None) ] * len(initial_guess)
 
-        rms_min = None
         params_opt = None
 
         result = minimize(  gpu_batched_objective, 
                             initial_guess, 
-                            args=( ngrdcol, runtime, N_tasks, N_vsize, N_prec, N_vlevs ), 
-                            method='Nelder-Mead' )
-                            #method='L-BFGS-B',
-                            #bounds = bounds )
+                            args=( param_scale, ngrdcol, runtime, N_tasks, N_vsize, N_prec, N_vlevs ), 
+                            #method='Nelder-Mead' )
+                            method='L-BFGS-B',
+                            bounds = bounds )
 
         rms_error = result.fun
         params_opt = result.x
 
-        T_cpu, _ = model_gpu_batched_time( params_opt, ngrdcol, runtime, N_tasks, N_vsize, N_prec, N_vlevs )
+        T_cpu, _ = model_gpu_batched_time( params_opt, param_scale, ngrdcol, runtime, N_tasks, N_vsize, N_prec, N_vlevs )
 
-        params_opt = gpu_batched_param_scale * params_opt
+        params_opt = param_scale * params_opt
 
         fit_params = {
             "m_ik_val": params_opt[0], 
             "m_k_val": params_opt[1], 
             "b_val": params_opt[2], 
             "b_est_val": b_est, 
+            #"d_val": params_opt[3], 
             "rms_error" : rms_error
         }
 
