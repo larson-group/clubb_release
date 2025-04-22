@@ -857,7 +857,7 @@ module parameters_tunable
 
           ! Find the average deltaz over the grid based on momentum level
           ! inputs.
-          avg_deltaz = ( gr%zm(i,gr%nzm) - gr%zm(i,1) ) &
+          avg_deltaz = ( gr%zm(i,gr%k_ub_zm) - gr%zm(i,gr%k_lb_zm) ) &
                        / real( gr%nzm - 1, kind = core_rknd )
 
         else if ( grid_type == 1 ) then
@@ -873,7 +873,7 @@ module parameters_tunable
 
           ! Find the average deltaz over the stretched grid based on
           ! thermodynamic level inputs.
-          avg_deltaz = ( gr%zt(i,gr%nzt) - gr%zt(i,1) ) &
+          avg_deltaz = ( gr%zt(i,gr%k_ub_zt) - gr%zt(i,gr%k_lb_zt) ) &
                        / real( gr%nzt - 1, kind = core_rknd )
 
         else
