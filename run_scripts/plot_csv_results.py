@@ -97,18 +97,16 @@ vcpu_model_columns = [
 ]
 
 
-vcpu_param_scale = [ 1e-2, 1.0, 1.0, 1.0 ]
-
-def vcpu_objective(params, ngrdcol, runtime, N_tasks, N_vsize, N_prec, N_vlevs, cp_func ):
-    _, rms_error = model_vcpu_time(params, ngrdcol, runtime, N_tasks, N_vsize, N_prec, N_vlevs, cp_func )
+def vcpu_objective(params, param_scale, ngrdcol, runtime, N_tasks, N_vsize, N_prec, N_vlevs, cp_func ):
+    _, rms_error = model_vcpu_time(params, param_scale, ngrdcol, runtime, N_tasks, N_vsize, N_prec, N_vlevs, cp_func )
     return rms_error
-def model_vcpu_time(params, ngrdcol, runtime, N_tasks, N_vsize, N_prec, N_vlevs, cp_func):
+def model_vcpu_time(params, param_scale, ngrdcol, runtime, N_tasks, N_vsize, N_prec, N_vlevs, cp_func):
 
     # Model time
     cols_per_core = ngrdcol / N_tasks
     flops_per_vop = N_vsize / N_prec
 
-    b, c, k, o = vcpu_param_scale * params
+    b, c, k, o = param_scale * params
 
     T_r = runtime[np.where(cols_per_core == 1)] - b
     T_v = runtime[np.where(cols_per_core == flops_per_vop)] - b
@@ -147,19 +145,56 @@ cpu_model_columns = [
     {"name": "RMSE", "id": "rms_error"},
 ]
 
-cpu_param_scale = [ 1e-4, 1e-2, 1.0, 1.0, 1.0 ]
-
-def cpu_objective(params, ngrdcol, runtime, N_tasks, N_vsize, N_prec, N_vlevs, cp_func ):
-    _, rms_error = model_cpu_time(params, ngrdcol, runtime, N_tasks, N_vsize, N_prec, N_vlevs, cp_func )
+def cpu_objective(params, param_scale, ngrdcol, runtime, N_tasks, N_vsize, N_prec, N_vlevs, cp_func ):
+    _, rms_error = model_cpu_time(params, param_scale, ngrdcol, runtime, N_tasks, N_vsize, N_prec, N_vlevs, cp_func )
     return rms_error
-def model_cpu_time(params, ngrdcol, runtime, N_tasks, N_vsize, N_prec, N_vlevs, cp_func):
+def model_cpu_time(params, param_scale, ngrdcol, runtime, N_tasks, N_vsize, N_prec, N_vlevs, cp_func):
 
     # Model time
-    m, b, c, k, o = cpu_param_scale * params
+    m, b, c, k, o = param_scale * params
 
     avg_array_size_MB = ngrdcol * N_vlevs * (N_prec/8) / 2**20
  
     T_cpu =  ( m * ngrdcol + b ) * cp_func( c, k, o, avg_array_size_MB )
+
+    # Calculate error
+    cps = ngrdcol / runtime
+    cps_model = ngrdcol / T_cpu
+
+    abs_percent_diff = 100 * ( cps - cps_model ) / cps
+    abs_diff = np.abs( cps - cps_model )
+
+    rms_error = np.sqrt( np.mean( abs_diff**2 ) )
+
+    return T_cpu, rms_error
+
+# ======================================== CPU Batched ========================================
+
+cpu_batched_model_columns = [
+    {"name": "Name", "id": "name"},
+    {"name": "m_ik", "id": "m_ik_val"},
+    {"name": "m_k", "id": "m_k_val"},
+    #{"name": "m_est", "id": "m_est_val"},
+    {"name": "b", "id": "b_val"},
+    #{"name": "b_est", "id": "b_est_val"},
+    {"name": "c", "id": "c_val"},
+    {"name": "k", "id": "k_val"},
+    {"name": "o", "id": "o_val"},
+    {"name": "Cache Pen Func", "id": "cp_func"},
+    {"name": "RMSE", "id": "rms_error"},
+]
+
+def cpu_batched_objective(params, param_scale, ngrdcol, runtime, N_tasks, N_vsize, N_prec, N_vlevs, cp_func ):
+    _, rms_error = model_cpu_batched_time(params, param_scale, ngrdcol, runtime, N_tasks, N_vsize, N_prec, N_vlevs, cp_func )
+    return rms_error
+def model_cpu_batched_time(params, param_scale, ngrdcol, runtime, N_tasks, N_vsize, N_prec, N_vlevs, cp_func):
+
+    # Model time
+    m_ik, m_k, b, c, k, o = param_scale * params
+
+    avg_array_size_MB = ngrdcol * N_vlevs * (N_prec/8) / 2**20
+ 
+    T_cpu =  ( m_ik * ngrdcol * N_vlevs + m_k * N_vlevs + b ) * cp_func( c, k, o, avg_array_size_MB )
 
     # Calculate error
     cps = ngrdcol / runtime
@@ -184,15 +219,12 @@ gpu_model_columns = [
     {"name": "RMSE", "id": "rms_error"},
 ]
 
-
-gpu_param_scale = [ 1.0, 1.0 ]
-
-def gpu_objective(params, ngrdcol, runtime, N_tasks, N_vsize, N_prec, N_vlevs ):
-    _, rms_error = model_gpu_time(params, ngrdcol, runtime, N_tasks, N_vsize, N_prec, N_vlevs )
+def gpu_objective(params, param_scale, ngrdcol, runtime, N_tasks, N_vsize, N_prec, N_vlevs ):
+    _, rms_error = model_gpu_time(params, param_scale, ngrdcol, runtime, N_tasks, N_vsize, N_prec, N_vlevs )
     return rms_error
-def model_gpu_time(params, ngrdcol, runtime, N_tasks, N_vsize, N_prec, N_vlevs):
+def model_gpu_time(params, param_scale, ngrdcol, runtime, N_tasks, N_vsize, N_prec, N_vlevs):
 
-    m, b = gpu_param_scale * params
+    m, b = param_scale * params
 
     T_gpu = b + m * ngrdcol
 
@@ -215,6 +247,7 @@ gpu_batched_model_columns = [
     {"name": "b", "id": "b_val"},
     #{"name": "b_est", "id": "b_est_val"},
     {"name": "d", "id": "d_val"},
+    #{"name": "m_i", "id": "m_i_val"},
     {"name": "RMSE", "id": "rms_error"},
 ]
 
@@ -246,9 +279,10 @@ def model_throughputs(ngrdcol, runtime, N_tasks, N_vsize, N_prec, N_vlevs, model
 
         b_est = runtime[0] - ( runtime[1] - runtime[0] ) / ( ngrdcol[1] - ngrdcol[0] ) * ngrdcol[0]
 
-        initial_guess = np.array( [b_est, 1.0, 1.0, 1.0] ) / np.array( vcpu_param_scale )
+        initial_guess = [ b_est, 1.0, 1.0, 1.0 ]
 
-        bounds = [ (0,None), (0,None), (0,None), (0,None) ]
+        param_scale = np.abs( initial_guess )
+        bounds = [ (0,None) ] * len(initial_guess)
 
         cache_pen_best = None
         rms_min = None
@@ -261,7 +295,7 @@ def model_throughputs(ngrdcol, runtime, N_tasks, N_vsize, N_prec, N_vlevs, model
             print(f" - trying cache pen: {cp_func.__name__}")
 
             result = minimize(  vcpu_objective, initial_guess, 
-                                args=(ngrdcol, runtime, N_tasks, N_vsize, N_prec, N_vlevs, cp_func), 
+                                args=(param_scale, ngrdcol, runtime, N_tasks, N_vsize, N_prec, N_vlevs, cp_func), 
                                 #method='BFGS'
                                 method='L-BFGS-B',
                                 bounds = bounds)
@@ -275,12 +309,12 @@ def model_throughputs(ngrdcol, runtime, N_tasks, N_vsize, N_prec, N_vlevs, model
                 params_opt = result.x
 
 
-        T_cpu, _ = model_vcpu_time(params_opt, ngrdcol, runtime, N_tasks, N_vsize, N_prec, N_vlevs, cache_pen_best)
+        T_cpu, _ = model_vcpu_time(params_opt, param_scale, ngrdcol, runtime, N_tasks, N_vsize, N_prec, N_vlevs, cache_pen_best)
 
         cols_per_core = ngrdcol / N_tasks
         flops_per_vop = N_vsize / N_prec
 
-        params_opt = params_opt * vcpu_param_scale
+        params_opt = param_scale * params_opt
 
         b = params_opt[0]
         T_r = runtime[np.where(cols_per_core == 1)] - b
@@ -310,7 +344,10 @@ def model_throughputs(ngrdcol, runtime, N_tasks, N_vsize, N_prec, N_vlevs, model
 
         m_est = ( runtime[first_vpoint] - b_est ) / ( ngrdcol[first_vpoint] )
 
-        bounds = [ (0,None), (0,None), (0,None), (0,None), (0,None) ]
+        initial_guess = [ m_est, b_est, 1.0, 1.0, 1.0 ]
+
+        param_scale = np.abs( initial_guess )
+        bounds = [ (0,None) ] * len(initial_guess)
 
         cache_pen_best = None
         rms_min = None
@@ -322,13 +359,11 @@ def model_throughputs(ngrdcol, runtime, N_tasks, N_vsize, N_prec, N_vlevs, model
 
             print(f" - trying cache pen: {cp_func.__name__}")
 
-            # m, b, c, k, o
-            initial_guess = np.array( [m_est, b_est, 1.0, 1.0, 1.0] ) / np.array( cpu_param_scale )
 
             result = minimize(
                 cpu_objective,
                 initial_guess,
-                args=(ngrdcol, runtime, N_tasks, N_vsize, N_prec, N_vlevs, cp_func),
+                args=(param_scale, ngrdcol, runtime, N_tasks, N_vsize, N_prec, N_vlevs, cp_func),
                 #method='BFGS'
                 method='L-BFGS-B',
                 bounds = bounds
@@ -343,9 +378,9 @@ def model_throughputs(ngrdcol, runtime, N_tasks, N_vsize, N_prec, N_vlevs, model
                 params_opt = result.x
 
 
-        T_cpu, _ = model_cpu_time(params_opt, ngrdcol, runtime, N_tasks, N_vsize, N_prec, N_vlevs, cache_pen_best)
+        T_cpu, _ = model_cpu_time(params_opt, param_scale, ngrdcol, runtime, N_tasks, N_vsize, N_prec, N_vlevs, cache_pen_best)
 
-        params_opt = params_opt * cpu_param_scale
+        params_opt = param_scale * params_opt
 
         fit_params = {
             "m_val": params_opt[0],
@@ -366,26 +401,24 @@ def model_throughputs(ngrdcol, runtime, N_tasks, N_vsize, N_prec, N_vlevs, model
         b_est = runtime[-2] - ( runtime[-1] - runtime[-2] ) / ( ngrdcol[-1] - ngrdcol[-2] ) * ngrdcol[-2]
         m_est = ( runtime[-1] - runtime[-2] ) / ( ngrdcol[-1] - ngrdcol[-2] )
 
-        initial_guess = np.array( [m_est, b_est] ) / np.array( gpu_param_scale )
+        initial_guess = [ m_est, b_est ]
 
-        bounds = [ (0,None), (0,None) ]
-
-        rms_min = None
-        params_opt = None
+        param_scale = np.abs( initial_guess )
+        bounds = [ (0,None) ] * len(initial_guess)
 
         result = minimize(  gpu_objective, 
                             initial_guess, 
-                            args=(ngrdcol, runtime, N_tasks, N_vsize, N_prec, N_vlevs), 
-                            method='Nelder-Mead' )
-                            #method='L-BFGS-B',
-                            #bounds = bounds )
+                            args=(param_scale, ngrdcol, runtime, N_tasks, N_vsize, N_prec, N_vlevs), 
+                            #method='Nelder-Mead' )
+                            method='L-BFGS-B',
+                            bounds = bounds )
 
         rms_error = result.fun
         params_opt = result.x
 
-        T_cpu, _ = model_gpu_time(params_opt, ngrdcol, runtime, N_tasks, N_vsize, N_prec, N_vlevs)
+        T_cpu, _ = model_gpu_time(param_scale, params_opt, ngrdcol, runtime, N_tasks, N_vsize, N_prec, N_vlevs)
 
-        params_opt = gpu_param_scale * params_opt
+        params_opt = param_scale * params_opt
 
         fit_params = {
             "m_val": params_opt[0], 
@@ -403,8 +436,9 @@ def model_throughputs(ngrdcol, runtime, N_tasks, N_vsize, N_prec, N_vlevs, model
         m_ik_est = ( runtime[-1] - runtime[-2] ) / ( ngrdcol[-1] - ngrdcol[-2] ) * ( 1 / N_vlevs[-1])
         m_k_est = b_est / N_vlevs[-1]
         #d_est = 100000.0
+        #m_i_est = m_ik_est
 
-        initial_guess = [ m_ik_est , m_k_est, b_est ]
+        initial_guess = [ m_ik_est, m_k_est, b_est ]
 
         param_scale = np.abs( initial_guess )
         bounds = [ (0,None) ] * len(initial_guess)
@@ -431,7 +465,68 @@ def model_throughputs(ngrdcol, runtime, N_tasks, N_vsize, N_prec, N_vlevs, model
             "b_val": params_opt[2], 
             "b_est_val": b_est, 
             #"d_val": params_opt[3], 
+            #"m_i_val": params_opt[3], 
             "rms_error" : rms_error
+        }
+
+    #============================== CPU Batched Model ==============================
+
+    if model_version == "cpu_batched":
+
+        b_est = runtime[0] - ( runtime[1] - runtime[0] ) / ( ngrdcol[1] - ngrdcol[0] ) * ngrdcol[0]
+
+        cols_per_core = ngrdcol / N_tasks
+        flops_per_vop = N_vsize / N_prec
+        first_vpoint = np.where(cols_per_core == flops_per_vop)[0][0]
+
+        m_ik_est = ( runtime[first_vpoint] - b_est ) / ( ngrdcol[first_vpoint] ) * ( 1 / N_vlevs[-1])
+        m_k_est = b_est / N_vlevs[-1]
+
+        initial_guess = [ m_ik_est, m_k_est, b_est, 1.0, 1.0, 1.0 ]
+
+        param_scale = np.abs( initial_guess )
+        bounds = [ (0,None) ] * len(initial_guess)
+
+        cache_pen_best = None
+        rms_min = None
+        params_opt = None
+
+        for name in selected_cp_funcs:
+
+            cp_func = cache_pen_funcs[name]
+
+            print(f" - trying cache pen: {cp_func.__name__}")
+
+            result = minimize(  cpu_batched_objective, 
+                                initial_guess, 
+                                args=( param_scale, ngrdcol, runtime, N_tasks, N_vsize, N_prec, N_vlevs, cp_func ), 
+                                #method='Nelder-Mead' )
+                                method='L-BFGS-B',
+                                bounds = bounds )
+
+            rms_error = result.fun
+            print(f" -- rms_error = {rms_error}")
+
+            if rms_min is None or rms_error < rms_min:
+                cache_pen_best = cp_func
+                rms_min = rms_error
+                params_opt = result.x
+
+        T_cpu, _ = model_cpu_batched_time( params_opt, param_scale, ngrdcol, runtime, N_tasks, N_vsize, N_prec, N_vlevs, cache_pen_best )
+
+        params_opt = param_scale * params_opt
+
+        fit_params = {
+            "m_ik_val": params_opt[0],
+            "m_k_val": params_opt[1],
+            #"m_est_val": m_est, 
+            "b_val": params_opt[2], 
+            #"b_est_val": b_est, 
+            "c_val": params_opt[3], 
+            "k_val": params_opt[4], 
+            "o_val": params_opt[5], 
+            "cp_func": cache_pen_best.__name__, 
+            "rms_error" : rms_min
         }
 
 
@@ -515,7 +610,7 @@ def launch_dash_app(dir_name, grouped_files, all_variables):
                 # Plot
                 dcc.Graph(id="fit-plot-batched", style=graph_style), 
 
-                # Table plot
+                # GPU Batched Table
                 html.Label("GPU Model"),
                 dash_table.DataTable(
                     id='gpu-batched-param-table',
@@ -525,6 +620,18 @@ def launch_dash_app(dir_name, grouped_files, all_variables):
                     editable=True,
                     row_deletable=False  # Allows deleting rows directly
                 ),
+
+                # CPU Batched Table
+                html.Label("CPU Model"),
+                dash_table.DataTable(
+                    id='cpu-batched-param-table',
+                    columns=cpu_batched_model_columns,
+                    style_cell={'textAlign': 'center', "whiteSpace": "pre-line"},
+                    data=[],  # Initial empty table
+                    editable=True,
+                    row_deletable=False  # Allows deleting rows directly
+                ),
+
             ], style=fit_plot_div_style),
 
             # Custom function plot
@@ -656,7 +763,7 @@ def launch_dash_app(dir_name, grouped_files, all_variables):
                                         {"label": name, "value": name}
                                         for name in cache_pen_funcs
                                     ],
-                                    value=list(cache_pen_funcs),
+                                    value=["loglog"],
                                     labelStyle={"display": "inline-block", "width": "25%"}  # 2 columns
                                 )
                             ],
@@ -1081,6 +1188,7 @@ def launch_dash_app(dir_name, grouped_files, all_variables):
             #Output('vcpu-param-table', 'data'),
             #Output('cpu-param-table', 'data'),
             Output('gpu-batched-param-table', 'data'),
+            Output('cpu-batched-param-table', 'data'),
         ],
         [
             Input("fit-batched-function-button", "n_clicks"),
@@ -1090,11 +1198,12 @@ def launch_dash_app(dir_name, grouped_files, all_variables):
             Input("variable-dropdown", "value"),
             Input("x-axis-scale", "value"),
             Input("y-axis-scale", "value"),
-            Input("fit-plot-mode", "value")
+            Input("fit-plot-mode", "value"),
+            State({"type": "cp_func_checkbox"}, "value")
         ],
         prevent_initial_call=True
     )
-    def update_fit_plot_batched(n_clicks, N_vsize, selected_files, selected_variable, xaxis_scale, yaxis_scale, plot_mode):
+    def update_fit_plot_batched(n_clicks, N_vsize, selected_files, selected_variable, xaxis_scale, yaxis_scale, plot_mode, selected_cp_funcs):
         
         if n_clicks == 0 or not selected_files:
             raise PreventUpdate
@@ -1103,18 +1212,20 @@ def launch_dash_app(dir_name, grouped_files, all_variables):
         combined_df = pd.DataFrame()
 
         gpu_batched_table_data = []
+        cpu_batched_table_data = []
 
         N_tasks = np.empty(0)
         N_vlevs = np.empty(0)
         runtimes = np.empty(0)
         ngrdcols = np.empty(0)
+        N_prec = np.empty(0)
         filenames = ""
+
+        gpu_fit = False
 
         for case, filename in flat_files:
             if case in data and filename in data[case] and selected_variable in data[case][filename].columns:
                 
-                #if any(gpu_name not in filename for gpu_name in ["A100", "V100", "H100"]):
-                #    raise PreventUpdate
 
                 # Get the number of cores used 
                 N_tasks  = np.concatenate( [N_tasks, np.array( data[case][filename]["tasks"] )] )
@@ -1122,27 +1233,35 @@ def launch_dash_app(dir_name, grouped_files, all_variables):
                 runtimes = np.concatenate( [runtimes, np.array( data[case][filename][selected_variable] )] )
                 ngrdcols = np.concatenate( [ngrdcols, np.array( data[case][filename]["ngrdcol"] )] )
 
-                # if filenames == "":
-                #     filenames = f"{case}/{filename}"
-                # else:
-                #     filenames = filenames + f"\n{case}/{filename}"
+                if "_sp_" in filename:
+                    N_prec = np.concatenate( [N_prec, np.array([32]*len(data[case][filename]["nz"])) ])
+                else:
+                    N_prec = np.concatenate( [N_prec, np.array([64]*len(data[case][filename]["nz"])) ])
+
+                # If any of the files in the batch are GPU, just do a GPU fit
+                if any(gpu_name in filename for gpu_name in ["A100", "V100", "H100"]):
+                    gpu_fit = True 
                 
-        # Currently used for gpu modelling, default to 64
-        N_prec = 64
+        # This will need changing if we want to batch fit single precision results
+        #N_prec = 64
 
-        T_gpu, gpu_params = model_throughputs(  ngrdcols, 
-                                                runtimes, 
-                                                N_tasks, 
-                                                N_vsize, 
-                                                N_prec, 
-                                                N_vlevs, 
-                                                "gpu_batched")
-
-        # gpu_batched_table_data.append({
-        #     col["id"]: f"{gpu_params.get(col['id']):.3e}" if isinstance(gpu_params.get(col["id"]), (int, float)) else gpu_params.get(col["id"])
-        #     for col in gpu_batched_model_columns
-        # })
-        # gpu_batched_table_data[-1]["name"] = filenames
+        if gpu_fit:
+            T_gpu, params_opt = model_throughputs(  ngrdcols, 
+                                                    runtimes, 
+                                                    N_tasks, 
+                                                    N_vsize, 
+                                                    N_prec, 
+                                                    N_vlevs, 
+                                                    "gpu_batched")
+        else:
+            T_gpu, params_opt = model_throughputs(  ngrdcols, 
+                                                    runtimes, 
+                                                    N_tasks, 
+                                                    N_vsize, 
+                                                    N_prec, 
+                                                    N_vlevs, 
+                                                    "cpu_batched",
+                                                    selected_cp_funcs )
 
         start_idx = 0
         for case, filename in flat_files:
@@ -1158,38 +1277,48 @@ def launch_dash_app(dir_name, grouped_files, all_variables):
                 original_df["Columns per Second"] = original_df["ngrdcol"] / original_df[selected_variable]
                 original_df["Grid Boxes per Second"] = grid_boxes / original_df[selected_variable]
 
-                gpu_model_df = original_df.copy()
+                model_df = original_df.copy()
 
                 end_idx = start_idx + len(original_df["ngrdcol"])
-                gpu_model_df[selected_variable] = T_gpu[start_idx:end_idx]
+                model_df[selected_variable] = T_gpu[start_idx:end_idx]
 
-                gpu_model_df["Grid Boxes per Second"] = grid_boxes / gpu_model_df[selected_variable]
-                gpu_model_df["Columns per Second"] = gpu_model_df["ngrdcol"] / gpu_model_df[selected_variable]
-                gpu_model_df["Name"] = f"{filename}_gmodel"
+                model_df["Grid Boxes per Second"] = grid_boxes / model_df[selected_variable]
+                model_df["Columns per Second"] = model_df["ngrdcol"] / model_df[selected_variable]
+                model_df["Name"] = f"{filename}_gmodel"
 
-                combined_df = pd.concat([combined_df, original_df, gpu_model_df])
+                combined_df = pd.concat([combined_df, original_df, model_df])
 
                 # Calculate RMS for specific model
                 cps = original_df["ngrdcol"] / original_df[selected_variable]
-                cps_model = gpu_model_df["ngrdcol"] / gpu_model_df[selected_variable]
+                cps_model = model_df["ngrdcol"] / model_df[selected_variable]
 
                 abs_diff = np.abs( cps - cps_model )
                 rms_error = np.sqrt( np.mean( abs_diff**2 ) )
 
-                gpu_params["rms_error"] = rms_error
+                params_opt["rms_error"] = rms_error
 
                 # Update table
-                gpu_batched_table_data.append({
-                    col["id"]: f"{gpu_params.get(col['id']):.3e}" if isinstance(gpu_params.get(col["id"]), (int, float)) else gpu_params.get(col["id"])
-                    for col in gpu_batched_model_columns
-                })
-                gpu_batched_table_data[-1]["name"] = f"{filename}"
+                if gpu_fit:
+                    gpu_batched_table_data.append({
+                        col["id"]: f"{params_opt.get(col['id']):.3e}" if isinstance(params_opt.get(col["id"]), (int, float)) else params_opt.get(col["id"])
+                        for col in gpu_batched_model_columns
+                    })
+                    gpu_batched_table_data[-1]["name"] = f"{filename}"
+                else:
+                    cpu_batched_table_data.append({
+                        col["id"]: f"{params_opt.get(col['id']):.3e}" if isinstance(params_opt.get(col["id"]), (int, float)) else params_opt.get(col["id"])
+                        for col in cpu_batched_model_columns
+                    })
+                    cpu_batched_table_data[-1]["name"] = f"{filename}"
+
 
                 start_idx = end_idx
 
                 
         if plot_mode == "cps":
-            fig = px.line(combined_df, x="Grid Boxes", y="Grid Boxes per Second", color="Name")
+            #fig = px.line(combined_df, x="Grid Boxes", y="Grid Boxes per Second", color="Name")
+            #fig.update_layout( yaxis_title = "Throughput ( grid boxes / second)" )
+            fig = px.line(combined_df, x="ngrdcol", y="Columns per Second", color="Name")
             fig.update_layout( yaxis_title = "Throughput ( grid boxes / second)" )
         else:
             fig = px.line(combined_df, x="Grid Boxes", y=selected_variable, color="Name")
@@ -1204,7 +1333,7 @@ def launch_dash_app(dir_name, grouped_files, all_variables):
         )
         fig = plot_with_enhancements(fig, f"{selected_variable} vs. Number of Grid Boxes")
 
-        return fig.to_dict(), gpu_batched_table_data
+        return fig.to_dict(), gpu_batched_table_data, cpu_batched_table_data
 
 
     # ======================================== App run ========================================
