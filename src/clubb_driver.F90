@@ -3276,6 +3276,8 @@ module clubb_driver
 
       if ( stats_metadata%l_stats_samp ) then
 
+        !$acc update host( rvm_mc, rcm_mc, thlm_mc, wprtp_mc, wpthlp_mc, rtp2_mc, thlp2_mc, rtpthlp_mc )
+
         ! Total microphysical tendency of vapor and cloud water mixing ratios
         do i = 1, ngrdcol
           call stat_update_var( stats_metadata%irvm_mc, rvm_mc(i,:), stats_zt(i) )         ! kg/kg/s
