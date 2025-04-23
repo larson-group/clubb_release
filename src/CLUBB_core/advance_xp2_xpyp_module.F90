@@ -75,7 +75,7 @@ module advance_xp2_xpyp_module
                                stats_metadata,                            & ! In
                                stats_zt, stats_zm, stats_sfc,             & ! In
                                rtp2, thlp2, rtpthlp, up2, vp2,            & ! Inout
-                               sclrp2, sclrprtp, sclrpthlp, err_code )      ! Inout
+                               sclrp2, sclrprtp, sclrpthlp, err_info )      ! Inout
 
     ! Description:
     ! Prognose scalar variances, scalar covariances, and horizontal turbulence components.
@@ -180,6 +180,9 @@ module advance_xp2_xpyp_module
         diffusion_zm_lhs    ! Procedure(s)
 
     use stats_type, only: stats ! Type
+
+    use err_info_type_module, only: &
+      err_info_type     ! Type
 
     implicit none
 
@@ -310,8 +313,8 @@ module advance_xp2_xpyp_module
     real( kind = core_rknd ), intent(inout), dimension(ngrdcol,nzm,sclr_dim) ::  & 
       sclrp2, sclrprtp, sclrpthlp
 
-    integer, intent(inout) :: &
-      err_code    ! Error code catching and relaying any errors occurring in this subroutine
+    type(err_info_type), intent(inout) :: &
+      err_info      ! err_info struct containing err_code and err_header
 
     !------------------------------ Local Variables ------------------------------
     real( kind = core_rknd ), dimension(ngrdcol,nzm) ::  &
@@ -443,26 +446,30 @@ module advance_xp2_xpyp_module
 
     if ( clubb_at_least_debug_level( 1 ) ) then
 
-      !$acc parallel loop gang vector default(present) reduction(.or.:err_code)
+      !$acc parallel loop gang vector default(present)
       do i = 1, ngrdcol
 
         ! Assertion check for C_uu_shr
         if ( clubb_params(i,iC_uu_shr) > one &
             .or. clubb_params(i,iC_uu_shr) < zero ) then
+          write(fstderr, *) err_info%err_header(i)
           write(fstderr,*) "The C_uu_shr variable is outside the valid range"
-          err_code = clubb_fatal_error
+          ! Error in grid column i -> set ith entry to clubb_fatal_error
+          err_info%err_code(i) = clubb_fatal_error
         end if
 
         if ( clubb_params(i,iC_uu_buoy) > one &
             .or. clubb_params(i,iC_uu_buoy) < zero ) then
+          write(fstderr, *) err_info%err_header(i)
           write(fstderr,*) "The C_uu_buoy variable is outside the valid range"
-          err_code = clubb_fatal_error
+          ! Error in grid column i -> set ith entry to clubb_fatal_error
+          err_info%err_code(i) = clubb_fatal_error
         end if
-        
+
       end do
       !$acc end parallel loop
 
-      if ( err_code == clubb_fatal_error ) then
+      if ( any(err_info%err_code == clubb_fatal_error) ) then
         return
       end if
 
@@ -651,7 +658,7 @@ module advance_xp2_xpyp_module
                                            stats_metadata,                              & ! In
                                            stats_zm, stats_sfc,                         & ! In
                                            rtp2, thlp2, rtpthlp,                        & ! InOut
-                                           sclrp2, sclrprtp, sclrpthlp, err_code )        ! InOut
+                                           sclrp2, sclrprtp, sclrpthlp, err_info )        ! InOut
     else
 
       ! Left hand sides are potentially different, this requires multiple solves
@@ -674,7 +681,7 @@ module advance_xp2_xpyp_module
                                              stats_metadata,                               & ! In
                                              stats_zm, stats_sfc,                          & ! In
                                              rtp2, thlp2, rtpthlp,                         & ! InOut
-                                             sclrp2, sclrprtp, sclrpthlp, err_code )         ! InOut
+                                             sclrp2, sclrprtp, sclrpthlp, err_info )         ! InOut
     end if
 
     !!!!!***** u'^2 / v'^2 *****!!!!!
@@ -743,7 +750,7 @@ module advance_xp2_xpyp_module
                             gr, tridiag_solve_method,          & ! Intent(in)
                             stats_metadata,                    & ! Intent(in)
                             stats_sfc,                         & ! intent(inout)
-                            uv_rhs, lhs, err_code,             & ! Intent(inout)
+                            uv_rhs, lhs, err_info,             & ! Intent(inout)
                             uv_solution )                        ! Intent(out)
 
       up2 = uv_solution(:,:,1)
@@ -786,7 +793,7 @@ module advance_xp2_xpyp_module
                            gr, tridiag_solve_method,          & ! Intent(in)
                            stats_metadata,                    & ! Intent(in)
                            stats_sfc,                         & ! intent(inout)
-                           uv_rhs, lhs, err_code,             & ! Intent(inout)
+                           uv_rhs, lhs, err_info,             & ! Intent(inout)
                            uv_solution )                        ! Intent(out)
 
       vp2 = uv_solution(:,:,1)
@@ -846,7 +853,7 @@ module advance_xp2_xpyp_module
                            gr, tridiag_solve_method,          & ! Intent(in)
                            stats_metadata,                    & ! Intent(in)
                            stats_sfc,                         & ! Intent(inout)
-                           uv_rhs, lhs, err_code,             & ! Intent(inout)
+                           uv_rhs, lhs, err_info,             & ! Intent(inout)
                            uv_solution )                        ! Intent(out)
 
       !$acc parallel loop gang vector collapse(2) default(present)
@@ -1360,7 +1367,7 @@ module advance_xp2_xpyp_module
 
     if ( clubb_at_least_debug_level( 0 ) ) then
 
-      if ( err_code == clubb_fatal_error ) then
+      if ( any(err_info%err_code == clubb_fatal_error) ) then
 
         !$acc update host( invrs_tau_xp2_zm, invrs_tau_C4_zm, invrs_tau_C14_zm, &
         !$acc              wm_zm, rtm, wprtp, thlm, wpthlp, wpthvp, um, vm, wp2, &
@@ -1371,6 +1378,7 @@ module advance_xp2_xpyp_module
         !$acc              up2_old, up2, vp2_old, vp2, sclrp2_old, sclrp2, &
         !$acc              sclrprtp_old, sclrprtp, sclrpthlp_old, sclrpthlp )
 
+        write(fstderr, *) err_info%err_header_global
         write(fstderr,*) "Error in advance_xp2_xpyp"
 
         write(fstderr,*) "Intent(in)"
@@ -1474,7 +1482,7 @@ module advance_xp2_xpyp_module
                                              stats_metadata, &
                                              stats_zm, stats_sfc, &
                                              rtp2, thlp2, rtpthlp, &
-                                             sclrp2, sclrprtp, sclrpthlp, err_code )
+                                             sclrp2, sclrprtp, sclrpthlp, err_info )
     ! Description:
     !     This subroutine generates a single lhs matrix and multiple rhs matricies, then 
     !     solves the system. This should only be used when the lhs matrices for
@@ -1507,6 +1515,9 @@ module advance_xp2_xpyp_module
 
     use stats_variables, only: &
       stats_metadata_type
+
+    use err_info_type_module, only: &
+      err_info_type     ! Type
 
     implicit none
 
@@ -1590,8 +1601,8 @@ module advance_xp2_xpyp_module
     real( kind = core_rknd ), intent(inout), dimension(ngrdcol,nzm,sclr_dim) :: &
       sclrp2, sclrprtp, sclrpthlp
 
-    integer, intent(inout) :: &
-      err_code    ! Error code catching and relaying any errors occurring in this subroutine
+    type(err_info_type), intent(inout) :: &
+      err_info      ! err_info struct containing err_code and err_header
 
     ! -------- Local Variables --------
 
@@ -1777,7 +1788,7 @@ module advance_xp2_xpyp_module
                          gr, tridiag_solve_method,                        & ! Intent(in)
                          stats_metadata,                                  & ! Intent(in)
                          stats_sfc,                                       & ! Intent(inout)
-                         rhs, lhs, err_code,                              & ! Intent(inout)
+                         rhs, lhs, err_info,                              & ! Intent(inout)
                          solution )                                         ! Intent(out)
 
     if ( l_lmm_stepping ) then
@@ -1892,7 +1903,7 @@ module advance_xp2_xpyp_module
                                                stats_metadata, &
                                                stats_zm, stats_sfc, & 
                                                rtp2, thlp2, rtpthlp, &
-                                               sclrp2, sclrprtp, sclrpthlp, err_code )
+                                               sclrp2, sclrprtp, sclrpthlp, err_info )
     ! Description:
     !     This subroutine generates different lhs and rhs matrices to solve for.
     !     
@@ -1924,8 +1935,11 @@ module advance_xp2_xpyp_module
     use stats_variables, only: &
         stats_metadata_type
 
+    use err_info_type_module, only: &
+      err_info_type     ! Type
+
     implicit none
-      
+
     !------------------------ Input Variables ------------------------
     integer, intent(in) :: &
       nzm,      & ! Number of momentum vertical levels
@@ -2020,8 +2034,8 @@ module advance_xp2_xpyp_module
     real( kind = core_rknd ), intent(inout), dimension(ngrdcol,nzm,sclr_dim) :: &
       sclrp2, sclrprtp, sclrpthlp
 
-    integer, intent(inout) :: &
-      err_code    ! Error code catching and relaying any errors occurring in this subroutine
+    type(err_info_type), intent(inout) :: &
+      err_info      ! err_info struct containing err_code and err_header
 
     !------------------------ Local Variables ------------------------
 
@@ -2103,7 +2117,7 @@ module advance_xp2_xpyp_module
                          gr, tridiag_solve_method,       & ! Intent(in)
                          stats_metadata,                 & ! Intent(in)
                          stats_sfc,                      & ! Intent(inout)
-                         rhs, lhs, err_code,             & ! Intent(inout)
+                         rhs, lhs, err_info,             & ! Intent(inout)
                          rtp2_solution )                   ! Intent(out)
 
     if ( l_lmm_stepping ) then
@@ -2171,7 +2185,7 @@ module advance_xp2_xpyp_module
                          gr, tridiag_solve_method,        & ! Intent(in)
                          stats_metadata,                  & ! Intent(in)
                          stats_sfc,                       & ! Intent(inout)
-                         rhs, lhs, err_code,              & ! Intent(inout)
+                         rhs, lhs, err_info,              & ! Intent(inout)
                          thlp2_solution )                   ! Intent(out)
 
     if ( l_lmm_stepping ) then
@@ -2238,7 +2252,7 @@ module advance_xp2_xpyp_module
                          gr, tridiag_solve_method,          & ! Intent(in)
                          stats_metadata,                    & ! Intent(in)
                          stats_sfc,                         & ! Intent(inout)
-                         rhs, lhs, err_code,                & ! Intent(inout)
+                         rhs, lhs, err_info,                & ! Intent(inout)
                          rtpthlp_solution )                   ! Intent(out)
 
     if ( l_lmm_stepping ) then
@@ -2315,7 +2329,7 @@ module advance_xp2_xpyp_module
                                gr, tridiag_solve_method,          & ! Intent(in)
                                stats_metadata,                    & ! Intent(in)
                                stats_sfc,                         & ! intent(inout)
-                               rhs, lhs, err_code,                & ! intent(inout)
+                               rhs, lhs, err_info,                & ! intent(inout)
                                sclrp2_solution(:,:,sclr) )          ! Intent(out)
 
           if ( l_lmm_stepping ) then
@@ -2355,7 +2369,7 @@ module advance_xp2_xpyp_module
                                gr, tridiag_solve_method,          & ! Intent(in)
                                stats_metadata,                    & ! Intent(in)
                                stats_sfc,                         & ! intent(inout)
-                               rhs, lhs, err_code,                & ! Intent(inout)
+                               rhs, lhs, err_info,                & ! Intent(inout)
                                sclrprtp_solution(:,:,sclr) )        ! Intent(out)
 
           if ( l_lmm_stepping ) then
@@ -2395,7 +2409,7 @@ module advance_xp2_xpyp_module
                                gr, tridiag_solve_method,          & ! Intent(in)
                                stats_metadata,                    & ! Intent(in)
                                stats_sfc,                         & ! intent(inout)
-                               rhs, lhs, err_code,                & ! Intent(inout)
+                               rhs, lhs, err_info,                & ! Intent(inout)
                                sclrpthlp_solution(:,:,sclr) )       ! Intent(out)
 
           if ( l_lmm_stepping ) then
@@ -2522,7 +2536,7 @@ module advance_xp2_xpyp_module
                              gr, tridiag_solve_method,                   & ! Intent(in)
                              stats_metadata,                             & ! Intent(in)
                              stats_sfc,                                  & ! intent(inout)
-                             sclr_rhs, lhs, err_code,                    & ! Intent(inout)
+                             sclr_rhs, lhs, err_info,                    & ! Intent(inout)
                              sclr_solution )                               ! Intent(out)
 
         if ( l_lmm_stepping ) then
@@ -2556,7 +2570,6 @@ module advance_xp2_xpyp_module
           end do
           !$acc end parallel loop
         endif ! l_lmm_stepping
-
 
       endif ! iiPDF_type
 
@@ -2697,7 +2710,7 @@ module advance_xp2_xpyp_module
                              gr, tridiag_solve_method, &
                              stats_metadata, &
                              stats_sfc, &
-                             rhs, lhs, err_code, &
+                             rhs, lhs, err_info, &
                              xapxbp )
 
     ! Description:
@@ -2727,6 +2740,9 @@ module advance_xp2_xpyp_module
         core_rknd ! Variable(s)
 
     use stats_type, only: stats ! Type
+
+    use err_info_type_module, only: &
+      err_info_type     ! Type
 
     use model_flags, only: &
         l_test_grid_generalization    ! Variable(s)
@@ -2766,11 +2782,11 @@ module advance_xp2_xpyp_module
     real( kind = core_rknd ), dimension(ndiags3,ngrdcol,nzm), intent(inout) :: & 
       lhs  ! Implicit contributions to x variance/covariance term [units vary]
 
-    integer, intent(inout) :: &
-      err_code    ! Error code catching and relaying any errors occurring in this subroutine
+    type(err_info_type), intent(inout) :: &
+      err_info      ! err_info struct containing err_code and err_header
 
     ! ---------------------- Output Variables ----------------------
-    real( kind = core_rknd ), dimension(ngrdcol,nzm,nrhs), intent(out) ::  & 
+    real( kind = core_rknd ), dimension(ngrdcol,nzm,nrhs), intent(out) :: &
       xapxbp ! Computed value of the variable(s) at <t+1> [units vary]
 
     ! ---------------------- Local variables ----------------------
@@ -2859,7 +2875,7 @@ module advance_xp2_xpyp_module
 
       call tridiag_solve( solve_type_str, tridiag_solve_method, & ! Intent(in)
                           ngrdcol, nzm, nrhs,                   & ! Intent(in)
-                          lhs, rhs, err_code,                   & ! Intent(inout)
+                          lhs, rhs, err_info,                   & ! Intent(inout)
                           xapxbp, rcond )                         ! Intent(out)
 
       if ( l_single_lhs_solve ) then
@@ -2892,7 +2908,7 @@ module advance_xp2_xpyp_module
 
       call tridiag_solve( solve_type_str, tridiag_solve_method, & ! Intent(in)
                           ngrdcol, nzm, nrhs,                   & ! Intent(in)
-                          lhs, rhs, err_code,                   & ! Intent(inout)
+                          lhs, rhs, err_info,                   & ! Intent(inout)
                           xapxbp )                                ! Intent(out)
     end if
 

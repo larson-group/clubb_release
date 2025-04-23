@@ -67,7 +67,7 @@ module setup_clubb_pdf_params
                                    l_const_Nc_in_cloud, &                         ! Intent(in)
                                    l_fix_w_chi_eta_correlations, &                ! Intent(in)
                                    stats_metadata, &                              ! Intent(in)
-                                   stats_zt, stats_zm, stats_sfc, err_code, &     ! intent(inout)
+                                   stats_zt, stats_zm, stats_sfc, err_info, &     ! intent(inout)
                                    hydrometp2, &                                  ! Intent(out)
                                    mu_x_1_n, mu_x_2_n, &                          ! Intent(out)
                                    sigma_x_1_n, sigma_x_2_n, &                    ! Intent(out)
@@ -155,6 +155,9 @@ module setup_clubb_pdf_params
     use stats_variables, only: &
       stats_metadata_type
 
+    use err_info_type_module, only: &
+      err_info_type     ! Type
+
     implicit none
 
     !------------------------ Input Variables ------------------------
@@ -227,8 +230,8 @@ module setup_clubb_pdf_params
       stats_zm, &
       stats_sfc
 
-    integer, intent(inout) :: &
-      err_code      ! Error code catching and relaying any errors occurring in this subroutine
+    type(err_info_type), intent(inout) :: &
+      err_info      ! err_info struct containing err_code and err_header
     !------------------------ Output Variables ------------------------
     real( kind = core_rknd ), dimension(ngrdcol,nzm,hydromet_dim), intent(out) :: &
       hydrometp2    ! Variance of a hydrometeor (overall) (m-levs.)   [units^2]
@@ -350,11 +353,13 @@ module setup_clubb_pdf_params
             do i = 1, ngrdcol
               if ( hydromet(i,k,j) < zero_threshold ) then
                 ! Write error message
+                write(fstderr, *) err_info%err_header(i)
                 write(fstderr,*) " at beginning of setup_pdf_parameters: ", &
                                   trim( hydromet_name )//" = ", &
                                   hydromet(i,k,j), " < ", zero_threshold, &
                                   " at k = ", k
-                err_code = clubb_fatal_error
+                ! Error in grid column i -> set ith entry to clubb_fatal_error
+                err_info%err_code(i) = clubb_fatal_error
                 return
               end if ! hydromet(k,i) < 0
             end do ! k = 1, nzt
@@ -399,13 +404,14 @@ module setup_clubb_pdf_params
                 pdf_params%ice_supersat_frac_1(:,:), pdf_params%ice_supersat_frac_2(:,:), & ! In
                 pdf_params%mixt_frac(:,:), clubb_params,                                  & ! In
                 stats_metadata,                                                           & ! In
-                stats_sfc(:), err_code,                                                   & ! Inout
+                stats_sfc(:), err_info,                                                   & ! Inout
                 precip_fracs%precip_frac(:,:),                                            & ! Out
                 precip_fracs%precip_frac_1(:,:),                                          & ! Out
                 precip_fracs%precip_frac_2(:,:),                                          & ! Out
                 precip_frac_tol(:) )                                                        ! Out
 
-      if ( err_code == clubb_fatal_error ) then
+      if ( any(err_info%err_code == clubb_fatal_error) ) then
+        write(fstderr, *) err_info%err_header_global
         write(fstderr,*) " in setup_pdf_parameters after calling precip_fraction"
         return
       end if
@@ -887,14 +893,17 @@ module setup_clubb_pdf_params
       do k = 1, nzt
         do i = 1, ngrdcol
           call assert_corr_symmetric( corr_array_1_n(i,k,:,:), pdf_dim, &! intent(in)
-                                      err_code )                         ! intent(inout)
+                                      err_info )                         ! intent(inout)
           call assert_corr_symmetric( corr_array_2_n(i,k,:,:), pdf_dim, &! intent(in)
-                                      err_code )                         ! intent(inout)
+                                      err_info )                         ! intent(inout)
+          if ( err_info%err_code(i) == clubb_fatal_error ) then
+            write(fstderr, *) err_info%err_header(i)
+          endif
         end do
       end do
     end if
 
-    if ( err_code == clubb_fatal_error ) then
+    if ( any(err_info%err_code == clubb_fatal_error) ) then
       write(fstderr,*) " in setup_pdf_parameters after calling assert_corr_symmetric"
     end if
 

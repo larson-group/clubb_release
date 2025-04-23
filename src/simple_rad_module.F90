@@ -170,7 +170,7 @@ module simple_rad_module
 !-------------------------------------------------------------------------------
   subroutine simple_rad( gr, rho, rho_zm, rtm, rcm, exner,  &
                          stats_metadata, &
-                         stats_sfc, err_code, &
+                         stats_sfc, err_info, &
                          Frad_LW, radht_LW )
 ! Description:
 !   A simplified radiation driver
@@ -205,6 +205,9 @@ module simple_rad_module
 
     use stats_type, only: stats ! Type
 
+    use err_info_type_module, only: &
+      err_info_type        ! Type
+
     implicit none
 
     ! External
@@ -233,8 +236,8 @@ module simple_rad_module
     type(stats), intent(inout) :: &
       stats_sfc
 
-    integer, intent(inout) :: &
-      err_code
+    type(err_info_type), intent(inout) :: &
+      err_info        ! err_info struct containing err_code and err_header
 
     ! Output Variables
     real( kind = core_rknd ), intent(out), dimension(gr%nzm) ::  &
@@ -282,12 +285,14 @@ module simple_rad_module
     
       if ( clubb_at_least_debug_level( 0 ) ) then
          if ( k == gr%nzt+1 .or. k == 1 ) then
+            write(fstderr,*) err_info%err_header_global
             write(fstderr,*) "Identification of 8.0 g/kg level failed"
             write(fstderr,*) "Subroutine: simple_rad. " & 
               // "File: simple_rad_module.F90"
             write(fstderr,*) "k = ", k
             write(fstderr,*) "rtm(k) = ", rtm(k)
-            err_code = clubb_fatal_error
+            ! General error -> set all entries to clubb_fatal_error
+            err_info%err_code = clubb_fatal_error
             return
          end if
       end if

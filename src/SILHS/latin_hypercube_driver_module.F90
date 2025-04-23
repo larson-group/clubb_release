@@ -36,7 +36,7 @@ module latin_hypercube_driver_module
                precip_fracs, silhs_config_flags, &                         ! intent(in)
                vert_decorr_coef, &                                         ! intent(in)
                stats_metadata, &                                           ! intent(in)
-               stats_lh_zt, stats_lh_sfc, &                                ! intent(inout)
+               stats_lh_zt, stats_lh_sfc, err_info, &                      ! intent(inout)
                X_nl_all_levs, X_mixt_comp_all_levs, &                      ! intent(out)
                lh_sample_point_weights )                                   ! intent(out)
 
@@ -97,6 +97,12 @@ module latin_hypercube_driver_module
 
     use corr_varnce_module, only: &
       hm_metadata_type
+
+    use err_info_type_module, only: &
+      err_info_type         ! Type
+
+    use error_code, only: &
+        clubb_fatal_error   ! Constant
 
     implicit none
 
@@ -172,7 +178,10 @@ module latin_hypercube_driver_module
     type(stats), dimension(ngrdcol), intent(inout) :: &
       stats_lh_zt, &
       stats_lh_sfc
-    
+
+    type(err_info_type), intent(inout) :: &
+      err_info          ! err_info struct containing err_code and err_header
+
     ! ---------------- Output Variables ----------------
     real( kind = core_rknd ), intent(out), dimension(ngrdcol,num_samples,nzt,pdf_dim) :: &
       X_nl_all_levs ! Sample that is transformed ultimately to normal-lognormal
@@ -422,10 +431,18 @@ module latin_hypercube_driver_module
       do i = 1, ngrdcol
         call output_2D_lognormal_dist_file( nzt, num_samples, pdf_dim, &
                                             real(X_nl_all_levs(i,:,:,:), kind = stat_rknd), &
-                                            stats_metadata )
+                                            stats_metadata, err_info )
       end do
+
+      if ( any(err_info%err_code == clubb_fatal_error) ) then
+        write(fstderr, *) err_info%err_header_global
+        write(fstderr, *) "Fatal error writing to the 2D LOGNORMAL sample netcdf file", &
+                          " in CLUBB SILHS procedure generate_silhs_sample"
+        return
+      end if
+
     end if
-    
+
     if ( l_output_2D_uniform_dist ) then
       !$acc update host(X_u_all_levs,X_mixt_comp_all_levs,lh_sample_point_weights)
       do i = 1, ngrdcol
@@ -433,8 +450,16 @@ module latin_hypercube_driver_module
                                           X_u_all_levs(i,:,:,:), &
                                           X_mixt_comp_all_levs(i,:,:), &
                                           lh_sample_point_weights(i,:,:), &
-                                          stats_metadata )
+                                          stats_metadata, err_info )
       end do
+
+      if ( any(err_info%err_code == clubb_fatal_error) ) then
+        write(fstderr, *) err_info%err_header_global
+        write(fstderr, *) "Fatal error writing to the 2D UNIFORM sample netcdf file", &
+                          " in CLUBB SILHS procedure generate_silhs_sample"
+        return
+      end if
+
     end if
 
     ! Various nefarious assertion checks
@@ -1537,7 +1562,7 @@ module latin_hypercube_driver_module
     use constants_clubb, only: &
       one, &      ! Constant(s)
       fstderr
-      
+
     use parameters_silhs, only: &
       single_prec_thresh   ! Constant
 
@@ -1631,7 +1656,8 @@ module latin_hypercube_driver_module
                clubb_params, sclr_dim, sclr_tol, &
                l_uv_nudge, &
                l_tke_aniso, &
-               l_standard_term_ta )
+               l_standard_term_ta, &
+               err_info )
 !-------------------------------------------------------------------------------
 
     use corr_varnce_module, only: &
@@ -1640,6 +1666,9 @@ module latin_hypercube_driver_module
     use clubb_precision, only: &
       time_precision, & ! Constant
       core_rknd
+
+    use constants_clubb, only: &
+      fstderr       ! Constant(s)
 
     use output_2D_samples_module, only: &
       open_2D_samples_file ! Procedure
@@ -1650,6 +1679,12 @@ module latin_hypercube_driver_module
 
     use parameter_indices, only: &
       nparams    ! Variable(s)
+
+    use err_info_type_module, only: &
+      err_info_type         ! Type
+
+    use error_code, only: &
+        clubb_fatal_error   ! Constant
 
     implicit none
 
@@ -1703,6 +1738,10 @@ module latin_hypercube_driver_module
                             ! Setting to .false. means that a_1 and a_3 are pulled outside of the
                             ! derivative in advance_wp2_wp3_module.F90 and in
                             ! advance_xp2_xpyp_module.F90.
+
+    ! Input/Output Variables
+    type(err_info_type), intent(inout) :: &
+      err_info              ! err_info struct containing err_code and err_header
 
     ! Local Variables
     character(len=100), allocatable, dimension(:) :: &
@@ -1812,11 +1851,18 @@ module latin_hypercube_driver_module
                                  l_uv_nudge, &
                                  l_tke_aniso, &
                                  l_standard_term_ta, &
-                                 lognormal_sample_file ) ! In/Out
+                                 lognormal_sample_file, err_info ) ! In/Out
+
+      if ( any(err_info%err_code == clubb_fatal_error) ) then
+        write(fstderr, *) err_info%err_header_global
+        write(fstderr, *) "Fatal error calling open_2D_samples_file for LOGNORMAL samples", &
+                          " in CLUBB SILHS procedure latin_hypercube_2D_output"
+        return
+      end if
 
       deallocate( variable_names, variable_descriptions, variable_units )
 
-    end if
+    end if ! l_output_2D_lognormal_dist
 
     if ( l_output_2D_uniform_dist ) then
 
@@ -1912,11 +1958,18 @@ module latin_hypercube_driver_module
                                  l_uv_nudge, &
                                  l_tke_aniso, &
                                  l_standard_term_ta, &
-                                 uniform_sample_file ) ! In/Out
+                                 uniform_sample_file, err_info ) ! In/Out
+
+      if ( any(err_info%err_code == clubb_fatal_error) ) then
+        write(fstderr, *) err_info%err_header_global
+        write(fstderr, *) "Fatal error calling open_2D_samples_file for UNIFORM samples", &
+                          " in CLUBB SILHS procedure latin_hypercube_2D_output"
+        return
+      end if
 
       deallocate( variable_names, variable_descriptions, variable_units )
 
-    end if
+    end if ! l_output_2D_uniform_dist
 
     return
   end subroutine latin_hypercube_2D_output

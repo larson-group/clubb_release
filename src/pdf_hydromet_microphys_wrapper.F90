@@ -18,7 +18,7 @@ module pdf_hydromet_microphys_wrapper
                clubb_config_flags, silhs_config_flags,          & ! In
                l_rad_itime, stats_metadata,                     & ! In
                stats_zt, stats_zm, stats_sfc,                   & ! In/Out
-               stats_lh_zt, stats_lh_sfc, err_code,             & ! In/Out
+               stats_lh_zt, stats_lh_sfc, err_info,             & ! In/Out
                time_clubb_pdf, time_stop, time_start,           & ! In/Out
                hydrometp2,                                      & ! Out
                mu_x_1_n, mu_x_2_n,                              & ! Out
@@ -101,7 +101,10 @@ module pdf_hydromet_microphys_wrapper
         clubb_fatal_error             ! Constant
 
     use clubb_precision, only: &
-        core_rknd    ! Variable(s) 
+        core_rknd    ! Variable(s)
+
+    use err_info_type_module, only: &
+      err_info_type                   ! Type
 
     implicit none
 
@@ -167,8 +170,8 @@ module pdf_hydromet_microphys_wrapper
       stats_lh_zt, &
       stats_lh_sfc
 
-    integer, intent(inout) :: &
-      err_code      ! Error code catching and relaying any errors
+    type(err_info_type), intent(inout) :: &
+      err_info        ! err_info struct containing err_code and err_header
 
     real( kind = core_rknd ), intent(inout) :: &
       time_clubb_pdf, & ! time spent in setup_pdf_parameters and hydrometeor_mixed_moments [s]
@@ -262,7 +265,7 @@ module pdf_hydromet_microphys_wrapper
               clubb_config_flags%l_const_Nc_in_cloud,                      & ! In
               clubb_config_flags%l_fix_w_chi_eta_correlations,             & ! In
               stats_metadata,                                              & ! In
-              stats_zt, stats_zm, stats_sfc, err_code,                     & ! In/Out
+              stats_zt, stats_zm, stats_sfc, err_info,                     & ! In/Out
               hydrometp2,                                                  & ! Out
               mu_x_1_n, mu_x_2_n,                                          & ! Out
               sigma_x_1_n, sigma_x_2_n,                                    & ! Out
@@ -273,7 +276,8 @@ module pdf_hydromet_microphys_wrapper
 
       ! Error check after setup_pdf_parameters
       if ( clubb_at_least_debug_level( 0 ) ) then
-        if ( err_code == clubb_fatal_error ) then
+        if ( any(err_info%err_code == clubb_fatal_error) ) then
+          write(fstderr, *) err_info%err_header_global
           write(fstderr,*) "Fatal error after setup_pdf_parameters_api"
           return
         end if
@@ -363,10 +367,19 @@ module pdf_hydromet_microphys_wrapper
              precip_fracs, silhs_config_flags,                             & ! In
              vert_decorr_coef,                                             & ! In
              stats_metadata,                                               & ! In
-             stats_lh_zt, stats_lh_sfc,                                    & ! InOut
+             stats_lh_zt, stats_lh_sfc, err_info,                          & ! InOut
              X_nl_all_levs, X_mixt_comp_all_levs,                          & ! Out
              lh_sample_point_weights ) ! Out
 
+      ! Error check after setup_pdf_parameters
+      if ( clubb_at_least_debug_level( 0 ) ) then
+        if ( any(err_info%err_code == clubb_fatal_error) ) then
+          write(fstderr, *) err_info%err_header_global
+          write(fstderr,*) "Fatal error calling generate_silhs_sample_api in "// &
+                           "pdf_hydromet_microphys_prep"
+          return
+        end if
+      end if
 
       call clip_transform_silhs_output_api( gr%nzt, ngrdcol, lh_num_samples,        & ! In
                                             pdf_dim, hydromet_dim, hm_metadata,     & ! In

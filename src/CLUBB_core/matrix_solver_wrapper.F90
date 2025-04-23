@@ -48,7 +48,7 @@ module matrix_solver_wrapper
   subroutine band_solve_single_rhs_multiple_lhs( &
                 solve_name, penta_solve_method, & ! Intent(in)
                 ngrdcol, nsup, nsub, ndim,      & ! Intent(in)
-                lhs, rhs, err_code,             & ! Intent(inout)
+                lhs, rhs, err_info,             & ! Intent(inout)
                 soln, rcond )                     ! Intent(out)
 
     use lapack_wrap, only: &
@@ -57,6 +57,9 @@ module matrix_solver_wrapper
 
     use penta_lu_solvers, only: &
       penta_lu_solve    ! Procedure(s)
+
+    use err_info_type_module, only: &
+      err_info_type        ! Type
 
     implicit none
 
@@ -79,8 +82,8 @@ module matrix_solver_wrapper
     real( kind = core_rknd ), dimension(ngrdcol,ndim), intent(inout) :: &
       rhs ! Right hand side(s)
 
-    integer, intent(inout) :: &
-      err_code      ! Error code catching and relaying any errors occurring in this subroutine
+    type(err_info_type), intent(inout) :: &
+      err_info        ! err_info struct containing err_code and err_header
 
     ! ----------------------- Output Variables -----------------------
     real( kind = core_rknd ), dimension(ngrdcol,ndim), intent(out) :: &
@@ -117,7 +120,7 @@ module matrix_solver_wrapper
       ! Using dummy_soln, since we only want this routine for diagnostics
       call lapack_band_solvex( solve_name, nsup, nsub,       & ! Intent(in)
                                ndim, 1, ngrdcol,             & ! Intent(in)
-                               lhs_copy, rhs_copy, err_code, & ! Intent(inout)
+                               lhs_copy, rhs_copy, err_info, & ! Intent(inout)
                                dummy_soln, rcond )             ! Intent(out)
 
       !$acc update device( rcond )
@@ -132,7 +135,7 @@ module matrix_solver_wrapper
       ! Perform LU decomp and solve system (LAPACK)
       call lapack_band_solve( solve_name, nsup, nsub,  & ! Intent(in)
                               ndim, 1, ngrdcol,        & ! Intent(in)
-                              lhs, rhs, err_code,      & ! Intent(inout)
+                              lhs, rhs, err_info,      & ! Intent(inout)
                               soln )                     ! Intent(out)
 
       !$acc update device( soln )
@@ -148,9 +151,11 @@ module matrix_solver_wrapper
 
       ! The solve method should match one of the above
       if ( clubb_at_least_debug_level( 0 ) ) then
+        write(fstderr,*) err_info%err_header_global
         write(fstderr,*) "Error in band_solve_single_rhs_multiple_lhs: "
         write(fstderr,*) "  no case for penta_solve_method = ", penta_solve_method
-        err_code = clubb_fatal_error
+        ! General error -> set all entries to clubb_fatal_error
+        err_info%err_code = clubb_fatal_error
       end if
 
     end if
@@ -162,7 +167,7 @@ module matrix_solver_wrapper
   subroutine band_solve_multiple_rhs_lhs( &
                 solve_name, penta_solve_method,   & ! Intent(in)
                 ngrdcol, nsup, nsub, ndim, nrhs,  & ! Intent(in)
-                lhs, rhs, err_code,               & ! Intent(inout)
+                lhs, rhs, err_info,               & ! Intent(inout)
                 soln, rcond )                       ! Intent(out)
 
     use lapack_wrap, only: &
@@ -171,6 +176,9 @@ module matrix_solver_wrapper
 
     use penta_lu_solvers, only: &
       penta_lu_solve    ! Procedure(s)
+
+    use err_info_type_module, only: &
+      err_info_type        ! Type
 
     implicit none
 
@@ -194,8 +202,8 @@ module matrix_solver_wrapper
     real( kind = core_rknd ), dimension(ngrdcol,ndim,nrhs), intent(inout) :: &
       rhs ! Right hand side(s)
 
-    integer, intent(inout) :: &
-      err_code      ! Error code catching and relaying any errors occurring in this subroutine
+    type(err_info_type), intent(inout) :: &
+      err_info        ! err_info struct containing err_code and err_header
 
     ! ----------------------- Output Variables -----------------------
     real( kind = core_rknd ), dimension(ngrdcol,ndim,nrhs), intent(out) :: &
@@ -232,7 +240,7 @@ module matrix_solver_wrapper
       ! Using dummy_soln, since we only want this routine for diagnostics
       call lapack_band_solvex( solve_name, nsup, nsub,       & ! Intent(in)
                                ndim, nrhs, ngrdcol,          & ! Intent(in)
-                               lhs_copy, rhs_copy, err_code, & ! Intent(inout)
+                               lhs_copy, rhs_copy, err_info, & ! Intent(inout)
                                dummy_soln, rcond )             ! Intent(out)
 
       !$acc update device( rcond )
@@ -247,7 +255,7 @@ module matrix_solver_wrapper
       ! Perform LU decomp and solve system (LAPACK)
       call lapack_band_solve( solve_name, nsup, nsub,  & ! Intent(in)
                               ndim, nrhs, ngrdcol,     & ! Intent(in)
-                              lhs, rhs, err_code,      & ! Intent(inout)
+                              lhs, rhs, err_info,      & ! Intent(inout)
                               soln )                     ! Intent(out)
 
       !$acc update device( soln )
@@ -263,9 +271,11 @@ module matrix_solver_wrapper
 
       ! The solve method should match one of the above
       if ( clubb_at_least_debug_level( 0 ) ) then
+        write(fstderr,*) err_info%err_header_global
         write(fstderr,*) "Error in band_solve_multiple_rhs_lhs: "
         write(fstderr,*) "  no case for penta_solve_method = ", penta_solve_method
-        err_code = clubb_fatal_error
+        ! General error -> set all entries to clubb_fatal_error
+        err_info%err_code = clubb_fatal_error
       end if
 
     end if
@@ -283,7 +293,7 @@ module matrix_solver_wrapper
   subroutine tridiag_solve_single_rhs_lhs( &
                 solve_name, tridiag_solve_method, & ! Intent(in)
                 ndim,                             & ! Intent(in)
-                lhs, rhs, err_code,               & ! Intent(inout)
+                lhs, rhs, err_info,               & ! Intent(inout)
                 soln, rcond )                       ! Intent(out)
 
     use lapack_wrap, only: &
@@ -292,6 +302,9 @@ module matrix_solver_wrapper
 
     use tridiag_lu_solvers, only: &
       tridiag_lu_solve    ! Procedure(s)
+
+    use err_info_type_module, only: &
+      err_info_type        ! Type
 
     implicit none
 
@@ -311,8 +324,8 @@ module matrix_solver_wrapper
     real( kind = core_rknd ), dimension(ndim), intent(inout) :: &
       rhs ! Right hand side(s)
 
-    integer, intent(inout) :: &
-      err_code      ! Error code catching and relaying any errors occurring in this subroutine
+    type(err_info_type), intent(inout) :: &
+      err_info        ! err_info struct containing err_code and err_header
 
     ! ----------------------- Output Variables -----------------------
     real( kind = core_rknd ), dimension(ndim), intent(out) :: &
@@ -345,7 +358,7 @@ module matrix_solver_wrapper
 
       ! Perform LU decomp and solve system (LAPACK with diagnostics)
       call lapack_tridiag_solvex( solve_name, ndim, 1, 1, &       ! Intent(in)
-                                  lhs_copy, rhs_copy, err_code, & ! Intent(inout)
+                                  lhs_copy, rhs_copy, err_info, & ! Intent(inout)
                                   dummy_soln, rcond )             ! Intent(out)
     end if
 
@@ -354,7 +367,7 @@ module matrix_solver_wrapper
 
       ! Perform LU decomp and solve system (LAPACK)
       call lapack_tridiag_solve( solve_name, ndim, 1, 1, & ! Intent(in)
-                                 lhs, rhs, err_code,     & ! Intent(inout)
+                                 lhs, rhs, err_info,     & ! Intent(inout)
                                  soln )                    ! Intent(out)
 
     else if ( tridiag_solve_method == tridiag_lu ) then
@@ -368,9 +381,11 @@ module matrix_solver_wrapper
 
       ! The solve method should match one of the above
       if ( clubb_at_least_debug_level( 0 ) ) then
+        write(fstderr,*) err_info%err_header_global
         write(fstderr,*) "Error in tridiag_solve_single_rhs_lhs: "
         write(fstderr,*) "  no case for tridiag_solve_method = ", tridiag_solve_method
-        err_code = clubb_fatal_error
+        ! General error -> set all entries to clubb_fatal_error
+        err_info%err_code = clubb_fatal_error
       end if
 
     end if
@@ -383,7 +398,7 @@ module matrix_solver_wrapper
   subroutine tridiag_solve_single_rhs_multiple_lhs( &
                 solve_name, tridiag_solve_method, & ! Intent(in)
                 ngrdcol, ndim,                    & ! Intent(in)
-                lhs, rhs, err_code,               & ! Intent(inout)
+                lhs, rhs, err_info,               & ! Intent(inout)
                 soln, rcond )                       ! Intent(out)
 
     use lapack_wrap, only: &
@@ -392,6 +407,9 @@ module matrix_solver_wrapper
 
     use tridiag_lu_solvers, only: &
       tridiag_lu_solve    ! Procedure(s)
+
+    use err_info_type_module, only: &
+      err_info_type        ! Type
 
     implicit none
 
@@ -412,8 +430,8 @@ module matrix_solver_wrapper
     real( kind = core_rknd ), dimension(ngrdcol,ndim), intent(inout) :: &
       rhs ! Right hand side(s)
 
-    integer, intent(inout) :: &
-      err_code      ! Error code catching and relaying any errors occurring in this subroutine
+    type(err_info_type), intent(inout) :: &
+      err_info        ! err_info struct containing err_code and err_header
 
     ! ----------------------- Output Variables -----------------------
     real( kind = core_rknd ), dimension(ngrdcol,ndim), intent(out) :: &
@@ -448,7 +466,7 @@ module matrix_solver_wrapper
 
       ! Perform LU decomp and solve system (LAPACK with diagnostics)
       call lapack_tridiag_solvex( solve_name, ndim, 1, ngrdcol, & ! Intent(in)
-                                  lhs_copy, rhs_copy, err_code, & ! Intent(inout)
+                                  lhs_copy, rhs_copy, err_info, & ! Intent(inout)
                                   dummy_soln, rcond )             ! Intent(out)
 
       !$acc update device( rcond )
@@ -462,7 +480,7 @@ module matrix_solver_wrapper
 
       ! Perform LU decomp and solve system (LAPACK)
       call lapack_tridiag_solve( solve_name, ndim, 1, ngrdcol, & ! Intent(in)
-                                 lhs, rhs, err_code,           & ! Intent(inout)
+                                 lhs, rhs, err_info,           & ! Intent(inout)
                                  soln )                          ! Intent(out)
 
       !$acc update device( soln )
@@ -477,9 +495,11 @@ module matrix_solver_wrapper
 
       ! The solve method should match one of the above
       if ( clubb_at_least_debug_level( 0 ) ) then
+        write(fstderr,*) err_info%err_header_global
         write(fstderr,*) "Error in tridiag_solve_single_rhs_multiple_lhs: "
         write(fstderr,*) "  no case for tridiag_solve_method = ", tridiag_solve_method
-        err_code = clubb_fatal_error
+        ! General error -> set all entries to clubb_fatal_error
+        err_info%err_code = clubb_fatal_error
       end if
 
     end if
@@ -491,7 +511,7 @@ module matrix_solver_wrapper
   subroutine tridiag_solve_multiple_rhs_lhs( &
                 solve_name, tridiag_solve_method, & ! Intent(in)
                 ngrdcol, ndim, nrhs,              & ! Intent(in)
-                lhs, rhs, err_code,               & ! Intent(inout)
+                lhs, rhs, err_info,               & ! Intent(inout)
                 soln, rcond )                       ! Intent(out)
 
     use lapack_wrap, only: &
@@ -500,6 +520,9 @@ module matrix_solver_wrapper
 
     use tridiag_lu_solvers, only: &
       tridiag_lu_solve    ! Procedure(s)
+
+    use err_info_type_module, only: &
+      err_info_type        ! Type
 
     implicit none
 
@@ -521,8 +544,8 @@ module matrix_solver_wrapper
     real( kind = core_rknd ), dimension(ngrdcol,ndim,nrhs), intent(inout) :: &
       rhs ! Right hand side(s)
 
-    integer, intent(inout) :: &
-      err_code      ! Error code catching and relaying any errors occurring in this subroutine
+    type(err_info_type), intent(inout) :: &
+      err_info        ! err_info struct containing err_code and err_header
 
     ! ----------------------- Output Variables -----------------------
     real( kind = core_rknd ), dimension(ngrdcol,ndim,nrhs), intent(out) :: &
@@ -557,7 +580,7 @@ module matrix_solver_wrapper
 
       ! Perform LU decomp and solve system (LAPACK with diagnostics)
       call lapack_tridiag_solvex( solve_name, ndim, nrhs, ngrdcol,  & ! Intent(in)
-                                  lhs_copy, rhs_copy, err_code,     & ! Intent(inout)
+                                  lhs_copy, rhs_copy, err_info,     & ! Intent(inout)
                                   dummy_soln, rcond )                 ! Intent(out)
 
       !$acc update device( rcond )
@@ -571,7 +594,7 @@ module matrix_solver_wrapper
 
       ! Perform LU decomp and solve system (LAPACK)
       call lapack_tridiag_solve( solve_name, ndim, nrhs, ngrdcol, & ! Intent(in)
-                                 lhs, rhs, err_code,              & ! Intent(inout)
+                                 lhs, rhs, err_info,              & ! Intent(inout)
                                  soln )                             ! Intent(out)
 
       !$acc update device( soln )
@@ -586,9 +609,11 @@ module matrix_solver_wrapper
 
       ! The solve method should match one of the above
       if ( clubb_at_least_debug_level( 0 ) ) then
+        write(fstderr,*) err_info%err_header_global
         write(fstderr,*) "Error in tridiag_solve_multiple_rhs_lhs: "
         write(fstderr,*) "  no case for tridiag_solve_method = ", tridiag_solve_method
-        err_code = clubb_fatal_error
+        ! General error -> set all entries to clubb_fatal_error
+        err_info%err_code = clubb_fatal_error
       end if
 
     end if
@@ -596,6 +621,5 @@ module matrix_solver_wrapper
     return
 
   end subroutine tridiag_solve_multiple_rhs_lhs
-
 
 end module matrix_solver_wrapper

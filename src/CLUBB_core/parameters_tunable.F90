@@ -369,7 +369,7 @@ module parameters_tunable
               deltaz, clubb_params, gr, ngrdcol, grid_type, &
               l_prescribed_avg_deltaz, &
               lmin, nu_vert_res_dep, &
-              err_code )
+              err_info )
 
     ! Description:
     ! Subroutine to setup model parameters
@@ -396,6 +396,9 @@ module parameters_tunable
 
     use parameter_indices, only: &
         izeta_vrnce_rat
+
+    use err_info_type_module, only: &
+      err_info_type        ! Type
 
     implicit none
 
@@ -438,8 +441,8 @@ module parameters_tunable
     type(nu_vertical_res_dep), intent(out) :: &
       nu_vert_res_dep    ! Vertical resolution dependent nu values
 
-    integer, intent(inout) :: &
-      err_code           ! Error code catching and relaying any errors occurring in this subroutine
+    type(err_info_type), intent(inout) :: &
+      err_info        ! err_info struct containing err_code and err_header
 
     integer :: k, i    ! loop variable
 
@@ -482,15 +485,19 @@ module parameters_tunable
 
         if ( k /= izeta_vrnce_rat .and. clubb_params(i,k) < zero ) then
 
+            write(fstderr, *) err_info%err_header(i)
             write(fstderr,*) params_list(k), " = ", clubb_params(i,k)
             write(fstderr,*) params_list(k), " must satisfy 0.0 <= ", params_list(k)
-            err_code = clubb_fatal_error
+            ! Error in grid column i -> set ith entry to clubb_fatal_error
+            err_info%err_code(i) = clubb_fatal_error
 
         else if ( clubb_params(i,k) < -one ) then
 
+            write(fstderr, *) err_info%err_header(i)
             write(fstderr,*) "zeta_vrnce_rat = ", zeta_vrnce_rat
             write(fstderr,*) "zeta_vrnce_rat must satisfy -1.0 <= zeta_vrnce_rat"
-            err_code = clubb_fatal_error
+            ! Error in grid column i -> set ith entry to clubb_fatal_error
+            err_info%err_code(i) = clubb_fatal_error
 
         end if
 
@@ -532,96 +539,116 @@ module parameters_tunable
 
       if ( beta < zero .or. beta > three ) then
 
+        write(fstderr, *) err_info%err_header(i)
         ! Constraints on beta
         write(fstderr,*) "beta = ", beta
         write(fstderr,*) "beta cannot be < 0 or > 3"
-        err_code = clubb_fatal_error
+        ! Error in grid column i -> set ith entry to clubb_fatal_error
+        err_info%err_code(i) = clubb_fatal_error
 
       endif ! beta < 0 or beta > 3
 
       if ( slope_coef_spread_DG_means_w <= zero ) then
 
+        write(fstderr, *) err_info%err_header(i)
         ! Constraint on slope_coef_spread_DG_means_w
         write(fstderr,*) "slope_coef_spread_DG_means_w = ", &
                           slope_coef_spread_DG_means_w
         write(fstderr,*) "slope_coef_spread_DG_means_w cannot be <= 0"
-        err_code = clubb_fatal_error
+        ! Error in grid column i -> set ith entry to clubb_fatal_error
+        err_info%err_code(i) = clubb_fatal_error
 
       endif ! slope_coef_spread_DG_means_w <= 0
 
       if ( pdf_component_stdev_factor_w <= zero ) then
 
+        write(fstderr, *) err_info%err_header(i)
         ! Constraint on pdf_component_stdev_factor_w
         write(fstderr,*) "pdf_component_stdev_factor_w = ", &
                           pdf_component_stdev_factor_w
         write(fstderr,*) "pdf_component_stdev_factor_w cannot be <= 0"
-        err_code = clubb_fatal_error
+        ! Error in grid column i -> set ith entry to clubb_fatal_error
+        err_info%err_code(i) = clubb_fatal_error
 
       endif ! pdf_component_stdev_factor_w <= 0
 
       if ( coef_spread_DG_means_rt < zero &
           .or. coef_spread_DG_means_rt >= one ) then
 
+        write(fstderr, *) err_info%err_header(i)
         ! Constraint on coef_spread_DG_means_rt
         write(fstderr,*) "coef_spread_DG_means_rt = ", coef_spread_DG_means_rt
         write(fstderr,*) "coef_spread_DG_means_rt cannot be < 0 or >= 1"
-        err_code = clubb_fatal_error
+        ! Error in grid column i -> set ith entry to clubb_fatal_error
+        err_info%err_code(i) = clubb_fatal_error
 
       endif ! coef_spread_DG_means_rt < 0 or coef_spread_DG_means_rt >= 1
 
       if ( coef_spread_DG_means_thl < zero &
           .or. coef_spread_DG_means_thl >= one ) then
 
+        write(fstderr, *) err_info%err_header(i)
         ! Constraint on coef_spread_DG_means_thl
         write(fstderr,*) "coef_spread_DG_means_thl = ", coef_spread_DG_means_thl
         write(fstderr,*) "coef_spread_DG_means_thl cannot be < 0 or >= 1"
-        err_code = clubb_fatal_error
+        ! Error in grid column i -> set ith entry to clubb_fatal_error
+        err_info%err_code(i) = clubb_fatal_error
 
       endif ! coef_spread_DG_means_thl < 0 or coef_spread_DG_means_thl >= 1
 
       if ( omicron <= zero .or. omicron > one ) then
 
+        write(fstderr, *) err_info%err_header(i)
         ! Constraints on omicron
         write(fstderr,*) "omicron = ", omicron
         write(fstderr,*) "omicron cannot be <= 0 or > 1"
-        err_code = clubb_fatal_error
+        ! Error in grid column i -> set ith entry to clubb_fatal_error
+        err_info%err_code(i) = clubb_fatal_error
 
       endif ! omicron <= 0 or omicron > 1
 
       if ( zeta_vrnce_rat <= -one ) then
 
+        write(fstderr, *) err_info%err_header(i)
         ! Constraints on zeta_vrnce_rat
         write(fstderr,*) "zeta_vrnce_rat = ", zeta_vrnce_rat
         write(fstderr,*) "zeta_vrnce_rat cannot be <= -1"
-        err_code = clubb_fatal_error
+        ! Error in grid column i -> set ith entry to clubb_fatal_error
+        err_info%err_code(i) = clubb_fatal_error
 
       endif ! zeta_vrnce_rat <= -1
 
       if ( upsilon_precip_frac_rat < zero &
           .or. upsilon_precip_frac_rat > one ) then
 
+        write(fstderr, *) err_info%err_header(i)
         ! Constraints on upsilon_precip_frac_rat
         write(fstderr,*) "upsilon_precip_frac_rat = ", upsilon_precip_frac_rat
         write(fstderr,*) "upsilon_precip_frac_rat cannot be < 0 or > 1"
-        err_code = clubb_fatal_error
+        ! Error in grid column i -> set ith entry to clubb_fatal_error
+        err_info%err_code(i) = clubb_fatal_error
 
       endif ! upsilon_precip_frac_rat < 0 or upsilon_precip_frac_rat > 1
 
       if ( mu < zero ) then
 
+        write(fstderr, *) err_info%err_header(i)
         ! Constraints on entrainment rate, mu.
         write(fstderr,*) "mu = ", mu
         write(fstderr,*) "mu cannot be < 0"
-        err_code = clubb_fatal_error
+        ! Error in grid column i -> set ith entry to clubb_fatal_error
+        err_info%err_code(i) = clubb_fatal_error
 
       endif ! mu < 0.0
 
       if ( lmin < 1.0_core_rknd ) then
 
+        write(fstderr, *) err_info%err_header(i)
         ! Constraints on mixing length
         write(fstderr,*) "lmin = ", lmin
         write(fstderr,*) "lmin is < 1.0_core_rknd"
-        err_code = clubb_fatal_error
+        ! Error in grid column i -> set ith entry to clubb_fatal_error
+        err_info%err_code(i) = clubb_fatal_error
 
       endif ! lmin < 1.0
 
@@ -629,68 +656,88 @@ module parameters_tunable
       ! Otherwise, the wpthlp pr1 term will be calculated inconsistently.
 
       if ( abs(C6rt - C6thl) > abs(C6rt + C6thl) / 2 * eps ) then
+          write(fstderr, *) err_info%err_header(i)
           write(fstderr,*) "C6rt = ", C6rt
           write(fstderr,*) "C6thl = ", C6thl
           write(fstderr,*) "C6rt and C6thl must be equal."
-          err_code = clubb_fatal_error
+          ! Error in grid column i -> set ith entry to clubb_fatal_error
+          err_info%err_code(i) = clubb_fatal_error
       endif ! C6rt /= C6thl
 
       if ( abs(C6rtb - C6thlb) > abs(C6rtb + C6thlb) / 2 * eps ) then
+          write(fstderr, *) err_info%err_header(i)
           write(fstderr,*) "C6rtb = ", C6rtb
           write(fstderr,*) "C6thlb = ", C6thlb
           write(fstderr,*) "C6rtb and C6thlb must be equal."
-          err_code = clubb_fatal_error
+          ! Error in grid column i -> set ith entry to clubb_fatal_error
+          err_info%err_code(i) = clubb_fatal_error
       endif ! C6rtb /= C6thlb
 
       if ( abs(C6rtc - C6thlc) > abs(C6rtc + C6thlc) / 2 * eps ) then
+          write(fstderr, *) err_info%err_header(i)
           write(fstderr,*) "C6rtc = ", C6rtc
           write(fstderr,*) "C6thlc = ", C6thlc
           write(fstderr,*) "C6rtc and C6thlc must be equal."
-          err_code = clubb_fatal_error
+          ! Error in grid column i -> set ith entry to clubb_fatal_error
+          err_info%err_code(i) = clubb_fatal_error
       endif ! C6rtc /= C6thlc
 
       if ( abs(C6rt_Lscale0 - C6thl_Lscale0) > abs(C6rt_Lscale0 + C6thl_Lscale0) / 2 * eps ) then
+          write(fstderr, *) err_info%err_header(i)
           write(fstderr,*) "C6rt_Lscale0 = ", C6rt_Lscale0
           write(fstderr,*) "C6thl_Lscale0 = ", C6thl_Lscale0
           write(fstderr,*) "C6rt_Lscale0 and C6thl_Lscale0 must be equal."
-          err_code = clubb_fatal_error
+          ! Error in grid column i -> set ith entry to clubb_fatal_error
+          err_info%err_code(i) = clubb_fatal_error
       endif ! C6rt_Lscale0 /= C6thl_Lscale0
 
 
       if ( C1 < zero ) then
+          write(fstderr, *) err_info%err_header(i)
           write(fstderr,*) "C1 = ", C1
           write(fstderr,*) "C1 must satisfy 0.0 <= C1"
-          err_code = clubb_fatal_error
+          ! Error in grid column i -> set ith entry to clubb_fatal_error
+          err_info%err_code(i) = clubb_fatal_error
       end if
 
       if ( C7 > one .or. C7 < zero ) then
+          write(fstderr, *) err_info%err_header(i)
           write(fstderr,*) "C7 = ", C7
           write(fstderr,*) "C7 must satisfy 0.0 <= C7 <= 1.0"
-          err_code = clubb_fatal_error
+          ! Error in grid column i -> set ith entry to clubb_fatal_error
+          err_info%err_code(i) = clubb_fatal_error
       end if
 
       if ( C7b > one .or. C7b < zero ) then
+          write(fstderr, *) err_info%err_header(i)
           write(fstderr,*) "C7b = ", C7b
           write(fstderr,*) "C7b must satisfy 0.0 <= C7b <= 1.0"
-          err_code = clubb_fatal_error
+          ! Error in grid column i -> set ith entry to clubb_fatal_error
+          err_info%err_code(i) = clubb_fatal_error
       end if
 
       if ( C11 > one .or. C11 < zero ) then
+          write(fstderr, *) err_info%err_header(i)
           write(fstderr,*) "C11 = ", C11
           write(fstderr,*) "C11 must satisfy 0.0 <= C11 <= 1.0"
-          err_code = clubb_fatal_error
+          ! Error in grid column i -> set ith entry to clubb_fatal_error
+          err_info%err_code(i) = clubb_fatal_error
       end if
 
       if ( C11b > one .or. C11b < zero ) then
+          write(fstderr, *) err_info%err_header(i)
           write(fstderr,*) "C11b = ", C11b
           write(fstderr,*) "C11b must satisfy 0.0 <= C11b <= 1.0"
-          err_code = clubb_fatal_error
+          ! Error in grid column i -> set ith entry to clubb_fatal_error
+          err_info%err_code(i) = clubb_fatal_error
       end if
 
       if ( C_wp2_splat < zero ) then
+          write(fstderr, *) err_info%err_header(i)
           write(fstderr,*) "C_wp2_splat = ", C_wp2_splat
           write(fstderr,*) "C_wp2_splat must satisfy C_wp2_splat >= 0"
-          err_code = clubb_fatal_error
+          ! Error in grid column i -> set ith entry to clubb_fatal_error
+          err_info%err_code(i) = clubb_fatal_error
       end if
 
     end do

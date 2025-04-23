@@ -954,7 +954,7 @@ module corr_varnce_module
   !-----------------------------------------------------------------------------
   subroutine assert_corr_symmetric( corr_array_n, & ! intent(in)
                                     pdf_dim, &      ! intent(in)
-                                    err_code )      ! intent(inout)
+                                    err_info )      ! intent(inout)
 
     ! Description:
     !   Asserts that corr_matrix(i,j) == corr_matrix(j,i) for all indeces
@@ -964,6 +964,9 @@ module corr_varnce_module
     !---------------------------------------------------------------------------
 
     use constants_clubb, only: fstderr, eps, one ! Constant(s)
+
+    use err_info_type_module, only: &
+      err_info_type        ! Type
 
     implicit none
 
@@ -975,8 +978,8 @@ module corr_varnce_module
       intent(in) :: corr_array_n ! Normal space correlation array to be checked
 
     ! Input/Output Variables
-    integer, intent(inout) :: &
-      err_code      ! Error code catching and relaying any errors occurring in this subroutine
+    type(err_info_type), intent(inout) :: &
+      err_info        ! err_info struct containing err_code and err_header
 
     ! Local Variables
 
@@ -990,9 +993,10 @@ module corr_varnce_module
     !Do the check
     do n_col = 1, pdf_dim
       do n_row = 1, pdf_dim
-
+        ! These errors occurr inside an individual grid column
         if ( abs(corr_array_n(n_col, n_row) - corr_array_n(n_row, n_col)) > tol ) then
-            err_code = clubb_fatal_error
+            err_info%err_code = clubb_fatal_error
+            write(fstderr,*) err_info%err_header
             write(fstderr,*) "in subroutine assert_corr_symmetric: ", &
                              "Correlation array is non symmetric."
             write(fstderr,*) corr_array_n
@@ -1000,7 +1004,8 @@ module corr_varnce_module
         end if
 
         if ( n_col == n_row .and. abs(corr_array_n(n_col, n_row)-one) > eps ) then
-            err_code = clubb_fatal_error
+            err_info%err_code = clubb_fatal_error
+            write(fstderr,*) err_info%err_header_global
             write(fstderr,*) "in subroutine assert_corr_symmetric: ", &
                              "Correlation array is formatted incorrectly."
             write(fstderr,*) corr_array_n

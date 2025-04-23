@@ -42,10 +42,20 @@ module grid_adaptation_module
   contains
 
   !=============================================================================
-  subroutine setup_simple_gr_dycore( nlevels, grid_sfc, grid_top, gr )
+  subroutine setup_simple_gr_dycore( nlevels, grid_sfc, grid_top, gr, err_info )
+
+    use constants_clubb, only : &
+        fstderr     ! Fortran file unit I/O constant
 
     use clubb_api_module, only: &
       setup_grid_api
+
+    use error_code, only: &
+      clubb_at_least_debug_level,  & ! Procedure
+      clubb_fatal_error
+
+    use err_info_type_module, only: &
+      err_info_type        ! Type
 
     implicit none
 
@@ -58,6 +68,10 @@ module grid_adaptation_module
 
     !--------------------- Output Variables ---------------------
     type (grid), intent(out) :: gr
+
+    !--------------------- In/Output Variables ---------------------
+    type(err_info_type), intent(inout) :: &
+      err_info        ! err_info struct containing err_code and err_header
 
     !--------------------- Local Variables ---------------------
     integer :: i
@@ -101,10 +115,17 @@ module grid_adaptation_module
 
     momentum_heights(nlevels) = grid_top
 
-    call setup_grid_api( nlevels, sfc_elevation, l_implemented, &     ! intent(in)
-                         .true., grid_type, deltaz, zm_init, zm_top, & ! intent(in)
-                         momentum_heights, thermodynamic_heights, & ! intent(in)
-                         gr )
+    call setup_grid_api( nlevels, sfc_elevation, l_implemented, &       ! intent(in)
+                         .true., grid_type, deltaz, zm_init, zm_top, &  ! intent(in)
+                         momentum_heights, thermodynamic_heights, &     ! intent(in)
+                         gr, err_info )                                 ! intent(inout)
+
+    if ( clubb_at_least_debug_level(0) ) then
+      if ( any(err_info%err_code == clubb_fatal_error) ) then
+        write(fstderr, *) err_info%err_header_global
+        write(fstderr, *) "Fatal error calling setup_grid_api in setup_simple_gr_dycore"
+      end if
+    end if
 
   end subroutine setup_simple_gr_dycore
 
@@ -1620,19 +1641,29 @@ module grid_adaptation_module
                          thlprcp, wprcp, w_up_in_cloud, w_down_in_cloud, &
                          cloudy_updraft_frac, cloudy_downdraft_frac, &
                          rcm_in_layer, cloud_cover, invrs_tau_zm, &
-                         Lscale )
+                         Lscale, err_info )
     ! Description:
     ! Adapts the grid based on the density function and interpolates all values to the new grid.
     !-----------------------------------------------------------------------
 
+    use constants_clubb, only : &
+        fstderr     ! Fortran file unit I/O constant
+
     use clubb_precision, only: &
         core_rknd ! Variable(s)
-    
+
+    use error_code, only: &
+        clubb_at_least_debug_level,  & ! Procedure
+        clubb_fatal_error
+
     use clubb_api_module, only: &
       setup_grid_api
 
     use calc_pressure, only: &
         init_pressure    ! Procedure(s)
+
+    use err_info_type_module, only: &
+      err_info_type        ! Type
 
     implicit none
 
@@ -1822,6 +1853,9 @@ module grid_adaptation_module
     real( kind = core_rknd ), dimension(ngrdcol,gr%nzt), intent(inout) :: &
       Lscale     ! Length scale         [m]
 
+    type(err_info_type), intent(inout) :: &
+      err_info        ! err_info struct containing err_code and err_header
+
     !--------------------- Local Variables ---------------------
     integer :: &
         num_levels, &                ! number of levels the new grid should have []
@@ -1866,8 +1900,16 @@ module grid_adaptation_module
     call setup_grid_api( num_levels, sfc_elevation(1), l_implemented, &         ! intent(in)
                          .true., grid_type, deltaz, gr%zm(1,1), gr%zm(1,num_levels), & ! intent(in)
                          new_gr_zm, thermodynamic_heights_placeholder, &        ! intent(in)
-                         new_gr )                                               ! intent(inout)
-    
+                         new_gr, err_info )                                     ! intent(inout)
+
+    if ( clubb_at_least_debug_level(0) ) then
+      if ( any(err_info%err_code == clubb_fatal_error) ) then
+        write(fstderr, *) err_info%err_header_global
+        write(fstderr, *) "Fatal error calling setup_grid_api in adapt_grid"
+        return
+      end if
+    end if
+
     ! Set the density values to use for interpolation for mass calculation
     total_idx_rho_lin_spline = gr%nzm
     rho_lin_spline_vals = rho_ds_zm
@@ -2023,9 +2065,9 @@ module grid_adaptation_module
                                        total_idx_rho_lin_spline, rho_lin_spline_vals, &
                                        rho_lin_spline_levels, &
                                        thvm )
-      ! calculate p_in_Pa instead of remapping directly since it can run into problems if for example
-      ! the two highest levels have the same pressure value, which could be happening with the
-      ! remapping, also calculate exner accordingly
+      ! calculate p_in_Pa instead of remapping directly since it can run into problems if
+      ! for example the two highest levels have the same pressure value, which could be happening
+      ! with the remapping, also calculate exner accordingly
       call init_pressure( ngrdcol, new_gr, thvm_new_grid, p_sfc, &
                           p_in_Pa, exner, p_in_Pa_zm, exner_zm )
       rcm = remap_zt_values( ngrdcol, gr, new_gr, &

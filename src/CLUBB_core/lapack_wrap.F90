@@ -33,7 +33,7 @@ module lapack_wrap
 
 !-----------------------------------------------------------------------
   subroutine lapack_tridiag_solvex( solve_type, ndim, nrhs, ngrdcol, &
-                                    lhs, rhs, err_code, &
+                                    lhs, rhs, err_info, &
                                     soln, rcond )
 
 ! Description:
@@ -59,6 +59,9 @@ module lapack_wrap
         lapack_gtsvx, &      ! Procedure
         lapack_isnan
 
+    use err_info_type_module, only: &
+      err_info_type        ! Type
+
     implicit none
 
     intrinsic :: kind
@@ -79,8 +82,8 @@ module lapack_wrap
     real( kind = core_rknd ), intent(inout), dimension(ngrdcol,ndim,nrhs) :: &
       rhs ! RHS input
 
-    integer, intent(inout) :: &
-      err_code      ! Error code catching and relaying any errors occurring in this subroutine
+    type(err_info_type), intent(inout) :: &
+      err_info        ! err_info struct containing err_code and err_header
 
     ! The estimate of the reciprocal of the condition number on the LHS matrix.
     ! If rcond is < machine precision the matrix is singular to working
@@ -151,28 +154,39 @@ module lapack_wrap
 
     select case( info )
     case( :-1 )
-      write(fstderr,*) trim( solve_type )// &
+      write(fstderr, *) err_info%err_header_global
+      write(fstderr, *) "lapack_tridiag_solvex"
+      write(fstderr, *) trim( solve_type )// &
         "illegal value in argument", -info
-      err_code = clubb_fatal_error
+      ! General error -> set all entries to clubb_fatal_error
+      err_info%err_code = clubb_fatal_error
 
     case( 0 )
       ! Success
       do i = 1, ngrdcol
         if ( lapack_isnan( ndim, nrhs, soln(i,:,:) ) ) then
-          err_code = clubb_fatal_error
+          write(fstderr, *) err_info%err_header(i)
+          write(fstderr, *) "lapack_tridiag_solvex"
+          write(fstderr, *) trim( solve_type )// &
+            "NaNs in solution", info
+          ! Error in grid column i -> set ith entry to clubb_fatal_error
+          err_info%err_code(i) = clubb_fatal_error
         end if
       end do
 
     case( 1: )
       if ( info == ndim+1 ) then
+        write(fstderr, *) "lapack_tridiag_solvex"
         write(fstderr,*) trim( solve_type) // &
           " Warning: matrix is singular to working precision."
         write(fstderr,'(a,e12.5)')  &
           "Estimate of the reciprocal of the condition number: ", rcond
       else
+        write(fstderr, *) err_info%err_header_global
         write(fstderr,*) solve_type// &
           " singular matrix."
-        err_code = clubb_fatal_error
+        ! General error -> set all entries to clubb_fatal_error
+        err_info%err_code = clubb_fatal_error
       end if
 
     end select
@@ -182,7 +196,7 @@ module lapack_wrap
 
 !-----------------------------------------------------------------------
   subroutine lapack_tridiag_solve( solve_type, ndim, nrhs, ngrdcol, &
-                                   lhs, rhs, err_code, &
+                                   lhs, rhs, err_info, &
                                    soln )
 
 ! Description:
@@ -211,6 +225,9 @@ module lapack_wrap
         lapack_gtsv, &       ! Procedure
         lapack_isnan
 
+    use err_info_type_module, only: &
+      err_info_type        ! Type
+
     implicit none
 
     intrinsic :: kind
@@ -231,8 +248,8 @@ module lapack_wrap
     real( kind = core_rknd ), intent(inout), dimension(ngrdcol,ndim,nrhs) :: &
       rhs ! RHS input
 
-    integer, intent(inout) :: &
-      err_code      ! Error code catching and relaying any errors occurring in this subroutine
+    type(err_info_type), intent(inout) :: &
+      err_info        ! err_info struct containing err_code and err_header
 
     ! ----------------------- Output variables -----------------------
     real( kind = core_rknd ), intent(out), dimension(ngrdcol,ndim,nrhs) :: &
@@ -278,9 +295,12 @@ module lapack_wrap
 
     select case( info )
     case( :-1 )
+      write(fstderr, *) err_info%err_header_global
+      write(fstderr, *) "lapack_tridiag_solve"
       write(fstderr,*) trim( solve_type )// &
         " illegal value in argument", -info
-      err_code = clubb_fatal_error
+      ! General error -> set all entries to clubb_fatal_error
+      err_info%err_code = clubb_fatal_error
 
       soln = -999._core_rknd
 
@@ -288,15 +308,23 @@ module lapack_wrap
       ! Success
       do i = 1, ngrdcol
         if ( lapack_isnan( ndim, nrhs, rhs(i,:,:) ) ) then
-          err_code = clubb_fatal_error
+          write(fstderr, *) err_info%err_header(i)
+          write(fstderr, *) "lapack_tridiag_solve"
+          write(fstderr, *) trim( solve_type )// &
+            "NaNs in solution", info
+          ! Error in grid column i -> set ith entry to clubb_fatal_error
+          err_info%err_code(i) = clubb_fatal_error
         end if
       end do
 
       soln = rhs
 
     case( 1: )
+      write(fstderr, *) err_info%err_header_global
+      write(fstderr, *) "lapack_tridiag_solve"
       write(fstderr,*) trim( solve_type )//" singular matrix."
-      err_code = clubb_fatal_error
+      ! General error -> set all entries to clubb_fatal_error
+      err_info%err_code = clubb_fatal_error
 
       soln = -999._core_rknd
 
@@ -308,7 +336,7 @@ module lapack_wrap
 !-----------------------------------------------------------------------
   subroutine lapack_band_solvex( solve_type, nsup, nsub, &
                                  ndim, nrhs, ngrdcol, &
-                                 lhs, rhs, err_code, &
+                                 lhs, rhs, err_info, &
                                  soln, rcond )
 
 ! Description:
@@ -339,6 +367,9 @@ module lapack_wrap
         lapack_gbsvx, &      ! Procedures
         lapack_isnan
 
+    use err_info_type_module, only: &
+      err_info_type        ! Type
+
     implicit none
 
     ! ------------------------------ Input Variables ------------------------------
@@ -358,8 +389,8 @@ module lapack_wrap
     real( kind = core_rknd ), dimension(ngrdcol,ndim,nrhs), intent(inout) :: &
       rhs ! Right hand side(s)
 
-    integer, intent(inout) :: &
-      err_code      ! Error code catching and relaying any errors occurring in this subroutine
+    type(err_info_type), intent(inout) :: &
+      err_info        ! err_info struct containing err_code and err_header
 
     ! ------------------------------ Output Variables ------------------------------
     real( kind = core_rknd ), dimension(ngrdcol,ndim,nrhs), intent(out) :: &
@@ -493,30 +524,39 @@ module lapack_wrap
     select case( info )
 
     case( :-1 )
+        write(fstderr, *) err_info%err_header_global
         write(fstderr,*) "in band_solvex for ", trim( solve_type ), &
             ": illegal value for argument", -info
-        err_code = clubb_fatal_error
+        ! General error -> set all entries to clubb_fatal_error
+        err_info%err_code = clubb_fatal_error
 
     case( 0 )
       ! Success!
       do i = 1, ngrdcol
         if ( lapack_isnan( ndim, nrhs, soln(i,:,:) ) ) then
-          err_code = clubb_fatal_error 
+          write(fstderr, *) err_info%err_header(i)
+          write(fstderr, *) "lapack_band_solvex"
+          write(fstderr, *) trim( solve_type )// &
+            "NaNs in solution", info
+          ! Error in grid column i -> set ith entry to clubb_fatal_error
+          err_info%err_code(i) = clubb_fatal_error 
         end if
       end do
 
     case( 1: )
       if ( info == ndim+1 ) then
 
-        write(fstderr,*) trim( solve_type )// &
+        write(fstderr,*) "in band_solvex for", trim( solve_type ), &
           " Warning: matrix singular to working precision."
         write(fstderr,'(a,e12.5)') &
           "Estimate of the reciprocal of the"// &
           " condition number: ", rcond
       else
+        write(fstderr, *) err_info%err_header_global
         write(fstderr,*) "in band_solvex for", trim( solve_type ), &
-          ": singular matrix, solution not computed"    
-        err_code = clubb_fatal_error
+          ": singular matrix, solution not computed"
+        ! General error -> set all entries to clubb_fatal_error
+        err_info%err_code = clubb_fatal_error
       end if
 
     end select
@@ -527,7 +567,7 @@ module lapack_wrap
 !-----------------------------------------------------------------------
   subroutine lapack_band_solve( solve_type, nsup, nsub, &
                                 ndim, nrhs, ngrdcol, &
-                                lhs, rhs, err_code, &
+                                lhs, rhs, err_info, &
                                 soln )
 ! Description:
 !   Restructure and then solve a band diagonal system
@@ -547,6 +587,9 @@ module lapack_wrap
     use lapack_interfaces, only: &
         lapack_gbsv, &       ! Procedures
         lapack_isnan
+
+    use err_info_type_module, only: &
+      err_info_type        ! Type
 
     implicit none
 
@@ -568,8 +611,8 @@ module lapack_wrap
     real( kind = core_rknd ), dimension(ngrdcol,ndim,nrhs), intent(inout) :: &
       rhs ! Right hand side(s)
 
-    integer, intent(inout) :: &
-      err_code      ! Error code catching and relaying any errors occurring in this subroutine
+    type(err_info_type), intent(inout) :: &
+      err_info        ! err_info struct containing err_code and err_header
 
     ! ------------------------------ Output Variables ------------------------------
     real( kind = core_rknd ), dimension(ngrdcol,ndim,nrhs), intent(out) :: &
@@ -738,15 +781,22 @@ module lapack_wrap
     select case( info )
 
     case( :-1 )
+          write(fstderr, *) err_info%err_header_global
           write(fstderr,*) "in band_solve for ", trim( solve_type ), &
             ": illegal value for argument", -info
-          err_code = clubb_fatal_error
+          ! General error -> set all entries to clubb_fatal_error
+          err_info%err_code = clubb_fatal_error
     case( 0 )
           ! Success!
           if ( clubb_at_least_debug_level( 1 ) ) then
             do i = 1, ngrdcol
               if ( lapack_isnan( ndim, nrhs, rhs(i,:,:) ) ) then
-                err_code = clubb_fatal_error
+                write(fstderr, *) err_info%err_header(i)
+                write(fstderr, *) "lapack_band_solve"
+                write(fstderr, *) trim( solve_type )// &
+                "NaNs in solution", info
+                ! Error in grid column i -> set ith entry to clubb_fatal_error
+                err_info%err_code(i) = clubb_fatal_error
               end if
             end do
           end if
@@ -754,9 +804,11 @@ module lapack_wrap
           soln = rhs
 
     case( 1: )
+        write(fstderr, *) err_info%err_header_global
         write(fstderr,*) "in band_solve for ", trim( solve_type ), &
                        ": singular matrix, solution not computed"
-        err_code = clubb_fatal_error
+        ! General error -> set all entries to clubb_fatal_error
+        err_info%err_code = clubb_fatal_error
     end select
 
     return

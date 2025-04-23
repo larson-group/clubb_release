@@ -60,7 +60,7 @@ module pdf_closure_module
                           l_mix_rat_hm,                               &
                           sigma_sqd_w,                                &
                           pdf_params, pdf_implicit_coefs_terms,       &
-                          err_code,                                   &
+                          err_info,                                   &
                           wpup2, wpvp2,                               &
                           wp2up2, wp2vp2, wp4,                        &
                           wprtp2, wp2rtp,                             &
@@ -171,6 +171,9 @@ module pdf_closure_module
     use stats_variables, only: &
         stats_metadata_type
 
+    use err_info_type_module, only: &
+      err_info_type     ! Type
+
     implicit none
 
     !----------------------------- Input Variables -----------------------------
@@ -271,8 +274,8 @@ module pdf_closure_module
     type(implicit_coefs_terms), intent(inout) :: &
       pdf_implicit_coefs_terms    ! Implicit coefs / explicit terms [units vary]
 
-    integer, intent(inout) :: &
-      err_code      ! Error code catching and relaying any errors occurring in this subroutine
+    type(err_info_type), intent(inout) :: &
+      err_info      ! err_info struct containing err_code and err_header
 
     !----------------------------- Output Variables -----------------------------
     real( kind = core_rknd ), dimension(ngrdcol,nz), intent(out) :: &
@@ -1339,28 +1342,36 @@ module pdf_closure_module
     ! This is necessary because for certain parameter sets we can get floating point errors
     do i=1, min( 10, size(pdf_params%thl_1(1,:)) )
         if ( pdf_params%thl_1(1,i) < 190. ) then
+            write(fstderr, *) err_info%err_header(1)
             write(fstderr,*) "Fatal error: pdf_params%thl_1 =", pdf_params%thl_1(1,i), &
                              " < 190K at first grid column and grid level i = ", i
-            err_code = clubb_fatal_error
+          ! Error in grid column 1 -> set 1st entry to clubb_fatal_error
+          err_info%err_code(1) = clubb_fatal_error
         end if
         if ( pdf_params%thl_2(1,i) < 190. ) then
+            write(fstderr, *) err_info%err_header(1)
             write(fstderr,*) "Fatal error: pdf_params%thl_2 =", pdf_params%thl_2(1,i), &
                              " < 190K at first grid column and grid level i = ", i
-            err_code = clubb_fatal_error
+          ! Error in grid column 1 -> set 1st entry to clubb_fatal_error
+          err_info%err_code(1) = clubb_fatal_error
         end if
         if ( pdf_params%thl_1(1,i) > 1000. ) then
+            write(fstderr, *) err_info%err_header(1)
             write(fstderr,*) "Fatal error: pdf_params%thl_1 =", pdf_params%thl_1(1,i), &
                              " > 1000K at first grid column and grid level i = ", i
-            err_code = clubb_fatal_error
+          ! Error in grid column 1 -> set 1st entry to clubb_fatal_error
+          err_info%err_code(1) = clubb_fatal_error
         end if
         if ( pdf_params%thl_2(1,i) > 1000. ) then
+            write(fstderr, *) err_info%err_header(1)
             write(fstderr,*) "Fatal error: pdf_params%thl_2 =", pdf_params%thl_2(1,i), &
                              " > 1000K at first grid column and grid level i = ", i
-            err_code = clubb_fatal_error
+          ! Error in grid column 1 -> set 1st entry to clubb_fatal_error
+          err_info%err_code(1) = clubb_fatal_error
         end if
     end do
     
-    if ( err_code == clubb_fatal_error ) return
+    if ( any(err_info%err_code == clubb_fatal_error) ) return
 
 #endif /*TUNER*/
 
@@ -1410,14 +1421,18 @@ module pdf_closure_module
                sclrpthvp(i,:,:), sclrprcp(i,:,:), wpsclrp2(i,:,:), & ! intent(in)
                wpsclrprtp(i,:,:), wpsclrpthlp(i,:,:), wp2sclrp(i,:,:), & ! intent(in)
                stats_metadata, & ! intent(in)
-               err_code ) ! intent(inout)
+               err_info ) ! intent(inout)
+
+        if ( err_info%err_code(i) == clubb_fatal_error ) then
+          write(fstderr, *) err_info%err_header(i)
+        endif
       end do
     end if
 
     ! Error Reporting
     ! Joshua Fasching February 2008
-    if ( clubb_at_least_debug_level( 2 ) ) then
-      if ( err_code == clubb_fatal_error ) then
+    if ( clubb_at_least_debug_level( 0 ) ) then
+      if ( any(err_info%err_code == clubb_fatal_error) ) then
 
         !$acc update host( p_in_Pa, exner, thv_ds, wm, wp2, wp3, sigma_sqd_w, &
         !$acc              rtm, rtp2, wprtp, thlm, thlp2, wpthlp, rtpthlp, ice_supersat_frac )

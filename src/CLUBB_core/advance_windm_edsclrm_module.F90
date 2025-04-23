@@ -48,7 +48,7 @@ module advance_windm_edsclrm_module
                                     stats_zt, stats_zm, stats_sfc, &
                                     um, vm, edsclrm, &
                                     upwp, vpwp, wpedsclrp, &
-                                    um_pert, vm_pert, upwp_pert, vpwp_pert, err_code )
+                                    um_pert, vm_pert, upwp_pert, vpwp_pert, err_info )
 
     ! Description:
     ! Solves for both mean horizontal wind components, um and vm, and for the
@@ -114,6 +114,9 @@ module advance_windm_edsclrm_module
         
     use advance_helper_module, only: &
         calc_xpwp
+
+    use err_info_type_module, only: &
+      err_info_type     ! Type
 
     implicit none
 
@@ -217,8 +220,8 @@ module advance_windm_edsclrm_module
       upwp_pert, & ! perturbed <u'w'> [m^2/s^2]
       vpwp_pert    ! perturbed <v'w'> [m^2/s^2]
 
-    integer, intent(inout) :: &
-      err_code    ! Error code catching and relaying any errors occurring in this subroutine
+    type(err_info_type), intent(inout) :: &
+      err_info      ! err_info struct containing err_code and err_header
 
     ! ------------------------ Local Variables ------------------------
     real( kind = core_rknd ), dimension(ngrdcol,nzt) ::  &
@@ -456,12 +459,13 @@ module advance_windm_edsclrm_module
                                 tridiag_solve_method,                           & ! intent(in)
                                 stats_metadata,                                 & ! intent(in)
                                 stats_sfc,                                      & ! intent(inout)
-                                lhs, rhs, err_code,                             & ! intent(inout)
+                                lhs, rhs, err_info,                             & ! intent(inout)
                                 solution )                                        ! intent(out)
 
       ! Check for singular matrices and bad LAPACK arguments
       if ( clubb_at_least_debug_level( 0 ) ) then
-        if ( err_code == clubb_fatal_error ) then
+        if ( any(err_info%err_code == clubb_fatal_error) ) then
+          write(fstderr, *) err_info%err_header_global
           write(fstderr,*) "Fatal error solving for um/vm"
           return
         end if
@@ -536,9 +540,11 @@ module advance_windm_edsclrm_module
         ! Thus this code is potentially unsafe when implemented in a host model, 
         ! which is indicated by l_implemented = T
         if ( l_implemented ) then
+          write(fstderr, *) err_info%err_header_global
           write(fstderr,*) "l_sponge_damping = T and l_implemented = T ", &
                             "-- this is likely unsafe and considered fatal"
-          err_code = clubb_fatal_error
+          ! General error -> set all entries to clubb_fatal_error
+          err_info%err_code = clubb_fatal_error
           return
         end if
           
@@ -830,12 +836,13 @@ module advance_windm_edsclrm_module
                                 tridiag_solve_method,                           & ! intent(in)
                                 stats_metadata,                                 & ! intent(in)
                                 stats_sfc,                                      & ! intent(in)
-                                lhs, rhs, err_code,                             & ! intent(inout)
+                                lhs, rhs, err_info,                             & ! intent(inout)
                                 solution )                                        ! intent(out)
 
       ! Check for singular matrices and bad LAPACK arguments
       if ( clubb_at_least_debug_level( 0 ) ) then
-        if ( err_code == clubb_fatal_error ) then
+        if ( any(err_info%err_code == clubb_fatal_error) ) then
+          write(fstderr, *) err_info%err_header_global
           write(fstderr,*) "Fatal error solving for um_pert/vm_pert"
           return
         endif
@@ -1048,11 +1055,12 @@ module advance_windm_edsclrm_module
                                 tridiag_solve_method,            & ! intent(in)
                                 stats_metadata,                  & ! intent(in)
                                 stats_sfc,                       & ! intent(inout)
-                                lhs, rhs, err_code,              & ! intent(inout)
+                                lhs, rhs, err_info,              & ! intent(inout)
                                 solution )                         ! intent(out)
 
       if ( clubb_at_least_debug_level( 0 ) ) then
-        if ( err_code == clubb_fatal_error ) then
+        if ( any(err_info%err_code == clubb_fatal_error) ) then
+          write(fstderr, *) err_info%err_header_global
           write(fstderr,*) "Fatal error solving for edsclrm"
         end if
       end if
@@ -1107,13 +1115,14 @@ module advance_windm_edsclrm_module
     endif
 
     if ( clubb_at_least_debug_level( 0 ) ) then
-        if ( err_code == clubb_fatal_error ) then
+        if ( any(err_info%err_code == clubb_fatal_error) ) then
 
           !$acc update host( wm_zt, Km_zm, ug, vg, um_ref, vm_ref, wp2, &
           !$acc              up2, vp2, um_forcing, vm_forcing, edsclrm_forcing, &
           !$acc              fcor, um_old, um, vm_old, vm, edsclrm_old, &
           !$acc              edsclrm, upwp, vpwp, wpedsclrp )
 
+          ! err_header already printed earlier
           write(fstderr,*) "Error in advance_windm_edsclrm"
 
           write(fstderr,*) "intent(in)"
@@ -1175,7 +1184,7 @@ module advance_windm_edsclrm_module
                                   tridiag_solve_method, &
                                   stats_metadata, &
                                   stats_sfc, &
-                                  lhs, rhs, err_code, &
+                                  lhs, rhs, err_info, &
                                   solution )
 
     ! Description:
@@ -1668,6 +1677,9 @@ module advance_windm_edsclrm_module
 
     use stats_type, only: stats ! Type
 
+    use err_info_type_module, only: &
+      err_info_type     ! Type
+
     use model_flags, only: &
         l_test_grid_generalization    ! Variable(s)
 
@@ -1703,8 +1715,8 @@ module advance_windm_edsclrm_module
     real( kind = core_rknd ), dimension(ngrdcol,nzt,nrhs), intent(inout) :: &
       rhs    ! Right-hand side (explicit) contributions.
 
-    integer, intent(inout) :: &
-      err_code    ! Error code catching and relaying any errors occurring in this subroutine
+    type(err_info_type), intent(inout) :: &
+      err_info      ! err_info struct containing err_code and err_header
 
     ! ------------------------ Output variables ------------------------
     real( kind = core_rknd ), dimension(ngrdcol,nzt,nrhs), intent(out) :: &
@@ -1755,7 +1767,7 @@ module advance_windm_edsclrm_module
 
       call tridiag_solve( "windm_edsclrm", tridiag_solve_method,  & ! Intent(in)
                           ngrdcol, nzt, nrhs,                     & ! Intent(in)
-                          lhs, rhs, err_code,                     & ! Intent(inout)
+                          lhs, rhs, err_info,                     & ! Intent(inout)
                           solution, rcond )                         ! Intent(out)
 
       ! Est. of the condition number of the variance LHS matrix
@@ -1768,7 +1780,7 @@ module advance_windm_edsclrm_module
 
       call tridiag_solve( "windm_edsclrm", tridiag_solve_method,  & ! Intent(in)
                           ngrdcol, nzt, nrhs,                     & ! Intent(in)
-                          lhs, rhs, err_code,                     & ! Intent(inout)
+                          lhs, rhs, err_info,                     & ! Intent(inout)
                           solution )                                ! Intent(out)
     end if
 

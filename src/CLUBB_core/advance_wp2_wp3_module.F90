@@ -85,7 +85,7 @@ module advance_wp2_wp3_module
                               l_wp2_fill_holes_tke,                          & ! intent(in)
                               stats_metadata,                                & ! intent(in)
                               stats_zt, stats_zm, stats_sfc,                 & ! intent(inout)
-                              up2, vp2, wp2, wp3, wp3_zm, wp2_zt, err_code )   ! intent(inout)
+                              up2, vp2, wp2, wp3, wp3_zm, wp2_zt, err_info )   ! intent(inout)
 
     ! Description:
     ! Advance w'^2 and w'^3 one timestep.
@@ -187,6 +187,9 @@ module advance_wp2_wp3_module
         clubb_fatal_error              ! Constant
 
     use stats_type, only: stats ! Type
+
+    use err_info_type_module, only: &
+      err_info_type     ! Type
 
     implicit none
 
@@ -315,8 +318,8 @@ module advance_wp2_wp3_module
       wp3,  & ! w'^3 (thermodynamic levels)               [m^3/s^3]
       wp2_zt  ! w'^2 interpolated to thermodyamic levels  [m^2/s^2]
 
-    integer, intent(inout) :: &
-      err_code    ! Error code catching and relaying any errors occurring in this subroutine
+    type(err_info_type), intent(inout) :: &
+      err_info      ! err_info struct containing err_code and err_header
 
     ! --------------------------- Local Variables ---------------------------
     real( kind = core_rknd ), dimension(ngrdcol,nzm) :: &
@@ -463,9 +466,11 @@ module advance_wp2_wp3_module
     !   end do
 
     if ( l_crank_nich_diff .and. l_use_tke_in_wp2_wp3_K_dfsn ) then
+      write(fstderr,*) err_info%err_header_global
       write(fstderr,*) "The l_crank_nich_diff flag and l_use_tke_in_wp2_wp3_K_dfsn ", &
                        "flags cannot currently be used together."
-      err_code = clubb_fatal_error
+      ! General error -> set all entries to clubb_fatal_error
+      err_info%err_code = clubb_fatal_error
       return
     end if
 
@@ -545,31 +550,35 @@ module advance_wp2_wp3_module
 
     if ( clubb_at_least_debug_level( 0 ) ) then
 
-      !$acc parallel loop gang vector collapse(2) default(present) reduction(.or.:err_code)
+      !$acc parallel loop gang vector collapse(2) default(present)
       do k = 1, nzt
         do i = 1, ngrdcol
           ! Assertion check for C11_Skw_fnc
           if ( C11_Skw_fnc(i,k) > one .or. C11_Skw_fnc(i,k) < 0._core_rknd ) then
+            write(fstderr,*) err_info%err_header(i)
             write(fstderr,*) "The C11_Skw_fnc is outside the valid range for this variable"
-            err_code = clubb_fatal_error
+            ! Error in grid column i -> set ith entry to clubb_fatal_error
+            err_info%err_code(i) = clubb_fatal_error
           end if
         end do
       end do
       !$acc end parallel loop
 
-      !$acc parallel loop gang vector collapse(2) default(present) reduction(.or.:err_code)
+      !$acc parallel loop gang vector collapse(2) default(present)
       do k = 1, nzt
         do i = 1, ngrdcol
           ! Assertion check for C11_Skw_fnc
           if ( C16_fnc(i,k) > one .or. C16_fnc(i,k) < 0._core_rknd ) then
+            write(fstderr,*) err_info%err_header(i)
             write(fstderr,*) "The C16_fnc is outside the valid range for this variable"
-            err_code = clubb_fatal_error
+            ! Error in grid column i -> set ith entry to clubb_fatal_error
+            err_info%err_code(i) = clubb_fatal_error
           end if
         end do
       end do
       !$acc end parallel loop
 
-      if ( err_code == clubb_fatal_error ) then
+      if ( any(err_info%err_code == clubb_fatal_error) ) then
         return
       end if
 
@@ -1035,7 +1044,7 @@ module advance_wp2_wp3_module
                      l_wp2_fill_holes_tke,                        & ! intent(in)
                      stats_metadata,                              & ! intent(in)
                      stats_zt, stats_zm, stats_sfc,               & ! intent(inout)
-                     up2, vp2, wp2, wp3, wp3_zm, wp2_zt, err_code ) ! intent(inout)
+                     up2, vp2, wp2, wp3, wp3_zm, wp2_zt, err_info ) ! intent(inout)
 
     if ( l_lmm_stepping ) then
       !$acc parallel loop gang vector collapse(2) default(present)
@@ -1110,7 +1119,7 @@ module advance_wp2_wp3_module
     end if ! wp3_sponge_damp_settings%l_sponge_damping
 
     if ( clubb_at_least_debug_level( 0 ) ) then
-      if ( err_code == clubb_fatal_error ) then  
+      if ( any(err_info%err_code == clubb_fatal_error) ) then
 
         !$acc update host( sfc_elevation, sigma_sqd_w, wm_zm, sfc_elevation, &
         !$acc              sigma_sqd_w, wm_zm, wm_zt, wpup2, wpvp2, wp2up2, &
@@ -1123,6 +1132,7 @@ module advance_wp2_wp3_module
         !$acc              wpthlp, rtp2, thlp2, wp2_zt, wp3_zm, wp2_old, wp2, &
         !$acc              wp3_old, wp3 )
 
+        write(fstderr,*) err_info%err_header_global
         write(fstderr,*) "Error in advance_wp2_wp3"
 
         write(fstderr,*) "intent(in)"
@@ -1226,7 +1236,7 @@ module advance_wp2_wp3_module
                          l_wp2_fill_holes_tke, &
                          stats_metadata, &
                          stats_zt, stats_zm, stats_sfc, &
-                         up2, vp2, wp2, wp3, wp3_zm, wp2_zt, err_code )
+                         up2, vp2, wp2, wp3, wp3_zm, wp2_zt, err_info )
 
     ! Description:
     ! Decompose, and back substitute the matrix for wp2/wp3
@@ -1301,6 +1311,9 @@ module advance_wp2_wp3_module
 
     use advance_helper_module, only: &
         vertical_avg
+
+    use err_info_type_module, only: &
+      err_info_type     ! Type
 
     implicit none
 
@@ -1405,8 +1418,8 @@ module advance_wp2_wp3_module
       wp3,  & ! w'^3 (thermodynamic levels)                       [m^3/s^3]
       wp2_zt  ! w'^2 interpolated to thermodyamic levels          [m^2/s^2]
 
-    integer, intent(inout) :: &
-      err_code    ! Error code catching and relaying any errors occurring in this subroutine
+    type(err_info_type), intent(inout) :: &
+      err_info      ! err_info struct containing err_code and err_header
 
     ! ----------------------- Local Variables -----------------------
     real( kind = core_rknd ), dimension(ngrdcol,2*nzm-1) :: &
@@ -1502,7 +1515,7 @@ module advance_wp2_wp3_module
       ! Note: When using lapack this can change the answer slightly
       call band_solve(  "wp2_wp3", penta_solve_method, & ! intent(in)
                         ngrdcol, 2, 2, 2*nzm-1,        & ! intent(in)
-                        lhs, rhs, err_code,            & ! intent(inout)
+                        lhs, rhs, err_info,            & ! intent(inout)
                         solut, rcond )                   ! intent(out)
 
       ! Est. of the condition number of the w'^2/w^3 LHS matrix
@@ -1518,7 +1531,7 @@ module advance_wp2_wp3_module
       ! Solve the system
       call band_solve( "wp2_wp3", penta_solve_method, & ! intent(in)
                        ngrdcol, 2, 2, 2*nzm-1,        & ! intent(in)
-                       lhs, rhs, err_code,            & ! intent(inout)
+                       lhs, rhs, err_info,            & ! intent(inout)
                        solut )                          ! intent(out)
 
     end if
@@ -1537,10 +1550,11 @@ module advance_wp2_wp3_module
     endif
 
     if ( clubb_at_least_debug_level( 0 ) ) then
-      if ( err_code == clubb_fatal_error ) then
+      if ( any(err_info%err_code == clubb_fatal_error) ) then
 
         !$acc update host( lhs, rhs_save )
 
+        write(fstderr,*) err_info%err_header_global
         write(fstderr,*) "Error in wp23_solve calling band_solve for wp2_wp3"
         write(fstderr,*) "wp2 & wp3 LU decomp. failed"
         write(fstderr,*) "wp2 and wp3 LHS"

@@ -42,6 +42,11 @@ module rev_direction_grid_test
         xpyp_term_ta_pdf_rhs,         &
         xpyp_term_ta_pdf_rhs_godunov
 
+    use err_info_type_module, only: &
+      err_info_type,                & ! Type
+      init_default_err_info_api,    & ! Procedures
+      cleanup_err_info_api
+
     use parameter_indices, only: &
         nparams    ! Variable(s)
 
@@ -51,7 +56,7 @@ module rev_direction_grid_test
 
     implicit none
 
-    integer, parameter :: & 
+    integer, parameter :: &
       t_above = 1, & ! Upper thermodynamic level index (gr%weights_zt2zm).
       t_below = 2, & ! Lower thermodynamic level index (gr%weights_zt2zm).
       m_above = 1, & ! Upper momentum level index (gr%weights_zm2zt).
@@ -203,8 +208,16 @@ module rev_direction_grid_test
     integer :: &
       rev_direction_grid_unit_test
 
+    type(err_info_type) :: &
+      err_info_dummy        ! err_info struct containing err_code and err_header
+
     integer :: k
 
+  !--------------------------------- Begin Code ---------------------------------
+
+    ! Init err_info with dummy values.
+    ! Latitude and Longitude are set to zero
+    call init_default_err_info_api(1, err_info_dummy)
 
     write(fstdout,*) ""
     write(fstdout,*) "Performing reverse direction grid unit test"
@@ -303,7 +316,7 @@ module rev_direction_grid_test
                             l_implemented, l_ascending_grid, &
                             grid_type, deltaz, zm_init, zm_top, &
                             momentum_heights, thermodynamic_heights, &
-                            gr_ascending )
+                            gr_ascending, err_info_dummy )
 
        ! Call setup_grid_api for a descending grid.
        l_ascending_grid = .false.
@@ -314,7 +327,7 @@ module rev_direction_grid_test
                             l_implemented, l_ascending_grid, &
                             grid_type, deltaz, zm_init, zm_top, &
                             momentum_heights, thermodynamic_heights, &
-                            gr_descending )
+                            gr_descending, err_info_dummy )
 
        !!!!! Grid Test 1 -- Test symmetry for grid variables.
 
@@ -1287,6 +1300,8 @@ module rev_direction_grid_test
        write(fstdout,*) ""
     endif ! rev_direction_grid_unit_test = 0
 
+    ! Deallocate err_info
+    call cleanup_err_info_api( err_info_dummy )
 
     return
 

@@ -40,7 +40,7 @@ module numerical_check
 
   contains
 !---------------------------------------------------------------------------------
-  subroutine length_check( nzt, Lscale, Lscale_up, Lscale_down, err_code )
+  subroutine length_check( nzt, Lscale, Lscale_up, Lscale_down, err_info )
 !
 !        Description: This subroutine determines if any of the output
 !        variables for the length_new subroutine carry values that
@@ -51,6 +51,9 @@ module numerical_check
 
     use clubb_precision, only: &
         core_rknd ! Variable(s)
+
+    use err_info_type_module, only: &
+      err_info_type     ! Type
 
     implicit none
 
@@ -66,17 +69,17 @@ module numerical_check
       Lscale_up,  & ! Upward mixing length          [m]
       Lscale_down   ! Downward mixing length        [m]
 
-    ! Input/Output variables
-    integer, intent(inout) :: &
-      err_code      ! Result of the parameterization checks in this subroutine
+    ! Input/Output Variables
+    type(err_info_type), intent(inout) :: &
+      err_info      ! err_info struct containing err_code and err_header
 !-----------------------------------------------------------------------------
 
     call check_nan( Lscale, "Lscale", proc_name, & ! intent(in)
-                    err_code ) ! intent(inout)
+                    err_info ) ! intent(inout)
     call check_nan( Lscale_up, "Lscale_up", proc_name, & ! intent(in)
-                    err_code ) ! intent(inout)
+                    err_info ) ! intent(inout)
     call check_nan( Lscale_down, "Lscale_down", proc_name, & ! intent(in)
-                    err_code ) ! intent(inout)
+                    err_info ) ! intent(inout)
 
     return
   end subroutine length_check
@@ -91,7 +94,7 @@ module numerical_check
                                 sclrpthvp, sclrprcp, wpsclrp2, & 
                                 wpsclrprtp, wpsclrpthlp, wp2sclrp, &
                                 stats_metadata, &
-                                err_code )
+                                err_info )
 
 ! Description: This subroutine determines if any of the output
 !   variables for the pdf_closure subroutine carry values that
@@ -108,6 +111,9 @@ module numerical_check
 
     use stats_variables, only: &
         stats_metadata_type
+
+    use err_info_type_module, only: &
+      err_info_type     ! Type
 
     implicit none
 
@@ -157,8 +163,8 @@ module numerical_check
       stats_metadata
 
     ! Input/Output variables
-    integer, intent(inout) :: &
-      err_code      ! Result of the parameterization checks in this subroutine
+    type(err_info_type), intent(inout) :: &
+      err_info      ! err_info struct containing err_code and err_header
 
     ! Local variables
     integer:: &
@@ -169,189 +175,189 @@ module numerical_check
     ! ---- Begin Code ----
 
     if ( stats_metadata%iwp4 > 0 ) call check_nan( wp4,"wp4", proc_name, & ! intent(in)
-                                                   err_code ) ! intent(inout)
+                                                   err_info ) ! intent(inout)
     if ( stats_metadata%iwprtp2 > 0 ) call check_nan( wprtp2,"wprtp2", proc_name, & ! intent(in)
-                                                      err_code ) ! intent(inout)
+                                                      err_info ) ! intent(inout)
     call check_nan( wp2rtp,"wp2rtp", proc_name, & ! intent(in)
-                    err_code ) ! intent(inout)
+                    err_info ) ! intent(inout)
     if ( stats_metadata%iwpthlp2 > 0 ) call check_nan( wpthlp2,"wpthlp2", proc_name, & ! intent(in)
-                                                       err_code ) ! intent(inout)
+                                                       err_info ) ! intent(inout)
     call check_nan( wp2thlp,"wp2thlp", proc_name, & ! intent(in)
-                    err_code ) ! intent(inout)
+                    err_info ) ! intent(inout)
     call check_nan( cloud_frac,"cloud_frac", proc_name, & ! intent(in)
-                    err_code ) ! intent(inout)
+                    err_info ) ! intent(inout)
     call check_nan( rcm,"rcm", proc_name, & ! intent(in)
-                    err_code ) ! intent(inout)
+                    err_info ) ! intent(inout)
     call check_nan( wpthvp, "wpthvp", proc_name, & ! intent(in)
-                    err_code ) ! intent(inout)
+                    err_info ) ! intent(inout)
     call check_nan( wp2thvp, "wp2thvp", proc_name, & ! intent(in)
-                    err_code ) ! intent(inout)
+                    err_info ) ! intent(inout)
     call check_nan( rtpthvp, "rtpthvp", proc_name, & ! intent(in)
-                    err_code ) ! intent(inout)
+                    err_info ) ! intent(inout)
     call check_nan( thlpthvp, "thlpthvp", proc_name, & ! intent(in)
-                    err_code ) ! intent(inout)
+                    err_info ) ! intent(inout)
     call check_nan( wprcp, "wprcp", proc_name, & ! intent(in)
-                    err_code ) ! intent(inout)
+                    err_info ) ! intent(inout)
     call check_nan( wp2rcp, "wp2rcp", proc_name, & ! intent(in)
-                    err_code ) ! intent(inout)
+                    err_info ) ! intent(inout)
     call check_nan( rtprcp, "rtprcp", proc_name, & ! intent(in)
-                    err_code ) ! intent(inout)
+                    err_info ) ! intent(inout)
     call check_nan( thlprcp, "thlprcp", proc_name, & ! intent(in)
-                    err_code ) ! intent(inout)
+                    err_info ) ! intent(inout)
     if ( stats_metadata%ircp2 >  0 ) call check_nan( rcp2, "rcp2", proc_name, & ! intent(in)
-                                                     err_code ) ! intent(inout)
+                                                     err_info ) ! intent(inout)
     if ( stats_metadata%iwprtpthlp > 0 ) &
          call check_nan( wprtpthlp, "wprtpthlp", proc_name, & ! intent(in)
-                         err_code ) ! intent(inout)
+                         err_info ) ! intent(inout)
     call check_nan( crt_1, "crt_1", proc_name, & ! intent(in)
-                    err_code ) ! intent(inout)
+                    err_info ) ! intent(inout)
     call check_nan( crt_2, "crt_2", proc_name, & ! intent(in)
-                    err_code ) ! intent(inout)
+                    err_info ) ! intent(inout)
     call check_nan( cthl_1, "cthl_1", proc_name, & ! intent(in)
-                    err_code ) ! intent(inout)
+                    err_info ) ! intent(inout)
     call check_nan( cthl_2, "cthl_2", proc_name, & ! intent(in)
-                    err_code ) ! intent(inout)
+                    err_info ) ! intent(inout)
     ! Check each PDF parameter at the grid level sent in.
     call check_nan( pdf_params%w_1(1,:), "pdf_params%w_1(1,:)", proc_name, & ! intent(in)
-                    err_code ) ! intent(inout)
+                    err_info ) ! intent(inout)
     call check_nan( pdf_params%w_2(1,:), "pdf_params%w_2(1,:)", proc_name, & ! intent(in)
-                    err_code ) ! intent(inout)
+                    err_info ) ! intent(inout)
     call check_nan( pdf_params%varnce_w_1(1,:), "pdf_params%varnce_w_1(1,:)", & ! intent(in)
                     proc_name, & ! intent(in)
-                    err_code ) ! intent(inout)
+                    err_info ) ! intent(inout)
     call check_nan( pdf_params%varnce_w_2(1,:), "pdf_params%varnce_w_2(1,:)", & ! intent(in)
                     proc_name, & ! intent(in)
-                    err_code ) ! intent(inout)
+                    err_info ) ! intent(inout)
     call check_nan( pdf_params%rt_1(1,:), "pdf_params%rt_1(1,:)", proc_name, & ! intent(in)
-                    err_code ) ! intent(inout)
+                    err_info ) ! intent(inout)
     call check_nan( pdf_params%rt_2(1,:), "pdf_params%rt_2(1,:)", proc_name, & ! intent(in)
-                    err_code ) ! intent(inout)
+                    err_info ) ! intent(inout)
     call check_nan( pdf_params%varnce_rt_1(1,:), "pdf_params%varnce_rt_1(1,:)", & ! intent(in)
                     proc_name, & ! intent(in)
-                    err_code ) ! intent(inout)
+                    err_info ) ! intent(inout)
     call check_nan( pdf_params%varnce_rt_2(1,:), "pdf_params%varnce_rt_2(1,:)", & ! intent(in)
                     proc_name, & ! intent(in)
-                    err_code ) ! intent(inout)
+                    err_info ) ! intent(inout)
     call check_nan( pdf_params%thl_1(1,:), "pdf_params%thl_1(1,:)", proc_name, & ! intent(in)
-                    err_code ) ! intent(inout)
+                    err_info ) ! intent(inout)
     call check_nan( pdf_params%thl_2(1,:), "pdf_params%thl_2(1,:)", proc_name, & ! intent(in)
-                    err_code ) ! intent(inout)
+                    err_info ) ! intent(inout)
     call check_nan( pdf_params%varnce_thl_1(1,:), "pdf_params%varnce_thl_1(1,:)", & ! intent(in)
                     proc_name, & ! intent(in)
-                    err_code ) ! intent(inout)
+                    err_info ) ! intent(inout)
     call check_nan( pdf_params%varnce_thl_2(1,:), "pdf_params%varnce_thl_2(1,:)", & ! intent(in)
                     proc_name, & ! intent(in)
-                    err_code ) ! intent(inout)
+                    err_info ) ! intent(inout)
     call check_nan( pdf_params%mixt_frac(1,:), "pdf_params%mixt_frac(1,:)", & ! intent(in)
                     proc_name, & ! intent(in)
-                    err_code ) ! intent(inout)
+                    err_info ) ! intent(inout)
     call check_nan( pdf_params%corr_w_rt_1(1,:), "pdf_params%corr_w_rt_1(1,:)", & ! intent(in)
                     proc_name, & ! intent(in)
-                    err_code ) ! intent(inout)
+                    err_info ) ! intent(inout)
     call check_nan( pdf_params%corr_w_rt_2(1,:), "pdf_params%corr_w_rt_2(1,:)", & ! intent(in)
                     proc_name, & ! intent(in)
-                    err_code ) ! intent(inout)
+                    err_info ) ! intent(inout)
     call check_nan( pdf_params%corr_w_thl_1(1,:), "pdf_params%corr_w_thl_1(1,:)", & ! intent(in)
                     proc_name, & ! intent(in)
-                    err_code ) ! intent(inout)
+                    err_info ) ! intent(inout)
     call check_nan( pdf_params%corr_w_thl_2(1,:), "pdf_params%corr_w_thl_2(1,:)", & ! intent(in)
                     proc_name, & ! intent(in)
-                    err_code ) ! intent(inout)
+                    err_info ) ! intent(inout)
     call check_nan( pdf_params%corr_rt_thl_1(1,:), "pdf_params%corr_rt_thl_1(1,:)", & ! intent(in)
                     proc_name, & ! intent(in)
-                    err_code ) ! intent(inout)
+                    err_info ) ! intent(inout)
     call check_nan( pdf_params%corr_rt_thl_2(1,:), "pdf_params%corr_rt_thl_2(1,:)", & ! intent(in)
                     proc_name, & ! intent(in)
-                    err_code ) ! intent(inout)
+                    err_info ) ! intent(inout)
     call check_nan( pdf_params%rc_1(1,:), "pdf_params%rc_1(1,:)", proc_name, & ! intent(in)
-                    err_code ) ! intent(inout)
+                    err_info ) ! intent(inout)
     call check_nan( pdf_params%rc_2(1,:), "pdf_params%rc_2(1,:)", proc_name, & ! intent(in)
-                    err_code ) ! intent(inout)
+                    err_info ) ! intent(inout)
     call check_nan( pdf_params%rsatl_1(1,:), "pdf_params%rsatl_1(1,:)", & ! intent(in)
                     proc_name, & ! intent(in)
-                    err_code ) ! intent(inout)
+                    err_info ) ! intent(inout)
     call check_nan( pdf_params%rsatl_2(1,:), "pdf_params%rsatl_2(1,:)", & ! intent(in)
                     proc_name, & ! intent(in)
-                    err_code ) ! intent(inout)
+                    err_info ) ! intent(inout)
     call check_nan( pdf_params%cloud_frac_1(1,:), "pdf_params%cloud_frac_1(1,:)", & ! intent(in)
                     proc_name, & ! intent(in)
-                    err_code ) ! intent(inout)
+                    err_info ) ! intent(inout)
     call check_nan( pdf_params%cloud_frac_2(1,:), "pdf_params%cloud_frac_2(1,:)", & ! intent(in)
                     proc_name, & ! intent(in)
-                    err_code ) ! intent(inout)
+                    err_info ) ! intent(inout)
     call check_nan( pdf_params%chi_1(1,:), "pdf_params%chi_1(1,:)", proc_name, & ! intent(in)
-                    err_code ) ! intent(inout)
+                    err_info ) ! intent(inout)
     call check_nan( pdf_params%chi_2(1,:), "pdf_params%chi_2(1,:)", proc_name, & ! intent(in)
-                    err_code ) ! intent(inout)
+                    err_info ) ! intent(inout)
     call check_nan( pdf_params%stdev_chi_1(1,:), "pdf_params%stdev_chi_1(1,:)", &! intent(in)
                     proc_name, & ! intent(in)
-                    err_code ) ! intent(inout)
+                    err_info ) ! intent(inout)
     call check_nan( pdf_params%stdev_chi_2(1,:), "pdf_params%stdev_chi_2(1,:)", & ! intent(in)
                     proc_name, & ! intent(in)
-                    err_code ) ! intent(inout)
+                    err_info ) ! intent(inout)
     call check_nan( pdf_params%stdev_eta_1(1,:), "pdf_params%stdev_eta_1(1,:)", & ! intent(in)
                     proc_name, & ! intent(in)
-                    err_code ) ! intent(inout)
+                    err_info ) ! intent(inout)
     call check_nan( pdf_params%stdev_eta_2(1,:), "pdf_params%stdev_eta_2(1,:)", & ! intent(in)
                     proc_name, & ! intent(in)
-                    err_code ) ! intent(inout)
+                    err_info ) ! intent(inout)
     call check_nan( pdf_params%covar_chi_eta_1(1,:), "pdf_params%covar_chi_eta_1(1,:)",&!intent(in)
                     proc_name, & ! intent(in)
-                    err_code ) ! intent(inout)
+                    err_info ) ! intent(inout)
     call check_nan( pdf_params%covar_chi_eta_2(1,:), "pdf_params%covar_chi_eta_2(1,:)",&!intent(in)
                     proc_name, & ! intent(in)
-                    err_code ) ! intent(inout)
+                    err_info ) ! intent(inout)
     call check_nan( pdf_params%corr_w_chi_1(1,:), "pdf_params%corr_w_chi_1(1,:)", & ! intent(in)
                     proc_name, & ! intent(in)
-                    err_code ) ! intent(inout)
+                    err_info ) ! intent(inout)
     call check_nan( pdf_params%corr_w_chi_2(1,:), "pdf_params%corr_w_chi_2(1,:)", & ! intent(in)
                     proc_name, & ! intent(in)
-                    err_code ) ! intent(inout)
+                    err_info ) ! intent(inout)
     call check_nan( pdf_params%corr_w_eta_1(1,:), "pdf_params%corr_w_eta_1(1,:)", & ! intent(in)
                     proc_name, & ! intent(in)
-                    err_code ) ! intent(inout)
+                    err_info ) ! intent(inout)
     call check_nan( pdf_params%corr_w_eta_2(1,:), "pdf_params%corr_w_eta_2(1,:)", & ! intent(in)
                     proc_name, & ! intent(in)
-                    err_code ) ! intent(inout)
+                    err_info ) ! intent(inout)
     call check_nan( pdf_params%corr_chi_eta_1(1,:), "pdf_params%corr_chi_eta_1(1,:)", & !intent(in)
                     proc_name, & ! intent(in)
-                    err_code ) ! intent(inout)
+                    err_info ) ! intent(inout)
     call check_nan( pdf_params%corr_chi_eta_2(1,:), "pdf_params%corr_chi_eta_2(1,:)", & !intent(in)
                     proc_name, & ! intent(in)
-                    err_code ) ! intent(inout)
+                    err_info ) ! intent(inout)
     call check_nan( pdf_params%alpha_thl(1,:), "pdf_params%alpha_thl(1,:)", & ! intent(in)
                     proc_name, & ! intent(in)
-                    err_code ) ! intent(inout)
+                    err_info ) ! intent(inout)
     call check_nan( pdf_params%alpha_rt(1,:), "pdf_params%alpha_rt(1,:)", & ! intent(in)
                     proc_name, & ! intent(in)
-                    err_code ) ! intent(inout)
+                    err_info ) ! intent(inout)
     call check_nan( pdf_params%ice_supersat_frac_1(1,:), & ! intent(in)
                     "pdf_params%ice_supersat_frac_1(1,:)", proc_name, & ! intent(in)
-                    err_code ) ! intent(inout)
+                    err_info ) ! intent(inout)
     call check_nan( pdf_params%ice_supersat_frac_2(1,:), & ! intent(in)
                     "pdf_params%ice_supersat_frac_2(1,:)", proc_name, & ! intent(in)
-                    err_code ) ! intent(inout)
+                    err_info ) ! intent(inout)
 
     if ( sclr_dim > 0 ) then
        do sclr = 1, sclr_dim, 1
           call check_nan( sclrpthvp(:,sclr),"sclrpthvp", & ! intent(in)
                           proc_name, & ! intent(in)
-                          err_code ) ! intent(inout)
+                          err_info ) ! intent(inout)
           call check_nan( sclrprcp(:,sclr), "sclrprcp", & ! intent(in)
                           proc_name, & ! intent(in)
-                          err_code ) ! intent(inout)
+                          err_info ) ! intent(inout)
           call check_nan( wpsclrprtp(:,sclr), "wpsclrprtp", & ! intent(in)
                           proc_name, & ! intent(in)
-                          err_code ) ! intent(inout)
+                          err_info ) ! intent(inout)
           call check_nan( wpsclrp2(:,sclr), "wpsclrp2", & ! intent(in)
                           proc_name, & ! intent(in)
-                          err_code ) ! intent(inout)
+                          err_info ) ! intent(inout)
           call check_nan( wpsclrpthlp(:,sclr), "wpsclrtlp", & ! intent(in)
                           proc_name, & ! intent(in)
-                          err_code ) ! intent(inout)
+                          err_info ) ! intent(inout)
           call check_nan( wp2sclrp(:,sclr), "wp2sclrp", & ! intent(in)
                           proc_name, & ! intent(in)
-                          err_code ) ! intent(inout)
+                          err_info ) ! intent(inout)
        enddo ! sclr = 1, sclr_dim, 1
     endif
 
@@ -375,7 +381,7 @@ module numerical_check
                sclrp2,                                                      & ! intent(in)
                sclrprtp, sclrpthlp, sclrm_forcing, edsclrm,                 & ! intent(in)
                edsclrm_forcing,                                             & ! intent(in)
-               err_code )                                                     ! intent(inout)
+               err_info )                                                     ! intent(inout)
 
 !
 ! Description:
@@ -394,6 +400,9 @@ module numerical_check
 
     use constants_clubb, only: &
         fstderr ! Variable
+
+    use err_info_type_module, only: &
+      err_info_type     ! Type
 
     implicit none
 
@@ -480,8 +489,8 @@ module numerical_check
       edsclrm_forcing    ! Eddy passive scalar forcing [units / s]
 
     ! Input/Output variables
-    integer, intent(inout) :: &
-      err_code         ! Result of the parameterization checks in this subroutine
+    type(err_info_type), intent(inout) :: &
+      err_info      ! err_info struct containing err_code and err_header
 
     ! Local Variables
     integer :: sclr, edsclr ! Loop iterator for the scalars
@@ -490,101 +499,101 @@ module numerical_check
 !-------- Input Nan Check ----------------------------------------------
 
     call check_nan( thlm_forcing, "thlm_forcing", prefix//proc_name, & ! intent(in)
-                    err_code ) ! intent(inout)
+                    err_info ) ! intent(inout)
     call check_nan( rtm_forcing,"rtm_forcing", prefix//proc_name, & ! intent(in)
-                    err_code ) ! intent(inout)
+                    err_info ) ! intent(inout)
     call check_nan( um_forcing,"um_forcing", prefix//proc_name, & ! intent(in)
-                    err_code ) ! intent(inout)
+                    err_info ) ! intent(inout)
     call check_nan( vm_forcing,"vm_forcing", prefix//proc_name, & ! intent(in)
-                    err_code ) ! intent(inout)
+                    err_info ) ! intent(inout)
 
     call check_nan( wm_zm, "wm_zm", prefix//proc_name, & ! intent(in)
-                    err_code ) ! intent(inout)
+                    err_info ) ! intent(inout)
     call check_nan( wm_zt, "wm_zt", prefix//proc_name, & ! intent(in)
-                    err_code ) ! intent(inout)
+                    err_info ) ! intent(inout)
     call check_nan( p_in_Pa, "p_in_Pa", prefix//proc_name, & ! intent(in)
-                    err_code ) ! intent(inout)
+                    err_info ) ! intent(inout)
     call check_nan( rho_zm, "rho_zm", prefix//proc_name, & ! intent(in)
-                    err_code ) ! intent(inout)
+                    err_info ) ! intent(inout)
     call check_nan( rho, "rho", prefix//proc_name, & ! intent(in)
-                    err_code ) ! intent(inout)
+                    err_info ) ! intent(inout)
     call check_nan( exner, "exner", prefix//proc_name, & ! intent(in)
-                    err_code ) ! intent(inout)
+                    err_info ) ! intent(inout)
     call check_nan( rho_ds_zm, "rho_ds_zm", prefix//proc_name, & ! intent(in)
-                    err_code ) ! intent(inout)
+                    err_info ) ! intent(inout)
     call check_nan( rho_ds_zt, "rho_ds_zt", prefix//proc_name, & ! intent(in)
-                    err_code ) ! intent(inout)
+                    err_info ) ! intent(inout)
     call check_nan( invrs_rho_ds_zm, "invrs_rho_ds_zm", prefix//proc_name, & ! intent(in)
-                    err_code ) ! intent(inout)
+                    err_info ) ! intent(inout)
     call check_nan( invrs_rho_ds_zt, "invrs_rho_ds_zt", prefix//proc_name, & ! intent(in)
-                    err_code ) ! intent(inout)
+                    err_info ) ! intent(inout)
     call check_nan( thv_ds_zm, "thv_ds_zm", prefix//proc_name, & ! intent(in)
-                    err_code ) ! intent(inout)
+                    err_info ) ! intent(inout)
     call check_nan( thv_ds_zt, "thv_ds_zt", prefix//proc_name, & ! intent(in)
-                    err_code ) ! intent(inout)
+                    err_info ) ! intent(inout)
 
     call check_nan( um, "um", prefix//proc_name, & ! intent(in)
-                    err_code ) ! intent(inout)
+                    err_info ) ! intent(inout)
     call check_nan( upwp, "upwp", prefix//proc_name, & ! intent(in)
-                    err_code ) ! intent(inout)
+                    err_info ) ! intent(inout)
     call check_nan( vm, "vm", prefix//proc_name, & ! intent(in)
-                    err_code ) ! intent(inout)
+                    err_info ) ! intent(inout)
     call check_nan( vpwp, "vpwp", prefix//proc_name, & ! intent(in)
-                    err_code ) ! intent(inout)
+                    err_info ) ! intent(inout)
     call check_nan( up2, "up2", prefix//proc_name, & ! intent(in)
-                    err_code ) ! intent(inout)
+                    err_info ) ! intent(inout)
     call check_nan( vp2, "vp2", prefix//proc_name, & ! intent(in)
-                    err_code ) ! intent(inout)
+                    err_info ) ! intent(inout)
     call check_nan( rtm, "rtm", prefix//proc_name, & ! intent(in)
-                    err_code ) ! intent(inout)
+                    err_info ) ! intent(inout)
     call check_nan( wprtp, "wprtp", prefix//proc_name, & ! intent(in)
-                    err_code ) ! intent(inout)
+                    err_info ) ! intent(inout)
     call check_nan( thlm, "thlm", prefix//proc_name, & ! intent(in)
-                    err_code ) ! intent(inout)
+                    err_info ) ! intent(inout)
     call check_nan( wpthlp, "wpthlp", prefix//proc_name, & ! intent(in)
-                    err_code ) ! intent(inout)
+                    err_info ) ! intent(inout)
     call check_nan( wp2, "wp2", prefix//proc_name, & ! intent(in)
-                    err_code ) ! intent(inout)
+                    err_info ) ! intent(inout)
     call check_nan( wp3, "wp3", prefix//proc_name, & ! intent(in)
-                    err_code ) ! intent(inout)
+                    err_info ) ! intent(inout)
     call check_nan( rtp2, "rtp2", prefix//proc_name, & ! intent(in)
-                    err_code ) ! intent(inout)
+                    err_info ) ! intent(inout)
     call check_nan( thlp2, "thlp2", prefix//proc_name, & ! intent(in)
-                    err_code ) ! intent(inout)
+                    err_info ) ! intent(inout)
     call check_nan( rtpthlp, "rtpthlp", prefix//proc_name, & ! intent(in)
-                    err_code ) ! intent(inout)
+                    err_info ) ! intent(inout)
 
     call check_nan( wpthlp_sfc, "wpthlp_sfc", prefix//proc_name, & ! intent(in)
-                    err_code ) ! intent(inout)
+                    err_info ) ! intent(inout)
     call check_nan( wprtp_sfc, "wprtp_sfc", prefix//proc_name, & ! intent(in)
-                    err_code ) ! intent(inout)
+                    err_info ) ! intent(inout)
     call check_nan( upwp_sfc, "upwp_sfc", prefix//proc_name, & ! intent(in)
-                    err_code ) ! intent(inout)
+                    err_info ) ! intent(inout)
     call check_nan( vpwp_sfc, "vpwp_sfc", prefix//proc_name, & ! intent(in)
-                    err_code ) ! intent(inout)
+                    err_info ) ! intent(inout)
     call check_nan( p_sfc, "p_sfc", prefix//proc_name, & ! intent(in)
-                    err_code ) ! intent(inout)
+                    err_info ) ! intent(inout)
 
     do sclr = 1, sclr_dim
 
       call check_nan( sclrm_forcing(:,sclr),"sclrm_forcing", & ! intent(in)
                       prefix//proc_name, & ! intent(in)
-                      err_code ) ! intent(inout) ) ! intent(in)
+                      err_info ) ! intent(inout) ) ! intent(in)
 
       call check_nan( wpsclrp_sfc(sclr),"wpsclrp_sfc", & ! intent(in)
                       prefix//proc_name, & ! intent(in)
-                      err_code ) ! intent(inout)
+                      err_info ) ! intent(inout)
 
       call check_nan( sclrm(:,sclr),"sclrm", prefix//proc_name, & ! intent(in)
-                      err_code ) ! intent(inout)
+                      err_info ) ! intent(inout)
       call check_nan( wpsclrp(:,sclr),"wpsclrp", prefix//proc_name, & ! intent(in)
-                      err_code ) ! intent(inout)
+                      err_info ) ! intent(inout)
       call check_nan( sclrp2(:,sclr),"sclrp2", prefix//proc_name, & ! intent(in)
-                      err_code ) ! intent(inout)
+                      err_info ) ! intent(inout)
       call check_nan( sclrprtp(:,sclr),"sclrprtp", prefix//proc_name, & ! intent(in)
-                      err_code ) ! intent(inout)
+                      err_info ) ! intent(inout)
       call check_nan( sclrpthlp(:,sclr),"sclrpthlp", prefix//proc_name, & ! intent(in)
-                      err_code ) ! intent(inout)
+                      err_info ) ! intent(inout)
 
     end do
 
@@ -592,64 +601,66 @@ module numerical_check
     do edsclr = 1, edsclr_dim
 
       call check_nan( edsclrm_forcing(:,edsclr),"edsclrm_forcing", prefix//proc_name, & ! intent(in)
-                      err_code ) ! intent(inout)
+                      err_info ) ! intent(inout)
 
       call check_nan( wpedsclrp_sfc(edsclr),"wpedsclrp_sfc", & ! intent(in)
                       prefix//proc_name, & ! intent(in)
-                      err_code ) ! intent(inout)
+                      err_info ) ! intent(inout)
 
       call check_nan( edsclrm(:,edsclr),"edsclrm", prefix//proc_name, & ! intent(in)
-                      err_code ) ! intent(inout)
+                      err_info ) ! intent(inout)
 
     enddo
 
 !---------------------------------------------------------------------
 
     if ( clubb_at_least_debug_level( 0 ) ) then
-        if ( err_code == clubb_fatal_error ) then
+        if ( any(err_info%err_code == clubb_fatal_error) ) then
             return
         end if
     end if
 
     call check_negative( rtm, 1, nzt, "rtm", prefix//proc_name, & ! intent(in)
-                         err_code ) ! intent(inout)
+                         err_info ) ! intent(inout)
     call check_negative( p_in_Pa, 1, nzt, "p_in_Pa", prefix//proc_name, & ! intent(in)
-                         err_code ) ! intent(inout)
+                         err_info ) ! intent(inout)
     call check_negative( rho, 1, nzt, "rho", prefix//proc_name, & ! intent(in)
-                         err_code ) ! intent(inout)
+                         err_info ) ! intent(inout)
     call check_negative( rho_zm, 1, nzm, "rho_zm", prefix//proc_name, & ! intent(in)
-                         err_code ) ! intent(inout)
+                         err_info ) ! intent(inout)
     call check_negative( exner, 1, nzt, "exner", prefix//proc_name, & ! intent(in)
-                         err_code ) ! intent(inout)
+                         err_info ) ! intent(inout)
     call check_negative( rho_ds_zm, 1, nzm, "rho_ds_zm", prefix//proc_name, & ! intent(in)
-                         err_code ) ! intent(inout)
+                         err_info ) ! intent(inout)
     call check_negative( rho_ds_zt, 1, nzt, "rho_ds_zt", prefix//proc_name, & ! intent(in)
-                         err_code ) ! intent(inout)
+                         err_info ) ! intent(inout)
     call check_negative( invrs_rho_ds_zm, 1, nzm, "invrs_rho_ds_zm", & ! intent(in)
                          prefix//proc_name, & ! intent(in)
-                         err_code ) ! intent(inout)
+                         err_info ) ! intent(inout)
     call check_negative( invrs_rho_ds_zt, 1, nzt, "invrs_rho_ds_zt", & ! intent(in)
                          prefix//proc_name, & ! intent(in)
-                         err_code ) ! intent(inout)
+                         err_info ) ! intent(inout)
     call check_negative( thv_ds_zm, 1, nzm, "thv_ds_zm", prefix//proc_name, & ! intent(in)
-                         err_code ) ! intent(inout)
+                         err_info ) ! intent(inout)
     call check_negative( thv_ds_zt, 1, nzt, "thv_ds_zt", prefix//proc_name, & ! intent(in)
-                         err_code ) ! intent(inout)
+                         err_info ) ! intent(inout)
     call check_negative( up2, 1, nzm, "up2", prefix//proc_name, & ! intent(in)
-                         err_code ) ! intent(inout)
+                         err_info ) ! intent(inout)
     call check_negative( vp2, 1, nzm, "vp2", prefix//proc_name, & ! intent(in)
-                         err_code ) ! intent(inout)
+                         err_info ) ! intent(inout)
     call check_negative( wp2, 1, nzm, "wp2", prefix//proc_name, & ! intent(in)
-                         err_code ) ! intent(inout)
+                         err_info ) ! intent(inout)
     call check_negative( thlm, 1, nzt, "thlm", prefix//proc_name, & ! intent(in)
-                         err_code ) ! intent(inout)
+                         err_info ) ! intent(inout)
     call check_negative( rtp2, 1, nzm, "rtp2", prefix//proc_name, & ! intent(in)
-                         err_code ) ! intent(inout)
+                         err_info ) ! intent(inout)
     call check_negative( thlp2, 1, nzm, "thlp2", prefix//proc_name, & ! intent(in)
-                         err_code ) ! intent(inout)
+                         err_info ) ! intent(inout)
 
-    if ( err_code == clubb_fatal_error .and. prefix == "beginning of " ) then
-        err_code = clubb_no_error   ! Negative value generated by host model, hence ignore error
+    if ( any(err_info%err_code == clubb_fatal_error) .and. prefix == "beginning of " ) then
+        ! Reset err_code (needs column nr!)
+        err_info%err_code = clubb_no_error   ! Negative value generated by host model,
+                                             ! hence ignore error
     end if
 
     ! Check the first levels for temperatures greater than 200K
@@ -667,7 +678,7 @@ module numerical_check
   subroutine sfc_varnce_check( sclr_dim, wp2_sfc, up2_sfc, vp2_sfc, thlp2_sfc, &
            rtp2_sfc, rtpthlp_sfc, &
            sclrp2_sfc, sclrprtp_sfc, sclrpthlp_sfc, &
-           err_code )
+           err_info )
 !
 !       Description:This subroutine determines if any of the output
 !       variables for the calc_surface_varnce subroutine carry values that
@@ -680,6 +691,9 @@ module numerical_check
 
     use clubb_precision, only: &
         core_rknd ! Variable(s)
+
+    use err_info_type_module, only: &
+      err_info_type     ! Type
 
     implicit none
 
@@ -707,38 +721,38 @@ module numerical_check
       sclrpthlp_sfc    ! Passive scalar theta_l covariance       [units K]
 
     ! Input/Output variables
-    integer, intent(inout) :: &
-      err_code         ! Result of the parameterization checks in this subroutine
+    type(err_info_type), intent(inout) :: &
+      err_info      ! err_info struct containing err_code and err_header
 !-----------------------------------------------------------------------
 
     ! ---- Begin Code ----
 
     call check_nan( wp2_sfc, "wp2_sfc", proc_name, & ! intent(in)
-                    err_code ) ! intent(inout)
+                    err_info ) ! intent(inout)
     call check_nan( up2_sfc, "up2_sfc", proc_name, & ! intent(in)
-                    err_code ) ! intent(inout)
+                    err_info ) ! intent(inout)
     call check_nan( vp2_sfc, "vp2_sfc", proc_name, & ! intent(in)
-                    err_code ) ! intent(inout)
+                    err_info ) ! intent(inout)
     call check_nan( thlp2_sfc, "thlp2_sfc", proc_name, & ! intent(in)
-                    err_code ) ! intent(inout)
+                    err_info ) ! intent(inout)
     call check_nan( rtp2_sfc, "rtp2_sfc", proc_name, & ! intent(in)
-                    err_code ) ! intent(inout)
+                    err_info ) ! intent(inout)
     call check_nan( rtpthlp_sfc, "rtpthlp_sfc", & ! intent(in)
                     proc_name, & ! intent(in)
-                    err_code ) ! intent(inout)
+                    err_info ) ! intent(inout)
 
     if ( sclr_dim > 0 ) then
       call check_nan( sclrp2_sfc, "sclrp2_sfc", & ! intent(in)
                       proc_name, & ! intent(in)
-                      err_code ) ! intent(inout)
+                      err_info ) ! intent(inout)
 
       call check_nan( sclrprtp_sfc, "sclrprtp_sfc", & ! intent(in)
                       proc_name, & ! intent(in)
-                      err_code ) ! intent(inout)
+                      err_info ) ! intent(inout)
 
       call check_nan( sclrpthlp_sfc, "sclrpthlp_sfc", & ! intent(in)
                       proc_name, & ! intent(in)
-                      err_code ) ! intent(inout)
+                      err_info ) ! intent(inout)
     end if
 
     return
@@ -747,7 +761,7 @@ module numerical_check
 !-----------------------------------------------------------------------
   subroutine rad_check( nzm, nzt, thlm, rcm, rtm, rim, &
                         cloud_frac, p_in_Pa, exner, rho_zm, &
-                        err_code )
+                        err_info )
 ! Description:
 !   Checks radiation input variables. If they are < 0 it reports
 !   to the console.
@@ -755,6 +769,9 @@ module numerical_check
 
     use clubb_precision, only: &
         core_rknd ! Variable(s)
+
+    use err_info_type_module, only: &
+      err_info_type     ! Type
 
     implicit none
 
@@ -780,8 +797,8 @@ module numerical_check
       rho_zm            ! Air Density                          [kg/m^3]
 
     ! Input/Output variables
-    integer, intent(inout) :: &
-      err_code          ! Result of the parameterization checks in this subroutine
+    type(err_info_type), intent(inout) :: &
+      err_info      ! err_info struct containing err_code and err_header
 
     ! Local variables
     real( kind = core_rknd ), dimension(nzt) :: rvm
@@ -791,23 +808,23 @@ module numerical_check
     rvm = rtm - rcm
 
     call check_negative( thlm, 1, nzt, "thlm", proc_name, & ! intent(in)
-                         err_code ) ! intent(inout)
+                         err_info ) ! intent(inout)
     call check_negative( rcm, 1, nzt, "rcm", proc_name, & ! intent(in)
-                         err_code ) ! intent(inout)
+                         err_info ) ! intent(inout)
     call check_negative( rtm, 1, nzt, "rtm", proc_name, & ! intent(in)
-                         err_code ) ! intent(inout)
+                         err_info ) ! intent(inout)
     call check_negative( rvm, 1, nzt, "rvm", proc_name, & ! intent(in)
-                         err_code ) ! intent(inout)
+                         err_info ) ! intent(inout)
     call check_negative( rim, 1, nzt, "rim", proc_name, & ! intent(in)
-                         err_code ) ! intent(inout)
+                         err_info ) ! intent(inout)
     call check_negative( cloud_frac, 1, nzt,"cloud_frac", proc_name, & ! intent(in)
-                         err_code ) ! intent(inout)
+                         err_info ) ! intent(inout)
     call check_negative( p_in_Pa, 1, nzt, "p_in_Pa", proc_name, & ! intent(in)
-                         err_code ) ! intent(inout)
+                         err_info ) ! intent(inout)
     call check_negative( exner, 1, nzt, "exner", proc_name, & ! intent(in)
-                         err_code ) ! intent(inout)
+                         err_info ) ! intent(inout)
     call check_negative( rho_zm, 1, nzm, "rho_zm", proc_name, & ! intent(in)
-                         err_code ) ! intent(inout)
+                         err_info ) ! intent(inout)
 
     return
 
@@ -1096,8 +1113,7 @@ module numerical_check
 
 
 !------------------------------------------------------------------------
-  subroutine check_negative_index &
-            ( var, varstart, varend, varname, operation, err_code )
+  subroutine check_negative_index( var, varstart, varend, varname, operation, err_info )
 !
 ! Description:
 !   Checks for negative values in the var array and reports
@@ -1113,6 +1129,9 @@ module numerical_check
     use error_code, only: &
         clubb_fatal_error              ! Constant
 
+    use err_info_type_module, only: &
+      err_info_type     ! Type
+
     implicit none
 
     real( kind = core_rknd ), intent(in) :: var(:)
@@ -1124,8 +1143,8 @@ module numerical_check
     operation      ! Procedure calling check_zero
 
     ! Input/Output variables
-    integer, intent(inout) :: &
-      err_code     ! Result of the parameterization checks in this subroutine
+    type(err_info_type), intent(inout) :: &
+      err_info      ! err_info struct containing err_code and err_header
 
     ! Local Variable
     integer :: k ! Loop iterator
@@ -1133,10 +1152,11 @@ module numerical_check
     do k = varstart, varend
 
       if ( var(k) < 0.0_core_rknd ) then
-
+        write(fstderr,*) err_info%err_header_global
         write(fstderr,*) varname, " < 0 in ", operation, &
                          " at k = ", k
-        err_code = clubb_fatal_error
+        ! Set to clubb_fatal_error in single col (col index not available!!)
+        err_info%err_code = clubb_fatal_error
 
       end if
 
@@ -1148,7 +1168,7 @@ module numerical_check
 
 
 !------------------------------------------------------------------------
-  subroutine check_nan_2d( var, varname, operation, err_code )
+  subroutine check_nan_2d( var, varname, operation, err_info )
 !
 !  Description:
 !    Checks for a NaN in the var array and reports it.
@@ -1164,6 +1184,9 @@ module numerical_check
     use error_code, only: &
         clubb_fatal_error              ! Constant
 
+    use err_info_type_module, only: &
+      err_info_type     ! Type
+
     implicit none
 
     ! External
@@ -1177,19 +1200,21 @@ module numerical_check
       operation   ! Procedure calling check_nan
 
     ! Input/Output variables
-    integer, intent(inout) :: &
-      err_code    ! Result of the parameterization checks in this subroutine
+    type(err_info_type), intent(inout) :: &
+      err_info      ! err_info struct containing err_code and err_header
 
     if ( is_nan_2d( var ) ) then
+      write(fstderr,*) err_info%err_header_global
       write(fstderr,*) varname, " is NaN in ",operation
-      err_code = clubb_fatal_error
+      ! Single col error, but col nr is not available
+      err_info%err_code = clubb_fatal_error
     end if
 
     return
   end subroutine check_nan_2d
 
 !-----------------------------------------------------------------------
-  subroutine check_nan_sclr( var, varname, operation, err_code )
+  subroutine check_nan_sclr( var, varname, operation, err_info )
 !
 ! Description:
 !   Checks for a NaN in the scalar var then reports it.
@@ -1204,6 +1229,9 @@ module numerical_check
     use error_code, only: &
         clubb_fatal_error              ! Constant
 
+    use err_info_type_module, only: &
+      err_info_type     ! Type
+
     implicit none
 
     ! External
@@ -1217,12 +1245,15 @@ module numerical_check
       operation     ! Procedure calling check_nan
 
     ! Input/Output variables
-    integer, intent(inout) :: &
-      err_code      ! Result of the parameterization checks in this subroutine
+    type(err_info_type), intent(inout) :: &
+      err_info      ! err_info struct containing err_code and err_header
+
 !--------------------------------------------------------------------
     if ( is_nan_sclr( var ) ) then
+      write(fstderr,*) err_info%err_header_global
       write(fstderr,*) varname, " is NaN in ",operation
-      err_code = clubb_fatal_error
+      ! Single col error, but col nr is not available
+      err_info%err_code = clubb_fatal_error
     end if
 
     return

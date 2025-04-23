@@ -248,6 +248,13 @@ module clubb_api_module
   use stats_clubb_utilities, only: &
     stats_finalize_api
 
+  use err_info_type_module, only: &
+    err_info_type,              & ! Type
+    init_err_info_api,          & ! Procedures
+    init_default_err_info_api,  &
+    set_err_info_values_api,    &
+    cleanup_err_info_api
+
   implicit none
 
   private
@@ -468,7 +475,14 @@ module clubb_api_module
   public &
    copy_single_pdf_params_to_multi, &
    copy_multi_pdf_params_to_single
-  
+
+  public &
+   err_info_type,                   &
+   init_err_info_api,               &
+   init_default_err_info_api,       &
+   set_err_info_values_api,         &
+   cleanup_err_info_api
+
   interface setup_pdf_parameters_api
     module procedure setup_pdf_parameters_api_single_col
     module procedure setup_pdf_parameters_api_multi_col
@@ -544,7 +558,7 @@ contains
                sclrm_trsport_only,  &  ! h1g, 2010-06-16    ! intent(inout)
 #endif
     sclrp2, sclrp3, sclrprtp, sclrpthlp, &                  ! intent(inout)
-    wpsclrp, edsclrm, err_code_api, &                       ! intent(inout)
+    wpsclrp, edsclrm, err_info_api, &                       ! intent(inout)
     rcm, cloud_frac, &                                      ! intent(inout)
     wpthvp, wp2thvp, rtpthvp, thlpthvp, &                   ! intent(inout)
     sclrpthvp, &                                            ! intent(inout)
@@ -805,7 +819,8 @@ contains
     real( kind = core_rknd ), intent(inout), dimension(gr%nzt,edsclr_dim) :: &
       edsclrm   ! Eddy passive scalar grid-mean (thermo. levels)   [units vary]
 
-    integer, intent(inout) :: err_code_api ! Diagnostic, for if some calculation goes amiss.
+    type(err_info_type), intent(inout) :: &
+      err_info_api          ! err_info struct containing err_code and err_header
 
     !--------------------------- Output Variables ---------------------------
     ! Variables that need to be output for use in other parts of the CLUBB
@@ -1354,7 +1369,7 @@ contains
       um_pert_col, vm_pert_col, upwp_pert_col, vpwp_pert_col, &                   ! intent(inout)
       pdf_params, pdf_params_zm, &                                                ! intent(inout)
       pdf_implicit_coefs_terms, &                                                 ! intent(inout)
-      err_code_api, &                                                             ! intent(inout)
+      err_info_api, &                                                             ! intent(inout)
 #ifdef GFDL
                RH_crit_col, & !h1g, 2010-06-16                                    ! intent(inout)
                do_liquid_only_in_clubb, &                                         ! intent(in)
@@ -1384,6 +1399,12 @@ contains
 #ifdef GFDL
     !$acc end data
 #endif
+
+    if ( any(err_info_api%err_code == clubb_fatal_error) ) then
+      write(fstderr,*) err_info_api%err_header_global
+      write(fstderr,*) "Fatal error advance_clubb_core in API module"
+      return
+    end if
 
     ! The following does not work for stats
     !     stats_zt = stats_zt_col(1)
@@ -1506,7 +1527,7 @@ contains
                sclrm_trsport_only,  &  ! h1g, 2010-06-16    ! intent(inout)
 #endif
     sclrp2, sclrp3, sclrprtp, sclrpthlp, &                  ! intent(inout)
-    wpsclrp, edsclrm, err_code_api, &                       ! intent(inout)
+    wpsclrp, edsclrm, err_info_api, &                       ! intent(inout)
     rcm, cloud_frac, &                                      ! intent(inout)
     wpthvp, wp2thvp, rtpthvp, thlpthvp, &                   ! intent(inout)
     sclrpthvp, &                                            ! intent(inout)
@@ -1763,7 +1784,8 @@ contains
     real( kind = core_rknd ), intent(inout), dimension(ngrdcol,nzt,edsclr_dim) :: &
     edsclrm   ! Eddy passive scalar mean (thermo. levels)   [units vary]
 
-    integer, intent(inout) :: err_code_api ! Diagnostic, for if some calculation goes amiss.
+    type(err_info_type), intent(inout) :: &
+      err_info_api          ! err_info struct containing err_code and err_header
 
     !------------------------ Output Variables ------------------------
     real( kind = core_rknd ), intent(out), dimension(ngrdcol,nzt) ::  &
@@ -1943,7 +1965,7 @@ contains
       um_pert, vm_pert, upwp_pert, vpwp_pert, &               ! intent(inout)
       pdf_params, pdf_params_zm, &                            ! intent(inout)
       pdf_implicit_coefs_terms, &                             ! intent(inout)
-      err_code_api, &                                         ! intent(inout)
+      err_info_api, &                                         ! intent(inout)
 #ifdef GFDL
                RH_crit, & !h1g, 2010-06-16                    ! intent(inout)
                do_liquid_only_in_clubb, &                     ! intent(in)
@@ -1973,6 +1995,11 @@ contains
 #ifdef GFDL
     !$acc end data
 #endif
+
+    if ( any(err_info_api%err_code == clubb_fatal_error) ) then
+      write(fstderr,*) err_info_api%err_header_global
+      write(fstderr,*) "Fatal error advance_clubb_core in API module"
+    end if
 
   end subroutine advance_clubb_core_api_multi_col
 
@@ -2211,20 +2238,20 @@ contains
   subroutine setup_grid_heights_api_single_col( &
     l_implemented, l_ascending_grid, &
     grid_type, deltaz, zm_init, momentum_heights,  &
-    gr, thermodynamic_heights )
+    gr, thermodynamic_heights, &
+    err_info_api )
 
-    use grid_class, only: & 
+    use grid_class, only: &
         grid, & ! Type
         setup_grid_heights
-    
+
     use error_code, only : &
-        clubb_no_error, &       ! Constant
         clubb_fatal_error       ! Constant
 
     implicit none
 
     ! Input Variables
-   
+
     type(grid), intent(inout) :: gr
 
     ! Flag to see if CLUBB is running on it's own,
@@ -2253,7 +2280,6 @@ contains
       deltaz,   & ! Vertical grid spacing                  [m]
       zm_init     ! Initial grid altitude (momentum level) [m]
 
-
     ! If the CLUBB parameterization is implemented in a host model, it needs to
     ! use the host model's momentum level altitudes and thermodynamic level
     ! altitudes.
@@ -2268,26 +2294,25 @@ contains
 
     real( kind = core_rknd ), intent(in), dimension(gr%nzt) ::  &
       thermodynamic_heights ! Thermodynamic level altitudes (input) [m]
-      
+
+    ! ------------------- InOut Variables -------------------
+
+    type(err_info_type), intent(inout) :: &
+      err_info_api          ! err_info struct containing err_code and err_header
+
     ! ------------------- Local Variables -------------------
-    
+
     real( kind = core_rknd ), dimension(1) ::  &
       deltaz_col,   & ! Vertical grid spacing                  [m]
       zm_init_col     ! Initial grid altitude (momentum level) [m]
-      
+
     real( kind = core_rknd ), dimension(1,gr%nzm) ::  &
       momentum_heights_col      ! Momentum level altitudes (input)      [m]
 
     real( kind = core_rknd ), dimension(1,gr%nzt) ::  &
       thermodynamic_heights_col ! Thermodynamic level altitudes (input) [m]
 
-    integer :: &
-      err_code_api  ! Local error code catching output of setup_grid_heights
-
     ! ------------------- Begin Code -------------------
-
-    ! Initialize err_code_api to "No error"
-    err_code_api = clubb_no_error
 
     deltaz_col(1) = deltaz
     zm_init_col(1) = zm_init
@@ -2299,9 +2324,12 @@ contains
       l_implemented, l_ascending_grid, & ! intent(in)
       grid_type, deltaz_col, zm_init_col, & ! intent(in)
       momentum_heights_col, thermodynamic_heights_col, & ! intent(in)
-      gr, err_code_api ) ! intent(inout)
+      gr, err_info_api ) ! intent(inout)
 
-    if ( err_code_api == clubb_fatal_error ) error stop "Error in CLUBB calling setup_grid_heights"
+    if ( any(err_info_api%err_code == clubb_fatal_error) ) then
+      write(fstderr, *) err_info_api%err_header_global
+      write(fstderr, *) "Error in CLUBB calling setup_grid_heights"
+    endif
 
   end subroutine setup_grid_heights_api_single_col
 
@@ -2313,14 +2341,14 @@ contains
       nzm, nzt, ngrdcol, &
       l_implemented, l_ascending_grid, &
       grid_type, deltaz, zm_init, momentum_heights,  &
-      gr, thermodynamic_heights )
+      gr, thermodynamic_heights, &
+      err_info_api )
 
-    use grid_class, only: & 
+    use grid_class, only: &
         grid, & ! Type
         setup_grid_heights
 
     use error_code, only : &
-        clubb_no_error, &       ! Constant
         clubb_fatal_error       ! Constant
 
     implicit none
@@ -2359,7 +2387,6 @@ contains
       deltaz,   & ! Vertical grid spacing                  [m]
       zm_init     ! Initial grid altitude (momentum level) [m]
 
-
     ! If the CLUBB parameterization is implemented in a host model, it needs to
     ! use the host model's momentum level altitudes and thermodynamic level
     ! altitudes.
@@ -2375,23 +2402,23 @@ contains
     real( kind = core_rknd ), intent(in), dimension(ngrdcol,nzt) ::  &
       thermodynamic_heights ! Thermodynamic level altitudes (input) [m]
 
-    ! ------------------- Local Variables -------------------
-    integer :: &
-      err_code_api  ! Local error code catching output of setup_grid_heights
+    ! ------------------- InOut Variables -------------------
+    type(err_info_type), intent(inout) :: &
+      err_info_api          ! err_info struct containing err_code and err_header
 
     ! ------------------- Begin Code -------------------
-
-    ! Initialize err_code_api to "No error"
-    err_code_api = clubb_no_error
 
     call setup_grid_heights( &
       nzm, nzt, ngrdcol, & ! intent(in)
       l_implemented, l_ascending_grid, & ! intent(in)
       grid_type, deltaz, zm_init, & ! intent(in)
       momentum_heights, thermodynamic_heights, & ! intent(in)
-      gr, err_code_api ) ! intent(inout)
+      gr, err_info_api ) ! intent(inout)
 
-    if ( err_code_api == clubb_fatal_error ) error stop "Error in CLUBB calling setup_grid_heights"
+    if ( any(err_info_api%err_code == clubb_fatal_error) ) then
+      write(fstderr, *) err_info_api%err_header_global
+      write(fstderr, *) "Error in CLUBB calling setup_grid_heights"
+    endif
 
   end subroutine setup_grid_heights_api_multi_col
 
@@ -2401,14 +2428,13 @@ contains
   subroutine setup_grid_api_single_col( nzmax, sfc_elevation, l_implemented, &
                                         l_ascending_grid, grid_type, deltaz, zm_init, zm_top, &
                                         momentum_heights, thermodynamic_heights, &
-                                        gr )
+                                        gr, err_info_api )
 
     use grid_class, only: &
         grid, & ! Type
         setup_grid
 
     use error_code, only : &
-        clubb_no_error, &       ! Constant
         clubb_fatal_error       ! Constant
 
     implicit none
@@ -2439,6 +2465,11 @@ contains
     real( kind = core_rknd ), intent(in), dimension(nzmax-1) :: &
       thermodynamic_heights ! Thermodynamic level altitudes (input) [m]
 
+    ! ------------------- InOut Variables -------------------
+    type(err_info_type), intent(inout) :: &
+      err_info_api          ! err_info struct containing err_code and err_header
+
+    ! ------------------- Local Variables -------------------
     real( kind = core_rknd ), dimension(1) :: &
       sfc_elevation_col  ! Elevation of ground level    [m AMSL]
 
@@ -2453,13 +2484,7 @@ contains
     real( kind = core_rknd ), dimension(1,nzmax-1) :: &
       thermodynamic_heights_col ! Thermodynamic level altitudes (input) [m]
 
-    ! Error variable to catch possible errors from setup_grid
-    integer :: &
-      err_code_api
     ! ------------------- Begin Code -------------------
-
-    ! Initialize err_code_api to "No error"
-    err_code_api = clubb_no_error
 
     sfc_elevation_col(1)            = sfc_elevation
     deltaz_col(1)                   = deltaz
@@ -2468,12 +2493,15 @@ contains
     momentum_heights_col(1,:)       = momentum_heights
     thermodynamic_heights_col(1,:)  = thermodynamic_heights
 
-    call setup_grid( nzmax, 1, sfc_elevation_col, l_implemented,                       & ! intent(in)
-                     l_ascending_grid, grid_type, deltaz_col, zm_init_col, zm_top_col, & ! intent(in)
-                     momentum_heights_col, thermodynamic_heights_col,                  & ! intent(in)
-                     gr, err_code_api )                                                  ! intent(inout)
+    call setup_grid( nzmax, 1, sfc_elevation_col, l_implemented,                  & ! intent(in)
+                     l_ascending_grid, grid_type, deltaz_col, zm_init_col,        & ! intent(in)
+                     zm_top_col, momentum_heights_col, thermodynamic_heights_col, & ! intent(in)
+                     gr, err_info_api )                                             ! intent(inout)
 
-    if ( err_code_api == clubb_fatal_error ) error stop "Error in CLUBB calling setup_grid"
+    if ( any(err_info_api%err_code == clubb_fatal_error) ) then
+      write(fstderr, *) err_info_api%err_header_global
+      write(fstderr, *) "Error in CLUBB calling setup_grid"
+    endif
 
   end subroutine setup_grid_api_single_col
 
@@ -2483,14 +2511,13 @@ contains
   subroutine setup_grid_api_multi_col( nzmax, ngrdcol, sfc_elevation, l_implemented, &
                                        l_ascending_grid, grid_type, deltaz, zm_init, zm_top, &
                                        momentum_heights, thermodynamic_heights, &
-                                       gr )
+                                       gr, err_info_api )
 
     use grid_class, only: &
         grid, & ! Type
         setup_grid
 
     use error_code, only : &
-        clubb_no_error, &       ! Constant
         clubb_fatal_error       ! Constant
 
     implicit none
@@ -2522,21 +2549,21 @@ contains
     real( kind = core_rknd ), intent(in), dimension(ngrdcol,nzmax-1) :: &
       thermodynamic_heights ! Thermodynamic level altitudes (input) [m]
 
-    ! Error variable to catch possible errors from setup_grid
-    integer :: &
-      err_code_api
+    ! ------------------- InOut Variables -------------------
+    type(err_info_type), intent(inout) :: &
+      err_info_api          ! err_info struct containing err_code and err_header
 
     ! ------------------- Begin Code -------------------
-
-    ! Initialize err_code_api to "No error"
-    err_code_api = clubb_no_error
 
     call setup_grid( nzmax, ngrdcol, sfc_elevation, l_implemented,         & ! intent(in)
                      l_ascending_grid, grid_type, deltaz, zm_init, zm_top, & ! intent(in)
                      momentum_heights, thermodynamic_heights,              & ! intent(in)
-                     gr, err_code_api )                                      ! intent(inout)
+                     gr, err_info_api )                                      ! intent(inout)
 
-    if ( err_code_api == clubb_fatal_error ) error stop "Error in CLUBB calling setup_grid"
+    if ( any(err_info_api%err_code == clubb_fatal_error) ) then
+      write(fstderr, *) err_info_api%err_header_global
+      write(fstderr, *) "Error in CLUBB calling setup_grid"
+    endif
 
   end subroutine setup_grid_api_multi_col
 
@@ -2605,7 +2632,7 @@ contains
   subroutine setup_parameters_api_single_col( &
              deltaz, clubb_params, gr, grid_type, &
              l_prescribed_avg_deltaz, &
-             lmin, nu_vert_res_dep, err_code_api )
+             lmin, nu_vert_res_dep, err_info_api )
 
     use parameters_tunable, only: &
         setup_parameters
@@ -2647,32 +2674,38 @@ contains
     type(nu_vertical_res_dep), intent(out) :: &
       nu_vert_res_dep    ! Vertical resolution dependent nu values
 
-    integer, intent(out) :: &
-      err_code_api ! Error condition
+    ! ------------------- InOut Variables -------------------
+    type(err_info_type), intent(inout) :: &
+      err_info_api          ! err_info struct containing err_code and err_header
 
+    ! ------------------- Local Variables -------------------
     real( kind = core_rknd ), dimension(1) ::  &
       deltaz_col  ! Change per height level        [m]
 
-    ! Initialize err_code_api to "No error"
-    err_code_api = clubb_no_error
+    ! ------------------- Begin Code -------------------
 
     deltaz_col(1) = deltaz
 
     call setup_parameters( &
               deltaz_col, clubb_params, gr, 1, grid_type, &
               l_prescribed_avg_deltaz, &
-              lmin, nu_vert_res_dep, err_code_api )
+              lmin, nu_vert_res_dep, err_info_api )
+
+    if ( any(err_info_api%err_code == clubb_fatal_error) ) then
+      write(fstderr, *) err_info_api%err_header_global
+      write(fstderr, *) "Error in CLUBB calling setup_parameters"
+    endif
 
   end subroutine setup_parameters_api_single_col
-  
+
   !================================================================================================
   ! setup_parameters - Sets up model parameters.
   !================================================================================================
-  
+
   subroutine setup_parameters_api_multi_col( &
              deltaz, clubb_params, gr, ngrdcol, grid_type, &
              l_prescribed_avg_deltaz, &
-             lmin, nu_vert_res_dep, err_code_api )
+             lmin, nu_vert_res_dep, err_info_api )
 
     use parameters_tunable, only: &
         setup_parameters
@@ -2718,16 +2751,21 @@ contains
     type(nu_vertical_res_dep), intent(out) :: &
       nu_vert_res_dep    ! Vertical resolution dependent nu values
 
-    integer, intent(out) :: &
-      err_code_api ! Error condition
+    ! ------------------- InOut Variables -------------------
+    type(err_info_type), intent(inout) :: &
+      err_info_api          ! err_info struct containing err_code and err_header
 
-    ! Initialize err_code_api to "No error"
-    err_code_api = clubb_no_error
+    ! ------------------- Begin Code -------------------
 
     call setup_parameters( &
               deltaz, clubb_params, gr, ngrdcol, grid_type, &
               l_prescribed_avg_deltaz, &
-              lmin, nu_vert_res_dep, err_code_api )
+              lmin, nu_vert_res_dep, err_info_api )
+
+    if ( any(err_info_api%err_code == clubb_fatal_error) ) then
+      write(fstderr, *) err_info_api%err_header_global
+      write(fstderr, *) "Error in CLUBB calling setup_parameters"
+    endif
 
   end subroutine setup_parameters_api_multi_col
 
@@ -3162,13 +3200,13 @@ contains
     l_const_Nc_in_cloud, &                      ! Intent(in)
     l_fix_w_chi_eta_correlations, &             ! Intent(in)
     stats_metadata, &                           ! Intent(in)
-    stats_zt, stats_zm, stats_sfc, &            ! intent(inout)
+    stats_zt, stats_zm, stats_sfc, err_info_api, & ! intent(inout)
     hydrometp2, &                               ! Intent(inout)
     mu_x_1_n, mu_x_2_n, &                       ! Intent(out)
     sigma_x_1_n, sigma_x_2_n, &                 ! Intent(out)
     corr_array_1_n, corr_array_2_n, &           ! Intent(out)
     corr_cholesky_mtx_1, corr_cholesky_mtx_2, & ! Intent(out)
-    precip_fracs,  &                            ! Intent(out)
+    precip_fracs, &                             ! Intent(inout)
     hydromet_pdf_params )                       ! Intent(out)
 
     use setup_clubb_pdf_params, only : &
@@ -3178,7 +3216,6 @@ contains
         nparams    ! Variable(s)
 
     use error_code, only : &
-        clubb_no_error, &   ! Constant
         clubb_fatal_error   ! Constant
 
     implicit none
@@ -3256,6 +3293,13 @@ contains
     real( kind = core_rknd ), dimension(nzm,hydromet_dim), intent(inout) :: &
       hydrometp2    ! Variance of a hydrometeor (overall) (m-levs.)   [units^2]
 
+    ! This is only an output, but it contains allocated arrays, so we need to treat it as inout
+    type(precipitation_fractions), intent(inout) :: &
+      precip_fracs           ! Precipitation fractions      [-]
+
+    type(err_info_type), intent(inout) :: &
+      err_info_api          ! err_info struct containing err_code and err_header
+
     !----------------------- Output Variables -----------------------
     real( kind = core_rknd ), dimension(nzt,pdf_dim), intent(out) :: &
       mu_x_1_n,    & ! Mean array (normal space): PDF vars. (comp. 1) [un. vary]
@@ -3273,13 +3317,9 @@ contains
       corr_cholesky_mtx_1, & ! Transposed corr. cholesky matrix, 1st comp. [-]
       corr_cholesky_mtx_2    ! Transposed corr. cholesky matrix, 2nd comp. [-]
 
-    ! This is only an output, but it contains allocated arrays, so we need to treat it as inout
-    type(precipitation_fractions), intent(inout) :: &
-      precip_fracs           ! Precipitation fractions      [-]
-
     type(hydromet_pdf_parameter), dimension(nzt), optional, intent(out) :: &
       hydromet_pdf_params    ! Hydrometeor PDF parameters        [units vary]
-      
+
     !----------------------- Local Variables -----------------------
     real( kind = core_rknd ), dimension(1,nzt) :: &
       Nc_in_cloud_col,       & ! Mean (in-cloud) cloud droplet conc.       [num/kg]
@@ -3322,13 +3362,7 @@ contains
       stats_zm_col, &
       stats_sfc_col
 
-    integer :: &
-      err_code_api  ! Local error code catching output of setup_pdf_parameters
-
     ! ------------------- Begin Code -------------------
-
-    ! Initialize err_code_api to "No error"
-    err_code_api = clubb_no_error
 
     Nc_in_cloud_col(1,:) = Nc_in_cloud
     cloud_frac_col(1,:) = cloud_frac
@@ -3358,7 +3392,7 @@ contains
       l_const_Nc_in_cloud, &                                  ! Intent(in)
       l_fix_w_chi_eta_correlations, &                         ! Intent(in)
       stats_metadata, &                                       ! Intent(in)
-      stats_zt_col, stats_zm_col, stats_sfc_col, err_code_api, &  ! Intent(inout)
+      stats_zt_col, stats_zm_col, stats_sfc_col, err_info_api, &  ! Intent(inout)
       hydrometp2_col, &                                       ! Intent(out)
       mu_x_1_n_col, mu_x_2_n_col, &                           ! Intent(out)
       sigma_x_1_n_col, sigma_x_2_n_col, &                     ! Intent(out)
@@ -3367,7 +3401,11 @@ contains
       precip_fracs, &                                         ! Intent(inout)
       hydromet_pdf_params_col )                               ! Optional(out)
 
-    if ( err_code_api == clubb_fatal_error ) error stop "Error in CLUBB calling setup_pdf_parameters"
+    if ( any(err_info_api%err_code == clubb_fatal_error) ) then
+      write(fstderr, *) err_info_api%err_header_global
+      write(fstderr, *) "Error in CLUBB calling setup_pdf_parameters"
+      return
+    endif
 
     ! The following does not work for stats
     !     stats_zt = stats_zt_col(1)
@@ -3417,7 +3455,7 @@ contains
     l_const_Nc_in_cloud, &                      ! Intent(in)
     l_fix_w_chi_eta_correlations, &             ! Intent(in)
     stats_metadata, &                           ! Intent(in)
-    stats_zt, stats_zm, stats_sfc, &            ! Intent(inout)
+    stats_zt, stats_zm, stats_sfc, err_info_api, & ! Intent(inout)
     hydrometp2, &                               ! Intent(inout)
     mu_x_1_n, mu_x_2_n, &                       ! Intent(out)
     sigma_x_1_n, sigma_x_2_n, &                 ! Intent(out)
@@ -3432,7 +3470,6 @@ contains
         nparams    ! Variable(s)
 
     use error_code, only : &
-        clubb_no_error, &     ! Constant
         clubb_fatal_error   ! Constant
 
     implicit none
@@ -3511,6 +3548,13 @@ contains
       stats_zm, &
       stats_sfc
 
+    ! This is only an output, but it contains allocated arrays, so we need to treat it as inout
+    type(precipitation_fractions), intent(inout) :: &
+      precip_fracs           ! Precipitation fractions      [-]
+
+    type(err_info_type), intent(inout) :: &
+      err_info_api          ! err_info struct containing err_code and err_header
+
     ! Output Variables
     real( kind = core_rknd ), dimension(ngrdcol,nzt,pdf_dim), intent(out) :: &
       mu_x_1_n,    & ! Mean array (normal space): PDF vars. (comp. 1) [un. vary]
@@ -3530,20 +3574,8 @@ contains
 
     type(hydromet_pdf_parameter), dimension(ngrdcol,nzt), optional, intent(out) :: &
       hydromet_pdf_params    ! Hydrometeor PDF parameters        [units vary]
-      
-    ! This is only an output, but it contains allocated arrays, so we need to treat it as inout
-    type(precipitation_fractions), intent(inout) :: &
-      precip_fracs           ! Precipitation fractions      [-]
-
-    !----------------------- Local Variables -----------------------
-
-    integer :: &
-      err_code_api  ! Local error code catching output of setup_pdf_parameters
 
     ! ------------------- Begin Code -------------------
-
-    ! Initialize err_code_api to "No error"
-    err_code_api = clubb_no_error
 
     call setup_pdf_parameters( gr, &                  ! intent(in)
       nzm, nzt, ngrdcol, pdf_dim, hydromet_dim, dt, & ! Intent(in)
@@ -3561,7 +3593,7 @@ contains
       l_const_Nc_in_cloud, &                          ! Intent(in)
       l_fix_w_chi_eta_correlations, &                 ! Intent(in)
       stats_metadata, &                               ! Intent(in)
-      stats_zt, stats_zm, stats_sfc, err_code_api, &  ! intent(inout)
+      stats_zt, stats_zm, stats_sfc, err_info_api, &  ! intent(inout)
       hydrometp2, &                                   ! Intent(out)
       mu_x_1_n, mu_x_2_n, &                           ! Intent(out)
       sigma_x_1_n, sigma_x_2_n, &                     ! Intent(out)
@@ -3570,7 +3602,10 @@ contains
       precip_fracs, &                                 ! Intent(inout)
       hydromet_pdf_params )                           ! Optional(out)
 
-    if ( err_code_api == clubb_fatal_error ) error stop "Error in CLUBB calling setup_pdf_parameters"
+    if ( any(err_info_api%err_code == clubb_fatal_error) ) then
+      write(fstderr, *) err_info_api%err_header_global
+      write(fstderr, *) "Error in CLUBB calling setup_pdf_parameters"
+    endif
 
   end subroutine setup_pdf_parameters_api_multi_col
 
@@ -3578,10 +3613,11 @@ contains
   ! stats_end_timestep - Calls statistics to be written to the output format.
   !================================================================================================
 
-  subroutine stats_end_timestep_api( stats_metadata, & 
+  subroutine stats_end_timestep_api( stats_metadata, &
                                      stats_zt, stats_zm, stats_sfc, &
                                      stats_lh_zt, stats_lh_sfc, &
-                                     stats_rad_zt, stats_rad_zm &
+                                     stats_rad_zt, stats_rad_zm, &
+                                     err_info_api &
                                    )
 
     use stats_clubb_utilities, only : stats_end_timestep
@@ -3592,6 +3628,7 @@ contains
     type (stats_metadata_type), intent(in) :: &
       stats_metadata
 
+    ! Input/Output Variables
     type(stats), intent(inout) :: &
       stats_zt, &
       stats_zm, &
@@ -3601,24 +3638,23 @@ contains
       stats_rad_zt, &
       stats_rad_zm
 
-    !----------------------- Local Variables -----------------------
-
-    integer :: &
-      err_code_api  ! Local error code catching output of stats_end_timestep
+    type(err_info_type), intent(inout) :: &
+      err_info_api          ! err_info struct containing err_code and err_header
 
     ! ------------------- Begin Code -------------------
-
-    ! Initialize err_code_api to "No error"
-    err_code_api = clubb_no_error
 
     call stats_end_timestep( stats_metadata,      & ! intent(in)
                              stats_zt, stats_zm, stats_sfc,     & ! intent(inout)
                              stats_lh_zt, stats_lh_sfc,         & ! intent(inout)
                              stats_rad_zt, stats_rad_zm,        & ! intent(inout)
-                             err_code_api                       & ! intent(inout)
+                             err_info_api                       & ! intent(inout)
                            )
 
-    if ( err_code_api == clubb_fatal_error ) error stop "Error in CLUBB calling stats_end_timestep"
+    if ( any(err_info_api%err_code == clubb_fatal_error) ) then
+      write(fstderr, *) err_info_api%err_header_global
+      write(fstderr, *) "Error in CLUBB calling stats_end_timestep"
+      return
+    endif
 
   end subroutine stats_end_timestep_api
 

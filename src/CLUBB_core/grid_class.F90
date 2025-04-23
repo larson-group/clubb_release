@@ -277,7 +277,7 @@ module grid_class
   subroutine setup_grid( nzmax, ngrdcol, sfc_elevation, l_implemented,         &
                          l_ascending_grid, grid_type, deltaz, zm_init, zm_top, &
                          momentum_heights, thermodynamic_heights,              &
-                         gr, err_code )
+                         gr, err_info )
 
     ! Description:
     !   Grid Constructor
@@ -293,11 +293,13 @@ module grid_class
 
     use error_code, only: &
         clubb_at_least_debug_level, &   ! Procedure
-        clubb_fatal_error, &            ! Constant
-        err_header                      ! String
+        clubb_fatal_error               ! Constant
 
     use clubb_precision, only: &
         core_rknd ! Variable(s)
+
+    use err_info_type_module, only: &
+      err_info_type        ! Type
 
     implicit none
 
@@ -358,8 +360,8 @@ module grid_class
       thermodynamic_heights ! Thermodynamic level altitudes (input) [m]
 
     ! InOut Variables
-    integer, intent(inout) :: &
-      err_code
+    type(err_info_type), intent(inout) :: &
+      err_info        ! err_info struct containing err_code and err_header
 
     ! Local Variables
     integer :: &
@@ -439,8 +441,11 @@ module grid_class
 
         if( thermodynamic_heights(1,k) <= zm_init(1) ) then
 
-          write(fstderr,*) err_header, "Stretched zt grid cannot fulfill zm_init requirement"
-          err_code = clubb_fatal_error
+          write(fstderr, *) err_info%err_header(1)
+          write(fstderr, *) "Stretched zt grid cannot fulfill zm_init requirement"
+          write(fstderr, *) "It is recommended to check the zm grid for all columns of the chunk"
+          ! General error -> set all entries to clubb_fatal_error
+          err_info%err_code = clubb_fatal_error
           return
 
         else
@@ -480,8 +485,11 @@ module grid_class
 
         if( zm_top(1) < thermodynamic_heights(1,k) ) then
 
-          write(fstderr,*) err_header, "Stretched zt grid cannot fulfill zm_top requirement"
-          err_code = clubb_fatal_error
+          write(fstderr, *) err_info%err_header(1)
+          write(fstderr, *) "Stretched zt grid cannot fulfill zm_top requirement"
+          write(fstderr, *) "It is recommended to check the zt grid for all columns of the chunk"
+          ! General error -> set all entries to clubb_fatal_error
+          err_info%err_code = clubb_fatal_error
           return
 
         else
@@ -536,8 +544,11 @@ module grid_class
 
         if( momentum_heights(1,k) < zm_init(1) ) then
 
-          write(fstderr,*) err_header, "Stretched zm grid cannot fulfill zm_init requirement"
-          err_code = clubb_fatal_error
+          write(fstderr, *) err_info%err_header(1)
+          write(fstderr, *) "Stretched zm grid cannot fulfill zm_init requirement"
+          write(fstderr, *) "It is recommended to check the zm grid for all columns of the chunk"
+          ! General error -> set all entries to clubb_fatal_error
+          err_info%err_code = clubb_fatal_error
           return
 
         else
@@ -577,8 +588,11 @@ module grid_class
 
         if ( momentum_heights(1,k) > zm_top(1) ) then
 
-          write(fstderr,*) err_header, "Stretched zm grid cannot fulfill zm_top requirement"
-          err_code = clubb_fatal_error
+          write(fstderr, *) err_info%err_header(1)
+          write(fstderr, *) "Stretched zm grid cannot fulfill zm_top requirement"
+          write(fstderr, *) "It is recommended to check the zm grid for all columns of the chunk"
+          ! General error -> set all entries to clubb_fatal_error
+          err_info%err_code = clubb_fatal_error
           return
 
         else
@@ -619,8 +633,10 @@ module grid_class
               stat=ierr )
 
     if ( ierr /= 0 ) then
-      write(fstderr,*) err_header, "In setup_grid: allocation of grid variables failed."
-      err_code = clubb_fatal_error
+      write(fstderr,*) err_info%err_header_global
+      write(fstderr,*) "In setup_grid: allocation of grid variables failed."
+      ! General error -> set all entries to clubb_fatal_error
+      err_info%err_code = clubb_fatal_error
       return
     end if
 
@@ -632,17 +648,19 @@ module grid_class
                   grid_type, deltaz, zm_init, & ! intent(in)
                   momentum_heights(:,begin_height_idx_zm:end_height_idx_zm),  & ! intent(in) 
                   thermodynamic_heights(:,begin_height_idx_zt:end_height_idx_zt), & ! intent(in)
-                  gr, err_code ) ! intent(inout)
+                  gr, err_info ) ! intent(inout)
 
     do i = 1, ngrdcol
       if ( sfc_elevation(i) > gr%zm(i,1) ) then
-        write(fstderr,*) err_header, "The altitude of the lowest momentum level, " &
+        write(fstderr,*) err_info%err_header(i)
+        write(fstderr,*) "The altitude of the lowest momentum level, " &
                          // "gr%zm(1,1), must be at or above the altitude of " &
                          // "the surface, sfc_elevation.  The lowest model " &
                          // "momentum level cannot be below the surface."
         write(fstderr,*) "Altitude of lowest momentum level =", gr%zm(i,1)
         write(fstderr,*) "Altitude of the surface =", sfc_elevation(i)
-        err_code = clubb_fatal_error
+        ! Column error -> set ith entry to clubb_fatal_error
+        err_info%err_code(i) = clubb_fatal_error
         return
       endif
     end do
@@ -693,7 +711,7 @@ module grid_class
                                  l_implemented, l_ascending_grid, &
                                  grid_type, deltaz, zm_init, &
                                  momentum_heights, thermodynamic_heights, &
-                                 gr, err_code )
+                                 gr, err_info )
 
     ! Description:
     !   Sets the heights and interpolation weights of the column.
@@ -711,8 +729,10 @@ module grid_class
         core_rknd  ! Variable(s)
 
     use error_code, only: &
-        clubb_fatal_error, &            ! Constant
-        err_header                      ! String
+        clubb_fatal_error               ! Constant
+
+    use err_info_type_module, only: &
+      err_info_type        ! Type
 
     implicit none
 
@@ -767,8 +787,8 @@ module grid_class
       thermodynamic_heights ! Thermodynamic level altitudes (input) [m]
 
     ! InOut Variables
-    integer, intent(inout) :: &
-      err_code
+    type(err_info_type), intent(inout) :: &
+      err_info        ! err_info struct containing err_code and err_header
 
     integer :: k, i
 
@@ -882,9 +902,11 @@ module grid_class
       else
 
         ! Invalid grid type.
-        write(fstderr,*) err_header, "Invalid grid type: ", grid_type, & 
+        write(fstderr,*) err_info%err_header_global
+        write(fstderr,*) "Invalid grid type: ", grid_type, & 
                          ".  Valid options are 1, 2, or 3."
-        err_code = clubb_fatal_error
+        ! General error -> set all entries to clubb_fatal_error
+        err_info%err_code = clubb_fatal_error
         return
 
       endif
@@ -1026,7 +1048,7 @@ module grid_class
                                 file_unit, &
                                 momentum_heights, & 
                                 thermodynamic_heights, &
-                                err_code )
+                                err_info )
 
     ! Description:
     ! This subroutine is used foremost in cases where the grid_type corresponds
@@ -1047,8 +1069,10 @@ module grid_class
         core_rknd ! Variable(s)
 
     use error_code, only: &
-        clubb_fatal_error, &            ! Constant
-        err_header                      ! String
+        clubb_fatal_error               ! Constant
+
+    use err_info_type_module, only: &
+      err_info_type        ! Type
 
     implicit none
 
@@ -1076,8 +1100,8 @@ module grid_class
       file_unit   ! Unit number for zt_grid_fname & zm_grid_fname (based on the OpenMP thread)
 
     ! InOut Variables.
-    integer, intent(inout) :: &
-      err_code
+    type(err_info_type), intent(inout) :: &
+      err_info        ! err_info struct containing err_code and err_header
 
     ! Output Variables.
 
@@ -1130,17 +1154,19 @@ module grid_class
       ! As a way of error checking, make sure that there isn't any file entry
       ! for either momentum level altitudes or thermodynamic level altitudes.
       if ( zm_grid_fname /= '' ) then
-        write(fstderr,*) err_header, & 
-           "An evenly-spaced grid has been selected. " & 
-           // " Please reset zm_grid_fname to ''."
-        err_code = clubb_fatal_error
+        write(fstderr,*) err_info%err_header_global
+        write(fstderr,*) "An evenly-spaced grid has been selected. " & 
+                         // " Please reset zm_grid_fname to ''."
+        ! General error -> set all entries to clubb_fatal_error
+        err_info%err_code = clubb_fatal_error
         return
       endif
       if ( zt_grid_fname /= '' ) then
-        write(fstderr,*) err_header, & 
-           "An evenly-spaced grid has been selected. " & 
-           // " Please reset zt_grid_fname to ''."
-        err_code = clubb_fatal_error
+        write(fstderr,*) err_info%err_header_global
+        write(fstderr,*) "An evenly-spaced grid has been selected. " & 
+                         // " Please reset zt_grid_fname to ''."
+        ! General error -> set all entries to clubb_fatal_error
+        err_info%err_code = clubb_fatal_error
         return
       endif
 
@@ -1155,11 +1181,12 @@ module grid_class
       ! As a way of error checking, make sure that there isn't any file entry
       ! for momentum level altitudes.
       if ( zm_grid_fname /= '' ) then
-        write(fstderr,*) err_header, & 
-           "Thermodynamic level altitudes have been selected " & 
-           // "for use in a stretched (unevenly-spaced) grid. " & 
-           // " Please reset zm_grid_fname to ''."
-        err_code = clubb_fatal_error
+        write(fstderr,*) err_info%err_header_global
+        write(fstderr,*) "Thermodynamic level altitudes have been selected " & 
+                         // "for use in a stretched (unevenly-spaced) grid. " & 
+                         // " Please reset zm_grid_fname to ''."
+        ! General error -> set all entries to clubb_fatal_error
+        err_info%err_code = clubb_fatal_error
         return
       endif
 
@@ -1176,9 +1203,9 @@ module grid_class
            generic_input_item
         if ( input_status < 0 ) exit   ! end of file indicator
         if ( input_status > 0 ) then
-          write(fstderr,*) err_header, &  ! error reading input
-             "Error reading thermodynamic level input file."
-          err_code = clubb_fatal_error
+          write(fstderr,*) "Error reading thermodynamic level input file."
+          ! General error -> set all entries to clubb_fatal_error
+          err_info%err_code = clubb_fatal_error
           exit
         end if
         zt_level_count = zt_level_count + 1
@@ -1188,22 +1215,26 @@ module grid_class
       close( unit=file_unit )
 !$omp end critical
       
-      if ( err_code == clubb_fatal_error ) return
+      if ( any(err_info%err_code == clubb_fatal_error) ) then
+        write(fstderr,*) err_info%err_header_global     ! error reading input
+        return
+      endif
 
       ! Check that the number of thermodynamic grid altitudes in the input file
       ! matches the declared number of CLUBB grid levels (nzmax).
       if ( zt_level_count /= nzmax-1 ) then
-        write(fstderr,*) err_header, &
-           "The number of thermodynamic grid altitudes " & 
-           // "listed in file " // trim(zt_grid_fname)  & 
-           // " does not match the number of CLUBB grid " & 
-           // "levels specified in the model.in file."
+        write(fstderr,*) err_info%err_header_global
+        write(fstderr,*) "The number of thermodynamic grid altitudes " & 
+                         // "listed in file " // trim(zt_grid_fname)  & 
+                         // " does not match the number of CLUBB grid " & 
+                         // "levels specified in the model.in file."
         write(fstderr,*) & 
            "Number of thermodynamic grid altitudes listed:  ", & 
            zt_level_count
         write(fstderr,*) & 
            "Number of CLUBB thermo grid levels specified (nzmax-1):  ", nzmax-1
-        err_code = clubb_fatal_error
+        ! General error -> set all entries to clubb_fatal_error
+        err_info%err_code = clubb_fatal_error
         return
       endif
 
@@ -1216,10 +1247,10 @@ module grid_class
       do k = 1, nzmax-2, 1
         if ( thermodynamic_heights(k+1)  & 
              <= thermodynamic_heights(k) ) then
-          write(fstderr,*) err_header, &
-             "The declared thermodynamic level grid " & 
-             // "altitudes are not increasing in height " & 
-             // "as grid level index increases."
+          write(fstderr,*) err_info%err_header_global
+          write(fstderr,*) "The declared thermodynamic level grid " & 
+                           // "altitudes are not increasing in height " & 
+                           // "as grid level index increases."
           write(fstderr,*) & 
              "Grid index:  ", k, ";", & 
              "  Thermodynamic level altitude:  ", & 
@@ -1228,7 +1259,8 @@ module grid_class
              "Grid index:  ", k+1, ";", & 
              "  Thermodynamic level altitude:  ", & 
              thermodynamic_heights(k+1)
-          err_code = clubb_fatal_error
+          ! General error -> set all entries to clubb_fatal_error
+          err_info%err_code = clubb_fatal_error
           return
         endif
       enddo
@@ -1244,11 +1276,12 @@ module grid_class
       ! As a way of error checking, make sure that there isn't any file entry
       ! for thermodynamic level altitudes.
       if ( zt_grid_fname /= '' ) then
-        write(fstderr,*) err_header, &
-           "Momentum level altitudes have been selected " & 
-           // "for use in a stretched (unevenly-spaced) grid. " & 
-           // " Please reset zt_grid_fname to ''."
-        err_code = clubb_fatal_error
+        write(fstderr,*) err_info%err_header_global
+        write(fstderr,*) "Momentum level altitudes have been selected " & 
+                         // "for use in a stretched (unevenly-spaced) grid. " & 
+                         // " Please reset zt_grid_fname to ''."
+        ! General error -> set all entries to clubb_fatal_error
+        err_info%err_code = clubb_fatal_error
         return
       endif
 
@@ -1265,9 +1298,10 @@ module grid_class
         if ( input_status < 0 ) exit   ! end of file indicator
         if ( input_status > 0 ) then
 
-          write(fstderr,*) err_header, &! error reading input
-                           "Error reading momentum level input file."
-          err_code = clubb_fatal_error
+          write(fstderr,*) err_info%err_header_global       ! error reading input
+          write(fstderr,*) "Error reading momentum level input file."
+          ! General error -> set all entries to clubb_fatal_error
+          err_info%err_code = clubb_fatal_error
           return
         end if
         zm_level_count = zm_level_count + 1
@@ -1279,17 +1313,18 @@ module grid_class
       ! Check that the number of momentum grid altitudes in the input file
       ! matches the declared number of CLUBB grid levels (nzmax).
       if ( zm_level_count /= nzmax ) then
-        write(fstderr,*) err_header, &
-           "The number of momentum grid altitudes " & 
-           // "listed in file " // trim(zm_grid_fname) & 
-           // " does not match the number of CLUBB grid " & 
-           // "levels specified in the model.in file."
+        write(fstderr,*) err_info%err_header_global
+        write(fstderr,*) "The number of momentum grid altitudes " & 
+                         // "listed in file " // trim(zm_grid_fname) & 
+                         // " does not match the number of CLUBB grid " & 
+                         // "levels specified in the model.in file."
         write(fstderr,*) & 
            "Number of momentum grid altitudes listed:  ", & 
            zm_level_count
         write(fstderr,*) & 
            "Number of CLUBB grid levels specified:  ", nzmax
-        err_code = clubb_fatal_error
+        ! General error -> set all entries to clubb_fatal_error
+        err_info%err_code = clubb_fatal_error
         return
       endif
 
@@ -1302,10 +1337,10 @@ module grid_class
       do k = 2, nzmax, 1
         if ( momentum_heights(k)  & 
              <= momentum_heights(k-1) ) then
-          write(fstderr,*) err_header, &
-             "The declared momentum level grid " & 
-             // "altitudes are not increasing in height " & 
-             // "as grid level index increases."
+          write(fstderr,*) err_info%err_header_global
+          write(fstderr,*) "The declared momentum level grid " & 
+                           // "altitudes are not increasing in height " & 
+                           // "as grid level index increases."
           write(fstderr,*) & 
              "Grid index:  ", k-1, ";", & 
              "  Momentum level altitude:  ", & 
@@ -1314,7 +1349,8 @@ module grid_class
              "Grid index:  ", k, ";", & 
              "  Momentum level altitude:  ", & 
              momentum_heights(k)
-          err_code = clubb_fatal_error
+          ! General error -> set all entries to clubb_fatal_error
+          err_info%err_code = clubb_fatal_error
           return
         endif
       enddo

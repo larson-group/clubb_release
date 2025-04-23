@@ -101,6 +101,11 @@ module spurious_source_test
     use stats_variables, only: &
         stats_metadata_type
 
+    use err_info_type_module, only: &
+      err_info_type,                & ! Type
+      init_default_err_info_api,    & ! Procedures
+      cleanup_err_info_api
+
     implicit none
 
     ! Return Variable
@@ -355,8 +360,10 @@ module spurious_source_test
       num_iter = 5    ! Number of different configurations to loop over.
 
     integer :: &
-      num_errors,       & ! Number of failed parameter sets
-      err_code_dummy      ! Dummy variable for catching error outputs
+      num_errors        ! Number of failed parameter sets
+
+    type(err_info_type) :: &
+      err_info_dummy    ! Dummy err_info struct containing err_code and err_header
 
     real( kind = core_rknd ), parameter :: &
       tol = 1.0e-10_core_rknd    ! Tolerance to determine pass or fail
@@ -603,11 +610,14 @@ module spurious_source_test
     momentum_heights = zero
     thermodynamic_heights = zero
 
+    ! Initialize err_info_dummy for 1 grid column and some values of lat and lon
+    call init_default_err_info_api(1, err_info_dummy)
+
     ! Set up the vertical grid.
     call setup_grid_api( nzm, sfc_elevation, l_implemented,  &
                          .true., grid_type, deltaz, zm_init, zm_top, &
                          momentum_heights, thermodynamic_heights, &
-                         gr )
+                         gr, err_info_dummy )
 
     ! Calculate the value of nu for use in advance_xm_wpxp.
     call adj_low_res_nu_api( gr, grid_type, deltaz, &
@@ -984,7 +994,7 @@ module spurious_source_test
                              stats_zt, stats_zm, stats_sfc, &
                              rtm, wprtp, thlm, wpthlp, &
                              sclrm, wpsclrp, um, upwp, vm, vpwp, &
-                             um_pert, vm_pert, upwp_pert, vpwp_pert, err_code_dummy )
+                             um_pert, vm_pert, upwp_pert, vpwp_pert, err_info_dummy )
 
        ! Calculate the spurious source for rtm
        rtm_flux_top = rho_ds_zm(1,gr%nzm) * wprtp(1,gr%nzm)
@@ -1086,6 +1096,8 @@ module spurious_source_test
 
     write(*,*) ""
 
+    ! Deallocate err_info
+    call cleanup_err_info_api( err_info_dummy )
 
     return
 

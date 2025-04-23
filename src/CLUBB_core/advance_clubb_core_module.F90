@@ -169,7 +169,7 @@ module advance_clubb_core_module
                um_pert, vm_pert, upwp_pert, vpwp_pert, &            ! intent(inout)
                pdf_params, pdf_params_zm, &                         ! intent(inout)
                pdf_implicit_coefs_terms, &                          ! intent(inout)
-               err_code, &                                          ! intent(inout)
+               err_info, &                                          ! intent(inout)
 #ifdef GFDL
                RH_crit, & !h1g, 2010-06-16                          ! intent(inout)
                do_liquid_only_in_clubb, &                           ! intent(in)
@@ -346,6 +346,9 @@ module advance_clubb_core_module
 
     use array_index, only: &
       sclr_idx_type
+
+    use err_info_type_module, only: &
+      err_info_type        ! Type
 
     implicit none
 
@@ -575,8 +578,8 @@ module advance_clubb_core_module
     type(implicit_coefs_terms), intent(inout) :: &
       pdf_implicit_coefs_terms    ! Implicit coefs / explicit terms [units vary]
 
-    integer, intent(inout) :: &
-      err_code  ! Error code indicator
+    type(err_info_type), intent(inout) :: &
+      err_info        ! err_info struct containing err_code and err_header
 
 #ifdef GFDL
     real( kind = core_rknd ), intent(inout), dimension(ngrdcol,nzt,sclr_dim) :: &  ! h1g, 2010-06-16
@@ -963,12 +966,15 @@ module advance_clubb_core_module
                sclrp2(i,:,:),                                                            & ! In
                sclrprtp(i,:,:), sclrpthlp(i,:,:), sclrm_forcing(i,:,:), edsclrm(i,:,:),  & ! In
                edsclrm_forcing(i,:,:), &                                                   ! In
-               err_code )                                                                  ! Inout
+               err_info )                                                                  ! Inout
 
+        if ( err_info%err_code(i) == clubb_fatal_error ) then
+          write(fstderr,*) err_info%err_header(i)
+        endif
       end do
 
-      if ( err_code == clubb_fatal_error ) then
-        write(fstderr,*) "Fatal error when testing input"
+      if ( any(err_info%err_code == clubb_fatal_error) ) then
+        write(fstderr,*) "Fatal error detected in parameterization_check when testing input"
         return
       end if
 
@@ -1181,7 +1187,7 @@ module advance_clubb_core_module
                                stats_zt, stats_zm,                          & ! Intent(inout)
                                rtm,                                         & ! Intent(inout)
                                pdf_implicit_coefs_terms,                    & ! Intent(inout)
-                               pdf_params, pdf_params_zm, err_code,         & ! Intent(inout)
+                               pdf_params, pdf_params_zm, err_info,         & ! Intent(inout)
 #ifdef GFDL
                                RH_crit(k, : , :),                           & ! Intent(inout)
                                do_liquid_only_in_clubb,                     & ! Intent(in)
@@ -1209,7 +1215,13 @@ module advance_clubb_core_module
                                rcm_supersat_adj,                            & ! Intent(out)
                                wp2sclrp, wpsclrp2, sclrprcp,                & ! Intent(out)
                                wpsclrprtp, wpsclrpthlp )                      ! Intent(out)
-      
+
+      if ( clubb_at_least_debug_level( 0 ) ) then
+        if ( any(err_info%err_code == clubb_fatal_error) ) then
+          write(fstderr,*) err_info%err_header_global
+          write(fstderr,*) "in pdf_closure_driver"
+        endif
+      endif
     endif ! clubb_config_flags%ipdf_call_placement == ipdf_pre_advance_fields
           ! or clubb_config_flags%ipdf_call_placement
           !    == ipdf_pre_post_advance_fields
@@ -1469,11 +1481,12 @@ module advance_clubb_core_module
                                   clubb_config_flags%saturation_formula,             & ! In
                                   clubb_config_flags%l_Lscale_plume_centered,        & ! In
                                   stats_metadata,                                    & ! In
-                                  stats_zt, err_code,                                & ! In/Out
+                                  stats_zt, err_info,                                & ! In/Out
                                   Lscale, Lscale_up, Lscale_down )                     ! Out
 
       if ( clubb_at_least_debug_level( 0 ) ) then
-        if ( err_code == clubb_fatal_error ) then
+        if ( any(err_info%err_code == clubb_fatal_error) ) then
+          write(fstderr,*) err_info%err_header_global
           write(fstderr,*) "Error calling calc_Lscale_directly"
           return
         end if
@@ -1539,7 +1552,7 @@ module advance_clubb_core_module
                         clubb_config_flags%l_e3sm_config,                         & ! In
                         clubb_config_flags%l_smooth_Heaviside_tau_wpxp,           & ! In
                         brunt_vaisala_freq_sqd_smth, Ri_zm,                       & ! In
-                        stats_zm, err_code,                                       & ! Inout
+                        stats_zm, err_info,                                       & ! Inout
                         invrs_tau_zt, invrs_tau_zm,                               & ! Out
                         invrs_tau_sfc, invrs_tau_no_N2_zm, invrs_tau_bkgnd,       & ! Out
                         invrs_tau_shear, invrs_tau_N2_iso,                        & ! Out
@@ -1547,6 +1560,14 @@ module advance_clubb_core_module
                         invrs_tau_wp3_zm, invrs_tau_wp3_zt, invrs_tau_wpxp_zm,    & ! Out
                         tau_max_zm, tau_max_zt, tau_zm, tau_zt,                   & ! Out
                         Lscale, Lscale_up, Lscale_down )                            ! Out
+
+      if ( clubb_at_least_debug_level( 0 ) ) then
+        if ( any(err_info%err_code == clubb_fatal_error) ) then
+          write(fstderr,*) err_info%err_header_global
+          write(fstderr, *) "Error calling diagnose_Lscale_from_tau"
+          return
+        end if
+      end if
 
     end if ! l_diag_Lscale_from_tau
 
@@ -1629,10 +1650,11 @@ module advance_clubb_core_module
                           wp2, up2, vp2,                                  & ! Intent(inout)
                           thlp2, rtp2, rtpthlp,                           & ! Intent(inout)
                           sclrp2, sclrprtp, sclrpthlp,                    & ! Intent(inout)
-                          err_code )                                        ! Intent(inout)
+                          err_info )                                        ! Intent(inout)
 
     if ( clubb_at_least_debug_level( 0 ) ) then
-      if ( err_code == clubb_fatal_error ) then
+      if ( any(err_info%err_code == clubb_fatal_error) ) then
+        write(fstderr,*) err_info%err_header_global
         write(fstderr, *) "Error calling calc_sfc_varnce"
         return
       end if
@@ -1927,10 +1949,11 @@ module advance_clubb_core_module
                             stats_zt, stats_zm, stats_sfc,                         & ! intent(i/o)
                             rtm, wprtp, thlm, wpthlp,                              & ! intent(i/o)
                             sclrm, wpsclrp, um, upwp, vm, vpwp,                    & ! intent(i/o)
-                            um_pert, vm_pert, upwp_pert, vpwp_pert, err_code )       ! intent(i/o)
+                            um_pert, vm_pert, upwp_pert, vpwp_pert, err_info )       ! intent(i/o)
 
       if ( clubb_at_least_debug_level( 0 ) ) then
-         if ( err_code == clubb_fatal_error ) then
+         if ( any(err_info%err_code == clubb_fatal_error) ) then
+            write(fstderr,*) err_info%err_header_global
             write(fstderr,*) "Error calling advance_xm_wpxp"
             return
          end if
@@ -1999,10 +2022,11 @@ module advance_clubb_core_module
                              stats_metadata,                                      & ! intent(in)
                              stats_zt, stats_zm, stats_sfc,                       & ! intent(inout)
                              rtp2, thlp2, rtpthlp, up2, vp2,                      & ! intent(inout)
-                             sclrp2, sclrprtp, sclrpthlp, err_code )                ! intent(inout)
+                             sclrp2, sclrprtp, sclrpthlp, err_info )                ! intent(inout)
       
       if ( clubb_at_least_debug_level( 0 ) ) then
-         if ( err_code == clubb_fatal_error ) then
+         if ( any(err_info%err_code == clubb_fatal_error) ) then
+            write(fstderr,*) err_info%err_header_global
             write(fstderr,*) "Error calling advance_xp2_xpyp"
             return
          end if
@@ -2106,10 +2130,11 @@ module advance_clubb_core_module
                             clubb_config_flags%l_wp2_fill_holes_tke,              & ! intent(in)
                             stats_metadata,                                       & ! intent(in)
                             stats_zt, stats_zm, stats_sfc,                        & ! intent(inout)
-                            up2, vp2, wp2, wp3, wp3_zm, wp2_zt, err_code )          ! intent(inout)
+                            up2, vp2, wp2, wp3, wp3_zm, wp2_zt, err_info )          ! intent(inout)
 
       if ( clubb_at_least_debug_level( 0 ) ) then
-         if ( err_code == clubb_fatal_error ) then
+         if ( any(err_info%err_code == clubb_fatal_error) ) then
+            write(fstderr,*) err_info%err_header_global
             write(fstderr,*) "Error calling advance_wp2_wp3"
             return
          end if
@@ -2224,7 +2249,15 @@ module advance_clubb_core_module
                                   um, vm, edsclrm,                            & ! intent(inout)
                                   upwp, vpwp, wpedsclrp,                      & ! intent(inout)
                                   um_pert, vm_pert, upwp_pert,                & ! intent(inout)
-                                  vpwp_pert, err_code )                         ! intent(inout)
+                                  vpwp_pert, err_info )                         ! intent(inout)
+
+      if ( clubb_at_least_debug_level( 0 ) ) then
+         if ( any(err_info%err_code == clubb_fatal_error) ) then
+            write(fstderr,*) err_info%err_header_global
+            write(fstderr,*) "Error calling advance_windm_edsclrm"
+            return
+         end if
+      end if
 
       if ( edsclr_dim > 1 .and. clubb_config_flags%l_do_expldiff_rtm_thlm ) then
 
@@ -2510,7 +2543,7 @@ module advance_clubb_core_module
                                stats_zt, stats_zm,                          & ! Intent(inout)
                                rtm,                                         & ! Intent(inout)
                                pdf_implicit_coefs_terms,                    & ! Intent(inout)
-                               pdf_params, pdf_params_zm, err_code,         & ! Intent(inout)
+                               pdf_params, pdf_params_zm, err_info,         & ! Intent(inout)
 #ifdef GFDL
                                RH_crit(k, : , :),                           & ! Intent(inout)
                                do_liquid_only_in_clubb,                     & ! Intent(in)
@@ -2538,6 +2571,14 @@ module advance_clubb_core_module
                                rcm_supersat_adj,                            & ! Intent(out)
                                wp2sclrp, wpsclrp2, sclrprcp,                & ! Intent(out)
                                wpsclrprtp, wpsclrpthlp )                      ! Intent(out)
+
+      if ( clubb_at_least_debug_level( 0 ) ) then
+         if ( any(err_info%err_code == clubb_fatal_error) ) then
+            write(fstderr,*) err_info%err_header_global
+            write(fstderr,*) "Error calling pdf_closure_driver"
+            return
+         end if
+      end if
 
     end if ! clubb_config_flags%ipdf_call_placement == ipdf_post_advance_fields
           ! or clubb_config_flags%ipdf_call_placement
@@ -2699,9 +2740,9 @@ module advance_clubb_core_module
       if ( stats_metadata%ivpwp_zt > 0 ) then
         vpwp_zt(:,:) = zm2zt_api( nzm, nzt, ngrdcol, gr, vpwp(:,:) )
       end if
-      
+
       do i = 1, ngrdcol
-        
+
         call stats_accumulate( &
                nzm, nzt, i, sclr_dim, edsclr_dim, gr%invrs_dzm(i,:), gr%zt(i,:),          & ! In
                gr%grid_dir * gr%dzm(i,:), gr%grid_dir * gr%dzt(i,:), dt,                  & ! In
@@ -2777,10 +2818,14 @@ module advance_clubb_core_module
              sclrp2(i,:,:),                                                            & ! In
              sclrprtp(i,:,:), sclrpthlp(i,:,:), sclrm_forcing(i,:,:), edsclrm(i,:,:),  & ! In
              edsclrm_forcing(i,:,:), &                                                   ! In
-             err_code )                                                                  ! Inout
+             err_info )                                                                  ! Inout
+        if ( err_info%err_code(i) == clubb_fatal_error ) then
+          write(fstderr, *) err_info%err_header(i)
+        endif
+
       end do
 
-      if ( err_code == clubb_fatal_error ) then
+      if ( any(err_info%err_code == clubb_fatal_error) ) then
         write(fstderr,*) "Error occurred during parameterization_check at"// &
                          " end of advance_clubb_core"
         return
@@ -2928,7 +2973,7 @@ module advance_clubb_core_module
                                  stats_zt, stats_zm,                      & ! Intent(inout)
                                  rtm,                                     & ! Intent(inout)
                                  pdf_implicit_coefs_terms,                & ! Intent(inout)
-                                 pdf_params, pdf_params_zm, err_code,     & ! Intent(inout)
+                                 pdf_params, pdf_params_zm, err_info,     & ! Intent(inout)
 #ifdef GFDL
                                  RH_crit(k, : , :),                       & ! Intent(inout)
                                  do_liquid_only_in_clubb,                 & ! Intent(in)
@@ -3030,6 +3075,9 @@ module advance_clubb_core_module
         core_rknd    ! Variable(s)
 
     use stats_type, only: stats ! Type
+
+    use err_info_type_module, only: &
+      err_info_type        ! Type
 
     implicit none
 
@@ -3166,8 +3214,8 @@ module advance_clubb_core_module
       pdf_params,    & ! PDF parameters                           [units vary]
       pdf_params_zm    ! PDF parameters                           [units vary]
 
-    integer, intent(inout) :: &
-      err_code    ! Error code catching and relaying any errors occurring in this subroutine
+    type(err_info_type), intent(inout) :: &
+      err_info        ! err_info struct containing err_code and err_header
 
 #ifdef GFDL
     ! hlg, 2010-06-16
@@ -3669,6 +3717,7 @@ module advance_clubb_core_module
            RH_crit,                                         & ! intent(inout)
            do_liquid_only_in_clubb,                         & ! intent(in)
 #endif
+
            wphydrometp_zt, wp2hmp,                          & ! intent(in)
            rtphmp_zt, thlphmp_zt,                           & ! intent(in)
            clubb_params,                                    & ! intent(in)
@@ -3678,7 +3727,7 @@ module advance_clubb_core_module
            l_mix_rat_hm,                                    & ! intent(in)
            sigma_sqd_w_zt,                                  & ! intent(inout)
            pdf_params, pdf_implicit_coefs_terms,            & ! intent(inout)
-           err_code,                                        & ! intent(inout)
+           err_info,                                        & ! intent(inout)
            wpup2, wpvp2,                                    & ! intent(out)
            wp2up2_zt, wp2vp2_zt, wp4_zt,                    & ! intent(out)
            wprtp2, wp2rtp,                                  & ! intent(out)
@@ -3696,10 +3745,11 @@ module advance_clubb_core_module
 
     ! Subroutine may produce NaN values, and if so, return
     if ( clubb_at_least_debug_level( 0 ) ) then
-       if ( err_code == clubb_fatal_error ) then
-          write(fstderr,*) "After pdf_closure"
-          return
-       endif
+      if ( any(err_info%err_code == clubb_fatal_error) ) then
+        write(fstderr, *) err_info%err_header_global
+        write(fstderr,*) "After pdf_closure"
+        return
+      endif
     endif
 
     if( l_rtm_nudge ) then
@@ -3801,7 +3851,7 @@ module advance_clubb_core_module
              l_mix_rat_hm,                                         & ! intent(in)
              sigma_sqd_w,                                          & ! intent(inout)
              pdf_params_zm, pdf_implicit_coefs_terms_zm,           & ! intent(inout)
-             err_code,                                             & ! intent(inout)
+             err_info,                                             & ! intent(inout)
              wpup2_zm, wpvp2_zm,                                   & ! intent(out)
              wp2up2, wp2vp2, wp4,                                  & ! intent(out)
              wprtp2_zm, wp2rtp_zm,                                 & ! intent(out)
@@ -3819,10 +3869,11 @@ module advance_clubb_core_module
 
       ! Subroutine may produce NaN values, and if so, return
       if ( clubb_at_least_debug_level( 0 ) ) then
-         if ( err_code == clubb_fatal_error ) then
-            write(fstderr,*) "After pdf_closure"
-            return
-         endif
+        if ( any(err_info%err_code == clubb_fatal_error) ) then
+          write(fstderr, *) err_info%err_header_global
+          write(fstderr,*) "After second call to pdf_closure"
+          return
+        endif
       endif
 
     else ! l_call_pdf_closure_twice is false
@@ -3974,7 +4025,7 @@ module advance_clubb_core_module
     ! Added July 2009
     call compute_cloud_cover( gr, nzt, ngrdcol,            & ! intent(in)
                               pdf_params, cloud_frac, rcm, & ! intent(in)
-                              err_code,                    & ! intent(inout)
+                              err_info,                    & ! intent(inout)
                               cloud_cover, rcm_in_layer )    ! intent(out)
 
     if ( l_use_cloud_cover ) then
@@ -4073,7 +4124,7 @@ module advance_clubb_core_module
                                        l_implemented,       & ! intent(in)
                                        l_input_fields,      & ! intent(in)
                                        clubb_config_flags,  & ! intent(in)
-                                       err_code )             ! intent(inout)
+                                       err_info )             ! intent(inout)
 
       ! Description:
       !   Subroutine to set up the model for execution.
@@ -4137,6 +4188,9 @@ module advance_clubb_core_module
           up2_vp2_sponge_damp_settings
 
 
+      use err_info_type_module, only: &
+        err_info_type        ! Type
+
       implicit none
 
       !---------------------- Input Variables ----------------------
@@ -4156,8 +4210,8 @@ module advance_clubb_core_module
         clubb_config_flags
 
       !---------------------- InOut Variables ----------------------
-      integer, intent(inout) :: &
-        err_code  ! Error code indicator
+      type(err_info_type), intent(inout) :: &
+        err_info        ! err_info struct containing err_code and err_header
 
       !---------------------- Begin Code ----------------------
 
@@ -4186,6 +4240,7 @@ module advance_clubb_core_module
            .and. ( any( abs(params(:,iC1) - params(:,iC14)) > &
                         abs(params(:,iC1) + params(:,iC14)) /  2 * eps ) &
                    .or. clubb_config_flags%l_stability_correct_tau_zm ) ) then
+          write(fstderr, *) err_info%err_header_global
           write(fstderr,*) "l_damp_wp2_using_em = T requires C1=C14 and" &
                             // " l_stability_correct_tau_zm = F"
           write(fstderr,*) "C1 = ", params(:,iC1)
@@ -4193,7 +4248,8 @@ module advance_clubb_core_module
           write(fstderr,*) "l_stability_correct_tau_zm = ", &
                            clubb_config_flags%l_stability_correct_tau_zm
           write(fstderr,*) "Fatal error in check_clubb_settings_api"
-          err_code = clubb_fatal_error
+          ! General error -> set all entries to clubb_fatal_error
+          err_info%err_code = clubb_fatal_error
           return
         end if
 
@@ -4216,10 +4272,12 @@ module advance_clubb_core_module
         ! Using the lookup table
 
       case default
+        write(fstderr, *) err_info%err_header_global
         write(fstderr,*) "Unknown approx. of saturation vapor pressure: ", &
            clubb_config_flags%saturation_formula
         write(fstderr,*) "Fatal error in check_clubb_settings_api"
-        err_code = clubb_fatal_error
+        ! General error -> set all entries to clubb_fatal_error
+        err_info%err_code = clubb_fatal_error
         return
       end select
 
@@ -4227,35 +4285,41 @@ module advance_clubb_core_module
       ! used for w, rt, and theta-l (or w, chi, and eta).
       if ( clubb_config_flags%iiPDF_type < iiPDF_ADG1 &
            .or. clubb_config_flags%iiPDF_type > iiPDF_new_hybrid ) then
+         write(fstderr, *) err_info%err_header_global
          write(fstderr,*) "Unknown type of double Gaussian PDF selected: ", &
                           clubb_config_flags%iiPDF_type
          write(fstderr,*) "iiPDF_type = ", clubb_config_flags%iiPDF_type
          write(fstderr,*) "Fatal error in check_clubb_settings_api"
-         err_code = clubb_fatal_error
+         ! General error -> set all entries to clubb_fatal_error
+         err_info%err_code = clubb_fatal_error
          return
       endif ! iiPDF_type < iiPDF_ADG1 or iiPDF_type > iiPDF_lY93
 
       ! The ADG2 and 3D Luhar PDFs can only be used as part of input fields.
       if ( clubb_config_flags%iiPDF_type == iiPDF_ADG2 ) then
          if ( .not. l_input_fields ) then
+            write(fstderr, *) err_info%err_header_global
             write(fstderr,*) "The ADG2 PDF can only be used with" &
                              // " input fields (l_input_fields = .true.)."
             write(fstderr,*) "iiPDF_type = ", clubb_config_flags%iiPDF_type
             write(fstderr,*) "l_input_fields = ", l_input_fields
             write(fstderr,*) "Fatal error in check_clubb_settings_api"
-            err_code = clubb_fatal_error
+            ! General error -> set all entries to clubb_fatal_error
+            err_info%err_code = clubb_fatal_error
             return
          endif ! .not. l_input_fields
       endif ! iiPDF_type == iiPDF_ADG2
 
       if ( clubb_config_flags%iiPDF_type == iiPDF_3D_Luhar ) then
          if ( .not. l_input_fields ) then
+            write(fstderr, *) err_info%err_header_global
             write(fstderr,*) "The 3D Luhar PDF can only be used with" &
                              // " input fields (l_input_fields = .true.)."
             write(fstderr,*) "iiPDF_type = ", clubb_config_flags%iiPDF_type
             write(fstderr,*) "l_input_fields = ", l_input_fields
             write(fstderr,*) "Fatal error in check_clubb_settings_api"
-            err_code = clubb_fatal_error
+            ! General error -> set all entries to clubb_fatal_error
+            err_info%err_code = clubb_fatal_error
             return
          endif ! .not. l_input_fields
       endif ! iiPDF_type == iiPDF_3D_Luhar
@@ -4264,12 +4328,14 @@ module advance_clubb_core_module
       ! implemented.
       if ( clubb_config_flags%iiPDF_type == iiPDF_new ) then
          if ( .not. l_input_fields ) then
+            write(fstderr, *) err_info%err_header_global
             write(fstderr,*) "The new PDF can only be used with" &
                              // " input fields (l_input_fields = .true.)."
             write(fstderr,*) "iiPDF_type = ", clubb_config_flags%iiPDF_type
             write(fstderr,*) "l_input_fields = ", l_input_fields
             write(fstderr,*) "Fatal error in check_clubb_settings_api"
-            err_code = clubb_fatal_error
+            ! General error -> set all entries to clubb_fatal_error
+            err_info%err_code = clubb_fatal_error
             return
          endif ! .not. l_input_fields
       endif ! iiPDF_type == iiPDF_new
@@ -4278,12 +4344,14 @@ module advance_clubb_core_module
       ! implemented.
       if ( clubb_config_flags%iiPDF_type == iiPDF_TSDADG ) then
          if ( .not. l_input_fields ) then
+            write(fstderr, *) err_info%err_header_global
             write(fstderr,*) "The new TSDADG PDF can only be used with" &
                              // " input fields (l_input_fields = .true.)."
             write(fstderr,*) "iiPDF_type = ", clubb_config_flags%iiPDF_type
             write(fstderr,*) "l_input_fields = ", l_input_fields
             write(fstderr,*) "Fatal error in check_clubb_settings_api"
-            err_code = clubb_fatal_error
+            ! General error -> set all entries to clubb_fatal_error
+            err_info%err_code = clubb_fatal_error
             return
          endif ! .not. l_input_fields
       endif ! iiPDF_type == iiPDF_TSDADG
@@ -4291,12 +4359,14 @@ module advance_clubb_core_module
       ! This also applies to Lewellen and Yoh (1993).
       if ( clubb_config_flags%iiPDF_type == iiPDF_LY93 ) then
          if ( .not. l_input_fields ) then
+            write(fstderr, *) err_info%err_header_global
             write(fstderr,*) "The Lewellen and Yoh PDF can only be used with" &
                              // " input fields (l_input_fields = .true.)."
             write(fstderr,*) "iiPDF_type = ", clubb_config_flags%iiPDF_type
             write(fstderr,*) "l_input_fields = ", l_input_fields
             write(fstderr,*) "Fatal error in check_clubb_settings_api"
-            err_code = clubb_fatal_error
+            ! General error -> set all entries to clubb_fatal_error
+            err_info%err_code = clubb_fatal_error
             return
          endif ! .not. l_input_fields
       endif ! iiPDF_type == iiPDF_LY93
@@ -4304,10 +4374,12 @@ module advance_clubb_core_module
       ! Check the option for the placement of the call to CLUBB's PDF.
       if ( clubb_config_flags%ipdf_call_placement < ipdf_pre_advance_fields &
            .or. clubb_config_flags%ipdf_call_placement > ipdf_pre_post_advance_fields ) then
+         write(fstderr, *) err_info%err_header_global
          write(fstderr,*) "Invalid option selected for ipdf_call_placement: ", &
                           clubb_config_flags%ipdf_call_placement
          write(fstderr,*) "Fatal error in check_clubb_settings_api"
-         err_code = clubb_fatal_error
+         ! General error -> set all entries to clubb_fatal_error
+         err_info%err_code = clubb_fatal_error
          return
       endif
 
@@ -4321,11 +4393,13 @@ module advance_clubb_core_module
          ! for u and v to be calculated in PDF closure.  These would be needed
          ! to calculate integrated fields such as wp2up, etc.
          if ( l_explicit_turbulent_adv_wpxp ) then
+            write(fstderr, *) err_info%err_header_global
             write(fstderr,*) "The l_explicit_turbulent_adv_wpxp option" &
                              // " is not currently set up for use with the" &
                              // " l_predict_upwp_vpwp code."
             write(fstderr,*) "Fatal error in check_clubb_settings_api"
-            err_code = clubb_fatal_error
+            ! General error -> set all entries to clubb_fatal_error
+            err_info%err_code = clubb_fatal_error
             return
          endif ! l_explicit_turbulent_adv_wpxp
 
@@ -4335,11 +4409,13 @@ module advance_clubb_core_module
          ! turbulent advection, such as coef_wp2up_implicit, etc.
          if ( ( clubb_config_flags%iiPDF_type /= iiPDF_ADG1 ) &
               .and. ( clubb_config_flags%iiPDF_type /= iiPDF_new_hybrid ) ) then
+            write(fstderr, *) err_info%err_header_global
             write(fstderr,*) "Currently, only the ADG1 PDF and the new hybrid" &
                              // " PDF are set up for use with the" &
                              // " l_predict_upwp_vpwp code."
             write(fstderr,*) "Fatal error in check_clubb_settings_api"
-            err_code = clubb_fatal_error
+            ! General error -> set all entries to clubb_fatal_error
+            err_info%err_code = clubb_fatal_error
             return
          endif ! iiPDF_type /= iiPDF_ADG1
 
@@ -4349,33 +4425,40 @@ module advance_clubb_core_module
       ! have opposite values.
       if ( ( clubb_config_flags%l_min_xp2_from_corr_wx ) &
          .and. ( clubb_config_flags%l_enable_relaxed_clipping ) ) then
+         write(fstderr, *) err_info%err_header_global
          write(fstderr,*) "Invalid configuration: l_min_xp2_from_corr_wx = T " &
                           // "and l_enable_relaxed_clipping = T"
          write(fstderr,*) "They must have opposite values"
          write(fstderr,*) "Fatal error in check_clubb_settings_api"
-         err_code = clubb_fatal_error
+         ! General error -> set all entries to clubb_fatal_error
+         err_info%err_code = clubb_fatal_error
          return
       elseif ( ( .not. clubb_config_flags%l_min_xp2_from_corr_wx ) &
                .and. ( .not. clubb_config_flags%l_enable_relaxed_clipping ) ) then
+         write(fstderr, *) err_info%err_header_global
          write(fstderr,*) "Invalid configuration: l_min_xp2_from_corr_wx = F " &
                           // "and l_enable_relaxed_clipping = F"
          write(fstderr,*) "They must have opposite values"
          write(fstderr,*) "Fatal error in check_clubb_settings_api"
-         !err_code = clubb_fatal_error
+         ! General error -> set all entries to clubb_fatal_error
+         !err_info%err_code = clubb_fatal_error
          !return
       endif
 
       ! Checking for the code that orders CLUBB's advance_ subroutines
       if ( order_xm_wpxp < 1 .or. order_xm_wpxp > 4 ) then
+         write(fstderr, *) err_info%err_header_global
          write(fstderr,*) "The variable order_xm_wpxp must have a value " &
                           // "between 1 and 4"
          write(fstderr,*) "order_xm_wpxp = ", order_xm_wpxp
          write(fstderr,*) "Fatal error in check_clubb_settings_api"
-         err_code = clubb_fatal_error
+         ! General error -> set all entries to clubb_fatal_error
+         err_info%err_code = clubb_fatal_error
          return
       elseif ( order_xm_wpxp == order_wp2_wp3 &
                .or. order_xm_wpxp == order_xp2_xpyp &
                .or. order_xm_wpxp == order_windm ) then
+         write(fstderr, *) err_info%err_header_global
          write(fstderr,*) "The variable order_xm_wpxp has the same value " &
                           // "as another order_ variable.  Please give each " &
                           // "order index a unique value."
@@ -4384,20 +4467,24 @@ module advance_clubb_core_module
          write(fstderr,*) "order_xp2_xpyp = ", order_xp2_xpyp
          write(fstderr,*) "order_windm = ", order_windm
          write(fstderr,*) "Fatal error in check_clubb_settings_api"
-         err_code = clubb_fatal_error
+         ! General error -> set all entries to clubb_fatal_error
+         err_info%err_code = clubb_fatal_error
          return
       endif
 
       if ( order_wp2_wp3 < 1 .or. order_wp2_wp3 > 4 ) then
+         write(fstderr, *) err_info%err_header_global
          write(fstderr,*) "The variable order_wp2_wp3 must have a value " &
                           // "between 1 and 4"
          write(fstderr,*) "order_wp2_wp3 = ", order_wp2_wp3
          write(fstderr,*) "Fatal error in check_clubb_settings_api"
-         err_code = clubb_fatal_error
+         ! General error -> set all entries to clubb_fatal_error
+         err_info%err_code = clubb_fatal_error
          return
       elseif ( order_wp2_wp3 == order_xm_wpxp &
                .or. order_wp2_wp3 == order_xp2_xpyp &
                .or. order_wp2_wp3 == order_windm ) then
+         write(fstderr, *) err_info%err_header_global
          write(fstderr,*) "The variable order_wp2_wp3 has the same value " &
                           // "as another order_ variable.  Please give each " &
                           // "order index a unique value."
@@ -4406,20 +4493,24 @@ module advance_clubb_core_module
          write(fstderr,*) "order_xp2_xpyp = ", order_xp2_xpyp
          write(fstderr,*) "order_windm = ", order_windm
          write(fstderr,*) "Fatal error in check_clubb_settings_api"
-         err_code = clubb_fatal_error
+         ! General error -> set all entries to clubb_fatal_error
+         err_info%err_code = clubb_fatal_error
          return
       endif
 
       if ( order_xp2_xpyp < 1 .or. order_xp2_xpyp > 4 ) then
+         write(fstderr, *) err_info%err_header_global
          write(fstderr,*) "The variable order_xp2_xpyp must have a value " &
                           // "between 1 and 4"
          write(fstderr,*) "order_xp2_xpyp = ", order_xp2_xpyp
          write(fstderr,*) "Fatal error in check_clubb_settings_api"
-         err_code = clubb_fatal_error
+         ! General error -> set all entries to clubb_fatal_error
+         err_info%err_code = clubb_fatal_error
          return
       elseif ( order_xp2_xpyp == order_wp2_wp3 &
                .or. order_xp2_xpyp == order_xm_wpxp &
                .or. order_xp2_xpyp == order_windm ) then
+         write(fstderr, *) err_info%err_header_global
          write(fstderr,*) "The variable order_xp2_xpyp has the same value " &
                           // "as another order_ variable.  Please give each " &
                           // "order index a unique value."
@@ -4428,20 +4519,24 @@ module advance_clubb_core_module
          write(fstderr,*) "order_xm_wpxp = ", order_xm_wpxp
          write(fstderr,*) "order_windm = ", order_windm
          write(fstderr,*) "Fatal error in check_clubb_settings_api"
-         err_code = clubb_fatal_error
+         ! General error -> set all entries to clubb_fatal_error
+         err_info%err_code = clubb_fatal_error
          return
       endif
 
       if ( order_windm < 1 .or. order_windm > 4 ) then
+         write(fstderr, *) err_info%err_header_global
          write(fstderr,*) "The variable order_windm must have a value " &
                           // "between 1 and 4"
          write(fstderr,*) "order_windm = ", order_windm
          write(fstderr,*) "Fatal error in check_clubb_settings_api"
-         err_code = clubb_fatal_error
+         ! General error -> set all entries to clubb_fatal_error
+         err_info%err_code = clubb_fatal_error
          return
       elseif ( order_windm == order_wp2_wp3 &
                .or. order_windm == order_xp2_xpyp &
                .or. order_windm == order_xm_wpxp ) then
+         write(fstderr, *) err_info%err_header_global
          write(fstderr,*) "The variable order_windm has the same value " &
                           // "as another order_ variable.  Please give each " &
                           // "order index a unique value."
@@ -4450,7 +4545,8 @@ module advance_clubb_core_module
          write(fstderr,*) "order_xp2_xpyp = ", order_xp2_xpyp
          write(fstderr,*) "order_xm_wpxp = ", order_xm_wpxp
          write(fstderr,*) "Fatal error in check_clubb_settings_api"
-         err_code = clubb_fatal_error
+         ! General error -> set all entries to clubb_fatal_error
+         err_info%err_code = clubb_fatal_error
          return
       endif
 
@@ -4470,7 +4566,8 @@ module advance_clubb_core_module
             write(fstderr,*) "C1 = ", params(:,iC1)
             write(fstderr,*) "Warning in check_clubb_settings_api"
             !write(fstderr,*) "Fatal error in check_clubb_settings_api"
-            !err_code = clubb_fatal_error
+            ! General error -> set all entries to clubb_fatal_error
+            !err_info%err_code = clubb_fatal_error
          endif ! C1 check
 
          ! C1b must have a value of 1
@@ -4480,7 +4577,8 @@ module advance_clubb_core_module
             write(fstderr,*) "C1b = ", params(:,iC1b)
             write(fstderr,*) "Warning in check_clubb_settings_api"
             !write(fstderr,*) "Fatal error in check_clubb_settings_api"
-            !err_code = clubb_fatal_error
+            ! General error -> set all entries to clubb_fatal_error
+            !err_info%err_code = clubb_fatal_error
          endif ! C1b check
 
          ! C2rt must have a value of 1
@@ -4490,7 +4588,8 @@ module advance_clubb_core_module
             write(fstderr,*) "C2rt = ", params(:,iC2rt)
             write(fstderr,*) "Warning in check_clubb_settings_api"
             !write(fstderr,*) "Fatal error in check_clubb_settings_api"
-            !err_code = clubb_fatal_error
+            ! General error -> set all entries to clubb_fatal_error
+            !err_info%err_code = clubb_fatal_error
          endif ! C2rt check
 
          ! C2thl must have a value of 1
@@ -4500,7 +4599,8 @@ module advance_clubb_core_module
             write(fstderr,*) "C2thl = ", params(:,iC2thl)
             write(fstderr,*) "Warning in check_clubb_settings_api"
             !write(fstderr,*) "Fatal error in check_clubb_settings_api"
-            !err_code = clubb_fatal_error
+            ! General error -> set all entries to clubb_fatal_error
+            !err_info%err_code = clubb_fatal_error
          endif ! C2thl check
 
          ! C2rtthl must have a value of 1
@@ -4510,7 +4610,8 @@ module advance_clubb_core_module
             write(fstderr,*) "C2rtthl = ", params(:,iC2rtthl)
             write(fstderr,*) "Warning in check_clubb_settings_api"
             !write(fstderr,*) "Fatal error in check_clubb_settings_api"
-            !err_code = clubb_fatal_error
+            ! General error -> set all entries to clubb_fatal_error
+            !err_info%err_code = clubb_fatal_error
          endif ! C2rtthl check
 
          ! C6rt must have a value of 1
@@ -4520,7 +4621,8 @@ module advance_clubb_core_module
             write(fstderr,*) "C6rt = ", params(:,iC6rt)
             write(fstderr,*) "Warning in check_clubb_settings_api"
             !write(fstderr,*) "Fatal error in check_clubb_settings_api"
-            !err_code = clubb_fatal_error
+            ! General error -> set all entries to clubb_fatal_error
+            !err_info%err_code = clubb_fatal_error
          endif ! C6rt check
 
          ! C6rtb must have a value of 1
@@ -4530,7 +4632,8 @@ module advance_clubb_core_module
             write(fstderr,*) "C6rtb = ", params(:,iC6rtb)
             write(fstderr,*) "Warning in check_clubb_settings_api"
             !write(fstderr,*) "Fatal error in check_clubb_settings_api"
-            !err_code = clubb_fatal_error
+            ! General error -> set all entries to clubb_fatal_error
+            !err_info%err_code = clubb_fatal_error
          endif ! C6rtb check
 
          ! C6thl must have a value of 1
@@ -4540,7 +4643,8 @@ module advance_clubb_core_module
             write(fstderr,*) "C6thl = ", params(:,iC6thl)
             write(fstderr,*) "Warning in check_clubb_settings_api"
             !write(fstderr,*) "Fatal error in check_clubb_settings_api"
-            !err_code = clubb_fatal_error
+            ! General error -> set all entries to clubb_fatal_error
+            !err_info%err_code = clubb_fatal_error
          endif ! C6thl check
 
          ! C6thlb must have a value of 1
@@ -4550,7 +4654,8 @@ module advance_clubb_core_module
             write(fstderr,*) "C6thlb = ", params(:,iC6thlb)
             write(fstderr,*) "Warning in check_clubb_settings_api"
             !write(fstderr,*) "Fatal error in check_clubb_settings_api"
-            !err_code = clubb_fatal_error
+            ! General error -> set all entries to clubb_fatal_error
+            !err_info%err_code = clubb_fatal_error
          endif ! C6thlb check
 
          ! C14 must have a value of 1
@@ -4560,7 +4665,8 @@ module advance_clubb_core_module
             write(fstderr,*) "C14 = ", params(:,iC14)
             write(fstderr,*) "Warning in check_clubb_settings_api"
             !write(fstderr,*) "Fatal error in check_clubb_settings_api"
-            !err_code = clubb_fatal_error
+            ! General error -> set all entries to clubb_fatal_error
+            !err_info%err_code = clubb_fatal_error
          endif ! C14 check
 
       endif ! l_diag_Lscale_from_tau
@@ -4568,59 +4674,75 @@ module advance_clubb_core_module
       if ( l_implemented ) then
 
         if ( clubb_config_flags%l_rtm_nudge ) then
+          write(fstderr, *) err_info%err_header_global
           write(fstderr,*) "l_rtm_nudge must be set to .false. when " &
                            // "l_implemented = .true."
           write(fstderr,*) "Fatal error in check_clubb_settings_api"
-          err_code = clubb_fatal_error
+          ! General error -> set all entries to clubb_fatal_error
+          err_info%err_code = clubb_fatal_error
         end if
 
         if ( clubb_config_flags%l_uv_nudge ) then
+          write(fstderr, *) err_info%err_header_global
           write(fstderr,*) "l_rtm_nudge must be set to .false. when " &
                            // "l_implemented = .true."
           write(fstderr,*) "Fatal error in check_clubb_settings_api"
-          err_code = clubb_fatal_error
+          ! General error -> set all entries to clubb_fatal_error
+          err_info%err_code = clubb_fatal_error
         end if
 
         if ( thlm_sponge_damp_settings%l_sponge_damping ) then
+          write(fstderr, *) err_info%err_header_global
           write(fstderr,*) "thlm_sponge_damp_settings%l_sponge_damping " &
                            // "must be set to .false. when  l_implemented = .true."
           write(fstderr,*) "Fatal error in check_clubb_settings_api"
-          err_code = clubb_fatal_error
+          ! General error -> set all entries to clubb_fatal_error
+          err_info%err_code = clubb_fatal_error
         end if
 
         if ( rtm_sponge_damp_settings%l_sponge_damping ) then
+          write(fstderr, *) err_info%err_header_global
           write(fstderr,*) "rtm_sponge_damp_settings%l_sponge_damping " &
                            // "must be set to .false. when  l_implemented = .true."
           write(fstderr,*) "Fatal error in check_clubb_settings_api"
-          err_code = clubb_fatal_error
+          ! General error -> set all entries to clubb_fatal_error
+          err_info%err_code = clubb_fatal_error
         end if
 
         if ( uv_sponge_damp_settings%l_sponge_damping ) then
+          write(fstderr, *) err_info%err_header_global
           write(fstderr,*) "uv_sponge_damp_settings%l_sponge_damping " &
                            // "must be set to .false. when  l_implemented = .true."
           write(fstderr,*) "Fatal error in check_clubb_settings_api"
-          err_code = clubb_fatal_error
+          ! General error -> set all entries to clubb_fatal_error
+          err_info%err_code = clubb_fatal_error
         end if
 
         if ( wp2_sponge_damp_settings%l_sponge_damping ) then
+          write(fstderr, *) err_info%err_header_global
           write(fstderr,*) "wp2_sponge_damp_settings%l_sponge_damping " &
                            // "must be set to .false. when  l_implemented = .true."
           write(fstderr,*) "Fatal error in check_clubb_settings_api"
-          err_code = clubb_fatal_error
+          ! General error -> set all entries to clubb_fatal_error
+          err_info%err_code = clubb_fatal_error
         end if
 
         if ( wp3_sponge_damp_settings%l_sponge_damping ) then
+          write(fstderr, *) err_info%err_header_global
           write(fstderr,*) "wp3_sponge_damp_settings%l_sponge_damping " &
                            // "must be set to .false. when  l_implemented = .true."
           write(fstderr,*) "Fatal error in check_clubb_settings_api"
-          err_code = clubb_fatal_error
+          ! General error -> set all entries to clubb_fatal_error
+          err_info%err_code = clubb_fatal_error
         end if
 
         if ( up2_vp2_sponge_damp_settings%l_sponge_damping ) then
+          write(fstderr, *) err_info%err_header_global
           write(fstderr,*) "up2_vp2_sponge_damp_settings%l_sponge_damping " &
                            // "must be set to .false. when  l_implemented = .true."
           write(fstderr,*) "Fatal error in check_clubb_settings_api"
-          err_code = clubb_fatal_error
+          ! General error -> set all entries to clubb_fatal_error
+          err_info%err_code = clubb_fatal_error
         end if
 
       end if
@@ -5095,7 +5217,7 @@ module advance_clubb_core_module
     !-----------------------------------------------------------------------
     subroutine compute_cloud_cover( gr, nzt, ngrdcol, &
                                     pdf_params, cloud_frac, rcm, & ! intent(in)
-                                    err_code,                    & ! intent(inout)
+                                    err_info,                    & ! intent(inout)
                                     cloud_cover, rcm_in_layer )    ! intent(out)
       !
       ! Description:
@@ -5129,6 +5251,9 @@ module advance_clubb_core_module
         clubb_at_least_debug_level,  & ! Procedure
         clubb_fatal_error              ! Constant
 
+      use err_info_type_module, only: &
+        err_info_type        ! Type
+
       implicit none
 
       !------------------------ Input variables ------------------------
@@ -5146,8 +5271,8 @@ module advance_clubb_core_module
         pdf_params    ! PDF Parameters  [units vary]
 
       !------------------------ Input/Output variables ------------------------
-    integer, intent(inout) :: &
-      err_code    ! Error code catching and relaying any errors occurring in this subroutine
+    type(err_info_type), intent(inout) :: &
+      err_info        ! err_info struct containing err_code and err_header
 
       !------------------------ Output variables ------------------------
       real( kind = core_rknd ), dimension(ngrdcol,nzt), intent(out) :: &
@@ -5181,7 +5306,7 @@ module advance_clubb_core_module
       end do
       !$acc end parallel loop
 
-      !$acc parallel loop gang vector collapse(2) default(present) reduction(.or.:err_code)
+      !$acc parallel loop gang vector collapse(2) default(present)
       do k = gr%k_lb_zt, gr%k_ub_zt-gr%grid_dir_indx, gr%grid_dir_indx
         do i = 1, ngrdcol
 
@@ -5276,13 +5401,19 @@ module advance_clubb_core_module
           else
 
             ! This case should not be entered
+            ! This case should be literally unreachable
+            ! since all possible options are covered in the above cases
             cloud_cover(i,k) = unused_var
             rcm_in_layer(i,k) = unused_var
-            err_code = clubb_fatal_error
+            ! Error in column i -> set ith entry to clubb_fatal_error
+            err_info%err_code(i) = clubb_fatal_error
+            write(fstderr, *) err_info%err_header(i)
+            write(fstderr, *) "in compute_cloud_cover"
+            write(fstderr, *) "invalid rcm values"
 
           end if ! rcm(k) < rc_tol
-          
-        end do
+
+        end do ! i = 1, ngrdcol
       end do ! k = 1, gr%nzt-1, 1
       !$acc end parallel loop
 
@@ -5294,7 +5425,7 @@ module advance_clubb_core_module
       !$acc end parallel loop
 
       if ( clubb_at_least_debug_level( 0 ) ) then
-        if ( err_code == clubb_fatal_error ) then
+        if ( any(err_info%err_code == clubb_fatal_error) ) then
 
           !$acc update host( pdf_params%mixt_frac, pdf_params%chi_1, pdf_params%chi_2, &
           !$acc              cloud_frac, rcm )
@@ -5497,7 +5628,7 @@ module advance_clubb_core_module
     !------------------------ Output Variables ------------------------
     real( kind = core_rknd ), dimension(ngrdcol), intent(out) :: &
       interp_var    ! output array (interpolated)   
-    
+
     !------------------------ Local Variables ------------------------
     integer :: &
       i, k,   & ! Loop indices
@@ -5508,11 +5639,11 @@ module advance_clubb_core_module
       dpl     ! lower level pressure difference
 
     logical :: &
-      l_found,  & ! true if input levels found   	
-      l_error     ! true if error     
+      l_found,  & ! true if input levels found
+      l_error     ! true if error
 
     !------------------------ Begin Code ------------------------
-    
+
     ! Initialize index array and logical flags
     l_error = .false.
 

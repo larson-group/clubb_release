@@ -33,7 +33,7 @@ module output_netcdf
   subroutine open_netcdf_for_writing( nlat, nlon, fdir, fname, ia, iz, zgrid,  & 
                           day, month, year, lat_vals, lon_vals, & 
                           time, dtwrite, nvar, &
-                          ncf, err_code, &
+                          ncf, err_info, &
                           nsamp) ! optional
 
 ! Description:
@@ -60,6 +60,9 @@ module output_netcdf
 
     use error_code, only: &
         clubb_fatal_error     ! Constant
+
+    use err_info_type_module, only: &
+        err_info_type     ! Type
 
     implicit none
 
@@ -92,8 +95,8 @@ module output_netcdf
     ! Input/output Variables
     type (stat_file), intent(inout) :: ncf
 
-    integer, intent(inout) :: &
-      err_code      ! Error code catching and relaying any errors occurring in this subroutine
+    type(err_info_type), intent(inout) :: &
+      err_info        ! err_info struct containing err_code and err_header
 
     ! Number of SILHS samples, used only for SILHS sample outputting
     integer, optional, intent(in) :: nsamp
@@ -179,10 +182,12 @@ module output_netcdf
                         ncid = ncf%iounit )
 
     if ( stat /= NF90_NOERR ) then
+      write(fstderr,*) err_info%err_header_global
       write(unit=fstderr,fmt=*) "Error opening file: ",  & 
         trim( fdir )//trim( fname )//'.nc', & 
         trim( nf90_strerror( stat ) )
-      err_code = clubb_fatal_error
+      ! General error -> set all entries to clubb_fatal_error
+      err_info%err_code = clubb_fatal_error
       return
     end if
 
@@ -190,14 +195,14 @@ module output_netcdf
                   ncf%day, ncf%month, ncf%year, ncf%time, & ! In
                   ncf%SampDimId, ncf%LatDimId, ncf%LongDimId, ncf%AltDimId, ncf%TimeDimId, &! Out
                   ncf%SampVarId, ncf%LatVarId, ncf%LongVarId, ncf%AltVarId, ncf%TimeVarId, &! Out
-                  err_code )                                                                ! Inout
+                  err_info )                                                                ! Inout
 
     return
   end subroutine open_netcdf_for_writing
 
 !-------------------------------------------------------------------------------
 
-  subroutine write_netcdf( ncf, err_code )
+  subroutine write_netcdf( ncf, err_info )
 
 ! Description:
 !   Writes some data to the NetCDF dataset, but doesn't close it.
@@ -224,12 +229,15 @@ module output_netcdf
     use clubb_precision, only: &
         time_precision ! Constant
 
+    use err_info_type_module, only: &
+      err_info_type        ! Type
+
     implicit none
 
     type (stat_file), intent(inout) :: ncf    ! The file
 
-    integer, intent(inout) :: &
-      err_code      ! Error code catching and relaying any errors occurring in this subroutine
+    type(err_info_type), intent(inout) :: &
+      err_info        ! err_info struct containing err_code and err_header
 
     ! Local Variables
     integer, dimension(:), allocatable :: stat ! Error status
@@ -259,8 +267,10 @@ module output_netcdf
     stat(1) = nf90_put_var( ncid=ncf%iounit, varid=ncf%TimeVarId,  & 
                             values=time(1), start=(/ncf%ntimes/) )
     if ( stat(1) /= NF90_NOERR ) then
+      write(fstderr,*) err_info%err_header_global
       write(fstderr,*) "time variable nf90_put_var failed"
-      err_code = clubb_fatal_error
+      ! General error -> set all entries to clubb_fatal_error
+      err_info%err_code = clubb_fatal_error
       return
     end if
 
@@ -294,8 +304,10 @@ module output_netcdf
           endif
         end if
       end do
+      write(fstderr,*) err_info%err_header_global
       write(fstderr,*) "nf90_put_var error"
-      err_code = clubb_fatal_error
+      ! General error -> set all entries to clubb_fatal_error
+      err_info%err_code = clubb_fatal_error
       return
     end if
 
@@ -309,7 +321,7 @@ module output_netcdf
                             day, month, year, time, & 
                             SampDimId, LatDimId, LongDimId, AltDimId, TimeDimId, &
                             SampVarId, LatVarId, LongVarId, AltVarId, TimeVarId, &
-                            err_code )
+                            err_info )
 
 ! Description:
 !   Used internally to create a definition for the NetCDF dataset
@@ -336,6 +348,9 @@ module output_netcdf
 
     use error_code, only: &
         clubb_fatal_error     ! Constant
+
+    use err_info_type_module, only: &
+      err_info_type        ! Type
 
     implicit none
 
@@ -364,8 +379,8 @@ module output_netcdf
       SampVarId, LatVarId, LongVarId, AltVarId, TimeVarId
 
     ! Input/Output Variables
-    integer, intent(inout) :: &
-      err_code      ! Error code catching and relaying any errors occurring in this subroutine
+    type(err_info_type), intent(inout) :: &
+      err_info        ! err_info struct containing err_code and err_header
 
     ! Local variables
     integer :: stat
@@ -381,9 +396,11 @@ module output_netcdf
       ! Define SILHS sample dimension
       stat =  nf90_def_dim( ncid, "lh_sample_number", nsamp, SampDimId )
       if ( stat /= NF90_NOERR ) then
+        write(fstderr,*) err_info%err_header_global
         write(fstderr,*) "Error defining lh_sample_number: ", &
           trim( nf90_strerror( stat ) )
-        err_code = clubb_fatal_error
+        ! General error -> set all entries to clubb_fatal_error
+        err_info%err_code = clubb_fatal_error
         return
       end if
       ! Define SILHS sample number variable
@@ -396,33 +413,41 @@ module output_netcdf
 
     stat = nf90_def_dim( ncid, "longitude", nlon, LongDimId )
     if ( stat /= NF90_NOERR ) then
+      write(fstderr,*) err_info%err_header_global
       write(fstderr,*) "Error defining longitude: ", & 
         trim( nf90_strerror( stat ) )
-      err_code = clubb_fatal_error
+      ! General error -> set all entries to clubb_fatal_error
+      err_info%err_code = clubb_fatal_error
       return
     end if
 
     stat =  nf90_def_dim( ncid, "latitude", nlat, LatDimId )
     if ( stat /= NF90_NOERR ) then
+      write(fstderr,*) err_info%err_header_global
       write(fstderr,*) "Error defining latitude: ", & 
         trim( nf90_strerror( stat ) )
-      err_code = clubb_fatal_error
+      ! General error -> set all entries to clubb_fatal_error
+      err_info%err_code = clubb_fatal_error
       return
     end if
 
     stat = nf90_def_dim( ncid, "altitude", iz, AltDimId )
     if ( stat /= NF90_NOERR ) then
+      write(fstderr,*) err_info%err_header_global
       write(fstderr,*) "Error defining altitude: ", & 
       trim( nf90_strerror( stat ) )
-      err_code = clubb_fatal_error
+      ! General error -> set all entries to clubb_fatal_error
+      err_info%err_code = clubb_fatal_error
       return
     end if
 
     stat =  nf90_def_dim( ncid, "time", NF90_UNLIMITED, TimeDimId )
     if ( stat /= NF90_NOERR ) then
+      write(fstderr,*) err_info%err_header_global
       write(fstderr,*) "Error defining time: ", & 
         trim( nf90_strerror( stat ) )
-      err_code = clubb_fatal_error
+      ! General error -> set all entries to clubb_fatal_error
+      err_info%err_code = clubb_fatal_error
       return
     end if
 
@@ -448,8 +473,10 @@ module output_netcdf
     ! Time attribute
     stat = nf90_put_att( ncid, TimeVarId, "cartesian_axis", "T" )
     if ( stat /= NF90_NOERR ) then
+      write(fstderr,*) err_info%err_header_global
       write(fstderr,*) "Error defining time: ", trim( nf90_strerror( stat ) )
-      err_code = clubb_fatal_error
+      ! General error -> set all entries to clubb_fatal_error
+      err_info%err_code = clubb_fatal_error
       return
     end if
 
@@ -458,22 +485,28 @@ module output_netcdf
 
     stat = nf90_put_att( ncid, TimeVarId, "units", TimeUnits )
     if ( stat /= NF90_NOERR ) then
+      write(fstderr,*) err_info%err_header_global
       write(fstderr,*) "Error defining time: ", trim( nf90_strerror( stat ) )
-      err_code = clubb_fatal_error
+      ! General error -> set all entries to clubb_fatal_error
+      err_info%err_code = clubb_fatal_error
       return
     end if
 
     stat = nf90_put_att( ncid, TimeVarId, "ipositive", 1 )
     if ( stat /= NF90_NOERR ) then
+      write(fstderr,*) err_info%err_header_global
       write(fstderr,*) "Error defining time: ", trim( nf90_strerror( stat ) )
-      err_code = clubb_fatal_error
+      ! General error -> set all entries to clubb_fatal_error
+      err_info%err_code = clubb_fatal_error
       return
     end if
 
     stat = nf90_put_att( ncid, TimeVarId, "calendar_type", "Gregorian" )
     if ( stat /= NF90_NOERR ) then
+      write(fstderr,*) err_info%err_header_global
       write(fstderr,*) "Error defining time", trim( nf90_strerror( stat ) )
-      err_code = clubb_fatal_error
+      ! General error -> set all entries to clubb_fatal_error
+      err_info%err_code = clubb_fatal_error
       return
     end if
 
@@ -556,7 +589,7 @@ module output_netcdf
                           l_uv_nudge, &
                           l_tke_aniso, &
                           l_standard_term_ta, &
-                          ncf, err_code )
+                          ncf, err_info )
 
 ! Description:
 !   Used on the first call to write_nc to finalize definitions
@@ -602,6 +635,9 @@ module output_netcdf
     use error_code, only: &
         clubb_fatal_error     ! Constant
 
+    use err_info_type_module, only: &
+      err_info_type        ! Type
+
     implicit none
 
     ! External
@@ -638,8 +674,8 @@ module output_netcdf
     ! Input/Output Variables
     type (stat_file), intent(inout) :: ncf
 
-    integer, intent(inout) :: &
-      err_code      ! Error code catching and relaying any errors occurring in this subroutine
+    type(err_info_type), intent(inout) :: &
+      err_info        ! err_info struct containing err_code and err_header
 
     ! Local Variables
     integer, dimension(:), allocatable :: stat
@@ -719,9 +755,11 @@ module output_netcdf
                     netcdf_precision, var_dim(:), ncf%samples_of_var(i)%indx )
       endif
       if ( stat(i) /= NF90_NOERR ) then
+        write(fstderr,*) err_info%err_header_global
         write(fstderr,*) "Error defining variable ",  & 
           ncf%grid_avg_var(i)%name //": ", trim( nf90_strerror( stat(i) ) )
-        err_code = clubb_fatal_error
+      ! General error -> set all entries to clubb_fatal_error
+        err_info%err_code = clubb_fatal_error
         return
       end if
 
@@ -733,9 +771,11 @@ module output_netcdf
                     "valid_range", var_range(1:2) )
       endif
       if ( stat(i) /= NF90_NOERR ) then
+        write(fstderr,*) err_info%err_header_global
         write(fstderr,*) "Error defining valid range", & 
           trim( nf90_strerror( stat(i) ) )
-        err_code = clubb_fatal_error
+        ! General error -> set all entries to clubb_fatal_error
+        err_info%err_code = clubb_fatal_error
         return
       end if
 
@@ -747,9 +787,11 @@ module output_netcdf
                   trim( ncf%samples_of_var(i)%description ) )
       endif
       if ( stat(i) /= NF90_NOERR ) then
+        write(fstderr,*) err_info%err_header_global
         write(fstderr,*) "Error in description", & 
           trim( nf90_strerror( stat(i) ) )
-        err_code = clubb_fatal_error
+        ! General error -> set all entries to clubb_fatal_error
+        err_info%err_code = clubb_fatal_error
         return
       end if
 
@@ -761,9 +803,11 @@ module output_netcdf
                   trim( ncf%samples_of_var(i)%units ) )
       endif
       if ( stat(i) /= NF90_NOERR ) then
+        write(fstderr,*) err_info%err_header_global
         write(fstderr,*) "Error in units", & 
           trim( nf90_strerror( stat(i) ) )
-        err_code = clubb_fatal_error
+        ! General error -> set all entries to clubb_fatal_error
+        err_info%err_code = clubb_fatal_error
         return
       end if
     end do
@@ -801,11 +845,13 @@ module output_netcdf
     end if ! l_output_file_run_date
 
     if ( any( stat /= NF90_NOERR ) ) then
+      write(fstderr,*) err_info%err_header_global
       write(fstderr,*) "Error writing model information"
       do i = 1, size( stat ), 1
         write(fstderr,*) trim( nf90_strerror( stat(i) ) )
       end do
-      err_code = clubb_fatal_error
+      ! General error -> set all entries to clubb_fatal_error
+      err_info%err_code = clubb_fatal_error
       return
     end if
 
@@ -822,11 +868,13 @@ module output_netcdf
     stat(6) = nf90_put_att( ncf%iounit, NF90_GLOBAL, "l_tke_aniso", lchar( l_tke_aniso ) )
 
     if ( any( stat /= NF90_NOERR ) ) then
+      write(fstderr,*) err_info%err_header_global
       write(fstderr,*) "Error writing model flags"
       do i = 1, size( stat ), 1
         write(fstderr,*) i, trim( nf90_strerror( stat(i) ) )
       end do
-      err_code = clubb_fatal_error
+      ! General error -> set all entries to clubb_fatal_error
+      err_info%err_code = clubb_fatal_error
       return
     end if
 
@@ -843,32 +891,36 @@ module output_netcdf
     end do
 
     if ( any( stat /= NF90_NOERR ) ) then
+      write(fstderr,*) err_info%err_header_global
       write(fstderr,*) "Error writing parameters"
       do i = 1, nparams, 1
         write(fstderr,*) i, trim( nf90_strerror( stat(i) ) )
       end do
-      err_code = clubb_fatal_error
+      ! General error -> set all entries to clubb_fatal_error
+      err_info%err_code = clubb_fatal_error
       return
     end if
 
     stat(1) = nf90_enddef( ncf%iounit ) ! end definitions
     if ( stat(1) /= NF90_NOERR ) then
+      write(fstderr,*) err_info%err_header_global
       write(fstderr,*) "Error finalizing definitions", & 
         trim( nf90_strerror( stat(1) ) )
-      err_code = clubb_fatal_error
+      ! General error -> set all entries to clubb_fatal_error
+      err_info%err_code = clubb_fatal_error
       return
     end if
 
     deallocate( stat )
 
-    call write_grid( ncf, err_code )  ! define lat., long., and grid intent(inout)
+    call write_grid( ncf, err_info )  ! define lat., long., and grid intent(inout)
     ncf%l_defined = .true.
 
     return
   end subroutine first_write
 
 !-------------------------------------------------------------------------------
-  subroutine write_grid( ncf, err_code )
+  subroutine write_grid( ncf, err_info )
 
 ! Description:
 !   Writes inforation about latitude, longitude and the grid
@@ -890,13 +942,16 @@ module output_netcdf
     use error_code, only: &
         clubb_fatal_error   ! Constant
 
+    use err_info_type_module, only: &
+      err_info_type        ! Type
+
     implicit none
 
     ! Input Variable(s)
     type (stat_file), intent(inout) :: ncf
 
-    integer, intent(inout) :: &
-      err_code      ! Error code catching and relaying any errors occurring in this subroutine
+    type(err_info_type), intent(inout) :: &
+      err_info        ! err_info struct containing err_code and err_header
 
     integer :: stat
 
@@ -905,27 +960,33 @@ module output_netcdf
     stat = nf90_put_var( ncid=ncf%iounit, varid=ncf%AltVarId, &
                          values=ncf%z(ncf%ia:ncf%iz) )
     if ( stat /= NF90_NOERR ) then
+      write(fstderr,*) err_info%err_header_global
       write(fstderr,*) "Error entering grid: ", &
         trim( nf90_strerror( stat ) )
-      err_code = clubb_fatal_error
+      ! General error -> set all entries to clubb_fatal_error
+      err_info%err_code = clubb_fatal_error
       return
     end if
 
     stat = nf90_put_var( ncid=ncf%iounit, varid=ncf%LongVarId, &
                          values=ncf%lon_vals )
     if ( stat /= NF90_NOERR ) then
+      write(fstderr,*) err_info%err_header_global
       write(fstderr,*) "Error entering longitude: ", &
         trim( nf90_strerror( stat ) )
-      err_code = clubb_fatal_error
+      ! General error -> set all entries to clubb_fatal_error
+      err_info%err_code = clubb_fatal_error
       return
     end if
 
     stat = nf90_put_var( ncid=ncf%iounit, varid=ncf%LatVarId, &
                          values=ncf%lat_vals )
     if ( stat /= NF90_NOERR ) then
+      write(fstderr,*) err_info%err_header_global
       write(fstderr,*) "Error entering latitude: ", &
         trim( nf90_strerror( stat ) )
-      err_code = clubb_fatal_error
+      ! General error -> set all entries to clubb_fatal_error
+      err_info%err_code = clubb_fatal_error
       return
     end if
 
@@ -934,9 +995,11 @@ module output_netcdf
       stat = nf90_put_var( ncid=ncf%iounit, varid=ncf%SampVarId, &
                            values=ncf%samp_idx )
       if ( stat /= NF90_NOERR ) then
+        write(fstderr,*) err_info%err_header_global
         write(fstderr,*) "Error entering grid: ", &
           trim( nf90_strerror( stat ) )
-        err_code = clubb_fatal_error
+        ! General error -> set all entries to clubb_fatal_error
+        err_info%err_code = clubb_fatal_error
         return
       end if
     endif

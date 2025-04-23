@@ -678,6 +678,12 @@ module error
     use stat_file_module, only: &
       stat_file ! Type(s)
 
+    use err_info_type_module, only: &
+      err_info_type,                  & ! Type
+      init_default_err_info_api,      & ! Procedure(s)
+      set_err_info_values_api,        &
+      cleanup_err_info_api
+
 #ifdef NETCDF
     use input_netcdf, only: &
       open_netcdf_read, & ! Procedure(s)
@@ -685,6 +691,10 @@ module error
 #endif /* NETCDF */
 
     implicit none
+
+#ifdef _OPENMP
+    integer :: omp_get_thread_num
+#endif
 
     ! External
     intrinsic :: achar, modulo, minval, maxval, trim, any, real
@@ -699,7 +709,7 @@ module error
 
     ! The interface declaration in the nr module prevents us from making
     ! this a fixed length array declaration
-    real, dimension(:), intent(in) ::  & 
+    real, dimension(:), intent(in) :: &
       param_vals_vector_r4 ! Tuning vector(ndim dimension) contains
                         ! parameterization constants (C1, C2 etc.)
 
@@ -708,45 +718,45 @@ module error
     real( kind = core_rknd ), dimension(size(param_vals_vector_r4)) :: &
       param_vals_vector ! core_rknd version of param_vals_vector_r4
 
-    real( kind = core_rknd ), dimension(nparams) :: & 
+    real( kind = core_rknd ), dimension(nparams) :: &
       params_local ! Local copy of the CLUBB parameters fed into run_clubb
 
     ! These are read after each run from the GrADS control files
-    integer ::  & 
+    integer :: &
       clubb_nz   ! Extent of the CLUBB domain in the z dimension
 
-    character(50) ::  & 
+    character(50) :: &
       errorfile ! nml filename for invalid runs
 
-    integer ::  & 
+    integer :: &
       AllocateStatus ! For hoc_zl, les_zl
 
-    real( kind = core_rknd ) ::  & 
+    real( kind = core_rknd ) :: &
       err_sum  ! scalar sum of all z-levels
 
-    integer ::  & 
+    integer :: &
       c_terms ! num of terms in err_sum (for normalization)
 
     ! LES and CLUBB values over nz z-levels
-    real( kind = core_rknd ), dimension(:), allocatable ::  & 
+    real( kind = core_rknd ), dimension(:), allocatable :: &
       clubb_zl, & 
       clubb2_zl, & 
       les_zl, &
       clubb_grid_heights
 
-    real( kind = core_rknd ), dimension(:,:), allocatable ::  & 
+    real( kind = core_rknd ), dimension(:,:), allocatable :: &
       err_sums  ! To save breakdown of cost function
 
-    real( kind = core_rknd ) ::  & 
+    real( kind = core_rknd ) :: &
       les_minmax ! The largest LES value subtracted from the
     ! smallest value of all zlvl's (for normalization)
 
-    logical ::  & 
+    logical :: &
       l_error, & ! Used to det. if reading the variable failed
       l_file_error ! Determines if reading the .netCDF file fails when checking that
                    ! The models start at the same time
 
-    logical ::  &
+    logical :: &
       l_save_all_nc_files = .false. ! This will save all netcdf files from a tuner run,
                                     ! labeled by iteration number.
                                     ! Be aware of how much memory this will use up.
@@ -755,12 +765,14 @@ module error
 
     integer :: underscore_idx ! Used when l_save_all_nc_files = .true.
 
-    integer :: err_code ! Error output of run_clubb
+    type(err_info_type) :: &
+      err_info      ! err_info struct containing err_code and err_header
+                    ! No need to initialize here since that is done within run_clubb
 
-    integer, dimension(c_total) ::  & 
+    integer, dimension(c_total) :: &
       run_stat ! isValid over each model case
 
-    type (stat_file) ::  &
+    type (stat_file) :: &
       les_netcdf_file,   & ! Data file derived type
       clubb_netcdf_file
 
@@ -801,7 +813,6 @@ module error
     err_sum  = 0.0_core_rknd
     err_sums = 0.0_core_rknd
     c_terms  = 0
-    err_code = clubb_no_error
     run_stat(1:c_total) = clubb_no_error
 
     ! Copy simplex into a vector of all possible CLUBB parameters
@@ -838,9 +849,12 @@ module error
     ! OpenMP directives should work as expected now, assuming new
     ! model variables are declared threadprivate -dschanen 31 Jan 2007
 
+    ! Initialize err_info with default values for one column
+    call init_default_err_info_api(1, err_info)
+
 !$omp parallel do default(none), private(c_run), &
 !$omp   shared(params_local, run_file, run_stat, c_total, model_flags_array, iter), &
-!$omp   private(err_code)
+!$omp   private(err_info)
     do c_run=1, c_total, 1
 
 #ifndef _OPENMP
@@ -851,23 +865,27 @@ module error
       call write_text( "Calling CLUBB with case "//trim( run_file(c_run) ), &
         l_save_tuning_run, file_unit )
       if( l_save_tuning_run ) close(unit=file_unit)
-
+#else
+      ! Set thread nr for err_info
+      call set_err_info_values_api(1, err_info, chunk_idx_in=omp_get_thread_num())
 #endif
       ! Run the CLUBB model with parameters as input
 
       if ( allocated( model_flags_array ) ) then
         call run_clubb( 1, 1, l_output_multi_col, l_output_double_prec, &
-                        params_local, run_file(c_run), l_stdout, err_code, &
+                        params_local, run_file(c_run), l_stdout, err_info, &
                         model_flags_array(iter,:) )
       else
         call run_clubb( 1, 1, l_output_multi_col, l_output_double_prec, &
-                        params_local, run_file(c_run), l_stdout, err_code )
+                        params_local, run_file(c_run), l_stdout, err_info )
       end if
 
-      run_stat(c_run) = err_code
- 
+      if ( any(err_info%err_code == clubb_fatal_error) ) then
+        run_stat(c_run) = clubb_fatal_error
+      end if
+
       ! Reset error code for next iteration
-      err_code = clubb_no_error
+      err_info%err_code = clubb_no_error
     end do ! 1..c_run
 !$omp end parallel do
 
@@ -1135,6 +1153,9 @@ module error
         close(unit=file_unit)
 
     end if
+
+    ! Clean up err_info
+    call cleanup_err_info_api(err_info)
 
     return
   end function min_les_clubb_diff

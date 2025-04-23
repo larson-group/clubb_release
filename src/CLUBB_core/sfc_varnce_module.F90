@@ -26,7 +26,7 @@ module sfc_varnce_module
                               wp2, up2, vp2, &
                               thlp2, rtp2, rtpthlp, &
                               sclrp2, sclrprtp,  sclrpthlp, &
-                              err_code )
+                              err_info )
 
     ! Description:
     ! This subroutine computes estimate of the surface thermodynamic and wind
@@ -84,6 +84,9 @@ module sfc_varnce_module
 
     use clubb_precision, only: &
         core_rknd ! Variable(s)
+
+    use err_info_type_module, only: &
+      err_info_type     ! Type
 
     implicit none
 
@@ -170,8 +173,8 @@ module sfc_varnce_module
       sclrprtp,  & ! Surface covariance of pssv scalar and rt  [units kg/kg]
       sclrpthlp    ! Surface covariance of pssv scalar and theta-l [units K]
 
-    integer, intent(inout) :: &
-      err_code      ! Error code catching and relaying any errors occurring in this subroutine
+    type(err_info_type), intent(inout) :: &
+      err_info      ! err_info struct containing err_code and err_header
 
     !-------------------------- Local Variables --------------------------
     real( kind = core_rknd ), dimension(ngrdcol) :: &
@@ -773,10 +776,13 @@ module sfc_varnce_module
                                vp2(i,gr%k_lb_zm), thlp2(i,gr%k_lb_zm), rtp2(i,gr%k_lb_zm), & ! intent(in)
                                rtpthlp(i,gr%k_lb_zm), sclrp2(i,gr%k_lb_zm,:),              & ! intent(in)
                                sclrprtp(i,gr%k_lb_zm,:), sclrpthlp(i,gr%k_lb_zm,:),        & ! intent(in)
-                               err_code )                                                    ! intent(inout)
+                               err_info )                                                    ! intent(inout)
+        if ( err_info%err_code(i) == clubb_fatal_error ) then
+          write(fstderr, *) err_info%err_header(i)
+        end if
       end do
 
-      if ( err_code == clubb_fatal_error ) then
+      if ( any(err_info%err_code == clubb_fatal_error) ) then
 
         write(fstderr,*) "Error in calc_sfc_varnce"
         write(fstderr,*) "Intent(in)"

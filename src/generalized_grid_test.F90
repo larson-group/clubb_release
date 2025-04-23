@@ -40,7 +40,7 @@ module generalized_grid_test
                thlm, rtm, wprtp, wpthlp, &                                ! Intent(inout)
                wp2, wp3, rtp2, rtp3, thlp2, thlp3, rtpthlp, &             ! Intent(inout)
                sclrm, sclrp2, sclrp3, sclrprtp, sclrpthlp, &              ! Intent(inout)
-               wpsclrp, edsclrm, err_code, &                              ! Intent(inout)
+               wpsclrp, edsclrm, err_info, &                              ! Intent(inout)
                rcm, cloud_frac, &                                         ! Intent(inout)
                wpthvp, wp2thvp, rtpthvp, thlpthvp, &                      ! Intent(inout)
                sclrpthvp, &                                               ! Intent(inout)
@@ -54,6 +54,9 @@ module generalized_grid_test
                cloudy_updraft_frac, cloudy_downdraft_frac, &              ! Intent(out)
                rcm_in_layer, cloud_cover, invrs_tau_zm, &                 ! Intent(out)
                Lscale )                                                   ! Intent(out)
+
+    use constants_clubb, only: &
+        fstderr
 
     use grid_class, only: &
         grid, & ! Type(s)
@@ -93,6 +96,9 @@ module generalized_grid_test
         clubb_generalized_grd_test_err, &
         clubb_no_error, &
         clubb_fatal_error
+
+    use err_info_type_module, only: &
+      err_info_type        ! Type
 
     implicit none
 
@@ -351,7 +357,8 @@ module generalized_grid_test
     real( kind = core_rknd ), dimension(ngrdcol,nzt), intent(out) :: &
       Lscale     ! Length scale         [m]
 
-    integer, intent(inout) :: err_code  ! Diagnostic, for if some calculation goes amiss.
+    type(err_info_type), intent(inout) :: &
+      err_info        ! err_info struct containing err_code and err_header
 
 #ifdef GFDL
     ! hlg, 2010-06-16
@@ -838,7 +845,7 @@ module generalized_grid_test
               thlm, rtm, wprtp, wpthlp, &                          ! Intent(inout)
               wp2, wp3, rtp2, rtp3, thlp2, thlp3, rtpthlp, &       ! Intent(inout)
               sclrm, sclrp2, sclrp3, sclrprtp, sclrpthlp, &        ! Intent(inout)
-              wpsclrp, edsclrm, err_code, &                        ! Intent(inout)
+              wpsclrp, edsclrm, err_info, &                        ! Intent(inout)
               rcm, cloud_frac, &                                   ! Intent(inout)
               wpthvp, wp2thvp, rtpthvp, thlpthvp, &                ! Intent(inout)
               sclrpthvp, &                                         ! Intent(inout)
@@ -871,9 +878,11 @@ module generalized_grid_test
       ! (and not overwritten this time) and that will cause the code to exit
       ! the run and stop. However, the results between the ascending grid and
       ! the descending grid will still match.
-      if ( err_code == clubb_fatal_error ) then
+      if ( any(err_info%err_code == clubb_fatal_error) ) then
+         write(fstderr, *) "Fatal error in advance_clubb_core using ascending grid direction"
+         write(fstderr, *) "Generalized grid test continuing anyway"
          ! Reset error code
-         err_code = clubb_no_error
+         err_info%err_code = clubb_no_error
       endif
 
 
@@ -908,7 +917,7 @@ module generalized_grid_test
               thlm_flip, rtm_flip, wprtp_flip, wpthlp_flip, &                       ! Intent(inout)
               wp2_flip, wp3_flip, rtp2_flip, rtp3_flip, thlp2_flip, thlp3_flip, rtpthlp_flip, & ! Intent(inout)
               sclrm_flip, sclrp2_flip, sclrp3_flip, sclrprtp_flip, sclrpthlp_flip, & ! Intent(inout)
-              wpsclrp_flip, edsclrm_flip, err_code, &                               ! Intent(inout)
+              wpsclrp_flip, edsclrm_flip, err_info, &                               ! Intent(inout)
               rcm_flip, cloud_frac_flip, &                                          ! Intent(inout)
               wpthvp_flip, wp2thvp_flip, rtpthvp_flip, thlpthvp_flip, &             ! Intent(inout)
               sclrpthvp_flip, &                                                     ! Intent(inout)
@@ -1535,9 +1544,9 @@ module generalized_grid_test
          print *, "##################################################"
          print *, "Discrepancy found in ascending vs. descending grid" &
                   // " direction test. Please see messages listed above."
-         err_code = clubb_generalized_grd_test_err
+          ! General error -> set all entries to clubb_generalized_grd_test_err
+         err_info%err_code = clubb_generalized_grd_test_err
       endif ! l_differences
-
 
       return
 
@@ -1554,7 +1563,7 @@ module generalized_grid_test
                clubb_config_flags, silhs_config_flags,          & ! In
                l_rad_itime, stats_metadata,                     & ! In
                stats_zt, stats_zm, stats_sfc,                   & ! In/Out
-               stats_lh_zt, stats_lh_sfc, err_code,             & ! In/Out
+               stats_lh_zt, stats_lh_sfc, err_info,             & ! In/Out
                time_clubb_pdf, time_stop, time_start,           & ! In/Out
                hydrometp2,                                      & ! Out
                mu_x_1_n, mu_x_2_n,                              & ! Out
@@ -1630,6 +1639,9 @@ module generalized_grid_test
     use clubb_precision, only: &
         core_rknd    ! Variable(s)
 
+    use err_info_type_module, only: &
+      err_info_type        ! Type
+
     implicit none
 
     ! Input Variables
@@ -1696,8 +1708,8 @@ module generalized_grid_test
       stats_lh_zt, &
       stats_lh_sfc
 
-    integer, intent(inout) :: &
-      err_code      ! Error code catching and relaying any errors
+    type(err_info_type), intent(inout) :: &
+      err_info        ! err_info struct containing err_code and err_header
 
     real( kind = core_rknd ), intent(inout) :: &
       time_clubb_pdf, & ! time spent in setup_pdf_parameters and hydrometeor_mixed_moments [s]
@@ -1921,7 +1933,7 @@ module generalized_grid_test
              clubb_config_flags, silhs_config_flags,          & ! In
              l_rad_itime, stats_metadata,                     & ! In
              stats_zt, stats_zm, stats_sfc,                   & ! In/Out
-             stats_lh_zt, stats_lh_sfc, err_code,             & ! In/Out
+             stats_lh_zt, stats_lh_sfc, err_info,             & ! In/Out
              time_clubb_pdf, time_stop, time_start,           & ! In/Out
              hydrometp2,                                      & ! Out
              mu_x_1_n, mu_x_2_n,                              & ! Out
@@ -1954,9 +1966,9 @@ module generalized_grid_test
       ! (and not overwritten this time) and that will cause the code to exit
       ! the run and stop. However, the results between the ascending grid and
       ! the descending grid will still match.
-      if ( err_code == clubb_fatal_error ) then
+      if ( any(err_info%err_code == clubb_fatal_error) ) then
          ! Reset error code
-         err_code = clubb_no_error
+         err_info%err_code = clubb_no_error
       endif
 
 
@@ -1973,7 +1985,7 @@ module generalized_grid_test
              clubb_config_flags, silhs_config_flags,          & ! In
              l_rad_itime, stats_metadata_flip,                & ! In
              stats_zt, stats_zm, stats_sfc,                   & ! In/Out
-             stats_lh_zt, stats_lh_sfc, err_code,             & ! In/Out
+             stats_lh_zt, stats_lh_sfc, err_info,             & ! In/Out
              time_clubb_pdf, time_stop, time_start,           & ! In/Out
              hydrometp2_flip,                                 & ! Out
              mu_x_1_n_flip, mu_x_2_n_flip,                    & ! Out
@@ -2247,7 +2259,7 @@ module generalized_grid_test
          print *, "##################################################"
          print *, "Discrepancy found in SILHS ascending vs. descending grid" &
                   // " direction test. Please see messages listed above."
-         err_code = clubb_generalized_grd_test_err
+         err_info%err_code = clubb_generalized_grd_test_err
       endif ! l_differences
 
 

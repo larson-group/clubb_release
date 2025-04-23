@@ -50,7 +50,7 @@ module advance_microphys_module
                                 stats_zt, stats_zm, stats_sfc, &           ! Inout
                                 hydromet, hydromet_vel_zt, hydrometp2, &   ! Inout
                                 K_hm, Ncm, Nc_in_cloud, rvm_mc, &          ! Inout
-                                thlm_mc, err_code, &                       ! Inout
+                                thlm_mc, err_info, &                       ! Inout
                                 wphydrometp, wpNcp )                       ! Out
 
     ! Description:
@@ -108,6 +108,9 @@ module advance_microphys_module
 
     use stats_type, only: &
         stats ! Type
+
+    use err_info_type_module, only: &
+      err_info_type        ! Type
 
     implicit none
 
@@ -193,8 +196,8 @@ module advance_microphys_module
       rvm_mc,  & ! Microphysics contributions to vapor water          [kg/kg/s]
       thlm_mc    ! Microphysics contributions to liquid potential temp.   [K/s]
 
-    integer, intent(inout) :: &
-      err_code    ! Error code catching and relaying any errors occurring in this subroutine
+    type(err_info_type), intent(inout) :: &
+      err_info        ! err_info struct containing err_code and err_header
 
     !---------------------- Output Variables ----------------------
     real( kind = core_rknd ), dimension(gr%nzm,hydromet_dim), intent(out) :: &
@@ -344,7 +347,7 @@ module advance_microphys_module
                                  stats_metadata, &
                                  stats_zt, stats_zm, &
                                  hydromet, hydromet_vel_zt, &
-                                 hydrometp2, rvm_mc, thlm_mc, err_code, &
+                                 hydrometp2, rvm_mc, thlm_mc, err_info, &
                                  wphydrometp, hydromet_vel, &
                                  hydromet_vel_covar, hydromet_vel_covar_zt )
 
@@ -352,7 +355,8 @@ module advance_microphys_module
 
 
     if ( clubb_at_least_debug_level( 0 ) ) then
-       if ( err_code == clubb_fatal_error ) then
+       if ( any(err_info%err_code == clubb_fatal_error) ) then
+          write(fstderr,*) err_info%err_header_global
           write(fstderr,*) "calling advance_hydrometeor"
           call write_adv_micro_errors( gr, dt, time_current, hydromet_dim,  & ! In
                                        wm_zt, wp2, &                          ! In
@@ -368,9 +372,9 @@ module advance_microphys_module
                                        hydromet, hydromet_vel_zt, &           ! In
                                        hydrometp2, K_hm, Ncm, &               ! In
                                        Nc_in_cloud, rvm_mc, thlm_mc, &        ! In
-                                       wphydrometp, wpNcp, err_code )         ! In
+                                       wphydrometp, wpNcp, err_info )         ! In
           return
-       endif !  err_code == clubb_fatal_error
+       endif !  err_info%err_code == clubb_fatal_error
     endif
 
     !-----------------------------------------------------------------------
@@ -389,11 +393,12 @@ module advance_microphys_module
                          tridiag_solve_method, &
                          stats_metadata, &
                          stats_zt, stats_zm, &
-                         Ncm, Nc_in_cloud, err_code, &
+                         Ncm, Nc_in_cloud, err_info, &
                          wpNcp )
 
        if ( clubb_at_least_debug_level( 0 ) ) then
-         if ( err_code == clubb_fatal_error ) then
+         if ( any(err_info%err_code == clubb_fatal_error) ) then
+          write(fstderr,*) err_info%err_header_global
            write(fstderr,*) "in advance_Ncm"
            call write_adv_micro_errors( gr, dt, time_current, hydromet_dim, & ! In
                                         wm_zt, wp2, &                         ! In
@@ -409,7 +414,7 @@ module advance_microphys_module
                                         hydromet, hydromet_vel_zt, &          ! In
                                         hydrometp2, K_hm, Ncm, &              ! In
                                         Nc_in_cloud, rvm_mc, thlm_mc, &       ! In
-                                        wphydrometp, wpNcp, err_code )        ! In
+                                        wphydrometp, wpNcp, err_info )        ! In
            return
          endif
        endif
@@ -517,7 +522,7 @@ module advance_microphys_module
                                  hydromet, hydromet_vel_zt, &          ! In
                                  hydrometp2, K_hm, Ncm, &              ! In
                                  Nc_in_cloud, rvm_mc, thlm_mc, &       ! In
-                                 wphydrometp, wpNcp, err_code )        ! In
+                                 wphydrometp, wpNcp, err_info )        ! In
 
     return
 
@@ -535,7 +540,7 @@ module advance_microphys_module
                                   stats_metadata, &
                                   stats_zt, stats_zm, &
                                   hydromet, hydromet_vel_zt, &
-                                  hydrometp2, rvm_mc, thlm_mc, err_code, &
+                                  hydrometp2, rvm_mc, thlm_mc, err_info, &
                                   wphydrometp, hydromet_vel, &
                                   hydromet_vel_covar, hydromet_vel_covar_zt )
 
@@ -593,6 +598,9 @@ module advance_microphys_module
         hm_metadata_type
 
     use stats_type, only: stats ! Type
+
+    use err_info_type_module, only: &
+      err_info_type        ! Type
 
     implicit none
 
@@ -660,8 +668,8 @@ module advance_microphys_module
       rvm_mc,  & ! Microphysics contributions to vapor water          [kg/kg/s]
       thlm_mc    ! Microphysics contributions to liquid potential temp.   [K/s]
 
-    integer, intent(inout) :: &
-      err_code    ! Error code catching and relaying any errors occurring in this subroutine
+    type(err_info_type), intent(inout) :: &
+      err_info        ! err_info struct containing err_code and err_header
 
     !---------------------------- Output Variables ----------------------------
     real( kind = core_rknd ), dimension(gr%nzm,hydromet_dim), intent(out) :: &
@@ -839,17 +847,17 @@ module advance_microphys_module
                              tridiag_solve_method,                            & ! In
                              stats_metadata,                                  & ! In
                              stats_zt,                                        & ! InOut
-                             lhs, rhs, hydromet(:,i), err_code )                ! InOut
+                             lhs, rhs, hydromet(:,i), err_info )                ! InOut
 
        if ( clubb_at_least_debug_level( 0 ) ) then
-           if ( err_code == clubb_fatal_error ) then
-
+           if ( any(err_info%err_code == clubb_fatal_error) ) then
+                write(fstderr,*) err_info%err_header_global
                 write(fstderr,*) "Error in hydrometeor field " &
                                   // trim( hm_metadata%hydromet_list(i) )
 
                 write(fstderr,*) trim( hm_metadata%hydromet_list(i) ) // " = ", hydromet(:,i)
      
-           endif !  err_code == clubb_fatal_error 
+           endif !  err_info%err_code == clubb_fatal_error 
         end if
 
     enddo ! i = 1, hydromet_dim, 1
@@ -1009,7 +1017,7 @@ module advance_microphys_module
                           tridiag_solve_method, &
                           stats_metadata, &
                           stats_zt, stats_zm, &
-                          Ncm, Nc_in_cloud, err_code, &
+                          Ncm, Nc_in_cloud, err_info, &
                           wpNcp )
 
     ! Description:
@@ -1062,6 +1070,9 @@ module advance_microphys_module
 
     use stats_type, only: stats ! Type
 
+    use err_info_type_module, only: &
+      err_info_type        ! Type
+
     implicit none
 
     !------------------------------- Input Variables -------------------------------
@@ -1110,8 +1121,8 @@ module advance_microphys_module
       Ncm,         & ! Mean cloud droplet conc., <N_c> (thermo. levs.)  [num/kg]
       Nc_in_cloud    ! Mean (in-cloud) cloud droplet concentration      [num/kg]
 
-    integer, intent(inout) :: &
-      err_code    ! Error code catching and relaying any errors occurring in this subroutine
+    type(err_info_type), intent(inout) :: &
+      err_info        ! err_info struct containing err_code and err_header
 
     !------------------------------- Output Variables -------------------------------
     real( kind = core_rknd ), dimension(gr%nzm), intent(out) :: &
@@ -1256,7 +1267,7 @@ module advance_microphys_module
                              tridiag_solve_method,                       & ! In
                              stats_metadata,                             & ! In
                              stats_zt,                                   & ! InOut
-                             lhs, rhs, Nc_in_cloud, err_code )             ! InOut
+                             lhs, rhs, Nc_in_cloud, err_info )             ! InOut
 
        Ncm = Nc_in_cloud * max( cloud_frac, cloud_frac_min )
 
@@ -1268,7 +1279,7 @@ module advance_microphys_module
                              tridiag_solve_method,                       & ! In
                              stats_metadata,                             & ! In
                              stats_zt,                                   & ! InOut
-                             lhs, rhs, Ncm, err_code )                     ! InOut
+                             lhs, rhs, Ncm, err_info )                     ! InOut
 
        Nc_in_cloud = Ncm / max( cloud_frac, cloud_frac_min )
 
@@ -1393,7 +1404,7 @@ module advance_microphys_module
                               tridiag_solve_method, &
                               stats_metadata, &
                               stats_zt, &
-                              lhs, rhs, hmm, err_code )
+                              lhs, rhs, hmm, err_info )
 
     ! Description:
     ! Solve the tridiagonal system for hydrometeor variable.
@@ -1428,6 +1439,9 @@ module advance_microphys_module
 
     use stats_type, only: &
         stats ! Type
+
+    use err_info_type_module, only: &
+      err_info_type        ! Type
 
     implicit none
 
@@ -1472,8 +1486,8 @@ module advance_microphys_module
     real( kind = core_rknd ), intent(inout), dimension(gr%nzt) :: & 
       hmm    ! Mean value of hydrometeor (thermodynamic levels)    [units vary]
 
-    integer, intent(inout) :: &
-      err_code    ! Error code catching and relaying any errors occurring in this subroutine
+    type(err_info_type), intent(inout) :: &
+      err_info        ! err_info struct containing err_code and err_header
 
     !------------------------ Local Variables ------------------------
     integer :: k, km1, kp1  ! Array indices
@@ -1549,7 +1563,7 @@ module advance_microphys_module
     ! Solve system using a tridiag_solve.
     call tridiag_solve( solve_type, tridiag_solve_method, & ! Intent(in)
                         gr%nzt,                           & ! Intent(in)
-                        lhs, rhs, err_code,               & ! Intent(inout)
+                        lhs, rhs, err_info,               & ! Intent(inout)
                         hmm )                               ! Intent(out)
 
 
@@ -3579,7 +3593,7 @@ module advance_microphys_module
                                      hydromet, hydromet_vel_zt, &           ! In
                                      hydrometp2, K_hm, Ncm, &               ! In
                                      Nc_in_cloud, rvm_mc, thlm_mc, &        ! In
-                                     wphydrometp, wpNcp, err_code )         ! In
+                                     wphydrometp, wpNcp, err_info )         ! In
 
     ! Description:
     ! Writes to screen the values of all variables that are passed into and out
@@ -3606,6 +3620,9 @@ module advance_microphys_module
     use clubb_precision, only:  &
         time_precision, & ! Variable(s)
         core_rknd
+
+    use err_info_type_module, only: &
+      err_info_type        ! Type
 
     implicit none
 
@@ -3684,13 +3701,13 @@ module advance_microphys_module
     real( kind = core_rknd ), dimension(gr%nzm), intent(in) :: &
       wpNcp          ! Covariance < w'N_c' > (momentum levels)   [(m/s)(num/kg)]
 
-    integer, intent(in) :: &
-      err_code    ! Error code from advance_hydrometeor to check if we need to generate error output
+    type(err_info_type), intent(in) :: &
+      err_info        ! err_info struct containing err_code and err_header
 
     !---------------------------- Begin Code ----------------------------
 
     if ( clubb_at_least_debug_level( 0 ) ) then
-       if ( err_code == clubb_fatal_error ) then
+       if ( any(err_info%err_code == clubb_fatal_error) ) then
 
           write(fstderr,*) "Error in advance_microphys"
 

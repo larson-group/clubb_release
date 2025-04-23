@@ -90,7 +90,7 @@ module advance_xm_wpxp_module
                               stats_zt, stats_zm, stats_sfc, &
                               rtm, wprtp, thlm, wpthlp, &
                               sclrm, wpsclrp, um, upwp, vm, vpwp, &
-                              um_pert, vm_pert, upwp_pert, vpwp_pert, err_code )
+                              um_pert, vm_pert, upwp_pert, vpwp_pert, err_info )
 
     ! Description:
     ! Advance the mean and flux terms by one timestep.
@@ -179,6 +179,9 @@ module advance_xm_wpxp_module
         sponge_damp_xm ! Procedure(s)
 
     use stats_type, only: stats ! Type
+
+    use err_info_type_module, only: &
+      err_info_type     ! Type
 
     implicit none
 
@@ -379,8 +382,8 @@ module advance_xm_wpxp_module
       upwp_pert, & ! perturbed <u'w'> [m^2/s^2]
       vpwp_pert    ! perturbed <v'w'> [m^2/s^2]
 
-    integer, intent(inout) :: &
-      err_code      ! Error code catching and relaying any errors occurring in this subroutine
+    type(err_info_type), intent(inout) :: &
+      err_info      ! err_info struct containing err_code and err_header
 
     ! -------------------- Local Variables --------------------
 
@@ -511,9 +514,11 @@ module advance_xm_wpxp_module
     ! Check whether monotonic flux limiter flags are set appropriately
     if ( clubb_at_least_debug_level( 0 ) ) then
       if ( l_mono_flux_lim_rtm .and. .not. l_mono_flux_lim_spikefix ) then
+        write(fstderr, *) err_info%err_header_global
         write(fstderr,*) &
                   "l_mono_flux_lim_rtm=T with l_mono_flux_lim_spikefix=F can lead to spikes aloft."
-        err_code = clubb_fatal_error
+        ! General error -> set all entries to clubb_fatal_error
+        err_info%err_code = clubb_fatal_error
         return
       end if
     end if
@@ -732,17 +737,18 @@ module advance_xm_wpxp_module
 
     if ( clubb_at_least_debug_level( 0 ) ) then
       ! Assertion check for C7_Skw_fnc
-      !$acc parallel loop gang vector collapse(2) default(present)  reduction(.or.:err_code)
+      !$acc parallel loop gang vector collapse(2) default(present)
       do k = 1, nzm
         do i = 1, ngrdcol
           if ( C7_Skw_fnc(i,k) > one .or. C7_Skw_fnc(i,k) < zero ) then
-            err_code = clubb_fatal_error
+            write(fstderr,*) err_info%err_header(i)
+            err_info%err_code(i) = clubb_fatal_error
           end if
         end do
       end do
       !$acc end parallel loop
 
-      if ( err_code == clubb_fatal_error ) then
+      if ( any(err_info%err_code == clubb_fatal_error) ) then
         write(fstderr,*) "The C7_Skw_fnc variable is outside the valid range"
         return
       end if
@@ -854,7 +860,7 @@ module advance_xm_wpxp_module
                                             stats_metadata,                                 & ! In
                                             stats_zt, stats_zm, stats_sfc,                  & ! InOut
                                             rtm, wprtp, thlm, wpthlp, sclrm, wpsclrp,       & ! InOut
-                                            err_code )                                        ! InOut
+                                            err_info )                                        ! InOut
     else
         
       ! LHS matrices are equivalent, only one solve required
@@ -895,7 +901,7 @@ module advance_xm_wpxp_module
                                           stats_zt, stats_zm, stats_sfc,                   & ! In
                                           rtm, wprtp, thlm, wpthlp,                        & ! InOut
                                           sclrm, wpsclrp, um, upwp, vm, vpwp,              & ! InOut
-                                          um_pert, vm_pert, upwp_pert, vpwp_pert, err_code ) ! InOut
+                                          um_pert, vm_pert, upwp_pert, vpwp_pert, err_info ) ! InOut
     end if ! ( ( iiPDF_type == iiPDF_new ) .and. ( .not. l_explicit_turbulent_adv_wpxp ) )
 
     if ( l_lmm_stepping ) then
@@ -965,7 +971,7 @@ module advance_xm_wpxp_module
     end if ! l_lmm_stepping
 
     if ( clubb_at_least_debug_level( 0 ) ) then
-      if ( err_code == clubb_fatal_error ) then
+      if ( any(err_info%err_code == clubb_fatal_error) ) then
 
         !$acc update host( sigma_sqd_w, wm_zm, wm_zt, wp2, Lscale_zm, wp3_on_wp2, &
         !$acc              wp3_on_wp2_zt, Kh_zt, Kh_zm, invrs_tau_C6_zm, Skw_zm, &
@@ -981,6 +987,7 @@ module advance_xm_wpxp_module
         !$acc              rtm_old,wprtp_old, thlm_old, wpthlp_old, sclrm_old, wpsclrp_old, &
         !$acc              um_old, upwp_old, vm_old, vpwp_old )
 
+        write(fstderr, *) err_info%err_header_global
         do i = 1, ngrdcol
           call error_prints_xm_wpxp( nzm, nzt, sclr_dim, gr%zm(i,:), gr%zt(i,:), & ! intent(in) 
                                      dt, sigma_sqd_w(i,:), wm_zm(i,:), wm_zt(i,:), & ! intent(in)
@@ -2655,7 +2662,7 @@ module advance_xm_wpxp_module
                                             stats_zt, stats_zm, stats_sfc, &
                                             rtm, wprtp, thlm, wpthlp, &
                                             sclrm, wpsclrp, um, upwp, vm, vpwp, &
-                                            um_pert, vm_pert, upwp_pert, vpwp_pert, err_code )
+                                            um_pert, vm_pert, upwp_pert, vpwp_pert, err_info )
     !
     ! Description: This subroutine solves all xm_wpxp when all the LHS matrices are equal.
     !              The LHS matrices being equivalent allows for only a single solve, rather
@@ -2697,6 +2704,9 @@ module advance_xm_wpxp_module
 
     use model_flags, only: &
         penta_bicgstab
+
+    use err_info_type_module, only: &
+      err_info_type     ! Type
 
     implicit none
 
@@ -2898,8 +2908,8 @@ module advance_xm_wpxp_module
       stats_zm, &
       stats_sfc
 
-    integer, intent(inout) :: &
-      err_code      ! Error code catching and relaying any errors occurring in this subroutine
+    type(err_info_type), intent(inout) :: &
+      err_info      ! err_info struct containing err_code and err_header
 
     ! ------------------- Local Variables -------------------
 
@@ -3382,18 +3392,19 @@ module advance_xm_wpxp_module
                                            + stats_metadata%irtm_matrix_condt_num > 0 ) then
        call xm_wpxp_solve( nzm, ngrdcol, nrhs, gr, & ! Intent(in)
                            penta_solve_method,     & ! Intent(in)
-                           lhs, rhs, err_code,     & ! Intent(inout)
+                           lhs, rhs, err_info,     & ! Intent(inout)
                            solution, rcond )         ! Intent(out)
     else
       call xm_wpxp_solve( nzm, ngrdcol, nrhs, gr, & ! Intent(in)
                           penta_solve_method,     & ! Intent(in)
-                          lhs, rhs, err_code,     & ! Intent(inout)
+                          lhs, rhs, err_info,     & ! Intent(inout)
                           solution )                ! Intent(out)
     end if
 
 
     if ( clubb_at_least_debug_level( 0 ) ) then
-      if ( err_code == clubb_fatal_error ) then
+      if ( any(err_info%err_code == clubb_fatal_error) ) then
+        write(fstderr, *) err_info%err_header_global
 
         !$acc update host( gr%zm, gr%zt, lhs, rhs_save )
 
@@ -3478,10 +3489,11 @@ module advance_xm_wpxp_module
            order_wp2_wp3, &                               ! Intent(in)
            stats_metadata, &                              ! Intent(in)
            stats_zt, stats_zm, stats_sfc, &               ! Intent(inout)
-           rtm, rt_tol_mfl, wprtp, err_code )             ! Intent(inout)
+           rtm, rt_tol_mfl, wprtp, err_info )             ! Intent(inout)
 
     if ( clubb_at_least_debug_level( 0 ) ) then
-       if ( err_code == clubb_fatal_error ) then
+       if ( any(err_info%err_code == clubb_fatal_error) ) then
+          write(fstderr, *) err_info%err_header_global
           write(fstderr,*) "rtm monotonic flux limiter:  tridiag failed"
           return
        end if
@@ -3511,10 +3523,11 @@ module advance_xm_wpxp_module
            order_wp2_wp3, &                               ! Intent(in)
            stats_metadata, &                              ! Intent(in)
            stats_zt, stats_zm, stats_sfc, &               ! Intent(inout)
-           thlm, thl_tol_mfl, wpthlp, err_code )          ! Intent(inout)
+           thlm, thl_tol_mfl, wpthlp, err_info )          ! Intent(inout)
 
     if ( clubb_at_least_debug_level( 0 ) ) then
-       if ( err_code == clubb_fatal_error ) then
+       if ( any(err_info%err_code == clubb_fatal_error) ) then
+          write(fstderr, *) err_info%err_header_global
           write(fstderr,*) "thlm monotonic flux limiter:  tridiag failed"
           return
        end if
@@ -3554,10 +3567,11 @@ module advance_xm_wpxp_module
              order_wp2_wp3, &                                        ! Intent(in)
              stats_metadata, &                                       ! Intent(in)
              stats_zt, stats_zm, stats_sfc, &                        ! Intent(inout)
-             sclrm(:,:,sclr), sclr_tol(sclr), wpsclrp(:,:,sclr), err_code ) ! Intent(inout)
+             sclrm(:,:,sclr), sclr_tol(sclr), wpsclrp(:,:,sclr), err_info ) ! Intent(inout)
 
       if ( clubb_at_least_debug_level( 0 ) ) then
-         if ( err_code == clubb_fatal_error ) then
+         if ( any(err_info%err_code == clubb_fatal_error) ) then
+            write(fstderr, *) err_info%err_header_global
             write(fstderr,*) "sclrm # ", sclr, "monotonic flux limiter: tridiag failed"
             return
          end if
@@ -3592,10 +3606,11 @@ module advance_xm_wpxp_module
             order_wp2_wp3,                                & ! Intent(in)
             stats_metadata,                               & ! Intent(in)
             stats_zt, stats_zm, stats_sfc,                & ! intent(inout)
-            um, w_tol, upwp, err_code )                     ! Intent(inout)
+            um, w_tol, upwp, err_info )                     ! Intent(inout)
 
       if ( clubb_at_least_debug_level( 0 ) ) then
-        if ( err_code == clubb_fatal_error ) then
+        if ( any(err_info%err_code == clubb_fatal_error) ) then
+          write(fstderr, *) err_info%err_header_global
           write(fstderr,*) "um monotonic flux limiter:  tridiag failed"
           return
         end if
@@ -3625,10 +3640,11 @@ module advance_xm_wpxp_module
             order_wp2_wp3,                                & ! Intent(in)
             stats_metadata,                               & ! Intent(in)
             stats_zt, stats_zm, stats_sfc,                & ! Intent(inout)
-            vm, w_tol, vpwp, err_code )                     ! Intent(inout)
+            vm, w_tol, vpwp, err_info )                     ! Intent(inout)
 
       if ( clubb_at_least_debug_level( 0 ) ) then
-        if ( err_code == clubb_fatal_error ) then
+        if ( any(err_info%err_code == clubb_fatal_error) ) then
+          write(fstderr, *) err_info%err_header_global
           write(fstderr,*) "vm monotonic flux limiter:  tridiag failed"
           return
         end if
@@ -3660,10 +3676,11 @@ module advance_xm_wpxp_module
                order_wp2_wp3,                                & ! Intent(in)
                stats_metadata,                               & ! Intent(in)
                stats_zt, stats_zm, stats_sfc,                & ! Intent(inout)
-               um_pert, w_tol, upwp_pert, err_code )           ! Intent(inout)
+               um_pert, w_tol, upwp_pert, err_info )           ! Intent(inout)
 
          if ( clubb_at_least_debug_level( 0 ) ) then
-           if ( err_code == clubb_fatal_error ) then
+           if ( any(err_info%err_code == clubb_fatal_error) ) then
+             write(fstderr, *) err_info%err_header_global
              write(fstderr,*) "um_pert monotonic flux limiter:  tridiag failed"
              return
            end if
@@ -3693,10 +3710,11 @@ module advance_xm_wpxp_module
                order_wp2_wp3,                                & ! Intent(in)
                stats_metadata,                               & ! Intent(in)
                stats_zt, stats_zm, stats_sfc,                & ! Intent(inout)
-               vm_pert, w_tol, vpwp_pert, err_code )           ! Intent(inout)
+               vm_pert, w_tol, vpwp_pert, err_info )           ! Intent(inout)
 
          if ( clubb_at_least_debug_level( 0 ) ) then
-           if ( err_code == clubb_fatal_error ) then
+           if ( any(err_info%err_code == clubb_fatal_error) ) then
+             write(fstderr, *) err_info%err_header_global
              write(fstderr,*) "vm_pert monotonic flux limiter:  tridiag failed"
              return
            end if
@@ -3748,7 +3766,7 @@ module advance_xm_wpxp_module
                                               order_xm_wpxp, order_xp2_xpyp, order_wp2_wp3, &
                                               stats_metadata, &
                                               stats_zt, stats_zm, stats_sfc, &
-                                              rtm, wprtp, thlm, wpthlp, sclrm, wpsclrp, err_code )
+                                              rtm, wprtp, thlm, wpthlp, sclrm, wpsclrp, err_info )
     !
     ! Description: This subroutine solves all xm_wpxp when all the LHS matrices are NOT equal.
     !              This means multiple solves are required, one for each unique LHS.
@@ -3784,6 +3802,9 @@ module advance_xm_wpxp_module
         penta_bicgstab
 
     use stats_type, only: stats ! Type
+
+    use err_info_type_module, only: &
+      err_info_type     ! Type
 
     implicit none
 
@@ -3945,8 +3966,8 @@ module advance_xm_wpxp_module
     real( kind = core_rknd ), intent(inout), dimension(ngrdcol,nzm,sclr_dim) :: &
       wpsclrp        !                                     [Units vary]
 
-    integer, intent(inout) :: &
-      err_code      ! Error code catching and relaying any errors occurring in this subroutine
+    type(err_info_type), intent(inout) :: &
+      err_info      ! err_info struct containing err_code and err_header
 
     ! ------------------- Local Variables -------------------
 
@@ -4008,17 +4029,18 @@ module advance_xm_wpxp_module
     if ( stats_metadata%l_stats_samp .and. stats_metadata%irtm_matrix_condt_num > 0 ) then
       call xm_wpxp_solve( nzm, ngrdcol, nrhs, gr, & ! Intent(in)
                           penta_solve_method,     & ! Intent(in)
-                          lhs, rhs, err_code,     & ! Intent(inout)
+                          lhs, rhs, err_info,     & ! Intent(inout)
                           solution, rcond )         ! Intent(out)
     else
       call xm_wpxp_solve( nzm, ngrdcol, nrhs, gr, & ! Intent(in)
                           penta_solve_method,     & ! Intent(in)
-                          lhs, rhs, err_code,     & ! Intent(inout)
+                          lhs, rhs, err_info,     & ! Intent(inout)
                           solution )                ! Intent(out)
     end if
 
     if ( clubb_at_least_debug_level( 0 ) ) then
-      if ( err_code == clubb_fatal_error ) then
+      if ( any(err_info%err_code == clubb_fatal_error) ) then
+        write(fstderr, *) err_info%err_header_global
         do i = 1, ngrdcol
           write(fstderr,*) "Mean total water & total water flux LU decomp. failed"
           write(fstderr,*) "rtm and wprtp LHS"
@@ -4070,10 +4092,11 @@ module advance_xm_wpxp_module
            order_wp2_wp3, &                               ! Intent(in)
            stats_metadata, &                              ! Intent(in)
            stats_zt, stats_zm, stats_sfc, &               ! Intent(inout)
-           rtm, rt_tol_mfl, wprtp, err_code )             ! Intent(inout)
+           rtm, rt_tol_mfl, wprtp, err_info )             ! Intent(inout)
 
     if ( clubb_at_least_debug_level( 0 ) ) then
-      if ( err_code == clubb_fatal_error ) then
+      if ( any(err_info%err_code == clubb_fatal_error) ) then
+        write(fstderr, *) err_info%err_header_global
         write(fstderr,*) "rtm monotonic flux limiter:  tridiag failed"
         return
       end if
@@ -4116,17 +4139,18 @@ module advance_xm_wpxp_module
     if ( stats_metadata%l_stats_samp .and. stats_metadata%ithlm_matrix_condt_num > 0 ) then
       call xm_wpxp_solve( nzm, ngrdcol, nrhs, gr, & ! Intent(in)
                           penta_solve_method,     & ! Intent(in)
-                          lhs, rhs, err_code,     & ! Intent(inout)
+                          lhs, rhs, err_info,     & ! Intent(inout)
                           solution, rcond )         ! Intent(out)
     else
       call xm_wpxp_solve( nzm, ngrdcol, nrhs, gr, & ! Intent(in)
                           penta_solve_method,     & ! Intent(in)
-                          lhs, rhs, err_code,     & ! Intent(inout)
+                          lhs, rhs, err_info,     & ! Intent(inout)
                           solution )                ! Intent(out)
     end if
 
     if ( clubb_at_least_debug_level( 0 ) ) then
-      if ( err_code == clubb_fatal_error ) then
+      if ( any(err_info%err_code == clubb_fatal_error) ) then
+        write(fstderr, *) err_info%err_header_global
         do i = 1, ngrdcol
           write(fstderr,*) "Liquid pot. temp & thetal flux LU decomp. failed"
           write(fstderr,*) "thlm and wpthlp LHS"
@@ -4178,10 +4202,11 @@ module advance_xm_wpxp_module
            order_wp2_wp3, &                               ! Intent(in)
            stats_metadata, &                              ! Intent(in)
            stats_zt, stats_zm, stats_sfc, &               ! Intent(inout)
-           thlm, thl_tol_mfl, wpthlp, err_code )          ! Intent(inout)
+           thlm, thl_tol_mfl, wpthlp, err_info )          ! Intent(inout)
 
     if ( clubb_at_least_debug_level( 0 ) ) then
-      if ( err_code == clubb_fatal_error ) then
+      if ( any(err_info%err_code == clubb_fatal_error) ) then
+        write(fstderr, *) err_info%err_header_global
         write(fstderr,*) "thlm monotonic flux limiter:  tridiag failed" 
         return
       end if
@@ -4240,11 +4265,12 @@ module advance_xm_wpxp_module
       ! Solve for sclrm / w'sclr'
       call xm_wpxp_solve( nzm, ngrdcol, nrhs, gr, & ! Intent(in)
                           penta_solve_method,     & ! Intent(in)
-                          lhs, rhs, err_code,     & ! Intent(inout)
+                          lhs, rhs, err_info,     & ! Intent(inout)
                           solution )                ! Intent(out)
 
       if ( clubb_at_least_debug_level( 0 ) ) then
-        if ( err_code == clubb_fatal_error ) then   
+        if ( any(err_info%err_code == clubb_fatal_error) ) then
+          write(fstderr, *) err_info%err_header_global
           do i = 1, ngrdcol
             write(fstderr,*) "Passive scalar # ", sclr, " LU decomp. failed."
             write(fstderr,*) "sclrm and wpsclrp LHS"
@@ -4297,10 +4323,11 @@ module advance_xm_wpxp_module
              order_wp2_wp3, &                                        ! Intent(in)
              stats_metadata, &                                       ! Intent(in)
              stats_zt, stats_zm, stats_sfc, &                        ! intent(inout)
-             sclrm(:,:,sclr), sclr_tol(sclr), wpsclrp(:,:,sclr), err_code ) ! Intent(inout)
+             sclrm(:,:,sclr), sclr_tol(sclr), wpsclrp(:,:,sclr), err_info ) ! Intent(inout)
 
       if ( clubb_at_least_debug_level( 0 ) ) then
-        if ( err_code == clubb_fatal_error ) then
+        if ( any(err_info%err_code == clubb_fatal_error) ) then
+          write(fstderr, *) err_info%err_header_global
           write(fstderr,*) "sclrm # ", sclr, "monotonic flux limiter: tridiag failed"
           return
         end if
@@ -4313,7 +4340,7 @@ module advance_xm_wpxp_module
   !=============================================================================
   subroutine xm_wpxp_solve( nzm, ngrdcol, nrhs, gr, &
                             penta_solve_method, &
-                            lhs, rhs, err_code, &
+                            lhs, rhs, err_info, &
                             solution, rcond )
 
     ! Description:
@@ -4338,7 +4365,10 @@ module advance_xm_wpxp_module
 
     use error_code, only: &
         clubb_at_least_debug_level,     & ! Procedure
-        clubb_no_error                    ! Constant
+        clubb_fatal_error                 ! Constant
+
+    use err_info_type_module, only: &
+      err_info_type     ! Type
 
     use model_flags, only: &
         l_test_grid_generalization    ! Variable(s)
@@ -4366,8 +4396,8 @@ module advance_xm_wpxp_module
     real( kind = core_rknd ), intent(inout), dimension(ngrdcol,2*nzm-1,nrhs) :: &
       rhs      ! Right-hand side of band diag. matrix. (LAPACK storage)
 
-    integer, intent(inout) :: &
-      err_code      ! Error code catching and relaying any errors occurring in this subroutine
+    type(err_info_type), intent(inout) :: &
+      err_info      ! err_info struct containing err_code and err_header
 
     !------------------------- Output Variables -------------------------
     real( kind = core_rknd ), intent(out), dimension(ngrdcol,2*nzm-1,nrhs) :: &
@@ -4418,7 +4448,7 @@ module advance_xm_wpxp_module
     ! Solve the system
     call band_solve( "xm_wpxp", penta_solve_method,      & ! Intent(in)
                      ngrdcol, nsup, nsub, 2*nzm-1, nrhs, & ! Intent(in)
-                     lhs, rhs, err_code,                 & ! Intent(inout)
+                     lhs, rhs, err_info,                 & ! Intent(inout)
                      solution, rcond )                     ! Intent(out)
 
     ! Generalized grid test
@@ -4437,7 +4467,8 @@ module advance_xm_wpxp_module
     endif
 
     if ( clubb_at_least_debug_level( 0 ) ) then
-      if ( err_code /= clubb_no_error ) then
+      if ( any(err_info%err_code == clubb_fatal_error) ) then
+        write(fstderr, *) err_info%err_header_global
         write(fstderr,*) "Error in xm_wpxp_solve"
         return
       end if
@@ -4472,7 +4503,7 @@ module advance_xm_wpxp_module
                order_wp2_wp3, &
                stats_metadata, &
                stats_zt, stats_zm, stats_sfc, &
-               xm, xm_tol, wpxp, err_code )
+               xm, xm_tol, wpxp, err_info )
 
     ! Description:
     ! Clips and computes implicit stats for an artitrary xm and wpxp
@@ -4530,6 +4561,9 @@ module advance_xm_wpxp_module
         stats_metadata_type
 
     use stats_type, only: stats ! Type
+
+    use err_info_type_module, only: &
+      err_info_type     ! Type
 
     implicit none
 
@@ -4653,8 +4687,8 @@ module advance_xm_wpxp_module
       stats_zm, &
       stats_sfc
 
-    integer, intent(inout) :: &
-      err_code      ! Error code catching and relaying any errors occurring in this subroutine
+    type(err_info_type), intent(inout) :: &
+      err_info      ! err_info struct containing err_code and err_header
 
     !--------------------------- Local Variables ---------------------------
     integer :: &
@@ -4960,7 +4994,7 @@ module advance_xm_wpxp_module
                                            l_mono_flux_lim_spikefix, & ! intent(in)
                                            stats_metadata, & ! intent(in)
                                            stats_zt, stats_zm, & ! intent(inout)
-                                           xm, wpxp, err_code ) ! intent(inout)
+                                           xm, wpxp, err_info ) ! intent(inout)
 
     end if ! l_mono_flux_lim
 

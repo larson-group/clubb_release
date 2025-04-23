@@ -41,7 +41,7 @@ module mono_flux_limiter
                                              l_mono_flux_lim_spikefix, &
                                              stats_metadata, &
                                              stats_zt, stats_zm, &
-                                             xm, wpxp, err_code )
+                                             xm, wpxp, err_info )
 
     ! Description:
     ! Limits the value of w'x' and corrects the value of xm when the xm turbulent
@@ -323,6 +323,9 @@ module mono_flux_limiter
 
     use stats_type, only: stats ! Type
 
+    use err_info_type_module, only: &
+      err_info_type     ! Type
+
     implicit none
 
     ! Constant Parameters
@@ -392,8 +395,8 @@ module mono_flux_limiter
     real( kind = core_rknd ), dimension(ngrdcol,nzm), intent(inout) :: &
       wpxp        ! w'x' (momentum levels)                          [units vary]
 
-    integer, intent(inout) :: &
-      err_code      ! Error code catching and relaying any errors occurring in this subroutine
+    type(err_info_type), intent(inout) :: &
+      err_info      ! err_info struct containing err_code and err_header
 
     !----------------------- Local Variables -----------------------
     real( kind = core_rknd ), dimension(ngrdcol,nzt) :: &
@@ -855,9 +858,9 @@ module mono_flux_limiter
 
         ! Solve the tridiagonal matrix equation.
         call mfl_xm_solve( nzt, ngrdcol, gr, solve_type, tridiag_solve_method, & ! intent(in)
-                           lhs_mfl_xm, rhs_mfl_xm, err_code,                   & ! intent(inout)
+                           lhs_mfl_xm, rhs_mfl_xm, err_info,                   & ! intent(inout)
                            xm_mfl )                                              ! intent(out)
-                           
+
         ! If an adjustment is for a column
         !$acc parallel loop gang vector collapse(2) default(present)
         do k = 1, nzt
@@ -871,7 +874,8 @@ module mono_flux_limiter
 
         ! Check for errors
         if ( clubb_at_least_debug_level( 0 ) ) then
-          if ( err_code == clubb_fatal_error ) then
+          if ( any(err_info%err_code == clubb_fatal_error) ) then
+            write(fstderr, *) err_info%err_header_global
             write(fstderr, *) "Error in monotonic_turbulent_flux_limit after calling mfl_xm_solve"
             return
           end if
@@ -1259,7 +1263,7 @@ module mono_flux_limiter
 
   !=============================================================================
   subroutine mfl_xm_solve( nzt, ngrdcol, gr, solve_type, tridiag_solve_method, &
-                           lhs, rhs, err_code, &
+                           lhs, rhs, err_info, &
                            xm )
 
     ! Description:
@@ -1285,8 +1289,10 @@ module mono_flux_limiter
         core_rknd
 
     use error_code, only: &
-        clubb_at_least_debug_level,  & ! Procedure
-        clubb_fatal_error              ! Constant
+        clubb_at_least_debug_level     ! Procedure
+
+    use err_info_type_module, only: &
+      err_info_type     ! Type
 
     use model_flags, only: &
         l_test_grid_generalization    ! Variable(s)
@@ -1314,8 +1320,8 @@ module mono_flux_limiter
     real( kind = core_rknd ), dimension(ngrdcol,nzt), intent(inout) :: &
       rhs  ! Right hand side of tridiagonal matrix equation
 
-    integer, intent(inout) :: &
-      err_code      ! Error code catching and relaying any errors occurring in this subroutine
+    type(err_info_type), intent(inout) :: &
+      err_info      ! err_info struct containing err_code and err_header
 
     !---------------------------- Output Variables ----------------------------
     real( kind = core_rknd ), dimension(ngrdcol,nzt), intent(out) :: &
@@ -1367,7 +1373,7 @@ module mono_flux_limiter
     ! Solve for xm at timestep index (t+1) using the tridiagonal solver.
     call tridiag_solve( solve_type_str, tridiag_solve_method,   & ! Intent(in)
                         ngrdcol, nzt,                           & ! Intent(in)
-                        lhs, rhs, err_code,                     & ! Intent(inout)
+                        lhs, rhs, err_info,                     & ! Intent(inout)
                         xm )                                      ! Intent(out)
 
     ! Generalized grid test
@@ -1382,14 +1388,6 @@ module mono_flux_limiter
       enddo
       !$acc end parallel loop
     endif
-
-
-    ! Check for errors
-    if ( clubb_at_least_debug_level( 0 ) ) then
-      if ( err_code == clubb_fatal_error ) then
-        return
-      end if
-    end if
 
     return
 

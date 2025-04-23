@@ -29,7 +29,7 @@ module output_2D_samples_module
                                    l_uv_nudge, &
                                    l_tke_aniso, &
                                    l_standard_term_ta, &
-                                   sample_file )
+                                   sample_file, err_info )
 ! Description:
 !   Open a 2D sample file
 ! References:
@@ -45,8 +45,17 @@ module output_2D_samples_module
         time_precision, &
         core_rknd ! Constant(s)
 
+    use constants_clubb, only: &
+        fstderr
+
     use parameter_indices, only: &
         nparams    ! Variable(s)
+
+    use err_info_type_module, only: &
+        err_info_type       ! Type
+
+    use error_code, only: &
+        clubb_fatal_error   ! Constant
 
     implicit none
 
@@ -71,27 +80,23 @@ module output_2D_samples_module
       variable_descriptions, & ! Description of the variables in the 2D file
       variable_units           ! Units on the variables
 
-    real(kind=time_precision), intent(in) :: & 
+    real(kind=time_precision), intent(in) :: &
       time      ! Start time                      [s] 
     
     real(kind=core_rknd), intent(in) :: &
       dtwrite   ! Interval for writing to disk    [s] 
 
-    real( kind = core_rknd ), intent(in), dimension(nzt) :: & 
+    real( kind = core_rknd ), intent(in), dimension(nzt) :: &
       zgrid ! Vertical grid levels [m]
-
-    ! Input/Output Variables
-    type(stat_file), intent(inout) :: &
-      sample_file ! File that is being opened
 
     integer, intent(in) :: &
       nlon, & ! Number of points in the X direction [-]
       nlat    ! Number of points in the Y direction [-]
 
-    real( kind = core_rknd ), dimension(nlon), intent(in) ::  &
+    real( kind = core_rknd ), dimension(nlon), intent(in) :: &
       lon_vals  ! Longitude values [Degrees E]
 
-    real( kind = core_rknd ), dimension(nlat), intent(in) ::  &
+    real( kind = core_rknd ), dimension(nlat), intent(in) :: &
       lat_vals  ! Latitude values  [Degrees N]
 
     real( kind = core_rknd ), dimension(nparams), intent(in) :: &
@@ -112,11 +117,16 @@ module output_2D_samples_module
                             ! derivative in advance_wp2_wp3_module.F90 and in
                             ! advance_xp2_xpyp_module.F90.
 
+    ! Input/Output Variables
+    type(stat_file), intent(inout) :: &
+      sample_file ! File that is being opened
+
+    type(err_info_type), intent(inout) :: &
+      err_info              ! err_info struct containing err_code and err_header
+
+    ! Local Variables
     character(len=100) :: fname
     integer :: i
-
-    ! Dummy err_code variable catching error output of open_netcdf_for_writing
-    integer :: err_code_dummy
 
     ! ---- Begin Code ----
 
@@ -136,7 +146,7 @@ module output_2D_samples_module
     call open_netcdf_for_writing( nlat, nlon, fdir, fname, 1, nzt, zgrid, &    ! In
                       day, month, year, lat_vals, lon_vals, &                  ! In
                       time, dtwrite, n_2D_variables, &                         ! In
-                      sample_file, err_code_dummy, &                           ! InOut
+                      sample_file, err_info, &                                 ! InOut
                       num_samples )                                            ! In (optional)
 
     ! Finalize the variable definitions
@@ -144,7 +154,14 @@ module output_2D_samples_module
                       l_uv_nudge, &                             ! intent(in)
                       l_tke_aniso, &                            ! intent(in)
                       l_standard_term_ta, &                     ! intent(in)
-                      sample_file, err_code_dummy )             ! intent(inout)
+                      sample_file, err_info )                   ! intent(inout)
+
+    if ( any(err_info%err_code == clubb_fatal_error) ) then
+      write(fstderr, *) err_info%err_header_global
+      write(fstderr, *) "Fatal error writing to netcdf file", fname , &
+                        " in CLUBB SILHS procedure open_2D_samples_file"
+    end if
+
 #else
     error stop "This version of CLUBB was not compiled for netCDF output"
 #endif
@@ -155,7 +172,8 @@ module output_2D_samples_module
 !-------------------------------------------------------------------------------
   subroutine output_2D_lognormal_dist_file ( nzt, num_samples, pdf_dim, &
                                              X_nl_all_levs, &
-                                             stats_metadata )
+                                             stats_metadata, &
+                                             err_info )
 ! Description:
 !   Output a 2D snapshot of latin hypercube samples
 ! References:
@@ -169,8 +187,17 @@ module output_2D_samples_module
     use clubb_precision, only: &
       stat_rknd ! Constant
 
+    use constants_clubb, only: &
+      fstderr
+
     use stats_variables, only: &
       stats_metadata_type
+
+    use err_info_type_module, only: &
+      err_info_type         ! Type
+
+    use error_code, only: &
+      clubb_fatal_error   ! Constant
 
     implicit none
 
@@ -186,10 +213,12 @@ module output_2D_samples_module
     type (stats_metadata_type), intent(in) :: &
       stats_metadata
 
-    integer :: sample, j
+    ! Input/Output Variables
+    type(err_info_type), intent(inout) :: &
+      err_info          ! err_info struct containing err_code and err_header
 
-    ! Dummy err_code variable catching error output of open_netcdf_for_writing
-    integer :: err_code_dummy
+    ! Local Variables
+    integer :: sample, j
 
     ! ---- Begin Code ----
 
@@ -207,10 +236,16 @@ module output_2D_samples_module
     end do
 
 #ifdef NETCDF
-    call write_netcdf( lognormal_sample_file, err_code_dummy )
+    call write_netcdf( lognormal_sample_file, err_info )
 #else
     error stop "This version of CLUBB was not compiled for netCDF output"
 #endif
+
+    if ( any(err_info%err_code == clubb_fatal_error) ) then
+      write(fstderr, *) err_info%err_header_global
+      write(fstderr, *) "Fatal error writing to netcdf file", lognormal_sample_file%fname , &
+                        " in CLUBB SILHS procedure output_2D_lognormal_dist_file"
+    end if
 
     do j = 1, pdf_dim
       deallocate( lognormal_sample_file%samples_of_var(j)%ptr )
@@ -224,7 +259,8 @@ module output_2D_samples_module
                                           X_u_all_levs, &
                                           X_mixt_comp_all_levs, &
                                           lh_sample_point_weights, &
-                                          stats_metadata )
+                                          stats_metadata, &
+                                          err_info )
 ! Description:
 !   Output a 2D snapshot of latin hypercube uniform distribution, i.e. (0,1)
 ! References:
@@ -238,8 +274,17 @@ module output_2D_samples_module
       core_rknd, &          ! Precision(s)
       stat_rknd
 
+    use constants_clubb, only: &
+      fstderr
+
     use stats_variables, only: &
       stats_metadata_type
+
+    use err_info_type_module, only: &
+      err_info_type         ! Type
+
+    use error_code, only: &
+        clubb_fatal_error   ! Constant
 
     implicit none
 
@@ -261,10 +306,12 @@ module output_2D_samples_module
     type (stats_metadata_type), intent(in) :: &
       stats_metadata
 
-    integer :: sample, j, k
+    ! Input/Output Variables
+    type(err_info_type), intent(inout) :: &
+      err_info          ! err_info struct containing err_code and err_header
 
-    ! Dummy err_code variable catching error output of open_netcdf_for_writing
-    integer :: err_code_dummy
+    ! Local Variables
+    integer :: sample, j, k
 
     ! ---- Begin Code ----
 
@@ -288,10 +335,16 @@ module output_2D_samples_module
     end do
 
 #ifdef NETCDF
-    call write_netcdf( uniform_sample_file, err_code_dummy )
+    call write_netcdf( uniform_sample_file, err_info )
 #else
     error stop "This version of CLUBB was not compiled for netCDF output"
 #endif
+
+    if ( any(err_info%err_code == clubb_fatal_error) ) then
+      write(fstderr, *) err_info%err_header_global
+      write(fstderr, *) "Fatal error writing to netcdf file", uniform_sample_file%fname , &
+                        " in CLUBB SILHS procedure output_2D_uniform_dist_file"
+    end if
 
     do j = 1, dp2+2
       deallocate( uniform_sample_file%samples_of_var(j)%ptr )

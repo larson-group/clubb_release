@@ -117,18 +117,18 @@ module silhs_api_module
   public  & ! to print 2D lh samples
     latin_hypercube_2D_output_api, &
     latin_hypercube_2D_close_api
-    
+
   private &
     generate_silhs_sample_api_single_col, &
     generate_silhs_sample_api_multi_col, &
     clip_transform_silhs_output_api_single_col, &
     clip_transform_silhs_output_api_multi_col
-    
+
   interface generate_silhs_sample_api
     module procedure generate_silhs_sample_api_single_col
     module procedure generate_silhs_sample_api_multi_col
   end interface
-  
+
   interface clip_transform_silhs_output_api
     module procedure clip_transform_silhs_output_api_single_col
     module procedure clip_transform_silhs_output_api_multi_col
@@ -139,7 +139,7 @@ contains
   !================================================================================================
   ! generate_silhs_sample - Generates sample points of moisture, temperature, et cetera.
   !================================================================================================
-  
+
   subroutine generate_silhs_sample_api_single_col( &
     iter, pdf_dim, num_samples, sequence_length, nzt, & ! In
     l_calc_weights_all_levs_itime, &
@@ -151,7 +151,7 @@ contains
     precip_fracs, silhs_config_flags, & ! In
     vert_decorr_coef, & ! In
     stats_metadata, & ! In
-    stats_lh_zt, stats_lh_sfc, & ! intent(inout)
+    stats_lh_zt, stats_lh_sfc, err_info, & ! intent(inout)
     X_nl_all_levs, X_mixt_comp_all_levs, & ! Out
     lh_sample_point_weights ) ! Out
 
@@ -184,6 +184,9 @@ contains
 
     use corr_varnce_module, only: &
       hm_metadata_type
+
+    use err_info_type_module, only: &
+      err_info_type         ! Type
 
     implicit none
 
@@ -252,10 +255,14 @@ contains
     type (stats_metadata_type), intent(in) :: &
       stats_metadata
 
+    ! Input/Output Variables
     type(stats), intent(inout) :: &
       stats_lh_zt, &
       stats_lh_sfc
-    
+
+    type(err_info_type), intent(inout) :: &
+      err_info          ! err_info struct containing err_code and err_header
+
     ! -------------- Local Variables --------------
       
     real( kind = core_rknd ), dimension(1,nzt) :: &
@@ -322,12 +329,12 @@ contains
       precip_fracs, silhs_config_flags, & ! In
       vert_decorr_coef, & ! In
       stats_metadata, & ! In
-      stats_lh_zt_col, stats_lh_sfc_col, & ! intent(inout)
+      stats_lh_zt_col, stats_lh_sfc_col, err_info, & ! intent(inout)
       X_nl_all_levs_col, X_mixt_comp_all_levs_col, & ! Out
       lh_sample_point_weights_col ) ! Out
 
     !$acc end data
-      
+
     X_nl_all_levs = X_nl_all_levs_col(1,:,:,:)
     X_mixt_comp_all_levs = X_mixt_comp_all_levs_col(1,:,:)
     lh_sample_point_weights = lh_sample_point_weights_col(1,:,:)
@@ -345,7 +352,7 @@ contains
     precip_fracs, silhs_config_flags, & ! In
     vert_decorr_coef, & ! In
     stats_metadata, & ! In
-    stats_lh_zt, stats_lh_sfc, & ! intent(inout)
+    stats_lh_zt, stats_lh_sfc, err_info, & ! intent(inout)
     X_nl_all_levs, X_mixt_comp_all_levs, & ! Out
     lh_sample_point_weights ) ! Out
 
@@ -377,6 +384,9 @@ contains
 
     use corr_varnce_module, only: &
       hm_metadata_type
+
+    use err_info_type_module, only: &
+      err_info_type         ! Type
 
     implicit none
 
@@ -415,6 +425,9 @@ contains
       stats_lh_zt, &
       stats_lh_sfc
 
+    type(err_info_type), intent(inout) :: &
+      err_info          ! err_info struct containing err_code and err_header
+
     ! Output Variables
     real( kind = core_rknd ), intent(out), dimension(ngrdcol,num_samples,nzt,pdf_dim) :: &
       X_nl_all_levs ! Sample that is transformed ultimately to normal-lognormal
@@ -450,7 +463,7 @@ contains
 
     type (stats_metadata_type), intent(in) :: &
       stats_metadata
-    
+
     !$acc data copyin( precip_fracs, precip_fracs%precip_frac_1, precip_fracs%precip_frac_2, &
     !$acc              delta_zm, Lscale, corr_cholesky_mtx_1, &
     !$acc              corr_cholesky_mtx_2, mu1, mu2, sigma1, sigma2 ) &
@@ -467,7 +480,7 @@ contains
       precip_fracs, silhs_config_flags, & ! In
       vert_decorr_coef, & ! In
       stats_metadata, & ! In
-      stats_lh_zt, stats_lh_sfc, & ! intent(inout)
+      stats_lh_zt, stats_lh_sfc, err_info, & ! intent(inout)
       X_nl_all_levs, X_mixt_comp_all_levs, & ! Out
       lh_sample_point_weights ) ! Out
 

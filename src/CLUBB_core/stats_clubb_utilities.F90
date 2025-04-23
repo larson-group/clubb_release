@@ -31,7 +31,7 @@ module stats_clubb_utilities
                              stats_zt, stats_zm, stats_sfc, &
                              stats_lh_zt, stats_lh_sfc, &
                              stats_rad_zt, stats_rad_zm, &
-                             err_code )
+                             err_info )
     !
     ! Description:
     !   Initializes the statistics saving functionality of the CLUBB model.
@@ -95,6 +95,9 @@ module stats_clubb_utilities
         clubb_fatal_error               ! Constant
 
     use stats_type, only: stats ! Type
+
+    use err_info_type_module, only: &
+      err_info_type        ! Type
 
     implicit none
 
@@ -196,8 +199,8 @@ module stats_clubb_utilities
       stats_rad_zt, &
       stats_rad_zm
 
-    integer, intent(inout) :: &
-      err_code    ! Error code catching and relaying any errors occurring in this subroutine
+    type(err_info_type), intent(inout) :: &
+      err_info        ! err_info struct containing err_code and err_header
 
     ! Local Variables
     logical :: l_error
@@ -283,6 +286,7 @@ module stats_clubb_utilities
         write(fstderr,*) "End of file marker reached while reading stats namelist in file ", &
                          trim( fnamelist )
       end if
+      write(fstderr, *) err_info%err_header_global
       write(fstderr,*) "One cause is having more statistical variables ",  &
                        "listed in the namelist for var_zt, var_zm, or ",  &
                        "var_sfc than allowed by nvarmax_zt, nvarmax_zm, ",  &
@@ -293,7 +297,8 @@ module stats_clubb_utilities
       write(fstderr,*) "Maximum variables allowed for var_rad_zm = ", nvarmax_rad_zm
       write(fstderr,*) "Maximum variables allowed for var_sfc = ", nvarmax_sfc
       write(fstderr,*) "stats_init_api: Error reading stats namelist."
-      err_code = clubb_fatal_error
+      ! General error -> set all entries to clubb_fatal_error
+      err_info%err_code = clubb_fatal_error
       close(unit=iunit)
       return
     end if ! read_status /= 0
@@ -383,9 +388,11 @@ module stats_clubb_utilities
       stats_metadata%l_grads  = .false.
 
     case default
+      write(fstderr, *) err_info%err_header_global
       write(fstderr,*) "In module stats_clubb_utilities subroutine stats_init_api: "
       write(fstderr,*) "Invalid stats output format "//trim( stats_fmt )
-      err_code = clubb_fatal_error
+      ! General error -> set all entries to clubb_fatal_error
+      err_info%err_code = clubb_fatal_error
       return
 
     end select
@@ -684,6 +691,7 @@ module stats_clubb_utilities
     endif
 
     if ( ntot >= nvarmax_zt ) then
+      write(fstderr, *) err_info%err_header_global
       write(fstderr,*) "There are more statistical variables listed in ",  &
                        "vars_zt than allowed for by nvarmax_zt."
       write(fstderr,*) "Check the number of variables listed for vars_zt ",  &
@@ -691,7 +699,8 @@ module stats_clubb_utilities
       write(fstderr,*) "nvarmax_zt = ", nvarmax_zt
       write(fstderr,*) "number of variables in vars_zt = ", ntot
       write(fstderr,*) "stats_init_api:  number of zt statistical variables exceeds limit"
-      err_code = clubb_fatal_error
+      ! General error -> set all entries to clubb_fatal_error
+      err_info%err_code = clubb_fatal_error
       return
     end if
 
@@ -746,16 +755,17 @@ module stats_clubb_utilities
                         stats_zt(1)%z, day, month, year, lat_vals, lon_vals, & ! In
                         time_current, stats_metadata%stats_tout, & ! In
                         stats_zt(1)%num_output_fields, & ! In
-                        stats_zt(1)%file, err_code ) ! InOut
+                        stats_zt(1)%file, err_info ) ! InOut
 
       ! Finalize the variable definitions
       call first_write( clubb_params(1,:), sclr_dim, sclr_tol, & ! intent(in)
                         l_uv_nudge, & ! intent(in)
                         l_tke_aniso, & ! intent(in)
                         l_standard_term_ta, & ! intent(in)
-                        stats_zt(1)%file, err_code ) ! intent(inout)
+                        stats_zt(1)%file, err_info ) ! intent(inout)
 
-      if ( err_code == clubb_fatal_error ) then
+      if ( any(err_info%err_code == clubb_fatal_error) ) then
+        write(fstderr, *) err_info%err_header_global
         write(fstderr,*) "Fatal error setting up stats_zt"
         return
       end if
@@ -796,14 +806,16 @@ module stats_clubb_utilities
       end if
 
       if ( ntot == nvarmax_lh_zt ) then
+        write(fstderr, *) err_info%err_header_global
         write(fstderr,*) "There are more statistical variables listed in ",  &
                          "vars_lh_zt than allowed for by nvarmax_lh_zt."
         write(fstderr,*) "Check the number of variables listed for vars_lh_zt ",  &
                          "in the stats namelist, or change nvarmax_lh_zt."
         write(fstderr,*) "nvarmax_lh_zt = ", nvarmax_lh_zt
         write(fstderr,*) "number of variables in vars_lh_zt = ", ntot
-        write(fstderr,*) "stats_init_api:  number of lh_zt statistical variables exceeds limit"
-        err_code = clubb_fatal_error
+        write(fstderr,*) "stats_init_api: number of lh_zt statistical variables exceeds limit"
+        ! General error -> set all entries to clubb_fatal_error
+        err_info%err_code = clubb_fatal_error
         return
       end if
 
@@ -855,16 +867,17 @@ module stats_clubb_utilities
                           stats_lh_zt(1)%z, day, month, year, lat_vals, lon_vals, &  ! In
                           time_current, stats_metadata%stats_tout, & ! In
                           stats_lh_zt(1)%num_output_fields, & ! In
-                          stats_lh_zt(1)%file, err_code ) ! InOut
+                          stats_lh_zt(1)%file, err_info ) ! InOut
 
         ! Finalize the variable definitions
         call first_write( clubb_params(1,:), sclr_dim, sclr_tol, & ! intent(in)
                           l_uv_nudge, & ! intent(in)
                           l_tke_aniso, & ! intent(in)
                           l_standard_term_ta, & ! intent(in)
-                          stats_lh_zt(1)%file, err_code ) ! intent(inout)
+                          stats_lh_zt(1)%file, err_info ) ! intent(inout)
 
-        if ( err_code == clubb_fatal_error ) then
+        if ( any(err_info%err_code == clubb_fatal_error) ) then
+          write(fstderr, *) err_info%err_header_global
           write(fstderr,*) "Fatal error setting up stats_lh_zt"
           return
         end if
@@ -882,14 +895,16 @@ module stats_clubb_utilities
       end do
       ntot = ivar - 1
       if ( ntot == nvarmax_lh_sfc ) then
+        write(fstderr, *) err_info%err_header_global
         write(fstderr,*) "There are more statistical variables listed in ",  &
                          "vars_lh_sfc than allowed for by nvarmax_lh_sfc."
         write(fstderr,*) "Check the number of variables listed for vars_lh_sfc ",  &
                          "in the stats namelist, or change nvarmax_lh_sfc."
         write(fstderr,*) "nvarmax_lh_sfc = ", nvarmax_lh_sfc
         write(fstderr,*) "number of variables in vars_lh_sfc = ", ntot
-        write(fstderr,*) "stats_init_api:  number of lh_sfc statistical variables exceeds limit"
-        err_code = clubb_fatal_error
+        write(fstderr,*) "stats_init_api: number of lh_sfc statistical variables exceeds limit"
+        ! General error -> set all entries to clubb_fatal_error
+        err_info%err_code = clubb_fatal_error
         return
       end if
 
@@ -941,16 +956,17 @@ module stats_clubb_utilities
                           stats_lh_sfc(1)%z, day, month, year, lat_vals, lon_vals, &  ! In
                           time_current, stats_metadata%stats_tout, & ! In
                           stats_lh_sfc(1)%num_output_fields, & ! In
-                          stats_lh_sfc(1)%file, err_code ) ! InOut
+                          stats_lh_sfc(1)%file, err_info ) ! InOut
 
         ! Finalize the variable definitions
         call first_write( clubb_params(1,:), sclr_dim, sclr_tol, & ! intent(in)
                           l_uv_nudge, & ! intent(in)
                           l_tke_aniso, & ! intent(in)
                           l_standard_term_ta, & ! intent(in)
-                          stats_lh_sfc(1)%file, err_code ) ! intent(inout)
+                          stats_lh_sfc(1)%file, err_info ) ! intent(inout)
 
-        if ( err_code == clubb_fatal_error ) then
+        if ( any(err_info%err_code == clubb_fatal_error) ) then
+          write(fstderr, *) err_info%err_header_global
           write(fstderr,*) "Fatal error setting up stats_lh_sfc"
           return
         end if
@@ -1123,14 +1139,16 @@ module stats_clubb_utilities
 
 
     if ( ntot == nvarmax_zm ) then
+      write(fstderr, *) err_info%err_header_global
       write(fstderr,*) "There are more statistical variables listed in ",  &
                        "vars_zm than allowed for by nvarmax_zm."
       write(fstderr,*) "Check the number of variables listed for vars_zm ",  &
                        "in the stats namelist, or change nvarmax_zm."
       write(fstderr,*) "nvarmax_zm = ", nvarmax_zm
       write(fstderr,*) "number of variables in vars_zm = ", ntot
-      write(fstderr,*) "stats_init_api:  number of zm statistical variables exceeds limit"
-      err_code = clubb_fatal_error
+      write(fstderr,*) "stats_init_api: number of zm statistical variables exceeds limit"
+      ! General error -> set all entries to clubb_fatal_error
+      err_info%err_code = clubb_fatal_error
       return
     end if
 
@@ -1183,16 +1201,17 @@ module stats_clubb_utilities
                         stats_zm(1)%z, day, month, year, lat_vals, lon_vals, & ! In
                         time_current, stats_metadata%stats_tout, & ! In
                         stats_zm(1)%num_output_fields, & ! In
-                        stats_zm(1)%file, err_code ) ! InOut
+                        stats_zm(1)%file, err_info ) ! InOut
       
       ! Finalize the variable definitions
       call first_write( clubb_params(1,:), sclr_dim, sclr_tol, & ! intent(in)
                         l_uv_nudge, & ! intent(in)
                         l_tke_aniso, & ! intent(in)
                         l_standard_term_ta, & ! intent(in)
-                        stats_zm(1)%file, err_code ) ! intent(inout)
+                        stats_zm(1)%file, err_info ) ! intent(inout)
 
-      if ( err_code == clubb_fatal_error ) then
+      if ( any(err_info%err_code == clubb_fatal_error) ) then
+        write(fstderr, *) err_info%err_header_global
         write(fstderr,*) "Fatal error setting up stats_zm"
         return
       end if
@@ -1213,14 +1232,16 @@ module stats_clubb_utilities
       end do
       ntot = ivar - 1
       if ( ntot == nvarmax_rad_zt ) then
+        write(fstderr, *) err_info%err_header_global
         write(fstderr,*) "There are more statistical variables listed in ",  &
                          "vars_rad_zt than allowed for by nvarmax_rad_zt."
         write(fstderr,*) "Check the number of variables listed for vars_rad_zt ",  &
                          "in the stats namelist, or change nvarmax_rad_zt."
         write(fstderr,*) "nvarmax_rad_zt = ", nvarmax_rad_zt
         write(fstderr,*) "number of variables in vars_rad_zt = ", ntot
-        write(fstderr,*) "stats_init_api:  number of rad_zt statistical variables exceeds limit"
-        err_code = clubb_fatal_error
+        write(fstderr,*) "stats_init_api: number of rad_zt statistical variables exceeds limit"
+        ! General error -> set all entries to clubb_fatal_error
+        err_info%err_code = clubb_fatal_error
         return
       end if
 
@@ -1271,16 +1292,17 @@ module stats_clubb_utilities
                           day, month, year, lat_vals, lon_vals, & ! intent(in)
                           time_current, stats_metadata%stats_tout, & ! intent(in)
                           stats_rad_zt(1)%num_output_fields, & ! intent(in)
-                          stats_rad_zt(1)%file, err_code ) ! intent(inout)
+                          stats_rad_zt(1)%file, err_info ) ! intent(inout)
 
         ! Finalize the variable definitions
         call first_write( clubb_params(1,:), sclr_dim, sclr_tol, & ! intent(in)
                           l_uv_nudge, & ! intent(in)
                           l_tke_aniso, & ! intent(in)
                           l_standard_term_ta, & ! intent(in)
-                          stats_rad_zt(1)%file, err_code ) ! intent(inout)
+                          stats_rad_zt(1)%file, err_info ) ! intent(inout)
 
-        if ( err_code == clubb_fatal_error ) then
+        if ( any(err_info%err_code == clubb_fatal_error) ) then
+          write(fstderr, *) err_info%err_header_global
           write(fstderr,*) "Fatal error setting up stats_rad_zt"
           return
         end if
@@ -1299,14 +1321,16 @@ module stats_clubb_utilities
       end do
       ntot = ivar - 1
       if ( ntot == nvarmax_rad_zm ) then
+        write(fstderr, *) err_info%err_header_global
         write(fstderr,*) "There are more statistical variables listed in ",  &
                          "vars_rad_zm than allowed for by nvarmax_rad_zm."
         write(fstderr,*) "Check the number of variables listed for vars_rad_zm ",  &
                          "in the stats namelist, or change nvarmax_rad_zm."
         write(fstderr,*) "nvarmax_rad_zm = ", nvarmax_rad_zm
         write(fstderr,*) "number of variables in vars_rad_zm = ", ntot
-        write(fstderr,*) "stats_init_api:  number of rad_zm statistical variables exceeds limit"
-        err_code = clubb_fatal_error
+        write(fstderr,*) "stats_init_api: number of rad_zm statistical variables exceeds limit"
+        ! General error -> set all entries to clubb_fatal_error
+        err_info%err_code = clubb_fatal_error
         return
       end if
 
@@ -1358,16 +1382,17 @@ module stats_clubb_utilities
                           day, month, year, lat_vals, lon_vals, & ! intent(in)
                           time_current, stats_metadata%stats_tout, & ! intent(in)
                           stats_rad_zm(1)%num_output_fields, & ! intent(in)
-                          stats_rad_zm(1)%file, err_code ) ! intent(inout)
+                          stats_rad_zm(1)%file, err_info ) ! intent(inout)
 
         ! Finalize the variable definitions
         call first_write( clubb_params(1,:), sclr_dim, sclr_tol, & ! intent(in)
                           l_uv_nudge, & ! intent(in)
                           l_tke_aniso, & ! intent(in)
                           l_standard_term_ta, & ! intent(in)
-                          stats_rad_zm(1)%file, err_code ) ! intent(inout)
+                          stats_rad_zm(1)%file, err_info ) ! intent(inout)
 
-        if ( err_code == clubb_fatal_error ) then
+        if ( any(err_info%err_code == clubb_fatal_error) ) then
+          write(fstderr, *) err_info%err_header_global
           write(fstderr,*) "Fatal error setting up stats_rad_zm"
           return
         end if
@@ -1390,14 +1415,16 @@ module stats_clubb_utilities
     end do
     ntot = ivar - 1
     if ( ntot == nvarmax_sfc ) then
+      write(fstderr, *) err_info%err_header_global
       write(fstderr,*) "There are more statistical variables listed in ",  &
                        "vars_sfc than allowed for by nvarmax_sfc."
       write(fstderr,*) "Check the number of variables listed for vars_sfc ",  &
                        "in the stats namelist, or change nvarmax_sfc."
       write(fstderr,*) "nvarmax_sfc = ", nvarmax_sfc
       write(fstderr,*) "number of variables in vars_sfc = ", ntot
-      write(fstderr,*) "stats_init_api:  number of sfc statistical variables exceeds limit"
-      err_code = clubb_fatal_error
+      write(fstderr,*) "stats_init_api: number of sfc statistical variables exceeds limit"
+      ! General error -> set all entries to clubb_fatal_error
+      err_info%err_code = clubb_fatal_error
       return
 
     end if
@@ -1450,16 +1477,17 @@ module stats_clubb_utilities
                         stats_sfc(1)%z, day, month, year, lat_vals, lon_vals, & ! In
                         time_current, stats_metadata%stats_tout, & ! In
                         stats_sfc(1)%num_output_fields, & ! In
-                        stats_sfc(1)%file, err_code ) ! InOut
+                        stats_sfc(1)%file, err_info ) ! InOut
 
       ! Finalize the variable definitions
       call first_write( clubb_params(1,:), sclr_dim, sclr_tol, & ! intent(in)
                         l_uv_nudge, & ! intent(in)
                         l_tke_aniso, & ! intent(in)
                         l_standard_term_ta, & ! intent(in)
-                        stats_sfc(1)%file, err_code ) ! intent(inout)
+                        stats_sfc(1)%file, err_info ) ! intent(inout)
 
-      if ( err_code == clubb_fatal_error ) then
+      if ( any(err_info%err_code == clubb_fatal_error) ) then
+        write(fstderr, *) err_info%err_header_global
         write(fstderr,*) "Fatal error setting up stats_sfc"
         return
       end if
@@ -1471,8 +1499,10 @@ module stats_clubb_utilities
     ! Check for errors
 
     if ( l_error ) then
-      write(fstderr,*) 'stats_init_api:  errors found'
-      err_code = clubb_fatal_error
+      write(fstderr, *) err_info%err_header_global
+      write(fstderr, *) 'stats_init_api:  errors found'
+      ! General error -> set all entries to clubb_fatal_error
+      err_info%err_code = clubb_fatal_error
       return
     endif
 
@@ -1615,7 +1645,7 @@ module stats_clubb_utilities
                                  stats_zt, stats_zm, stats_sfc, & ! intent(inout)
                                  stats_lh_zt, stats_lh_sfc,     & ! intent(inout)
                                  stats_rad_zt, stats_rad_zm,    & ! intent(inout)
-                                 err_code                       & ! intent(inout)
+                                 err_info                       & ! intent(inout)
                                )
 
     ! Description:
@@ -1650,6 +1680,9 @@ module stats_clubb_utilities
 
     use stats_type, only: stats ! Type
 
+    use err_info_type_module, only: &
+      err_info_type        ! Type
+
     implicit none
 
     type (stats_metadata_type), intent(in) :: &
@@ -1664,8 +1697,8 @@ module stats_clubb_utilities
       stats_rad_zt, &
       stats_rad_zm
 
-    integer, intent(inout) :: &
-      err_code  ! Error code catching and relaying any errors occurring in this subroutine
+    type(err_info_type), intent(inout) :: &
+      err_info        ! err_info struct containing err_code and err_header
 
     ! External
     intrinsic :: floor
@@ -1704,11 +1737,13 @@ module stats_clubb_utilities
 
     ! Return if errors are found.
     if ( l_error ) then
+      write(fstderr, *) err_info%err_header_global
       write(fstderr,*) 'Possible statistical sampling error'
       write(fstderr,*) 'For details, set debug_level to a value of at ',  &
                        'least 1 in the appropriate model.in file.'
       write(fstderr,*) 'stats_end_timestep:  error(s) found'
-      err_code = clubb_fatal_error
+      ! General error -> set all entries to clubb_fatal_error
+      err_info%err_code = clubb_fatal_error
       return
     end if ! l_error
 
@@ -1760,28 +1795,32 @@ module stats_clubb_utilities
       else ! l_netcdf
 
 #ifdef NETCDF
-        call write_netcdf( stats_zt%file, err_code ) ! intent(inout)
+        call write_netcdf( stats_zt%file, err_info ) ! intent(inout)
 
-        call write_netcdf( stats_zm%file, err_code ) ! intent(inout)
+        call write_netcdf( stats_zm%file, err_info ) ! intent(inout)
 
         if ( stats_metadata%l_silhs_out ) then
 
-          call write_netcdf( stats_lh_zt%file, err_code ) ! intent(inout)
+          call write_netcdf( stats_lh_zt%file, err_info ) ! intent(inout)
 
-          call write_netcdf( stats_lh_sfc%file, err_code ) ! intent(inout)
+          call write_netcdf( stats_lh_sfc%file, err_info ) ! intent(inout)
 
         end if
         if ( stats_metadata%l_output_rad_files ) then
 
-          call write_netcdf( stats_rad_zt%file, err_code ) ! intent(inout)
+          call write_netcdf( stats_rad_zt%file, err_info ) ! intent(inout)
 
-          call write_netcdf( stats_rad_zm%file, err_code ) ! intent(inout)
+          call write_netcdf( stats_rad_zm%file, err_info ) ! intent(inout)
 
         end if
 
-        call write_netcdf( stats_sfc%file, err_code ) ! intent(inout)
+        call write_netcdf( stats_sfc%file, err_info ) ! intent(inout)
             
-        if ( err_code == clubb_fatal_error ) return
+        if ( any(err_info%err_code == clubb_fatal_error) ) then
+          write(fstderr, *) err_info%err_header_global
+          write(fstderr,*) 'stats_end_timestep:  error(s) found while calling write_netcdf'
+          return
+        endif
 #else
         error stop "This program was not compiled with netCDF support"
 #endif /* NETCDF */

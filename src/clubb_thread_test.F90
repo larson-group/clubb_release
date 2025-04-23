@@ -29,6 +29,12 @@ program clubb_thread_test
 
   use constants_clubb, only: fstderr ! Constant(s)
 
+  use err_info_type_module, only: &
+    err_info_type,                  & ! Type
+    init_default_err_info_api,      & ! Procedure(s)
+    set_err_info_values_api,        &
+    cleanup_err_info_api
+
   implicit none
 
 #ifdef _OPENMP
@@ -58,7 +64,10 @@ program clubb_thread_test
   ! Internal variables
   integer, dimension(ncases) :: err_code_saves
 
-  integer :: iter, iunit, err_code
+  integer :: iter, iunit
+
+  type(err_info_type) :: &
+    err_info        ! err_info struct containing err_code and err_header
 
   !-----------------------------------------------------------------------------
 
@@ -68,28 +77,38 @@ program clubb_thread_test
   error stop "This program needs to be compiled with OpenMP enabled to test if CLUBB is threadsafe"
 #endif
 
-  ! Initialize status of run 
+  ! Initialize status of run. We don't need to initialize err_info since that is done in run_clubb
   err_code_saves = clubb_no_error
-  err_code = clubb_no_error
+
+  ! Initialize err_info with default values for one column
+  call init_default_err_info_api(1, err_info)
 
   ! Run the model in parallel
-!$omp parallel do default(shared), private(iter, clubb_params, iunit, err_code), &
+!$omp parallel do default(shared), private(iter, clubb_params, iunit, err_info), &
 !$omp   shared(err_code_saves)
   do iter = 1, ncases
 #ifdef _OPENMP
     iunit = omp_get_thread_num() + 10
+
+    ! Set OMP thread nr for err_info
+    call set_err_info_values_api(1, err_info, chunk_idx_in=omp_get_thread_num())
 #else
     iunit = 10
 #endif
+
     ! Read in model parameter values
     call init_clubb_params_api( 1, iunit, namelist_filename(iter), &
                                 clubb_params )
 
     ! Run the model
     call run_clubb( 1, 1, l_output_multi_col, l_output_double_prec, &
-                    clubb_params, namelist_filename(iter), l_stdout, err_code )
+                    clubb_params, namelist_filename(iter), l_stdout, err_info )
 
-    err_code_saves(iter) = err_code
+    ! Save err_code value
+    err_code_saves(iter) = err_info%err_code(1)
+
+    ! Reset all err_code values
+    err_info%err_code = clubb_no_error
 
   end do ! 1 .. ncases
 !$omp end parallel do
@@ -99,6 +118,9 @@ program clubb_thread_test
       write(fstderr,*) "Simulation ", iter, " failed (multi-threaded)"
     end if
   end do
+
+  ! Clean up err_info
+  call cleanup_err_info_api(err_info)
 
 end program clubb_thread_test
 !-------------------------------------------------------------------------------

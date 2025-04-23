@@ -45,6 +45,11 @@ program jacobian
   use clubb_precision, only: &
     core_rknd ! Variable(s)
 
+  use err_info_type_module, only: &
+    err_info_type,                  & ! Type
+    init_default_err_info_api,      & ! Procedure(s)
+    cleanup_err_info_api
+
   implicit none
 
   !----------------------------------------------------------------------------
@@ -62,7 +67,7 @@ program jacobian
   !----------------------------------------------------------------------------
   type variable_array
 
-    integer ::  & 
+    integer :: &
       nz,   & ! Z dimension [grid boxes] 
       entries ! Total variables
 
@@ -83,8 +88,8 @@ program jacobian
   intrinsic sum, transfer, abs, int, trim
 
   ! Constant Parameters
-  integer, parameter :: & 
-    nvarzt = 15, & 
+  integer, parameter :: &
+    nvarzt = 15, &
     nvarzm = 40
 
 ! character, parameter :: delta   = 'Δ' ! Only works on unicode terminals
@@ -92,13 +97,13 @@ program jacobian
   character, parameter :: delta   = 'D'
 
   ! Local Variables
-  integer, dimension(10) :: & 
+  integer, dimension(10) :: &
     times ! Times to read in [GraDS output file units]
 
   ! Types to hold GrADS variables and parameter constants
   type (param_array) :: clubb_params
 
-  type (variable_array) ::  & 
+  type (variable_array) :: &
     var1zt,  & ! Thermo grid GrADS results   [units vary]
     var2zt,  & ! Thermo grid GrADS results   [units vary]
     var1zm,  & ! Momentum grid GrADS results [units vary]
@@ -117,14 +122,16 @@ program jacobian
     nzt, &          ! Thermo grid levels
     nzm, &          ! Momentum grid levels
     alloc_stat, &   ! Det. whether array allocation worked
-    i, j, k, &      ! loop variables
-    err_code        ! Error status output of run_clubb
+    i, j, k         ! loop variables
 
-  real( kind = core_rknd ) ::  & 
+  type(err_info_type) :: &
+    err_info        ! err_info struct containing err_code and err_header
+
+  real( kind = core_rknd ) :: &
     delta_factor, & ! Factor that tunable parameters are multiplied by
     tmp_param       ! Temporary variable
 
-  logical :: & 
+  logical :: &
     l_use_standard_vars ! Whether to use the standard tunable parameters
 
   logical, parameter :: &
@@ -134,12 +141,15 @@ program jacobian
 
 
   ! Namelists
-  namelist /jcbn_nml/  & 
+  namelist /jcbn_nml/  &
     times, delta_factor, l_use_standard_vars
 
 !-----------------------------------------------------------------------
 
   ! ---- Begin Code ----
+
+  ! Initialize err_info with default values for one column
+  call init_default_err_info_api(1, err_info)
 
   ! Use an internal file write to specify the write format for the jacobian_matrix.txt
   ! and impact_matrix.txt files.
@@ -147,8 +157,8 @@ program jacobian
 
   times(1:10) = 0
 
-  allocate( clubb_params%value( 1, nparams ),  & 
-            clubb_params%name( nparams ), & 
+  allocate( clubb_params%value( 1, nparams ), &
+            clubb_params%name( nparams ), &
             stat=alloc_stat )
   if (alloc_stat /= 0 ) error stop "allocate failed"
 
@@ -172,20 +182,19 @@ program jacobian
 
   clubb_params%name(1:nparams) = params_list(1:nparams)
 
-  write(unit=fstdout,fmt='(a27,2a12)')  & 
+  write(unit=fstdout,fmt='(a27,2a12)') &
     "Parameter", "Initial", "Varied"
 
   do i = 1, clubb_params%entries, 1
-    write(unit=*,fmt='(a27,2f12.5)') trim( clubb_params%name(i) ),  & 
+    write(unit=*,fmt='(a27,2f12.5)') trim( clubb_params%name(i) ), &
       clubb_params%value(1,i), clubb_params%value(1,i) * delta_factor
   end do
 
-  err_code = clubb_no_error
   call run_clubb( 1, 1, l_output_multi_col, l_output_double_prec, &
-                  clubb_params%value(1,:), 'jacobian.in', l_stdout, err_code )
+                  clubb_params%value(1,:), 'jacobian.in', l_stdout, err_info )
 
   if ( clubb_at_least_debug_level( 0 ) ) then
-    if ( err_code == clubb_fatal_error ) then
+    if ( any(err_info%err_code == clubb_fatal_error) ) then
       error stop "The initial set of parameters caused a fatal error."
     end if
   end if
@@ -199,12 +208,12 @@ program jacobian
 
   ! Initialize the structures holding the variables
 
-  allocate( var1zt%value(nzt, nvarzt), & 
-            var2zt%value(nzt, nvarzt), & 
-            var1zt%name(nvarzt), & 
-            var2zt%name(nvarzt), & 
-            var1zt%z(nzt), & 
-            var2zt%z(nzt), & 
+  allocate( var1zt%value(nzt, nvarzt), &
+            var2zt%value(nzt, nvarzt), &
+            var1zt%name(nvarzt), &
+            var2zt%name(nvarzt), &
+            var1zt%z(nzt), &
+            var2zt%z(nzt), &
             stat=alloc_stat )
 
   if (alloc_stat /= 0 ) error stop "allocate failed"
@@ -219,12 +228,12 @@ program jacobian
   var2zt%z = stat_file_vertical_levels &
     ( var1zt%name(1), "../output/"//trim( stats_metadata%fname_zt )//".ctl", nzt )
 
-  allocate( var1zm%value(nzm, nvarzm), & 
-            var2zm%value(nzm, nvarzm), & 
-            var1zm%name(nvarzm), & 
-            var2zm%name(nvarzm), & 
-            var1zm%z(nzm), & 
-            var2zm%z(nzm), & 
+  allocate( var1zm%value(nzm, nvarzm), &
+            var2zm%value(nzm, nvarzm), &
+            var1zm%name(nvarzm), &
+            var2zm%name(nvarzm), &
+            var1zm%z(nzm), &
+            var2zm%z(nzm), &
             stat = alloc_stat )
 
   if (alloc_stat /= 0 ) error stop "allocate failed"
@@ -279,15 +288,15 @@ program jacobian
     tmp_param = clubb_params%value(1,i)
     clubb_params%value(1,i) = clubb_params%value(1,i) * delta_factor
 
-    err_code = clubb_no_error
+    ! Reset err_code to "no error"
+    err_info%err_code = clubb_no_error
     call run_clubb( 1, 1, l_output_multi_col, l_output_double_prec, &
-                    clubb_params%value(1,:), 'jacobian.in', l_stdout, err_code )
+                    clubb_params%value(1,:), 'jacobian.in', l_stdout, err_info )
 
     ! Print a period so the user knows something is happening
     write(unit=fstdout, fmt='(a1)', advance='no') "."
 
-    if ( err_code == clubb_fatal_error ) then
-
+    if ( any(err_info%err_code == clubb_fatal_error) ) then
       ! Pos. Infinity bit pattern
       jmatrix(i,:) = real(PosInf, kind = core_rknd)
       clubb_params%value(1,i) = tmp_param
@@ -383,13 +392,16 @@ program jacobian
   close(unit=20)
 
   ! Deallocate memory
-  deallocate( var1zt%value, var2zt%value, & 
-              var1zt%name, var2zt%name, & 
+  deallocate( var1zt%value, var2zt%value, &
+              var1zt%name, var2zt%name, &
               var1zt%z, var2zt%z )
 
-  deallocate( var1zm%value, var2zm%value, & 
-              var1zm%name, var2zm%name, & 
+  deallocate( var1zm%value, var2zm%value, &
+              var1zm%name, var2zm%name, &
               var1zm%z, var2zm%z )
+
+  ! Clean up err_info
+  call cleanup_err_info_api(err_info)
 
   stop "Program exited normally"
 

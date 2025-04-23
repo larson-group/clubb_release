@@ -18,7 +18,7 @@ module mixing_length
                                     exner, thv_ds, mu, lmin, &
                                     saturation_formula, &
                                     l_implemented, &
-                                    err_code, &
+                                    err_info, &
                                     Lscale, Lscale_up, Lscale_down )
 
     ! Description:
@@ -139,6 +139,9 @@ module mixing_length
     use saturation, only:  &
         sat_mixrat_liq_api ! Procedure(s)
 
+    use err_info_type_module, only: &
+      err_info_type     ! Type
+
     implicit none
 
     ! Constant Parameters
@@ -183,8 +186,8 @@ module mixing_length
       l_implemented ! Flag for CLUBB being implemented in a larger model
 
     !--------------------------------- InOut Variables ---------------------------------
-    integer, intent(inout) :: &
-      err_code      ! Error code catching and relaying any errors occurring in this subroutine
+    type(err_info_type), intent(inout) :: &
+      err_info      ! err_info struct containing err_code and err_header
 
     !--------------------------------- Output Variables ---------------------------------
     real( kind = core_rknd ), dimension(ngrdcol,nzt), intent(out) ::  &
@@ -253,15 +256,17 @@ module mixing_length
     !$acc parallel loop gang vector default(present)
     do i = 1, ngrdcol
       if ( abs(mu(i)) < eps ) then
-        err_code = clubb_fatal_error
+        ! General error -> set all entries to clubb_fatal_error
+        err_info%err_code = clubb_fatal_error
+        write(fstderr,*) err_info%err_header(i)
         print *, "mu = ", mu(i)
       end if
     end do
     !$acc end parallel loop
 
-    if ( err_code == clubb_fatal_error ) then
-      write(fstderr,*) "Entrainment rate mu cannot be 0"
-      error stop "Fatal error in subroutine compute_mixing_length"
+    if ( any(err_info%err_code == clubb_fatal_error) ) then
+      write(fstderr, *) "Entrainment rate mu cannot be 0"
+      write(fstderr, *) "Fatal error in subroutine compute_mixing_length"
     end if
 
     ! Calculate initial turbulent kinetic energy for each grid level
@@ -1013,30 +1018,31 @@ module mixing_length
 
       do i = 1, ngrdcol
         call length_check( nzt, Lscale(i,:), Lscale_up(i,:), Lscale_down(i,:), & ! intent(in)
-                           err_code ) ! intent(inout)
+                           err_info ) ! intent(inout)
+
+        if ( err_info%err_code(i) == clubb_fatal_error ) then
+
+          write(fstderr,*) err_info%err_header(i)
+          write(fstderr,*) "Errors in compute_mixing_length subroutine in grid column ", i
+
+          write(fstderr,*) "Intent(in)"
+
+          write(fstderr,*) "thvm = ", thvm(i,:)
+          write(fstderr,*) "thlm = ", thlm(i,:)
+          write(fstderr,*) "rtm = ", rtm(i,:)
+          write(fstderr,*) "em = ", em(i,:)
+          write(fstderr,*) "exner = ", exner(i,:)
+          write(fstderr,*) "p_in_Pa = ", p_in_Pa(i,:)
+          write(fstderr,*) "thv_ds = ", thv_ds(i,:)
+
+          write(fstderr,*) "Intent(out)"
+
+          write(fstderr,*) "Lscale = ", Lscale(i,:)
+          write(fstderr,*) "Lscale_up = ", Lscale_up(i,:)
+          write(fstderr,*) "Lscale_down = ", Lscale_down(i,:)
+
+        endif ! Fatal error
       end do
-
-      if ( err_code == clubb_fatal_error ) then
-
-        write(fstderr,*) "Errors in compute_mixing_length subroutine"
-
-        write(fstderr,*) "Intent(in)"
-
-        write(fstderr,*) "thvm = ", thvm
-        write(fstderr,*) "thlm = ", thlm
-        write(fstderr,*) "rtm = ", rtm
-        write(fstderr,*) "em = ", em
-        write(fstderr,*) "exner = ", exner
-        write(fstderr,*) "p_in_Pa = ", p_in_Pa
-        write(fstderr,*) "thv_ds = ", thv_ds
-
-        write(fstderr,*) "Intent(out)"
-
-        write(fstderr,*) "Lscale = ", Lscale
-        write(fstderr,*) "Lscale_up = ", Lscale_up
-        write(fstderr,*) "Lscale_down = ", Lscale_down
-
-      endif ! Fatal error
 
     end if
 
@@ -1058,7 +1064,7 @@ module mixing_length
                                     saturation_formula, &
                                     l_Lscale_plume_centered, &
                                     stats_metadata, &
-                                    stats_zt, err_code, &
+                                    stats_zt, err_info, &
                                     Lscale, Lscale_up, Lscale_down)
 
     use constants_clubb, only: &
@@ -1098,6 +1104,9 @@ module mixing_length
 
     use stats_type, only: &
         stats ! Type
+
+    use err_info_type_module, only: &
+      err_info_type     ! Type
 
     implicit none
 
@@ -1154,8 +1163,8 @@ module mixing_length
     type (stats), dimension(ngrdcol), intent(inout) :: &
       stats_zt
 
-    integer, intent(inout) :: &
-      err_code      ! Error code catching and relaying any errors occurring in this subroutine
+    type(err_info_type), intent(inout) :: &
+      err_info      ! err_info struct containing err_code and err_header
 
     !--------------------------------- Output Variables ---------------------------------
     real( kind = core_rknd ), dimension(ngrdcol,nzt), intent(out) ::  &
@@ -1203,9 +1212,11 @@ module mixing_length
     if ( clubb_at_least_debug_level( 0 ) ) then
 
       if ( l_Lscale_plume_centered .and. .not. l_avg_Lscale ) then
+        write(fstderr,*) err_info%err_header_global
         write(fstderr,*) "l_Lscale_plume_centered requires l_avg_Lscale"
         write(fstderr,*) "Fatal error in advance_clubb_core"
-        err_code = clubb_fatal_error
+        ! General error -> set all entries to clubb_fatal_error
+        err_info%err_code = clubb_fatal_error
         return
       end if
 
@@ -1253,7 +1264,7 @@ module mixing_length
                                   exner, thv_ds_zt, mu_pert_1, lmin,        & ! In
                                   saturation_formula,                       & ! In
                                   l_implemented,                            & ! In
-                                  err_code,                                 & ! InOut
+                                  err_info,                                 & ! InOut
                                   Lscale_pert_1, Lscale_up, Lscale_down )     ! Out
 
       !$acc parallel loop gang vector collapse(2) default(present)
@@ -1285,7 +1296,7 @@ module mixing_length
                                   exner, thv_ds_zt, mu_pert_2, lmin,        & ! In
                                   saturation_formula,                       & ! In
                                   l_implemented,                            & ! In
-                                  err_code,                                 & ! InOut
+                                  err_info,                                 & ! InOut
                                   Lscale_pert_2, Lscale_up, Lscale_down )     ! Out
 
     else if ( l_avg_Lscale .and. l_Lscale_plume_centered ) then
@@ -1357,7 +1368,7 @@ module mixing_length
                                   exner, thv_ds_zt, mu_pert_pos_rt, lmin,        & ! In
                                   saturation_formula,                            & ! In
                                   l_implemented,                                 & ! In
-                                  err_code,                                      & ! InOut
+                                  err_info,                                      & ! InOut
                                   Lscale_pert_1, Lscale_up, Lscale_down )          ! Out
 
       call compute_mixing_length( nzm, nzt, ngrdcol, gr, thvm, thlm_pert_neg_rt, & ! In
@@ -1365,7 +1376,7 @@ module mixing_length
                                   exner, thv_ds_zt, mu_pert_neg_rt, lmin,        & ! In
                                   saturation_formula,                            & ! In
                                   l_implemented,                                 & ! In
-                                  err_code,                                      & ! InOut
+                                  err_info,                                      & ! InOut
                                   Lscale_pert_2, Lscale_up, Lscale_down )          ! Out
 
     else
@@ -1405,7 +1416,7 @@ module mixing_length
                                 exner, thv_ds_zt, newmu, lmin,     & ! In
                                 saturation_formula,                & ! In
                                 l_implemented,                     & ! In
-                                err_code,                          & ! InOut
+                                err_info,                          & ! InOut
                                 Lscale, Lscale_up, Lscale_down )     ! Out
 
     if ( l_avg_Lscale ) then
@@ -1460,7 +1471,7 @@ module mixing_length
                         l_e3sm_config, & ! intent in
                         l_smooth_Heaviside_tau_wpxp, & ! intent in
                         brunt_vaisala_freq_sqd_smth, Ri_zm, & ! intent in
-                        stats_zm, err_code, & ! intent inout
+                        stats_zm, err_info, & ! intent inout
                         invrs_tau_zt, invrs_tau_zm, & ! intent out
                         invrs_tau_sfc, invrs_tau_no_N2_zm, invrs_tau_bkgnd, & ! intent out
                         invrs_tau_shear, invrs_tau_N2_iso, & ! intent out
@@ -1483,16 +1494,17 @@ module mixing_length
         stat_update_var ! Procedure
 
     use constants_clubb, only: &
-        one_fourth,     &
-        one_half,       &
-        vonk,           &
-        zero,           &
-        one,            & 
-        two,            &
-        em_min,         &
-        zero_threshold, &
-        eps,            &
-        min_max_smth_mag
+        one_fourth,         &
+        one_half,           &
+        vonk,               &
+        zero,               &
+        one,                &
+        two,                &
+        em_min,             &
+        zero_threshold,     &
+        eps,                &
+        min_max_smth_mag,   &
+        fstderr
 
     use grid_class, only: &
         grid, & ! Type
@@ -1529,6 +1541,9 @@ module mixing_length
       stats_metadata_type
 
     use stats_type, only: stats ! Type
+
+    use err_info_type_module, only: &
+      err_info_type     ! Type
 
     implicit none
 
@@ -1578,8 +1593,8 @@ module mixing_length
     type (stats), intent(inout), dimension(ngrdcol) :: &
       stats_zm
 
-    integer, intent(inout) :: &
-      err_code      ! Error code catching and relaying any errors occurring in this subroutine
+    type(err_info_type), intent(inout) :: &
+      err_info      ! err_info struct containing err_code and err_header
 
     !--------------------------------- Output Variables ---------------------------------
     real( kind = core_rknd ), dimension(ngrdcol,nzm), intent(out) :: &
@@ -1652,7 +1667,7 @@ module mixing_length
     !$acc                    norm_ddzt_umvm, smooth_norm_ddzt_umvm, &
     !$acc                    brunt_vaisala_freq_clipped, &
     !$acc                    ice_supersat_frac_zm, invrs_tau_shear_smooth, &
-    !$acc                    tmp_calc_ngrdcol )
+    !$acc                    tmp_calc_ngrdcol, err_info, err_info%err_code )
 
     !$acc enter data if( l_smooth_min_max ) &
     !$acc            create( tau_zm_unclipped, tau_zt_unclipped, Ri_zm_smooth, em_clipped, &
@@ -1661,14 +1676,17 @@ module mixing_length
     !$acc parallel loop gang vector default(present)
     do i = 1, ngrdcol
       if ( gr%zm(i,gr%k_lb_zm) - sfc_elevation(i) + clubb_params(i,iz_displace) < eps ) then
-        err_code = clubb_fatal_error
+        ! Error in grid column i -> set ith entry to clubb_fatal_error
+        err_info%err_code(i) = clubb_fatal_error
+        write(fstderr, *) err_info%err_header(i)
       end if
     end do
     !$acc end parallel loop
 
     if ( clubb_at_least_debug_level(0) ) then
-      if ( err_code == clubb_fatal_error ) then
-        error stop  "Lowest zm grid level is below ground in CLUBB."
+      if ( any(err_info%err_code == clubb_fatal_error) ) then
+        write(fstderr, *) "Lowest zm grid level is below ground in CLUBB."
+        return
       end if
     end if
 

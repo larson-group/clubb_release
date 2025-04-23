@@ -76,9 +76,9 @@ module atex
                          l_add_dycore_grid, &
                          grid_remap_method, &
                          gr_dycore, rho_ds_zm_dycore, &
-                         err_code, &
-                         wm_zt, wm_zm, & 
-                         thlm_forcing, rtm_forcing, & 
+                         err_info, &
+                         wm_zt, wm_zm, &
+                         thlm_forcing, rtm_forcing, &
                          sclrm_forcing, edsclrm_forcing )
   ! Description:
   !   Subroutine to set theta-l and water tendencies for ATEX case
@@ -110,6 +110,9 @@ module atex
 
   use array_index, only: &
     sclr_idx_type
+
+  use err_info_type_module, only: &
+    err_info_type        ! Type
 
   use interpolation, only: &
     lin_interp_between_grids
@@ -152,8 +155,8 @@ module atex
                      ! use this to assume the exact linear spline as the rho_ds profile
 
   !--------------------- InOut Variables ---------------------
-    integer, intent(inout) :: &
-      err_code    ! Error code catching and relaying any errors occurring in this subroutine
+    type(err_info_type), intent(inout) :: &
+      err_info        ! err_info struct containing err_code and err_header
 
   !--------------------- Output Variables ---------------------
   real( kind = core_rknd ), intent(out), dimension(ngrdcol,gr%nzt) :: &
@@ -211,11 +214,12 @@ module atex
 
       do i = 1, ngrdcol
         if ( z_lev(i) == gr%nzt+1 .or. z_lev(i) == 1 ) then
+          write(fstderr, *) err_info%err_header(i)
           write(fstderr,*) "Identification of 6.5 g/kg level failed"
           write(fstderr,*) "Subroutine: atex_tndcy. File: atex.F"
           write(fstderr,*) "k = ", z_lev(i), " i = ", i
           write(fstderr,*) "rtm(k) = ",rtm(i,z_lev(i))
-          err_code = clubb_fatal_error
+          err_info%err_code(i) = clubb_fatal_error
           return
         end if
       end do
@@ -276,11 +280,12 @@ module atex
 
         do i = 1, ngrdcol
           if ( z_lev_dycore(i) == gr_dycore%nzt+1 .or. z_lev_dycore(i) == 1 ) then
+            write(fstderr, *) err_info%err_header(i)
             write(fstderr,*) "Identification of 6.5 g/kg level failed on dycore grid"
             write(fstderr,*) "Subroutine: atex_tndcy. File: atex.F"
             write(fstderr,*) "k = ", z_lev_dycore(i), " i = ", i
             write(fstderr,*) "rtm_dycore(k) = ",rtm_dycore(i,z_lev_dycore(i))
-            err_code = clubb_fatal_error
+            err_info%err_code(i) = clubb_fatal_error
             return
           end if
         end do

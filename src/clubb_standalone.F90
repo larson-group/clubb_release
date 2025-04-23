@@ -11,8 +11,7 @@ program clubb_standalone
   use clubb_driver, only: run_clubb ! Procedure(s)
 
   use error_code, only: &
-      clubb_no_error, &                 ! Constants
-      clubb_generalized_grd_test_err, &
+      clubb_generalized_grd_test_err, & ! Constants
       clubb_fatal_error
 
   use model_flags, only: &
@@ -27,6 +26,11 @@ program clubb_standalone
   use clubb_precision, only: core_rknd ! Constant
 
   use constants_clubb, only: fstderr ! Constant
+
+  use err_info_type_module, only: &
+    err_info_type,                  & ! Type
+    init_default_err_info_api,      & ! Procedure(s)
+    cleanup_err_info_api
 
   implicit none
 
@@ -43,8 +47,11 @@ program clubb_standalone
   integer :: &
     ngrdcol, &
     calls_per_out, &
-    iostat, &
-    err_code
+    iostat
+
+  type(err_info_type) :: &
+    err_info        ! err_info struct containing err_code and err_header
+                    ! Initialization is done within run_clubb
 
   character(len=13), parameter :: &
     namelist_filename = "clubb.in"  ! Text file containing namelists
@@ -80,10 +87,13 @@ program clubb_standalone
   open(unit=iunit, file=namelist_filename, status='old', action='read')
   read(unit=iunit, iostat=iostat, nml=multicol_def)
   close(unit=iunit)
-  
+
   if ( iostat /= 0 ) then
     write(fstderr,*) "multicol_def namelist not found in clubb.in -- defaulting to ngrdcol = 1"
   end if
+
+  ! Initialize err_info with default values
+  call init_default_err_info_api(ngrdcol, err_info)
 
   allocate( clubb_params(ngrdcol,nparams) )
 
@@ -91,16 +101,14 @@ program clubb_standalone
   call init_clubb_params_api( ngrdcol, iunit, namelist_filename, &
                               clubb_params )
 
-  ! Initialize status of run 
-  err_code = clubb_no_error
-
   ! Run the model
   call run_clubb( ngrdcol, calls_per_out, l_output_multi_col, l_output_double_prec, &
-                  clubb_params, namelist_filename, l_stdout, err_code )
+                  clubb_params, namelist_filename, l_stdout, err_info )
 
+  write(fstderr, *) "after run_clubb"
   if ( .not. l_test_grid_generalization ) then
     ! Normal CLUBB run
-    if ( err_code == clubb_fatal_error ) then
+    if ( any(err_info%err_code == clubb_fatal_error) ) then
       error stop "Fatal error in clubb, check your parameter values and timestep"
     else
       write(fstderr,*) "Program exited normally"
@@ -109,7 +117,7 @@ program clubb_standalone
   else ! l_test_grid_generalization
     ! CLUBB grid generalization test
     ! A different success or error return is required
-    if ( err_code == clubb_generalized_grd_test_err ) then
+    if ( any(err_info%err_code == clubb_generalized_grd_test_err) ) then
       error stop "Error in generalized grid test; check the error messages"
     else
       write(fstderr,*) "Generalized grid test passed"
@@ -117,5 +125,7 @@ program clubb_standalone
     end if
   endif
 
+  ! Clean up err_info
+  call cleanup_err_info_api(err_info)
 
 end program clubb_standalone
