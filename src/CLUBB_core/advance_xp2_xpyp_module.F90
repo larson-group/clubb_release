@@ -469,6 +469,7 @@ module advance_xp2_xpyp_module
       end do
       !$acc end parallel loop
 
+      !$acc update host( err_info%err_code )
       if ( any(err_info%err_code == clubb_fatal_error) ) then
         return
       end if

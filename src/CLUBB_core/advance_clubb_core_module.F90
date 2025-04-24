@@ -5425,6 +5425,7 @@ module advance_clubb_core_module
       !$acc end parallel loop
 
       if ( clubb_at_least_debug_level( 0 ) ) then
+        !$acc update host( err_info%err_code )
         if ( any(err_info%err_code == clubb_fatal_error) ) then
 
           !$acc update host( pdf_params%mixt_frac, pdf_params%chi_1, pdf_params%chi_2, &

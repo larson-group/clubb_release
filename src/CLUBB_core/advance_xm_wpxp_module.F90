@@ -748,6 +748,7 @@ module advance_xm_wpxp_module
       end do
       !$acc end parallel loop
 
+      !$acc update host( err_info%err_code )
       if ( any(err_info%err_code == clubb_fatal_error) ) then
         write(fstderr,*) "The C7_Skw_fnc variable is outside the valid range"
         return

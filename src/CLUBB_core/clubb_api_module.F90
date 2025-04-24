@@ -1240,7 +1240,7 @@ contains
     !$acc              upwp_sfc_pert_col, vpwp_sfc_pert_col, rtm_ref_col, thlm_ref_col, &
     !$acc              um_ref_col, &
     !$acc              vm_ref_col, ug_col, vg_col, host_dx_col, host_dy_col, &
-    !$acc              pdf_params, pdf_params_zm ) &
+    !$acc              pdf_params, pdf_params_zm, err_info_api, err_info_api%err_header ) &
     !$acc        copy( um_col, upwp_col, vm_col, vpwp_col, up2_col, vp2_col, up3_col, vp3_col, &
     !$acc              rtm_col, wprtp_col, thlm_col, wpthlp_col, rtp2_col, &
     !$acc              rtp3_col, thlp2_col, thlp3_col, rtpthlp_col, wp2_col, wp3_col, &
@@ -1250,6 +1250,7 @@ contains
     !$acc              wp4_col, wpup2_col, wpvp2_col, wp2up2_col, wp2vp2_col, &
     !$acc              ice_supersat_frac_col, um_pert_col, &
     !$acc              vm_pert_col, upwp_pert_col, vpwp_pert_col, &
+    !$acc              err_info_api%err_code, &
     !$acc              pdf_params%w_1, pdf_params%w_2, &
     !$acc              pdf_params%varnce_w_1, pdf_params%varnce_w_2, &
     !$acc              pdf_params%rt_1, pdf_params%rt_2, &
@@ -1841,7 +1842,7 @@ contains
     !$acc              wprtp_sfc, upwp_sfc, vpwp_sfc, p_sfc, & 
     !$acc              upwp_sfc_pert, vpwp_sfc_pert, rtm_ref, thlm_ref, um_ref, &
     !$acc              vm_ref, ug, vg, host_dx, host_dy, &
-    !$acc              pdf_params, pdf_params_zm ) &
+    !$acc              pdf_params, pdf_params_zm, err_info_api, err_info_api%err_header ) &
     !$acc        copy( um, upwp, vm, vpwp, up2, vp2, up3, vp3, rtm, wprtp, thlm, wpthlp, rtp2, &
     !$acc              rtp3, thlp2, thlp3, rtpthlp, wp2, wp3, &
     !$acc              p_in_Pa, exner, rcm, cloud_frac, wpthvp, wp2thvp, &
@@ -1896,7 +1897,7 @@ contains
     !$acc              pdf_params_zm%ice_supersat_frac_2 ) &
     !$acc     copyout( rcm_in_layer, cloud_cover, wprcp, w_up_in_cloud, w_down_in_cloud, &
     !$acc              cloudy_updraft_frac, cloudy_downdraft_frac, invrs_tau_zm, Kh_zt, &
-    !$acc              Kh_zm, thlprcp, Lscale )
+    !$acc              Kh_zm, thlprcp, Lscale, err_info_api%err_code )
 
     !$acc data if( sclr_dim > 0 ) &
     !$acc      copyin( sclr_tol, sclrm_forcing, wpsclrp_sfc ) &

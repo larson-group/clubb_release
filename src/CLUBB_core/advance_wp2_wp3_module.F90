@@ -578,6 +578,7 @@ module advance_wp2_wp3_module
       end do
       !$acc end parallel loop
 
+      !$acc update host( err_info%err_code )
       if ( any(err_info%err_code == clubb_fatal_error) ) then
         return
       end if

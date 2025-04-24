@@ -257,13 +257,14 @@ module mixing_length
     do i = 1, ngrdcol
       if ( abs(mu(i)) < eps ) then
         ! General error -> set all entries to clubb_fatal_error
-        err_info%err_code = clubb_fatal_error
+        err_info%err_code(i) = clubb_fatal_error
         write(fstderr,*) err_info%err_header(i)
-        print *, "mu = ", mu(i)
+        write(fstderr,*) "mu = ", mu(i)
       end if
     end do
     !$acc end parallel loop
 
+    !$acc update host( err_info%err_code )
     if ( any(err_info%err_code == clubb_fatal_error) ) then
       write(fstderr, *) "Entrainment rate mu cannot be 0"
       write(fstderr, *) "Fatal error in subroutine compute_mixing_length"
@@ -1667,7 +1668,7 @@ module mixing_length
     !$acc                    norm_ddzt_umvm, smooth_norm_ddzt_umvm, &
     !$acc                    brunt_vaisala_freq_clipped, &
     !$acc                    ice_supersat_frac_zm, invrs_tau_shear_smooth, &
-    !$acc                    tmp_calc_ngrdcol, err_info, err_info%err_code )
+    !$acc                    tmp_calc_ngrdcol )
 
     !$acc enter data if( l_smooth_min_max ) &
     !$acc            create( tau_zm_unclipped, tau_zt_unclipped, Ri_zm_smooth, em_clipped, &
@@ -1684,6 +1685,7 @@ module mixing_length
     !$acc end parallel loop
 
     if ( clubb_at_least_debug_level(0) ) then
+      !$acc update host( err_info%err_code )
       if ( any(err_info%err_code == clubb_fatal_error) ) then
         write(fstderr, *) "Lowest zm grid level is below ground in CLUBB."
         return
