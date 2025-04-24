@@ -3982,7 +3982,6 @@ module clubb_driver
 
     !---- Begin code ----
 
-    write(fstderr,*) 'Start of init, pre sounding'
     ! Read sounding information
     ! Only use first value of p_sfc and zm_init because sounding files are not configured
     ! to use multiple columns yet
@@ -3994,7 +3993,6 @@ module clubb_driver
                         alt_type, p_in_Pa, subs_type, wm_zt, &   ! Intent(out)
                         rtm_sfc, thlm_sfc, sclrm, edsclrm )      ! Intent(out)
 
-    write(fstderr,*) 'Post sounding, pre init clubb vars'
     ! Covert sounding input to CLUBB compatible input
     call initialize_clubb_variables( ngrdcol, sclr_dim, edsclr_dim, sclr_idx, & ! Intent(in)
                                     gr, alt_type, theta_type,                 & ! Intent(in)
@@ -4007,7 +4005,6 @@ module clubb_driver
                                     invrs_rho_ds_zt, thv_ds_zm,               & ! Intent(out)
                                     thv_ds_zt, sclrm, edsclrm )                 ! Intent(out)
 
-    write(fstderr,*) 'Post sounding, pre bugsrad'
     if ( trim( rad_scheme ) == "bugsrad" ) then
       ! Currently clubb does not support different grid heights, use only the first column to
       ! determine the size of the extended atmosphere
@@ -4022,7 +4019,7 @@ module clubb_driver
     else
       ! lin_int_buffer et al. are set to zero in clubb_model_settings.
     end if
-
+    
     ! Determine initial value cloud droplet number concentration when Nc
     ! is predicted.
     Nc_in_cloud = Nc0_in_cloud / rho
@@ -4049,7 +4046,6 @@ module clubb_driver
       end do ! k = 1, gr%nzt, 1
     end do
 
-    write(fstderr,*) 'pre microphys select'
     select case ( trim( microphys_scheme ) )
 
     case ( "coamps" )
@@ -4066,7 +4062,6 @@ module clubb_driver
     end select
 
 
-    write(fstderr,*) 'pre subs_type select'
     ! Initialize imposed w
     select case ( trim( subs_type ) ) ! Perform different operations based off
       !                                   the sounding file
@@ -4094,7 +4089,6 @@ module clubb_driver
 
     end select
 
-    write(fstderr,*) 'post subs_type, pre spongedamp'
     ! Initialize damping
     if ( thlm_sponge_damp_settings%l_sponge_damping ) then
       call initialize_tau_sponge_damp( gr, gr%nzt, dt_main, gr%zt(1,:), & ! Intent(in)
@@ -4132,7 +4126,6 @@ module clubb_driver
                                        up2_vp2_sponge_damp_profile )   ! Intent(out)
     endif
 
-    write(fstderr,*) 'post sponge, pre dycore'
     ! Initialize the dycore grid rho_ds linear spline approximation and p_in_Pa for dycore grid
     if ( l_add_dycore_grid ) then
       do i = 1, ngrdcol
@@ -4149,7 +4142,6 @@ module clubb_driver
 
     ! Initialize Time Dependent Input
     
-    write(fstderr,*) 'post dycore, pre t_dependent'
     if( l_t_dependent ) then
 
       if ( l_add_dycore_grid ) then
@@ -4183,7 +4175,6 @@ module clubb_driver
 
     end if
     
-    write(fstderr,*) 'post t_dependent, pre runtype select'
     ! Initialize TKE and other fields as needed
 
     select case ( trim( runtype ) )
@@ -4563,7 +4554,6 @@ module clubb_driver
 
     end if ! l_tke_aniso
 
-    write(fstderr,*) 'post runtype, pre spongedamp final'
     ! Moved this to be more general -dschanen July 16 2007
     if ( clubb_config_flags%l_uv_nudge .or. uv_sponge_damp_settings%l_sponge_damping ) then
       um_ref = um ! Michael Falk addition for nudging code.  27 Sep/1 Nov 2006
