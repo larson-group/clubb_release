@@ -807,12 +807,12 @@ module grid_adaptation_module
         ! check monotonicity
         ! check monotonicity if iv is 1
         ! ppm is monotone on the inner levels (from 3 to n-2) if iv=1 and kord=4 or higher but it also seems to be in most cases monotone for iv=0 and kord=3, the relevant variable is lmt in kmppm, lmt=0 is not always monotone, lmt=1 is always monotone for the inner levels, but unfortunately i havent found a configuration where all levels, including the boundarties are monotone
-        if ( iv == 1 .and. kord >= 4 ) then
+        !if ( iv == 1 .and. kord >= 4 ) then
           call check_remapped_val_for_monotonicity( 1, &                                   ! In
                                                     nlevel_source-1, nlevel_target-1, &    ! In
                                                     source_values(i,:), &                  ! In
                                                     remap_vals_to_target(i,:) )            ! In
-        end if
+        !end if
       end do
     end if
 

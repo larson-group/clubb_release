@@ -295,6 +295,67 @@ module output_netcdf
 
     real( kind=core_rknd ), dimension(:,:), allocatable :: levels_target_zm_vals
 
+    integer :: &
+      iv_wind = -1, &
+      iv_pos_def = 0, &
+      iv_other = 1     ! this is used as the default here
+
+    integer :: iv, k
+
+    ! TODO find better way to set if variable is wind, pos_Def or other, maybe in ncf%grid_avg_var and then set default to other etc
+    character(len=7), dimension(11) :: &
+      iv_wind_variables = [ 'wm_zt  ', &
+                            'um_ref ', &
+                            'vm_ref ', &
+                            'ug     ', &
+                            'vg     ', &
+                            'ug     ', &
+                            'um     ', &
+                            'vm     ', &
+                            'um_pert', &
+                            'vm_pert', &
+                            'wm_zm  ' ]
+
+    !character(len=:), allocatable, dimension(:) :: trimmed_iv_wind_variables
+
+    character(len=21), dimension(34) :: &
+      iv_pos_def_variables = [ 'rho                  ', &
+                               'rho_ds_zt            ', &
+                               'invrs_rho_ds_zt      ', &
+                               'thv_ds_zt            ', &
+                               'rfrzm                ', &
+                               'rtm_ref              ', &
+                               'thlm_ref             ', &
+                               'rtm                  ', &
+                               'thlm                 ', &
+                               'thvm                 ', &
+                               'rcm                  ', &
+                               'cloud_frac           ', &
+                               'ice_supersat_frac    ', &
+                               'rcm_in_layer         ', &
+                               'cloud_cover          ', &
+                               'cloudy_updraft_frac  ', &
+                               'cloudy_downdraft_frac', &
+                               'Kh_zt                ', &
+                               'Lscale               ', &
+                               'rho_zm               ', &
+                               'rho_ds_zm            ', &
+                               'invrs_rho_ds_zm      ', &
+                               'thv_ds_zm            ', &
+                               'up2                  ', &
+                               'vp2                  ', &
+                               'rtp2                 ', &
+                               'thlp2                ', &
+                               'wp2                  ', &
+                               'rc_coef_zm           ', &
+                               'wp4                  ', &
+                               'wp2up2               ', &
+                               'wp2vp2               ', &
+                               'invrs_tau_zm         ', &
+                               'Kh_zm                ' ]
+
+    !character(len=:), allocatable, dimension(:) :: trimmed_iv_pos_def_variables
+
     ! ---- Begin Code ----
 
     if ( l_different_output_grid ) then
@@ -362,6 +423,19 @@ module output_netcdf
             ! TODO is ncf%iz always the count or do I have to take ncf%ia - ncf%iz ?
             allocate( grid_avg_var_diff_gr(1,ncf%nlon,ncf%nlat,ncf%iz) )
           endif
+
+          iv = 1
+          do k = 1, size(iv_pos_def_variables)
+            if ( trim(iv_pos_def_variables(k)) == ncf%grid_avg_var(i)%name ) then
+              iv = 0
+            end if
+          end do
+          do k = 1, size(iv_wind_variables)
+            if ( trim(iv_wind_variables(k)) == ncf%grid_avg_var(i)%name ) then
+              iv = -1
+            end if
+          end do
+
           do lon = 1, ncf%nlon
             do lat = 1, ncf%nlat
               if ( zm_zt == 'zm' ) then
@@ -374,7 +448,7 @@ module output_netcdf
                                           rho_lin_spline_vals, &
                                           rho_lin_spline_levels, &
                                           ncf%grid_avg_var(i)%ptr(lon,lat,ncf%ia:gr_source%nzm ), &
-                                          1, &  ! TODO replace by named variable
+                                          iv, &  ! TODO replace by named variable
                                           R_ij_zm, p_sfc )
 
               else if ( zm_zt == 'zt' ) then
@@ -387,9 +461,8 @@ module output_netcdf
                                           rho_lin_spline_vals, &
                                           rho_lin_spline_levels, &
                                           ncf%grid_avg_var(i)%ptr(lon,lat,ncf%ia:gr_source%nzt ), &
-                                          1, & ! TODO replace by named variable
+                                          iv, & ! TODO replace by named variable
                                           R_ij_zt, p_sfc )
-
               else
                 error stop 'Invalid value for zm_zt in write_netcdf_helper()'
               endif
@@ -413,6 +486,19 @@ module output_netcdf
             ! TODO is ncf%iz always the count or do I have to take ncf%ia - ncf%iz ?
             allocate( samples_of_var_diff_gr(1,ncf%nsamp,ncf%nlon,ncf%nlat,ncf%iz) )
           endif
+
+          iv = 1
+          do k = 1, size(iv_pos_def_variables)
+            if ( trim(iv_pos_def_variables(k)) == ncf%grid_avg_var(i)%name ) then
+              iv = 0
+            end if
+          end do
+          do k = 1, size(iv_wind_variables)
+            if ( trim(iv_wind_variables(k)) == ncf%grid_avg_var(i)%name ) then
+              iv = -1
+            end if
+          end do
+
           do samp = 1, ncf%nsamp
             do lon = 1, ncf%nlon
               do lat = 1, ncf%nlat
@@ -425,7 +511,7 @@ module output_netcdf
                                      rho_lin_spline_vals, &
                                      rho_lin_spline_levels, &
                                      ncf%samples_of_var(i)%ptr(samp,lon,lat,ncf%ia:gr_source%nzm), &
-                                     1, & ! TODO replace by named variable (iv_other)
+                                     iv, & ! TODO replace by named variable (iv_other)
                                      R_ij_zm, p_sfc )
                 else if ( zm_zt == 'zt' ) then
                   samples_of_var_diff_gr(:,samp,lon,lat,:) &
@@ -436,7 +522,7 @@ module output_netcdf
                                      rho_lin_spline_vals, &
                                      rho_lin_spline_levels, &
                                      ncf%samples_of_var(i)%ptr(samp,lon,lat,ncf%ia:gr_source%nzt), &
-                                     1, & ! TODO replace by named variable
+                                     iv, & ! TODO replace by named variable
                                      R_ij_zt, p_sfc )
                 else
                   error stop 'Invalid value for zm_zt in write_netcdf_helper()'

@@ -1080,7 +1080,7 @@ module time_dependent_input
       edsclrm_forcing ! Edscalar forcing [-]
 
     !--------------------- Local Variables ---------------------
-    integer :: n, before_time, after_time
+    integer :: n, before_time, after_time, iv
 
     real( kind = core_rknd ), dimension(gr_dycore%nzt) :: temp_array_dycore
 
