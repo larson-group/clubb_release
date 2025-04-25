@@ -42,8 +42,8 @@
     "flag9": {
         "l_tke_aniso": false,
         "l_min_wp2_from_corr_wx": true,
-        "l_C2_cloud_frac": true,
         "l_stability_correct_tau_zm": true,
+        "l_damp_wp2_using_em": false,
         "l_use_C7_Richardson": false
     },
     "flag10": {
@@ -55,7 +55,7 @@
     },
     "flag11": {
         "l_rcm_supersat_adj": false,
-        "l_damp_wp2_using_em": false,
+        "l_C2_cloud_frac": true,
         "l_use_precip_frac": false,
         "l_do_expldiff_rtm_thlm": true,
         "l_use_shear_Richardson": true

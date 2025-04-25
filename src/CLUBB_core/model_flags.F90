@@ -142,7 +142,7 @@ module model_flags
   ! This flag is only enabled when performing a generalized grid
   ! (ascending vs. descending grid) test.
   logical, parameter, public :: &
-     l_test_grid_generalization = .false.
+     l_test_grid_generalization = .true.
 
   ! Derived type to hold all configurable CLUBB flags
   type clubb_config_flags_type
