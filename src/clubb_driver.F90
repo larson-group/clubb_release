@@ -3359,6 +3359,8 @@ module clubb_driver
 
       if ( stats_metadata%l_stats_samp ) then
 
+        !$acc update host( radht )
+
         do i = 1, ngrdcol
           call stat_update_var( stats_metadata%iFrad, Frad(i,:), stats_zm(i) )
         end do
