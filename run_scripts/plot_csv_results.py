@@ -496,19 +496,54 @@ def model_throughputs(ngrdcol, runtime, N_tasks, N_vsize, N_prec, N_vlevs, model
 
         params_opt = param_scale * params_opt
 
-        fit_params = {
-            "m_ik_val": params_opt[0],
-            "m_k_val": params_opt[1],
-            #"m_est_val": m_est, 
-            "b_val": params_opt[2], 
-            #"b_est_val": b_est, 
-            "c_val": params_opt[3], 
-            "k_val": params_opt[4], 
-            "o_val": params_opt[5], 
-            "cp_func": cache_pen_best.__name__, 
-            "rms_error" : rms_min
-        }
+        # Bootstrap procedure
+        params_bootstrap = []
 
+        n_points = len(runtime)
+        rng = np.random.default_rng()
+
+        for _ in range(100):
+            indices = rng.integers(0, n_points, size=n_points)  # resample with replacement
+            ngrdcol_bs = ngrdcol[indices]
+            runtime_bs = runtime[indices]
+            N_prec_bs = N_prec[indices]
+            N_vlevs_bs = N_vlevs[indices]
+            #N_tasks_bs = N_tasks if np.ndim(N_tasks) == 0 else N_tasks[indices]
+            #N_vsize_bs = N_vsize if np.ndim(N_vsize) == 0 else N_vsize[indices]
+
+            try:
+                result_bs = minimize(
+                    cpu_batched_objective, 
+                    initial_guess, 
+                    args=(param_scale, ngrdcol_bs, runtime_bs, N_tasks, N_vsize, N_prec_bs, N_vlevs_bs, cache_pen_best),
+                    method='L-BFGS-B',
+                    bounds=bounds
+                )
+                params_bootstrap.append(result_bs.x * param_scale)  # save rescaled params
+            except Exception as e:
+                # Skip failed fits
+                print(f"Bootstrap fit failed: {e}")
+                continue
+
+        params_bootstrap = np.array(params_bootstrap)
+
+        confidence_level = 90
+
+        # Now get 5th and 95th percentile (for 90% confidence interval)
+        params_low = np.percentile(params_bootstrap, (100 - confidence_level) / 2, axis=0)
+        params_high = np.percentile(params_bootstrap, 100 - (100 - confidence_level) / 2, axis=0)
+
+        # Assemble fit_params dictionary
+        fit_params = {
+            "m_ik_val": f"{params_opt[0]:.2e} \n({params_low[0]:.2e}, {params_high[0]:.2e})",
+            "m_k_val": f"{params_opt[1]:.2e} \n({params_low[1]:.2e}, {params_high[1]:.2e})",
+            "b_val": f"{params_opt[2]:.2e} \n({params_low[2]:.2e}, {params_high[2]:.2e})",
+            "c_val": f"{params_opt[3]:.2e} \n({params_low[3]:.2e}, {params_high[3]:.2e})",
+            "k_val": f"{params_opt[4]:.2e} \n({params_low[4]:.2e}, {params_high[4]:.2e})",
+            "o_val": f"{params_opt[5]:.2e} \n({params_low[5]:.2e}, {params_high[5]:.2e})",
+            "cp_func": cache_pen_best.__name__,
+            "rms_error": rms_min
+        }
 
     return T_cpu, fit_params
 
