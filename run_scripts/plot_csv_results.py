@@ -63,7 +63,7 @@ def sqrtlog( c, k, o, x ):
 
 def logsig( c, k, o, x ):
     warnings.filterwarnings("ignore", category=RuntimeWarning)
-    return  1 + ( np.log(np.log( np.exp(c*(x - o)) + 1 ) + 1 ) + 1 ) / (1 + np.exp(-k * x + o ))
+    return  c * np.log(np.log( np.exp(x - o) + 1 ) + 1 ) / (1 + np.exp(-k * ( x - o )) ) + 1
 
 def logcosh( c, k, o, x ):
     warnings.filterwarnings("ignore", category=RuntimeWarning)
@@ -77,9 +77,27 @@ def logcosh( c, k, o, x ):
 cache_pen_funcs = {
     "loglog": loglog,
     "logcosh": logcosh,
+    "logsig": logsig,
     "sigmoid": sigmoid,
     "sqrtlog": sqrtlog
 }
+
+def rms_error( ngrdcol, runtime, T_model ):
+
+    abs_diff_time = np.abs( runtime - T_model )
+    abs_percent_time = 100 * ( runtime - T_model ) / runtime
+
+    cps = ngrdcol / runtime
+    cps_model = ngrdcol / T_model
+
+    abs_percent_diff_cps = 100 * ( cps - cps_model ) / cps
+    abs_diff_cps = np.abs( cps - cps_model )
+
+    rms_error = np.sqrt( np.mean( abs_percent_diff_cps**2 ) )
+
+    return rms_error
+
+
 
 # ======================================== VCPU ========================================
 
@@ -106,10 +124,10 @@ def model_vcpu_time(params, param_scale, ngrdcol, runtime, N_tasks, N_vsize, N_p
     cols_per_core = ngrdcol / N_tasks
     flops_per_vop = N_vsize / N_prec
 
-    b, c, k, o = param_scale * params
+    T_r, T_v, b, c, k, o = param_scale * params
 
-    T_r = runtime[np.where(cols_per_core == 1)] - b
-    T_v = runtime[np.where(cols_per_core == flops_per_vop)] - b
+    #T_r = runtime[np.where(cols_per_core == 1)] - b
+    #T_v = runtime[np.where(cols_per_core == flops_per_vop)] - b
 
     N_s = np.ceil( cols_per_core ) % ( flops_per_vop )
     N_v = np.floor( cols_per_core / ( flops_per_vop ) )
@@ -118,16 +136,7 @@ def model_vcpu_time(params, param_scale, ngrdcol, runtime, N_tasks, N_vsize, N_p
 
     T_vcpu = ( T_r * N_s + T_v * N_v ) * cp_func( c, k, o, avg_array_size_MB ) + b
 
-    # Calculate error
-    cps = ngrdcol / runtime
-    cps_model = ngrdcol / T_vcpu
-
-    abs_percent_diff = 100 * ( cps - cps_model ) / cps
-    abs_diff = np.abs( cps - cps_model )
-
-    rms_error = np.sqrt( np.mean( abs_diff**2 ) )
-
-    return T_vcpu, rms_error
+    return T_vcpu, rms_error( ngrdcol, runtime, T_vcpu )
 
 
 # ======================================== CPU ========================================
@@ -157,16 +166,7 @@ def model_cpu_time(params, param_scale, ngrdcol, runtime, N_tasks, N_vsize, N_pr
  
     T_cpu =  ( m * ngrdcol + b ) * cp_func( c, k, o, avg_array_size_MB )
 
-    # Calculate error
-    cps = ngrdcol / runtime
-    cps_model = ngrdcol / T_cpu
-
-    abs_percent_diff = 100 * ( cps - cps_model ) / cps
-    abs_diff = np.abs( cps - cps_model )
-
-    rms_error = np.sqrt( np.mean( abs_diff**2 ) )
-
-    return T_cpu, rms_error
+    return T_cpu, rms_error( ngrdcol, runtime, T_cpu )
 
 # ======================================== CPU Batched ========================================
 
@@ -196,16 +196,7 @@ def model_cpu_batched_time(params, param_scale, ngrdcol, runtime, N_tasks, N_vsi
  
     T_cpu =  ( m_ik * ngrdcol * N_vlevs + m_k * N_vlevs + b ) * cp_func( c, k, o, avg_array_size_MB )
 
-    # Calculate error
-    cps = ngrdcol / runtime
-    cps_model = ngrdcol / T_cpu
-
-    abs_percent_diff = 100 * ( cps - cps_model ) / cps
-    abs_diff = np.abs( cps - cps_model )
-
-    rms_error = np.sqrt( np.mean( abs_diff**2 ) )
-
-    return T_cpu, rms_error
+    return T_cpu, rms_error( ngrdcol, runtime, T_cpu )
 
 
 # ======================================== GPU ========================================
@@ -228,14 +219,7 @@ def model_gpu_time(params, param_scale, ngrdcol, runtime, N_tasks, N_vsize, N_pr
 
     T_gpu = b + m * ngrdcol
 
-    # Calculate error
-    cps = ngrdcol / runtime
-    cps_model = ngrdcol / T_gpu
-
-    abs_diff = np.abs( cps - cps_model )
-    rms_error = np.sqrt( np.mean( abs_diff**2 ) )
-
-    return T_gpu, rms_error
+    return T_gpu, rms_error( ngrdcol, runtime, T_gpu )
 
 
 # ======================================== Batched GPU ========================================
@@ -260,14 +244,7 @@ def model_gpu_batched_time(params, param_scale, ngrdcol, runtime, N_tasks, N_vsi
 
     T_bgpu = m_ik * ngrdcol * N_vlevs + m_k * N_vlevs + b
 
-    # Calculate error
-    cps = ngrdcol / runtime
-    cps_model = ngrdcol / T_bgpu
-
-    abs_diff = np.abs( cps - cps_model )
-    rms_error = np.sqrt( np.mean( abs_diff**2 ) )
-
-    return T_bgpu, rms_error
+    return T_bgpu, rms_error( ngrdcol, runtime, T_bgpu )
 
 
 def model_throughputs(ngrdcol, runtime, N_tasks, N_vsize, N_prec, N_vlevs, model_version, selected_cp_funcs=None):
@@ -277,9 +254,16 @@ def model_throughputs(ngrdcol, runtime, N_tasks, N_vsize, N_prec, N_vlevs, model
 
     if model_version == "vcpu":
 
-        b_est = runtime[0] - ( runtime[1] - runtime[0] ) / ( ngrdcol[1] - ngrdcol[0] ) * ngrdcol[0]
+        cols_per_core = ngrdcol / N_tasks
+        flops_per_vop = N_vsize / N_prec
 
-        initial_guess = [ b_est, 1.0, 1.0, 1.0 ]
+        b_est = runtime[0] - ( runtime[1] - runtime[0] ) / ( ngrdcol[1] - ngrdcol[0] ) * ngrdcol[0]
+        T_r_est = runtime[np.where(cols_per_core == 1)] - b_est
+        T_v_est = runtime[np.where(cols_per_core == flops_per_vop)] - b_est
+
+        initial_guess = [ T_r_est[0], T_v_est[0], b_est, 1.0, 1.0, 1.0 ]
+
+        print(initial_guess)
 
         param_scale = np.abs( initial_guess )
         bounds = [ (0,None) ] * len(initial_guess)
@@ -316,18 +300,14 @@ def model_throughputs(ngrdcol, runtime, N_tasks, N_vsize, N_prec, N_vlevs, model
 
         params_opt = param_scale * params_opt
 
-        b = params_opt[0]
-        T_r = runtime[np.where(cols_per_core == 1)] - b
-        T_v = runtime[np.where(cols_per_core == flops_per_vop)] - b
-
         fit_params = {
-            "c_val": params_opt[1],
-            "k_val": params_opt[2],
-            "o_val": params_opt[3], 
-            "b_val": b, 
-            "b_est_val": b_est, 
-            "T_v_val": T_v[0], 
-            "T_r_val": T_r[0], 
+            "T_v_val": params_opt[0], 
+            "T_r_val": params_opt[1], 
+            "b_val": params_opt[2],  
+            #"b_est_val": b_est, 
+            "c_val": params_opt[3],
+            "k_val": params_opt[4],
+            "o_val": params_opt[5], 
             "cp_func": cache_pen_best.__name__, 
             "rms_error" : rms_error
         }
