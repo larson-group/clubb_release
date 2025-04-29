@@ -1,7 +1,7 @@
 $Id$
   
 This directory contains scripts for the various programs that can be used with
-the CLUBB parameterization.
+the CLUBB parameterization. 
 
 generate_seed.bash: 
   Generates a psuedo random seed that is used by the tuner.
