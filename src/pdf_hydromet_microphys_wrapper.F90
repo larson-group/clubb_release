@@ -55,7 +55,7 @@ module pdf_hydromet_microphys_wrapper
         clip_transform_silhs_output_api
 
     use latin_hypercube_driver_module, only: &
-        stats_accumulate_lh
+        stats_accumulate_lh_api
 #endif /*SILHS*/
 
     use pdf_parameter_module, only: &
@@ -396,7 +396,7 @@ module pdf_hydromet_microphys_wrapper
         !$acc              lh_rt_clipped, lh_thl_clipped, lh_rc_clipped, lh_rv_clipped, lh_Nc_clipped )
 
         do i = 1, ngrdcol
-          call stats_accumulate_lh( &
+          call stats_accumulate_lh_api( &
                 gr, gr%nzt, lh_num_samples, pdf_dim, rho_ds_zt(i,:),     & ! In
                 hydromet_dim, hm_metadata,                               & ! In
                 lh_sample_point_weights(i,:,:),  X_nl_all_levs(i,:,:,:), & ! In

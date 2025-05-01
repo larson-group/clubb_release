@@ -15,9 +15,9 @@ module latin_hypercube_driver_module
 
   private ! Default scope
 
-#ifdef SILHS 
-  public :: latin_hypercube_2D_output, &
-    latin_hypercube_2D_close, stats_accumulate_lh, generate_silhs_sample, &
+#ifdef SILHS
+  public :: latin_hypercube_2D_output_api, &
+    latin_hypercube_2D_close_api, stats_accumulate_lh_api, generate_silhs_sample, &
     copy_X_nl_into_hydromet_all_pts, clip_transform_silhs_output
 
   private :: stats_accumulate_uniform_lh
@@ -1647,7 +1647,7 @@ module latin_hypercube_driver_module
 !-------------------------------------------------------------------------------
 
 !-------------------------------------------------------------------------------
-  subroutine latin_hypercube_2D_output( &
+  subroutine latin_hypercube_2D_output_api( &
                fname_prefix, fdir, stats_tout, &
                nzt, pdf_dim, &
                stats_zt, time_initial, num_samples, &
@@ -1856,7 +1856,7 @@ module latin_hypercube_driver_module
       if ( any(err_info%err_code == clubb_fatal_error) ) then
         write(fstderr, *) err_info%err_header_global
         write(fstderr, *) "Fatal error calling open_2D_samples_file for LOGNORMAL samples", &
-                          " in CLUBB SILHS procedure latin_hypercube_2D_output"
+                          " in CLUBB SILHS procedure latin_hypercube_2D_output_api"
         return
       end if
 
@@ -1963,7 +1963,7 @@ module latin_hypercube_driver_module
       if ( any(err_info%err_code == clubb_fatal_error) ) then
         write(fstderr, *) err_info%err_header_global
         write(fstderr, *) "Fatal error calling open_2D_samples_file for UNIFORM samples", &
-                          " in CLUBB SILHS procedure latin_hypercube_2D_output"
+                          " in CLUBB SILHS procedure latin_hypercube_2D_output_api"
         return
       end if
 
@@ -1972,10 +1972,10 @@ module latin_hypercube_driver_module
     end if ! l_output_2D_uniform_dist
 
     return
-  end subroutine latin_hypercube_2D_output
+  end subroutine latin_hypercube_2D_output_api
 
 !-------------------------------------------------------------------------------
-  subroutine latin_hypercube_2D_close
+  subroutine latin_hypercube_2D_close_api
 ! Description:
 !   Close a 2D sample file
 
@@ -2001,7 +2001,7 @@ module latin_hypercube_driver_module
     end if
 
     return
-  end subroutine latin_hypercube_2D_close
+  end subroutine latin_hypercube_2D_close_api
 
 !-------------------------------------------------------------------------------
   subroutine compute_arb_overlap( nzt, ngrdcol, num_samples, pdf_dim, d_uniform_extra, &
@@ -2135,7 +2135,7 @@ module latin_hypercube_driver_module
   end subroutine compute_arb_overlap
 
 !-------------------------------------------------------------------------------
-  subroutine stats_accumulate_lh( &
+  subroutine stats_accumulate_lh_api( &
                gr, nzt, num_samples, pdf_dim, rho_ds_zt, &
                hydromet_dim, hm_metadata,&
                lh_sample_point_weights, X_nl_all_levs, &
@@ -2630,7 +2630,7 @@ module latin_hypercube_driver_module
     end if ! stats_metadata%l_stats_samp
 
     return
-  end subroutine stats_accumulate_lh
+  end subroutine stats_accumulate_lh_api
 
   !-----------------------------------------------------------------------
   subroutine stats_accumulate_uniform_lh( nzt, num_samples, ngrdcol, l_in_precip_all_levs, &

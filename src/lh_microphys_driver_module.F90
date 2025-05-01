@@ -53,8 +53,8 @@ contains
     use hydromet_pdf_parameter_module, only: &
       precipitation_fractions ! Type
 
-    use est_kessler_microphys_module, only: &
-      est_kessler_microphys
+    use silhs_api_module, only: &
+      est_kessler_microphys_api
 
     use clubb_precision, only: &
       core_rknd
@@ -179,7 +179,7 @@ contains
     ! Perform LH and analytic microphysical calculations
     ! As a test of SILHS, compute an estimate of Kessler microphysics
     if ( clubb_at_least_debug_level( 2 ) ) then
-       call est_kessler_microphys &
+       call est_kessler_microphys_api &
             ( nzt, num_samples, pdf_dim, &                        ! Intent(in)
               X_nl_all_levs, pdf_params, rcm, cloud_frac, &      ! Intent(in)
               X_mixt_comp_all_levs, lh_sample_point_weights, &   ! Intent(in)

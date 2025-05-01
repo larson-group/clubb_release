@@ -5,14 +5,14 @@ module lh_microphys_var_covar_module
 
   implicit none
 
-  public :: lh_microphys_var_covar_driver
+  public :: lh_microphys_var_covar_driver_api
 
   private ! Default scope
 
   contains
 
   !-----------------------------------------------------------------------
-  subroutine lh_microphys_var_covar_driver &
+  subroutine lh_microphys_var_covar_driver_api &
              ( nzt, num_samples, dt, lh_sample_point_weights, &
                pdf_params, lh_rt_all, lh_thl_all, lh_w_all, &
                lh_rcm_mc_all, lh_rvm_mc_all, lh_thlm_mc_all, &
@@ -183,6 +183,6 @@ module lh_microphys_var_covar_module
     end if ! .not. l_lh_instant_var_covar_src
 
     return
-  end subroutine lh_microphys_var_covar_driver
+  end subroutine lh_microphys_var_covar_driver_api
   !-----------------------------------------------------------------------
 end module lh_microphys_var_covar_module

@@ -81,8 +81,8 @@ module estimate_scm_microphys_module
     use corr_varnce_module, only: &
       hm_metadata_type
 
-    use lh_microphys_var_covar_module, only: &
-      lh_microphys_var_covar_driver   ! Procedure
+    use silhs_api_module, only: &
+      lh_microphys_var_covar_driver_api   ! Procedure
 
     use silhs_category_variance_module, only: &
       silhs_category_variance_driver  ! Procedure
@@ -282,7 +282,7 @@ module estimate_scm_microphys_module
 
     if ( l_var_covar_src ) then
 
-      call lh_microphys_var_covar_driver &
+      call lh_microphys_var_covar_driver_api &
            ( nzt, num_samples, dt, lh_sample_point_weights,  &  ! Intent(in)
              pdf_params, lh_rt_clipped, lh_thl_clipped, w_all_points,  &  ! Intent(in)
              lh_rcm_mc_all, lh_rvm_mc_all, lh_thlm_mc_all,  &  ! Intent(in)

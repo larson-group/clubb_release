@@ -86,24 +86,24 @@ module parameters_silhs
   private ! Default Scope
 
   public :: eight_cluster_presc_probs_type, silhs_config_flags_type, &
-            set_default_silhs_config_flags, initialize_silhs_config_flags_type, &
-            print_silhs_config_flags
+            set_default_silhs_config_flags_api, initialize_silhs_config_flags_type_api, &
+            print_silhs_config_flags_api
 
   contains
 
 !-------------------------------------------------------------------------------
-  subroutine set_default_silhs_config_flags( cluster_allocation_strategy, &
-                                             l_lh_importance_sampling, &
-                                             l_Lscale_vert_avg, &
-                                             l_lh_straight_mc, &
-                                             l_lh_clustered_sampling, &
-                                             l_rcm_in_cloud_k_lh_start, &
-                                             l_random_k_lh_start, &
-                                             l_max_overlap_in_cloud, &
-                                             l_lh_instant_var_covar_src, &
-                                             l_lh_limit_weights, &
-                                             l_lh_var_frac, &
-                                             l_lh_normalize_weights )
+  subroutine set_default_silhs_config_flags_api( cluster_allocation_strategy, &
+                                                 l_lh_importance_sampling, &
+                                                 l_Lscale_vert_avg, &
+                                                 l_lh_straight_mc, &
+                                                 l_lh_clustered_sampling, &
+                                                 l_rcm_in_cloud_k_lh_start, &
+                                                 l_random_k_lh_start, &
+                                                 l_max_overlap_in_cloud, &
+                                                 l_lh_instant_var_covar_src, &
+                                                 l_lh_limit_weights, &
+                                                 l_lh_var_frac, &
+                                                 l_lh_normalize_weights )
 
     ! Description:
     !   Sets all SILHS flags to a default setting.
@@ -164,23 +164,23 @@ module parameters_silhs
                                         ! (the "ratio estimate")
 
     return
-  end subroutine set_default_silhs_config_flags
+  end subroutine set_default_silhs_config_flags_api
 !-----------------------------------------------------------------------
 
 !-------------------------------------------------------------------------------
-  subroutine initialize_silhs_config_flags_type( cluster_allocation_strategy, &
-                                                 l_lh_importance_sampling, &
-                                                 l_Lscale_vert_avg, &
-                                                 l_lh_straight_mc, &
-                                                 l_lh_clustered_sampling, &
-                                                 l_rcm_in_cloud_k_lh_start, &
-                                                 l_random_k_lh_start, &
-                                                 l_max_overlap_in_cloud, &
-                                                 l_lh_instant_var_covar_src, &
-                                                 l_lh_limit_weights, &
-                                                 l_lh_var_frac, &
-                                                 l_lh_normalize_weights, &
-                                                 silhs_config_flags )
+  subroutine initialize_silhs_config_flags_type_api( cluster_allocation_strategy, &
+                                                     l_lh_importance_sampling, &
+                                                     l_Lscale_vert_avg, &
+                                                     l_lh_straight_mc, &
+                                                     l_lh_clustered_sampling, &
+                                                     l_rcm_in_cloud_k_lh_start, &
+                                                     l_random_k_lh_start, &
+                                                     l_max_overlap_in_cloud, &
+                                                     l_lh_instant_var_covar_src, &
+                                                     l_lh_limit_weights, &
+                                                     l_lh_var_frac, &
+                                                     l_lh_normalize_weights, &
+                                                     silhs_config_flags )
 
     ! Description:
     !   Initialize the silhs_config_flags_type.
@@ -238,11 +238,11 @@ module parameters_silhs
     silhs_config_flags%l_lh_normalize_weights      = l_lh_normalize_weights
 
     return
-  end subroutine initialize_silhs_config_flags_type
+  end subroutine initialize_silhs_config_flags_type_api
 !-----------------------------------------------------------------------
 
 !-------------------------------------------------------------------------------
-  subroutine print_silhs_config_flags( iunit, silhs_config_flags )
+  subroutine print_silhs_config_flags_api( iunit, silhs_config_flags )
 
     ! Description:
     !   Prints the silhs_config_flags.
@@ -277,7 +277,7 @@ module parameters_silhs
     write(iunit,*) "l_lh_normalize_weights = ", silhs_config_flags%l_lh_normalize_weights
 
     return
-  end subroutine print_silhs_config_flags
+  end subroutine print_silhs_config_flags_api
 !-----------------------------------------------------------------------
 
 end module parameters_silhs

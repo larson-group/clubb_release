@@ -71,12 +71,14 @@ module microphys_init_cleanup
 
     use parameters_silhs, only: &
         silhs_config_flags_type,             & ! Type(s)
-        set_default_silhs_config_flags,      & ! Procedure(s)
-        initialize_silhs_config_flags_type,  &
-        print_silhs_config_flags,            &
         eight_cluster_presc_probs,           & ! Sampling probabilities for prescribed mode (SILHS)
         importance_prob_thresh,              & ! Minimum PDF probability for importance sampling
         vert_decorr_coef                       ! Vertical overlap decorrelation coefficient (SILHS)
+
+    use silhs_api_module, only: &
+        set_default_silhs_config_flags_api,     & ! Procedure(s)
+        initialize_silhs_config_flags_type_api, &
+        print_silhs_config_flags_api
 
     use parameters_microphys, only: &
         lh_num_samples                  ! SILHS sample points
@@ -393,18 +395,18 @@ module microphys_init_cleanup
     read(iunit, nml=microphysics_setting)
     close(unit=iunit)
 
-    call set_default_silhs_config_flags( cluster_allocation_strategy, & ! Out
-                                         l_lh_importance_sampling, & ! Out
-                                         l_Lscale_vert_avg, & ! Out
-                                         l_lh_straight_mc, & ! Out
-                                         l_lh_clustered_sampling, & ! Out
-                                         l_rcm_in_cloud_k_lh_start, & ! Out
-                                         l_random_k_lh_start, & ! Out
-                                         l_max_overlap_in_cloud, & ! Out
-                                         l_lh_instant_var_covar_src, & ! Out
-                                         l_lh_limit_weights, & ! Out
-                                         l_lh_var_frac, & ! Out
-                                         l_lh_normalize_weights ) ! Out
+    call set_default_silhs_config_flags_api( cluster_allocation_strategy, & ! Out
+                                             l_lh_importance_sampling, & ! Out
+                                             l_Lscale_vert_avg, & ! Out
+                                             l_lh_straight_mc, & ! Out
+                                             l_lh_clustered_sampling, & ! Out
+                                             l_rcm_in_cloud_k_lh_start, & ! Out
+                                             l_random_k_lh_start, & ! Out
+                                             l_max_overlap_in_cloud, & ! Out
+                                             l_lh_instant_var_covar_src, & ! Out
+                                             l_lh_limit_weights, & ! Out
+                                             l_lh_var_frac, & ! Out
+                                             l_lh_normalize_weights ) ! Out
 
     ! Read in SILHS parameters, if SILHS is enabled
     if ( trim( lh_microphys_type ) /= "disabled" ) then
@@ -417,19 +419,19 @@ module microphys_init_cleanup
       close(unit=iunit)
     end if ! trim( lh_microphys_type ) /= "disabled"
 
-    call initialize_silhs_config_flags_type( cluster_allocation_strategy, & ! In
-                                             l_lh_importance_sampling, & ! In
-                                             l_Lscale_vert_avg, & ! In
-                                             l_lh_straight_mc, & ! In
-                                             l_lh_clustered_sampling, & ! In
-                                             l_rcm_in_cloud_k_lh_start, & ! In
-                                             l_random_k_lh_start, & ! In
-                                             l_max_overlap_in_cloud, & ! In
-                                             l_lh_instant_var_covar_src, & ! In
-                                             l_lh_limit_weights, & ! In
-                                             l_lh_var_frac, & ! In
-                                             l_lh_normalize_weights, & ! In
-                                             silhs_config_flags ) ! Out
+    call initialize_silhs_config_flags_type_api( cluster_allocation_strategy, & ! In
+                                                 l_lh_importance_sampling, & ! In
+                                                 l_Lscale_vert_avg, & ! In
+                                                 l_lh_straight_mc, & ! In
+                                                 l_lh_clustered_sampling, & ! In
+                                                 l_rcm_in_cloud_k_lh_start, & ! In
+                                                 l_random_k_lh_start, & ! In
+                                                 l_max_overlap_in_cloud, & ! In
+                                                 l_lh_instant_var_covar_src, & ! In
+                                                 l_lh_limit_weights, & ! In
+                                                 l_lh_var_frac, & ! In
+                                                 l_lh_normalize_weights, & ! In
+                                                 silhs_config_flags ) ! Out
 
     vert_decorr_coef_out = vert_decorr_coef
 
@@ -577,7 +579,7 @@ module microphys_init_cleanup
        call write_text( "--------------------------------------------------", &
                         l_write_to_file, iunit )
 
-       call print_silhs_config_flags( iunit, silhs_config_flags ) ! Intent(in)
+       call print_silhs_config_flags_api( iunit, silhs_config_flags ) ! Intent(in)
 
        if ( l_write_to_file ) close(unit=iunit)
 

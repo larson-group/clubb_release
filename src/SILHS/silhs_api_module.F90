@@ -86,11 +86,23 @@ module silhs_api_module
     importance_prob_thresh
 
   use latin_hypercube_driver_module, only : &
-    stats_accumulate_lh_api => stats_accumulate_lh
+    stats_accumulate_lh_api
 
-  ! latin_hypercube_2D_output - Creates and opens the SILHS 2D output files.
+  ! latin_hypercube_2D_output_api - Creates and opens the SILHS 2D output files.
   use latin_hypercube_driver_module, only: &
-    latin_hypercube_2D_output_api => latin_hypercube_2D_output
+    latin_hypercube_2D_output_api, &
+    latin_hypercube_2D_close_api
+
+  use est_kessler_microphys_module, only: &
+    est_kessler_microphys_api
+
+  use lh_microphys_var_covar_module, only: &
+    lh_microphys_var_covar_driver_api
+
+  use parameters_silhs, only: &
+    set_default_silhs_config_flags_api, &
+    initialize_silhs_config_flags_type_api, &
+    print_silhs_config_flags_api
 
 #endif
 
@@ -489,78 +501,6 @@ contains
   end subroutine generate_silhs_sample_api_multi_col
 
   !================================================================================================
-  ! est_kessler_microphys - Computes microphysical grid box means of Kessler autoconversion scheme.
-  !================================================================================================
-
-  subroutine est_kessler_microphys_api( &
-    nzt, num_samples, pdf_dim, &
-    X_nl_all_levs, pdf_params, rcm, cloud_frac, &
-    X_mixt_comp_all_levs, lh_sample_point_weights, &
-    l_lh_importance_sampling, &
-    lh_AKm, AKm, AKstd, AKstd_cld, &
-    AKm_rcm, AKm_rcc, lh_rcm_avg )
-
-    use est_kessler_microphys_module, only : est_kessler_microphys
-
-    use pdf_parameter_module, only:  &
-      pdf_parameter  ! Type
-
-    use clubb_precision, only: &
-      core_rknd
-
-    implicit none
-
-    ! Input Variables
-
-    integer, intent(in) :: &
-      nzt,         & ! Number of vertical levels
-      num_samples, & ! Number of sample points
-      pdf_dim        ! Number of variates
-
-    real( kind = core_rknd ), dimension(num_samples,nzt,pdf_dim), intent(in) :: &
-      X_nl_all_levs ! Sample that is transformed ultimately to normal-lognormal
-
-    real( kind = core_rknd ), dimension(nzt), intent(in) :: &
-      cloud_frac    ! Cloud fraction           [-]
-
-    real( kind = core_rknd ), dimension(nzt), intent(in) :: &
-      rcm          ! Liquid water mixing ratio                [kg/kg]
-
-    type(pdf_parameter), intent(in) :: &
-      pdf_params ! PDF parameters       [units vary]
-
-    integer, dimension(num_samples,nzt), intent(in) :: &
-      X_mixt_comp_all_levs ! Whether we're in mixture component 1 or 2
-
-    real( kind = core_rknd ), dimension(num_samples,nzt), intent(in) :: &
-      lh_sample_point_weights ! Weight for cloud weighted sampling
-
-    logical, intent(in) :: &
-      l_lh_importance_sampling ! Do importance sampling (SILHS) [-]
-
-    real( kind = core_rknd ), dimension(nzt), intent(out) :: &
-      lh_AKm,    & ! Monte Carlo estimate of Kessler autoconversion [kg/kg/s]
-      AKm,       & ! Exact Kessler autoconversion, AKm,             [kg/kg/s]
-      AKstd,     & ! Exact standard deviation of gba Kessler        [kg/kg/s]
-      AKstd_cld, & ! Exact w/in cloud std of gba Kessler            [kg/kg/s]
-      AKm_rcm,   & ! Exact local gba Kessler auto based on rcm      [kg/kg/s]
-      AKm_rcc      ! Exact local gba Kessler based on w/in cloud rc [kg/kg/s]
-
-    ! For comparison, estimate kth liquid water using Monte Carlo
-    real( kind = core_rknd ), dimension(nzt), intent(out) :: &
-      lh_rcm_avg ! lh estimate of grid box avg liquid water [kg/kg]
-
-    call est_kessler_microphys( &
-      nzt, num_samples, pdf_dim, &
-      X_nl_all_levs, pdf_params, rcm, cloud_frac, &
-      X_mixt_comp_all_levs, lh_sample_point_weights, &
-      l_lh_importance_sampling, &
-      lh_AKm, AKm, AKstd, AKstd_cld, &
-      AKm_rcm, AKm_rcc, lh_rcm_avg )
-
-  end subroutine est_kessler_microphys_api
-
-  !================================================================================================
   ! clip_transform_silhs_output - Computes extra SILHS sample variables, such as rt and thl.
   !================================================================================================
 
@@ -737,242 +677,6 @@ contains
    !$acc end data
 
   end subroutine clip_transform_silhs_output_api_multi_col
-
-  !-----------------------------------------------------------------
-  ! lh_microphys_var_covar_driver: Computes the effect of microphysics on gridbox covariances
-  !-----------------------------------------------------------------
-
-  subroutine lh_microphys_var_covar_driver_api &                ! In
-             ( nzt, num_samples, dt, lh_sample_point_weights, &  ! In
-               pdf_params, lh_rt_all, lh_thl_all, lh_w_all, &   ! In
-               lh_rcm_mc_all, lh_rvm_mc_all, lh_thlm_mc_all, &  ! In
-               l_lh_instant_var_covar_src, &                    ! In
-               lh_rtp2_mc_zt, lh_thlp2_mc_zt, lh_wprtp_mc_zt, & ! Out
-               lh_wpthlp_mc_zt, lh_rtpthlp_mc_zt )              ! Out
-
-    use lh_microphys_var_covar_module, only: &
-      lh_microphys_var_covar_driver  ! Procedure
-
-    use clubb_precision, only: &
-      core_rknd   ! Constant
-
-    use pdf_parameter_module, only: &
-      pdf_parameter
-      
-    implicit none
-
-    ! Input Variables!
-    integer, intent(in) :: &
-      nzt,           &                  ! Number of vertical levels
-      num_samples                      ! Number of SILHS sample points
-
-    real( kind = core_rknd ), intent(in) :: &
-      dt                               ! Model time step                             [s]
-
-    real( kind = core_rknd ), dimension(num_samples,nzt), intent(in) :: &
-      lh_sample_point_weights          ! Weight of SILHS sample points
-
-    real( kind = core_rknd ), dimension(num_samples,nzt), intent(in) :: &
-      lh_rt_all, &                     ! SILHS samples of total water                [kg/kg]
-      lh_thl_all, &                    ! SILHS samples of potential temperature      [K]
-      lh_w_all, &                      ! SILHS samples of vertical velocity          [m/s]
-      lh_rcm_mc_all, &                 ! SILHS microphys. tendency of rcm            [kg/kg/s]
-      lh_rvm_mc_all, &                 ! SILHS microphys. tendency of rvm            [kg/kg/s]
-      lh_thlm_mc_all                   ! SILHS microphys. tendency of thlm           [K/s]
-
-    logical, intent(in) :: &
-      l_lh_instant_var_covar_src       ! Produce instantaneous var/covar tendencies  [-]
-
-    ! Output Variables
-    real( kind = core_rknd ), dimension(nzt), intent(out) :: &
-      lh_rtp2_mc_zt,   &               ! SILHS microphys. est. tendency of <rt'^2>   [(kg/kg)^2/s]
-      lh_thlp2_mc_zt,  &               ! SILHS microphys. est. tendency of <thl'^2>  [K^2/s]
-      lh_wprtp_mc_zt,  &               ! SILHS microphys. est. tendency of <w'rt'>   [m*(kg/kg)/s^2]
-      lh_wpthlp_mc_zt, &               ! SILHS microphys. est. tendency of <w'thl'>  [m*K/s^2]
-      lh_rtpthlp_mc_zt                 ! SILHS microphys. est. tendency of <rt'thl'> [K*(kg/kg)/s]
-
-    type(pdf_parameter), intent(in) :: &
-      pdf_params    ! The PDF parameters_silhs
-
-    call lh_microphys_var_covar_driver &
-         ( nzt, num_samples, dt, lh_sample_point_weights, &
-           pdf_params, lh_rt_all, lh_thl_all, lh_w_all, &
-           lh_rcm_mc_all, lh_rvm_mc_all, lh_thlm_mc_all, &
-           l_lh_instant_var_covar_src, &
-           lh_rtp2_mc_zt, lh_thlp2_mc_zt, lh_wprtp_mc_zt, &
-           lh_wpthlp_mc_zt, lh_rtpthlp_mc_zt )
-
-  end subroutine lh_microphys_var_covar_driver_api
-
-  !-----------------------------------------------------------------
-  ! set_default_silhs_config_flags: Sets all SILHS flags to a default setting
-  !-----------------------------------------------------------------
-
-  subroutine set_default_silhs_config_flags_api( cluster_allocation_strategy, & ! Out
-                                                 l_lh_importance_sampling, & ! Out
-                                                 l_Lscale_vert_avg, & ! Out
-                                                 l_lh_straight_mc, & ! Out
-                                                 l_lh_clustered_sampling, & ! Out
-                                                 l_rcm_in_cloud_k_lh_start, & ! Out
-                                                 l_random_k_lh_start, & ! Out
-                                                 l_max_overlap_in_cloud, & ! Out
-                                                 l_lh_instant_var_covar_src, & ! Out
-                                                 l_lh_limit_weights, & ! Out
-                                                 l_lh_var_frac, & ! Out
-                                                 l_lh_normalize_weights ) ! Out
-
-    use parameters_silhs, only: &
-      set_default_silhs_config_flags  ! Procedure
-
-    implicit none
-
-    ! Output variables
-    integer, intent(out) :: &
-      cluster_allocation_strategy   ! Two clusters, one containing all categories with either
-                                    ! cloud or precip, and the other containing categories with
-                                    ! neither
-
-    logical, intent(out) :: &
-      l_lh_importance_sampling, &   ! Limit noise by performing importance sampling
-      l_Lscale_vert_avg, &          ! Calculate Lscale_vert_avg in generate_silhs_sample
-      l_lh_straight_mc, &           ! Use true Monte Carlo sampling with no Latin
-                                    !  hypercube sampling and no importance sampling
-      l_lh_clustered_sampling, &    ! Use the "new" SILHS importance sampling
-                                    !  scheme with prescribed probabilities
-      l_rcm_in_cloud_k_lh_start, &  ! Determine k_lh_start based on maximum within-cloud rcm
-      l_random_k_lh_start, &        ! Place k_lh_start at a random grid level between
-                                    !  maximum rcm and maximum rcm_in_cloud
-      l_max_overlap_in_cloud, &     ! Assume maximum vertical overlap when grid-box rcm
-                                    !  exceeds cloud threshold
-      l_lh_instant_var_covar_src, & ! Produces "instantaneous" variance-covariance
-                                    !  microphysical source terms, ignoring
-                                    !  discretization effects
-      l_lh_limit_weights, &         ! Limit SILHS sample point weights for stability
-      l_lh_var_frac, &              ! Prescribe variance fractions
-      l_lh_normalize_weights        ! Scale sample point weights to sum to num_samples
-                                    ! (the "ratio estimate")
-
-    call set_default_silhs_config_flags( cluster_allocation_strategy, & ! Out
-                                         l_lh_importance_sampling, & ! Out
-                                         l_Lscale_vert_avg, & ! Out
-                                         l_lh_straight_mc, & ! Out
-                                         l_lh_clustered_sampling, & ! Out
-                                         l_rcm_in_cloud_k_lh_start, & ! Out
-                                         l_random_k_lh_start, & ! Out
-                                         l_max_overlap_in_cloud, & ! Out
-                                         l_lh_instant_var_covar_src, & ! Out
-                                         l_lh_limit_weights, & ! Out
-                                         l_lh_var_frac,  & ! Out
-                                         l_lh_normalize_weights ) ! Out
-
-  end subroutine set_default_silhs_config_flags_api
-
-  !-----------------------------------------------------------------
-  ! initialize_silhs_config_flags_type: Initialize the silhs_config_flags_type
-  !-----------------------------------------------------------------
-
-  subroutine initialize_silhs_config_flags_type_api( cluster_allocation_strategy, & ! In
-                                                     l_lh_importance_sampling, & ! In
-                                                     l_Lscale_vert_avg, & ! In
-                                                     l_lh_straight_mc, & ! In
-                                                     l_lh_clustered_sampling, & ! In
-                                                     l_rcm_in_cloud_k_lh_start, & ! In
-                                                     l_random_k_lh_start, & ! In
-                                                     l_max_overlap_in_cloud, & ! In
-                                                     l_lh_instant_var_covar_src, & ! In
-                                                     l_lh_limit_weights, & ! In
-                                                     l_lh_var_frac, & ! In
-                                                     l_lh_normalize_weights, & ! In
-                                                     silhs_config_flags ) ! Out
-
-    use parameters_silhs, only: &
-      silhs_config_flags_type, &          ! Type
-      initialize_silhs_config_flags_type  ! Procedure
-
-    implicit none
-
-    ! Input variables
-    integer, intent(in) :: &
-      cluster_allocation_strategy   ! Two clusters, one containing all categories with either
-                                    ! cloud or precip, and the other containing categories with
-                                    ! neither
-
-    logical, intent(in) :: &
-      l_lh_importance_sampling, &   ! Limit noise by performing importance sampling
-      l_Lscale_vert_avg, &          ! Calculate Lscale_vert_avg in generate_silhs_sample
-      l_lh_straight_mc, &           ! Use true Monte Carlo sampling with no Latin
-                                    !  hypercube sampling and no importance sampling
-      l_lh_clustered_sampling, &    ! Use the "new" SILHS importance sampling
-                                    !  scheme with prescribed probabilities
-      l_rcm_in_cloud_k_lh_start, &  ! Determine k_lh_start based on maximum within-cloud rcm
-      l_random_k_lh_start, &        ! Place k_lh_start at a random grid level between
-                                    !  maximum rcm and maximum rcm_in_cloud
-      l_max_overlap_in_cloud, &     ! Assume maximum vertical overlap when grid-box rcm
-                                    !  exceeds cloud threshold
-      l_lh_instant_var_covar_src, & ! Produces "instantaneous" variance-covariance
-                                    !  microphysical source terms, ignoring
-                                    !  discretization effects
-      l_lh_limit_weights, &         ! Limit SILHS sample point weights for stability
-      l_lh_var_frac, &              ! Prescribe variance fractions
-      l_lh_normalize_weights        ! Scale sample point weights to sum to num_samples
-                                    ! (the "ratio estimate")
-
-    ! Output variables
-    type(silhs_config_flags_type), intent(out) :: &
-      silhs_config_flags            ! Derived type holding all configurable SILHS flags
-
-    call initialize_silhs_config_flags_type( cluster_allocation_strategy, & ! In
-                                             l_lh_importance_sampling, & ! In
-                                             l_Lscale_vert_avg, & ! In
-                                             l_lh_straight_mc, & ! In
-                                             l_lh_clustered_sampling, & ! In
-                                             l_rcm_in_cloud_k_lh_start, & ! In
-                                             l_random_k_lh_start, & ! In
-                                             l_max_overlap_in_cloud, & ! In
-                                             l_lh_instant_var_covar_src, & ! In
-                                             l_lh_limit_weights, & ! In
-                                             l_lh_var_frac, & ! In
-                                             l_lh_normalize_weights, & ! In
-                                             silhs_config_flags ) ! Out
-
-  end subroutine initialize_silhs_config_flags_type_api
-
-  !-----------------------------------------------------------------
-  ! print_silhs_config_flags: Prints the silhs_config_flags
-  !-----------------------------------------------------------------
-
-  subroutine print_silhs_config_flags_api( iunit, silhs_config_flags ) ! In
-
-    use parameters_silhs, only: &
-      silhs_config_flags_type, &          ! Type
-      print_silhs_config_flags            ! Procedure
-
-    implicit none
-
-    ! Input variables
-    integer, intent(in) :: &
-      iunit ! The file to write to
-
-    type(silhs_config_flags_type), intent(in) :: &
-      silhs_config_flags ! Derived type holding all configurable SILHS flags
-
-    call print_silhs_config_flags( iunit, silhs_config_flags ) ! In
-
-  end subroutine print_silhs_config_flags_api
-
-  !================================================================================================
-  ! latin_hypercube_2D_close - Closes the SILHS 2D output files.
-  !================================================================================================
-
-  subroutine latin_hypercube_2D_close_api( )
-
-    use latin_hypercube_driver_module, only: latin_hypercube_2D_close
-
-    implicit none
-
-    call latin_hypercube_2D_close( )
-
-  end subroutine latin_hypercube_2D_close_api
 
 #endif
 

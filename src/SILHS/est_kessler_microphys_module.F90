@@ -6,7 +6,7 @@ module est_kessler_microphys_module
 
   implicit none
 
-  public :: est_kessler_microphys
+  public :: est_kessler_microphys_api
 
   private :: calc_estimate
 
@@ -16,7 +16,7 @@ module est_kessler_microphys_module
 
 !------------------------------------------------------------------------
 
-  subroutine est_kessler_microphys &
+  subroutine est_kessler_microphys_api &
              ( nzt, num_samples, pdf_dim, &
                X_nl_all_levs, pdf_params, rcm, cloud_frac, &
                X_mixt_comp_all_levs, lh_sample_point_weights, &
@@ -260,7 +260,7 @@ module est_kessler_microphys_module
     end do ! level = 1, nzt
 
     return
-  end subroutine est_kessler_microphys
+  end subroutine est_kessler_microphys_api
 
 !-----------------------------------------------------------------------
   subroutine calc_estimate( num_samples, mixt_frac, &
