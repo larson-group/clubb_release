@@ -52,7 +52,7 @@
         "l_add_dycore_grid": false
     },
     "flag2": {
-	 "iiPDfalse,_type": 1,
+	 "iiPDF_type": 1,
          "ipdf_call_placement": 2,
          "penta_solve_method": 1,
          "tridiag_solve_method": 1,
