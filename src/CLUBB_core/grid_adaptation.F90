@@ -154,7 +154,7 @@ module grid_adaptation_module
       nlevel, &
       level_min
 
-    character(len=32) :: & 
+    character(len=100) :: & 
       zm_grid_fname,  & ! Path and filename of file for momentum level altitudes
       zt_grid_fname     ! Path and filename of file for thermodynamic level altitudes
 
@@ -175,8 +175,12 @@ module grid_adaptation_module
     !--------------------- Begin Code ---------------------
 
     nzmax = 73 ! since dycore grid has in total 73 (zm) levels
+    !nzmax = 31 ! since dycore grid has in total 73 (zm) levels
     grid_type = 3
-    zm_grid_fname = '../input/grid/dycore.grd'
+    !zm_grid_fname = '../input/grid/dycore.grd'
+    !zm_grid_fname = '../input/grid/31_level_zm_grid.grd'
+    zm_grid_fname = '../input/grid/test_dycore.grd'
+    !zm_grid_fname = '../input/grid/dycore_e3sm_coarsened_6_0.grd'
     zt_grid_fname = ''
 
     do i = 1, ngrdcol
@@ -230,6 +234,128 @@ module grid_adaptation_module
     end if
 
   end subroutine setup_gr_dycore
+
+  subroutine setup_min_gr( iunit, ngrdcol, grid_sfc, grid_top, gr )
+
+    use grid_class, only: &
+      read_grid_heights, &
+      setup_grid
+
+    use error_code, only: &
+      clubb_fatal_error
+    
+    implicit none
+
+    !--------------------- Input Variables ---------------------
+    integer :: &
+      iunit, &
+      ngrdcol
+    
+    real( kind = core_rknd ), dimension(ngrdcol) :: &
+        grid_sfc, &    ! grids surface height for the dycore grid [m]
+        grid_top       ! grids highest level for the dycore grid [m]
+
+    !--------------------- Output Variables ---------------------
+    type (grid), intent(out) :: gr
+
+    !--------------------- Local Variables ---------------------
+    integer :: i
+    ! If CLUBB is running on it's own, this option determines if it is using:
+    ! 1) an evenly-spaced grid;
+    ! 2) a stretched (unevenly-spaced) grid entered on the thermodynamic grid
+    !    levels (with momentum levels set halfway between thermodynamic levels);
+    !    or
+    ! 3) a stretched (unevenly-spaced) grid entered on the momentum grid levels
+    !    (with thermodynamic levels set halfway between momentum levels).
+    integer :: &
+      grid_type, &
+      err_code, &
+      nzmax, &
+      nlevel, &
+      level_min
+
+    character(len=100) :: & 
+      zm_grid_fname,  & ! Path and filename of file for momentum level altitudes
+      zt_grid_fname     ! Path and filename of file for thermodynamic level altitudes
+
+    real( kind = core_rknd ), dimension(ngrdcol) ::  &
+        sfc_elevation  ! Elevation of ground level    [m AMSL]
+
+    logical :: l_implemented
+
+    real( kind = core_rknd ), dimension(ngrdcol,73) :: & ! since dycore grid has 73 levels in total
+      momentum_heights      ! Momentum level altitudes (file input)      [m]
+    
+    real( kind = core_rknd ), dimension(ngrdcol,73-1) :: &! since dycore grid has 73 levels in total
+      thermodynamic_heights ! Thermodynamic level altitudes (file input) [m]
+    
+    real( kind = core_rknd ), dimension(ngrdcol) :: &
+      deltaz ! vertical grid spacing [m]
+
+    !--------------------- Begin Code ---------------------
+
+    nzmax = 73 ! since dycore grid has in total 73 (zm) levels
+    !nzmax = 31 ! since dycore grid has in total 73 (zm) levels
+    grid_type = 3
+    !zm_grid_fname = '../input/grid/dycore.grd'
+    !zm_grid_fname = '../input/grid/31_level_zm_grid.grd'
+    zm_grid_fname = '../input/grid/dycore.grd'
+    zt_grid_fname = ''
+
+    do i = 1, ngrdcol
+      call read_grid_heights( nzmax, grid_type, &                 ! Intent(in)
+                              zm_grid_fname, zt_grid_fname, &     ! Intent(in)
+                              iunit, &                            ! Intent(in)
+                              momentum_heights(i,:), &            ! Intent(out)
+                              thermodynamic_heights(i,:), &       ! Intent(out)
+                              err_code )                          ! Intent(inout)
+      sfc_elevation(i) = 0.0_core_rknd
+      deltaz(i) = 0.0_core_rknd
+    end do
+
+    if ( err_code == clubb_fatal_error ) then
+      write(fstderr, *) "Error in read_grid_heights"
+      error stop
+    end if
+
+    nlevel = nzmax
+    do while( momentum_heights(1,nlevel) > grid_top(1) .and. nlevel > 1 )
+
+      nlevel = nlevel - 1
+
+    end do
+
+    do i = 1, ngrdcol
+      momentum_heights(i,nlevel) = grid_top(i)
+    end do
+
+    level_min = nlevel
+    do while( momentum_heights(1,level_min) > grid_sfc(1) .and. level_min > 1 )
+
+      level_min = level_min - 1
+
+    end do
+
+    do i = 1, ngrdcol
+      momentum_heights(i,level_min) = grid_sfc(i)
+    end do
+
+
+    l_implemented = .false.
+    !write(*,*) 'nlevel: ', nlevel
+    !write(*,*) 'momentum_heights: ', momentum_heights
+    !write(*,*) 'grid_sfc: ', grid_sfc
+    !write(*,*) 'grid_top: ', grid_top
+    call setup_grid( nlevel, ngrdcol, sfc_elevation, l_implemented, &   ! intent(in)
+                     grid_type, deltaz, grid_sfc, grid_top, &           ! intent(in)
+                     momentum_heights, thermodynamic_heights, &         ! intent(in)
+                     gr, err_code )                                     ! intent(inout)
+
+    if ( err_code == clubb_fatal_error ) then
+      error stop "Error in CLUBB calling setup_grid"
+    end if
+
+  end subroutine setup_min_gr
 
 
 !-------------------------------------------------------------------------------
@@ -1329,9 +1455,12 @@ module grid_adaptation_module
         grid_top_arr(i) = grid_top
       end do
       ! Initialize the dycore grid to use as a profile for minimum grid density function
-      call setup_gr_dycore( iunit, ngrdcol, &              ! Intent(in)
-                            grid_sfc_arr, grid_top_arr, &  ! Intent(in)
-                            gr_dycore )                    ! Intent(out)
+      !call setup_gr_dycore( iunit, ngrdcol, &              ! Intent(in)
+      !                      grid_sfc_arr, grid_top_arr, &  ! Intent(in)
+      !                      gr_dycore )                    ! Intent(out)
+      call setup_min_gr( iunit, ngrdcol, &              ! Intent(in)
+                         grid_sfc_arr, grid_top_arr, &  ! Intent(in)
+                         gr_dycore )                    ! Intent(out)
       fixed_min_gr_dens_idx = gr_dycore%nzt+2
     end if
 
