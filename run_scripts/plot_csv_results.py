@@ -82,7 +82,7 @@ cache_pen_funcs = {
     "sqrtlog": sqrtlog
 }
 
-def rms_error( ngrdcol, runtime, T_model ):
+def rms_error( ngrdcol, runtime, T_model, mode="abs_percent_cps" ):
 
     abs_diff_time = np.abs( runtime - T_model )
     abs_percent_time = 100 * ( runtime - T_model ) / runtime
@@ -93,7 +93,11 @@ def rms_error( ngrdcol, runtime, T_model ):
     abs_percent_diff_cps = 100 * ( cps - cps_model ) / cps
     abs_diff_cps = np.abs( cps - cps_model )
 
-    rms_error = np.sqrt( np.mean( abs_percent_diff_cps**2 ) )
+    if mode == "abs_percent_cps":
+        rms_error = np.sqrt( np.mean( abs_percent_diff_cps**2 ) )
+    elif mode == "abs_cps":
+        rms_error = np.sqrt( np.mean( abs_diff_cps**2 ) )
+
 
     return rms_error
 
@@ -219,7 +223,7 @@ def model_gpu_time(params, param_scale, ngrdcol, runtime, N_tasks, N_vsize, N_pr
 
     T_gpu = b + m * ngrdcol
 
-    return T_gpu, rms_error( ngrdcol, runtime, T_gpu )
+    return T_gpu, rms_error( ngrdcol, runtime, T_gpu, mode="abs_cps" )
 
 
 # ======================================== Batched GPU ========================================
@@ -244,7 +248,7 @@ def model_gpu_batched_time(params, param_scale, ngrdcol, runtime, N_tasks, N_vsi
 
     T_bgpu = m_ik * ngrdcol * N_vlevs + m_k * N_vlevs + b
 
-    return T_bgpu, rms_error( ngrdcol, runtime, T_bgpu )
+    return T_bgpu, rms_error( ngrdcol, runtime, T_bgpu, mode="abs_cps" )
 
 
 def model_throughputs(ngrdcol, runtime, N_tasks, N_vsize, N_prec, N_vlevs, model_version, selected_cp_funcs=None):
