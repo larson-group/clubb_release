@@ -1678,10 +1678,17 @@ module advance_windm_edsclrm_module
     use stats_type, only: stats ! Type
 
     use err_info_type_module, only: &
-      err_info_type     ! Type
+        err_info_type     ! Type
 
     use model_flags, only: &
         l_test_grid_generalization    ! Variable(s)
+
+    use constants_clubb, only: &
+        fstderr
+
+    use error_code, only: &
+        clubb_at_least_debug_level,  & ! Procedure
+        clubb_fatal_error              ! Constant
 
     implicit none
 
@@ -1783,6 +1790,14 @@ module advance_windm_edsclrm_module
                           lhs, rhs, err_info,                     & ! Intent(inout)
                           solution )                                ! Intent(out)
     end if
+
+    if ( clubb_at_least_debug_level( 0 ) ) then
+      if ( any(err_info%err_code == clubb_fatal_error) ) then
+        write(fstderr, *) err_info%err_header_global
+        write(fstderr,*) "calling tridiag_solve in windm_edsclrm_solve"
+        return
+      endif
+    endif
 
     ! Generalized grid test
     ! This block of code is used when a generalized grid test

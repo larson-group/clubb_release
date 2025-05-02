@@ -1053,12 +1053,13 @@ module advance_microphys_module
         l_in_cloud_Nc_diff  ! Use in cloud values of Nc for diffusion
 
     use error_code, only: &
-        clubb_at_least_debug_level   ! Procedure
+        clubb_at_least_debug_level, & ! Procedure
+        clubb_fatal_error             ! Constant
 
-    use clubb_precision, only:  & 
+    use clubb_precision, only: &
         core_rknd ! Variable(s)
 
-    use stats_type_utilities, only: & 
+    use stats_type_utilities, only: &
         stat_update_var,      & ! Procedure(s)
         stat_begin_update,    &
         stat_begin_update_pt, &
@@ -1071,7 +1072,7 @@ module advance_microphys_module
     use stats_type, only: stats ! Type
 
     use err_info_type_module, only: &
-      err_info_type        ! Type
+        err_info_type        ! Type
 
     implicit none
 
@@ -1285,6 +1286,13 @@ module advance_microphys_module
 
     endif
 
+    if ( clubb_at_least_debug_level( 0 ) ) then
+      if ( any(err_info%err_code == clubb_fatal_error) ) then
+        write(fstderr, *) err_info%err_header_global
+        write(fstderr,*) "calling microphys_solve in advance_Ncm"
+        return
+      endif
+    endif
 
     ! Clipping for mean cloud droplet concentration, <Nc>.
 
@@ -1416,15 +1424,17 @@ module advance_microphys_module
     use grid_class, only: grid
 
     use constants_clubb, only: &
-        cloud_frac_min  ! Constant(s)
+        cloud_frac_min, & ! Constant(s)
+        fstderr
 
-    use clubb_precision, only:  & 
+    use clubb_precision, only: &
         core_rknd    ! Variable(s)
 
     use error_code, only: &
-        clubb_at_least_debug_level   ! Procedure
+        clubb_at_least_debug_level, & ! Procedure
+        clubb_fatal_error             ! Constant
 
-    use matrix_solver_wrapper, only:  & 
+    use matrix_solver_wrapper, only: &
         tridiag_solve ! Procedure(s)
 
     use parameters_microphys, only: &
@@ -1441,7 +1451,7 @@ module advance_microphys_module
         stats ! Type
 
     use err_info_type_module, only: &
-      err_info_type        ! Type
+        err_info_type        ! Type
 
     implicit none
 
@@ -1566,6 +1576,13 @@ module advance_microphys_module
                         lhs, rhs, err_info,               & ! Intent(inout)
                         hmm )                               ! Intent(out)
 
+    if ( clubb_at_least_debug_level( 0 ) ) then
+      if ( any(err_info%err_code == clubb_fatal_error) ) then
+        write(fstderr, *) err_info%err_header_global
+        write(fstderr,*) "calling tridiag_solve in microphys_solve"
+        return
+      endif
+    endif
 
     ! Statistics
     if ( stats_metadata%l_stats_samp ) then

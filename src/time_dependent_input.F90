@@ -453,10 +453,14 @@ module time_dependent_input
     end do
 
     do i=1, nforcings
-      deallocate( t_dependent_forcing_data(i)%values )
+      if ( allocated( t_dependent_forcing_data(i)%values ) ) then
+        deallocate( t_dependent_forcing_data(i)%values )
+      end if
     end do
 
-    deallocate( dimension_var%values ) 
+    if ( allocated( dimension_var%values ) ) then
+      deallocate( dimension_var%values )
+    end if
 
     return
   end subroutine finalize_t_dependent_forcings

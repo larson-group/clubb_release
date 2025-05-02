@@ -256,7 +256,7 @@ module mixing_length
     !$acc parallel loop gang vector default(present)
     do i = 1, ngrdcol
       if ( abs(mu(i)) < eps ) then
-        ! General error -> set all entries to clubb_fatal_error
+        ! Error in grid column i -> set ith entry to clubb_fatal_error
         err_info%err_code(i) = clubb_fatal_error
         write(fstderr,*) err_info%err_header(i)
         write(fstderr,*) "mu = ", mu(i)
@@ -268,6 +268,7 @@ module mixing_length
     if ( any(err_info%err_code == clubb_fatal_error) ) then
       write(fstderr, *) "Entrainment rate mu cannot be 0"
       write(fstderr, *) "Fatal error in subroutine compute_mixing_length"
+      return
     end if
 
     ! Calculate initial turbulent kinetic energy for each grid level
@@ -1215,7 +1216,7 @@ module mixing_length
       if ( l_Lscale_plume_centered .and. .not. l_avg_Lscale ) then
         write(fstderr,*) err_info%err_header_global
         write(fstderr,*) "l_Lscale_plume_centered requires l_avg_Lscale"
-        write(fstderr,*) "Fatal error in advance_clubb_core"
+        write(fstderr,*) "Fatal error in calc_Lscale_directly"
         ! General error -> set all entries to clubb_fatal_error
         err_info%err_code = clubb_fatal_error
         return

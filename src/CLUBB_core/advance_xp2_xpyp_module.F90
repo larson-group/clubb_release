@@ -1506,7 +1506,8 @@ module advance_xp2_xpyp_module
       zero, &
       zero_threshold, &
       gamma_over_implicit_ts, &
-      one_half
+      one_half, &
+      fstderr
 
     use array_index, only: &
       sclr_idx_type
@@ -1519,6 +1520,10 @@ module advance_xp2_xpyp_module
 
     use err_info_type_module, only: &
       err_info_type     ! Type
+
+    use error_code, only: &
+      clubb_at_least_debug_level, & ! Procedure
+      clubb_fatal_error             ! Constant
 
     implicit none
 
@@ -1792,6 +1797,14 @@ module advance_xp2_xpyp_module
                          rhs, lhs, err_info,                              & ! Intent(inout)
                          solution )                                         ! Intent(out)
 
+    if ( clubb_at_least_debug_level( 0 ) ) then
+      if ( any(err_info%err_code == clubb_fatal_error) ) then
+        write(fstderr, *) err_info%err_header_global
+        write(fstderr,*) "calling xp2_xpyp_solve in solve_xp2_xpyp_with_single_lhs"
+        return
+      endif
+    endif
+
     if ( l_lmm_stepping ) then
 
       !$acc parallel loop gang vector collapse(2) default(present)
@@ -1922,7 +1935,8 @@ module advance_xp2_xpyp_module
         zero, &
         zero_threshold, &
         gamma_over_implicit_ts, &
-        one_half
+        one_half, &
+        fstderr
 
     use model_flags, only: &
         iiPDF_ADG1    ! Variable(s)
@@ -1937,7 +1951,11 @@ module advance_xp2_xpyp_module
         stats_metadata_type
 
     use err_info_type_module, only: &
-      err_info_type     ! Type
+        err_info_type     ! Type
+
+    use error_code, only: &
+        clubb_at_least_debug_level,  & ! Procedure
+        clubb_fatal_error              ! Constant
 
     implicit none
 
@@ -2121,6 +2139,14 @@ module advance_xp2_xpyp_module
                          rhs, lhs, err_info,             & ! Intent(inout)
                          rtp2_solution )                   ! Intent(out)
 
+    if ( clubb_at_least_debug_level( 0 ) ) then
+      if ( any(err_info%err_code == clubb_fatal_error) ) then
+        write(fstderr, *) err_info%err_header_global
+        write(fstderr,*) "calling xp2_xpyp_solve for rtp2 in solve_xp2_xpyp_with_multiple_lhs"
+        return
+      endif
+    endif
+
     if ( l_lmm_stepping ) then
       !$acc parallel loop gang vector collapse(2) default(present)
       do k = 1, nzm
@@ -2189,6 +2215,14 @@ module advance_xp2_xpyp_module
                          rhs, lhs, err_info,              & ! Intent(inout)
                          thlp2_solution )                   ! Intent(out)
 
+    if ( clubb_at_least_debug_level( 0 ) ) then
+      if ( any(err_info%err_code == clubb_fatal_error) ) then
+        write(fstderr, *) err_info%err_header_global
+        write(fstderr,*) "calling xp2_xpyp_solve for thlp2 in solve_xp2_xpyp_with_multiple_lhs"
+        return
+      endif
+    endif
+
     if ( l_lmm_stepping ) then
       !$acc parallel loop gang vector collapse(2) default(present)
       do k = 1, nzm
@@ -2255,6 +2289,14 @@ module advance_xp2_xpyp_module
                          stats_sfc,                         & ! Intent(inout)
                          rhs, lhs, err_info,                & ! Intent(inout)
                          rtpthlp_solution )                   ! Intent(out)
+
+    if ( clubb_at_least_debug_level( 0 ) ) then
+      if ( any(err_info%err_code == clubb_fatal_error) ) then
+        write(fstderr, *) err_info%err_header_global
+        write(fstderr,*) "calling xp2_xpyp_solve for rtpthlp in solve_xp2_xpyp_with_multiple_lhs"
+        return
+      endif
+    endif
 
     if ( l_lmm_stepping ) then
       !$acc parallel loop gang vector collapse(2) default(present)
@@ -2333,6 +2375,15 @@ module advance_xp2_xpyp_module
                                rhs, lhs, err_info,                & ! intent(inout)
                                sclrp2_solution(:,:,sclr) )          ! Intent(out)
 
+          if ( clubb_at_least_debug_level( 0 ) ) then
+            if ( any(err_info%err_code == clubb_fatal_error) ) then
+              write(fstderr, *) err_info%err_header_global
+              write(fstderr,*) "calling xp2_xpyp_solve for sclrp2 with sclr index ", sclr, &
+                               " in solve_xp2_xpyp_with_multiple_lhs"
+              return
+            endif
+          endif
+
           if ( l_lmm_stepping ) then
             sclrp2(:,:,sclr) = one_half * ( sclrp2(:,:,sclr) + sclrp2_solution(:,:,sclr) )
           else
@@ -2373,6 +2424,15 @@ module advance_xp2_xpyp_module
                                rhs, lhs, err_info,                & ! Intent(inout)
                                sclrprtp_solution(:,:,sclr) )        ! Intent(out)
 
+          if ( clubb_at_least_debug_level( 0 ) ) then
+            if ( any(err_info%err_code == clubb_fatal_error) ) then
+              write(fstderr, *) err_info%err_header_global
+              write(fstderr,*) "calling xp2_xpyp_solve for sclrprtp with sclr index ", sclr, &
+                               " in solve_xp2_xpyp_with_multiple_lhs"
+              return
+            endif
+          endif
+
           if ( l_lmm_stepping ) then
             sclrprtp(:,:,sclr) = one_half * ( sclrprtp(:,:,sclr) + sclrprtp_solution(:,:,sclr) )
           else
@@ -2412,6 +2472,15 @@ module advance_xp2_xpyp_module
                                stats_sfc,                         & ! intent(inout)
                                rhs, lhs, err_info,                & ! Intent(inout)
                                sclrpthlp_solution(:,:,sclr) )       ! Intent(out)
+
+          if ( clubb_at_least_debug_level( 0 ) ) then
+            if ( any(err_info%err_code == clubb_fatal_error) ) then
+              write(fstderr, *) err_info%err_header_global
+              write(fstderr,*) "calling xp2_xpyp_solve for sclrpthlp with sclr index ", sclr, &
+                               " in solve_xp2_xpyp_with_multiple_lhs"
+              return
+            endif
+          endif
 
           if ( l_lmm_stepping ) then
             sclrpthlp(:,:,sclr) = one_half * ( sclrpthlp(:,:,sclr) + sclrpthlp_solution(:,:,sclr) )
@@ -2539,6 +2608,15 @@ module advance_xp2_xpyp_module
                              stats_sfc,                                  & ! intent(inout)
                              sclr_rhs, lhs, err_info,                    & ! Intent(inout)
                              sclr_solution )                               ! Intent(out)
+
+        if ( clubb_at_least_debug_level( 0 ) ) then
+          if ( any(err_info%err_code == clubb_fatal_error) ) then
+            write(fstderr, *) err_info%err_header_global
+            write(fstderr,*) "calling xp2_xpyp_solve for sclr with sclr index ", sclr, &
+                             " in solve_xp2_xpyp_with_multiple_lhs"
+            return
+          endif
+        endif
 
         if ( l_lmm_stepping ) then
 
@@ -2722,7 +2800,8 @@ module advance_xp2_xpyp_module
     !-----------------------------------------------------------------------
 
     use constants_clubb, only: &
-        one  ! Constant(s)
+        one, &  ! Constant(s)
+        fstderr
 
     use grid_class, only: &
         grid, & ! Type(s)
@@ -2747,6 +2826,10 @@ module advance_xp2_xpyp_module
 
     use model_flags, only: &
         l_test_grid_generalization    ! Variable(s)
+
+    use error_code, only: &
+        clubb_at_least_debug_level,  & ! Procedure
+        clubb_fatal_error              ! Constant
 
     implicit none
 
@@ -2912,6 +2995,14 @@ module advance_xp2_xpyp_module
                           lhs, rhs, err_info,                   & ! Intent(inout)
                           xapxbp )                                ! Intent(out)
     end if
+
+    if ( clubb_at_least_debug_level( 0 ) ) then
+      if ( any(err_info%err_code == clubb_fatal_error) ) then
+        write(fstderr, *) err_info%err_header_global
+        write(fstderr,*) "calling tridiag_solve in xp2_xpyp_solve"
+        return
+      endif
+    endif
 
     ! Generalized grid test
     ! This block of code is used when a generalized grid test

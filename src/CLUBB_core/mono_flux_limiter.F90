@@ -1289,13 +1289,18 @@ module mono_flux_limiter
         core_rknd
 
     use error_code, only: &
-        clubb_at_least_debug_level     ! Procedure
+        clubb_at_least_debug_level, & ! Procedure
+        clubb_fatal_error             ! Constant
 
     use err_info_type_module, only: &
-      err_info_type     ! Type
+        err_info_type     ! Type
 
     use model_flags, only: &
         l_test_grid_generalization    ! Variable(s)
+
+    use constants_clubb, only: &
+        fstderr
+
 
     implicit none
 
@@ -1375,6 +1380,14 @@ module mono_flux_limiter
                         ngrdcol, nzt,                           & ! Intent(in)
                         lhs, rhs, err_info,                     & ! Intent(inout)
                         xm )                                      ! Intent(out)
+
+    if ( clubb_at_least_debug_level( 0 ) ) then
+      if ( any(err_info%err_code == clubb_fatal_error) ) then
+        write(fstderr, *) err_info%err_header_global
+        write(fstderr,*) "calling tridiag_solve in mfl_xm_solve"
+        return
+      endif
+    endif
 
     ! Generalized grid test
     ! This block of code is used when a generalized grid test

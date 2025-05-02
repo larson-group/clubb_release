@@ -1745,12 +1745,32 @@ module clubb_driver
                                    clubb_config_flags,  & ! intent(in)
                                    err_info )             ! Intent(inout)
 
+    if ( clubb_at_least_debug_level( 0 ) ) then
+      if ( any(err_info%err_code == clubb_fatal_error) ) then
+        write(fstderr, *) err_info%err_header_global
+        write(fstderr, *) "Fatal error calling check_clubb_settings_api in clubb_driver"
+        ! At this point, input fields haven't been set up, so don't clean them up.
+        call cleanup_clubb( l_input_fields=.false., gr=gr )
+        return
+      end if
+    end if
+
     ! Setup grid
     call setup_grid_api( nzmax, ngrdcol, sfc_elevation, l_implemented,         & ! intent(in)
                          l_ascending_grid, grid_type, deltaz, zm_init, zm_top, & ! intent(in)
                          momentum_heights, thermodynamic_heights,              & ! intent(in)
                          gr,                                                   & ! intent(out)
                          err_info )                                              ! intent(inout)
+
+    if ( clubb_at_least_debug_level( 0 ) ) then
+      if ( any(err_info%err_code == clubb_fatal_error) ) then
+        write(fstderr, *) err_info%err_header_global
+        write(fstderr, *) "Fatal error calling setup_grid_api in clubb_driver"
+        ! At this point, input fields haven't been set up, so don't clean them up.
+        call cleanup_clubb( l_input_fields=.false., gr=gr )
+        return
+      end if
+    end if
 
     ! Generalized grid test
     ! This block of code is used when a generalized grid test
@@ -1761,6 +1781,17 @@ module clubb_driver
                            momentum_heights_flip, thermodynamic_heights_flip,            & ! in
                            gr_desc,                                                      & ! out
                            err_info )                                                      ! inout
+
+      if ( clubb_at_least_debug_level( 0 ) ) then
+        if ( any(err_info%err_code == clubb_fatal_error) ) then
+          write(fstderr, *) err_info%err_header_global
+          write(fstderr, *) "Fatal error calling setup_grid_api for gr_desc in clubb_driver"
+          ! At this point, input fields haven't been set up, so don't clean them up.
+          call cleanup_clubb( l_input_fields=.false., gr=gr )
+          return
+        end if
+      end if
+
     endif
 
     ! Define tunable constant parameters
@@ -1769,6 +1800,16 @@ module clubb_driver
            l_prescribed_avg_deltaz,                      & ! intent(in)
            lmin, nu_vert_res_dep,                        & ! intent(out)
            err_info )                                      ! intent(inout)
+
+    if ( clubb_at_least_debug_level( 0 ) ) then
+      if ( any(err_info%err_code == clubb_fatal_error) ) then
+        write(fstderr, *) err_info%err_header_global
+        write(fstderr, *) "Fatal error calling setup_parameters_api in clubb_driver"
+        ! At this point, input fields haven't been set up, so don't clean them up.
+        call cleanup_clubb( l_input_fields=.false., gr=gr )
+        return
+      end if
+    end if
 
     ! Allocate and initialize variables
 
@@ -2061,17 +2102,6 @@ module clubb_driver
       end do
     end do
 
-    ! Check for check_clubb_settings_api, setup_grid_api, and setup_parameters_api
-    if ( clubb_at_least_debug_level( 0 ) ) then
-      if ( any(err_info%err_code == clubb_fatal_error) ) then
-        write(fstderr, *) err_info%err_header_global
-        write(fstderr, *) "Fatal error during CLUBB setup"
-        ! At this point, input fields haven't been set up, so don't clean them up.
-        call cleanup_clubb( l_input_fields=.false., gr=gr )
-        return
-      end if
-    end if
-
     ! This special purpose code only applies to tuner runs where the tune_type
     ! is setup to try all permutations of our model flags
     if ( present( model_flags_array ) ) then
@@ -2188,6 +2218,15 @@ module clubb_driver
           sclrm_init, edsclrm_init,                                       & ! Intent(out)
           rho_ds_zm_dycore_init )                                           ! Intent(out)
 
+    if ( clubb_at_least_debug_level( 0 ) ) then
+      if ( any(err_info%err_code == clubb_fatal_error) ) then
+        write(fstderr, *) err_info%err_header_global
+        write(fstderr,*) "FATAL ERROR calling initialize_clubb in run_clubb"
+        call cleanup_clubb( l_input_fields, gr=gr )
+        return
+      end if
+    end if
+
 !$OMP CRITICAL
     if ( stats_metadata%l_output_rad_files ) then
 
@@ -2239,8 +2278,8 @@ module clubb_driver
       if ( any(err_info%err_code == clubb_fatal_error) ) then
         write(fstderr, *) err_info%err_header_global
         write(fstderr,*) "FATAL ERROR in stats_init"
-        ! At this point, input fields haven't been set up, so don't clean them up.
-        call cleanup_clubb( l_input_fields=.false., gr=gr )
+        call cleanup_clubb( l_input_fields, gr=gr )
+        return
       end if
     end if
 
@@ -2266,6 +2305,7 @@ module clubb_driver
     if ( any(err_info%err_code == clubb_fatal_error) ) then
       write(fstderr, *) err_info%err_header_global
       write(fstderr, *) "Fatal error calling latin_hypercube_2D_output_api in run_clubb"
+      call cleanup_clubb( l_input_fields, gr=gr )
       return
     end if
 
@@ -3037,7 +3077,8 @@ module clubb_driver
       if ( clubb_at_least_debug_level( 0 ) ) then
         if ( any(err_info%err_code == clubb_fatal_error) ) then
           write(fstderr, *) err_info%err_header_global
-          write(fstderr, *) "Fatal error in clubb, check your parameter values and timestep"
+          write(fstderr, *) "Fatal error in advance_clubb_core, ", &
+                            "check your parameter values and timestep"
           exit mainloop
         end if
       end if
@@ -3383,6 +3424,13 @@ module clubb_driver
                                  stats_zt(1), stats_zm(1), stats_sfc(1),    & ! intent(inout)
                                  stats_lh_zt(1), stats_lh_sfc(1),           & ! intent(inout)
                                  stats_rad_zt(1), stats_rad_zm(1), err_info ) ! intent(inout)
+
+        if ( any(err_info%err_code == clubb_fatal_error) ) then
+          write(fstderr, *) err_info%err_header_global
+          write(fstderr, *) "Fatal error calling stats_end_timestep in run_clubb"
+          exit mainloop
+        end if
+
       end if
 
       ! Set Time

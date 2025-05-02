@@ -1219,7 +1219,8 @@ module advance_clubb_core_module
       if ( clubb_at_least_debug_level( 0 ) ) then
         if ( any(err_info%err_code == clubb_fatal_error) ) then
           write(fstderr,*) err_info%err_header_global
-          write(fstderr,*) "in pdf_closure_driver"
+          write(fstderr,*) "Error calling pdf_closure_driver in advance_clubb_core"
+          return
         endif
       endif
     endif ! clubb_config_flags%ipdf_call_placement == ipdf_pre_advance_fields
@@ -1487,7 +1488,7 @@ module advance_clubb_core_module
       if ( clubb_at_least_debug_level( 0 ) ) then
         if ( any(err_info%err_code == clubb_fatal_error) ) then
           write(fstderr,*) err_info%err_header_global
-          write(fstderr,*) "Error calling calc_Lscale_directly"
+          write(fstderr,*) "Error calling calc_Lscale_directly in advance_clubb_core"
           return
         end if
       end if
@@ -1564,7 +1565,7 @@ module advance_clubb_core_module
       if ( clubb_at_least_debug_level( 0 ) ) then
         if ( any(err_info%err_code == clubb_fatal_error) ) then
           write(fstderr,*) err_info%err_header_global
-          write(fstderr, *) "Error calling diagnose_Lscale_from_tau"
+          write(fstderr, *) "Error calling diagnose_Lscale_from_tau in advance_clubb_core"
           return
         end if
       end if
@@ -1655,7 +1656,7 @@ module advance_clubb_core_module
     if ( clubb_at_least_debug_level( 0 ) ) then
       if ( any(err_info%err_code == clubb_fatal_error) ) then
         write(fstderr,*) err_info%err_header_global
-        write(fstderr, *) "Error calling calc_sfc_varnce"
+        write(fstderr, *) "Error calling calc_sfc_varnce in advance_clubb_core"
         return
       end if
     end if
@@ -1954,7 +1955,7 @@ module advance_clubb_core_module
       if ( clubb_at_least_debug_level( 0 ) ) then
          if ( any(err_info%err_code == clubb_fatal_error) ) then
             write(fstderr,*) err_info%err_header_global
-            write(fstderr,*) "Error calling advance_xm_wpxp"
+            write(fstderr,*) "Error calling advance_xm_wpxp in advance_clubb_core"
             return
          end if
       end if
@@ -2023,11 +2024,11 @@ module advance_clubb_core_module
                              stats_zt, stats_zm, stats_sfc,                       & ! intent(inout)
                              rtp2, thlp2, rtpthlp, up2, vp2,                      & ! intent(inout)
                              sclrp2, sclrprtp, sclrpthlp, err_info )                ! intent(inout)
-      
+
       if ( clubb_at_least_debug_level( 0 ) ) then
          if ( any(err_info%err_code == clubb_fatal_error) ) then
             write(fstderr,*) err_info%err_header_global
-            write(fstderr,*) "Error calling advance_xp2_xpyp"
+            write(fstderr,*) "Error calling advance_xp2_xpyp in advance_clubb_core"
             return
          end if
       end if
@@ -2135,7 +2136,7 @@ module advance_clubb_core_module
       if ( clubb_at_least_debug_level( 0 ) ) then
          if ( any(err_info%err_code == clubb_fatal_error) ) then
             write(fstderr,*) err_info%err_header_global
-            write(fstderr,*) "Error calling advance_wp2_wp3"
+            write(fstderr,*) "Error calling advance_wp2_wp3 in advance_clubb_core"
             return
          end if
       end if
@@ -2254,7 +2255,7 @@ module advance_clubb_core_module
       if ( clubb_at_least_debug_level( 0 ) ) then
          if ( any(err_info%err_code == clubb_fatal_error) ) then
             write(fstderr,*) err_info%err_header_global
-            write(fstderr,*) "Error calling advance_windm_edsclrm"
+            write(fstderr,*) "Error calling advance_windm_edsclrm in advance_clubb_core"
             return
          end if
       end if
@@ -2575,7 +2576,7 @@ module advance_clubb_core_module
       if ( clubb_at_least_debug_level( 0 ) ) then
          if ( any(err_info%err_code == clubb_fatal_error) ) then
             write(fstderr,*) err_info%err_header_global
-            write(fstderr,*) "Error calling pdf_closure_driver"
+            write(fstderr,*) "Error calling pdf_closure_driver in advance_clubb_core"
             return
          end if
       end if
@@ -3747,7 +3748,7 @@ module advance_clubb_core_module
     if ( clubb_at_least_debug_level( 0 ) ) then
       if ( any(err_info%err_code == clubb_fatal_error) ) then
         write(fstderr, *) err_info%err_header_global
-        write(fstderr,*) "After pdf_closure"
+        write(fstderr,*) "After first call to pdf_closure in pdf_closure_driver"
         return
       endif
     endif
@@ -3871,7 +3872,7 @@ module advance_clubb_core_module
       if ( clubb_at_least_debug_level( 0 ) ) then
         if ( any(err_info%err_code == clubb_fatal_error) ) then
           write(fstderr, *) err_info%err_header_global
-          write(fstderr,*) "After second call to pdf_closure"
+          write(fstderr,*) "After second call to pdf_closure in pdf_closure_driver"
           return
         endif
       endif
@@ -4027,6 +4028,14 @@ module advance_clubb_core_module
                               pdf_params, cloud_frac, rcm, & ! intent(in)
                               err_info,                    & ! intent(inout)
                               cloud_cover, rcm_in_layer )    ! intent(out)
+
+    if ( clubb_at_least_debug_level( 0 ) ) then
+      if ( any(err_info%err_code == clubb_fatal_error) ) then
+        write(fstderr, *) err_info%err_header_global
+        write(fstderr,*) "calling compute_cloud_cover in pdf_closure_driver"
+        return
+      endif
+    endif
 
     if ( l_use_cloud_cover ) then
       ! Use cloud_cover and rcm_in_layer to help boost cloud_frac and rcm to help

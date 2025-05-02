@@ -4548,7 +4548,8 @@ module advance_xm_wpxp_module
         fill_holes_vertical_api ! Procedure
 
     use error_code, only: &
-        clubb_at_least_debug_level  ! Procedure
+        clubb_at_least_debug_level, & ! Procedure
+        clubb_fatal_error             ! Constant
 
     use stats_type_utilities, only: & 
         stat_begin_update,  & ! Procedure(s)
@@ -4564,7 +4565,7 @@ module advance_xm_wpxp_module
     use stats_type, only: stats ! Type
 
     use err_info_type_module, only: &
-      err_info_type     ! Type
+        err_info_type     ! Type
 
     implicit none
 
@@ -4996,6 +4997,14 @@ module advance_xm_wpxp_module
                                            stats_metadata, & ! intent(in)
                                            stats_zt, stats_zm, & ! intent(inout)
                                            xm, wpxp, err_info ) ! intent(inout)
+
+      if ( clubb_at_least_debug_level( 0 ) ) then
+        if ( any(err_info%err_code == clubb_fatal_error) ) then
+          write(fstderr, *) err_info%err_header_global
+          write(fstderr,*) "calling monotonic_turbulent_flux_limit in xm_wpxp_clipping_and_stats"
+          return
+        endif
+      endif
 
     end if ! l_mono_flux_lim
 

@@ -650,6 +650,14 @@ module grid_class
                   thermodynamic_heights(:,begin_height_idx_zt:end_height_idx_zt), & ! intent(in)
                   gr, err_info ) ! intent(inout)
 
+    if ( clubb_at_least_debug_level( 0 ) ) then
+      if ( any(err_info%err_code == clubb_fatal_error) ) then
+        write(fstderr,*) err_info%err_header_global
+        write(fstderr,*) "Fatal error in setup_grid calling setup_grid_heights"
+        return
+      end if
+    end if
+
     do i = 1, ngrdcol
       if ( sfc_elevation(i) > gr%zm(i,1) ) then
         write(fstderr,*) err_info%err_header(i)

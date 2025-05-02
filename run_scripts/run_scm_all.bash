@@ -255,15 +255,12 @@ do
 			EXIT_CODES[$x]=$?
     fi
 
-    #RESULT_STATUS=`echo "$RESULT" | grep 'normally'`
-    RESULT_STATUS=`grep 'normally' $TMP_OUT`
-
     if [ ${EXIT_CODES[$x]} -ne 0 ]; then
         # If there was an error, and this is not running in nightly mode,
         # it will not be displayed. So, display the error here.
         if [ $NIGHTLY != true ] ; then
             #echo -e "$RESULT" | tail
-            tail $TMP_OUT
+            cat $TMP_OUT
         fi
     fi
     rm -f $TMP_OUT

@@ -105,7 +105,6 @@ program clubb_standalone
   call run_clubb( ngrdcol, calls_per_out, l_output_multi_col, l_output_double_prec, &
                   clubb_params, namelist_filename, l_stdout, err_info )
 
-  write(fstderr, *) "after run_clubb"
   if ( .not. l_test_grid_generalization ) then
     ! Normal CLUBB run
     if ( any(err_info%err_code == clubb_fatal_error) ) then
