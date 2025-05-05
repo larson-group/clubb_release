@@ -23,7 +23,7 @@ DEBUG=""
 WARNINGS="-warn -warn notruncated_source"
 
 # == Machine specific options ==
-#ARCH="-xHost" # This should work on most modern AMD/Intel computers
+ARCH="-xHost" # This should work on most modern AMD/Intel computers
 # == Used to promote all real's to double precision ==
 DOUBLE_PRECISION="-real-size 64"
 
