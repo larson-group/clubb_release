@@ -1304,7 +1304,9 @@ def launch_dash_app(dir_name, grouped_files, all_variables):
                 model_df["Grid Boxes per Second"] = grid_boxes / model_df[selected_variable]
                 model_df["Columns per Second"] = model_df["ngrdcol"] / model_df[selected_variable]
                 model_df["Name"] = f"{filename}_gmodel"
-
+                
+                original_df["Source"] = "original"
+                model_df["Source"] = "model"
                 combined_df = pd.concat([combined_df, original_df, model_df])
 
                 # Calculate RMS for specific model
@@ -1337,19 +1339,40 @@ def launch_dash_app(dir_name, grouped_files, all_variables):
         if plot_mode == "cps":
             #fig = px.line(combined_df, x="Grid Boxes", y="Grid Boxes per Second", color="Name")
             #fig.update_layout( yaxis_title = "Throughput ( grid boxes / second)" )
-            fig = px.line(combined_df, x="ngrdcol", y="Columns per Second", color="Name")
+            #fig = px.line(combined_df, x="ngrdcol", y="Columns per Second", color="Name")
+            fig = px.line(
+                combined_df, 
+                x="ngrdcol", 
+                y="Columns per Second", 
+                color="Name", 
+                symbol="Source"
+            )
             fig.update_layout( yaxis_title = "Throughput ( grid boxes / second)" )
         else:
-            fig = px.line(combined_df, x="Grid Boxes", y=selected_variable, color="Name")
+            #fig = px.line(combined_df, x="Grid Boxes", y=selected_variable, color="Name")
+            fig = px.line(
+                combined_df, 
+                x="Grid Boxes", 
+                y=selected_variable, 
+                color="Name", 
+                symbol="Source"
+            )
             fig.update_layout( yaxis_title = f"Runtime of {selected_variable} (seconds)" )
 
+        for trace in fig.data:
+            if trace.name.endswith("model"):
+                trace.line.update(dash='dot')
+                
         fig.update_layout(
+            yaxis_title="Throughput (grid boxes / second)",
             xaxis=dict(type=xaxis_scale),
             yaxis=dict(type=yaxis_scale),
-            xaxis_title = "Batch size (Grid Boxes)", 
+            xaxis_title="Batch size (Grid Boxes)", 
             autosize=True,
-            uirevision='constant'
+            uirevision='constant',
+            legend_title_text="Case"
         )
+        fig.update_traces(marker=dict(size=8))
         fig = plot_with_enhancements(fig, f"{selected_variable} vs. Number of Grid Boxes")
 
         return fig.to_dict(), gpu_batched_table_data, cpu_batched_table_data
