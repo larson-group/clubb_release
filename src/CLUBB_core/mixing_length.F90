@@ -982,7 +982,8 @@ module mixing_length
         if( l_implemented ) then
 
           ! Within a host model, increase mixing length in 500 m layer above *ground*
-          lminh = max( zero_threshold, Lscale_sfclyr_depth - ( gr%zt(i,k) - gr%zm(i,1) ) ) &
+          lminh = max( zero_threshold, &
+                       Lscale_sfclyr_depth - ( gr%zt(i,k) - gr%zm(i,gr%k_lb_zm) ) ) &
                   * lmin * invrs_Lscale_sfclyr_depth
         else
 

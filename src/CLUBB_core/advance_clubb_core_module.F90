@@ -2845,10 +2845,10 @@ module advance_clubb_core_module
         if ( l_implemented .or. &
              (all( abs(wm_zt(i,:)) < eps ) .and. all( abs(wm_zm(i,:)) < eps ))) then
           ! Calculate the spurious source for rtm
-          rtm_flux_top(i) = rho_ds_zm(i,nzm) * wprtp(i,nzm)
+          rtm_flux_top(i) = rho_ds_zm(i,gr%k_ub_zm) * wprtp(i,gr%k_ub_zm)
 
           if ( .not. clubb_config_flags%l_host_applies_sfc_fluxes ) then
-            rtm_flux_sfc(i) = rho_ds_zm(i,1) * wprtp_sfc(i)
+            rtm_flux_sfc(i) = rho_ds_zm(i,gr%k_lb_zm) * wprtp_sfc(i)
           else
             rtm_flux_sfc(i) = 0.0_core_rknd
           end if
@@ -2869,10 +2869,10 @@ module advance_clubb_core_module
                                        dt )
 
           ! Calculate the spurious source for thlm
-          thlm_flux_top(i) = rho_ds_zm(i,nzm) * wpthlp(i,nzm)
+          thlm_flux_top(i) = rho_ds_zm(i,gr%k_ub_zm) * wpthlp(i,gr%k_ub_zm)
 
           if ( .not. clubb_config_flags%l_host_applies_sfc_fluxes ) then
-            thlm_flux_sfc(i) = rho_ds_zm(i,1) * wpthlp_sfc(i)
+            thlm_flux_sfc(i) = rho_ds_zm(i,gr%k_lb_zm) * wpthlp_sfc(i)
           else
             thlm_flux_sfc(i) = 0.0_core_rknd
           end if
