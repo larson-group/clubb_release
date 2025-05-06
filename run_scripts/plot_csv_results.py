@@ -67,11 +67,11 @@ def logsig( c, k, o, x ):
 
 def logcosh( c, k, o, x ):
     warnings.filterwarnings("ignore", category=RuntimeWarning)
-    return np.where(
-        x < o,
-        1,
-        c * np.log(np.log(np.cosh(k * (x - o))) + 1) + 1
-    )
+    return c * np.log(np.log(np.cosh(k * np.maximum(x - o, 0.0) )) + 1) + 1
+
+def logcoshsig( c, k, o, x ):
+    warnings.filterwarnings("ignore", category=RuntimeWarning)
+    return c * np.log( np.log(np.cosh(np.maximum(x-o, 0.0) )) / (1 + np.exp(-k * ( x - o )) ) + 1) + 1
 
 #cache_pen_funcs = [ loglog, logcosh, sigmoid, sqrtlog ]
 cache_pen_funcs = {
@@ -79,6 +79,7 @@ cache_pen_funcs = {
     "logcosh": logcosh,
     "logsig": logsig,
     "sigmoid": sigmoid,
+    "logcoshsig": logcoshsig,
     "sqrtlog": sqrtlog
 }
 
@@ -489,7 +490,10 @@ def model_throughputs(ngrdcol, runtime, N_tasks, N_vsize, N_prec, N_vlevs, model
                                 bounds = bounds )
 
             rms_error = result.fun
-            print(f" -- rms_error = {rms_error}")
+            scaled_params = param_scale * result.x
+            formatted_params = " ".join([f"{p:.3e}" for p in scaled_params])
+            print(f" -- rms_error = {rms_error} -- {formatted_params}")
+            #print(f" -- rms_error = {rms_error} -- {(param_scale *result.x):.3e}")
 
             if rms_min is None or rms_error < rms_min:
                 cache_pen_best = cp_func
@@ -506,7 +510,7 @@ def model_throughputs(ngrdcol, runtime, N_tasks, N_vsize, N_prec, N_vlevs, model
         n_points = len(runtime)
         rng = np.random.default_rng()
 
-        for _ in range(100):
+        for _ in range(1):
             indices = rng.integers(0, n_points, size=n_points)  # resample with replacement
             ngrdcol_bs = ngrdcol[indices]
             runtime_bs = runtime[indices]
@@ -709,7 +713,8 @@ def launch_dash_app(dir_name, grouped_files, all_variables):
             dcc.Dropdown(
                 id="variable-dropdown",
                 options=[{"label": var, "value": var} for var in all_variables],
-                value = "mainloop_r" if "_gptl" in dir_name else "compute_i",
+                #value = "mainloop_r" if "_gptl" in dir_name else "compute_i",],
+                value = "compute_i",
                 style={"margin-bottom": "20px"}
             ),
 
@@ -782,7 +787,7 @@ def launch_dash_app(dir_name, grouped_files, all_variables):
                                         {"label": name, "value": name}
                                         for name in cache_pen_funcs
                                     ],
-                                    value=["loglog"],
+                                    value=["logcosh"],
                                     labelStyle={"display": "inline-block", "width": "25%"}  # 2 columns
                                 )
                             ],
@@ -1287,7 +1292,9 @@ def launch_dash_app(dir_name, grouped_files, all_variables):
             if case in data and filename in data[case] and selected_variable in data[case][filename].columns:
 
                 original_df = data[case][filename][["ngrdcol", selected_variable]].copy()
-                original_df["Name"] = f"{filename}"
+                #original_df["Name"] = f"{filename}"
+                original_df["Name"] = re.sub(r'(_gptl|_derecho)(?=(_|$))', '', f"{filename}")
+
 
 
                 grid_boxes = original_df["ngrdcol"] * data[case][filename]["nz"]
@@ -1303,7 +1310,7 @@ def launch_dash_app(dir_name, grouped_files, all_variables):
 
                 model_df["Grid Boxes per Second"] = grid_boxes / model_df[selected_variable]
                 model_df["Columns per Second"] = model_df["ngrdcol"] / model_df[selected_variable]
-                model_df["Name"] = f"{filename}_gmodel"
+                model_df["Name"] = original_df["Name"]
                 
                 original_df["Source"] = "original"
                 model_df["Source"] = "model"
@@ -1347,7 +1354,10 @@ def launch_dash_app(dir_name, grouped_files, all_variables):
                 color="Name", 
                 symbol="Source"
             )
-            fig.update_layout( yaxis_title = "Throughput ( grid boxes / second)" )
+            fig.update_layout( 
+                xaxis_title="Batch size (columns)", 
+                yaxis_title = "Throughput (columns / second)"
+            )
         else:
             #fig = px.line(combined_df, x="Grid Boxes", y=selected_variable, color="Name")
             fig = px.line(
@@ -1364,16 +1374,14 @@ def launch_dash_app(dir_name, grouped_files, all_variables):
                 trace.line.update(dash='dot')
                 
         fig.update_layout(
-            yaxis_title="Throughput (grid boxes / second)",
             xaxis=dict(type=xaxis_scale),
             yaxis=dict(type=yaxis_scale),
-            xaxis_title="Batch size (Grid Boxes)", 
             autosize=True,
             uirevision='constant',
             legend_title_text="Case"
         )
         fig.update_traces(marker=dict(size=8))
-        fig = plot_with_enhancements(fig, f"{selected_variable} vs. Number of Grid Boxes")
+        fig = plot_with_enhancements(fig, "CPU Model: Throughput vs Batch Size")
 
         return fig.to_dict(), gpu_batched_table_data, cpu_batched_table_data
 
