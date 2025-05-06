@@ -190,12 +190,13 @@ cpu_batched_model_columns = [
 ]
 
 def cpu_batched_objective(params, param_scale, ngrdcol, runtime, N_tasks, N_vsize, N_prec, N_vlevs, cp_func ):
-    _, rms_error = model_cpu_batched_time(params, param_scale, ngrdcol, runtime, N_tasks, N_vsize, N_prec, N_vlevs, cp_func )
+    params = params * param_scale
+    _, rms_error = model_cpu_batched_time(params, ngrdcol, runtime, N_tasks, N_vsize, N_prec, N_vlevs, cp_func )
     return rms_error
-def model_cpu_batched_time(params, param_scale, ngrdcol, runtime, N_tasks, N_vsize, N_prec, N_vlevs, cp_func):
+def model_cpu_batched_time(params, ngrdcol, runtime, N_tasks, N_vsize, N_prec, N_vlevs, cp_func):
 
     # Model time
-    m_ik, m_k, b, c, k, o = param_scale * params
+    m_ik, m_k, b, c, k, o = params
 
     avg_array_size_MB = ngrdcol * N_vlevs * (N_prec/8) / 2**20
  
@@ -271,7 +272,7 @@ def model_throughputs(ngrdcol, runtime, N_tasks, N_vsize, N_prec, N_vlevs, model
         print(initial_guess)
 
         param_scale = np.abs( initial_guess )
-        bounds = [ (0,None) ] * len(initial_guess)
+        bounds = [ (None,None) ] * len(initial_guess)
 
         cache_pen_best = None
         rms_min = None
@@ -332,7 +333,7 @@ def model_throughputs(ngrdcol, runtime, N_tasks, N_vsize, N_prec, N_vlevs, model
         initial_guess = [ m_est, b_est, 1.0, 1.0, 1.0 ]
 
         param_scale = np.abs( initial_guess )
-        bounds = [ (0,None) ] * len(initial_guess)
+        bounds = [ (None,None) ] * len(initial_guess)
 
         cache_pen_best = None
         rms_min = None
@@ -467,10 +468,11 @@ def model_throughputs(ngrdcol, runtime, N_tasks, N_vsize, N_prec, N_vlevs, model
         m_ik_est = ( runtime[first_vpoint] - b_est ) / ( ngrdcol[first_vpoint] ) * ( 1 / N_vlevs[-1])
         m_k_est = b_est / N_vlevs[-1]
 
-        initial_guess = [ m_ik_est, m_k_est, b_est, 1.0, 1.0, 1.0 ]
+        param_scale = np.abs( [ m_ik_est, m_k_est, b_est, 1.0, 1.0, 1.0 ] )
 
-        param_scale = np.abs( initial_guess )
-        bounds = [ (0,None) ] * len(initial_guess)
+        initial_guess = [ 1.0, 1.0, 1.0, 1.0, 1.0, 1.0 ]
+
+        bounds = [ (None,None) ] * len(initial_guess)
 
         cache_pen_best = None
         rms_min = None
@@ -500,9 +502,11 @@ def model_throughputs(ngrdcol, runtime, N_tasks, N_vsize, N_prec, N_vlevs, model
                 rms_min = rms_error
                 params_opt = result.x
 
-        T_cpu, _ = model_cpu_batched_time( params_opt, param_scale, ngrdcol, runtime, N_tasks, N_vsize, N_prec, N_vlevs, cache_pen_best )
-
         params_opt = param_scale * params_opt
+
+        T_cpu, _ = model_cpu_batched_time( params_opt, ngrdcol, runtime, N_tasks, N_vsize, N_prec, N_vlevs, cache_pen_best )
+
+
 
         # Bootstrap procedure
         params_bootstrap = []
@@ -510,7 +514,7 @@ def model_throughputs(ngrdcol, runtime, N_tasks, N_vsize, N_prec, N_vlevs, model
         n_points = len(runtime)
         rng = np.random.default_rng()
 
-        for _ in range(1):
+        for _ in range(100):
             indices = rng.integers(0, n_points, size=n_points)  # resample with replacement
             ngrdcol_bs = ngrdcol[indices]
             runtime_bs = runtime[indices]
@@ -1270,7 +1274,7 @@ def launch_dash_app(dir_name, grouped_files, all_variables):
         #N_prec = 64
 
         if gpu_fit:
-            T_gpu, params_opt = model_throughputs(  ngrdcols, 
+            T_model, params_opt = model_throughputs(  ngrdcols, 
                                                     runtimes, 
                                                     N_tasks, 
                                                     N_vsize, 
@@ -1278,7 +1282,7 @@ def launch_dash_app(dir_name, grouped_files, all_variables):
                                                     N_vlevs, 
                                                     "gpu_batched")
         else:
-            T_gpu, params_opt = model_throughputs(  ngrdcols, 
+            T_model, params_opt = model_throughputs(  ngrdcols, 
                                                     runtimes, 
                                                     N_tasks, 
                                                     N_vsize, 
@@ -1306,7 +1310,7 @@ def launch_dash_app(dir_name, grouped_files, all_variables):
                 model_df = original_df.copy()
 
                 end_idx = start_idx + len(original_df["ngrdcol"])
-                model_df[selected_variable] = T_gpu[start_idx:end_idx]
+                model_df[selected_variable] = T_model[start_idx:end_idx]
 
                 model_df["Grid Boxes per Second"] = grid_boxes / model_df[selected_variable]
                 model_df["Columns per Second"] = model_df["ngrdcol"] / model_df[selected_variable]
@@ -1362,7 +1366,7 @@ def launch_dash_app(dir_name, grouped_files, all_variables):
             #fig = px.line(combined_df, x="Grid Boxes", y=selected_variable, color="Name")
             fig = px.line(
                 combined_df, 
-                x="Grid Boxes", 
+                x="ngrdcol", 
                 y=selected_variable, 
                 color="Name", 
                 symbol="Source"
