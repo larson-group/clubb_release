@@ -200,7 +200,7 @@ def model_cpu_batched_time(params, ngrdcol, runtime, N_tasks, N_vsize, N_prec, N
 
     avg_array_size_MB = ngrdcol * N_vlevs * (N_prec/8) / 2**20
  
-    T_cpu =  ( m_ik * ngrdcol * N_vlevs + m_k * N_vlevs + b ) * cp_func( c, k, o, avg_array_size_MB )
+    T_cpu =  ( m_ik * ngrdcol * N_vlevs + m_k * N_vlevs + b ) * cp_func( c, k, o, avg_array_size_MB ) 
 
     return T_cpu, rms_error( ngrdcol, runtime, T_cpu )
 
@@ -472,7 +472,13 @@ def model_throughputs(ngrdcol, runtime, N_tasks, N_vsize, N_prec, N_vlevs, model
 
         initial_guess = [ 1.0, 1.0, 1.0, 1.0, 1.0, 1.0 ]
 
-        bounds = [ (None,None) ] * len(initial_guess)
+        bounds = [  (0,None),       # m_ik
+                    (0,None),       # m_k
+                    (0,None),       # b
+                    (0,None),       # c
+                    (0,None),       # k
+                    (None,None)     # o
+                ]
 
         cache_pen_best = None
         rms_min = None
