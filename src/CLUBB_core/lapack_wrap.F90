@@ -52,15 +52,15 @@ module lapack_wrap
         core_rknd ! Variable(s)
 
     use error_code, only: &
-        clubb_at_least_debug_level,  & ! Procedure
-        clubb_fatal_error              ! Constants
+        clubb_at_least_debug_level, & ! Procedure
+        clubb_fatal_error             ! Constants
 
     use lapack_interfaces, only: &
         lapack_gtsvx, &      ! Procedure
         lapack_isnan
 
     use err_info_type_module, only: &
-      err_info_type        ! Type
+        err_info_type        ! Type
 
     implicit none
 
@@ -164,13 +164,15 @@ module lapack_wrap
     case( 0 )
       ! Success
       do i = 1, ngrdcol
-        if ( lapack_isnan( ndim, nrhs, soln(i,:,:) ) ) then
-          write(fstderr, *) err_info%err_header(i)
-          write(fstderr, *) "lapack_tridiag_solvex"
-          write(fstderr, *) trim( solve_type )// &
-            "NaNs in solution", info
-          ! Error in grid column i -> set ith entry to clubb_fatal_error
-          err_info%err_code(i) = clubb_fatal_error
+        if ( clubb_at_least_debug_level( 0 ) ) then
+          if ( lapack_isnan( ndim, nrhs, soln(i,:,:) ) ) then
+            write(fstderr, *) err_info%err_header(i)
+            write(fstderr, *) "lapack_tridiag_solvex"
+            write(fstderr, *) trim( solve_type )// &
+              "NaNs in solution", info
+            ! Error in grid column i -> set ith entry to clubb_fatal_error
+            err_info%err_code(i) = clubb_fatal_error
+          end if
         end if
       end do
 
@@ -219,14 +221,15 @@ module lapack_wrap
 #endif /*E3SM*/
 
     use error_code, only: &
-        clubb_fatal_error              ! Constants
+        clubb_at_least_debug_level, & ! Procedure
+        clubb_fatal_error             ! Constants
 
     use lapack_interfaces, only: &
         lapack_gtsv, &       ! Procedure
         lapack_isnan
 
     use err_info_type_module, only: &
-      err_info_type        ! Type
+        err_info_type        ! Type
 
     implicit none
 
@@ -307,13 +310,15 @@ module lapack_wrap
     case( 0 )
       ! Success
       do i = 1, ngrdcol
-        if ( lapack_isnan( ndim, nrhs, rhs(i,:,:) ) ) then
-          write(fstderr, *) err_info%err_header(i)
-          write(fstderr, *) "lapack_tridiag_solve"
-          write(fstderr, *) trim( solve_type )// &
-            "NaNs in solution", info
-          ! Error in grid column i -> set ith entry to clubb_fatal_error
-          err_info%err_code(i) = clubb_fatal_error
+        if ( clubb_at_least_debug_level( 0 ) ) then
+          if ( lapack_isnan( ndim, nrhs, rhs(i,:,:) ) ) then
+            write(fstderr, *) err_info%err_header(i)
+            write(fstderr, *) "lapack_tridiag_solve"
+            write(fstderr, *) trim( solve_type )// &
+              "NaNs in solution", info
+            ! Error in grid column i -> set ith entry to clubb_fatal_error
+            err_info%err_code(i) = clubb_fatal_error
+          end if
         end if
       end do
 
@@ -360,15 +365,15 @@ module lapack_wrap
         core_rknd ! Variable(s)
 
     use error_code, only: &
-        clubb_at_least_debug_level,  & ! Procedure
-        clubb_fatal_error              ! Constants
+        clubb_at_least_debug_level, & ! Procedure
+        clubb_fatal_error             ! Constants
 
     use lapack_interfaces, only: &
         lapack_gbsvx, &      ! Procedures
         lapack_isnan
 
     use err_info_type_module, only: &
-      err_info_type        ! Type
+        err_info_type        ! Type
 
     implicit none
 
@@ -533,13 +538,15 @@ module lapack_wrap
     case( 0 )
       ! Success!
       do i = 1, ngrdcol
-        if ( lapack_isnan( ndim, nrhs, soln(i,:,:) ) ) then
-          write(fstderr, *) err_info%err_header(i)
-          write(fstderr, *) "lapack_band_solvex"
-          write(fstderr, *) trim( solve_type )// &
-            "NaNs in solution", info
-          ! Error in grid column i -> set ith entry to clubb_fatal_error
-          err_info%err_code(i) = clubb_fatal_error 
+        if ( clubb_at_least_debug_level( 0 ) ) then
+          if ( lapack_isnan( ndim, nrhs, soln(i,:,:) ) ) then
+            write(fstderr, *) err_info%err_header(i)
+            write(fstderr, *) "lapack_band_solvex"
+            write(fstderr, *) trim( solve_type )// &
+              "NaNs in solution", info
+            ! Error in grid column i -> set ith entry to clubb_fatal_error
+            err_info%err_code(i) = clubb_fatal_error
+          end if
         end if
       end do
 
@@ -581,15 +588,15 @@ module lapack_wrap
         core_rknd ! Variable(s)
 
     use error_code, only: &
-        clubb_at_least_debug_level, &
-        clubb_fatal_error              ! Constants
+        clubb_at_least_debug_level, & ! Procedure
+        clubb_fatal_error             ! Constants
 
     use lapack_interfaces, only: &
         lapack_gbsv, &       ! Procedures
         lapack_isnan
 
     use err_info_type_module, only: &
-      err_info_type        ! Type
+        err_info_type        ! Type
 
     implicit none
 
@@ -788,7 +795,7 @@ module lapack_wrap
           err_info%err_code = clubb_fatal_error
     case( 0 )
           ! Success!
-          if ( clubb_at_least_debug_level( 1 ) ) then
+          if ( clubb_at_least_debug_level( 0 ) ) then
             do i = 1, ngrdcol
               if ( lapack_isnan( ndim, nrhs, rhs(i,:,:) ) ) then
                 write(fstderr, *) err_info%err_header(i)
