@@ -1,0 +1,88 @@
+commit 1f2fc1fc313f86736c95e12472ed0d9886a9c46c
+Author: domkesteffen <42725900+domkesteffen@users.noreply.github.com>
+Date:   Fri May 9 12:40:41 2025 -0500
+
+    Fixed and equalized NaN checks in lapack_wrap (#1246)
+    
+    See CAM pull request larson-group/CAM#188
+    
+    Added debug_level_at_least(0) checks where missing and changed debug_level(1) to 0 in lapack_band_solve,
+    so the new CAM CLUBB error handling test can do what it's supposed to do.
+
+commit b7e8ad326ddae6128dfc222922dc10c1a8275700
+Author: bmg929 <bmg2@uwm.edu>
+Date:   Tue May 6 11:34:23 2025 -0500
+
+    Cleaning up some grid generalization issues that were found within
+    l_implemented flag blocks.
+
+commit 6912ae1620711773f96385ece3b9330fc73daf68
+Author: bmg929 <bmg2@uwm.edu>
+Date:   Fri May 2 16:44:43 2025 -0500
+
+    Fixing an error in the previous commit. (lol, good ol' find and replace)
+
+commit f1b430ab343e05a36e916cf1910c78c1a20c177b
+Author: bmg929 <bmg2@uwm.edu>
+Date:   Fri May 2 16:40:50 2025 -0500
+
+    I am adding a second set of host flags as part of the generalized
+    vertical grid test for host model flags. Flag set 2 consists of
+    flag settings that are found in the clubb_silhs_devel branch of CAM.
+
+commit d1b42f244d4e38d86e5cf1bea3cbdb38950e094b
+Author: bmg929 <bmg2@uwm.edu>
+Date:   Fri May 2 16:17:46 2025 -0500
+
+    I am adding a Jenkinsfile for a new CLUBB generalized vertical
+    grid test that uses flag sets consisting of specialized flag
+    settings that are found in host models of which CLUBB is a part.
+
+commit 9b42183b3b368cf7c079faf0a7b79eefc159f901
+Author: bmg929 <bmg2@uwm.edu>
+Date:   Fri May 2 14:35:23 2025 -0500
+
+    I am adding a new .json file for host model flags. Flag set 1 consists
+    of the current CAM default settings.
+
+commit 1e73c9c30c0b13eb0a0a5e0010ce9fd81c67c2f0
+Author: domkesteffen <42725900+domkesteffen@users.noreply.github.com>
+Date:   Fri May 2 12:37:23 2025 -0500
+
+    Run scm fixes (#1244)
+    
+    Fixed error output for run?scm?all.bash, added some missing error checks to CLUBB
+    CLUBB ticket #975
+    
+    * Fixed error output issues for run_scm_all.bash
+    - Changed tail $TMP_OUT to cat $TMP_OUT so we can see the entire stderr output of CLUBB in the log
+    - Added `if allocated` check to subroutine finalize_t_dependent_forcings in time_dependent_input.F90 to avoid runtime errors
+    - Removed unnecessary write statement in clubb_standalone.F90
+    
+    * Added missing err_code checks
+    - Added err_code checks so we don't get false negative error messages
+
+commit 3a3e3d57af0db172255568b51e92976571b7ad42
+Author: domkesteffen <42725900+domkesteffen@users.noreply.github.com>
+Date:   Thu May 1 15:13:38 2025 -0500
+
+    Removed renaming operators `=>` and wrapper subroutines from silhs_api_module (#1240)
+    
+    CLUBB ticket #1223
+    * Removed renaming operators `=>` from silhs_api_module
+    This just affected latin_hypercube_2D_output_api and stats_accumulate_lh_api.
+    
+    * Removed definitions of wrapper subroutines from silhs_api_module
+    Removed wrappers est_kessler_microphys_api, lh_microphys_var_covar_driver_api, set_default_silhs_config_flags_api, initialize_silhs_config_flags_type_api, print_silhs_config_flags_api, latin_hypercube_2D_close_api from silhs_api_module.
+
+commit 4fb7b70b67db3fa7decde426bed55920a12d7d4e
+Author: Gunther Huebler <huebler@uwm.edu>
+Date:   Tue Apr 29 12:07:28 2025 -0500
+
+    Changing readme to add BIT_CHANGING:71eb9b3c5fd65c33905f17be8476a1dea89a2511 since that commit was a bug fix, so technically it was bit changing.
+
+commit 71eb9b3c5fd65c33905f17be8476a1dea89a2511
+Author: Gunther Huebler <huebler@uwm.edu>
+Date:   Mon Apr 28 13:33:34 2025 -0500
+
+    Small bug fix that has somehow gone unfound until recently. RESOLVED:f9d92113871bdf87b5e3147db6740ab654dc0967
