@@ -5,7 +5,7 @@ import os
 import pandas as pd
 import re
 from glob import glob
-from dash import Dash, dcc, html, Input, Output, State, dash_table
+from dash import Dash, dcc, html, Input, Output, State, dash_table, ctx
 import plotly.express as px
 import numpy as np
 from collections import defaultdict
@@ -135,11 +135,11 @@ def model_vcpu_time(params, param_scale, ngrdcol, runtime, N_tasks, N_vsize, N_p
     #T_v = runtime[np.where(cols_per_core == flops_per_vop)] - b
 
     N_s = np.ceil( cols_per_core ) % ( flops_per_vop )
-    N_v = np.floor( cols_per_core / ( flops_per_vop ) )
+    N_v = np.floor( cols_per_core / flops_per_vop )
 
     avg_array_size_MB = ngrdcol * N_vlevs * (N_prec/8) / 2**20
 
-    T_vcpu = ( T_r * N_s + T_v * N_v ) * cp_func( c, k, o, avg_array_size_MB ) + b
+    T_vcpu = ( T_r * N_s + T_v * N_v + b ) * cp_func( c, k, o, avg_array_size_MB )
 
     return T_vcpu, rms_error( ngrdcol, runtime, T_vcpu )
 
@@ -200,9 +200,49 @@ def model_cpu_batched_time(params, ngrdcol, runtime, N_tasks, N_vsize, N_prec, N
 
     avg_array_size_MB = ngrdcol * N_vlevs * (N_prec/8) / 2**20
  
-    T_cpu =  ( m_ik * ngrdcol * N_vlevs + m_k * N_vlevs + b ) * cp_func( c, k, o, avg_array_size_MB ) 
+    T_cpu =  ( m_ik * ngrdcol * N_vlevs  ) * cp_func( c, k, o, avg_array_size_MB ) + m_k * N_vlevs + b
 
     return T_cpu, rms_error( ngrdcol, runtime, T_cpu )
+
+
+# ======================================== VCPU Batched ========================================
+
+vcpu_batched_model_columns = [
+    {"name": "Name", "id": "name"},
+    {"name": "T_v", "id": "T_v_val"},
+    {"name": "T_r", "id": "T_r_val"},
+    {"name": "m_k", "id": "m_k_val"},
+    #{"name": "m_est", "id": "m_est_val"},
+    {"name": "b", "id": "b_val"},
+    #{"name": "b_est", "id": "b_est_val"},
+    {"name": "c", "id": "c_val"},
+    {"name": "k", "id": "k_val"},
+    {"name": "o", "id": "o_val"},
+    {"name": "Cache Pen Func", "id": "cp_func"},
+    {"name": "RMSE", "id": "rms_error"},
+]
+
+def vcpu_batched_objective(params, param_scale, ngrdcol, runtime, N_tasks, N_vsize, N_prec, N_vlevs, cp_func ):
+    params = params * param_scale
+    _, rms_error = model_vcpu_batched_time(params, ngrdcol, runtime, N_tasks, N_vsize, N_prec, N_vlevs, cp_func )
+    return rms_error
+def model_vcpu_batched_time(params, ngrdcol, runtime, N_tasks, N_vsize, N_prec, N_vlevs, cp_func):
+
+    # Model time
+    T_r, T_v, m_k, b, c, k, o = params
+
+    cols_per_core = ngrdcol / N_tasks
+    flops_per_vop = N_vsize / N_prec
+
+    N_s = np.ceil( cols_per_core ) % ( flops_per_vop )
+    N_v = np.floor( cols_per_core / flops_per_vop )
+
+    avg_array_size_MB = ngrdcol * N_vlevs * (N_prec/8) / 2**20
+ 
+    #T_cpu =  ( m_ik * ngrdcol * N_vlevs  ) * cp_func( c, k, o, avg_array_size_MB ) + m_k * N_vlevs + b
+    T_vcpu = ( T_r * N_s * N_vlevs + T_v * N_v * N_vlevs + m_k * N_vlevs + b ) * cp_func( c, k, o, avg_array_size_MB )
+
+    return T_vcpu, rms_error( ngrdcol, runtime, T_vcpu )
 
 
 # ======================================== GPU ========================================
@@ -253,7 +293,7 @@ def model_gpu_batched_time(params, param_scale, ngrdcol, runtime, N_tasks, N_vsi
     return T_bgpu, rms_error( ngrdcol, runtime, T_bgpu, mode="abs_cps" )
 
 
-def model_throughputs(ngrdcol, runtime, N_tasks, N_vsize, N_prec, N_vlevs, model_version, selected_cp_funcs=None):
+def model_throughputs(ngrdcol, runtime, N_tasks, N_vsize, N_prec, N_vlevs, model_version, bootstrap_samps=0, selected_cp_funcs=None):
 
 
     #============================== VCPU Model ==============================
@@ -267,12 +307,17 @@ def model_throughputs(ngrdcol, runtime, N_tasks, N_vsize, N_prec, N_vlevs, model
         T_r_est = runtime[np.where(cols_per_core == 1)] - b_est
         T_v_est = runtime[np.where(cols_per_core == flops_per_vop)] - b_est
 
-        initial_guess = [ T_r_est[0], T_v_est[0], b_est, 1.0, 1.0, 1.0 ]
+        param_scale = np.abs( [ T_r_est[0], T_v_est[0], b_est, 1.0, 1.0, 1.0 ] )
 
-        print(initial_guess)
+        initial_guess = [ 1.0, 1.0, 1.0, 1.0, 1.0, 1.0 ]
 
-        param_scale = np.abs( initial_guess )
-        bounds = [ (None,None) ] * len(initial_guess)
+        bounds = [  (0,None),       # T_r_est
+                    (0,None),       # T_v_est
+                    (0,None),       # b
+                    (0,None),       # c
+                    (0,None),       # k
+                    (None,None)     # o
+                ]
 
         cache_pen_best = None
         rms_min = None
@@ -299,7 +344,7 @@ def model_throughputs(ngrdcol, runtime, N_tasks, N_vsize, N_prec, N_vlevs, model
                 params_opt = result.x
 
 
-        T_cpu, _ = model_vcpu_time(params_opt, param_scale, ngrdcol, runtime, N_tasks, N_vsize, N_prec, N_vlevs, cache_pen_best)
+        T_model, _ = model_vcpu_time(params_opt, param_scale, ngrdcol, runtime, N_tasks, N_vsize, N_prec, N_vlevs, cache_pen_best)
 
         cols_per_core = ngrdcol / N_tasks
         flops_per_vop = N_vsize / N_prec
@@ -330,10 +375,15 @@ def model_throughputs(ngrdcol, runtime, N_tasks, N_vsize, N_prec, N_vlevs, model
 
         m_est = ( runtime[first_vpoint] - b_est ) / ( ngrdcol[first_vpoint] )
 
-        initial_guess = [ m_est, b_est, 1.0, 1.0, 1.0 ]
+        param_scale = np.abs( [ m_est, b_est, 1.0, 1.0, 1.0 ] )
+        initial_guess = [ 1.0, 1.0, 1.0, 1.0, 1.0 ]
 
-        param_scale = np.abs( initial_guess )
-        bounds = [ (None,None) ] * len(initial_guess)
+        bounds = [  (0,None),       # m_ik
+                    (0,None),       # b
+                    (0,None),       # c
+                    (0,None),       # k
+                    (None,None)     # o
+                ]
 
         cache_pen_best = None
         rms_min = None
@@ -364,7 +414,7 @@ def model_throughputs(ngrdcol, runtime, N_tasks, N_vsize, N_prec, N_vlevs, model
                 params_opt = result.x
 
 
-        T_cpu, _ = model_cpu_time(params_opt, param_scale, ngrdcol, runtime, N_tasks, N_vsize, N_prec, N_vlevs, cache_pen_best)
+        T_model, _ = model_cpu_time(params_opt, param_scale, ngrdcol, runtime, N_tasks, N_vsize, N_prec, N_vlevs, cache_pen_best)
 
         params_opt = param_scale * params_opt
 
@@ -402,7 +452,7 @@ def model_throughputs(ngrdcol, runtime, N_tasks, N_vsize, N_prec, N_vlevs, model
         rms_error = result.fun
         params_opt = result.x
 
-        T_cpu, _ = model_gpu_time(param_scale, params_opt, ngrdcol, runtime, N_tasks, N_vsize, N_prec, N_vlevs)
+        T_model, _ = model_gpu_time(param_scale, params_opt, ngrdcol, runtime, N_tasks, N_vsize, N_prec, N_vlevs)
 
         params_opt = param_scale * params_opt
 
@@ -441,7 +491,7 @@ def model_throughputs(ngrdcol, runtime, N_tasks, N_vsize, N_prec, N_vlevs, model
         rms_error = result.fun
         params_opt = result.x
 
-        T_cpu, _ = model_gpu_batched_time( params_opt, param_scale, ngrdcol, runtime, N_tasks, N_vsize, N_prec, N_vlevs )
+        T_model, _ = model_gpu_batched_time( params_opt, param_scale, ngrdcol, runtime, N_tasks, N_vsize, N_prec, N_vlevs )
 
         params_opt = param_scale * params_opt
 
@@ -510,7 +560,7 @@ def model_throughputs(ngrdcol, runtime, N_tasks, N_vsize, N_prec, N_vlevs, model
 
         params_opt = param_scale * params_opt
 
-        T_cpu, _ = model_cpu_batched_time( params_opt, ngrdcol, runtime, N_tasks, N_vsize, N_prec, N_vlevs, cache_pen_best )
+        T_model, _ = model_cpu_batched_time( params_opt, ngrdcol, runtime, N_tasks, N_vsize, N_prec, N_vlevs, cache_pen_best )
 
 
 
@@ -520,50 +570,194 @@ def model_throughputs(ngrdcol, runtime, N_tasks, N_vsize, N_prec, N_vlevs, model
         n_points = len(runtime)
         rng = np.random.default_rng()
 
-        for _ in range(100):
-            indices = rng.integers(0, n_points, size=n_points)  # resample with replacement
-            ngrdcol_bs = ngrdcol[indices]
-            runtime_bs = runtime[indices]
-            N_prec_bs = N_prec[indices]
-            N_vlevs_bs = N_vlevs[indices]
-            #N_tasks_bs = N_tasks if np.ndim(N_tasks) == 0 else N_tasks[indices]
-            #N_vsize_bs = N_vsize if np.ndim(N_vsize) == 0 else N_vsize[indices]
+        if bootstrap_samps > 0:
+            for _ in range(bootstrap_samps):
+                indices = rng.integers(0, n_points, size=n_points)  # resample with replacement
+                ngrdcol_bs = ngrdcol[indices]
+                runtime_bs = runtime[indices]
+                N_prec_bs = N_prec[indices]
+                N_vlevs_bs = N_vlevs[indices]
+                #N_tasks_bs = N_tasks if np.ndim(N_tasks) == 0 else N_tasks[indices]
+                #N_vsize_bs = N_vsize if np.ndim(N_vsize) == 0 else N_vsize[indices]
 
-            try:
-                result_bs = minimize(
-                    cpu_batched_objective, 
-                    initial_guess, 
-                    args=(param_scale, ngrdcol_bs, runtime_bs, N_tasks, N_vsize, N_prec_bs, N_vlevs_bs, cache_pen_best),
-                    method='L-BFGS-B',
-                    bounds=bounds
-                )
-                params_bootstrap.append(result_bs.x * param_scale)  # save rescaled params
-            except Exception as e:
-                # Skip failed fits
-                print(f"Bootstrap fit failed: {e}")
-                continue
+                try:
+                    result_bs = minimize(
+                        cpu_batched_objective, 
+                        initial_guess, 
+                        args=(param_scale, ngrdcol_bs, runtime_bs, N_tasks, N_vsize, N_prec_bs, N_vlevs_bs, cache_pen_best),
+                        method='L-BFGS-B',
+                        bounds=bounds
+                    )
+                    params_bootstrap.append(result_bs.x * param_scale)  # save rescaled params
+                except Exception as e:
+                    # Skip failed fits
+                    print(f"Bootstrap fit failed: {e}")
+                    continue
+            
+            params_bootstrap = np.array(params_bootstrap)
 
-        params_bootstrap = np.array(params_bootstrap)
+            confidence_level = 90
 
-        confidence_level = 90
+            # Now get 5th and 95th percentile (for 90% confidence interval)
+            params_low = np.percentile(params_bootstrap, (100 - confidence_level) / 2, axis=0)
+            params_high = np.percentile(params_bootstrap, 100 - (100 - confidence_level) / 2, axis=0)
 
-        # Now get 5th and 95th percentile (for 90% confidence interval)
-        params_low = np.percentile(params_bootstrap, (100 - confidence_level) / 2, axis=0)
-        params_high = np.percentile(params_bootstrap, 100 - (100 - confidence_level) / 2, axis=0)
+            # Assemble fit_params dictionary
+            fit_params = {
+                "m_ik_val": f"{params_opt[0]:.2e} \n({params_low[0]:.2e}, {params_high[0]:.2e})",
+                "m_k_val": f"{params_opt[1]:.2e} \n({params_low[1]:.2e}, {params_high[1]:.2e})",
+                "b_val": f"{params_opt[2]:.2e} \n({params_low[2]:.2e}, {params_high[2]:.2e})",
+                "c_val": f"{params_opt[3]:.2e} \n({params_low[3]:.2e}, {params_high[3]:.2e})",
+                "k_val": f"{params_opt[4]:.2e} \n({params_low[4]:.2e}, {params_high[4]:.2e})",
+                "o_val": f"{params_opt[5]:.2e} \n({params_low[5]:.2e}, {params_high[5]:.2e})",
+                "cp_func": cache_pen_best.__name__,
+                "rms_error": rms_min
+            }
 
-        # Assemble fit_params dictionary
-        fit_params = {
-            "m_ik_val": f"{params_opt[0]:.2e} \n({params_low[0]:.2e}, {params_high[0]:.2e})",
-            "m_k_val": f"{params_opt[1]:.2e} \n({params_low[1]:.2e}, {params_high[1]:.2e})",
-            "b_val": f"{params_opt[2]:.2e} \n({params_low[2]:.2e}, {params_high[2]:.2e})",
-            "c_val": f"{params_opt[3]:.2e} \n({params_low[3]:.2e}, {params_high[3]:.2e})",
-            "k_val": f"{params_opt[4]:.2e} \n({params_low[4]:.2e}, {params_high[4]:.2e})",
-            "o_val": f"{params_opt[5]:.2e} \n({params_low[5]:.2e}, {params_high[5]:.2e})",
-            "cp_func": cache_pen_best.__name__,
-            "rms_error": rms_min
-        }
+        else:
 
-    return T_cpu, fit_params
+            # Assemble fit_params dictionary
+            fit_params = {
+                "m_ik_val": f"{params_opt[0]:.2e}",
+                "m_k_val": f"{params_opt[1]:.2e}",
+                "b_val": f"{params_opt[2]:.2e}",
+                "c_val": f"{params_opt[3]:.2e}",
+                "k_val": f"{params_opt[4]:.2e}",
+                "o_val": f"{params_opt[5]:.2e}",
+                "cp_func": cache_pen_best.__name__,
+                "rms_error": rms_min
+            }
+
+    #============================== VCPU Batched Model ==============================
+    if model_version == "vcpu_batched":
+
+        cols_per_core = ngrdcol / N_tasks
+        flops_per_vop = N_vsize / N_prec
+
+        b_est = runtime[0] - ( runtime[1] - runtime[0] ) / ( ngrdcol[1] - ngrdcol[0] ) * ngrdcol[0]
+        m_k_est = b_est / N_vlevs[-1]
+
+        T_v_est = ( runtime[np.where(cols_per_core == flops_per_vop)] - b_est ) / N_vlevs[-1]
+        T_r_est = ( runtime[np.where(cols_per_core == 1)] - b_est ) / N_vlevs[-1]
+
+        param_scale = np.abs( [ T_v_est[0], T_r_est[0], m_k_est, b_est, 1.0, 1.0, 1.0 ] )
+
+        initial_guess = [ 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0 ]
+
+        bounds = [  (0,None),       # T_v
+                    (0,None),       # T_r
+                    (0,None),       # m_k
+                    (0,None),       # b
+                    (0,None),       # c
+                    (0,None),       # k
+                    (None,None)     # o
+                ]
+
+        cache_pen_best = None
+        rms_min = None
+        params_opt = None
+
+        for name in selected_cp_funcs:
+
+            cp_func = cache_pen_funcs[name]
+
+            print(f" - trying cache pen: {cp_func.__name__}")
+
+            result = minimize(  vcpu_batched_objective, 
+                                initial_guess, 
+                                args=( param_scale, ngrdcol, runtime, N_tasks, N_vsize, N_prec, N_vlevs, cp_func ), 
+                                #method='Nelder-Mead' )
+                                method='L-BFGS-B',
+                                bounds = bounds )
+
+            rms_error = result.fun
+            scaled_params = param_scale * result.x
+            formatted_params = " ".join([f"{p:.3e}" for p in scaled_params])
+            print(f" -- rms_error = {rms_error} -- {formatted_params}")
+            #print(f" -- rms_error = {rms_error} -- {(param_scale *result.x):.3e}")
+
+            if rms_min is None or rms_error < rms_min:
+                cache_pen_best = cp_func
+                rms_min = rms_error
+                params_opt = result.x
+
+        params_opt = param_scale * params_opt
+
+        T_model, _ = model_vcpu_batched_time( params_opt, ngrdcol, runtime, N_tasks, N_vsize, N_prec, N_vlevs, cache_pen_best )
+
+
+
+        # Bootstrap procedure
+        params_bootstrap = []
+
+        n_points = len(runtime)
+        rng = np.random.default_rng()
+
+        if bootstrap_samps > 0:
+            for _ in range(bootstrap_samps):
+                indices = rng.integers(0, n_points, size=n_points)  # resample with replacement
+                ngrdcol_bs = ngrdcol[indices]
+                runtime_bs = runtime[indices]
+                N_prec_bs = N_prec[indices]
+                N_vlevs_bs = N_vlevs[indices]
+                #N_tasks_bs = N_tasks if np.ndim(N_tasks) == 0 else N_tasks[indices]
+                #N_vsize_bs = N_vsize if np.ndim(N_vsize) == 0 else N_vsize[indices]
+
+                try:
+                    result_bs = minimize(
+                        vcpu_batched_objective, 
+                        initial_guess, 
+                        args=(param_scale, ngrdcol_bs, runtime_bs, N_tasks, N_vsize, N_prec_bs, N_vlevs_bs, cache_pen_best),
+                        method='L-BFGS-B',
+                        bounds=bounds
+                    )
+                    params_bootstrap.append(result_bs.x * param_scale)  # save rescaled params
+                except Exception as e:
+                    # Skip failed fits
+                    print(f"Bootstrap fit failed: {e}")
+                    continue
+            
+            params_bootstrap = np.array(params_bootstrap)
+
+            confidence_level = 90
+
+            # Now get 5th and 95th percentile (for 90% confidence interval)
+            params_low = np.percentile(params_bootstrap, (100 - confidence_level) / 2, axis=0)
+            params_high = np.percentile(params_bootstrap, 100 - (100 - confidence_level) / 2, axis=0)
+
+            # Assemble fit_params dictionary
+            fit_params = {
+                "T_v_val": f"{params_opt[0]:.2e} \n({params_low[0]:.2e}, {params_high[0]:.2e})",
+                "T_r_val": f"{params_opt[1]:.2e} \n({params_low[1]:.2e}, {params_high[1]:.2e})",
+                "m_k_val": f"{params_opt[2]:.2e} \n({params_low[2]:.2e}, {params_high[2]:.2e})",
+                "b_val": f"{params_opt[3]:.2e} \n({params_low[3]:.2e}, {params_high[3]:.2e})",
+                "c_val": f"{params_opt[4]:.2e} \n({params_low[4]:.2e}, {params_high[4]:.2e})",
+                "k_val": f"{params_opt[5]:.2e} \n({params_low[5]:.2e}, {params_high[5]:.2e})",
+                "o_val": f"{params_opt[6]:.2e} \n({params_low[6]:.2e}, {params_high[6]:.2e})",
+                "cp_func": cache_pen_best.__name__,
+                "rms_error": rms_min
+            }
+
+        else:
+
+            # Assemble fit_params dictionary
+            fit_params = {
+                "T_v_val": f"{params_opt[0]:.2e}",
+                "T_r_val": f"{params_opt[1]:.2e}",
+                "m_k_val": f"{params_opt[2]:.2e}",
+                "b_val": f"{params_opt[3]:.2e}",
+                "c_val": f"{params_opt[4]:.2e}",
+                "k_val": f"{params_opt[5]:.2e}",
+                "o_val": f"{params_opt[6]:.2e}",
+                "cp_func": cache_pen_best.__name__,
+                "rms_error": rms_min
+            }
+
+    else:
+
+        print(f"ERROR: unknown fit mode {model_version} ")
+
+    return T_model, fit_params
 
 
 def launch_dash_app(dir_name, grouped_files, all_variables):
@@ -659,6 +853,17 @@ def launch_dash_app(dir_name, grouped_files, all_variables):
                 dash_table.DataTable(
                     id='cpu-batched-param-table',
                     columns=cpu_batched_model_columns,
+                    style_cell={'textAlign': 'center', "whiteSpace": "pre-line"},
+                    data=[],  # Initial empty table
+                    editable=True,
+                    row_deletable=False  # Allows deleting rows directly
+                ),
+
+                # VCPU Batched Table
+                html.Label("VCPU Model"),
+                dash_table.DataTable(
+                    id='vcpu-batched-param-table',
+                    columns=vcpu_batched_model_columns,
                     style_cell={'textAlign': 'center', "whiteSpace": "pre-line"},
                     data=[],  # Initial empty table
                     editable=True,
@@ -813,16 +1018,35 @@ def launch_dash_app(dir_name, grouped_files, all_variables):
 
                     # Fit button
                     html.Button(
-                        "Fit",
+                        "Fit Individuals",
                         id="fit-function-button",
+                        n_clicks=0,
+                        style={"padding": "10px", "background-color": "#4CAF50", "color": "white", "border": "none", "cursor": "pointer", "margin-bottom": "8px"}
+                    ),
+
+                    html.Div([
+                        html.Label("Bootstrap Samples: ", style={"margin-top": "5px"}),
+                        dcc.Input(id="bootstrap_samps", type="number", value=0, style={"width": "20%"}),
+                    ], style={"margin-bottom": "8px"}),
+
+                    # Batched fit button
+                    html.Button(
+                        "Fit CPU Batched",
+                        id="fit-cpu-batched-function-button",
                         n_clicks=0,
                         style={"padding": "10px", "background-color": "#4CAF50", "color": "white", "border": "none", "cursor": "pointer"}
                     ),
 
-                    # Batched fit button
                     html.Button(
-                        "Fit Batched",
-                        id="fit-batched-function-button",
+                        "Fit VCPU Batched",
+                        id="fit-vcpu-batched-function-button",
+                        n_clicks=0,
+                        style={"padding": "10px", "background-color": "#4CAF50", "color": "white", "border": "none", "cursor": "pointer"}
+                    ),
+
+                    html.Button(
+                        "Fit GPU Batched",
+                        id="fit-gpu-batched-function-button",
                         n_clicks=0,
                         style={"padding": "10px", "background-color": "#4CAF50", "color": "white", "border": "none", "cursor": "pointer"}
                     ),
@@ -1160,7 +1384,7 @@ def launch_dash_app(dir_name, grouped_files, all_variables):
                                                              N_prec, 
                                                              N_vlevs, 
                                                              "vcpu",
-                                                             selected_cp_funcs )
+                                                             selected_cp_funcs=selected_cp_funcs )
 
                     vcpu_df[selected_variable] = T_vcpu
                     vcpu_df["Columns per Second"] = vcpu_df["ngrdcol"] / vcpu_df[selected_variable]
@@ -1181,7 +1405,7 @@ def launch_dash_app(dir_name, grouped_files, all_variables):
                                                            N_prec, 
                                                            N_vlevs, 
                                                            "cpu",
-                                                           selected_cp_funcs)
+                                                           selected_cp_funcs=selected_cp_funcs)
                     
                     cpu_df[selected_variable] = T_cpu
                     cpu_df["Columns per Second"] = cpu_df["ngrdcol"] / cpu_df[selected_variable]
@@ -1223,30 +1447,47 @@ def launch_dash_app(dir_name, grouped_files, all_variables):
             #Output('cpu-param-table', 'data'),
             Output('gpu-batched-param-table', 'data'),
             Output('cpu-batched-param-table', 'data'),
+            Output('vcpu-batched-param-table', 'data'),
         ],
         [
-            Input("fit-batched-function-button", "n_clicks"),
+            Input("fit-cpu-batched-function-button", "n_clicks"),
+            Input("fit-vcpu-batched-function-button", "n_clicks"),
+            Input("fit-gpu-batched-function-button", "n_clicks"),
             #Input("N_tasks", "value"),
             State("N_vsize", "value"),
+            State("bootstrap_samps", "value"),
             State({"type": "file-checkbox", "case": ALL}, "value"),
-            Input("variable-dropdown", "value"),
-            Input("x-axis-scale", "value"),
-            Input("y-axis-scale", "value"),
-            Input("fit-plot-mode", "value"),
+            State("variable-dropdown", "value"),
+            State("x-axis-scale", "value"),
+            State("y-axis-scale", "value"),
+            State("fit-plot-mode", "value"),
             State({"type": "cp_func_checkbox"}, "value")
         ],
         prevent_initial_call=True
     )
-    def update_fit_plot_batched(n_clicks, N_vsize, selected_files, selected_variable, xaxis_scale, yaxis_scale, plot_mode, selected_cp_funcs):
-        
-        if n_clicks == 0 or not selected_files:
-            raise PreventUpdate
+    def update_fit_plot_batched(cpu_clicks, vcpu_clicks, gpu_clicks, N_vsize, bootstrap_samps, 
+                                selected_files, selected_variable, xaxis_scale, yaxis_scale, 
+                                plot_mode, selected_cp_funcs):
+
+        cpu_fit, vcpu_fit, gpu_fit = False, False, False
+
+        if ctx.triggered_id ==  'fit-cpu-batched-function-button':
+            cpu_fit         = True 
+            model_version   = "cpu_batched"
+        elif ctx.triggered_id == 'fit-vcpu-batched-function-button':
+            vcpu_fit         = True 
+            model_version   = "vcpu_batched"
+        elif ctx.triggered_id == 'fit-gpu-batched-function-button':
+            gpu_fit         = True 
+            model_version   = "gpu_batched"
+            
 
         flat_files = [item.split("/") for sublist in selected_files for item in sublist]
         combined_df = pd.DataFrame()
 
         gpu_batched_table_data = []
         cpu_batched_table_data = []
+        vcpu_batched_table_data = []
 
         N_tasks = np.empty(0)
         N_vlevs = np.empty(0)
@@ -1255,7 +1496,6 @@ def launch_dash_app(dir_name, grouped_files, all_variables):
         N_prec = np.empty(0)
         filenames = ""
 
-        gpu_fit = False
 
         for case, filename in flat_files:
             if case in data and filename in data[case] and selected_variable in data[case][filename].columns:
@@ -1271,31 +1511,17 @@ def launch_dash_app(dir_name, grouped_files, all_variables):
                     N_prec = np.concatenate( [N_prec, np.array([32]*len(data[case][filename]["nz"])) ])
                 else:
                     N_prec = np.concatenate( [N_prec, np.array([64]*len(data[case][filename]["nz"])) ])
-
-                # If any of the files in the batch are GPU, just do a GPU fit
-                if any(gpu_name in filename for gpu_name in ["A100", "V100", "H100"]):
-                    gpu_fit = True 
                 
-        # This will need changing if we want to batch fit single precision results
-        #N_prec = 64
 
-        if gpu_fit:
-            T_model, params_opt = model_throughputs(  ngrdcols, 
-                                                    runtimes, 
-                                                    N_tasks, 
-                                                    N_vsize, 
-                                                    N_prec, 
-                                                    N_vlevs, 
-                                                    "gpu_batched")
-        else:
-            T_model, params_opt = model_throughputs(  ngrdcols, 
-                                                    runtimes, 
-                                                    N_tasks, 
-                                                    N_vsize, 
-                                                    N_prec, 
-                                                    N_vlevs, 
-                                                    "cpu_batched",
-                                                    selected_cp_funcs )
+        T_model, params_opt = model_throughputs( ngrdcols, 
+                                                 runtimes, 
+                                                 N_tasks, 
+                                                 N_vsize, 
+                                                 N_prec, 
+                                                 N_vlevs, 
+                                                 model_version,
+                                                 bootstrap_samps, 
+                                                 selected_cp_funcs )
 
         start_idx = 0
         for case, filename in flat_files:
@@ -1326,28 +1552,38 @@ def launch_dash_app(dir_name, grouped_files, all_variables):
                 model_df["Source"] = "model"
                 combined_df = pd.concat([combined_df, original_df, model_df])
 
-                # Calculate RMS for specific model
-                cps = original_df["ngrdcol"] / original_df[selected_variable]
-                cps_model = model_df["ngrdcol"] / model_df[selected_variable]
 
-                abs_diff = np.abs( cps - cps_model )
-                rms_error = np.sqrt( np.mean( abs_diff**2 ) )
-
-                params_opt["rms_error"] = rms_error
+                # GPU uses absolute error 
+                params_opt["rms_error"] = rms_error( model_df["ngrdcol"], 
+                                                        original_df[selected_variable], 
+                                                        model_df[selected_variable], 
+                                                        mode="abs_cps" if gpu_fit else "abs_percent_cps" )
 
                 # Update table
                 if gpu_fit:
+
                     gpu_batched_table_data.append({
                         col["id"]: f"{params_opt.get(col['id']):.3e}" if isinstance(params_opt.get(col["id"]), (int, float)) else params_opt.get(col["id"])
                         for col in gpu_batched_model_columns
                     })
                     gpu_batched_table_data[-1]["name"] = f"{filename}"
-                else:
+
+
+                elif cpu_fit:
+
                     cpu_batched_table_data.append({
                         col["id"]: f"{params_opt.get(col['id']):.3e}" if isinstance(params_opt.get(col["id"]), (int, float)) else params_opt.get(col["id"])
                         for col in cpu_batched_model_columns
                     })
                     cpu_batched_table_data[-1]["name"] = f"{filename}"
+
+                elif vcpu_fit:
+
+                    vcpu_batched_table_data.append({
+                        col["id"]: f"{params_opt.get(col['id']):.3e}" if isinstance(params_opt.get(col["id"]), (int, float)) else params_opt.get(col["id"])
+                        for col in vcpu_batched_model_columns
+                    })
+                    vcpu_batched_table_data[-1]["name"] = f"{filename}"
 
 
                 start_idx = end_idx
@@ -1391,9 +1627,13 @@ def launch_dash_app(dir_name, grouped_files, all_variables):
             legend_title_text="Case"
         )
         fig.update_traces(marker=dict(size=8))
-        fig = plot_with_enhancements(fig, "CPU Model: Throughput vs Batch Size")
 
-        return fig.to_dict(), gpu_batched_table_data, cpu_batched_table_data
+        if gpu_fit:
+            fig = plot_with_enhancements(fig, "GPU Model: Throughput vs Batch Size")
+        else:
+            fig = plot_with_enhancements(fig, "CPU Model: Throughput vs Batch Size")
+
+        return fig.to_dict(), gpu_batched_table_data, cpu_batched_table_data, vcpu_batched_table_data
 
 
     # ======================================== App run ========================================
