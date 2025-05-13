@@ -107,17 +107,20 @@ module clubb_driver
         check_clubb_settings_api, &
         setup_parameters_model_api, &
         setup_grid_api, &
-        setup_parameters_api
+        setup_parameters_api, &
+        set_clubb_debug_level_api, &
+        init_pdf_implicit_coefs_terms_api, &
+        stats_begin_timestep_api, &
+        stats_end_timestep_api , &
+        print_clubb_config_flags_api, &
+        clubb_at_least_debug_level_api
 
     use pdf_parameter_module, only: &
         pdf_parameter,                 & !----------------------------------- Variable Type(s)
         implicit_coefs_terms,          &
-        init_pdf_params,               & !----------------------------------- Procedure(s)
-        init_pdf_implicit_coefs_terms
+        init_pdf_params                  !----------------------------------- Procedure(s)
 
     use error_code, only: &
-        clubb_at_least_debug_level,     & ! --------------------------------- Procedures
-        set_clubb_debug_level,          &
         clubb_fatal_error,              & ! --------------------------------- Constant
         clubb_generalized_grd_test_err, &
         clubb_no_error
@@ -138,7 +141,6 @@ module clubb_driver
     use model_flags, only: &
         set_default_clubb_config_flags_api, & !-------------------------------- Procedure(s)
         initialize_clubb_config_flags_type_api, &
-        print_clubb_config_flags, &
         clubb_config_flags_type, & !--------------------------------------- Type(s)
         l_silhs_rad, & !--------------------------------------------------- Constants
         l_pos_def, l_hole_fill, &
@@ -146,9 +148,8 @@ module clubb_driver
         saturation_flatau, &
         l_test_grid_generalization
 
-    use stats_clubb_utilities, only: & 
-        stats_begin_timestep_api, stats_end_timestep, & !----------------------- Procedure(s)
-        stats_init_api
+    use stats_clubb_utilities, only: &
+        stats_init_api          !----------------------- Procedure(s)
 
     use stats_type_utilities, only: &
         stat_update_var !---------------------------------------------------- Procedure
@@ -248,8 +249,7 @@ module clubb_driver
     use hydromet_pdf_parameter_module, only: &
         hydromet_pdf_parameter,   & !------------------------------------- Type(s)
         precipitation_fractions,  &
-        init_hydromet_pdf_params, & !------------------------------------- Procedure(s)
-        init_precip_fracs
+        init_hydromet_pdf_params    !------------------------------------- Procedure(s)
 
     use advance_helper_module, only: &
         vertical_avg  !--------------------------------------------------- Procedure(s)
@@ -1285,10 +1285,10 @@ module clubb_driver
 #endif
 
     ! Set debug level
-    call set_clubb_debug_level( debug_level ) ! Intent(in)
+    call set_clubb_debug_level_api( debug_level ) ! Intent(in)
 
     ! Printing Model Inputs
-    if ( clubb_at_least_debug_level( 1 ) ) then
+    if ( clubb_at_least_debug_level_api( 1 ) ) then
 
       if ( l_write_to_file ) then
         open(unit=iunit, file=case_info_file, status='replace', action='write')
@@ -1561,7 +1561,7 @@ module clubb_driver
 
       if ( l_write_to_file ) close(unit=iunit)
 
-    end if ! clubb_at_least_debug_level( 1 )
+    end if ! clubb_at_least_debug_level_api( 1 )
 
     !----------------------------------------------------------------------
 
@@ -1698,7 +1698,7 @@ module clubb_driver
                                                  clubb_config_flags ) ! Intent(out)
 
     ! Printing configurable CLUBB flags Inputs
-    if ( clubb_at_least_debug_level( 1 ) ) then
+    if ( clubb_at_least_debug_level_api( 1 ) ) then
 
       if ( l_write_to_file ) then
         open(unit=iunit, file=case_info_file, status='old', action='write', position='append')
@@ -1710,8 +1710,8 @@ module clubb_driver
       call write_text( "--------------------------------------------------", &
                        l_write_to_file, iunit )
 
-      call print_clubb_config_flags( fstdout, clubb_config_flags ) ! Intent(in)
-      call print_clubb_config_flags( iunit, clubb_config_flags ) ! Intent(in)
+      call print_clubb_config_flags_api( fstdout, clubb_config_flags ) ! Intent(in)
+      call print_clubb_config_flags_api( iunit, clubb_config_flags ) ! Intent(in)
 
       call write_text( "--------------------------------------------------", &
                        l_write_to_file, iunit )
@@ -1728,7 +1728,7 @@ module clubb_driver
         call execute_command_line( 'git --no-pager diff >> '//case_info_file )
       end if
 
-    end if ! clubb_at_least_debug_level( 1 )
+    end if ! clubb_at_least_debug_level_api( 1 )
 
     ! Allocate & initialize variables,
     ! setup grid, setup constants, and setup flags
@@ -1745,7 +1745,7 @@ module clubb_driver
                                    clubb_config_flags,  & ! intent(in)
                                    err_info )             ! Intent(inout)
 
-    if ( clubb_at_least_debug_level( 0 ) ) then
+    if ( clubb_at_least_debug_level_api( 0 ) ) then
       if ( any(err_info%err_code == clubb_fatal_error) ) then
         write(fstderr, *) err_info%err_header_global
         write(fstderr, *) "Fatal error calling check_clubb_settings_api in clubb_driver"
@@ -1762,7 +1762,7 @@ module clubb_driver
                          gr,                                                   & ! intent(out)
                          err_info )                                              ! intent(inout)
 
-    if ( clubb_at_least_debug_level( 0 ) ) then
+    if ( clubb_at_least_debug_level_api( 0 ) ) then
       if ( any(err_info%err_code == clubb_fatal_error) ) then
         write(fstderr, *) err_info%err_header_global
         write(fstderr, *) "Fatal error calling setup_grid_api in clubb_driver"
@@ -1782,7 +1782,7 @@ module clubb_driver
                            gr_desc,                                                      & ! out
                            err_info )                                                      ! inout
 
-      if ( clubb_at_least_debug_level( 0 ) ) then
+      if ( clubb_at_least_debug_level_api( 0 ) ) then
         if ( any(err_info%err_code == clubb_fatal_error) ) then
           write(fstderr, *) err_info%err_header_global
           write(fstderr, *) "Fatal error calling setup_grid_api for gr_desc in clubb_driver"
@@ -1801,7 +1801,7 @@ module clubb_driver
            lmin, nu_vert_res_dep,                        & ! intent(out)
            err_info )                                      ! intent(inout)
 
-    if ( clubb_at_least_debug_level( 0 ) ) then
+    if ( clubb_at_least_debug_level_api( 0 ) ) then
       if ( any(err_info%err_code == clubb_fatal_error) ) then
         write(fstderr, *) err_info%err_header_global
         write(fstderr, *) "Fatal error calling setup_parameters_api in clubb_driver"
@@ -2089,8 +2089,8 @@ module clubb_driver
     call init_pdf_params( gr%nzt, ngrdcol, pdf_params )
     call init_pdf_params( gr%nzm, ngrdcol, pdf_params_zm )
 
-    call init_pdf_implicit_coefs_terms( gr%nzt, ngrdcol, sclr_dim, &   ! Intent(in)
-                                        pdf_implicit_coefs_terms ) ! Intent(out)
+    call init_pdf_implicit_coefs_terms_api( gr%nzt, ngrdcol, sclr_dim, &   ! Intent(in)
+                                            pdf_implicit_coefs_terms ) ! Intent(out)
 
     call init_precip_fracs_api( gr%nzt, ngrdcol, &
                                 precip_fracs )
@@ -2101,6 +2101,17 @@ module clubb_driver
         call init_hydromet_pdf_params( hydromet_pdf_params(i,k) )
       end do
     end do
+
+    ! Check for check_clubb_settings_api, setup_grid_api, and setup_parameters_api
+    if ( clubb_at_least_debug_level_api( 0 ) ) then
+      if ( any(err_info%err_code == clubb_fatal_error) ) then
+        write(fstderr, *) err_info%err_header_global
+        write(fstderr, *) "Fatal error during CLUBB setup"
+        ! At this point, input fields haven't been set up, so don't clean them up.
+        call cleanup_clubb( l_input_fields=.false., gr=gr )
+        return
+      end if
+    end if
 
     ! This special purpose code only applies to tuner runs where the tune_type
     ! is setup to try all permutations of our model flags
@@ -2218,7 +2229,7 @@ module clubb_driver
           sclrm_init, edsclrm_init,                                       & ! Intent(out)
           rho_ds_zm_dycore_init )                                           ! Intent(out)
 
-    if ( clubb_at_least_debug_level( 0 ) ) then
+    if ( clubb_at_least_debug_level_api( 0 ) ) then
       if ( any(err_info%err_code == clubb_fatal_error) ) then
         write(fstderr, *) err_info%err_header_global
         write(fstderr,*) "FATAL ERROR calling initialize_clubb in run_clubb"
@@ -2274,7 +2285,7 @@ module clubb_driver
     end if
 !$OMP END CRITICAL
 
-    if ( clubb_at_least_debug_level( 0 ) ) then
+    if ( clubb_at_least_debug_level_api( 0 ) ) then
       if ( any(err_info%err_code == clubb_fatal_error) ) then
         write(fstderr, *) err_info%err_header_global
         write(fstderr,*) "FATAL ERROR in stats_init"
@@ -2824,7 +2835,7 @@ module clubb_driver
         end if
       end if
 
-      if ( clubb_at_least_debug_level( 2 ) ) then
+      if ( clubb_at_least_debug_level_api( 2 ) ) then
 
         !$acc update host( um, vm, rtm, wprtp, thlm, wpthlp, rtp2, thlp2, rtpthlp, wp2, wp3, &
         !$acc              wp2thvp, rtpthvp, thlpthvp )
@@ -2883,7 +2894,7 @@ module clubb_driver
                                T_sfc, p_sfc, sens_ht, latent_ht, & ! Inout
                                wpsclrp_sfc, wpedsclrp_sfc, err_info ) ! Inout
 
-      if ( clubb_at_least_debug_level( 0 ) ) then
+      if ( clubb_at_least_debug_level_api( 0 ) ) then
         if ( any(err_info%err_code == clubb_fatal_error) ) then
           write(fstderr, *) err_info%err_header_global
           write(fstderr,*) "Fatal error in prescribe_forcings:"
@@ -3065,7 +3076,7 @@ module clubb_driver
               rcm_in_layer, cloud_cover, invrs_tau_zm, &           ! Intent(out)
               Lscale )                                             ! Intent(out)
 
-        if ( clubb_at_least_debug_level( 0 ) ) then
+        if ( clubb_at_least_debug_level_api( 0 ) ) then
           if ( any(err_info%err_code == clubb_generalized_grd_test_err) ) then
             write(fstderr,*) "Mismatch in generalized grid test; Stopping run"
             exit mainloop
@@ -3074,7 +3085,7 @@ module clubb_driver
 
       endif
 
-      if ( clubb_at_least_debug_level( 0 ) ) then
+      if ( clubb_at_least_debug_level_api( 0 ) ) then
         if ( any(err_info%err_code == clubb_fatal_error) ) then
           write(fstderr, *) err_info%err_header_global
           write(fstderr, *) "Fatal error in advance_clubb_core, ", &
@@ -3147,7 +3158,7 @@ module clubb_driver
       endif
 
       ! Error check after pdf_hydromet_microphys_prep
-      if ( clubb_at_least_debug_level( 0 ) ) then
+      if ( clubb_at_least_debug_level_api( 0 ) ) then
         if ( any(err_info%err_code == clubb_fatal_error) ) then
           write(fstderr, *) err_info%err_header_global
           write(fstderr,*) "Fatal error after pdf_hydromet_microphys_prep"
@@ -3254,7 +3265,7 @@ module clubb_driver
                                   thlm_mc(i,:), err_info,                                     & ! Inout
                                   wphydrometp(i,:,:), wpNcp(i,:) )                              ! Out
 
-          if ( clubb_at_least_debug_level( 0 ) ) then
+          if ( clubb_at_least_debug_level_api( 0 ) ) then
             if ( any(err_info%err_code == clubb_fatal_error) ) then
               write(fstderr, *) err_info%err_header(i)
             endif
@@ -3270,7 +3281,7 @@ module clubb_driver
         time_microphys_advance = time_microphys_advance + time_stop - time_start
         call cpu_time(time_start) ! initialize timer for the end part of the main loop
 
-        if ( clubb_at_least_debug_level( 0 ) ) then
+        if ( clubb_at_least_debug_level_api( 0 ) ) then
           if ( any(err_info%err_code == clubb_fatal_error) ) then
             write(fstderr,*) "Fatal error in advance_microphys:"
             exit mainloop
@@ -3387,7 +3398,7 @@ module clubb_driver
 
         end if ! l_silhs_rad
 
-        if ( clubb_at_least_debug_level( 0 ) ) then
+        if ( clubb_at_least_debug_level_api( 0 ) ) then
           if ( any(err_info%err_code == clubb_fatal_error) ) then
             write(fstderr, *) err_info%err_header_global
             write(fstderr, *) "Fatal error in radiation, " &
@@ -3420,10 +3431,10 @@ module clubb_driver
       ! but since the stats isn't setup to use multiple columns, it will just attempt
       ! write to the same file
       if ( stats_metadata%l_stats_last ) then
-        call stats_end_timestep( stats_metadata,                            & ! intent(in)
-                                 stats_zt(1), stats_zm(1), stats_sfc(1),    & ! intent(inout)
-                                 stats_lh_zt(1), stats_lh_sfc(1),           & ! intent(inout)
-                                 stats_rad_zt(1), stats_rad_zm(1), err_info ) ! intent(inout)
+        call stats_end_timestep_api( stats_metadata,                            & ! intent(in)
+                                     stats_zt(1), stats_zm(1), stats_sfc(1),    & ! intent(inout)
+                                     stats_lh_zt(1), stats_lh_sfc(1),           & ! intent(inout)
+                                     stats_rad_zt(1), stats_rad_zm(1), err_info ) ! intent(inout)
 
         if ( any(err_info%err_code == clubb_fatal_error) ) then
           write(fstderr, *) err_info%err_header_global
@@ -3552,11 +3563,11 @@ module clubb_driver
         time_adapt_grid = time_adapt_grid + time_stop - time_start
       end if ! grid_adapt_in_time_method > 0 .and. modulo(itime, 1) == 0
 
-      ! Checking error status for stats_end_timestep
-      if ( clubb_at_least_debug_level( 0 ) ) then
+      ! Checking error status for stats_end_timestep_api
+      if ( clubb_at_least_debug_level_api( 0 ) ) then
         if ( any(err_info%err_code == clubb_fatal_error) ) then
           write(fstderr, *) err_info%err_header_global
-          write(fstderr, *) "Fatal error calling stats_end_timestep in run_clubb"
+          write(fstderr, *) "Fatal error calling stats_end_timestep_api in run_clubb"
           exit mainloop
         endif
       end if
@@ -3861,8 +3872,11 @@ module clubb_driver
         uv_sponge_damp_profile,       &
         wp2_sponge_damp_profile,      &
         wp3_sponge_damp_profile,      &
-        up2_vp2_sponge_damp_profile,  &
-        initialize_tau_sponge_damp      !------------------------------ Procedure(s)
+        up2_vp2_sponge_damp_profile
+
+    use clubb_api_module, only: &
+        clubb_fatal_error,              & !------------------------------ Constant(s)
+        initialize_tau_sponge_damp_api    !------------------------------ Procedure(s)
 
     use input_names, only: &
       wm_name, &
@@ -3889,9 +3903,6 @@ module clubb_driver
       lin_interp_between_grids
 
     use constants_clubb, only: fstderr !-------------------------- Variables(s)
-
-    use error_code, only: &
-        clubb_fatal_error
 
     use err_info_type_module, only: &
       err_info_type        ! Type
@@ -4142,39 +4153,39 @@ module clubb_driver
 
     ! Initialize damping
     if ( thlm_sponge_damp_settings%l_sponge_damping ) then
-      call initialize_tau_sponge_damp( gr, gr%nzt, dt_main, gr%zt(1,:), & ! Intent(in)
-                                       thlm_sponge_damp_settings, & ! Intent(in)
-                                       thlm_sponge_damp_profile )   ! Intent(out)
+      call initialize_tau_sponge_damp_api( gr, gr%nzt, dt_main, gr%zt(1,:), & ! Intent(in)
+                                           thlm_sponge_damp_settings, & ! Intent(in)
+                                           thlm_sponge_damp_profile )   ! Intent(out)
     endif
 
     if ( rtm_sponge_damp_settings%l_sponge_damping ) then
-      call initialize_tau_sponge_damp( gr, gr%nzt, dt_main, gr%zt(1,:), & ! Intent(in)
-                                       rtm_sponge_damp_settings, & ! Intent(in)
-                                       rtm_sponge_damp_profile )   ! Intent(out)
+      call initialize_tau_sponge_damp_api( gr, gr%nzt, dt_main, gr%zt(1,:), & ! Intent(in)
+                                           rtm_sponge_damp_settings, & ! Intent(in)
+                                           rtm_sponge_damp_profile )   ! Intent(out)
     endif
 
     if ( uv_sponge_damp_settings%l_sponge_damping ) then
-      call initialize_tau_sponge_damp( gr, gr%nzt, dt_main, gr%zt(1,:), & ! Intent(in)
-                                       uv_sponge_damp_settings, & ! Intent(in)
-                                       uv_sponge_damp_profile )   ! Intent(out)
+      call initialize_tau_sponge_damp_api( gr, gr%nzt, dt_main, gr%zt(1,:), & ! Intent(in)
+                                           uv_sponge_damp_settings, & ! Intent(in)
+                                           uv_sponge_damp_profile )   ! Intent(out)
     endif
 
     if ( wp2_sponge_damp_settings%l_sponge_damping ) then
-      call initialize_tau_sponge_damp( gr, gr%nzm, dt_main, gr%zm(1,:), & ! Intent(in)
-                                       wp2_sponge_damp_settings, & ! Intent(in)
-                                       wp2_sponge_damp_profile )   ! Intent(out)
+      call initialize_tau_sponge_damp_api( gr, gr%nzm, dt_main, gr%zm(1,:), & ! Intent(in)
+                                           wp2_sponge_damp_settings, & ! Intent(in)
+                                           wp2_sponge_damp_profile )   ! Intent(out)
     endif
 
     if ( wp3_sponge_damp_settings%l_sponge_damping ) then
-      call initialize_tau_sponge_damp( gr, gr%nzt, dt_main, gr%zt(1,:), & ! Intent(in)
-                                       wp3_sponge_damp_settings, & ! Intent(in)
-                                       wp3_sponge_damp_profile )   ! Intent(out)
+      call initialize_tau_sponge_damp_api( gr, gr%nzt, dt_main, gr%zt(1,:), & ! Intent(in)
+                                           wp3_sponge_damp_settings, & ! Intent(in)
+                                           wp3_sponge_damp_profile )   ! Intent(out)
     endif
 
     if ( up2_vp2_sponge_damp_settings%l_sponge_damping ) then
-      call initialize_tau_sponge_damp( gr, gr%nzm, dt_main, gr%zm(1,:), & ! Intent(in)
-                                       up2_vp2_sponge_damp_settings, & ! Intent(in)
-                                       up2_vp2_sponge_damp_profile )   ! Intent(out)
+      call initialize_tau_sponge_damp_api( gr, gr%nzm, dt_main, gr%zm(1,:), & ! Intent(in)
+                                           up2_vp2_sponge_damp_settings, & ! Intent(in)
+                                           up2_vp2_sponge_damp_profile )   ! Intent(out)
     endif
 
     ! Initialize the dycore grid rho_ds linear spline approximation and p_in_Pa for dycore grid
@@ -5211,8 +5222,10 @@ module clubb_driver
         uv_sponge_damp_profile,       &
         wp2_sponge_damp_profile,      &
         wp3_sponge_damp_profile,      &
-        up2_vp2_sponge_damp_profile,  &
-        finalize_tau_sponge_damp        !---------------- Procedure(s)
+        up2_vp2_sponge_damp_profile
+
+    use clubb_api_module, only: &
+        finalize_tau_sponge_damp_api    !---------------- Procedure(s)
 
     use time_dependent_input, only: &
         l_t_dependent,    & !---------------------------- Variable(s)
@@ -5221,8 +5234,8 @@ module clubb_driver
     use extended_atmosphere_module, only: &
         finalize_extended_atm
 
-    use advance_clubb_core_module, only: &
-        cleanup_clubb_core
+    use clubb_api_module, only: &
+        cleanup_clubb_core_api
 
     use variables_radiation_module, only: &
         cleanup_radiation_variables
@@ -5257,27 +5270,27 @@ module clubb_driver
 
     ! Free memory
     if ( thlm_sponge_damp_settings%l_sponge_damping ) then
-       call finalize_tau_sponge_damp( thlm_sponge_damp_profile )
+       call finalize_tau_sponge_damp_api( thlm_sponge_damp_profile )
     endif
 
     if ( rtm_sponge_damp_settings%l_sponge_damping ) then
-       call finalize_tau_sponge_damp( rtm_sponge_damp_profile )
+       call finalize_tau_sponge_damp_api( rtm_sponge_damp_profile )
     endif
 
     if ( uv_sponge_damp_settings%l_sponge_damping ) then
-       call finalize_tau_sponge_damp( uv_sponge_damp_profile )
+       call finalize_tau_sponge_damp_api( uv_sponge_damp_profile )
     endif
 
     if ( wp2_sponge_damp_settings%l_sponge_damping ) then
-       call finalize_tau_sponge_damp( wp2_sponge_damp_profile )
+       call finalize_tau_sponge_damp_api( wp2_sponge_damp_profile )
     endif
 
     if ( wp3_sponge_damp_settings%l_sponge_damping ) then
-       call finalize_tau_sponge_damp( wp3_sponge_damp_profile )
+       call finalize_tau_sponge_damp_api( wp3_sponge_damp_profile )
     endif
 
     if ( up2_vp2_sponge_damp_settings%l_sponge_damping ) then
-       call finalize_tau_sponge_damp( up2_vp2_sponge_damp_profile )
+       call finalize_tau_sponge_damp_api( up2_vp2_sponge_damp_profile )
     endif
 
     if( l_t_dependent ) then
@@ -5286,7 +5299,7 @@ module clubb_driver
 
     call finalize_extended_atm( )
 
-    call cleanup_clubb_core( gr )
+    call cleanup_clubb_core_api( gr )
 
     call cleanup_radiation_variables( )
 
@@ -5942,9 +5955,9 @@ module clubb_driver
     use err_info_type_module, only: &
       err_info_type        ! Type
 
-    use error_code, only: &
-        clubb_at_least_debug_level, & ! Procedure
-        clubb_fatal_error             ! Constant
+    use clubb_api_module, only: &
+        clubb_fatal_error,              & ! Constant
+        clubb_at_least_debug_level_api    ! Procedure
 
     implicit none
 
@@ -6192,7 +6205,7 @@ module clubb_driver
                          thlm_forcing, rtm_forcing, &           ! Intent(out)
                          sclrm_forcing, edsclrm_forcing )       ! Intent(out)
 
-        if ( clubb_at_least_debug_level( 0 ) ) then
+        if ( clubb_at_least_debug_level_api( 0 ) ) then
           if ( any(err_info%err_code == clubb_fatal_error) ) then
             write(fstderr, *) err_info%err_header_global
             write(fstderr, *) "Calling atex_tndcy in prescribe_forcings"
@@ -6727,8 +6740,8 @@ module clubb_driver
         p0,      & ! Reference pressure of 100000 Pa             [Pa]
         kappa      ! Rd/Cp                                       [-]
 
-    use error_code, only: &
-        clubb_at_least_debug_level ! Error indicator
+    use clubb_api_module, only: &
+        clubb_at_least_debug_level_api ! Error indicator
 
     implicit none
 
@@ -6828,7 +6841,7 @@ module clubb_driver
         end do
       end do
 
-      if ( clubb_at_least_debug_level( 1 ) ) then
+      if ( clubb_at_least_debug_level_api( 1 ) ) then
 
         !$acc update host( k_min )
       
@@ -6957,13 +6970,14 @@ module clubb_driver
     use simple_rad_module, only: &
       simple_rad, simple_rad_bomex, simple_rad_lba, sunray_sw_wrap
 
-    use error_code, only: &
-        clubb_at_least_debug_level, & !-------------------------------- Procedure
-        clubb_fatal_error             !-------------------------------- Constant
-
     use grid_class, only: zt2zm_api !--------------------------------------- Procedure
 
-    use interpolation, only: binary_search, lin_interpolate_on_grid !--- Procdure(s)
+    use interpolation, only: binary_search !--- Procdure(s)
+
+    use clubb_api_module, only: &
+        clubb_at_least_debug_level_api, & !-------------------------------- Procedure(s)
+        lin_interpolate_on_grid_api, &
+        clubb_fatal_error                 !-------------------------------- Constant
 
 #ifdef radoffline
     use bugsrad_driver, only: compute_bugsrad_radiation !--------------- Procedure(s)
@@ -7124,7 +7138,7 @@ module clubb_driver
       ! NaN checks added to detect possible errors with BUGSrad
       ! Joshua Fasching November 2007
 
-      if ( clubb_at_least_debug_level( 0 ) ) then
+      if ( clubb_at_least_debug_level_api( 0 ) ) then
 
         if ( is_nan_2d( thlm ) ) then
           write(fstderr,*) "thlm before BUGSrad is NaN"
@@ -7185,7 +7199,7 @@ module clubb_driver
                         cloud_frac, p_in_Pa, exner, rho_zm,  & ! Intent(in)
                         err_info )                             ! Intent(inout)
 
-      end if  ! clubb_at_least_debug_level( 0 )
+      end if  ! clubb_at_least_debug_level_api( 0 )
 
       call compute_bugsrad_radiation &
            ( gr%zm(1,:), gr%nzm, gr%nzt, lin_int_buffer,       & ! Intent(in)
@@ -7200,7 +7214,7 @@ module clubb_driver
              Frad_SW_up, Frad_LW_up,                           & ! Intent(out)
              Frad_SW_down, Frad_LW_down )                        ! Intent(out)
 
-      if ( clubb_at_least_debug_level( 0 ) ) then
+      if ( clubb_at_least_debug_level_api( 0 ) ) then
 
         if ( is_nan_2d( Frad ) ) then
           write(fstderr,*) "Frad after BUGSrad is NaN"
@@ -7214,7 +7228,7 @@ module clubb_driver
           err_info%err_code = clubb_fatal_error
         end if
 
-      end if  ! clubb_at_least_debug_level( 2 )
+      end if  ! clubb_at_least_debug_level_api( 2 )
 
 #else
 
@@ -7232,8 +7246,8 @@ module clubb_driver
       if ( l_sw_radiation .and. amu0 > 0._dp ) then
         amu0_core_rknd = real( amu0, kind = core_rknd )
         if ( nparam > 1 ) then
-          call lin_interpolate_on_grid( nparam, cos_solar_zen_values(1:nparam), &
-                                    Fs_values(1:nparam), amu0_core_rknd, Fs0 )
+          call lin_interpolate_on_grid_api( nparam, cos_solar_zen_values(1:nparam), &
+                                            Fs_values(1:nparam), amu0_core_rknd, Fs0 )
         else
           Fs0 = Fs_values(1)
         end if
@@ -7275,7 +7289,7 @@ module clubb_driver
 
     end select ! Radiation scheme
 
-    if ( clubb_at_least_debug_level( 0 ) ) then
+    if ( clubb_at_least_debug_level_api( 0 ) ) then
       if ( any(err_info%err_code == clubb_fatal_error) ) then
         write(fstderr, *) err_info%err_header_global
         write(fstderr,*) "Fatal error in advance_clubb_radiation:"
@@ -7493,8 +7507,8 @@ module clubb_driver
     use clubb_precision, only: &
       core_rknd
 
-    use error_code, only: &
-      clubb_at_least_debug_level, & ! Procedure
+    use clubb_api_module, only: &
+      clubb_at_least_debug_level_api, & ! Procedure
       clubb_fatal_error             ! Constant
 
     use latin_hypercube_driver_module, only: &
@@ -7649,7 +7663,7 @@ module clubb_driver
 
     end forall
 
-    if ( clubb_at_least_debug_level( 0 ) ) then
+    if ( clubb_at_least_debug_level_api( 0 ) ) then
       if ( any(err_info%err_code == clubb_fatal_error) ) then
         write(fstderr, *) err_info%err_header_global
         write(fstderr,*) "Fatal error in silhs_radiation_driver:"

@@ -15,7 +15,7 @@ module error_code
 !   most servere to the output.
 
 !   This code also handles subroutines related to debug_level. See
-!   the 'set_clubb_debug_level' description for more detail.
+!   the 'set_clubb_debug_level_api' description for more detail.
 
 ! References:
 !   None
@@ -25,9 +25,9 @@ module error_code
 
     private ! Default Scope
 
-    public :: & 
-        clubb_at_least_debug_level,  & 
-        set_clubb_debug_level, &
+    public :: &
+        clubb_at_least_debug_level_api, &
+        set_clubb_debug_level_api, &
         initialize_error_headers
 
     private :: clubb_debug_level
@@ -51,7 +51,7 @@ module error_code
 ! Description:
 !   Checks to see if clubb has been set to a specified debug level
 !-------------------------------------------------------------------------------
-    logical function clubb_at_least_debug_level( level )
+    logical function clubb_at_least_debug_level_api( level )
 
         implicit none
 
@@ -62,11 +62,11 @@ module error_code
 
         ! ---- Begin Code ----
 
-        clubb_at_least_debug_level = ( level <= clubb_debug_level )
+        clubb_at_least_debug_level_api = ( level <= clubb_debug_level )
 
         return
 
-    end function clubb_at_least_debug_level
+    end function clubb_at_least_debug_level_api
 
 
     subroutine initialize_error_headers
@@ -102,7 +102,7 @@ module error_code
 !  References:
 !    None
 !-------------------------------------------------------------------------------
-    subroutine set_clubb_debug_level( level )
+    subroutine set_clubb_debug_level_api( level )
 
         implicit none
 
@@ -116,6 +116,6 @@ module error_code
 
 
         return
-        end subroutine set_clubb_debug_level
+        end subroutine set_clubb_debug_level_api
 
     end module error_code

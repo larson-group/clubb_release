@@ -142,7 +142,7 @@ module microphys_init_cleanup
         write_text   ! Used to write microphysics settings to setup.txt file
 
     use error_code, only: &
-        clubb_at_least_debug_level   ! Procedure
+        clubb_at_least_debug_level_api   ! Procedure
 
     use gfdl_activation, only: nooc, sul_concen, & ! Variables
         low_concen, high_concen, &
@@ -436,7 +436,7 @@ module microphys_init_cleanup
     vert_decorr_coef_out = vert_decorr_coef
 
     ! Printing Microphysics inputs
-    if ( clubb_at_least_debug_level( 1 ) ) then
+    if ( clubb_at_least_debug_level_api( 1 ) ) then
 
        ! This will open the cases setup.txt file and append it to include the
        ! parameters in the microphysics_setting namelist. This file was created
@@ -583,7 +583,7 @@ module microphys_init_cleanup
 
        if ( l_write_to_file ) close(unit=iunit)
 
-    endif ! clubb_at_least_debug_level( 1 )
+    endif ! clubb_at_least_debug_level_api( 1 )
 
     ! Read in the name list for initialization, if it exists
     open(unit=iunit, file=namelist_file, status='old', action='read')
@@ -936,7 +936,7 @@ module microphys_init_cleanup
     ! being pushed negative) that requires a different hm_sigma2_on_mu than
     ! hmp2_ip_on_hmm2_ip * omicron.  These printed arrays should be used as a
     ! GUIDE.  I still recommend using the GrADS or netCDF output file.
-    if ( clubb_at_least_debug_level( 1 ) &
+    if ( clubb_at_least_debug_level_api( 1 ) &
          .and. abs(clubb_params(izeta_vrnce_rat)) < eps &
          .and. trim( microphys_scheme ) /= "none" ) then
 
@@ -1034,7 +1034,7 @@ module microphys_init_cleanup
        deallocate( corr_array_cloud )
        deallocate( corr_array_below )
 
-    endif ! clubb_at_least_debug_level( 1 )
+    endif ! clubb_at_least_debug_level_api( 1 )
           ! and zeta_vrnce_rat = 0
           ! and microphys_scheme /= "none"
 

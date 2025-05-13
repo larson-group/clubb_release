@@ -45,7 +45,7 @@ module bugsrad_driver
 
     use T_in_K_module, only: thlm2T_in_K_api ! Procedure(s)
 
-    use error_code, only: clubb_at_least_debug_level ! Procedure(s)
+    use error_code, only: clubb_at_least_debug_level_api ! Procedure(s)
 
     use grid_class, only: flip  ! Procedure(s)
 
@@ -167,7 +167,7 @@ module bugsrad_driver
     do z = 1, nzt
       if ( rtm(z) < rcm(z) ) then
         sp_humidity(1,z) = 0.0_dp
-        if ( clubb_at_least_debug_level( 1 ) ) then
+        if ( clubb_at_least_debug_level_api( 1 ) ) then
           write(fstderr,*) "rvm < 0 at ", z, " before BUGSrad, specific humidity set to 0"
         endif
       else
@@ -367,7 +367,7 @@ module bugsrad_driver
       radiation_top, l_fix_cos_solar_zen, l_sw_radiation, &
       slr, l_rad_above_cloud, l_use_default_std_atmosphere, nparam
 
-    use error_code, only: clubb_at_least_debug_level ! Function
+    use error_code, only: clubb_at_least_debug_level_api ! Function
 
     use text_writer, only: &
       write_text   ! Used to write radiation settings to setup.txt file
@@ -458,7 +458,7 @@ module bugsrad_driver
     read(iunit, nml=radiation_setting)
     close(unit=iunit)
 
-    if ( clubb_at_least_debug_level( 1 ) ) then
+    if ( clubb_at_least_debug_level_api( 1 ) ) then
 
       ! This will open the cases setup.txt file and append it to include the
       ! parameters in the radiation_setting namelist. This file was created
@@ -500,7 +500,7 @@ module bugsrad_driver
 
       if ( l_write_to_file ) close(unit=iunit);
 
-    end if ! clubb_at_least_debug_level( 1 )
+    end if ! clubb_at_least_debug_level_api( 1 )
 
     do k = 1, size( cos_solar_zen_values )
       if ( abs(cos_solar_zen_values(k) - (-999._core_rknd)) &

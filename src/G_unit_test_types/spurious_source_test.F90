@@ -87,7 +87,7 @@ module spurious_source_test
 
     use pdf_parameter_module, only: &
         implicit_coefs_terms,   & ! Variable Type
-        init_pdf_implicit_coefs_terms
+        init_pdf_implicit_coefs_terms_api
 
     use clubb_precision, only: &
         core_rknd    ! Variable(s)
@@ -595,8 +595,8 @@ module spurious_source_test
                                              l_add_dycore_grid )
 
     ! Initialize pdf_implicit_coefs_terms
-    call init_pdf_implicit_coefs_terms( nzt, 1, sclr_dim, &
-                                        pdf_implicit_coefs_terms )
+    call init_pdf_implicit_coefs_terms_api( nzt, 1, sclr_dim, &
+                                            pdf_implicit_coefs_terms )
 
     write(*,*)
     write(*,*) "Performing spurious source unit test"

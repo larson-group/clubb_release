@@ -792,7 +792,7 @@ module diagnose_correlations_module
         one ! Variable(s)
 
     use error_code, only: &
-        clubb_at_least_debug_level  ! Procedure
+        clubb_at_least_debug_level_api  ! Procedure
 
     implicit none
 
@@ -812,7 +812,7 @@ module diagnose_correlations_module
 
     !-------------------- Begin code --------------------
 
-    if ( clubb_at_least_debug_level( 1 ) ) then
+    if ( clubb_at_least_debug_level_api( 1 ) ) then
 
        do i = 1, n_variables - 1
           do j = i+1, n_variables
@@ -833,7 +833,7 @@ module diagnose_correlations_module
 
     endif
 
-    if ( clubb_at_least_debug_level( 2 ) ) then
+    if ( clubb_at_least_debug_level_api( 2 ) ) then
 
        do i = 1, n_variables
           ! Check if the diagonal elements are one (up to a tolerance)

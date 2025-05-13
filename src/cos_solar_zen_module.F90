@@ -37,8 +37,8 @@ module cos_solar_zen_module
 
     use clubb_precision, only: time_precision, core_rknd ! Variable(s)
 
-    use calendar, only:  & 
-        gregorian2julian_day, compute_current_date, leap_year ! Procedure(s)
+    use calendar, only: &
+        gregorian2julian_day, compute_current_date_api, leap_year ! Procedure(s)
 
     implicit none
 
@@ -48,7 +48,7 @@ module cos_solar_zen_module
     ! Constant Parameters
 
     ! Liou's coefficients
-    real( kind = dp ), parameter :: & 
+    real( kind = dp ), parameter :: &
       c0 =  0.006918_dp,   & ! [-]
       c1 = -0.399912_dp,   & ! [-]
       c2 = -0.006758_dp,   & ! [-]
@@ -58,15 +58,15 @@ module cos_solar_zen_module
       d3 =  0.000148_dp      ! [-]
 
     ! Input Variables
-    integer, intent(in) ::  & 
+    integer, intent(in) :: &
       day,    & ! Day of month at model start
       month,  & ! Month of year at model start
       year      ! Year at model start
 
-    real(kind=time_precision), intent(in) :: & 
+    real(kind=time_precision), intent(in) :: &
       current_time   ! Current time since start date [s]
 
-    real( kind = core_rknd ), intent(in) :: & 
+    real( kind = core_rknd ), intent(in) :: &
       lat_in_degrees, & ! Latitude       [degrees_N]
       lon_in_degrees    ! Longitude      [degrees_E]
 
@@ -75,28 +75,29 @@ module cos_solar_zen_module
       cos_solar_zen
 
     ! Local Variables
-    real( kind = dp ) :: & 
-      t,  & 
-      delta, & 
-      zln, & 
-      longang, & 
-      latang, & 
+    real( kind = dp ) :: &
+      t,  &
+      delta, &
+      zln, &
+      longang, &
+      latang, &
       hour
-    real( kind = time_precision ) :: & 
+
+    real( kind = time_precision ) :: &
       present_time
 
-    integer :: & 
-      jul_day, days_in_year, & 
+    integer :: &
+      jul_day, days_in_year, &
       present_year, present_month, present_day
 
-    call compute_current_date( day, month, & 
-                               year, & 
-                               current_time, & 
-                               present_day, present_month, & 
-                               present_year, & 
-                               present_time )
+    call compute_current_date_api( day, month, &
+                                   year, &
+                                   current_time, &
+                                   present_day, present_month, &
+                                   present_year, &
+                                   present_time )
 
-    jul_day = gregorian2julian_day( present_day, present_month, & 
+    jul_day = gregorian2julian_day( present_day, present_month, &
                                present_year )
 
     if ( leap_year( present_year ) ) then

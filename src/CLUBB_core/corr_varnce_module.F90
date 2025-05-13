@@ -7,7 +7,7 @@ module corr_varnce_module
       core_rknd
 
   use error_code, only: &
-        clubb_at_least_debug_level, &   ! Procedure
+        clubb_at_least_debug_level_api, &   ! Procedure
         clubb_fatal_error               ! Constant
 
   implicit none
@@ -906,7 +906,7 @@ module corr_varnce_module
 
     else ! Read in default correlation matrices
         
-      if ( clubb_at_least_debug_level( 1 ) ) then
+      if ( clubb_at_least_debug_level_api( 1 ) ) then
         write(fstderr,*) "Warning: "//trim( input_file_cloud )//" was not found! " // &
                          "The default correlation arrays will be used." 
       end if
@@ -925,7 +925,7 @@ module corr_varnce_module
     
 
     ! Sanity check to avoid confusing non-convergence results.
-    if ( clubb_at_least_debug_level( 2 ) ) then
+    if ( clubb_at_least_debug_level_api( 2 ) ) then
 
       if ( .not. l_fix_w_chi_eta_correlations .and. hm_metadata%iiPDF_Ncn > 0 ) then
         l_warning = .false.
@@ -944,7 +944,7 @@ module corr_varnce_module
         end if
        end if ! l_fix_w_chi_eta_correlations .and. iiPDF_Ncn > 0
 
-    end if ! clubb_at_least_debug_level( 2 )
+    end if ! clubb_at_least_debug_level_api( 2 )
 
 
     return

@@ -671,7 +671,7 @@ module output_grads
         time_precision    ! Variable(s)
 
     use calendar, only:  & 
-        compute_current_date ! Procedure(s)
+        compute_current_date_api ! Procedure(s)
 
     use calendar, only: & 
         month_names ! Variable(s)
@@ -683,16 +683,16 @@ module output_grads
     implicit none
 
     ! Input Variables
-    integer, intent(in) :: & 
+    integer, intent(in) :: &
       day_in,   & ! Day of the Month at Model Start  [dd]
       month_in, & ! Month of the Year at Model Start [mm]
       year_in     ! Year at Model Start              [yyyy]
 
-    real(kind=time_precision), intent(in) ::  & 
+    real(kind=time_precision), intent(in) :: &
       time_in ! Time since Model Start              [s]
 
     ! Output Variables
-    character(len=15), intent(out) ::  & 
+    character(len=15), intent(out) :: &
       date ! Current Date in format 'hh:mmZddmmmyyyy'
 
     ! Local Variables
@@ -708,12 +708,12 @@ module output_grads
     iyear  = year_in
     time   = time_in
 
-    call compute_current_date( day_in, month_in, &  ! In
-                               year_in, & ! In
-                               time_in, & ! In 
-                               iday, imonth, & ! Out
-                               iyear, & ! Out
-                               time ) ! Out
+    call compute_current_date_api( day_in, month_in, & ! In
+                                   year_in, & ! In
+                                   time_in, & ! In
+                                   iday, imonth, & ! Out
+                                   iyear, & ! Out
+                                   time ) ! Out
 
     date = 'hh:mmZddmmmyyyy'
     write(unit=date(7:8),fmt='(i2.2)') iday

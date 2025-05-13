@@ -97,7 +97,7 @@ module pdf_hydromet_microphys_wrapper
         nparams    ! Variable(s)
 
     use error_code, only: &
-        clubb_at_least_debug_level, & ! Procedure(s)
+        clubb_at_least_debug_level_api, & ! Procedure(s)
         clubb_fatal_error             ! Constant
 
     use clubb_precision, only: &
@@ -275,7 +275,7 @@ module pdf_hydromet_microphys_wrapper
               hydromet_pdf_params )                                          ! Optional(out)
 
       ! Error check after setup_pdf_parameters
-      if ( clubb_at_least_debug_level( 0 ) ) then
+      if ( clubb_at_least_debug_level_api( 0 ) ) then
         if ( any(err_info%err_code == clubb_fatal_error) ) then
           write(fstderr, *) err_info%err_header_global
           write(fstderr,*) "Fatal error after setup_pdf_parameters_api"
@@ -372,7 +372,7 @@ module pdf_hydromet_microphys_wrapper
              lh_sample_point_weights ) ! Out
 
       ! Error check after setup_pdf_parameters
-      if ( clubb_at_least_debug_level( 0 ) ) then
+      if ( clubb_at_least_debug_level_api( 0 ) ) then
         if ( any(err_info%err_code == clubb_fatal_error) ) then
           write(fstderr, *) err_info%err_header_global
           write(fstderr,*) "Fatal error calling generate_silhs_sample_api in "// &

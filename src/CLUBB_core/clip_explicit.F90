@@ -899,7 +899,7 @@ module clip_explicit
         fstderr
 
     use error_code, only: &
-        clubb_at_least_debug_level  ! Procedure
+        clubb_at_least_debug_level_api  ! Procedure
 
     implicit none
 
@@ -1002,7 +1002,7 @@ module clip_explicit
     do k = gr%k_lb_zm, gr%k_ub_zm-gr%grid_dir_indx, gr%grid_dir_indx
       do i = 1, ngrdcol
         if ( xp2(i,k) < threshold_lo(i,k) ) then
-          if ( clubb_at_least_debug_level(3) ) then
+          if ( clubb_at_least_debug_level_api(3) ) then
             write(fstderr, *) "Warning: (solve_type==", solve_type,") xp2 =", xp2(i,k), &
                              "<", threshold_lo(i,k), " @ k =", k, ". Small values are clipped."
           end if
@@ -1020,7 +1020,7 @@ module clip_explicit
         do i = 1, ngrdcol
           if ( xp2(i,k) > threshold_hi ) then
             xp2(i,k) = threshold_hi
-            if ( clubb_at_least_debug_level(3) ) then
+            if ( clubb_at_least_debug_level_api(3) ) then
               write(fstderr, *) "Warning: (solve_type==", solve_type,") xp2 =", xp2(i,k), &
                                ">", threshold_hi, " @ k =", k, ". Large values are clipped."
             end if

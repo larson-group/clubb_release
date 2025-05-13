@@ -5,8 +5,8 @@ module calendar
 
   implicit none
 
-  public :: gregorian2julian_date, julian2gregorian_date,  & 
-            leap_year, compute_current_date, & 
+  public :: gregorian2julian_date, julian2gregorian_date, &
+            leap_year, compute_current_date_api, &
             gregorian2julian_day
 
   private ! Default Scope
@@ -14,13 +14,13 @@ module calendar
   ! Constant Parameters
 
   ! 3 Letter Month Abbreviations
-  character(len=3), dimension(12), public, parameter :: & 
-    month_names = (/'JAN','FEB','MAR','APR','MAY','JUN', & 
+  character(len=3), dimension(12), public, parameter :: &
+    month_names = (/'JAN','FEB','MAR','APR','MAY','JUN', &
                     'JUL','AUG','SEP','OCT','NOV','DEC'/)
 
   ! Number of days per month (Jan..Dec) for a non leap year
-  integer, public, dimension(12), parameter :: & 
-    days_per_month = (/31, 28, 31, 30, 31, 30, & 
+  integer, public, dimension(12), parameter :: &
+    days_per_month = (/31, 28, 31, 30, 31, 30, &
                        31, 31, 30, 31, 30, 31/)
 
   contains
@@ -39,7 +39,7 @@ module calendar
     implicit none
 
     ! Input Variables
-    integer, intent(in) ::  & 
+    integer, intent(in) :: &
       day,        & ! Gregorian Calendar Day for given Month        [dd]
       month,      & ! Gregorian Calendar Month for given Year       [mm]
       year          ! Gregorian Calendar Year                       [yyyy]
@@ -51,14 +51,14 @@ module calendar
     J = month
     K = day
 
-    gregorian2julian_date = K-32075+1461*(I+4800+(J-14)/12)/4+367* & 
+    gregorian2julian_date = K-32075+1461*(I+4800+(J-14)/12)/4+367* &
            (J-2-(J-14)/12*12)/12-3*((I+4900+(J-14)/12)/100)/4
 
     return
   end function gregorian2julian_date
 
 !------------------------------------------------------------------
-  subroutine julian2gregorian_date & 
+  subroutine julian2gregorian_date &
                ( julian_date, &
                  day, month, year )
 !
@@ -125,19 +125,19 @@ module calendar
 
     ! ---- Begin Code ----
 
-    leap_year = ( (mod( year, 4 ) == 0) .and. & 
+    leap_year = ( (mod( year, 4 ) == 0) .and. &
          (.not.(  mod( year, 100 ) == 0 .and. mod( year, 400 ) /= 0 ) ) )
 
     return
   end function leap_year
 
 !----------------------------------------------------------------------------
-  subroutine compute_current_date( previous_day, previous_month, & 
-                                   previous_year,  & 
-                                   seconds_since_previous_date, & 
-                                   current_day, current_month, & 
-                                   current_year, & 
-                                   seconds_since_current_date )
+  subroutine compute_current_date_api( previous_day, previous_month, &
+                                       previous_year, &
+                                       seconds_since_previous_date, &
+                                       current_day, current_month, &
+                                       current_year, &
+                                       seconds_since_current_date )
 !
 ! Description: 
 !   Computes the current Gregorian date from a previous date and
@@ -146,10 +146,10 @@ module calendar
 ! References:
 !   None
 !----------------------------------------------------------------------------
-    use clubb_precision, only: & 
+    use clubb_precision, only: &
         time_precision  ! Variable(s)
 
-    use constants_clubb, only: & 
+    use constants_clubb, only: &
         sec_per_day     ! Variable(s)
 
     implicit none
@@ -157,27 +157,27 @@ module calendar
     ! Input Variable(s)
 
     ! Previous date
-    integer, intent(in) :: & 
+    integer, intent(in) :: &
       previous_day,    & ! Day of the month      [dd]
       previous_month,  & ! Month of the year     [mm]
       previous_year      ! Year                  [yyyy]
 
-    real(kind=time_precision), intent(in) :: & 
+    real(kind=time_precision), intent(in) :: &
       seconds_since_previous_date ! [s]
 
     ! Output Variable(s)
 
     ! Current date
-    integer, intent(out) :: & 
+    integer, intent(out) :: &
       current_day,     & ! Day of the month      [dd]
       current_month,   & ! Month of the year     [mm]
       current_year       ! Year                  [yyyy]
 
-    real(kind=time_precision), intent(out) :: & 
+    real(kind=time_precision), intent(out) :: &
       seconds_since_current_date
 
-    integer :: & 
-      days_since_1jan4713bc, & 
+    integer :: &
+      days_since_1jan4713bc, &
       days_since_start
 
     ! ---- Begin Code ----
@@ -187,11 +187,11 @@ module calendar
 
     ! Determine the Julian Date of the starting date,
     !    written in Gregorian (day, month, year) form
-    days_since_1jan4713bc = gregorian2julian_date( previous_day,  & 
+    days_since_1jan4713bc = gregorian2julian_date( previous_day, &
                                      previous_month, previous_year )
 
     ! Determine the amount of days that have passed since start date
-    days_since_start =  & 
+    days_since_start = &
           floor( seconds_since_previous_date / real(sec_per_day,kind=time_precision) )
 
     ! Set days_since_1jan4713 to the present Julian date
@@ -201,12 +201,12 @@ module calendar
     seconds_since_current_date = seconds_since_previous_date &
       - ( real( days_since_start, kind=time_precision ) * real(sec_per_day,kind=time_precision) )
 
-    call julian2gregorian_date & 
+    call julian2gregorian_date &
            ( days_since_1jan4713bc, & ! intent(in)
              current_day, current_month, current_year ) ! intent(out)
 
     return
-  end subroutine compute_current_date
+  end subroutine compute_current_date_api
 
 !-------------------------------------------------------------------------------------
   integer function gregorian2julian_day( day, month, year )
@@ -225,7 +225,7 @@ module calendar
     intrinsic :: sum
 
     ! Input Variable(s)
-    integer, intent(in) :: & 
+    integer, intent(in) :: &
      day,             & ! Day of the Month      [dd]
      month,           & ! Month of the Year     [mm]
      year               ! Year                  [yyyy]

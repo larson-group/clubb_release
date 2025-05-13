@@ -144,7 +144,7 @@ module setup_clubb_pdf_params
         assert_corr_symmetric     ! Procedure(s)
 
     use error_code, only: &
-        clubb_at_least_debug_level, &   ! Procedure
+        clubb_at_least_debug_level_api, &   ! Procedure
         clubb_fatal_error               ! Constant
 
     use stats_type, only: stats ! Type
@@ -345,7 +345,7 @@ module setup_clubb_pdf_params
     
     ! Assertion check
     ! Check that all hydrometeors are positive otherwise exit the program
-    if ( clubb_at_least_debug_level( 0 ) ) then
+    if ( clubb_at_least_debug_level_api( 0 ) ) then
       if ( any(hydromet < zero_threshold) ) then
         do j = 1, hydromet_dim
           hydromet_name = hm_metadata%hydromet_list(j)
@@ -366,7 +366,7 @@ module setup_clubb_pdf_params
           end do ! i = 1, hydromet_dim
         end do
       end if
-    end if !clubb_at_least_debug_level( 0 )
+    end if !clubb_at_least_debug_level_api( 0 )
 
     ! Setup some of the PDF parameters
     do k = 1, nzt
@@ -889,7 +889,7 @@ module setup_clubb_pdf_params
 
     end if
 
-    if ( clubb_at_least_debug_level( 2 ) ) then
+    if ( clubb_at_least_debug_level_api( 2 ) ) then
       do k = 1, nzt
         do i = 1, ngrdcol
           call assert_corr_symmetric( corr_array_1_n(i,k,:,:), pdf_dim, &! intent(in)

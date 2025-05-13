@@ -164,7 +164,7 @@ module advance_xp2_xpyp_module
         stat_update_var
 
     use error_code, only: &
-        clubb_at_least_debug_level,  & ! Procedure
+        clubb_at_least_debug_level_api,  & ! Procedure
         clubb_fatal_error              ! Constants
 
     use stats_variables, only: &
@@ -444,7 +444,7 @@ module advance_xp2_xpyp_module
     !$acc              rhs_ta_wpsclrp2, rhs_ta_wprtpsclrp, rhs_ta_wpthlpsclrp, &
     !$acc              sclrpthlp_chnge ) 
 
-    if ( clubb_at_least_debug_level( 1 ) ) then
+    if ( clubb_at_least_debug_level_api( 1 ) ) then
 
       !$acc parallel loop gang vector default(present)
       do i = 1, ngrdcol
@@ -1366,7 +1366,7 @@ module advance_xp2_xpyp_module
 
     endif ! l_scalar_calc
 
-    if ( clubb_at_least_debug_level( 0 ) ) then
+    if ( clubb_at_least_debug_level_api( 0 ) ) then
 
       if ( any(err_info%err_code == clubb_fatal_error) ) then
 
@@ -1522,8 +1522,8 @@ module advance_xp2_xpyp_module
       err_info_type     ! Type
 
     use error_code, only: &
-      clubb_at_least_debug_level, & ! Procedure
-      clubb_fatal_error             ! Constant
+      clubb_at_least_debug_level_api, & ! Procedure
+      clubb_fatal_error                 ! Constant
 
     implicit none
 
@@ -1797,7 +1797,7 @@ module advance_xp2_xpyp_module
                          rhs, lhs, err_info,                              & ! Intent(inout)
                          solution )                                         ! Intent(out)
 
-    if ( clubb_at_least_debug_level( 0 ) ) then
+    if ( clubb_at_least_debug_level_api( 0 ) ) then
       if ( any(err_info%err_code == clubb_fatal_error) ) then
         write(fstderr, *) err_info%err_header_global
         write(fstderr,*) "calling xp2_xpyp_solve in solve_xp2_xpyp_with_single_lhs"
@@ -1954,8 +1954,8 @@ module advance_xp2_xpyp_module
         err_info_type     ! Type
 
     use error_code, only: &
-        clubb_at_least_debug_level,  & ! Procedure
-        clubb_fatal_error              ! Constant
+        clubb_at_least_debug_level_api,  & ! Procedure
+        clubb_fatal_error                  ! Constant
 
     implicit none
 
@@ -2139,7 +2139,7 @@ module advance_xp2_xpyp_module
                          rhs, lhs, err_info,             & ! Intent(inout)
                          rtp2_solution )                   ! Intent(out)
 
-    if ( clubb_at_least_debug_level( 0 ) ) then
+    if ( clubb_at_least_debug_level_api( 0 ) ) then
       if ( any(err_info%err_code == clubb_fatal_error) ) then
         write(fstderr, *) err_info%err_header_global
         write(fstderr,*) "calling xp2_xpyp_solve for rtp2 in solve_xp2_xpyp_with_multiple_lhs"
@@ -2215,7 +2215,7 @@ module advance_xp2_xpyp_module
                          rhs, lhs, err_info,              & ! Intent(inout)
                          thlp2_solution )                   ! Intent(out)
 
-    if ( clubb_at_least_debug_level( 0 ) ) then
+    if ( clubb_at_least_debug_level_api( 0 ) ) then
       if ( any(err_info%err_code == clubb_fatal_error) ) then
         write(fstderr, *) err_info%err_header_global
         write(fstderr,*) "calling xp2_xpyp_solve for thlp2 in solve_xp2_xpyp_with_multiple_lhs"
@@ -2290,7 +2290,7 @@ module advance_xp2_xpyp_module
                          rhs, lhs, err_info,                & ! Intent(inout)
                          rtpthlp_solution )                   ! Intent(out)
 
-    if ( clubb_at_least_debug_level( 0 ) ) then
+    if ( clubb_at_least_debug_level_api( 0 ) ) then
       if ( any(err_info%err_code == clubb_fatal_error) ) then
         write(fstderr, *) err_info%err_header_global
         write(fstderr,*) "calling xp2_xpyp_solve for rtpthlp in solve_xp2_xpyp_with_multiple_lhs"
@@ -2375,7 +2375,7 @@ module advance_xp2_xpyp_module
                                rhs, lhs, err_info,                & ! intent(inout)
                                sclrp2_solution(:,:,sclr) )          ! Intent(out)
 
-          if ( clubb_at_least_debug_level( 0 ) ) then
+          if ( clubb_at_least_debug_level_api( 0 ) ) then
             if ( any(err_info%err_code == clubb_fatal_error) ) then
               write(fstderr, *) err_info%err_header_global
               write(fstderr,*) "calling xp2_xpyp_solve for sclrp2 with sclr index ", sclr, &
@@ -2424,7 +2424,7 @@ module advance_xp2_xpyp_module
                                rhs, lhs, err_info,                & ! Intent(inout)
                                sclrprtp_solution(:,:,sclr) )        ! Intent(out)
 
-          if ( clubb_at_least_debug_level( 0 ) ) then
+          if ( clubb_at_least_debug_level_api( 0 ) ) then
             if ( any(err_info%err_code == clubb_fatal_error) ) then
               write(fstderr, *) err_info%err_header_global
               write(fstderr,*) "calling xp2_xpyp_solve for sclrprtp with sclr index ", sclr, &
@@ -2473,7 +2473,7 @@ module advance_xp2_xpyp_module
                                rhs, lhs, err_info,                & ! Intent(inout)
                                sclrpthlp_solution(:,:,sclr) )       ! Intent(out)
 
-          if ( clubb_at_least_debug_level( 0 ) ) then
+          if ( clubb_at_least_debug_level_api( 0 ) ) then
             if ( any(err_info%err_code == clubb_fatal_error) ) then
               write(fstderr, *) err_info%err_header_global
               write(fstderr,*) "calling xp2_xpyp_solve for sclrpthlp with sclr index ", sclr, &
@@ -2609,7 +2609,7 @@ module advance_xp2_xpyp_module
                              sclr_rhs, lhs, err_info,                    & ! Intent(inout)
                              sclr_solution )                               ! Intent(out)
 
-        if ( clubb_at_least_debug_level( 0 ) ) then
+        if ( clubb_at_least_debug_level_api( 0 ) ) then
           if ( any(err_info%err_code == clubb_fatal_error) ) then
             write(fstderr, *) err_info%err_header_global
             write(fstderr,*) "calling xp2_xpyp_solve for sclr with sclr index ", sclr, &
@@ -2828,8 +2828,8 @@ module advance_xp2_xpyp_module
         l_test_grid_generalization    ! Variable(s)
 
     use error_code, only: &
-        clubb_at_least_debug_level,  & ! Procedure
-        clubb_fatal_error              ! Constant
+        clubb_at_least_debug_level_api,  & ! Procedure
+        clubb_fatal_error                  ! Constant
 
     implicit none
 
@@ -2996,7 +2996,7 @@ module advance_xp2_xpyp_module
                           xapxbp )                                ! Intent(out)
     end if
 
-    if ( clubb_at_least_debug_level( 0 ) ) then
+    if ( clubb_at_least_debug_level_api( 0 ) ) then
       if ( any(err_info%err_code == clubb_fatal_error) ) then
         write(fstderr, *) err_info%err_header_global
         write(fstderr,*) "calling tridiag_solve in xp2_xpyp_solve"

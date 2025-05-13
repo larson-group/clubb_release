@@ -52,8 +52,8 @@ module lapack_wrap
         core_rknd ! Variable(s)
 
     use error_code, only: &
-        clubb_at_least_debug_level, & ! Procedure
-        clubb_fatal_error             ! Constants
+        clubb_at_least_debug_level_api, & ! Procedure
+        clubb_fatal_error                 ! Constants
 
     use lapack_interfaces, only: &
         lapack_gtsvx, &      ! Procedure
@@ -137,7 +137,7 @@ module lapack_wrap
     end do
 
     ! Print diagnostics for when ferr is large
-    if ( clubb_at_least_debug_level( 2 ) .and. any( ferr > 1.e-3_core_rknd ) ) then
+    if ( clubb_at_least_debug_level_api( 2 ) .and. any( ferr > 1.e-3_core_rknd ) ) then
 
       write(fstderr,*) "Warning, large error est. for: " // trim( solve_type )
 
@@ -164,7 +164,7 @@ module lapack_wrap
     case( 0 )
       ! Success
       do i = 1, ngrdcol
-        if ( clubb_at_least_debug_level( 0 ) ) then
+        if ( clubb_at_least_debug_level_api( 0 ) ) then
           if ( lapack_isnan( ndim, nrhs, soln(i,:,:) ) ) then
             write(fstderr, *) err_info%err_header(i)
             write(fstderr, *) "lapack_tridiag_solvex"
@@ -221,8 +221,8 @@ module lapack_wrap
 #endif /*E3SM*/
 
     use error_code, only: &
-        clubb_at_least_debug_level, & ! Procedure
-        clubb_fatal_error             ! Constants
+        clubb_at_least_debug_level_api, & ! Procedure
+        clubb_fatal_error                 ! Constants
 
     use lapack_interfaces, only: &
         lapack_gtsv, &       ! Procedure
@@ -310,7 +310,7 @@ module lapack_wrap
     case( 0 )
       ! Success
       do i = 1, ngrdcol
-        if ( clubb_at_least_debug_level( 0 ) ) then
+        if ( clubb_at_least_debug_level_api( 0 ) ) then
           if ( lapack_isnan( ndim, nrhs, rhs(i,:,:) ) ) then
             write(fstderr, *) err_info%err_header(i)
             write(fstderr, *) "lapack_tridiag_solve"
@@ -365,8 +365,8 @@ module lapack_wrap
         core_rknd ! Variable(s)
 
     use error_code, only: &
-        clubb_at_least_debug_level, & ! Procedure
-        clubb_fatal_error             ! Constants
+        clubb_at_least_debug_level_api, & ! Procedure
+        clubb_fatal_error                 ! Constants
 
     use lapack_interfaces, only: &
         lapack_gbsvx, &      ! Procedures
@@ -509,7 +509,7 @@ module lapack_wrap
 ! %% end debug
 
     ! Diagnostic information
-    if ( clubb_at_least_debug_level( 2 ) .and. any( ferr > 1.e-3_core_rknd ) ) then
+    if ( clubb_at_least_debug_level_api( 2 ) .and. any( ferr > 1.e-3_core_rknd ) ) then
 
       write(fstderr,*) "Warning, large error est. for: " // trim( solve_type )
 
@@ -538,7 +538,7 @@ module lapack_wrap
     case( 0 )
       ! Success!
       do i = 1, ngrdcol
-        if ( clubb_at_least_debug_level( 0 ) ) then
+        if ( clubb_at_least_debug_level_api( 0 ) ) then
           if ( lapack_isnan( ndim, nrhs, soln(i,:,:) ) ) then
             write(fstderr, *) err_info%err_header(i)
             write(fstderr, *) "lapack_band_solvex"
@@ -588,8 +588,8 @@ module lapack_wrap
         core_rknd ! Variable(s)
 
     use error_code, only: &
-        clubb_at_least_debug_level, & ! Procedure
-        clubb_fatal_error             ! Constants
+        clubb_at_least_debug_level_api, & ! Procedure
+        clubb_fatal_error                 ! Constants
 
     use lapack_interfaces, only: &
         lapack_gbsv, &       ! Procedures
@@ -795,7 +795,7 @@ module lapack_wrap
           err_info%err_code = clubb_fatal_error
     case( 0 )
           ! Success!
-          if ( clubb_at_least_debug_level( 0 ) ) then
+          if ( clubb_at_least_debug_level_api( 0 ) ) then
             do i = 1, ngrdcol
               if ( lapack_isnan( ndim, nrhs, rhs(i,:,:) ) ) then
                 write(fstderr, *) err_info%err_header(i)

@@ -1023,10 +1023,10 @@ module output_netcdf
 !   Uses Fortran `internal' files to write the string output.
 !-------------------------------------------------------------------------------
 
-    use calendar, only:  &
-        compute_current_date ! Procedure(s)
+    use calendar, only: &
+        compute_current_date_api ! Procedure(s)
 
-    use clubb_precision, only:  & 
+    use clubb_precision, only: &
         time_precision ! Variable(s)
 
     implicit none
@@ -1050,12 +1050,12 @@ module output_netcdf
 
     real(kind=time_precision) :: st_time ! Start time [s]
 
-    call compute_current_date( day_in, month_in,  & ! intent(in)
-                               year_in, &  ! intent(in)
-                               time_in, & ! intent(in)
-                               iday, imonth, & ! intent(out)
-                               iyear, &  ! intent(out)
-                               st_time ) ! intent(out)
+    call compute_current_date_api( day_in, month_in,  & ! intent(in)
+                                   year_in, &  ! intent(in)
+                                   time_in, & ! intent(in)
+                                   iday, imonth, & ! intent(out)
+                                   iyear, &  ! intent(out)
+                                   st_time ) ! intent(out)
 
     if ( .not. l_grads_netcdf_boost_ts ) then
       date = "seconds since YYYY-MM-DD HH:MM:00.0"

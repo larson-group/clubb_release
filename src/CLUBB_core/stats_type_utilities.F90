@@ -276,7 +276,7 @@ nz
         fstderr   ! Constant(s) 
 
     use error_code, only: &
-        clubb_at_least_debug_level   ! Procedure
+        clubb_at_least_debug_level_api   ! Procedure
 
     implicit none
 
@@ -306,7 +306,7 @@ nz
 
         grid_kind%l_in_update(clubb_i,clubb_j,grid_level, var_index) = .true.  ! Start Record
 
-      else if ( clubb_at_least_debug_level( 1 ) ) then
+      else if ( clubb_at_least_debug_level_api( 1 ) ) then
 
             write(fstderr,*) "Beginning an update before finishing previous for variable: "// &
                               trim( grid_kind%file%grid_avg_var(var_index)%name )
@@ -403,7 +403,7 @@ nz
         fstderr   ! Constant(s) 
 
     use error_code, only: &
-        clubb_at_least_debug_level   ! Procedure
+        clubb_at_least_debug_level_api   ! Procedure
 
     implicit none
 
@@ -434,7 +434,7 @@ nz
 
         grid_kind%l_in_update(clubb_i,clubb_j,grid_level,var_index) = .false. ! End Record
 
-      else if ( clubb_at_least_debug_level( 1 ) ) then
+      else if ( clubb_at_least_debug_level_api( 1 ) ) then
 
         write(fstderr,*) "Ending before beginning update. For variable "// &
                           grid_kind%file%grid_avg_var(var_index)%name

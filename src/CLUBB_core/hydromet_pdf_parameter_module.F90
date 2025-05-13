@@ -20,7 +20,7 @@ module hydromet_pdf_parameter_module
   public :: hydromet_pdf_parameter,   & ! Variable type
             precipitation_fractions, &
             init_hydromet_pdf_params, & ! Procedure
-            init_precip_fracs
+            init_precip_fracs_api
 
   integer, parameter, private :: &
     max_hydromet_dim = 8
@@ -61,7 +61,6 @@ module hydromet_pdf_parameter_module
       precip_frac_2    ! Precipitation fraction (2nd PDF component) [-]
       
   end type 
-    
 
 contains
 
@@ -108,10 +107,10 @@ contains
     return
 
   end subroutine init_hydromet_pdf_params
-  
+
   !=============================================================================
-  subroutine init_precip_fracs( nzt, ngrdcol, &
-                                precip_fracs )
+  subroutine init_precip_fracs_api( nzt, ngrdcol, &
+                                    precip_fracs )
 
     ! Description:
     ! Initialize the elements of precip_fracs.
@@ -145,7 +144,7 @@ contains
 
     return
 
-  end subroutine init_precip_fracs
+  end subroutine init_precip_fracs_api
 
 !===============================================================================
 

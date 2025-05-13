@@ -23,7 +23,7 @@ module pdf_parameter_module
             print_pdf_params,              &
             copy_single_pdf_params_to_multi, &
             copy_multi_pdf_params_to_single, &
-            init_pdf_implicit_coefs_terms
+            init_pdf_implicit_coefs_terms_api
 
   ! CLUBB's PDF parameters.
   type pdf_parameter
@@ -78,7 +78,7 @@ module pdf_parameter_module
       ice_supersat_frac_2    ! Ice supersaturation fraction (2nd PDF comp.)  [-]
 
   end type pdf_parameter
-  
+
   ! The implicit coefficients, semi-implicit coefficients and terms, and
   ! explicit terms for turbulent advection of turbulent fields are calculated
   ! from the PDF and the resulting PDF parameters.
@@ -160,14 +160,14 @@ module pdf_parameter_module
 ! code is now also used for WRF-CLUBB.
 !#ifdef CLUBB_CAM /* Code for storing pdf_parameter structs in pbuf as array */
 
-  public :: pack_pdf_params, unpack_pdf_params
+  public :: pack_pdf_params_api, unpack_pdf_params_api
 
   integer, public, parameter :: num_pdf_params = 47
 
 !#endif /* CLUBB_CAM */
 
   contains
-  
+
   !=============================================================================
   subroutine init_pdf_params( nz, ngrdcol, &
                               pdf_params )
@@ -292,10 +292,10 @@ module pdf_parameter_module
     return
 
   end subroutine init_pdf_params
-  
+
   !=============================================================================
-  subroutine init_pdf_implicit_coefs_terms( nz, ngrdcol, sclr_dim, &
-                                            pdf_implicit_coefs_terms )
+  subroutine init_pdf_implicit_coefs_terms_api( nz, ngrdcol, sclr_dim, &
+                                                pdf_implicit_coefs_terms )
 
     ! Description:
     ! Initializes all PDF implicit coefficients and explicit terms in the
@@ -387,7 +387,7 @@ module pdf_parameter_module
 
     return
 
-  end subroutine init_pdf_implicit_coefs_terms
+  end subroutine init_pdf_implicit_coefs_terms_api
 
   !=============================================================================
   subroutine print_pdf_params( pdf_params, ngrdcol )
@@ -484,24 +484,24 @@ module pdf_parameter_module
 ! code is now also used for WRF-CLUBB.
 !#ifdef CLUBB_CAM /* Code for storing pdf_parameter structs in pbuf as array */
 
-  subroutine pack_pdf_params(pdf_params, nz, &
-                             r_param_array, &
-                             k_start_in, k_end_in )
+  subroutine pack_pdf_params_api(pdf_params, nz, &
+                                 r_param_array, &
+                                 k_start_in, k_end_in )
     implicit none
-    
+
     integer, intent(in) :: nz ! Num Vert Model Levs
-    
+
     ! Input a pdf_parameter array with nz instances of pdf_parameter
     type (pdf_parameter), intent(in) :: pdf_params
 
     ! Output a two dimensional real array with all values
     real (kind = core_rknd), dimension(nz,num_pdf_params), intent(out) :: &
-       r_param_array  
+       r_param_array
 
     integer, optional, intent(in) :: k_start_in, k_end_in
-    
+
     integer :: k_start, k_end
-    
+
     if( present( k_start_in ) .and. present( k_end_in ) ) then
         k_start = k_start_in
         k_end = k_end_in
@@ -558,26 +558,26 @@ module pdf_parameter_module
     r_param_array(:,46) = pdf_params%ice_supersat_frac_1(1,k_start:k_end)
     r_param_array(:,47) = pdf_params%ice_supersat_frac_2(1,k_start:k_end)
 
-  end subroutine pack_pdf_params
+  end subroutine pack_pdf_params_api
 !===============================================================!
-  subroutine unpack_pdf_params(r_param_array, nz, &
-                               pdf_params, &
-                               k_start_in, k_end_in )
+  subroutine unpack_pdf_params_api(r_param_array, nz, &
+                                   pdf_params, &
+                                   k_start_in, k_end_in )
     implicit none
-    
+
     integer, intent(in) :: nz ! Num Vert Model Levs
-    
+
     ! Input a two dimensional real array with pdf values
     real (kind = core_rknd), dimension(nz,num_pdf_params), intent(in) :: &
-       r_param_array 
+       r_param_array
 
     ! Output a pdf_parameter array with nz instances of pdf_parameter
     type (pdf_parameter), intent(inout) :: pdf_params
-    
+
     integer, optional, intent(in) :: k_start_in, k_end_in
-    
+
     integer :: k_start, k_end
-    
+
     if( present( k_start_in ) .and. present( k_end_in ) ) then
         k_start = k_start_in
         k_end = k_end_in
@@ -585,7 +585,7 @@ module pdf_parameter_module
         k_start = 1
         k_end = nz
     end if
-    
+
     pdf_params%w_1(1,k_start:k_end) = r_param_array(:,1)
     pdf_params%w_2(1,k_start:k_end) = r_param_array(:,2)
     pdf_params%varnce_w_1(1,k_start:k_end) = r_param_array(:,3)
@@ -634,9 +634,8 @@ module pdf_parameter_module
     pdf_params%ice_supersat_frac_1(1,k_start:k_end) = r_param_array(:,46)
     pdf_params%ice_supersat_frac_2(1,k_start:k_end) = r_param_array(:,47)
 
-  end subroutine unpack_pdf_params
-  
-  
+  end subroutine unpack_pdf_params_api
+
   !================================================================================================
   ! copy_single_pdf_params_to_multi - copies values of a single column version of pdf_params
   !   to a multiple column version for a specified column.
@@ -647,20 +646,20 @@ module pdf_parameter_module
   !================================================================================================
   subroutine copy_single_pdf_params_to_multi( pdf_params_single, icol, &
                                               pdf_params_multi )
-    
+
     implicit none
 
     ! Input Variable(s)
     integer, intent(in) :: &
       icol   ! Column number to copy to
-      
+
     type(pdf_parameter), intent(in) :: &
       pdf_params_single  ! PDF parameters            [units vary]
 
     ! Output Variable(s)
     type(pdf_parameter), intent(inout) :: &
       pdf_params_multi  ! PDF parameters            [units vary]
-      
+
     pdf_params_multi%w_1(icol,:)                  = pdf_params_single%w_1(1,:) 
     pdf_params_multi%w_2(icol,:)                  = pdf_params_single%w_2(1,:) 
     pdf_params_multi%varnce_w_1(icol,:)           = pdf_params_single%varnce_w_1(1,:) 
@@ -708,9 +707,9 @@ module pdf_parameter_module
     pdf_params_multi%mixt_frac(icol,:)            = pdf_params_single%mixt_frac(1,:) 
     pdf_params_multi%ice_supersat_frac_1(icol,:)  = pdf_params_single%ice_supersat_frac_1(1,:) 
     pdf_params_multi%ice_supersat_frac_2(icol,:)  = pdf_params_single%ice_supersat_frac_2(1,:) 
-    
+
   end subroutine copy_single_pdf_params_to_multi
-  
+
   !================================================================================================
   ! copy_multi_pdf_params_to_single - copies values of a multiple column version of pdf_params
   !   at a specified column to a single column version.
@@ -721,20 +720,20 @@ module pdf_parameter_module
   !================================================================================================
   subroutine copy_multi_pdf_params_to_single( pdf_params_multi, icol, &
                                               pdf_params_single )
-    
+
     implicit none
 
     ! Input Variable(s)
     integer, intent(in) :: &
       icol   ! Column number to copy to
-      
+
     type(pdf_parameter), intent(in) :: &
       pdf_params_multi  ! PDF parameters            [units vary]
 
     ! Output Variable(s)
     type(pdf_parameter), intent(inout) :: &
       pdf_params_single   ! PDF parameters            [units vary]
-      
+
     pdf_params_single%w_1(1,:)                  = pdf_params_multi%w_1(icol,:) 
     pdf_params_single%w_2(1,:)                  = pdf_params_multi%w_2(icol,:) 
     pdf_params_single%varnce_w_1(1,:)           = pdf_params_multi%varnce_w_1(icol,:) 
@@ -782,7 +781,7 @@ module pdf_parameter_module
     pdf_params_single%mixt_frac(1,:)            = pdf_params_multi%mixt_frac(icol,:) 
     pdf_params_single%ice_supersat_frac_1(1,:)  = pdf_params_multi%ice_supersat_frac_1(icol,:) 
     pdf_params_single%ice_supersat_frac_2(1,:)  = pdf_params_multi%ice_supersat_frac_2(icol,:) 
-    
+
   end subroutine copy_multi_pdf_params_to_single
 
 !#endif /* CLUBB_CAM */

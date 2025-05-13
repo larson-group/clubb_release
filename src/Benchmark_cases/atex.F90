@@ -105,7 +105,7 @@ module atex
     core_rknd
 
   use error_code, only: &
-    clubb_at_least_debug_level, &   ! Procedure
+    clubb_at_least_debug_level_api, &   ! Procedure
     clubb_fatal_error               ! Constant
 
   use array_index, only: &
@@ -208,7 +208,7 @@ module atex
       end do
     end do
 
-    if ( clubb_at_least_debug_level(2) ) then
+    if ( clubb_at_least_debug_level_api(2) ) then
 
       !$acc update host( z_lev, rtm )
 
@@ -276,7 +276,7 @@ module atex
         end do
       end do
 
-      if ( clubb_at_least_debug_level(2) ) then
+      if ( clubb_at_least_debug_level_api(2) ) then
 
         do i = 1, ngrdcol
           if ( z_lev_dycore(i) == gr_dycore%nzt+1 .or. z_lev_dycore(i) == 1 ) then
@@ -308,7 +308,7 @@ module atex
                              thlm_forcing_dycore, rtm_forcing_dycore, &  ! intent(in)
                              thlm_forcing, rtm_forcing )                 ! intent(out)
 
-        if ( clubb_at_least_debug_level( 2 ) ) then
+        if ( clubb_at_least_debug_level_api( 2 ) ) then
 
           ! checks if the mass over the physics and dycore grid is the same
           call check_mass_conservation_zt_zm( ngrdcol, gr_dycore, gr, &           ! intent(in)

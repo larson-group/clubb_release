@@ -7,7 +7,7 @@ module stats_clubb_utilities
 
   private ! Set Default Scope
 
-  public :: stats_init_api, stats_begin_timestep_api, stats_end_timestep, & 
+  public :: stats_init_api, stats_begin_timestep_api, stats_end_timestep_api, &
     stats_accumulate, stats_finalize_api, stats_accumulate_hydromet_api, &
     stats_accumulate_lh_tend
 
@@ -91,7 +91,7 @@ module stats_clubb_utilities
         fstdout, fstderr, var_length ! Constants
 
     use error_code, only: &
-        clubb_at_least_debug_level, &   ! Procedure
+        clubb_at_least_debug_level_api, &   ! Procedure
         clubb_fatal_error               ! Constant
 
     use stats_type, only: stats ! Type
@@ -305,7 +305,7 @@ module stats_clubb_utilities
 
     close(unit=iunit)
 
-    if ( clubb_at_least_debug_level( 1 ) ) then
+    if ( clubb_at_least_debug_level_api( 1 ) ) then
       write(fstdout,*) "--------------------------------------------------"
 
       write(fstdout,*) "Statistics"
@@ -365,7 +365,7 @@ module stats_clubb_utilities
       end do
 
       write(fstdout,*) "--------------------------------------------------"
-    end if ! clubb_at_least_debug_level 1
+    end if ! clubb_at_least_debug_level_api 1
 
     ! Determine file names for GrADS or NetCDF files
     stats_metadata%fname_zt  = trim( fname_prefix )//"_zt"
@@ -1641,12 +1641,12 @@ module stats_clubb_utilities
   end subroutine stats_begin_timestep_api
 
   !-----------------------------------------------------------------------
-  subroutine stats_end_timestep( stats_metadata,                & ! intent(in)
-                                 stats_zt, stats_zm, stats_sfc, & ! intent(inout)
-                                 stats_lh_zt, stats_lh_sfc,     & ! intent(inout)
-                                 stats_rad_zt, stats_rad_zm,    & ! intent(inout)
-                                 err_info                       & ! intent(inout)
-                               )
+  subroutine stats_end_timestep_api( stats_metadata,                & ! intent(in)
+                                     stats_zt, stats_zm, stats_sfc, & ! intent(inout)
+                                     stats_lh_zt, stats_lh_sfc,     & ! intent(inout)
+                                     stats_rad_zt, stats_rad_zm,    & ! intent(inout)
+                                     err_info                       & ! intent(inout)
+                                   )
 
     ! Description:
     !   Called when the stats timestep has ended. This subroutine
@@ -1741,7 +1741,7 @@ module stats_clubb_utilities
       write(fstderr,*) 'Possible statistical sampling error'
       write(fstderr,*) 'For details, set debug_level to a value of at ',  &
                        'least 1 in the appropriate model.in file.'
-      write(fstderr,*) 'stats_end_timestep:  error(s) found'
+      write(fstderr,*) 'stats_end_timestep_api:  error(s) found'
       ! General error -> set all entries to clubb_fatal_error
       err_info%err_code = clubb_fatal_error
       return
@@ -1815,10 +1815,10 @@ module stats_clubb_utilities
         end if
 
         call write_netcdf( stats_sfc%file, err_info ) ! intent(inout)
-            
+
         if ( any(err_info%err_code == clubb_fatal_error) ) then
           write(fstderr, *) err_info%err_header_global
-          write(fstderr,*) 'stats_end_timestep:  error(s) found while calling write_netcdf'
+          write(fstderr,*) 'stats_end_timestep_api:  error(s) found while calling write_netcdf'
           return
         endif
 #else
@@ -1858,7 +1858,7 @@ module stats_clubb_utilities
     end if ! clubb_i = stats_zt%ii .and. clubb_j == stats_zt%jj
 
     return
-  end subroutine stats_end_timestep
+  end subroutine stats_end_timestep_api
 
   !----------------------------------------------------------------------
   subroutine stats_accumulate( &
@@ -3353,7 +3353,7 @@ subroutine stats_check_num_samples( stats_grid, stats_metadata, &
         stats_metadata_type
 
     use error_code, only: &
-        clubb_at_least_debug_level   ! Procedure
+        clubb_at_least_debug_level_api   ! Procedure
 
     implicit none
 
@@ -3391,7 +3391,7 @@ subroutine stats_check_num_samples( stats_grid, stats_metadata, &
 
         l_error = .true.  ! This will stop the run
 
-        if ( clubb_at_least_debug_level( 1 ) ) then
+        if ( clubb_at_least_debug_level_api( 1 ) ) then
           write(fstderr,*) 'Possible sampling error for variable ',  &
                            trim(stats_grid%file%grid_avg_var(ivar)%name), ' in stats_grid ',  &
                            'at k = ', kvar,  &

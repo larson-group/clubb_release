@@ -15,12 +15,12 @@ module sponge_layer_damping
 
   implicit none
 
-  public :: sponge_damp_xm,             & ! Procedure(s)
-            sponge_damp_xp2,            &
-            sponge_damp_xp3,            &
-            initialize_tau_sponge_damp, &
-            finalize_tau_sponge_damp,   &
-            sponge_damp_settings,       & ! Variable type(s)
+  public :: sponge_damp_xm,                 & ! Procedure(s)
+            sponge_damp_xp2,                &
+            sponge_damp_xp3,                &
+            initialize_tau_sponge_damp_api, &
+            finalize_tau_sponge_damp_api,   &
+            sponge_damp_settings,           & ! Variable type(s)
             sponge_damp_profile
 
 
@@ -422,8 +422,8 @@ module sponge_layer_damping
   end function sponge_damp_xp3
 
   !=============================================================================
-  subroutine initialize_tau_sponge_damp( gr, nz, dt, z, settings, &
-                                         damping_profile )
+  subroutine initialize_tau_sponge_damp_api( gr, nz, dt, z, settings, &
+                                             damping_profile )
 
     ! Description:
     ! Initialize time scale, tau_sponge_damp, used for damping.  The time scale
@@ -553,13 +553,13 @@ module sponge_layer_damping
 
     return
 
-  end subroutine initialize_tau_sponge_damp
+  end subroutine initialize_tau_sponge_damp_api
 
   !=============================================================================
-  subroutine finalize_tau_sponge_damp( damping_profile )
+  subroutine finalize_tau_sponge_damp_api( damping_profile )
 
     ! Description:
-    ! Frees memory allocated in initialize_tau_sponge_damp
+    ! Frees memory allocated in initialize_tau_sponge_damp_api
     ! 
     ! References:
     ! None
@@ -579,7 +579,7 @@ module sponge_layer_damping
 
     return
 
-  end subroutine finalize_tau_sponge_damp
+  end subroutine finalize_tau_sponge_damp_api
 
 !===============================================================================
 

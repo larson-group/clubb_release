@@ -133,7 +133,7 @@ module mixing_length
         core_rknd ! Variable(s)
 
     use error_code, only: &
-        clubb_at_least_debug_level,  & ! Procedure
+        clubb_at_least_debug_level_api,  & ! Procedure
         clubb_fatal_error              ! Constant
 
     use saturation, only:  &
@@ -1014,7 +1014,7 @@ module mixing_length
     !$acc end parallel loop
 
     ! Ensure that no Lscale values are NaN
-    if ( clubb_at_least_debug_level( 1 ) ) then
+    if ( clubb_at_least_debug_level_api( 1 ) ) then
 
       !$acc update host( Lscale, Lscale_up, Lscale_down, &
       !$acc              thvm, thlm, rtm, em, exner, p_in_Pa, thv_ds )
@@ -1099,7 +1099,7 @@ module mixing_length
         stat_update_var
 
     use error_code, only: &
-        clubb_at_least_debug_level,  & ! Procedure
+        clubb_at_least_debug_level_api,  & ! Procedure
         clubb_fatal_error              ! Constant
 
     use constants_clubb, only:  &
@@ -1212,7 +1212,7 @@ module mixing_length
     !$acc                    rtm_pert_neg_rt, &
     !$acc                    mu_pert_1, mu_pert_2, mu_pert_pos_rt, mu_pert_neg_rt )
 
-    if ( clubb_at_least_debug_level( 0 ) ) then
+    if ( clubb_at_least_debug_level_api( 0 ) ) then
 
       if ( l_Lscale_plume_centered .and. .not. l_avg_Lscale ) then
         write(fstderr,*) err_info%err_header_global
@@ -1538,7 +1538,7 @@ module mixing_length
 
     use error_code, only: &
       clubb_fatal_error, &
-      clubb_at_least_debug_level
+      clubb_at_least_debug_level_api
 
     use stats_variables, only: &
       stats_metadata_type
@@ -1686,7 +1686,7 @@ module mixing_length
     end do
     !$acc end parallel loop
 
-    if ( clubb_at_least_debug_level(0) ) then
+    if ( clubb_at_least_debug_level_api(0) ) then
       !$acc update host( err_info%err_code )
       if ( any(err_info%err_code == clubb_fatal_error) ) then
         write(fstderr, *) "Lowest zm grid level is below ground in CLUBB."

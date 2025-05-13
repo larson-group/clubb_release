@@ -399,7 +399,7 @@ module fill_holes
         zero, one
 
     use error_code, only: &
-        clubb_at_least_debug_level  ! Procedure
+        clubb_at_least_debug_level_api  ! Procedure
 
     implicit none
 
@@ -510,7 +510,7 @@ module fill_holes
             end if
           end if
         end if
-        if ( clubb_at_least_debug_level(3) ) then
+        if ( clubb_at_least_debug_level_api(3) ) then
           ! Check for conservation
           tke_diff = abs(tke_x2_old - (up2(i,k) + vp2(i,k) + wp2(i,k)))
           if ( tke_diff > epsilon(tke_diff)*1000 ) then
@@ -578,7 +578,7 @@ module fill_holes
         core_rknd ! Variable(s)
 
     use error_code, only: &
-        clubb_at_least_debug_level  ! Procedure
+        clubb_at_least_debug_level_api  ! Procedure
 
     implicit none
 
@@ -630,7 +630,7 @@ module fill_holes
     ! There is no water substance at all to fill the hole
     if ( abs(total_mass) < eps ) then
 
-       if ( clubb_at_least_debug_level( 2 ) ) then
+       if ( clubb_at_least_debug_level_api( 2 ) ) then
           print *, "Warning: One-level hole filling was not successful! total_mass ~= 0"
        endif
 
@@ -648,7 +648,7 @@ module fill_holes
        ! if there is not enough material, fill the holes partially with all the material available
        if ( abs(total_hole) > total_mass ) then
 
-          if ( clubb_at_least_debug_level( 2 ) ) then
+          if ( clubb_at_least_debug_level_api( 2 ) ) then
              print *, "Warning: One-level hole filling was not able to fill holes completely!" // &
                       " The holes were filled partially. |total_hole| > total_mass"
           endif
@@ -663,7 +663,7 @@ module fill_holes
     enddo
 
     ! Assertion checks (water substance conservation, non-negativity)
-    if ( clubb_at_least_debug_level( 2 ) ) then
+    if ( clubb_at_least_debug_level_api( 2 ) ) then
 
        if ( abs(sum( hm_one_lev ) - sum(hm_one_lev_filled)) > &
             abs(sum( hm_one_lev ) + sum(hm_one_lev_filled)) * eps/2 ) then
@@ -911,7 +911,7 @@ module fill_holes
         stats_metadata_type
 
     use error_code, only: &
-        clubb_at_least_debug_level  ! Procedure
+        clubb_at_least_debug_level_api  ! Procedure
 
     use stats_type, only: &
       stats ! Type
@@ -1020,7 +1020,7 @@ module fill_holes
       hydromet_name = hm_metadata%hydromet_list(i)
 
       ! Print warning message if any hydrometeor species has a value < 0.
-      if ( clubb_at_least_debug_level( 1 ) ) then
+      if ( clubb_at_least_debug_level_api( 1 ) ) then
          if ( any( hydromet(:,i) < zero_threshold ) ) then
 
             do k = 1, nzt
@@ -1032,7 +1032,7 @@ module fill_holes
             enddo ! k = 1, nzt
 
          endif ! hydromet(:,i) < 0       
-      endif ! clubb_at_least_debug_level( 1 )
+      endif ! clubb_at_least_debug_level_api( 1 )
 
 
       ! Store the previous value of the hydrometeor for the effect of the

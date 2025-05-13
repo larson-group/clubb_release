@@ -35,9 +35,11 @@ program jacobian
       stat_file_vertical_levels
 
   use error_code, only: &
-        clubb_at_least_debug_level,  & ! Procedure
-        clubb_fatal_error,           & ! Constant
-        clubb_no_error
+      clubb_fatal_error,           & ! Constant
+      clubb_no_error
+
+  use clubb_api_module, only: &
+      clubb_at_least_debug_level_api    ! Procedure
 
   use clubb_model_settings, only: &
     PosInf ! Variable(s)
@@ -193,7 +195,7 @@ program jacobian
   call run_clubb( 1, 1, l_output_multi_col, l_output_double_prec, &
                   clubb_params%value(1,:), 'jacobian.in', l_stdout, err_info )
 
-  if ( clubb_at_least_debug_level( 0 ) ) then
+  if ( clubb_at_least_debug_level_api( 0 ) ) then
     if ( any(err_info%err_code == clubb_fatal_error) ) then
       error stop "The initial set of parameters caused a fatal error."
     end if

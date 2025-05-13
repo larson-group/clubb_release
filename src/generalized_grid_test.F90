@@ -63,7 +63,8 @@ module generalized_grid_test
         flip    ! Procedure(s)
 
     use clubb_api_module, only: &
-        advance_clubb_core_api
+        advance_clubb_core_api, &
+        init_pdf_implicit_coefs_terms_api
 
     use clubb_precision, only: &
         core_rknd
@@ -80,8 +81,7 @@ module generalized_grid_test
     use pdf_parameter_module, only: &
         pdf_parameter,                 &
         implicit_coefs_terms,          &
-        init_pdf_params,               &
-        init_pdf_implicit_coefs_terms
+        init_pdf_params
 
     use model_flags, only: &
         clubb_config_flags_type
@@ -540,8 +540,8 @@ module generalized_grid_test
       call init_pdf_params( gr%nzt, ngrdcol, pdf_params_flip )
       call init_pdf_params( gr%nzm, ngrdcol, pdf_params_zm_flip )
 
-      call init_pdf_implicit_coefs_terms( gr%nzt, ngrdcol, sclr_dim, &   ! Intent(in)
-                                          pdf_implicit_coefs_terms_flip ) ! Intent(out)
+      call init_pdf_implicit_coefs_terms_api( gr%nzt, ngrdcol, sclr_dim, &   ! Intent(in)
+                                              pdf_implicit_coefs_terms_flip ) ! Intent(out)
 
       ! Set up "flipped" variables for call to descending grid.
       do i = 1, ngrdcol

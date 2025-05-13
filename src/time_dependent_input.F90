@@ -1016,7 +1016,7 @@ module time_dependent_input
                                       check_remap_for_consistency
 
     use error_code, only: &
-      clubb_at_least_debug_level
+      clubb_at_least_debug_level_api
 
     use constants_clubb, only: &
       fstderr
@@ -1104,7 +1104,7 @@ module time_dependent_input
                                                     rho_lin_spline_levels, &
                                                     temp_array_dycore )
 
-        if ( clubb_at_least_debug_level( 2 ) ) then
+        if ( clubb_at_least_debug_level_api( 2 ) ) then
           call check_mass_conservation( gr_dycore%nzm, gr%nzm, &
                                         gr_dycore%zm, &
                                         gr%zm, &

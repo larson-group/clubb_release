@@ -62,7 +62,7 @@ module morrison_microphys_module
         core_rknd   ! Variable(s)
 
     use error_code, only: &
-        clubb_at_least_debug_level   ! Procedure
+        clubb_at_least_debug_level_api   ! Procedure
 
     use advance_helper_module, only: &
         vertical_integral
@@ -685,7 +685,7 @@ module morrison_microphys_module
            NIM_MORR_CL, QC_INST, QR_INST, QI_INST, QS_INST, QG_INST, &
            NC_INST, NR_INST, NI_INST, NS_INST, NG_INST )
 
-    if ( clubb_at_least_debug_level( 2 ) ) then
+    if ( clubb_at_least_debug_level_api( 2 ) ) then
        call print_morr_error_output( nzt, gr, hydromet_dim, hm_metadata, &
                                      rcm_mc_r4, rim_mc_r4, rsm_mc_r4, &
                                      rrm_mc_r4, rgm_mc_r4, Ncm_mc_r4, &
@@ -719,7 +719,7 @@ module morrison_microphys_module
                                      QR_INST, QI_INST, QS_INST, QG_INST, &
                                      NC_INST, NR_INST, NI_INST, NS_INST, &
                                      NG_INST )
-    endif ! clubb_at_least_debug_level( 2 )
+    endif ! clubb_at_least_debug_level_api( 2 )
 
     hl_after = Cp * real( T_in_K, kind = core_rknd ) + grav * gr%zt(1,:) &
                - Lv * ( real( rcm_r4, kind = core_rknd) &
@@ -823,7 +823,7 @@ module morrison_microphys_module
     call microphys_put_var( stats_metadata%irsm_sd_morr_int, (/rsm_sd_morr_int/), &
                             microphys_stats_sfc )
 
-    if ( clubb_at_least_debug_level( 1 ) ) then
+    if ( clubb_at_least_debug_level_api( 1 ) ) then
         if ( rsm_sd_morr_int > maxval( real( rsm_sten(1:nzt), &
                                                kind=core_rknd ) ) ) then
             print *, "Warning: rsm_sd_morr was not conservative!" // &

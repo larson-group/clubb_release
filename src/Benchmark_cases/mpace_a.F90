@@ -83,7 +83,7 @@ module mpace_a
       core_rknd
 
     use error_code, only: &
-      clubb_at_least_debug_level  ! Procedure
+      clubb_at_least_debug_level_api  ! Procedure
 
     use array_index, only: &
       sclr_idx_type
@@ -174,7 +174,7 @@ module mpace_a
                       before_time, after_time, ratio )
 
     ! Sanity check to ensure that time_times is sorted.
-    if( clubb_at_least_debug_level( 1 ) .and. (before_time == -1 .or. after_time == -1) ) then
+    if( clubb_at_least_debug_level_api( 1 ) .and. (before_time == -1 .or. after_time == -1) ) then
       write(fstderr,*) "file_times not sorted in mpace_a_tndcy."
     endif 
 
@@ -295,7 +295,7 @@ module mpace_a
 
     use interpolation, only: linear_interp_factor ! Procedure(s)
 
-    use error_code, only: clubb_at_least_debug_level  ! Procedure
+    use error_code, only: clubb_at_least_debug_level_api  ! Procedure
 
     ! Note that this subroutine is from time_dependent_input, but 
     ! mpace_a does not have time_dependent input.
@@ -342,7 +342,7 @@ module mpace_a
 
     ! Sanity check to make certain that the values read into
     ! file_times are sorted. Joshua Fasching June 2008
-    if ( clubb_at_least_debug_level( 1 ) .and. (before_time == -1 .or. after_time == -1) ) then
+    if ( clubb_at_least_debug_level_api( 1 ) .and. (before_time == -1 .or. after_time == -1) ) then
       write(fstderr,*) "file_times not sorted in MPACE_A"
     endif
 

@@ -158,7 +158,7 @@ module advance_xm_wpxp_module
         core_rknd ! Variable(s)
 
     use error_code, only: &
-        clubb_at_least_debug_level,  & ! Procedure
+        clubb_at_least_debug_level_api,  & ! Procedure
         clubb_fatal_error              ! Constants
 
     use stats_type_utilities, only: &
@@ -512,7 +512,7 @@ module advance_xm_wpxp_module
     l_perturbed_wind = l_predict_upwp_vpwp .and. l_linearize_pbl_winds
 
     ! Check whether monotonic flux limiter flags are set appropriately
-    if ( clubb_at_least_debug_level( 0 ) ) then
+    if ( clubb_at_least_debug_level_api( 0 ) ) then
       if ( l_mono_flux_lim_rtm .and. .not. l_mono_flux_lim_spikefix ) then
         write(fstderr, *) err_info%err_header_global
         write(fstderr,*) &
@@ -735,7 +735,7 @@ module advance_xm_wpxp_module
 
     end if
 
-    if ( clubb_at_least_debug_level( 0 ) ) then
+    if ( clubb_at_least_debug_level_api( 0 ) ) then
       ! Assertion check for C7_Skw_fnc
       !$acc parallel loop gang vector collapse(2) default(present)
       do k = 1, nzm
@@ -971,7 +971,7 @@ module advance_xm_wpxp_module
       
     end if ! l_lmm_stepping
 
-    if ( clubb_at_least_debug_level( 0 ) ) then
+    if ( clubb_at_least_debug_level_api( 0 ) ) then
       if ( any(err_info%err_code == clubb_fatal_error) ) then
 
         !$acc update host( sigma_sqd_w, wm_zm, wm_zt, wp2, Lscale_zm, wp3_on_wp2, &
@@ -2677,7 +2677,7 @@ module advance_xm_wpxp_module
         zt2zm2zt
 
     use error_code, only: &
-        clubb_at_least_debug_level,  & ! Procedure
+        clubb_at_least_debug_level_api,  & ! Procedure
         clubb_fatal_error              ! Constants
 
     use stats_type_utilities, only: &
@@ -3403,7 +3403,7 @@ module advance_xm_wpxp_module
     end if
 
 
-    if ( clubb_at_least_debug_level( 0 ) ) then
+    if ( clubb_at_least_debug_level_api( 0 ) ) then
       if ( any(err_info%err_code == clubb_fatal_error) ) then
         write(fstderr, *) err_info%err_header_global
 
@@ -3492,7 +3492,7 @@ module advance_xm_wpxp_module
            stats_zt, stats_zm, stats_sfc, &               ! Intent(inout)
            rtm, rt_tol_mfl, wprtp, err_info )             ! Intent(inout)
 
-    if ( clubb_at_least_debug_level( 0 ) ) then
+    if ( clubb_at_least_debug_level_api( 0 ) ) then
        if ( any(err_info%err_code == clubb_fatal_error) ) then
           write(fstderr, *) err_info%err_header_global
           write(fstderr,*) "rtm monotonic flux limiter:  tridiag failed"
@@ -3526,7 +3526,7 @@ module advance_xm_wpxp_module
            stats_zt, stats_zm, stats_sfc, &               ! Intent(inout)
            thlm, thl_tol_mfl, wpthlp, err_info )          ! Intent(inout)
 
-    if ( clubb_at_least_debug_level( 0 ) ) then
+    if ( clubb_at_least_debug_level_api( 0 ) ) then
        if ( any(err_info%err_code == clubb_fatal_error) ) then
           write(fstderr, *) err_info%err_header_global
           write(fstderr,*) "thlm monotonic flux limiter:  tridiag failed"
@@ -3570,7 +3570,7 @@ module advance_xm_wpxp_module
              stats_zt, stats_zm, stats_sfc, &                        ! Intent(inout)
              sclrm(:,:,sclr), sclr_tol(sclr), wpsclrp(:,:,sclr), err_info ) ! Intent(inout)
 
-      if ( clubb_at_least_debug_level( 0 ) ) then
+      if ( clubb_at_least_debug_level_api( 0 ) ) then
          if ( any(err_info%err_code == clubb_fatal_error) ) then
             write(fstderr, *) err_info%err_header_global
             write(fstderr,*) "sclrm # ", sclr, "monotonic flux limiter: tridiag failed"
@@ -3609,7 +3609,7 @@ module advance_xm_wpxp_module
             stats_zt, stats_zm, stats_sfc,                & ! intent(inout)
             um, w_tol, upwp, err_info )                     ! Intent(inout)
 
-      if ( clubb_at_least_debug_level( 0 ) ) then
+      if ( clubb_at_least_debug_level_api( 0 ) ) then
         if ( any(err_info%err_code == clubb_fatal_error) ) then
           write(fstderr, *) err_info%err_header_global
           write(fstderr,*) "um monotonic flux limiter:  tridiag failed"
@@ -3643,7 +3643,7 @@ module advance_xm_wpxp_module
             stats_zt, stats_zm, stats_sfc,                & ! Intent(inout)
             vm, w_tol, vpwp, err_info )                     ! Intent(inout)
 
-      if ( clubb_at_least_debug_level( 0 ) ) then
+      if ( clubb_at_least_debug_level_api( 0 ) ) then
         if ( any(err_info%err_code == clubb_fatal_error) ) then
           write(fstderr, *) err_info%err_header_global
           write(fstderr,*) "vm monotonic flux limiter:  tridiag failed"
@@ -3679,7 +3679,7 @@ module advance_xm_wpxp_module
                stats_zt, stats_zm, stats_sfc,                & ! Intent(inout)
                um_pert, w_tol, upwp_pert, err_info )           ! Intent(inout)
 
-         if ( clubb_at_least_debug_level( 0 ) ) then
+         if ( clubb_at_least_debug_level_api( 0 ) ) then
            if ( any(err_info%err_code == clubb_fatal_error) ) then
              write(fstderr, *) err_info%err_header_global
              write(fstderr,*) "um_pert monotonic flux limiter:  tridiag failed"
@@ -3713,7 +3713,7 @@ module advance_xm_wpxp_module
                stats_zt, stats_zm, stats_sfc,                & ! Intent(inout)
                vm_pert, w_tol, vpwp_pert, err_info )           ! Intent(inout)
 
-         if ( clubb_at_least_debug_level( 0 ) ) then
+         if ( clubb_at_least_debug_level_api( 0 ) ) then
            if ( any(err_info%err_code == clubb_fatal_error) ) then
              write(fstderr, *) err_info%err_header_global
              write(fstderr,*) "vm_pert monotonic flux limiter:  tridiag failed"
@@ -3779,7 +3779,7 @@ module advance_xm_wpxp_module
         ddzt    ! Procedure(s)
 
     use error_code, only: &
-        clubb_at_least_debug_level,  & ! Procedure
+        clubb_at_least_debug_level_api,  & ! Procedure
         clubb_fatal_error              ! Constants
 
     use stats_type_utilities, only: &
@@ -4039,7 +4039,7 @@ module advance_xm_wpxp_module
                           solution )                ! Intent(out)
     end if
 
-    if ( clubb_at_least_debug_level( 0 ) ) then
+    if ( clubb_at_least_debug_level_api( 0 ) ) then
       if ( any(err_info%err_code == clubb_fatal_error) ) then
         write(fstderr, *) err_info%err_header_global
         do i = 1, ngrdcol
@@ -4095,7 +4095,7 @@ module advance_xm_wpxp_module
            stats_zt, stats_zm, stats_sfc, &               ! Intent(inout)
            rtm, rt_tol_mfl, wprtp, err_info )             ! Intent(inout)
 
-    if ( clubb_at_least_debug_level( 0 ) ) then
+    if ( clubb_at_least_debug_level_api( 0 ) ) then
       if ( any(err_info%err_code == clubb_fatal_error) ) then
         write(fstderr, *) err_info%err_header_global
         write(fstderr,*) "rtm monotonic flux limiter:  tridiag failed"
@@ -4149,7 +4149,7 @@ module advance_xm_wpxp_module
                           solution )                ! Intent(out)
     end if
 
-    if ( clubb_at_least_debug_level( 0 ) ) then
+    if ( clubb_at_least_debug_level_api( 0 ) ) then
       if ( any(err_info%err_code == clubb_fatal_error) ) then
         write(fstderr, *) err_info%err_header_global
         do i = 1, ngrdcol
@@ -4205,7 +4205,7 @@ module advance_xm_wpxp_module
            stats_zt, stats_zm, stats_sfc, &               ! Intent(inout)
            thlm, thl_tol_mfl, wpthlp, err_info )          ! Intent(inout)
 
-    if ( clubb_at_least_debug_level( 0 ) ) then
+    if ( clubb_at_least_debug_level_api( 0 ) ) then
       if ( any(err_info%err_code == clubb_fatal_error) ) then
         write(fstderr, *) err_info%err_header_global
         write(fstderr,*) "thlm monotonic flux limiter:  tridiag failed" 
@@ -4269,7 +4269,7 @@ module advance_xm_wpxp_module
                           lhs, rhs, err_info,     & ! Intent(inout)
                           solution )                ! Intent(out)
 
-      if ( clubb_at_least_debug_level( 0 ) ) then
+      if ( clubb_at_least_debug_level_api( 0 ) ) then
         if ( any(err_info%err_code == clubb_fatal_error) ) then
           write(fstderr, *) err_info%err_header_global
           do i = 1, ngrdcol
@@ -4326,7 +4326,7 @@ module advance_xm_wpxp_module
              stats_zt, stats_zm, stats_sfc, &                        ! intent(inout)
              sclrm(:,:,sclr), sclr_tol(sclr), wpsclrp(:,:,sclr), err_info ) ! Intent(inout)
 
-      if ( clubb_at_least_debug_level( 0 ) ) then
+      if ( clubb_at_least_debug_level_api( 0 ) ) then
         if ( any(err_info%err_code == clubb_fatal_error) ) then
           write(fstderr, *) err_info%err_header_global
           write(fstderr,*) "sclrm # ", sclr, "monotonic flux limiter: tridiag failed"
@@ -4365,7 +4365,7 @@ module advance_xm_wpxp_module
         fstderr     ! Constant(s)
 
     use error_code, only: &
-        clubb_at_least_debug_level,     & ! Procedure
+        clubb_at_least_debug_level_api,     & ! Procedure
         clubb_fatal_error                 ! Constant
 
     use err_info_type_module, only: &
@@ -4467,7 +4467,7 @@ module advance_xm_wpxp_module
       !$acc end parallel loop
     endif
 
-    if ( clubb_at_least_debug_level( 0 ) ) then
+    if ( clubb_at_least_debug_level_api( 0 ) ) then
       if ( any(err_info%err_code == clubb_fatal_error) ) then
         write(fstderr, *) err_info%err_header_global
         write(fstderr,*) "Error in xm_wpxp_solve"
@@ -4548,8 +4548,8 @@ module advance_xm_wpxp_module
         fill_holes_vertical_api ! Procedure
 
     use error_code, only: &
-        clubb_at_least_debug_level, & ! Procedure
-        clubb_fatal_error             ! Constant
+        clubb_at_least_debug_level_api, & ! Procedure
+        clubb_fatal_error                 ! Constant
 
     use stats_type_utilities, only: & 
         stat_begin_update,  & ! Procedure(s)
@@ -4998,7 +4998,7 @@ module advance_xm_wpxp_module
                                            stats_zt, stats_zm, & ! intent(inout)
                                            xm, wpxp, err_info ) ! intent(inout)
 
-      if ( clubb_at_least_debug_level( 0 ) ) then
+      if ( clubb_at_least_debug_level_api( 0 ) ) then
         if ( any(err_info%err_code == clubb_fatal_error) ) then
           write(fstderr, *) err_info%err_header_global
           write(fstderr,*) "calling monotonic_turbulent_flux_limit in xm_wpxp_clipping_and_stats"
@@ -5055,7 +5055,7 @@ module advance_xm_wpxp_module
     
     if ( solve_type /= xm_wpxp_um .and. solve_type /= xm_wpxp_vm .and. l_hole_fill ) then 
 
-      if ( clubb_at_least_debug_level( 3 ) ) then
+      if ( clubb_at_least_debug_level_api( 3 ) ) then
 
         !$acc update host( xm )
 

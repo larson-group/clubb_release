@@ -118,7 +118,7 @@ module matrix_operations
 !    <http://www.netlib.org/lapack/explore-html/a00753.html> dlaqsy
 !-------------------------------------------------------------------------------
     use error_code, only: &
-        clubb_at_least_debug_level ! Procedure
+        clubb_at_least_debug_level_api ! Procedure
 
     use constants_clubb, only: &
         fstderr ! Constant
@@ -208,7 +208,7 @@ module matrix_operations
         error stop
       case( 0 )
         ! Success!
-        if ( clubb_at_least_debug_level( 1 ) .and. iter > 1 ) then
+        if ( clubb_at_least_debug_level_api( 1 ) .and. iter > 1 ) then
           write(fstderr,*) "a_factored (worked)="
           do i = 1, ndim
             do j = 1, i
@@ -219,7 +219,7 @@ module matrix_operations
         end if
         exit
       case( 1: )
-        if ( clubb_at_least_debug_level( 1 ) ) then
+        if ( clubb_at_least_debug_level_api( 1 ) ) then
           ! This shouldn't happen now that the s and t Mellor(chi/eta) elements have been
           ! modified to never be perfectly correlated, but it's here just in case.
           ! -dschanen 10 Sept 2010
@@ -242,7 +242,7 @@ module matrix_operations
           end do
         end if
 
-        if ( clubb_at_least_debug_level( 2 ) ) then
+        if ( clubb_at_least_debug_level_api( 2 ) ) then
           call Symm_matrix_eigenvalues( ndim, a_input, & ! intent(in)
                                         a_eigenvalues ) ! intent(out)
           write(fstderr,*) "a_eigenvalues="
@@ -265,7 +265,7 @@ module matrix_operations
         if ( iter == itermax ) then
           write(fstderr,*) "iteration =", iter, "itermax =", itermax
           write(fstderr,*) "Fatal error in Cholesky_factor"
-        else if ( clubb_at_least_debug_level( 1 ) ) then
+        else if ( clubb_at_least_debug_level_api( 1 ) ) then
           ! Adding a STOP statement to prevent this problem from slipping under
           ! the rug.
           write(fstderr,*) "Fatal error in Cholesky_factor"
@@ -301,7 +301,7 @@ module matrix_operations
           end do
         end do
 
-        if ( clubb_at_least_debug_level( 2 ) ) then
+        if ( clubb_at_least_debug_level_api( 2 ) ) then
           call Symm_matrix_eigenvalues( ndim, a_Cholesky, & ! intent(in)
                                         a_eigenvalues ) ! intent(out)
           write(fstderr,*) "a_modified eigenvalues="

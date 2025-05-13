@@ -49,7 +49,7 @@ module sounding
       sclr_idx_type
 
     use error_code, only: &
-      clubb_at_least_debug_level  ! Procedure
+      clubb_at_least_debug_level_api  ! Procedure
 
     use input_names, only: &
       z_name, & ! Variables
@@ -193,7 +193,7 @@ module sounding
 
     !---------------------------------------------------------------------------------------------
     ! Status Message
-    if( clubb_at_least_debug_level( 1 ) ) then
+    if( clubb_at_least_debug_level_api( 1 ) ) then
       print *, "Path to sounding: ", trim( runtype )//'_sounding.in'
       print *, "File exists? ", l_sounding_exists
       print *, "Path to sclr_sounding: ", trim( runtype )//'_sclr_sounding.in'
@@ -303,7 +303,7 @@ module sounding
 
     end if
 
-    if ( clubb_at_least_debug_level( 1 ) ) then
+    if ( clubb_at_least_debug_level_api( 1 ) ) then
 
       write(fstdout,*) "Reading in sounding information"
       !------------Printing Model Inputs-------------------------------
@@ -327,7 +327,7 @@ module sounding
         write(fstdout,'(8g10.3)') edsclr_snd(1:nlevels,edsclr)
       enddo
 
-    endif ! clubb_at_least_debug_level( 1 )
+    endif ! clubb_at_least_debug_level_api( 1 )
     !----------------------------------------------------------------------
     ! Use linear interpolation from two nearest prescribed grid points
     ! (one above and one below) to initialize mean quantities in the model

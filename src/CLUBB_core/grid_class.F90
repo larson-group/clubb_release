@@ -292,7 +292,7 @@ module grid_class
         fstderr ! Variable(s)
 
     use error_code, only: &
-        clubb_at_least_debug_level, &   ! Procedure
+        clubb_at_least_debug_level_api, &   ! Procedure
         clubb_fatal_error               ! Constant
 
     use clubb_precision, only: &
@@ -377,7 +377,7 @@ module grid_class
 
     ! Define the grid size
 
-    if ( nzmax > NWARNING .and. clubb_at_least_debug_level( 1 ) ) then
+    if ( nzmax > NWARNING .and. clubb_at_least_debug_level_api( 1 ) ) then
       write(fstderr,*) "Warning:  running with vertical grid "// & 
                        "which is larger than", NWARNING, "levels."
       write(fstderr,*) "This may take a lot of CPU time and memory."
@@ -650,7 +650,7 @@ module grid_class
                   thermodynamic_heights(:,begin_height_idx_zt:end_height_idx_zt), & ! intent(in)
                   gr, err_info ) ! intent(inout)
 
-    if ( clubb_at_least_debug_level( 0 ) ) then
+    if ( clubb_at_least_debug_level_api( 0 ) ) then
       if ( any(err_info%err_code == clubb_fatal_error) ) then
         write(fstderr,*) err_info%err_header_global
         write(fstderr,*) "Fatal error in setup_grid calling setup_grid_heights"

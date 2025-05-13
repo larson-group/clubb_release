@@ -184,7 +184,7 @@ module simple_rad_module
     use constants_clubb, only: fstderr, one, Cp, eps ! Variable(s)
 
     use error_code, only: &
-        clubb_at_least_debug_level,  & ! Procedure
+        clubb_at_least_debug_level_api,  & ! Procedure
         clubb_fatal_error                 ! Constant
 
     use stats_type_utilities, only: stat_update_var_pt ! Procedure(s)
@@ -283,7 +283,7 @@ module simple_rad_module
         k = k + 1
       end do
     
-      if ( clubb_at_least_debug_level( 0 ) ) then
+      if ( clubb_at_least_debug_level_api( 0 ) ) then
          if ( k == gr%nzt+1 .or. k == 1 ) then
             write(fstderr,*) err_info%err_header_global
             write(fstderr,*) "Identification of 8.0 g/kg level failed"

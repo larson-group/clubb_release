@@ -103,7 +103,7 @@ module advance_clubb_core_module
   public ::  &
     check_clubb_settings_api, &
     advance_clubb_core, &
-    cleanup_clubb_core, &
+    cleanup_clubb_core_api, &
     set_Lscale_max, &
     calculate_thlp2_rad
 
@@ -297,7 +297,7 @@ module advance_clubb_core_module
         core_rknd ! Variable(s)
 
     use error_code, only: &
-        clubb_at_least_debug_level,  & ! Procedure
+        clubb_at_least_debug_level_api,  & ! Procedure
         clubb_fatal_error              ! Constant
 
     use Skx_module, only: &
@@ -934,7 +934,7 @@ module advance_clubb_core_module
     !----------------------------------------------------------------
     ! Test input variables
     !----------------------------------------------------------------
-    if ( clubb_at_least_debug_level( 2 ) ) then
+    if ( clubb_at_least_debug_level_api( 2 ) ) then
 
       !$acc update host( thlm_forcing, rtm_forcing, um_forcing, vm_forcing, &
       !$acc              wm_zm, wm_zt, p_in_Pa, rho_zm, rho, exner, rho_ds_zm, &
@@ -1216,7 +1216,7 @@ module advance_clubb_core_module
                                wp2sclrp, wpsclrp2, sclrprcp,                & ! Intent(out)
                                wpsclrprtp, wpsclrpthlp )                      ! Intent(out)
 
-      if ( clubb_at_least_debug_level( 0 ) ) then
+      if ( clubb_at_least_debug_level_api( 0 ) ) then
         if ( any(err_info%err_code == clubb_fatal_error) ) then
           write(fstderr,*) err_info%err_header_global
           write(fstderr,*) "Error calling pdf_closure_driver in advance_clubb_core"
@@ -1485,7 +1485,7 @@ module advance_clubb_core_module
                                   stats_zt, err_info,                                & ! In/Out
                                   Lscale, Lscale_up, Lscale_down )                     ! Out
 
-      if ( clubb_at_least_debug_level( 0 ) ) then
+      if ( clubb_at_least_debug_level_api( 0 ) ) then
         if ( any(err_info%err_code == clubb_fatal_error) ) then
           write(fstderr,*) err_info%err_header_global
           write(fstderr,*) "Error calling calc_Lscale_directly in advance_clubb_core"
@@ -1562,7 +1562,7 @@ module advance_clubb_core_module
                         tau_max_zm, tau_max_zt, tau_zm, tau_zt,                   & ! Out
                         Lscale, Lscale_up, Lscale_down )                            ! Out
 
-      if ( clubb_at_least_debug_level( 0 ) ) then
+      if ( clubb_at_least_debug_level_api( 0 ) ) then
         if ( any(err_info%err_code == clubb_fatal_error) ) then
           write(fstderr,*) err_info%err_header_global
           write(fstderr, *) "Error calling diagnose_Lscale_from_tau in advance_clubb_core"
@@ -1653,7 +1653,7 @@ module advance_clubb_core_module
                           sclrp2, sclrprtp, sclrpthlp,                    & ! Intent(inout)
                           err_info )                                        ! Intent(inout)
 
-    if ( clubb_at_least_debug_level( 0 ) ) then
+    if ( clubb_at_least_debug_level_api( 0 ) ) then
       if ( any(err_info%err_code == clubb_fatal_error) ) then
         write(fstderr,*) err_info%err_header_global
         write(fstderr, *) "Error calling calc_sfc_varnce in advance_clubb_core"
@@ -1952,7 +1952,7 @@ module advance_clubb_core_module
                             sclrm, wpsclrp, um, upwp, vm, vpwp,                    & ! intent(i/o)
                             um_pert, vm_pert, upwp_pert, vpwp_pert, err_info )       ! intent(i/o)
 
-      if ( clubb_at_least_debug_level( 0 ) ) then
+      if ( clubb_at_least_debug_level_api( 0 ) ) then
          if ( any(err_info%err_code == clubb_fatal_error) ) then
             write(fstderr,*) err_info%err_header_global
             write(fstderr,*) "Error calling advance_xm_wpxp in advance_clubb_core"
@@ -2024,8 +2024,8 @@ module advance_clubb_core_module
                              stats_zt, stats_zm, stats_sfc,                       & ! intent(inout)
                              rtp2, thlp2, rtpthlp, up2, vp2,                      & ! intent(inout)
                              sclrp2, sclrprtp, sclrpthlp, err_info )                ! intent(inout)
-
-      if ( clubb_at_least_debug_level( 0 ) ) then
+      
+      if ( clubb_at_least_debug_level_api( 0 ) ) then
          if ( any(err_info%err_code == clubb_fatal_error) ) then
             write(fstderr,*) err_info%err_header_global
             write(fstderr,*) "Error calling advance_xp2_xpyp in advance_clubb_core"
@@ -2133,7 +2133,7 @@ module advance_clubb_core_module
                             stats_zt, stats_zm, stats_sfc,                        & ! intent(inout)
                             up2, vp2, wp2, wp3, wp3_zm, wp2_zt, err_info )          ! intent(inout)
 
-      if ( clubb_at_least_debug_level( 0 ) ) then
+      if ( clubb_at_least_debug_level_api( 0 ) ) then
          if ( any(err_info%err_code == clubb_fatal_error) ) then
             write(fstderr,*) err_info%err_header_global
             write(fstderr,*) "Error calling advance_wp2_wp3 in advance_clubb_core"
@@ -2252,7 +2252,7 @@ module advance_clubb_core_module
                                   um_pert, vm_pert, upwp_pert,                & ! intent(inout)
                                   vpwp_pert, err_info )                         ! intent(inout)
 
-      if ( clubb_at_least_debug_level( 0 ) ) then
+      if ( clubb_at_least_debug_level_api( 0 ) ) then
          if ( any(err_info%err_code == clubb_fatal_error) ) then
             write(fstderr,*) err_info%err_header_global
             write(fstderr,*) "Error calling advance_windm_edsclrm in advance_clubb_core"
@@ -2573,7 +2573,7 @@ module advance_clubb_core_module
                                wp2sclrp, wpsclrp2, sclrprcp,                & ! Intent(out)
                                wpsclrprtp, wpsclrpthlp )                      ! Intent(out)
 
-      if ( clubb_at_least_debug_level( 0 ) ) then
+      if ( clubb_at_least_debug_level_api( 0 ) ) then
          if ( any(err_info%err_code == clubb_fatal_error) ) then
             write(fstderr,*) err_info%err_header_global
             write(fstderr,*) "Error calling pdf_closure_driver in advance_clubb_core"
@@ -2787,7 +2787,7 @@ module advance_clubb_core_module
       end do
     endif ! stats_metadata%l_stats_samp
 
-    if ( clubb_at_least_debug_level( 2 ) ) then
+    if ( clubb_at_least_debug_level_api( 2 ) ) then
 
       !$acc update host( thlm_forcing, rtm_forcing, um_forcing, vm_forcing, &
       !$acc              wm_zm, wm_zt, p_in_Pa, rho_zm, rho, exner, rho_ds_zm, &
@@ -3025,7 +3025,7 @@ module advance_clubb_core_module
     use pdf_parameter_module, only: &
         pdf_parameter,        & ! Variable Type
         implicit_coefs_terms, &  ! Variable Type
-        init_pdf_implicit_coefs_terms ! Procedure
+        init_pdf_implicit_coefs_terms_api ! Procedure
 
     use parameters_model, only: &
         ts_nudge,               & ! Variable(s)
@@ -3062,7 +3062,7 @@ module advance_clubb_core_module
         iiPDF_new_hybrid    ! new hybrid PDF
 
     use error_code, only: &
-        clubb_at_least_debug_level,  & ! Procedure
+        clubb_at_least_debug_level_api,  & ! Procedure
         clubb_fatal_error              ! Constant
 
     use stats_type_utilities, only: &
@@ -3745,7 +3745,7 @@ module advance_clubb_core_module
            rc_coef                                          ) ! intent(out)
 
     ! Subroutine may produce NaN values, and if so, return
-    if ( clubb_at_least_debug_level( 0 ) ) then
+    if ( clubb_at_least_debug_level_api( 0 ) ) then
       if ( any(err_info%err_code == clubb_fatal_error) ) then
         write(fstderr, *) err_info%err_header_global
         write(fstderr,*) "After first call to pdf_closure in pdf_closure_driver"
@@ -3822,9 +3822,9 @@ module advance_clubb_core_module
       ! pdf_implicit_coefs_terms is only used in the iiPDF_new and iiPDF_new_hybrid closures.
       ! So we only need to initialize our local _zm version if we're working with one of those.
       if ( iiPDF_type == iiPDF_new .or. iiPDF_type == iiPDF_new_hybrid ) then
-        call init_pdf_implicit_coefs_terms( nzm, ngrdcol, sclr_dim, &     ! Intent(in)
-                                            pdf_implicit_coefs_terms_zm ) ! Intent(out)
-      end if 
+        call init_pdf_implicit_coefs_terms_api( nzm, ngrdcol, sclr_dim, &     ! Intent(in)
+                                                pdf_implicit_coefs_terms_zm ) ! Intent(out)
+      end if
 
       ! Call pdf_closure to output the variables which belong on the momentum grid.
       call pdf_closure( nzm, ngrdcol, sclr_dim, sclr_tol, gr,      & ! intent(in)
@@ -3869,7 +3869,7 @@ module advance_clubb_core_module
              rc_coef_zm                                            ) ! intent(out)
 
       ! Subroutine may produce NaN values, and if so, return
-      if ( clubb_at_least_debug_level( 0 ) ) then
+      if ( clubb_at_least_debug_level_api( 0 ) ) then
         if ( any(err_info%err_code == clubb_fatal_error) ) then
           write(fstderr, *) err_info%err_header_global
           write(fstderr,*) "After second call to pdf_closure in pdf_closure_driver"
@@ -4029,7 +4029,7 @@ module advance_clubb_core_module
                               err_info,                    & ! intent(inout)
                               cloud_cover, rcm_in_layer )    ! intent(out)
 
-    if ( clubb_at_least_debug_level( 0 ) ) then
+    if ( clubb_at_least_debug_level_api( 0 ) ) then
       if ( any(err_info%err_code == clubb_fatal_error) ) then
         write(fstderr, *) err_info%err_header_global
         write(fstderr,*) "calling compute_cloud_cover in pdf_closure_driver"
@@ -4093,7 +4093,7 @@ module advance_clubb_core_module
       end do
       !$acc end parallel loop
 
-      if ( clubb_at_least_debug_level( 1 ) .and. l_spur_supersat ) then
+      if ( clubb_at_least_debug_level_api( 1 ) .and. l_spur_supersat ) then
         write(fstderr,*) 'Warning: spurious supersaturation was removed after pdf_closure!'
       end if
 
@@ -4165,7 +4165,7 @@ module advance_clubb_core_module
           eps
 
       use error_code, only: &
-          clubb_at_least_debug_level,  & ! Procedures
+          clubb_at_least_debug_level_api,  & ! Procedures
           initialize_error_headers,    &
           clubb_fatal_error              ! Constant
 
@@ -4243,7 +4243,7 @@ module advance_clubb_core_module
 #endif
 
       ! Sanity check
-      if ( clubb_at_least_debug_level( 0 ) ) then
+      if ( clubb_at_least_debug_level_api( 0 ) ) then
 
         if ( clubb_config_flags%l_damp_wp2_using_em &
            .and. ( any( abs(params(:,iC1) - params(:,iC14)) > &
@@ -4761,7 +4761,7 @@ module advance_clubb_core_module
     end subroutine check_clubb_settings_api
 
     !----------------------------------------------------------------------------
-    subroutine cleanup_clubb_core( gr )
+    subroutine cleanup_clubb_core_api( gr )
 
       ! Description:
       !   Frees memory used by the model itself.
@@ -4784,7 +4784,7 @@ module advance_clubb_core_module
       call cleanup_grid( gr ) ! intent(in)
 
       return
-    end subroutine cleanup_clubb_core
+    end subroutine cleanup_clubb_core_api
 
     !-----------------------------------------------------------------------
     subroutine trapezoidal_rule_zt( nzm, nzt, ngrdcol, sclr_dim, gr,             & ! intent(in)
@@ -5257,7 +5257,7 @@ module advance_clubb_core_module
           core_rknd ! Variable(s)
 
       use error_code, only: &
-        clubb_at_least_debug_level,  & ! Procedure
+        clubb_at_least_debug_level_api,  & ! Procedure
         clubb_fatal_error              ! Constant
 
       use err_info_type_module, only: &
@@ -5433,7 +5433,7 @@ module advance_clubb_core_module
       end do
       !$acc end parallel loop
 
-      if ( clubb_at_least_debug_level( 0 ) ) then
+      if ( clubb_at_least_debug_level_api( 0 ) ) then
         !$acc update host( err_info%err_code )
         if ( any(err_info%err_code == clubb_fatal_error) ) then
 
@@ -5474,7 +5474,7 @@ module advance_clubb_core_module
       !---------------------------------------------------------------------
 
       use error_code, only: &
-        clubb_at_least_debug_level  ! Procedure
+        clubb_at_least_debug_level_api  ! Procedure
 
       use constants_clubb, only: &
         fstderr, & ! Variable(s)
@@ -5505,7 +5505,7 @@ module advance_clubb_core_module
       !$acc data copyin( rtm ) &
       !$acc        copy( rcm )
 
-      if ( clubb_at_least_debug_level( 3 ) ) then
+      if ( clubb_at_least_debug_level_api( 3 ) ) then
 
         !$acc update host( rcm, rtm )
 
@@ -5521,7 +5521,7 @@ module advance_clubb_core_module
             
           end do
         end do
-      end if ! clubb_at_least_debug_level( 3 )
+      end if ! clubb_at_least_debug_level_api( 3 )
 
       ! Vince Larson clipped rcm in order to prevent rvm < 0.  5 Apr 2008.
       ! This code won't work unless rtm >= 0 !!!

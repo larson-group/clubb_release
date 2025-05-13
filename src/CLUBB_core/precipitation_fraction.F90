@@ -64,7 +64,7 @@ module precipitation_fraction
         core_rknd  ! Variable(s)
 
     use error_code, only: &
-        clubb_at_least_debug_level, &   ! Procedure
+        clubb_at_least_debug_level_api, &   ! Procedure
         clubb_fatal_error               ! Constant
 
     use stats_type, only: &
@@ -403,7 +403,7 @@ module precipitation_fraction
 
 
     ! Assertion check for precip_frac, precip_frac_1, and precip_frac_2.
-    if ( clubb_at_least_debug_level( 2 ) ) then
+    if ( clubb_at_least_debug_level_api( 2 ) ) then
       do j = 1, ngrdcol
         call precip_frac_assert_check( nzt, hydromet_dim, hydromet_tol,                   & ! In
                                        hydromet(j,:,:), mixt_frac(j,:), precip_frac(j,:), & ! In

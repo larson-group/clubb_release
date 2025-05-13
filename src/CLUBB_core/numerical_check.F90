@@ -394,7 +394,7 @@ module numerical_check
         core_rknd ! Variable(s)
 
     use error_code, only: &
-        clubb_at_least_debug_level,   & ! Procedure
+        clubb_at_least_debug_level_api,   & ! Procedure
         clubb_no_error,               & ! Constants
         clubb_fatal_error
 
@@ -614,7 +614,7 @@ module numerical_check
 
 !---------------------------------------------------------------------
 
-    if ( clubb_at_least_debug_level( 0 ) ) then
+    if ( clubb_at_least_debug_level_api( 0 ) ) then
         if ( any(err_info%err_code == clubb_fatal_error) ) then
             return
         end if

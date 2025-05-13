@@ -656,10 +656,12 @@ module error
 
     use clubb_driver, only: run_clubb ! Procedure(s)
 
+    use clubb_api_module, only: &
+      clubb_at_least_debug_level_api    ! Procedure
+
     use error_code, only: &
-        clubb_at_least_debug_level,  & ! Procedure
-        clubb_no_error,              & ! Constant
-        clubb_fatal_error
+      clubb_no_error,       & ! Constant
+      clubb_fatal_error
 
     use stat_file_utils, only: &
       stat_file_num_vertical_levels, & ! Procedure(s)

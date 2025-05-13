@@ -82,13 +82,15 @@ module clubb_api_module
       sclr_idx_type
 
   use error_code, only: &
-      clubb_at_least_debug_level,  & ! Procedure
+      set_clubb_debug_level_api,   &
+      clubb_at_least_debug_level_api, &
       clubb_no_error,              & ! Constants
       clubb_fatal_error
 
   use hydromet_pdf_parameter_module, only : &
     hydromet_pdf_parameter, &
-    precipitation_fractions
+    precipitation_fractions, &
+    init_precip_fracs_api
 
   use model_flags, only : &
       clubb_config_flags_type, & ! Type
@@ -96,7 +98,8 @@ module clubb_api_module
       iiPDF_new_hybrid, &
       ipdf_pre_advance_fields, &
       ipdf_post_advance_fields, &
-      l_use_boussinesq    ! Use Boussinesq form of predictive equations (default is Anelastic).
+      l_use_boussinesq, &    ! Use Boussinesq form of predictive equations (default is Anelastic).
+      print_clubb_config_flags_api
 
   use parameters_tunable, only : &
     params_list,         & ! Variable(s)
@@ -135,7 +138,10 @@ module clubb_api_module
     num_pdf_params, &
 !#endif
     pdf_parameter, &
-    implicit_coefs_terms
+    implicit_coefs_terms, &
+    pack_pdf_params_api, &
+    unpack_pdf_params_api, &
+    init_pdf_implicit_coefs_terms_api
 
   use sponge_layer_damping, only : &
     thlm_sponge_damp_settings,    & ! Variable(s)
@@ -149,7 +155,9 @@ module clubb_api_module
     uv_sponge_damp_profile,       &
     wp2_sponge_damp_profile,      &
     wp3_sponge_damp_profile,      &
-    up2_vp2_sponge_damp_profile
+    up2_vp2_sponge_damp_profile,  &
+    finalize_tau_sponge_damp_api, &   ! Procedure(s)
+    initialize_tau_sponge_damp_api
 
   use stat_file_module, only : &
     clubb_i, &    ! Used to output multiple columns
@@ -186,7 +194,7 @@ module clubb_api_module
     ! Used to compute the saturation mixing ratio of liquid water.
     sat_mixrat_liq_api
 
-  use T_in_K_module, only : &
+  use T_in_K_module, only: &
     ! Calculates absolute temperature from liquid water potential
     ! temperature.  (Does not include ice.)
     thlm2T_in_K_api, &
@@ -194,9 +202,16 @@ module clubb_api_module
     ! Calculates liquid water potential temperature from absolute temperature
     T_in_K2thlm_api
 
+  use calendar, only: &
+    compute_current_date_api
+
+  use interpolation, only: &
+    lin_interpolate_on_grid_api
+
   use advance_clubb_core_module, only: &
     check_clubb_settings_api, &
-    calculate_thlp2_rad
+    calculate_thlp2_rad, &
+    cleanup_clubb_core_api
 
   use parameters_model, only: &
     setup_parameters_model_api
@@ -222,7 +237,8 @@ module clubb_api_module
    stats_init_sfc_api
 
   use stats_clubb_utilities, only : &
-    stats_begin_timestep_api
+    stats_begin_timestep_api, &
+    stats_end_timestep_api
 
   use model_flags, only: &
     initialize_clubb_config_flags_type_api, &
@@ -298,15 +314,13 @@ module clubb_api_module
         iRichardson_num_min, iRichardson_num_max, iwpxp_Ri_exp, &
         ia3_coef_min, ia_const, iCx_min, iCx_max, ibv_efold, iz_displace
 
-
-
   public &
         advance_clubb_core_api, &
         advance_clubb_core_api_single_col, &
         advance_clubb_core_api_multi_col, &
         pdf_parameter, &
         implicit_coefs_terms, &
-    cleanup_clubb_core_api
+        cleanup_clubb_core_api
 
   public &
     ! To Implement SILHS:
@@ -2061,21 +2075,6 @@ contains
     end subroutine calculate_thlp2_rad_api
 
   !================================================================================================
-  ! cleanup_clubb_core_api - Frees memory used by the model.
-  !================================================================================================
-
-  subroutine cleanup_clubb_core_api( gr )
-
-    use advance_clubb_core_module, only : cleanup_clubb_core
-
-    implicit none
-
-    type(grid), intent(inout) :: gr
-    call cleanup_clubb_core( gr ) ! intent(inout)
-
-  end subroutine cleanup_clubb_core_api
-
-  !================================================================================================
   ! gregorian2julian_day - Computes the number of days since 1 January 4713 BC.
   !================================================================================================
 
@@ -2097,51 +2096,6 @@ contains
   end function gregorian2julian_day_api
 
   !================================================================================================
-  ! compute_current_date - Computes the current date and the seconds since that date.
-  !================================================================================================
-
-  subroutine compute_current_date_api( &
-    previous_day, previous_month, &
-    previous_year,  &
-    seconds_since_previous_date, &
-    current_day, current_month, &
-    current_year, &
-    seconds_since_current_date )
-
-    use calendar, only : compute_current_date
-
-    implicit none
-
-    ! Previous date
-    integer, intent(in) :: &
-      previous_day,    & ! Day of the month      [dd]
-      previous_month,  & ! Month of the year     [mm]
-      previous_year      ! Year                  [yyyy]
-
-    real(kind=time_precision), intent(in) :: &
-      seconds_since_previous_date ! [s]
-
-    ! Output Variable(s)
-
-    ! Current date
-    integer, intent(out) :: &
-      current_day,     & ! Day of the month      [dd]
-      current_month,   & ! Month of the year     [mm]
-      current_year       ! Year                  [yyyy]
-
-    real(kind=time_precision), intent(out) :: &
-      seconds_since_current_date
-
-    call compute_current_date( &
-      previous_day, previous_month, & ! intent(in)
-      previous_year,  & ! intent(in)
-      seconds_since_previous_date, & ! intent(in)
-      current_day, current_month, & ! intent(out)
-      current_year, & ! intent(out)
-      seconds_since_current_date ) ! intent(out)
-  end subroutine compute_current_date_api
-
-  !================================================================================================
   ! leap_year - Determines if the given year is a leap year.
   !================================================================================================
 
@@ -2161,44 +2115,6 @@ contains
     leap_year_api = leap_year( &
       year )
   end function leap_year_api
-
-  !================================================================================================
-  ! set_clubb_debug_level - Controls the importance of error messages sent to the console.
-  !================================================================================================
-
-  subroutine set_clubb_debug_level_api( &
-    level )
-
-    use error_code, only: &
-        set_clubb_debug_level ! Procedure
-
-    implicit none
-
-    ! Input variable
-    integer, intent(in) :: level ! The debug level being checked against the current setting
-
-    call set_clubb_debug_level( &
-      level ) ! intent(in)
-  end subroutine set_clubb_debug_level_api
-
-  !================================================================================================
-  ! clubb_at_least_debug_level - Checks to see if clubb has been set to a specified debug level.
-  !================================================================================================
-
-  logical function clubb_at_least_debug_level_api( &
-    level )
-    
-    use error_code, only: &
-        clubb_at_least_debug_level ! Procedure
-
-    implicit none
-
-    ! Input variable
-    integer, intent(in) :: level   ! The debug level being checked against the current setting
-
-    clubb_at_least_debug_level_api = clubb_at_least_debug_level( &
-      level )
-  end function clubb_at_least_debug_level_api
 
   !================================================================================================
   ! vertical_integral - Computes the vertical integral.
@@ -2245,9 +2161,6 @@ contains
     use grid_class, only: &
         grid, & ! Type
         setup_grid_heights
-
-    use error_code, only : &
-        clubb_fatal_error       ! Constant
 
     implicit none
 
@@ -2349,9 +2262,6 @@ contains
         grid, & ! Type
         setup_grid_heights
 
-    use error_code, only : &
-        clubb_fatal_error       ! Constant
-
     implicit none
 
     ! Input Variables
@@ -2435,9 +2345,6 @@ contains
         grid, & ! Type
         setup_grid
 
-    use error_code, only : &
-        clubb_fatal_error       ! Constant
-
     implicit none
 
     ! Input Variables
@@ -2518,9 +2425,6 @@ contains
         grid, & ! Type
         setup_grid
 
-    use error_code, only : &
-        clubb_fatal_error       ! Constant
-
     implicit none
 
     ! Input Variables
@@ -2595,37 +2499,6 @@ contains
       var_high, var_low )
 
   end function lin_interpolate_two_points_api
-
-  !================================================================================================
-  ! lin_interpolate_on_grid - Linear interpolation for 25 June 1996 altocumulus case.
-  !================================================================================================
-
-  subroutine lin_interpolate_on_grid_api( &
-    nparam, xlist, tlist, xvalue, tvalue )
-
-    use interpolation, only : lin_interpolate_on_grid
-
-    implicit none
-
-    ! Input Variables
-    integer, intent(in) :: nparam ! Number of parameters in xlist and tlist
-
-    ! Input/Output Variables
-    real( kind = core_rknd ), intent(inout), dimension(nparam) ::  &
-      xlist,  & ! List of x-values (independent variable)
-      tlist     ! List of t-values (dependent variable)
-
-    real( kind = core_rknd ), intent(in) ::  &
-      xvalue  ! x-value at which to interpolate
-
-    real( kind = core_rknd ), intent(inout) ::  &
-      tvalue  ! t-value solved by interpolation
-
-    call lin_interpolate_on_grid( &
-      nparam, xlist, tlist, xvalue, & ! intent(in)
-      tvalue ) ! intent(inout)
-
-  end subroutine lin_interpolate_on_grid_api
 
   !================================================================================================
   ! setup_parameters - Sets up model parameters for a single column
@@ -2883,79 +2756,6 @@ contains
 
   end subroutine adj_low_res_nu_api_multi_col
 
-! The CLUBB_CAM preprocessor directives are being commented out because this
-! code is now also used for WRF-CLUBB.
-!#ifdef CLUBB_CAM /* Code for storing pdf_parameter structs in pbuf as array */
-  !================================================================================================
-  ! pack_pdf_params - Returns a two dimensional real array with all values.
-  !================================================================================================
-
-  subroutine pack_pdf_params_api( pdf_params, nz, r_param_array, &
-                                  k_start, k_end )
-
-    use pdf_parameter_module, only : pack_pdf_params
-
-    !use statements
-
-    implicit none
-
-    integer, intent(in) :: nz ! Num Vert Model Levs
-    
-    ! Input a pdf_parameter array with nz instances of pdf_parameter
-    type (pdf_parameter), intent(inout) :: pdf_params
-
-    ! Output a two dimensional real array with all values
-    real (kind = core_rknd), dimension(nz,num_pdf_params), intent(inout) :: &
-      r_param_array
-      
-    integer, optional, intent(in) :: k_start, k_end
-      
-    if( present( k_start ) .and. present( k_end ) ) then
-        call pack_pdf_params( pdf_params, nz, & ! intent(in)
-                              r_param_array, & ! intent(out)
-                              k_start, k_end ) ! intent(in/optional)
-    else 
-        call pack_pdf_params( pdf_params, nz, & ! intent(in)
-                              r_param_array ) ! intent(out)
-    end if
-
-  end subroutine pack_pdf_params_api
-
-  !================================================================================================
-  ! unpack_pdf_params - Returns a pdf_parameter array with nz instances of pdf_parameter.
-  !================================================================================================
-
-  subroutine unpack_pdf_params_api( r_param_array, nz, pdf_params, &
-                                    k_start, k_end )
-
-    use pdf_parameter_module, only : unpack_pdf_params
-
-    implicit none
-    
-    integer, intent(in) :: nz ! Num Vert Model Levs
-    
-    ! Input a two dimensional real array with pdf values
-    real (kind = core_rknd), dimension(nz,num_pdf_params), intent(in) :: &
-      r_param_array
-
-    ! Output a pdf_parameter array with nz instances of pdf_parameter
-    type (pdf_parameter), intent(inout) :: pdf_params
-    
-    integer, optional, intent(in) :: k_start, k_end
-
-    if( present( k_start ) .and. present( k_end ) ) then
-        call unpack_pdf_params( r_param_array, nz, & ! intent(in)
-                                pdf_params, & ! intent(inout)
-                                k_start, k_end ) ! intent(in/optional)
-    else  
-        call unpack_pdf_params( r_param_array, nz, & ! intent(in)
-                                pdf_params ) ! intent(inout)
-    end if
-    
-    
-  end subroutine unpack_pdf_params_api
-  
-!#endif
   !================================================================================================
   ! init_pdf_params - allocates arrays for pdf_params
   !================================================================================================
@@ -3127,60 +2927,6 @@ contains
     
   end subroutine copy_multi_pdf_params_to_single
 
-  
-  !================================================================================================
-  ! init_precip_fracs - allocates arrays for precip_fracs
-  !================================================================================================
-  subroutine init_precip_fracs_api( nz, ngrdcol, &
-                                    precip_fracs )
-
-    use hydromet_pdf_parameter_module, only : init_precip_fracs
-
-    implicit none
-    
-    ! Input Variable(s)
-    integer, intent(in) :: &
-      nz,     & ! Number of vertical grid levels    [-]
-      ngrdcol   ! Number of grid columns            [-]
-
-    ! Output Variable
-    type(precipitation_fractions), intent(out) :: &
-      precip_fracs    ! Hydrometeor PDF parameters      [units vary]
-
-    call init_precip_fracs( nz, ngrdcol, & ! intent(in)
-                            precip_fracs ) ! intent(out)
-
-    return
-
-  end subroutine init_precip_fracs_api
-  
-  !================================================================================================
-  ! init_pdf_implicit_coefs_terms - allocates arrays for the PDF implicit
-  ! coefficient and explicit terms.
-  !================================================================================================
-  subroutine init_pdf_implicit_coefs_terms_api( nz, ngrdcol, sclr_dim, &
-                                                pdf_implicit_coefs_terms )
-
-    use pdf_parameter_module, only: &
-        init_pdf_implicit_coefs_terms    ! Procedure(s)
-
-    implicit none
-
-    ! Input Variables
-    integer, intent(in) :: &
-      nz,       & ! Number of vertical grid levels    [-]
-      ngrdcol,  & ! Number of grid columns            [-]
-      sclr_dim    ! Number of scalar variables        [-]
-
-    ! Output Variable
-    type(implicit_coefs_terms), intent(out) :: &
-      pdf_implicit_coefs_terms    ! Implicit coefs / explicit terms [units vary]
-
-    call init_pdf_implicit_coefs_terms( nz, ngrdcol, sclr_dim, & ! intent(in)
-                                        pdf_implicit_coefs_terms ) ! intent(out)
-
-  end subroutine init_pdf_implicit_coefs_terms_api
-
   !================================================================================================
   ! setup_pdf_parameters
   !================================================================================================
@@ -3215,9 +2961,6 @@ contains
 
     use parameter_indices, only: &
         nparams    ! Variable(s)
-
-    use error_code, only : &
-        clubb_fatal_error   ! Constant
 
     implicit none
 
@@ -3470,9 +3213,6 @@ contains
     use parameter_indices, only: &
         nparams    ! Variable(s)
 
-    use error_code, only : &
-        clubb_fatal_error   ! Constant
-
     implicit none
 
     ! Input Variables
@@ -3611,56 +3351,6 @@ contains
   end subroutine setup_pdf_parameters_api_multi_col
 
   !================================================================================================
-  ! stats_end_timestep - Calls statistics to be written to the output format.
-  !================================================================================================
-
-  subroutine stats_end_timestep_api( stats_metadata, &
-                                     stats_zt, stats_zm, stats_sfc, &
-                                     stats_lh_zt, stats_lh_sfc, &
-                                     stats_rad_zt, stats_rad_zm, &
-                                     err_info_api &
-                                   )
-
-    use stats_clubb_utilities, only : stats_end_timestep
-
-    implicit none
-
-    ! Input Variables
-    type (stats_metadata_type), intent(in) :: &
-      stats_metadata
-
-    ! Input/Output Variables
-    type(stats), intent(inout) :: &
-      stats_zt, &
-      stats_zm, &
-      stats_sfc, &
-      stats_lh_zt, &
-      stats_lh_sfc, &
-      stats_rad_zt, &
-      stats_rad_zm
-
-    type(err_info_type), intent(inout) :: &
-      err_info_api          ! err_info struct containing err_code and err_header
-
-    ! ------------------- Begin Code -------------------
-
-    call stats_end_timestep( stats_metadata,      & ! intent(in)
-                             stats_zt, stats_zm, stats_sfc,     & ! intent(inout)
-                             stats_lh_zt, stats_lh_sfc,         & ! intent(inout)
-                             stats_rad_zt, stats_rad_zm,        & ! intent(inout)
-                             err_info_api                       & ! intent(inout)
-                           )
-
-    if ( any(err_info_api%err_code == clubb_fatal_error) ) then
-      write(fstderr, *) err_info_api%err_header_global
-      write(fstderr, *) "Error in CLUBB calling stats_end_timestep"
-      return
-    endif
-
-  end subroutine stats_end_timestep_api
-
-
-  !================================================================================================
   ! calculate_spurious_source - Checks whether there is conservation within the column.
   !================================================================================================
   function calculate_spurious_source_api ( &
@@ -3737,14 +3427,14 @@ contains
       wprtp_mc, &   !Tendency of <w'rt'> due to evaporation   [m*(kg/kg)/s^2]
       wpthlp_mc, &  !Tendency of <w'thl'> due to evaporation  [m*K/s^2] 
       rtpthlp_mc    !Tendency of <rt'thl'> due to evaporation [K*(kg/kg)/s]
-      
+
     call update_xp2_mc( gr, nzm, nzt, ngrdcol, dt, cloud_frac, rcm, rvm, thlm,        & ! intent(in)
                         wm, exner, rrm_evap, pdf_params,        & ! intent(in)
                         rtp2_mc, thlp2_mc, wprtp_mc, wpthlp_mc,    & ! intent(inout)
                         rtpthlp_mc ) ! intent(inout)
     return
   end subroutine update_xp2_mc_api_multi_col
-  
+
   !================================================================================================
   ! update_xp2_mc - Calculates the effects of rain evaporation on rtp2 and thlp2
   !================================================================================================
@@ -3788,9 +3478,9 @@ contains
       rtp2_mc, &    !Tendency of <rt'^2> due to evaporation   [(kg/kg)^2/s]
       thlp2_mc, &   !Tendency of <thl'^2> due to evaporation  [K^2/s]
       wprtp_mc, &   !Tendency of <w'rt'> due to evaporation   [m*(kg/kg)/s^2]
-      wpthlp_mc, &  !Tendency of <w'thl'> due to evaporation  [m*K/s^2] 
+      wpthlp_mc, &  !Tendency of <w'thl'> due to evaporation  [m*K/s^2]
       rtpthlp_mc    !Tendency of <rt'thl'> due to evaporation [K*(kg/kg)/s]
-      
+
     ! -------------------- Local Variables --------------------
     real( kind = core_rknd ), dimension(1,nzt) :: &
       cloud_frac_col, &       !Cloud fraction                        [-]
@@ -3802,14 +3492,14 @@ contains
       rrm_evap_col         !Evaporation of rain                   [kg/kg/s]
                           !It is expected that this variable is negative, as
                           !that is the convention in Morrison microphysics
-                          
+
     real( kind = core_rknd ), dimension(1,nzm) :: &
       rtp2_mc_col, &    !Tendency of <rt'^2> due to evaporation   [(kg/kg)^2/s]
       thlp2_mc_col, &   !Tendency of <thl'^2> due to evaporation  [K^2/s]
       wprtp_mc_col, &   !Tendency of <w'rt'> due to evaporation   [m*(kg/kg)/s^2]
-      wpthlp_mc_col, &  !Tendency of <w'thl'> due to evaporation  [m*K/s^2] 
+      wpthlp_mc_col, &  !Tendency of <w'thl'> due to evaporation  [m*K/s^2]
       rtpthlp_mc_col    !Tendency of <rt'thl'> due to evaporation [K*(kg/kg)/s]
-      
+
     cloud_frac_col(1,:) = cloud_frac
     rcm_col(1,:) = rcm
     rvm_col(1,:) = rvm
@@ -3822,98 +3512,19 @@ contains
     wprtp_mc_col(1,:) = wprtp_mc
     wpthlp_mc_col(1,:) = wpthlp_mc
     rtpthlp_mc_col(1,:) = rtpthlp_mc
-      
+
     call update_xp2_mc( gr, nzm, nzt, 1, dt, cloud_frac_col, rcm_col, rvm_col, thlm_col, & ! In
                         wm_col, exner_col, rrm_evap_col, pdf_params,        & ! In
                         rtp2_mc_col, thlp2_mc_col, wprtp_mc_col, wpthlp_mc_col,    & ! In/Out
                         rtpthlp_mc_col ) ! In/Out
-                        
+
     rtp2_mc = rtp2_mc_col(1,:)
     thlp2_mc = thlp2_mc_col(1,:)
     wprtp_mc = wprtp_mc_col(1,:)
     wpthlp_mc = wpthlp_mc_col(1,:)
     rtpthlp_mc = rtpthlp_mc_col(1,:)
-    
+
     return
   end subroutine update_xp2_mc_api_single_col
-    
-  !================================================================================================
-  ! print_clubb_config_flags: Prints the clubb_config_flags
-  !================================================================================================
-  subroutine print_clubb_config_flags_api( iunit, clubb_config_flags ) ! In
 
-    use model_flags, only: &
-        clubb_config_flags_type, &          ! Type
-        print_clubb_config_flags            ! Procedure
-
-    implicit none
-
-    ! Input variables
-    integer, intent(in) :: &
-      iunit ! The file to write to
-
-    type(clubb_config_flags_type), intent(in) :: &
-      clubb_config_flags ! Derived type holding all configurable CLUBB flags
-
-    call print_clubb_config_flags( iunit, clubb_config_flags ) ! In
-
-  end subroutine print_clubb_config_flags_api
-
-  !================================================================================================
-  ! initialize_tau_sponge_damp
-  !================================================================================================
-  subroutine initialize_tau_sponge_damp_api( gr, nz, dt, z, settings, damping_profile )
-
-    use sponge_layer_damping, only: &
-        sponge_damp_settings,       & ! Variable(s)
-        sponge_damp_profile,        &
-        initialize_tau_sponge_damp    ! Procedure(s)
-
-    
-
-    implicit none
-
-    type(grid), intent(in) :: gr
-
-    ! Input Variable(s)
-    integer, intent(in) :: &
-      nz
-
-    real( kind = core_rknd ), intent(in) :: &
-      dt    ! Model Timestep    [s]
-
-    real( kind = core_rknd ), dimension(nz), intent(in) :: &
-      z    ! Height of model grid levels    [m]
-
-    type(sponge_damp_settings), intent(in) :: &
-      settings
-
-    ! Output Variable(s)
-    type(sponge_damp_profile), intent(out) :: &
-      damping_profile
-
-    call initialize_tau_sponge_damp( gr, nz, dt, z, settings, & ! intent(in)
-                                     damping_profile ) ! intent(inout)
-
-  end subroutine initialize_tau_sponge_damp_api
-
-  !================================================================================================
-  ! finalize_tau_sponge_damp
-  !================================================================================================
-  subroutine finalize_tau_sponge_damp_api( damping_profile )
-
-    use sponge_layer_damping, only: &
-        sponge_damp_profile,      & ! Variable(s)
-        finalize_tau_sponge_damp    ! Procedure(s)
-
-    implicit none
-
-    ! Input/Output Variable(s)
-    type(sponge_damp_profile), intent(inout) :: &
-      damping_profile ! Information for damping the profile
-
-    call finalize_tau_sponge_damp( damping_profile ) ! intent(inout)
-
-  end subroutine finalize_tau_sponge_damp_api
-    
 end module clubb_api_module

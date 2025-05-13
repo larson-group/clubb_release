@@ -90,7 +90,7 @@ module advance_microphys_module
         core_rknd
 
     use error_code, only: &
-        clubb_at_least_debug_level, & ! Procedure
+        clubb_at_least_debug_level_api, & ! Procedure
         clubb_fatal_error             ! Constant
 
     use corr_varnce_module, only: &
@@ -354,7 +354,7 @@ module advance_microphys_module
     endif ! hydromet_dim > 0
 
 
-    if ( clubb_at_least_debug_level( 0 ) ) then
+    if ( clubb_at_least_debug_level_api( 0 ) ) then
        if ( any(err_info%err_code == clubb_fatal_error) ) then
           write(fstderr,*) err_info%err_header_global
           write(fstderr,*) "calling advance_hydrometeor"
@@ -396,7 +396,7 @@ module advance_microphys_module
                          Ncm, Nc_in_cloud, err_info, &
                          wpNcp )
 
-       if ( clubb_at_least_debug_level( 0 ) ) then
+       if ( clubb_at_least_debug_level_api( 0 ) ) then
          if ( any(err_info%err_code == clubb_fatal_error) ) then
           write(fstderr,*) err_info%err_header_global
            write(fstderr,*) "in advance_Ncm"
@@ -578,7 +578,7 @@ module advance_microphys_module
         l_upwind_diff_sed
 
     use error_code, only: &
-        clubb_at_least_debug_level, & ! Procedure
+        clubb_at_least_debug_level_api, & ! Procedure
         clubb_fatal_error             ! Constant
 
     use clubb_precision, only: &
@@ -759,7 +759,7 @@ module advance_microphys_module
        ! Set realistic limits on sedimentation velocities, following the
        ! numbers in the Morrison microphysics.
        do k = 1, gr%nzt
-          if ( clubb_at_least_debug_level( 1 ) ) then
+          if ( clubb_at_least_debug_level_api( 1 ) ) then
             ! Print a warning if the velocity has a large magnitude or the
             ! velocity is in the wrong direction.
              if ( hydromet_vel_zt(k,i) < max_velocity .or. &
@@ -849,7 +849,7 @@ module advance_microphys_module
                              stats_zt,                                        & ! InOut
                              lhs, rhs, hydromet(:,i), err_info )                ! InOut
 
-       if ( clubb_at_least_debug_level( 0 ) ) then
+       if ( clubb_at_least_debug_level_api( 0 ) ) then
            if ( any(err_info%err_code == clubb_fatal_error) ) then
                 write(fstderr,*) err_info%err_header_global
                 write(fstderr,*) "Error in hydrometeor field " &
@@ -888,7 +888,7 @@ module advance_microphys_module
 
           hydromet_name = hm_metadata%hydromet_list(i)
 
-          if ( clubb_at_least_debug_level( 1 ) ) then
+          if ( clubb_at_least_debug_level_api( 1 ) ) then
              do k = 1, gr%nzt
                 if ( hydromet(k,i) < zero_threshold ) then
                    write(fstderr,*) trim( hydromet_name ) //" < ", &
@@ -1053,8 +1053,8 @@ module advance_microphys_module
         l_in_cloud_Nc_diff  ! Use in cloud values of Nc for diffusion
 
     use error_code, only: &
-        clubb_at_least_debug_level, & ! Procedure
-        clubb_fatal_error             ! Constant
+        clubb_at_least_debug_level_api, & ! Procedure
+        clubb_fatal_error                 ! Constant
 
     use clubb_precision, only: &
         core_rknd ! Variable(s)
@@ -1286,7 +1286,7 @@ module advance_microphys_module
 
     endif
 
-    if ( clubb_at_least_debug_level( 0 ) ) then
+    if ( clubb_at_least_debug_level_api( 0 ) ) then
       if ( any(err_info%err_code == clubb_fatal_error) ) then
         write(fstderr, *) err_info%err_header_global
         write(fstderr,*) "calling microphys_solve in advance_Ncm"
@@ -1317,14 +1317,14 @@ module advance_microphys_module
     ! Print warning message if Ncm (at any level) has a value < Ncm_min.
     if ( any( Ncm < Ncm_min ) ) then
 
-       if ( clubb_at_least_debug_level( 1 ) ) then
+       if ( clubb_at_least_debug_level_api( 1 ) ) then
           do k = 1, gr%nzt
              if ( Ncm(k) < Ncm_min(k) ) then
                 write(fstderr,*) "Ncm < ", Ncm_min(k), &
                                  " in advance_microphys at k = ", k
              endif ! Ncm(k) < Ncm_min(k)
           enddo ! k = 1, gr%nzt, 1
-       endif ! clubb_at_least_debug_level( 1 )
+       endif ! clubb_at_least_debug_level_api( 1 )
 
     endif ! Ncm < Ncm_min
 
@@ -1431,8 +1431,8 @@ module advance_microphys_module
         core_rknd    ! Variable(s)
 
     use error_code, only: &
-        clubb_at_least_debug_level, & ! Procedure
-        clubb_fatal_error             ! Constant
+        clubb_at_least_debug_level_api, & ! Procedure
+        clubb_fatal_error                 ! Constant
 
     use matrix_solver_wrapper, only: &
         tridiag_solve ! Procedure(s)
@@ -1576,7 +1576,7 @@ module advance_microphys_module
                         lhs, rhs, err_info,               & ! Intent(inout)
                         hmm )                               ! Intent(out)
 
-    if ( clubb_at_least_debug_level( 0 ) ) then
+    if ( clubb_at_least_debug_level_api( 0 ) ) then
       if ( any(err_info%err_code == clubb_fatal_error) ) then
         write(fstderr, *) err_info%err_header_global
         write(fstderr,*) "calling tridiag_solve in microphys_solve"
@@ -3631,7 +3631,7 @@ module advance_microphys_module
         nu_vertical_res_dep    ! Type(s)
 
     use error_code, only: &
-        clubb_at_least_debug_level, & ! Procedure
+        clubb_at_least_debug_level_api, & ! Procedure
         clubb_fatal_error             ! Constant
 
     use clubb_precision, only:  &
@@ -3723,7 +3723,7 @@ module advance_microphys_module
 
     !---------------------------- Begin Code ----------------------------
 
-    if ( clubb_at_least_debug_level( 0 ) ) then
+    if ( clubb_at_least_debug_level_api( 0 ) ) then
        if ( any(err_info%err_code == clubb_fatal_error) ) then
 
           write(fstderr,*) "Error in advance_microphys"

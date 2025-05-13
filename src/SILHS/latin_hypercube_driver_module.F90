@@ -81,7 +81,7 @@ module latin_hypercube_driver_module
       silhs_config_flags_type ! Type(s)
 
     use error_code, only: &
-      clubb_at_least_debug_level  ! Procedure
+      clubb_at_least_debug_level_api  ! Procedure
       
     use advance_helper_module, only: &
       vertical_avg  ! Procedure
@@ -318,7 +318,7 @@ module latin_hypercube_driver_module
     end if
     
     ! Assertion check for the vertical correlation
-    if ( clubb_at_least_debug_level( 1 ) ) then
+    if ( clubb_at_least_debug_level_api( 1 ) ) then
 
       !$acc update host( X_vert_corr )
 
@@ -333,7 +333,7 @@ module latin_hypercube_driver_module
         error stop "Fatal error in vertical_overlap_driver"
       end if ! Some correlation isn't between [0,1]
 
-    end if ! clubb_at_least_debug_level 1
+    end if ! clubb_at_least_debug_level_api 1
 
     ! Generate pool of random numbers
     call generate_random_pool( nzt, ngrdcol, pdf_dim, num_samples, d_uniform_extra, & ! Intent(in)
@@ -463,7 +463,7 @@ module latin_hypercube_driver_module
     end if
 
     ! Various nefarious assertion checks
-    if ( clubb_at_least_debug_level( 2 ) ) then
+    if ( clubb_at_least_debug_level_api( 2 ) ) then
       !$acc update host(X_u_all_levs,X_mixt_comp_all_levs,X_nl_all_levs)
 
       ! Simple assertion check to ensure uniform variates are in the appropriate
@@ -495,7 +495,7 @@ module latin_hypercube_driver_module
         end do ! k=1, nzt
       end do ! i=1, ngrdcol
 
-    end if ! clubb_at_least_debug_level( 2 )
+    end if ! clubb_at_least_debug_level_api( 2 )
 
     ! Stop the run if an error occurred
     if ( l_error ) then

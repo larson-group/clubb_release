@@ -60,7 +60,7 @@ module silhs_importance_sample_module
       two_cluster_cp_nocp_opt
 
     use error_code, only: &
-        clubb_at_least_debug_level  ! Procedure
+        clubb_at_least_debug_level_api  ! Procedure
 
     implicit none
 
@@ -198,7 +198,7 @@ module silhs_importance_sample_module
         lh_sample_point_weights(1:num_samples) * real( num_samples, kind = core_rknd ) / weights_sum
     end if
 
-    if ( clubb_at_least_debug_level( 2 ) ) then
+    if ( clubb_at_least_debug_level_api( 2 ) ) then
 
       call importance_sampling_assertions &
            ( num_samples, importance_categories, category_real_probs, & ! In
@@ -449,7 +449,7 @@ module silhs_importance_sample_module
       fstderr
 
     use error_code, only: &
-        clubb_at_least_debug_level  ! Procedure
+        clubb_at_least_debug_level_api  ! Procedure
 
     implicit none
 
@@ -529,7 +529,7 @@ module silhs_importance_sample_module
 
     ! As an assertion check, make sure this subroutine actually
     ! performed its task successfully.
-    if ( clubb_at_least_debug_level( 2 ) ) then
+    if ( clubb_at_least_debug_level_api( 2 ) ) then
       do icategory=1, num_importance_categories
         if ( category_prescribed_probs(icategory) > zero .and. &
              category_real_probs(icategory) >= real_prob_thresh_for_transfer ) then
@@ -545,7 +545,7 @@ module silhs_importance_sample_module
           end if
         end if ! category_prescribed_probs(icategory) > zero
       end do ! icategory=1, num_importance_categories
-    end if ! clubb_at_least_debug_level( 2 )
+    end if ! clubb_at_least_debug_level_api( 2 )
 
     return
   end subroutine limit_category_weights
@@ -793,7 +793,7 @@ module silhs_importance_sample_module
       core_rknd      ! Constant
 
     use error_code, only: &
-        clubb_at_least_debug_level  ! Procedure
+        clubb_at_least_debug_level_api  ! Procedure
 
     implicit none
 
@@ -850,7 +850,7 @@ module silhs_importance_sample_module
       end if
     end do ! icategory=1, num_importance_categories
 
-    if ( clubb_at_least_debug_level( 2 ) ) then
+    if ( clubb_at_least_debug_level_api( 2 ) ) then
       if ( num_categories_in_cluster(iinocld_precip) /= 2 .or. &
            num_categories_in_cluster(iicld_or_precip) /= 6 ) then
         error stop "Invalid categories in two_cluster_cp_nocp"
@@ -998,7 +998,7 @@ module silhs_importance_sample_module
       fstderr       ! Constant
 
     use error_code, only: &
-        clubb_at_least_debug_level  ! Procedure
+        clubb_at_least_debug_level_api  ! Procedure
 
     implicit none
 
@@ -1084,7 +1084,7 @@ module silhs_importance_sample_module
 
     end do ! icategory=1, num_importance_categories
 
-    if ( clubb_at_least_debug_level( 2 ) ) then
+    if ( clubb_at_least_debug_level_api( 2 ) ) then
       if ( any( num_categories_in_cluster /= 2 ) ) then
         write(fstderr,*) "Not all clusters have two categories"
         error stop "Fatal error in four_cluster_no_precip"

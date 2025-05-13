@@ -60,7 +60,7 @@ module pos_definite_module
         core_rknd ! Variable(s)
 
     use error_code, only: &
-        clubb_at_least_debug_level   ! Procedure
+        clubb_at_least_debug_level_api   ! Procedure
 
     implicit none
 
@@ -109,7 +109,7 @@ module pos_definite_module
 
 !-----------------------------------------------------------------------
 
-    if ( clubb_at_least_debug_level( 1 ) ) then
+    if ( clubb_at_least_debug_level_api( 1 ) ) then
       print *, "Correcting flux"
     end if
 

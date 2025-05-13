@@ -165,7 +165,7 @@ module pdf_closure_module
         core_rknd ! Variable(s)
 
     use error_code, only: &
-        clubb_at_least_debug_level,  & ! Procedure
+        clubb_at_least_debug_level_api,  & ! Procedure
         clubb_fatal_error              ! Constant
 
     use stats_variables, only: &
@@ -1062,7 +1062,7 @@ module pdf_closure_module
       end do
       !$acc end parallel loop
 
-      if (clubb_at_least_debug_level( 1 )) then
+      if (clubb_at_least_debug_level_api( 1 )) then
           write(fstderr,*) "Warning: ice_supersat_frac has garbage values if &
                           & do_liquid_only_in_clubb = .false."
       end if
@@ -1375,7 +1375,7 @@ module pdf_closure_module
 
 #endif /*TUNER*/
 
-    if ( clubb_at_least_debug_level( 2 ) ) then
+    if ( clubb_at_least_debug_level_api( 2 ) ) then
 
       !$acc update host( wp4, wprtp2, wp2rtp, wpthlp2, wp2thlp, cloud_frac, &
       !$acc              rcm, wpthvp, wp2thvp, rtpthvp, thlpthvp, wprcp, wp2rcp, &
@@ -1431,7 +1431,7 @@ module pdf_closure_module
 
     ! Error Reporting
     ! Joshua Fasching February 2008
-    if ( clubb_at_least_debug_level( 0 ) ) then
+    if ( clubb_at_least_debug_level_api( 0 ) ) then
       if ( any(err_info%err_code == clubb_fatal_error) ) then
 
         !$acc update host( p_in_Pa, exner, thv_ds, wm, wp2, wp3, sigma_sqd_w, &
@@ -1727,7 +1727,7 @@ module pdf_closure_module
         
       end do
 
-    end if ! clubb_at_least_debug_level
+    end if ! clubb_at_least_debug_level_api
 
     !$acc exit data delete( u_1, u_2, varnce_u_1, varnce_u_2, v_1, v_2, &
     !$acc                   varnce_v_1, varnce_v_2, alpha_u, alpha_v, &

@@ -10,8 +10,8 @@ module interpolation
 
   private ! Default Scope
 
-  public :: lin_interpolate_two_points, binary_search, zlinterp_fnc, & 
-    lin_interpolate_on_grid, linear_interp_factor, mono_cubic_interp, plinterp_fnc, &
+  public :: lin_interpolate_two_points, binary_search, zlinterp_fnc, &
+    lin_interpolate_on_grid_api, linear_interp_factor, mono_cubic_interp, plinterp_fnc, &
     lin_interp_between_grids
 
   contains
@@ -281,7 +281,7 @@ module interpolation
         fstderr                    ! Variable(s)
     
     use error_code, only: &
-        clubb_at_least_debug_level ! Error indicator
+        clubb_at_least_debug_level_api ! Error indicator
 
     implicit none
 
@@ -357,7 +357,7 @@ module interpolation
     enddo 
 
     ! Code should not get to this point, but return -1 to be safe
-    if ( clubb_at_least_debug_level( 0 ) ) then
+    if ( clubb_at_least_debug_level_api( 0 ) ) then
         write(fstderr,*) "Logic error in function binary_search."
     end if
 
@@ -502,7 +502,7 @@ module interpolation
   end function zlinterp_fnc
 
 !-------------------------------------------------------------------------------
-  subroutine lin_interpolate_on_grid & 
+  subroutine lin_interpolate_on_grid_api &
              ( nparam, xlist, tlist, xvalue, &
                tvalue )
 
@@ -523,7 +523,7 @@ module interpolation
         core_rknd ! Variable(s)
 
     use error_code, only: &
-        clubb_at_least_debug_level ! Error indicator
+        clubb_at_least_debug_level_api ! Error indicator
 
     implicit none
 
@@ -556,10 +556,10 @@ module interpolation
 !
 !-------------------------------------------------------------------------------
 
-     if ( clubb_at_least_debug_level( 0 ) ) then
+     if ( clubb_at_least_debug_level_api( 0 ) ) then
        do i=2,nparam
          if ( xlist(i) <= xlist(i-1) ) then
-           write(fstderr,*) "xlist must be sorted for lin_interpolate_on_grid."
+           write(fstderr,*) "xlist must be sorted for lin_interpolate_on_grid_api."
            error stop
          end if
        end do
@@ -571,9 +571,9 @@ module interpolation
 !
 !-------------------------------------------------------------------------------
 
-    if ( clubb_at_least_debug_level( 0 ) ) then
+    if ( clubb_at_least_debug_level_api( 0 ) ) then
         if ( (xvalue < xlist(1)) .or. (xvalue > xlist(nparam)) ) then
-          write(fstderr,*) "lin_interpolate_on_grid: Value out of range"
+          write(fstderr,*) "lin_interpolate_on_grid_api: Value out of range"
           error stop
         end if
     end if
@@ -595,17 +595,17 @@ module interpolation
       end if
     end do
 
-    if ( clubb_at_least_debug_level( 1 ) .and. (topbound == -1 .or. bottombound == -1) ) then
-      write(fstderr,*) "Sanity check failed! xlist is not properly sorted" 
-      write(fstderr,*) "in lin_interpolate_on_grid."
+    if ( clubb_at_least_debug_level_api( 1 ) .and. (topbound == -1 .or. bottombound == -1) ) then
+      write(fstderr,*) "Sanity check failed! xlist is not properly sorted"
+      write(fstderr,*) "in lin_interpolate_on_grid_api."
     end if
 
-    tvalue =  & 
-    lin_interpolate_two_points( xvalue, xlist(topbound), xlist(bottombound),  & 
+    tvalue = &
+    lin_interpolate_two_points( xvalue, xlist(topbound), xlist(bottombound), &
             tlist(topbound), tlist(bottombound) )
 
     return
-  end subroutine lin_interpolate_on_grid
+  end subroutine lin_interpolate_on_grid_api
 
   function lin_interp_between_grids( size_interpolate, size_current, &
                                      interpolate_altitudes, current_altitudes, &
@@ -616,7 +616,7 @@ module interpolation
     use constants_clubb, only: fstderr ! Constant
 
     use error_code, only: &
-        clubb_at_least_debug_level ! Error indicator
+        clubb_at_least_debug_level_api ! Error indicator
 
     implicit none
     !--------------------- Input Variables ---------------------
@@ -655,7 +655,7 @@ module interpolation
     !
     !-------------------------------------------------------------------------------
 
-    if ( clubb_at_least_debug_level( 0 ) ) then
+    if ( clubb_at_least_debug_level_api( 0 ) ) then
       do i=2,size_current
         if ( current_altitudes(i) <= current_altitudes(i-1) ) then
           write(fstderr,*) "current_altitudes must be sorted for lin_interp_between_grids."
@@ -671,7 +671,7 @@ module interpolation
     !
     !-------------------------------------------------------------------------------
 
-    if ( clubb_at_least_debug_level( 0 ) ) then
+    if ( clubb_at_least_debug_level_api( 0 ) ) then
         if ( (minval(interpolate_altitudes) < current_altitudes(1)) &
               .or. (maxval(interpolate_altitudes) > current_altitudes(size_current)) ) then
           write(fstderr,*) "lin_interp_between_grids: Value out of range"

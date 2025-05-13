@@ -90,7 +90,7 @@ module advance_windm_edsclrm_module
         clip_covar  ! Procedure(s)
 
     use error_code, only: &
-        clubb_at_least_debug_level,  & ! Procedure
+        clubb_at_least_debug_level_api,  & ! Procedure
         clubb_fatal_error              ! Constant
 
     use constants_clubb, only:  &
@@ -463,7 +463,7 @@ module advance_windm_edsclrm_module
                                 solution )                                        ! intent(out)
 
       ! Check for singular matrices and bad LAPACK arguments
-      if ( clubb_at_least_debug_level( 0 ) ) then
+      if ( clubb_at_least_debug_level_api( 0 ) ) then
         if ( any(err_info%err_code == clubb_fatal_error) ) then
           write(fstderr, *) err_info%err_header_global
           write(fstderr,*) "Fatal error solving for um/vm"
@@ -840,7 +840,7 @@ module advance_windm_edsclrm_module
                                 solution )                                        ! intent(out)
 
       ! Check for singular matrices and bad LAPACK arguments
-      if ( clubb_at_least_debug_level( 0 ) ) then
+      if ( clubb_at_least_debug_level_api( 0 ) ) then
         if ( any(err_info%err_code == clubb_fatal_error) ) then
           write(fstderr, *) err_info%err_header_global
           write(fstderr,*) "Fatal error solving for um_pert/vm_pert"
@@ -1058,7 +1058,7 @@ module advance_windm_edsclrm_module
                                 lhs, rhs, err_info,              & ! intent(inout)
                                 solution )                         ! intent(out)
 
-      if ( clubb_at_least_debug_level( 0 ) ) then
+      if ( clubb_at_least_debug_level_api( 0 ) ) then
         if ( any(err_info%err_code == clubb_fatal_error) ) then
           write(fstderr, *) err_info%err_header_global
           write(fstderr,*) "Fatal error solving for edsclrm"
@@ -1114,7 +1114,7 @@ module advance_windm_edsclrm_module
 
     endif
 
-    if ( clubb_at_least_debug_level( 0 ) ) then
+    if ( clubb_at_least_debug_level_api( 0 ) ) then
         if ( any(err_info%err_code == clubb_fatal_error) ) then
 
           !$acc update host( wm_zt, Km_zm, ug, vg, um_ref, vm_ref, wp2, &
@@ -1687,8 +1687,8 @@ module advance_windm_edsclrm_module
         fstderr
 
     use error_code, only: &
-        clubb_at_least_debug_level,  & ! Procedure
-        clubb_fatal_error              ! Constant
+        clubb_at_least_debug_level_api,  & ! Procedure
+        clubb_fatal_error                  ! Constant
 
     implicit none
 
@@ -1791,7 +1791,7 @@ module advance_windm_edsclrm_module
                           solution )                                ! Intent(out)
     end if
 
-    if ( clubb_at_least_debug_level( 0 ) ) then
+    if ( clubb_at_least_debug_level_api( 0 ) ) then
       if ( any(err_info%err_code == clubb_fatal_error) ) then
         write(fstderr, *) err_info%err_header_global
         write(fstderr,*) "calling tridiag_solve in windm_edsclrm_solve"

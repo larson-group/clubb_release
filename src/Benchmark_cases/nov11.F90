@@ -138,7 +138,7 @@ module nov11
 !
 !    use interpolation, only: lin_interpolate_on_grid ! Procedure(s)
 !
-!    use error_code, only: clubb_at_least_debug_level  ! Procedure
+!    use error_code, only: clubb_at_least_debug_level_api  ! Procedure
 !
 !    use array_index, only:  & 
 !        iisclr_thl, iisclr_rt, iiedsclr_thl, iiedsclr_rt ! Variable(s)
@@ -330,7 +330,7 @@ module nov11
 !          call lin_interpolate_on_grid( nparam, zsubs, wt1, gr%zt(1,k), wm_zt(k) )
 !        else
 !          wm_zt(k) = 0.0_core_rknd
-!          if ( clubb_at_least_debug_level( 1 ) ) then
+!          if ( clubb_at_least_debug_level_api( 1 ) ) then
 !            write(fstderr,*) "Thermodynamic grid level", k, "at height",  &
 !                             gr%zt(1,k), "m. is above the highest level ",  &
 !                             "specified in the subsidence sounding, which ",  &

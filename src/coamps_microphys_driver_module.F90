@@ -63,7 +63,7 @@ module coamps_microphys_driver_module
         stats_metadata_type
 
     use error_code, only: &
-        clubb_at_least_debug_level  ! Procedure
+        clubb_at_least_debug_level_api  ! Procedure
 
     use parameters_microphys, only: l_graupel, l_ice_microphys ! Variable(s)
 
@@ -537,7 +537,7 @@ module coamps_microphys_driver_module
 
     if( any( rvm < 0. ) ) then
 
-        if ( clubb_at_least_debug_level( 1 ) ) then
+        if ( clubb_at_least_debug_level_api( 1 ) ) then
             write(fstderr,*) 'in COAMPS (R) microphys driver: some rvm < 0'
         end if
 

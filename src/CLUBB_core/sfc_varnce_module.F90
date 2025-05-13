@@ -65,7 +65,7 @@ module sfc_varnce_module
         sfc_varnce_check ! Procedure
 
     use error_code, only: &
-        clubb_at_least_debug_level,  & ! Procedure
+        clubb_at_least_debug_level_api,  & ! Procedure
         clubb_fatal_error              ! Constant
 
     use array_index, only: &
@@ -764,7 +764,7 @@ module sfc_varnce_module
       end do
     end if
 
-    if ( clubb_at_least_debug_level( 2 ) ) then 
+    if ( clubb_at_least_debug_level_api( 2 ) ) then 
 
       !$acc update host( wp2, up2, vp2, thlp2, rtp2, rtpthlp, &
       !$acc              upwp_sfc, vpwp_sfc, wpthlp, wprtp_sfc )
@@ -813,7 +813,7 @@ module sfc_varnce_module
 
       endif ! err_code == clubb_fatal_error
 
-    endif ! clubb_at_least_debug_level ( 2 )! Update surface stats
+    endif ! clubb_at_least_debug_level_api ( 2 )! Update surface stats
 
     !$acc exit data delete( uf, depth_pos_wpthlp, min_wp2_sfc_val, &
     !$acc                   um_sfc_sqd, vm_sfc_sqd, usp2_sfc, vsp2_sfc, &

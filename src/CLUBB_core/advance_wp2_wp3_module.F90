@@ -183,7 +183,7 @@ module advance_wp2_wp3_module
         core_rknd ! Variable(s)
 
     use error_code, only: &
-        clubb_at_least_debug_level,  & ! Procedure
+        clubb_at_least_debug_level_api,  & ! Procedure
         clubb_fatal_error              ! Constant
 
     use stats_type, only: stats ! Type
@@ -548,7 +548,7 @@ module advance_wp2_wp3_module
     end do
     !$acc end parallel loop
 
-    if ( clubb_at_least_debug_level( 0 ) ) then
+    if ( clubb_at_least_debug_level_api( 0 ) ) then
 
       !$acc parallel loop gang vector collapse(2) default(present)
       do k = 1, nzt
@@ -1119,7 +1119,7 @@ module advance_wp2_wp3_module
 
     end if ! wp3_sponge_damp_settings%l_sponge_damping
 
-    if ( clubb_at_least_debug_level( 0 ) ) then
+    if ( clubb_at_least_debug_level_api( 0 ) ) then
       if ( any(err_info%err_code == clubb_fatal_error) ) then
 
         !$acc update host( sfc_elevation, sigma_sqd_w, wm_zm, sfc_elevation, &
@@ -1262,7 +1262,7 @@ module advance_wp2_wp3_module
         wp2_max
 
     use error_code, only: &
-        clubb_at_least_debug_level,  & ! Procedure
+        clubb_at_least_debug_level_api,  & ! Procedure
         clubb_fatal_error              ! Constants
 
     use model_flags, only: &
@@ -1550,7 +1550,7 @@ module advance_wp2_wp3_module
       !$acc end parallel loop
     endif
 
-    if ( clubb_at_least_debug_level( 0 ) ) then
+    if ( clubb_at_least_debug_level_api( 0 ) ) then
       if ( any(err_info%err_code == clubb_fatal_error) ) then
 
         !$acc update host( lhs, rhs_save )
@@ -1841,7 +1841,7 @@ module advance_wp2_wp3_module
       ! Debugging to check if wp2 hole-filling is conservative:
       ! Compute vertical_avg before and after hole-filling
       ! Output warning in case the average changed from hole-filling
-      if ( clubb_at_least_debug_level(3) ) then
+      if ( clubb_at_least_debug_level_api(3) ) then
         wp2_avg_before = vertical_avg(nzm, rho_ds_zm, wp2, gr%dzm)
       endif
 
@@ -1853,7 +1853,7 @@ module advance_wp2_wp3_module
                                     gr%dzm, rho_ds_zm, gr%grid_dir_indx, & ! In
                                     wp2 )                                  ! InOut
 
-      if ( clubb_at_least_debug_level(3) ) then
+      if ( clubb_at_least_debug_level_api(3) ) then
         wp2_avg_after = vertical_avg(nzm, rho_ds_zm, wp2, gr%dzm)
         if ( abs(wp2_avg_before - wp2_avg_after) > epsilon(wp2_avg_after)*1000 ) then
           write(fstderr, *) "Warning! Hole-filling on wp2 is not conservative! ", &
@@ -1930,7 +1930,7 @@ module advance_wp2_wp3_module
                  upwp(i,k)**2 / ( up2(i,k) * max_mag_correlation_flux**2 ), &
                  vpwp(i,k)**2 / ( vp2(i,k) * max_mag_correlation_flux**2 ) )
 
-          if ( clubb_at_least_debug_level(3) ) then
+          if ( clubb_at_least_debug_level_api(3) ) then
             if ( wp2_min_array(i,k) > one ) then
               write(fstderr, *) "Warning: wp2_min_array(", i, ",", k, ") = ", wp2_min_array(i,k), &
                                "> 1.0. The threshold value is limited to 1.0."

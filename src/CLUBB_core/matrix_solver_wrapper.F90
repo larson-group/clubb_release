@@ -7,7 +7,7 @@ module matrix_solver_wrapper
     core_rknd ! Variable(s)
 
   use error_code, only: &
-    clubb_at_least_debug_level, & ! Procedure
+    clubb_at_least_debug_level_api, & ! Procedure
     clubb_no_error,             & ! Constant
     clubb_fatal_error
 
@@ -150,7 +150,7 @@ module matrix_solver_wrapper
     else
 
       ! The solve method should match one of the above
-      if ( clubb_at_least_debug_level( 0 ) ) then
+      if ( clubb_at_least_debug_level_api( 0 ) ) then
         write(fstderr,*) err_info%err_header_global
         write(fstderr,*) "Error in band_solve_single_rhs_multiple_lhs: "
         write(fstderr,*) "  no case for penta_solve_method = ", penta_solve_method
@@ -270,7 +270,7 @@ module matrix_solver_wrapper
     else
 
       ! The solve method should match one of the above
-      if ( clubb_at_least_debug_level( 0 ) ) then
+      if ( clubb_at_least_debug_level_api( 0 ) ) then
         write(fstderr,*) err_info%err_header_global
         write(fstderr,*) "Error in band_solve_multiple_rhs_lhs: "
         write(fstderr,*) "  no case for penta_solve_method = ", penta_solve_method
@@ -380,7 +380,7 @@ module matrix_solver_wrapper
     else
 
       ! The solve method should match one of the above
-      if ( clubb_at_least_debug_level( 0 ) ) then
+      if ( clubb_at_least_debug_level_api( 0 ) ) then
         write(fstderr,*) err_info%err_header_global
         write(fstderr,*) "Error in tridiag_solve_single_rhs_lhs: "
         write(fstderr,*) "  no case for tridiag_solve_method = ", tridiag_solve_method
@@ -494,7 +494,7 @@ module matrix_solver_wrapper
     else
 
       ! The solve method should match one of the above
-      if ( clubb_at_least_debug_level( 0 ) ) then
+      if ( clubb_at_least_debug_level_api( 0 ) ) then
         write(fstderr,*) err_info%err_header_global
         write(fstderr,*) "Error in tridiag_solve_single_rhs_multiple_lhs: "
         write(fstderr,*) "  no case for tridiag_solve_method = ", tridiag_solve_method
@@ -608,7 +608,7 @@ module matrix_solver_wrapper
     else
 
       ! The solve method should match one of the above
-      if ( clubb_at_least_debug_level( 0 ) ) then
+      if ( clubb_at_least_debug_level_api( 0 ) ) then
         write(fstderr,*) err_info%err_header_global
         write(fstderr,*) "Error in tridiag_solve_multiple_rhs_lhs: "
         write(fstderr,*) "  no case for tridiag_solve_method = ", tridiag_solve_method

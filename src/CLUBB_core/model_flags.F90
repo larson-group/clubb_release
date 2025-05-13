@@ -13,7 +13,7 @@ module model_flags
   implicit none
 
   public :: clubb_config_flags_type, set_default_clubb_config_flags_api, &
-            initialize_clubb_config_flags_type_api, print_clubb_config_flags
+            initialize_clubb_config_flags_type_api, print_clubb_config_flags_api
 
   private ! Default Scope
 
@@ -881,7 +881,7 @@ module model_flags
   end subroutine initialize_clubb_config_flags_type_api
 
 !===============================================================================
-  subroutine print_clubb_config_flags( iunit, clubb_config_flags )
+  subroutine print_clubb_config_flags_api( iunit, clubb_config_flags )
 
 ! Description:
 !   Prints the clubb_config_flags.
@@ -973,6 +973,6 @@ module model_flags
     write(iunit,*) "l_add_dycore_grid = ",clubb_config_flags%l_add_dycore_grid
 
     return
-  end subroutine print_clubb_config_flags
+  end subroutine print_clubb_config_flags_api
 
 end module model_flags

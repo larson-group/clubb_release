@@ -60,7 +60,7 @@ contains
       core_rknd
       
     use error_code, only: &
-       clubb_at_least_debug_level  ! Procedure
+       clubb_at_least_debug_level_api  ! Procedure
 
     use estimate_scm_microphys_module, only: &
       est_single_column_tndcy
@@ -178,7 +178,7 @@ contains
 
     ! Perform LH and analytic microphysical calculations
     ! As a test of SILHS, compute an estimate of Kessler microphysics
-    if ( clubb_at_least_debug_level( 2 ) ) then
+    if ( clubb_at_least_debug_level_api( 2 ) ) then
        call est_kessler_microphys_api &
             ( nzt, num_samples, pdf_dim, &                        ! Intent(in)
               X_nl_all_levs, pdf_params, rcm, cloud_frac, &      ! Intent(in)

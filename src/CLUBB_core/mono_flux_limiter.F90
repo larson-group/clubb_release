@@ -304,7 +304,7 @@ module mono_flux_limiter
         fstderr
 
     use error_code, only: &
-        clubb_at_least_debug_level,  & ! Procedure
+        clubb_at_least_debug_level_api,  & ! Procedure
         clubb_fatal_error              ! Constant
 
     use clubb_precision, only: &
@@ -873,7 +873,7 @@ module mono_flux_limiter
         !$acc end parallel loop
 
         ! Check for errors
-        if ( clubb_at_least_debug_level( 0 ) ) then
+        if ( clubb_at_least_debug_level_api( 0 ) ) then
           if ( any(err_info%err_code == clubb_fatal_error) ) then
             write(fstderr, *) err_info%err_header_global
             write(fstderr, *) "Error in monotonic_turbulent_flux_limit after calling mfl_xm_solve"
@@ -1289,8 +1289,8 @@ module mono_flux_limiter
         core_rknd
 
     use error_code, only: &
-        clubb_at_least_debug_level, & ! Procedure
-        clubb_fatal_error             ! Constant
+        clubb_at_least_debug_level_api, & ! Procedure
+        clubb_fatal_error                 ! Constant
 
     use err_info_type_module, only: &
         err_info_type     ! Type
@@ -1381,7 +1381,7 @@ module mono_flux_limiter
                         lhs, rhs, err_info,                     & ! Intent(inout)
                         xm )                                      ! Intent(out)
 
-    if ( clubb_at_least_debug_level( 0 ) ) then
+    if ( clubb_at_least_debug_level_api( 0 ) ) then
       if ( any(err_info%err_code == clubb_fatal_error) ) then
         write(fstderr, *) err_info%err_header_global
         write(fstderr,*) "calling tridiag_solve in mfl_xm_solve"

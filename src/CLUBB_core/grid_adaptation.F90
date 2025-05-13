@@ -14,7 +14,7 @@ module grid_adaptation_module
       one, fstdout, fstderr ! Constants
 
   use error_code, only: &
-      clubb_at_least_debug_level
+      clubb_at_least_debug_level_api
 
   implicit none
 
@@ -51,7 +51,7 @@ module grid_adaptation_module
       setup_grid_api
 
     use error_code, only: &
-      clubb_at_least_debug_level,  & ! Procedure
+      clubb_at_least_debug_level_api,  & ! Procedure
       clubb_fatal_error
 
     use err_info_type_module, only: &
@@ -120,7 +120,7 @@ module grid_adaptation_module
                          momentum_heights, thermodynamic_heights, &     ! intent(in)
                          gr, err_info )                                 ! intent(inout)
 
-    if ( clubb_at_least_debug_level(0) ) then
+    if ( clubb_at_least_debug_level_api(0) ) then
       if ( any(err_info%err_code == clubb_fatal_error) ) then
         write(fstderr, *) err_info%err_header_global
         write(fstderr, *) "Fatal error calling setup_grid_api in setup_simple_gr_dycore"
@@ -358,7 +358,7 @@ module grid_adaptation_module
         end do
     end do
 
-    if ( clubb_at_least_debug_level( 2 ) ) then
+    if ( clubb_at_least_debug_level_api( 2 ) ) then
       call check_remap_conservation( remapping_matrix, (nlevel_target-1), (nlevel_source-1), &
                                      levels_source, levels_target, &
                                      total_idx_rho_lin_spline, &
@@ -1317,7 +1317,7 @@ module grid_adaptation_module
         end do
     end if
 
-    if ( clubb_at_least_debug_level( 2 ) ) then
+    if ( clubb_at_least_debug_level_api( 2 ) ) then
       ! check if minimum of function is actually bigger or equal to min_dens
       if ((minval(gr_dens_norm) + tol) < min_dens) then
         write(fstderr,*) "WARNING! The minimum of the normalized function is below min_dens."
@@ -1598,7 +1598,7 @@ module grid_adaptation_module
     !grid_heights_idx = shape(grid_heights)
     grid_heights_idx = size(grid_heights) ! counts the scalar values
 
-    if ( clubb_at_least_debug_level( 2 ) ) then
+    if ( clubb_at_least_debug_level_api( 2 ) ) then
         call check_grid( grid_heights_idx, grid_heights, &
                          num_levels, min_dens, &
                          grid_sfc, grid_top )
@@ -1653,7 +1653,7 @@ module grid_adaptation_module
         core_rknd ! Variable(s)
 
     use error_code, only: &
-        clubb_at_least_debug_level,  & ! Procedure
+        clubb_at_least_debug_level_api,  & ! Procedure
         clubb_fatal_error
 
     use clubb_api_module, only: &
@@ -1902,7 +1902,7 @@ module grid_adaptation_module
                          new_gr_zm, thermodynamic_heights_placeholder, &        ! intent(in)
                          new_gr, err_info )                                     ! intent(inout)
 
-    if ( clubb_at_least_debug_level(0) ) then
+    if ( clubb_at_least_debug_level_api(0) ) then
       if ( any(err_info%err_code == clubb_fatal_error) ) then
         write(fstderr, *) err_info%err_header_global
         write(fstderr, *) "Fatal error calling setup_grid_api in adapt_grid"
