@@ -14,12 +14,52 @@ pipeline {
     // The next 2 stages check to make sure the test produced the expected output errors
     stage('Check for wp2 NaN error from advance_wp2_wp3') {
       steps {
-        sh '''grep 'Error calling advance_wp2_wp3' run_scripts/advance_wp2_wp3_bad_wp2'''
+        script{
+            // The shebang is necessary to silently change the script behavior in two ways:
+            // x: Suppresses unnecessary outputs in the Jenkins log. The grep command, for example is not announced anymore.
+            // e: The script continues even if a command fails. The grep is supposed to fail in the 'no error' case,
+            //    but we still want to write to the log a FAIL message.
+            sh '''#!/bin/bash +ex
+                  # Find the right error message in the CLUBB log and write the grep result to a txt file
+                  grep "Error calling advance_wp2_wp3" run_scripts/advance_wp2_wp3_bad_wp2 > output.txt
+                  # Check if 'output.txt' file is empty (-s is TRUE is the file is not empty)
+                  if [ -s output.txt ]; then
+                    echo "Error message 'Error calling advance_wp2_wp3' found in log"
+                    echo "CLUBB error handling test for advance_wp2_wp3 was SUCCESSFUL"
+                    rm output.txt
+                    # Trigger SUCCESS state for Jenkins (this is for clarity, since exit code 0 is default)
+                    exit 0
+                  else
+                    echo "Error message 'Error calling advance_wp2_wp3' NOT found in log"
+                    echo "CLUBB error handling test for advance_wp2_wp3 FAILED"
+                    rm output.txt
+                    # Trigger FAIL state for Jenkins
+                    exit 1
+                  fi'''
+        }
       }
     }
     stage('Check for wp2 NaN error from advance_wm_wpxp') {
       steps {
-        sh '''grep 'Error calling advance_xm_wpxp' run_scripts/advance_xm_wpxp_bad_wp2'''
+        script{
+            sh '''#!/bin/bash +ex
+                  # Find the right error message in the CLUBB log and write the grep result to a txt file
+                  grep "Error calling advance_xm_wpxp" run_scripts/advance_xm_wpxp_bad_wp2 > output.txt
+                  # Check if 'output.txt' file is empty (-s is TRUE is the file is not empty)
+                  if [ -s output.txt ]; then
+                    echo "Error message 'Error calling advance_xm_wpxp' found in log"
+                    echo "CLUBB error handling test for advance_xm_wpxp was SUCCESSFUL"
+                    rm output.txt
+                    # Trigger SUCCESS state for Jenkins (this is for clarity, since exit code 0 is default)
+                    exit 0
+                  else
+                    echo "Error message 'Error calling advance_xm_wpxp' NOT found in log"
+                    echo "CLUBB error handling test for advance_xm_wpxp FAILED"
+                    rm output.txt
+                    # Trigger FAIL state for Jenkins
+                    exit 1
+                  fi'''
+        }
       }
     }
   }
