@@ -115,8 +115,7 @@ module atex
   use interpolation, only: &
     lin_interp_between_grids
   
-  use grid_adaptation_module, only: &
-    remapping_matrix_zt_values, &
+  use remapping_module, only: &
     remap_vals_to_target
 
   use model_flags, only: &
@@ -159,8 +158,8 @@ module atex
     p_sfc
 
   !--------------------- InOut Variables ---------------------
-    integer, intent(inout) :: &
-      err_code    ! Error code catching and relaying any errors occurring in this subroutine
+  integer, intent(inout) :: &
+    err_code    ! Error code catching and relaying any errors occurring in this subroutine
 
   !--------------------- Output Variables ---------------------
   real( kind = core_rknd ), intent(out), dimension(ngrdcol,gr%nzt) :: &
@@ -179,6 +178,9 @@ module atex
 
   !--------------------- Local Variables ---------------------
   integer :: i, k
+  
+  integer, parameter :: &
+    iv_other = 1
 
   integer, dimension(ngrdcol) :: &
     z_lev
@@ -196,8 +198,8 @@ module atex
   real( kind = core_rknd ), dimension(ngrdcol,gr_dycore%nzt) :: & 
     rtm_dycore             ! Total water mixing ratio                      [kg/kg]
 
-  real( kind = core_rknd ), dimension(ngrdcol,gr%nzt,gr_dycore%nzt) :: &
-    R_ij
+  logical :: &
+    l_zt_variable
 
   !--------------------- Begin Code ---------------------
 
@@ -305,41 +307,31 @@ module atex
       call calc_forcings( ngrdcol, gr_dycore, z_inversion_dycore, &  ! intent(in)
                           thlm_forcing_dycore, rtm_forcing_dycore )  ! intent(out)
 
-      if ( grid_remap_method == cons_ullrich_remap ) then
+      l_zt_variable = .true.
 
-        call remapping_matrix_zt_values( ngrdcol, &           ! Intent(in)
-                                         gr_dycore, gr, &     ! Intent(in)
-                                         gr_dycore%nzm, &     ! Intent(in)
-                                         rho_ds_zm_dycore, &  ! Intent(in)
-                                         gr_dycore%zm, &      ! Intent(in)
-                                         R_ij )               ! Intent(out)
+      thlm_forcing = remap_vals_to_target( ngrdcol, &
+                                           gr_dycore, gr, &
+                                           gr_dycore%nzt, &
+                                           thlm_forcing_dycore, &
+                                           gr%nzt, &
+                                           gr_dycore%nzm, &
+                                           rho_ds_zm_dycore, &
+                                           gr_dycore%zm, &
+                                           iv_other, p_sfc, &
+                                           grid_remap_method, &
+                                           l_zt_variable )
 
-        thlm_forcing = remap_vals_to_target( ngrdcol, &
-                                             gr_dycore%nzm, gr%nzm, &
-                                             gr_dycore%zm, gr%zm, &
-                                             gr_dycore%nzm, &
-                                             rho_ds_zm_dycore, &
-                                             gr_dycore%zm, &
-                                             thlm_forcing_dycore, &
-                                             1, & ! TODO replace by named variable
-                                             R_ij, p_sfc )
-
-        rtm_forcing = remap_vals_to_target( ngrdcol, &
-                                            gr_dycore%nzm, gr%nzm, &
-                                            gr_dycore%zm, gr%zm, &
-                                            gr_dycore%nzm, &
-                                            rho_ds_zm_dycore, &
-                                            gr_dycore%zm, &
-                                            rtm_forcing_dycore, &
-                                            1, & ! TODO replace by named variable
-                                            R_ij, p_sfc )
-
-      
-      else
-        write(fstderr,*) "There is currently no method implemented for", &
-                         " grid_remap_method=", grid_remap_method
-        error stop 'Invalid option for flag grid_remap_method.'
-      end if
+      rtm_forcing = remap_vals_to_target( ngrdcol, &
+                                          gr_dycore, gr, &
+                                          gr_dycore%nzt, &
+                                          rtm_forcing_dycore, &
+                                          gr%nzt, &
+                                          gr_dycore%nzm, &
+                                          rho_ds_zm_dycore, &
+                                          gr_dycore%zm, &
+                                          iv_other, p_sfc, &
+                                          grid_remap_method, &
+                                          l_zt_variable )
 
     else
 

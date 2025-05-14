@@ -4163,12 +4163,12 @@ module clubb_driver
     else
 
       if ( l_add_dycore_grid .and. trim( runtype ) /= 'atex' ) then
-        if ( grid_remap_method /= cons_ullrich_remap .or. trim( runtype ) /= 'gabls2' ) then
+        if ( trim( runtype ) /= 'gabls2' ) then
           ! works for gabls2 since forcings are just set to 0, so it doesn't make any difference
           ! if we first set the forcings on dycore grid to zero and then remap to the physics
           ! grid or if we just directly set the forcings on the physics grid to 0,
           ! at least if remapping scheme is consistent
-          ! (which is the case for ullrich remapping scheme (method 1))
+          ! (which is the case for ullrich remapping scheme (method 1) and ppm (method 2))
           write(fstderr,*) 'WARNING! The option l_add_dycore_grid=.true. or ', &
                            'grid_adapt_in_time_method>0 can currently only ', &
                            'be used for cases with forcings from an input file and for the atex ', &

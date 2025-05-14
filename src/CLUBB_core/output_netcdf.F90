@@ -200,11 +200,12 @@ module output_netcdf
 
   subroutine write_netcdf_helper( l_different_output_grid, &
                                   gr_source, gr_target, &
-                                  zm_zt, &
+                                  l_zt_variable, &
                                   total_idx_rho_lin_spline, &
                                   rho_lin_spline_vals, &
                                   rho_lin_spline_levels, &
                                   p_sfc, &
+                                  grid_remap_method, &
                                   ncf, err_code )
 
 ! Description:
@@ -234,9 +235,7 @@ module output_netcdf
         core_rknd, &
         time_precision ! Constant
 
-    use grid_adaptation_module, only: &
-        remapping_matrix_zm_values, &
-        remapping_matrix_zt_values, &
+    use remapping_module, only: &
         remap_vals_to_target
 
     use grid_class, only: grid ! Type
@@ -261,17 +260,20 @@ module output_netcdf
       gr_target    ! the grid where the values should be remapped to;
                    ! only used if l_different_output_gr is .true.
 
-    character(len=2), intent(in) :: zm_zt ! whether the file is the zm or zt file
+    logical, intent(in) :: l_zt_variable ! whether the file is the zm or zt file
 
     real( kind = core_rknd ), dimension(1), intent(in) :: &
       p_sfc
+
+    integer, intent(in) :: &
+      grid_remap_method
 
     type (stat_file), intent(inout) :: ncf    ! The file
 
     integer, intent(inout) :: &
       err_code      ! Error code catching and relaying any errors occurring in this subroutine
 
-    ! Local Variables
+    !----------------------------- Local Variables ------------------------------------
     integer, dimension(:), allocatable :: stat ! Error status
 
     real(kind=8), dimension(1) :: time         ! Time          [s]
@@ -287,20 +289,16 @@ module output_netcdf
     integer :: i, &     ! Array index
                samp, lon, lat ! loop vars
 
-    real( kind=core_rknd ), dimension(:,:,:), allocatable :: R_ij_zm
-    
-    real( kind=core_rknd ), dimension(:,:,:), allocatable :: R_ij_zt
-
-    real( kind=core_rknd ), dimension(:,:), allocatable :: levels_source_zm_vals
-
-    real( kind=core_rknd ), dimension(:,:), allocatable :: levels_target_zm_vals
-
     integer :: &
       iv_wind = -1, &
       iv_pos_def = 0, &
       iv_other = 1     ! this is used as the default here
 
     integer :: iv, k
+
+    integer :: &
+      source_values_idx, &
+      target_values_idx
 
     ! TODO find better way to set if variable is wind, pos_Def or other, maybe in ncf%grid_avg_var and then set default to other etc
     character(len=7), dimension(11) :: &
@@ -315,8 +313,6 @@ module output_netcdf
                             'um_pert', &
                             'vm_pert', &
                             'wm_zm  ' ]
-
-    !character(len=:), allocatable, dimension(:) :: trimmed_iv_wind_variables
 
     character(len=21), dimension(34) :: &
       iv_pos_def_variables = [ 'rho                  ', &
@@ -354,21 +350,7 @@ module output_netcdf
                                'invrs_tau_zm         ', &
                                'Kh_zm                ' ]
 
-    !character(len=:), allocatable, dimension(:) :: trimmed_iv_pos_def_variables
-
-    ! ---- Begin Code ----
-
-    if ( l_different_output_grid ) then
-      allocate( R_ij_zm(1,gr_target%nzm,gr_source%nzm) )
-      allocate( R_ij_zt(1,gr_target%nzt,gr_source%nzt) )
-      allocate( levels_source_zm_vals(1,gr_source%nzt+2) )
-      allocate( levels_target_zm_vals(1,gr_target%nzt+2) )
-    else
-      allocate( R_ij_zm(1,1,1) )
-      allocate( R_ij_zt(1,1,1) )
-      allocate( levels_source_zm_vals(1,1) )
-      allocate( levels_target_zm_vals(1,1) )
-    end if
+    !--------------------------------- Begin Code ---------------------------
 
     ! If there is no data to write, then return
     if ( ncf%nvar == 0 ) then
@@ -396,22 +378,13 @@ module output_netcdf
     end if
 
     if ( l_different_output_grid ) then
-
-      call remapping_matrix_zm_values( 1, &                          ! Intent(in)
-                                       gr_source, gr_target, &       ! Intent(in)
-                                       total_idx_rho_lin_spline, &   ! Intent(in)
-                                       rho_lin_spline_vals, &        ! Intent(in)
-                                       rho_lin_spline_levels, &      ! Intent(in)
-                                       levels_source_zm_vals, &      ! Intent(out)
-                                       levels_target_zm_vals, &      ! Intent(out)
-                                       R_ij_zm )                     ! Intent(out)
-
-      call remapping_matrix_zt_values( 1, &                            ! Intent(in)
-                                       gr_source, gr_target, &         ! Intent(in)
-                                       total_idx_rho_lin_spline, &     ! Intent(in)
-                                       rho_lin_spline_vals, &          ! Intent(in)
-                                       rho_lin_spline_levels, &        ! Intent(in)
-                                       R_ij_zt )                       ! Intent(out)
+      if ( .not. l_zt_variable ) then
+        source_values_idx = gr_source%nzm
+        target_values_idx = gr_source%nzm
+      else if ( l_zt_variable ) then
+        source_values_idx = gr_source%nzt
+        target_values_idx = gr_source%nzt
+      end if
     end if
 
     ! If the grid_avg_var are allocated, then print to 4d netcdf.
@@ -424,6 +397,7 @@ module output_netcdf
             allocate( grid_avg_var_diff_gr(1,ncf%nlon,ncf%nlat,ncf%iz) )
           endif
 
+          ! TODO maybe find better way to associate iv variable with variables
           iv = 1
           do k = 1, size(iv_pos_def_variables)
             if ( trim(iv_pos_def_variables(k)) == ncf%grid_avg_var(i)%name ) then
@@ -438,34 +412,19 @@ module output_netcdf
 
           do lon = 1, ncf%nlon
             do lat = 1, ncf%nlat
-              if ( zm_zt == 'zm' ) then
-
-                grid_avg_var_diff_gr(:,lon,lat,:) &
-                  = remap_vals_to_target( 1, &
-                                          gr_source%nzt+2, gr_target%nzt+2, &
-                                          levels_source_zm_vals, levels_target_zm_vals, &
-                                          total_idx_rho_lin_spline, &
-                                          rho_lin_spline_vals, &
-                                          rho_lin_spline_levels, &
-                                          ncf%grid_avg_var(i)%ptr(lon,lat,ncf%ia:gr_source%nzm ), &
-                                          iv, &  ! TODO replace by named variable
-                                          R_ij_zm, p_sfc )
-
-              else if ( zm_zt == 'zt' ) then
-
-                grid_avg_var_diff_gr(:,lon,lat,:) &
-                  = remap_vals_to_target( 1, &
-                                          gr_source%nzm, gr_target%nzm, &
-                                          gr_source%zm, gr_target%zm, &
-                                          total_idx_rho_lin_spline, &
-                                          rho_lin_spline_vals, &
-                                          rho_lin_spline_levels, &
-                                          ncf%grid_avg_var(i)%ptr(lon,lat,ncf%ia:gr_source%nzt ), &
-                                          iv, & ! TODO replace by named variable
-                                          R_ij_zt, p_sfc )
-              else
-                error stop 'Invalid value for zm_zt in write_netcdf_helper()'
-              endif
+              grid_avg_var_diff_gr(:,lon,lat,:) &
+                = remap_vals_to_target( 1, &
+                                        gr_source, gr_target, &
+                                        source_values_idx, &
+                                        ncf%grid_avg_var(i)%ptr( &
+                                                     lon,lat,ncf%ia:source_values_idx), &
+                                        target_values_idx, &
+                                        total_idx_rho_lin_spline, &
+                                        rho_lin_spline_vals, &
+                                        rho_lin_spline_levels, &
+                                        iv, p_sfc, &
+                                        grid_remap_method, &
+                                        l_zt_variable )
             end do
           end do
           stat(i)  &
@@ -502,31 +461,19 @@ module output_netcdf
           do samp = 1, ncf%nsamp
             do lon = 1, ncf%nlon
               do lat = 1, ncf%nlat
-                if ( zm_zt == 'zm' ) then
-                  samples_of_var_diff_gr(:,samp,lon,lat,:) &
-                    = remap_vals_to_target( 1, &
-                                     gr_source%nzt+2, gr_target%nzt+2, &
-                                     levels_source_zm_vals, levels_target_zm_vals, &
-                                     total_idx_rho_lin_spline, &
-                                     rho_lin_spline_vals, &
-                                     rho_lin_spline_levels, &
-                                     ncf%samples_of_var(i)%ptr(samp,lon,lat,ncf%ia:gr_source%nzm), &
-                                     iv, & ! TODO replace by named variable (iv_other)
-                                     R_ij_zm, p_sfc )
-                else if ( zm_zt == 'zt' ) then
-                  samples_of_var_diff_gr(:,samp,lon,lat,:) &
-                    = remap_vals_to_target( 1, &
-                                     gr_source%nzm, gr_target%nzm, &
-                                     gr_source%zm, gr_target%zm, &
-                                     total_idx_rho_lin_spline, &
-                                     rho_lin_spline_vals, &
-                                     rho_lin_spline_levels, &
-                                     ncf%samples_of_var(i)%ptr(samp,lon,lat,ncf%ia:gr_source%nzt), &
-                                     iv, & ! TODO replace by named variable
-                                     R_ij_zt, p_sfc )
-                else
-                  error stop 'Invalid value for zm_zt in write_netcdf_helper()'
-                endif
+                samples_of_var_diff_gr(:,samp,lon,lat,:) &
+                  = remap_vals_to_target( 1, &
+                                          gr_source, gr_target, &
+                                          source_values_idx, &
+                                          ncf%samples_of_var(i)%ptr( &
+                                                   samp,lon,lat,ncf%ia:source_values_idx), &
+                                          target_values_idx, &
+                                          total_idx_rho_lin_spline, &
+                                          rho_lin_spline_vals, &
+                                          rho_lin_spline_levels, &
+                                          iv, p_sfc, &
+                                          grid_remap_method, &
+                                          l_zt_variable )
               end do
             end do
           end do
@@ -572,11 +519,6 @@ module output_netcdf
       deallocate( samples_of_var_diff_gr )
     end if
 
-    deallocate( R_ij_zm )
-    deallocate( R_ij_zt )
-    deallocate( levels_source_zm_vals )
-    deallocate( levels_target_zm_vals )
-
     return
   end subroutine write_netcdf_helper
 
@@ -610,7 +552,8 @@ module output_netcdf
       l_different_output_grid ! use different grid to write values to file
 
     integer :: &
-      total_idx_rho_lin_spline_placeholder ! number of points in the rho spline
+      total_idx_rho_lin_spline_placeholder, & ! number of points in the rho spline
+      grid_remap_method_placeholder
 
     real( kind = core_rknd ), dimension(:), allocatable :: &
       rho_lin_spline_vals_placeholder, &  ! the rho values for constructing the spline for
@@ -624,7 +567,7 @@ module output_netcdf
       gr_target_placeholder    ! the grid where the values should be remapped to;
                                ! only used if l_different_output_gr is .true.
 
-    character(len=2) :: zm_zt_placeholder ! whether the file is the zm or zt file
+    logical :: l_zt_variable_placeholder ! whether the file is the zm or zt file
                                           ! only used if l_different_output_gr is .true.
 
     real( kind = core_rknd ), dimension(1) :: &
@@ -632,20 +575,22 @@ module output_netcdf
 
     ! ---- Begin Code ----
     l_different_output_grid = .false.
-    zm_zt_placeholder = ''
+    l_zt_variable_placeholder = .true.
     total_idx_rho_lin_spline_placeholder = 1
     p_sfc_placeholder = -99999.0
+    grid_remap_method_placeholder = 0
 
     allocate( rho_lin_spline_vals_placeholder(total_idx_rho_lin_spline_placeholder) )
     allocate( rho_lin_spline_levels_placeholder(total_idx_rho_lin_spline_placeholder) )
 
     call write_netcdf_helper( l_different_output_grid, &
                               gr_source_placeholder, gr_target_placeholder, &
-                              zm_zt_placeholder, &
+                              l_zt_variable_placeholder, &
                               total_idx_rho_lin_spline_placeholder, &
                               rho_lin_spline_vals_placeholder, &
                               rho_lin_spline_levels_placeholder, &
                               p_sfc_placeholder, &
+                              grid_remap_method_placeholder, &
                               ncf, err_code )
      
     deallocate( rho_lin_spline_vals_placeholder )
@@ -656,11 +601,12 @@ module output_netcdf
   !-------------------------------------------------------------------------------
 
   subroutine write_netcdf_w_diff_output_gr( gr_source, gr_target, &
-                                            zm_zt, &
+                                            l_zt_variable, &
                                             total_idx_rho_lin_spline, &
                                             rho_lin_spline_vals, &
                                             rho_lin_spline_levels, &
                                             p_sfc, &
+                                            grid_remap_method, &
                                             ncf, err_code )
 
   ! Description:
@@ -695,10 +641,13 @@ module output_netcdf
       gr_target    ! the grid where the values should be remapped to;
                    ! only used if l_different_output_gr is .true.
 
-    character(len=2), intent(in) :: zm_zt ! whether the file is the zm or zt file
+    logical, intent(in) :: l_zt_variable ! whether the file is the zm or zt file
 
     real( kind = core_rknd ), dimension(1), intent(in) :: &
       p_sfc
+
+    integer, intent(in) :: &
+      grid_remap_method
 
     type (stat_file), intent(inout) :: ncf    ! The file
 
@@ -714,11 +663,12 @@ module output_netcdf
 
     call write_netcdf_helper( l_different_output_grid, &
                               gr_source, gr_target, &
-                              zm_zt, &
+                              l_zt_variable, &
                               total_idx_rho_lin_spline, &
                               rho_lin_spline_vals, &
                               rho_lin_spline_levels, &
                               p_sfc, &
+                              grid_remap_method, &
                               ncf, err_code )
 
   end subroutine write_netcdf_w_diff_output_gr

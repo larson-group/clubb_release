@@ -2059,6 +2059,7 @@ module stats_clubb_utilities
                                         rho_lin_spline_vals,           & ! intent(in)
                                         rho_lin_spline_levels,         & ! intent(in)
                                         p_sfc,                         & ! intent(in)
+                                        grid_remap_method,             & ! intent(in)
                                         stats_zt, stats_zm, stats_sfc, & ! intent(inout)
                                         stats_lh_zt, stats_lh_sfc,     & ! intent(inout)
                                         stats_rad_zt, stats_rad_zm,    & ! intent(inout)
@@ -2129,6 +2130,9 @@ module stats_clubb_utilities
     real( kind = core_rknd ), dimension(1), intent(in) :: &
       p_sfc
 
+    integer, intent(in) :: &
+      grid_remap_method
+
     type (stats), intent(inout) :: &
       stats_zt, &
       stats_zm, &
@@ -2146,7 +2150,8 @@ module stats_clubb_utilities
 
     ! Local Variables
 
-    logical :: l_error
+    logical :: l_error, &
+               l_zt_variable
 
     ! ------------------- Begin Code -------------------
 
@@ -2235,20 +2240,24 @@ module stats_clubb_utilities
 
 #ifdef NETCDF
         if ( l_different_output_grid ) then
+          l_zt_variable = .true.
           call write_netcdf_w_diff_output_gr( gr_source, gr_target, &      ! Intent(in)
-                                              'zt', &                      ! Intent(in)
+                                              l_zt_variable, &             ! Intent(in)
                                               total_idx_rho_lin_spline, &  ! Intent(in)
                                               rho_lin_spline_vals, &       ! Intent(in)
                                               rho_lin_spline_levels, &     ! Intent(in)
                                               p_sfc, &
+                                              grid_remap_method, &
                                               stats_zt%file, err_code )    ! Intent(inout)
           
+          l_zt_variable = .false.
           call write_netcdf_w_diff_output_gr( gr_source, gr_target, &      ! Intent(in)
-                                              'zm', &                      ! Intent(in)
+                                              l_zt_variable, &             ! Intent(in)
                                               total_idx_rho_lin_spline, &  ! Intent(in)
                                               rho_lin_spline_vals, &       ! Intent(in)
                                               rho_lin_spline_levels, &     ! Intent(in)
                                               p_sfc, &
+                                              grid_remap_method, &
                                               stats_zm%file, err_code )    ! Intent(inout)
         else
           call write_netcdf( stats_zt%file, err_code ) ! intent(inout)
@@ -2365,7 +2374,8 @@ module stats_clubb_utilities
     logical :: l_different_output_grid
 
     integer :: &
-      total_idx_rho_lin_spline_placeholder ! number of points in the rho spline
+      total_idx_rho_lin_spline_placeholder, & ! number of points in the rho spline
+      grid_remap_method_placeholder
 
     real( kind = core_rknd ), dimension(:), allocatable :: &
       rho_lin_spline_vals_placeholder, &  ! the rho values for constructing the spline for
@@ -2386,6 +2396,7 @@ module stats_clubb_utilities
     l_different_output_grid = .false.
     total_idx_rho_lin_spline_placeholder = 1
     p_sfc_placeholder = -9999.0
+    grid_remap_method_placeholder = 0
 
     allocate( rho_lin_spline_vals_placeholder(total_idx_rho_lin_spline_placeholder) )
     allocate( rho_lin_spline_levels_placeholder(total_idx_rho_lin_spline_placeholder) )
@@ -2397,6 +2408,7 @@ module stats_clubb_utilities
                                     rho_lin_spline_vals_placeholder,              & ! intent(in)
                                     rho_lin_spline_levels_placeholder,            & ! intent(in)
                                     p_sfc_placeholder,                            & ! intent(in)
+                                    grid_remap_method_placeholder,                & ! intent(in)
                                     stats_zt, stats_zm, stats_sfc,                & ! intent(inout)
                                     stats_lh_zt, stats_lh_sfc,                    & ! intent(inout)
                                     stats_rad_zt, stats_rad_zm,                   & ! intent(inout)
@@ -2415,6 +2427,7 @@ module stats_clubb_utilities
                                                   rho_lin_spline_vals,           & ! intent(in)
                                                   rho_lin_spline_levels,         & ! intent(in)
                                                   p_sfc,                         & ! intent(in)
+                                                  grid_remap_method,             & ! intent(in)
                                                   stats_zt, stats_zm, stats_sfc, & ! intent(inout)
                                                   stats_lh_zt, stats_lh_sfc,     & ! intent(inout)
                                                   stats_rad_zt, stats_rad_zm,    & ! intent(inout)
@@ -2463,6 +2476,9 @@ module stats_clubb_utilities
     real( kind = core_rknd ), dimension(1), intent(in) :: &
       p_sfc
 
+    integer, intent(in) :: &
+      grid_remap_method
+
     type (stats), intent(inout) :: &
       stats_zt, &
       stats_zm, &
@@ -2492,6 +2508,7 @@ module stats_clubb_utilities
                                     rho_lin_spline_vals,            & ! intent(in)
                                     rho_lin_spline_levels,          & ! intent(in)
                                     p_sfc,                          & ! intent(in)
+                                    grid_remap_method,              & ! intent(in)
                                     stats_zt, stats_zm, stats_sfc,  & ! intent(inout)
                                     stats_lh_zt, stats_lh_sfc,      & ! intent(inout)
                                     stats_rad_zt, stats_rad_zm,     & ! intent(inout)

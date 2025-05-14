@@ -46,9 +46,10 @@ module model_flags
   ! the remapping technique to remap the values from one grid to another
   ! starts at 1, so 0 is an invalid option for this flag
   integer, parameter, public :: &
-    cons_ullrich_remap    = 1    ! uses the remapping method proposed by Ullrich et al. in 
-                                 ! 'Arbitrary-Order Conservative and Consistent Remapping and a 
-                                 !  Theory of Linear Maps: Part II' (Formula (30))
+    cons_ullrich_remap    = 1, &    ! uses the remapping method proposed by Ullrich et al. in 
+                                    ! 'Arbitrary-Order Conservative and Consistent Remapping and a 
+                                    !  Theory of Linear Maps: Part II' (Formula (30))
+    ppm_remap             = 2       ! uses piecewise parabolic method from E3SM implementation
 
   ! Options for grid_adapt_in_time_method, either don't use this setup at all (0) or define
   ! the variables and the way the grid density function is formed
@@ -510,7 +511,7 @@ module model_flags
     penta_solve_method = lapack
     tridiag_solve_method = lapack
     saturation_formula = saturation_flatau
-    grid_remap_method = cons_ullrich_remap
+    grid_remap_method = ppm_remap
     grid_adapt_in_time_method = no_grid_adaptation
     l_use_precip_frac = .true.
     l_predict_upwp_vpwp = .true.

@@ -999,8 +999,7 @@ module time_dependent_input
       linear_interp_factor ! Procedure(s)
 
     use grid_class, only : &
-      grid, & ! Type
-      zt2zm   ! Procedure(s)
+      grid ! Type
 
     use clubb_precision, only: &
       time_precision, &
@@ -1009,18 +1008,8 @@ module time_dependent_input
     use array_index, only: &
       sclr_idx_type
 
-    use grid_adaptation_module, only: &
-      remapping_matrix_zt_values, &
+    use remapping_module, only: &
       remap_vals_to_target
-
-    use error_code, only: &
-      clubb_at_least_debug_level
-
-    use constants_clubb, only: &
-      fstderr
-
-    use model_flags, only: &
-      cons_ullrich_remap
 
     implicit none
 
@@ -1088,51 +1077,33 @@ module time_dependent_input
 
     real( kind = core_rknd ) :: time_frac
 
-    ! right now only one forcings profile can be applied, so ngrdcol=1
-    real( kind = core_rknd ), dimension(1,gr%nzt,gr_dycore%nzt) :: R_ij
+    logical :: &
+      l_zt_variable
 
     !--------------------- Begin Code ---------------------
     time_frac = -one ! Default initialization
+    iv = 1
+    l_zt_variable = .true.
 
     call time_select( time, size(dimension_var%values), dimension_var%values, &
                                  before_time, after_time, time_frac )
-
-    if ( grid_remap_method == cons_ullrich_remap ) then
-
-      ! right now only one forcings profile can be applied, so ngrdcol=1
-      call remapping_matrix_zt_values( 1, &                          ! Intent(in)
-                                       gr_dycore, gr, &              ! Intent(in)
-                                       total_idx_rho_lin_spline, &   ! Intent(in)
-                                       rho_lin_spline_vals(1,:), &   ! Intent(in)
-                                       rho_lin_spline_levels(1,:), & ! Intent(in)
-                                       R_ij )                        ! Intent(out)
-    end if
 
     do n = 2, nforcings
 
       temp_array_dycore = linear_interp_factor &
                           ( time_frac, t_dependent_forcing_data(n)%values(:,after_time), &
                             t_dependent_forcing_data(n)%values(:,before_time) )
-
-      if ( grid_remap_method == cons_ullrich_remap ) then
-
-        forcings_array(:,n,:) = remap_vals_to_target( 1, &
-                                                      gr_dycore%nzm, &
-                                                      gr%nzm, &
-                                                      gr_dycore%zm(1,:), &
-                                                      gr%zm(1,:), &
-                                                      total_idx_rho_lin_spline, &
-                                                      rho_lin_spline_vals(1,:), &
-                                                      rho_lin_spline_levels(1,:), &
-                                                      temp_array_dycore, &
-                                                      1, & ! TODO replace by named variable
-                                                      R_ij(1,:,:), p_sfc(1) )
-
-      else
-        write(fstderr,*) 'There is currently no method implemented for grid_remap_method=', &
-                         grid_remap_method, '. Set flag to different value.'
-        error stop 'Invalid value for flag grid_remap_method.'
-      end if
+      forcings_array(:,n,:) = remap_vals_to_target( 1, &
+                                                    gr_dycore, gr, &
+                                                    gr_dycore%nzt, &
+                                                    temp_array_dycore, &
+                                                    gr%nzt, &
+                                                    total_idx_rho_lin_spline, &
+                                                    rho_lin_spline_vals(1,:), &
+                                                    rho_lin_spline_levels(1,:), &
+                                                    iv, p_sfc(1), &
+                                                    grid_remap_method, &
+                                                    l_zt_variable )
     end do
 
     call apply_time_dependent_forcings_from_array( &
