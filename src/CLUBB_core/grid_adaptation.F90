@@ -7,9 +7,6 @@ module grid_adaptation_module
   use clubb_precision, only: &
       core_rknd ! Variable(s)
 
-  use grid_class, only: &
-      grid ! Type
-
   use constants_clubb, only: &
       one, fstderr ! Constants
 
@@ -67,17 +64,6 @@ module grid_adaptation_module
   real( kind = core_rknd ), dimension(:), allocatable :: &
     cumulative_chi ! cumulative chi term sum [m]
 
-
-  ! TODO remove those three variables
-  integer :: &
-    max_history_Lscale = 1000
-
-  integer :: &
-    ind_Lscale_history
-
-  real( kind = core_rknd ), dimension(:,:), allocatable :: &
-    Lscale_history ! Lscale values of the last iterations [m]
-
   contains
 
   !=============================================================================
@@ -86,7 +72,8 @@ module grid_adaptation_module
 
     use grid_class, only: &
       read_grid_heights, &
-      setup_grid
+      setup_grid, & ! Procedures
+      grid          ! Type
 
     use error_code, only: &
       clubb_fatal_error
@@ -205,8 +192,9 @@ module grid_adaptation_module
   subroutine setup_min_gr( iunit, ngrdcol, grid_sfc, grid_top, gr )
 
     use grid_class, only: &
-      read_grid_heights, &
-      setup_grid
+        read_grid_heights, &
+        setup_grid, & ! Procedures
+        grid          ! Type
 
     use error_code, only: &
       clubb_fatal_error
@@ -333,9 +321,6 @@ module grid_adaptation_module
     ! None
     !-----------------------------------------------------------------------
 
-    use clubb_precision, only: &
-        core_rknd ! Variable(s)
-
     implicit none
 
     !--------------------- Input Variables ---------------------
@@ -375,6 +360,9 @@ module grid_adaptation_module
     ! References:
     ! None
     !-----------------------------------------------------------------------
+
+    use grid_class, only: &
+        grid ! Type
 
     implicit none
 
@@ -712,9 +700,6 @@ module grid_adaptation_module
     ! None
     !-----------------------------------------------------------------------
 
-    use clubb_precision, only: &
-        core_rknd ! Variable(s)
-
     use interpolation, only: &
         zlinterp_fnc
 
@@ -891,9 +876,6 @@ module grid_adaptation_module
     ! None
     !-----------------------------------------------------------------------
 
-    use clubb_precision, only: &
-        core_rknd ! Variable(s)
-
     use interpolation, only: &
         zlinterp_fnc
 
@@ -947,9 +929,6 @@ module grid_adaptation_module
     ! References:
     ! None
     !-----------------------------------------------------------------------
-
-    use clubb_precision, only: &
-        core_rknd ! Variable(s)
 
     implicit none
 
@@ -1079,11 +1058,8 @@ module grid_adaptation_module
     ! None
     !-----------------------------------------------------------------------
 
-    use clubb_precision, only: &
-      core_rknd ! Variable(s)
-
     use interpolation, only: &
-      zlinterp_fnc
+        zlinterp_fnc
 
     implicit none
 
@@ -1196,11 +1172,8 @@ module grid_adaptation_module
     ! None
     !-----------------------------------------------------------------------
 
-    use clubb_precision, only: &
-      core_rknd ! Variable(s)
-
     use interpolation, only: &
-      zlinterp_fnc
+        zlinterp_fnc
 
     implicit none
 
@@ -1305,11 +1278,8 @@ module grid_adaptation_module
     ! None
     !-----------------------------------------------------------------------
 
-    use clubb_precision, only: &
-      core_rknd ! Variable(s)
-
     use interpolation, only: &
-      zlinterp_fnc
+        zlinterp_fnc
 
     implicit none
 
@@ -1603,22 +1573,22 @@ module grid_adaptation_module
     ! Description:
     ! Adapts the grid based on the density function and interpolates all values to the new grid.
     !-----------------------------------------------------------------------
-
-    use clubb_precision, only: &
-      core_rknd ! Variable(s)
     
     use grid_class, only: &
-      setup_grid
+        setup_grid
 
     use calc_pressure, only: &
-      init_pressure    ! Procedure(s)
+        init_pressure    ! Procedure(s)
 
     use model_flags, only: &
-      cons_ullrich_remap, &
-      ppm_remap
+        cons_ullrich_remap, &
+        ppm_remap
 
     use error_code, only: &
-      clubb_fatal_error
+        clubb_fatal_error
+    
+    use grid_class, only: &
+        grid ! Type
 
     implicit none
 
@@ -2061,6 +2031,9 @@ module grid_adaptation_module
 
     use remapping_module, only: &
         remap_vals_to_target
+
+    use grid_class, only: &
+        grid ! Type
 
     implicit none
 
@@ -3437,9 +3410,6 @@ module grid_adaptation_module
     ! None
     !-----------------------------------------------------------------------
 
-    use clubb_precision, only: &
-        core_rknd ! Variable(s)
-
     use pdf_parameter_module, only:  &
         pdf_parameter  ! Type
 
@@ -3452,6 +3422,9 @@ module grid_adaptation_module
 
     use advance_helper_module, only: &
         calc_brunt_vaisala_freq_sqd ! Procedure
+
+    use grid_class, only: &
+        grid ! Type
 
     implicit none
 
@@ -3600,9 +3573,6 @@ module grid_adaptation_module
     ! References:
     ! None
     !-----------------------------------------------------------------------
-
-    use clubb_precision, only: &
-        core_rknd ! Variable(s)
 
     implicit none
 
@@ -3783,9 +3753,6 @@ module grid_adaptation_module
     ! References:
     ! None
     !-----------------------------------------------------------------------
-
-    use clubb_precision, only: &
-        core_rknd ! Variable(s)
 
     implicit none
 
