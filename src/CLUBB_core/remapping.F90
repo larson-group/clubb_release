@@ -11,11 +11,14 @@ module remapping_module
 
   implicit none
 
-  ! TODO adjust list
   public :: remap_vals_to_target
 
-  ! TODO adjust list
-  !private :: 
+  private :: calc_mass_over_grid_intervals, matrix_vector_mult, vertical_integral_conserve_mass, &
+             check_conservation, check_monotonicity, check_consistency, &
+             remap_vals_to_target_helper, &
+             check_remap_matrix_conservation, check_remap_matrix_consistency, &
+             check_remap_matrix_monotonicity, remapping_matrix, &
+             kmppm, steepz, ppm2m, map1_ppm, remap_vals_ppm
 
   private
 
@@ -1012,7 +1015,7 @@ module remapping_module
   !-------------------------------------------------------------------------------
   !-------------------------------------------------------------------------------
 
-  subroutine kmppm(dm, a4, itot, lmt)
+  subroutine kmppm( dm, a4, itot, lmt )
     ! the monotonicity constrained defined in the PPM paper
 
     use constants_clubb, only: &
@@ -1115,7 +1118,7 @@ module remapping_module
     return
   end subroutine kmppm
 
-  subroutine steepz(i1, i2, km, a4, df2, dm, dq, dp, d4)
+  subroutine steepz( i1, i2, km, a4, df2, dm, dq, dp, d4 )
     ! the discontinuity adjustment defined in the PPM paper
 
     use constants_clubb, only: &
@@ -1186,7 +1189,7 @@ module remapping_module
     return
   end subroutine steepz
 
-  subroutine ppm2m(a4, delp, km, i1, i2, iv, kord)
+  subroutine ppm2m( a4, delp, km, i1, i2, iv, kord )
 
     use constants_clubb, only: &
         zero, &
