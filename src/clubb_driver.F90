@@ -3323,7 +3323,7 @@ module clubb_driver
         lambda = 0.5
         !lambda = 0.4
         call normalize_grid_density( ngrdcol, &
-                                     iunit_grid_adaptation, itime, &
+                                     iunit_grid_adaptation, &
                                      gr%nzm, &
                                      gr_dens_z, gr_dens, &
                                      lambda, &
@@ -3365,20 +3365,21 @@ module clubb_driver
                                    stats_lh_zt(1), stats_lh_sfc(1),           & ! intent(inout)
                                    stats_rad_zt(1), stats_rad_zm(1), err_code ) ! intent(inout)
         else
-          call stats_end_timestep_w_diff_output_gr( stats_metadata,   & ! intent(in)
-                                                    gr, gr_output,    & ! intent(in)
-                                                    gr%nzm,           & ! intent(in)
-                                                    rho_ds_zm(1,:),   & ! intent(in)
-                                                    gr%zm(1,:),       & ! intent(in)
-                                                    p_sfc(1),         & ! intent(in)
-                                                    stats_zt(1),      & ! intent(inout)
-                                                    stats_zm(1),      & ! intent(inout)
-                                                    stats_sfc(1),     & ! intent(inout)
-                                                    stats_lh_zt(1),   & ! intent(inout)
-                                                    stats_lh_sfc(1),  & ! intent(inout)
-                                                    stats_rad_zt(1),  & ! intent(inout)
-                                                    stats_rad_zm(1),  & ! intent(inout)
-                                                    err_code          & ! intent(inout)
+          call stats_end_timestep_w_diff_output_gr( stats_metadata,    & ! intent(in)
+                                                    gr, gr_output,     & ! intent(in)
+                                                    gr%nzm,            & ! intent(in)
+                                                    rho_ds_zm(1,:),    & ! intent(in)
+                                                    gr%zm(1,:),        & ! intent(in)
+                                                    p_sfc(1),          & ! intent(in)
+                                                    grid_remap_method, & ! intent(in)
+                                                    stats_zt(1),       & ! intent(inout)
+                                                    stats_zm(1),       & ! intent(inout)
+                                                    stats_sfc(1),      & ! intent(inout)
+                                                    stats_lh_zt(1),    & ! intent(inout)
+                                                    stats_lh_sfc(1),   & ! intent(inout)
+                                                    stats_rad_zt(1),   & ! intent(inout)
+                                                    stats_rad_zm(1),   & ! intent(inout)
+                                                    err_code           & ! intent(inout)
                                                   )
         endif
       end if
@@ -3444,7 +3445,8 @@ module clubb_driver
         write(*,*) 'time_current: ', time_current
         ! TODO replace itime with time_current, since itime is only iteration and time_current is actual time...
 
-        call adapt_grid( iunit_grid_adaptation, itime, ngrdcol, gr%nzm, &        ! Intent(in)
+        call cpu_time(time_start_tmp)
+        call adapt_grid( ngrdcol, gr%nzm, &                                     ! Intent(in)
                          gr%zm, norm_grid_dens, &                               ! Intent(in)
                          gr%zm, norm_min_grid_dens, &
                          sfc_elevation, l_implemented, &                         ! Intent(in)
@@ -3842,8 +3844,7 @@ module clubb_driver
       core_rknd !------------------------------------------------------ Variable(s)
 
     use model_flags, only: &
-      clubb_config_flags_type, &
-      cons_ullrich_remap
+      clubb_config_flags_type
 
     use array_index, only: &
       sclr_idx_type
