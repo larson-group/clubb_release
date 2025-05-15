@@ -767,7 +767,7 @@ module clubb_driver
       time_adapt_grid, &           ! Time spent adapting the grid and remapping all the values
       time_clubb_advance, &        ! time spent in advance_clubb_core [s]
       time_clubb_pdf, &      	   ! time spent in setup_pdf_parameters 
-				   !	and hydrometeor_mixed_moments [s]
+				                         !	and hydrometeor_mixed_moments [s]
       time_SILHS,    &             ! time needed to compute subcolumns [s]
       time_microphys_scheme, &     ! time needed for calc_microphys_scheme_tendcies [s]
       time_microphys_advance, &    ! time needed for advance_microphys [s]
@@ -3289,39 +3289,32 @@ module clubb_driver
         end do
       end if
 
-      ! TODO hide all this behind id grid adaptation or debug level 2, to not make performance worse
-      ! calculate grid density for grid adaptation
-      !if ( grid_adapt_in_time_method > no_grid_adaptation ) then
-!
-      !  if ( grid_adapt_in_time_method == Lscale_and_wp2 ) then
+      if ( grid_adapt_in_time_method > no_grid_adaptation ) then
 
-          ! TODO also stop time here for adaptation until normaizatyion or decide if adapt
-          call calc_grid_dens( ngrdcol, gr, &
-                               um, vm, &
-                               Lscale, wp2, &
-                               pdf_params, &
-                               thlm, exner, rtm, &
-                               rcm, p_in_Pa, thvm, &
-                               ice_supersat_frac, &
-                               clubb_params(:,ibv_efold), &
-                               clubb_config_flags, &
-                               gr_dens_z, gr_dens, &
-                               alt_term, lscale_term, &
-                               lscale_term_time_avg, &
-                               chi_term, &
-                               chi_term_time_avg, &
-                               brunt_term, &
-                               brunt_term_time_avg )
-        !else
-      !
-        !  write(fstderr,*) 'There is currently no grid adaptation method implemented for ', &
-        !                   'grid_adapt_in_time_method=', grid_adapt_in_time_method
-        !
-        !end if
+        ! interrupt stopping time for time_loop_end if grid gets adapted to save time specific
+        ! for calculating the normalized grid density and updating the stats vars
+        call cpu_time(time_stop)
+        time_loop_end = time_loop_end + time_stop - time_start
+        call cpu_time(time_start)
 
-        lambda = 0.3
+        call calc_grid_dens( ngrdcol, gr, &
+                             um, vm, &
+                             Lscale, wp2, &
+                             pdf_params, &
+                             thlm, exner, rtm, &
+                             rcm, p_in_Pa, thvm, &
+                             ice_supersat_frac, &
+                             clubb_params(:,ibv_efold), &
+                             clubb_config_flags, &
+                             gr_dens_z, gr_dens, &
+                             alt_term, lscale_term, &
+                             lscale_term_time_avg, &
+                             chi_term, &
+                             chi_term_time_avg, &
+                             brunt_term, &
+                             brunt_term_time_avg )
+
         lambda = 0.5
-        !lambda = 0.4
         call normalize_grid_density( ngrdcol, &
                                      iunit_grid_adaptation, &
                                      gr%nzm, &
@@ -3351,8 +3344,11 @@ module clubb_driver
           end do
         endif
 
+        call cpu_time(time_stop)
+        time_adapt_grid = time_adapt_grid + time_stop - time_start
+        call cpu_time(time_start)
 
-      !endif
+      endif
 
       ! End statistics timestep
       ! Only end stats for the first column of values, this writes the values to file,
@@ -3438,14 +3434,10 @@ module clubb_driver
                                                       ! iterations that get averaged before written
                                                       ! to file
 
-        l_first_write_to_file = .false.
-
         call cpu_time(time_start)
 
-        write(*,*) 'time_current: ', time_current
-        ! TODO replace itime with time_current, since itime is only iteration and time_current is actual time...
+        l_first_write_to_file = .false.
 
-        call cpu_time(time_start_tmp)
         call adapt_grid( ngrdcol, gr%nzm, &                                     ! Intent(in)
                          gr%zm, norm_grid_dens, &                               ! Intent(in)
                          gr%zm, norm_min_grid_dens, &
@@ -3481,7 +3473,6 @@ module clubb_driver
                          rcm_in_layer, cloud_cover, invrs_tau_zm, &              ! Intent(inout)
                          Lscale )                                                ! Intent(inout)
 
-
         if ( .not. l_add_dycore_grid .and. l_t_dependent ) then
           ! if we want to adapt the grid over time, but don't want to simulate the host model by
           ! getting forcings on the dycore grid, we need to adjust the forcings everytime for the
@@ -3498,7 +3489,10 @@ module clubb_driver
       end if
 
       if ( grid_adapt_in_time_method > no_grid_adaptation ) then
+        call cpu_time(time_start)
         write(iunit_grid_adaptation, *) 'g', itime, gr%zm
+        call cpu_time(time_stop)
+        time_adapt_grid = time_adapt_grid + time_stop - time_start
       end if
     
       if ( clubb_at_least_debug_level( 0 ) ) then
@@ -3554,7 +3548,7 @@ module clubb_driver
     write(unit=fstdout, fmt='(a,f10.4)') 'CLUBB-TIMER time_output_multi_col =  ', &
       time_output_multi_col
     if ( grid_adapt_in_time_method > no_grid_adaptation ) then
-      write(unit=fstdout, fmt='(a,f10.4)') 'CLUBB-TIMER time_adapt_grid =        ', &
+      write(unit=fstdout, fmt='(a,f10.4)') 'CLUBB-TIMER time_adapt_grid =  ', &
         time_adapt_grid
     end if
     write(unit=fstdout, fmt='(a,f10.4)') 'CLUBB-TIMER time_total =             ', &
