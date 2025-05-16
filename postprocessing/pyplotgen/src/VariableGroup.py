@@ -1005,7 +1005,8 @@ class VariableGroup:
             varnames = line_definition['var_names']
             label = line_definition['legend_label']
             if label_suffix != "":
-                label = line_definition['legend_label'] + " " + label_suffix
+                #label = line_definition['legend_label'] + " " + label_suffix
+                label = label
             variable = NetCdfVariable(varnames, dataset, independent_var_names=Case_definitions.HEIGHT_VAR_NAMES,
                                       start_time=self.start_time, end_time=self.end_time)
             variable.trimArray(self.height_min_value, self.height_max_value, data=variable.independent_data)

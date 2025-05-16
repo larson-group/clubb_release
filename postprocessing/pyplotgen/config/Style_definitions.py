@@ -91,15 +91,15 @@ MOVIE_XAXIS_SCALE_FACTOR = 0.05 # THIS VALUE SHOULD BE << 1
 FRAMES_PER_SECOND = 10 # FOR ANIMATIONS
 
 # Image output configuration
-HQ_DPI = 100 # This value overwrites the default IMG_OUTPUT_DPI when --high-quality is passed in via command line
+HQ_DPI = 300 # This value overwrites the default IMG_OUTPUT_DPI when --high-quality is passed in via command line
 IMG_OUTPUT_DPI = 45 # Recommended default value: 45
 FIGSIZE = (10,6) # The x,y proportions (in inches) to pass into matplotlib. It's not recommended to change this.
 
 # Time-height plot settings
 # An overview of all colormaps available in matplotlib can be found here:
 # https://matplotlib.org/1.4.2/examples/color/colormaps_reference.html
-CONTOUR_CMAP_GENERAL = 'Oranges' # One-sided cmap used for non-negative or non-positive variables
-CONTOUR_CMAP_CORR = 'coolwarm' # Two-sided cmap used for correlations and any other variable with positive and negative values
+CONTOUR_CMAP_GENERAL = 'inferno'#'Reds'#'magma'#'Oranges' # One-sided cmap used for non-negative or non-positive variables
+CONTOUR_CMAP_CORR = 'RdBu_r' #'seismic'#'RdBu'#'BrBG'#'coolwarm' # Two-sided cmap used for correlations and any other variable with positive and negative values
 
 # Animation settings
 ANIM_OUTPUT_FORMAT = 'gif' # or 'mp4'

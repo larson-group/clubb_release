@@ -91,6 +91,25 @@ class ContourPanel(Panel):
             x_data, y_data = np.meshgrid(x_data, y_data)
             cmap = mpl.colormaps.get_cmap(var.colors)
             vmin, vmax = c_data.min(), c_data.max()
+            #vmin, vmax = 0, 0.017 #rtm arm
+            #vmin, vmax = 0, 0.0119 #rtm astex
+            #vmin, vmax = 0, 0.00296 #rtm gabls2
+            
+            #vmin, vmax = -0.42337, 0.12668 #wpthlp arm
+            #vmin, vmax = -0.49862, 0.06589 #wpthlp astex
+            #vmin, vmax = -0.05, 0.008 #wpthlp astex new
+            #vmin, vmax = -0.11252, 0.21776 #wpthlp gabls2
+            #vmin, vmax = -0.04, 0.07 #wpthlp gabls2 new
+
+            #vmin, vmax = 0, 0.78 #cloud frac arm
+            #vmin, vmax = 0, 1.0 #cloud frac astex
+
+            #vmin, vmax = 0, 1.89 #wp2 arm
+            #vmin, vmax = 0, 0.49 #wp2 astex
+            #vmin, vmax = 0, 1.0 #wp2 gabls2
+
+            #vmin, vmax = -0.26, 0.06 #wpthlp astex noise comparison
+            
             # ticks=None means matplotlib will generate ticks automatically
             # For non-correlation variables with positive and negative values, we want to create ticks manually
             # and individually for the positive and negative parts of the colorbar,
@@ -108,6 +127,8 @@ class ContourPanel(Panel):
                 if vmin<0 and vmax>0:
                     # Positive and negative values -> Use two-sided colormap
                     cmap = mpl.colormaps.get_cmap(Style_definitions.CONTOUR_CMAP_CORR)
+                    cmap.set_over("green") # Color for values above vmax
+                    cmap.set_under("yellow")  # Color for values below vmin
                     norm = mpl.colors.TwoSlopeNorm(vmin=vmin, vcenter=0, vmax=vmax)
                     # Manually create ticks for the positive and negative part individually,
                     # then paste them together
@@ -115,6 +136,8 @@ class ContourPanel(Panel):
                 else:
                     # Only one-sided values -> Use unicolor colormap
                     cmap = mpl.colormaps.get_cmap(Style_definitions.CONTOUR_CMAP_GENERAL)
+                    cmap.set_over("green") # Color for values above vmax
+                    cmap.set_under("black")  # Color for values below vmin
                     norm = mpl.colors.Normalize(vmin=vmin, vmax=vmax)
             cont_map = plt.cm.ScalarMappable(norm=norm, cmap=cmap)
             label = var.label
@@ -129,9 +152,12 @@ class ContourPanel(Panel):
             plt.contour(x_data, y_data, c_data.T, levels=cmap.N, norm=norm, cmap=cmap)
             # Add colorbar to the current ax (gca)
             # For details on __getFormatter, see below
+            #plt.gcf().colorbar(cont_map, ax=plt.gca(), cmap=cmap, norm=norm, label=self.dependent_title,
+            #                   orientation='vertical', ticks=ticks, format=ContourPanel.__getFormatter())
             plt.gcf().colorbar(cont_map, ax=plt.gca(), cmap=cmap, norm=norm, label=self.dependent_title,
-                               orientation='vertical', ticks=ticks, format=ContourPanel.__getFormatter())
-            plt.title(label + ' - ' + self.title, pad=10)
+                               orientation='vertical', format=ContourPanel.__getFormatter())
+            #plt.title(label + ' - ' + self.title, pad=10)
+            plt.title(self.title + ' - ' + label, pad=10)
             plt.xlabel(self.x_title)
             plt.ylabel(self.y_title)
 

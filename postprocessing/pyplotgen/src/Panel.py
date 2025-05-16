@@ -8,6 +8,7 @@ from datetime import datetime
 from textwrap import fill
 
 import matplotlib.pyplot as plt
+import matplotlib.patches as mpatches
 import numpy as np
 from cycler import cycler
 
@@ -149,12 +150,16 @@ class Panel:
         plt.gcf().subplots_adjust(bottom=0.15)
 
         # Plot dashed line. This var will oscillate between true and false
-        plot_dashed = True
+        plot_dashed = False
+
+        generate_grid_adapt_plot = False
+        grid_comparison_plot = False
 
         max_panel_value = 0
         for var in self.all_plots:
             legend_char_wrap_length = 17
-            var.label = var.label.replace('_', ' ') # replace _'s in foldernames with spaces for the legend label
+            legend_char_wrap_length = 100
+            #var.label = var.label.replace('_', ' ') # replace _'s in foldernames with spaces for the legend label
             var.label = fill(var.label, width=legend_char_wrap_length)
             x_data = var.x
             if self.sci_scale is not None:
@@ -186,7 +191,108 @@ class Panel:
             if thin_lines:
                 line_width = Style_definitions.THIN_LINE_THICKNESS
             plotting_benchmark = var.line_format != ""
-            if plotting_benchmark:
+            if generate_grid_adapt_plot:
+                # TODO set rc back to defaults for the prop_cycler
+                read_dir = '/home/carstensen/results_thesis_5_0/adapt'
+                output_dir = '/home/carstensen/results_thesis_5_0/adapt/test'
+                file_ending = '_grid_adapt.txt'
+                for filename in os.listdir(read_dir):
+                    if filename.endswith(file_ending):
+                        read_file = read_dir + '/' + filename
+                        write_file_plot = output_dir + '/' + filename.split('.')[0] + '.png'
+
+                        with open(read_file, 'r') as file:
+                            lines = file.readlines()
+                        matrix_grid = []
+                        times_grid = []
+                        restrict_time_frame = False
+                        restrict_shown_grid_levs = False
+                        max_time = 800
+                        max_grid_levs = 15
+                        for line in lines:
+                            splitted_line = line.split()
+                            is_grid = (splitted_line[0]).strip() == 'g'
+                            itime = line.split()[1]
+                            itime = float(itime)
+                            if itime <= max_time or not restrict_time_frame:
+                                if is_grid:
+                                    times_grid.append(itime)
+                                n = len(splitted_line)
+                                grid = splitted_line[2:n]
+                                if is_grid:
+                                    matrix_grid.append([float(level) for level in grid])
+                        times = np.array(times_grid)
+                        matrix = np.array(matrix_grid)
+                        if restrict_shown_grid_levs:
+                            plt.plot(times, matrix[:,0:max_grid_levs])
+                        else:
+                            plt.plot(times, matrix)
+                        #plt.xlabel('time [min]')
+                        title = ''
+                        if ('arm' in read_file):
+                            title = 'ARM'
+                        elif ('astex' in read_file):
+                            title = 'ASTEX'
+                        elif ('gabls2' in read_file):
+                            title = 'GABLS2'
+
+                        ax = plt.gca()
+                        box = ax.get_position()
+                        ax.set_position([box.x0, box.y0, box.width * 0.8, box.height])
+                        plt.title(title)
+                        plt.xlabel('iteration')
+                        plt.ylabel('z [m]')
+                        plt.savefig(write_file_plot, dpi=300, bbox_inches='tight')
+                        plt.clf()
+                raise Exception('only calculated grid adapt plot, set generate_grid_adapt_plot to False')
+            elif grid_comparison_plot:
+                hi_res = [i for i in range(0,9001,20)]
+                hi_res_grid_spacings = []
+                hi_res_grid_spacings_heights = []
+                for i in range(len(hi_res)-1):
+                    hi_res_grid_spacings.append(hi_res[i+1]-hi_res[i])
+                    hi_res_grid_spacings_heights.append((hi_res[i+1]+hi_res[i])/2)
+
+                dycore = [0.0, 100.0, 325.0, 625.0, 950.0, 1300.0, 1675.0, 2065.0, 2475.0, 2915.0, 3400.0, 3890.0, 4390.0, 4915.0, 5450.0, 6010.0, 6670.0, 7490.0, 8490.0]
+                dycore_grid_spacings = []
+                dycore_grid_spacings_heights = []
+                for i in range(len(dycore)-1):
+                    dycore_grid_spacings.append(dycore[i+1]-dycore[i])
+                    dycore_grid_spacings_heights.append((dycore[i+1]+dycore[i])/2)
+
+                plt.plot(1, 1)
+
+                ax = plt.gca()
+                box = ax.get_position()
+                ax.set_position([box.x0, box.y0, box.width * 0.8, box.height])
+
+                plt.scatter(hi_res_grid_spacings, hi_res_grid_spacings_heights, s=0)
+                for i, (x, y) in enumerate(zip(hi_res_grid_spacings, hi_res_grid_spacings_heights)):
+                    plt.text(x, y, str(i+1), fontsize=12, ha='center', va='center', color='black')
+
+                plt.scatter(dycore_grid_spacings, dycore_grid_spacings_heights, s=0)
+                for i, (x, y) in enumerate(zip(dycore_grid_spacings, dycore_grid_spacings_heights)):
+                    plt.text(x, y, str(i+1), fontsize=12, ha='center', va='center', color='red')
+
+                plt.title('Grid comparison')
+                plt.xlabel('$\Delta z \quad [\mathrm{m}]$')
+                plt.ylabel('$z \quad [\mathrm{m}]$')
+
+                # Create a custom legend entry
+                legend_patch_hi_res = mpatches.Patch(color='black', label="hi-res")
+                legend_patch_dycore = mpatches.Patch(color='red', label="dycore")
+
+                # Add the legend
+                plt.legend(handles=[legend_patch_hi_res, legend_patch_dycore])
+
+                plt.savefig('grid_comp.png', dpi=300, bbox_inches='tight')
+                plt.close()
+                raise Exception('only calculated grid adapt plot, set grid_comparison_plot to False')
+                #plt.savefig('grid_comp.png', dpi=300, bbox_inches='tight')
+                #print('after savefig')
+                #plt.clf()
+                #raise Exception('only calculated grid adapt plot, set grid_comparison_plot to False')
+            elif plotting_benchmark:
                 plt.plot(x_data, y_data, var.line_format, label=var.label, linewidth=line_width)
                 # If a benchmark defines a custom color (e.g. "gray" or "#404040) this messes up the color rotation.
                 # Setting the prop cycle to None and then redefining it fixes the color rotation.
@@ -234,10 +340,11 @@ class Panel:
             box = ax.get_position()
             ax.set_position([box.x0, box.y0, box.width * 0.8, box.height])
             # Put a legend to the right of the current axis
-            if not self.bkgrnd_rcm_flag:
-                ax.legend(loc='center left', bbox_to_anchor=(1, 0.5))
-            else:
-                ax.legend(loc='upper right', bbox_to_anchor=(1, 1))
+            ax.legend(loc='upper right', bbox_to_anchor=(1, 1))
+            #if not self.bkgrnd_rcm_flag:
+            #    ax.legend(loc='center left', bbox_to_anchor=(1, 0.5))
+            #else:
+            #    ax.legend(loc='upper right', bbox_to_anchor=(1, 1))
 
         # Center plots
         if max_panel_value != 0:
@@ -295,7 +402,7 @@ class Panel:
         rel_filename = output_folder + "/" +casename+'/' + filename
         rel_filename = clean_path(rel_filename)
         # Save image file
-        plt.savefig(rel_filename + image_extension, dpi=Style_definitions.IMG_OUTPUT_DPI)
+        plt.savefig(rel_filename + image_extension, dpi=Style_definitions.IMG_OUTPUT_DPI, bbox_inches='tight')
         plt.close()
 
     def __removeInvalidFilenameChars__(self, filename):

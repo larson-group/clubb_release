@@ -33,6 +33,22 @@ class VariableGroupBase(VariableGroup):
             {'var_names': ['corr_w_chi_2'], 'legend_label': 'PDF comp. 2'},
         ]
 
+        norm_grid_density = [
+            {'var_names': ['norm_min_grid_dens'], 'legend_label': 'norm. min. grid dens.'},
+            {'var_names': ['norm_grid_dens'], 'legend_label': 'norm. grid dens.'},
+        ]
+
+        norm_grid_density_plot = [
+            {'var_names': ['norm_min_grid_dens'], 'legend_label': r"$g_\mathrm{min}(z)$"},
+            {'var_names': ['norm_grid_dens'], 'legend_label': r"$g(z)$"},
+        ]
+
+        each_ref_crit_term = [
+            {'var_names': ['alt_term'], 'legend_label': r"$3 \cdot g_z (z)$"},
+            {'var_names': ['chi_term_time_avg'], 'legend_label': r"$100 \cdot \bar{g}_\chi (z)$"},
+            {'var_names': ['brunt_term_time_avg'], 'legend_label': r"$7.5 \cdot \bar{g}_\mathrm{Ri} (z)$"},
+        ]
+
         corr_chi_eta_i_lines = [
             {'var_names': ['corr_chi_eta_1'], 'legend_label': 'PDF comp. 1'},
             {'var_names': ['corr_chi_eta_2'], 'legend_label': 'PDF comp. 2'},
@@ -84,6 +100,22 @@ class VariableGroupBase(VariableGroup):
             },
             {'var_names':
                 {
+                    'clubb': ['rtm'],
+                    'sam': [self.getRtmSamCalc,'QT'],
+                    'coamps': ['qtm', 'rtm'],
+                    'r408': ['rtm'],
+                    'hoc': ['rtm'],
+                    'e3sm': ['rtm'],
+                    'cam': ['rtm'],
+                    'wrf': ['rtm','CSP_QT'],
+                },
+                'sci_scale': -3,
+                'priority': True,
+                'title': 'GABLS2', # TODO change title here
+                'axis_title': r"$\bar{r}_t ~~~[\mathrm{kg}/\mathrm{kg}]$",
+            },
+            {'var_names':
+                {
                     'clubb': ['wpthlp'],
                     'sam': [self.getWpthlpSamCalc, 'WPTHLP'],
                     'coamps': ['wpthlp'],
@@ -95,6 +127,22 @@ class VariableGroupBase(VariableGroup):
                 },
                 'sci_scale': 0,
                 'priority': True,
+            },
+            {'var_names':
+                {
+                    'clubb': ['wpthlp'],
+                    'sam': [self.getWpthlpSamCalc, 'WPTHLP'],
+                    'coamps': ['wpthlp'],
+                    'r408': ['wpthlp'],
+                    'hoc': ['wpthlp'],
+                    'e3sm': ['wpthlp'],
+                    'cam': ['wpthlp'],
+                    'wrf': ['wpthlp','CSP_WTHL'],
+                },
+                'sci_scale': 0,
+                'priority': True,
+                'title': 'ASTEX', # TODO change title here
+                'axis_title': r"$\overline{w^{\prime}\theta^{\prime}_l} ~~~[\mathrm{m}\mathrm{s}^{-1}\mathrm{K}]$",
             },
             {'var_names':
                 {
@@ -123,7 +171,23 @@ class VariableGroupBase(VariableGroup):
                 },
                 'title': 'Cloud fraction',
                 'axis_title': 'cloud_frac [$-$]',
-                'sci_scale': 0,
+                #'sci_scale': 0,
+                'priority': True,
+            },
+            {'var_names':
+                {
+                    'clubb': ['cloud_frac'],
+                    'sam': ['CLD_FRAC_CLUBB', 'CLD'],
+                    'coamps': ['cf'],
+                    'r408': ['cloud_frac', 'cf'],
+                    'hoc': ['cloud_frac', 'cf'],
+                    'e3sm': ['cloud_frac'],
+                    'cam': ['CLOUD', 'cloud_frac'],
+                    'wrf': ['cloud_frac'],
+                },
+                'title': 'ASTEX', # TODO change title here
+                'axis_title': 'Cloud fraction    [$-$]',
+                #'sci_scale': 0,
                 'priority': True,
             },
             {'var_names':
@@ -138,7 +202,38 @@ class VariableGroupBase(VariableGroup):
                     'wrf': ['rcm','CSP_QC'],
                 },
                 'sam_conv_factor': 1 / 1000,
-                'sci_scale': -5,
+                #'sci_scale': -5,
+                'priority': True,
+            },
+            {'var_names':
+                {
+                    'clubb': ['rcm'],
+                    'sam': ['QCL', 'QC'],
+                    'coamps': ['qcm', 'rcm'],
+                    'r408': ['rcm'],
+                    'hoc': ['rcm'],
+                    'e3sm': ['rcm'],
+                    'cam': ['CLDLIQ', 'rcm'],
+                    'wrf': ['rcm','CSP_QC'],
+                },
+                'sam_conv_factor': 1 / 1000,
+                #'sci_scale': -5,
+                'priority': True,
+                'title': 'ASTEX', # TODO change title here
+                'axis_title': r"$\bar{r}_c \text{ [kg/kg]}$",
+            },
+            {'var_names':
+                {
+                    'clubb': ['wp2', 'W2'],
+                    'sam': [self.get_wp2_sam_calc, 'W2', 'WP2'],
+                    'coamps': ['wp2', 'W2'],
+                    'r408': ['wp2'],
+                    'hoc': ['wp2'],
+                    'e3sm': ['wp2'],
+                    'cam': ['WP2_CLUBB', 'wp2'],
+                    'wrf': ['wp2','CSP_W2'],
+                },
+                'sci_scale': 0,
                 'priority': True,
             },
             {'var_names':
@@ -154,6 +249,8 @@ class VariableGroupBase(VariableGroup):
                 },
                 'sci_scale': 0,
                 'priority': True,
+                'title': 'ASTEX', # TODO change title here 
+                'axis_title': r"$\overline{{w^{\prime}}^2} ~~~[\mathrm{m}^2/\mathrm{s}^2]$",
             },
             {'var_names':
                 {
@@ -418,6 +515,58 @@ class VariableGroupBase(VariableGroup):
                 },
                 'type': Panel.TYPE_TIMESERIES,
             },
+            {'var_names':
+                {
+                    'clubb': ['rtp2_vert_avg'],
+                    'sam': [''],
+                    'coamps': ['rtp2_vert_avg'],
+                    'r408': ['rtp2_vert_avg'],
+                    'hoc': ['rtp2_vert_avg'],
+                    'e3sm': ['rtp2_vert_avg'],
+                    'cam': ['rtp2_vert_avg'],
+                    'wrf': ['rtp2_vert_avg'],
+                },
+                'type': Panel.TYPE_TIMESERIES,
+            },
+            {'var_names':
+                {
+                    'clubb': ['thlp2_vert_avg'],
+                    'sam': [''],
+                    'coamps': ['thlp2_vert_avg'],
+                    'r408': ['thlp2_vert_avg'],
+                    'hoc': ['thlp2_vert_avg'],
+                    'e3sm': ['thlp2_vert_avg'],
+                    'cam': ['thlp2_vert_avg'],
+                    'wrf': ['thlp2_vert_avg'],
+                },
+                'type': Panel.TYPE_TIMESERIES,
+            },
+            {'var_names':
+                {
+                    'clubb': ['wpthlp_sfc'],
+                    'sam': [''],
+                    'coamps': ['wpthlp_sfc'],
+                    'r408': ['wpthlp_sfc'],
+                    'hoc': ['wpthlp_sfc'],
+                    'e3sm': ['wpthlp_sfc'],
+                    'cam': ['wpthlp_sfc'],
+                    'wrf': ['wpthlp_sfc'],
+                },
+                'type': Panel.TYPE_TIMESERIES,
+            },
+            {'var_names':
+                {
+                    'clubb': ['wprtp_sfc'],
+                    'sam': [''],
+                    'coamps': ['wprtp_sfc'],
+                    'r408': ['wprtp_sfc'],
+                    'hoc': ['wprtp_sfc'],
+                    'e3sm': ['wprtp_sfc'],
+                    'cam': ['wprtp_sfc'],
+                    'wrf': ['wprtp_sfc'],
+                },
+                'type': Panel.TYPE_TIMESERIES,
+            },
             {'var_names': # First set of inverse tau variables (multiple lines)
                 {
                     'clubb': [''],
@@ -478,8 +627,193 @@ class VariableGroupBase(VariableGroup):
                 },
                 'title': 'Brunt-Vaisala frequency squared',
                 'axis_title': 'bv_freq_sqd [$\mathrm{1/s^2}$]',
-                'sci_scale': 0,
+                #'sci_scale': 0,
                 'sam_calc': self.getBVSqdSamCalc,
+            },
+            {'var_names':
+                {
+                'clubb': ['chi'],
+                'sam': [],
+                'coamps': [],
+                'r408': [],
+                'hoc': [],
+                'e3sm': [],
+                'cam': [],
+                'wrf': [],
+                },
+                'title': 'Extended liquid water content',
+                'axis_title': 'chi [$kg/kg$]',
+            },
+            {'var_names':
+                {
+                'clubb': ['ddzt_umvm_sqd'],
+                'sam': [],
+                'coamps': [],
+                'r408': [],
+                'hoc': [],
+                'e3sm': [],
+                'cam': [],
+                'wrf': [],
+                },
+                'title': 'Square sum of horizontal shears, ddzt_umvm_sqd',
+                'axis_title': '',
+            },
+            {'var_names':
+                {
+                'clubb': ['grid_density'],
+                'sam': [],
+                'coamps': [],
+                'r408': [],
+                'hoc': [],
+                'e3sm': [],
+                'cam': [],
+                'wrf': [],
+                },
+                'title': 'Proposed non-normalized grid density',
+                'axis_title': 'grid_density [1/m]',
+            },
+            {'var_names':
+                {
+                'clubb': [''],
+                'sam': [],
+                'coamps': [],
+                'r408': [],
+                'hoc': [],
+                'e3sm': [],
+                'cam': [],
+                'wrf': [],
+                },
+                'lines': norm_grid_density,
+                'title': 'Proposed normalized grid density',
+                'axis_title': 'norm_min_grid_dens [1/m]',
+            },
+            {'var_names':
+                {
+                'clubb': [''],
+                'sam': [],
+                'coamps': [],
+                'r408': [],
+                'hoc': [],
+                'e3sm': [],
+                'cam': [],
+                'wrf': [],
+                },
+                'lines': norm_grid_density_plot,
+                'title': 'GABLS2', # TODO change title here
+                'axis_title': 'grid density [1/m]',
+            },
+            {'var_names':
+                {
+                'clubb': [''],
+                'sam': [],
+                'coamps': [],
+                'r408': [],
+                'hoc': [],
+                'e3sm': [],
+                'cam': [],
+                'wrf': [],
+                },
+                'lines': each_ref_crit_term,
+                'title': 'GABLS2', # TODO change title here
+                'axis_title': 'grid density [1/m]',
+            },
+            {'var_names':
+                {
+                'clubb': ['alt_term'],
+                'sam': [],
+                'coamps': [],
+                'r408': [],
+                'hoc': [],
+                'e3sm': [],
+                'cam': [],
+                'wrf': [],
+                },
+                'title': '$g_z(z)$',
+                'axis_title': '$g_z$ [1/m]',
+            },
+            {'var_names':
+                {
+                'clubb': ['lscale_term'],
+                'sam': [],
+                'coamps': [],
+                'r408': [],
+                'hoc': [],
+                'e3sm': [],
+                'cam': [],
+                'wrf': [],
+                },
+                'title': 'non-normalized inverse Lscale term of grid density',
+                'axis_title': 'lscale_term [1/m]',
+            },
+            {'var_names':
+                {
+                'clubb': ['lscale_term_time_avg'],
+                'sam': [],
+                'coamps': [],
+                'r408': [],
+                'hoc': [],
+                'e3sm': [],
+                'cam': [],
+                'wrf': [],
+                },
+                'title': 'non-normalized time avg. inverse Lscale term of grid density',
+                'axis_title': 'lscale_term_time_avg [1/m]',
+            },
+            {'var_names':
+                {
+                'clubb': ['brunt_term_time_avg'],
+                'sam': [],
+                'coamps': [],
+                'r408': [],
+                'hoc': [],
+                'e3sm': [],
+                'cam': [],
+                'wrf': [],
+                },
+                'title': '$\\bar{g}_\mathrm{Ri}(z)$',
+                'axis_title': '$\\bar{g}_\mathrm{Ri}(z)$ [1/m]',
+            },
+            {'var_names':
+                {
+                'clubb': ['chi_term_time_avg'],
+                'sam': [],
+                'coamps': [],
+                'r408': [],
+                'hoc': [],
+                'e3sm': [],
+                'cam': [],
+                'wrf': [],
+                },
+                'title': '$\\bar{g}_\chi(z)$',
+                'axis_title': '$\\bar{g}_\chi(z)$ [1/m]',
+            },
+            {'var_names':
+                {
+                'clubb': ['chi_term'],
+                'sam': [],
+                'coamps': [],
+                'r408': [],
+                'hoc': [],
+                'e3sm': [],
+                'cam': [],
+                'wrf': [],
+                },
+                'title': 'non-normalized chi term of grid density',
+                'axis_title': 'chi_term [1/m]',
+            },
+            {'var_names':
+                {
+                'clubb': ['brunt_term'],
+                'sam': [],
+                'coamps': [],
+                'r408': [],
+                'hoc': [],
+                'e3sm': [],
+                'cam': [],
+                'wrf': [],
+                },
+                'title': 'non-normalized brunt term of grid density',
+                'axis_title': 'brunt_term [1/m]',
             },
             {'var_names':
                 {
@@ -494,7 +828,7 @@ class VariableGroupBase(VariableGroup):
                 },
                 'title': 'Brunt-Vaisala frequency squared for splatting',
                 'axis_title': 'bv_freq_sqd_splat [$\mathrm{1/s^2}$]',
-                'sci_scale': 0,
+                #'sci_scale': 0,
             },
             {'var_names':
                 {
