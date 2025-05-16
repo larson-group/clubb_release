@@ -779,7 +779,7 @@ module stats_clubb_utilities
 #ifdef NETCDF
       if ( l_different_output_grid ) then
         call open_netcdf_for_writing( nlat, nlon, fdir, fname, 1, output_gr_nzm-1, &
-                                      output_gr_zt(1,:), day, month, year, lat_vals, lon_vals, & ! In
+                                      output_gr_zt(1,:), day, month, year, lat_vals, lon_vals, &! In
                                       time_current, stats_metadata%stats_tout, & ! In
                                       stats_zt(1)%num_output_fields, & ! In
                                       stats_zt(1)%file, err_code ) ! InOut

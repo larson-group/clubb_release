@@ -121,9 +121,6 @@ module atex
   use remapping_module, only: &
     remap_vals_to_target
 
-  use model_flags, only: &
-      cons_ullrich_remap
-
   implicit none
 
   !--------------------- Input Variables ---------------------

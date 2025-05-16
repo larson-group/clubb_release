@@ -300,7 +300,8 @@ module output_netcdf
       source_values_idx, &
       target_values_idx
 
-    ! TODO find better way to set if variable is wind, pos_Def or other, maybe in ncf%grid_avg_var and then set default to other etc
+    ! TODO find better way to associate the iv setting to variables,
+    ! maybe in ncf%grid_avg_var and then set default to other etc
     character(len=7), dimension(11) :: &
       iv_wind_variables = [ 'wm_zt  ', &
                             'um_ref ', &
@@ -397,16 +398,15 @@ module output_netcdf
             allocate( grid_avg_var_diff_gr(1,ncf%nlon,ncf%nlat,ncf%iz) )
           endif
 
-          ! TODO maybe find better way to associate iv variable with variables
-          iv = 1
+          iv = iv_other
           do k = 1, size(iv_pos_def_variables)
             if ( trim(iv_pos_def_variables(k)) == ncf%grid_avg_var(i)%name ) then
-              iv = 0
+              iv = iv_pos_def
             end if
           end do
           do k = 1, size(iv_wind_variables)
             if ( trim(iv_wind_variables(k)) == ncf%grid_avg_var(i)%name ) then
-              iv = -1
+              iv = iv_wind
             end if
           end do
 

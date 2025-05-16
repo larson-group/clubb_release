@@ -292,8 +292,7 @@ module clubb_driver
         ibv_efold
 
     use model_flags, only: &
-      no_grid_adaptation, &
-      Lscale_and_wp2
+      no_grid_adaptation
 
 #ifdef _OPENMP
     ! Because Fortran I/O is not thread safe, we use this here to
@@ -2218,7 +2217,6 @@ module clubb_driver
           clubb_config_flags,                                              & ! Intent(in)
           l_modify_ic_with_cubic_int,                                      & ! Intent(in)
           l_add_dycore_grid,                                               & ! Intent(in)
-          grid_remap_method,                                               & ! Intent(in)
           grid_adapt_in_time_method,                                       & ! Intent(in)
           thlm, rtm, um, vm, ug, vg, wp2, up2, vp2, rcm,                   & ! Intent(inout)
           wm_zt, wm_zm, em, exner,                                         & ! Intent(inout)
@@ -2335,7 +2333,7 @@ module clubb_driver
     if ( stats_metadata%l_output_rad_files ) then
       ! Initialize statistics output, note that this will allocate/initialize stats
       ! variables for all columns, but only create the stats files for the first columns
-      if ( grid_adapt_in_time_method == no_grid_adaptation .and. .not. l_add_dycore_grid ) then ! TODO or also remap when we do remap from dycore even without grid adaptation?
+      if ( grid_adapt_in_time_method == no_grid_adaptation .and. .not. l_add_dycore_grid ) then
 
         call stats_init( iunit, fname_prefix, output_dir, l_stats, & ! In
                          stats_fmt, stats_tsamp, stats_tout, runfile, & ! In
@@ -2386,7 +2384,7 @@ module clubb_driver
     else
       ! Initialize statistics output, note that this will allocate/initialize stats
       ! variables for all columns, but only create the stats files for the first columns
-      if ( grid_adapt_in_time_method == no_grid_adaptation .and. .not. l_add_dycore_grid ) then ! TODO or also remap when we do remap from dycore even without grid adaptation?
+      if ( grid_adapt_in_time_method == no_grid_adaptation .and. .not. l_add_dycore_grid ) then
 
         call stats_init( iunit, fname_prefix, output_dir, l_stats, & ! In
                          stats_fmt, stats_tsamp, stats_tout, runfile, & ! In
@@ -2510,7 +2508,8 @@ module clubb_driver
       write(iunit_grid_adaptation, *) 'g', 0, gr%zm
     end if
 
-    open(unit=iunit_grid_adaptation+10, file='../output/'//trim( runtype )//'_grid.txt', status='replace', action='write')
+    open( unit=iunit_grid_adaptation+10, file='../output/'//trim( runtype )//'_grid.txt', &
+          status='replace', action='write' )
     do b = 1, size(gr%zm(1,:))
         write(iunit_grid_adaptation+10, *) gr%zm(1,b)
     end do
@@ -3746,7 +3745,6 @@ module clubb_driver
                clubb_config_flags, &
                l_modify_ic_with_cubic_int, &
                l_add_dycore_grid, &
-               grid_remap_method, &
                grid_adapt_in_time_method, &
                thlm, rtm, um, vm, ug, vg, wp2, up2, vp2, rcm, &
                wm_zt, wm_zm, em, exner, &
@@ -3885,7 +3883,6 @@ module clubb_driver
       l_add_dycore_grid ! flag to set remapping from dycore to on or off
 
     integer, intent(in) :: &
-      grid_remap_method, &        ! Integer flag to set how values should be remapped
       grid_adapt_in_time_method   ! Integer flag to see if grid should be adapted over time and if
                                   ! so what parameters should be used to setup the grid
                                   ! density function
