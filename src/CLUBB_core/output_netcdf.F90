@@ -381,10 +381,10 @@ module output_netcdf
     if ( l_different_output_grid ) then
       if ( .not. l_zt_variable ) then
         source_values_idx = gr_source%nzm
-        target_values_idx = gr_source%nzm
+        target_values_idx = gr_target%nzm
       else if ( l_zt_variable ) then
         source_values_idx = gr_source%nzt
-        target_values_idx = gr_source%nzt
+        target_values_idx = gr_target%nzt
       end if
     end if
 
