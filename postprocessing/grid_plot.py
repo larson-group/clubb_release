@@ -103,7 +103,8 @@ def create_tikz(heights_matrix, max_height, png_output_file, tikz_output_file, n
         abs_current_dist = ABSOLUT_DIST_BETWEEN_TEXT
         for i, height_scaled in enumerate(heights_scaled):
             if heights[i] in heights_intersected:
-                line_zm = tikz.line((j*absolut_grid_width + j*dist_between_grids, height_scaled), ((j+1)*absolut_grid_width + j*dist_between_grids, height_scaled), options="thick,blue", action="draw")
+                #line_zm = tikz.line((j*absolut_grid_width + j*dist_between_grids, height_scaled), ((j+1)*absolut_grid_width + j*dist_between_grids, height_scaled), options="thick,blue", action="draw")
+                line_zm = tikz.line((j*absolut_grid_width + j*dist_between_grids, height_scaled), ((j+1)*absolut_grid_width + j*dist_between_grids, height_scaled), options="thick,black", action="draw")
             else:
                 line_zm = tikz.line((j*absolut_grid_width + j*dist_between_grids, height_scaled), ((j+1)*absolut_grid_width + j*dist_between_grids, height_scaled), options="thick", action="draw")
             if (i > 0):

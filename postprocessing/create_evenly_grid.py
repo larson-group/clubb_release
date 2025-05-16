@@ -1,7 +1,7 @@
 def write_file(file_name):
-    alt_sfc = 20.0
-    alt_top = 9000.0
-    num_levels = 33
+    alt_sfc = 0.0
+    alt_top = 9270.0
+    num_levels = 464.5
     with open(file_name, "w") as f:
         altitude = alt_sfc
         while altitude < alt_top:

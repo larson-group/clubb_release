@@ -30,6 +30,19 @@ def coarsen_grid(grid_altitudes, factor):
         grid_altitudes_coarsened.append(grid_altitudes_coarsened[i-1] + deltaz)
     return grid_altitudes_coarsened
 
+def coarsen_grid_const(grid_altitudes, factor):
+    grid_altitudes_coarsened = [grid_altitudes[0]]
+    for i in range(1,len(grid_altitudes)):
+        deltaz = factor * (grid_altitudes[i] - grid_altitudes[i-1])
+        grid_altitudes_coarsened.append(grid_altitudes_coarsened[i-1] + deltaz)
+    return grid_altitudes_coarsened
+
+def coarsen_grid_const_new(grid_altitudes, factor):
+    grid_altitudes_coarsened = [grid_altitudes[0]]
+    for i in range(1,len(grid_altitudes)):
+        grid_altitudes_coarsened.append(factor * grid_altitudes[i])
+    return grid_altitudes_coarsened
+
 def moving_avg_spacings(grid_altitudes):
     grid_spacings = []
     for i in range(1,len(grid_altitudes)):
@@ -109,14 +122,14 @@ def write_grid(file_name, grid_altitudes):
             file.write(str(altitude) + '\n')
 
 def main():
-    FACTOR = 2.2
+    FACTOR = 5.1
     READ_FILE_NAME = '../input/grid/dycore_e3sm.grd'
 
     grid_altitudes = read_grid(READ_FILE_NAME)
-    moving_avg(grid_altitudes)
     #grid_altitudes_coarsened = coarsen_grid(grid_altitudes, factor)
-    grid_altitudes_coarsened = grid_altitudes
-    for i in range(400): # 300, 500 is too much
+    grid_altitudes_coarsened = coarsen_grid_const(grid_altitudes, FACTOR)
+    #grid_altitudes_coarsened = grid_altitudes
+    for _ in range(0): # 300, 500 is too much
         grid_altitudes_coarsened = moving_avg(grid_altitudes_coarsened)
     output_file_name = get_output_file_name(READ_FILE_NAME)
     write_grid(output_file_name, grid_altitudes_coarsened)

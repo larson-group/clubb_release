@@ -6,10 +6,9 @@ import os
 from moviepy.video.VideoClip import DataVideoClip
 
 output_dir_default = '../output'
-read_dir = '../output'
+read_dir_default = '../output'
 file_ending = '_grid_adapt.txt'
 fps_default = 4
-
 
 #read_dir = '/home/carstensen/comp_out/dycore_adapt_from_dycore'
 #utput_dir_default = read_dir
@@ -18,6 +17,8 @@ def processArguments():
     parser = argparse.ArgumentParser()
     parser.add_argument("-o", "--output-dir", help="Directory where the files should bewritten to.",
                         action="store", default=output_dir_default)
+    parser.add_argument("-r", "--read-dir", help="Directory where the files are read from.",
+                        action="store", default=read_dir_default)
     parser.add_argument("--fps", help="Set what fps should be used for the animation.",
                         action="store", default=fps_default, type=int)
     parser.add_argument("--anim", help="If additionally animations should be generated.",
@@ -90,6 +91,7 @@ def make_grid_adapt_animation_for_file(read_file, write_file, fps=fps_default):
 
 
 def make_grid_adapt_plot_for_file(read_file, write_file):
+    plt.figure(figsize=(6.4, 4.8))
     with open(read_file, 'r') as file:
         lines = file.readlines()
     
@@ -121,13 +123,23 @@ def make_grid_adapt_plot_for_file(read_file, write_file):
     else:
         plt.plot(times, matrix)
     #plt.xlabel('time [min]')
+
+    title = ''
+    if ('arm' in read_file):
+        title = 'ARM'
+    elif ('astex' in read_file):
+        title = 'ASTEX'
+    elif ('gabls2' in read_file):
+        title = 'GABLS2'
+    plt.title(title)
     plt.xlabel('iteration')
     plt.ylabel('z [m]')
-    plt.savefig(write_file)
+    plt.savefig(write_file, dpi=300)
     plt.clf()
 
 def make_all_plots_and_anim(args):
     output_dir = args.output_dir
+    read_dir = args.read_dir
     for filename in os.listdir(read_dir):
         if filename.endswith(file_ending):
             read_file = read_dir + '/' + filename
