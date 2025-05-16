@@ -8,7 +8,8 @@
 #
 #####################################################################
 
-CASES=( arm atex bomex fire wangara )
+#CASES=( arm atex bomex fire wangara )
+CASES=( arm astex_a209 gabls2 )
 
 CASE_RUNS=( 1 1 4 8 4 )
 

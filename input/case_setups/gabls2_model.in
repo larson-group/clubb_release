@@ -10,10 +10,7 @@ runtype = "gabls2" ! Case name.
 
 ! For grid_type = 1 nzmax can be any nunber
 nzmax = 73       ! Number of vertical levels.
-!nzmax = 31       ! Number of vertical levels.
 !nzmax = 426       ! Number of vertical levels.
-!nzmax = 851       ! Number of vertical levels.
-!nzmax = 2001       ! Number of vertical levels.
 
 grid_type = 3     ! Select grid type:
                   ! 1 ==> evenly-spaced grid levels.
@@ -46,10 +43,7 @@ zt_grid_fname = ''
 ! Path (from ../run_scripts/) and filename to data file that contains
 ! momentum level altitudes (in meters).
 ! Note:  For this option, zt_grid_fname must be ''.
-!zm_grid_fname = '../input/grid/dycore.grd'
-!zm_grid_fname = '../input/grid/31_level_zm_grid.grd'
-zm_grid_fname = '../input/grid/test_dycore.grd'
-!zm_grid_fname = '../input/grid/dycore_e3sm_coarsened_6_0.grd'
+zm_grid_fname = '../input/grid/dycore.grd'
 !zm_grid_fname = ''
 
 day   = 22    ! Day of model start (1 to 31).

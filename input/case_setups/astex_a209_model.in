@@ -8,14 +8,8 @@
 runtype = "astex_a209"  ! Case name.
 
 ! For grid_type = 1 nzmax can be any nunber
-!nzmax = 128       ! Number of vertical levels.
 nzmax = 73       ! Number of vertical levels.
-!nzmax = 31       ! Number of vertical levels.
-!nzmax = 34       ! Number of vertical levels.
-!nzmax = 60       ! Number of vertical levels.
 !nzmax = 451       ! Number of vertical levels.
-!nzmax = 901       ! Number of vertical levels.
-!nzmax = 4501       ! Number of vertical levels.
 
 grid_type = 3     ! Select grid type:
                   ! 1 ==> evenly-spaced grid levels.
@@ -30,14 +24,7 @@ grid_type = 3     ! Select grid type:
 
 ! Evenly-spaced grid (grid_type = 1).
 ! Note:  For this option, both zt_grid_fname and zm_grid_fname must be ''.
-!deltaz_nl  = 2.0    ! Distance between grid levels on evenly-spaced grid.      [m]
-!deltaz_nl  = 10.0    ! Distance between grid levels on evenly-spaced grid.      [m]
 !deltaz_nl  = 20.0    ! Distance between grid levels on evenly-spaced grid.      [m]
-!deltaz_nl  = 153.0    ! Distance between grid levels on evenly-spaced grid.      [m]
-!deltaz_nl  = 180.0    ! Distance between grid levels on evenly-spaced grid.      [m]
-!deltaz_nl  = 300.0    ! Distance between grid levels on evenly-spaced grid.      [m]
-!deltaz_nl  = 153.0    ! Distance between grid levels on evenly-spaced grid.      [m]
-!deltaz_nl  = 272.727    ! Distance between grid levels on evenly-spaced grid.      [m]
 zm_init_nl = 0.0 ! Minimum Altitude of lowest momentum level on any grid. [m]
 zm_top_nl = 9000.0 ! Maximum Altitude of highest momentum level on any grid. [m]
 
@@ -52,15 +39,7 @@ zt_grid_fname = ''
 ! Path (from ../run_scripts/) and filename to data file that contains
 ! momentum level altitudes (in meters).
 ! Note:  For this option, zt_grid_fname must be ''.
-!zm_grid_fname = '../input/grid/41_level_zm_grid_physics9_1_9000.grd'
-!zm_grid_fname = '../input/grid/31_level_zm_grid_physics9_2_9000.grd'
-!zm_grid_fname = '../input/grid/dycore.grd'
-!zm_grid_fname = '../input/grid/31_level_zm_grid.grd'
-!zm_grid_fname = '../input/grid/dycore_e3sm_coarsened_6_0.grd'
-zm_grid_fname = '../input/grid/test_dycore.grd'
-!zm_grid_fname = '../input/grid/dycore_e3sm_coarsened_1_5.grd'
-!zm_grid_fname = '../input/grid/evenly_sfc_refined.grd'
-!zm_grid_fname = '../input/grid/test.grd'
+zm_grid_fname = '../input/grid/dycore.grd'
 !zm_grid_fname = ''
 
 day   = 13     ! Day of model start (1 to 31).

@@ -128,7 +128,7 @@ module grid_adaptation_module
       l_implemented = .false.
 
     character(len=100), parameter :: & 
-      zm_grid_fname  = '../input/grid/test_dycore.grd',  & ! Path and filename of file for
+      zm_grid_fname  = '../input/grid/dycore.grd',       & ! Path and filename of file for
                                                            ! momentum level altitudes
       zt_grid_fname = ''                                   ! Path and filename of file for
                                                            ! thermodynamic level altitudes
@@ -239,7 +239,7 @@ module grid_adaptation_module
       l_implemented = .false.
 
     character(len=100), parameter :: & 
-      zm_grid_fname  = '../input/grid/dycore.grd',  & ! Path and filename of file for
+      zm_grid_fname  = '../input/grid/gr_min.grd',  & ! Path and filename of file for
                                                       ! momentum level altitudes
       zt_grid_fname = ''                              ! Path and filename of file for
                                                       ! thermodynamic level altitudes
