@@ -75,7 +75,10 @@ module atex
                          rtm, &
                          l_add_dycore_grid, &
                          grid_remap_method, &
-                         gr_dycore, rho_ds_zm_dycore, &
+                         gr_dycore, &
+                         total_idx_rho_lin_spline, &
+                         rho_lin_spline_vals, &
+                         rho_lin_spline_levels, &
                          p_sfc, &
                          err_code, &
                          wm_zt, wm_zm, & 
@@ -150,12 +153,16 @@ module atex
   type( grid ), intent(in) :: &
     gr_dycore
 
-  real( kind = core_rknd ), intent(in), dimension(ngrdcol,gr_dycore%nzm) :: & 
-    rho_ds_zm_dycore ! Dry, static density on momentum levels on dycore grid [kg/m^3]
-                     ! use this to assume the exact linear spline as the rho_ds profile
+  integer, intent(in) :: &
+    total_idx_rho_lin_spline ! number of indices for the linear spline definition arrays
+
+  real( kind = core_rknd ), dimension(ngrdcol,total_idx_rho_lin_spline), intent(in) :: &
+    rho_lin_spline_vals, & ! rho values at the given altitudes   [kg/m^3]
+    rho_lin_spline_levels  ! altitudes for the given rho values  [m]
+    ! Note: both these arrays need to be sorted from low to high altitude
 
   real(kind=time_precision), dimension(ngrdcol), intent(in) :: &
-    p_sfc
+    p_sfc  ! pressure at surface [Pa]
 
   !--------------------- InOut Variables ---------------------
   integer, intent(inout) :: &
@@ -314,9 +321,9 @@ module atex
                                            gr_dycore%nzt, &
                                            thlm_forcing_dycore, &
                                            gr%nzt, &
-                                           gr_dycore%nzm, &
-                                           rho_ds_zm_dycore, &
-                                           gr_dycore%zm, &
+                                           total_idx_rho_lin_spline, &
+                                           rho_lin_spline_vals, &
+                                           rho_lin_spline_levels, &
                                            iv_other, p_sfc, &
                                            grid_remap_method, &
                                            l_zt_variable )
@@ -326,9 +333,9 @@ module atex
                                           gr_dycore%nzt, &
                                           rtm_forcing_dycore, &
                                           gr%nzt, &
-                                          gr_dycore%nzm, &
-                                          rho_ds_zm_dycore, &
-                                          gr_dycore%zm, &
+                                          total_idx_rho_lin_spline, &
+                                          rho_lin_spline_vals, &
+                                          rho_lin_spline_levels, &
                                           iv_other, p_sfc, &
                                           grid_remap_method, &
                                           l_zt_variable )

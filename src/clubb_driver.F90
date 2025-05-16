@@ -1018,12 +1018,9 @@ module clubb_driver
       gr_dycore, & ! only set and used, if l_add_dycore_grid is .true.
       gr_output
 
-    real( kind = core_rknd ), dimension(:,:), allocatable :: &
-      rho_ds_zm_dycore ! only set and used, if l_add_dycore_grid is .true.
-
     real( kind = core_rknd ), dimension(:), allocatable :: &
-      gr_dens_z, &     ! levels at which the grid density is given
-      gr_dens          ! grid density at the given levels in gr_dens_z [# levs/meter]
+      gr_dens_z, &     ! levels at which the grid density is given      [m]
+      gr_dens          ! grid density at the given levels in gr_dens_z  [1/m]
 
     real( kind = core_rknd ), dimension(:), allocatable :: &
       alt_term, &
@@ -1031,8 +1028,8 @@ module clubb_driver
       lscale_term_time_avg, &
       chi_term, &
       chi_term_time_avg, &
-      brunt_term, &
-      brunt_term_time_avg, &
+      richardson_num_term, &
+      richardson_num_term_time_avg, &
       norm_min_grid_dens, &
       norm_grid_dens
 
@@ -1951,17 +1948,13 @@ module clubb_driver
                             gr_dycore )                       ! Intent(out)
       gr_output = gr_dycore
 
-      allocate( rho_ds_zm_dycore(ngrdcol, gr_dycore%nzm) ) ! dry, static density: 
-                                                           ! m-levs of dycore grid
     else
-      ! if no interpolation should be used, rho_ds_zm_dycore is not needed and we can use a 
-      ! dummy variable
-      allocate( rho_ds_zm_dycore(ngrdcol, 1) ) ! dry, static density: m-levs of dycore grid
+
       gr_output = gr
 
     end if
 
-    !if (grid_adapt_in_time_method > no_grid_adaptation) then
+    if (grid_adapt_in_time_method > no_grid_adaptation) then
       allocate( gr_dens_z(gr%nzm) )
       allocate( gr_dens(gr%nzm) )
 
@@ -1969,12 +1962,12 @@ module clubb_driver
       allocate( lscale_term(gr%nzm) )
       allocate( lscale_term_time_avg(gr%nzm) )
       allocate( chi_term_time_avg(gr%nzm) )
-      allocate( brunt_term_time_avg(gr%nzm) )
+      allocate( richardson_num_term_time_avg(gr%nzm) )
       allocate( norm_min_grid_dens(gr%nzm) )
       allocate( norm_grid_dens(gr%nzm) )
       allocate( chi_term(gr%nzm) )
-      allocate( brunt_term(gr%nzm) )
-    !end if
+      allocate( richardson_num_term(gr%nzm) )
+    end if
 
     ! Variables for PDF closure scheme
     call init_pdf_params( gr%nzt, ngrdcol, pdf_params )
@@ -2182,8 +2175,6 @@ module clubb_driver
     X_mixt_comp_all_levs = -999
     lh_sample_point_weights = -999._core_rknd
 
-    rho_ds_zm_dycore = zero
-
     ! Check for errors in check_clubb_settings_api and setup_parameters_api
     if ( clubb_at_least_debug_level( 0 ) ) then
         if ( err_code == clubb_fatal_error ) then
@@ -2229,7 +2220,6 @@ module clubb_driver
           l_add_dycore_grid,                                               & ! Intent(in)
           grid_remap_method,                                               & ! Intent(in)
           grid_adapt_in_time_method,                                       & ! Intent(in)
-          gr_dycore,                                                       & ! Intent(in)
           thlm, rtm, um, vm, ug, vg, wp2, up2, vp2, rcm,                   & ! Intent(inout)
           wm_zt, wm_zm, em, exner,                                         & ! Intent(inout)
           thvm, p_in_Pa,                                                   & ! Intent(inout)
@@ -2240,8 +2230,7 @@ module clubb_driver
           um_ref, vm_ref,                                                  & ! Intent(inout)
           Ncm, Nc_in_cloud, Nccnm,                                         & ! Intent(inout)
           deep_soil_T_in_K, sfc_soil_T_in_K, veg_T_in_K,                   & ! Intent(inout)
-          sclrm, edsclrm,                                                  & ! Intent(out)
-          rho_ds_zm_dycore )                                                 ! Intent(out)
+          sclrm, edsclrm )                                                   ! Intent(out)
     
     if ( clubb_at_least_debug_level( 0 ) ) then
         if ( err_code == clubb_fatal_error ) then
@@ -2738,7 +2727,7 @@ module clubb_driver
                                grid_remap_method, & ! In
                                gr%nzm, rho_ds_zm, &
                                gr%zm, &
-                               gr_dycore, rho_ds_zm_dycore, & ! In
+                               gr_dycore, & ! In
                                rtm, wm_zm, wm_zt, ug, vg, um_ref, vm_ref, & ! Inout
                                thlm_forcing, rtm_forcing, um_forcing, & ! Inout
                                vm_forcing, wprtp_forcing, wpthlp_forcing, & ! Inout
@@ -3297,6 +3286,7 @@ module clubb_driver
         time_loop_end = time_loop_end + time_stop - time_start
         call cpu_time(time_start)
 
+        ! calculate the non-normalized grid density using the refinement criterion
         call calc_grid_dens( ngrdcol, gr, &
                              um, vm, &
                              Lscale, wp2, &
@@ -3311,10 +3301,12 @@ module clubb_driver
                              lscale_term_time_avg, &
                              chi_term, &
                              chi_term_time_avg, &
-                             brunt_term, &
-                             brunt_term_time_avg )
+                             richardson_num_term, &
+                             richardson_num_term_time_avg )
 
         lambda = 0.5
+
+        ! normalize the grid density
         call normalize_grid_density( ngrdcol, &
                                      iunit_grid_adaptation, &
                                      gr%nzm, &
@@ -3324,23 +3316,24 @@ module clubb_driver
                                      norm_min_grid_dens, &
                                      norm_grid_dens )
 
+        ! update the stats variables
         if ( stats_metadata%l_stats_samp ) then
           do i = 1, ngrdcol
             call stat_update_var( stats_metadata%igrid_density, gr_dens, stats_zm(i) )
-            call stat_update_var( stats_metadata%ialt_term, alt_term, stats_zm(i) )
+            call stat_update_var( stats_metadata%ialt_term, 3*alt_term, stats_zm(i) )
             call stat_update_var( stats_metadata%ilscale_term, lscale_term, stats_zm(i) )
             call stat_update_var( stats_metadata%ilscale_term_time_avg, lscale_term_time_avg, &
                                   stats_zm(i) )
-            call stat_update_var( stats_metadata%ichi_term_time_avg, chi_term_time_avg, &
+            call stat_update_var( stats_metadata%ichi_term_time_avg, 100*chi_term_time_avg, &
                                   stats_zm(i) )
-            call stat_update_var( stats_metadata%ibrunt_term_time_avg, brunt_term_time_avg, &
-                                  stats_zm(i) )
+            call stat_update_var( stats_metadata%ibrunt_term_time_avg, &
+                                  7.5*richardson_num_term_time_avg, stats_zm(i) )
             call stat_update_var( stats_metadata%inorm_min_grid_dens, norm_min_grid_dens, &
                                   stats_zm(i) )
             call stat_update_var( stats_metadata%inorm_grid_dens, norm_grid_dens, &
                                   stats_zm(i) )
             call stat_update_var( stats_metadata%ichi_term, chi_term, stats_zm(i) )
-            call stat_update_var( stats_metadata%ibrunt_term, brunt_term, stats_zm(i) )
+            call stat_update_var( stats_metadata%ibrunt_term, richardson_num_term, stats_zm(i) )
           end do
         endif
 
@@ -3426,7 +3419,7 @@ module clubb_driver
       call cpu_time(time_stop)
       time_output_multi_col = time_output_multi_col + time_stop - time_start
 
-      if ( (grid_adapt_in_time_method > no_grid_adaptation) &
+      if ( ( grid_adapt_in_time_method > no_grid_adaptation ) &
            .and. (modulo(itime, 120) == 0 .or. l_first_write_to_file) & 
            .and. (stats_metadata%l_stats_last) ) then ! only adapt grid when the average of the last
                                                       ! iterations was just written to file,
@@ -3438,9 +3431,9 @@ module clubb_driver
 
         l_first_write_to_file = .false.
 
-        call adapt_grid( ngrdcol, gr%nzm, &                                     ! Intent(in)
-                         gr%zm, norm_grid_dens, &                               ! Intent(in)
-                         gr%zm, norm_min_grid_dens, &
+        call adapt_grid( ngrdcol, gr%nzm, &                                      ! Intent(in)
+                         gr%zm, norm_grid_dens, &                                ! Intent(in)
+                         gr%zm, norm_min_grid_dens, &                            ! Intent(in)
                          sfc_elevation, l_implemented, &                         ! Intent(in)
                          hydromet_dim, sclr_dim, edsclr_dim, &                   ! Intent(in)
                          thvm, gr%nzt, p_sfc, &                                  ! Intent(in)
@@ -3548,7 +3541,7 @@ module clubb_driver
     write(unit=fstdout, fmt='(a,f10.4)') 'CLUBB-TIMER time_output_multi_col =  ', &
       time_output_multi_col
     if ( grid_adapt_in_time_method > no_grid_adaptation ) then
-      write(unit=fstdout, fmt='(a,f10.4)') 'CLUBB-TIMER time_adapt_grid =  ', &
+      write(unit=fstdout, fmt='(a,f10.4)') 'CLUBB-TIMER time_adapt_grid =        ', &
         time_adapt_grid
     end if
     write(unit=fstdout, fmt='(a,f10.4)') 'CLUBB-TIMER time_total =             ', &
@@ -3724,8 +3717,8 @@ module clubb_driver
                 lh_rv_clipped, lh_Nc_clipped, &
                 X_mixt_comp_all_levs, lh_sample_point_weights, Nc_in_cloud )
 
-    !if ( grid_adapt_in_time_method > no_grid_adaptation ) then
-      ! TODO maybe just allocate and dealocate always if we want grid density function always put out?
+    if ( grid_adapt_in_time_method > no_grid_adaptation ) then
+
       deallocate( gr_dens_z )
       deallocate( gr_dens )
 
@@ -3736,11 +3729,11 @@ module clubb_driver
       deallocate( norm_grid_dens )
       deallocate( chi_term )
       deallocate( chi_term_time_avg )
-      deallocate( brunt_term )
-      deallocate( brunt_term_time_avg )
+      deallocate( richardson_num_term )
+      deallocate( richardson_num_term_time_avg )
 
       call clean_up_grid_adaptation_module()
-    !end if
+    end if
 
     return
 
@@ -3755,7 +3748,6 @@ module clubb_driver
                l_add_dycore_grid, &
                grid_remap_method, &
                grid_adapt_in_time_method, &
-               gr_dycore, &
                thlm, rtm, um, vm, ug, vg, wp2, up2, vp2, rcm, &
                wm_zt, wm_zm, em, exner, &
                thvm, p_in_Pa, &
@@ -3766,8 +3758,7 @@ module clubb_driver
                um_ref, vm_ref, &
                Ncm, Nc_in_cloud, Nccnm, &
                deep_soil_T_in_K, sfc_soil_T_in_K, veg_T_in_K, &
-               sclrm, edsclrm, &
-               rho_ds_zm_dycore )
+               sclrm, edsclrm )
     ! Description:
     !   Execute the necessary steps for the initialization of the
     !   CLUBB model run.
@@ -3781,7 +3772,8 @@ module clubb_driver
         em_min,         &
         grav,           &
         cm3_per_m3,     &
-        cloud_frac_min
+        cloud_frac_min, &
+        fstderr         !----------------------------------------------- Variable(s)
 
     use grid_class, only: grid ! Type
 
@@ -3790,7 +3782,6 @@ module clubb_driver
         microphys_scheme
 
     use parameters_radiation, only: radiation_top, rad_scheme !--------- Variable(s)
-
 
     use grid_class, only: &
       zm2zt, &   !----------------------------------------------------- Procedure(s)
@@ -3844,9 +3835,10 @@ module clubb_driver
       sclr_idx_type
 
     use interpolation, only: &
-      lin_interp_between_grids
+        lin_interp_between_grids
 
-    use constants_clubb, only: fstderr !-------------------------- Variables(s)
+    use grid_adaptation_module, only: &
+        setup_gr_dycore
 
     implicit none
 
@@ -3897,9 +3889,6 @@ module clubb_driver
       grid_adapt_in_time_method   ! Integer flag to see if grid should be adapted over time and if
                                   ! so what parameters should be used to setup the grid
                                   ! density function
-
-    type( grid ), intent(in) :: &
-      gr_dycore  ! only set and used if l_add_dycore_grid=.true.
 
     ! Output
     real( kind = core_rknd ), dimension(ngrdcol,gr%nzt), intent(inout) :: &
@@ -3955,9 +3944,6 @@ module clubb_driver
     real( kind = core_rknd ), dimension(ngrdcol,gr%nzt,edsclr_dim), intent(out) :: &
       edsclrm    ! Eddy diffusivity passive scalar [units vary]
 
-    real( kind = core_rknd ), dimension(ngrdcol,gr_dycore%nzm), intent(out) :: &
-      rho_ds_zm_dycore  ! Dry, static density (moment. levs.) on dycore grid  [kg/m^3]
-
     ! Local Variables
 
     real( kind = core_rknd ), dimension(ngrdcol,gr%nzm) :: &
@@ -3978,7 +3964,9 @@ module clubb_driver
 
     integer :: i, k ! Loop index
 
-    real( kind = core_rknd ), dimension(ngrdcol,gr_dycore%nzt) :: &
+    type( grid ) :: gr_dycore ! only used if l_add_dycore_grid = .true.
+
+    real( kind = core_rknd ), dimension(:,:), allocatable :: &
       p_in_Pa_dycore  ! p_in_Pa interpolated to the dycore grid
 
     !---- Begin code ----
@@ -4122,23 +4110,24 @@ module clubb_driver
                                        up2_vp2_sponge_damp_profile )   ! Intent(out)
     endif
 
-    ! Initialize the dycore grid rho_ds linear spline approximation and p_in_Pa for dycore grid
-    if ( l_add_dycore_grid ) then
-      do i = 1, ngrdcol
-        rho_ds_zm_dycore(i,:) = lin_interp_between_grids( gr_dycore%nzm, gr%nzm, &
-                                                          gr_dycore%zm, gr%zm, &
-                                                          rho_ds_zm(i,:) )
-        p_in_Pa_dycore(i,:) = lin_interp_between_grids( gr_dycore%nzt, gr%nzm, &
-                                                        gr_dycore%zt, gr%zm, &
-                                                        p_in_Pa_zm(i,:) )
-      end do
-    end if
-
     ! Initialize Time Dependent Input
     
     if( l_t_dependent ) then
 
       if ( l_add_dycore_grid ) then
+        ! get dycore grid
+        call setup_gr_dycore( iunit, ngrdcol, &                 ! Intent(in)
+                              gr%zm(:,1), gr%zm(:,gr%nzm), &    ! Intent(in)
+                              gr_dycore )                       ! Intent(out)
+
+        allocate( p_in_Pa_dycore(ngrdcol,gr_dycore%nzt) )
+
+        ! get pressure for the dycore grid
+        do i = 1, ngrdcol
+          p_in_Pa_dycore(i,:) = lin_interp_between_grids( gr_dycore%nzt, gr%nzm, &
+                                                          gr_dycore%zt, gr%zm, &
+                                                          p_in_Pa_zm(i,:) )
+        end do
         ! if we want to simulate the forcings from the host model on the dycore grid,
         ! we first read in all the forcings from the file to the dycore grid and every
         ! timestep remap the results to the current physics grid, so we need to pay
@@ -4147,6 +4136,8 @@ module clubb_driver
         call initialize_t_dependent_input &
                    ( iunit, runtype, gr_dycore%nzt, gr_dycore%zt(1,:), p_in_Pa_dycore(1,:), &
                      l_add_dycore_grid, grid_adapt_in_time_method )
+
+        deallocate( p_in_Pa_dycore )
       else
         ! no simulating forcings input from host model on dycore grid
         ! l_add_dycore_grid=.false.
@@ -5765,7 +5756,7 @@ module clubb_driver
                                  grid_remap_method, &
                                  total_idx_rho_lin_spline, rho_lin_spline_vals, &
                                  rho_lin_spline_levels, &
-                                 gr_dycore, rho_ds_zm_dycore, &
+                                 gr_dycore, &
                                  rtm, wm_zm, wm_zt, ug, vg, um_ref, vm_ref, &
                                  thlm_forcing, rtm_forcing, um_forcing, &
                                  vm_forcing, wprtp_forcing, wpthlp_forcing, &
@@ -5941,10 +5932,7 @@ module clubb_driver
     ! Note: both these arrays need to be sorted from low to high altitude
 
     type( grid ), intent(in) :: &
-      gr_dycore
-
-    real( kind = core_rknd ), dimension(gr_dycore%nzm), intent(in) :: &
-      rho_ds_zm_dycore
+      gr_dycore ! only allocated if l_add_dycore_grid = .true.
 
     real( kind = core_rknd ), dimension(ngrdcol,nzt), intent(inout) :: &
       rtm,             & ! total water mixing ratio, r_t (thermo. levs.)        [kg/kg]
@@ -6118,7 +6106,10 @@ module clubb_driver
                          rtm, &                                 ! Intent(in)
                          l_add_dycore_grid, &                   ! Intent(in)
                          grid_remap_method, &                   ! Intent(in)
-                         gr_dycore, rho_ds_zm_dycore, &         ! Intent(in)
+                         gr_dycore, &                           ! Intent(in)
+                         total_idx_rho_lin_spline, &            ! Intent(in)
+                         rho_lin_spline_vals, &                 ! Intent(in)
+                         rho_lin_spline_levels, &               ! Intent(in)
                          p_sfc(1), &                            ! Intent(in)
                          err_code, &                            ! Intent(inout)
                          wm_zt, wm_zm, &                        ! Intent(out)
