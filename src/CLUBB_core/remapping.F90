@@ -350,7 +350,7 @@ module remapping_module
     err_percentage = 1.e-7_core_rknd
     
     ! not use fixed global tolerance, since there are some extremely large vertical integrals
-    if ( abs( integral_target - integral_source ) > abs( integral_source*err_percentage ) .or. &
+    if ( abs( integral_target - integral_source ) > abs( integral_source*err_percentage ) .and. &
          abs( integral_target - integral_source ) > tol_cons ) then
 
       write(fstderr,*) "WARNING! Integral for field was not conserved."
@@ -1660,7 +1660,7 @@ module remapping_module
     real( kind = core_rknd ), dimension(levels_source_idx-1) :: &
       source_values_flipped  ! source_values flipped
 
-    real( kind = core_rknd ), dimension(levels_source_idx-1) :: &
+    real( kind = core_rknd ), dimension(levels_target_idx-1) :: &
       target_values_flipped  ! remapped values on the target grid
 
     ! configurations for the map1_ppm method
