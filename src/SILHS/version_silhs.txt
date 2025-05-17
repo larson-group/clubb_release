@@ -1,0 +1,106 @@
+commit 6011fadbf84bd9e26f1105695ab4e40d72ae3f71
+Author: bmg929 <bmg2@uwm.edu>
+Date:   Fri May 16 17:24:49 2025 -0500
+
+    I updated run_bindiff_w_flags_config_host_flags to add flag set 3,
+    which, from what I can tell, contains the default CLUBB flag settings
+    for E3SM in the maint-3.0 branch.
+
+commit f9b793fc2d666ae40a33e3e574558b6ea39c78d3
+Author: domkesteffen <42725900+domkesteffen@users.noreply.github.com>
+Date:   Wed May 14 13:06:17 2025 -0500
+
+    Fix jenkins clubb error handling output (#1247)
+    
+    * Modified CLUBB error handling Jenkins test similar to changes in new CAM CLUBB test
+    CAM pull request larson-group/cam#195
+    
+    Changes to Jenkinsfile for clubb_error_handling_gfortran_test so output is cleaner and more descriptive.
+
+commit 942e02ac28ca0981f9a54f4e56d8fc8a16b49b65
+Author: domkesteffen <42725900+domkesteffen@users.noreply.github.com>
+Date:   Tue May 13 12:55:59 2025 -0500
+
+    Removed simple wrappers from clubb_api_module (#1245)
+    
+    * Removed simple wrappers from clubb_api_module
+    CLUBB ticket #1223
+    
+    Removed wrappers and renamed procedures in original modules:
+    - cleanup_clubb_core_api
+    - compute_current_date_api
+    - set_clubb_debug_level_api
+    - clubb_at_least_debug_level_api
+    - lin_interpolate_on_grid_api
+    - pack_pdf_params_api
+    - unpack_pdf_params_api
+    - init_precip_fracs_api
+    - init_pdf_implicit_coefs_terms_api
+    - stats_end_timestep_api
+    - print_clubb_config_flags_api
+    - initialize_tau_sponge_damp_api
+    - finalize_tau_sponge_damp_api
+
+commit 1f2fc1fc313f86736c95e12472ed0d9886a9c46c
+Author: domkesteffen <42725900+domkesteffen@users.noreply.github.com>
+Date:   Fri May 9 12:40:41 2025 -0500
+
+    Fixed and equalized NaN checks in lapack_wrap (#1246)
+    
+    See CAM pull request larson-group/CAM#188
+    
+    Added debug_level_at_least(0) checks where missing and changed debug_level(1) to 0 in lapack_band_solve,
+    so the new CAM CLUBB error handling test can do what it's supposed to do.
+
+commit b7e8ad326ddae6128dfc222922dc10c1a8275700
+Author: bmg929 <bmg2@uwm.edu>
+Date:   Tue May 6 11:34:23 2025 -0500
+
+    Cleaning up some grid generalization issues that were found within
+    l_implemented flag blocks.
+
+commit 6912ae1620711773f96385ece3b9330fc73daf68
+Author: bmg929 <bmg2@uwm.edu>
+Date:   Fri May 2 16:44:43 2025 -0500
+
+    Fixing an error in the previous commit. (lol, good ol' find and replace)
+
+commit f1b430ab343e05a36e916cf1910c78c1a20c177b
+Author: bmg929 <bmg2@uwm.edu>
+Date:   Fri May 2 16:40:50 2025 -0500
+
+    I am adding a second set of host flags as part of the generalized
+    vertical grid test for host model flags. Flag set 2 consists of
+    flag settings that are found in the clubb_silhs_devel branch of CAM.
+
+commit d1b42f244d4e38d86e5cf1bea3cbdb38950e094b
+Author: bmg929 <bmg2@uwm.edu>
+Date:   Fri May 2 16:17:46 2025 -0500
+
+    I am adding a Jenkinsfile for a new CLUBB generalized vertical
+    grid test that uses flag sets consisting of specialized flag
+    settings that are found in host models of which CLUBB is a part.
+
+commit 9b42183b3b368cf7c079faf0a7b79eefc159f901
+Author: bmg929 <bmg2@uwm.edu>
+Date:   Fri May 2 14:35:23 2025 -0500
+
+    I am adding a new .json file for host model flags. Flag set 1 consists
+    of the current CAM default settings.
+
+commit 1e73c9c30c0b13eb0a0a5e0010ce9fd81c67c2f0
+Author: domkesteffen <42725900+domkesteffen@users.noreply.github.com>
+Date:   Fri May 2 12:37:23 2025 -0500
+
+    Run scm fixes (#1244)
+    
+    Fixed error output for run?scm?all.bash, added some missing error checks to CLUBB
+    CLUBB ticket #975
+    
+    * Fixed error output issues for run_scm_all.bash
+    - Changed tail $TMP_OUT to cat $TMP_OUT so we can see the entire stderr output of CLUBB in the log
+    - Added `if allocated` check to subroutine finalize_t_dependent_forcings in time_dependent_input.F90 to avoid runtime errors
+    - Removed unnecessary write statement in clubb_standalone.F90
+    
+    * Added missing err_code checks
+    - Added err_code checks so we don't get false negative error messages
