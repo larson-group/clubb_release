@@ -348,7 +348,8 @@ class CaseGallerySetup:
         return np.abs(long-short)
 
     def plot(self, output_folder, replace_images=False, no_legends=False, thin_lines=False,
-             show_alphabetic_id=False, total_progress_counter=[0,0]):
+             show_alphabetic_id=False, total_progress_counter=[0,0], 
+             generate_grid_adapt_plot = False, grid_comparison_plot = False, read_file_paths=[]):
         """
         Plot all panels associated with the case, these will be saved to image files in the <<output>>/<<casename>>
         folder
@@ -400,7 +401,10 @@ class CaseGallerySetup:
             else:
                 panel.plot(output_folder, self.name, replace_images=replace_images, no_legends=no_legends,
                            thin_lines=thin_lines, alphabetic_id=alphabetic_id, paired_plots=plot_paired_lines,
-                           image_extension=self.image_extension)
+                           image_extension=self.image_extension, 
+                           generate_grid_adapt_plot=generate_grid_adapt_plot, 
+                           grid_comparison_plot=grid_comparison_plot,
+                           read_file_paths=read_file_paths)
             curr_panel_num += 1
 
             # increment by 1 for each plotted panel

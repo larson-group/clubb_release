@@ -36,7 +36,7 @@ class ContourPanel(Panel):
     """
 
     def __init__(self, plots, panel_type=Panel.TYPE_TIMEHEIGHT, title="Unnamed panel",
-                 dependent_title="dependent variable"):
+                 dependent_title="dependent variable", var_min=None, var_max=None, file_identifier=''):
         """
         Constructor of the ContourPanel subclass. Will call the constructor of the Panel superclass.
 
@@ -50,15 +50,21 @@ class ContourPanel(Panel):
             Profile plots are usually centered, while budget plots are not.
         """
 
+        self.var_min = var_min
+        self.var_max = var_max
+
         # Note: Nones added to make contour plots ignore background-rcm option for now
         #       If, at some point, we want this to work with Contours,
         #       we would need to modify the super call here and kind of copy the code from Panel
         #       that handles background-rcm into ContourPanel.
         super().__init__(plots, bkgrnd_rcm=None, altitude_bkgrnd_rcm=None, start_alt_idx=None, end_alt_idx=None,
-                         panel_type=panel_type, title=title, dependent_title=dependent_title, sci_scale=None, centered=False)
+                         panel_type=panel_type, title=title, dependent_title=dependent_title, sci_scale=None, centered=False, file_identifier=file_identifier)
 
     def plot(self, output_folder, casename, replace_images = False, no_legends = True, thin_lines = False,
-             alphabetic_id = '', paired_plots = True, image_extension=".png"):
+             alphabetic_id = '', paired_plots = True, image_extension=".png", 
+                           generate_grid_adapt_plot=False, 
+                           grid_comparison_plot=False,
+                           read_file_paths=''):
         """
         Generate a single contourf plot from the given data
 
@@ -91,6 +97,10 @@ class ContourPanel(Panel):
             x_data, y_data = np.meshgrid(x_data, y_data)
             cmap = mpl.colormaps.get_cmap(var.colors)
             vmin, vmax = c_data.min(), c_data.max()
+            
+            if self.var_min is not None and self.var_max is not None:
+                vmin, vmax = self.var_min, self.var_max
+
             #vmin, vmax = 0, 0.017 #rtm arm
             #vmin, vmax = 0, 0.0119 #rtm astex
             #vmin, vmax = 0, 0.00296 #rtm gabls2
@@ -179,7 +189,10 @@ class ContourPanel(Panel):
                 pass # do nothing
 
             # Generate image filename
-            filename = "timeheight_"+ str(datetime.now())+ "_" + self.title
+            if len(self.file_identifier) > 0:
+                filename = self.file_identifier + "_" + self.title + '_' + label
+            else:
+                filename = "timeheight_" + str(datetime.now()) + "_" + self.title
 
             filename = self.__removeInvalidFilenameChars__(filename)
             # Concatenate with output foldername

@@ -34,7 +34,7 @@ class Panel:
 
     def __init__(self, plots, bkgrnd_rcm, altitude_bkgrnd_rcm, start_alt_idx, end_alt_idx,
                  panel_type="profile", title="Unnamed panel", dependent_title="dependent variable", sci_scale = None,
-                 centered = False, bkgrnd_rcm_flag = False):
+                 centered = False, bkgrnd_rcm_flag = False, file_identifier=''):
         """
         Creates a new panel
 
@@ -67,6 +67,7 @@ class Panel:
         self.sci_scale = sci_scale
         self.centered = centered
         self.bkgrnd_rcm_flag = bkgrnd_rcm_flag
+        self.file_identifier = file_identifier
 
     def __init_axis_titles__(self):
         """
@@ -94,7 +95,8 @@ class Panel:
                              '. Valid options are: ' + str(Panel.VALID_PANEL_TYPES))
 
     def plot(self, output_folder, casename, replace_images = False, no_legends = True, thin_lines = False,
-             alphabetic_id="", paired_plots = True, image_extension=".png"):
+             alphabetic_id="", paired_plots = True, image_extension=".png", 
+             generate_grid_adapt_plot=False, grid_comparison_plot=False, read_file_paths=[]):
         """
         Saves a single panel/graph as image to the output directory specified by the pyplotgen launch parameters
 
@@ -120,7 +122,8 @@ class Panel:
         # colors again
         default_cycler = (
                 cycler(linestyle=Style_definitions.STYLE_ROTATION) * cycler(color=Style_definitions.COLOR_ROTATION))
-        plt.rc('axes', prop_cycle=default_cycler)
+        if not generate_grid_adapt_plot:
+            plt.rc('axes', prop_cycle=default_cycler)
 
         # Set graph size
         plt.figure(figsize=Style_definitions.FIGSIZE)
@@ -152,8 +155,6 @@ class Panel:
         # Plot dashed line. This var will oscillate between true and false
         plot_dashed = False
 
-        generate_grid_adapt_plot = False
-        grid_comparison_plot = False
 
         max_panel_value = 0
         for var in self.all_plots:
@@ -192,9 +193,8 @@ class Panel:
                 line_width = Style_definitions.THIN_LINE_THICKNESS
             plotting_benchmark = var.line_format != ""
             if generate_grid_adapt_plot:
-                # TODO set rc back to defaults for the prop_cycler
-                read_dir = '/home/carstensen/results_thesis_5_0/adapt'
-                output_dir = '/home/carstensen/results_thesis_5_0/adapt/test'
+                read_dir = read_file_paths[0]
+                output_dir = output_folder
                 file_ending = '_grid_adapt.txt'
                 for filename in os.listdir(read_dir):
                     if filename.endswith(file_ending):
@@ -253,7 +253,15 @@ class Panel:
                     hi_res_grid_spacings.append(hi_res[i+1]-hi_res[i])
                     hi_res_grid_spacings_heights.append((hi_res[i+1]+hi_res[i])/2)
 
-                dycore = [0.0, 100.0, 325.0, 625.0, 950.0, 1300.0, 1675.0, 2065.0, 2475.0, 2915.0, 3400.0, 3890.0, 4390.0, 4915.0, 5450.0, 6010.0, 6670.0, 7490.0, 8490.0]
+                # This is the path to the file where the dycore grid is stored in, so dycore.grd
+                dycore_file_path = '../../input/grid/dycore.grd'
+
+                # Read in dycore grid and make it an array
+                dycore = []
+                with open(dycore_file_path) as f:
+                    for line in f:
+                        if (float(line) <= 9000.0):
+                            dycore.append(float(line))
                 dycore_grid_spacings = []
                 dycore_grid_spacings_heights = []
                 for i in range(len(dycore)-1):
@@ -285,7 +293,7 @@ class Panel:
                 # Add the legend
                 plt.legend(handles=[legend_patch_hi_res, legend_patch_dycore])
 
-                plt.savefig('grid_comp.png', dpi=300, bbox_inches='tight')
+                plt.savefig(output_folder + '/grid_comp.png', dpi=300, bbox_inches='tight')
                 plt.close()
                 raise Exception('only calculated grid adapt plot, set grid_comparison_plot to False')
                 #plt.savefig('grid_comp.png', dpi=300, bbox_inches='tight')
@@ -389,14 +397,18 @@ class Panel:
             pass # do nothing
 
         # Generate image filename
-        filename = self.panel_type + "_"+ str(datetime.now())
-        # Force subcolumn plots to show up on top
-        if self.panel_type == Panel.TYPE_SUBCOLUMN:
-            filename = 'aaa' + filename
-        if self.panel_type == Panel.TYPE_BUDGET:
-            filename = filename + "_"+ self.title
+        #filename = self.panel_type
+        if len(self.file_identifier) > 0:
+            filename = self.file_identifier + '_' + self.title
         else:
-            filename = filename + '_' + self.y_title + "_VS_" + self.x_title
+            filename = self.panel_type + "_"+ str(datetime.now())
+            # Force subcolumn plots to show up on top
+            if self.panel_type == Panel.TYPE_SUBCOLUMN:
+                filename = 'aaa' + filename
+            if self.panel_type == Panel.TYPE_BUDGET:
+                filename = filename + "_"+ self.title
+            else:
+                filename = filename + '_' + self.y_title + "_VS_" + self.x_title
         filename = self.__removeInvalidFilenameChars__(filename)
         # Concatenate with output foldername
         rel_filename = output_folder + "/" +casename+'/' + filename

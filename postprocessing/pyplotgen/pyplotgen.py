@@ -23,7 +23,7 @@ from multiprocessing import freeze_support
 
 from fpdf import FPDF
 
-from config import Case_definitions, Style_definitions
+from config import Case_definitions, Style_definitions, Case_definitions_red_height
 from python_html_gallery import gallery
 from src import Panel
 from src.CaseGallerySetup import CaseGallerySetup
@@ -47,7 +47,8 @@ class PyPlotGen:
                  e3sm_folders=[""], sam_folders=[""], wrf_folders=[""], cam_folders=[""], priority_vars=False,
                  plot_budgets=False, bu_morr=False, lumped_buoy_budgets=False, background_rcm=False, diff=None,
                  show_alphabetic_id=False, time_height=False, animation=None, samstyle=False, disable_multithreading=False,
-                 pdf=False, pdf_filesize_limit=None, plot_subcolumns=False, image_extension=".png"):
+                 pdf=False, pdf_filesize_limit=None, plot_subcolumns=False, image_extension=".png",
+                 grid_adapt_plot=False, grid_comparison_plot=False, red_height=False):
         """
         This creates an instance of PyPlotGen. Each parameter is a command line parameter passed in from the argparser
         below.
@@ -131,6 +132,9 @@ class PyPlotGen:
         self.pdf = pdf
         self.pdf_filesize_limit = pdf_filesize_limit
         self.image_extension = image_extension
+        self.grid_adapt_plot = grid_adapt_plot
+        self.grid_comparison_plot = grid_comparison_plot
+        self.red_height = red_height
 
         # Append date to output folder name
         if os.path.isdir(self.output_folder) and self.replace_images is False:
@@ -185,7 +189,10 @@ class PyPlotGen:
         # Load data used for difference plots
         if self.diff is not None:
             self.diff_datasets = self.diff_files_data_reader.loadFolder(self.diff)
-        all_enabled_cases = Case_definitions.CASES_TO_PLOT
+        if not self.red_height:
+            all_enabled_cases = Case_definitions.CASES_TO_PLOT
+        else:
+            all_enabled_cases = Case_definitions_red_height.CASES_TO_PLOT
 
         # Downloads model output (sam, les, clubb) if it doesn't exist
         if self.__benchmarkFilesNeeded__():
@@ -426,7 +433,10 @@ class PyPlotGen:
             # Call plot function of case instance
             case_gallery_setup.plot(self.output_folder, replace_images=self.replace_images, no_legends=self.no_legends,
                                     thin_lines=self.thin, show_alphabetic_id=self.show_alphabetic_id,
-                                    total_progress_counter=total_progress_counter)
+                                    total_progress_counter=total_progress_counter, 
+                                    generate_grid_adapt_plot = self.grid_adapt_plot, 
+                                    grid_comparison_plot = self.grid_comparison_plot,
+                                    read_file_paths=self.clubb_folders)
             self.cases_plotted.append(case_def)
             case_plotted = True
 
@@ -642,6 +652,9 @@ def __processArguments__():
                         action="store_true")
     parser.add_argument("--thin", help="Plot using thin solid lines.", action="store_true")
     parser.add_argument("--no-legends", help="Plot without legend boxes defining the line types.", action="store_true")
+    parser.add_argument("--grid-adapt-plot", help="Plot grid adaptation plot.", action="store_true")
+    parser.add_argument("--red-height", help="Plot with reduced height.", action="store_true")
+    parser.add_argument("--grid-comparison-plot", help="Plot grid comparison plot.", action="store_true")
     parser.add_argument("-b", "--plot-budgets", help="Plot all defined budgets of moments.",
                         action="store_true")
     parser.add_argument("--lumped-buoy-budgets", help="Lump together wpxp_bp and wpxp_pr3 terms in CLUBB's budgets.",
@@ -806,7 +819,8 @@ def __processArguments__():
                           show_alphabetic_id=args.show_alphabetic_id, time_height=args.time_height_plots, animation=args.movies,
                           samstyle=args.sam_style_budgets, disable_multithreading=args.disable_multithreading, pdf=args.pdf,
                           pdf_filesize_limit=args.pdf_filesize_limit, plot_subcolumns=args.plot_subcolumns,
-                          image_extension=image_extension)
+                          image_extension=image_extension, grid_adapt_plot=args.grid_adapt_plot,
+                          grid_comparison_plot=args.grid_comparison_plot, red_height=args.red_height)
     return pyplotgen
 
 

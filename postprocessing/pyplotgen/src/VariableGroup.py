@@ -435,16 +435,24 @@ class VariableGroup:
                     centered = variable['centered']
 
                 if panel_type == Panel.TYPE_TIMEHEIGHT:
-                    panel = ContourPanel(plotset, title=title, dependent_title=axis_label, panel_type=panel_type)
+                    if 'var_min' in variable and 'var_max' in variable:
+                        panel = ContourPanel(plotset, title=title, dependent_title=axis_label, panel_type=panel_type, var_min=variable['var_min'], var_max=variable['var_max'], file_identifier=variable['file_identifier'])
+                    else:
+                        panel = ContourPanel(plotset, title=title, dependent_title=axis_label, panel_type=panel_type)
                 elif self.animation is not None:
                     panel = AnimationPanel(plotset, self.bkgrnd_rcm, self.altitude_bkgrnd_rcm, self.time_bkgrnd_rcm,
                                            self.start_alt_idx, self.end_alt_idx, panel_type=panel_type, title=title,
                                            dependent_title=axis_label, sci_scale=sci_scale, centered=centered,
                                            bkgrnd_rcm_flag=self.bkgrnd_rcm_flag)
                 else:
-                    panel = Panel(plotset, self.bkgrnd_rcm, self.altitude_bkgrnd_rcm, self.start_alt_idx, self.end_alt_idx,
-                                  panel_type=panel_type, title=title, dependent_title=axis_label, sci_scale=sci_scale,
-                                  centered=centered, bkgrnd_rcm_flag=self.bkgrnd_rcm_flag)
+                    if 'file_identifier' in variable:
+                        panel = Panel(plotset, self.bkgrnd_rcm, self.altitude_bkgrnd_rcm, self.start_alt_idx, self.end_alt_idx,
+                                      panel_type=panel_type, title=title, dependent_title=axis_label, sci_scale=sci_scale,
+                                      centered=centered, bkgrnd_rcm_flag=self.bkgrnd_rcm_flag, file_identifier=variable['file_identifier'])
+                    else:
+                        panel = Panel(plotset, self.bkgrnd_rcm, self.altitude_bkgrnd_rcm, self.start_alt_idx, self.end_alt_idx,
+                                      panel_type=panel_type, title=title, dependent_title=axis_label, sci_scale=sci_scale,
+                                      centered=centered, bkgrnd_rcm_flag=self.bkgrnd_rcm_flag)
                 self.panels.append(panel)
 
     def __getTitles__(self, variable_def_dict, plotted_models_varname):
