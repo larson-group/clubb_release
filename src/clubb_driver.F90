@@ -1953,7 +1953,8 @@ module clubb_driver
 
     end if
 
-    if (grid_adapt_in_time_method > no_grid_adaptation) then
+    ! TODO only execute when grid adaptation is used, so remove clubb_at_least_debug_level condition
+    if (grid_adapt_in_time_method > no_grid_adaptation .or. clubb_at_least_debug_level( 2 ) ) then
       allocate( gr_dens_z(gr%nzm) )
       allocate( gr_dens(gr%nzm) )
 
@@ -3277,7 +3278,8 @@ module clubb_driver
         end do
       end if
 
-      if ( grid_adapt_in_time_method > no_grid_adaptation ) then
+      ! TODO only execute when grid adaptation is used
+      if ( grid_adapt_in_time_method > no_grid_adaptation .or. clubb_at_least_debug_level(2) ) then
 
         ! interrupt stopping time for time_loop_end if grid gets adapted to save time specific
         ! for calculating the normalized grid density and updating the stats vars
@@ -3716,7 +3718,7 @@ module clubb_driver
                 lh_rv_clipped, lh_Nc_clipped, &
                 X_mixt_comp_all_levs, lh_sample_point_weights, Nc_in_cloud )
 
-    if ( grid_adapt_in_time_method > no_grid_adaptation ) then
+    if ( grid_adapt_in_time_method > no_grid_adaptation .or. clubb_at_least_debug_level(2) ) then
 
       deallocate( gr_dens_z )
       deallocate( gr_dens )
