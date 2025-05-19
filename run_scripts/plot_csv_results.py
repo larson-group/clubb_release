@@ -45,6 +45,17 @@ fit_plot_div_style = {
     "alignItems": "left"
 }
 
+growing_container = {
+    "width": "auto",              
+    "maxWidth": "100%",           # Prevent overflow
+    "height": "60%",             # Let it fill available vertical space
+    "flexGrow": 1,                # Tell flex layout to expand this div if space allows
+    "minWidth": 0,                # Prevent layout overflow in flexbox
+    "display": "flex",            # Optional, useful if you're aligning internal content
+    "flexDirection": "column",    # Keeps label/table below the graph
+    "alignItems": "left"
+}
+
 graph_style = {"width": "100%", "height": "100%"}
 
 
@@ -201,6 +212,20 @@ def model_vcpu_batched_time(params, ngrdcol, runtime, N_tasks, N_vsize, N_prec, 
 
     # Model time
     T_r, T_v, m_k, b, c, k, o = params
+
+    cols_per_core = ngrdcol / N_tasks
+    flops_per_vop = N_vsize / N_prec
+    
+    b_est = runtime[0] - ( runtime[1] - runtime[0] ) / ( ngrdcol[1] - ngrdcol[0] ) * ngrdcol[0]
+    m_k_est = b_est / N_vlevs[-1]
+    first_vpoint = np.where(cols_per_core == flops_per_vop)[0][0]
+
+    T_v_est = ( runtime[first_vpoint] - b_est ) / ( ngrdcol[first_vpoint] ) * ( 1 / N_vlevs[-1])
+    T_r_est = ( runtime[0] - b_est ) / ( ngrdcol[1] ) * ( 1 / N_vlevs[-1])
+
+    T_r = T_r_est
+    T_v = T_v_est
+    b = b_est
 
     cols_per_core = ngrdcol / N_tasks
     flops_per_vop = N_vsize / N_prec
@@ -459,18 +484,14 @@ def model_throughputs(ngrdcol, runtime, N_tasks, N_vsize, N_prec, N_vlevs, model
         params_opt = param_scale * params_opt
 
         fit_params = {
-            "m_ik_val": params_opt[0], 
-            "m_k_val": params_opt[1], 
-            "b_val": params_opt[2], 
-            "b_est_val": b_est, 
-            #"d_val": params_opt[3], 
-            #"m_i_val": params_opt[3], 
-            "rms_error" : rms_error
+            "m_ik": f"{params_opt[0]:.2e}", 
+            "m_k": f"{params_opt[1]:.2e}",
+            "b": f"{params_opt[2]:.2e}"
         }
 
     #============================== CPU Batched Model ==============================
 
-    if model_version == "cpu_batched":
+    elif model_version == "cpu_batched":
 
         b_est = runtime[0] - ( runtime[1] - runtime[0] ) / ( ngrdcol[1] - ngrdcol[0] ) * ngrdcol[0]
 
@@ -585,18 +606,19 @@ def model_throughputs(ngrdcol, runtime, N_tasks, N_vsize, N_prec, N_vlevs, model
             }
 
     #============================== VCPU Batched Model ==============================
-    if model_version == "vcpu_batched":
+    elif model_version == "vcpu_batched":
 
         cols_per_core = ngrdcol / N_tasks
         flops_per_vop = N_vsize / N_prec
 
         b_est = runtime[0] - ( runtime[1] - runtime[0] ) / ( ngrdcol[1] - ngrdcol[0] ) * ngrdcol[0]
         m_k_est = b_est / N_vlevs[-1]
+        first_vpoint = np.where(cols_per_core == flops_per_vop)[0][0]
 
-        T_v_est = ( runtime[np.where(cols_per_core == flops_per_vop)] - b_est ) / N_vlevs[-1]
-        T_r_est = ( runtime[np.where(cols_per_core == 1)] - b_est ) / N_vlevs[-1]
+        T_v_est = ( runtime[first_vpoint] - b_est ) / ( ngrdcol[first_vpoint] ) * ( 1 / N_vlevs[-1])
+        T_r_est = ( runtime[0] - b_est ) / ( ngrdcol[1] ) * ( 1 / N_vlevs[-1])
 
-        param_scale = np.abs( [ T_v_est[0], T_r_est[0], m_k_est, b_est, 1.0, 1.0, 1.0 ] )
+        param_scale = np.abs( [ T_v_est, T_r_est, m_k_est, b_est, 1.0, 1.0, 1.0 ] )
 
         initial_guess = [ 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0 ]
 
@@ -622,9 +644,9 @@ def model_throughputs(ngrdcol, runtime, N_tasks, N_vsize, N_prec, N_vlevs, model
             result = minimize(  vcpu_batched_objective, 
                                 initial_guess, 
                                 args=( param_scale, ngrdcol, runtime, N_tasks, N_vsize, N_prec, N_vlevs, cp_func ), 
-                                #method='Nelder-Mead' )
-                                method='L-BFGS-B',
-                                bounds = bounds )
+                                method='CG' )
+                                #method='L-BFGS-B',
+                                #bounds = bounds )
 
             rms_error = result.fun
             scaled_params = param_scale * result.x
@@ -643,13 +665,13 @@ def model_throughputs(ngrdcol, runtime, N_tasks, N_vsize, N_prec, N_vlevs, model
 
         # Assemble fit_params dictionary
         fit_params = {
-            "T_v": f"{params_opt[0]:.2e}",
-            "T_r": f"{params_opt[1]:.2e}",
-            "m_k": f"{params_opt[2]:.2e}",
-            "b": f"{params_opt[3]:.2e}",
-            "c": f"{params_opt[4]:.2e}",
-            "k": f"{params_opt[5]:.2e}",
-            "o": f"{params_opt[6]:.2e}",
+            "T_v": f"{params_opt[0]:.2e} - {param_scale[0]}",
+            "T_r": f"{params_opt[1]:.2e} - {param_scale[1]}",
+            "m_k": f"{params_opt[2]:.2e} - {param_scale[2]}",
+            "b": f"{params_opt[3]:.2e} - {param_scale[3]}",
+            "c": f"{params_opt[4]:.2e} - {param_scale[4]}",
+            "k": f"{params_opt[5]:.2e} - {param_scale[5]}",
+            "o": f"{params_opt[6]:.2e} - {param_scale[6]}",
             "cp_func": cache_pen_best.__name__,
             #"rms_error": rms_min
         }
@@ -712,14 +734,12 @@ def model_throughputs(ngrdcol, runtime, N_tasks, N_vsize, N_prec, N_vlevs, model
 
 def launch_dash_app(dir_name, grouped_files, all_variables):
 
-    #data = {case: {filename: pd.read_csv(filepath, comment="#") for filename, filepath in files.items()} for case, files in grouped_files.items()}
     data = {
         filename: pd.read_csv(filepath, comment="#")
-        for case, files in grouped_files.items()
+        for group, files in grouped_files.items()
         for filename, filepath in files.items()
     }
 
-    #app = Dash(__name__)
     app = Dash(
             __name__,
             requests_pathname_prefix='/plots/',
@@ -734,102 +754,144 @@ def launch_dash_app(dir_name, grouped_files, all_variables):
         html.Div([
 
             # Columns per second plot
-            html.Div(dcc.Graph(id="plot-columns-per-second", style=graph_style), style=plot_div_style),
+            html.Details(
+                [
+                    html.Summary("Columns per Second Plot", style={"font-weight": "bold", "background-color": "#ddd", "padding": "10px", "cursor": "pointer", "font-size": "20px"}),
+                    html.Div(
+                        dcc.Graph(id="plot-columns-per-second", style=graph_style),
+                        style=plot_div_style
+                    )
+                ],
+                style=growing_container,
+                open=False  # default open, or remove to start collapsed
+            ),
 
             # Time plot
-            html.Div(dcc.Graph(id="plot-raw", style=graph_style), style=plot_div_style),
+            html.Details(
+                [
+                    html.Summary("Runtime Plot", style={"font-weight": "bold", "background-color": "#ddd", "padding": "10px", "cursor": "pointer", "font-size": "20px"}),
+                    html.Div(
+                        dcc.Graph(id="plot-raw", style=graph_style),
+                        style=plot_div_style
+                    )
+                ],
+                style=growing_container,
+                open=False
+            ),
 
             # Fit plot
-            html.Div([
+            html.Details(
+                [
+                    html.Summary("Individual Fit Plot", style={"font-weight": "bold", "background-color": "#ddd", "padding": "10px", "cursor": "pointer", "font-size": "20px"}),
+                    html.Div([
 
-                # Plot
-                dcc.Graph(id="fit-plot", style=graph_style), 
+                        # Plot
+                        dcc.Graph(id="fit-plot", style=graph_style), 
 
-                # VCPU table
-                html.Div([
-                    html.Label("Vector CPU Model"),
-                    dash_table.DataTable(
-                        id='vcpu-param-table',
-                        columns=vcpu_model_columns,
-                        style_cell={'textAlign': 'center', "whiteSpace": "pre-line"},
-                        data=[],  # Initial empty table
-                        editable=True,
-                        row_deletable=False  # Allows deleting rows directly
-                    ),
-                ], style={"margin-bottom": "20px"}),
+                        # VCPU table
+                        html.Div([
+                            html.Label("Vector CPU Model"),
+                            dash_table.DataTable(
+                                id='vcpu-param-table',
+                                columns=vcpu_model_columns,
+                                style_cell={'textAlign': 'center', "whiteSpace": "pre-line"},
+                                data=[],  # Initial empty table
+                                editable=True,
+                                row_deletable=False  # Allows deleting rows directly
+                            ),
+                        ], style={"margin-bottom": "20px"}),
 
-                # CPU table
-                html.Div([
-                    html.Label("Simple CPU Model"),
-                    dash_table.DataTable(
-                        id='cpu-param-table',
-                        columns=cpu_model_columns,
-                        style_cell={'textAlign': 'center', "whiteSpace": "pre-line"},
-                        data=[],  # Initial empty table
-                        editable=True,
-                        row_deletable=False  # Allows deleting rows directly
-                    ),
-                ], style={"margin-bottom": "20px"}),
-                
-                # GPU table
-                html.Div([
-                    html.Label("GPU Model"),
-                    dash_table.DataTable(
-                        id='gpu-param-table',
-                        columns=gpu_model_columns,
-                        style_cell={'textAlign': 'center', "whiteSpace": "pre-line"},
-                        data=[],  # Initial empty table
-                        editable=True,
-                        row_deletable=False  # Allows deleting rows directly
-                    ),
-                ], style={"margin-bottom": "20px"}),
+                        # CPU table
+                        html.Div([
+                            html.Label("Simple CPU Model"),
+                            dash_table.DataTable(
+                                id='cpu-param-table',
+                                columns=cpu_model_columns,
+                                style_cell={'textAlign': 'center', "whiteSpace": "pre-line"},
+                                data=[],  # Initial empty table
+                                editable=True,
+                                row_deletable=False  # Allows deleting rows directly
+                            ),
+                        ], style={"margin-bottom": "20px"}),
+                        
+                        # GPU table
+                        html.Div([
+                            html.Label("GPU Model"),
+                            dash_table.DataTable(
+                                id='gpu-param-table',
+                                columns=gpu_model_columns,
+                                style_cell={'textAlign': 'center', "whiteSpace": "pre-line"},
+                                data=[],  # Initial empty table
+                                editable=True,
+                                row_deletable=False  # Allows deleting rows directly
+                            ),
+                        ], style={"margin-bottom": "20px"}),
 
-            ], style=fit_plot_div_style),
+                    ], style=fit_plot_div_style),
+                ],
+                style=growing_container,
+                open=False
+            ),
 
             # Batched fit plot
-            html.Div([
+            html.Details(
+                [
+                    html.Summary("Batched Fit Plot", style={"font-weight": "bold", "background-color": "#ddd", "padding": "10px", "cursor": "pointer", "font-size": "20px"}),
+                    html.Div([
 
-                # Plot
-                dcc.Graph(id="fit-plot-batched", style=graph_style), 
-                
-                html.Label("Model Parameters"),
-                dash_table.DataTable(
-                    id='batched-param-table',
-                    #columns=gpu_batched_model_columns,
-                    style_cell={'textAlign': 'center', "whiteSpace": "pre-line"},
-                    data=[],  # Initial empty table
-                    editable=True,
-                    row_deletable=False  # Allows deleting rows directly
-                ),
+                        # Plot
+                        dcc.Graph(id="fit-plot-batched", style=graph_style), 
+                        
+                        html.Label("Model Parameters"),
+                        dash_table.DataTable(
+                            id='batched-param-table',
+                            #columns=gpu_batched_model_columns,
+                            style_cell={'textAlign': 'center', "whiteSpace": "pre-line"},
+                            data=[],  # Initial empty table
+                            editable=True,
+                            row_deletable=False  # Allows deleting rows directly
+                        ),
 
-                html.Label("RMS Error"),
-                dash_table.DataTable(
-                    id='batched-rms-table',
-                    #columns=gpu_batched_model_columns,
-                    style_cell={'textAlign': 'center', "whiteSpace": "pre-line"},
-                    data=[],  # Initial empty table
-                    editable=True,
-                    row_deletable=False  # Allows deleting rows directly
-                ),
+                        html.Label("RMS Error"),
+                        dash_table.DataTable(
+                            id='batched-rms-table',
+                            #columns=gpu_batched_model_columns,
+                            style_cell={'textAlign': 'center', "whiteSpace": "pre-line"},
+                            data=[],  # Initial empty table
+                            editable=True,
+                            row_deletable=False  # Allows deleting rows directly
+                        ),
 
-            ], style=fit_plot_div_style),
+                    ], style=fit_plot_div_style),
+                ],
+                style=growing_container,
+                open=True
+            ),
 
             # Custom function plot
-            html.Div([
+            html.Details(
+                [
+                    html.Summary("Custom Function Plot", style={"font-weight": "bold", "background-color": "#ddd", "padding": "10px", "cursor": "pointer", "font-size": "20px"}),
+                    
+                    html.Div([
 
-                # Plot
-                dcc.Graph(id="plot-custom", style=graph_style),
+                        # Plot
+                        dcc.Graph(id="plot-custom", style=graph_style),
 
-                # Custom function input
-                dcc.Input(
-                    id="custom-function",
-                    type="text",
-                    placeholder="Enter function (e.g., baseline + 5 * iter_total)",
-                    debounce=True,
-                    style={"width": "30%", "margin-top": "10px", "text-align": "center"}
-                ),
+                        # Custom function input
+                        dcc.Input(
+                            id="custom-function",
+                            type="text",
+                            placeholder="Enter function (e.g., baseline + 5 * iter_total)",
+                            debounce=True,
+                            style={"width": "80%", "margin-top": "10px", "text-align": "center"}
+                        ),
 
-            ], style=plot_div_style),
+                    ], style=plot_div_style),
+                ],
+                style=growing_container,
+                open=False
+            ),
 
         ], style={  "flex": "1", 
                     "padding-right": "10px", 
@@ -1167,7 +1229,7 @@ def launch_dash_app(dir_name, grouped_files, all_variables):
 
 
         for filename in selected_flat:
-            if filename in data and selected_variable in data[filename].columns:
+            if filename in data:
                 temp_df = data[filename].copy()
                 temp_df["Source"] = filename
 
@@ -1203,14 +1265,9 @@ def launch_dash_app(dir_name, grouped_files, all_variables):
 
         selected_flat = list(chain.from_iterable(selected_files))
 
-        if not n_clicks or not selected_files:
-            raise PreventUpdate
-
         # The order in 'header' will match the order of these files
-        header = ["ngrdcol"]
-        header += [filename for filename in selected_files]
+        header = ["ngrdcol"] + selected_flat
 
-        # This will map: ngrdcol -> { "case1/file1": val, "case2/file2": val, ... }
         data_rows = defaultdict(dict)
 
         # Populate data_rows
@@ -1516,16 +1573,15 @@ def launch_dash_app(dir_name, grouped_files, all_variables):
                 combined_df = pd.concat([combined_df, original_df, model_df])
                 start_idx = end_idx
 
-
                 # GPU uses absolute error 
-                rms_error_case = rms_error( model_df["ngrdcol"], 
-                                            original_df[selected_variable], 
-                                            model_df[selected_variable], 
-                                            mode="abs_cps" if gpu_fit else "abs_percent_cps" )
+                rms_error_model = rms_error( model_df["ngrdcol"], 
+                                             original_df[selected_variable], 
+                                             model_df[selected_variable], 
+                                             mode="abs_cps" if gpu_fit else "abs_percent_cps" )
 
                 # Add name field first
-                row_data = {"Configuration": f"{config_name}" }
-                row_data = {**row_data, "RMS Error": f"{rms_error_case}"}
+                row_data = {"Configuration": f"{filename}" }
+                row_data = {**row_data, "RMS Error": f"{rms_error_model}"}
 
                 # Add row to table
                 batched_rms_table.append(row_data)
@@ -1533,9 +1589,6 @@ def launch_dash_app(dir_name, grouped_files, all_variables):
 
                 
         if plot_mode == "cps":
-            #fig = px.line(combined_df, x="Grid Boxes", y="Grid Boxes per Second", color="Name")
-            #fig.update_layout( yaxis_title = "Throughput ( grid boxes / second)" )
-            #fig = px.line(combined_df, x="ngrdcol", y="Columns per Second", color="Name")
             fig = px.line(
                 combined_df, 
                 x="ngrdcol", 
@@ -1548,7 +1601,6 @@ def launch_dash_app(dir_name, grouped_files, all_variables):
                 yaxis_title = "Throughput (columns / second)"
             )
         else:
-            #fig = px.line(combined_df, x="Grid Boxes", y=selected_variable, color="Name")
             fig = px.line(
                 combined_df, 
                 x="ngrdcol", 
@@ -1567,7 +1619,7 @@ def launch_dash_app(dir_name, grouped_files, all_variables):
             yaxis=dict(type=yaxis_scale),
             autosize=True,
             uirevision='constant',
-            legend_title_text="Case"
+            legend_title_text="Configuration"
         )
         fig.update_traces(marker=dict(size=8))
 
