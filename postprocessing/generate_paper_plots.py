@@ -7,7 +7,7 @@ import re
 # for each of the three cases
 
 # This is the output directory where the final plot files are stored
-OUTPUT_DIR = '/home/carstensen/results_refined_grid_v2/paper_plots'
+OUTPUT_DIR = '/home/carstensen/results_refined_grid_v2/paper_plots_v2'
 
 # The names of the diectories are relevant, since these names are used as names
 # in the legend in the plots
@@ -404,20 +404,20 @@ def create_plot(lam, file_out):
     
     fig.tight_layout()
     #fig.savefig(f'func_norm_lam_{lam}_new.svg')
-    plt.savefig(f'func_norm_lam_{lam}_new.png', dpi=300)
+    plt.savefig(file_out, dpi=300)
     #plt.show()
 
 def main():
     lam_one_half = 0.5
-    file_out_one_half = 'func_norm.png'
+    file_out_one_half = OUTPUT_DIR + '/func_norm.png'
     create_plot(lam_one_half, file_out_one_half)
     
     lam_one = 1.0
-    file_out_one = 'func_norm_lam_1.png'
+    file_out_one = OUTPUT_DIR + '/func_norm_lam_1.png'
     create_plot(lam_one, file_out_one)
 
     lam_zero = 1e-20
-    file_out_zero = 'func_norm_lam_0.png'
+    file_out_zero = OUTPUT_DIR + '/func_norm_lam_0.png'
     create_plot(lam_zero, file_out_zero)
 
 main()
