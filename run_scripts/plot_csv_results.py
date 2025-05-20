@@ -15,6 +15,7 @@ import pyperclip
 from scipy.optimize import minimize
 import warnings
 from itertools import chain
+import plotly.graph_objects as go
 
 # ======================================== Reused html styles ========================================
 plot_div_style = {
@@ -763,7 +764,7 @@ def launch_dash_app(dir_name, grouped_files, all_variables):
                     )
                 ],
                 style=growing_container,
-                open=False  # default open, or remove to start collapsed
+                open=True 
             ),
 
             # Time plot
@@ -1083,7 +1084,7 @@ def launch_dash_app(dir_name, grouped_files, all_variables):
 
 
     def plot_with_enhancements(fig, title):
-        fig.update_traces(mode="lines+markers")
+        fig.update_traces(mode="lines+markers", selector=dict(mode="lines"))
         fig.update_layout(
             title=title,
             xaxis=dict(showgrid=True, gridcolor="lightgray"),
@@ -1159,18 +1160,197 @@ def launch_dash_app(dir_name, grouped_files, all_variables):
             if filename in data and selected_variable in data[filename].columns:
                 df = data[filename]
                 if selected_variable in df.columns:  # Check before accessing
+
+                    config_name = re.sub(r'(_gptl|_derecho|_arm|_intel|_nvhpc|_[0-9]*nz|_async)(?=(_|$))', '', f"{filename}")
+
                     temp_df = data[filename][["ngrdcol", selected_variable]].copy()
-                    temp_df["Source"] = filename
-                    temp_df["Columns per Second"] = temp_df["ngrdcol"] / temp_df[selected_variable]
+                    temp_df = temp_df[temp_df["ngrdcol"] >= 32] 
+                    temp_df["Configuration"] = config_name
+                    temp_df["Throughput"] = temp_df["ngrdcol"] / temp_df[selected_variable]
                     combined_df = pd.concat([combined_df, temp_df])
-        fig = px.line(combined_df, x="ngrdcol", y="Columns per Second", color="Source")
+                    
+        fig = px.line(combined_df, x="ngrdcol", y="Throughput", color="Configuration")
+
         fig.update_layout(
             xaxis=dict(type=xaxis_scale),
             yaxis=dict(type=yaxis_scale),
-            autosize=True,
+            xaxis_title = "Batch size (columns)", 
+            yaxis_title = "Throughput (columns per second)", 
+            autosize=False,
             uirevision='constant'
         )
-        return plot_with_enhancements(fig, f"Throughput (ngrdcol/{selected_variable}) vs. Number of Grid Columns")
+
+        if (
+            len(selected_flat) == 2 and
+            any("A100" in name for name in selected_flat) and
+            any("AMD7763" in name for name in selected_flat)
+        ):
+            # Extract names
+            name1, name2 = selected_flat
+            config_name1 = re.sub(r'(_gptl|_derecho|_arm|_intel|_nvhpc|_[0-9]*nz|_async)(?=(_|$))', '', f"{name1}")
+            config_name2 = re.sub(r'(_gptl|_derecho|_arm|_intel|_nvhpc|_[0-9]*nz|_async)(?=(_|$))', '', f"{name2}")
+            if "A100" in name1:
+                gpu_name, cpu_name = config_name1, config_name2
+            else:
+                gpu_name, cpu_name = config_name2, config_name1
+
+            cpu_df = combined_df[combined_df["Configuration"] == cpu_name]
+            gpu_df = combined_df[combined_df["Configuration"] == gpu_name]
+
+            # Find maxes
+            cpu_Tmax = cpu_df["Throughput"].max()
+            cpu_Tmax_i = cpu_df.loc[cpu_df["Throughput"].idxmax(), "ngrdcol"]
+            gpu_Tmax = gpu_df["Throughput"].max()
+
+            # Find two points in dataset2 that straddle cpu_Tmax
+            above = gpu_df[gpu_df["Throughput"] > cpu_Tmax]
+            below = gpu_df[gpu_df["Throughput"] <= cpu_Tmax]
+
+            if not above.empty and not below.empty:
+                # Take nearest points for interpolation
+                y1 = below.iloc[-1]["Throughput"]
+                x1 = below.iloc[-1]["ngrdcol"]
+                y2 = above.iloc[0]["Throughput"]
+                x2 = above.iloc[0]["ngrdcol"]
+
+                # Linear interpolation to find crossing point
+                x_cross = x1 + (cpu_Tmax - y1) * (x2 - x1) / (y2 - y1)
+
+                # Horizontal line from CPU peak
+                fig.add_trace(go.Scatter(
+                    x=[cpu_Tmax_i, x_cross],
+                    y=[cpu_Tmax, cpu_Tmax],
+                    mode="lines+text",
+                    line=dict(color="black", dash="dot"),
+                    showlegend=False
+                ))
+
+                # Downward vertical line from PRC
+                fig.add_trace(go.Scatter(
+                    x=[x_cross, x_cross],
+                    y=[cpu_Tmax*0.03, cpu_Tmax],
+                    mode="lines+text",
+                    line=dict(color="black", dash="dot"),
+                    showlegend=False
+                ))
+
+                # Text for PRC
+                fig.add_trace(go.Scatter(
+                    x=[x_cross],
+                    y=[0],
+                    mode="text",
+                    text=[f"PRC = {int(round_sigfigs(x_cross, 3))}"],
+                    textposition="bottom center",
+                    textfont=dict(size=18, color="black"),
+                    showlegend=False
+                ))
+
+                # Upward vertical line from CPU peak to GPU Peak (PPR)
+                fig.add_trace(go.Scatter(
+                    x=[cpu_Tmax_i, cpu_Tmax_i],
+                    y=[cpu_Tmax, gpu_Tmax],
+                    mode="lines+text",
+                    line=dict(color="black", dash="dot"),
+                    showlegend=False
+                ))
+
+                # Horizontal line atop PPR line
+                fig.add_trace(go.Scatter(
+                    x=[cpu_Tmax_i/1.2, cpu_Tmax_i*1.2],
+                    y=[gpu_Tmax, gpu_Tmax],
+                    mode="lines+text",
+                    line=dict(color="black", dash="dot"),
+                    showlegend=False
+                ))
+
+                # Text for PPR
+                fig.add_trace(go.Scatter(
+                    x=[cpu_Tmax_i*1.05],
+                    y=[(cpu_Tmax+gpu_Tmax)/2],
+                    mode="text",
+                    text=[f"PPR = {round_sigfigs(gpu_Tmax/cpu_Tmax, 3)}x"],
+                    textposition="middle right",
+                    textfont=dict(size=18, color="black"),
+                    showlegend=False
+                ))
+
+            for g_i in range(len(gpu_df)-1):
+
+                gpu_i   = gpu_df.iloc[g_i]
+                gpu_ip1 = gpu_df.iloc[g_i+1]
+
+                for c_i in range(len(cpu_df)-1):
+
+                    cpu_i   = cpu_df.iloc[c_i]
+                    cpu_ip1 = cpu_df.iloc[c_i+1]
+
+                    if ( 
+                        max( gpu_i["ngrdcol"], cpu_i["ngrdcol"] ) < min( gpu_ip1["ngrdcol"], cpu_ip1["ngrdcol"] ) and
+                        gpu_i["Throughput"] < cpu_i["Throughput"] and
+                        gpu_ip1["Throughput"] > cpu_ip1["Throughput"]
+                    ):
+                        print(f"g_i = {g_i} -- c_i = {c_i}")
+                        break
+
+
+            cpu_df_sorted = cpu_df.sort_values("ngrdcol")
+            gpu_df_sorted = gpu_df.sort_values("ngrdcol")
+
+            # Get common ngrdcol range
+            x_min = max(cpu_df_sorted["ngrdcol"].min(), gpu_df_sorted["ngrdcol"].min())
+            x_max = min(cpu_df_sorted["ngrdcol"].max(), gpu_df_sorted["ngrdcol"].max())
+
+            # Build a dense common x-axis (e.g., 500 points)
+            x_common = np.linspace(x_min, x_max, 5000)
+
+            # Interpolate both curves on this common x-axis
+            cpu_interp = np.interp(x_common, cpu_df_sorted["ngrdcol"], cpu_df_sorted["Throughput"])
+            gpu_interp = np.interp(x_common, gpu_df_sorted["ngrdcol"], gpu_df_sorted["Throughput"])
+
+            # Find where they cross (change sign in difference)
+            diff = cpu_interp - gpu_interp
+            cross_indices = np.where(np.diff(np.sign(diff)) != 0)[0]
+
+            if len(cross_indices) > 0:
+                i = cross_indices[0]
+
+                # Interpolate between the two points to find precise crossing
+                x1, x2 = x_common[i], x_common[i + 1]
+                y1_cpu, y2_cpu = cpu_interp[i], cpu_interp[i + 1]
+                y1_gpu, y2_gpu = gpu_interp[i], gpu_interp[i + 1]
+
+                # Linear interpolation of difference = 0
+                d1 = y1_cpu - y1_gpu
+                d2 = y2_cpu - y2_gpu
+                alpha = -d1 / (d2 - d1)
+                x_cross = x1 + alpha * (x2 - x1)
+                y_cross = y1_cpu + alpha * (y2_cpu - y1_cpu)
+                
+                # Down ward vertical line from DRC
+                fig.add_trace(go.Scatter(
+                    x=[x_cross, x_cross],
+                    y=[y_cross*0.05, y_cross],
+                    mode="lines+text",
+                    line=dict(color="black", dash="dot"),
+                    showlegend=False,
+                    name="Intersection Marker"
+                ))
+
+                # Text for DRC
+                fig.add_trace(go.Scatter(
+                    x=[x_cross],
+                    y=[0],
+                    mode="text",
+                    text=[f"DRC = {int(round_sigfigs(x_cross, 3))}"],
+                    textposition="bottom center",
+                    textfont=dict(size=18, color="black"),
+                    showlegend=False,
+                    name="Intersection Marker"
+                ))
+
+
+
+        return plot_with_enhancements(fig, f"Throughput vs. Batch Size")
 
 
     # ======================================== Custom function plot ========================================
@@ -1667,6 +1847,12 @@ def launch_dash_app(dir_name, grouped_files, all_variables):
 
 
 # ======================================== Main / helper functions ========================================
+def round_sigfigs(x, sigfigs=3):
+    if x == 0:
+        return 0
+    from math import log10, floor
+    return round(x, -int(floor(log10(abs(x)))) + (sigfigs - 1))
+
 def get_shared_variables(csv_files):
     variable_sets = {}
     for file in csv_files:
