@@ -21,6 +21,11 @@ pipeline {
         sh '''sed -i "s:l_stats.*:l_stats = .false.:g" input/case_setups/*_model.in'''
       }
     }
+    stage('Shorten the MC3E Case') {
+      steps {
+        sh '''sed -i "s:time_final.*:time_final = 1944000.0:g" input/case_setups/mc3e_model.in'''
+      }
+    }
     stage('Compile') {
       steps {
         sh '''source /etc/profile.d/larson-group.sh
