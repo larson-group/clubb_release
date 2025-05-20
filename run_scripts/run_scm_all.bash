@@ -14,6 +14,7 @@ NIGHTLY=false
 SHORT_CASES=false
 PRIORITY_CASES=false
 MIN_CASES=false
+GG_MESSAGE=false
 
 OUTPUT_DIR=$nightlyOut
 
@@ -31,7 +32,7 @@ OPTIONS=$*
 # Note that we use `"$@"' to let each command-line parameter expand to a
 # separate word. The quotes around `$@' are essential!
 # We need TEMP as the `eval set --' would nuke the return value of getopt.
-TEMP=`getopt -o :nhcij --long nightly,help,short-cases,priority-cases,min-cases -n 'run_scm_all.bash' -- "$@"`
+TEMP=`getopt -o :nhcijg --long nightly,help,short-cases,priority-cases,min-cases,generalized-grid -n 'run_scm_all.bash' -- "$@"`
 
 # Note the quotes around `$TEMP': they are essential!
 eval set -- "$TEMP"
@@ -47,6 +48,7 @@ while true ; do
             echo -e "\t-c, --short-cases\t\tRun short cases. This will omit\n\t\tthe gabls2, cloud_feedback_s6, cloud_feedback_s11,\n\t\tcloud_feedback_s12, and twp_ice cases"
             echo -e "\t-i, --priority-cases\t\tRun priority cases. This will include\n\t\tonly the following cases if they are in RUN_CASES: arm, atex,\n\t\tbomex, dycoms2_rf01, dycoms2_rf01_fixed_sst, dycoms2_rf02_ds,\n\t\tdycoms2_rf02_nd, mpace_b, rico, wangara, arm_97,\n\t\tcloud_feedback_s6, cloud_feedback_s11, cloud_feedback_s12,\n\t\tgabls3_night, lba, and twp_ice."
             echo -e "\t-j, --min-cases\t\t\tRun a minimal set of cases (e.g. to\n\t\teconomize on output). This will include only the following\n\t\tcases if they are in RUN_CASES: arm, atex, bomex, dycoms2_rf01,\n\t\tdycoms2_rf02_ds, rico, wangara, arm_97, gabls3_night, lba,\n\t\tand twp_ice."
+	    echo -e "\t-g, --generalized-grid\t\tPrints pass/fail message for a generalized grid test."
             echo -e "\t-h, --help\t\t\tPrints this help message"
 
             # Since the options for run_scm.bash are also valid, print those too:
@@ -63,6 +65,9 @@ while true ; do
   -j|--min-cases) # A subset of priority cases
       MIN_CASES=true
       shift ;;
+  -g|--generalized-grid) # Prints pass/fail message for a generalized grid test
+      GG_MESSAGE=true
+      shift ;;
   --) shift ; break ;;
   *) echo "Something bad happened!" ; exit 1 ;;
   esac
@@ -71,6 +76,13 @@ done
 # Declare arrays that will be used later on in this script.
 declare -a RUN_CASE
 declare -a EXIT_CODES
+if [ $GG_MESSAGE == true ] ; then
+    # Remove -g and --generalized-grid from the options so they
+    # aren't passed to the run_scm.bash script
+    OPTIONS=${OPTIONS#-g}
+    OPTIONS=${OPTIONS#--generalized-grid}
+    GG_MESSAGE=true
+fi
 if [ $SHORT_CASES == true ] ; then # Run only short cases
     # Remove -c and --short-cases from the options so they aren't
     # passed to the run_scm.bash script
@@ -268,18 +280,38 @@ done
 
 EXIT_STATUS=0
 
-# Print the results and copy files for a nightly run
-for (( x=0; x < "${#RUN_CASE[@]}"; x++ )); do
-  if [ "${EXIT_CODES[$x]}" != 0 ]; then
-    echo "${RUN_CASE[$x]}"' failure'
-        EXIT_STATUS=1
-   fi
-done
+if [ $GG_MESSAGE == false ] ; then
 
-# If no cases failed, print an all good message
-if [[ $EXIT_STATUS -eq 0 ]]; then
-   echo "" 
-   echo "All cases ran to completion."
+  # Print the results and copy files for a nightly run
+  for (( x=0; x < "${#RUN_CASE[@]}"; x++ )); do
+    if [ "${EXIT_CODES[$x]}" != 0 ]; then
+      echo "${RUN_CASE[$x]}"' failure'
+      EXIT_STATUS=1
+    fi
+  done
+
+  # If no cases failed, print an all good message
+  if [[ $EXIT_STATUS -eq 0 ]]; then
+    echo "" 
+    echo "All cases ran to completion."
+  fi
+
+else # Print pass/fail message for a generalized grid test
+
+  # Print the results
+  for (( x=0; x < "${#RUN_CASE[@]}"; x++ )); do
+    if [ "${EXIT_CODES[$x]}" != 0 ]; then
+      echo "${RUN_CASE[$x]}"' failed the generalized grid test'
+      EXIT_STATUS=1
+    fi
+  done
+
+  # If no cases failed, print an all good message
+  if [[ $EXIT_STATUS -eq 0 ]]; then
+    echo "" 
+    echo "All cases passed generalized grid test (were bit-for-bit when compared between ascending and descending grid directions)"
+  fi
+
 fi
 
 exit $EXIT_STATUS

@@ -189,6 +189,8 @@ def run_clubb_model_for_all_flag_settings(args, abs_path_to_dirs, flag_files):
     runs CLUBB for all of the different flag files.
     """
     flags_to_add = []
+    if args.gg_test:
+        flags_to_add.append("--generalized-grid")
     if args.priority_cases:
         flags_to_add.append("--priority-cases")
     elif args.min_cases:

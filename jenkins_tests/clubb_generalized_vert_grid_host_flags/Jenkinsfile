@@ -32,7 +32,7 @@ pipeline {
       steps {
         sh '''source /etc/profile.d/larson-group.sh
               module load gcc netcdf-fortran
-              python3 run_scripts/run_clubb_w_varying_flags.py -f run_scripts/run_bindiff_w_flags_config_host_flags.json'''
+              python3 run_scripts/run_clubb_w_varying_flags.py -g -f run_scripts/run_bindiff_w_flags_config_host_flags.json'''
       }
     }
   }
