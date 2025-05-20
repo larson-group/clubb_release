@@ -2505,7 +2505,7 @@ module clubb_driver
     stats_nsamp = nint( stats_metadata%stats_tsamp / dt_main )
     stats_nout = nint( stats_metadata%stats_tout / dt_main )
 
-    if ( grid_adapt_in_time_method > no_grid_adaptation ) then
+    if ( grid_adapt_in_time_method > no_grid_adaptation .and. l_stats ) then
       write(iunit_grid_adaptation, *) 'g', 0, gr%zm
     end if
 

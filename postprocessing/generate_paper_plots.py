@@ -3,16 +3,18 @@ import os
 import shutil
 import re
 
+# To get the old plots back, change the VariableGroupds back in the CaseDefintions file
+# for each of the three cases
 
 # This is the output directory where the final plot files are stored
-OUTPUT_DIR = '/home/carstensen/results_refined_grid/plots'
+OUTPUT_DIR = '/home/carstensen/results_refined_grid_v2/paper_plots'
 
 # The names of the diectories are relevant, since these names are used as names
 # in the legend in the plots
 # These are the directories where the data is read in from
-READ_DIR_HI_RES = '/home/carstensen/results_refined_grid/hi-res'
-READ_DIR_NO_ADAPT = '/home/carstensen/results_refined_grid/dycore'
-READ_DIR_ADAPT = '/home/carstensen/results_refined_grid/grid adaptation'
+READ_DIR_HI_RES = '/home/carstensen/results_refined_grid_v2/hi-res'
+READ_DIR_NO_ADAPT = '/home/carstensen/results_refined_grid_v2/dycore'
+READ_DIR_ADAPT = '/home/carstensen/results_refined_grid_v2/grid adaptation'
 
 #================================================================================================
 
@@ -95,11 +97,11 @@ output_dir_tmp_each_ref_crit = output_dir_tmp + '/each_ref_crit'
 subprocess.run(['python', 'pyplotgen.py', '-o', output_dir_tmp_each_ref_crit, '-c',
                 READ_DIR_HI_RES, '--hq'], cwd='pyplotgen')
 shutil.copy(output_dir_tmp_each_ref_crit + '/arm/each_ref_crit_term_ARM.png',
-            OUTPUT_DIR + '/arm_grid_adapt.png')
+            OUTPUT_DIR + '/arm_each_ref_crit_term.png')
 shutil.copy(output_dir_tmp_each_ref_crit + '/astex_a209/each_ref_crit_term_ASTEX.png',
-            OUTPUT_DIR + '/astex_grid_adapt.png')
+            OUTPUT_DIR + '/astex_each_ref_crit_term.png')
 shutil.copy(output_dir_tmp_each_ref_crit + '/gabls2/each_ref_crit_term_GABLS2.png',
-            OUTPUT_DIR + '/gabls2_grid_adapt.png')
+            OUTPUT_DIR + '/gabls2_each_ref_crit_term.png')
 
 # These are the plots that show the normalized (minimum) grid density
 output_dir_tmp_norm_grid_dens = output_dir_tmp + '/norm_grid_dens'

@@ -268,11 +268,17 @@ class Panel:
                     dycore_grid_spacings.append(dycore[i+1]-dycore[i])
                     dycore_grid_spacings_heights.append((dycore[i+1]+dycore[i])/2)
 
-                plt.plot(1, 1)
-
                 ax = plt.gca()
                 box = ax.get_position()
                 ax.set_position([box.x0, box.y0, box.width * 0.8, box.height])
+
+                for i in range(len(dycore)-1):
+                    dycore_grid_spacings[i] = dycore_grid_spacings[i]/1000
+                    dycore_grid_spacings_heights[i] = dycore_grid_spacings_heights[i]/1000
+
+                for i in range(len(hi_res)-1):
+                    hi_res_grid_spacings[i] = hi_res_grid_spacings[i]/1000
+                    hi_res_grid_spacings_heights[i] = hi_res_grid_spacings_heights[i]/1000
 
                 plt.scatter(hi_res_grid_spacings, hi_res_grid_spacings_heights, s=0)
                 for i, (x, y) in enumerate(zip(hi_res_grid_spacings, hi_res_grid_spacings_heights)):
@@ -283,8 +289,10 @@ class Panel:
                     plt.text(x, y, str(i+1), fontsize=12, ha='center', va='center', color='red')
 
                 plt.title('Grid comparison')
-                plt.xlabel('$\Delta z \quad [\mathrm{m}]$')
-                plt.ylabel('$z \quad [\mathrm{m}]$')
+                #plt.xlabel('$\Delta z \quad [\mathrm{m}]$')
+                plt.xlabel('$\Delta z \quad [\mathrm{km}]$')
+                #plt.ylabel('$z \quad [\mathrm{m}]$')
+                plt.ylabel('$z \quad [\mathrm{km}]$')
 
                 # Create a custom legend entry
                 legend_patch_hi_res = mpatches.Patch(color='black', label="hi-res")
