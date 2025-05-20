@@ -6172,7 +6172,7 @@ module advance_xm_wpxp_module
   end subroutine diagnose_upxp
 
   !=============================================================================
-  subroutine error_prints_xm_wpxp( nzm, nzt, sclr_dim, zt, zm, &
+  subroutine error_prints_xm_wpxp( nzm, nzt, sclr_dim, zm, zt, &
                                    dt, sigma_sqd_w, wm_zm, wm_zt, &
                                    wp2, &
                                    Lscale_zm, wp3_on_wp2, &
