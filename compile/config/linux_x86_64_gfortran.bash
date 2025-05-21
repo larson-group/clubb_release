@@ -47,6 +47,13 @@ DOUBLE_PRECISION="-fdefault-real-8"
 # available, the -O3 optimization should be tried again.
 #OPTIMIZE="-O3"
 OPTIMIZE="-O2"
+#OPTIMIZE="-O2 -fno-expensive-optimizations"
+#OPTIMIZE="-O0 -fbounds-check -fimplicit-none -Waliasing -fcheck=all -fwhole-file"
+#OPTIMIZE="-O1"
+#OPTIMIZE="-O1 -fexpensive-optimizations" # results are different
+#OPTIMIZE="-O1 -ffast-math" # results are different
+#OPTIMIZE="-O1 -fexpensive-optimizations -fopt-info" # results are different
+
 
 # == NetCDF Location ==
 #NETCDF="/usr" # Ubuntu / Fedora

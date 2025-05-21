@@ -3482,7 +3482,7 @@ module clubb_driver
         time_adapt_grid = time_adapt_grid + time_stop - time_start
       end if
 
-      if ( grid_adapt_in_time_method > no_grid_adaptation ) then
+      if ( grid_adapt_in_time_method > no_grid_adaptation .and. l_stats ) then
         call cpu_time(time_start)
         write(iunit_grid_adaptation, *) 'g', itime, gr%zm
         call cpu_time(time_stop)

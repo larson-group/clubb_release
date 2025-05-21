@@ -7,7 +7,7 @@ import re
 # for each of the three cases
 
 # This is the output directory where the final plot files are stored
-OUTPUT_DIR = '/home/carstensen/results_refined_grid_v2/paper_plots_v2'
+OUTPUT_DIR = '/home/carstensen/results_refined_grid_v2/paper_plots'
 
 # The names of the diectories are relevant, since these names are used as names
 # in the legend in the plots
