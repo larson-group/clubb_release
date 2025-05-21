@@ -1205,11 +1205,76 @@ def launch_dash_app(dir_name, grouped_files, all_variables):
             cpu_Tmax = cpu_df["Throughput"].max()
             cpu_Tmax_i = cpu_df.loc[cpu_df["Throughput"].idxmax(), "ngrdcol"]
             gpu_Tmax = gpu_df["Throughput"].max()
+            gpu_Tmax_i = gpu_df.loc[gpu_df["Throughput"].idxmax(), "ngrdcol"]
+
+
+            # Upward vertical line from CPU peak to GPU Peak (PPR)
+            fig.add_trace(go.Scatter(
+                x=[min(cpu_Tmax_i, cpu_Tmax_i),max(cpu_Tmax_i, cpu_Tmax_i)],
+                y=[min(cpu_Tmax, gpu_Tmax),max(cpu_Tmax, gpu_Tmax)],
+                mode="lines+text",
+                line=dict(color="black", dash="dot"),
+                showlegend=False
+            ))
+            
+            # Horizontal line atop PPR line
+            fig.add_trace(go.Scatter(
+                x=[cpu_Tmax_i/1.2, cpu_Tmax_i*1.2],
+                y=[gpu_Tmax, gpu_Tmax],
+                mode="lines+text",
+                line=dict(color="black", dash="dot"),
+                showlegend=False
+            ))
+
+            # Text for PPR
+            fig.add_trace(go.Scatter(
+                x=[cpu_Tmax_i*1.05],
+                y=[(cpu_Tmax+gpu_Tmax)/2],
+                mode="text",
+                text=[f"PPR = {round_sigfigs(gpu_Tmax/cpu_Tmax, 3)}x"],
+                textposition="middle right",
+                textfont=dict(size=18, color="black"),
+                showlegend=False
+            ))
+
+            cpu_final_val = cpu_df["Throughput"].values[-1]
+
+            # Downward vertical line from GPU peak to CPU asymptote, ATR
+            fig.add_trace(go.Scatter(
+                x=[gpu_Tmax_i,gpu_Tmax_i],
+                y=[gpu_Tmax,cpu_final_val],
+                mode="lines+text",
+                line=dict(color="black", dash="dot"),
+                showlegend=False
+            ))
+
+            # Horizontal line atop ATR line
+            fig.add_trace(go.Scatter(
+                x=[gpu_Tmax_i/1.2, gpu_Tmax_i*1.2],
+                y=[cpu_final_val, cpu_final_val],
+                mode="lines+text",
+                line=dict(color="black", dash="dot"),
+                showlegend=False
+            ))
+
+            # Text for ATR
+            fig.add_trace(go.Scatter(
+                x=[gpu_Tmax_i/1.05],
+                y=[(cpu_final_val+gpu_Tmax)/2],
+                mode="text",
+                text=[f"ATR = {round_sigfigs(gpu_Tmax/cpu_final_val, 3)}x"],
+                textposition="middle left",
+                textfont=dict(size=18, color="black"),
+                showlegend=False
+            ))
+
+
 
             # Find two points in dataset2 that straddle cpu_Tmax
             above = gpu_df[gpu_df["Throughput"] > cpu_Tmax]
             below = gpu_df[gpu_df["Throughput"] <= cpu_Tmax]
 
+            # PRC line
             if not above.empty and not below.empty:
                 # Take nearest points for interpolation
                 y1 = below.iloc[-1]["Throughput"]
@@ -1252,35 +1317,7 @@ def launch_dash_app(dir_name, grouped_files, all_variables):
                     showlegend=False
                 ))
 
-                # Upward vertical line from CPU peak to GPU Peak (PPR)
-                fig.add_trace(go.Scatter(
-                    x=[cpu_Tmax_i, cpu_Tmax_i],
-                    y=[cpu_Tmax, gpu_Tmax],
-                    mode="lines+text",
-                    line=dict(color="black", dash="dot"),
-                    showlegend=False
-                ))
-
-                # Horizontal line atop PPR line
-                fig.add_trace(go.Scatter(
-                    x=[cpu_Tmax_i/1.2, cpu_Tmax_i*1.2],
-                    y=[gpu_Tmax, gpu_Tmax],
-                    mode="lines+text",
-                    line=dict(color="black", dash="dot"),
-                    showlegend=False
-                ))
-
-                # Text for PPR
-                fig.add_trace(go.Scatter(
-                    x=[cpu_Tmax_i*1.05],
-                    y=[(cpu_Tmax+gpu_Tmax)/2],
-                    mode="text",
-                    text=[f"PPR = {round_sigfigs(gpu_Tmax/cpu_Tmax, 3)}x"],
-                    textposition="middle right",
-                    textfont=dict(size=18, color="black"),
-                    showlegend=False
-                ))
-
+            # Figure out EXACTLY where to place the DRC line
             for g_i in range(len(gpu_df)-1):
 
                 gpu_i   = gpu_df.iloc[g_i]
