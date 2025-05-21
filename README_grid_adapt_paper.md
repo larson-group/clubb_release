@@ -13,7 +13,7 @@ Then the code needs to be compiled using `./compile/compile.bash`.
 
 ## Reproducing the hi-res/benchmark results
 1. Change `grid_adapt_in_time_method` to `0` in `./input/tunable_parameters/configurable_model_flags.in`
-2. Set the following files accordingly
+2. Set the following files accordingly  
 `./input/case_setups/arm_model.in`
 ```
 ! $Id$
