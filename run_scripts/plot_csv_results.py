@@ -17,6 +17,9 @@ import warnings
 from itertools import chain
 import plotly.graph_objects as go
 
+gpu_names = ["A100", "V100", "H100"]
+cpu_names = ["AMD7763", "Intel6430", "Intel6240"]
+
 # ======================================== Reused html styles ========================================
 plot_div_style = {
     "margin-bottom": "2%",
@@ -1182,14 +1185,15 @@ def launch_dash_app(dir_name, grouped_files, all_variables):
 
         if (
             len(selected_flat) == 2 and
-            any("A100" in name for name in selected_flat) and
-            any("AMD7763" in name for name in selected_flat)
+            any(any(gpu in f for gpu in gpu_names) for f in selected_flat) and
+            any(any(cpu in f for cpu in cpu_names) for f in selected_flat)
         ):
             # Extract names
             name1, name2 = selected_flat
             config_name1 = re.sub(r'(_gptl|_derecho|_arm|_intel|_nvhpc|_[0-9]*nz|_async)(?=(_|$))', '', f"{name1}")
             config_name2 = re.sub(r'(_gptl|_derecho|_arm|_intel|_nvhpc|_[0-9]*nz|_async)(?=(_|$))', '', f"{name2}")
-            if "A100" in name1:
+
+            if any(gpu_name in name1 for gpu_name in gpu_names ):
                 gpu_name, cpu_name = config_name1, config_name2
             else:
                 gpu_name, cpu_name = config_name2, config_name1
@@ -1216,9 +1220,12 @@ def launch_dash_app(dir_name, grouped_files, all_variables):
                 # Linear interpolation to find crossing point
                 x_cross = x1 + (cpu_Tmax - y1) * (x2 - x1) / (y2 - y1)
 
+                # Do an inverse log scale transformation to find where this point is on the log plot
+                x_cross_logged = 10.0**( np.log10(x1) + ( x_cross - x1 ) / ( x2 - x1 ) * ( np.log10(x2) - np.log10(x1) ) )
+
                 # Horizontal line from CPU peak
                 fig.add_trace(go.Scatter(
-                    x=[cpu_Tmax_i, x_cross],
+                    x=[cpu_Tmax_i, x_cross_logged],
                     y=[cpu_Tmax, cpu_Tmax],
                     mode="lines+text",
                     line=dict(color="black", dash="dot"),
@@ -1227,7 +1234,7 @@ def launch_dash_app(dir_name, grouped_files, all_variables):
 
                 # Downward vertical line from PRC
                 fig.add_trace(go.Scatter(
-                    x=[x_cross, x_cross],
+                    x=[x_cross_logged, x_cross_logged],
                     y=[cpu_Tmax*0.03, cpu_Tmax],
                     mode="lines+text",
                     line=dict(color="black", dash="dot"),
@@ -1284,70 +1291,100 @@ def launch_dash_app(dir_name, grouped_files, all_variables):
                     cpu_i   = cpu_df.iloc[c_i]
                     cpu_ip1 = cpu_df.iloc[c_i+1]
 
+                    # Ensure the region is worth checking 
                     if ( 
                         max( gpu_i["ngrdcol"], cpu_i["ngrdcol"] ) < min( gpu_ip1["ngrdcol"], cpu_ip1["ngrdcol"] ) and
                         gpu_i["Throughput"] < cpu_i["Throughput"] and
                         gpu_ip1["Throughput"] > cpu_ip1["Throughput"]
                     ):
-                        print(f"g_i = {g_i} -- c_i = {c_i}")
-                        break
+
+                        # We need to find the intersection between these points
+                        xg1, yg1 = gpu_i["ngrdcol"], gpu_i["Throughput"]
+                        xg2, yg2 = gpu_ip1["ngrdcol"], gpu_ip1["Throughput"]
+                        xc1, yc1 = cpu_i["ngrdcol"], cpu_i["Throughput"]
+                        xc2, yc2 = cpu_ip1["ngrdcol"], cpu_ip1["Throughput"]
+                        
+                        # Slopes and intercepts (assume no vertical lines and not parallel)
+                        mg = (yg2 - yg1) / (xg2 - xg1)
+                        bg = yg1 - mg * xg1
+
+                        mc = (yc2 - yc1) / (xc2 - xc1)
+                        bc = yc1 - mc * xc1
+
+                        # Find x where mg*x + bg == mc*x + bc
+                        x_int = (bc - bg) / (mg - mc)
+                        y_int = mg * x_int + bg
+
+                        # If the intersection of the interpolation is in the range we care about
+                        if (min(xg1, xg2) <= x_int <= max(xg1, xg2) and
+                            min(xc1, xc2) <= x_int <= max(xc1, xc2)):
 
 
-            cpu_df_sorted = cpu_df.sort_values("ngrdcol")
-            gpu_df_sorted = gpu_df.sort_values("ngrdcol")
+                            def get_cross( xg1, xg2, xc1, xc2, yg1, yg2, yc1, yc2, do_log=False):
 
-            # Get common ngrdcol range
-            x_min = max(cpu_df_sorted["ngrdcol"].min(), gpu_df_sorted["ngrdcol"].min())
-            x_max = min(cpu_df_sorted["ngrdcol"].max(), gpu_df_sorted["ngrdcol"].max())
+                                x_common = np.linspace(max(xc1, xg1), min(xc2, xg2), 5000)
 
-            # Build a dense common x-axis (e.g., 500 points)
-            x_common = np.linspace(x_min, x_max, 5000)
+                                def scaler( xt, x1, x2, do_log=False):
+                                    if do_log:
+                                        return ( np.log10(xt) - np.log10(x1) ) / ( np.log10(x2) - np.log10(x1) )
+                                    else:
+                                        return ( xt - x1 ) / ( x2 - x1 )
 
-            # Interpolate both curves on this common x-axis
-            cpu_interp = np.interp(x_common, cpu_df_sorted["ngrdcol"], cpu_df_sorted["Throughput"])
-            gpu_interp = np.interp(x_common, gpu_df_sorted["ngrdcol"], gpu_df_sorted["Throughput"])
+                                xg = xg1 + (xg2-xg1) * scaler( x_common, xg1, xg2, do_log )
+                                xc = xc1 + (xc2-xc1) * scaler( x_common, xc1, xc2, do_log )
 
-            # Find where they cross (change sign in difference)
-            diff = cpu_interp - gpu_interp
-            cross_indices = np.where(np.diff(np.sign(diff)) != 0)[0]
+                                yg = yg1 + ( yg2 - yg1) * scaler( x_common, xg1, xg2, do_log )
+                                yc = yc1 + ( yc2 - yc1) * scaler( x_common, xc1, xc2, do_log )
 
-            if len(cross_indices) > 0:
-                i = cross_indices[0]
+                                diff = yc - yg
+                                cross_indices = np.where(np.diff(np.sign(diff)) != 0)[0]
+                                
+                                if len(cross_indices) > 0:
+                                    i = cross_indices[0]
 
-                # Interpolate between the two points to find precise crossing
-                x1, x2 = x_common[i], x_common[i + 1]
-                y1_cpu, y2_cpu = cpu_interp[i], cpu_interp[i + 1]
-                y1_gpu, y2_gpu = gpu_interp[i], gpu_interp[i + 1]
+                                    # Linear interpolation of difference = 0
+                                    d1 = yc[i] - yg[i]
+                                    d2 = yc[i+1] - yg[i+1]
+                                    alpha = -d1 / (d2 - d1)
+                                    x_cross = x_common[i] + alpha * (x_common[i] - x_common[i+1])
+                                    y_cross = yc[i] + alpha * (yc[i+1] - yc[i])
 
-                # Linear interpolation of difference = 0
-                d1 = y1_cpu - y1_gpu
-                d2 = y2_cpu - y2_gpu
-                alpha = -d1 / (d2 - d1)
-                x_cross = x1 + alpha * (x2 - x1)
-                y_cross = y1_cpu + alpha * (y2_cpu - y1_cpu)
+                                    return x_cross, y_cross
+
+                                return None, None
+
+                            # We need to transform these points to log world, THEN find the intersection
+                            # this is because plotly connects points with linear line segments even when 
+                            # plotting in log, so the x_cross we plot is not the actual one we want 
+                            x_cross, y_cross = get_cross( xg1, xg2, xc1, xc2, yg1, yg2, yc1, yc2, do_log=False)
+                            x_cross_adj, y_cross_adj = get_cross( xg1, xg2, xc1, xc2, yg1, yg2, yc1, yc2, do_log=True)
+
+                            if x_cross_adj is None:
+                                print("The x_cross transform broke the logic, we could move the transform up, but meh, defaulting to using linear x_cross")
+                                x_cross_adj, y_cross_adj = x_cross, y_cross
+                                print(f"x_cross = {x_cross}")
                 
-                # Down ward vertical line from DRC
-                fig.add_trace(go.Scatter(
-                    x=[x_cross, x_cross],
-                    y=[y_cross*0.05, y_cross],
-                    mode="lines+text",
-                    line=dict(color="black", dash="dot"),
-                    showlegend=False,
-                    name="Intersection Marker"
-                ))
+                            # Down ward vertical line from DRC
+                            fig.add_trace(go.Scatter(
+                                x=[x_cross_adj, x_cross_adj],
+                                y=[y_cross_adj*0.05, y_cross_adj],
+                                mode="lines+text",
+                                line=dict(color="black", dash="dot"),
+                                showlegend=False,
+                                name="Intersection Marker"
+                            ))
 
-                # Text for DRC
-                fig.add_trace(go.Scatter(
-                    x=[x_cross],
-                    y=[0],
-                    mode="text",
-                    text=[f"DRC = {int(round_sigfigs(x_cross, 3))}"],
-                    textposition="bottom center",
-                    textfont=dict(size=18, color="black"),
-                    showlegend=False,
-                    name="Intersection Marker"
-                ))
-
+                            # Text for DRC
+                            fig.add_trace(go.Scatter(
+                                x=[x_cross],
+                                y=[0],
+                                mode="text",
+                                text=[f"DRC = {int(round_sigfigs(x_cross, 3))}"],
+                                textposition="bottom center",
+                                textfont=dict(size=18, color="black"),
+                                showlegend=False,
+                                name="Intersection Marker"
+                            ))
 
 
         return plot_with_enhancements(fig, f"Throughput vs. Batch Size")
@@ -1543,7 +1580,7 @@ def launch_dash_app(dir_name, grouped_files, all_variables):
                 else:
                     N_prec = 64
                 
-                if any(gpu_name in filename for gpu_name in ["A100", "V100", "H100"]):
+                if any(gpu_name in filename for gpu_name in gpu_names ):
 
                     print(f"modeling {filename} with gpu")
                     T_gpu, gpu_params, _ = model_throughputs(  gpu_model_df["ngrdcol"].values, 
