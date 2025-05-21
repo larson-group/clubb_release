@@ -2377,6 +2377,89 @@ module stats_zm_module
              var_units="(K kg/kg)/s", l_silhs=.false., grid_kind=stats_zm )
         k = k + 1
 
+      case ('grid_density')
+        stats_metadata%igrid_density = k
+        call stat_assign( var_index=stats_metadata%igrid_density, var_name="grid_density", &
+             var_description="grid_density, Grid density to create new grid", &
+             var_units="1/m", l_silhs=.false., &
+             grid_kind=stats_zm )
+        k = k + 1
+
+      case ('alt_term')
+        stats_metadata%ialt_term = k
+        call stat_assign( var_index=stats_metadata%ialt_term, var_name="alt_term", &
+             var_description="alt_term, Inverse altitude term of the grid density", &
+             var_units="1/m", l_silhs=.false., &
+             grid_kind=stats_zm )
+        k = k + 1
+
+      case ('lscale_term')
+        stats_metadata%ilscale_term = k
+        call stat_assign( var_index=stats_metadata%ilscale_term, var_name="lscale_term", &
+             var_description="lscale_term, Lscale term of the grid density", &
+             var_units="1/m", l_silhs=.false., &
+             grid_kind=stats_zm )
+        k = k + 1
+
+      case ('lscale_term_time_avg')
+        stats_metadata%ilscale_term_time_avg = k
+        call stat_assign( var_index=stats_metadata%ilscale_term_time_avg, &
+             var_name="lscale_term_time_avg", &
+             var_description="lscale_term_time_avg, time averaged Lscale term of the grid density",&
+             var_units="1/m", l_silhs=.false., &
+             grid_kind=stats_zm )
+        k = k + 1
+
+      case ('chi_term')
+        stats_metadata%ichi_term = k
+        call stat_assign( var_index=stats_metadata%ichi_term, var_name="chi_term", &
+             var_description="chi_term, Chi term of the grid density", &
+             var_units="1/m", l_silhs=.false., &
+             grid_kind=stats_zm )
+        k = k + 1
+
+      case ('chi_term_time_avg')
+        stats_metadata%ichi_term_time_avg = k
+        call stat_assign( var_index=stats_metadata%ichi_term_time_avg, &
+             var_name="chi_term_time_avg", &
+             var_description="chi_term_time_avg, time averaged chi term of the grid density",&
+             var_units="1/m", l_silhs=.false., &
+             grid_kind=stats_zm )
+        k = k + 1
+
+      case ('brunt_term')
+        stats_metadata%ibrunt_term = k
+        call stat_assign( var_index=stats_metadata%ibrunt_term, var_name="brunt_term", &
+             var_description="brunt_term, Brunt-Vaisala Frequency term of the grid density", &
+             var_units="1/m", l_silhs=.false., &
+             grid_kind=stats_zm )
+        k = k + 1
+
+      case ('brunt_term_time_avg')
+        stats_metadata%ibrunt_term_time_avg = k
+        call stat_assign( var_index=stats_metadata%ibrunt_term_time_avg, &
+             var_name="brunt_term_time_avg", &
+             var_description="brunt_term_time_avg, time averaged brunt term of the grid density",&
+             var_units="1/m", l_silhs=.false., &
+             grid_kind=stats_zm )
+        k = k + 1
+
+      case ('norm_min_grid_dens')
+        stats_metadata%inorm_min_grid_dens = k
+        call stat_assign( var_index=stats_metadata%inorm_min_grid_dens, var_name="norm_min_grid_dens", &
+             var_description="norm_min_grid_dens, normalized minimum grid density", &
+             var_units="1/m", l_silhs=.false., &
+             grid_kind=stats_zm )
+        k = k + 1
+
+      case ('norm_grid_dens')
+        stats_metadata%inorm_grid_dens = k
+        call stat_assign( var_index=stats_metadata%inorm_grid_dens, var_name="norm_grid_dens", &
+             var_description="norm_grid_dens, normalized minimum grid density", &
+             var_units="1/m", l_silhs=.false., &
+             grid_kind=stats_zm )
+        k = k + 1
+
       case ( 'sclrprtp' )
         do sclr = 1, sclr_dim, 1
           write( sclr_idx, * ) sclr

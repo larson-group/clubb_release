@@ -1135,6 +1135,18 @@ module stats_variables
     integer, allocatable, dimension(:) :: & 
        iwpedsclrp ! eddy sclr'(1)w'
 
+    integer :: &
+      igrid_density = 0,           & ! the grid density to adapt the grid
+      ialt_term = 0,               & ! the inverse altitude term of the grid density
+      ilscale_term = 0,            & ! the Lscale term of the grid density
+      ilscale_term_time_avg = 0,   & ! the time averaged Lscale term of the grid density
+      ichi_term = 0,               & ! the chi term of the grid density
+      ichi_term_time_avg = 0,   & ! the time averaged Lscale term of the grid density
+      ibrunt_term = 0,             & ! the brunt-vaisala term of the grid density
+      ibrunt_term_time_avg = 0,   & ! the time averaged Lscale term of the grid density
+      inorm_min_grid_dens = 0,     & ! the brunt-vaisala term of the grid density
+      inorm_grid_dens = 0            ! the brunt-vaisala term of the grid density
+
 
     !====================================================================
     !                         RAD ZT Indices

@@ -88,7 +88,6 @@ module time_dependent_input
                                                          ! variable were already initialized
 !$omp threadprivate( l_sfc_already_initialized )
 
-
   ! File path constants
   character(len=*), private, parameter :: input_path = "../input/case_setups/"
 
@@ -335,6 +334,9 @@ module time_dependent_input
     use clubb_precision, only: &
       core_rknd ! Variable(s)
 
+    use model_flags, only: &
+      no_grid_adaptation
+
     implicit none
 
     ! External
@@ -414,10 +416,10 @@ module time_dependent_input
 
     end do
 
-    if ( l_add_dycore_grid .or. grid_adapt_in_time_method == 0 ) then
+    if ( l_add_dycore_grid .or. grid_adapt_in_time_method == no_grid_adaptation ) then
       ! the array should only be kept in memory, if we want to use grid adaptation
-      ! (grid_adapt_in_time_method > 0) and no simulating forcings input from the host
-      ! model on the dycore grid (l_add_dycore_grid == .true.), since then we
+      ! (grid_adapt_in_time_method > no_grid_adaptation) and no simulating forcings input from the
+      ! host model on the dycore grid (l_add_dycore_grid == .true.), since then we
       ! need the raw input from the file during the CLUBB run if the grid changes
       do i = 1, nforcings
         if ( allocated( t_dependent_forcing_data_f_grid(i)%values ) ) then
@@ -986,6 +988,7 @@ module time_dependent_input
               grid_remap_method, &
               total_idx_rho_lin_spline, rho_lin_spline_vals, &
               rho_lin_spline_levels, &
+              p_sfc, &
               thlm_f, rtm_f, um_ref, vm_ref, um_f, vm_f, &
               wm_zt, wm_zm,  ug, vg, &
               sclrm_forcing, edsclrm_forcing )
@@ -1000,26 +1003,18 @@ module time_dependent_input
       linear_interp_factor ! Procedure(s)
 
     use grid_class, only : &
-      grid,     & ! Type
-      zt2zm_api   ! Procedure(s)
+        grid,     & ! Type
+        zt2zm_api   ! Procedure(s)
 
     use clubb_precision, only: &
       time_precision, &
       core_rknd ! Variable(s)
 
     use array_index, only: &
-      sclr_idx_type
+        sclr_idx_type
 
-    use grid_adaptation_module, only: remap_vals_to_target, &
-                                      check_mass_conservation, &
-                                      check_vertical_integral_conservation, &
-                                      check_remap_for_consistency
-
-    use error_code, only: &
-      clubb_at_least_debug_level_api
-
-    use constants_clubb, only: &
-      fstderr
+    use remapping_module, only: &
+        remap_vals_to_target
 
     implicit none
 
@@ -1049,10 +1044,13 @@ module time_dependent_input
       total_idx_rho_lin_spline, & ! number of indices for the linear spline definition arrays
       grid_remap_method  ! Integer that specifies what remapping method should be used
 
-    real( kind = core_rknd ), dimension(total_idx_rho_lin_spline), intent(in) :: &
+    real( kind = core_rknd ), dimension(ngrdcol,total_idx_rho_lin_spline), intent(in) :: &
       rho_lin_spline_vals, & ! rho values at the given altitudes
       rho_lin_spline_levels  ! altitudes for the given rho values
     ! Note: both these arrays need to be sorted from low to high altitude
+
+    real( kind = core_rknd ), dimension(ngrdcol), intent(in) :: &
+      p_sfc
 
     !--------------------- Output Variables ---------------------
     real( kind = core_rknd ), dimension(ngrdcol,nzt), intent(inout) :: &
@@ -1076,16 +1074,21 @@ module time_dependent_input
       edsclrm_forcing ! Edscalar forcing [-]
 
     !--------------------- Local Variables ---------------------
-    integer :: n, before_time, after_time
+    integer :: n, before_time, after_time, iv
 
     real( kind = core_rknd ), dimension(gr_dycore%nzt) :: temp_array_dycore
 
-    real( kind = core_rknd ), dimension(nforcings,nzt) :: forcings_array
+    real( kind = core_rknd ), dimension(1,nforcings,nzt) :: forcings_array
 
     real( kind = core_rknd ) :: time_frac
 
+    logical :: &
+      l_zt_variable
+
     !--------------------- Begin Code ---------------------
     time_frac = -one ! Default initialization
+    iv = 1
+    l_zt_variable = .true.
 
     call time_select( time, size(dimension_var%values), dimension_var%values, &
                                  before_time, after_time, time_frac )
@@ -1095,50 +1098,24 @@ module time_dependent_input
       temp_array_dycore = linear_interp_factor &
                           ( time_frac, t_dependent_forcing_data(n)%values(:,after_time), &
                             t_dependent_forcing_data(n)%values(:,before_time) )
-
-      if ( grid_remap_method == 1 ) then
-        forcings_array(n,:) = remap_vals_to_target( gr_dycore%nzm, gr%nzm, &
-                                                    gr_dycore%zm, gr%zm,&
+      forcings_array(:,n,:) = remap_vals_to_target( 1, &
+                                                    gr_dycore, gr, &
+                                                    gr_dycore%nzt, &
+                                                    temp_array_dycore, &
+                                                    gr%nzt, &
                                                     total_idx_rho_lin_spline, &
-                                                    rho_lin_spline_vals, &
-                                                    rho_lin_spline_levels, &
-                                                    temp_array_dycore )
-
-        if ( clubb_at_least_debug_level_api( 2 ) ) then
-          call check_mass_conservation( gr_dycore%nzm, gr%nzm, &
-                                        gr_dycore%zm, &
-                                        gr%zm, &
-                                        total_idx_rho_lin_spline, rho_lin_spline_vals, &
-                                        rho_lin_spline_levels )
-
-          call check_vertical_integral_conservation( total_idx_rho_lin_spline, &
-                                                     rho_lin_spline_vals, &
-                                                     rho_lin_spline_levels, &
-                                                     gr_dycore%nzm, gr%nzm, &
-                                                     gr_dycore%zm, &
-                                                     gr%zm,&
-                                                     temp_array_dycore, &
-                                                     forcings_array(n,:) )
-
-          call check_remap_for_consistency( gr_dycore%nzm, gr%nzm, &
-                                            gr_dycore%zm, &
-                                            gr%zm, &
-                                            total_idx_rho_lin_spline, &
-                                            rho_lin_spline_vals, &
-                                            rho_lin_spline_levels )
-        end if
-      else
-        write(fstderr,*) 'There is currently no method implemented for grid_remap_method=', &
-                         grid_remap_method, '. Set flag to different value.'
-        error stop 'Invalid value for flag grid_remap_method.'
-      end if
+                                                    rho_lin_spline_vals(1,:), &
+                                                    rho_lin_spline_levels(1,:), &
+                                                    iv, p_sfc(1), &
+                                                    grid_remap_method, &
+                                                    l_zt_variable )
     end do
 
     call apply_time_dependent_forcings_from_array( &
                                                    ngrdcol, nzm, nzt, &
                                                    sclr_dim, edsclr_dim, sclr_idx, &
                                                    gr, rtm, rho, exner,  &
-                                                   forcings_array, &
+                                                   forcings_array(1,:,:), &
                                                    thlm_f, rtm_f, um_ref, vm_ref, um_f, vm_f, &
                                                    wm_zt, wm_zm,  ug, vg, &
                                                    sclrm_forcing, edsclrm_forcing )

@@ -126,6 +126,7 @@ class ContourPanel(Panel):
             # plt.gcf().subplots_adjust(bottom=0.15)
 
             plt.contourf(x_data, y_data, c_data.T, levels=cmap.N, norm=norm, cmap=cmap)
+            plt.contour(x_data, y_data, c_data.T, levels=cmap.N, norm=norm, cmap=cmap)
             # Add colorbar to the current ax (gca)
             # For details on __getFormatter, see below
             plt.gcf().colorbar(cont_map, ax=plt.gca(), cmap=cmap, norm=norm, label=self.dependent_title,

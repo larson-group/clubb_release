@@ -75,9 +75,13 @@ module atex
                          rtm, &
                          l_add_dycore_grid, &
                          grid_remap_method, &
-                         gr_dycore, rho_ds_zm_dycore, &
+                         gr_dycore, &
+                         total_idx_rho_lin_spline, &
+                         rho_lin_spline_vals, &
+                         rho_lin_spline_levels, &
+                         p_sfc, &
                          err_info, &
-                         wm_zt, wm_zm, &
+                         wm_zt, wm_zm, & 
                          thlm_forcing, rtm_forcing, &
                          sclrm_forcing, edsclrm_forcing )
   ! Description:
@@ -117,9 +121,8 @@ module atex
   use interpolation, only: &
     lin_interp_between_grids
   
-  use grid_adaptation_module, only: &
-    remap_forcings, check_mass_conservation_zt_zm, &
-    check_remap_for_consistency_zt_zm, check_vertical_integral_conservation_all_zt_values
+  use remapping_module, only: &
+    remap_vals_to_target
 
   implicit none
 
@@ -150,13 +153,20 @@ module atex
   type( grid ), intent(in) :: &
     gr_dycore
 
-  real( kind = core_rknd ), intent(in), dimension(ngrdcol,gr_dycore%nzm) :: & 
-    rho_ds_zm_dycore ! Dry, static density on momentum levels on dycore grid [kg/m^3]
-                     ! use this to assume the exact linear spline as the rho_ds profile
+  integer, intent(in) :: &
+    total_idx_rho_lin_spline ! number of indices for the linear spline definition arrays
+
+  real( kind = core_rknd ), dimension(ngrdcol,total_idx_rho_lin_spline), intent(in) :: &
+    rho_lin_spline_vals, & ! rho values at the given altitudes   [kg/m^3]
+    rho_lin_spline_levels  ! altitudes for the given rho values  [m]
+    ! Note: both these arrays need to be sorted from low to high altitude
+
+  real(kind=time_precision), dimension(ngrdcol), intent(in) :: &
+    p_sfc  ! pressure at surface [Pa]
 
   !--------------------- InOut Variables ---------------------
-    type(err_info_type), intent(inout) :: &
-      err_info        ! err_info struct containing err_code and err_header
+  type(err_info_type), intent(inout) :: &
+    err_info        ! err_info struct containing err_code and err_header
 
   !--------------------- Output Variables ---------------------
   real( kind = core_rknd ), intent(out), dimension(ngrdcol,gr%nzt) :: &
@@ -175,6 +185,9 @@ module atex
 
   !--------------------- Local Variables ---------------------
   integer :: i, k
+  
+  integer, parameter :: &
+    iv_other = 1
 
   integer, dimension(ngrdcol) :: &
     z_lev
@@ -191,6 +204,9 @@ module atex
 
   real( kind = core_rknd ), dimension(ngrdcol,gr_dycore%nzt) :: & 
     rtm_dycore             ! Total water mixing ratio                      [kg/kg]
+
+  logical :: &
+    l_zt_variable
 
   !--------------------- Begin Code ---------------------
 
@@ -300,51 +316,31 @@ module atex
       call calc_forcings( ngrdcol, gr_dycore, z_inversion_dycore, &  ! intent(in)
                           thlm_forcing_dycore, rtm_forcing_dycore )  ! intent(out)
 
-      if ( grid_remap_method == 1 ) then
+      l_zt_variable = .true.
 
-        call remap_forcings( ngrdcol, gr_dycore, gr, &                   ! intent(in)
-                             gr_dycore%nzm, rho_ds_zm_dycore, &          ! intent(in)
-                             gr_dycore%zm, &                             ! intent(in)
-                             thlm_forcing_dycore, rtm_forcing_dycore, &  ! intent(in)
-                             thlm_forcing, rtm_forcing )                 ! intent(out)
+      thlm_forcing = remap_vals_to_target( ngrdcol, &
+                                           gr_dycore, gr, &
+                                           gr_dycore%nzt, &
+                                           thlm_forcing_dycore, &
+                                           gr%nzt, &
+                                           total_idx_rho_lin_spline, &
+                                           rho_lin_spline_vals, &
+                                           rho_lin_spline_levels, &
+                                           iv_other, p_sfc, &
+                                           grid_remap_method, &
+                                           l_zt_variable )
 
-        if ( clubb_at_least_debug_level_api( 2 ) ) then
-
-          ! checks if the mass over the physics and dycore grid is the same
-          call check_mass_conservation_zt_zm( ngrdcol, gr_dycore, gr, &           ! intent(in)
-                                              gr_dycore%nzm, rho_ds_zm_dycore, &  ! intent(in)
-                                              gr_dycore%zm )                      ! intent(in)
-
-          ! check if the calculated vertical integral is the same for both grids for the thlm value
-          call check_vertical_integral_conservation_all_zt_values( ngrdcol, &             ! In
-                                                                   gr_dycore, gr, &       ! In
-                                                                   gr_dycore%nzm, &       ! In
-                                                                   rho_ds_zm_dycore, &    ! In
-                                                                   gr_dycore%zm, &        ! In
-                                                                   thlm_forcing_dycore, & ! In
-                                                                   thlm_forcing )         ! In
-
-          ! check if the calculated vertical integral is the same for both grids for the rtm value
-          call check_vertical_integral_conservation_all_zt_values( ngrdcol, &             ! In
-                                                                   gr_dycore, gr, &       ! In
-                                                                   gr_dycore%nzm, &       ! In
-                                                                   rho_ds_zm_dycore, &    ! In
-                                                                   gr_dycore%zm, &        ! In
-                                                                   rtm_forcing_dycore, &  ! In
-                                                                   rtm_forcing )          ! In
-
-          ! check if remapping operator fulfills condition for consistency
-          ! with the grids for zt and zm levels
-          call check_remap_for_consistency_zt_zm( ngrdcol, gr_dycore, gr, &            ! intent(in)
-                                                  gr_dycore%nzm, rho_ds_zm_dycore, &   ! intent(in)
-                                                  gr_dycore%zm )                       ! intent(in)
-        end if
-      
-      else
-        write(fstderr,*) "There is currently no method implemented for", &
-                         " grid_remap_method=", grid_remap_method
-        error stop 'Invalid option for flag grid_remap_method.'
-      end if
+      rtm_forcing = remap_vals_to_target( ngrdcol, &
+                                          gr_dycore, gr, &
+                                          gr_dycore%nzt, &
+                                          rtm_forcing_dycore, &
+                                          gr%nzt, &
+                                          total_idx_rho_lin_spline, &
+                                          rho_lin_spline_vals, &
+                                          rho_lin_spline_levels, &
+                                          iv_other, p_sfc, &
+                                          grid_remap_method, &
+                                          l_zt_variable )
 
     else
 

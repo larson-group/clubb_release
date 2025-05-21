@@ -157,30 +157,32 @@ module constants_clubb
     zero_dp       = 0.0_dp     ! 0
 
   real( kind = core_rknd ), parameter, public :: &
-    one_hundred   = 100.0_core_rknd,             & ! 100
-    fifty         = 50.0_core_rknd,              & ! 50
-    thirty_six    = 36.0_core_rknd,              & ! 36
-    twenty        = 20.0_core_rknd,              & ! 20
-    eighteen      = 18.0_core_rknd,              & ! 18
-    twelve        = 12.0_core_rknd,              & ! 12
-    ten           = 10.0_core_rknd,              & ! 10
-    nine          = 9.0_core_rknd,               & ! 9
-    eight         = 8.0_core_rknd,               & ! 8
-    seven         = 7.0_core_rknd,               & ! 7
-    six           = 6.0_core_rknd,               & ! 6
-    five          = 5.0_core_rknd,               & ! 5
-    four          = 4.0_core_rknd,               & ! 4
-    three         = 3.0_core_rknd,               & ! 3
-    two           = 2.0_core_rknd,               & ! 2
-    three_halves  = 3.0_core_rknd/2.0_core_rknd, & ! 3/2
-    four_thirds   = 4.0_core_rknd/3.0_core_rknd, & ! 4/3
-    one           = 1.0_core_rknd,               & ! 1
-    three_fourths = 0.75_core_rknd,              & ! 3/4
-    two_thirds    = 2.0_core_rknd/3.0_core_rknd, & ! 2/3
-    one_half      = 0.5_core_rknd,               & ! 1/2
-    one_third     = 1.0_core_rknd/3.0_core_rknd, & ! 1/3
-    one_fourth    = 0.25_core_rknd,              & ! 1/4
-    zero          = 0.0_core_rknd                  ! 0
+    one_hundred     = 100.0_core_rknd,             & ! 100
+    fifty           = 50.0_core_rknd,              & ! 50
+    thirty_six      = 36.0_core_rknd,              & ! 36
+    twenty          = 20.0_core_rknd,              & ! 20
+    eighteen        = 18.0_core_rknd,              & ! 18
+    twelve          = 12.0_core_rknd,              & ! 12
+    ten             = 10.0_core_rknd,              & ! 10
+    nine            = 9.0_core_rknd,               & ! 9
+    eight           = 8.0_core_rknd,               & ! 8
+    seven           = 7.0_core_rknd,               & ! 7
+    six             = 6.0_core_rknd,               & ! 6
+    five            = 5.0_core_rknd,               & ! 5
+    four            = 4.0_core_rknd,               & ! 4
+    three           = 3.0_core_rknd,               & ! 3
+    two             = 2.0_core_rknd,               & ! 2
+    three_halves    = 3.0_core_rknd/2.0_core_rknd, & ! 3/2
+    four_thirds     = 4.0_core_rknd/3.0_core_rknd, & ! 4/3
+    one             = 1.0_core_rknd,               & ! 1
+    three_fourths   = 0.75_core_rknd,              & ! 3/4
+    two_thirds      = 2.0_core_rknd/3.0_core_rknd, & ! 2/3
+    one_half        = 0.5_core_rknd,               & ! 1/2
+    one_third       = 1.0_core_rknd/3.0_core_rknd, & ! 1/3
+    one_fourth      = 0.25_core_rknd,              & ! 1/4
+    three_sixteenth = 0.1875_core_rknd,            & ! 3/16
+    one_eighth      = 0.125_core_rknd,             & ! 1/8
+    zero            = 0.0_core_rknd                  ! 0
 
   !-----------------------------------------------------------------------------
   ! Physical constants
