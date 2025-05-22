@@ -161,7 +161,7 @@ module atex
     rho_lin_spline_levels  ! altitudes for the given rho values  [m]
     ! Note: both these arrays need to be sorted from low to high altitude
 
-  real(kind=time_precision), dimension(ngrdcol), intent(in) :: &
+  real( kind = core_rknd ), dimension(ngrdcol), intent(in) :: &
     p_sfc  ! pressure at surface [Pa]
 
   !--------------------- InOut Variables ---------------------

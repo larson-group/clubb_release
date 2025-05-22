@@ -426,8 +426,8 @@ module output_netcdf
                 = remap_vals_to_target( 1, &
                                         gr_source, gr_target, &
                                         source_values_idx, &
-                                        ncf%grid_avg_var(i)%ptr( &
-                                                     lon,lat,ncf%ia:source_values_idx), &
+                                        real( ncf%grid_avg_var(i)%ptr( &
+                                              lon,lat,ncf%ia:source_values_idx), core_rknd ), &
                                         target_values_idx, &
                                         total_idx_rho_lin_spline, &
                                         rho_lin_spline_vals, &
@@ -475,8 +475,9 @@ module output_netcdf
                   = remap_vals_to_target( 1, &
                                           gr_source, gr_target, &
                                           source_values_idx, &
-                                          ncf%samples_of_var(i)%ptr( &
-                                                   samp,lon,lat,ncf%ia:source_values_idx), &
+                                          real( ncf%samples_of_var(i)%ptr( &
+                                                samp,lon,lat,ncf%ia:source_values_idx), &
+                                                core_rknd ), &
                                           target_values_idx, &
                                           total_idx_rho_lin_spline, &
                                           rho_lin_spline_vals, &
