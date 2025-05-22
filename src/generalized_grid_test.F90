@@ -2,6 +2,97 @@
 !===============================================================================
 module generalized_grid_test
 
+  ! Guide:
+  !
+  ! Where to use generalized grid statements:
+  !
+  ! 1) Where the limits of the loop over the vertical grid are not symmetric
+  !
+  !    Examples of symmetric grid loops:
+  !       do k = 1, nzt
+  !       do k = 2, nzt-1
+  !       do k = 1, nzm
+  !       do k = 2, nzm-1
+  !
+  !    Examples of grid loops that are not symmetric and need special grid
+  !    statements:
+  !
+  !       do k = 1, nzt-1
+  !
+  !       should be replaced by:
+  !
+  !       do k = gr%k_lb_zt, gr%k_ub_zt-grid_dir_indx, gr%grid_dir_indx
+  !
+  !       For an ascending grid, this results in a loop from 1 (lower boundary)
+  !       to nzt-1 with an increment of 1. For a descending grid, this results
+  !       in a loop from nzt (lower boundary) to 2 with an increment of -1.
+  !
+  !       As another example:
+  !
+  !       do k = 2, nzm
+  !
+  !       should be replaced by:
+  !
+  !       do k = gr%k_lb_zm+gr%grid_dir_indx, gr%k_ub_zm, gr%grid_dir_indx
+  !
+  !       For an ascending grid, this results in a loop from 2 to nzm (upper
+  !       boundary) with an increment of 1. For a descending grid, this results
+  !       in a loop from nzm-1 to 1 (upper boundary) with an increment of -1.
+  !
+  ! 2) Statements specific to upper or lower boundary grid levels
+  !
+  !    For example, setting surface values for some variables:
+  !
+  !    do i = 1, ngrdcol
+  !      wpthlp(i,gr%k_lb_zm) = wpthlp_sfc(i)
+  !      wprtp(i,gr%k_lb_zm)  = wprtp_sfc(i)
+  !      upwp(i,gr%k_lb_zm)   = upwp_sfc(i)
+  !      vpwp(i,gr%k_lb_zm)   = vpwp_sfc(i)
+  !    end do
+  !
+  !    As another example, setting the upper or lower boundary conditons used
+  !    in CLUBB's lhs and rhs arrays that are used to advance the predictive
+  !    equations:
+  !
+  !    do i = 1, ngrdcol
+  !      rhs(i,gr%k_lb_zm) = xap2(i,gr%k_lb_zm)
+  !      ! The value of u'^2 or v'^2 at the upper boundary will be set to the
+  !      ! threshold minimum value of w_tol_sqd.
+  !      rhs(i,gr%k_ub_zm) = w_tol_sqd
+  !    end do
+  !
+  ! 3) Loops over the vertical grid that need to be handled in a consistent
+  !    direction, regardless of what grid direction is used
+  !
+  !    A great example of this is CLUBB's traditional length scale calculation,
+  !    which is found in subroutine compute_mixing_length in mixing_length.F90.
+  !    Even though loops are symmetric and the calculation doesn't use
+  !    boundary-specific statements, generalized grid statements are still
+  !    necessary because the calculation starts at the surface or lower boundary
+  !    always integrates upward.
+  !
+  !    Other examples of the code needing to use generalized grid statements
+  !    because calculations are needing to be handled consistently in the same
+  !    direction, regardless of grid direction, are found in the monotonic flux
+  !    limiter and in the vertical hole filler.
+  !
+  ! Notes:
+  !
+  ! All statements where 2 quantities are added together match bit-for-bit when
+  ! compiled with -O0 optimization and in debug mode. In other words,
+  ! A + B = B + A, and it doesn't matter in which order the addition or
+  ! subtraction is handled. However, this isn't necessarily true when 3 or more
+  ! quantities are added together. In other words, A + B + C doesn't necessarily
+  ! match C + B + A bit-for-bit. In order to promote a bit-for-bit match between
+  ! ascending and descending grids and allow for a test to check the grid
+  ! direction integrity of the code, grid generalization statements have been
+  ! added to some places where 3 or more quantities are added together in a row
+  ! to ensure that the addition or subtraction always happens in the same order.
+  !
+  ! Comparing Results:
+  !
+  ! When comparing arrays in the vertical, 
+
   implicit none
 
   public :: clubb_generalized_grid_testing, &
