@@ -4,7 +4,7 @@ module generalized_grid_test
 
   ! Guide:
   !
-  ! Where to use generalized grid statements:
+  ! *** Where to use generalized grid statements:
   !
   ! 1) Where the limits of the loop over the vertical grid are not symmetric
   !
@@ -89,10 +89,82 @@ module generalized_grid_test
   ! added to some places where 3 or more quantities are added together in a row
   ! to ensure that the addition or subtraction always happens in the same order.
   !
-  ! Comparing Results:
+  ! *** Comparing Results:
   !
-  ! When comparing arrays in the vertical, 
-
+  ! When comparing arrays in the vertical, follow the method found
+  ! in this test, as well as in the G-unit test found in
+  ! src/G_unit_test_types/rev_direction_grid_test.F90. The value of a
+  ! thermodynamic-level field found at level nzt in the ascending grid needs
+  ! to match the value found at level 1 in the descending grid, the value
+  ! at level 3 in the ascending grid needs to match the value at level nzt-2
+  ! in the descending grid, etc. Additionally, for lhs arrays, the values along
+  ! the superdiagonal in the ascending grid need to match (in reverse) the
+  ! values along the subdiagonal in the descending grid, etc. Examples of this
+  ! comparison can be found in src/G_unit_test_types/rev_direction_grid_test.F90
+  ! for some commonly used lhs subroutines.
+  !
+  ! *** When the generalized vertical grid test fails:
+  !
+  ! 1) Check which flagset number or numbers fail. The flag changes
+  !    associated with each flagset can be found in the run_scripts directory
+  !    in the file run_bindiff_w_flags_config_core_flags.json (for the
+  !    test clubb_generalized_vertical_grid_test) or in the file
+  !    run_bindiff_w_flags_config_host_flags.json (for the
+  !    test clubb_generalized_vert_grid_host_flags). Note that the test script
+  !    automatically runs the unaltered default flag set as the final flagset.
+  !    (The .json file might list 17 flagsets, and then the default
+  !    configuration is run as flagset 18.)
+  !
+  ! 2) Within a test for a flag set, all CLUBB test cases are run. Note which
+  !    cases fail and pick a single case to use to debug. When there's a choice,
+  !    choose a simpler, shorter case to use for debugging.
+  !
+  ! 3) Run the grid generalization test manually. The two main necessities are:
+  !
+  !    a) Setting l_test_grid_generalization to true in the file
+  !       src/CLUBB_core/model_flags.F90; and
+  !
+  !    b) Compiling using the compiler script linux_x86_64_gfortran_debug.bash,
+  !       which uses -O0 compiler optimization and debug settings, with the
+  !       command (when run from the compile directory):
+  !       ./compile.bash -c config/linux_x86_64_gfortran_debug.bash.
+  !
+  !    Further modifications that you might want or need to make
+  !    (especially when running one of the CGILS cases) can be found by
+  !    following the steps listed in the Jenkins test recipe in
+  !    jenkins_tests/clubb_generalized_vertical_grid_test/Jenkinsfile.
+  !
+  ! 4) Locally, change the flag settings for the run located in
+  !    input/tunable_parameters/configurable_model_flags.in to match those
+  !    found in the guilty flag set. Then, run CLUBB for the single case
+  !    that you chose to test with. It is best to do multiple runs and change
+  !    flag settings one at a time until you find the guilty flag.
+  !
+  ! 5) The grid generalization test will exit and fail after the first timestep
+  !    where output that is not bit-for-bit between ascending and descending
+  !    grids is detected. A list of variables (and all grid levels for each
+  !    variable) that are not bit-for-bit will be printed to the screen. Figure
+  !    out which failing variable was calculated first in the sequence. This
+  !    will give a clue to roughly where the error might be located.
+  !
+  ! 6) Use the information gained from which variable goes wrong first, which
+  !    flags are being run (flagset info), and information from the changeset
+  !    when the test went wrong to get an idea of where the issue might be
+  !    in the code. Also take into account the information listed in the
+  !    "Where to use generalized grid statements" section above.
+  !
+  ! 7) Finally, utilize print statements. Narrow it down and then print out
+  !    everything until the culprit is found!
+  !
+  ! 8) Once the culprit is found, rerun all cases using that flagset to check
+  !    that they all pass. Rerun the full Jenkins test after the fix has been
+  !    committed so that it can be run in the background.
+  !
+  ! 9) Congratulations! Now don't break it again!
+  !
+  ! Brian Griffin; May 23, 2025
+ 
+ 
   implicit none
 
   public :: clubb_generalized_grid_testing, &
