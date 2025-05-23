@@ -2097,7 +2097,9 @@ module clubb_driver
       ! Initialize the dycore grid
       call setup_gr_dycore( iunit, ngrdcol, &                 ! Intent(in)
                             gr%zm(:,1), gr%zm(:,gr%nzm), &    ! Intent(in)
-                            gr_dycore )                       ! Intent(out)
+                            l_ascending_grid, &               ! Intent(in)
+                            gr_dycore, &                      ! Intent(out)
+                            err_info )                        ! Intent(inout)
       gr_output = gr_dycore
 
     else
@@ -2249,6 +2251,7 @@ module clubb_driver
           l_modify_ic_with_cubic_int,                                     & ! Intent(in)
           l_add_dycore_grid,                                              & ! Intent(in)
           grid_adapt_in_time_method,                                      & ! Intent(in)
+          l_ascending_grid,                                               & ! Intent(in)
           thlm_init, rtm_init, um_init, vm_init, ug_init, vg_init,        & ! Intent(out)
           wp2_init, up2_init, vp2_init, rcm_init,                         & ! Intent(out)
           wm_zt_init, wm_zm_init, em_init, exner_init,                    & ! Intent(out)
@@ -3551,8 +3554,10 @@ module clubb_driver
                                      gr_dens_z, gr_dens, &
                                      lambda, &
                                      gr%nzm, &
+                                     l_ascending_grid, &
                                      norm_min_grid_dens, &
-                                     norm_grid_dens )
+                                     norm_grid_dens, &
+                                     err_info )
 
         ! update the stats variables
         if ( stats_metadata%l_stats_samp ) then
@@ -3999,6 +4004,7 @@ module clubb_driver
                l_modify_ic_with_cubic_int, &
                l_add_dycore_grid, &
                grid_adapt_in_time_method, &
+               l_ascending_grid, &
                thlm, rtm, um, vm, ug, vg, wp2, up2, vp2, rcm, &
                wm_zt, wm_zm, em, exner, &
                thvm, p_in_Pa, &
@@ -4145,6 +4151,9 @@ module clubb_driver
       grid_adapt_in_time_method   ! Integer flag to see if grid should be adapted over time and if
                                   ! so what parameters should be used to setup the grid
                                   ! density function
+
+    logical, intent(in) :: &
+      l_ascending_grid
 
     ! Output
     real( kind = core_rknd ), dimension(ngrdcol,gr%nzt), intent(inout) :: &
@@ -4382,7 +4391,9 @@ module clubb_driver
         ! get dycore grid
         call setup_gr_dycore( iunit, ngrdcol, &                 ! Intent(in)
                               gr%zm(:,1), gr%zm(:,gr%nzm), &    ! Intent(in)
-                              gr_dycore )                       ! Intent(out)
+                              l_ascending_grid, &               ! Intent(in)
+                              gr_dycore, &                      ! Intent(out)
+                              err_info )                        ! Intent(inout)
 
         allocate( p_in_Pa_dycore(ngrdcol,gr_dycore%nzt) )
 

@@ -69,7 +69,7 @@ module grid_adaptation_module
   ! file paths, and maybe some solution where parameters are not hardcoded, so maybe something
   ! where the parameters are read from model.in file and dont use hardcoded 73 in dimension of
   ! heights vectors
-  subroutine setup_gr_dycore( iunit, ngrdcol, grid_sfc, grid_top, gr )
+  subroutine setup_gr_dycore( iunit, ngrdcol, grid_sfc, grid_top, l_ascending_grid, gr, err_info )
 
     ! Description:
     ! Thid subroutine is used to set up the dycore grid for the grid adaptation
@@ -92,18 +92,24 @@ module grid_adaptation_module
     implicit none
 
     !--------------------- Input Variables ---------------------
-    integer :: &
+    integer, intent(in) :: &
       iunit, &
       ngrdcol
     
-    real( kind = core_rknd ), dimension(ngrdcol) :: &
-        grid_sfc, &    ! grids surface height for the dycore grid [m]
-        grid_top       ! grids highest level for the dycore grid  [m]
+    real( kind = core_rknd ), dimension(ngrdcol), intent(in) :: &
+      grid_sfc, &    ! grids surface height for the dycore grid [m]
+      grid_top       ! grids highest level for the dycore grid  [m]
+
+    logical, intent(in) :: &
+      l_ascending_grid
 
     !--------------------- Output Variables ---------------------
     type (grid), intent(out) :: gr
 
     !--------------------- In/Output Variables ---------------------
+
+    type(err_info_type), intent(inout) :: &
+      err_info        ! err_info struct containing err_code and err_header
 
     !--------------------- Local Variables ---------------------
 
@@ -137,9 +143,6 @@ module grid_adaptation_module
                                                            ! momentum level altitudes
       zt_grid_fname = ''                                   ! Path and filename of file for
                                                            ! thermodynamic level altitudes
-
-    type(err_info_type) :: &
-      err_info        ! err_info struct containing err_code and err_header
 
     !--------------------- Begin Code ---------------------
 
@@ -178,7 +181,7 @@ module grid_adaptation_module
     end do
     
     call setup_grid( nlevel, ngrdcol, sfc_elevation, l_implemented, &           ! intent(in)
-                     .true., grid_type, deltaz, grid_sfc, grid_top, &           ! intent(in)
+                     l_ascending_grid, grid_type, deltaz, grid_sfc, grid_top, & ! intent(in)
                      momentum_heights, thermodynamic_heights, &                 ! intent(in)
                      gr, err_info )                                             ! intent(inout)
 
@@ -191,7 +194,7 @@ module grid_adaptation_module
 
   end subroutine setup_gr_dycore
 
-  subroutine setup_gr_min( iunit, ngrdcol, grid_sfc, grid_top, gr )
+  subroutine setup_gr_min( iunit, ngrdcol, grid_sfc, grid_top, l_ascending_grid, gr, err_info )
 
     ! Description:
     ! Thid subroutine is used to get the minimum grid density profile from a file
@@ -213,16 +216,23 @@ module grid_adaptation_module
     implicit none
 
     !--------------------- Input Variables ---------------------
-    integer :: &
+    integer, intent(in) :: &
       iunit, &
       ngrdcol
     
-    real( kind = core_rknd ), dimension(ngrdcol) :: &
-        grid_sfc, &    ! grids surface height for the dycore grid [m]
-        grid_top       ! grids highest level for the dycore grid  [m]
+    real( kind = core_rknd ), dimension(ngrdcol), intent(in) :: &
+      grid_sfc, &    ! grids surface height for the dycore grid [m]
+      grid_top       ! grids highest level for the dycore grid  [m]
+
+    logical, intent(in) :: &
+      l_ascending_grid
 
     !--------------------- Output Variables ---------------------
     type (grid), intent(out) :: gr
+
+    !--------------------- Input/Output Variables ---------------------
+    type(err_info_type), intent(inout) :: &
+      err_info        ! err_info struct containing err_code and err_header
 
     !--------------------- Local Variables ---------------------
 
@@ -256,9 +266,6 @@ module grid_adaptation_module
                                                       ! momentum level altitudes
       zt_grid_fname = ''                              ! Path and filename of file for
                                                       ! thermodynamic level altitudes
-
-    type(err_info_type) :: &
-      err_info        ! err_info struct containing err_code and err_header
 
     !--------------------- Begin Code ---------------------
 
@@ -297,7 +304,7 @@ module grid_adaptation_module
     end do
     
     call setup_grid( nlevel, ngrdcol, sfc_elevation, l_implemented, &           ! intent(in)
-                     .true., grid_type, deltaz, grid_sfc, grid_top, &           ! intent(in)
+                     l_ascending_grid, grid_type, deltaz, grid_sfc, grid_top, & ! intent(in)
                      momentum_heights, thermodynamic_heights, &                 ! intent(in)
                      gr, err_info )                                             ! intent(inout)
 
@@ -349,7 +356,9 @@ module grid_adaptation_module
   end function calc_integral
 
   subroutine create_fixed_min_gr_dens_func( iunit, ngrdcol, &
-                                            grid_sfc, grid_top )
+                                            grid_sfc, grid_top, &
+                                            l_ascending_grid, &
+                                            err_info )
 
     ! Description:
     ! Creates and allocates the fixed minimum grid density function from read in minimum grid.
@@ -363,6 +372,9 @@ module grid_adaptation_module
     use error_code, only: &
         clubb_at_least_debug_level_api
 
+    use err_info_type_module, only: &
+        err_info_type
+
     implicit none
 
     !--------------------- Input Variables ---------------------
@@ -373,6 +385,13 @@ module grid_adaptation_module
     real( kind = core_rknd ), intent(in) :: &
       grid_sfc, & ! altitude of the grids surface [m]
       grid_top    ! altitude of the grids top     [m]
+
+    logical, intent(in) :: &
+      l_ascending_grid
+
+    !--------------------- Input/Output Variables ---------------------
+    type( err_info_type ), intent(inout) :: &
+      err_info
 
     !--------------------- Local Variables ---------------------
     integer :: i, j
@@ -394,7 +413,8 @@ module grid_adaptation_module
       ! Initialize the minimum grid to use as a profile for the prescribed minimum grid density
       call setup_gr_min( iunit, ngrdcol, &              ! Intent(in)
                          grid_sfc_arr, grid_top_arr, &  ! Intent(in)
-                         gr_min )                       ! Intent(out)
+                         l_ascending_grid, &            ! Intent(in)
+                         gr_min, err_info )             ! Intent(out)
       fixed_min_gr_dens_idx = gr_min%nzt+2
     end if
 
@@ -688,8 +708,10 @@ module grid_adaptation_module
                                      gr_dens_z, gr_dens, &
                                      lambda, &
                                      num_levels, &
+                                     l_ascending_grid, &
                                      norm_min_grid_dens, &
-                                     norm_grid_dens )
+                                     norm_grid_dens, &
+                                     err_info )
     ! Description:
     ! Normalizes the prescribed grid density.
 
@@ -697,6 +719,9 @@ module grid_adaptation_module
 
     use interpolation, only: &
         zlinterp_fnc
+
+    use err_info_type_module, only: &
+        err_info_type
 
     implicit none
 
@@ -717,12 +742,19 @@ module grid_adaptation_module
       gr_dens         ! the values of the density function at the given z coordinates of the
                       ! connection points of the piecewise linear grid density function        [1/m]
 
+    logical, intent(in) :: &
+      l_ascending_grid
+
     !--------------------- Output Variable ---------------------
     real( kind = core_rknd ), dimension(ngrdcol,gr_dens_idx), intent(out) :: &
       norm_min_grid_dens, & ! the density at the given z coordinates of the connection points
                             ! of the normalized piecewise linear grid density function         [1/m]
       norm_grid_dens        ! the density at the given z coordinates of the connection points
                             ! of the normalized piecewise linear grid density function         [1/m]
+
+    !--------------------- Input/Output Variable ---------------------
+    type( err_info_type ), intent(inout) :: &
+      err_info
 
     !--------------------- Local Variables ---------------------
     integer :: i
@@ -740,7 +772,9 @@ module grid_adaptation_module
     grid_top = gr_dens_z(1,gr_dens_idx)
 
     call create_fixed_min_gr_dens_func( iunit+1, ngrdcol, &
-                                        grid_sfc, grid_top )
+                                        grid_sfc, grid_top, &
+                                        l_ascending_grid, &
+                                        err_info )
 
     ! set the minimum grid density profile to be the linear piecewise function of the
     ! original minimum grid density function evaluated at the current grid levels
