@@ -79,7 +79,7 @@ os.mkdir(OUTPUT_DIR)
 # dycore.grd file
 output_dir_tmp_grid_comp = output_dir_tmp + '/grid_comp'
 subprocess.run(['python', 'pyplotgen.py', '--grid-comparison-plot', '-o',
-                output_dir_tmp_grid_comp], cwd='pyplotgen')
+                output_dir_tmp_grid_comp, '-c', READ_DIR_NO_ADAPT], cwd='pyplotgen')
 shutil.copy(output_dir_tmp_grid_comp + '/grid_comp.png', OUTPUT_DIR + '/grid_comp.png')
 
 # These are the grid adaptation plots
