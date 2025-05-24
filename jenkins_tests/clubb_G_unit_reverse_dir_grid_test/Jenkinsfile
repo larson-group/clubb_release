@@ -33,7 +33,7 @@ pipeline {
       // This cleans out the test workspace so the next run has a fresh start
       // However this only occurs when the test is named clubb_generalized_vertical_grid_test
       // This is to prevent the branch and copy tests from deleting thier workspaces so they are available for debugging
-      if ( "${env.JOB_NAME}" == "clubb_generalized_vertical_grid_test" )
+      if ( "${env.JOB_NAME}" == "clubb_G_unit_reverse_dir_grid_test" )
       	cleanWs(cleanWhenAborted: true, cleanWhenFailure: true, cleanWhenSuccess: true, cleanWhenUnstable: true)
       }
     }
