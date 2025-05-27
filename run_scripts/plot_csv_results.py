@@ -781,10 +781,23 @@ def launch_dash_app(dir_name, grouped_files, all_variables):
             html.Details(
                 [
                     html.Summary("Runtime Plot", style={"font-weight": "bold", "background-color": "#ddd", "padding": "10px", "cursor": "pointer", "font-size": "20px"}),
-                    html.Div(
+                    html.Div([
+
                         dcc.Graph(id="plot-raw", style=graph_style),
-                        style=plot_div_style
-                    )
+                    
+                        html.Summary("Display Modifications"),
+                        dcc.RadioItems(
+                            id="runtime-mods",
+                            options=[
+                                {"label": "none", "value": "none"},
+                                {"label": "linear-fit", "value": "linfit"},
+                                {"label": "scaling", "value": "scaling"}
+                            ],
+                            value="none",
+                            labelStyle={"display": "inline-block"}  # 2 columns
+                        ),
+                        
+                    ], style=plot_div_style ),
                 ],
                 style=growing_container,
                 open=False
@@ -1093,7 +1106,7 @@ def launch_dash_app(dir_name, grouped_files, all_variables):
     ], style={"display": "flex", "flexDirection": "row", "width": "100%", "height": "auto"})
 
 
-    def plot_with_enhancements(fig, title, scale_factor=1.0):
+    def plot_with_enhancements(fig, title, scale_factor=2.0):
         fig.update_traces(mode="lines+markers", selector=dict(mode="lines"))
         
         fig.update_layout(
@@ -1142,10 +1155,16 @@ def launch_dash_app(dir_name, grouped_files, all_variables):
             Input({"type": "file-checkbox", "group": ALL}, "value"),
             Input("variable-dropdown", "value"),
             Input("x-axis-scale", "value"),
-            Input("y-axis-scale", "value")
+            Input("y-axis-scale", "value"),
+            Input("runtime-mods", "value")
         ]
     )
-    def update_raw_plot(selected_files, selected_variable, xaxis_scale, yaxis_scale):
+    def update_raw_plot(selected_files, selected_variable, xaxis_scale, yaxis_scale, runtime_mods ):
+
+        
+                                # {"label": "none", "value": "none"},
+                                # {"label": "linear-fit", "value": "linfit"},
+                                # {"label": "scaling", "value": "scaling"}
 
         # Flatten the list of lists into a single list of selected filenames
         selected_flat = list(chain.from_iterable(selected_files))
@@ -1157,21 +1176,29 @@ def launch_dash_app(dir_name, grouped_files, all_variables):
 
         for filename in selected_flat:
             if filename in data and selected_variable in data[filename].columns:
-                df =data[filename]
+                df = data[filename]
                 if selected_variable in df.columns:  # Check before accessing
-                    temp_df =data[filename][["ngrdcol", selected_variable]].copy()
-                    temp_df["Source"] = filename
+
+                    config_name = re.sub(r'(_gptl|_derecho|_arm|_intel|_nvhpc|_[0-9]*nz|_async)(?=(_|$))', '', f"{filename}")
+
+                    temp_df = data[filename][["ngrdcol", selected_variable]].copy()
+                    temp_df = temp_df[temp_df["ngrdcol"] >= 32] 
+
+                    temp_df["Configuration"] = config_name
+
                     combined_df = pd.concat([combined_df, temp_df])
 
 
-        fig = px.line(combined_df, x="ngrdcol", y=selected_variable, color="Source")
+        fig = px.line(combined_df, x="ngrdcol", y=selected_variable, color="Configuration")
         fig.update_layout(
             xaxis=dict(type=xaxis_scale),
             yaxis=dict(type=yaxis_scale),
+            xaxis_title = "Batch size (columns)", 
+            yaxis_title = "Runtime (seconds)", 
             autosize=True,
             uirevision='constant'
         )
-        return plot_with_enhancements(fig, f"Runtime of '{selected_variable}' vs. Number of Grid Columns")
+        return plot_with_enhancements(fig, f"Runtime vs Batch Size")
 
 
     # ======================================== CPS plot ========================================
