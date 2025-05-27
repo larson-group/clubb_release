@@ -62,6 +62,16 @@ growing_container = {
 
 graph_style = {"width": "100%", "height": "100%"}
 
+graph_config = {
+    'toImageButtonOptions': {
+        'format': 'png',        # one of 'svg', 'png', 'jpeg', 'webp'
+        'filename': 'custom_image',
+        'height': 400,          # desired height in pixels
+        'width': 800,           # desired width in pixels
+        'scale': 2              # multiply resolution (2 = 2x retina)
+    }
+}
+
 
 # ======================================== Cache penalty functions ========================================
 def loglog( c, k, o, x ):
@@ -220,19 +230,16 @@ def model_vcpu_batched_time(params, ngrdcol, runtime, N_tasks, N_vsize, N_prec, 
     cols_per_core = ngrdcol / N_tasks
     flops_per_vop = N_vsize / N_prec
     
-    b_est = runtime[0] - ( runtime[1] - runtime[0] ) / ( ngrdcol[1] - ngrdcol[0] ) * ngrdcol[0]
-    m_k_est = b_est / N_vlevs[-1]
-    first_vpoint = np.where(cols_per_core == flops_per_vop)[0][0]
+    #b_est = runtime[0] - ( runtime[1] - runtime[0] ) / ( ngrdcol[1] - ngrdcol[0] ) * ngrdcol[0]
+    #m_k_est = b_est / N_vlevs[-1]
+    #first_vpoint = np.where(cols_per_core == flops_per_vop)[0][0]
 
-    T_v_est = ( runtime[first_vpoint] - b_est ) / ( ngrdcol[first_vpoint] ) * ( 1 / N_vlevs[-1])
-    T_r_est = ( runtime[0] - b_est ) / ( ngrdcol[1] ) * ( 1 / N_vlevs[-1])
+    #T_v_est = ( runtime[first_vpoint] - b_est ) / ( ngrdcol[first_vpoint] ) * ( 1 / N_vlevs[-1])
+    #T_r_est = ( runtime[0] - b_est ) / ( ngrdcol[1] ) * ( 1 / N_vlevs[-1])
 
-    T_r = T_r_est
-    T_v = T_v_est
-    b = b_est
-
-    cols_per_core = ngrdcol / N_tasks
-    flops_per_vop = N_vsize / N_prec
+    #T_r = T_r_est
+    #T_v = T_v_est
+    #b = b_est
 
     # Number of columns using residual operations 
     N_r = N_tasks * ( cols_per_core % flops_per_vop )
@@ -762,7 +769,7 @@ def launch_dash_app(dir_name, grouped_files, all_variables):
                 [
                     html.Summary("Columns per Second Plot", style={"font-weight": "bold", "background-color": "#ddd", "padding": "10px", "cursor": "pointer", "font-size": "20px"}),
                     html.Div(
-                        dcc.Graph(id="plot-columns-per-second", style=graph_style),
+                        dcc.Graph(id="plot-columns-per-second", style=graph_style, config=graph_config),
                         style=plot_div_style
                     )
                 ],
@@ -1086,19 +1093,47 @@ def launch_dash_app(dir_name, grouped_files, all_variables):
     ], style={"display": "flex", "flexDirection": "row", "width": "100%", "height": "auto"})
 
 
-    def plot_with_enhancements(fig, title):
+    def plot_with_enhancements(fig, title, scale_factor=1.0):
         fig.update_traces(mode="lines+markers", selector=dict(mode="lines"))
+        
         fig.update_layout(
-            title=title,
-            xaxis=dict(showgrid=True, gridcolor="lightgray"),
-            yaxis=dict(showgrid=True, gridcolor="lightgray", zeroline=True, range=[0, None]),
-            margin=dict(l=10, r=10, t=30, b=10),
+            title=dict(
+                text=title,
+                font=dict(size=18 * scale_factor)
+            ),
+            xaxis=dict(
+                showgrid=True,
+                gridcolor="lightgray",
+                title_font=dict(size=14 * scale_factor),
+                tickfont=dict(size=12 * scale_factor),
+                showline=True,
+                linewidth=1,
+                linecolor="black",
+                mirror=True
+            ),
+            yaxis=dict(
+                showgrid=True,
+                gridcolor="lightgray",
+                zeroline=True,
+                range=[0, None],
+                title_font=dict(size=14 * scale_factor),
+                tickfont=dict(size=12 * scale_factor),
+                showline=True,
+                linewidth=1,
+                linecolor="black",
+                mirror=True
+            ),
+            legend=dict(
+                font=dict(size=12 * scale_factor)
+            ),
+            font=dict(size=12 * scale_factor),
+            margin=dict(l=10, r=10, t=50, b=10),
             paper_bgcolor="white",
             plot_bgcolor="white",
         )
-        fig.update_xaxes(showline=True, linewidth=1, linecolor="black", mirror=True)
-        fig.update_yaxes(showline=True, linewidth=1, linecolor="black", mirror=True)
+        
         return fig
+
 
     # ======================================== Time plot ========================================
     @app.callback(
