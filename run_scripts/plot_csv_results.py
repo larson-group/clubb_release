@@ -1106,7 +1106,7 @@ def launch_dash_app(dir_name, grouped_files, all_variables):
     ], style={"display": "flex", "flexDirection": "row", "width": "100%", "height": "auto"})
 
 
-    def plot_with_enhancements(fig, title, scale_factor=2.0):
+    def plot_with_enhancements(fig, title, scale_factor=1.0):
         fig.update_traces(mode="lines+markers", selector=dict(mode="lines"))
         
         fig.update_layout(
@@ -1137,6 +1137,13 @@ def launch_dash_app(dir_name, grouped_files, all_variables):
                 mirror=True
             ),
             legend=dict(
+                x=0.05,          # 0 is left, 1 is right
+                y=0.95,          # 0 is bottom, 1 is top
+                xanchor='left', # anchor the x position
+                yanchor='top',   # anchor the y position
+                bgcolor='rgba(255,255,255,0.5)',  # optional translucent background
+                bordercolor='black',
+                borderwidth=1,
                 font=dict(size=12 * scale_factor)
             ),
             font=dict(size=12 * scale_factor),
@@ -1161,11 +1168,6 @@ def launch_dash_app(dir_name, grouped_files, all_variables):
     )
     def update_raw_plot(selected_files, selected_variable, xaxis_scale, yaxis_scale, runtime_mods ):
 
-        
-                                # {"label": "none", "value": "none"},
-                                # {"label": "linear-fit", "value": "linfit"},
-                                # {"label": "scaling", "value": "scaling"}
-
         # Flatten the list of lists into a single list of selected filenames
         selected_flat = list(chain.from_iterable(selected_files))
 
@@ -1174,22 +1176,99 @@ def launch_dash_app(dir_name, grouped_files, all_variables):
 
         combined_df = pd.DataFrame()
 
+        trendline_labels = []
+
         for filename in selected_flat:
             if filename in data and selected_variable in data[filename].columns:
                 df = data[filename]
                 if selected_variable in df.columns:  # Check before accessing
 
-                    config_name = re.sub(r'(_gptl|_derecho|_arm|_intel|_nvhpc|_[0-9]*nz|_async)(?=(_|$))', '', f"{filename}")
+                    config_name = filename #re.sub(r'(_gptl|_derecho|_arm|_intel|_nvhpc|_[0-9]*nz|_async)(?=(_|$))', '', f"{filename}")
 
-                    temp_df = data[filename][["ngrdcol", selected_variable]].copy()
-                    temp_df = temp_df[temp_df["ngrdcol"] >= 32] 
+                    original_df = data[filename][["ngrdcol", selected_variable]].copy()
+                    original_df = original_df[original_df["ngrdcol"] >= 32] 
 
-                    temp_df["Configuration"] = config_name
+                    original_df["Configuration"] = config_name
+                    original_df["Source"] = "original"
 
-                    combined_df = pd.concat([combined_df, temp_df])
+                    if runtime_mods == "scaling":
 
+                        # Assume CPU, only really meant for CPU anyway 
+                        coeffs = np.polyfit(original_df["ngrdcol"][0:4], original_df[selected_variable][0:4], deg=1)
 
-        fig = px.line(combined_df, x="ngrdcol", y=selected_variable, color="Configuration")
+                        scale_curve = original_df.copy()
+
+                        scale_curve[selected_variable] = scale_curve[selected_variable] / ( scale_curve["ngrdcol"] * coeffs[0] + coeffs[1] )
+                        scale_curve["Source"] = "scale"
+
+                        combined_df = pd.concat([combined_df, scale_curve])
+
+                    else:
+
+                        if runtime_mods == "linfit":
+
+                            model_df = original_df.copy()
+
+                            if any(cpu in filename for cpu in cpu_names):
+
+                                # CPU trendline should consider only the first 5 samples
+                                coeffs = np.polyfit(original_df["ngrdcol"][0:4], original_df[selected_variable][0:4], deg=1)
+                                label_position = 24
+                            
+                            else:
+
+                                # Use all samples
+                                coeffs = np.polyfit(original_df["ngrdcol"], original_df[selected_variable], deg=1)
+                                label_position = 11
+
+                            print(f"coeffs: {coeffs}")
+
+                            model_df[selected_variable] = model_df["ngrdcol"] * coeffs[0] + coeffs[1]
+
+                            model_df["Configuration"] = config_name
+                            model_df["Source"] = "fit"
+
+                            combined_df = pd.concat([combined_df, model_df])
+
+                            # Create annotation text
+                            m, b = coeffs
+                            equation_text = f"y = {m:.3e}·x + {b:.3e}"
+
+                            # Store one x,y point near end for label positioning
+                            x_label = model_df["ngrdcol"][label_position]
+                            y_label = model_df[selected_variable][model_df["ngrdcol"] == x_label].values[0]
+
+                            # Save label info to annotate later
+                            trendline_labels.append({
+                                "x": x_label,
+                                "y": y_label,
+                                "text": equation_text,
+                                "config": config_name
+                            })
+                                
+
+                        combined_df = pd.concat([combined_df, original_df])
+
+        fig = px.line(combined_df, x="ngrdcol", y=selected_variable, color="Configuration", symbol="Source")
+
+        for trace in fig.data:
+            if trace.name.endswith("fit"):
+                trace.line.update(dash='dot')
+
+        for label in trendline_labels:
+            fig.add_annotation(
+                x=label["x"],
+                y=label["y"],
+                text=label["text"],
+                showarrow=True,
+                arrowhead=1,
+                ax=40,  # offset x for label placement
+                ay=-30,
+                font=dict(size=12),
+                bgcolor="white",
+                opacity=0.7
+            )
+
         fig.update_layout(
             xaxis=dict(type=xaxis_scale),
             yaxis=dict(type=yaxis_scale),
@@ -1198,6 +1277,7 @@ def launch_dash_app(dir_name, grouped_files, all_variables):
             autosize=True,
             uirevision='constant'
         )
+
         return plot_with_enhancements(fig, f"Runtime vs Batch Size")
 
 
@@ -1220,13 +1300,25 @@ def launch_dash_app(dir_name, grouped_files, all_variables):
             raise PreventUpdate
 
         combined_df = pd.DataFrame()
+
+        if (
+            len(selected_flat) == 2 and
+            any(any(gpu in f for gpu in gpu_names) for f in selected_flat) and
+            any(any(cpu in f for cpu in cpu_names) for f in selected_flat)
+        ):
+            plot_mode = "cpu_vs_gpu"
+        else:
+            plot_mode = "regular"
         
         for filename in selected_flat:
             if filename in data and selected_variable in data[filename].columns:
                 df = data[filename]
                 if selected_variable in df.columns:  # Check before accessing
 
-                    config_name = re.sub(r'(_gptl|_derecho|_arm|_intel|_nvhpc|_[0-9]*nz|_async)(?=(_|$))', '', f"{filename}")
+                    if plot_mode == "cpu_vs_gpu":
+                        config_name = re.sub(r'(_gptl|_derecho|_arm|_intel|_nvhpc|_[0-9]*nz|_async)(?=(_|$))', '', f"{filename}")
+                    else:
+                        config_name = filename
 
                     temp_df = data[filename][["ngrdcol", selected_variable]].copy()
                     temp_df = temp_df[temp_df["ngrdcol"] >= 32] 
@@ -1245,11 +1337,9 @@ def launch_dash_app(dir_name, grouped_files, all_variables):
             uirevision='constant'
         )
 
-        if (
-            len(selected_flat) == 2 and
-            any(any(gpu in f for gpu in gpu_names) for f in selected_flat) and
-            any(any(cpu in f for cpu in cpu_names) for f in selected_flat)
-        ):
+        
+        if plot_mode == "cpu_vs_gpu":
+
             # Extract names
             name1, name2 = selected_flat
             config_name1 = re.sub(r'(_gptl|_derecho|_arm|_intel|_nvhpc|_[0-9]*nz|_async)(?=(_|$))', '', f"{name1}")
