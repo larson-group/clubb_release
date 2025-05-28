@@ -768,10 +768,22 @@ def launch_dash_app(dir_name, grouped_files, all_variables):
             html.Details(
                 [
                     html.Summary("Columns per Second Plot", style={"font-weight": "bold", "background-color": "#ddd", "padding": "10px", "cursor": "pointer", "font-size": "20px"}),
-                    html.Div(
+                    html.Div([
+
+                        html.Div([
+                            html.Label("Title: ", style={"margin-top": "5px"}),
+                            dcc.Input(id="cps-plot-title", type="text", placeholder="Enter Title", value="Throughput vs Batch Size", style={"width": "80%"}),
+                        ], style={"margin-bottom": "8px", "width": "600px"}),
+
+                        html.Div([
+                            html.Label("Config Regex: ", style={"margin-top": "5px"}),
+                            dcc.Input(id="cps-config-name-regex", type="text", placeholder="Name Filter", 
+                                      value="(_gptl|_derecho|_arm|_intel|_nvhpc|_[0-9]*nz|_async)(?=(_|$))", style={"width": "100%"}),
+                        ], style={"margin-bottom": "8px", "width": "800px"}),
+
                         dcc.Graph(id="plot-columns-per-second", style=graph_style, config=graph_config),
-                        style=plot_div_style
-                    )
+                        
+                    ], style=plot_div_style )
                 ],
                 style=growing_container,
                 open=True 
@@ -783,7 +795,18 @@ def launch_dash_app(dir_name, grouped_files, all_variables):
                     html.Summary("Runtime Plot", style={"font-weight": "bold", "background-color": "#ddd", "padding": "10px", "cursor": "pointer", "font-size": "20px"}),
                     html.Div([
 
-                        dcc.Graph(id="plot-raw", style=graph_style),
+                        html.Div([
+                            html.Label("Title: ", style={"margin-top": "5px"}),
+                            dcc.Input(id="raw-plot-title", type="text", placeholder="Enter Title", value="Runtime vs Batch Size", style={"width": "80%"}),
+                        ], style={"margin-bottom": "8px", "width": "600px"}),
+
+                        html.Div([
+                            html.Label("Config Regex: ", style={"margin-top": "5px"}),
+                            dcc.Input(id="raw-config-name-regex", type="text", placeholder="Name Filter", 
+                                      value="(_gptl|_derecho|_arm|_intel|_nvhpc|_[0-9]*nz|_async)(?=(_|$))", style={"width": "100%"}),
+                        ], style={"margin-bottom": "8px", "width": "800px"}),
+
+                        dcc.Graph(id="plot-raw", style=graph_style, config=graph_config),
                     
                         html.Summary("Display Modifications"),
                         dcc.RadioItems(
@@ -796,6 +819,16 @@ def launch_dash_app(dir_name, grouped_files, all_variables):
                             value="none",
                             labelStyle={"display": "inline-block"}  # 2 columns
                         ),
+                        
+                        html.Div([
+                            dcc.RangeSlider(
+                                id="range-slider",
+                                min=1,
+                                max=65536,
+                                value=[128, 1024],  # Initial range selection
+                                tooltip={"always_visible": True}
+                            ),
+                        ], style={"width": "60%", "padding": "20px"})
                         
                     ], style=plot_div_style ),
                 ],
@@ -810,7 +843,7 @@ def launch_dash_app(dir_name, grouped_files, all_variables):
                     html.Div([
 
                         # Plot
-                        dcc.Graph(id="fit-plot", style=graph_style), 
+                        dcc.Graph(id="fit-plot", style=graph_style, config=graph_config), 
 
                         # VCPU table
                         html.Div([
@@ -864,7 +897,7 @@ def launch_dash_app(dir_name, grouped_files, all_variables):
                     html.Div([
 
                         # Plot
-                        dcc.Graph(id="fit-plot-batched", style=graph_style), 
+                        dcc.Graph(id="fit-plot-batched", style=graph_style, config=graph_config), 
                         
                         html.Label("Model Parameters"),
                         dash_table.DataTable(
@@ -900,7 +933,7 @@ def launch_dash_app(dir_name, grouped_files, all_variables):
                     html.Div([
 
                         # Plot
-                        dcc.Graph(id="plot-custom", style=graph_style),
+                        dcc.Graph(id="plot-custom", style=graph_style, config=graph_config),
 
                         # Custom function input
                         dcc.Input(
@@ -1106,7 +1139,7 @@ def launch_dash_app(dir_name, grouped_files, all_variables):
     ], style={"display": "flex", "flexDirection": "row", "width": "100%", "height": "auto"})
 
 
-    def plot_with_enhancements(fig, title, scale_factor=1.0):
+    def plot_with_enhancements(fig, title, scale_factor=1.2):
         fig.update_traces(mode="lines+markers", selector=dict(mode="lines"))
         
         fig.update_layout(
@@ -1163,10 +1196,13 @@ def launch_dash_app(dir_name, grouped_files, all_variables):
             Input("variable-dropdown", "value"),
             Input("x-axis-scale", "value"),
             Input("y-axis-scale", "value"),
-            Input("runtime-mods", "value")
+            Input("runtime-mods", "value"),
+            Input("range-slider", "value"),
+            Input("raw-plot-title", "value"),
+            Input("raw-config-name-regex", "value")
         ]
     )
-    def update_raw_plot(selected_files, selected_variable, xaxis_scale, yaxis_scale, runtime_mods ):
+    def update_raw_plot(selected_files, selected_variable, xaxis_scale, yaxis_scale, runtime_mods, range_slider, title, config_regex ):
 
         # Flatten the list of lists into a single list of selected filenames
         selected_flat = list(chain.from_iterable(selected_files))
@@ -1183,7 +1219,7 @@ def launch_dash_app(dir_name, grouped_files, all_variables):
                 df = data[filename]
                 if selected_variable in df.columns:  # Check before accessing
 
-                    config_name = filename #re.sub(r'(_gptl|_derecho|_arm|_intel|_nvhpc|_[0-9]*nz|_async)(?=(_|$))', '', f"{filename}")
+                    config_name = re.sub(config_regex, '', f"{filename}")
 
                     original_df = data[filename][["ngrdcol", selected_variable]].copy()
                     original_df = original_df[original_df["ngrdcol"] >= 32] 
@@ -1193,15 +1229,20 @@ def launch_dash_app(dir_name, grouped_files, all_variables):
 
                     if runtime_mods == "scaling":
 
-                        # Assume CPU, only really meant for CPU anyway 
-                        coeffs = np.polyfit(original_df["ngrdcol"][0:4], original_df[selected_variable][0:4], deg=1)
+                        if any(cpu in filename for cpu in cpu_names):
 
-                        scale_curve = original_df.copy()
+                            coeffs = np.polyfit(
+                                original_df["ngrdcol"].where(original_df["ngrdcol"].between(*range_slider)).dropna(),
+                                original_df[selected_variable].where(original_df["ngrdcol"].between(*range_slider)).dropna(),
+                                deg=1
+                            )
 
-                        scale_curve[selected_variable] = scale_curve[selected_variable] / ( scale_curve["ngrdcol"] * coeffs[0] + coeffs[1] )
-                        scale_curve["Source"] = "scale"
+                            scale_curve = original_df.copy()
 
-                        combined_df = pd.concat([combined_df, scale_curve])
+                            scale_curve[selected_variable] = scale_curve[selected_variable] / ( scale_curve["ngrdcol"] * coeffs[0] + coeffs[1] )
+                            scale_curve["Source"] = "scale"
+
+                            combined_df = pd.concat([combined_df, scale_curve])
 
                     else:
 
@@ -1211,17 +1252,19 @@ def launch_dash_app(dir_name, grouped_files, all_variables):
 
                             if any(cpu in filename for cpu in cpu_names):
 
-                                # CPU trendline should consider only the first 5 samples
-                                coeffs = np.polyfit(original_df["ngrdcol"][0:4], original_df[selected_variable][0:4], deg=1)
+                                # Use the slider to deremine CPU fit range
+                                coeffs = np.polyfit(
+                                    original_df["ngrdcol"].where(original_df["ngrdcol"].between(*range_slider)).dropna(),
+                                    original_df[selected_variable].where(original_df["ngrdcol"].between(*range_slider)).dropna(),
+                                    deg=1
+                                )
                                 label_position = 24
                             
                             else:
 
-                                # Use all samples
+                                # Use all samples otherwise 
                                 coeffs = np.polyfit(original_df["ngrdcol"], original_df[selected_variable], deg=1)
                                 label_position = 11
-
-                            print(f"coeffs: {coeffs}")
 
                             model_df[selected_variable] = model_df["ngrdcol"] * coeffs[0] + coeffs[1]
 
@@ -1232,7 +1275,10 @@ def launch_dash_app(dir_name, grouped_files, all_variables):
 
                             # Create annotation text
                             m, b = coeffs
-                            equation_text = f"y = {m:.3e}·x + {b:.3e}"
+                            if any( cpu in config_name for cpu in cpu_names ):
+                                equation_text = f"R\u0302<sub>CPU</sub>(N<sub>i</sub>) = {m:.3e}·N<sub>i</sub> + {b:.3e}"
+                            else:
+                                equation_text = f"R\u0302<sub>GPU</sub>(N<sub>i</sub>) = {m:.3e}·N<sub>i</sub> + {b:.3e}"
 
                             # Store one x,y point near end for label positioning
                             x_label = model_df["ngrdcol"][label_position]
@@ -1246,7 +1292,6 @@ def launch_dash_app(dir_name, grouped_files, all_variables):
                                 "config": config_name
                             })
                                 
-
                         combined_df = pd.concat([combined_df, original_df])
 
         fig = px.line(combined_df, x="ngrdcol", y=selected_variable, color="Configuration", symbol="Source")
@@ -1263,8 +1308,8 @@ def launch_dash_app(dir_name, grouped_files, all_variables):
                 showarrow=True,
                 arrowhead=1,
                 ax=40,  # offset x for label placement
-                ay=-30,
-                font=dict(size=12),
+                ay=30 if any( cpu in label["config"] for cpu in cpu_names ) else -30,
+                font=dict(size=16, color="black", family="Arial"),
                 bgcolor="white",
                 opacity=0.7
             )
@@ -1273,12 +1318,12 @@ def launch_dash_app(dir_name, grouped_files, all_variables):
             xaxis=dict(type=xaxis_scale),
             yaxis=dict(type=yaxis_scale),
             xaxis_title = "Batch size (columns)", 
-            yaxis_title = "Runtime (seconds)", 
+            yaxis_title = "Runtime (seconds)" if runtime_mods != "scaling" else "Cache Penalty Multiplier", 
             autosize=True,
             uirevision='constant'
         )
 
-        return plot_with_enhancements(fig, f"Runtime vs Batch Size")
+        return plot_with_enhancements(fig, title)
 
 
     # ======================================== CPS plot ========================================
@@ -1288,10 +1333,12 @@ def launch_dash_app(dir_name, grouped_files, all_variables):
             Input({"type": "file-checkbox", "group": ALL}, "value"),
             Input("variable-dropdown", "value"),
             Input("x-axis-scale", "value"),
-            Input("y-axis-scale", "value")  
+            Input("y-axis-scale", "value"),
+            Input("cps-plot-title", "value"),
+            Input("cps-config-name-regex", "value") 
         ]
     )
-    def update_columns_per_second_plot(selected_files, selected_variable, xaxis_scale, yaxis_scale):
+    def update_columns_per_second_plot(selected_files, selected_variable, xaxis_scale, yaxis_scale, title, config_regex):
 
         # Flatten the list of lists into a single list of selected filenames
         selected_flat = list(chain.from_iterable(selected_files))
@@ -1300,25 +1347,13 @@ def launch_dash_app(dir_name, grouped_files, all_variables):
             raise PreventUpdate
 
         combined_df = pd.DataFrame()
-
-        if (
-            len(selected_flat) == 2 and
-            any(any(gpu in f for gpu in gpu_names) for f in selected_flat) and
-            any(any(cpu in f for cpu in cpu_names) for f in selected_flat)
-        ):
-            plot_mode = "cpu_vs_gpu"
-        else:
-            plot_mode = "regular"
         
         for filename in selected_flat:
             if filename in data and selected_variable in data[filename].columns:
                 df = data[filename]
                 if selected_variable in df.columns:  # Check before accessing
 
-                    if plot_mode == "cpu_vs_gpu":
-                        config_name = re.sub(r'(_gptl|_derecho|_arm|_intel|_nvhpc|_[0-9]*nz|_async)(?=(_|$))', '', f"{filename}")
-                    else:
-                        config_name = filename
+                    config_name = re.sub(config_regex, '', f"{filename}")
 
                     temp_df = data[filename][["ngrdcol", selected_variable]].copy()
                     temp_df = temp_df[temp_df["ngrdcol"] >= 32] 
@@ -1338,7 +1373,11 @@ def launch_dash_app(dir_name, grouped_files, all_variables):
         )
 
         
-        if plot_mode == "cpu_vs_gpu":
+        if (
+            len(selected_flat) == 2 and
+            any(any(gpu in f for gpu in gpu_names) for f in selected_flat) and
+            any(any(cpu in f for cpu in cpu_names) for f in selected_flat)
+        ):
 
             # Extract names
             name1, name2 = selected_flat
@@ -1576,7 +1615,7 @@ def launch_dash_app(dir_name, grouped_files, all_variables):
                             ))
 
 
-        return plot_with_enhancements(fig, f"Throughput vs. Batch Size")
+        return plot_with_enhancements(fig, title)
 
 
     # ======================================== Custom function plot ========================================
