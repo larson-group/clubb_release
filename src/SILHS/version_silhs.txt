@@ -1,0 +1,219 @@
+commit 46cac2787c3802be0418762948ad6d1231dde182
+Author: Vincent Larson <vlarson@users.noreply.github.com>
+Date:   Sat May 24 07:04:28 2025 -0500
+
+    Clean out clubb_G_unit_reverse_dir_grid_test folder before running Jenkins test
+
+commit dd5f915658016e9a8b64128024eebaf4c7d24318
+Author: bmg929 <bmg2@uwm.edu>
+Date:   Fri May 23 13:13:53 2025 -0500
+
+    Finished my notes, documentation, and instructions for the generalized
+    grid test.
+
+commit 003b6cf728915e52cba23dc54bd3ae5ea9ee6364
+Author: st3113n <0-freundlich-adenin@icloud.com>
+Date:   Thu May 22 20:25:09 2025 -0500
+
+    add fix for grid generalization
+
+commit f1798e4237187cb3f36a25c73293c27e6453b0eb
+Author: st3113n <0-freundlich-adenin@icloud.com>
+Date:   Thu May 22 20:01:59 2025 -0500
+
+    rename grid_adaptation and remapping modules
+
+commit 01cd6d52d06689c704a7dc1b8239f1a6a82db237
+Author: st3113n <110198346+st3113n@users.noreply.github.com>
+Date:   Thu May 22 18:08:16 2025 -0500
+
+    fix precision error of reals
+
+commit ab83782970ee2389c03e0b387abc35b6452418bc
+Author: bmg929 <bmg2@uwm.edu>
+Date:   Thu May 22 11:24:58 2025 -0500
+
+    I start adding some notes on grid generalization.
+
+commit 25d5bed515ab3d6e11e43419ef1fc3a71777e545
+Author: st3113n <110198346+st3113n@users.noreply.github.com>
+Date:   Wed May 21 17:32:02 2025 -0500
+
+    Merge grid adaptation implementation (#1249)
+    
+    * add tunable parameter interp_from_dycore_grid_method
+    
+    * add dycore interpolation to atex case with conservative remapping by ullrich
+    
+    * remove new gpu commands
+    
+    * add acc annotation for gpu
+    
+    * remove acc annotation again
+    
+    * add acc annotation for parallel loop
+    
+    * add acc annotations for parallel loop execution
+    
+    * change remapping subroutine to take number of levels and levels as input instead of whole grid object
+    
+    * add more general functions to interpolate
+    
+    * add and refactor functions for remapping values given on zm levels
+    
+    * fix compiler errors and refactoring to stay under 100 chars per line
+    
+    * remove TODOs and used new interpolating function in interpolate_forcings
+    
+    * add functions for adaptive grid generation and grid density function normalization
+    
+    * add conservative ullrich remapping to cases with forcing time dependent inputs
+    
+    * add grid adaptation and flag
+    
+    * clean up and add warning for case when remapping from dycore flag cannot be used
+    
+    * some refactoring
+    
+    * add logical flag for dycore and renamed flags for dycore and grid adaptation
+    
+    * remove ifdefs
+    
+    * refactoring
+    
+    * add units
+    
+    * changed Lscale to inverse
+    
+    * add write to file for grid adaptation (still WIP)
+    
+    * clean up
+    
+    * change parameter for grid adaptation and add file and plot script for grid adaptation
+    
+    * add script for animation
+    
+    * add e3sm dycore grid
+    
+    * refactoring for efficiency
+    
+    * small fix for grid adapt plot script
+    
+    * add new grid adaptation method with prescribed minimum density profile
+    
+    * fix call to setup_grid
+    
+    * add gabls2 case
+    
+    * add refinement criterion and adaptation trigger
+    
+    * small fix and add minimum grid density profile to animation
+    
+    * add grid density to pyplots
+    
+    * add general refinement criteria for astex and gabls2 case (and arm)
+    
+    * update create_evenly_grid script
+    
+    * unfinished save
+    
+    * WIP: save progress
+    
+    * save working configuration
+    
+    * save working config without Lscale
+    
+    * save working config wo the use of Lscale
+    
+    * change call to map1_ppm to use correct iv parameter and order 4
+    
+    * save code for results in thesis
+    
+    * add code for results
+    
+    * refactor remapping module for grid adaptation
+    
+    * add list of functions/subroutines to remapping module
+    
+    * adjust use statements
+    
+    * add model files for arm, astex and gabls2
+    
+    * refactor grid_adaptation module
+    
+    * refactor and adjust tim stopping in clubb_driver
+    
+    * clean up
+    
+    * clean up
+    
+    * add grids
+    
+    * add scripts
+    
+    * add changes made to pyplotgen to generate plots for paper
+    
+    * add configurable model flags file that was used to obtain results
+    
+    * clean up and save tunable parameters file
+    
+    * fix error
+    
+    * fix error
+    
+    * add grid adapt output for debug level 2
+    
+    * change dycore grid
+    
+    * add plot generation script for paper plots
+    
+    * add small changes
+    
+    * add normalization explaination plot to paper plots script
+    
+    * fix plot
+    
+    * clean up for stats output
+    
+    * add comment
+    
+    * fix use of clubb_at_least_debug_api
+    
+    * small deallocation fix
+    
+    * fix merge problems
+    
+    * revert changes made to test grid adaptation
+    
+    * revert tunable_parameters for Lscale
+    
+    * revert changes made to create plots for grid adaptation
+    
+    * add new line
+    
+    * add new line
+    
+    * revert changes
+    
+    * revert changes made to generate grid adaptation plots
+
+commit df1dbd76ba2ecb03a34137394fbb108eba6a3406
+Merge: b5929aa67 ec0644cf8
+Author: bmg929 <bmg2@uwm.edu>
+Date:   Tue May 20 00:55:19 2025 -0500
+
+    Merge branch 'master' of github.com:larson-group/clubb
+
+commit b5929aa672244c4324f925e9c05fb2eb39baa1be
+Author: bmg929 <bmg2@uwm.edu>
+Date:   Tue May 20 00:54:46 2025 -0500
+
+    zm and zt were mixed up in the error prints argument list.
+
+commit ec0644cf80b501f02e9f43a32d39c9aeb784d669
+Author: bmg929 <bmg2@uwm.edu>
+Date:   Mon May 19 23:11:42 2025 -0500
+
+    For the long-duration clubb_generalized_vertical_grid_test, I am
+    shortening the duration of the MC3E runs to half their normal number
+    of timesteps in order to cut down on the time it takes to do the run.
