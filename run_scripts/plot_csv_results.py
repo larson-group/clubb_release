@@ -781,7 +781,41 @@ def launch_dash_app(dir_name, grouped_files, all_variables):
                                       value="(_gptl|_derecho|_arm|_intel|_nvhpc|_[0-9]*nz|_async)(?=(_|$))", style={"width": "100%"}),
                         ], style={"margin-bottom": "8px", "width": "800px"}),
 
+                        html.Div([
+                            html.Label("Legend X"),
+                            dcc.Slider(
+                                id='cps-x-legend',
+                                min=0,
+                                max=1,
+                                step=0.01,
+                                value=0.05,  # default value
+                                marks=None,         # hide all tick labels
+                                tooltip={"placement": "bottom", "always_visible": True},
+                                updatemode='drag'   # update the graph continuously while dragging
+                            ),
+                        ], style={"margin-bottom": "8px", "width": "200px"}),
+
+                        html.Div([
+                            html.Label("Legend Y"),
+                            dcc.Slider(
+                                id='cps-y-legend',
+                                min=0,
+                                max=1,
+                                step=0.01,
+                                value=0.95,  # default value
+                                marks=None,         # hide all tick labels
+                                tooltip={"placement": "bottom", "always_visible": True},
+                                updatemode='drag'   # update the graph continuously while dragging
+                            ),
+                        ], style={"margin-bottom": "8px", "width": "200px"}),
+                        
                         dcc.Graph(id="plot-columns-per-second", style=graph_style, config=graph_config),
+
+                        html.Div([
+                            html.Label("Base Batch Size: ", style={"margin-left": "5px"}),
+                            dcc.Input(id="base-batch-size", type="number", value=0),
+                        ], style={"margin-bottom": "8px", "width": "200px"}),
+
                         
                     ], style=plot_div_style )
                 ],
@@ -1139,7 +1173,7 @@ def launch_dash_app(dir_name, grouped_files, all_variables):
     ], style={"display": "flex", "flexDirection": "row", "width": "100%", "height": "auto"})
 
 
-    def plot_with_enhancements(fig, title, scale_factor=1.2):
+    def plot_with_enhancements(fig, title, scale_factor=1.2, x_legend=0.05, y_legend=0.95):
         fig.update_traces(mode="lines+markers", selector=dict(mode="lines"))
         
         fig.update_layout(
@@ -1170,8 +1204,8 @@ def launch_dash_app(dir_name, grouped_files, all_variables):
                 mirror=True
             ),
             legend=dict(
-                x=0.05,          # 0 is left, 1 is right
-                y=0.95,          # 0 is bottom, 1 is top
+                x=x_legend,          # 0 is left, 1 is right
+                y=y_legend,          # 0 is bottom, 1 is top
                 xanchor='left', # anchor the x position
                 yanchor='top',   # anchor the y position
                 bgcolor='rgba(255,255,255,0.5)',  # optional translucent background
@@ -1335,10 +1369,13 @@ def launch_dash_app(dir_name, grouped_files, all_variables):
             Input("x-axis-scale", "value"),
             Input("y-axis-scale", "value"),
             Input("cps-plot-title", "value"),
-            Input("cps-config-name-regex", "value") 
+            Input("cps-config-name-regex", "value"),
+            Input("base-batch-size", "value"),
+            Input("cps-x-legend", "value"),
+            Input("cps-y-legend", "value") 
         ]
     )
-    def update_columns_per_second_plot(selected_files, selected_variable, xaxis_scale, yaxis_scale, title, config_regex):
+    def update_columns_per_second_plot(selected_files, selected_variable, xaxis_scale, yaxis_scale, title, config_regex, base_batch_size, x_legend, y_legend):
 
         # Flatten the list of lists into a single list of selected filenames
         selected_flat = list(chain.from_iterable(selected_files))
@@ -1347,6 +1384,8 @@ def launch_dash_app(dir_name, grouped_files, all_variables):
             raise PreventUpdate
 
         combined_df = pd.DataFrame()
+
+        ngrdcol_min = 0
         
         for filename in selected_flat:
             if filename in data and selected_variable in data[filename].columns:
@@ -1355,19 +1394,36 @@ def launch_dash_app(dir_name, grouped_files, all_variables):
 
                     config_name = re.sub(config_regex, '', f"{filename}")
 
-                    temp_df = data[filename][["ngrdcol", selected_variable]].copy()
-                    temp_df = temp_df[temp_df["ngrdcol"] >= 32] 
+                    temp_df = data[filename].copy()
+
+                    temp_df = temp_df[
+                        (temp_df["ngrdcol"] >= max( 32, 2**int(base_batch_size) ) ) & 
+                        (temp_df["ngrdcol"] % 2**int(base_batch_size) == 0)
+                    ]
+
+                    temp_df["ngrdcol"] = temp_df["ngrdcol"] / int( 2**int(base_batch_size) )
+
+                    temp_df = temp_df[temp_df["ngrdcol"] >= temp_df["tasks"]]
+
+                    if (ngrdcol_min is None) or (temp_df["ngrdcol"].min() > ngrdcol_min):
+                        ngrdcol_min = temp_df["ngrdcol"].min()
+                    
+
+                    #print(temp_df["ngrdcol"])
+
                     temp_df["Configuration"] = config_name
                     temp_df["Throughput"] = temp_df["ngrdcol"] / temp_df[selected_variable]
                     combined_df = pd.concat([combined_df, temp_df])
+
+        combined_df = combined_df[combined_df["ngrdcol"] >= ngrdcol_min]
                     
         fig = px.line(combined_df, x="ngrdcol", y="Throughput", color="Configuration")
 
         fig.update_layout(
             xaxis=dict(type=xaxis_scale),
             yaxis=dict(type=yaxis_scale),
-            xaxis_title = "Batch size (columns)", 
-            yaxis_title = "Throughput (columns per second)", 
+            xaxis_title = "Batch size (columns)" if base_batch_size == 0 else f"Batch size (chunks of {2**base_batch_size} columns)", 
+            yaxis_title = "Throughput (columns per second)" if base_batch_size == 0 else f"Throughput (column chunks per second)",
             autosize=False,
             uirevision='constant'
         )
@@ -1381,8 +1437,8 @@ def launch_dash_app(dir_name, grouped_files, all_variables):
 
             # Extract names
             name1, name2 = selected_flat
-            config_name1 = re.sub(r'(_gptl|_derecho|_arm|_intel|_nvhpc|_[0-9]*nz|_async)(?=(_|$))', '', f"{name1}")
-            config_name2 = re.sub(r'(_gptl|_derecho|_arm|_intel|_nvhpc|_[0-9]*nz|_async)(?=(_|$))', '', f"{name2}")
+            config_name1 = re.sub(config_regex, '', f"{name1}")
+            config_name2 = re.sub(config_regex, '', f"{name2}")
 
             if any(gpu_name in name1 for gpu_name in gpu_names ):
                 gpu_name, cpu_name = config_name1, config_name2
@@ -1615,7 +1671,7 @@ def launch_dash_app(dir_name, grouped_files, all_variables):
                             ))
 
 
-        return plot_with_enhancements(fig, title)
+        return plot_with_enhancements(fig, title, x_legend=x_legend, y_legend=y_legend)
 
 
     # ======================================== Custom function plot ========================================
