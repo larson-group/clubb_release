@@ -675,14 +675,26 @@ def model_throughputs(ngrdcol, runtime, N_tasks, N_vsize, N_prec, N_vlevs, model
         T_model, _ = model_vcpu_batched_time( params_opt, ngrdcol, runtime, N_tasks, N_vsize, N_prec, N_vlevs, cache_pen_best )
 
         # Assemble fit_params dictionary
+        # fit_params = {
+        #     "T_v": f"{params_opt[0]:.2e} - {param_scale[0]}",
+        #     "T_r": f"{params_opt[1]:.2e} - {param_scale[1]}",
+        #     "m_k": f"{params_opt[2]:.2e} - {param_scale[2]}",
+        #     "b": f"{params_opt[3]:.2e} - {param_scale[3]}",
+        #     "c": f"{params_opt[4]:.2e} - {param_scale[4]}",
+        #     "k": f"{params_opt[5]:.2e} - {param_scale[5]}",
+        #     "o": f"{params_opt[6]:.2e} - {param_scale[6]}",
+        #     "cp_func": cache_pen_best.__name__,
+        #     #"rms_error": rms_min
+        # }
+
         fit_params = {
-            "T_v": f"{params_opt[0]:.2e} - {param_scale[0]}",
-            "T_r": f"{params_opt[1]:.2e} - {param_scale[1]}",
-            "m_k": f"{params_opt[2]:.2e} - {param_scale[2]}",
-            "b": f"{params_opt[3]:.2e} - {param_scale[3]}",
-            "c": f"{params_opt[4]:.2e} - {param_scale[4]}",
-            "k": f"{params_opt[5]:.2e} - {param_scale[5]}",
-            "o": f"{params_opt[6]:.2e} - {param_scale[6]}",
+            "m_vik": f"{params_opt[0]:.2e}",
+            "m_rik": f"{params_opt[1]:.2e}",
+            "m_k": f"{params_opt[2]:.2e}",
+            "b": f"{params_opt[3]:.2e}",
+            "c": f"{params_opt[4]:.2e}",
+            "k": f"{params_opt[5]:.2e}",
+            "o": f"{params_opt[6]:.2e}",
             "cp_func": cache_pen_best.__name__,
             #"rms_error": rms_min
         }
@@ -930,6 +942,56 @@ def launch_dash_app(dir_name, grouped_files, all_variables):
                     html.Summary("Batched Fit Plot", style={"font-weight": "bold", "background-color": "#ddd", "padding": "10px", "cursor": "pointer", "font-size": "20px"}),
                     html.Div([
 
+                        html.Div([
+                            html.Label("Title: ", style={"margin-top": "5px"}),
+                            dcc.Input(id="fit-batched-plot-title", type="text", placeholder="Enter Title", value="Throughput vs Batch Size", style={"width": "80%"}),
+                        ], style={"margin-bottom": "8px", "width": "600px"}),
+
+                        html.Div([
+                            html.Label("Config Regex: ", style={"margin-top": "5px"}),
+                            dcc.Input(id="fit-batched-config-name-regex", type="text", placeholder="Name Filter", 
+                                      value="_gptl|_derecho|_arm|_intel|_nvhpc|_async", style={"width": "100%"}),
+                        ], style={"margin-bottom": "8px", "width": "800px"}),
+
+                        html.Div([
+                            html.Label("Legend X"),
+                            dcc.Slider(
+                                id='fit-batched-x-legend',
+                                min=0,
+                                max=1,
+                                step=0.01,
+                                value=0.05,  # default value
+                                marks=None,         # hide all tick labels
+                                tooltip={"placement": "bottom", "always_visible": True}
+                            ),
+                        ], style={"margin-bottom": "8px", "width": "200px"}),
+
+                        html.Div([
+                            html.Label("Legend Y"),
+                            dcc.Slider(
+                                id='fit-batched-y-legend',
+                                min=0,
+                                max=1,
+                                step=0.01,
+                                value=0.95,  # default value
+                                marks=None,         # hide all tick labels
+                                tooltip={"placement": "bottom", "always_visible": True}
+                            ),
+                        ], style={"margin-bottom": "8px", "width": "200px"}),
+
+                        html.Div([
+                            html.Label("Config Scale"),
+                            dcc.Slider(
+                                id='fit-batched-config-scale',
+                                min=0,
+                                max=2,
+                                step=0.05,
+                                value=1.2,  # default value
+                                marks=None,         # hide all tick labels
+                                tooltip={"placement": "bottom", "always_visible": True}
+                            ),
+                        ], style={"margin-bottom": "8px", "width": "200px"}),
+
                         # Plot
                         dcc.Graph(id="fit-plot-batched", style=graph_style, config=graph_config), 
                         
@@ -1173,7 +1235,7 @@ def launch_dash_app(dir_name, grouped_files, all_variables):
     ], style={"display": "flex", "flexDirection": "row", "width": "100%", "height": "auto"})
 
 
-    def plot_with_enhancements(fig, title, scale_factor=1.2, x_legend=0.05, y_legend=0.95):
+    def plot_with_enhancements(fig, title, scale_factor=1.2, x_legend=0.05, y_legend=0.95, config_scale=1):
         fig.update_traces(mode="lines+markers", selector=dict(mode="lines"))
         
         fig.update_layout(
@@ -1211,7 +1273,9 @@ def launch_dash_app(dir_name, grouped_files, all_variables):
                 bgcolor='rgba(255,255,255,0.5)',  # optional translucent background
                 bordercolor='black',
                 borderwidth=1,
-                font=dict(size=12 * scale_factor)
+                font=dict(size=12 * config_scale),
+                itemsizing='constant',
+                itemwidth=30 * config_scale
             ),
             font=dict(size=12 * scale_factor),
             margin=dict(l=10, r=10, t=50, b=10),
@@ -1979,13 +2043,18 @@ def launch_dash_app(dir_name, grouped_files, all_variables):
             State("x-axis-scale", "value"),
             State("y-axis-scale", "value"),
             State("fit-plot-mode", "value"),
-            State({"type": "cp_func_checkbox"}, "value")
+            State({"type": "cp_func_checkbox"}, "value"),
+            State("fit-batched-plot-title", "value"),
+            State("fit-batched-config-name-regex", "value"),
+            State("fit-batched-x-legend", "value"),
+            State("fit-batched-y-legend", "value"),
+            State("fit-batched-config-scale", "value")
         ],
         prevent_initial_call=True
     )
     def update_fit_plot_batched(cpu_clicks, vcpu_clicks, gpu_clicks, N_vsize, bootstrap_samps, bootstrap_conf, 
                                 selected_files, selected_variable, xaxis_scale, yaxis_scale, 
-                                plot_mode, selected_cp_funcs):
+                                plot_mode, selected_cp_funcs, title, config_regex, x_legend, y_legend, config_scale):
 
         cpu_fit, vcpu_fit, gpu_fit = False, False, False
 
@@ -2014,17 +2083,19 @@ def launch_dash_app(dir_name, grouped_files, all_variables):
         for filename in selected_flat:
             if filename in data and selected_variable in data[filename].columns:
                 
+                original_df = data[filename].copy()
+                original_df = original_df[original_df["ngrdcol"] > 32]
 
                 # Get the number of cores used 
-                N_tasks  = np.concatenate( [N_tasks, np.array( data[filename]["tasks"] )] )
-                N_vlevs  = np.concatenate( [N_vlevs, np.array( data[filename]["nz"] )] )
-                runtimes = np.concatenate( [runtimes, np.array( data[filename][selected_variable] )] )
-                ngrdcols = np.concatenate( [ngrdcols, np.array( data[filename]["ngrdcol"] )] )
+                N_tasks  = np.concatenate( [N_tasks, np.array( original_df["tasks"] )] )
+                N_vlevs  = np.concatenate( [N_vlevs, np.array( original_df["nz"] )] )
+                runtimes = np.concatenate( [runtimes, np.array( original_df[selected_variable] )] )
+                ngrdcols = np.concatenate( [ngrdcols, np.array( original_df["ngrdcol"] )] )
 
                 if "_sp_" in filename:
-                    N_prec = np.concatenate( [N_prec, np.array([32]*len(data[filename]["nz"])) ])
+                    N_prec = np.concatenate( [N_prec, np.array([32]*len(original_df["nz"])) ])
                 else:
-                    N_prec = np.concatenate( [N_prec, np.array([64]*len(data[filename]["nz"])) ])
+                    N_prec = np.concatenate( [N_prec, np.array([64]*len(original_df["nz"])) ])
                 
 
         T_model, params_opt, params_opt_CI = model_throughputs( ngrdcols, 
@@ -2056,9 +2127,11 @@ def launch_dash_app(dir_name, grouped_files, all_variables):
         for filename in selected_flat:
             if filename in data and selected_variable in data[filename].columns:
 
-                config_name = re.sub(r'(_gptl|_derecho)(?=(_|$))', '', f"{filename}")
+                config_name = re.sub(config_regex, '', f"{filename}")
 
                 original_df = data[filename][["ngrdcol", selected_variable]].copy()
+                original_df = original_df[original_df["ngrdcol"] > 32]
+
                 original_df["Name"] = config_name
                 original_df["Source"] = "original"
                 original_df["Columns per Second"] = original_df["ngrdcol"] / original_df[selected_variable]
@@ -2107,7 +2180,7 @@ def launch_dash_app(dir_name, grouped_files, all_variables):
                 x="ngrdcol", 
                 y=selected_variable, 
                 color="Name", 
-                symbol="Source"
+                symbol="Name"
             )
             fig.update_layout( yaxis_title = f"Runtime of {selected_variable} (seconds)" )
 
@@ -2122,12 +2195,10 @@ def launch_dash_app(dir_name, grouped_files, all_variables):
             uirevision='constant',
             legend_title_text="Configuration"
         )
+
         fig.update_traces(marker=dict(size=8))
 
-        if gpu_fit:
-            fig = plot_with_enhancements(fig, "GPU Model: Throughput vs Batch Size")
-        else:
-            fig = plot_with_enhancements(fig, "CPU Model: Throughput vs Batch Size")
+        fig = plot_with_enhancements(fig, title, x_legend=x_legend, y_legend=y_legend, config_scale=config_scale)
 
         return fig.to_dict(), batched_param_table, batched_rms_table
 
