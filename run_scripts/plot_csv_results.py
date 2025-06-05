@@ -225,31 +225,18 @@ def vcpu_batched_objective(params, param_scale, ngrdcol, runtime, N_tasks, N_vsi
 def model_vcpu_batched_time(params, ngrdcol, runtime, N_tasks, N_vsize, N_prec, N_vlevs, cp_func):
 
     # Model time
-    T_r, T_v, m_k, b, c, k, o = params
+    m_vik, m_rik, m_k, b, c, k, o = params
 
     cols_per_core = ngrdcol / N_tasks
     flops_per_vop = N_vsize / N_prec
     
-    #b_est = runtime[0] - ( runtime[1] - runtime[0] ) / ( ngrdcol[1] - ngrdcol[0] ) * ngrdcol[0]
-    #m_k_est = b_est / N_vlevs[-1]
-    #first_vpoint = np.where(cols_per_core == flops_per_vop)[0][0]
-
-    #T_v_est = ( runtime[first_vpoint] - b_est ) / ( ngrdcol[first_vpoint] ) * ( 1 / N_vlevs[-1])
-    #T_r_est = ( runtime[0] - b_est ) / ( ngrdcol[1] ) * ( 1 / N_vlevs[-1])
-
-    #T_r = T_r_est
-    #T_v = T_v_est
-    #b = b_est
-
     # Number of columns using residual operations 
-    N_r = N_tasks * ( cols_per_core % flops_per_vop )
-
-    # Number of columns using vector operations
-    N_v = ngrdcol - N_r #np.floor( cols_per_core / flops_per_vop )
+    #N_r = N_tasks * ( cols_per_core % flops_per_vop )
+    N_r =  ngrdcol % (N_tasks * N_vsize / N_prec)
 
     avg_array_size_MB = ngrdcol * N_vlevs * (N_prec/8) / 2**20
  
-    T_vcpu = ( ( T_r * N_r + T_v * N_v + m_k ) * N_vlevs + b ) * cp_func( c, k, o, avg_array_size_MB )
+    T_vcpu = (( m_vik * (ngrdcol - N_r ) + m_rik * N_r + m_k  ) * N_vlevs + b ) * cp_func( c, k, o, avg_array_size_MB )
 
     return T_vcpu, rms_error( ngrdcol, runtime, T_vcpu )
 
@@ -1236,7 +1223,11 @@ def launch_dash_app(dir_name, grouped_files, all_variables):
 
 
     def plot_with_enhancements(fig, title, scale_factor=1.2, x_legend=0.05, y_legend=0.95, config_scale=1):
+
         fig.update_traces(mode="lines+markers", selector=dict(mode="lines"))
+
+        fig.update_traces(marker=dict(size=5))
+        fig.update_traces(line=dict(width=2))
         
         fig.update_layout(
             title=dict(
@@ -1273,9 +1264,7 @@ def launch_dash_app(dir_name, grouped_files, all_variables):
                 bgcolor='rgba(255,255,255,0.5)',  # optional translucent background
                 bordercolor='black',
                 borderwidth=1,
-                font=dict(size=12 * config_scale),
-                itemsizing='constant',
-                itemwidth=30 * config_scale
+                font=dict(size=12 * config_scale)
             ),
             font=dict(size=12 * scale_factor),
             margin=dict(l=10, r=10, t=50, b=10),
@@ -2168,7 +2157,8 @@ def launch_dash_app(dir_name, grouped_files, all_variables):
                 x="ngrdcol", 
                 y="Columns per Second", 
                 color="Name", 
-                symbol="Source"
+                symbol="Name",
+                line_dash="Source"
             )
             fig.update_layout( 
                 xaxis_title="Batch size (columns)", 
@@ -2180,7 +2170,8 @@ def launch_dash_app(dir_name, grouped_files, all_variables):
                 x="ngrdcol", 
                 y=selected_variable, 
                 color="Name", 
-                symbol="Name"
+                symbol="Name",
+                line_dash="Source"
             )
             fig.update_layout( yaxis_title = f"Runtime of {selected_variable} (seconds)" )
 
@@ -2196,7 +2187,7 @@ def launch_dash_app(dir_name, grouped_files, all_variables):
             legend_title_text="Configuration"
         )
 
-        fig.update_traces(marker=dict(size=8))
+        #fig.update_traces(marker=dict(size=8))
 
         fig = plot_with_enhancements(fig, title, x_legend=x_legend, y_legend=y_legend, config_scale=config_scale)
 
