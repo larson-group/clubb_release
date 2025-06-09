@@ -487,6 +487,48 @@ def model_throughputs(ngrdcol, runtime, N_tasks, N_vsize, N_prec, N_vlevs, model
             "b": f"{params_opt[2]:.2e}"
         }
 
+        if bootstrap_samps > 0:
+
+            # Bootstrap procedure
+            params_bootstrap = []
+
+            n_points = len(runtime)
+            rng = np.random.default_rng()
+
+            for _ in range(bootstrap_samps):
+                indices = rng.integers(0, n_points, size=n_points)  # resample with replacement
+                ngrdcol_bs = ngrdcol[indices]
+                runtime_bs = runtime[indices]
+                N_prec_bs = N_prec[indices]
+                N_vlevs_bs = N_vlevs[indices]
+
+                try:
+                    result_bs = minimize(
+                        gpu_batched_objective, 
+                        initial_guess, 
+                        args=(param_scale, ngrdcol_bs, runtime_bs, N_tasks, N_vsize, N_prec_bs, N_vlevs_bs ),
+                        method='L-BFGS-B',
+                        bounds=bounds
+                    )
+                    params_bootstrap.append(result_bs.x * param_scale)  # save rescaled params
+                except Exception as e:
+                    # Skip failed fits
+                    print(f"Bootstrap fit failed: {e}")
+                    continue
+            
+            params_bootstrap = np.array(params_bootstrap)
+
+            # Now get 5th and 95th percentile (for 90% confidence interval)
+            params_low = np.percentile(params_bootstrap, (100 - bootstrap_conf) / 2, axis=0)
+            params_high = np.percentile(params_bootstrap, 100 - (100 - bootstrap_conf) / 2, axis=0)
+
+            # Assemble fit_params dictionary
+            fit_params_CI = {
+                "m_ik": f"({params_low[0]:.2e}, {params_high[0]:.2e})",
+                "m_k": f"({params_low[1]:.2e}, {params_high[1]:.2e})",
+                "b": f"({params_low[2]:.2e}, {params_high[2]:.2e})"
+            }
+
     #============================== CPU Batched Model ==============================
 
     elif model_version == "cpu_batched":
@@ -726,8 +768,8 @@ def model_throughputs(ngrdcol, runtime, N_tasks, N_vsize, N_prec, N_vlevs, model
 
 
             fit_params_CI = {
-                "T_v": f"({params_low[0]:.2e}, {params_high[0]:.2e})",
-                "T_r": f"({params_low[1]:.2e}, {params_high[1]:.2e})",
+                "m_vik": f"({params_low[0]:.2e}, {params_high[0]:.2e})",
+                "m_rik": f"({params_low[1]:.2e}, {params_high[1]:.2e})",
                 "m_k": f"({params_low[2]:.2e}, {params_high[2]:.2e})",
                 "b": f"({params_low[3]:.2e}, {params_high[3]:.2e})",
                 "c": f"({params_low[4]:.2e}, {params_high[4]:.2e})",
