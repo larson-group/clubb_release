@@ -62,13 +62,15 @@ growing_container = {
 
 graph_style = {"width": "100%", "height": "100%"}
 
+cm_to_in = lambda cm: cm / 2.54
+
 graph_config = {
     'toImageButtonOptions': {
-        'format': 'png',        # one of 'svg', 'png', 'jpeg', 'webp'
+        'format': 'png',
         'filename': 'custom_image',
-        'height': 400,          # desired height in pixels
-        'width': 800,           # desired width in pixels
-        'scale': 2              # multiply resolution (2 = 2x retina)
+        'height': 400,
+        'width': 800,
+        'scale': 3.125  # 300 DPI equivalent
     }
 }
 
@@ -1268,7 +1270,7 @@ def launch_dash_app(dir_name, grouped_files, all_variables):
 
         fig.update_traces(mode="lines+markers", selector=dict(mode="lines"))
 
-        fig.update_traces(marker=dict(size=5))
+        fig.update_traces(marker=dict(size=8))
         fig.update_traces(line=dict(width=2))
         
         fig.update_layout(
@@ -1512,7 +1514,7 @@ def launch_dash_app(dir_name, grouped_files, all_variables):
 
         combined_df = combined_df[combined_df["ngrdcol"] >= ngrdcol_min]
                     
-        fig = px.line(combined_df, x="ngrdcol", y="Throughput", color="Configuration")
+        fig = px.line(combined_df, x="ngrdcol", y="Throughput", color="Configuration", symbol="Configuration")
 
         fig.update_layout(
             xaxis=dict(type=xaxis_scale),
