@@ -83,7 +83,7 @@ It can be obtained by cloning with git.
 If you have not already downloaded CLUBB, then at a bash prompt, type in the
 following command from the directory where you want the clubb folder to be
 placed, all on one line:
-user@computer ~$ git clone http://github.com/larson-group/clubb_release.git
+user@computer ~$ git clone http://github.com/larson-group/clubb_release.git clubb
 
 After entering this command, git will download the CLUBB source code into the
 directory specified as the last option in the git command; in the example
