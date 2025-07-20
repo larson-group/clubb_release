@@ -1879,7 +1879,7 @@ module advance_clubb_core_module
                              thv_ds_zm, cloud_frac,                       & ! intent(in)
                              wp3_on_wp2, wp3_on_wp2_zt,                   & ! intent(in)
                              pdf_implicit_coefs_terms,                    & ! intent(in)
-                             dt_advance,                                  & ! intent(in)
+                             dt_advance, fcory,                           & ! intent(in)
                              sclrm, wpsclrp,                              & ! intent(in)
                              wpsclrp2, wpsclrprtp, wpsclrpthlp,           & ! intent(in)
                              lhs_splat_wp2,                               & ! intent(in)
@@ -1887,6 +1887,7 @@ module advance_clubb_core_module
                              clubb_config_flags%iiPDF_type,               & ! intent(in)
                              clubb_config_flags%tridiag_solve_method,     & ! intent(in)
                              clubb_config_flags%l_predict_upwp_vpwp,      & ! intent(in)
+                             clubb_config_flags%l_nontraditional_Coriolis,& ! intent(in)
                              clubb_config_flags%l_min_xp2_from_corr_wx,   & ! intent(in)
                              clubb_config_flags%l_C2_cloud_frac,          & ! intent(in)
                              clubb_config_flags%l_upwind_xpyp_ta,         & ! intent(in)
@@ -1973,7 +1974,7 @@ module advance_clubb_core_module
 
       ! advance_wp2_wp3_bad_wp2 ! Test error comment, DO NOT modify or move
       call advance_wp2_wp3( nz, ngrdcol, gr, dt_advance,                          & ! intent(in)
-                            sfc_elevation, sigma_sqd_w, wm_zm,                    & ! intent(in)
+                            sfc_elevation, fcory, sigma_sqd_w, wm_zm,             & ! intent(in)
                             wm_zt, a3_coef, a3_coef_zt, wp3_on_wp2,               & ! intent(in)
                             wpup2, wpvp2, wp2up2, wp2vp2, wp4,                    & ! intent(in)
                             wpthvp, wp2thvp, um, vm, upwp, vpwp,                  & ! intent(in)
@@ -2000,6 +2001,7 @@ module advance_clubb_core_module
                             clubb_config_flags%l_use_tke_in_wp3_pr_turb_term,     & ! intent(in)
                             clubb_config_flags%l_use_tke_in_wp2_wp3_K_dfsn,       & ! intent(in)
                             clubb_config_flags%l_use_wp3_lim_with_smth_Heaviside, & ! intent(in)
+                            clubb_config_flags%l_nontraditional_Coriolis,         & ! intent(in)
                             stats_metadata,                                       & ! intent(in)
                             stats_zt, stats_zm, stats_sfc,                        & ! intent(inout)
                             wp2, wp3, wp3_zm, wp2_zt )                              ! intent(inout)

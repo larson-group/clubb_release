@@ -3136,6 +3136,20 @@ module advance_xm_wpxp_module
 
       end if ! l_traditional_Coriolils
 
+      ! Add optional nontraditional Coriolis term for <u'w'>
+      ! Hing Ong, 19 July 2025
+      if ( l_nontraditional_Coriolis ) then
+
+        !$acc parallel loop gang vector collapse(2) default(present)
+        do k = 1, nz
+          do i = 1, ngrdcol
+            upwp_forcing(i,k) = upwp_forcing(i,k) + fcory(i) * ( up2(i,k) - wp2(i,k) )
+          end do
+        end do
+        !$acc end parallel loop
+
+      end if ! l_nontraditional_Coriolils
+
       if ( l_perturbed_wind ) then
 
         ddzt_um_pert = ddzt( nz, ngrdcol, gr, um_pert )
