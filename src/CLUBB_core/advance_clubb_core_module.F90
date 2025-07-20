@@ -1797,6 +1797,8 @@ module advance_clubb_core_module
                             clubb_config_flags%tridiag_solve_method,              & ! intent(in)
                             clubb_config_flags%saturation_formula,                & ! intent(in)
                             clubb_config_flags%l_predict_upwp_vpwp,               & ! intent(in)
+                            clubb_config_flags%l_nontraditional_Coriolis,         & ! intent(in)
+                            clubb_config_flags%l_traditional_Coriolis,            & ! intent(in)
                             clubb_config_flags%l_diffuse_rtm_and_thlm,            & ! intent(in)
                             clubb_config_flags%l_stability_correct_Kh_N2_zm,      & ! intent(in)
                             clubb_config_flags%l_godunov_upwind_wpxp_ta,          & ! intent(in)
