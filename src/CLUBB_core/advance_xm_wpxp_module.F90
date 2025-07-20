@@ -63,7 +63,7 @@ module advance_xm_wpxp_module
                               ice_supersat_frac, &
                               pdf_implicit_coefs_terms, &
                               um_forcing, vm_forcing, ug, vg, wpthvp, &
-                              fcor, um_ref, vm_ref, up2, vp2, &
+                              fcor, fcory, um_ref, vm_ref, up2, vp2, &
                               uprcp, vprcp, rc_coef_zm, &
                               clubb_params, nu_vert_res_dep, &
                               iiPDF_type, &
@@ -276,7 +276,8 @@ module advance_xm_wpxp_module
       rc_coef_zm      ! Coefficient on X'r_c' in X'th_v' equation [K/(kg/kg)]
 
      real( kind = core_rknd ), dimension(ngrdcol), intent(in) ::  &
-      fcor          ! Coriolis parameter                           [s^-1]
+      fcor,       & ! Coriolis parameter                           [s^-1]
+      fcory         ! Nontraditional Coriolis parameter            [s^-1]
 
     real( kind = core_rknd ), dimension(ngrdcol,nz), intent(in) :: & 
       um_ref, & ! Reference u wind component for nudging       [m/s]

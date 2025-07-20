@@ -127,7 +127,7 @@ module advance_clubb_core_module
   !#######################################################################
   !#######################################################################
   subroutine advance_clubb_core( gr, nz, ngrdcol, &                 ! intent(in)
-               l_implemented, dt, fcor, sfc_elevation,            & ! intent(in)
+               l_implemented, dt, fcor, fcory, sfc_elevation, &     ! intent(in)
                hydromet_dim,                                      & ! intent(in)
                sclr_dim, sclr_tol, edsclr_dim, sclr_idx,      & ! intent(in)
                thlm_forcing, rtm_forcing, um_forcing, vm_forcing, & ! intent(in)
@@ -385,6 +385,7 @@ module advance_clubb_core_module
 
     real( kind = core_rknd ), intent(in), dimension(ngrdcol) ::  &
       fcor,  &          ! Coriolis forcing             [s^-1]
+      fcory, &          ! Nontraditional Coriolis parameter [s^-1]
       sfc_elevation     ! Elevation of ground level    [m above MSL]
 
     integer, intent(in) :: &
@@ -1788,7 +1789,7 @@ module advance_clubb_core_module
                             ice_supersat_frac,                                    & ! intent(in)
                             pdf_implicit_coefs_terms,                             & ! intent(in)
                             um_forcing, vm_forcing, ug, vg, wpthvp,               & ! intent(in)
-                            fcor, um_ref, vm_ref, up2, vp2,                       & ! intent(in)
+                            fcor, fcory, um_ref, vm_ref, up2, vp2,                & ! intent(in)
                             uprcp, vprcp, rc_coef_zm,                             & ! intent(in)
                             clubb_params, nu_vert_res_dep,                        & ! intent(in)
                             clubb_config_flags%iiPDF_type,                        & ! intent(in)

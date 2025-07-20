@@ -506,7 +506,7 @@ contains
   !================================================================================================
 
   subroutine advance_clubb_core_api_single_col( gr, &       ! intent(in)
-    l_implemented, dt, fcor, sfc_elevation, &               ! intent(in)
+    l_implemented, dt, fcor, fcory, sfc_elevation, &        ! intent(in)
     hydromet_dim, &                                         ! intent(in)
     sclr_dim, sclr_tol, edsclr_dim, sclr_idx, &         ! intent(in)
     thlm_forcing, rtm_forcing, um_forcing, vm_forcing, &    ! intent(in)
@@ -593,6 +593,7 @@ contains
 
     real( kind = core_rknd ), intent(in) ::  &
       fcor,  &          ! Coriolis forcing             [s^-1]
+      fcory, &          ! Nontraditional Coriolis parameter [s^-1]
       sfc_elevation     ! Elevation of ground level    [m AMSL]
 
     integer, intent(in) :: &
@@ -834,6 +835,7 @@ contains
 
     real( kind = core_rknd ), dimension(1) ::  &
       fcor_col,  &          ! Coriolis forcing             [s^-1]
+      fcory_col, &          ! Nontraditional Coriolis parameter [s^-1] 
       sfc_elevation_col     ! Elevation of ground level    [m AMSL]
 
     ! Input Variables
@@ -1028,6 +1030,7 @@ contains
     !------------------------- Begin Code -------------------------
 
     fcor_col(1) = fcor
+    fcory_col(1) = fcory
     sfc_elevation_col(1) = sfc_elevation
     
     thlm_forcing_col(1,:) = thlm_forcing
@@ -1262,7 +1265,7 @@ contains
 #endif
 
     call advance_clubb_core( gr, gr%nz, 1,              &
-      l_implemented, dt, fcor_col, sfc_elevation_col,            &            ! intent(in)
+      l_implemented, dt, fcor_col, fcory_col, sfc_elevation_col, &            ! intent(in)
       hydromet_dim, &                                                         ! intent(in)
       sclr_dim, sclr_tol, edsclr_dim, sclr_idx, &                         ! intent(in)
       thlm_forcing_col, rtm_forcing_col, um_forcing_col, vm_forcing_col, &    ! intent(in)
@@ -1422,7 +1425,7 @@ contains
   end subroutine advance_clubb_core_api_single_col
   
   subroutine advance_clubb_core_api_multi_col( gr, nz, ngrdcol, &
-    l_implemented, dt, fcor, sfc_elevation,            &    ! intent(in)
+    l_implemented, dt, fcor, fcory, sfc_elevation, &        ! intent(in)
     hydromet_dim, &                                         ! intent(in)
     sclr_dim, sclr_tol, edsclr_dim, sclr_idx, &         ! intent(in)
     thlm_forcing, rtm_forcing, um_forcing, vm_forcing, &    ! intent(in)
@@ -1505,6 +1508,7 @@ contains
       
     real( kind = core_rknd ), intent(in), dimension(ngrdcol) ::  &
       fcor, &           ! Coriolis forcing             [s^-1]
+      fcory, &          ! Nontraditional Coriolis parameter [s^-1]
       sfc_elevation     ! Elevation of ground level    [m AMSL]
 
     integer, intent(in) :: &
@@ -1833,7 +1837,7 @@ contains
 #endif
 
     call advance_clubb_core( gr, nz, ngrdcol, &
-      l_implemented, dt, fcor, sfc_elevation,            &    ! intent(in)
+      l_implemented, dt, fcor, fcory, sfc_elevation, &        ! intent(in)
       hydromet_dim, &                                         ! intent(in)
       sclr_dim, sclr_tol, edsclr_dim, sclr_idx, &             ! intent(in)
       thlm_forcing, rtm_forcing, um_forcing, vm_forcing, &    ! intent(in)
