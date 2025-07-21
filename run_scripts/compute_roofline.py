@@ -7,6 +7,17 @@ import dash
 from dash import Dash, dcc, html
 import plotly.graph_objs as go
 
+graph_config = {
+    'toImageButtonOptions': {
+        'format': 'png',
+        'filename': 'custom_image',
+        'height': 400,
+        'width': 800,
+        'scale': 3.125  # 300 DPI equivalent
+    }
+}
+
+min_ai, max_ai = 1e-3, 5e2
 
 # Verify command-line arguments
 if len(sys.argv) != 2:
@@ -233,7 +244,7 @@ app.layout = html.Div([
             dcc.Graph(
                 id='roofline-graph',
                 style={'width': '100%', 'height': '100%'},
-                config={'responsive': True}
+                config=graph_config
             ),
             style={
                 'height': '35vh',
@@ -251,7 +262,7 @@ app.layout = html.Div([
             dcc.Graph(
                 id='dp-ai-histogram',
                 style={'width': '100%', 'height': '100%'},
-                config={'responsive': True}
+                config=graph_config
             ),
             html.Div([
                 html.Label('Histogram x_bin_num:', style={'padding-right': '10px'}),
@@ -279,7 +290,7 @@ app.layout = html.Div([
             dcc.Graph(
                 id='efficiency-plot',
                 style={'width': '100%', 'flex': '1 1 auto'},
-                config={'responsive': True}
+                config=graph_config
             ),
             html.Div([
                 html.Label('Heatmap x_bin_num:', style={'padding-right': '10px'}),
@@ -323,7 +334,6 @@ app.layout = html.Div([
 def make_precision_traces(df, prec, peak_perf, mem_bw, color):
 
     knee_ai = peak_perf / mem_bw
-    min_ai, max_ai = 1e-6, 1e3
 
     mem_x  = [min_ai, knee_ai]
     mem_y  = [1e-12 * min_ai * mem_bw, 1e-12 * peak_perf]
@@ -336,8 +346,7 @@ def make_precision_traces(df, prec, peak_perf, mem_bw, color):
     kernel_names = df.loc[mask, 'Kernel Name']
     kernel_times = df.loc[mask, 'Average Duration (s)']
 
-    avg_ai = ai.mean()
-    avg_perf = perf.mean()
+    
 
     total_time = kernel_times.sum()
     weighted_avg_ai = (ai * kernel_times).sum() / total_time
@@ -345,38 +354,38 @@ def make_precision_traces(df, prec, peak_perf, mem_bw, color):
 
     traces = [
         go.Scatter(
-            x=ai, y=perf, mode='markers', name=f'{prec} Kernels',
-            marker=dict(color=color, symbol='circle', size=8),
+            x=ai, y=perf, mode='markers', name=f'CLUBB Kernels',
+            marker=dict(color="red", symbol='circle', size=6),
             text=kernel_names,
             hovertemplate=(
                 "Kernel: %{text}<br>AI: %{x:.3f} FLOPs/Byte"
                 "<br>Performance: %{y:.3e} FLOPs/s<extra></extra>"
             )
         ),
+        # go.Scatter(
+        #     x=[ai.median()], y=[perf.median()], mode='markers', name=f'Median',
+        #     marker=dict(color='green', symbol='star', size=15),
+        #     hovertemplate=(
+        #         "{prec} Average<br>AI: %{x:.3f} FLOPs/Byte"
+        #         "<br>Performance: %{y:.3e} FLOPs/s<extra></extra>"
+        #     )
+        # ),
         go.Scatter(
-            x=[avg_ai], y=[avg_perf], mode='markers', name=f'{prec} Average',
-            marker=dict(color='green', symbol='star', size=15),
-            hovertemplate=(
-                "{prec} Average<br>AI: %{x:.3f} FLOPs/Byte"
-                "<br>Performance: %{y:.3e} FLOPs/s<extra></extra>"
-            )
-        ),
-        go.Scatter(
-            x=[weighted_avg_ai], y=[weighted_avg_perf], mode='markers', name=f'{prec} Average (Runtime-Weighted)',
-            marker=dict(color='red', symbol='star', size=15),
+            x=[weighted_avg_ai], y=[weighted_avg_perf], mode='markers', name=f'Average (Runtime-Weighted)',
+            marker=dict(color='green', symbol='star', size=18),
             hovertemplate=(
                 "{prec} Average (Weighted by Runtime)<br>AI: %{x:.3f} FLOPs/Byte"
                 "<br>Performance: %{y:.3e} FLOPs/s<extra></extra>"
             )
         ),
         go.Scatter(
-            x=mem_x, y=mem_y, mode='lines', name=f"{prec} Memory ({mem_bw * 1e-9:.0f} GB/s)",
-            line=dict(color=color, width=2, dash='dash'),
+            x=mem_x, y=mem_y, mode='lines', name=f"Memory Bound ({mem_bw * 1e-9:.0f} GB/s)",
+            line=dict(color="darkblue", width=2, dash='dash'),
             hovertemplate=f"{prec} memory-bound: {mem_bw:.3e} * AI<extra></extra>"
         ),
         go.Scatter(
-            x=comp_x, y=comp_y, mode='lines', name=f"{prec} Compute (Peak {peak_perf * 1e-12:.2f} TFLOP/s)",
-            line=dict(color=color, width=2, dash='solid'),
+            x=comp_x, y=comp_y, mode='lines', name=f"Compute Bound ({peak_perf * 1e-12:.2f} TFLOP/s)",
+            line=dict(color="darkblue", width=2, dash='solid'),
             hovertemplate=f"{prec} compute-bound: {peak_perf:.3e} FLOPs/s<extra></extra>"
         )
     ]
@@ -394,7 +403,7 @@ def update_roofline(selected_precisions):
 
     # DP is default if no selection
     if 'DP' in selected_precisions or len(selected_precisions) == 0:
-        traces += make_precision_traces( df, 'DP', peak_dp, peak_mem_bandwidth, 'blue' )
+        traces += make_precision_traces( df, 'DP', peak_dp, peak_mem_bandwidth, 'red' )
 
     if 'SP' in selected_precisions:
         traces += make_precision_traces( df, 'SP', peak_sp, peak_mem_bandwidth, 'orange' )
@@ -406,10 +415,34 @@ def update_roofline(selected_precisions):
     return {
         'data': traces,
         'layout': go.Layout(
-            xaxis=dict(title="Arithmetic Intensity (FLOPs/Byte)", type="log"),
-            yaxis=dict(title="Achieved Performance (FLOPs/s)", type="log"),
-            legend=dict(x=0.01, y=0.99),
-            margin=dict(l=60, r=20, t=40, b=60),
+            title=dict(
+                text="CLUBB Roofline Diagram on Nvidia A100 GPU",
+                x=0.5,
+                xanchor='center',
+                font=dict(size=24)  # Title font size
+            ),
+            xaxis=dict(
+                title=dict(
+                    text="Arithmetic Intensity (FLOPs/Byte)",
+                    font=dict(size=18)  # X-axis title font
+                ),
+                type="log",
+                tickfont=dict(size=14)  # X-axis tick labels
+            ),
+            yaxis=dict(
+                title=dict(
+                    text="Achieved Performance (FLOPs/s)",
+                    font=dict(size=18)  # Y-axis title font
+                ),
+                type="log",
+                tickfont=dict(size=14)  # Y-axis tick labels
+            ),
+            legend=dict(
+                x=0.01,
+                y=0.99,
+                font=dict(size=14)  # Legend font size
+            ),
+            margin=dict(l=60, r=20, t=60, b=60),
             hovermode="closest"
         )
     }
@@ -462,14 +495,14 @@ def update_histogram(x_bin_num,selected_precisions):
                 x=bin_centers,
                 y=ai_hist,
                 width=np.diff(bin_edges),
-                marker=dict(color='blue'),
+                marker=dict(color='red'),
                 opacity=0.75,
                 name="DP AI Histogram"
             )
         ],
         'layout': go.Layout(
             title="Distribution of Arithmetic Intensity (DP Kernels)",
-            xaxis=dict(title="Arithmetic Intensity (FLOPs/Byte)", type='log', range=[-6,3]),
+            xaxis=dict(title="Arithmetic Intensity (FLOPs/Byte)", type='log', range=[np.log10(min_ai),np.log10(max_ai)]),
             yaxis=dict(title="Kernel Count"),
             margin=dict(l=60, r=20, t=40, b=60)
         )
@@ -582,11 +615,12 @@ def update_efficiency_plot(x_bin_num, y_bin_num, selected_precisions):
                 x=x_bins,
                 y=y_bins,
                 colorscale=[
-                    [0.0, 'rgba(255,255,255,0)'],
-                    [1e-9, 'rgb(255,245,240)'],
-                    [1.0, 'rgb(150,0,13)']
+                    [0.0, 'rgba(255,255,255,0)'],         # Transparent white for zero
+                    [1e-9, 'rgb(230,245,255)'],           # Very light blue
+                    [1.0, 'rgb(0,0,139)']                 # Dark blue (standard "DarkBlue")
                 ],
                 colorbar=dict(
+                    title="Binned Runtime<br>Contribution",
                     x=0.95,
                     xanchor='right',
                     y=0.5,
@@ -605,18 +639,41 @@ def update_efficiency_plot(x_bin_num, y_bin_num, selected_precisions):
                 y=efficiency,
                 mode='markers',
                 name='Efficiency',
-                marker=dict(color='green', size=8),
+                marker=dict(color='red', size=8),
                 text=kernel_names,
                 hovertemplate=("Kernel: %{text}<br>AI: %{x:.3f} FLOPs/Byte"
                                "<br>Efficiency: %{y:.2f}<extra></extra>")
             )
         ],
         'layout': go.Layout(
-            title="DP Kernel Efficiency Relative to Roofline",
-            xaxis=dict(title="Arithmetic Intensity (FLOPs/Byte)", type="log", range=[-6,3]),
-            yaxis=dict(title="Efficiency (Achieved / Theoretical)", range=[0, 1.05]),
-            margin=dict(l=60, r=20, t=40, b=60),
-            hovermode="closest"
+            title=dict(
+                text="CLUBB Roofline Kernel Efficiency on Nvidia A100",
+                x=0.5,
+                xanchor='center',
+                font=dict(size=24)  # Title font size
+            ),
+            xaxis=dict(
+                title=dict(
+                    text="Arithmetic Intensity (FLOPs/Byte)",
+                    font=dict(size=18)
+                ),
+                tickfont=dict(size=14),
+                type="log",
+                range=[np.log10(min_ai),np.log10(max_ai)]
+            ),
+            yaxis=dict(
+                title=dict(
+                    text="Achieved Performance / Theoretical Max",
+                    font=dict(size=18)
+                ),
+                tickfont=dict(size=14),
+                range=[0, 1.05]
+            ),
+            margin=dict(l=60, r=20, t=60, b=60),
+            hovermode="closest",
+            legend=dict(
+                font=dict(size=14)
+            )
         )
     }
     return figure
