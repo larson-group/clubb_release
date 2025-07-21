@@ -376,8 +376,9 @@ module clubb_driver
     real( kind = core_rknd ), dimension(ngrdcol) :: &
       p_sfc,  & ! surface pressure        [Pa]
       T_sfc,  &
-      fcor      ! Coriolis parameter            [s^-1]
-      
+      fcor,   & ! Coriolis parameter            [s^-1]
+      fcory     ! Nontraditional Coriolis parameter [s^-1]
+
     real( kind = core_rknd ) :: &
       T0,              & ! Reference Temperature         [K]
       ts_nudge           ! Timescale for u/v nudging     [s]
@@ -865,6 +866,10 @@ module clubb_driver
                                       ! advance_xm_wpxp.  Otherwise, <u'w'> and <v'w'> are still
                                       ! approximated by eddy diffusivity when <u> and <v> are
                                       ! advanced in subroutine advance_windm_edsclrm.
+      l_nontraditional_Coriolis,    & ! Flag to implement the nontraditional Coriolis terms in the
+                                      ! prognostic equations of <w'w'>, <u'w'>, and <u'u'>.
+      l_traditional_Coriolis,       & ! Flag to implement the traditional Coriolis terms in the
+                                      ! prognostic equations of <v'w'> and <u'w'>.
       l_min_wp2_from_corr_wx,       & ! Flag to base the threshold minimum value of wp2 on keeping
                                       ! the overall correlation of w and x (w and rt, as well as w
                                       ! and theta-l) within the limits of -max_mag_correlation_flux
@@ -988,7 +993,8 @@ module clubb_driver
       sfc_elevation_nl, &
       p_sfc_nl, &
       T_sfc_nl, &
-      fcor_nl
+      fcor_nl, &
+      fcory_nl
 
     real( kind = core_rknd ), dimension(ngrdcol) :: &
       sfc_elevation, &
@@ -1003,7 +1009,7 @@ module clubb_driver
       day, month, year, lat_vals, lon_vals, sfc_elevation_nl, &
       time_initial, time_final, &
       dt_main, dt_rad, &
-      sfctype, T_sfc_nl, p_sfc_nl, sens_ht, latent_ht, fcor_nl, T0, ts_nudge, &
+      sfctype, T_sfc_nl, p_sfc_nl, sens_ht, latent_ht, fcor_nl, fcory_nl, T0, ts_nudge, &
       forcings_file_path, l_t_dependent, l_input_xpwp_sfc, &
       l_ignore_forcings, l_modify_ic_with_cubic_int, &
       l_modify_bc_for_cnvg_test, &
@@ -1031,7 +1037,8 @@ module clubb_driver
       l_partial_upwind_wp3, l_godunov_upwind_wpxp_ta, l_godunov_upwind_xpyp_ta, &
       l_use_cloud_cover, l_rcm_supersat_adj, &
       l_damp_wp3_Skw_squared, l_min_wp2_from_corr_wx, l_min_xp2_from_corr_wx, &
-      l_C2_cloud_frac, l_predict_upwp_vpwp, l_diag_Lscale_from_tau, &
+      l_C2_cloud_frac, l_predict_upwp_vpwp, l_nontraditional_Coriolis, l_traditional_Coriolis, &
+      l_diag_Lscale_from_tau, &
       l_stability_correct_tau_zm, l_damp_wp2_using_em, l_use_C7_Richardson, &
       l_use_precip_frac, l_do_expldiff_rtm_thlm, l_use_C11_Richardson, &
       l_use_shear_Richardson, l_prescribed_avg_deltaz, l_diffuse_rtm_and_thlm, &
@@ -1087,6 +1094,7 @@ module clubb_driver
     sens_ht   = 0._core_rknd
     latent_ht = 0._core_rknd
     fcor_nl   = 1.e-4_core_rknd
+    fcory_nl  = 1.e-4_core_rknd
     T0        = 300._core_rknd
     ts_nudge  = 86400._core_rknd
 
@@ -1181,6 +1189,8 @@ module clubb_driver
                                              grid_adapt_in_time_method, & ! Intent(out)
                                              l_use_precip_frac, & ! Intent(out)
                                              l_predict_upwp_vpwp, & ! Intent(out)
+                                             l_nontraditional_Coriolis, & ! Intent(out)
+                                             l_traditional_Coriolis, & ! Intent(out)
                                              l_min_wp2_from_corr_wx, & ! Intent(out)
                                              l_min_xp2_from_corr_wx, & ! Intent(out)
                                              l_C2_cloud_frac, & ! Intent(out)
@@ -1260,6 +1270,7 @@ module clubb_driver
     p_sfc = p_sfc_nl
     T_sfc = T_sfc_nl
     fcor = fcor_nl
+    fcory = fcory_nl
 
     sclr_idx%iisclr_thl = iisclr_thl
     sclr_idx%iisclr_rt  = iisclr_rt
@@ -1461,6 +1472,7 @@ module clubb_driver
       call write_text( "sens_ht = ", sens_ht, l_write_to_file, iunit )
       call write_text( "latent_ht = ", latent_ht, l_write_to_file, iunit )
       call write_text( "fcor = ", fcor, l_write_to_file, iunit )
+      call write_text( "fcory = ", fcory, l_write_to_file, iunit )
       call write_text( "T0 = ", T0, l_write_to_file, iunit )
       call write_text( "ts_nudge = ", ts_nudge, l_write_to_file, iunit )
 
@@ -1680,6 +1692,8 @@ module clubb_driver
                                                  grid_adapt_in_time_method, & ! Intent(in)
                                                  l_use_precip_frac, & ! Intent(in)
                                                  l_predict_upwp_vpwp, & ! Intent(in)
+                                                 l_nontraditional_Coriolis, & ! Intent(in)
+                                                 l_traditional_Coriolis, & ! Intent(in)
                                                  l_min_wp2_from_corr_wx, & ! Intent(in)
                                                  l_min_xp2_from_corr_wx, & ! Intent(in)
                                                  l_C2_cloud_frac, & ! Intent(in)
@@ -3081,7 +3095,7 @@ module clubb_driver
         ! Call the clubb core api for all columns
         call advance_clubb_core_api( &
                 gr, gr%nzm, gr%nzt, ngrdcol, &
-                l_implemented, dt_main, fcor, sfc_elevation, &       ! Intent(in)
+                l_implemented, dt_main, fcor, fcory, sfc_elevation, &! Intent(in)
                 hydromet_dim, &                                      ! intent(in)
                 sclr_dim, sclr_tol, edsclr_dim, sclr_idx, &          ! intent(in)
                 thlm_forcing, rtm_forcing, um_forcing, vm_forcing, & ! Intent(in)
@@ -3129,7 +3143,7 @@ module clubb_driver
         ! (ascending vs. descending grid) is being performed.
         call clubb_generalized_grid_testing &
             ( gr, gr_desc, gr%nzm, gr%nzt, ngrdcol, &              ! Intent(in)
-              l_implemented, dt_main, fcor, sfc_elevation, &       ! Intent(in)
+              l_implemented, dt_main, fcor, fcory, sfc_elevation, &! Intent(in)
               hydromet_dim, &                                      ! intent(in)
               sclr_dim, sclr_tol, edsclr_dim, sclr_idx, &          ! intent(in)
               thlm_forcing, rtm_forcing, um_forcing, vm_forcing, & ! Intent(in)

@@ -177,7 +177,7 @@ module generalized_grid_test
   !=============================================================================
   subroutine clubb_generalized_grid_testing &
              ( gr, gr_desc, nzm, nzt, ngrdcol, &                          ! Intent(in)
-               l_implemented, dt, fcor, sfc_elevation, &                  ! Intent(in)
+               l_implemented, dt, fcor, fcory, sfc_elevation, &           ! Intent(in)
                hydromet_dim, &                                            ! intent(in)
                sclr_dim, sclr_tol, edsclr_dim, sclr_idx, &                ! intent(in)
                thlm_forcing, rtm_forcing, um_forcing, vm_forcing, &       ! Intent(in)
@@ -283,6 +283,7 @@ module generalized_grid_test
       
     real( kind = core_rknd ), intent(in), dimension(ngrdcol) ::  &
       fcor, &           ! Coriolis forcing             [s^-1]
+      fcory, &          ! Nontraditional Coriolis parameter [s^-1]
       sfc_elevation     ! Elevation of ground level    [m AMSL]
 
     integer, intent(in) :: &
@@ -982,7 +983,7 @@ module generalized_grid_test
       ! Call advance_clubb_core_api for the ascending grid direction
       call advance_clubb_core_api( &
               gr, nzm, nzt, ngrdcol, &                             ! Intent(in)
-              l_implemented, dt, fcor, sfc_elevation, &            ! Intent(in)
+              l_implemented, dt, fcor, fcory, sfc_elevation, &     ! Intent(in)
               hydromet_dim, &                                      ! intent(in)
               sclr_dim, sclr_tol, edsclr_dim, sclr_idx, &          ! intent(in)
               thlm_forcing, rtm_forcing, um_forcing, vm_forcing, & ! Intent(in)
@@ -1054,7 +1055,7 @@ module generalized_grid_test
       ! in this call.
       call advance_clubb_core_api( &
               gr_desc, nzm, nzt, ngrdcol, &                                         ! Intent(in)
-              l_implemented, dt, fcor, sfc_elevation, &                             ! Intent(in)
+              l_implemented, dt, fcor, fcory, sfc_elevation, &                      ! Intent(in)
               hydromet_dim, &                                                       ! intent(in)
               sclr_dim, sclr_tol, edsclr_dim, sclr_idx, &                           ! intent(in)
               thlm_forcing_flip, rtm_forcing_flip, um_forcing_flip, vm_forcing_flip, & ! Intent(in)

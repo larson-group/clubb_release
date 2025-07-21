@@ -176,6 +176,10 @@ module model_flags
                                       ! advance_xm_wpxp.  Otherwise, <u'w'> and <v'w'> are still
                                       ! approximated by eddy diffusivity when <u> and <v> are
                                       ! advanced in subroutine advance_windm_edsclrm.
+      l_nontraditional_Coriolis,    & ! Flag to implement the nontraditional Coriolis terms in the
+                                      ! prognostic equations of <w'w'>, <u'w'>, and <u'u'>.
+      l_traditional_Coriolis,       & ! Flag to implement the traditional Coriolis terms in the
+                                      ! prognostic equations of <v'w'> and <u'w'>.
       l_min_wp2_from_corr_wx,       & ! Flag to base the threshold minimum value of wp2 on keeping
                                       ! the overall correlation of w and x (w and rt, as well as w
                                       ! and theta-l) within the limits of -max_mag_correlation_flux
@@ -302,6 +306,8 @@ module model_flags
                                                  grid_adapt_in_time_method, &
                                                  l_use_precip_frac, &
                                                  l_predict_upwp_vpwp, &
+                                                 l_nontraditional_Coriolis, &
+                                                 l_traditional_Coriolis, &
                                                  l_min_wp2_from_corr_wx, &
                                                  l_min_xp2_from_corr_wx, &
                                                  l_C2_cloud_frac, &
@@ -394,6 +400,10 @@ module model_flags
                                       ! advance_xm_wpxp.  Otherwise, <u'w'> and <v'w'> are still
                                       ! approximated by eddy diffusivity when <u> and <v> are
                                       ! advanced in subroutine advance_windm_edsclrm.
+      l_nontraditional_Coriolis,    & ! Flag to implement the nontraditional Coriolis terms in the
+                                      ! prognostic equations of <w'w'>, <u'w'>, and <u'u'>.
+      l_traditional_Coriolis,       & ! Flag to implement the traditional Coriolis terms in the
+                                      ! prognostic equations of <v'w'> and <u'w'>.
       l_min_wp2_from_corr_wx,       & ! Flag to base the threshold minimum value of wp2 on keeping
                                       ! the overall correlation of w and x (w and rt, as well as w
                                       ! and theta-l) within the limits of -max_mag_correlation_flux
@@ -520,6 +530,8 @@ module model_flags
     grid_adapt_in_time_method = no_grid_adaptation
     l_use_precip_frac = .true.
     l_predict_upwp_vpwp = .true.
+    l_nontraditional_Coriolis = .false.
+    l_traditional_Coriolis = .false.
     l_min_wp2_from_corr_wx = .false.
     l_min_xp2_from_corr_wx = .true.
     l_C2_cloud_frac = .false.
@@ -593,6 +605,8 @@ module model_flags
                                                      grid_adapt_in_time_method, &
                                                      l_use_precip_frac, &
                                                      l_predict_upwp_vpwp, &
+                                                     l_nontraditional_Coriolis, &
+                                                     l_traditional_Coriolis, &
                                                      l_min_wp2_from_corr_wx, &
                                                      l_min_xp2_from_corr_wx, &
                                                      l_C2_cloud_frac, &
@@ -686,6 +700,10 @@ module model_flags
                                       ! advance_xm_wpxp.  Otherwise, <u'w'> and <v'w'> are still
                                       ! approximated by eddy diffusivity when <u> and <v> are
                                       ! advanced in subroutine advance_windm_edsclrm.
+      l_nontraditional_Coriolis,    & ! Flag to implement the nontraditional Coriolis terms in the
+                                      ! prognostic equations of <w'w'>, <u'w'>, and <u'u'>.
+      l_traditional_Coriolis,       & ! Flag to implement the traditional Coriolis terms in the
+                                      ! prognostic equations of <v'w'> and <u'w'>.
       l_min_wp2_from_corr_wx,       & ! Flag to base the threshold minimum value of wp2 on keeping
                                       ! the overall correlation of w and x (w and rt, as well as w
                                       ! and theta-l) within the limits of -max_mag_correlation_flux
@@ -818,6 +836,8 @@ module model_flags
     clubb_config_flags%grid_adapt_in_time_method = grid_adapt_in_time_method
     clubb_config_flags%l_use_precip_frac = l_use_precip_frac
     clubb_config_flags%l_predict_upwp_vpwp = l_predict_upwp_vpwp
+    clubb_config_flags%l_nontraditional_Coriolis = l_nontraditional_Coriolis
+    clubb_config_flags%l_traditional_Coriolis = l_traditional_Coriolis
     clubb_config_flags%l_min_wp2_from_corr_wx = l_min_wp2_from_corr_wx
     clubb_config_flags%l_min_xp2_from_corr_wx = l_min_xp2_from_corr_wx
     clubb_config_flags%l_C2_cloud_frac = l_C2_cloud_frac
@@ -908,6 +928,8 @@ module model_flags
     write(iunit,*) "grid_adapt_in_time_method = ", clubb_config_flags%grid_adapt_in_time_method
     write(iunit,*) "l_use_precip_frac = ", clubb_config_flags%l_use_precip_frac
     write(iunit,*) "l_predict_upwp_vpwp = ", clubb_config_flags%l_predict_upwp_vpwp
+    write(iunit,*) "l_nontraditional_Coriolis = ", clubb_config_flags%l_nontraditional_Coriolis
+    write(iunit,*) "l_traditional_Coriolis = ", clubb_config_flags%l_traditional_Coriolis
     write(iunit,*) "l_min_wp2_from_corr_wx = ", clubb_config_flags%l_min_wp2_from_corr_wx
     write(iunit,*) "l_min_xp2_from_corr_wx = ", clubb_config_flags%l_min_xp2_from_corr_wx
     write(iunit,*) "l_C2_cloud_frac = ", clubb_config_flags%l_C2_cloud_frac

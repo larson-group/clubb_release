@@ -62,13 +62,15 @@ module advance_xm_wpxp_module
                               sclrpthvp, sclrm_forcing, sclrp2, Cx_fnc_Richardson, &
                               pdf_implicit_coefs_terms, &
                               um_forcing, vm_forcing, ug, vg, wpthvp, &
-                              fcor, um_ref, vm_ref, up2, vp2, &
+                              fcor, fcory, um_ref, vm_ref, up2, vp2, &
                               uprcp, vprcp, rc_coef_zm, &
                               clubb_params, nu_vert_res_dep, &
                               iiPDF_type, &
                               penta_solve_method, &
                               tridiag_solve_method, &
                               l_predict_upwp_vpwp, &
+                              l_nontraditional_Coriolis, &
+                              l_traditional_Coriolis, &
                               l_diffuse_rtm_and_thlm, &
                               l_stability_correct_Kh_N2_zm, &
                               l_godunov_upwind_wpxp_ta, &
@@ -276,8 +278,9 @@ module advance_xm_wpxp_module
       vprcp,        & ! < v' r_c' >                               [(m kg)/(s kg)]
       rc_coef_zm      ! Coefficient on X'r_c' in X'th_v' equation [K/(kg/kg)]
 
-     real( kind = core_rknd ), dimension(ngrdcol), intent(in) :: &
-      fcor          ! Coriolis parameter                           [s^-1]
+    real( kind = core_rknd ), dimension(ngrdcol), intent(in) ::  &
+      fcor,       & ! Coriolis parameter                           [s^-1]
+      fcory         ! Nontraditional Coriolis parameter            [s^-1]
 
     real( kind = core_rknd ), dimension(ngrdcol,nzt), intent(in) :: &
       um_ref, & ! Reference u wind component for nudging       [m/s]
@@ -308,6 +311,10 @@ module advance_xm_wpxp_module
                                       ! advance_xm_wpxp.  Otherwise, <u'w'> and <v'w'> are still
                                       ! approximated by eddy diffusivity when <u> and <v> are
                                       ! advanced in subroutine advance_windm_edsclrm.
+      l_nontraditional_Coriolis,    & ! Flag to implement the nontraditional Coriolis terms in the
+                                      ! prognostic equations of <w'w'>, <u'w'>, and <u'u'>.
+      l_traditional_Coriolis,       & ! Flag to implement the traditional Coriolis terms in the
+                                      ! prognostic equations of <v'w'> and <u'w'>.
       l_diffuse_rtm_and_thlm,       & ! This flag determines whether or not we want CLUBB to do
                                       ! diffusion on rtm and thlm
       l_stability_correct_Kh_N2_zm, & ! This flag determines whether or not we want CLUBB to apply
@@ -874,7 +881,7 @@ module advance_xm_wpxp_module
                                           thv_ds_zm, rtp2, thlp2, l_implemented,           & ! In
                                           sclrpthvp, sclrm_forcing, sclrp2, um_forcing,    & ! In
                                           vm_forcing, ug, vg, uprcp, vprcp, rc_coef_zm, fcor, & ! In
-                                          up2, vp2,                                        & ! In
+                                          fcory, up2, vp2,                                 & ! In
                                           low_lev_effect, high_lev_effect,                 & ! In
                                           C6rt_Skw_fnc, C6thl_Skw_fnc, C7_Skw_fnc,         & ! In
                                           lhs_diff_zm, lhs_diff_zt, lhs_ma_zt, lhs_ma_zm,  & ! In
@@ -887,6 +894,8 @@ module advance_xm_wpxp_module
                                           penta_solve_method,                              & ! In
                                           tridiag_solve_method,                            & ! In
                                           l_predict_upwp_vpwp,                             & ! In
+                                          l_nontraditional_Coriolis,                       & ! In
+                                          l_traditional_Coriolis,                          & ! In
                                           l_diffuse_rtm_and_thlm,                          & ! In
                                           l_upwind_xm_ma,                                  & ! In
                                           l_tke_aniso,                                     & ! In
@@ -2635,7 +2644,7 @@ module advance_xm_wpxp_module
                                             thv_ds_zm, rtp2, thlp2, l_implemented, &
                                             sclrpthvp, sclrm_forcing, sclrp2, um_forcing, &
                                             vm_forcing, ug, vg, uprcp, vprcp, rc_coef_zm, fcor, &
-                                            up2, vp2, &
+                                            fcory, up2, vp2, &
                                             low_lev_effect, high_lev_effect, &
                                             C6rt_Skw_fnc, C6thl_Skw_fnc, C7_Skw_fnc, &
                                             lhs_diff_zm, lhs_diff_zt, lhs_ma_zt, lhs_ma_zm, &
@@ -2648,6 +2657,8 @@ module advance_xm_wpxp_module
                                             penta_solve_method, &
                                             tridiag_solve_method, &
                                             l_predict_upwp_vpwp, &
+                                            l_nontraditional_Coriolis, &
+                                            l_traditional_Coriolis, &
                                             l_diffuse_rtm_and_thlm, &
                                             l_upwind_xm_ma, &
                                             l_tke_aniso, &
@@ -2772,8 +2783,9 @@ module advance_xm_wpxp_module
       vprcp,       & ! < v' r_c' >                               [(m kg)/(s kg)]
       rc_coef_zm     ! Coefficient on X'r_c' in X'th_v' equation [K/(kg/kg)]
 
-    real( kind = core_rknd ), dimension(ngrdcol), intent(in) :: &
-      fcor          ! Coriolis parameter                           [s^-1]
+    real( kind = core_rknd ), dimension(ngrdcol), intent(in) ::  &
+      fcor,       & ! Coriolis parameter                           [s^-1]
+      fcory         ! Nontraditional Coriolis parameter            [s^-1]
 
     real( kind = core_rknd ), dimension(ngrdcol,nzm), intent(in) :: &
       up2,    & ! Variance of the u wind component             [m^2/s^2]
@@ -2843,6 +2855,10 @@ module advance_xm_wpxp_module
                                    ! approximated by eddy diffusivity when <u>
                                    ! and <v> are advanced in subroutine
                                    ! advance_windm_edsclrm.
+      l_nontraditional_Coriolis, & ! Flag to implement the nontraditional Coriolis terms in the
+                                   ! prognostic equations of <w'w'>, <u'w'>, and <u'u'>.
+      l_traditional_Coriolis,    & ! Flag to implement the traditional Coriolis terms in the
+                                   ! prognostic equations of <v'w'> and <u'w'>.
       l_diffuse_rtm_and_thlm,    & ! This flag determines whether or not we want
                                    ! CLUBB to do diffusion on rtm and thlm
       l_upwind_xm_ma,            & ! This flag determines whether we want to use
@@ -3131,6 +3147,35 @@ module advance_xm_wpxp_module
         end do
       end do
       !$acc end parallel loop
+
+      ! Add optional traditional Coriolis terms for <u'w'> and <v'w'>
+      ! Hing Ong, 19 July 2025
+      if ( l_traditional_Coriolis ) then
+
+        !$acc parallel loop gang vector collapse(2) default(present)
+        do k = 1, nzm
+          do i = 1, ngrdcol
+            upwp_forcing(i,k) = upwp_forcing(i,k) + fcor(i) * vpwp(i,k)
+            vpwp_forcing(i,k) = vpwp_forcing(i,k) - fcor(i) * upwp(i,k)
+          end do
+        end do
+        !$acc end parallel loop
+
+      end if ! l_traditional_Coriolils
+
+      ! Add optional nontraditional Coriolis term for <u'w'>
+      ! Hing Ong, 19 July 2025
+      if ( l_nontraditional_Coriolis ) then
+
+        !$acc parallel loop gang vector collapse(2) default(present)
+        do k = 1, nzm
+          do i = 1, ngrdcol
+            upwp_forcing(i,k) = upwp_forcing(i,k) + fcory(i) * ( up2(i,k) - wp2(i,k) )
+          end do
+        end do
+        !$acc end parallel loop
+
+      end if ! l_nontraditional_Coriolils
 
       if ( l_perturbed_wind ) then
 

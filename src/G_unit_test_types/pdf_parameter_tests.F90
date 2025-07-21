@@ -452,6 +452,10 @@ module pdf_parameter_tests
                                       ! advance_xm_wpxp.  Otherwise, <u'w'> and <v'w'> are still
                                       ! approximated by eddy diffusivity when <u> and <v> are
                                       ! advanced in subroutine advance_windm_edsclrm.
+      l_nontraditional_Coriolis,    & ! Flag to implement the nontraditional Coriolis terms in the
+                                      ! prognostic equations of <w'w'>, <u'w'>, and <u'u'>.
+      l_traditional_Coriolis,       & ! Flag to implement the traditional Coriolis terms in the
+                                      ! prognostic equations of <v'w'> and <u'w'>.
       l_min_wp2_from_corr_wx,       & ! Flag to base the threshold minimum value of wp2 on keeping
                                       ! the overall correlation of w and x (w and rt, as well as w
                                       ! and theta-l) within the limits of -max_mag_correlation_flux
@@ -594,6 +598,8 @@ module pdf_parameter_tests
                                              grid_adapt_in_time_method, &
                                              l_use_precip_frac, &
                                              l_predict_upwp_vpwp, &
+                                             l_nontraditional_Coriolis, &
+                                             l_traditional_Coriolis, &
                                              l_min_wp2_from_corr_wx, &
                                              l_min_xp2_from_corr_wx, &
                                              l_C2_cloud_frac, &

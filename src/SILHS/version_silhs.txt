@@ -217,3 +217,72 @@ Date:   Mon May 19 23:11:42 2025 -0500
     For the long-duration clubb_generalized_vertical_grid_test, I am
     shortening the duration of the MC3E runs to half their normal number
     of timesteps in order to cut down on the time it takes to do the run.
+
+commit 73d60f64a17ad0db20fc8ff6d24543bf8ea66383
+Author: huebleruwm <huebler@uwm.edu>
+Date:   Wed Jun 5 00:12:59 2024 -0600
+
+    Making the only change required to make clubb run with openacc in cam.
+
+commit a67e22194ccac507c0dc1b684db1336cf93054fe
+Author: huebler <huebler@uwm.edu>
+Date:   Mon Jun 3 17:09:24 2024 -0500
+
+    Making multicol diffness script rely on the largest difference detected, rather the the sum/total of differences. This is essentially to relax the cpu vs gpu diffness test because mpace_b is noisey and often causes the test to fail for innocent bit changing commits. Looking at the largest difference does have the advantage of the check being less sensitive to case differences, such as number of timesteps, vertical levels, number of columns, etc.
+
+commit ed26ee90739d5041950bc843717fa39c922934ed
+Author: huebler <huebler@uwm.edu>
+Date:   Mon Jun 3 16:47:32 2024 -0500
+
+    Surrounding print statement with debug flag check.
+
+commit e9cf9a87c16e65f678c6146663dbb8ff9b22b5c7
+Author: huebler <huebler@uwm.edu>
+Date:   Mon Jun 3 16:29:06 2024 -0500
+
+    Making the f in f90 capital for consistency.
+
+commit 4a157a41ada7c94ad9d4d626d8effb2f89b787ab
+Author: vlarson <vlarson@uwm.edu>
+Date:   Mon Jun 3 12:13:17 2024 -0500
+
+    QuadTune: Moves plotting code to new fnc, createFigs.
+    
+    For #910.
+
+commit 7d2369cb2db29fbc630c678a19d08445c261c08d
+Merge: a3a589a1c 678e448be
+Author: bmg929 <bmg2@uwm.edu>
+Date:   Wed May 29 19:16:09 2024 -0500
+
+    Merge branch 'master' of github.com:larson-group/clubb
+
+commit a3a589a1cfcc34b2d84a163f958bd9d4090d9bff
+Author: bmg929 <bmg2@uwm.edu>
+Date:   Wed May 29 19:14:59 2024 -0500
+
+    The variable rc_coef_zm needed to be passed in and saved from
+    timestep-to-timestep rather than rc_coef. The results of this
+    change are BIT_CHANGING.
+
+commit 678e448bed0d6791b77f9f9f361bf99463b15fcf
+Author: vlarson <vlarson@uwm.edu>
+Date:   Tue May 28 08:53:26 2024 -0500
+
+    QuadTune: Brings in CAM regional files.
+    
+    For #910.
+
+commit 89fd4bd76b19d2a6a23300325bb65c9127fea590
+Merge: a29122b39 4fa1344ba
+Author: bmg929 <bmg2@uwm.edu>
+Date:   Thu May 16 14:52:09 2024 -0500
+
+    Merge branch 'master' of github.com:larson-group/clubb
+
+commit a29122b397fd78f5b4fede7c8fd520e927660b4b
+Author: bmg929 <bmg2@uwm.edu>
+Date:   Thu May 16 14:51:48 2024 -0500
+
+    Fixing a bug. Does not change default results.
+
