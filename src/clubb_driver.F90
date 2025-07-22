@@ -89,6 +89,8 @@ module clubb_driver
         one, &
         one_half, &
         zero, &
+        two, &
+        radians_per_deg, &
         rt_tol, &
         thl_tol, &
         w_tol, &
@@ -98,7 +100,8 @@ module clubb_driver
         Lv, &
         kappa, &
         Cp, &
-        p0
+        p0, &
+        omega_planet
 
     use clubb_api_module, only: &
         precipitation_fractions, &
@@ -993,8 +996,10 @@ module clubb_driver
       sfc_elevation_nl, &
       p_sfc_nl, &
       T_sfc_nl, &
-      fcor_nl, &
-      fcory_nl
+      fcor_nl ! obsolete
+      ! fcor_nl can be read from a namelist but is not used for any calculation.
+      ! fcor and fcory are calculated from lat_vals from a namelist.
+      ! Hing Ong, 22 July 2025
 
     real( kind = core_rknd ), dimension(ngrdcol) :: &
       sfc_elevation, &
@@ -1009,7 +1014,7 @@ module clubb_driver
       day, month, year, lat_vals, lon_vals, sfc_elevation_nl, &
       time_initial, time_final, &
       dt_main, dt_rad, &
-      sfctype, T_sfc_nl, p_sfc_nl, sens_ht, latent_ht, fcor_nl, fcory_nl, T0, ts_nudge, &
+      sfctype, T_sfc_nl, p_sfc_nl, sens_ht, latent_ht, fcor_nl, T0, ts_nudge, &
       forcings_file_path, l_t_dependent, l_input_xpwp_sfc, &
       l_ignore_forcings, l_modify_ic_with_cubic_int, &
       l_modify_bc_for_cnvg_test, &
@@ -1093,8 +1098,7 @@ module clubb_driver
     p_sfc_nl  = 1000.e2_core_rknd
     sens_ht   = 0._core_rknd
     latent_ht = 0._core_rknd
-    fcor_nl   = 1.e-4_core_rknd
-    fcory_nl  = 1.e-4_core_rknd
+    fcor_nl   = 1.e-4_core_rknd ! obsolete
     T0        = 300._core_rknd
     ts_nudge  = 86400._core_rknd
 
@@ -1269,8 +1273,8 @@ module clubb_driver
     zm_top = zm_top_nl
     p_sfc = p_sfc_nl
     T_sfc = T_sfc_nl
-    fcor = fcor_nl
-    fcory = fcory_nl
+    fcor  = two * omega_planet * sin ( lat_vals*radians_per_deg ) ! Retire fcor_nl
+    fcory = two * omega_planet * cos ( lat_vals*radians_per_deg )
 
     sclr_idx%iisclr_thl = iisclr_thl
     sclr_idx%iisclr_rt  = iisclr_rt
