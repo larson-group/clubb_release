@@ -1078,6 +1078,14 @@ module stats_zm_module
              var_units="m^2/s^3", l_silhs=.false., grid_kind=stats_zm )
         k = k + 1
 
+      case ('wp2_nct')
+        stats_metadata%iwp2_nct = k
+
+        call stat_assign( var_index=stats_metadata%iwp2_nct, var_name="wp2_nct", &
+             var_description="w'^2_nct, wp2 budget: wp2 nontraditional Coriolis term", &
+             var_units="m^2/s^3", l_silhs=.false., grid_kind=stats_zm )
+        k = k + 1
+
       case ('wp2_pr1')
         stats_metadata%iwp2_pr1 = k
 
@@ -1441,6 +1449,20 @@ module stats_zm_module
              var_units="m^2/s^3", l_silhs=.false., grid_kind=stats_zm )
         k = k + 1
 
+      case ('upwp_tct')
+        stats_metadata%iupwp_tct = k
+        call stat_assign( var_index=stats_metadata%iupwp_tct, var_name="upwp_tct", &
+             var_description="u'w'_tct', upwp budget: upwp traditional Coriolis term", &
+             var_units="m^2/s^3", l_silhs=.false., grid_kind=stats_zm )
+        k = k + 1
+
+      case ('upwp_nct')
+        stats_metadata%iupwp_nct = k
+        call stat_assign( var_index=stats_metadata%iupwp_nct, var_name="upwp_nct", &
+             var_description="u'w'_nct', upwp budget: upwp nontraditional Coriolis term", &
+             var_units="m^2/s^3", l_silhs=.false., grid_kind=stats_zm )
+        k = k + 1
+
       case ('upwp_pr1')
         stats_metadata%iupwp_pr1 = k
         call stat_assign( var_index=stats_metadata%iupwp_pr1, var_name="upwp_pr1", &
@@ -1529,6 +1551,13 @@ module stats_zm_module
         stats_metadata%ivpwp_bp = k
         call stat_assign( var_index=stats_metadata%ivpwp_bp, var_name="vpwp_bp", &
              var_description="v'w'_b', vpwp budget: vpwp buoyancy production", &
+             var_units="m^2/s^3", l_silhs=.false., grid_kind=stats_zm )
+        k = k + 1
+
+      case ('vpwp_tct')
+        stats_metadata%ivpwp_tct = k
+        call stat_assign( var_index=stats_metadata%ivpwp_tct, var_name="vpwp_tct", &
+             var_description="v'w'_tct', vpwp budget: vpwp traditional Coriolis term", &
              var_units="m^2/s^3", l_silhs=.false., grid_kind=stats_zm )
         k = k + 1
 
@@ -1854,6 +1883,13 @@ module stats_zm_module
              var_description="u'^2_d'^2, up2 budget: up2 dissipation term 2", &
              var_units="m^2/s^3", &
              l_silhs=.false., grid_kind=stats_zm )
+        k = k + 1
+
+      case ('up2_nct')
+        stats_metadata%iup2_nct = k
+        call stat_assign( var_index=stats_metadata%iup2_nct, var_name="up2_nct", &
+             var_description="u'^2_nct, up2 budget: up2 nontraditional Coriolis term", &
+             var_units="m^2/s^3", l_silhs=.false., grid_kind=stats_zm )
         k = k + 1
 
       case ('up2_pr1')

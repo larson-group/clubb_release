@@ -3161,7 +3161,7 @@ module advance_xm_wpxp_module
         end do
         !$acc end parallel loop
 
-      end if ! l_traditional_Coriolils
+      end if ! l_traditional_Coriolis
 
       ! Add optional nontraditional Coriolis term for <u'w'>
       ! Hing Ong, 19 July 2025
@@ -3175,7 +3175,7 @@ module advance_xm_wpxp_module
         end do
         !$acc end parallel loop
 
-      end if ! l_nontraditional_Coriolils
+      end if ! l_nontraditional_Coriolis
 
       if ( l_perturbed_wind ) then
 
@@ -3205,6 +3205,32 @@ module advance_xm_wpxp_module
                                 C_uu_shr(i) * wp2(i,:) * ddzt_vm(i,:), & ! intent(in)
                                 stats_zm(i) )                            ! intent(inout)
         end do
+
+        if ( l_traditional_Coriolis ) then
+
+          !$acc update host( upwp, vpwp, fcor )
+
+          do i = 1, ngrdcol
+            call stat_update_var( stats_metadata%iupwp_tct,              & ! intent(in)
+                                    fcor(i) * vpwp(i,:),                 & ! intent(in)
+                                  stats_zm(i) )                            ! intent(inout)
+            call stat_update_var( stats_metadata%ivpwp_tct,              & ! intent(in)
+                                  - fcor(i) * upwp(i,:),                 & ! intent(in)
+                                  stats_zm(i) )                            ! intent(inout)
+          end do
+        end if ! l_traditional_Coriolis
+
+        if ( l_nontraditional_Coriolis ) then
+
+          !$acc update host( up2, wp2, fcory )
+
+          do i = 1, ngrdcol
+            call stat_update_var( stats_metadata%iupwp_nct,              & ! intent(in)
+                                  fcory(i) * ( up2(i,:) - wp2(i,:) ),    & ! intent(in)
+                                  stats_zm(i) )                            ! intent(inout)
+          end do
+        end if ! l_traditional_Coriolis
+
       end if ! stats_metadata%l_stats_samp
 
       ! need tau_C6_zm for these calls

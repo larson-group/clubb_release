@@ -958,6 +958,7 @@ module stats_variables
        iwp2_ta = 0, & 
        iwp2_ac = 0, & 
        iwp2_bp = 0, & 
+       iwp2_nct = 0, &
        iwp2_pr1 = 0, & 
        iwp2_pr2 = 0, & 
        iwp2_pr3 = 0, &
@@ -1013,6 +1014,8 @@ module stats_variables
        iupwp_tp = 0,  &
        iupwp_ac = 0,  &
        iupwp_bp = 0,  &
+       iupwp_tct = 0, &
+       iupwp_nct = 0, &
        iupwp_pr1 = 0, &
        iupwp_pr2 = 0, &
        iupwp_pr3 = 0, &
@@ -1029,6 +1032,7 @@ module stats_variables
        ivpwp_tp = 0,  &
        ivpwp_ac = 0,  &
        ivpwp_bp = 0,  &
+       ivpwp_tct = 0, &
        ivpwp_pr1 = 0, &
        ivpwp_pr2 = 0, &
        ivpwp_pr3 = 0, &
@@ -1095,6 +1099,7 @@ module stats_variables
       iup2_ma = 0, & 
       iup2_dp1 = 0, & 
       iup2_dp2 = 0, & 
+      iup2_nct = 0, &
       iup2_pr1 = 0, & 
       iup2_pr2 = 0, & 
       iup2_sdmp = 0, & 

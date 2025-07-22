@@ -2938,6 +2938,13 @@ module advance_wp2_wp3_module
                                    rhs_bp_wp2(i,k), & ! intent(in)
                                    stats_zm(i) )      ! intent(out)
 
+          ! w'^2 term nct is completely explicit; call stat_update_var_pt.
+          ! Hing Ong, 22 July 2025
+          if ( l_nontraditional_Coriolis ) then
+            call stat_update_var_pt( stats_metadata%iwp2_nct, k, & ! intent(in)
+                                     fcory(i) * upwp(i,k),       & ! intent(in)
+                                     stats_zm(i) )                 ! intent(out)
+          end if ! l_nontraditional_Coriolis
 
           call stat_update_var_pt( stats_metadata%iwp2_pr_dfsn, k, & ! intent(in)
                                    rhs_pr_dfsn_wp2(i,k), &           ! intent(in)

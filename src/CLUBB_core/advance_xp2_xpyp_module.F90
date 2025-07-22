@@ -753,6 +753,7 @@ module advance_xp2_xpyp_module
                             uv_rhs(:,:,1) ) ! Out
 
       if ( l_nontraditional_Coriolis ) then
+
         ! Add the nontraditional Coriolis term
         ! Hing Ong, 19 July 2025
         !$acc parallel loop gang vector collapse(2) default(present)
@@ -762,6 +763,21 @@ module advance_xp2_xpyp_module
           end do
         end do
         !$acc end parallel loop
+
+        if ( stats_metadata%l_stats_samp ) then
+
+          ! u'u' term nct is completely explicit; call stat_update_var.
+          ! Hing Ong, 22 July 2025
+          !$acc parallel loop gang vector collapse(2) default(present)
+          do i = 1, ngrdcol
+            call stat_update_var( stats_metadata%iup2_nct, & ! Intent(in)
+                                  - fcory(i) * upwp(i,:),  & ! intent(in)
+                                  stats_zm(i) )              ! Intent(inout)
+          end do
+          !$acc end parallel loop
+
+        end if ! stats_metadata%l_stats_samp
+
       end if ! l_nontraditional_Coriolis
 
       ! Solve the tridiagonal system
@@ -855,6 +871,7 @@ module advance_xp2_xpyp_module
                             uv_rhs(:,:,1) ) ! Out
 
       if ( l_nontraditional_Coriolis ) then
+
         ! Add the nontraditional Coriolis term
         ! Hing Ong, 19 July 2025
         !$acc parallel loop gang vector collapse(2) default(present)
@@ -864,6 +881,21 @@ module advance_xp2_xpyp_module
           end do
         end do
         !$acc end parallel loop
+
+        if ( stats_metadata%l_stats_samp ) then
+
+          ! u'u' term nct is completely explicit; call stat_update_var.
+          ! Hing Ong, 22 July 2025
+          !$acc parallel loop gang vector collapse(2) default(present)
+          do i = 1, ngrdcol
+            call stat_update_var( stats_metadata%iup2_nct, & ! Intent(in)
+                                  - fcory(i) * upwp(i,:),  & ! intent(in)
+                                  stats_zm(i) )              ! Intent(inout)
+          end do
+          !$acc end parallel loop
+
+        end if ! stats_metadata%l_stats_samp
+
       end if ! l_nontraditional_Coriolis
 
       ! Explicit contributions to vp2
