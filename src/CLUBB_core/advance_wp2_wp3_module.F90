@@ -2197,6 +2197,7 @@ module advance_wp2_wp3_module
 
     use constants_clubb, only: & 
         w_tol_sqd,     & ! Variable(s)
+        two,           &
         one,           &
         zero,          &
         gamma_over_implicit_ts
@@ -2464,7 +2465,7 @@ module advance_wp2_wp3_module
       do k = 2, nz-1
         do i = 1, ngrdcol
           k_wp2 = 2*k
-          rhs(i,k_wp2) = rhs(i,k_wp2) + fcory(i) * upwp(i,k)
+          rhs(i,k_wp2) = rhs(i,k_wp2) + two * fcory(i) * upwp(i,k)
         end do
       end do
       !$acc end parallel loop

@@ -103,6 +103,7 @@ module advance_xp2_xpyp_module
         max_mag_correlation_flux, &
         cloud_frac_min, &
         fstderr, &
+        two, &
         one, &
         two_thirds, &
         one_half, &
@@ -732,7 +733,7 @@ module advance_xp2_xpyp_module
         !$acc parallel loop gang vector collapse(2) default(present)
         do k = 1, nz
           do i = 1, ngrdcol
-            uv_rhs(i,k,1) = uv_rhs(i,k,1) - fcory(i) * upwp(i,k)
+            uv_rhs(i,k,1) = uv_rhs(i,k,1) - two * fcory(i) * upwp(i,k)
           end do
         end do
         !$acc end parallel loop
@@ -834,7 +835,7 @@ module advance_xp2_xpyp_module
         !$acc parallel loop gang vector collapse(2) default(present)
         do k = 1, nz
           do i = 1, ngrdcol
-            uv_rhs(i,k,1) = uv_rhs(i,k,1) - fcory(i) * upwp(i,k)
+            uv_rhs(i,k,1) = uv_rhs(i,k,1) - two * fcory(i) * upwp(i,k)
           end do
         end do
         !$acc end parallel loop
