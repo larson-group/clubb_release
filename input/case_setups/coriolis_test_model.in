@@ -1,5 +1,9 @@
 ! $Id$
-! Parameter file for GCSS BOMEX tradewind Cu case
+! Parameter file for Coriolis test case
+! Before running this case,
+! set "thl_tol = zero" and "rt_tol = zero" in "../../src/CLUBB_core/constants_clubb.F90" and
+! set "l_nontraditional_Coriolis = .true." in "../tunable_parameters/configurable_model_flags.in"
+! and then compile.
 
 &model_setting
 
@@ -51,8 +55,12 @@ l_t_dependent = .true. ! Read values from _surface.in file. Also read
                        ! _forcings.in file if l_ignore_forcings
 l_ignore_forcings = .true. ! Do not read values from _forcings.in file,
                            ! even if l_t_dependent = .true.
-l_modify_ic_with_cubic_int = .false. ! Initial sounding uses monotonic cubic interpolation
-l_modify_bc_for_cnvg_test = .true. ! Modify surface boundary conditions for convergence test
+l_input_xpwp_sfc = .true. ! Flag used to determine whether or not to
+                          ! read in the surface momentum fluxes,
+                          ! upwp_sfc and vpwp_sfc
+l_uv_nudge = .true. ! Flag for horizontal wind speed nudging.
+
+ts_nudge = 60.0        ! Timescale of u/v nudging [s]
 
 time_initial = 0.0     ! Model start time [seconds since midnight on start date]
 time_final   = 86400.0 ! Model end time [seconds since midnight on start date]
@@ -123,6 +131,8 @@ edsclr_dim  = 0
 
 iiedsclr_rt     = -1 ! Location in the edsclrm array to place total water
 iiedsclr_thl    = -2 ! Location in the edsclrm array to place a scalar like thetal
+
+parameter_file = "../input/tunable_parameters/coriolis_test_parameters.in"
 
 /
 

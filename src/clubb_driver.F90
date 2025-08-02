@@ -766,6 +766,7 @@ module clubb_driver
       wp2_init, &
       up2_init, &
       vp2_init, &
+      upwp_init, &
       rcm_init, &
       wm_zt_init, &
       wm_zm_init, &
@@ -2086,6 +2087,7 @@ module clubb_driver
               wp2_init(gr%nzm), &
               up2_init(gr%nzm), &
               vp2_init(gr%nzm), &
+              upwp_init(gr%nzm), &
               rcm_init(gr%nzt), &
               wm_zt_init(gr%nzt), &
               wm_zm_init(gr%nzm), &
@@ -2269,9 +2271,9 @@ module clubb_driver
           l_modify_ic_with_cubic_int,                                     & ! Intent(in)
           l_add_dycore_grid,                                              & ! Intent(in)
           grid_adapt_in_time_method,                                      & ! Intent(in)
-          l_ascending_grid,                                               & ! Intent(in)
+          l_ascending_grid, fcory,                                        & ! Intent(in)
           thlm_init, rtm_init, um_init, vm_init, ug_init, vg_init,        & ! Intent(out)
-          wp2_init, up2_init, vp2_init, rcm_init,                         & ! Intent(out)
+          wp2_init, up2_init, vp2_init, upwp_init, rcm_init,              & ! Intent(out)
           wm_zt_init, wm_zm_init, em_init, exner_init,                    & ! Intent(out)
           thvm_init, p_in_Pa_init,                                        & ! Intent(out)
           rho_init, rho_zm_init, rho_ds_zm_init, rho_ds_zt_init,          & ! Intent(out)
@@ -2649,7 +2651,7 @@ module clubb_driver
     !$acc parallel loop gang vector collapse(2) default(present)
     do k = 1, gr%nzm
       do i = 1, ngrdcol
-        upwp(i,k)             = zero          ! vertical u momentum flux
+        upwp(i,k)             = upwp_init(k)  ! vertical u momentum flux
         vpwp(i,k)             = zero          ! vertical v momentum flux
         up2(i,k)              = up2_init(k)     ! u'^2
         vp2(i,k)              = vp2_init(k)      ! v'^2
@@ -4022,8 +4024,8 @@ module clubb_driver
                l_modify_ic_with_cubic_int, &
                l_add_dycore_grid, &
                grid_adapt_in_time_method, &
-               l_ascending_grid, &
-               thlm, rtm, um, vm, ug, vg, wp2, up2, vp2, rcm, &
+               l_ascending_grid, fcory, &
+               thlm, rtm, um, vm, ug, vg, wp2, up2, vp2, upwp, rcm, &
                wm_zt, wm_zm, em, exner, &
                thvm, p_in_Pa, &
                rho, rho_zm, rho_ds_zm, rho_ds_zt, &
@@ -4044,6 +4046,7 @@ module clubb_driver
     use constants_clubb, only: &
         one,            & !--------------------------------------------- Constant(s)
         zero,           &
+        pi,             &
         em_min,         &
         w_tol_sqd,      &
         grav,           &
@@ -4142,7 +4145,8 @@ module clubb_driver
 
     real( kind = core_rknd ), dimension(ngrdcol), intent(in) :: &
       p_sfc,   & ! Pressure at the surface        [Pa]
-      zm_init    ! Initial moment. level altitude [m]
+      zm_init, & ! Initial moment. level altitude [m]
+      fcory      ! Nontraditional Coriolis parameter [s^-1]
 
     integer, intent(in) :: &
       sclr_dim, &
@@ -4202,6 +4206,7 @@ module clubb_driver
       wp2,             & ! Vertical velocity variance (w'^2)                 [m^2/s^2]
       up2,             & ! East-west velocity variance (u'^2)                [m^2/s^2]
       vp2,             & ! North-south velocity variance (v'^2)              [m^2/s^2]
+      upwp,            & ! Vertical east-west velocity covariance (u'w')     [m^2/s^2]
       wm_zm,           & ! Vertical wind                                     [m/s]
       em,              & ! Turbulence kinetic energy                         [m^2/s^2]
       rho_zm,          & ! Density on momentum levels                        [kg/m^3]
@@ -4242,6 +4247,7 @@ module clubb_driver
 
     real( kind = core_rknd ) :: &
       cloud_top_height, & ! Cloud top altitude in initial profile  [m]
+      domain_depth,     & ! Domain depth                           [m]
       em_max              ! Maximum value of initial subgrid TKE   [m^2/s^2]
 
     character(len=50) :: &
@@ -4815,7 +4821,13 @@ module clubb_driver
       deep_soil_T_in_K = 288.58_core_rknd
 
     case ( "coriolis_test" )
-      em = w_tol_sqd * 6._core_rknd
+
+      do i = 1, ngrdcol
+        domain_depth = gr%zm(i,gr%nzm) - gr%zm(i,1)
+        do k=1,gr%nzm
+        em(i,k) = sin( pi * gr%zm(i,k) / domain_depth ) * w_tol_sqd * 6.0_core_rknd
+        end do
+      end do
 
     case default
 
@@ -4836,12 +4848,19 @@ module clubb_driver
       wp2 = (2.0_core_rknd/3.0_core_rknd) * em
       up2 = (2.0_core_rknd/3.0_core_rknd) * em
       vp2 = (2.0_core_rknd/3.0_core_rknd) * em
+      upwp = zero
 
       if ( trim( runtype ) == "coriolis_test" ) then
 
-        wp2 = (1.5_core_rknd/3.0_core_rknd) * em
-        up2 = (2.5_core_rknd/3.0_core_rknd) * em
-        vp2 = (2.0_core_rknd/3.0_core_rknd) * em
+        wp2  = (1.0_core_rknd/3.0_core_rknd) * em + w_tol_sqd
+        up2  = (3.0_core_rknd/3.0_core_rknd) * em + w_tol_sqd
+        vp2  = (2.0_core_rknd/3.0_core_rknd) * em + w_tol_sqd
+        em   = em + 1.5_core_rknd * w_tol_sqd
+        do i = 1, ngrdcol
+          do k=1,gr%nzm
+            upwp(i,k) = 0.5_core_rknd * dt_main * fcory(i) * ( up2(i,k) - wp2(i,k) )
+          end do
+        end do
 
       end if
 
@@ -4850,6 +4869,7 @@ module clubb_driver
       ! TKE:  em = (3/2) * w'^2
 
       wp2 = (2.0_core_rknd/3.0_core_rknd) * em
+      upwp = zero
 
     end if ! l_tke_aniso
 
