@@ -2380,6 +2380,7 @@ module advance_wp2_wp3_module
 
     use constants_clubb, only: &
         w_tol_sqd,     & ! Variable(s)
+        two,           &
         one,           &
         zero,          &
         gamma_over_implicit_ts
@@ -2661,7 +2662,7 @@ module advance_wp2_wp3_module
       do k = 2, nzm-1
         do i = 1, ngrdcol
           k_wp2 = 2*k - 1
-          rhs(i,k_wp2) = rhs(i,k_wp2) + fcory(i) * upwp(i,k)
+          rhs(i,k_wp2) = rhs(i,k_wp2) + two * fcory(i) * upwp(i,k)
         end do
       end do
       !$acc end parallel loop
@@ -2942,7 +2943,7 @@ module advance_wp2_wp3_module
           ! Hing Ong, 22 July 2025
           if ( l_nontraditional_Coriolis ) then
             call stat_update_var_pt( stats_metadata%iwp2_nct, k, & ! intent(in)
-                                     fcory(i) * upwp(i,k),       & ! intent(in)
+                                     two * fcory(i) * upwp(i,k), & ! intent(in)
                                      stats_zm(i) )                 ! intent(out)
           end if ! l_nontraditional_Coriolis
 

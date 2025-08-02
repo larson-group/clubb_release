@@ -103,6 +103,7 @@ module advance_xp2_xpyp_module
         max_mag_correlation_flux, &
         cloud_frac_min, &
         fstderr, &
+        two, &
         one, &
         two_thirds, &
         one_half, &
@@ -759,7 +760,7 @@ module advance_xp2_xpyp_module
         !$acc parallel loop gang vector collapse(2) default(present)
         do k = 1, nzm
           do i = 1, ngrdcol
-            uv_rhs(i,k,1) = uv_rhs(i,k,1) - fcory(i) * upwp(i,k)
+            uv_rhs(i,k,1) = uv_rhs(i,k,1) - two * fcory(i) * upwp(i,k)
           end do
         end do
         !$acc end parallel loop
@@ -770,9 +771,9 @@ module advance_xp2_xpyp_module
           ! Hing Ong, 22 July 2025
           !$acc parallel loop gang vector collapse(2) default(present)
           do i = 1, ngrdcol
-            call stat_update_var( stats_metadata%iup2_nct, & ! Intent(in)
-                                  - fcory(i) * upwp(i,:),  & ! intent(in)
-                                  stats_zm(i) )              ! Intent(inout)
+            call stat_update_var( stats_metadata%iup2_nct,      & ! Intent(in)
+                                  - two * fcory(i) * upwp(i,:), & ! intent(in)
+                                  stats_zm(i) )                   ! Intent(inout)
           end do
           !$acc end parallel loop
 
@@ -877,7 +878,7 @@ module advance_xp2_xpyp_module
         !$acc parallel loop gang vector collapse(2) default(present)
         do k = 1, nzm
           do i = 1, ngrdcol
-            uv_rhs(i,k,1) = uv_rhs(i,k,1) - fcory(i) * upwp(i,k)
+            uv_rhs(i,k,1) = uv_rhs(i,k,1) - two * fcory(i) * upwp(i,k)
           end do
         end do
         !$acc end parallel loop
@@ -888,9 +889,9 @@ module advance_xp2_xpyp_module
           ! Hing Ong, 22 July 2025
           !$acc parallel loop gang vector collapse(2) default(present)
           do i = 1, ngrdcol
-            call stat_update_var( stats_metadata%iup2_nct, & ! Intent(in)
-                                  - fcory(i) * upwp(i,:),  & ! intent(in)
-                                  stats_zm(i) )              ! Intent(inout)
+            call stat_update_var( stats_metadata%iup2_nct,      & ! Intent(in)
+                                  - two * fcory(i) * upwp(i,:), & ! intent(in)
+                                  stats_zm(i) )                   ! Intent(inout)
           end do
           !$acc end parallel loop
 
