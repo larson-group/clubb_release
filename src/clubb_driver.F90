@@ -4045,6 +4045,7 @@ module clubb_driver
         one,            & !--------------------------------------------- Constant(s)
         zero,           &
         em_min,         &
+        w_tol_sqd,      &
         grav,           &
         cm3_per_m3,     &
         cloud_frac_min, &
@@ -4813,6 +4814,9 @@ module clubb_driver
       sfc_soil_T_in_K = 300._core_rknd
       deep_soil_T_in_K = 288.58_core_rknd
 
+    case ( "coriolis_test" )
+      em = w_tol_sqd * 6._core_rknd
+
     case default
 
       em = em_min
@@ -4832,6 +4836,14 @@ module clubb_driver
       wp2 = (2.0_core_rknd/3.0_core_rknd) * em
       up2 = (2.0_core_rknd/3.0_core_rknd) * em
       vp2 = (2.0_core_rknd/3.0_core_rknd) * em
+
+      if ( trim( runtype ) == "coriolis_test" ) then
+
+        wp2 = (1.5_core_rknd/3.0_core_rknd) * em
+        up2 = (2.5_core_rknd/3.0_core_rknd) * em
+        vp2 = (2.0_core_rknd/3.0_core_rknd) * em
+
+      end if
 
     else
 
@@ -6460,7 +6472,7 @@ module clubb_driver
                                  thlm_forcing, rtm_forcing, &                   ! Intent(out)
                                  sclrm_forcing, edsclrm_forcing )               ! Intent(out)
 
-      case ( "fire", "generic" ) ! FIRE Sc case
+      case ( "fire", "generic" , "coriolis_test" ) ! FIRE Sc case
 
         ! Analytic radiation is computed elsewhere
         !$acc parallel loop gang vector collapse(2) default(present)
@@ -6839,6 +6851,18 @@ module clubb_driver
         l_set_sclr_sfc_rtm_thlm = .true.
         call wangara_sfclyr( ngrdcol, time_current, &                 ! Intent(in)
                               wpthlp_sfc, wprtp_sfc, ustar ) ! Intent(out)
+
+      case ( "coriolis_test" )
+
+        l_compute_momentum_flux = .true.
+        l_set_sclr_sfc_rtm_thlm = .false.
+        l_fixed_flux            = .true.
+
+        ! Ensure ustar is set
+        !$acc parallel loop gang vector default(present)
+        do i = 1, ngrdcol
+          ustar(i) = 0._core_rknd
+        end do
 
       case default
 
