@@ -40,7 +40,7 @@ program jacobian
         err_code,                    & ! Error Indicator
         clubb_fatal_error              ! Constant
 
-  use parameters_model, only: &
+  use clubb_model_settings, only: &
     PosInf ! Variable(s)
 
   use clubb_precision, only: &

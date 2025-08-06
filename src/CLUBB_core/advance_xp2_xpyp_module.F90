@@ -59,7 +59,7 @@ module advance_xp2_xpyp_module
                                thv_ds_zm, cloud_frac,                     & ! In
                                wp3_on_wp2, wp3_on_wp2_zt,                 & ! In
                                pdf_implicit_coefs_terms,                  & ! In
-                               dt,                                        & ! In
+                               dt, fcory,                                 & ! In
                                sclrm, wpsclrp,                            & ! In
                                wpsclrp2, wpsclrprtp, wpsclrpthlp,         & ! In
                                lhs_splat_wp2,                             & ! In
@@ -67,6 +67,7 @@ module advance_xp2_xpyp_module
                                iiPDF_type,                                & ! In
                                tridiag_solve_method,                      & ! In
                                l_predict_upwp_vpwp,                       & ! In
+                               l_nontraditional_Coriolis,                 & ! In
                                l_min_xp2_from_corr_wx,                    & ! In
                                l_C2_cloud_frac,                           & ! In
                                l_upwind_xpyp_ta,                          & ! In
@@ -102,6 +103,7 @@ module advance_xp2_xpyp_module
         max_mag_correlation_flux, &
         cloud_frac_min, &
         fstderr, &
+        two, &
         one, &
         two_thirds, &
         one_half, &
@@ -238,6 +240,9 @@ module advance_xp2_xpyp_module
     real( kind = core_rknd ), intent(in) :: &
       dt             ! Model timestep                                [s]
 
+    real( kind = core_rknd ), dimension(ngrdcol), intent(in) ::  &
+      fcory              ! Nontraditional Coriolis parameter         [s^-1]
+
     ! Passive scalar input
     real( kind = core_rknd ), intent(in), dimension(ngrdcol,nz,sclr_dim) ::  & 
       sclrm,       & ! Mean value; pass. scalar (t-levs.) [{sclr units}]
@@ -268,6 +273,8 @@ module advance_xp2_xpyp_module
                                 ! <sclr>, and <w'sclr'> in subroutine advance_xm_wpxp.  Otherwise,
                                 ! <u'w'> and <v'w'> are still approximated by eddy diffusivity when
                                 ! <u> and <v> are advanced in subroutine advance_windm_edsclrm.
+      l_nontraditional_Coriolis, & ! Flag to implement the nontraditional Coriolis terms in the
+                                   ! prognostic equations of <w'w'>, <u'w'>, and <u'u'>.
       l_min_xp2_from_corr_wx, & ! Flag to base the threshold minimum value of xp2 (rtp2 and thlp2)
                                 ! on keeping the overall correlation of w and x within the limits
                                 ! of -max_mag_correlation_flux to max_mag_correlation_flux.
@@ -720,6 +727,18 @@ module advance_xp2_xpyp_module
                             stats_zm, & ! intent(inout)
                             uv_rhs(:,:,1) ) ! Out
 
+      if ( l_nontraditional_Coriolis ) then
+        ! Add the nontraditional Coriolis term
+        ! Hing Ong, 19 July 2025
+        !$acc parallel loop gang vector collapse(2) default(present)
+        do k = 1, nz
+          do i = 1, ngrdcol
+            uv_rhs(i,k,1) = uv_rhs(i,k,1) - two * fcory(i) * upwp(i,k)
+          end do
+        end do
+        !$acc end parallel loop
+      end if ! l_nontraditional_Coriolis
+
       ! Solve the tridiagonal system
        call xp2_xpyp_solve( nz, ngrdcol, xp2_xpyp_up2_vp2, 1, & ! Intent(in)
                             tridiag_solve_method,             & ! Intent(in)
@@ -809,6 +828,18 @@ module advance_xp2_xpyp_module
                             stats_metadata, & ! In
                             stats_zm, & ! intent(inout)
                             uv_rhs(:,:,1) ) ! Out
+
+      if ( l_nontraditional_Coriolis ) then
+        ! Add the nontraditional Coriolis term
+        ! Hing Ong, 19 July 2025
+        !$acc parallel loop gang vector collapse(2) default(present)
+        do k = 1, nz
+          do i = 1, ngrdcol
+            uv_rhs(i,k,1) = uv_rhs(i,k,1) - two * fcory(i) * upwp(i,k)
+          end do
+        end do
+        !$acc end parallel loop
+      end if ! l_nontraditional_Coriolis
 
       ! Explicit contributions to vp2
       call xp2_xpyp_uv_rhs( nz, ngrdcol, gr, xp2_xpyp_vp2, dt, & ! In

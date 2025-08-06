@@ -127,7 +127,7 @@ module advance_clubb_core_module
   !#######################################################################
   !#######################################################################
   subroutine advance_clubb_core( gr, nz, ngrdcol, &                 ! intent(in)
-               l_implemented, dt, fcor, sfc_elevation,            & ! intent(in)
+               l_implemented, dt, fcor, fcory, sfc_elevation, &     ! intent(in)
                hydromet_dim,                                      & ! intent(in)
                sclr_dim, sclr_tol, edsclr_dim, sclr_idx,      & ! intent(in)
                thlm_forcing, rtm_forcing, um_forcing, vm_forcing, & ! intent(in)
@@ -385,6 +385,7 @@ module advance_clubb_core_module
 
     real( kind = core_rknd ), intent(in), dimension(ngrdcol) ::  &
       fcor,  &          ! Coriolis forcing             [s^-1]
+      fcory, &          ! Nontraditional Coriolis parameter [s^-1]
       sfc_elevation     ! Elevation of ground level    [m above MSL]
 
     integer, intent(in) :: &
@@ -1788,7 +1789,7 @@ module advance_clubb_core_module
                             ice_supersat_frac,                                    & ! intent(in)
                             pdf_implicit_coefs_terms,                             & ! intent(in)
                             um_forcing, vm_forcing, ug, vg, wpthvp,               & ! intent(in)
-                            fcor, um_ref, vm_ref, up2, vp2,                       & ! intent(in)
+                            fcor, fcory, um_ref, vm_ref, up2, vp2,                & ! intent(in)
                             uprcp, vprcp, rc_coef_zm,                             & ! intent(in)
                             clubb_params, nu_vert_res_dep,                        & ! intent(in)
                             clubb_config_flags%iiPDF_type,                        & ! intent(in)
@@ -1796,6 +1797,8 @@ module advance_clubb_core_module
                             clubb_config_flags%tridiag_solve_method,              & ! intent(in)
                             clubb_config_flags%saturation_formula,                & ! intent(in)
                             clubb_config_flags%l_predict_upwp_vpwp,               & ! intent(in)
+                            clubb_config_flags%l_nontraditional_Coriolis,         & ! intent(in)
+                            clubb_config_flags%l_traditional_Coriolis,            & ! intent(in)
                             clubb_config_flags%l_diffuse_rtm_and_thlm,            & ! intent(in)
                             clubb_config_flags%l_stability_correct_Kh_N2_zm,      & ! intent(in)
                             clubb_config_flags%l_godunov_upwind_wpxp_ta,          & ! intent(in)
@@ -1876,7 +1879,7 @@ module advance_clubb_core_module
                              thv_ds_zm, cloud_frac,                       & ! intent(in)
                              wp3_on_wp2, wp3_on_wp2_zt,                   & ! intent(in)
                              pdf_implicit_coefs_terms,                    & ! intent(in)
-                             dt_advance,                                  & ! intent(in)
+                             dt_advance, fcory,                           & ! intent(in)
                              sclrm, wpsclrp,                              & ! intent(in)
                              wpsclrp2, wpsclrprtp, wpsclrpthlp,           & ! intent(in)
                              lhs_splat_wp2,                               & ! intent(in)
@@ -1884,6 +1887,7 @@ module advance_clubb_core_module
                              clubb_config_flags%iiPDF_type,               & ! intent(in)
                              clubb_config_flags%tridiag_solve_method,     & ! intent(in)
                              clubb_config_flags%l_predict_upwp_vpwp,      & ! intent(in)
+                             clubb_config_flags%l_nontraditional_Coriolis,& ! intent(in)
                              clubb_config_flags%l_min_xp2_from_corr_wx,   & ! intent(in)
                              clubb_config_flags%l_C2_cloud_frac,          & ! intent(in)
                              clubb_config_flags%l_upwind_xpyp_ta,         & ! intent(in)
@@ -1970,7 +1974,7 @@ module advance_clubb_core_module
 
       ! advance_wp2_wp3_bad_wp2 ! Test error comment, DO NOT modify or move
       call advance_wp2_wp3( nz, ngrdcol, gr, dt_advance,                          & ! intent(in)
-                            sfc_elevation, sigma_sqd_w, wm_zm,                    & ! intent(in)
+                            sfc_elevation, fcory, sigma_sqd_w, wm_zm,             & ! intent(in)
                             wm_zt, a3_coef, a3_coef_zt, wp3_on_wp2,               & ! intent(in)
                             wpup2, wpvp2, wp2up2, wp2vp2, wp4,                    & ! intent(in)
                             wpthvp, wp2thvp, um, vm, upwp, vpwp,                  & ! intent(in)
@@ -1997,6 +2001,7 @@ module advance_clubb_core_module
                             clubb_config_flags%l_use_tke_in_wp3_pr_turb_term,     & ! intent(in)
                             clubb_config_flags%l_use_tke_in_wp2_wp3_K_dfsn,       & ! intent(in)
                             clubb_config_flags%l_use_wp3_lim_with_smth_Heaviside, & ! intent(in)
+                            clubb_config_flags%l_nontraditional_Coriolis,         & ! intent(in)
                             stats_metadata,                                       & ! intent(in)
                             stats_zt, stats_zm, stats_sfc,                        & ! intent(inout)
                             wp2, wp3, wp3_zm, wp2_zt )                              ! intent(inout)

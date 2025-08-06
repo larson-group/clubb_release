@@ -31,12 +31,6 @@ module parameters_model
     rtm_min                = epsilon( rtm_min ), & ! Value below which rtm will be nudged [kg/kg]
     rtm_nudge_max_altitude = 10000._core_rknd      ! Highest altitude at which to nudge rtm [m]
 
-  integer, parameter :: &
-    sp = selected_real_kind(6)  ! 32-bit floating point number
-
-  real( kind = sp ), public :: &
-    PosInf = transfer( 2139095040, 1.0_sp ) ! 2139095040 is a magic number
-
   public :: setup_parameters_model 
 
   contains
