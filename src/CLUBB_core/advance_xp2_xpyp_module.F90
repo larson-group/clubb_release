@@ -59,7 +59,7 @@ module advance_xp2_xpyp_module
                                thv_ds_zm, cloud_frac,                     & ! In
                                wp3_on_wp2, wp3_on_wp2_zt,                 & ! In
                                pdf_implicit_coefs_terms,                  & ! In
-                               dt, fcory,                                 & ! In
+                               dt, fcor_y,                                & ! In
                                sclrm, wpsclrp,                            & ! In
                                wpsclrp2, wpsclrprtp, wpsclrpthlp,         & ! In
                                lhs_splat_wp2,                             & ! In
@@ -246,7 +246,8 @@ module advance_xp2_xpyp_module
       dt             ! Model timestep                                [s]
 
     real( kind = core_rknd ), dimension(ngrdcol), intent(in) ::  &
-      fcory              ! Nontraditional Coriolis parameter         [s^-1]
+      fcor_y             ! Nontraditional Coriolis parameter         [s^-1]
+                         ! Meridional planetary vorticity. Proportional to cos(latitude)
 
     ! Passive scalar input
     real( kind = core_rknd ), intent(in), dimension(ngrdcol,nzt,sclr_dim) :: &
@@ -760,7 +761,7 @@ module advance_xp2_xpyp_module
         !$acc parallel loop gang vector collapse(2) default(present)
         do k = 1, nzm
           do i = 1, ngrdcol
-            uv_rhs(i,k,1) = uv_rhs(i,k,1) - two * fcory(i) * upwp(i,k)
+            uv_rhs(i,k,1) = uv_rhs(i,k,1) - two * fcor_y(i) * upwp(i,k)
           end do
         end do
         !$acc end parallel loop
@@ -771,9 +772,9 @@ module advance_xp2_xpyp_module
           ! Hing Ong, 22 July 2025
           !$acc parallel loop gang vector collapse(2) default(present)
           do i = 1, ngrdcol
-            call stat_update_var( stats_metadata%iup2_nct,      & ! Intent(in)
-                                  - two * fcory(i) * upwp(i,:), & ! intent(in)
-                                  stats_zm(i) )                   ! Intent(inout)
+            call stat_update_var( stats_metadata%iup2_nct,       & ! Intent(in)
+                                  - two * fcor_y(i) * upwp(i,:), & ! intent(in)
+                                  stats_zm(i) )                    ! Intent(inout)
           end do
           !$acc end parallel loop
 
@@ -878,7 +879,7 @@ module advance_xp2_xpyp_module
         !$acc parallel loop gang vector collapse(2) default(present)
         do k = 1, nzm
           do i = 1, ngrdcol
-            uv_rhs(i,k,1) = uv_rhs(i,k,1) - two * fcory(i) * upwp(i,k)
+            uv_rhs(i,k,1) = uv_rhs(i,k,1) - two * fcor_y(i) * upwp(i,k)
           end do
         end do
         !$acc end parallel loop
@@ -889,9 +890,9 @@ module advance_xp2_xpyp_module
           ! Hing Ong, 22 July 2025
           !$acc parallel loop gang vector collapse(2) default(present)
           do i = 1, ngrdcol
-            call stat_update_var( stats_metadata%iup2_nct,      & ! Intent(in)
-                                  - two * fcory(i) * upwp(i,:), & ! intent(in)
-                                  stats_zm(i) )                   ! Intent(inout)
+            call stat_update_var( stats_metadata%iup2_nct,       & ! Intent(in)
+                                  - two * fcor_y(i) * upwp(i,:), & ! intent(in)
+                                  stats_zm(i) )                    ! Intent(inout)
           end do
           !$acc end parallel loop
 
