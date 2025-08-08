@@ -251,8 +251,10 @@ module spurious_source_test
       wpthvp        ! <w'thv'> (momentum levels)                   [m/s K]
 
      real( kind = core_rknd ), dimension(1) :: &
-      fcor,       & ! Coriolis parameter                           [s^-1]
-      fcory         ! Nontraditional Coriolis parameter            [s^-1]
+      fcor,       & ! Traditional Coriolis parameter               [s^-1]
+                    ! Vertical planetary vorticity.   Proportional to sin(latitude)
+      fcor_y        ! Nontraditional Coriolis parameter            [s^-1]
+                    ! Meridional planetary vorticity. Proportional to cos(latitude)
 
     real( kind = core_rknd ), dimension(1,nzt) :: &
       um_ref, & ! Reference u wind component for nudging       [m/s]
@@ -912,7 +914,7 @@ module spurious_source_test
        vg(1,:) = zero
        wpthvp(1,:) = zero
        fcor(1) = zero
-       fcory(1) = zero
+       fcor_y(1) = zero
        um_ref(1,:) = zero
        vm_ref(1,:) = zero
        up2(1,:) = wp2(1,:)
@@ -974,7 +976,7 @@ module spurious_source_test
                              sclrpthvp, sclrm_forcing, sclrp2, Cx_fnc_Richardson, &
                              pdf_implicit_coefs_terms, &
                              um_forcing, vm_forcing, ug, vg, wpthvp, &
-                             fcor, fcory, um_ref, vm_ref, up2, vp2, &
+                             fcor, fcor_y, um_ref, vm_ref, up2, vp2, &
                              uprcp, vprcp, rc_coef_zm, &
                              clubb_params(1,:), nu_vert_res_dep, &
                              iiPDF_type, &
