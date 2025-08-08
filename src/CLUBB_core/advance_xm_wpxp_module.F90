@@ -62,7 +62,7 @@ module advance_xm_wpxp_module
                               sclrpthvp, sclrm_forcing, sclrp2, Cx_fnc_Richardson, &
                               pdf_implicit_coefs_terms, &
                               um_forcing, vm_forcing, ug, vg, wpthvp, &
-                              fcor, fcory, um_ref, vm_ref, up2, vp2, &
+                              fcor, fcor_y, um_ref, vm_ref, up2, vp2, &
                               uprcp, vprcp, rc_coef_zm, &
                               clubb_params, nu_vert_res_dep, &
                               iiPDF_type, &
@@ -279,8 +279,10 @@ module advance_xm_wpxp_module
       rc_coef_zm      ! Coefficient on X'r_c' in X'th_v' equation [K/(kg/kg)]
 
     real( kind = core_rknd ), dimension(ngrdcol), intent(in) ::  &
-      fcor,       & ! Coriolis parameter                           [s^-1]
-      fcory         ! Nontraditional Coriolis parameter            [s^-1]
+      fcor,        & ! Traditional Coriolis parameter               [s^-1]
+                     ! Vertical planetary vorticity.   Proportional to sin(latitude)
+      fcor_y         ! Nontraditional Coriolis parameter            [s^-1]
+                     ! Meridional planetary vorticity. Proportional to cos(latitude)
 
     real( kind = core_rknd ), dimension(ngrdcol,nzt), intent(in) :: &
       um_ref, & ! Reference u wind component for nudging       [m/s]
@@ -881,7 +883,7 @@ module advance_xm_wpxp_module
                                           thv_ds_zm, rtp2, thlp2, l_implemented,           & ! In
                                           sclrpthvp, sclrm_forcing, sclrp2, um_forcing,    & ! In
                                           vm_forcing, ug, vg, uprcp, vprcp, rc_coef_zm, fcor, & ! In
-                                          fcory, up2, vp2,                                 & ! In
+                                          fcor_y, up2, vp2,                                & ! In
                                           low_lev_effect, high_lev_effect,                 & ! In
                                           C6rt_Skw_fnc, C6thl_Skw_fnc, C7_Skw_fnc,         & ! In
                                           lhs_diff_zm, lhs_diff_zt, lhs_ma_zt, lhs_ma_zm,  & ! In
@@ -2644,7 +2646,7 @@ module advance_xm_wpxp_module
                                             thv_ds_zm, rtp2, thlp2, l_implemented, &
                                             sclrpthvp, sclrm_forcing, sclrp2, um_forcing, &
                                             vm_forcing, ug, vg, uprcp, vprcp, rc_coef_zm, fcor, &
-                                            fcory, up2, vp2, &
+                                            fcor_y, up2, vp2, &
                                             low_lev_effect, high_lev_effect, &
                                             C6rt_Skw_fnc, C6thl_Skw_fnc, C7_Skw_fnc, &
                                             lhs_diff_zm, lhs_diff_zt, lhs_ma_zt, lhs_ma_zm, &
@@ -2784,8 +2786,10 @@ module advance_xm_wpxp_module
       rc_coef_zm     ! Coefficient on X'r_c' in X'th_v' equation [K/(kg/kg)]
 
     real( kind = core_rknd ), dimension(ngrdcol), intent(in) ::  &
-      fcor,       & ! Coriolis parameter                           [s^-1]
-      fcory         ! Nontraditional Coriolis parameter            [s^-1]
+      fcor,        & ! Traditional Coriolis parameter               [s^-1]
+                     ! Vertical planetary vorticity.   Proportional to sin(latitude)
+      fcor_y         ! Nontraditional Coriolis parameter            [s^-1]
+                     ! Meridional planetary vorticity. Proportional to cos(latitude)
 
     real( kind = core_rknd ), dimension(ngrdcol,nzm), intent(in) :: &
       up2,    & ! Variance of the u wind component             [m^2/s^2]
@@ -3170,7 +3174,7 @@ module advance_xm_wpxp_module
         !$acc parallel loop gang vector collapse(2) default(present)
         do k = 1, nzm
           do i = 1, ngrdcol
-            upwp_forcing(i,k) = upwp_forcing(i,k) + fcory(i) * ( up2(i,k) - wp2(i,k) )
+            upwp_forcing(i,k) = upwp_forcing(i,k) + fcor_y(i) * ( up2(i,k) - wp2(i,k) )
           end do
         end do
         !$acc end parallel loop
@@ -3222,11 +3226,11 @@ module advance_xm_wpxp_module
 
         if ( l_nontraditional_Coriolis ) then
 
-          !$acc update host( up2, wp2, fcory )
+          !$acc update host( up2, wp2, fcor_y )
 
           do i = 1, ngrdcol
             call stat_update_var( stats_metadata%iupwp_nct,              & ! intent(in)
-                                  fcory(i) * ( up2(i,:) - wp2(i,:) ),    & ! intent(in)
+                                  fcor_y(i) * ( up2(i,:) - wp2(i,:) ),   & ! intent(in)
                                   stats_zm(i) )                            ! intent(inout)
           end do
         end if ! l_traditional_Coriolis
