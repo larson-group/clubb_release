@@ -55,7 +55,7 @@ module advance_wp2_wp3_module
 
   !=============================================================================
   subroutine advance_wp2_wp3( nzm, nzt, ngrdcol, gr, dt,                     & ! intent(in)
-                              sfc_elevation, fcory, sigma_sqd_w, wm_zm,      & ! intent(in)
+                              sfc_elevation, fcor_y, sigma_sqd_w, wm_zm,     & ! intent(in)
                               wm_zt, a3_coef, a3_coef_zt, wp3_on_wp2,        & ! intent(in)
                               wpup2, wpvp2, wp2up2, wp2vp2, wp4,             & ! intent(in)
                               wpthvp, wp2thvp, um, vm, upwp, vpwp,           & ! intent(in)
@@ -208,7 +208,8 @@ module advance_wp2_wp3_module
 
     real( kind = core_rknd ), dimension(ngrdcol), intent(in) ::  &
       sfc_elevation,   & ! Elevation of ground level                 [m AMSL]
-      fcory              ! Nontraditional Coriolis parameter         [s^-1]
+      fcor_y             ! Nontraditional Coriolis parameter         [s^-1]
+                         ! Meridional planetary vorticity. Proportional to cos(latitude)
 
     real( kind = core_rknd ), intent(in), dimension(ngrdcol,nzm) :: &
       sigma_sqd_w,       & ! sigma_sqd_w (momentum levels)             [-]
@@ -920,7 +921,7 @@ module advance_wp2_wp3_module
     
     ! Compute the explicit portion of the w'^2 and w'^3 equations.
     ! Build the right-hand side vector.
-    call wp23_rhs( nzm, nzt, ngrdcol, gr, dt, fcory,                                & ! intent(in)
+    call wp23_rhs( nzm, nzt, ngrdcol, gr, dt, fcor_y,                               & ! intent(in)
                    wp3_term_ta_lhs_result,                                          & ! intent(in)
                    lhs_diff_zm, lhs_diff_zt, lhs_diff_zm_crank, lhs_diff_zt_crank,  & ! intent(in)
                    lhs_tp_wp3, lhs_adv_tp_wp3, lhs_pr_tp_wp3,                       & ! intent(in)
@@ -2323,7 +2324,7 @@ module advance_wp2_wp3_module
   end subroutine wp23_lhs
 
   !=================================================================================
-  subroutine wp23_rhs( nzm, nzt, ngrdcol, gr, dt, fcory, &
+  subroutine wp23_rhs( nzm, nzt, ngrdcol, gr, dt, fcor_y, &
                        wp3_term_ta_lhs_result, &
                        lhs_diff_zm, lhs_diff_zt, lhs_diff_zm_crank, lhs_diff_zt_crank, &
                        lhs_tp_wp3, lhs_adv_tp_wp3, lhs_pr_tp_wp3, &
@@ -2418,7 +2419,8 @@ module advance_wp2_wp3_module
       dt                 ! Timestep length                           [s]
 
     real( kind = core_rknd ), dimension(ngrdcol), intent(in) ::  &
-      fcory              ! Nontraditional Coriolis parameter         [s^-1]
+      fcor_y              ! Nontraditional Coriolis parameter         [s^-1]
+                          ! Meridional planetary vorticity. Proportional to cos(latitude)
 
     real( kind = core_rknd ), intent(in), dimension(ndiags5,ngrdcol,nzt) :: &
       wp3_term_ta_lhs_result
@@ -2662,7 +2664,7 @@ module advance_wp2_wp3_module
       do k = 2, nzm-1
         do i = 1, ngrdcol
           k_wp2 = 2*k - 1
-          rhs(i,k_wp2) = rhs(i,k_wp2) + two * fcory(i) * upwp(i,k)
+          rhs(i,k_wp2) = rhs(i,k_wp2) + two * fcor_y(i) * upwp(i,k)
         end do
       end do
       !$acc end parallel loop
@@ -2942,9 +2944,9 @@ module advance_wp2_wp3_module
           ! w'^2 term nct is completely explicit; call stat_update_var_pt.
           ! Hing Ong, 22 July 2025
           if ( l_nontraditional_Coriolis ) then
-            call stat_update_var_pt( stats_metadata%iwp2_nct, k, & ! intent(in)
-                                     two * fcory(i) * upwp(i,k), & ! intent(in)
-                                     stats_zm(i) )                 ! intent(out)
+            call stat_update_var_pt( stats_metadata%iwp2_nct, k,  & ! intent(in)
+                                     two * fcor_y(i) * upwp(i,k), & ! intent(in)
+                                     stats_zm(i) )                  ! intent(out)
           end if ! l_nontraditional_Coriolis
 
           call stat_update_var_pt( stats_metadata%iwp2_pr_dfsn, k, & ! intent(in)
