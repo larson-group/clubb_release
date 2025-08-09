@@ -379,8 +379,10 @@ module clubb_driver
     real( kind = core_rknd ), dimension(ngrdcol) :: &
       p_sfc,  & ! surface pressure        [Pa]
       T_sfc,  &
-      fcor,   & ! Coriolis parameter            [s^-1]
-      fcory     ! Nontraditional Coriolis parameter [s^-1]
+      fcor,   & ! Traditional Coriolis parameter    [s^-1]
+                ! Vertical planetary vorticity.   Proportional to sin(latitude) 
+      fcor_y    ! Nontraditional Coriolis parameter [s^-1]
+                ! Meridional planetary vorticity. Proportional to cos(latitude)
 
     real( kind = core_rknd ) :: &
       T0,              & ! Reference Temperature         [K]
@@ -999,7 +1001,7 @@ module clubb_driver
       T_sfc_nl, &
       fcor_nl ! obsolete
       ! fcor_nl can be read from a namelist but is not used for any calculation.
-      ! fcor and fcory are calculated from lat_vals from a namelist.
+      ! fcor and fcor_y are calculated from lat_vals from a namelist.
       ! Hing Ong, 22 July 2025
 
     real( kind = core_rknd ), dimension(ngrdcol) :: &
@@ -1274,8 +1276,8 @@ module clubb_driver
     zm_top = zm_top_nl
     p_sfc = p_sfc_nl
     T_sfc = T_sfc_nl
-    fcor  = two * omega_planet * sin ( lat_vals*radians_per_deg ) ! Retire fcor_nl
-    fcory = two * omega_planet * cos ( lat_vals*radians_per_deg )
+    fcor   = two * omega_planet * sin ( lat_vals*radians_per_deg ) ! Retire fcor_nl
+    fcor_y = two * omega_planet * cos ( lat_vals*radians_per_deg )
 
     sclr_idx%iisclr_thl = iisclr_thl
     sclr_idx%iisclr_rt  = iisclr_rt
@@ -1477,7 +1479,7 @@ module clubb_driver
       call write_text( "sens_ht = ", sens_ht, l_write_to_file, iunit )
       call write_text( "latent_ht = ", latent_ht, l_write_to_file, iunit )
       call write_text( "fcor = ", fcor, l_write_to_file, iunit )
-      call write_text( "fcory = ", fcory, l_write_to_file, iunit )
+      call write_text( "fcor_y = ", fcor_y, l_write_to_file, iunit )
       call write_text( "T0 = ", T0, l_write_to_file, iunit )
       call write_text( "ts_nudge = ", ts_nudge, l_write_to_file, iunit )
 
@@ -2271,7 +2273,7 @@ module clubb_driver
           l_modify_ic_with_cubic_int,                                     & ! Intent(in)
           l_add_dycore_grid,                                              & ! Intent(in)
           grid_adapt_in_time_method,                                      & ! Intent(in)
-          l_ascending_grid, fcory,                                        & ! Intent(in)
+          l_ascending_grid, fcor_y,                                       & ! Intent(in)
           thlm_init, rtm_init, um_init, vm_init, ug_init, vg_init,        & ! Intent(out)
           wp2_init, up2_init, vp2_init, upwp_init, rcm_init,              & ! Intent(out)
           wm_zt_init, wm_zm_init, em_init, exner_init,                    & ! Intent(out)
@@ -3101,7 +3103,7 @@ module clubb_driver
         ! Call the clubb core api for all columns
         call advance_clubb_core_api( &
                 gr, gr%nzm, gr%nzt, ngrdcol, &
-                l_implemented, dt_main, fcor, fcory, sfc_elevation, &! Intent(in)
+                l_implemented, dt_main, fcor, fcor_y, sfc_elevation, &!Intent(in)
                 hydromet_dim, &                                      ! intent(in)
                 sclr_dim, sclr_tol, edsclr_dim, sclr_idx, &          ! intent(in)
                 thlm_forcing, rtm_forcing, um_forcing, vm_forcing, & ! Intent(in)
@@ -3149,7 +3151,7 @@ module clubb_driver
         ! (ascending vs. descending grid) is being performed.
         call clubb_generalized_grid_testing &
             ( gr, gr_desc, gr%nzm, gr%nzt, ngrdcol, &              ! Intent(in)
-              l_implemented, dt_main, fcor, fcory, sfc_elevation, &! Intent(in)
+              l_implemented, dt_main, fcor, fcor_y, sfc_elevation, &!Intent(in)
               hydromet_dim, &                                      ! intent(in)
               sclr_dim, sclr_tol, edsclr_dim, sclr_idx, &          ! intent(in)
               thlm_forcing, rtm_forcing, um_forcing, vm_forcing, & ! Intent(in)
@@ -4024,7 +4026,7 @@ module clubb_driver
                l_modify_ic_with_cubic_int, &
                l_add_dycore_grid, &
                grid_adapt_in_time_method, &
-               l_ascending_grid, fcory, &
+               l_ascending_grid, fcor_y, &
                thlm, rtm, um, vm, ug, vg, wp2, up2, vp2, upwp, rcm, &
                wm_zt, wm_zm, em, exner, &
                thvm, p_in_Pa, &
@@ -4146,7 +4148,8 @@ module clubb_driver
     real( kind = core_rknd ), dimension(ngrdcol), intent(in) :: &
       p_sfc,   & ! Pressure at the surface        [Pa]
       zm_init, & ! Initial moment. level altitude [m]
-      fcory      ! Nontraditional Coriolis parameter [s^-1]
+      fcor_y     ! Nontraditional Coriolis parameter [s^-1]
+                 ! Meridional planetary vorticity. Proportional to cos(latitude)
 
     integer, intent(in) :: &
       sclr_dim, &
@@ -4820,6 +4823,9 @@ module clubb_driver
       sfc_soil_T_in_K = 300._core_rknd
       deep_soil_T_in_K = 288.58_core_rknd
 
+    ! Set the amplitude of the harmonic oscillator in the "coriolis_test".
+    ! The maximum amplitude is 2 * w_tol_sqd at the middle vertical level.
+    ! Hing Ong, 8 August 2025
     case ( "coriolis_test" )
 
       do i = 1, ngrdcol
@@ -4850,15 +4856,31 @@ module clubb_driver
       vp2 = (2.0_core_rknd/3.0_core_rknd) * em
       upwp = zero
 
+      ! The "coriolis_test" is a benchmark against analytic solutions where up2, wp2, and upwp
+      ! interact as a harmonic oscillator analogous to the Foucault pendulum.
+      ! Here are the solutions to test the implementation of the nontraditional Coriolis terms:
+      !              upwp = amplitude(grdcol,zm) * sin( 2 * fcor_y * time )
+      ! ( up2 - wp2 ) / 2 = amplitude(grdcol,zm) * cos( 2 * fcor_y * time )
+      ! Here, set up2, wp2, upwp at time = 0.
+      ! The setting can be modified to test the implementation of the traditional Coriolis terms,
+      ! where the solutions are as follows:
+      ! upwp = amplitude(grdcol,zm) * cos(   fcor * time )
+      ! vpwp = amplitude(grdcol,zm) * sin( - fcor * time )
+      ! Hing Ong, 8 August 2025
       if ( trim( runtype ) == "coriolis_test" ) then
 
         wp2  = (1.0_core_rknd/3.0_core_rknd) * em + w_tol_sqd
         up2  = (3.0_core_rknd/3.0_core_rknd) * em + w_tol_sqd
         vp2  = (2.0_core_rknd/3.0_core_rknd) * em + w_tol_sqd
         em   = em + 1.5_core_rknd * w_tol_sqd
+
+        ! Advance upwp by half a time step like the leapfrog time integration.
+        ! This improves the benchmarking when initializing at time = 0, where the time tendency is
+        ! large for upwp but small for up2 and wp2.
+        ! Hing Ong, 8 August 2025
         do i = 1, ngrdcol
           do k=1,gr%nzm
-            upwp(i,k) = 0.5_core_rknd * dt_main * fcory(i) * ( up2(i,k) - wp2(i,k) )
+            upwp(i,k) = 0.5_core_rknd * dt_main * fcor_y(i) * ( up2(i,k) - wp2(i,k) )
           end do
         end do
 
