@@ -77,28 +77,17 @@ benchmark test cases, and creating plots.
 -------------------------------------------------------
 - STEP 1: OBTAINING THE CODE FROM THE REPOSITORY
 -------------------------------------------------------
-Checking CLUBB out requires the user to be a collaborator on the clubb_release github repository.
-Sign up will require a github username.
+The CLUBB code is provided open-source on GitHub.
+It can be obtained by cloning with git.
 
-After entering the required information in the registration page, an invitation e-mail
-will be sent to the email associated with the github account entered.
+If you have not already downloaded CLUBB, then at a bash prompt, type in the
+following command from the directory where you want the clubb folder to be
+placed, all on one line:
+user@computer ~$ git clone https://github.com/larson-group/clubb_release.git clubb
 
-Please note that each user will only need to sign up once.
-
-With the valid permissions as a collaborator, the CLUBB code can be cloned from its
-repository using git.  If you have not already downloaded CLUBB,
-then at a bash prompt, type in the following command from the directory where
-you want the clubb folder to be placed, all on one line:
-user@computer ~$ git clone http://github.com/larson-group/clubb_release.git 
-
-After entering this command, git will prompt for a username and password. 
-Use your github credentials. After the authorized credentials are entered, 
-git will download the CLUBB source code into the directory specified as the
-last option in the git command; in the example
-above, it will be downloaded to the clubb/ directory.  On some computers,
-when entering the password, the cursor may remain in the same spot
-and the screen may remain blank.  Don't be confused; hit return, and 
-your password will be entered.  
+After entering this command, git will download the CLUBB source code into the
+directory specified as the last option in the git command; in the example
+above, it will be downloaded to the clubb/ directory.
 
 -------------------------------------------------------
 - STEP 2: COMPILING THE CLUBB SOURCE CODE
