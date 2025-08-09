@@ -1,9 +1,23 @@
 ! $Id$
 ! Parameter file for Coriolis test case
+!
+! The "coriolis_test" is a benchmark against analytic solutions where up2, wp2, and upwp
+! interact as a harmonic oscillator analogous to the Foucault pendulum.
+! Here are the solutions to test the implementation of the nontraditional Coriolis terms:
+!              upwp = amplitude(grdcol,zm) * sin( 2 * fcor_y * time )
+! ( up2 - wp2 ) / 2 = amplitude(grdcol,zm) * cos( 2 * fcor_y * time )
+! The amplitude is 2 * w_tol_sqd * sin( pi * zm / domain_depth ), maximizing at
+! 2 * w_tol_sqd at the middle vertical level.
+!
 ! Before running this case,
 ! set "thl_tol = zero" and "rt_tol = zero" in "../../src/CLUBB_core/constants_clubb.F90" and
 ! set "l_nontraditional_Coriolis = .true." in "../tunable_parameters/configurable_model_flags.in"
 ! and then compile.
+!
+! If there is a need to modify the initial conditions, search for "coriolis_test" in
+! "../../src/clubb_driver.F90", change, and then compile.
+
+! Hing Ong, 8 August 2025
 
 &model_setting
 
