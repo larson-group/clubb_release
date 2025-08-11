@@ -11,11 +11,10 @@ ngrdcol,iterations,nz,tasks,total_runs,total,compute_i,baseline,advance_clubb_co
 32768,870,134,64,1,45.63355207443237,0.026047033733791778,22.972632726033527,0.0,0.0,0.0,0.717,0.0
 65536,870,134,64,1,60.33959984779358,0.041089038099822416,24.59213670094808,0.0,0.0,0.0,0.717,0.0
 131072,870,134,64,1,90.85855221748352,0.07669060285063996,24.137727737426758,0.0,0.0,0.0,0.717,0.0
-262144,870,134,64,1,68.3997015953064,0.05083060237182968,24.177077531814575,0.0,0.0,0.0,0.717,0.0
 
 # Timing script options
-# - ngrdcol_max = 262144
-# - tasks = 64 -- results in a max of 4096 columns per task
+# - ngrdcol_max = 131072
+# - tasks = 64 -- results in a max of 2048 columns per task
 # - working dir = /glade/u/home/huebler/Code/clubb_performance_testing_feb25/clubb_A100_nvhpc/run_scripts
 # - hostname = deg0001 : deg0001.de.hpc.ucar.edu
 # - git hash = d3743beac60cce539b96d272dfeecd55d0b11d44
@@ -25,7 +24,7 @@ ngrdcol,iterations,nz,tasks,total_runs,total,compute_i,baseline,advance_clubb_co
 
 # Metadata from clubb.in (the parameters listed are only the last set tested)
 # &multicol_def
-# ngrdcol = 4096
+# ngrdcol = 2048
 # l_output_multi_col = .false.
 # calls_per_out = 1
 # /
