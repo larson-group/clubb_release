@@ -1162,6 +1162,20 @@ def launch_dash_app(dir_name, grouped_files, all_variables):
                 )
             ], style={"display": "flex", "align-items": "center", "margin-top": "10px"}),
 
+            # Time / cps choice
+            html.Div([
+                dcc.RadioItems(
+                    id="fit-plot-mode",
+                    options=[
+                        {"label": "Time", "value": "time"},
+                        {"label": "Cols per Sec", "value": "cps"},
+                        {"label": "Grid Boxes per Sec", "value": "gbps"}
+                    ],
+                    value="cps",
+                    inline=True,
+                ),
+            ], style={"margin-bottom": "8px"}),
+
             # Fit function controls
             html.Div([
                 
@@ -1170,19 +1184,6 @@ def launch_dash_app(dir_name, grouped_files, all_variables):
                 ], style={"margin-bottom": "8px"}),
 
                 html.Div([
-
-                    # Time / cps choice
-                    html.Div([
-                        dcc.RadioItems(
-                            id="fit-plot-mode",
-                            options=[
-                                {"label": "Time", "value": "time"},
-                                {"label": "Cols per Sec", "value": "cps"}
-                            ],
-                            value="cps",
-                            inline=True,
-                        ),
-                    ], style={"margin-bottom": "8px"}),
 
                     # Cache pen func choice
                     html.Div([
@@ -1301,15 +1302,21 @@ def launch_dash_app(dir_name, grouped_files, all_variables):
                 mirror=True
             ),
             legend=dict(
-                x=x_legend,          # 0 is left, 1 is right
-                y=y_legend,          # 0 is bottom, 1 is top
-                xanchor='left', # anchor the x position
-                yanchor='top',   # anchor the y position
-                bgcolor='rgba(255,255,255,0.5)',  # optional translucent background
-                bordercolor='black',
-                borderwidth=1,
-                font=dict(size=12 * config_scale)
+                x=0.01, y=0.99,
+                xanchor="left", yanchor="top",
+                font=dict(size=12 * config_scale),
+                bgcolor="rgba(255,255,255,0.5)"
             ),
+            # legend=dict(
+            #     x=x_legend,          # 0 is left, 1 is right
+            #     y=y_legend,          # 0 is bottom, 1 is top
+            #     xanchor='left', # anchor the x position
+            #     yanchor='top',   # anchor the y position
+            #     bgcolor='rgba(255,255,255,0.5)',  # optional translucent background
+            #     #bordercolor='black',
+            #     #borderwidth=1,
+            #     font=dict(size=12 * config_scale)
+            # ),
             font=dict(size=12 * scale_factor),
             margin=dict(l=10, r=10, t=50, b=10),
             paper_bgcolor="white",
@@ -1425,6 +1432,9 @@ def launch_dash_app(dir_name, grouped_files, all_variables):
                                 
                         combined_df = pd.concat([combined_df, original_df])
 
+        if combined_df.empty:
+            raise PreventUpdate
+
         fig = px.line(combined_df, x="ngrdcol", y=selected_variable, color="Configuration", symbol="Source")
 
         for trace in fig.data:
@@ -1448,7 +1458,7 @@ def launch_dash_app(dir_name, grouped_files, all_variables):
         fig.update_layout(
             xaxis=dict(type=xaxis_scale),
             yaxis=dict(type=yaxis_scale),
-            xaxis_title = "Batch size (columns)", 
+            xaxis_title = "Batch Size (columns)", 
             yaxis_title = "Runtime (seconds)" if runtime_mods != "scaling" else "Cache Penalty Multiplier", 
             autosize=True,
             uirevision='constant'
@@ -1469,10 +1479,11 @@ def launch_dash_app(dir_name, grouped_files, all_variables):
             Input("cps-config-name-regex", "value"),
             Input("base-batch-size", "value"),
             Input("cps-x-legend", "value"),
-            Input("cps-y-legend", "value") 
+            Input("cps-y-legend", "value"),
+            Input("fit-plot-mode", "value")
         ]
     )
-    def update_columns_per_second_plot(selected_files, selected_variable, xaxis_scale, yaxis_scale, title, config_regex, base_batch_size, x_legend, y_legend):
+    def update_columns_per_second_plot(selected_files, selected_variable, xaxis_scale, yaxis_scale, title, config_regex, base_batch_size, x_legend, y_legend, plot_mode):
 
         # Flatten the list of lists into a single list of selected filenames
         selected_flat = list(chain.from_iterable(selected_files))
@@ -1509,21 +1520,42 @@ def launch_dash_app(dir_name, grouped_files, all_variables):
                     #print(temp_df["ngrdcol"])
 
                     temp_df["Configuration"] = config_name
-                    temp_df["Throughput"] = temp_df["ngrdcol"] / temp_df[selected_variable]
+
+                    
+                    if plot_mode == "gbps":
+                        temp_df["Throughput"] = temp_df["nz"] * temp_df["ngrdcol"] / temp_df[selected_variable]
+                        temp_df["ngrdcol"] = temp_df["nz"] * temp_df["ngrdcol"]
+                    else:
+                        temp_df["Throughput"] = temp_df["ngrdcol"] / temp_df[selected_variable]
+
                     combined_df = pd.concat([combined_df, temp_df])
 
-        combined_df = combined_df[combined_df["ngrdcol"] >= ngrdcol_min]
+        if combined_df.empty:
+            raise PreventUpdate
+            
+        combined_df = combined_df[combined_df["ngrdcol"] >= 64]
                     
-        fig = px.line(combined_df, x="ngrdcol", y="Throughput", color="Configuration", symbol="Configuration")
+        fig = px.line(combined_df, x="ngrdcol", y="Throughput", color="Configuration", symbol="Configuration", labels={"Configuration": ""}, 
+                      symbol_sequence=["circle", "square", "diamond", "cross", "x", "triangle-up", "star", "triangle-down", "bowtie", "hourglass"] )
 
-        fig.update_layout(
-            xaxis=dict(type=xaxis_scale),
-            yaxis=dict(type=yaxis_scale),
-            xaxis_title = "Batch size (columns)" if base_batch_size == 0 else f"Batch size (chunks of {2**base_batch_size} columns)", 
-            yaxis_title = "Throughput (columns per second)" if base_batch_size == 0 else f"Throughput (column chunks per second)",
-            autosize=False,
-            uirevision='constant'
-        )
+        if plot_mode == "gbps":
+            fig.update_layout(
+                xaxis=dict(type=xaxis_scale),
+                yaxis=dict(type=yaxis_scale),
+                xaxis_title = "Batch size (grid boxes)",
+                yaxis_title = "Throughput (grid boxes per second)",
+                autosize=False,
+                uirevision='constant'
+            )
+        else:
+            fig.update_layout(
+                xaxis=dict(type=xaxis_scale),
+                yaxis=dict(type=yaxis_scale),
+                xaxis_title = "Batch Size (columns)" if base_batch_size == 0 else f"Batch size (chunks of {2**base_batch_size} columns)", 
+                yaxis_title = "Throughput (columns per second)" if base_batch_size == 0 else f"Throughput (column chunks per second)",
+                autosize=False,
+                uirevision='constant'
+            )
 
         
         if (
@@ -2048,7 +2080,7 @@ def launch_dash_app(dir_name, grouped_files, all_variables):
         fig.update_layout(
             xaxis=dict(type=xaxis_scale),
             yaxis=dict(type=yaxis_scale),
-            xaxis_title = "Batch size (Columns)", 
+            xaxis_title = "Batch Size (columns)", 
             autosize=True,
             uirevision='constant'
         )
@@ -2205,7 +2237,7 @@ def launch_dash_app(dir_name, grouped_files, all_variables):
                 line_dash="Source"
             )
             fig.update_layout( 
-                xaxis_title="Batch size (columns)", 
+                xaxis_title="Batch Size (columns)", 
                 yaxis_title = "Throughput (columns / second)"
             )
         else:
@@ -2332,6 +2364,28 @@ def group_files_by_case(csv_files):
 
     return sorted_cases
 
+# def group_files_by_config(csv_files):
+#     configs = defaultdict(dict)
+    
+#     for file in csv_files:
+#         basename = os.path.basename(file)
+#         # Match everything before ".csv"
+#         match = re.match(r"^(.*)\.csv$", basename)
+#         if match:
+#             filename = match.group(1)
+
+#             # Remove the "_<number>nz_" part to form the group key
+#             group_key = re.sub(r'_\d+nz_', '_nz_', filename)
+
+#             configs[group_key][filename] = file
+
+#     # Sort filenames naturally within each config group
+#     sorted_configs = {}
+#     for config, files in configs.items():
+#         sorted_configs[config] = dict(sorted(files.items(), key=lambda item: natural_key(item[0])))
+
+#     return sorted_configs
+
 def group_files_by_config(csv_files):
     configs = defaultdict(dict)
     
@@ -2342,10 +2396,11 @@ def group_files_by_config(csv_files):
         if match:
             filename = match.group(1)
 
-            # Remove the "_<number>nz_" part to form the group key
-            group_key = re.sub(r'_\d+nz_', '_nz_', filename)
-
-            configs[group_key][filename] = file
+            # Extract prefix before first underscore (e.g., "A100" from "A100_nvhpc_xyz")
+            group_key_match = re.match(r"^([^_]+)", filename)
+            if group_key_match:
+                group_key = group_key_match.group(1)
+                configs[group_key][filename] = file
 
     # Sort filenames naturally within each config group
     sorted_configs = {}
