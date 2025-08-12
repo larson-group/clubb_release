@@ -17,8 +17,95 @@ import warnings
 from itertools import chain
 import plotly.graph_objects as go
 
-gpu_names = ["A100", "V100", "H100"]
+# ======================================== GPU and CPU Labelling Code ========================================
+gpu_names = ["A100", "V100", "H100", "MI250X"]
 cpu_names = ["AMD7763", "Intel6430", "Intel6240"]
+
+def is_gpu(name): return any(k in name for k in gpu_names)
+def is_cpu(name): return any(k in name for k in cpu_names)
+
+#base_colors = ["#d62728", "#1f77b4", "#2ca02c", "#9467bd", "#e377c2"]  # red, blue, green, purple, brown, pink
+cpu_palette = [
+    "blue",  # blue
+    "red",  # vermillion
+    "green",  # bluish green
+    "purple",  # reddish purple
+    "pink",  # sky blue
+]
+
+gpu_palette = [
+    "darkorange",   # orange to contrast vermillion/red
+    "seagreen",     # warmer green
+    "mediumorchid", # lighter, warmer purple
+    "deeppink",     # vivid pink
+    "dodgerblue",   # brighter, slightly lighter blue
+]
+
+cpu_symbols = ["square", "circle", "cross", "triangle-up", "star"]
+gpu_symbols = [s + "-open" for s in cpu_symbols]
+
+def lighten(hex_color, factor=0.55):
+    # Blend toward white; smaller factor -> lighter
+    h = hex_color.lstrip("#")
+    r, g, b = int(h[0:2], 16), int(h[2:4], 16), int(h[4:6], 16)
+    r = int(r + (255 - r) * (1 - factor))
+    g = int(g + (255 - g) * (1 - factor))
+    b = int(b + (255 - b) * (1 - factor))
+    return f"#{r:02x}{g:02x}{b:02x}"
+
+def complementary(hex_color):
+    """Return complementary color (RGB values inverted)."""
+    h = hex_color.lstrip("#")
+    r, g, b = int(h[0:2], 16), int(h[2:4], 16), int(h[4:6], 16)
+    # Complementary = inverse in RGB space
+    return f"#{(255 - r):02x}{(255 - g):02x}{(255 - b):02x}"
+    
+def complementary_and_darken(hex_color, darken_factor=0.85):
+    """
+    Return a complementary color (RGB inverted) and slightly darken it.
+    """
+    # Remove "#" and parse RGB
+    h = hex_color.lstrip("#")
+    r, g, b = int(h[0:2], 16), int(h[2:4], 16), int(h[4:6], 16)
+
+    # Complementary color in RGB space
+    r_c, g_c, b_c = 255 - r, 255 - g, 255 - b
+
+    # Darken the complementary color
+    r_d = int(r_c * darken_factor)
+    g_d = int(g_c * darken_factor)
+    b_d = int(b_c * darken_factor)
+
+    return f"#{r_d:02x}{g_d:02x}{b_d:02x}"
+
+def get_symbols_and_colors( combined_df ):
+
+    series = list(combined_df["Configuration"].unique())
+    cpu_series = [s for s in series if is_cpu(s)]
+    gpu_series = [s for s in series if is_gpu(s)]
+    others = [s for s in series if s not in cpu_series + gpu_series]
+
+    color_map, symbol_map = {}, {}
+
+    # CPUs: first 5 colors + solid symbols
+    for i, name in enumerate(cpu_series):
+        color_map[name]  = cpu_palette[i % len(cpu_palette)]
+        symbol_map[name] = cpu_symbols[i % len(cpu_symbols)]
+
+    # GPUs: last 5 colors + open symbols
+    for i, name in enumerate(gpu_series):
+        color_map[name]  = gpu_palette[i % len(gpu_palette)]
+        symbol_map[name] = gpu_symbols[i % len(gpu_symbols)]
+
+    # Any unclassified configs: cycle remaining CPU colors with a neutral symbol
+    for j, name in enumerate(others):
+        color_map[name]  = cpu_palette[(len(cpu_series) + j) % len(cpu_palette)]
+        symbol_map[name] = "circle"
+
+    # Legend ordering (CPUs first, then GPUs, then others)
+    category_order = {"Configuration": cpu_series + gpu_series + others}
+
+    return category_order, color_map, symbol_map
 
 # ======================================== Reused html styles ========================================
 plot_div_style = {
@@ -1323,6 +1410,10 @@ def launch_dash_app(dir_name, grouped_files, all_variables):
             plot_bgcolor="white",
         )
         
+        for tr in fig.data:
+            if "fit" in tr.name or "scale" in tr.name:
+                tr.update(showlegend=False, mode="lines")
+
         return fig
 
 
@@ -1419,8 +1510,9 @@ def launch_dash_app(dir_name, grouped_files, all_variables):
                                 equation_text = f"R\u0302<sub>GPU</sub>(N<sub>i</sub>) = {m:.3e}·N<sub>i</sub> + {b:.3e}"
 
                             # Store one x,y point near end for label positioning
-                            x_label = model_df["ngrdcol"][label_position]
-                            y_label = model_df[selected_variable][model_df["ngrdcol"] == x_label].values[0]
+                            x_label = model_df["ngrdcol"][label_position]/1.3
+                            #y_label = model_df[selected_variable][model_df["ngrdcol"] == x_label].values[0]
+                            y_label = coeffs[1] + coeffs[0] * x_label
 
                             # Save label info to annotate later
                             trendline_labels.append({
@@ -1435,7 +1527,68 @@ def launch_dash_app(dir_name, grouped_files, all_variables):
         if combined_df.empty:
             raise PreventUpdate
 
-        fig = px.line(combined_df, x="ngrdcol", y=selected_variable, color="Configuration", symbol="Source")
+            
+        category_order, color_map_cfg, symbol_map_cfg = get_symbols_and_colors(combined_df)
+
+        # 1) SeriesID: plain config for originals; suffix only for others
+        combined_df["SeriesID"] = np.where(
+            combined_df["Source"].eq("original"),
+            combined_df["Configuration"],
+            combined_df["Configuration"] + " • " + combined_df["Source"],
+        )
+
+        # 2) Create maps keyed by SeriesID
+        symbol_map_series = {}
+        dash_map_series   = {}
+        color_map_series  = {}
+
+        for cfg in combined_df["Configuration"].unique():
+            base_color  = color_map_cfg.get(cfg, "black")
+            base_symbol = symbol_map_cfg.get(cfg, "circle")
+
+            # originals: key is just the config name (no ' • original')
+            sid = cfg
+            if (combined_df["SeriesID"] == sid).any():
+                color_map_series[sid]  = base_color
+                symbol_map_series[sid] = base_symbol
+                dash_map_series[sid]   = "solid"
+
+            # scale
+            sid = f"{cfg} • scale"
+            if (combined_df["SeriesID"] == sid).any():
+                color_map_series[sid]  = base_color
+                symbol_map_series[sid] = base_symbol
+                dash_map_series[sid]   = "dash"
+
+            # fit: black + circle + dotted
+            sid = f"{cfg} • fit"
+            if (combined_df["SeriesID"] == sid).any():
+                color_map_series[sid]  = "black"
+                symbol_map_series[sid] = "circle"
+                dash_map_series[sid]   = "dot"
+                # (if you later want no markers / no legend, handle post-plot)
+
+        # 3) Order (originals → scales → fits) so originals draw underneath
+        series_order = (
+            [s for s in color_map_series if " • " not in s] +
+            [s for s in color_map_series if " • scale" in s] +
+            [s for s in color_map_series if " • fit"   in s]
+        )
+
+        # 4) Plot, legend title removed
+        fig = px.line(
+            combined_df,
+            x="ngrdcol",
+            y=selected_variable,
+            color="SeriesID",
+            symbol="SeriesID",
+            line_dash="SeriesID",
+            labels={"SeriesID": ""},  # no legend title
+            category_orders={"SeriesID": series_order},
+            color_discrete_map=color_map_series,
+            symbol_map=symbol_map_series,
+            line_dash_map=dash_map_series,
+        )
 
         for trace in fig.data:
             if trace.name.endswith("fit"):
@@ -1534,9 +1687,23 @@ def launch_dash_app(dir_name, grouped_files, all_variables):
             raise PreventUpdate
             
         combined_df = combined_df[combined_df["ngrdcol"] >= 64]
-                    
-        fig = px.line(combined_df, x="ngrdcol", y="Throughput", color="Configuration", symbol="Configuration", labels={"Configuration": ""}, 
-                      symbol_sequence=["circle", "square", "diamond", "cross", "x", "triangle-up", "star", "triangle-down", "bowtie", "hourglass"] )
+
+        category_order, color_map, symbol_map = get_symbols_and_colors( combined_df )
+
+        fig = px.line(
+            combined_df,
+            x="ngrdcol",
+            y="Throughput",
+            color="Configuration",
+            symbol="Configuration",
+            labels={"Configuration": ""},
+            category_orders=category_order,
+            color_discrete_map=color_map,
+            symbol_map=symbol_map,
+        )
+
+        # fig = px.line(combined_df, x="ngrdcol", y="Throughput", color="Configuration", symbol="Configuration", labels={"Configuration": ""}, 
+        #               symbol_sequence=["circle", "square", "diamond", "cross", "x", "triangle-up", "star", "triangle-down", "bowtie", "hourglass"] )
 
         if plot_mode == "gbps":
             fig.update_layout(
