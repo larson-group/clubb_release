@@ -33,7 +33,7 @@ OPTIMIZE="-O2"
 
 # == NetCDF Location ==
 #Variable defined in larson-group.sh, see here (https://github.com/larson-group/sys_admin/blob/master/set_larson-group_paths/larson-group.sh)
-NETCDF="$(nf-config --prefix)"
+#NETCDF="$(nf-config --prefix)"
 
 # == LAPACK libraries ==
 # AMD Core Math Library
@@ -43,7 +43,7 @@ NETCDF="$(nf-config --prefix)"
 # == Linking Flags ==
 # Use -s to strip (no debugging); 
 # Use -L<library path> -l<lib> to link in an external library
-LDFLAGS="-L$NETCDF/lib -lnetcdff $LAPACK"
+LDFLAGS="-$LAPACK"
 
 FFLAGS="$ARCH $OPTIMIZE $DEBUG"
 
@@ -55,8 +55,8 @@ FFLAGS="$ARCH $OPTIMIZE $DEBUG"
 # Define include directories. 
 # Need location of include and *.mod files for the netcdf library
 
-CPPDEFS="-DNETCDF -DCLUBB_REAL_TYPE=8"
-CPPFLAGS="-I$NETCDF/include"
+CPPDEFS="-DCLUBB_REAL_TYPE=8"
+CPPFLAGS=""
 
 # == Static library processing ==
 AR=ar

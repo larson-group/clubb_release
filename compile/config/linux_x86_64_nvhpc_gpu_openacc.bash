@@ -31,10 +31,10 @@ OPTIMIZE="-O2 -Mstack_arrays"
 
 # == NetCDF Location ==
 #Variable defined in larson-group.sh, see here (https://github.com/larson-group/sys_admin/blob/master/set_larson-group_paths/larson-group.sh)
-NETCDF="$(nf-config --prefix)"
+#NETCDF="$(nf-config --prefix)"
 
 # == Linking Flags ==
-LDFLAGS="$ARCH -L$NETCDF/lib -lnetcdff $LAPACK -acc -cuda"
+LDFLAGS="$ARCH $LAPACK -acc -cuda"
 
 FFLAGS="$ARCH $OPTIMIZE $DEBUG -Mbackslash -Mstandard -Kieee -acc -Minfo=accel"
 
@@ -42,8 +42,8 @@ FFLAGS="$ARCH $OPTIMIZE $DEBUG -Mbackslash -Mstandard -Kieee -acc -Minfo=accel"
 #   -DNETCDF enables netCDF output
 # Define include directories. 
 # Need location of include and *.mod files for the netcdf library
-CPPDEFS="-DNETCDF -DCLUBB_REAL_TYPE=8 -DCLUBB_GPU -DCUDA"
-CPPFLAGS="-I$NETCDF/include"
+CPPDEFS="-DCLUBB_REAL_TYPE=8 -DCLUBB_GPU -DCUDA"
+CPPFLAGS=""
 
 # == Static library processing ==
 AR=ar

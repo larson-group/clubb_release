@@ -1,0 +1,77 @@
+=================================================================================
+                                  Timing Results
+==================================================================================
+
+CLUBB timing results were generated with the "clubb/run_scripts/time_clubb.py" script, and are all stored in "timing_results" as csv files. Note that a number of the results were ran using the GPTL timing library with extra timers, for the non-GPTL results, these extra timers will show up as all zeros. The "compute_i" variable is the average per-iteration computational time, ignoring startup costs, cleanup costs, and CPU-GPU data transfer costs. 
+
+To view the CLUBB timing results using the pydash app
+  - install the python dependencies defined in requirement.txt: 
+  - run "python timing_results.py"
+  - view results in browser "http://0.0.0.0:8051/plots/"
+
+
+==================================================================================
+                           Nvidia Nsight Compute Results
+==================================================================================
+The Nvidia Nsight Compute file used is "a100_nvhpc_async_64k.ncu-rep", running on a single Nvidia A100, using the nvhpc compiler, async directives, and a batch size of 65536. This file was converted to a csv via "ncu --import a100_nvhpc_async_64k.ncu-rep --csv --page raw > a100_nvhpc_async_64k_ncu.csv". Nsight tracks many variables, but we consider only the roofline metrics in the app to view the results.
+
+To view the roofline results using the pydash app
+  - install the python dependencies defined in requirement.txt: 
+  - run "python roofline_results.py"
+  - view results in browser "http://0.0.0.0:8050/roofline/"
+
+
+==================================================================================
+                          Nvidia Nsight Systems Results
+==================================================================================
+There are 3 reports using Nvidia Nsight Systems in "nsys_reports", and can be viewed with Nvidia's "nsys-ui". Each was run on a single Nvidia A100 using 10 iterations with a batch size of 65536. 
+
+a100_cray_acc_64kcols_10iters.nsys-rep
+  - cray compiler, OpenACC directives
+
+a100_nvhpc_acc_async_64kcols_10iters.nsys-rep
+  - nvhpc compiler, OpenACC directives, async clauses
+
+a100_nvhpc_omp_64kcols_10iters.nsys-rep
+  - nvhpc compiler, OpenMP directives
+
+
+==================================================================================
+                             Intel Vtune Results
+==================================================================================
+The Vtune profile results of different batch sizes on an Intel 6430 CPU are stored in "Intel6430_uarch_vtune_multicore". The results were converted to csv files containing the different hardware metrics that Vtune tracks, using the script "Intel6430_uarch_vtune_multicore/extract_metrics.bash".
+
+To view the aggregated Vtune results using the pydash app
+  - install the python dependencies defined in requirement.txt: 
+  - run "python vtune_results.py"
+  - view results in browser "http://0.0.0.0:8050/"
+
+
+==================================================================================
+                             Compiling and Running
+==================================================================================
+To compile, navigate to "clubb/compile", load the environment needed to use the desired compiler, and run one of the following commands:
+
+  GPU compile with nvhpc using OpenACC directives
+    - ./convert_to_async.bash   (this only adds async directives to code and can be skipped)
+    - ./compile.bash -c config/linux_x86_64_nvhpc_gpu_openacc.bash
+
+  GPU compile with nvhpc using OpenMP directives
+    - ./convert_acc_to_omp.bash
+    - ./compile.bash -c config/linux_x86_64_nvhpc_gpu_openmp.bash
+
+  GPU compile with cray using OpenACC directives
+    - ./compile.bash -c config/linux_x86_64_cray.bash
+
+  CPU compile with Intel ifx compiler
+    - ./compile.bash -c config/linux_x86_64_ifort.bash
+
+
+To run, navigate to "clubb/run_scripts" 
+
+  Run a single run with arm case
+    - configure number of columns to run "./create_multi_col_params.py -n NCOLS"
+    - run arm "./run_scm.bash -p clubb_params_multi_col.in arm"
+
+  To perform a timing run, the usage is described better in "clubb/run_scripts/time_clubb.py". This script is however tailored for specific versions of MPI and SLURM, so some modifications may be required to run on other systems.
+
