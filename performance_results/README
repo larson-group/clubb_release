@@ -50,7 +50,7 @@ To view the aggregated Vtune results using the pydash app
 ==================================================================================
                              Compiling and Running
 ==================================================================================
-To compile, navigate to "clubb/compile", load the environment needed to use the desired compiler, and run one of the following commands:
+To compile, navigate to "clubb/compile", load the environment needed to use the desired compiler, and do one of the following:
 
   GPU compile with nvhpc using OpenACC directives
     - ./convert_to_async.bash   (this only adds async directives to code and can be skipped)
