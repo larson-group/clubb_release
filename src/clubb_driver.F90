@@ -4483,7 +4483,7 @@ module clubb_driver
       em(:,gr%nzm) = em_min
 
       ! GCSS BOMEX
-    case ( "bomex" )
+    case ( "bomex", "ekman" )
 
 !---> Reduction of initial sounding for stability
 !         do k = 1, gr%nz
@@ -6213,6 +6213,8 @@ module clubb_driver
 
     use neutral_case, only: neutral_case_sfclyr   ! Procedure(s)
 
+    use ekman, only: ekman_sfclyr   ! Procedure(s)
+
     use twp_ice, only: twp_ice_sfclyr !---------------------- Procedure(s)
 
     use wangara, only: wangara_tndcy, wangara_sfclyr !------- Procedure(s)
@@ -6514,7 +6516,7 @@ module clubb_driver
                                  thlm_forcing, rtm_forcing, &                   ! Intent(out)
                                  sclrm_forcing, edsclrm_forcing )               ! Intent(out)
 
-      case ( "fire", "generic" , "coriolis_test" ) ! FIRE Sc case
+      case ( "fire", "generic", "coriolis_test", "ekman" ) ! FIRE Sc case
 
         ! Analytic radiation is computed elsewhere
         !$acc parallel loop gang vector collapse(2) default(present)
@@ -6877,6 +6879,15 @@ module clubb_driver
                                   um_bot, vm_bot, ubar,          & ! Intent(in)
                                   upwp_sfc, vpwp_sfc,            & ! Intent(out)
                                   wpthlp_sfc, wprtp_sfc, ustar )   ! Intent(out)
+
+      case ( "ekman" )
+
+        l_compute_momentum_flux = .true.
+        l_set_sclr_sfc_rtm_thlm = .true.
+        call ekman_sfclyr( ngrdcol, z_bot,                & ! Intent(in)
+                           um_bot, vm_bot, ubar,          & ! Intent(in)
+                           upwp_sfc, vpwp_sfc,            & ! Intent(out)
+                           wpthlp_sfc, wprtp_sfc, ustar )   ! Intent(out)
 
       case ( "twp_ice" )
 
