@@ -129,70 +129,76 @@ app.layout = html.Div([
                 },
                 config=graph_config
             ),
-        dcc.Graph(
-            id='stall-graph',
-            figure={
-                'data': [
-                    go.Bar(
-                        x=totals_df.index,
-                        y=totals_df['Stall L3 Miss %'],
-                        name='STALLS_L3_MISS',
-                        marker=dict(color="Red")    
-                    ),
-                    go.Bar(
-                        x=totals_df.index,
-                        y=totals_df['Stall L2 Miss %'],
-                        name='STALLS_L2_MISS',
-                        marker=dict(color="Yellow") 
-                    ),
-                    go.Bar(
-                        x=totals_df.index,
-                        y=totals_df['Stall L1D Miss %'],
-                        name='STALLS_L1D_MISS',
-                        marker=dict(color="Green") 
-                    ),
-                ],
-                'layout': go.Layout(
-                    barmode='stack',
-                    title=dict(
-                        text="Cache-Miss Stall Breakdown (share of total cycles)",
-                        font=dict(size=24)
-                    ),
-                    xaxis=dict(
-                        title=dict(
-                            text="Per Core Batch Size (columns per core)",
-                            font=dict(size=18)
+            dcc.Graph(
+                id='stall-graph',
+                figure={
+                    'data': [
+                        go.Scatter(
+                            x=totals_df.index,
+                            y=totals_df['Stall L3 Miss %'],
+                            name='STALLS_L3_MISS',
+                            mode='lines',
+                            line=dict(width=0.5, color="red"),
+                            stackgroup='one',       # enables stacking
+                            groupnorm=None,         # or 'percent' if you want percentages
                         ),
-                        showline=True,
-                        linecolor="black",
-                        linewidth=1,
-                        mirror=True,
-                        dtick=4
-                    ),
-                    yaxis=dict(
-                        title=dict(
-                            text="Stall cycles (% of total core cycles)",
-                            font=dict(size=18)
+                        go.Scatter(
+                            x=totals_df.index,
+                            y=totals_df['Stall L2 Miss %'],
+                            name='STALLS_L2_MISS',
+                            mode='lines',
+                            line=dict(width=0.5, color="yellow"),
+                            stackgroup='one',
                         ),
-                        showline=True,
-                        linecolor="black",
-                        linewidth=1,
-                        mirror=True
-                    ),
-                    margin=dict(l=10, r=10, t=50, b=10),
-                    template="plotly_white",
-                    legend=dict(
-                        orientation="v",   # or "v" for vertical stack
-                        yanchor="top",
-                        y=0.98,            # slightly below top edge (1.0 would be flush)
-                        xanchor="left",
-                        x=0.02,            # slightly inside from the left
-                        bgcolor="rgba(255,255,255,0.5)"  # semi-transparent white background (optional)
+                        go.Scatter(
+                            x=totals_df.index,
+                            y=totals_df['Stall L1D Miss %'],
+                            name='STALLS_L1D_MISS',
+                            mode='lines',
+                            line=dict(width=0.5, color="green"),
+                            stackgroup='one',
+                        ),
+                    ],
+                    'layout': go.Layout(
+                        title=dict(
+                            text="Stalls due to Cache Misses on Intel 6430 CPU",
+                            font=dict(size=24)
+                        ),
+                        xaxis=dict(
+                            title=dict(
+                                text="Per Core Batch Size (columns per core)",
+                                font=dict(size=18)
+                            ),
+                            showline=True,
+                            linecolor="black",
+                            linewidth=1,
+                            mirror=True,
+                            dtick=4
+                        ),
+                        yaxis=dict(
+                            title=dict(
+                                text="Stalled Cycles (% of total cycles)",
+                                font=dict(size=18)
+                            ),
+                            showline=True,
+                            linecolor="black",
+                            linewidth=1,
+                            mirror=True
+                        ),
+                        margin=dict(l=10, r=10, t=50, b=10),
+                        template="plotly_white",
+                        legend=dict(
+                            orientation="v",
+                            yanchor="top",
+                            y=0.98,
+                            xanchor="left",
+                            x=0.02,
+                            bgcolor="rgba(255,255,255,0.5)"
+                        )
                     )
-                )
-            },
-            config=graph_config
-        ),
+                },
+                config=graph_config
+            ),
 
         ], style={
             'width': '74%',
