@@ -4,7 +4,7 @@
 ! The "ekman" case is a benchmark against an idealized large-eddy simulation where an Ekman spiral
 ! develops in a dry and statically neutral atmosphere with constant geostrophic wind.
 
-! Hing Ong, 27 August 2025
+! Hing Ong, 1 Sep 2025
 
 &model_setting
 
@@ -30,7 +30,7 @@ grid_type = 1     ! Select grid type:
 ! Note:  For this option, both zt_grid_fname and zm_grid_fname must be ''.
 deltaz_nl  = 100.0   ! Distance between grid levels on evenly-spaced grid.      [m]
 zm_init_nl = 0.0     ! Minimum Altitude of lowest momentum level on any grid. [m]
-zm_top_nl  = 12800.0 ! Maximum Altitude of highest momentum level on any grid. [m]
+zm_top_nl  = 10000.0 ! Maximum Altitude of highest momentum level on any grid. [m]
 
 ! Path (from ../run_scripts/) and filename of data file that contains 
 ! thermodynamic level altitudes (in meters).  
@@ -125,6 +125,8 @@ edsclr_dim  = 0
 
 iiedsclr_rt     = -1 ! Location in the edsclrm array to place total water
 iiedsclr_thl    = -2 ! Location in the edsclrm array to place a scalar like thetal
+
+parameter_file = "../input/tunable_parameters/ekman_parameters.in"
 
 /
 
