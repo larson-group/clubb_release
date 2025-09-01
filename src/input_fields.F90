@@ -33,7 +33,7 @@ module inputfields
     l_input_Lscale = .false., l_input_Lscale_up = .false., l_input_Lscale_down = .false., & 
     l_input_Kh_zt = .false., l_input_Kh_zm = .false., &
     l_input_tau_zm = .false., l_input_tau_zt = .false., & 
-    l_input_wpthvp = .false., l_input_wp2thvp = .false., &
+    l_input_wpthvp = .false., l_input_wp2thvp = .false., l_input_wp2up = .false., &
     l_input_rtpthvp = .false., l_input_thlpthvp = .false., &
     l_input_wp2rtp = .false., l_input_wp2thlp = .false., &
     l_input_uprcp = .false., l_input_vprcp = .false., &
@@ -221,7 +221,7 @@ module inputfields
                                  thlp2, thlp3, rtpthlp, &
                                  wp2, wp3, &
                                  p_in_Pa, exner, rcm, cloud_frac, &
-                                 wpthvp, wp2thvp, rtpthvp, thlpthvp, &
+                                 wpthvp, wp2thvp, wp2up, rtpthvp, thlpthvp, &
                                  wp2rtp, wp2thlp, uprcp, vprcp, &
                                  rc_coef_zm, wp4, wpup2, &
                                  wpvp2, wp2up2, &
@@ -316,6 +316,7 @@ module inputfields
       rcm,               & ! cloud water mixing ratio, r_c (thermo. levels)     [kg/kg]
       cloud_frac,        & ! cloud fraction (thermodynamic levels)              [-]
       wp2thvp,           & ! < w'^2 th_v' > (thermodynamic levels)              [m^2/s^2 K]
+      wp2up,             & ! < w'^2 u' > (thermodynamic levels)                 [m^3/s^3]
       wp2rtp,            & ! w'^2 rt' (thermodynamic levels)                    [m^2/s^2 kg/kg]
       wp2thlp,           & ! w'^2 thl' (thermodynamic levels)                   [m^2/s^2 K]
       wpup2,             & ! w'u'^2 (thermodynamic levels)                      [m^3/s^3]
@@ -653,6 +654,12 @@ module inputfields
       call get_clubb_variable_interpolated &
            ( l_input_wp2thvp, stat_files(clubb_zt), "wp2thvp", gr%nzt, &
              timestep, gr%zt(1,:), wp2thvp, l_read_error )
+
+      l_fatal_error = l_fatal_error .or. l_read_error
+
+      call get_clubb_variable_interpolated &
+           ( l_input_wp2up, stat_files(clubb_zt), "wp2up", gr%nzt, &
+             timestep, gr%zt(1,:), wp2up, l_read_error )
 
       l_fatal_error = l_fatal_error .or. l_read_error
 

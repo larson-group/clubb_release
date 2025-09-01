@@ -58,7 +58,7 @@ module advance_wp2_wp3_module
                               sfc_elevation, fcor_y, sigma_sqd_w, wm_zm,     & ! intent(in)
                               wm_zt, a3_coef, a3_coef_zt, wp3_on_wp2,        & ! intent(in)
                               wpup2, wpvp2, wp2up2, wp2vp2, wp4,             & ! intent(in)
-                              wpthvp, wp2thvp, um, vm, upwp, vpwp,           & ! intent(in)
+                              wpthvp, wp2thvp, wp2up, um, vm, upwp, vpwp,    & ! intent(in)
                               em, Kh_zm, Kh_zt, invrs_tau_C4_zm,             & ! intent(in)
                               invrs_tau_wp3_zt, invrs_tau_C1_zm, Skw_zm,     & ! intent(in)
                               Skw_zt, rho_ds_zm, rho_ds_zt, invrs_rho_ds_zm, & ! intent(in)
@@ -243,6 +243,7 @@ module advance_wp2_wp3_module
       wpup2,             & ! w'u'^2 (thermodynamic levels)             [m^3/s^3]
       wpvp2,             & ! w'v'^2 (thermodynamic levels)             [m^3/s^3]
       wp2thvp,           & ! w'^2th_v' (thermodynamic levels)          [K m^2/s^2]
+      wp2up,             & ! w'^2u' (thermodynamic levels)             [m^3/s^3]
       um,                & ! u wind component (thermodynamic levels)   [m/s]
       vm,                & ! v wind component (thermodynamic levels)   [m/s]
       Kh_zt,             & ! Eddy diffusivity on thermodynamic levels  [m^2/s]
@@ -930,7 +931,7 @@ module advance_wp2_wp3_module
                    rhs_pr_dfsn_wp2, rhs_bp1_pr2_wp3, rhs_pr3_wp2, rhs_pr3_wp3,      & ! intent(in)
                    rhs_ta_wp3, rhs_pr_turb_wp3, rhs_pr_dfsn_wp3,                    & ! intent(in)
                    wp2, wp3, wpup2, wpvp2,                                          & ! intent(in)
-                   wpthvp, wp2thvp, up2, vp2, upwp,                                 & ! intent(in)
+                   wpthvp, wp2thvp, wp2up, up2, vp2, upwp,                          & ! intent(in)
                    C11_Skw_fnc, thv_ds_zm, thv_ds_zt,                               & ! intent(in)
                    lhs_splat_wp2, lhs_splat_wp3,                                    & ! intent(in)
                    clubb_params,                                                    & ! intent(in)
@@ -1157,6 +1158,7 @@ module advance_wp2_wp3_module
         write(fstderr,*) "wp4 = ", wp4, new_line('c')
         write(fstderr,*) "wpthvp = ", wpthvp, new_line('c')
         write(fstderr,*) "wp2thvp = ", wp2thvp, new_line('c')
+        write(fstderr,*) "wp2up = ", wp2up, new_line('c')
         write(fstderr,*) "um = ", um, new_line('c')
         write(fstderr,*) "vm = ", vm, new_line('c')
         write(fstderr,*) "upwp = ", upwp, new_line('c')
@@ -2333,7 +2335,7 @@ module advance_wp2_wp3_module
                        rhs_pr_dfsn_wp2, rhs_bp1_pr2_wp3, rhs_pr3_wp2, rhs_pr3_wp3, &
                        rhs_ta_wp3, rhs_pr_turb_wp3, rhs_pr_dfsn_wp3, &
                        wp2, wp3, wpup2, wpvp2, &
-                       wpthvp, wp2thvp, up2, vp2, upwp, &
+                       wpthvp, wp2thvp, wp2up, up2, vp2, upwp, &
                        C11_Skw_fnc, thv_ds_zm, thv_ds_zt, &
                        lhs_splat_wp2, lhs_splat_wp3, &
                        clubb_params, &
@@ -2471,6 +2473,7 @@ module advance_wp2_wp3_module
       wpup2,             & ! w'u'^2 (thermodynamic levels)             [m^3/s^3]
       wpvp2,             & ! w'v'^2 (thermodynamic levels)             [m^3/s^3]
       wp2thvp,           & ! w'^2th_v' (thermodynamic levels)        [K m^2/s^2]
+      wp2up,             & ! w'^2u' (thermodynamic levels)             [m^3/s^3]
       C11_Skw_fnc,       & ! C_11 parameter with Sk_w applied          [-]
       thv_ds_zt,         & ! Dry, base-state theta_v on thermo. levs.  [K]
       lhs_splat_wp3        ! LHS coefficient of wp3 splatting term     [1/s]

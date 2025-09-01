@@ -877,6 +877,14 @@ module stats_zt_module
              grid_kind=stats_zt )
         k = k + 1
 
+      case ('wp2up')
+        stats_metadata%iwp2up = k
+        call stat_assign( var_index=stats_metadata%iwp2up, var_name="wp2up", &
+             var_description="w'^2u', Vertical turbulent flux of w'u'", &
+             var_units="m^3/s^3", l_silhs=.false., &
+             grid_kind=stats_zt )
+        k = k + 1
+
       case ('wp2rcp')
         stats_metadata%iwp2rcp = k
         call stat_assign( var_index=stats_metadata%iwp2rcp, var_name="wp2rcp", &

@@ -98,6 +98,7 @@ module stats_variables
        iinvrs_tau_zt = 0, & 
        iKh_zt = 0, & 
        iwp2thvp = 0, & 
+       iwp2up = 0, &
        iwp2rcp = 0, & 
        iw_up_in_cloud = 0, &
        iw_down_in_cloud = 0, &

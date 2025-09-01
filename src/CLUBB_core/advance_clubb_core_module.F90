@@ -163,7 +163,7 @@ module advance_clubb_core_module
                sclrp2, sclrp3, sclrprtp, sclrpthlp, &               ! intent(inout)
                wpsclrp, edsclrm, &                                  ! intent(inout)
                rcm, cloud_frac, &                                   ! intent(inout)
-               wpthvp, wp2thvp, rtpthvp, thlpthvp, &                ! intent(inout)
+               wpthvp, wp2thvp, wp2up, rtpthvp, thlpthvp, &         ! intent(inout)
                sclrpthvp, &                                         ! intent(inout)
                wp2rtp, wp2thlp, uprcp, vprcp, rc_coef_zm, wp4, &    ! intent(inout)
                wpup2, wpvp2, wp2up2, wp2vp2, ice_supersat_frac, &   ! intent(inout)
@@ -541,7 +541,8 @@ module advance_clubb_core_module
     real( kind = core_rknd ), intent(inout), dimension(ngrdcol,nzt) ::  &
       rcm,        & ! cloud water mixing ratio, r_c (thermo. levels) [kg/kg]
       cloud_frac, & ! cloud fraction (thermodynamic levels)          [-]
-      wp2thvp       ! < w'^2 th_v' > (thermodynamic levels)          [m^2/s^2 K]
+      wp2thvp,    & ! < w'^2 th_v' > (thermodynamic levels)          [m^2/s^2 K]
+      wp2up         ! < w'^2 u' > (thermodynamic levels)             [m^3/s^3]
 
     real( kind = core_rknd ), intent(inout), dimension(ngrdcol,nzm) ::  &
       wpthvp,     & ! < w' th_v' > (momentum levels)                 [kg/kg K]
@@ -1198,7 +1199,7 @@ module advance_clubb_core_module
 #endif
                                rcm, cloud_frac,                             & ! Intent(out)
                                ice_supersat_frac, wprcp,                    & ! Intent(out)
-                               sigma_sqd_w, wpthvp, wp2thvp,                & ! Intent(out)
+                               sigma_sqd_w, wpthvp, wp2thvp, wp2up,         & ! Intent(out)
                                rtpthvp, thlpthvp, rc_coef,                  & ! Intent(out)
                                rcm_in_layer, cloud_cover,                   & ! Intent(out)
                                rcp2_zt, thlprcp,                            & ! Intent(out)
@@ -2111,7 +2112,7 @@ module advance_clubb_core_module
                             sfc_elevation, fcor_y, sigma_sqd_w, wm_zm,            & ! intent(in)
                             wm_zt, a3_coef, a3_coef_zt, wp3_on_wp2,               & ! intent(in)
                             wpup2, wpvp2, wp2up2, wp2vp2, wp4,                    & ! intent(in)
-                            wpthvp, wp2thvp, um, vm, upwp, vpwp,                  & ! intent(in)
+                            wpthvp, wp2thvp, wp2up, um, vm, upwp, vpwp,           & ! intent(in)
                             em, Kh_zm, Kh_zt, invrs_tau_C4_zm,                    & ! intent(in)
                             invrs_tau_wp3_zt, invrs_tau_C1_zm, Skw_zm,            & ! intent(in)
                             Skw_zt, rho_ds_zm, rho_ds_zt, invrs_rho_ds_zm,        & ! intent(in)
@@ -2559,7 +2560,7 @@ module advance_clubb_core_module
 #endif
                                rcm, cloud_frac,                             & ! Intent(out)
                                ice_supersat_frac, wprcp,                    & ! Intent(out)
-                               sigma_sqd_w, wpthvp, wp2thvp,                & ! Intent(out)
+                               sigma_sqd_w, wpthvp, wp2thvp, wp2up,         & ! Intent(out)
                                rtpthvp, thlpthvp, rc_coef,                  & ! Intent(out)
                                rcm_in_layer, cloud_cover,                   & ! Intent(out)
                                rcp2_zt, thlprcp,                            & ! Intent(out)
@@ -2759,7 +2760,7 @@ module advance_clubb_core_module
                thlm(i,:), rtm(i,:), wprtp(i,:), wpthlp(i,:),                              & ! In
                wp2(i,:), wp3(i,:), rtp2(i,:), rtp3(i,:), thlp2(i,:), thlp3(i,:),          & ! In
                rtpthlp(i,:),                                                              & ! In
-               wpthvp(i,:), wp2thvp(i,:), rtpthvp(i,:), thlpthvp(i,:),                    & ! In
+               wpthvp(i,:), wp2thvp(i,:), wp2up, rtpthvp(i,:), thlpthvp(i,:),             & ! In
                p_in_Pa(i,:), exner(i,:), rho(i,:), rho_zm(i,:),                           & ! In
                rho_ds_zm(i,:), rho_ds_zt(i,:), thv_ds_zm(i,:), thv_ds_zt(i,:),            & ! In
                wm_zt(i,:), wm_zm(i,:), rcm(i,:), wprcp(i,:), rc_coef(i,:),                & ! In
@@ -2989,7 +2990,7 @@ module advance_clubb_core_module
 #endif
                                  rcm, cloud_frac,                         & ! Intent(out)
                                  ice_supersat_frac, wprcp,                & ! Intent(out)
-                                 sigma_sqd_w, wpthvp, wp2thvp,            & ! Intent(out)
+                                 sigma_sqd_w, wpthvp, wp2thvp, wp2up,     & ! Intent(out)
                                  rtpthvp, thlpthvp, rc_coef,              & ! Intent(out)
                                  rcm_in_layer, cloud_cover,               & ! Intent(out)
                                  rcp2_zt, thlprcp,                        & ! Intent(out)
@@ -3242,6 +3243,7 @@ module advance_clubb_core_module
       cloud_frac,        & ! cloud fraction (thermodynamic levels)  [-]
       ice_supersat_frac, & ! ice supersat. frac. (thermo. levels)   [-]
       wp2thvp,           & ! < w'^2 th_v' > (thermodynamic levels)  [m^2/s^2 K]
+      wp2up,             & ! < w'^2 u' > (thermodynamic levels)     [m^3/s^3]
       rc_coef,           & ! Coefficient of X'r_c' (thermo. levs.)  [K/(kg/kg)]
       rcm_in_layer,      & ! rcm in cloud layer                     [kg/kg]
       cloud_cover,       & ! cloud cover                            [-]
@@ -3403,6 +3405,7 @@ module advance_clubb_core_module
       wp2thlp_zm,   & ! < w'^2 th_l' > on momentum levels     [m^2/s^2 K]
       wprtpthlp_zm, & ! < w' r_t' th_l' > on momentum levels  [m/s kg/kg K]
       wp2thvp_zm,   & ! < w'^2 th_v' > on momentum levels     [m^2/s^2 K]
+      wp2up_zm,     & ! < w'^2 u' > on momentum levels        [m^3/s^3]
       wp2rcp_zm       ! < w'^2 r_c' > on momentum levles      [m^2/s^2 kg/kg]
 
     real( kind = core_rknd ), dimension(ngrdcol,nzm,sclr_dim) :: &
@@ -3742,7 +3745,7 @@ module advance_clubb_core_module
            wprtp2, wp2rtp,                                  & ! intent(out)
            wpthlp2, wp2thlp, wprtpthlp,                     & ! intent(out)
            cloud_frac, ice_supersat_frac,                   & ! intent(out)
-           rcm, wpthvp_zt, wp2thvp, rtpthvp_zt,             & ! intent(out)
+           rcm, wpthvp_zt, wp2thvp, wp2up, rtpthvp_zt,      & ! intent(out)
            thlpthvp_zt, wprcp_zt, wp2rcp, rtprcp_zt,        & ! intent(out)
            thlprcp_zt, rcp2_zt,                             & ! intent(out)
            uprcp_zt, vprcp_zt,                              & ! intent(out)
@@ -3866,7 +3869,7 @@ module advance_clubb_core_module
              wprtp2_zm, wp2rtp_zm,                                 & ! intent(out)
              wpthlp2_zm, wp2thlp_zm, wprtpthlp_zm,                 & ! intent(out)
              cloud_frac_zm, ice_supersat_frac_zm,                  & ! intent(out)
-             rcm_zm, wpthvp, wp2thvp_zm, rtpthvp,                  & ! intent(out)
+             rcm_zm, wpthvp, wp2thvp_zm, wp2up_zm, rtpthvp,        & ! intent(out)
              thlpthvp, wprcp, wp2rcp_zm, rtprcp,                   & ! intent(out)
              thlprcp, rcp2,                                        & ! intent(out)
              uprcp, vprcp,                                         & ! intent(out)
@@ -3993,11 +3996,12 @@ module advance_clubb_core_module
                                 stats_metadata,                              & ! intent(in)
                                 wprtp2, wpthlp2,                             & ! intent(inout)
                                 wprtpthlp, cloud_frac, ice_supersat_frac,    & ! intent(inout)
-                                rcm, wp2thvp, wpsclrprtp, wpsclrp2,          & ! intent(inout)
+                                rcm, wp2thvp, wp2up, wpsclrprtp, wpsclrp2,   & ! intent(inout)
                                 wpsclrpthlp,                                 & ! intent(inout)
                                 wprtp2_zm, wpthlp2_zm,                       & ! intent(inout)
                                 wprtpthlp_zm, cloud_frac_zm,                 & ! intent(inout)
                                 ice_supersat_frac_zm, rcm_zm, wp2thvp_zm,    & ! intent(inout)
+                                wp2up_zm,                                    & ! intent(inout)
                                 wpsclrprtp_zm, wpsclrp2_zm, wpsclrpthlp_zm )   ! intent(inout)
     else ! l_trapezoidal_rule_zt
       cloud_frac_zm = zt2zm_api( nzm, nzt, ngrdcol, gr, cloud_frac )
@@ -4800,11 +4804,12 @@ module advance_clubb_core_module
                                     stats_metadata,                              & ! intent(in)
                                     wprtp2, wpthlp2,                             & ! intent(inout)
                                     wprtpthlp, cloud_frac, ice_supersat_frac,    & ! intent(inout)
-                                    rcm, wp2thvp, wpsclrprtp, wpsclrp2,          & ! intent(inout)
+                                    rcm, wp2thvp, wp2up, wpsclrprtp, wpsclrp2,   & ! intent(inout)
                                     wpsclrpthlp,                                 & ! intent(inout)
                                     wprtp2_zm, wpthlp2_zm,                       & ! intent(inout)
                                     wprtpthlp_zm, cloud_frac_zm,                 & ! intent(inout)
                                     ice_supersat_frac_zm, rcm_zm, wp2thvp_zm,    & ! intent(inout)
+                                    wp2up_zm,                                    & ! intent(inout)
                                     wpsclrprtp_zm, wpsclrp2_zm, wpsclrpthlp_zm )   ! intent(inout)
                  
       !
@@ -4869,7 +4874,8 @@ module advance_clubb_core_module
         cloud_frac,         & ! Cloud Fraction            [-]
         ice_supersat_frac,  & ! Ice Cloud Fraction        [-]
         rcm,                & ! Liquid water mixing ratio [kg/kg]
-        wp2thvp               ! w'^2 th_v'                [m^2 K/s^2]
+        wp2thvp,            & ! w'^2 th_v'                [m^2 K/s^2]
+        wp2up                 ! w'^2 u'                   [m^3/s^3]
 
       real( kind = core_rknd ), dimension(ngrdcol,nzt,sclr_dim), intent(inout) :: &
         wpsclrprtp,  & ! w'sclr'rt'
@@ -4886,7 +4892,8 @@ module advance_clubb_core_module
         cloud_frac_zm,        & ! Cloud Fraction on momentum grid            [-]
         ice_supersat_frac_zm, & ! Ice Cloud Fraction on momentum grid        [-]
         rcm_zm,               & ! Liquid water mixing ratio on momentum grid [kg/kg]
-        wp2thvp_zm              ! w'^2 th_v' on momentum grid                [m^2 K/s^2]
+        wp2thvp_zm,           & ! w'^2 th_v' on momentum grid                [m^2 K/s^2]
+        wp2up_zm                ! w'^2 u' on momentum grid                   [m^3/s^3]
 
       real( kind = core_rknd ), dimension(ngrdcol,nzm,sclr_dim), intent(inout) :: &
         wpsclrprtp_zm,  & ! w'sclr'rt' on momentum grid
@@ -4922,6 +4929,7 @@ module advance_clubb_core_module
         ice_supersat_frac_zm        = zt2zm_api( nzm, nzt, ngrdcol, gr, ice_supersat_frac )
         rcm_zm                      = zt2zm_api( nzm, nzt, ngrdcol, gr, rcm )
         wp2thvp_zm                  = zt2zm_api( nzm, nzt, ngrdcol, gr, wp2thvp )
+        wp2up_zm                    = zt2zm_api( nzm, nzt, ngrdcol, gr, wp2up )
 
         ! Since top momentum level is higher than top thermo. level,
         ! set variables at top momentum level to 0.
@@ -4934,6 +4942,7 @@ module advance_clubb_core_module
           ice_supersat_frac_zm(i,gr%k_ub_zm) = 0.0_core_rknd
           rcm_zm(i,gr%k_ub_zm)               = 0.0_core_rknd
           wp2thvp_zm(i,gr%k_ub_zm)           = 0.0_core_rknd
+          wp2up_zm(i,gr%k_ub_zm)             = 0.0_core_rknd
         end do
         !$acc end parallel loop
 
@@ -5006,6 +5015,10 @@ module advance_clubb_core_module
       call calc_trapezoid_zt( nzm, nzt, ngrdcol, gr, &
                               wp2thvp_zm, &
                               wp2thvp )
+
+      call calc_trapezoid_zt( nzm, nzt, ngrdcol, gr, &
+                              wp2up_zm, &
+                              wp2up )
 
       ! End of trapezoidal rule
 

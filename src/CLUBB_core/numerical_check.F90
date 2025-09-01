@@ -87,7 +87,7 @@ module numerical_check
 !---------------------------------------------------------------------------
   subroutine pdf_closure_check( nz, sclr_dim, &
                                 wp4, wprtp2, wp2rtp, wpthlp2, &
-                                wp2thlp, cloud_frac, rcm, wpthvp, wp2thvp, &
+                                wp2thlp, cloud_frac, rcm, wpthvp, wp2thvp, wp2up, &
                                 rtpthvp, thlpthvp, wprcp, wp2rcp, & 
                                 rtprcp, thlprcp, rcp2, wprtpthlp, & 
                                 crt_1, crt_2, cthl_1, cthl_2, pdf_params, &
@@ -136,6 +136,7 @@ module numerical_check
       rcm,             & ! Mean liquid water     [kg/kg]
       wpthvp,          & ! Buoyancy flux         [(K m)/s] 
       wp2thvp,         & ! w'^2 th_v'            [(m^2 K)/s^2]
+      wp2up,           & ! w'^2 u'               [m^3/s^3]
       rtpthvp,         & ! r_t' th_v'            [(kg K)/kg]
       thlpthvp,        & ! th_l' th_v'           [K^2]
       wprcp,           & ! w' r_c'               [(m kg)/(s kg)]
@@ -191,6 +192,8 @@ module numerical_check
     call check_nan( wpthvp, "wpthvp", proc_name, & ! intent(in)
                     err_info ) ! intent(inout)
     call check_nan( wp2thvp, "wp2thvp", proc_name, & ! intent(in)
+                    err_info ) ! intent(inout)
+    call check_nan( wp2up, "wp2up", proc_name, & ! intent(in)
                     err_info ) ! intent(inout)
     call check_nan( rtpthvp, "rtpthvp", proc_name, & ! intent(in)
                     err_info ) ! intent(inout)
@@ -835,7 +838,7 @@ module numerical_check
                                          sclr_dim, edsclr_dim, &
                                          um, vm, rtm, wprtp, thlm, wpthlp, &
                                          rtp2, thlp2, rtpthlp, wp2, wp3, &
-                                         wp2thvp, rtpthvp, thlpthvp, &
+                                         wp2thvp, wp2up, rtpthvp, thlpthvp, &
                                          hydromet, sclrm, edsclrm )
 
 !       Description:
@@ -869,7 +872,8 @@ module numerical_check
       rtm,      & ! total water mixing ratio, r_t (thermo. levels) [kg/kg]
       thlm,     & ! liq. water pot. temp., th_l (thermo. levels)   [K]
       wp3,      & ! w'^3 (thermodynamic levels)                    [m^3/s^3]
-      wp2thvp     ! < w'^2 th_v' > (thermodynamic levels)          [m^2/s^2 K]
+      wp2thvp,  & ! < w'^2 th_v' > (thermodynamic levels)          [m^2/s^2 K]
+      wp2up       ! < w'^2 u' > (thermodynamic levels)             [m^3/s^3]
 
     real( kind = core_rknd ), dimension(nzm), intent(in) :: &
       wprtp,    & ! w' r_t' (momentum levels)                      [(kg/kg) m/s]
@@ -999,6 +1003,12 @@ module numerical_check
 !         write(fstderr,*) "wp2thvp = ", wp2thvp
       invalid_model_arrays = .true.
 !         return
+    end if
+
+    if ( is_nan_2d( wp2up ) ) then
+      write(fstderr,*) "NaN in wp2up model array"
+!         write(fstderr,*) "wp2up = ", wp2up
+      invalid_model_arrays = .true.
     end if
 
     if ( is_nan_2d( rtpthvp ) ) then

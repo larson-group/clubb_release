@@ -205,7 +205,7 @@ module generalized_grid_test
                sclrm, sclrp2, sclrp3, sclrprtp, sclrpthlp, &              ! Intent(inout)
                wpsclrp, edsclrm, err_info, &                              ! Intent(inout)
                rcm, cloud_frac, &                                         ! Intent(inout)
-               wpthvp, wp2thvp, rtpthvp, thlpthvp, &                      ! Intent(inout)
+               wpthvp, wp2thvp, wp2up, rtpthvp, thlpthvp, &               ! Intent(inout)
                sclrpthvp, &                                               ! Intent(inout)
                wp2rtp, wp2thlp, uprcp, vprcp, rc_coef_zm, wp4, &          ! intent(inout)
                wpup2, wpvp2, wp2up2, wp2vp2, ice_supersat_frac, &         ! intent(inout)
@@ -440,7 +440,8 @@ module generalized_grid_test
     real( kind = core_rknd ), intent(inout), dimension(ngrdcol,nzt) ::  &
       rcm,        & ! cloud water mixing ratio, r_c (thermo. levels) [kg/kg]
       cloud_frac, & ! cloud fraction (thermodynamic levels)          [-]
-      wp2thvp       ! < w'^2 th_v' > (thermodynamic levels)          [m^2/s^2 K]
+      wp2thvp,    & ! < w'^2 th_v' > (thermodynamic levels)          [m^2/s^2 K]
+      wp2up         ! < w'^2 u' > (thermodynamic levels)             [m^3/s^3]
 
     real( kind = core_rknd ), intent(inout), dimension(ngrdcol,nzm) ::  &
       wpthvp,     & ! < w' th_v' > (momentum levels)                 [kg/kg K]
@@ -624,7 +625,8 @@ module generalized_grid_test
     real( kind = core_rknd ), dimension(ngrdcol,nzt) ::  &
       rcm_flip,        & ! cloud water mixing ratio, r_c (thermo. levels) [kg/kg]
       cloud_frac_flip, & ! cloud fraction (thermodynamic levels)          [-]
-      wp2thvp_flip       ! < w'^2 th_v' > (thermodynamic levels)          [m^2/s^2 K]
+      wp2thvp_flip,    & ! < w'^2 th_v' > (thermodynamic levels)          [m^2/s^2 K]
+      wp2up_flip         ! < w'^2 u' > (thermodynamic levels)             [m^3/s^3]
 
     real( kind = core_rknd ), dimension(ngrdcol,nzm) ::  &
       wpthvp_flip,     & ! < w' th_v' > (momentum levels)                 [kg/kg K]
@@ -764,6 +766,7 @@ module generalized_grid_test
          cloud_frac_flip(i,:) = flip( cloud_frac(i,:), nzt )
          wpthvp_flip(i,:) = flip( wpthvp(i,:), nzm )
          wp2thvp_flip(i,:) = flip( wp2thvp(i,:), nzt )
+         wp2up_flip(i,:) = flip( wp2up(i,:), nzt )
          rtpthvp_flip(i,:) = flip( rtpthvp(i,:), nzm )
          thlpthvp_flip(i,:) = flip( thlpthvp(i,:), nzm )
          wp2rtp_flip(i,:) = flip( wp2rtp(i,:), nzt )
@@ -1013,7 +1016,7 @@ module generalized_grid_test
               sclrm, sclrp2, sclrp3, sclrprtp, sclrpthlp, &        ! Intent(inout)
               wpsclrp, edsclrm, err_info, &                        ! Intent(inout)
               rcm, cloud_frac, &                                   ! Intent(inout)
-              wpthvp, wp2thvp, rtpthvp, thlpthvp, &                ! Intent(inout)
+              wpthvp, wp2thvp, wp2up, rtpthvp, thlpthvp, &         ! Intent(inout)
               sclrpthvp, &                                         ! Intent(inout)
               wp2rtp, wp2thlp, uprcp, vprcp, rc_coef_zm, wp4, &    ! intent(inout)
               wpup2, wpvp2, wp2up2, wp2vp2, ice_supersat_frac, &   ! intent(inout)
@@ -1085,7 +1088,7 @@ module generalized_grid_test
               sclrm_flip, sclrp2_flip, sclrp3_flip, sclrprtp_flip, sclrpthlp_flip, & ! Intent(inout)
               wpsclrp_flip, edsclrm_flip, err_info, &                               ! Intent(inout)
               rcm_flip, cloud_frac_flip, &                                          ! Intent(inout)
-              wpthvp_flip, wp2thvp_flip, rtpthvp_flip, thlpthvp_flip, &             ! Intent(inout)
+              wpthvp_flip, wp2thvp_flip, wp2up_flip, rtpthvp_flip, thlpthvp_flip, & ! Intent(inout)
               sclrpthvp_flip, &                                                     ! Intent(inout)
               wp2rtp_flip, wp2thlp_flip, uprcp_flip, vprcp_flip, rc_coef_zm_flip, wp4_flip, & ! intent(inout)
               wpup2_flip, wpvp2_flip, wp2up2_flip, wp2vp2_flip, ice_supersat_frac_flip, & ! intent(inout)
@@ -1168,6 +1171,9 @@ module generalized_grid_test
                                   l_differences )
       ! wp2thvp
       call check_flipped_results( "wp2thvp", wp2thvp, wp2thvp_flip, nzt, ngrdcol, &
+                                  l_differences )
+      ! wp2up
+      call check_flipped_results( "wp2up", wp2up, wp2up_flip, nzt, ngrdcol, &
                                   l_differences )
       ! rtpthvp
       call check_flipped_results( "rtpthvp", rtpthvp, rtpthvp_flip, nzm, ngrdcol, &

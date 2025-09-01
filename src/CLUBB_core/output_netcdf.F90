@@ -1485,7 +1485,8 @@ module output_netcdf
                                       um, vm, up3, vp3, rtm, thlm, rtp3, thlp3, wp3, upwp, vpwp, &
                                       up2, vp2, wprtp, wpthlp, rtp2, thlp2, rtpthlp, wp2, &
                                       sclrm, sclrp3, wpsclrp, sclrp2, sclrprtp, sclrpthlp, &
-                                      p_in_Pa, exner, rcm, cloud_frac, wp2thvp, wpthvp, rtpthvp, &
+                                      p_in_Pa, exner, rcm, cloud_frac, wp2thvp, wp2up, wpthvp, &
+                                      rtpthvp, &
                                       thlpthvp, sclrpthvp, wp2rtp, wp2thlp, wpup2, wpvp2, &
                                       ice_supersat_frac, uprcp, vprcp, rc_coef_zm, wp4, wp2up2, &
                                       wp2vp2, um_pert, vm_pert, upwp_pert, vpwp_pert, edsclrm, &
@@ -1582,6 +1583,7 @@ module output_netcdf
       rcm,                    & ! cloud water mixing ratio, r_c (thermo. levels) [kg/kg]
       cloud_frac,             & ! cloud fraction (thermodynamic levels)          [-]
       wp2thvp,                & ! < w'^2 th_v' > (thermodynamic levels)          [m^2/s^2 K]
+      wp2up,                  & ! < w'^2 u' > (thermodynamic levels)             [m^3/s^3]
       wp2rtp,                 & ! w'^2 rt' (thermodynamic levels)      [m^2/s^2 kg/kg]
       wp2thlp,                & ! w'^2 thl' (thermodynamic levels)     [m^2/s^2 K]
       wpup2,                  & ! w'u'^2 (thermodynamic levels)        [m^3/s^3]

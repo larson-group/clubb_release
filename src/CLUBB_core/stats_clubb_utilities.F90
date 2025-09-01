@@ -2567,7 +2567,7 @@ module stats_clubb_utilities
                      thlm, rtm, wprtp, wpthlp, &
                      wp2, wp3, rtp2, rtp3, thlp2, thlp3, &
                      rtpthlp, &
-                     wpthvp, wp2thvp, rtpthvp, thlpthvp, &
+                     wpthvp, wp2thvp, wp2up, rtpthvp, thlpthvp, &
                      p_in_Pa, exner, rho, rho_zm, &
                      rho_ds_zm, rho_ds_zt, thv_ds_zm, thv_ds_zt, &
                      wm_zt, wm_zm, rcm, wprcp, rc_coef, &
@@ -2680,7 +2680,8 @@ module stats_clubb_utilities
       wp3,      & ! < w'^3 > (thermodynamic levels)        [m^3/s^3]
       rtp3,     & ! < r_t'^3 > (thermodynamic levels)      [(kg/kg)^3]
       thlp3,    & ! < th_l'^3 > (thermodynamic levels)     [K^3]
-      wp2thvp     ! < w'^2 th_v' > (thermodynamic levels)  [m^2/s^2 K]
+      wp2thvp,  & ! < w'^2 th_v' > (thermodynamic levels)  [m^2/s^2 K]
+      wp2up       ! < w'^2 u' > (thermodynamic levels)     [m^3/s^3]
 
     real( kind = core_rknd ), intent(in), dimension(nzm) :: & 
       upwp,     & ! vertical u momentum flux (m levs.)     [m^2/s^2]
@@ -2922,6 +2923,8 @@ module stats_clubb_utilities
       call stat_update_var( stats_metadata%iKh_zt, Kh_zt, & ! intent(in)
                             stats_zt ) ! intent(inout)
       call stat_update_var( stats_metadata%iwp2thvp, wp2thvp, & ! intent(in)
+                            stats_zt ) ! intent(inout)
+      call stat_update_var( stats_metadata%iwp2up, wp2up, & ! intent(in)
                             stats_zt ) ! intent(inout)
       call stat_update_var( stats_metadata%iwp2rcp, wp2rcp, & ! intent(in)
                             stats_zt ) ! intent(inout)

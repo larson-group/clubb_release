@@ -66,7 +66,7 @@ module pdf_closure_module
                           wprtp2, wp2rtp,                             &
                           wpthlp2, wp2thlp, wprtpthlp,                &
                           cloud_frac, ice_supersat_frac,              &
-                          rcm, wpthvp, wp2thvp, rtpthvp,              &
+                          rcm, wpthvp, wp2thvp, wp2up, rtpthvp,       &
                           thlpthvp, wprcp, wp2rcp, rtprcp,            &
                           thlprcp, rcp2,                              &
                           uprcp, vprcp,                               &
@@ -293,6 +293,7 @@ module pdf_closure_module
       rcm,                   & ! Mean liquid water          [kg/kg]
       wpthvp,                & ! Buoyancy flux              [(K m)/s] 
       wp2thvp,               & ! w'^2 th_v'                 [(m^2 K)/s^2]
+      wp2up,                 & ! w'^2 u'                    [m^3/s^3]
       rtpthvp,               & ! r_t' th_v'                 [(kg K)/kg]
       thlpthvp,              & ! th_l' th_v'                [K^2]
       wprcp,                 & ! w' r_c'                    [(m kg)/(s kg)]
@@ -761,7 +762,16 @@ module pdf_closure_module
                          pdf_params%corr_w_thl_1, pdf_params%corr_w_thl_2,     &
                          pdf_params%mixt_frac,                                 &
                          wp2thlp )
-    
+
+    call calc_wp2xp_pdf( nz, ngrdcol,                                          &
+                         wm, um, pdf_params%w_1, pdf_params%w_2,               &
+                         u_1, u_2,                                             &
+                         pdf_params%varnce_w_1, pdf_params%varnce_w_2,         &
+                         varnce_u_1, varnce_u_2,                               &
+                         corr_u_w_1, corr_u_w_2,                               &
+                         pdf_params%mixt_frac,                                 &
+                         wp2up )
+
     ! Compute higher order moments (these may be interactive)
     call calc_wpxp2_pdf( nz, ngrdcol, &
                          wm, um, pdf_params%w_1, pdf_params%w_2, &
@@ -1413,6 +1423,7 @@ module pdf_closure_module
                nz, sclr_dim, &
                wp4(i,:), wprtp2(i,:), wp2rtp(i,:), wpthlp2(i,:), & ! intent(in)
                wp2thlp(i,:), cloud_frac(i,:), rcm(i,:), wpthvp(i,:), wp2thvp(i,:), & ! intent(in)
+               wp2up(i,:), & ! intent(in)
                rtpthvp(i,:), thlpthvp(i,:), wprcp(i,:), wp2rcp(i,:), & ! intent(in)
                rtprcp(i,:), thlprcp(i,:), rcp2(i,:), wprtpthlp(i,:), & ! intent(in)
                pdf_params%crt_1(i,:), pdf_params%crt_2(i,:), & ! intent(in)
@@ -1481,6 +1492,7 @@ module pdf_closure_module
         write(fstderr,*) "rcm = ", rcm
         write(fstderr,*) "wpthvp = ", wpthvp
         write(fstderr,*) "wp2thvp = ", wp2thvp
+        write(fstderr,*) "wp2up = ", wp2up
         write(fstderr,*) "rtpthvp = ", rtpthvp
         write(fstderr,*) "thlpthvp = ", thlpthvp
         write(fstderr,*) "wprcp = ", wprcp

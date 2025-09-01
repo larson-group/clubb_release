@@ -574,7 +574,7 @@ contains
     sclrp2, sclrp3, sclrprtp, sclrpthlp, &                  ! intent(inout)
     wpsclrp, edsclrm, err_info_api, &                       ! intent(inout)
     rcm, cloud_frac, &                                      ! intent(inout)
-    wpthvp, wp2thvp, rtpthvp, thlpthvp, &                   ! intent(inout)
+    wpthvp, wp2thvp, wp2up, rtpthvp, thlpthvp, &            ! intent(inout)
     sclrpthvp, &                                            ! intent(inout)
     wp2rtp, wp2thlp, uprcp, vprcp, rc_coef_zm, wp4, &       ! intent(inout)
     wpup2, wpvp2, wp2up2, wp2vp2, ice_supersat_frac, &      ! intent(inout)
@@ -786,7 +786,8 @@ contains
     real( kind = core_rknd ), intent(inout), dimension(gr%nzt) ::  &
       rcm,        & ! cloud water mixing ratio, r_c (thermo. levels) [kg/kg]
       cloud_frac, & ! cloud fraction (thermodynamic levels)          [-]
-      wp2thvp       ! < w'^2 th_v' > (thermodynamic levels)          [m^2/s^2 K]
+      wp2thvp,    & ! < w'^2 th_v' > (thermodynamic levels)          [m^2/s^2 K]
+      wp2up         ! < w'^2 u' > (thermodynamic levels)             [m^3/s^3]
 
     real( kind = core_rknd ), intent(inout), dimension(gr%nzm) ::  &
       wpthvp,     & ! < w' th_v' > (momentum levels)                 [kg/kg K]
@@ -1019,7 +1020,8 @@ contains
     real( kind = core_rknd ), dimension(1,gr%nzt) ::  &
       rcm_col,        & ! cloud water mixing ratio, r_c (thermo. levels) [kg/kg]
       cloud_frac_col, & ! cloud fraction (thermodynamic levels)          [-]
-      wp2thvp_col       ! < w'^2 th_v' > (thermodynamic levels)          [m^2/s^2 K]
+      wp2thvp_col,    & ! < w'^2 th_v' > (thermodynamic levels)          [m^2/s^2 K]
+      wp2up_col         ! < w'^2 u' > (thermodynamic levels)             [m^3/s^3]
 
     real( kind = core_rknd ), dimension(1,gr%nzm) ::  &
       wpthvp_col,     & ! < w' th_v' > (momentum levels)                 [kg/kg K]
@@ -1205,6 +1207,7 @@ contains
     cloud_frac_col(1,:) = cloud_frac
     wpthvp_col(1,:) = wpthvp
     wp2thvp_col(1,:) = wp2thvp
+    wp2up_col(1,:) = wp2up
     rtpthvp_col(1,:) = rtpthvp
     thlpthvp_col(1,:) = thlpthvp
     sclrpthvp_col(1,:,:) = sclrpthvp
@@ -1384,7 +1387,7 @@ contains
       sclrp2_col, sclrp3_col, sclrprtp_col, sclrpthlp_col, &                      ! intent(inout)
       wpsclrp_col, edsclrm_col, &                                                 ! intent(inout)
       rcm_col, cloud_frac_col, &                                                  ! intent(inout)
-      wpthvp_col, wp2thvp_col, rtpthvp_col, thlpthvp_col, &                       ! intent(inout)
+      wpthvp_col, wp2thvp_col, wp2up_col, rtpthvp_col, thlpthvp_col, &            ! intent(inout)
       sclrpthvp_col, &                                                            ! intent(inout)
       wp2rtp_col, wp2thlp_col, uprcp_col, vprcp_col, rc_coef_zm_col, wp4_col, &   ! intent(inout)
       wpup2_col, wpvp2_col, wp2up2_col, wp2vp2_col, ice_supersat_frac_col, &      ! intent(inout)
@@ -1480,6 +1483,7 @@ contains
     cloud_frac = cloud_frac_col(1,:)
     wpthvp = wpthvp_col(1,:)
     wp2thvp = wp2thvp_col(1,:)
+    wp2up = wp2up_col(1,:)
     rtpthvp = rtpthvp_col(1,:)
     thlpthvp = thlpthvp_col(1,:)
     sclrpthvp = sclrpthvp_col(1,:,:)
@@ -1555,7 +1559,7 @@ contains
     sclrp2, sclrp3, sclrprtp, sclrpthlp, &                  ! intent(inout)
     wpsclrp, edsclrm, err_info_api, &                       ! intent(inout)
     rcm, cloud_frac, &                                      ! intent(inout)
-    wpthvp, wp2thvp, rtpthvp, thlpthvp, &                   ! intent(inout)
+    wpthvp, wp2thvp, wp2up, rtpthvp, thlpthvp, &            ! intent(inout)
     sclrpthvp, &                                            ! intent(inout)
     wp2rtp, wp2thlp, uprcp, vprcp, rc_coef_zm, wp4, &       ! intent(inout)
     wpup2, wpvp2, wp2up2, wp2vp2, ice_supersat_frac, &      ! intent(inout)
@@ -1762,7 +1766,8 @@ contains
     real( kind = core_rknd ), intent(inout), dimension(ngrdcol,nzt) ::  &
       rcm,        & ! cloud water mixing ratio, r_c (thermo. levels) [kg/kg]
       cloud_frac, & ! cloud fraction (thermodynamic levels)          [-]
-      wp2thvp       ! < w'^2 th_v' > (thermodynamic levels)          [m^2/s^2 K]
+      wp2thvp,    & ! < w'^2 th_v' > (thermodynamic levels)          [m^2/s^2 K]
+      wp2up         ! < w'^2 u' > (thermodynamic levels)             [m^3/s^3]
 
     real( kind = core_rknd ), intent(inout), dimension(ngrdcol,nzm) ::  &
       wpthvp,     & ! < w' th_v' > (momentum levels)                 [kg/kg K]
@@ -1985,7 +1990,7 @@ contains
       sclrp2, sclrp3, sclrprtp, sclrpthlp, &                  ! intent(inout)
       wpsclrp, edsclrm, &                                     ! intent(inout)
       rcm, cloud_frac, &                                      ! intent(inout)
-      wpthvp, wp2thvp, rtpthvp, thlpthvp, &                   ! intent(inout)
+      wpthvp, wp2thvp, wp2up, rtpthvp, thlpthvp, &            ! intent(inout)
       sclrpthvp, &                                            ! intent(inout)
       wp2rtp, wp2thlp, uprcp, vprcp, rc_coef_zm, wp4, &       ! intent(inout)
       wpup2, wpvp2, wp2up2, wp2vp2, ice_supersat_frac, &      ! intent(inout)
