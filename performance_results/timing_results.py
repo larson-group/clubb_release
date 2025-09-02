@@ -18,8 +18,8 @@ from itertools import chain
 import plotly.graph_objects as go
 
 # ======================================== GPU and CPU Labelling Code ========================================
-gpu_names = ["A100", "V100", "H100", "MI250X"]
-cpu_names = ["AMD7763", "Intel6430", "Intel6240"]
+gpu_names = ["V100", "A100", "H100", "MI250X"]
+cpu_names = ["Intel6240", "AMD7763",  "Intel6430", "AMD7713"]
 
 def is_gpu(name): return any(k in name for k in gpu_names)
 def is_cpu(name): return any(k in name for k in cpu_names)
@@ -78,31 +78,53 @@ def complementary_and_darken(hex_color, darken_factor=0.85):
 
     return f"#{r_d:02x}{g_d:02x}{b_d:02x}"
 
-def get_symbols_and_colors( combined_df ):
+def get_symbols_and_colors(combined_df):
 
     series = list(combined_df["Configuration"].unique())
     cpu_series = [s for s in series if is_cpu(s)]
     gpu_series = [s for s in series if is_gpu(s)]
-    others = [s for s in series if s not in cpu_series + gpu_series]
+    others     = [s for s in series if s not in cpu_series + gpu_series]
+
+    # Helper: order a list of series by preferred name order (case-insensitive, substring),
+    # then append any remaining (not matched) in alphabetical order for determinism.
+    def order_by_preferred(series_list, preferred_names):
+        used = set()
+        ordered = []
+        for pname in preferred_names:
+            p = pname.lower()
+            for s in series_list:
+                if s in used:
+                    continue
+                if p in s.lower():
+                    ordered.append(s)
+                    used.add(s)
+        # add the rest in alpha order for stable behavior
+        remaining = [s for s in series_list if s not in used]
+        ordered += sorted(remaining, key=str.lower)
+        return ordered
+
+    # Reorder CPU/GPU series to match preferred name sequences
+    cpu_series = order_by_preferred(cpu_series, cpu_names)
+    gpu_series = order_by_preferred(gpu_series, gpu_names)
 
     color_map, symbol_map = {}, {}
 
-    # CPUs: first 5 colors + solid symbols
+    # CPUs: cycle cpu palette/symbols in this (now-ordered) list
     for i, name in enumerate(cpu_series):
         color_map[name]  = cpu_palette[i % len(cpu_palette)]
         symbol_map[name] = cpu_symbols[i % len(cpu_symbols)]
 
-    # GPUs: last 5 colors + open symbols
+    # GPUs: cycle gpu palette/symbols in this (now-ordered) list
     for i, name in enumerate(gpu_series):
         color_map[name]  = gpu_palette[i % len(gpu_palette)]
         symbol_map[name] = gpu_symbols[i % len(gpu_symbols)]
 
-    # Any unclassified configs: cycle remaining CPU colors with a neutral symbol
+    # Others: keep at the end; neutral symbol (you can also give them a neutral palette if you prefer)
     for j, name in enumerate(others):
         color_map[name]  = cpu_palette[(len(cpu_series) + j) % len(cpu_palette)]
         symbol_map[name] = "circle"
 
-    # Legend ordering (CPUs first, then GPUs, then others)
+    # Legend ordering: CPUs (preferred order), then GPUs (preferred order), then others
     category_order = {"Configuration": cpu_series + gpu_series + others}
 
     return category_order, color_map, symbol_map
