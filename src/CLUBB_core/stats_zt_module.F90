@@ -1357,6 +1357,13 @@ module stats_zt_module
              var_units="m^{3} s^{-4}", l_silhs=.false., grid_kind=stats_zt )
         k = k + 1
 
+      case ('wp3_nct')
+        stats_metadata%iwp3_nct = k
+        call stat_assign( var_index=stats_metadata%iwp3_nct, var_name="wp3_nct", &
+             var_description="wp3_nct, wp3 budget: wp3 nontraditional Coriolis term", &
+             var_units="m^{3} s^{-4}", l_silhs=.false., grid_kind=stats_zt )
+        k = k + 1
+
       case ('wp3_pr_tp')
         stats_metadata%iwp3_pr_tp = k
         call stat_assign( var_index=stats_metadata%iwp3_pr_tp, var_name="wp3_pr_tp", &

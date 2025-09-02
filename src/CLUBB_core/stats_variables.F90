@@ -346,6 +346,7 @@ module stats_variables
        iwp3_tp  = 0, & 
        iwp3_ac  = 0, & 
        iwp3_bp1 = 0, &
+       iwp3_nct = 0, &
        iwp3_pr_tp = 0, & 
        iwp3_pr_turb = 0, &
        iwp3_pr_dfsn = 0, & 

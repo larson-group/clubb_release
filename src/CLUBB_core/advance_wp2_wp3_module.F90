@@ -2383,6 +2383,7 @@ module advance_wp2_wp3_module
 
     use constants_clubb, only: &
         w_tol_sqd,     & ! Variable(s)
+        three,         &
         two,           &
         one,           &
         zero,          &
@@ -2661,7 +2662,8 @@ module advance_wp2_wp3_module
     end if
 
     if ( l_nontraditional_Coriolis ) then
-      ! Add the nontraditional Coriolis term
+
+      ! Add the nontraditional Coriolis term for wp2
       ! Hing Ong, 19 July 2025
       !$acc parallel loop gang vector collapse(2) default(present)
       do k = 2, nzm-1
@@ -2671,6 +2673,18 @@ module advance_wp2_wp3_module
         end do
       end do
       !$acc end parallel loop
+
+      ! Add the nontraditional Coriolis term for wp3
+      ! Hing Ong, 1 Septempber 2025
+      !$acc parallel loop gang vector collapse(2) default(present)
+      do k = 2, nzt-1
+        do i = 1, ngrdcol
+          k_wp3 = 2*k
+          rhs(i,k_wp3) = rhs(i,k_wp3) + three * fcor_y(i) * wp2up(i,k)
+        end do
+      end do
+      !$acc end parallel loop
+
     end if ! l_nontraditional_Coriolis
 
     ! Combine terms
@@ -3100,6 +3114,13 @@ module advance_wp2_wp3_module
                                    rhs_bp1_wp3(i,k), &           ! intent(in)
                                    stats_zt(i) )                 ! intent(out)
 
+          ! w'^3 term nct is completely explicit; call stat_update_var_pt.
+          ! Hing Ong, 1 September 2025
+          if ( l_nontraditional_Coriolis ) then
+            call stat_update_var_pt( stats_metadata%iwp3_nct, k,     & ! intent(in)
+                                     three * fcor_y(i) * wp2up(i,k), & ! intent(in)
+                                     stats_zt(i) )                     ! intent(out)
+          end if
 
           ! w'^3 term pr2 has both implicit and explicit components; call
           ! stat_begin_update_pt.  Since stat_begin_update_pt automatically

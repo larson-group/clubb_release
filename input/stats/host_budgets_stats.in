@@ -17,7 +17,7 @@ vars_zt =
 'um_sdmp', 'um_ndg', 'um_mfl',
 'vm_bt', 'vm_ma', 'vm_gf', 'vm_cf', 'vm_ta', 'vm_f', 
 'vm_sdmp', 'vm_ndg', 'vm_mfl',
-'wp3_bt', 'wp3_ma', 'wp3_ta', 'wp3_tp', 'wp3_ac', 'wp3_bp1', 'wp3_pr_turb',
+'wp3_bt', 'wp3_ma', 'wp3_ta', 'wp3_tp', 'wp3_ac', 'wp3_bp1', 'wp3_nct', 'wp3_pr_turb',
 'wp3_pr1', 'wp3_pr2', 'wp3_sdmp', 'wp3_dp1', 'wp3_cl', 'wp3_splat',
 'rtp3_bt', 'rtp3_tp', 'rtp3_ac', 'rtp3_dp',
 'thlp3_bt', 'thlp3_tp', 'thlp3_ac', 'thlp3_dp',
