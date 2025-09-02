@@ -25,7 +25,7 @@ min_ai, max_ai = 1e-3, 5e2
 if len(sys.argv) != 2:
     print(f"No file specfied. Defaulting to 'a100_nsight_compute.csv'")
     print(f" - To specify a different file use: {sys.argv[0]} <ncu csv file>")
-    input_path = "a100_nvhpc_async_64k_ncu.csv"
+    input_path = "ncu_report/a100_nvhpc_async_64k_ncu.csv"
 else:
     input_path = sys.argv[1]
 
