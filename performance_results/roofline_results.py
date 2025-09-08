@@ -10,7 +10,7 @@ from dash import Dash, dcc, html
 import plotly.graph_objs as go
 
 save_height = 400
-save_width = 400
+save_width = 800
 graph_config = {
     'toImageButtonOptions': {
         'format': 'png',
@@ -365,7 +365,7 @@ def make_precision_traces(df, prec, peak_perf, mem_bw, color):
             text=kernel_names,
             hovertemplate=(
                 "Kernel: %{text}<br>AI: %{x:.3f} FLOPs/Byte"
-                "<br>Performance: %{y:.3e} FLOPs/s<extra></extra>"
+                "<br>Performance: %{y:.3e} GFLOPs/s<extra></extra>"
             )
         ),
         # go.Scatter(
@@ -434,22 +434,26 @@ def update_roofline(selected_precisions):
                     font=dict(size=18)  # X-axis title font
                 ),
                 type="log",
-                tickfont=dict(size=14)
+                tickfont=dict(size=14),
+                showline=True,
+                mirror=True
             ),
             yaxis=dict(
                 title=dict(
-                    text="Achieved Performance (FLOPs/s)",
+                    text="Achieved Performance (GFLOPs/s)",
                     font=dict(size=18)  # Y-axis title font
                 ),
                 type="log",
                 range=[np.log10(5e-3),np.log10(20)],
-                tickfont=dict(size=14)
+                tickfont=dict(size=14),
+                showline=True,
+                mirror=True
             ),
             legend=dict(
-                x=0.01,
-                y=0.99,
+                x=0.00,
+                y=1,
                 itemwidth=30,
-                font=dict(size=10)  # Legend font size
+                font=dict(size=10 if save_width == 400 else 14)  # Legend font size
             ),
             margin=dict(l=60, r=20, t=60, b=60),
             hovermode="closest"

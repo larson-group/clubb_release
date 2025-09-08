@@ -93,13 +93,15 @@ app.layout = html.Div([
                             y=totals_df['Vectorization Ratio'],
                             mode='lines+markers',
                             name='Vectorization Ratio',
-                            marker=dict(size=8)  
+                            marker=dict(size=6)  
                         )
                     ],
                     'layout': go.Layout(
                         title=dict(
-                            text="CLUBB Vectorization Ratio on Intel 6430 CPU",
-                            font=dict(size=24)  # Title font size
+                            text="CPU vectorization ratio",
+                            font=dict(size=24),  # Title font size
+                            x=0.5,  # Center horizontally
+                            xanchor="center"  # Anchor relative to the center
                         ),
                         xaxis=dict(
                             title=dict(
@@ -161,8 +163,11 @@ app.layout = html.Div([
                     ],
                     'layout': go.Layout(
                         title=dict(
-                            text="Stalls due to Cache Misses on Intel 6430 CPU",
-                            font=dict(size=24)
+                            text="CPU stalls due to cache misses",
+                            #text="Cache miss stalls on Intel 6430 CPU",
+                            font=dict(size=24),  # Title font size
+                            x=0.5,  # Center horizontally
+                            xanchor="center"  # Anchor relative to the center
                         ),
                         xaxis=dict(
                             title=dict(
