@@ -173,12 +173,14 @@ graph_style = {"width": "100%", "height": "100%"}
 
 cm_to_in = lambda cm: cm / 2.54
 
+save_height = 400
+save_width = 800
 graph_config = {
     'toImageButtonOptions': {
         'format': 'png',
         'filename': 'custom_image',
-        'height': 400,
-        'width': 800,
+        'height': save_height,
+        'width': save_width,
         'scale': 3.125  # 300 DPI equivalent
     }
 }
@@ -930,7 +932,7 @@ def launch_dash_app(dir_name, grouped_files, all_variables):
                         html.Div([
                             html.Label("Legend Filter (Regex): ", style={"margin-top": "5px"}),
                             dcc.Input(id="cps-config-name-regex", type="text", placeholder="Name Filter", 
-                                      value="_gptl|_derecho|_frontier|_casper|_arm", style={"width": "100%"}),
+                                      value="_gptl|_derecho|_frontier|_casper|_arm|_intel|_async|_nvhpc", style={"width": "100%"}),
                         ], style={"margin-bottom": "8px", "width": "800px"}),
 
                         html.Div([
@@ -989,7 +991,7 @@ def launch_dash_app(dir_name, grouped_files, all_variables):
                         html.Div([
                             html.Label("Legend Filter (Regex) ", style={"margin-top": "5px"}),
                             dcc.Input(id="raw-config-name-regex", type="text", placeholder="Name Filter", 
-                                      value="_gptl|_derecho|_frontier|_casper|_arm", style={"width": "100%"}),
+                                      value="_gptl|_derecho|_frontier|_casper|_arm|_intel|_async|_nvhpc", style={"width": "100%"}),
                         ], style={"margin-bottom": "8px", "width": "800px"}),
 
                         dcc.Graph(id="plot-raw", style=graph_style, config=graph_config),
@@ -1002,7 +1004,7 @@ def launch_dash_app(dir_name, grouped_files, all_variables):
                                 {"label": "linear-fit", "value": "linfit"},
                                 {"label": "scaling", "value": "scaling"}
                             ],
-                            value="none",
+                            value="linfit",
                             labelStyle={"display": "inline-block"}  # 2 columns
                         ),
                         
@@ -1090,7 +1092,7 @@ def launch_dash_app(dir_name, grouped_files, all_variables):
                         html.Div([
                             html.Label("Legend Filter (Regex): ", style={"margin-top": "5px"}),
                             dcc.Input(id="fit-batched-config-name-regex", type="text", placeholder="Name Filter", 
-                                      value="_gptl|_derecho|_frontier|_casper|_arm", style={"width": "100%"}),
+                                      value="_gptl|_derecho|_frontier|_casper|_arm|_intel|_async|_nvhpc", style={"width": "100%"}),
                         ], style={"margin-bottom": "8px", "width": "800px"}),
 
                         html.Div([
@@ -1382,10 +1384,24 @@ def launch_dash_app(dir_name, grouped_files, all_variables):
 
         fig.update_traces(marker=dict(size=8))
         fig.update_traces(line=dict(width=2))
+
+        # Count legend items that will actually show
+        n_legend_items = sum(
+            1 for tr in fig.data
+            if (getattr(tr, "showlegend", True) is not False)
+            and getattr(tr, "name", None)
+        )
+
+        # Base legend font size
+        legend_font_size = 12
+        if save_width == 800:
+            legend_font_size = 16 if n_legend_items < 5 else 12
         
         fig.update_layout(
             title=dict(
                 text=title,
+                x=0.5,
+                xanchor='center',
                 font=dict(size=18 * scale_factor)
             ),
             xaxis=dict(
@@ -1413,19 +1429,9 @@ def launch_dash_app(dir_name, grouped_files, all_variables):
             legend=dict(
                 x=0.01, y=0.99,
                 xanchor="left", yanchor="top",
-                font=dict(size=12 * config_scale),
+                font=dict(size=legend_font_size * config_scale),
                 bgcolor="rgba(255,255,255,0.5)"
             ),
-            # legend=dict(
-            #     x=x_legend,          # 0 is left, 1 is right
-            #     y=y_legend,          # 0 is bottom, 1 is top
-            #     xanchor='left', # anchor the x position
-            #     yanchor='top',   # anchor the y position
-            #     bgcolor='rgba(255,255,255,0.5)',  # optional translucent background
-            #     #bordercolor='black',
-            #     #borderwidth=1,
-            #     font=dict(size=12 * config_scale)
-            # ),
             font=dict(size=12 * scale_factor),
             margin=dict(l=10, r=10, t=50, b=10),
             paper_bgcolor="white",
@@ -1522,10 +1528,16 @@ def launch_dash_app(dir_name, grouped_files, all_variables):
 
                             # Create annotation text
                             m, b = coeffs
-                            if any( cpu in config_name for cpu in cpu_names ):
-                                equation_text = f"R\u0302<sub>CPU</sub>(N<sub>i</sub>) = {m:.3e}·N<sub>i</sub> + {b:.3e}"
+                            if save_width == 400:
+                                if any( cpu in config_name for cpu in cpu_names ):
+                                    equation_text = f"R\u0302<sub>CPU</sub>"
+                                else:
+                                    equation_text = f"R\u0302<sub>GPU</sub>"
                             else:
-                                equation_text = f"R\u0302<sub>GPU</sub>(N<sub>i</sub>) = {m:.3e}·N<sub>i</sub> + {b:.3e}"
+                                if any( cpu in config_name for cpu in cpu_names ):
+                                    equation_text = f"R\u0302<sub>CPU</sub>(N<sub>i</sub>) = {m:.3e}·N<sub>i</sub> + {b:.3e}"
+                                else:
+                                    equation_text = f"R\u0302<sub>GPU</sub>(N<sub>i</sub>) = {m:.3e}·N<sub>i</sub> + {b:.3e}"
 
                             # Store one x,y point near end for label positioning
                             x_label = model_df["ngrdcol"][label_position]/1.3
@@ -1619,8 +1631,8 @@ def launch_dash_app(dir_name, grouped_files, all_variables):
                 text=label["text"],
                 showarrow=True,
                 arrowhead=1,
-                ax=40,  # offset x for label placement
-                ay=30 if any( cpu in label["config"] for cpu in cpu_names ) else -30,
+                ax=50,  # offset x for label placement
+                ay=25 if any( cpu in label["config"] for cpu in cpu_names ) else -30,
                 font=dict(size=16, color="black", family="Arial"),
                 bgcolor="white",
                 opacity=0.7
@@ -1636,6 +1648,15 @@ def launch_dash_app(dir_name, grouped_files, all_variables):
         )
 
         fig = plot_with_enhancements(fig, title)
+
+        fig.update_layout(
+            xaxis=dict(
+                range=[-100, 12500] 
+            ),
+            yaxis=dict(
+                range=[-0.003, 0.05]
+            )
+        )
 
         for tr in fig.data:
             if "fit" in tr.name or "scale" in tr.name:
@@ -1774,35 +1795,65 @@ def launch_dash_app(dir_name, grouped_files, all_variables):
             gpu_Tmax = gpu_df["Throughput"].max()
             gpu_Tmax_i = gpu_df.loc[gpu_df["Throughput"].idxmax(), "ngrdcol"]
 
+            ppr_above_prc = False
 
-            # Upward vertical line from CPU peak to GPU Peak (PPR)
-            fig.add_trace(go.Scatter(
-                x=[min(cpu_Tmax_i, cpu_Tmax_i),max(cpu_Tmax_i, cpu_Tmax_i)],
-                y=[min(cpu_Tmax, gpu_Tmax),max(cpu_Tmax, gpu_Tmax)],
-                mode="lines+text",
-                line=dict(color="black", dash="dot"),
-                showlegend=False
-            ))
-            
-            # Horizontal line atop PPR line
-            fig.add_trace(go.Scatter(
-                x=[cpu_Tmax_i/1.2, cpu_Tmax_i*1.2],
-                y=[gpu_Tmax, gpu_Tmax],
-                mode="lines+text",
-                line=dict(color="black", dash="dot"),
-                showlegend=False
-            ))
+            if not ppr_above_prc:
 
-            # Text for PPR
-            fig.add_trace(go.Scatter(
-                x=[cpu_Tmax_i*1.05],
-                y=[(cpu_Tmax+gpu_Tmax)/2],
-                mode="text",
-                text=[f"PPR = {round_sigfigs(gpu_Tmax/cpu_Tmax, 3)}x"],
-                textposition="middle right",
-                textfont=dict(size=18, color="black"),
-                showlegend=False
-            ))
+                # Upward vertical line from CPU peak to GPU Peak (PPR)
+                fig.add_trace(go.Scatter(
+                    x=[min(cpu_Tmax_i, cpu_Tmax_i),max(cpu_Tmax_i, cpu_Tmax_i)],
+                    y=[min(cpu_Tmax, gpu_Tmax),max(cpu_Tmax, gpu_Tmax)],
+                    mode="lines+text",
+                    line=dict(color="black", dash="dot"),
+                    showlegend=False
+                ))
+
+                # Arrowhead marker up
+                fig.add_trace(go.Scatter(
+                    x=[min(cpu_Tmax_i, cpu_Tmax_i)],
+                    y=[max(cpu_Tmax, gpu_Tmax)],
+                    mode="markers",
+                    marker=dict(symbol="arrow-up", size=16, color="black"),
+                    showlegend=False
+                ))
+
+                # Arrowhead marker down
+                fig.add_trace(go.Scatter(
+                    x=[min(cpu_Tmax_i, cpu_Tmax_i)],
+                    y=[min(cpu_Tmax, gpu_Tmax)],
+                    mode="markers",
+                    marker=dict(symbol="arrow-down", size=16, color="black"),
+                    showlegend=False
+                ))
+                
+                # Horizontal line atop PPR line
+                fig.add_trace(go.Scatter(
+                    x=[cpu_Tmax_i/1.2, cpu_Tmax_i*1.2],
+                    y=[gpu_Tmax, gpu_Tmax],
+                    mode="lines+text",
+                    line=dict(color="black", dash="dot"),
+                    showlegend=False
+                ))
+
+                # Horizontal line beneath PPR line
+                fig.add_trace(go.Scatter(
+                    x=[cpu_Tmax_i/1.2, cpu_Tmax_i*1.2],
+                    y=[cpu_Tmax, cpu_Tmax],
+                    mode="lines+text",
+                    line=dict(color="black", dash="dot"),
+                    showlegend=False
+                ))
+
+                # Text for PPR
+                fig.add_trace(go.Scatter(
+                    x=[cpu_Tmax_i*1.05],
+                    y=[(cpu_Tmax+gpu_Tmax)/2],
+                    mode="text",
+                    text=[f"PPR = {round_sigfigs(gpu_Tmax/cpu_Tmax, 3)}x"],
+                    textposition="middle right",
+                    textfont=dict(size=18, color="black"),
+                    showlegend=False
+                ))
 
             cpu_final_val = cpu_df["Throughput"].values[-1]
 
@@ -1815,7 +1866,36 @@ def launch_dash_app(dir_name, grouped_files, all_variables):
                 showlegend=False
             ))
 
-            # Horizontal line atop ATR line
+            # Arrowhead marker at the top
+            fig.add_trace(go.Scatter(
+                x=[gpu_Tmax_i],
+                y=[cpu_final_val],
+                mode="markers",
+                marker=dict(symbol="arrow-down", size=16, color="black"),
+                showlegend=False
+            ))
+
+            # Arrowhead marker at the top
+            fig.add_trace(go.Scatter(
+                x=[gpu_Tmax_i],
+                y=[gpu_Tmax],
+                mode="markers",
+                marker=dict(symbol="arrow-up", size=16, color="black"),
+                showlegend=False
+            ))
+
+
+            if not ppr_above_prc:
+                # Horizontal line atop ATR line
+                fig.add_trace(go.Scatter(
+                    x=[gpu_Tmax_i/1.2, gpu_Tmax_i*1.2],
+                    y=[gpu_Tmax, gpu_Tmax],
+                    mode="lines+text",
+                    line=dict(color="black", dash="dot"),
+                    showlegend=False
+                ))
+
+            # Horizontal line below ATR line
             fig.add_trace(go.Scatter(
                 x=[gpu_Tmax_i/1.2, gpu_Tmax_i*1.2],
                 y=[cpu_final_val, cpu_final_val],
@@ -1857,7 +1937,7 @@ def launch_dash_app(dir_name, grouped_files, all_variables):
 
                 # Horizontal line from CPU peak
                 fig.add_trace(go.Scatter(
-                    x=[cpu_Tmax_i, x_cross_logged],
+                    x=[cpu_Tmax_i/1.2, x_cross_logged*1.2],
                     y=[cpu_Tmax, cpu_Tmax],
                     mode="lines+text",
                     line=dict(color="black", dash="dot"),
@@ -1867,9 +1947,18 @@ def launch_dash_app(dir_name, grouped_files, all_variables):
                 # Downward vertical line from PRC
                 fig.add_trace(go.Scatter(
                     x=[x_cross_logged, x_cross_logged],
-                    y=[cpu_Tmax*0.03, cpu_Tmax],
+                    y=[cpu_Tmax*0.03, cpu_Tmax*0.9],
                     mode="lines+text",
                     line=dict(color="black", dash="dot"),
+                    showlegend=False
+                ))
+
+                # Arrowhead marker at the top
+                fig.add_trace(go.Scatter(
+                    x=[x_cross_logged],
+                    y=[cpu_Tmax*0.9],
+                    mode="markers",
+                    marker=dict(symbol="triangle-up", size=16, color="black"),
                     showlegend=False
                 ))
 
@@ -1883,6 +1972,56 @@ def launch_dash_app(dir_name, grouped_files, all_variables):
                     textfont=dict(size=18, color="black"),
                     showlegend=False
                 ))
+
+                #======== PPR Line
+                if ppr_above_prc:
+
+                    # Upward ward vertical line from CPU peak to GPU Peak (PPR)
+                    fig.add_trace(go.Scatter(
+                        x=[x_cross_logged,x_cross_logged],
+                        y=[min(cpu_Tmax, gpu_Tmax),max(cpu_Tmax, gpu_Tmax)],
+                        mode="lines+text",
+                        line=dict(color="black", dash="dot"),
+                        showlegend=False
+                    ))
+
+                    # Arrowhead marker at the top
+                    fig.add_trace(go.Scatter(
+                        x=[x_cross_logged],
+                        y=[max(cpu_Tmax, gpu_Tmax)],
+                        mode="markers",
+                        marker=dict(symbol="arrow-up", size=16, color="black"),
+                        showlegend=False
+                    ))
+
+                    # Arrowhead marker at the top
+                    fig.add_trace(go.Scatter(
+                        x=[x_cross_logged],
+                        y=[min(cpu_Tmax, gpu_Tmax)],
+                        mode="markers",
+                        marker=dict(symbol="arrow-down", size=16, color="black"),
+                        showlegend=False
+                    ))
+                    
+                    # Text for PPR
+                    fig.add_trace(go.Scatter(
+                        x=[x_cross_logged/1.05],
+                        y=[(cpu_Tmax+gpu_Tmax)/2],
+                        mode="text",
+                        text=[f"PPR = {round_sigfigs(gpu_Tmax/cpu_Tmax, 3)}x"],
+                        textposition="middle left",
+                        textfont=dict(size=18, color="black"),
+                        showlegend=False
+                    ))
+
+                    # Horizontal line atop ATR line
+                    fig.add_trace(go.Scatter(
+                        x=[x_cross_logged/1.2, gpu_Tmax_i*1.2],
+                        y=[gpu_Tmax, gpu_Tmax],
+                        mode="lines+text",
+                        line=dict(color="black", dash="dot"),
+                        showlegend=False
+                    ))
 
             # Figure out EXACTLY where to place the DRC line
             for g_i in range(len(gpu_df)-1):
@@ -1971,11 +2110,20 @@ def launch_dash_app(dir_name, grouped_files, all_variables):
                             # Down ward vertical line from DRC
                             fig.add_trace(go.Scatter(
                                 x=[x_cross_adj, x_cross_adj],
-                                y=[y_cross_adj*0.05, y_cross_adj],
+                                y=[y_cross_adj*0.05, y_cross_adj*0.7],
                                 mode="lines+text",
                                 line=dict(color="black", dash="dot"),
                                 showlegend=False,
                                 name="Intersection Marker"
+                            ))
+
+                            # Arrowhead marker at the top
+                            fig.add_trace(go.Scatter(
+                                x=[x_cross_adj],
+                                y=[y_cross_adj*0.7],
+                                mode="markers",
+                                marker=dict(symbol="triangle-up", size=16, color="black"),
+                                showlegend=False
                             ))
 
                             # Text for DRC
