@@ -5,12 +5,12 @@ import kaleido
 
 # File paths for async and non-async runs per GPU
 files = {
-    "Async NVHPC V100": "timing_results_gptl_new/V100_nvhpc_async_1x1_casper_arm.csv",
-    "Non‑Async V100":   "timing_results_gptl_new/V100_nvhpc_noasync_1x1_casper_arm.csv",
-    "Async NVHPC A100": "timing_results_gptl_new/A100_nvhpc_asnyc_1x1_derecho_arm.csv",
-    "Non‑Async A100":   "timing_results_gptl_new/A100_nvhpc_noasnyc_1x1_derecho_arm.csv",
-    "Async NVHPC H100": "timing_results_gptl_new/H100_nvhpc_async_1x1_derecho_arm.csv",
-    "Non‑Async H100":   "timing_results_gptl_new/H100_nvhpc_noasync_1x1_casper_arm.csv"
+    "Async NVHPC V100": "../timing_results/V100_nvhpc_async_1x1_casper_arm.csv",
+    "Non‑Async V100":   "../timing_results/V100_nvhpc_noasync_1x1_casper_arm.csv",
+    "Async NVHPC A100": "../timing_results/A100_nvhpc_async_1x1_derecho_arm.csv",
+    "Non‑Async A100":   "../timing_results/A100_nvhpc_noasync_1x1_derecho_arm.csv",
+    "Async NVHPC H100": "../timing_results/H100_nvhpc_async_1x1_derecho_arm.csv",
+    "Non‑Async H100":   "../timing_results/H100_nvhpc_noasync_1x1_casper_arm.csv"
 }
 
 # Marker symbols for each GPU
@@ -61,19 +61,25 @@ font_size = 16
 
 # Update layout
 fig.update_layout(
-    title="Async vs Non-Async Throughput Ratio",
+    title=dict(
+        text="Async vs non-async throughput ratio",
+        x=0.5,
+        xanchor='center',
+        font=dict(size=24)  # Title font size
+    ),
     title_font=dict(size=font_size+4),
     font=dict(size=font_size),
     xaxis=dict(
-        title="Batch Size",
+        title="Batch Size (columns)",
         title_font=dict(size=font_size),
         type="log",
         linecolor='black',
         linewidth=1,
+        tickvals=[10, 100, 1000, 10000, 100000],  # <-- force these
         mirror=True
     ),
     yaxis=dict(
-        title="Throughput Ratio (Async / Non‑Async)",
+        title="Throughput Ratio (async / non‑async)",
         title_font=dict(size=font_size),
         range=[0.8, 2.1],
         rangemode="normal",
@@ -96,10 +102,16 @@ fig.update_layout(
 # Export to PNG
 pio.write_image(
     fig,
-    "async_speedup_comparison.png",
-    width=800,
+    "async_speedup_comparison_small.png",
+    width=400,
     height=400,
     scale=3.125
 )
 
-#fig.show()
+pio.write_image(
+    fig,
+    "async_speedup_comparison_big.png",
+    width=800,
+    height=400,
+    scale=3.125
+)

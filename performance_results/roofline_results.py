@@ -9,17 +9,19 @@ import dash
 from dash import Dash, dcc, html
 import plotly.graph_objs as go
 
+save_height = 400
+save_width = 400
 graph_config = {
     'toImageButtonOptions': {
         'format': 'png',
         'filename': 'custom_image',
-        'height': 400,
-        'width': 800,
+        'height': save_height,
+        'width': save_width,
         'scale': 3.125  # 300 DPI equivalent
     }
 }
 
-min_ai, max_ai = 1e-3, 5e2
+min_ai, max_ai = 5e-3, 1e2
 
 # Verify command-line arguments
 if len(sys.argv) != 2:
@@ -374,14 +376,14 @@ def make_precision_traces(df, prec, peak_perf, mem_bw, color):
         #         "<br>Performance: %{y:.3e} FLOPs/s<extra></extra>"
         #     )
         # ),
-        go.Scatter(
-            x=[weighted_avg_ai], y=[weighted_avg_perf], mode='markers', name=f'Average (Runtime-Weighted)',
-            marker=dict(color='green', symbol='star', size=18),
-            hovertemplate=(
-                "{prec} Average (Weighted by Runtime)<br>AI: %{x:.3f} FLOPs/Byte"
-                "<br>Performance: %{y:.3e} FLOPs/s<extra></extra>"
-            )
-        ),
+        # go.Scatter(
+        #     x=[weighted_avg_ai], y=[weighted_avg_perf], mode='markers', name=f'Average (Runtime-Weighted)',
+        #     marker=dict(color='green', symbol='star', size=18),
+        #     hovertemplate=(
+        #         "{prec} Average (Weighted by Runtime)<br>AI: %{x:.3f} FLOPs/Byte"
+        #         "<br>Performance: %{y:.3e} FLOPs/s<extra></extra>"
+        #     )
+        # ),
         go.Scatter(
             x=mem_x, y=mem_y, mode='lines', name=f"Memory Bound ({mem_bw * 1e-9:.0f} GB/s)",
             line=dict(color="darkblue", width=2, dash='dash'),
@@ -420,18 +422,19 @@ def update_roofline(selected_precisions):
         'data': traces,
         'layout': go.Layout(
             title=dict(
-                text="CLUBB Roofline Diagram on Nvidia A100 GPU",
+                #text="CLUBB Roofline Diagram on Nvidia A100 GPU",
+                text="CLUBB roofline diagram on A100",
                 x=0.5,
                 xanchor='center',
                 font=dict(size=24)  # Title font size
             ),
             xaxis=dict(
                 title=dict(
-                    text="Arithmetic Intensity (FLOPs/Byte)",
+                    text="Arithmetic Intensity (FLOPs/byte)",
                     font=dict(size=18)  # X-axis title font
                 ),
                 type="log",
-                tickfont=dict(size=14)  # X-axis tick labels
+                tickfont=dict(size=14)
             ),
             yaxis=dict(
                 title=dict(
@@ -439,12 +442,14 @@ def update_roofline(selected_precisions):
                     font=dict(size=18)  # Y-axis title font
                 ),
                 type="log",
-                tickfont=dict(size=14)  # Y-axis tick labels
+                range=[np.log10(5e-3),np.log10(20)],
+                tickfont=dict(size=14)
             ),
             legend=dict(
                 x=0.01,
                 y=0.99,
-                font=dict(size=14)  # Legend font size
+                itemwidth=30,
+                font=dict(size=10)  # Legend font size
             ),
             margin=dict(l=60, r=20, t=60, b=60),
             hovermode="closest"
@@ -624,8 +629,8 @@ def update_efficiency_plot(x_bin_num, y_bin_num, selected_precisions):
                     [1.0, 'rgb(0,0,139)']                 # Dark blue (standard "DarkBlue")
                 ],
                 colorbar=dict(
-                    title="Binned Runtime<br>Contribution",
-                    x=0.95,
+                    title="Runtime<br>cost (%)",
+                    x=1,
                     xanchor='right',
                     y=0.5,
                     yanchor='middle',
@@ -651,7 +656,8 @@ def update_efficiency_plot(x_bin_num, y_bin_num, selected_precisions):
         ],
         'layout': go.Layout(
             title=dict(
-                text="CLUBB Roofline Kernel Efficiency on Nvidia A100",
+                #text="CLUBB Roofline Kernel Efficiency on Nvidia A100",
+                text="Kernel efficiency (eff binned)",
                 x=0.5,
                 xanchor='center',
                 font=dict(size=24)  # Title font size
@@ -667,7 +673,7 @@ def update_efficiency_plot(x_bin_num, y_bin_num, selected_precisions):
             ),
             yaxis=dict(
                 title=dict(
-                    text="Achieved Performance / Theoretical Max",
+                    text="Achieved Performance / Roofline Max",
                     font=dict(size=18)
                 ),
                 tickfont=dict(size=14),

@@ -5,12 +5,12 @@ import kaleido
 
 # Define input files per device and directive method
 files = {
-    "V100 OpenACC": "timing_results_gptl_new/V100_nvhpc_noasync_1x1_casper_arm.csv",
-    "V100 OpenMP":  "timing_results_gptl_new/V100_nvhpc_omp_1x1_casper_arm.csv",
-    "A100 OpenACC": "timing_results_gptl_new/A100_nvhpc_noasnyc_1x1_derecho_arm.csv",
-    "A100 OpenMP":  "timing_results_gptl_new/A100_nvhpc_omp_1x1_derecho_arm.csv",
-    "H100 OpenACC": "timing_results_gptl_new/H100_nvhpc_noasync_1x1_casper_arm.csv",
-    "H100 OpenMP":  "timing_results_gptl_new/H100_nvhpc_omp_1x1_casper_arm.csv"
+    "V100 OpenACC": "../timing_results/V100_nvhpc_noasync_1x1_casper_arm.csv",
+    "V100 OpenMP":  "../timing_results/V100_nvhpc_omp_1x1_casper_arm.csv",
+    "A100 OpenACC": "../timing_results/A100_nvhpc_noasync_1x1_derecho_arm.csv",
+    "A100 OpenMP":  "../timing_results/A100_nvhpc_omp_1x1_derecho_arm.csv",
+    "H100 OpenACC": "../timing_results/H100_nvhpc_noasync_1x1_casper_arm.csv",
+    "H100 OpenMP":  "../timing_results/H100_nvhpc_omp_1x1_casper_arm.csv"
 }
 
 # Marker symbols for visual distinction
@@ -57,22 +57,28 @@ fig.add_hline(
     line_dash="dash",
     line_color="gray",
     annotation_text="Baseline (OpenACC)",
-    annotation_position="top right"
+    annotation_position="bottom left"
 )
 
 font_size = 16
 
 # Layout configuration
 fig.update_layout(
-    title="Directive Method: OpenMP vs OpenACC",
+    title=dict(
+        text="OpenMP vs OpenACC throughput ratio",
+        x=0.5,
+        xanchor='center',
+        font=dict(size=24)  # Title font size
+    ),
     title_font=dict(size=font_size+4),
     font=dict(size=font_size),
     xaxis=dict(
-        title="Batch Size",
+        title="Batch Size (columns)",
         title_font=dict(size=font_size),
         type="log",
         linecolor='black',
         linewidth=1,
+        tickvals=[10, 100, 1000, 10000, 100000],  # <-- force these
         mirror=True
     ),
     yaxis=dict(
@@ -99,10 +105,17 @@ fig.update_layout(
 # Export as PNG
 pio.write_image(
     fig,
-    "openacc_vs_openmp_speedup.png",
+    "openacc_vs_openmp_speedup_small.png",
+    width=400,
+    height=400,
+    scale=3.125
+)
+
+pio.write_image(
+    fig,
+    "openacc_vs_openmp_speedup_big.png",
     width=800,
     height=400,
     scale=3.125
 )
 
-#fig.show()
