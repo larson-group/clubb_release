@@ -136,6 +136,10 @@ class Panel:
         plt.rc('ytick', labelsize=Style_definitions.Y_TICKMARK_FONT_SIZE)    # fontsize of the tick labels
         plt.rc('legend', fontsize=Style_definitions.LEGEND_FONT_SIZE)    # legend fontsize
         plt.rc('figure', titlesize=Style_definitions.TITLE_TEXT_SIZE)  # fontsize of the figure title
+        plt.rc('axes', linewidth=Style_definitions.AXES_LINE_WIDTH, titleweight='bold')  # linewidth of the figures axes
+        plt.rc('xtick.major', width=Style_definitions.TICK_MAJOR_WIDTH)  # linewidth of the major x tick
+        plt.rc('ytick.major', width=Style_definitions.TICK_MAJOR_WIDTH)  # linewidth of the major y tick
+
 
         label_scale_factor = ""
         # Use custom sci scaling
@@ -231,21 +235,23 @@ class Panel:
                         title = ''
                         if ('arm' in read_file):
                             title = 'ARM'
-                        elif ('astex' in read_file):
+                        elif ('astex_a209' in read_file):
                             title = 'ASTEX'
                         elif ('gabls2' in read_file):
                             title = 'GABLS2'
+                        elif ('dycoms2_rf01' in read_file):
+                            title = 'DYCOMS2'
 
                         ax = plt.gca()
                         box = ax.get_position()
                         ax.set_position([box.x0, box.y0, box.width * 0.8, box.height])
                         plt.title(title)
-                        plt.xlabel('iteration')
+                        plt.xlabel(f"iteration (1 min timestep)")
                         plt.ylabel('z [m]')
                         plt.savefig(write_file_plot, dpi=300, bbox_inches='tight')
                         plt.clf()
                 raise Exception('only calculated grid adapt plot, set generate_grid_adapt_plot to False')
-            elif grid_comparison_plot:
+            elif False:
                 hi_res = [i for i in range(0,9001,20)]
                 hi_res_grid_spacings = []
                 hi_res_grid_spacings_heights = []
@@ -280,6 +286,36 @@ class Panel:
                     hi_res_grid_spacings[i] = hi_res_grid_spacings[i]/1000
                     hi_res_grid_spacings_heights[i] = hi_res_grid_spacings_heights[i]/1000
 
+                plt.xlim(0, 0.1)
+                plt.ylim(0, 0.5)
+
+                #plt.scatter(hi_res_grid_spacings, hi_res_grid_spacings_heights, s=0.001, c='black')
+                plt.scatter(hi_res_grid_spacings, hi_res_grid_spacings_heights, s=0)
+                for i, (x, y) in enumerate(zip(hi_res_grid_spacings, hi_res_grid_spacings_heights)):
+                    if x <= 0.1 and y <= 0.5:
+                        plt.text(x, y, str(i+1), fontsize=12, ha='center', va='center', color='black')
+
+                plt.scatter(dycore_grid_spacings, dycore_grid_spacings_heights, s=0)
+                for i, (x, y) in enumerate(zip(dycore_grid_spacings, dycore_grid_spacings_heights)):
+                    if x <= 0.1 and y <= 0.5:
+                        plt.text(x, y, str(i+1), fontsize=12, ha='center', va='center', color='red')
+
+                plt.title('Grid comparison detail view')
+                #plt.xlabel('$\Delta z \quad [\mathrm{m}]$')
+                plt.xlabel('$\Delta z \quad [\mathrm{km}]$')
+                #plt.ylabel('$z \quad [\mathrm{m}]$')
+                plt.ylabel('$z \quad [\mathrm{km}]$')
+
+                # Create a custom legend entry
+                legend_patch_hi_res = mpatches.Patch(color='black', label="hi-res")
+                legend_patch_dycore = mpatches.Patch(color='red', label="dycore")
+
+                # Add the legend
+                plt.legend(handles=[legend_patch_hi_res, legend_patch_dycore])
+
+                plt.savefig(output_folder + '/grid_comp_zoomed.png', dpi=300, bbox_inches='tight')
+                plt.cla()
+
                 plt.scatter(hi_res_grid_spacings, hi_res_grid_spacings_heights, s=0)
                 for i, (x, y) in enumerate(zip(hi_res_grid_spacings, hi_res_grid_spacings_heights)):
                     plt.text(x, y, str(i+1), fontsize=12, ha='center', va='center', color='black')
@@ -308,6 +344,101 @@ class Panel:
                 #print('after savefig')
                 #plt.clf()
                 #raise Exception('only calculated grid adapt plot, set grid_comparison_plot to False')
+            elif grid_comparison_plot:
+                hi_res = [i for i in range(0,9001,20)]
+                hi_res_grid_spacings = []
+                hi_res_grid_spacings_heights = []
+                for i in range(len(hi_res)-1):
+                    hi_res_grid_spacings.append(hi_res[i+1]-hi_res[i])
+                    hi_res_grid_spacings_heights.append((hi_res[i+1]+hi_res[i])/2)
+
+                # This is the path to the file where the dycore grid is stored in, so dycore.grd
+                dycore_file_path = '../../input/grid/dycore.grd'
+
+                # Read in dycore grid and make it an array
+                dycore = []
+                with open(dycore_file_path) as f:
+                    for line in f:
+                        if (float(line) <= 9000.0):
+                            dycore.append(float(line))
+                dycore_grid_spacings = []
+                dycore_grid_spacings_heights = []
+                for i in range(len(dycore)-1):
+                    dycore_grid_spacings.append(dycore[i+1]-dycore[i])
+                    dycore_grid_spacings_heights.append((dycore[i+1]+dycore[i])/2)
+
+                #ax = plt.gca()
+                #box = ax.get_position()
+                #ax.set_position([box.x0, box.y0, box.width * 0.8, box.height])
+
+                for i in range(len(dycore)-1):
+                    dycore_grid_spacings[i] = dycore_grid_spacings[i]/1000
+                    dycore_grid_spacings_heights[i] = dycore_grid_spacings_heights[i]/1000
+
+                for i in range(len(hi_res)-1):
+                    hi_res_grid_spacings[i] = hi_res_grid_spacings[i]/1000
+                    hi_res_grid_spacings_heights[i] = hi_res_grid_spacings_heights[i]/1000
+
+                f, (ax1, ax2) = plt.subplots(1,2,figsize=(20, 6))
+
+                ax2.set_xlim([0, 0.1])
+                ax2.set_ylim([0, 0.5])
+
+                #plt.scatter(hi_res_grid_spacings, hi_res_grid_spacings_heights, s=0.001, c='black')
+                ax2.scatter(hi_res_grid_spacings, hi_res_grid_spacings_heights, s=0)
+                for i, (x, y) in enumerate(zip(hi_res_grid_spacings, hi_res_grid_spacings_heights)):
+                    if x <= 0.1 and y <= 0.5:
+                        ax2.text(x, y, str(i+1), fontsize=12, ha='center', va='center', color='black')
+
+                ax2.scatter(dycore_grid_spacings, dycore_grid_spacings_heights, s=0)
+                for i, (x, y) in enumerate(zip(dycore_grid_spacings, dycore_grid_spacings_heights)):
+                    if x <= 0.1 and y <= 0.5:
+                        ax2.text(x, y, str(i+1), fontsize=12, ha='center', va='center', color='red')
+
+                ax2.set_title('Grid comparison detail view')
+                #plt.xlabel('$\Delta z \quad [\mathrm{m}]$')
+                ax2.set_xlabel('$\Delta z \quad [\mathrm{km}]$')
+                #plt.ylabel('$z \quad [\mathrm{m}]$')
+                ax2.set_ylabel('$z \quad [\mathrm{km}]$')
+
+                # Create a custom legend entry
+                legend_patch_hi_res = mpatches.Patch(color='black', label="hi-res")
+                legend_patch_dycore = mpatches.Patch(color='red', label="dycore")
+
+                # Add the legend
+                ax2.legend(handles=[legend_patch_hi_res, legend_patch_dycore])
+
+                #plt.savefig(output_folder + '/grid_comp_zoomed.png', dpi=300, bbox_inches='tight')
+                #plt.cla()
+
+                ax1.scatter(hi_res_grid_spacings, hi_res_grid_spacings_heights, s=0)
+                for i, (x, y) in enumerate(zip(hi_res_grid_spacings, hi_res_grid_spacings_heights)):
+                    ax1.text(x, y, str(i+1), fontsize=12, ha='center', va='center', color='black')
+
+                ax1.scatter(dycore_grid_spacings, dycore_grid_spacings_heights, s=0)
+                for i, (x, y) in enumerate(zip(dycore_grid_spacings, dycore_grid_spacings_heights)):
+                    ax1.text(x, y, str(i+1), fontsize=12, ha='center', va='center', color='red')
+
+                ax1.set_title('Grid comparison')
+                #plt.xlabel('$\Delta z \quad [\mathrm{m}]$')
+                ax1.set_xlabel('$\Delta z \quad [\mathrm{km}]$')
+                #plt.ylabel('$z \quad [\mathrm{m}]$')
+                ax1.set_ylabel('$z \quad [\mathrm{km}]$')
+
+                # Create a custom legend entry
+                legend_patch_hi_res = mpatches.Patch(color='black', label="hi-res")
+                legend_patch_dycore = mpatches.Patch(color='red', label="dycore")
+
+                # Add the legend
+                ax1.legend(handles=[legend_patch_hi_res, legend_patch_dycore])
+
+                plt.savefig(output_folder + '/grid_comp.png', dpi=300, bbox_inches='tight')
+                #plt.savefig(output_folder + '/grid_comp_zoomed.png', dpi=300, bbox_inches='tight')
+                plt.close()
+                raise Exception('only calculated grid adapt plot, set grid_comparison_plot to False')
+                #plt.savefig('grid_comp.png', dpi=300, bbox_inches='tight')
+                #print('after savefig')
+                #plt.clf()
             elif plotting_benchmark:
                 plt.plot(x_data, y_data, var.line_format, label=var.label, linewidth=line_width)
                 # If a benchmark defines a custom color (e.g. "gray" or "#404040) this messes up the color rotation.
@@ -422,7 +553,7 @@ class Panel:
         rel_filename = output_folder + "/" +casename+'/' + filename
         rel_filename = clean_path(rel_filename)
         # Save image file
-        plt.savefig(rel_filename + image_extension, dpi=Style_definitions.IMG_OUTPUT_DPI, bbox_inches='tight')
+        plt.savefig(rel_filename + image_extension, dpi=Style_definitions.HQ_DPI, bbox_inches='tight')
         plt.close()
 
     def __removeInvalidFilenameChars__(self, filename):

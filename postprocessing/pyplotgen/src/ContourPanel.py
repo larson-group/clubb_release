@@ -88,6 +88,9 @@ class ContourPanel(Panel):
         plt.rc('ytick', labelsize=Style_definitions.Y_TICKMARK_FONT_SIZE)    # fontsize of the tick labels
         plt.rc('legend', fontsize=Style_definitions.LEGEND_FONT_SIZE)    # legend fontsize
         plt.rc('figure', titlesize=Style_definitions.TITLE_TEXT_SIZE)  # fontsize of the figure title
+        plt.rc('axes', linewidth=Style_definitions.AXES_LINE_WIDTH, titleweight='bold')  # linewidth of the figures axes
+        plt.rc('xtick.major', width=Style_definitions.TICK_MAJOR_WIDTH)  # linewidth of the major x tick
+        plt.rc('ytick.major', width=Style_definitions.TICK_MAJOR_WIDTH)  # linewidth of the major y tick
 
         # For each Contour object stored in self.all_plots generate an individual contourf plot
         for var in self.all_plots:

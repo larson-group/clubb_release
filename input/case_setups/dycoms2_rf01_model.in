@@ -8,9 +8,11 @@
 runtype = "dycoms2_rf01" ! Case name.
 
 ! For grid_type = 1 nzmax can be any nunber
-nzmax = 132       ! Number of vertical levels.
+!nzmax = 132       ! Number of vertical levels.
+!nzmax = 426       ! Number of vertical levels.
+nzmax = 73       ! Number of vertical levels.
 
-grid_type = 1     ! Select grid type:
+grid_type = 3     ! Select grid type:
                   ! 1 ==> evenly-spaced grid levels.
                   ! 2 ==> stretched (unevenly-spaced) grid
                   !       entered on thermodynamic grid levels;
@@ -23,9 +25,11 @@ grid_type = 1     ! Select grid type:
 
 ! Evenly-spaced grid (grid_type = 1).
 ! Note:  For this option, both zt_grid_fname and zm_grid_fname must be ''.
-deltaz_nl  = 10.0    ! Distance between grid levels on evenly-spaced grid.      [m]
+!deltaz_nl  = 10.0    ! Distance between grid levels on evenly-spaced grid.      [m]
+!deltaz_nl  = 20.0    ! Distance between grid levels on evenly-spaced grid.      [m]
 zm_init_nl = 0.0 ! Minimum Altitude of lowest momentum level on any grid. [m]
-zm_top_nl = 5000.0 ! Maximum Altitude of highest momentum level on any grid. [m]
+!zm_top_nl = 5000.0 ! Maximum Altitude of highest momentum level on any grid. [m]
+zm_top_nl = 8500.0 ! Maximum Altitude of highest momentum level on any grid. [m]
 
 
 ! Stretched grid on thermodynamic levels (grid_type = 2).
@@ -38,7 +42,8 @@ zt_grid_fname = ''
 ! Path (from ../run_scripts/) and filename to data file that contains
 ! momentum level altitudes (in meters).
 ! Note:  For this option, zt_grid_fname must be ''.
-zm_grid_fname = ''
+!zm_grid_fname = ''
+zm_grid_fname = '../input/grid/dycore.grd'
 
 day   = 10    ! Day of model start (1 to 31).
 month = 7     ! Month of model start (1 to 12).

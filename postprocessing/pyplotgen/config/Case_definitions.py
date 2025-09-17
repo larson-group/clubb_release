@@ -125,7 +125,8 @@ CASES_TO_PLOT = [BOMEX, FIRE]
 ARM = {'name': 'arm',
        'description': "Output may differ from plotgen in some models (e.g. WRF) due to a difference in the time "
                       "averaging interval.",
-       'start_time': 1, 'end_time': 870,
+       'start_time': 91, 'end_time': 870,
+       #'start_time': 1, 'end_time': 870,
        #'height_min_value': 0, 'height_max_value': 3000,
        'height_min_value': 0, 'height_max_value': 8500,
 
@@ -178,7 +179,8 @@ ARM_97 = {'name': 'arm_97',
 ASTEX_A209 = {'name': 'astex_a209',
               'description': "",
               #'start_time': 2340, 'end_time': 2400,
-              'start_time': 1, 'end_time': 2500,
+              'start_time': 91, 'end_time': 2500,
+              #'start_time': 1, 'end_time': 2500,
               'height_min_value': 0, 'height_max_value': 8500,
               #'height_min_value': 0, 'height_max_value': 3000,
               #'height_min_value': 0, 'height_max_value': 2500,
@@ -364,8 +366,9 @@ CLEX9_OCT14 = {'name': 'clex9_oct14',
 
 DYCOMS2_RF01 = {'name': 'dycoms2_rf01',
                 'description': "",
-                'start_time': 181, 'end_time': 240,
-                'height_min_value': 0, 'height_max_value': 1200,
+                'start_time': 91, 'end_time': 240,
+                #'start_time': 1, 'end_time': 240,
+                'height_min_value': 0, 'height_max_value': 8500,
 
                 'blacklisted_vars': [],
                 'sam_benchmark_file': {'sam_benchmark': SAM_BENCHMARK_OUTPUT_ROOT +
@@ -385,7 +388,8 @@ DYCOMS2_RF01 = {'name': 'dycoms2_rf01',
                 'cam_file': None,
                 'sam_file': None,
                 'wrf_file': None,
-                'var_groups': [VariableGroupBase, VariableGroupWs]}
+                #'var_groups': [VariableGroupBase, VariableGroupWs]}
+                'var_groups': [VariableGroupPaperPlots]}
 
 DYCOMS2_RF01_FIXED_SST = {'name': 'dycoms2_rf01_fixed_sst',
                           'description': "Copied from plotgen: Ran with a 5 min timestep and a 48-level grid",
@@ -568,7 +572,8 @@ FIRE = {'name': 'fire',
 GABLS2 = {'name': 'gabls2',
           'description': "",
           #'start_time': 2101, 'end_time': 2160,
-          'start_time': 1, 'end_time': 3540,
+          'start_time': 91, 'end_time': 3540,
+          #'start_time': 1, 'end_time': 3540,
           'height_min_value': 0, 'height_max_value': 8500,
           #'height_min_value': 0, 'height_max_value': 3500,
           #'height_min_value': 0, 'height_max_value': 1000,

@@ -504,6 +504,32 @@ class VariableGroupBase(VariableGroup):
             },
             {'var_names':
                 {
+                    'clubb': ['thlm_vert_avg'],
+                    'sam': [],
+                    'coamps': [],
+                    'r408': [],
+                    'hoc': [],
+                    'e3sm': [],
+                    'cam': [],
+                    'wrf': [],
+                },
+                'type': Panel.TYPE_TIMESERIES
+            },
+            {'var_names':
+                {
+                    'clubb': ['rtm_vert_avg'],
+                    'sam': [],
+                    'coamps': [],
+                    'r408': [],
+                    'hoc': [],
+                    'e3sm': [],
+                    'cam': [],
+                    'wrf': [],
+                },
+                'type': Panel.TYPE_TIMESERIES
+            },
+            {'var_names':
+                {
                     'clubb': ['wp2_vert_avg'],
                     'sam': ['W2_VERT_AVG'],
                     'coamps': ['wp2_vert_avg'],

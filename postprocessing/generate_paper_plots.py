@@ -3,8 +3,16 @@ import os
 import shutil
 import re
 
+# If the run failed, the temporary directory and the OUTPUT_DIR directory needs to be removed manually
+# before the next run can be done.
+# Delete /tmp/delete_me_plot_generation and OUTPUT_DIR
+
 # To get the old plots back, change the VariableGroupds back in the CaseDefintions file
 # for each of the three cases
+
+# When adding a new case, you also need to put the VariableGroupPaperPlots
+# in the Case_definitions_red_height.py file and the Case_definitions.py
+# file for that case.
 
 # This is the output directory where the final plot files are stored
 OUTPUT_DIR = '/home/carstensen/results_refined_grid_v2/paper_plots'
@@ -79,20 +87,25 @@ os.mkdir(OUTPUT_DIR)
 # dycore.grd file
 output_dir_tmp_grid_comp = output_dir_tmp + '/grid_comp'
 subprocess.run(['python', 'pyplotgen.py', '--grid-comparison-plot', '-o',
-                output_dir_tmp_grid_comp, '-c', READ_DIR_NO_ADAPT], cwd='pyplotgen')
+                output_dir_tmp_grid_comp, '-c', READ_DIR_NO_ADAPT, '--hq'], cwd='pyplotgen')
 shutil.copy(output_dir_tmp_grid_comp + '/grid_comp.png', OUTPUT_DIR + '/grid_comp.png')
 
 # These are the grid adaptation plots
 output_dir_tmp_grid_adapt = output_dir_tmp + '/grid_adapt'
 subprocess.run(['python', 'pyplotgen.py', '--grid-adapt-plot', '-o', output_dir_tmp_grid_adapt,
-                '-c', READ_DIR_ADAPT], cwd='pyplotgen')
-shutil.copy(output_dir_tmp_grid_adapt + '/arm_grid_adapt.png', OUTPUT_DIR + '/arm_grid_adapt.png')
+                '-c', READ_DIR_ADAPT, '--hq'], cwd='pyplotgen')
+shutil.copy(output_dir_tmp_grid_adapt + '/arm_grid_adapt.png',
+            OUTPUT_DIR + '/arm_grid_adapt.png')
 shutil.copy(output_dir_tmp_grid_adapt + '/astex_a209_grid_adapt.png',
             OUTPUT_DIR + '/astex_a209_grid_adapt.png')
 shutil.copy(output_dir_tmp_grid_adapt + '/gabls2_grid_adapt.png',
             OUTPUT_DIR + '/gabls2_grid_adapt.png')
+shutil.copy(output_dir_tmp_grid_adapt + '/dycoms2_rf01_grid_adapt.png',
+            OUTPUT_DIR + '/dycoms2_rf01_grid_adapt.png')
 
 # These are the plots that show each refinement criterion term
+# To add another case here, you need to add a segment to the VariableGroupPaperPlots
+# like the other ones for ARM, ASTEX and GABLS2
 output_dir_tmp_each_ref_crit = output_dir_tmp + '/each_ref_crit'
 subprocess.run(['python', 'pyplotgen.py', '-o', output_dir_tmp_each_ref_crit, '-c',
                 READ_DIR_HI_RES, '--hq'], cwd='pyplotgen')
@@ -102,8 +115,12 @@ shutil.copy(output_dir_tmp_each_ref_crit + '/astex_a209/each_ref_crit_term_ASTEX
             OUTPUT_DIR + '/astex_each_ref_crit_term.png')
 shutil.copy(output_dir_tmp_each_ref_crit + '/gabls2/each_ref_crit_term_GABLS2.png',
             OUTPUT_DIR + '/gabls2_each_ref_crit_term.png')
+shutil.copy(output_dir_tmp_each_ref_crit + '/dycoms2_rf01/each_ref_crit_term_DYCOMS2.png',
+            OUTPUT_DIR + '/dycoms2_rf01_each_ref_crit_term.png')
 
 # These are the plots that show the normalized (minimum) grid density
+# To add another case here, you need to add a segment to the VariableGroupPaperPlots
+# like the other ones for ARM, ASTEX and GABLS2
 output_dir_tmp_norm_grid_dens = output_dir_tmp + '/norm_grid_dens'
 subprocess.run(['python', 'pyplotgen.py', '-o', output_dir_tmp_norm_grid_dens, '-c',
                 READ_DIR_NO_ADAPT, '--hq'], cwd='pyplotgen')
@@ -113,9 +130,13 @@ shutil.copy(output_dir_tmp_norm_grid_dens + '/astex_a209/norm_grid_dens_ASTEX.pn
             OUTPUT_DIR + '/astex_norm_grid_dens.png')
 shutil.copy(output_dir_tmp_norm_grid_dens + '/gabls2/norm_grid_dens_GABLS2.png',
             OUTPUT_DIR + '/gabls2_norm_grid_dens.png')
+shutil.copy(output_dir_tmp_norm_grid_dens + '/dycoms2_rf01/norm_grid_dens_DYCOMS2.png',
+            OUTPUT_DIR + '/dycoms2_rf01_norm_grid_dens.png')
 
 # To make changes to the reduced height, adjust the height in the cases in Case_definitions_red_height.py
 # These are the profiles with reduced height (rcm profile)
+# To add another case here, you need to add a segment to the VariableGroupPaperPlots
+# like the other ones for ARM, ASTEX and GABLS2
 output_dir_tmp_profiles_red_height = output_dir_tmp + '/profiles_red_height'
 subprocess.run(['python', 'pyplotgen.py', '-o', output_dir_tmp_profiles_red_height, '-c',
                 READ_DIR_HI_RES, READ_DIR_NO_ADAPT, READ_DIR_ADAPT,
@@ -124,6 +145,8 @@ shutil.copy(output_dir_tmp_profiles_red_height + '/arm/rcm_ARM.png',
             OUTPUT_DIR + '/arm_rcm_profile.png')
 shutil.copy(output_dir_tmp_profiles_red_height + '/astex_a209/rcm_ASTEX.png',
             OUTPUT_DIR + '/astex_rcm_profile.png')
+shutil.copy(output_dir_tmp_profiles_red_height + '/dycoms2_rf01/rcm_DYCOMS2.png',
+            OUTPUT_DIR + '/dycoms2_rf01_rcm_profile.png')
 
 # These are the profiles with full height (rtm profile)
 output_dir_tmp_profiles_full_height = output_dir_tmp + '/profiles_full_height'
@@ -135,6 +158,8 @@ shutil.copy(output_dir_tmp_profiles_full_height + '/astex_a209/rtm_ASTEX.png',
             OUTPUT_DIR + '/astex_rtm_profile.png')
 shutil.copy(output_dir_tmp_profiles_full_height + '/gabls2/rtm_GABLS2.png',
             OUTPUT_DIR + '/gabls2_rtm_profile.png')
+shutil.copy(output_dir_tmp_profiles_full_height + '/dycoms2_rf01/rtm_DYCOMS2.png',
+            OUTPUT_DIR + '/dycoms2_rf01_rtm_profile.png')
 
 # To adjust the minimum and maximum value of the color scales, adjust the constants in VariableGroupPaperPlots (WP2_VAR_MIN_ASTEX etc.)
 
@@ -150,6 +175,19 @@ shutil.copy(output_dir_tmp_hovmoeller + f'/astex_a209/wpthlp_ASTEX_{adapt_name}.
 shutil.copy(output_dir_tmp_hovmoeller + f'/gabls2/wpthlp_GABLS2_{hi_res_name}.png', OUTPUT_DIR + '/gabls2_wpthlp_hovmoeller_hi_res.png')
 shutil.copy(output_dir_tmp_hovmoeller + f'/gabls2/wpthlp_GABLS2_{no_adapt_name}.png', OUTPUT_DIR + '/gabls2_wpthlp_hovmoeller_no_adapt.png')
 shutil.copy(output_dir_tmp_hovmoeller + f'/gabls2/wpthlp_GABLS2_{adapt_name}.png', OUTPUT_DIR + '/gabls2_wpthlp_hovmoeller_adapt.png')
+shutil.copy(output_dir_tmp_hovmoeller + f'/dycoms2_rf01/wpthlp_DYCOMS2_{hi_res_name}.png', OUTPUT_DIR + '/dycoms2_rf01_wpthlp_hovmoeller_hi_res.png')
+shutil.copy(output_dir_tmp_hovmoeller + f'/dycoms2_rf01/wpthlp_DYCOMS2_{no_adapt_name}.png', OUTPUT_DIR + '/dycoms2_rf01_wpthlp_hovmoeller_no_adapt.png')
+shutil.copy(output_dir_tmp_hovmoeller + f'/dycoms2_rf01/wpthlp_DYCOMS2_{adapt_name}.png', OUTPUT_DIR + '/dycoms2_rf01_wpthlp_hovmoeller_adapt.png')
+
+shutil.copy(output_dir_tmp_hovmoeller + f'/arm/rcm_ARM_{hi_res_name}.png', OUTPUT_DIR + '/arm_rcm_hovmoeller_hi_res.png')
+shutil.copy(output_dir_tmp_hovmoeller + f'/arm/rcm_ARM_{no_adapt_name}.png', OUTPUT_DIR + '/arm_rcm_hovmoeller_no_adapt.png')
+shutil.copy(output_dir_tmp_hovmoeller + f'/arm/rcm_ARM_{adapt_name}.png', OUTPUT_DIR + '/arm_rcm_hovmoeller_adapt.png')
+shutil.copy(output_dir_tmp_hovmoeller + f'/astex_a209/rcm_ASTEX_{hi_res_name}.png', OUTPUT_DIR + '/astex_rcm_hovmoeller_hi_res.png')
+shutil.copy(output_dir_tmp_hovmoeller + f'/astex_a209/rcm_ASTEX_{no_adapt_name}.png', OUTPUT_DIR + '/astex_rcm_hovmoeller_no_adapt.png')
+shutil.copy(output_dir_tmp_hovmoeller + f'/astex_a209/rcm_ASTEX_{adapt_name}.png', OUTPUT_DIR + '/astex_rcm_hovmoeller_adapt.png')
+shutil.copy(output_dir_tmp_hovmoeller + f'/dycoms2_rf01/rcm_DYCOMS2_{hi_res_name}.png', OUTPUT_DIR + '/dycoms2_rf01_rcm_hovmoeller_hi_res.png')
+shutil.copy(output_dir_tmp_hovmoeller + f'/dycoms2_rf01/rcm_DYCOMS2_{no_adapt_name}.png', OUTPUT_DIR + '/dycoms2_rf01_rcm_hovmoeller_no_adapt.png')
+shutil.copy(output_dir_tmp_hovmoeller + f'/dycoms2_rf01/rcm_DYCOMS2_{adapt_name}.png', OUTPUT_DIR + '/dycoms2_rf01_rcm_hovmoeller_adapt.png')
 
 shutil.copy(output_dir_tmp_hovmoeller + f'/arm/cloud_frac_ARM_{hi_res_name}.png', OUTPUT_DIR + '/arm_cloud_frac_hovmoeller_hi_res.png')
 shutil.copy(output_dir_tmp_hovmoeller + f'/arm/cloud_frac_ARM_{no_adapt_name}.png', OUTPUT_DIR + '/arm_cloud_frac_hovmoeller_no_adapt.png')
@@ -157,6 +195,9 @@ shutil.copy(output_dir_tmp_hovmoeller + f'/arm/cloud_frac_ARM_{adapt_name}.png',
 shutil.copy(output_dir_tmp_hovmoeller + f'/astex_a209/cloud_frac_ASTEX_{hi_res_name}.png', OUTPUT_DIR + '/astex_cloud_frac_hovmoeller_hi_res.png')
 shutil.copy(output_dir_tmp_hovmoeller + f'/astex_a209/cloud_frac_ASTEX_{no_adapt_name}.png', OUTPUT_DIR + '/astex_cloud_frac_hovmoeller_no_adapt.png')
 shutil.copy(output_dir_tmp_hovmoeller + f'/astex_a209/cloud_frac_ASTEX_{adapt_name}.png', OUTPUT_DIR + '/astex_cloud_frac_hovmoeller_adapt.png')
+shutil.copy(output_dir_tmp_hovmoeller + f'/dycoms2_rf01/cloud_frac_DYCOMS2_{hi_res_name}.png', OUTPUT_DIR + '/dycoms2_rf01_cloud_frac_hovmoeller_hi_res.png')
+shutil.copy(output_dir_tmp_hovmoeller + f'/dycoms2_rf01/cloud_frac_DYCOMS2_{no_adapt_name}.png', OUTPUT_DIR + '/dycoms2_rf01_cloud_frac_hovmoeller_no_adapt.png')
+shutil.copy(output_dir_tmp_hovmoeller + f'/dycoms2_rf01/cloud_frac_DYCOMS2_{adapt_name}.png', OUTPUT_DIR + '/dycoms2_rf01_cloud_frac_hovmoeller_adapt.png')
 
 shutil.copy(output_dir_tmp_hovmoeller + f'/arm/wp2_ARM_{hi_res_name}.png', OUTPUT_DIR + '/arm_wp2_hovmoeller_hi_res.png')
 shutil.copy(output_dir_tmp_hovmoeller + f'/arm/wp2_ARM_{no_adapt_name}.png', OUTPUT_DIR + '/arm_wp2_hovmoeller_no_adapt.png')
@@ -167,6 +208,9 @@ shutil.copy(output_dir_tmp_hovmoeller + f'/astex_a209/wp2_ASTEX_{adapt_name}.png
 shutil.copy(output_dir_tmp_hovmoeller + f'/gabls2/wp2_GABLS2_{hi_res_name}.png', OUTPUT_DIR + '/gabls2_wp2_hovmoeller_hi_res.png')
 shutil.copy(output_dir_tmp_hovmoeller + f'/gabls2/wp2_GABLS2_{no_adapt_name}.png', OUTPUT_DIR + '/gabls2_wp2_hovmoeller_no_adapt.png')
 shutil.copy(output_dir_tmp_hovmoeller + f'/gabls2/wp2_GABLS2_{adapt_name}.png', OUTPUT_DIR + '/gabls2_wp2_hovmoeller_adapt.png')
+shutil.copy(output_dir_tmp_hovmoeller + f'/dycoms2_rf01/wp2_DYCOMS2_{hi_res_name}.png', OUTPUT_DIR + '/dycoms2_rf01_wp2_hovmoeller_hi_res.png')
+shutil.copy(output_dir_tmp_hovmoeller + f'/dycoms2_rf01/wp2_DYCOMS2_{no_adapt_name}.png', OUTPUT_DIR + '/dycoms2_rf01_wp2_hovmoeller_no_adapt.png')
+shutil.copy(output_dir_tmp_hovmoeller + f'/dycoms2_rf01/wp2_DYCOMS2_{adapt_name}.png', OUTPUT_DIR + '/dycoms2_rf01_wp2_hovmoeller_adapt.png')
 
 shutil.rmtree(output_dir_tmp)
 
