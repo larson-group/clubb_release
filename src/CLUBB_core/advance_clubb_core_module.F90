@@ -854,6 +854,10 @@ module advance_clubb_core_module
     real( kind = core_rknd ), dimension(ngrdcol,nzt) :: &
        lhs_splat_wp3    ! LHS coefficient of wp3 splatting term  [1/s]
 
+    real( kind = core_rknd ), dimension(ngrdcol,nzt) :: &
+       thlm_ed, &  ! explicit diffusion budget term for thlm
+       rtm_ed      ! explicit diffusion budget term for rtm
+
     ! Variables associated with upgradient momentum contributions due to cumuli
     !real( kind = core_rknd ), dimension(nz) :: &
     !  Km_Skw_factor ! Factor, with value < 1, that reduces eddy diffusivity,
@@ -2260,6 +2264,10 @@ module advance_clubb_core_module
          end if
       end if
 
+      ! these budget terms must be initialized to zero
+      thlm_ed = 0.0_core_rknd
+      rtm_ed = 0.0_core_rknd
+
       if ( edsclr_dim > 1 .and. clubb_config_flags%l_do_expldiff_rtm_thlm ) then
 
         call pvertinterp( nzt, ngrdcol, gr,                 & ! intent(in)
@@ -2274,13 +2282,25 @@ module advance_clubb_core_module
         do k = 1, nzt
           do i = 1, ngrdcol         
             if ( thlm700(i) - thlm1000(i) < 20.0_core_rknd ) then
+              ! thlm_ed and rtm_ed are budget terms intended to track the effect 
+              ! of explicit diffusion
+              thlm_ed(i,k) = ( edsclrm(i,k,edsclr_dim-1) - thlm(i,k) ) / dt
               thlm(i,k) = edsclrm(i,k,edsclr_dim-1)
+              rtm_ed(i,k) = ( edsclrm(i,k,edsclr_dim) - rtm(i,k) ) / dt
               rtm(i,k) = edsclrm(i,k,edsclr_dim)
             end if
           end do
         end do
         !$acc end parallel loop
+      end if
 
+      if ( stats_metadata%l_stats_samp ) then
+        do i = 1, ngrdcol
+          call stat_update_var( stats_metadata%ithlm_ed, thlm_ed(i,:),  & ! intent(in)
+                                stats_zt(i) )                             ! intent(inout)
+          call stat_update_var( stats_metadata%irtm_ed, rtm_ed(i,:),    & ! intent(in)
+                                stats_zt(i) )                             ! intent(inout)
+        end do
       end if
 
       ! Eric Raut: this seems dangerous to call without any attached flag.
