@@ -1,0 +1,1 @@
+add_library(scm_activation_lib aer_ccn_act_k.F90)

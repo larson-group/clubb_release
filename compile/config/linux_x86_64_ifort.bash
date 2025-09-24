@@ -28,7 +28,7 @@ ARCH="-xHost" # This should work on most modern AMD/Intel computers
 DOUBLE_PRECISION="-real-size 64"
 
 # == Optimization ==
-OPTIMIZE="-O3 -fp-model strict"
+OPTIMIZE="-O2"
 #OPTIMIZE="-O3 -ipo" # Interprocedural optimization
 
 # == NetCDF Location ==

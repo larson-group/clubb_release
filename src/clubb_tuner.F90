@@ -226,7 +226,7 @@ program clubb_tuner
   !     References:
   !     _Numerical Recipes in Fortran 90_.  See full citation above.
   !------------------------------------------------------------------------
-#ifdef NR_SP
+  
   use nr, only:  & 
       amoeba ! Procedure(s)
 
@@ -272,9 +272,7 @@ program clubb_tuner
   min_err = cost_fnc_vector(1)
 
   return
-#else
-  error stop "Numerical recipes subroutines were disabled at compile time"
-#endif /* NR_SP */
+
   end subroutine amoeba_driver
 
   !-----------------------------------------------------------------------
@@ -289,7 +287,7 @@ program clubb_tuner
   ! References:
   !   None
   !-----------------------------------------------------------------------
-#ifdef NR_SP
+
   use nr, only:  & 
       amebsa ! Procedure(s)
 
@@ -389,9 +387,6 @@ program clubb_tuner
 
   return
 
-#else
-  error stop "Numerical recipes subroutines were disabled at compile time"
-#endif /* NR_SP */
 end subroutine amebsa_driver
 !----------------------------------------------------------------------
 subroutine enhanced_simann_driver

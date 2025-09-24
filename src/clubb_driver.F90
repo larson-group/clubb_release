@@ -1387,11 +1387,6 @@ module clubb_driver
 #else
       call write_text( "-DCOAMPS_MICRO disabled", l_write_to_file, iunit )
 #endif
-#ifdef NR_SP
-      call write_text( "-DNR_SP enabled", l_write_to_file, iunit )
-#else
-      call write_text( "-DNR_SP disabled", l_write_to_file, iunit )
-#endif
 #ifdef TUNER
       call write_text( "-DTUNER enabled", l_write_to_file, iunit )
 #else

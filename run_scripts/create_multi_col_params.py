@@ -5,6 +5,23 @@ import os
 import numpy as np
 import argparse
 
+# detect any &multicol* namelist (e.g., &multicol_def)
+def is_single_col_list(path: str) -> bool:
+    """Return False if a &multicol* namelist is present (case-insensitive)."""
+    _MULTICOL_RE = re.compile(r'^\s*&\s*multicol\w*\b', re.IGNORECASE)
+
+    try:
+        with open(path, "r", encoding="utf-8", errors="ignore") as f:
+            for raw in f:
+                # strip Fortran trailing comments
+                line = raw.split("!", 1)[0]
+                if _MULTICOL_RE.search(line):
+                    return False
+    except FileNotFoundError:
+        print(f"Parameters file not found: {path}", file=sys.stderr)
+        sys.exit(1)
+    return True
+
 # Parse a parameter file
 # - this will match anything with the form var = n1, n2, n3, so ensure
 #   that the file contains only parameters with 1 value definition
@@ -142,10 +159,22 @@ if __name__ == "__main__":
     calls_per_out           = args.calls_per_out
     mirror                  = args.mirror == "true"
 
+    if ngrdcol < 1:
+        sys.exit("-n (ngrdcol) must be >= 1")
+
     if args.tweak_list is None:
         tweak_list = ['C7','C11']
     else:
         tweak_list = args.tweak_list
+
+     # The input params file must have only a single column definition
+    if not is_single_col_list(clubb_params_file):
+        abs_p = os.path.abspath(clubb_params_file)
+        print(
+            f"ERROR: '{abs_p}' already defines a &multicol* namelist.\n"
+            f"This script can only duplicate a single-column params file.\n"
+        )
+        sys.exit(2)
     
     # Parse the clubb params file
     parsed_params = parse_clubb_params(clubb_params_file)
