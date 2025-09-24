@@ -70,7 +70,7 @@ def configure_cmake(args, compiler, inst_dir, build_type):
         f"-S{CLUBB_ROOT}",
         f"-DUSE_NetCDF={to_on_off(not args.disable_netcdf)}",  # default ON
         f"-DSILHS={to_on_off(not args.disable_silhs)}",        # default ON
-        f"-DENABLE_OMP={to_on_off(args.openmp)}",          # default OFF
+        f"-DENABLE_OMP={to_on_off(args.openmp)}",              # default OFF
         f"-DTUNING={to_on_off(args.tuning)}",                  # default OFF
         f"-DCMAKE_TOOLCHAIN_FILE={toolchain_file}",
         f"-DCMAKE_INSTALL_PREFIX={inst_dir}",
@@ -78,8 +78,12 @@ def configure_cmake(args, compiler, inst_dir, build_type):
         f"-DCMAKE_BUILD_TYPE={build_type}",
         f"-DGPU={args.gpu}",
         f"-DPython_EXECUTABLE={shutil.which('python')}",
-        "-G", "Ninja"
-    ] + args.extra_args
+    ]
+
+    if shutil.which("ninja"):
+        cmake_cmd += ["-G", "Ninja"]
+
+    cmake_cmd += args.extra_args
 
     print("Running CMake configure...")
 
@@ -92,9 +96,11 @@ def configure_cmake(args, compiler, inst_dir, build_type):
 
 def run_cmake_build(logfile):
 
+    nproc = os.cpu_count() or 4  # fallback to 4 if detection fails
+
     # This script command allows us to log output to "logfile" but also get nice looking
     # output from cmake
-    cmd = f'script -qfec "cmake --build . --target install" /dev/stdout | tee -a {logfile}'
+    cmd = f'script -qfec "cmake --build . --target install" -- -j{nproc} /dev/stdout | tee -a {logfile}'
 
     # Run the command
     subprocess.call(cmd, shell=True)
