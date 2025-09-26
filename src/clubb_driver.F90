@@ -277,10 +277,13 @@ module clubb_driver
         silhs_generalized_grid_testing
 
     use grid_adaptation_module, only: &
+        setup_gr_fixed_min, &
         setup_gr_dycore, &
         normalize_grid_density, adapt_grid, &
-        calc_grid_dens, &
-        clean_up_grid_adaptation_module  ! Procedure(s)
+        calc_grid_dens, &                       ! Procedure(s)
+        alt_term_weight, &
+        chi_term_weight, &
+        richardson_num_term_weight              ! Parameters
 
     use time_dependent_input, only: initialize_t_dependent_input ! Procedure(s)
 
@@ -1054,11 +1057,38 @@ module clubb_driver
 
     type( grid ) :: &
       gr_dycore, & ! only set and used, if l_add_dycore_grid is .true.
-      gr_output
+      gr_output, &
+      gr_fixed_min ! the read in grid for the minimum grid density profile
+                   ! for the grid adaptation; only set and used,
+                   ! if grid_adapt_in_time_method > no_grid_adaptation
 
     real( kind = core_rknd ), dimension(:), allocatable :: &
       gr_dens_z, &     ! levels at which the grid density is given      [m]
       gr_dens          ! grid density at the given levels in gr_dens_z  [1/m]
+
+    ! Save the normalized grid density from the last grid adaptation, to check if new grid would
+    ! be significantly different (grid adaptation trigger)
+    real( kind = core_rknd ), dimension(:,:), allocatable ::  &
+      ! The two arrays gr_dens_old_z and gr_dens_old build the piecewise linear
+      ! normalized grid density, from the last time the grid was adapted
+      gr_dens_old_z,  & ! altitudes [m]
+      gr_dens_old       ! densities [1/m]
+
+    ! Save the calculated values for the refinement criterion terms as a cumulative sum starting
+    ! from the last grid adaptation, to take the time average over that region, to have a
+    ! smoother evolution in time (x_counter + cumulative_x)
+    integer :: &
+      Lscale_counter, &          ! the number of values cumulated in cumulative_Lscale
+      richardson_num_counter, &  ! the number of values cumulated in cumulative_richardson_num
+      chi_counter                ! the number of values cumulated in cumulative_chi
+
+    real( kind = core_rknd ), dimension(:), allocatable :: &
+      cumulative_Lscale, &          ! cumulative sum of the Lscale term in the
+                                    ! refinement cirterion                                  [1/m]
+      cumulative_richardson_num, &  ! cumulative sum of the richardson number term in the
+                                    ! refinement cirterion                                  [1/m]
+      cumulative_chi                ! cumulative sum of the chi term in the
+                                    ! refinement cirterion                                  [1/m]
 
     real( kind = core_rknd ), dimension(:), allocatable :: &
       alt_term, &
@@ -2116,6 +2146,31 @@ module clubb_driver
       allocate( norm_grid_dens(gr%nzm) )
       allocate( chi_term(gr%nzm) )
       allocate( richardson_num_term(gr%nzm) )
+
+      allocate( gr_dens_old_z(ngrdcol,gr%nzm) )
+      allocate( gr_dens_old(ngrdcol,gr%nzm) )
+
+      gr_dens_old_z = gr%zm
+      gr_dens_old = gr%invrs_dzm
+
+      allocate( cumulative_Lscale(gr%nzm) )
+      allocate( cumulative_chi(gr%nzm) )
+      allocate( cumulative_richardson_num(gr%nzm) )
+
+      Lscale_counter = 0
+      chi_counter = 0
+      richardson_num_counter = 0
+      do k = 1, gr%nzm
+        cumulative_Lscale(k) = zero
+        cumulative_chi(k) = zero
+        cumulative_richardson_num(k) = zero
+      end do
+
+      call setup_gr_fixed_min( iunit, ngrdcol, &               ! Intent(in)
+                               gr%zm(:,1), gr%zm(:,gr%nzm), &  ! Intent(in)
+                               l_ascending_grid, &             ! Intent(in)
+                               gr_fixed_min, err_info )        ! Intent(out)
+
     end if
 
     ! Variables for PDF closure scheme
@@ -3538,34 +3593,39 @@ module clubb_driver
                              chi_term, &
                              chi_term_time_avg, &
                              richardson_num_term, &
-                             richardson_num_term_time_avg )
+                             richardson_num_term_time_avg, &
+                             Lscale_counter, &
+                             chi_counter, &
+                             richardson_num_counter, &
+                             cumulative_Lscale, &
+                             cumulative_chi, &
+                             cumulative_richardson_num )
 
         lambda = 0.5
 
         ! normalize the grid density
         call normalize_grid_density( ngrdcol, &
-                                     iunit_grid_adaptation, &
                                      gr%nzm, &
                                      gr_dens_z, gr_dens, &
                                      lambda, &
                                      gr%nzm, &
-                                     l_ascending_grid, &
+                                     gr_fixed_min, &
                                      norm_min_grid_dens, &
-                                     norm_grid_dens, &
-                                     err_info )
+                                     norm_grid_dens )
 
         ! update the stats variables
         if ( stats_metadata%l_stats_samp ) then
           do i = 1, ngrdcol
             call stat_update_var( stats_metadata%igrid_density, gr_dens, stats_zm(i) )
-            call stat_update_var( stats_metadata%ialt_term, 3*alt_term, stats_zm(i) )
+            call stat_update_var( stats_metadata%ialt_term, alt_term_weight*alt_term, stats_zm(i) )
             call stat_update_var( stats_metadata%ilscale_term, lscale_term, stats_zm(i) )
             call stat_update_var( stats_metadata%ilscale_term_time_avg, lscale_term_time_avg, &
                                   stats_zm(i) )
-            call stat_update_var( stats_metadata%ichi_term_time_avg, 100*chi_term_time_avg, &
-                                  stats_zm(i) )
+            call stat_update_var( stats_metadata%ichi_term_time_avg, &
+                                  chi_term_weight*chi_term_time_avg, stats_zm(i) )
             call stat_update_var( stats_metadata%ibrunt_term_time_avg, &
-                                  7.5*richardson_num_term_time_avg, stats_zm(i) )
+                                  richardson_num_term_weight*richardson_num_term_time_avg, &
+                                  stats_zm(i) )
             call stat_update_var( stats_metadata%inorm_min_grid_dens, norm_min_grid_dens, &
                                   stats_zm(i) )
             call stat_update_var( stats_metadata%inorm_grid_dens, norm_grid_dens, &
@@ -3685,6 +3745,13 @@ module clubb_driver
                          thvm, gr%nzt, p_sfc, &                                  ! Intent(in)
                          grid_remap_method, &                                    ! Intent(in)
                          gr, &                                                   ! Intent(inout)
+                         gr_dens_old_z, gr_dens_old, &                           ! Intent(inout)
+                         Lscale_counter, &                                       ! Intent(inout)
+                         chi_counter, &                                          ! Intent(inout)
+                         richardson_num_counter, &                               ! Intent(inout)
+                         cumulative_Lscale, &                                    ! Intent(inout)
+                         cumulative_chi, &                                       ! Intent(inout)
+                         cumulative_richardson_num, &                            ! Intent(inout)
                          thlm_forcing, rtm_forcing, um_forcing, vm_forcing, &    ! Intent(inout)
                          sclrm_forcing, edsclrm_forcing, wprtp_forcing, &        ! Intent(inout)
                          wpthlp_forcing, rtp2_forcing, thlp2_forcing, &          ! Intent(inout)
@@ -3974,6 +4041,12 @@ module clubb_driver
       deallocate( gr_dens_z )
       deallocate( gr_dens )
 
+      deallocate( gr_dens_old_z )
+      deallocate( gr_dens_old )
+
+      deallocate( cumulative_Lscale )
+      deallocate( cumulative_chi )
+      deallocate( cumulative_richardson_num )
       deallocate( alt_term )
       deallocate( lscale_term )
       deallocate( lscale_term_time_avg )
@@ -3984,7 +4057,6 @@ module clubb_driver
       deallocate( richardson_num_term )
       deallocate( richardson_num_term_time_avg )
 
-      call clean_up_grid_adaptation_module()
     end if
 
     return
