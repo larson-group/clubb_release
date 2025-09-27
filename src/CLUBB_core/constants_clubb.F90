@@ -390,7 +390,9 @@ module constants_clubb
     em_min = 1.5_core_rknd * w_tol_sqd  ! [m^2/s^2]
 
   real( kind = core_rknd ), parameter, public ::  & 
-    eps = 1.0e-10_core_rknd ! Small value to prevent a divide by zero
+    eps = max( 1.0e-10_core_rknd, epsilon(pi) ) ! Small value to prevent a divide by zero
+                                                ! max() and epsilon() used here to raise 
+                                                ! threshold when using single precision
 
   real( kind = core_rknd ), parameter, public :: &
     max_num_stdevs = 5.0_core_rknd ! Range of standard deviations for statistical significance
