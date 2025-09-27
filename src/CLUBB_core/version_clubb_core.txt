@@ -1,0 +1,158 @@
+commit 4aa7da34e62d33f881f92c049f1060250a818a7a
+Author: st3113n <110198346+st3113n@users.noreply.github.com>
+Date:   Fri Sep 26 19:37:14 2025 +0200
+
+    Remove module vars from grid_adaptation_module (#1255)
+    
+    * removed fixed_min_gr_dens module variables
+    
+    * remove gr_dens_old_global variables
+    
+    * remove counter and cumulative module variables
+
+commit 3162e68e6a7599821bae5a3650e62dc2dd1a7280
+Author: Gunther Huebler <37674341+huebleruwm@users.noreply.github.com>
+Date:   Thu Sep 25 19:27:34 2025 -0500
+
+    Precip frac fix (#1254)
+    
+    * Using epsilon() to help check precip_frac against precip_frac_tol
+    
+    * Using clubb version of eps for checks
+    
+    Including BIT_CHANGING:06288ac66a3a26013c135d8aef776cc99202f64f because a ifort compiler option changed, and that changes the results. Otherwise it was all BFB.
+
+commit 85532ccf3c52c4770c4a11029719bf885e96df54
+Author: Gunther Huebler <huebler@uwm.edu>
+Date:   Wed Sep 24 18:10:58 2025 -0500
+
+    Making cmake only optionally use ninja. Now we only use it if it's available.
+
+commit 06288ac66a3a26013c135d8aef776cc99202f64f
+Author: Gunther Huebler <37674341+huebleruwm@users.noreply.github.com>
+Date:   Wed Sep 24 17:44:14 2025 -0500
+
+    The cmake update (#1253)
+    
+    * Initial cmake additions
+    
+    * Reworking dependency handling and toolchains.
+    
+    * Improvements, intel, gfortran, and nvfortran work with and without debugging, and nvfortran works with openacc or openmp too.
+    
+    * Small changes to toolchains
+    
+    * Little various improvements
+    
+    * Making ctests work
+    
+    * Reworking ctests, we have decided to make the ctests run a small number of quick cases/tests just to facilitate development.
+    
+    * Introducing ctests. Big script updates - run_scm.py and compile.py are new
+    
+    * Introducing run_scm.py to replace run_scm.bash and CLUBBStandardsCheck.py to replace CLUBBStandardsCheck.pl. The new CLUBBStandardsCheck.py is much faster and should be even more capable at detecting issues than the perl version, it also has improved readability. The new run_scm.py is way more capable and managable than the bash version, it's used now in the new ctests. Also, the compile script has improved functionality, and ctests can be invoked when adding -run_tests to the compile.py call. Also the whole system supports maintaining builds with multiple compilers now, e.g. using nvfortran then ifx will not overwrite the nvfortran version now, and the new run_scm.py is smart enough to choose the right one depending on the compiler loaded.
+    
+    * Small changes and adding a -legacy flag to run_scm.py to run the bin/clubb_standalone version from the excruciatingly old compilation system.
+    
+    * Small cleanup and Cmake file simplifications - more to come
+    
+    * Mostly cleanup. Moving stuff around to put it in better places, renaming, removing unnecessary parts, etc.
+    
+    * More cleanup and adding comments
+    
+    * Hopefully final cleanup
+    
+    * Small bug fix
+    
+    * Small changes and new jenkins test
+    
+    * Small fix
+    
+    * Now that our source checking scripts return error codes, we have to ignore them in this make file. This doesn't change their output at all, but causes the error code to be ignored
+    
+    * Accidentally removed output dir
+    
+    * Small fix to jenkins test
+    
+    * Small fix to jenkins test
+    
+    * Small fix to jenkins test
+    
+    * Small fix to jenkins test
+    
+    * Compile script improvements and new run_thread_test.py to replace bash version.
+    
+    * Changing default ENABLE_OMP to default off, and changing the default executable used by the new python version of the thread test to use the cmake install by default.
+    
+    * Making more general cmake test to test various compile options.
+    
+    * Making ctests output better in compile.py and making new jenkins test a little fancier.
+    
+    * Small fix to jenkins test
+    
+    * Small fix to jenkins test
+    
+    * Small fix to jenkins test
+    
+    * Small fix to jenkins test
+    
+    * Reverting some of the fancyness of new test
+    
+    larson-group/clubb#1117
+
+commit cfd36718c8a48ad02f35a4805ebab6108914d470
+Author: Benjamin A. Stephens <59519056+bstephens82@users.noreply.github.com>
+Date:   Tue Sep 23 09:54:36 2025 -0600
+
+    Adding expldiff budget terms for thlm and rtm (#1252)
+    
+    * Adding expldiff budget terms for thlm and rtm
+    
+    * Removing unintentional line.
+    
+    * Fixing initialization-to-zero problem
+    
+    * Adding some comments.
+    
+    * Adding thlm_ed and rtm_ed to standard_stats.in
+    
+    * Adding thlm_ed and rtm_ed to all_stats.in
+    
+    * Fixing two bugs. Budget balance test passes and results are b4b.
+    
+    This commit is BIT_CHANGING, but only because it adds additional
+    stats fields to the _zt.nc files. Answers would only change if
+    l_do_expldiff_rtm_thlm=T.
+
+commit a21a3de745989d0bfed4c54337c5569fb8d17057
+Author: pickett <larsongroupgithub@gmail.com>
+Date:   Sun Sep 14 23:01:06 2025 -0500
+
+    Raw-copy updating src/Morrison_microphys
+
+commit 91ec079057dd95651c032d832845b40e73e8ac21
+Author: Vincent Larson <vlarson@users.noreply.github.com>
+Date:   Sat Aug 9 14:38:04 2025 -0500
+
+    Update License.txt in order to note that BIT_CHANGING:b5ec2335bc0cf95dbbe1f48a0043bb792a72d3c6
+
+commit b5ec2335bc0cf95dbbe1f48a0043bb792a72d3c6
+Author: Vincent Larson <vlarson@users.noreply.github.com>
+Date:   Sat Aug 9 14:28:43 2025 -0500
+
+    Increase lh_num_samples to 64 for LBA case
+    
+    in the hopes of reducing the differences in surface precipitation between the CPU and GPU runs.
+
+commit 46cac2787c3802be0418762948ad6d1231dde182
+Author: Vincent Larson <vlarson@users.noreply.github.com>
+Date:   Sat May 24 07:04:28 2025 -0500
+
+    Clean out clubb_G_unit_reverse_dir_grid_test folder before running Jenkins test
+
+commit dd5f915658016e9a8b64128024eebaf4c7d24318
+Author: bmg929 <bmg2@uwm.edu>
+Date:   Fri May 23 13:13:53 2025 -0500
+
+    Finished my notes, documentation, and instructions for the generalized
+    grid test.
