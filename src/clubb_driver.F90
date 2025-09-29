@@ -3051,7 +3051,8 @@ module clubb_driver
       !---------------------------------------------------------------
       if ( l_soil_veg ) then
 
-        !$acc update host( rho_zm, wpthlp_sfc, wprtp_sfc, p_sfc )
+        !$acc update host( rho_zm, wpthlp_sfc, wprtp_sfc, p_sfc, &
+        !$acc              deep_soil_T_in_K, sfc_soil_T_in_K, veg_T_in_K )
 
         call advance_soil_veg( ngrdcol, dt_main, rho_zm(:,1), &
                                Frad_SW_up(:,1), Frad_SW_down(:,1), &
