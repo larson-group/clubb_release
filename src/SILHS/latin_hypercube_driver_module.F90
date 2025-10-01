@@ -599,7 +599,10 @@ module latin_hypercube_driver_module
     
     ! If first iteration, intialize generator
     if ( l_first_iter ) then
-      l_first_iter = .false.
+      ! Setting of l_first_iter disabled, this guarantees that lh_seed will define the output
+      ! making the results more reproducible, but does waste time recreating the generator 
+      ! each call to this subroutine
+      !l_first_iter = .false.
       r_status = curandCreateGenerator( cu_gen, CURAND_RNG_PSEUDO_DEFAULT )
       r_status = curandSetPseudoRandomGeneratorSeed( cu_gen, lh_seed )
     end if

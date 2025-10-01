@@ -106,6 +106,9 @@ module pdf_hydromet_microphys_wrapper
     use err_info_type_module, only: &
       err_info_type                   ! Type
 
+    use mt95, only: &
+      genrand_intg  ! Type
+
     implicit none
 
     ! Input Variables
@@ -240,6 +243,10 @@ module pdf_hydromet_microphys_wrapper
                                ! since the changes made here (Nc-tendency) are not fed into 
                                ! the microphysics
 
+    integer( kind = genrand_intg ) :: &
+      lh_seed_custom
+
+    ! -------------------------------- Begin Code --------------------------------
 
 
     if ( .not. trim( microphys_scheme ) == "none" ) then
@@ -356,12 +363,19 @@ module pdf_hydromet_microphys_wrapper
       !   end do
       ! endif
 
+      ! Rather than using the seed just to intialize the random number generator at the first timestep, we use it every
+      ! timestep. Thus this seed defines the randoms, that way we can reproduce results for restart runs by using a 
+      ! reproducible seed. If we didn't do it this way, we would have to save the internal state of the random number 
+      ! generator to disk each timestep, then read it back in to reinitialize the random number generator
+      ! upon restart - which is too much work to implement
+      lh_seed_custom = int( lh_seed * itime, kind = genrand_intg )
+
       call generate_silhs_sample_api( &
              itime, pdf_dim, lh_num_samples, lh_sequence_length, gr%nzt, ngrdcol, & ! In
              l_calc_weights_all_levs_itime,                                & ! In
              gr, pdf_params, gr%dzt, Lscale,                               & ! In
-             lh_seed, hm_metadata,                                         & ! In
-             !rho_ds_zt,                                                    & ! In
+             lh_seed_custom, hm_metadata,                                  & ! In
+             !rho_ds_zt,                                                   & ! In
              mu_x_1_n, mu_x_2_n, sigma_x_1_n, sigma_x_2_n,                 & ! In
              corr_cholesky_mtx_1, corr_cholesky_mtx_2,                     & ! In
              precip_fracs, silhs_config_flags,                             & ! In
