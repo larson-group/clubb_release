@@ -270,6 +270,7 @@ module latin_hypercube_driver_module
     call compute_k_lh_start( gr, nzt, ngrdcol, rcm_pdf, pdf_params, &
                              silhs_config_flags%l_rcm_in_cloud_k_lh_start, &
                              silhs_config_flags%l_random_k_lh_start, &
+                             lh_seed, &
                              k_lh_start )
                                      
     ! Calculate possible Sigma_Cholesky values
@@ -964,6 +965,7 @@ module latin_hypercube_driver_module
   subroutine compute_k_lh_start( gr, nzt, ngrdcol, rcm_pdf, pdf_params, &
                                  l_rcm_in_cloud_k_lh_start, &
                                  l_random_k_lh_start, &
+                                 lh_seed, &
                                  k_lh_start )
 
   ! Description:
@@ -993,6 +995,10 @@ module latin_hypercube_driver_module
     use math_utilities, only: &
       rand_integer_in_range  ! Procedure
 
+    use mt95, only: &
+      genrand_init_api, & ! Procedure
+      genrand_intg
+
     implicit none
 
     ! Input Variables
@@ -1012,6 +1018,9 @@ module latin_hypercube_driver_module
     logical, intent(in) :: &
       l_rcm_in_cloud_k_lh_start, & ! Determine k_lh_start based on maximum within-cloud rcm
       l_random_k_lh_start          ! k_lh_start found randomly between max rcm and rcm_in_cloud
+
+    integer( kind = genrand_intg ), intent(in) :: &
+      lh_seed      ! Random number generator seed
 
     ! Output Variable
     integer, dimension(ngrdcol), intent(out) :: &
@@ -1105,8 +1114,12 @@ module latin_hypercube_driver_module
 
       !$acc update host( k_lh_start_rcm_in_cloud, k_lh_start_rcm )
 
-      do i = 1, ngrdcol
+      ! Intialize generator, this is required every timestep to enable restart runs to 
+      ! produce bit-for-bit results
+      call genrand_init_api( lh_seed )
 
+      do i = 1, ngrdcol
+ 
         ! Pick a random height level between k_lh_start_rcm and k_lh_start_rcm_in_cloud
         if ( k_lh_start_rcm_in_cloud(i) > k_lh_start_rcm(i) ) then
           k_lh_start(i) = rand_integer_in_range( k_lh_start_rcm(i), k_lh_start_rcm_in_cloud(i) )
