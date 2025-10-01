@@ -52,8 +52,7 @@ mkdir ../restart
 mv ../output/*.* ../restart/
 
 # Set case file for restart runs
-sed -i -e 's/time_initial\s*=\s*.*/time_initial = '$halfway_time'/g' \
-       -e 's/l_restart\s*=\s*.*/l_restart = .true./g' \
+sed -i -e 's/l_restart\s*=\s*.*/l_restart = .true./g' \
        -e 's/restart_path_case\s*=\s*.*/restart_path_case = "restart\/'$RUN_CASE'"/g' \
        -e 's/time_restart\s*=\s*.*/time_restart = '$halfway_time'/g' $RUN_CASE_INPUT
 
