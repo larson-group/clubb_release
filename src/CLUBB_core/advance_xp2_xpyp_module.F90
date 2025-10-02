@@ -4257,7 +4257,7 @@ module advance_xp2_xpyp_module
     !$acc                 term_wpvp2_explicit_zm, sgn_t_vel_rtp2, &
     !$acc                 sgn_t_vel_thlp2, sgn_t_vel_rtpthlp, sgn_t_vel_up2, sgn_t_vel_vp2, & 
     !$acc                 a1_coef, a1_coef_zt, upwp_zt, vpwp_zt, wprtp_zt, wpthlp_zt, wp_coef, &
-    !$acc                 wp_coef_zt )
+    !$acc                 wp_coef_zt, sgn_t_vel_rtp2_zt, sgn_t_vel_thlp2_zt, sgn_t_vel_rtpthlp_zt )
 
     !$acc enter data if( sclr_dim > 0 ) &
     !$acc         create( coef_wpsclrp2_implicit, term_wpsclrp2_explicit, &
@@ -4704,6 +4704,7 @@ module advance_xp2_xpyp_module
             end do
           end do
           !$acc end parallel loop
+
           !$acc parallel loop gang vector collapse(2) default(present)
           do k = 1, nzt
             do i = 1, ngrdcol 
@@ -4762,6 +4763,7 @@ module advance_xp2_xpyp_module
             end do
           end do
           !$acc end parallel loop
+
           !$acc parallel loop gang vector collapse(2) default(present)
           do k = 1, nzt
             do i = 1, ngrdcol 
@@ -4815,6 +4817,7 @@ module advance_xp2_xpyp_module
             end do
           end do
           !$acc end parallel loop
+
           !$acc parallel loop gang vector collapse(2) default(present)
           do k = 1, nzt
             do i = 1, ngrdcol           
@@ -5586,7 +5589,7 @@ module advance_xp2_xpyp_module
     !$acc                 term_wpvp2_explicit_zm, sgn_t_vel_rtp2, &
     !$acc                 sgn_t_vel_thlp2, sgn_t_vel_rtpthlp, sgn_t_vel_up2, sgn_t_vel_vp2, & 
     !$acc                 a1_coef, a1_coef_zt, upwp_zt, vpwp_zt, wprtp_zt, wpthlp_zt, wp_coef, &
-    !$acc                 wp_coef_zt )
+    !$acc                 wp_coef_zt, sgn_t_vel_rtp2_zt, sgn_t_vel_thlp2_zt, sgn_t_vel_rtpthlp_zt )
 
     !$acc exit data if( sclr_dim > 0 ) &
     !$acc         delete( coef_wpsclrp2_implicit, term_wpsclrp2_explicit, &
