@@ -2264,10 +2264,6 @@ module advance_clubb_core_module
          end if
       end if
 
-      ! these budget terms must be initialized to zero
-      thlm_ed = 0.0_core_rknd
-      rtm_ed = 0.0_core_rknd
-
       if ( edsclr_dim > 1 .and. clubb_config_flags%l_do_expldiff_rtm_thlm ) then
 
         call pvertinterp( nzt, ngrdcol, gr,                 & ! intent(in)
@@ -2278,23 +2274,46 @@ module advance_clubb_core_module
                           p_in_Pa, 100000.0_core_rknd, thlm,  & ! intent(in)
                           thlm1000 )                            ! intent(out)
 
+        if ( stats_metadata%l_stats_samp ) then
+
+          !$acc update host( edsclrm, thlm, rtm, thlm700, thlm1000 )
+
+          ! thlm_ed and rtm_ed are budget terms intended to track the effect of explicit diffusion
+          do k = 1, nzt
+            do i = 1, ngrdcol         
+              if ( thlm700(i) - thlm1000(i) < 20.0_core_rknd ) then
+                thlm_ed(i,k) = ( edsclrm(i,k,edsclr_dim-1) - thlm(i,k) ) / dt
+                rtm_ed(i,k)  = ( edsclrm(i,k,edsclr_dim)   - rtm(i,k) )  / dt
+              else
+                thlm_ed(i,k) = zero
+                rtm_ed(i,k)  = zero
+              end if
+            end do
+          end do
+
+        end if
+
         !$acc parallel loop gang vector collapse(2) default(present)
         do k = 1, nzt
           do i = 1, ngrdcol         
             if ( thlm700(i) - thlm1000(i) < 20.0_core_rknd ) then
-              ! thlm_ed and rtm_ed are budget terms intended to track the effect 
-              ! of explicit diffusion
-              thlm_ed(i,k) = ( edsclrm(i,k,edsclr_dim-1) - thlm(i,k) ) / dt
               thlm(i,k) = edsclrm(i,k,edsclr_dim-1)
-              rtm_ed(i,k) = ( edsclrm(i,k,edsclr_dim) - rtm(i,k) ) / dt
-              rtm(i,k) = edsclrm(i,k,edsclr_dim)
+              rtm(i,k)  = edsclrm(i,k,edsclr_dim)
             end if
           end do
         end do
         !$acc end parallel loop
+        
       end if
 
       if ( stats_metadata%l_stats_samp ) then
+
+        if ( edsclr_dim <= 1 .or. .not. clubb_config_flags%l_do_expldiff_rtm_thlm ) then
+          ! thlm_ed and rtm_ed are budget terms intended to track the effect of explicit diffusion
+          thlm_ed(:,:) = zero
+          rtm_ed(:,:)  = zero
+        end if
+
         do i = 1, ngrdcol
           call stat_update_var( stats_metadata%ithlm_ed, thlm_ed(i,:),  & ! intent(in)
                                 stats_zt(i) )                             ! intent(inout)
