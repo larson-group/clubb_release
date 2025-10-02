@@ -25,7 +25,8 @@ srcdir="$dir/../src"  # dir where the source files reside
 # These are the options for debugging symbols, bounds checking & IEEE-754 
 # floating point arithmetic
 #DEBUG="-g -fbounds-check -mieee-fp -finit-real=nan -finit-integer=-99999 -finit-logical=false -fall-intrinsics -fbacktrace" # Floating point trapping disabled
-DEBUG="-g -fbounds-check -mieee-fp -ffpe-trap=invalid,zero,overflow -finit-real=nan -finit-integer=-99999 -finit-logical=false -fall-intrinsics -fbacktrace" # Floating point trapping enabled for invalid operations, divide-by-zero, and overflow
+#DEBUG="-g -fbounds-check -mieee-fp -ffpe-trap=invalid,zero,overflow -finit-real=nan -finit-integer=-99999 -finit-logical=false -fall-intrinsics -fbacktrace" # Floating point trapping enabled for invalid operations, divide-by-zero, and overflow
+DEBUG="-mieee-fp -fall-intrinsics -std=gnu -fallow-argument-mismatch"
 
 # == Warnings ==
 WARNINGS="-Wall -Wextra -Wconversion -Wunderflow -Wcharacter-truncation -std=f2008 -pedantic"
@@ -35,7 +36,7 @@ NO_CONV="-Wno-conversion" #Added to remove conversion warnings from clubb_model_
 # Run CLUBB without OpenMP
 ARCH="-march=native -msse3 -mfpmath=sse"
 # Run CLUBB with OpenMP (comment the following line if you want a sequential run)
-ARCH="$ARCH -fopenmp"
+#ARCH="$ARCH -fopenmp"
 
 # == Used to promote all real's to double precision ==
 DOUBLE_PRECISION="-fdefault-real-8"
