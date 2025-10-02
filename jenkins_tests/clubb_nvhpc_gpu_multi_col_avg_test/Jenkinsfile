@@ -22,6 +22,7 @@ pipeline {
           sh '''run_scripts/create_multi_col_params.py -n 100 -calls_per_out 1'''
           sh '''source /etc/profile.d/larson-group.sh
                 module load nvhpc netcdf-fortran
+                ulimit -s 8388608
                 run_scripts/run_scm.bash -e -p ../clubb_params_multi_col.in arm
                 mv output output_full_res; mkdir output'''
         }
@@ -33,6 +34,7 @@ pipeline {
           sh '''run_scripts/create_multi_col_params.py -n 100 -calls_per_out 4'''
           sh '''source /etc/profile.d/larson-group.sh
                 module load nvhpc netcdf-fortran
+                ulimit -s 8388608
                 run_scripts/run_scm.bash -e -p ../clubb_params_multi_col.in arm
                 mv output output_double; mkdir output'''
         }
@@ -44,6 +46,7 @@ pipeline {
           sh '''run_scripts/create_multi_col_params.py -n 100 -l_multi_col_output single -calls_per_out 4'''
           sh '''source /etc/profile.d/larson-group.sh
                 module load nvhpc netcdf-fortran
+                ulimit -s 8388608
                 run_scripts/run_scm.bash -e -p ../clubb_params_multi_col.in arm
                 mv output output_single; mkdir output'''
         }
