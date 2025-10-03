@@ -36,7 +36,7 @@ NO_CONV="-Wno-conversion" #Added to remove conversion warnings from clubb_model_
 # Run CLUBB without OpenMP
 ARCH="-march=native -msse3 -mfpmath=sse"
 # Run CLUBB with OpenMP (comment the following line if you want a sequential run)
-#ARCH="$ARCH -fopenmp"
+ARCH="$ARCH -fopenmp"
 
 # == Used to promote all real's to double precision ==
 DOUBLE_PRECISION="-fdefault-real-8"
