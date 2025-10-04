@@ -1,0 +1,65 @@
+commit df9e2152bc4889d33e801021a44c11fd6b685d1f
+Author: Gunther Huebler <huebler@uwm.edu>
+Date:   Fri Oct 3 15:18:26 2025 -0500
+
+    Must add -fopenmp back for now, since this is used for the openmp test and it also broke the BFB tests for an obnoxious reason - that test compiles each commit without cleaning the build, so the baseline commit had -fopenmp and compiled with openmp stuff enabled, but then the subsequent commits had it turned off, but no changes in the files, so it didn't recompile with it off, and only turned it off in the linking stage, causing a build error. RESOLVED:320551df13ee84bdb9280db0be788a36e1f03494 RESOLVED:6c0201d44694fadf7f4bb0d4d58c3a9871096a22 RESOLVED:26644de2ea83ee6335b273f54dd57afc8f6f4b0c
+
+commit 6c0201d44694fadf7f4bb0d4d58c3a9871096a22
+Author: Gunther Huebler <huebler@uwm.edu>
+Date:   Thu Oct 2 17:47:43 2025 -0500
+
+    Adding -Mstack_arrays to the nvfortran flags causes us to use more stack space, which means we need to allow processes to use more stack space (when using lots of columns, since that increases memory footprint). We do by using using 'ulimit BIGNUMBER'.
+
+commit 26644de2ea83ee6335b273f54dd57afc8f6f4b0c
+Author: Gunther Huebler <huebler@uwm.edu>
+Date:   Thu Oct 2 15:55:29 2025 -0500
+
+    thlm_ed and rtm_ed caused GPU errors since those variables were added to a acc loop, but never added to the acc data statement. This change makes it so they're only calculated on the CPU, since they are only used for stats, fixing the issue without adding the GPU memory footprint.
+
+commit 320551df13ee84bdb9280db0be788a36e1f03494
+Author: Gunther Huebler <huebler@uwm.edu>
+Date:   Thu Oct 2 14:25:51 2025 -0500
+
+    Modifying compiler configurations (mainly optimization level) in order to prepare for switching scipts and tests to cmake, specifically separating out this BIT_CHANGING commit from the rest
+
+commit eac573b2f186d900e285d06c2fd5a933316b7c4e
+Author: Gunther Huebler <huebler@uwm.edu>
+Date:   Thu Oct 2 14:20:19 2025 -0500
+
+    Adding variables to openacc data statements. Without this, the code crashes when using the GPU with l_godunov_upwind_xpyp_ta=.true.
+
+commit def788b540d3bf4995b1deefeb077e198906f158
+Author: Gunther Huebler <huebler@uwm.edu>
+Date:   Wed Oct 1 17:36:25 2025 -0500
+
+    Making the l_random_k_lh_start set the random generator seed before generating a random. This should fix the generalized grid test, which failed for the only flag set that turned on l_random_k_lh_start. Before, the test passed because we used the same random seed for all timesteps, preventing differences in the random call. But now we use a different seed each timestep, causing differences. To ensure reproducibility, we use the seed each timestep to generate rand_pool, which is an effective solution, but we need to do that for the rand_integer_in_range call in the l_random_k_lh_start code for the same reason. Since this does change the random that comes out, this is BIT_CHANGING, but only for runs using both SILHS and l_random_k_lh_start=.true.
+
+commit 1d2f7cf2618dd274b5745f2d82b23fdbba461c07
+Author: Gunther Huebler <huebler@uwm.edu>
+Date:   Wed Oct 1 16:15:53 2025 -0500
+
+    Making restart test not overwrite time_initial. The time_initial should be defined by the _model.in file and not overwritten, but this script was setting time_initial to time_restart, which resulted in the initial iteration value (iinit) to be 1 in the restart regardless of the restart time.
+
+commit 9fed3afd3153c67a4c38a1f11d741cea5cac1df0
+Author: Gunther Huebler <37674341+huebleruwm@users.noreply.github.com>
+Date:   Tue Sep 30 22:39:59 2025 -0500
+
+    SILHS reproducibility (#1258)
+    
+    * Making the SILHS random number generator on GPUs more reproducible by relying on the lh_seed input every call, which is the same as how the CPU randoms work. Also ensuring that the seed changes each timestep, just to prevent generating the same randoms on different timesteps. Since this does change the randoms, it is BIT_CHANGING for silhs enabled runs.
+    
+    * Improving comment
+
+commit 15d2cb2c130a1c17d3869f04b9eba2d5c287a455
+Author: Gunther Huebler <huebler@uwm.edu>
+Date:   Mon Sep 29 14:21:10 2025 -0500
+
+    Bug fix. This is BIT_CHANGING, but only on GPUs and only when l_soil_veg=.true. (which is only gabls3 currently).
+
+commit 1bc1aba5ac2dbd0fab0dbf870b7d8616fbf9d462
+Author: Gunther Huebler <37674341+huebleruwm@users.noreply.github.com>
+Date:   Sat Sep 27 07:03:11 2025 -0500
+
+    Change tolerance in way that affects only single precision builds (#1256)
+    
+    This fixes a problem with precip_frac exceeding a bound in single precision.  The code change is BIT_CHANGING for single precision, but V. Larson wouldn't expect it to be bit changing for double precision, although V. Larson hasn't checked.
