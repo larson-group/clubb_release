@@ -22,8 +22,13 @@ set(BUGSrad_SOURCES
         two_rt_sw.F
         two_rt_sw_iter.F
         two_rt_sw_ocastrndm.F90
+        variables_radiation_module.F90
 )
 
 add_library(bugsrad_lib ${BUGSrad_SOURCES})
 
 target_link_libraries(bugsrad_lib PRIVATE clubb_core_lib lapack_lib)
+
+if(${ENABLE_OMP})
+    target_link_libraries(bugsrad_lib PRIVATE openmp-fortran)
+endif()

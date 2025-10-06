@@ -40,7 +40,7 @@ module spurious_source_test
 
     use clubb_api_module, only: &
         setup_grid_api, & ! Procedure(s)
-        adj_low_res_nu_api
+        calc_derrived_params_api
 
     use grid_class, only: &
         zm2zt_api,      &
@@ -119,6 +119,9 @@ module spurious_source_test
       stats_sfc
 
     type (grid), target :: gr
+
+    real( kind = core_rknd ), parameter ::  & 
+      ts_nudge = 0._core_rknd      ! Timescale of u/v nudging             [s]
 
     integer, parameter :: &
       sclr_dim = 0 ! Number of passive scalars
@@ -375,6 +378,10 @@ module spurious_source_test
 
     type(nu_vertical_res_dep) :: &
       nu_vert_res_dep    ! Vertical resolution dependent nu values
+
+    real( kind = core_rknd ) :: &
+      mixt_frac_max_mag, &
+      lmin    ! Min. value for the length scale    [m]
   
     integer, parameter :: iunit = 10
 
@@ -490,7 +497,7 @@ module spurious_source_test
       l_rcm_supersat_adj,           & ! Add excess supersaturated vapor to cloud water
                                       ! rtpthlp
       l_damp_wp3_Skw_squared,       & ! Set damping on wp3 to use Skw^2 rather than Skw^4
-      l_prescribed_avg_deltaz,      & ! used in adj_low_res_nu. If .true., avg_deltaz = deltaz
+      l_prescribed_avg_deltaz,      & ! used in calc_derrived_params_api. If .true., avg_deltaz = deltaz
       l_lmm_stepping,               & ! Apply Linear Multistep Method (LMM) Stepping
       l_e3sm_config,                & ! Run model with E3SM settings
       l_vary_convect_depth,         & ! Flag used to calculate convective velocity using
@@ -620,10 +627,11 @@ module spurious_source_test
                          gr, err_info_dummy )
 
     ! Calculate the value of nu for use in advance_xm_wpxp.
-    call adj_low_res_nu_api( gr, grid_type, deltaz, &
-                             clubb_params(1,:), &
-                             l_prescribed_avg_deltaz, &
-                             nu_vert_res_dep )
+    call calc_derrived_params_api( gr, grid_type, deltaz, &
+                           clubb_params(1,:), &
+                           l_prescribed_avg_deltaz, &
+                           nu_vert_res_dep, lmin, &
+                           mixt_frac_max_mag )
 
     dt = 300.0_core_rknd
 
@@ -968,7 +976,7 @@ module spurious_source_test
                              um_forcing, vm_forcing, ug, vg, wpthvp, &
                              fcor, um_ref, vm_ref, up2, vp2, &
                              uprcp, vprcp, rc_coef_zm, &
-                             clubb_params(1,:), nu_vert_res_dep, &
+                             clubb_params(1,:), nu_vert_res_dep, ts_nudge, &
                              iiPDF_type, &
                              penta_solve_method, &
                              tridiag_solve_method, &

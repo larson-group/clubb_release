@@ -39,7 +39,6 @@ set( CLUBB_CORE_SOURCES
         mixing_length.F90
         model_flags.F90
         mono_flux_limiter.F90
-        mt95.F90
         Nc_Ncn_eqns.F90
         new_hybrid_pdf.F90
         new_hybrid_pdf_main.F90
@@ -50,7 +49,6 @@ set( CLUBB_CORE_SOURCES
         output_grads.F90
         output_netcdf.F90
         parameter_indices.F90
-        parameters_model.F90
         parameters_tunable.F90
         pdf_closure_module.F90
         pdf_parameter_module.F90

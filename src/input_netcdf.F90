@@ -17,6 +17,11 @@ module input_netcdf
   public :: get_netcdf_var, open_netcdf_read, & 
     close_netcdf_read
 
+  integer, public ::  & 
+    clubb_day,    & ! Start time the of simulation
+    clubb_month,  &
+    clubb_year 
+
   contains
 
 !-----------------------------------------------------------------------
@@ -50,11 +55,6 @@ module input_netcdf
 
     use calendar, only: &
       gregorian2julian_date
-
-    use clubb_model_settings, only: &
-      day, &
-      month, &
-      year
 
     implicit none
 
@@ -90,15 +90,10 @@ module input_netcdf
 
     integer, dimension(NF90_MAX_VAR_DIMS) :: dimIds
 
-    integer :: clubb_day, clubb_month, clubb_year
 
 !-----------------------------------------------------------------------
 
     ! ---- Begin Code ----
-    ! Initialize clubb_day, month, and year
-    clubb_day = day
-    clubb_month = month
-    clubb_year = year
 
     ! Initialize l_error to false
     l_error = .false.

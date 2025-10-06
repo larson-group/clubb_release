@@ -8,11 +8,79 @@ module mixing_length
   private ! Default Scope
 
   public :: calc_Lscale_directly,  &
-            diagnose_Lscale_from_tau
+            diagnose_Lscale_from_tau, &
+            set_Lscale_max
 
   contains
 
   !=============================================================================
+
+  subroutine set_Lscale_max( ngrdcol, l_implemented, host_dx, host_dy, &
+                              Lscale_max )
+
+    ! Description:
+    !   This subroutine sets the value of Lscale_max, which is the maximum
+    !   allowable value of Lscale.  For standard CLUBB, it is set to a very large
+    !   value so that Lscale will not be limited.  However, when CLUBB is running
+    !   as part of a host model, the value of Lscale_max is dependent on the size
+    !   of the host model's horizontal grid spacing.  The smaller the host model's
+    !   horizontal grid spacing, the smaller the value of Lscale_max.  When Lscale
+    !   is limited to a small value, the value of time-scale Tau is reduced, which
+    !   in turn produces greater damping on CLUBB's turbulent parameters.  This
+    !   is the desired effect on turbulent parameters for a host model with small
+    !   horizontal grid spacing, for small areas usually contain much less
+    !   variation in meteorological quantities than large areas.
+
+    ! References:
+    !   None
+    !-----------------------------------------------------------------------
+
+    use clubb_precision, only: &
+      core_rknd ! Variable(s)
+
+    implicit none
+
+    !----------------------- Input Variables -----------------------
+    integer, intent(in) :: &
+      ngrdcol
+    
+    logical, intent(in) :: &
+      l_implemented     ! Flag to see if CLUBB is running on it's own,
+                        ! or if it's implemented as part of a host model.
+
+    real( kind = core_rknd ), dimension(ngrdcol), intent(in) :: &
+      host_dx, & ! Host model's east-west horizontal grid spacing     [m]
+      host_dy    ! Host model's north-south horizontal grid spacing   [m]
+
+    !----------------------- Output Variable -----------------------
+    real( kind = core_rknd ), dimension(ngrdcol), intent(out) :: &
+      Lscale_max    ! Maximum allowable value for Lscale   [m]
+
+    !----------------------- Local Variable -----------------------
+    integer :: i
+
+    !----------------------- Begin Code-----------------------
+
+    ! Determine the maximum allowable value for Lscale (in meters).
+    if ( l_implemented ) then
+      !$acc parallel loop gang vector default(present)
+      do i = 1, ngrdcol
+        Lscale_max(i) = 0.25_core_rknd * min( host_dx(i), host_dy(i) )
+      end do
+      !$acc end parallel loop
+    else
+      !$acc parallel loop gang vector default(present)
+      do i = 1, ngrdcol
+        Lscale_max(i) = 1.0e5_core_rknd
+      end do
+      !$acc end parallel loop
+    end if
+
+    return
+  end subroutine set_Lscale_max
+
+  !=============================================================================
+
   subroutine compute_mixing_length( nzm, nzt, ngrdcol, gr, thvm, thlm, &
                                     rtm, em, Lscale_max, p_in_Pa, &
                                     exner, thv_ds, mu, lmin, &

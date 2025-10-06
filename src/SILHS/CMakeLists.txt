@@ -10,6 +10,7 @@ set(SILHS_SOURCES
                     silhs_api_module.F90
                     silhs_importance_sample_module.F90
                     transform_to_pdf_module.F90
+                    mt95.F90
 )
 
 add_library(silhs_lib ${SILHS_SOURCES})

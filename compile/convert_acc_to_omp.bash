@@ -28,6 +28,7 @@ $ACC_TO_OMP_SCRIPT -overwrite-input -async=ignore -no-declare-mapper *.F90
 $ACC_TO_OMP_SCRIPT -overwrite-input -async=ignore -no-declare-mapper CLUBB_core/*.F90
 $ACC_TO_OMP_SCRIPT -overwrite-input -async=ignore -no-declare-mapper SILHS/*.F90
 $ACC_TO_OMP_SCRIPT -overwrite-input -async=ignore -no-declare-mapper Benchmark_cases/*.F90
+$ACC_TO_OMP_SCRIPT -overwrite-input -async=ignore -no-declare-mapper Microphys/*.F90
 
 
 # Remove the extra generated files

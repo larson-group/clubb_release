@@ -156,7 +156,7 @@ module grid_class
 
   public :: grid, zt2zm_api, zm2zt_api, zt2zm2zt, zm2zt2zm, & 
             ddzm, ddzt, & 
-            setup_grid, cleanup_grid, setup_grid_heights, &
+            setup_grid, cleanup_grid_api, setup_grid_heights, &
             read_grid_heights, flip
 
   private :: t_above, t_below, m_above, m_below
@@ -678,7 +678,7 @@ module grid_class
   end subroutine setup_grid
 
   !=============================================================================
-  subroutine cleanup_grid( gr )
+  subroutine cleanup_grid_api( gr )
 
     ! Description:
     !   De-allocates the memory for the grid
@@ -712,7 +712,7 @@ module grid_class
 
     return
 
-  end subroutine cleanup_grid
+  end subroutine cleanup_grid_api
 
   !=============================================================================
   subroutine setup_grid_heights( nzm, nzt, ngrdcol, &

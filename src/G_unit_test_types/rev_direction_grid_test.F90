@@ -9,7 +9,7 @@ module rev_direction_grid_test
 
     use grid_class, only: &
         flip,         & ! Procedure(s)
-        cleanup_grid, &
+        cleanup_grid_api, &
         zt2zm2zt,     &
         zm2zt2zm,     &
         ddzm,         &
@@ -25,7 +25,7 @@ module rev_direction_grid_test
         setup_grid_api,     & ! Procedure(s)
         zt2zm_api,          &
         zm2zt_api,          &
-        adj_low_res_nu_api, &
+        calc_derrived_params_api,   &
         core_rknd             ! Variable(s)
 
     use mean_adv, only: &
@@ -197,7 +197,7 @@ module rev_direction_grid_test
     real( kind = core_rknd ), dimension(1,nparams) :: & 
       clubb_params  ! Array of the model constants
 
-    ! Flag for using prescribed avg_deltaz in adj_low_res_nu
+    ! Flag for using prescribed avg_deltaz in calc_derrived_params_api
     logical, parameter :: &
       l_prescribed_avg_deltaz = .false.
 
@@ -205,6 +205,10 @@ module rev_direction_grid_test
       nu_vert_res_dep_ascend,  & ! Vertical resolution dependent nu (ascending)
       nu_vert_res_dep_descend    ! Vertical resolution dependent nu (descending)
   
+    real( kind = core_rknd ) :: & 
+      mixt_frac_max_mag, &
+      lmin
+
     integer :: &
       rev_direction_grid_unit_test
 
@@ -235,7 +239,7 @@ module rev_direction_grid_test
     ! This value will remain at 0 if all tests are successful.
     rev_direction_grid_unit_test = 0
 
-    ! Read in model parameter values for the call to adj_low_res_nu
+    ! Read in model parameter values for the call to calc_derrived_params_api
     call init_clubb_params_api( 1, iunit, namelist_filename, &
                                 clubb_params )
       
@@ -801,15 +805,17 @@ module rev_direction_grid_test
                                           rho_ds_zm_flip, & ! In
                                           rhs_ta_godunov_descend ) ! Out
 
-       ! adj_low_res_nu (called from within setup_parameters in CLUBB)
-       call adj_low_res_nu_api( gr_ascending, grid_type, deltaz, & ! Intent(in)
-                                clubb_params(1,:),               & ! Intent(in)
-                                l_prescribed_avg_deltaz,         & ! Intent(in)
-                                nu_vert_res_dep_ascend )           ! Intent(out)
-       call adj_low_res_nu_api( gr_descending, grid_type, deltaz, & ! Intent(in)
-                                clubb_params(1,:),                & ! Intent(in)
-                                l_prescribed_avg_deltaz,          & ! Intent(in)
-                                nu_vert_res_dep_descend )           ! Intent(out)
+       ! calc_derrived_params_api (called from within setup_parameters in CLUBB)
+       call calc_derrived_params_api( gr_ascending, grid_type, deltaz, & ! Intent(in)
+                              clubb_params(1,:),               & ! Intent(in)
+                              l_prescribed_avg_deltaz,         & ! Intent(in)
+                              nu_vert_res_dep_ascend, lmin,    & ! intent(inout)
+                              mixt_frac_max_mag )                ! intent(inout)
+       call calc_derrived_params_api( gr_descending, grid_type, deltaz, & ! Intent(in)
+                              clubb_params(1,:),                & ! Intent(in)
+                              l_prescribed_avg_deltaz,          & ! Intent(in)
+                              nu_vert_res_dep_descend, lmin,    & ! intent(inout)
+                              mixt_frac_max_mag )                 ! intent(inout)
 
        ! Compare the symmetry of the results -- zt level variables
        do k = 1, nzt
@@ -1281,8 +1287,8 @@ module rev_direction_grid_test
 
        ! Deallocate gr variables
        ! (They are allocated during the call to setup_grid_api).
-       call cleanup_grid( gr_ascending )
-       call cleanup_grid( gr_descending )
+       call cleanup_grid_api( gr_ascending )
+       call cleanup_grid_api( gr_descending )
 
     enddo ! iter = 1, 3, 1
 

@@ -1669,6 +1669,7 @@ module latin_hypercube_driver_module
                stats_zt, time_initial, num_samples, &
                nlon, nlat, lon_vals, lat_vals, &
                hm_metadata, &
+               T0, ts_nudge, &
                clubb_params, sclr_dim, sclr_tol, &
                l_uv_nudge, &
                l_tke_aniso, &
@@ -1736,6 +1737,10 @@ module latin_hypercube_driver_module
 
     type (hm_metadata_type), intent(in) :: &
       hm_metadata
+      
+    real( kind = core_rknd ), intent(in) :: &
+      T0, &
+      ts_nudge
 
     real( kind = core_rknd ), dimension(nparams), intent(in) :: &
       clubb_params    ! Array of CLUBB's tunable parameters    [units vary]
@@ -1862,6 +1867,7 @@ module latin_hypercube_driver_module
                                  trim( fname_prefix )//"_nl", fdir, & ! In
                                  time_initial, stats_tout, stats_zt, variable_names, & ! In
                                  variable_descriptions, variable_units, & ! In
+                                 T0, ts_nudge, &
                                  nlon, nlat, lon_vals, lat_vals, & ! In
                                  clubb_params, sclr_dim, sclr_tol, &
                                  l_uv_nudge, &
@@ -1969,6 +1975,7 @@ module latin_hypercube_driver_module
                                  time_initial, stats_tout, stats_zt, & ! In
                                  variable_names(1:p), variable_descriptions(1:p), & ! In
                                  variable_units(1:p), & ! In
+                                 T0, ts_nudge, &
                                  nlon, nlat, lon_vals, lat_vals, & ! In
                                  clubb_params, sclr_dim, sclr_tol, &
                                  l_uv_nudge, &

@@ -1149,7 +1149,7 @@ module grid_adaptation_module
                              thlm, exner, rtm, &
                              rcm, p_in_Pa, thvm, &
                              ice_supersat_frac, &
-                             bv_efold, &
+                             bv_efold, T0, &
                              clubb_config_flags, &
                              gr_dens_z, gr_dens, &
                              alt_term, Lscale_term, &
@@ -1214,6 +1214,9 @@ module grid_adaptation_module
     real( kind = core_rknd ), dimension(ngrdcol), intent(in) :: &
       bv_efold             ! Control parameter for inverse e-folding of cloud fraction
                            ! in the mixed Brunt Vaisala frequency  [-]
+
+    real( kind = core_rknd ), intent(in) :: &
+      T0                     ! Reference temperature (usually 300)  [K]
 
     type(pdf_parameter), intent(in) :: & 
       pdf_params           ! PDF parameters
@@ -1307,7 +1310,7 @@ module grid_adaptation_module
                                       clubb_config_flags%l_brunt_vaisala_freq_moist,      & ! In
                                       clubb_config_flags%l_use_thvm_in_bv_freq,           & ! In
                                       clubb_config_flags%l_modify_limiters_for_cnvg_test, & ! In
-                                      bv_efold,                                           & ! In
+                                      bv_efold, T0,                                       & ! In
                                       brunt_vaisala_freq_sqd,                             & ! Out
                                       brunt_vaisala_freq_sqd_mixed,                       & ! Out
                                       brunt_vaisala_freq_sqd_dry,                         & ! Out

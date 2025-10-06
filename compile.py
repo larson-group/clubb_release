@@ -102,6 +102,9 @@ def run_cmake_build(logfile):
     # output from cmake
     cmd = f'script -qfec "cmake --build . --target install" -- -j{nproc} /dev/stdout | tee -a {logfile}'
 
+    # this one might work better, need to figure out
+    #cmd = f'script -q -c "cmake --build . --target install -j{nproc}" /dev/stdout | tee -a {logfile}' 
+
     # Run the command
     subprocess.call(cmd, shell=True)
 
@@ -226,7 +229,7 @@ def main():
     os.chdir(build_dir)
 
     # Reset build log
-    build_log="cmake_build_output.txt"
+    build_log = os.path.join(build_dir, f"cmake_build_output.txt") 
     open(build_log, "w").close()
 
     inst_dir = args.install if args.install else os.path.join(CLUBB_ROOT, f"install/{compiler}") 
@@ -251,7 +254,7 @@ def main():
         print(f"\033[91m  THIS IS PRINTED IN ALL RED, CAPITAL LETTERS, AND USES")
         print(f"\033[91m  AN EXCLAMATION MARK TO ENSURE THE DEVELOPERS FEEL SHAME!")
         print(f"\033[91m  IF YOU ARE ONE OF THESE \"DEVELOPERS\" CHECK THE")
-        print(f"\033[91m  LOG FILE FOR DETAILS: {build_dir}/{build_log}")
+        print(f"\033[91m  LOG FILE FOR DETAILS: {build_log}")
         print(f"\033[91m===============================================================\033[0m")
         source_check_failed = True
 
@@ -262,7 +265,7 @@ def main():
         print(f"\033[91m  THIS IS PRINTED IN ALL RED, CAPITAL LETTERS, AND USES")
         print(f"\033[91m  AN EXCLAMATION MARK TO ENSURE THE DEVELOPERS FEEL SHAME!")
         print(f"\033[91m  IF YOU ARE ONE OF THESE \"DEVELOPERS\" CHECK THE")
-        print(f"\033[91m  LOG FILE FOR DETAILS: {build_dir}/{build_log}")
+        print(f"\033[91m  LOG FILE FOR DETAILS: {build_log}")
         print(f"\033[91m===============================================================\033[0m")
         source_check_failed = True
 

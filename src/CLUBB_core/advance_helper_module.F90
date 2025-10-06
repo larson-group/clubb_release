@@ -21,7 +21,9 @@ module advance_helper_module
     calc_xpwp, &
     vertical_avg, &
     vertical_integral, &
-    Lscale_width_vert_avg
+    Lscale_width_vert_avg, &
+    calculate_thlp2_rad, &
+    pvertinterp
 
   interface calc_xpwp
     module procedure calc_xpwp_1D
@@ -223,7 +225,7 @@ module advance_helper_module
                                         exner, rtm, rcm, &
                                         p_in_Pa, thvm, ice_supersat_frac, &
                                         lambda0_stability_coef, &
-                                        bv_efold, &
+                                        bv_efold, T0, &
                                         saturation_formula, &
                                         l_brunt_vaisala_freq_moist, &
                                         l_use_thvm_in_bv_freq, &
@@ -274,6 +276,9 @@ module advance_helper_module
       bv_efold                      ! Control parameter for inverse e-folding of
                                     ! cloud fraction in the mixed Brunt Vaisala frequency
 
+    real( kind = core_rknd ), intent(in) :: &
+      T0
+
     integer, intent(in) :: &
       saturation_formula ! Integer that stores the saturation formula to be used
 
@@ -317,7 +322,7 @@ module advance_helper_module
                                       l_brunt_vaisala_freq_moist, &     ! intent(in)
                                       l_use_thvm_in_bv_freq, &          ! intent(in)
                                       l_modify_limiters_for_cnvg_test, &! intent(in)
-                                      bv_efold, &                       ! intent(in)
+                                      bv_efold, T0, &                   ! intent(in)
                                       brunt_vaisala_freq_sqd, &         ! intent(out)
                                       brunt_vaisala_freq_sqd_mixed,&    ! intent(out)
                                       brunt_vaisala_freq_sqd_dry, &     ! intent(out)
@@ -362,7 +367,7 @@ module advance_helper_module
                                            l_brunt_vaisala_freq_moist, &
                                            l_use_thvm_in_bv_freq, &
                                            l_modify_limiters_for_cnvg_test, &
-                                           bv_efold, &
+                                           bv_efold, T0, &
                                            brunt_vaisala_freq_sqd, &
                                            brunt_vaisala_freq_sqd_mixed,&
                                            brunt_vaisala_freq_sqd_dry, &
@@ -388,9 +393,6 @@ module advance_helper_module
         one, &
         zero_threshold, &
         min_max_smth_mag
-
-    use parameters_model, only: &
-        T0 ! Variable!
 
     use grid_class, only: &
         grid,       & ! Type
@@ -441,6 +443,9 @@ module advance_helper_module
     real( kind = core_rknd ), dimension(ngrdcol), intent(in) :: &
       bv_efold                      ! Control parameter for inverse e-folding of
                                     ! cloud fraction in the mixed Brunt Vaisala frequency
+
+    real( kind = core_rknd ), intent(in) :: &
+      T0                    ! Reference temperature (usually 300)  [K]
 
     !---------------------------- Output Variables ----------------------------
     real( kind = core_rknd ), dimension(ngrdcol,nzm), intent(out) :: &
@@ -2067,6 +2072,192 @@ module advance_helper_module
 
     return
   end function vertical_integral
+
+  !-------------------------------------------------------------------------------
+  subroutine pvertinterp( nzt, ngrdcol, gr, &
+                          p_mid, p_out, input_var, &
+                          interp_var )
+
+    use grid_class, only: &
+        grid    ! Type(s)
+
+    use clubb_precision, only: &
+        core_rknd
+     
+    implicit none
+    
+    !------------------------ Input Variables ------------------------
+    integer , intent(in)  :: &
+      nzt, &
+      ngrdcol
+
+    type( grid ), intent(in) :: &
+      gr
+
+    real( kind = core_rknd ), dimension(ngrdcol,nzt), intent(in)  :: &
+      p_mid,      & ! input level pressure levels
+      input_var     ! input  array
+
+    real( kind = core_rknd ), intent(in)  :: &
+      p_out         ! output pressure level
+
+    !------------------------ Output Variables ------------------------
+    real( kind = core_rknd ), dimension(ngrdcol), intent(out) :: &
+      interp_var    ! output array (interpolated)   
+
+    !------------------------ Local Variables ------------------------
+    integer :: &
+      i, k,   & ! Loop indices
+      k_upper    ! Level indices for interpolation
+
+    real( kind = core_rknd ) :: &
+      dpu,  & ! upper level pressure difference
+      dpl     ! lower level pressure difference
+
+    logical :: &
+      l_found,  & ! true if input levels found
+      l_error     ! true if error
+
+    !------------------------ Begin Code ------------------------
+
+    ! Initialize index array and logical flags
+    l_error = .false.
+
+    ! If we've fallen through the k=1,nz-1 loop, we cannot interpolate and
+    ! must extrapolate from the bottom or top data level for at least some
+    ! of the longitude points.
+    !$acc parallel loop gang vector default(present)
+    do i = 1, ngrdcol
+
+      if ( p_out >= p_mid(i,gr%k_lb_zt) ) then
+
+        interp_var(i) = input_var(i,gr%k_lb_zt)
+
+      elseif ( p_out <= p_mid(i,gr%k_ub_zt) ) then
+
+        interp_var(i) = input_var(i,gr%k_ub_zt)
+
+      else
+
+        l_found = .false.
+        k_upper = 1
+
+        ! Store level indices for interpolation.
+        ! If all indices for this level have been found,
+        ! do the interpolation
+        do k = gr%k_lb_zt, gr%k_ub_zt-gr%grid_dir_indx, gr%grid_dir_indx
+          if ( p_mid(i,k) > p_out .and. p_out >= p_mid(i,k+gr%grid_dir_indx) ) then
+            l_found = .true.
+            k_upper = k
+            exit
+          end if
+        end do
+
+        if ( .not. l_found ) then
+          l_error = .true.
+        end if
+
+        dpu = p_mid(i,k_upper) - p_out
+        dpl = p_out - p_mid(i,k_upper+gr%grid_dir_indx)
+        interp_var(i) = ( input_var(i,k_upper)*dpl &
+                          + input_var(i,k_upper+gr%grid_dir_indx)*dpu ) &
+                        / ( dpl + dpu )
+      end if
+
+    end do
+    !$acc end parallel loop
+     
+    return
+
+  end subroutine pvertinterp
+
+  !=============================================================================
+  subroutine calculate_thlp2_rad( ngrdcol, nzm, nzt, gr, & ! Intent(in)
+                                  rcm, thlprcp, radht, clubb_params, & ! Intent(in)
+                                  thlp2_forcing )                  ! Intent(inout)
+
+  ! Description:
+  !   Computes the contribution of radiative cooling to thlp2
+
+  ! References:
+  !   See clubb:ticket:632
+  !----------------------------------------------------------------------
+
+    use clubb_precision, only: &
+        core_rknd                     ! Constant(s)
+
+    use constants_clubb, only: &
+        two, &
+        rc_tol
+
+    use parameter_indices, only: &
+        nparams, & ! Variable(s)
+        ithlp2_rad_coef
+
+    use grid_class, only: &
+        grid, &
+        zt2zm_api
+
+    implicit none
+
+    ! Input Variables
+    integer, intent(in) :: &
+      ngrdcol, &            ! Number of grid columns
+      nzm, &                ! Number of thermod vertical levels              [-]
+      nzt                   ! Number of momentum vertical levels             [-]
+
+    type( grid ), intent(in) :: &
+      gr
+
+    real( kind = core_rknd ), dimension(ngrdcol,nzt), intent(in) :: &
+      rcm, &             ! Cloud water mixing ratio on momentum grid      [kg/kg]
+      radht              ! SW + LW heating rate (on momentum grid)        [K/s]
+
+    real( kind = core_rknd ), dimension(ngrdcol,nzm), intent(in) :: &
+      thlprcp            ! thl'rc'                                        [K kg/kg]
+
+    real( kind = core_rknd ), dimension(ngrdcol,nparams), intent(in) :: &
+      clubb_params    ! Array of CLUBB's tunable parameters    [units vary]
+
+    ! Input/Output Variables
+    real( kind = core_rknd ), dimension(ngrdcol,nzm), intent(inout) :: &
+      thlp2_forcing         ! <th_l'^2> forcing (momentum levels)            [K^2/s]
+
+    ! Local Variables
+    real( kind = core_rknd ), dimension(ngrdcol,nzm) :: &
+      rcm_zm, &             ! Cloud water mixing ratio on momentum grid      [kg/kg]
+      radht_zm              ! SW + LW heating rate (on momentum grid)        [K/s]
+
+    integer :: &
+      i, k                     ! Loop iterator                                  [-]
+
+    !----------------------------------------------------------------------
+
+    !$acc enter data create( rcm_zm, radht_zm )
+
+    rcm_zm    = zt2zm_api( gr%nzm, gr%nzt, ngrdcol, gr, rcm )
+    radht_zm  = zt2zm_api( gr%nzm, gr%nzt, ngrdcol, gr, radht )
+
+    !$acc parallel loop gang vector collapse(2) default(present)
+    do k = 1, nzm
+      do i = 1, ngrdcol
+
+        if ( rcm_zm(i,k) > rc_tol ) then
+
+          thlp2_forcing(i,k) = thlp2_forcing(i,k) &
+                               + clubb_params(i,ithlp2_rad_coef) &
+                                 * ( two ) * radht_zm(i,k) / rcm_zm(i,k) * thlprcp(i,k)
+
+        end if
+
+      end do
+    end do
+
+    !$acc exit data delete( rcm_zm, radht_zm )
+
+    return
+
+  end subroutine calculate_thlp2_rad
 
 
 end module advance_helper_module

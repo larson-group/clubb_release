@@ -29,9 +29,8 @@ program clubb_standalone
 
   use err_info_type_module, only: &
     err_info_type,                  & ! Type
-    init_default_err_info_api,      & ! Procedure(s)
-    cleanup_err_info_api
-
+    cleanup_err_info_api              ! Procedure(s)
+    
   implicit none
 
   ! External
@@ -91,9 +90,6 @@ program clubb_standalone
   if ( iostat /= 0 ) then
     write(fstderr,*) "multicol_def namelist not found in clubb.in -- defaulting to ngrdcol = 1"
   end if
-
-  ! Initialize err_info with default values
-  call init_default_err_info_api(ngrdcol, err_info)
 
   allocate( clubb_params(ngrdcol,nparams) )
 

@@ -24,6 +24,7 @@ module output_2D_samples_module
                                    fname_prefix, fdir, &
                                    time, dtwrite, zgrid, variable_names, &
                                    variable_descriptions, variable_units, &
+                                   T0, ts_nudge, &
                                    nlon, nlat, lon_vals, lat_vals, &
                                    clubb_params, sclr_dim, sclr_tol, &
                                    l_uv_nudge, &
@@ -99,6 +100,10 @@ module output_2D_samples_module
     real( kind = core_rknd ), dimension(nlat), intent(in) :: &
       lat_vals  ! Latitude values  [Degrees N]
 
+    real( kind = core_rknd ), intent(in) :: &
+      T0, &
+      ts_nudge
+
     real( kind = core_rknd ), dimension(nparams), intent(in) :: &
       clubb_params    ! Array of CLUBB's tunable parameters    [units vary]
 
@@ -151,6 +156,7 @@ module output_2D_samples_module
 
     ! Finalize the variable definitions
     call first_write( clubb_params, sclr_dim, sclr_tol, &       ! intent(in)
+                      T0, ts_nudge, &                           ! intent(in)
                       l_uv_nudge, &                             ! intent(in)
                       l_tke_aniso, &                            ! intent(in)
                       l_standard_term_ta, &                     ! intent(in)

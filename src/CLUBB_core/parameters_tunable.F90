@@ -16,11 +16,6 @@ module parameters_tunable
   !
   ! References:
   !   None
-  ! 
-  ! Notes:
-  !   To make it easier to verify of code correctness, please keep the omp threadprivate
-  !   directives just after the variable declaration.  All parameters in this
-  !   module should be declared threadprivate because of the CLUBB tuner.
   !-----------------------------------------------------------------------
 
   use constants_clubb, only: eps ! Epsilon
@@ -35,9 +30,9 @@ module parameters_tunable
   ! Default to private
   private
 
-  public :: set_default_parameters, setup_parameters, init_clubb_params_api, &
+  public :: set_default_parameters, check_parameters_api, init_clubb_params_api, &
             read_param_minmax, read_param_constraints, &
-            adj_low_res_nu, nu_vertical_res_dep
+            calc_derrived_params, nu_vertical_res_dep
 
   type nu_vertical_res_dep
     real( kind = core_rknd ), allocatable, dimension(:) :: &
@@ -365,11 +360,8 @@ module parameters_tunable
   end subroutine set_default_parameters
 
   !=============================================================================
-  subroutine setup_parameters( &
-              deltaz, clubb_params, gr, ngrdcol, grid_type, &
-              l_prescribed_avg_deltaz, &
-              lmin, nu_vert_res_dep, &
-              err_info )
+  subroutine check_parameters_api( ngrdcol, clubb_params, lmin, &
+                                   err_info )
 
     ! Description:
     ! Subroutine to setup model parameters
@@ -402,44 +394,15 @@ module parameters_tunable
 
     implicit none
 
-    ! Constant Parameters
-    real( kind = core_rknd ), parameter :: &
-      lmin_deltaz = 40.0_core_rknd ! Fixed value for minimum value for the length scale.
-
     ! Input Variables
-
-    ! Grid definition
-    type(grid), intent(in) :: &
-      gr
-
     integer, intent(in) :: &
       ngrdcol   ! Number of grid columns          [#]
-      
-    real( kind = core_rknd ), dimension(ngrdcol), intent(in) :: &
-      deltaz  ! Change per height level        [m]
 
     real( kind = core_rknd ), intent(in), dimension(ngrdcol,nparams) :: &
       clubb_params  ! Tuneable model parameters      [-]
 
-    ! If CLUBB is running on its own, this option determines
-    ! if it is using:
-    ! 1) an evenly-spaced grid,
-    ! 2) a stretched (unevenly-spaced) grid entered on the
-    !    thermodynamic grid levels (with momentum levels set
-    !    halfway between thermodynamic levels), or
-    ! 3) a stretched (unevenly-spaced) grid entered on the
-    !    momentum grid levels (with thermodynamic levels set
-    !    halfway between momentum levels).
-    integer, intent(in) :: grid_type
-
-    logical, intent(in) :: &
-      l_prescribed_avg_deltaz ! used in adj_low_res_nu. If .true., avg_deltaz = deltaz
-
-    real( kind = core_rknd ), intent(out) :: &
+    real( kind = core_rknd ), intent(in) :: &
       lmin    ! Min. value for the length scale    [m]
-
-    type(nu_vertical_res_dep), intent(out) :: &
-      nu_vert_res_dep    ! Vertical resolution dependent nu values
 
     type(err_info_type), intent(inout) :: &
       err_info        ! err_info struct containing err_code and err_header
@@ -472,12 +435,19 @@ module parameters_tunable
 
     !-------------------- Begin code --------------------
 
-    ! ### Adjust Constant Diffusivity Coefficients Based On Grid Spacing ###
-    call adj_low_res_nu( gr, ngrdcol, grid_type, deltaz,  & ! Intent(in)
-                         clubb_params,                    & ! Intent(in)
-                         l_prescribed_avg_deltaz,         & ! Intent(in)
-                         nu_vert_res_dep )                  ! Intent(out)
+    ! This should have ngrdcol dimensions, but doesn't yet 
+    if ( lmin < 1.0_core_rknd ) then
 
+      write(fstderr, *) err_info%err_header(i)
+      ! Constraints on mixing length
+      write(fstderr,*) "lmin = ", lmin
+      write(fstderr,*) "lmin is < 1.0_core_rknd"
+      ! Error in grid column i -> set ith entry to clubb_fatal_error
+      err_info%err_code(ngrdcol) = clubb_fatal_error
+
+    endif ! lmin < 1.0
+
+      
     do i = 1, ngrdcol
 
       ! Ensure all variables are greater than 0, and zeta_vrnce_rat is greater than -1
@@ -529,13 +499,6 @@ module parameters_tunable
                 C_invrs_tau_wpxp_Ri, C_invrs_tau_wpxp_N2_thresh, & ! intent(out)
                 Cx_min, Cx_max, Richardson_num_min, Richardson_num_max, & ! intent(out)
                 wpxp_Ri_exp, a3_coef_min, a_const, bv_efold, z_displace ) ! intent(out)
-
-
-      ! It was decided after some experimentation, that the best
-      ! way to produce grid independent results is to set lmin to be
-      ! some fixed value. -dschanen 21 May 2007
-      !lmin = lmin_coef * deltaz  ! Old
-      lmin = lmin_coef * lmin_deltaz ! New fixed value
 
       if ( beta < zero .or. beta > three ) then
 
@@ -641,17 +604,6 @@ module parameters_tunable
 
       endif ! mu < 0.0
 
-      if ( lmin < 1.0_core_rknd ) then
-
-        write(fstderr, *) err_info%err_header(i)
-        ! Constraints on mixing length
-        write(fstderr,*) "lmin = ", lmin
-        write(fstderr,*) "lmin is < 1.0_core_rknd"
-        ! Error in grid column i -> set ith entry to clubb_fatal_error
-        err_info%err_code(i) = clubb_fatal_error
-
-      endif ! lmin < 1.0
-
       ! The C6rt parameters must be set equal to the C6thl parameters.
       ! Otherwise, the wpthlp pr1 term will be calculated inconsistently.
 
@@ -744,16 +696,19 @@ module parameters_tunable
 
     return
 
-  end subroutine setup_parameters
+  end subroutine check_parameters_api
 
   !=============================================================================
-  subroutine adj_low_res_nu( gr, ngrdcol, grid_type, deltaz, & ! Intent(in)
-                             clubb_params,                   & ! Intent(in)
-                             l_prescribed_avg_deltaz,        & ! Intent(in)
-                             nu_vert_res_dep )                 ! Intent(out)
+  subroutine calc_derrived_params( gr, ngrdcol, grid_type, deltaz,  & ! Intent(in)
+                                   clubb_params,                    & ! Intent(in)
+                                   l_prescribed_avg_deltaz,         & ! Intent(in)
+                                   nu_vert_res_dep, lmin,           & ! Intent(inout)
+                                   mixt_frac_max_mag )                ! Intent(inout)
 
     ! Description:
-    !   Adjust the values of background eddy diffusivity based on
+    !   Calculates clubb parameters that should be derrived from other quantities.
+    !
+    !   Adjusts the values of background eddy diffusivity based on
     !   vertical grid spacing.
     !   This code was made into a public subroutine so that it may be
     !   called multiple times per model run in scenarios where grid
@@ -772,6 +727,8 @@ module parameters_tunable
         core_rknd ! Variable(s)
 
     use parameter_indices, only: &
+        ilmin_coef, &
+        iSkw_max_mag, &
         imult_coef, &
         inu1, &
         inu2, &
@@ -782,6 +739,10 @@ module parameters_tunable
         inu_hm
 
     implicit none
+
+    !------------------------------ Constant Parameters ------------------------------
+    real( kind = core_rknd ), parameter :: &
+      lmin_deltaz = 40.0_core_rknd ! Fixed value for minimum value for the length scale.
 
     ! Flag for adjusting the values of the constant background eddy diffusivity
     ! coefficients based on the average vertical grid spacing.  If this flag is
@@ -801,7 +762,7 @@ module parameters_tunable
     real( kind = core_rknd ), parameter :: &
       grid_spacing_thresh = 40.0_core_rknd  ! grid spacing threshold  [m]
 
-    ! Input Variables
+    !------------------------------ Input Variables ------------------------------
 
     ! Grid definition
     type(grid), intent(in) :: &
@@ -825,150 +786,155 @@ module parameters_tunable
       deltaz  ! Change per height level        [m]
 
     logical, intent(in) :: &
-      l_prescribed_avg_deltaz ! used in adj_low_res_nu. If .true., avg_deltaz = deltaz
+      l_prescribed_avg_deltaz ! used in calc_derrived_params_api. If .true., avg_deltaz = deltaz
 
     real( kind = core_rknd ), intent(in), dimension(ngrdcol,nparams) :: &
       clubb_params  ! Tuneable model parameters      [-]
 
-    ! Output Variables
-    type(nu_vertical_res_dep), intent(out) :: &
+    !------------------------------ Output Variables ------------------------------
+    type(nu_vertical_res_dep), intent(inout) :: &
       nu_vert_res_dep    ! Vertical resolution dependent nu values
 
-    ! Local Variables
+    real( kind = core_rknd ), intent(inout) :: &
+      mixt_frac_max_mag, &  ! Maximum allowable mag. of mixt_frac   [-]
+      lmin                  ! Min. value for the length scale    [m]
+      
+    !------------------------------ Local Variables ------------------------------
 
-    real( kind = core_rknd ) :: &
-      mult_coef, & ! CLUBB tunable parameter mult_coef
-      nu1,       & ! CLUBB tunable parameter nu1
-      nu2,       & ! CLUBB tunable parameter nu2
-      nu6,       & ! CLUBB tunable parameter nu6
-      nu8,       & ! CLUBB tunable parameter nu8
-      nu9,       & ! CLUBB tunable parameter nu9
-      nu10,      & ! CLUBB tunable parameter nu10
-      nu_hm        ! CLUBB tunable parameter nu_hm
-
-    real( kind = core_rknd ) :: avg_deltaz  ! Average grid box height   [m]
+    real( kind = core_rknd ), dimension(ngrdcol) :: &
+      avg_deltaz  ! Average grid box height   [m]
 
     ! The factor by which to multiply the coefficients of background eddy
     ! diffusivity if the grid spacing threshold is exceeded and l_adj_low_res_nu
     ! is turned on.
-    real( kind = core_rknd ) :: &
+    real( kind = core_rknd ), dimension(ngrdcol) :: &
       mult_factor_zt, &  ! Uses gr%dzt(1,:) for nu values on zt levels
       mult_factor_zm     ! Uses gr%dzm(1,:) for nu values on zm levels
 
     integer :: i
 
-    !--------------- Begin code -------------------------
+    !------------------------------ Begin code ------------------------------
+
+    if ( .not. allocated(nu_vert_res_dep%nu1) ) then
+      allocate( nu_vert_res_dep%nu1(ngrdcol), &
+                nu_vert_res_dep%nu2(ngrdcol), &
+                nu_vert_res_dep%nu6(ngrdcol), &
+                nu_vert_res_dep%nu8(ngrdcol), &
+                nu_vert_res_dep%nu9(ngrdcol), &
+                nu_vert_res_dep%nu10(ngrdcol), &
+                nu_vert_res_dep%nu_hm(ngrdcol) )
+    end if
+
+    ! It was decided after some experimentation, that the best
+    ! way to produce grid independent results is to set lmin to be
+    ! some fixed value. -dschanen 21 May 2007
+    !lmin = lmin_coef * deltaz  ! Old
+    ! TODO: using "clubb_params(ngrdcol,ilmin_coef)", but lmin should really be
+    ! changed to dimension(ngrdcol) to avoid this
+    lmin = clubb_params(ngrdcol,ilmin_coef) * lmin_deltaz ! New fixed value
+
+    ! Using ngrdcol here as well for temporary backward compatibility, same as above
+    mixt_frac_max_mag = 1.0_core_rknd &
+      - ( 0.5_core_rknd * ( 1.0_core_rknd - clubb_params(ngrdcol,iSkw_max_mag) &
+                                            / sqrt( 4.0_core_rknd * ( 1.0_core_rknd - 0.4_core_rknd )**3 &
+                                                    + clubb_params(ngrdcol,iSkw_max_mag)**2 ) ) ) ! Known magic number
     
-    allocate( nu_vert_res_dep%nu1(1:ngrdcol), &
-              nu_vert_res_dep%nu2(1:ngrdcol), &
-              nu_vert_res_dep%nu6(1:ngrdcol), &
-              nu_vert_res_dep%nu8(1:ngrdcol), &
-              nu_vert_res_dep%nu9(1:ngrdcol), &
-              nu_vert_res_dep%nu10(1:ngrdcol), &
-              nu_vert_res_dep%nu_hm(1:ngrdcol) )
+    ! Flag for adjusting the values of the constant diffusivity coefficients
+    ! based on the grid spacing.  If this flag is turned off, the values of the
+    ! various nu coefficients will remain as they are declared in the
+    ! parameters.in file.
+    if ( l_adj_low_res_nu ) then
 
-    do i = 1, ngrdcol
+      ! ### Adjust Constant Diffusivity Coefficients Based On Grid Spacing ###
 
-      mult_coef = clubb_params(i,imult_coef)
-      nu1       = clubb_params(i,inu1)
-      nu2       = clubb_params(i,inu2)
-      nu6       = clubb_params(i,inu6)
-      nu8       = clubb_params(i,inu8)
-      nu9       = clubb_params(i,inu9)
-      nu10      = clubb_params(i,inu10)
-      nu_hm     = clubb_params(i,inu_hm)
+      ! All of the background coefficients of eddy diffusivity, as well as the
+      ! constant coefficient for 4th-order hyper-diffusion, must be adjusted
+      ! based on the size of the grid spacing.  For a case that uses an
+      ! evenly-spaced grid, the adjustment is based on the constant grid
+      ! spacing deltaz.  For a case that uses a stretched grid, the adjustment
+      ! is based on avg_deltaz, which is the average grid spacing over the
+      ! vertical domain.
 
-      ! Flag for adjusting the values of the constant diffusivity coefficients
-      ! based on the grid spacing.  If this flag is turned off, the values of the
-      ! various nu coefficients will remain as they are declared in the
-      ! parameters.in file.
-      if ( l_adj_low_res_nu ) then
+      if ( l_prescribed_avg_deltaz ) then
 
-        ! ### Adjust Constant Diffusivity Coefficients Based On Grid Spacing ###
+        do i = 1, ngrdcol
+          avg_deltaz(i) = deltaz(i)
+        end do
 
-        ! All of the background coefficients of eddy diffusivity, as well as the
-        ! constant coefficient for 4th-order hyper-diffusion, must be adjusted
-        ! based on the size of the grid spacing.  For a case that uses an
-        ! evenly-spaced grid, the adjustment is based on the constant grid
-        ! spacing deltaz.  For a case that uses a stretched grid, the adjustment
-        ! is based on avg_deltaz, which is the average grid spacing over the
-        ! vertical domain.
+      else if ( grid_type == 3 ) then
 
-        if ( l_prescribed_avg_deltaz ) then
+        ! CLUBB is implemented in a host model, or is using grid_type = 3
 
-          avg_deltaz = deltaz(i)
+        ! Find the average deltaz over the grid based on momentum level
+        ! inputs.
+        do i = 1, ngrdcol
+          avg_deltaz(i) = ( gr%zm(i,gr%k_ub_zm) - gr%zm(i,gr%k_lb_zm) ) &
+                      / real( gr%nzm - 1, kind = core_rknd )
+        end do
 
-        else if ( grid_type == 3 ) then
+      else if ( grid_type == 1 ) then
 
-          ! CLUBB is implemented in a host model, or is using grid_type = 3
+        ! Evenly-spaced grid.
+        do i = 1, ngrdcol
+          avg_deltaz(i) = deltaz(i)
+        end do
 
-          ! Find the average deltaz over the grid based on momentum level
-          ! inputs.
-          avg_deltaz = ( gr%zm(i,gr%k_ub_zm) - gr%zm(i,gr%k_lb_zm) ) &
-                       / real( gr%nzm - 1, kind = core_rknd )
+      else if ( grid_type == 2 ) then
 
-        else if ( grid_type == 1 ) then
+        ! Stretched (unevenly-spaced) grid:  stretched thermodynamic level
+        ! input.
 
-          ! Evenly-spaced grid.
+        ! Find the average deltaz over the stretched grid based on
+        ! thermodynamic level inputs.
+        do i = 1, ngrdcol
+          avg_deltaz(i) = ( gr%zt(i,gr%k_ub_zt) - gr%zt(i,gr%k_lb_zt) ) &
+                      / real( gr%nzt - 1, kind = core_rknd )
+        end do
 
-          avg_deltaz = deltaz(i)
+      end if ! grid_type
 
-        else if ( grid_type == 2 ) then
+      ! The nu's are chosen for deltaz <= 40 m. Looks like they must
+      ! be adjusted for larger grid spacings (Vince Larson)
 
-          ! Stretched (unevenly-spaced) grid:  stretched thermodynamic level
-          ! input.
-
-          ! Find the average deltaz over the stretched grid based on
-          ! thermodynamic level inputs.
-          avg_deltaz = ( gr%zt(i,gr%k_ub_zt) - gr%zt(i,gr%k_lb_zt) ) &
-                       / real( gr%nzt - 1, kind = core_rknd )
-
+      ! Use a constant mult_factor so nu does not depend on grid spacing
+      do i = 1, ngrdcol
+        if( avg_deltaz(i) > grid_spacing_thresh ) then
+          mult_factor_zt(i) = 1.0_core_rknd + clubb_params(i,imult_coef) * log( avg_deltaz(i) / grid_spacing_thresh )
+          mult_factor_zm(i) = mult_factor_zt(i)
         else
-
-          ! Eric Raut added to remove compiler warning. (Obviously, this value is not used)
-          avg_deltaz = 0.0_core_rknd
-          write(fstderr,*) "Invalid grid_type:", grid_type
-          error stop "Fatal error"
-
-        end if ! grid_type
-
-        ! The nu's are chosen for deltaz <= 40 m. Looks like they must
-        ! be adjusted for larger grid spacings (Vince Larson)
-
-        ! Use a constant mult_factor so nu does not depend on grid spacing
-        if( avg_deltaz > grid_spacing_thresh ) then
-          mult_factor_zt = 1.0_core_rknd + mult_coef * log( avg_deltaz / grid_spacing_thresh )
-          mult_factor_zm = mult_factor_zt
-        else
-          mult_factor_zt = 1.0_core_rknd
-          mult_factor_zm = 1.0_core_rknd
+          mult_factor_zt(i) = 1.0_core_rknd
+          mult_factor_zm(i) = 1.0_core_rknd
         end if
+      end do
 
-        !mult_factor = 1.0_core_rknd + mult_coef * log( avg_deltaz / grid_spacing_thresh )
-        nu_vert_res_dep%nu1(i)   =  nu1 * mult_factor_zm
-        nu_vert_res_dep%nu2(i)   =  nu2 * mult_factor_zm
-        nu_vert_res_dep%nu6(i)   =  nu6 * mult_factor_zm
-        nu_vert_res_dep%nu8(i)   =  nu8 * mult_factor_zt
-        nu_vert_res_dep%nu9(i)   =  nu9 * mult_factor_zm
-        nu_vert_res_dep%nu10(i)  =  nu10 * mult_factor_zt !We're unsure of the grid
-        nu_vert_res_dep%nu_hm(i) =  nu_hm * mult_factor_zt
+      !mult_factor = 1.0_core_rknd + mult_coef * log( avg_deltaz / grid_spacing_thresh )
+      do i = 1, ngrdcol
+        nu_vert_res_dep%nu1(i)   =  clubb_params(i,inu1)   * mult_factor_zm(i)
+        nu_vert_res_dep%nu2(i)   =  clubb_params(i,inu2)   * mult_factor_zm(i)
+        nu_vert_res_dep%nu6(i)   =  clubb_params(i,inu6)   * mult_factor_zm(i)
+        nu_vert_res_dep%nu8(i)   =  clubb_params(i,inu8)   * mult_factor_zt(i)
+        nu_vert_res_dep%nu9(i)   =  clubb_params(i,inu9)   * mult_factor_zm(i)
+        nu_vert_res_dep%nu10(i)  =  clubb_params(i,inu10)  * mult_factor_zt(i) !We're unsure of the grid
+        nu_vert_res_dep%nu_hm(i) =  clubb_params(i,inu_hm) * mult_factor_zt(i)
+      end do
 
-      else ! nu values are not adjusted
+    else ! nu values are not adjusted
 
-        nu_vert_res_dep%nu1(i)   =  nu1
-        nu_vert_res_dep%nu2(i)   =  nu2
-        nu_vert_res_dep%nu6(i)   =  nu6
-        nu_vert_res_dep%nu8(i)   =  nu8
-        nu_vert_res_dep%nu9(i)   =  nu9
-        nu_vert_res_dep%nu10(i)  =  nu10
-        nu_vert_res_dep%nu_hm(i) =  nu_hm
+      do i = 1, ngrdcol
+        nu_vert_res_dep%nu1(i)   =  clubb_params(i,inu1)
+        nu_vert_res_dep%nu2(i)   =  clubb_params(i,inu2)
+        nu_vert_res_dep%nu6(i)   =  clubb_params(i,inu6)
+        nu_vert_res_dep%nu8(i)   =  clubb_params(i,inu8)
+        nu_vert_res_dep%nu9(i)   =  clubb_params(i,inu9)
+        nu_vert_res_dep%nu10(i)  =  clubb_params(i,inu10)
+        nu_vert_res_dep%nu_hm(i) =  clubb_params(i,inu_hm)
+      end do
 
-      end if  ! l_adj_low_res_nu
+    end if  ! l_adj_low_res_nu
       
-    end do
-
     return
-  end subroutine adj_low_res_nu
+
+  end subroutine calc_derrived_params
 
   !=============================================================================
   subroutine init_clubb_params_api( ngrdcol, iunit, filename, &

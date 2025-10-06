@@ -20,13 +20,19 @@ module pdf_parameter_module
   public :: pdf_parameter,                 & ! Variable Type(s)
             implicit_coefs_terms,          &
             init_pdf_params,               & ! Procedure(s)
+            zero_pdf_params_api,               &
             print_pdf_params,              &
             copy_single_pdf_params_to_multi, &
             copy_multi_pdf_params_to_single, &
-            init_pdf_implicit_coefs_terms_api
+            init_pdf_implicit_coefs_terms_api, &
+            zero_pdf_implicit_coefs_terms_api
 
   ! CLUBB's PDF parameters.
   type pdf_parameter
+
+    integer :: & 
+      ngrdcol, &  ! Dimensions of variables
+      nz
 
     real( kind = core_rknd ), dimension(:,:), allocatable :: &
       w_1,             & ! Mean of w (1st PDF component)                   [m/s]
@@ -83,6 +89,11 @@ module pdf_parameter_module
   ! explicit terms for turbulent advection of turbulent fields are calculated
   ! from the PDF and the resulting PDF parameters.
   type implicit_coefs_terms
+
+    integer :: & 
+      ngrdcol, &  ! Dimensions of variables
+      nz, &
+      sclr_dim
 
     real( kind = core_rknd ), dimension(:,:), allocatable :: &
       coef_wp4_implicit    ! <w'^4> = coef_wp4_implicit * <w'^2>^2       [-]
@@ -240,58 +251,115 @@ module pdf_parameter_module
               pdf_params%ice_supersat_frac_1(ngrdcol,nz), &
               pdf_params%ice_supersat_frac_2(ngrdcol,nz) )
 
-    pdf_params%w_1(:,:) = zero
-    pdf_params%w_2(:,:) = zero
-    pdf_params%varnce_w_1(:,:) = zero
-    pdf_params%varnce_w_2(:,:) = zero
-    pdf_params%rt_1(:,:) = zero
-    pdf_params%rt_2(:,:) = zero
-    pdf_params%varnce_rt_1(:,:) = zero
-    pdf_params%varnce_rt_2(:,:) = zero
-    pdf_params%thl_1(:,:) = zero
-    pdf_params%thl_2(:,:) = zero
-    pdf_params%varnce_thl_1(:,:) = zero
-    pdf_params%varnce_thl_2(:,:) = zero
-    pdf_params%corr_w_rt_1(:,:) = zero
-    pdf_params%corr_w_rt_2(:,:) = zero
-    pdf_params%corr_w_thl_1(:,:) = zero
-    pdf_params%corr_w_thl_2(:,:) = zero
-    pdf_params%corr_rt_thl_1(:,:) = zero
-    pdf_params%corr_rt_thl_2(:,:) = zero
-    pdf_params%alpha_thl(:,:) = zero
-    pdf_params%alpha_rt(:,:) = zero
-    pdf_params%crt_1(:,:) = zero
-    pdf_params%crt_2(:,:) = zero
-    pdf_params%cthl_1(:,:) = zero
-    pdf_params%cthl_2(:,:) = zero
-    pdf_params%chi_1(:,:) = zero
-    pdf_params%chi_2(:,:) = zero
-    pdf_params%stdev_chi_1(:,:) = zero
-    pdf_params%stdev_chi_2(:,:) = zero
-    pdf_params%stdev_eta_1(:,:) = zero
-    pdf_params%stdev_eta_2(:,:) = zero
-    pdf_params%covar_chi_eta_1(:,:) = zero
-    pdf_params%covar_chi_eta_2(:,:) = zero
-    pdf_params%corr_w_chi_1(:,:) = zero 
-    pdf_params%corr_w_chi_2(:,:) = zero 
-    pdf_params%corr_w_eta_1(:,:) = zero 
-    pdf_params%corr_w_eta_2(:,:) = zero 
-    pdf_params%corr_chi_eta_1(:,:) = zero 
-    pdf_params%corr_chi_eta_2(:,:) = zero 
-    pdf_params%rsatl_1(:,:) = zero
-    pdf_params%rsatl_2(:,:) = zero
-    pdf_params%rc_1(:,:) = zero
-    pdf_params%rc_2(:,:) = zero
-    pdf_params%cloud_frac_1(:,:) = zero
-    pdf_params%cloud_frac_2(:,:) = zero
-    pdf_params%mixt_frac(:,:) = zero
-    pdf_params%ice_supersat_frac_1(:,:) = zero
-    pdf_params%ice_supersat_frac_2(:,:) = zero
+    ! Set metadata values 
+    pdf_params%ngrdcol       = ngrdcol
+    pdf_params%nz            = nz
 
+    call zero_pdf_params_api( pdf_params )
 
     return
 
   end subroutine init_pdf_params
+
+  !=============================================================================
+  subroutine zero_pdf_params_api( pdf_params )
+
+    ! Description:
+    ! Zeros all PDF parameters in the variable type pdf_parameter.
+
+    ! References:
+    !--------------------------------------------------------------------
+
+    use constants_clubb, only: &
+        zero    ! Constant(s)
+
+    implicit none
+
+    !----------------------------------- Inout Variable(s) -----------------------------------
+    type(pdf_parameter), intent(inout) :: &
+      pdf_params    ! PDF parameters            [units vary]
+
+    !----------------------------------- Local Variables -----------------------------------
+    integer :: i, k
+
+    !----------------------------------- Begin Code -----------------------------------
+
+    !$acc data copyin( pdf_params ) &
+    !$acc      copy( pdf_params%w_1, pdf_params%w_2, pdf_params%varnce_w_1, &
+    !$acc            pdf_params%varnce_w_2, pdf_params%mixt_frac, &
+    !$acc            pdf_params%rt_1, pdf_params%rt_2, &
+    !$acc            pdf_params%varnce_rt_1, pdf_params%varnce_rt_2, pdf_params%thl_1, &
+    !$acc            pdf_params%thl_2, pdf_params%varnce_thl_1, pdf_params%varnce_thl_2, &
+    !$acc            pdf_params%corr_w_rt_1, pdf_params%corr_w_rt_2, pdf_params%corr_w_thl_1, &
+    !$acc            pdf_params%corr_w_thl_2, pdf_params%corr_rt_thl_1, pdf_params%corr_rt_thl_2, &
+    !$acc            pdf_params%alpha_thl, pdf_params%alpha_rt, pdf_params%crt_1, pdf_params%crt_2, &
+    !$acc            pdf_params%cthl_1, pdf_params%cthl_2, pdf_params%chi_1, pdf_params%chi_2, &
+    !$acc            pdf_params%stdev_chi_1, pdf_params%stdev_chi_2, pdf_params%stdev_eta_1, &
+    !$acc            pdf_params%stdev_eta_2, pdf_params%covar_chi_eta_1, pdf_params%covar_chi_eta_2, &
+    !$acc            pdf_params%corr_w_chi_1, pdf_params%corr_w_chi_2, pdf_params%corr_w_eta_1, &
+    !$acc            pdf_params%corr_w_eta_2, pdf_params%corr_chi_eta_1, pdf_params%corr_chi_eta_2, &
+    !$acc            pdf_params%rsatl_1, pdf_params%rsatl_2, pdf_params%rc_1, pdf_params%rc_2, &
+    !$acc            pdf_params%cloud_frac_1, pdf_params%cloud_frac_2, &
+    !$acc            pdf_params%ice_supersat_frac_1, pdf_params%ice_supersat_frac_2 )
+
+    !$acc parallel loop gang vector collapse(2) default(present)
+    do k = 1, pdf_params%nz
+      do i = 1, pdf_params%ngrdcol
+        pdf_params%w_1(i,k)                 = zero
+        pdf_params%w_2(i,k)                 = zero
+        pdf_params%varnce_w_1(i,k)          = zero
+        pdf_params%varnce_w_2(i,k)          = zero
+        pdf_params%rt_1(i,k)                = zero
+        pdf_params%rt_2(i,k)                = zero
+        pdf_params%varnce_rt_1(i,k)         = zero
+        pdf_params%varnce_rt_2(i,k)         = zero
+        pdf_params%thl_1(i,k)               = zero
+        pdf_params%thl_2(i,k)               = zero
+        pdf_params%varnce_thl_1(i,k)        = zero
+        pdf_params%varnce_thl_2(i,k)        = zero
+        pdf_params%corr_w_rt_1(i,k)         = zero
+        pdf_params%corr_w_rt_2(i,k)         = zero
+        pdf_params%corr_w_thl_1(i,k)        = zero
+        pdf_params%corr_w_thl_2(i,k)        = zero
+        pdf_params%corr_rt_thl_1(i,k)       = zero
+        pdf_params%corr_rt_thl_2(i,k)       = zero
+        pdf_params%alpha_thl(i,k)           = zero
+        pdf_params%alpha_rt(i,k)            = zero
+        pdf_params%crt_1(i,k)               = zero
+        pdf_params%crt_2(i,k)               = zero
+        pdf_params%cthl_1(i,k)              = zero
+        pdf_params%cthl_2(i,k)              = zero
+        pdf_params%chi_1(i,k)               = zero
+        pdf_params%chi_2(i,k)               = zero
+        pdf_params%stdev_chi_1(i,k)         = zero
+        pdf_params%stdev_chi_2(i,k)         = zero
+        pdf_params%stdev_eta_1(i,k)         = zero
+        pdf_params%stdev_eta_2(i,k)         = zero
+        pdf_params%covar_chi_eta_1(i,k)     = zero
+        pdf_params%covar_chi_eta_2(i,k)     = zero
+        pdf_params%corr_w_chi_1(i,k)        = zero 
+        pdf_params%corr_w_chi_2(i,k)        = zero 
+        pdf_params%corr_w_eta_1(i,k)        = zero 
+        pdf_params%corr_w_eta_2(i,k)        = zero 
+        pdf_params%corr_chi_eta_1(i,k)      = zero 
+        pdf_params%corr_chi_eta_2(i,k)      = zero 
+        pdf_params%rsatl_1(i,k)             = zero
+        pdf_params%rsatl_2(i,k)             = zero
+        pdf_params%rc_1(i,k)                = zero
+        pdf_params%rc_2(i,k)                = zero
+        pdf_params%cloud_frac_1(i,k)        = zero
+        pdf_params%cloud_frac_2(i,k)        = zero
+        pdf_params%mixt_frac(i,k)           = zero
+        pdf_params%ice_supersat_frac_1(i,k) = zero
+        pdf_params%ice_supersat_frac_2(i,k) = zero
+      end do
+    end do
+
+    !$acc end data
+
+    return
+
+  end subroutine zero_pdf_params_api
 
   !=============================================================================
   subroutine init_pdf_implicit_coefs_terms_api( nz, ngrdcol, sclr_dim, &
@@ -353,41 +421,86 @@ module pdf_parameter_module
           pdf_implicit_coefs_terms%term_wpthlpsclrp_explicit(1:ngrdcol,1:nz,1:sclr_dim) )
     endif ! sclr_dim > 0
 
-    ! Initialize pdf_implicit_coefs_terms
-    pdf_implicit_coefs_terms%coef_wp4_implicit = zero
-    pdf_implicit_coefs_terms%coef_wp2rtp_implicit = zero
-    pdf_implicit_coefs_terms%term_wp2rtp_explicit = zero
-    pdf_implicit_coefs_terms%coef_wp2thlp_implicit = zero
-    pdf_implicit_coefs_terms%term_wp2thlp_explicit = zero
-    pdf_implicit_coefs_terms%coef_wp2up_implicit = zero
-    pdf_implicit_coefs_terms%term_wp2up_explicit = zero
-    pdf_implicit_coefs_terms%coef_wp2vp_implicit = zero
-    pdf_implicit_coefs_terms%term_wp2vp_explicit = zero
-    pdf_implicit_coefs_terms%coef_wprtp2_implicit = zero
-    pdf_implicit_coefs_terms%term_wprtp2_explicit = zero
-    pdf_implicit_coefs_terms%coef_wpthlp2_implicit = zero
-    pdf_implicit_coefs_terms%term_wpthlp2_explicit = zero
-    pdf_implicit_coefs_terms%coef_wprtpthlp_implicit = zero
-    pdf_implicit_coefs_terms%term_wprtpthlp_explicit = zero
-    pdf_implicit_coefs_terms%coef_wpup2_implicit = zero
-    pdf_implicit_coefs_terms%term_wpup2_explicit = zero
-    pdf_implicit_coefs_terms%coef_wpvp2_implicit = zero
-    pdf_implicit_coefs_terms%term_wpvp2_explicit = zero
-    if ( sclr_dim > 0 ) then
-       pdf_implicit_coefs_terms%coef_wp2sclrp_implicit = zero
-       pdf_implicit_coefs_terms%term_wp2sclrp_explicit = zero
-       pdf_implicit_coefs_terms%coef_wpsclrp2_implicit = zero
-       pdf_implicit_coefs_terms%term_wpsclrp2_explicit = zero
-       pdf_implicit_coefs_terms%coef_wprtpsclrp_implicit = zero
-       pdf_implicit_coefs_terms%term_wprtpsclrp_explicit = zero
-       pdf_implicit_coefs_terms%coef_wpthlpsclrp_implicit = zero
-       pdf_implicit_coefs_terms%term_wpthlpsclrp_explicit = zero
-    endif ! sclr_dim > 0
+    ! Set metadata values 
+    pdf_implicit_coefs_terms%ngrdcol       = ngrdcol
+    pdf_implicit_coefs_terms%nz            = nz
+    pdf_implicit_coefs_terms%sclr_dim      = sclr_dim
 
+    ! Zero pdf_implicit_coefs_terms
+    call zero_pdf_implicit_coefs_terms_api( pdf_implicit_coefs_terms)
 
     return
 
   end subroutine init_pdf_implicit_coefs_terms_api
+
+  subroutine zero_pdf_implicit_coefs_terms_api( pdf_implicit_coefs_terms )
+
+    ! Description:
+    ! Zeros all PDF implicit coefficients and explicit terms in the
+    ! variable type implicit_coefs_terms.
+
+    ! References:
+    !--------------------------------------------------------------------
+
+    use constants_clubb, only: &
+        zero    ! Constant(s)
+
+    implicit none
+
+    !----------------------------------- Inout Variable(s) -----------------------------------
+    type(implicit_coefs_terms), intent(inout) :: &
+      pdf_implicit_coefs_terms    ! Implicit coefs / explicit terms [units vary]
+
+    !----------------------------------- Local Variables -----------------------------------
+    integer :: i, k, sclr
+
+    !----------------------------------- Begin Code -----------------------------------
+
+    ! Initialize pdf_implicit_coefs_terms
+    do k = 1, pdf_implicit_coefs_terms%nz
+      do i = 1, pdf_implicit_coefs_terms%ngrdcol
+        pdf_implicit_coefs_terms%coef_wp4_implicit(i,k) = zero
+        pdf_implicit_coefs_terms%coef_wp2rtp_implicit(i,k) = zero
+        pdf_implicit_coefs_terms%term_wp2rtp_explicit(i,k) = zero
+        pdf_implicit_coefs_terms%coef_wp2thlp_implicit(i,k) = zero
+        pdf_implicit_coefs_terms%term_wp2thlp_explicit(i,k) = zero
+        pdf_implicit_coefs_terms%coef_wp2up_implicit(i,k) = zero
+        pdf_implicit_coefs_terms%term_wp2up_explicit(i,k) = zero
+        pdf_implicit_coefs_terms%coef_wp2vp_implicit(i,k) = zero
+        pdf_implicit_coefs_terms%term_wp2vp_explicit(i,k) = zero
+        pdf_implicit_coefs_terms%coef_wprtp2_implicit(i,k) = zero
+        pdf_implicit_coefs_terms%term_wprtp2_explicit(i,k) = zero
+        pdf_implicit_coefs_terms%coef_wpthlp2_implicit(i,k) = zero
+        pdf_implicit_coefs_terms%term_wpthlp2_explicit(i,k) = zero
+        pdf_implicit_coefs_terms%coef_wprtpthlp_implicit(i,k) = zero
+        pdf_implicit_coefs_terms%term_wprtpthlp_explicit(i,k) = zero
+        pdf_implicit_coefs_terms%coef_wpup2_implicit(i,k) = zero
+        pdf_implicit_coefs_terms%term_wpup2_explicit(i,k) = zero
+        pdf_implicit_coefs_terms%coef_wpvp2_implicit(i,k) = zero
+        pdf_implicit_coefs_terms%term_wpvp2_explicit(i,k) = zero
+      end do
+    end do
+
+    if ( pdf_implicit_coefs_terms%sclr_dim > 0 ) then
+      do sclr = 1, pdf_implicit_coefs_terms%sclr_dim
+        do k = 1, pdf_implicit_coefs_terms%nz
+          do i = 1, pdf_implicit_coefs_terms%ngrdcol
+            pdf_implicit_coefs_terms%coef_wp2sclrp_implicit(i,k,sclr) = zero
+            pdf_implicit_coefs_terms%term_wp2sclrp_explicit(i,k,sclr) = zero
+            pdf_implicit_coefs_terms%coef_wpsclrp2_implicit(i,k,sclr) = zero
+            pdf_implicit_coefs_terms%term_wpsclrp2_explicit(i,k,sclr) = zero
+            pdf_implicit_coefs_terms%coef_wprtpsclrp_implicit(i,k,sclr) = zero
+            pdf_implicit_coefs_terms%term_wprtpsclrp_explicit(i,k,sclr) = zero
+            pdf_implicit_coefs_terms%coef_wpthlpsclrp_implicit(i,k,sclr) = zero
+            pdf_implicit_coefs_terms%term_wpthlpsclrp_explicit(i,k,sclr) = zero
+          end do
+        end do
+      end do
+    endif ! sclr_dim > 0
+
+    return
+
+  end subroutine zero_pdf_implicit_coefs_terms_api
 
   !=============================================================================
   subroutine print_pdf_params( pdf_params, ngrdcol )

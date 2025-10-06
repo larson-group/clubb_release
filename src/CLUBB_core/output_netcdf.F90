@@ -962,6 +962,7 @@ module output_netcdf
 
 !-------------------------------------------------------------------------------
   subroutine first_write( clubb_params, sclr_dim, sclr_tol, &
+                          T0, ts_nudge, &
                           l_uv_nudge, &
                           l_tke_aniso, &
                           l_standard_term_ta, &
@@ -989,10 +990,6 @@ module output_netcdf
 
     use constants_clubb, only:  &
         fstderr ! Variable
-
-    use parameters_model, only: &
-        T0, &       ! Real variables
-        ts_nudge
 
     use parameters_tunable, only: &
         params_list ! Variable names (characters)
@@ -1034,6 +1031,10 @@ module output_netcdf
 
     real( kind = core_rknd ), dimension(sclr_dim), intent(in) :: &
       sclr_tol
+
+    real( kind = core_rknd ), intent(in) ::  & 
+      T0,         & ! Reference temperature               [K]
+      ts_nudge      ! Timescale of u/v nudging            [s]
 
     real( kind = core_rknd ), dimension(nparams), intent(in) :: &
       clubb_params    ! Array of CLUBB's tunable parameters    [units vary]

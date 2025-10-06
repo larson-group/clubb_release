@@ -20,7 +20,8 @@ module hydromet_pdf_parameter_module
   public :: hydromet_pdf_parameter,   & ! Variable type
             precipitation_fractions, &
             init_hydromet_pdf_params, & ! Procedure
-            init_precip_fracs_api
+            init_precip_fracs_api, &
+            zero_precip_fracs_api
 
   integer, parameter, private :: &
     max_hydromet_dim = 8
@@ -54,7 +55,11 @@ module hydromet_pdf_parameter_module
   end type hydromet_pdf_parameter
   
   type precipitation_fractions
-    
+
+    integer :: & 
+      ngrdcol, &  ! Dimensions of variables
+      nzt
+
     real( kind = core_rknd ), dimension(:,:), allocatable :: &
       precip_frac,   & ! Precipitation fraction (overall)           [-]
       precip_frac_1, & ! Precipitation fraction (1st PDF component) [-]
@@ -79,7 +84,7 @@ contains
     implicit none
 
     ! Output Variable
-    type(hydromet_pdf_parameter), intent(out) :: &
+    type(hydromet_pdf_parameter), intent(inout) :: &
       hydromet_pdf_params    ! Hydrometeor PDF parameters      [units vary]
 
     ! Initialize hydromet_pdf_params.
@@ -137,14 +142,52 @@ contains
               precip_fracs%precip_frac_1(ngrdcol,nzt), &
               precip_fracs%precip_frac_2(ngrdcol,nzt)  )
 
-    ! Initialize precip_fracs.
-    precip_fracs%precip_frac   = zero
-    precip_fracs%precip_frac_1 = zero
-    precip_fracs%precip_frac_2 = zero
+    ! Set metadata values 
+    precip_fracs%ngrdcol  = ngrdcol
+    precip_fracs%nzt      = nzt
+
+    ! Zero precip_fracs
+    call zero_precip_fracs_api( precip_fracs )
 
     return
 
   end subroutine init_precip_fracs_api
+
+  !=============================================================================
+  subroutine zero_precip_fracs_api( precip_fracs )
+
+    ! Description:
+    ! Initialize the elements of precip_fracs.
+
+    ! References:
+    !-----------------------------------------------------------------------
+
+    use constants_clubb, only: &
+        zero  ! Constant(s)
+
+    implicit none
+
+    !----------------------------------- Inout Variable(s) -----------------------------------
+    type(precipitation_fractions), intent(inout) :: &
+      precip_fracs    ! Hydrometeor PDF parameters      [units vary]
+
+    !----------------------------------- Local Variables -----------------------------------
+    integer :: i, k
+
+    !----------------------------------- Begin Code -----------------------------------
+
+    ! Initialize precip_fracs.
+    do k = 1, precip_fracs%nzt
+      do i = 1, precip_fracs%ngrdcol
+        precip_fracs%precip_frac(i,k)   = zero
+        precip_fracs%precip_frac_1(i,k) = zero
+        precip_fracs%precip_frac_2(i,k) = zero
+      end do
+    end do
+
+    return
+
+  end subroutine zero_precip_fracs_api
 
 !===============================================================================
 

@@ -1,0 +1,41 @@
+pipeline {
+
+  agent any
+  
+  stages {
+    stage('standard cases + multi_col with ifx') {
+      steps {
+        sh '''source /etc/profile.d/larson-group.sh
+              module load intel netcdf-fortran
+              ./compile.py
+              ulimit -s 8388608
+              run_scripts/run_scm_all.py -ngrdcol 4 -max_iters 500 -out_dir standalone_output_ifx
+              run_scripts/run_scm_all.py -ngrdcol 4 -max_iters 500 -out_dir driver_test_output_ifx -driver_test
+              run_scripts/run_bindiff_all.py standalone_output_ifx driver_test_output_ifx'''
+      }
+    }
+    stage('min_cases + multi_col with nvhpc + openacc') {
+      steps {
+        sh '''sed -i "s:penta_solve_method.*:penta_solve_method = 2:g" input/tunable_parameters/configurable_model_flags.in'''
+        sh '''sed -i "s:tridiag_solve_method.*:tridiag_solve_method = 2:g" input/tunable_parameters/configurable_model_flags.in'''
+        sh '''sed -i "s:lh_straight_mc.*:lh_straight_mc = true:g" input/tunable_parameters/configurable_model_flags.in'''
+        sh '''source /etc/profile.d/larson-group.sh
+              module load nvhpc netcdf-fortran
+              ./compile.py -gpu openacc
+              ulimit -s 8388608
+              run_scripts/run_scm_all.py -min_cases -ngrdcol 8 -max_iters 200 -out_dir standalone_output_nvhpc
+              run_scripts/run_scm_all.py -min_cases -ngrdcol 8 -max_iters 200 -out_dir driver_test_output_nvhpc -driver_test
+              run_scripts/run_bindiff_all.py standalone_output_nvhpc driver_test_output_nvhpc'''
+      }
+    }
+  }
+  post {
+    failure {
+      script {
+      if ( "${env.JOB_NAME}" == "clubb_driver_test" )
+        // This command handles the email on failure feature of the jenkins test. This line is the same on every jenkins test.
+      	emailext(to: 'messnermet@uwm.edu', subject: "${env.JOB_NAME} build ${env.BUILD_NUMBER} has Failed", attachLog: true, body: "${env.JOB_NAME} build ${env.BUILD_NUMBER} has failed. See the attached build log and the build results (${env.BUILD_URL}) for help troubleshooting.")
+      }
+    }
+  }
+}

@@ -79,6 +79,13 @@ module silhs_api_module
 
 #ifdef SILHS
 
+  use mt95, only : &
+    assignment( = ), &
+    genrand_state, & ! Internal representation of the RNG state.
+    genrand_srepr, & ! Public representation of the RNG state. Should be used to save the RNG state
+    genrand_intg, &
+    genrand_init_api
+
   use parameters_silhs, only: &
     silhs_config_flags_type,   & ! Type(s)
     eight_cluster_presc_probs, & ! Variable(s)
@@ -125,6 +132,14 @@ module silhs_api_module
     eight_cluster_presc_probs, & ! Variable(s)
     vert_decorr_coef, &
     importance_prob_thresh
+
+  ! mt95 implemenation types
+  public :: &
+    assignment( = ), &
+    genrand_init_api, &
+    genrand_state, &
+    genrand_srepr, &
+    genrand_intg
 
   public  & ! to print 2D lh samples
     latin_hypercube_2D_output_api, &

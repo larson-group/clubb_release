@@ -35,7 +35,7 @@ module advance_windm_edsclrm_module
                                     edsclrm_forcing, &
                                     rho_ds_zm, invrs_rho_ds_zt, &
                                     fcor, l_implemented, &
-                                    nu_vert_res_dep, &
+                                    nu_vert_res_dep, ts_nudge, &
                                     tridiag_solve_method, &
                                     l_predict_upwp_vpwp, &
                                     l_upwind_xm_ma, &
@@ -68,9 +68,6 @@ module advance_windm_edsclrm_module
     use grid_class, only:  &
         grid, &  ! Type
         zm2zt_api
-
-    use parameters_model, only:  &
-        ts_nudge ! Variable(s)
 
     use parameters_tunable, only: &
         nu_vertical_res_dep    ! Type(s)
@@ -162,6 +159,9 @@ module advance_windm_edsclrm_module
 
     type(nu_vertical_res_dep), intent(in) :: &
       nu_vert_res_dep    ! Vertical resolution dependent nu values
+
+    real( kind = core_rknd ), intent(in) ::  &
+      ts_nudge               ! Timescale of u/v nudging             [s]
 
     integer, intent(in) :: &
       tridiag_solve_method  ! Specifier for method to solve tridiagonal systems

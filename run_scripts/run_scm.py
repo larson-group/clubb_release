@@ -123,7 +123,6 @@ def setup_files_and_aggregate(args):
     silhs_params_file = args.silhs_params or os.path.join(config_dir, "silhs_parameters.in")
     stats_file        = args.stats        or os.path.join(CLUBB_ROOT, "input/stats/standard_stats.in")
 
-
     if args.exe:
         # Use the users input from -exe to determine which executable to use
         if args.legacy:
@@ -136,7 +135,11 @@ def setup_files_and_aggregate(args):
         # Find the executable based on compiler by default (install/COMPILER/clubb_standalone), otherwise
         # default to (install/lastest/clubb_standalone) which points to the last one compiled
         compiler    = os.path.basename(os.environ["FC"]) if "FC" in os.environ else "latest"
-        executable  = os.path.join(CLUBB_ROOT, f"install/{compiler}/clubb_standalone")
+
+        if args.driver_test:
+            executable  = os.path.join(CLUBB_ROOT, f"install/{compiler}/clubb_driver_test")
+        else:
+            executable  = os.path.join(CLUBB_ROOT, f"install/{compiler}/clubb_standalone")
 
     print(f" - using executable: {executable}")
 
@@ -198,12 +201,15 @@ def edit_namelist(args, clubb_input_namelist, model_file):
         clubb_in = re.sub(r"debug_level\s*=.*", f"debug_level = {args.debug}", clubb_in)
 
     # Iteration control
-    if args.iters is not None:
+    if args.max_iters is not None:
         vals = read_model_times(model_file)
         time_initial = vals["time_initial"]
         dt_main_val = args.dt_main if args.dt_main else vals.get("dt_main")
-        new_time_final = time_initial + dt_main_val * args.iters
-        clubb_in = re.sub(r"time_final\s*=.*", f"time_final = {new_time_final}", clubb_in)
+        new_time_final = time_initial + dt_main_val * args.max_iters
+
+        # only update time_final if it's less than the current one\
+        if ( vals["time_final"] >= new_time_final ):
+            clubb_in = re.sub(r"time_final\s*=.*", f"time_final = {new_time_final}", clubb_in)
 
     # Overrides
     if args.override:
@@ -255,6 +261,10 @@ def main():
     # but inputting a specific executable will override that with the specified one
     parser.add_argument("-exe", metavar="[EXECUTABLE]",
         help="CLUBB executable to use.\nDefault: install/clubb_standalone")
+        
+    parser.add_argument("-driver_test", action="store_true",
+        help="Runs the clubb_driver_test executable instead of clubb_standalone"
+    )
 
     # The old method of compile clubb resulted in the executable "clubb/bin/clubb_standalone"
     # this option causes that to be the prefered executable, unless -exe is specified
@@ -271,7 +281,7 @@ def main():
     # Runtime options
     parser.add_argument("-debug", metavar="[NUM]",
         help="Debug level (0–3) that controls CLUBB's runtime checks (0 is no checks).\nDefault specified in model file.")
-    parser.add_argument("-iters", metavar="[NUM]", type=int,
+    parser.add_argument("-max_iters", metavar="[NUM]", type=int,
         help="Maximum number of iterations")
     parser.add_argument("-dt_main", metavar="[SECONDS]", type=int,
         help="Main timestep (s).\nDefault from model file.")
@@ -297,6 +307,11 @@ def main():
 
     parser.add_argument("case_name", help="Name of the case to run")
     args = parser.parse_args()
+
+    # Error check
+    ndefined = sum(bool(x) for x in [args.exe, args.legacy, args.driver_test])
+    if ndefined > 1:
+        parser.error("Only one of -exe, -legacy, or -driver_test may be specified.")
 
     # Validate grid options
     if args.zt_grid and args.zm_grid:

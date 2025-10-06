@@ -10,10 +10,11 @@ set(KK_MICROPHYS_SOURCES
         PDF_integrals_covar.F90
         PDF_integrals_all_MM.F90
         parameters_KK.F90
+        Parabolic.f90
+        Parabolic_constants.f90
+        AiryFunction.f90
 )
 
 add_library(KK_microphys_lib ${KK_MICROPHYS_SOURCES})
 
-target_link_libraries(KK_microphys_lib PRIVATE clubb_core_lib
-                                          microphys_utils_lib
-                                          parabolic_lib)
+target_link_libraries(KK_microphys_lib PRIVATE clubb_core_lib microphys_utils_lib)

@@ -141,7 +141,7 @@ REQ_LIBS="-lclubb_bugsrad -lclubb_KK_microphys -lclubb_parabolic -lclubb_morriso
 OPT_LIBS="-lclubb_other"
 # ------------------------------------------------------------------------------
 # Append preprocessor flags and libraries as needed
-if [ -e $srcdir/COAMPS_microphys ]; then
+if [ -e $srcdir/Microphys/COAMPS_microphys ]; then
 	CPPDEFS="${CPPDEFS} -DCOAMPS_MICRO"
 	OPT_LIBS="${OPT_LIBS} -lclubb_coamps"
 	COAMPS_LIB="libclubb_coamps.a"
@@ -152,7 +152,7 @@ if ! "$l_double_precision"; then
 	fi
 fi
 
-if [ -e $srcdir/SCM_Activation ]; then
+if [ -e $srcdir/Microphys/SCM_Activation ]; then
 	#CPPDEFS="${CPPDEFS} -DAERSOL_ACT"
 	OPT_LIBS="${OPT_LIBS} -lclubb_gfdlact"
 	GFDLACT_LIB="libclubb_gfdlact.a"
@@ -251,14 +251,14 @@ repository_file_lists=( \
 if [ -e $srcdir/SILHS ]; then
 	ls $srcdir/SILHS/*.F90 > "$generated_lists_dir"/silhs_files
 fi
-if [ -e $srcdir/COAMPS_microphys ]; then
-	ls $srcdir/COAMPS_microphys/*.F > "$generated_lists_dir"/clubb_coamps_files
+if [ -e $srcdir/Microphys/COAMPS_microphys ]; then
+	ls $srcdir/Microphys/COAMPS_microphys/*.F > "$generated_lists_dir"/clubb_coamps_files
 fi
-if [ -e $srcdir/SCM_Activation/aer_ccn_act_k.F90 ]; then 
-	ls $srcdir/SCM_Activation/aer_ccn_act_k.F90 > "$generated_lists_dir"/clubb_gfdl_activation_files
+if [ -e $srcdir/Microphys/SCM_Activation/aer_ccn_act_k.F90 ]; then 
+	ls $srcdir/Microphys/SCM_Activation/aer_ccn_act_k.F90 > "$generated_lists_dir"/clubb_gfdl_activation_files
 fi
-if [ -e  $srcdir/Microphys_utils  ]; then
-	ls $srcdir/Microphys_utils/*.F90 > "$generated_lists_dir"/clubb_microphys_utils_files
+if [ -e  $srcdir/Microphys/Microphys_utils  ]; then
+	ls $srcdir/Microphys/Microphys_utils/*.F90 > "$generated_lists_dir"/clubb_microphys_utils_files
 fi
 if [ -e  $srcdir/CLUBB_core ]; then
 	ls $srcdir/CLUBB_core/*.[f,F]90 > "$generated_lists_dir"/clubb_param_files

@@ -41,11 +41,9 @@ program jacobian
   use clubb_api_module, only: &
       clubb_at_least_debug_level_api    ! Procedure
 
-  use clubb_model_settings, only: &
-    PosInf ! Variable(s)
-
   use clubb_precision, only: &
-    core_rknd ! Variable(s)
+    core_rknd, & ! Variable(s)
+    sp
 
   use err_info_type_module, only: &
     err_info_type,                  & ! Type
@@ -141,6 +139,8 @@ program jacobian
     l_output_multi_col = .false., &
     l_output_double_prec = .false.
 
+  real( kind = sp ) :: &
+    PosInf = transfer( 2139095040, 1.0_sp ) ! 2139095040 is a magic number
 
   ! Namelists
   namelist /jcbn_nml/  &

@@ -23,12 +23,21 @@ set(CLUBB_BENCHMARK_SOURCES
         mpace_a.F90
         mpace_b.F90
         nov11.F90
-        rad_lwsw_module.F90
         rico.F90
         neutral_case.F90
         spec_hum_to_mixing_ratio.F90
         sfc_flux.F90
         twp_ice.F90
         wangara.F90
+        time_dependent_input.F90
+        prescribe_forcings.F90
 )
-target_sources(clubb_src_lib PRIVATE ${CLUBB_BENCHMARK_SOURCES})
+
+add_library(benchmark_cases_lib ${CLUBB_BENCHMARK_SOURCES})
+
+target_link_libraries(benchmark_cases_lib PRIVATE clubb_core_lib)
+
+if(${ENABLE_OMP})
+  target_link_libraries(benchmark_cases_lib PRIVATE openmp-fortran)
+endif()
+

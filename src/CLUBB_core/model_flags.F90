@@ -17,6 +17,13 @@ module model_flags
 
   private ! Default Scope
 
+  ! Advance subroutine ordering variables
+  integer, parameter, public :: &
+    order_xm_wpxp = 1, &
+    order_xp2_xpyp = 2, &
+    order_wp2_wp3 = 3, &
+    order_windm = 4
+
   ! Options for the two component normal (double Gaussian) PDF type to use for
   ! the w, rt, and theta-l (or w, chi, and eta) portion of CLUBB's multivariate,
   ! two-component PDF.
@@ -258,7 +265,7 @@ module model_flags
       l_use_thvm_in_bv_freq,        & ! Use thvm in the calculation of Brunt-Vaisala frequency
       l_rcm_supersat_adj,           & ! Add excess supersaturated vapor to cloud water
       l_damp_wp3_Skw_squared,       & ! Set damping on wp3 to use Skw^2 rather than Skw^4
-      l_prescribed_avg_deltaz,      & ! used in adj_low_res_nu. If .true., avg_deltaz = deltaz
+      l_prescribed_avg_deltaz,      & ! used in calc_derrived_params_api. If .true., avg_deltaz = deltaz
       l_lmm_stepping,               & ! Apply Linear Multistep Method (LMM) Stepping
       l_e3sm_config,                & ! Run model with E3SM settings
       l_vary_convect_depth,         & ! Flag used to calculate convective velocity using
@@ -476,7 +483,7 @@ module model_flags
       l_use_thvm_in_bv_freq,        & ! Use thvm in the calculation of Brunt-Vaisala frequency
       l_rcm_supersat_adj,           & ! Add excess supersaturated vapor to cloud water
       l_damp_wp3_Skw_squared,       & ! Set damping on wp3 to use Skw^2 rather than Skw^4
-      l_prescribed_avg_deltaz,      & ! used in adj_low_res_nu. If .true., avg_deltaz = deltaz
+      l_prescribed_avg_deltaz,      & ! used in calc_derrived_params_api. If .true., avg_deltaz = deltaz
       l_lmm_stepping,               & ! Apply Linear Multistep Method (LMM) Stepping
       l_e3sm_config,                & ! Run model with E3SM settings
       l_vary_convect_depth,         & ! Flag used to calculate convective velocity using
@@ -768,7 +775,7 @@ module model_flags
       l_use_thvm_in_bv_freq,        & ! Use thvm in the calculation of Brunt-Vaisala frequency
       l_rcm_supersat_adj,           & ! Add excess supersaturated vapor to cloud water
       l_damp_wp3_Skw_squared,       & ! Set damping on wp3 to use Skw^2 rather than Skw^4
-      l_prescribed_avg_deltaz,      & ! used in adj_low_res_nu. If .true., avg_deltaz = deltaz
+      l_prescribed_avg_deltaz,      & ! used in calc_derrived_params_api. If .true., avg_deltaz = deltaz
       l_lmm_stepping,               & ! Apply Linear Multistep Method (LMM) Stepping
       l_e3sm_config,                & ! Run model with E3SM settings
       l_vary_convect_depth,         & ! Flag used to calculate convective velocity using

@@ -64,7 +64,7 @@ module advance_xm_wpxp_module
                               um_forcing, vm_forcing, ug, vg, wpthvp, &
                               fcor, um_ref, vm_ref, up2, vp2, &
                               uprcp, vprcp, rc_coef_zm, &
-                              clubb_params, nu_vert_res_dep, &
+                              clubb_params, nu_vert_res_dep, ts_nudge, &
                               iiPDF_type, &
                               penta_solve_method, &
                               tridiag_solve_method, &
@@ -136,9 +136,6 @@ module advance_xm_wpxp_module
         one_half, &
         zero, &
         eps
-
-    use parameters_model, only: & 
-        ts_nudge
 
     use grid_class, only: & 
         grid, & ! Type
@@ -292,6 +289,9 @@ module advance_xm_wpxp_module
 
     type(nu_vertical_res_dep), intent(in) :: &
       nu_vert_res_dep    ! Vertical resolution dependent nu values
+
+    real( kind = core_rknd ), intent(in) :: &
+      ts_nudge              ! Timescale of u/v nudging             [s]
 
     integer, intent(in) :: &
       iiPDF_type,           & ! Selected option for the two-component normal (double

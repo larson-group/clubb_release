@@ -71,29 +71,29 @@ if(${ENABLE_TESTS})
 
 
     # Run 100 iterations of a handful of common casse
-    run_clubb_case( bomex_100iter "-iters 100 bomex" )
-    run_clubb_case( wangara_100iter "-iters 100 wangara" )
-    run_clubb_case( fire_100iter "-iters 100 fire" )
-    run_clubb_case( atex_100iter "-iters 100 atex" )
+    run_clubb_case( bomex_100iter "-max_iters 100 bomex" )
+    run_clubb_case( wangara_100iter "-max_iters 100 wangara" )
+    run_clubb_case( fire_100iter "-max_iters 100 fire" )
+    run_clubb_case( atex_100iter "-max_iters 100 atex" )
 
     # rico_silhs to test silhs_lib
-    run_clubb_case( rico_silhs_100iter "-iters 100 -override l_lh_straight_mc=.true. rico_silhs" )
+    run_clubb_case( rico_silhs_100iter "-max_iters 100 -override l_lh_straight_mc=.true. rico_silhs" )
 
     # arm_97 to test microphys and SILHS
-    run_clubb_case( arm_97_50iter "-iters 50 -override l_lh_straight_mc=.true. arm_97" )
+    run_clubb_case( arm_97_50iter "-max_iters 50 -override l_lh_straight_mc=.true. arm_97" )
 
     # cobra to test scalars and ice code
-    run_clubb_case( cobra_100iter "-iters 100 cobra" )
+    run_clubb_case( cobra_100iter "-max_iters 100 cobra" )
 
     # test for r8029 parameter/flag set
     set(R8029_CONFIG ${CLUBB_ROOT}/input/tunable_parameters_compatible_r8029/)
-    run_clubb_case( arm_r8029_100iter "-iters 100 -config ${R8029_CONFIG} arm" )
+    run_clubb_case( arm_r8029_100iter "-max_iters 100 -config ${R8029_CONFIG} arm" )
 
     # multicol test and disable normal stats output
-    run_clubb_case( arm_100iter_8col "-iters 100 -ngrdcol 8 -tout 0 arm" )
+    run_clubb_case( arm_100iter_8col "-max_iters 100 -ngrdcol 8 -tout 0 arm" )
 
     # test with small timestep to check that it doesn't break anything
-    run_clubb_case( arm_1000iter_5dt "-iters 1000 -dt_main 5 arm" )
+    run_clubb_case( arm_1000iter_5dt "-max_iters 1000 -dt_main 5 arm" )
 
 endif()
 
