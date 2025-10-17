@@ -4489,7 +4489,7 @@ module clubb_driver
       em(:,gr%nzm) = em_min
 
       ! GCSS BOMEX
-    case ( "bomex", "ekman" )
+    case ( "bomex", "ekman", "atex_long" )
 
 !---> Reduction of initial sounding for stability
 !         do k = 1, gr%nz
@@ -6180,6 +6180,8 @@ module clubb_driver
 
     use atex, only: atex_tndcy, atex_sfclyr !---------------- Procedure(s)
 
+    use atex_long, only: atex_long_tndcy, atex_long_sfclyr !- Procedure(s)
+
     use arm_97, only: arm_97_sfclyr !------------------------ Procedure(s)
 
     use bomex, only: bomex_tndcy, bomex_sfclyr !------------- Procedure(s)
@@ -6504,6 +6506,14 @@ module clubb_driver
           end if
         end if
 
+      case ( "atex_long" ) ! Long ATEX case
+
+        call atex_long_tndcy( ngrdcol, sclr_dim, edsclr_dim, sclr_idx, & ! Intent(in)
+                              gr, time_current, &                        ! Intent(in)
+                              wm_zt, wm_zm, &                            ! Intent(out)
+                              thlm_forcing, rtm_forcing, &               ! Intent(out)
+                              sclrm_forcing, edsclrm_forcing )           ! Intent(out)
+
       case ( "bomex" ) ! BOMEX Cu case
 
         call bomex_tndcy( ngrdcol, sclr_dim, edsclr_dim, sclr_idx, &     ! Intent(in)
@@ -6820,6 +6830,14 @@ module clubb_driver
         call atex_sfclyr( ngrdcol, time_current, ubar,  &       ! Intent(in)
                           thlm_bot, rtm_bot, exner_bot, &       ! Intent(in)
                           wpthlp_sfc, wprtp_sfc, ustar, T_sfc ) ! Intent(out)
+
+      case ( "atex_long" )
+
+        l_compute_momentum_flux = .true.
+        l_set_sclr_sfc_rtm_thlm = .true.
+        call atex_long_sfclyr( ngrdcol, time_current, ubar,  &       ! Intent(in)
+                               thlm_bot, rtm_bot, exner_bot, &       ! Intent(in)
+                               wpthlp_sfc, wprtp_sfc, ustar, T_sfc ) ! Intent(out)
 
       case ( "bomex" )
 
