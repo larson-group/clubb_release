@@ -82,7 +82,7 @@ c_K10 = 1.0            ! Coefficient of momentum diffusivity, Km_zm. Units [-]
 c_K10h = 1.0           ! Coefficient of thermo   diffusivity, Kmh_zm. Units [-]
 thlp2_rad_coef = 1.0   ! Coefficient of thlp2_rad. Units [-]
 thlp2_rad_cloud_frac_thresh = 0.1 ! Minimum cloud fraction for computation of thlp2_rad. Units [-]
-up2_sfc_coef = 14.0    ! Coefficient of up2_sfc and vp2_sfc    [-]
+up2_sfc_coef = 5.8   ! Coefficient of up2_sfc and vp2_sfc    [-]
 Skw_max_mag = 10.0     ! Max magnitude of skewness     [-]
 C_invrs_tau_bkgnd = 0.44 ! Coefficient of inverse tau term contributed by background constant value [-]
 C_invrs_tau_sfc = 0.04   ! Coefficient of inverse tau term contributed by surface log law [-]
@@ -103,7 +103,7 @@ Richardson_num_max = 400.0 ! Threshold on Richardson number
 Cx_min = 0.33              ! Threshold on Cx_fnc_Richardson
 Cx_max = 0.95              ! Threshold on Cx_fnc_Richardson
 a3_coef_min = 1.0         ! Minimum threshold on the a3 coefficient  [-]
-a_const = 0.32            ! Used for sfc values in sfc_varnce_module, usually =1.8 if l_vary_convect_depth=F, =0.6 if T
+a_const = 0.6             ! Used for sfc values in sfc_varnce_module, usually =1.8 if l_vary_convect_depth=F, =0.6 if T
 bv_efold = 5.0            ! Control parameter for inverse e-folding of cloud fraction in the mixed Brunt Vaisala frequency  [-]
 wpxp_Ri_exp = .5          ! Exponent determining the influence of the Richardson number on invrs_tau_wpxp  [-]
 z_displace = 50.0         ! displacement of log law profile above ground  [m]
