@@ -23,6 +23,12 @@ if(${SILHS})
 endif()
 
 
+if(${USE_GPTL})
+    # enable "ifdef GPTL"
+    add_compile_definitions(GPTL)
+endif()
+
+
 # Flags used to define GPU usage. These may neccesary for CPU builds too, as sometimes
 # flags are required to explicitly disable GPU usage (e.g. -noacc for nvhpc)
 add_compile_options(${GPU_COMPILE_FLAGS})

@@ -12,6 +12,7 @@ option(TUNING       "Compile additional code useful for TUNING runs"    OFF )   
 option(SILHS        "Enable SILHS"                                      ON  )   # silhs is default in some cases
 option(ENABLE_OMP   "Enable CLUBB to run with OpenMP"                   OFF )   # enables openmp
 option(ENABLE_TESTS "Enable creation of ctests"                         ON  )   # enable quick run tests
+option(USE_GPTL     "Enables use of the gptl timing library"            OFF )   # a library with nice timing features
 
 # Create the project
 project(CLUBB Fortran C CXX)
@@ -31,6 +32,11 @@ endif()
 if(${ENABLE_OMP})
     # cmake/deps/OpenMPDependency.cmake finds openmp and makes it available via 'openmp-fortran'
     include(OpenMPDependency)
+endif()
+
+if(${USE_GPTL})
+    # cmake/deps/GPTLDependency.cmake finds gptl and makes it available via 'gptl'
+    include(GPTLDependency)
 endif()
 
 # Add libraries/executables

@@ -9,6 +9,7 @@ set(G_unit_tests_sources
         pdf_parameter_tests.F90
         spurious_source_test.F90
         tuner_tests.F90
+        fill_holes_tests.F90
         w_up_in_cloud_tests.F90
         smooth_heaviside_tests.F90
         smooth_min_max_tests.F90

@@ -5,14 +5,14 @@ pipeline {
       steps {
         sh '''source /etc/profile.d/larson-group.sh
               module load gcc netcdf-fortran
-              compile/compile.bash'''
+              python compile.py -debug'''
       }
     }
     stage('Run CLUBB\'s G Unit Tests') {
       steps {
         sh '''source /etc/profile.d/larson-group.sh
               module load gcc netcdf-fortran
-              run_scripts/run_G_unit_tests.bash'''
+              python run_scripts/run_G_unit_tests.py'''
       }
     }
   }

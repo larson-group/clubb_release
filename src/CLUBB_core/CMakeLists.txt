@@ -92,3 +92,7 @@ endif()
 if(${ENABLE_OMP})
     target_link_libraries(clubb_core_lib PRIVATE openmp-fortran)
 endif()
+
+if(${USE_GPTL})
+    target_link_libraries(clubb_core_lib PRIVATE gptl)
+endif()

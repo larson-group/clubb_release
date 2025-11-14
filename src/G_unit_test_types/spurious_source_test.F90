@@ -401,8 +401,9 @@ module spurious_source_test
       grid_remap_method,              & ! Integer that stores what remapping technique should
                                         ! be used to remap the values from one grid to another
                                         ! (starts at 1, so 0 is an invalid option for this flag)
-      grid_adapt_in_time_method         ! Integer that stores how the grid should be adapted every
+      grid_adapt_in_time_method,      & ! Integer that stores how the grid should be adapted every
                                         ! timestep or if the grid should not be adapted at all
+      fill_holes_type                   ! Option for which type of hole filler to use
 
     logical :: &
       l_use_precip_frac,            & ! Flag to use precipitation fraction in KK microphysics. The
@@ -543,6 +544,7 @@ module spurious_source_test
                                              saturation_formula, &
                                              grid_remap_method, &
                                              grid_adapt_in_time_method, &
+                                             fill_holes_type, &
                                              l_use_precip_frac, &
                                              l_predict_upwp_vpwp, &
                                              l_min_wp2_from_corr_wx, &
@@ -980,6 +982,7 @@ module spurious_source_test
                              iiPDF_type, &
                              penta_solve_method, &
                              tridiag_solve_method, &
+                             fill_holes_type, &
                              l_predict_upwp_vpwp, &
                              l_diffuse_rtm_and_thlm, &
                              l_stability_correct_Kh_N2_zm, &

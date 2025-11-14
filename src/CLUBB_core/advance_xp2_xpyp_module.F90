@@ -66,6 +66,7 @@ module advance_xp2_xpyp_module
                                clubb_params, nu_vert_res_dep,             & ! In
                                iiPDF_type,                                & ! In
                                tridiag_solve_method,                      & ! In
+                               fill_holes_type,                           & ! In
                                l_predict_upwp_vpwp,                       & ! In
                                l_min_xp2_from_corr_wx,                    & ! In
                                l_C2_cloud_frac,                           & ! In
@@ -114,7 +115,6 @@ module advance_xp2_xpyp_module
     use model_flags, only: & 
         iiPDF_ADG1,       & ! integer constants
         iiPDF_new_hybrid, &
-        l_hole_fill,      & ! logical constants
         l_explicit_turbulent_adv_xpyp
 
     use parameter_indices, only: &
@@ -263,11 +263,12 @@ module advance_xp2_xpyp_module
       nu_vert_res_dep    ! Vertical resolution dependent nu values
 
     integer, intent(in) :: &
-      iiPDF_type,         & ! Selected option for the two-component normal (double
-                            ! Gaussian) PDF type to use for the w, rt, and theta-l (or
-                            ! w, chi, and eta) portion of CLUBB's multivariate,
-                            ! two-component PDF.
-      tridiag_solve_method  ! Specifier for method to solve tridiagonal systems
+      iiPDF_type,           & ! Selected option for the two-component normal (double
+                              ! Gaussian) PDF type to use for the w, rt, and theta-l (or
+                              ! w, chi, and eta) portion of CLUBB's multivariate,
+                              ! two-component PDF.
+      tridiag_solve_method, & ! Specifier for method to solve tridiagonal systems
+      fill_holes_type         ! Specifier for which hole filling method to use
 
     logical, intent(in) :: &
       l_predict_upwp_vpwp,    & ! Flag to predict <u'w'> and <v'w'> along with <u> and <v>
@@ -902,27 +903,34 @@ module advance_xp2_xpyp_module
 
 
     ! Apply the positive definite scheme to variances
-    if ( l_hole_fill ) then
-      call pos_definite_variances( nzm, ngrdcol, gr,              & ! In
-                                   xp2_xpyp_rtp2, dt, rt_tol**2,  & ! In
-                                   rho_ds_zm,                     & ! In
-                                   stats_metadata,                & ! In
-                                   stats_zm,                      & ! InOut
-                                   rtp2 )                           ! InOut
+    if ( fill_holes_type /= 0 ) then
       call pos_definite_variances( nzm, ngrdcol, gr,                & ! In
-                                   xp2_xpyp_thlp2, dt, thl_tol**2,  & ! In
+                                   xp2_xpyp_rtp2, fill_holes_type,  & ! In
+                                   dt, rt_tol**2,                   & ! In
+                                   rho_ds_zm,                       & ! In
+                                   stats_metadata,                  & ! In
+                                   stats_zm,                        & ! InOut
+                                   rtp2 )                           ! InOut
+
+      call pos_definite_variances( nzm, ngrdcol, gr,                & ! In
+                                   xp2_xpyp_thlp2, fill_holes_type, & ! In
+                                   dt, thl_tol**2,                  & ! In
                                    rho_ds_zm,                       & ! In
                                    stats_metadata,                  & ! In
                                    stats_zm,                        & ! InOut
                                    thlp2 )                            ! InOut
+
       call pos_definite_variances( nzm, ngrdcol, gr,                & ! In
-                                   xp2_xpyp_up2, dt, w_tol_sqd,     & ! In
+                                   xp2_xpyp_up2, fill_holes_type,   & ! In
+                                   dt, w_tol_sqd,                   & ! In
                                    rho_ds_zm,                       & ! In
                                    stats_metadata,                  & ! In
                                    stats_zm,                        & ! InOut
                                    up2 )                              ! InOut
+
       call pos_definite_variances( nzm, ngrdcol, gr,                & ! In
-                                   xp2_xpyp_vp2, dt, w_tol_sqd,     & ! In
+                                   xp2_xpyp_vp2, fill_holes_type,   & ! In
+                                   dt, w_tol_sqd,                   & ! In
                                    rho_ds_zm,                       & ! In
                                    stats_metadata,                  & ! In
                                    stats_zm,                        & ! InOut
@@ -1244,10 +1252,11 @@ module advance_xp2_xpyp_module
     if ( l_scalar_calc ) then
 
       ! Apply hole filling algorithm to the scalar variance terms
-      if ( l_hole_fill ) then
+      if ( fill_holes_type /= 0 ) then
         do sclr = 1, sclr_dim, 1
           call pos_definite_variances( nzm, ngrdcol, gr,                        & ! In
-                                       xp2_xpyp_sclrp2, dt, sclr_tol(sclr)**2,  & ! In
+                                       xp2_xpyp_sclrp2, fill_holes_type,        & ! In
+                                       dt, sclr_tol(sclr)**2,                   & ! In
                                        rho_ds_zm,                               & ! In
                                        stats_metadata,                          & ! In
                                        stats_zm,                                & ! InOut
@@ -1256,7 +1265,8 @@ module advance_xp2_xpyp_module
           if ( sclr == sclr_idx%iisclr_rt ) then
             ! Here again, we do this kluge here to make sclr'rt' == rt'^2
             call pos_definite_variances( nzm, ngrdcol, gr,                          & ! In
-                                         xp2_xpyp_sclrprtp, dt, sclr_tol(sclr)**2,  & ! In
+                                         xp2_xpyp_sclrprtp, fill_holes_type,        & ! In
+                                         dt, sclr_tol(sclr)**2,                     & ! In
                                          rho_ds_zm,                                 & ! In
                                          stats_metadata,                            & ! In
                                          stats_zm,                                  & ! InOut
@@ -1265,7 +1275,8 @@ module advance_xp2_xpyp_module
           if ( sclr == sclr_idx%iisclr_thl ) then
             ! As with sclr'rt' above, but for sclr'thl'
             call pos_definite_variances( nzm, ngrdcol, gr,                          & ! In
-                                         xp2_xpyp_sclrpthlp, dt, sclr_tol(sclr)**2, & ! In
+                                         xp2_xpyp_sclrpthlp, fill_holes_type,       & ! In
+                                         dt, sclr_tol(sclr)**2,                     & ! In
                                          rho_ds_zm,                                 & ! In
                                          stats_metadata,                            & ! In
                                          stats_zm,                                  & ! InOut
@@ -6124,7 +6135,8 @@ module advance_xp2_xpyp_module
 
   !=============================================================================
   subroutine pos_definite_variances( nzm, ngrdcol, gr, &
-                                     solve_type, dt, tolerance, &
+                                     solve_type, fill_holes_type, &
+                                     dt, tolerance, &
                                      rho_ds_zm, &
                                      stats_metadata, &
                                      stats_zm, &
@@ -6158,7 +6170,8 @@ module advance_xp2_xpyp_module
       gr
     
     integer, intent(in) :: & 
-      solve_type
+      solve_type, &
+      fill_holes_type
 
     real( kind = core_rknd ), intent(in) :: & 
       dt        ! Model timestep              [s]
@@ -6209,15 +6222,19 @@ module advance_xp2_xpyp_module
       end do
     endif
 
+
     ! Call the hole-filling scheme.
     ! The first pass-through should draw from only two levels on either side
     ! of the hole.
     ! upper_hf_level = nz-1 since we are filling the zm levels
-    call fill_holes_vertical_api( nzm, ngrdcol, tolerance,             & ! In
-                                  gr%k_lb_zm + gr%grid_dir_indx,       & ! In
-                                  gr%k_ub_zm - gr%grid_dir_indx,       & ! In
-                                  gr%dzm, rho_ds_zm, gr%grid_dir_indx, & ! In
-                                  xp2_np1 )                              ! InOut
+    if ( fill_holes_type /= 0 ) then
+      call fill_holes_vertical_api( nzm, ngrdcol, tolerance,              & ! In
+                                    gr%k_lb_zm + gr%grid_dir_indx,        & ! In
+                                    gr%k_ub_zm - gr%grid_dir_indx,        & ! In
+                                    gr%dzm, rho_ds_zm, gr%grid_dir_indx,  & ! In
+                                    fill_holes_type,                      & ! In
+                                    xp2_np1 )                               ! InOut
+    end if
 
     if ( stats_metadata%l_stats_samp ) then
 

@@ -16,25 +16,24 @@ module fill_holes
 
   private ! Set Default Scope
 
+  logical, parameter :: &
+    l_debug               = .false., & ! Printouts to help track down errors
+    l_print_before_after  = .false.    ! Printouts of field before and after
+
+  integer :: ret_code
+
   contains
 
   !=============================================================================
   subroutine fill_holes_vertical_api( nz, ngrdcol, threshold, &
                                       lower_hf_level, upper_hf_level, &
                                       dz, rho_ds, grid_dir_indx, &
+                                      fill_holes_type, &
                                       field )
 
     ! Description:
-    !   This subroutine clips values of 'field' that are below 'threshold' as much
-    !   as possible (i.e. "fills holes"), but conserves the total integrated mass
-    !   of 'field'.  This prevents clipping from acting as a spurious source.
-    !
-    !   Mass is conserved by reducing the clipped field everywhere by a constant
-    !   multiplicative coefficient.
-    !
-    !   This subroutine does not guarantee that the clipped field will exceed
-    !   threshold everywhere; blunt clipping is needed for that.
-    !
+    !   This subroutine calls a hole filling method, specified by fill_holes_type. 
+
     !   The lowest level (k=1) should not be included, as the hole-filling scheme
     !   should not alter the set value of 'field' at the surface (for momentum
     !   level variables), or consider the value of 'field' at a level below the
@@ -45,9 +44,244 @@ module fill_holes
     !   So for momemtum level variables, call with upper_hf_level=nz-1, and
     !   for thermodynamic level variables, call with upper_hf_level=nz.
     !
-    ! References:
-    !   ``Numerical Methods for Wave Equations in Geophysical Fluid
-    !     Dynamics'', Durran (1999), p. 292.
+    !-----------------------------------------------------------------------
+
+    use clubb_precision, only: &
+        core_rknd ! Variable(s)
+
+    use constants_clubb, only: &
+        fstderr, &
+        eps, &
+        one, &
+        num_hf_draw_points ! The number of points on either side of the hole;
+                           ! Mass is drawn from these points to fill the hole
+
+    use model_flags, only: &
+        global_fill, &
+        sliding_window, &
+        widening_windows, &
+        smart_window, &
+        smart_window_smooth, &
+        parallel_fill
+
+    implicit none
+    
+    ! --------------------- Input variables ---------------------
+    integer, intent(in) :: &
+      nz, &
+      ngrdcol
+    
+    real( kind = core_rknd ), dimension(ngrdcol,nz), intent(in) :: &
+      dz      ! Spacing between thermodynamic grid levels; centered over
+              ! momentum grid levels
+              ! OR
+              ! Spcaing between momentum grid levels; centered over
+              ! thermodynamic grid levels
+                  
+    integer, intent(in) :: & 
+      lower_hf_level, & ! Lower grid level of global hole-filling range      []
+      upper_hf_level, & ! Upper grid level of global hole-filling range      []
+      grid_dir_indx,  & ! Grid direction index (+1 ascending; -1 descending)
+      fill_holes_type   ! Option for which type of hole filler to use
+
+    real( kind = core_rknd ), intent(in) :: & 
+      threshold  ! A threshold (e.g. w_tol*w_tol) below which field must not
+                 ! fall                           [Units vary; same as field]
+
+    real( kind = core_rknd ), dimension(ngrdcol,nz), intent(in) ::  & 
+      rho_ds       ! Dry, static density on thermodynamic or momentum levels    [kg/m^3]
+
+    ! --------------------- Input/Output variable ---------------------
+    real( kind = core_rknd ), dimension(ngrdcol,nz), intent(inout) :: & 
+      field  ! The field (e.g. wp2) that contains holes [Units same as threshold]
+ 
+    ! --------------------- Local Variables ---------------------
+
+    logical :: &
+      l_field_below_threshold
+
+    real( kind = core_rknd ), dimension(ngrdcol,nz) ::  & 
+      field_initial
+
+    integer :: i, k
+
+    ! --------------------- Begin Code ---------------------
+
+    !$acc data copyin( rho_ds, dz ) &
+    !$acc        copy( field  )
+
+    ! Useful for diagnostic checks and debugging
+    if ( l_debug .or. l_print_before_after ) then
+
+      !$acc update host( field )
+
+      ! Save initial field for diagnositc checks later
+      field_initial = field
+
+      ! Print initial field and threshold for potential diagnostics
+      write(fstderr, *) "field threshold: ", threshold
+      write(fstderr, *) "field: ", field 
+      write(fstderr, *) " -- over"
+    end if 
+
+    l_field_below_threshold = .false.
+
+    !$acc parallel loop gang vector collapse(2) default(present) &
+    !$acc          reduction(.or.:l_field_below_threshold)
+    do k = 1, nz
+      do i = 1, ngrdcol
+        if ( field(i,k) < threshold ) then
+          l_field_below_threshold = .true.
+        end if
+      end do
+    end do
+    !$acc end parallel loop
+
+    ! Only bother will a fill call if there are values below threshold
+    if ( l_field_below_threshold ) then
+
+      if ( fill_holes_type == global_fill ) then 
+
+        ! This fills holes by modifying the entire range, this is maximally effective 
+        ! and computationally cheap, but minimally local
+        call fill_holes_global( nz, ngrdcol, threshold, &
+                                lower_hf_level, upper_hf_level, &
+                                dz, rho_ds, grid_dir_indx, &
+                                field )
+      
+      else if ( fill_holes_type == sliding_window ) then
+
+        ! This performs a sliding window technique, modifying consecutive ranges of 
+        ! vertical levels in serial, this is computationally expensive, but highly local.
+        ! This can also fail to fill, so this falls back to a global fill if neccesary.
+        call fill_holes_sliding_window( nz, ngrdcol, threshold, &
+                                  lower_hf_level, upper_hf_level, &
+                                  dz, rho_ds, grid_dir_indx, &
+                                  field )
+
+      else if ( fill_holes_type == widening_windows ) then
+
+        ! This performs a multi-window technique, splitting the vertical levels into a 
+        ! series of ranges that can be filled in parallel. This can often fail to fill
+        ! and continually widens the range as neccesary, and if the window range
+        ! gets wide enough, it is equivalent to a global fill
+        call fill_holes_widening_windows( nz, ngrdcol, threshold, &
+                                  lower_hf_level, upper_hf_level, &
+                                  dz, rho_ds, grid_dir_indx, &
+                                  field )
+
+      else if ( fill_holes_type == smart_window ) then
+
+        ! This performs filling by first scanning the vertical levels to determine a
+        ! range to fill before actually doing the fill calculations. The window can
+        ! increase to the whole range, which is effectively a global fallback
+        call fill_holes_smart_window( nz, ngrdcol, threshold, &
+                                      lower_hf_level, upper_hf_level, &
+                                      dz, rho_ds, grid_dir_indx, &
+                                      field )
+
+      else if ( fill_holes_type == smart_window_smooth ) then
+
+        ! This is a modification of the smart_window technique, which includes two "smoothing"
+        ! features to preserve the field derivative a bit. The efficacy of this over the basic
+        ! smart_window technique is unclear, and should be investigated more. 
+        ! WARNING: This also potentially fail to fill even if the field average is above 
+        ! threshold (no global fallack), see the subroutine description for more detail
+        call fill_holes_smart_window_smooth( nz, ngrdcol, threshold, &
+                                             lower_hf_level, upper_hf_level, &
+                                             dz, rho_ds, grid_dir_indx, &
+                                             field )
+
+      else if ( fill_holes_type == parallel_fill ) then
+
+        ! This fills holes by considering each hole independently, Making this method the most
+        ! parallelizable one, but also the most traditionally computationally expensive.
+        ! This will fall back to a global fill if the locality preserving passes fail
+        call fill_holes_parallel( nz, ngrdcol, threshold, &
+                                  lower_hf_level, upper_hf_level, &
+                                  dz, rho_ds, grid_dir_indx, &
+                                  field )
+      else
+
+        write(fstderr, *) "ERROR: unknown fill_holes_type: ", fill_holes_type
+        stop
+
+      end if 
+      
+    end if
+
+    ! Useful for diagnostic checks and debugging
+    if ( l_debug .or. l_print_before_after ) then
+
+      !$acc update host( field, rho_ds, dz )
+
+      ! If the field is below threshold after the fill, print some additional information
+      if ( any( field < threshold ) ) then
+
+        if ( sum(field(i,:) * rho_ds(i,:) * dz(i,:)) &
+             / sum( rho_ds(i,:) * dz(i,:)) > threshold ) then
+
+          write(fstderr, *) "THERE ARE BELOW THRESHOLD VALUES IN THE FIELD AFTER THE FILL"
+          write(fstderr, *) "EVEN THOUGH THE FIELD AVERAGE IS BELOW THRESHOLD. This is not"
+          write(fstderr, *) "a gauranteed error, since smoothing contraints may prevent "
+          write(fstderr, *) "some above threshold levels from having all their mass exhausted."
+
+          ! List exactly which field values in each column haven't been filled
+          do k = 1, nz
+            do i = 1, ngrdcol
+              if ( field(i,k) < threshold ) then
+                write(*,'(A6,I5,1X,I5,A4,E30.20,A3,E30.20)') "field(", i, k, ") = ", field(i,k), " < ", threshold
+              end if
+            end do
+          end do
+
+          ! Print the field average, this can be compared to the threshold - if the field average
+          ! is below threshold, then filling is not possible to gaurantee
+          do i = 1, ngrdcol
+            write(fstderr, *) "column", i, " field average = ", sum(field(i,:) * rho_ds(i,:) * dz(i,:)) &
+                                                                / sum( rho_ds(i,:) * dz(i,:)) , &
+                              " -- threshold = ", threshold
+          end do
+        else
+
+          write(fstderr, *) "FIELD AVERAGE BELOW THRESHOLD - FILLING INCOMPLETE AS EXPECTED"
+        end if
+        
+      end if
+
+      ! Print the difference in mass, this should be very small
+      write(fstderr, *) "difference in mass (before-after): ", &
+                          sum( field_initial(:,:) * rho_ds(:,:) * dz(:,:) ) &
+                        - sum(         field(:,:) * rho_ds(:,:) * dz(:,:) ) 
+
+      ! Print the field for potential diagnostics
+      write(fstderr, *) "field after: ", field 
+      write(fstderr, *) " -- over"
+
+    end if
+
+    !$acc end data
+
+    return
+
+  end subroutine fill_holes_vertical_api
+
+  !=============================================================================
+  subroutine fill_holes_global( nz, ngrdcol, threshold, &
+                                lower_hf_level, upper_hf_level, &
+                                dz, rho_ds, grid_dir_indx, &
+                                field )
+
+    ! Description:
+    !   This subroutine clips values of 'field' that are below 'threshold' using
+    !   the whole range [lower_hf_level:upper_hf_level] as the fill window. This
+    !   maximized effectiveness, but minimized locality.
+    !
+    !   Mass is conserved by reducing the clipped field everywhere by a constant
+    !   multiplicative coefficient.
+    !
+    !   This subroutine does not guarantee that the clipped field will exceed
+    !   threshold everywhere; blunt clipping is needed for that.
     !-----------------------------------------------------------------------
 
     use clubb_precision, only: &
@@ -91,27 +325,15 @@ module fill_holes
  
     ! --------------------- Local Variables ---------------------
     integer :: & 
-      i,             & ! Loop index for column                           []
-      k,             & ! Loop index for absolute grid level              []
-      j,             &
-      start_indx,    &
-      stop_indx,     &
-      start_indx_j,  &
-      stop_indx_j,   &
-      k_start,       & ! Lower grid level of local hole-filling range    []
-      k_end            ! Upper grid level of local hole-filling range    []
+      i, k  ! Loop variables
 
     real( kind = core_rknd ), dimension(ngrdcol,nz)  ::  & 
       rho_ds_dz,            & ! rho_ds * dz
-      invrs_denom_integral, & ! Inverse of the integral in the denominator (see description)
       field_clipped           ! The raw field (e.g. wp2) that contains no holes
                               !                          [Units same as threshold]
 
     real( kind = core_rknd ) ::  & 
-      field_avg,          & ! Vertical average of field [Units of field]
-      field_clipped_avg,  & ! Vertical average of clipped field [Units of field]
-      mass_fraction         ! Coefficient that multiplies clipped field
-                            ! in order to conserve mass.                      []
+      field_clipped_avg       ! Vertical average of clipped field [Units of field]
 
     real( kind = core_rknd ), dimension(ngrdcol) ::  & 
       denom_integral_global,  & ! Integral in the denominator for global filling
@@ -120,35 +342,12 @@ module fill_holes
       mass_fraction_global      ! Coefficient that multiplies clipped field
                                 ! in order to conserve mass.                      []
 
-    logical :: &
-      l_field_below_threshold
-
-    real( kind = core_rknd ) ::  & 
-      rho_k_sum
-
     ! --------------------- Begin Code --------------------- 
 
-    l_field_below_threshold = .false.
+    if ( l_debug ) print *, "fill_holes_type: GLOBAL FILL"
 
-    !$acc parallel loop gang vector collapse(2) default(present) &
-    !$acc          reduction(.or.:l_field_below_threshold)
-    do k = 1, nz
-      do i = 1, ngrdcol
-        if ( field(i,k) < threshold ) then
-          l_field_below_threshold = .true.
-        end if
-      end do
-    end do
-    !$acc end parallel loop
-
-    ! If all field values are above the specified threshold, no hole filling is required
-    if ( .not. l_field_below_threshold ) then
-      return
-    end if
-
-    !$acc enter data create( invrs_denom_integral, field_clipped, denom_integral_global, &
-    !$acc                    rho_ds_dz, numer_integral_global, field_avg_global, &
-    !$acc                    mass_fraction_global )
+    !$acc data create( rho_ds_dz, field_clipped, denom_integral_global, &
+    !$acc              numer_integral_global, field_avg_global, mass_fraction_global )
 
     !$acc parallel loop gang vector collapse(2) default(present)
     do k = 1, nz
@@ -157,124 +356,6 @@ module fill_holes
       end do  
     end do
     !$acc end parallel loop
-
-    start_indx = lower_hf_level + grid_dir_indx * num_hf_draw_points
-    stop_indx  = upper_hf_level - grid_dir_indx * num_hf_draw_points
-
-    ! denom_integral does not change throughout the hole filling algorithm
-    ! so we can calculate it before hand. This results in unneccesary computations,
-    ! but is parallelizable and reduces the cost of the serial k loop
-    !$acc parallel loop gang vector collapse(2) default(present)
-    do i = 1, ngrdcol
-      do k = start_indx, stop_indx, grid_dir_indx
-
-        ! This loop and division could be written more compactly as
-        ! invrs_denom_integral(i,k) = one / sum(
-        !                                    rho_ds_dz(i,k-num_hf_draw_points:k+num_hf_draw_points))
-        ! but has been manually written in loop form to improve performance 
-        ! when using OpenMP target offloading
-        ! See: https://github.com/larson-group/clubb/issues/1138#issuecomment-1974918151
-        rho_k_sum = 0.0_core_rknd
-
-        start_indx_j = k - grid_dir_indx * num_hf_draw_points
-        stop_indx_j  = k + grid_dir_indx * num_hf_draw_points
-        do j = start_indx_j, stop_indx_j, grid_dir_indx
-          rho_k_sum = rho_k_sum + rho_ds_dz(i,j)
-        end do
-
-        invrs_denom_integral(i,k) = one / rho_k_sum
-      end do
-    end do
-    !$acc end parallel loop
-
-    !$acc parallel loop gang vector default(present)
-    do i = 1, ngrdcol
-
-      ! Make one pass up the profile, filling holes as much as we can using
-      ! nearby mass, ignoring the first level.
-      !
-      ! This loop can only be done in serial due to the field values required for the next
-      ! iteration potentially changing. We could in theory expose more parallelism in cases 
-      ! where there are large enough gaps between vertical levels which need hole-filling,
-      ! but levels which require hole-filling are often close or consecutive.
-      do k = start_indx, stop_indx, grid_dir_indx
-
-        k_start = k - grid_dir_indx * num_hf_draw_points
-        k_end   = k + grid_dir_indx * num_hf_draw_points
-
-        if ( any( field(i,k_start:k_end:grid_dir_indx) < threshold ) ) then
-
-          ! Compute the field's vertical average cenetered at k, which we must conserve,
-          ! see description of the vertical_avg function in advance_helper_module
-          field_avg = sum( rho_ds_dz(i,k_start:k_end:grid_dir_indx) &
-                           * field(i,k_start:k_end:grid_dir_indx) ) &
-                      * invrs_denom_integral(i,k)
-
-          ! Clip small or negative values from field.
-          if ( field_avg >= threshold ) then
-            ! We know we can fill in holes completely
-            field_clipped(i,k_start:k_end:grid_dir_indx) &
-            = max( threshold, field(i,k_start:k_end:grid_dir_indx) )
-          else
-            ! We can only fill in holes partly;
-            ! to do so, we remove all mass above threshold.
-            field_clipped(i,k_start:k_end:grid_dir_indx) &
-            = min( threshold, field(i,k_start:k_end:grid_dir_indx) )
-          endif
-
-          ! Compute the clipped field's vertical integral.
-          ! clipped_total_mass >= original_total_mass,
-          ! see description of the vertical_avg function in advance_helper_module
-          field_clipped_avg = sum( rho_ds_dz(i,k_start:k_end:grid_dir_indx) &
-                                   * field_clipped(i,k_start:k_end:grid_dir_indx) ) &
-                              * invrs_denom_integral(i,k)
-
-          ! Avoid divide by zero issues by doing nothing if field_clipped_avg ~= threshold
-          if ( abs(field_clipped_avg-threshold) > abs(field_clipped_avg+threshold)*eps/2) then
-            ! Compute coefficient that makes the clipped field have the same mass as the
-            ! original field.  We should always have mass_fraction > 0.
-            mass_fraction = ( field_avg - threshold ) &
-                            / ( field_clipped_avg - threshold )
-
-            ! Calculate normalized, filled field
-            field(i,k_start:k_end:grid_dir_indx) &
-            = threshold &
-              + mass_fraction * ( field_clipped(i,k_start:k_end:grid_dir_indx) - threshold )
-          endif
-
-        endif
-
-      end do
-
-    end do
-    !$acc end parallel loop
-
-    l_field_below_threshold = .false.
-
-    !$acc parallel loop gang vector collapse(2) default(present) &
-    !$acc reduction(.or.:l_field_below_threshold)
-    do k = 1, nz
-      do i = 1, ngrdcol
-        if ( field(i,k) < threshold ) then
-          l_field_below_threshold = .true.
-        end if
-      end do
-    end do
-    !$acc end parallel loop
-
-    ! If all field values are above the threshold, no further hole filling is required
-    if ( .not. l_field_below_threshold ) then
-      !$acc exit data delete( invrs_denom_integral, field_clipped, denom_integral_global, &
-      !$acc                   rho_ds_dz, numer_integral_global, field_avg_global, &
-      !$acc                   mass_fraction_global )
-      return
-    end if
-
-
-    ! Now we fill holes globally to maximize the chance that all holes are filled.
-    ! To improve parallelism we assume that global hole filling needs to be done 
-    ! for each grid column, perform all calculations required, and only check
-    ! if any holes need filling before the final step of updating the field. 
 
     ! Compute the numerator and denominator integrals
     !$acc parallel loop gang vector default(present)
@@ -356,13 +437,1276 @@ module fill_holes
 
     end do
     !$acc end parallel loop
+
+    !$acc end data
     
-    !$acc exit data delete( invrs_denom_integral, field_clipped, denom_integral_global, rho_ds_dz,&
-    !$acc                   numer_integral_global, field_avg_global, mass_fraction_global )
+    return
+
+  end subroutine fill_holes_global
+
+  !=============================================================================
+  subroutine fill_holes_sliding_window( nz, ngrdcol, threshold, &
+                                        lower_hf_level, upper_hf_level, &
+                                        dz, rho_ds, grid_dir_indx, &
+                                        field )
+
+    ! Description:
+    !   This subroutine clips values of 'field' that are below 'threshold' as much
+    !   as possible (i.e. "fills holes"), but conserves the total integrated mass
+    !   of 'field'.  This prevents clipping from acting as a spurious source.
+    !
+    !   This performs a sliding window technique, modifying consecutive ranges of 
+    !   vertical levels in serial, this is computationally expensive, but highly local.
+    !   This high locally has a tradeoff with effectiveness, and can often fail to fill 
+    !   all the holes, especially if there is more than ~5, as a result, this relies on 
+    !   the global fill if the first pass of the sliding window fails to fill all holes
+    !
+    !   Mass is conserved by reducing the clipped field everywhere by a constant
+    !   multiplicative coefficient.
+    !
+    ! References:
+    !   ``Numerical Methods for Wave Equations in Geophysical Fluid
+    !     Dynamics'', Durran (1999), p. 292.
+    !-----------------------------------------------------------------------
+
+    use clubb_precision, only: &
+        core_rknd ! Variable(s)
+
+    use constants_clubb, only: &
+        eps, &
+        one, &
+        num_hf_draw_points ! The number of points on either side of the hole;
+                           ! Mass is drawn from these points to fill the hole
+
+    implicit none
+    
+    ! --------------------- Input variables ---------------------
+    integer, intent(in) :: &
+      nz, &
+      ngrdcol
+    
+    real( kind = core_rknd ), dimension(ngrdcol,nz), intent(in) :: &
+      dz      ! Spacing between thermodynamic grid levels; centered over
+              ! momentum grid levels
+              ! OR
+              ! Spcaing between momentum grid levels; centered over
+              ! thermodynamic grid levels
+                  
+    integer, intent(in) :: & 
+      lower_hf_level, & ! Lower grid level of global hole-filling range      []
+      upper_hf_level, & ! Upper grid level of global hole-filling range      []
+      grid_dir_indx     ! Grid direction index (+1 ascending; -1 descending)
+
+    real( kind = core_rknd ), intent(in) :: & 
+      threshold  ! A threshold (e.g. w_tol*w_tol) below which field must not
+                 ! fall                           [Units vary; same as field]
+
+    real( kind = core_rknd ), dimension(ngrdcol,nz), intent(in) ::  & 
+      rho_ds       ! Dry, static density on thermodynamic or momentum levels    [kg/m^3]
+
+    ! --------------------- Input/Output variable ---------------------
+    real( kind = core_rknd ), dimension(ngrdcol,nz), intent(inout) :: & 
+      field  ! The field (e.g. wp2) that contains holes [Units same as threshold]
+ 
+    ! --------------------- Local Variables ---------------------
+    integer :: & 
+      i,             & ! Loop index for column                           []
+      k,             & ! Loop index for absolute grid level              []
+      j,             &
+      start_indx,    &
+      stop_indx,     &
+      start_indx_j,  &
+      stop_indx_j,   &
+      k_start,       & ! Lower grid level of local hole-filling range    []
+      k_end            ! Upper grid level of local hole-filling range    []
+
+    real( kind = core_rknd ), dimension(ngrdcol,nz)  ::  & 
+      rho_ds_dz,            & ! rho_ds * dz
+      invrs_denom_integral, & ! Inverse of the integral in the denominator (see description)
+      field_clipped           ! The raw field (e.g. wp2) that contains no holes
+                              !                          [Units same as threshold]
+
+    real( kind = core_rknd ) ::  & 
+      field_avg,          & ! Vertical average of field [Units of field]
+      field_clipped_avg,  & ! Vertical average of clipped field [Units of field]
+      mass_fraction         ! Coefficient that multiplies clipped field
+                            ! in order to conserve mass.                      []
+
+    logical :: &
+      l_field_below_threshold
+
+    real( kind = core_rknd ) ::  & 
+      rho_k_sum
+
+    ! --------------------- Begin Code --------------------- 
+
+    if ( l_debug ) print *, "fill_holes_type: SLIDING WINDOW FILL WITH GLOBAL FALLBACK"
+
+    l_field_below_threshold = .false.
+
+    !$acc parallel loop gang vector collapse(2) default(present) &
+    !$acc          reduction(.or.:l_field_below_threshold)
+    do k = 1, nz
+      do i = 1, ngrdcol
+        if ( field(i,k) < threshold ) then
+          l_field_below_threshold = .true.
+        end if
+      end do
+    end do
+    !$acc end parallel loop
+
+    ! If all field values are above the specified threshold, no hole filling is required
+    if ( l_field_below_threshold ) then
+
+      !$acc data create( invrs_denom_integral, field_clipped, rho_ds_dz )
+
+      !$acc parallel loop gang vector collapse(2) default(present)
+      do k = 1, nz
+        do i = 1, ngrdcol
+          rho_ds_dz(i,k) = rho_ds(i,k) * dz(i,k)
+        end do  
+      end do
+      !$acc end parallel loop
+
+      start_indx = lower_hf_level + grid_dir_indx * num_hf_draw_points
+      stop_indx  = upper_hf_level - grid_dir_indx * num_hf_draw_points
+
+      ! denom_integral does not change throughout the hole filling algorithm
+      ! so we can calculate it before hand. This results in unneccesary computations,
+      ! but is parallelizable and reduces the cost of the serial k loop
+      !$acc parallel loop gang vector collapse(2) default(present)
+      do i = 1, ngrdcol
+        do k = start_indx, stop_indx, grid_dir_indx
+
+          ! This loop and division could be written more compactly as
+          ! invrs_denom_integral(i,k) = one / sum(
+          !                                    rho_ds_dz(i,k-num_hf_draw_points:k+num_hf_draw_points))
+          ! but has been manually written in loop form to improve performance 
+          ! when using OpenMP target offloading
+          ! See: https://github.com/larson-group/clubb/issues/1138#issuecomment-1974918151
+          rho_k_sum = 0.0_core_rknd
+
+          start_indx_j = k - grid_dir_indx * num_hf_draw_points
+          stop_indx_j  = k + grid_dir_indx * num_hf_draw_points
+          do j = start_indx_j, stop_indx_j, grid_dir_indx
+            rho_k_sum = rho_k_sum + rho_ds_dz(i,j)
+          end do
+
+          invrs_denom_integral(i,k) = one / rho_k_sum
+        end do
+      end do
+      !$acc end parallel loop
+      
+      !$acc parallel loop gang vector default(present)
+      do i = 1, ngrdcol
+
+        ! Make one pass up the profile, filling holes as much as we can using
+        ! nearby mass, ignoring the first level.
+        !
+        ! This loop can only be done in serial due to the field values required for the next
+        ! iteration potentially changing. We could in theory expose more parallelism in cases 
+        ! where there are large enough gaps between vertical levels which need hole-filling,
+        ! but levels which require hole-filling are often close or consecutive.
+        do k = start_indx, stop_indx, grid_dir_indx
+
+
+          k_start = k - grid_dir_indx * num_hf_draw_points
+          k_end   = k + grid_dir_indx * num_hf_draw_points
+
+          if ( any( field(i,k_start:k_end:grid_dir_indx) < threshold ) ) then
+          !if ( .true. ) then
+
+            ! Compute the field's vertical average cenetered at k, which we must conserve,
+            ! see description of the vertical_avg function in advance_helper_module
+            field_avg = sum( rho_ds_dz(i,k_start:k_end:grid_dir_indx) &
+                            * field(i,k_start:k_end:grid_dir_indx) ) &
+                        * invrs_denom_integral(i,k)
+
+            ! Clip small or negative values from field.
+            if ( field_avg >= threshold ) then
+              ! We know we can fill in holes completely
+              field_clipped(i,k_start:k_end:grid_dir_indx) &
+              = max( threshold, field(i,k_start:k_end:grid_dir_indx) )
+            else
+              ! We can only fill in holes partly;
+              ! to do so, we remove all mass above threshold.
+              field_clipped(i,k_start:k_end:grid_dir_indx) &
+              = min( threshold, field(i,k_start:k_end:grid_dir_indx) )
+            endif
+
+            ! Compute the clipped field's vertical integral.
+            ! clipped_total_mass >= original_total_mass,
+            ! see description of the vertical_avg function in advance_helper_module
+            field_clipped_avg = sum( rho_ds_dz(i,k_start:k_end:grid_dir_indx) &
+                                    * field_clipped(i,k_start:k_end:grid_dir_indx) ) &
+                                * invrs_denom_integral(i,k)
+
+            ! Avoid divide by zero issues by doing nothing if field_clipped_avg ~= threshold
+            if ( abs(field_clipped_avg-threshold) > abs(field_clipped_avg+threshold)*eps/2) then
+              ! Compute coefficient that makes the clipped field have the same mass as the
+              ! original field.  We should always have mass_fraction > 0.
+              mass_fraction = ( field_avg - threshold ) &
+                              / ( field_clipped_avg - threshold )
+
+              ! Calculate normalized, filled field
+              field(i,k_start:k_end:grid_dir_indx) &
+              = threshold &
+                + mass_fraction * ( field_clipped(i,k_start:k_end:grid_dir_indx) - threshold )
+            endif
+
+          endif
+
+        end do
+
+      end do
+      !$acc end parallel loop
+
+      !$acc end data
+
+    end if
+
+    ! Check if all holes were filled.
+
+    l_field_below_threshold = .false.
+
+    !$acc parallel loop gang vector collapse(2) default(present) &
+    !$acc reduction(.or.:l_field_below_threshold)
+    do k = 1, nz
+      do i = 1, ngrdcol
+        if ( field(i,k) < threshold ) then
+          l_field_below_threshold = .true.
+        end if
+      end do
+    end do
+    !$acc end parallel loop
+
+    ! If the first sliding window pass didn't work, fallback to global fill
+    if ( l_field_below_threshold ) then
+
+      if ( l_debug ) print *, "first pass insufficient -- doing global fill"
+
+      call fill_holes_global( nz, ngrdcol, threshold, &
+                              lower_hf_level, upper_hf_level, &
+                              dz, rho_ds, grid_dir_indx, &
+                              field )
+    end if
+
 
     return
 
-  end subroutine fill_holes_vertical_api
+  end subroutine fill_holes_sliding_window
+
+  !=============================================================================
+  subroutine fill_holes_widening_windows( nz, ngrdcol, threshold, &
+                                          lower_hf_level, upper_hf_level, &
+                                          dz, rho_ds, grid_dir_indx, &
+                                          field )
+    ! Description:
+    !   This performs a multi-window technique, splitting the vertical levels into a 
+    !   series of ranges that can be filled in parallel. This is much cheaper 
+    !   (computationally) than the sliding window and still results in a high degree of
+    !   locality, but is even less effective. If the windowing technique fails, we 
+    !   repeat the algorithm with increasingly larger window sizes rather than fallback 
+    !   to a global fill. This increases our chances of being able to fill locally, but 
+    !   if filling continuously fails, the window size grows to the entire range,
+    !   effectively performing a global fill. 
+    !-----------------------------------------------------------------------
+
+    use clubb_precision, only: &
+        core_rknd ! Variable(s)
+
+    use constants_clubb, only: &
+        eps, &
+        one, &
+        zero, &
+        num_hf_draw_points ! The number of points on either side of the hole;
+                           ! Mass is drawn from these points to fill the hole
+
+    implicit none
+    
+    ! --------------------- Input variables ---------------------
+    integer, intent(in) :: &
+      nz, &
+      ngrdcol
+    
+    real( kind = core_rknd ), dimension(ngrdcol,nz), intent(in) :: &
+      dz      ! Spacing between thermodynamic grid levels; centered over
+              ! momentum grid levels
+              ! OR
+              ! Spcaing between momentum grid levels; centered over
+              ! thermodynamic grid levels
+                  
+    integer, intent(in) :: & 
+      lower_hf_level, & ! Lower grid level of global hole-filling range      []
+      upper_hf_level, & ! Upper grid level of global hole-filling range      []
+      grid_dir_indx     ! Grid direction index (+1 ascending; -1 descending)
+
+    real( kind = core_rknd ), intent(in) :: & 
+      threshold  ! A threshold (e.g. w_tol*w_tol) below which field must not
+                 ! fall                           [Units vary; same as field]
+
+    real( kind = core_rknd ), dimension(ngrdcol,nz), intent(in) ::  & 
+      rho_ds       ! Dry, static density on thermodynamic or momentum levels    [kg/m^3]
+
+    ! --------------------- Input/Output variable ---------------------
+    real( kind = core_rknd ), dimension(ngrdcol,nz), intent(inout) :: & 
+      field  ! The field (e.g. wp2) that contains holes [Units same as threshold]
+ 
+    ! --------------------- Local Variables ---------------------
+    integer :: & 
+      i,             & ! Loop index for column                           []
+      k,             & ! Loop index for absolute grid level              []
+      window_size, &
+      k_start,       & ! Lower grid level of local hole-filling range    []
+      k_end            ! Upper grid level of local hole-filling range    []
+
+    real( kind = core_rknd ), dimension(ngrdcol,nz)  ::  & 
+      rho_ds_dz        ! rho_ds * dz
+
+    real( kind = core_rknd ) ::  & 
+      invrs_denom,        &
+      field_avg,          & ! Vertical average of field [Units of field]
+      field_clipped_avg,  & ! Vertical average of clipped field [Units of field]
+      mass_fraction         ! Coefficient that multiplies clipped field
+                            ! in order to conserve mass.                      []
+    logical :: &
+      l_field_below_threshold
+      
+    ! --------------------- Begin Code --------------------- 
+
+    if ( l_debug ) print *, "fill_holes_type: WIDENING_WINDOWS"
+
+    !$acc data create( rho_ds_dz )
+
+    !$acc parallel loop gang vector collapse(2) default(present)
+    do k = 1, nz
+      do i = 1, ngrdcol
+        rho_ds_dz(i,k) = rho_ds(i,k) * dz(i,k)
+      end do  
+    end do
+    !$acc end parallel loop
+    
+    l_field_below_threshold = .true.
+    window_size = 10
+
+    do while ( l_field_below_threshold ) 
+
+      l_field_below_threshold = .false.
+
+      !$acc parallel loop gang vector collapse(2) default(present) &
+      !$acc reduction(.or.:l_field_below_threshold)
+      do i = 1, ngrdcol
+        do k = lower_hf_level, upper_hf_level, window_size * grid_dir_indx
+
+          k_start = k
+
+          if (grid_dir_indx > 0 ) then
+            k_end   = min( k + ( window_size - 1), upper_hf_level )
+          else
+            k_end   = max( k - ( window_size - 1), upper_hf_level )
+          end if
+
+          if ( l_debug ) print *, "filling in window: ", k_start, k_end
+
+          if ( any( field(i,k_start:k_end:grid_dir_indx) < threshold ) ) then
+
+            invrs_denom = one / sum( rho_ds_dz(i,k_start:k_end:grid_dir_indx) )
+
+            field_avg = sum( rho_ds_dz(i,k_start:k_end:grid_dir_indx) &
+                            * field(i,k_start:k_end:grid_dir_indx) ) &
+                        * invrs_denom
+
+            if ( field_avg < threshold ) then
+        
+              field_clipped_avg = sum( rho_ds_dz(i,k_start:k_end:grid_dir_indx) &
+                                      * min( threshold, field(i,k_start:k_end:grid_dir_indx) ) ) * invrs_denom
+
+              mass_fraction = ( field_avg - threshold ) / ( field_clipped_avg - threshold )
+
+              field(i,k_start:k_end:grid_dir_indx) = threshold &
+                  + mass_fraction * ( min( threshold, field(i,k_start:k_end:grid_dir_indx) ) - threshold )
+
+            else
+          
+              field_clipped_avg = sum( rho_ds_dz(i,k_start:k_end:grid_dir_indx) &
+                                      * max( threshold, field(i,k_start:k_end:grid_dir_indx) ) ) * invrs_denom
+    
+              if ( abs(field_clipped_avg-threshold) > zero ) then
+                mass_fraction = ( field_avg - threshold ) / ( field_clipped_avg - threshold )
+      
+                  ! Calculate normalized, filled field
+                field(i,k_start:k_end:grid_dir_indx) = threshold &
+                    + mass_fraction * ( max( threshold, field(i,k_start:k_end:grid_dir_indx) ) - threshold )
+              end if
+            end if
+
+            if ( any( field(i,k_start:k_end:grid_dir_indx) < threshold ) ) then
+              l_field_below_threshold = .true.
+            end if
+
+          endif
+
+        end do
+
+      end do
+      !$acc end parallel loop
+
+      window_size = 2 * window_size
+
+    end do
+
+    !$acc end data
+
+    return
+
+  end subroutine fill_holes_widening_windows
+
+  !=============================================================================
+  subroutine fill_holes_smart_window( nz, ngrdcol, threshold, &
+                                      lower_hf_level, upper_hf_level, &
+                                      dz, rho_ds, grid_dir_indx, &
+                                      field )
+    ! Description:
+    !   This performs filling by first scanning the vertical levels to determine a
+    !   range to fill. This is done by looping over the vertical, and tracking the start 
+    !   and end of a range of holes, then expanding that range until the field average 
+    !   is above threshold before attempting to fill. Once a range is filled, it continues
+    !   scanning the vertical levels for more hole ranges. This is highly local when 
+    !   possible, and is kept computationally cheap by avoiding fill attempts on ranges
+    !   whose average is below threshold. Because the range is expanded until either the
+    !   field average of the range is above threshold, or is the whole range, this
+    !   will effectively perform a global fill if neccesary.
+    !-----------------------------------------------------------------------
+
+    use clubb_precision, only: &
+        core_rknd ! Variable(s)
+
+    use constants_clubb, only: &
+        eps, &
+        one, &
+        zero
+
+    implicit none
+    
+    ! --------------------- Input variables ---------------------
+    integer, intent(in) :: &
+      nz, &
+      ngrdcol
+    
+    real( kind = core_rknd ), dimension(ngrdcol,nz), intent(in) :: &
+      dz      ! Spacing between thermodynamic grid levels; centered over
+              ! momentum grid levels
+              ! OR
+              ! Spcaing between momentum grid levels; centered over
+              ! thermodynamic grid levels
+                  
+    integer, intent(in) :: & 
+      lower_hf_level, & ! Lower grid level of global hole-filling range      []
+      upper_hf_level, & ! Upper grid level of global hole-filling range      []
+      grid_dir_indx     ! Grid direction index (+1 ascending; -1 descending)
+
+    real( kind = core_rknd ), intent(in) :: & 
+      threshold  ! A threshold (e.g. w_tol*w_tol) below which field must not
+                 ! fall                           [Units vary; same as field]
+
+    real( kind = core_rknd ), dimension(ngrdcol,nz), intent(in) ::  & 
+      rho_ds       ! Dry, static density on thermodynamic or momentum levels    [kg/m^3]
+
+    ! --------------------- Input/Output variable ---------------------
+    real( kind = core_rknd ), dimension(ngrdcol,nz), intent(inout) :: & 
+      field  ! The field (e.g. wp2) that contains holes [Units same as threshold]
+  
+    ! --------------------- Local Variables ---------------------
+    integer :: & 
+      k_first_lte_thresh,  & ! First vertical level (k) with field <= threshold
+      k_last_lte_thresh,   & ! Most recent vertical level (k) with field <= threshold
+      n_holes,             & ! Number of holes found
+      n_steal_points,      & ! Number of points to steal
+      k_start,             & ! Lower grid level of local hole-filling range
+      k_end,               & ! Upper grid level of local hole-filling range
+      k_start_new,         & ! Named temporary
+      k_end_new              ! Named temporary
+
+    real( kind = core_rknd ), dimension(ngrdcol,nz)  ::  & 
+      normalized_mass        ! Threshold normalized mass (excess or hole)
+
+    real( kind = core_rknd ) ::  & 
+      stealable_mass,       & ! Sum of excess mass in a range
+      hole_mass,            & ! Sum of hole mass in a range
+      mass_fraction_above,  & ! Used to compute new field values of above threshold field values
+      mass_fraction_below     ! Used to compute new field values of below threshold field values
+
+    integer :: & 
+      i, k, k_in ! loop variables
+
+    ! --------------------- Begin Code --------------------- 
+
+    if ( l_debug ) print *, "fill_holes_type: SMART_WINDOW"
+
+    !$acc data create( normalized_mass )
+
+    ! Calculate the threshold normalized mass, a useful precalculation
+    !$acc parallel loop gang vector collapse(2) default(present)
+    do k = 1, nz
+      do i = 1, ngrdcol
+        normalized_mass(i,k) = ( field(i,k) - threshold ) * rho_ds(i,k) * dz(i,k)
+      end do  
+    end do
+
+    ! All columns are independent
+    !$acc parallel loop gang vector default(present)
+    do i = 1, ngrdcol
+
+      ! Initialize counters
+      k_first_lte_thresh = zero
+      k_last_lte_thresh  = zero
+      n_holes            = zero
+
+      ! Loop from lower_hf_level to upper_hf_level, using a do while because we need to increment 
+      ! k internally sometimes
+      k = lower_hf_level
+      do while ( grid_dir_indx * ( k - upper_hf_level ) <= 0 )
+
+        if ( normalized_mass(i,k) > zero ) then
+
+          ! If normalized_mass(i,k) > 0, then field(i,k) > threshold
+
+          if ( n_holes == 0 ) then
+            ! If we found field value at or below tolerance, but no holes yet, we want to 
+            ! ignore it by reseting the k tracker for the first <= thresh 
+            k_first_lte_thresh = 0
+          end if
+
+        else 
+  
+          ! If normalized_mass(i,k) <= 0, then field(i,k) <= threshold
+
+          ! This is only a true hole if it's less than zero, otherwise no need to fill it
+          if ( normalized_mass(i,k) < zero  ) then
+            n_holes        = n_holes + 1
+            n_steal_points = 2 * n_holes  
+          end if
+
+          ! Keep track of the k we found this potential hole
+          k_last_lte_thresh = k
+
+          ! If this is our first time seeing a <= threshold value, save it
+          if ( k_first_lte_thresh == 0 ) k_first_lte_thresh = k
+
+        end if
+
+        if ( l_debug ) print *, k, "/", nz, " --- ", k_first_lte_thresh, &
+                             " --- ", k_last_lte_thresh, " --- ", n_holes
+  
+        ! If we have holes, and we are either out of levels or k is >= n_steal_points away from
+        ! the first <= threshold level, then we attempt to fill the holes we've found
+        if ( n_holes > 0 .and. ( k == upper_hf_level &
+                                 .or. abs(k - k_last_lte_thresh) >= n_steal_points ) ) then
+
+          ! Calcualte our fill range
+          if ( grid_dir_indx > 0 ) then
+            k_start = max( lower_hf_level, k_first_lte_thresh - grid_dir_indx * n_steal_points )
+            k_end   = min( upper_hf_level, k_last_lte_thresh  + grid_dir_indx * n_steal_points )
+          else
+            k_start = min( lower_hf_level, k_first_lte_thresh - grid_dir_indx * n_steal_points )
+            k_end   = max( upper_hf_level, k_last_lte_thresh  + grid_dir_indx * n_steal_points )
+          end if
+                          
+          if ( l_debug ) print *, " -- range ", k_start, k_end
+
+          ! Calculate the excess mass we can steal, and the hole mass that needs filling
+          stealable_mass  = sum( max( normalized_mass(i,k_start:k_end:grid_dir_indx), zero ) )
+          hole_mass       = sum( min( normalized_mass(i,k_start:k_end:grid_dir_indx), zero ) )
+
+          if ( l_debug ) print *, " -- stealable/hole ", stealable_mass, hole_mass
+          
+          ! If there isn't enough stealable mass to fill the holes, then try to repeatedly
+          ! expand the range until we find enough
+          do while( stealable_mass  <  abs( hole_mass ) &
+                    .and. ( k_start /= lower_hf_level  .or. k_end /= upper_hf_level ) )
+
+            if ( l_debug ) print *, " -- ! not enough "
+
+            ! Double the points we search for on either side of the range
+            n_steal_points = 2 * n_steal_points
+
+            ! Recalcualte our fill range
+            if ( grid_dir_indx > 0 ) then
+              k_start_new = max( lower_hf_level, k_first_lte_thresh-grid_dir_indx*n_steal_points )
+              k_end_new   = min( upper_hf_level, k_last_lte_thresh +grid_dir_indx*n_steal_points )
+            else
+              k_start_new = min( lower_hf_level, k_first_lte_thresh-grid_dir_indx*n_steal_points )
+              k_end_new   = max( upper_hf_level, k_last_lte_thresh +grid_dir_indx*n_steal_points )
+            end if
+                        
+            if ( l_debug ) print *, " -- new range ", k_start_new, k_end_new
+
+            ! Only add to the sum what we haven't so far, this handles stuff added below
+            do k_in = k_start_new, k_start-grid_dir_indx, grid_dir_indx
+              stealable_mass  = stealable_mass + max( normalized_mass(i,k_in), zero )
+              hole_mass       = hole_mass      + min( normalized_mass(i,k_in), zero )
+            end do
+            
+            ! Only add to the sum what we haven't so far, this handles stuff added above
+            do k_in = k_end+grid_dir_indx, k_end_new, grid_dir_indx
+              stealable_mass  = stealable_mass + max( normalized_mass(i,k_in), zero )
+              hole_mass       = hole_mass      + min( normalized_mass(i,k_in), zero )
+            end do
+
+            if ( l_debug ) print *, " -- new stealable/hole ", stealable_mass, hole_mass
+
+            ! Set new range
+            k_start = k_start_new
+            k_end   = k_end_new
+            
+          end do
+
+          ! We can only move mass if there is some above threshold
+          if ( stealable_mass > zero ) then
+
+            ! Calcualte our mass fractions
+            mass_fraction_above = max( ( stealable_mass + hole_mass ) / stealable_mass, zero )
+            mass_fraction_below = max( ( stealable_mass + hole_mass ) / hole_mass,      zero )
+
+            ! Compute new field and update normalized mass in case we need to touch
+            ! these levels again in another pass
+            do k_in = k_start, k_end, grid_dir_indx
+
+              if ( field(i,k_in) >= threshold ) then
+
+                field(i,k_in)           = mass_fraction_above * ( field(i,k_in) - threshold ) &
+                                          + threshold
+
+                normalized_mass(i,k_in) = mass_fraction_above * normalized_mass(i,k_in)
+
+              else
+
+                field(i,k_in)           = mass_fraction_below * ( field(i,k_in) - threshold ) &
+                                          + threshold
+
+                normalized_mass(i,k_in) = mass_fraction_below * normalized_mass(i,k_in)
+
+              end if
+
+            end do
+
+          end if
+
+          ! Filling complete, reset in case there are more holes to find
+          k_first_lte_thresh = zero
+          k_last_lte_thresh  = zero
+          n_holes            = zero
+          
+          ! set k to whatever we used for k_end, since all holes up to k_end should be filled
+          k = k_end 
+            
+        end if
+
+        k = k + grid_dir_indx
+
+      end do
+
+    end do
+    !$acc end parallel loop
+
+    !$acc end data
+
+    return
+
+  end subroutine fill_holes_smart_window
+
+  !=============================================================================
+  subroutine fill_holes_smart_window_smooth( nz, ngrdcol, threshold, &
+                                             lower_hf_level, upper_hf_level, &
+                                             dz, rho_ds, grid_dir_indx, &
+                                             field )
+    ! Description:
+    !   This is a modification of the smart_window technique, but includes two "smoothing"
+    !   features. The first feature is psuedo-threshold, larger than the input threshold. 
+    !   This is used to maintain the "shape" of the below threshold part of the field,
+    !   by squishing the field with values in the range [minval(field),threshold] to 
+    !   [threshold, psuedo-threshold]. As a result, this will increase field entries
+    !   whose values are between [threshold, psuedo-threshold], even though they are 
+    !   above threshold already. The second smoothing feature is a minimum mass_fraction,
+    !   mf_min, which prevents the above threshold field values from decreasing by 
+    !   more than a factor of mf_min. This increased smoothness requires more mass
+    !   in general, making it slightly less local than the non-smooth smart_window 
+    !   version, and the increased complexity makes it slightly more expensive. 
+    !   Additionally if the whole field average is between [threshold, psuedo-threshold],
+    !   then filling can fail the same way that the a global fill can fail if the average
+    !   is below threshold, even though the field average is above threshold - this
+    !   only occurs in situations where the hole mass is almost as large as the total excess
+    !   (above threshold) mass. 
+    !-----------------------------------------------------------------------
+
+    use clubb_precision, only: &
+        core_rknd ! Variable(s)
+
+    use constants_clubb, only: &
+        eps, &
+        one, &
+        zero
+
+    implicit none
+    
+    ! --------------------- Input variables ---------------------
+    integer, intent(in) :: &
+      nz, &
+      ngrdcol
+    
+    real( kind = core_rknd ), dimension(ngrdcol,nz), intent(in) :: &
+      dz      ! Spacing between thermodynamic grid levels; centered over
+              ! momentum grid levels
+              ! OR
+              ! Spcaing between momentum grid levels; centered over
+              ! thermodynamic grid levels
+                  
+    integer, intent(in) :: & 
+      lower_hf_level, & ! Lower grid level of global hole-filling range      []
+      upper_hf_level, & ! Upper grid level of global hole-filling range      []
+      grid_dir_indx     ! Grid direction index (+1 ascending; -1 descending)
+
+    real( kind = core_rknd ), intent(in) :: & 
+      threshold  ! A threshold (e.g. w_tol*w_tol) below which field must not
+                  ! fall                           [Units vary; same as field]
+
+    real( kind = core_rknd ), dimension(ngrdcol,nz), intent(in) ::  & 
+      rho_ds       ! Dry, static density on thermodynamic or momentum levels    [kg/m^3]
+
+    ! --------------------- Input/Output variable ---------------------
+    real( kind = core_rknd ), dimension(ngrdcol,nz), intent(inout) :: & 
+      field  ! The field (e.g. wp2) that contains holes [Units same as threshold]
+  
+    ! --------------------- Local Variables ---------------------
+    integer :: & 
+      k_first_lte_thresh,  & ! First vertical level (k) with field <= threshold
+      k_last_lte_thresh,   & ! Most recent vertical level (k) with field <= threshold
+      n_holes,             & ! Number of holes found
+      n_steal_points,      & ! Number of points to steal
+      k_start,             & ! Lower grid level of local hole-filling range
+      k_end,               & ! Upper grid level of local hole-filling range
+      k_start_new,         & ! Named temporary
+      k_end_new              ! Named temporary
+
+    real( kind = core_rknd ), dimension(ngrdcol,nz)  ::  & 
+      normalized_mass        ! Threshold normalized mass (excess or hole)
+
+    real( kind = core_rknd ) ::  & 
+      stealable_mass,       & ! Sum of excess mass in a range
+      hole_mass,            & ! Sum of hole mass in a range
+      mass_fraction_above,  & ! Used to compute new field values of above threshold field values
+      mass_fraction_below,  & ! Used to compute new field values of below threshold field values
+      T, &
+      mf_min, &
+      field_min, &
+      threshold_2
+
+    integer :: & 
+      i, k, k_in ! loop variables
+
+    ! --------------------- Begin Code --------------------- 
+
+    if ( l_debug ) print *, "fill_holes_type: SMART_WINDOW_SMOOTH"
+
+    threshold_2 = 1.05_core_rknd * threshold
+    mf_min = 0.05
+
+    !$acc data create( normalized_mass )
+
+    ! Calculate the threshold normalized mass, a useful precalculation
+    !$acc parallel loop gang vector collapse(2) default(present)
+    do k = 1, nz
+      do i = 1, ngrdcol
+        normalized_mass(i,k) = ( field(i,k) - threshold_2 ) * rho_ds(i,k) * dz(i,k)
+      end do  
+    end do
+
+    ! All columns are independent
+    !$acc parallel loop gang vector default(present)
+    do i = 1, ngrdcol
+
+      ! Initialize counters
+      k_first_lte_thresh = zero
+      k_last_lte_thresh  = zero
+      n_holes            = zero
+
+      ! Loop from lower_hf_level to upper_hf_level, using a do while because we need to increment 
+      ! k internally sometimes
+      k = lower_hf_level
+      do while ( grid_dir_indx * ( k - upper_hf_level ) <= 0 )
+
+        if ( normalized_mass(i,k) > zero ) then
+
+          ! If normalized_mass(i,k) > 0, then field(i,k) > threshold
+
+          if ( n_holes == 0 ) then
+            ! If we found field value at or below tolerance, but no holes yet, we want to 
+            ! ignore it by reseting the k tracker for the first <= thresh 
+            k_first_lte_thresh = 0
+          end if
+
+        else 
+  
+          ! If normalized_mass(i,k) <= 0, then field(i,k) <= threshold
+
+          ! This is only a true hole if it's less than zero, otherwise no need to fill it
+          if ( normalized_mass(i,k) < zero  ) then
+            n_holes        = n_holes + 1
+            n_steal_points = 2 * n_holes  
+          end if
+
+          ! Keep track of the k we found this potential hole
+          k_last_lte_thresh = k
+
+          ! If this is our first time seeing a <= threshold value, save it
+          if ( k_first_lte_thresh == 0 ) k_first_lte_thresh = k
+
+        end if
+
+        if ( l_debug ) print *, k, "/", nz, " --- ", k_first_lte_thresh, &
+                             " --- ", k_last_lte_thresh, " --- ", n_holes
+  
+        ! If we have holes, and we are either out of levels or k is >= n_steal_points away from
+        ! the first <= threshold level, then we attempt to fill the holes we've found
+        if ( n_holes > 0 .and. ( k == upper_hf_level &
+                                 .or. abs(k - k_last_lte_thresh) >= n_steal_points ) ) then
+
+          ! Calcualte our fill range
+          if ( grid_dir_indx > 0 ) then
+            k_start = max( lower_hf_level, k_first_lte_thresh - grid_dir_indx * n_steal_points )
+            k_end   = min( upper_hf_level, k_last_lte_thresh  + grid_dir_indx * n_steal_points )
+          else
+            k_start = min( lower_hf_level, k_first_lte_thresh - grid_dir_indx * n_steal_points )
+            k_end   = max( upper_hf_level, k_last_lte_thresh  + grid_dir_indx * n_steal_points )
+          end if
+                          
+          if ( l_debug ) print *, " -- range ", k_start, k_end
+
+          ! Calculate the excess mass we can steal, and the hole mass that needs filling
+          stealable_mass  = sum( max( normalized_mass(i,k_start:k_end:grid_dir_indx), zero ) )
+          hole_mass       = sum( min( normalized_mass(i,k_start:k_end:grid_dir_indx), zero ) )
+          field_min       = minval(field(i,k_start:k_end:grid_dir_indx))
+
+          if ( l_debug ) print *, " -- stealable/hole ", stealable_mass, hole_mass
+          if ( l_debug ) print *, " -- field_min ", field_min
+          
+          ! If there isn't enough stealable mass to fill the holes, then try to repeatedly
+          ! expand the range until we find enough
+          do while( stealable_mass  <  abs( hole_mass ) &
+                    .and. ( k_start /= lower_hf_level  .or. k_end /= upper_hf_level ) )
+
+            if ( l_debug ) print *, " -- ! not enough "
+
+            ! Double the points we search for on either side of the range
+            n_steal_points = 2 * n_steal_points
+
+            ! Recalcualte our fill range
+            if ( grid_dir_indx > 0 ) then
+              k_start_new = max( lower_hf_level, k_first_lte_thresh-grid_dir_indx*n_steal_points )
+              k_end_new   = min( upper_hf_level, k_last_lte_thresh +grid_dir_indx*n_steal_points )
+            else
+              k_start_new = min( lower_hf_level, k_first_lte_thresh-grid_dir_indx*n_steal_points )
+              k_end_new   = max( upper_hf_level, k_last_lte_thresh +grid_dir_indx*n_steal_points )
+            end if
+                        
+            if ( l_debug ) print *, " -- new range ", k_start_new, k_end_new
+
+            ! Only add to the sum what we haven't so far, this handles stuff added below
+            do k_in = k_start_new, k_start-grid_dir_indx, grid_dir_indx
+              stealable_mass  = stealable_mass + max( normalized_mass(i,k_in), zero )
+              hole_mass       = hole_mass      + min( normalized_mass(i,k_in), zero )
+              field_min       = min( field_min, field(i,k_in) )
+            end do
+            
+            ! Only add to the sum what we haven't so far, this handles stuff added above
+            do k_in = k_end+grid_dir_indx, k_end_new, grid_dir_indx
+              stealable_mass  = stealable_mass + max( normalized_mass(i,k_in), zero )
+              hole_mass       = hole_mass      + min( normalized_mass(i,k_in), zero )
+              field_min       = min( field_min, field(i,k_in) )
+            end do
+
+            if ( l_debug ) print *, " -- new stealable/hole ", stealable_mass, hole_mass
+            if ( l_debug ) print *, " -- field_min ", field_min
+
+            ! Set new range
+            k_start = k_start_new
+            k_end   = k_end_new
+            
+          end do
+
+          ! We can only move mass if there is some above threshold
+          if ( stealable_mass > zero ) then
+
+            T = ( threshold_2 - threshold ) / ( threshold_2 - field_min )
+
+            ! Calcualte our mass fractions
+            mass_fraction_above = max( ( stealable_mass + ( one - T ) * hole_mass ) &
+                                       / stealable_mass, mf_min )
+
+            mass_fraction_below = max( ( ( one - mf_min ) * stealable_mass + hole_mass ) &
+                                       / hole_mass, T )
+
+            ! Compute new field and update normalized mass in case we need to touch
+            ! these levels again in another pass
+            do k_in = k_start, k_end, grid_dir_indx
+
+              if ( field(i,k_in) >= threshold_2 ) then
+                field(i,k_in)           = mass_fraction_above * ( field(i,k_in) - threshold_2 ) &
+                                          + threshold_2
+                normalized_mass(i,k_in) = mass_fraction_above * normalized_mass(i,k_in)
+              else
+                field(i,k_in)           = mass_fraction_below * ( field(i,k_in) - threshold_2 ) &
+                                          + threshold_2
+                normalized_mass(i,k_in) = mass_fraction_below * normalized_mass(i,k_in)
+              end if
+
+            end do
+
+          end if
+
+          ! Filling complete, reset in case there are more holes to find
+          k_first_lte_thresh = zero
+          k_last_lte_thresh  = zero
+          n_holes            = zero
+          
+          ! set k to whatever we used for k_end, since all holes up to k_end should be filled
+          k = k_end 
+            
+        end if
+
+        k = k + grid_dir_indx
+
+      end do
+
+    end do
+    !$acc end parallel loop
+
+    !$acc end data
+
+    return
+
+  end subroutine fill_holes_smart_window_smooth
+
+
+  !=============================================================================
+  subroutine fill_holes_parallel( nz, ngrdcol, threshold, &
+                                 lower_hf_level, upper_hf_level, &
+                                 dz, rho_ds, grid_dir_indx, &
+                                 field )
+    ! Description:
+    !   This fills holes by considering each hole independently. It first calculates the 
+    !   number of holes (n_holes), then only allows each hole to steal at most 1/n_holes mass
+    !   from the above threshold levels. This maximizes parallelism because each hole can
+    !   be handled simultaneously, and maintains a high degree of locality. However, 
+    !   handling each hole by itself can require many more large passes than is required 
+    !   in theory, making this very computationally expensive if the increaseD parallelism
+    !   cannot be exploited (e.g bad for CPUs, this is designed for GPUs).
+    !   Note: this seems to be slower than other methods on GPUs too, perhaps worth
+    !   a revisit. Maybe faster for a small number of holes? Was mostly tested with 
+    !   fields with a large range of holes.
+    !-----------------------------------------------------------------------
+    use clubb_precision, only: &
+        core_rknd ! Variable(s)
+
+    use constants_clubb, only: &
+        eps, &
+        one, &
+        zero, &
+        two
+
+    implicit none
+    
+    ! --------------------- Input variables ---------------------
+    integer, intent(in) :: &
+      nz, &
+      ngrdcol
+    
+    real( kind = core_rknd ), dimension(ngrdcol,nz), intent(in) :: &
+      dz      ! Spacing between thermodynamic grid levels; centered over
+              ! momentum grid levels
+              ! OR
+              ! Spcaing between momentum grid levels; centered over
+              ! thermodynamic grid levels
+                  
+    integer, intent(in) :: & 
+      lower_hf_level, & ! Lower grid level of global hole-filling range      []
+      upper_hf_level, & ! Upper grid level of global hole-filling range      []
+      grid_dir_indx     ! Grid direction index (+1 ascending; -1 descending)
+
+    real( kind = core_rknd ), intent(in) :: & 
+      threshold  ! A threshold (e.g. w_tol*w_tol) below which field must not
+                 ! fall                           [Units vary; same as field]
+
+    real( kind = core_rknd ), dimension(ngrdcol,nz), intent(in) ::  & 
+      rho_ds       ! Dry, static density on thermodynamic or momentum levels    [kg/m^3]
+
+    ! --------------------- Input/Output variable ---------------------
+    real( kind = core_rknd ), dimension(ngrdcol,nz), intent(inout) :: & 
+      field  ! The field (e.g. wp2) that contains holes [Units same as threshold]
+ 
+    ! --------------------- Local Variables ---------------------
+
+    logical :: & 
+      l_field_below_threshold
+
+    integer, dimension(ngrdcol) :: & 
+      n_holes                ! Number of holes found in each column
+
+    real( kind = core_rknd ) ::  & 
+      stealable_scale,      & ! Amount of mass allows to be stolen to fill a single hole
+      mass_fraction_above,  & ! Used to compute new field values of above threshold field values
+      mf_min                  ! Minimum mass fraction allowed, functionally a smoothing term, 
+                              ! e.g mf_min=0.5 means that we're not allowed to steal more than
+                              ! 50% of the excess (above threshold) mass from anywhere
+
+    real( kind = core_rknd ), dimension(nz,ngrdcol) ::  & 
+      rho_ds_dz,            & ! rho_ds * dz
+      invrs_rho_ds_dz,      & ! 1 / rho_ds_dz, a valuable precomputation
+      stealable_mass          ! The amount of mass allowed to be stolen from each grid level
+
+    real( kind = core_rknd ) ::  & 
+      stealable_mass_total, & ! Sum of excess mass in a range
+      hole_mass,            & ! Sum of hole mass in a range
+      field_adj               ! Temorary for the field change, used 
+                              ! to make acc atomic step as small as possible
+
+    integer :: &
+      k_start,             & ! Lower grid level of local hole-filling range
+      k_end,               & ! Upper grid level of local hole-filling range
+      k_start_new,         & ! Named temporary
+      k_end_new,           & ! Named temporary
+      holes_local,         & ! Local hole count, used to as a temorary  
+      n_steal_points         ! Number of points to steal
+
+    integer :: &
+      i, k, k_in  ! Loop variables
+
+    ! --------------------- Begin Code --------------------- 
+
+    !$acc data create( n_holes, rho_ds_dz, invrs_rho_ds_dz, stealable_mass )  
+
+    if ( l_debug ) print *, "fill_holes_type: parallel"
+
+    ! Precalculate rho_ds_dz and invrs_rho_ds_dz
+    !$acc parallel loop gang vector collapse(2) default(present)
+    do k = 1, nz
+      do i = 1, ngrdcol
+        rho_ds_dz(k,i) = rho_ds(i,k) * dz(i,k)
+        invrs_rho_ds_dz(k,i) = one / rho_ds_dz(k,i)
+      end do  
+    end do
+
+    ! Set mf_min, this is tunable. If filling fails on first pass, this is increased 
+    ! and the filling is attempted again, so this is merely a starting value
+    mf_min = .5
+
+    ! Calculate the number of holes in each column, this reduction method is fast(est?) on GPUs
+    !$acc parallel loop gang vector
+    do i = 1, ngrdcol
+      holes_local = 0
+      !$acc loop seq reduction(+:holes_local)
+      do k = lower_hf_level, upper_hf_level, grid_dir_indx
+        if ( field(i,k) < threshold ) then
+          holes_local = holes_local + 1
+        end if
+      end do
+      n_holes(i) = holes_local
+    end do
+
+    !$acc parallel default(present) 
+
+    l_field_below_threshold = .true.
+
+    ! Loop until all holes are filled
+    do while ( l_field_below_threshold )
+
+      ! Calculate the steablable mass. We take stealable_scale = mf_min / n_holes(i) to 
+      ! ensure that each hole doesn't steal too much mass from above threshold levels.
+      ! In theory, each hole could take up to 1 / n_holes mass, but we have mf_min as a smoothing
+      ! term, otherwise mass is stolen quite agressively with this approach, since holes
+      ! have no knowledge of how far out other holes have to search
+      !$acc loop gang vector collapse(2) 
+      do k = lower_hf_level, upper_hf_level, grid_dir_indx
+        do i = 1, ngrdcol
+          stealable_scale = ( one - mf_min ) / n_holes(i)
+          stealable_mass(k,i) =  max( field(i,k) - threshold, 0.0_core_rknd ) &
+                                 * rho_ds_dz(k,i) * stealable_scale
+        end do  
+      end do
+  
+      if ( l_debug ) print *, "holes found: ", n_holes
+
+      ! Assume we can fill all holes
+      l_field_below_threshold = .false.
+
+      ! Fill the holes, this loop is completely parallelizable (aside from the parts ,
+      ! in atomic clauses), but this feature is the main purpose of this method
+      !$acc loop gang vector collapse(2) &
+      !$acc  reduction(.or.:l_field_below_threshold)
+      do i = 1, ngrdcol 
+        do k = lower_hf_level, upper_hf_level, grid_dir_indx
+
+          ! Only do something if the field value were considering is below threshold
+          if ( field(i,k) < threshold ) then
+
+            if ( l_debug ) print *, "HOLE @ ", k
+
+            ! Hole detected, calculate the mass needed to fill it
+            hole_mass = ( field(i,k) - threshold ) * rho_ds_dz(k,i)
+
+            if ( l_debug ) print *, " -- mass to fill ", hole_mass
+
+            ! We need to steal from other levels, but how far out to reach initially?
+            ! 2*n_holes seems like a good guess, more holes means more "reach" needed, and 
+            ! this scales with holes is the important part
+            n_steal_points = n_holes(i) * 2
+
+            ! Caclulate our fill range
+            if ( grid_dir_indx > 0 ) then
+              k_start = max( lower_hf_level, k - grid_dir_indx * n_steal_points )
+              k_end   = min( upper_hf_level, k + grid_dir_indx * n_steal_points )
+            else
+              k_start = min( lower_hf_level, k - grid_dir_indx * n_steal_points )
+              k_end   = max( upper_hf_level, k + grid_dir_indx * n_steal_points )
+            end if
+
+            ! Caclulate the total amount of stealable mass in that range
+            stealable_mass_total = sum( stealable_mass(k_start:k_end:grid_dir_indx,i) )
+
+            if ( l_debug ) print *, " -- range ", k_start, k_end
+            if ( l_debug ) print *, " -- stealable mass ", stealable_mass_total
+
+            ! If we didn't find enough mass to fill the hole (and our bounds aren't exhausted),
+            ! then expand the range until we have found enough
+            do while( stealable_mass_total < abs(hole_mass) &
+                      .and. ( k_start /= lower_hf_level .or. k_end /= upper_hf_level) )
+
+              if ( l_debug ) print *, " -- ! not enough "
+
+              ! Double the number of levels to try stealing from
+              n_steal_points = 2 * n_steal_points
+
+              ! Recalculate bounds of fill range
+              if ( grid_dir_indx > 0 ) then
+                k_start_new = max( lower_hf_level, k - grid_dir_indx * n_steal_points )
+                k_end_new   = min( upper_hf_level, k + grid_dir_indx * n_steal_points )
+              else
+                k_start_new = min( lower_hf_level, k - grid_dir_indx * n_steal_points )
+                k_end_new   = max( upper_hf_level, k + grid_dir_indx * n_steal_points )
+              end if
+              
+              ! Sum up new mass in [k_start_new:k_start-1] and [k_end+1:k_end_new], or
+              ! with reversed grid - [k_start+1:k_start_new] and [k_end_new:k_end-1]
+              do k_in = k_start_new, k_start-grid_dir_indx, grid_dir_indx
+                stealable_mass_total = stealable_mass_total + stealable_mass(k_in,i)
+              end do
+
+              do k_in = k_end+grid_dir_indx, k_end_new, grid_dir_indx
+                stealable_mass_total = stealable_mass_total + stealable_mass(k_in,i)
+              end do
+
+              ! Set new fill range
+              k_start = k_start_new
+              k_end   = k_end_new
+
+              if ( l_debug ) print *, " -- new range ", k_start, k_end
+              if ( l_debug ) print *, " -- new stealable mass ", stealable_mass_total
+              
+            end do
+
+            ! We can only fill if stealable_mass_total > 0, this is mostly to prevent divide by 0
+            if ( stealable_mass_total > zero ) then
+
+              ! Calculate mass fraction
+              mass_fraction_above = one - max( ( stealable_mass_total + hole_mass ) &
+                                               / stealable_mass_total, zero)
+              
+              ! Update field values for levels we're stealing from in the fill range
+              do k_in = k_start, k_end, grid_dir_indx
+
+                if ( field(i,k_in) > threshold ) then
+
+                  field_adj = mass_fraction_above *  stealable_mass(k_in,i) &
+                                                  * invrs_rho_ds_dz(k_in,i)
+
+                  !$acc atomic
+                  field(i,k_in) = field(i,k_in) - field_adj
+                end if
+
+              end do
+
+
+            end if
+
+            ! Update the field value for the hole were considering
+            if ( stealable_mass_total < abs(hole_mass) ) then
+
+              ! Hole cannot be completely filled, give it all the mass we have available
+              ! and set the flag indicated there is still a hole
+
+              l_field_below_threshold = .true.
+              field(i,k) = field(i,k) + stealable_mass_total * invrs_rho_ds_dz(k,i)
+
+            else
+
+              ! Hole can be completely filled, which means it should be set to threshold,
+              ! also decrement the hole count since now there is one less
+
+              !$acc atomic
+              n_holes(i) = n_holes(i) - 1
+
+              field(i,k) = threshold
+
+            end if
+
+          end if
+
+        end do
+      end do
+      
+      ! If we didn't fill all holes completely, increase mf_min and try again.
+      if ( l_field_below_threshold ) then
+      
+        if (  mf_min <= 0.02_core_rknd  ) then
+
+          ! Our mf_min is already about as small as we can safely make it (see comment below), so
+          ! lets just give up trying. One could consider adding the global fill to this section,
+          ! effectively cancelling out the smoothing term in this 
+
+          ! Call the global filler
+          call fill_holes_global( nz, ngrdcol, threshold, &
+                                  lower_hf_level, upper_hf_level, &
+                                  dz, rho_ds, grid_dir_indx, &
+                                  field )
+
+          if ( l_debug ) print *, " WARNING: FILLING INSUFFICIENT - FALLING BACK TO GLOBAL"
+          exit
+
+        else
+  
+          if ( l_debug ) print *, " failed with: mf_min = ", mf_min, " - doubling and trying again"
+
+          ! Allowing mf_min = 0.0 is fine in theory, but the way we decompose the stealable mass
+          ! can result in the sum of that being slightly greater than what we actually have.
+          ! So if we need to steal all of the mass from a level, it's likely that we're going to 
+          ! steal slightly too much, and drive the above threshold value below. This is a quirk of
+          ! floating point calculations, and is quite unfortunate, since it forces us to rely on 
+          ! a global fill rather than just setting it to 0. Limiting this to 0.01 is arbirary,
+          ! you can probably set it lower and be fine
+          mf_min = max( 0.01_core_rknd, mf_min / two )
+   
+        end if
+
+      end if
+
+    end do
+    !$acc end parallel
+
+    !$acc end data
+
+    return
+
+  end subroutine fill_holes_parallel
 
   !===============================================================================
   subroutine fill_holes_wp2_from_horz_tke( nz, ngrdcol, threshold, &
@@ -868,6 +2212,7 @@ module fill_holes
   subroutine fill_holes_driver_api( gr, nzt, dt, hydromet_dim, hm_metadata,      & ! Intent(in)
                                     l_fill_holes_hm,                             & ! Intent(in)
                                     rho_ds_zt, exner,                            & ! Intent(in)
+                                    fill_holes_type,                             & ! Intent(in)
                                     stats_metadata,                              & ! Intent(in)
                                     stats_zt,                                    & ! intent(inout)
                                     thlm_mc, rvm_mc, hydromet )                    ! Intent(inout)
@@ -924,7 +2269,8 @@ module fill_holes
 
     integer, intent(in) :: &
       hydromet_dim, &
-      nzt
+      nzt, &
+      fill_holes_type
 
     type (hm_metadata_type), intent(in) :: &
       hm_metadata
@@ -1051,11 +2397,14 @@ module fill_holes
             !$acc data copyin( gr, gr%dzt, rho_ds_zt ) &
             !$acc        copy( hydromet(:,i) )
 
+            print *, "filling holes of: hydromet_r"
+
             ! Apply the hole filling algorithm
             ! upper_hf_level = nzt since we are filling the zt levels
             call fill_holes_vertical_api( gr%nzt, 1, zero_threshold, & ! In
                                           1, gr%nzt,                 & ! In
                                           gr%dzt, rho_ds_zt, 1,      & ! In
+                                          fill_holes_type,           & ! In
                                           hydromet(:,i) )              ! InOut
 
             !$acc end data

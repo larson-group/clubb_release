@@ -46,6 +46,10 @@ if(${ENABLE_OMP})
     target_link_libraries(clubb_driver_lib PRIVATE openmp-fortran)
 endif()
 
+if(${USE_GPTL})
+    target_link_libraries(clubb_driver_lib PRIVATE gptl)
+endif()
+
 # Create clubb_standalone executable
 add_executable(clubb_standalone clubb_standalone.F90)
 target_link_libraries(clubb_standalone PRIVATE clubb_driver_lib)

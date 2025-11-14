@@ -72,6 +72,7 @@ def configure_cmake(args, compiler, inst_dir, build_type):
         f"-DSILHS={to_on_off(not args.disable_silhs)}",        # default ON
         f"-DENABLE_OMP={to_on_off(args.openmp)}",              # default OFF
         f"-DTUNING={to_on_off(args.tuning)}",                  # default OFF
+        f"-DUSE_GPTL={to_on_off(args.gptl)}",                      # default OFF
         f"-DCMAKE_TOOLCHAIN_FILE={toolchain_file}",
         f"-DCMAKE_INSTALL_PREFIX={inst_dir}",
         f"-DPRECISION={args.precision}",
@@ -197,6 +198,7 @@ def main():
     parser.add_argument("-disable_silhs", action="store_true", help="Disable SILHS (default: enabled)")
     parser.add_argument("-openmp", action="store_true", help="Enable OpenMP threading (default: disabled)")
     parser.add_argument("-tuning", action="store_true", help="Enable TUNING mode with extra runtime checks (default: disabled)")
+    parser.add_argument("-gptl", action="store_true", help="Enable GPTL timing library (default: disabled)")
 
     # Passthrough
     parser.add_argument("extra_args", nargs=argparse.REMAINDER, help="Extra arguments passed to CMake")
@@ -223,16 +225,22 @@ def main():
         print(f"ERROR: No Fortran compiler (FC) detected and no entry specified for -toolchain")
         sys.exit(1)
 
+    subdir_suffix =  ""
+    subdir_suffix += f"_DEBUG" if args.debug else ""
+    subdir_suffix += f"_GPU{args.gpu}" if args.gpu != "none" else ""
+    subdir_suffix += f"_PREC{args.precision}"
+
     # Create build directory and cd into it
-    build_dir = os.path.join(CLUBB_ROOT, f"build/{compiler}") 
+    build_dir = os.path.join(CLUBB_ROOT, f"build/{compiler}{subdir_suffix}") 
     os.makedirs(build_dir, exist_ok=True)
     os.chdir(build_dir)
+    print(f"Setting CLUBB installation dir: {build_dir}")
 
     # Reset build log
     build_log = os.path.join(build_dir, f"cmake_build_output.txt") 
     open(build_log, "w").close()
 
-    inst_dir = args.install if args.install else os.path.join(CLUBB_ROOT, f"install/{compiler}") 
+    inst_dir = args.install if args.install else os.path.join(CLUBB_ROOT, f"install/{compiler}{subdir_suffix}") 
     print(f"Setting CLUBB installation dir: {inst_dir}")
 
     # Run configure step and save installation directory

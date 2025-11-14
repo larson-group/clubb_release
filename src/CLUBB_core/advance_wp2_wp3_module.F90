@@ -70,6 +70,7 @@ module advance_wp2_wp3_module
                               clubb_params, nu_vert_res_dep,                 & ! intent(in)
                               iiPDF_type,                                    & ! intent(in)
                               penta_solve_method,                            & ! intent(in)
+                              fill_holes_type,                                & ! intent(in)
                               l_min_wp2_from_corr_wx,                        & ! intent(in)
                               l_upwind_xm_ma,                                & ! intent(in)
                               l_tke_aniso,                                   & ! intent(in)
@@ -261,11 +262,12 @@ module advance_wp2_wp3_module
       nu_vert_res_dep    ! Vertical resolution dependent nu values
 
     integer, intent(in) :: &
-      iiPDF_type,       & ! Selected option for the two-component normal (double
-                          ! Gaussian) PDF type to use for the w, rt, and theta-l (or
-                          ! w, chi, and eta) portion of CLUBB's multivariate,
-                          ! two-component PDF.
-      penta_solve_method  ! Method to solve then penta-diagonal system
+      iiPDF_type,         & ! Selected option for the two-component normal (double
+                            ! Gaussian) PDF type to use for the w, rt, and theta-l (or
+                            ! w, chi, and eta) portion of CLUBB's multivariate,
+                            ! two-component PDF.
+      penta_solve_method, & ! Method to solve then penta-diagonal system
+      fill_holes_type        ! Specifier for which hole filling method to use
 
     logical, intent(in) :: &
       l_min_wp2_from_corr_wx,     & ! Flag to base the threshold minimum value of wp2 on keeping the
@@ -1038,6 +1040,7 @@ module advance_wp2_wp3_module
                      upwp, vpwp, wprtp, wpthlp, rtp2, thlp2,      & ! intent(in)
                      clubb_params,                                & ! intent(in)
                      penta_solve_method,                          & ! intent(in)
+                     fill_holes_type,                              & ! intent(in)
                      l_min_wp2_from_corr_wx,                      & ! intent(in)
                      l_tke_aniso,                                 & ! intent(in)
                      l_use_tke_in_wp2_wp3_K_dfsn,                 & ! intent(in)
@@ -1230,6 +1233,7 @@ module advance_wp2_wp3_module
                          upwp, vpwp, wprtp, wpthlp, rtp2, thlp2, &
                          clubb_params, &
                          penta_solve_method, &
+                         fill_holes_type, &
                          l_min_wp2_from_corr_wx, &
                          l_tke_aniso, &
                          l_use_tke_in_wp2_wp3_K_dfsn, &
@@ -1264,9 +1268,6 @@ module advance_wp2_wp3_module
     use error_code, only: &
         clubb_at_least_debug_level_api,  & ! Procedure
         clubb_fatal_error              ! Constants
-
-    use model_flags, only: &
-        l_hole_fill                    ! Variable(s)
 
     use clubb_precision, only: &
         core_rknd ! Variable(s)
@@ -1386,7 +1387,8 @@ module advance_wp2_wp3_module
       clubb_params    ! Array of CLUBB's tunable parameters    [units vary]
 
     integer, intent(in) :: &
-      penta_solve_method  ! Method to solve then penta-diagonal system
+      penta_solve_method,   & ! Method to solve then penta-diagonal system
+      fill_holes_type         ! Specifier for which hole filling method to use
 
     logical, intent(in) :: &
       l_min_wp2_from_corr_wx,     & ! Flag to base the threshold minimum value of wp2 on keeping
@@ -1837,7 +1839,8 @@ module advance_wp2_wp3_module
       end do
     end if
 
-    if ( l_hole_fill ) then
+    if ( fill_holes_type /= 0 ) then
+      
       ! Debugging to check if wp2 hole-filling is conservative:
       ! Compute vertical_avg before and after hole-filling
       ! Output warning in case the average changed from hole-filling
@@ -1851,6 +1854,7 @@ module advance_wp2_wp3_module
                                     gr%k_lb_zm + gr%grid_dir_indx,       & ! In
                                     gr%k_ub_zm - gr%grid_dir_indx,       & ! In
                                     gr%dzm, rho_ds_zm, gr%grid_dir_indx, & ! In
+                                    fill_holes_type,                      & ! In
                                     wp2 )                                  ! InOut
 
       if ( clubb_at_least_debug_level_api(3) ) then
@@ -1866,7 +1870,7 @@ module advance_wp2_wp3_module
                                            wp2, up2, vp2 )                             !Inout
       end if
 
-    end if ! l_hole_fill wp2
+    end if ! wp2 hole filling check
 
     if ( stats_metadata%l_stats_samp ) then
 

@@ -97,7 +97,6 @@ module clubb_driver
   use model_flags, only: &
     l_silhs_rad, &
     l_pos_def, &
-    l_hole_fill, &
     l_gamma_Skw, &
     l_byteswap_io, &
     saturation_flatau, &
@@ -918,8 +917,10 @@ module clubb_driver
       grid_remap_method,              & ! Integer that stores what remapping technique should
                                         ! be used to remap the values from one grid to another
                                         ! (starts with 1, so 0 is invalid value for flag)
-      grid_adapt_in_time_method         ! Integer that stores how the grid should be adapted every
+      grid_adapt_in_time_method,      & ! Integer that stores how the grid should be adapted every
                                         ! timestep or if the grid should not be adapted at all
+      fill_holes_type                   ! Option for which type of hole filler to use in the 
+                                        ! fill_holes_vertical procedure
 
     logical :: &
       l_use_precip_frac,            & ! Flag to use precipitation fraction in KK microphysics. The
@@ -1099,7 +1100,7 @@ module clubb_driver
   namelist /configurable_clubb_flags_nl/ &
     iiPDF_type, ipdf_call_placement, penta_solve_method, tridiag_solve_method, &
     saturation_formula, grid_remap_method, &
-    grid_adapt_in_time_method, &
+    grid_adapt_in_time_method, fill_holes_type, &
     l_upwind_xpyp_ta, l_upwind_xm_ma, &
     l_tke_aniso, l_vert_avg_closure, l_standard_term_ta, &
     l_partial_upwind_wp3, l_godunov_upwind_wpxp_ta, l_godunov_upwind_xpyp_ta, &
@@ -1266,6 +1267,7 @@ module clubb_driver
                                             saturation_formula, &  ! Intent(out)
                                             grid_remap_method, & ! Intent(out)
                                             grid_adapt_in_time_method, & ! Intent(out)
+                                            fill_holes_type, & ! Intent(out)
                                             l_use_precip_frac, & ! Intent(out)
                                             l_predict_upwp_vpwp, & ! Intent(out)
                                             l_min_wp2_from_corr_wx, & ! Intent(out)
@@ -1673,7 +1675,6 @@ module clubb_driver
               l_write_to_file, iunit)
       call write_text( "Constant flags:", l_write_to_file, iunit )
       call write_text( "l_pos_def = ", l_pos_def, l_write_to_file, iunit )
-      call write_text( "l_hole_fill = ", l_hole_fill, l_write_to_file, iunit )
       call write_text( "l_gamma_Skw = ", l_gamma_Skw, l_write_to_file, iunit)
       call write_text( "l_byteswap_io = ", l_byteswap_io, l_write_to_file, iunit )
 
@@ -1777,6 +1778,7 @@ module clubb_driver
                                                   saturation_formula, & ! Intent(in)
                                                   grid_remap_method, & ! Intent(in)
                                                   grid_adapt_in_time_method, & ! Intent(in)
+                                                  fill_holes_type, & ! Intent(in)
                                                   l_use_precip_frac, & ! Intent(in)
                                                   l_predict_upwp_vpwp, & ! Intent(in)
                                                   l_min_wp2_from_corr_wx, & ! Intent(in)
@@ -3109,6 +3111,10 @@ module clubb_driver
       chi_term_weight, &
       richardson_num_term_weight              ! Parameters
       
+#ifdef GPTL
+    use gptl
+#endif
+
     implicit none
 
     integer, intent(in) :: &
@@ -3154,6 +3160,7 @@ module clubb_driver
       lambda
 
     integer :: &
+      ret_code, &
       itime,          & ! Iteration counters
       itime_nearest,  & ! Used for and inputfields run [s]       
       i, k              ! Local Loop Variables
@@ -3180,6 +3187,13 @@ module clubb_driver
     time_stop = 0.0_core_rknd
     time_start = 0.0_core_rknd
     
+#ifdef GPTL
+    ret_code = GPTLsetoption(GPTLprint_method, GPTLfull_tree)
+    ret_code = GPTLsetoption(GPTLabort_on_error, 1) ! Abort on GPTL error
+    ret_code = GPTLsetoption(GPTLoverhead, 0)       ! Turn off overhead estimate
+    ret_code = GPTLinitialize()                     ! Initialize GPTL
+#endif
+
     ! Save time before main loop starts
     call cpu_time( time_start )
     time_total = time_start
@@ -3690,6 +3704,7 @@ module clubb_driver
                                   hydromet_vel_covar_zt_expc(i,:,:),                          & ! In
                                   clubb_params(i,:), nu_vert_res_dep,                         & ! In
                                   clubb_config_flags%tridiag_solve_method,                    & ! In
+                                  clubb_config_flags%fill_holes_type,                         & ! In
                                   clubb_config_flags%l_upwind_xm_ma,                          & ! In
                                   stats_metadata,                                             & ! In
                                   stats_zt(i), stats_zm(i), stats_sfc(i),                     & ! Inout
@@ -4121,6 +4136,7 @@ module clubb_driver
       end if
 
     end do mainloop ! itime=1, ifinal
+    
 
     !-------------------------------------------------------------------------------
     !                       End Main Time Stepping Loop
@@ -4141,6 +4157,11 @@ module clubb_driver
     write(unit=fstdout, fmt='(a,f10.4)') 'CLUBB-TIMER time_output_multi_col =  ', time_output_multi_col
     write(unit=fstdout, fmt='(a,f10.4)') 'CLUBB-TIMER time_adapt_grid =        ', time_adapt_grid
     write(unit=fstdout, fmt='(a,f10.4)') 'CLUBB-TIMER time_total =             ', time_total
+
+#ifdef GPTL
+    ret_code = GPTLpr(1)
+    ret_code = GPTLfinalize()
+#endif
 
   end subroutine advance_clubb_to_end
 

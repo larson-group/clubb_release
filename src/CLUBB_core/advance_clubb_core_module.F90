@@ -1938,6 +1938,7 @@ module advance_clubb_core_module
                             clubb_config_flags%iiPDF_type,                         & ! intent(in)
                             clubb_config_flags%penta_solve_method,                 & ! intent(in)
                             clubb_config_flags%tridiag_solve_method,               & ! intent(in)
+                            clubb_config_flags%fill_holes_type,                    & ! intent(in)
                             clubb_config_flags%l_predict_upwp_vpwp,                & ! intent(in)
                             clubb_config_flags%l_diffuse_rtm_and_thlm,             & ! intent(in)
                             clubb_config_flags%l_stability_correct_Kh_N2_zm,       & ! intent(in)
@@ -2024,6 +2025,7 @@ module advance_clubb_core_module
                              clubb_params, nu_vert_res_dep,                       & ! intent(in)
                              clubb_config_flags%iiPDF_type,                       & ! intent(in)
                              clubb_config_flags%tridiag_solve_method,             & ! intent(in)
+                             clubb_config_flags%fill_holes_type,                  & ! intent(in)
                              clubb_config_flags%l_predict_upwp_vpwp,              & ! intent(in)
                              clubb_config_flags%l_min_xp2_from_corr_wx,           & ! intent(in)
                              clubb_config_flags%l_C2_cloud_frac,                  & ! intent(in)
@@ -2126,6 +2128,7 @@ module advance_clubb_core_module
                             clubb_params, nu_vert_res_dep,                        & ! intent(in)
                             clubb_config_flags%iiPDF_type,                        & ! intent(in)
                             clubb_config_flags%penta_solve_method,                & ! intent(in)
+                            clubb_config_flags%fill_holes_type,                   & ! intent(in)
                             clubb_config_flags%l_min_wp2_from_corr_wx,            & ! intent(in)
                             clubb_config_flags%l_upwind_xm_ma,                    & ! intent(in)
                             clubb_config_flags%l_tke_aniso,                       & ! intent(in)
@@ -2335,6 +2338,7 @@ module advance_clubb_core_module
         ! upper_hf_level = nzt since we are filling the zt levels
         call fill_holes_vertical_api( nzt, ngrdcol, zero_threshold, 1, nzt, & ! In
                                       gr%dzt, rho_ds_zt, gr%grid_dir_indx,  & ! In
+                                      clubb_config_flags%fill_holes_type,   & ! In
                                       edsclrm(:,:,edsclr) )                   ! InOut
       enddo
 #endif

@@ -12,4 +12,5 @@
 ../src/G_unit_test_types/w_up_in_cloud_tests.F90
 ../src/G_unit_test_types/smooth_heaviside_tests.F90
 ../src/G_unit_test_types/smooth_min_max_tests.F90
+../src/G_unit_test_types/fill_holes_tests.F90
 ../src/G_unit_test_types/rev_direction_grid_test.F90

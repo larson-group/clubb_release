@@ -551,8 +551,9 @@ subroutine logical_flags_driver( current_date, current_time )
     grid_remap_method,              & ! Integer that stores what remapping technique should
                                       ! be used to remap values from one grid to another
                                       ! (starts at 1, so 0 is an invalid value for this flag)
-    grid_adapt_in_time_method         ! Integer that stores how the grid should be adapted every
+    grid_adapt_in_time_method,      & ! Integer that stores how the grid should be adapted every
                                       ! timestep or if the grid should not be adapted at all
+    fill_holes_type
 
   logical :: &
     l_use_precip_frac,            & ! Flag to use precipitation fraction in KK microphysics. The
@@ -679,7 +680,7 @@ subroutine logical_flags_driver( current_date, current_time )
   namelist /configurable_clubb_flags_nl/ &
     iiPDF_type, ipdf_call_placement, penta_solve_method, tridiag_solve_method, &
     saturation_formula, grid_remap_method, &
-    grid_adapt_in_time_method, &
+    grid_adapt_in_time_method, fill_holes_type, &
     l_upwind_xpyp_ta, l_upwind_xm_ma, &
     l_tke_aniso, l_vert_avg_closure, l_standard_term_ta, &
     l_partial_upwind_wp3, l_godunov_upwind_wpxp_ta, l_godunov_upwind_xpyp_ta, &
@@ -705,6 +706,7 @@ subroutine logical_flags_driver( current_date, current_time )
                                            saturation_formula,                & ! Intent(out)
                                            grid_remap_method,                 & ! Intent(out)
                                            grid_adapt_in_time_method,         & ! Intent(out)
+                                           fill_holes_type,                   & ! Intent(out)
                                            l_use_precip_frac,                 & ! Intent(out)
                                            l_predict_upwp_vpwp,               & ! Intent(out)
                                            l_min_wp2_from_corr_wx,            & ! Intent(out)

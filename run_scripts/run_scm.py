@@ -134,12 +134,12 @@ def setup_files_and_aggregate(args):
     else:
         # Find the executable based on compiler by default (install/COMPILER/clubb_standalone), otherwise
         # default to (install/lastest/clubb_standalone) which points to the last one compiled
-        compiler    = os.path.basename(os.environ["FC"]) if "FC" in os.environ else "latest"
+        #compiler    = os.path.basename(os.environ["FC"]) if "FC" in os.environ else "latest"
 
         if args.driver_test:
-            executable  = os.path.join(CLUBB_ROOT, f"install/{compiler}/clubb_driver_test")
+            executable  = os.path.join(CLUBB_ROOT, f"install/latest/clubb_driver_test")
         else:
-            executable  = os.path.join(CLUBB_ROOT, f"install/{compiler}/clubb_standalone")
+            executable  = os.path.join(CLUBB_ROOT, f"install/latest/clubb_standalone")
 
     print(f" - using executable: {executable}")
 

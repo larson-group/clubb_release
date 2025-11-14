@@ -6,6 +6,7 @@ tridiag_solve_method            = 1
 saturation_formula              = 3
 grid_remap_method               = 1
 grid_adapt_in_time_method       = 0
+fill_holes_type                 = 2
 
 l_godunov_upwind_wpxp_ta     = .false.,
 l_upwind_xpyp_ta             = .true.,

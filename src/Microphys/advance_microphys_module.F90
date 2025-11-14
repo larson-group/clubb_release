@@ -45,6 +45,7 @@ module advance_microphys_module
                                 hydromet_vel_covar_zt_expc, &              ! In
                                 clubb_params, nu_vert_res_dep, &           ! In
                                 tridiag_solve_method, &                    ! In
+                                fill_holes_type, &                         ! In
                                 l_upwind_xm_ma, &                          ! In
                                 stats_metadata, &                          ! In
                                 stats_zt, stats_zm, stats_sfc, &           ! Inout
@@ -164,7 +165,8 @@ module advance_microphys_module
       nu_vert_res_dep    ! Vertical resolution dependent nu values
 
     integer, intent(in) :: &
-      tridiag_solve_method  ! Specifier for method to solve tridiagonal systems
+      tridiag_solve_method, & ! Specifier for method to solve tridiagonal systems
+      fill_holes_type         ! Option for which type of hole filler to use
 
     logical, intent(in) :: &
       l_upwind_xm_ma ! This flag determines whether we want to use an upwind differencing
@@ -344,6 +346,7 @@ module advance_microphys_module
                                  nu_vert_res_dep, &
                                  l_upwind_xm_ma, &
                                  tridiag_solve_method, &
+                                 fill_holes_type, &
                                  stats_metadata, &
                                  stats_zt, stats_zm, &
                                  hydromet, hydromet_vel_zt, &
@@ -537,6 +540,7 @@ module advance_microphys_module
                                   nu_vert_res_dep, &
                                   l_upwind_xm_ma, &
                                   tridiag_solve_method, &
+                                  fill_holes_type, &
                                   stats_metadata, &
                                   stats_zt, stats_zm, &
                                   hydromet, hydromet_vel_zt, &
@@ -647,7 +651,8 @@ module advance_microphys_module
                      ! mean advection terms. It affects rtm, thlm, sclrm, um and vm.
 
     integer, intent(in) :: &
-      tridiag_solve_method  ! Specifier for method to solve tridiagonal systems
+      tridiag_solve_method, & ! Specifier for method to solve tridiagonal systems
+      fill_holes_type         ! Specifier for which hole filling method to use
 
     type (stats_metadata_type), intent(in) :: &
       stats_metadata
@@ -867,6 +872,7 @@ module advance_microphys_module
     call fill_holes_driver_api( gr, gr%nzt, dt, hydromet_dim,         & ! Intent(in)
                                 hm_metadata, l_fill_holes_hm,         & ! Intent(in)
                                 rho_ds_zt, exner,                     & ! Intent(in)
+                                fill_holes_type,                      & ! Intent(in)
                                 stats_metadata,                       & ! Intent(in)
                                 stats_zt,                             & ! intent(inout)
                                 thlm_mc, rvm_mc, hydromet )             ! Intent(inout)

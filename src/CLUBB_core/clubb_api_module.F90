@@ -94,7 +94,13 @@ module clubb_api_module
       ipdf_pre_advance_fields, &
       ipdf_post_advance_fields, &
       l_use_boussinesq, &    ! Use Boussinesq form of predictive equations (default is Anelastic).
-      print_clubb_config_flags_api
+      print_clubb_config_flags_api, &
+      global_fill, & 
+      sliding_window, & 
+      widening_windows, & 
+      smart_window, & 
+      smart_window_smooth, & 
+      parallel_fill
 
   use parameters_tunable, only : &
     params_list,            & ! Variable(s)
@@ -369,7 +375,13 @@ module clubb_api_module
     fill_holes_hydromet_api, &
     set_clubb_debug_level_api, &
     vertical_integral_api, &
-    num_hf_draw_points
+    num_hf_draw_points, &
+    global_fill, & 
+    sliding_window, & 
+    widening_windows, & 
+    smart_window, & 
+    smart_window_smooth, & 
+    parallel_fill
 
   public &
     ! Constants That May be Helpful:
