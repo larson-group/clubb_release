@@ -1670,14 +1670,7 @@ module fill_holes
         if (  mf_min <= 0.02_core_rknd  ) then
 
           ! Our mf_min is already about as small as we can safely make it (see comment below), so
-          ! lets just give up trying. One could consider adding the global fill to this section,
-          ! effectively cancelling out the smoothing term in this 
-
-          ! Call the global filler
-          call fill_holes_global( nz, ngrdcol, threshold, &
-                                  lower_hf_level, upper_hf_level, &
-                                  dz, rho_ds, grid_dir_indx, &
-                                  field )
+          ! lets just give up trying. 
 
           if ( l_debug ) print *, " WARNING: FILLING INSUFFICIENT - FALLING BACK TO GLOBAL"
           exit
@@ -1701,6 +1694,14 @@ module fill_holes
 
     end do
     !$acc end parallel
+
+    ! If we still have below threshold values, just call the global fill at this point
+    if ( l_field_below_threshold ) then
+      call fill_holes_global( nz, ngrdcol, threshold, &
+                              lower_hf_level, upper_hf_level, &
+                              dz, rho_ds, grid_dir_indx, &
+                              field )
+    end if
 
     !$acc end data
 
