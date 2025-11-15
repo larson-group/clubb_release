@@ -97,29 +97,28 @@ def configure_cmake(args, compiler, inst_dir, build_type):
 
 def run_cmake_build(logfile):
 
-    nproc = os.cpu_count() or 4  # fallback to 4 if detection fails
+    nproc = os.cpu_count() or 4
 
-    # This script command allows us to log output to "logfile" but also get nice looking
-    # output from cmake
-    cmd = f'script -qfec "cmake --build . --target install" -- -j{nproc} /dev/stdout | tee -a {logfile}'
+    cmd = ["cmake", "--build", ".", "--target", "install", f"-j{nproc}"]
 
-    # this one might work better, need to figure out
-    #cmd = f'script -q -c "cmake --build . --target install -j{nproc}" /dev/stdout | tee -a {logfile}' 
+    with open(logfile, "a") as log:
+        process = subprocess.Popen(
+            cmd,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            text=True
+        )
 
-    # Run the command
-    subprocess.call(cmd, shell=True)
+        # Stream output live to console and logfile
+        for line in process.stdout:
+            print(line, end="")
+            log.write(line)
 
-    # Parse the logfile, and save the reported COMMAND_EXIT_CODE into retcode
-    retcode = 0
-    with open(logfile, "r") as f:
-        for line in f:
-            if "COMMAND_EXIT_CODE=" in line:
-                retcode = int(line.split("=")[1].strip('"]\n'))
+    retcode = process.wait()
 
     if retcode != 0:
         print(f"\n\033[91mBuild failed. See {logfile} for details.\033[0m")
         sys.exit(retcode)
-    
 
 def run_threadprivate_check(logfile):
 
@@ -131,7 +130,6 @@ def run_threadprivate_check(logfile):
     )
 
     return retcode
-
 
 def run_clubb_standards_check(logfile):
 

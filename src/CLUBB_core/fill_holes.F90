@@ -1782,7 +1782,8 @@ module fill_holes
       ratio                 ! Fraction between missing_wp2 and up2+vp2      []
 
     logical :: &
-      l_field_below_threshold
+      l_field_below_threshold, &
+      l_print_warning
 
     ! --------------------- Begin Code ---------------------
 
@@ -1804,14 +1805,18 @@ module fill_holes
       return
     end if
 
+    l_print_warning = clubb_at_least_debug_level_api(3)
+
     ! For each height level, fill holes in wp2 by taking tke from up2 and vp2
     !$acc parallel loop gang vector collapse(2) default(present)
     do i = 1, ngrdcol
       do k = lower_hf_level, upper_hf_level
+
         tke_x2_old = up2(i,k) + vp2(i,k) + wp2(i,k)
         up2_old = up2(i,k)
         vp2_old = vp2(i,k)
         wp2_old = wp2(i,k)
+
         ! Check if we have a hole to fill at level k and
         ! there is buffer TKE in up2 and/or vp2 available
         if ( wp2(i,k) < threshold .and. ( up2(i,k) > threshold .or. vp2(i,k) > threshold )  ) then
@@ -1855,7 +1860,8 @@ module fill_holes
             end if
           end if
         end if
-        if ( clubb_at_least_debug_level_api(3) ) then
+
+        if ( l_print_warning ) then
           ! Check for conservation
           tke_diff = abs(tke_x2_old - (up2(i,k) + vp2(i,k) + wp2(i,k)))
           if ( tke_diff > epsilon(tke_diff)*1000 ) then
@@ -1890,6 +1896,7 @@ module fill_holes
                               threshold, ", old: ", vp2_old, ", new: ", vp2(i,k)
           end if
         end if
+
       end do
     end do
     !$acc end parallel loop

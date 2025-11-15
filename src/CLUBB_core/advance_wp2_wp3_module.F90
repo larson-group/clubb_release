@@ -1466,6 +1466,9 @@ module advance_wp2_wp3_module
     ! Array indices
     integer :: k, km1, kp1, k_wp2, k_wp3, i
 
+    logical :: &
+      l_print_warning
+
     !------------------------- Begin Code -------------------------
 
     !$acc enter data create( rhs_save, solut, old_solut, rcond, wp2_min_array )
@@ -1894,6 +1897,7 @@ module advance_wp2_wp3_module
     ! instability caused by large wp2 in CLUBB led unrealistic results in AM3.
     ! -dschanen 11 Apr 2011
 
+    l_print_warning = clubb_at_least_debug_level_api(3)
 
     ! The value of <w'^2> is not allowed to become smaller than the threshold
     ! value of w_tol^2.  Additionally, that threshold value may be boosted at
@@ -1934,7 +1938,7 @@ module advance_wp2_wp3_module
                  upwp(i,k)**2 / ( up2(i,k) * max_mag_correlation_flux**2 ), &
                  vpwp(i,k)**2 / ( vp2(i,k) * max_mag_correlation_flux**2 ) )
 
-          if ( clubb_at_least_debug_level_api(3) ) then
+          if ( l_print_warning ) then
             if ( wp2_min_array(i,k) > one ) then
               write(fstderr, *) "Warning: wp2_min_array(", i, ",", k, ") = ", wp2_min_array(i,k), &
                                "> 1.0. The threshold value is limited to 1.0."
