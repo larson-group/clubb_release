@@ -1,0 +1,231 @@
+commit de8bbefe59ca054f99b8f487c51d788558213a12
+Author: Gunther Huebler <huebler@uwm.edu>
+Date:   Fri Nov 14 23:34:48 2025 -0600
+
+    Making clubb_at_least_debug_level not a device routine. It confuses the poor little nvidia compiler when compiling inside cam. Also making the compile script a little more robust.
+
+commit 50a5528a55591d69e8b704dccebe1e7d6baa2669
+Author: Gunther Huebler <huebler@uwm.edu>
+Date:   Fri Nov 14 01:36:29 2025 -0600
+
+    Small bug fix in fill_holes_parallel on GPU
+
+commit f3de007e9528afc6cc2d71090bce5c6c53337152
+Merge: 665f38964 9745207a2
+Author: pickett <larsongroupgithub@gmail.com>
+Date:   Thu Nov 13 23:01:28 2025 -0600
+
+    Autoupdated clubb's morrison using sam's morrison
+
+commit 9745207a28bd22786d72673afd580fbc5f17938b
+Author: Gunther Huebler <37674341+huebleruwm@users.noreply.github.com>
+Date:   Thu Nov 13 19:02:28 2025 -0600
+
+    Making compatible with new version of clubb (#167)
+
+commit 665f3896481654acdb49de9afae25d7a9b24a81c
+Author: Gunther Huebler <37674341+huebleruwm@users.noreply.github.com>
+Date:   Thu Nov 13 19:00:40 2025 -0600
+
+    New fill_holes methods (#1262)
+    
+    * Adding little code bits to help explore fill_holes. This is just a diagnostic playground
+    
+    * Improvements
+    
+    * Maybe better algorithm?
+    
+    * Improvements to the new fill holes
+    
+    * Nice progress
+    
+    * Small tweaks
+    
+    * Mainly adding gptl option for cmake and new run_timestep_tests.py
+    
+    * Making namelist input for fill type, and adding ANOTHER new filler that should be completely parallelizable, but right now large hole groups steal too much from nearby points and it looks kinda bad.
+    
+    * Big improvements, new algorithm is good now
+    
+    * Small updates
+    
+    * Making new fill_holes_type flag for clubb_config_flags
+    
+    * New hybrid filler
+    
+    * Small fixes
+    
+    * Changes, mainly for performance, also adding -gptl option to compile.py to make it use the gptl library
+    
+    * Bunch of things
+    
+    * Updates
+    
+    * small fix
+    
+    * Various cleanup and comments
+    
+    * Small improvement to p_atomic
+    
+    * Updates for speed mainly
+    
+    * Small improvement to p_atomic
+    
+    * Potential improvement to p_atomic
+    
+    * Updates for speed mainly
+    
+    * Updates to make G_unit fill holes test
+    
+    * Improving new tests and making widening_windows and smart_window work in flipped grid mode
+    
+    * All methods passing G_unit test, still need a little cleanup
+    
+    * Slight comments update
+    
+    * Cleanup
+    
+    * Adding named constants for fill type
+    
+    * Uncommentting source checks after compile
+    
+    * Adding new file to old compile method
+    
+    * Small fixes
+    
+    * Small fixes
+    
+    * Mainly comments
+    
+    * Making G_unit test use the new python script and compiler method. Small bug fix too
+    
+    * Little fixes
+
+commit ea0b892fd2c25049cb5d1429994dc80e4ab6ed9f
+Author: Gunther Huebler <huebler@uwm.edu>
+Date:   Wed Oct 8 17:39:23 2025 -0500
+
+    Adding Morrison_microphys folder inside Microphys and reflecting change in compilation files. This is to make this new structure work with the way we include Morrison code, which is brought in from sam_clubb via the updateClubbMorrison.sh found in sys_admin/gitUpdateScripts/
+
+commit 194887296834904671023aaea076cb176ae650e5
+Merge: 1f751ddf9 fe14f38dc
+Author: pickett <larsongroupgithub@gmail.com>
+Date:   Sun Oct 5 20:47:42 2025 -0500
+
+    Added morrison subtree
+    
+    git-subtree-dir: src/Morrison_microphys
+    git-subtree-mainline: 1f751ddf9c56cfa707bc5b302f0bc3b40c708a8d
+    git-subtree-split: fe14f38dc4183053649f580f02e2f8c540c2f06a
+
+commit 1f751ddf9c56cfa707bc5b302f0bc3b40c708a8d
+Author: Gunther Huebler <37674341+huebleruwm@users.noreply.github.com>
+Date:   Sun Oct 5 20:45:58 2025 -0500
+
+    Clubb driver upgrades part2 (#1257)
+    
+    * Initial commit. Breaking up clubb driver into sections. This should be bfb on everything, but this hasn't been checked well yet.
+    
+    * Combining namelist read into case init, same stuff really
+    
+    * Reorganizing many things, mainly in the pursuit of sectioning off code into groups like Microphys or Radiation
+    
+    * Organizing clubb_driver. All cases still BFB.
+    
+    * Mostly cosmetic improvements
+    
+    * Small improvements, comments, making clubb_driver_test to ensure consistency functionality of new compartmentalized model run components
+    
+    * Removing accidentally added files.
+    
+    * Mostly breaking up structure initialization behavior, split into init_ and zero_ so that we don't have to allocate to reset.
+    
+    * Doing away with clubb_model_settings and parameters_module in the spirit of consolidating functionality and spiting module variables.
+    
+    * Missed some changes to commit, should've been included in previous commit
+    
+    * Splitting up funcionality of setup_parameters. Now theres one part that calculates and another checks flag values.
+    
+    * GPU code working, but not BFB yet
+    
+    * GPU all BFB with mutliple columns, except gabls3, and driver test doesnt work (pass reinitialize, fails double timestep test)
+    
+    * Turning off multi_column output for the new driver test
+    
+    * Changes needed after rebase
+    
+    * Name changes, comments, and threadprivate additions for parallel runs
+    
+    * Adding variables to openacc data statements. Without this, the code crashes when using the GPU with l_godunov_upwind_xpyp_ta=.true.
+    
+    * Modifying compiler configurations (mainly optimization level) in order to prepare for switching scipts and tests to cmake, specifically separating out this BIT_CHANGING commit from the rest
+    
+    * thlm_ed and rtm_ed caused GPU errors since those variables were added to a acc loop, but never added to the acc data statement. This change makes it so they're only calculated on the CPU, since they are only used for stats, fixing the issue without adding the GPU memory footprint.
+    
+    * Adding -Mstack_arrays to the nvfortran flags causes us to use more stack space, which means we need to allow processes to use more stack space (when using lots of columns, since that increases memory footprint). We do by using using 'ulimit BIGNUMBER'.
+    
+    * Making old compiler script work with new file structure, also making Input_fields directory and library.
+    
+    * Missed text_writer_lib
+    
+    * Undoing Input_fields directory, it has too many depencencies currently, certainly can be simplified with argument lists.
+    
+    * Adding library dependency
+    
+    * Small changes to cmake list
+    
+    * Adding openmp flag back to gfortran script, needed for jenkins test
+    
+    * Making the init_inputfields get called for restarts too, because restart code call input_field code.
+    
+    * Making pdf_implicit_coefs_terms conditional in generalized grid test
+    
+    * Adding microphys directory to acc_to_omp script
+    
+    * Renaming -iters option in run_scm.py to -max_iters
+    
+    * Making run_scm_all.py and new driver test
+    
+    * Test and script improvements
+    
+    * Limiting iterations in jenkins test
+    
+    * Name change
+    
+    * adding ulimit
+    
+    * name update
+    
+    * jenkins script update
+    
+    * jenkins script update
+    
+    * jenkins script update
+    
+    * jenkins script update
+    
+    * jenkins script and run_scm_all.py update
+    
+    * jenkins script update
+    
+    * Turning calc_lmin_nu into calc_derrived_params, which is more general, and now calculates mixt_frac_max_mag
+    
+    * Small improvement for GPU
+    
+    * Small updates needed for host model integration
+    
+    * Removing accidentally added file
+    
+    * Small cleanup
+
+commit df9e2152bc4889d33e801021a44c11fd6b685d1f
+Author: Gunther Huebler <huebler@uwm.edu>
+Date:   Fri Oct 3 15:18:26 2025 -0500
+
+    Must add -fopenmp back for now, since this is used for the openmp test and it also broke the BFB tests for an obnoxious reason - that test compiles each commit without cleaning the build, so the baseline commit had -fopenmp and compiled with openmp stuff enabled, but then the subsequent commits had it turned off, but no changes in the files, so it didn't recompile with it off, and only turned it off in the linking stage, causing a build error. RESOLVED:320551df13ee84bdb9280db0be788a36e1f03494 RESOLVED:6c0201d44694fadf7f4bb0d4d58c3a9871096a22 RESOLVED:26644de2ea83ee6335b273f54dd57afc8f6f4b0c
+
+commit 6c0201d44694fadf7f4bb0d4d58c3a9871096a22
+Author: Gunther Huebler <huebler@uwm.edu>
+Date:   Thu Oct 2 17:47:43 2025 -0500
+
+    Adding -Mstack_arrays to the nvfortran flags causes us to use more stack space, which means we need to allow processes to use more stack space (when using lots of columns, since that increases memory footprint). We do by using using 'ulimit BIGNUMBER'.
