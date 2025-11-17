@@ -127,6 +127,9 @@ module atex_long
   !--------------------- Local Variables ---------------------
   integer :: i, k
 
+  real( kind = core_rknd ) :: &
+    spinup ! Spin up time [s]
+
   !--------------------- Begin Code ---------------------
   ! Large scale subsidence ! Hing - known magic numbers
   !$acc parallel loop gang vector collapse(2) default(present)
@@ -145,10 +148,16 @@ module atex_long
     end do
   end do
 
+  call calc_forcings( ngrdcol, gr,              &                ! intent(in)
+                      thlm_forcing, rtm_forcing )                ! intent(out)
+
   ! Spin up period ! Hing - known magic number
-!  if ( time < 43200.0_time_precision ) then
-!    wm_zt(:,:) = wm_zt(:,:) * time / 43200.0_time_precision
-!  end if
+  spinup = 43200.0_core_rknd
+  if ( time < spinup ) then
+    thlm_forcing(:,:) = thlm_forcing(:,:) * time / spinup
+    rtm_forcing(:,:)  =  rtm_forcing(:,:) * time / spinup
+    wm_zt(:,:)        =   wm_zt(:,:)      * time / spinup
+  end if
 
   wm_zm = zt2zm_api( gr%nzm, gr%nzt, ngrdcol, gr, wm_zt )
 
@@ -158,15 +167,6 @@ module atex_long
     wm_zm(i,1) = 0.0_core_rknd       ! At surface
     wm_zm(i,gr%nzm) = 0.0_core_rknd  ! Model top
   end do
-
-  call calc_forcings( ngrdcol, gr,              &                ! intent(in)
-                      thlm_forcing, rtm_forcing )                ! intent(out)
-
-  ! Spin up period ! Hing - known magic number
-!  if ( time < 43200.0_time_precision ) then
-!    thlm_forcing(:,:) = thlm_forcing(:,:) * time / 43200.0_time_precision
-!     rtm_forcing(:,:) =  rtm_forcing(:,:) * time / 43200.0_time_precision
-!  end if
 
   if ( sclr_dim > 0 ) then
     !$acc parallel loop gang vector collapse(2) default(present)
@@ -197,7 +197,7 @@ module atex_long
 
   !======================================================================
   subroutine atex_long_sfclyr( ngrdcol, time, ubar, & 
-                               thlm_sfc, rtm_sfc, exner_sfc, & 
+                               thlm_sfc, rtm_sfc, exner_sfc, rho_sfc, &
                                wpthlp_sfc, wprtp_sfc, ustar, T_sfc )
   ! Description:
   !   This subroutine computes surface fluxes of
@@ -210,7 +210,8 @@ module atex_long
   !   ATEX_JAS2001.pdf
   !----------------------------------------------------------------------
 
-  use sfc_flux, only: compute_wpthlp_sfc, compute_wprtp_sfc
+  use sfc_flux, only: compute_wpthlp_sfc, compute_wprtp_sfc, &          ! Procedure(s)
+                      convert_sens_ht_to_km_s, convert_latent_ht_to_m_s ! Procedure(s)
 
   use interpolation, only: linear_interp_factor ! Procedure(s)
 
@@ -232,7 +233,8 @@ module atex_long
     ubar,    & ! mean sfc wind speed                           [m/s]
     thlm_sfc,& ! theta_l at first model layer                  [K]
     rtm_sfc, & ! Total water mixing ratio at first model layer [kg/kg]
-    exner_sfc  ! Exner function                                [-]
+    exner_sfc,&! Exner function                                [-]
+    rho_sfc    ! Density                                       [kg/m^3]
 
   ! Output variables
   real( kind = core_rknd ), dimension(ngrdcol), intent(out) ::  & 
@@ -244,7 +246,10 @@ module atex_long
   ! Local Variable
   real( kind = core_rknd ) :: & 
     time_frac, & ! Time fraction used for interpolation
-    T_sfc_interp
+    T_sfc_interp, &
+    sens_ht,   & ! Sensible heat flux [W/m^2]
+    latent_ht, & ! Latent heat flux   [W/m^2]
+    spinup       ! Spin up time       [s]
 
   real( kind = core_rknd ), dimension(ngrdcol) :: & 
     C_10, &      ! Coefficient
@@ -253,7 +258,12 @@ module atex_long
   integer :: &
     before_time, after_time, i ! The 
 
+  logical :: &
+    l_compute_flux
+
   !-----------------BEGIN CODE-----------------------
+
+  l_compute_flux = .true.
 
   !$acc enter data create( C_10, adjustment )
 
@@ -264,7 +274,19 @@ module atex_long
 
   T_sfc_interp = linear_interp_factor( time_frac, T_sfc_given(after_time), &
                                        T_sfc_given(before_time) )
-                
+
+  ! Prescribe fluxes ! Hing - known magic number
+  if (.not.l_compute_flux) then
+    sens_ht   = 10.70_core_rknd
+    latent_ht = 154.0_core_rknd
+    ! Spin up period ! Hing - known magic number
+    spinup = 86400.0_core_rknd
+    if ( time < spinup ) then
+      sens_ht   =   sens_ht - 2.20_core_rknd * ( spinup - time) / spinup
+      latent_ht = latent_ht + 40.0_core_rknd * ( spinup - time) / spinup
+    end if
+  end if
+
   !$acc parallel loop gang vector default(present)
   do i = 1, ngrdcol
     C_10(i)       = 0.0013_core_rknd
@@ -272,14 +294,21 @@ module atex_long
                                         ! Hing
     ustar(i)      = 0.3_core_rknd
     T_sfc(i)      = T_sfc_interp
+
+    if (.not.l_compute_flux) then
+      wpthlp_sfc(i) = convert_sens_ht_to_km_s (   sens_ht, rho_sfc(i))
+      wprtp_sfc(i)  = convert_latent_ht_to_m_s( latent_ht, rho_sfc(i))
+    end if
   end do
 
   ! Compute wpthlp_sfc and wprtp_sfc
-  call compute_wpthlp_sfc( ngrdcol, C_10, ubar, thlm_sfc, T_sfc, exner_sfc, &
-                           wpthlp_sfc ) 
+  if (l_compute_flux) then
+    call compute_wpthlp_sfc( ngrdcol, C_10, ubar, thlm_sfc, T_sfc, exner_sfc, &
+                             wpthlp_sfc ) 
 
-  call compute_wprtp_sfc( ngrdcol, C_10, ubar, rtm_sfc, adjustment, &
-                          wprtp_sfc )
+    call compute_wprtp_sfc( ngrdcol, C_10, ubar, rtm_sfc, adjustment, &
+                            wprtp_sfc )
+  end if
 
   !$acc exit data delete( C_10, adjustment )
 

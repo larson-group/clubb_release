@@ -6835,9 +6835,9 @@ module clubb_driver
 
         l_compute_momentum_flux = .true.
         l_set_sclr_sfc_rtm_thlm = .true.
-        call atex_long_sfclyr( ngrdcol, time_current, ubar,  &       ! Intent(in)
-                               thlm_bot, rtm_bot, exner_bot, &       ! Intent(in)
-                               wpthlp_sfc, wprtp_sfc, ustar, T_sfc ) ! Intent(out)
+        call atex_long_sfclyr( ngrdcol, time_current, ubar,  &          ! Intent(in)
+                               thlm_bot, rtm_bot, exner_bot, rho_bot, & ! Intent(in)
+                               wpthlp_sfc, wprtp_sfc, ustar, T_sfc )    ! Intent(out)
 
       case ( "bomex" )
 
