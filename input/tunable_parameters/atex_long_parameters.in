@@ -4,13 +4,13 @@
 ! C4, C14, and nu9 are only relevant when l_tke_aniso is true.   
 
 &clubb_params_nl 
-C1          = 1.000000 ! Low Skewness in C1 Skewness Function. Units [-]
-C1b         = 1.000000 ! High Skewness in C1 Skewness Function. Units [-]
+C1          = 0.670000 ! Low Skewness in C1 Skewness Function. Units [-]
+C1b         = 0.670000 ! High Skewness in C1 Skewness Function. Units [-]
 C1c         = 1.000000 ! Degree of Slope of C1 Skewness Function. Units [-]
 C2rt        = 2.000000 ! C2 constant associated with rtp2 dissipation term. Units [-]
 C2thl       = 2.000000 ! C2 constant associated with thlp2 dissipation term. Units [-]
 C2rtthl     = 2.000000 ! C2 constant associated with rtpthlp dissipation term. Units [-]
-C4          = 1.000000 ! Return to isotropy term in wp2/up2/vp2. Units [-]
+C4          = 0.670000 ! Return to isotropy term in wp2/up2/vp2. Units [-]
 C_uu_shr    = 0.400000 ! Constant for shear terms in wp2 pressure term 2. Units [-]
 C_uu_buoy   = 0.300000 ! Constant for buoyancy terms in wp2 pressure term 2. Units [-]
 C6rt        = 2.000000 ! Low Skewness in C6rt Skewness Function. Units [-]
@@ -30,7 +30,7 @@ C11b        = 0.400000 ! High Skewness in C11 Skewness Function. Units [-]
 C11c        = 0.500000 ! Degree of Slope of C11 Skewness Function. Units [-]
 C12         = 1.000000 ! Constant applied to vertical velocity diffusion. Units [-]
 !C13         = 0.100000 ! Not currently used in model. Units [-]
-C14         = 1.000000 ! Constant applied to up2 and vp2. Units [-]
+C14         = 0.670000 ! Constant applied to up2 and vp2. Units [-]
 C_wp2_pr_dfsn = 0.000000 ! Constant applied to wp2_pr_dfsn. Units [-]
 C_wp3_pr_tp   = 0.000000 ! Constant applied to wp3_pr_tp. Units [-]
 C_wp3_pr_turb = 1.000000 ! Constant applied to wp3_pr_turb. Units [-]
@@ -82,17 +82,17 @@ c_K10 = 1.0            ! Coefficient of momentum diffusivity, Km_zm. Units [-]
 c_K10h = 1.0           ! Coefficient of thermo   diffusivity, Kmh_zm. Units [-]
 thlp2_rad_coef = 1.0   ! Coefficient of thlp2_rad. Units [-]
 thlp2_rad_cloud_frac_thresh = 0.1 ! Minimum cloud fraction for computation of thlp2_rad. Units [-]
-up2_sfc_coef = 720.0   ! Coefficient of up2_sfc and vp2_sfc    [-]
+up2_sfc_coef = 24.0    ! Coefficient of up2_sfc and vp2_sfc    [-]
 Skw_max_mag = 10.0     ! Max magnitude of skewness     [-]
 C_invrs_tau_bkgnd = 1.1  ! Coefficient of inverse tau term contributed by background constant value [-]
-C_invrs_tau_sfc = 0.1    ! Coefficient of inverse tau term contributed by surface log law [-]
+C_invrs_tau_sfc = 0.3    ! Coefficient of inverse tau term contributed by surface log law [-]
 C_invrs_tau_shear = 0.15 ! Coefficient of inverse tau term contributed by vertical wind shear [-]
-C_invrs_tau_N2 = 0.16    ! Coefficient of inverse tau term contributed by Brunt Vaisala frequency [-]
-C_invrs_tau_N2_wp2 = 0.08! Coefficient of inverse tau term contributed by Brunt Vaisala frequency but for wp3_wp2 [-]
-C_invrs_tau_N2_xp2 = 0.02! Coefficient of inverse tau term contributed by Brunt Vaisala frequency but for xp2_wpxp [-]
+C_invrs_tau_N2 = 0.24    ! Coefficient of inverse tau term contributed by Brunt Vaisala frequency [-]
+C_invrs_tau_N2_wp2 = 0.12! Coefficient of inverse tau term contributed by Brunt Vaisala frequency but for wp3_wp2 [-]
+C_invrs_tau_N2_xp2 = 0.03! Coefficient of inverse tau term contributed by Brunt Vaisala frequency but for xp2_wpxp [-]
 C_invrs_tau_N2_wpxp= 0.0 ! Coefficient of inverse tau term contributed by Brunt Vaisala frequency but for xm_wpxp [-]
-C_invrs_tau_N2_clear_wp3 = 0.4 ! Coefficient of inverse tau term contributed by Brunt Vaisala frequency but for wp3 [-]
-C_invrs_tau_wpxp_Ri = 0.14 ! Coefficient of the "Ri_zm term" for invrs_tau_wpxp
+C_invrs_tau_N2_clear_wp3 = 0.6 ! Coefficient of inverse tau term contributed by Brunt Vaisala frequency but for wp3 [-]
+C_invrs_tau_wpxp_Ri = 0.21 ! Coefficient of the "Ri_zm term" for invrs_tau_wpxp
 C_invrs_tau_wpxp_N2_thresh = 3.3E-4 ! Brunt-Vaisala freq. threshold value for invrs_tau_wpxp "Ri_zm term" 
 xp3_coef_base  = 0.25    ! "Base" value of xp3_coef in simple eqn  [-]
 xp3_coef_slope = 0.01    ! Slope in regards to Brunt-Vaisla freq.  [-]
@@ -103,8 +103,8 @@ Richardson_num_max = 400.0 ! Threshold on Richardson number
 Cx_min = 0.33              ! Threshold on Cx_fnc_Richardson
 Cx_max = 0.95              ! Threshold on Cx_fnc_Richardson
 a3_coef_min = 1.0         ! Minimum threshold on the a3 coefficient  [-]
-a_const = 0.01            ! Used for sfc values in sfc_varnce_module, usually =1.8 if l_vary_convect_depth=F, =0.6 if T
+a_const = 0.3             ! Used for sfc values in sfc_varnce_module, usually =1.8 if l_vary_convect_depth=F, =0.6 if T
 bv_efold = 5.0            ! Control parameter for inverse e-folding of cloud fraction in the mixed Brunt Vaisala frequency  [-]
 wpxp_Ri_exp = .5          ! Exponent determining the influence of the Richardson number on invrs_tau_wpxp  [-]
-z_displace = 10.0         ! displacement of log law profile above ground  [m]
+z_displace = 5.0          ! displacement of log law profile above ground  [m]
 /
