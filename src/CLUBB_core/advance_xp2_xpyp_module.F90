@@ -6332,13 +6332,13 @@ module advance_xp2_xpyp_module
     ! -------------------- Begin Code --------------------
 
     ! Calculate precip_frac_double_delta
-    precip_frac_double_delta(:,nzt) = 0.0_core_rknd
-    do k = nzt-1, 1, -1
+    precip_frac_double_delta(:,gr%k_ub_zt) = 0.0_core_rknd
+    do k = gr%k_ub_zt - gr%grid_dir_indx, gr%k_lb_zt, -gr%grid_dir_indx
       do i = 1, ngrdcol
         if ( cloud_frac(i,k) > cloud_frac_min ) then
           precip_frac_double_delta(i,k) = cloud_frac(i,k)
         else
-          precip_frac_double_delta(i,k) = precip_frac_double_delta(i,k+1)
+          precip_frac_double_delta(i,k) = precip_frac_double_delta(i,k+gr%grid_dir_indx)
         end if
       end do
     end do
