@@ -2618,6 +2618,7 @@ module stats_clubb_utilities
                      wpsclrpthlp, wpedsclrp, edsclrm, &
                      edsclrm_forcing, &
                      saturation_formula, &
+                     l_call_pdf_closure_twice, &
                      stats_metadata, &
                      stats_zt, stats_zm, stats_sfc )
 
@@ -2834,6 +2835,9 @@ module stats_clubb_utilities
 
     integer, intent(in) :: &
       saturation_formula
+    
+    logical, intent(in) :: &
+      l_call_pdf_closure_twice
 
     type (stats_metadata_type), intent(in) :: &
       stats_metadata
@@ -3212,16 +3216,20 @@ module stats_clubb_utilities
                             stats_zm ) ! In/Out
       call stat_update_var( stats_metadata%ithlm_zm, thlm_zm, & ! In
                             stats_zm ) ! In/Out
-      call stat_update_var( stats_metadata%iw_1_zm, pdf_params_zm%w_1(icol,:), & ! In
-                            stats_zm ) ! In/Out
-      call stat_update_var( stats_metadata%iw_2_zm, pdf_params_zm%w_2(icol,:), & ! In
-                            stats_zm ) ! In/Out
-      call stat_update_var( stats_metadata%ivarnce_w_1_zm, pdf_params_zm%varnce_w_1(icol,:), & ! In
-                            stats_zm ) ! In/Out
-      call stat_update_var( stats_metadata%ivarnce_w_2_zm, pdf_params_zm%varnce_w_2(icol,:), & ! In
-                            stats_zm ) ! In/Out
-      call stat_update_var( stats_metadata%imixt_frac_zm, pdf_params_zm%mixt_frac(icol,:), & ! In
-                            stats_zm ) ! In/Out
+
+      ! pdf_params_zm is only ever updated if l_call_pdf_closure_twice=.true.
+      if ( l_call_pdf_closure_twice ) then
+        call stat_update_var( stats_metadata%iw_1_zm, pdf_params_zm%w_1(icol,:), & ! In
+                              stats_zm ) ! In/Out
+        call stat_update_var( stats_metadata%iw_2_zm, pdf_params_zm%w_2(icol,:), & ! In
+                              stats_zm ) ! In/Out
+        call stat_update_var( stats_metadata%ivarnce_w_1_zm, pdf_params_zm%varnce_w_1(icol,:), & ! In
+                              stats_zm ) ! In/Out
+        call stat_update_var( stats_metadata%ivarnce_w_2_zm, pdf_params_zm%varnce_w_2(icol,:), & ! In
+                              stats_zm ) ! In/Out
+        call stat_update_var( stats_metadata%imixt_frac_zm, pdf_params_zm%mixt_frac(icol,:), & ! In
+                              stats_zm ) ! In/Out
+      end if
 
       if ( sclr_dim > 0 ) then
         do sclr=1, sclr_dim

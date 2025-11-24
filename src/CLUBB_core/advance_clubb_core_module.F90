@@ -2833,6 +2833,7 @@ module advance_clubb_core_module
                wpsclrpthlp(i,:,:), wpedsclrp(i,:,:), edsclrm(i,:,:),                      & ! In
                edsclrm_forcing(i,:,:),                                                    & ! In
                clubb_config_flags%saturation_formula,                                     & ! In
+               clubb_config_flags%l_call_pdf_closure_twice,                               & ! In
                stats_metadata,                                                            & ! In
                stats_zt(i), stats_zm(i), stats_sfc(i) )                                     ! In/Out
       end do
