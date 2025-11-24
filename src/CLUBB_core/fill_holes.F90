@@ -1783,7 +1783,7 @@ module fill_holes
 
     logical :: &
       l_field_below_threshold, &
-      l_print_warning
+      l_clubb_at_least_debug_level_3
 
     ! --------------------- Begin Code ---------------------
 
@@ -1805,7 +1805,7 @@ module fill_holes
       return
     end if
 
-    l_print_warning = clubb_at_least_debug_level_api(3)
+    l_clubb_at_least_debug_level_3 = clubb_at_least_debug_level_api(3)
 
     ! For each height level, fill holes in wp2 by taking tke from up2 and vp2
     !$acc parallel loop gang vector collapse(2) default(present)
@@ -1861,7 +1861,7 @@ module fill_holes
           end if
         end if
 
-        if ( l_print_warning ) then
+        if ( l_clubb_at_least_debug_level_3 ) then
           ! Check for conservation
           tke_diff = abs(tke_x2_old - (up2(i,k) + vp2(i,k) + wp2(i,k)))
           if ( tke_diff > epsilon(tke_diff)*1000 ) then

@@ -943,7 +943,7 @@ module clip_explicit
       ixp2_cl
 
     logical :: &
-      l_print_warning
+      l_clubb_at_least_debug_level_3
 
     ! -------------------- Begin Code --------------------
 
@@ -991,7 +991,7 @@ module clip_explicit
       end do
     end if
 
-    l_print_warning = clubb_at_least_debug_level_api(3)
+    l_clubb_at_least_debug_level_3 = clubb_at_least_debug_level_api(3)
 
     ! Limit the value of x'^2 at threshold.
     ! The value of x'^2 at the surface (or lower boundary) is a set value that
@@ -1008,7 +1008,7 @@ module clip_explicit
     do k = gr%k_lb_zm, gr%k_ub_zm-gr%grid_dir_indx, gr%grid_dir_indx
       do i = 1, ngrdcol
         if ( xp2(i,k) < threshold_lo(i,k) ) then
-          if ( l_print_warning ) then
+          if ( l_clubb_at_least_debug_level_3 ) then
             write(fstderr, *) "Warning: (solve_type==", solve_type,") xp2 =", xp2(i,k), &
                              "<", threshold_lo(i,k), " @ k =", k, ". Small values are clipped."
           end if
@@ -1026,7 +1026,7 @@ module clip_explicit
         do i = 1, ngrdcol
           if ( xp2(i,k) > threshold_hi ) then
             xp2(i,k) = threshold_hi
-            if ( l_print_warning ) then
+            if ( l_clubb_at_least_debug_level_3 ) then
               write(fstderr, *) "Warning: (solve_type==", solve_type,") xp2 =", xp2(i,k), &
                                ">", threshold_hi, " @ k =", k, ". Large values are clipped."
             end if
