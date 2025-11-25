@@ -1,0 +1,132 @@
+commit 040e9961b5b422803a0aa816c5921be9576aa4a8
+Author: Gunther Huebler <huebler@uwm.edu>
+Date:   Sun Nov 23 20:52:32 2025 -0600
+
+    Small bug fix, but this is BIT_CHANGING because it affects stats output. Some zm fields (w_1_zm, w_2_zm, varnce_w_1_zm, varnce_w_2_zm, and mixt_frac_zm) were all nan in the netcdf output when l_call_pdf_closure_twice=.false., because those come from pdf_params_zm.
+
+commit 0da744a4b04f078044dcee08c614ad2a47916751
+Author: Gunther Huebler <huebler@uwm.edu>
+Date:   Sun Nov 23 20:47:09 2025 -0600
+
+    Improving variable name
+
+commit d5703f0d199f44b4fb66df14b4ebfcdb14b57c19
+Author: Gunther Huebler <37674341+huebleruwm@users.noreply.github.com>
+Date:   Sun Nov 23 13:06:28 2025 -0600
+
+    Making update_xp2_mc work with either grid mode (#1263)
+
+commit 61aa970643913037e2766554210e4527bb5e8171
+Author: Gunther Huebler <huebler@uwm.edu>
+Date:   Mon Nov 17 13:43:35 2025 -0600
+
+    Removing accidentally added files
+
+commit de8bbefe59ca054f99b8f487c51d788558213a12
+Author: Gunther Huebler <huebler@uwm.edu>
+Date:   Fri Nov 14 23:34:48 2025 -0600
+
+    Making clubb_at_least_debug_level not a device routine. It confuses the poor little nvidia compiler when compiling inside cam. Also making the compile script a little more robust.
+
+commit 50a5528a55591d69e8b704dccebe1e7d6baa2669
+Author: Gunther Huebler <huebler@uwm.edu>
+Date:   Fri Nov 14 01:36:29 2025 -0600
+
+    Small bug fix in fill_holes_parallel on GPU
+
+commit f3de007e9528afc6cc2d71090bce5c6c53337152
+Merge: 665f38964 9745207a2
+Author: pickett <larsongroupgithub@gmail.com>
+Date:   Thu Nov 13 23:01:28 2025 -0600
+
+    Autoupdated clubb's morrison using sam's morrison
+
+commit 9745207a28bd22786d72673afd580fbc5f17938b
+Author: Gunther Huebler <37674341+huebleruwm@users.noreply.github.com>
+Date:   Thu Nov 13 19:02:28 2025 -0600
+
+    Making compatible with new version of clubb (#167)
+
+commit 665f3896481654acdb49de9afae25d7a9b24a81c
+Author: Gunther Huebler <37674341+huebleruwm@users.noreply.github.com>
+Date:   Thu Nov 13 19:00:40 2025 -0600
+
+    New fill_holes methods (#1262)
+    
+    * Adding little code bits to help explore fill_holes. This is just a diagnostic playground
+    
+    * Improvements
+    
+    * Maybe better algorithm?
+    
+    * Improvements to the new fill holes
+    
+    * Nice progress
+    
+    * Small tweaks
+    
+    * Mainly adding gptl option for cmake and new run_timestep_tests.py
+    
+    * Making namelist input for fill type, and adding ANOTHER new filler that should be completely parallelizable, but right now large hole groups steal too much from nearby points and it looks kinda bad.
+    
+    * Big improvements, new algorithm is good now
+    
+    * Small updates
+    
+    * Making new fill_holes_type flag for clubb_config_flags
+    
+    * New hybrid filler
+    
+    * Small fixes
+    
+    * Changes, mainly for performance, also adding -gptl option to compile.py to make it use the gptl library
+    
+    * Bunch of things
+    
+    * Updates
+    
+    * small fix
+    
+    * Various cleanup and comments
+    
+    * Small improvement to p_atomic
+    
+    * Updates for speed mainly
+    
+    * Small improvement to p_atomic
+    
+    * Potential improvement to p_atomic
+    
+    * Updates for speed mainly
+    
+    * Updates to make G_unit fill holes test
+    
+    * Improving new tests and making widening_windows and smart_window work in flipped grid mode
+    
+    * All methods passing G_unit test, still need a little cleanup
+    
+    * Slight comments update
+    
+    * Cleanup
+    
+    * Adding named constants for fill type
+    
+    * Uncommentting source checks after compile
+    
+    * Adding new file to old compile method
+    
+    * Small fixes
+    
+    * Small fixes
+    
+    * Mainly comments
+    
+    * Making G_unit test use the new python script and compiler method. Small bug fix too
+    
+    * Little fixes
+
+commit ea0b892fd2c25049cb5d1429994dc80e4ab6ed9f
+Author: Gunther Huebler <huebler@uwm.edu>
+Date:   Wed Oct 8 17:39:23 2025 -0500
+
+    Adding Morrison_microphys folder inside Microphys and reflecting change in compilation files. This is to make this new structure work with the way we include Morrison code, which is brought in from sam_clubb via the updateClubbMorrison.sh found in sys_admin/gitUpdateScripts/
