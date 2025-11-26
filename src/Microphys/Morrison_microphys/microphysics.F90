@@ -41,7 +41,7 @@ logical :: isallocatedMICRO = .false.
 integer :: nmicro_fields ! total number of prognostic water vars
 
 #ifdef CLUBB
-real, allocatable, dimension(:,:,:,:) :: micro_field  ! holds mphys quantities
+real, allocatable, target, dimension(:,:,:,:) :: micro_field  ! holds mphys quantities
 #else
 real, allocatable, dimension(:,:,:,:) :: micro_field  ! holds mphys quantities
 #endif
@@ -63,7 +63,7 @@ integer, parameter :: index_cloud_ice = -1 ! historical variable (don't change)
 real, allocatable, dimension(:,:,:) :: fluxbmk, fluxtmk !surface/top fluxes
 real, allocatable, dimension(:,:,:) :: reffc, reffi
 #ifdef CLUBB
-real, allocatable, dimension(:,:,:) :: cloudliq
+real, allocatable, target, dimension(:,:,:) :: cloudliq
 #else
 real, allocatable, dimension(:,:,:) :: cloudliq
 #endif
@@ -873,7 +873,8 @@ use clubb_api_module, only: &
   clubb_at_least_debug_level_api, &
   fill_holes_vertical_api, &
   core_rknd, &
-  grid
+  grid, &
+  sliding_window
 use clubbvars, only: wp2, cloud_frac, rho_ds_zt, rho_ds_zm ! are used, but not modified here
 use vars, only: qcl ! Used here and updated in micro_diagnose
 use vars, only: prespot ! exner^-1
@@ -894,7 +895,7 @@ use clubb_silhs_vars, only: &
 implicit none 
 
 #ifdef CLUBB
-type(grid), intent(in) :: gr
+type(grid), target, intent(in) :: gr
 
 #endif /* CLUBB */
 
@@ -1388,6 +1389,7 @@ do j = 1,ny
         ! upper_hf_level = nzm since we are filling the zt levels
         call fill_holes_vertical_api( gr%nzt, 1, 0._core_rknd, 1, nzm,  & ! In
                                       gr%dzt, rho_ds_zt_col, gr%grid_dir_indx, & ! In
+                                      sliding_window, & ! In (using sliding_window by default)
                                       qv_clip )
         tmpqv = qv_clip(1,1:nzm)
       end if
@@ -1403,6 +1405,7 @@ do j = 1,ny
         ! upper_hf_level = nzm since we are filling the zt levels
         call fill_holes_vertical_api( gr%nzt, 1, 0._core_rknd, 1, nzm,  & ! In
                                       gr%dzt, rho_ds_zt_col, gr%grid_dir_indx, & ! In
+                                      sliding_window, & ! In (using sliding_window by default)
                                       qcl_clip )
                                       
         tmpqcl = qcl_clip(1,1:nzm)
@@ -1469,6 +1472,7 @@ do j = 1,ny
         ! upper_hf_level = nzm since we are filling the zt levels
         call fill_holes_vertical_api( gr%nzt, 1, 0._core_rknd, 1, nzm,  & ! In
                                       gr%dzt, rho_ds_zt_col, gr%grid_dir_indx, & ! In
+                                      sliding_window, & ! In (using sliding_window by default)
                                       qv_clip )
         tmpqv = qv_clip(1,1:nzm)
       end if
@@ -1484,6 +1488,7 @@ do j = 1,ny
         ! upper_hf_level = nzm since we are filling the zt levels
         call fill_holes_vertical_api( gr%nzt, 1, 0._core_rknd, 1, nzm,  & ! In
                                       gr%dzt, rho_ds_zt_col, gr%grid_dir_indx, & ! In
+                                      sliding_window, & ! In (using sliding_window by default)
                                       qcl_clip )
                                       
         tmpqcl = qcl_clip(1,1:nzm)

@@ -11,6 +11,11 @@ module inputfields
   use clubb_precision, only: &
     core_rknd ! variable(s)
 
+  use input_netcdf, only: &
+    clubb_day, &
+    clubb_month, &
+    clubb_year
+
   implicit none
 
   ! Run information
@@ -158,6 +163,10 @@ module inputfields
     logical :: l_grads
 
     ! ---- Begin Code ----
+
+    if ( allocated(stat_files) ) then
+      deallocate(stat_files)
+    end if
 
     stats_input_type = -1
 
@@ -3132,7 +3141,7 @@ module inputfields
   end subroutine inputfields_interp_and_adjust
 
 !-------------------------------------------------------------------------------
-  subroutine inputfields_init( iunit, namelist_filename )
+  subroutine inputfields_init( iunit, namelist_filename, day, month, year )
 
 !-------------------------------------------------------------------------------
     implicit none
@@ -3142,6 +3151,9 @@ module inputfields
       namelist_filename
 
     integer, intent(in) :: iunit
+
+    integer, intent(in) ::  & 
+      day, month, year ! Start time the of simulation
 
     ! Local variables
     character(len=120) :: datafile
@@ -3174,6 +3186,10 @@ module inputfields
       l_input_wpthlp_mc, l_input_rtp2_mc, l_input_thlp2_mc, l_input_rtpthlp_mc
 
     ! --- Begin Code ---
+
+    clubb_day = day
+    clubb_month = month
+    clubb_year = year
 
     ! Pick some initial values
     datafile = ''

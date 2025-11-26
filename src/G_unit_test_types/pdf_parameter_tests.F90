@@ -439,8 +439,9 @@ module pdf_parameter_tests
       grid_remap_method,               & ! Integer that stores what remapping technique should
                                          ! be used to remap the values from one grid to another
                                          ! (starts at 1, so 0 is an invalid option for this flag)
-      grid_adapt_in_time_method          ! Integer that stores how the grid should be adapted every
+      grid_adapt_in_time_method,       & ! Integer that stores how the grid should be adapted every
                                          ! timestep or if the grid should not be adapted at all
+      fill_holes_type                    ! Option for which type of hole filler to use
 
     logical :: &
       l_use_precip_frac,            & ! Flag to use precipitation fraction in KK microphysics. The
@@ -538,7 +539,7 @@ module pdf_parameter_tests
       l_use_thvm_in_bv_freq,        & ! Use thvm in the calculation of Brunt-Vaisala frequency
       l_rcm_supersat_adj,           & ! Add excess supersaturated vapor to cloud water
       l_damp_wp3_Skw_squared,       & ! Set damping on wp3 to use Skw^2 rather than Skw^4
-      l_prescribed_avg_deltaz,      & ! used in adj_low_res_nu. If .true., avg_deltaz = deltaz
+      l_prescribed_avg_deltaz,      & ! used in calc_derrived_params_api. If .true., avg_deltaz = deltaz
       l_lmm_stepping,               & ! Apply Linear Multistep Method (LMM) Stepping
       l_e3sm_config,                & ! Run model with E3SM settings
       l_vary_convect_depth,         & ! Flag used to calculate convective velocity using
@@ -596,6 +597,7 @@ module pdf_parameter_tests
                                              saturation_formula, &
                                              grid_remap_method, &
                                              grid_adapt_in_time_method, &
+                                             fill_holes_type, &
                                              l_use_precip_frac, &
                                              l_predict_upwp_vpwp, &
                                              l_nontraditional_Coriolis, &

@@ -18,14 +18,6 @@
 
 module clubb_api_module
 
-
-  use mt95, only : &
-    assignment( = ), &
-    genrand_state, & ! Internal representation of the RNG state.
-    genrand_srepr, & ! Public representation of the RNG state. Should be used to save the RNG state
-    genrand_intg, &
-    genrand_init_api
-
   use clubb_precision, only : &
     time_precision, &
     core_rknd, &
@@ -90,20 +82,30 @@ module clubb_api_module
   use hydromet_pdf_parameter_module, only : &
     hydromet_pdf_parameter, &
     precipitation_fractions, &
-    init_precip_fracs_api
+    init_hydromet_pdf_params, &
+    init_precip_fracs_api, &
+    zero_precip_fracs_api
 
   use model_flags, only : &
       clubb_config_flags_type, & ! Type
       iiPDF_ADG1, &
+      iiPDF_new, &
       iiPDF_new_hybrid, &
       ipdf_pre_advance_fields, &
       ipdf_post_advance_fields, &
       l_use_boussinesq, &    ! Use Boussinesq form of predictive equations (default is Anelastic).
-      print_clubb_config_flags_api
+      print_clubb_config_flags_api, &
+      global_fill, & 
+      sliding_window, & 
+      widening_windows, & 
+      smart_window, & 
+      smart_window_smooth, & 
+      parallel_fill
 
   use parameters_tunable, only : &
-    params_list,         & ! Variable(s)
-    nu_vertical_res_dep    ! Type(s)
+    params_list,            & ! Variable(s)
+    check_parameters_api,   & ! Procedure(s)
+    nu_vertical_res_dep       ! Type(s)
 
   use parameter_indices, only:  &
     nparams, & ! Variable(s)
@@ -141,7 +143,9 @@ module clubb_api_module
     implicit_coefs_terms, &
     pack_pdf_params_api, &
     unpack_pdf_params_api, &
-    init_pdf_implicit_coefs_terms_api
+    zero_pdf_params_api, &
+    init_pdf_implicit_coefs_terms_api, &
+    zero_pdf_implicit_coefs_terms_api
 
   use sponge_layer_damping, only : &
     thlm_sponge_damp_settings,    & ! Variable(s)
@@ -188,7 +192,10 @@ module clubb_api_module
     zm2zt_api, &
 
     ! Interpolate thermodynamic level variables to momentum levels
-    zt2zm_api
+    zt2zm_api, &
+
+    ! Deallocate grid variable
+    cleanup_grid_api
 
   use saturation, only: &
     ! Used to compute the saturation mixing ratio of liquid water.
@@ -208,13 +215,8 @@ module clubb_api_module
   use interpolation, only: &
     lin_interpolate_on_grid_api
 
-  use advance_clubb_core_module, only: &
-    check_clubb_settings_api, &
-    calculate_thlp2_rad, &
-    cleanup_clubb_core_api
-
-  use parameters_model, only: &
-    setup_parameters_model_api
+  use numerical_check, only : &
+    check_clubb_settings_api
 
   use fill_holes, only : &
     fill_holes_driver_api, &
@@ -278,10 +280,10 @@ module clubb_api_module
   public &
     ! To Implement CLUBB:
     check_clubb_settings_api, &
-    setup_parameters_model_api, &
     init_clubb_params_api, &
         ! CLUBB can be set more specifically using these flags:
         iiPDF_ADG1, &
+        iiPDF_new, &
         iiPDF_new_hybrid, &
         ipdf_pre_advance_fields, &
         ipdf_post_advance_fields, &
@@ -319,8 +321,7 @@ module clubb_api_module
         advance_clubb_core_api_single_col, &
         advance_clubb_core_api_multi_col, &
         pdf_parameter, &
-        implicit_coefs_terms, &
-        cleanup_clubb_core_api
+        implicit_coefs_terms
 
   public &
     ! To Implement SILHS:
@@ -328,11 +329,6 @@ module clubb_api_module
     setup_pdf_parameters_api, &
     hydromet_pdf_parameter, &
     init_pdf_hydromet_arrays_api, &
-    ! generate_silhs_sample - SILHS API
-    genrand_init_api, & ! if you are doing restarts)
-    genrand_state, &
-    genrand_srepr, &
-    genrand_intg, &
     ! To use the results, you will need these variables:
     hmp2_ip_on_hmm2_ip_slope_type,      & ! Types
     hmp2_ip_on_hmm2_ip_intrcpt_type, &
@@ -365,7 +361,8 @@ module clubb_api_module
     T_in_K2thlm_api, &
     thlm2T_in_K_api, &
     zm2zt_api, &
-    zt2zm_api
+    zt2zm_api, &
+    cleanup_grid_api
 
   public &
     ! To Check For and Handle CLUBB's Errors:
@@ -378,7 +375,13 @@ module clubb_api_module
     fill_holes_hydromet_api, &
     set_clubb_debug_level_api, &
     vertical_integral_api, &
-    num_hf_draw_points
+    num_hf_draw_points, &
+    global_fill, & 
+    sliding_window, & 
+    widening_windows, & 
+    smart_window, & 
+    smart_window_smooth, & 
+    parallel_fill
 
   public &
     ! Constants That May be Helpful:
@@ -434,10 +437,13 @@ module clubb_api_module
 !#endif
     init_pdf_params_api, &
     init_precip_fracs_api, &
+    init_hydromet_pdf_params, &
+    zero_precip_fracs_api, &
     precipitation_fractions, &
+    zero_pdf_params_api, &
     init_pdf_implicit_coefs_terms_api, &
-    adj_low_res_nu_api, &
-    assignment( = ), &
+    zero_pdf_implicit_coefs_terms_api, &
+    calc_derrived_params_api, &
     clubb_i, &
     clubb_j, &
     compute_current_date_api, &
@@ -452,7 +458,7 @@ module clubb_api_module
   public &
     nparams, &
     nu_vertical_res_dep, &
-    setup_parameters_api, &
+    check_parameters_api, &
     stat_nknd, &
     stat_rknd, &
     stats_accumulate_hydromet_api, &
@@ -511,15 +517,10 @@ module clubb_api_module
     module procedure setup_grid_api_single_col
     module procedure setup_grid_api_multi_col
   end interface
-  
-  interface setup_parameters_api
-    module procedure setup_parameters_api_single_col
-    module procedure setup_parameters_api_multi_col
-  end interface
 
-  interface adj_low_res_nu_api
-    module procedure adj_low_res_nu_api_single_col
-    module procedure adj_low_res_nu_api_multi_col
+  interface calc_derrived_params_api
+    module procedure calc_derrived_params_api_single_col
+    module procedure calc_derrived_params_api_multi_col
   end interface
   
   interface setup_grid_heights_api
@@ -561,6 +562,8 @@ contains
     wphydrometp, wp2hmp, rtphmp_zt, thlphmp_zt, &           ! intent(in)
     host_dx, host_dy, &                                     ! intent(in)
     clubb_params, nu_vert_res_dep, lmin, &                  ! intent(in)
+    mixt_frac_max_mag, T0, ts_nudge, &                      ! Intent(in)
+    rtm_min, rtm_nudge_max_altitude, &                      ! Intent(in)
     clubb_config_flags, &                                   ! intent(in)
     stats_metadata, &                                       ! intent(in)
     stats_zt, stats_zm, stats_sfc, &                        ! intent(inout)
@@ -730,7 +733,12 @@ contains
       nu_vert_res_dep    ! Vertical resolution dependent nu values
 
     real( kind = core_rknd ), intent(in) :: &
-      lmin    ! Min. value for the length scale    [m]
+      lmin, &                 ! Min. value for the length scale    [m]
+      mixt_frac_max_mag, &
+      T0, &                   ! Reference temperature (usually 300)  [K]
+      ts_nudge, &             ! Timescale of u/v nudging             [s]
+      rtm_min, &              ! Value below which rtm will be nudged [kg/kg]
+      rtm_nudge_max_altitude  ! Highest altitude at which to nudge rtm [m]
 
     type( clubb_config_flags_type ), intent(in) :: &
       clubb_config_flags ! Derived type holding all configurable CLUBB flags
@@ -1374,6 +1382,8 @@ contains
       wphydrometp_col, wp2hmp_col, rtphmp_zt_col, thlphmp_zt_col, &               ! intent(in)
       host_dx_col, host_dy_col, &                                                 ! intent(in)
       clubb_params_col, nu_vert_res_dep, lmin, &                                  ! intent(in)
+      mixt_frac_max_mag, T0, ts_nudge, &                                          ! Intent(in)
+      rtm_min, rtm_nudge_max_altitude, &                                          ! Intent(in)
       clubb_config_flags, &                                                       ! intent(in)
       stats_metadata, &                                                           ! intent(in)
       stats_zt_col, stats_zm_col, stats_sfc_col, &                                ! intent(inout)
@@ -1546,6 +1556,8 @@ contains
     wphydrometp, wp2hmp, rtphmp_zt, thlphmp_zt, &           ! intent(in)
     host_dx, host_dy, &                                     ! intent(in)
     clubb_params, nu_vert_res_dep, lmin, &                  ! intent(in)
+    mixt_frac_max_mag, T0, ts_nudge, &                      ! Intent(in)
+    rtm_min, rtm_nudge_max_altitude, &                      ! Intent(in)
     clubb_config_flags, &                                   ! intent(in)
     stats_metadata, &                                       ! intent(in)
     stats_zt, stats_zm, stats_sfc, &                        ! intent(inout)
@@ -1710,7 +1722,12 @@ contains
       nu_vert_res_dep    ! Vertical resolution dependent nu values
 
     real( kind = core_rknd ), intent(in) :: &
-      lmin    ! Min. value for the length scale    [m]
+      lmin, &                 ! Min. value for the length scale    [m]
+      mixt_frac_max_mag, &
+      T0, &                   ! Reference temperature (usually 300)  [K]
+      ts_nudge, &             ! Timescale of u/v nudging             [s]
+      rtm_min, &              ! Value below which rtm will be nudged [kg/kg]
+      rtm_nudge_max_altitude  ! Highest altitude at which to nudge rtm [m]
 
     type( clubb_config_flags_type ), intent(in) :: &
       clubb_config_flags ! Derived type holding all configurable CLUBB flags
@@ -1973,10 +1990,12 @@ contains
       rfrzm, &                                                ! intent(in)
 #ifdef CLUBBND_CAM
       varmu, &
-#endif
+#endif 
       wphydrometp, wp2hmp, rtphmp_zt, thlphmp_zt, &           ! intent(in)
       host_dx, host_dy, &                                     ! intent(in)
       clubb_params, nu_vert_res_dep, lmin, &                  ! intent(in)
+      mixt_frac_max_mag, T0, ts_nudge, &                      ! Intent(in)
+      rtm_min, rtm_nudge_max_altitude, &                      ! Intent(in)
       clubb_config_flags, &                                   ! intent(in)
       stats_metadata, &                                       ! intent(in)
       stats_zt, stats_zm, stats_sfc, &                        ! intent(inout)
@@ -2048,7 +2067,7 @@ contains
     use grid_class, only: &
       grid
 
-    use advance_clubb_core_module, only : &
+    use advance_helper_module, only : &
       calculate_thlp2_rad
 
     implicit none
@@ -2518,158 +2537,17 @@ contains
   end function lin_interpolate_two_points_api
 
   !================================================================================================
-  ! setup_parameters - Sets up model parameters for a single column
-  !================================================================================================
-  subroutine setup_parameters_api_single_col( &
-             deltaz, clubb_params, gr, grid_type, &
-             l_prescribed_avg_deltaz, &
-             lmin, nu_vert_res_dep, err_info_api )
-
-    use parameters_tunable, only: &
-        setup_parameters
-
-    use parameter_indices, only:  &
-        nparams ! Variable(s)
-
-    implicit none
-
-    ! Input Variables
-    real( kind = core_rknd ), intent(in) ::  &
-      deltaz  ! Change per height level        [m]
-
-    real( kind = core_rknd ), intent(in), dimension(nparams) :: &
-      clubb_params  ! Tuneable model parameters      [-]
-
-    ! Grid definition
-    type(grid), intent(in) :: &
-      gr
-
-    ! If CLUBB is running on its own, this option determines
-    ! if it is using:
-    ! 1) an evenly-spaced grid,
-    ! 2) a stretched (unevenly-spaced) grid entered on the
-    !    thermodynamic grid levels (with momentum levels set
-    !    halfway between thermodynamic levels), or
-    ! 3) a stretched (unevenly-spaced) grid entered on the
-    !    momentum grid levels (with thermodynamic levels set
-    !    halfway between momentum levels).
-    integer, intent(in) :: grid_type
-
-    logical, intent(in) :: &
-      l_prescribed_avg_deltaz ! used in adj_low_res_nu. If .true., avg_deltaz = deltaz
-
-    ! Output Variables 
-    real( kind = core_rknd ), intent(out) :: &
-      lmin    ! Min. value for the length scale    [m]
-
-    type(nu_vertical_res_dep), intent(out) :: &
-      nu_vert_res_dep    ! Vertical resolution dependent nu values
-
-    ! ------------------- InOut Variables -------------------
-    type(err_info_type), intent(inout) :: &
-      err_info_api          ! err_info struct containing err_code and err_header
-
-    ! ------------------- Local Variables -------------------
-    real( kind = core_rknd ), dimension(1) ::  &
-      deltaz_col  ! Change per height level        [m]
-
-    ! ------------------- Begin Code -------------------
-
-    deltaz_col(1) = deltaz
-
-    call setup_parameters( &
-              deltaz_col, clubb_params, gr, 1, grid_type, &
-              l_prescribed_avg_deltaz, &
-              lmin, nu_vert_res_dep, err_info_api )
-
-    if ( any(err_info_api%err_code == clubb_fatal_error) ) then
-      write(fstderr, *) err_info_api%err_header_global
-      write(fstderr, *) "Error in CLUBB calling setup_parameters"
-    endif
-
-  end subroutine setup_parameters_api_single_col
-
-  !================================================================================================
-  ! setup_parameters - Sets up model parameters.
+  ! calc_derrived_params_api - Adjusts values of background eddy diffusivity based on vertical grid spacing
+  !                    and calculates 
   !================================================================================================
 
-  subroutine setup_parameters_api_multi_col( &
-             deltaz, clubb_params, gr, ngrdcol, grid_type, &
-             l_prescribed_avg_deltaz, &
-             lmin, nu_vert_res_dep, err_info_api )
+  subroutine calc_derrived_params_api_single_col( gr, grid_type, deltaz,    & ! Intent(in)
+                                                  clubb_params,             & ! Intent(in)
+                                                  l_prescribed_avg_deltaz,  & ! Intent(in)
+                                                  nu_vert_res_dep, lmin,    & ! Intent(inout)
+                                                  mixt_frac_max_mag )         ! Intent(inout)
 
-    use parameters_tunable, only: &
-        setup_parameters
-
-    use parameter_indices, only:  &
-        nparams ! Variable(s)
-
-    implicit none
-
-    ! Input Variables
-
-    ! Grid definition
-    type(grid), intent(in) :: &
-      gr
-
-    integer, intent(in) :: &
-      ngrdcol   ! Number of grid columns          [#]
-
-    real( kind = core_rknd ), dimension(ngrdcol), intent(in) ::  &
-      deltaz  ! Change per height level        [m]
-
-    real( kind = core_rknd ), intent(in), dimension(ngrdcol,nparams) :: &
-      clubb_params  ! Tuneable model parameters      [-]
-      
-    ! If CLUBB is running on its own, this option determines
-    ! if it is using:
-    ! 1) an evenly-spaced grid,
-    ! 2) a stretched (unevenly-spaced) grid entered on the
-    !    thermodynamic grid levels (with momentum levels set
-    !    halfway between thermodynamic levels), or
-    ! 3) a stretched (unevenly-spaced) grid entered on the
-    !    momentum grid levels (with thermodynamic levels set
-    !    halfway between momentum levels).
-    integer, intent(in) :: grid_type
-
-    logical, intent(in) :: &
-      l_prescribed_avg_deltaz ! used in adj_low_res_nu. If .true., avg_deltaz = deltaz
-
-    ! Output Variables 
-    real( kind = core_rknd ), intent(out) :: &
-      lmin    ! Min. value for the length scale    [m]
-
-    type(nu_vertical_res_dep), intent(out) :: &
-      nu_vert_res_dep    ! Vertical resolution dependent nu values
-
-    ! ------------------- InOut Variables -------------------
-    type(err_info_type), intent(inout) :: &
-      err_info_api          ! err_info struct containing err_code and err_header
-
-    ! ------------------- Begin Code -------------------
-
-    call setup_parameters( &
-              deltaz, clubb_params, gr, ngrdcol, grid_type, &
-              l_prescribed_avg_deltaz, &
-              lmin, nu_vert_res_dep, err_info_api )
-
-    if ( any(err_info_api%err_code == clubb_fatal_error) ) then
-      write(fstderr, *) err_info_api%err_header_global
-      write(fstderr, *) "Error in CLUBB calling setup_parameters"
-    endif
-
-  end subroutine setup_parameters_api_multi_col
-
-  !================================================================================================
-  ! adj_low_res_nu - Adjusts values of background eddy diffusivity based on vertical grid spacing.
-  !================================================================================================
-
-  subroutine adj_low_res_nu_api_single_col( gr, grid_type, deltaz,    & ! Intent(in)
-                                            clubb_params,             & ! Intent(in)
-                                            l_prescribed_avg_deltaz,  & ! Intent(in)
-                                            nu_vert_res_dep )           ! Intent(out)
-
-    use parameters_tunable, only : adj_low_res_nu
+    use parameters_tunable, only : calc_derrived_params
 
     implicit none
 
@@ -2697,11 +2575,15 @@ contains
       clubb_params  ! Tuneable model parameters      [-]
 
     logical, intent(in) :: &
-      l_prescribed_avg_deltaz ! used in adj_low_res_nu. If .true., avg_deltaz = deltaz
+      l_prescribed_avg_deltaz ! used in calc_derrived_params_api. If .true., avg_deltaz = deltaz
 
     ! Output Variables
-    type(nu_vertical_res_dep), intent(out) :: &
+    type(nu_vertical_res_dep), intent(inout) :: &
       nu_vert_res_dep    ! Vertical resolution dependent nu values
+
+    real( kind = core_rknd ), intent(inout) :: &
+      mixt_frac_max_mag, &
+      lmin    ! Min. value for the length scale    [m]
       
     ! Local variables
     real( kind = core_rknd ), dimension(1) ::  &
@@ -2713,23 +2595,26 @@ contains
     deltaz_col(1) = deltaz
     clubb_params_col(1,:) = clubb_params
 
-    call adj_low_res_nu( gr, 1, grid_type, deltaz_col,  & ! Intent(in)
-                         clubb_params,                  & ! Intent(in)
-                         l_prescribed_avg_deltaz,       & ! Intent(in)
-                         nu_vert_res_dep )                ! Intent(out)
+    call calc_derrived_params( gr, 1, grid_type, deltaz_col,  & ! Intent(in)
+                               clubb_params,                  & ! Intent(in)
+                               l_prescribed_avg_deltaz,       & ! Intent(in)
+                               nu_vert_res_dep, lmin,         & ! Intent(inout)
+                               mixt_frac_max_mag )              ! Intent(inout)
 
-  end subroutine adj_low_res_nu_api_single_col
+  end subroutine calc_derrived_params_api_single_col
   
   !================================================================================================
-  ! adj_low_res_nu - Adjusts values of background eddy diffusivity based on vertical grid spacing.
+  ! calc_derrived_params_api - Adjusts values of background eddy diffusivity based on vertical grid spacing
+  !                    and calculates 
   !================================================================================================
 
-  subroutine adj_low_res_nu_api_multi_col( gr, ngrdcol, grid_type, deltaz,  & ! Intent(in)
-                                           clubb_params,                    & ! Intent(in)
-                                           l_prescribed_avg_deltaz,         & ! Intent(in)
-                                           nu_vert_res_dep )                  ! Intent(out)
+  subroutine calc_derrived_params_api_multi_col( gr, ngrdcol, grid_type, deltaz,  & ! Intent(in)
+                                                 clubb_params,                    & ! Intent(in)
+                                                 l_prescribed_avg_deltaz,         & ! Intent(in)
+                                                 nu_vert_res_dep, lmin,           & ! Intent(inout)
+                                                 mixt_frac_max_mag )                ! Intent(inout)
 
-    use parameters_tunable, only : adj_low_res_nu
+    use parameters_tunable, only : calc_derrived_params
 
     implicit none
 
@@ -2760,18 +2645,23 @@ contains
       clubb_params  ! Tuneable model parameters      [-]
 
     logical, intent(in) :: &
-      l_prescribed_avg_deltaz ! used in adj_low_res_nu. If .true., avg_deltaz = deltaz
+      l_prescribed_avg_deltaz ! used in calc_derrived_params_api. If .true., avg_deltaz = deltaz
 
     ! Output Variables
-    type(nu_vertical_res_dep), intent(out) :: &
+    type(nu_vertical_res_dep), intent(inout) :: &
       nu_vert_res_dep    ! Vertical resolution dependent nu values
 
-    call adj_low_res_nu( gr, ngrdcol, grid_type, deltaz, & ! Intent(in)
-                         clubb_params,                   & ! Intent(in)
-                         l_prescribed_avg_deltaz,        & ! Intent(in)
-                         nu_vert_res_dep )                 ! Intent(out)
+    real( kind = core_rknd ), intent(inout) :: &
+      mixt_frac_max_mag, &
+      lmin    ! Min. value for the length scale    [m]
 
-  end subroutine adj_low_res_nu_api_multi_col
+    call calc_derrived_params( gr, ngrdcol, grid_type, deltaz, & ! Intent(in)
+                               clubb_params,                   & ! Intent(in)
+                               l_prescribed_avg_deltaz,        & ! Intent(in)
+                               nu_vert_res_dep, lmin,          & ! Intent(inout)
+                               mixt_frac_max_mag )               ! Intent(inout)
+
+  end subroutine calc_derrived_params_api_multi_col
 
   !================================================================================================
   ! init_pdf_params - allocates arrays for pdf_params

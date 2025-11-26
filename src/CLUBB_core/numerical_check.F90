@@ -22,7 +22,8 @@ module numerical_check
   public :: invalid_model_arrays, is_nan_2d,  &
             rad_check, parameterization_check, &
             sfc_varnce_check, pdf_closure_check, &
-            length_check, is_nan_sclr, calculate_spurious_source
+            length_check, is_nan_sclr, calculate_spurious_source, &
+            check_clubb_settings_api
 
   private :: check_negative, check_nan
 
@@ -1312,4 +1313,648 @@ module numerical_check
 
   end function calculate_spurious_source
 !-------------------------------------------------------------------------
+
+  !=============================================================================
+  subroutine check_clubb_settings_api( ngrdcol,             & ! intent(in)
+                                       params,              & ! intent(in)
+                                       l_implemented,       & ! intent(in)
+                                       l_input_fields,      & ! intent(in)
+                                       clubb_config_flags,  & ! intent(in)
+                                       err_info )             ! intent(inout)
+
+      ! Description:
+      !   Subroutine to set up the model for execution.
+      !
+      ! References:
+      !   None
+      !---------------------------------------------------------------------
+
+      use parameter_indices, only:  &
+          nparams,      & ! Variable(s)
+          iC1,          & ! Constant(s)
+          iC1b,         &
+          iC2rt,        &
+          iC2thl,       &
+          iC2rtthl,     &
+          iC6rt,        &
+          iC6rtb,       &
+          iC6thl,       &
+          iC6thlb,      &
+          iC14
+
+      use parameters_tunable, only: &
+          nu_vertical_res_dep    ! Type(s)
+
+      use constants_clubb, only:  &
+          fstderr, &  ! Variable(s)
+          one, &
+          eps
+
+      use error_code, only: &
+          clubb_at_least_debug_level_api,  & ! Procedures
+          initialize_error_headers,    &
+          clubb_fatal_error              ! Constant
+
+      use model_flags, only: &
+          clubb_config_flags_type, & ! Type
+          iiPDF_ADG1,       & ! Variable(s)
+          iiPDF_ADG2,       &
+          iiPDF_3D_Luhar,   &
+          iiPDF_new,        &
+          iiPDF_TSDADG,     &
+          iiPDF_LY93,       &
+          iiPDF_new_hybrid, &
+          saturation_bolton,  &
+          saturation_gfdl,    &
+          saturation_flatau,  &
+          saturation_lookup,  &
+          ipdf_pre_advance_fields, &     
+          ipdf_post_advance_fields, &    
+          ipdf_pre_post_advance_fields, &
+          l_explicit_turbulent_adv_wpxp, &
+          order_xm_wpxp, &
+          order_xp2_xpyp, &
+          order_wp2_wp3, &
+          order_windm
+          
+#ifdef CLUBB_GPU
+      use model_flags, only: &
+          lapack
+#endif
+
+      use clubb_precision, only: &
+          core_rknd ! Variable(s)
+
+      use sponge_layer_damping, only: &
+          thlm_sponge_damp_settings,    & ! Variable(s)
+          rtm_sponge_damp_settings,     &
+          uv_sponge_damp_settings,      &
+          wp2_sponge_damp_settings,     &
+          wp3_sponge_damp_settings,     &
+          up2_vp2_sponge_damp_settings
+
+
+      use err_info_type_module, only: &
+        err_info_type        ! Type
+
+      implicit none
+
+      !---------------------- Input Variables ----------------------
+
+      integer, intent(in) :: &
+        ngrdcol
+
+      real( kind = core_rknd ), intent(in), dimension(ngrdcol,nparams) :: &
+        params  ! Including C1, nu1, nu2, etc.
+
+      ! Flags
+      logical, intent(in) ::  &
+        l_implemented, & ! Flag for whether CLUBB is being run in a host model
+        l_input_fields   ! Flag for whether LES input fields are being used
+
+      type(clubb_config_flags_type), intent(in) :: &
+        clubb_config_flags
+
+      !---------------------- InOut Variables ----------------------
+      type(err_info_type), intent(inout) :: &
+        err_info        ! err_info struct containing err_code and err_header
+
+      !---------------------- Begin Code ----------------------
+
+      call initialize_error_headers
+
+#ifdef CLUBB_GPU
+      if ( clubb_config_flags%penta_solve_method == lapack ) then
+        write(fstderr,*) "WARNING: The penta-diagonal lapack solver is not GPU accelerated"
+        write(fstderr,*) " Set penta_solve_method = 2, to use an accelerated penta-diagonal solver"
+      end if
+
+      if ( clubb_config_flags%tridiag_solve_method == lapack ) then
+        write(fstderr,*) "WARNING: The tri-diagonal lapack solver is not GPU accelerated"
+        write(fstderr,*) " Set tridiag_solve_method = 2, to use an accelerated tri-diagonal solver"
+      end if
+
+      if ( l_input_fields ) then
+        error stop "l_input_fields = .true. not usable when running on GPUs"
+      end if
+#endif
+
+      ! Sanity check
+      if ( clubb_at_least_debug_level_api( 0 ) ) then
+
+        if ( clubb_config_flags%l_damp_wp2_using_em &
+           .and. ( any( abs(params(:,iC1) - params(:,iC14)) > &
+                        abs(params(:,iC1) + params(:,iC14)) /  2 * eps ) &
+                   .or. clubb_config_flags%l_stability_correct_tau_zm ) ) then
+          write(fstderr, *) err_info%err_header_global
+          write(fstderr,*) "l_damp_wp2_using_em = T requires C1=C14 and" &
+                            // " l_stability_correct_tau_zm = F"
+          write(fstderr,*) "C1 = ", params(:,iC1)
+          write(fstderr,*) "C14 = ", params(:,iC14)
+          write(fstderr,*) "l_stability_correct_tau_zm = ", &
+                           clubb_config_flags%l_stability_correct_tau_zm
+          write(fstderr,*) "Fatal error in check_clubb_settings_api"
+          ! General error -> set all entries to clubb_fatal_error
+          err_info%err_code = clubb_fatal_error
+          return
+        end if
+
+      end if
+
+      ! Sanity check for the saturation formula
+      select case ( clubb_config_flags%saturation_formula )
+      case ( saturation_bolton )
+        ! Using the Bolton 1980 approximations for SVP over vapor/ice
+
+      case ( saturation_gfdl )
+        ! Using the Flatau, et al. polynomial approximation for SVP over vapor/ice
+
+      case ( saturation_flatau )   ! h1g, 2010-06-16
+        ! Using the GFDL SVP formula (Goff-Gratch)
+
+        ! Add new saturation formulas after this
+
+      case ( saturation_lookup )
+        ! Using the lookup table
+
+      case default
+        write(fstderr, *) err_info%err_header_global
+        write(fstderr,*) "Unknown approx. of saturation vapor pressure: ", &
+           clubb_config_flags%saturation_formula
+        write(fstderr,*) "Fatal error in check_clubb_settings_api"
+        ! General error -> set all entries to clubb_fatal_error
+        err_info%err_code = clubb_fatal_error
+        return
+      end select
+
+      ! Check for the type of two component normal (double Gaussian) PDF being
+      ! used for w, rt, and theta-l (or w, chi, and eta).
+      if ( clubb_config_flags%iiPDF_type < iiPDF_ADG1 &
+           .or. clubb_config_flags%iiPDF_type > iiPDF_new_hybrid ) then
+         write(fstderr, *) err_info%err_header_global
+         write(fstderr,*) "Unknown type of double Gaussian PDF selected: ", &
+                          clubb_config_flags%iiPDF_type
+         write(fstderr,*) "iiPDF_type = ", clubb_config_flags%iiPDF_type
+         write(fstderr,*) "Fatal error in check_clubb_settings_api"
+         ! General error -> set all entries to clubb_fatal_error
+         err_info%err_code = clubb_fatal_error
+         return
+      endif ! iiPDF_type < iiPDF_ADG1 or iiPDF_type > iiPDF_lY93
+
+      ! The ADG2 and 3D Luhar PDFs can only be used as part of input fields.
+      if ( clubb_config_flags%iiPDF_type == iiPDF_ADG2 ) then
+         if ( .not. l_input_fields ) then
+            write(fstderr, *) err_info%err_header_global
+            write(fstderr,*) "The ADG2 PDF can only be used with" &
+                             // " input fields (l_input_fields = .true.)."
+            write(fstderr,*) "iiPDF_type = ", clubb_config_flags%iiPDF_type
+            write(fstderr,*) "l_input_fields = ", l_input_fields
+            write(fstderr,*) "Fatal error in check_clubb_settings_api"
+            ! General error -> set all entries to clubb_fatal_error
+            err_info%err_code = clubb_fatal_error
+            return
+         endif ! .not. l_input_fields
+      endif ! iiPDF_type == iiPDF_ADG2
+
+      if ( clubb_config_flags%iiPDF_type == iiPDF_3D_Luhar ) then
+         if ( .not. l_input_fields ) then
+            write(fstderr, *) err_info%err_header_global
+            write(fstderr,*) "The 3D Luhar PDF can only be used with" &
+                             // " input fields (l_input_fields = .true.)."
+            write(fstderr,*) "iiPDF_type = ", clubb_config_flags%iiPDF_type
+            write(fstderr,*) "l_input_fields = ", l_input_fields
+            write(fstderr,*) "Fatal error in check_clubb_settings_api"
+            ! General error -> set all entries to clubb_fatal_error
+            err_info%err_code = clubb_fatal_error
+            return
+         endif ! .not. l_input_fields
+      endif ! iiPDF_type == iiPDF_3D_Luhar
+
+      ! This also currently applies to the new PDF until it has been fully
+      ! implemented.
+      if ( clubb_config_flags%iiPDF_type == iiPDF_new ) then
+         if ( .not. l_input_fields ) then
+            write(fstderr, *) err_info%err_header_global
+            write(fstderr,*) "The new PDF can only be used with" &
+                             // " input fields (l_input_fields = .true.)."
+            write(fstderr,*) "iiPDF_type = ", clubb_config_flags%iiPDF_type
+            write(fstderr,*) "l_input_fields = ", l_input_fields
+            write(fstderr,*) "Fatal error in check_clubb_settings_api"
+            ! General error -> set all entries to clubb_fatal_error
+            err_info%err_code = clubb_fatal_error
+            return
+         endif ! .not. l_input_fields
+      endif ! iiPDF_type == iiPDF_new
+
+      ! This also currently applies to the TSDADG PDF until it has been fully
+      ! implemented.
+      if ( clubb_config_flags%iiPDF_type == iiPDF_TSDADG ) then
+         if ( .not. l_input_fields ) then
+            write(fstderr, *) err_info%err_header_global
+            write(fstderr,*) "The new TSDADG PDF can only be used with" &
+                             // " input fields (l_input_fields = .true.)."
+            write(fstderr,*) "iiPDF_type = ", clubb_config_flags%iiPDF_type
+            write(fstderr,*) "l_input_fields = ", l_input_fields
+            write(fstderr,*) "Fatal error in check_clubb_settings_api"
+            ! General error -> set all entries to clubb_fatal_error
+            err_info%err_code = clubb_fatal_error
+            return
+         endif ! .not. l_input_fields
+      endif ! iiPDF_type == iiPDF_TSDADG
+
+      ! This also applies to Lewellen and Yoh (1993).
+      if ( clubb_config_flags%iiPDF_type == iiPDF_LY93 ) then
+         if ( .not. l_input_fields ) then
+            write(fstderr, *) err_info%err_header_global
+            write(fstderr,*) "The Lewellen and Yoh PDF can only be used with" &
+                             // " input fields (l_input_fields = .true.)."
+            write(fstderr,*) "iiPDF_type = ", clubb_config_flags%iiPDF_type
+            write(fstderr,*) "l_input_fields = ", l_input_fields
+            write(fstderr,*) "Fatal error in check_clubb_settings_api"
+            ! General error -> set all entries to clubb_fatal_error
+            err_info%err_code = clubb_fatal_error
+            return
+         endif ! .not. l_input_fields
+      endif ! iiPDF_type == iiPDF_LY93
+
+      ! Check the option for the placement of the call to CLUBB's PDF.
+      if ( clubb_config_flags%ipdf_call_placement < ipdf_pre_advance_fields &
+           .or. clubb_config_flags%ipdf_call_placement > ipdf_pre_post_advance_fields ) then
+         write(fstderr, *) err_info%err_header_global
+         write(fstderr,*) "Invalid option selected for ipdf_call_placement: ", &
+                          clubb_config_flags%ipdf_call_placement
+         write(fstderr,*) "Fatal error in check_clubb_settings_api"
+         ! General error -> set all entries to clubb_fatal_error
+         err_info%err_code = clubb_fatal_error
+         return
+      endif
+
+      ! The l_predict_upwp_vpwp flag requires that the ADG1 PDF is used
+      ! implicitly in subroutine advance_xm_wpxp.
+      if ( clubb_config_flags%l_predict_upwp_vpwp ) then
+
+         ! When l_predict_upwp_vpwp is enabled, the
+         ! l_explicit_turbulent_adv_wpxp flag must be turned off.
+         ! Otherwise, explicit turbulent advection would require PDF parameters
+         ! for u and v to be calculated in PDF closure.  These would be needed
+         ! to calculate integrated fields such as wp2up, etc.
+         if ( l_explicit_turbulent_adv_wpxp ) then
+            write(fstderr, *) err_info%err_header_global
+            write(fstderr,*) "The l_explicit_turbulent_adv_wpxp option" &
+                             // " is not currently set up for use with the" &
+                             // " l_predict_upwp_vpwp code."
+            write(fstderr,*) "Fatal error in check_clubb_settings_api"
+            ! General error -> set all entries to clubb_fatal_error
+            err_info%err_code = clubb_fatal_error
+            return
+         endif ! l_explicit_turbulent_adv_wpxp
+
+         ! When l_predict_upwp_vpwp is enabled, the PDF type must be set to
+         ! the ADG1 PDF or the new hybrid PDF.  The other PDFs are not currently
+         ! set up to calculate variables needed for implicit or semi-implicit
+         ! turbulent advection, such as coef_wp2up_implicit, etc.
+         if ( ( clubb_config_flags%iiPDF_type /= iiPDF_ADG1 ) &
+              .and. ( clubb_config_flags%iiPDF_type /= iiPDF_new_hybrid ) ) then
+            write(fstderr, *) err_info%err_header_global
+            write(fstderr,*) "Currently, only the ADG1 PDF and the new hybrid" &
+                             // " PDF are set up for use with the" &
+                             // " l_predict_upwp_vpwp code."
+            write(fstderr,*) "Fatal error in check_clubb_settings_api"
+            ! General error -> set all entries to clubb_fatal_error
+            err_info%err_code = clubb_fatal_error
+            return
+         endif ! iiPDF_type /= iiPDF_ADG1
+
+      endif ! l_predict_upwp_vpwp
+
+      ! The flags l_min_xp2_from_corr_wx and l_enable_relaxed_clipping must
+      ! have opposite values.
+      if ( ( clubb_config_flags%l_min_xp2_from_corr_wx ) &
+         .and. ( clubb_config_flags%l_enable_relaxed_clipping ) ) then
+         write(fstderr, *) err_info%err_header_global
+         write(fstderr,*) "Invalid configuration: l_min_xp2_from_corr_wx = T " &
+                          // "and l_enable_relaxed_clipping = T"
+         write(fstderr,*) "They must have opposite values"
+         write(fstderr,*) "Fatal error in check_clubb_settings_api"
+         ! General error -> set all entries to clubb_fatal_error
+         err_info%err_code = clubb_fatal_error
+         return
+      elseif ( ( .not. clubb_config_flags%l_min_xp2_from_corr_wx ) &
+               .and. ( .not. clubb_config_flags%l_enable_relaxed_clipping ) ) then
+         write(fstderr, *) err_info%err_header_global
+         write(fstderr,*) "Invalid configuration: l_min_xp2_from_corr_wx = F " &
+                          // "and l_enable_relaxed_clipping = F"
+         write(fstderr,*) "They must have opposite values"
+         write(fstderr,*) "Fatal error in check_clubb_settings_api"
+         ! General error -> set all entries to clubb_fatal_error
+         !err_info%err_code = clubb_fatal_error
+         !return
+      endif
+
+      ! Checking for the code that orders CLUBB's advance_ subroutines
+      if ( order_xm_wpxp < 1 .or. order_xm_wpxp > 4 ) then
+         write(fstderr, *) err_info%err_header_global
+         write(fstderr,*) "The variable order_xm_wpxp must have a value " &
+                          // "between 1 and 4"
+         write(fstderr,*) "order_xm_wpxp = ", order_xm_wpxp
+         write(fstderr,*) "Fatal error in check_clubb_settings_api"
+         ! General error -> set all entries to clubb_fatal_error
+         err_info%err_code = clubb_fatal_error
+         return
+      elseif ( order_xm_wpxp == order_wp2_wp3 &
+               .or. order_xm_wpxp == order_xp2_xpyp &
+               .or. order_xm_wpxp == order_windm ) then
+         write(fstderr, *) err_info%err_header_global
+         write(fstderr,*) "The variable order_xm_wpxp has the same value " &
+                          // "as another order_ variable.  Please give each " &
+                          // "order index a unique value."
+         write(fstderr,*) "order_xm_wpxp = ", order_xm_wpxp
+         write(fstderr,*) "order_wp2_wp3 = ", order_wp2_wp3
+         write(fstderr,*) "order_xp2_xpyp = ", order_xp2_xpyp
+         write(fstderr,*) "order_windm = ", order_windm
+         write(fstderr,*) "Fatal error in check_clubb_settings_api"
+         ! General error -> set all entries to clubb_fatal_error
+         err_info%err_code = clubb_fatal_error
+         return
+      endif
+
+      if ( order_wp2_wp3 < 1 .or. order_wp2_wp3 > 4 ) then
+         write(fstderr, *) err_info%err_header_global
+         write(fstderr,*) "The variable order_wp2_wp3 must have a value " &
+                          // "between 1 and 4"
+         write(fstderr,*) "order_wp2_wp3 = ", order_wp2_wp3
+         write(fstderr,*) "Fatal error in check_clubb_settings_api"
+         ! General error -> set all entries to clubb_fatal_error
+         err_info%err_code = clubb_fatal_error
+         return
+      elseif ( order_wp2_wp3 == order_xm_wpxp &
+               .or. order_wp2_wp3 == order_xp2_xpyp &
+               .or. order_wp2_wp3 == order_windm ) then
+         write(fstderr, *) err_info%err_header_global
+         write(fstderr,*) "The variable order_wp2_wp3 has the same value " &
+                          // "as another order_ variable.  Please give each " &
+                          // "order index a unique value."
+         write(fstderr,*) "order_wp2_wp3 = ", order_wp2_wp3
+         write(fstderr,*) "order_xm_wpxp = ", order_xm_wpxp
+         write(fstderr,*) "order_xp2_xpyp = ", order_xp2_xpyp
+         write(fstderr,*) "order_windm = ", order_windm
+         write(fstderr,*) "Fatal error in check_clubb_settings_api"
+         ! General error -> set all entries to clubb_fatal_error
+         err_info%err_code = clubb_fatal_error
+         return
+      endif
+
+      if ( order_xp2_xpyp < 1 .or. order_xp2_xpyp > 4 ) then
+         write(fstderr, *) err_info%err_header_global
+         write(fstderr,*) "The variable order_xp2_xpyp must have a value " &
+                          // "between 1 and 4"
+         write(fstderr,*) "order_xp2_xpyp = ", order_xp2_xpyp
+         write(fstderr,*) "Fatal error in check_clubb_settings_api"
+         ! General error -> set all entries to clubb_fatal_error
+         err_info%err_code = clubb_fatal_error
+         return
+      elseif ( order_xp2_xpyp == order_wp2_wp3 &
+               .or. order_xp2_xpyp == order_xm_wpxp &
+               .or. order_xp2_xpyp == order_windm ) then
+         write(fstderr, *) err_info%err_header_global
+         write(fstderr,*) "The variable order_xp2_xpyp has the same value " &
+                          // "as another order_ variable.  Please give each " &
+                          // "order index a unique value."
+         write(fstderr,*) "order_xp2_xpyp = ", order_xp2_xpyp
+         write(fstderr,*) "order_wp2_wp3 = ", order_wp2_wp3
+         write(fstderr,*) "order_xm_wpxp = ", order_xm_wpxp
+         write(fstderr,*) "order_windm = ", order_windm
+         write(fstderr,*) "Fatal error in check_clubb_settings_api"
+         ! General error -> set all entries to clubb_fatal_error
+         err_info%err_code = clubb_fatal_error
+         return
+      endif
+
+      if ( order_windm < 1 .or. order_windm > 4 ) then
+         write(fstderr, *) err_info%err_header_global
+         write(fstderr,*) "The variable order_windm must have a value " &
+                          // "between 1 and 4"
+         write(fstderr,*) "order_windm = ", order_windm
+         write(fstderr,*) "Fatal error in check_clubb_settings_api"
+         ! General error -> set all entries to clubb_fatal_error
+         err_info%err_code = clubb_fatal_error
+         return
+      elseif ( order_windm == order_wp2_wp3 &
+               .or. order_windm == order_xp2_xpyp &
+               .or. order_windm == order_xm_wpxp ) then
+         write(fstderr, *) err_info%err_header_global
+         write(fstderr,*) "The variable order_windm has the same value " &
+                          // "as another order_ variable.  Please give each " &
+                          // "order index a unique value."
+         write(fstderr,*) "order_windm = ", order_windm
+         write(fstderr,*) "order_wp2_wp3 = ", order_wp2_wp3
+         write(fstderr,*) "order_xp2_xpyp = ", order_xp2_xpyp
+         write(fstderr,*) "order_xm_wpxp = ", order_xm_wpxp
+         write(fstderr,*) "Fatal error in check_clubb_settings_api"
+         ! General error -> set all entries to clubb_fatal_error
+         err_info%err_code = clubb_fatal_error
+         return
+      endif
+
+      ! Checking that when the l_diag_Lscale_from_tau is enabled, the
+      ! relevant Cx tunable parameters are all set to a value of 1 (as
+      ! you're supposed to tune the C_invrs_tau_ parameters instead).
+      if ( clubb_config_flags%l_diag_Lscale_from_tau ) then
+
+         ! Note: someday when we can successfully run with all these parameters
+         ! having a value of 1, the "Warning" messages should be removed and the
+         ! "Fatal error" messages should be uncommented.
+
+         ! C1 must have a value of 1
+         if ( any(params(:,iC1) > one .or. params(:,iC1) < one) ) then
+            write(fstderr,*) "When the l_diag_Lscale_from_tau flag is " &
+                             // "enabled, C1 must have a value of 1."
+            write(fstderr,*) "C1 = ", params(:,iC1)
+            write(fstderr,*) "Warning in check_clubb_settings_api"
+            !write(fstderr,*) "Fatal error in check_clubb_settings_api"
+            ! General error -> set all entries to clubb_fatal_error
+            !err_info%err_code = clubb_fatal_error
+         endif ! C1 check
+
+         ! C1b must have a value of 1
+         if ( any(params(:,iC1b) > one .or. params(:,iC1b) < one) ) then
+            write(fstderr,*) "When the l_diag_Lscale_from_tau flag is " &
+                             // "enabled, C1b must have a value of 1."
+            write(fstderr,*) "C1b = ", params(:,iC1b)
+            write(fstderr,*) "Warning in check_clubb_settings_api"
+            !write(fstderr,*) "Fatal error in check_clubb_settings_api"
+            ! General error -> set all entries to clubb_fatal_error
+            !err_info%err_code = clubb_fatal_error
+         endif ! C1b check
+
+         ! C2rt must have a value of 1
+         if ( any(params(:,iC2rt) > one .or. params(:,iC2rt) < one) ) then
+            write(fstderr,*) "When the l_diag_Lscale_from_tau flag is " &
+                             // "enabled, C2rt must have a value of 1."
+            write(fstderr,*) "C2rt = ", params(:,iC2rt)
+            write(fstderr,*) "Warning in check_clubb_settings_api"
+            !write(fstderr,*) "Fatal error in check_clubb_settings_api"
+            ! General error -> set all entries to clubb_fatal_error
+            !err_info%err_code = clubb_fatal_error
+         endif ! C2rt check
+
+         ! C2thl must have a value of 1
+         if ( any(params(:,iC2thl) > one .or. params(:,iC2thl) < one) ) then
+            write(fstderr,*) "When the l_diag_Lscale_from_tau flag is " &
+                             // "enabled, C2thl must have a value of 1."
+            write(fstderr,*) "C2thl = ", params(:,iC2thl)
+            write(fstderr,*) "Warning in check_clubb_settings_api"
+            !write(fstderr,*) "Fatal error in check_clubb_settings_api"
+            ! General error -> set all entries to clubb_fatal_error
+            !err_info%err_code = clubb_fatal_error
+         endif ! C2thl check
+
+         ! C2rtthl must have a value of 1
+         if ( any(params(:,iC2rtthl) > one .or. params(:,iC2rtthl) < one) ) then
+            write(fstderr,*) "When the l_diag_Lscale_from_tau flag is " &
+                             // "enabled, C2rtthl must have a value of 1."
+            write(fstderr,*) "C2rtthl = ", params(:,iC2rtthl)
+            write(fstderr,*) "Warning in check_clubb_settings_api"
+            !write(fstderr,*) "Fatal error in check_clubb_settings_api"
+            ! General error -> set all entries to clubb_fatal_error
+            !err_info%err_code = clubb_fatal_error
+         endif ! C2rtthl check
+
+         ! C6rt must have a value of 1
+         if ( any(params(:,iC6rt) > one .or. params(:,iC6rt) < one) ) then
+            write(fstderr,*) "When the l_diag_Lscale_from_tau flag is " &
+                             // "enabled, C6rt must have a value of 1."
+            write(fstderr,*) "C6rt = ", params(:,iC6rt)
+            write(fstderr,*) "Warning in check_clubb_settings_api"
+            !write(fstderr,*) "Fatal error in check_clubb_settings_api"
+            ! General error -> set all entries to clubb_fatal_error
+            !err_info%err_code = clubb_fatal_error
+         endif ! C6rt check
+
+         ! C6rtb must have a value of 1
+         if ( any(params(:,iC6rtb) > one .or. params(:,iC6rtb) < one) ) then
+            write(fstderr,*) "When the l_diag_Lscale_from_tau flag is " &
+                             // "enabled, C6rtb must have a value of 1."
+            write(fstderr,*) "C6rtb = ", params(:,iC6rtb)
+            write(fstderr,*) "Warning in check_clubb_settings_api"
+            !write(fstderr,*) "Fatal error in check_clubb_settings_api"
+            ! General error -> set all entries to clubb_fatal_error
+            !err_info%err_code = clubb_fatal_error
+         endif ! C6rtb check
+
+         ! C6thl must have a value of 1
+         if ( any(params(:,iC6thl) > one .or. params(:,iC6thl) < one) ) then
+            write(fstderr,*) "When the l_diag_Lscale_from_tau flag is " &
+                             // "enabled, C6thl must have a value of 1."
+            write(fstderr,*) "C6thl = ", params(:,iC6thl)
+            write(fstderr,*) "Warning in check_clubb_settings_api"
+            !write(fstderr,*) "Fatal error in check_clubb_settings_api"
+            ! General error -> set all entries to clubb_fatal_error
+            !err_info%err_code = clubb_fatal_error
+         endif ! C6thl check
+
+         ! C6thlb must have a value of 1
+         if ( any(params(:,iC6thlb) > one .or. params(:,iC6thlb) < one) ) then
+            write(fstderr,*) "When the l_diag_Lscale_from_tau flag is " &
+                             // "enabled, C6thlb must have a value of 1."
+            write(fstderr,*) "C6thlb = ", params(:,iC6thlb)
+            write(fstderr,*) "Warning in check_clubb_settings_api"
+            !write(fstderr,*) "Fatal error in check_clubb_settings_api"
+            ! General error -> set all entries to clubb_fatal_error
+            !err_info%err_code = clubb_fatal_error
+         endif ! C6thlb check
+
+         ! C14 must have a value of 1
+         if ( any(params(:,iC14) > one .or. params(:,iC14) < one) ) then
+            write(fstderr,*) "When the l_diag_Lscale_from_tau flag is " &
+                             // "enabled, C14 must have a value of 1."
+            write(fstderr,*) "C14 = ", params(:,iC14)
+            write(fstderr,*) "Warning in check_clubb_settings_api"
+            !write(fstderr,*) "Fatal error in check_clubb_settings_api"
+            ! General error -> set all entries to clubb_fatal_error
+            !err_info%err_code = clubb_fatal_error
+         endif ! C14 check
+
+      endif ! l_diag_Lscale_from_tau
+
+      if ( l_implemented ) then
+
+        if ( clubb_config_flags%l_rtm_nudge ) then
+          write(fstderr, *) err_info%err_header_global
+          write(fstderr,*) "l_rtm_nudge must be set to .false. when " &
+                           // "l_implemented = .true."
+          write(fstderr,*) "Fatal error in check_clubb_settings_api"
+          ! General error -> set all entries to clubb_fatal_error
+          err_info%err_code = clubb_fatal_error
+        end if
+
+        if ( clubb_config_flags%l_uv_nudge ) then
+          write(fstderr, *) err_info%err_header_global
+          write(fstderr,*) "l_rtm_nudge must be set to .false. when " &
+                           // "l_implemented = .true."
+          write(fstderr,*) "Fatal error in check_clubb_settings_api"
+          ! General error -> set all entries to clubb_fatal_error
+          err_info%err_code = clubb_fatal_error
+        end if
+
+        if ( thlm_sponge_damp_settings%l_sponge_damping ) then
+          write(fstderr, *) err_info%err_header_global
+          write(fstderr,*) "thlm_sponge_damp_settings%l_sponge_damping " &
+                           // "must be set to .false. when  l_implemented = .true."
+          write(fstderr,*) "Fatal error in check_clubb_settings_api"
+          ! General error -> set all entries to clubb_fatal_error
+          err_info%err_code = clubb_fatal_error
+        end if
+
+        if ( rtm_sponge_damp_settings%l_sponge_damping ) then
+          write(fstderr, *) err_info%err_header_global
+          write(fstderr,*) "rtm_sponge_damp_settings%l_sponge_damping " &
+                           // "must be set to .false. when  l_implemented = .true."
+          write(fstderr,*) "Fatal error in check_clubb_settings_api"
+          ! General error -> set all entries to clubb_fatal_error
+          err_info%err_code = clubb_fatal_error
+        end if
+
+        if ( uv_sponge_damp_settings%l_sponge_damping ) then
+          write(fstderr, *) err_info%err_header_global
+          write(fstderr,*) "uv_sponge_damp_settings%l_sponge_damping " &
+                           // "must be set to .false. when  l_implemented = .true."
+          write(fstderr,*) "Fatal error in check_clubb_settings_api"
+          ! General error -> set all entries to clubb_fatal_error
+          err_info%err_code = clubb_fatal_error
+        end if
+
+        if ( wp2_sponge_damp_settings%l_sponge_damping ) then
+          write(fstderr, *) err_info%err_header_global
+          write(fstderr,*) "wp2_sponge_damp_settings%l_sponge_damping " &
+                           // "must be set to .false. when  l_implemented = .true."
+          write(fstderr,*) "Fatal error in check_clubb_settings_api"
+          ! General error -> set all entries to clubb_fatal_error
+          err_info%err_code = clubb_fatal_error
+        end if
+
+        if ( wp3_sponge_damp_settings%l_sponge_damping ) then
+          write(fstderr, *) err_info%err_header_global
+          write(fstderr,*) "wp3_sponge_damp_settings%l_sponge_damping " &
+                           // "must be set to .false. when  l_implemented = .true."
+          write(fstderr,*) "Fatal error in check_clubb_settings_api"
+          ! General error -> set all entries to clubb_fatal_error
+          err_info%err_code = clubb_fatal_error
+        end if
+
+        if ( up2_vp2_sponge_damp_settings%l_sponge_damping ) then
+          write(fstderr, *) err_info%err_header_global
+          write(fstderr,*) "up2_vp2_sponge_damp_settings%l_sponge_damping " &
+                           // "must be set to .false. when  l_implemented = .true."
+          write(fstderr,*) "Fatal error in check_clubb_settings_api"
+          ! General error -> set all entries to clubb_fatal_error
+          err_info%err_code = clubb_fatal_error
+        end if
+
+      end if
+
+      return
+
+    end subroutine check_clubb_settings_api
+
 end module numerical_check

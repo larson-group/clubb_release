@@ -303,7 +303,8 @@ module stats_variables
       irtm_mfl = 0,        & ! rtm change due to monotonic flux limiter
       irtm_tacl = 0,       & ! rtm correction from turbulent advection (wprtp) clipping
       irtm_cl = 0,         & ! rtm clipping term
-      irtm_pd = 0,         & ! thlm postive definite adj term
+      irtm_pd = 0,         & ! rtm postive definite adj term
+      irtm_ed = 0,         & ! rtm explicit diffusion (expldiff) term
       ithlm_bt = 0,        & ! thlm total time tendency
       ithlm_ma = 0,        & ! thlm mean advect. term
       ithlm_ta = 0,        & ! thlm turb. advect. term
@@ -312,8 +313,8 @@ module stats_variables
       ithlm_mc = 0,        & ! thlm change from microphysics
       ithlm_mfl = 0,       & ! thlm change due to monotonic flux limiter
       ithlm_tacl = 0,      & ! thlm correction from turbulent advection (wpthlp) clipping
-      ithlm_cl = 0           ! thlm clipping term
-
+      ithlm_cl = 0,        & ! thlm clipping term
+      ithlm_ed = 0           ! thlm explicit diffusion (expldiff) term
 
     !monatonic flux limiter diagnostic terms
     integer :: &

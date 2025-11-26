@@ -9,13 +9,17 @@ module grid_adaptation_module
 
   implicit none
 
-  public :: setup_gr_dycore, &
+  public :: setup_gr_fixed_min, &
+            setup_gr_dycore, &
             normalize_grid_density, &
             adapt_grid, &
-            calc_grid_dens, &
-            clean_up_grid_adaptation_module
+            calc_grid_dens, &                   ! Procedures
+            lscale_term_weight, &
+            alt_term_weight, &
+            chi_term_weight, &
+            richardson_num_term_weight          ! Parameters
 
-  private :: setup_gr_min, calc_integral, create_fixed_min_gr_dens_func, &
+  private :: calc_integral, &
              normalize_min_grid_density, normalize_grid_density_helper, &
              decide_if_grid_adapt, apply_equidistribution_principle, &
              create_grid_from_normalized_grid_density, check_grid, &
@@ -26,40 +30,12 @@ module grid_adaptation_module
   real( kind = core_rknd ), parameter ::  &
     tol = 1.0e-6_core_rknd ! tolerance to check if to real numbers are equal
 
-  ! Save prescribed minimum grid density profile, this is then interpolated every timestep
-  ! to the current physics grid
-  integer :: &
-    fixed_min_gr_dens_idx ! number of elements in the vertical axis of fixed_min_gr_dens
-
-  real( kind = core_rknd ), dimension(:,:), allocatable :: &
-    fixed_min_gr_dens_z, &  ! z coordinates of the piecewise linear minimum
-                            ! grid density function                                       [m]
-    fixed_min_gr_dens       ! minimum grid density values given at the z coordinates      [1/m]
-
-  ! Save the normalized grid density from the last grid adaptation, to check if new grid would
-  ! be significantly different (grid adaptation trigger)
-  integer :: &
-    gr_dens_old_idx_global ! number of levels in gr_dens_old_global and gr_dens_old_z_global
-  
-  real( kind = core_rknd ), dimension(:,:), allocatable :: &
-    gr_dens_old_z_global, &  ! grid density altitudes from adaptation step before [m]
-    gr_dens_old_global       ! grid density from adaptation step before           [1/m]
-
-  ! Save the calculated values for the refinement criterion terms as a cumulative sum starting
-  ! from the last grid adaptation, to take the time average over that region, to have a
-  ! smoother evolution in time
-  integer :: &
-    Lscale_counter, &          ! the number of values cumulated in cumulative_Lscale
-    richardson_num_counter, &  ! the number of values cumulated in cumulative_richardson_num
-    chi_counter                ! the number of values cumulated in cumulative_chi
-
-  real( kind = core_rknd ), dimension(:), allocatable :: &
-    cumulative_Lscale, &          ! cumulative sum of the Lscale term in the
-                                  ! refinement cirterion                                  [1/m]
-    cumulative_richardson_num, &  ! cumulative sum of the richardson number term in the
-                                  ! refinement cirterion                                  [1/m]
-    cumulative_chi                ! cumulative sum of the chi term in the
-                                  ! refinement cirterion                                  [1/m]
+  ! weights for each term in the refinement criterion
+  real( kind = core_rknd ), parameter ::  &
+    lscale_term_weight = 0.0, &
+    alt_term_weight = 3.0, &
+    chi_term_weight = 100.0, &
+    richardson_num_term_weight = 7.5
 
   contains
 
@@ -194,7 +170,10 @@ module grid_adaptation_module
 
   end subroutine setup_gr_dycore
 
-  subroutine setup_gr_min( iunit, ngrdcol, grid_sfc, grid_top, l_ascending_grid, gr, err_info )
+  subroutine setup_gr_fixed_min( iunit, ngrdcol, &
+                                 grid_first, grid_last, &
+                                 l_ascending_grid, &
+                                 gr, err_info )
 
     ! Description:
     ! Thid subroutine is used to get the minimum grid density profile from a file
@@ -221,8 +200,8 @@ module grid_adaptation_module
       ngrdcol
     
     real( kind = core_rknd ), dimension(ngrdcol), intent(in) :: &
-      grid_sfc, &    ! grids surface height for the dycore grid [m]
-      grid_top       ! grids highest level for the dycore grid  [m]
+      grid_first, &    ! grids first momentum height for the fixed minimum grid [m]
+      grid_last        ! grids last momentum level for the fixed minimum grid  [m]
 
     logical, intent(in) :: &
       l_ascending_grid
@@ -267,8 +246,17 @@ module grid_adaptation_module
       zt_grid_fname = ''                              ! Path and filename of file for
                                                       ! thermodynamic level altitudes
 
-    !--------------------- Begin Code ---------------------
+    real( kind = core_rknd ), dimension(ngrdcol) :: &
+      grid_sfc, &    ! grids surface height for the dycore grid [m]
+      grid_top       ! grids highest level for the dycore grid  [m]
 
+    ! these are the grid_sfc/grid_top variable -/+ a small value, to ensure that the
+    ! setup_grid subroutine always includes the exact grid_sfc and grid_top values
+    real( kind = core_rknd ), dimension(ngrdcol) :: &
+      grid_sfc_outer, &   !  [m]
+      grid_top_outer      !  [m]
+
+    !--------------------- Begin Code ---------------------
     do i = 1, ngrdcol
       call read_grid_heights( nzmax, grid_type, &                 ! Intent(in)
                               zm_grid_fname, zt_grid_fname, &     ! Intent(in)
@@ -282,13 +270,30 @@ module grid_adaptation_module
 
     if ( any(err_info%err_code == clubb_fatal_error) ) then
       write(fstderr, *) err_info%err_header_global
-      write(fstderr, *) "Fatal error calling read_grid_heights in setup_gr_min"
+      write(fstderr, *) "Fatal error calling read_grid_heights in setup_gr_fixed_min"
+    end if
+
+    if ( l_ascending_grid ) then
+      do i = 1, ngrdcol
+        grid_sfc(i) = grid_first(i)
+        grid_top(i) = grid_last(i)
+      end do
+    else
+      do i = 1, ngrdcol
+        grid_sfc(i) = grid_last(i)
+        grid_top(i) = grid_first(i)
+      end do
     end if
 
     nlevel = nzmax
     do while( momentum_heights(1,nlevel) > grid_top(1) .and. nlevel > 1 )
       nlevel = nlevel - 1
     end do
+
+    if ( momentum_heights(1,nzmax) < grid_top(1) .or. momentum_heights(1,1) > grid_sfc(1) ) then
+      write(fstderr, *) "Error in setup_gr_fixed_min in grid_adaptation_module."
+      write(fstderr, *) "The fixed minimum grid density momentum heights need to cover at least the domain of the physics grid."
+    end if
 
     do i = 1, ngrdcol
       momentum_heights(i,nlevel) = grid_top(i)
@@ -302,18 +307,24 @@ module grid_adaptation_module
     do i = 1, ngrdcol
       momentum_heights(i,level_min) = grid_sfc(i)
     end do
+
+    do i = 1, ngrdcol
+      grid_sfc_outer(i) = grid_sfc(i) - 0.001
+      grid_top_outer(i) = grid_top(i) + 0.001
+    end do
     
     call setup_grid( nlevel, ngrdcol, sfc_elevation, l_implemented, &           ! intent(in)
-                     l_ascending_grid, grid_type, deltaz, grid_sfc, grid_top, & ! intent(in)
+                     l_ascending_grid, grid_type, deltaz, &                     ! intent(in)
+                     grid_sfc_outer, grid_top_outer, &                          ! intent(in)
                      momentum_heights, thermodynamic_heights, &                 ! intent(in)
                      gr, err_info )                                             ! intent(inout)
 
     if ( any(err_info%err_code == clubb_fatal_error) ) then
       write(fstderr, *) err_info%err_header_global
-      write(fstderr, *) "Fatal error calling setup_grid in setup_gr_min"
+      write(fstderr, *) "Fatal error calling setup_grid in setup_gr_fixed_min"
     end if
 
-  end subroutine setup_gr_min
+  end subroutine setup_gr_fixed_min
 
   function calc_integral( g_idx, g_x, g_y )
     ! Description:
@@ -354,131 +365,6 @@ module grid_adaptation_module
     end do
 
   end function calc_integral
-
-  subroutine create_fixed_min_gr_dens_func( iunit, ngrdcol, &
-                                            grid_sfc, grid_top, &
-                                            l_ascending_grid, &
-                                            err_info )
-
-    ! Description:
-    ! Creates and allocates the fixed minimum grid density function from read in minimum grid.
-    ! Takes the inverse grid distance between zm levels.
-
-    !-----------------------------------------------------------------------
-
-    use grid_class, only: &
-        grid ! Type
-
-    use error_code, only: &
-        clubb_at_least_debug_level_api
-
-    use err_info_type_module, only: &
-        err_info_type
-
-    implicit none
-
-    !--------------------- Input Variables ---------------------
-    integer, intent(in) :: &
-      iunit, &
-      ngrdcol
-
-    real( kind = core_rknd ), intent(in) :: &
-      grid_sfc, & ! altitude of the grids surface [m]
-      grid_top    ! altitude of the grids top     [m]
-
-    logical, intent(in) :: &
-      l_ascending_grid
-
-    !--------------------- Input/Output Variables ---------------------
-    type( err_info_type ), intent(inout) :: &
-      err_info
-
-    !--------------------- Local Variables ---------------------
-    integer :: i, j
-
-    type( grid ) :: gr_min ! The grid that is read in from a file and that is used for the
-                           ! prescribed non-normalized minimum grid density
-
-    real( kind = core_rknd ), dimension(ngrdcol) :: &
-      grid_sfc_arr, & ! an array with grid_sfc
-      grid_top_arr    ! an array with grid_top
-
-    !--------------------- Begin Code ---------------------
-    if ( (.not. allocated( fixed_min_gr_dens_z )) .or. (.not. allocated( fixed_min_gr_dens )) ) then
-      do i = 1, ngrdcol
-        grid_sfc_arr(i) = grid_sfc
-        grid_top_arr(i) = grid_top
-      end do
-
-      ! Initialize the minimum grid to use as a profile for the prescribed minimum grid density
-      call setup_gr_min( iunit, ngrdcol, &              ! Intent(in)
-                         grid_sfc_arr, grid_top_arr, &  ! Intent(in)
-                         l_ascending_grid, &            ! Intent(in)
-                         gr_min, err_info )             ! Intent(out)
-      fixed_min_gr_dens_idx = gr_min%nzt+2
-    end if
-
-    if ( .not. allocated( fixed_min_gr_dens_z ) ) then
-      allocate( fixed_min_gr_dens_z(ngrdcol,gr_min%nzt+2) )
-      do i = 1, ngrdcol
-        fixed_min_gr_dens_z(i,1) = grid_sfc
-        do j = 1, gr_min%nzt
-          fixed_min_gr_dens_z(i,j+1) = gr_min%zt(i,j)
-        end do
-        fixed_min_gr_dens_z(i,gr_min%nzt+2) = grid_top
-      end do
-    end if
-
-    ! TODO maybe just use invrs_dzm instead since it has already nzm levels,
-    ! but this will probably change results slightly, but then fixed_min_gr_dens_idx and
-    ! fixed_min_gr_dens_z would also change
-    if ( .not. allocated( fixed_min_gr_dens ) ) then
-      allocate( fixed_min_gr_dens(ngrdcol,gr_min%nzt+2) )
-      do i = 1, ngrdcol
-        ! Use linear extrapolation to calculate points on the outer zm levels
-        fixed_min_gr_dens(i,1) = gr_min%invrs_dzt(i,1) &
-                                 + (fixed_min_gr_dens_z(i,1) - gr_min%zt(i,1)) &
-                                   /(gr_min%zt(i,2) - gr_min%zt(i,1)) &
-                                    *(gr_min%invrs_dzt(i,2) - gr_min%invrs_dzt(i,1))
-
-        ! Check if extrapolated value is non-negative
-        if ( clubb_at_least_debug_level_api( 2 ) ) then
-          if ( fixed_min_gr_dens(i,1) <= 0 ) then
-            error stop 'Initial minimum grid density function needs to be positive.'
-          end if
-        end if
-        
-        do j = 1, gr_min%nzt
-          fixed_min_gr_dens(i,j+1) = gr_min%invrs_dzt(i,j)
-
-          ! Check if value is non-negative
-          if ( clubb_at_least_debug_level_api( 2 ) ) then
-            if ( fixed_min_gr_dens(i,j+1) <= 0 ) then
-              error stop 'Initial minimum grid density function needs to be positive.'
-            end if
-          end if
-        end do
-
-        ! Use linear extrapolation to calculate points on the outer zm levels
-        fixed_min_gr_dens(i,gr_min%nzt+2) = gr_min%invrs_dzt(i,gr_min%nzt-1) &
-                                               + (fixed_min_gr_dens_z(i,gr_min%nzt+2) &
-                                                  - gr_min%zt(i,gr_min%nzt-1)) &
-                                                 /(gr_min%zt(i,gr_min%nzt) &
-                                                   - gr_min%zt(i,gr_min%nzt-1)) &
-                                                  *(gr_min%invrs_dzt(i,gr_min%nzt) &
-                                                    - gr_min%invrs_dzt(i,gr_min%nzt-1))
-
-        ! Check if extrapolated value is non-negative
-        if ( clubb_at_least_debug_level_api( 2 ) ) then
-          if ( fixed_min_gr_dens(i,gr_min%nzt+2) <= 0 ) then
-            error stop 'Initial minimum grid density function needs to be positive.'
-          end if
-        end if
-
-      end do
-    end if
-    
-  end subroutine create_fixed_min_gr_dens_func
 
   function normalize_min_grid_density( ngrdcol, &
                                        min_gr_dens_idx, &
@@ -703,32 +589,30 @@ module grid_adaptation_module
 
   end function normalize_grid_density_helper
 
-  subroutine normalize_grid_density( ngrdcol, iunit, &
+  subroutine normalize_grid_density( ngrdcol, &
                                      gr_dens_idx, &
                                      gr_dens_z, gr_dens, &
                                      lambda, &
                                      num_levels, &
-                                     l_ascending_grid, &
+                                     gr_fixed_min, &
                                      norm_min_grid_dens, &
-                                     norm_grid_dens, &
-                                     err_info )
+                                     norm_grid_dens )
     ! Description:
     ! Normalizes the prescribed grid density.
 
     !-----------------------------------------------------------------------
 
+    use grid_class, only: &
+        grid ! Type
+
     use interpolation, only: &
         zlinterp_fnc
-
-    use err_info_type_module, only: &
-        err_info_type
 
     implicit none
 
     !--------------------- Input Variables ---------------------
     integer, intent(in) :: & 
       ngrdcol, &
-      iunit, &
       gr_dens_idx, &     ! total numer of indices of gr_dens_z and gr_dens []
       num_levels         ! number of levels the new grid should have       []
 
@@ -742,8 +626,8 @@ module grid_adaptation_module
       gr_dens         ! the values of the density function at the given z coordinates of the
                       ! connection points of the piecewise linear grid density function        [1/m]
 
-    logical, intent(in) :: &
-      l_ascending_grid
+    type( grid ), intent(in) :: &
+      gr_fixed_min
 
     !--------------------- Output Variable ---------------------
     real( kind = core_rknd ), dimension(ngrdcol,gr_dens_idx), intent(out) :: &
@@ -752,10 +636,6 @@ module grid_adaptation_module
       norm_grid_dens        ! the density at the given z coordinates of the connection points
                             ! of the normalized piecewise linear grid density function         [1/m]
 
-    !--------------------- Input/Output Variable ---------------------
-    type( err_info_type ), intent(inout) :: &
-      err_info
-
     !--------------------- Local Variables ---------------------
     integer :: i
 
@@ -763,26 +643,15 @@ module grid_adaptation_module
       min_gr_dens        ! the density at the given z coordinates of the connection points
                          ! of the normalized piecewise linear grid density function          [1/m]
 
-    real( kind = core_rknd ) ::  &
-      grid_sfc,  &    ! height of the grids surface   [m]
-      grid_top        ! height of the top of the grid [m]
-
     !--------------------- Begin Code ---------------------
-    grid_sfc = gr_dens_z(1,1)
-    grid_top = gr_dens_z(1,gr_dens_idx)
-
-    call create_fixed_min_gr_dens_func( iunit+1, ngrdcol, &
-                                        grid_sfc, grid_top, &
-                                        l_ascending_grid, &
-                                        err_info )
 
     ! set the minimum grid density profile to be the linear piecewise function of the
     ! original minimum grid density function evaluated at the current grid levels
     ! this way the function can be executed with all checks and works out exactly
     do i = 1, ngrdcol
-      min_gr_dens(i,:) = zlinterp_fnc( gr_dens_idx, fixed_min_gr_dens_idx, &
-                                       gr_dens_z(i,:), fixed_min_gr_dens_z(i,:), &
-                                       fixed_min_gr_dens(i,:) )
+      min_gr_dens(i,:) = zlinterp_fnc( gr_dens_idx, gr_fixed_min%nzm, &
+                                       gr_dens_z(i,:), gr_fixed_min%zm(i,:), &
+                                       gr_fixed_min%invrs_dzm(i,:) )
     end do
 
     norm_min_grid_dens = normalize_min_grid_density( ngrdcol, &
@@ -1060,7 +929,8 @@ module grid_adaptation_module
                                                        num_levels, &
                                                        threshold, &
                                                        grid_heights, &
-                                                       l_adapt_grid )
+                                                       l_adapt_grid, &
+                                                       gr_dens_old_z, gr_dens_old )
     ! Description:
     ! Creates the grid from the non-normalized minimum grid density and the non-normalized
     ! grid density following the equidistribution principle.
@@ -1098,6 +968,13 @@ module grid_adaptation_module
     logical, dimension(ngrdcol), intent(out) :: &
       l_adapt_grid ! whether the grid should be adapted or not
 
+    !--------------------- Input/Output Variable ---------------------
+    real( kind = core_rknd ), dimension(ngrdcol,gr_dens_norm_idx), intent(inout) ::  &
+      ! The two arrays gr_dens_old_z and gr_dens_old build the piecewise linear
+      ! normalized grid density, from the last time the grid was adapted
+      gr_dens_old_z,  & ! altitudes [m]
+      gr_dens_old       ! densities [1/m]
+
     !--------------------- Local Variables ---------------------
     integer :: grid_heights_idx, i
 
@@ -1110,13 +987,10 @@ module grid_adaptation_module
     grid_top = gr_dens_norm_z(1,gr_dens_norm_idx)
 
     ! decide if grid should be adapted or not
-    if ( .not. allocated( gr_dens_old_z_global ) .and. .not. allocated( gr_dens_old_global ) ) then
-      error stop 'gr_dens_old_z_global and gr_dens_old_global were not allocated...'
-    end if
     l_adapt_grid = decide_if_grid_adapt( ngrdcol, &
-                                         gr_dens_old_idx_global, &
-                                         gr_dens_old_z_global, &
-                                         gr_dens_old_global, &
+                                         gr_dens_norm_idx, &
+                                         gr_dens_old_z, &
+                                         gr_dens_old, &
                                          gr_dens_norm_idx, &
                                          gr_dens_norm_z, &
                                          gr_dens_norm, &
@@ -1126,8 +1000,8 @@ module grid_adaptation_module
     do i = 1, ngrdcol
       if ( l_adapt_grid(i) ) then
         ! store new normalized grid density as old grid density for next adaptation iteration
-        gr_dens_old_z_global(i,:) = gr_dens_norm_z(i,:)
-        gr_dens_old_global(i,:) = gr_dens_norm(i,:)
+        gr_dens_old_z(i,:) = gr_dens_norm_z(i,:)
+        gr_dens_old(i,:) = gr_dens_norm(i,:)
         ! only create grid if it should actually be adapted
         grid_heights(i,:) = apply_equidistribution_principle( num_levels, &
                                                                            gr_dens_norm_idx, &
@@ -1275,7 +1149,7 @@ module grid_adaptation_module
                              thlm, exner, rtm, &
                              rcm, p_in_Pa, thvm, &
                              ice_supersat_frac, &
-                             bv_efold, &
+                             bv_efold, T0, &
                              clubb_config_flags, &
                              gr_dens_z, gr_dens, &
                              alt_term, Lscale_term, &
@@ -1283,7 +1157,13 @@ module grid_adaptation_module
                              chi_term, &
                              chi_term_time_avg, &
                              richardson_num_term, &
-                             richardson_num_term_time_avg )
+                             richardson_num_term_time_avg, &
+                             Lscale_counter, &
+                             chi_counter, &
+                             richardson_num_counter, &
+                             cumulative_Lscale, &
+                             cumulative_chi, &
+                             cumulative_richardson_num )
     ! Description:
     ! Calculate the necessary variables and then construct the non-normalized
     ! grid density from them.
@@ -1335,6 +1215,9 @@ module grid_adaptation_module
       bv_efold             ! Control parameter for inverse e-folding of cloud fraction
                            ! in the mixed Brunt Vaisala frequency  [-]
 
+    real( kind = core_rknd ), intent(in) :: &
+      T0                     ! Reference temperature (usually 300)  [K]
+
     type(pdf_parameter), intent(in) :: & 
       pdf_params           ! PDF parameters
 
@@ -1356,6 +1239,23 @@ module grid_adaptation_module
       chi_term_time_avg, &         ! time averaged chi term of the refinement criterion      [1/m]
       richardson_num_term_time_avg ! time averaged richardson number term of the refinement
                                    ! criterion                                               [1/m]
+
+    !--------------------- Input/Output Variable ---------------------
+    ! Save the calculated values for the refinement criterion terms as a cumulative sum starting
+    ! from the last grid adaptation, to take the time average over that region, to have a
+    ! smoother evolution in time
+    integer :: &
+      Lscale_counter, &          ! the number of values cumulated in cumulative_Lscale
+      richardson_num_counter, &  ! the number of values cumulated in cumulative_richardson_num
+      chi_counter                ! the number of values cumulated in cumulative_chi
+  
+    real( kind = core_rknd ), dimension(gr%nzm) :: &
+      cumulative_Lscale, &          ! cumulative sum of the Lscale term in the
+                                    ! refinement cirterion                                  [1/m]
+      cumulative_richardson_num, &  ! cumulative sum of the richardson number term in the
+                                    ! refinement cirterion                                  [1/m]
+      cumulative_chi                ! cumulative sum of the chi term in the
+                                    ! refinement cirterion                                  [1/m]
 
     !--------------------- Local Variables ---------------------
     integer :: k, i
@@ -1410,7 +1310,7 @@ module grid_adaptation_module
                                       clubb_config_flags%l_brunt_vaisala_freq_moist,      & ! In
                                       clubb_config_flags%l_use_thvm_in_bv_freq,           & ! In
                                       clubb_config_flags%l_modify_limiters_for_cnvg_test, & ! In
-                                      bv_efold,                                           & ! In
+                                      bv_efold, T0,                                       & ! In
                                       brunt_vaisala_freq_sqd,                             & ! Out
                                       brunt_vaisala_freq_sqd_mixed,                       & ! Out
                                       brunt_vaisala_freq_sqd_dry,                         & ! Out
@@ -1429,7 +1329,13 @@ module grid_adaptation_module
                                 chi_term,                      & ! Out
                                 chi_term_time_avg,             & ! Out
                                 richardson_num_term,           & ! Out
-                                richardson_num_term_time_avg )   ! Out
+                                richardson_num_term_time_avg,  & ! Out
+                                Lscale_counter,                & ! In/Out
+                                chi_counter,                   & ! In/Out
+                                richardson_num_counter,        & ! In/Out
+                                cumulative_Lscale,             & ! In/Out
+                                cumulative_chi,                & ! In/Out
+                                cumulative_richardson_num )      ! In/Out
 
   end subroutine calc_grid_dens
 
@@ -1444,7 +1350,13 @@ module grid_adaptation_module
                                     chi_term, &
                                     chi_term_time_avg, &
                                     richardson_num_term, &
-                                    richardson_num_term_time_avg )
+                                    richardson_num_term_time_avg, &
+                                    Lscale_counter, &
+                                    chi_counter, &
+                                    richardson_num_counter, &
+                                    cumulative_Lscale, &
+                                    cumulative_chi, &
+                                    cumulative_richardson_num )
     ! Description:
     ! Calculates the non-normalized grid density from Lscale, chi,
     ! ddzt_umvm_sqd and brunt_vaisala_freq_sqd.
@@ -1488,6 +1400,23 @@ module grid_adaptation_module
       richardson_num_term_time_avg ! time averaged richardson number term of the refinement
                                    ! criterion                                               [1/m]
 
+    !--------------------- Input/Output Variable ---------------------
+    ! Save the calculated values for the refinement criterion terms as a cumulative sum starting
+    ! from the last grid adaptation, to take the time average over that region, to have a
+    ! smoother evolution in time
+    integer :: &
+      Lscale_counter, &          ! the number of values cumulated in cumulative_Lscale
+      richardson_num_counter, &  ! the number of values cumulated in cumulative_richardson_num
+      chi_counter                ! the number of values cumulated in cumulative_chi
+  
+    real( kind = core_rknd ), dimension(nzm) :: &
+      cumulative_Lscale, &          ! cumulative sum of the Lscale term in the
+                                    ! refinement cirterion                                  [1/m]
+      cumulative_richardson_num, &  ! cumulative sum of the richardson number term in the
+                                    ! refinement cirterion                                  [1/m]
+      cumulative_chi                ! cumulative sum of the chi term in the
+                                    ! refinement cirterion                                  [1/m]
+
     !--------------------- Local Variables ---------------------
     integer :: k
 
@@ -1495,36 +1424,11 @@ module grid_adaptation_module
       wp2_threshold = 0.001 ! threshold for wp2 that decides whether Lscale is used or not [m^2/s^2]
 
     !--------------------- Begin Code ---------------------
-    ! Prepare cumulative_Lscale to use for time averaged Lscale term
-    if ( .not. allocated( cumulative_Lscale ) ) then
-      allocate( cumulative_Lscale(nzm) )
-      Lscale_counter = 0
-      do k = 1, nzm
-        cumulative_Lscale(k) = zero
-      end do
-    end if
+
     Lscale_counter = Lscale_counter + 1
-
-    ! Prepare cumulative_richardson_num to use for time averaged richardson number term
-    if ( .not. allocated( cumulative_richardson_num ) ) then
-      allocate( cumulative_richardson_num(nzm) )
-      richardson_num_counter = 0
-      do k = 1, nzm
-        cumulative_richardson_num(k) = zero
-      end do
-    end if
     richardson_num_counter = richardson_num_counter + 1
-
-    ! Prepare cumulative_chi to use for time averaged chi term
-    if ( .not. allocated( cumulative_chi ) ) then
-      allocate( cumulative_chi(nzm) )
-      chi_counter = 0
-      do k = 1, nzm
-        cumulative_chi(k) = zero
-      end do
-    end if
     chi_counter = chi_counter + 1
-
+    
     ! Calculate each refinement criterion term
     do k = 1, nzm
       gr_dens_z(k) = zm(1,k)
@@ -1563,10 +1467,10 @@ module grid_adaptation_module
     ! Weigh each term to get the final density as sum of the individual terms
     do k = 1, nzm
         ! refinement criterion
-        gr_dens(k) =   0.0   * Lscale_term_time_avg(k) &
-                     + 3.0   * alt_term(k) &
-                     + 100.0 * chi_term_time_avg(k) &
-                     + 7.5   * richardson_num_term_time_avg(k)
+        gr_dens(k) =   lscale_term_weight           * Lscale_term_time_avg(k) &
+                     + alt_term_weight              * alt_term(k) &
+                     + chi_term_weight              * chi_term_time_avg(k) &
+                     + richardson_num_term_weight   * richardson_num_term_time_avg(k)
     end do
 
     ! Smooth the grid density
@@ -1681,40 +1585,6 @@ module grid_adaptation_module
 
   end function moving_average
 
-  subroutine clean_up_grid_adaptation_module()
-
-    implicit none
-
-    if ( allocated( fixed_min_gr_dens ) ) then
-      deallocate( fixed_min_gr_dens )
-    end if
-
-    if ( allocated( fixed_min_gr_dens_z ) ) then
-      deallocate( fixed_min_gr_dens_z )
-    end if
-
-    if ( allocated( gr_dens_old_global ) ) then
-      deallocate( gr_dens_old_global )
-    end if
-
-    if ( allocated( gr_dens_old_z_global ) ) then
-      deallocate( gr_dens_old_z_global )
-    end if
-
-    if ( allocated( cumulative_Lscale ) ) then
-      deallocate( cumulative_Lscale )
-    end if
-
-    if ( allocated( cumulative_richardson_num ) ) then
-      deallocate( cumulative_richardson_num )
-    end if
-
-    if ( allocated( cumulative_chi ) ) then
-      deallocate( cumulative_chi )
-    end if
-
-  end subroutine clean_up_grid_adaptation_module
-
   subroutine adapt_grid( ngrdcol, gr_dens_norm_idx, &
                          gr_dens_norm_z, gr_dens_norm, &
                          min_gr_dens_norm_z, min_gr_dens_norm, &
@@ -1723,6 +1593,13 @@ module grid_adaptation_module
                          thvm, idx_thvm, p_sfc, &
                          grid_remap_method, &
                          gr, &
+                         gr_dens_old_z, gr_dens_old, &
+                         Lscale_counter, &
+                         chi_counter, &
+                         richardson_num_counter, &
+                         cumulative_Lscale, &
+                         cumulative_chi, &
+                         cumulative_richardson_num, &
                          thlm_forcing, rtm_forcing, um_forcing, vm_forcing, &
                          sclrm_forcing, edsclrm_forcing, wprtp_forcing, &
                          wpthlp_forcing, rtp2_forcing, thlp2_forcing, &
@@ -1810,6 +1687,28 @@ module grid_adaptation_module
 
     !--------------------- In/Out Variable ---------------------
     type( grid ), intent(inout) :: gr ! the current grid, all values are given on
+
+    real( kind = core_rknd ), dimension(ngrdcol,gr_dens_norm_idx), intent(inout) ::  &
+      ! The two arrays gr_dens_old_z and gr_dens_old build the piecewise linear
+      ! normalized grid density, from the last time the grid was adapted
+      gr_dens_old_z,  & ! altitudes [m]
+      gr_dens_old       ! densities [1/m]
+
+    ! Save the calculated values for the refinement criterion terms as a cumulative sum starting
+    ! from the last grid adaptation, to take the time average over that region, to have a
+    ! smoother evolution in time
+    integer :: &
+      Lscale_counter, &          ! the number of values cumulated in cumulative_Lscale
+      richardson_num_counter, &  ! the number of values cumulated in cumulative_richardson_num
+      chi_counter                ! the number of values cumulated in cumulative_chi
+  
+    real( kind = core_rknd ), dimension(gr%nzm) :: &
+      cumulative_Lscale, &          ! cumulative sum of the Lscale term in the
+                                    ! refinement cirterion                                  [1/m]
+      cumulative_richardson_num, &  ! cumulative sum of the richardson number term in the
+                                    ! refinement cirterion                                  [1/m]
+      cumulative_chi                ! cumulative sum of the chi term in the
+                                    ! refinement cirterion                                  [1/m]
 
     real( kind = core_rknd ), intent(inout), dimension(ngrdcol,gr%nzt) ::  &
       thlm_forcing,    & ! theta_l forcing (thermodynamic levels)    [K/s]
@@ -2004,18 +1903,6 @@ module grid_adaptation_module
     ! trigger threshold
     threshold = 6.0e-3
 
-    ! Allocate and set gr_dens_old_global if not already allocated
-    if ( .not. allocated( gr_dens_old_global ) ) then
-      gr_dens_old_idx_global = gr%nzm
-      allocate( gr_dens_old_global(ngrdcol,gr%nzm) )
-      gr_dens_old_global = gr%invrs_dzm
-    end if
-
-    if ( .not. allocated( gr_dens_old_z_global ) ) then
-      allocate( gr_dens_old_z_global(ngrdcol,gr%nzm) )
-      gr_dens_old_z_global = gr%zm
-    end if
-
     call create_grid_from_normalized_grid_density( ngrdcol, &
                                                    gr_dens_norm_idx, &
                                                    gr_dens_norm_z, gr_dens_norm, &
@@ -2023,7 +1910,8 @@ module grid_adaptation_module
                                                    num_levels, &
                                                    threshold, &
                                                    new_gr_zm, &
-                                                   l_adapt_grid )
+                                                   l_adapt_grid, &
+                                                   gr_dens_old_z, gr_dens_old )
     
 
     do i = 1, ngrdcol

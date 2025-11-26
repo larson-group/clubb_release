@@ -19,7 +19,7 @@ DEBUG="-traceback -g -C -Kieee -Ktrap=fp"
 
 # == Machine specific options ==
 # The NVHPC Fortran compiler will select the native processor type by default
-ARCH="-Mcache_align" # -Mcache_align is included for the use of the ACML
+ARCH="-Mcache_align -Mbackslash -Mstandard" # -Mcache_align is included for the use of the ACML
 
 # == Used to promote all real's to double precision ==
 DOUBLE_PRECISION="-r8"
@@ -34,7 +34,7 @@ NETCDF="$(nf-config --prefix)"
 # == Linking Flags ==
 LDFLAGS="$ARCH -L$NETCDF/lib -lnetcdff $LAPACK"
 
-FFLAGS="$ARCH $OPTIMIZE $DEBUG -Mbackslash -Mstandard -Kieee"
+FFLAGS="$ARCH $OPTIMIZE $DEBUG -Kieee"
 
 # Preprocessing Directives:
 #   -DNETCDF enables netCDF output

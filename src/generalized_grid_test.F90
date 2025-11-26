@@ -196,6 +196,8 @@ module generalized_grid_test
                wp2hmp, rtphmp_zt, thlphmp_zt, &                           ! Intent(in)
                host_dx, host_dy, &                                        ! Intent(in)
                clubb_params, nu_vert_res_dep, lmin, &                     ! Intent(in)
+               mixt_frac_max_mag, T0, ts_nudge, &                         ! Intent(in)
+               rtm_min, rtm_nudge_max_altitude, &                         ! Intent(in)
                clubb_config_flags, &                                      ! Intent(in)
                stats_metadata, &                                          ! Intent(in)
                stats_zt, stats_zm, stats_sfc, &                           ! intent(inout)
@@ -247,7 +249,9 @@ module generalized_grid_test
         init_pdf_params
 
     use model_flags, only: &
-        clubb_config_flags_type
+        clubb_config_flags_type, &
+        iiPDF_new, &
+        iiPDF_new_hybrid
 
     use stats_type, only: &
         stats ! Type
@@ -383,9 +387,14 @@ module generalized_grid_test
 
     type(nu_vertical_res_dep), intent(in) :: &
       nu_vert_res_dep    ! Vertical resolution dependent nu values
-
+      
     real( kind = core_rknd ), intent(in) :: &
-      lmin    ! Min. value for the length scale    [m]
+      lmin, &                 ! Min. value for the length scale    [m]
+      mixt_frac_max_mag, &
+      T0, &                   ! Reference temperature (usually 300)  [K]
+      ts_nudge, &             ! Timescale of u/v nudging             [s]
+      rtm_min, &              ! Value below which rtm will be nudged [kg/kg]
+      rtm_nudge_max_altitude  ! Highest altitude at which to nudge rtm [m]
 
     type( clubb_config_flags_type ), intent(in) :: &
       clubb_config_flags ! Derived type holding all configurable CLUBB flags
@@ -905,65 +914,67 @@ module generalized_grid_test
          pdf_params_zm_flip%ice_supersat_frac_1(i,:) = flip( pdf_params_zm%ice_supersat_frac_1(i,:), nzm )
          pdf_params_zm_flip%ice_supersat_frac_2(i,:) = flip( pdf_params_zm%ice_supersat_frac_2(i,:), nzm )
 
-         ! pdf_implicit_coefs_terms
-         pdf_implicit_coefs_terms_flip%coef_wp4_implicit(i,:) &
-            = flip( pdf_implicit_coefs_terms%coef_wp4_implicit(i,:), nzt )
-         pdf_implicit_coefs_terms_flip%coef_wp2rtp_implicit(i,:) & 
-            = flip( pdf_implicit_coefs_terms%coef_wp2rtp_implicit(i,:), nzt )
-         pdf_implicit_coefs_terms_flip%term_wp2rtp_explicit(i,:) &
-            = flip( pdf_implicit_coefs_terms%term_wp2rtp_explicit(i,:), nzt )
-         pdf_implicit_coefs_terms_flip%coef_wp2thlp_implicit(i,:) &
-            = flip( pdf_implicit_coefs_terms%coef_wp2thlp_implicit(i,:), nzt )
-         pdf_implicit_coefs_terms_flip%term_wp2thlp_explicit(i,:) &
-            = flip( pdf_implicit_coefs_terms%term_wp2thlp_explicit(i,:), nzt )
-         pdf_implicit_coefs_terms_flip%coef_wp2up_implicit(i,:) &
-            = flip( pdf_implicit_coefs_terms%coef_wp2up_implicit(i,:), nzt )
-         pdf_implicit_coefs_terms_flip%term_wp2up_explicit(i,:) &
-            = flip( pdf_implicit_coefs_terms%term_wp2up_explicit(i,:), nzt )
-         pdf_implicit_coefs_terms_flip%coef_wp2vp_implicit(i,:) &
-            = flip( pdf_implicit_coefs_terms%coef_wp2vp_implicit(i,:), nzt )
-         pdf_implicit_coefs_terms_flip%term_wp2vp_explicit(i,:) &
-            = flip( pdf_implicit_coefs_terms%term_wp2vp_explicit(i,:), nzt )
-         pdf_implicit_coefs_terms_flip%coef_wprtp2_implicit(i,:) &
-            = flip( pdf_implicit_coefs_terms%coef_wprtp2_implicit(i,:), nzt )
-         pdf_implicit_coefs_terms_flip%term_wprtp2_explicit(i,:) &
-            = flip( pdf_implicit_coefs_terms%term_wprtp2_explicit(i,:), nzt )
-         pdf_implicit_coefs_terms_flip%coef_wpthlp2_implicit(i,:) &
-            = flip( pdf_implicit_coefs_terms%coef_wpthlp2_implicit(i,:), nzt )
-         pdf_implicit_coefs_terms_flip%term_wpthlp2_explicit(i,:) &
-            = flip( pdf_implicit_coefs_terms%term_wpthlp2_explicit(i,:), nzt )
-         pdf_implicit_coefs_terms_flip%coef_wprtpthlp_implicit(i,:) &
-            = flip( pdf_implicit_coefs_terms%coef_wprtpthlp_implicit(i,:), nzt )
-         pdf_implicit_coefs_terms_flip%term_wprtpthlp_explicit(i,:) &
-            = flip( pdf_implicit_coefs_terms%term_wprtpthlp_explicit(i,:), nzt )
-         pdf_implicit_coefs_terms_flip%coef_wpup2_implicit(i,:) &
-            = flip( pdf_implicit_coefs_terms%coef_wpup2_implicit(i,:), nzt )
-         pdf_implicit_coefs_terms_flip%term_wpup2_explicit(i,:) &
-            = flip( pdf_implicit_coefs_terms%term_wpup2_explicit(i,:), nzt )
-         pdf_implicit_coefs_terms_flip%coef_wpvp2_implicit(i,:) &
-            = flip( pdf_implicit_coefs_terms%coef_wpvp2_implicit(i,:), nzt )
-         pdf_implicit_coefs_terms_flip%term_wpvp2_explicit(i,:) &
-            = flip( pdf_implicit_coefs_terms%term_wpvp2_explicit(i,:), nzt )
-         if ( sclr_dim > 0 ) then
-            do sclr = 1, sclr_dim
-               pdf_implicit_coefs_terms_flip%coef_wp2sclrp_implicit(i,:,sclr) &
-                  = flip( pdf_implicit_coefs_terms%coef_wp2sclrp_implicit(i,:,sclr), nzt )
-               pdf_implicit_coefs_terms_flip%term_wp2sclrp_explicit(i,:,sclr) &
-                  = flip( pdf_implicit_coefs_terms%term_wp2sclrp_explicit(i,:,sclr), nzt )
-               pdf_implicit_coefs_terms_flip%coef_wpsclrp2_implicit(i,:,sclr) &
-                  = flip( pdf_implicit_coefs_terms%coef_wpsclrp2_implicit(i,:,sclr), nzt )
-               pdf_implicit_coefs_terms_flip%term_wpsclrp2_explicit(i,:,sclr) &
-                  = flip( pdf_implicit_coefs_terms%term_wpsclrp2_explicit(i,:,sclr), nzt )
-               pdf_implicit_coefs_terms_flip%coef_wprtpsclrp_implicit(i,:,sclr) &
-                  = flip( pdf_implicit_coefs_terms%coef_wprtpsclrp_implicit(i,:,sclr), nzt )
-               pdf_implicit_coefs_terms_flip%term_wprtpsclrp_explicit(i,:,sclr) &
-                  = flip( pdf_implicit_coefs_terms%term_wprtpsclrp_explicit(i,:,sclr), nzt )
-               pdf_implicit_coefs_terms_flip%coef_wpthlpsclrp_implicit(i,:,sclr) &
-                  = flip( pdf_implicit_coefs_terms%coef_wpthlpsclrp_implicit(i,:,sclr), nzt )
-               pdf_implicit_coefs_terms_flip%term_wpthlpsclrp_explicit(i,:,sclr) &
-                  = flip( pdf_implicit_coefs_terms%term_wpthlpsclrp_explicit(i,:,sclr), nzt )
-            enddo
-         endif ! sclr_dim > 0
+        if ( clubb_config_flags%iiPDF_type == iiPDF_new .or. clubb_config_flags%iiPDF_type == iiPDF_new_hybrid ) then
+          ! pdf_implicit_coefs_terms
+          pdf_implicit_coefs_terms_flip%coef_wp4_implicit(i,:) &
+              = flip( pdf_implicit_coefs_terms%coef_wp4_implicit(i,:), nzt )
+          pdf_implicit_coefs_terms_flip%coef_wp2rtp_implicit(i,:) & 
+              = flip( pdf_implicit_coefs_terms%coef_wp2rtp_implicit(i,:), nzt )
+          pdf_implicit_coefs_terms_flip%term_wp2rtp_explicit(i,:) &
+              = flip( pdf_implicit_coefs_terms%term_wp2rtp_explicit(i,:), nzt )
+          pdf_implicit_coefs_terms_flip%coef_wp2thlp_implicit(i,:) &
+              = flip( pdf_implicit_coefs_terms%coef_wp2thlp_implicit(i,:), nzt )
+          pdf_implicit_coefs_terms_flip%term_wp2thlp_explicit(i,:) &
+              = flip( pdf_implicit_coefs_terms%term_wp2thlp_explicit(i,:), nzt )
+          pdf_implicit_coefs_terms_flip%coef_wp2up_implicit(i,:) &
+              = flip( pdf_implicit_coefs_terms%coef_wp2up_implicit(i,:), nzt )
+          pdf_implicit_coefs_terms_flip%term_wp2up_explicit(i,:) &
+              = flip( pdf_implicit_coefs_terms%term_wp2up_explicit(i,:), nzt )
+          pdf_implicit_coefs_terms_flip%coef_wp2vp_implicit(i,:) &
+              = flip( pdf_implicit_coefs_terms%coef_wp2vp_implicit(i,:), nzt )
+          pdf_implicit_coefs_terms_flip%term_wp2vp_explicit(i,:) &
+              = flip( pdf_implicit_coefs_terms%term_wp2vp_explicit(i,:), nzt )
+          pdf_implicit_coefs_terms_flip%coef_wprtp2_implicit(i,:) &
+              = flip( pdf_implicit_coefs_terms%coef_wprtp2_implicit(i,:), nzt )
+          pdf_implicit_coefs_terms_flip%term_wprtp2_explicit(i,:) &
+              = flip( pdf_implicit_coefs_terms%term_wprtp2_explicit(i,:), nzt )
+          pdf_implicit_coefs_terms_flip%coef_wpthlp2_implicit(i,:) &
+              = flip( pdf_implicit_coefs_terms%coef_wpthlp2_implicit(i,:), nzt )
+          pdf_implicit_coefs_terms_flip%term_wpthlp2_explicit(i,:) &
+              = flip( pdf_implicit_coefs_terms%term_wpthlp2_explicit(i,:), nzt )
+          pdf_implicit_coefs_terms_flip%coef_wprtpthlp_implicit(i,:) &
+              = flip( pdf_implicit_coefs_terms%coef_wprtpthlp_implicit(i,:), nzt )
+          pdf_implicit_coefs_terms_flip%term_wprtpthlp_explicit(i,:) &
+              = flip( pdf_implicit_coefs_terms%term_wprtpthlp_explicit(i,:), nzt )
+          pdf_implicit_coefs_terms_flip%coef_wpup2_implicit(i,:) &
+              = flip( pdf_implicit_coefs_terms%coef_wpup2_implicit(i,:), nzt )
+          pdf_implicit_coefs_terms_flip%term_wpup2_explicit(i,:) &
+              = flip( pdf_implicit_coefs_terms%term_wpup2_explicit(i,:), nzt )
+          pdf_implicit_coefs_terms_flip%coef_wpvp2_implicit(i,:) &
+              = flip( pdf_implicit_coefs_terms%coef_wpvp2_implicit(i,:), nzt )
+          pdf_implicit_coefs_terms_flip%term_wpvp2_explicit(i,:) &
+              = flip( pdf_implicit_coefs_terms%term_wpvp2_explicit(i,:), nzt )
+          if ( sclr_dim > 0 ) then
+              do sclr = 1, sclr_dim
+                pdf_implicit_coefs_terms_flip%coef_wp2sclrp_implicit(i,:,sclr) &
+                    = flip( pdf_implicit_coefs_terms%coef_wp2sclrp_implicit(i,:,sclr), nzt )
+                pdf_implicit_coefs_terms_flip%term_wp2sclrp_explicit(i,:,sclr) &
+                    = flip( pdf_implicit_coefs_terms%term_wp2sclrp_explicit(i,:,sclr), nzt )
+                pdf_implicit_coefs_terms_flip%coef_wpsclrp2_implicit(i,:,sclr) &
+                    = flip( pdf_implicit_coefs_terms%coef_wpsclrp2_implicit(i,:,sclr), nzt )
+                pdf_implicit_coefs_terms_flip%term_wpsclrp2_explicit(i,:,sclr) &
+                    = flip( pdf_implicit_coefs_terms%term_wpsclrp2_explicit(i,:,sclr), nzt )
+                pdf_implicit_coefs_terms_flip%coef_wprtpsclrp_implicit(i,:,sclr) &
+                    = flip( pdf_implicit_coefs_terms%coef_wprtpsclrp_implicit(i,:,sclr), nzt )
+                pdf_implicit_coefs_terms_flip%term_wprtpsclrp_explicit(i,:,sclr) &
+                    = flip( pdf_implicit_coefs_terms%term_wprtpsclrp_explicit(i,:,sclr), nzt )
+                pdf_implicit_coefs_terms_flip%coef_wpthlpsclrp_implicit(i,:,sclr) &
+                    = flip( pdf_implicit_coefs_terms%coef_wpthlpsclrp_implicit(i,:,sclr), nzt )
+                pdf_implicit_coefs_terms_flip%term_wpthlpsclrp_explicit(i,:,sclr) &
+                    = flip( pdf_implicit_coefs_terms%term_wpthlpsclrp_explicit(i,:,sclr), nzt )
+              enddo
+          endif ! sclr_dim > 0
+        end if
 
          Kh_zm_flip(i,:) = flip( Kh_zm(i,:), nzm )
          Kh_zt_flip(i,:) = flip( Kh_zt(i,:), nzt )
@@ -1007,6 +1018,8 @@ module generalized_grid_test
               wp2hmp, rtphmp_zt, thlphmp_zt, &                     ! Intent(in)
               host_dx, host_dy, &                                  ! Intent(in)
               clubb_params, nu_vert_res_dep, lmin, &               ! Intent(in)
+              mixt_frac_max_mag, T0, ts_nudge, &                   ! Intent(in)
+              rtm_min, rtm_nudge_max_altitude, &                   ! Intent(in)
               clubb_config_flags, &                                ! Intent(in)
               stats_metadata, &                                    ! Intent(in)
               stats_zt, stats_zm, stats_sfc, &                     ! intent(inout)
@@ -1079,6 +1092,8 @@ module generalized_grid_test
               wp2hmp_flip, rtphmp_zt_flip, thlphmp_zt_flip, &                       ! Intent(in)
               host_dx, host_dy, &                                                   ! Intent(in)
               clubb_params, nu_vert_res_dep, lmin, &                                ! Intent(in)
+              mixt_frac_max_mag, T0, ts_nudge, &                                    ! Intent(in)
+              rtm_min, rtm_nudge_max_altitude, &                                    ! Intent(in)
               clubb_config_flags, &                                                 ! Intent(in)
               stats_metadata_flip, &                                                ! Intent(in)
               stats_zt, stats_zm, stats_sfc, &                                      ! intent(inout)
@@ -1578,136 +1593,138 @@ module generalized_grid_test
                                   pdf_params_zm_flip%ice_supersat_frac_2, nzm, ngrdcol, &
                                   l_differences )
       ! pdf_implicit_coefs_terms
-      call check_flipped_results( "pdf_implicit_coefs_terms%coef_wp4_implicit", &
-                                  pdf_implicit_coefs_terms%coef_wp4_implicit, &
-                                  pdf_implicit_coefs_terms_flip%coef_wp4_implicit, nzt, ngrdcol, &
-                                  l_differences )
-      call check_flipped_results( "pdf_implicit_coefs_terms%coef_wp2rtp_implicit", &
-                                  pdf_implicit_coefs_terms%coef_wp2rtp_implicit, &
-                                  pdf_implicit_coefs_terms_flip%coef_wp2rtp_implicit, &
-                                  nzt, ngrdcol, &
-                                  l_differences )
-      call check_flipped_results( "pdf_implicit_coefs_terms%term_wp2rtp_explicit", &
-                                  pdf_implicit_coefs_terms%term_wp2rtp_explicit, &
-                                  pdf_implicit_coefs_terms_flip%term_wp2rtp_explicit, &
-                                  nzt, ngrdcol, &
-                                  l_differences )
-      call check_flipped_results( "pdf_implicit_coefs_terms%coef_wp2thlp_implicit", &
-                                  pdf_implicit_coefs_terms%coef_wp2thlp_implicit, &
-                                  pdf_implicit_coefs_terms_flip%coef_wp2thlp_implicit, &
-                                  nzt, ngrdcol, &
-                                  l_differences )
-      call check_flipped_results( "pdf_implicit_coefs_terms%term_wp2thlp_explicit", &
-                                  pdf_implicit_coefs_terms%term_wp2thlp_explicit, &
-                                  pdf_implicit_coefs_terms_flip%term_wp2thlp_explicit, &
-                                  nzt, ngrdcol, &
-                                  l_differences )
-      call check_flipped_results( "pdf_implicit_coefs_terms%coef_wp2up_implicit", &
-                                  pdf_implicit_coefs_terms%coef_wp2up_implicit, &
-                                  pdf_implicit_coefs_terms_flip%coef_wp2up_implicit, nzt, ngrdcol, &
-                                  l_differences )
-      call check_flipped_results( "pdf_implicit_coefs_terms%term_wp2up_explicit", &
-                                  pdf_implicit_coefs_terms%term_wp2up_explicit, &
-                                  pdf_implicit_coefs_terms_flip%term_wp2up_explicit, nzt, ngrdcol, &
-                                  l_differences )
-      call check_flipped_results( "pdf_implicit_coefs_terms%coef_wp2vp_implicit", &
-                                  pdf_implicit_coefs_terms%coef_wp2vp_implicit, &
-                                  pdf_implicit_coefs_terms_flip%coef_wp2vp_implicit, nzt, ngrdcol, &
-                                  l_differences )
-      call check_flipped_results( "pdf_implicit_coefs_terms%term_wp2vp_explicit", &
-                                  pdf_implicit_coefs_terms%term_wp2vp_explicit, &
-                                  pdf_implicit_coefs_terms_flip%term_wp2vp_explicit, nzt, ngrdcol, &
-                                  l_differences )
-      call check_flipped_results( "pdf_implicit_coefs_terms%coef_wprtp2_implicit", &
-                                  pdf_implicit_coefs_terms%coef_wprtp2_implicit, &
-                                  pdf_implicit_coefs_terms_flip%coef_wprtp2_implicit, &
-                                  nzt, ngrdcol, &
-                                  l_differences )
-      call check_flipped_results( "pdf_implicit_coefs_terms%term_wprtp2_explicit", &
-                                  pdf_implicit_coefs_terms%term_wprtp2_explicit, &
-                                  pdf_implicit_coefs_terms_flip%term_wprtp2_explicit, &
-                                  nzt, ngrdcol, &
-                                  l_differences )
-      call check_flipped_results( "pdf_implicit_coefs_terms%coef_wpthlp2_implicit", &
-                                  pdf_implicit_coefs_terms%coef_wpthlp2_implicit, &
-                                  pdf_implicit_coefs_terms_flip%coef_wpthlp2_implicit, &
-                                  nzt, ngrdcol, &
-                                  l_differences )
-      call check_flipped_results( "pdf_implicit_coefs_terms%term_wpthlp2_explicit", &
-                                  pdf_implicit_coefs_terms%term_wpthlp2_explicit, &
-                                  pdf_implicit_coefs_terms_flip%term_wpthlp2_explicit, &
-                                  nzt, ngrdcol, &
-                                  l_differences )
-      call check_flipped_results( "pdf_implicit_coefs_terms%coef_wprtpthlp_implicit", &
-                                  pdf_implicit_coefs_terms%coef_wprtpthlp_implicit, &
-                                  pdf_implicit_coefs_terms_flip%coef_wprtpthlp_implicit, &
-                                  nzt, ngrdcol, &
-                                  l_differences )
-      call check_flipped_results( "pdf_implicit_coefs_terms%term_wprtpthlp_explicit", &
-                                  pdf_implicit_coefs_terms%term_wprtpthlp_explicit, &
-                                  pdf_implicit_coefs_terms_flip%term_wprtpthlp_explicit, &
-                                  nzt, ngrdcol, &
-                                  l_differences )
-      call check_flipped_results( "pdf_implicit_coefs_terms%coef_wpup2_implicit", &
-                                  pdf_implicit_coefs_terms%coef_wpup2_implicit, &
-                                  pdf_implicit_coefs_terms_flip%coef_wpup2_implicit, nzt, ngrdcol, &
-                                  l_differences )
-      call check_flipped_results( "pdf_implicit_coefs_terms%term_wpup2_explicit", &
-                                  pdf_implicit_coefs_terms%term_wpup2_explicit, &
-                                  pdf_implicit_coefs_terms_flip%term_wpup2_explicit, nzt, ngrdcol, &
-                                  l_differences )
-      call check_flipped_results( "pdf_implicit_coefs_terms%coef_wpvp2_implicit", &
-                                  pdf_implicit_coefs_terms%coef_wpvp2_implicit, &
-                                  pdf_implicit_coefs_terms_flip%coef_wpvp2_implicit, nzt, ngrdcol, &
-                                  l_differences )
-      call check_flipped_results( "pdf_implicit_coefs_terms%term_wpvp2_explicit", &
-                                  pdf_implicit_coefs_terms%term_wpvp2_explicit, &
-                                  pdf_implicit_coefs_terms_flip%term_wpvp2_explicit, nzt, ngrdcol, &
-                                  l_differences )
-      if ( sclr_dim > 0 ) then
-         do sclr = 1, sclr_dim
-            call check_flipped_results( "pdf_implicit_coefs_terms%coef_wp2sclrp_implicit", &
-                               pdf_implicit_coefs_terms%coef_wp2sclrp_implicit(:,:,sclr), &
-                               pdf_implicit_coefs_terms_flip%coef_wp2sclrp_implicit(:,:,sclr), &
-                               nzt, ngrdcol, &
-                               l_differences )
-            call check_flipped_results( "pdf_implicit_coefs_terms%term_wp2sclrp_explicit", &
-                               pdf_implicit_coefs_terms%term_wp2sclrp_explicit(:,:,sclr), &
-                               pdf_implicit_coefs_terms_flip%term_wp2sclrp_explicit(:,:,sclr), &
-                               nzt, ngrdcol, &
-                               l_differences )
-            call check_flipped_results( "pdf_implicit_coefs_terms%coef_wpsclrp2_implicit", &
-                               pdf_implicit_coefs_terms%coef_wpsclrp2_implicit(:,:,sclr), &
-                               pdf_implicit_coefs_terms_flip%coef_wpsclrp2_implicit(:,:,sclr), &
-                               nzt, ngrdcol, &
-                               l_differences )
-            call check_flipped_results( "pdf_implicit_coefs_terms%term_wpsclrp2_explicit", &
-                               pdf_implicit_coefs_terms%term_wpsclrp2_explicit(:,:,sclr), &
-                               pdf_implicit_coefs_terms_flip%term_wpsclrp2_explicit(:,:,sclr), &
-                               nzt, ngrdcol, &
-                               l_differences )
-            call check_flipped_results( "pdf_implicit_coefs_terms%coef_wprtpsclrp_implicit", &
-                               pdf_implicit_coefs_terms%coef_wprtpsclrp_implicit(:,:,sclr), &
-                               pdf_implicit_coefs_terms_flip%coef_wprtpsclrp_implicit(:,:,sclr), &
-                               nzt, ngrdcol, &
-                               l_differences )
-            call check_flipped_results( "pdf_implicit_coefs_terms%term_wprtpsclrp_explicit", &
-                               pdf_implicit_coefs_terms%term_wprtpsclrp_explicit(:,:,sclr), &
-                               pdf_implicit_coefs_terms_flip%term_wprtpsclrp_explicit(:,:,sclr), &
-                               nzt, ngrdcol, &
-                               l_differences )
-            call check_flipped_results( "pdf_implicit_coefs_terms%coef_wpthlpsclrp_implicit", &
-                               pdf_implicit_coefs_terms%coef_wpthlpsclrp_implicit(:,:,sclr), &
-                               pdf_implicit_coefs_terms_flip%coef_wpthlpsclrp_implicit(:,:,sclr), &
-                               nzt, ngrdcol, &
-                               l_differences )
-            call check_flipped_results( "pdf_implicit_coefs_terms%term_wpthlpsclrp_explicit", &
-                               pdf_implicit_coefs_terms%term_wpthlpsclrp_explicit(:,:,sclr), &
-                               pdf_implicit_coefs_terms_flip%term_wpthlpsclrp_explicit(:,:,sclr), &
-                               nzt, ngrdcol, &
-                               l_differences )
-         enddo ! sclr = 1, sclr_dim
-      endif ! sclr_dim > 0
+      if ( clubb_config_flags%iiPDF_type == iiPDF_new .or. clubb_config_flags%iiPDF_type == iiPDF_new_hybrid ) then
+        call check_flipped_results( "pdf_implicit_coefs_terms%coef_wp4_implicit", &
+                                    pdf_implicit_coefs_terms%coef_wp4_implicit, &
+                                    pdf_implicit_coefs_terms_flip%coef_wp4_implicit, nzt, ngrdcol, &
+                                    l_differences )
+        call check_flipped_results( "pdf_implicit_coefs_terms%coef_wp2rtp_implicit", &
+                                    pdf_implicit_coefs_terms%coef_wp2rtp_implicit, &
+                                    pdf_implicit_coefs_terms_flip%coef_wp2rtp_implicit, &
+                                    nzt, ngrdcol, &
+                                    l_differences )
+        call check_flipped_results( "pdf_implicit_coefs_terms%term_wp2rtp_explicit", &
+                                    pdf_implicit_coefs_terms%term_wp2rtp_explicit, &
+                                    pdf_implicit_coefs_terms_flip%term_wp2rtp_explicit, &
+                                    nzt, ngrdcol, &
+                                    l_differences )
+        call check_flipped_results( "pdf_implicit_coefs_terms%coef_wp2thlp_implicit", &
+                                    pdf_implicit_coefs_terms%coef_wp2thlp_implicit, &
+                                    pdf_implicit_coefs_terms_flip%coef_wp2thlp_implicit, &
+                                    nzt, ngrdcol, &
+                                    l_differences )
+        call check_flipped_results( "pdf_implicit_coefs_terms%term_wp2thlp_explicit", &
+                                    pdf_implicit_coefs_terms%term_wp2thlp_explicit, &
+                                    pdf_implicit_coefs_terms_flip%term_wp2thlp_explicit, &
+                                    nzt, ngrdcol, &
+                                    l_differences )
+        call check_flipped_results( "pdf_implicit_coefs_terms%coef_wp2up_implicit", &
+                                    pdf_implicit_coefs_terms%coef_wp2up_implicit, &
+                                    pdf_implicit_coefs_terms_flip%coef_wp2up_implicit, nzt, ngrdcol, &
+                                    l_differences )
+        call check_flipped_results( "pdf_implicit_coefs_terms%term_wp2up_explicit", &
+                                    pdf_implicit_coefs_terms%term_wp2up_explicit, &
+                                    pdf_implicit_coefs_terms_flip%term_wp2up_explicit, nzt, ngrdcol, &
+                                    l_differences )
+        call check_flipped_results( "pdf_implicit_coefs_terms%coef_wp2vp_implicit", &
+                                    pdf_implicit_coefs_terms%coef_wp2vp_implicit, &
+                                    pdf_implicit_coefs_terms_flip%coef_wp2vp_implicit, nzt, ngrdcol, &
+                                    l_differences )
+        call check_flipped_results( "pdf_implicit_coefs_terms%term_wp2vp_explicit", &
+                                    pdf_implicit_coefs_terms%term_wp2vp_explicit, &
+                                    pdf_implicit_coefs_terms_flip%term_wp2vp_explicit, nzt, ngrdcol, &
+                                    l_differences )
+        call check_flipped_results( "pdf_implicit_coefs_terms%coef_wprtp2_implicit", &
+                                    pdf_implicit_coefs_terms%coef_wprtp2_implicit, &
+                                    pdf_implicit_coefs_terms_flip%coef_wprtp2_implicit, &
+                                    nzt, ngrdcol, &
+                                    l_differences )
+        call check_flipped_results( "pdf_implicit_coefs_terms%term_wprtp2_explicit", &
+                                    pdf_implicit_coefs_terms%term_wprtp2_explicit, &
+                                    pdf_implicit_coefs_terms_flip%term_wprtp2_explicit, &
+                                    nzt, ngrdcol, &
+                                    l_differences )
+        call check_flipped_results( "pdf_implicit_coefs_terms%coef_wpthlp2_implicit", &
+                                    pdf_implicit_coefs_terms%coef_wpthlp2_implicit, &
+                                    pdf_implicit_coefs_terms_flip%coef_wpthlp2_implicit, &
+                                    nzt, ngrdcol, &
+                                    l_differences )
+        call check_flipped_results( "pdf_implicit_coefs_terms%term_wpthlp2_explicit", &
+                                    pdf_implicit_coefs_terms%term_wpthlp2_explicit, &
+                                    pdf_implicit_coefs_terms_flip%term_wpthlp2_explicit, &
+                                    nzt, ngrdcol, &
+                                    l_differences )
+        call check_flipped_results( "pdf_implicit_coefs_terms%coef_wprtpthlp_implicit", &
+                                    pdf_implicit_coefs_terms%coef_wprtpthlp_implicit, &
+                                    pdf_implicit_coefs_terms_flip%coef_wprtpthlp_implicit, &
+                                    nzt, ngrdcol, &
+                                    l_differences )
+        call check_flipped_results( "pdf_implicit_coefs_terms%term_wprtpthlp_explicit", &
+                                    pdf_implicit_coefs_terms%term_wprtpthlp_explicit, &
+                                    pdf_implicit_coefs_terms_flip%term_wprtpthlp_explicit, &
+                                    nzt, ngrdcol, &
+                                    l_differences )
+        call check_flipped_results( "pdf_implicit_coefs_terms%coef_wpup2_implicit", &
+                                    pdf_implicit_coefs_terms%coef_wpup2_implicit, &
+                                    pdf_implicit_coefs_terms_flip%coef_wpup2_implicit, nzt, ngrdcol, &
+                                    l_differences )
+        call check_flipped_results( "pdf_implicit_coefs_terms%term_wpup2_explicit", &
+                                    pdf_implicit_coefs_terms%term_wpup2_explicit, &
+                                    pdf_implicit_coefs_terms_flip%term_wpup2_explicit, nzt, ngrdcol, &
+                                    l_differences )
+        call check_flipped_results( "pdf_implicit_coefs_terms%coef_wpvp2_implicit", &
+                                    pdf_implicit_coefs_terms%coef_wpvp2_implicit, &
+                                    pdf_implicit_coefs_terms_flip%coef_wpvp2_implicit, nzt, ngrdcol, &
+                                    l_differences )
+        call check_flipped_results( "pdf_implicit_coefs_terms%term_wpvp2_explicit", &
+                                    pdf_implicit_coefs_terms%term_wpvp2_explicit, &
+                                    pdf_implicit_coefs_terms_flip%term_wpvp2_explicit, nzt, ngrdcol, &
+                                    l_differences )
+        if ( sclr_dim > 0 ) then
+          do sclr = 1, sclr_dim
+              call check_flipped_results( "pdf_implicit_coefs_terms%coef_wp2sclrp_implicit", &
+                                pdf_implicit_coefs_terms%coef_wp2sclrp_implicit(:,:,sclr), &
+                                pdf_implicit_coefs_terms_flip%coef_wp2sclrp_implicit(:,:,sclr), &
+                                nzt, ngrdcol, &
+                                l_differences )
+              call check_flipped_results( "pdf_implicit_coefs_terms%term_wp2sclrp_explicit", &
+                                pdf_implicit_coefs_terms%term_wp2sclrp_explicit(:,:,sclr), &
+                                pdf_implicit_coefs_terms_flip%term_wp2sclrp_explicit(:,:,sclr), &
+                                nzt, ngrdcol, &
+                                l_differences )
+              call check_flipped_results( "pdf_implicit_coefs_terms%coef_wpsclrp2_implicit", &
+                                pdf_implicit_coefs_terms%coef_wpsclrp2_implicit(:,:,sclr), &
+                                pdf_implicit_coefs_terms_flip%coef_wpsclrp2_implicit(:,:,sclr), &
+                                nzt, ngrdcol, &
+                                l_differences )
+              call check_flipped_results( "pdf_implicit_coefs_terms%term_wpsclrp2_explicit", &
+                                pdf_implicit_coefs_terms%term_wpsclrp2_explicit(:,:,sclr), &
+                                pdf_implicit_coefs_terms_flip%term_wpsclrp2_explicit(:,:,sclr), &
+                                nzt, ngrdcol, &
+                                l_differences )
+              call check_flipped_results( "pdf_implicit_coefs_terms%coef_wprtpsclrp_implicit", &
+                                pdf_implicit_coefs_terms%coef_wprtpsclrp_implicit(:,:,sclr), &
+                                pdf_implicit_coefs_terms_flip%coef_wprtpsclrp_implicit(:,:,sclr), &
+                                nzt, ngrdcol, &
+                                l_differences )
+              call check_flipped_results( "pdf_implicit_coefs_terms%term_wprtpsclrp_explicit", &
+                                pdf_implicit_coefs_terms%term_wprtpsclrp_explicit(:,:,sclr), &
+                                pdf_implicit_coefs_terms_flip%term_wprtpsclrp_explicit(:,:,sclr), &
+                                nzt, ngrdcol, &
+                                l_differences )
+              call check_flipped_results( "pdf_implicit_coefs_terms%coef_wpthlpsclrp_implicit", &
+                                pdf_implicit_coefs_terms%coef_wpthlpsclrp_implicit(:,:,sclr), &
+                                pdf_implicit_coefs_terms_flip%coef_wpthlpsclrp_implicit(:,:,sclr), &
+                                nzt, ngrdcol, &
+                                l_differences )
+              call check_flipped_results( "pdf_implicit_coefs_terms%term_wpthlpsclrp_explicit", &
+                                pdf_implicit_coefs_terms%term_wpthlpsclrp_explicit(:,:,sclr), &
+                                pdf_implicit_coefs_terms_flip%term_wpthlpsclrp_explicit(:,:,sclr), &
+                                nzt, ngrdcol, &
+                                l_differences )
+          enddo ! sclr = 1, sclr_dim
+        endif ! sclr_dim > 0
+      end if
 
 
       ! Print a message and stop the run if there are any discrepanices found

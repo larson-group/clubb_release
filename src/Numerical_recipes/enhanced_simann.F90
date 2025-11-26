@@ -14,16 +14,22 @@ module enhanced_simann
 
     implicit none
 
-    public :: esa_driver, esa_driver_siarry
+    public :: esa_driver, esa_driver_siarry, &
+              l_use_prescribed_rand_seed, prescribed_rand_seed
 
     private :: exec_movement, exec_movement_siarry, select_partition, init_random
 
     private ! Default scope
 
+    integer :: & 
+      prescribed_rand_seed = 1    ! Default value for prescribed random seed for esa methods
+                                  ! Value read from stats nml in input_misc/tuner/error*.in
+
+    logical :: &
+        l_use_prescribed_rand_seed = .false.    ! Whether to use a fixed random seed for esa method
     
     logical, parameter :: &
-        l_esa_debug_statements = .false. ! Verbose debugging output
-
+        l_esa_debug_statements = .false.        ! Verbose debugging output
 
     contains
 !-----------------------------------------------------------------------------
@@ -425,10 +431,6 @@ module enhanced_simann
 
     subroutine init_random
 
-        use error, only: &
-            l_use_prescribed_rand_seed, &   ! constant(s) 
-            prescribed_rand_seed
-
         use constants_clubb, only: fstdout
 
         implicit none
@@ -461,7 +463,8 @@ module enhanced_simann
 
   !============================== OLD VERSION ==================================
   !-----------------------------------------------------------------------------
-  subroutine esa_driver_siarry( xinit, x0min, x0max, tmpini, fobj, xopt, enopt )
+  subroutine esa_driver_siarry( xinit, x0min, x0max, tmpini, fobj, xopt, enopt, &
+                                nfobj )
 
   ! Description:
   !   Driver subroutine
@@ -471,8 +474,6 @@ module enhanced_simann
     use mt95, only: genrand_real1 ! Procedure
 
     use mt95, only: genrand_real ! Constant
-
-    use error, only: nfobj => iter ! Variable
 
     use clubb_precision, only: &
       core_rknd ! Variable(s)
@@ -527,6 +528,9 @@ module enhanced_simann
 
     real( kind = core_rknd ), intent(out) :: &
       enopt   ! Optimal value of the cost function
+
+    integer, optional, intent(inout) :: &
+      nfobj
 
     ! Local variables
 

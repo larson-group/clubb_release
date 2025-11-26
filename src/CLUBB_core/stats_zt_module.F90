@@ -1252,6 +1252,14 @@ module stats_zt_module
 
         k = k + 1
 
+      case ('rtm_ed')
+        stats_metadata%irtm_ed = k
+
+        call stat_assign( var_index=stats_metadata%irtm_ed, var_name="rtm_ed", &
+             var_description="rtm_ed, rtm budget: rtm_expldiff", var_units="kg kg^{-1} s^{-1}", &
+             l_silhs=.false., grid_kind=stats_zt )
+        k = k + 1
+
       case ('thlm_bt')
         stats_metadata%ithlm_bt = k
 
@@ -1308,6 +1316,14 @@ module stats_zt_module
 
         call stat_assign( var_index=stats_metadata%ithlm_cl, var_name="thlm_cl", &
              var_description="thlm_cl, thlm budget: thlm_cl", var_units="K s^{-1}", &
+             l_silhs=.false., grid_kind=stats_zt )
+        k = k + 1
+
+      case ('thlm_ed')
+        stats_metadata%ithlm_ed = k
+
+        call stat_assign( var_index=stats_metadata%ithlm_ed, var_name="thlm_ed", &
+             var_description="thlm_ed, thlm budget: thlm_expldiff", var_units="K s^{-1}", &
              l_silhs=.false., grid_kind=stats_zt )
         k = k + 1
 

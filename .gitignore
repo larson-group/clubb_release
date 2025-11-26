@@ -2,8 +2,23 @@ output/
 bin/
 lib/
 obj/
+build/
+install/
+compile/file_list/generated_lists/
 **/.idea
 postprocessing/pyplotgen/les_and_clubb_benchmark_runs
+cmake_install.cmake
+CMakeFiles
+CMakeCache.txt
+CTestTestfile.cmake
+Makefile
+clubb_lapack_ext-prefix/
+clubb_netcdffortran-prefix/
+*.ninja
+DartConfiguration.tcl
+run_scripts/clubb.in
+run_scripts/clubb_params_multi_col.in
+run_scripts/tmp_dup_params.in
 
 *.pyc
 

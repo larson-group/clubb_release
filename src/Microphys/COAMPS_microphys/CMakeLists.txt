@@ -1,0 +1,52 @@
+set(COAMPS_SOURCES
+                    adjmlt.F
+                    adjtq.F
+                    conice.F
+                    eqa10g.F
+                    eqa11g.F
+                    eqa12.F
+                    eqa12g.F
+                    eqa13g.F
+                    eqa14g.F
+                    eqa15.F
+                    eqa17g.F
+                    eqa18.F
+                    eqa18g.F
+                    eqa19.F
+                    eqa19g.F
+                    eqa20g.F
+                    eqa21.F
+                    eqa21g.F
+                    eqa22.F
+                    eqa22g.F
+                    eqa25.F
+                    eqa26.F
+                    eqa27.F
+                    eqa27r.F
+                    eqa28.F
+                    eqa5g.F
+                    eqa6.F
+                    eqa7.F
+                    eqa7g.F
+                    eqa8g.F
+                    eqa9.F
+                    eqa9g.F
+                    esati.F
+                    esat_new.F
+                    esatv.F
+                    frzh.F
+                    gamma.F
+                    nrmcol.F
+                    nrmtqi.F
+                    nrmtqw.F
+                    qsatvi.F
+                    qtadj.F
+                    slope.F
+                    tgqg.F
+                    tgqi.F
+                    tgqr.F
+                    tgqs.F
+)
+
+add_library(coamps_lib ${COAMPS_SOURCES})
+target_link_libraries(coamps_lib PRIVATE clubb_core_lib)

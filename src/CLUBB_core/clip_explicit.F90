@@ -12,7 +12,8 @@ module clip_explicit
             clip_covar_level, & 
             clip_variance, & 
             clip_skewness, &
-            clip_skewness_core
+            clip_skewness_core, &
+            clip_rcm
 
   ! Named constants to avoid string comparisons
   integer, parameter, public :: &
@@ -941,6 +942,9 @@ module clip_explicit
     integer :: &
       ixp2_cl
 
+    logical :: &
+      l_clubb_at_least_debug_level_3
+
     ! -------------------- Begin Code --------------------
 
     !$acc data copyin( threshold_lo ) &
@@ -987,6 +991,8 @@ module clip_explicit
       end do
     end if
 
+    l_clubb_at_least_debug_level_3 = clubb_at_least_debug_level_api(3)
+
     ! Limit the value of x'^2 at threshold.
     ! The value of x'^2 at the surface (or lower boundary) is a set value that
     ! is determined elsewhere in a surface subroutine.  Thus, the variance
@@ -1002,7 +1008,7 @@ module clip_explicit
     do k = gr%k_lb_zm, gr%k_ub_zm-gr%grid_dir_indx, gr%grid_dir_indx
       do i = 1, ngrdcol
         if ( xp2(i,k) < threshold_lo(i,k) ) then
-          if ( clubb_at_least_debug_level_api(3) ) then
+          if ( l_clubb_at_least_debug_level_3 ) then
             write(fstderr, *) "Warning: (solve_type==", solve_type,") xp2 =", xp2(i,k), &
                              "<", threshold_lo(i,k), " @ k =", k, ". Small values are clipped."
           end if
@@ -1011,7 +1017,7 @@ module clip_explicit
       end do
     end do
     !$acc end parallel loop
-
+ 
     ! Optional clipping of large values
     ! This was added so the <var>_cl budget term also contains the upper clipping contributions
     if ( present (threshold_hi) ) then
@@ -1020,7 +1026,7 @@ module clip_explicit
         do i = 1, ngrdcol
           if ( xp2(i,k) > threshold_hi ) then
             xp2(i,k) = threshold_hi
-            if ( clubb_at_least_debug_level_api(3) ) then
+            if ( l_clubb_at_least_debug_level_3 ) then
               write(fstderr, *) "Warning: (solve_type==", solve_type,") xp2 =", xp2(i,k), &
                                ">", threshold_hi, " @ k =", k, ". Large values are clipped."
             end if
@@ -1338,6 +1344,91 @@ module clip_explicit
     !$acc exit data delete( wp2_zt_cubed, wp3_lim_sqd, zagl_thresh, H_zagl )
 
   end subroutine clip_skewness_core
+
+  !-----------------------------------------------------------------------
+  subroutine clip_rcm ( nzt, ngrdcol, rtm, & ! intent(in)
+                        message,           & ! intent(in)
+                        rcm )                ! intent(inout)
+    !
+    ! Description:
+    !   Subroutine that reduces cloud water (rcm) whenever
+    !   it exceeds total water (rtm = vapor + liquid).
+    !   This avoids negative values of rvm = water vapor mixing ratio.
+    !   However, it will not ensure that rcm <= rtm if rtm <= 0.
+    !
+    ! References:
+    !   None
+    !---------------------------------------------------------------------
+
+    use error_code, only: &
+      clubb_at_least_debug_level_api  ! Procedure
+
+    use constants_clubb, only: &
+      fstderr, & ! Variable(s)
+      zero_threshold
+
+    use clubb_precision, only: &
+      core_rknd ! Variable(s)
+
+    implicit none
+
+    ! Input variables
+    integer, intent(in) :: &
+      nzt, &
+      ngrdcol
+  
+    real( kind = core_rknd ), dimension(ngrdcol,nzt), intent(in) :: &
+      rtm           ! Total water mixing ratio             [kg/kg]
+
+    character(len= * ), intent(in) :: message
+
+    real( kind = core_rknd ), dimension(ngrdcol,nzt), intent(inout) :: &
+      rcm           ! Cloud water mixing ratio  [kg/kg]
+
+    integer :: i, k
+
+    ! ------------ Begin code ---------------
+
+    !$acc data copyin( rtm ) &
+    !$acc        copy( rcm )
+
+    if ( clubb_at_least_debug_level_api( 3 ) ) then
+
+      !$acc update host( rcm, rtm )
+
+      do k = 1, nzt
+        do i = 1, ngrdcol 
+          
+          if ( rtm(i,k) < rcm(i,k) ) then
+
+            write(fstderr,*) message, ' at k=', k, ' at i=', i, 'rcm(k) = ', rcm(i,k), &
+              'rtm(k) = ', rtm(i,k), '.',  ' Clipping rcm.'
+
+          end if ! rtm(k) < rcm(k)
+          
+        end do
+      end do
+    end if ! clubb_at_least_debug_level_api( 3 )
+
+    ! Vince Larson clipped rcm in order to prevent rvm < 0.  5 Apr 2008.
+    ! This code won't work unless rtm >= 0 !!!
+    ! We do not clip rcm_in_layer because rcm_in_layer only influences
+    ! radiation, and we do not want to bother recomputing it.  6 Aug 2009
+    !$acc parallel loop gang vector collapse(2) default(present)
+    do k = 1, nzt
+      do i = 1, ngrdcol 
+        if ( rtm(i,k) < rcm(i,k) ) then
+          rcm(i,k) = max( zero_threshold, rtm(i,k) - epsilon( rtm(i,k) ) )
+        end if ! rtm(k) < rcm(k)
+      end do
+    end do
+    !$acc end parallel loop
+
+    !$acc end data
+
+    return
+
+  end subroutine clip_rcm
 
 !===============================================================================
 

@@ -16,7 +16,7 @@ Thank you for your interest in CLUBB.  We work hard to create a code that implem
 
 7.  CLUBB is provided "as is" and without warranty.
 
-We hope that CLUBB will develop into a community resource.  We encourage users to contribute their CLUBB modifications or extensions to the CLUBB development group.  We will then consider them for inclusion in CLUBB.  Such contributions will benefit all CLUBB users.  We would be pleased to acknowledge contributors and list their CLUBB-related papers on our "About CLUBB" webpage (https://carson.math.uwm.edu/larson-group/clubb_site/about.html) for those contributors who so desire.   
+We hope that CLUBB will develop into a community resource.  We encourage users to contribute their CLUBB modifications or extensions to the CLUBB development group.  We will then consider them for inclusion in CLUBB.  Such contributions will benefit all CLUBB users.
 
 Thanks so much and best wishes for your research!
 

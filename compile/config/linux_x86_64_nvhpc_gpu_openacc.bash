@@ -21,13 +21,13 @@ DEBUG=""
 
 # == Machine specific options ==
 # The NVHPC Fortran compiler will select the native processor type by default
-ARCH="-Mcache_align" # -Mcache_align is included for the use of the ACML
+ARCH="-Mcache_align -Mbackslash -Mstandard" # -Mcache_align is included for the use of the ACML
 
 # == Used to promote all real's to double precision ==
 DOUBLE_PRECISION="-r8"
 
 # == Optimization ==
-OPTIMIZE="-O2"
+OPTIMIZE="-O2 -Mstack_arrays"
 
 # == NetCDF Location ==
 #Variable defined in larson-group.sh, see here (https://github.com/larson-group/sys_admin/blob/master/set_larson-group_paths/larson-group.sh)
@@ -36,7 +36,7 @@ NETCDF="$(nf-config --prefix)"
 # == Linking Flags ==
 LDFLAGS="$ARCH -L$NETCDF/lib -lnetcdff $LAPACK -acc -Mcuda"
 
-FFLAGS="$ARCH $OPTIMIZE $DEBUG -Mbackslash -Mstandard -Kieee -acc -Minfo=accel"
+FFLAGS="$ARCH $OPTIMIZE $DEBUG -acc -Minfo=accel"
 
 # Preprocessing Directives:
 #   -DNETCDF enables netCDF output

@@ -24,8 +24,6 @@ module stat_file_utils
 
     use constants_clubb, only: fstderr, eps ! Variable(s)
 
-    use clubb_model_settings, only: PosInf ! Variable(s)
-
     use stat_file_module, only: stat_file ! Type(s)
 
     use input_grads, only: &
@@ -45,7 +43,8 @@ module stat_file_utils
       lin_interpolate_two_points
 
     use clubb_precision, only: &
-      core_rknd ! Variable(s)
+      core_rknd, & ! Variable(s)
+      sp
 
     implicit none
 
@@ -124,6 +123,9 @@ module stat_file_utils
     logical :: &
       l_convert_to_MKS ! convert inputs to MKS units
 
+    real( kind = sp ) :: &
+      PosInf = transfer( 2139095040, 1.0_sp ) ! 2139095040 is a magic number
+    
 !-----------------------------------------------------------------------
 
     ! Initialize variables

@@ -1186,7 +1186,7 @@ module precipitation_fraction
           ! is present at a grid level.  In other words, it cannot have a value
           ! that is greater than 0 but less than precip_frac_tol
           if ( precip_frac_1(k) > zero &
-               .and. precip_frac_1(k) < precip_frac_tol ) then
+               .and. precip_frac_1(k) < precip_frac_tol - eps ) then
              write(fstderr, *) err_info%err_header_global
              write(fstderr,*) "0 < precip_frac_1 < precip_frac_tol"
              write(fstderr,*) "level = ", k
@@ -1225,7 +1225,7 @@ module precipitation_fraction
           ! is present at a grid level.  In other words, it cannot have a value
           ! that is greater than 0 but less than precip_frac_tol
           if ( precip_frac_2(k) > zero &
-               .and. precip_frac_2(k) < precip_frac_tol ) then
+               .and. precip_frac_2(k) < precip_frac_tol - eps ) then
              write(fstderr,*) "0 < precip_frac_2 < precip_frac_tol"
              write(fstderr,*) "level = ", k
              write(fstderr,*) "precip_frac_2 = ", precip_frac_2(k), &
@@ -1314,7 +1314,7 @@ module precipitation_fraction
        if ( ( precip_frac(k) &
               - ( mixt_frac(k) * precip_frac_1(k) &
                   + ( one - mixt_frac(k) ) * precip_frac_2(k) ) ) &
-            > ( epsilon( precip_frac(k) ) * precip_frac(k) ) ) then
+            > eps ) then
           write(fstderr, *) err_info%err_header_global
           write(fstderr,*) "mixt_frac * precip_frac_1 " &
                            // "+ ( 1 - mixt_frac ) * precip_frac_2 " &

@@ -17,6 +17,13 @@ module model_flags
 
   private ! Default Scope
 
+  ! Advance subroutine ordering variables
+  integer, parameter, public :: &
+    order_xm_wpxp = 1, &
+    order_xp2_xpyp = 2, &
+    order_wp2_wp3 = 3, &
+    order_windm = 4
+
   ! Options for the two component normal (double Gaussian) PDF type to use for
   ! the w, rt, and theta-l (or w, chi, and eta) portion of CLUBB's multivariate,
   ! two-component PDF.
@@ -35,6 +42,44 @@ module model_flags
     ipdf_post_advance_fields  = 2,   & ! Call after advancing predictive fields
     ipdf_pre_post_advance_fields = 3   ! Call both before and after advancing
                                        ! predictive fields
+
+  ! Options to set which algorithm the fill_holes routine uses to correct below threshold values
+  ! in field solutions. The fill_holes method attempts to fill in a mass preserving way, in hopes
+  ! of avoiding the need to perform blunt clipping, which can cause surious sources/sinks.
+  ! An important consideration with these method is the locality - moving mass from one grid level
+  ! to a far away one can create unintended non-local effects, so most methods attempt
+  ! to fill with some degree of locality before relying on a global fill.
+  integer, parameter, public :: &
+    global_fill           = 1, & ! Fast but minimally local, most methods use this as a last resort.
+
+    sliding_window        = 2, & ! Attempt a highly local fill with a sliding window technique,
+                                 ! and falls back to global if local pass failed.
+
+    widening_windows      = 3, & ! Attempt to fill within fixed windows of a certain size, then
+                                 ! repeat with increasaingly larger window sizes until all holes 
+                                 ! are filled. Window size can increase to entire domain, which
+                                 ! is equivalent to a global fill.
+
+    smart_window          = 4, & ! Uses lightweight hueristics to determine ranges to fill in one
+                                 ! pass. This is highly local when possible, maintains some
+                                 ! locality when wide hole ranges are encountered (if possible), 
+                                 ! and range can be the whole domain, which is equivalent to
+                                 ! a global fallback. The gauranteed "one pass" feature seems
+                                 ! to cause this to be the fastest method overall, at least with
+                                 ! the current common hole patterns observed in CLUBB.
+
+    smart_window_smooth   = 5, & ! Same as smart window, but contains fancy smoothing features.
+                                 ! This could fail if the field is average above (but close to) 
+                                 ! threshold. The efficacy of the smoothing features is (currently)
+                                 ! untested, and this is about 25% slower than smart_window without
+                                 ! the smoothing, and has no global fallack (we could add one), 
+                                 ! but the smoothing could matter in theory, and looks nice.
+
+    parallel_fill         = 6    ! A parallelizable method that limits the mass each hole can
+                                 ! steal, then considers each hole independently.
+                                 ! Despite the parallizability being an attractive GPU
+                                 ! feature, current timing results suggest this is the slowest
+                                 ! method on a GPU (and CPU).
 
   integer, parameter, public :: &
     lapack          = 1,  & ! Use lapack library for matrix solves
@@ -60,7 +105,6 @@ module model_flags
 
   logical, parameter, public ::  & 
     l_pos_def            = .false., & ! Flux limiting positive definite scheme on rtm
-    l_hole_fill          = .true.,  & ! Hole filling pos def scheme on wp2,up2,rtp2,etc
     l_clip_turb_adv      = .false.    ! Corrects thlm/rtm when w'th_l'/w'r_t' is clipped
 
   logical, parameter, public :: &
@@ -163,8 +207,10 @@ module model_flags
       grid_remap_method,              & ! Integer that stores what remapping technique should
                                         ! be used to remap from one grid to another
                                         ! (starts at 1, so 0 is an invalid option for this flag)
-      grid_adapt_in_time_method         ! Integer that stores how the grid should be adapted every
+      grid_adapt_in_time_method,      & ! Integer that stores how the grid should be adapted every
                                         ! timestep or if the grid should not be adapted at all
+      fill_holes_type                   ! Option for which type of hole filler to use in the 
+                                        ! fill_holes_vertical procedure
 
     logical :: &
       l_use_precip_frac,            & ! Flag to use precipitation fraction in KK microphysics. The
@@ -262,7 +308,7 @@ module model_flags
       l_use_thvm_in_bv_freq,        & ! Use thvm in the calculation of Brunt-Vaisala frequency
       l_rcm_supersat_adj,           & ! Add excess supersaturated vapor to cloud water
       l_damp_wp3_Skw_squared,       & ! Set damping on wp3 to use Skw^2 rather than Skw^4
-      l_prescribed_avg_deltaz,      & ! used in adj_low_res_nu. If .true., avg_deltaz = deltaz
+      l_prescribed_avg_deltaz,      & ! used in calc_derrived_params_api. If .true., avg_deltaz = deltaz
       l_lmm_stepping,               & ! Apply Linear Multistep Method (LMM) Stepping
       l_e3sm_config,                & ! Run model with E3SM settings
       l_vary_convect_depth,         & ! Flag used to calculate convective velocity using
@@ -304,6 +350,7 @@ module model_flags
                                                  saturation_formula, &
                                                  grid_remap_method, &
                                                  grid_adapt_in_time_method, &
+                                                 fill_holes_type, &
                                                  l_use_precip_frac, &
                                                  l_predict_upwp_vpwp, &
                                                  l_nontraditional_Coriolis, &
@@ -386,9 +433,10 @@ module model_flags
       saturation_formula,             & ! Integer that stores the saturation formula to be used
       grid_remap_method,              & ! Integer that stores what remapping technique should
                                         ! be used to remap from one grid to another
-                                        ! (starts at 1, so 0 is an invalid input)
-      grid_adapt_in_time_method         ! Integer that stores how the grid should be adapted every
+      grid_adapt_in_time_method,      & ! Integer that stores how the grid should be adapted every
                                         ! timestep or if the grid should not be adapted at all
+      fill_holes_type                   ! Option for which type of hole filler to use in the 
+                                        ! fill_holes_vertical procedure
 
     logical, intent(out) :: &
       l_use_precip_frac,            & ! Flag to use precipitation fraction in KK microphysics. The
@@ -486,7 +534,7 @@ module model_flags
       l_use_thvm_in_bv_freq,        & ! Use thvm in the calculation of Brunt-Vaisala frequency
       l_rcm_supersat_adj,           & ! Add excess supersaturated vapor to cloud water
       l_damp_wp3_Skw_squared,       & ! Set damping on wp3 to use Skw^2 rather than Skw^4
-      l_prescribed_avg_deltaz,      & ! used in adj_low_res_nu. If .true., avg_deltaz = deltaz
+      l_prescribed_avg_deltaz,      & ! used in calc_derrived_params_api. If .true., avg_deltaz = deltaz
       l_lmm_stepping,               & ! Apply Linear Multistep Method (LMM) Stepping
       l_e3sm_config,                & ! Run model with E3SM settings
       l_vary_convect_depth,         & ! Flag used to calculate convective velocity using
@@ -528,6 +576,7 @@ module model_flags
     saturation_formula = saturation_flatau
     grid_remap_method = ppm_remap
     grid_adapt_in_time_method = no_grid_adaptation
+    fill_holes_type = sliding_window
     l_use_precip_frac = .true.
     l_predict_upwp_vpwp = .true.
     l_nontraditional_Coriolis = .false.
@@ -603,6 +652,7 @@ module model_flags
                                                      saturation_formula, &
                                                      grid_remap_method, &
                                                      grid_adapt_in_time_method, &
+                                                     fill_holes_type, &
                                                      l_use_precip_frac, &
                                                      l_predict_upwp_vpwp, &
                                                      l_nontraditional_Coriolis, &
@@ -687,8 +737,10 @@ module model_flags
       grid_remap_method,              & ! Integer that stores what remapping technique should
                                         ! be used to remap from one grid to another
                                         ! (starts at 1, so 0 is an invalid option for this flag)
-      grid_adapt_in_time_method         ! Integer that stores how the grid should be adapted every
+      grid_adapt_in_time_method,      & ! Integer that stores how the grid should be adapted every
                                         ! timestep or if the grid should not be adapted at all
+      fill_holes_type                   ! Option for which type of hole filler to use in the 
+                                        ! fill_holes_vertical procedure
 
     logical, intent(in) :: &
       l_use_precip_frac,            & ! Flag to use precipitation fraction in KK microphysics. The
@@ -786,7 +838,7 @@ module model_flags
       l_use_thvm_in_bv_freq,        & ! Use thvm in the calculation of Brunt-Vaisala frequency
       l_rcm_supersat_adj,           & ! Add excess supersaturated vapor to cloud water
       l_damp_wp3_Skw_squared,       & ! Set damping on wp3 to use Skw^2 rather than Skw^4
-      l_prescribed_avg_deltaz,      & ! used in adj_low_res_nu. If .true., avg_deltaz = deltaz
+      l_prescribed_avg_deltaz,      & ! used in calc_derrived_params_api. If .true., avg_deltaz = deltaz
       l_lmm_stepping,               & ! Apply Linear Multistep Method (LMM) Stepping
       l_e3sm_config,                & ! Run model with E3SM settings
       l_vary_convect_depth,         & ! Flag used to calculate convective velocity using
@@ -834,6 +886,7 @@ module model_flags
     clubb_config_flags%saturation_formula = saturation_formula
     clubb_config_flags%grid_remap_method = grid_remap_method
     clubb_config_flags%grid_adapt_in_time_method = grid_adapt_in_time_method
+    clubb_config_flags%fill_holes_type = fill_holes_type
     clubb_config_flags%l_use_precip_frac = l_use_precip_frac
     clubb_config_flags%l_predict_upwp_vpwp = l_predict_upwp_vpwp
     clubb_config_flags%l_nontraditional_Coriolis = l_nontraditional_Coriolis

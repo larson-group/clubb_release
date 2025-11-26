@@ -171,99 +171,74 @@ our $forbiddenRegEx = qr/
 
 # Captures verbose command switch.
 GetOptions ('v|verbose' => \$verbose);
+# Track failures
+my $fail_count = 0;
 
 # Test to see if at least one argument is present.
-if(@ARGV < 1 )
-{
-	warn "Not enough arguments"	
+if (@ARGV < 1) {
+    die "Not enough arguments\n";
 }
+
 #### BEGIN MAIN PROGRAM ####
-else{
-	warn "CLUBBStandardsCheck.pl has begun.\n";
+warn "CLUBBStandardsCheck.pl has begun.\n";
 
-	# Declare Local Variables
-	our $thr;
-	our $file;
-	
-	# For Every File
-	foreach $file (@ARGV)
-	{
-		$thr = threads->create(\&fileThread, $file, $thr);
-	}
-	
-	while ( my(@list)=threads->list()) {
-		grep { $_->join } @list;
-	};
+# For Every File
+foreach my $file (@ARGV) {
+    fileThread($file);
+}
 
-	warn "CLUBBStandardsCheck.pl has finished.\n";
+warn "CLUBBStandardsCheck.pl has finished.\n";
+
+# Exit non-zero if failures occurred
+if ($fail_count > 0) {
+    warn "FAIL: $fail_count check(s) failed.\n";
+    exit 1;
+} else {
+		warn "PASS: 0 checks failed";
+    exit 0;
 }
 #### END MAIN PROGRAM ####
 
-sub fileThread
-{
-	my($file) = shift(@_);
-		
-	my(@input);
+sub fileThread {
+    my ($file) = shift(@_);
 
-	# Open the file
-	open FILE, $file or die "Bad Filename";
-	
-	# Store the lines to an array
-	@input = <FILE>;
+    my @input;
 
-	# Check for missing implicit nones
-	if( ! &implicitCheck( $verbose, @input ) )
-	{
-		warn "$file\n";	
-	        warn $horizontal;
+    # Open the file
+    open my $fh, '<', $file or do {
+        warn "Bad Filename: $file\n";
+        $fail_count++;
+        return;
+    };
 
-	}
+    @input = <$fh>;
+    close $fh;
 
-	# Check for use statements without only
-	if( ! &useCheck( $verbose, @input ) )
-	{
-		warn "$file\n";
-	        warn $horizontal;
-	}
-
-	# Check for default private statements
-	if( ! &privateCheck( $verbose, @input ) )
-	{
-		warn "$file\n";
-		warn $horizontal;
-	}
-	
-        # This is no longer necessary because CLUBB is in a git repo.	
-	# Check for missing $ Id $ tags
-	#if( ! &idCheck( $verbose, $file, @input ) )
-	#{
-	#	warn "$file\n";
-	#	warn $horizontal;
-	#}
-
-	# Check for use of forbidden keywords
-	if( ! &forbiddenCheck( $verbose, @input ) )
-	{
-		warn "$file\n";
-		warn $horizontal;
-	}
-
-	# Check for long lines
-	if( ! &lineCheck( $verbose, @input ) )
-	{
-		warn "$file\n";
-		warn $horizontal;
-	}
-	if( ! &endCheck( $verbose, @input ) )
-	{
-		warn "$file\n";
-		warn $horizontal;
-	}
-
-
-	# Close File		
-	close FILE;
-	
+    # Run checks
+    unless (&implicitCheck($verbose, @input)) {
+        warn "implicitCheck failed: $file\n$horizontal";
+        $fail_count++;
+    }
+    unless (&useCheck($verbose, @input)) {
+        warn "useCheck failed: $file\n$horizontal";
+        $fail_count++;
+    }
+    unless (&privateCheck($verbose, @input)) {
+        warn "privateCheck failed: $file\n$horizontal";
+        $fail_count++;
+    }
+    unless (&forbiddenCheck($verbose, @input)) {
+        warn "forbiddenCheck failed: $file\n$horizontal";
+        $fail_count++;
+    }
+    unless (&lineCheck($verbose, @input)) {
+        warn "lineCheck failed: $file\n$horizontal";
+        $fail_count++;
+    }
+    unless (&endCheck($verbose, @input)) {
+        warn "endCheck failed: $file\n$horizontal";
+        $fail_count++;
+    }
 }
 #####################################################################
 sub endCheck

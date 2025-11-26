@@ -26,6 +26,7 @@ module stats_clubb_utilities
                                 nzmax, ngrdcol, nlon, nlat, gzt, gzm, nnrad_zt, &
                                 grad_zt, nnrad_zm, grad_zm, day, month, year, &
                                 lon_vals, lat_vals, time_current, delt, l_silhs_out_in, &
+                                T0, ts_nudge, &
                                 clubb_params, &
                                 l_uv_nudge, &
                                 l_tke_aniso, &
@@ -194,7 +195,9 @@ module stats_clubb_utilities
       time_current ! Model time                         [s]
 
     real( kind = core_rknd ), intent(in) ::  & 
-      delt         ! Timestep (dt_main in CLUBB)         [s]
+      delt,       & ! Timestep (dt_main in CLUBB)         [s]
+      T0,         & ! Reference temperature               [K]
+      ts_nudge      ! Timescale of u/v nudging            [s]
 
     logical, intent(in) :: &
       l_silhs_out_in  ! Whether to output SILHS files (stats_lh_zt, stats_lh_sfc)  [boolean]
@@ -805,6 +808,7 @@ module stats_clubb_utilities
 
       ! Finalize the variable definitions
       call first_write( clubb_params(1,:), sclr_dim, sclr_tol, & ! intent(in)
+                        T0, ts_nudge, & ! intent(in)
                         l_uv_nudge, & ! intent(in)
                         l_tke_aniso, & ! intent(in)
                         l_standard_term_ta, & ! intent(in)
@@ -917,6 +921,7 @@ module stats_clubb_utilities
 
         ! Finalize the variable definitions
         call first_write( clubb_params(1,:), sclr_dim, sclr_tol, & ! intent(in)
+                          T0, ts_nudge, & ! intent(in)
                           l_uv_nudge, & ! intent(in)
                           l_tke_aniso, & ! intent(in)
                           l_standard_term_ta, & ! intent(in)
@@ -1006,6 +1011,7 @@ module stats_clubb_utilities
 
         ! Finalize the variable definitions
         call first_write( clubb_params(1,:), sclr_dim, sclr_tol, & ! intent(in)
+                          T0, ts_nudge, & ! intent(in)
                           l_uv_nudge, & ! intent(in)
                           l_tke_aniso, & ! intent(in)
                           l_standard_term_ta, & ! intent(in)
@@ -1272,6 +1278,7 @@ module stats_clubb_utilities
       
       ! Finalize the variable definitions
       call first_write( clubb_params(1,:), sclr_dim, sclr_tol, & ! intent(in)
+                        T0, ts_nudge, & ! intent(in)
                         l_uv_nudge, & ! intent(in)
                         l_tke_aniso, & ! intent(in)
                         l_standard_term_ta, & ! intent(in)
@@ -1363,6 +1370,7 @@ module stats_clubb_utilities
 
         ! Finalize the variable definitions
         call first_write( clubb_params(1,:), sclr_dim, sclr_tol, & ! intent(in)
+                          T0, ts_nudge, & ! intent(in)
                           l_uv_nudge, & ! intent(in)
                           l_tke_aniso, & ! intent(in)
                           l_standard_term_ta, & ! intent(in)
@@ -1453,6 +1461,7 @@ module stats_clubb_utilities
 
         ! Finalize the variable definitions
         call first_write( clubb_params(1,:), sclr_dim, sclr_tol, & ! intent(in)
+                          T0, ts_nudge, & ! intent(in)
                           l_uv_nudge, & ! intent(in)
                           l_tke_aniso, & ! intent(in)
                           l_standard_term_ta, & ! intent(in)
@@ -1548,6 +1557,7 @@ module stats_clubb_utilities
 
       ! Finalize the variable definitions
       call first_write( clubb_params(1,:), sclr_dim, sclr_tol, & ! intent(in)
+                        T0, ts_nudge, & ! intent(in)
                         l_uv_nudge, & ! intent(in)
                         l_tke_aniso, & ! intent(in)
                         l_standard_term_ta, & ! intent(in)
@@ -1585,6 +1595,7 @@ module stats_clubb_utilities
                              nzmax, ngrdcol, nlon, nlat, gzt, gzm, nnrad_zt, &
                              grad_zt, nnrad_zm, grad_zm, day, month, year, &
                              lon_vals, lat_vals, time_current, delt, l_silhs_out_in, &
+                             T0, ts_nudge, &
                              clubb_params, &
                              l_uv_nudge, &
                              l_tke_aniso, &
@@ -1692,6 +1703,10 @@ module stats_clubb_utilities
     real( kind = core_rknd ), dimension(ngrdcol,nparams), intent(in) :: &
       clubb_params    ! Array of CLUBB's tunable parameters    [units vary]
 
+    real( kind = core_rknd ), intent(in) ::  & 
+      T0,         & ! Reference temperature               [K]
+      ts_nudge      ! Timescale of u/v nudging            [s]
+
     logical, intent(in) :: &
       l_uv_nudge,         & ! For wind speed nudging
       l_tke_aniso,        & ! For anisotropic turbulent kinetic energy, i.e. TKE = 1/2
@@ -1739,6 +1754,7 @@ module stats_clubb_utilities
                             nzmax, ngrdcol, nlon, nlat, gzt, gzm, nnrad_zt, &
                             grad_zt, nnrad_zm, grad_zm, day, month, year, &
                             lon_vals, lat_vals, time_current, delt, l_silhs_out_in, &
+                            T0, ts_nudge, &
                             clubb_params, &
                             l_uv_nudge, &
                             l_tke_aniso, &
@@ -1767,6 +1783,7 @@ module stats_clubb_utilities
                                           nzmax, ngrdcol, nlon, nlat, gzt, gzm, nnrad_zt, &
                                           grad_zt, nnrad_zm, grad_zm, day, month, year, &
                                           lon_vals, lat_vals, time_current, delt, l_silhs_out_in, &
+                                          T0, ts_nudge, &
                                           clubb_params, &
                                           l_uv_nudge, &
                                           l_tke_aniso, &
@@ -1885,7 +1902,9 @@ module stats_clubb_utilities
       time_current ! Model time                         [s]
 
     real( kind = core_rknd ), intent(in) ::  & 
-      delt         ! Timestep (dt_main in CLUBB)         [s]
+      delt,       & ! Timestep (dt_main in CLUBB)         [s]
+      T0,         & ! Reference temperature               [K]
+      ts_nudge      ! Timescale of u/v nudging            [s]
 
     logical, intent(in) :: &
       l_silhs_out_in  ! Whether to output SILHS files (stats_lh_zt, stats_lh_sfc)  [boolean]
@@ -1932,6 +1951,7 @@ module stats_clubb_utilities
                             nzmax, ngrdcol, nlon, nlat, gzt, gzm, nnrad_zt, &
                             grad_zt, nnrad_zm, grad_zm, day, month, year, &
                             lon_vals, lat_vals, time_current, delt, l_silhs_out_in, &
+                            T0, ts_nudge, &
                             clubb_params, &
                             l_uv_nudge, &
                             l_tke_aniso, &
@@ -2598,6 +2618,7 @@ module stats_clubb_utilities
                      wpsclrpthlp, wpedsclrp, edsclrm, &
                      edsclrm_forcing, &
                      saturation_formula, &
+                     l_call_pdf_closure_twice, &
                      stats_metadata, &
                      stats_zt, stats_zm, stats_sfc )
 
@@ -2815,6 +2836,9 @@ module stats_clubb_utilities
 
     integer, intent(in) :: &
       saturation_formula
+    
+    logical, intent(in) :: &
+      l_call_pdf_closure_twice
 
     type (stats_metadata_type), intent(in) :: &
       stats_metadata
@@ -3195,16 +3219,20 @@ module stats_clubb_utilities
                             stats_zm ) ! In/Out
       call stat_update_var( stats_metadata%ithlm_zm, thlm_zm, & ! In
                             stats_zm ) ! In/Out
-      call stat_update_var( stats_metadata%iw_1_zm, pdf_params_zm%w_1(icol,:), & ! In
-                            stats_zm ) ! In/Out
-      call stat_update_var( stats_metadata%iw_2_zm, pdf_params_zm%w_2(icol,:), & ! In
-                            stats_zm ) ! In/Out
-      call stat_update_var( stats_metadata%ivarnce_w_1_zm, pdf_params_zm%varnce_w_1(icol,:), & ! In
-                            stats_zm ) ! In/Out
-      call stat_update_var( stats_metadata%ivarnce_w_2_zm, pdf_params_zm%varnce_w_2(icol,:), & ! In
-                            stats_zm ) ! In/Out
-      call stat_update_var( stats_metadata%imixt_frac_zm, pdf_params_zm%mixt_frac(icol,:), & ! In
-                            stats_zm ) ! In/Out
+
+      ! pdf_params_zm is only ever updated if l_call_pdf_closure_twice=.true.
+      if ( l_call_pdf_closure_twice ) then
+        call stat_update_var( stats_metadata%iw_1_zm, pdf_params_zm%w_1(icol,:), & ! In
+                              stats_zm ) ! In/Out
+        call stat_update_var( stats_metadata%iw_2_zm, pdf_params_zm%w_2(icol,:), & ! In
+                              stats_zm ) ! In/Out
+        call stat_update_var( stats_metadata%ivarnce_w_1_zm, pdf_params_zm%varnce_w_1(icol,:), & ! In
+                              stats_zm ) ! In/Out
+        call stat_update_var( stats_metadata%ivarnce_w_2_zm, pdf_params_zm%varnce_w_2(icol,:), & ! In
+                              stats_zm ) ! In/Out
+        call stat_update_var( stats_metadata%imixt_frac_zm, pdf_params_zm%mixt_frac(icol,:), & ! In
+                              stats_zm ) ! In/Out
+      end if
 
       if ( sclr_dim > 0 ) then
         do sclr=1, sclr_dim
@@ -4098,7 +4126,8 @@ subroutine stats_check_num_samples( stats_grid, stats_metadata, &
                            trim(stats_grid%file%grid_avg_var(ivar)%name), ' in stats_grid ',  &
                            'at k = ', kvar,  &
                            '; stats_grid%accum_num_samples(',kvar,',',ivar,') = ', &
-                            stats_grid%accum_num_samples(1,1,kvar,ivar)
+                            stats_grid%accum_num_samples(1,1,kvar,ivar), &
+                           'floor stuff= ', floor(  stats_metadata%stats_tout / stats_metadata%stats_tsamp )
         end if ! clubb_at_lest_debug_level 1
 
 

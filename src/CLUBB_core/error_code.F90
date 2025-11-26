@@ -34,7 +34,6 @@ module error_code
 
     ! Model-Wide Debug Level
     integer, save :: clubb_debug_level = 0
-    !$acc declare create(clubb_debug_level)
 
     ! Error Code Values
     integer, parameter, public :: & 
@@ -54,8 +53,6 @@ module error_code
     logical function clubb_at_least_debug_level_api( level )
 
         implicit none
-
-        !$acc routine seq
 
         ! Input variable
         integer, intent(in) :: level   ! The debug level being checked against the current setting
@@ -112,8 +109,6 @@ module error_code
         ! ---- Begin Code ----
 
         clubb_debug_level = max(level,0)
-        !$acc update device(clubb_debug_level)
-
 
         return
         end subroutine set_clubb_debug_level_api

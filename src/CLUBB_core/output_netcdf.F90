@@ -962,6 +962,7 @@ module output_netcdf
 
 !-------------------------------------------------------------------------------
   subroutine first_write( clubb_params, sclr_dim, sclr_tol, &
+                          T0, ts_nudge, &
                           l_uv_nudge, &
                           l_tke_aniso, &
                           l_standard_term_ta, &
@@ -990,10 +991,6 @@ module output_netcdf
     use constants_clubb, only:  &
         fstderr ! Variable
 
-    use parameters_model, only: &
-        T0, &       ! Real variables
-        ts_nudge
-
     use parameters_tunable, only: &
         params_list ! Variable names (characters)
 
@@ -1002,7 +999,6 @@ module output_netcdf
 
     use model_flags, only: &
         l_pos_def, &
-        l_hole_fill, &
         l_gamma_Skw
 
     use clubb_precision, only: &
@@ -1034,6 +1030,10 @@ module output_netcdf
 
     real( kind = core_rknd ), dimension(sclr_dim), intent(in) :: &
       sclr_tol
+
+    real( kind = core_rknd ), intent(in) ::  & 
+      T0,         & ! Reference temperature               [K]
+      ts_nudge      ! Timescale of u/v nudging            [s]
 
     real( kind = core_rknd ), dimension(nparams), intent(in) :: &
       clubb_params    ! Array of CLUBB's tunable parameters    [units vary]
@@ -1233,15 +1233,14 @@ module output_netcdf
 
     ! Write the model flags to the file
     deallocate( stat )
-    allocate( stat(6) ) ! # of model flags
+    allocate( stat(5) ) ! # of model flags
 
     stat(1) = nf90_put_att( ncf%iounit, NF90_GLOBAL, "l_pos_def", lchar( l_pos_def ) )
-    stat(2) = nf90_put_att( ncf%iounit, NF90_GLOBAL, "l_hole_fill", lchar( l_hole_fill ) )
-    stat(3) = nf90_put_att( ncf%iounit, NF90_GLOBAL, "l_standard_term_ta", &
+    stat(2) = nf90_put_att( ncf%iounit, NF90_GLOBAL, "l_standard_term_ta", &
       lchar( l_standard_term_ta ) )
-    stat(4) = nf90_put_att( ncf%iounit, NF90_GLOBAL, "l_gamma_Skw", lchar( l_gamma_Skw ) )
-    stat(5) = nf90_put_att( ncf%iounit, NF90_GLOBAL, "l_uv_nudge", lchar( l_uv_nudge ) )
-    stat(6) = nf90_put_att( ncf%iounit, NF90_GLOBAL, "l_tke_aniso", lchar( l_tke_aniso ) )
+    stat(3) = nf90_put_att( ncf%iounit, NF90_GLOBAL, "l_gamma_Skw", lchar( l_gamma_Skw ) )
+    stat(4) = nf90_put_att( ncf%iounit, NF90_GLOBAL, "l_uv_nudge", lchar( l_uv_nudge ) )
+    stat(5) = nf90_put_att( ncf%iounit, NF90_GLOBAL, "l_tke_aniso", lchar( l_tke_aniso ) )
 
     if ( any( stat /= NF90_NOERR ) ) then
       write(fstderr,*) err_info%err_header_global

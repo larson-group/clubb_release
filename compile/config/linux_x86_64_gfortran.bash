@@ -25,7 +25,8 @@ srcdir="$dir/../src"  # dir where the source files reside
 # These are the options for debugging symbols, bounds checking & IEEE-754 
 # floating point arithmetic
 #DEBUG="-g -fbounds-check -mieee-fp -finit-real=nan -finit-integer=-99999 -finit-logical=false -fall-intrinsics -fbacktrace" # Floating point trapping disabled
-DEBUG="-g -fbounds-check -mieee-fp -ffpe-trap=invalid,zero,overflow -finit-real=nan -finit-integer=-99999 -finit-logical=false -fall-intrinsics -fbacktrace" # Floating point trapping enabled for invalid operations, divide-by-zero, and overflow
+#DEBUG="-g -fbounds-check -mieee-fp -ffpe-trap=invalid,zero,overflow -finit-real=nan -finit-integer=-99999 -finit-logical=false -fall-intrinsics -fbacktrace" # Floating point trapping enabled for invalid operations, divide-by-zero, and overflow
+DEBUG="-mieee-fp -fall-intrinsics -std=gnu -fallow-argument-mismatch"
 
 # == Warnings ==
 WARNINGS="-Wall -Wextra -Wconversion -Wunderflow -Wcharacter-truncation -std=f2008 -pedantic"

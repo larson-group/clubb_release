@@ -36,6 +36,7 @@ pipeline {
         lock( "GPU_${env.NODE_NAME}" ) {
           sh '''source /etc/profile.d/larson-group.sh
                 module load nvhpc netcdf-fortran
+                ulimit -s 8388608
                 run_scripts/run_scm_all.bash -e -p ../clubb_params_multi_col.in'''
         }
       }

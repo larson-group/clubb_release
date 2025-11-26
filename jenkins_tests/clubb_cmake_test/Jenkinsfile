@@ -1,0 +1,58 @@
+pipeline {
+
+  agent any
+  
+  stages {
+    stage('Compile gfortran') {
+      steps {
+        sh '''source /etc/profile.d/larson-group.sh
+              module load gcc netcdf-fortran
+              ./compile.py -run_tests'''
+      }
+    }
+    stage('Compile gfortran: openmp+debug') {
+      steps {
+        sh '''source /etc/profile.d/larson-group.sh
+              module load gcc netcdf-fortran
+              ./compile.py -debug -openmp -run_tests'''
+      }
+    }
+    stage('Compile ifx') {
+      steps {
+        sh '''source /etc/profile.d/larson-group.sh
+              module load intel netcdf-fortran
+              ./compile.py -run_tests'''
+      }
+    }
+    stage('Compile ifx: single precision') {
+      steps {
+        sh '''source /etc/profile.d/larson-group.sh
+              module load intel netcdf-fortran
+              ./compile.py -precision single -run_tests'''
+      }
+    }
+    stage('Compile nvfortran') {
+      steps {
+        sh '''source /etc/profile.d/larson-group.sh
+              module load nvhpc netcdf-fortran
+              ./compile.py -run_tests'''
+      }
+    }
+    stage('Compile nvfortran: openacc') {
+      steps {
+        sh '''source /etc/profile.d/larson-group.sh
+              module load nvhpc netcdf-fortran
+              ./compile.py -gpu openacc -run_tests'''
+      }
+    }
+  }
+  post {
+    failure {
+      script {
+      if ( "${env.JOB_NAME}" == "clubb_cmake_test" )
+        // This command handles the email on failure feature of the jenkins test. This line is the same on every jenkins test.
+      	emailext(to: 'messnermet@uwm.edu', subject: "${env.JOB_NAME} build ${env.BUILD_NUMBER} has Failed", attachLog: true, body: "${env.JOB_NAME} build ${env.BUILD_NUMBER} has failed. See the attached build log and the build results (${env.BUILD_URL}) for help troubleshooting.")
+      }
+    }
+  }
+}

@@ -70,17 +70,29 @@ def extractVarNames(decLine):
     """Given a logical line that declares one or more variables,
     return the variable names in a list."""
 
-    # a Fortran parameter does not need a threadprivate declaration
-    if re.search(r"\bparameter\b(?=.*::)", decLine, re.IGNORECASE) is not None:
+    if re.search(r"\bparameter\b(?=.*::)", decLine, re.IGNORECASE):
         return []
-    else:
-        # print(decLine)
-        decLine = decLine.split("::")[1]  # Remove declaration text
-        decLine = decLine.split("!")[0]  # Remove code comment
-        listOfVars = decLine.split(",")  # Separate variable names
-        listOfVars = [x.split("=")[0] for x in listOfVars]  # Remove equations
-        listOfVars = [x.strip() for x in listOfVars]  # Remove extra whitespace
-    return listOfVars
+
+    if "::" not in decLine:
+        return []
+    decLine = decLine.split("::", 1)[1]
+    decLine = decLine.split("!")[0]
+
+    # Grab identifiers before '=' or ',' or end
+    candidates = re.findall(r"\b([A-Za-z_]\w*)\b\s*(?==|,|$)", decLine)
+
+    # Remove intrinsics/keywords
+    blacklist = {"reshape", "kind", "dimension", "public", "private"}
+    filtered = [c for c in candidates if c.lower() not in blacklist]
+
+    # Remove false positives:
+    #  - things ending in '_c' (your numeric suffixes)
+    #  - known dimension symbols like d_var_total
+    filtered = [c for c in filtered if not c.endswith("_c")]
+    filtered = [c for c in filtered if not c.startswith("_")]
+    filtered = [c for c in filtered if c not in {"d_var_total"}]
+
+    return filtered
 
 
 def findDecVars(fileName):
@@ -97,7 +109,7 @@ def findThreadPrivates(fileName):
     that are declared threadprivate. """
     with open(fileName) as srcFile:
         srcString = srcFile.read()     # Make file into one big string
-        srcString = re.split("contains\s*\n",srcString)[0]  # Chop off everything after "contains"
+        srcString = re.split(r"contains\s*\n", srcString)[0]  # Chop off everything after "contains"
         listOfThreadPrivates = re.findall(r"(?si)!\$omp\s*threadprivate\s*(\(.*?\))", srcString)
         listOfThreadPrivates = [x.strip("()") for x in listOfThreadPrivates]  # Eliminate parentheses
         listOfThreadPrivates = [x.split(",") for x in listOfThreadPrivates]  # Separate variables
@@ -108,23 +120,14 @@ def findThreadPrivates(fileName):
     return listOfThreadPrivates
 
 
-# Code taken from usage_analyzer.py
-# Returns an array of every file in a directory
-# This function is adapted from Stack Overflow: http://stackoverflow.com/questions/19932130/python-
-# iterate-through-folders-then-subfolders-and-print-filenames-with-path-t
-def findFiles(dir):
-    """ Find all files in a directory.
-    """
-    foundFiles = []  # The returned full files locations and names
-    subdirs = [x[0] for x in os.walk(dir)]  # Walk through each directory (including the given) 
-    #    and find subdirectories recursively
-    for subdir in subdirs:  # Go through each subdirectory (including this one)
-        currentFiles = next(os.walk(subdir))[2]  # Add the found files to a list
-        if (len(currentFiles) > 0):  # If files were found
-            for file in currentFiles:  # go through each file
-                foundFiles.append(subdir + file)  # Add its location and the filename 
-                #    to the returned files list
-    return foundFiles  # Return the found files
+def findF90Files(dir):
+    """ Find all Fortran source files (*.F90) in a directory tree. """
+    foundFiles = []
+    for subdir, _, files in os.walk(dir):
+        for file in files:
+            if file.endswith(".F90"):
+                foundFiles.append(os.path.join(subdir, file))
+    return foundFiles
 
 
 def main():
@@ -135,12 +138,9 @@ def main():
     print("check_for_missing_threadprivate.py has begun.")
 
     # get command line args where argv[1] is clubb core path and argv[2] is silhs path
-    clubbFileNames = findFiles(sys.argv[1])
-    silhsFileNames = findFiles(sys.argv[2])
+    clubbFileNames = findF90Files(sys.argv[1])
+    silhsFileNames = findF90Files(sys.argv[2])
     fileNames = clubbFileNames + silhsFileNames
-
-    # Removes .swp files from the file list
-    fileNames = [x for x in fileNames if not x.endswith(".swp") and not x.endswith(".txt")]
 
     # outputFile = open("/home/vlarson/Downloads/threadprivate_output.txt","w+")
     failedFiles = []
@@ -155,9 +155,20 @@ def main():
         # print(listOfThreadPrivates)
         varsWoThreadprivates = list(set(listOfVars) - set(listOfThreadPrivates))
         threadprivatesWoVars = list(set(listOfThreadPrivates) - set(listOfVars))
-        if varsWoThreadprivates != [] or threadprivatesWoVars != []:
+        if varsWoThreadprivates or threadprivatesWoVars:
             passedTest = False
             failedFiles.append(fileName)
+            print(f"File {fileName} failed:")
+
+            if varsWoThreadprivates:
+                print("  Missing threadprivate for:")
+                for var in varsWoThreadprivates:
+                    print(f"    {var}")
+
+            if threadprivatesWoVars:
+                print("  Threadprivate without declaration for:")
+                for var in threadprivatesWoVars:
+                    print(f"    {var}")
         # outputFile.write("%s\n" % fileName)
         # outputFile.write("%s\n" % str(varsWoThreadprivates))
         # outputFile.write("%s\n\n" % str(threadprivatesWoVars))
@@ -176,4 +187,8 @@ def main():
 # Standard boilerplate to call the main() function to begin
 # the program.
 if __name__ == '__main__':
-    main()
+    success = main()
+    if success:
+        sys.exit(0)
+    else:
+        sys.exit(1)

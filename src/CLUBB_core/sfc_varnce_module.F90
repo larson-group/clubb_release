@@ -19,6 +19,7 @@ module sfc_varnce_module
                               lhs_splat_wp2, tau_zm, &
                               !wp2_splat_sfc, tau_zm_sfc, &
                               l_vary_convect_depth, &
+                              T0, &
                               up2_sfc_coef, &
                               a_const, &
                               stats_metadata, &
@@ -40,9 +41,6 @@ module sfc_varnce_module
 
     use grid_class, only: &
         grid
-
-    use parameters_model, only: &
-        T0 ! Variable(s)
 
     use constants_clubb, only: &
         four,       & ! Variable(s)
@@ -147,6 +145,9 @@ module sfc_varnce_module
 
     logical, intent(in) :: &
       l_vary_convect_depth
+
+    real( kind = core_rknd ), intent(in) :: &
+      T0                ! Reference temperature (usually 300)  [K]
 
     real( kind = core_rknd ), dimension(ngrdcol) :: &
       up2_sfc_coef,   & ! CLUBB tunable parameter up2_sfc_coef   [-]

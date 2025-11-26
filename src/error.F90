@@ -45,6 +45,10 @@ module error
   use clubb_precision, only: &
     core_rknd ! Variable(s)
 
+  use enhanced_simann, only: &
+    prescribed_rand_seed,     & ! Value for prescribed random seed for esa methods
+    l_use_prescribed_rand_seed  ! Whether to use a fixed random seed for esa method
+
   implicit none
 
   ! Constant Parameters
@@ -83,8 +87,6 @@ module error
     tune_type = iesa, &   ! Toggle for downhill simplex of simulated annealing
     c_total = 0, &        ! Total number of simulation cases to tune over
     v_total = 0, &        ! Total number of variables to tune over
-    prescribed_rand_seed = 1, & ! Default value for prescribed random seed for esa methods
-                                ! Value read from stats nml in input_misc/tuner/error*.in
     max_iters_in = 2000         ! Max number of iteration steps for tuner. Read from error*.in
 
   logical, public :: & 
@@ -92,10 +94,8 @@ module error
     l_results_file = .false.,      & ! Whether to generate a new error.in based on
                                      ! the new tuning constants
     l_stdout_on_invalid = .false., & ! Generate a new error.in when the simulation crashes
-    l_keep_params_equal = .false., & ! Whether to keep parameters like C1, C1b,
+    l_keep_params_equal = .false.    ! Whether to keep parameters like C1, C1b,
                                      ! etc. equal throughout tuning run
-    l_use_prescribed_rand_seed = .false.    ! Whether to use a fixed random seed for
-                                            ! esa methods. Value in prescribed_rand_seed
 
   logical, parameter, public :: &
     l_save_tuning_run = .true.  ! If true, writes the results of the tuning run to a file
@@ -681,9 +681,7 @@ module error
       stat_file ! Type(s)
 
     use err_info_type_module, only: &
-      err_info_type,                  & ! Type
-      init_default_err_info_api,      & ! Procedure(s)
-      set_err_info_values_api,        &
+      err_info_type, &                  ! Type
       cleanup_err_info_api
 
 #ifdef NETCDF
@@ -851,9 +849,6 @@ module error
     ! OpenMP directives should work as expected now, assuming new
     ! model variables are declared threadprivate -dschanen 31 Jan 2007
 
-    ! Initialize err_info with default values for one column
-    call init_default_err_info_api(1, err_info)
-
 !$omp parallel do default(none), private(c_run), &
 !$omp   shared(params_local, run_file, run_stat, c_total, model_flags_array, iter), &
 !$omp   private(err_info)
@@ -867,9 +862,6 @@ module error
       call write_text( "Calling CLUBB with case "//trim( run_file(c_run) ), &
         l_save_tuning_run, file_unit )
       if( l_save_tuning_run ) close(unit=file_unit)
-#else
-      ! Set thread nr for err_info
-      call set_err_info_values_api(1, err_info, chunk_idx_in=omp_get_thread_num())
 #endif
       ! Run the CLUBB model with parameters as input
 

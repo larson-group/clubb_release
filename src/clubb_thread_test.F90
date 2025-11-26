@@ -31,9 +31,7 @@ program clubb_thread_test
 
   use err_info_type_module, only: &
     err_info_type,                  & ! Type
-    init_default_err_info_api,      & ! Procedure(s)
-    set_err_info_values_api,        &
-    cleanup_err_info_api
+    cleanup_err_info_api              ! Procedure(s)
 
   implicit none
 
@@ -80,18 +78,13 @@ program clubb_thread_test
   ! Initialize status of run. We don't need to initialize err_info since that is done in run_clubb
   err_code_saves = clubb_no_error
 
-  ! Initialize err_info with default values for one column
-  call init_default_err_info_api(1, err_info)
-
   ! Run the model in parallel
 !$omp parallel do default(shared), private(iter, clubb_params, iunit, err_info), &
 !$omp   shared(err_code_saves)
   do iter = 1, ncases
+    
 #ifdef _OPENMP
     iunit = omp_get_thread_num() + 10
-
-    ! Set OMP thread nr for err_info
-    call set_err_info_values_api(1, err_info, chunk_idx_in=omp_get_thread_num())
 #else
     iunit = 10
 #endif

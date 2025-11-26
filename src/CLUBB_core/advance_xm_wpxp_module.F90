@@ -64,10 +64,11 @@ module advance_xm_wpxp_module
                               um_forcing, vm_forcing, ug, vg, wpthvp, &
                               fcor, fcor_y, um_ref, vm_ref, up2, vp2, &
                               uprcp, vprcp, rc_coef_zm, &
-                              clubb_params, nu_vert_res_dep, &
+                              clubb_params, nu_vert_res_dep, ts_nudge, &
                               iiPDF_type, &
                               penta_solve_method, &
                               tridiag_solve_method, &
+                              fill_holes_type, &
                               l_predict_upwp_vpwp, &
                               l_nontraditional_Coriolis, &
                               l_traditional_Coriolis, &
@@ -138,9 +139,6 @@ module advance_xm_wpxp_module
         one_half, &
         zero, &
         eps
-
-    use parameters_model, only: & 
-        ts_nudge
 
     use grid_class, only: & 
         grid, & ! Type
@@ -298,13 +296,17 @@ module advance_xm_wpxp_module
     type(nu_vertical_res_dep), intent(in) :: &
       nu_vert_res_dep    ! Vertical resolution dependent nu values
 
+    real( kind = core_rknd ), intent(in) :: &
+      ts_nudge              ! Timescale of u/v nudging             [s]
+
     integer, intent(in) :: &
       iiPDF_type,           & ! Selected option for the two-component normal (double
                               ! Gaussian) PDF type to use for the w, rt, and theta-l (or
                               ! w, chi, and eta) portion of CLUBB's multivariate,
                               ! two-component PDF.
       penta_solve_method,   & ! Method to solve then penta-diagonal system
-      tridiag_solve_method    ! Specifier for method to solve tridiagonal systems
+      tridiag_solve_method, & ! Specifier for method to solve tridiagonal systems
+      fill_holes_type         ! Specifier for which hole filling method to use
 
     logical, intent(in) :: &
       l_predict_upwp_vpwp,          & ! Flag to predict <u'w'> and <v'w'> along with <u> and <v>
@@ -856,6 +858,7 @@ module advance_xm_wpxp_module
                                             lhs_pr1_wpthlp, lhs_pr1_wpsclrp,                & ! In
                                             penta_solve_method,                             & ! In
                                             tridiag_solve_method,                           & ! In
+                                            fill_holes_type,                                & ! In
                                             l_predict_upwp_vpwp,                            & ! In
                                             l_diffuse_rtm_and_thlm,                         & ! In
                                             l_upwind_xm_ma,                                 & ! In
@@ -895,6 +898,7 @@ module advance_xm_wpxp_module
                                           clubb_params(:,iC_uu_shr),                       & ! In
                                           penta_solve_method,                              & ! In
                                           tridiag_solve_method,                            & ! In
+                                          fill_holes_type,                                 & ! In
                                           l_predict_upwp_vpwp,                             & ! In
                                           l_nontraditional_Coriolis,                       & ! In
                                           l_traditional_Coriolis,                          & ! In
@@ -2658,6 +2662,7 @@ module advance_xm_wpxp_module
                                             C_uu_shr, &
                                             penta_solve_method, &
                                             tridiag_solve_method, &
+                                            fill_holes_type, &
                                             l_predict_upwp_vpwp, &
                                             l_nontraditional_Coriolis, &
                                             l_traditional_Coriolis, &
@@ -2846,9 +2851,10 @@ module advance_xm_wpxp_module
       C_uu_shr    ! CLUBB tunable parameter C_uu_shr
 
     integer, intent(in) :: &
-      penta_solve_method, & ! Method to solve then penta-diagonal system
-      tridiag_solve_method  ! Specifier for method to solve tridiagonal systems,
-                            ! used for monotonic flux limiter
+      penta_solve_method,   & ! Method to solve then penta-diagonal system
+      tridiag_solve_method, & ! Specifier for method to solve tridiagonal systems,
+                              ! used for monotonic flux limiter
+      fill_holes_type         ! Specifier for which hole filling method to use
 
     logical, intent(in) :: &
       l_predict_upwp_vpwp,       & ! Flag to predict <u'w'> and <v'w'> along
@@ -3552,6 +3558,7 @@ module advance_xm_wpxp_module
            lhs_tp, lhs_ta_xm, lhs_pr1_wprtp, &            ! Intent(in)
            l_implemented, solution(:,:,1),  &             ! Intent(in)
            tridiag_solve_method, &                        ! Intent(in)
+           fill_holes_type, &                             ! Intent(in)
            l_predict_upwp_vpwp, &                         ! Intent(in)
            l_upwind_xm_ma, &                              ! Intent(in)
            l_tke_aniso, &                                 ! Intent(in)
@@ -3586,6 +3593,7 @@ module advance_xm_wpxp_module
            lhs_tp, lhs_ta_xm, lhs_pr1_wprtp, &            ! Intent(in)
            l_implemented, solution(:,:,2),  &             ! Intent(in)
            tridiag_solve_method, &                        ! Intent(in)
+           fill_holes_type, &                             ! Intent(in)
            l_predict_upwp_vpwp, &                         ! Intent(in)
            l_upwind_xm_ma, &                              ! Intent(in)
            l_tke_aniso, &                                 ! Intent(in)
@@ -3630,6 +3638,7 @@ module advance_xm_wpxp_module
              lhs_tp, lhs_ta_xm, lhs_pr1_wprtp, &                     ! Intent(in)
              l_implemented, solution(:,:,2+sclr),  &                 ! Intent(in)
              tridiag_solve_method, &                                 ! Intent(in)
+             fill_holes_type, &                                      ! Intent(in)
              l_predict_upwp_vpwp, &                                  ! Intent(in)
              l_upwind_xm_ma, &                                       ! Intent(in)
              l_tke_aniso, &                                          ! Intent(in)
@@ -3669,6 +3678,7 @@ module advance_xm_wpxp_module
             lhs_tp, lhs_ta_xm, lhs_pr1_wprtp,             & ! Intent(in)
             l_implemented, solution(:,:,3+sclr_dim),      & ! Intent(in)
             tridiag_solve_method,                         & ! Intent(in)
+            fill_holes_type,                              & ! Intent(in)
             l_predict_upwp_vpwp,                          & ! Intent(in)
             l_upwind_xm_ma,                               & ! Intent(in)
             l_tke_aniso,                                  & ! Intent(in)
@@ -3703,6 +3713,7 @@ module advance_xm_wpxp_module
             lhs_tp, lhs_ta_xm, lhs_pr1_wprtp,             & ! Intent(in)
             l_implemented, solution(:,:,4+sclr_dim),      & ! Intent(in)
             tridiag_solve_method,                         & ! Intent(in)
+            fill_holes_type,                              & ! Intent(in)
             l_predict_upwp_vpwp,                          & ! Intent(in)
             l_upwind_xm_ma,                               & ! Intent(in)
             l_tke_aniso,                                  & ! Intent(in)
@@ -3739,6 +3750,7 @@ module advance_xm_wpxp_module
                lhs_tp, lhs_ta_xm, lhs_pr1_wprtp,             & ! Intent(in)
                l_implemented, solution(:,:,5+sclr_dim),      & ! Intent(in)
                tridiag_solve_method,                         & ! Intent(in)
+               fill_holes_type,                              & ! Intent(in)
                l_predict_upwp_vpwp,                          & ! Intent(in)
                l_upwind_xm_ma,                               & ! Intent(in)
                l_tke_aniso,                                  & ! Intent(in)
@@ -3773,6 +3785,7 @@ module advance_xm_wpxp_module
                lhs_tp, lhs_ta_xm, lhs_pr1_wprtp,             & ! Intent(in)
                l_implemented, solution(:,:,6+sclr_dim),      & ! Intent(in)
                tridiag_solve_method,                         & ! Intent(in)
+               fill_holes_type,                              & ! Intent(in)
                l_predict_upwp_vpwp,                          & ! Intent(in)
                l_upwind_xm_ma,                               & ! Intent(in)
                l_tke_aniso,                                  & ! Intent(in)
@@ -3829,6 +3842,7 @@ module advance_xm_wpxp_module
                                               lhs_pr1_wpthlp, lhs_pr1_wpsclrp, &
                                               penta_solve_method, &
                                               tridiag_solve_method, &
+                                              fill_holes_type, &
                                               l_predict_upwp_vpwp, &
                                               l_diffuse_rtm_and_thlm, &
                                               l_upwind_xm_ma, &
@@ -3981,7 +3995,8 @@ module advance_xm_wpxp_module
       nrhs         ! Number of RHS vectors
 
     integer, intent(in) :: &
-      tridiag_solve_method  ! Specifier for method to solve tridiagonal systems
+      tridiag_solve_method, & ! Specifier for method to solve tridiagonal systems
+      fill_holes_type         ! Specifier for which hole filling method to use
 
     logical, intent(in) :: &
       l_predict_upwp_vpwp,       & ! Flag to predict <u'w'> and <v'w'> along
@@ -4155,6 +4170,7 @@ module advance_xm_wpxp_module
            lhs_tp, lhs_ta_xm, lhs_pr1_wprtp, &            ! Intent(in)
            l_implemented, solution(:,:,1), &              ! Intent(in)
            tridiag_solve_method, &                        ! Intent(in)
+           fill_holes_type, &                             ! Intent(in)
            l_predict_upwp_vpwp, &                         ! Intent(in)
            l_upwind_xm_ma, &                              ! Intent(in)
            l_tke_aniso, &                                 ! Intent(in)
@@ -4265,6 +4281,7 @@ module advance_xm_wpxp_module
            lhs_tp, lhs_ta_xm, lhs_pr1_wpthlp, &           ! Intent(in)
            l_implemented, solution(:,:,1),  &             ! Intent(in)
            tridiag_solve_method, &                        ! Intent(in)
+           fill_holes_type, &                             ! Intent(in)
            l_predict_upwp_vpwp, &                         ! Intent(in)
            l_upwind_xm_ma, &                              ! Intent(in)
            l_tke_aniso, &                                 ! Intent(in)
@@ -4386,6 +4403,7 @@ module advance_xm_wpxp_module
              lhs_tp, lhs_ta_xm, lhs_pr1_wpsclrp, &                   ! Intent(in)
              l_implemented, solution(:,:,1),  &                      ! Intent(in)
              tridiag_solve_method, &                                 ! Intent(in)
+             fill_holes_type, &                                      ! Intent(in)
              l_predict_upwp_vpwp, &                                  ! Intent(in)
              l_upwind_xm_ma, &                                       ! Intent(in)
              l_tke_aniso, &                                          ! Intent(in)
@@ -4566,6 +4584,7 @@ module advance_xm_wpxp_module
                lhs_tp, lhs_ta_xm, lhs_pr1, &
                l_implemented, solution, &
                tridiag_solve_method, &
+               fill_holes_type, &
                l_predict_upwp_vpwp, &
                l_upwind_xm_ma, &
                l_tke_aniso, &
@@ -4610,7 +4629,6 @@ module advance_xm_wpxp_module
 
     use model_flags, only: & 
         l_pos_def, &     ! Logical for whether to apply the positive definite scheme to rtm
-        l_hole_fill, &   ! Logical for whether to apply the hole filling scheme to thlm/rtm
         l_clip_turb_adv  ! Logical for whether to clip xm when wpxp is clipped
 
     use constants_clubb, only: &
@@ -4717,7 +4735,8 @@ module advance_xm_wpxp_module
       solution ! The <t+1> value of xm and wpxp   [units vary]
 
     integer, intent(in) :: &
-      tridiag_solve_method  ! Specifier for method to solve tridiagonal systems
+      tridiag_solve_method, & ! Specifier for method to solve tridiagonal systems
+      fill_holes_type         ! Specifier for which hole filling method to use
 
     logical, intent(in) :: &
       l_predict_upwp_vpwp,       & ! Flag to predict <u'w'> and <v'w'> along
@@ -5128,14 +5147,15 @@ module advance_xm_wpxp_module
       end do
     end if
     
-    if ( solve_type /= xm_wpxp_um .and. solve_type /= xm_wpxp_vm .and. l_hole_fill ) then 
+    if ( fill_holes_type /= 0 &
+         .and. solve_type /= xm_wpxp_um .and. solve_type /= xm_wpxp_vm  ) then 
 
       if ( clubb_at_least_debug_level_api( 3 ) ) then
 
         !$acc update host( xm )
 
         if ( any( xm < xm_threshold) ) then
-          
+
           select case ( solve_type )
           case ( xm_wpxp_rtm )
             solve_type_str = "rtm"
@@ -5158,10 +5178,11 @@ module advance_xm_wpxp_module
       end if
 
       ! upper_hf_level = nz since we are filling the zt levels
-      call fill_holes_vertical_api( nzt, ngrdcol, xm_threshold,          & ! In
-                                    gr%k_lb_zt, gr%k_ub_zt,              & ! In
-                                    gr%dzt, rho_ds_zt, gr%grid_dir_indx, & ! In
-                                    xm )                                   ! InOut
+      call fill_holes_vertical_api( nzt, ngrdcol, xm_threshold,           & ! In
+                                    gr%k_lb_zt, gr%k_ub_zt,               & ! In
+                                    gr%dzt, rho_ds_zt, gr%grid_dir_indx,  & ! In
+                                    fill_holes_type,                       & ! In
+                                    xm )                                    ! InOut
       
     end if
 
