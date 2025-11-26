@@ -254,7 +254,10 @@ module spurious_source_test
       wpthvp        ! <w'thv'> (momentum levels)                   [m/s K]
 
      real( kind = core_rknd ), dimension(1) :: &
-      fcor          ! Coriolis parameter                           [s^-1]
+      fcor,       & ! Traditional Coriolis parameter               [s^-1]
+                    ! Vertical planetary vorticity.   Proportional to sin(latitude)
+      fcor_y        ! Nontraditional Coriolis parameter            [s^-1]
+                    ! Meridional planetary vorticity. Proportional to cos(latitude)
 
     real( kind = core_rknd ), dimension(1,nzt) :: &
       um_ref, & ! Reference u wind component for nudging       [m/s]
@@ -415,6 +418,10 @@ module spurious_source_test
                                       ! advance_xm_wpxp.  Otherwise, <u'w'> and <v'w'> are still
                                       ! approximated by eddy diffusivity when <u> and <v> are
                                       ! advanced in subroutine advance_windm_edsclrm.
+      l_nontraditional_Coriolis,    & ! Flag to implement the nontraditional Coriolis terms in the
+                                      ! prognostic equations of <w'w'>, <u'w'>, and <u'u'>.
+      l_traditional_Coriolis,       & ! Flag to implement the traditional Coriolis terms in the
+                                      ! prognostic equations of <v'w'> and <u'w'>.
       l_min_wp2_from_corr_wx,       & ! Flag to base the threshold minimum value of wp2 on keeping
                                       ! the overall correlation of w and x (w and rt, as well as w
                                       ! and theta-l) within the limits of -max_mag_correlation_flux
@@ -547,6 +554,8 @@ module spurious_source_test
                                              fill_holes_type, &
                                              l_use_precip_frac, &
                                              l_predict_upwp_vpwp, &
+                                             l_nontraditional_Coriolis, &
+                                             l_traditional_Coriolis, &
                                              l_min_wp2_from_corr_wx, &
                                              l_min_xp2_from_corr_wx, &
                                              l_C2_cloud_frac, &
@@ -915,6 +924,7 @@ module spurious_source_test
        vg(1,:) = zero
        wpthvp(1,:) = zero
        fcor(1) = zero
+       fcor_y(1) = zero
        um_ref(1,:) = zero
        vm_ref(1,:) = zero
        up2(1,:) = wp2(1,:)
@@ -976,7 +986,7 @@ module spurious_source_test
                              sclrpthvp, sclrm_forcing, sclrp2, Cx_fnc_Richardson, &
                              pdf_implicit_coefs_terms, &
                              um_forcing, vm_forcing, ug, vg, wpthvp, &
-                             fcor, um_ref, vm_ref, up2, vp2, &
+                             fcor, fcor_y, um_ref, vm_ref, up2, vp2, &
                              uprcp, vprcp, rc_coef_zm, &
                              clubb_params(1,:), nu_vert_res_dep, ts_nudge, &
                              iiPDF_type, &
@@ -984,6 +994,8 @@ module spurious_source_test
                              tridiag_solve_method, &
                              fill_holes_type, &
                              l_predict_upwp_vpwp, &
+                             l_nontraditional_Coriolis, &
+                             l_traditional_Coriolis, &
                              l_diffuse_rtm_and_thlm, &
                              l_stability_correct_Kh_N2_zm, &
                              l_godunov_upwind_wpxp_ta, &

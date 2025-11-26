@@ -565,6 +565,10 @@ subroutine logical_flags_driver( current_date, current_time )
                                     ! advance_xm_wpxp.  Otherwise, <u'w'> and <v'w'> are still
                                     ! approximated by eddy diffusivity when <u> and <v> are
                                     ! advanced in subroutine advance_windm_edsclrm.
+    l_nontraditional_Coriolis,    & ! Flag to implement the nontraditional Coriolis terms in the
+                                    ! prognostic equations of <w'w'>, <u'w'>, and <u'u'>.
+    l_traditional_Coriolis,       & ! Flag to implement the traditional Coriolis terms in the
+                                    ! prognostic equations of <v'w'> and <u'w'>.
     l_min_wp2_from_corr_wx,       & ! Flag to base the threshold minimum value of wp2 on keeping
                                     ! the overall correlation of w and x (w and rt, as well as w
                                     ! and theta-l) within the limits of -max_mag_correlation_flux
@@ -686,7 +690,8 @@ subroutine logical_flags_driver( current_date, current_time )
     l_partial_upwind_wp3, l_godunov_upwind_wpxp_ta, l_godunov_upwind_xpyp_ta, &
     l_use_cloud_cover, l_rcm_supersat_adj, &
     l_damp_wp3_Skw_squared, l_min_wp2_from_corr_wx, l_min_xp2_from_corr_wx, l_C2_cloud_frac, &
-    l_predict_upwp_vpwp, l_diag_Lscale_from_tau, l_stability_correct_tau_zm, &
+    l_predict_upwp_vpwp, l_nontraditional_Coriolis, l_traditional_Coriolis, &
+    l_diag_Lscale_from_tau, l_stability_correct_tau_zm, &
     l_damp_wp2_using_em, l_use_C7_Richardson, l_use_precip_frac, l_do_expldiff_rtm_thlm, &
     l_use_C11_Richardson, l_use_shear_Richardson, l_prescribed_avg_deltaz, &
     l_diffuse_rtm_and_thlm, l_stability_correct_Kh_N2_zm, l_trapezoidal_rule_zt, &
@@ -709,6 +714,8 @@ subroutine logical_flags_driver( current_date, current_time )
                                            fill_holes_type,                   & ! Intent(out)
                                            l_use_precip_frac,                 & ! Intent(out)
                                            l_predict_upwp_vpwp,               & ! Intent(out)
+                                           l_nontraditional_Coriolis,         & ! Intent(out)
+                                           l_traditional_Coriolis,            & ! Intent(out)
                                            l_min_wp2_from_corr_wx,            & ! Intent(out)
                                            l_min_xp2_from_corr_wx,            & ! Intent(out)
                                            l_C2_cloud_frac,                   & ! Intent(out)

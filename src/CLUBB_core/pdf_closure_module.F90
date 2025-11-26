@@ -67,7 +67,7 @@ module pdf_closure_module
                           wprtp2, wp2rtp,                             &
                           wpthlp2, wp2thlp, wprtpthlp,                &
                           cloud_frac, ice_supersat_frac,              &
-                          rcm, wpthvp, wp2thvp, rtpthvp,              &
+                          rcm, wpthvp, wp2thvp, wp2up, rtpthvp,       &
                           thlpthvp, wprcp, wp2rcp, rtprcp,            &
                           thlprcp, rcp2,                              &
                           uprcp, vprcp,                               &
@@ -294,6 +294,7 @@ module pdf_closure_module
       rcm,                   & ! Mean liquid water          [kg/kg]
       wpthvp,                & ! Buoyancy flux              [(K m)/s] 
       wp2thvp,               & ! w'^2 th_v'                 [(m^2 K)/s^2]
+      wp2up,                 & ! w'^2 u'                    [m^3/s^3]
       rtpthvp,               & ! r_t' th_v'                 [(kg K)/kg]
       thlpthvp,              & ! th_l' th_v'                [K^2]
       wprcp,                 & ! w' r_c'                    [(m kg)/(s kg)]
@@ -762,7 +763,16 @@ module pdf_closure_module
                          pdf_params%corr_w_thl_1, pdf_params%corr_w_thl_2,     &
                          pdf_params%mixt_frac,                                 &
                          wp2thlp )
-    
+
+    call calc_wp2xp_pdf( nz, ngrdcol,                                          &
+                         wm, um, pdf_params%w_1, pdf_params%w_2,               &
+                         u_1, u_2,                                             &
+                         pdf_params%varnce_w_1, pdf_params%varnce_w_2,         &
+                         varnce_u_1, varnce_u_2,                               &
+                         corr_u_w_1, corr_u_w_2,                               &
+                         pdf_params%mixt_frac,                                 &
+                         wp2up )
+
     ! Compute higher order moments (these may be interactive)
     call calc_wpxp2_pdf( nz, ngrdcol, &
                          wm, um, pdf_params%w_1, pdf_params%w_2, &
@@ -1414,6 +1424,7 @@ module pdf_closure_module
                nz, sclr_dim, &
                wp4(i,:), wprtp2(i,:), wp2rtp(i,:), wpthlp2(i,:), & ! intent(in)
                wp2thlp(i,:), cloud_frac(i,:), rcm(i,:), wpthvp(i,:), wp2thvp(i,:), & ! intent(in)
+               wp2up(i,:), & ! intent(in)
                rtpthvp(i,:), thlpthvp(i,:), wprcp(i,:), wp2rcp(i,:), & ! intent(in)
                rtprcp(i,:), thlprcp(i,:), rcp2(i,:), wprtpthlp(i,:), & ! intent(in)
                pdf_params%crt_1(i,:), pdf_params%crt_2(i,:), & ! intent(in)
@@ -1482,6 +1493,7 @@ module pdf_closure_module
         write(fstderr,*) "rcm = ", rcm
         write(fstderr,*) "wpthvp = ", wpthvp
         write(fstderr,*) "wp2thvp = ", wp2thvp
+        write(fstderr,*) "wp2up = ", wp2up
         write(fstderr,*) "rtpthvp = ", rtpthvp
         write(fstderr,*) "thlpthvp = ", thlpthvp
         write(fstderr,*) "wprcp = ", wprcp
@@ -3687,7 +3699,7 @@ module pdf_closure_module
 #endif
                                  rcm, cloud_frac,                         & ! Intent(out)
                                  ice_supersat_frac, wprcp,                & ! Intent(out)
-                                 sigma_sqd_w, wpthvp, wp2thvp,            & ! Intent(out)
+                                 sigma_sqd_w, wpthvp, wp2thvp, wp2up,     & ! Intent(out)
                                  rtpthvp, thlpthvp, rc_coef,              & ! Intent(out)
                                  rcm_in_layer, cloud_cover,               & ! Intent(out)
                                  rcp2_zt, thlprcp,                        & ! Intent(out)
@@ -3941,6 +3953,7 @@ module pdf_closure_module
       cloud_frac,        & ! cloud fraction (thermodynamic levels)  [-]
       ice_supersat_frac, & ! ice supersat. frac. (thermo. levels)   [-]
       wp2thvp,           & ! < w'^2 th_v' > (thermodynamic levels)  [m^2/s^2 K]
+      wp2up,             & ! < w'^2 u' > (thermodynamic levels)     [m^3/s^3]
       rc_coef,           & ! Coefficient of X'r_c' (thermo. levs.)  [K/(kg/kg)]
       rcm_in_layer,      & ! rcm in cloud layer                     [kg/kg]
       cloud_cover,       & ! cloud cover                            [-]
@@ -4102,6 +4115,7 @@ module pdf_closure_module
       wp2thlp_zm,   & ! < w'^2 th_l' > on momentum levels     [m^2/s^2 K]
       wprtpthlp_zm, & ! < w' r_t' th_l' > on momentum levels  [m/s kg/kg K]
       wp2thvp_zm,   & ! < w'^2 th_v' > on momentum levels     [m^2/s^2 K]
+      wp2up_zm,     & ! < w'^2 u' > on momentum levels        [m^3/s^3]
       wp2rcp_zm       ! < w'^2 r_c' > on momentum levles      [m^2/s^2 kg/kg]
 
     real( kind = core_rknd ), dimension(ngrdcol,nzm,sclr_dim) :: &
@@ -4441,7 +4455,7 @@ module pdf_closure_module
            wprtp2, wp2rtp,                                  & ! intent(out)
            wpthlp2, wp2thlp, wprtpthlp,                     & ! intent(out)
            cloud_frac, ice_supersat_frac,                   & ! intent(out)
-           rcm, wpthvp_zt, wp2thvp, rtpthvp_zt,             & ! intent(out)
+           rcm, wpthvp_zt, wp2thvp, wp2up, rtpthvp_zt,      & ! intent(out)
            thlpthvp_zt, wprcp_zt, wp2rcp, rtprcp_zt,        & ! intent(out)
            thlprcp_zt, rcp2_zt,                             & ! intent(out)
            uprcp_zt, vprcp_zt,                              & ! intent(out)
@@ -4565,7 +4579,7 @@ module pdf_closure_module
              wprtp2_zm, wp2rtp_zm,                                 & ! intent(out)
              wpthlp2_zm, wp2thlp_zm, wprtpthlp_zm,                 & ! intent(out)
              cloud_frac_zm, ice_supersat_frac_zm,                  & ! intent(out)
-             rcm_zm, wpthvp, wp2thvp_zm, rtpthvp,                  & ! intent(out)
+             rcm_zm, wpthvp, wp2thvp_zm, wp2up_zm, rtpthvp,        & ! intent(out)
              thlpthvp, wprcp, wp2rcp_zm, rtprcp,                   & ! intent(out)
              thlprcp, rcp2,                                        & ! intent(out)
              uprcp, vprcp,                                         & ! intent(out)
@@ -4692,11 +4706,12 @@ module pdf_closure_module
                                 stats_metadata,                              & ! intent(in)
                                 wprtp2, wpthlp2,                             & ! intent(inout)
                                 wprtpthlp, cloud_frac, ice_supersat_frac,    & ! intent(inout)
-                                rcm, wp2thvp, wpsclrprtp, wpsclrp2,          & ! intent(inout)
+                                rcm, wp2thvp, wp2up, wpsclrprtp, wpsclrp2,   & ! intent(inout)
                                 wpsclrpthlp,                                 & ! intent(inout)
                                 wprtp2_zm, wpthlp2_zm,                       & ! intent(inout)
                                 wprtpthlp_zm, cloud_frac_zm,                 & ! intent(inout)
                                 ice_supersat_frac_zm, rcm_zm, wp2thvp_zm,    & ! intent(inout)
+                                wp2up_zm,                                    & ! intent(inout)
                                 wpsclrprtp_zm, wpsclrp2_zm, wpsclrpthlp_zm )   ! intent(inout)
     else ! l_trapezoidal_rule_zt
       cloud_frac_zm = zt2zm_api( nzm, nzt, ngrdcol, gr, cloud_frac )
@@ -4840,11 +4855,12 @@ module pdf_closure_module
                                   stats_metadata,                              & ! intent(in)
                                   wprtp2, wpthlp2,                             & ! intent(inout)
                                   wprtpthlp, cloud_frac, ice_supersat_frac,    & ! intent(inout)
-                                  rcm, wp2thvp, wpsclrprtp, wpsclrp2,          & ! intent(inout)
+                                  rcm, wp2thvp, wp2up, wpsclrprtp, wpsclrp2,   & ! intent(inout)
                                   wpsclrpthlp,                                 & ! intent(inout)
                                   wprtp2_zm, wpthlp2_zm,                       & ! intent(inout)
                                   wprtpthlp_zm, cloud_frac_zm,                 & ! intent(inout)
                                   ice_supersat_frac_zm, rcm_zm, wp2thvp_zm,    & ! intent(inout)
+                                  wp2up_zm,                                    & ! intent(inout)
                                   wpsclrprtp_zm, wpsclrp2_zm, wpsclrpthlp_zm )   ! intent(inout)
                
     !
@@ -4909,7 +4925,8 @@ module pdf_closure_module
       cloud_frac,         & ! Cloud Fraction            [-]
       ice_supersat_frac,  & ! Ice Cloud Fraction        [-]
       rcm,                & ! Liquid water mixing ratio [kg/kg]
-      wp2thvp               ! w'^2 th_v'                [m^2 K/s^2]
+      wp2thvp,            & ! w'^2 th_v'                [m^2 K/s^2]
+      wp2up                 ! w'^2 u'                   [m^3/s^3]
 
     real( kind = core_rknd ), dimension(ngrdcol,nzt,sclr_dim), intent(inout) :: &
       wpsclrprtp,  & ! w'sclr'rt'
@@ -4926,7 +4943,8 @@ module pdf_closure_module
       cloud_frac_zm,        & ! Cloud Fraction on momentum grid            [-]
       ice_supersat_frac_zm, & ! Ice Cloud Fraction on momentum grid        [-]
       rcm_zm,               & ! Liquid water mixing ratio on momentum grid [kg/kg]
-      wp2thvp_zm              ! w'^2 th_v' on momentum grid                [m^2 K/s^2]
+      wp2thvp_zm,           & ! w'^2 th_v' on momentum grid                [m^2 K/s^2]
+      wp2up_zm                ! w'^2 u' on momentum grid                   [m^3/s^3]
 
     real( kind = core_rknd ), dimension(ngrdcol,nzm,sclr_dim), intent(inout) :: &
       wpsclrprtp_zm,  & ! w'sclr'rt' on momentum grid
@@ -4962,6 +4980,7 @@ module pdf_closure_module
       ice_supersat_frac_zm        = zt2zm_api( nzm, nzt, ngrdcol, gr, ice_supersat_frac )
       rcm_zm                      = zt2zm_api( nzm, nzt, ngrdcol, gr, rcm )
       wp2thvp_zm                  = zt2zm_api( nzm, nzt, ngrdcol, gr, wp2thvp )
+      wp2up_zm                    = zt2zm_api( nzm, nzt, ngrdcol, gr, wp2up )
 
       ! Since top momentum level is higher than top thermo. level,
       ! set variables at top momentum level to 0.
@@ -4974,6 +4993,7 @@ module pdf_closure_module
         ice_supersat_frac_zm(i,gr%k_ub_zm) = 0.0_core_rknd
         rcm_zm(i,gr%k_ub_zm)               = 0.0_core_rknd
         wp2thvp_zm(i,gr%k_ub_zm)           = 0.0_core_rknd
+        wp2up_zm(i,gr%k_ub_zm)             = 0.0_core_rknd
       end do
       !$acc end parallel loop
 
@@ -5046,6 +5066,10 @@ module pdf_closure_module
     call calc_trapezoid_zt( nzm, nzt, ngrdcol, gr, &
                             wp2thvp_zm, &
                             wp2thvp )
+
+     call calc_trapezoid_zt( nzm, nzt, ngrdcol, gr, &
+                              wp2up_zm, &
+                              wp2up )
 
     ! End of trapezoidal rule
 

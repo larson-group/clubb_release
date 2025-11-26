@@ -53,7 +53,7 @@ time_initial = 0.0       ! Model start time [seconds since midnight on start dat
 time_final   = 864000.0 ! Model end time [seconds since midnight on start date]
 
 
-dt_main    = 300.0   ! Model timestep [s]
+dt_main    = 200.0   ! Model timestep [s]
 dt_rad = 600.0   ! Radiation timestep [s]
 
 sfctype = 1      ! Select surface scheme (cases without specified surface fluxes).
@@ -202,7 +202,7 @@ l_use_default_std_atmosphere = .false.
 
 l_stats       = .true.   ! Flag for statistical output.
 fname_prefix = "cgils_s6"    ! Prefix of output filename.
-stats_tsamp  = 300.      ! Frequency of statistical sampling [s]
+stats_tsamp  = 200.      ! Frequency of statistical sampling [s]
                          ! For most complete sampling, let 
                          ! stats_tsamp = dt_main
                          ! (stats_tsamp must multiply evenly into stats_tout)

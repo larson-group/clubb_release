@@ -134,8 +134,9 @@ module constants_clubb
 #else
 
   real( kind = core_rknd ), parameter, public ::  & 
-    pi = 3.141592654_core_rknd, &       ! The ratio of radii to their circumference
-    invrs_pi = 0.31830988618_core_rknd  ! 1 / pi
+    pi = 3.141592654_core_rknd, &         ! The ratio of radii to their circumference
+    invrs_pi = 0.31830988618_core_rknd, & ! 1 / pi
+    radians_per_deg = pi / 180._core_rknd
 
   real( kind = dp ), parameter, public :: &
     radians_per_deg_dp = pi_dp / 180._dp
@@ -290,7 +291,8 @@ module constants_clubb
 
   ! Changed g to grav to make it easier to find in the code 5/25/05
   ! real, parameter, public :: grav  = 9.80665_core_rknd ! Gravitational acceleration [m/s^2]
-  real( kind = core_rknd ), parameter, public :: & 
+  real( kind = core_rknd ), parameter, public :: &
+    omega_planet = 7.292e-5_core_rknd, & ! Planetary rotation rate [s^-1]
     grav = 9.81_core_rknd, & ! Gravitational acceleration     [m/s^2]
     p0   = 1.0e5_core_rknd   ! Reference pressure             [Pa]
 

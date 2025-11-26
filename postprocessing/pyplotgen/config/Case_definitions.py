@@ -221,6 +221,29 @@ ATEX = {'name': 'atex',
                      },
         'var_groups': [VariableGroupBase, VariableGroupWs, VariableGroupLiquidMP, VariableGroupIceMP]}
 
+ATEX_LONG = {'name': 'atex_long',
+        'description': "",
+        'start_time': 2881, 'end_time': 11520,
+        'height_min_value': 0, 'height_max_value': 2500,
+
+        'blacklisted_vars': [],
+        'sam_benchmark_file': None,
+        'clubb_file': {'zm': clubb_output_root + '/atex_long_zm.nc',
+                       'zt': clubb_output_root + '/atex_long_zt.nc',
+                       'sfc': clubb_output_root + '/atex_long_sfc.nc'},
+        'coamps_benchmark_file': None,
+        'wrf_benchmark_file': None,
+        'clubb_r408_benchmark_file': None,
+        'clubb_hoc_benchmark_file': None,
+        'e3sm_file': None,
+        'cam_file': {'cam': cam_output_root + "/atex_long_cam.nc"},
+        'sam_file': None,
+        'wrf_file': {'zm': wrf_output_root + "/atex_long_zm_wrf.nc",
+                     'zt': wrf_output_root + "/atex_long_zt_wrf.nc",
+                     'sfc': wrf_output_root + "/atex_long_sfc_wrf.nc"
+                     },
+        'var_groups': [VariableGroupBase, VariableGroupWs, VariableGroupLiquidMP, VariableGroupIceMP]}
+
 BOMEX = {'name': 'bomex',
          'description': "",
          'start_time': 181, 'end_time': 360,
@@ -1127,7 +1150,7 @@ LASSO_20181002 = {'name': 'lasso_20181002',
 
 # DO NOT EDIT THIS LIST UNLESS YOU ARE ADDING A NEW CASE. NEVER REMOVE CASES FROM THIS LIST.
 # You may define a subset of cases at the end of this file.
-ALL_CASES = [ARM, ARM_97, ASTEX_A209, ATEX,
+ALL_CASES = [ARM, ARM_97, ASTEX_A209, ATEX, ATEX_LONG,
                  BOMEX,
                  CGILS_S6, CGILS_S11, CGILS_S12, CLEX9_NOV02, CLEX9_OCT14,
                  DYCOMS2_RF01, DYCOMS2_RF01_FIXED_SST, DYCOMS2_RF02_DO,
