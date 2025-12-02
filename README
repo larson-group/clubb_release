@@ -12,6 +12,7 @@
 *         subject to copyright. 
 ********************************************************************************
 
+
 ********************************************************************************
 *        Overview of the Cloud Layers Unified By Binormals (CLUBB) code        
 ********************************************************************************
@@ -1501,3 +1502,4 @@ CLUBB.  The script run_scm_debug.bash is configured to use the PGI debugger
 by default, but it could be modified to use any number of free or commercial 
 debuggers.  When doing so ensure the debugging flags for your compiler have
 been enabled in your config file.
+
