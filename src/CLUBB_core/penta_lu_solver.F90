@@ -189,8 +189,8 @@ module penta_lu_solvers
       lower_1(i,ndim) = lhs(1,i,ndim) - lower_2(i,ndim) * upper_1(i,ndim-2)
 
       lower_diag_invrs(i,ndim) = 1.0_core_rknd  &
-                                 / ( lhs(0,i,ndim-1) - lower_2(i,ndim) * upper_2(i,ndim-2) &
-                                                     - lower_1(i,ndim) * upper_1(i,ndim-1) )
+                                 / ( lhs(0,i,ndim) - lower_2(i,ndim) * upper_2(i,ndim-2) &
+                                                   - lower_1(i,ndim) * upper_1(i,ndim-1) )
     end do
     !$acc end parallel loop
     
@@ -309,8 +309,8 @@ module penta_lu_solvers
       lower_1(i,ndim) = lhs(1,i,ndim) - lower_2(i,ndim) * upper_1(i,ndim-2)
 
       lower_diag_invrs(i,ndim) = 1.0_core_rknd  &
-                                 / ( lhs(0,i,ndim-1) - lower_2(i,ndim) * upper_2(i,ndim-2) &
-                                                     - lower_1(  i,ndim) * upper_1(i,ndim-1) )
+                                 / ( lhs(0,i,ndim) - lower_2(i,ndim) * upper_2(i,ndim-2) &
+                                                   - lower_1(  i,ndim) * upper_1(i,ndim-1) )
     end do
     !$acc end parallel loop
 
