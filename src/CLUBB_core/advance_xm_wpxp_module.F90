@@ -3399,11 +3399,13 @@ module advance_xm_wpxp_module
                                            + stats_metadata%irtm_matrix_condt_num > 0 ) then
        call xm_wpxp_solve( nzm, ngrdcol, nrhs, gr, & ! Intent(in)
                            penta_solve_method,     & ! Intent(in)
+                           old_solution,           & ! Intent(in) 
                            lhs, rhs, err_info,     & ! Intent(inout)
                            solution, rcond )         ! Intent(out)
     else
       call xm_wpxp_solve( nzm, ngrdcol, nrhs, gr, & ! Intent(in)
                           penta_solve_method,     & ! Intent(in)
+                          old_solution,           & ! Intent(in) 
                           lhs, rhs, err_info,     & ! Intent(inout)
                           solution )                ! Intent(out)
     end if
@@ -4045,11 +4047,13 @@ module advance_xm_wpxp_module
     if ( stats_metadata%l_stats_samp .and. stats_metadata%irtm_matrix_condt_num > 0 ) then
       call xm_wpxp_solve( nzm, ngrdcol, nrhs, gr, & ! Intent(in)
                           penta_solve_method,     & ! Intent(in)
+                          old_solution,           & ! Intent(in) 
                           lhs, rhs, err_info,     & ! Intent(inout)
                           solution, rcond )         ! Intent(out)
     else
       call xm_wpxp_solve( nzm, ngrdcol, nrhs, gr, & ! Intent(in)
                           penta_solve_method,     & ! Intent(in)
+                          old_solution,           & ! Intent(in) 
                           lhs, rhs, err_info,     & ! Intent(inout)
                           solution )                ! Intent(out)
     end if
@@ -4156,11 +4160,13 @@ module advance_xm_wpxp_module
     if ( stats_metadata%l_stats_samp .and. stats_metadata%ithlm_matrix_condt_num > 0 ) then
       call xm_wpxp_solve( nzm, ngrdcol, nrhs, gr, & ! Intent(in)
                           penta_solve_method,     & ! Intent(in)
+                          old_solution,           & ! Intent(in) 
                           lhs, rhs, err_info,     & ! Intent(inout)
                           solution, rcond )         ! Intent(out)
     else
       call xm_wpxp_solve( nzm, ngrdcol, nrhs, gr, & ! Intent(in)
                           penta_solve_method,     & ! Intent(in)
+                          old_solution,           & ! Intent(in) 
                           lhs, rhs, err_info,     & ! Intent(inout)
                           solution )                ! Intent(out)
     end if
@@ -4283,6 +4289,7 @@ module advance_xm_wpxp_module
       ! Solve for sclrm / w'sclr'
       call xm_wpxp_solve( nzm, ngrdcol, nrhs, gr, & ! Intent(in)
                           penta_solve_method,     & ! Intent(in)
+                          old_solution,           & ! Intent(in) 
                           lhs, rhs, err_info,     & ! Intent(inout)
                           solution )                ! Intent(out)
 
@@ -4359,6 +4366,7 @@ module advance_xm_wpxp_module
   !=============================================================================
   subroutine xm_wpxp_solve( nzm, ngrdcol, nrhs, gr, &
                             penta_solve_method, &
+                            old_solution, &
                             lhs, rhs, err_info, &
                             solution, rcond )
 
@@ -4407,6 +4415,9 @@ module advance_xm_wpxp_module
 
     integer, intent(in) :: &
       penta_solve_method ! Method to solve then penta-diagonal system
+
+    real( kind = core_rknd ), intent(in), dimension(nsup+nsub+1,ngrdcol,2*nzm-1) :: &
+      old_solution
 
     !------------------------- Input/Output Variables -------------------------
     real( kind = core_rknd ), intent(inout), dimension(nsup+nsub+1,ngrdcol,2*nzm-1) :: &
@@ -4468,7 +4479,9 @@ module advance_xm_wpxp_module
     call band_solve( "xm_wpxp", penta_solve_method,      & ! Intent(in)
                      ngrdcol, nsup, nsub, 2*nzm-1, nrhs, & ! Intent(in)
                      lhs, rhs, err_info,                 & ! Intent(inout)
-                     solution, rcond )                     ! Intent(out)
+                     solution, &
+                     rcond = rcond, &
+                     old_soln = old_solution )                     ! Intent(out)
 
     ! Generalized grid test
     ! This block of code is used when a generalized grid test

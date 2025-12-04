@@ -53,6 +53,7 @@ set( CLUBB_CORE_SOURCES
         pdf_closure_module.F90
         pdf_parameter_module.F90
         pdf_utilities.F90
+        penta_bicgstab_solver.F90
         penta_lu_solver.F90
         pos_definite_module.F90
         precipitation_fraction.F90

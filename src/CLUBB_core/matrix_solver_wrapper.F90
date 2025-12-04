@@ -49,7 +49,9 @@ module matrix_solver_wrapper
                 solve_name, penta_solve_method, & ! Intent(in)
                 ngrdcol, nsup, nsub, ndim,      & ! Intent(in)
                 lhs, rhs, err_info,             & ! Intent(inout)
-                soln, rcond )                     ! Intent(out)
+                soln,                           & ! Intent(out)
+                old_soln,                       & ! Optional(in)
+                rcond )                           ! Optional(out)
 
     use lapack_wrap, only: &
       lapack_band_solve,  & ! Procedure(s)
@@ -57,6 +59,9 @@ module matrix_solver_wrapper
 
     use penta_lu_solvers, only: &
       penta_lu_solve    ! Procedure(s)
+
+    use bicgstab_solvers, only: &
+      penta_bicgstab_solve
 
     use err_info_type_module, only: &
       err_info_type        ! Type
@@ -89,6 +94,10 @@ module matrix_solver_wrapper
     real( kind = core_rknd ), dimension(ngrdcol,ndim), intent(out) :: &
       soln
 
+    ! ----------------------- Optional In -----------------------
+    real( kind = core_rknd ), optional, dimension(ngrdcol,ndim), intent(in) :: &
+      old_soln
+
     ! ----------------------- Optional Out -----------------------
 
     ! The estimate of the reciprocal condition number of matrix
@@ -105,6 +114,8 @@ module matrix_solver_wrapper
 
     real( kind = core_rknd ), dimension(ngrdcol,ndim) :: &
       dummy_soln
+
+    integer :: i, k, its
 
     ! ----------------------- Begin Code -----------------------
 
@@ -146,6 +157,15 @@ module matrix_solver_wrapper
       call penta_lu_solve( ndim, ngrdcol,         & ! Intent(in)
                            lhs(:,:,:), rhs(:,:),  & ! Intent(in)
                            soln(:,:) )              ! Intent(out)
+    
+    else if ( penta_solve_method == penta_bicgstab ) then 
+
+      !$acc update host( lhs, rhs, old_soln )
+
+      call penta_bicgstab_solve( ndim, ngrdcol, lhs(:,:,:), rhs(:,:), &
+                                 soln(:,:), old_soln(:,:), its )
+
+      !$acc update device( soln )
 
     else
 
@@ -168,7 +188,9 @@ module matrix_solver_wrapper
                 solve_name, penta_solve_method,   & ! Intent(in)
                 ngrdcol, nsup, nsub, ndim, nrhs,  & ! Intent(in)
                 lhs, rhs, err_info,               & ! Intent(inout)
-                soln, rcond )                       ! Intent(out)
+                soln,                             & ! Intent(out)
+                old_soln,                         & ! Optional(in)
+                rcond )                             ! Optional(out)
 
     use lapack_wrap, only: &
       lapack_band_solve,  & ! Procedure(s)
@@ -176,6 +198,9 @@ module matrix_solver_wrapper
 
     use penta_lu_solvers, only: &
       penta_lu_solve    ! Procedure(s)
+
+    use bicgstab_solvers, only: &
+      penta_bicgstab_solve
 
     use err_info_type_module, only: &
       err_info_type        ! Type
@@ -209,6 +234,10 @@ module matrix_solver_wrapper
     real( kind = core_rknd ), dimension(ngrdcol,ndim,nrhs), intent(out) :: &
       soln
 
+    ! ----------------------- Optional In -----------------------
+    real( kind = core_rknd ), optional, dimension(ngrdcol,ndim,nrhs), intent(in) :: &
+      old_soln
+
     ! ----------------------- Optional Out -----------------------
 
     ! The estimate of the reciprocal condition number of matrix
@@ -225,6 +254,8 @@ module matrix_solver_wrapper
 
     real( kind = core_rknd ), dimension(ngrdcol,ndim,nrhs) :: &
       dummy_soln
+
+    integer :: i, k, j, its
 
     ! ----------------------- Begin Code -----------------------
 
@@ -267,6 +298,22 @@ module matrix_solver_wrapper
                            lhs(:,:,:), rhs(:,:,:),  & ! Intent(in)
                            soln(:,:,:) )              ! Intent(out)
 
+    else if ( penta_solve_method == penta_bicgstab ) then 
+
+      !$acc update host( lhs, rhs, old_soln )
+
+      ! We call the right hand sides one at a time because they can vary
+      ! greatly in magnitude, which makes it harder to determine convergence
+      ! criteria in this iterative solver
+      do j = 1, nrhs
+        
+        call penta_bicgstab_solve( ndim, ngrdcol, lhs(:,:,:), rhs(:,:,j), &
+                                   soln(:,:,j), old_soln(:,:,j), its )
+
+      end do
+
+      !$acc update device( soln )
+      
     else
 
       ! The solve method should match one of the above

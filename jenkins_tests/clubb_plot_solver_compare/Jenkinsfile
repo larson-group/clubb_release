@@ -1,0 +1,62 @@
+pipeline {
+  
+  agent any
+  
+  environment {
+    commit      = "${GIT_COMMIT.substring(0, 7)}"
+    branch_name = "${GIT_BRANCH.split('/').last()}"
+  }
+
+  stages {
+    stage('Compile') {
+      steps {
+        sh '''source /etc/profile.d/larson-group.sh
+              module load intel netcdf-fortran
+		          ./compile.py'''
+      }
+    }
+    stage('Run Lapack') {
+      steps {
+        sh '''sed -i "s:penta_solve_method.*:penta_solve_method = 1:g" input/tunable_parameters/configurable_model_flags.in'''
+        sh '''sed -i "s:tridiag_solve_method.*:tridiag_solve_method = 1:g" input/tunable_parameters/configurable_model_flags.in'''
+        sh '''run_scripts/run_scm_all.py -priority_cases -out_dir lapack_output'''
+      }
+    }
+    stage('Run custom_lu') {
+      steps {
+        sh '''sed -i "s:penta_solve_method.*:penta_solve_method = 2:g" input/tunable_parameters/configurable_model_flags.in'''
+        sh '''sed -i "s:tridiag_solve_method.*:tridiag_solve_method = 2:g" input/tunable_parameters/configurable_model_flags.in'''
+        sh '''run_scripts/run_scm_all.py -priority_cases -out_dir custom_lu_output'''
+      }
+    }
+    stage('Run bicgstab') {
+      steps {
+        sh '''sed -i "s:penta_solve_method.*:penta_solve_method = 3:g" input/tunable_parameters/configurable_model_flags.in'''
+        // there is no tridiag bicgstab method, just use the custom tridiag_lu tridiag method
+        sh '''sed -i "s:tridiag_solve_method.*:tridiag_solve_method = 2:g" input/tunable_parameters/configurable_model_flags.in'''
+        // wrap in this catch since we currently expect dycoms2_rf02_ds to fail
+        catchError(buildResult: 'SUCCESS', stageResult: 'SUCCESS') {
+          sh '''run_scripts/run_scm_all.py -priority_cases -out_dir bicgstab_output'''
+        }
+        sh '''rm bicgstab_output/dycoms2_rf02_ds_*'''
+      }
+    }
+    stage('Plot') {
+      steps {
+        sh 'python postprocessing/pyplotgen/pyplotgen.py -l -c lapack_output custom_lu_output bicgstab_output -o ${commit}_solver'
+        sh "ssh carson 'mkdir -p /home/pub/web_plots/clubb_solver_plots/${branch_name}'"
+        sh "scp -r *_solver carson:/home/pub/web_plots/clubb_solver_plots/${branch_name}"
+        sh "ssh carson '/home/pub/web_plots/generate_plot_directory_page.py /home/pub/web_plots/clubb_solver_plots/'"
+      }
+    }
+  }
+  post { 
+    failure {
+      script {
+      if ( "${env.JOB_NAME}" == "clubb_plot_solver_compare" )
+        // This command handles the email on failure feature of the jenkins test. This line is the same on every jenkins test.
+	emailext(to: 'messnermet@uwm.edu', subject: "${env.JOB_NAME} build ${env.BUILD_NUMBER} has Failed", attachLog: true, body: "${env.JOB_NAME} build ${env.BUILD_NUMBER} has failed. See the attached build log and the build results (${env.BUILD_URL}) for help troubleshooting.")
+      }
+    }
+  }
+}

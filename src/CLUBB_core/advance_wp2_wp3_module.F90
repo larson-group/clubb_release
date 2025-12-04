@@ -1522,7 +1522,8 @@ module advance_wp2_wp3_module
       call band_solve(  "wp2_wp3", penta_solve_method, & ! intent(in)
                         ngrdcol, 2, 2, 2*nzm-1,        & ! intent(in)
                         lhs, rhs, err_info,            & ! intent(inout)
-                        solut, rcond )                   ! intent(out)
+                        solut, &
+                        rcond = rcond )                   ! intent(out)
 
       ! Est. of the condition number of the w'^2/w^3 LHS matrix
       do i = 1, ngrdcol
@@ -1538,7 +1539,8 @@ module advance_wp2_wp3_module
       call band_solve( "wp2_wp3", penta_solve_method, & ! intent(in)
                        ngrdcol, 2, 2, 2*nzm-1,        & ! intent(in)
                        lhs, rhs, err_info,            & ! intent(inout)
-                       solut )                          ! intent(out)
+                       solut, &
+                       old_soln = old_solut )                          ! intent(out)
 
     end if
 
