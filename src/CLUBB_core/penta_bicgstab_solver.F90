@@ -47,13 +47,14 @@ module bicgstab_solvers
                             ! depends on the number of lhs bands too. 
                             ! 5 seems like a good number, but this needs more investigation
 
+  ! Reference tolerance used for convergence criteria.
+  ! This is somewhat arbitrary, feel free to experiment with it.
+  ! In theory, lower tolerance = less error, but too small
+  ! of a tolerance result in unnecessary iterations. 
+  ! max-epsilon statement is used to increase tolerance 
+  ! when using single precision
   real( kind = core_rknd ), parameter :: &
-    bicgstab_tol = max( 1.e-10, epsilon(bicgstab_tol) )   ! Reference tolerance used for convergence criteria.
-                                                          ! This is somewhat arbitrary, feel free to experiment with it.
-                                                          ! In theory, lower tolerance = less error, but too small
-                                                          ! of a tolerance result in unnecessary iterations. 
-                                                          ! max-epsilon statement is used to increase tolerance 
-                                                          ! when using single precision
+    bicgstab_tol = max( 1.e-10_core_rknd, epsilon(bicgstab_tol) )   
 
   public  :: penta_bicgstab_solve
 
