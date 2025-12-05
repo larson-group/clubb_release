@@ -2,7 +2,7 @@
 vars_zt =
 'thlm', 'rtm', 'cloud_frac', 'rcm', 'wp3', 'thlp3', 'rtp3', 'Skw_zt',
 'Skrt_zt', 'Skthl_zt', 'wp2rtp', 'wp2thlp', 'wprtp2', 'wpthlp2', 'wprtpthlp',
-'wp2thvp', 'wp2rcp', 'rc_coef',
+'wp2thvp', 'wp2up', 'wp2rcp', 'rc_coef',
 'um', 'vm', 'wm_zt', 'rrm', 'Nrm', 'rrm_evap', 'rrm_accr', 'rrm_auto',
 'Ncm', 'Nc_in_cloud', 'rgm', 'rim', 'Nim',
 'rsm', 'Nsm','Lscale', 'radht',

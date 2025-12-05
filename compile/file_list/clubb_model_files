@@ -4,6 +4,7 @@
 ../src/Benchmark_cases/arm_97.F90
 ../src/Benchmark_cases/astex_a209.F90
 ../src/Benchmark_cases/atex.F90
+../src/Benchmark_cases/atex_long.F90
 ../src/Benchmark_cases/bomex.F90
 ../src/Benchmark_cases/clex9_nov02.F90
 ../src/Benchmark_cases/clex9_oct14.F90
@@ -24,6 +25,7 @@
 ../src/Benchmark_cases/nov11.F90
 ../src/Benchmark_cases/rico.F90
 ../src/Benchmark_cases/neutral_case.F90
+../src/Benchmark_cases/ekman.F90
 ../src/Benchmark_cases/spec_hum_to_mixing_ratio.F90
 ../src/Benchmark_cases/sfc_flux.F90
 ../src/Benchmark_cases/twp_ice.F90

@@ -86,6 +86,8 @@ module prescribe_forcings_module
 
     use atex, only: atex_tndcy, atex_sfclyr !---------------- Procedure(s)
 
+    use atex_long, only: atex_long_tndcy, atex_long_sfclyr !- Procedure(s)
+
     use arm_97, only: arm_97_sfclyr !------------------------ Procedure(s)
 
     use bomex, only: bomex_tndcy, bomex_sfclyr !------------- Procedure(s)
@@ -126,6 +128,8 @@ module prescribe_forcings_module
     use rico, only: rico_tndcy, rico_sfclyr !---------------- Procedure(s)
 
     use neutral_case, only: neutral_case_sfclyr   ! Procedure(s)
+
+    use ekman, only: ekman_sfclyr                 ! Procedure(s)
 
     use twp_ice, only: twp_ice_sfclyr !---------------------- Procedure(s)
 
@@ -409,6 +413,14 @@ module prescribe_forcings_module
           end if
         end if
 
+      case ( "atex_long" ) ! Long ATEX case
+
+        call atex_long_tndcy( ngrdcol, sclr_dim, edsclr_dim, sclr_idx, & ! Intent(in)
+                              gr, time_current, &                        ! Intent(in)
+                              wm_zt, wm_zm, &                            ! Intent(out)
+                              thlm_forcing, rtm_forcing, &               ! Intent(out)
+                              sclrm_forcing, edsclrm_forcing )           ! Intent(out)
+
       case ( "bomex" ) ! BOMEX Cu case
 
         call bomex_tndcy( ngrdcol, sclr_dim, edsclr_dim, sclr_idx, &     ! Intent(in)
@@ -429,7 +441,7 @@ module prescribe_forcings_module
                                  thlm_forcing, rtm_forcing, &                   ! Intent(out)
                                  sclrm_forcing, edsclrm_forcing )               ! Intent(out)
 
-      case ( "fire", "generic" ) ! FIRE Sc case
+      case ( "fire", "generic", "coriolis_test", "ekman" ) ! FIRE Sc case
 
         ! Analytic radiation is computed elsewhere
         !$acc parallel loop gang vector collapse(2) default(present)
@@ -726,6 +738,14 @@ module prescribe_forcings_module
                           thlm_bot, rtm_bot, exner_bot, &       ! Intent(in)
                           wpthlp_sfc, wprtp_sfc, ustar, T_sfc ) ! Intent(out)
 
+      case ( "atex_long" )
+
+        l_compute_momentum_flux = .true.
+        l_set_sclr_sfc_rtm_thlm = .true.
+        call atex_long_sfclyr( ngrdcol, time_current, ubar,  &          ! Intent(in)
+                               thlm_bot, rtm_bot, exner_bot, rho_bot, & ! Intent(in)
+                               wpthlp_sfc, wprtp_sfc, ustar, T_sfc )    ! Intent(out)
+
       case ( "bomex" )
 
         l_compute_momentum_flux = .true.
@@ -793,6 +813,15 @@ module prescribe_forcings_module
                                   upwp_sfc, vpwp_sfc,            & ! Intent(out)
                                   wpthlp_sfc, wprtp_sfc, ustar )   ! Intent(out)
 
+      case ( "ekman" )
+
+        l_compute_momentum_flux = .true.
+        l_set_sclr_sfc_rtm_thlm = .true.
+        call ekman_sfclyr( ngrdcol, z_bot,                & ! Intent(in)
+                           um_bot, vm_bot, ubar,          & ! Intent(in)
+                           upwp_sfc, vpwp_sfc,            & ! Intent(out)
+                           wpthlp_sfc, wprtp_sfc, ustar )   ! Intent(out)
+
       case ( "twp_ice" )
 
         l_compute_momentum_flux = .true.
@@ -808,6 +837,18 @@ module prescribe_forcings_module
         l_set_sclr_sfc_rtm_thlm = .true.
         call wangara_sfclyr( ngrdcol, time_current, &                 ! Intent(in)
                               wpthlp_sfc, wprtp_sfc, ustar ) ! Intent(out)
+
+      case ( "coriolis_test" )
+
+        l_compute_momentum_flux = .true.
+        l_set_sclr_sfc_rtm_thlm = .false.
+        l_fixed_flux            = .true.
+
+        ! Ensure ustar is set
+        !$acc parallel loop gang vector default(present)
+        do i = 1, ngrdcol
+          ustar(i) = 0._core_rknd
+        end do
 
       case default
 
