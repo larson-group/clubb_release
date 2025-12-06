@@ -1,0 +1,89 @@
+commit 988ea0f2cc24e424e0a204b65bfd59bd4e9eee5b
+Author: Gunther Huebler <huebler@uwm.edu>
+Date:   Thu Dec 4 20:47:54 2025 -0600
+
+    Small bug fix to make gfortran+debug happy, without the _core_rknd this could be a potential type error
+
+commit 14f5e6e323b11dc9e5fff8ca5982c6ab7f92f8c1
+Author: Gunther Huebler <37674341+huebleruwm@users.noreply.github.com>
+Date:   Thu Dec 4 15:49:21 2025 -0600
+
+    Bicgstab addition (#1261)
+    
+    * Adding 'initial' bicgstab solver
+    
+    * Currently working, lots of diagnostic code still present
+    
+    * Pruning everything unneccesary, adding lots of comments, making names good.
+    
+    * Adding jenkins test to plot results with different solvers
+    
+    * jenkins script update
+    
+    * jenkins script update
+    
+    * jenkins script update
+    
+    * jenkins script update
+    
+    * jenkins script update
+    
+    * jenkins script update
+    
+    * jenkins script update
+    
+    * Removing print statement
+    
+    * Improved naming and comments
+    
+    * Removing print statement
+    
+    * A couple more comments.
+
+commit bba14c86a748da7993af72c056a9f6505cf43f1b
+Author: Gunther Huebler <37674341+huebleruwm@users.noreply.github.com>
+Date:   Wed Dec 3 01:33:20 2025 -0600
+
+    BIT_CHANGING bug fix for the penta_lu solver, only BC when using penta_solve_method=2 (#1264)
+
+commit a5597665ed8bdd21902000712f8ad2685276eec0
+Author: Vincent Larson <vlarson@users.noreply.github.com>
+Date:   Mon Dec 1 19:31:28 2025 -0600
+
+    Add blank line to README.
+
+commit 040e9961b5b422803a0aa816c5921be9576aa4a8
+Author: Gunther Huebler <huebler@uwm.edu>
+Date:   Sun Nov 23 20:52:32 2025 -0600
+
+    Small bug fix, but this is BIT_CHANGING because it affects stats output. Some zm fields (w_1_zm, w_2_zm, varnce_w_1_zm, varnce_w_2_zm, and mixt_frac_zm) were all nan in the netcdf output when l_call_pdf_closure_twice=.false., because those come from pdf_params_zm.
+
+commit 0da744a4b04f078044dcee08c614ad2a47916751
+Author: Gunther Huebler <huebler@uwm.edu>
+Date:   Sun Nov 23 20:47:09 2025 -0600
+
+    Improving variable name
+
+commit d5703f0d199f44b4fb66df14b4ebfcdb14b57c19
+Author: Gunther Huebler <37674341+huebleruwm@users.noreply.github.com>
+Date:   Sun Nov 23 13:06:28 2025 -0600
+
+    Making update_xp2_mc work with either grid mode (#1263)
+
+commit 61aa970643913037e2766554210e4527bb5e8171
+Author: Gunther Huebler <huebler@uwm.edu>
+Date:   Mon Nov 17 13:43:35 2025 -0600
+
+    Removing accidentally added files
+
+commit de8bbefe59ca054f99b8f487c51d788558213a12
+Author: Gunther Huebler <huebler@uwm.edu>
+Date:   Fri Nov 14 23:34:48 2025 -0600
+
+    Making clubb_at_least_debug_level not a device routine. It confuses the poor little nvidia compiler when compiling inside cam. Also making the compile script a little more robust.
+
+commit 50a5528a55591d69e8b704dccebe1e7d6baa2669
+Author: Gunther Huebler <huebler@uwm.edu>
+Date:   Fri Nov 14 01:36:29 2025 -0600
+
+    Small bug fix in fill_holes_parallel on GPU
