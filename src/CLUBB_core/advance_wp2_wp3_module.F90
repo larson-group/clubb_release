@@ -55,10 +55,10 @@ module advance_wp2_wp3_module
 
   !=============================================================================
   subroutine advance_wp2_wp3( nzm, nzt, ngrdcol, gr, dt,                     & ! intent(in)
-                              sfc_elevation, sigma_sqd_w, wm_zm,             & ! intent(in)
+                              sfc_elevation, fcor_y, sigma_sqd_w, wm_zm,     & ! intent(in)
                               wm_zt, a3_coef, a3_coef_zt, wp3_on_wp2,        & ! intent(in)
                               wpup2, wpvp2, wp2up2, wp2vp2, wp4,             & ! intent(in)
-                              wpthvp, wp2thvp, um, vm, upwp, vpwp,           & ! intent(in)
+                              wpthvp, wp2thvp, wp2up, um, vm, upwp, vpwp,    & ! intent(in)
                               em, Kh_zm, Kh_zt, invrs_tau_C4_zm,             & ! intent(in)
                               invrs_tau_wp3_zt, invrs_tau_C1_zm, Skw_zm,     & ! intent(in)
                               Skw_zt, rho_ds_zm, rho_ds_zt, invrs_rho_ds_zm, & ! intent(in)
@@ -84,6 +84,7 @@ module advance_wp2_wp3_module
                               l_use_tke_in_wp2_wp3_K_dfsn,                   & ! intent(in)
                               l_use_wp3_lim_with_smth_Heaviside,             & ! intent(in)
                               l_wp2_fill_holes_tke,                          & ! intent(in)
+                              l_nontraditional_Coriolis,                     & ! intent(in)
                               stats_metadata,                                & ! intent(in)
                               stats_zt, stats_zm, stats_sfc,                 & ! intent(inout)
                               up2, vp2, wp2, wp3, wp3_zm, wp2_zt, err_info )   ! intent(inout)
@@ -206,8 +207,10 @@ module advance_wp2_wp3_module
     real( kind = core_rknd ), intent(in) :: &
       dt                 ! Model timestep                            [s]
 
-    real( kind = core_rknd ), dimension(ngrdcol), intent(in) :: &
-      sfc_elevation      ! Elevation of ground level                 [m AMSL]
+    real( kind = core_rknd ), dimension(ngrdcol), intent(in) ::  &
+      sfc_elevation,   & ! Elevation of ground level                 [m AMSL]
+      fcor_y             ! Nontraditional Coriolis parameter         [s^-1]
+                         ! Meridional planetary vorticity. Proportional to cos(latitude)
 
     real( kind = core_rknd ), intent(in), dimension(ngrdcol,nzm) :: &
       sigma_sqd_w,       & ! sigma_sqd_w (momentum levels)             [-]
@@ -241,6 +244,7 @@ module advance_wp2_wp3_module
       wpup2,             & ! w'u'^2 (thermodynamic levels)             [m^3/s^3]
       wpvp2,             & ! w'v'^2 (thermodynamic levels)             [m^3/s^3]
       wp2thvp,           & ! w'^2th_v' (thermodynamic levels)          [K m^2/s^2]
+      wp2up,             & ! w'^2u' (thermodynamic levels)             [m^3/s^3]
       um,                & ! u wind component (thermodynamic levels)   [m/s]
       vm,                & ! v wind component (thermodynamic levels)   [m/s]
       Kh_zt,             & ! Eddy diffusivity on thermodynamic levels  [m^2/s]
@@ -298,8 +302,10 @@ module advance_wp2_wp3_module
       l_use_tke_in_wp3_pr_turb_term, & ! Use TKE formulation for wp3 pr_turb term
       l_use_tke_in_wp2_wp3_K_dfsn, & ! Use TKE in eddy diffusion for wp2 and wp3
       l_use_wp3_lim_with_smth_Heaviside, & ! Flag to activate mods on wp3 limiters for conv test
-      l_wp2_fill_holes_tke            ! Turn on additional hole-filling for wp2
+      l_wp2_fill_holes_tke,         & ! Turn on additional hole-filling for wp2
                                       ! that takes TKE from up2 and vp2, if necessary
+      l_nontraditional_Coriolis     ! Flag to implement the nontraditional Coriolis terms in the
+                                    ! prognostic equations of <w'w'>, <u'w'>, and <u'u'>.
 
     type (stats_metadata_type), intent(in) :: &
       stats_metadata
@@ -918,7 +924,7 @@ module advance_wp2_wp3_module
     
     ! Compute the explicit portion of the w'^2 and w'^3 equations.
     ! Build the right-hand side vector.
-    call wp23_rhs( nzm, nzt, ngrdcol, gr, dt,                                       & ! intent(in)
+    call wp23_rhs( nzm, nzt, ngrdcol, gr, dt, fcor_y,                               & ! intent(in)
                    wp3_term_ta_lhs_result,                                          & ! intent(in)
                    lhs_diff_zm, lhs_diff_zt, lhs_diff_zm_crank, lhs_diff_zt_crank,  & ! intent(in)
                    lhs_tp_wp3, lhs_adv_tp_wp3, lhs_pr_tp_wp3,                       & ! intent(in)
@@ -927,13 +933,14 @@ module advance_wp2_wp3_module
                    rhs_pr_dfsn_wp2, rhs_bp1_pr2_wp3, rhs_pr3_wp2, rhs_pr3_wp3,      & ! intent(in)
                    rhs_ta_wp3, rhs_pr_turb_wp3, rhs_pr_dfsn_wp3,                    & ! intent(in)
                    wp2, wp3, wpup2, wpvp2,                                          & ! intent(in)
-                   wpthvp, wp2thvp, up2, vp2,                                       & ! intent(in)
+                   wpthvp, wp2thvp, wp2up, up2, vp2, upwp,                          & ! intent(in)
                    C11_Skw_fnc, thv_ds_zm, thv_ds_zt,                               & ! intent(in)
                    lhs_splat_wp2, lhs_splat_wp3,                                    & ! intent(in)
                    clubb_params,                                                    & ! intent(in)
                    iiPDF_type,                                                      & ! intent(in)
                    l_tke_aniso,                                                     & ! intent(in)
                    l_use_tke_in_wp2_wp3_K_dfsn,                                     & ! intent(in)
+                   l_nontraditional_Coriolis,                                       & ! intent(in)
                    stats_metadata,                                                  & ! intent(in)
                    stats_zt, stats_zm,                                              & ! intent(in)
                    rhs )                                                              ! intent(out)
@@ -1154,6 +1161,7 @@ module advance_wp2_wp3_module
         write(fstderr,*) "wp4 = ", wp4, new_line('c')
         write(fstderr,*) "wpthvp = ", wpthvp, new_line('c')
         write(fstderr,*) "wp2thvp = ", wp2thvp, new_line('c')
+        write(fstderr,*) "wp2up = ", wp2up, new_line('c')
         write(fstderr,*) "um = ", um, new_line('c')
         write(fstderr,*) "vm = ", vm, new_line('c')
         write(fstderr,*) "upwp = ", upwp, new_line('c')
@@ -2328,7 +2336,7 @@ module advance_wp2_wp3_module
   end subroutine wp23_lhs
 
   !=================================================================================
-  subroutine wp23_rhs( nzm, nzt, ngrdcol, gr, dt, &
+  subroutine wp23_rhs( nzm, nzt, ngrdcol, gr, dt, fcor_y, &
                        wp3_term_ta_lhs_result, &
                        lhs_diff_zm, lhs_diff_zt, lhs_diff_zm_crank, lhs_diff_zt_crank, &
                        lhs_tp_wp3, lhs_adv_tp_wp3, lhs_pr_tp_wp3, &
@@ -2337,13 +2345,14 @@ module advance_wp2_wp3_module
                        rhs_pr_dfsn_wp2, rhs_bp1_pr2_wp3, rhs_pr3_wp2, rhs_pr3_wp3, &
                        rhs_ta_wp3, rhs_pr_turb_wp3, rhs_pr_dfsn_wp3, &
                        wp2, wp3, wpup2, wpvp2, &
-                       wpthvp, wp2thvp, up2, vp2,  &
+                       wpthvp, wp2thvp, wp2up, up2, vp2, upwp, &
                        C11_Skw_fnc, thv_ds_zm, thv_ds_zt, &
                        lhs_splat_wp2, lhs_splat_wp3, &
                        clubb_params, &
                        iiPDF_type, &
                        l_tke_aniso, &
                        l_use_tke_in_wp2_wp3_K_dfsn, &
+                       l_nontraditional_Coriolis, &
                        stats_metadata, &
                        stats_zt, stats_zm, &
                        rhs )
@@ -2384,6 +2393,8 @@ module advance_wp2_wp3_module
 
     use constants_clubb, only: &
         w_tol_sqd,     & ! Variable(s)
+        three,         &
+        two,           &
         one,           &
         zero,          &
         gamma_over_implicit_ts
@@ -2419,6 +2430,10 @@ module advance_wp2_wp3_module
 
     real( kind = core_rknd ), intent(in) :: &
       dt                 ! Timestep length                           [s]
+
+    real( kind = core_rknd ), dimension(ngrdcol), intent(in) ::  &
+      fcor_y              ! Nontraditional Coriolis parameter         [s^-1]
+                          ! Meridional planetary vorticity. Proportional to cos(latitude)
 
     real( kind = core_rknd ), intent(in), dimension(ndiags5,ngrdcol,nzt) :: &
       wp3_term_ta_lhs_result
@@ -2460,6 +2475,7 @@ module advance_wp2_wp3_module
       wpthvp,            & ! w'th_v' (momentum levels)                 [K m/s]
       up2,               & ! u'^2 (momentum levels)                    [m^2/s^2]
       vp2,               & ! v'^2 (momentum levels)                    [m^2/s^2]
+      upwp,              & ! u'w' (momentum levels)                    [m^2/s^2]
       thv_ds_zm,         & ! Dry, base-state theta_v on momentum levs. [K]
       lhs_splat_wp2        ! LHS coefficient of wp2 splatting term     [1/s]
 
@@ -2468,6 +2484,7 @@ module advance_wp2_wp3_module
       wpup2,             & ! w'u'^2 (thermodynamic levels)             [m^3/s^3]
       wpvp2,             & ! w'v'^2 (thermodynamic levels)             [m^3/s^3]
       wp2thvp,           & ! w'^2th_v' (thermodynamic levels)        [K m^2/s^2]
+      wp2up,             & ! w'^2u' (thermodynamic levels)             [m^3/s^3]
       C11_Skw_fnc,       & ! C_11 parameter with Sk_w applied          [-]
       thv_ds_zt,         & ! Dry, base-state theta_v on thermo. levs.  [K]
       lhs_splat_wp3        ! LHS coefficient of wp3 splatting term     [1/s]
@@ -2484,7 +2501,9 @@ module advance_wp2_wp3_module
     logical, intent(in) :: &
       l_tke_aniso,          &        ! For anisotropic turbulent kinetic energy, i.e. TKE = 1/2
                                      ! (u'^2 + v'^2 + w'^2)
-      l_use_tke_in_wp2_wp3_K_dfsn    ! Use TKE in eddy diffusion for wp2 and wp3
+      l_use_tke_in_wp2_wp3_K_dfsn, & ! Use TKE in eddy diffusion for wp2 and wp3
+      l_nontraditional_Coriolis      ! Flag to implement the nontraditional Coriolis terms in the
+                                     ! prognostic equations of <w'w'>, <u'w'>, and <u'u'>.
 
     type (stats_metadata_type), intent(in) :: &
       stats_metadata
@@ -2651,6 +2670,32 @@ module advance_wp2_wp3_module
       end do
       !$acc end parallel loop
     end if
+
+    if ( l_nontraditional_Coriolis ) then
+
+      ! Add the nontraditional Coriolis term for wp2
+      ! Hing Ong, 19 July 2025
+      !$acc parallel loop gang vector collapse(2) default(present)
+      do k = 2, nzm-1
+        do i = 1, ngrdcol
+          k_wp2 = 2*k - 1
+          rhs(i,k_wp2) = rhs(i,k_wp2) + two * fcor_y(i) * upwp(i,k)
+        end do
+      end do
+      !$acc end parallel loop
+
+      ! Add the nontraditional Coriolis term for wp3
+      ! Hing Ong, 1 Septempber 2025
+      !$acc parallel loop gang vector collapse(2) default(present)
+      do k = 2, nzt-1
+        do i = 1, ngrdcol
+          k_wp3 = 2*k
+          rhs(i,k_wp3) = rhs(i,k_wp3) + three * fcor_y(i) * wp2up(i,k)
+        end do
+      end do
+      !$acc end parallel loop
+
+    end if ! l_nontraditional_Coriolis
 
     ! Combine terms
     !$acc parallel loop gang vector collapse(2) default(present)
@@ -2923,6 +2968,13 @@ module advance_wp2_wp3_module
                                    rhs_bp_wp2(i,k), & ! intent(in)
                                    stats_zm(i) )      ! intent(out)
 
+          ! w'^2 term nct is completely explicit; call stat_update_var_pt.
+          ! Hing Ong, 22 July 2025
+          if ( l_nontraditional_Coriolis ) then
+            call stat_update_var_pt( stats_metadata%iwp2_nct, k,  & ! intent(in)
+                                     two * fcor_y(i) * upwp(i,k), & ! intent(in)
+                                     stats_zm(i) )                  ! intent(out)
+          end if ! l_nontraditional_Coriolis
 
           call stat_update_var_pt( stats_metadata%iwp2_pr_dfsn, k, & ! intent(in)
                                    rhs_pr_dfsn_wp2(i,k), &           ! intent(in)
@@ -3072,6 +3124,13 @@ module advance_wp2_wp3_module
                                    rhs_bp1_wp3(i,k), &           ! intent(in)
                                    stats_zt(i) )                 ! intent(out)
 
+          ! w'^3 term nct is completely explicit; call stat_update_var_pt.
+          ! Hing Ong, 1 September 2025
+          if ( l_nontraditional_Coriolis ) then
+            call stat_update_var_pt( stats_metadata%iwp3_nct, k,     & ! intent(in)
+                                     three * fcor_y(i) * wp2up(i,k), & ! intent(in)
+                                     stats_zt(i) )                     ! intent(out)
+          end if
 
           ! w'^3 term pr2 has both implicit and explicit components; call
           ! stat_begin_update_pt.  Since stat_begin_update_pt automatically

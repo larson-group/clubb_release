@@ -177,7 +177,7 @@ module generalized_grid_test
   !=============================================================================
   subroutine clubb_generalized_grid_testing &
              ( gr, gr_desc, nzm, nzt, ngrdcol, &                          ! Intent(in)
-               l_implemented, dt, fcor, sfc_elevation, &                  ! Intent(in)
+               l_implemented, dt, fcor, fcor_y, sfc_elevation, &          ! Intent(in)
                hydromet_dim, &                                            ! intent(in)
                sclr_dim, sclr_tol, edsclr_dim, sclr_idx, &                ! intent(in)
                thlm_forcing, rtm_forcing, um_forcing, vm_forcing, &       ! Intent(in)
@@ -207,7 +207,7 @@ module generalized_grid_test
                sclrm, sclrp2, sclrp3, sclrprtp, sclrpthlp, &              ! Intent(inout)
                wpsclrp, edsclrm, err_info, &                              ! Intent(inout)
                rcm, cloud_frac, &                                         ! Intent(inout)
-               wpthvp, wp2thvp, rtpthvp, thlpthvp, &                      ! Intent(inout)
+               wpthvp, wp2thvp, wp2up, rtpthvp, thlpthvp, &               ! Intent(inout)
                sclrpthvp, &                                               ! Intent(inout)
                wp2rtp, wp2thlp, uprcp, vprcp, rc_coef_zm, wp4, &          ! intent(inout)
                wpup2, wpvp2, wp2up2, wp2vp2, ice_supersat_frac, &         ! intent(inout)
@@ -286,7 +286,10 @@ module generalized_grid_test
       dt  ! Current timestep duration    [s]
       
     real( kind = core_rknd ), intent(in), dimension(ngrdcol) ::  &
-      fcor, &           ! Coriolis forcing             [s^-1]
+      fcor, &           ! Traditional Coriolis parameter    [s^-1]
+                        ! Vertical planetary vorticity.   Proportional to sin(latitude)
+      fcor_y, &         ! Nontraditional Coriolis parameter [s^-1]
+                        ! Meridional planetary vorticity. Proportional to cos(latitude)
       sfc_elevation     ! Elevation of ground level    [m AMSL]
 
     integer, intent(in) :: &
@@ -446,7 +449,8 @@ module generalized_grid_test
     real( kind = core_rknd ), intent(inout), dimension(ngrdcol,nzt) ::  &
       rcm,        & ! cloud water mixing ratio, r_c (thermo. levels) [kg/kg]
       cloud_frac, & ! cloud fraction (thermodynamic levels)          [-]
-      wp2thvp       ! < w'^2 th_v' > (thermodynamic levels)          [m^2/s^2 K]
+      wp2thvp,    & ! < w'^2 th_v' > (thermodynamic levels)          [m^2/s^2 K]
+      wp2up         ! < w'^2 u' > (thermodynamic levels)             [m^3/s^3]
 
     real( kind = core_rknd ), intent(inout), dimension(ngrdcol,nzm) ::  &
       wpthvp,     & ! < w' th_v' > (momentum levels)                 [kg/kg K]
@@ -630,7 +634,8 @@ module generalized_grid_test
     real( kind = core_rknd ), dimension(ngrdcol,nzt) ::  &
       rcm_flip,        & ! cloud water mixing ratio, r_c (thermo. levels) [kg/kg]
       cloud_frac_flip, & ! cloud fraction (thermodynamic levels)          [-]
-      wp2thvp_flip       ! < w'^2 th_v' > (thermodynamic levels)          [m^2/s^2 K]
+      wp2thvp_flip,    & ! < w'^2 th_v' > (thermodynamic levels)          [m^2/s^2 K]
+      wp2up_flip         ! < w'^2 u' > (thermodynamic levels)             [m^3/s^3]
 
     real( kind = core_rknd ), dimension(ngrdcol,nzm) ::  &
       wpthvp_flip,     & ! < w' th_v' > (momentum levels)                 [kg/kg K]
@@ -770,6 +775,7 @@ module generalized_grid_test
          cloud_frac_flip(i,:) = flip( cloud_frac(i,:), nzt )
          wpthvp_flip(i,:) = flip( wpthvp(i,:), nzm )
          wp2thvp_flip(i,:) = flip( wp2thvp(i,:), nzt )
+         wp2up_flip(i,:) = flip( wp2up(i,:), nzt )
          rtpthvp_flip(i,:) = flip( rtpthvp(i,:), nzm )
          thlpthvp_flip(i,:) = flip( thlpthvp(i,:), nzm )
          wp2rtp_flip(i,:) = flip( wp2rtp(i,:), nzt )
@@ -993,7 +999,7 @@ module generalized_grid_test
       ! Call advance_clubb_core_api for the ascending grid direction
       call advance_clubb_core_api( &
               gr, nzm, nzt, ngrdcol, &                             ! Intent(in)
-              l_implemented, dt, fcor, sfc_elevation, &            ! Intent(in)
+              l_implemented, dt, fcor, fcor_y, sfc_elevation, &    ! Intent(in)
               hydromet_dim, &                                      ! intent(in)
               sclr_dim, sclr_tol, edsclr_dim, sclr_idx, &          ! intent(in)
               thlm_forcing, rtm_forcing, um_forcing, vm_forcing, & ! Intent(in)
@@ -1023,7 +1029,7 @@ module generalized_grid_test
               sclrm, sclrp2, sclrp3, sclrprtp, sclrpthlp, &        ! Intent(inout)
               wpsclrp, edsclrm, err_info, &                        ! Intent(inout)
               rcm, cloud_frac, &                                   ! Intent(inout)
-              wpthvp, wp2thvp, rtpthvp, thlpthvp, &                ! Intent(inout)
+              wpthvp, wp2thvp, wp2up, rtpthvp, thlpthvp, &         ! Intent(inout)
               sclrpthvp, &                                         ! Intent(inout)
               wp2rtp, wp2thlp, uprcp, vprcp, rc_coef_zm, wp4, &    ! intent(inout)
               wpup2, wpvp2, wp2up2, wp2vp2, ice_supersat_frac, &   ! intent(inout)
@@ -1067,7 +1073,7 @@ module generalized_grid_test
       ! in this call.
       call advance_clubb_core_api( &
               gr_desc, nzm, nzt, ngrdcol, &                                         ! Intent(in)
-              l_implemented, dt, fcor, sfc_elevation, &                             ! Intent(in)
+              l_implemented, dt, fcor, fcor_y, sfc_elevation, &                     ! Intent(in)
               hydromet_dim, &                                                       ! intent(in)
               sclr_dim, sclr_tol, edsclr_dim, sclr_idx, &                           ! intent(in)
               thlm_forcing_flip, rtm_forcing_flip, um_forcing_flip, vm_forcing_flip, & ! Intent(in)
@@ -1097,7 +1103,7 @@ module generalized_grid_test
               sclrm_flip, sclrp2_flip, sclrp3_flip, sclrprtp_flip, sclrpthlp_flip, & ! Intent(inout)
               wpsclrp_flip, edsclrm_flip, err_info, &                               ! Intent(inout)
               rcm_flip, cloud_frac_flip, &                                          ! Intent(inout)
-              wpthvp_flip, wp2thvp_flip, rtpthvp_flip, thlpthvp_flip, &             ! Intent(inout)
+              wpthvp_flip, wp2thvp_flip, wp2up_flip, rtpthvp_flip, thlpthvp_flip, & ! Intent(inout)
               sclrpthvp_flip, &                                                     ! Intent(inout)
               wp2rtp_flip, wp2thlp_flip, uprcp_flip, vprcp_flip, rc_coef_zm_flip, wp4_flip, & ! intent(inout)
               wpup2_flip, wpvp2_flip, wp2up2_flip, wp2vp2_flip, ice_supersat_frac_flip, & ! intent(inout)
@@ -1180,6 +1186,9 @@ module generalized_grid_test
                                   l_differences )
       ! wp2thvp
       call check_flipped_results( "wp2thvp", wp2thvp, wp2thvp_flip, nzt, ngrdcol, &
+                                  l_differences )
+      ! wp2up
+      call check_flipped_results( "wp2up", wp2up, wp2up_flip, nzt, ngrdcol, &
                                   l_differences )
       ! rtpthvp
       call check_flipped_results( "rtpthvp", rtpthvp, rtpthvp_flip, nzm, ngrdcol, &

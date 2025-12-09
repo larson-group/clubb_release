@@ -98,6 +98,7 @@ module stats_variables
        iinvrs_tau_zt = 0, & 
        iKh_zt = 0, & 
        iwp2thvp = 0, & 
+       iwp2up = 0, &
        iwp2rcp = 0, & 
        iw_up_in_cloud = 0, &
        iw_down_in_cloud = 0, &
@@ -346,6 +347,7 @@ module stats_variables
        iwp3_tp  = 0, & 
        iwp3_ac  = 0, & 
        iwp3_bp1 = 0, &
+       iwp3_nct = 0, &
        iwp3_pr_tp = 0, & 
        iwp3_pr_turb = 0, &
        iwp3_pr_dfsn = 0, & 
@@ -959,6 +961,7 @@ module stats_variables
        iwp2_ta = 0, & 
        iwp2_ac = 0, & 
        iwp2_bp = 0, & 
+       iwp2_nct = 0, &
        iwp2_pr1 = 0, & 
        iwp2_pr2 = 0, & 
        iwp2_pr3 = 0, &
@@ -1014,6 +1017,8 @@ module stats_variables
        iupwp_tp = 0,  &
        iupwp_ac = 0,  &
        iupwp_bp = 0,  &
+       iupwp_tct = 0, &
+       iupwp_nct = 0, &
        iupwp_pr1 = 0, &
        iupwp_pr2 = 0, &
        iupwp_pr3 = 0, &
@@ -1030,6 +1035,7 @@ module stats_variables
        ivpwp_tp = 0,  &
        ivpwp_ac = 0,  &
        ivpwp_bp = 0,  &
+       ivpwp_tct = 0, &
        ivpwp_pr1 = 0, &
        ivpwp_pr2 = 0, &
        ivpwp_pr3 = 0, &
@@ -1096,6 +1102,7 @@ module stats_variables
       iup2_ma = 0, & 
       iup2_dp1 = 0, & 
       iup2_dp2 = 0, & 
+      iup2_nct = 0, &
       iup2_pr1 = 0, & 
       iup2_pr2 = 0, & 
       iup2_sdmp = 0, & 

@@ -540,7 +540,7 @@ contains
   !================================================================================================
 
   subroutine advance_clubb_core_api_single_col( gr, &       ! intent(in)
-    l_implemented, dt, fcor, sfc_elevation, &               ! intent(in)
+    l_implemented, dt, fcor, fcor_y, sfc_elevation, &       ! intent(in)
     hydromet_dim, &                                         ! intent(in)
     sclr_dim, sclr_tol, edsclr_dim, sclr_idx, &             ! intent(in)
     thlm_forcing, rtm_forcing, um_forcing, vm_forcing, &    ! intent(in)
@@ -577,7 +577,7 @@ contains
     sclrp2, sclrp3, sclrprtp, sclrpthlp, &                  ! intent(inout)
     wpsclrp, edsclrm, err_info_api, &                       ! intent(inout)
     rcm, cloud_frac, &                                      ! intent(inout)
-    wpthvp, wp2thvp, rtpthvp, thlpthvp, &                   ! intent(inout)
+    wpthvp, wp2thvp, wp2up, rtpthvp, thlpthvp, &            ! intent(inout)
     sclrpthvp, &                                            ! intent(inout)
     wp2rtp, wp2thlp, uprcp, vprcp, rc_coef_zm, wp4, &       ! intent(inout)
     wpup2, wpvp2, wp2up2, wp2vp2, ice_supersat_frac, &      ! intent(inout)
@@ -630,7 +630,10 @@ contains
       dt  ! Current timestep duration    [s]
 
     real( kind = core_rknd ), intent(in) ::  &
-      fcor,  &          ! Coriolis forcing             [s^-1]
+      fcor,  &          ! Traditional Coriolis parameter    [s^-1]
+                        ! Vertical planetary vorticity.   Proportional to sin(latitude)
+      fcor_y, &         ! Nontraditional Coriolis parameter [s^-1]
+                        ! Meridional planetary vorticity. Proportional to cos(latitude)
       sfc_elevation     ! Elevation of ground level    [m above MSL]
 
     integer, intent(in) :: &
@@ -791,7 +794,8 @@ contains
     real( kind = core_rknd ), intent(inout), dimension(gr%nzt) ::  &
       rcm,        & ! cloud water mixing ratio, r_c (thermo. levels) [kg/kg]
       cloud_frac, & ! cloud fraction (thermodynamic levels)          [-]
-      wp2thvp       ! < w'^2 th_v' > (thermodynamic levels)          [m^2/s^2 K]
+      wp2thvp,    & ! < w'^2 th_v' > (thermodynamic levels)          [m^2/s^2 K]
+      wp2up         ! < w'^2 u' > (thermodynamic levels)             [m^3/s^3]
 
     real( kind = core_rknd ), intent(inout), dimension(gr%nzm) ::  &
       wpthvp,     & ! < w' th_v' > (momentum levels)                 [kg/kg K]
@@ -896,7 +900,10 @@ contains
       stats_sfc_col
 
     real( kind = core_rknd ), dimension(1) ::  &
-      fcor_col,  &          ! Coriolis forcing             [s^-1]
+      fcor_col,  &          ! Traditional Coriolis parameter    [s^-1]
+                            ! Vertical planetary vorticity.   Proportional to sin(latitude)
+      fcor_y_col, &         ! Nontraditional Coriolis parameter [s^-1] 
+                            ! Meridional planetary vorticity. Proportional to cos(latitude)
       sfc_elevation_col     ! Elevation of ground level    [m AMSL]
 
     ! Input Variables
@@ -1021,7 +1028,8 @@ contains
     real( kind = core_rknd ), dimension(1,gr%nzt) ::  &
       rcm_col,        & ! cloud water mixing ratio, r_c (thermo. levels) [kg/kg]
       cloud_frac_col, & ! cloud fraction (thermodynamic levels)          [-]
-      wp2thvp_col       ! < w'^2 th_v' > (thermodynamic levels)          [m^2/s^2 K]
+      wp2thvp_col,    & ! < w'^2 th_v' > (thermodynamic levels)          [m^2/s^2 K]
+      wp2up_col         ! < w'^2 u' > (thermodynamic levels)             [m^3/s^3]
 
     real( kind = core_rknd ), dimension(1,gr%nzm) ::  &
       wpthvp_col,     & ! < w' th_v' > (momentum levels)                 [kg/kg K]
@@ -1107,6 +1115,7 @@ contains
     !------------------------- Begin Code -------------------------
 
     fcor_col(1) = fcor
+    fcor_y_col(1) = fcor_y
     sfc_elevation_col(1) = sfc_elevation
 
     thlm_forcing_col(1,:) = thlm_forcing
@@ -1206,6 +1215,7 @@ contains
     cloud_frac_col(1,:) = cloud_frac
     wpthvp_col(1,:) = wpthvp
     wp2thvp_col(1,:) = wp2thvp
+    wp2up_col(1,:) = wp2up
     rtpthvp_col(1,:) = rtpthvp
     thlpthvp_col(1,:) = thlpthvp
     sclrpthvp_col(1,:,:) = sclrpthvp
@@ -1350,7 +1360,7 @@ contains
 #endif
 
     call advance_clubb_core( gr, gr%nzm, gr%nzt, 1,             &             ! intent(in)
-      l_implemented, dt, fcor_col, sfc_elevation_col,            &            ! intent(in)
+      l_implemented, dt, fcor_col, fcor_y_col, sfc_elevation_col, &           ! intent(in)
       hydromet_dim, &                                                         ! intent(in)
       sclr_dim, sclr_tol, edsclr_dim, sclr_idx, &                             ! intent(in)
       thlm_forcing_col, rtm_forcing_col, um_forcing_col, vm_forcing_col, &    ! intent(in)
@@ -1387,7 +1397,7 @@ contains
       sclrp2_col, sclrp3_col, sclrprtp_col, sclrpthlp_col, &                      ! intent(inout)
       wpsclrp_col, edsclrm_col, &                                                 ! intent(inout)
       rcm_col, cloud_frac_col, &                                                  ! intent(inout)
-      wpthvp_col, wp2thvp_col, rtpthvp_col, thlpthvp_col, &                       ! intent(inout)
+      wpthvp_col, wp2thvp_col, wp2up_col, rtpthvp_col, thlpthvp_col, &            ! intent(inout)
       sclrpthvp_col, &                                                            ! intent(inout)
       wp2rtp_col, wp2thlp_col, uprcp_col, vprcp_col, rc_coef_zm_col, wp4_col, &   ! intent(inout)
       wpup2_col, wpvp2_col, wp2up2_col, wp2vp2_col, ice_supersat_frac_col, &      ! intent(inout)
@@ -1412,6 +1422,10 @@ contains
     !$acc end data
     !$acc end data
     !$acc end data
+      
+#ifdef CLUBB_CAM
+    !$acc end data
+#endif
 
 #ifdef CLUBB_CAM
     !$acc end data
@@ -1479,6 +1493,7 @@ contains
     cloud_frac = cloud_frac_col(1,:)
     wpthvp = wpthvp_col(1,:)
     wp2thvp = wp2thvp_col(1,:)
+    wp2up = wp2up_col(1,:)
     rtpthvp = rtpthvp_col(1,:)
     thlpthvp = thlpthvp_col(1,:)
     sclrpthvp = sclrpthvp_col(1,:,:)
@@ -1519,7 +1534,7 @@ contains
   end subroutine advance_clubb_core_api_single_col
 
   subroutine advance_clubb_core_api_multi_col( gr, nzm, nzt, ngrdcol, &  ! intent(in)
-    l_implemented, dt, fcor, sfc_elevation,            &    ! intent(in)
+    l_implemented, dt, fcor, fcor_y, sfc_elevation, &       ! intent(in)
     hydromet_dim, &                                         ! intent(in)
     sclr_dim, sclr_tol, edsclr_dim, sclr_idx, &             ! intent(in)
     thlm_forcing, rtm_forcing, um_forcing, vm_forcing, &    ! intent(in)
@@ -1556,7 +1571,7 @@ contains
     sclrp2, sclrp3, sclrprtp, sclrpthlp, &                  ! intent(inout)
     wpsclrp, edsclrm, err_info_api, &                       ! intent(inout)
     rcm, cloud_frac, &                                      ! intent(inout)
-    wpthvp, wp2thvp, rtpthvp, thlpthvp, &                   ! intent(inout)
+    wpthvp, wp2thvp, wp2up, rtpthvp, thlpthvp, &            ! intent(inout)
     sclrpthvp, &                                            ! intent(inout)
     wp2rtp, wp2thlp, uprcp, vprcp, rc_coef_zm, wp4, &       ! intent(inout)
     wpup2, wpvp2, wp2up2, wp2vp2, ice_supersat_frac, &      ! intent(inout)
@@ -1607,6 +1622,7 @@ contains
       
     real( kind = core_rknd ), intent(in), dimension(ngrdcol) :: &
       fcor, &           ! Coriolis forcing             [s^-1]
+      fcor_y, &         ! Nontraditional Coriolis parameter [s^-1]
       sfc_elevation     ! Elevation of ground level    [m AMSL]
 
     integer, intent(in) :: &
@@ -1767,7 +1783,8 @@ contains
     real( kind = core_rknd ), intent(inout), dimension(ngrdcol,nzt) ::  &
       rcm,        & ! cloud water mixing ratio, r_c (thermo. levels) [kg/kg]
       cloud_frac, & ! cloud fraction (thermodynamic levels)          [-]
-      wp2thvp       ! < w'^2 th_v' > (thermodynamic levels)          [m^2/s^2 K]
+      wp2thvp,    & ! < w'^2 th_v' > (thermodynamic levels)          [m^2/s^2 K]
+      wp2up         ! < w'^2 u' > (thermodynamic levels)             [m^3/s^3]
 
     real( kind = core_rknd ), intent(inout), dimension(ngrdcol,nzm) ::  &
       wpthvp,     & ! < w' th_v' > (momentum levels)                 [kg/kg K]
@@ -1955,7 +1972,7 @@ contains
 #endif
 
     call advance_clubb_core( gr, nzm, nzt, ngrdcol, &         ! intent(in)
-      l_implemented, dt, fcor, sfc_elevation,            &    ! intent(in)
+      l_implemented, dt, fcor, fcor_y, sfc_elevation, &       ! intent(in)
       hydromet_dim, &                                         ! intent(in)
       sclr_dim, sclr_tol, edsclr_dim, sclr_idx, &             ! intent(in)
       thlm_forcing, rtm_forcing, um_forcing, vm_forcing, &    ! intent(in)
@@ -1992,7 +2009,7 @@ contains
       sclrp2, sclrp3, sclrprtp, sclrpthlp, &                  ! intent(inout)
       wpsclrp, edsclrm, &                                     ! intent(inout)
       rcm, cloud_frac, &                                      ! intent(inout)
-      wpthvp, wp2thvp, rtpthvp, thlpthvp, &                   ! intent(inout)
+      wpthvp, wp2thvp, wp2up, rtpthvp, thlpthvp, &            ! intent(inout)
       sclrpthvp, &                                            ! intent(inout)
       wp2rtp, wp2thlp, uprcp, vprcp, rc_coef_zm, wp4, &       ! intent(inout)
       wpup2, wpvp2, wp2up2, wp2vp2, ice_supersat_frac, &      ! intent(inout)
