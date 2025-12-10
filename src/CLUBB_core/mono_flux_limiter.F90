@@ -1296,7 +1296,7 @@ module mono_flux_limiter
         err_info_type     ! Type
 
     use model_flags, only: &
-        l_test_grid_generalization    ! Variable(s)
+        l_force_descending_solves    ! Variable(s)
 
     use constants_clubb, only: &
         fstderr
@@ -1336,15 +1336,6 @@ module mono_flux_limiter
     character(len=10) :: &
       solve_type_str ! solve_type as a string for debug output purposes
 
-    real( kind = core_rknd ), dimension(ndiags3,ngrdcol,nzt) ::  & 
-      lhs_copy  ! Left hand side of tridiagonal matrix
-
-    real( kind = core_rknd ), dimension(ngrdcol,nzt) ::  &
-      rhs_copy  ! Right hand side of tridiagonal matrix equation
-
-    real( kind = core_rknd ), dimension(ngrdcol,nzt) :: &
-      xm_copy   ! Value of variable being solved for at timestep (t+1)   [units vary]
-
     integer :: i
 
     !---------------------------- Begin Code ----------------------------
@@ -1358,21 +1349,16 @@ module mono_flux_limiter
       solve_type_str = "scalars"
     end select
 
-    ! Generalized grid test
-    ! This block of code is used when a generalized grid test
-    ! (ascending vs. descending grid) is being performed and
-    ! the grid is arranged in the descending direction.
-    if ( l_test_grid_generalization .and. gr%grid_dir_indx < 0 ) then
-      lhs_copy = lhs
-      rhs_copy = rhs
-      !$acc parallel loop gang vector default(present)
-      do i = 1, ngrdcol
-        lhs(1,i,:) = flip( lhs_copy(3,i,:), nzt )
-        lhs(2,i,:) = flip( lhs_copy(2,i,:), nzt )
-        lhs(3,i,:) = flip( lhs_copy(1,i,:), nzt )
-        rhs(i,:)   = flip( rhs_copy(i,:), nzt )
-      enddo
-      !$acc end parallel loop
+    ! Matrix solves are bit-different between ascending and descending.
+    ! This ensures matrices are solved in the same (descending) order,
+    ! which is useful for ensuring BFBness between grid modes 
+    if ( l_force_descending_solves .and. gr%grid_dir_indx > 0 ) then
+
+      ! We need to flip in both the vertical dimensions and the bands for the lhs
+      lhs(:,:,:) = lhs(3:1:-1,:,nzt:1:-1)
+
+      rhs(:,:)   = rhs(:,nzt:1:-1)
+
     endif
 
     ! Solve for xm at timestep index (t+1) using the tridiagonal solver.
@@ -1389,17 +1375,10 @@ module mono_flux_limiter
       endif
     endif
 
-    ! Generalized grid test
-    ! This block of code is used when a generalized grid test
-    ! (ascending vs. descending grid) is being performed and
-    ! the grid is arranged in the descending direction.
-    if ( l_test_grid_generalization .and. gr%grid_dir_indx < 0 ) then
-      xm_copy = xm
-      !$acc parallel loop gang vector default(present)
-      do i = 1, ngrdcol
-        xm(i,:) = flip( xm_copy(i,:), nzt )
-      enddo
-      !$acc end parallel loop
+    ! Flip the back to the ascending direction if we forced the solve
+    ! to be in descending mode
+    if ( l_force_descending_solves .and. gr%grid_dir_indx > 0 ) then
+      xm(:,:) = xm(:,nzt:1:-1)
     endif
 
     return

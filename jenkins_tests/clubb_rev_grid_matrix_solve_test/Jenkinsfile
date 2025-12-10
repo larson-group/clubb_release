@@ -4,9 +4,8 @@ pipeline {
     stage('Enable Model Flag for Test') {
       steps {
         sh '''sed -i "s:l_test_grid_generalization.*:l_test_grid_generalization = .true.:g" src/CLUBB_core/model_flags.F90'''
-        // setting l_force_descending_solves should cause results to be BFB in either ascending or descending mode, this
-        // BFB criteria is enforced by `subroutine check_flipped_results` in `generalized_grid_test.F90`
-        sh '''sed -i "s:l_force_descending_solves.*:l_force_descending_solves = .true.:g" src/CLUBB_core/model_flags.F90'''
+        // turning this to false allows the matrices to be solved in whatever mode clubb is running in
+        sh '''sed -i "s:l_force_descending_solves.*:l_force_descending_solves = .false.:g" src/CLUBB_core/model_flags.F90'''
       }
     }
     stage('Turn Off Sponge Damping in Case Setups') {
@@ -19,22 +18,27 @@ pipeline {
         sh '''sed -i "s:rtm_sponge_damp_settings%l_sponge_damping.*:rtm_sponge_damp_settings%l_sponge_damping = .false.:g" input/case_setups/cgils_s12_model.in'''
       }
     }
-    stage('Shorten the MC3E Case') {
-      steps {
-        sh '''sed -i "s:time_final.*:time_final = 1944000.0:g" input/case_setups/mc3e_model.in'''
-      }
-    }
     stage('Compile') {
-      // we need -O0 for this test to be BFB, which is added when using debug flags
       steps {
+        // even though this doesn't need to be BFB, using -O2 creates too many differences to pass
+        // the grid_generalization test, so we use -debug for -O0
         sh '''source /etc/profile.d/larson-group.sh
               module load intel netcdf-fortran
               ./compile.py -debug'''
       }
     }
-    stage('Run') {
+    stage('Lapack') {
       steps {
-        sh '''python3 run_scripts/run_clubb_w_varying_flags.py -f run_scripts/run_bindiff_w_flags_config_core_flags.json'''
+        sh '''sed -i "s:penta_solve_method.*:penta_solve_method = 1:g" input/tunable_parameters/configurable_model_flags.in'''
+        sh '''sed -i "s:tridiag_solve_method.*:tridiag_solve_method = 1:g" input/tunable_parameters/configurable_model_flags.in'''
+        sh '''python3 run_scripts/run_scm_all.py -max_iters 100'''
+      }
+    }
+    stage('Custom LU') {
+      steps {
+        sh '''sed -i "s:penta_solve_method.*:penta_solve_method = 2:g" input/tunable_parameters/configurable_model_flags.in'''
+        sh '''sed -i "s:tridiag_solve_method.*:tridiag_solve_method = 2:g" input/tunable_parameters/configurable_model_flags.in'''
+        sh '''python3 run_scripts/run_scm_all.py -max_iters 100'''
       }
     }
   }
@@ -43,15 +47,15 @@ pipeline {
       // Certain logical functions like IF statements or TRY-CATCH blocks can only operate while in a script{} block
       script {
       // This cleans out the test workspace so the next run has a fresh start
-      // However this only occurs when the test is named clubb_generalized_vertical_grid_test
+      // However this only occurs when the test is named clubb_rev_grid_matrix_solve_test
       // This is to prevent the branch and copy tests from deleting thier workspaces so they are available for debugging
-      if ( "${env.JOB_NAME}" == "clubb_generalized_vertical_grid_test" )
+      if ( "${env.JOB_NAME}" == "clubb_rev_grid_matrix_solve_test" )
       	cleanWs(cleanWhenAborted: true, cleanWhenFailure: true, cleanWhenSuccess: true, cleanWhenUnstable: true)
       }
     }
     failure {
       script {
-      if ( "${env.JOB_NAME}" == "clubb_generalized_vertical_grid_test" )
+      if ( "${env.JOB_NAME}" == "clubb_rev_grid_matrix_solve_test" )
         // This command handles the email on failure feature of the jenkins test. This line is the same on every jenkins test.
       	emailext(to: 'messnermet@uwm.edu', subject: "${env.JOB_NAME} build ${env.BUILD_NUMBER} has Failed", attachLog: true, body: "${env.JOB_NAME} build ${env.BUILD_NUMBER} has failed. See the attached build log and the build results (${env.BUILD_URL}) for help troubleshooting.")
       }

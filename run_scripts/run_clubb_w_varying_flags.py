@@ -1,285 +1,283 @@
+#!/usr/bin/env python3
 """
-Run CLUBB with various flags are toggled.
+Run CLUBB with various flag configurations.
 
-In order to run this script you need to install the dependencies with 
-    pip install -r run_bindiff_w_flags_requirements.txt
+This script:
+  1. Reads a JSON configuration file describing flag sets to test.
+  2. Creates modified versions of configurable_model_flags.in.
+  3. Runs CLUBB for each flag configuration.
+  4. Reports failures immediately and exits with an aggregated code.
 
-The simplest way to use this script would look like:
-  python3 ./run_clubb_w_varying_flags.py -f <flag_config_file>
+Modes:
+  - Single-case mode:
+        ./run_clubb_flags.py rico
+    → runs run_scm.py rico for each flag configuration.
 
-Inputs:
-  1. JSON configuration file, describing what flags you want to toggle
-
-All different input flag configuration files get generated and stored in the
-input/tunable_parameters directory, depending on the input file passed with
---flag-config-file.  This input file defines what flags should be adjusted,
-taking the configurable_model_flags.in file as the default.
-
-An example for this file is the run_bindiff_w_flags_config_example.json found
-in the run_scripts directory.
-
-The code then gets run with all the different flag files.
+  - Multi-case mode (no case name):
+        ./run_clubb_flags.py --short-cases
+    → runs run_scm_all.py -short_cases for each flag configuration.
 """
 
-import shutil
 import sys
 import os
 import re
 import subprocess
 import argparse
 import json
-import git
 
 
-# Define a custom argument type for a list of strings
-def list_of_strings(arg):
-    return arg.split(",")
-
+# ------------------------------------------------------------------------------
+# CLI ARGUMENT PROCESSING
+# ------------------------------------------------------------------------------
 
 def get_cli_args():
-    # Set up and parse command line arguments
-    parser = argparse.ArgumentParser(formatter_class=argparse.RawTextHelpFormatter)
-    parser.add_argument(
-        "--short-cases",
-        action="store_true",
-        default=False,
-        help="Run short cases. This will omit\n\t\tthe gabls2, cloud_feedback_s6, "
-           + "cloud_feedback_s11,\n\t\tcloud_feedback_s12, and twp_ice cases.",
+    parser = argparse.ArgumentParser(
+        formatter_class=argparse.RawTextHelpFormatter
     )
+
+    # case_name is now OPTIONAL
     parser.add_argument(
-        "--priority-cases",
-        action="store_true",
-        default=False,
-        help="Run priority cases. This will include\n\t\tonly the following cases if they are "
-           + "in RUN_CASES: arm, atex,\n\t\tbomex, dycoms2_rf01, dycoms2_rf01_fixed_sst, "
-           + "dycoms2_rf02_ds,\n\t\tdycoms2_rf02_nd, mpace_b, rico, wangara, arm_97,\n"
-           + "\t\tcloud_feedback_s6, cloud_feedback_s11, cloud_feedback_s12,\n"
-           + "\t\tgabls3_night, lba, and twp_ice.",
-    )
-    parser.add_argument(
-        "--min-cases",
-        action="store_true",
-        default=False,
-        help="Run a minimal set of cases (e.g. to\n\t\teconomize on output). "
-           + "This will include only the following\n\t\tcases if they are in RUN_CASES: "
-           + "arm, atex, bomex, dycoms2_rf01,\n\t\tdycoms2_rf02_ds, rico, wangara, arm_97, "
-           + "gabls3_night, lba,\n\t\tand twp_ice.",
-    )
-    parser.add_argument(
-        "--skip-default-flags",
-        action="store_true",
-        default=False,
-        help="Skip the default flag configurations.",
-    )
-    parser.add_argument(
-        "--central-run-script",
-        action="store_true",
-        default=False,
-        help="Use the run_scm_all.bash script from the repository you running this script from. "
-           + "Otherwise the script from the corresponding clones is taken.",
-    )
-    parser.add_argument(
-        "-g",
-        "--gg-test",
-        action="store_true",
-        default=False,
-        help="A grid generalization test is being performed. Keep stats output files "
-           + "to a minimal size",
-    )
-    parser.add_argument(
-        "-f",
-        "--flag-config-file",
-        action="store",
+        "case_name",
         type=str,
-        default="flag_config.json",
-        help="Choose which file will be read to configure the different flag settings.\n",
-    )
-    args = parser.parse_args()
-    if sum([args.short_cases, args.priority_cases, args.min_cases]) > 1:
-        print(
-            "Error: You can only enter one of --short-cases, --priority-cases or --min-cases."
+        nargs="?",
+        help=(
+            "Name of the CLUBB case to run (optional).\n"
+            "If omitted, you must specify exactly one of:\n"
+            "  --all, --short-cases, --priority-cases, --min-cases."
         )
-        exit(1)
+    )
+
+    parser.add_argument(
+        "--all",
+        action="store_true",
+        default=False,
+        help="Run all cases (multi-case mode, via run_scm_all.py).",
+    )
+    parser.add_argument(
+        "--short-cases", action="store_true", default=False,
+        help="Run short cases only (multi-case mode)."
+    )
+    parser.add_argument(
+        "--priority-cases", action="store_true", default=False,
+        help="Run priority cases only (multi-case mode)."
+    )
+    parser.add_argument(
+        "--min-cases", action="store_true", default=False,
+        help="Run minimal set of cases (multi-case mode)."
+    )
+    parser.add_argument(
+        "--skip-default-flags", action="store_true", default=False,
+        help="Do not run the default flag configuration."
+    )
+    parser.add_argument(
+        "-f", "--flag-config-file", type=str, default="flag_config.json",
+        help="JSON file describing alternate flag settings."
+    )
+
+    args = parser.parse_args()
+
+    # Count subset flags
+    subset_flags_count = sum([
+        args.all,
+        args.short_cases,
+        args.priority_cases,
+        args.min_cases,
+    ])
+
+    if args.case_name is None:
+        # Multi-case mode: must have only one subset flag
+        if subset_flags_count >= 1:
+            print("\nError: only one of the following may be specified:\n"
+                  "  --all, --short-cases, --priority-cases, --min-cases\n")
+            sys.exit(1)
+    else:
+        # Single-case mode: subset flags are not allowed
+        if subset_flags_count > 0:
+            print("\nError: When providing a case_name, you may not also use "
+                  "--all, --short-cases, --priority-cases, or --min-cases.\n")
+            sys.exit(1)
+
     return args
 
 
-def read_in_flag_settings(flag_config_file_path):
-    print(f"Reading settings from {flag_config_file_path}...")
-    if not flag_config_file_path.endswith(".json"):
-        print(
-            "Config file for different flag settings (--flag-config-file) "
-            + "needs to be in the JSON format."
-        )
-        exit(1)
-    with open(flag_config_file_path) as json_file:
-        data = json.load(json_file)
-    return data
+# ------------------------------------------------------------------------------
+# READ JSON FLAG SETTINGS
+# ------------------------------------------------------------------------------
+
+def read_flag_settings(path):
+    if not path.endswith(".json"):
+        print("Error: Flag config file must be a JSON file.")
+        sys.exit(1)
+
+    print(f"Reading settings from {path}...")
+    with open(path) as f:
+        return json.load(f)
 
 
-def get_flag_file_names(flag_config_file, skip_default_flag, flags_to_change):
-    """
-    This function takes the flag config JSON file and returns a list of the names of
-    all the flag .in files with the toggled flags from configurable_model_flags.in.
-    """
-    flag_file_names = {}
+# ------------------------------------------------------------------------------
+# DETERMINE FLAG FILE NAMES
+# ------------------------------------------------------------------------------
+
+def get_flag_file_names(skip_default, flag_dict):
+    names = {}
     default_name = "default"
-    for run_name in flags_to_change:
-        if run_name == default_name:
-            print(
-                f"Error: You are not allowed to use the name {default_name} "
-                + "for one of the cases in your {flag_config_file}."
-            )
-            exit(1)
-        flag_file_names[run_name] = run_name + "_tmp.in"
-    if not skip_default_flag:
-        flag_file_names[default_name] = "configurable_model_flags.in"
-    return flag_file_names
+
+    for case_name in flag_dict:
+        if case_name == default_name:
+            print(f"Error: '{default_name}' may not be used as a flag set name.")
+            sys.exit(1)
+        names[case_name] = f"{case_name}_tmp.in"
+
+    if not skip_default:
+        names[default_name] = "configurable_model_flags.in"
+
+    return names
 
 
-def write_flag_change(flags_file, text_line, flags):
-    for flag_name, flag_value in flags.items():
-        pattern = r"\b" + re.escape(flag_name) + r"\b"
-        flag_in_line = re.search(pattern, text_line)
-        if flag_in_line:
+# ------------------------------------------------------------------------------
+# FLAG MODIFYING HELPER
+# ------------------------------------------------------------------------------
+
+def write_flag_change(output_file, line, case_flags):
+    """
+    Replace the value of a flag on a given line.
+    Boolean replacement is safe; integer replacement replaces RHS of '='.
+    """
+    for flag_name, flag_value in case_flags.items():
+        if re.search(rf"\b{re.escape(flag_name)}\b", line):
             if isinstance(flag_value, bool):
-                if flag_value:
-                    text_line = re.sub(r"\..*\.", ".true.", text_line)
-                else:
-                    text_line = re.sub(r"\..*\.", ".false.", text_line)
+                value = ".true." if flag_value else ".false."
+                line = re.sub(r"=\s*\.\w+\.", f"= {value}", line)
             elif isinstance(flag_value, int):
-                text_line = re.sub(r"= .*", f"= {flag_value}", text_line)
-    flags_file.write(text_line)
+                line = re.sub(r"=\s*.*", f"= {flag_value}", line)
+
+    output_file.write(line)
 
 
-def create_flag_files(abs_path_to_dirs, flags_to_change, flag_file_names):
+# ------------------------------------------------------------------------------
+# CREATE FLAG FILES
+# ------------------------------------------------------------------------------
+
+def create_flag_files(root, flag_dict, flag_file_names):
+    print("Creating input flag files...")
+
+    base_path = os.path.join(root, "input/tunable_parameters")
+    default_file = os.path.join(base_path, "configurable_model_flags.in")
+
+    with open(default_file, "r") as original:
+        for case_name, filename in flag_file_names.items():
+            if filename == "configurable_model_flags.in":
+                continue
+
+            out_path = os.path.join(base_path, filename)
+            with open(out_path, "w") as newf:
+                for line in original:
+                    write_flag_change(newf, line, flag_dict[case_name])
+                original.seek(0)   # rewind for next flag file
+
+
+# ------------------------------------------------------------------------------
+# RUN CLUBB FOR EACH FLAG CONFIGURATION
+# ------------------------------------------------------------------------------
+
+def run_clubb(root, flag_files, args):
     """
-    This function creates the different input flag files from the flag configuration
-    file content, given by flags_to_change.
+    If args.case_name is set:
+        Runs run_scm.py <flags> <case_name> for each flag configuration.
+
+    If args.case_name is None:
+        Runs run_scm_all.py <subset-flag> <flags> for each flag configuration,
+        where <subset-flag> is one of: -all, -short_cases, -priority_cases, -min_cases.
     """
-    print(
-        f"Creating all input flag files in {abs_path_to_dirs}"
-        + "input/tunable_parameters ..."
-    )
-    with open(
-        abs_path_to_dirs
-        + "input/tunable_parameters/configurable_model_flags.in",
-        "r",
-    ) as flags_file_default:
+    is_single_case_mode = args.case_name is not None
 
-        for case_name, flag_file_name in flag_file_names.items():
-            if flag_file_name != "configurable_model_flags.in":
-                new_flags_file_path = (
-                    abs_path_to_dirs
-                    + "/input/tunable_parameters/"
-                    + flag_file_name
-                )
+    if is_single_case_mode:
+        script_path = os.path.join(root, "run_scripts", "run_scm.py")
+        case_name = args.case_name
+        print(f"\nRunning CLUBB case '{case_name}' for {len(flag_files)} flag configurations...")
+        subset_flag = None  # not used in this mode
+    else:
+        script_path = os.path.join(root, "run_scripts", "run_scm_all.py")
+        print(f"\nRunning CLUBB multi-case mode for {len(flag_files)} flag configurations...")
 
-                # create and open new flag file
-                with open(new_flags_file_path, "w") as flags_file:
-                    for line in flags_file_default:
-                        write_flag_change(flags_file, line, flags_to_change[case_name])
-
-                # start again at beginning of file (set file pointer back to start)
-                flags_file_default.seek(0)
-
-
-def run_clubb_model_for_all_flag_settings(args, abs_path_to_dirs, flag_files):
-    """
-    This function takes all the names of the newly created flag .in files and
-    runs CLUBB for all of the different flag files.
-    """
-    flags_to_add = []
-    if args.gg_test:
-        flags_to_add.append("--generalized-grid")
-    if args.priority_cases:
-        flags_to_add.append("--priority-cases")
-    elif args.min_cases:
-        flags_to_add.append("--min-cases")
-    elif args.short_cases:
-        flags_to_add.append("--short-cases")
-
-    # Initialize the flag_exit_code array.
-    flag_exit_codes = []
-    flag_exit_codes = [-999 for indx in range(len(flag_files.values()))]
-
-    # Run every case in CLUBB for each flag file
-    print(f"\nRunning CLUBB for {len(flag_files.values())} total flag files")
-    indx = -1
-    for _, flag_file in flag_files.items():
-        print(f"\nRunning cases for {flag_file} ...")
-        abs_clubb_path = f"{abs_path_to_dirs}"
-        indx = indx + 1
-        if args.central_run_script:
-            result = subprocess.run(
-                [
-                    f"./run_scm_all.bash",
-                    *flags_to_add,
-                    "--clubb_exec_file",
-                    f"{abs_clubb_path}/bin/clubb_standalone",
-                    "-o",
-                    f"{abs_clubb_path}/output/{flag_file.split('.')[0]}",
-                    "--flags_file",
-                    f"{abs_clubb_path}/input/tunable_parameters/{flag_file}",
-                ],
-                stdout = subprocess.PIPE,
-                stderr = subprocess.STDOUT,
-                universal_newlines = True
-            )
-            print(result.stdout)
-            flag_exit_codes[indx] = result.returncode
+        # Determine which subset flag to pass to run_scm_all.py
+        if args.all:
+            subset_flag = "-all"
+        elif args.short_cases:
+            subset_flag = "-short_cases"
+        elif args.priority_cases:
+            subset_flag = "-priority_cases"
+        elif args.min_cases:
+            subset_flag = "-min_cases"
         else:
-            result = subprocess.run(
-                [
-                    f"{abs_clubb_path}/run_scripts/run_scm_all.bash",
-                    *flags_to_add,
-                    "--clubb_exec_file",
-                    f"{abs_clubb_path}/bin/clubb_standalone",
-                    "-o",
-                    f"{abs_clubb_path}/output/{flag_file.split('.')[0]}",
-                    "--flags_file",
-                    f"{abs_clubb_path}/input/tunable_parameters/{flag_file}",
-                ],
-                stdout = subprocess.PIPE,
-                stderr = subprocess.STDOUT,
-                universal_newlines = True
-            )
-            print(result.stdout)
-            flag_exit_codes[indx] = result.returncode
+            # use whatever default run_scm_all.py uses
+            subset_flag = None
 
-    exit_code = max(flag_exit_codes)
-    return exit_code
+    exit_codes = []
 
+    for case_label, flag_file in flag_files.items():
+        print(f"\n--- Running flag set: {case_label} ({flag_file}): ", end="")
+
+        out_dir = os.path.join(root, "output", case_label)
+        flag_path = os.path.join(root, "input/tunable_parameters", flag_file)
+
+        cmd = [script_path]
+
+        # In multi-case mode, pass the subset flag (-all, -short_cases, etc.)
+        if not is_single_case_mode and subset_flag is not None:
+            cmd.append(subset_flag)
+
+        cmd += [
+            "-out_dir", out_dir,
+            "-tout", "0",
+            "-debug", "0",
+            "-flags", flag_path,
+        ]
+
+        # In single-case mode, append the case name at the end
+        if is_single_case_mode:
+            cmd.append(case_name)
+
+        result = subprocess.run(
+            cmd,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            universal_newlines=True
+        )
+
+        exit_codes.append(result.returncode)
+
+        if result.returncode != 0:
+            print(result.stdout)   # Print ONLY if failed
+            print(f"\n!===== FAILURE for flag set '{case_label}' (file: {flag_file})")
+        else:
+            print("PASS")
+
+    return max(exit_codes)
+
+
+# ------------------------------------------------------------------------------
+# MAIN
+# ------------------------------------------------------------------------------
 
 def main():
     args = get_cli_args()
 
-    path_to_runscript = os.path.dirname(os.path.realpath(__file__))
-    dest_dir_path_expanded = path_to_runscript + "/.."
-    abs_destination_dir_path = os.path.abspath(dest_dir_path_expanded) + "/"
+    # Paths relative to script location
+    script_dir = os.path.dirname(os.path.realpath(__file__))
+    root = os.path.abspath(os.path.join(script_dir, ".."))
 
-    if not os.path.exists(abs_destination_dir_path):
-        print(f"Directory {abs_destination_dir_path} does not exist.")
-        print(f"Creating directory {abs_destination_dir_path}...")
-        os.makedirs(abs_destination_dir_path)
+    flags = read_flag_settings(args.flag_config_file)
+    flag_files = get_flag_file_names(args.skip_default_flags, flags)
 
-    flags_to_change = read_in_flag_settings(args.flag_config_file)
+    create_flag_files(root, flags, flag_files)
 
-    flag_file_names = get_flag_file_names(
-        args.flag_config_file, args.skip_default_flags, flags_to_change
-    )
-
-    create_flag_files(
-        abs_destination_dir_path, flags_to_change, flag_file_names
-    )
-
-    exit_code = run_clubb_model_for_all_flag_settings(
-        args, abs_destination_dir_path, flag_file_names
-    )
+    exit_code = run_clubb(root, flag_files, args)
 
     if exit_code == 0:
-        print(f"\nCLUBB run was successful for all cases and all files")
+        print("\n🎉 All CLUBB runs succeeded.")
     else:
-        print(f"\nThere was a failure in the CLUBB run")
+        print("\n⚠️ Some CLUBB runs failed. See messages above.")
 
     sys.exit(exit_code)
 

@@ -189,6 +189,10 @@ module model_flags
   logical, parameter, public :: &
      l_test_grid_generalization = .false.
 
+  ! Forces our matrices to be solved in descending mode, useful for the grid_generalization test
+  logical, parameter, public :: &
+     l_force_descending_solves  = .false.
+
   ! Derived type to hold all configurable CLUBB flags
   type clubb_config_flags_type
     ! Note that all flags in this data type might also be modified in 

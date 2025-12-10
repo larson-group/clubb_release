@@ -716,199 +716,197 @@ module generalized_grid_test
                                               pdf_implicit_coefs_terms_flip ) ! Intent(out)
 
       ! Set up "flipped" variables for call to descending grid.
-      do i = 1, ngrdcol
+      thlm_forcing_flip(:,:) = thlm_forcing(:,nzt:1:-1)
+      rtm_forcing_flip(:,:) = rtm_forcing(:,nzt:1:-1)
+      um_forcing_flip(:,:) = um_forcing(:,nzt:1:-1)
+      vm_forcing_flip(:,:) = vm_forcing(:,nzt:1:-1)
+      wprtp_forcing_flip(:,:) = wprtp_forcing(:,nzm:1:-1)
+      wpthlp_forcing_flip(:,:) = wpthlp_forcing(:,nzm:1:-1)
+      rtp2_forcing_flip(:,:) = rtp2_forcing(:,nzm:1:-1)
+      thlp2_forcing_flip(:,:) = thlp2_forcing(:,nzm:1:-1)
+      rtpthlp_forcing_flip(:,:) = rtpthlp_forcing(:,nzm:1:-1)
+      wm_zm_flip(:,:) = wm_zm(:,nzm:1:-1)
+      wm_zt_flip(:,:) = wm_zt(:,nzt:1:-1)
+      rtm_ref_flip(:,:) = rtm_ref(:,nzt:1:-1)
+      thlm_ref_flip(:,:) = thlm_ref(:,nzt:1:-1)
+      um_ref_flip(:,:) = um_ref(:,nzt:1:-1)
+      vm_ref_flip(:,:) = vm_ref(:,nzt:1:-1)
+      ug_flip(:,:) = ug(:,nzt:1:-1)
+      vg_flip(:,:) = vg(:,nzt:1:-1)
+      p_in_Pa_flip(:,:) = p_in_Pa(:,nzt:1:-1)
+      rho_zm_flip(:,:) = rho_zm(:,nzm:1:-1)
+      rho_flip(:,:) = rho(:,nzt:1:-1)
+      exner_flip(:,:) = exner(:,nzt:1:-1)
+      rho_ds_zm_flip(:,:) = rho_ds_zm(:,nzm:1:-1)
+      rho_ds_zt_flip(:,:) = rho_ds_zt(:,nzt:1:-1)
+      invrs_rho_ds_zm_flip(:,:) = invrs_rho_ds_zm(:,nzm:1:-1)
+      invrs_rho_ds_zt_flip(:,:) = invrs_rho_ds_zt(:,nzt:1:-1)
+      thv_ds_zt_flip(:,:) = thv_ds_zt(:,nzt:1:-1)
+      thv_ds_zm_flip(:,:) = thv_ds_zm(:,nzm:1:-1)
+      rfrzm_flip(:,:) = rfrzm(:,nzt:1:-1)
+    
+      um_flip(:,:) = um(:,nzt:1:-1)
+      vm_flip(:,:) = vm(:,nzt:1:-1)
+      upwp_flip(:,:) = upwp(:,nzm:1:-1)
+      vpwp_flip(:,:) = vpwp(:,nzm:1:-1)
+      up2_flip(:,:) = up2(:,nzm:1:-1)
+      vp2_flip(:,:) = vp2(:,nzm:1:-1)
+      up3_flip(:,:) = up3(:,nzt:1:-1)
+      vp3_flip(:,:) = vp3(:,nzt:1:-1)
+      thlm_flip(:,:) = thlm(:,nzt:1:-1)
+      rtm_flip(:,:) = rtm(:,nzt:1:-1)
+      wpthlp_flip(:,:) = wpthlp(:,nzm:1:-1)
+      wprtp_flip(:,:) = wprtp(:,nzm:1:-1)
+      wp2_flip(:,:) = wp2(:,nzm:1:-1)
+      wp3_flip(:,:) = wp3(:,nzt:1:-1)
+      rtp2_flip(:,:) = rtp2(:,nzm:1:-1)
+      rtp3_flip(:,:) = rtp3(:,nzt:1:-1)
+      thlp2_flip(:,:) = thlp2(:,nzm:1:-1)
+      thlp3_flip(:,:) = thlp3(:,nzt:1:-1)
+      rtpthlp_flip(:,:) = rtpthlp(:,nzm:1:-1)
+      rcm_flip(:,:) = rcm(:,nzt:1:-1)
+      cloud_frac_flip(:,:) = cloud_frac(:,nzt:1:-1)
+      wpthvp_flip(:,:) = wpthvp(:,nzm:1:-1)
+      wp2thvp_flip(:,:) = wp2thvp(:,nzt:1:-1)
+      rtpthvp_flip(:,:) = rtpthvp(:,nzm:1:-1)
+      thlpthvp_flip(:,:) = thlpthvp(:,nzm:1:-1)
+      wp2rtp_flip(:,:) = wp2rtp(:,nzt:1:-1)
+      wp2thlp_flip(:,:) = wp2thlp(:,nzt:1:-1)
+      uprcp_flip(:,:) = uprcp(:,nzm:1:-1)
+      vprcp_flip(:,:) = vprcp(:,nzm:1:-1)
+      rc_coef_zm_flip(:,:) = rc_coef_zm(:,nzm:1:-1)
+      wp4_flip(:,:) = wp4(:,nzm:1:-1)
+      wpup2_flip(:,:) = wpup2(:,nzt:1:-1)
+      wpvp2_flip(:,:) = wpvp2(:,nzt:1:-1)
+      wp2up2_flip(:,:) = wp2up2(:,nzm:1:-1)
+      wp2vp2_flip(:,:) = wp2vp2(:,nzm:1:-1)
+      ice_supersat_frac_flip(:,:) = ice_supersat_frac(:,nzt:1:-1)
 
-         thlm_forcing_flip(i,:) = flip( thlm_forcing(i,:), nzt )
-         rtm_forcing_flip(i,:) = flip( rtm_forcing(i,:), nzt )
-         um_forcing_flip(i,:) = flip( um_forcing(i,:), nzt )
-         vm_forcing_flip(i,:) = flip( vm_forcing(i,:), nzt )
-         wprtp_forcing_flip(i,:) = flip( wprtp_forcing(i,:), nzm )
-         wpthlp_forcing_flip(i,:) = flip( wpthlp_forcing(i,:), nzm )
-         rtp2_forcing_flip(i,:) = flip( rtp2_forcing(i,:), nzm )
-         thlp2_forcing_flip(i,:) = flip( thlp2_forcing(i,:), nzm )
-         rtpthlp_forcing_flip(i,:) = flip( rtpthlp_forcing(i,:), nzm )
-         wm_zm_flip(i,:) = flip( wm_zm(i,:), nzm )
-         wm_zt_flip(i,:) = flip( wm_zt(i,:), nzt )
-         rtm_ref_flip(i,:) = flip( rtm_ref(i,:), nzt )
-         thlm_ref_flip(i,:) = flip( thlm_ref(i,:), nzt )
-         um_ref_flip(i,:) = flip( um_ref(i,:), nzt )
-         vm_ref_flip(i,:) = flip( vm_ref(i,:), nzt )
-         ug_flip(i,:) = flip( ug(i,:), nzt )
-         vg_flip(i,:) = flip( vg(i,:), nzt )
-         p_in_Pa_flip(i,:) = flip( p_in_Pa(i,:), nzt )
-         rho_zm_flip(i,:) = flip( rho_zm(i,:), nzm )
-         rho_flip(i,:) = flip( rho(i,:), nzt )
-         exner_flip(i,:) = flip( exner(i,:), nzt )
-         rho_ds_zm_flip(i,:) = flip( rho_ds_zm(i,:), nzm )
-         rho_ds_zt_flip(i,:) = flip( rho_ds_zt(i,:), nzt )
-         invrs_rho_ds_zm_flip(i,:) = flip( invrs_rho_ds_zm(i,:), nzm )
-         invrs_rho_ds_zt_flip(i,:) = flip( invrs_rho_ds_zt(i,:), nzt )
-         thv_ds_zt_flip(i,:) = flip( thv_ds_zt(i,:), nzt )
-         thv_ds_zm_flip(i,:) = flip( thv_ds_zm(i,:), nzm )
-         rfrzm_flip(i,:) = flip( rfrzm(i,:), nzt )
+      if ( sclr_dim > 0 ) then
+        sclrm_forcing_flip(:,:,:) = sclrm_forcing(:,nzt:1:-1,:)
+        sclrm_flip(:,:,:) = sclrm(:,nzt:1:-1,:)
+        wpsclrp_flip(:,:,:) = wpsclrp(:,nzm:1:-1,:)
+        sclrprtp_flip(:,:,:) = sclrprtp(:,nzm:1:-1,:)
+        sclrpthlp_flip(:,:,:) = sclrpthlp(:,nzm:1:-1,:)
+        sclrpthvp_flip(:,:,:) = sclrpthvp(:,nzm:1:-1,:)
+        sclrp2_flip(:,:,:) = sclrp2(:,nzm:1:-1,:)
+        sclrp3_flip(:,:,:) = sclrp3(:,nzt:1:-1,:)
+      end if
 
-         um_flip(i,:) = flip( um(i,:), nzt )
-         vm_flip(i,:) = flip( vm(i,:), nzt )
-         upwp_flip(i,:) = flip( upwp(i,:), nzm )
-         vpwp_flip(i,:) = flip( vpwp(i,:), nzm )
-         up2_flip(i,:) = flip( up2(i,:), nzm )
-         vp2_flip(i,:) = flip( vp2(i,:), nzm )
-         up3_flip(i,:) = flip( up3(i,:), nzt )
-         vp3_flip(i,:) = flip( vp3(i,:), nzt )
-         thlm_flip(i,:) = flip( thlm(i,:), nzt )
-         rtm_flip(i,:) = flip( rtm(i,:), nzt )
-         wpthlp_flip(i,:) = flip( wpthlp(i,:), nzm )
-         wprtp_flip(i,:) = flip( wprtp(i,:), nzm )
-         wp2_flip(i,:) = flip( wp2(i,:), nzm )
-         wp3_flip(i,:) = flip( wp3(i,:), nzt )
-         rtp2_flip(i,:) = flip( rtp2(i,:), nzm )
-         rtp3_flip(i,:) = flip( rtp3(i,:), nzt )
-         thlp2_flip(i,:) = flip( thlp2(i,:), nzm )
-         thlp3_flip(i,:) = flip( thlp3(i,:), nzt )
-         rtpthlp_flip(i,:) = flip( rtpthlp(i,:), nzm )
-         rcm_flip(i,:) = flip( rcm(i,:), nzt )
-         cloud_frac_flip(i,:) = flip( cloud_frac(i,:), nzt )
-         wpthvp_flip(i,:) = flip( wpthvp(i,:), nzm )
-         wp2thvp_flip(i,:) = flip( wp2thvp(i,:), nzt )
-         rtpthvp_flip(i,:) = flip( rtpthvp(i,:), nzm )
-         thlpthvp_flip(i,:) = flip( thlpthvp(i,:), nzm )
-         wp2rtp_flip(i,:) = flip( wp2rtp(i,:), nzt )
-         wp2thlp_flip(i,:) = flip( wp2thlp(i,:), nzt )
-         uprcp_flip(i,:) = flip( uprcp(i,:), nzm )
-         vprcp_flip(i,:) = flip( vprcp(i,:), nzm )
-         rc_coef_zm_flip(i,:) = flip( rc_coef_zm(i,:), nzm )
-         wp4_flip(i,:) = flip( wp4(i,:), nzm )
-         wpup2_flip(i,:) = flip( wpup2(i,:), nzt )
-         wpvp2_flip(i,:) = flip( wpvp2(i,:), nzt )
-         wp2up2_flip(i,:) = flip( wp2up2(i,:), nzm )
-         wp2vp2_flip(i,:) = flip( wp2vp2(i,:), nzm )
-         ice_supersat_frac_flip(i,:) = flip( ice_supersat_frac(i,:), nzt )
+      ! edsclr variables
+      if ( edsclr_dim > 0 ) then
+        edsclrm_forcing_flip(:,:,:) = edsclrm_forcing(:,nzt:1:-1,:)
+        edsclrm_flip(:,:,:) = edsclrm(:,nzt:1:-1,:)
+      end if
 
-         ! sclr variables
-         do sclr = 1, sclr_dim
-            sclrm_forcing_flip(i,:,sclr) = flip( sclrm_forcing(i,:,sclr), nzt )
-            sclrm_flip(i,:,sclr) = flip( sclrm(i,:,sclr), nzt )
-            wpsclrp_flip(i,:,sclr) = flip( wpsclrp(i,:,sclr), nzm )
-            sclrprtp_flip(i,:,sclr) = flip( sclrprtp(i,:,sclr), nzm )
-            sclrpthlp_flip(i,:,sclr) = flip( sclrpthlp(i,:,sclr), nzm )
-            sclrpthvp_flip(i,:,sclr) = flip( sclrpthvp(i,:,sclr), nzm )
-            sclrp2_flip(i,:,sclr) = flip( sclrp2(i,:,sclr), nzm )
-            sclrp3_flip(i,:,sclr) = flip( sclrp3(i,:,sclr), nzt )
-         enddo
+      ! hydrometeor variables
+      if ( hydromet_dim > 0 ) then
+        wphydrometp_flip(:,:,:) = wphydrometp(:,nzm:1:-1,:)
+        wp2hmp_flip(:,:,:) = wp2hmp(:,nzt:1:-1,:)
+        rtphmp_zt_flip(:,:,:) = rtphmp_zt(:,nzt:1:-1,:)
+        thlphmp_zt_flip(:,:,:) = thlphmp_zt(:,nzt:1:-1,:)
+      end if
 
-         ! edsclr variables
-         do edsclr = 1, edsclr_dim
-            edsclrm_forcing_flip(i,:,edsclr) = flip( edsclrm_forcing(i,:,edsclr), nzt )
-            edsclrm_flip(i,:,edsclr) = flip( edsclrm(i,:,edsclr), nzt )
-         enddo
+      ! pdf_params
+      pdf_params_flip%w_1(:,:) = pdf_params%w_1(:,nzt:1:-1)
+      pdf_params_flip%w_2(:,:) = pdf_params%w_2(:,nzt:1:-1)
+      pdf_params_flip%varnce_w_1(:,:) = pdf_params%varnce_w_1(:,nzt:1:-1)
+      pdf_params_flip%varnce_w_2(:,:) = pdf_params%varnce_w_2(:,nzt:1:-1)
+      pdf_params_flip%rt_1(:,:) = pdf_params%rt_1(:,nzt:1:-1)
+      pdf_params_flip%rt_2(:,:) = pdf_params%rt_2(:,nzt:1:-1)
+      pdf_params_flip%varnce_rt_1(:,:) = pdf_params%varnce_rt_1(:,nzt:1:-1)
+      pdf_params_flip%varnce_rt_2(:,:) = pdf_params%varnce_rt_2(:,nzt:1:-1)
+      pdf_params_flip%thl_1(:,:) = pdf_params%thl_1(:,nzt:1:-1)
+      pdf_params_flip%thl_2(:,:) = pdf_params%thl_2(:,nzt:1:-1)
+      pdf_params_flip%varnce_thl_1(:,:) = pdf_params%varnce_thl_1(:,nzt:1:-1)
+      pdf_params_flip%varnce_thl_2(:,:) = pdf_params%varnce_thl_2(:,nzt:1:-1)
+      pdf_params_flip%corr_w_rt_1(:,:) = pdf_params%corr_w_rt_1(:,nzt:1:-1)
+      pdf_params_flip%corr_w_rt_2(:,:) = pdf_params%corr_w_rt_2(:,nzt:1:-1)
+      pdf_params_flip%corr_w_thl_1(:,:) = pdf_params%corr_w_thl_1(:,nzt:1:-1)
+      pdf_params_flip%corr_w_thl_2(:,:) = pdf_params%corr_w_thl_2(:,nzt:1:-1)
+      pdf_params_flip%corr_rt_thl_1(:,:) = pdf_params%corr_rt_thl_1(:,nzt:1:-1)
+      pdf_params_flip%corr_rt_thl_2(:,:) = pdf_params%corr_rt_thl_2(:,nzt:1:-1)
+      pdf_params_flip%alpha_thl(:,:) = pdf_params%alpha_thl(:,nzt:1:-1)
+      pdf_params_flip%alpha_rt(:,:) = pdf_params%alpha_rt(:,nzt:1:-1)
+      pdf_params_flip%crt_1(:,:) = pdf_params%crt_1(:,nzt:1:-1)
+      pdf_params_flip%crt_2(:,:) = pdf_params%crt_2(:,nzt:1:-1)
+      pdf_params_flip%cthl_1(:,:) = pdf_params%cthl_1(:,nzt:1:-1)
+      pdf_params_flip%cthl_2(:,:) = pdf_params%cthl_2(:,nzt:1:-1)
+      pdf_params_flip%chi_1(:,:) = pdf_params%chi_1(:,nzt:1:-1)
+      pdf_params_flip%chi_2(:,:) = pdf_params%chi_2(:,nzt:1:-1)
+      pdf_params_flip%stdev_chi_1(:,:) = pdf_params%stdev_chi_1(:,nzt:1:-1)
+      pdf_params_flip%stdev_chi_2(:,:) = pdf_params%stdev_chi_2(:,nzt:1:-1)
+      pdf_params_flip%stdev_eta_1(:,:) = pdf_params%stdev_eta_1(:,nzt:1:-1)
+      pdf_params_flip%stdev_eta_2(:,:) = pdf_params%stdev_eta_2(:,nzt:1:-1)
+      pdf_params_flip%covar_chi_eta_1(:,:) = pdf_params%covar_chi_eta_1(:,nzt:1:-1)
+      pdf_params_flip%covar_chi_eta_2(:,:) = pdf_params%covar_chi_eta_2(:,nzt:1:-1)
+      pdf_params_flip%corr_w_chi_1(:,:) = pdf_params%corr_w_chi_1(:,nzt:1:-1)
+      pdf_params_flip%corr_w_chi_2(:,:) = pdf_params%corr_w_chi_2(:,nzt:1:-1)
+      pdf_params_flip%corr_w_eta_1(:,:) = pdf_params%corr_w_eta_1(:,nzt:1:-1)
+      pdf_params_flip%corr_w_eta_2(:,:) = pdf_params%corr_w_eta_2(:,nzt:1:-1)
+      pdf_params_flip%corr_chi_eta_1(:,:) = pdf_params%corr_chi_eta_1(:,nzt:1:-1)
+      pdf_params_flip%corr_chi_eta_2(:,:) = pdf_params%corr_chi_eta_2(:,nzt:1:-1)
+      pdf_params_flip%rsatl_1(:,:) = pdf_params%rsatl_1(:,nzt:1:-1)
+      pdf_params_flip%rsatl_2(:,:) = pdf_params%rsatl_2(:,nzt:1:-1)
+      pdf_params_flip%rc_1(:,:) = pdf_params%rc_1(:,nzt:1:-1)
+      pdf_params_flip%rc_2(:,:) = pdf_params%rc_2(:,nzt:1:-1)
+      pdf_params_flip%cloud_frac_1(:,:) = pdf_params%cloud_frac_1(:,nzt:1:-1)
+      pdf_params_flip%cloud_frac_2(:,:) = pdf_params%cloud_frac_2(:,nzt:1:-1)
+      pdf_params_flip%mixt_frac(:,:) = pdf_params%mixt_frac(:,nzt:1:-1)
+      pdf_params_flip%ice_supersat_frac_1(:,:) = pdf_params%ice_supersat_frac_1(:,nzt:1:-1)
+      pdf_params_flip%ice_supersat_frac_2(:,:) = pdf_params%ice_supersat_frac_2(:,nzt:1:-1)
 
-         ! hydrometeor variables
-         do hm_idx = 1, hydromet_dim
-            wphydrometp_flip(i,:,hm_idx) = flip( wphydrometp(i,:,hm_idx), nzm )
-            wp2hmp_flip(i,:,hm_idx) = flip( wp2hmp(i,:,hm_idx), nzt )
-            rtphmp_zt_flip(i,:,hm_idx) = flip( rtphmp_zt(i,:,hm_idx), nzt )
-            thlphmp_zt_flip(i,:,hm_idx) = flip( thlphmp_zt(i,:,hm_idx), nzt )
-         enddo ! hm_idx = 1, hydromet_dim
+      ! pdf_params_zm
+      pdf_params_zm_flip%w_1(:,:) = pdf_params_zm%w_1(:,nzm:1:-1)
+      pdf_params_zm_flip%w_2(:,:) = pdf_params_zm%w_2(:,nzm:1:-1)
+      pdf_params_zm_flip%varnce_w_1(:,:) = pdf_params_zm%varnce_w_1(:,nzm:1:-1)
+      pdf_params_zm_flip%varnce_w_2(:,:) = pdf_params_zm%varnce_w_2(:,nzm:1:-1)
+      pdf_params_zm_flip%rt_1(:,:) = pdf_params_zm%rt_1(:,nzm:1:-1)
+      pdf_params_zm_flip%rt_2(:,:) = pdf_params_zm%rt_2(:,nzm:1:-1)
+      pdf_params_zm_flip%varnce_rt_1(:,:) = pdf_params_zm%varnce_rt_1(:,nzm:1:-1)
+      pdf_params_zm_flip%varnce_rt_2(:,:) = pdf_params_zm%varnce_rt_2(:,nzm:1:-1)
+      pdf_params_zm_flip%thl_1(:,:) = pdf_params_zm%thl_1(:,nzm:1:-1)
+      pdf_params_zm_flip%thl_2(:,:) = pdf_params_zm%thl_2(:,nzm:1:-1)
+      pdf_params_zm_flip%varnce_thl_1(:,:) = pdf_params_zm%varnce_thl_1(:,nzm:1:-1)
+      pdf_params_zm_flip%varnce_thl_2(:,:) = pdf_params_zm%varnce_thl_2(:,nzm:1:-1)
+      pdf_params_zm_flip%corr_w_rt_1(:,:) = pdf_params_zm%corr_w_rt_1(:,nzm:1:-1)
+      pdf_params_zm_flip%corr_w_rt_2(:,:) = pdf_params_zm%corr_w_rt_2(:,nzm:1:-1)
+      pdf_params_zm_flip%corr_w_thl_1(:,:) = pdf_params_zm%corr_w_thl_1(:,nzm:1:-1)
+      pdf_params_zm_flip%corr_w_thl_2(:,:) = pdf_params_zm%corr_w_thl_2(:,nzm:1:-1)
+      pdf_params_zm_flip%corr_rt_thl_1(:,:) = pdf_params_zm%corr_rt_thl_1(:,nzm:1:-1)
+      pdf_params_zm_flip%corr_rt_thl_2(:,:) = pdf_params_zm%corr_rt_thl_2(:,nzm:1:-1)
+      pdf_params_zm_flip%alpha_thl(:,:) = pdf_params_zm%alpha_thl(:,nzm:1:-1)
+      pdf_params_zm_flip%alpha_rt(:,:) = pdf_params_zm%alpha_rt(:,nzm:1:-1)
+      pdf_params_zm_flip%crt_1(:,:) = pdf_params_zm%crt_1(:,nzm:1:-1)
+      pdf_params_zm_flip%crt_2(:,:) = pdf_params_zm%crt_2(:,nzm:1:-1)
+      pdf_params_zm_flip%cthl_1(:,:) = pdf_params_zm%cthl_1(:,nzm:1:-1)
+      pdf_params_zm_flip%cthl_2(:,:) = pdf_params_zm%cthl_2(:,nzm:1:-1)
+      pdf_params_zm_flip%chi_1(:,:) = pdf_params_zm%chi_1(:,nzm:1:-1)
+      pdf_params_zm_flip%chi_2(:,:) = pdf_params_zm%chi_2(:,nzm:1:-1)
+      pdf_params_zm_flip%stdev_chi_1(:,:) = pdf_params_zm%stdev_chi_1(:,nzm:1:-1)
+      pdf_params_zm_flip%stdev_chi_2(:,:) = pdf_params_zm%stdev_chi_2(:,nzm:1:-1)
+      pdf_params_zm_flip%stdev_eta_1(:,:) = pdf_params_zm%stdev_eta_1(:,nzm:1:-1)
+      pdf_params_zm_flip%stdev_eta_2(:,:) = pdf_params_zm%stdev_eta_2(:,nzm:1:-1)
+      pdf_params_zm_flip%covar_chi_eta_1(:,:) = pdf_params_zm%covar_chi_eta_1(:,nzm:1:-1)
+      pdf_params_zm_flip%covar_chi_eta_2(:,:) = pdf_params_zm%covar_chi_eta_2(:,nzm:1:-1)
+      pdf_params_zm_flip%corr_w_chi_1(:,:) = pdf_params_zm%corr_w_chi_1(:,nzm:1:-1)
+      pdf_params_zm_flip%corr_w_chi_2(:,:) = pdf_params_zm%corr_w_chi_2(:,nzm:1:-1)
+      pdf_params_zm_flip%corr_w_eta_1(:,:) = pdf_params_zm%corr_w_eta_1(:,nzm:1:-1)
+      pdf_params_zm_flip%corr_w_eta_2(:,:) = pdf_params_zm%corr_w_eta_2(:,nzm:1:-1)
+      pdf_params_zm_flip%corr_chi_eta_1(:,:) = pdf_params_zm%corr_chi_eta_1(:,nzm:1:-1)
+      pdf_params_zm_flip%corr_chi_eta_2(:,:) = pdf_params_zm%corr_chi_eta_2(:,nzm:1:-1)
+      pdf_params_zm_flip%rsatl_1(:,:) = pdf_params_zm%rsatl_1(:,nzm:1:-1)
+      pdf_params_zm_flip%rsatl_2(:,:) = pdf_params_zm%rsatl_2(:,nzm:1:-1)
+      pdf_params_zm_flip%rc_1(:,:) = pdf_params_zm%rc_1(:,nzm:1:-1)
+      pdf_params_zm_flip%rc_2(:,:) = pdf_params_zm%rc_2(:,nzm:1:-1)
+      pdf_params_zm_flip%cloud_frac_1(:,:) = pdf_params_zm%cloud_frac_1(:,nzm:1:-1)
+      pdf_params_zm_flip%cloud_frac_2(:,:) = pdf_params_zm%cloud_frac_2(:,nzm:1:-1)
+      pdf_params_zm_flip%mixt_frac(:,:) = pdf_params_zm%mixt_frac(:,nzm:1:-1)
+      pdf_params_zm_flip%ice_supersat_frac_1(:,:) = pdf_params_zm%ice_supersat_frac_1(:,nzm:1:-1)
+      pdf_params_zm_flip%ice_supersat_frac_2(:,:) = pdf_params_zm%ice_supersat_frac_2(:,nzm:1:-1)
 
-         ! pdf_params
-         pdf_params_flip%w_1(i,:) = flip( pdf_params%w_1(i,:), nzt )
-         pdf_params_flip%w_2(i,:) = flip( pdf_params%w_2(i,:), nzt )
-         pdf_params_flip%varnce_w_1(i,:) = flip( pdf_params%varnce_w_1(i,:), nzt )
-         pdf_params_flip%varnce_w_2(i,:) = flip( pdf_params%varnce_w_2(i,:), nzt )
-         pdf_params_flip%rt_1(i,:) = flip( pdf_params%rt_1(i,:), nzt )
-         pdf_params_flip%rt_2(i,:) = flip( pdf_params%rt_2(i,:), nzt )
-         pdf_params_flip%varnce_rt_1(i,:) = flip( pdf_params%varnce_rt_1(i,:), nzt )
-         pdf_params_flip%varnce_rt_2(i,:) = flip( pdf_params%varnce_rt_2(i,:), nzt )
-         pdf_params_flip%thl_1(i,:) = flip( pdf_params%thl_1(i,:), nzt )
-         pdf_params_flip%thl_2(i,:) = flip( pdf_params%thl_2(i,:), nzt )
-         pdf_params_flip%varnce_thl_1(i,:) = flip( pdf_params%varnce_thl_1(i,:), nzt )
-         pdf_params_flip%varnce_thl_2(i,:) = flip( pdf_params%varnce_thl_2(i,:), nzt )
-         pdf_params_flip%corr_w_rt_1(i,:) = flip( pdf_params%corr_w_rt_1(i,:), nzt )
-         pdf_params_flip%corr_w_rt_2(i,:) = flip( pdf_params%corr_w_rt_2(i,:), nzt )
-         pdf_params_flip%corr_w_thl_1(i,:) = flip( pdf_params%corr_w_thl_1(i,:), nzt )
-         pdf_params_flip%corr_w_thl_2(i,:) = flip( pdf_params%corr_w_thl_2(i,:), nzt )
-         pdf_params_flip%corr_rt_thl_1(i,:) = flip( pdf_params%corr_rt_thl_1(i,:), nzt )
-         pdf_params_flip%corr_rt_thl_2(i,:) = flip( pdf_params%corr_rt_thl_2(i,:), nzt )
-         pdf_params_flip%alpha_thl(i,:) = flip( pdf_params%alpha_thl(i,:), nzt )
-         pdf_params_flip%alpha_rt(i,:) = flip( pdf_params%alpha_rt(i,:), nzt )
-         pdf_params_flip%crt_1(i,:) = flip( pdf_params%crt_1(i,:), nzt )
-         pdf_params_flip%crt_2(i,:) = flip( pdf_params%crt_2(i,:), nzt )
-         pdf_params_flip%cthl_1(i,:) = flip( pdf_params%cthl_1(i,:), nzt )
-         pdf_params_flip%cthl_2(i,:) = flip( pdf_params%cthl_2(i,:), nzt )
-         pdf_params_flip%chi_1(i,:) = flip( pdf_params%chi_1(i,:), nzt )
-         pdf_params_flip%chi_2(i,:) = flip( pdf_params%chi_2(i,:), nzt )
-         pdf_params_flip%stdev_chi_1(i,:) = flip( pdf_params%stdev_chi_1(i,:), nzt )
-         pdf_params_flip%stdev_chi_2(i,:) = flip( pdf_params%stdev_chi_2(i,:), nzt )
-         pdf_params_flip%stdev_eta_1(i,:) = flip( pdf_params%stdev_eta_1(i,:), nzt )
-         pdf_params_flip%stdev_eta_2(i,:) = flip( pdf_params%stdev_eta_2(i,:), nzt )
-         pdf_params_flip%covar_chi_eta_1(i,:) = flip( pdf_params%covar_chi_eta_1(i,:), nzt )
-         pdf_params_flip%covar_chi_eta_2(i,:) = flip( pdf_params%covar_chi_eta_2(i,:), nzt )
-         pdf_params_flip%corr_w_chi_1(i,:) = flip( pdf_params%corr_w_chi_1(i,:), nzt )
-         pdf_params_flip%corr_w_chi_2(i,:) = flip( pdf_params%corr_w_chi_2(i,:), nzt )
-         pdf_params_flip%corr_w_eta_1(i,:) = flip( pdf_params%corr_w_eta_1(i,:), nzt )
-         pdf_params_flip%corr_w_eta_2(i,:) = flip( pdf_params%corr_w_eta_2(i,:), nzt )
-         pdf_params_flip%corr_chi_eta_1(i,:) = flip( pdf_params%corr_chi_eta_1(i,:), nzt )
-         pdf_params_flip%corr_chi_eta_2(i,:) = flip( pdf_params%corr_chi_eta_2(i,:), nzt )
-         pdf_params_flip%rsatl_1(i,:) = flip( pdf_params%rsatl_1(i,:), nzt )
-         pdf_params_flip%rsatl_2(i,:) = flip( pdf_params%rsatl_2(i,:), nzt )
-         pdf_params_flip%rc_1(i,:) = flip( pdf_params%rc_1(i,:), nzt )
-         pdf_params_flip%rc_2(i,:) = flip( pdf_params%rc_2(i,:), nzt )
-         pdf_params_flip%cloud_frac_1(i,:) = flip( pdf_params%cloud_frac_1(i,:), nzt )
-         pdf_params_flip%cloud_frac_2(i,:) = flip( pdf_params%cloud_frac_2(i,:), nzt )
-         pdf_params_flip%mixt_frac(i,:) = flip( pdf_params%mixt_frac(i,:), nzt )
-         pdf_params_flip%ice_supersat_frac_1(i,:) = flip( pdf_params%ice_supersat_frac_1(i,:), nzt )
-         pdf_params_flip%ice_supersat_frac_2(i,:) = flip( pdf_params%ice_supersat_frac_2(i,:), nzt )
-
-         ! pdf_params_zm
-         pdf_params_zm_flip%w_1(i,:) = flip( pdf_params_zm%w_1(i,:), nzm )
-         pdf_params_zm_flip%w_2(i,:) = flip( pdf_params_zm%w_2(i,:), nzm )
-         pdf_params_zm_flip%varnce_w_1(i,:) = flip( pdf_params_zm%varnce_w_1(i,:), nzm )
-         pdf_params_zm_flip%varnce_w_2(i,:) = flip( pdf_params_zm%varnce_w_2(i,:), nzm )
-         pdf_params_zm_flip%rt_1(i,:) = flip( pdf_params_zm%rt_1(i,:), nzm )
-         pdf_params_zm_flip%rt_2(i,:) = flip( pdf_params_zm%rt_2(i,:), nzm )
-         pdf_params_zm_flip%varnce_rt_1(i,:) = flip( pdf_params_zm%varnce_rt_1(i,:), nzm )
-         pdf_params_zm_flip%varnce_rt_2(i,:) = flip( pdf_params_zm%varnce_rt_2(i,:), nzm )
-         pdf_params_zm_flip%thl_1(i,:) = flip( pdf_params_zm%thl_1(i,:), nzm )
-         pdf_params_zm_flip%thl_2(i,:) = flip( pdf_params_zm%thl_2(i,:), nzm )
-         pdf_params_zm_flip%varnce_thl_1(i,:) = flip( pdf_params_zm%varnce_thl_1(i,:), nzm )
-         pdf_params_zm_flip%varnce_thl_2(i,:) = flip( pdf_params_zm%varnce_thl_2(i,:), nzm )
-         pdf_params_zm_flip%corr_w_rt_1(i,:) = flip( pdf_params_zm%corr_w_rt_1(i,:), nzm )
-         pdf_params_zm_flip%corr_w_rt_2(i,:) = flip( pdf_params_zm%corr_w_rt_2(i,:), nzm )
-         pdf_params_zm_flip%corr_w_thl_1(i,:) = flip( pdf_params_zm%corr_w_thl_1(i,:), nzm )
-         pdf_params_zm_flip%corr_w_thl_2(i,:) = flip( pdf_params_zm%corr_w_thl_2(i,:), nzm )
-         pdf_params_zm_flip%corr_rt_thl_1(i,:) = flip( pdf_params_zm%corr_rt_thl_1(i,:), nzm )
-         pdf_params_zm_flip%corr_rt_thl_2(i,:) = flip( pdf_params_zm%corr_rt_thl_2(i,:), nzm )
-         pdf_params_zm_flip%alpha_thl(i,:) = flip( pdf_params_zm%alpha_thl(i,:), nzm )
-         pdf_params_zm_flip%alpha_rt(i,:) = flip( pdf_params_zm%alpha_rt(i,:), nzm )
-         pdf_params_zm_flip%crt_1(i,:) = flip( pdf_params_zm%crt_1(i,:), nzm )
-         pdf_params_zm_flip%crt_2(i,:) = flip( pdf_params_zm%crt_2(i,:), nzm )
-         pdf_params_zm_flip%cthl_1(i,:) = flip( pdf_params_zm%cthl_1(i,:), nzm )
-         pdf_params_zm_flip%cthl_2(i,:) = flip( pdf_params_zm%cthl_2(i,:), nzm )
-         pdf_params_zm_flip%chi_1(i,:) = flip( pdf_params_zm%chi_1(i,:), nzm )
-         pdf_params_zm_flip%chi_2(i,:) = flip( pdf_params_zm%chi_2(i,:), nzm )
-         pdf_params_zm_flip%stdev_chi_1(i,:) = flip( pdf_params_zm%stdev_chi_1(i,:), nzm )
-         pdf_params_zm_flip%stdev_chi_2(i,:) = flip( pdf_params_zm%stdev_chi_2(i,:), nzm )
-         pdf_params_zm_flip%stdev_eta_1(i,:) = flip( pdf_params_zm%stdev_eta_1(i,:), nzm )
-         pdf_params_zm_flip%stdev_eta_2(i,:) = flip( pdf_params_zm%stdev_eta_2(i,:), nzm )
-         pdf_params_zm_flip%covar_chi_eta_1(i,:) = flip( pdf_params_zm%covar_chi_eta_1(i,:), nzm )
-         pdf_params_zm_flip%covar_chi_eta_2(i,:) = flip( pdf_params_zm%covar_chi_eta_2(i,:), nzm )
-         pdf_params_zm_flip%corr_w_chi_1(i,:) = flip( pdf_params_zm%corr_w_chi_1(i,:), nzm )
-         pdf_params_zm_flip%corr_w_chi_2(i,:) = flip( pdf_params_zm%corr_w_chi_2(i,:), nzm )
-         pdf_params_zm_flip%corr_w_eta_1(i,:) = flip( pdf_params_zm%corr_w_eta_1(i,:), nzm )
-         pdf_params_zm_flip%corr_w_eta_2(i,:) = flip( pdf_params_zm%corr_w_eta_2(i,:), nzm )
-         pdf_params_zm_flip%corr_chi_eta_1(i,:) = flip( pdf_params_zm%corr_chi_eta_1(i,:), nzm )
-         pdf_params_zm_flip%corr_chi_eta_2(i,:) = flip( pdf_params_zm%corr_chi_eta_2(i,:), nzm )
-         pdf_params_zm_flip%rsatl_1(i,:) = flip( pdf_params_zm%rsatl_1(i,:), nzm )
-         pdf_params_zm_flip%rsatl_2(i,:) = flip( pdf_params_zm%rsatl_2(i,:), nzm )
-         pdf_params_zm_flip%rc_1(i,:) = flip( pdf_params_zm%rc_1(i,:), nzm )
-         pdf_params_zm_flip%rc_2(i,:) = flip( pdf_params_zm%rc_2(i,:), nzm )
-         pdf_params_zm_flip%cloud_frac_1(i,:) = flip( pdf_params_zm%cloud_frac_1(i,:), nzm )
-         pdf_params_zm_flip%cloud_frac_2(i,:) = flip( pdf_params_zm%cloud_frac_2(i,:), nzm )
-         pdf_params_zm_flip%mixt_frac(i,:) = flip( pdf_params_zm%mixt_frac(i,:), nzm )
-         pdf_params_zm_flip%ice_supersat_frac_1(i,:) = flip( pdf_params_zm%ice_supersat_frac_1(i,:), nzm )
-         pdf_params_zm_flip%ice_supersat_frac_2(i,:) = flip( pdf_params_zm%ice_supersat_frac_2(i,:), nzm )
-
-        if ( clubb_config_flags%iiPDF_type == iiPDF_new .or. clubb_config_flags%iiPDF_type == iiPDF_new_hybrid ) then
+      if ( clubb_config_flags%iiPDF_type == iiPDF_new .or. clubb_config_flags%iiPDF_type == iiPDF_new_hybrid ) then
+        do i = 1, ngrdcol
           ! pdf_implicit_coefs_terms
           pdf_implicit_coefs_terms_flip%coef_wp4_implicit(i,:) &
               = flip( pdf_implicit_coefs_terms%coef_wp4_implicit(i,:), nzt )
@@ -966,24 +964,24 @@ module generalized_grid_test
                     = flip( pdf_implicit_coefs_terms%coef_wpthlpsclrp_implicit(i,:,sclr), nzt )
                 pdf_implicit_coefs_terms_flip%term_wpthlpsclrp_explicit(i,:,sclr) &
                     = flip( pdf_implicit_coefs_terms%term_wpthlpsclrp_explicit(i,:,sclr), nzt )
-              enddo
-          endif ! sclr_dim > 0
-        end if
+              end do
+          end if ! sclr_dim > 0
+        end do ! i = 1, ngrdcol
+      end if
 
-         Kh_zm_flip(i,:) = flip( Kh_zm(i,:), nzm )
-         Kh_zt_flip(i,:) = flip( Kh_zt(i,:), nzt )
-         thlprcp_flip(i,:) = flip( thlprcp(i,:), nzm )
-         wprcp_flip(i,:) = flip( wprcp(i,:), nzm )
-         w_up_in_cloud_flip(i,:) = flip( w_up_in_cloud(i,:), nzt )
-         w_down_in_cloud_flip(i,:) = flip( w_down_in_cloud(i,:), nzt )
-         cloudy_updraft_frac_flip(i,:) = flip( cloudy_updraft_frac(i,:), nzt )
-         cloudy_downdraft_frac_flip(i,:) = flip( cloudy_downdraft_frac(i,:), nzt )
-         rcm_in_layer_flip(i,:) = flip( rcm_in_layer(i,:), nzt )
-         cloud_cover_flip(i,:) = flip( cloud_cover(i,:), nzt )
-         invrs_tau_zm_flip(i,:) = flip( invrs_tau_zm(i,:), nzm )
-         Lscale_flip(i,:) = flip( Lscale(i,:), nzt )
+      Kh_zm_flip(:,:) = Kh_zm(:,nzm:1:-1)
+      Kh_zt_flip(:,:) = Kh_zt(:,nzt:1:-1)
+      thlprcp_flip(:,:) = thlprcp(:,nzm:1:-1)
+      wprcp_flip(:,:) = wprcp(:,nzm:1:-1)
+      w_up_in_cloud_flip(:,:) = w_up_in_cloud(:,nzt:1:-1)
+      w_down_in_cloud_flip(:,:) = w_down_in_cloud(:,nzt:1:-1)
+      cloudy_updraft_frac_flip(:,:) = cloudy_updraft_frac(:,nzt:1:-1)
+      cloudy_downdraft_frac_flip(:,:) = cloudy_downdraft_frac(:,nzt:1:-1)
+      rcm_in_layer_flip(:,:) = rcm_in_layer(:,nzt:1:-1)
+      cloud_cover_flip(:,:) = cloud_cover(:,nzt:1:-1)
+      invrs_tau_zm_flip(:,:) = invrs_tau_zm(:,nzm:1:-1)
+      Lscale_flip(:,:) = Lscale(:,nzt:1:-1)
 
-      enddo ! i = 1, ngrdcol
 
       ! Set statistical sampling to false for descending grid to avoid
       ! the error from having too many statistical samples.
@@ -2013,6 +2011,8 @@ module generalized_grid_test
 
     logical :: l_differences = .false.
 
+    !------------------------- Begin Code -------------------------
+
 
       ! Allocate space and initialize flipped pdf parameter terms
       call init_pdf_params( gr%nzt, ngrdcol, pdf_params_flip )
@@ -2028,74 +2028,68 @@ module generalized_grid_test
         end do
       end do
 
-      ! Set up "flipped" variables for call to descending grid.
-      do i = 1, ngrdcol
 
-         Nc_in_cloud_flip(i,:) = flip( Nc_in_cloud(i,:), gr%nzt )
-         cloud_frac_flip(i,:) = flip( cloud_frac(i,:), gr%nzt )
-         ice_supersat_frac_flip(i,:) = flip( ice_supersat_frac(i,:), gr%nzt )
-         rho_ds_zt_flip(i,:) = flip( rho_ds_zt(i,:), gr%nzt )
-         Lscale_flip(i,:) = flip( Lscale(i,:), gr%nzt )
-         Kh_zm_flip(i,:) = flip( Kh_zm(i,:), gr%nzm )
+      Nc_in_cloud_flip(:,:) = Nc_in_cloud(:,gr%nzt:1:-1) 
+      cloud_frac_flip(:,:) = cloud_frac(:,gr%nzt:1:-1) 
+      ice_supersat_frac_flip(:,:) = ice_supersat_frac(:,gr%nzt:1:-1) 
+      rho_ds_zt_flip(:,:) = rho_ds_zt(:,gr%nzt:1:-1) 
+      Lscale_flip(:,:) = Lscale(:,gr%nzt:1:-1) 
+      Kh_zm_flip(:,:) = Kh_zm(:,gr%nzm:1:-1) 
 
-         ! Hydrometeor variables
-         do hm_idx = 1, hydromet_dim         
-            hydromet_flip(i,:,hm_idx) = flip( hydromet(i,:,hm_idx), gr%nzt )
-            wphydrometp_flip(i,:,hm_idx) = flip( wphydrometp(i,:,hm_idx), gr%nzm )
-         enddo ! hm_idx = 1, hydromet_dim         
+      ! Hydrometeor variables
+      if ( hydromet_dim > 0 ) then
+        hydromet_flip(:,:,:) = hydromet(:,gr%nzt:1:-1,:)
+        wphydrometp_flip(:,:,:) = wphydrometp(:,gr%nzm:1:-1,:)
+      end if
 
-         ! pdf_params
-         pdf_params_flip%w_1(i,:) = flip( pdf_params%w_1(i,:), gr%nzt )
-         pdf_params_flip%w_2(i,:) = flip( pdf_params%w_2(i,:), gr%nzt )
-         pdf_params_flip%varnce_w_1(i,:) = flip( pdf_params%varnce_w_1(i,:), gr%nzt )
-         pdf_params_flip%varnce_w_2(i,:) = flip( pdf_params%varnce_w_2(i,:), gr%nzt )
-         pdf_params_flip%rt_1(i,:) = flip( pdf_params%rt_1(i,:), gr%nzt )
-         pdf_params_flip%rt_2(i,:) = flip( pdf_params%rt_2(i,:), gr%nzt )
-         pdf_params_flip%varnce_rt_1(i,:) = flip( pdf_params%varnce_rt_1(i,:), gr%nzt )
-         pdf_params_flip%varnce_rt_2(i,:) = flip( pdf_params%varnce_rt_2(i,:), gr%nzt )
-         pdf_params_flip%thl_1(i,:) = flip( pdf_params%thl_1(i,:), gr%nzt )
-         pdf_params_flip%thl_2(i,:) = flip( pdf_params%thl_2(i,:), gr%nzt )
-         pdf_params_flip%varnce_thl_1(i,:) = flip( pdf_params%varnce_thl_1(i,:), gr%nzt )
-         pdf_params_flip%varnce_thl_2(i,:) = flip( pdf_params%varnce_thl_2(i,:), gr%nzt )
-         pdf_params_flip%corr_w_rt_1(i,:) = flip( pdf_params%corr_w_rt_1(i,:), gr%nzt )
-         pdf_params_flip%corr_w_rt_2(i,:) = flip( pdf_params%corr_w_rt_2(i,:), gr%nzt )
-         pdf_params_flip%corr_w_thl_1(i,:) = flip( pdf_params%corr_w_thl_1(i,:), gr%nzt )
-         pdf_params_flip%corr_w_thl_2(i,:) = flip( pdf_params%corr_w_thl_2(i,:), gr%nzt )
-         pdf_params_flip%corr_rt_thl_1(i,:) = flip( pdf_params%corr_rt_thl_1(i,:), gr%nzt )
-         pdf_params_flip%corr_rt_thl_2(i,:) = flip( pdf_params%corr_rt_thl_2(i,:), gr%nzt )
-         pdf_params_flip%alpha_thl(i,:) = flip( pdf_params%alpha_thl(i,:), gr%nzt )
-         pdf_params_flip%alpha_rt(i,:) = flip( pdf_params%alpha_rt(i,:), gr%nzt )
-         pdf_params_flip%crt_1(i,:) = flip( pdf_params%crt_1(i,:), gr%nzt )
-         pdf_params_flip%crt_2(i,:) = flip( pdf_params%crt_2(i,:), gr%nzt )
-         pdf_params_flip%cthl_1(i,:) = flip( pdf_params%cthl_1(i,:), gr%nzt )
-         pdf_params_flip%cthl_2(i,:) = flip( pdf_params%cthl_2(i,:), gr%nzt )
-         pdf_params_flip%chi_1(i,:) = flip( pdf_params%chi_1(i,:), gr%nzt )
-         pdf_params_flip%chi_2(i,:) = flip( pdf_params%chi_2(i,:), gr%nzt )
-         pdf_params_flip%stdev_chi_1(i,:) = flip( pdf_params%stdev_chi_1(i,:), gr%nzt )
-         pdf_params_flip%stdev_chi_2(i,:) = flip( pdf_params%stdev_chi_2(i,:), gr%nzt )
-         pdf_params_flip%stdev_eta_1(i,:) = flip( pdf_params%stdev_eta_1(i,:), gr%nzt )
-         pdf_params_flip%stdev_eta_2(i,:) = flip( pdf_params%stdev_eta_2(i,:), gr%nzt )
-         pdf_params_flip%covar_chi_eta_1(i,:) = flip( pdf_params%covar_chi_eta_1(i,:), gr%nzt )
-         pdf_params_flip%covar_chi_eta_2(i,:) = flip( pdf_params%covar_chi_eta_2(i,:), gr%nzt )
-         pdf_params_flip%corr_w_chi_1(i,:) = flip( pdf_params%corr_w_chi_1(i,:), gr%nzt )
-         pdf_params_flip%corr_w_chi_2(i,:) = flip( pdf_params%corr_w_chi_2(i,:), gr%nzt )
-         pdf_params_flip%corr_w_eta_1(i,:) = flip( pdf_params%corr_w_eta_1(i,:), gr%nzt )
-         pdf_params_flip%corr_w_eta_2(i,:) = flip( pdf_params%corr_w_eta_2(i,:), gr%nzt )
-         pdf_params_flip%corr_chi_eta_1(i,:) = flip( pdf_params%corr_chi_eta_1(i,:), gr%nzt )
-         pdf_params_flip%corr_chi_eta_2(i,:) = flip( pdf_params%corr_chi_eta_2(i,:), gr%nzt )
-         pdf_params_flip%rsatl_1(i,:) = flip( pdf_params%rsatl_1(i,:), gr%nzt )
-         pdf_params_flip%rsatl_2(i,:) = flip( pdf_params%rsatl_2(i,:), gr%nzt )
-         pdf_params_flip%rc_1(i,:) = flip( pdf_params%rc_1(i,:), gr%nzt )
-         pdf_params_flip%rc_2(i,:) = flip( pdf_params%rc_2(i,:), gr%nzt )
-         pdf_params_flip%cloud_frac_1(i,:) = flip( pdf_params%cloud_frac_1(i,:), gr%nzt )
-         pdf_params_flip%cloud_frac_2(i,:) = flip( pdf_params%cloud_frac_2(i,:), gr%nzt )
-         pdf_params_flip%mixt_frac(i,:) = flip( pdf_params%mixt_frac(i,:), gr%nzt )
-         pdf_params_flip%ice_supersat_frac_1(i,:) &
-         = flip( pdf_params%ice_supersat_frac_1(i,:), gr%nzt )
-         pdf_params_flip%ice_supersat_frac_2(i,:) &
-         = flip( pdf_params%ice_supersat_frac_2(i,:), gr%nzt )
-
-      enddo ! i = 1, ngrdcol
+      ! pdf_params
+      pdf_params_flip%w_1(:,:) = pdf_params%w_1(:,gr%nzt:1:-1)
+      pdf_params_flip%w_2(:,:) = pdf_params%w_2(:,gr%nzt:1:-1)
+      pdf_params_flip%varnce_w_1(:,:) = pdf_params%varnce_w_1(:,gr%nzt:1:-1)
+      pdf_params_flip%varnce_w_2(:,:) = pdf_params%varnce_w_2(:,gr%nzt:1:-1)
+      pdf_params_flip%rt_1(:,:) = pdf_params%rt_1(:,gr%nzt:1:-1)
+      pdf_params_flip%rt_2(:,:) = pdf_params%rt_2(:,gr%nzt:1:-1)
+      pdf_params_flip%varnce_rt_1(:,:) = pdf_params%varnce_rt_1(:,gr%nzt:1:-1)
+      pdf_params_flip%varnce_rt_2(:,:) = pdf_params%varnce_rt_2(:,gr%nzt:1:-1)
+      pdf_params_flip%thl_1(:,:) = pdf_params%thl_1(:,gr%nzt:1:-1)
+      pdf_params_flip%thl_2(:,:) = pdf_params%thl_2(:,gr%nzt:1:-1)
+      pdf_params_flip%varnce_thl_1(:,:) = pdf_params%varnce_thl_1(:,gr%nzt:1:-1)
+      pdf_params_flip%varnce_thl_2(:,:) = pdf_params%varnce_thl_2(:,gr%nzt:1:-1)
+      pdf_params_flip%corr_w_rt_1(:,:) = pdf_params%corr_w_rt_1(:,gr%nzt:1:-1)
+      pdf_params_flip%corr_w_rt_2(:,:) = pdf_params%corr_w_rt_2(:,gr%nzt:1:-1)
+      pdf_params_flip%corr_w_thl_1(:,:) = pdf_params%corr_w_thl_1(:,gr%nzt:1:-1)
+      pdf_params_flip%corr_w_thl_2(:,:) = pdf_params%corr_w_thl_2(:,gr%nzt:1:-1)
+      pdf_params_flip%corr_rt_thl_1(:,:) = pdf_params%corr_rt_thl_1(:,gr%nzt:1:-1)
+      pdf_params_flip%corr_rt_thl_2(:,:) = pdf_params%corr_rt_thl_2(:,gr%nzt:1:-1)
+      pdf_params_flip%alpha_thl(:,:) = pdf_params%alpha_thl(:,gr%nzt:1:-1)
+      pdf_params_flip%alpha_rt(:,:) = pdf_params%alpha_rt(:,gr%nzt:1:-1)
+      pdf_params_flip%crt_1(:,:) = pdf_params%crt_1(:,gr%nzt:1:-1)
+      pdf_params_flip%crt_2(:,:) = pdf_params%crt_2(:,gr%nzt:1:-1)
+      pdf_params_flip%cthl_1(:,:) = pdf_params%cthl_1(:,gr%nzt:1:-1)
+      pdf_params_flip%cthl_2(:,:) = pdf_params%cthl_2(:,gr%nzt:1:-1)
+      pdf_params_flip%chi_1(:,:) = pdf_params%chi_1(:,gr%nzt:1:-1)
+      pdf_params_flip%chi_2(:,:) = pdf_params%chi_2(:,gr%nzt:1:-1)
+      pdf_params_flip%stdev_chi_1(:,:) = pdf_params%stdev_chi_1(:,gr%nzt:1:-1)
+      pdf_params_flip%stdev_chi_2(:,:) = pdf_params%stdev_chi_2(:,gr%nzt:1:-1)
+      pdf_params_flip%stdev_eta_1(:,:) = pdf_params%stdev_eta_1(:,gr%nzt:1:-1)
+      pdf_params_flip%stdev_eta_2(:,:) = pdf_params%stdev_eta_2(:,gr%nzt:1:-1)
+      pdf_params_flip%covar_chi_eta_1(:,:) = pdf_params%covar_chi_eta_1(:,gr%nzt:1:-1)
+      pdf_params_flip%covar_chi_eta_2(:,:) = pdf_params%covar_chi_eta_2(:,gr%nzt:1:-1)
+      pdf_params_flip%corr_w_chi_1(:,:) = pdf_params%corr_w_chi_1(:,gr%nzt:1:-1)
+      pdf_params_flip%corr_w_chi_2(:,:) = pdf_params%corr_w_chi_2(:,gr%nzt:1:-1)
+      pdf_params_flip%corr_w_eta_1(:,:) = pdf_params%corr_w_eta_1(:,gr%nzt:1:-1)
+      pdf_params_flip%corr_w_eta_2(:,:) = pdf_params%corr_w_eta_2(:,gr%nzt:1:-1)
+      pdf_params_flip%corr_chi_eta_1(:,:) = pdf_params%corr_chi_eta_1(:,gr%nzt:1:-1)
+      pdf_params_flip%corr_chi_eta_2(:,:) = pdf_params%corr_chi_eta_2(:,gr%nzt:1:-1)
+      pdf_params_flip%rsatl_1(:,:) = pdf_params%rsatl_1(:,gr%nzt:1:-1)
+      pdf_params_flip%rsatl_2(:,:) = pdf_params%rsatl_2(:,gr%nzt:1:-1)
+      pdf_params_flip%rc_1(:,:) = pdf_params%rc_1(:,gr%nzt:1:-1)
+      pdf_params_flip%rc_2(:,:) = pdf_params%rc_2(:,gr%nzt:1:-1)
+      pdf_params_flip%cloud_frac_1(:,:) = pdf_params%cloud_frac_1(:,gr%nzt:1:-1)
+      pdf_params_flip%cloud_frac_2(:,:) = pdf_params%cloud_frac_2(:,gr%nzt:1:-1)
+      pdf_params_flip%mixt_frac(:,:) = pdf_params%mixt_frac(:,gr%nzt:1:-1)
+      pdf_params_flip%ice_supersat_frac_1(:,:) = pdf_params%ice_supersat_frac_1(:,gr%nzt:1:-1)
+      pdf_params_flip%ice_supersat_frac_2(:,:) = pdf_params%ice_supersat_frac_2(:,gr%nzt:1:-1)
 
       ! Set statistical sampling to false for descending grid to avoid
       ! the error from having too many statistical samples.
@@ -2452,13 +2446,17 @@ module generalized_grid_test
                                     l_differences )
 
     use constants_clubb, only: &
-        zero
+        zero, &
+        eps
 
     use grid_class, only: &
         flip
 
     use clubb_precision, only: &
         core_rknd
+
+    use model_flags, only: &
+        l_force_descending_solves
 
     implicit none
 
@@ -2478,27 +2476,46 @@ module generalized_grid_test
     logical, intent(inout) :: &
       l_differences    ! Flag that gets set to true if any differences are found
 
-    ! Local Variable
+    ! Local Variables
     integer :: k, i  ! Loop indices
 
+    real( kind = core_rknd ) :: &
+      tolerance  ! tolerance used to determine if results match
 
-    ! Variable
-    do i = 1, ngrdcol
-       if ( any( abs( var(i,:) - flip( var_flip(i,:), nz ) ) > zero ) ) then
-          l_differences = .true.
-          print *, "**************************************************"
-          print *, "Differences found in ", trim( varname )
-          do k = 1, nz, 1
-             if ( abs( var(i,k) - var_flip(i,nz-k+1) ) > zero ) then
-                print *, "array index ascending = ", k
-                print *, "array index descending = ", nz-k+1
-                print *, trim( varname ), " post-solve ascending = ", var(i,k)
-                print *, trim( varname ), " post-solve descending = ", var_flip(i,nz-k+1)
-             endif
-          enddo
-       endif
-    enddo
+    !--------------- Begin Code -------------------
 
+    if ( l_force_descending_solves ) then
+      ! If we are forcing the matrix solves to be done in descending grid mode, 
+      ! then results should be BFB and we can use tolerance 0.0.
+      tolerance = zero
+    else
+      ! If we do not force matrix solves to be done in a specific direction, then
+      ! results are not expected to be BFB, so we need a non-zero tolerance, but 
+      ! they should be close, so we want a pretty small tolerance
+      tolerance = max( 1.e-8_core_rknd, epsilon(tolerance) )    ! max statement for single precision runs
+    end if
+
+    if ( any( abs( var - var_flip(:,nz:1:-1) ) > tolerance ) ) then
+      l_differences = .true.
+
+      print *, "**************************************************"
+      print *, "Differences found in ", trim( varname )
+
+      do i = 1, ngrdcol
+
+        print *, " - column ", i, ": "
+
+        do k = 1, nz, 1
+          if ( abs( var(i,k) - var_flip(i,nz-k+1) ) > tolerance ) then
+            !print *, " ascending/descending level = ", k, " / ", nz-k+1
+            print *, "ascending @ k =", k, ":", var(i,k), "descending @ k =", &
+                      nz-k+1, ":", var_flip(i,nz-k+1), " difference = ", &
+                      abs(var(i,k)-var_flip(i,nz-k+1))
+          endif
+        enddo
+      enddo
+
+    endif
 
     return
 

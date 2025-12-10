@@ -4,6 +4,9 @@ pipeline {
     stage('Enable Model Flag for Test') {
       steps {
         sh '''sed -i "s:l_test_grid_generalization.*:l_test_grid_generalization = .true.:g" src/CLUBB_core/model_flags.F90'''
+        // setting l_force_descending_solves should cause results to be BFB in either ascending or descending mode, this
+        // BFB criteria is enforced by `subroutine check_flipped_results` in `generalized_grid_test.F90`
+        sh '''sed -i "s:l_force_descending_solves.*:l_force_descending_solves = .true.:g" src/CLUBB_core/model_flags.F90'''
       }
     }
     stage('Turn Off Sponge Damping in Case Setups') {
@@ -16,23 +19,17 @@ pipeline {
         sh '''sed -i "s:rtm_sponge_damp_settings%l_sponge_damping.*:rtm_sponge_damp_settings%l_sponge_damping = .false.:g" input/case_setups/cgils_s12_model.in'''
       }
     }
-    stage('Turn Off Model Stats in Case Setups') {
-      steps {
-        sh '''sed -i "s:l_stats.*:l_stats = .false.:g" input/case_setups/*_model.in'''
-      }
-    }
     stage('Compile') {
+      // we need -O0 for this test to be BFB, which is added when using debug flags
       steps {
         sh '''source /etc/profile.d/larson-group.sh
-              module load gcc netcdf-fortran
-              compile/compile.bash -c config/linux_x86_64_gfortran_debug.bash'''
+              module load intel netcdf-fortran
+              ./compile.py -debug'''
       }
     }
     stage('Run') {
       steps {
-        sh '''source /etc/profile.d/larson-group.sh
-              module load gcc netcdf-fortran
-              python3 run_scripts/run_clubb_w_varying_flags.py -g -f run_scripts/run_bindiff_w_flags_config_host_flags.json'''
+        sh '''python3 run_scripts/run_clubb_w_varying_flags.py -f run_scripts/run_bindiff_w_flags_config_host_flags.json'''
       }
     }
   }
@@ -41,7 +38,7 @@ pipeline {
       // Certain logical functions like IF statements or TRY-CATCH blocks can only operate while in a script{} block
       script {
       // This cleans out the test workspace so the next run has a fresh start
-      // However this only occurs when the test is named clubb_generalized_vertical_grid_test
+      // However this only occurs when the test is named clubb_generalized_vert_grid_host_flags
       // This is to prevent the branch and copy tests from deleting thier workspaces so they are available for debugging
       if ( "${env.JOB_NAME}" == "clubb_generalized_vert_grid_host_flags" )
       	cleanWs(cleanWhenAborted: true, cleanWhenFailure: true, cleanWhenSuccess: true, cleanWhenUnstable: true)

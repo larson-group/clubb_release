@@ -1309,7 +1309,7 @@ module advance_wp2_wp3_module
 
     use model_flags, only: &
         penta_bicgstab,             & ! Variable(s)
-        l_test_grid_generalization
+        l_force_descending_solves
 
     use advance_helper_module, only: &
         vertical_avg
@@ -1435,13 +1435,6 @@ module advance_wp2_wp3_module
     real( kind = core_rknd ), dimension(ngrdcol) :: &
       rcond  ! Est. of the reciprocal of the condition #
 
-    ! Generalized grid testing
-    real( kind = core_rknd ), dimension(ndiags5,ngrdcol,2*nzm-1) ::  & 
-      lhs_copy    ! Implicit contributions to wp2/wp3 (band diag. matrix)
-      
-    real( kind = core_rknd ), dimension(ngrdcol,2*nzm-1) ::  & 
-      solut_copy  ! Solution to band diagonal system.
-
     real( kind = core_rknd ), dimension(ngrdcol,nzm) :: &
       lhs_wp2_ac_term,  & ! w'^2 term ac, used for stats
       lhs_wp2_pr2_term, & ! w'^2 term pr2, used for stats
@@ -1496,22 +1489,20 @@ module advance_wp2_wp3_module
       end do
     end if
 
-    ! Generalized grid test
-    ! This block of code is used when a generalized grid test
-    ! (ascending vs. descending grid) is being performed and
-    ! the grid is arranged in the descending direction.
-    if ( l_test_grid_generalization .and. gr%grid_dir_indx < 0 ) then
-      lhs_copy = lhs
-      !$acc parallel loop gang vector default(present)
-      do i = 1, ngrdcol
-        lhs(1,i,:) = flip( lhs_copy(5,i,:), 2*nzm-1 )
-        lhs(2,i,:) = flip( lhs_copy(4,i,:), 2*nzm-1 )
-        lhs(3,i,:) = flip( lhs_copy(3,i,:), 2*nzm-1 )
-        lhs(4,i,:) = flip( lhs_copy(2,i,:), 2*nzm-1 )
-        lhs(5,i,:) = flip( lhs_copy(1,i,:), 2*nzm-1 )
-        rhs(i,:)   = flip( rhs_save(i,:), 2*nzm-1 )
-      enddo
-      !$acc end parallel loop
+    ! Matrix solves are bit-different between ascending and descending.
+    ! This ensures matrices are solved in the same (descending) order,
+    ! which is useful for ensuring BFBness between grid modes 
+    if ( l_force_descending_solves .and. gr%grid_dir_indx > 0 ) then
+
+      ! We need to flip in both the vertical dimensions and the bands for the lhs
+      lhs(:,:,:) = lhs(5:1:-1,:,2*nzm-1:1:-1)
+
+      rhs(:,:)   = rhs(:,2*nzm-1:1:-1)
+
+      if ( penta_solve_method == penta_bicgstab ) then
+        old_solut(:,:) = old_solut(:,2*nzm-1:1:-1)
+      end if
+
     endif
 
     ! Solve the system with LAPACK
@@ -1544,17 +1535,11 @@ module advance_wp2_wp3_module
 
     end if
 
-    ! Generalized grid test
-    ! This block of code is used when a generalized grid test
-    ! (ascending vs. descending grid) is being performed and
-    ! the grid is arranged in the descending direction.
-    if ( l_test_grid_generalization .and. gr%grid_dir_indx < 0 ) then
-      solut_copy = solut
-      !$acc parallel loop gang vector default(present)
-      do i = 1, ngrdcol
-        solut(i,:) = flip( solut_copy(i,:), 2*nzm-1 )
-      enddo
-      !$acc end parallel loop
+
+    ! Flip the back to the ascending direction if we forced the solve
+    ! to be in descending mode
+    if ( l_force_descending_solves .and. gr%grid_dir_indx > 0 ) then
+      solut(:,:) = solut(:,2*nzm-1:1:-1)
     endif
 
     if ( clubb_at_least_debug_level_api( 0 ) ) then

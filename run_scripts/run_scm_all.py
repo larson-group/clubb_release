@@ -84,7 +84,6 @@ parser.add_argument("-all", action="store_true", help="Run ALL cases, even unmai
 parser.add_argument("-short_cases", action="store_true", help="Run short cases only")
 parser.add_argument("-priority_cases", action="store_true", help="Run priority cases only")
 parser.add_argument("-min_cases", action="store_true", help="Run minimal case set")
-parser.add_argument("-generalized-grid", action="store_true", help="Perform generalized grid test")
 parser.add_argument("-v", "--verbose", action="store_true", help="Show output from each run_scm.py call")
 
 args, extra_opts = parser.parse_known_args()
@@ -122,21 +121,12 @@ for case in run_cases:
 exit_status = 0
 
 print("\n=================== Runs Complete ===================")
-if not args.generalized_grid:
-    for case, code in zip(run_cases, exit_codes):
-        if code != 0:
-            print(f"{case} failure")
-            exit_status = 1
+for case, code in zip(run_cases, exit_codes):
+    if code != 0:
+        print(f"{case} failure")
+        exit_status = 1
 
-    if exit_status == 0:
-        print("All cases ran to completion.")
-else:
-    for case, code in zip(run_cases, exit_codes):
-        if code != 0:
-            print(f"{case} failed the generalized grid test")
-            exit_status = 1
-
-    if exit_status == 0:
-        print("All cases passed generalized grid test (bit-for-bit ascending/descending)")
+if exit_status == 0:
+    print("All cases ran to completion.")
 
 sys.exit(exit_status)

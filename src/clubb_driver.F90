@@ -5434,6 +5434,8 @@ module clubb_driver
       ! TKE:  em = (3/2) * w'^2
 
       wp2 = (2.0_core_rknd/3.0_core_rknd) * em
+      up2 = zero
+      vp2 = zero
 
     end if ! l_tke_aniso
 

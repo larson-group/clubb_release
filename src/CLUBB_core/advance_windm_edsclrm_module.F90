@@ -1681,7 +1681,7 @@ module advance_windm_edsclrm_module
         err_info_type     ! Type
 
     use model_flags, only: &
-        l_test_grid_generalization    ! Variable(s)
+        l_force_descending_solves    ! Variable(s)
 
     use constants_clubb, only: &
         fstderr
@@ -1733,40 +1733,20 @@ module advance_windm_edsclrm_module
     real( kind = core_rknd ), dimension(ngrdcol) :: &
       rcond ! Estimate of the reciprocal of the condition number on the LHS matrix
 
-    real( kind = core_rknd ), dimension(3,ngrdcol,nzt) :: &
-      lhs_copy    ! Implicit contributions to um, vm, and eddy scalars  [units vary]
-
-    real( kind = core_rknd ), dimension(ngrdcol,nzt,nrhs) :: &
-      rhs_copy    ! Right-hand side (explicit) contributions.
-
-    real( kind = core_rknd ), dimension(ngrdcol,nzt,nrhs) :: &
-      solution_copy ! Solution to the system of equations    [units vary]
-
     integer :: i, j
     
     ! ------------------------ Begin Code ------------------------
 
-    ! Generalized grid test
-    ! This block of code is used when a generalized grid test
-    ! (ascending vs. descending grid) is being performed and
-    ! the grid is arranged in the descending direction.
-    if ( l_test_grid_generalization .and. gr%grid_dir_indx < 0 ) then
-      lhs_copy = lhs
-      rhs_copy = rhs
-      !$acc parallel loop gang vector default(present)
-      do i = 1, ngrdcol
-        lhs(1,i,:) = flip( lhs_copy(3,i,:), nzt )
-        lhs(2,i,:) = flip( lhs_copy(2,i,:), nzt )
-        lhs(3,i,:) = flip( lhs_copy(1,i,:), nzt )
-      enddo
-      !$acc end parallel loop
-      !$acc parallel loop gang vector collapse(2) default(present)
-      do i = 1, ngrdcol
-        do j = 1, nrhs
-           rhs(i,:,j) = flip( rhs_copy(i,:,j), nzt )
-        enddo
-      enddo
-      !$acc end parallel loop
+    ! Matrix solves are bit-different between ascending and descending.
+    ! This ensures matrices are solved in the same (descending) order,
+    ! which is useful for ensuring BFBness between grid modes 
+    if ( l_force_descending_solves .and. gr%grid_dir_indx > 0 ) then
+
+      ! We need to flip in both the vertical dimensions and the bands for the lhs
+      lhs(:,:,:) = lhs(3:1:-1,:,nzt:1:-1)
+
+      rhs(:,:,:) = rhs(:,nzt:1:-1,:)
+
     endif
 
     ! Solve tridiagonal system for xm.
@@ -1799,19 +1779,10 @@ module advance_windm_edsclrm_module
       endif
     endif
 
-    ! Generalized grid test
-    ! This block of code is used when a generalized grid test
-    ! (ascending vs. descending grid) is being performed and
-    ! the grid is arranged in the descending direction.
-    if ( l_test_grid_generalization .and. gr%grid_dir_indx < 0 ) then
-      solution_copy = solution
-      !$acc parallel loop gang vector collapse(2) default(present)
-      do i = 1, ngrdcol
-        do j = 1, nrhs
-           solution(i,:,j) = flip( solution_copy(i,:,j), nzt )
-        enddo
-      enddo
-      !$acc end parallel loop
+    ! Flip the back to the ascending direction if we forced the solve
+    ! to be in descending mode
+    if ( l_force_descending_solves .and. gr%grid_dir_indx > 0 ) then
+      solution(:,:,:) = solution(:,nzt:1:-1,:)
     endif
 
     return

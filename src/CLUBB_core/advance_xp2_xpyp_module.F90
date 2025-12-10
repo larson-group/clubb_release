@@ -2815,8 +2815,7 @@ module advance_xp2_xpyp_module
         fstderr
 
     use grid_class, only: &
-        grid, & ! Type(s)
-        flip    ! Procedure(s)
+        grid ! Type(s)
 
     use matrix_solver_wrapper, only: &
         tridiag_solve ! Procedure(s)
@@ -2836,7 +2835,7 @@ module advance_xp2_xpyp_module
       err_info_type     ! Type
 
     use model_flags, only: &
-        l_test_grid_generalization    ! Variable(s)
+        l_force_descending_solves    ! Variable(s)
 
     use error_code, only: &
         clubb_at_least_debug_level_api,  & ! Procedure
@@ -2897,16 +2896,6 @@ module advance_xp2_xpyp_module
 
     integer :: i
 
-    ! Generalized grid test
-    real( kind = core_rknd ), dimension(ndiags3,ngrdcol,nzm) :: & 
-      lhs_copy  ! Implicit contributions to x variance/covariance term [units vary]
-
-    real( kind = core_rknd ), dimension(ngrdcol,nzm,nrhs) :: & 
-      rhs_copy  ! Explicit contributions to x variance/covariance term [units vary]
-
-    real( kind = core_rknd ), dimension(ngrdcol,nzm,nrhs) ::  & 
-      xapxbp_copy ! Computed value of the variable(s) at <t+1> [units vary]
-
     integer :: j
 
     ! --- Begin Code ---
@@ -2943,27 +2932,16 @@ module advance_xp2_xpyp_module
       solve_type_str = "scalar"
     end select
 
-    ! Generalized grid test
-    ! This block of code is used when a generalized grid test
-    ! (ascending vs. descending grid) is being performed and
-    ! the grid is arranged in the descending direction.
-    if ( l_test_grid_generalization .and. gr%grid_dir_indx < 0 ) then
-      lhs_copy = lhs
-      rhs_copy = rhs
-      !$acc parallel loop gang vector default(present)
-      do i = 1, ngrdcol
-        lhs(1,i,:) = flip( lhs_copy(3,i,:), nzm )
-        lhs(2,i,:) = flip( lhs_copy(2,i,:), nzm )
-        lhs(3,i,:) = flip( lhs_copy(1,i,:), nzm )
-      enddo
-      !$acc end parallel loop
-      !$acc parallel loop gang vector collapse(2) default(present)
-      do i = 1, ngrdcol
-        do j = 1, nrhs
-           rhs(i,:,j) = flip( rhs_copy(i,:,j), nzm )
-        enddo
-      enddo
-      !$acc end parallel loop
+    ! Matrix solves are bit-different between ascending and descending.
+    ! This ensures matrices are solved in the same (descending) order,
+    ! which is useful for ensuring BFBness between grid modes 
+    if ( l_force_descending_solves .and. gr%grid_dir_indx > 0 ) then
+      
+      ! We need to flip in both the vertical dimensions and the bands for the lhs
+      lhs(:,:,:) = lhs(3:1:-1,:,nzm:1:-1)
+
+      rhs(:,:,:) = rhs(:,nzm:1:-1,:)
+
     endif
 
     if ( stats_metadata%l_stats_samp .and. ixapxbp_matrix_condt_num > 0 ) then
@@ -3015,19 +2993,10 @@ module advance_xp2_xpyp_module
       endif
     endif
 
-    ! Generalized grid test
-    ! This block of code is used when a generalized grid test
-    ! (ascending vs. descending grid) is being performed and
-    ! the grid is arranged in the descending direction.
-    if ( l_test_grid_generalization .and. gr%grid_dir_indx < 0 ) then
-      xapxbp_copy = xapxbp
-      !$acc parallel loop gang vector collapse(2) default(present)
-      do i = 1, ngrdcol
-        do j = 1, nrhs
-           xapxbp(i,:,j) = flip( xapxbp_copy(i,:,j), nzm )
-        enddo
-      enddo
-      !$acc end parallel loop
+    ! Flip the back to the ascending direction if we forced the solve
+    ! to be in descending mode
+    if ( l_force_descending_solves .and. gr%grid_dir_indx > 0 ) then
+      xapxbp(:,:,:) = xapxbp(:,nzm:1:-1,:)
     endif
 
     return

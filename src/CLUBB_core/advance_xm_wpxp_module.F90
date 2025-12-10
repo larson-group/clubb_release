@@ -4398,7 +4398,8 @@ module advance_xm_wpxp_module
       err_info_type     ! Type
 
     use model_flags, only: &
-        l_test_grid_generalization    ! Variable(s)
+        l_force_descending_solves, & ! Variable(s)
+        penta_bicgstab
 
     implicit none
 
@@ -4416,15 +4417,15 @@ module advance_xm_wpxp_module
     integer, intent(in) :: &
       penta_solve_method ! Method to solve then penta-diagonal system
 
-    real( kind = core_rknd ), intent(in), dimension(nsup+nsub+1,ngrdcol,2*nzm-1) :: &
-      old_solution
-
     !------------------------- Input/Output Variables -------------------------
     real( kind = core_rknd ), intent(inout), dimension(nsup+nsub+1,ngrdcol,2*nzm-1) :: &
       lhs  ! Implicit contributions to wpxp/xm (band diag. matrix in LAPACK storage)
 
     real( kind = core_rknd ), intent(inout), dimension(ngrdcol,2*nzm-1,nrhs) :: &
       rhs      ! Right-hand side of band diag. matrix. (LAPACK storage)
+
+    real( kind = core_rknd ), intent(inout), dimension(nsup+nsub+1,ngrdcol,2*nzm-1) :: &
+      old_solution
 
     type(err_info_type), intent(inout) :: &
       err_info      ! err_info struct containing err_code and err_header
@@ -4437,42 +4438,25 @@ module advance_xm_wpxp_module
       rcond ! Est. of the reciprocal of the condition #
 
     !------------------------- Local Variables --------------------
-    real( kind = core_rknd ), dimension(nsup+nsub+1,ngrdcol,2*nzm-1) :: & 
-      lhs_copy  ! Implicit contributions to wpxp/xm (band diag. matrix in LAPACK storage)
-
-    real( kind = core_rknd ), dimension(ngrdcol,2*nzm-1,nrhs) ::  & 
-      rhs_copy      ! Right-hand side of band diag. matrix. (LAPACK storage)
-
-    real( kind = core_rknd ), dimension(ngrdcol,2*nzm-1,nrhs) ::  & 
-      solution_copy ! Solution to band diagonal system (LAPACK storage)
 
     integer :: i, ivar
 
     !------------------------- Begin Code -------------------------
 
-    ! Generalized grid test
-    ! This block of code is used when a generalized grid test
-    ! (ascending vs. descending grid) is being performed and
-    ! the grid is arranged in the descending direction.
-    if ( l_test_grid_generalization .and. gr%grid_dir_indx < 0 ) then
-      lhs_copy = lhs
-      rhs_copy = rhs
-      !$acc parallel loop gang vector default(present)
-      do i = 1, ngrdcol
-        lhs(1,i,:) = flip( lhs_copy(5,i,:), 2*nzm-1 )
-        lhs(2,i,:) = flip( lhs_copy(4,i,:), 2*nzm-1 )
-        lhs(3,i,:) = flip( lhs_copy(3,i,:), 2*nzm-1 )
-        lhs(4,i,:) = flip( lhs_copy(2,i,:), 2*nzm-1 )
-        lhs(5,i,:) = flip( lhs_copy(1,i,:), 2*nzm-1 )
-      enddo
-      !$acc end parallel loop
-      !$acc parallel loop gang vector collapse(2) default(present)
-      do i = 1, ngrdcol
-        do ivar = 1, nrhs
-          rhs(i,:,ivar) = flip( rhs_copy(i,:,ivar), 2*nzm-1 )
-        enddo
-      enddo
-      !$acc end parallel loop
+    ! Matrix solves are bit-different between ascending and descending.
+    ! This ensures matrices are solved in the same (descending) order,
+    ! which is useful for ensuring BFBness between grid modes 
+    if ( l_force_descending_solves .and. gr%grid_dir_indx > 0 ) then
+
+      ! We need to flip in both the vertical dimensions and the bands for the lhs
+      lhs(:,:,:) = lhs(5:1:-1,:,2*nzm-1:1:-1)
+      
+      rhs(:,:,:) = rhs(:,2*nzm-1:1:-1,:)
+
+      if ( penta_solve_method == penta_bicgstab ) then
+        old_solution(:,:,:) = old_solution(:,2*nzm-1:1:-1,:)
+      end if
+      
     endif
 
     ! Solve the system
@@ -4483,19 +4467,10 @@ module advance_xm_wpxp_module
                      rcond = rcond, &
                      old_soln = old_solution )                     ! Intent(out)
 
-    ! Generalized grid test
-    ! This block of code is used when a generalized grid test
-    ! (ascending vs. descending grid) is being performed and
-    ! the grid is arranged in the descending direction.
-    if ( l_test_grid_generalization .and. gr%grid_dir_indx < 0 ) then
-      solution_copy = solution
-      !$acc parallel loop gang vector collapse(2) default(present)
-      do i = 1, ngrdcol
-        do ivar = 1, nrhs
-          solution(i,:,ivar) = flip( solution_copy(i,:,ivar), 2*nzm-1 )
-        enddo
-      enddo
-      !$acc end parallel loop
+    ! Flip the back to the ascending direction if we forced the solve
+    ! to be in descending mode
+    if ( l_force_descending_solves .and. gr%grid_dir_indx > 0 ) then
+      solution(:,:,:) = solution(:,2*nzm-1:1:-1,:)
     endif
 
     if ( clubb_at_least_debug_level_api( 0 ) ) then
