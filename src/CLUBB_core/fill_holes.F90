@@ -218,34 +218,35 @@ module fill_holes
       ! If the field is below threshold after the fill, print some additional information
       if ( any( field < threshold ) ) then
 
-        if ( sum(field(i,:) * rho_ds(i,:) * dz(i,:)) &
-             / sum( rho_ds(i,:) * dz(i,:)) > threshold ) then
+        write(fstderr, *) "THERE ARE BELOW THRESHOLD VALUES IN THE FIELD AFTER THE FILL"
+        write(fstderr, *) "EVEN THOUGH THE FIELD AVERAGE IS BELOW THRESHOLD. This is not"
+        write(fstderr, *) "a gauranteed error, since smoothing contraints may prevent "
+        write(fstderr, *) "some above threshold levels from having all their mass exhausted."
 
-          write(fstderr, *) "THERE ARE BELOW THRESHOLD VALUES IN THE FIELD AFTER THE FILL"
-          write(fstderr, *) "EVEN THOUGH THE FIELD AVERAGE IS BELOW THRESHOLD. This is not"
-          write(fstderr, *) "a gauranteed error, since smoothing contraints may prevent "
-          write(fstderr, *) "some above threshold levels from having all their mass exhausted."
+        do i = 1, ngrdcol
 
-          ! List exactly which field values in each column haven't been filled
-          do k = 1, nz
-            do i = 1, ngrdcol
+          if ( sum(field(i,:) * rho_ds(i,:) * dz(i,:)) &
+              / sum( rho_ds(i,:) * dz(i,:)) > threshold ) then
+
+            ! List exactly which field values in each column haven't been filled
+            do k = 1, nz
               if ( field(i,k) < threshold ) then
                 write(*,'(A6,I5,1X,I5,A4,E30.20,A3,E30.20)') "field(", i, k, ") = ", field(i,k), " < ", threshold
               end if
             end do
-          end do
 
-          ! Print the field average, this can be compared to the threshold - if the field average
-          ! is below threshold, then filling is not possible to gaurantee
-          do i = 1, ngrdcol
+            ! Print the field average, this can be compared to the threshold - if the field average
+            ! is below threshold, then filling is not possible to gaurantee
             write(fstderr, *) "column", i, " field average = ", sum(field(i,:) * rho_ds(i,:) * dz(i,:)) &
                                                                 / sum( rho_ds(i,:) * dz(i,:)) , &
                               " -- threshold = ", threshold
-          end do
-        else
 
-          write(fstderr, *) "FIELD AVERAGE BELOW THRESHOLD - FILLING INCOMPLETE AS EXPECTED"
-        end if
+          else
+
+            write(fstderr, *) "FIELD AVERAGE BELOW THRESHOLD - FILLING INCOMPLETE AS EXPECTED"
+          end if
+
+        end do
         
       end if
 
@@ -949,7 +950,7 @@ module fill_holes
     !$acc parallel loop gang vector collapse(2) default(present)
     do k = 1, nz
       do i = 1, ngrdcol
-        normalized_mass(i,k) = ( field(i,k) - threshold ) * rho_ds(i,k) * dz(i,k)
+        normalized_mass(i,k) = ( field(i,k) - threshold ) * rho_ds(i,k) * abs(dz(i,k))
       end do  
     end do
 
@@ -1005,11 +1006,11 @@ module fill_holes
 
           ! Calcualte our fill range
           if ( grid_dir_indx > 0 ) then
-            k_start = max( lower_hf_level, k_first_lte_thresh - grid_dir_indx * n_steal_points )
-            k_end   = min( upper_hf_level, k_last_lte_thresh  + grid_dir_indx * n_steal_points )
+            k_start = max( lower_hf_level, k_first_lte_thresh - n_steal_points )
+            k_end   = min( upper_hf_level, k_last_lte_thresh  + n_steal_points )
           else
-            k_start = min( lower_hf_level, k_first_lte_thresh - grid_dir_indx * n_steal_points )
-            k_end   = max( upper_hf_level, k_last_lte_thresh  + grid_dir_indx * n_steal_points )
+            k_start = min( lower_hf_level, k_first_lte_thresh + n_steal_points )
+            k_end   = max( upper_hf_level, k_last_lte_thresh  - n_steal_points )
           end if
                           
           if ( l_debug ) print *, " -- range ", k_start, k_end
@@ -1032,11 +1033,11 @@ module fill_holes
 
             ! Recalcualte our fill range
             if ( grid_dir_indx > 0 ) then
-              k_start_new = max( lower_hf_level, k_first_lte_thresh-grid_dir_indx*n_steal_points )
-              k_end_new   = min( upper_hf_level, k_last_lte_thresh +grid_dir_indx*n_steal_points )
+              k_start_new = max( lower_hf_level, k_first_lte_thresh - n_steal_points )
+              k_end_new   = min( upper_hf_level, k_last_lte_thresh  + n_steal_points )
             else
-              k_start_new = min( lower_hf_level, k_first_lte_thresh-grid_dir_indx*n_steal_points )
-              k_end_new   = max( upper_hf_level, k_last_lte_thresh +grid_dir_indx*n_steal_points )
+              k_start_new = min( lower_hf_level, k_first_lte_thresh + n_steal_points )
+              k_end_new   = max( upper_hf_level, k_last_lte_thresh  - n_steal_points )
             end if
                         
             if ( l_debug ) print *, " -- new range ", k_start_new, k_end_new
@@ -1217,7 +1218,7 @@ module fill_holes
     !$acc parallel loop gang vector collapse(2) default(present)
     do k = 1, nz
       do i = 1, ngrdcol
-        normalized_mass(i,k) = ( field(i,k) - threshold_2 ) * rho_ds(i,k) * dz(i,k)
+        normalized_mass(i,k) = ( field(i,k) - threshold_2 ) * rho_ds(i,k) * abs(dz(i,k))
       end do  
     end do
 
@@ -1273,11 +1274,11 @@ module fill_holes
 
           ! Calcualte our fill range
           if ( grid_dir_indx > 0 ) then
-            k_start = max( lower_hf_level, k_first_lte_thresh - grid_dir_indx * n_steal_points )
-            k_end   = min( upper_hf_level, k_last_lte_thresh  + grid_dir_indx * n_steal_points )
+            k_start = max( lower_hf_level, k_first_lte_thresh - n_steal_points )
+            k_end   = min( upper_hf_level, k_last_lte_thresh  + n_steal_points )
           else
-            k_start = min( lower_hf_level, k_first_lte_thresh - grid_dir_indx * n_steal_points )
-            k_end   = max( upper_hf_level, k_last_lte_thresh  + grid_dir_indx * n_steal_points )
+            k_start = min( lower_hf_level, k_first_lte_thresh + n_steal_points )
+            k_end   = max( upper_hf_level, k_last_lte_thresh  - n_steal_points )
           end if
                           
           if ( l_debug ) print *, " -- range ", k_start, k_end
@@ -1302,11 +1303,11 @@ module fill_holes
 
             ! Recalcualte our fill range
             if ( grid_dir_indx > 0 ) then
-              k_start_new = max( lower_hf_level, k_first_lte_thresh-grid_dir_indx*n_steal_points )
-              k_end_new   = min( upper_hf_level, k_last_lte_thresh +grid_dir_indx*n_steal_points )
+              k_start_new = max( lower_hf_level, k_first_lte_thresh - n_steal_points )
+              k_end_new   = min( upper_hf_level, k_last_lte_thresh  + n_steal_points )
             else
-              k_start_new = min( lower_hf_level, k_first_lte_thresh-grid_dir_indx*n_steal_points )
-              k_end_new   = max( upper_hf_level, k_last_lte_thresh +grid_dir_indx*n_steal_points )
+              k_start_new = min( lower_hf_level, k_first_lte_thresh + n_steal_points )
+              k_end_new   = max( upper_hf_level, k_last_lte_thresh  - n_steal_points )
             end if
                         
             if ( l_debug ) print *, " -- new range ", k_start_new, k_end_new
@@ -1491,7 +1492,7 @@ module fill_holes
     !$acc parallel loop gang vector collapse(2) default(present)
     do k = 1, nz
       do i = 1, ngrdcol
-        rho_ds_dz(k,i) = rho_ds(i,k) * dz(i,k)
+        rho_ds_dz(k,i) = rho_ds(i,k) * abs(dz(i,k))
         invrs_rho_ds_dz(k,i) = one / rho_ds_dz(k,i)
       end do  
     end do
@@ -1563,11 +1564,11 @@ module fill_holes
 
             ! Caclulate our fill range
             if ( grid_dir_indx > 0 ) then
-              k_start = max( lower_hf_level, k - grid_dir_indx * n_steal_points )
-              k_end   = min( upper_hf_level, k + grid_dir_indx * n_steal_points )
+              k_start = max( lower_hf_level, k - n_steal_points )
+              k_end   = min( upper_hf_level, k + n_steal_points )
             else
-              k_start = min( lower_hf_level, k - grid_dir_indx * n_steal_points )
-              k_end   = max( upper_hf_level, k + grid_dir_indx * n_steal_points )
+              k_start = min( lower_hf_level, k + n_steal_points )
+              k_end   = max( upper_hf_level, k - n_steal_points )
             end if
 
             ! Caclulate the total amount of stealable mass in that range
@@ -1588,11 +1589,11 @@ module fill_holes
 
               ! Recalculate bounds of fill range
               if ( grid_dir_indx > 0 ) then
-                k_start_new = max( lower_hf_level, k - grid_dir_indx * n_steal_points )
-                k_end_new   = min( upper_hf_level, k + grid_dir_indx * n_steal_points )
+                k_start_new = max( lower_hf_level, k - n_steal_points )
+                k_end_new   = min( upper_hf_level, k + n_steal_points )
               else
-                k_start_new = min( lower_hf_level, k - grid_dir_indx * n_steal_points )
-                k_end_new   = max( upper_hf_level, k + grid_dir_indx * n_steal_points )
+                k_start_new = min( lower_hf_level, k + n_steal_points )
+                k_end_new   = max( upper_hf_level, k - n_steal_points )
               end if
               
               ! Sum up new mass in [k_start_new:k_start-1] and [k_end+1:k_end_new], or

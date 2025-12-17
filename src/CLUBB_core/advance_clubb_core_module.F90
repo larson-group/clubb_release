@@ -2331,17 +2331,15 @@ module advance_clubb_core_module
         end do
       end if
 
-      ! Eric Raut: this seems dangerous to call without any attached flag.
-      ! Hence the preprocessor.
-#ifdef CLUBB_CAM
-      do edsclr=1,edsclr_dim
-        ! upper_hf_level = nzt since we are filling the zt levels
-        call fill_holes_vertical_api( nzt, ngrdcol, zero_threshold, 1, nzt, & ! In
-                                      gr%dzt, rho_ds_zt, gr%grid_dir_indx,  & ! In
-                                      clubb_config_flags%fill_holes_type,   & ! In
-                                      edsclrm(:,:,edsclr) )                   ! InOut
-      enddo
-#endif
+      if ( edsclr_dim > 0 .and. clubb_config_flags%fill_holes_type /= 0 ) then
+        do edsclr = 1, edsclr_dim
+          call fill_holes_vertical_api( nzt, ngrdcol, zero_threshold,         & ! In
+                                        gr%k_lb_zt, gr%k_ub_zt,               & ! In
+                                        gr%dzt, rho_ds_zt, gr%grid_dir_indx,  & ! In
+                                        clubb_config_flags%fill_holes_type,   & ! In
+                                        edsclrm(:,:,edsclr) )                   ! InOut
+        end do
+      end if
 
      endif ! advance_order_loop_iter
 

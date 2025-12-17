@@ -121,10 +121,10 @@ sclr_tol_nl  = 1.e-2, 1.e-8 ! Tolerances below which we consider scalar to be 0.
 ! 0 to shut off all scalar computations
 ! > 0 the specifies the number of columns in <runtype>_edsclr_sounding.in 
 !	that will be read in and tracked
-edsclr_dim  = 0
+edsclr_dim  = 2
 
-iiedsclr_rt     = -1 ! Location in the edsclrm array to place total water
-iiedsclr_thl    = -2 ! Location in the edsclrm array to place a scalar like thetal
+iiedsclr_rt     = 1 ! Location in the edsclrm array to place total water
+iiedsclr_thl    = 2 ! Location in the edsclrm array to place a scalar like thetal
 
 l_input_fields = .false.,
 /

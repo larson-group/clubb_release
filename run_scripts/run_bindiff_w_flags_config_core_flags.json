@@ -4,7 +4,8 @@
         "tridiag_solve_method": 2,
         "l_diffuse_rtm_and_thlm": true,
         "penta_solve_method": 2,
-        "saturation_formula": 2
+        "saturation_formula": 2,
+        "fill_holes_type": 4
     },
     "flag2": {
         "saturation_formula": 1,
@@ -30,7 +31,8 @@
 	    "l_lh_straight_mc": true
     },
     "flag7": {
-        "l_diag_Lscale_from_tau": false
+        "l_diag_Lscale_from_tau": false,
+        "fill_holes_type": 3
     },
     "flag8": {
         "l_upwind_xpyp_ta": false,

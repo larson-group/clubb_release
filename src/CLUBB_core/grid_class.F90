@@ -946,6 +946,7 @@ module grid_class
 
     ! Define dzm, the spacing between thermodynamic grid levels; centered over
     ! momentum grid levels
+    ! NOTE: dzm is intended to be negative in descending grid mode
     do k = 2, nzm-1
       do i = 1, ngrdcol
         gr%dzm(i,k) = gr%zt(i,k) - gr%zt(i,k-1)
@@ -974,6 +975,7 @@ module grid_class
 
     ! Define dzt, the spacing between momentum grid levels; centered over
     ! thermodynamic grid levels
+    ! NOTE: dzt is intended to be negative in descending grid mode
     do k = 1, nzt
       do i = 1, ngrdcol
         gr%dzt(i,k) = gr%zm(i,k+1) - gr%zm(i,k)
