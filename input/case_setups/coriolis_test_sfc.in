@@ -1,0 +1,8 @@
+! $Id$
+!
+! Note that T_sfc is included here, but it is not currently used. It is
+! included here to facilitate a transition to using T_sfc in the future
+! if needed.
+Time[s]        'wpqtp_sfc[(kg/kg)m/s]'   'wpthlp_sfc[mK/s]'   'upwp_sfc[(m/s)^2]'   'vpwp_sfc[(m/s)^2]'   T_sfc[K]
+0.000000       0.0                       0.0                  0.0                   0.0                   300.0
+172800.000000  0.0                       0.0                  0.0                   0.0                   300.0

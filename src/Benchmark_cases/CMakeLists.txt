@@ -5,6 +5,7 @@ set(CLUBB_BENCHMARK_SOURCES
         arm_97.F90
         astex_a209.F90
         atex.F90
+        atex_long.F90
         bomex.F90
         clex9_nov02.F90
         clex9_oct14.F90
@@ -29,6 +30,7 @@ set(CLUBB_BENCHMARK_SOURCES
         sfc_flux.F90
         twp_ice.F90
         wangara.F90
+        ekman.F90
         time_dependent_input.F90
         prescribe_forcings.F90
 )

@@ -75,6 +75,8 @@ module clubb_driver
     one, &
     one_half, &
     zero, &
+    two, &
+    radians_per_deg, &
     rt_tol, &
     thl_tol, &
     w_tol, &
@@ -84,7 +86,8 @@ module clubb_driver
     Lv, &
     kappa, &
     Cp, &
-    p0
+    p0, &
+    omega_planet
 
   use error_code, only: &
     clubb_fatal_error, & 
@@ -371,6 +374,7 @@ module clubb_driver
     wp2_init, &
     up2_init, &
     vp2_init, &
+    upwp_init, &
     rcm_init, &
     wm_zt_init, &
     wm_zm_init, &
@@ -398,7 +402,10 @@ module clubb_driver
   real( kind = core_rknd ), dimension(:), allocatable :: &
     p_sfc,          & ! surface pressure              [Pa]
     T_sfc,          &
-    fcor,           & ! Coriolis parameter            [s^-1]
+    fcor,           & ! Traditional Coriolis parameter    [s^-1]
+                      ! Vertical planetary vorticity.   Proportional to sin(latitude) 
+    fcor_y,         & ! Nontraditional Coriolis parameter [s^-1]
+                      ! Meridional planetary vorticity. Proportional to cos(latitude)
     sfc_elevation,  &
     zm_init,        &
     zm_top,         &
@@ -550,6 +557,7 @@ module clubb_driver
     cloud_frac, & ! cloud fraction (thermodynamic levels)       [-]
     wpthvp,     & ! < w' th_v' > (momentum levels)              [kg/kg K]
     wp2thvp,    & ! < w'^2 th_v' > (thermodynamic levels)       [m^2/s^2 K]
+    wp2up,      & ! < w'^2 u' > (thermodynamic levels)          [m^3/s^3]
     rtpthvp,    & ! < r_t' th_v' > (momentum levels)            [kg/kg K]
     thlpthvp,   & ! < th_l' th_v' > (momentum levels)           [K^2]
     wp2rtp,     & ! w'^2 rt' (thermodynamic levels)             [m^2/s^2 kg/kg]
@@ -932,6 +940,10 @@ module clubb_driver
                                       ! advance_xm_wpxp.  Otherwise, <u'w'> and <v'w'> are still
                                       ! approximated by eddy diffusivity when <u> and <v> are
                                       ! advanced in subroutine advance_windm_edsclrm.
+      l_ho_nontrad_coriolis,        & ! Flag to implement the nontraditional Coriolis terms in the
+                                      ! prognostic equations of <w'w'>, <u'w'>, and <u'u'>.
+      l_ho_trad_coriolis,           & ! Flag to implement the traditional Coriolis terms in the
+                                      ! prognostic equations of <v'w'> and <u'w'>.
       l_min_wp2_from_corr_wx,       & ! Flag to base the threshold minimum value of wp2 on keeping
                                       ! the overall correlation of w and x (w and rt, as well as w
                                       ! and theta-l) within the limits of -max_mag_correlation_flux
@@ -1106,7 +1118,8 @@ module clubb_driver
     l_partial_upwind_wp3, l_godunov_upwind_wpxp_ta, l_godunov_upwind_xpyp_ta, &
     l_use_cloud_cover, l_rcm_supersat_adj, &
     l_damp_wp3_Skw_squared, l_min_wp2_from_corr_wx, l_min_xp2_from_corr_wx, &
-    l_C2_cloud_frac, l_predict_upwp_vpwp, l_diag_Lscale_from_tau, &
+    l_C2_cloud_frac, l_predict_upwp_vpwp, l_ho_nontrad_coriolis, l_ho_trad_coriolis, &
+    l_diag_Lscale_from_tau, &
     l_stability_correct_tau_zm, l_damp_wp2_using_em, l_use_C7_Richardson, &
     l_use_precip_frac, l_do_expldiff_rtm_thlm, l_use_C11_Richardson, &
     l_use_shear_Richardson, l_prescribed_avg_deltaz, l_diffuse_rtm_and_thlm, &
@@ -1270,6 +1283,8 @@ module clubb_driver
                                             fill_holes_type, & ! Intent(out)
                                             l_use_precip_frac, & ! Intent(out)
                                             l_predict_upwp_vpwp, & ! Intent(out)
+                                            l_ho_nontrad_coriolis, & ! Intent(out)
+                                            l_ho_trad_coriolis, & ! Intent(out)
                                             l_min_wp2_from_corr_wx, & ! Intent(out)
                                             l_min_xp2_from_corr_wx, & ! Intent(out)
                                             l_C2_cloud_frac, & ! Intent(out)
@@ -1332,7 +1347,6 @@ module clubb_driver
     read(unit=iunit, nml=stats_setting)
     close(unit=iunit)
 
-
     sclr_idx%iisclr_thl = iisclr_thl
     sclr_idx%iisclr_rt  = iisclr_rt
     sclr_idx%iisclr_CO2 = iisclr_CO2
@@ -1357,6 +1371,7 @@ module clubb_driver
       p_sfc(ngrdcol),         &
       T_sfc(ngrdcol),         &
       fcor(ngrdcol),          &
+      fcor_y(ngrdcol),        &
       dummy_dx(ngrdcol),      &
       dummy_dy(ngrdcol),      &
       deep_soil_T_in_K(ngrdcol), &
@@ -1376,6 +1391,20 @@ module clubb_driver
     p_sfc = p_sfc_nl
     T_sfc = T_sfc_nl
     fcor = fcor_nl
+
+    ! Suppose the vector Coriolis term is written as 2*Omega_vector x v_vector, where 
+    ! Omega_vector is the Earth's angular velocity vector (omega_planet in code), which 
+    ! points along the North Pole, and v_vector is the full air velocity vector in the 
+    ! rotating frame of reference. Now suppose we break Omega_vector into a local upward
+    ! component, Omega_z*z_hat, and a local northward component, Omega_y*y_hat. 
+    ! Then we define fcor = 2*Omega_z and fcor_y = 2*Omega_y. 
+    ! Then fcor_y = 2 * Omega_vector \dot y_hat = 2 * |Omega_vector| * cos( angle between north 
+    ! pole and local northward direction ) 
+    fcor_y = two * omega_planet * cos ( lat_vals * radians_per_deg )
+
+    ! fcor could reasonably be defined as below, but currently it is input via namelist
+    ! Hing Ong, 25 November 2025
+    !fcor   = two * omega_planet * sin ( lat_vals * radians_per_deg )
 
     open(unit=iunit, file=runfile, status='old', action='read')
     read(unit=iunit, nml=configurable_clubb_flags_nl)
@@ -1552,6 +1581,7 @@ module clubb_driver
       call write_text( "sens_ht = ", sens_ht, l_write_to_file, iunit )
       call write_text( "latent_ht = ", latent_ht, l_write_to_file, iunit )
       call write_text( "fcor = ", fcor, l_write_to_file, iunit )
+      call write_text( "fcor_y = ", fcor_y, l_write_to_file, iunit )
       call write_text( "T0 = ", T0, l_write_to_file, iunit )
       call write_text( "ts_nudge = ", ts_nudge, l_write_to_file, iunit )
 
@@ -1781,6 +1811,8 @@ module clubb_driver
                                                   fill_holes_type, & ! Intent(in)
                                                   l_use_precip_frac, & ! Intent(in)
                                                   l_predict_upwp_vpwp, & ! Intent(in)
+                                                  l_ho_nontrad_coriolis, & ! Intent(in)
+                                                  l_ho_trad_coriolis, & ! Intent(in)
                                                   l_min_wp2_from_corr_wx, & ! Intent(in)
                                                   l_min_xp2_from_corr_wx, & ! Intent(in)
                                                   l_C2_cloud_frac, & ! Intent(in)
@@ -2022,6 +2054,7 @@ module clubb_driver
     allocate( wpthvp(ngrdcol, gr%nzm) )   ! w'thv'
     allocate( wp2thvp(ngrdcol, gr%nzt) )  ! w'^2thv'
 
+    allocate( wp2up(ngrdcol, gr%nzt) )   ! w'^2u'
     allocate( wp2rtp(ngrdcol, gr%nzt) )  ! w'^2 rt'
     allocate( wp2thlp(ngrdcol, gr%nzt) ) ! w'^2 thl'
     allocate( uprcp(ngrdcol, gr%nzm) )   ! u'rc'
@@ -2125,6 +2158,7 @@ module clubb_driver
               wp2_init(gr%nzm), &
               up2_init(gr%nzm), &
               vp2_init(gr%nzm), &
+              upwp_init(gr%nzm), &
               rcm_init(gr%nzt), &
               wm_zt_init(gr%nzt), &
               wm_zm_init(gr%nzm), &
@@ -2302,9 +2336,9 @@ module clubb_driver
           l_modify_ic_with_cubic_int,                                     & ! Intent(in)
           clubb_config_flags%l_add_dycore_grid,                           & ! Intent(in)
           clubb_config_flags%grid_adapt_in_time_method,                   & ! Intent(in)
-          l_ascending_grid,                                               & ! Intent(in)
+          l_ascending_grid, fcor_y,                                       & ! Intent(in)
           thlm_init, rtm_init, um_init, vm_init, ug_init, vg_init,        & ! Intent(out)
-          wp2_init, up2_init, vp2_init, rcm_init,                         & ! Intent(out)
+          wp2_init, up2_init, vp2_init, upwp_init, rcm_init,              & ! Intent(out)
           wm_zt_init, wm_zm_init, em_init, exner_init,                    & ! Intent(out)
           thvm_init, p_in_Pa_init,                                        & ! Intent(out)
           rho_init, rho_zm_init, rho_ds_zm_init, rho_ds_zt_init,          & ! Intent(out)
@@ -2747,6 +2781,7 @@ module clubb_driver
         thlp3(i,k)                  = zero
         rtp3(i,k)                   = zero
         wp2thvp(i,k)                = zero        ! w'^2thv'
+        wp2up(i,k)                  = zero        ! w'^2u'
         wp2rtp(i,k)                 = zero        ! w'^2 rt'
         wp2thlp(i,k)                = zero        ! w'^2 thl'
         wpup2(i,k)                  = zero        ! w'u'^2
@@ -2763,7 +2798,7 @@ module clubb_driver
     !$acc parallel loop gang vector collapse(2) default(present)
     do k = 1, gr%nzm
       do i = 1, ngrdcol
-        upwp(i,k)             = zero          ! vertical u momentum flux
+        upwp(i,k)             = upwp_init(k)  ! vertical u momentum flux
         vpwp(i,k)             = zero          ! vertical v momentum flux
         up2(i,k)              = up2_init(k)     ! u'^2
         vp2(i,k)              = vp2_init(k)      ! v'^2
@@ -2979,7 +3014,7 @@ module clubb_driver
               wprtp(i,:), thlm(i,:), wpthlp(i,:), rtp2(i,:), rtp3(i,:),            & ! Intent(inout)
               thlp2, thlp3, rtpthlp(i,:), wp2, wp3(i,:),                           & ! Intent(inout)
               p_in_Pa(i,:), exner(i,:), rcm(i,:), cloud_frac(i,:),                 & ! Intent(inout)
-              wpthvp(i,:), wp2thvp(i,:), rtpthvp(i,:), thlpthvp(i,:),              & ! Intent(inout)
+              wpthvp(i,:), wp2thvp(i,:), wp2up(i,:), rtpthvp(i,:), thlpthvp(i,:),  & ! Intent(inout)
               wp2rtp(i,:), wp2thlp(i,:), uprcp(i,:), vprcp(i,:),                   & ! Intent(inout)
               rc_coef_zm(i,:), wp4(i,:), wpup2(i,:), wpvp2(i,:), wp2up2(i,:),      & ! Intent(inout)
               wp2vp2(i,:), ice_supersat_frac(i,:),                                 & ! Intent(inout)
@@ -3243,7 +3278,8 @@ module clubb_driver
                                   thlp2(i,:), thlp3(i,:), rtpthlp(i,:), & ! Inout
                                   wp2(i,:), wp3(i,:), & ! Inout
                                   p_in_Pa(i,:), exner(i,:), rcm(i,:), cloud_frac(i,:), & ! Inout
-                                  wpthvp(i,:), wp2thvp(i,:), rtpthvp(i,:), thlpthvp(i,:), & ! Inout
+                                  wpthvp(i,:), wp2thvp(i,:), wp2up(i,:), rtpthvp(i,:), & ! Inout
+                                  thlpthvp(i,:), & ! Inout
                                   wp2rtp(i,:), wp2thlp(i,:), uprcp(i,:), vprcp(i,:), & ! Inout
                                   rc_coef_zm(i,:), wp4(i,:), wpup2(i,:), & ! Inout
                                   wpvp2(i,:), wp2up2(i,:), & ! Inout
@@ -3291,7 +3327,7 @@ module clubb_driver
                                       sclr_dim, edsclr_dim, &
                                       um(i,:), vm(i,:), rtm(i,:), wprtp(i,:), thlm(i,:), wpthlp(i,:), &
                                       rtp2(i,:), thlp2(i,:), rtpthlp(i,:), wp2(i,:), wp3(i,:), &
-                                      wp2thvp(i,:), rtpthvp(i,:), thlpthvp(i,:), &
+                                      wp2thvp(i,:), wp2up(i,:), rtpthvp(i,:), thlpthvp(i,:), &
                                       hydromet(i,:,:), sclrm(i,:,:), edsclrm(i,:,:) ) ) then
 
             err_info%err_code(i) = clubb_fatal_error
@@ -3431,7 +3467,7 @@ module clubb_driver
         ! Call the clubb core api for all columns
         call advance_clubb_core_api( &
                 gr, gr%nzm, gr%nzt, ngrdcol, &
-                l_implemented, dt_main, fcor, sfc_elevation, &       ! Intent(in)
+                l_implemented, dt_main, fcor, fcor_y, sfc_elevation, &!Intent(in)
                 hydromet_dim, &                                      ! intent(in)
                 sclr_dim, sclr_tol, edsclr_dim, sclr_idx, &          ! intent(in)
                 thlm_forcing, rtm_forcing, um_forcing, vm_forcing, & ! Intent(in)
@@ -3461,7 +3497,7 @@ module clubb_driver
                 sclrm, sclrp2, sclrp3, sclrprtp, sclrpthlp, &        ! Intent(inout)
                 wpsclrp, edsclrm, err_info, &                        ! Intent(inout)
                 rcm, cloud_frac, &                                   ! Intent(inout)
-                wpthvp, wp2thvp, rtpthvp, thlpthvp, &                ! Intent(inout)
+                wpthvp, wp2thvp, wp2up, rtpthvp, thlpthvp, &         ! Intent(inout)
                 sclrpthvp, &                                         ! Intent(inout)
                 wp2rtp, wp2thlp, uprcp, vprcp, rc_coef_zm, wp4, &    ! intent(inout)
                 wpup2, wpvp2, wp2up2, wp2vp2, ice_supersat_frac, &   ! intent(inout)
@@ -3481,7 +3517,7 @@ module clubb_driver
         ! (ascending vs. descending grid) is being performed.
         call clubb_generalized_grid_testing &
             ( gr, gr_desc, gr%nzm, gr%nzt, ngrdcol, &              ! Intent(in)
-              l_implemented, dt_main, fcor, sfc_elevation, &       ! Intent(in)
+              l_implemented, dt_main, fcor, fcor_y, sfc_elevation, &!Intent(in)
               hydromet_dim, &                                      ! intent(in)
               sclr_dim, sclr_tol, edsclr_dim, sclr_idx, &          ! intent(in)
               thlm_forcing, rtm_forcing, um_forcing, vm_forcing, & ! Intent(in)
@@ -3511,7 +3547,7 @@ module clubb_driver
               sclrm, sclrp2, sclrp3, sclrprtp, sclrpthlp, &        ! Intent(inout)
               wpsclrp, edsclrm, err_info, &                        ! Intent(inout)
               rcm, cloud_frac, &                                   ! Intent(inout)
-              wpthvp, wp2thvp, rtpthvp, thlpthvp, &                ! Intent(inout)
+              wpthvp, wp2thvp, wp2up, rtpthvp, thlpthvp, &         ! Intent(inout)
               sclrpthvp, &                                         ! Intent(inout)
               wp2rtp, wp2thlp, uprcp, vprcp, rc_coef_zm, wp4, &    ! intent(inout)
               wpup2, wpvp2, wp2up2, wp2vp2, ice_supersat_frac, &   ! intent(inout)
@@ -4031,7 +4067,8 @@ module clubb_driver
                                       um, vm, up3, vp3, rtm, thlm, rtp3, thlp3, wp3, upwp, vpwp, &
                                       up2, vp2, wprtp, wpthlp, rtp2, thlp2, rtpthlp, wp2, &
                                       sclrm, sclrp3, wpsclrp, sclrp2, sclrprtp, sclrpthlp, &
-                                      p_in_Pa, exner, rcm, cloud_frac, wp2thvp, wpthvp, rtpthvp, &
+                                      p_in_Pa, exner, rcm, cloud_frac, wp2thvp, wp2up, wpthvp, &
+                                      rtpthvp, &
                                       thlpthvp, sclrpthvp, wp2rtp, wp2thlp, wpup2, wpvp2, &
                                       ice_supersat_frac, uprcp, vprcp, rc_coef_zm, wp4, wp2up2, &
                                       wp2vp2, um_pert, vm_pert, upwp_pert, vpwp_pert, edsclrm, &
@@ -4087,7 +4124,7 @@ module clubb_driver
                          sclrm, sclrp2, sclrp3, sclrprtp, sclrpthlp, &           ! Intent(inout)
                          wpsclrp, edsclrm, &                                     ! Intent(inout)
                          rcm, cloud_frac, &                                      ! Intent(inout)
-                         wpthvp, wp2thvp, rtpthvp, thlpthvp, &                   ! Intent(inout)
+                         wpthvp, wp2thvp, wp2up, rtpthvp, thlpthvp, &            ! Intent(inout)
                          sclrpthvp, &                                            ! Intent(inout)
                          wp2rtp, wp2thlp, uprcp, vprcp, rc_coef_zm, wp4, &       ! Intent(inout)
                          wpup2, wpvp2, wp2up2, wp2vp2, ice_supersat_frac, &      ! Intent(inout)
@@ -4483,6 +4520,7 @@ module clubb_driver
     deallocate( wpthvp )   ! w'thv'
     deallocate( wp2thvp )  ! w'^2thv'
 
+    deallocate( wp2up )   ! w'^2u'
     deallocate( wp2rtp )  ! w'^2 rt'
     deallocate( wp2thlp ) ! w'^2 thl'
     deallocate( uprcp )   ! u'rc'
@@ -4626,8 +4664,8 @@ module clubb_driver
                 l_modify_ic_with_cubic_int, &
                 l_add_dycore_grid, &
                 grid_adapt_in_time_method, &
-                l_ascending_grid, &
-                thlm, rtm, um, vm, ug, vg, wp2, up2, vp2, rcm, &
+                l_ascending_grid, fcor_y, &
+                thlm, rtm, um, vm, ug, vg, wp2, up2, vp2, upwp, rcm, &
                 wm_zt, wm_zm, em, exner, &
                 thvm, p_in_Pa, &
                 rho, rho_zm, rho_ds_zm, rho_ds_zt, &
@@ -4648,7 +4686,9 @@ module clubb_driver
     use constants_clubb, only: &
         one,            & !--------------------------------------------- Constant(s)
         zero,           &
+        pi,             &
         em_min,         &
+        w_tol_sqd,      &
         grav,           &
         cm3_per_m3,     &
         cloud_frac_min, &
@@ -4737,7 +4777,9 @@ module clubb_driver
 
     real( kind = core_rknd ), dimension(ngrdcol), intent(in) :: &
       p_sfc,   & ! Pressure at the surface        [Pa]
-      zm_init    ! Initial moment. level altitude [m]
+      zm_init, & ! Initial moment. level altitude [m]
+      fcor_y     ! Nontraditional Coriolis parameter [s^-1]
+                 ! Meridional planetary vorticity. Proportional to cos(latitude)
 
     integer, intent(in) :: &
       sclr_dim, &
@@ -4797,6 +4839,7 @@ module clubb_driver
       wp2,             & ! Vertical velocity variance (w'^2)                 [m^2/s^2]
       up2,             & ! East-west velocity variance (u'^2)                [m^2/s^2]
       vp2,             & ! North-south velocity variance (v'^2)              [m^2/s^2]
+      upwp,            & ! Vertical east-west velocity covariance (u'w')     [m^2/s^2]
       wm_zm,           & ! Vertical wind                                     [m/s]
       em,              & ! Turbulence kinetic energy                         [m^2/s^2]
       rho_zm,          & ! Density on momentum levels                        [kg/m^3]
@@ -4837,6 +4880,7 @@ module clubb_driver
 
     real( kind = core_rknd ) :: &
       cloud_top_height, & ! Cloud top altitude in initial profile  [m]
+      domain_depth,     & ! Domain depth                           [m]
       em_max              ! Maximum value of initial subgrid TKE   [m^2/s^2]
 
     character(len=50) :: &
@@ -5069,7 +5113,7 @@ module clubb_driver
       em(:,gr%nzm) = em_min
 
       ! GCSS BOMEX
-    case ( "bomex" )
+    case ( "bomex", "ekman", "atex_long" )
 
 !---> Reduction of initial sounding for stability
 !         do k = 1, gr%nz
@@ -5409,6 +5453,18 @@ module clubb_driver
       sfc_soil_T_in_K = 300._core_rknd
       deep_soil_T_in_K = 288.58_core_rknd
 
+    ! Set the amplitude of the harmonic oscillator in the "coriolis_test".
+    ! The maximum amplitude is 2 * w_tol_sqd at the middle vertical level.
+    ! Hing Ong, 8 August 2025
+    case ( "coriolis_test" )
+
+      do i = 1, ngrdcol
+        domain_depth = gr%zm(i,gr%nzm) - gr%zm(i,1)
+        do k=1,gr%nzm
+        em(i,k) = sin( pi * gr%zm(i,k) / domain_depth ) * w_tol_sqd * 6.0_core_rknd
+        end do
+      end do
+
     case default
 
       em = em_min
@@ -5428,14 +5484,46 @@ module clubb_driver
       wp2 = (2.0_core_rknd/3.0_core_rknd) * em
       up2 = (2.0_core_rknd/3.0_core_rknd) * em
       vp2 = (2.0_core_rknd/3.0_core_rknd) * em
+      upwp = zero
+
+      ! The "coriolis_test" is a benchmark against analytic solutions where up2, wp2, and upwp
+      ! interact as a harmonic oscillator analogous to the Foucault pendulum.
+      ! Here are the solutions to test the implementation of the nontraditional Coriolis terms:
+      !              upwp = amplitude(grdcol,zm) * sin( 2 * fcor_y * time )
+      ! ( up2 - wp2 ) / 2 = amplitude(grdcol,zm) * cos( 2 * fcor_y * time )
+      ! Here, set up2, wp2, upwp at time = 0.
+      ! The setting can be modified to test the implementation of the traditional Coriolis terms,
+      ! where the solutions are as follows:
+      ! upwp = amplitude(grdcol,zm) * cos(   fcor * time )
+      ! vpwp = amplitude(grdcol,zm) * sin( - fcor * time )
+      ! Hing Ong, 8 August 2025
+      if ( trim( runtype ) == "coriolis_test" ) then
+
+        wp2  = (1.0_core_rknd/3.0_core_rknd) * em + w_tol_sqd
+        up2  = (3.0_core_rknd/3.0_core_rknd) * em + w_tol_sqd
+        vp2  = (2.0_core_rknd/3.0_core_rknd) * em + w_tol_sqd
+        em   = em + 1.5_core_rknd * w_tol_sqd
+
+        ! Advance upwp by half a time step like the leapfrog time integration.
+        ! This improves the benchmarking when initializing at time = 0, where the time tendency is
+        ! large for upwp but small for up2 and wp2.
+        ! Hing Ong, 8 August 2025
+        do i = 1, ngrdcol
+          do k=1,gr%nzm
+            upwp(i,k) = 0.5_core_rknd * dt_main * fcor_y(i) * ( up2(i,k) - wp2(i,k) )
+          end do
+        end do
+
+      end if
 
     else
 
       ! TKE:  em = (3/2) * w'^2
 
-      wp2 = (2.0_core_rknd/3.0_core_rknd) * em
-      up2 = zero
-      vp2 = zero
+      wp2  = (2.0_core_rknd/3.0_core_rknd) * em
+      up2  = zero
+      vp2  = zero
+      upwp = zero
 
     end if ! l_tke_aniso
 
@@ -6028,7 +6116,7 @@ module clubb_driver
                 wprtp, thlm, wpthlp, rtp2, rtp3, & ! Inout
                 thlp2, thlp3, rtpthlp, wp2, wp3, & ! Inout
                 p_in_Pa, exner, rcm, cloud_frac, & ! Inout
-                wpthvp, wp2thvp, rtpthvp, thlpthvp, & ! Inout
+                wpthvp, wp2thvp, wp2up, rtpthvp, thlpthvp, & ! Inout
                 wp2rtp, wp2thlp, uprcp, vprcp, & ! Inout
                 rc_coef_zm, wp4, wpup2, wpvp2, wp2up2, & ! Inout
                 wp2vp2, ice_supersat_frac, & ! Inout
@@ -6066,7 +6154,7 @@ module clubb_driver
         l_input_thv_ds_zm, l_input_thv_ds_zt, &
         l_input_Lscale, l_input_Lscale_up, l_input_Lscale_down, &
         l_input_Kh_zt, l_input_Kh_zm, l_input_tau_zm, l_input_tau_zt, &
-        l_input_wpthvp, l_input_wp2thvp, l_input_rtpthvp, l_input_thlpthvp, &
+        l_input_wpthvp, l_input_wp2thvp, l_input_wp2up, l_input_rtpthvp, l_input_thlpthvp, &
         l_input_wp2rtp, l_input_wp2thlp, l_input_uprcp, l_input_vprcp, &
         l_input_rc_coef_zm, l_input_wp4, l_input_wpup2, l_input_wpvp2, &
         l_input_wp2up2, l_input_wp2vp2, l_input_iss_frac, &
@@ -6153,6 +6241,7 @@ module clubb_driver
       rcm,               & ! cloud water mixing ratio, r_c (thermo. levels) [kg/kg]
       cloud_frac,        & ! cloud fraction (thermodynamic levels)          [-]
       wp2thvp,           & ! < w'^2 th_v' > (thermodynamic levels)          [m^2/s^2 K]
+      wp2up,             & ! < w'^2 u' > (thermodynamic levels)             [m^3/s^3]
       wp2rtp,            & ! w'^2 rt' (thermodynamic levels)      [m^2/s^2 kg/kg]
       wp2thlp,           & ! w'^2 thl' (thermodynamic levels)     [m^2/s^2 K]
       wpup2,             & ! w'u'^2 (thermodynamic levels)        [m^3/s^3]
@@ -6291,6 +6380,7 @@ module clubb_driver
     l_input_thvm = .true.
     l_input_wpthvp = .true.
     l_input_wp2thvp = .true.
+    l_input_wp2up = .true.
     l_input_rtpthvp = .true.
     l_input_thlpthvp = .true.
     l_input_wp2rtp = .true.
@@ -6450,7 +6540,7 @@ module clubb_driver
                               thlp2, thlp3, rtpthlp, & ! Inout
                               wp2, wp3, & ! Inout
                               p_in_Pa, exner, rcm, cloud_frac, & ! Inout
-                              wpthvp, wp2thvp, rtpthvp, thlpthvp, & ! Inout
+                              wpthvp, wp2thvp, wp2up, rtpthvp, thlpthvp, & ! Inout
                               wp2rtp, wp2thlp, uprcp, vprcp, & ! Inout
                               rc_coef_zm, wp4, wpup2, & ! Inout
                               wpvp2, wp2up2, & ! Inout

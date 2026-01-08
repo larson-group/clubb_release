@@ -1616,7 +1616,7 @@ module grid_adaptation_module
                          sclrm, sclrp2, sclrp3, sclrprtp, sclrpthlp, &
                          wpsclrp, edsclrm, &
                          rcm, cloud_frac, &
-                         wpthvp, wp2thvp, rtpthvp, thlpthvp, &
+                         wpthvp, wp2thvp, wp2up, rtpthvp, thlpthvp, &
                          sclrpthvp, &
                          wp2rtp, wp2thlp, uprcp, vprcp, rc_coef_zm, wp4, &
                          wpup2, wpvp2, wp2up2, wp2vp2, ice_supersat_frac, &
@@ -1801,7 +1801,8 @@ module grid_adaptation_module
     real( kind = core_rknd ), intent(inout), dimension(ngrdcol,gr%nzt) ::  &
       rcm,        & ! cloud water mixing ratio, r_c (thermo. levels) [kg/kg]
       cloud_frac, & ! cloud fraction (thermodynamic levels)          [-]
-      wp2thvp       ! < w'^2 th_v' > (thermodynamic levels)          [m^2/s^2 K]
+      wp2thvp,    & ! < w'^2 th_v' > (thermodynamic levels)          [m^2/s^2 K]
+      wp2up         ! < w'^2 u' > (thermodynamic levels)             [m^3/s^3]
 
     real( kind = core_rknd ), intent(inout), dimension(ngrdcol,gr%nzm) ::  &
       wpthvp,     & ! < w' th_v' > (momentum levels)                 [kg/kg K]
@@ -1966,7 +1967,7 @@ module grid_adaptation_module
                                       sclrm, sclrp2, sclrp3, sclrprtp, sclrpthlp, &
                                       wpsclrp, edsclrm, &
                                       rcm, cloud_frac, &
-                                      wpthvp, wp2thvp, rtpthvp, thlpthvp, &
+                                      wpthvp, wp2thvp, wp2up, rtpthvp, thlpthvp, &
                                       sclrpthvp, &
                                       wp2rtp, wp2thlp, uprcp, vprcp, rc_coef_zm, wp4, &
                                       wpup2, wpvp2, wp2up2, wp2vp2, ice_supersat_frac, &
@@ -2005,7 +2006,7 @@ module grid_adaptation_module
                                         sclrm, sclrp2, sclrp3, sclrprtp, sclrpthlp, &
                                         wpsclrp, edsclrm, &
                                         rcm, cloud_frac, &
-                                        wpthvp, wp2thvp, rtpthvp, thlpthvp, &
+                                        wpthvp, wp2thvp, wp2up, rtpthvp, thlpthvp, &
                                         sclrpthvp, &
                                         wp2rtp, wp2thlp, uprcp, vprcp, rc_coef_zm, wp4, &
                                         wpup2, wpvp2, wp2up2, wp2vp2, ice_supersat_frac, &
@@ -2152,7 +2153,8 @@ module grid_adaptation_module
     real( kind = core_rknd ), intent(inout), dimension(ngrdcol,gr_source%nzt) ::  &
       rcm,        & ! cloud water mixing ratio, r_c (thermo. levels) [kg/kg]
       cloud_frac, & ! cloud fraction (thermodynamic levels)          [-]
-      wp2thvp       ! < w'^2 th_v' > (thermodynamic levels)          [m^2/s^2 K]
+      wp2thvp,    & ! < w'^2 th_v' > (thermodynamic levels)          [m^2/s^2 K]
+      wp2up         ! < w'^2 u' > (thermodynamic levels)             [m^3/s^3]
 
     real( kind = core_rknd ), intent(inout), dimension(ngrdcol,gr_source%nzm) ::  &
       wpthvp,     & ! < w' th_v' > (momentum levels)                 [kg/kg K]
@@ -2655,6 +2657,17 @@ module grid_adaptation_module
                                     iv_other, p_sfc, &
                                     grid_remap_method, &
                                     l_zt_variable )
+    wp2up = remap_vals_to_target( ngrdcol, &
+                                  gr_source, gr_target, &
+                                  gr_source%nzt, &
+                                  wp2up, &
+                                  gr_target%nzt, &
+                                  total_idx_rho_lin_spline, &
+                                  rho_lin_spline_vals, &
+                                  rho_lin_spline_levels, &
+                                  iv_other, p_sfc, &
+                                  grid_remap_method, &
+                                  l_zt_variable )
     wp2rtp = remap_vals_to_target( ngrdcol, &
                                    gr_source, gr_target, &
                                    gr_source%nzt, &

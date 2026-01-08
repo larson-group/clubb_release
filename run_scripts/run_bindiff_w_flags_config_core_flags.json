@@ -15,7 +15,9 @@
         "l_max_overlap_in_cloud": false
     },
     "flag3": {
-        "ipdf_call_placement": 1
+        "ipdf_call_placement": 1, 
+        "l_ho_trad_coriolis": true,
+        "l_ho_nontrad_coriolis": true
     },
     "flag4": {
         "iiPDF_type": 7

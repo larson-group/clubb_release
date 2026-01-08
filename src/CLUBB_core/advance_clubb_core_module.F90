@@ -111,8 +111,9 @@ module advance_clubb_core_module
   ! change the calls to this function in the host models CAM, WRF and SAM.
   !#######################################################################
   !#######################################################################
+
   subroutine advance_clubb_core( gr, nzm, nzt, ngrdcol, &           ! intent(in)
-               l_implemented, dt, fcor, sfc_elevation,            & ! intent(in)
+               l_implemented, dt, fcor, fcor_y, sfc_elevation, &    ! intent(in)
                hydromet_dim,                                      & ! intent(in)
                sclr_dim, sclr_tol, edsclr_dim, sclr_idx,      &     ! intent(in)
                thlm_forcing, rtm_forcing, um_forcing, vm_forcing, & ! intent(in)
@@ -149,7 +150,7 @@ module advance_clubb_core_module
                sclrp2, sclrp3, sclrprtp, sclrpthlp, &               ! intent(inout)
                wpsclrp, edsclrm, &                                  ! intent(inout)
                rcm, cloud_frac, &                                   ! intent(inout)
-               wpthvp, wp2thvp, rtpthvp, thlpthvp, &                ! intent(inout)
+               wpthvp, wp2thvp, wp2up, rtpthvp, thlpthvp, &         ! intent(inout)
                sclrpthvp, &                                         ! intent(inout)
                wp2rtp, wp2thlp, uprcp, vprcp, rc_coef_zm, wp4, &    ! intent(inout)
                wpup2, wpvp2, wp2up2, wp2vp2, ice_supersat_frac, &   ! intent(inout)
@@ -379,7 +380,10 @@ module advance_clubb_core_module
                   ! Only differs from dt if l_lmm_stepping is used    [s]
 
     real( kind = core_rknd ), intent(in), dimension(ngrdcol) ::  &
-      fcor,  &          ! Coriolis forcing             [s^-1]
+      fcor,  &          ! Traditional Coriolis parameter    [s^-1]
+                        ! Vertical planetary vorticity.   Proportional to sin(latitude)
+      fcor_y, &         ! Nontraditional Coriolis parameter [s^-1]
+                        ! Meridional planetary vorticity. Proportional to cos(latitude)
       sfc_elevation     ! Elevation of ground level    [m above MSL]
 
     integer, intent(in) :: &
@@ -540,7 +544,8 @@ module advance_clubb_core_module
     real( kind = core_rknd ), intent(inout), dimension(ngrdcol,nzt) ::  &
       rcm,        & ! cloud water mixing ratio, r_c (thermo. levels) [kg/kg]
       cloud_frac, & ! cloud fraction (thermodynamic levels)          [-]
-      wp2thvp       ! < w'^2 th_v' > (thermodynamic levels)          [m^2/s^2 K]
+      wp2thvp,    & ! < w'^2 th_v' > (thermodynamic levels)          [m^2/s^2 K]
+      wp2up         ! < w'^2 u' > (thermodynamic levels)             [m^3/s^3]
 
     real( kind = core_rknd ), intent(inout), dimension(ngrdcol,nzm) ::  &
       wpthvp,     & ! < w' th_v' > (momentum levels)                 [kg/kg K]
@@ -1203,7 +1208,7 @@ module advance_clubb_core_module
 #endif
                                rcm, cloud_frac,                             & ! Intent(out)
                                ice_supersat_frac, wprcp,                    & ! Intent(out)
-                               sigma_sqd_w, wpthvp, wp2thvp,                & ! Intent(out)
+                               sigma_sqd_w, wpthvp, wp2thvp, wp2up,         & ! Intent(out)
                                rtpthvp, thlpthvp, rc_coef,                  & ! Intent(out)
                                rcm_in_layer, cloud_cover,                   & ! Intent(out)
                                rcp2_zt, thlprcp,                            & ! Intent(out)
@@ -1932,7 +1937,7 @@ module advance_clubb_core_module
                             sclrpthvp, sclrm_forcing, sclrp2, Cx_fnc_Richardson,   & ! intent(in)
                             pdf_implicit_coefs_terms,                              & ! intent(in)
                             um_forcing, vm_forcing, ug, vg, wpthvp,                & ! intent(in)
-                            fcor, um_ref, vm_ref, up2, vp2,                        & ! intent(in)
+                            fcor, fcor_y, um_ref, vm_ref, up2, vp2,                & ! intent(in)
                             uprcp, vprcp, rc_coef_zm,                              & ! intent(in)
                             clubb_params, nu_vert_res_dep, ts_nudge,               & ! intent(in)
                             clubb_config_flags%iiPDF_type,                         & ! intent(in)
@@ -1940,6 +1945,8 @@ module advance_clubb_core_module
                             clubb_config_flags%tridiag_solve_method,               & ! intent(in)
                             clubb_config_flags%fill_holes_type,                    & ! intent(in)
                             clubb_config_flags%l_predict_upwp_vpwp,                & ! intent(in)
+                            clubb_config_flags%l_ho_nontrad_coriolis,              & ! intent(in)
+                            clubb_config_flags%l_ho_trad_coriolis,                 & ! intent(in)
                             clubb_config_flags%l_diffuse_rtm_and_thlm,             & ! intent(in)
                             clubb_config_flags%l_stability_correct_Kh_N2_zm,       & ! intent(in)
                             clubb_config_flags%l_godunov_upwind_wpxp_ta,           & ! intent(in)
@@ -2018,7 +2025,7 @@ module advance_clubb_core_module
                              thv_ds_zm, cloud_frac,                               & ! intent(in)
                              wp3_on_wp2, wp3_on_wp2_zt,                           & ! intent(in)
                              pdf_implicit_coefs_terms,                            & ! intent(in)
-                             dt_advance,                                          & ! intent(in)
+                             dt_advance, fcor_y,                                  & ! intent(in)
                              sclrm, wpsclrp,                                      & ! intent(in)
                              wpsclrp2, wpsclrprtp, wpsclrpthlp,                   & ! intent(in)
                              lhs_splat_wp2,                                       & ! intent(in)
@@ -2027,6 +2034,7 @@ module advance_clubb_core_module
                              clubb_config_flags%tridiag_solve_method,             & ! intent(in)
                              clubb_config_flags%fill_holes_type,                  & ! intent(in)
                              clubb_config_flags%l_predict_upwp_vpwp,              & ! intent(in)
+                             clubb_config_flags%l_ho_nontrad_coriolis,            & ! intent(in)
                              clubb_config_flags%l_min_xp2_from_corr_wx,           & ! intent(in)
                              clubb_config_flags%l_C2_cloud_frac,                  & ! intent(in)
                              clubb_config_flags%l_upwind_xpyp_ta,                 & ! intent(in)
@@ -2113,10 +2121,10 @@ module advance_clubb_core_module
 
       ! advance_wp2_wp3_bad_wp2 ! Test error comment, DO NOT modify or move
       call advance_wp2_wp3( nzm, nzt, ngrdcol, gr, dt_advance,                    & ! intent(in)
-                            sfc_elevation, sigma_sqd_w, wm_zm,                    & ! intent(in)
+                            sfc_elevation, fcor_y, sigma_sqd_w, wm_zm,            & ! intent(in)
                             wm_zt, a3_coef, a3_coef_zt, wp3_on_wp2,               & ! intent(in)
                             wpup2, wpvp2, wp2up2, wp2vp2, wp4,                    & ! intent(in)
-                            wpthvp, wp2thvp, um, vm, upwp, vpwp,                  & ! intent(in)
+                            wpthvp, wp2thvp, wp2up, um, vm, upwp, vpwp,           & ! intent(in)
                             em, Kh_zm, Kh_zt, invrs_tau_C4_zm,                    & ! intent(in)
                             invrs_tau_wp3_zt, invrs_tau_C1_zm, Skw_zm,            & ! intent(in)
                             Skw_zt, rho_ds_zm, rho_ds_zt, invrs_rho_ds_zm,        & ! intent(in)
@@ -2142,6 +2150,7 @@ module advance_clubb_core_module
                             clubb_config_flags%l_use_tke_in_wp2_wp3_K_dfsn,       & ! intent(in)
                             clubb_config_flags%l_use_wp3_lim_with_smth_Heaviside, & ! intent(in)
                             clubb_config_flags%l_wp2_fill_holes_tke,              & ! intent(in)
+                            clubb_config_flags%l_ho_nontrad_coriolis,             & ! intent(in)
                             stats_metadata,                                       & ! intent(in)
                             stats_zt, stats_zm, stats_sfc,                        & ! intent(inout)
                             up2, vp2, wp2, wp3, wp3_zm, wp2_zt, err_info )          ! intent(inout)
@@ -2600,7 +2609,7 @@ module advance_clubb_core_module
 #endif
                                rcm, cloud_frac,                             & ! Intent(out)
                                ice_supersat_frac, wprcp,                    & ! Intent(out)
-                               sigma_sqd_w, wpthvp, wp2thvp,                & ! Intent(out)
+                               sigma_sqd_w, wpthvp, wp2thvp, wp2up,         & ! Intent(out)
                                rtpthvp, thlpthvp, rc_coef,                  & ! Intent(out)
                                rcm_in_layer, cloud_cover,                   & ! Intent(out)
                                rcp2_zt, thlprcp,                            & ! Intent(out)
@@ -2800,7 +2809,7 @@ module advance_clubb_core_module
                thlm(i,:), rtm(i,:), wprtp(i,:), wpthlp(i,:),                              & ! In
                wp2(i,:), wp3(i,:), rtp2(i,:), rtp3(i,:), thlp2(i,:), thlp3(i,:),          & ! In
                rtpthlp(i,:),                                                              & ! In
-               wpthvp(i,:), wp2thvp(i,:), rtpthvp(i,:), thlpthvp(i,:),                    & ! In
+               wpthvp(i,:), wp2thvp(i,:), wp2up(i,:), rtpthvp(i,:), thlpthvp(i,:),        & ! In
                p_in_Pa(i,:), exner(i,:), rho(i,:), rho_zm(i,:),                           & ! In
                rho_ds_zm(i,:), rho_ds_zt(i,:), thv_ds_zm(i,:), thv_ds_zt(i,:),            & ! In
                wm_zt(i,:), wm_zm(i,:), rcm(i,:), wprcp(i,:), rc_coef(i,:),                & ! In
