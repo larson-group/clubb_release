@@ -3315,7 +3315,7 @@ module clubb_driver
       if ( clubb_at_least_debug_level_api( 2 ) ) then
 
         !$acc update host( um, vm, rtm, wprtp, thlm, wpthlp, rtp2, thlp2, rtpthlp, wp2, wp3, &
-        !$acc              wp2thvp, rtpthvp, thlpthvp )
+        !$acc              wp2thvp, rtpthvp, thlpthvp, wp2up )
 
         !$acc if( sclr_dim > 0   ) update host( sclrm )
         !$acc if( edsclr_dim > 0 ) update host( edsclrm )
