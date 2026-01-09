@@ -1422,10 +1422,6 @@ contains
     !$acc end data
     !$acc end data
     !$acc end data
-      
-#ifdef CLUBB_CAM
-    !$acc end data
-#endif
 
 #ifdef CLUBB_CAM
     !$acc end data
