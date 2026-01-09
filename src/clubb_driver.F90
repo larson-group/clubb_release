@@ -4287,7 +4287,7 @@ module clubb_driver
     !$acc              nu_vert_res_dep%nu6, &
     !$acc              pdf_params, pdf_params_zm, &
     !$acc              sclr_idx, clubb_params, hm_metadata, &
-    !$acc              T_sfc, p_sfc, fcor, sfc_elevation, &
+    !$acc              T_sfc, p_sfc, fcor, fcor_y, sfc_elevation, &
     !$acc              dummy_dx, dummy_dy, &
     !$acc              pdf_params%w_1, pdf_params%w_2, pdf_params%varnce_w_1, &
     !$acc              pdf_params%varnce_w_2, pdf_params%mixt_frac, &
@@ -4591,6 +4591,7 @@ module clubb_driver
     deallocate( p_sfc,            &
                 T_sfc,            &
                 fcor,             &
+                fcor_y,           &
                 dummy_dx,         &
                 dummy_dy,         &
                 deep_soil_T_in_K, &
