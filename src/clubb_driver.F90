@@ -731,12 +731,12 @@ module clubb_driver
   !$omp  dt_rad, deltaz_nl, zm_init_nl, zm_top_nl, mixt_frac_max_mag, T0, ts_nudge, rtm_min, &
   !$omp  rtm_nudge_max_altitude, rad_dummy, deep_soil_T_in_K_init, sfc_soil_T_in_K_init, &
   !$omp  veg_T_in_K_init, dummy_dx, dummy_dy, sclr_tol, thlm_init, rtm_init, um_init, &
-  !$omp  vm_init, ug_init, vg_init, wp2_init, up2_init, vp2_init, rcm_init, wm_zt_init, &
+  !$omp  vm_init, ug_init, vg_init, wp2_init, up2_init, vp2_init, upwp_init, rcm_init, wm_zt_init, &
   !$omp  wm_zm_init, em_init, exner_init, thvm_init, p_in_Pa_init, rho_init, rho_zm_init, &
   !$omp  rho_ds_zm_init, rho_ds_zt_init, invrs_rho_ds_zm_init, invrs_rho_ds_zt_init, &
   !$omp  thv_ds_zm_init, thv_ds_zt_init, rtm_ref_init, thlm_ref_init, um_ref_init, &
   !$omp  vm_ref_init, Ncm_init, Nc_in_cloud_init, Nccnm_init, rho_ds_zm_dycore_init, &
-  !$omp  p_sfc, T_sfc, fcor, sfc_elevation, zm_init, zm_top, deltaz, sclrm_init, &
+  !$omp  p_sfc, T_sfc, fcor, fcor_y, sfc_elevation, zm_init, zm_top, deltaz, sclrm_init, &
   !$omp  edsclrm_init, corr_array_n_cloud, corr_array_n_below, iinit, X_mixt_comp_all_levs, &
   !$omp  gr, gr_desc, gr_dycore, gr_output, gr_fixed_min, pdf_params, pdf_params_zm, &
   !$omp  pdf_implicit_coefs_terms, precip_fracs, nu_vert_res_dep, stats_zt, stats_zm, &
@@ -2577,14 +2577,14 @@ module clubb_driver
     !$acc              nu_vert_res_dep%nu6, &
     !$acc              pdf_params, pdf_params_zm, &
     !$acc              sclr_idx, clubb_params, hm_metadata, &
-    !$acc              T_sfc, p_sfc, fcor, sfc_elevation, &
+    !$acc              T_sfc, p_sfc, fcor, fcor_y, sfc_elevation, &
     !$acc              dummy_dx, dummy_dy, deltaz, &
     !$acc              pdf_params%w_1, pdf_params%w_2, pdf_params%varnce_w_1, &
     !$acc              pdf_params%varnce_w_2, pdf_params%mixt_frac, &
     !$acc              pdf_params_zm%w_1, pdf_params_zm%w_2, pdf_params_zm%varnce_w_1, &
     !$acc              pdf_params_zm%varnce_w_2, pdf_params_zm%mixt_frac, &
     !$acc              thlm_init, rtm_init, um_init, vm_init, ug_init, vg_init, &
-    !$acc              wp2_init, up2_init, vp2_init, rcm_init, wm_zt_init, &
+    !$acc              wp2_init, up2_init, vp2_init, upwp_init, rcm_init, wm_zt_init, &
     !$acc              wm_zm_init, em_init, exner_init, thvm_init, p_in_Pa_init, &
     !$acc              rho_init, rho_zm_init, rho_ds_zm_init, rho_ds_zt_init, &
     !$acc              invrs_rho_ds_zm_init, invrs_rho_ds_zt_init, thv_ds_zm_init, &
@@ -2605,7 +2605,7 @@ module clubb_driver
     !$acc              thlm_ref, um, upwp, &
     !$acc              vm, vpwp, up2, vp2, up3, vp3, thlm, &
     !$acc              rtp3, thlp3, p_in_Pa, exner, &
-    !$acc              rcm, cloud_frac, wpthvp, wp2rtp, &
+    !$acc              rcm, cloud_frac, wpthvp, wp2rtp, wp2up, &
     !$acc              wp2thlp, uprcp, vprcp, rc_coef_zm, wp4, wpup2, wpvp2, &
     !$acc              wp2up2, wp2vp2, ice_supersat_frac, um_pert, vm_pert, upwp_pert, vpwp_pert, &
     !$acc              rcm_in_layer, cloud_cover, wprcp, w_up_in_cloud, w_down_in_cloud, cloudy_updraft_frac, &
@@ -4294,7 +4294,7 @@ module clubb_driver
     !$acc              pdf_params_zm%w_1, pdf_params_zm%w_2, pdf_params_zm%varnce_w_1, &
     !$acc              pdf_params_zm%varnce_w_2, pdf_params_zm%mixt_frac, &
     !$acc              thlm_init, rtm_init, um_init, vm_init, ug_init, vg_init, &
-    !$acc              wp2_init, up2_init, vp2_init, rcm_init, wm_zt_init, &
+    !$acc              wp2_init, up2_init, vp2_init, upwp_init, rcm_init, wm_zt_init, &
     !$acc              wm_zm_init, em_init, exner_init, thvm_init, p_in_Pa_init, &
     !$acc              rho_init, rho_zm_init, rho_ds_zm_init, rho_ds_zt_init, &
     !$acc              invrs_rho_ds_zm_init, invrs_rho_ds_zt_init, thv_ds_zm_init, &
@@ -4315,7 +4315,7 @@ module clubb_driver
     !$acc              thlm_ref, um, upwp, &
     !$acc              vm, vpwp, up2, vp2, up3, vp3, thlm, &
     !$acc              rtp3, thlp3, p_in_Pa, exner, &
-    !$acc              rcm, cloud_frac, wpthvp, wp2rtp, &
+    !$acc              rcm, cloud_frac, wpthvp, wp2rtp, wp2up, &
     !$acc              wp2thlp, uprcp, vprcp, rc_coef_zm, wp4, wpup2, wpvp2, &
     !$acc              wp2up2, wp2vp2, ice_supersat_frac, um_pert, vm_pert, upwp_pert, vpwp_pert, &
     !$acc              rcm_in_layer, cloud_cover, wprcp, w_up_in_cloud, w_down_in_cloud, cloudy_updraft_frac, &
@@ -4630,6 +4630,7 @@ module clubb_driver
               wp2_init, &
               up2_init, &
               vp2_init, &
+              upwp_init, &
               rcm_init, &
               wm_zt_init, &
               wm_zm_init, &
