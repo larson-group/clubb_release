@@ -1390,7 +1390,7 @@ module pdf_closure_module
 
       !$acc update host( wp4, wprtp2, wp2rtp, wpthlp2, wp2thlp, cloud_frac, &
       !$acc              rcm, wpthvp, wp2thvp, rtpthvp, thlpthvp, wprcp, wp2rcp, &
-      !$acc              rtprcp, thlprcp, rcp2, wprtpthlp, &
+      !$acc              rtprcp, thlprcp, rcp2, wprtpthlp, wp2up, &
       !$acc              pdf_params%w_1, pdf_params%w_2, &
       !$acc              pdf_params%varnce_w_1, pdf_params%varnce_w_2, &
       !$acc              pdf_params%rt_1, pdf_params%rt_2, &
@@ -4166,7 +4166,7 @@ module pdf_closure_module
     !$acc                    w_down_in_cloud_zm, cloudy_updraft_frac_zm,  &
     !$acc                    cloudy_downdraft_frac_zm, p_in_Pa_zm, exner_zm, &
     !$acc                    wprtp2_zm, wp2rtp_zm, wpthlp2_zm, &
-    !$acc                    wp2thlp_zm, wprtpthlp_zm, wp2thvp_zm, wp2rcp_zm )
+    !$acc                    wp2thlp_zm, wprtpthlp_zm, wp2thvp_zm, wp2rcp_zm, wp2up_zm )
 
     !$acc enter data if( sclr_dim > 0 ) &
     !$acc            create( wpsclrp_zt, sclrp2_zt, sclrp3_zm, sclrprtp_zt, sclrpthlp_zt, &
@@ -4836,7 +4836,7 @@ module pdf_closure_module
     !$acc                   w_down_in_cloud_zm, cloudy_updraft_frac_zm,  &
     !$acc                   cloudy_downdraft_frac_zm, p_in_Pa_zm, exner_zm, &
     !$acc                   wprtp2_zm, wp2rtp_zm, wpthlp2_zm, &
-    !$acc                   wp2thlp_zm, wprtpthlp_zm, wp2thvp_zm, wp2rcp_zm )
+    !$acc                   wp2thlp_zm, wprtpthlp_zm, wp2thvp_zm, wp2rcp_zm, wp2up_zm )
 
     !$acc exit data if( sclr_dim > 0 ) &
     !$acc           delete( wpsclrp_zt, sclrp2_zt, sclrp3_zm, sclrprtp_zt, sclrpthlp_zt, &

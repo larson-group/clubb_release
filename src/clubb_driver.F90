@@ -748,7 +748,7 @@ module clubb_driver
   !$omp  lscale_term_time_avg, chi_term, chi_term_time_avg, richardson_num_term, &
   !$omp  richardson_num_term_time_avg, norm_min_grid_dens, norm_grid_dens, um, upwp, vm, vpwp, &
   !$omp  up2, vp2, up3, vp3, wprtp, wpthlp, rtp2, rtp3, thlp2, thlp3, rtpthlp, wp2, wp2_zt, thvm, &
-  !$omp  exner, rtm, thlm, rcm, wp3, wp3_zm, delta_zm, p_in_Pa, cloud_frac, wpthvp, wp2thvp, &
+  !$omp  exner, rtm, thlm, rcm, wp3, wp3_zm, delta_zm, p_in_Pa, cloud_frac, wpthvp, wp2thvp, wp2up, &
   !$omp  rtpthvp, thlpthvp, wp2rtp, wp2thlp, uprcp, vprcp, rc_coef_zm, wp4, wpup2, wpvp2, wp2up2, &
   !$omp  wp2vp2, rho_ds_zt, thv_ds_zt, wm_zm, wm_zt, rho, rho_zm, rho_ds_zm, invrs_rho_ds_zm, &
   !$omp  invrs_rho_ds_zt, thv_ds_zm, thlm_forcing, rtm_forcing, um_forcing, vm_forcing, &
