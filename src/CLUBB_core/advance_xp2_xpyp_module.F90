@@ -769,15 +769,15 @@ module advance_xp2_xpyp_module
 
         if ( stats_metadata%l_stats_samp ) then
 
+          !$acc update host( fcor_y, upwp )
+
           ! u'u' term nct is completely explicit; call stat_update_var.
           ! Hing Ong, 22 July 2025
-          !$acc parallel loop gang vector collapse(2) default(present)
           do i = 1, ngrdcol
             call stat_update_var( stats_metadata%iup2_nct,       & ! Intent(in)
                                   - two * fcor_y(i) * upwp(i,:), & ! intent(in)
                                   stats_zm(i) )                    ! Intent(inout)
           end do
-          !$acc end parallel loop
 
         end if ! stats_metadata%l_stats_samp
 
@@ -887,15 +887,15 @@ module advance_xp2_xpyp_module
 
         if ( stats_metadata%l_stats_samp ) then
 
+          !$acc update host( fcor_y, upwp )
+
           ! u'u' term nct is completely explicit; call stat_update_var.
           ! Hing Ong, 22 July 2025
-          !$acc parallel loop gang vector collapse(2) default(present)
           do i = 1, ngrdcol
             call stat_update_var( stats_metadata%iup2_nct,       & ! Intent(in)
                                   - two * fcor_y(i) * upwp(i,:), & ! intent(in)
                                   stats_zm(i) )                    ! Intent(inout)
           end do
-          !$acc end parallel loop
 
         end if ! stats_metadata%l_stats_samp
 

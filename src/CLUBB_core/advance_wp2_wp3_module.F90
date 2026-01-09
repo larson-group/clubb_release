@@ -2868,7 +2868,8 @@ module advance_wp2_wp3_module
       !$acc              rhs_ta_wp3, wp3_term_ta_lhs_result, wp3, lhs_ta_wp3, &
       !$acc              lhs_adv_tp_wp3, lhs_pr_tp_wp3, rhs_pr3_wp3, rhs_pr1_wp3, &
       !$acc              lhs_pr1_wp3, lhs_splat_wp3, lhs_diff_zt, wpup2, wpvp2, &
-      !$acc              rhs_pr_turb_wp3, rhs_pr_dfsn_wp3, clubb_params, C11_Skw_fnc )
+      !$acc              rhs_pr_turb_wp3, rhs_pr_dfsn_wp3, clubb_params, C11_Skw_fnc, &
+      !$acc              upwp, wp2up, fcor_y )
 
       C_uu_buoy_zeros       = zero
       C_uu_buoy_plus_one    = clubb_params(:,iC_uu_buoy) + one
