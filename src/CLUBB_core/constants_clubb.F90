@@ -310,8 +310,8 @@ module constants_clubb
   ! Tolerances below which we consider moments to be zero
   real( kind = core_rknd ), parameter, public ::  & 
     w_tol   = 2.e-2_core_rknd, & ! [m/s]
-    thl_tol = 1.e-2_core_rknd, & ! [K]
-    rt_tol  = max( 1.e-8_core_rknd, epsilon(pi) ), & ! [kg/kg]
+    thl_tol = zero, & ! 1.e-2_core_rknd, & ! [K]
+    rt_tol  = zero, & ! max( 1.e-8_core_rknd, epsilon(pi) ), & ! [kg/kg]
     chi_tol = max( 1.e-8_core_rknd, epsilon(pi) ), & ! [kg/kg]
     eta_tol = chi_tol       ! [kg/kg]
 
