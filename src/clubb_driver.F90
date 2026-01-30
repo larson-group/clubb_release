@@ -1404,7 +1404,7 @@ module clubb_driver
 
     ! fcor could reasonably be defined as below, but currently it is input via namelist
     ! Hing Ong, 25 November 2025
-    !fcor   = two * omega_planet * sin ( lat_vals * radians_per_deg )
+    fcor   = two * omega_planet * sin ( lat_vals * radians_per_deg )
 
     open(unit=iunit, file=runfile, status='old', action='read')
     read(unit=iunit, nml=configurable_clubb_flags_nl)
