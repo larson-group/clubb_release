@@ -114,10 +114,6 @@ module stats_zm_module
       allocate( stats_metadata%isclrpthlp(1:sclr_dim) )
       allocate( stats_metadata%isclrprcp(1:sclr_dim) )
       allocate( stats_metadata%iwpsclrp(1:sclr_dim) )
-      allocate( stats_metadata%iwp2sclrp(1:sclr_dim) )
-      allocate( stats_metadata%iwpsclrp2(1:sclr_dim) )
-      allocate( stats_metadata%iwpsclrprtp(1:sclr_dim) )
-      allocate( stats_metadata%iwpsclrpthlp(1:sclr_dim) )
       allocate( stats_metadata%iwpedsclrp(1:edsclr_dim) )
 
       stats_metadata%isclrprtp(:)    = 0
@@ -126,10 +122,6 @@ module stats_zm_module
       stats_metadata%isclrpthlp(:)   = 0
       stats_metadata%isclrprcp(:)    = 0
       stats_metadata%iwpsclrp(:)     = 0
-      stats_metadata%iwp2sclrp(:)    = 0
-      stats_metadata%iwpsclrp2(:)    = 0
-      stats_metadata%iwpsclrprtp(:)  = 0
-      stats_metadata%iwpsclrpthlp(:) = 0
       stats_metadata%iwpedsclrp(:)   = 0
 
     end if
@@ -233,38 +225,6 @@ module stats_zm_module
        ! Subtract 1 from the loop size for each scalar.
        tot_zm_loops = tot_zm_loops - sclr_dim
        ! Add 1 for "wpsclrp" to the loop size.
-       tot_zm_loops = tot_zm_loops + 1
-    endif
-
-    if ( any( vars_zm == "wpsclrp2" ) ) then
-       ! Correct for number of variables found under "wpsclrp2".
-       ! Subtract 1 from the loop size for each scalar.
-       tot_zm_loops = tot_zm_loops - sclr_dim
-       ! Add 1 for "wpsclrp2" to the loop size.
-       tot_zm_loops = tot_zm_loops + 1
-    endif
-
-    if ( any( vars_zm == "wp2sclrp" ) ) then
-       ! Correct for number of variables found under "wp2sclrp".
-       ! Subtract 1 from the loop size for each scalar.
-       tot_zm_loops = tot_zm_loops - sclr_dim
-       ! Add 1 for "wp2sclrp" to the loop size.
-       tot_zm_loops = tot_zm_loops + 1
-    endif
-
-    if ( any( vars_zm == "wpsclrprtp" ) ) then
-       ! Correct for number of variables found under "wpsclrprtp".
-       ! Subtract 1 from the loop size for each scalar.
-       tot_zm_loops = tot_zm_loops - sclr_dim
-       ! Add 1 for "wpsclrprtp" to the loop size.
-       tot_zm_loops = tot_zm_loops + 1
-    endif
-
-    if ( any( vars_zm == "wpsclrpthlp" ) ) then
-       ! Correct for number of variables found under "wpsclrpthlp".
-       ! Subtract 1 from the loop size for each scalar.
-       tot_zm_loops = tot_zm_loops - sclr_dim
-       ! Add 1 for "wpsclrpthlp" to the loop size.
        tot_zm_loops = tot_zm_loops + 1
     endif
 
@@ -2564,54 +2524,6 @@ module stats_zm_module
           call stat_assign( var_index=stats_metadata%iwpsclrp(sclr), &
             var_name="wpsclr"//trim(sclr_idx)//"p", &
             var_description="'w'scalar("//trim(sclr_idx)//")", var_units="unknown", &
-            l_silhs=.false., grid_kind=stats_zm )
-          k = k + 1
-        end do
-
-      case ( 'wpsclrp2' )
-        do sclr = 1, sclr_dim, 1
-          write( sclr_idx, * ) sclr
-          sclr_idx = adjustl(sclr_idx)
-          stats_metadata%iwpsclrp2(sclr) = k
-          call stat_assign( var_index=stats_metadata%iwpsclrp2(sclr), &
-            var_name="wpsclr"//trim(sclr_idx)//"p2", &
-            var_description="'w'scalar("//trim(sclr_idx)//")'^2'", var_units="unknown", &
-            l_silhs=.false., grid_kind=stats_zm )
-          k = k + 1
-        end do
-
-      case ( 'wp2sclrp' )
-        do sclr = 1, sclr_dim, 1
-          write( sclr_idx, * ) sclr
-          sclr_idx = adjustl(sclr_idx)
-          stats_metadata%iwp2sclrp(sclr) = k
-          call stat_assign( var_index=stats_metadata%iwp2sclrp(sclr), &
-            var_name="wp2sclr"//trim(sclr_idx)//"p", &
-            var_description="'w'^2 scalar("//trim(sclr_idx)//")", var_units="unknown", &
-            l_silhs=.false., grid_kind=stats_zm )
-          k = k + 1
-        end do
-
-      case ( 'wpsclrprtp' )
-        do sclr = 1, sclr_dim, 1
-          write( sclr_idx, * ) sclr
-          sclr_idx = adjustl(sclr_idx)
-          stats_metadata%iwpsclrprtp(sclr) = k
-          call stat_assign( var_index=stats_metadata%iwpsclrprtp(sclr), &
-            var_name="wpsclr"//trim(sclr_idx)//"prtp", &
-            var_description="'w' scalar("//trim(sclr_idx)//")'rt'", var_units="unknown", &
-            l_silhs=.false., grid_kind=stats_zm )
-          k = k + 1
-        end do
-
-      case ( 'wpsclrpthlp' )
-        do sclr = 1, sclr_dim, 1
-          write( sclr_idx, * ) sclr
-          sclr_idx = adjustl(sclr_idx)
-          stats_metadata%iwpsclrpthlp(sclr) = k
-          call stat_assign( var_index=stats_metadata%iwpsclrpthlp(sclr), &
-            var_name="wpsclr"//trim(sclr_idx)//"pthlp", &
-            var_description="'w' scalar("//trim(sclr_idx)//")'th_l'", var_units="unknown", &
             l_silhs=.false., grid_kind=stats_zm )
           k = k + 1
         end do

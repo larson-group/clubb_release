@@ -90,6 +90,7 @@ vars_zt =
 'chi', 'chip2', 'C11_Skw_fnc',
 'wp2_zt', 'thlp2_zt', 'wpthlp_zt', 'wprtp_zt', 'rtp2_zt', 'rtpthlp_zt',
 'up2_zt', 'vp2_zt', 'upwp_zt', 'vpwp_zt', 'hmp2_zt',
+'wp2sclrp', 'wpsclrp2', 'wpsclrprtp', 'wpsclrpthlp',
 'sclrm', 'sclrm_f', 'edsclrm', 'edsclrm_f', 
 'PSMLT', 'EVPMS', 'PRACS', 'EVPMG', 'PRACG',
 'PGMLT', 'MNUCCC', 'PSACWS', 'PSACWI', 'QMULTS',
@@ -106,7 +107,7 @@ vars_zt =
 'SIZEFIX_NS', 'SIZEFIX_NG', 'NEGFIX_NR', 'NEGFIX_NC', 'NEGFIX_NI', 'NEGFIX_NS', 
 'NEGFIX_NG', 'NIM_MORR_CL', 'QC_INST', 'QR_INST', 'QI_INST', 'QS_INST', 'QG_INST', 
 'NC_INST', 'NR_INST', 'NI_INST', 'NS_INST', 'NG_INST', 'T_in_K_mc', 'cloud_frac_refined',
-'rcm_refined', 'hl_on_Cp_residual', 'qto_residual',
+'rcm_refined', 'hl_on_Cp_residual', 'qto_residual', 'rcm_in_cloud',
 ''
 
 vars_lh_zt =
@@ -122,7 +123,7 @@ vars_lh_zt =
 'lh_Nrm_auto', 'lh_Nrm_evap', 'lh_rrm_src_adj', 'lh_rrm_evap_adj',
 'lh_Nrm_src_adj', 'lh_Nrm_evap_adj', 'lh_precip_frac', 'lh_mixt_frac', 'silhs_variance_category',
 'lh_rrm_mc_nonadj', 'lh_samp_frac_category', 'lh_cloud_frac_unweighted', 'lh_mixt_frac_unweighted',
-'lh_precip_frac_unweighted', 'lh_m_vol_rad_rain'
+'lh_precip_frac_unweighted', 'lh_m_vol_rad_rain',
 ''
 
 vars_lh_sfc =
@@ -174,8 +175,7 @@ vars_zm =
 'wpthlp_enter_mfl', 'wpthlp_exit_mfl', 'wprtp_enter_mfl', 'wprtp_exit_mfl',
 'wpthlp_mfl_min', 'wpthlp_mfl_max', 'wprtp_mfl_min', 'wprtp_mfl_max',
 'sclrprtp', 'sclrp2', 'sclrpthvp', 'sclrpthlp',  
-'sclrprcp', 'wpsclrp',  'wpsclrp2', 'wp2sclrp', 
-'wpsclrprtp', 'wpsclrpthlp', 'wpedsclrp',  'stability_correction',
+'sclrprcp', 'wpsclrp', 'wpedsclrp',  'stability_correction',
 'lh_rtp2_mc', 'lh_thlp2_mc', 'lh_wprtp_mc', 'lh_wpthlp_mc', 'lh_rtpthlp_mc',
 'bv_freq_sqd', 'bv_freq_sqd_splat', 'bv_freq_sqd_mixed', 'bv_freq_sqd_moist', 'bv_freq_sqd_dry',
 'bv_freq_sqd_smth', 'bv_freq_out_cloud', 'bv_freq_pos', 'ddzt_umvm_sqd', 'invrs_tau_zm',

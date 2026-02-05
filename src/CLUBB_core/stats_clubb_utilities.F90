@@ -718,6 +718,38 @@ module stats_clubb_utilities
        ntot = ntot + edsclr_dim
     endif
 
+    if ( any( vars_zt == "wpsclrp2" ) ) then
+       ! Correct for number of variables found under "wpsclrp2".
+       ! Subtract "wpsclrp2" from the number of zt statistical variables.
+       ntot = ntot - 1
+       ! Add 1 for each scalar to the number of zt statistical variables.
+       ntot = ntot + sclr_dim
+    endif
+
+    if ( any( vars_zt == "wp2sclrp" ) ) then
+       ! Correct for number of variables found under "wp2sclrp".
+       ! Subtract "wp2sclrp" from the number of zt statistical variables.
+       ntot = ntot - 1
+       ! Add 1 for each scalar to the number of zt statistical variables.
+       ntot = ntot + sclr_dim
+    endif
+
+    if ( any( vars_zt == "wpsclrprtp" ) ) then
+       ! Correct for number of variables found under "wpsclrprtp".
+       ! Subtract "wpsclrprtp" from the number of zt statistical variables.
+       ntot = ntot - 1
+       ! Add 1 for each scalar to the number of zt statistical variables.
+       ntot = ntot + sclr_dim
+    endif
+
+    if ( any( vars_zt == "wpsclrpthlp" ) ) then
+       ! Correct for number of variables found under "wpsclrpthlp".
+       ! Subtract "wpsclrpthlp" from the number of zt statistical variables.
+       ntot = ntot - 1
+       ! Add 1 for each scalar to the number of zt statistical variables.
+       ntot = ntot + sclr_dim
+    endif
+
     if ( ntot >= nvarmax_zt ) then
       write(fstderr, *) err_info%err_header_global
       write(fstderr,*) "There are more statistical variables listed in ",  &
@@ -1142,43 +1174,6 @@ module stats_clubb_utilities
        ! Add 1 for each scalar to the number of zm statistical variables.
        ntot = ntot + sclr_dim
     endif
-
-
-    if ( any( vars_zm == "wpsclrp2" ) ) then
-       ! Correct for number of variables found under "wpsclrp2".
-       ! Subtract "wpsclrp2" from the number of zm statistical variables.
-       ntot = ntot - 1
-       ! Add 1 for each scalar to the number of zm statistical variables.
-       ntot = ntot + sclr_dim
-    endif
-
-
-    if ( any( vars_zm == "wp2sclrp" ) ) then
-       ! Correct for number of variables found under "wp2sclrp".
-       ! Subtract "wp2sclrp" from the number of zm statistical variables.
-       ntot = ntot - 1
-       ! Add 1 for each scalar to the number of zm statistical variables.
-       ntot = ntot + sclr_dim
-    endif
-
-
-    if ( any( vars_zm == "wpsclrprtp" ) ) then
-       ! Correct for number of variables found under "wpsclrprtp".
-       ! Subtract "wpsclrprtp" from the number of zm statistical variables.
-       ntot = ntot - 1
-       ! Add 1 for each scalar to the number of zm statistical variables.
-       ntot = ntot + sclr_dim
-    endif
-
-
-    if ( any( vars_zm == "wpsclrpthlp" ) ) then
-       ! Correct for number of variables found under "wpsclrpthlp".
-       ! Subtract "wpsclrpthlp" from the number of zm statistical variables.
-       ntot = ntot - 1
-       ! Add 1 for each scalar to the number of zm statistical variables.
-       ntot = ntot + sclr_dim
-    endif
-
 
     if ( any( vars_zm == "wpedsclrp" ) ) then
        ! Correct for number of variables found under "wpedsclrp".
@@ -3116,6 +3111,14 @@ module stats_clubb_utilities
                                 stats_zt ) ! In/Out
           call stat_update_var( stats_metadata%isclrm_f(sclr), sclrm_forcing(:,sclr),  & ! In
                                 stats_zt ) ! In/Out
+          call stat_update_var( stats_metadata%iwp2sclrp(sclr), wp2sclrp(:,sclr), & ! In
+                                stats_zt ) ! In/Out
+          call stat_update_var( stats_metadata%iwpsclrp2(sclr), wpsclrp2(:,sclr), & ! In
+                                stats_zt ) ! In/Out
+          call stat_update_var( stats_metadata%iwpsclrprtp(sclr), wpsclrprtp(:,sclr), & ! In
+                                stats_zt ) ! In/Out
+          call stat_update_var( stats_metadata%iwpsclrpthlp(sclr), wpsclrpthlp(:,sclr), & ! In
+                                stats_zt ) ! In/Out
         end do
       end if
 
@@ -3248,14 +3251,6 @@ module stats_clubb_utilities
                                 stats_zm ) ! In/Out
           call stat_update_var( stats_metadata%iwpsclrp(sclr), wpsclrp(:,sclr), & ! In
                                stats_zm ) ! In/Out
-          call stat_update_var( stats_metadata%iwp2sclrp(sclr), wp2sclrp(:,sclr), & ! In
-                                stats_zm ) ! In/Out
-          call stat_update_var( stats_metadata%iwpsclrp2(sclr), wpsclrp2(:,sclr), & ! In
-                                stats_zm ) ! In/Out
-          call stat_update_var( stats_metadata%iwpsclrprtp(sclr), wpsclrprtp(:,sclr), & ! In
-                                stats_zm ) ! In/Out
-          call stat_update_var( stats_metadata%iwpsclrpthlp(sclr), wpsclrpthlp(:,sclr), & ! In
-                                stats_zm ) ! In/Out
         end do
       end if
       if ( edsclr_dim > 0 ) then
