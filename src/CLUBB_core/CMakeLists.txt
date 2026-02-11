@@ -82,7 +82,6 @@ set( CLUBB_CORE_SOURCES
         grid_adaptation_module.F90
 )
 
-
 add_library(clubb_core_lib ${CLUBB_CORE_SOURCES})
 
 target_link_libraries(clubb_core_lib PRIVATE lapack_lib)
