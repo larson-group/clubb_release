@@ -7,7 +7,7 @@ interfaces with the 1D version of the scheme in the WRF
 implementation.  Several microphysical options in the WRF
 implementation are accessible here, through the specification of
 parameters in the namelist MICRO_M2005, which should be placed in the
-prm file and are listed below.  The scheme will use an increasing
+prm file and are listed below. The scheme will use an increasing
 number of microphysical variables, depending on the options specified
 in the PARAMETERS and MICRO_M2005 namelists.  
 
