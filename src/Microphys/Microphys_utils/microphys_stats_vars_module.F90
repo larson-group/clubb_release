@@ -14,9 +14,14 @@ module microphys_stats_vars_module
 
   private ! Set Default Scope
 
+  integer, parameter :: &
+    stats_name_len = 64
+
   public :: microphys_stats_vars_type, microphys_stats_alloc, microphys_put_var, &
-            microphys_get_var, microphys_get_index, &
+            microphys_get_var_by_name, &
             microphys_stats_accumulate, microphys_stats_cleanup
+
+  ! (no debug flags)
 
   type microphys_stats_vars_type
 
@@ -26,11 +31,12 @@ module microphys_stats_vars_module
     integer :: &
       nz, &       ! Number of vertical levels
       num_vars, & ! Number of output variables from microphysics
-      alloc_size  ! Size of allocated stats_indices and output_values arrays
+      alloc_size  ! Size of allocated var_names and output_values arrays
 
-    ! An array of statistics indices corresponding to the output variables
-    integer, dimension(:), allocatable :: &
-      stats_indices
+    ! Names of the output variables (used for stats mapping)
+    ! An array of names corresponding to the output variables.
+    character( len = stats_name_len ), dimension(:), allocatable :: &
+      var_names
 
     ! Values of the output variables (over the vertical domain)
     real( kind = core_rknd ), dimension(:,:), allocatable :: &
@@ -66,12 +72,21 @@ module microphys_stats_vars_module
 
     !----- Begin Code -----
 
-    allocate( microphys_stats_vars%stats_indices(num_vars), &
+    if ( num_vars <= 0 .or. nz <= 0 ) then
+      microphys_stats_vars%nz = max( nz, 0 )
+      microphys_stats_vars%alloc_size = 0
+      microphys_stats_vars%num_vars = 0
+      microphys_stats_vars%l_allocated = .false.
+      return
+    end if
+
+    allocate( microphys_stats_vars%var_names(num_vars), &
               microphys_stats_vars%output_values(nz,num_vars) )
 
     microphys_stats_vars%nz = nz
     microphys_stats_vars%alloc_size = num_vars
     microphys_stats_vars%num_vars = 0 ! Since no variables have been put into structure
+    microphys_stats_vars%var_names = ""
 
     microphys_stats_vars%l_allocated = .true.
 
@@ -80,7 +95,7 @@ module microphys_stats_vars_module
   !-----------------------------------------------------------------------
 
   !-----------------------------------------------------------------------
-  subroutine microphys_put_var( var_index, value, microphys_stats_vars )
+  subroutine microphys_put_var( var_name, value, microphys_stats_vars )
 
   ! Description:
   !   Places a variable in the microphys_stats_vars structure
@@ -89,9 +104,6 @@ module microphys_stats_vars_module
   !   None
   !-----------------------------------------------------------------------
 
-    use constants_clubb, only: &
-      fstderr           ! Constant
-
     implicit none
 
     ! Input/Output Variables
@@ -99,8 +111,8 @@ module microphys_stats_vars_module
       microphys_stats_vars   ! The structure to place the variable into
 
     ! Input Variables
-    integer, intent(in) :: &
-      var_index              ! Statistics index of the variable
+    character(len=*), intent(in) :: &
+      var_name               ! Name of the variable
 
     real( kind = core_rknd ), dimension(microphys_stats_vars%nz), intent(in) :: &
       value
@@ -108,24 +120,23 @@ module microphys_stats_vars_module
   !-----------------------------------------------------------------------
 
     !----- Begin Code -----
-    if ( microphys_stats_vars%num_vars == microphys_stats_vars%alloc_size ) then
-      ! There is no more room in the structure. Do nothing (for now).
-      write(fstderr,*) "Invalid allocation size"
-      error stop "Fatal error in microphys_put_var"
+    if ( .not. microphys_stats_vars%l_allocated ) return
+
+    if ( microphys_stats_vars%num_vars >= microphys_stats_vars%alloc_size ) then
+      ! There is no more room in the structure.
+      error stop "Fatal error in microphys_put_var: allocation exhausted"
     end if
 
-    if ( var_index > 0 ) then
-      microphys_stats_vars%num_vars = microphys_stats_vars%num_vars + 1
-
-      microphys_stats_vars%stats_indices(microphys_stats_vars%num_vars) = var_index
-      microphys_stats_vars%output_values(:,microphys_stats_vars%num_vars) = value
-    end if
+    microphys_stats_vars%num_vars = microphys_stats_vars%num_vars + 1
+    microphys_stats_vars%var_names(microphys_stats_vars%num_vars) = trim(var_name)
+    microphys_stats_vars%output_values(:,microphys_stats_vars%num_vars) = value
 
     return
   end subroutine microphys_put_var
   !-----------------------------------------------------------------------
 
-  subroutine microphys_stats_accumulate( microphys_stats_vars, stats_metadata, grid )
+  subroutine microphys_stats_accumulate( microphys_stats_vars, &
+                                         stats, icol )
 
   ! Description:
   !   Samples all variables stored in the microphys_stats_vars structure by
@@ -136,14 +147,9 @@ module microphys_stats_vars_module
   !   None
   !-----------------------------------------------------------------------
 
-    use stats_type_utilities, only: &
-      stat_update_var ! Procedure
-
-    use stats_type, only: &
-      stats           ! Type
-
-    use stats_variables, only: &
-      stats_metadata_type
+    use stats_netcdf, only: &
+      stats_type, &
+      stats_update
 
     implicit none
 
@@ -151,107 +157,55 @@ module microphys_stats_vars_module
     type(microphys_stats_vars_type), intent(in) :: &
       microphys_stats_vars
 
-    type (stats_metadata_type), intent(in) :: &
-      stats_metadata
+    type(stats_type), intent(inout) :: &
+      stats
 
-    ! Input/Output Variables
-    type(stats), intent(inout) :: &
-      grid                      ! Which grid to sample variables to
+    integer, intent(in) :: &
+      icol
 
-    ! Local Variables
+    ! Local Variablesbit
     integer :: i ! Loop variable
 
   !-----------------------------------------------------------------------
 
     !----- Begin Code -----
-    if ( stats_metadata%l_stats_samp ) then
-
-      do i=1, microphys_stats_vars%num_vars
-
-        call stat_update_var( microphys_stats_vars%stats_indices(i), &
-                              microphys_stats_vars%output_values(:,i), grid )
-
-      end do ! i=1, microphys_stats_vars%num_vars
-
-    end if ! stats_metadata%l_stats_samp
+    if ( stats%l_sample ) then
+      do i = 1, microphys_stats_vars%num_vars
+        if ( microphys_stats_vars%nz == 1 ) then
+          call stats_update( trim(microphys_stats_vars%var_names(i)), &
+                            microphys_stats_vars%output_values(1,i), stats, icol)
+        else
+          call stats_update( trim(microphys_stats_vars%var_names(i)), &
+                            microphys_stats_vars%output_values(:,i), stats, icol)
+        end if
+      end do
+    end if
 
   end subroutine microphys_stats_accumulate
   !-----------------------------------------------------------------------
 
-  !-----------------------------------------------------------------------
-  function microphys_get_index( stats_index, microphys_stats_vars ) result( var_index )
+  function microphys_get_var_by_name( var_name, microphys_stats_vars ) result( stats_var )
 
   ! Description:
+  !   Gets the specified statistics variable from the input structure by name.
   !   Get an index to the arrays in the microphys_stats_vars structure
-  !   associated with the given stats index.
+  !   associated with the given stats name.
 
   ! References:
-  !   Eric Raut
+  !   None
   !-----------------------------------------------------------------------
     implicit none
 
     ! Input Variables
-    integer, intent(in) :: &
-      stats_index             ! The stats index of the variable
+    character(len=*), intent(in) :: &
+      var_name                ! Name of the variable
 
     type(microphys_stats_vars_type), intent(in) :: &
       microphys_stats_vars    ! The statistics structure
 
     ! Output Variable
-    integer :: &
-      var_index               ! The index to the structure associated with
-                              ! the given stats index
-
-    ! Local Variables
-    integer :: ivar
-    logical :: l_found
-
-  !-----------------------------------------------------------------------
-
-    ! Initialize variables
-    var_index = 0
-    l_found = .false.
-
-    !----- Begin Code -----
-    do ivar=1, microphys_stats_vars%num_vars
-      if ( microphys_stats_vars%stats_indices(ivar) == stats_index) then
-
-        var_index = ivar
-        l_found = .true.
-        exit
-
-      end if
-    end do
-
-    if ( .not. l_found ) then
-      error stop "Variable not found in microphys_get_index"
-    end if
-
-    return
-  end function microphys_get_index
-  !-----------------------------------------------------------------------
-
-  !-----------------------------------------------------------------------
-  function microphys_get_var( stats_index, microphys_stats_vars ) result( stats_var )
-  
-  ! Description:
-  !   Gets the specified statistics variable from the input structure.
-
-  ! References:
-  !   Eric Raut
-  !-----------------------------------------------------------------------
-    implicit none
-
-    ! Input Variables
-    integer, intent(in) :: &
-      stats_index            ! The index of the variable
-
-    type(microphys_stats_vars_type), intent(in) :: &
-      microphys_stats_vars   ! The statistics structure
-
-    ! Output Variable
     real( kind = core_rknd ), dimension(microphys_stats_vars%nz) :: &
-      stats_var              ! The output statistics variable
+      stats_var               ! The output statistics variable
 
     ! Local Variables
     integer :: ivar
@@ -264,22 +218,20 @@ module microphys_stats_vars_module
     l_found = .false.
 
     !----- Begin Code -----
-    do ivar=1, microphys_stats_vars%num_vars
-      if ( microphys_stats_vars%stats_indices(ivar) == stats_index) then
-
+    do ivar = 1, microphys_stats_vars%num_vars
+      if ( trim(microphys_stats_vars%var_names(ivar)) == trim(var_name) ) then
         stats_var = microphys_stats_vars%output_values(:,ivar)
         l_found = .true.
         exit
-
       end if
     end do
 
     if ( .not. l_found ) then
-      error stop "Variable not found in microphys_get_var"
+      error stop "Variable not found in microphys_get_var_by_name"
     end if
 
     return
-  end function microphys_get_var
+  end function microphys_get_var_by_name
   !-----------------------------------------------------------------------
 
   !-----------------------------------------------------------------------
@@ -303,8 +255,14 @@ module microphys_stats_vars_module
 
     !----- Begin Code -----
 
-    deallocate( microphys_stats_vars%stats_indices, &
-                microphys_stats_vars%output_values )
+    if ( .not. microphys_stats_vars%l_allocated ) return
+
+    if ( allocated(microphys_stats_vars%var_names) ) then
+      deallocate( microphys_stats_vars%var_names )
+    end if
+    if ( allocated(microphys_stats_vars%output_values) ) then
+      deallocate( microphys_stats_vars%output_values )
+    end if
 
     microphys_stats_vars%l_allocated = .false.
     return

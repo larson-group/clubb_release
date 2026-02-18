@@ -655,11 +655,6 @@ module advance_helper_module
         iRichardson_num_min, &
         iRichardson_num_max
 
-    use stats_type_utilities, only: &
-        stat_update_var      ! Procedure
-
-    use stats_type, only: stats ! Type
-
     implicit none
 
     !------------------------------ Constant Parameters ------------------------------
@@ -1659,6 +1654,8 @@ module advance_helper_module
 !===============================================================================
   function smooth_max_scalars( input_var1, input_var2, smth_coef ) &
   result( output_var )
+  ! When calling this function within an acc block, it needs to be declared to the compiler
+  !$acc routine seq
 
   ! Description:
   !   Computes a smoothed version of the max function, using two scalars as inputs.
@@ -1676,8 +1673,6 @@ module advance_helper_module
 
     implicit none
 
-    ! When calling this function within an acc block, it needs to be declared to the compiler
-    !$acc routine seq
     !----------------------------- Input Variables -----------------------------
     real ( kind = core_rknd ), intent(in) :: &
       input_var1, &       ! Units vary

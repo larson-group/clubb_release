@@ -97,8 +97,7 @@ module silhs_api_module
 
   ! latin_hypercube_2D_output_api - Creates and opens the SILHS 2D output files.
   use latin_hypercube_driver_module, only: &
-    latin_hypercube_2D_output_api, &
-    latin_hypercube_2D_close_api
+    latin_hypercube_2D_output_api
 
   use est_kessler_microphys_module, only: &
     est_kessler_microphys_api
@@ -142,8 +141,7 @@ module silhs_api_module
     genrand_intg
 
   public  & ! to print 2D lh samples
-    latin_hypercube_2D_output_api, &
-    latin_hypercube_2D_close_api
+    latin_hypercube_2D_output_api
 
   private &
     generate_silhs_sample_api_single_col, &
@@ -177,10 +175,10 @@ contains
     corr_cholesky_mtx_1, corr_cholesky_mtx_2, & ! In
     precip_fracs, silhs_config_flags, & ! In
     vert_decorr_coef, & ! In
-    stats_metadata, & ! In
-    stats_lh_zt, stats_lh_sfc, err_info, & ! intent(inout)
+    err_info, & ! intent(inout)
     X_nl_all_levs, X_mixt_comp_all_levs, & ! Out
-    lh_sample_point_weights ) ! Out
+    lh_sample_point_weights, & ! Out
+    stats )         ! InOut
 
     use grid_class, only: &
         grid   ! Type(s)
@@ -203,17 +201,14 @@ contains
     use mt95, only: &
       genrand_intg
 
-    use stats_type, only: &
-      stats ! Type
-
-    use stats_variables, only: &
-      stats_metadata_type
-
     use corr_varnce_module, only: &
       hm_metadata_type
 
     use err_info_type_module, only: &
       err_info_type         ! Type
+      
+    use stats_netcdf, only: &
+      stats_type
 
     implicit none
 
@@ -279,17 +274,13 @@ contains
     real( kind = core_rknd ), intent(in) :: &
       vert_decorr_coef    ! Empirically defined de-correlation constant [-]
 
-    type (stats_metadata_type), intent(in) :: &
-      stats_metadata
-
     ! Input/Output Variables
-    type(stats), intent(inout) :: &
-      stats_lh_zt, &
-      stats_lh_sfc
-
     type(err_info_type), intent(inout) :: &
       err_info          ! err_info struct containing err_code and err_header
-
+      
+    type(stats_type), intent(inout), optional :: &
+      stats
+    
     ! -------------- Local Variables --------------
       
     real( kind = core_rknd ), dimension(1,nzt) :: &
@@ -322,10 +313,6 @@ contains
     real( kind = core_rknd ), dimension(1,num_samples,nzt) :: &
       lh_sample_point_weights_col
 
-    type(stats), dimension(1) :: &
-      stats_lh_zt_col, &
-      stats_lh_sfc_col
-
     ! -------------- Begin Code --------------
 
     delta_zm_col(1,:)                 = delta_zm
@@ -337,28 +324,41 @@ contains
     mu2_col(1,:,:)                    = mu2
     sigma1_col(1,:,:)                 = sigma1
     sigma2_col(1,:,:)                 = sigma2
-    stats_lh_zt_col(1)                = stats_lh_zt
-    stats_lh_sfc_col(1)               = stats_lh_sfc
-
     !$acc data copyin( precip_fracs, precip_fracs%precip_frac_1, precip_fracs%precip_frac_2, &
     !$acc              delta_zm_col, Lscale_col, corr_cholesky_mtx_1_col, &
     !$acc              corr_cholesky_mtx_2_col, mu1_col, mu2_col, sigma1_col, sigma2_col ) &
     !$acc     copyout( X_nl_all_levs, X_mixt_comp_all_levs, lh_sample_point_weights )
 
-    call generate_silhs_sample( &
-      iter, pdf_dim, num_samples, sequence_length, nzt, 1, & ! In
-      l_calc_weights_all_levs_itime, & ! In
-      gr, pdf_params, delta_zm_col, Lscale_col, & ! In
-      lh_seed, hm_metadata, & ! In
-      !rho_ds_zt_col, & ! Unused
-      mu1_col, mu2_col, sigma1_col, sigma2_col, & ! In
-      corr_cholesky_mtx_1_col, corr_cholesky_mtx_2_col, & ! In
-      precip_fracs, silhs_config_flags, & ! In
-      vert_decorr_coef, & ! In
-      stats_metadata, & ! In
-      stats_lh_zt_col, stats_lh_sfc_col, err_info, & ! intent(inout)
-      X_nl_all_levs_col, X_mixt_comp_all_levs_col, & ! Out
-      lh_sample_point_weights_col ) ! Out
+    if ( present(stats) ) then
+      call generate_silhs_sample( &
+        iter, pdf_dim, num_samples, sequence_length, nzt, 1, & ! In
+        l_calc_weights_all_levs_itime, & ! In
+        gr, pdf_params, delta_zm_col, Lscale_col, & ! In
+        lh_seed, hm_metadata, & ! In
+        !rho_ds_zt_col, & ! Unused
+        mu1_col, mu2_col, sigma1_col, sigma2_col, & ! In
+        corr_cholesky_mtx_1_col, corr_cholesky_mtx_2_col, & ! In
+        precip_fracs, silhs_config_flags, & ! In
+        vert_decorr_coef, & ! In
+        err_info, & ! intent(inout)
+        X_nl_all_levs_col, X_mixt_comp_all_levs_col, & ! Out
+        lh_sample_point_weights_col, & ! Out
+        stats )         ! InOut
+    else
+      call generate_silhs_sample( &
+        iter, pdf_dim, num_samples, sequence_length, nzt, 1, & ! In
+        l_calc_weights_all_levs_itime, & ! In
+        gr, pdf_params, delta_zm_col, Lscale_col, & ! In
+        lh_seed, hm_metadata, & ! In
+        !rho_ds_zt_col, & ! Unused
+        mu1_col, mu2_col, sigma1_col, sigma2_col, & ! In
+        corr_cholesky_mtx_1_col, corr_cholesky_mtx_2_col, & ! In
+        precip_fracs, silhs_config_flags, & ! In
+        vert_decorr_coef, & ! In
+        err_info, & ! intent(inout)
+        X_nl_all_levs_col, X_mixt_comp_all_levs_col, & ! Out
+        lh_sample_point_weights_col ) ! Out
+    end if
 
     !$acc end data
 
@@ -378,10 +378,10 @@ contains
     corr_cholesky_mtx_1, corr_cholesky_mtx_2, & ! In
     precip_fracs, silhs_config_flags, & ! In
     vert_decorr_coef, & ! In
-    stats_metadata, & ! In
-    stats_lh_zt, stats_lh_sfc, err_info, & ! intent(inout)
+    err_info, & ! intent(inout)
     X_nl_all_levs, X_mixt_comp_all_levs, & ! Out
-    lh_sample_point_weights ) ! Out
+    lh_sample_point_weights, & ! Out
+    stats )         ! InOut
 
     use grid_class, only: &
         grid    ! Type(s)
@@ -403,17 +403,14 @@ contains
     use mt95, only: &
       genrand_intg
 
-    use stats_type, only: &
-      stats ! Type
-
-    use stats_variables, only: &
-      stats_metadata_type
-
     use corr_varnce_module, only: &
       hm_metadata_type
 
     use err_info_type_module, only: &
       err_info_type         ! Type
+    
+    use stats_netcdf, only: &
+      stats_type
 
     implicit none
 
@@ -448,13 +445,12 @@ contains
       hm_metadata
 
     ! InOut Variables
-    type(stats), dimension(ngrdcol), intent(inout) :: &
-      stats_lh_zt, &
-      stats_lh_sfc
-
     type(err_info_type), intent(inout) :: &
       err_info          ! err_info struct containing err_code and err_header
-
+    
+    type(stats_type), intent(inout), optional :: &
+      stats
+    
     ! Output Variables
     real( kind = core_rknd ), intent(out), dimension(ngrdcol,num_samples,nzt,pdf_dim) :: &
       X_nl_all_levs ! Sample that is transformed ultimately to normal-lognormal
@@ -488,28 +484,41 @@ contains
     real( kind = core_rknd ), intent(in) :: &
       vert_decorr_coef    ! Empirically defined de-correlation constant [-]
 
-    type (stats_metadata_type), intent(in) :: &
-      stats_metadata
-
     !$acc data copyin( precip_fracs, precip_fracs%precip_frac_1, precip_fracs%precip_frac_2, &
     !$acc              delta_zm, Lscale, corr_cholesky_mtx_1, &
     !$acc              corr_cholesky_mtx_2, mu1, mu2, sigma1, sigma2 ) &
     !$acc     copyout( X_nl_all_levs, X_mixt_comp_all_levs, lh_sample_point_weights )
 
-    call generate_silhs_sample( &
-      iter, pdf_dim, num_samples, sequence_length, nzt, ngrdcol, & ! In
-      l_calc_weights_all_levs_itime, & ! In
-      gr, pdf_params, delta_zm, Lscale, & ! In
-      lh_seed, hm_metadata, & ! In
-      !rho_ds_zt, &
-      mu1, mu2, sigma1, sigma2, & ! In
-      corr_cholesky_mtx_1, corr_cholesky_mtx_2, & ! In
-      precip_fracs, silhs_config_flags, & ! In
-      vert_decorr_coef, & ! In
-      stats_metadata, & ! In
-      stats_lh_zt, stats_lh_sfc, err_info, & ! intent(inout)
-      X_nl_all_levs, X_mixt_comp_all_levs, & ! Out
-      lh_sample_point_weights ) ! Out
+    if ( present(stats) ) then
+      call generate_silhs_sample( &
+        iter, pdf_dim, num_samples, sequence_length, nzt, ngrdcol, & ! In
+        l_calc_weights_all_levs_itime, & ! In
+        gr, pdf_params, delta_zm, Lscale, & ! In
+        lh_seed, hm_metadata, & ! In
+        !rho_ds_zt, &
+        mu1, mu2, sigma1, sigma2, & ! In
+        corr_cholesky_mtx_1, corr_cholesky_mtx_2, & ! In
+        precip_fracs, silhs_config_flags, & ! In
+        vert_decorr_coef, & ! In
+        err_info, & ! intent(inout)
+        X_nl_all_levs, X_mixt_comp_all_levs, & ! Out
+        lh_sample_point_weights, & ! Out
+        stats )         ! InOut
+    else
+      call generate_silhs_sample( &
+        iter, pdf_dim, num_samples, sequence_length, nzt, ngrdcol, & ! In
+        l_calc_weights_all_levs_itime, & ! In
+        gr, pdf_params, delta_zm, Lscale, & ! In
+        lh_seed, hm_metadata, & ! In
+        !rho_ds_zt, &
+        mu1, mu2, sigma1, sigma2, & ! In
+        corr_cholesky_mtx_1, corr_cholesky_mtx_2, & ! In
+        precip_fracs, silhs_config_flags, & ! In
+        vert_decorr_coef, & ! In
+        err_info, & ! intent(inout)
+        X_nl_all_levs, X_mixt_comp_all_levs, & ! Out
+        lh_sample_point_weights ) ! Out
+    end if
 
     !$acc end data
 

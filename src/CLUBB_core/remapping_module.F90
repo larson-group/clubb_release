@@ -11,7 +11,7 @@ module remapping_module
 
   implicit none
 
-  public :: remap_vals_to_target
+  public :: remap_vals_to_target, remap_iv_from_var_name
 
   private :: calc_mass_over_grid_intervals, matrix_vector_mult, vertical_integral_conserve_mass, &
              check_conservation, check_monotonicity, check_consistency, &
@@ -38,6 +38,45 @@ module remapping_module
   !
   !-------------------------------------------------------------------------------
   !-------------------------------------------------------------------------------
+
+  integer function remap_iv_from_var_name(var_name) result(iv)
+
+    ! Description:
+    !   Return iv selector for remapping methods:
+    !     iv = -1 : wind-like variables
+    !     iv =  0 : positive-definite variables
+    !     iv =  1 : all other variables
+    !
+    ! The mapping mirrors the legacy output_netcdf implementation.
+
+    implicit none
+
+    character(len=*), intent(in) :: var_name
+    character(len=64) :: name
+
+    name = trim(adjustl(var_name))
+    iv = 1
+
+    select case (name)
+    case ("rho", "rho_ds_zt", "invrs_rho_ds_zt", "thv_ds_zt", "rfrzm", "rtm_ref", &
+          "thlm_ref", "rtm", "thlm", "thvm", "rcm", "cloud_frac", "ice_supersat_frac", &
+          "rcm_in_layer", "cloud_cover", "cloudy_updraft_frac", "cloudy_downdraft_frac", &
+          "Kh_zt", "Lscale", "rho_zm", "rho_ds_zm", "invrs_rho_ds_zm", "thv_ds_zm", &
+          "up2", "vp2", "rtp2", "thlp2", "wp2", "rc_coef_zm", "wp4", "wp2up2", "wp2vp2", &
+          "invrs_tau_zm", "Kh_zm")
+      iv = 0
+    case default
+      continue
+    end select
+
+    select case (name)
+    case ("wm_zt", "um_ref", "vm_ref", "ug", "vg", "um", "vm", "um_pert", "vm_pert", "wm_zm")
+      iv = -1
+    case default
+      continue
+    end select
+
+  end function remap_iv_from_var_name
 
   function calc_mass_over_grid_intervals( total_idx_lin_spline, &
                                           lin_spline_rho_vals, &

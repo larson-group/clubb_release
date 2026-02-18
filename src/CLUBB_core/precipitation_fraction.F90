@@ -29,12 +29,12 @@ module precipitation_fraction
                               cloud_frac_2, ice_supersat_frac, &
                               ice_supersat_frac_1, ice_supersat_frac_2, &
                               mixt_frac, clubb_params, &
-                              stats_metadata, &
-                              stats_sfc, err_info, &
+                              err_info, &
                               precip_frac, &
                               precip_frac_1, &
                               precip_frac_2, &
-                              precip_frac_tol )
+                              precip_frac_tol, &
+                              stats )
 
     ! Description:
     ! Determines (overall) precipitation fraction over the horizontal domain, as
@@ -57,9 +57,6 @@ module precipitation_fraction
         nparams, & ! Variable(s)
         iupsilon_precip_frac_rat
 
-    use stats_type_utilities, only: &
-        stat_update_var_pt  ! Procedure(s)
-
     use clubb_precision, only: &
         core_rknd  ! Variable(s)
 
@@ -67,11 +64,9 @@ module precipitation_fraction
         clubb_at_least_debug_level_api, &   ! Procedure
         clubb_fatal_error               ! Constant
 
-    use stats_type, only: &
-        stats ! Type
-
-    use stats_variables, only: &
-        stats_metadata_type
+    use stats_netcdf, only: &
+      stats_type, &
+      stats_update
 
     use err_info_type_module, only: &
       err_info_type        ! Type
@@ -109,12 +104,9 @@ module precipitation_fraction
     real( kind = core_rknd ), dimension(nparams), intent(in) :: &
       clubb_params    ! Array of CLUBB's tunable parameters    [units vary]
       
-    type (stats_metadata_type), intent(in) :: &
-      stats_metadata
-
     !------------------------- Inout Variables -------------------------
-    type (stats), dimension(ngrdcol), intent(inout) :: &
-      stats_sfc
+    type(stats_type), intent(inout) :: &
+      stats
 
     type(err_info_type), intent(inout) :: &
       err_info        ! err_info struct containing err_code and err_header
@@ -138,7 +130,6 @@ module precipitation_fraction
 
     integer :: &
       j, k, ivar   ! Loop indices
-
 
     ! Initialize the precipitation fraction variables (precip_frac,
     ! precip_frac_1, and precip_frac_2) to 0.
@@ -391,15 +382,9 @@ module precipitation_fraction
 
 
     ! Statistics
-    if ( stats_metadata%l_stats_samp ) then
-      if ( stats_metadata%iprecip_frac_tol > 0 ) then
-        do j = 1, ngrdcol
-          call stat_update_var_pt( stats_metadata%iprecip_frac_tol, 1, & ! In
-                                   precip_frac_tol(j), & ! In
-                                   stats_sfc(j) ) ! In/Out
-        end do
-      end if ! stats_metadata%iprecip_frac_tol
-    end if ! stats_metadata%l_stats_samp
+    if ( stats%l_sample ) then
+      call stats_update( "precip_frac_tol", precip_frac_tol, stats )
+    end if
 
 
     ! Assertion check for precip_frac, precip_frac_1, and precip_frac_2.

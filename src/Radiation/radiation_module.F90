@@ -1,8 +1,8 @@
 module radiation_module
 
   use clubb_precision, only: time_precision ! Variable(s)
-  
-  use stats_type, only: stats ! Type
+
+  use stats_netcdf, only: stats_type ! Type
 
   implicit none
 
@@ -24,8 +24,9 @@ module radiation_module
                rho, rho_zm, p_in_Pa, &
                exner, cloud_frac, ice_supersat_frac, &
                thlm, rtm, rcm, hydromet, &
-               hm_metadata, stats_metadata, &
-               stats_sfc, err_info, &
+               hm_metadata, stats,         &
+               icol, &
+               err_info, &
                radht, Frad, Frad_SW_up, Frad_LW_up, &
                Frad_SW_down, Frad_LW_down )
 ! Description:
@@ -75,9 +76,6 @@ module radiation_module
       dp, & !----------------------------------------------------------- double precision
       time_precision, & !----------------------------------------------- Variable(s)
       core_rknd
-
-    use stats_variables, only: &
-      stats_metadata_type
 
     use corr_varnce_module, only: &
         hm_metadata_type
@@ -132,12 +130,12 @@ module radiation_module
     type (hm_metadata_type), intent(in) :: &
       hm_metadata
 
-    type (stats_metadata_type), intent(in) :: &
-      stats_metadata
-
     ! Input/Output Variables
-    type (stats), intent(inout)  :: &
-      stats_sfc        ! stats_sfc
+    type(stats_type), intent(inout) :: &
+      stats
+
+    integer, intent(in) :: &
+      icol
 
     type(err_info_type), intent(inout) :: &
       err_info        ! err_info struct containing err_code and err_header
@@ -347,9 +345,8 @@ module radiation_module
       end if
 
       call simple_rad( gr, rho, rho_zm, rtm, rcm, exner, & ! In
-                       stats_metadata,                   & ! In
-                       stats_sfc, err_info,              & ! Inout
-                       Frad_LW, radht_LW )                 ! Out
+                       stats, icol, err_info,           & ! Inout
+                       Frad_LW, radht_LW )                ! Out
 
 
       Frad = Frad_SW + Frad_LW
@@ -384,16 +381,18 @@ module radiation_module
         return
       end if
     end if
+    if ( stats%l_sample ) then
+      continue
+    end if
 
     return
   end subroutine advance_clubb_radiation
 
   !-----------------------------------------------------------------------------
-  subroutine update_radiation_variables( nzm, nzt, radht, Frad_SW_up, Frad_LW_up, &
+  subroutine update_radiation_variables( ngrdcol, nzm, nzt, radht, Frad_SW_up, Frad_LW_up, &
                                          Frad_SW_down, Frad_LW_down, &
                                          extended_atmos_range_size, lin_int_buffer, &
-                                         stats_metadata, stats_zt, stats_zm, &
-                                         stats_rad_zt, stats_rad_zm )
+                                         stats )
 
     ! Description:
     !   Updates the radiation variables using the stat_var_update() subroutine.
@@ -411,27 +410,26 @@ module radiation_module
     use grid_class, only: &
       flip !------------------------------------------------------------------------- Prodecure(s)
 
-    use stats_variables, only: &
-      stats_metadata_type
-
-    use stats_type_utilities, only: &
-      stat_update_var !----------------------------------------------------------------- Procedure
-
     use clubb_precision, only: &
       core_rknd
+
+    use stats_netcdf, only: &
+      stats_type, &
+      stats_update
 
     implicit none
 
     ! Input Variables
 
     integer, intent(in) :: &
+      ngrdcol, &
       nzm, & ! Model domain / # of momentum vertical levels          [-]
       nzt    ! Model domain / # of thermodynamic vertical levels     [-]
 
-    real( kind = core_rknd ), dimension(nzt), intent(in) :: &
+    real( kind = core_rknd ), dimension(ngrdcol,nzt), intent(in) :: &
       radht           ! SW + LW heating rate               [K/s]
 
-    real( kind = core_rknd ), dimension(nzm), intent(in) :: &
+    real( kind = core_rknd ), dimension(ngrdcol,nzm), intent(in) :: &
       Frad_SW_up,   & ! SW radiative upwelling flux        [W/m^2]
       Frad_LW_up,   & ! LW radiative upwelling flux        [W/m^2]
       Frad_SW_down, & ! SW radiative downwelling flux      [W/m^2]
@@ -441,133 +439,69 @@ module radiation_module
       extended_atmos_range_size, &
       lin_int_buffer
 
-    type (stats_metadata_type), intent(in) :: &
-      stats_metadata
-
-    type (stats), intent(inout)  :: &
-      stats_zt,      & ! stats_zt grid
-      stats_zm,      & ! stats_zm grid
-      stats_rad_zt,  & ! stats_rad_zt grid
-      stats_rad_zm     ! stats_rad_zm grid
+    type(stats_type), intent(inout) :: &
+      stats
 
     ! Local Variables
 
-    integer :: rad_zt_dim, rad_zm_dim ! Dimensions of the radiation grid
+    integer :: rad_zt_dim, rad_zm_dim, i, rad_col ! Dimensions of the radiation grid
 
     ! ---- Begin Code ----
 
-    if ( stats_metadata%l_stats_samp ) then
+    if (.not. stats%l_sample) return
 
-      call stat_update_var( stats_metadata%iradht, radht, stats_zt )
+    call stats_update( "radht", radht, stats )
+    call stats_update( "Frad_SW_up", Frad_SW_up, stats )
+    call stats_update( "Frad_LW_up", Frad_LW_up, stats )
+    call stats_update( "Frad_SW_down", Frad_SW_down, stats )
+    call stats_update( "Frad_LW_down", Frad_LW_down, stats )
 
-      call stat_update_var( stats_metadata%iradht_LW, radht_LW, stats_zt )
+    ! This is duplicating these fields to all columns
+    do i = 1, ngrdcol
+      call stats_update( "radht_LW", radht_LW, stats, i )
+      call stats_update( "radht_SW", radht_SW, stats, i )
+      call stats_update( "Frad_SW", Frad_SW, stats, i )
+      call stats_update( "Frad_LW", Frad_LW, stats, i )
+    end do
 
-      call stat_update_var( stats_metadata%iradht_SW, radht_SW, stats_zt )
+    if ( stats%l_output_rad_files ) then
+      rad_zt_dim = nzt + lin_int_buffer+extended_atmos_range_size
+      rad_zm_dim = nzm + lin_int_buffer+extended_atmos_range_size
+      do i = 1, ngrdcol
+        rad_col = min( i, size( T_in_K, 1 ) )
+        call stats_update( "T_in_K_rad", real( T_in_K(rad_col,rad_zt_dim:1:-1), kind=core_rknd ), stats, i )
+        call stats_update( "rcil_rad", real( rcil(rad_col,rad_zt_dim:1:-1), kind=core_rknd ), stats, i )
+        call stats_update( "o3l_rad", real( o3l(rad_col,rad_zt_dim:1:-1), kind=core_rknd ), stats, i )
+        call stats_update( "rsm_rad", real( rsm_2d(rad_col,rad_zt_dim:1:-1), kind=core_rknd ), stats, i )
+        call stats_update( "rcm_in_cloud_rad", real( rcm_in_cloud_2d(rad_col,rad_zt_dim:1:-1), &
+                                                     kind=core_rknd ), stats, i )
+        call stats_update( "cloud_frac_rad", real( cloud_frac_2d(rad_col,rad_zt_dim:1:-1), &
+                                                   kind=core_rknd ), stats, i )
+        call stats_update( "ice_supersat_frac_rad", real( ice_supersat_frac_2d(rad_col,rad_zt_dim:1:-1), &
+                                                          kind=core_rknd ), stats, i )
+        call stats_update( "radht_rad", real( radht_SW_2d(rad_col,rad_zt_dim:1:-1) + &
+                                              radht_LW_2d(rad_col,rad_zt_dim:1:-1), kind=core_rknd ), stats, i )
+        call stats_update( "radht_LW_rad", real( radht_LW_2d(rad_col,rad_zt_dim:1:-1), kind=core_rknd ), stats, i )
+        call stats_update( "p_in_mb_rad", real( p_in_mb(rad_col,rad_zt_dim:1:-1), kind=core_rknd ), stats, i )
+        call stats_update( "sp_humidity_rad", real( sp_humidity(rad_col,rad_zt_dim:1:-1), kind=core_rknd ), stats, i )
 
-      call stat_update_var( stats_metadata%iFrad_SW, Frad_SW, stats_zm )
+        rad_col = min( i, size( Frad_uSW, 1 ) )
+        call stats_update( "Frad_SW_rad", real( Frad_uSW(rad_col,rad_zm_dim:1:-1) - &
+                                                Frad_dSW(rad_col,rad_zm_dim:1:-1), kind=core_rknd ), stats, i )
+        call stats_update( "Frad_LW_rad", real( Frad_uLW(rad_col,rad_zm_dim:1:-1) - &
+                                                Frad_dLW(rad_col,rad_zm_dim:1:-1), kind=core_rknd ), stats, i )
+        call stats_update( "Frad_SW_up_rad", real( Frad_uSW(rad_col,rad_zm_dim:1:-1), kind=core_rknd ), stats, i )
+        call stats_update( "Frad_LW_up_rad", real( Frad_uLW(rad_col,rad_zm_dim:1:-1), kind=core_rknd ), stats, i )
+        call stats_update( "Frad_SW_down_rad", real( Frad_dSW(rad_col,rad_zm_dim:1:-1), kind=core_rknd ), stats, i )
+        call stats_update( "Frad_LW_down_rad", real( Frad_dLW(rad_col,rad_zm_dim:1:-1), kind=core_rknd ), stats, i )
 
-      call stat_update_var( stats_metadata%iFrad_LW, Frad_LW, stats_zm )
-
-      call stat_update_var( stats_metadata%iFrad_SW_up, Frad_SW_up, stats_zm )
-
-      call stat_update_var( stats_metadata%iFrad_LW_up, Frad_LW_up, stats_zm )
-
-      call stat_update_var( stats_metadata%iFrad_SW_down, Frad_SW_down, stats_zm )
-
-      call stat_update_var( stats_metadata%iFrad_LW_down, Frad_LW_down, stats_zm )
-
-      if ( stats_metadata%l_output_rad_files ) then
-
-        rad_zt_dim = (nzm-1)+lin_int_buffer+extended_atmos_range_size
-        rad_zm_dim = (nzm-1)+lin_int_buffer+extended_atmos_range_size+1
-
-        call stat_update_var( stats_metadata%iT_in_K_rad, &
-                              flip( real( T_in_K(1,:), kind = core_rknd ), rad_zt_dim ), &
-                              stats_rad_zt )
-
-        call stat_update_var( stats_metadata%ircil_rad, &
-                              flip( real( rcil(1,:), kind = core_rknd ), rad_zt_dim ), &
-                              stats_rad_zt )
-
-        call stat_update_var( stats_metadata%io3l_rad, &
-                              flip( real( o3l(1,:), kind = core_rknd ), rad_zt_dim ), &
-                              stats_rad_zt )
-
-        call stat_update_var( stats_metadata%irsm_rad, &
-                              flip( real( rsm_2d(1,:), kind = core_rknd ), rad_zt_dim ), &
-                              stats_rad_zt )
-
-        call stat_update_var( stats_metadata%ircm_in_cloud_rad, &
-                              flip( real( rcm_in_cloud_2d(1,:), kind = core_rknd ), &
-                                    rad_zt_dim ), stats_rad_zt )
-
-        call stat_update_var( stats_metadata%icloud_frac_rad, &
-                              flip( real( cloud_frac_2d(1,:), kind = core_rknd ), &
-                                    rad_zt_dim ), stats_rad_zt )
-        
-        call stat_update_var( stats_metadata%iice_supersat_frac_rad, &
-                              flip( real( ice_supersat_frac_2d(1,:), kind = core_rknd ), &
-                                    rad_zt_dim ), stats_rad_zt )
-
-        call stat_update_var( stats_metadata%iradht_rad, &
-                              flip( real( radht_SW_2d(1,:) + radht_LW_2d(1,:), &
-                                          kind = core_rknd ), rad_zt_dim ), stats_rad_zt )
-
-        call stat_update_var( stats_metadata%iradht_LW_rad, &
-                              flip( real( radht_LW_2d(1,:), kind = core_rknd ), rad_zt_dim ), &
-                              stats_rad_zt )
-
-        call stat_update_var( stats_metadata%ip_in_mb_rad, &
-                              flip( real( p_in_mb(1,:), kind = core_rknd ), rad_zt_dim ), &
-                              stats_rad_zt )
-
-        call stat_update_var( stats_metadata%isp_humidity_rad, &
-                              flip( real( sp_humidity(1,:), kind = core_rknd ), rad_zt_dim ), &
-                              stats_rad_zt )
-
-        call stat_update_var( stats_metadata%iFrad_SW_rad, &
-                              flip( real( Frad_uSW(1,:) - Frad_dSW(1,:), kind = core_rknd ), &
-                                    rad_zm_dim ), stats_rad_zm )
-
-        call stat_update_var( stats_metadata%iFrad_LW_rad, &
-                              flip( real( Frad_uLW(1,:) - Frad_dLW(1,:), kind = core_rknd ), &
-                                    rad_zm_dim ), stats_rad_zm )
-
-        call stat_update_var( stats_metadata%iFrad_SW_up_rad, &
-                              flip( real( Frad_uSW(1,:), kind = core_rknd ), rad_zm_dim ), &
-                              stats_rad_zm )
-
-        call stat_update_var( stats_metadata%iFrad_LW_up_rad, &
-                              flip( real( Frad_uLW(1,:), kind = core_rknd ), rad_zm_dim ), &
-                              stats_rad_zm )
-
-        call stat_update_var( stats_metadata%iFrad_SW_down_rad, &
-                              flip( real( Frad_dSW(1,:), kind = core_rknd ), rad_zm_dim ), &
-                              stats_rad_zm )
-
-        call stat_update_var( stats_metadata%iFrad_LW_down_rad, &
-                              flip( real( Frad_dLW(1,:), kind = core_rknd ), rad_zm_dim ), &
-                              stats_rad_zm )
-
-        call stat_update_var( stats_metadata%ifdswcl, &
-                              flip( real( fdswcl(1,:), kind = core_rknd ), rad_zm_dim ), &
-                              stats_rad_zm )
-
-        call stat_update_var( stats_metadata%ifuswcl, &
-                              flip( real( fuswcl(1,:), kind = core_rknd ), rad_zm_dim ), &
-                              stats_rad_zm )
-
-        call stat_update_var( stats_metadata%ifdlwcl, &
-                              flip( real( fdlwcl(1,:), kind = core_rknd ), rad_zm_dim ), &
-                              stats_rad_zm )
-
-        call stat_update_var( stats_metadata%ifulwcl, &
-                              flip( real( fulwcl(1,:), kind = core_rknd ), rad_zm_dim ), &
-                              stats_rad_zm )
-
-      end if ! l_output_rad_files
-
-    end if ! lstats_samp
+        rad_col = min( i, size( fdswcl, 1 ) )
+        call stats_update( "fdswcl", real( fdswcl(rad_col,rad_zm_dim:1:-1), kind=core_rknd ), stats, i )
+        call stats_update( "fuswcl", real( fuswcl(rad_col,rad_zm_dim:1:-1), kind=core_rknd ), stats, i )
+        call stats_update( "fdlwcl", real( fdlwcl(rad_col,rad_zm_dim:1:-1), kind=core_rknd ), stats, i )
+        call stats_update( "fulwcl", real( fulwcl(rad_col,rad_zm_dim:1:-1), kind=core_rknd ), stats, i )
+      end do
+    end if
 
   end subroutine update_radiation_variables
 
@@ -583,8 +517,8 @@ module radiation_module
                time_current, time_initial, rho, rho_zm, p_in_Pa, exner, &
                cloud_frac, ice_supersat_frac, X_nl_all_levs, &
                lh_rt_clipped, lh_thl_clipped, lh_rc_clipped, &
-               lh_sample_point_weights, hydromet, stats_metadata, &
-               stats_sfc, err_info, &
+               lh_sample_point_weights, hydromet, stats, icol,         &
+               err_info, &
                radht, Frad, Frad_SW_up, Frad_LW_up, Frad_SW_down, Frad_LW_down )
 
   ! Description:
@@ -611,9 +545,6 @@ module radiation_module
 
     use constants_clubb, only: &
       fstderr        !------------------------------------------- Constant
-
-    use stats_variables, only: &
-      stats_metadata_type
 
     use corr_varnce_module, only: &
       hm_metadata_type
@@ -675,11 +606,11 @@ module radiation_module
     real( kind = core_rknd ), dimension(nzt,hydromet_dim), intent(in) :: &
       hydromet             ! Hydrometeor mean fields
 
-    type (stats_metadata_type), intent(in) :: &
-      stats_metadata
+    type(stats_type), intent(inout) :: &
+      stats
 
-    type (stats), intent(inout)  :: &
-      stats_sfc        ! stats_sfc
+    integer, intent(in) :: &
+      icol
 
     type(err_info_type), intent(inout) :: &
       err_info        ! err_info struct containing err_code and err_header
@@ -713,6 +644,7 @@ module radiation_module
       Frad_SW_down_samples, &    ! Frad_SW_down evaluated at each sample point
       Frad_LW_down_samples       ! Frad_LW_down evaluated at each sample point
 
+    type(stats_type) :: stats_dummy
     integer :: isample, k ! Looping variates
 
   !-----------------------------------------------------------------------
@@ -726,6 +658,8 @@ module radiation_module
            hydromet, &                                    ! Intent(in)
            hydromet_all_pts, &                            ! Intent(out)
            Ncn_all_points )                               ! Intent(out)
+
+    stats_dummy%enabled = .false.
 
     do isample=1, lh_num_samples
       ! Call a radiation scheme
@@ -741,8 +675,9 @@ module radiation_module
              exner, cloud_frac, ice_supersat_frac, lh_thl_clipped(isample,:), &     ! Intent(in)
              lh_rt_clipped(isample,:), lh_rc_clipped(isample,:), &                  ! Intent(in)
              hydromet_all_pts(isample,:,:), &                                       ! Intent(in)
-             hm_metadata, stats_metadata, &                                         ! Intent(in)
-             stats_sfc, err_info, &                                                 ! Intent(inout)
+             hm_metadata, stats_dummy, &                                        ! Intent(inout)
+             icol, &                                                                ! Intent(in)
+             err_info, &                                                            ! Intent(inout)
              radht_samples(isample,:), Frad_samples(isample,:), &                   ! Intent(out)
              Frad_SW_up_samples(isample,:), Frad_LW_up_samples(isample,:), &        ! Intent(out)
              Frad_SW_down_samples(isample,:), Frad_LW_down_samples(isample,:) )     ! Intent(out)

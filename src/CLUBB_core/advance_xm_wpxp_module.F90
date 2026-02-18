@@ -10,6 +10,14 @@ module advance_xm_wpxp_module
   ! None
   !-----------------------------------------------------------------------
 
+  use stats_netcdf, only: &
+      stats_type, &
+      stats_update, &
+      stats_begin_budget, &
+      stats_update_budget, &
+      stats_finalize_budget, &
+      var_on_stats_list
+
   implicit none
 
   private ! Default scope
@@ -89,8 +97,7 @@ module advance_xm_wpxp_module
                               l_mono_flux_lim_vm, &
                               l_mono_flux_lim_spikefix, &
                               order_xm_wpxp, order_xp2_xpyp, order_wp2_wp3, &
-                              stats_metadata, &
-                              stats_zt, stats_zm, stats_sfc, &
+                              stats,         &
                               rtm, wprtp, thlm, wpthlp, &
                               sclrm, wpsclrp, um, upwp, vm, vpwp, &
                               um_pert, vm_pert, upwp_pert, vpwp_pert, err_info )
@@ -161,13 +168,11 @@ module advance_xm_wpxp_module
         clubb_at_least_debug_level_api,  & ! Procedure
         clubb_fatal_error              ! Constants
 
-    use stats_type_utilities, only: &
-        stat_begin_update, & ! Procedure(s)
-        stat_end_update, &
-        stat_update_var
-
-    use stats_variables, only: & 
-        stats_metadata_type
+    use stats_netcdf, only: &
+        stats_type, &
+        stats_update, &
+        stats_begin_budget, &
+        stats_finalize_budget
 
     use sponge_layer_damping, only: &
         rtm_sponge_damp_settings, &
@@ -177,8 +182,6 @@ module advance_xm_wpxp_module
         thlm_sponge_damp_profile, &
         uv_sponge_damp_profile, &
         sponge_damp_xm ! Procedure(s)
-
-    use stats_type, only: stats ! Type
 
     use err_info_type_module, only: &
       err_info_type     ! Type
@@ -352,14 +355,9 @@ module advance_xm_wpxp_module
       order_xp2_xpyp, &
       order_wp2_wp3
 
-    type (stats_metadata_type), intent(in) :: &
-      stats_metadata
-
-    ! -------------------- Input/Output Variables --------------------
-    type (stats), dimension(ngrdcol), intent(inout) :: &
-      stats_zt, &
-      stats_zm, &
-      stats_sfc
+    !------------------- InOut Variables -------------------
+    type(stats_type), intent(inout) :: &
+      stats
 
     real( kind = core_rknd ), intent(inout), dimension(ngrdcol,nzt) ::  & 
       rtm,       & ! r_t  (total water mixing ratio)           [kg/kg]
@@ -442,6 +440,7 @@ module advance_xm_wpxp_module
       wprtp_old,  & ! Saved value of w'r_t'     [(kg/kg) m/s]
       wpthlp_old    ! Saved value of w'th_l'    [K m/s]
 
+    ! -------------------- Input/Output Variables --------------------
     ! Input/Output Variables
     real( kind = core_rknd ), dimension(ngrdcol,nzt,sclr_dim) :: &
       sclrm_old      ! Saved value of sclr      [units vary]
@@ -726,24 +725,12 @@ module advance_xm_wpxp_module
                              C7_Skw_fnc )
 
     end if ! l_use_C7_Richardson
-    
-    
-    if ( stats_metadata%l_stats_samp ) then
 
+    if ( stats%l_sample ) then
       !$acc update host( C7_Skw_fnc, C6rt_Skw_fnc, C6thl_Skw_fnc )
-
-      do i = 1, ngrdcol
-        call stat_update_var( stats_metadata%iC7_Skw_fnc, & ! intent(in)
-                              C7_Skw_fnc(i,:),            & ! intent(in)
-                              stats_zm(i) )                 ! intent(inout)
-        call stat_update_var( stats_metadata%iC6rt_Skw_fnc, & ! intent(in)
-                              C6rt_Skw_fnc(i,:),            & ! intent(in)
-                              stats_zm(i) )                   ! intent(inout
-        call stat_update_var( stats_metadata%iC6thl_Skw_fnc, & ! intent(in)
-                              C6thl_Skw_fnc(i,:),            & ! intent(in)
-                              stats_zm(i) )                    ! intent(inout)
-      end do
-
+      call stats_update( "C7_Skw_fnc", C7_Skw_fnc, stats )
+      call stats_update( "C6rt_Skw_fnc", C6rt_Skw_fnc, stats )
+      call stats_update( "C6thl_Skw_fnc", C6thl_Skw_fnc, stats )
     end if
 
     if ( clubb_at_least_debug_level_api( 0 ) ) then
@@ -785,8 +772,7 @@ module advance_xm_wpxp_module
     call calc_turb_adv_range( nzm, nzt, ngrdcol, gr, dt,                    & ! intent(in)
                               w_1_zm, w_2_zm, varnce_w_1_zm, varnce_w_2_zm, & ! intent(in)
                               mixt_frac_zm,                                 & ! intent(in)
-                              stats_metadata,                               & ! intent(in)
-                              stats_zm,                                     & ! intent(inout)
+                              stats,                                        & ! intent(inout)
                               low_lev_effect, high_lev_effect               ) ! intent(out)
 
     ! Calculate 1st pressure terms for w'r_t', w'thl', and w'sclr'. 
@@ -802,13 +788,9 @@ module advance_xm_wpxp_module
     end do
     !$acc end parallel loop
 
-    if ( stats_metadata%l_stats_samp ) then
+    if ( stats%l_sample ) then
       !$acc update host( C6_term )
-      do i = 1, ngrdcol
-        call stat_update_var( stats_metadata%iC6_term, & ! intent(in)
-                              C6_term(i,:),            & ! intent(in)
-                              stats_zm(i) )              ! intent(inout)
-      end do
+      call stats_update( "C6_term", C6_term, stats )
     end if
 
     call  calc_xm_wpxp_ta_terms( nzm, nzt, ngrdcol, sclr_dim, gr, wp2rtp, &  ! intent(in)
@@ -820,8 +802,7 @@ module advance_xm_wpxp_module
                                  l_explicit_turbulent_adv_wpxp, l_predict_upwp_vpwp, & ! intent(in)
                                  l_scalar_calc, & ! intent(in)
                                  l_godunov_upwind_wpxp_ta, & ! intent(in)
-                                 stats_metadata, & ! intent(in)
-                                 stats_zt, & ! intent(inout)
+                                 stats,         & ! intent(in)
                                  lhs_ta_wprtp, lhs_ta_wpthlp, lhs_ta_wpup, & ! intent(out)
                                  lhs_ta_wpvp, lhs_ta_wpsclrp, & ! intent(out)
                                  rhs_ta_wprtp, rhs_ta_wpthlp, rhs_ta_wpup, & ! intent(out)
@@ -870,8 +851,7 @@ module advance_xm_wpxp_module
                                             l_mono_flux_lim_vm,                             & ! In
                                             l_mono_flux_lim_spikefix,                       & ! In
                                             order_xm_wpxp, order_xp2_xpyp, order_wp2_wp3,   & ! In
-                                            stats_metadata,                                 & ! In
-                                            stats_zt, stats_zm, stats_sfc,                  & ! InOut
+                                            stats,                                           & ! InOut
                                             rtm, wprtp, thlm, wpthlp, sclrm, wpsclrp,       & ! InOut
                                             err_info )                                        ! InOut
     else
@@ -913,8 +893,7 @@ module advance_xm_wpxp_module
                                           l_mono_flux_lim_vm,                              & ! In
                                           l_mono_flux_lim_spikefix,                        & ! In
                                           order_xm_wpxp, order_xp2_xpyp, order_wp2_wp3,    & ! In
-                                          stats_metadata,                                  & ! In
-                                          stats_zt, stats_zm, stats_sfc,                   & ! In
+                                          stats,                                            & ! InOut
                                           rtm, wprtp, thlm, wpthlp,                        & ! InOut
                                           sclrm, wpsclrp, um, upwp, vm, vpwp,              & ! InOut
                                           um_pert, vm_pert, upwp_pert, vpwp_pert, err_info ) ! InOut
@@ -1050,11 +1029,8 @@ module advance_xm_wpxp_module
 
       !$acc update host( rtm, rtm_ref )
 
-      if ( stats_metadata%l_stats_samp ) then
-        do i = 1, ngrdcol
-          call stat_begin_update( nzt, stats_metadata%irtm_sdmp, rtm(i,:) / dt, & ! intent(in)
-                                  stats_zt(i) )             ! intent(inout)
-        end do
+      if ( stats%l_sample ) then
+        call stats_begin_budget( "rtm_sdmp", rtm / dt, stats )
       end if
 
       do i = 1, ngrdcol
@@ -1062,11 +1038,8 @@ module advance_xm_wpxp_module
                                    rtm_ref(i,:), rtm(i,:), rtm_sponge_damp_profile )
       end do
 
-      if ( stats_metadata%l_stats_samp ) then
-        do i = 1, ngrdcol
-          call stat_end_update( nzt, stats_metadata%irtm_sdmp, rtm(i,:) / dt, & ! intent(in)
-                                stats_zt(i) )             ! intent(inout)
-        end do
+      if ( stats%l_sample ) then
+        call stats_finalize_budget( "rtm_sdmp", rtm / dt, stats )
       end if
 
       !$acc update device( rtm )
@@ -1077,11 +1050,8 @@ module advance_xm_wpxp_module
 
       !$acc update host( thlm, thlm_ref )
 
-      if ( stats_metadata%l_stats_samp ) then
-        do i = 1, ngrdcol
-          call stat_begin_update( nzt, stats_metadata%ithlm_sdmp, thlm(i,:) / dt, & ! intent(in)
-                                  stats_zt(i) )               ! intent(inout)
-        end do
+      if ( stats%l_sample ) then
+        call stats_begin_budget( "thlm_sdmp", thlm / dt, stats )
       end if
 
       do i = 1, ngrdcol
@@ -1089,11 +1059,8 @@ module advance_xm_wpxp_module
                                     thlm_ref(i,:), thlm(i,:), thlm_sponge_damp_profile )
       end do
 
-      if ( stats_metadata%l_stats_samp ) then
-        do i = 1, ngrdcol
-          call stat_end_update( nzt, stats_metadata%ithlm_sdmp, thlm(i,:) / dt, & ! intent(in)
-                                stats_zt(i) )               ! intent(inout)
-        end do
+      if ( stats%l_sample ) then
+        call stats_finalize_budget( "thlm_sdmp", thlm / dt, stats )
       end if
 
       !$acc update device( thlm )
@@ -1106,13 +1073,9 @@ module advance_xm_wpxp_module
 
         !$acc update host( um, vm, um_ref, vm_ref )
 
-        if ( stats_metadata%l_stats_samp ) then
-          do i = 1, ngrdcol
-             call stat_begin_update( nzt, stats_metadata%ium_sdmp, um(i,:) / dt, & ! intent(in)
-                                     stats_zt(i) )           ! intent(inout)
-             call stat_begin_update( nzt, stats_metadata%ivm_sdmp, vm(i,:) / dt, & ! intent(in)
-                                     stats_zt(i) )           ! intent(inout)
-          end do
+        if ( stats%l_sample ) then
+          call stats_begin_budget( "um_sdmp", um / dt, stats )
+          call stats_begin_budget( "vm_sdmp", vm / dt, stats )
         end if
 
         do i = 1, ngrdcol
@@ -1125,13 +1088,9 @@ module advance_xm_wpxp_module
                                     vm_ref(i,:), vm(i,:), uv_sponge_damp_profile )
         end do
 
-        if ( stats_metadata%l_stats_samp ) then
-          do i = 1, ngrdcol
-            call stat_end_update( nzt, stats_metadata%ium_sdmp, um(i,:) / dt, & ! intent(in)
-                                  stats_zt(i) )           ! intent(inout)
-            call stat_end_update( nzt, stats_metadata%ivm_sdmp, vm(i,:) / dt, & ! intent(in)
-                                  stats_zt(i) )           ! intent(inout)
-          end do
+        if ( stats%l_sample ) then
+          call stats_finalize_budget( "um_sdmp", um / dt, stats )
+          call stats_finalize_budget( "vm_sdmp", vm / dt, stats )
         end if
 
       !$acc update device( um, vm )
@@ -1142,14 +1101,10 @@ module advance_xm_wpxp_module
       if ( l_uv_nudge ) then
 
         ! Reflect nudging in budget
-        if ( stats_metadata%l_stats_samp ) then
-          !$acc update host( um, vm )
-          do i = 1, ngrdcol
-            call stat_begin_update( nzt, stats_metadata%ium_ndg, um(i,:) / dt, & ! intent(in)
-                                    stats_zt(i) )          ! intent(inout)
-            call stat_begin_update( nzt, stats_metadata%ivm_ndg, vm(i,:) / dt, & ! intent(in)
-                                    stats_zt(i) )          ! intent(inout)
-          end do
+
+        if ( stats%l_sample ) then
+          call stats_begin_budget( "um_ndg", um / dt, stats )
+          call stats_begin_budget( "vm_ndg", vm / dt, stats )
         end if
         
         !$acc parallel loop gang vector collapse(2) default(present)
@@ -1162,28 +1117,17 @@ module advance_xm_wpxp_module
         !$acc end parallel loop
 
         ! Reflect nudging in budget
-        if ( stats_metadata%l_stats_samp ) then
-          !$acc update host( um, vm )
-          do i = 1, ngrdcol
-            call stat_end_update( nzt, stats_metadata%ium_ndg, um(i,:) / dt, & ! intent(in)
-                                  stats_zt(i) )          ! intent(inout)
-            call stat_end_update( nzt, stats_metadata%ivm_ndg, vm(i,:) / dt, & ! intent(in)
-                                  stats_zt(i) )          ! intent(inout)
-          end do
+
+        if ( stats%l_sample ) then
+          call stats_finalize_budget( "um_ndg", um / dt, stats )
+          call stats_finalize_budget( "vm_ndg", vm / dt, stats )
         end if
 
       end if ! l_uv_nudge
 
-      if ( stats_metadata%l_stats_samp ) then
-        !$acc update host( um_ref, vm_ref )
-        do i = 1, ngrdcol
-          call stat_update_var( stats_metadata%ium_ref, & ! intent(in)
-                                um_ref(i,:),            & ! intent(in)
-                                stats_zt(i) )             ! intent(inout)
-          call stat_update_var( stats_metadata%ivm_ref, & ! intent(in)
-                                vm_ref(i,:),            & ! intent(in)
-                                stats_zt(i) )             ! intent(inout)
-        end do
+      if ( stats%l_sample ) then
+        call stats_update( "um_ref", um_ref, stats )
+        call stats_update( "vm_ref", vm_ref, stats )
       end if
 
     end if ! l_predict_upwp_vpwp
@@ -1680,8 +1624,7 @@ module advance_xm_wpxp_module
                           xm, wpxp, xm_forcing, wpxp_forcing, C7_Skw_fnc, & ! In
                           xpthvp, rhs_ta, thv_ds_zm, & ! In
                           lhs_pr1, lhs_ta_wpxp, & ! In
-                          stats_metadata, & ! In
-                          stats_zt, stats_zm, & ! In
+                          stats,         & ! InOut
                           rhs ) ! Out
 
     ! Description:
@@ -1723,17 +1666,6 @@ module advance_xm_wpxp_module
 
     use clubb_precision, only:  & 
         core_rknd ! Variable(s)
-
-    use stats_type_utilities, only: & 
-        stat_update_var,      & ! Procedure(s)
-        stat_update_var_pt,   & 
-        stat_begin_update_pt, &
-        stat_modify_pt
-
-    use stats_variables, only: &
-        stats_metadata_type
-
-    use stats_type, only: stats ! Type
 
     implicit none
 
@@ -1777,13 +1709,8 @@ module advance_xm_wpxp_module
       xm,                     & ! xm (thermodynamic levels)               [x un]
       xm_forcing                ! xm forcings (thermodynamic levels)  [{x un}/s]
     
-    type (stats_metadata_type), intent(in) :: &
-      stats_metadata
-
-    !------------------- InOut Variables -------------------
-    type (stats), dimension(ngrdcol), intent(inout) :: &
-      stats_zt, &
-      stats_zm
+    type(stats_type), intent(inout) :: &
+      stats
 
     !------------------- Output Variable -------------------
     real( kind = core_rknd ), intent(out), dimension(ngrdcol,2*nzm-1) ::  & 
@@ -1800,8 +1727,11 @@ module advance_xm_wpxp_module
         invrs_dt
 
     real( kind = core_rknd ), dimension(ngrdcol,nzm) :: &
-      C7_Skw_fnc_plus_one,  & ! stats only
-      C7_Skw_fnc_zeros        ! stats only
+      C7_Skw_fnc_plus_one,      & ! stats only
+      C7_Skw_fnc_zeros,         & ! stats only
+      wpxp_forcing_stats,       & ! stats only
+      ta_over,                  & ! stats only
+      pr1_over                    ! stats only
 
     ! Indices
     integer :: k, k_xm, k_wpxp
@@ -1810,13 +1740,13 @@ module advance_xm_wpxp_module
       rhs_lb_idx_zm, & ! Index of (momentum) lower boundary level in rhs array
       rhs_ub_idx_zm    ! Index of (momentum) upper boundary level in rhs array
 
-    integer :: & 
-      ixm_f, & 
-      iwpxp_bp, & 
-      iwpxp_pr3, &
-      iwpxp_f, &
-      iwpxp_ta, &
-      iwpxp_pr1
+    character(len=32) :: &
+      name_xm_f, &
+      name_wpxp_bp, &
+      name_wpxp_pr3, &
+      name_wpxp_f, &
+      name_wpxp_ta, &
+      name_wpxp_pr1
       
     integer :: i
 
@@ -1905,48 +1835,45 @@ module advance_xm_wpxp_module
     end if
     
 
-    if ( stats_metadata%l_stats_samp ) then
+    if ( stats%l_sample ) then
 
       select case ( solve_type )
           case ( xm_wpxp_rtm )  ! rtm/wprtp budget terms
-            ixm_f      = stats_metadata%irtm_forcing
-            iwpxp_bp   = stats_metadata%iwprtp_bp
-            iwpxp_pr3  = stats_metadata%iwprtp_pr3
-            iwpxp_f    = stats_metadata%iwprtp_forcing
-            iwpxp_ta   = stats_metadata%iwprtp_ta
-            iwpxp_pr1  = stats_metadata%iwprtp_pr1
+            name_xm_f = "rtm_forcing"
+            name_wpxp_bp = "wprtp_bp"
+            name_wpxp_pr3 = "wprtp_pr3"
+            name_wpxp_f = "wprtp_forcing"
+            name_wpxp_ta = "wprtp_ta"
+            name_wpxp_pr1 = "wprtp_pr1"
           case ( xm_wpxp_thlm ) ! thlm/wpthlp budget terms
-            ixm_f      = stats_metadata%ithlm_forcing
-            iwpxp_bp   = stats_metadata%iwpthlp_bp
-            iwpxp_pr3  = stats_metadata%iwpthlp_pr3
-            iwpxp_f    = stats_metadata%iwpthlp_forcing
-            iwpxp_ta   = stats_metadata%iwpthlp_ta
-            iwpxp_pr1  = stats_metadata%iwpthlp_pr1
+            name_xm_f = "thlm_forcing"
+            name_wpxp_bp = "wpthlp_bp"
+            name_wpxp_pr3 = "wpthlp_pr3"
+            name_wpxp_f = "wpthlp_forcing"
+            name_wpxp_ta = "wpthlp_ta"
+            name_wpxp_pr1 = "wpthlp_pr1"
           case ( xm_wpxp_um )  ! um/upwp budget terms
-            ixm_f      = 0
-            iwpxp_bp   = stats_metadata%iupwp_bp
-            iwpxp_pr3  = stats_metadata%iupwp_pr3
-            iwpxp_f    = 0
-            iwpxp_ta   = stats_metadata%iupwp_ta
-            iwpxp_pr1  = stats_metadata%iupwp_pr1
+            name_xm_f = ""
+            name_wpxp_bp = "upwp_bp"
+            name_wpxp_pr3 = "upwp_pr3"
+            name_wpxp_f = ""
+            name_wpxp_ta = "upwp_ta"
+            name_wpxp_pr1 = "upwp_pr1"
           case ( xm_wpxp_vm )  ! vm/vpwp budget terms
-            ixm_f      = 0
-            iwpxp_bp   = stats_metadata%ivpwp_bp
-            iwpxp_pr3  = stats_metadata%ivpwp_pr3
-            iwpxp_f    = 0
-            iwpxp_ta   = stats_metadata%ivpwp_ta
-            iwpxp_pr1  = stats_metadata%ivpwp_pr1
+            name_xm_f = ""
+            name_wpxp_bp = "vpwp_bp"
+            name_wpxp_pr3 = "vpwp_pr3"
+            name_wpxp_f = ""
+            name_wpxp_ta = "vpwp_ta"
+            name_wpxp_pr1 = "vpwp_pr1"
           case default    ! this includes the sclrm case
-            ixm_f      = 0
-            iwpxp_bp   = 0
-            iwpxp_pr3  = 0
-            iwpxp_f    = 0
-            iwpxp_ta   = 0
-            iwpxp_pr1  = 0
+            name_xm_f = ""
+            name_wpxp_bp = ""
+            name_wpxp_pr3 = ""
+            name_wpxp_f = ""
+            name_wpxp_ta = ""
+            name_wpxp_pr1 = ""
       end select
-
-
-      ! Statistics: explicit contributions for wpxp.
 
       C7_Skw_fnc_zeros    = zero
       C7_Skw_fnc_plus_one = C7_Skw_fnc + one
@@ -1954,6 +1881,7 @@ module advance_xm_wpxp_module
       !$acc data copyin( C7_Skw_fnc_zeros, C7_Skw_fnc_plus_one ) &
       !$acc      copyout( rhs_bp, rhs_pr3 )
 
+      ! Statistics: explicit contributions for wpxp.
       ! w'x' term bp is completely explicit; call stat_update_var.
       ! Note:  To find the contribution of w'x' term bp, substitute 0 for the
       !        C_7 skewness function input to function wpxp_terms_bp_pr3_rhs.
@@ -1970,76 +1898,77 @@ module advance_xm_wpxp_module
 
       !$acc end data
 
-      do i = 1, ngrdcol
-
-        call stat_update_var( iwpxp_bp, rhs_bp(i,:), & ! intent(in)
-                              stats_zm(i) )            ! intent(inout)
-
-        call stat_update_var( iwpxp_pr3, rhs_pr3(i,:), & ! intent(in)
-                              stats_zm(i) )              ! intent(inout)
-      end do
-
       !$acc update host( lhs_ta_wpxp, xm, wpxp, xm_forcing, wpxp_forcing, &
       !$acc              C7_Skw_fnc, xpthvp, thv_ds_zm, lhs_pr1, rhs_ta, rhs )
 
-      do k = 2, nzm-1
-        do i = 1, ngrdcol
+      ! Keep the bp/pr3 split consistent with the legacy stats decomposition.
+      ! rhs_bp uses C7_Skw_fnc=0 and rhs_pr3 uses C7_Skw_fnc+1.
+      call stats_update( name_wpxp_bp, rhs_bp, stats )
+      call stats_update( name_wpxp_pr3, rhs_pr3, stats )
 
-          ! w'x' forcing term is completely explicit; call stat_update_var_pt.
-          call stat_update_var_pt( iwpxp_f, k,          & ! intent(in)
-                                   wpxp_forcing(i,k),   & ! intent(in)
-                                   stats_zm(i) )          ! intent(inout)
+      if ( len_trim(name_wpxp_f) > 0 ) then
+        wpxp_forcing_stats(:,1) = 0.0_core_rknd
+        wpxp_forcing_stats(:,nzm) = 0.0_core_rknd
+        wpxp_forcing_stats(:,2:nzm-1) = wpxp_forcing(:,2:nzm-1)
+        ! w'x' forcing term is completely explicit; call stat_update_var_pt.
+        call stats_update( name_wpxp_f, wpxp_forcing_stats, stats )
+      end if
 
-
-          ! <w'x'> term ta has both implicit and explicit components; call
-          ! stat_begin_update_pt.  Since stat_begin_update_pt automatically
-          ! subtracts the value sent in, reverse the sign on
-          ! xpyp_term_ta_pdf_rhs.
-          call stat_begin_update_pt( iwpxp_ta, k, -rhs_ta(i,k), & ! intent(in) 
-                                     stats_zm(i) )                 ! intent(inout)
-
-          ! Note:  An "over-implicit" weighted time step is applied to this term.
-          !        A weighting factor of greater than 1 may be used to make the
-          !        term more numerically stable (see note above for RHS
-          !        contribution from "over-implicit" weighted time step for LHS
-          !        turbulent advection (ta) term).
-          call stat_modify_pt( iwpxp_ta, k, & ! intent(in)
-               + ( one - gamma_over_implicit_ts ) &
-                 * ( - lhs_ta_wpxp(2-gr%grid_dir_indx,i,k) * wpxp(i,k+gr%grid_dir_indx) &
-                     - lhs_ta_wpxp(2,i,k) * wpxp(i,k) &
-                     - lhs_ta_wpxp(2+gr%grid_dir_indx,i,k) * wpxp(i,k-gr%grid_dir_indx) ), &
-                               stats_zm(i) ) ! intent(inout)
-
-          ! w'x' term pr1 is normally completely implicit.  However, there is a
-          ! RHS contribution from the "over-implicit" weighted time step.  A
-          ! weighting factor of greater than 1 may be used to make the term more
-          ! numerically stable (see note above for RHS contribution from
-          ! "over-implicit" weighted time step for LHS turbulent advection (ta)
-          ! term).  Therefore, w'x' term pr1 has both implicit and explicit
-          ! components; call stat_begin_update_pt.  Since stat_begin_update_pt
-          ! automatically subtracts the value sent in, reverse the sign on the
-          ! input value.
-          call stat_begin_update_pt( iwpxp_pr1, k, & ! intent(in)
-                                    - ( one - gamma_over_implicit_ts )  &
-                                    * ( - lhs_pr1(i,k) * wpxp(i,k) ), & ! intent(in)
-                                     stats_zm(i) ) ! intent(inout)
+      if ( len_trim(name_wpxp_ta) > 0 ) then
+        ! <w'x'> term ta has both implicit and explicit components; call
+        ! stat_begin_update_pt.  Since stat_begin_update_pt automatically
+        ! subtracts the value sent in, reverse the sign on
+        ! xpyp_term_ta_pdf_rhs.
+        ! Start with the explicit rhs term via stats_begin_budget.
+        call stats_begin_budget( name_wpxp_ta, rhs_ta, stats )
+        ta_over(:,1) = 0.0_core_rknd
+        do k = 2, nzm-1
+          do i = 1, ngrdcol
+            ta_over(i,k) = ( one - gamma_over_implicit_ts ) &
+              * ( - lhs_ta_wpxp(2-gr%grid_dir_indx,i,k) * wpxp(i,k+gr%grid_dir_indx) &
+                  - lhs_ta_wpxp(2,i,k) * wpxp(i,k) &
+                - lhs_ta_wpxp(2+gr%grid_dir_indx,i,k) * wpxp(i,k-gr%grid_dir_indx) )
+          end do
         end do
-      end do
+        ta_over(:,nzm) = 0.0_core_rknd
+        ! Note:  An "over-implicit" weighted time step is applied to this term.
+        !        A weighting factor of greater than 1 may be used to make the
+        !        term more numerically stable (see note above for RHS
+        !        contribution from "over-implicit" weighted time step for LHS
+        !        turbulent advection (ta) term).
+        call stats_update_budget( name_wpxp_ta, ta_over, stats )
+      end if
 
-      
+      if ( len_trim(name_wpxp_pr1) > 0 ) then
+        ! w'x' term pr1 is normally completely implicit.  However, there is a
+        ! RHS contribution from the "over-implicit" weighted time step.
+        ! RHS contribution from the "over-implicit" weighted time step.  A
+        ! weighting factor of greater than 1 may be used to make the term more
+        ! numerically stable (see note above for RHS contribution from
+        ! "over-implicit" weighted time step for LHS turbulent advection (ta)
+        ! term).  Therefore, w'x' term pr1 has both implicit and explicit
+        ! components; call stat_begin_update_pt.  Since stat_begin_update_pt
+        ! Therefore, w'x' term pr1 has both implicit and explicit components;
+        ! call stat_begin_update_pt.  Since stat_begin_update_pt
+        ! automatically subtracts the value sent in, reverse the sign on the
+        ! input value.
+        pr1_over(:,1) = 0.0_core_rknd
+        do k = 2, nzm-1
+          do i = 1, ngrdcol
+            pr1_over(i,k) = ( one - gamma_over_implicit_ts ) * lhs_pr1(i,k) * wpxp(i,k)
+          end do
+        end do
+        pr1_over(:,nzm) = 0.0_core_rknd
+        call stats_begin_budget( name_wpxp_pr1, pr1_over, stats )
+      end if
+
       ! Statistics: explicit contributions for xm
       !             (including microphysics/radiation).
-
       ! xm forcings term is completely explicit; call stat_update_var_pt.
-      do k = 1, nzt
-        do i = 1, ngrdcol
-          call stat_update_var_pt( ixm_f, k, & ! intent(in)
-                                   xm_forcing(i,k), & ! intent(in)
-                                   stats_zt(i) )                ! intent(inout)
-        end do
-      end do
+      ! xm forcing (e.g., large-scale forcing and source terms) is explicit.
+      call stats_update( name_xm_f, xm_forcing, stats )
 
-    endif ! stats_metadata%l_stats_samp
+    end if
 
     !$acc exit data delete( rhs_bp_pr3 )
 
@@ -2057,8 +1986,7 @@ module advance_xm_wpxp_module
                                     l_explicit_turbulent_adv_wpxp, l_predict_upwp_vpwp, &
                                     l_scalar_calc, &
                                     l_godunov_upwind_wpxp_ta, &
-                                    stats_metadata, &
-                                    stats_zt, &
+                                    stats,         &
                                     lhs_ta_wprtp, lhs_ta_wpthlp, lhs_ta_wpup, &
                                     lhs_ta_wpvp, lhs_ta_wpsclrp, &
                                     rhs_ta_wprtp, rhs_ta_wpthlp, rhs_ta_wpup, &
@@ -2096,15 +2024,6 @@ module advance_xm_wpxp_module
         iiPDF_new,        &
         iiPDF_new_hybrid
       
-    use stats_variables, only: &
-        stats_metadata_type
-      
-    use stats_type_utilities, only: & 
-        stat_update_var   ! Procedure(s)
-
-    use stats_type, only: &
-      stats ! Type
-
     implicit none 
     
     !------------------- Input Variables -------------------
@@ -2157,13 +2076,9 @@ module advance_xm_wpxp_module
                               ! More information on this can be found on issue #926
                               ! on the clubb repository.
 
-    type (stats_metadata_type), intent(in) :: &
-      stats_metadata         
+    type(stats_type), intent(inout) :: &
+      stats
 
-    !------------------- Inout Variables -------------------
-    type (stats), dimension(ngrdcol), intent(inout) :: &
-      stats_zt
-      
     !------------------- Output Variables -------------------
         
     real( kind = core_rknd ), dimension(ndiags3,ngrdcol,nzm), intent(out) :: &
@@ -2253,7 +2168,8 @@ module advance_xm_wpxp_module
       ! <w'x'> are calculated on thermodynamic levels.
        
       ! These coefficients only need to be set if stats output is on
-      if ( stats_metadata%l_stats_samp ) then
+
+      if ( stats%l_sample ) then
         coef_wp2rtp_implicit(:,:)  = zero
         coef_wp2thlp_implicit(:,:) = zero
       end if
@@ -2425,8 +2341,8 @@ module advance_xm_wpxp_module
           end do
           !$acc end parallel loop
         end if
-        
-        if ( stats_metadata%l_stats_samp ) then
+
+        if ( stats%l_sample ) then
           !$acc parallel loop gang vector collapse(2) default(present)
           do k = 1, nzt
             do i = 1, ngrdcol
@@ -2580,8 +2496,8 @@ module advance_xm_wpxp_module
             lhs_ta_wpsclrp(:,:,:,sclr) = lhs_ta_wprtp(:,:,:)
           end do
         end if
-        
-        if ( stats_metadata%l_stats_samp ) then
+
+        if ( stats%l_sample ) then
           term_wp2rtp_explicit(:,:) = zero
           term_wp2thlp_explicit(:,:) = zero
         end if
@@ -2609,25 +2525,15 @@ module advance_xm_wpxp_module
       endif ! iiPDF_type
 
     endif ! l_explicit_turbulent_adv_xpyp
-      
-    if ( stats_metadata%l_stats_samp ) then
+
+    if ( stats%l_sample ) then
       !$acc update host( coef_wp2rtp_implicit, term_wp2rtp_explicit, &
       !$acc              coef_wp2thlp_implicit, term_wp2thlp_explicit )
-      do i = 1, ngrdcol
-        call stat_update_var( stats_metadata%icoef_wp2rtp_implicit, & ! intent(in)
-                              coef_wp2rtp_implicit(i,:),            & ! intent(in)
-                              stats_zt(i) )                           ! intent(inout)
-        call stat_update_var( stats_metadata%iterm_wp2rtp_explicit, & ! intent(in)
-                              term_wp2rtp_explicit(i,:),            & ! intent(in)
-                              stats_zt(i) )                           ! intent(inout)
-        call stat_update_var( stats_metadata%icoef_wp2thlp_implicit, & ! intent(in)
-                              coef_wp2thlp_implicit(i,:),            & ! intent(in)
-                              stats_zt(i) )                            ! intent(inout)
-        call stat_update_var( stats_metadata%iterm_wp2thlp_explicit, & ! intent(in)
-                              term_wp2thlp_explicit(i,:),            & ! intent(in)
-                              stats_zt(i) )                            ! intent(inout)
-      end do
-    endif
+      call stats_update( "coef_wp2rtp_implicit", coef_wp2rtp_implicit, stats )
+      call stats_update( "term_wp2rtp_explicit", term_wp2rtp_explicit, stats )
+      call stats_update( "coef_wp2thlp_implicit", coef_wp2thlp_implicit, stats )
+      call stats_update( "term_wp2thlp_explicit", term_wp2thlp_explicit, stats )
+    end if
 
     !$acc exit data delete( coef_wp2rtp_implicit, term_wp2rtp_explicit, coef_wp2rtp_implicit_zm, &
     !$acc                 term_wp2rtp_explicit_zm, coef_wp2thlp_implicit, term_wp2thlp_explicit, &
@@ -2677,8 +2583,7 @@ module advance_xm_wpxp_module
                                             l_mono_flux_lim_vm, &
                                             l_mono_flux_lim_spikefix, &
                                             order_xm_wpxp, order_xp2_xpyp, order_wp2_wp3, &
-                                            stats_metadata, &
-                                            stats_zt, stats_zm, stats_sfc, &
+                                            stats,         &
                                             rtm, wprtp, thlm, wpthlp, &
                                             sclrm, wpsclrp, um, upwp, vm, vpwp, &
                                             um_pert, vm_pert, upwp_pert, vpwp_pert, err_info )
@@ -2698,12 +2603,6 @@ module advance_xm_wpxp_module
         clubb_at_least_debug_level_api,  & ! Procedure
         clubb_fatal_error              ! Constants
 
-    use stats_type_utilities, only: &
-        stat_update_var   ! Procedure(s)
-
-    use stats_variables, only: &
-        stats_metadata_type
-
     use clubb_precision, only: &
         core_rknd ! Variable(s)
 
@@ -2718,8 +2617,6 @@ module advance_xm_wpxp_module
         zero, &
         one, &
         ep1
-
-    use stats_type, only: stats ! Type
 
     use model_flags, only: &
         penta_bicgstab
@@ -2893,8 +2790,8 @@ module advance_xm_wpxp_module
       order_xp2_xpyp, &
       order_wp2_wp3
 
-    type (stats_metadata_type), intent(in) :: &
-      stats_metadata
+    type(stats_type), intent(inout) :: &
+      stats
 
     ! ------------------- Input/Output Variables -------------------
 
@@ -2929,11 +2826,6 @@ module advance_xm_wpxp_module
     real( kind = core_rknd ), dimension(ngrdcol,nzm), intent(inout) :: &
       upwp_pert, & ! perturbed <u'w'> [m^2/s^2]
       vpwp_pert    ! perturbed <v'w'> [m^2/s^2]
-
-    type (stats), dimension(ngrdcol), intent(inout) :: &
-      stats_zt, &
-      stats_zm, &
-      stats_sfc
 
     type(err_info_type), intent(inout) :: &
       err_info      ! err_info struct containing err_code and err_header
@@ -2995,6 +2887,12 @@ module advance_xm_wpxp_module
       um_smth, &
       vm_smth
 
+    real( kind = core_rknd ), dimension(ngrdcol,nzt) :: &
+      tmp_zt
+
+    real( kind = core_rknd ), dimension(ngrdcol,nzm) :: &
+      tmp_zm
+
     integer :: i, k, j, n, sclr
     
     ! ------------------- Begin Code -------------------
@@ -3036,8 +2934,7 @@ module advance_xm_wpxp_module
                       rtm, wprtp, rtm_forcing, wprtp_forcing, C7_Skw_fnc,     & ! In
                       rtpthvp, rhs_ta_wprtp, thv_ds_zm,                       & ! In
                       lhs_pr1_wprtp, lhs_ta_wpxp,                             & ! In
-                      stats_metadata,                                         & ! In
-                      stats_zt, stats_zm,                                     & ! Inout
+                      stats,                                                  & ! InOut
                       rhs(:,:,1) )                                              ! Out
                         
     ! Compute the explicit portion of the th_l and w'th_l' equations.
@@ -3046,8 +2943,7 @@ module advance_xm_wpxp_module
                       thlm, wpthlp, thlm_forcing, wpthlp_forcing, C7_Skw_fnc,    & ! In
                       thlpthvp, rhs_ta_wpthlp, thv_ds_zm,                        & ! In
                       lhs_pr1_wpthlp, lhs_ta_wpxp,                               & ! In
-                      stats_metadata,                                            & ! In
-                      stats_zt, stats_zm,                                        & ! Inout
+                      stats,                                                     & ! InOut
                       rhs(:,:,2) )                                                 ! Out
 
 ! ---> h1g, 2010-06-15
@@ -3075,8 +2971,7 @@ module advance_xm_wpxp_module
                         wpsclrp_forcing(:,:,sclr), C7_Skw_fnc,                            & ! In
                         sclrpthvp(:,:,sclr), rhs_ta_wpsclrp(:,:,sclr), thv_ds_zm,         & ! In
                         lhs_pr1_wpsclrp, lhs_ta_wpxp,                                     & ! In
-                        stats_metadata,                                                   & ! In
-                        stats_zt, stats_zm,                                               & ! Inout
+                        stats,                                                            & ! InOut
                         rhs(:,:,2+sclr) )                                                   ! Out
 
     end do
@@ -3102,35 +2997,47 @@ module advance_xm_wpxp_module
         end do
         !$acc end parallel loop
 
-        if ( stats_metadata%l_stats_samp ) then
-
+        if ( stats%l_sample ) then
           !$acc update host( fcor, um_forcing, vm_forcing, vg, ug, vm, um )
-
-          do i = 1, ngrdcol
-            ! um or vm term gf is completely explicit; call stat_update_var.
-            call stat_update_var( stats_metadata%ium_gf, & ! intent(in)
-                                  - fcor(i) * vg(i,:),   & ! intent(in)
-                                  stats_zt(i) )            ! intent(inout)
-            call stat_update_var( stats_metadata%ivm_gf, fcor(i) * ug(i,:), & ! intent(in)
-                                  stats_zt(i) )                               ! intent(inout)
-
-            ! um or vm term cf is completely explicit; call stat_update_var.
-            call stat_update_var( stats_metadata%ium_cf, & ! intent(in)
-                                  fcor(i) * vm(i,:),     & ! intent(in)
-                                  stats_zt(i) )            ! intent(inout)
-            call stat_update_var( stats_metadata%ivm_cf, & ! intent(in)
-                                  - fcor(i) * um(i,:),   & ! intent(in)
-                                  stats_zt(i) )            ! intent(inout)
-
-            ! um or vm forcing term
-            call stat_update_var( stats_metadata%ium_f, & ! intent(in)
-                                  um_forcing(i,:),      & ! intent(in)
-                                  stats_zt(i) )           ! intent(inout)
-            call stat_update_var( stats_metadata%ivm_f, & ! intent(in)
-                                  vm_forcing(i,:),      & ! intent(in)
-                                  stats_zt(i) )           ! intent(inout)
+          ! um or vm term gf is completely explicit; call stat_update_var.
+          ! Geostrophic-forcing contribution to um tendency.
+          do k = 1, nzt
+            do i = 1, ngrdcol
+              tmp_zt(i,k) = -fcor(i) * vg(i,k)
+            end do
           end do
-        endif ! stats_metadata%l_stats_samp
+          call stats_update( "um_gf", tmp_zt, stats )
+
+          ! Geostrophic-forcing contribution to vm tendency.
+          do k = 1, nzt
+            do i = 1, ngrdcol
+              tmp_zt(i,k) = fcor(i) * ug(i,k)
+            end do
+          end do
+          call stats_update( "vm_gf", tmp_zt, stats )
+
+          ! um or vm term cf is completely explicit; call stat_update_var.
+          ! Coriolis-coupling contribution to um tendency.
+          do k = 1, nzt
+            do i = 1, ngrdcol
+              tmp_zt(i,k) = fcor(i) * vm(i,k)
+            end do
+          end do
+          call stats_update( "um_cf", tmp_zt, stats )
+
+          ! Coriolis-coupling contribution to vm tendency.
+          do k = 1, nzt
+            do i = 1, ngrdcol
+              tmp_zt(i,k) = -fcor(i) * um(i,k)
+            end do
+          end do
+          call stats_update( "vm_cf", tmp_zt, stats )
+
+          ! um or vm forcing term
+          ! External forcing terms are explicit.
+          call stats_update( "um_f", um_forcing, stats )
+          call stats_update( "vm_f", vm_forcing, stats )
+        end if
 
       else ! implemented in a host model
 
@@ -3203,45 +3110,49 @@ module advance_xm_wpxp_module
 
       endif ! l_perturbed_wind
 
-      if ( stats_metadata%l_stats_samp ) then
-
+      if ( stats%l_sample ) then
         !$acc update host( wp2, ddzt_um, ddzt_vm, C_uu_shr )
-
-        do i = 1, ngrdcol
-          call stat_update_var( stats_metadata%iupwp_pr4,              & ! intent(in)
-                                C_uu_shr(i) * wp2(i,:) * ddzt_um(i,:), & ! intent(in)
-                                stats_zm(i) )                            ! intent(inout)
-          call stat_update_var( stats_metadata%ivpwp_pr4,              & ! intent(in)
-                                C_uu_shr(i) * wp2(i,:) * ddzt_vm(i,:), & ! intent(in)
-                                stats_zm(i) )                            ! intent(inout)
+        do k = 1, nzm
+          do i = 1, ngrdcol
+            tmp_zm(i,k) = C_uu_shr(i) * wp2(i,k) * ddzt_um(i,k)
+          end do
         end do
+        call stats_update( "upwp_pr4", tmp_zm, stats )
+
+        do k = 1, nzm
+          do i = 1, ngrdcol
+            tmp_zm(i,k) = C_uu_shr(i) * wp2(i,k) * ddzt_vm(i,k)
+          end do
+        end do
+        call stats_update( "vpwp_pr4", tmp_zm, stats )
 
         if ( l_ho_trad_coriolis ) then
-
           !$acc update host( upwp, vpwp, fcor )
-
-          do i = 1, ngrdcol
-            call stat_update_var( stats_metadata%iupwp_tct,              & ! intent(in)
-                                    fcor(i) * vpwp(i,:),                 & ! intent(in)
-                                  stats_zm(i) )                            ! intent(inout)
-            call stat_update_var( stats_metadata%ivpwp_tct,              & ! intent(in)
-                                  - fcor(i) * upwp(i,:),                 & ! intent(in)
-                                  stats_zm(i) )                            ! intent(inout)
+          do k = 1, nzm
+            do i = 1, ngrdcol
+              tmp_zm(i,k) = fcor(i) * vpwp(i,k)
+            end do
           end do
-        end if ! l_ho_trad_coriolis
+          call stats_update( "upwp_tct", tmp_zm, stats )
+
+          do k = 1, nzm
+            do i = 1, ngrdcol
+              tmp_zm(i,k) = -fcor(i) * upwp(i,k)
+            end do
+          end do
+          call stats_update( "vpwp_tct", tmp_zm, stats )
+        end if
 
         if ( l_ho_nontrad_coriolis ) then
-
           !$acc update host( up2, wp2, fcor_y )
-
-          do i = 1, ngrdcol
-            call stat_update_var( stats_metadata%iupwp_nct,              & ! intent(in)
-                                  fcor_y(i) * ( up2(i,:) - wp2(i,:) ),   & ! intent(in)
-                                  stats_zm(i) )                            ! intent(inout)
+          do k = 1, nzm
+            do i = 1, ngrdcol
+              tmp_zm(i,k) = fcor_y(i) * ( up2(i,k) - wp2(i,k) )
+            end do
           end do
-        end if ! l_ho_trad_coriolis
-
-      end if ! stats_metadata%l_stats_samp
+          call stats_update( "upwp_nct", tmp_zm, stats )
+        end if
+      end if
 
       ! need tau_C6_zm for these calls
       !$acc parallel loop gang vector collapse(2) default(present)
@@ -3330,46 +3241,28 @@ module advance_xm_wpxp_module
 
       endif ! l_perturbed_wind
 
-      if ( stats_metadata%l_stats_samp ) then
-
+      if ( stats%l_sample ) then
         !$acc update host( upthlp, uprtp, vpthlp, vprtp, upthvp, vpthvp )
-
-        do i = 1, ngrdcol
-          call stat_update_var( stats_metadata%iupthlp, & ! intent(in)
-                                upthlp(i,:),            & ! intent(in)
-                                stats_zm(i) )             ! intent(inout)
-          call stat_update_var( stats_metadata%iuprtp,  & ! intent(in)
-                                uprtp(i,:),             & ! intent(in)
-                                stats_zm(i) )             ! intent(inout)
-          call stat_update_var( stats_metadata%ivpthlp, & ! intent(in)
-                                vpthlp(i,:),            & ! intent(in)
-                                stats_zm(i) )             ! intent(inout)
-          call stat_update_var( stats_metadata%ivprtp,  & ! intent(in)
-                                vprtp(i,:),             & ! intent(in)
-                                stats_zm(i) )             ! intent(inout)
-          call stat_update_var( stats_metadata%iupthvp, & ! intent(in)
-                                upthvp(i,:),            & ! intent(in)
-                                stats_zm(i) )             ! intent(inout)
-          call stat_update_var( stats_metadata%ivpthvp, & ! intent(in)
-                                vpthvp(i,:),            & ! intent(in)
-                                stats_zm(i) )             ! intent(inout)
-        end do
-      end if ! stats_metadata%l_stats_samp
+        call stats_update( "upthlp", upthlp, stats )
+        call stats_update( "uprtp", uprtp, stats )
+        call stats_update( "vpthlp", vpthlp, stats )
+        call stats_update( "vprtp", vprtp, stats )
+        call stats_update( "upthvp", upthvp, stats )
+        call stats_update( "vpthvp", vpthvp, stats )
+      end if
 
       call xm_wpxp_rhs( nzm, nzt, ngrdcol, gr, xm_wpxp_um, l_iter, dt,       & ! In
                         um, upwp, um_tndcy, upwp_forcing, C7_Skw_fnc,        & ! In
                         upthvp, rhs_ta_wpup, thv_ds_zm,                      & ! In
                         lhs_pr1_wprtp, lhs_ta_wpxp,                          & ! In
-                        stats_metadata,                                      & ! In
-                        stats_zt, stats_zm,                                  & ! Inout
+                        stats,                                               & ! InOut
                         rhs(:,:,3+sclr_dim) )                                  ! Out
 
       call xm_wpxp_rhs( nzm, nzt, ngrdcol, gr, xm_wpxp_vm, l_iter, dt,       & ! In
                         vm, vpwp, vm_tndcy, vpwp_forcing, C7_Skw_fnc,        & ! In
                         vpthvp, rhs_ta_wpvp, thv_ds_zm,                      & ! In
                         lhs_pr1_wprtp, lhs_ta_wpxp,                          & ! In
-                        stats_metadata,                                      & ! In
-                        stats_zt, stats_zm,                                  & ! Inout
+                        stats,                                               & ! InOut
                         rhs(:,:,4+sclr_dim) )                                  ! Out
 
       if ( l_perturbed_wind ) then
@@ -3378,16 +3271,14 @@ module advance_xm_wpxp_module
                           upwp_pert, um_tndcy, upwp_forcing_pert, C7_Skw_fnc,     & ! In
                           upthvp_pert, rhs_ta_wpup, thv_ds_zm,                    & ! In
                           lhs_pr1_wprtp, lhs_ta_wpxp,                             & ! In
-                          stats_metadata,                                         & ! In
-                          stats_zt, stats_zm,                                     & ! Inout
+                          stats,                                                  & ! InOut
                           rhs(:,:,5+sclr_dim) )                                     ! Out
 
         call xm_wpxp_rhs( nzm, nzt, ngrdcol, gr, xm_wpxp_vm, l_iter, dt, vm_pert, & ! In
                           vpwp_pert, vm_tndcy, vpwp_forcing_pert, C7_Skw_fnc,     & ! In
                           vpthvp_pert, rhs_ta_wpvp, thv_ds_zm,                    & ! In
                           lhs_pr1_wprtp, lhs_ta_wpxp,                             & ! In
-                          stats_metadata,                                         & ! In
-                          stats_zt, stats_zm,                                     & ! Inout
+                          stats,                                                  & ! InOut
                           rhs(:,:,6+sclr_dim) )                                     ! Out
 
       endif ! l_perturbed_wind
@@ -3470,8 +3361,9 @@ module advance_xm_wpxp_module
     end if
 
     ! Solve for all fields
-    if ( stats_metadata%l_stats_samp .and. stats_metadata%ithlm_matrix_condt_num &
-                                           + stats_metadata%irtm_matrix_condt_num > 0 ) then
+    if ( stats%l_sample .and. (             &
+         var_on_stats_list( stats, "thlm_matrix_condt_num" ) .or.       &
+         var_on_stats_list( stats, "rtm_matrix_condt_num" ) ) ) then
        call xm_wpxp_solve( nzm, ngrdcol, nrhs, gr, & ! Intent(in)
                            penta_solve_method,     & ! Intent(in)
                            old_solution,           & ! Intent(in) 
@@ -3572,8 +3464,7 @@ module advance_xm_wpxp_module
            l_mono_flux_lim_spikefix, &                    ! Intent(in)
            order_xm_wpxp, order_xp2_xpyp, &               ! Intent(in)
            order_wp2_wp3, &                               ! Intent(in)
-           stats_metadata, &                              ! Intent(in)
-           stats_zt, stats_zm, stats_sfc, &               ! Intent(inout)
+           stats,         &
            rtm, rt_tol_mfl, wprtp, err_info )             ! Intent(inout)
 
     if ( clubb_at_least_debug_level_api( 0 ) ) then
@@ -3607,8 +3498,7 @@ module advance_xm_wpxp_module
            l_mono_flux_lim_spikefix, &                    ! Intent(in)
            order_xm_wpxp, order_xp2_xpyp, &               ! Intent(in)
            order_wp2_wp3, &                               ! Intent(in)
-           stats_metadata, &                              ! Intent(in)
-           stats_zt, stats_zm, stats_sfc, &               ! Intent(inout)
+           stats,         &
            thlm, thl_tol_mfl, wpthlp, err_info )          ! Intent(inout)
 
     if ( clubb_at_least_debug_level_api( 0 ) ) then
@@ -3652,8 +3542,7 @@ module advance_xm_wpxp_module
              l_mono_flux_lim_spikefix, &                             ! Intent(in)
              order_xm_wpxp, order_xp2_xpyp, &                        ! Intent(in)
              order_wp2_wp3, &                                        ! Intent(in)
-             stats_metadata, &                                       ! Intent(in)
-             stats_zt, stats_zm, stats_sfc, &                        ! Intent(inout)
+             stats,         &
              sclrm(:,:,sclr), sclr_tol(sclr), wpsclrp(:,:,sclr), err_info ) ! Intent(inout)
 
       if ( clubb_at_least_debug_level_api( 0 ) ) then
@@ -3692,8 +3581,7 @@ module advance_xm_wpxp_module
             l_mono_flux_lim_spikefix,                     & ! Intent(in)
             order_xm_wpxp, order_xp2_xpyp,                & ! Intent(in)
             order_wp2_wp3,                                & ! Intent(in)
-            stats_metadata,                               & ! Intent(in)
-            stats_zt, stats_zm, stats_sfc,                & ! intent(inout)
+            stats,         &
             um, w_tol, upwp, err_info )                     ! Intent(inout)
 
       if ( clubb_at_least_debug_level_api( 0 ) ) then
@@ -3727,8 +3615,7 @@ module advance_xm_wpxp_module
             l_mono_flux_lim_spikefix,                     & ! Intent(in)
             order_xm_wpxp, order_xp2_xpyp,                & ! Intent(in)
             order_wp2_wp3,                                & ! Intent(in)
-            stats_metadata,                               & ! Intent(in)
-            stats_zt, stats_zm, stats_sfc,                & ! Intent(inout)
+            stats,         &
             vm, w_tol, vpwp, err_info )                     ! Intent(inout)
 
       if ( clubb_at_least_debug_level_api( 0 ) ) then
@@ -3764,8 +3651,7 @@ module advance_xm_wpxp_module
                l_mono_flux_lim_spikefix,                     & ! Intent(in)
                order_xm_wpxp, order_xp2_xpyp,                & ! Intent(in)
                order_wp2_wp3,                                & ! Intent(in)
-               stats_metadata,                               & ! Intent(in)
-               stats_zt, stats_zm, stats_sfc,                & ! Intent(inout)
+               stats,         &
                um_pert, w_tol, upwp_pert, err_info )           ! Intent(inout)
 
          if ( clubb_at_least_debug_level_api( 0 ) ) then
@@ -3799,8 +3685,7 @@ module advance_xm_wpxp_module
                l_mono_flux_lim_spikefix,                     & ! Intent(in)
                order_xm_wpxp, order_xp2_xpyp,                & ! Intent(in)
                order_wp2_wp3,                                & ! Intent(in)
-               stats_metadata,                               & ! Intent(in)
-               stats_zt, stats_zm, stats_sfc,                & ! Intent(inout)
+               stats,         &
                vm_pert, w_tol, vpwp_pert, err_info )           ! Intent(inout)
 
          if ( clubb_at_least_debug_level_api( 0 ) ) then
@@ -3856,8 +3741,7 @@ module advance_xm_wpxp_module
                                               l_mono_flux_lim_vm, &
                                               l_mono_flux_lim_spikefix, &
                                               order_xm_wpxp, order_xp2_xpyp, order_wp2_wp3, &
-                                              stats_metadata, &
-                                              stats_zt, stats_zm, stats_sfc, &
+                                              stats,         &
                                               rtm, wprtp, thlm, wpthlp, sclrm, wpsclrp, err_info )
     !
     ! Description: This subroutine solves all xm_wpxp when all the LHS matrices are NOT equal.
@@ -3873,12 +3757,6 @@ module advance_xm_wpxp_module
         clubb_at_least_debug_level_api,  & ! Procedure
         clubb_fatal_error              ! Constants
 
-    use stats_type_utilities, only: &
-        stat_update_var   ! Procedure(s)
-
-    use stats_variables, only: &
-        stats_metadata_type
-
     use clubb_precision, only: &
         core_rknd ! Variable(s)
 
@@ -3892,8 +3770,6 @@ module advance_xm_wpxp_module
 
     use model_flags, only: &
         penta_bicgstab
-
-    use stats_type, only: stats ! Type
 
     use err_info_type_module, only: &
       err_info_type     ! Type
@@ -4035,15 +3911,10 @@ module advance_xm_wpxp_module
       order_xp2_xpyp, &
       order_wp2_wp3
 
-    type (stats_metadata_type), intent(in) :: &
-      stats_metadata
+    type(stats_type), intent(inout) :: &
+      stats
 
     ! ------------------- Input/Output Variables -------------------
-
-    type (stats), dimension(ngrdcol), intent(inout) :: &
-      stats_zt, &
-      stats_zm, &
-      stats_sfc
 
     real( kind = core_rknd ), intent(inout), dimension(ngrdcol,nzt) :: &
       rtm,       & ! r_t  (total water mixing ratio)           [kg/kg]
@@ -4100,8 +3971,7 @@ module advance_xm_wpxp_module
                       rtm, wprtp, rtm_forcing, wprtp_forcing, C7_Skw_fnc,     & ! In
                       rtpthvp, rhs_ta_wprtp, thv_ds_zm,                       & ! In
                       lhs_pr1_wprtp, lhs_ta_wprtp,                            & ! In
-                      stats_metadata,                                         & ! In
-                      stats_zt, stats_zm,                                     & ! Inout
+                      stats,                                                   & ! InOut
                       rhs(:,:,1) )                                              ! Out
 
     ! Save the value of rhs, which will be overwritten with the solution as
@@ -4119,7 +3989,8 @@ module advance_xm_wpxp_module
     end if
 
     ! Solve r_t / w'r_t'
-    if ( stats_metadata%l_stats_samp .and. stats_metadata%irtm_matrix_condt_num > 0 ) then
+    if ( stats%l_sample .and.             &
+         var_on_stats_list( stats, "rtm_matrix_condt_num" ) ) then
       call xm_wpxp_solve( nzm, ngrdcol, nrhs, gr, & ! Intent(in)
                           penta_solve_method,     & ! Intent(in)
                           old_solution,           & ! Intent(in) 
@@ -4186,8 +4057,7 @@ module advance_xm_wpxp_module
            l_mono_flux_lim_spikefix, &                    ! Intent(in)
            order_xm_wpxp, order_xp2_xpyp, &               ! Intent(in)
            order_wp2_wp3, &                               ! Intent(in)
-           stats_metadata, &                              ! Intent(in)
-           stats_zt, stats_zm, stats_sfc, &               ! Intent(inout)
+           stats,         &
            rtm, rt_tol_mfl, wprtp, err_info )             ! Intent(inout)
 
     if ( clubb_at_least_debug_level_api( 0 ) ) then
@@ -4213,8 +4083,7 @@ module advance_xm_wpxp_module
                       thlm, wpthlp, thlm_forcing, wpthlp_forcing, C7_Skw_fnc,    & ! In
                       thlpthvp, rhs_ta_wpthlp, thv_ds_zm,                        & ! In
                       lhs_pr1_wpthlp, lhs_ta_wpthlp,                             & ! In
-                      stats_metadata,                                            & ! In
-                      stats_zt, stats_zm,                                        & ! Inout
+                      stats,                                                      & ! InOut
                       rhs(:,:,1) )                                                 ! Out
 
     ! Save the value of rhs, which will be overwritten with the solution as
@@ -4232,7 +4101,8 @@ module advance_xm_wpxp_module
     end if
 
     ! Solve for th_l / w'th_l'
-    if ( stats_metadata%l_stats_samp .and. stats_metadata%ithlm_matrix_condt_num > 0 ) then
+    if ( stats%l_sample .and.             &
+         var_on_stats_list( stats, "thlm_matrix_condt_num" ) ) then
       call xm_wpxp_solve( nzm, ngrdcol, nrhs, gr, & ! Intent(in)
                           penta_solve_method,     & ! Intent(in)
                           old_solution,           & ! Intent(in) 
@@ -4299,8 +4169,7 @@ module advance_xm_wpxp_module
            l_mono_flux_lim_spikefix, &                    ! Intent(in)
            order_xm_wpxp, order_xp2_xpyp, &               ! Intent(in)
            order_wp2_wp3, &                               ! Intent(in)
-           stats_metadata, &                              ! Intent(in)
-           stats_zt, stats_zm, stats_sfc, &               ! Intent(inout)
+           stats,         &
            thlm, thl_tol_mfl, wpthlp, err_info )          ! Intent(inout)
 
     if ( clubb_at_least_debug_level_api( 0 ) ) then
@@ -4343,8 +4212,7 @@ module advance_xm_wpxp_module
                         wpsclrp_forcing(:,:,sclr), C7_Skw_fnc,                            & ! In
                         sclrpthvp(:,:,sclr), rhs_ta_wpsclrp(:,:,sclr), thv_ds_zm,         & ! In
                         lhs_pr1_wpsclrp, lhs_ta_wpsclrp(:,:,:,sclr),                      & ! In
-                        stats_metadata,                                                   & ! In
-                        stats_zt, stats_zm,                                               & ! Inout
+                        stats,                                                             & ! InOut
                         rhs(:,:,1) )                                                        ! Out
 
       ! Save the value of rhs, which will be overwritten with the solution as
@@ -4422,8 +4290,7 @@ module advance_xm_wpxp_module
              l_mono_flux_lim_spikefix, &                             ! Intent(in)
              order_xm_wpxp, order_xp2_xpyp, &                        ! Intent(in)
              order_wp2_wp3, &                                        ! Intent(in)
-             stats_metadata, &                                       ! Intent(in)
-             stats_zt, stats_zm, stats_sfc, &                        ! intent(inout)
+             stats,         &
              sclrm(:,:,sclr), sclr_tol(sclr), wpsclrp(:,:,sclr), err_info ) ! Intent(inout)
 
       if ( clubb_at_least_debug_level_api( 0 ) ) then
@@ -4584,8 +4451,7 @@ module advance_xm_wpxp_module
                l_mono_flux_lim_spikefix, &
                order_xm_wpxp, order_xp2_xpyp, &
                order_wp2_wp3, &
-               stats_metadata, &
-               stats_zt, stats_zm, stats_sfc, &
+               stats,         &
                xm, xm_tol, wpxp, err_info )
 
     ! Description:
@@ -4631,19 +4497,6 @@ module advance_xm_wpxp_module
     use error_code, only: &
         clubb_at_least_debug_level_api, & ! Procedure
         clubb_fatal_error                 ! Constant
-
-    use stats_type_utilities, only: & 
-        stat_begin_update,  & ! Procedure(s)
-        stat_update_var_pt, & 
-        stat_end_update_pt, & 
-        stat_end_update,  & 
-        stat_update_var, & 
-        stat_modify
-
-    use stats_variables, only: &
-        stats_metadata_type
-
-    use stats_type, only: stats ! Type
 
     use err_info_type_module, only: &
         err_info_type     ! Type
@@ -4756,8 +4609,8 @@ module advance_xm_wpxp_module
       order_xp2_xpyp, &
       order_wp2_wp3
 
-    type (stats_metadata_type), intent(in) :: &
-      stats_metadata
+    type(stats_type), intent(inout) :: &
+      stats
 
     !--------------------------- Input/Output Variables ---------------------------
     real( kind = core_rknd ), intent(inout), dimension(ngrdcol,nzt) :: &
@@ -4765,11 +4618,6 @@ module advance_xm_wpxp_module
 
     real( kind = core_rknd ), intent(inout), dimension(ngrdcol,nzm) :: &
       wpxp      ! The flux of x     [units vary m/s]
-
-    type (stats), dimension(ngrdcol), intent(inout) :: &
-      stats_zt, &
-      stats_zm, &
-      stats_sfc
 
     type(err_info_type), intent(inout) :: &
       err_info      ! err_info struct containing err_code and err_header
@@ -4803,22 +4651,31 @@ module advance_xm_wpxp_module
     ! Indices
     integer :: &
       k, i, km1, kp1, &
-      k_xm, k_wpxp
+      k_xm, k_wpxp 
 
-    integer :: & 
-      ixm_ta, & 
-      ixm_ma, & 
-      ixm_matrix_condt_num, & 
-      ixm_pd, & 
-      ixm_cl, & 
-      iwpxp_ma, & 
-      iwpxp_ta, & 
-      iwpxp_tp, & 
-      iwpxp_ac, & 
-      iwpxp_pr1, & 
-      iwpxp_pr2, & 
-      iwpxp_dp1, & 
-      iwpxp_pd 
+    character(len=32) :: &
+      name_xm_ta, &
+      name_xm_ma, &
+      name_xm_matrix_condt_num, &
+      name_xm_pd, &
+      name_xm_cl, &
+      name_wpxp_ma, &
+      name_wpxp_ta, &
+      name_wpxp_tp, &
+      name_wpxp_ac, &
+      name_wpxp_pr1, &
+      name_wpxp_pr2, &
+      name_wpxp_dp1, &
+      name_wpxp_pd
+
+    real( kind = core_rknd ), dimension(ngrdcol,nzt) :: &
+      tmp_zt_stats
+
+    real( kind = core_rknd ), dimension(ngrdcol,nzm) :: &
+      tmp_zm_stats
+
+    real( kind = core_rknd ), dimension(ngrdcol) :: &
+      tmp_cols_stats
 
     ! --------------------------- Begin code ---------------------------
 
@@ -4827,90 +4684,91 @@ module advance_xm_wpxp_module
     select case ( solve_type )
 
     case ( xm_wpxp_rtm ) ! rtm/wprtp budget terms
-      ixm_ta     = stats_metadata%irtm_ta
-      ixm_ma     = stats_metadata%irtm_ma
-      ixm_pd     = stats_metadata%irtm_pd
-      ixm_cl     = stats_metadata%irtm_cl
-      iwpxp_ma   = stats_metadata%iwprtp_ma
-      iwpxp_ta   = stats_metadata%iwprtp_ta
-      iwpxp_tp   = stats_metadata%iwprtp_tp
-      iwpxp_ac   = stats_metadata%iwprtp_ac
-      iwpxp_pr1  = stats_metadata%iwprtp_pr1
-      iwpxp_pr2  = stats_metadata%iwprtp_pr2
-      iwpxp_dp1  = stats_metadata%iwprtp_dp1
-      iwpxp_pd   = stats_metadata%iwprtp_pd
 
       ! This is a diagnostic from inverting the matrix, not a budget
-      ixm_matrix_condt_num = stats_metadata%irtm_matrix_condt_num
+      name_xm_ta = "rtm_ta"
+      name_xm_ma = "rtm_ma"
+      name_xm_pd = "rtm_pd"
+      name_xm_cl = "rtm_cl"
+      name_xm_matrix_condt_num = "rtm_matrix_condt_num"
+      name_wpxp_ma = "wprtp_ma"
+      name_wpxp_ta = "wprtp_ta"
+      name_wpxp_tp = "wprtp_tp"
+      name_wpxp_ac = "wprtp_ac"
+      name_wpxp_pr1 = "wprtp_pr1"
+      name_wpxp_pr2 = "wprtp_pr2"
+      name_wpxp_dp1 = "wprtp_dp1"
+      name_wpxp_pd = "wprtp_pd"
 
     case ( xm_wpxp_thlm ) ! thlm/wpthlp budget terms
-      ixm_ta     = stats_metadata%ithlm_ta
-      ixm_ma     = stats_metadata%ithlm_ma
-      ixm_pd     = 0
-      ixm_cl     = stats_metadata%ithlm_cl
-      iwpxp_ma   = stats_metadata%iwpthlp_ma
-      iwpxp_ta   = stats_metadata%iwpthlp_ta
-      iwpxp_tp   = stats_metadata%iwpthlp_tp
-      iwpxp_ac   = stats_metadata%iwpthlp_ac
-      iwpxp_pr1  = stats_metadata%iwpthlp_pr1
-      iwpxp_pr2  = stats_metadata%iwpthlp_pr2
-      iwpxp_dp1  = stats_metadata%iwpthlp_dp1
-      iwpxp_pd   = 0
 
       ! This is a diagnostic from inverting the matrix, not a budget
-      ixm_matrix_condt_num = stats_metadata%ithlm_matrix_condt_num
+      name_xm_ta = "thlm_ta"
+      name_xm_ma = "thlm_ma"
+      name_xm_pd = ""
+      name_xm_cl = "thlm_cl"
+      name_xm_matrix_condt_num = "thlm_matrix_condt_num"
+      name_wpxp_ma = "wpthlp_ma"
+      name_wpxp_ta = "wpthlp_ta"
+      name_wpxp_tp = "wpthlp_tp"
+      name_wpxp_ac = "wpthlp_ac"
+      name_wpxp_pr1 = "wpthlp_pr1"
+      name_wpxp_pr2 = "wpthlp_pr2"
+      name_wpxp_dp1 = "wpthlp_dp1"
+      name_wpxp_pd = ""
 
     case ( xm_wpxp_um ) ! um/upwp budget terms
-      ixm_ta     = stats_metadata%ium_ta
-      ixm_ma     = stats_metadata%ium_ma
-      ixm_pd     = 0
-      ixm_cl     = 0
-      iwpxp_ma   = stats_metadata%iupwp_ma
-      iwpxp_ta   = stats_metadata%iupwp_ta
-      iwpxp_tp   = stats_metadata%iupwp_tp
-      iwpxp_ac   = stats_metadata%iupwp_ac
-      iwpxp_pr1  = stats_metadata%iupwp_pr1
-      iwpxp_pr2  = stats_metadata%iupwp_pr2
-      iwpxp_dp1  = stats_metadata%iupwp_dp1
-      iwpxp_pd   = 0
 
       ! This is a diagnostic from inverting the matrix, not a budget
-      ixm_matrix_condt_num = 0
+      name_xm_ta = "um_ta"
+      name_xm_ma = "um_ma"
+      name_xm_pd = ""
+      name_xm_cl = ""
+      name_xm_matrix_condt_num = ""
+      name_wpxp_ma = "upwp_ma"
+      name_wpxp_ta = "upwp_ta"
+      name_wpxp_tp = "upwp_tp"
+      name_wpxp_ac = "upwp_ac"
+      name_wpxp_pr1 = "upwp_pr1"
+      name_wpxp_pr2 = "upwp_pr2"
+      name_wpxp_dp1 = "upwp_dp1"
+      name_wpxp_pd = ""
 
     case ( xm_wpxp_vm ) ! vm/vpwp budget terms
-      ixm_ta     = stats_metadata%ivm_ta
-      ixm_ma     = stats_metadata%ivm_ma
-      ixm_pd     = 0
-      ixm_cl     = 0
-      iwpxp_ma   = stats_metadata%ivpwp_ma
-      iwpxp_ta   = stats_metadata%ivpwp_ta
-      iwpxp_tp   = stats_metadata%ivpwp_tp
-      iwpxp_ac   = stats_metadata%ivpwp_ac
-      iwpxp_pr1  = stats_metadata%ivpwp_pr1
-      iwpxp_pr2  = stats_metadata%ivpwp_pr2
-      iwpxp_dp1  = stats_metadata%ivpwp_dp1
-      iwpxp_pd   = 0
 
       ! This is a diagnostic from inverting the matrix, not a budget
-      ixm_matrix_condt_num = 0
+      name_xm_ta = "vm_ta"
+      name_xm_ma = "vm_ma"
+      name_xm_pd = ""
+      name_xm_cl = ""
+      name_xm_matrix_condt_num = ""
+      name_wpxp_ma = "vpwp_ma"
+      name_wpxp_ta = "vpwp_ta"
+      name_wpxp_tp = "vpwp_tp"
+      name_wpxp_ac = "vpwp_ac"
+      name_wpxp_pr1 = "vpwp_pr1"
+      name_wpxp_pr2 = "vpwp_pr2"
+      name_wpxp_dp1 = "vpwp_dp1"
+      name_wpxp_pd = ""
 
     case default  ! this includes the sclrm case
-      ixm_ta     = 0
-      ixm_ma     = 0
-      ixm_pd     = 0
-      ixm_cl     = 0
-      iwpxp_ma   = 0
-      iwpxp_ta   = 0
-      iwpxp_tp   = 0
-      iwpxp_ac   = 0
-      iwpxp_pr1  = 0
-      iwpxp_pr2  = 0
-      iwpxp_dp1  = 0
-      iwpxp_pd   = 0
 
-      ixm_matrix_condt_num = 0
+      name_xm_ta = ""
+      name_xm_ma = ""
+      name_xm_pd = ""
+      name_xm_cl = ""
+      name_xm_matrix_condt_num = ""
+      name_wpxp_ma = ""
+      name_wpxp_ta = ""
+      name_wpxp_tp = ""
+      name_wpxp_ac = ""
+      name_wpxp_pr1 = ""
+      name_wpxp_pr2 = ""
+      name_wpxp_dp1 = ""
+      name_wpxp_pd = ""
 
     end select
+
     
     !$acc parallel loop gang vector collapse(2) default(present)
     do k = 1, nzt
@@ -4932,19 +4790,17 @@ module advance_xm_wpxp_module
     end do ! k=1..nzm
     !$acc end parallel loop
 
-    if ( stats_metadata%l_stats_samp ) then
-    
-      !$acc update host( wm_zt, rcond, &
-      !$acc              lhs_diff_zm, lhs_ma_zt, lhs_ma_zm, &
-      !$acc              lhs_ta_wpxp, lhs_tp, lhs_ta_xm, &
-      !$acc              lhs_pr1, C7_Skw_fnc, xm, wpxp )
+    if ( stats%l_sample ) then
+
+      !$acc update host( wm_zt, rcond, lhs_diff_zm, lhs_ma_zt, lhs_ma_zm, &
+      !$acc              lhs_ta_wpxp, lhs_tp, lhs_ta_xm, lhs_pr1, C7_Skw_fnc, xm, wpxp )
 
       C7_Skw_fnc_zeros    = zero
       C7_Skw_fnc_plus_one = C7_Skw_fnc + one
 
       !$acc data copyin( C7_Skw_fnc_zeros, C7_Skw_fnc_plus_one ) &
       !$acc     copyout( wpxp_ac, wpxp_pr2 )
-      
+
       ! Note:  To find the contribution of w'x' term ac,
       !        substitute 0 for the C_7 skewness function input
       !        to function wpxp_terms_ac_pr2_lhs.
@@ -4960,105 +4816,135 @@ module advance_xm_wpxp_module
                                   wpxp_pr2 )                                    ! intent(out)
 
       !$acc end data
-    
-      do i = 1, ngrdcol
 
-        if ( ixm_matrix_condt_num > 0 ) then
-          ! Est. of the condition number of the mean/flux LHS matrix
-          call stat_update_var_pt( ixm_matrix_condt_num, 1, & ! intent(in)
-                                   one / rcond(i), & ! intent(in)
-                                   stats_sfc(i) )                             ! intent(inout)
-        end if
+    end if
 
-        ! Finalize implicit contributions for xm
+    if ( stats%l_sample ) then
+
+      ! Est. of the condition number of the mean/flux LHS matrix
+      ! Est. of the condition number of the mean/flux LHS matrix.
+      if ( var_on_stats_list( stats, name_xm_matrix_condt_num ) ) then
+        call stats_update( name_xm_matrix_condt_num, one / rcond, stats )
+      end if
+
+      ! Finalize implicit contributions for xm
+      ! Finalize implicit contributions for xm.
+      if ( .not. l_implemented) then
+        tmp_zt_stats(:,:) = zero
         do k = 1, nzt
-
           km1 = max( k-gr%grid_dir_indx, 1 )
           kp1 = min( k+gr%grid_dir_indx, nzt )
+          do i = 1, ngrdcol
+            tmp_zt_stats(i,k) = (-lhs_ma_zt(2+gr%grid_dir_indx,i,k)) * xm(i,km1) & 
+                              + (-lhs_ma_zt(2,i,k)) * xm(i,k) & 
+                              + (-lhs_ma_zt(2-gr%grid_dir_indx,i,k)) * xm(i,kp1)
+          end do
+        end do
+        ! xm term ma is completely implicit; call stat_update_var_pt.
+        call stats_update( name_xm_ma, tmp_zt_stats, stats )
+      end if
 
-          ! xm term ma is completely implicit; call stat_update_var_pt.
-          if ( .not. l_implemented ) then
-            call stat_update_var_pt( ixm_ma, k, & ! intent(in)
-                (-lhs_ma_zt(2+gr%grid_dir_indx,i,k)) * xm(i,km1) & 
-              + (-lhs_ma_zt(2,i,k)) * xm(i,k) & 
-              + (-lhs_ma_zt(2-gr%grid_dir_indx,i,k)) * xm(i,kp1), & ! intent(in)
-                stats_zt(i) ) ! intent(inout)
-          end if
-
-          kp1 = min( k+1, nzm )
-
-          ! xm term ta is completely implicit; call stat_update_var_pt.
-          call stat_update_var_pt( ixm_ta, k, & ! intent(in)
-              (-lhs_ta_xm(2,i,k)) * wpxp(i,k) & 
-            + (-lhs_ta_xm(1,i,k)) * wpxp(i,k+1), & ! intent(in)
-              stats_zt(i) ) ! intent(inout)
-
-        enddo ! xm loop: 1..nzt
-
-        ! The wpxp loop runs between k = 2 and k = nz-1.  The value of wpxp
-        ! is set to specified values at both the lowest level, k = 1, and the
-        ! highest level, k = nz.  Thus, the statistical code will run from
-        ! levels 2 through nz-1.
-        do k = 2, nzm-1
-
-          km1 = max( k-gr%grid_dir_indx, 1 )
-          kp1 = min( k+gr%grid_dir_indx, nzm )
-
-          ! Finalize implicit contributions for wpxp
-
-          ! w'x' term ma is completely implicit; call stat_update_var_pt.
-          call stat_update_var_pt( iwpxp_ma, k, & ! intent(in)
-              (-lhs_ma_zm(2+gr%grid_dir_indx,i,k)) * wpxp(i,km1) & 
-            + (-lhs_ma_zm(2,i,k)) * wpxp(i,k) & 
-            + (-lhs_ma_zm(2-gr%grid_dir_indx,i,k)) * wpxp(i,kp1), & ! intent(in)
-              stats_zm(i) ) ! intent(inout)
-
-
-            call stat_end_update_pt( iwpxp_ta, k, & ! intent(in)
-                (-gamma_over_implicit_ts*lhs_ta_wpxp(2+gr%grid_dir_indx,i,k)) * wpxp(i,km1) & 
-              + (-gamma_over_implicit_ts*lhs_ta_wpxp(2,i,k)) * wpxp(i,k) & 
-              + (-gamma_over_implicit_ts*lhs_ta_wpxp(2-gr%grid_dir_indx,i,k)) * wpxp(i,kp1), &
-                stats_zm(i) ) ! intent(inout)
-
-          ! w'x' term tp is completely implicit; call stat_update_var_pt.
-          call stat_update_var_pt( iwpxp_tp, k, & ! intent(in)
-              (-lhs_tp(2,i,k)) * xm(i,k-1) & 
-            + (-lhs_tp(1,i,k)) * xm(i,k), & ! intent(in)
-              stats_zm(i) ) ! intent(inout)
-
-          ! w'x' term ac is completely implicit; call stat_update_var_pt.
-          call stat_update_var_pt( iwpxp_ac, k, & ! intent(in)
-                                   -wpxp_ac(i,k) * wpxp(i,k), & ! intent(in)
-                                   stats_zm(i) ) ! intent(inout)
-
-          ! w'x' term pr1 is normally completely implicit.  However, due to the
-          ! RHS contribution from the "over-implicit" weighted time step,
-          ! w'x' term pr1 has both implicit and explicit components;
-          ! call stat_end_update_pt.
-          ! Note:  An "over-implicit" weighted time step is applied to this term.
-          !        A weighting factor of greater than 1 may be used to make the
-          !        term more numerically stable (see note above for LHS turbulent
-          !        advection (ta) term).
-          call stat_end_update_pt( iwpxp_pr1, k, & ! intent(in) 
-              (-gamma_over_implicit_ts*lhs_pr1(i,k)) * wpxp(i,k), & ! intent(in)
-              stats_zm(i) ) ! intent(inout)
-              
-          call stat_update_var_pt( iwpxp_pr2, k, & ! intent(in) 
-                                  -wpxp_pr2(i,k) * wpxp(i,k), & ! intent(in)
-                                   stats_zm(i) ) ! intent(inout)
-
-          ! w'x' term dp1 is completely implicit; call stat_update_var_pt.
-          call stat_update_var_pt( iwpxp_dp1, k, & ! intent(in)
-              (-lhs_diff_zm(2+gr%grid_dir_indx,i,k)) * wpxp(i,km1) & 
-            + (-lhs_diff_zm(2,i,k)) * wpxp(i,k) & 
-            + (-lhs_diff_zm(2-gr%grid_dir_indx,i,k)) * wpxp(i,kp1), & ! intent(in)
-              stats_zm(i) ) ! intent(inout)
-
-        end do ! wpxp loop: 2..nzm-1
-        
+      tmp_zt_stats(:,:) = zero
+      do k = 1, nzt
+        do i = 1, ngrdcol
+          tmp_zt_stats(i,k) = (-lhs_ta_xm(2,i,k)) * wpxp(i,k) &
+                            + (-lhs_ta_xm(1,i,k)) * wpxp(i,k+1)
+        end do
       end do
+      ! xm term ta is completely implicit; call stat_update_var_pt.
+      call stats_update( name_xm_ta, tmp_zt_stats, stats )
 
-    end if ! stats_metadata%l_stats_samp
+      ! The wpxp loop runs between k = 2 and k = nz-1.  The value of wpxp
+      ! is set to specified values at both the lowest level, k = 1, and the
+      ! highest level, k = nz.  Thus, the statistical code will run from
+      ! levels 2 through nz-1.
+      ! Finalize implicit contributions for wpxp
+      ! Finalize implicit contributions for wpxp.
+      tmp_zm_stats(:,:) = zero
+      do k = 2, nzm-1
+        km1 = max( k-gr%grid_dir_indx, 1 )
+        kp1 = min( k+gr%grid_dir_indx, nzm )
+        do i = 1, ngrdcol
+          tmp_zm_stats(i,k) = (-lhs_ma_zm(2+gr%grid_dir_indx,i,k)) * wpxp(i,km1) & 
+                            + (-lhs_ma_zm(2,i,k)) * wpxp(i,k) & 
+                            + (-lhs_ma_zm(2-gr%grid_dir_indx,i,k)) * wpxp(i,kp1)
+        end do
+      end do
+      ! w'x' term ma is completely implicit; call stat_update_var_pt.
+      call stats_update( name_wpxp_ma, tmp_zm_stats, stats )
+
+      tmp_zm_stats(:,:) = zero
+      do k = 2, nzm-1
+        km1 = max( k-gr%grid_dir_indx, 1 )
+        kp1 = min( k+gr%grid_dir_indx, nzm )
+        do i = 1, ngrdcol
+          tmp_zm_stats(i,k) = (-gamma_over_implicit_ts*lhs_ta_wpxp(2+gr%grid_dir_indx,i,k)) * wpxp(i,km1) & 
+                            + (-gamma_over_implicit_ts*lhs_ta_wpxp(2,i,k)) * wpxp(i,k) & 
+                            + (-gamma_over_implicit_ts*lhs_ta_wpxp(2-gr%grid_dir_indx,i,k)) * wpxp(i,kp1)
+        end do
+      end do
+      ! w'x' term ta has implicit and explicit components.
+      call stats_finalize_budget( name_wpxp_ta, tmp_zm_stats, stats )
+
+      tmp_zm_stats(:,:) = zero
+      do k = 2, nzm-1
+        do i = 1, ngrdcol
+          tmp_zm_stats(i,k) = (-lhs_tp(2,i,k)) * xm(i,k-1) & 
+                            + (-lhs_tp(1,i,k)) * xm(i,k)
+        end do
+      end do
+      ! w'x' term tp is completely implicit; call stat_update_var_pt.
+      call stats_update( name_wpxp_tp, tmp_zm_stats, stats )
+
+      tmp_zm_stats(:,:) = zero
+      do k = 2, nzm-1
+        do i = 1, ngrdcol
+          tmp_zm_stats(i,k) = -wpxp_ac(i,k) * wpxp(i,k)
+        end do
+      end do
+      ! w'x' term ac is completely implicit; call stat_update_var_pt.
+      call stats_update( name_wpxp_ac, tmp_zm_stats, stats )
+
+      tmp_zm_stats(:,:) = zero
+      do k = 2, nzm-1
+        do i = 1, ngrdcol
+          tmp_zm_stats(i,k) = (-gamma_over_implicit_ts*lhs_pr1(i,k)) * wpxp(i,k)
+        end do
+      end do
+      ! w'x' term pr1 is normally completely implicit.  However, due to the
+      ! RHS contribution from the "over-implicit" weighted time step,
+      ! w'x' term pr1 has both implicit and explicit components.
+      ! w'x' term pr1 has both implicit and explicit components;
+      ! call stat_end_update_pt.
+      ! Note:  An "over-implicit" weighted time step is applied to this term.
+      !        A weighting factor of greater than 1 may be used to make the
+      !        term more numerically stable (see note above for LHS turbulent
+      !        advection (ta) term).
+      call stats_finalize_budget( name_wpxp_pr1, tmp_zm_stats, stats )
+
+      tmp_zm_stats(:,:) = zero
+      do k = 2, nzm-1
+        do i = 1, ngrdcol
+          tmp_zm_stats(i,k) = -wpxp_pr2(i,k) * wpxp(i,k)
+        end do
+      end do
+      ! w'x' pr2 is fully implicit in this solve path.
+      call stats_update( name_wpxp_pr2, tmp_zm_stats, stats )
+
+      tmp_zm_stats(:,:) = zero
+      do k = 2, nzm-1
+        km1 = max( k-gr%grid_dir_indx, 1 )
+        kp1 = min( k+gr%grid_dir_indx, nzm )
+        do i = 1, ngrdcol
+          tmp_zm_stats(i,k) = (-lhs_diff_zm(2+gr%grid_dir_indx,i,k)) * wpxp(i,km1) & 
+                            + (-lhs_diff_zm(2,i,k)) * wpxp(i,k) & 
+                            + (-lhs_diff_zm(2-gr%grid_dir_indx,i,k)) * wpxp(i,kp1)
+        end do
+      end do
+      ! w'x' term dp1 is completely implicit; call stat_update_var_pt.
+      call stats_update( name_wpxp_dp1, tmp_zm_stats, stats )
+
+    end if
 
 
     ! Apply a monotonic turbulent flux limiter to xm/w'x'.
@@ -5076,8 +4962,7 @@ module advance_xm_wpxp_module
                                            tridiag_solve_method, & ! intent(in)
                                            l_upwind_xm_ma, & ! intent(in)
                                            l_mono_flux_lim_spikefix, & ! intent(in)
-                                           stats_metadata, & ! intent(in)
-                                           stats_zt, stats_zm, & ! intent(inout)
+                                           stats,         & ! intent(inout)
                                            xm, wpxp, err_info ) ! intent(inout)
 
       if ( clubb_at_least_debug_level_api( 0 ) ) then
@@ -5107,32 +4992,19 @@ module advance_xm_wpxp_module
 
       !$acc update device( xm, wpxp, xm_old )
 
-    else
-      ! For stats purposes
-      if ( stats_metadata%l_stats_samp ) then
-        xm_pd(:,:)   = zero
-        wpxp_pd(:,:) = zero
+      if ( stats%l_sample ) then
+        !$acc update host( wpxp_pd, xm_pd )
+        call stats_update( name_wpxp_pd, wpxp_pd, stats )
+        call stats_update( name_xm_pd, xm_pd, stats )
       end if
-
+      
     end if ! l_pos_def and solve_type == "rtm" and rtm <n+1> less than 0
 
-    if ( stats_metadata%l_stats_samp ) then
-
-      !$acc update host( xm )
-
-      do i = 1, ngrdcol
-        call stat_update_var( iwpxp_pd,         & ! intent(in)
-                              wpxp_pd(i,1:nzm), & ! intent(in)
-                              stats_zm(i) )       ! intent(inout)
-
-        call stat_update_var( ixm_pd,         & ! intent(in)
-                              xm_pd(i,1:nzt), & ! intent(in)
-                              stats_zt(i) )     ! intent(inout)
-                          
-        ! Computed value before clipping
-        call stat_begin_update( nzt, ixm_cl, xm(i,:) / dt, & ! Intent(in)
-                                stats_zt(i) )                  ! Intent(inout)
-      end do
+    ! For stats purposes
+    if ( stats%l_sample ) then
+      ! Computed value before clipping
+      ! Computed value before clipping.
+      call stats_begin_budget( name_xm_cl, xm / dt, stats )
     end if
     
     if ( fill_holes_type /= 0 &
@@ -5174,12 +5046,8 @@ module advance_xm_wpxp_module
       
     end if
 
-    if ( stats_metadata%l_stats_samp ) then
-      !$acc update host( xm )
-      do i = 1, ngrdcol
-        call stat_end_update( nzt, ixm_cl, xm(i,:) / dt, & ! Intent(in) 
-                              stats_zt(i) )                       ! Intent(inout)
-      end do                        
+    if ( stats%l_sample ) then
+        call stats_finalize_budget( name_xm_cl, xm / dt, stats )
     end if
 
     ! Clipping for w'x'
@@ -5272,8 +5140,7 @@ module advance_xm_wpxp_module
       call clip_covar( nzm, ngrdcol, solve_type_cl, l_first_clip_ts, & ! In
                        l_last_clip_ts, dt, wp2, xp2_relaxed,         & ! In
                        l_predict_upwp_vpwp,                          & ! In
-                       stats_metadata,                               & ! In
-                       stats_zm,                                     & ! intent(inout)
+                       stats,                                        & ! In
                        wpxp, wpxp_chnge )                              ! In/Out
     else ! clipping for upwp or vpwp
 
@@ -5281,15 +5148,13 @@ module advance_xm_wpxp_module
         call clip_covar( nzm, ngrdcol, solve_type_cl, l_first_clip_ts, & ! In
                          l_last_clip_ts, dt, wp2, xp2,                 & ! In
                          l_predict_upwp_vpwp,                          & ! In
-                         stats_metadata,                               & ! In
-                         stats_zm,                                     & ! intent(inout)
+                         stats,                                        & ! In
                          wpxp, wpxp_chnge )                              ! In/Out
       else
         call clip_covar( nzm, ngrdcol, solve_type_cl, l_first_clip_ts, & ! In
                          l_last_clip_ts, dt, wp2, wp2,                 & ! In
                          l_predict_upwp_vpwp,                          & ! In
-                         stats_metadata,                               & ! In
-                         stats_zm,                                     & ! intent(inout)
+                         stats,                                        & ! In
                          wpxp, wpxp_chnge )                              ! In/Out
        end if ! l_tke_aniso
     end if ! solve_type /= xm_wpxp_um .and. solve_type /= xm_wpxp_vm
@@ -5298,8 +5163,7 @@ module advance_xm_wpxp_module
     if ( l_clip_turb_adv ) then
       call xm_correction_wpxp_cl( nzm, nzt, ngrdcol, solve_type, dt, & ! intent(in)
                                   wpxp_chnge, gr%invrs_dzt,          & ! intent(in)
-                                  stats_metadata,                    & ! intent(in)
-                                  stats_zt,                          & ! intent(inout)
+                                  stats,                             & ! intent(inout)
                                   xm )                                 ! intent(inout)
     end if 
 
@@ -5866,8 +5730,7 @@ module advance_xm_wpxp_module
   !=============================================================================
   subroutine xm_correction_wpxp_cl( nzm, nzt, ngrdcol, solve_type, dt, &
                                     wpxp_chnge, invrs_dzt, &
-                                    stats_metadata, &
-                                    stats_zt, & 
+                                    stats,         &
                                     xm )
 
     ! Description:
@@ -5983,14 +5846,6 @@ module advance_xm_wpxp_module
     use clubb_precision, only: &
         core_rknd ! Variable(s)
 
-    use stats_type_utilities, only: &
-        stat_update_var ! Procedure(s)
-
-    use stats_variables, only: &
-        stats_metadata_type
-
-    use stats_type, only: stats ! Type
-
     use constants_clubb, only: &
         eps  ! Constant(s)
 
@@ -6014,13 +5869,10 @@ module advance_xm_wpxp_module
     real( kind = core_rknd ), dimension(ngrdcol,nzt), intent(in) :: &
       invrs_dzt     ! Inverse of grid spacing                   [1/m]
 
-    type (stats_metadata_type), intent(in) :: &
-      stats_metadata
+    type(stats_type), intent(inout) :: &
+      stats
 
     !---------------------------- Input/Output Variable ----------------------------
-    type (stats), dimension(ngrdcol), intent(inout) :: &
-      stats_zt
-
     real( kind = core_rknd ), dimension(ngrdcol,nzt), intent(inout) :: &
       xm            ! xm (thermodynamic levels)                 [{xm units}]
 
@@ -6030,7 +5882,7 @@ module advance_xm_wpxp_module
 
     integer :: i, k    ! Array index
 
-    integer :: ixm_tacl  ! Statistical index
+    character(len=32) :: name_xm_tacl
 
     logical, dimension(ngrdcol) :: &
       l_clipping_needed
@@ -6063,11 +5915,11 @@ module advance_xm_wpxp_module
 
     select case ( solve_type )
     case ( xm_wpxp_rtm )
-      ixm_tacl = stats_metadata%irtm_tacl
+      name_xm_tacl = "rtm_tacl"
     case ( xm_wpxp_thlm )
-      ixm_tacl = stats_metadata%ithlm_tacl
+      name_xm_tacl = "thlm_tacl"
     case default
-      ixm_tacl = 0
+      name_xm_tacl = ""
     end select
 
     ! Adjusting xm based on clipping for w'x'.
@@ -6084,18 +5936,13 @@ module advance_xm_wpxp_module
     end do
     !$acc end parallel loop
 
-    if ( stats_metadata%l_stats_samp ) then
-
+    if ( stats%l_sample ) then
       !$acc update host( xm_tndcy_wpxp_cl )
-
       ! The adjustment to xm due to turbulent advection term clipping
       ! (xm term tacl) is completely explicit; call stat_update_var.
-      do i = 1, ngrdcol
-        call stat_update_var( ixm_tacl,              & ! intent(in)
-                              xm_tndcy_wpxp_cl(i,:), & ! intent(in)
-                              stats_zt(i) )            ! intent(inout)
-      end do
-    endif
+      ! (xm term tacl) is completely explicit.
+      call stats_update( name_xm_tacl, xm_tndcy_wpxp_cl, stats )
+    end if
 
     !$acc exit data delete( xm_tndcy_wpxp_cl, l_clipping_needed, l_any_clipping_needed )
 

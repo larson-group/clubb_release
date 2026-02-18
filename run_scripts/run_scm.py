@@ -27,7 +27,7 @@ def strip_comments_and_remove_keys(content: str, keys_to_remove=None) -> str:
         lines.append(line)
     return "\n".join(lines)
 
-def run_case(executable, namelist_file):
+def run_case(executable, case_name, namelist_file):
 
     if not os.path.isfile(executable):
         print(f"{executable} not found (did you re-compile?)")
@@ -36,11 +36,49 @@ def run_case(executable, namelist_file):
     # clubb requires the output directory to exist prior to running
     os.makedirs(OUTPUT_DIR, exist_ok=True)
 
-    result = subprocess.run([executable],cwd=RUN_SCRIPTS)
+    log_path = os.path.join(OUTPUT_DIR, f"{case_name}_log")
+    with open(log_path, "w", encoding="utf-8") as log_file:
+        process = subprocess.Popen(
+            [executable, namelist_file],
+            cwd=RUN_SCRIPTS,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            text=True,
+            errors="replace",
+            bufsize=1,
+        )
 
-    if result.returncode == 6:
-        return 0
-    return 1
+        # Stream model output to terminal and file at the same time.
+        if process.stdout is not None:
+            for line in process.stdout:
+                print(line, end="", flush=True)
+                log_file.write(line)
+            process.stdout.close()
+
+        process.wait()
+
+    if process.returncode not in (0, 6):
+        return 1
+
+    split_script = os.path.join(CLUBB_ROOT, "utilities", "split_stats_to_legacy.py")
+    stats_file = os.path.join(OUTPUT_DIR, f"{case_name}_stats.nc")
+    if os.path.isfile(stats_file):
+        split_cmd = [
+            sys.executable,
+            split_script,
+            "--input",
+            stats_file,
+            "--output-dir",
+            OUTPUT_DIR,
+            "--overwrite",
+        ]
+        split_result = subprocess.run(split_cmd, cwd=CLUBB_ROOT)
+        if split_result.returncode != 0:
+            return 1
+    else:
+        print(f"WARNING: stats output not found for split: {stats_file}")
+
+    return 0
 
 
 def read_model_times(model_file):
@@ -87,7 +125,7 @@ def convert_to_multi_col(params_file: str, ngrdcol: int | None) -> str:
 
 def override_value(override_string, clubb_in_text):
     """
-    Apply overrides from -flag FLAG1=val1,FLAG2=val2,... to the clubb.in text.
+    Apply overrides from -flag FLAG1=val1,FLAG2=val2,... to the aggregate text.
     """
     for pair in override_string.split(","):
         if "=" not in pair:
@@ -104,7 +142,7 @@ def override_value(override_string, clubb_in_text):
 
 
 def setup_files_and_aggregate(args):
-    """Resolve file paths, validate, and create the aggregate namelist (clubb.in)."""
+    """Resolve file paths, validate, and create the aggregate namelist."""
 
     # Model file
     model_file = os.path.join(CLUBB_ROOT, f"input/case_setups/{args.case_name}_model.in")
@@ -121,7 +159,9 @@ def setup_files_and_aggregate(args):
     params_file       = args.params       or os.path.join(config_dir, "tunable_parameters.in")
     flags_file        = args.flags        or os.path.join(config_dir, "configurable_model_flags.in")
     silhs_params_file = args.silhs_params or os.path.join(config_dir, "silhs_parameters.in")
-    stats_file        = args.stats        or os.path.join(CLUBB_ROOT, "input/stats/standard_stats.in")
+    stats_arg = (args.stats or "").strip()
+    disable_stats = stats_arg.lower() == "none"
+    stats_file = None if disable_stats else (args.stats or os.path.join(CLUBB_ROOT, "input/stats/standard_stats.in"))
 
     if args.exe:
         # Use the users input from -exe to determine which executable to use
@@ -148,20 +188,27 @@ def setup_files_and_aggregate(args):
         params_file = convert_to_multi_col(params_file, args.ngrdcol)
 
     # Validate files
-    for opt, f in [
+    files_to_validate = [
         ("-params", params_file),
         ("-flags", flags_file),
         ("-silhs_params", silhs_params_file),
-        ("-stats", stats_file),
         ("-exe", executable),
-    ]:
+    ]
+    if not disable_stats:
+        files_to_validate.append(("-stats", stats_file))
+
+    for opt, f in files_to_validate:
         if not os.path.isfile(f):
             sys.exit(f"Required file for {opt} not found: {f}")
 
-    # Aggregate into clubb.in
-    clubb_input_namelist = os.path.join(RUN_SCRIPTS, "clubb.in")
+    # Aggregate into output/CASE.in
+    os.makedirs(OUTPUT_DIR, exist_ok=True)
+    clubb_input_namelist = os.path.join(OUTPUT_DIR, f"{args.case_name}.in")
     with open(clubb_input_namelist, "w") as out:
-        for f in [params_file, silhs_params_file, flags_file, model_file, stats_file]:
+        files_to_aggregate = [params_file, silhs_params_file, flags_file, model_file]
+        if not disable_stats:
+            files_to_aggregate.append(stats_file)
+        for f in files_to_aggregate:
             with open(f) as src:
                 out.write(strip_comments_and_remove_keys(src.read()))
                 out.write("\n")
@@ -189,12 +236,19 @@ def edit_namelist(args, clubb_input_namelist, model_file):
     if args.zm_grid is not None:
         clubb_in += f"\nnzmax = {args.nzmax}\nzm_grid_fname = '{args.zm_grid}'\ngrid_type = 3\n"
 
-    # Stats output control, args.tout defines output frequency, and setting to 0 disables output 
+    # Stats output control, args.tout defines output frequency, and setting to 0 disables output.
+    disable_stats = ((args.stats or "").strip().lower() == "none")
     if args.tout is not None:
         if args.tout == 0:
-            clubb_in = re.sub(r"l_stats\s*=.*", "l_stats = .false.", clubb_in)
+            disable_stats = True
         else:
             clubb_in = re.sub(r"stats_tout\s*=.*", f"stats_tout = {args.tout}.0", clubb_in)
+
+    if disable_stats:
+        if re.search(r"l_stats\s*=.*", clubb_in):
+            clubb_in = re.sub(r"l_stats\s*=.*", "l_stats = .false.", clubb_in)
+        else:
+            clubb_in += "\nl_stats = .false.\n"
 
     # Debug level
     if args.debug is not None:
@@ -255,7 +309,9 @@ def main():
 
     # Stats fiules define which fields to output, can be overriden here
     parser.add_argument("-stats", metavar="[FILE]",
-        help="Stats file defining fields to output.\nDefault: input/stats/standard_stats.in")
+        help=("Stats file defining fields to output.\n"
+              "Default: input/stats/standard_stats.in.\n"
+              "Use 'none' to disable stats output."))
 
     # This script will try to figure out the right executable to use based on the compiler in the environment
     # but inputting a specific executable will override that with the specified one
@@ -299,7 +355,7 @@ def main():
              "To define a multi_col parameter set differently, use the create_multi_col_params.py script, then "
              "pass in using --params. Default: 0")
 
-    # This can be used to override pretty much any settings in clubb.in
+    # This can be used to override pretty much any settings in the aggregate namelist
     parser.add_argument(
         "-override",
         help="Comma-separated key=value pairs, e.g. -override FLAG1=true,C2=2.0,...",
@@ -319,7 +375,7 @@ def main():
     if args.nzmax and not (args.zt_grid or args.zm_grid):
         print("\n\033[93mWARNING: Specifying --nzmax will have no effect without specifying a --zm_grid or --zt_grid\033[0m")
 
-    # Step 1: setup and aggregate namelist files into clubb.in
+    # Step 1: setup and aggregate namelist files into output/CASE.in
     clubb_input_namelist, model_file, executable = setup_files_and_aggregate(args)
 
     # Step 2: edit clubb_input_namelist based on input specifications
@@ -327,7 +383,7 @@ def main():
 
     # Step 3: run model
     print(f"=================== Running {args.case_name} ===================")
-    result = run_case(executable, clubb_input_namelist)
+    result = run_case(executable, args.case_name, clubb_input_namelist)
 
     # Move output to specified output directory
     if args.out_dir:

@@ -24,7 +24,7 @@ module prescribe_forcings_module
                                  veg_T_in_K, &
                                  l_modify_bc_for_cnvg_test, &
                                  saturation_formula, &
-                                 stats_metadata, stats_sfc, &
+                                 stats,         &
                                  l_add_dycore_grid, &
                                  grid_remap_method, &
                                  total_idx_rho_lin_spline, rho_lin_spline_vals, &
@@ -51,12 +51,9 @@ module prescribe_forcings_module
 
     use grid_class, only: zt2zm_api, zm2zt_api !---------------------- Procedure(s)
 
-    use stats_variables, only: &
-      stats_metadata_type
-
-    use stats_type_utilities, only: stat_update_var_pt !------ Procedure(s)
-
-    use stats_type, only: stats ! Type
+    use stats_netcdf, only: &
+      stats_type, &
+      stats_update
 
     use constants_clubb, only: &
       Cp, Lv, kappa, p0, & !---------------------------------- Variable(s)
@@ -200,11 +197,8 @@ module prescribe_forcings_module
     integer, intent(in) :: &
       saturation_formula ! Integer that stores the saturation formula to be used
 
-    type (stats_metadata_type), intent(in) :: &
-      stats_metadata
-
-    type (stats), dimension(ngrdcol), intent(inout)  :: &
-      stats_sfc        ! stats_sfc
+    type(stats_type), intent(inout) :: &
+      stats
 
     logical, intent(in) :: &
       l_add_dycore_grid
@@ -900,37 +894,19 @@ module prescribe_forcings_module
     end if
 
     ! Store values of surface fluxes for statistics
-    if ( stats_metadata%l_stats_samp ) then
-
-      !$acc update host( wpthlp_sfc, rho_zm, wprtp_sfc, upwp_sfc, vpwp_sfc, ustar, T_sfc )
-
-      do i = 1, ngrdcol
-        call stat_update_var_pt( stats_metadata%ish, 1, wpthlp_sfc(i)*rho_zm(i,1)*Cp,&       ! intent(in)
-                                 stats_sfc(i) )                             ! intent(inout)
-
-        call stat_update_var_pt( stats_metadata%ilh, 1, wprtp_sfc(i)*rho_zm(i,1)*Lv, &       ! intent(in)
-                                 stats_sfc(i) )                             ! intent(inout)
-
-        call stat_update_var_pt( stats_metadata%iwpthlp_sfc, 1, wpthlp_sfc(i), &           ! intent(in)
-                                 stats_sfc(i) )                             ! intent(inout)
-
-        call stat_update_var_pt( stats_metadata%iwprtp_sfc, 1, wprtp_sfc(i), &             ! intent(in)
-                                 stats_sfc(i) )                             ! intent(inout)
-
-        call stat_update_var_pt( stats_metadata%iupwp_sfc, 1, upwp_sfc(i), &               ! intent(in)
-                                 stats_sfc(i) )                             ! intent(inout)
-
-        call stat_update_var_pt( stats_metadata%ivpwp_sfc, 1, vpwp_sfc(i), &               ! intent(in)
-                                 stats_sfc(i) )                             ! intent(inout)
-
-        call stat_update_var_pt( stats_metadata%iustar, 1, ustar(i), &                    ! intent(in)
-                                 stats_sfc(i) )                             ! intent(inout)
-
-        call stat_update_var_pt( stats_metadata%iT_sfc, 1, T_sfc(i), &                     ! intent(in)
-                                 stats_sfc(i) )                             ! intent(inout)
-      end do
-
-    endif
+    if ( stats%l_sample ) then
+      ! Keep host copies in sync before surface-flux stats updates.
+      ! $acc update host( wpthlp_sfc, rho_zm, wprtp_sfc, upwp_sfc, vpwp_sfc, ustar, T_sfc )
+      !$acc update host( wpthlp_sfc, wprtp_sfc, upwp_sfc, vpwp_sfc, ustar, T_sfc, rho_zm )
+      call stats_update( "sh", wpthlp_sfc(:)*rho_zm(:,1)*Cp, stats )
+      call stats_update( "lh", wprtp_sfc(:)*rho_zm(:,1)*Lv, stats )
+      call stats_update( "wpthlp_sfc", wpthlp_sfc(:), stats )
+      call stats_update( "wprtp_sfc", wprtp_sfc(:), stats )
+      call stats_update( "upwp_sfc", upwp_sfc(:), stats )
+      call stats_update( "vpwp_sfc", vpwp_sfc(:), stats )
+      call stats_update( "ustar", ustar(:), stats )
+      call stats_update( "T_sfc", T_sfc(:), stats )
+    end if
 
     !$acc exit data delete( um_bot, vm_bot, rtm_bot, thlm_bot, rho_bot, exner_bot, z_bot, ustar, ubar )
 

@@ -9,9 +9,7 @@ pipeline {
         sh '''sed -i "s:penta_solve_method.*:penta_solve_method = 2:g" input/tunable_parameters/configurable_model_flags.in'''
         sh '''sed -i "s:tridiag_solve_method.*:tridiag_solve_method = 2:g" input/tunable_parameters/configurable_model_flags.in'''
         sh '''sed -i "s:lh_straight_mc.*:lh_straight_mc = true:g" input/tunable_parameters/configurable_model_flags.in'''
-        sh '''sed -i "s:time_final.*:time_final = 87600:g" input/case_setups/cobra_model.in'''
-        sh '''sed -i "s:time_final.*:time_final = 3000:g" input/case_setups/rico_silhs_model.in'''
-        sh '''sed -i "s: -DCUDA::g" compile/config/*'''
+        sh '''sed -i "s:set(GPU_DEFINITIONS CLUBB_GPU CUDA):set(GPU_DEFINITIONS CLUBB_GPU):g" cmake/toolchains/linux_x86_64_nvfortran.cmake'''
         sh '''run_scripts/create_multi_col_params.py -n 32 -param_file input/tunable_parameters/tunable_parameters.in -mode dup_tweak'''
       }
     }
@@ -19,81 +17,63 @@ pipeline {
       steps {
         sh '''source /etc/profile.d/larson-group.sh
               module load nvhpc netcdf-fortran
-              compile/compile.bash -c config/linux_x86_64_nvhpc.bash'''
+              ./compile.py'''
       }
     }
     stage('Run CPU') {
       steps {
-        sh '''source /etc/profile.d/larson-group.sh
-              module load nvhpc netcdf-fortran
-              ulimit -s 8388608
-              run_scripts/run_scm.bash -p ../clubb_params_multi_col.in -e arm
-              run_scripts/run_scm.bash -p ../clubb_params_multi_col.in -e cobra
-              run_scripts/run_scm.bash -p ../clubb_params_multi_col.in -e rico_silhs
+        sh '''ulimit -s 8388608
+              run_scripts/run_scm.py -params clubb_params_multi_col.in -stats input/stats/multi_col_stats.in -debug 0 arm
+              run_scripts/run_scm.py -params clubb_params_multi_col.in -stats input/stats/multi_col_stats.in -debug 0 -max_iters 500 cobra
+              run_scripts/run_scm.py -params clubb_params_multi_col.in -stats input/stats/multi_col_stats.in -debug 0 -max_iters 10 rico_silhs
               mv output cpu_output; mkdir output'''
       }
     }
     stage('Compile GPU_ACC') {
       steps {
-          sh ''' compile/clean_all.bash
-                 source /etc/profile.d/larson-group.sh
+          sh ''' source /etc/profile.d/larson-group.sh
                  module load nvhpc netcdf-fortran
-                 compile/compile.bash -c config/linux_x86_64_nvhpc_gpu_openacc.bash'''
+                 ./compile.py -gpu openacc'''
       }
     }
     stage('Run GPU_ACC') {
       steps {
         lock( "GPU_${env.NODE_NAME}" ) {
-          sh '''source /etc/profile.d/larson-group.sh
-                module load nvhpc netcdf-fortran
-                ulimit -s 8388608
-                run_scripts/run_scm.bash -p ../clubb_params_multi_col.in -e arm
-                run_scripts/run_scm.bash -p ../clubb_params_multi_col.in -e cobra
-                run_scripts/run_scm.bash -p ../clubb_params_multi_col.in -e rico_silhs
+          sh '''ulimit -s 8388608
+                run_scripts/run_scm.py -params clubb_params_multi_col.in -stats input/stats/multi_col_stats.in -debug 0 arm
+                run_scripts/run_scm.py -params clubb_params_multi_col.in -stats input/stats/multi_col_stats.in -debug 0 -max_iters 500 cobra
+                run_scripts/run_scm.py -params clubb_params_multi_col.in -stats input/stats/multi_col_stats.in -debug 0 -max_iters 10 rico_silhs
                 mv output acc_output; mkdir output'''
         }
       }
     }
     stage('Compile GPU_OMP') {
       steps {
-        sh '''compile/clean_all.bash
-              compile/convert_acc_to_omp.bash
-              source /etc/profile.d/larson-group.sh
+        sh '''source /etc/profile.d/larson-group.sh
               module load nvhpc netcdf-fortran
-              compile/compile.bash -c config/linux_x86_64_nvhpc_gpu_openmp.bash'''
+              compile/convert_acc_to_omp.bash
+              ./compile.py -gpu openmp'''
       }
     }
     stage('Run GPU_OMP') {
       steps {
         lock( "GPU_${env.NODE_NAME}" ) {
-          sh '''source /etc/profile.d/larson-group.sh
-              module load nvhpc netcdf-fortran
-              ulimit -s 8388608
-              run_scripts/run_scm.bash -p ../clubb_params_multi_col.in -e arm
-              run_scripts/run_scm.bash -p ../clubb_params_multi_col.in -e cobra
-              run_scripts/run_scm.bash -p ../clubb_params_multi_col.in -e rico_silhs
-              mv output omp_output; mkdir output'''
+          sh '''ulimit -s 8388608
+                run_scripts/run_scm.py -params clubb_params_multi_col.in -stats input/stats/multi_col_stats.in -debug 0 arm
+                run_scripts/run_scm.py -params clubb_params_multi_col.in -stats input/stats/multi_col_stats.in -debug 0 -max_iters 500 cobra
+                run_scripts/run_scm.py -params clubb_params_multi_col.in -stats input/stats/multi_col_stats.in -debug 0 -max_iters 10 rico_silhs
+                mv output omp_output; mkdir output'''
         }
       }
     }
     stage('Compare CPU vs ACC') {
       steps {
-        sh '''run_scripts/check_multi_col_error.py cpu_output/arm_multi_col_zm.nc acc_output/arm_multi_col_zm.nc'''
-        sh '''run_scripts/check_multi_col_error.py cpu_output/arm_multi_col_zt.nc acc_output/arm_multi_col_zt.nc'''
-        sh '''run_scripts/check_multi_col_error.py cpu_output/cobra_multi_col_zm.nc acc_output/cobra_multi_col_zm.nc'''
-        sh '''run_scripts/check_multi_col_error.py cpu_output/cobra_multi_col_zt.nc acc_output/cobra_multi_col_zt.nc'''
-        sh '''run_scripts/check_multi_col_error.py -t 1e-6 -s cpu_output/rico_silhs_multi_col_zm.nc acc_output/rico_silhs_multi_col_zm.nc'''
-        sh '''run_scripts/check_multi_col_error.py -t 1e-6 -s cpu_output/rico_silhs_multi_col_zt.nc acc_output/rico_silhs_multi_col_zt.nc'''
+        sh '''run_scripts/run_bindiff_all.py -v 2 -t 1e-6 -s cpu_output acc_output'''
       }
     }
     stage('Compare CPU vs OMP') {
       steps {
-        sh '''run_scripts/check_multi_col_error.py cpu_output/arm_multi_col_zm.nc omp_output/arm_multi_col_zm.nc'''
-        sh '''run_scripts/check_multi_col_error.py cpu_output/arm_multi_col_zt.nc omp_output/arm_multi_col_zt.nc'''
-        sh '''run_scripts/check_multi_col_error.py cpu_output/cobra_multi_col_zm.nc omp_output/cobra_multi_col_zm.nc'''
-        sh '''run_scripts/check_multi_col_error.py cpu_output/cobra_multi_col_zt.nc omp_output/cobra_multi_col_zt.nc'''
-        sh '''run_scripts/check_multi_col_error.py -t 1e-6 -s cpu_output/rico_silhs_multi_col_zm.nc omp_output/rico_silhs_multi_col_zm.nc'''
-        sh '''run_scripts/check_multi_col_error.py -t 1e-6 -s cpu_output/rico_silhs_multi_col_zt.nc omp_output/rico_silhs_multi_col_zt.nc'''
+        sh '''run_scripts/run_bindiff_all.py -v 2 -t 1e-6 -s cpu_output omp_output'''
       }
     }
   }

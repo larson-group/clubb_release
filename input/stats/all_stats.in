@@ -1,218 +1,891 @@
-! $Id$
-! This file contains a comprehensive listing of all the CLUBB variables that 
-! can be output to GrADS or netCDF, as found in 
-! src/CLUBB_core/stats_variables.F90
-! This file, as well as the statistical files for all the other cases, needs
-! to be updated every time a new statistical parameter is added.
-
-! To output a scalar variable result, 
-! follow the form <sclr_type> + <column_number> + <variable_type>
-!
-! Ex.   'sclr' + '1' + 'm_f' = 'sclr1m_f' 
-!
-&statsnl
-
-vars_zt = 
-'thlm', 'thvm', 'rtm', 'rcm', 'rvm', 'um', 'vm', 'um_ref', 'vm_ref', 'wm_zt',
-'ug', 'vg', 'cloud_frac', 'ice_supersat_frac', 'cloud_cover', 'rcm_in_layer', 'rcm_supersat_adj',
-'p_in_Pa', 'exner', 'rho_ds_zt', 'thv_ds_zt', 'Lscale', 'T_in_K',
-'rel_humidity', 'wp3', 'thlp3', 'rtp3', 'wpthlp2', 'wp2thlp', 'wprtp2', 'wp2rtp', 'Skw_zt',
-'Skthl_zt', 'Skrt_zt',
-'Lscale_up', 'Lscale_down', 'tau_zt', 'Kh_zt', 'wp2thvp', 'wp2up', 'wp2rcp', 'wp2hmp',
-'w_up_in_cloud', 'w_down_in_cloud', 'cld_updr_frac', 'cld_downdr_frac',
-'wprtpthlp', 'wpup2', 'wpvp2', 'rc_coef', 'Lscale_pert_1', 'Lscale_pert_2',
-'sigma_sqd_w_zt', 'rho', 'radht', 'radht_LW', 'radht_SW',
-'Ncm', 'Nc_in_cloud', 'Nc_activated', 'Nccnm', 'Nim', 'snowslope', 'Nsm', 'Ngm', 
-'sed_rcm', 'rsat', 'rsati', 'rfrzm',
-'rrm', 'Nrm', 'm_vol_rad_rain', 'm_vol_rad_cloud',
-'eff_rad_cloud', 'eff_rad_ice', 'eff_rad_snow', 'eff_rad_rain', 'eff_rad_graupel',
-'precip_rate_zt', 'rsm', 'rim', 'rgm',
-'diam', 'mass_ice_cryst', 'rcm_icedfs', 'u_T_cm',
-'rtm_bt', 'rtm_ma', 'rtm_ta', 'rtm_mfl', 'rtm_tacl', 'rtm_cl', 'rtm_ed',
-'rtm_forcing', 'rtm_sdmp', 'rtm_mc', 'rtm_pd', 'rvm_mc', 'rcm_mc', 'rcm_sd_mg_morr',
-'thlm_bt', 'thlm_ma', 'thlm_ta', 'thlm_mfl', 'thlm_tacl', 'thlm_cl', 'thlm_ed',
-'thlm_forcing', 'thlm_sdmp', 'thlm_mc',
-'thlm_old', 'thlm_without_ta',
-'thlm_mfl_min', 'thlm_mfl_max', 'thlm_enter_mfl', 'thlm_exit_mfl',
-'rtm_old', 'rtm_without_ta',
-'rtm_mfl_min', 'rtm_mfl_max', 'rtm_enter_mfl', 'rtm_exit_mfl',
-'um_bt', 'um_ma', 'um_gf', 'um_cf', 'um_ta', 'um_f',
-'um_sdmp', 'um_ndg', 'um_mfl',
-'vm_bt', 'vm_ma', 'vm_gf', 'vm_cf', 'vm_ta', 'vm_f',
-'vm_sdmp', 'vm_ndg', 'vm_mfl',
-'wp3_bt', 'wp3_ma', 'wp3_ta', 'wp3_tp', 'wp3_ac', 'wp3_bp1', 'wp3_nct', 'wp3_pr_turb',
-'wp3_pr_dfsn',
-'wp3_pr1', 'wp3_pr2', 'wp3_pr3', 'wp3_pr_tp', 'wp3_dp1', 'wp3_sdmp', 'wp3_cl', 'wp3_splat',
-'rtp3_bt', 'rtp3_tp', 'rtp3_ac', 'rtp3_dp',
-'thlp3_bt', 'thlp3_tp', 'thlp3_ac', 'thlp3_dp',
-'rrm_bt', 'rrm_ma', 'rrm_sd', 'rrm_ts', 'rrm_sd_morr',
-'rrm_ta', 'rrm_evap', 'rrm_auto', 'rrm_accr',
-'rrm_evap_adj', 'rrm_src_adj', 'rrm_mc_nonadj',
-'rrm_hf', 'rrm_wvhf', 'rrm_cl', 'rrm_mc',
-'Nrm_bt', 'Nrm_ma', 'Nrm_sd', 'Nrm_ts', 'Nrm_ta', 'Nrm_evap', 'Nrm_auto',
-'Nrm_evap_adj', 'Nrm_src_adj', 'Nrm_cl', 'Nrm_mc',
-'Ncm_bt', 'Ncm_ma', 'Ncm_ta', 'Ncm_mc', 'Ncm_cl', 'Ncm_act',
-'rsm_bt', 'rsm_ma', 'rsm_sd', 'rsm_sd_morr', 'rsm_ta', 'rsm_mc',
-'rsm_hf', 'rsm_wvhf', 'rsm_cl',
-'rim_bt', 'rim_ma', 'rim_sd', 'rim_sd_mg_morr', 'rim_ta', 'rim_mc',
-'rim_hf', 'rim_wvhf', 'rim_cl',
-'rgm_bt', 'rgm_ma', 'rgm_sd', 'rgm_sd_morr', 'rgm_ta',
-'rgm_mc', 'rgm_hf', 'rgm_wvhf', 'rgm_cl',
-'Nsm_bt', 'Nsm_mc', 'Nsm_ta', 'Nsm_ma', 'Nsm_sd', 'Nsm_cl', 
-'Nim_bt', 'Nim_mc', 'Nim_ta', 'Nim_ma', 'Nim_sd', 'Nim_cl', 
-'Ngm_bt', 'Ngm_mc', 'Ngm_ta', 'Ngm_ma', 'Ngm_sd', 'Ngm_cl',
-'w_KK_evap_covar_zt', 'rt_KK_evap_covar_zt', 'thl_KK_evap_covar_zt', 
-'w_KK_auto_covar_zt', 'rt_KK_auto_covar_zt', 'thl_KK_auto_covar_zt', 
-'w_KK_accr_covar_zt', 'rt_KK_accr_covar_zt', 'thl_KK_accr_covar_zt',
-'rr_KK_mvr_covar_zt', 'Nr_KK_mvr_covar_zt', 'KK_mvr_variance_zt', 
-'mixt_frac', 'w_1', 'w_2', 'varnce_w_1', 'varnce_w_2', 'thl_1', 'thl_2', 'varnce_thl_1', 'varnce_thl_2',
-'rt_1', 'rt_2', 'varnce_rt_1', 'varnce_rt_2', 'rc_1', 'rc_2', 'rsatl_1', 'rsatl_2', 
-'cloud_frac_1', 'cloud_frac_2', 'a3_coef_zt', 'wp3_on_wp2_zt',
-'chi_1', 'chi_2', 'stdev_chi_1', 'stdev_chi_2', 'stdev_eta_1', 'stdev_eta_2',
-'covar_chi_eta_1', 'covar_chi_eta_2', 'corr_w_chi_1', 'corr_w_chi_2',
-'corr_w_eta_1', 'corr_w_eta_2', 'corr_chi_eta_1', 'corr_chi_eta_2',
-'corr_w_rt_1', 'corr_w_rt_2', 'corr_w_thl_1', 'corr_w_thl_2',
-'corr_rt_thl_1', 'corr_rt_thl_2', 'crt_1', 'crt_2', 'cthl_1', 'cthl_2',
-'coef_wprtp2_implicit', 'term_wprtp2_explicit',
-'coef_wpthlp2_implicit', 'term_wpthlp2_explicit',
-'coef_wprtpthlp_implicit', 'term_wprtpthlp_explicit',
-'coef_wp2rtp_implicit', 'term_wp2rtp_explicit',
-'coef_wp2thlp_implicit', 'term_wp2thlp_explicit',
-'hm_i', 'precip_frac', 'precip_frac_1', 'precip_frac_2', 'Ncnm',
-'mu_hm_i', 'mu_Ncn_i', 'mu_hm_i_n', 'mu_Ncn_i_n',
-'sigma_hm_i', 'sigma_Ncn_i', 'sigma_hm_i_n', 'sigma_Ncn_i_n',
-'corr_w_chi_1_ca', 'corr_w_chi_2_ca', 'corr_w_eta_1_ca', 'corr_w_eta_2_ca',
-'corr_w_hm_i', 'corr_w_Ncn_i', 'corr_chi_eta_1_ca', 'corr_chi_eta_2_ca',
-'corr_chi_hm_i', 'corr_chi_Ncn_i', 'corr_eta_hm_i', 'corr_eta_Ncn_i',
-'corr_Ncn_hm_i', 'corr_hmx_hmy_i',
-'corr_w_hm_i_n', 'corr_w_Ncn_i_n', 'corr_chi_hm_i_n', 'corr_chi_Ncn_i_n',
-'corr_eta_hm_i_n', 'corr_eta_Ncn_i_n', 'corr_Ncn_hm_i_n', 'corr_hmx_hmy_i_n',
-'chi', 'chip2', 'C11_Skw_fnc',
-'wp2_zt', 'thlp2_zt', 'wpthlp_zt', 'wprtp_zt', 'rtp2_zt', 'rtpthlp_zt',
-'up2_zt', 'vp2_zt', 'upwp_zt', 'vpwp_zt', 'hmp2_zt',
-'wp2sclrp', 'wpsclrp2', 'wpsclrprtp', 'wpsclrpthlp',
-'sclrm', 'sclrm_f', 'edsclrm', 'edsclrm_f', 
-'PSMLT', 'EVPMS', 'PRACS', 'EVPMG', 'PRACG',
-'PGMLT', 'MNUCCC', 'PSACWS', 'PSACWI', 'QMULTS',
-'QMULTG', 'PSACWG', 'PGSACW', 'PRD', 'PRCI', 
-'PRAI', 'QMULTR', 'QMULTRG', 'MNUCCD', 'PRACI', 
-'PRACIS', 'EPRD', 'MNUCCR', 'PIACR', 'PIACRS',
-'PGRACS', 'PRDS', 'EPRDS', 'PSACR', 'PRDG', 'EPRDG',
-'NGSTEN', 'NRSTEN', 'NISTEN', 'NSSTEN', 'NCSTEN', 'NPRC1', 'NRAGG',
-'NPRACG', 'NSUBR', 'NSMLTR', 'NGMLTR', 'NPRACS', 'NNUCCR', 'NIACR',
-'NIACRS', 'NGRACS', 'NSMLTS', 'NSAGG', 'NPRCI', 'NSCNG', 'NSUBS', 'PRC', 'PRA', 
-'PRE', 'PCC', 'NNUCCC', 'NPSACWS', 'NPRA', 'NPRC', 'NPSACWI', 'NPSACWG', 
-'NPRAI', 'NMULTS', 'NMULTG', 'NMULTR', 'NMULTRG', 'NNUCCD', 'NSUBI', 
-'NGMLTG', 'NSUBG', 'NACT', 'SIZEFIX_NR', 'SIZEFIX_NC', 'SIZEFIX_NI', 
-'SIZEFIX_NS', 'SIZEFIX_NG', 'NEGFIX_NR', 'NEGFIX_NC', 'NEGFIX_NI', 'NEGFIX_NS', 
-'NEGFIX_NG', 'NIM_MORR_CL', 'QC_INST', 'QR_INST', 'QI_INST', 'QS_INST', 'QG_INST', 
-'NC_INST', 'NR_INST', 'NI_INST', 'NS_INST', 'NG_INST', 'T_in_K_mc', 'cloud_frac_refined',
-'rcm_refined', 'hl_on_Cp_residual', 'qto_residual', 'rcm_in_cloud',
-''
-
-vars_lh_zt =
-'AKm', 'lh_AKm', 'AKstd', 'AKstd_cld', 'AKm_rcm', 'AKm_rcc',
-'lh_thlm_mc', 'lh_rvm_mc', 'lh_rcm_mc', 'lh_Ncm_mc', 'lh_rrm_mc', 'lh_Nrm_mc',
-'lh_rsm_mc', 'lh_Nsm_mc', 'lh_rgm_mc', 'lh_Ngm_mc', 'lh_rim_mc', 'lh_Nim_mc',
-'lh_Vrr', 'lh_VNr', 'lh_rrm', 'lh_rim', 'lh_rsm', 'lh_rgm',
-'lh_thlm', 'lh_rcm', 'lh_rvm', 'lh_wm', 'lh_rcp2_zt', 'lh_rrp2_zt', 
-'lh_Nrp2_zt', 'lh_Ncp2_zt', 'lh_Ncnp2_zt', 'lh_wp2_zt', 'lh_cloud_frac',
-'lh_chi', 'lh_eta', 'lh_chip2', 'lh_rtp2_zt', 'lh_thlp2_zt',
-'lh_Nrm', 'lh_Nim', 'lh_Ncnm', 'lh_Ncm', 'lh_Ngm', 'lh_Nsm',
-'lh_rcm_avg', 'lh_rrm_auto', 'lh_rrm_accr', 'lh_rrm_evap',
-'lh_Nrm_auto', 'lh_Nrm_evap', 'lh_rrm_src_adj', 'lh_rrm_evap_adj',
-'lh_Nrm_src_adj', 'lh_Nrm_evap_adj', 'lh_precip_frac', 'lh_mixt_frac', 'silhs_variance_category',
-'lh_rrm_mc_nonadj', 'lh_samp_frac_category', 'lh_cloud_frac_unweighted', 'lh_mixt_frac_unweighted',
-'lh_precip_frac_unweighted', 'lh_m_vol_rad_rain',
-''
-
-vars_lh_sfc =
-'lh_morr_snow_rate', 'lh_vwp', 'lh_lwp', 'k_lh_start',
-'lh_sample_weights_sum', 'lh_sample_weights_avg',
-''
-
-vars_zm = 
-'wp2', 'rtp2', 'thlp2', 'rtpthlp', 'wprtp', 'wpthlp', 'wp2up2', 'wp2vp2', 'wp4',
-'up2', 'vp2', 'Skw_zm', 'Skthl_zm', 'Skrt_zm',
-'wpthvp', 'rtpthvp', 'thlpthvp', 'tau_zm', 'Kh_zm', 'K_hm', 'wprcp', 'rc_coef_zm', 'wm_zm',
-'thlprcp', 'rtprcp', 'rcp2', 'upwp', 'vpwp',
-'upthlp', 'uprtp', 'vpthlp', 'vprtp',
-'upthvp', 'uprcp', 'vpthvp', 'vprcp',
-'rho_zm', 'sigma_sqd_w', 'Skw_velocity',
-'gamma_Skw_fnc', 'coef_wp4_implicit', 'C6rt_Skw_fnc', 'C6thl_Skw_fnc', 'C6_term',
-'C7_Skw_fnc', 'C1_Skw_fnc', 'a3_coef', 'wp3_on_wp2', 'wp3_on_wp2_cfl_num', 'rcm_zm', 'rtm_zm',
-'thlm_zm', 'cloud_frac_zm', 'ice_supersat_frac_zm', 'rho_ds_zm', 'thv_ds_zm',
-'em', 'mean_w_up', 'mean_w_down', 'shear', 'wp3_zm', 'thlp3_zm', 'rtp3_zm',
-'w_1_zm', 'w_2_zm', 'varnce_w_1_zm', 'varnce_w_2_zm', 'mixt_frac_zm',
-'Frad', 'Frad_LW', 'Frad_SW', 'Frad_LW_up', 'Frad_SW_up', 'Frad_LW_down', 'Frad_SW_down',
-'Fprec', 'Fcsed',
-'hydrometp2', 'wphydrometp', 'rtphmp', 'thlphmp', 'hmxphmyp',
-'Vri', 'VNi', 'Vrc', 'VNc', 'Vrr', 'VNr', 'Vrs', 'VNs', 'Vrg',
-'Vrrprrp', 'VNrpNrp', 'Vrrprrp_expcalc', 'VNrpNrp_expcalc',
-'wp2_bt', 'wp2_ma', 'wp2_ta', 'wp2_ac', 'wp2_bp', 'wp2_nct', 'wp2_pr1', 'wp2_pr2',
-'wp2_pr3', 'wp2_pr_dfsn', 'wp2_dp1', 'wp2_dp2', 'wp2_sdmp',
-'wp2_cl', 'wp2_pd', 'wp2_sf', 'wp2_splat',
-'vp2_bt', 'vp2_ma', 'vp2_ta', 'vp2_tp', 'vp2_dp1', 'vp2_dp2', 
-'vp2_pr1', 'vp2_pr2', 'vp2_sdmp', 'vp2_cl', 'vp2_pd', 'vp2_sf', 'vp2_splat',
-'up2_bt', 'up2_ma', 'up2_ta', 'up2_tp', 'up2_dp1', 'up2_dp2', 'up2_nct',
-'up2_pr1', 'up2_pr2', 'up2_sdmp', 'up2_cl', 'up2_pd', 'up2_sf', 'up2_splat',
-'upwp_bt', 'upwp_ma', 'upwp_ta', 'upwp_tp', 'upwp_ac', 'upwp_bp', 'upwp_tct', 'upwp_nct',
-'upwp_pr1', 'upwp_pr2', 'upwp_pr3', 'upwp_pr4', 'upwp_dp1', 'upwp_mfl', 'upwp_cl',
-'vpwp_bt', 'vpwp_ma', 'vpwp_ta', 'vpwp_tp', 'vpwp_ac', 'vpwp_bp', 'vpwp_tct', 'vpwp_pr1',
-'vpwp_pr2', 'vpwp_pr3', 'vpwp_pr4', 'vpwp_dp1', 'vpwp_mfl', 'vpwp_cl',
-'wprtp_bt', 'wprtp_ma', 'wprtp_ta', 'wprtp_tp', 'wprtp_ac', 
-'wprtp_bp', 'wprtp_pr1', 'wprtp_pr2', 'wprtp_pr3', 'wprtp_dp1', 
-'wprtp_mfl', 'wprtp_cl', 'wprtp_pd', 'wprtp_forcing', 'wprtp_mc',
-'wpthlp_bt', 'wpthlp_ma', 'wpthlp_ta', 'wpthlp_tp', 'wpthlp_ac', 
-'wpthlp_bp', 'wpthlp_pr1', 'wpthlp_pr2', 'wpthlp_pr3', 'wpthlp_dp1', 
-'wpthlp_mfl', 'wpthlp_cl', 'wpthlp_forcing', 'wpthlp_mc',
-'rtp2_bt', 'rtp2_ma', 'rtp2_ta', 'rtp2_tp', 
-'rtp2_dp1', 'rtp2_dp2', 'rtp2_cl', 'rtp2_pd', 'rtp2_sf', 'rtp2_forcing', 'rtp2_mc',
-'thlp2_bt', 'thlp2_ma', 'thlp2_ta', 'thlp2_tp',
-'thlp2_dp1', 'thlp2_dp2', 'thlp2_cl', 'thlp2_pd', 'thlp2_sf', 'thlp2_forcing', 'thlp2_mc',
-'rtpthlp_bt', 'rtpthlp_ma', 'rtpthlp_ta', 'rtpthlp_tp1', 'rtpthlp_tp2',
-'rtpthlp_dp1', 'rtpthlp_dp2', 'rtpthlp_cl', 'rtpthlp_sf', 'rtpthlp_forcing', 'rtpthlp_mc',
-'wpthlp_enter_mfl', 'wpthlp_exit_mfl', 'wprtp_enter_mfl', 'wprtp_exit_mfl',
-'wpthlp_mfl_min', 'wpthlp_mfl_max', 'wprtp_mfl_min', 'wprtp_mfl_max',
-'sclrprtp', 'sclrp2', 'sclrpthvp', 'sclrpthlp',  
-'sclrprcp', 'wpsclrp', 'wpedsclrp',  'stability_correction',
-'lh_rtp2_mc', 'lh_thlp2_mc', 'lh_wprtp_mc', 'lh_wpthlp_mc', 'lh_rtpthlp_mc',
-'bv_freq_sqd', 'bv_freq_sqd_splat', 'bv_freq_sqd_mixed', 'bv_freq_sqd_moist', 'bv_freq_sqd_dry',
-'bv_freq_sqd_smth', 'bv_freq_out_cloud', 'bv_freq_pos', 'ddzt_umvm_sqd', 'invrs_tau_zm',
-'invrs_tau_xp2_zm', 'invrs_tau_wp2_zm', 'invrs_tau_wpxp_zm', 'invrs_tau_wp3_zm',
-'invrs_tau_no_N2_zm', 'invrs_tau_bkgnd', 'invrs_tau_sfc', 'invrs_tau_shear', 'Ri_zm',
-'grid_density', 'alt_term', 'lscale_term', 'chi_term', 'brunt_term',
-'lscale_term_time_avg', 'chi_term_time_avg', 'brunt_term_time_avg', 
-'norm_min_grid_dens', 'norm_grid_dens',
-''
-
-vars_rad_zt =
-'T_in_K_rad', 'rcil_rad', 'o3l_rad', 'rsm_rad', 'rcm_in_cloud_rad',
-'cloud_frac_rad', 'ice_supersat_frac_rad', 'radht_rad', 'radht_SW_rad', 'radht_LW_rad',
-'p_in_mb_rad', 'sp_humidity_rad',
-''
-
-! fulwcl, fdlwcl, fdswcl and fuswcl were added to calculate clear-sky radiative fluxes
-vars_rad_zm =
-'Frad_SW_rad', 'Frad_LW_rad', 'Frad_SW_up_rad', 'Frad_LW_up_rad', 'Frad_SW_down_rad', 'Frad_LW_down_rad',
-'fulwcl', 'fdlwcl', 'fdswcl', 'fuswcl',
-''
-
-vars_sfc = 
-'ustar', 'soil_heat_flux', 'veg_T_in_K', 'sfc_soil_T_in_K', 'deep_soil_T_in_K', 
-'lh', 'sh', 'cc', 'lwp', 'vwp',
-'swp', 'iwp', 'rwp', 'z_cloud_base', 'z_inversion', 'precip_rate_sfc',
-'rain_flux_sfc', 'rrm_sfc', 'precip_frac_tol', 
-'wpthlp_sfc', 'wprtp_sfc', 'upwp_sfc', 'vpwp_sfc',
-'morr_snow_rate',
-'thlm_vert_avg', 'rtm_vert_avg', 'um_vert_avg', 'vm_vert_avg', 
-'wp2_vert_avg', 'up2_vert_avg', 'vp2_vert_avg', 'rtp2_vert_avg', 
-'thlp2_vert_avg', 'T_sfc', 
-'rtm_spur_src', 'thlm_spur_src',
-'wp23_matrix_condt_num', 'rtm_matrix_condt_num', 'thlm_matrix_condt_num', 
-'rtp2_matrix_condt_num', 'thlp2_matrix_condt_num', 'rtpthlp_matrix_condt_num',
-'up2_vp2_matrix_condt_num', 'windm_matrix_condt_num', 'rs_sd_morr_int', 
-'tot_vartn_normlzd_rtm', 'tot_vartn_normlzd_thlm', 'tot_vartn_normlzd_wprtp',
-''
-
+&clubb_stats_nl
+  ! entry(i) format: "name | grid | units | long_name"
+  ! grid options: zt, zm, sfc, lh_zt, lh_sfc, rad_zt, rad_zm
+  entry(1)   = "thlm                      | zt     | K                     | Liquid water potential temperature (theta_l)"
+  entry(2)   = "thvm                      | zt     | K                     | Virtual potential temperature"
+  entry(3)   = "rtm                       | zt     | kg/kg                 | Total (vapor+liquid) water mixing ratio"
+  entry(4)   = "rcm                       | zt     | kg/kg                 | Cloud water mixing ratio"
+  entry(5)   = "rvm                       | zt     | kg/kg                 | Vapor water mixing ratio"
+  entry(6)   = "um                        | zt     | m/s                   | Grid-mean eastward (u) wind"
+  entry(7)   = "vm                        | zt     | m/s                   | Grid-mean northward (v) wind"
+  entry(8)   = "um_ref                    | zt     | m/s                   | Reference u wind"
+  entry(9)   = "vm_ref                    | zt     | m/s                   | Reference v wind"
+  entry(10)  = "wm_zt                     | zt     | m/s                   | Grid-mean upward (w) wind"
+  entry(11)  = "ug                        | zt     | m/s                   | u geostrophic wind"
+  entry(12)  = "vg                        | zt     | m/s                   | v geostrophic wind"
+  entry(13)  = "cloud_frac                | zt     | -                     | Cloud fraction (between 0 and 1)"
+  entry(14)  = "ice_supersat_frac         | zt     | count                 | Ice cloud fraction (between 0 and 1)"
+  entry(15)  = "cloud_cover               | zt     | count                 | Cloud cover (between 0 and 1)"
+  entry(16)  = "rcm_in_layer              | zt     | kg/kg                 | rcm in cloud layer"
+  entry(17)  = "rcm_supersat_adj          | zt     | kg/kg                 | rcm adjustment due to spurious supersaturation"
+  entry(18)  = "p_in_Pa                   | zt     | Pa                    | Pressure"
+  entry(19)  = "exner                     | zt     | count                 | Exner function = (p/p0)**(rd/cp)"
+  entry(20)  = "rho_ds_zt                 | zt     | kg m^{-3}             | Dry static base-state density"
+  entry(21)  = "thv_ds_zt                 | zt     | K                     | Dry base-state theta_v"
+  entry(22)  = "Lscale                    | zt     | m                     | Turbulent mixing length"
+  entry(23)  = "T_in_K                    | zt     | K                     | Absolute temperature"
+  entry(24)  = "rel_humidity              | zt     | [-]                   | Relative humidity w.r.t. liquid (between 0 and 1)"
+  entry(25)  = "wp3                       | zt     | m^3/s^3               | Third-order moment of vertical air velocity"
+  entry(26)  = "thlp3                     | zt     | K^3                   | Third-order moment of theta_l"
+  entry(27)  = "rtp3                      | zt     | (kg/kg)^3             | Third-order moment of total water, rt"
+  entry(28)  = "wpthlp2                   | zt     | (m K^2)/s             | Vertical turbulent flux of theta_l'^2"
+  entry(29)  = "wp2thlp                   | zt     | (m^2 K)/s^2           | Vertical turbulent flux of w'theta_l'"
+  entry(30)  = "wprtp2                    | zt     | (m kg)/(s kg)         | Vertical turbulent flux of rt'^2"
+  entry(31)  = "wp2rtp                    | zt     | (m^2 kg)/(s^2 kg)     | Vertical turbulent flux of w'rt'"
+  entry(32)  = "Skw_zt                    | zt     | -                     | Skewness of w on thermodynamic levels"
+  entry(33)  = "Skthl_zt                  | zt     | -                     | Skewness of thl on thermodynamic levels"
+  entry(34)  = "Skrt_zt                   | zt     | -                     | Skewness of rt on thermodynamic levels"
+  entry(35)  = "Lscale_up                 | zt     | m                     | Upward mixing length"
+  entry(36)  = "Lscale_down               | zt     | m                     | Downward mixing length"
+  entry(37)  = "tau_zt                    | zt     | s                     | Dissipation time"
+  entry(38)  = "Kh_zt                     | zt     | m^2/s                 | Eddy diffusivity"
+  entry(39)  = "wp2thvp                   | zt     | K m^2/s^2             | Vertical turbulent flux of w'theta_v'"
+  entry(40)  = "wp2up                     | zt     | m^3/s^3               | Vertical turbulent flux of w'u'"
+  entry(41)  = "wp2rcp                    | zt     | (m^2 kg)/(s^2 kg)     | w'^2rc'"
+  entry(42)  = "wp2hmp                    | zt     | [-]                   | Third-order moment <w'^2 <hm>'>"
+  entry(43)  = "w_up_in_cloud             | zt     | m/s                   | Mean W in saturated updrafts"
+  entry(44)  = "w_down_in_cloud           | zt     | m/s                   | Mean W in saturated downdrafts"
+  entry(45)  = "cld_updr_frac             | zt     | -                     | Cloudy Updraft Fraction"
+  entry(46)  = "cld_downdr_frac           | zt     | -                     | Cloudy Downdraft Fraction"
+  entry(47)  = "wprtpthlp                 | zt     | (m kg K)/(s kg)       | Vertical turbulent flux of rt'theta_l'"
+  entry(48)  = "wpup2                     | zt     | m^3/s^3               | Third-order moment from PDF"
+  entry(49)  = "wpvp2                     | zt     | m^3/s^3               | Third-order moment from PDF"
+  entry(50)  = "rc_coef                   | zt     | K/(kg/kg)             | Coefficient of X'r_c'"
+  entry(51)  = "Lscale_pert_1             | zt     | m                     | Mixing length using a perturbed value of rtm/thlm"
+  entry(52)  = "Lscale_pert_2             | zt     | m                     | Mixing length using a perturbed value of rtm/thlm"
+  entry(53)  = "sigma_sqd_w_zt            | zt     | -                     | Nondimensionalized w variance of Gaussian component"
+  entry(54)  = "rho                       | zt     | kg m^{-3}             | Air density"
+  entry(55)  = "radht                     | zt     | K/s                   | Total (sw+lw) radiative heating rate"
+  entry(56)  = "radht_LW                  | zt     | K/s                   | Long-wave radiative heating rate"
+  entry(57)  = "radht_SW                  | zt     | K/s                   | Short-wave radiative heating rate"
+  entry(58)  = "Ncm                       | zt     | num/kg                | Cloud droplet number concentration"
+  entry(59)  = "Nc_in_cloud               | zt     | num/kg                | In cloud droplet concentration"
+  entry(60)  = "Nc_activated              | zt     | num/kg                | Droplets activated by GFDL activation"
+  entry(61)  = "Nccnm                     | zt     | num/kg                | Cloud condensation nuclei concentration"
+  entry(62)  = "Nim                       | zt     | num/kg                | Ice crystal number concentration"
+  entry(63)  = "snowslope                 | zt     | 1/m                   | COAMPS microphysics snow slope parameter"
+  entry(64)  = "Nsm                       | zt     | num/kg                | Snow particle number concentration"
+  entry(65)  = "Ngm                       | zt     | num/kg                | Graupel number concentration"
+  entry(66)  = "sed_rcm                   | zt     | kg / [m^2 s]          | d(rcm)/dt due to cloud sedimentation"
+  entry(67)  = "rsat                      | zt     | kg/kg                 | Saturation mixing ratio over liquid"
+  entry(68)  = "rsati                     | zt     | kg/kg                 | Saturation mixing ratio over ice"
+  entry(69)  = "rfrzm                     | zt     | kg/kg                 | rfrzm, Total ice phase water mixing ratio"
+  entry(70)  = "rrm                       | zt     | kg/kg                 | Rain water mixing ratio"
+  entry(71)  = "Nrm                       | zt     | num/kg                | Rain drop number concentration"
+  entry(72)  = "mvrr                      | zt     | m                     | mvrr, Rain drop mean volume radius"
+  entry(73)  = "m_vol_rad_cloud           | zt     | m                     | Cloud drop mean volume radius"
+  entry(74)  = "eff_rad_cloud             | zt     | microns               | Cloud drop effective volume radius"
+  entry(75)  = "eff_rad_ice               | zt     | microns               | Ice effective volume radius"
+  entry(76)  = "eff_rad_snow              | zt     | microns               | Snow effective volume radius"
+  entry(77)  = "eff_rad_rain              | zt     | microns               | Rain drop effective volume radius"
+  entry(78)  = "eff_rad_graupel           | zt     | microns               | Graupel effective volume radius"
+  entry(79)  = "precip_rate_zt            | zt     | mm/day                | Rain rate"
+  entry(80)  = "rsm                       | zt     | kg/kg                 | Snow water mixing ratio"
+  entry(81)  = "rim                       | zt     | kg/kg                 | Pristine ice water mixing ratio"
+  entry(82)  = "rgm                       | zt     | kg/kg                 | Graupel water mixing ratio"
+  entry(83)  = "diam                      | zt     | m                     | Ice crystal diameter"
+  entry(84)  = "mass_ice_cryst            | zt     | kg                    | Mass of a single ice crystal"
+  entry(85)  = "rcm_icedfs                | zt     | kg/kg/s               | Change in liquid due to ice"
+  entry(86)  = "u_T_cm                    | zt     | cm s^{-1}             | Ice crystal fallspeed"
+  entry(87)  = "rtm_bt                    | zt     | kg kg^{-1} s^{-1}     | rtm budget: rtm time tendency"
+  entry(88)  = "rtm_ma                    | zt     | kg kg^{-1} s^{-1}     | rtm budget: rtm vertical mean advection"
+  entry(89)  = "rtm_ta                    | zt     | kg kg^{-1} s^{-1}     | rtm budget: rtm turbulent advection"
+  entry(90)  = "rtm_mfl                   | zt     | kg kg^{-1} s^{-1}     | rtm budget: rtm correction due to monotonic flux limiter"
+  entry(91)  = "rtm_tacl                  | zt     | kg kg^{-1} s^{-1}     | rtm budget: rtm correction due to ta term (wprtp) clipping"
+  entry(92)  = "rtm_cl                    | zt     | kg kg^{-1} s^{-1}     | rtm budget: rtm clipping"
+  entry(93)  = "rtm_ed                    | zt     | kg kg^{-1} s^{-1}     | rtm budget: rtm_expldiff"
+  entry(94)  = "rtm_forcing               | zt     | kg kg^{-1} s^{-1}     | rtm budget: rt forcing (includes rtm_mc)"
+  entry(95)  = "rtm_sdmp                  | zt     | kg kg^{-1} s^{-1}     | rtm budget: rtm correction due to sponge damping"
+  entry(96)  = "rtm_mc                    | zt     | kg kg^{-1} s^{-1}     | Change in rt due to microphysics (not in budget)"
+  entry(97)  = "rtm_pd                    | zt     | kg kg^{-1} s^{-1}     | rtm budget: rtm positive definite adjustment"
+  entry(98)  = "rvm_mc                    | zt     | kg/(kg s)             | Time tendency of vapor mixing ratio due to microphysics"
+  entry(99)  = "rcm_mc                    | zt     | kg/kg/s               | Time tendency of liquid water mixing ratio due microphysics"
+  entry(100) = "rcm_sd_mg_morr            | zt     | kg kg^{-1} s^{-1}     | rcm sedimentation when using morrision or MG microphysics (not in budget, included in rcm_mc)"
+  entry(101) = "thlm_bt                   | zt     | K s^{-1}              | thlm budget: thlm time tendency"
+  entry(102) = "thlm_ma                   | zt     | K s^{-1}              | thlm budget: thlm vertical mean advection"
+  entry(103) = "thlm_ta                   | zt     | K s^{-1}              | thlm budget: thlm turbulent advection"
+  entry(104) = "thlm_mfl                  | zt     | K s^{-1}              | thlm budget: thlm correction due to monotonic flux limiter"
+  entry(105) = "thlm_tacl                 | zt     | K s^{-1}              | thlm budget: thlm correction due to ta term (wpthlp) clipping"
+  entry(106) = "thlm_cl                   | zt     | K s^{-1}              | thlm budget: thlm_cl"
+  entry(107) = "thlm_ed                   | zt     | K s^{-1}              | thlm budget: thlm_expldiff"
+  entry(108) = "thlm_forcing              | zt     | K s^{-1}              | thlm budget: thetal forcing (includes thlm_mc and radht)"
+  entry(109) = "thlm_sdmp                 | zt     | K s^{-1}              | thlm budget: thlm correction due to sponge damping"
+  entry(110) = "thlm_mc                   | zt     | K s^{-1}              | Change in thlm due to microphysics (not in budget)"
+  entry(111) = "thlm_old                  | zt     | K                     | Thlm at previous timestep"
+  entry(112) = "thlm_without_ta           | zt     | K                     | Thlm without turbulent advection contribution"
+  entry(113) = "thlm_mfl_min              | zt     | K                     | Minimum allowable thlm"
+  entry(114) = "thlm_mfl_max              | zt     | K                     | Maximum allowable thlm"
+  entry(115) = "thlm_enter_mfl            | zt     | K                     | Thlm before flux-limiter"
+  entry(116) = "thlm_exit_mfl             | zt     | K                     | Thlm exiting flux-limiter"
+  entry(117) = "rtm_old                   | zt     | kg/kg                 | Rtm at previous timestep"
+  entry(118) = "rtm_without_ta            | zt     | kg/kg                 | Rtm without turbulent advection contribution"
+  entry(119) = "rtm_mfl_min               | zt     | kg/kg                 | Minimum allowable rtm"
+  entry(120) = "rtm_mfl_max               | zt     | kg/kg                 | Maximum allowable rtm"
+  entry(121) = "rtm_enter_mfl             | zt     | kg/kg                 | Rtm before flux-limiter"
+  entry(122) = "rtm_exit_mfl              | zt     | kg/kg                 | Rtm exiting flux-limiter"
+  entry(123) = "um_bt                     | zt     | m s^{-2}              | um budget: um time tendency"
+  entry(124) = "um_ma                     | zt     | m s^{-2}              | um budget: um vertical mean advection"
+  entry(125) = "um_gf                     | zt     | m s^{-2}              | um budget: um geostrophic forcing"
+  entry(126) = "um_cf                     | zt     | m s^{-2}              | um budget: um coriolis forcing"
+  entry(127) = "um_ta                     | zt     | m s^{-2}              | um budget: um turbulent advection"
+  entry(128) = "um_f                      | zt     | m s^{-2}              | um budget: um forcing"
+  entry(129) = "um_sdmp                   | zt     | m s^{-2}              | um budget: um sponge damping"
+  entry(130) = "um_ndg                    | zt     | m s^{-2}              | um budget: um nudging"
+  entry(131) = "um_mfl                    | zt     | m s^{-2}              | um budget: um monotonic flux limiter"
+  entry(132) = "vm_bt                     | zt     | m s^{-2}              | vm budget: vm time tendency"
+  entry(133) = "vm_ma                     | zt     | m s^{-2}              | vm budget: vm vertical mean advection"
+  entry(134) = "vm_gf                     | zt     | m s^{-2}              | vm budget: vm geostrophic forcing"
+  entry(135) = "vm_cf                     | zt     | m s^{-2}              | vm budget: vm coriolis forcing"
+  entry(136) = "vm_ta                     | zt     | m s^{-2}              | vm budget: vm turbulent transport"
+  entry(137) = "vm_f                      | zt     | m s^{-2}              | vm budget: vm forcing"
+  entry(138) = "vm_sdmp                   | zt     | m s^{-2}              | vm budget: vm sponge damping"
+  entry(139) = "vm_ndg                    | zt     | m s^{-2}              | vm budget: vm nudging"
+  entry(140) = "vm_mfl                    | zt     | m s^{-2}              | vm budget: vm monotonic flux limiter"
+  entry(141) = "wp3_bt                    | zt     | m^{3} s^{-4}          | wp3 budget: wp3 time tendency"
+  entry(142) = "wp3_ma                    | zt     | m^{3} s^{-4}          | wp3 budget: wp3 vertical mean advection"
+  entry(143) = "wp3_ta                    | zt     | m^{3} s^{-4}          | wp3 budget: wp3 turbulent advection"
+  entry(144) = "wp3_tp                    | zt     | m^{3} s^{-4}          | wp3 budget: wp3 turbulent transport"
+  entry(145) = "wp3_ac                    | zt     | m^{3} s^{-4}          | wp3 budget: wp3 accumulation term"
+  entry(146) = "wp3_bp1                   | zt     | m^{3} s^{-4}          | wp3 budget: wp3 buoyancy production"
+  entry(147) = "wp3_nct                   | zt     | m^{3} s^{-4}          | wp3 budget: wp3 nontraditional Coriolis term"
+  entry(148) = "wp3_pr_turb               | zt     | m^{3} s^{-4}          | wp3 budget: wp3 pressure-turbulence correlation term"
+  entry(149) = "wp3_pr_dfsn               | zt     | m^{3} s^{-4}          | wp3 budget: wp3 pressure diffusion term"
+  entry(150) = "wp3_pr1                   | zt     | m^{3} s^{-4}          | wp3 budget: wp3 pressure term 1"
+  entry(151) = "wp3_pr2                   | zt     | m^{3} s^{-4}          | wp3 budget: wp3 pressure term 2"
+  entry(152) = "wp3_pr3                   | zt     | m^{3} s^{-4}          | wp3 budget: wp3 pressure term 3"
+  entry(153) = "wp3_pr_tp                 | zt     | m^{3} s^{-4}          | wp3 budget: wp3 pressure damping of turbulent production"
+  entry(154) = "wp3_dp1                   | zt     | m^{3} s^{-4}          | wp3 budget: wp3 dissipation term 1"
+  entry(155) = "wp3_sdmp                  | zt     | m^{3} s^{-4}          | wp3 budget: wp3 sponge damping term"
+  entry(156) = "wp3_cl                    | zt     | m^{3} s^{-4}          | wp3 budget: wp3 clipping term"
+  entry(157) = "wp3_splat                 | zt     | m^3 s^-4              | wp3 budget: wp3 splatting term"
+  entry(158) = "rtp3_bt                   | zt     | kg^{3} kg^{-3} s^{-1} | rtp3 budget: rtp3 time tendency[kg^{3} kg^{-3} s^{-1}]"
+  entry(159) = "rtp3_tp                   | zt     | kg^{3} kg^{-3} s^{-1} | rtp3 budget: rtp3 turbulent production[kg^{3} kg^{-3} s^{-1}]"
+  entry(160) = "rtp3_ac                   | zt     | kg^{3} kg^{-3} s^{-1} | rtp3 budget: rtp3 accumulation[kg^{3} kg^{-3} s^{-1}]"
+  entry(161) = "rtp3_dp                   | zt     | kg^{3} kg^{-3} s^{-1} | rtp3 budget: rtp3 dissipation[kg^{3} kg^{-3} s^{-1}]"
+  entry(162) = "thlp3_bt                  | zt     | K^{3} s^{-1}          | thlp3 budget: thlp3 time tendency[K^{3} s^{-1}]"
+  entry(163) = "thlp3_tp                  | zt     | K^{3} s^{-1}          | thlp3 budget: thlp3 turbulent production[K^{3} s^{-1}]"
+  entry(164) = "thlp3_ac                  | zt     | K^{3} s^{-1}          | thlp3 budget: thlp3 accumulation[K^{3} s^{-1}]"
+  entry(165) = "thlp3_dp                  | zt     | K^{3} s^{-1}          | thlp3 budget: thlp3 dissipation"
+  entry(166) = "rrm_bt                    | zt     | kg kg^{-1} s^{-1}     | rrm budget: rrm time tendency"
+  entry(167) = "rrm_ma                    | zt     | kg kg^{-1} s^{-1}     | rrm budget: rrm vertical mean advection"
+  entry(168) = "rrm_sd                    | zt     | kg kg^{-1} s^{-1}     | rrm budget: rrm sedimentation"
+  entry(169) = "rrm_ts                    | zt     | kg kg^{-1} s^{-1}     | rrm budget: rrm turbulent sedimentation"
+  entry(170) = "rrm_sd_morr               | zt     | kg kg^{-1} s^{-1}     | rrm sedimentation when using morrision microphysics (not in budget, included in rrm_mc)"
+  entry(171) = "rrm_ta                    | zt     | kg kg^{-1} s^{-1}     | rrm budget: rrm turbulent advection"
+  entry(172) = "rrm_evap                  | zt     | kg kg^{-1} s^{-1}     | rrm evaporation rate"
+  entry(173) = "rrm_auto                  | zt     | kg kg^{-1} s^{-1}     | rrm autoconversion rate"
+  entry(174) = "rrm_accr                  | zt     | kg kg^{-1} s^{-1}     | rrm accretion rate"
+  entry(175) = "rrm_evap_adj              | zt     | kg kg^{-1} s^{-1}     | rrm evaporation adjustment due to over-evaporation"
+  entry(176) = "rrm_src_adj               | zt     | kg kg^{-1} s^{-1}     | rrm source term adjustment due to over-depletion"
+  entry(177) = "rrm_mc_nonadj             | zt     | kg kg^{-1} s^{-1}     | Value of rrm_mc tendency before adjustment"
+  entry(178) = "rrm_hf                    | zt     | kg kg^{-1} s^{-1}     | rrm budget: rrm hole-filling term"
+  entry(179) = "rrm_wvhf                  | zt     | kg kg^{-1} s^{-1}     | rrm budget: rrm water vapor hole-filling term"
+  entry(180) = "rrm_cl                    | zt     | kg kg^{-1} s^{-1}     | rrm budget: rrm clipping term"
+  entry(181) = "rrm_mc                    | zt     | kg kg^{-1} s^{-1}     | rrm budget: Change in rrm due to microphysics"
+  entry(182) = "Nrm_bt                    | zt     | (num/kg)/s            | Nrm budget: Nrm time tendency"
+  entry(183) = "Nrm_ma                    | zt     | (num/kg)/s            | Nrm budget: Nrm vertical mean advection"
+  entry(184) = "Nrm_sd                    | zt     | (num/kg)/s            | Nrm budget: Nrm sedimentation"
+  entry(185) = "Nrm_ts                    | zt     | (num/kg)/s            | Nrm budget: Nrm turbulent sedimentation"
+  entry(186) = "Nrm_ta                    | zt     | (num/kg)/s            | Nrm budget: Nrm turbulent advection"
+  entry(187) = "Nrm_evap                  | zt     | (num/kg)/s            | Nrm evaporation rate"
+  entry(188) = "Nrm_auto                  | zt     | (num/kg)/s            | Nrm autoconversion rate"
+  entry(189) = "Nrm_evap_adj              | zt     | (num/kg)/s            | Nrm evaporation adjustment due to over-evaporation"
+  entry(190) = "Nrm_src_adj               | zt     | (num/kg)/s            | Nrm source term adjustment due to over-depletion"
+  entry(191) = "Nrm_cl                    | zt     | (num/kg)/s            | Nrm budget: Nrm clipping term"
+  entry(192) = "Nrm_mc                    | zt     | (num/kg)/s            | Nrm budget: Change in Nrm due to microphysics (Not in budget)"
+  entry(193) = "Ncm_bt                    | zt     | (num/kg)/s            | Ncm budget: Cloud droplet number concentration budget"
+  entry(194) = "Ncm_ma                    | zt     | (num/kg)/s            | Ncm budget: Ncm vertical mean advection"
+  entry(195) = "Ncm_ta                    | zt     | (num/kg)/s            | Ncm budget: Ncm turbulent advection"
+  entry(196) = "Ncm_mc                    | zt     | (num/kg)/s            | Ncm budget: Change in Ncm due to microphysics"
+  entry(197) = "Ncm_cl                    | zt     | (num/kg)/s            | Ncm budget: Ncm clipping term"
+  entry(198) = "Ncm_act                   | zt     | (num/kg)/s            | Ncm budget: Change in Ncm due to activation"
+  entry(199) = "rsm_bt                    | zt     | (kg/kg)/s             | rsm budget: rsm time tendency"
+  entry(200) = "rsm_ma                    | zt     | (kg/kg)/s             | rsm budget: rsm vertical mean advection"
+  entry(201) = "rsm_sd                    | zt     | (kg/kg)/s             | rsm budget: rsm sedimentation"
+  entry(202) = "rsm_sd_morr               | zt     | (kg/kg)/s             | rsm sedimentation when using morrison microphysics (Not in budget, included in rsm_mc)"
+  entry(203) = "rsm_ta                    | zt     | (kg/kg)/s             | rsm budget: rsm turbulent advection"
+  entry(204) = "rsm_mc                    | zt     | (kg/kg)/s             | rsm budget: Change in rsm due to microphysics"
+  entry(205) = "rsm_hf                    | zt     | (kg/kg)/s             | rsm budget: rsm hole-filling term"
+  entry(206) = "rsm_wvhf                  | zt     | (kg/kg)/s             | rsm budget: rsm water vapor hole-filling term"
+  entry(207) = "rsm_cl                    | zt     | (kg/kg)/s             | rsm budget: rsm clipping term"
+  entry(208) = "rim_bt                    | zt     | (kg/kg)/s             | rim budget: rim time tendency"
+  entry(209) = "rim_ma                    | zt     | (kg/kg)/s             | rim budget: rim vertical mean advection"
+  entry(210) = "rim_sd                    | zt     | (kg/kg)/s             | rim budget: rim sedimentation"
+  entry(211) = "rim_sd_mg_morr            | zt     | (kg/kg)/s             | rim sedimentation when using morrison or MG microphysics(not in budget, included in rim_mc)"
+  entry(212) = "rim_ta                    | zt     | (kg/kg)/s             | rim budget: rim turbulent advection"
+  entry(213) = "rim_mc                    | zt     | (kg/kg)/s             | rim budget: Change in rim due to microphysics"
+  entry(214) = "rim_hf                    | zt     | (kg/kg)/s             | rim budget: rim hole-filling term"
+  entry(215) = "rim_wvhf                  | zt     | (kg/kg)/s             | rim budget: rim water vapor hole-filling term"
+  entry(216) = "rim_cl                    | zt     | (kg/kg)/s             | rim budget: rim clipping term"
+  entry(217) = "rgm_bt                    | zt     | (kg/kg)/s             | rgm budget: rgm time tendency"
+  entry(218) = "rgm_ma                    | zt     | (kg/kg)/s             | rgm budget: rgm vertical mean advection"
+  entry(219) = "rgm_sd                    | zt     | (kg/kg)/s             | rgm budget: rgm sedimentation"
+  entry(220) = "rgm_sd_morr               | zt     | (kg/kg)/s             | rgm sedimentation when using morrison microphysics (not in budget, included in rgm_mc)"
+  entry(221) = "rgm_ta                    | zt     | (kg/kg)/s             | rgm budget: rgm turbulent advection"
+  entry(222) = "rgm_mc                    | zt     | (kg/kg)/s             | rgm budget: Change in rgm due to microphysics"
+  entry(223) = "rgm_hf                    | zt     | (kg/kg)/s             | rgm budget: rgm hole-filling term"
+  entry(224) = "rgm_wvhf                  | zt     | (kg/kg)/s             | rgm budget: rgm water vapor hole-filling term"
+  entry(225) = "rgm_cl                    | zt     | (kg/kg)/s             | rgm budget: rgm clipping term"
+  entry(226) = "Nsm_bt                    | zt     | (num/kg)/s            | Nsm budget"
+  entry(227) = "Nsm_mc                    | zt     | (num/kg)/s            | Nsm budget: Nsm microphysics"
+  entry(228) = "Nsm_ta                    | zt     | (num/kg)/s            | Nsm budget: Nsm turbulent advection"
+  entry(229) = "Nsm_ma                    | zt     | (num/kg)/s            | Nsm budget: Nsm mean advection"
+  entry(230) = "Nsm_sd                    | zt     | (num/kg)/s            | Nsm budget: Nsm sedimentation"
+  entry(231) = "Nsm_cl                    | zt     | (num/kg)/s            | Nsm budget: Nsm clipping term"
+  entry(232) = "Nim_bt                    | zt     | (num/kg)/s            | Nim budget"
+  entry(233) = "Nim_mc                    | zt     | (num/kg)/s            | Nim budget: Nim microphysics term"
+  entry(234) = "Nim_ta                    | zt     | (num/kg)/s            | Nim budget: Nim turbulent advection"
+  entry(235) = "Nim_ma                    | zt     | (num/kg)/s            | Nim budget: Nim mean advection"
+  entry(236) = "Nim_sd                    | zt     | (num/kg)/s            | Nim budget: Nim sedimentation"
+  entry(237) = "Nim_cl                    | zt     | (num/kg)/s            | Nim budget: Nim clipping term"
+  entry(238) = "Ngm_bt                    | zt     | (num/kg)/s            | Ngm budget:"
+  entry(239) = "Ngm_mc                    | zt     | (num/kg)/s            | Ngm budget: Ngm microphysics term"
+  entry(240) = "Ngm_ta                    | zt     | (num/kg)/s            | Ngm budget: Ngm turbulent advection"
+  entry(241) = "Ngm_ma                    | zt     | (num/kg)/s            | Ngm budget: Ngm mean advection"
+  entry(242) = "Ngm_sd                    | zt     | (num/kg)/s            | Ngm budget: Ngm sedimentation"
+  entry(243) = "Ngm_cl                    | zt     | (num/kg)/s            | Ngm budget: Ngm clipping term"
+  entry(244) = "w_KK_evap_covar_zt        | zt     | m*(kg/kg)/s^2         | Covariance of w and KK evaporation rate"
+  entry(245) = "rt_KK_evap_covar_zt       | zt     | (kg/kg)^2/s           | Covariance of r_t and KK evaporation rate"
+  entry(246) = "thl_KK_evap_covar_zt      | zt     | K*(kg/kg)/s           | Covariance of theta_l and KK evaporation rate"
+  entry(247) = "w_KK_auto_covar_zt        | zt     | m*(kg/kg)/s^2         | Covariance of w and KK autoconversion rate"
+  entry(248) = "rt_KK_auto_covar_zt       | zt     | (kg/kg)^2/s           | Covariance of r_t and KK autoconversion rate"
+  entry(249) = "thl_KK_auto_covar_zt      | zt     | K*(kg/kg)/s           | Covariance of theta_l and KK autoconversion rate"
+  entry(250) = "w_KK_accr_covar_zt        | zt     | m*(kg/kg)/s^2         | Covariance of w and KK accretion rate"
+  entry(251) = "rt_KK_accr_covar_zt       | zt     | (kg/kg)^2/s           | Covariance of r_t and KK accretion rate"
+  entry(252) = "thl_KK_accr_covar_zt      | zt     | K*(kg/kg)/s           | Covariance of theta_l and KK accretion rate"
+  entry(253) = "rr_KK_mvr_covar_zt        | zt     | (kg/kg)m              | Covariance of r_r and KK rain drop mean volume radius"
+  entry(254) = "Nr_KK_mvr_covar_zt        | zt     | (num/kg)m             | Covariance of N_r and KK rain drop mean volume radius"
+  entry(255) = "KK_mvr_variance_zt        | zt     | m^2                   | Variance of KK rain drop mean volume radius"
+  entry(256) = "mixt_frac                 | zt     | count                 | pdf parameter: mixture fraction"
+  entry(257) = "w_1                       | zt     | m/s                   | pdf parameter: mean w of component 1"
+  entry(258) = "w_2                       | zt     | m/s                   | pdf paramete: mean w of component 2"
+  entry(259) = "varnce_w_1                | zt     | m^2/s^2               | pdf parameter: w variance of component 1"
+  entry(260) = "varnce_w_2                | zt     | m^2/s^2               | pdf parameter: w variance of component 2"
+  entry(261) = "thl_1                     | zt     | K                     | pdf parameter: mean thl of component 1"
+  entry(262) = "thl_2                     | zt     | K                     | pdf parameter: mean thl of component 2"
+  entry(263) = "varnce_thl_1              | zt     | K^2                   | pdf parameter: thl variance of component 1"
+  entry(264) = "varnce_thl_2              | zt     | K^2                   | pdf parameter: thl variance of component 2"
+  entry(265) = "rt_1                      | zt     | kg/kg                 | pdf parameter: mean rt of component 1"
+  entry(266) = "rt_2                      | zt     | kg/kg                 | pdf parameter: mean rt of component 2"
+  entry(267) = "varnce_rt_1               | zt     | (kg^2)/(kg^2)         | pdf parameter: rt variance of component 1"
+  entry(268) = "varnce_rt_2               | zt     | (kg^2)/(kg^2)         | pdf parameter: rt variance of component 2"
+  entry(269) = "rc_1                      | zt     | kg/kg                 | pdf parameter: mean rc of component 1"
+  entry(270) = "rc_2                      | zt     | kg/kg                 | pdf parameter: mean rc of component 2"
+  entry(271) = "rsatl_1                   | zt     | kg/kg                 | pdf parameter: sat mix rat based on tl1"
+  entry(272) = "rsatl_2                   | zt     | kg/kg                 | pdf parameter: sat mix rat based on tl2"
+  entry(273) = "cloud_frac_1              | zt     | -                     | pdf parameter cloud_frac_1"
+  entry(274) = "cloud_frac_2              | zt     | -                     | pdf parameter cloud_frac_2"
+  entry(275) = "a3_coef_zt                | zt     | count                 | The a3 coefficient interpolated the the zt grid"
+  entry(276) = "wp3_on_wp2_zt             | zt     | m/s                   | Smoothed version of wp3 / wp2"
+  entry(277) = "chi_1                     | zt     | kg/kg                 | pdf parameter: Mellor's s (extended liq) for component 1"
+  entry(278) = "chi_2                     | zt     | kg/kg                 | pdf parameter: Mellor's s (extended liq) for component 2"
+  entry(279) = "stdev_chi_1               | zt     | kg/kg                 | pdf parameter: Std dev of chi_1"
+  entry(280) = "stdev_chi_2               | zt     | kg/kg                 | pdf parameter: Std dev of chi_2"
+  entry(281) = "stdev_eta_1               | zt     | kg/kg                 | Standard dev. of eta(t) (1st PDF component)"
+  entry(282) = "stdev_eta_2               | zt     | kg/kg                 | Standard dev. of eta(t) (2nd PDF component)"
+  entry(283) = "covar_chi_eta_1           | zt     | kg^2/kg^2             | Covariance of chi(s) and eta(t) (1st PDF component)"
+  entry(284) = "covar_chi_eta_2           | zt     | kg^2/kg^2             | Covariance of chi(s) and eta(t) (2nd PDF component)"
+  entry(285) = "corr_w_chi_1              | zt     | -                     | Correlation of w and chi (s) (1st PDF component)"
+  entry(286) = "corr_w_chi_2              | zt     | -                     | Correlation of w and chi (s) (2nd PDF component)"
+  entry(287) = "corr_w_eta_1              | zt     | -                     | Correlation of w and eta (t) (1st PDF component)"
+  entry(288) = "corr_w_eta_2              | zt     | -                     | Correlation of w and eta (t) (2nd PDF component)"
+  entry(289) = "corr_chi_eta_1            | zt     | -                     | Correlation of chi (s) and eta (t) (1st PDF component)"
+  entry(290) = "corr_chi_eta_2            | zt     | -                     | Correlation of chi (s) and eta (t) (2nd PDF component)"
+  entry(291) = "corr_w_rt_1               | zt     | -                     | Correlation of w and rt (1st PDF component)"
+  entry(292) = "corr_w_rt_2               | zt     | -                     | Correlation of w and rt (2nd PDF component)"
+  entry(293) = "corr_w_thl_1              | zt     | -                     | Correlation of w and thl (1st PDF component)"
+  entry(294) = "corr_w_thl_2              | zt     | -                     | Correlation of w and thl (2nd PDF component)"
+  entry(295) = "corr_rt_thl_1             | zt     | -                     | Correlation of rt and thl (1st PDF component)"
+  entry(296) = "corr_rt_thl_2             | zt     | -                     | Correlation of rt and thl (2nd PDF component)"
+  entry(297) = "crt_1                     | zt     | -                     | Coefficient on rt in chi/eta equations (1st PDF comp.)"
+  entry(298) = "crt_2                     | zt     | -                     | Coefficient on rt in chi/eta equations (2nd PDF comp.)"
+  entry(299) = "cthl_1                    | zt     | kg/kg/K               | Coefficient on theta-l in chi/eta equations (1st PDF comp.)"
+  entry(300) = "cthl_2                    | zt     | kg/kg/K               | Coefficient on theta-l in chi/eta equations (2nd PDF comp.)"
+  entry(301) = "coef_wprtp2_implicit      | zt     | m/s                   | wprtp2 = coef_wprtp2_implicit * rtp2 + term_wprtp2_explicit"
+  entry(302) = "term_wprtp2_explicit      | zt     | m/s kg^2/kg^2         | wprtp2 = coef_wprtp2_implicit * rtp2 + term_wprtp2_explicit"
+  entry(303) = "coef_wpthlp2_implicit     | zt     | m/s                   | wpthlp2 = coef_wpthlp2_implicit * thlp2 + term_wpthlp2_explicit"
+  entry(304) = "term_wpthlp2_explicit     | zt     | m/s K^2               | wpthlp2 = coef_wpthlp2_implicit * thlp2 + term_wpthlp2_explicit"
+  entry(305) = "coef_wprtpthlp_implicit   | zt     | m/s                   | wprtpthlp = coef_wprtpthlp_implicit * rtpthlp + term_wprtpthlp_explicit"
+  entry(306) = "term_wprtpthlp_explicit   | zt     | m/s (kg/kg) K         | wprtpthlp = coef_wprtpthlp_implicit * rtpthlp + term_wprtpthlp_explicit]"
+  entry(307) = "coef_wp2rtp_implicit      | zt     | m/s                   | wp2rtp = coef_wp2rtp_implicit * wprtp + term_wp2rtp_explicit"
+  entry(308) = "term_wp2rtp_explicit      | zt     | m^2/s^2 kg/kg         | wp2rtp = coef_wp2rtp_implicit * wprtp + term_wp2rtp_explicit"
+  entry(309) = "coef_wp2thlp_implicit     | zt     | m/s                   | wp2thlp = coef_wp2thlp_implicit * wpthlp + term_wp2thlp_explicit"
+  entry(310) = "term_wp2thlp_explicit     | zt     | m^2/s^2 K             | wp2thlp = coef_wp2thlp_implicit * wpthlp + term_wp2thlp_explicit"
+  entry(311) = "hm_i                      | zt     | [-]                   | Mean of <hm> (PDF component 1/2)"
+  entry(312) = "precip_frac               | zt     | -                     | Precipitation Fraction"
+  entry(313) = "precip_frac_1             | zt     | -                     | Precipitation Fraction (1st PDF component)"
+  entry(314) = "precip_frac_2             | zt     | -                     | Precipitation Fraction (2nd PDF component)"
+  entry(315) = "Ncnm                      | zt     | num/kg                | Cloud nuclei concentration (PDF)"
+  entry(316) = "mu_hm_i                   | zt     | [-]                   | Mean (in-precip) of <hm> (PDF component 1/2)"
+  entry(317) = "mu_Ncn_i                  | zt     | [-]                   | Mean of N_cn (PDF component 1/2)"
+  entry(318) = "mu_hm_i_n                 | zt     | [-]                   | Mean (in-precip) of ln <hm> (PDF component 1/2)"
+  entry(319) = "mu_Ncn_i_n                | zt     | [-]                   | Mean of ln N_cn (PDF component 1/2)"
+  entry(320) = "sigma_hm_i                | zt     | [-]                   | Standard deviation (in-precip) of <hm> (PDF component 1/2)"
+  entry(321) = "sigma_Ncn_i               | zt     | [-]                   | Standard deviation of N_cn (PDF component 1/2)"
+  entry(322) = "sigma_hm_i_n              | zt     | [-]                   | Standard deviation (in-precip) of ln <hm> (PDF component 1/2)"
+  entry(323) = "sigma_Ncn_i_n             | zt     | [-]                   | Standard deviation of ln N_cn (PDF component 1/2)"
+  entry(324) = "corr_w_chi_1_ca           | zt     | -                     | Correlation of w and chi (1st PDF component) found in the correlation array"
+  entry(325) = "corr_w_chi_2_ca           | zt     | -                     | Correlation of w and chi (2nd PDF component) found in the correlation array"
+  entry(326) = "corr_w_eta_1_ca           | zt     | -                     | Correlation of w and eta (1st PDF component) found in the correlation array"
+  entry(327) = "corr_w_eta_2_ca           | zt     | -                     | Correlation of w and eta (2nd PDF component) found in the correlation array"
+  entry(328) = "corr_w_hm_i               | zt     | [-]                   | Correlation (in-precip) of w and <hm> (PDF component 1/2) [-]"
+  entry(329) = "corr_w_Ncn_i              | zt     | [-]                   | Correlation of w and N_cn (PDF component 1/2) [-]"
+  entry(330) = "corr_chi_eta_1_ca         | zt     | -                     | Correlation of chi (s) and eta (t) (1st PDF component) found in the correlation array"
+  entry(331) = "corr_chi_eta_2_ca         | zt     | -                     | Correlation of chi (s) and eta (t) (2nd PDF component) found in the correlation array"
+  entry(332) = "corr_chi_hm_i             | zt     | [-]                   | Correlation (in-precip) of chi (s) and <hm> (PDF component 1/2) [-]"
+  entry(333) = "corr_chi_Ncn_i            | zt     | [-]                   | Correlation of chi and N_cn (PDF component 1/2) [-]"
+  entry(334) = "corr_eta_hm_i             | zt     | [-]                   | Correlation (in-precip) of eta (t) and <hm> (PDF component 1/2) [-]"
+  entry(335) = "corr_eta_Ncn_i            | zt     | [-]                   | Correlation of eta and N_cn (PDF component 1/2) [-]"
+  entry(336) = "corr_Ncn_hm_i             | zt     | [-]                   | Correlation (in-precip) of N_cn and <hm> (PDF component 1/2) [-]"
+  entry(337) = "corr_hmx_hmy_i            | zt     | [-]                   | Correlation (in-precip) of <hmx> and <hmy> (PDF component 1/2) [-]"
+  entry(338) = "corr_w_hm_i_n             | zt     | [-]                   | Correlation (in-precip) of w and ln <hm> (PDF component 1/2) [-]"
+  entry(339) = "corr_w_Ncn_i_n            | zt     | [-]                   | Correlation of w and ln N_cn (PDF component 1/2) [-]"
+  entry(340) = "corr_chi_hm_i_n           | zt     | [-]                   | Correlation (in-precip) of chi (s) and ln <hm> (PDF component 1/2) [-]"
+  entry(341) = "corr_chi_Ncn_i_n          | zt     | [-]                   | Correlation of chi (s) and ln N_cn (PDF component 1/2) [-]"
+  entry(342) = "corr_eta_hm_i_n           | zt     | [-]                   | Correlation (in-precip) of eta (t) and ln <hm> (PDF component 1/2) [-]"
+  entry(343) = "corr_eta_Ncn_i_n          | zt     | [-]                   | Correlation of eta (t) and ln N_cn (PDF component 1/2) [-]"
+  entry(344) = "corr_Ncn_hm_i_n           | zt     | [-]                   | Correlation (in-precip) of ln N_cn and ln <hm> (PDF component 1/2) [-]"
+  entry(345) = "corr_hmx_hmy_i_n          | zt     | [-]                   | Correlation (in-precip) of ln <hmx> and ln <hmy> (PDF component 1/2) [-]"
+  entry(346) = "chi                       | zt     | kg/kg                 | Mellor's s (extended liq)"
+  entry(347) = "chip2                     | zt     | (kg/kg)^2             | Variance of chi(s) (overall)"
+  entry(348) = "C11_Skw_fnc               | zt     | count                 | C_11 parameter with Sk_w applied"
+  entry(349) = "wp2_zt                    | zt     | m^2/s^2               | w'^2 interpolated to thermodynamic levels"
+  entry(350) = "thlp2_zt                  | zt     | K^2                   | thl'^2 interpolated to thermodynamic levels"
+  entry(351) = "wpthlp_zt                 | zt     | (m K)/s               | w'thl' interpolated to thermodynamic levels"
+  entry(352) = "wprtp_zt                  | zt     | (m kg)/(s kg)         | w'rt' interpolated to thermodynamic levels"
+  entry(353) = "rtp2_zt                   | zt     | (kg/kg)^2             | rt'^2 interpolated to thermodynamic levels"
+  entry(354) = "rtpthlp_zt                | zt     | (kg K)/kg             | rt'thl' interpolated to thermodynamic levels"
+  entry(355) = "up2_zt                    | zt     | m^2/s^2               | u'^2 interpolated to thermodynamic levels"
+  entry(356) = "vp2_zt                    | zt     | m^2/s^2               | v'^2 interpolated to thermodynamic levels"
+  entry(357) = "upwp_zt                   | zt     | m^2/s^2               | u'w' interpolated to thermodynamic levels"
+  entry(358) = "vpwp_zt                   | zt     | m^2/s^2               | v'w' interpolated to thermodynamic levels"
+  entry(359) = "hmp2_zt                   | zt     | [-]                   | <hm>'^2 on thermodynamic levels (from integration over PDF)"
+  entry(360) = "wp2sclrp                  | zt     | [-]                   | ..."
+  entry(361) = "wpsclrp2                  | zt     | [-]                   | ..."
+  entry(362) = "wpsclrprtp                | zt     | [-]                   | ..."
+  entry(363) = "wpsclrpthlp               | zt     | [-]                   | ..."
+  entry(364) = "sclrm                     | zt     | [-]                   | ...)"
+  entry(365) = "sclrm_f                   | zt     | [-]                   | Passive scalar forcing <n>"
+  entry(366) = "edsclrm                   | zt     | [-]                   | ...)"
+  entry(367) = "edsclrm_f                 | zt     | [-]                   | ...)"
+  entry(368) = "PSMLT                     | zt     | (kg/kg)/s             | Freezing of rain to form snow, +rsm, -rrm"
+  entry(369) = "EVPMS                     | zt     | (kg/kg)/s             | Evaporation of melted snow, +rsm, -rvm"
+  entry(370) = "PRACS                     | zt     | (kg/kg)/s             | Collection of rain by snow, +rsm, -rrm"
+  entry(371) = "EVPMG                     | zt     | (kg/kg)/s             | Evaporation of melted graupel, +rgm, -rvm"
+  entry(372) = "PRACG                     | zt     | (kg/kg)/s             | Negative of collection of rain by graupel, +rrm, -rgm"
+  entry(373) = "PGMLT                     | zt     | (kg/kg)/s             | Negative of melting of graupel, +rgm, -rrm"
+  entry(374) = "MNUCCC                    | zt     | (kg/kg)/s             | Contact freezing of cloud droplets, +rim, -rcm"
+  entry(375) = "PSACWS                    | zt     | (kg/kg)/s             | Collection of cloud water by snow, +rsm, -rcm"
+  entry(376) = "PSACWI                    | zt     | (kg/kg)/s             | Collection of cloud water by cloud ice, +rim, -rcm"
+  entry(377) = "QMULTS                    | zt     | (kg/kg)/s             | Splintering from cloud droplets accreted onto snow, +rim, -rcm"
+  entry(378) = "QMULTG                    | zt     | (kg/kg)/s             | Splintering from droplets accreted onto graupel, +rim, -rcm"
+  entry(379) = "PSACWG                    | zt     | (kg/kg)/s             | Collection of cloud water by graupel, +rgm, -rcm"
+  entry(380) = "PGSACW                    | zt     | (kg/kg)/s             | Reclassification of rimed snow as graupel, +rgm, -rcm"
+  entry(381) = "PRD                       | zt     | (kg/kg)/s             | Depositional growth of cloud ice, +rim, -rvm"
+  entry(382) = "PRCI                      | zt     | (kg/kg)/s             | Autoconversion of cloud ice to snow, +rsm, -rim"
+  entry(383) = "PRAI                      | zt     | (kg/kg)/s             | Collection of cloud ice by snow, +rsm, -rim"
+  entry(384) = "QMULTR                    | zt     | (kg/kg)/s             | Splintering from rain droplets accreted onto snow, +rim, -rrm"
+  entry(385) = "QMULTRG                   | zt     | (kg/kg)/s             | Splintering from rain droplets accreted onto graupel, +rim, -rrm"
+  entry(386) = "MNUCCD                    | zt     | (kg/kg)/s             | Freezing of aerosol, +rim, -rvm"
+  entry(387) = "PRACI                     | zt     | (kg/kg)/s             | Collection of cloud ice by rain, +rgm, -rim"
+  entry(388) = "PRACIS                    | zt     | (kg/kg)/s             | Collection of cloud ice by rain, +rsm, -rim"
+  entry(389) = "EPRD                      | zt     | (kg/kg)/s             | Negative of sublimation of cloud ice, +rim, -rvm"
+  entry(390) = "MNUCCR                    | zt     | (kg/kg)/s             | Contact freezing of rain droplets, +rgm, -rrm"
+  entry(391) = "PIACR                     | zt     | (kg/kg)/s             | Collection of cloud ice by rain, +rgm, -rrm"
+  entry(392) = "PIACRS                    | zt     | (kg/kg)/s             | Collection of cloud ice by rain, +rsm, -rrm"
+  entry(393) = "PGRACS                    | zt     | (kg/kg)/s             | Collection of rain by snow, +rgm, -rrm"
+  entry(394) = "PRDS                      | zt     | (kg/kg)/s             | Depositional growth of snow, +rsm, -rvm"
+  entry(395) = "EPRDS                     | zt     | (kg/kg)/s             | Negative of sublimation of snow, +rsm, -rvm"
+  entry(396) = "PSACR                     | zt     | (kg/kg)/s             | Collection of snow by rain, +rgm, -rsm"
+  entry(397) = "PRDG                      | zt     | (kg/kg)/s             | Depositional growth of graupel, +rgm, -rvm"
+  entry(398) = "EPRDG                     | zt     | (kg/kg)/s             | Negative of sublimation of graupel, +rgm, -rvm"
+  entry(399) = "NGSTEN                    | zt     | (#/kg/s)              | Graupel sedimentation tendency"
+  entry(400) = "NRSTEN                    | zt     | (#/kg/s)              | Rain sedimentation tendency"
+  entry(401) = "NISTEN                    | zt     | (#/kg/s)              | Cloud ice sedimentation tendency"
+  entry(402) = "NSSTEN                    | zt     | (#/kg/s)              | Snow sedimentation tendency"
+  entry(403) = "NCSTEN                    | zt     | (#/kg/s)              | Cloud water sedimentation tendency"
+  entry(404) = "NPRC1                     | zt     | (#/kg/s)              | Change in Nrm due to autoconversion of droplets, +Nrm"
+  entry(405) = "NRAGG                     | zt     | (#/kg/s)              | Change in Nrm due to self-collection of raindrops, +Nrm"
+  entry(406) = "NPRACG                    | zt     | (#/kg/s)              | Collection of rainwater by graupel, -Nrm"
+  entry(407) = "NSUBR                     | zt     | (#/kg/s)              | Loss of Nrm by evaporation, +Nrm"
+  entry(408) = "NSMLTR                    | zt     | (#/kg/s)              | Melting of snow to form rain, -Nrm"
+  entry(409) = "NGMLTR                    | zt     | (#/kg/s)              | Melting of graupel to form rain, -Nrm"
+  entry(410) = "NPRACS                    | zt     | (#/kg/s)              | Collection of rainwater by snow, -Nrm"
+  entry(411) = "NNUCCR                    | zt     | (#/kg/s)              | Contact freezing of rain, +Ngm, -Nrm"
+  entry(412) = "NIACR                     | zt     | (#/kg/s)              | Collection of cloud ice by rain, +Ngm, -Nrm, -Nim"
+  entry(413) = "NIACRS                    | zt     | (#/kg/s)              | Collection of cloud ice by rain, +Nsm, -Nrm, -Nim"
+  entry(414) = "NGRACS                    | zt     | (#/kg/s)              | Collection of rain by snow, +Ngm, -Nrm, -Nsm"
+  entry(415) = "NSMLTS                    | zt     | (#/kg/s)              | Melting of snow, +Nsm"
+  entry(416) = "NSAGG                     | zt     | (#/kg/s)              | Self collection of snow, +Nsm"
+  entry(417) = "NPRCI                     | zt     | (#/kg/s)              | Autoconversion of cloud ice to snow, -Nim, +Nsm"
+  entry(418) = "NSCNG                     | zt     | (#/kg/s)              | Conversion of snow to graupel, +Ngm, -Nsm"
+  entry(419) = "NSUBS                     | zt     | (#/kg/s)              | Loss of snow due to sublimation, +Nsm"
+  entry(420) = "PRC                       | zt     | (kg/kg/s)             | Autoconversion +rrm -rcm"
+  entry(421) = "PRA                       | zt     | (kg/kg/s)             | Accretion +rrm -rcm"
+  entry(422) = "PRE                       | zt     | (kg/kg/s)             | Evaporation of rain -rrm"
+  entry(423) = "PCC                       | zt     | (kg/kg/s)             | Satuation adjustment -rvm +rcm"
+  entry(424) = "NNUCCC                    | zt     | (#/kg/s)              | Contact freezing of drops, -Ncm + Nim"
+  entry(425) = "NPSACWS                   | zt     | (#/kg/s)              | Droplet accretion by snow, -Ncm"
+  entry(426) = "NPRA                      | zt     | (#/kg/s)              | Droplet accretion by rain, -Ncm"
+  entry(427) = "NPRC                      | zt     | (#/kg/s)              | Autoconversion of cloud drops, -Ncm"
+  entry(428) = "NPSACWI                   | zt     | (#/kg/s)              | Droplet accretion by cloud ice, -Ncm"
+  entry(429) = "NPSACWG                   | zt     | (#/kg/s)              | Collection of cloud droplets by graupel, -Ncm"
+  entry(430) = "NPRAI                     | zt     | (#/kg/s)              | Accretion of cloud ice by snow, -Nim"
+  entry(431) = "NMULTS                    | zt     | (#/kg/s)              | Ice multiplication due to riming of cloud droplets by snow, +Nim"
+  entry(432) = "NMULTG                    | zt     | (#/kg/s)              | Ice multiplication due to accretion of droplets by graupel, +Nim"
+  entry(433) = "NMULTR                    | zt     | (#/kg/s)              | +Nim"
+  entry(434) = "NMULTRG                   | zt     | (#/kg/s)              | Ice multiplication due to accretion of rain by graupel, +Nim"
+  entry(435) = "NNUCCD                    | zt     | (#/kg/s)              | Primary ice nucleation, freezing of aerosol, +Nim"
+  entry(436) = "NSUBI                     | zt     | (#/kg/s)              | Loss of ice due to sublimation, -Nim"
+  entry(437) = "NGMLTG                    | zt     | (#/kg/s)              | Loss of graupel due to melting, -Ngm"
+  entry(438) = "NSUBG                     | zt     | (#/kg/s)              | Loss of graupel due to sublimation, -Ngm"
+  entry(439) = "NACT                      | zt     | (#/kg/s)              | Cloud drop formation by aerosol activation, +Ncm"
+  entry(440) = "SIZEFIX_NR                | zt     | (#/kg/s)              | Adjust rain # conc. for large/small drops, +Nrm"
+  entry(441) = "SIZEFIX_NC                | zt     | (#/kg/s)              | Adjust cloud # conc. for large/small drops, +Ncm"
+  entry(442) = "SIZEFIX_NI                | zt     | (#/kg/s)              | Adjust ice # conc. for large/small drops, +Nim"
+  entry(443) = "SIZEFIX_NS                | zt     | (#/kg/s)              | Adjust snow # conc. for large/small drops, +Nsm"
+  entry(444) = "SIZEFIX_NG                | zt     | (#/kg/s)              | Adjust graupel # conc. for large/small drops,+Ngm"
+  entry(445) = "NEGFIX_NR                 | zt     | (#/kg/s)              | Removal of negative rain drop number conc., -Nrm"
+  entry(446) = "NEGFIX_NC                 | zt     | (#/kg/s)              | Removal of negative cloud drop number conc., -Ncm"
+  entry(447) = "NEGFIX_NI                 | zt     | (#/kg/s)              | Removal of negative ice number conc., -Nim"
+  entry(448) = "NEGFIX_NS                 | zt     | (#/kg/s)              | Removal of negative snow number conc, -Nsm"
+  entry(449) = "NEGFIX_NG                 | zt     | (#/kg/s)              | Removal of negative graupel number conc., -Ngm"
+  entry(450) = "NIM_MORR_CL               | zt     | (#/kg/s)              | Clipping of large ice concentrations, -Nim"
+  entry(451) = "QC_INST                   | zt     | (kg/kg/s)             | Change in mixing ratio due to instantaneous processes +rcm"
+  entry(452) = "QR_INST                   | zt     | (kg/kg/s)             | Change in mixing ratio from instantaneous processes, +rrm"
+  entry(453) = "QI_INST                   | zt     | (kg/kg/s)             | Change in mixing ratio from instantaneous processes +rim"
+  entry(454) = "QS_INST                   | zt     | (kg/kg/s)             | Change in mixing ratio from instantaneous processes +rsm"
+  entry(455) = "QG_INST                   | zt     | (kg/kg/s)             | Change in mixing ratio from instantaneous processes +rgm"
+  entry(456) = "NC_INST                   | zt     | (#/kg/s)              | Change in # conc. from instantaneous processes +Ncm"
+  entry(457) = "NR_INST                   | zt     | (#/kg/s)              | Change in # conc. from instantaneous processes +Nrm"
+  entry(458) = "NI_INST                   | zt     | (#/kg/s)              | Change in # conc. from instantaneous processes +Nim"
+  entry(459) = "NS_INST                   | zt     | (#/kg/s)              | Change in # conc. from instantaneous processes +Nsm"
+  entry(460) = "NG_INST                   | zt     | (#/kg/s)              | Change in # conc. from instantaneous processes +Ngm"
+  entry(461) = "T_in_K_mc                 | zt     | (K/s)                 | Temperature tendency from Morrison microphysics"
+  entry(462) = "cloud_frac_refined        | zt     | -                     | Cloud fraction computed on refined grid"
+  entry(463) = "rcm_refined               | zt     | kg/kg                 | Cloud water mixing ratio computed on refined grid [kg/kg]"
+  entry(464) = "hl_on_Cp_residual         | zt     | K                     | Residual change in HL/Cp from Morrison microphysics not due to sedimentation"
+  entry(465) = "qto_residual              | zt     | kg/kg                 | Residual change in total water from Morrison microphysics not due to sedimentation"
+  entry(466) = "rcm_in_cloud              | zt     | kg/kg                 | In-cloud value of rcm (for microphysics)"
+  entry(467) = "AKm                       | lh_zt  | kg/kg                 | Analytic Kessler ac [kg/kg]"
+  entry(468) = "lh_AKm                    | lh_zt  | kg/kg/s               | LH Kessler estimate [kg/kg/s]"
+  entry(469) = "AKstd                     | lh_zt  | kg/kg/s               | Exact standard deviation of gba Kessler [kg/kg/s]"
+  entry(470) = "AKstd_cld                 | lh_zt  | kg/kg/s               | Exact w/in cloud std of gba Kessler [kg/kg/s]"
+  entry(471) = "AKm_rcm                   | lh_zt  | kg/kg/s               | Exact local gba auto based on rcm [kg/kg/s]"
+  entry(472) = "AKm_rcc                   | lh_zt  | kg/kg/s               | Exact local gba based on w/in cloud rc [kg/kg/s]"
+  entry(473) = "lh_thlm_mc                | lh_zt  | kg/kg/s               | Latin hypercube estimate of thlm_mc [kg/kg/s]"
+  entry(474) = "lh_rvm_mc                 | lh_zt  | kg/kg/s               | Latin hypercube estimate of rvm_mc [kg/kg/s]"
+  entry(475) = "lh_rcm_mc                 | lh_zt  | kg/kg/s               | Latin hypercube estimate of rcm_mc [kg/kg/s]"
+  entry(476) = "lh_Ncm_mc                 | lh_zt  | kg/kg/s               | Latin hypercube estimate of Ncm_mc [kg/kg/s]"
+  entry(477) = "lh_rrm_mc                 | lh_zt  | kg/kg/s               | Latin hypercube estimate of rrm_mc [kg/kg/s]"
+  entry(478) = "lh_Nrm_mc                 | lh_zt  | kg/kg/s               | Latin hypercube estimate of Nrm_mc [kg/kg/s]"
+  entry(479) = "lh_rsm_mc                 | lh_zt  | kg/kg/s               | Latin hypercube estimate of rsm_mc [kg/kg/s]"
+  entry(480) = "lh_Nsm_mc                 | lh_zt  | kg/kg/s               | Latin hypercube estimate of Nsm_mc [kg/kg/s]"
+  entry(481) = "lh_rgm_mc                 | lh_zt  | kg/kg/s               | Latin hypercube estimate of rgm_mc [kg/kg/s]"
+  entry(482) = "lh_Ngm_mc                 | lh_zt  | kg/kg/s               | Latin hypercube estimate of Ngm_mc [kg/kg/s]"
+  entry(483) = "lh_rim_mc                 | lh_zt  | kg/kg/s               | Latin hypercube estimate of rim_mc [kg/kg/s]"
+  entry(484) = "lh_Nim_mc                 | lh_zt  | kg/kg/s               | Latin hypercube estimate of Nim_mc [kg/kg/s]"
+  entry(485) = "lh_Vrr                    | lh_zt  | m/s                   | Latin hypercube estimate of rrm sedimentation velocity [m/s]"
+  entry(486) = "lh_VNr                    | lh_zt  | m/s                   | Latin hypercube estimate of Nrm sedimentation velocity [m/s]"
+  entry(487) = "lh_rrm                    | lh_zt  | kg/kg                 | Latin hypercube estimate of rrm [kg/kg]"
+  entry(488) = "lh_rim                    | lh_zt  | kg/kg                 | Latin hypercube estimate of rim [kg/kg]"
+  entry(489) = "lh_rsm                    | lh_zt  | kg/kg                 | Latin hypercube estimate of rsm [kg/kg]"
+  entry(490) = "lh_rgm                    | lh_zt  | kg/kg                 | Latin hypercube estimate of rgm [kg/kg]"
+  entry(491) = "lh_thlm                   | lh_zt  | K                     | Latin hypercube estimate of thlm [K]"
+  entry(492) = "lh_rcm                    | lh_zt  | kg/kg                 | Latin hypercube estimate of rcm [kg/kg]"
+  entry(493) = "lh_rvm                    | lh_zt  | kg/kg                 | Latin hypercube estimate of rvm [kg/kg]"
+  entry(494) = "lh_wm                     | lh_zt  | m/s                   | Latin hypercube estimate of vertical velocity [m/s]"
+  entry(495) = "lh_rcp2_zt                | lh_zt  | kg^2/kg^2             | Variance of the latin hypercube estimate of rc [kg^2/kg^2]"
+  entry(496) = "lh_rrp2_zt                | lh_zt  | kg^2/kg^2             | Variance of the latin hypercube estimate of rr [kg^2/kg^2]"
+  entry(497) = "lh_Nrp2_zt                | lh_zt  | count^2/kg^2          | Variance of the latin hypercube estimate of Nr [count^2/kg^2]"
+  entry(498) = "lh_Ncp2_zt                | lh_zt  | count^2/kg^2          | Variance of the latin hypercube estimate of Nc [count^2/kg^2]"
+  entry(499) = "lh_Ncnp2_zt               | lh_zt  | count^2/kg^2          | Variance of the latin hypercube estimate of Ncn [count^2/kg^2]"
+  entry(500) = "lh_wp2_zt                 | lh_zt  | m^2/s^2               | Variance of the latin hypercube estimate of w [m^2/s^2]"
+  entry(501) = "lh_cloud_frac             | lh_zt  | count                 | Latin hypercube estimate of cloud fraction [count]"
+  entry(502) = "lh_chi                    | lh_zt  | kg/kg                 | Latin hypercube estimate of Mellor's s (extended liq) [kg/kg]"
+  entry(503) = "lh_eta                    | lh_zt  | kg/kg                 | Latin hypercube estimate of Mellor's t [kg/kg]"
+  entry(504) = "lh_chip2                  | lh_zt  | kg/kg                 | Latin hypercube estimate of variance of chi(s) [kg/kg]"
+  entry(505) = "lh_rtp2_zt                | lh_zt  | kg^2/kg^2             | Variance of the latin hypercube estimate of rt [kg^2/kg^2]"
+  entry(506) = "lh_thlp2_zt               | lh_zt  | K^2                   | Variance of the latin hypercube estimate of thl [K^2]"
+  entry(507) = "lh_Nrm                    | lh_zt  | count/kg              | Latin hypercube estimate of Nrm [count/kg]"
+  entry(508) = "lh_Nim                    | lh_zt  | count/kg              | Latin hypercube estimate of Nim [count/kg]"
+  entry(509) = "lh_Ncnm                   | lh_zt  | count/kg              | Latin hypercube estimate of Ncnm [count/kg]"
+  entry(510) = "lh_Ncm                    | lh_zt  | count/kg              | Latin hypercube estimate of Ncm [count/kg]"
+  entry(511) = "lh_Ngm                    | lh_zt  | kg/kg                 | Latin hypercube estimate of Ngm [kg/kg]"
+  entry(512) = "lh_Nsm                    | lh_zt  | count/kg              | Latin hypercube estimate of Nsm [count/kg]"
+  entry(513) = "lh_rcm_avg                | lh_zt  | kg/kg                 | Latin hypercube average estimate of rcm [kg/kg]"
+  entry(514) = "lh_rrm_auto               | lh_zt  | kg/kg/s               | Latin hypercube estimate of autoconversion [kg/kg/s]"
+  entry(515) = "lh_rrm_accr               | lh_zt  | kg/kg/s               | Latin hypercube estimate of accretion [kg/kg/s]"
+  entry(516) = "lh_rrm_evap               | lh_zt  | kg/kg/s               | Latin hypercube estimate of evaporation [kg/kg/s]"
+  entry(517) = "lh_Nrm_auto               | lh_zt  | num/kg/s              | Latin hypercube estimate of Nrm autoconversion [num/kg/s]"
+  entry(518) = "lh_Nrm_evap               | lh_zt  | num/kg/s              | Latin hypercube estimate of Nrm evaporation [num/kg/s]"
+  entry(519) = "lh_rrm_src_adj            | lh_zt  | kg/kg/s               | Latin hypercube estimate of source adjustment (KK only) [kg/kg/s]"
+  entry(520) = "lh_rrm_evap_adj           | lh_zt  | kg/kg/s               | Latin hypercube estimate of evap adjustment (KK only) [kg/kg/s]"
+  entry(521) = "lh_Nrm_src_adj            | lh_zt  | kg/kg/s               | Latin hypercube estimate of Nrm source adjustment (KK only) [kg/kg/s]"
+  entry(522) = "lh_Nrm_evap_adj           | lh_zt  | kg/kg/s               | Latin hypercube estimate of Nrm evap adjustment (KK only) [kg/kg/s]"
+  entry(523) = "lh_precip_frac            | lh_zt  | -                     | Latin hypercube estimate of precipitation fraction [-]"
+  entry(524) = "lh_mixt_frac              | lh_zt  | -                     | Latin hypercube estimate of mixture fraction (weight of 1st PDF component [-]"
+  entry(525) = "silhs_variance_category   | lh_zt  | [-]                   | Variance of SILHS variable in importance category (template; expands to silhs_var_cat_#)"
+  entry(526) = "lh_rrm_mc_nonadj          | lh_zt  | kg/kg/s               | SILHS est. of rrm_mc_nonadj [kg/kg/s]"
+  entry(527) = "lh_samp_frac_category     | lh_zt  | [-]                   | Number of samples in importance category (template; expands to lh_samp_frac_#) [-]"
+  entry(528) = "lh_cloud_frac_unweighted  | lh_zt  | -                     | Unweighted fraction of silhs sample points that are in cloud [-]"
+  entry(529) = "lh_mixt_frac_unweighted   | lh_zt  | -                     | Unweighted fraction of sample points in first PDF component [-]"
+  entry(530) = "lh_precip_frac_unweighted | lh_zt  | -                     | Unweighted fraction of sample points in precipitation [-]"
+  entry(531) = "lh_m_vol_rad_rain         | lh_zt  | m                     | SILHS est. of rain radius"
+  entry(532) = "lh_morr_snow_rate         | lh_sfc | mm/day                | Snow+Ice+Graupel fallout rate from Morrison scheme [mm/day]"
+  entry(533) = "lh_vwp                    | lh_sfc | kg/m^2                | Vapor water path [kg/m^2]"
+  entry(534) = "lh_lwp                    | lh_sfc | kg/m^2                | Liquid water path [kg/m^2]"
+  entry(535) = "k_lh_start                | lh_sfc | integer               | Index of height level for SILHS sampling preferentially within cloud [integer]"
+  entry(536) = "lh_sample_weights_sum     | lh_sfc | -                     | Sum of the sample point weights [-]"
+  entry(537) = "lh_sample_weights_avg     | lh_sfc | -                     | Average of the sample point weights [-]"
+  entry(538) = "wp2                       | zm     | m^2/s^2               | Variance of vertical air velocity"
+  entry(539) = "rtp2                      | zm     | (kg/kg)^2             | Variance of total water, rt"
+  entry(540) = "thlp2                     | zm     | K^2                   | Variance of theta_l"
+  entry(541) = "rtpthlp                   | zm     | (kg K)/kg             | Covariance of rt and theta_l"
+  entry(542) = "wprtp                     | zm     | (m kg)/(s kg)         | Vertical turbulent flux of total water, rt"
+  entry(543) = "wpthlp                    | zm     | (m K)/s               | Vertical turbulent flux of theta_l"
+  entry(544) = "wp2up2                    | zm     | (m^4)/(s^4)           | 4th-order moment of vertical and zonal air velocity"
+  entry(545) = "wp2vp2                    | zm     | (m^4)/(s^4)           | 4th-order moment of vert. and merid. air velocity"
+  entry(546) = "wp4                       | zm     | (m^4)/(s^4)           | Fourth-order moment of vertical air velocity"
+  entry(547) = "up2                       | zm     | m^2/s^2               | Variance of eastward (u) wind"
+  entry(548) = "vp2                       | zm     | m^2/s^2               | Variance of northward (v) wind"
+  entry(549) = "Skw_zm                    | zm     | -                     | Skewness of w on momentum levels"
+  entry(550) = "Skthl_zm                  | zm     | -                     | Skewness of thl on momentum levels"
+  entry(551) = "Skrt_zm                   | zm     | -                     | Skewness of rt on momentum levels"
+  entry(552) = "wpthvp                    | zm     | K m/s                 | Buoyancy flux"
+  entry(553) = "rtpthvp                   | zm     | (kg/kg) K             | Covariance of rt and theta_v"
+  entry(554) = "thlpthvp                  | zm     | K^2                   | Covariance of theta_l and theta_v"
+  entry(555) = "tau_zm                    | zm     | s                     | Time-scale tau on momentum levels"
+  entry(556) = "Kh_zm                     | zm     | m^2/s                 | Eddy diffusivity on momentum levels"
+  entry(557) = "K_hm                      | zm     | [-]                   | Eddy diffusivity coefficient of <hm> [m^2/s]"
+  entry(558) = "wprcp                     | zm     | (m/s) (kg/kg)         | w'rc'"
+  entry(559) = "rc_coef_zm                | zm     | K/(kg/kg)             | Coefficient of X'r_c'"
+  entry(560) = "wm_zm                     | zm     | m/s                   | Vertical (w) wind"
+  entry(561) = "thlprcp                   | zm     | K (kg/kg)             | thl'rc'"
+  entry(562) = "rtprcp                    | zm     | (kg^2)/(kg^2)         | rt'rc'"
+  entry(563) = "rcp2                      | zm     | (kg^2)/(kg^2)         | Variance of cloud water mixing ratio"
+  entry(564) = "upwp                      | zm     | m^2/s^2               | Vertical turbulent flux of eastward (u) wind"
+  entry(565) = "vpwp                      | zm     | m^2/s^2               | Vertical turbulent flux of northward (v) wind"
+  entry(566) = "upthlp                    | zm     | (m/s)K                | Eastward theta_l flux"
+  entry(567) = "uprtp                     | zm     | (m/s)(kg/kg)          | Eastward total water flux"
+  entry(568) = "vpthlp                    | zm     | (m/s)K                | Northward theta_l flux"
+  entry(569) = "vprtp                     | zm     | (m/s)(kg/kg)          | Northward total water flux"
+  entry(570) = "upthvp                    | zm     | (m/s)K                | Eastward theta_v flux"
+  entry(571) = "uprcp                     | zm     | (m/s)(kg/kg)          | Eastward liquid water flux"
+  entry(572) = "vpthvp                    | zm     | (m/s)K                | Northward theta_v flux"
+  entry(573) = "vprcp                     | zm     | (m/s)(kg/kg)          | Northward liquid water flux"
+  entry(574) = "rho_zm                    | zm     | kg m^{-3}             | Density on momentum levels"
+  entry(575) = "sigma_sqd_w               | zm     | -                     | Nondim w variance of Gaussian component"
+  entry(576) = "Skw_velocity              | zm     | m/s                   | Skewness velocity"
+  entry(577) = "gamma_Skw_fnc             | zm     | -                     | Gamma as a function of skewness"
+  entry(578) = "coef_wp4_implicit         | zm     | -                     | wp4 = coef_wp4_implicit * wp2^2 (new PDF)"
+  entry(579) = "C6rt_Skw_fnc              | zm     | -                     | C_6rt parameter with Sk_w applied"
+  entry(580) = "C6thl_Skw_fnc             | zm     | -                     | C_6thl parameter with Sk_w applied"
+  entry(581) = "C6_term                   | zm     | -                     | C6 term [-]"
+  entry(582) = "C7_Skw_fnc                | zm     | -                     | C_7 parameter with Sk_w applied"
+  entry(583) = "C1_Skw_fnc                | zm     | -                     | C_1 parameter with Sk_w applied"
+  entry(584) = "a3_coef                   | zm     | count                 | Quantity in formula 25 from Equations for CLUBB"
+  entry(585) = "wp3_on_wp2                | zm     | m/s                   | Smoothed version of wp3 / wp2"
+  entry(586) = "wp3_on_wp2_cfl_num        | zm     | -                     | w'^3_on_w'^2 CFL number"
+  entry(587) = "rcm_zm                    | zm     | kg/kg                 | Total water mixing ratio"
+  entry(588) = "rtm_zm                    | zm     | kg/kg                 | Total water mixing ratio"
+  entry(589) = "thlm_zm                   | zm     | K                     | Liquid potential temperature"
+  entry(590) = "cloud_frac_zm             | zm     | -                     | Cloud fraction"
+  entry(591) = "ice_supersat_frac_zm      | zm     | count                 | Ice cloud fraction"
+  entry(592) = "rho_ds_zm                 | zm     | kg m^{-3}             | Dry static, base-state density"
+  entry(593) = "thv_ds_zm                 | zm     | K                     | Dry, base-state theta_v"
+  entry(594) = "em                        | zm     | m^2/s^2               | Turbulent kinetic energy, usu. 0.5*(u'^2+v'^2+w'^2)"
+  entry(595) = "mean_w_up                 | zm     | m/s                   | Mean w >= w_ref"
+  entry(596) = "mean_w_down               | zm     | m/s                   | Mean w <= w_ref"
+  entry(597) = "shear                     | zm     | m^2/s^3               | Wind shear production term"
+  entry(598) = "wp3_zm                    | zm     | (m^3)/(s^3)           | w'^3 interpolated to moment. levels"
+  entry(599) = "thlp3_zm                  | zm     | K^3                   | thl'^3 interpolated to moment. levels"
+  entry(600) = "rtp3_zm                   | zm     | (kg^3)/(kg^3)         | rt'^3 interpolated to moment. levels"
+  entry(601) = "w_1_zm                    | zm     | m/s                   | pdf parameter zm: mean w of component 1"
+  entry(602) = "w_2_zm                    | zm     | m/s                   | pdf parameter zm: mean w of component 2"
+  entry(603) = "varnce_w_1_zm             | zm     | m^2/s^2               | pdf parameter zm: w variance of component 1"
+  entry(604) = "varnce_w_2_zm             | zm     | m^2/s^2               | pdf parameter zm: w variance of component 2"
+  entry(605) = "mixt_frac_zm              | zm     | -                     | pdf parameter zm: mixture fraction"
+  entry(606) = "Frad                      | zm     | W/m^2                 | Total (sw+lw) net (up+down) radiative flux"
+  entry(607) = "Frad_LW                   | zm     | W/m^2                 | Net long-wave radiative flux"
+  entry(608) = "Frad_SW                   | zm     | W/m^2                 | Net short-wave radiative flux"
+  entry(609) = "Frad_LW_up                | zm     | W/m^2                 | Long-wave upwelling radiative flux"
+  entry(610) = "Frad_SW_up                | zm     | W/m^2                 | Short-wave upwelling radiative flux"
+  entry(611) = "Frad_LW_down              | zm     | W/m^2                 | Long-wave downwelling radiative flux"
+  entry(612) = "Frad_SW_down              | zm     | W/m^2                 | Short-wave downwelling radiative flux"
+  entry(613) = "Fprec                     | zm     | W/m^2                 | Rain flux"
+  entry(614) = "Fcsed                     | zm     | kg/(s*m^2)            | cloud water sedimentation flux"
+  entry(615) = "hydrometp2                | zm     | [-]                   | <hm>'^2"
+  entry(616) = "wphydrometp               | zm     | [-]                   | Covariance of w and <hm>"
+  entry(617) = "rtphmp                    | zm     | [-]                   | Covariance of r_t and <hm>"
+  entry(618) = "thlphmp                   | zm     | [-]                   | Covariance of th_l and <hm>"
+  entry(619) = "hmxphmyp                  | zm     | [-]                   | Covariance of <hmx> and <hmy>"
+  entry(620) = "Vri                       | zm     | m/s                   | Cloud ice mixing ratio fallspeed"
+  entry(621) = "VNi                       | zm     | m/s                   | Cloud ice concentration fallspeed"
+  entry(622) = "Vrc                       | zm     | m/s                   | Nrm mixing ratio fallspeed"
+  entry(623) = "VNc                       | zm     | m/s                   | Nrm concentration fallspeed"
+  entry(624) = "Vrr                       | zm     | m/s                   | rrm mixing ratio fallspeed"
+  entry(625) = "VNr                       | zm     | m/s                   | rrm concentration fallspeed"
+  entry(626) = "Vrs                       | zm     | m/s                   | Snow mixing ratio fallspeed"
+  entry(627) = "VNs                       | zm     | m/s                   | Snow concentration fallspeed"
+  entry(628) = "Vrg                       | zm     | m/s                   | Graupel sedimentation velocity"
+  entry(629) = "Vrrprrp                   | zm     | (m/s)(kg/kg)          | Covariance of V_rr (r_r sed. vel.) and r_r"
+  entry(630) = "VNrpNrp                   | zm     | (m/s)(num/kg)         | Covariance of V_Nr (N_r sed. vel.) and N_r"
+  entry(631) = "Vrrprrp_expcalc           | zm     | (m/s)(kg/kg)          | completely explicit calculation"
+  entry(632) = "VNrpNrp_expcalc           | zm     | (m/s)(num/kg)         | V_Nr'N_r' completely explicit calculation"
+  entry(633) = "wp2_bt                    | zm     | m^2/s^3               | wp2 budget: wp2 time tendency"
+  entry(634) = "wp2_ma                    | zm     | m^2/s^3               | wp2 budget: wp2 vertical mean advection"
+  entry(635) = "wp2_ta                    | zm     | m^2/s^3               | wp2 budget: wp2 turbulent advection"
+  entry(636) = "wp2_ac                    | zm     | m^2/s^3               | wp2 budget: wp2 accumulation term"
+  entry(637) = "wp2_bp                    | zm     | m^2/s^3               | wp2 budget: wp2 buoyancy production"
+  entry(638) = "wp2_nct                   | zm     | m^2/s^3               | wp2 budget: wp2 nontraditional Coriolis term"
+  entry(639) = "wp2_pr1                   | zm     | m^2/s^3               | wp2 budget: wp2 pressure term 1"
+  entry(640) = "wp2_pr2                   | zm     | m^2/s^3               | wp2 budget: wp2 pressure term 2"
+  entry(641) = "wp2_pr3                   | zm     | m^2/s^3               | wp2 budget: wp2 pressure term 3"
+  entry(642) = "wp2_pr_dfsn               | zm     | m^2/s^3               | wp2 budget: wp2 pressure diffusion term"
+  entry(643) = "wp2_dp1                   | zm     | m^2/s^3               | wp2 budget: wp2 dissipation term 1"
+  entry(644) = "wp2_dp2                   | zm     | m^2/s^3               | wp2 budget: wp2 dissipation term 2"
+  entry(645) = "wp2_sdmp                  | zm     | m^2/s^3               | wp2 budget: wp2 sponge damping term"
+  entry(646) = "wp2_cl                    | zm     | m^2/s^3               | wp2 budget: wp2 clipping term"
+  entry(647) = "wp2_pd                    | zm     | m2/s3                 | wp2 budget: wp2 positive definite adjustment"
+  entry(648) = "wp2_sf                    | zm     | m2/s3                 | wp2 budget: wp2 surface variance"
+  entry(649) = "wp2_splat                 | zm     | m^2/s^3               | wp2 budget: wp2 splatting"
+  entry(650) = "vp2_bt                    | zm     | m^2/s^3               | vp2 budget: vp2 time tendency"
+  entry(651) = "vp2_ma                    | zm     | m^2/s^3               | vp2 budget: vp2 mean advection"
+  entry(652) = "vp2_ta                    | zm     | m^2/s^3               | vp2 budget: vp2 turbulent advection"
+  entry(653) = "vp2_tp                    | zm     | m^2/s^3               | vp2 budget: vp2 turbulent production"
+  entry(654) = "vp2_dp1                   | zm     | m^2/s^3               | vp2 budget: vp2 dissipation term 1"
+  entry(655) = "vp2_dp2                   | zm     | m^2/s^3               | vp2 budget: vp2 dissipation term 2"
+  entry(656) = "vp2_pr1                   | zm     | m^2/s^3               | vp2 budget: vp2 pressure term 1"
+  entry(657) = "vp2_pr2                   | zm     | m^2/s^3               | vp2 budget: vp2 pressure term 2"
+  entry(658) = "vp2_sdmp                  | zm     | m^2/s^3               | vp2 budget: vp2 sponge damping term"
+  entry(659) = "vp2_cl                    | zm     | m^2/s^3               | vp2 budget: vp2 clipping"
+  entry(660) = "vp2_pd                    | zm     | m^2/s^3               | vp2 budget: vp2 positive definite adjustment"
+  entry(661) = "vp2_sf                    | zm     | m^2/s^3               | vp2 budget: vp2 surface variance"
+  entry(662) = "vp2_splat                 | zm     | m^2/s^3               | vp2 budget: vp2 splatting"
+  entry(663) = "up2_bt                    | zm     | m^2/s^3               | up2 budget: up2 time tendency"
+  entry(664) = "up2_ma                    | zm     | m^2/s^3               | up2 budget: up2 mean advection"
+  entry(665) = "up2_ta                    | zm     | m^2/s^3               | up2 budget: up2 turbulent advection"
+  entry(666) = "up2_tp                    | zm     | m^2/s^3               | up2 budget: up2 turbulent production"
+  entry(667) = "up2_dp1                   | zm     | m^2/s^3               | up2 budget: up2 dissipation term 1"
+  entry(668) = "up2_dp2                   | zm     | m^2/s^3               | up2 budget: up2 dissipation term 2"
+  entry(669) = "up2_nct                   | zm     | m^2/s^3               | up2 budget: up2 nontraditional Coriolis term"
+  entry(670) = "up2_pr1                   | zm     | m^2/s^3               | up2 budget: up2 pressure term 1"
+  entry(671) = "up2_pr2                   | zm     | m^2/s^3               | up2 budget: up2 pressure term 2"
+  entry(672) = "up2_sdmp                  | zm     | m^2/s^3               | up2 budget: up2 sponge damping term"
+  entry(673) = "up2_cl                    | zm     | m^2/s^3               | up2 budget: up2 clipping"
+  entry(674) = "up2_pd                    | zm     | m^2/s^3               | up2 budget: up2 positive definite adjustment"
+  entry(675) = "up2_sf                    | zm     | m^2/s^3               | up2 budget: up2 surface variance"
+  entry(676) = "up2_splat                 | zm     | m^2/s^3               | up2 budget: up2 splatting"
+  entry(677) = "upwp_bt                   | zm     | m^2/s^3               | upwp budget: upwp time tendency"
+  entry(678) = "upwp_ma                   | zm     | m^2/s^3               | upwp budget: upwp mean advection"
+  entry(679) = "upwp_ta                   | zm     | m^2/s^3               | upwp budget: upwp turbulent advection"
+  entry(680) = "upwp_tp                   | zm     | m^2/s^3               | upwp budget: upwp turbulent production"
+  entry(681) = "upwp_ac                   | zm     | m^2/s^3               | upwp budget: upwp accumulation term"
+  entry(682) = "upwp_bp                   | zm     | m^2/s^3               | upwp budget: upwp buoyancy production"
+  entry(683) = "upwp_tct                  | zm     | m^2/s^3               | upwp budget: upwp traditional Coriolis term"
+  entry(684) = "upwp_nct                  | zm     | m^2/s^3               | upwp budget: upwp nontraditional Coriolis term"
+  entry(685) = "upwp_pr1                  | zm     | m^2/s^3               | upwp budget: upwp pressure term 1"
+  entry(686) = "upwp_pr2                  | zm     | m^2/s^3               | upwp budget: upwp pressure term 2"
+  entry(687) = "upwp_pr3                  | zm     | m^2/s^3               | upwp budget: upwp pressure term 3"
+  entry(688) = "upwp_pr4                  | zm     | m^2/s^3               | upwp budget: upwp pressure term 4"
+  entry(689) = "upwp_dp1                  | zm     | m^2/s^3               | upwp budget: upwp dissipation term 1"
+  entry(690) = "upwp_mfl                  | zm     | m^2/s^3               | upwp budget: upwp monotonic flux limiter"
+  entry(691) = "upwp_cl                   | zm     | m^2/s^3               | upwp budget: upwp clipping term"
+  entry(692) = "vpwp_bt                   | zm     | m^2/s^3               | vpwp budget: vpwp time tendency"
+  entry(693) = "vpwp_ma                   | zm     | m^2/s^3               | vpwp budget: vpwp mean advection"
+  entry(694) = "vpwp_ta                   | zm     | m^2/s^3               | vpwp budget: vpwp turbulent advection"
+  entry(695) = "vpwp_tp                   | zm     | m^2/s^3               | vpwp budget: vpwp turbulent production"
+  entry(696) = "vpwp_ac                   | zm     | m^2/s^3               | vpwp budget: vpwp accumulation term"
+  entry(697) = "vpwp_bp                   | zm     | m^2/s^3               | vpwp budget: vpwp buoyancy production"
+  entry(698) = "vpwp_tct                  | zm     | m^2/s^3               | vpwp budget: vpwp traditional Coriolis term"
+  entry(699) = "vpwp_pr1                  | zm     | m^2/s^3               | vpwp budget: vpwp pressure term 1"
+  entry(700) = "vpwp_pr2                  | zm     | m^2/s^3               | vpwp budget: vpwp pressure term 2"
+  entry(701) = "vpwp_pr3                  | zm     | m^2/s^3               | vpwp budget: vpwp pressure term 3"
+  entry(702) = "vpwp_pr4                  | zm     | m^2/s^3               | vpwp budget: vpwp pressure term 4"
+  entry(703) = "vpwp_dp1                  | zm     | m^2/s^3               | vpwp budget: vpwp dissipation term 1"
+  entry(704) = "vpwp_mfl                  | zm     | m^2/s^3               | vpwp budget: vpwp monotonic flux limiter"
+  entry(705) = "vpwp_cl                   | zm     | m^2/s^3               | vpwp budget: vpwp clipping term"
+  entry(706) = "wprtp_bt                  | zm     | (m kg)/(s^2 kg)       | wprtp budget: wprtp time tendency"
+  entry(707) = "wprtp_ma                  | zm     | (m kg)/(s^2 kg)       | wprtp budget: wprtp mean advection"
+  entry(708) = "wprtp_ta                  | zm     | (m kg)/(s^2 kg)       | wprtp budget: wprtp turbulent advection"
+  entry(709) = "wprtp_tp                  | zm     | (m kg)/(s^2 kg)       | wprtp budget: wprtp turbulent production"
+  entry(710) = "wprtp_ac                  | zm     | (m kg)/(s^2 kg)       | wprtp budget: wprtp accumulation term"
+  entry(711) = "wprtp_bp                  | zm     | (m kg)/(s^2 kg)       | wprtp budget: wprtp buoyancy production"
+  entry(712) = "wprtp_pr1                 | zm     | (m kg)/(s^2 kg)       | wprtp budget: wprtp pressure term 1"
+  entry(713) = "wprtp_pr2                 | zm     | (m kg)/(s^2 kg)       | wprtp budget: wprtp pressure term 2"
+  entry(714) = "wprtp_pr3                 | zm     | (m kg)/(s^2 kg)       | wprtp budget: wprtp pressure term 3"
+  entry(715) = "wprtp_dp1                 | zm     | (m kg)/(s^2 kg)       | wprtp budget: wprtp dissipation term 1"
+  entry(716) = "wprtp_mfl                 | zm     | (m kg)/(s^2 kg)       | wprtp budget: wprtp monotonic flux limiter"
+  entry(717) = "wprtp_cl                  | zm     | (m kg)/(s^2 kg)       | wprtp budget: wprtp clipping term"
+  entry(718) = "wprtp_pd                  | zm     | (m kg)/(s^2 kg)       | wprtp budget: wprtp flux corrected trans. term"
+  entry(719) = "wprtp_forcing             | zm     | (m kg/kg)/s^2         | wprtp budget: wprtp forcing (includes microphysics tendency)"
+  entry(720) = "wprtp_mc                  | zm     | (m kg/kg)/s^2         | Microphysics tendency for wprtp (not in budget)"
+  entry(721) = "wpthlp_bt                 | zm     | (m K)/s^2             | wpthlp budget"
+  entry(722) = "wpthlp_ma                 | zm     | (m K)/s^2             | wpthlp budget: wpthlp mean advection"
+  entry(723) = "wpthlp_ta                 | zm     | (m K)/s^2             | wpthlp budget: wpthlp turbulent advection"
+  entry(724) = "wpthlp_tp                 | zm     | (m K)/s^2             | wpthlp budget: wpthlp turbulent production"
+  entry(725) = "wpthlp_ac                 | zm     | (m K)/s^2             | wpthlp budget: wpthlp accumulation term"
+  entry(726) = "wpthlp_bp                 | zm     | (m K)/s^2             | wpthlp budget: wpthlp buoyancy production"
+  entry(727) = "wpthlp_pr1                | zm     | (m K)/s^2             | wpthlp budget: wpthlp pressure term 1"
+  entry(728) = "wpthlp_pr2                | zm     | (m K)/s^2             | wpthlp budget: wpthlp pressure term 2"
+  entry(729) = "wpthlp_pr3                | zm     | (m K)/s^2             | wpthlp budget: wpthlp pressure term 3"
+  entry(730) = "wpthlp_dp1                | zm     | (m K)/s^2             | wpthlp budget: wpthlp dissipation term 1"
+  entry(731) = "wpthlp_mfl                | zm     | (m K)/s^2             | wpthlp budget: wpthlp monotonic flux limiter"
+  entry(732) = "wpthlp_cl                 | zm     | (m K)/s^2             | wpthlp budget: wpthlp clipping term"
+  entry(733) = "wpthlp_forcing            | zm     | (m K)/s^2             | wpthlp budget: wpthlp forcing (includes microphysics tendency)"
+  entry(734) = "wpthlp_mc                 | zm     | (m K)/s^2             | Microphysics tendency for wpthlp (not in budget)"
+  entry(735) = "rtp2_bt                   | zm     | (kg^2)/(kg^2 s)       | rt'2 budget: rtp2 time tendency"
+  entry(736) = "rtp2_ma                   | zm     | (kg^2)/(kg^2 s)       | rtp2 budget: rtp2 mean advection"
+  entry(737) = "rtp2_ta                   | zm     | (kg^2)/(kg^2 s)       | rtp2 budget: rtp2 turbulent advection"
+  entry(738) = "rtp2_tp                   | zm     | (kg^2)/(kg^2 s)       | rtp2 budget: rtp2 turbulent production"
+  entry(739) = "rtp2_dp1                  | zm     | (kg^2)/(kg^2 s)       | rtp2 budget: rtp2 dissipation term 1"
+  entry(740) = "rtp2_dp2                  | zm     | (kg^2)/(kg^2 s)       | rtp2 budget: rtp2 dissipation term 2"
+  entry(741) = "rtp2_cl                   | zm     | (kg^2)/(kg^2 s)       | rtp2 budget: rtp2 clipping term"
+  entry(742) = "rtp2_pd                   | zm     | (kg^2)/(kg^2 s)       | rtp2 budget: rtp2 positive definite adjustment"
+  entry(743) = "rtp2_sf                   | zm     | (kg^2)/(kg^2 s)       | rtp2 budget: rtp2 surface variance"
+  entry(744) = "rtp2_forcing              | zm     | (kg/kg)^2/s           | rtp2 budget: rtp2 forcing (includes microphysics tendency)"
+  entry(745) = "rtp2_mc                   | zm     | (kg/kg)^2/s           | Microphysics tendency for rtp2 (not in budget)"
+  entry(746) = "thlp2_bt                  | zm     | (K^2)/s               | thlp2 budget: thlp2 time tendency"
+  entry(747) = "thlp2_ma                  | zm     | (K^2)/s               | thlp2 budget: thlp2 mean advection"
+  entry(748) = "thlp2_ta                  | zm     | (K^2)/s               | thlp2 budget: thlp2 turbulent advection"
+  entry(749) = "thlp2_tp                  | zm     | (K^2)/s               | thlp2 budget: thlp2 turbulent production"
+  entry(750) = "thlp2_dp1                 | zm     | (K^2)/s               | thlp2 budget: thlp2 dissipation term 1"
+  entry(751) = "thlp2_dp2                 | zm     | (K^2)/s               | thlp2 budget: thlp2 dissipation term 2"
+  entry(752) = "thlp2_cl                  | zm     | (K^2)/s               | thlp2 budget: thlp2 clipping term"
+  entry(753) = "thlp2_pd                  | zm     | K^2/s                 | thlp2 budget: thlp2 positive definite adjustment"
+  entry(754) = "thlp2_sf                  | zm     | K^2/s                 | thl'^2 budget: thlp2 surface variance"
+  entry(755) = "thlp2_forcing             | zm     | K^2/s                 | thlp2 budget: thlp2 forcing (includes microphysics tendency) [K^2/s]"
+  entry(756) = "thlp2_mc                  | zm     | K^2/s                 | Microphysics tendency for thlp2 (not in budget)"
+  entry(757) = "rtpthlp_bt                | zm     | (kg K)/(kg s)         | rtpthlp budget: rtpthlp time tendency"
+  entry(758) = "rtpthlp_ma                | zm     | (kg K)/(kg s)         | rtpthlp budget: rtpthlp mean advection"
+  entry(759) = "rtpthlp_ta                | zm     | (kg K)/(kg s)         | rtpthlp budget: rtpthlp turbulent advection"
+  entry(760) = "rtpthlp_tp1               | zm     | (kg K)/(kg s)         | rtpthlp budget: rtpthlp turbulent production 1"
+  entry(761) = "rtpthlp_tp2               | zm     | (kg K)/(kg s)         | rtpthlp budget: rtpthlp turbulent production 2"
+  entry(762) = "rtpthlp_dp1               | zm     | (kg K)/(kg s)         | rtpthlp budget: rtpthlp dissipation term 1"
+  entry(763) = "rtpthlp_dp2               | zm     | (kg K)/(kg s)         | rtpthlp budget: rtpthlp dissipation term 2"
+  entry(764) = "rtpthlp_cl                | zm     | (kg K)/(kg s)         | rtpthlp budget: rtpthlp clipping term"
+  entry(765) = "rtpthlp_sf                | zm     | (kg K)/(kg s)         | rtpthlp budget: rtpthlp surface variance"
+  entry(766) = "rtpthlp_forcing           | zm     | (K kg/kg)/s           | rtpthlp budget: rtpthlp forcing (includes microphysics tendency)"
+  entry(767) = "rtpthlp_mc                | zm     | (K kg/kg)/s           | Microphysics tendency for rtpthlp (not in budget)"
+  entry(768) = "wpthlp_enter_mfl          | zm     | (m K)/s               | Wpthlp entering flux limiter"
+  entry(769) = "wpthlp_exit_mfl           | zm     | (m K)/s               | Wpthlp exiting flux limiter"
+  entry(770) = "wprtp_enter_mfl           | zm     | (m kg)/(s kg)         | Wprtp entering flux limiter"
+  entry(771) = "wprtp_exit_mfl            | zm     | (m kg)/(s kg)         | Wprtp exiting flux limiter"
+  entry(772) = "wpthlp_mfl_min            | zm     | (m K)/s               | Minimum allowable wpthlp"
+  entry(773) = "wpthlp_mfl_max            | zm     | (m K)/s               | Maximum allowable wpthlp"
+  entry(774) = "wprtp_mfl_min             | zm     | (m kg)/(s kg)         | Minimum allowable wprtp"
+  entry(775) = "wprtp_mfl_max             | zm     | (m kg)/(s kg)         | Maximum allowable wprtp"
+  entry(776) = "sclrprtp                  | zm     | [-]                   | ..."
+  entry(777) = "sclrp2                    | zm     | [-]                   | ..."
+  entry(778) = "sclrpthvp                 | zm     | [-]                   | ..."
+  entry(779) = "sclrpthlp                 | zm     | [-]                   | ..."
+  entry(780) = "sclrprcp                  | zm     | [-]                   | ..."
+  entry(781) = "wpsclrp                   | zm     | [-]                   | ..."
+  entry(782) = "wpedsclrp                 | zm     | [-]                   | ...)"
+  entry(783) = "stability_correction      | zm     | -                     | Stability applied to diffusion of rtm and thlm"
+  entry(784) = "lh_rtp2_mc                | zm     | (kg/kg)^2/s           | LH est. of rtp2_mc"
+  entry(785) = "lh_thlp2_mc               | zm     | K^2/s                 | LH est. of thlp2_mc"
+  entry(786) = "lh_wprtp_mc               | zm     | (m kg/kg)/s^2         | LH est. of wprtp_mc"
+  entry(787) = "lh_wpthlp_mc              | zm     | (m K)/s^2             | LH est. of wpthlp_mc"
+  entry(788) = "lh_rtpthlp_mc             | zm     | (K kg/kg)/s           | LH est. of rtpthlp_mc"
+  entry(789) = "bv_freq_sqd               | zm     | 1/s^2                 | Brunt-Vaisala frequency squared"
+  entry(790) = "bv_freq_sqd_splat         | zm     | 1/s^2                 | Brunt-Vaisala freq. squared for splatting"
+  entry(791) = "bv_freq_sqd_mixed         | zm     | 1/s^2                 | Interpolated Brunt-Vaisala freq. squared between moist and dry air"
+  entry(792) = "bv_freq_sqd_moist         | zm     | 1/s^2                 | Brunt-Vaisala freq. squared in moist air"
+  entry(793) = "bv_freq_sqd_dry           | zm     | 1/s^2                 | Brunt-Vaisala freq. squared in dry air"
+  entry(794) = "bv_freq_sqd_smth          | zm     | 1/s^2                 | Smoothed Brunt-Vaisala freq. squared"
+  entry(795) = "bv_freq_out_cloud         | zm     | 1/s^2                 | Out-of-cloud part of Brunt-Vaisala freq."
+  entry(796) = "bv_freq_pos               | zm     | 1/s^2                 | Positive part of Brunt-Vaisala freq."
+  entry(797) = "ddzt_umvm_sqd             | zm     | -                     | ddzt_umvm_sqd"
+  entry(798) = "invrs_tau_zm              | zm     | s^-1                  | invrs tau on momentum levels [s-1]"
+  entry(799) = "invrs_tau_xp2_zm          | zm     | s^-1                  | invrs tau xp2 on momentum levels [s-1]"
+  entry(800) = "invrs_tau_wp2_zm          | zm     | s^-1                  | invrs tau wp2 on momentum levels [s-1]"
+  entry(801) = "invrs_tau_wpxp_zm         | zm     | s^-1                  | invrs tau wpxp on momentum levels [s-1]"
+  entry(802) = "invrs_tau_wp3_zm          | zm     | s^-1                  | invrs tau wp3 on momentum levels [s-1]"
+  entry(803) = "invrs_tau_no_N2_zm        | zm     | s^-1                  | invrs tau_no_N2 on momentum levels [s-1]"
+  entry(804) = "invrs_tau_bkgnd           | zm     | s^-1                  | invrs tau of bkgnd on momentum levels [s-1]"
+  entry(805) = "invrs_tau_sfc             | zm     | s^-1                  | invrs tau of surface on momentum levels [s-1]"
+  entry(806) = "invrs_tau_shear           | zm     | s^-1                  | invrs tau of shear on momentum levels [s-1]"
+  entry(807) = "Ri_zm                     | zm     | -                     | Richardson number [-]"
+  entry(808) = "grid_density              | zm     | 1/m                   | Grid density to create new grid"
+  entry(809) = "alt_term                  | zm     | 1/m                   | Inverse altitude term of the grid density"
+  entry(810) = "lscale_term               | zm     | 1/m                   | Lscale term of the grid density"
+  entry(811) = "chi_term                  | zm     | 1/m                   | Chi term of the grid density"
+  entry(812) = "brunt_term                | zm     | 1/m                   | Brunt-Vaisala Frequency term of the grid density"
+  entry(813) = "lscale_term_time_avg      | zm     | 1/m                   | time averaged Lscale term of the grid density"
+  entry(814) = "chi_term_time_avg         | zm     | 1/m                   | time averaged chi term of the grid density"
+  entry(815) = "brunt_term_time_avg       | zm     | 1/m                   | time averaged brunt term of the grid density"
+  entry(816) = "norm_min_grid_dens        | zm     | 1/m                   | normalized minimum grid density"
+  entry(817) = "norm_grid_dens            | zm     | 1/m                   | normalized minimum grid density"
+  entry(818) = "T_in_K_rad                | rad_zt | K                     | Temperature [K]"
+  entry(819) = "rcil_rad                  | rad_zt | kg/kg                 | Ice mixing ratio [kg/kg]"
+  entry(820) = "o3l_rad                   | rad_zt | kg/kg                 | Ozone mixing ratio [kg/kg]"
+  entry(821) = "rsm_rad                   | rad_zt | kg/kg                 | Snow water mixing ratio [kg/kg]"
+  entry(822) = "rcm_in_cloud_rad          | rad_zt | kg/kg                 | rcm in cloud layer [kg/kg]"
+  entry(823) = "cloud_frac_rad            | rad_zt | count                 | Cloud fraction (between 0 and 1) [-]"
+  entry(824) = "ice_supersat_frac_rad     | rad_zt | count                 | Ice cloud fraction (between 0 and 1) [-]"
+  entry(825) = "radht_rad                 | rad_zt | K/s                   | Total radiative heating rate [K/s]"
+  entry(826) = "radht_SW_rad              | rad_zt | K/s                   | Short-wave radiative heating rate [K/s]"
+  entry(827) = "radht_LW_rad              | rad_zt | K/s                   | Long-wave radiative heating rate [K/s]"
+  entry(828) = "p_in_mb_rad               | rad_zt | hPa                   | Pressure [hPa]"
+  entry(829) = "sp_humidity_rad           | rad_zt | kg/kg                 | Specific humidity [kg/kg]"
+  entry(830) = "Frad_SW_rad               | rad_zm | W/m^2                 | Net short-wave radiative flux [W/m^2]"
+  entry(831) = "Frad_LW_rad               | rad_zm | W/m^2                 | Net long-wave radiative flux [W/m^2]"
+  entry(832) = "Frad_SW_up_rad            | rad_zm | W/m^2                 | Short-wave upwelling radiative flux [W/m^2]"
+  entry(833) = "Frad_LW_up_rad            | rad_zm | W/m^2                 | Long-wave upwelling radiative flux [W/m^2]"
+  entry(834) = "Frad_SW_down_rad          | rad_zm | W/m^2                 | Short-wave downwelling radiative flux [W/m^2]"
+  entry(835) = "Frad_LW_down_rad          | rad_zm | W/m^2                 | Long-wave downwelling radiative flux [W/m^2]"
+  entry(836) = "fulwcl                    | rad_zm | W/m^2                 | Upward clear-sky LW flux [W/m^2]"
+  entry(837) = "fdlwcl                    | rad_zm | W/m^2                 | Downward clear-sky LW flux [W/m^2]"
+  entry(838) = "fdswcl                    | rad_zm | W/m^2                 | Downward clear-sky SW flux [W/m^2]"
+  entry(839) = "fuswcl                    | rad_zm | W/m^2                 | Upward clear-sky SW flux [W/m^2]"
+  entry(840) = "ustar                     | sfc    | m/s                   | Friction velocity"
+  entry(841) = "soil_heat_flux            | sfc    | W/m^2                 | soil_heat_flux"
+  entry(842) = "veg_T_in_K                | sfc    | K                     | Surface Vegetation Temperature"
+  entry(843) = "sfc_soil_T_in_K           | sfc    | K                     | Surface soil temperature"
+  entry(844) = "deep_soil_T_in_K          | sfc    | K                     | Deep soil Temperature"
+  entry(845) = "lh                        | sfc    | W/m2                  | Surface latent heating"
+  entry(846) = "sh                        | sfc    | W/m2                  | Surface sensible heating"
+  entry(847) = "cc                        | sfc    | count                 | Cloud cover"
+  entry(848) = "lwp                       | sfc    | kg/m2                 | Liquid water path"
+  entry(849) = "vwp                       | sfc    | kg/m2                 | Vapor water path"
+  entry(850) = "swp                       | sfc    | kg/m2                 | Snow water path"
+  entry(851) = "iwp                       | sfc    | kg/m2                 | Ice water path"
+  entry(852) = "rwp                       | sfc    | kg/m2                 | Rain water path"
+  entry(853) = "z_cloud_base              | sfc    | m                     | Cloud base altitude"
+  entry(854) = "z_inversion               | sfc    | m                     | Inversion altitude"
+  entry(855) = "precip_rate_sfc           | sfc    | mm/day                | Surface rainfall rate"
+  entry(856) = "rain_flux_sfc             | sfc    | W/m^2                 | Surface rain flux"
+  entry(857) = "rrm_sfc                   | sfc    | kg/kg                 | Surface rain water mixing ratio"
+  entry(858) = "precip_frac_tol           | sfc    | -                     | Smallest allowable precipitation fraction when hydrometeors are present [-]"
+  entry(859) = "wpthlp_sfc                | sfc    | K m/s                 | wpthlp surface flux"
+  entry(860) = "wprtp_sfc                 | sfc    | (kg/kg) m/s           | wprtp surface flux"
+  entry(861) = "upwp_sfc                  | sfc    | m^2/s^2               | upwp surface flux"
+  entry(862) = "vpwp_sfc                  | sfc    | m^2/s^2               | vpwp surface flux"
+  entry(863) = "morr_snow_rate            | sfc    | mm/day                | Snow+Ice+Graupel fallout rate from Morrison scheme"
+  entry(864) = "thlm_vert_avg             | sfc    | K                     | Vertical average (density-weighted) of thlm"
+  entry(865) = "rtm_vert_avg              | sfc    | kg/kg                 | Vertical average (density-weighted) of rtm"
+  entry(866) = "um_vert_avg               | sfc    | m/s                   | Vertical average (density-weighted) of um"
+  entry(867) = "vm_vert_avg               | sfc    | m/s                   | Vertical average (density-weighted) of vm"
+  entry(868) = "wp2_vert_avg              | sfc    | m^2/s^2               | Density-weighted vertical average of w'^2"
+  entry(869) = "up2_vert_avg              | sfc    | m^2/s^2               | Vertical average (density-weighted) of up2"
+  entry(870) = "vp2_vert_avg              | sfc    | m^2/s^2               | Vertical average (density-weighted) of vp2"
+  entry(871) = "rtp2_vert_avg             | sfc    | kg^2/kg^2             | Vertical average (density-weighted) of rtp2"
+  entry(872) = "thlp2_vert_avg            | sfc    | K^2                   | Vertical average (density-weighted) of thlp2"
+  entry(873) = "T_sfc                     | sfc    | K                     | Surface Temperature"
+  entry(874) = "rtm_spur_src              | sfc    | kg/(m^2 s)            | rtm spurious source"
+  entry(875) = "thlm_spur_src             | sfc    | (K kg) / (m^2 s)      | thlm spurious source"
+  entry(876) = "wp23_matrix_condt_num     | sfc    | count                 | Estimate of the condition number for wp2/3"
+  entry(877) = "rtm_matrix_condt_num      | sfc    | count                 | Estimate of the condition number for rtm/wprtp"
+  entry(878) = "thlm_matrix_condt_num     | sfc    | count                 | Estimate of the condition number for thlm/wpthlp"
+  entry(879) = "rtp2_matrix_condt_num     | sfc    | count                 | Estimate of the condition number for rtp2"
+  entry(880) = "thlp2_matrix_condt_num    | sfc    | count                 | Estimate of the condition number for thlp2"
+  entry(881) = "rtpthlp_matrix_condt_num  | sfc    | count                 | Estimate of the condition number for rtpthlp"
+  entry(882) = "up2_vp2_matrix_condt_num  | sfc    | count                 | Estimate of the condition number for up2/vp2"
+  entry(883) = "windm_matrix_condt_num    | sfc    | count                 | Estimate of the condition number for the mean wind"
+  entry(884) = "rs_sd_morr_int            | sfc    | (kg/kg)/s             | rsm_sd_morr vertical integral"
+  entry(885) = "tot_vartn_normlzd_rtm     | sfc    | -                     | Total variation of rtm in the vertical normalized"
+  entry(886) = "tot_vartn_normlzd_thlm    | sfc    | -                     | Total variation of thlm in the vertical normalized"
+  entry(887) = "tot_vartn_normlzd_wprtp   | sfc    | -                     | Total variation of wprtp in the vertical normalized"
 /

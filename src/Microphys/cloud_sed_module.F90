@@ -61,8 +61,7 @@ contains
   !=============================================================================
   subroutine cloud_drop_sed( gr, rcm, Ncm, &
                              rho_zm, rho, exner, sigma_g, &
-                             stats_metadata, &
-                             stats_zt, stats_zm, & 
+                             stats, icol,         &
                              rcm_mc, thlm_mc )
 
     ! Description:
@@ -113,16 +112,12 @@ contains
         Cp,         &
         Lv
  
-    use stats_type_utilities, only: &
-        stat_update_var ! Procedure(s)
-
-    use stats_variables, only: &
-        stats_metadata_type
-
     use clubb_precision, only: &
         core_rknd ! Variable(s)
 
-    use stats_type, only: stats ! Type
+    use stats_netcdf, only: &
+        stats_type, &
+        stats_update
 
     implicit none
 
@@ -145,13 +140,11 @@ contains
     real( kind = core_rknd ), intent(in) :: &
       sigma_g   ! Geometric standard deviation of cloud droplets   [-]
 
-    type (stats_metadata_type), intent(in) :: &
-          stats_metadata
+    type(stats_type), intent(inout) :: &
+      stats
 
-    ! Input/Output Variables
-    type(stats), intent(inout) :: &
-      stats_zt, &
-      stats_zm
+    integer, intent(in) :: &
+      icol
 
     real( kind = core_rknd ), intent(inout), dimension(gr%nzt) ::  & 
       rcm_mc,  & ! r_c tendency due to microphysics     [kg/kg)/s] 
@@ -198,13 +191,10 @@ contains
     ! sed_rcm units:  [ kg (liquid) / kg (air) ] / s
     sed_rcm = (one/rho) * ddzm( gr, Fcsed )
 
-    if ( stats_metadata%l_stats_samp ) then
- 
-       call stat_update_var( stats_metadata%ised_rcm, sed_rcm, stats_zt )
-
-       call stat_update_var( stats_metadata%iFcsed, Fcsed, stats_zm )
-
-    endif
+    if ( stats%l_sample ) then
+      call stats_update( "sed_rcm", sed_rcm, stats, icol )
+      call stats_update( "Fcsed", Fcsed, stats, icol )
+    end if
 
     ! + thlm/rtm_microphysics -- cloud water sedimentation.
     ! Code addition by Brian for cloud water sedimentation.

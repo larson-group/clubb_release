@@ -7,6 +7,7 @@ add_subdirectory(Morrison_microphys)       # provides:  morrison_microphys_lib
 set(MICROPHYS_SOURCES advance_microphys_module.F90
                       coamps_microphys_driver_module.F90  
                       microphys_driver.F90                
+                      cloud_sed_module.F90
                       morrison_microphys_module.F90
                       KK_microphys_module.F90  
                       microphys_init_cleanup.F90
@@ -24,6 +25,7 @@ set(MICROPHYS_SOURCES advance_microphys_module.F90
 add_library(microphys_lib ${MICROPHYS_SOURCES})
 
 target_link_libraries(microphys_lib PRIVATE clubb_core_lib
+                                            input_fields_lib
                                             KK_microphys_lib
                                             coamps_lib
                                             silhs_lib

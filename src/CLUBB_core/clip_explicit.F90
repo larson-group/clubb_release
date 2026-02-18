@@ -9,7 +9,6 @@ module clip_explicit
 
   public :: clip_covars_denom, &
             clip_covar, & 
-            clip_covar_level, & 
             clip_variance, & 
             clip_skewness, &
             clip_skewness_core, &
@@ -44,8 +43,7 @@ module clip_explicit
                                 l_predict_upwp_vpwp, &
                                 l_tke_aniso, &
                                 l_linearize_pbl_winds, &
-                                stats_metadata, &
-                                stats_zm, & 
+                                stats,         &
                                 wprtp, wpthlp, upwp, vpwp, wpsclrp, &
                                 upwp_pert, vpwp_pert )
 
@@ -71,11 +69,8 @@ module clip_explicit
     use clubb_precision, only: & 
         core_rknd ! Variable(s)
 
-    use stats_type, only: &
-        stats ! Type
-
-     use stats_variables, only: &
-        stats_metadata_type
+     use stats_netcdf, only: &
+        stats_type
 
     implicit none
 
@@ -115,13 +110,10 @@ module clip_explicit
                                ! (u'^2 + v'^2 + w'^2)
       l_linearize_pbl_winds    ! Flag (used by E3SM) to linearize PBL winds
 
-    type (stats_metadata_type), intent(in) :: &
-      stats_metadata
+    type(stats_type), intent(inout) :: &
+      stats
 
     ! --------------------- Input/Output Variables ---------------------
-    type (stats), dimension(ngrdcol), intent(inout) :: &
-      stats_zm
-    
     real( kind = core_rknd ), dimension(ngrdcol,nzm), intent(inout) :: &
       wprtp,  & ! w'r_t'        [(kg/kg) m/s]
       wpthlp, & ! w'theta_l'    [K m/s]
@@ -189,11 +181,10 @@ module clip_explicit
     endif
 
     ! Clip w'r_t'
-    call clip_covar( nzm, ngrdcol, clip_wprtp, l_first_clip_ts, & ! intent(in) 
+    call clip_covar( nzm, ngrdcol, clip_wprtp, l_first_clip_ts, & ! intent(in)
                      l_last_clip_ts, dt, wp2, rtp2,             & ! intent(in)
                      l_predict_upwp_vpwp,                       & ! intent(in)
-                     stats_metadata,                            & ! intent(in)
-                     stats_zm,                                  & ! intent(inout)
+                     stats,                                     & ! intent(in)
                      wprtp, wprtp_chnge )                         ! intent(inout)
 
     !!! Clipping for w'th_l'
@@ -231,8 +222,7 @@ module clip_explicit
     call clip_covar( nzm, ngrdcol, clip_wpthlp, l_first_clip_ts, & ! intent(in)
                      l_last_clip_ts, dt, wp2, thlp2,             & ! intent(in)
                      l_predict_upwp_vpwp,                        & ! intent(in)
-                     stats_metadata,                             & ! intent(in)
-                     stats_zm,                                   & ! intent(inout)
+                     stats,                                      & ! intent(in)
                      wpthlp, wpthlp_chnge )                        ! intent(inout)
 
     !!! Clipping for w'sclr'
@@ -271,8 +261,7 @@ module clip_explicit
       call clip_covar( nzm, ngrdcol, clip_wpsclrp, l_first_clip_ts,    & ! intent(in)
                        l_last_clip_ts, dt, wp2(:,:), sclrp2(:,:,sclr), & ! intent(in)
                        l_predict_upwp_vpwp,                            & ! intent(in)
-                       stats_metadata,                                 & ! intent(in)
-                       stats_zm,                                       & ! intent(inout)
+                       stats,                                          & ! intent(in)
                        wpsclrp(:,:,sclr), wpsclrp_chnge(:,:,sclr) )      ! intent(inout)
     enddo
 
@@ -313,16 +302,14 @@ module clip_explicit
       call clip_covar( nzm, ngrdcol, clip_upwp, l_first_clip_ts, & ! intent(in)
                        l_last_clip_ts, dt, wp2, up2,             & ! intent(in)
                        l_predict_upwp_vpwp,                      & ! intent(in)
-                       stats_metadata,                           & ! intent(in)
-                       stats_zm,                                 & ! intent(inout)
+                       stats,                                    & ! intent(in)
                        upwp, upwp_chnge )                          ! intent(inout)
                      
       if ( l_linearize_pbl_winds ) then
         call clip_covar( nzm, ngrdcol, clip_upwp, l_first_clip_ts, & ! intent(in)
                          l_last_clip_ts, dt, wp2, up2,             & ! intent(in)
                          l_predict_upwp_vpwp,                      & ! intent(in)
-                         stats_metadata,                           & ! intent(in)
-                         stats_zm,                                 & ! intent(inout)
+                         stats,                                    & ! intent(in)
                          upwp_pert, upwp_chnge )                     ! intent(inout)
       endif ! l_linearize_pbl_winds
     else
@@ -330,16 +317,14 @@ module clip_explicit
       call clip_covar( nzm, ngrdcol, clip_upwp, l_first_clip_ts, & ! intent(in)
                        l_last_clip_ts, dt, wp2, wp2,             & ! intent(in)
                        l_predict_upwp_vpwp,                      & ! intent(in)
-                       stats_metadata,                           & ! intent(in)
-                       stats_zm,                                 & ! intent(inout)
+                       stats,                                    & ! intent(in)
                        upwp, upwp_chnge )                          ! intent(inout)
                      
       if ( l_linearize_pbl_winds ) then
           call clip_covar( nzm, ngrdcol, clip_upwp, l_first_clip_ts, & ! intent(in)
                            l_last_clip_ts, dt, wp2, wp2,             & ! intent(in)
                            l_predict_upwp_vpwp,                      & ! intent(in)
-                           stats_metadata,                           & ! intent(in)
-                           stats_zm,                                 & ! intent(inout)
+                           stats,                                    & ! intent(in)
                            upwp_pert, upwp_chnge )                     ! intent(inout)
       endif ! l_linearize_pbl_winds
     end if
@@ -381,16 +366,14 @@ module clip_explicit
       call clip_covar( nzm, ngrdcol, clip_vpwp, l_first_clip_ts, & ! intent(in)
                        l_last_clip_ts, dt, wp2, vp2,             & ! intent(in)
                        l_predict_upwp_vpwp,                      & ! intent(in)
-                       stats_metadata,                           & ! intent(in)
-                       stats_zm,                                 & ! intent(inout)
+                       stats,                                    & ! intent(in)
                        vpwp, vpwp_chnge )                          ! intent(inout)
                      
       if ( l_linearize_pbl_winds ) then
         call clip_covar( nzm, ngrdcol, clip_vpwp, l_first_clip_ts, & ! intent(in)
                          l_last_clip_ts, dt, wp2, vp2,             & ! intent(in)
                          l_predict_upwp_vpwp,                      & ! intent(in)
-                         stats_metadata,                           & ! intent(in)
-                         stats_zm,                                 & ! intent(inout)
+                         stats,                                    & ! intent(in)
                          vpwp_pert, vpwp_chnge )                     ! intent(inout)
       endif ! l_linearize_pbl_winds
     else
@@ -398,16 +381,14 @@ module clip_explicit
       call clip_covar( nzm, ngrdcol, clip_vpwp, l_first_clip_ts, & ! intent(in)
                        l_last_clip_ts, dt, wp2, wp2,             & ! intent(in)
                        l_predict_upwp_vpwp,                      & ! intent(in)
-                       stats_metadata,                           & ! intent(in)
-                       stats_zm,                                 & ! intent(inout)
+                       stats,                                    & ! intent(in)
                        vpwp, vpwp_chnge )                          ! intent(inout)
                      
       if ( l_linearize_pbl_winds ) then
         call clip_covar( nzm, ngrdcol, clip_vpwp, l_first_clip_ts, & ! intent(in)
                          l_last_clip_ts, dt, wp2, wp2,             & ! intent(in)
                          l_predict_upwp_vpwp,                      & ! intent(in)
-                         stats_metadata,                           & ! intent(in)
-                         stats_zm,                                 & ! intent(inout)
+                         stats,                                    & ! intent(in)
                          vpwp_pert, vpwp_chnge )                     ! intent(inout)
       endif ! l_linearize_pbl_winds
     end if
@@ -422,13 +403,13 @@ module clip_explicit
   subroutine clip_covar( nzm, ngrdcol, solve_type, l_first_clip_ts,  & 
                          l_last_clip_ts, dt, xp2, yp2,  &
                          l_predict_upwp_vpwp, &
-                         stats_metadata, &
-                         stats_zm, &
+                         stats,         &
                          xpyp, xpyp_chnge )
 
     ! Description:
     ! Clipping the value of covariance x'y' based on the correlation between x
     ! and y.
+    ! and y.  This is all done at a single vertical level.
     !
     ! The correlation between variables x and y is:
     !
@@ -473,15 +454,11 @@ module clip_explicit
     use clubb_precision, only: & 
         core_rknd ! Variable(s)
 
-    use stats_type_utilities, only: & 
-        stat_begin_update,  & ! Procedure(s)
-        stat_modify, & 
-        stat_end_update
-
-    use stats_variables, only: &
-        stats_metadata_type
-
-    use stats_type, only: stats ! Type
+    use stats_netcdf, only: &
+        stats_type, &
+        stats_begin_budget, &
+        stats_update_budget, &
+        stats_finalize_budget
 
     implicit none
 
@@ -511,13 +488,11 @@ module clip_explicit
                           ! approximated by eddy diffusivity when <u> and <v> are advanced in
                           ! subroutine advance_windm_edsclrm.
                           
-    type (stats_metadata_type), intent(in) :: &
-      stats_metadata
-
     ! -------------------------- InOut Variables --------------------------
-    type (stats), dimension(ngrdcol), intent(inout) :: &
-      stats_zm
+    type(stats_type), intent(inout) :: &
+      stats
 
+    ! ------------------------- InOut Variable -------------------------
     real( kind = core_rknd ), dimension(ngrdcol,nzm), intent(inout) :: & 
       xpyp   ! Covariance of x and y, x'y' (momentum levels) [{x units}*{y units}]
 
@@ -533,51 +508,43 @@ module clip_explicit
 
     integer :: i, k  ! Array index
 
-    integer :: & 
-      ixpyp_cl
+    character(len=32) :: &
+      name_xpyp_cl
 
     ! -------------------------- Begin Code --------------------------
 
+    name_xpyp_cl = ""
     select case ( solve_type )
     case ( clip_wprtp )   ! wprtp clipping budget term
-      ixpyp_cl = stats_metadata%iwprtp_cl
+      name_xpyp_cl = "wprtp_cl"
     case ( clip_wpthlp )   ! wpthlp clipping budget term
-      ixpyp_cl = stats_metadata%iwpthlp_cl
+      name_xpyp_cl = "wpthlp_cl"
     case ( clip_rtpthlp )   ! rtpthlp clipping budget term
-      ixpyp_cl = stats_metadata%irtpthlp_cl
+      name_xpyp_cl = "rtpthlp_cl"
     case ( clip_upwp )   ! upwp clipping budget term
       if ( l_predict_upwp_vpwp ) then
-        ixpyp_cl = stats_metadata%iupwp_cl
+        name_xpyp_cl = "upwp_cl"
       else
-        ixpyp_cl = 0
+        name_xpyp_cl = ""
       endif ! l_predict_upwp_vpwp
     case ( clip_vpwp )   ! vpwp clipping budget term
       if ( l_predict_upwp_vpwp ) then
-        ixpyp_cl = stats_metadata%ivpwp_cl
+        name_xpyp_cl = "vpwp_cl"
       else
-        ixpyp_cl = 0
+        name_xpyp_cl = ""
       endif ! l_predict_upwp_vpwp
     case default   ! scalars (or upwp/vpwp) are involved
-      ixpyp_cl = 0
+      name_xpyp_cl = ""
     end select
-
-
-    if ( stats_metadata%l_stats_samp ) then
-
+    
+    if ( stats%l_sample ) then
       !$acc update host( xpyp )
-
       if ( l_first_clip_ts ) then
-        do i = 1, ngrdcol
-          call stat_begin_update( nzm, ixpyp_cl, xpyp(i,:) / dt, & ! intent(in)
-                                  stats_zm(i) ) ! intent(inout)
-        end do
+        call stats_begin_budget( name_xpyp_cl, xpyp / dt , stats )
       else
-        do i = 1, ngrdcol
-          call stat_modify( nzm, ixpyp_cl, -xpyp(i,:) / dt, & ! intent(in)
-                            stats_zm(i) ) ! intent(inout)
-        end do
-      endif
-    endif
+        call stats_update_budget( name_xpyp_cl, -xpyp / dt , stats )
+      end if
+    end if
 
     ! When clipping for wprtp or wpthlp, use the special value for
     ! max_mag_correlation_flux.  For all other correlations, use
@@ -634,235 +601,22 @@ module clip_explicit
     end do
     !$acc end parallel loop
 
-    if ( stats_metadata%l_stats_samp ) then
-
+    if ( stats%l_sample ) then
       !$acc update host( xpyp )
-
       if ( l_last_clip_ts ) then
-        do i = 1, ngrdcol
-          call stat_end_update( nzm, ixpyp_cl, xpyp(i,:) / dt, & ! intent(in)
-                                stats_zm(i) ) ! intent(inout)
-        end do
+        call stats_finalize_budget( name_xpyp_cl, xpyp / dt , stats )
       else
-        do i = 1, ngrdcol
-          call stat_modify( nzm, ixpyp_cl, xpyp(i,:) / dt, & ! intent(in)
-                            stats_zm(i) ) ! intent(inout)
-        end do
-      endif
-    endif
+        call stats_update_budget( name_xpyp_cl, xpyp / dt , stats )
+      end if
+    end if
 
     return
     
   end subroutine clip_covar
 
   !=============================================================================
-  subroutine clip_covar_level( solve_type, level, l_first_clip_ts,  & 
-                               l_last_clip_ts, dt, xp2, yp2,  &
-                               l_predict_upwp_vpwp, &
-                               stats_metadata, &
-                               stats_zm, & 
-                               xpyp, xpyp_chnge )
-
-    ! Description:
-    ! Clipping the value of covariance x'y' based on the correlation between x
-    ! and y.  This is all done at a single vertical level.
-    !
-    ! The correlation between variables x and y is:
-    !
-    ! corr_(x,y) = x'y' / [ sqrt(x'^2) * sqrt(y'^2) ];
-    !
-    ! where x'^2 is the variance of x, y'^2 is the variance of y, and x'y' is
-    ! the covariance of x and y.
-    !
-    ! The correlation of two variables must always have a value between -1
-    ! and 1, such that:
-    !
-    ! -1 <= corr_(x,y) <= 1.
-    !
-    ! Therefore, there is an upper limit on x'y', such that:
-    !
-    ! x'y' <=  [ sqrt(x'^2) * sqrt(y'^2) ];
-    !
-    ! and a lower limit on x'y', such that:
-    !
-    ! x'y' >= -[ sqrt(x'^2) * sqrt(y'^2) ].
-    !
-    ! The values of x'y', x'^2, and y'^2 are all found on momentum levels.
-    !
-    ! The value of x'y' may need to be clipped whenever x'y', x'^2, or y'^2 is
-    ! updated.
-    !
-    ! The following covariances are found in the code:
-    !
-    ! w'r_t', w'th_l', w'sclr', (computed in advance_xm_wpxp);
-    ! r_t'th_l', sclr'r_t', sclr'th_l', (computed in advance_xp2_xpyp);
-    ! u'w', v'w', w'edsclr' (computed in advance_windm_edsclrm);
-    ! and w'hm' (computed in setup_pdf_parameters).
-
-    ! References:
-    ! None
-    !-----------------------------------------------------------------------
-
-    use constants_clubb, only: &
-        max_mag_correlation,      & ! Constant(s)
-        max_mag_correlation_flux, &
-        zero
-
-    use clubb_precision, only: & 
-        core_rknd ! Variable(s)
-
-    use stats_type_utilities, only: & 
-        stat_begin_update_pt, & ! Procedure(s)
-        stat_modify_pt,       & 
-        stat_end_update_pt
-
-    use stats_variables, only: &
-        stats_metadata_type
-
-    use stats_type, only: stats ! Type
-
-    implicit none
-
-    type (stats), intent(inout) :: &
-      stats_zm
-
-    !------------------------- Input Variables -------------------------
-    integer, intent(in) :: & 
-      solve_type, & ! Variable being solved; used for STATS
-      level         ! Vertical level index
-
-    logical, intent(in) :: & 
-      l_first_clip_ts, & ! First instance of clipping in a timestep.
-      l_last_clip_ts     ! Last instance of clipping in a timestep.
-
-    real( kind = core_rknd ), intent(in) ::  & 
-      dt     ! Model timestep; used here for STATS        [s]
-
-    real( kind = core_rknd ), intent(in) :: & 
-      xp2, & ! Variance of x, <x'^2>                      [{x units}^2]
-      yp2    ! Variance of y, <y'^2>                      [{y units}^2]
-
-    logical, intent(in) :: &
-      l_predict_upwp_vpwp ! Flag to predict <u'w'> and <v'w'> along with <u> and <v> alongside the
-                          ! advancement of <rt>, <w'rt'>, <thl>, <wpthlp>, <sclr>, and <w'sclr'> in
-                          ! subroutine advance_xm_wpxp.  Otherwise, <u'w'> and <v'w'> are still
-                          ! approximated by eddy diffusivity when <u> and <v> are advanced in
-                          ! subroutine advance_windm_edsclrm.
-
-    type (stats_metadata_type), intent(in) :: &
-      stats_metadata
-
-    !------------------------- InOut Variable -------------------------
-    real( kind = core_rknd ), intent(inout) :: & 
-      xpyp   ! Covariance of x and y, <x'y'>              [{x units}*{y units}]
-
-    !------------------------- Output Variable -------------------------
-    real( kind = core_rknd ), intent(out) :: &
-      xpyp_chnge  ! Net change in <x'y'> due to clipping  [{x units}*{y units}]
-
-
-    !------------------------- Local Variables -------------------------
-    real( kind = core_rknd ) ::  & 
-      max_mag_corr    ! Maximum magnitude of a correlation allowed
-
-    integer :: & 
-      ixpyp_cl    ! Statistics index
-
-    !------------------------- Begin Code -------------------------
-
-    select case ( solve_type )
-    case ( clip_wprtp )   ! wprtp clipping budget term
-      ixpyp_cl = stats_metadata%iwprtp_cl
-    case ( clip_wpthlp )   ! wpthlp clipping budget term
-      ixpyp_cl = stats_metadata%iwpthlp_cl
-    case ( clip_rtpthlp )   ! rtpthlp clipping budget term
-      ixpyp_cl = stats_metadata%irtpthlp_cl
-    case ( clip_upwp )   ! upwp clipping budget term
-      if ( l_predict_upwp_vpwp ) then
-        ixpyp_cl = stats_metadata%iupwp_cl
-      else
-        ixpyp_cl = 0
-      endif ! l_predict_upwp_vpwp
-    case ( clip_vpwp )   ! vpwp clipping budget term
-      if ( l_predict_upwp_vpwp ) then
-        ixpyp_cl = stats_metadata%ivpwp_cl
-      else
-        ixpyp_cl = 0
-      endif ! l_predict_upwp_vpwp
-    case default   ! scalars (or upwp/vpwp) are involved
-      ixpyp_cl = 0
-    end select
-
-
-    if ( stats_metadata%l_stats_samp ) then
-       if ( l_first_clip_ts ) then
-          call stat_begin_update_pt( ixpyp_cl, level, xpyp / dt, & ! intent(in)
-                                     stats_zm ) ! intent(inout)
-       else
-          call stat_modify_pt( ixpyp_cl, level, -xpyp / dt, & ! intent(in)
-                               stats_zm ) ! intent(inout)
-       endif
-    endif
-
-    ! When clipping for wprtp or wpthlp, use the special value for
-    ! max_mag_correlation_flux.  For all other correlations, use
-    ! max_mag_correlation.
-    if ( ( solve_type == clip_wprtp ) .or. ( solve_type == clip_wpthlp ) ) then
-       max_mag_corr = max_mag_correlation_flux
-    else ! All other covariances
-       max_mag_corr = max_mag_correlation
-    endif ! solve_type
-
-    ! The value of x'y' at the surface (or lower boundary) is a set value that
-    ! is either specified or determined elsewhere in a surface subroutine.  It
-    ! is ensured elsewhere that the correlation between x and y at the surface
-    ! (or lower boundary) is between -1 and 1.  Thus, the covariance clipping
-    ! code does not need to be invoked at the lower boundary.  Likewise, the
-    ! value of x'y' is set at the upper boundary, so the covariance clipping
-    ! code does not need to be invoked at the upper boundary.
-    ! Note that if clipping were applied at the lower boundary, momentum will
-    ! not be conserved, therefore it should never be added.
-
-    ! Clipping for xpyp at an upper limit corresponding with a correlation
-    ! between x and y of max_mag_corr.
-    if ( xpyp > max_mag_corr * sqrt( xp2 * yp2 ) ) then
-
-        xpyp_chnge = max_mag_corr * sqrt( xp2 * yp2 ) - xpyp
-
-        xpyp = max_mag_corr * sqrt( xp2 * yp2 )
-
-    ! Clipping for xpyp at a lower limit corresponding with a correlation
-    ! between x and y of -max_mag_corr.
-    elseif ( xpyp < -max_mag_corr * sqrt( xp2 * yp2 ) ) then
-
-        xpyp_chnge = -max_mag_corr * sqrt( xp2 * yp2 ) - xpyp
-
-        xpyp = -max_mag_corr * sqrt( xp2 * yp2 )
-
-    else
-
-        xpyp_chnge = zero
-
-    endif
-
-    if ( stats_metadata%l_stats_samp ) then
-       if ( l_last_clip_ts ) then
-          call stat_end_update_pt( ixpyp_cl, level, xpyp / dt, & ! intent(in)
-                                   stats_zm ) ! intent(inout)
-       else
-          call stat_modify_pt( ixpyp_cl, level, xpyp / dt, & ! intent(in)
-                               stats_zm ) ! intent(inout)
-       endif
-    endif
-
-
-    return
-  end subroutine clip_covar_level
-
-  !=============================================================================
   subroutine clip_variance( nzm, ngrdcol, gr, solve_type, dt, threshold_lo, &
-                            stats_metadata, &
-                            stats_zm, &
+                            stats,         &
                             xp2, &
                             threshold_hi )
 
@@ -887,14 +641,10 @@ module clip_explicit
     use clubb_precision, only: & 
         core_rknd ! Variable(s)
 
-    use stats_type_utilities, only: &
-        stat_begin_update,  & ! Procedure(s)
-        stat_end_update
-
-    use stats_variables, only: &
-        stats_metadata_type
-
-    use stats_type, only: stats ! Type
+    use stats_netcdf, only: &
+        stats_type, &
+        stats_begin_budget, &
+        stats_finalize_budget
 
     use constants_clubb, only: &
         fstderr
@@ -921,12 +671,8 @@ module clip_explicit
     real( kind = core_rknd ), dimension(ngrdcol,nzm), intent(in) :: &
       threshold_lo   ! Minimum value of x'^2                   [{x units}^2]
 
-    type (stats_metadata_type), intent(in) :: &
-      stats_metadata
-
-    ! -------------------- InOut Variables --------------------
-    type (stats), dimension(ngrdcol), intent(inout) :: &
-      stats_zm
+    type(stats_type), intent(inout) :: &
+      stats
 
     ! -------------------- Output Variable --------------------
     real( kind = core_rknd ), dimension(ngrdcol,nzm), intent(inout) :: &
@@ -939,8 +685,8 @@ module clip_explicit
     ! -------------------- Local Variables --------------------
     integer :: i, k   ! Array index
 
-    integer :: &
-      ixp2_cl
+    character(len=32) :: &
+      name_xp2_cl
 
     logical :: &
       l_clubb_at_least_debug_level_3
@@ -967,28 +713,24 @@ module clip_explicit
       !$acc end parallel loop
     end if
 
+    name_xp2_cl = ""
     select case ( solve_type )
     case ( clip_wp2 )   ! wp2 clipping budget term
-      ixp2_cl = stats_metadata%iwp2_cl
+      name_xp2_cl = "wp2_cl"
     case ( clip_rtp2 )   ! rtp2 clipping budget term
-      ixp2_cl = stats_metadata%irtp2_cl
+      name_xp2_cl = "rtp2_cl"
     case ( clip_thlp2 )   ! thlp2 clipping budget term
-      ixp2_cl = stats_metadata%ithlp2_cl
+      name_xp2_cl = "thlp2_cl"
     case ( clip_up2 )   ! up2 clipping budget term
-      ixp2_cl = stats_metadata%iup2_cl
+      name_xp2_cl = "up2_cl"
     case ( clip_vp2 )   ! vp2 clipping budget term
-      ixp2_cl = stats_metadata%ivp2_cl
+      name_xp2_cl = "vp2_cl"
     case default   ! scalars are involved
-      ixp2_cl = 0
+      name_xp2_cl = ""
     end select
-
-
-    if ( stats_metadata%l_stats_samp ) then
+    if ( stats%l_sample ) then
       !$acc update host( xp2 )
-      do i = 1, ngrdcol
-        call stat_begin_update( nzm, ixp2_cl, xp2(i,:) / dt, & ! intent(in)
-                                stats_zm(i) )                  ! intent(inout)
-      end do
+      call stats_begin_budget( name_xp2_cl, xp2 / dt , stats )
     end if
 
     l_clubb_at_least_debug_level_3 = clubb_at_least_debug_level_api(3)
@@ -1036,12 +778,9 @@ module clip_explicit
       !$acc end parallel loop
     end if
 
-    if ( stats_metadata%l_stats_samp ) then
+    if ( stats%l_sample ) then
       !$acc update host( xp2 )
-      do i = 1, ngrdcol
-        call stat_end_update( nzm, ixp2_cl, xp2(i,:) / dt, & ! intent(in)
-                              stats_zm(i) ) ! intent(inout)
-      end do
+      call stats_finalize_budget( name_xp2_cl, xp2 / dt , stats )
     end if
 
     !$acc end data
@@ -1054,8 +793,7 @@ module clip_explicit
   subroutine clip_skewness( nzt, ngrdcol, gr, dt, sfc_elevation, & ! intent(in)
                             Skw_max_mag, wp2_zt,                & ! intent(in)
                             l_use_wp3_lim_with_smth_Heaviside,  & ! intent(in)
-                            stats_metadata,                     & ! intent(in)
-                            stats_zt,                           & ! intent(inout)
+                            stats,                              & ! intent(in)
                             wp3 )                                 ! intent(out)
 
     ! Description:
@@ -1103,14 +841,10 @@ module clip_explicit
     use clubb_precision, only: & 
         core_rknd ! Variable(s)
 
-    use stats_type_utilities, only: &
-        stat_begin_update,  & ! Procedure(s)
-        stat_end_update
-
-    use stats_variables, only: &
-        stats_metadata_type
-
-    use stats_type, only: stats ! Type
+    use stats_netcdf, only: &
+        stats_type, &
+        stats_begin_budget, &
+        stats_finalize_budget
 
     implicit none
 
@@ -1137,13 +871,10 @@ module clip_explicit
     logical, intent(in):: &
       l_use_wp3_lim_with_smth_Heaviside
 
-    type (stats_metadata_type), intent(in) :: &
-      stats_metadata
+    type(stats_type), intent(inout) :: &
+      stats
 
     ! ----------------------- Input/Output Variables -----------------------
-    type (stats), dimension(ngrdcol), intent(inout) :: &
-      stats_zt
-      
     real( kind = core_rknd ), dimension(ngrdcol,nzt), intent(inout) :: &
       wp3              ! w'^3 (thermodynamic levels)                [m^3/s^3]
       
@@ -1156,14 +887,9 @@ module clip_explicit
     !$acc              sfc_elevation, wp2_zt ) &
     !$acc        copy( wp3 )
 
-    if ( stats_metadata%l_stats_samp ) then
-
+    if ( stats%l_sample ) then
       !$acc update host( wp3 )
-
-      do i = 1, ngrdcol
-        call stat_begin_update( nzt, stats_metadata%iwp3_cl, wp3(i,:) / dt, & ! intent(in)
-                                stats_zt(i) ) ! intent(inout)
-      end do
+      call stats_begin_budget( "wp3_cl", wp3 / dt, stats )
     end if
 
     call clip_skewness_core( nzt, ngrdcol, gr, sfc_elevation,    & ! intent(in)
@@ -1171,14 +897,9 @@ module clip_explicit
                              l_use_wp3_lim_with_smth_Heaviside, & ! intent(in)
                              wp3 )                                ! intent(inout)
 
-    if ( stats_metadata%l_stats_samp ) then
-
+    if ( stats%l_sample ) then
       !$acc update host( wp3 )
-
-      do i = 1, ngrdcol
-        call stat_end_update( nzt, stats_metadata%iwp3_cl, wp3(i,:) / dt, & ! intent(in)
-                              stats_zt(i) ) ! intent(inout)
-      end do
+      call stats_finalize_budget( "wp3_cl", wp3 / dt, stats )
     end if
 
     !$acc end data

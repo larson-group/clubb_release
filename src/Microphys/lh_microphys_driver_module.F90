@@ -26,8 +26,7 @@ contains
                l_lh_importance_sampling, &
                l_lh_instant_var_covar_src, &
                saturation_formula, &
-               stats_metadata, &
-               stats_zt, stats_zm, stats_sfc, stats_lh_zt, &
+               stats, icol,         &
                lh_hydromet_mc, lh_hydromet_vel, lh_Ncm_mc, &
                lh_rcm_mc, lh_rvm_mc, lh_thlm_mc, &
                lh_rtp2_mc, lh_thlp2_mc, lh_wprtp_mc, &
@@ -65,11 +64,8 @@ contains
     use estimate_scm_microphys_module, only: &
       est_single_column_tndcy
 
-    use stats_type, only: &
-      stats ! Type
-
-    use stats_variables, only: &
-      stats_metadata_type
+    use stats_netcdf, only: &
+      stats_type
 
     use corr_varnce_module, only: &
       hm_metadata_type
@@ -137,14 +133,8 @@ contains
     integer, intent(in) :: &
       saturation_formula ! Integer that stores the saturation formula to be used
 
-    type (stats_metadata_type), intent(in) :: &
-      stats_metadata
-
-    type(stats), intent(inout) :: &
-      stats_zt, &
-      stats_zm, &
-      stats_sfc, &
-      stats_lh_zt
+    type(stats_type), intent(inout) :: &
+      stats
 
     ! Output Variables
     real( kind = core_rknd ), dimension(nzt,hydromet_dim), intent(out) :: &
@@ -174,18 +164,29 @@ contains
       AKm_rcm,    & ! Kessler ac based on rcm             [kg/kg/s]
       AKm_rcc       ! Kessler ac based on rcm/cloud_frac  [kg/kg/s]
 
+    integer, intent(in) :: &
+      icol
+
     ! ---- Begin Code ----
 
     ! Perform LH and analytic microphysical calculations
     ! As a test of SILHS, compute an estimate of Kessler microphysics
     if ( clubb_at_least_debug_level_api( 2 ) ) then
        call est_kessler_microphys_api &
-            ( nzt, num_samples, pdf_dim, &                        ! Intent(in)
+            ( nzt, num_samples, pdf_dim, &                       ! Intent(in)
               X_nl_all_levs, pdf_params, rcm, cloud_frac, &      ! Intent(in)
               X_mixt_comp_all_levs, lh_sample_point_weights, &   ! Intent(in)
               l_lh_importance_sampling, &                        ! Intent(in)
               lh_AKm, AKm, AKstd, AKstd_cld, &                   ! Intent(out)
               AKm_rcm, AKm_rcc, lh_rcm_avg )                     ! Intent(out)
+    else
+      lh_AKm     = 0._core_rknd
+      AKm        = 0._core_rknd
+      AKstd      = 0._core_rknd
+      AKstd_cld  = 0._core_rknd
+      lh_rcm_avg = 0._core_rknd
+      AKm_rcm    = 0._core_rknd
+      AKm_rcc    = 0._core_rknd
     end if
 
     ! Call the latin hypercube microphysics driver for microphys_sub
@@ -201,8 +202,7 @@ contains
            lh_Nc_clipped, &                                            ! Intent(in)
            l_lh_instant_var_covar_src, &                               ! Intent(in)
            saturation_formula, &                                       ! Intent(in)
-           stats_metadata, &                                           ! Intent(in) 
-           stats_zt, stats_zm, stats_sfc, stats_lh_zt, &               ! intent(inout)
+           stats, icol,         &                                      ! Intent(inout)
            lh_hydromet_mc, lh_hydromet_vel, lh_Ncm_mc, &               ! Intent(out)
            lh_rvm_mc, lh_rcm_mc, lh_thlm_mc, &                         ! Intent(out)
            lh_rtp2_mc, lh_thlp2_mc, lh_wprtp_mc, &                     ! Intent(out)

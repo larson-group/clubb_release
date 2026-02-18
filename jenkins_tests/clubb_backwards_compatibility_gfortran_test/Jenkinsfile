@@ -5,7 +5,7 @@ pipeline {
       steps {
         sh '''source /etc/profile.d/larson-group.sh
               module load gcc netcdf-fortran
-              compile/compile.bash'''
+              ./compile.py'''
 
       }
     }
@@ -18,13 +18,9 @@ pipeline {
     }
     stage('Run Clubb') {
       steps {
-        // This edits the number of cases it runs then runs the model
-        // In this case it only runs bomex and dycoms2_rf01
-        sh '''bash -c "echo bomex > run_scripts/RUN_CASES"
-              bash -c "echo dycoms2_rf01 >> run_scripts/RUN_CASES"
-              source /etc/profile.d/larson-group.sh
-              module load gcc netcdf-fortran
-              run_scripts/run_scm_all.bash'''
+        // Only run bomex and dycoms2_rf01
+        sh '''run_scripts/run_scm.py bomex
+              run_scripts/run_scm.py dycoms2_rf01'''
       }
     }
     stage('Check output against tolerance') {

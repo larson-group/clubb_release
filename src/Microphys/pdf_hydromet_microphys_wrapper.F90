@@ -16,9 +16,8 @@ module pdf_hydromet_microphys_wrapper
                corr_array_n_cloud, corr_array_n_below,          & ! In
                hm_metadata, pdf_params, clubb_params,           & ! In
                clubb_config_flags, silhs_config_flags,          & ! In
-               l_rad_itime, stats_metadata,                     & ! In
-               stats_zt, stats_zm, stats_sfc,                   & ! In/Out
-               stats_lh_zt, stats_lh_sfc, err_info,             & ! In/Out
+               l_rad_itime, stats,                              & ! In
+               err_info,                                        & ! In/Out
                time_clubb_pdf, time_stop, time_start,           & ! In/Out
                hydrometp2,                                      & ! Out
                mu_x_1_n, mu_x_2_n,                              & ! Out
@@ -44,7 +43,7 @@ module pdf_hydromet_microphys_wrapper
         grid    ! Type(s)
 
     use setup_clubb_pdf_params, only: &
-        setup_pdf_parameters    ! Procedure(s)
+        setup_pdf_parameters_api    ! Procedure(s)
 
     use mixed_moment_PDF_integrals, only: &
         hydrometeor_mixed_moments    ! Procedure(s)
@@ -75,11 +74,8 @@ module pdf_hydromet_microphys_wrapper
     use parameters_silhs, only: &
         silhs_config_flags_type    ! Types(s)
 
-    use stats_type, only: &
-        stats ! Type(s)
-
-    use stats_variables, only: &
-        stats_metadata_type    ! Type(s)
+    use stats_netcdf, only: &
+        stats_type
 
     use parameters_microphys, only: &
         microphys_scheme    ! Variable(s)
@@ -162,17 +158,10 @@ module pdf_hydromet_microphys_wrapper
     logical, intent(in) :: &
       l_rad_itime
 
-    type (stats_metadata_type), intent(in) :: &
-      stats_metadata
+    type(stats_type), intent(inout) :: &
+      stats
 
     ! Input/Output Variables
-    type (stats), dimension(ngrdcol), intent(inout) :: &
-      stats_zt, &
-      stats_zm, &
-      stats_sfc, &
-      stats_lh_zt, &
-      stats_lh_sfc
-
     type(err_info_type), intent(inout) :: &
       err_info        ! err_info struct containing err_code and err_header
 
@@ -248,7 +237,6 @@ module pdf_hydromet_microphys_wrapper
 
     ! -------------------------------- Begin Code --------------------------------
 
-
     if ( .not. trim( microphys_scheme ) == "none" ) then
 
       !$acc update host( cloud_frac, Kh_zm, ice_supersat_frac )
@@ -256,7 +244,7 @@ module pdf_hydromet_microphys_wrapper
       !$acc if( hydromet_dim > 0 ) update host( wphydrometp )
 
       !!! Setup the PDF parameters.
-      call setup_pdf_parameters( &
+      call setup_pdf_parameters_api( &
               gr, gr%nzm, gr%nzt, ngrdcol, pdf_dim, hydromet_dim, dt_main, & ! In
               Nc_in_cloud, cloud_frac, Kh_zm,                              & ! In
               ice_supersat_frac, hydromet, wphydrometp,                    & ! In
@@ -271,15 +259,15 @@ module pdf_hydromet_microphys_wrapper
               clubb_config_flags%l_calc_w_corr,                            & ! In
               clubb_config_flags%l_const_Nc_in_cloud,                      & ! In
               clubb_config_flags%l_fix_w_chi_eta_correlations,             & ! In
-              stats_metadata,                                              & ! In
-              stats_zt, stats_zm, stats_sfc, err_info,                     & ! In/Out
+              err_info,                                                    & ! In/Out
               hydrometp2,                                                  & ! Out
               mu_x_1_n, mu_x_2_n,                                          & ! Out
               sigma_x_1_n, sigma_x_2_n,                                    & ! Out
               corr_array_1_n, corr_array_2_n,                              & ! Out
               corr_cholesky_mtx_1, corr_cholesky_mtx_2,                    & ! Out
               precip_fracs,                                                & ! In/Out
-              hydromet_pdf_params )                                          ! Optional(out)
+              hydromet_pdf_params,                                         & ! Optional(out)
+              stats )                                                        ! Inout
 
       ! Error check after setup_pdf_parameters
       if ( clubb_at_least_debug_level_api( 0 ) ) then
@@ -299,9 +287,8 @@ module pdf_hydromet_microphys_wrapper
                                         corr_array_1_n(i,:,:,:), corr_array_2_n(i,:,:,:),  & ! In
                                         pdf_params, hydromet_pdf_params(i,:),              & ! In
                                         precip_fracs,                                      & ! In
-                                        stats_metadata,                                    & ! In
-                                        stats_zt(i), stats_zm(i),                          & ! In/Out
-                                        rtphmp_zt(i,:,:), thlphmp_zt(i,:,:), wp2hmp(i,:,:) ) ! Out
+                                        rtphmp_zt(i,:,:), thlphmp_zt(i,:,:), wp2hmp(i,:,:), & ! Out
+                                        stats, icol=i )                                      ! Inout
        end do
 
       !$acc update device( mu_x_1_n, mu_x_2_n, sigma_x_1_n, sigma_x_2_n, corr_array_1_n, corr_array_2_n, &
@@ -380,10 +367,10 @@ module pdf_hydromet_microphys_wrapper
              corr_cholesky_mtx_1, corr_cholesky_mtx_2,                     & ! In
              precip_fracs, silhs_config_flags,                             & ! In
              vert_decorr_coef,                                             & ! In
-             stats_metadata,                                               & ! In
-             stats_lh_zt, stats_lh_sfc, err_info,                          & ! InOut
+             err_info,                                                      & ! InOut
              X_nl_all_levs, X_mixt_comp_all_levs,                          & ! Out
-             lh_sample_point_weights ) ! Out
+             lh_sample_point_weights, &                                     ! Out
+             stats )                                                          ! InOut
 
       ! Error check after setup_pdf_parameters
       if ( clubb_at_least_debug_level_api( 0 ) ) then
@@ -404,8 +391,7 @@ module pdf_hydromet_microphys_wrapper
                                             lh_rc_clipped, lh_rv_clipped,           & ! Out
                                             lh_Nc_clipped                           ) ! Out
 
-      if ( stats_metadata%l_stats_samp ) then     
-
+      if ( stats%l_sample ) then
         !$acc update host( rho_ds_zt, lh_sample_point_weights, X_nl_all_levs, &
         !$acc              lh_rt_clipped, lh_thl_clipped, lh_rc_clipped, lh_rv_clipped, lh_Nc_clipped )
 
@@ -417,8 +403,7 @@ module pdf_hydromet_microphys_wrapper
                 lh_rt_clipped(i,:,:), lh_thl_clipped(i,:,:),             & ! In
                 lh_rc_clipped(i,:,:), lh_rv_clipped(i,:,:),              & ! In
                 lh_Nc_clipped(i,:,:),                                    & ! In
-                stats_metadata,                                          & ! In
-                stats_lh_zt(i), stats_lh_sfc(i) )                          ! intent(inout)
+                stats, icol=i )                                            ! InOut
         end do
       end if
 

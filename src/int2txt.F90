@@ -9,7 +9,7 @@ program int2txt
 ! Notes:  Not very useful on machines without a /dev/random, 
 !   though any 34 bytes of pseudo-random seed data would suffice.
 !-----------------------------------------------------------------------
-#include "CLUBB_core/recl.inc"
+#include "Input_fields/recl.inc"
 
   use mt95, only: &
     genrand_intg ! Integer precision

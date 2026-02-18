@@ -10,7 +10,6 @@ set(CLUBB_BENCHMARK_SOURCES
         clex9_nov02.F90
         clex9_oct14.F90
         cloud_feedback.F90
-        cloud_sed_module.F90
         cobra.F90
         diag_ustar_module.F90
         dycoms2_rf01.F90
@@ -37,9 +36,8 @@ set(CLUBB_BENCHMARK_SOURCES
 
 add_library(benchmark_cases_lib ${CLUBB_BENCHMARK_SOURCES})
 
-target_link_libraries(benchmark_cases_lib PRIVATE clubb_core_lib)
+target_link_libraries(benchmark_cases_lib PRIVATE clubb_core_lib input_fields_lib)
 
 if(${ENABLE_OMP})
   target_link_libraries(benchmark_cases_lib PRIVATE openmp-fortran)
 endif()
-

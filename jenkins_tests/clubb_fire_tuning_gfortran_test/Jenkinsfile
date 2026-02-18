@@ -4,19 +4,14 @@ pipeline {
     stage('Compile') {
       steps {
         // This command is directly modifying flags present in the compile configuration, these changes will linger after the test if the file is not reset
-        sh '''sed -r 's/-ffpe-trap=(\\w,?)+\\s//g' -i compile/config/linux_x86_64_gfortran.bash
-              source /etc/profile.d/larson-group.sh
+        sh '''source /etc/profile.d/larson-group.sh
               module load gcc netcdf-fortran
-              compile/compile.bash'''
-        // This clones the sys_admin repo to the workspace for later, it uses the offcial clone command rather than simply git clone
-        checkout([$class: 'GitSCM', branches: [[name: '*/master']], doGenerateSubmoduleConfigurations: false, extensions: [[$class: 'RelativeTargetDirectory', relativeTargetDir: 'sys_admin']], submoduleCfg: [], userRemoteConfigs: [[credentialsId: 'Generic_Key', url: 'https://github.com/larson-group/sys_admin']]])
+              ./compile.py'''
       }
     }
     stage('Run fire_tuner') {
       steps {
-        sh '''source /etc/profile.d/larson-group.sh
-              module load gcc netcdf-fortran
-              sys_admin/bitten_test_driver_scripts/fire_tuner.bash .'''
+        sh '''python3 run_scripts/fire_tuner.py .'''
       }
     }
   }

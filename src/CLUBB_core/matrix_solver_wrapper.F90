@@ -134,7 +134,7 @@ module matrix_solver_wrapper
                                lhs_copy, rhs_copy, err_info, & ! Intent(inout)
                                dummy_soln, rcond )             ! Intent(out)
 
-      !$acc update device( rcond )
+      !$acc update device( rcond ) if_present
 
     end if
 
@@ -274,7 +274,7 @@ module matrix_solver_wrapper
                                lhs_copy, rhs_copy, err_info, & ! Intent(inout)
                                dummy_soln, rcond )             ! Intent(out)
 
-      !$acc update device( rcond )
+      !$acc update device( rcond ) if_present
 
     end if
 
@@ -516,7 +516,7 @@ module matrix_solver_wrapper
                                   lhs_copy, rhs_copy, err_info, & ! Intent(inout)
                                   dummy_soln, rcond )             ! Intent(out)
 
-      !$acc update device( rcond )
+      !$acc update device( rcond ) if_present
 
     end if
 
@@ -630,7 +630,7 @@ module matrix_solver_wrapper
                                   lhs_copy, rhs_copy, err_info,     & ! Intent(inout)
                                   dummy_soln, rcond )                 ! Intent(out)
 
-      !$acc update device( rcond )
+      !$acc update device( rcond ) if_present
 
     end if
 

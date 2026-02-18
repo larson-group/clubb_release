@@ -1,17 +1,13 @@
-! $Id$
-! This file is used by the script run_tuner.bash.  It contains a list of the 
-! variables being tuned for while running the tuner and should match
-! the CLUBB "t_variables" listed in error_<CASE_NAME>.in.
-$statsnl
-
-vars_zt =
-'cloud_frac', 'rcm', 'wp2_zt', 'wp3', 'wpthlp_zt', 'wprtp_zt', 'rtp2_zt', 'thlp2_zt',
-''
-
-vars_zm = 
-'wp2',
-''
-
-vars_sfc =
-''
+&clubb_stats_nl
+  ! entry(i) format: "name | grid | units | long_name"
+  ! grid options: zt, zm, sfc, lh_zt, lh_sfc, rad_zt, rad_zm
+  entry(1) = "cloud_frac | zt | -             | Cloud fraction (between 0 and 1)"
+  entry(2) = "rcm        | zt | kg/kg         | Cloud water mixing ratio"
+  entry(3) = "wp2_zt     | zt | m^2/s^2       | w'^2 interpolated to thermodynamic levels"
+  entry(4) = "wp3        | zt | m^3/s^3       | Third-order moment of vertical air velocity"
+  entry(5) = "wpthlp_zt  | zt | (m K)/s       | w'thl' interpolated to thermodynamic levels"
+  entry(6) = "wprtp_zt   | zt | (m kg)/(s kg) | w'rt' interpolated to thermodynamic levels"
+  entry(7) = "rtp2_zt    | zt | (kg/kg)^2     | rt'^2 interpolated to thermodynamic levels"
+  entry(8) = "thlp2_zt   | zt | K^2           | thl'^2 interpolated to thermodynamic levels"
+  entry(9) = "wp2        | zm | m^2/s^2       | Variance of vertical air velocity"
 /

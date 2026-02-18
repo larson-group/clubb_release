@@ -6,6 +6,7 @@ add_subdirectory(Numerical_recipes)     # provides:  numerical_recipes_lib
 add_subdirectory(G_unit_test_types)     # provides:  G_unit_test_lib
 add_subdirectory(CLUBB_core)            # provides:  clubb_core_lib
 add_subdirectory(Lapack)                # provides:  lapack_lib
+add_subdirectory(Input_fields)          # provides:  input_fields_lib
 add_subdirectory(Benchmark_cases)       # provides:  benchmark_cases_lib
 
 # create text_writer_lib used in various files
@@ -16,21 +17,14 @@ target_link_libraries(text_writer_lib PRIVATE clubb_core_lib)
 set(CLUBB_DRIVER_SOURCES
         clubb_driver.F90
         soil_vegetation.F90
-        sounding.F90
-        input_netcdf.F90
-        input_interpret.F90
-        input_fields.F90
-        input_grads.F90
-        extrapolation.F90
-        hydrostatic_module.F90
         generalized_grid_test.F90  
-        stat_file_utils.F90
 )
 
 add_library(clubb_driver_lib ${CLUBB_DRIVER_SOURCES})
 
 # Define link interface for clubb_driver_lib
 target_link_libraries(clubb_driver_lib PRIVATE  clubb_core_lib
+                                                input_fields_lib
                                                 radiation_lib
                                                 silhs_lib
                                                 benchmark_cases_lib
@@ -39,7 +33,7 @@ target_link_libraries(clubb_driver_lib PRIVATE  clubb_core_lib
                                             )
 
 if(${USE_NetCDF})
-    target_link_libraries(clubb_driver_lib PRIVATE netcdf-fortran)
+    target_link_libraries(clubb_driver_lib PUBLIC netcdf-fortran)
 endif()
 
 if(${ENABLE_OMP})
@@ -65,6 +59,7 @@ endif()
 # Create clubb_tuner executable
 add_executable(clubb_tuner clubb_tuner.F90 error.F90)
 target_link_libraries(clubb_tuner PRIVATE clubb_driver_lib 
+                                          input_fields_lib
                                           numerical_recipes_lib
                                         )
 

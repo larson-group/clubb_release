@@ -1,0 +1,131 @@
+html,
+body,
+#_dash-app-content {
+  margin: 0;
+  padding: 0;
+  min-height: 100%;
+}
+
+#app-root {
+  min-height: 100vh;
+}
+
+#app-root.theme-dark {
+  background: #0b1220;
+  color: #e5e7eb;
+}
+
+#app-root.theme-light {
+  background: #f8fafc;
+  color: #0f172a;
+}
+
+#app-root.theme-dark .dash-tabs,
+#app-root.theme-dark .tab-content,
+#app-root.theme-dark .tab-parent {
+  background: #0b1220 !important;
+  border-color: #0b1220 !important;
+}
+
+#app-root.theme-light .dash-tabs,
+#app-root.theme-light .tab-content,
+#app-root.theme-light .tab-parent {
+  background: #f8fafc !important;
+  border-color: #f8fafc !important;
+}
+
+#app-root.theme-dark .tab {
+  background: #1f2937 !important;
+  color: #cbd5e1 !important;
+  border-color: #334155 !important;
+}
+
+#app-root.theme-dark .tab--selected {
+  background: #334155 !important;
+  color: #f8fafc !important;
+  border-color: #475569 !important;
+}
+
+#app-root.theme-light .tab {
+  background: #e2e8f0 !important;
+  color: #334155 !important;
+  border-color: #cbd5e1 !important;
+}
+
+#app-root.theme-light .tab--selected {
+  background: #ffffff !important;
+  color: #0f172a !important;
+  border-color: #cbd5e1 !important;
+}
+
+#app-root.theme-dark details {
+  background-color: #111827 !important;
+  border-color: #374151 !important;
+}
+
+#app-root.theme-dark summary {
+  color: #e5e7eb !important;
+}
+
+#app-root.theme-dark input,
+#app-root.theme-dark textarea,
+#app-root.theme-dark select {
+  background: #0f172a !important;
+  color: #e2e8f0 !important;
+  border: 1px solid #334155 !important;
+}
+
+#app-root.theme-dark label,
+#app-root.theme-dark h1,
+#app-root.theme-dark h2,
+#app-root.theme-dark h3,
+#app-root.theme-dark h4,
+#app-root.theme-dark h5,
+#app-root.theme-dark h6,
+#app-root.theme-dark p,
+#app-root.theme-dark div,
+#app-root.theme-dark span {
+  color: inherit;
+}
+
+#app-root.theme-dark .dash-dropdown .Select-control {
+  background: #0f172a !important;
+  border-color: #334155 !important;
+}
+
+#app-root.theme-dark .dash-dropdown .Select-menu-outer {
+  background: #0f172a !important;
+  border-color: #334155 !important;
+}
+
+#app-root.theme-dark .dash-dropdown .Select-option {
+  background: #0f172a !important;
+  color: #e2e8f0 !important;
+}
+
+#app-root.theme-dark .dash-dropdown .Select-option.is-focused {
+  background: #1e293b !important;
+}
+
+#app-root .theme-toggle-button {
+  position: fixed;
+  left: 12px;
+  bottom: 12px;
+  z-index: 2000;
+  border: 1px solid #64748b;
+  padding: 6px 10px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+#app-root.theme-dark .theme-toggle-button {
+  background-color: #1e293b;
+  color: #f8fafc;
+}
+
+#app-root.theme-light .theme-toggle-button {
+  background-color: #ffffff;
+  color: #0f172a;
+  border-color: #94a3b8;
+}

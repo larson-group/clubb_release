@@ -18,8 +18,7 @@ module silhs_category_variance_module
                X_mixt_comp_all_levs, microphys_stats_vars_all, &
                lh_hydromet_mc_all, lh_sample_point_weights, pdf_params, &
                precip_fracs, &
-               stats_metadata, &
-               stats_lh_zt )
+               stats, icol )
 
   ! Description:
   !   Computes the variance of a microphysics variable in each importance
@@ -34,8 +33,7 @@ module silhs_category_variance_module
       core_rknd
 
     use microphys_stats_vars_module, only: &
-      microphys_stats_vars_type, &    ! Type
-      microphys_get_index             ! Procedure
+      microphys_stats_vars_type       ! Type
 
     use corr_varnce_module, only: &
       hm_metadata_type
@@ -46,11 +44,8 @@ module silhs_category_variance_module
     use hydromet_pdf_parameter_module, only: &
       precipitation_fractions
 
-    use stats_type, only: &
-      stats ! Type
-
-    use stats_variables, only: &
-      stats_metadata_type
+    use stats_netcdf, only: &
+      stats_type
 
     implicit none
 
@@ -85,61 +80,26 @@ module silhs_category_variance_module
     type(precipitation_fractions), intent(in) :: &
       precip_fracs           ! Precipitation fractions      [-]
 
-    type (stats_metadata_type), intent(in) :: &
-      stats_metadata
-
     !--------------------------- InOut Variables ---------------------------
-    type(stats), intent(inout) :: &
-      stats_lh_zt
+    type(stats_type), intent(inout) :: &
+      stats
+
+    integer, intent(in) :: &
+      icol
 
     !--------------------------- Local Variables ---------------------------
     real( kind = core_rknd ), dimension(num_samples,nzt) :: &
       samples_all
 
-    integer :: structure_index, isample
-
-    integer :: istat_var  ! Statistics variable in microphys_stats_vars being sampled
-
     !--------------------------- Begin Code ---------------------------
 
-
-    if ( .false. ) then
-
-      ! Sample rrm_auto?
-      istat_var = stats_metadata%irrm_auto
-
-      ! It is assumed here that the structure_index will be the same for all the
-      ! microphys_stats_vars objects.
-      structure_index = microphys_get_index( istat_var, microphys_stats_vars_all(1) )
-
-      do isample=1, num_samples
-        samples_all(isample,:) = microphys_stats_vars_all(isample)%output_values &
-                                   (:,structure_index)
-      end do
-
-    else if ( .false. ) then
-
-      samples_all = X_nl_all_levs(:,:,hm_metadata%iiPDF_chi)
-
-    else if ( .true. ) then
-
-      samples_all = lh_hydromet_mc_all(:,:,hm_metadata%iirr) ! Sample rrm_mc
-
-    else ! .false.
-      istat_var = stats_metadata%irrm_mc_nonadj
-      structure_index = microphys_get_index( istat_var, microphys_stats_vars_all(1) )
-      do isample=1, num_samples
-        samples_all(isample,:) = microphys_stats_vars_all(isample)%output_values &
-                                   (:,structure_index)
-      end do
-
-    end if ! .false.
+    ! Sample rrm_mc from the hydrometeor tendencies generated for each SILHS point.
+    samples_all = lh_hydromet_mc_all(:,:,hm_metadata%iirr)
 
     call silhs_sample_category_variance( &
            nzt, num_samples, pdf_dim, X_nl_all_levs, X_mixt_comp_all_levs, &
            samples_all, lh_sample_point_weights, pdf_params, precip_fracs, &
-           hm_metadata, stats_metadata, &
-           stats_lh_zt )
+           hm_metadata, stats, icol )
 
     return
   end subroutine silhs_category_variance_driver
@@ -149,8 +109,7 @@ module silhs_category_variance_module
   subroutine silhs_sample_category_variance( &
                nzt, num_samples, pdf_dim, X_nl_all_levs, X_mixt_comp_all_levs, &
                samples_all, lh_sample_point_weights, pdf_params, precip_fracs, &
-               hm_metadata, stats_metadata, &
-               stats_lh_zt )
+               hm_metadata, stats, icol )
 
   ! Description:
   !   Computes the variance of a microphysics variable in each importance
@@ -174,20 +133,15 @@ module silhs_category_variance_module
       importance_category_type, &
       determine_sample_categories
 
-    use stats_type_utilities, only: &
-      stat_update_var                 ! Procedure
-
     use pdf_parameter_module, only: &
       pdf_parameter       ! Type
 
     use hydromet_pdf_parameter_module, only: &
       precipitation_fractions
 
-    use stats_type, only: &
-      stats ! Type
-
-    use stats_variables, only: &
-      stats_metadata_type
+    use stats_netcdf, only: &
+      stats_type, &
+      stats_update
 
     use corr_varnce_module, only: &
       hm_metadata_type
@@ -221,12 +175,11 @@ module silhs_category_variance_module
     type (hm_metadata_type), intent(in) :: &
       hm_metadata
 
-    type (stats_metadata_type), intent(in) :: &
-      stats_metadata
+    type(stats_type), intent(inout) :: &
+      stats
 
-    ! ---------------------- InOut Variables ----------------------
-    type(stats), intent(inout) :: &
-      stats_lh_zt
+    integer, intent(in) :: &
+      icol
 
     !---------------------- Local Variables ----------------------
     type(importance_category_type), dimension(num_importance_categories) :: &
@@ -242,6 +195,8 @@ module silhs_category_variance_module
       root_weight_mean_sq_cat
 
     integer :: isample, icat, k
+    character(len=32) :: cat_name
+    character(len=2) :: cat_num
 
     !---------------------- Begin Code----------------------
 
@@ -287,10 +242,11 @@ module silhs_category_variance_module
 
     end do ! k = 1, nzt
 
-    if ( stats_metadata%l_stats_samp ) then
+    if ( stats%l_sample ) then
       do icat=1, num_importance_categories
-        call stat_update_var( stats_metadata%isilhs_variance_category(icat), &
-                              root_weight_mean_sq_cat(icat,:), stats_lh_zt )
+        write(cat_num,'(I1)') icat
+        cat_name = "silhs_var_cat_" // trim(cat_num)
+        call stats_update( cat_name, root_weight_mean_sq_cat(icat,:), stats, icol )
       end do
     end if
 

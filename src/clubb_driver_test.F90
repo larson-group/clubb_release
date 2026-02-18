@@ -21,19 +21,8 @@ program clubb_driver_test
   use model_flags, only: &
     l_test_grid_generalization
 
-  use parameter_indices, only: &
-    nparams ! Variable(s)
-
-  use parameters_tunable, only: &
-    set_default_parameters, & ! Procedure(s)
-    init_clubb_params_api
-
-  use clubb_precision, only: &
-    core_rknd ! Constant
-
   use constants_clubb, only: &
-    fstderr, & ! Constant
-    fstdout
+    fstderr ! Constant
 
   use err_info_type_module, only: &
     err_info_type,                  & ! Type
@@ -46,64 +35,35 @@ program clubb_driver_test
 
   ! Constant parameters
   integer, parameter :: &
-    iunit = 10
-
-  integer, parameter :: &
     success_code = 6
 
   integer :: &
-    ngrdcol, &
-    calls_per_out, &
-    iostat
+    arg_len, &
+    arg_status
 
   type(err_info_type) :: &
     err_info        ! err_info struct containing err_code and err_header
                     ! Initialization is done within run_clubb
 
-  character(len=13), parameter :: &
-    namelist_filename = "clubb.in"  ! Text file containing namelists
-                                    ! concatenated from various input files such as
-                                    ! model.in, tunable_parameters.in, error....in.
+  character(len=256) :: &
+    namelist_filename  ! Text file containing namelists
+                       ! concatenated from various input files such as
+                       ! model.in, tunable_parameters.in, error....in.
   logical, parameter :: &
     l_stdout = .true.
 
-  logical :: &
-    l_output_multi_col, &
-    l_output_double_prec    ! Flag to enable double precision
-
-  character(len=10) :: arg
-
-  real( kind = core_rknd ), dimension(:,:), allocatable :: & 
-    clubb_params  ! Array of the model constants
-
-  namelist /multicol_def/  & 
-    ngrdcol, &
-    l_output_multi_col, &
-    l_output_double_prec, &
-    calls_per_out
+  character(len=256) :: arg
 
   !--------------------------------- Begin Code ---------------------------------
 
-  ! Set default namelist values
-  ngrdcol = 1
-  l_output_multi_col = .false.
-  l_output_double_prec = .true.
-  calls_per_out = 1
-
-  ! Read the namelist for ngrdcol only
-  open(unit=iunit, file=namelist_filename, status='old', action='read')
-  read(unit=iunit, iostat=iostat, nml=multicol_def)
-  close(unit=iunit)
-
-  if ( iostat /= 0 ) then
-    write(fstderr,*) "multicol_def namelist not found in clubb.in -- defaulting to ngrdcol = 1"
+  ! Set default namelist values.
+  namelist_filename = "clubb.in"
+  if ( command_argument_count() >= 1 ) then
+    call get_command_argument(1, arg, length=arg_len, status=arg_status)
+    if ( arg_status == 0 .and. arg_len > 0 ) then
+      namelist_filename = trim(arg(1:arg_len))
+    end if
   end if
-
-  allocate( clubb_params(ngrdcol,nparams) )
-
-  !Read in model parameter values
-  call init_clubb_params_api( ngrdcol, iunit, namelist_filename, &
-                              clubb_params )
 
   !---------------------------------------- Test Sections ----------------------------------------
 
@@ -112,10 +72,10 @@ program clubb_driver_test
   write(fstderr, *) "in clean_up_clubb. This may cause a runtime error if there is a mismatch between"
   write(fstderr, *) "allocate/deallocate statements, but could "
 
-  ! initialize, cleaup, then initialize again
-  call init_clubb_case(namelist_filename, ngrdcol, clubb_params, err_info)
-  call clean_up_clubb(ngrdcol, clubb_params, err_info)
-  call init_clubb_case(namelist_filename, ngrdcol, clubb_params, err_info)
+  ! Read in model parameter values by initializing, cleaning up, and initializing again.
+  call init_clubb_case(trim(namelist_filename), err_info)
+  call clean_up_clubb(err_info)
+  call init_clubb_case(trim(namelist_filename), err_info)
 
 
   write(fstderr, *) "======================== DOUBLE TIMESTEP RUN ========================"
@@ -124,21 +84,16 @@ program clubb_driver_test
   write(fstderr, *) "error if an allocation statement appears in these routines, since"
   write(fstderr, *) "we don't call clean_up_clubb in between the advance_ calls."
 
-  ! Run once with stats off. Turning stats on will output to disk, which we only want to do
-  ! for the second run. This sets l_output_multi_col=.false. for the same reason
-  call advance_clubb_to_end( ngrdcol, calls_per_out, clubb_params, &
-                       l_stdout, .false., l_output_double_prec, &
-                       err_info, &
-                       l_suppress_stats=.true. )
+  ! Run once with stats off. Turning stats on writes output to disk, and we only want
+  ! that for the second run used for the standalone comparison.
+  call advance_clubb_to_end( l_stdout, err_info, l_suppress_stats=.true. )
 
   ! Reset model back to initial conditions
-  call set_case_initial_conditions(ngrdcol, clubb_params, err_info)
+  call set_case_initial_conditions(err_info)
 
   ! Turn stats on and run. If this produces different output than what calling run_clubb
   ! does, then set_case_initial_conditions is not correctly reseting to initial conditions
-  call advance_clubb_to_end( ngrdcol, calls_per_out, clubb_params, &
-                       l_stdout, l_output_multi_col, l_output_double_prec, &
-                       err_info )
+  call advance_clubb_to_end( l_stdout, err_info )
 
   write(fstderr, *) "======================== RUN OVER ========================"
   write(fstderr, *) "WARNING: The double timestep test is not complete until the "
@@ -148,7 +103,7 @@ program clubb_driver_test
   write(fstderr, *) "If there are differences, set_case_initial_conditions is likely"
   write(fstderr, *) "not resetting everything it needs to."
 
-  call clean_up_clubb(ngrdcol, clubb_params, err_info)
+  call clean_up_clubb(err_info)
 
   ! Clean up err_info
 

@@ -9,12 +9,12 @@ pipeline {
   stages {
     stage('Compile') {
       steps {
-        sh '''compile/compile.bash -c config/macosx_x86_64_gfortran.bash'''
+        sh '''./compile.py'''
       }
     }
     stage('Run Clubb') {
       steps {
-        sh 'run_scripts/run_scm_all.bash --min-cases'
+        sh 'run_scripts/run_scm_all.py -min_cases'
       }
     }
   }

@@ -22,8 +22,7 @@ module sfc_varnce_module
                               T0, &
                               up2_sfc_coef, &
                               a_const, &
-                              stats_metadata, &
-                              stats_zm, &
+                              stats,         &
                               wp2, up2, vp2, &
                               thlp2, rtp2, rtpthlp, &
                               sclrp2, sclrprtp,  sclrpthlp, &
@@ -69,16 +68,10 @@ module sfc_varnce_module
     use array_index, only: &
         sclr_idx_type
 
-    use stats_type, only: &
-        stats ! Type
-
-    use stats_type_utilities, only: &
-        stat_end_update_pt,   & ! Procedure(s)
-        stat_begin_update_pt, &
-        stat_update_var_pt
-
-    use stats_variables, only: &
-        stats_metadata_type
+    use stats_netcdf, only: &
+        stats_type, &
+        stats_begin_budget, &
+        stats_finalize_budget
 
     use clubb_precision, only: &
         core_rknd ! Variable(s)
@@ -153,12 +146,8 @@ module sfc_varnce_module
       up2_sfc_coef,   & ! CLUBB tunable parameter up2_sfc_coef   [-]
       a_const           ! Coefficient in front of wp2, up2, and vp2
 
-    type (stats_metadata_type), intent(in) :: &
-      stats_metadata
-
-    !-------------------------- InOut Variables --------------------------
-    type (stats), intent(inout), dimension(ngrdcol) :: &
-      stats_zm
+    type(stats_type), intent(inout) :: &
+      stats
 
     !-------------------------- InOut Variables --------------------------
     real( kind = core_rknd ), dimension(ngrdcol,nzm), intent(inout) :: &
@@ -210,35 +199,14 @@ module sfc_varnce_module
     !$acc                    ustar, zeta, wp2_splat_sfc_correction )
 
     ! Reflect surface varnce changes in budget
-    if ( stats_metadata%l_stats_samp ) then
-
+    if ( stats%l_sample ) then
       !$acc update host( wp2, up2, vp2, thlp2, rtp2, rtpthlp )
-
-      do i = 1, ngrdcol
-        call stat_begin_update_pt( stats_metadata%ithlp2_sf, gr%k_lb_zm,   & ! intent(in)
-                                   thlp2(i,gr%k_lb_zm) / dt,               & ! intent(in)
-                                   stats_zm(i) )                             ! intent(inout)
-
-        call stat_begin_update_pt( stats_metadata%irtp2_sf, gr%k_lb_zm,    & ! intent(in)
-                                   rtp2(i,gr%k_lb_zm) / dt,                & ! intent(in)
-                                   stats_zm(i) )                             ! intent(inout)
-
-        call stat_begin_update_pt( stats_metadata%irtpthlp_sf, gr%k_lb_zm, & ! intent(in)
-                                   rtpthlp(i,gr%k_lb_zm) / dt,             & ! intent(in)
-                                   stats_zm(i) )                             ! intent(inout)
-
-        call stat_begin_update_pt( stats_metadata%iup2_sf, gr%k_lb_zm,     & ! intent(in)
-                                   up2(i,gr%k_lb_zm) / dt,                 & ! intent(in)
-                                   stats_zm(i) )                             ! intent(inout)
-
-        call stat_begin_update_pt( stats_metadata%ivp2_sf, gr%k_lb_zm,     & ! intent(in)
-                                   vp2(i,gr%k_lb_zm) / dt,                 & ! intent(in)
-                                   stats_zm(i) )                             ! intent(inout)
-
-        call stat_begin_update_pt( stats_metadata%iwp2_sf, gr%k_lb_zm,     & ! intent(in)
-                                   wp2(i,gr%k_lb_zm) / dt,                 & ! intent(in)
-                                   stats_zm(i) )                             ! intent(inout)
-      end do
+      call stats_begin_budget( "thlp2_sf", thlp2 / dt , stats )
+      call stats_begin_budget( "rtp2_sf", rtp2 / dt , stats )
+      call stats_begin_budget( "rtpthlp_sf", rtpthlp / dt , stats )
+      call stats_begin_budget( "up2_sf", up2 / dt , stats )
+      call stats_begin_budget( "vp2_sf", vp2 / dt , stats )
+      call stats_begin_budget( "wp2_sf", wp2 / dt , stats )
     end if
 
     !$acc parallel loop gang vector default(present)
@@ -734,35 +702,14 @@ module sfc_varnce_module
       end do
     end if
 
-    if ( stats_metadata%l_stats_samp ) then
-
+    if ( stats%l_sample ) then
       !$acc update host( wp2, up2, vp2, thlp2, rtp2, rtpthlp )
-
-      do i = 1, ngrdcol
-        call stat_end_update_pt( stats_metadata%ithlp2_sf, gr%k_lb_zm,    & ! intent(in)
-                                 thlp2(i,gr%k_lb_zm) / dt, & ! intent(in)
-                                 stats_zm(i) )      ! intent(inout)
-
-        call stat_end_update_pt( stats_metadata%irtp2_sf, gr%k_lb_zm,     & ! intent(in)
-                                 rtp2(i,gr%k_lb_zm) / dt,  & ! intent(in)
-                                 stats_zm(i) )      ! intent(inout)
-
-        call stat_end_update_pt( stats_metadata%irtpthlp_sf, gr%k_lb_zm,    & ! intent(in)
-                                 rtpthlp(i,gr%k_lb_zm) / dt, & ! intent(in)
-                                 stats_zm(i) )        ! intent(inout)
-
-        call stat_end_update_pt( stats_metadata%iup2_sf, gr%k_lb_zm,    & ! intent(in)
-                                 up2(i,gr%k_lb_zm) / dt, & ! intent(in)
-                                 stats_zm(i) )    ! intent(inout)
-
-        call stat_end_update_pt( stats_metadata%ivp2_sf, gr%k_lb_zm,    & ! intent(in)
-                                 vp2(i,gr%k_lb_zm) / dt, & ! intent(in)
-                                 stats_zm(i) )    ! intent(inout)
-
-        call stat_end_update_pt( stats_metadata%iwp2_sf, gr%k_lb_zm,    & ! intent(in)
-                                 wp2(i,gr%k_lb_zm) / dt, & ! intent(in)
-                                 stats_zm(i) )    ! intent(inout)
-      end do
+        call stats_finalize_budget( "thlp2_sf", thlp2 / dt , stats )
+        call stats_finalize_budget( "rtp2_sf", rtp2 / dt , stats )
+        call stats_finalize_budget( "rtpthlp_sf", rtpthlp / dt , stats )
+        call stats_finalize_budget( "up2_sf", up2 / dt , stats )
+        call stats_finalize_budget( "vp2_sf", vp2 / dt , stats )
+        call stats_finalize_budget( "wp2_sf", wp2 / dt , stats )
     end if
 
     if ( clubb_at_least_debug_level_api( 2 ) ) then 

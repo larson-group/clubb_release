@@ -23,8 +23,7 @@ module estimate_scm_microphys_module
                lh_Nc_clipped, &
                l_lh_instant_var_covar_src, &
                saturation_formula, &
-               stats_metadata, &
-               stats_zt, stats_zm, stats_sfc, stats_lh_zt, &
+               stats, icol,         &
                lh_hydromet_mc, lh_hydromet_vel, lh_Ncm_mc, &
                lh_rvm_mc, lh_rcm_mc, lh_thlm_mc, &
                lh_rtp2_mc, lh_thlp2_mc, lh_wprtp_mc, &
@@ -53,11 +52,10 @@ module estimate_scm_microphys_module
     use grid_class, only: &
       zt2zm_api
 
-    use stats_variables, only: &
-        stats_metadata_type
-
-    use stats_type_utilities, only: &
-      stat_update_var ! Procedure
+    use stats_netcdf, only: &
+      stats_type, &
+      stats_update, &
+      var_on_stats_list
 
     use microphys_stats_vars_module, only: &
       microphys_stats_vars_type, &
@@ -92,8 +90,6 @@ module estimate_scm_microphys_module
 
     use hydromet_pdf_parameter_module, only: &
       precipitation_fractions
-
-    use stats_type, only: stats ! Type
 
     implicit none
 
@@ -160,15 +156,11 @@ module estimate_scm_microphys_module
     integer, intent(in) :: &
       saturation_formula ! Integer that stores the saturation formula to be used
 
-    type (stats_metadata_type), intent(in) :: &
-      stats_metadata
+    type(stats_type), intent(inout) :: &
+      stats
 
-    ! InOut Variables
-    type(stats), intent(inout) :: &
-      stats_zt, &
-      stats_zm, &
-      stats_sfc, &
-      stats_lh_zt
+    integer, intent(in) :: &
+      icol
 
     ! Output Variables
 
@@ -259,6 +251,15 @@ module estimate_scm_microphys_module
 
     do sample = 1, num_samples
 
+      microphys_stats_zt_all(sample)%l_allocated = .false.
+      microphys_stats_zt_all(sample)%num_vars = 0
+      microphys_stats_zt_all(sample)%alloc_size = 0
+      microphys_stats_zt_all(sample)%nz = 0
+      microphys_stats_sfc_all(sample)%l_allocated = .false.
+      microphys_stats_sfc_all(sample)%num_vars = 0
+      microphys_stats_sfc_all(sample)%alloc_size = 0
+      microphys_stats_sfc_all(sample)%nz = 0
+
       cloud_frac_unused = unused_var
       w_std_dev_unused  = unused_var
       ! Call the microphysics scheme to obtain a sample point
@@ -271,7 +272,7 @@ module estimate_scm_microphys_module
              chi_all_points(sample,:), lh_rv_clipped(sample,:), & ! In
              hydromet_all_points(sample,:,:), & ! In
              saturation_formula, &
-             stats_metadata, & ! In
+             stats, icol,         & ! InOut
              lh_hydromet_mc_all(sample,:,:), lh_hydromet_vel_all(sample,:,:), & ! Out
              lh_Ncm_mc_all(sample,:), & ! Out
              lh_rcm_mc_all(sample,:), lh_rvm_mc_all(sample,:), lh_thlm_mc_all(sample,:), & ! Out
@@ -297,13 +298,13 @@ module estimate_scm_microphys_module
       lh_wpthlp_mc  = zt2zm_api( gr, lh_wpthlp_mc_zt )
       lh_rtpthlp_mc = zt2zm_api( gr, lh_rtpthlp_mc_zt )
 
-      ! Stats sampling
-      if ( stats_metadata%l_stats_samp ) then
-        call stat_update_var( stats_metadata%ilh_rtp2_mc, lh_rtp2_mc, stats_zm )
-        call stat_update_var( stats_metadata%ilh_thlp2_mc, lh_thlp2_mc, stats_zm )
-        call stat_update_var( stats_metadata%ilh_wprtp_mc, lh_wprtp_mc, stats_zm )
-        call stat_update_var( stats_metadata%ilh_wpthlp_mc, lh_wpthlp_mc, stats_zm )
-        call stat_update_var( stats_metadata%ilh_rtpthlp_mc, lh_rtpthlp_mc, stats_zm )
+    ! Stats sampling for LH variance/covariance tendencies.
+    if ( stats%l_sample ) then
+      call stats_update( "lh_rtp2_mc", lh_rtp2_mc, stats, icol )
+      call stats_update( "lh_thlp2_mc", lh_thlp2_mc, stats, icol )
+      call stats_update( "lh_wprtp_mc", lh_wprtp_mc, stats, icol )
+        call stats_update( "lh_wpthlp_mc", lh_wpthlp_mc, stats, icol )
+        call stats_update( "lh_rtpthlp_mc", lh_rtpthlp_mc, stats, icol )
       end if
 
     else ! .not. l_var_covar_src
@@ -341,12 +342,11 @@ module estimate_scm_microphys_module
                                                          lh_sample_point_weights )
 
     if ( lh_microphys_type /= lh_microphys_non_interactive ) then
-      call microphys_stats_accumulate( microphys_stats_zt_avg, stats_metadata, stats_zt )
-      call microphys_stats_accumulate( microphys_stats_sfc_avg, stats_metadata, stats_sfc )
+      call microphys_stats_accumulate( microphys_stats_zt_avg, stats, icol )
+      call microphys_stats_accumulate( microphys_stats_sfc_avg, stats, icol )
     else
       call silhs_noninteractive_stats( microphys_stats_zt_avg, &
-                                       stats_metadata, &
-                                       stats_lh_zt )
+                                       stats, icol )
     end if
 
     ! Adjust the mean if l_silhs_KK_convergence_adj_mean is true
@@ -355,8 +355,7 @@ module estimate_scm_microphys_module
                                 hydromet(:,iiNr), hydromet,                     & ! intent(in)
                                 hydromet_dim, hm_metadata%iiri,                 & ! intent(in)
                                 microphys_stats_zt_avg,                         & ! intent(in)
-                                stats_metadata,                                 & ! intent(in)
-                                stats_lh_zt,                                    & ! intent(inout)
+                                stats, icol,                                    & ! intent(inout)
                                 lh_hydromet_vel(:,iirr),                        & ! intent(inout)
                                 lh_hydromet_vel(:,iiNr),                        & ! intent(inout)
                                 lh_hydromet_mc(:,iirr), lh_hydromet_mc(:,iiNr), & ! intent(out)
@@ -365,24 +364,17 @@ module estimate_scm_microphys_module
 
     ! Invoke the SILHS category variance sampler (if desired by user)!!
 
-    if ( stats_metadata%l_stats_samp ) then
-
-      if ( allocated( stats_metadata%isilhs_variance_category ) ) then
-
-        if( stats_metadata%isilhs_variance_category(1) > 0 ) then
-          call silhs_category_variance_driver( &
-                 nzt, num_samples, pdf_dim, hydromet_dim, hm_metadata,      & ! Intent(in)
-                 X_nl_all_levs,                                             & ! Intent(in)
-                 X_mixt_comp_all_levs, microphys_stats_zt_all,              & ! Intent(in)
-                 lh_hydromet_mc_all, lh_sample_point_weights, pdf_params,   & ! Intent(in)
-                 precip_fracs,                                              & ! intent(in)
-                 stats_metadata,                                            & ! intent(in)
-                 stats_lh_zt )                                                ! intent(inout)
-        end if ! stats_metadata%isilhs_variance_category(1) > 0
-
-      end if ! allocated( stats_metadata%isilhs_variance_category ) 
-
-    end if ! stats_metadata%l_stats_samp
+    if ( stats%l_sample ) then
+      if ( var_on_stats_list( stats, "silhs_var_cat_1" ) ) then
+        call silhs_category_variance_driver( &
+               nzt, num_samples, pdf_dim, hydromet_dim, hm_metadata,      & ! Intent(in)
+               X_nl_all_levs,                                             & ! Intent(in)
+               X_mixt_comp_all_levs, microphys_stats_zt_all,              & ! Intent(in)
+               lh_hydromet_mc_all, lh_sample_point_weights, pdf_params,   & ! Intent(in)
+               precip_fracs,                                              & ! intent(in)
+               stats, icol )                                                ! intent(inout)
+      end if
+    end if
 
     ! Cleanup microphys_stats_vars objects
     do ivar=1, num_samples
@@ -408,6 +400,9 @@ module estimate_scm_microphys_module
   !-----------------------------------------------------------------------
 
     ! Included Modules
+    use constants_clubb, only: &
+      fstderr
+
     use clubb_precision, only: &
       core_rknd            ! Compile-time constant
 
@@ -428,7 +423,7 @@ module estimate_scm_microphys_module
     type(microphys_stats_vars_type), dimension(num_samples), intent(in) :: &
       microphys_stats_all   ! Statistics variables
 
-    real( kind = core_rknd ), dimension(num_samples,microphys_stats_all(1)%nz), intent(in) :: &
+    real( kind = core_rknd ), dimension(:,:), intent(in) :: &
       lh_sample_point_weights ! Weight of each SILHS sample point
 
     ! Output Variables
@@ -436,33 +431,142 @@ module estimate_scm_microphys_module
       microphys_stats_avg   ! Average of statistical variables
 
     ! Local Variables
-    integer :: ivar, svar, nz, num_vars, stats_index
+    integer :: ivar, svar, nz, num_vars, nz_weights, nz_stats
+    logical :: l_use_first_level_weights
 
-    real( kind = core_rknd ), dimension(num_samples,microphys_stats_all(1)%nz) :: &
+    real( kind = core_rknd ), dimension(:,:), allocatable :: &
       stats_var_all
 
-    real( kind = core_rknd ), dimension(microphys_stats_all(1)%nz) :: &
+    real( kind = core_rknd ), dimension(:), allocatable :: &
       stats_var_avg
 
   !-----------------------------------------------------------------------
     !----- Begin Code-----
 
-    nz = microphys_stats_all(1)%nz
+    if ( .not. microphys_stats_all(1)%l_allocated ) then
+      microphys_stats_avg%l_allocated = .false.
+      microphys_stats_avg%nz = 0
+      microphys_stats_avg%num_vars = 0
+      microphys_stats_avg%alloc_size = 0
+      return
+    end if
+    if ( .not. allocated(microphys_stats_all(1)%var_names) .or. &
+         .not. allocated(microphys_stats_all(1)%output_values) ) then
+      microphys_stats_avg%l_allocated = .false.
+      microphys_stats_avg%nz = 0
+      microphys_stats_avg%num_vars = 0
+      microphys_stats_avg%alloc_size = 0
+      return
+    end if
+
+    nz_weights = size(lh_sample_point_weights, 2)
+    nz_stats = microphys_stats_all(1)%nz
     num_vars = microphys_stats_all(1)%num_vars
 
+    if ( nz_weights <= 0 .or. nz_stats <= 0 .or. num_vars <= 0 ) then
+      microphys_stats_avg%l_allocated = .false.
+      microphys_stats_avg%nz = 0
+      microphys_stats_avg%num_vars = 0
+      microphys_stats_avg%alloc_size = 0
+      return
+    end if
+    if ( microphys_stats_all(1)%alloc_size <= 0 ) then
+      microphys_stats_avg%l_allocated = .false.
+      microphys_stats_avg%nz = 0
+      microphys_stats_avg%num_vars = 0
+      microphys_stats_avg%alloc_size = 0
+      return
+    end if
+    if ( num_vars > microphys_stats_all(1)%alloc_size ) then
+      num_vars = microphys_stats_all(1)%alloc_size
+    end if
+
+    if ( nz_stats == nz_weights ) then
+      nz = nz_stats
+      l_use_first_level_weights = .false.
+    else if ( nz_stats == 1 .and. nz_weights > 1 ) then
+      nz = 1
+      l_use_first_level_weights = .true.
+    else
+      microphys_stats_avg%l_allocated = .false.
+      microphys_stats_avg%nz = 0
+      microphys_stats_avg%num_vars = 0
+      microphys_stats_avg%alloc_size = 0
+      return
+    end if
+
+    do svar = 1, num_samples
+      if ( .not. microphys_stats_all(svar)%l_allocated ) then
+        microphys_stats_avg%l_allocated = .false.
+        microphys_stats_avg%nz = 0
+        microphys_stats_avg%num_vars = 0
+        microphys_stats_avg%alloc_size = 0
+        return
+      end if
+      if ( microphys_stats_all(svar)%nz /= nz ) then
+        microphys_stats_avg%l_allocated = .false.
+        microphys_stats_avg%nz = 0
+        microphys_stats_avg%num_vars = 0
+        microphys_stats_avg%alloc_size = 0
+        return
+      end if
+      if ( .not. allocated(microphys_stats_all(svar)%var_names) .or. &
+           .not. allocated(microphys_stats_all(svar)%output_values) ) then
+        microphys_stats_avg%l_allocated = .false.
+        microphys_stats_avg%nz = 0
+        microphys_stats_avg%num_vars = 0
+        microphys_stats_avg%alloc_size = 0
+        return
+      end if
+      if ( microphys_stats_all(svar)%alloc_size <= 0 ) then
+        microphys_stats_avg%l_allocated = .false.
+        microphys_stats_avg%nz = 0
+        microphys_stats_avg%num_vars = 0
+        microphys_stats_avg%alloc_size = 0
+        return
+      end if
+      if ( microphys_stats_all(svar)%num_vars < num_vars ) then
+        num_vars = microphys_stats_all(svar)%num_vars
+      end if
+      if ( microphys_stats_all(svar)%alloc_size < num_vars ) then
+        num_vars = microphys_stats_all(svar)%alloc_size
+      end if
+    end do
+
+    if ( num_vars <= 0 ) then
+      microphys_stats_avg%l_allocated = .false.
+      microphys_stats_avg%nz = 0
+      microphys_stats_avg%num_vars = 0
+      microphys_stats_avg%alloc_size = 0
+      return
+    end if
+
     call microphys_stats_alloc( nz, num_vars, microphys_stats_avg )
+    allocate( stats_var_all(num_samples, nz) )
+    allocate( stats_var_avg(nz) )
 
     do ivar=1, num_vars
 
-      stats_index = microphys_stats_all(1)%stats_indices(ivar)
+      if ( size(microphys_stats_all(1)%output_values, 1) /= nz ) then
+        microphys_stats_avg%l_allocated = .false.
+        microphys_stats_avg%nz = 0
+        microphys_stats_avg%num_vars = 0
+        microphys_stats_avg%alloc_size = 0
+        return
+      end if
 
       do svar=1, num_samples
         stats_var_all(svar,:) = microphys_stats_all(svar)%output_values(:,ivar)
       end do
 
-      stats_var_avg = compute_sample_mean( nz, num_samples, lh_sample_point_weights, stats_var_all )
+      if ( l_use_first_level_weights ) then
+        stats_var_avg = compute_sample_mean( nz, num_samples, lh_sample_point_weights(:,1:1), stats_var_all )
+      else
+        stats_var_avg = compute_sample_mean( nz, num_samples, lh_sample_point_weights, stats_var_all )
+      end if
 
-      call microphys_put_var( stats_index, stats_var_avg, microphys_stats_avg )
+      call microphys_put_var( microphys_stats_all(1)%var_names(ivar), &
+                              stats_var_avg, microphys_stats_avg )
 
     end do
 
@@ -472,8 +576,7 @@ module estimate_scm_microphys_module
 
   !-----------------------------------------------------------------------
   subroutine silhs_noninteractive_stats( microphys_stats_zt_avg, &
-                                         stats_metadata, &
-                                         stats_lh_zt )
+                                         stats, icol )
 
   ! Description:
   !   When SILHS is run in non-interactive mode in CLUBB standalone, this
@@ -484,21 +587,16 @@ module estimate_scm_microphys_module
   !   none
   !-----------------------------------------------------------------------
 
-    use microphys_stats_vars_module, only: &
-      microphys_stats_vars_type, &  ! Type
-      microphys_get_var ! Procedure
-
-    use stats_type_utilities, only: &
-      stat_update_var  ! Procedure
+    use stats_netcdf, only: &
+      stats_type, &
+      stats_update
 
     use parameters_microphys, only: &
       microphys_scheme    ! Variable
-
-    use stats_type, only: &
-      stats ! Type
-
-    use stats_variables, only: &
-      stats_metadata_type
+ 
+    use microphys_stats_vars_module, only: &
+      microphys_stats_vars_type, &  ! Type
+      microphys_get_var_by_name ! Procedure
 
     implicit none
 
@@ -506,57 +604,45 @@ module estimate_scm_microphys_module
     type(microphys_stats_vars_type), intent(in) :: &
       microphys_stats_zt_avg  ! Statistics structure from the microphysics scheme
 
-    type (stats_metadata_type), intent(in) :: &
-      stats_metadata
+    type(stats_type), intent(inout) :: &
+      stats
 
-    !--------------------------- InOut Variables ---------------------------
-    type(stats), intent(inout) :: &
-      stats_lh_zt
+    integer, intent(in) :: &
+      icol
 
     !--------------------------- Begin Code ---------------------------
+    if ( stats%l_sample ) then
+      ! These variables are output only from KK microphysics.
+      call stats_update( "lh_rrm_auto", &
+                        microphys_get_var_by_name( "rrm_auto", microphys_stats_zt_avg ), stats,         &
+                        icol)
 
-    ! Statistical sampling
-    if ( stats_metadata%l_stats_samp ) then
+      call stats_update( "lh_rrm_accr", &
+                        microphys_get_var_by_name( "rrm_accr", microphys_stats_zt_avg ), stats,         &
+                        icol)
 
-      if ( stats_metadata%ilh_rrm_auto > 0 ) then
-        call stat_update_var( stats_metadata%ilh_rrm_auto, microphys_get_var( &
-             stats_metadata%irrm_auto, microphys_stats_zt_avg ), stats_lh_zt )
-      end if
+      call stats_update( "lh_rrm_evap", &
+                        microphys_get_var_by_name( "rrm_evap", microphys_stats_zt_avg ), stats,         &
+                        icol)
 
-      if ( stats_metadata%ilh_rrm_accr > 0 ) then
-        call stat_update_var( stats_metadata%ilh_rrm_accr, microphys_get_var( &
-             stats_metadata%irrm_accr, microphys_stats_zt_avg ), stats_lh_zt )
-      end if
+      call stats_update( "lh_Nrm_auto", &
+                        microphys_get_var_by_name( "Nrm_auto", microphys_stats_zt_avg ), stats,         &
+                        icol)
 
-      if ( stats_metadata%ilh_rrm_evap > 0 ) then
-        call stat_update_var( stats_metadata%ilh_rrm_evap, microphys_get_var( &
-             stats_metadata%irrm_evap, microphys_stats_zt_avg ), stats_lh_zt )
-      end if
-
-      if ( stats_metadata%ilh_Nrm_auto > 0 ) then
-        call stat_update_var( stats_metadata%ilh_Nrm_auto, microphys_get_var( &
-             stats_metadata%iNrm_auto, microphys_stats_zt_avg ), stats_lh_zt )
-      end if
-
-      if ( stats_metadata%ilh_Nrm_evap > 0 ) then
-        call stat_update_var( stats_metadata%ilh_Nrm_evap, microphys_get_var( &
-             stats_metadata%iNrm_evap, microphys_stats_zt_avg ), stats_lh_zt )
-      end if
+      call stats_update( "lh_Nrm_evap", &
+                        microphys_get_var_by_name( "Nrm_evap", microphys_stats_zt_avg ), stats,         &
+                        icol)
 
       if ( trim( microphys_scheme ) == "khairoutdinov_kogan" ) then
-        ! These variables are output only from KK microphysics.
-        if ( stats_metadata%ilh_m_vol_rad_rain > 0 ) then
-          call stat_update_var( stats_metadata%ilh_m_vol_rad_rain, microphys_get_var( &
-               stats_metadata%im_vol_rad_rain, microphys_stats_zt_avg ), stats_lh_zt )
-        end if
+        call stats_update( "lh_m_vol_rad_rain", &
+                          microphys_get_var_by_name( "mvrr", microphys_stats_zt_avg ), stats,         &
+                          icol)
 
-        if ( stats_metadata%ilh_rrm_mc_nonadj > 0 ) then
-          call stat_update_var( stats_metadata%ilh_rrm_mc_nonadj, microphys_get_var( &
-               stats_metadata%irrm_mc_nonadj, microphys_stats_zt_avg ), stats_lh_zt )
-        end if
+        call stats_update( "lh_rrm_mc_nonadj", &
+                          microphys_get_var_by_name( "rrm_mc_nonadj", microphys_stats_zt_avg ), stats,         &
+                          icol)
       end if ! trim( microphys_scheme ) == "khairoutdinov_kogan"
-
-    end if ! stats_metadata%l_stats_samp
+    end if
 
     return
   end subroutine silhs_noninteractive_stats
@@ -566,8 +652,7 @@ module estimate_scm_microphys_module
   subroutine adjust_KK_src_means( dt, nzt, exner, rcm, rrm, Nrm, hydromet, &
                                   hydromet_dim, iiri,                      &
                                   microphys_stats_zt,                      &
-                                  stats_metadata,                          &
-                                  stats_lh_zt,                             &
+                                  stats, icol,                             &
                                   lh_Vrr, lh_VNr,                          &
                                   rrm_mc, Nrm_mc,                          &
                                   rvm_mc, rcm_mc, thlm_mc )
@@ -597,23 +682,15 @@ module estimate_scm_microphys_module
     use constants_clubb, only: &
         zero    ! Constant
 
-    use stats_type_utilities, only: &
-        stat_update_var ! Procedure
+    use stats_netcdf, only: &
+      stats_type, &
+      stats_update
 
     use microphys_stats_vars_module, only: &
         microphys_stats_vars_type, &     ! Type
-        microphys_get_var                ! Procedure
-
-    use stats_type, only: &
-        stats ! Type
-
-    use stats_variables, only: &
-        stats_metadata_type
+        microphys_get_var_by_name        ! Procedure
 
     implicit none
-
-    type(stats), intent(inout) :: &
-      stats_lh_zt
 
     ! Local Constants
     logical, parameter :: &
@@ -643,8 +720,11 @@ module estimate_scm_microphys_module
     type(microphys_stats_vars_type), intent(in) :: &
       microphys_stats_zt     ! Statistics variables        [units vary]
 
-    type (stats_metadata_type), intent(in) :: &
-      stats_metadata
+    type(stats_type), intent(inout) :: &
+      stats
+
+    integer, intent(in) :: &
+      icol
 
     !-------------------------- InOut Variables --------------------------
     real( kind = core_rknd ), dimension(nzt), intent(inout) :: &
@@ -681,12 +761,12 @@ module estimate_scm_microphys_module
     rcm_mc = zero
     thlm_mc = zero
 
-    rrm_auto = microphys_get_var( stats_metadata%irrm_auto, microphys_stats_zt )
-    rrm_accr = microphys_get_var( stats_metadata%irrm_accr, microphys_stats_zt )
-    rrm_evap = microphys_get_var( stats_metadata%irrm_evap, microphys_stats_zt )
+    rrm_auto = microphys_get_var_by_name( "rrm_auto", microphys_stats_zt )
+    rrm_accr = microphys_get_var_by_name( "rrm_accr", microphys_stats_zt )
+    rrm_evap = microphys_get_var_by_name( "rrm_evap", microphys_stats_zt )
 
-    Nrm_auto    = microphys_get_var( stats_metadata%iNrm_auto,    microphys_stats_zt )
-    Nrm_evap    = microphys_get_var( stats_metadata%iNrm_evap,    microphys_stats_zt )
+    Nrm_auto    = microphys_get_var_by_name( "Nrm_auto", microphys_stats_zt )
+    Nrm_evap    = microphys_get_var_by_name( "Nrm_evap", microphys_stats_zt )
 
     ! Loop over each vertical level above the lower boundary
     do k = 1, nzt, 1
@@ -732,25 +812,12 @@ module estimate_scm_microphys_module
     thlm_mc(nzt) = zero
 
     ! Statistical sampling
-    if ( stats_metadata%l_stats_samp ) then
-
-      if ( stats_metadata%ilh_rrm_src_adj > 0 ) then
-        call stat_update_var( stats_metadata%ilh_rrm_src_adj, adj_terms%rrm_src_adj, stats_lh_zt )
-      end if
-
-      if ( stats_metadata%ilh_Nrm_src_adj > 0 ) then
-        call stat_update_var( stats_metadata%ilh_Nrm_src_adj, adj_terms%Nrm_src_adj, stats_lh_zt )
-      end if
-
-      if ( stats_metadata%ilh_rrm_evap_adj > 0 ) then
-        call stat_update_var( stats_metadata%ilh_rrm_evap_adj, adj_terms%rrm_evap_adj, stats_lh_zt )
-      end if
-
-      if ( stats_metadata%ilh_Nrm_evap_adj > 0 ) then
-        call stat_update_var( stats_metadata%ilh_Nrm_evap_adj, adj_terms%Nrm_evap_adj, stats_lh_zt )
-      end if
-
-    end if ! stats_metadata%l_stats_samp
+    if ( stats%l_sample ) then
+      call stats_update( "lh_rrm_src_adj", adj_terms%rrm_src_adj, stats, icol )
+      call stats_update( "lh_Nrm_src_adj", adj_terms%Nrm_src_adj, stats, icol )
+      call stats_update( "lh_rrm_evap_adj", adj_terms%rrm_evap_adj, stats, icol )
+      call stats_update( "lh_Nrm_evap_adj", adj_terms%Nrm_evap_adj, stats, icol )
+    end if
 
   end subroutine adjust_KK_src_means
   !-----------------------------------------------------------------------

@@ -19,7 +19,7 @@ module input_grads
 !   * Added preprocesing for RECL
 ! Other modifications have been tracked via subversion.
 !-------------------------------------------------------------------------------
-#include "CLUBB_core/recl.inc"
+#include "recl.inc"
   use endian, only: & 
     little_endian, & ! Variable(s)
     big_endian, & 
@@ -59,8 +59,6 @@ module input_grads
     use model_flags, only: l_byteswap_io
 
     use stat_file_module, only: stat_file
-
-    use text_writer, only: write_text
 
     use constants_clubb, only: &
       sec_per_day, & ! Constant(s)

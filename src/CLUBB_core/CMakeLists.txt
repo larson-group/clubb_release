@@ -27,8 +27,6 @@ set( CLUBB_CORE_SOURCES
         grid_class.F90
         hydromet_pdf_parameter_module.F90
         index_mapping.F90
-        input_names.F90
-        input_reader.F90
         interpolation.F90
         lapack_interfaces.F90
         lapack_wrap.F90
@@ -44,10 +42,9 @@ set( CLUBB_CORE_SOURCES
         new_hybrid_pdf_main.F90
         new_pdf.F90
         new_pdf_main.F90
+        stats_netcdf.F90
         new_tsdadg_pdf.F90
         numerical_check.F90
-        output_grads.F90
-        output_netcdf.F90
         parameter_indices.F90
         parameters_tunable.F90
         pdf_closure_module.F90
@@ -63,18 +60,7 @@ set( CLUBB_CORE_SOURCES
         sigma_sqd_w_module.F90
         Skx_module.F90
         sponge_layer_damping.F90
-        stat_file_module.F90
         stats_clubb_utilities.F90
-        stats_lh_sfc_module.F90
-        stats_lh_zt_module.F90
-        stats_rad_zm_module.F90
-        stats_rad_zt_module.F90
-        stats_sfc_module.F90
-        stats_type.F90
-        stats_type_utilities.F90
-        stats_variables.F90
-        stats_zm_module.F90
-        stats_zt_module.F90
         T_in_K_module.F90
         tridiag_lu_solver.F90
         turbulent_adv_pdf.F90
@@ -87,7 +73,7 @@ add_library(clubb_core_lib ${CLUBB_CORE_SOURCES})
 target_link_libraries(clubb_core_lib PRIVATE lapack_lib)
 
 if(${USE_NetCDF})
-    target_link_libraries(clubb_core_lib PRIVATE netcdf-fortran)
+    target_link_libraries(clubb_core_lib PUBLIC netcdf-fortran)
 endif()
 
 if(${ENABLE_OMP})

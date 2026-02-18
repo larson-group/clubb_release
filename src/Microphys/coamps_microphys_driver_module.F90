@@ -20,8 +20,7 @@ module coamps_microphys_driver_module
            thlm, rim, rrm, rgm, rsm, & 
            rcm, Ncm, Nrm, Nim, &
            saturation_formula, &
-           stats_metadata, &
-           stats_zt, &
+           stats, icol,         &
            Nccnm, cond, &
            Vrs, Vri, Vrr, VNr, Vrg, & 
            ritend, rrtend, rgtend,  & 
@@ -57,10 +56,9 @@ module coamps_microphys_driver_module
 
     use grid_class, only: grid ! Type
 
-    use stats_type_utilities, only: stat_update_var_pt ! Procedure(s)
-
-    use stats_variables, only: &
-        stats_metadata_type
+    use stats_netcdf, only: &
+        stats_type, &
+        stats_update
 
     use error_code, only: &
         clubb_at_least_debug_level_api  ! Procedure
@@ -68,8 +66,6 @@ module coamps_microphys_driver_module
     use parameters_microphys, only: l_graupel, l_ice_microphys ! Variable(s)
 
     use T_in_K_module, only: thlm2T_in_K_api ! Procedure(s)
-
-    use stats_type, only: stats ! Type
 
     implicit none
 
@@ -195,11 +191,11 @@ module coamps_microphys_driver_module
     integer, intent(in) :: &
       saturation_formula ! Integer that stores the saturation formula to be used
 
-    type (stats_metadata_type), intent(in) :: &
-      stats_metadata
+    type(stats_type), intent(inout) :: &
+      stats
 
-    type(stats), intent(inout) :: &
-      stats_zt 
+    integer, intent(in) :: &
+      icol
 
     real(kind = core_rknd), dimension(gr%nzt), intent(inout) :: & 
       Nccnm         ! Number of cloud nuclei     [count/kg]
@@ -397,6 +393,7 @@ module coamps_microphys_driver_module
       fallg_in_cloud
 ! eMFc
 
+    ! Mean volume radius of cloud and rain droplets used by COAMPS microphysics.
     real, dimension(1,1,gr%nzt) :: & 
       rvc,      & ! Cloud droplet radius         [cm]
       rvr      ! Rain droplet radius          [cm]
@@ -909,41 +906,56 @@ module coamps_microphys_driver_module
           - real(thlm(k)) ) / deltf, kind = core_rknd)
       end do ! k=1..kk
 
-      if ( stats_metadata%l_stats_samp ) then
-        ! Mean volume radius of rain and cloud droplets
-        do k=1,kk
-          call stat_update_var_pt( stats_metadata%im_vol_rad_rain, k, &
-               real(rvr(1,1,k) / 100.0, kind = core_rknd), stats_zt )
-          call stat_update_var_pt( stats_metadata%im_vol_rad_cloud, k, &
-               real(rvc(1,1,k) / 100.0, kind = core_rknd), stats_zt )
-        end do
-
-
-! Addition by Adam Smith, 24 April 2008
-! Adding calculation for snow particle number concentration
-        do k = 1,kk,1
-          call stat_update_var_pt( stats_metadata%isnowslope, k, real(snowslope(1,1,k), &
-            kind = core_rknd), stats_zt)
-        end do
-
-! Addition by Adam Smith, 25 April 2008
-! Adding calculation for snow particle number concentration
-        do k=1, kk
-          call stat_update_var_pt( stats_metadata%iNsm, k, real(Nsm(k), kind = core_rknd) , &
-                                   stats_zt )
-        end do
-
+      if ( stats%l_sample ) then
+        call stats_update( "mvrr", real( rvr(1,1,1:kk) / 100.0, kind = core_rknd ), stats, icol )
+        call stats_update( "m_vol_rad_cloud", real( rvc(1,1,1:kk) / 100.0, kind = core_rknd ), stats, icol )
+        call stats_update( "snowslope", real( snowslope(1,1,1:kk), kind = core_rknd ), stats, icol )
+        call stats_update( "Nsm", real( Nsm(1:kk), kind = core_rknd ), stats, icol )
       end if
 
-
-
       return
+      
     end subroutine coamps_microphys_driver
 
 #else /* COAMPS_MICRO not defined */
-   subroutine coamps_microphys_driver( )
+   subroutine coamps_microphys_driver( gr, runtype, timea_in, deltf_in, &
+           rtm, wm_zm, p_in_Pa, exner, rho, &
+           thlm, rim, rrm, rgm, rsm, &
+           rcm, Ncm, Nrm, Nim, &
+           saturation_formula, &
+           stats, icol,         &
+           Nccnm, cond, &
+           Vrs, Vri, Vrr, VNr, Vrg, &
+           ritend, rrtend, rgtend, &
+           rstend, nrmtend, &
+           ncmtend, nimtend, &
+           rvm_mc, rcm_mc, thlm_mc )
+
+     use clubb_precision, only: time_precision, core_rknd
+     use grid_class, only: grid
+     use stats_netcdf, only: stats_type
 
      implicit none
+
+     type(grid), intent(in) :: gr
+     character(len=*), intent(in) :: runtype
+     real(kind=time_precision), intent(in) :: timea_in
+     real(kind=core_rknd), intent(in) :: deltf_in
+     integer, intent(in) :: saturation_formula
+     integer, intent(in) :: icol
+
+     real(kind=core_rknd), dimension(:), intent(in) :: &
+       rtm, wm_zm, p_in_Pa, exner, rho, thlm, rim, rrm, rgm, rsm, &
+       rcm, Ncm, Nrm, Nim
+
+     type(stats_type), intent(inout) :: stats
+
+     real(kind=core_rknd), dimension(:), intent(inout) :: Nccnm
+     real(kind=core_rknd), dimension(:,:,:), intent(inout) :: cond
+
+     real(kind=core_rknd), dimension(:), intent(out) :: &
+       Vrs, Vri, Vrr, VNr, Vrg, ritend, rrtend, rgtend, rstend, &
+       nrmtend, ncmtend, nimtend, rvm_mc, rcm_mc, thlm_mc
 
      error stop "Not compiled with COAMPS Microphysics"
 

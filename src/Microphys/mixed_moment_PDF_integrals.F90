@@ -26,9 +26,8 @@ module mixed_moment_PDF_integrals
                                         corr_array_1_n, corr_array_2_n, &
                                         pdf_params, hydromet_pdf_params, &
                                         precip_fracs, &
-                                        stats_metadata, &
-                                        stats_zt, stats_zm, &
-                                        rtphmp_zt, thlphmp_zt, wp2hmp ) 
+                                        rtphmp_zt, thlphmp_zt, wp2hmp, &
+                                        stats, icol )
 
     ! Description:
     ! Calculates <rt'hm'>, <thl'hm'>, and <w'^2 hm'>, for all hydrometeors, hm.
@@ -61,20 +60,15 @@ module mixed_moment_PDF_integrals
         calc_corr_rt_x,        &
         calc_corr_thl_x  
 
-    use stats_type_utilities, only: &
-        stat_update_var    ! Procedure(s)
-
     use clubb_precision, only: &
         core_rknd    ! Variable(s)
 
-    use stats_type, only: &
-        stats ! Type
-
-    use stats_variables, only: &
-        stats_metadata_type
-
     use corr_varnce_module, only: &
         hm_metadata_type
+    
+    use stats_netcdf, only: &
+        stats_type, &
+        stats_update
 
     implicit none
 
@@ -114,12 +108,11 @@ module mixed_moment_PDF_integrals
       precip_fracs           ! Precipitation fractions      [-]
 
     !------------------------ InOut Variables ------------------------
-    type (stats_metadata_type), intent(in) :: &
-      stats_metadata
-
-    type(stats), intent(inout) :: &
-      stats_zt, &
-      stats_zm 
+    type(stats_type), intent(inout) :: &
+      stats
+    
+    integer, intent(in) :: &
+      icol
 
     !------------------------ Output Variables ------------------------
     real( kind = core_rknd ), dimension(nzt,hydromet_dim), intent(out) :: &
@@ -200,6 +193,12 @@ module mixed_moment_PDF_integrals
       a_exp,   & ! Exponent on w' in < w'^a hm'^b >
       b_exp,   & ! Exponent on hm' in < w'^a hm'^b >
       k          ! Index of a vertical level
+    
+    character(len=64) :: &
+      hm_type, &
+      hmx_type, &
+      hmy_type, &
+      var_name
 
 
     ! Loop over all thermodynamic levels between the model lower and upper
@@ -391,37 +390,30 @@ module mixed_moment_PDF_integrals
 
     enddo ! k = 1, nzt, 1
 
-
     ! Statistics
-    if ( stats_metadata%l_stats_samp ) then
+    if ( stats%l_sample ) then
+      do hm_idx = 1, hydromet_dim, 1
+        hm_type = hm_metadata%hydromet_list(hm_idx)
 
-       do hm_idx = 1, hydromet_dim, 1
+        var_name = "wp2"//trim( hm_type(1:2) )//"p"
+        call stats_update( var_name, wp2hmp(:,hm_idx), stats, icol )
 
-          if ( stats_metadata%iwp2hmp(hm_idx) > 0 ) then
-             call stat_update_var( stats_metadata%iwp2hmp(hm_idx), wp2hmp(:,hm_idx), stats_zt )
-          endif ! stats_metadata%iwp2hmp(hm_idx) > 0
+        var_name = "rtp"//trim( hm_type(1:2) )//"p"
+        call stats_update( var_name, zt2zm_api( gr, rtphmp_zt(:,hm_idx) ), stats, icol )
 
-          if ( stats_metadata%irtphmp(hm_idx) > 0 ) then
-             call stat_update_var( stats_metadata%irtphmp(hm_idx), &
-                                   zt2zm_api( gr, rtphmp_zt(:,hm_idx) ), stats_zm )
-          endif ! stats_metadata%irtphmp(hm_idx) > 0
+        var_name = "thlp"//trim( hm_type(1:2) )//"p"
+        call stats_update( var_name, zt2zm_api( gr, thlphmp_zt(:,hm_idx) ), stats, icol )
+      end do
 
-          if ( stats_metadata%ithlphmp(hm_idx) > 0 ) then
-             call stat_update_var( stats_metadata%ithlphmp(hm_idx), &
-                                   zt2zm_api( gr, thlphmp_zt(:,hm_idx) ), stats_zm )
-          endif ! stats_metadata%ithlphmp(hm_idx) > 0
-
-          do hmy_idx = hm_idx+1, hydromet_dim, 1
-             if ( stats_metadata%ihmxphmyp(hmy_idx,hm_idx) > 0 ) then
-                call stat_update_var( stats_metadata%ihmxphmyp(hmy_idx,hm_idx), &
-                                      zt2zm_api( gr, hmxphmyp_zt(:,hmy_idx,hm_idx) ), &
-                                      stats_zm )
-             endif ! stats_metadata%ihmxphmyp(hmy_idx,hm_idx) > 0
-          enddo ! hmy_idx = hm_idx+1, hydromet_dim, 1
-
-       enddo ! hm_idx = 1, hydromet_dim, 1
-
-    endif ! stats_metadata%l_stats_samp
+      do hm_idx = 1, hydromet_dim, 1
+        hmx_type = hm_metadata%hydromet_list(hm_idx)
+        do hmy_idx = hm_idx+1, hydromet_dim, 1
+          hmy_type = hm_metadata%hydromet_list(hmy_idx)
+          var_name = trim( hmx_type(1:2) )//"p"//trim( hmy_type(1:2) )//"p"
+          call stats_update( var_name, zt2zm_api( gr, hmxphmyp_zt(:,hmy_idx,hm_idx) ), stats, icol )
+        end do
+      end do
+    end if
 
 
     return

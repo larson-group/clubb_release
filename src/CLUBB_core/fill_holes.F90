@@ -12,7 +12,7 @@ module fill_holes
             fill_holes_hydromet_api, &
             fill_holes_wv, &
             clip_hydromet_conc_mvr, &
-            setup_stats_indices
+            setup_stats_names
 
   private ! Set Default Scope
 
@@ -2222,8 +2222,8 @@ module fill_holes
                                     l_fill_holes_hm,                             & ! Intent(in)
                                     rho_ds_zt, exner,                            & ! Intent(in)
                                     fill_holes_type,                             & ! Intent(in)
-                                    stats_metadata,                              & ! Intent(in)
-                                    stats_zt,                                    & ! intent(inout)
+                                    stats,                                       & ! Intent(inout)
+                                    icol,                                        & ! Intent(in)
                                     thlm_mc, rvm_mc, hydromet )                    ! Intent(inout)
 
   ! Description:
@@ -2257,18 +2257,13 @@ module fill_holes
     use corr_varnce_module, only: &
         hm_metadata_type
 
-    use stats_type_utilities, only: &
-        stat_begin_update, & ! Subroutines
-        stat_end_update
-
-    use stats_variables, only: &
-        stats_metadata_type
-
     use error_code, only: &
         clubb_at_least_debug_level_api  ! Procedure
 
-    use stats_type, only: &
-      stats ! Type
+    use stats_netcdf, only: &
+      stats_type, &
+      stats_begin_budget, &
+      stats_finalize_budget
 
     implicit none
 
@@ -2294,12 +2289,11 @@ module fill_holes
       rho_ds_zt, & ! Dry, static density on thermo. levels    [kg/m^3]
       exner        ! Exner function                           [-]
 
-    type (stats_metadata_type), intent(in) :: &
-      stats_metadata
+    type(stats_type), intent(inout) :: &
+      stats
 
-    !----------------------- Input/Output Variables -----------------------
-    type (stats), intent(inout) :: &
-      stats_zt
+    integer, intent(in) :: &
+      icol
 
     real( kind = core_rknd ), dimension(nzt,hydromet_dim), intent(inout) :: &
       hydromet    ! Mean of hydrometeor fields    [units vary]
@@ -2320,32 +2314,24 @@ module fill_holes
     real( kind = core_rknd ) :: &
       max_velocity    ! Maximum sedimentation velocity                     [m/s]
 
-    integer :: ixrm_hf, ixrm_wvhf, ixrm_cl, &
-               ixrm_bt, ixrm_mc
-
     logical :: l_hole_fill = .true.
+
+    character(len=32) :: name_bt, name_hf, name_wvhf, name_cl, name_mc
 
     !----------------------- Begin Code -----------------------
 
     ! Start stats output for the _hf variables (changes in the hydromet array
     ! due to fill_holes_hydromet_api and fill_holes_vertical_api)
-    if ( stats_metadata%l_stats_samp ) then
-
+    if ( stats%l_sample ) then
        do i = 1, hydromet_dim
+          call setup_stats_names( i, hydromet_dim, hm_metadata%hydromet_list, & ! Intent(in)
+                                  max_velocity,                                 & ! Intent(inout)
+                                  name_bt, name_hf, name_wvhf,                 & ! Intent(out)
+                                  name_cl, name_mc )                             ! Intent(out)
 
-          ! Set up the stats indices for hydrometeor at index i
-          call setup_stats_indices( i, stats_metadata, hydromet_dim,  & ! Intent(in)
-                                    hm_metadata%hydromet_list,        & ! Intent(in)
-                                    ixrm_bt, ixrm_hf, ixrm_wvhf,      & ! Intent(inout)
-                                    ixrm_cl, ixrm_mc,                 & ! Intent(inout)
-                                    max_velocity )                      ! Intent(inout)
-
-          call stat_begin_update( gr%nzt, ixrm_hf, hydromet(:,i) / dt, & ! intent(in)
-                                  stats_zt ) ! intent(inout)
-
+          call stats_begin_budget( name_hf, hydromet(:,i) / dt, stats, icol )
        enddo ! i = 1, hydromet_dim
-
-    endif ! stats_metadata%l_stats_samp
+    end if
 
     ! If we're dealing with negative hydrometeors, we first try to fill the
     ! holes proportionally from other same-phase hydrometeors at each height
@@ -2365,12 +2351,11 @@ module fill_holes
 
     do i = 1, hydromet_dim
 
-      ! Set up the stats indices for hydrometeor at index i
-      call setup_stats_indices( i, stats_metadata, hydromet_dim,  & ! Intent(in)
-                                hm_metadata%hydromet_list,     & ! Intent(in)
-                                ixrm_bt, ixrm_hf, ixrm_wvhf,      & ! Intent(inout)
-                                ixrm_cl, ixrm_mc,                 & ! Intent(inout)
-                                max_velocity )                      ! Intent(inout)
+      ! Set up the stats budget/output names for hydrometeor i
+      call setup_stats_names( i, hydromet_dim, hm_metadata%hydromet_list, & ! Intent(in)
+                              max_velocity,                                 & ! Intent(inout)
+                              name_bt, name_hf, name_wvhf,                 & ! Intent(out)
+                              name_cl, name_mc )                             ! Intent(out)
 
       hydromet_name = hm_metadata%hydromet_list(i)
 
@@ -2390,13 +2375,6 @@ module fill_holes
       endif ! clubb_at_least_debug_level_api( 1 )
 
 
-      ! Store the previous value of the hydrometeor for the effect of the
-      ! hole-filling scheme.
-!      if ( stats_metadata%l_stats_samp ) then
-!         call stat_begin_update( ixrm_hf, hydromet(:,i) &
-!                                          / dt, stats_zt )
-!      endif
-
       ! If we're dealing with a mixing ratio and hole filling is enabled,
       ! then we apply the hole filling algorithm
       if ( any( hydromet(:,i) < zero_threshold ) ) then
@@ -2405,8 +2383,6 @@ module fill_holes
 
             !$acc data copyin( gr, gr%dzt, rho_ds_zt ) &
             !$acc        copy( hydromet(:,i) )
-
-            print *, "filling holes of: hydromet_r"
 
             ! Apply the hole filling algorithm
             ! upper_hf_level = nzt since we are filling the zt levels
@@ -2424,17 +2400,17 @@ module fill_holes
 
       ! Enter the new value of the hydrometeor for the effect of the
       ! hole-filling scheme.
-      if ( stats_metadata%l_stats_samp ) then
-         call stat_end_update( gr%nzt, ixrm_hf, hydromet(:,i) / dt, & ! intent(in)
-                               stats_zt ) ! intent(inout)
-      endif
+      if ( stats%l_sample ) then
+          call stats_finalize_budget( name_hf, hydromet(:,i) / dt, stats, icol )
+      end if
 
       ! Store the previous value of the hydrometeor for the effect of the water
       ! vapor hole-filling scheme.
-      if ( stats_metadata%l_stats_samp ) then
-         call stat_begin_update( gr%nzt, ixrm_wvhf, hydromet(:,i) / dt, & ! intent(in)
-                                 stats_zt ) ! intent(inout)
-      endif
+      ! Store the previous value of the hydrometeor for the effect of the
+      ! hole-filling scheme.
+      if ( stats%l_sample ) then
+          call stats_begin_budget( name_wvhf, hydromet(:,i) / dt, stats, icol )
+      end if
 
       if ( any( hydromet(:,i) < zero_threshold ) ) then
 
@@ -2453,20 +2429,18 @@ module fill_holes
 
       ! Enter the new value of the hydrometeor for the effect of the water vapor
       ! hole-filling scheme.
-      if ( stats_metadata%l_stats_samp ) then
-         call stat_end_update( gr%nzt, ixrm_wvhf, hydromet(:,i) / dt, & ! intent(in)
-                               stats_zt ) ! intent(inout)
-      endif
+      if ( stats%l_sample ) then
+          call stats_finalize_budget( name_wvhf, hydromet(:,i) / dt, stats, icol )
+      end if
 
       ! Clipping for hydrometeor mixing ratios.
       if ( hm_metadata%l_mix_rat_hm(i) ) then
 
          ! Store the previous value of the hydrometeor for the effect of
          ! clipping.
-         if ( stats_metadata%l_stats_samp ) then
-            call stat_begin_update( gr%nzt, ixrm_cl, hydromet(:,i) / dt, & ! intent(in)
-                                    stats_zt ) ! intent(inout)
-         endif
+         if ( stats%l_sample ) then
+             call stats_begin_budget( name_cl, hydromet(:,i) / dt, stats, icol )
+         end if
 
          if ( any( hydromet(:,i) < zero_threshold ) ) then
 
@@ -2514,10 +2488,9 @@ module fill_holes
 
 
          ! Enter the new value of the hydrometeor for the effect of clipping.
-         if ( stats_metadata%l_stats_samp ) then
-            call stat_end_update( gr%nzt, ixrm_cl, hydromet(:,i) / dt, & ! intent(in)
-                                  stats_zt ) ! intent(inout)
-         endif
+         if ( stats%l_sample ) then
+             call stats_finalize_budget( name_cl, hydromet(:,i) / dt, stats, icol )
+         end if
 
       endif ! l_mix_rat_hm(i)
 
@@ -2533,30 +2506,22 @@ module fill_holes
 
        if ( .not. hm_metadata%l_mix_rat_hm(i) ) then
 
-          if ( stats_metadata%l_stats_samp ) then
+          call setup_stats_names( i, hydromet_dim, hm_metadata%hydromet_list, & ! Intent(in)
+                                  max_velocity,                                 & ! Intent(inout)
+                                  name_bt, name_hf, name_wvhf,                 & ! Intent(out)
+                                  name_cl, name_mc )                             ! Intent(out)
 
-             ! Set up the stats indices for hydrometeor at index i
-             call setup_stats_indices( i, stats_metadata, hydromet_dim,   & ! Intent(in)
-                                       hm_metadata%hydromet_list,      & ! Intent(in)
-                                       ixrm_bt, ixrm_hf, ixrm_wvhf,       & ! In/Out
-                                       ixrm_cl, ixrm_mc,                  & ! In/Out
-                                       max_velocity )                       ! In/Out
-
-             ! Store the previous value of the hydrometeor for the effect of
-             ! clipping.
-             call stat_begin_update( gr%nzt, ixrm_cl, hydromet(:,i) / dt, & ! intent(in)
-                                     stats_zt ) ! intent(inout)
-
-          endif ! stats_metadata%l_stats_samp
+          if ( stats%l_sample ) then
+              call stats_begin_budget( name_cl, hydromet(:,i) / dt, stats, icol )
+          end if
 
           ! Apply clipping of hydrometeor concentrations.
           hydromet(:,i) = hydromet_clipped(:,i)
 
           ! Enter the new value of the hydrometeor for the effect of clipping.
-          if ( stats_metadata%l_stats_samp ) then
-             call stat_end_update( gr%nzt, ixrm_cl, hydromet(:,i) / dt, & ! intent(in)
-                                   stats_zt ) ! intent(inout)
-          endif
+          if ( stats%l_sample ) then
+              call stats_finalize_budget( name_cl, hydromet(:,i) / dt, stats, icol )
+          end if
 
        endif ! .not. l_mix_rat_hm(i)
 
@@ -2716,23 +2681,17 @@ module fill_holes
   end subroutine clip_hydromet_conc_mvr
 
   !-----------------------------------------------------------------------
-  subroutine setup_stats_indices( ihm, stats_metadata, hydromet_dim,  & ! Intent(in)
-                                  hydromet_list,                      & ! Intent(in)
-                                  ixrm_bt, ixrm_hf, ixrm_wvhf,        & ! Intent(inout)
-                                  ixrm_cl, ixrm_mc,                   & ! Intent(inout)
-                                  max_velocity )                        ! Intent(inout)
+  subroutine setup_stats_names( ihm, hydromet_dim, hydromet_list,     & ! Intent(in)
+                                max_velocity,                          & ! Intent(inout)
+                                name_bt, name_hf, name_wvhf,          & ! Intent(out), optional
+                                name_cl, name_mc )                      ! Intent(out), optional
 
-  ! Description:
-  !
-  ! Determines the stats output indices depending on the hydrometeor.
-
-  ! Attention: hydromet_list needs to be set up before this routine is called.
-  !
-  ! Bogus example
-  ! References:
-  !
-  ! None
-  !-----------------------------------------------------------------------
+    ! Description:
+    !
+    ! Determines the stats output names depending on the hydrometeor.
+    ! Attention: hydromet_list needs to be set up before this routine is called.
+    !
+    ! Bogus example
 
     use clubb_precision, only: &
         core_rknd
@@ -2740,146 +2699,111 @@ module fill_holes
     use constants_clubb, only: &
         zero
 
-    use stats_variables, only: & 
-        stats_metadata_type
-
     implicit none
 
-    ! Input Variables
     integer, intent(in) :: ihm, hydromet_dim
 
-    type (stats_metadata_type), intent(in) :: &
-      stats_metadata
-    
-    character(len=10), dimension(hydromet_dim), intent(in) :: & 
+    character(len=10), dimension(hydromet_dim), intent(in) :: &
       hydromet_list
 
-    ! Input/Output Variables
     real( kind = core_rknd ), intent(inout) :: &
       max_velocity ! Maximum sedimentation velocity [m/s]
 
-    integer, intent(inout) :: ixrm_hf, ixrm_wvhf, ixrm_cl, &
-                              ixrm_bt, ixrm_mc
+    character(len=*), intent(out), optional :: &
+      name_bt, name_hf, name_wvhf, name_cl, name_mc
 
-  !-----------------------------------------------------------------------
-
-    !----- Begin Code -----
+    character(len=32) :: &
+      name_bt_local, name_hf_local, name_wvhf_local, name_cl_local, name_mc_local
 
     ! Initializing max_velocity in order to avoid a compiler warning.
     ! Regardless of the case, it will be reset in the 'select case'
     ! statement immediately below.
     max_velocity = zero
+    name_bt_local = ""
+    name_hf_local = ""
+    name_wvhf_local = ""
+    name_cl_local = ""
+    name_mc_local = ""
 
     select case ( trim( hydromet_list(ihm) ) )
       case ( "rrm" )
-        ixrm_bt   = stats_metadata%irrm_bt
-        ixrm_hf   = stats_metadata%irrm_hf
-        ixrm_wvhf = stats_metadata%irrm_wvhf
-        ixrm_cl   = stats_metadata%irrm_cl
-        ixrm_mc   = stats_metadata%irrm_mc
-
-        max_velocity = -9.1_core_rknd ! m/s
-
+        name_bt_local = "rrm_bt"
+        name_hf_local = "rrm_hf"
+        name_wvhf_local = "rrm_wvhf"
+        name_cl_local = "rrm_cl"
+        name_mc_local = "rrm_mc"
+        max_velocity = -9.1_core_rknd
       case ( "rim" )
-        ixrm_bt   = stats_metadata%irim_bt
-        ixrm_hf   = stats_metadata%irim_hf
-        ixrm_wvhf = stats_metadata%irim_wvhf
-        ixrm_cl   = stats_metadata%irim_cl
-        ixrm_mc   = stats_metadata%irim_mc
-
-        max_velocity = -1.2_core_rknd ! m/s
-
+        name_bt_local = "rim_bt"
+        name_hf_local = "rim_hf"
+        name_wvhf_local = "rim_wvhf"
+        name_cl_local = "rim_cl"
+        name_mc_local = "rim_mc"
+        ! Morrison limit
+!         max_velocity = -1.2_core_rknd ! m/s
+        ! Made up limit.  The literature suggests that it is quite possible
+        ! that snow flake might achieve a terminal velocity of 2 m/s, and this
+        ! happens in the COAMPS microphysics -dschanen 29 Sept 2009
+        max_velocity = -1.2_core_rknd
       case ( "rsm" )
-        ixrm_bt   = stats_metadata%irsm_bt
-        ixrm_hf   = stats_metadata%irsm_hf
-        ixrm_wvhf = stats_metadata%irsm_wvhf
-        ixrm_cl   = stats_metadata%irsm_cl
-        ixrm_mc   = stats_metadata%irsm_mc
-
-        ! Morrison limit
-!         max_velocity = -1.2_core_rknd ! m/s
-        ! Made up limit.  The literature suggests that it is quite possible
-        ! that snow flake might achieve a terminal velocity of 2 m/s, and this
-        ! happens in the COAMPS microphysics -dschanen 29 Sept 2009
-        max_velocity = -2.0_core_rknd ! m/s
-
+        name_bt_local = "rsm_bt"
+        name_hf_local = "rsm_hf"
+        name_wvhf_local = "rsm_wvhf"
+        name_cl_local = "rsm_cl"
+        name_mc_local = "rsm_mc"
+        max_velocity = -2.0_core_rknd
       case ( "rgm" )
-        ixrm_bt   = stats_metadata%irgm_bt
-        ixrm_hf   = stats_metadata%irgm_hf
-        ixrm_wvhf = stats_metadata%irgm_wvhf
-        ixrm_cl   = stats_metadata%irgm_cl
-        ixrm_mc   = stats_metadata%irgm_mc
-
-        max_velocity = -20._core_rknd ! m/s
-
+        name_bt_local = "rgm_bt"
+        name_hf_local = "rgm_hf"
+        name_wvhf_local = "rgm_wvhf"
+        name_cl_local = "rgm_cl"
+        name_mc_local = "rgm_mc"
+        max_velocity = -20._core_rknd
       case ( "Nrm" )
-        ixrm_bt   = stats_metadata%iNrm_bt
-        ixrm_hf   = 0
-        ixrm_wvhf = 0
-        ixrm_cl   = stats_metadata%iNrm_cl
-        ixrm_mc   = stats_metadata%iNrm_mc
-
-        max_velocity = -9.1_core_rknd ! m/s
-
+        name_bt_local = "Nrm_bt"
+        name_cl_local = "Nrm_cl"
+        name_mc_local = "Nrm_mc"
+        max_velocity = -9.1_core_rknd
       case ( "Nim" )
-        ixrm_bt   = stats_metadata%iNim_bt
-        ixrm_hf   = 0
-        ixrm_wvhf = 0
-        ixrm_cl   = stats_metadata%iNim_cl
-        ixrm_mc   = stats_metadata%iNim_mc
-
-        max_velocity = -1.2_core_rknd ! m/s
-
-      case ( "Nsm" )
-        ixrm_bt   = stats_metadata%iNsm_bt
-        ixrm_hf   = 0
-        ixrm_wvhf = 0
-        ixrm_cl   = stats_metadata%iNsm_cl
-        ixrm_mc   = stats_metadata%iNsm_mc
-
+        name_bt_local = "Nim_bt"
+        name_cl_local = "Nim_cl"
+        name_mc_local = "Nim_mc"
         ! Morrison limit
 !         max_velocity = -1.2_core_rknd ! m/s
         ! Made up limit.  The literature suggests that it is quite possible
         ! that snow flake might achieve a terminal velocity of 2 m/s, and this
         ! happens in the COAMPS microphysics -dschanen 29 Sept 2009
-        max_velocity = -2.0_core_rknd ! m/s
-
+        max_velocity = -1.2_core_rknd
+      case ( "Nsm" )
+        name_bt_local = "Nsm_bt"
+        name_cl_local = "Nsm_cl"
+        name_mc_local = "Nsm_mc"
+        max_velocity = -2.0_core_rknd
       case ( "Ngm" )
-        ixrm_bt   = stats_metadata%iNgm_bt
-        ixrm_hf   = 0
-        ixrm_wvhf = 0
-        ixrm_cl   = stats_metadata%iNgm_cl
-        ixrm_mc   = stats_metadata%iNgm_mc
-
-        max_velocity = -20._core_rknd ! m/s
-
+        name_bt_local = "Ngm_bt"
+        name_cl_local = "Ngm_cl"
+        name_mc_local = "Ngm_mc"
+        max_velocity = -20._core_rknd
       case ( "Ncm" )
-        ixrm_bt   = stats_metadata%iNcm_bt
-        ixrm_hf   = 0
-        ixrm_wvhf = 0
-        ixrm_cl   = stats_metadata%iNcm_cl
-        ixrm_mc   = stats_metadata%iNcm_mc
-
+        name_bt_local = "Ncm_bt"
+        name_cl_local = "Ncm_cl"
+        name_mc_local = "Ncm_mc"
         ! Use the rain water limit, since Morrison has no explicit limit on
         ! cloud water.  Presumably these numbers are never large.
         ! -dschanen 28 Sept 2009
-        max_velocity = -9.1_core_rknd ! m/s
-
+        max_velocity = -9.1_core_rknd
       case default
-        ixrm_bt   = 0
-        ixrm_hf   = 0
-        ixrm_wvhf = 0
-        ixrm_cl   = 0
-        ixrm_mc   = 0
-
-        max_velocity = -9.1_core_rknd ! m/s
-
+        max_velocity = zero
     end select
 
+    if ( present(name_bt) )   name_bt = name_bt_local
+    if ( present(name_hf) )   name_hf = name_hf_local
+    if ( present(name_wvhf) ) name_wvhf = name_wvhf_local
+    if ( present(name_cl) )   name_cl = name_cl_local
+    if ( present(name_mc) )   name_mc = name_mc_local
 
     return
 
-  end subroutine setup_stats_indices
-  !-----------------------------------------------------------------------
+  end subroutine setup_stats_names
 
 end module fill_holes

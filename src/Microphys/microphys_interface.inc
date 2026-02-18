@@ -12,7 +12,7 @@ interface
                             exner, rho, cloud_frac, w_std_dev, &
                             dzq, rcm, Nc, chi, rvm, hydromet, &
                             saturation_formula, &
-                            stats_metadata, &
+                            stats, icol,         &
                             hydromet_mc, hydromet_vel, Ncm_mc, &
                             rcm_mc, rvm_mc, thlm_mc, &
                             microphys_stats_zt, microphys_stats_sfc )
@@ -21,8 +21,8 @@ interface
 
     use grid_class, only: grid ! Type
 
-    use stats_variables, only: &
-      stats_metadata_type
+    use stats_netcdf, only: &
+      stats_type
 
     use corr_varnce_module, only: &
         hm_metadata_type
@@ -69,9 +69,12 @@ interface
 
     integer, intent(in) :: &
       saturation_formula ! Integer that stores the saturation formula to be used
-      
-    type (stats_metadata_type), intent(in) :: &
-      stats_metadata
+
+    type(stats_type), intent(inout) :: &
+      stats
+
+    integer, intent(in) :: &
+      icol
 
     ! Output Variables
 

@@ -73,7 +73,7 @@ module input_netcdf
     ! Local Variables
     integer :: i, ierr, itmp, varid, xtype
 
-    integer :: xdim, ydim, ndims
+    integer :: xdim, ydim, cdim, ndims
     
     real( kind = time_precision ) :: hours, minutes, seconds, multiplier, delta_d
 
@@ -118,7 +118,7 @@ module input_netcdf
     ierr = nf90_inquire_variable( ncid=ncf%iounit, varid=varid, xtype=xtype, &
                                   ndims=ndims, dimIds=dimIds )
 
-    if ( ierr /= NF90_NOERR .or. ndims /= 4 .or. &
+    if ( ierr /= NF90_NOERR .or. ( ndims /= 3 .and. ndims /= 4 ) .or. &
                             .not. (xtype == NF90_DOUBLE .or. xtype == NF90_FLOAT) ) then
             write(fstderr,*) "input_netcdf.open_netcdf_read : The netCDF data doesn't "// &
             "conform to expected precision, shape, or dimensions"
@@ -129,6 +129,7 @@ module input_netcdf
 
     xdim = -1
     ydim = -1
+    cdim = -1
     ncf%iz = -1
     ncf%ntimes = -1
 
@@ -143,7 +144,7 @@ module input_netcdf
       end if
 
       select case ( trim( dim_name ) )
-      case ( "Z", "z", "altitude", "height", "lev" )
+      case ( "Z", "z", "zt", "zm", "altitude", "height", "lev", "lh_zt", "rad_zt", "rad_zm" )
         ncf%ia = 1
         ncf%iz = itmp
         ncf%AltDimId = dimIds(i)
@@ -158,6 +159,8 @@ module input_netcdf
         ncf%ntimes = itmp
         ncf%TimeDimId = dimIds(i)
         time_name = dim_name
+      case ( "col", "column" )
+        cdim = itmp
       case default
         l_error = .true.
         return
@@ -165,9 +168,21 @@ module input_netcdf
 
     end do
 
-    if ( ydim /= 1 .or. xdim /= 1 ) then
+    if ( ncf%iz < 1 .or. ncf%ntimes < 1 ) then
+      l_error = .true.
+      return
+    end if
+
+    if ( cdim < 0 ) then
+      if ( ydim /= 1 .or. xdim /= 1 ) then
+        write(fstderr,*) "input_netcdf.open_netcdf_read : The netCDF data doesn't "// &
+          "conform to the expected X or Y dimension"
+        l_error = .true.
+        return
+      end if
+    else if ( cdim < 1 ) then
       write(fstderr,*) "input_netcdf.open_netcdf_read : The netCDF data doesn't "// &
-        "conform to the expected X or Y dimension"
+        "conform to the expected col dimension"
       l_error = .true.
       return
     end if
@@ -351,11 +366,13 @@ module input_netcdf
       nf90_get_var, &
       nf90_get_att, &
       nf90_inquire_variable, &
+      nf90_inquire_dimension, &
       nf90_strerror
 
     use netcdf, only: &
       NF90_NOERR, & ! Constant(s)
       NF90_MAX_VAR_DIMS, &
+      NF90_MAX_NAME, &
       NF90_DOUBLE, &
       NF90_FLOAT
 
@@ -392,15 +409,18 @@ module input_netcdf
     ! Local Variables
 
     integer :: varid, ierr, xtype, ndims
+    integer :: i, dim_len
+    integer :: xdim, ydim, cdim
+    integer :: idx_x, idx_y, idx_z, idx_t, idx_col
 
     ! Local Variables
     integer, dimension(NF90_MAX_VAR_DIMS) :: dimIds
+    integer, dimension(NF90_MAX_VAR_DIMS) :: start, count
+
+    character(len=NF90_MAX_NAME) :: dim_name
 
     character(len=10) :: &
       units ! The units on the variable
-
-    real( kind = core_rknd ), dimension(:,:,:,:), allocatable :: & 
-      x4 ! The variable from the file
 
 
     ! ---- Begin Code ----
@@ -420,36 +440,93 @@ module input_netcdf
     ierr = nf90_inquire_variable( ncid=ncf%iounit, varid=varid, xtype=xtype, &
                                   ndims=ndims, dimIds=dimIds )
 
-    if ( ierr /= NF90_NOERR .or. ndims /= 4 .or. &
+    if ( ierr /= NF90_NOERR .or. ( ndims /= 3 .and. ndims /= 4 ) .or. &
                             .not. (xtype == NF90_DOUBLE .or. xtype == NF90_FLOAT) ) then
             write(fstderr,*) "input_netcdf.get_var : The netCDF data doesn't "// &
             "conform to expected precision, shape, or dimensions"
       l_error = .true.
       return
 
-    else
+    end if
 
-      if ( itime > ncf%ntimes ) then
-        write(fstderr,*) "input_netcdf.get_var: The time specified exceeds the netCDF data"
+    if ( itime > ncf%ntimes ) then
+      write(fstderr,*) "input_netcdf.get_var: The time specified exceeds the netCDF data"
+      l_error = .true.
+      return
+    end if
+
+    if ( size( x ) < ncf%iz ) then
+      write(fstderr,*) "input_netcdf.get_var: Output array is too small for vertical levels"
+      l_error = .true.
+      return
+    end if
+
+    idx_x = -1
+    idx_y = -1
+    idx_z = -1
+    idx_t = -1
+    idx_col = -1
+    xdim = -1
+    ydim = -1
+    cdim = -1
+
+    do i = 1, ndims
+      ierr = nf90_inquire_dimension( ncid=ncf%iounit, dimId=dimIds(i), name=dim_name, len=dim_len )
+      if ( ierr /= NF90_NOERR ) then
+        write(fstderr,*) nf90_strerror( ierr )
         l_error = .true.
         return
       end if
 
-      allocate( x4(1,1,ncf%iz,1) )
+      select case ( trim( dim_name ) )
+      case ( "Z", "z", "zt", "zm", "altitude", "height", "lev", "lh_zt", "rad_zt", "rad_zm" )
+        idx_z = i
+      case ( "T", "t", "time" )
+        idx_t = i
+      case ( "X", "x", "longitude", "lon" )
+        idx_x = i
+        xdim = dim_len
+      case ( "Y", "y", "latitude", "lat" )
+        idx_y = i
+        ydim = dim_len
+      case ( "col", "column" )
+        idx_col = i
+        cdim = dim_len
+      case default
+        l_error = .true.
+        return
+      end select
+    end do
 
+    if ( idx_z < 0 .or. idx_t < 0 ) then
+      l_error = .true.
+      return
     end if
 
+    if ( idx_col < 0 ) then
+      if ( idx_x < 0 .or. idx_y < 0 .or. xdim /= 1 .or. ydim /= 1 ) then
+        l_error = .true.
+        return
+      end if
+    else if ( cdim < 1 ) then
+      l_error = .true.
+      return
+    end if
+
+    start(1:ndims) = 1
+    count(1:ndims) = 1
+    start(idx_t) = itime
+    count(idx_z) = ncf%iz
+
     ! Obtain a vertical column at time itime
-    ierr = nf90_get_var( ncid=ncf%iounit, varid=varid, values=x4, &
-      start=(/1,1,1,itime/), count=(/1,1,ncf%iz,1/) )
+    ierr = nf90_get_var( ncid=ncf%iounit, varid=varid, values=x(1:ncf%iz), &
+                         start=start(1:ndims), count=count(1:ndims) )
 
     if ( ierr /= NF90_NOERR ) then
       write(fstderr,*) nf90_strerror( ierr )
       l_error = .true.
       return
     end if
-
-    x = real( x4(1,1,:,1), kind = core_rknd )
 
     if ( l_convert_to_MKS ) then
 

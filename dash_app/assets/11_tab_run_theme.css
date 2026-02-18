@@ -1,0 +1,235 @@
+#app-root.theme-dark .run-tab-layout {
+  color: #e5e7eb;
+}
+
+#app-root.theme-light .run-tab-layout {
+  color: #0f172a;
+}
+
+.run-tab-layout {
+  align-items: stretch;
+}
+
+.run-pane-divider {
+  width: 8px;
+  box-sizing: border-box;
+  min-height: 100%;
+  align-self: stretch;
+  cursor: col-resize;
+  border-radius: 8px;
+  pointer-events: auto;
+  position: relative;
+  z-index: 5;
+}
+
+#app-root.theme-dark .run-pane-divider {
+  background: #1e293b;
+  border-left: 1px solid #334155;
+  border-right: 1px solid #334155;
+}
+
+#app-root.theme-light .run-pane-divider {
+  background: #cbd5e1;
+  border-left: 1px solid #94a3b8;
+  border-right: 1px solid #94a3b8;
+}
+
+.run-param-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 6px 12px;
+}
+
+.run-settings-heading {
+  display: block;
+  width: 80%;
+  text-align: center;
+  padding: 6px 8px;
+  border-radius: 6px;
+  border: 1px solid;
+  margin: 10px auto 8px auto;
+}
+
+#app-root.theme-dark .run-settings-heading {
+  background: #1e293b;
+  border-color: #334155;
+  color: #e2e8f0;
+}
+
+#app-root.theme-light .run-settings-heading {
+  background: #e2e8f0;
+  border-color: #cbd5e1;
+  color: #0f172a;
+}
+
+.run-param-container {
+  min-width: 0;
+  width: 100%;
+}
+
+.run-flag-container {
+  justify-content: flex-start;
+}
+
+.run-flag-checklist label {
+  margin: 0;
+}
+
+.run-flag-checklist input[type="checkbox"] {
+  margin-right: 6px;
+}
+
+body.run-ui-dragging,
+body.run-ui-dragging * {
+  user-select: none !important;
+  cursor: col-resize !important;
+}
+
+#app-root.theme-dark .run-section-title {
+  color: #cbd5e1;
+}
+
+#app-root.theme-light .run-section-title {
+  color: #334155;
+}
+
+#app-root.theme-dark .run-empty-message,
+#app-root.theme-dark .run-muted-text {
+  color: #94a3b8 !important;
+}
+
+#app-root.theme-light .run-empty-message,
+#app-root.theme-light .run-muted-text {
+  color: #475569 !important;
+}
+
+#app-root.theme-dark .run-progress-track {
+  background-color: #334155 !important;
+}
+
+#app-root.theme-light .run-progress-track {
+  background-color: #e2e8f0 !important;
+}
+
+#app-root.theme-dark .run-console-panel {
+  border: 1px solid #334155 !important;
+  background-color: #0f172a !important;
+}
+
+#app-root.theme-light .run-console-panel {
+  border: 1px solid #e2e8f0 !important;
+  background-color: #f8fafc !important;
+}
+
+#app-root.theme-dark .run-console-summary {
+  color: #e5e7eb;
+}
+
+#app-root.theme-light .run-console-summary {
+  color: #0f172a;
+}
+
+#app-root.theme-dark .run-console {
+  background-color: #020617 !important;
+  color: #e2e8f0 !important;
+  border: 1px solid #334155;
+}
+
+#app-root.theme-light .run-console {
+  background-color: #0f172a !important;
+  color: #e2e8f0 !important;
+  border: 1px solid #334155;
+}
+
+#app-root.theme-dark .run-right-pane input,
+#app-root.theme-dark .run-right-pane textarea,
+#app-root.theme-dark .run-right-pane select {
+  background-color: #0b1220 !important;
+  color: #e2e8f0 !important;
+  border: 1px solid #334155 !important;
+}
+
+#app-root.theme-light .run-right-pane input,
+#app-root.theme-light .run-right-pane textarea,
+#app-root.theme-light .run-right-pane select {
+  background-color: #ffffff !important;
+  color: #0f172a !important;
+  border: 1px solid #cbd5e1 !important;
+}
+
+#app-root.theme-dark .run-right-pane label,
+#app-root.theme-dark .run-right-pane h4,
+#app-root.theme-dark .run-right-pane div,
+#app-root.theme-dark .run-left-pane div {
+  color: inherit;
+}
+
+/* Run selected stays green in both themes */
+#app-root .run-button-run-selected {
+  background-color: #16a34a !important;
+  color: #ffffff !important;
+}
+
+/* Select group buttons use selection highlight color in dark mode only */
+#app-root.theme-dark .run-select-group-button {
+  background-color: #f59e0b !important;
+  color: #111827 !important;
+  border: none !important;
+}
+
+.run-command-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 8px;
+  margin-bottom: 6px;
+}
+
+.run-command-text {
+  flex: 1 1 auto;
+  min-width: 0;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+  font-size: 12px;
+  border: 1px solid;
+  border-radius: 6px;
+  padding: 6px 8px;
+  overflow-x: auto;
+  white-space: nowrap;
+}
+
+.run-copy-command-button {
+  flex: 0 0 auto;
+  border: 1px solid;
+  border-radius: 6px;
+  padding: 6px;
+  cursor: pointer;
+}
+
+.run-copy-command-label {
+  flex: 0 0 auto;
+  font-size: 12px;
+}
+
+#app-root.theme-dark .run-command-text {
+  background-color: #020617;
+  border-color: #334155;
+  color: #e2e8f0;
+}
+
+#app-root.theme-light .run-command-text {
+  background-color: #ffffff;
+  border-color: #cbd5e1;
+  color: #0f172a;
+}
+
+#app-root.theme-dark .run-copy-command-button {
+  background-color: #0b1220;
+  border-color: #334155;
+  color: #e2e8f0;
+}
+
+#app-root.theme-light .run-copy-command-button {
+  background-color: #ffffff;
+  border-color: #cbd5e1;
+  color: #0f172a;
+}

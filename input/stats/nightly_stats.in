@@ -1,24 +1,79 @@
-&statsnl
-vars_zt =
-'thlm', 'rtm', 'cloud_frac', 'rcm', 'wp3', 'thlp3', 'rtp3', 'Skw_zt',
-'Skrt_zt', 'Skthl_zt', 'wp2rtp', 'wp2thlp', 'wprtp2', 'wpthlp2', 'wprtpthlp',
-'wp2thvp', 'wp2up', 'wp2rcp', 'rc_coef',
-'um', 'vm', 'wm_zt', 'rrm', 'Nrm', 'rrm_evap', 'rrm_accr', 'rrm_auto',
-'Ncm', 'Nc_in_cloud', 'rgm', 'rim', 'Nim',
-'rsm', 'Nsm','Lscale', 'radht',
-'corr_w_chi_1', 'corr_w_chi_2', 'corr_w_hm_i', 'corr_w_Ncn_i',
-'corr_chi_eta_1', 'corr_chi_eta_2', 'corr_chi_hm_i', 'corr_chi_Ncn_i',
-'corr_hmx_hmy_i', 'precip_frac', 'ice_supersat_frac',
-''
-
-vars_zm =
-'wp2', 'rtp2', 'thlp2', 'rtpthlp', 'wprtp', 'wpthlp', 'tau_zm',
-'upwp', 'vpwp', 'up2', 'vp2', 'rcp2', 'wp4', 'wpthvp', 'wprcp', 'rc_coef_zm',
-'thlpthvp', 'thlprcp', 'rtpthvp', 'rtprcp', 'wphydrometp', 'bv_freq_sqd',
-''
-
-vars_sfc =
-'wp2_vert_avg', 'lwp', 'swp', 'iwp', 'rwp',
-'precip_rate_sfc',
-''
+&clubb_stats_nl
+  ! entry(i) format: "name | grid | units | long_name"
+  ! grid options: zt, zm, sfc, lh_zt, lh_sfc, rad_zt, rad_zm
+  entry(1) = "thlm              | zt  | K                 | Liquid water potential temperature (theta_l)"
+  entry(2) = "rtm               | zt  | kg/kg             | Total (vapor+liquid) water mixing ratio"
+  entry(3) = "cloud_frac        | zt  | -                 | Cloud fraction (between 0 and 1)"
+  entry(4) = "rcm               | zt  | kg/kg             | Cloud water mixing ratio"
+  entry(5) = "wp3               | zt  | m^3/s^3           | Third-order moment of vertical air velocity"
+  entry(6) = "thlp3             | zt  | K^3               | Third-order moment of theta_l"
+  entry(7) = "rtp3              | zt  | (kg/kg)^3         | Third-order moment of total water, rt"
+  entry(8) = "Skw_zt            | zt  | -                 | Skewness of w on thermodynamic levels"
+  entry(9) = "Skrt_zt           | zt  | -                 | Skewness of rt on thermodynamic levels"
+  entry(10) = "Skthl_zt          | zt  | -                 | Skewness of thl on thermodynamic levels"
+  entry(11) = "wp2rtp            | zt  | (m^2 kg)/(s^2 kg) | Vertical turbulent flux of w'rt'"
+  entry(12) = "wp2thlp           | zt  | (m^2 K)/s^2       | Vertical turbulent flux of w'theta_l'"
+  entry(13) = "wprtp2            | zt  | (m kg)/(s kg)     | Vertical turbulent flux of rt'^2"
+  entry(14) = "wpthlp2           | zt  | (m K^2)/s         | Vertical turbulent flux of theta_l'^2"
+  entry(15) = "wprtpthlp         | zt  | (m kg K)/(s kg)   | Vertical turbulent flux of rt'theta_l'"
+  entry(16) = "wp2thvp           | zt  | K m^2/s^2         | Vertical turbulent flux of w'theta_v'"
+  entry(17) = "wp2up             | zt  | m^3/s^3           | Vertical turbulent flux of w'u'"
+  entry(18) = "wp2rcp            | zt  | (m^2 kg)/(s^2 kg) | w'^2rc'"
+  entry(19) = "rc_coef           | zt  | K/(kg/kg)         | Coefficient of X'r_c'"
+  entry(20) = "um                | zt  | m/s               | Grid-mean eastward (u) wind"
+  entry(21) = "vm                | zt  | m/s               | Grid-mean northward (v) wind"
+  entry(22) = "wm_zt             | zt  | m/s               | Grid-mean upward (w) wind"
+  entry(23) = "rrm               | zt  | kg/kg             | Rain water mixing ratio"
+  entry(24) = "Nrm               | zt  | num/kg            | Rain drop number concentration"
+  entry(25) = "rrm_evap          | zt  | kg kg^{-1} s^{-1} | rrm evaporation rate"
+  entry(26) = "rrm_accr          | zt  | kg kg^{-1} s^{-1} | rrm accretion rate"
+  entry(27) = "rrm_auto          | zt  | kg kg^{-1} s^{-1} | rrm autoconversion rate"
+  entry(28) = "Ncm               | zt  | num/kg            | Cloud droplet number concentration"
+  entry(29) = "Nc_in_cloud       | zt  | num/kg            | In cloud droplet concentration"
+  entry(30) = "rgm               | zt  | kg/kg             | Graupel water mixing ratio"
+  entry(31) = "rim               | zt  | kg/kg             | Pristine ice water mixing ratio"
+  entry(32) = "Nim               | zt  | num/kg            | Ice crystal number concentration"
+  entry(33) = "rsm               | zt  | kg/kg             | Snow water mixing ratio"
+  entry(34) = "Nsm               | zt  | num/kg            | Snow particle number concentration"
+  entry(35) = "Lscale            | zt  | m                 | Turbulent mixing length"
+  entry(36) = "radht             | zt  | K/s               | Total (sw+lw) radiative heating rate"
+  entry(37) = "corr_w_chi_1      | zt  | -                 | Correlation of w and chi (s) (1st PDF component)"
+  entry(38) = "corr_w_chi_2      | zt  | -                 | Correlation of w and chi (s) (2nd PDF component)"
+  entry(39) = "corr_w_hm_i       | zt  | [-]               | Correlation (in-precip) of w and <hm> (PDF component 1/2) [-]"
+  entry(40) = "corr_w_Ncn_i      | zt  | [-]               | Correlation of w and N_cn (PDF component 1/2) [-]"
+  entry(41) = "corr_chi_eta_1    | zt  | -                 | Correlation of chi (s) and eta (t) (1st PDF component)"
+  entry(42) = "corr_chi_eta_2    | zt  | -                 | Correlation of chi (s) and eta (t) (2nd PDF component)"
+  entry(43) = "corr_chi_hm_i     | zt  | [-]               | Correlation (in-precip) of chi (s) and <hm> (PDF component 1/2) [-]"
+  entry(44) = "corr_chi_Ncn_i    | zt  | [-]               | Correlation of chi and N_cn (PDF component 1/2) [-]"
+  entry(45) = "corr_hmx_hmy_i    | zt  | [-]               | Correlation (in-precip) of <hmx> and <hmy> (PDF component 1/2) [-]"
+  entry(46) = "precip_frac       | zt  | -                 | Precipitation Fraction"
+  entry(47) = "ice_supersat_frac | zt  | count             | Ice cloud fraction (between 0 and 1)"
+  entry(48) = "wp2               | zm  | m^2/s^2           | Variance of vertical air velocity"
+  entry(49) = "rtp2              | zm  | (kg/kg)^2         | Variance of total water, rt"
+  entry(50) = "thlp2             | zm  | K^2               | Variance of theta_l"
+  entry(51) = "rtpthlp           | zm  | (kg K)/kg         | Covariance of rt and theta_l"
+  entry(52) = "wprtp             | zm  | (m kg)/(s kg)     | Vertical turbulent flux of total water, rt"
+  entry(53) = "wpthlp            | zm  | (m K)/s           | Vertical turbulent flux of theta_l"
+  entry(54) = "tau_zm            | zm  | s                 | Time-scale tau on momentum levels"
+  entry(55) = "upwp              | zm  | m^2/s^2           | Vertical turbulent flux of eastward (u) wind"
+  entry(56) = "vpwp              | zm  | m^2/s^2           | Vertical turbulent flux of northward (v) wind"
+  entry(57) = "up2               | zm  | m^2/s^2           | Variance of eastward (u) wind"
+  entry(58) = "vp2               | zm  | m^2/s^2           | Variance of northward (v) wind"
+  entry(59) = "rcp2              | zm  | (kg^2)/(kg^2)     | Variance of cloud water mixing ratio"
+  entry(60) = "wp4               | zm  | (m^4)/(s^4)       | Fourth-order moment of vertical air velocity"
+  entry(61) = "wpthvp            | zm  | K m/s             | Buoyancy flux"
+  entry(62) = "wprcp             | zm  | (m/s) (kg/kg)     | w'rc'"
+  entry(63) = "rc_coef_zm        | zm  | K/(kg/kg)         | Coefficient of X'r_c'"
+  entry(64) = "thlpthvp          | zm  | K^2               | Covariance of theta_l and theta_v"
+  entry(65) = "thlprcp           | zm  | K (kg/kg)         | thl'rc'"
+  entry(66) = "rtpthvp           | zm  | (kg/kg) K         | Covariance of rt and theta_v"
+  entry(67) = "rtprcp            | zm  | (kg^2)/(kg^2)     | rt'rc'"
+  entry(68) = "wphydrometp       | zm  | [-]               | Covariance of w and <hm>"
+  entry(69) = "bv_freq_sqd       | zm  | 1/s^2             | Brunt-Vaisala frequency squared"
+  entry(70) = "wp2_vert_avg      | sfc | m^2/s^2           | Density-weighted vertical average of w'^2"
+  entry(71) = "lwp               | sfc | kg/m2             | Liquid water path"
+  entry(72) = "swp               | sfc | kg/m2             | Snow water path"
+  entry(73) = "iwp               | sfc | kg/m2             | Ice water path"
+  entry(74) = "rwp               | sfc | kg/m2             | Rain water path"
+  entry(75) = "precip_rate_sfc   | sfc | mm/day            | Surface rainfall rate"
 /

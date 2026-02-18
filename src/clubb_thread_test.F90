@@ -20,13 +20,6 @@ program clubb_thread_test
         clubb_no_error,              & ! Constant
         clubb_fatal_error
 
-  use parameter_indices, only: nparams ! Variable(s)
-
-  use parameters_tunable, only: &
-      init_clubb_params_api ! Procedure(s)
-
-  use clubb_precision, only: core_rknd ! Variable(s)
-
   use constants_clubb, only: fstderr ! Constant(s)
 
   use err_info_type_module, only: &
@@ -34,10 +27,6 @@ program clubb_thread_test
     cleanup_err_info_api              ! Procedure(s)
 
   implicit none
-
-#ifdef _OPENMP
-  integer :: omp_get_thread_num
-#endif
 
   ! Constant Parameters
 
@@ -50,19 +39,14 @@ program clubb_thread_test
     namelist_filename = (/"clubb_1.in", "clubb_2.in", "clubb_3.in", "clubb_4.in" /)
 
   logical, parameter :: &
-    l_stdout = .false., &
-    l_output_multi_col = .false., &
-    l_output_double_prec = .false.
+    l_stdout = .false.
   
+  ! Run information.
   ! Local Variables
-  ! Run information
-  real( kind = core_rknd ), dimension(1,nparams) :: & 
-    clubb_params  ! Array of the model constants
-
   ! Internal variables
   integer, dimension(ncases) :: err_code_saves
 
-  integer :: iter, iunit
+  integer :: iter
 
   type(err_info_type) :: &
     err_info        ! err_info struct containing err_code and err_header
@@ -79,23 +63,12 @@ program clubb_thread_test
   err_code_saves = clubb_no_error
 
   ! Run the model in parallel
-!$omp parallel do default(shared), private(iter, clubb_params, iunit, err_info), &
+!$omp parallel do default(shared), private(iter, err_info), &
 !$omp   shared(err_code_saves)
   do iter = 1, ncases
-    
-#ifdef _OPENMP
-    iunit = omp_get_thread_num() + 10
-#else
-    iunit = 10
-#endif
 
-    ! Read in model parameter values
-    call init_clubb_params_api( 1, iunit, namelist_filename(iter), &
-                                clubb_params )
-
-    ! Run the model
-    call run_clubb( 1, 1, l_output_multi_col, l_output_double_prec, &
-                    clubb_params, namelist_filename(iter), l_stdout, err_info )
+    ! Read in model parameter values and run the model.
+    call run_clubb( namelist_filename(iter), l_stdout, err_info )
 
     ! Save err_code value
     err_code_saves(iter) = err_info%err_code(1)

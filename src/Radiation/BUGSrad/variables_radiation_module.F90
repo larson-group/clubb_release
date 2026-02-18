@@ -28,14 +28,14 @@ module variables_radiation_module
 
 !$omp threadprivate(radht_LW, radht_SW, Frad_SW, Frad_LW)
 
-  real(kind = dp), public, dimension(:,:), allocatable :: &
+  real( kind = dp ), public, dimension(:,:), allocatable :: &
     T_in_K,   & ! Temperature        [K]
     rcil,     & ! Ice mixing ratio   [kg/kg]
     o3l         ! Ozone mixing ratio [kg/kg]
 
 !$omp threadprivate(T_in_K, rcil, o3l)
 
-  real(kind = dp), public, dimension(:,:), allocatable :: &
+  real( kind = dp ), public, dimension(:,:), allocatable :: &
     rsm_2d,& ! Two-dimensional copies of the input parameters
     rcm_in_cloud_2d, &
     cloud_frac_2d, &
@@ -44,19 +44,19 @@ module variables_radiation_module
 !$omp threadprivate(rsm_2d, rcm_in_cloud_2d, cloud_frac_2d, &
 !$omp   ice_supersat_frac_2d)
 
-  real(kind = dp), public, dimension(:,:), allocatable :: &
+  real( kind = dp ), public, dimension(:,:), allocatable :: &
     radht_SW_2d, & ! SW Radiative heating rate  [W/m^2]
     radht_LW_2d    ! LW Radiative heating rate  [W/m^2]
 
 !$omp threadprivate(radht_SW_2d, radht_LW_2d)
 
-  real(kind = dp), public, dimension(:,:), allocatable :: &
+  real( kind = dp ), public, dimension(:,:), allocatable :: &
     p_in_mb, &   ! Pressure in millibars        [mb]
     sp_humidity  ! Specific humidity            [kg/kg]
 
 !$omp threadprivate(p_in_mb, sp_humidity)
 
-  real(kind = dp), public, dimension(:,:), allocatable :: &
+  real( kind = dp ), public, dimension(:,:), allocatable :: &
     Frad_uLW, & ! LW upwelling flux         [W/m^2]
     Frad_dLW, & ! LW downwelling flux       [W/m^2]
     Frad_uSW, & ! SW upwelling flux         [W/m^2]
@@ -64,7 +64,7 @@ module variables_radiation_module
 
 !$omp threadprivate(Frad_uLW, Frad_dLW, Frad_uSW, Frad_dSW)
 
-  real(kind = dp), public, dimension(:,:), allocatable :: &
+  real( kind = dp ), public, dimension(:,:), allocatable :: &
      fdswcl, &  !Downward clear-sky SW flux                 (W/m^-2).
      fuswcl, &  !Upward clear-sky SW flux                   (W/m^-2).
      fdlwcl, &  !Downward clear-sky LW flux                 (W/m^-2).

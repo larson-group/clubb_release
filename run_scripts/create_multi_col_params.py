@@ -126,17 +126,11 @@ if __name__ == "__main__":
     parser.add_argument( "-param_file", type=str, help="Path to the CLUBB parameters file",
                          default = str(tunable_parameters_default_path) )
 
-    parser.add_argument( "-l_multi_col_output", type=str, help="Set precision or disable l_output_multi_col (no/single/double)",
-                         default = "double" )
-
-    parser.add_argument( "-out_file", type=str, help="Enable or disable l_output_multi_col (True/False)",
+    parser.add_argument( "-out_file", type=str, help="Output namelist file",
                          default = "clubb_params_multi_col.in" )
 
-    parser.add_argument( "-mode", type=str, help="Enable or disable l_output_multi_col (True/False)",
+    parser.add_argument( "-mode", type=str, help="Parameter generation mode",
                          default = "dup_tweak" )
-
-    parser.add_argument( "-calls_per_out", type=int, help="Number of timesteps between multi_col output call",
-                         default = 1 )
 
     parser.add_argument( "-mirror", type=str, help="mirror param lists",
                          default = "false" )
@@ -153,10 +147,8 @@ if __name__ == "__main__":
     # Assign parsed arguments to variables
     ngrdcol                 = args.n
     clubb_params_file       = args.param_file
-    l_multi_col_output      = args.l_multi_col_output
     output_file_name        = args.out_file
     param_creation_mode     = args.mode
-    calls_per_out           = args.calls_per_out
     mirror                  = args.mirror == "true"
 
     if ngrdcol < 1:
@@ -217,23 +209,6 @@ if __name__ == "__main__":
 
         file.write(f"ngrdcol = {ngrdcol}\n")
         print(f" - ngrdcol = {ngrdcol}")
-
-        if l_multi_col_output == "double":
-            file.write(f"l_output_multi_col = .true.\n")
-            file.write(f"l_output_double_prec = .true.\n")
-            print(f" - l_output_multi_col = .true.")
-            print(f" - l_output_double_prec = .true.")
-        elif l_multi_col_output == "single":
-            file.write(f"l_output_multi_col = .true.\n")
-            file.write(f"l_output_double_prec = .false.\n")
-            print(f" - l_output_multi_col = .true.")
-            print(f" - l_output_double_prec = .false.")
-        else:
-            file.write(f"l_output_multi_col = .false.\n")
-            print(f" - l_output_multi_col = .false.")
-
-        file.write(f"calls_per_out = {calls_per_out}\n")
-        print(f" - calls_per_out = {calls_per_out}")
         file.write(f"/\n")
 
         file.write(f"&clubb_params_nl\n")

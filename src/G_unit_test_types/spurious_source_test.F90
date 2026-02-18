@@ -95,11 +95,8 @@ module spurious_source_test
     use model_flags, only: &
         set_default_clubb_config_flags_api ! Procedure(s)
 
-    use stats_type, only: &
-        stats ! Type
-
-    use stats_variables, only: &
-        stats_metadata_type
+    use stats_netcdf, only: &
+        stats_type
 
     use err_info_type_module, only: &
       err_info_type,                & ! Type
@@ -113,10 +110,8 @@ module spurious_source_test
       spurious_source_unit_test    ! Pass/fail output for spurious source test
 
     ! Local Variables
-    type(stats), dimension(1) :: &
-      stats_zt, &
-      stats_zm, &
-      stats_sfc
+    type(stats_type) :: &
+      stats
 
     type (grid), target :: gr
 
@@ -278,9 +273,6 @@ module spurious_source_test
 
     real( kind = core_rknd ), dimension(1,nzm) :: &
       stability_correction  ! Stability correction factor
-
-    type (stats_metadata_type) :: &
-      stats_metadata
 
     ! Input/Output Variables
     real( kind = core_rknd ), dimension(1,nzt,sclr_dim) :: &
@@ -969,14 +961,18 @@ module spurious_source_test
        rtm_integral_before &
        = vertical_integral( gr%nzt, rho_ds_zt, rtm, gr%dzt )
 
-       thlm_integral_before &
-       = vertical_integral( gr%nzt, rho_ds_zt, thlm, gr%dzt )
+      thlm_integral_before &
+      = vertical_integral( gr%nzt, rho_ds_zt, thlm, gr%dzt )
 
-       call advance_xm_wpxp( nzm, nzt, 1, sclr_dim, sclr_tol, gr, dt, &
-                             sigma_sqd_w, wm_zm, wm_zt, wp2, Lscale, &
-                             wp3_on_wp2, wp3_on_wp2_zt, Kh_zt, Kh_zm, &
-                             stability_correction, &
-                             invrs_tau_C6_zm, tau_max_zm, Skw_zm, wp2rtp, rtpthvp, &
+      stats%enabled = .false.
+      stats%l_sample = .false.
+      stats%l_last_sample = .false.
+
+      call advance_xm_wpxp( nzm, nzt, 1, sclr_dim, sclr_tol, gr, dt, &
+                            sigma_sqd_w, wm_zm, wm_zt, wp2, Lscale, &
+                            wp3_on_wp2, wp3_on_wp2_zt, Kh_zt, Kh_zm, &
+                            stability_correction, &
+                            invrs_tau_C6_zm, tau_max_zm, Skw_zm, wp2rtp, rtpthvp, &
                              rtm_forcing, wprtp_forcing, rtm_ref, wp2thlp, &
                              thlpthvp, thlm_forcing, wpthlp_forcing, thlm_ref, &
                              rho_ds_zm, rho_ds_zt, invrs_rho_ds_zm, &
@@ -1013,8 +1009,7 @@ module spurious_source_test
                              l_mono_flux_lim_vm, &
                              l_mono_flux_lim_spikefix, &
                              order_xm_wpxp, order_xp2_xpyp, order_wp2_wp3, &
-                             stats_metadata, &
-                             stats_zt, stats_zm, stats_sfc, &
+                             stats,         &
                              rtm, wprtp, thlm, wpthlp, &
                              sclrm, wpsclrp, um, upwp, vm, vpwp, &
                              um_pert, vm_pert, upwp_pert, vpwp_pert, err_info_dummy )

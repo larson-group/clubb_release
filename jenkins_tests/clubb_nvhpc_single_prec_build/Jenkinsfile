@@ -1,23 +1,16 @@
 pipeline {
   agent any
   stages {
-    stage('Edit Compiler Config') {
-      steps {
-        sh '''sed -i "s:DCLUBB_REAL_TYPE=8:DCLUBB_REAL_TYPE=4:g" compile/config/linux_x86_64_nvhpc.bash'''
-      }
-    }
     stage('Compile') {
       steps {
         sh '''source /etc/profile.d/larson-group.sh
               module load nvhpc netcdf-fortran
-              compile/compile.bash -c config/linux_x86_64_nvhpc.bash'''
+              ./compile.py -precision single'''
       }
     }
     stage('Run') {
       steps {
-        sh '''source /etc/profile.d/larson-group.sh
-              module load nvhpc netcdf-fortran
-              run_scripts/run_scm_all.bash'''
+        sh '''run_scripts/run_scm_all.py'''
       }
     }
   }

@@ -1134,8 +1134,7 @@ module mixing_length
                                     clubb_params, &
                                     saturation_formula, &
                                     l_Lscale_plume_centered, &
-                                    stats_metadata, &
-                                    stats_zt, err_info, &
+                                    stats, err_info,         &
                                     Lscale, Lscale_up, Lscale_down)
 
     use constants_clubb, only: &
@@ -1157,14 +1156,12 @@ module mixing_length
     use clubb_precision, only: &
         core_rknd
 
-    use stats_variables, only: &
-        stats_metadata_type
-
     use pdf_parameter_module, only: &
         pdf_parameter
 
-    use stats_type_utilities, only:   &
-        stat_update_var
+    use stats_netcdf, only: &
+        stats_type, &
+        stats_update
 
     use error_code, only: &
         clubb_at_least_debug_level_api,  & ! Procedure
@@ -1172,9 +1169,6 @@ module mixing_length
 
     use constants_clubb, only:  &
         fstderr  ! Variable(s)
-
-    use stats_type, only: &
-        stats ! Type
 
     use err_info_type_module, only: &
       err_info_type     ! Type
@@ -1227,12 +1221,8 @@ module mixing_length
     logical, intent(in) :: &
       l_Lscale_plume_centered    ! Alternate that uses the PDF to compute the perturbed values
 
-    type (stats_metadata_type), intent(in) :: &
-      stats_metadata
-
-    !--------------------------------- InOut Variables ---------------------------------
-    type (stats), dimension(ngrdcol), intent(inout) :: &
-      stats_zt
+    type(stats_type), intent(inout) :: &
+      stats
 
     type(err_info_type), intent(inout) :: &
       err_info      ! err_info struct containing err_code and err_header
@@ -1463,15 +1453,11 @@ module mixing_length
 
     end if ! l_avg_Lscale
 
-    if ( stats_metadata%l_stats_samp ) then
+    if ( stats%l_sample ) then
       !$acc update host( Lscale_pert_1, Lscale_pert_2 )
-      do i = 1, ngrdcol
-        call stat_update_var( stats_metadata%iLscale_pert_1, Lscale_pert_1(i,:), & ! intent(in)
-                              stats_zt(i) )                       ! intent(inout)
-        call stat_update_var( stats_metadata%iLscale_pert_2, Lscale_pert_2(i,:), & ! intent(in)
-                              stats_zt(i) )                       ! intent(inout)
-      end do
-    end if ! stats_metadata%l_stats_samp
+      call stats_update( "Lscale_pert_1", Lscale_pert_1, stats )
+      call stats_update( "Lscale_pert_2", Lscale_pert_2, stats )
+    end if
 
 
     ! ********** NOTE: **********
@@ -1538,11 +1524,11 @@ module mixing_length
                         ufmin, tau_const, & ! intent in
                         sfc_elevation, Lscale_max, & ! intent in
                         clubb_params, & ! intent in
-                        stats_metadata, & ! intent in
+                        stats,         & ! intent in
                         l_e3sm_config, & ! intent in
                         l_smooth_Heaviside_tau_wpxp, & ! intent in
                         brunt_vaisala_freq_sqd_smth, Ri_zm, & ! intent in
-                        stats_zm, err_info, & ! intent inout
+                        err_info, & ! intent inout
                         invrs_tau_zt, invrs_tau_zm, & ! intent out
                         invrs_tau_sfc, invrs_tau_no_N2_zm, invrs_tau_bkgnd, & ! intent out
                         invrs_tau_shear, invrs_tau_N2_iso, & ! intent out
@@ -1561,8 +1547,9 @@ module mixing_length
         smooth_heaviside_peskin, &
         smooth_min, smooth_max
 
-    use stats_type_utilities, only:   &
-        stat_update_var ! Procedure
+    use stats_netcdf, only: &
+        stats_type, &
+        stats_update
 
     use constants_clubb, only: &
         one_fourth,         &
@@ -1608,11 +1595,6 @@ module mixing_length
       clubb_fatal_error, &
       clubb_at_least_debug_level_api
 
-    use stats_variables, only: &
-      stats_metadata_type
-
-    use stats_type, only: stats ! Type
-
     use err_info_type_module, only: &
       err_info_type     ! Type
 
@@ -1652,8 +1634,8 @@ module mixing_length
     real( kind = core_rknd ), dimension(ngrdcol,nparams), intent(in) :: &
       clubb_params    ! Array of CLUBB's tunable parameters    [units vary]
  
-    type (stats_metadata_type), intent(in) :: &
-      stats_metadata
+    type(stats_type), intent(inout) :: &
+      stats
 
     logical, intent(in) :: &
       l_e3sm_config,              &
@@ -1661,9 +1643,6 @@ module mixing_length
                                     ! to compute invrs_tau_wpxp_zm
 
     !--------------------------- Input/Output Variables ---------------------------
-    type (stats), intent(inout), dimension(ngrdcol) :: &
-      stats_zm
-
     type(err_info_type), intent(inout) :: &
       err_info      ! err_info struct containing err_code and err_header
 
@@ -1915,17 +1894,10 @@ module mixing_length
     !$acc end parallel loop
 
     ! Write both bv extra terms to invrs_taus to disk
-    if ( stats_metadata%l_stats_samp ) then
-
+    if ( stats%l_sample ) then
       !$acc update host( brunt_freq_pos, brunt_freq_out_cloud )
-
-      do i = 1, ngrdcol
-        call stat_update_var(stats_metadata%ibrunt_freq_pos, brunt_freq_pos(i,:), & ! intent(in)
-                             stats_zm(i))                                           ! intent(inout)
-        call stat_update_var(stats_metadata%ibrunt_freq_out_cloud, &                ! intent(in)
-                             brunt_freq_out_cloud(i,:), &                           ! intent(in)
-                             stats_zm(i))                                           ! intent(inout)
-      end do
+      call stats_update( "bv_freq_pos", brunt_freq_pos, stats )
+      call stats_update( "bv_freq_out_cloud", brunt_freq_out_cloud, stats )
     end if
 
     ! This time scale is used optionally for the return-to-isotropy term. It

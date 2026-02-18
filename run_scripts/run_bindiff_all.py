@@ -7,6 +7,9 @@ import os
 import subprocess
 import numpy as np
 import tabulate
+import multiprocessing as mp
+import io
+import contextlib
 
 DEBUG = False
 
@@ -21,7 +24,20 @@ filePostFix = "_diff{}.log"
 field_threshold = 1.0e-7
 
 # NetCDF file postfixes we want to diff
-nc_data_formats = ["_zm.nc", "_zt.nc", "_sfc.nc", "_multi_col_zm.nc", "_multi_col_zt.nc"]
+nc_data_formats = [
+    "_stats.nc",
+    "_zm.nc",
+    "_zt.nc",
+    "_sfc.nc",
+    "_lh_zt.nc",
+    "_lh_sfc.nc",
+    "_nl_lh_sample_points_2D.nc",
+    "_u_lh_sample_points_2D.nc",
+    "_rad_zt.nc",
+    "_rad_zm.nc",
+    "_multi_col_zm.nc",
+    "_multi_col_zt.nc",
+]
 
 # File containing all the case names
 case_file = "RUN_CASES"
@@ -47,6 +63,7 @@ def main():
                         "1: Default. Add summarized results for each file.\n"+
                         "2: Add tables with detailed numerical differences in common variables for each file.")
     parser.add_argument("-t", "--threshold", dest="threshold", type=float, action="store", help="(float) Define the maximum absolute difference for an individual variable to be treated as different.")
+    parser.add_argument("-s", "--scale", action="store_true", help="Scale absolute differences by the average field value, using the same approach as check_multi_col_error.py.")
     parser.add_argument("-g", "--ghostbuster", action="store_true", help="Perform a comparison that omits the 'ghost' level in '_zt.nc' output files.")
     parser.add_argument("dirs", nargs=2, help="Need 2 clubb output directories containing netCDF files with the same name to diff. Usage: python run_bindiff_all.py dir_path1 dir_path2")
     args = parser.parse_args()
@@ -71,12 +88,14 @@ def main():
 
     # Define difference detection threshold
     if ( args.threshold is not None ):
-        tot_abs_diff_thresh = args.threshold
+        abs_error_threshold = args.threshold
     else:
-        tot_abs_diff_thresh = 0.0
+        abs_error_threshold = 0.0
 
     if args.verbose>=1:
-        print( "Using reporting threshold: ", tot_abs_diff_thresh, "\n" )
+        print( "Using reporting threshold: ", abs_error_threshold, "\n" )
+        if args.scale:
+            print("Absolute differences will be scaled by average field value.\n")
 
     # Create folder in CLUBB output folder
     if args.fileout:
@@ -85,7 +104,7 @@ def main():
         if not os.path.exists(outFilePath):
             os.makedirs(outFilePath)
 
-    linux_diff, diff_in_files, file_skipped = find_diffs_in_all_files(args.dirs[0], args.dirs[1], args.fileout, args.verbose, tot_abs_diff_thresh, args.ghostbuster)
+    linux_diff, diff_in_files, file_skipped = find_diffs_in_all_files(args.dirs[0], args.dirs[1], args.fileout, args.verbose, abs_error_threshold, args.ghostbuster, args.scale)
 
     if DEBUG:
         print(linux_diff, diff_in_files, file_skipped)
@@ -197,7 +216,7 @@ def get_cases(dir1, dir2, verbose):
 
     return cases
 
-def find_diffs_in_all_files(dir1, dir2, save_to_file, verbose, thresh, l_ghostbuster):
+def find_diffs_in_all_files(dir1, dir2, save_to_file, verbose, thresh, l_ghostbuster, l_scale):
     # For each case with existing netCDF files in the diff folders:
     # 1. Create an output file if those are requested
     # 2. Loop through the netCDF files and call `find_diffs_in_common_vars` on each pair
@@ -217,14 +236,50 @@ def find_diffs_in_all_files(dir1, dir2, save_to_file, verbose, thresh, l_ghostbu
     linux_diff = False
     file_skipped = False
 
-    # This for loop runs through all the cases you have the files to check,
-    # and each netcdf format. It runs the linux diff on the binary netcdf files
-    # to see which files should be looked at more closely
-    for case in cases:
-        if verbose>=1:
+    case_order = list(cases.keys())
+
+    # Determine worker count (nproc - 2, but at least 1 and no more than number of cases)
+    cpu_total = os.cpu_count() or 1
+    nproc = max(1, cpu_total - 2)
+    nproc = min(nproc, max(1, len(case_order)))
+
+    args_list = [
+        (case, cases[case], dir1, dir2, save_to_file, verbose, thresh, l_ghostbuster, l_scale)
+        for case in case_order
+    ]
+
+    if nproc > 1:
+        try:
+            with mp.Pool(processes=nproc) as pool:
+                results = pool.map(_diff_case, args_list)
+        except (PermissionError, OSError):
+            # Some CI/runtime environments disallow multiprocessing semaphores.
+            # Fall back to serial comparison in that case.
+            results = [_diff_case(args) for args in args_list]
+    else:
+        results = [_diff_case(args) for args in args_list]
+
+    # Emit stdout in a stable order and aggregate results
+    for result in results:
+        if result["stdout"]:
+            print(result["stdout"], end="")
+        linux_diff = result["linux_diff_in_case"] or linux_diff
+        diff_in_all_files = result["diff_in_case"] or diff_in_all_files
+        file_skipped = result["file_skipped"] or file_skipped
+
+    return (linux_diff, diff_in_all_files, file_skipped)
+
+
+def _diff_case(args):
+    case, files, dir1, dir2, save_to_file, verbose, thresh, l_ghostbuster, l_scale = args
+    linux_diff_in_case = False
+    diff_in_case = False
+    file_skipped = False
+
+    stdout = io.StringIO()
+    with contextlib.redirect_stdout(stdout):
+        if verbose >= 1:
             print("###DIFFING " + case + " netCDF (*.nc) files###")
-        linux_diff_in_case = False
-        diff_in_case = False
 
         # Write any output that should be written to file to string 'content'
         if save_to_file:
@@ -233,30 +288,36 @@ def find_diffs_in_all_files(dir1, dir2, save_to_file, verbose, thresh, l_ghostbu
             content += "\n - " + dir2
             content += "\nDiffed case: " + case + "\n"
             content += "********************************************************************************************\n"
+        else:
+            content = ""
 
         # Looping over all files associated to <case>
-        for ncfname in cases[case]:
+        for ncfname in files:
 
             # Call linux diff command, if it shows a diff, check the netcdf values to confirm
-            if( len(subprocess.getoutput("diff " + dir1 + "/" + ncfname + " " + dir2 + "/" + ncfname)) > 0 ):
+            if len(subprocess.getoutput("diff " + dir1 + "/" + ncfname + " " + dir2 + "/" + ncfname)) > 0:
                 linux_diff_in_case = True
-                if verbose>=1:
+                if verbose >= 1:
                     print(">The linux diff detected differences in " + ncfname + "<")
                 if save_to_file:
                     content += ">The linux diff detected differences in " + ncfname + "<\n"
-                # Update diff_in_all_files: if either it or the output of find_diffs_in_common_vars is true, we conclude that there is a difference. The printed messages will elaborate on the specific differences.
-                diff_in_case, new_content = find_diffs_in_common_vars(ncfname, dir1, dir2, save_to_file, verbose, thresh, l_ghostbuster) or diff_in_case
-                if verbose>=2:
-                    print('')
+
+                case_diff, new_content = find_diffs_in_common_vars(
+                    ncfname, dir1, dir2, save_to_file, verbose, thresh, l_ghostbuster, l_scale
+                )
+                diff_in_case = case_diff or diff_in_case
+
+                if verbose >= 2:
+                    print("")
                 if save_to_file:
                     content += new_content
-                    content += '\n'
+                    content += "\n"
             else:
-                if verbose>=1:
+                if verbose >= 1:
                     print(">No differences detected by the linux diff in " + ncfname + "<")
 
         if diff_in_case:
-            if verbose>=1:
+            if verbose >= 1:
                 print(">>>Differences in common variables detected for case {}<<<".format(case))
             if save_to_file:
                 # Create file to save diff log for <case> into
@@ -264,7 +325,7 @@ def find_diffs_in_all_files(dir1, dir2, save_to_file, verbose, thresh, l_ghostbu
                 if DEBUG:
                     print(diff_file_name)
                 # Check if we need to create a file
-                if not os.path.exists(diff_file_name.format('')) or save_to_file=="replace":
+                if not os.path.exists(diff_file_name.format('')) or save_to_file == "replace":
                     # If file does not exist or should be overwritten, open file with default name and write content
                     with open(diff_file_name.format(''), "w") as caseLogFile:
                         caseLogFile.write(content)
@@ -273,29 +334,31 @@ def find_diffs_in_all_files(dir1, dir2, save_to_file, verbose, thresh, l_ghostbu
                     i = 1
                     diff_file_name = diff_file_name.format('{:02d}')
                     while os.path.exists(diff_file_name.format(i)):
-                        i = i+1
+                        i = i + 1
                     with open(diff_file_name.format(i), "w") as caseLogFile:
                         caseLogFile.write(content)
                 elif save_to_file == "skip":
                     file_skipped = True
-                    if  verbose>=2:
+                    if verbose >= 2:
                         print("Warning! Despite detected differences no log file was created for case {} since the file {} already exists and the 'skip' output option was used ".format(case, diff_file_name.format('')))
         elif linux_diff_in_case:
-            if verbose>=1:
+            if verbose >= 1:
                 print(no_value_diff_out.format(case))
         else:
-            if verbose>=1:
+            if verbose >= 1:
                 print(">>>The linux diff could not detect any differences in the file pairs for case {}.<<<".format(case))
-        if verbose>=1:
+        if verbose >= 1:
             print('**********************************************************************************************************')
 
-        # Update diff_in_all_files: Set to True if diff_in_case==True (differences in case found)
-        linux_diff = linux_diff_in_case or linux_diff
-        diff_in_all_files = diff_in_case or diff_in_all_files
+    return {
+        "case": case,
+        "linux_diff_in_case": linux_diff_in_case,
+        "diff_in_case": diff_in_case,
+        "file_skipped": file_skipped,
+        "stdout": stdout.getvalue(),
+    }
 
-    return (linux_diff, diff_in_all_files, file_skipped)
-
-def find_diffs_in_common_vars( test_file, dir1, dir2, save_to_file, verbose, tot_abs_diff_thresh, l_ghostbuster ):
+def find_diffs_in_common_vars( test_file, dir1, dir2, save_to_file, verbose, abs_error_threshold, l_ghostbuster, l_scale ):
     # This is the integral function of this script!
     # Compare content of one specific pair of files with the same name in each folder:
     # 1. Find the variables that are present in only one of the files
@@ -315,9 +378,12 @@ def find_diffs_in_common_vars( test_file, dir1, dir2, save_to_file, verbose, tot
         print(os.path.join(dir1, test_file))
         print(os.path.join(dir2, test_file))
 
-    # Create datasets from nc files
+    # Create datasets from nc files.
+    # Disable netCDF4 auto-masking so _FillValue=0.0 fields are compared as raw values.
     dset1 = netCDF4.Dataset(os.path.join(dir1, test_file))
     dset2 = netCDF4.Dataset(os.path.join(dir2, test_file))
+    dset1.set_auto_mask(False)
+    dset2.set_auto_mask(False)
 
     # Find variables that are only present in ONE of the files
     diff1 = set(dset1.variables.keys()).difference(dset2.variables.keys())
@@ -377,10 +443,16 @@ def find_diffs_in_common_vars( test_file, dir1, dir2, save_to_file, verbose, tot
               # The multi_col outputs currently use (time,nz,ngrdcol)
               abs_diff = abs( dset1[var][:,:,:] - dset2[var][:,:,:] )
             else:
-              abs_diff = abs( dset1[var][:,:,:,:] - dset2[var][:,:,:,:] )
+              abs_diff = abs( dset1[var][...] - dset2[var][...] )
 
-            # If the sum of all absolute differences is less than the threshold, then ignore this var
-            if ( np.sum(abs_diff) <= tot_abs_diff_thresh ):
+            # Match check_multi_col_error.py behavior:
+            # scale absolute differences by average field magnitude.
+            if l_scale:
+              field_avg = ( np.average( dset1[var] ) + np.average( dset2[var] ) ) / 2.0
+              abs_diff = abs_diff / np.ceil( np.abs( field_avg ) )
+
+            # If the average absolute differences is less than the threshold, then ignore this var
+            if ( np.average(abs_diff) <= abs_error_threshold ):
               continue
             else:
               diff_in_common_vars = True
@@ -403,8 +475,8 @@ def find_diffs_in_common_vars( test_file, dir1, dir2, save_to_file, verbose, tot
               field_1_clipped = np.clip( dset1[var][:,:,:], a_min = field_threshold, a_max = 9999999.0  )
               field_2_clipped = np.clip( dset2[var][:,:,:], a_min = field_threshold, a_max = 9999999.0 )
             else:
-              field_1_clipped = np.clip( dset1[var][:,:,:,:], a_min = field_threshold, a_max = 9999999.0  )
-              field_2_clipped = np.clip( dset2[var][:,:,:,:], a_min = field_threshold, a_max = 9999999.0 )
+              field_1_clipped = np.clip( dset1[var][...], a_min = field_threshold, a_max = 9999999.0  )
+              field_2_clipped = np.clip( dset2[var][...], a_min = field_threshold, a_max = 9999999.0 )
 
             # Calculate the percent difference, 100 * (a-b) / ((a+b)/2)
             percent_diff = 200.0 * ( field_1_clipped-field_2_clipped ) \
@@ -424,7 +496,7 @@ def find_diffs_in_common_vars( test_file, dir1, dir2, save_to_file, verbose, tot
     if diff_in_common_vars:
       output = tabulate.tabulate(table, headers='firstrow')
     else:
-      output = "Total absolute value of all differences are below threshold: " + str(tot_abs_diff_thresh)
+      output = "Total absolute value of all differences are below threshold: " + str(abs_error_threshold)
 
     if verbose>=2:
         # Print a very pretty table of the values
@@ -440,6 +512,8 @@ def find_diffs_in_common_vars( test_file, dir1, dir2, save_to_file, verbose, tot
     else:
         if verbose>=1:
             print(">>Differences above threshold were detected in the common fields in file " + test_file + "<<")
+    dset1.close()
+    dset2.close()
     return (diff_in_common_vars, new_content)
 
 

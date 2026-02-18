@@ -17,4 +17,4 @@ set(G_unit_tests_sources
 )
 
 add_library(G_unit_test_lib ${G_unit_tests_sources})
-target_link_libraries(G_unit_test_lib PRIVATE clubb_core_lib silhs_lib numerical_recipes_lib )
+target_link_libraries(G_unit_test_lib PRIVATE clubb_core_lib input_fields_lib silhs_lib numerical_recipes_lib )

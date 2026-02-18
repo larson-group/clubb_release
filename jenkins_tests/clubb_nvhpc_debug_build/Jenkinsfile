@@ -5,14 +5,13 @@ pipeline {
       steps {
         sh '''source /etc/profile.d/larson-group.sh
               module load nvhpc netcdf-fortran
-              compile/compile.bash -c config/linux_x86_64_nvhpc_debug.bash'''
+              ./compile.py -debug'''
       }
     }
     stage('Run') {
       steps {
-        sh '''source /etc/profile.d/larson-group.sh
-              module load nvhpc netcdf-fortran
-              run_scripts/run_scm_all.bash'''
+        sh '''ulimit -s 8388608
+              run_scripts/run_scm_all.py'''
       }
     }
   }

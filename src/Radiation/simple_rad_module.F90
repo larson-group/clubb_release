@@ -169,8 +169,7 @@ module simple_rad_module
 
 !-------------------------------------------------------------------------------
   subroutine simple_rad( gr, rho, rho_zm, rtm, rcm, exner,  &
-                         stats_metadata, &
-                         stats_sfc, err_info, &
+                         stats, icol, err_info,         &
                          Frad_LW, radht_LW )
 ! Description:
 !   A simplified radiation driver
@@ -187,10 +186,9 @@ module simple_rad_module
         clubb_at_least_debug_level_api,  & ! Procedure
         clubb_fatal_error                 ! Constant
 
-    use stats_type_utilities, only: stat_update_var_pt ! Procedure(s)
-
-    use stats_variables, only: &
-      stats_metadata_type
+    use stats_netcdf, only: &
+      stats_type, &
+      stats_update
 
     use interpolation, only: lin_interpolate_two_points ! Procedure(s)
 
@@ -202,8 +200,6 @@ module simple_rad_module
 
     use clubb_precision, only: &
       core_rknd ! Variable(s)
-
-    use stats_type, only: stats ! Type
 
     use err_info_type_module, only: &
       err_info_type        ! Type
@@ -230,11 +226,11 @@ module simple_rad_module
     real( kind = core_rknd ), intent(in), dimension(gr%nzm) :: &
       rho_zm    ! Density on momentum grid       [kg/m^3]
 
-    type (stats_metadata_type), intent(in) :: &
-      stats_metadata
+    type(stats_type), intent(inout) :: &
+      stats
 
-    type(stats), intent(inout) :: &
-      stats_sfc
+    integer, intent(in) :: &
+      icol
 
     type(err_info_type), intent(inout) :: &
       err_info        ! err_info struct containing err_code and err_header
@@ -322,11 +318,9 @@ module simple_rad_module
         end if
       end do ! k=1..gr%nzm
 
-      ! Update surface statistics
-      if ( stats_metadata%l_stats_samp ) then
-
-        call stat_update_var_pt( stats_metadata%iz_inversion, 1, z_i, stats_sfc )
-
+      ! Update inversion-height statistics used by surface-radiation diagnostics.
+      if ( stats%l_sample ) then
+        call stats_update( "z_inversion", z_i, stats, icol )
       end if
 
     end if ! l_rad_above_cloud

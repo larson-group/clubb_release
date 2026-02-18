@@ -172,8 +172,6 @@ program G_unit_tests
 
   use grid_class, only: grid ! Type
 
-  use stats_type, only: stats ! Type
-
   implicit none
 
   type(grid), target :: gr

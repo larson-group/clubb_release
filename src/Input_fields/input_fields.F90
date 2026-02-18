@@ -223,6 +223,7 @@ module inputfields
 
 !-----------------------------------------------------------------------
   subroutine stat_fields_reader( gr, timestep, hydromet_dim, hm_metadata, &
+                                 microphys_scheme, l_predict_Nc, &
                                  um, upwp, vm, vpwp, &
                                  up2, vp2, rtm, &
                                  wprtp, thlm, wpthlp, &
@@ -283,10 +284,6 @@ module inputfields
         lin_ext_zt_bottom, &
         lin_ext_zm_bottom
 
-    use parameters_microphys, only: &
-        microphys_scheme, & ! Variable(s)
-        l_predict_Nc
-
     use clubb_precision, only: &
         core_rknd ! Variable(s)
 
@@ -311,6 +308,12 @@ module inputfields
 
     type (hm_metadata_type), intent(in) :: &
       hm_metadata
+
+    character(len=*), intent(in) :: &
+      microphys_scheme
+
+    logical, intent(in) :: &
+      l_predict_Nc
 
     real( kind = core_rknd ), dimension(gr%nzt), target, intent(inout) :: &
       um,                & ! eastward grid-mean wind component (thermo. levs.)  [m/s]

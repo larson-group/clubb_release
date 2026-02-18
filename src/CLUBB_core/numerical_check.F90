@@ -94,7 +94,7 @@ module numerical_check
                                 crt_1, crt_2, cthl_1, cthl_2, pdf_params, &
                                 sclrpthvp, sclrprcp, wpsclrp2, & 
                                 wpsclrprtp, wpsclrpthlp, wp2sclrp, &
-                                stats_metadata, &
+                                stats,         &
                                 err_info )
 
 ! Description: This subroutine determines if any of the output
@@ -110,8 +110,9 @@ module numerical_check
     use clubb_precision, only: &
         core_rknd ! Variable(s)
 
-    use stats_variables, only: &
-        stats_metadata_type
+    use stats_netcdf, only: &
+        stats_type, &
+        var_on_stats_list
 
     use err_info_type_module, only: &
       err_info_type     ! Type
@@ -161,8 +162,8 @@ module numerical_check
       wpsclrpthlp, &
       wp2sclrp
 
-    type (stats_metadata_type), intent(in) :: &
-      stats_metadata
+    type(stats_type), intent(in) :: &
+      stats
 
     ! Input/Output variables
     type(err_info_type), intent(inout) :: &
@@ -176,14 +177,14 @@ module numerical_check
 
     ! ---- Begin Code ----
 
-    if ( stats_metadata%iwp4 > 0 ) call check_nan( wp4,"wp4", proc_name, & ! intent(in)
-                                                   err_info ) ! intent(inout)
-    if ( stats_metadata%iwprtp2 > 0 ) call check_nan( wprtp2,"wprtp2", proc_name, & ! intent(in)
-                                                      err_info ) ! intent(inout)
+    if ( var_on_stats_list( stats, "wp4" ) )         &
+      call check_nan( wp4, "wp4", proc_name, err_info ) ! intent(inout)
+    if ( var_on_stats_list( stats, "wprtp2" ) )         &
+      call check_nan( wprtp2, "wprtp2", proc_name, err_info ) ! intent(inout)
     call check_nan( wp2rtp,"wp2rtp", proc_name, & ! intent(in)
                     err_info ) ! intent(inout)
-    if ( stats_metadata%iwpthlp2 > 0 ) call check_nan( wpthlp2,"wpthlp2", proc_name, & ! intent(in)
-                                                       err_info ) ! intent(inout)
+    if ( var_on_stats_list( stats, "wpthlp2" ) )         &
+      call check_nan( wpthlp2, "wpthlp2", proc_name, err_info ) ! intent(inout)
     call check_nan( wp2thlp,"wp2thlp", proc_name, & ! intent(in)
                     err_info ) ! intent(inout)
     call check_nan( cloud_frac,"cloud_frac", proc_name, & ! intent(in)
@@ -208,11 +209,10 @@ module numerical_check
                     err_info ) ! intent(inout)
     call check_nan( thlprcp, "thlprcp", proc_name, & ! intent(in)
                     err_info ) ! intent(inout)
-    if ( stats_metadata%ircp2 >  0 ) call check_nan( rcp2, "rcp2", proc_name, & ! intent(in)
-                                                     err_info ) ! intent(inout)
-    if ( stats_metadata%iwprtpthlp > 0 ) &
-         call check_nan( wprtpthlp, "wprtpthlp", proc_name, & ! intent(in)
-                         err_info ) ! intent(inout)
+    if ( var_on_stats_list( stats, "rcp2" ) )         &
+      call check_nan( rcp2, "rcp2", proc_name, err_info ) ! intent(inout)
+    if ( var_on_stats_list( stats, "wprtpthlp" ) )         &
+      call check_nan( wprtpthlp, "wprtpthlp", proc_name, err_info ) ! intent(inout)
     call check_nan( crt_1, "crt_1", proc_name, & ! intent(in)
                     err_info ) ! intent(inout)
     call check_nan( crt_2, "crt_2", proc_name, & ! intent(in)

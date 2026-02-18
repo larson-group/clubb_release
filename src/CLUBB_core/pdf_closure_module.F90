@@ -56,7 +56,7 @@ module pdf_closure_module
                           rtphmp, thlphmp,                            &
                           clubb_params, mixt_frac_max_mag,            &
                           saturation_formula,                         &
-                          stats_metadata,                             &
+                          stats,                                      &
                           iiPDF_type,                                 &
                           l_mix_rat_hm,                               &
                           sigma_sqd_w,                                &
@@ -166,8 +166,10 @@ module pdf_closure_module
         clubb_at_least_debug_level_api,  & ! Procedure
         clubb_fatal_error              ! Constant
 
-    use stats_variables, only: &
-        stats_metadata_type
+    use stats_netcdf, only: &
+      stats_type, &
+      stats_update, &
+      var_on_stats_list
 
     use err_info_type_module, only: &
       err_info_type     ! Type
@@ -260,8 +262,8 @@ module pdf_closure_module
     integer, intent(in) :: &
       saturation_formula ! Integer that stores the saturation formula to be used
 
-    type (stats_metadata_type), intent(in) :: &
-      stats_metadata
+    type(stats_type), intent(inout) :: &
+      stats
 
     !----------------------------- InOut Variables -----------------------------
     real( kind = core_rknd ), dimension(ngrdcol,nz), intent(inout) :: &
@@ -361,8 +363,8 @@ module pdf_closure_module
       corr_w_sclr_1, corr_w_sclr_2
 
     logical :: &
-      l_scalar_calc, &  ! True if sclr_dim > 0
-      l_calc_ice_supersat_frac ! True if we should calculate ice_supersat_frac
+      l_scalar_calc, &          ! True if sclr_dim > 0
+      l_calc_ice_supersat_frac  ! True if we should calculate ice_supersat_frac
 
     ! Quantities needed to predict higher order moments
     real( kind = core_rknd ), dimension(ngrdcol,nz) :: &
@@ -816,7 +818,8 @@ module pdf_closure_module
                        pdf_params%mixt_frac, &
                        wp4 )
 
-    if ( l_explicit_turbulent_adv_xpyp .or. stats_metadata%iwprtp2 > 0 ) then
+    if ( l_explicit_turbulent_adv_xpyp .or. &
+         ( var_on_stats_list( stats, "wprtp2" )) ) then
       call calc_wpxp2_pdf( nz, ngrdcol, &
                            wm, rtm, pdf_params%w_1, pdf_params%w_2,        &
                            pdf_params%rt_1, pdf_params%rt_2,               &
@@ -827,7 +830,8 @@ module pdf_closure_module
                            wprtp2 )
     end if
 
-    if ( l_explicit_turbulent_adv_xpyp .or. stats_metadata%iwpthlp2 > 0 ) then
+    if ( l_explicit_turbulent_adv_xpyp .or. &
+         ( var_on_stats_list( stats, "wpthlp2" )) ) then
       call calc_wpxp2_pdf( nz, ngrdcol, &
                            wm, thlm, pdf_params%w_1, pdf_params%w_2,          &
                            pdf_params%thl_1, pdf_params%thl_2,                &
@@ -838,7 +842,8 @@ module pdf_closure_module
                            wpthlp2 )
     end if
 
-    if ( l_explicit_turbulent_adv_xpyp .or. stats_metadata%iwprtpthlp > 0 ) then
+    if ( l_explicit_turbulent_adv_xpyp .or. &
+         ( var_on_stats_list( stats, "wprtpthlp" )) ) then
       
       call calc_wpxpyp_pdf( nz, ngrdcol, &
                             wm, rtm, thlm, pdf_params%w_1, pdf_params%w_2,      &
@@ -1297,8 +1302,8 @@ module pdf_closure_module
     ! This is not needed for closure.  Statistical Analysis only.
 
 #ifndef CLUBB_CAM
-      !  if CLUBB is used in CAM we want this variable computed no matter what
-      if ( stats_metadata%ircp2 > 0 ) then
+      ! if CLUBB is used in CAM we want this variable computed no matter what
+      if ( var_on_stats_list( stats, "rcp2" ) ) then
 #endif
     !$acc parallel loop gang vector collapse(2) default(present)
     do k = 1,nz
@@ -1322,7 +1327,8 @@ module pdf_closure_module
 
     if ( ( iiPDF_type == iiPDF_ADG1 .or. iiPDF_type == iiPDF_ADG2 &
            .or. iiPDF_type == iiPDF_new_hybrid ) &
-         .and. ( stats_metadata%iw_up_in_cloud > 0 .or. stats_metadata%iw_down_in_cloud > 0 ) ) then
+         .and. ( var_on_stats_list( stats, "w_up_in_cloud" )       &
+               .or. var_on_stats_list( stats, "w_down_in_cloud" )) ) then
                  
       call calc_w_up_in_cloud( nz, ngrdcol, &                                      ! In
                                pdf_params%mixt_frac, &                             ! In
@@ -1432,7 +1438,7 @@ module pdf_closure_module
                pdf_params, & ! intent(in)
                sclrpthvp(i,:,:), sclrprcp(i,:,:), wpsclrp2(i,:,:), & ! intent(in)
                wpsclrprtp(i,:,:), wpsclrpthlp(i,:,:), wp2sclrp(i,:,:), & ! intent(in)
-               stats_metadata, & ! intent(in)
+               stats,         & ! intent(in)
                err_info ) ! intent(inout)
 
         if ( err_info%err_code(i) == clubb_fatal_error ) then
@@ -1481,11 +1487,11 @@ module pdf_closure_module
         write(fstderr,*) "Intent(out)"
 
         write(fstderr,*) "wp4 = ", wp4
-        if ( l_explicit_turbulent_adv_xpyp .or. stats_metadata%iwprtp2 > 0 ) then
+        if ( l_explicit_turbulent_adv_xpyp .or. var_on_stats_list( stats, "wprtp2" ) ) then
           write(fstderr,*) "wprtp2 = ", wprtp2
         end if
         write(fstderr,*) "wp2rtp = ", wp2rtp
-        if ( l_explicit_turbulent_adv_xpyp .or. stats_metadata%iwpthlp2 > 0 ) then
+        if ( l_explicit_turbulent_adv_xpyp .or. var_on_stats_list( stats, "wpthlp2" ) ) then
           write(fstderr,*) "wpthlp2 = ", wpthlp2
         end if
         write(fstderr,*) "cloud_frac = ", cloud_frac
@@ -1501,14 +1507,14 @@ module pdf_closure_module
         write(fstderr,*) "rtprcp = ", rtprcp
         write(fstderr,*) "thlprcp = ", thlprcp
 #ifndef CLUBB_CAM
-        !  if CLUBB is used in CAM we want this variable computed no matter what
-        if ( stats_metadata%ircp2 > 0 ) then
+        ! if CLUBB is used in CAM we want this variable computed no matter what
+        if ( var_on_stats_list( stats, "rcp2" ) ) then
 #endif
           write(fstderr,*) "rcp2 = ", rcp2
 #ifndef CLUBB_CAM
         end if
 #endif
-        if ( l_explicit_turbulent_adv_xpyp .or. stats_metadata%iwprtpthlp > 0 ) then
+        if ( l_explicit_turbulent_adv_xpyp .or. var_on_stats_list( stats, "wprtpthlp" ) ) then
           write(fstderr,*) "wprtpthlp = ", wprtpthlp
         end if
         write(fstderr,*) "rcp2 = ", rcp2
@@ -3688,8 +3694,7 @@ module pdf_closure_module
                                  l_use_cloud_cover,                       & ! Intent(in)
                                  l_rcm_supersat_adj,                      & ! Intent(in
                                  l_mix_rat_hm,                            & ! Intent(in)
-                                 stats_metadata,                          & ! Intent(in)
-                                 stats_zt, stats_zm,                      & ! Intent(inout)
+                                 stats,                                   & ! Intent(inout)
                                  rtm,                                     & ! Intent(inout)
                                  pdf_implicit_coefs_terms,                & ! Intent(inout)
                                  pdf_params, pdf_params_zm, err_info,     & ! Intent(inout)
@@ -3775,17 +3780,13 @@ module pdf_closure_module
         clubb_at_least_debug_level_api,  & ! Procedure
         clubb_fatal_error              ! Constant
 
-    use stats_type_utilities, only: &
-        stat_update_var,    & ! Procedure(s)
-        stat_update_var_pt
-
-    use stats_variables, only: &
-        stats_metadata_type
+    use stats_netcdf, only: &
+        stats_type, &
+        stats_update, &
+        var_on_stats_list
 
     use clubb_precision, only: &
         core_rknd    ! Variable(s)
-
-    use stats_type, only: stats ! Type
 
     use err_info_type_module, only: &
       err_info_type        ! Type
@@ -3915,14 +3916,10 @@ module pdf_closure_module
                                   ! rcm to help increase cloudiness at coarser grid resolutions.
       l_rcm_supersat_adj          ! Add excess supersaturated vapor to cloud water
 
-    type (stats_metadata_type), intent(in) :: &
-      stats_metadata
+    type(stats_type), intent(inout) :: &
+      stats
 
     !------------------------------- InOut Variables -------------------------------
-    type (stats), dimension(ngrdcol), intent(inout) :: &
-      stats_zt, &
-      stats_zm
-
     real( kind = core_rknd ), dimension(ngrdcol,nzt), intent(inout) ::  &
       rtm    ! total water mixing ratio, r_t (thermo. levels) [kg/kg]
 
@@ -4181,18 +4178,23 @@ module pdf_closure_module
     ! compute Skw, Skrt, Skthl, Sku, Skv, and Sksclr for both the momentum and
     ! thermodynamic grid levels.
     !---------------------------------------------------------------------------
+
     ! Positive definite quantity
     wp2_zt(:,:)   = zm2zt_api( nzm, nzt, ngrdcol, gr, wp2(:,:), w_tol_sqd )
     wp3_zm(:,:)   = zt2zm_api( nzm, nzt, ngrdcol, gr, wp3(:,:) )
+    
     ! Positive definite quantity
     thlp2_zt(:,:) = zm2zt_api( nzm, nzt, ngrdcol, gr, thlp2(:,:), thl_tol**2 )
     thlp3_zm(:,:) = zt2zm_api( nzm, nzt, ngrdcol, gr, thlp3(:,:) )
+
     ! Positive definite quantity
     rtp2_zt(:,:)  = zm2zt_api( nzm, nzt, ngrdcol, gr, rtp2(:,:), rt_tol**2 )
     rtp3_zm(:,:)  = zt2zm_api( nzm, nzt, ngrdcol, gr, rtp3(:,:) )
+
     ! Positive definite quantity
     up2_zt(:,:)   = zm2zt_api( nzm, nzt, ngrdcol, gr, up2(:,:), w_tol_sqd )
     up3_zm(:,:)   = zt2zm_api( nzm, nzt, ngrdcol, gr, up3(:,:) )
+
     ! Positive definite quantity
     vp2_zt(:,:)   = zm2zt_api( nzm, nzt, ngrdcol, gr, vp2(:,:), w_tol_sqd )
     vp3_zm(:,:)   = zt2zm_api( nzm, nzt, ngrdcol, gr, vp3(:,:) )
@@ -4255,24 +4257,14 @@ module pdf_closure_module
                       
     end do ! sclr = 1, sclr_dim, 1
 
-    if ( stats_metadata%l_stats_samp .and. l_samp_stats_in_pdf_call ) then
-
+    if ( stats%l_sample .and. l_samp_stats_in_pdf_call ) then
       !$acc update host( Skw_zt, Skw_zm, Skthl_zt, Skrt_zt, Skrt_zm, Skthl_zm )
-
-      do i = 1, ngrdcol
-        call stat_update_var( stats_metadata%iSkw_zt, Skw_zt(i,:), & ! In
-                              stats_zt(i) ) ! In/Out
-        call stat_update_var( stats_metadata%iSkw_zm, Skw_zm(i,:), &
-                              stats_zm(i) ) ! In/Out
-        call stat_update_var( stats_metadata%iSkthl_zt, Skthl_zt(i,:), &
-                              stats_zt(i) ) ! In/Out
-        call stat_update_var( stats_metadata%iSkthl_zm, Skthl_zm(i,:), &
-                              stats_zm(i) ) ! In/Out
-        call stat_update_var( stats_metadata%iSkrt_zt, Skrt_zt(i,:), &
-                              stats_zt(i) ) ! In/Out
-        call stat_update_var( stats_metadata%iSkrt_zm, Skrt_zm(i,:), &
-                              stats_zm(i) ) ! In/Out
-      end do
+      call stats_update( "Skw_zt", Skw_zt, stats )
+      call stats_update( "Skw_zm", Skw_zm, stats )
+      call stats_update( "Skthl_zt", Skthl_zt, stats )
+      call stats_update( "Skthl_zm", Skthl_zm, stats )
+      call stats_update( "Skrt_zt", Skrt_zt, stats )
+      call stats_update( "Skrt_zm", Skrt_zm, stats )
     end if
 
     ! The right hand side of this conjunction is only for reducing cpu time,
@@ -4350,13 +4342,10 @@ module pdf_closure_module
 
     end if
 
-    if ( stats_metadata%l_stats_samp .and. l_samp_stats_in_pdf_call ) then
-      !$acc update host(gamma_Skw_fnc)      
-      do i = 1, ngrdcol
-        call stat_update_var( stats_metadata%igamma_Skw_fnc, gamma_Skw_fnc(i,:), & ! intent(in)
-                              stats_zm(i) )                       ! intent(inout)
-      end do
-    endif
+    if ( stats%l_sample .and. l_samp_stats_in_pdf_call ) then
+      !$acc update host(gamma_Skw_fnc)
+      call stats_update( "gamma_Skw_fnc", gamma_Skw_fnc, stats )
+    end if
 
     ! Compute sigma_sqd_w (dimensionless PDF width parameter)
     call compute_sigma_sqd_w( nzm, ngrdcol, &
@@ -4394,7 +4383,7 @@ module pdf_closure_module
     vpwp_zt(:,:)    = zm2zt_api( nzm, nzt, ngrdcol, gr, vpwp(:,:) )
 
     ! Compute skewness velocity for stats output purposes
-    if ( stats_metadata%iSkw_velocity > 0 ) then
+    if ( var_on_stats_list( stats, "Skw_velocity" ) ) then
       !$acc parallel loop gang vector collapse(2) default(present)
       do k = 1, nzm
         do i = 1, ngrdcol
@@ -4444,7 +4433,7 @@ module pdf_closure_module
            rtphmp_zt, thlphmp_zt,                           & ! intent(in)
            clubb_params, mixt_frac_max_mag,                 & ! intent(in)
            saturation_formula,                              & ! intent(in)
-           stats_metadata,                                  & ! intent(in)
+           stats,                                           & ! intent(inout)
            iiPDF_type,                                      & ! intent(in)
            l_mix_rat_hm,                                    & ! intent(in)
            sigma_sqd_w_zt,                                  & ! intent(inout)
@@ -4568,7 +4557,7 @@ module pdf_closure_module
              rtphmp, thlphmp,                                      & ! intent(in)
              clubb_params, mixt_frac_max_mag,                      & ! intent(in)
              saturation_formula,                                   & ! intent(in)
-             stats_metadata,                                       & ! intent(in)
+             stats,                                                & ! intent(inout)
              iiPDF_type,                                           & ! intent(in)
              l_mix_rat_hm,                                         & ! intent(in)
              sigma_sqd_w,                                          & ! intent(inout)
@@ -4617,7 +4606,7 @@ module pdf_closure_module
 
 #ifndef CLUBB_CAM
       ! CAM-CLUBB needs cloud water variance thus always compute this
-      if ( stats_metadata%ircp2 > 0 ) then
+      if ( var_on_stats_list( stats, "rcp2" ) ) then
 #endif
         ! Pos. def. quantity
         rcp2(:,:) = zt2zm_api( nzm, nzt, ngrdcol, gr, rcp2_zt(:,:), zero_threshold )
@@ -4687,14 +4676,10 @@ module pdf_closure_module
 
     end if ! l_call_pdf_closure_twice
     
-    if ( stats_metadata%l_stats_samp .and. l_samp_stats_in_pdf_call ) then
+    if ( stats%l_sample .and. l_samp_stats_in_pdf_call ) then
       !$acc update host( uprcp, vprcp )
-      do i = 1, ngrdcol
-        call stat_update_var( stats_metadata%iuprcp,  uprcp(i,:),  & ! intent(in)
-                              stats_zm(i) )           ! intent(inout)
-        call stat_update_var( stats_metadata%ivprcp,  vprcp(i,:),  & ! intent(in)
-                              stats_zm(i) )           ! intent(inout)
-      end do
+      call stats_update( "uprcp", uprcp, stats )
+      call stats_update( "vprcp", vprcp, stats )
     end if
     
     ! If l_trapezoidal_rule_zt is true, call trapezoidal_rule_zt for
@@ -4703,7 +4688,7 @@ module pdf_closure_module
     if ( l_trapezoidal_rule_zt ) then
       call trapezoidal_rule_zt( nzm, nzt, ngrdcol, sclr_dim, gr,             & ! intent(in)
                                 l_call_pdf_closure_twice,                    & ! intent(in)
-                                stats_metadata,                              & ! intent(in)
+                                stats,                                       & ! intent(in)
                                 wprtp2, wpthlp2,                             & ! intent(inout)
                                 wprtpthlp, cloud_frac, ice_supersat_frac,    & ! intent(inout)
                                 rcm, wp2thvp, wp2up, wpsclrprtp, wpsclrp2,   & ! intent(inout)
@@ -4852,7 +4837,7 @@ module pdf_closure_module
   !-----------------------------------------------------------------------
   subroutine trapezoidal_rule_zt( nzm, nzt, ngrdcol, sclr_dim, gr,             & ! intent(in)
                                   l_call_pdf_closure_twice,                    & ! intent(in)
-                                  stats_metadata,                              & ! intent(in)
+                                  stats,                                       & ! intent(in)
                                   wprtp2, wpthlp2,                             & ! intent(inout)
                                   wprtpthlp, cloud_frac, ice_supersat_frac,    & ! intent(inout)
                                   rcm, wp2thvp, wp2up, wpsclrprtp, wpsclrp2,   & ! intent(inout)
@@ -4895,8 +4880,9 @@ module pdf_closure_module
     use clubb_precision, only: &
         core_rknd ! Variable(s)
 
-    use stats_variables, only: &
-        stats_metadata_type
+    use stats_netcdf, only: &
+      stats_type, &
+      var_on_stats_list
 
     implicit none
 
@@ -4913,8 +4899,8 @@ module pdf_closure_module
     logical, intent(in) :: &
       l_call_pdf_closure_twice
 
-    type (stats_metadata_type), intent(in) :: &
-      stats_metadata
+    type(stats_type), intent(in) :: &
+      stats
 
     !------------------------ Input/Output variables ------------------------
     ! Thermodynamic level variables output from the first call to pdf_closure
@@ -5013,43 +4999,40 @@ module pdf_closure_module
 
     end if ! .not. l_call_pdf_closure_twice
 
-    if ( stats_metadata%l_stats ) then
+    if ( stats%enabled ) then
+
       ! Use the trapezoidal rule to recompute the variables on the stats_zt level
-      if ( stats_metadata%iwprtp2 > 0 ) then
+      if ( var_on_stats_list( stats, "wprtp2" ) ) then
         call calc_trapezoid_zt( nzm, nzt, ngrdcol, gr, &
                                 wprtp2_zm, &
                                 wprtp2 )
       end if
-      if ( stats_metadata%iwpthlp2 > 0 ) then
+
+      if ( var_on_stats_list( stats, "wpthlp2" ) ) then
         call calc_trapezoid_zt( nzm, nzt, ngrdcol, gr, &
                                 wpthlp2_zm, &
                                 wpthlp2 )
       end if
-      if ( stats_metadata%iwprtpthlp > 0 ) then
+
+      if ( var_on_stats_list( stats, "wprtpthlp" ) ) then
         call calc_trapezoid_zt( nzm, nzt, ngrdcol, gr, &
                                 wprtpthlp_zm, &
                                 wprtpthlp )
       end if
 
       do sclr = 1, sclr_dim
-        if ( stats_metadata%iwpsclrprtp(sclr) > 0 ) then
-          call calc_trapezoid_zt( nzm, nzt, ngrdcol, gr, &
-                                  wpsclrprtp_zm(:,:,sclr), &
-                                  wpsclrprtp(:,:,sclr) )
-        end if
-        if ( stats_metadata%iwpsclrpthlp(sclr) > 0 ) then
-          call calc_trapezoid_zt( nzm, nzt, ngrdcol, gr, &
-                                  wpsclrpthlp_zm(:,:,sclr), &
-                                  wpsclrpthlp(:,:,sclr) )
-        end if
-        if ( stats_metadata%iwpsclrp2(sclr) > 0 ) then
-          call calc_trapezoid_zt( nzm, nzt, ngrdcol,  gr, &
-                                  wpsclrp2_zm(:,:,sclr), &
-                                  wpsclrp2(:,:,sclr) )
-        end if
-        
+        call calc_trapezoid_zt( nzm, nzt, ngrdcol, gr, &
+                                wpsclrprtp_zm(:,:,sclr), &
+                                wpsclrprtp(:,:,sclr) )
+        call calc_trapezoid_zt( nzm, nzt, ngrdcol, gr, &
+                                wpsclrpthlp_zm(:,:,sclr), &
+                                wpsclrpthlp(:,:,sclr) )
+        call calc_trapezoid_zt( nzm, nzt, ngrdcol,  gr, &
+                                wpsclrp2_zm(:,:,sclr), &
+                                wpsclrp2(:,:,sclr) )
       end do ! sclr = 1, sclr_dim
-    end if ! l_stats
+      
+    end if
 
     call calc_trapezoid_zt( nzm, nzt, ngrdcol, gr, &
                             cloud_frac_zm, &

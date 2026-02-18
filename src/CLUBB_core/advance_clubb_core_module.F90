@@ -138,8 +138,7 @@ module advance_clubb_core_module
                mixt_frac_max_mag, T0, ts_nudge, &                   ! Intent(in)
                rtm_min, rtm_nudge_max_altitude, &                   ! Intent(in)
                clubb_config_flags, &                                ! intent(in)
-               stats_metadata, &                                    ! intent(in)
-               stats_zt, stats_zm, stats_sfc, &                     ! intent(inout)
+               stats,         &                                     ! intent(inout)
                um, vm, upwp, vpwp, up2, vp2, up3, vp3, &            ! intent(inout)
                thlm, rtm, wprtp, wpthlp, &                          ! intent(inout)
                wp2, wp3, rtp2, rtp3, thlp2, thlp3, rtpthlp, &       ! intent(inout)
@@ -311,14 +310,6 @@ module advance_clubb_core_module
     use stats_clubb_utilities, only: &
         stats_accumulate ! Procedure
 
-    use stats_type_utilities, only:   &
-        stat_update_var_pt,   & ! Procedure(s)
-        stat_update_var,      &
-        stat_begin_update,    &
-        stat_begin_update_pt, &
-        stat_end_update,      &
-        stat_end_update_pt
-
     use fill_holes, only: &
         fill_holes_vertical_api
 
@@ -335,10 +326,12 @@ module advance_clubb_core_module
         calculate_thlp2_rad, &
         pvertinterp
 
-    use stats_type, only: stats ! Type
-
-    use stats_variables, only: &
-      stats_metadata_type
+    use stats_netcdf, only: &
+        stats_type, &
+        stats_update, &
+        stats_begin_budget, &
+        stats_finalize_budget, &
+        var_on_stats_list
 
     use array_index, only: &
       sclr_idx_type
@@ -493,14 +486,9 @@ module advance_clubb_core_module
     type( clubb_config_flags_type ), intent(in) :: &
       clubb_config_flags ! Derived type holding all configurable CLUBB flags
 
-    type (stats_metadata_type), intent(in) :: &
-      stats_metadata
-
     !--------------------------- Input/Output Variables ---------------------------
-    type (stats), intent(inout), dimension(ngrdcol) :: &
-      stats_zt, &
-      stats_zm, &
-      stats_sfc
+    type(stats_type), intent(inout) :: &
+      stats
 
     ! These are prognostic or are planned to be in the future
     real( kind = core_rknd ), intent(inout), dimension(ngrdcol,nzt) ::  &
@@ -919,7 +907,7 @@ module advance_clubb_core_module
     call set_Lscale_max( ngrdcol, l_implemented, host_dx, host_dy, & ! intent(in)
                          Lscale_max )                                ! intent(out)
 
-    if ( stats_metadata%l_stats .and. stats_metadata%l_stats_samp ) then
+    if ( stats%l_sample ) then
 
       !$acc update host( wm_zt, wm_zm, rho_ds_zt, rtm, gr%dzt, &
       !$acc              rtm, thlm )
@@ -993,61 +981,34 @@ module advance_clubb_core_module
     end if
     !-----------------------------------------------------------------------
 
-    if ( stats_metadata%l_stats_samp ) then
+    if ( stats%l_sample ) then
 
       !$acc update host( rfrzm, wp2, vp2, up2, wprtp, wpthlp, upwp, vpwp, &
       !$acc              rtp2, thlp2, rtpthlp, rtm, thlm, um, vm, wp3 )
 
-      do i = 1, ngrdcol
-
-        call stat_update_var( stats_metadata%irfrzm, rfrzm(i,:), & ! intent(in)
-                              stats_zt(i) ) ! intent(inout)
+      call stats_update( "rfrzm", rfrzm, stats )
 
       ! Set up budget stats variables.
-        
-        !print *, "B stats_zt(i)%accum_field_values", stats_zt(i)%accum_field_values
-        !print *, "wp2(i,:) = ", wp2(i,:)
+      call stats_begin_budget( "wp2_bt", wp2 / dt, stats )
+      call stats_begin_budget( "vp2_bt", vp2 / dt, stats )
+      call stats_begin_budget( "up2_bt", up2 / dt, stats )
+      call stats_begin_budget( "wprtp_bt", wprtp / dt, stats )
+      call stats_begin_budget( "wpthlp_bt", wpthlp / dt, stats )
 
-         call stat_begin_update( nzm, stats_metadata%iwp2_bt, wp2(i,:) / dt, & ! intent(in)
-                                 stats_zm(i) )           ! intent(inout)
-                                 
-         !print *, "A stats_zt(i)%accum_field_values", stats_zt(i)%accum_field_values
-                                 
-                                 
-         call stat_begin_update( nzm, stats_metadata%ivp2_bt, vp2(i,:) / dt, & ! intent(in)
-                                 stats_zm(i) )           ! intent(inout)
-         call stat_begin_update( nzm, stats_metadata%iup2_bt, up2(i,:) / dt, & ! intent(in)
-                                 stats_zm(i) )           ! intent(inout)
-         call stat_begin_update( nzm, stats_metadata%iwprtp_bt, wprtp(i,:) / dt, & ! intent(in)
-                                 stats_zm(i) )               ! intent(inout)
-         call stat_begin_update( nzm, stats_metadata%iwpthlp_bt, wpthlp(i,:) / dt, & ! intent(in)
-                                 stats_zm(i) )                 ! intent(inout)
-         if ( clubb_config_flags%l_predict_upwp_vpwp ) then
-            call stat_begin_update( nzm, stats_metadata%iupwp_bt, upwp(i,:) / dt, & ! intent(in)
-                                    stats_zm(i) )             ! intent(inout)
-            call stat_begin_update( nzm, stats_metadata%ivpwp_bt, vpwp(i,:) / dt, & ! intent(in)
-                                    stats_zm(i) )             ! intent(inout)
-         endif ! l_predict_upwp_vpwp
-         call stat_begin_update( nzm, stats_metadata%irtp2_bt, rtp2(i,:) / dt, & ! intent(in)
-                                 stats_zm(i) )             ! intent(inout)
-         call stat_begin_update( nzm, stats_metadata%ithlp2_bt, thlp2(i,:) / dt, & ! intent(in)
-                                 stats_zm(i) )               ! intent(inout)
-         call stat_begin_update( nzm, stats_metadata%irtpthlp_bt, rtpthlp(i,:) / dt, & ! intent(in)
-                                 stats_zm(i) )                   ! intent(inout)
+      if ( clubb_config_flags%l_predict_upwp_vpwp ) then
+        call stats_begin_budget( "upwp_bt", upwp / dt, stats )
+        call stats_begin_budget( "vpwp_bt", vpwp / dt, stats )
+      end if
 
-         call stat_begin_update( nzt, stats_metadata%irtm_bt, rtm(i,:) / dt, & ! intent(in)
-                                 stats_zt(i) )           ! intent(inout)
-         call stat_begin_update( nzt, stats_metadata%ithlm_bt, thlm(i,:) / dt, & ! intent(in)
-                                 stats_zt(i) )             ! intent(inout)
-         call stat_begin_update( nzt, stats_metadata%ium_bt, um(i,:) / dt, & ! intent(in)
-                                 stats_zt(i) )         ! intent(inout)
-         call stat_begin_update( nzt, stats_metadata%ivm_bt, vm(i,:) / dt, & ! intent(in)
-                                 stats_zt(i) )         ! intent(inout)
-         call stat_begin_update( nzt, stats_metadata%iwp3_bt, wp3(i,:) / dt, & ! intent(in)
-                                 stats_zt(i) )           ! intent(inout)
+      call stats_begin_budget( "rtp2_bt", rtp2 / dt, stats )
+      call stats_begin_budget( "thlp2_bt", thlp2 / dt, stats )
+      call stats_begin_budget( "rtpthlp_bt", rtpthlp / dt, stats )
 
-      end do
-
+      call stats_begin_budget( "rtm_bt", rtm / dt, stats )
+      call stats_begin_budget( "thlm_bt", thlm / dt, stats )
+      call stats_begin_budget( "um_bt", um / dt, stats )
+      call stats_begin_budget( "vm_bt", vm / dt, stats )
+      call stats_begin_budget( "wp3_bt", wp3 / dt, stats )
     end if
 
     ! SET SURFACE VALUES OF FLUXES (BROUGHT IN)
@@ -1197,8 +1158,7 @@ module advance_clubb_core_module
                                clubb_config_flags%l_use_cloud_cover,        & ! Intent(in)
                                clubb_config_flags%l_rcm_supersat_adj,       & ! Intent(in)
                                l_mix_rat_hm,                                & ! Intent(in)
-                               stats_metadata,                              & ! Intent(in)
-                               stats_zt, stats_zm,                          & ! Intent(inout)
+                               stats,                                       & ! Intent(inout)
                                rtm,                                         & ! Intent(inout)
                                pdf_implicit_coefs_terms,                    & ! Intent(inout)
                                pdf_params, pdf_params_zm, err_info,         & ! Intent(inout)
@@ -1444,12 +1404,9 @@ module advance_clubb_core_module
     end do
     !$acc end parallel loop
 
-    if ( stats_metadata%l_stats_samp ) then
+    if ( stats%l_sample ) then
       !$acc update host(ddzt_umvm_sqd)
-      do i = 1, ngrdcol
-        call stat_update_var( stats_metadata%iddzt_umvm_sqd, ddzt_umvm_sqd(i,:), & ! intent(in)
-                              stats_zm(i) )               ! intent(inout)
-      end do
+      call stats_update( "ddzt_umvm_sqd", ddzt_umvm_sqd, stats )
     end if
 
     ! Calculate Richardson number Ri_zm
@@ -1495,8 +1452,7 @@ module advance_clubb_core_module
                                   clubb_params,                                      & ! In
                                   clubb_config_flags%saturation_formula,             & ! In
                                   clubb_config_flags%l_Lscale_plume_centered,        & ! In
-                                  stats_metadata,                                    & ! In
-                                  stats_zt, err_info,                                & ! In/Out
+                                  stats, err_info,                                   & ! In/Out
                                   Lscale, Lscale_up, Lscale_down )                     ! Out
 
       if ( clubb_at_least_debug_level_api( 0 ) ) then
@@ -1563,11 +1519,11 @@ module advance_clubb_core_module
                         ufmin, tau_const,                                         & ! In
                         sfc_elevation, Lscale_max,                                & ! In
                         clubb_params,                                             & ! In
-                        stats_metadata,                                           & ! In
+                        stats,                                                    & ! InOut
                         clubb_config_flags%l_e3sm_config,                         & ! In
                         clubb_config_flags%l_smooth_Heaviside_tau_wpxp,           & ! In
                         brunt_vaisala_freq_sqd_smth, Ri_zm,                       & ! In
-                        stats_zm, err_info,                                       & ! Inout
+                        err_info,                                                & ! Inout
                         invrs_tau_zt, invrs_tau_zm,                               & ! Out
                         invrs_tau_sfc, invrs_tau_no_N2_zm, invrs_tau_bkgnd,       & ! Out
                         invrs_tau_shear, invrs_tau_N2_iso,                        & ! Out
@@ -1661,8 +1617,7 @@ module advance_clubb_core_module
                           T0,                                             & ! Intent(in)
                           clubb_params(:,iup2_sfc_coef),                  & ! Intent(in)
                           clubb_params(:,ia_const),                       & ! Intent(in)
-                          stats_metadata,                                 & ! Intent(in)
-                          stats_zm,                                       & ! Intent(inout)
+                          stats,                                          & ! Intent(inout)
                           wp2, up2, vp2,                                  & ! Intent(inout)
                           thlp2, rtp2, rtpthlp,                           & ! Intent(inout)
                           sclrp2, sclrprtp, sclrpthlp,                    & ! Intent(inout)
@@ -1680,23 +1635,16 @@ module advance_clubb_core_module
     !############## ADVANCE PROGNOSTIC VARIABLES ONE TIMESTEP ##############
     !#######################################################################
 
-    if ( stats_metadata%l_stats_samp ) then
-
+    if ( stats%l_sample ) then
       !$acc update host( rtm, rcm, thlm, exner, p_in_Pa )
-
-      do i = 1, ngrdcol
-        call stat_update_var( stats_metadata%irvm, rtm(i,:) - rcm(i,:), & !intent(in)
-                              stats_zt(i) )               !intent(inout)
-      end do
-
-      ! Output relative humidity (q/q∗ where q∗ is the saturation mixing ratio over liquid)
-      ! Added an extra check for stats_metadata%irel_humidity > 0; otherwise, 
-      ! if both stats_metadata%irsat = 0 and
-      ! stats_metadata%irel_humidity = 0, rsat is not computed, leading to a 
-      ! floating-point exception
-      ! when stat_update_var is called for rel_humidity.  ldgrant
-      if ( stats_metadata%irel_humidity > 0 ) then
-        
+      call stats_update( "rvm", rtm - rcm, stats )
+      ! Output relative humidity (q/q* where q* is the saturation mixing ratio
+      ! over liquid).
+      ! Added an extra check for rel_humidity or rsat output; otherwise,
+      ! if both are omitted, rsat may not be computed, leading to a
+      ! floating-point exception when rel_humidity is written.
+      if ( var_on_stats_list( stats, "rel_humidity" ) &
+           .or. var_on_stats_list( stats, "rsat" ) ) then
         rsat = sat_mixrat_liq_api( nzt, ngrdcol, gr, p_in_Pa, &
                                    thlm2T_in_K_api( nzt, ngrdcol, thlm, exner, rcm ), &
                                    clubb_config_flags%saturation_formula )
@@ -1704,12 +1652,11 @@ module advance_clubb_core_module
         ! Recompute rsat and rel_humidity. They might have changed.
         do i = 1, ngrdcol
           rel_humidity(i,:) = (rtm(i,:) - rcm(i,:)) / rsat(i,:)
-
-          call stat_update_var( stats_metadata%irel_humidity, rel_humidity(i,:), & ! intent(in)
-                                stats_zt(i))                                       ! intent(inout)
         end do
-      end if ! stats_metadata%irel_humidity > 0
-    end if ! stats_metadata%l_stats_samp
+        ! Write the var to stats
+        call stats_update( "rel_humidity", rel_humidity, stats )
+      end if
+    end if
 
     !----------------------------------------------------------------
     ! Advance rtm/wprtp and thlm/wpthlp one time step
@@ -1752,13 +1699,9 @@ module advance_clubb_core_module
                                       clubb_config_flags%l_modify_limiters_for_cnvg_test, & ! In
                                       stability_correction )                                ! Out
 
-      if ( stats_metadata%l_stats_samp ) then
+      if ( stats%l_sample ) then
         !$acc update host( stability_correction )
-        do i = 1, ngrdcol
-          call stat_update_var( stats_metadata%istability_correction, & ! In
-                                stability_correction(i,:), & ! In
-                                stats_zm(i) ) ! In/Out
-        end do
+        call stats_update( "stability_correction", stability_correction, stats )
       end if
 
       ! Determine the static stability corrected version of tau_zm
@@ -1773,7 +1716,9 @@ module advance_clubb_core_module
         end do
       end do
       !$acc end parallel loop
+
     else
+
       !$acc parallel loop gang vector collapse(2) default(present)
       do k = 1, nzm
         do i = 1, ngrdcol
@@ -1783,6 +1728,7 @@ module advance_clubb_core_module
         end do
       end do
       !$acc end parallel loop
+
     end if ! l_stability_correction
 
     ! Set invrs_tau variables for C4 and C14
@@ -1821,70 +1767,33 @@ module advance_clubb_core_module
       !$acc end parallel loop
     end if
 
-    if ( stats_metadata%l_stats_samp ) then
-
+    if ( stats%l_sample ) then
       !$acc update host( invrs_tau_zm, invrs_tau_xp2_zm, invrs_tau_wp2_zm, invrs_tau_wpxp_zm, &
       !$acc              Ri_zm, invrs_tau_wp3_zm, invrs_tau_no_N2_zm, invrs_tau_bkgnd, &
       !$acc              invrs_tau_sfc, invrs_tau_shear, brunt_vaisala_freq_sqd, &
       !$acc              brunt_vaisala_freq_sqd_splat, brunt_vaisala_freq_sqd_mixed, &
       !$acc              brunt_vaisala_freq_sqd_moist, brunt_vaisala_freq_sqd_dry, &
       !$acc              brunt_vaisala_freq_sqd_smth )
+      call stats_update( "invrs_tau_zm", invrs_tau_zm, stats )
+      call stats_update( "invrs_tau_xp2_zm", invrs_tau_xp2_zm, stats )
+      call stats_update( "invrs_tau_wp2_zm", invrs_tau_wp2_zm, stats )
+      call stats_update( "invrs_tau_wpxp_zm", invrs_tau_wpxp_zm, stats )
+      call stats_update( "Ri_zm", Ri_zm, stats )
+      call stats_update( "invrs_tau_wp3_zm", invrs_tau_wp3_zm, stats )
 
-      do i = 1, ngrdcol
+      if ( clubb_config_flags%l_diag_Lscale_from_tau ) then
+        call stats_update( "invrs_tau_no_N2_zm", invrs_tau_no_N2_zm, stats )
+        call stats_update( "invrs_tau_bkgnd", invrs_tau_bkgnd, stats )
+        call stats_update( "invrs_tau_sfc", invrs_tau_sfc, stats )
+        call stats_update( "invrs_tau_shear", invrs_tau_shear, stats )
+      end if
 
-        call stat_update_var(stats_metadata%iinvrs_tau_zm, & ! intent(in)
-                             invrs_tau_zm(i,:), & ! intent(in)
-                             stats_zm(i))                      ! intent(inout)
-        call stat_update_var(stats_metadata%iinvrs_tau_xp2_zm, & ! intent(in)
-                             invrs_tau_xp2_zm(i,:), & ! intent(in)
-                             stats_zm(i))                              ! intent(inout)
-        call stat_update_var(stats_metadata%iinvrs_tau_wp2_zm, & ! intent(in)
-                             invrs_tau_wp2_zm(i,:), & ! intent(in)
-                             stats_zm(i))                              ! intent(inout)
-        call stat_update_var(stats_metadata%iinvrs_tau_wpxp_zm, & ! intent(in)
-                             invrs_tau_wpxp_zm(i,:), & ! intent(in)
-                             stats_zm(i))                                ! intent(inout)
-        call stat_update_var(stats_metadata%iRi_zm, & ! intent(in)
-                             Ri_zm(i,:), & ! intent(in)
-                             stats_zm(i))                  ! intent(inout)
-        call stat_update_var(stats_metadata%iinvrs_tau_wp3_zm, & ! intent(in)
-                             invrs_tau_wp3_zm(i,:), & ! intent(in)
-                             stats_zm(i))                                ! intent(inout)
-
-        if ( clubb_config_flags%l_diag_Lscale_from_tau ) then
-          call stat_update_var(stats_metadata%iinvrs_tau_no_N2_zm, & ! intent(in)
-                               invrs_tau_no_N2_zm(i,:), & ! intent(in)
-                               stats_zm(i))                                  ! intent(inout)
-          call stat_update_var(stats_metadata%iinvrs_tau_bkgnd, & ! intent(in)
-                               invrs_tau_bkgnd(i,:), & ! intent(in)
-                               stats_zm(i))                            ! intent(inout)
-          call stat_update_var(stats_metadata%iinvrs_tau_sfc, & ! intent(in)
-                               invrs_tau_sfc(i,:), & ! intent(in)
-                               stats_zm(i))                        ! intent(inout)
-          call stat_update_var(stats_metadata%iinvrs_tau_shear, & ! intent(in)
-                               invrs_tau_shear(i,:), & ! intent(in)
-                               stats_zm(i))                            ! intent(inout)
-        end if
-        call stat_update_var(stats_metadata%ibrunt_vaisala_freq_sqd, & ! intent(in)
-                             brunt_vaisala_freq_sqd(i,:), & ! intent(in)
-                             stats_zm(i))
-        call stat_update_var(stats_metadata%ibrunt_vaisala_freq_sqd_splat, & ! intent(in)
-                             brunt_vaisala_freq_sqd_splat(i,:), & ! intent(in)
-                             stats_zm(i))                                       ! intent(inout)
-        call stat_update_var(stats_metadata%ibrunt_vaisala_freq_sqd_mixed, & ! intent(in)
-                             brunt_vaisala_freq_sqd_mixed(i,:), & ! intent(in)
-                             stats_zm(i))                                          ! intent(inout)
-        call stat_update_var(stats_metadata%ibrunt_vaisala_freq_sqd_moist, & ! intent(in)
-                             brunt_vaisala_freq_sqd_moist(i,:), & ! intent(in)
-                             stats_zm(i))                                          ! intent(inout)
-        call stat_update_var(stats_metadata%ibrunt_vaisala_freq_sqd_dry, & ! intent(in)
-                             brunt_vaisala_freq_sqd_dry(i,:), & ! intent(in)
-                             stats_zm(i))                                          ! intent(inout)
-        call stat_update_var(stats_metadata%ibrunt_vaisala_freq_sqd_smth, & ! intent(in)
-                             brunt_vaisala_freq_sqd_smth(i,:), & ! intent(in)
-                             stats_zm(i))                                          ! intent(inout)
-
-      end do
+      call stats_update( "bv_freq_sqd", brunt_vaisala_freq_sqd, stats )
+      call stats_update( "bv_freq_sqd_splat", brunt_vaisala_freq_sqd_splat, stats )
+      call stats_update( "bv_freq_sqd_mixed", brunt_vaisala_freq_sqd_mixed, stats )
+      call stats_update( "bv_freq_sqd_moist", brunt_vaisala_freq_sqd_moist, stats )
+      call stats_update( "bv_freq_sqd_dry", brunt_vaisala_freq_sqd_dry, stats )
+      call stats_update( "bv_freq_sqd_smth", brunt_vaisala_freq_sqd_smth, stats )
     end if
 
     ! Cx_fnc_Richardson is only used if one of these flags is true,
@@ -1964,8 +1873,7 @@ module advance_clubb_core_module
                             clubb_config_flags%l_mono_flux_lim_vm,                 & ! intent(in)
                             clubb_config_flags%l_mono_flux_lim_spikefix,           & ! intent(in)
                             order_xm_wpxp, order_xp2_xpyp, order_wp2_wp3,          & ! intent(in)
-                            stats_metadata,                                        & ! intent(in)
-                            stats_zt, stats_zm, stats_sfc,                         & ! intent(i/o)
+                            stats,                                                  & ! intent(inout)
                             rtm, wprtp, thlm, wpthlp,                              & ! intent(i/o)
                             sclrm, wpsclrp, um, upwp, vm, vpwp,                    & ! intent(i/o)
                             um_pert, vm_pert, upwp_pert, vpwp_pert, err_info )       ! intent(i/o)
@@ -2040,8 +1948,7 @@ module advance_clubb_core_module
                              clubb_config_flags%l_upwind_xpyp_ta,                 & ! intent(in)
                              clubb_config_flags%l_godunov_upwind_xpyp_ta,         & ! intent(in)
                              clubb_config_flags%l_lmm_stepping,                   & ! intent(in)
-                             stats_metadata,                                      & ! intent(in)
-                             stats_zt, stats_zm, stats_sfc,                       & ! intent(inout)
+                             stats,                                               & ! intent(inout)
                              rtp2, thlp2, rtpthlp, up2, vp2,                      & ! intent(inout)
                              sclrp2, sclrprtp, sclrpthlp, err_info )                ! intent(inout)
       
@@ -2107,8 +2014,7 @@ module advance_clubb_core_module
                               clubb_config_flags%l_predict_upwp_vpwp,       & ! intent(in)
                               clubb_config_flags%l_tke_aniso,               & ! intent(in)
                               clubb_config_flags%l_linearize_pbl_winds,     & ! intent(in)
-                              stats_metadata,                               & ! intent(in)
-                              stats_zm,                                     & ! intent(inout)
+                              stats,                                        & ! intent(inout)
                               wprtp, wpthlp, upwp, vpwp, wpsclrp,           & ! intent(inout)
                               upwp_pert, vpwp_pert )                          ! intent(inout)
       
@@ -2151,8 +2057,7 @@ module advance_clubb_core_module
                             clubb_config_flags%l_use_wp3_lim_with_smth_Heaviside, & ! intent(in)
                             clubb_config_flags%l_wp2_fill_holes_tke,              & ! intent(in)
                             clubb_config_flags%l_ho_nontrad_coriolis,             & ! intent(in)
-                            stats_metadata,                                       & ! intent(in)
-                            stats_zt, stats_zm, stats_sfc,                        & ! intent(inout)
+                            stats,                                                & ! intent(inout)
                             up2, vp2, wp2, wp3, wp3_zm, wp2_zt, err_info )          ! intent(inout)
 
       if ( clubb_at_least_debug_level_api( 0 ) ) then
@@ -2218,8 +2123,7 @@ module advance_clubb_core_module
                               clubb_config_flags%l_predict_upwp_vpwp,       & ! intent(in)
                               clubb_config_flags%l_tke_aniso,               & ! intent(in)
                               clubb_config_flags%l_linearize_pbl_winds,     & ! intent(in)
-                              stats_metadata,                               & ! intent(in)
-                              stats_zm,                                     & ! intent(inout)
+                              stats,                                        & ! intent(inout)
                               wprtp, wpthlp, upwp, vpwp, wpsclrp,           & ! intent(inout)
                               upwp_pert, vpwp_pert )                          ! intent(inout)
 
@@ -2267,8 +2171,7 @@ module advance_clubb_core_module
                                   clubb_config_flags%l_lmm_stepping,          & ! intent(in)
                                   clubb_config_flags%l_linearize_pbl_winds,   & ! intent(in)
                                   order_xp2_xpyp, order_wp2_wp3, order_windm, & ! intent(in)
-                                  stats_metadata,                             & ! intent(in)
-                                  stats_zt, stats_zm, stats_sfc,              & ! intent(inout)
+                                  stats,                                       & ! intent(inout)
                                   um, vm, edsclrm,                            & ! intent(inout)
                                   upwp, vpwp, wpedsclrp,                      & ! intent(inout)
                                   um_pert, vm_pert, upwp_pert,                & ! intent(inout)
@@ -2292,7 +2195,7 @@ module advance_clubb_core_module
                           p_in_Pa, 100000.0_core_rknd, thlm,  & ! intent(in)
                           thlm1000 )                            ! intent(out)
 
-        if ( stats_metadata%l_stats_samp ) then
+        if ( stats%l_sample ) then
 
           !$acc update host( edsclrm, thlm, rtm, thlm700, thlm1000 )
 
@@ -2324,20 +2227,13 @@ module advance_clubb_core_module
         
       end if
 
-      if ( stats_metadata%l_stats_samp ) then
-
+      if ( stats%l_sample ) then
         if ( edsclr_dim <= 1 .or. .not. clubb_config_flags%l_do_expldiff_rtm_thlm ) then
-          ! thlm_ed and rtm_ed are budget terms intended to track the effect of explicit diffusion
           thlm_ed(:,:) = zero
           rtm_ed(:,:)  = zero
         end if
-
-        do i = 1, ngrdcol
-          call stat_update_var( stats_metadata%ithlm_ed, thlm_ed(i,:),  & ! intent(in)
-                                stats_zt(i) )                             ! intent(inout)
-          call stat_update_var( stats_metadata%irtm_ed, rtm_ed(i,:),    & ! intent(in)
-                                stats_zt(i) )                             ! intent(inout)
-        end do
+        call stats_update( "thlm_ed", thlm_ed, stats )
+        call stats_update( "rtm_ed", rtm_ed, stats )
       end if
 
       if ( edsclr_dim > 0 .and. clubb_config_flags%fill_holes_type /= 0 ) then
@@ -2371,8 +2267,7 @@ module advance_clubb_core_module
                         invrs_rho_ds_zt, invrs_tau_zt, tau_max_zt,     & ! Intent(in)
                         sclrm, sclrp2, wpsclrp, wpsclrp2,              & ! Intent(in)
                         clubb_config_flags%l_lmm_stepping,             & ! intent(in)
-                        stats_metadata,                                & ! intent(in)
-                        stats_zt,                                      & ! intent(inout)
+                        stats,                                         & ! intent(inout)
                         rtp3, thlp3, sclrp3 )                            ! Intent(inout)
 
       ! Use a modified form of the Larson and Golaz (2005) ansatz for the
@@ -2598,8 +2493,7 @@ module advance_clubb_core_module
                                clubb_config_flags%l_use_cloud_cover,        & ! Intent(in)
                                clubb_config_flags%l_rcm_supersat_adj,       & ! Intent(in)
                                l_mix_rat_hm,                                & ! Intent(in)
-                               stats_metadata,                              & ! Intent(in)
-                               stats_zt, stats_zm,                          & ! Intent(inout)
+                               stats,                                       & ! Intent(inout)
                                rtm,                                         & ! Intent(inout)
                                pdf_implicit_coefs_terms,                    & ! Intent(inout)
                                pdf_params, pdf_params_zm, err_info,         & ! Intent(inout)
@@ -2658,7 +2552,7 @@ module advance_clubb_core_module
     !#############            ACCUMULATE STATISTICS            #############
     !#######################################################################
 
-    if ( stats_metadata%l_stats_samp ) then
+    if ( stats%l_sample ) then
 
       !$acc update host( wp2, vp2, up2, wprtp, wpthlp, upwp, vpwp, rtp2, thlp2, &
       !$acc              rtpthlp, rtm, thlm, um, vm, wp3, &
@@ -2739,112 +2633,74 @@ module advance_clubb_core_module
 
       !$acc update host( edsclrm, edsclrm_forcing  ) if ( edsclr_dim > 0 )
 
-      do i = 1, ngrdcol
+      wpthlp_zt(:,:)  = zm2zt_api( nzm, nzt, ngrdcol, gr, wpthlp(:,:) )
+      wprtp_zt(:,:)   = zm2zt_api( nzm, nzt, ngrdcol, gr, wprtp(:,:) )
+      up2_zt(:,:) = zm2zt_api( nzm, nzt, ngrdcol, gr, up2(:,:), w_tol_sqd )
+      vp2_zt(:,:) = zm2zt_api( nzm, nzt, ngrdcol, gr, vp2(:,:), w_tol_sqd )
+      upwp_zt(:,:) = zm2zt_api( nzm, nzt, ngrdcol, gr, upwp(:,:) )
+      vpwp_zt(:,:) = zm2zt_api( nzm, nzt, ngrdcol, gr, vpwp(:,:) )
 
-        call stat_end_update( nzm, stats_metadata%iwp2_bt, wp2(i,:) / dt, & ! intent(in)
-                              stats_zm(i) )           ! intent(inout)
-        call stat_end_update( nzm, stats_metadata%ivp2_bt, vp2(i,:) / dt, & ! intent(in)
-                              stats_zm(i) )           ! intent(inout)
-        call stat_end_update( nzm, stats_metadata%iup2_bt, up2(i,:) / dt, & ! intent(in)
-                              stats_zm(i) )           ! intent(inout)
-        call stat_end_update( nzm, stats_metadata%iwprtp_bt, wprtp(i,:) / dt, & ! intent(in)
-                              stats_zm(i) )               ! intent(inout)
-        call stat_end_update( nzm, stats_metadata%iwpthlp_bt, wpthlp(i,:) / dt, & ! intent(in)
-                              stats_zm(i) )                 ! intent(inout)
-        if ( clubb_config_flags%l_predict_upwp_vpwp ) then
-           call stat_end_update( nzm, stats_metadata%iupwp_bt, upwp(i,:) / dt, & ! intent(in)
-                                 stats_zm(i) )             ! intent(inout)
-           call stat_end_update( nzm, stats_metadata%ivpwp_bt, vpwp(i,:) / dt, & ! intent(in)
-                                 stats_zm(i) )             ! intent(inout)
-        endif ! l_predict_upwp_vpwp
-        call stat_end_update( nzm, stats_metadata%irtp2_bt, rtp2(i,:) / dt, & ! intent(in)
-                              stats_zm(i) )             ! intent(inout)
-        call stat_end_update( nzm, stats_metadata%ithlp2_bt, thlp2(i,:) / dt, & ! intent(in)
-                              stats_zm(i) )               ! intent(inout)
-        call stat_end_update( nzm, stats_metadata%irtpthlp_bt, rtpthlp(i,:) / dt, & ! intent(in)
-                              stats_zm(i) )                   ! intent(inout)
- 
-        call stat_end_update( nzt, stats_metadata%irtm_bt, rtm(i,:) / dt, & ! intent(in)
-                              stats_zt(i) )           ! intent(inout)
-        call stat_end_update( nzt, stats_metadata%ithlm_bt, thlm(i,:) / dt, & ! intent(in)
-                              stats_zt(i) )             ! intent(inout)
-        call stat_end_update( nzt, stats_metadata%ium_bt, um(i,:) / dt, & ! intent(in)
-                              stats_zt(i) )         ! intent(inout)
-        call stat_end_update( nzt, stats_metadata%ivm_bt, vm(i,:) / dt, & ! intent(in)
-                              stats_zt(i) )         ! intent(inout)
-        call stat_end_update( nzt, stats_metadata%iwp3_bt, wp3(i,:) / dt, & ! intent(in)
-                              stats_zt(i) )           ! intent(inout)
-      end do
+      call stats_accumulate( &
+             nzm, nzt, ngrdcol, sclr_dim, edsclr_dim, gr%invrs_dzm, gr%zt,                & ! In
+             gr%grid_dir * gr%dzm, gr%grid_dir * gr%dzt, dt,                              & ! In
+             um, vm, upwp, vpwp, up2, vp2,                                                 & ! In
+             thlm, rtm, wprtp, wpthlp,                                                     & ! In
+             wp2, wp3, rtp2, rtp3, thlp2, thlp3,                                           & ! In
+             rtpthlp,                                                                       & ! In
+             wpthvp, wp2thvp, wp2up, rtpthvp, thlpthvp,                                    & ! In
+             p_in_Pa, exner, rho, rho_zm,                                                  & ! In
+             rho_ds_zm, rho_ds_zt, thv_ds_zm, thv_ds_zt,                                   & ! In
+             wm_zt, wm_zm, rcm, wprcp, rc_coef,                                            & ! In
+             rc_coef_zm,                                                                    & ! In
+             rcm_zm, rtm_zm, thlm_zm, cloud_frac,                                          & ! In
+             ice_supersat_frac,                                                             & ! In
+             cloud_frac_zm, ice_supersat_frac_zm, rcm_in_layer,                            & ! In
+             cloud_cover, rcm_supersat_adj, sigma_sqd_w,                                   & ! In
+             thvm, ug, vg, Lscale, wpthlp2, wp2thlp,                                       & ! In
+             wprtp2, wp2rtp,                                                                & ! In
+             Lscale_up, Lscale_down, tau_zt, Kh_zt, wp2rcp,                                & ! In
+             wprtpthlp, sigma_sqd_w_zt, rsat, wp2_zt,                                      & ! In
+             thlp2_zt,                                                                      & ! In
+             wpthlp_zt, wprtp_zt, rtp2_zt, rtpthlp_zt,                                     & ! In
+             up2_zt,                                                                        & ! In
+             vp2_zt, upwp_zt, vpwp_zt, wpup2, wpvp2,                                       & ! In
+             wp2up2, wp2vp2, wp4,                                                          & ! In
+             tau_zm, Kh_zm, thlprcp,                                                       & ! In
+             rtprcp, rcp2, em, a3_coef, a3_coef_zt,                                        & ! In
+             wp3_zm, wp3_on_wp2, wp3_on_wp2_zt, Skw_velocity,                              & ! In
+             w_up_in_cloud, w_down_in_cloud,                                               & ! In
+             cloudy_updraft_frac, cloudy_downdraft_frac,                                   & ! In
+             pdf_params, pdf_params_zm,                                                    & ! In
+             sclrm, sclrp2,                                                                 & ! In
+             sclrprtp, sclrpthlp, sclrm_forcing, sclrpthvp,                                & ! In
+             wpsclrp, sclrprcp, wp2sclrp, wpsclrp2,                                        & ! In
+             wpsclrprtp,                                                                    & ! In
+             wpsclrpthlp, wpedsclrp, edsclrm,                                              & ! In
+             edsclrm_forcing,                                                               & ! In
+             clubb_config_flags%saturation_formula,                                         & ! In
+             clubb_config_flags%l_call_pdf_closure_twice,                                   & ! In
+             stats )                                                                        ! In
+      call stats_finalize_budget( "wp2_bt", wp2 / dt, stats )
+      call stats_finalize_budget( "vp2_bt", vp2 / dt, stats )
+      call stats_finalize_budget( "up2_bt", up2 / dt, stats )
+      call stats_finalize_budget( "wprtp_bt", wprtp / dt, stats )
+      call stats_finalize_budget( "wpthlp_bt", wpthlp / dt, stats )
 
-      if ( stats_metadata%iwpthlp_zt > 0 ) then
-        wpthlp_zt(:,:)  = zm2zt_api( nzm, nzt, ngrdcol, gr, wpthlp(:,:) )
+      if ( clubb_config_flags%l_predict_upwp_vpwp ) then
+        call stats_finalize_budget( "upwp_bt", upwp / dt, stats )
+        call stats_finalize_budget( "vpwp_bt", vpwp / dt, stats )
       end if
 
-      if ( stats_metadata%iwprtp_zt > 0 ) then
-        wprtp_zt(:,:)   = zm2zt_api( nzm, nzt, ngrdcol, gr, wprtp(:,:) )
-      end if
+      call stats_finalize_budget( "rtp2_bt", rtp2 / dt, stats )
+      call stats_finalize_budget( "thlp2_bt", thlp2 / dt, stats )
+      call stats_finalize_budget( "rtpthlp_bt", rtpthlp / dt, stats )
 
-      if ( stats_metadata%iup2_zt > 0 ) then
-        up2_zt(:,:) = zm2zt_api( nzm, nzt, ngrdcol, gr, up2(:,:), w_tol_sqd )
-      end if
-
-      if (stats_metadata%ivp2_zt > 0 ) then
-        vp2_zt(:,:) = zm2zt_api( nzm, nzt, ngrdcol, gr, vp2(:,:), w_tol_sqd )
-      end if
-
-      if ( stats_metadata%iupwp_zt > 0 ) then
-        upwp_zt(:,:) = zm2zt_api( nzm, nzt, ngrdcol, gr, upwp(:,:) )
-      end if
-
-      if ( stats_metadata%ivpwp_zt > 0 ) then
-        vpwp_zt(:,:) = zm2zt_api( nzm, nzt, ngrdcol, gr, vpwp(:,:) )
-      end if
-
-      do i = 1, ngrdcol
-
-        call stats_accumulate( &
-               nzm, nzt, i, sclr_dim, edsclr_dim, gr%invrs_dzm(i,:), gr%zt(i,:),          & ! In
-               gr%grid_dir * gr%dzm(i,:), gr%grid_dir * gr%dzt(i,:), dt,                  & ! In
-               um(i,:), vm(i,:), upwp(i,:), vpwp(i,:), up2(i,:), vp2(i,:),                & ! In
-               thlm(i,:), rtm(i,:), wprtp(i,:), wpthlp(i,:),                              & ! In
-               wp2(i,:), wp3(i,:), rtp2(i,:), rtp3(i,:), thlp2(i,:), thlp3(i,:),          & ! In
-               rtpthlp(i,:),                                                              & ! In
-               wpthvp(i,:), wp2thvp(i,:), wp2up(i,:), rtpthvp(i,:), thlpthvp(i,:),        & ! In
-               p_in_Pa(i,:), exner(i,:), rho(i,:), rho_zm(i,:),                           & ! In
-               rho_ds_zm(i,:), rho_ds_zt(i,:), thv_ds_zm(i,:), thv_ds_zt(i,:),            & ! In
-               wm_zt(i,:), wm_zm(i,:), rcm(i,:), wprcp(i,:), rc_coef(i,:),                & ! In
-               rc_coef_zm(i,:),                                                           & ! In
-               rcm_zm(i,:), rtm_zm(i,:), thlm_zm(i,:), cloud_frac(i,:),                   & ! In
-               ice_supersat_frac(i,:),                                                    & ! In
-               cloud_frac_zm(i,:), ice_supersat_frac_zm(i,:), rcm_in_layer(i,:),          & ! In
-               cloud_cover(i,:), rcm_supersat_adj(i,:), sigma_sqd_w(i,:),                 & ! In
-               thvm(i,:), ug(i,:), vg(i,:), Lscale(i,:), wpthlp2(i,:), wp2thlp(i,:),      & ! In
-               wprtp2(i,:), wp2rtp(i,:),                                                  & ! In
-               Lscale_up(i,:), Lscale_down(i,:), tau_zt(i,:), Kh_zt(i,:), wp2rcp(i,:),    & ! In
-               wprtpthlp(i,:), sigma_sqd_w_zt(i,:), rsat(i,:), wp2_zt(i,:),               & ! In
-               thlp2_zt(i,:),                                                             & ! In
-               wpthlp_zt(i,:), wprtp_zt(i,:), rtp2_zt(i,:), rtpthlp_zt(i,:),              & ! In
-               up2_zt(i,:),                                                               & ! In
-               vp2_zt(i,:), upwp_zt(i,:), vpwp_zt(i,:), wpup2(i,:), wpvp2(i,:),           & ! In
-               wp2up2(i,:), wp2vp2(i,:), wp4(i,:),                                        & ! In
-               tau_zm(i,:), Kh_zm(i,:), thlprcp(i,:),                                     & ! In
-               rtprcp(i,:), rcp2(i,:), em(i,:), a3_coef(i,:), a3_coef_zt(i,:),            & ! In
-               wp3_zm(i,:), wp3_on_wp2(i,:), wp3_on_wp2_zt(i,:), Skw_velocity(i,:),       & ! In
-               w_up_in_cloud(i,:), w_down_in_cloud(i,:),                                  & ! In
-               cloudy_updraft_frac(i,:), cloudy_downdraft_frac(i,:),                      & ! In
-               pdf_params, pdf_params_zm,                                                 & ! In
-               sclrm(i,:,:), sclrp2(i,:,:),                                               & ! In
-               sclrprtp(i,:,:), sclrpthlp(i,:,:), sclrm_forcing(i,:,:), sclrpthvp(i,:,:), & ! In
-               wpsclrp(i,:,:), sclrprcp(i,:,:), wp2sclrp(i,:,:), wpsclrp2(i,:,:),         & ! In
-               wpsclrprtp(i,:,:),                                                         & ! In
-               wpsclrpthlp(i,:,:), wpedsclrp(i,:,:), edsclrm(i,:,:),                      & ! In
-               edsclrm_forcing(i,:,:),                                                    & ! In
-               clubb_config_flags%saturation_formula,                                     & ! In
-               clubb_config_flags%l_call_pdf_closure_twice,                               & ! In
-               stats_metadata,                                                            & ! In
-               stats_zt(i), stats_zm(i), stats_sfc(i) )                                     ! In/Out
-      end do
-    endif ! stats_metadata%l_stats_samp
+      call stats_finalize_budget( "rtm_bt", rtm / dt, stats )
+      call stats_finalize_budget( "thlm_bt", thlm / dt, stats )
+      call stats_finalize_budget( "um_bt", um / dt, stats )
+      call stats_finalize_budget( "vm_bt", vm / dt, stats )
+      call stats_finalize_budget( "wp3_bt", wp3 / dt, stats )
+    end if
 
     if ( clubb_at_least_debug_level_api( 2 ) ) then
 
@@ -2893,7 +2749,7 @@ module advance_clubb_core_module
 
     end if
 
-    if ( stats_metadata%l_stats .and. stats_metadata%l_stats_samp ) then
+    if ( stats%l_sample ) then
 
       !$acc update host( wm_zt, wm_zm, rho_ds_zm, wprtp, wprtp_sfc, rho_ds_zt, &
       !$acc              rtm, rtm_forcing, thlm, thlm_forcing )
@@ -2955,16 +2811,8 @@ module advance_clubb_core_module
           thlm_spur_src(i) = -9999.0_core_rknd
         end if
       end do
-
-      ! Write the var to stats
-      do i = 1, ngrdcol
-        call stat_update_var_pt( stats_metadata%irtm_spur_src, 1, & ! intent(in)
-                                 rtm_spur_src(i),                 & ! intent(in)
-                                 stats_sfc(i) )                     ! intent(inout)
-        call stat_update_var_pt( stats_metadata%ithlm_spur_src, 1, & ! intent(in)
-                                 thlm_spur_src(i),                 & ! intent(in)
-                                 stats_sfc(i) )                      ! intent(inout)
-      end do
+      call stats_update( "rtm_spur_src", rtm_spur_src, stats )
+      call stats_update( "thlm_spur_src", thlm_spur_src, stats )
     end if
 
     !$acc exit data if( sclr_dim > 0 ) &
@@ -2999,6 +2847,7 @@ module advance_clubb_core_module
     !$acc                   brunt_vaisala_freq_sqd_zt, brunt_vaisala_freq_clipped, Ri_zm, &
     !$acc                   Lscale_max, tau_max_zm, tau_max_zt, mu, lhs_splat_wp2, lhs_splat_wp3 )
     
+
     return
 
   end subroutine advance_clubb_core

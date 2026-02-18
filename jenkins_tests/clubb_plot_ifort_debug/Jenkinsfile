@@ -13,15 +13,13 @@ pipeline {
         // The source step is done to bring in all the needed intel path variables to run the rest of the commands
         sh '''source /etc/profile.d/larson-group.sh
               module load intel netcdf-fortran
-		          compile/compile.bash -c config/linux_x86_64_ifort_debug.bash'''
+		          ./compile.py -debug'''
       }
     }
     stage('Run') {
       steps {
         // The source step is done to bring in all the needed intel path variables to run the rest of the commands
-        sh '''source /etc/profile.d/larson-group.sh
-              module load intel netcdf-fortran
-              run_scripts/run_scm_all.bash
+        sh '''run_scripts/run_scm_all.py
               mv output cpu_${commit}; mkdir output'''
       }
     }

@@ -13,8 +13,7 @@ module ice_dfsn_module
 !-------------------------------------------------------------------------------
   subroutine ice_dfsn( gr, dt, thlm, rcm, exner, p_in_Pa, rho, & 
                        saturation_formula, &
-                       stats_metadata, &
-                       stats_zt, &
+                       stats, icol,         &
                        rcm_icedfsn, thlm_icedfsn )
 ! Description:
 !   This subroutine is based on a COAMPS subroutine (nov11_icedfs)
@@ -79,14 +78,9 @@ module ice_dfsn_module
     use T_in_K_module, only: &
         thlm2T_in_K_api ! Procedure(s)
 
-    use stats_type_utilities, only: & 
-        stat_update_var
-
-    use stats_variables, only: &
-        stats_metadata_type
-
-    use stats_type, only: &
-        stats ! Type
+    use stats_netcdf, only: &
+        stats_type, &
+        stats_update
 
     implicit none
 
@@ -112,12 +106,12 @@ module ice_dfsn_module
     integer, intent(in) :: &
       saturation_formula ! Integer that stores the saturation formula to be used
 
-    type (stats_metadata_type), intent(in) :: &
-      stats_metadata
+    ! ---------------------- InOut variables ----------------------
+    type(stats_type), intent(inout) :: &
+      stats
 
-    !---------------------- InOut variables ----------------------
-    type(stats), intent(inout) :: &
-      stats_zt
+    integer, intent(in) :: &
+      icol
 
     !---------------------- Output variables ----------------------
     real(kind = core_rknd), dimension(gr%nzt), intent(out)::  & 
@@ -136,6 +130,9 @@ module ice_dfsn_module
       dmass_ice_cryst,  & ! Change in ice mass over vertical grid box   [kg m^{-1}]
       diam,             & ! Diameter of ice crystal                     [m]
       u_T_cm              ! Fallspeed of ice crystal in cm/s            [cm s^{-1}]
+                         ! diam(:) ! Icedfs diameter; Michael Falk, 1 Nov 2006
+                         ! dqc_dt_icedfsn(:) ! Icedfs change in liquid; Michael Falk, 1 Nov 2006
+                         ! u_T_cm(:)        ! Icedfs fallspeed (cm/s); Michael Falk, 1 Nov 2006
 
     REAL(KIND=core_rknd)::  & 
       a_coef,     & ! Pre-factor for mass-diameter relationship, Mitchell (1996) [kg] 
@@ -297,20 +294,11 @@ module ice_dfsn_module
 
     end do ! k = gr%nzt, 1, -1
 
-    if ( stats_metadata%l_stats_samp ) then
-
-!       diam(:) ! Icedfs diameter; Michael Falk, 1 Nov 2006
-!       m(:)    ! Icedfs mass; Michael Falk, 1 Nov 2006
-!       dqc_dt_icedfs(:) ! Icedfs change in liquid; Michael Falk, 1 Nov 2006
-!       u_T_cm(:)        ! Icedfs fallspeed (cm/s); Michael Falk, 1 Nov 2006
-      call stat_update_var( stats_metadata%ircm_icedfs, rcm_icedfsn, stats_zt )
-
-      call stat_update_var( stats_metadata%idiam, diam, stats_zt )
-
-      call stat_update_var( stats_metadata%imass_ice_cryst, mass_ice_cryst, stats_zt )
-
-      call stat_update_var( stats_metadata%iu_T_cm, u_T_cm, stats_zt )
-
+    if ( stats%l_sample ) then
+      call stats_update( "rcm_icedfs", rcm_icedfsn, stats, icol )
+      call stats_update( "diam", diam, stats, icol )
+      call stats_update( "mass_ice_cryst", mass_ice_cryst, stats, icol )
+      call stats_update( "u_T_cm", u_T_cm, stats, icol )
     end if
 
     ! Determine time tendency of liquid potential temperature

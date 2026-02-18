@@ -5,14 +5,12 @@ pipeline {
       steps {
         sh '''source /etc/profile.d/larson-group.sh
               module load gcc netcdf-fortran
-              compile/compile.bash -c config/linux_x86_64_gfortran.bash'''
+              ./compile.py'''
       }
     }
     stage('Run SILHS test script') {
       steps {
-        sh '''source /etc/profile.d/larson-group.sh
-              module load gcc netcdf-fortran
-              run_scripts/run_silhs_test.bash'''
+        sh '''python run_scripts/run_silhs_test.py'''
       }
     }
   }

@@ -1,0 +1,19 @@
+&clubb_stats_nl
+  ! entry(i) format: "name | grid | units | long_name"
+  ! grid options: zt, zm, sfc, lh_zt, lh_sfc, rad_zt, rad_zm
+  entry(1) = "wpthlp     | zm | (m K)/s       | Vertical turbulent flux of theta_l"
+  entry(2) = "wprtp      | zm | (m kg)/(s kg) | Vertical turbulent flux of total water, rt"
+  entry(3) = "wp2        | zm | m^2/s^2       | Variance of vertical air velocity"
+  entry(4) = "thlp2      | zm | K^2           | Variance of theta_l"
+  entry(5) = "rtp2       | zm | (kg/kg)^2     | Variance of total water, rt"
+  entry(6) = "rtpthlp    | zm | (kg K)/kg     | Covariance of rt and theta_l"
+  entry(7) = "upwp       | zm | m^2/s^2       | Vertical turbulent flux of eastward (u) wind"
+  entry(8) = "vpwp       | zm | m^2/s^2       | Vertical turbulent flux of northward (v) wind"
+  entry(9) = "up2        | zm | m^2/s^2       | Variance of eastward (u) wind"
+  entry(10) = "vp2        | zm | m^2/s^2       | Variance of northward (v) wind"
+  entry(11) = "wp3        | zt | m^3/s^3       | Third-order moment of vertical air velocity"
+  entry(12) = "rcm        | zt | kg/kg         | Cloud water mixing ratio"
+  entry(13) = "cloud_frac | zt | -             | Cloud fraction (between 0 and 1)"
+  entry(14) = "rtm        | zt | kg/kg         | Total (vapor+liquid) water mixing ratio"
+  entry(15) = "thlm       | zt | K             | Liquid water potential temperature (theta_l)"
+/

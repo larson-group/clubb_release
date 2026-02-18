@@ -786,27 +786,24 @@ postprocessing/pyplotgen/README.md in your CLUBB checkout.
 CLUBB has the capability to run with multiple columns, where each
 columns uses a different parameter set. To perform one of these runs
 you need a file containing a list of the parameters you want to use
-for each colummn, along with an additional namelist containing the 
-number of columns to run with (ngrdcol) and a logical (l_output_multi_col)
-that tells CLUBB whether or not you want to multiple column data to be saved 
-to disk. 
+for each colummn, along with an additional namelist containing the
+number of columns to run with (`ngrdcol`).
 
 There is a tool in run_scripts used to generate a multiple column
 parameter set along with this extra namelist, here is an example use:
 `create_multi_col_params.py -n 32 -param_file input/tunable_parameters/tunable_parameters.in`
 - This will create a new param file with the default name "clubb_params_multi_col.in"
 - This file will contain 32 copies of the parameter set passed into it
-- It will also contain the namelist setting ngrdcol=32 and l_output_multi_col=.true. (true by default)
+- It will also contain the namelist setting `ngrdcol=32`
 - There are other options this script takes, including different parameter generation schemes,
   see the script for more details.
 
 Once you have the multicolumn parameter file, you can run clubb with the '-p'
 flag to pass in the new parameter set, like so:
 `./run_scm.bash -p clubb_params_multi_col.in arm`
-- The multiple column data will be saved to output/{casename}_multi_col_zm/zt.nc
-- This data is output if `l_output_multi_col` is true, regardless of the 
-  l_stats setting, so one can run clubb with "-e" as well to turn off 
-  stats and still get the the multicolumn output, e.g
+- The multiple column data will be saved to `output/{casename}_multi_col_zm/zt.nc`
+- This data is written independently from the `l_stats` setting, so one can
+  run CLUBB with `-e` to turn off stats and still get multicolumn output, e.g.
 `./run_scm.bash -p clubb_params_multi_col.in -e arm`
 
 -----------------------------------------------------------------------

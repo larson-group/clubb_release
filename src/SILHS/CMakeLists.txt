@@ -5,7 +5,6 @@ set(SILHS_SOURCES
                     latin_hypercube_driver_module.F90
                     lh_microphys_var_covar_module.F90
                     math_utilities.F90
-                    output_2D_samples_module.F90
                     parameters_silhs.F90
                     silhs_api_module.F90
                     silhs_importance_sample_module.F90

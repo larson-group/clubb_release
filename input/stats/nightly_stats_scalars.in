@@ -1,18 +1,40 @@
-&statsnl
-vars_zt =
-'thlm', 'rtm', 'cloud_frac', 'rcm', 'wp3','thlp3','rtp3',
-'um', 'vm', 'wm_zt', 'rrm', 'Nrm',
-'Ncm', 'rgm', 'rim', 'Nim',
-'sclrm','Lscale'
-''
-
-vars_zm =
-'wp2', 'rtp2', 'thlp2', 'rtpthlp', 'wprtp', 'wpthlp', 'wpthvp',
-'upwp', 'vpwp', 'up2', 'vp2', 'sclrp2',
-''
-
-vars_sfc =
-'wp2_vert_avg', 'lwp', 'swp', 'iwp', 'rwp',
-'precip_rate_sfc',
-''
+&clubb_stats_nl
+  ! entry(i) format: "name | grid | units | long_name"
+  ! grid options: zt, zm, sfc, lh_zt, lh_sfc, rad_zt, rad_zm
+  entry(1) = "thlm            | zt  | K             | Liquid water potential temperature (theta_l)"
+  entry(2) = "rtm             | zt  | kg/kg         | Total (vapor+liquid) water mixing ratio"
+  entry(3) = "cloud_frac      | zt  | -             | Cloud fraction (between 0 and 1)"
+  entry(4) = "rcm             | zt  | kg/kg         | Cloud water mixing ratio"
+  entry(5) = "wp3             | zt  | m^3/s^3       | Third-order moment of vertical air velocity"
+  entry(6) = "thlp3           | zt  | K^3           | Third-order moment of theta_l"
+  entry(7) = "rtp3            | zt  | (kg/kg)^3     | Third-order moment of total water, rt"
+  entry(8) = "um              | zt  | m/s           | Grid-mean eastward (u) wind"
+  entry(9) = "vm              | zt  | m/s           | Grid-mean northward (v) wind"
+  entry(10) = "wm_zt           | zt  | m/s           | Grid-mean upward (w) wind"
+  entry(11) = "rrm             | zt  | kg/kg         | Rain water mixing ratio"
+  entry(12) = "Nrm             | zt  | num/kg        | Rain drop number concentration"
+  entry(13) = "Ncm             | zt  | num/kg        | Cloud droplet number concentration"
+  entry(14) = "rgm             | zt  | kg/kg         | Graupel water mixing ratio"
+  entry(15) = "rim             | zt  | kg/kg         | Pristine ice water mixing ratio"
+  entry(16) = "Nim             | zt  | num/kg        | Ice crystal number concentration"
+  entry(17) = "sclrm           | zt  | [-]           | ...)"
+  entry(18) = "Lscale          | zt  | m             | Turbulent mixing length"
+  entry(19) = "wp2             | zm  | m^2/s^2       | Variance of vertical air velocity"
+  entry(20) = "rtp2            | zm  | (kg/kg)^2     | Variance of total water, rt"
+  entry(21) = "thlp2           | zm  | K^2           | Variance of theta_l"
+  entry(22) = "rtpthlp         | zm  | (kg K)/kg     | Covariance of rt and theta_l"
+  entry(23) = "wprtp           | zm  | (m kg)/(s kg) | Vertical turbulent flux of total water, rt"
+  entry(24) = "wpthlp          | zm  | (m K)/s       | Vertical turbulent flux of theta_l"
+  entry(25) = "wpthvp          | zm  | K m/s         | Buoyancy flux"
+  entry(26) = "upwp            | zm  | m^2/s^2       | Vertical turbulent flux of eastward (u) wind"
+  entry(27) = "vpwp            | zm  | m^2/s^2       | Vertical turbulent flux of northward (v) wind"
+  entry(28) = "up2             | zm  | m^2/s^2       | Variance of eastward (u) wind"
+  entry(29) = "vp2             | zm  | m^2/s^2       | Variance of northward (v) wind"
+  entry(30) = "sclrp2          | zm  | [-]           | ..."
+  entry(31) = "wp2_vert_avg    | sfc | m^2/s^2       | Density-weighted vertical average of w'^2"
+  entry(32) = "lwp             | sfc | kg/m2         | Liquid water path"
+  entry(33) = "swp             | sfc | kg/m2         | Snow water path"
+  entry(34) = "iwp             | sfc | kg/m2         | Ice water path"
+  entry(35) = "rwp             | sfc | kg/m2         | Rain water path"
+  entry(36) = "precip_rate_sfc | sfc | mm/day        | Surface rainfall rate"
 /

@@ -73,6 +73,19 @@ module clubb_api_module
   use array_index, only: &
       sclr_idx_type
 
+  use stats_netcdf, only: &
+      stats_type, &
+      stats_init_api, &
+      stats_begin_timestep_api, &
+      stats_end_timestep_api, &
+      stats_finalize_api
+
+  use setup_clubb_pdf_params, only: &
+      setup_pdf_parameters_api
+
+  use stats_clubb_utilities, only: &
+      stats_accumulate_hydromet_api
+
   use error_code, only: &
       set_clubb_debug_level_api,   &
       clubb_at_least_debug_level_api, &
@@ -163,28 +176,6 @@ module clubb_api_module
     finalize_tau_sponge_damp_api, &   ! Procedure(s)
     initialize_tau_sponge_damp_api
 
-  use stat_file_module, only : &
-    clubb_i, &    ! Used to output multiple columns
-    clubb_j       ! The indices must not exceed nlon (for i) or nlat (for j).
-
-  use stats_rad_zm_module, only : &
-    nvarmax_rad_zm ! Maximum variables allowed
-
-  use stats_rad_zt_module, only : &
-    nvarmax_rad_zt  ! Maximum variables allowed
-
-  use stats_zm_module, only : &
-    nvarmax_zm ! Maximum variables allowed
-
-  use stats_zt_module, only : &
-    nvarmax_zt ! Maximum variables allowed
-
-  use stats_sfc_module, only : &
-    nvarmax_sfc
-
-  use stats_variables, only: & 
-    stats_metadata_type
-
   use grid_class, only: grid ! Type
 
   use grid_class, only: &
@@ -223,25 +214,6 @@ module clubb_api_module
     fill_holes_hydromet_api, &
     fill_holes_vertical_api
 
-  use stats_rad_zm_module, only : &
-    stats_init_rad_zm_api
-
-  use stats_rad_zt_module, only : &
-   stats_init_rad_zt_api
-
-  use stats_zm_module, only : &
-   stats_init_zm_api
-
-  use stats_zt_module, only : &
-   stats_init_zt_api
-
-  use stats_sfc_module, only : &
-   stats_init_sfc_api
-
-  use stats_clubb_utilities, only : &
-    stats_begin_timestep_api, &
-    stats_end_timestep_api
-
   use model_flags, only: &
     initialize_clubb_config_flags_type_api, &
     set_default_clubb_config_flags_api, &
@@ -254,17 +226,8 @@ module clubb_api_module
     setup_corr_varnce_array_api, &
     init_pdf_hydromet_arrays_api
 
-  use stats_clubb_utilities, only : &
-    stats_accumulate_hydromet_api, &
-    stats_init_api
-
-  use stats_type, only: stats ! Type
-
   use parameters_tunable, only: &
     init_clubb_params_api
-
-  use stats_clubb_utilities, only: &
-    stats_finalize_api
 
   use err_info_type_module, only: &
     err_info_type,              & ! Type
@@ -326,7 +289,6 @@ module clubb_api_module
   public &
     ! To Implement SILHS:
     setup_corr_varnce_array_api, &
-    setup_pdf_parameters_api, &
     hydromet_pdf_parameter, &
     init_pdf_hydromet_arrays_api, &
     ! To use the results, you will need these variables:
@@ -334,8 +296,7 @@ module clubb_api_module
     hmp2_ip_on_hmm2_ip_intrcpt_type, &
     hm_metadata_type, &
     sclr_idx_type, &
-    grid, &
-    stats
+    grid
 
   public &
     ! To Interact With CLUBB's Grid:
@@ -344,11 +305,14 @@ module clubb_api_module
     setup_grid_api
 
   public &
-    ! To Obtain More Output from CLUBB for Diagnostics:
+    ! To Obtain NetCDF Stats Output from CLUBB:
+    stats_type, &
+    stats_init_api, &
     stats_begin_timestep_api, &
     stats_end_timestep_api, &
     stats_finalize_api, &
-    stats_init_api
+    setup_pdf_parameters_api, &
+    stats_accumulate_hydromet_api
 
   public :: &
     calculate_thlp2_rad_api, params_list, &
@@ -444,30 +408,16 @@ module clubb_api_module
     init_pdf_implicit_coefs_terms_api, &
     zero_pdf_implicit_coefs_terms_api, &
     calc_derrived_params_api, &
-    clubb_i, &
-    clubb_j, &
     compute_current_date_api, &
     gregorian2julian_day_api, &
-    leap_year_api, &
-    nvarmax_rad_zm, &
-    nvarmax_rad_zt, &
-    nvarmax_sfc, &
-    nvarmax_zm, &
-    nvarmax_zt
+    leap_year_api
 
   public &
     nparams, &
     nu_vertical_res_dep, &
     check_parameters_api, &
     stat_nknd, &
-    stat_rknd, &
-    stats_accumulate_hydromet_api, &
-    stats_init_rad_zm_api, &
-    stats_init_rad_zt_api, &
-    stats_init_sfc_api, &
-    stats_init_zm_api, &
-    stats_init_zt_api, &
-    stats_metadata_type
+    stat_rknd
 
   public &
     ! Needed to use the configurable CLUBB flags
@@ -503,11 +453,6 @@ module clubb_api_module
    set_err_info_values_api,         &
    cleanup_err_info_api
 
-  interface setup_pdf_parameters_api
-    module procedure setup_pdf_parameters_api_single_col
-    module procedure setup_pdf_parameters_api_multi_col
-  end interface
-  
   interface advance_clubb_core_api
     module procedure advance_clubb_core_api_single_col
     module procedure advance_clubb_core_api_multi_col
@@ -565,8 +510,7 @@ contains
     mixt_frac_max_mag, T0, ts_nudge, &                      ! Intent(in)
     rtm_min, rtm_nudge_max_altitude, &                      ! Intent(in)
     clubb_config_flags, &                                   ! intent(in)
-    stats_metadata, &                                       ! intent(in)
-    stats_zt, stats_zm, stats_sfc, &                        ! intent(inout)
+    stats,         &                                        ! intent(inout)
     um, vm, upwp, vpwp, up2, vp2, up3, vp3, &               ! intent(inout)
     thlm, rtm, wprtp, wpthlp, &                             ! intent(inout)
     wp2, wp3, rtp2, rtp3, thlp2, thlp3, rtpthlp, &          ! intent(inout)
@@ -604,15 +548,6 @@ contains
 
     use model_flags, only: &
         clubb_config_flags_type
-
-    use stats_zm_module, only: &
-        stats_init_zm_api ! Procedure(s)
-
-    use stats_zt_module, only: &
-        stats_init_zt_api
-
-    use stats_sfc_module, only: &
-        stats_init_sfc_api ! Procedure(s)
 
     use array_index, only: &
       sclr_idx_type
@@ -743,14 +678,8 @@ contains
     type( clubb_config_flags_type ), intent(in) :: &
       clubb_config_flags ! Derived type holding all configurable CLUBB flags
 
-    type (stats_metadata_type), intent(in) :: &
-      stats_metadata
-
-    !--------------------------- Input/Output Variables ---------------------------
-    type (stats), intent(inout) :: &
-      stats_zt, &
-      stats_zm, &
-      stats_sfc
+    type(stats_type), intent(inout) :: &
+      stats
 
     ! These are prognostic or are planned to be in the future
     real( kind = core_rknd ), intent(inout), dimension(gr%nzt) ::  &
@@ -894,11 +823,6 @@ contains
 #endif
 
     !------------------------- Local Variables -------------------------
-    type(stats), dimension(1) :: &
-      stats_zt_col, &
-      stats_zm_col, &
-      stats_sfc_col
-
     real( kind = core_rknd ), dimension(1) ::  &
       fcor_col,  &          ! Traditional Coriolis parameter    [s^-1]
                             ! Vertical planetary vorticity.   Proportional to sin(latitude)
@@ -1176,10 +1100,6 @@ contains
 
     clubb_params_col(1,:) = clubb_params
 
-    stats_zt_col(1) = stats_zt
-    stats_zm_col(1) = stats_zm
-    stats_sfc_col(1) = stats_sfc
-
     um_col(1,:) = um
     vm_col(1,:) = vm
     upwp_col(1,:) = upwp
@@ -1385,8 +1305,7 @@ contains
       mixt_frac_max_mag, T0, ts_nudge, &                                          ! Intent(in)
       rtm_min, rtm_nudge_max_altitude, &                                          ! Intent(in)
       clubb_config_flags, &                                                       ! intent(in)
-      stats_metadata, &                                                           ! intent(in)
-      stats_zt_col, stats_zm_col, stats_sfc_col, &                                ! intent(inout)
+      stats,         &                                                            ! intent(inout)
       um_col, vm_col, upwp_col, vpwp_col, up2_col, vp2_col, up3_col, vp3_col, &   ! intent(inout)
       thlm_col, rtm_col, wprtp_col, wpthlp_col, &                                 ! intent(inout)
       wp2_col, wp3_col, rtp2_col, rtp3_col, thlp2_col, thlp3_col, rtpthlp_col, &  ! intent(inout)
@@ -1416,7 +1335,7 @@ contains
       thlprcp_col, wprcp_col, w_up_in_cloud_col, w_down_in_cloud_col, &           ! intent(out)
       cloudy_updraft_frac_col, cloudy_downdraft_frac_col, &                       ! intent(out)
       rcm_in_layer_col, cloud_cover_col, invrs_tau_zm_col, &                      ! intent(out)
-      Lscale_col )                                                                ! intent(out)
+      Lscale_col )
 
     !$acc end data
     !$acc end data
@@ -1439,23 +1358,6 @@ contains
       write(fstderr,*) err_info_api%err_header_global
       write(fstderr,*) "Fatal error advance_clubb_core in API module"
       return
-    end if
-
-    ! The following does not work for stats
-    !     stats_zt = stats_zt_col(1)
-    !     stats_zm = stats_zm_col(1)
-    !     stats_sfc = stats_sfc_col(1)
-    ! because of some mysterious pointer issue. However, the only thing that
-    ! updates in stats is the field values, so we can copy only those instead.
-    if ( stats_metadata%l_stats ) then
-      stats_zm%accum_field_values = stats_zm_col(1)%accum_field_values
-      stats_zm%accum_num_samples = stats_zm_col(1)%accum_num_samples
-
-      stats_zt%accum_field_values = stats_zt_col(1)%accum_field_values
-      stats_zt%accum_num_samples = stats_zt_col(1)%accum_num_samples
-
-      stats_sfc%accum_field_values = stats_sfc_col(1)%accum_field_values
-      stats_sfc%accum_num_samples = stats_sfc_col(1)%accum_num_samples
     end if
 
     um = um_col(1,:)
@@ -1555,8 +1457,7 @@ contains
     mixt_frac_max_mag, T0, ts_nudge, &                      ! Intent(in)
     rtm_min, rtm_nudge_max_altitude, &                      ! Intent(in)
     clubb_config_flags, &                                   ! intent(in)
-    stats_metadata, &                                       ! intent(in)
-    stats_zt, stats_zm, stats_sfc, &                        ! intent(inout)
+    stats,         &                                        ! intent(inout)
     um, vm, upwp, vpwp, up2, vp2, up3, vp3, &               ! intent(inout)
     thlm, rtm, wprtp, wpthlp, &                             ! intent(inout)
     wp2, wp3, rtp2, rtp3, thlp2, thlp3, rtpthlp, &          ! intent(inout)
@@ -1728,14 +1629,8 @@ contains
     type( clubb_config_flags_type ), intent(in) :: &
       clubb_config_flags ! Derived type holding all configurable CLUBB flags
 
-    type (stats_metadata_type), intent(in) :: &
-      stats_metadata
-
-    !------------------------ Input/Output Variables ------------------------
-    type(stats), intent(inout), dimension(ngrdcol) :: &
-      stats_zt, &
-      stats_zm, &
-      stats_sfc
+    type(stats_type), intent(inout) :: &
+      stats
 
     ! These are prognostic or are planned to be in the future
     real( kind = core_rknd ), intent(inout), dimension(ngrdcol,nzt) ::  &
@@ -1993,8 +1888,7 @@ contains
       mixt_frac_max_mag, T0, ts_nudge, &                      ! Intent(in)
       rtm_min, rtm_nudge_max_altitude, &                      ! Intent(in)
       clubb_config_flags, &                                   ! intent(in)
-      stats_metadata, &                                       ! intent(in)
-      stats_zt, stats_zm, stats_sfc, &                        ! intent(inout)
+      stats,         &                                        ! intent(inout)
       um, vm, upwp, vpwp, up2, vp2, up3, vp3, &               ! intent(inout)
       thlm, rtm, wprtp, wpthlp, &                             ! intent(inout)
       wp2, wp3, rtp2, rtp3, thlp2, thlp3, rtpthlp, &          ! intent(inout)
@@ -2024,7 +1918,7 @@ contains
       thlprcp, wprcp, w_up_in_cloud, w_down_in_cloud, &       ! intent(out)
       cloudy_updraft_frac, cloudy_downdraft_frac, &           ! intent(out)
       rcm_in_layer, cloud_cover, invrs_tau_zm, &              ! intent(out)
-      Lscale )                                                ! intent(out)
+      Lscale )
 
     !$acc end data
     !$acc end data
@@ -2829,429 +2723,6 @@ contains
     pdf_params_single%ice_supersat_frac_2(1,:)  = pdf_params_multi%ice_supersat_frac_2(icol,:) 
     
   end subroutine copy_multi_pdf_params_to_single
-
-  !================================================================================================
-  ! setup_pdf_parameters
-  !================================================================================================
-
-  subroutine setup_pdf_parameters_api_single_col( gr, & ! intent(in)
-    nzm, nzt, pdf_dim, hydromet_dim, dt, &      ! Intent(in)
-    Nc_in_cloud, cloud_frac, Kh_zm, &           ! Intent(in)
-    ice_supersat_frac, hydromet, wphydrometp, & ! Intent(in)
-    corr_array_n_cloud, corr_array_n_below, &   ! Intent(in)
-    hm_metadata, &                              ! Intent(in)
-    pdf_params, &                               ! Intent(in)
-    clubb_params, &                             ! Intent(in)
-    iiPDF_type, &                               ! Intent(in)
-    l_use_precip_frac, &                        ! Intent(in)
-    l_predict_upwp_vpwp, &                      ! Intent(in)
-    l_diagnose_correlations, &                  ! Intent(in)
-    l_calc_w_corr, &                            ! Intent(in)
-    l_const_Nc_in_cloud, &                      ! Intent(in)
-    l_fix_w_chi_eta_correlations, &             ! Intent(in)
-    stats_metadata, &                           ! Intent(in)
-    stats_zt, stats_zm, stats_sfc, err_info_api, & ! intent(inout)
-    hydrometp2, &                               ! Intent(inout)
-    mu_x_1_n, mu_x_2_n, &                       ! Intent(out)
-    sigma_x_1_n, sigma_x_2_n, &                 ! Intent(out)
-    corr_array_1_n, corr_array_2_n, &           ! Intent(out)
-    corr_cholesky_mtx_1, corr_cholesky_mtx_2, & ! Intent(out)
-    precip_fracs, &                             ! Intent(inout)
-    hydromet_pdf_params )                       ! Intent(out)
-
-    use setup_clubb_pdf_params, only : &
-        setup_pdf_parameters
-
-    use parameter_indices, only: &
-        nparams    ! Variable(s)
-
-    implicit none
-
-    !----------------------- Input Variables -----------------------
-    type(grid), intent(in) :: gr
-
-    integer, intent(in) :: &
-      nzm,          & ! Number of model momentum vertical grid levels
-      nzt,          & ! Number of model thermodynamic vertical grid levels
-      pdf_dim,      & ! Number of variables in the correlation array
-      hydromet_dim    ! Number of hydrometeor species
-
-    real( kind = core_rknd ), intent(in) ::  &
-      dt    ! Model timestep                                           [s]
-
-    real( kind = core_rknd ), dimension(nzt), intent(in) :: &
-      Nc_in_cloud,       & ! Mean (in-cloud) cloud droplet conc.       [num/kg]
-      cloud_frac,        & ! Cloud fraction                            [-]
-      ice_supersat_frac    ! Ice supersaturation fraction              [-]
-
-    real( kind = core_rknd ), dimension(nzm), intent(in) :: &
-      Kh_zm                ! Eddy diffusivity coef. on momentum levels [m^2/s]
-
-    real( kind = core_rknd ), dimension(nzt,hydromet_dim), intent(in) :: &
-      hydromet       ! Mean of hydrometeor, hm (overall) (t-levs.) [units]
-
-    real( kind = core_rknd ), dimension(nzm,hydromet_dim), intent(in) :: &
-      wphydrometp    ! Covariance < w'h_m' > (momentum levels)     [(m/s)units]
-
-    real( kind = core_rknd ), dimension(pdf_dim,pdf_dim), &
-      intent(in) :: &
-      corr_array_n_cloud, & ! Prescribed norm. space corr. array in cloud    [-]
-      corr_array_n_below    ! Prescribed norm. space corr. array below cloud [-]
-
-    type (hm_metadata_type), intent(in) :: &
-      hm_metadata
-
-    type(pdf_parameter), intent(in) :: &
-      pdf_params    ! PDF parameters                               [units vary]
-
-    real( kind = core_rknd ), dimension(nparams), intent(in) :: &
-      clubb_params    ! Array of CLUBB's tunable parameters    [units vary]
-
-    integer, intent(in) :: &
-      iiPDF_type    ! Selected option for the two-component normal (double
-                    ! Gaussian) PDF type to use for the w, rt, and theta-l (or
-                    ! w, chi, and eta) portion of CLUBB's multivariate,
-                    ! two-component PDF.
-
-    logical, intent(in) :: &
-      l_use_precip_frac,            & ! Flag to use precipitation fraction in KK microphysics. The
-                                      ! precipitation fraction is automatically set to 1 when this
-                                      ! flag is turned off.
-      l_predict_upwp_vpwp,          & ! Flag to predict <u'w'> and <v'w'> along with <u> and <v>
-                                      ! alongside the advancement of <rt>, <w'rt'>, <thl>,
-                                      ! <wpthlp>, <sclr>, and <w'sclr'> in subroutine
-                                      ! advance_xm_wpxp.  Otherwise, <u'w'> and <v'w'> are still
-                                      ! approximated by eddy diffusivity when <u> and <v> are
-                                      ! advanced in subroutine advance_windm_edsclrm.
-      l_diagnose_correlations,      & ! Diagnose correlations instead of using fixed ones
-      l_calc_w_corr,                & ! Calculate the correlations between w and the hydrometeors
-      l_const_Nc_in_cloud,          & ! Use a constant cloud droplet conc. within cloud (K&K)
-      l_fix_w_chi_eta_correlations    ! Use a fixed correlation for s and t Mellor(chi/eta)
-
-    type (stats_metadata_type), intent(in) :: &
-      stats_metadata
-
-    !----------------------- Input/Output Variables -----------------------
-    type(stats), intent(inout) :: &
-      stats_zt, &
-      stats_zm, &
-      stats_sfc
-
-    real( kind = core_rknd ), dimension(nzm,hydromet_dim), intent(inout) :: &
-      hydrometp2    ! Variance of a hydrometeor (overall) (m-levs.)   [units^2]
-
-    ! This is only an output, but it contains allocated arrays, so we need to treat it as inout
-    type(precipitation_fractions), intent(inout) :: &
-      precip_fracs           ! Precipitation fractions      [-]
-
-    type(err_info_type), intent(inout) :: &
-      err_info_api          ! err_info struct containing err_code and err_header
-
-    !----------------------- Output Variables -----------------------
-    real( kind = core_rknd ), dimension(nzt,pdf_dim), intent(out) :: &
-      mu_x_1_n,    & ! Mean array (normal space): PDF vars. (comp. 1) [un. vary]
-      mu_x_2_n,    & ! Mean array (normal space): PDF vars. (comp. 2) [un. vary]
-      sigma_x_1_n, & ! Std. dev. array (normal space): PDF vars (comp. 1) [u.v.]
-      sigma_x_2_n    ! Std. dev. array (normal space): PDF vars (comp. 2) [u.v.]
-
-    real( kind = core_rknd ), dimension(nzt,pdf_dim,pdf_dim), &
-      intent(out) :: &
-      corr_array_1_n, & ! Corr. array (normal space):  PDF vars. (comp. 1)   [-]
-      corr_array_2_n    ! Corr. array (normal space):  PDF vars. (comp. 2)   [-]
-
-    real( kind = core_rknd ), dimension(nzt,pdf_dim,pdf_dim), &
-      intent(out) :: &
-      corr_cholesky_mtx_1, & ! Transposed corr. cholesky matrix, 1st comp. [-]
-      corr_cholesky_mtx_2    ! Transposed corr. cholesky matrix, 2nd comp. [-]
-
-    type(hydromet_pdf_parameter), dimension(nzt), optional, intent(out) :: &
-      hydromet_pdf_params    ! Hydrometeor PDF parameters        [units vary]
-
-    !----------------------- Local Variables -----------------------
-    real( kind = core_rknd ), dimension(1,nzt) :: &
-      Nc_in_cloud_col,       & ! Mean (in-cloud) cloud droplet conc.       [num/kg]
-      cloud_frac_col,        & ! Cloud fraction                            [-]
-      ice_supersat_frac_col    ! Ice supersaturation fraction              [-]
-
-    real( kind = core_rknd ), dimension(1,nzm) :: &
-      Kh_zm_col                ! Eddy diffusivity coef. on momentum levels [m^2/s]
-
-    real( kind = core_rknd ), dimension(1,nzt,hydromet_dim) :: &
-      hydromet_col       ! Mean of hydrometeor, hm (overall) (t-levs.) [units]
-
-    real( kind = core_rknd ), dimension(1,nzm,hydromet_dim) :: &
-      wphydrometp_col    ! Covariance < w'h_m' > (momentum levels)     [(m/s)units]
-      
-    ! Input/Output Variables
-    real( kind = core_rknd ), dimension(1,nzm,hydromet_dim) :: &
-      hydrometp2_col    ! Variance of a hydrometeor (overall) (m-levs.)   [units^2]
-
-    ! Output Variables
-    real( kind = core_rknd ), dimension(1,nzt,pdf_dim) :: &
-      mu_x_1_n_col,    & ! Mean array (normal space): PDF vars. (comp. 1) [un. vary]
-      mu_x_2_n_col,    & ! Mean array (normal space): PDF vars. (comp. 2) [un. vary]
-      sigma_x_1_n_col, & ! Std. dev. array (normal space): PDF vars (comp. 1) [u.v.]
-      sigma_x_2_n_col    ! Std. dev. array (normal space): PDF vars (comp. 2) [u.v.]
-
-    real( kind = core_rknd ), dimension(1,nzt,pdf_dim,pdf_dim) :: &
-      corr_array_1_n_col, & ! Corr. array (normal space):  PDF vars. (comp. 1)   [-]
-      corr_array_2_n_col    ! Corr. array (normal space):  PDF vars. (comp. 2)   [-]
-
-    real( kind = core_rknd ), dimension(1,nzt,pdf_dim,pdf_dim) :: &
-      corr_cholesky_mtx_1_col, & ! Transposed corr. cholesky matrix, 1st comp. [-]
-      corr_cholesky_mtx_2_col    ! Transposed corr. cholesky matrix, 2nd comp. [-]
-
-    type(hydromet_pdf_parameter), dimension(1,nzt) :: &
-      hydromet_pdf_params_col    ! Hydrometeor PDF parameters        [units vary]
-      
-    type(stats), dimension(1) :: &
-      stats_zt_col, &
-      stats_zm_col, &
-      stats_sfc_col
-
-    ! ------------------- Begin Code -------------------
-
-    Nc_in_cloud_col(1,:) = Nc_in_cloud
-    cloud_frac_col(1,:) = cloud_frac
-    Kh_zm_col(1,:) = Kh_zm
-    ice_supersat_frac_col(1,:) = ice_supersat_frac
-    
-    hydromet_col(1,:,:) = hydromet
-    wphydrometp_col(1,:,:) = wphydrometp
-    
-    stats_zt_col(1) = stats_zt
-    stats_zm_col(1) = stats_zm
-    stats_sfc_col(1) = stats_sfc
-
-    call setup_pdf_parameters( gr, &                          ! intent(in)
-      nzm, nzt, 1, pdf_dim, hydromet_dim, dt, &               ! Intent(in)
-      Nc_in_cloud_col, cloud_frac_col, Kh_zm_col, &           ! Intent(in)
-      ice_supersat_frac_col, hydromet_col, wphydrometp_col, & ! Intent(in)
-      corr_array_n_cloud, corr_array_n_below, &               ! Intent(in)
-      hm_metadata, &                                          ! Intent(in)
-      pdf_params, &                                           ! Intent(in)
-      clubb_params, &                                         ! Intent(in)
-      iiPDF_type, &                                           ! Intent(in)
-      l_use_precip_frac, &                                    ! Intent(in)
-      l_predict_upwp_vpwp, &                                  ! Intent(in)
-      l_diagnose_correlations, &                              ! Intent(in)
-      l_calc_w_corr, &                                        ! Intent(in)
-      l_const_Nc_in_cloud, &                                  ! Intent(in)
-      l_fix_w_chi_eta_correlations, &                         ! Intent(in)
-      stats_metadata, &                                       ! Intent(in)
-      stats_zt_col, stats_zm_col, stats_sfc_col, err_info_api, &  ! Intent(inout)
-      hydrometp2_col, &                                       ! Intent(out)
-      mu_x_1_n_col, mu_x_2_n_col, &                           ! Intent(out)
-      sigma_x_1_n_col, sigma_x_2_n_col, &                     ! Intent(out)
-      corr_array_1_n_col, corr_array_2_n_col, &               ! Intent(out)
-      corr_cholesky_mtx_1_col, corr_cholesky_mtx_2_col, &     ! Intent(out)
-      precip_fracs, &                                         ! Intent(inout)
-      hydromet_pdf_params_col )                               ! Optional(out)
-
-    if ( any(err_info_api%err_code == clubb_fatal_error) ) then
-      write(fstderr, *) err_info_api%err_header_global
-      write(fstderr, *) "Error in CLUBB calling setup_pdf_parameters"
-      return
-    endif
-
-    ! The following does not work for stats
-    !     stats_zt = stats_zt_col(1)
-    !     stats_zm = stats_zm_col(1) 
-    !     stats_sfc = stats_sfc_col(1)
-    ! because of some mysterious pointer issue. However, the only thing that 
-    ! updates in stats is the field values, so we can copy only those instead.
-    if ( stats_metadata%l_stats ) then 
-      stats_zm%accum_field_values = stats_zm_col(1)%accum_field_values
-      stats_zm%accum_num_samples = stats_zm_col(1)%accum_num_samples
-
-      stats_zt%accum_field_values = stats_zt_col(1)%accum_field_values
-      stats_zt%accum_num_samples = stats_zt_col(1)%accum_num_samples
-
-      stats_sfc%accum_field_values = stats_sfc_col(1)%accum_field_values
-      stats_sfc%accum_num_samples = stats_sfc_col(1)%accum_num_samples
-    end if
-
-    hydrometp2 = hydrometp2_col(1,:,:)
-    mu_x_1_n = mu_x_1_n_col(1,:,:)
-    mu_x_2_n = mu_x_2_n_col(1,:,:)
-    sigma_x_1_n = sigma_x_1_n_col(1,:,:)
-    sigma_x_2_n = sigma_x_2_n_col(1,:,:)
-    corr_array_1_n = corr_array_1_n_col(1,:,:,:)
-    corr_array_2_n = corr_array_2_n_col(1,:,:,:)
-    corr_cholesky_mtx_1 = corr_cholesky_mtx_1_col(1,:,:,:)
-    corr_cholesky_mtx_2 = corr_cholesky_mtx_2_col(1,:,:,:)
-    if ( present(hydromet_pdf_params) ) then
-      hydromet_pdf_params = hydromet_pdf_params_col(1,:)
-    end if
-
-  end subroutine setup_pdf_parameters_api_single_col
-!===========================================================================! 
-  subroutine setup_pdf_parameters_api_multi_col( gr, &
-    nzm, nzt, ngrdcol, pdf_dim, hydromet_dim, dt, & ! Intent(in)
-    Nc_in_cloud, cloud_frac, Kh_zm, &           ! Intent(in)
-    ice_supersat_frac, hydromet, wphydrometp, & ! Intent(in)
-    corr_array_n_cloud, corr_array_n_below, &   ! Intent(in)
-    hm_metadata, &                              ! Intent(in)
-    pdf_params, &                               ! Intent(in)
-    clubb_params, &                             ! Intent(in)
-    iiPDF_type, &                               ! Intent(in)
-    l_use_precip_frac, &                        ! Intent(in)
-    l_predict_upwp_vpwp, &                      ! Intent(in)
-    l_diagnose_correlations, &                  ! Intent(in)
-    l_calc_w_corr, &                            ! Intent(in)
-    l_const_Nc_in_cloud, &                      ! Intent(in)
-    l_fix_w_chi_eta_correlations, &             ! Intent(in)
-    stats_metadata, &                           ! Intent(in)
-    stats_zt, stats_zm, stats_sfc, err_info_api, & ! Intent(inout)
-    hydrometp2, &                               ! Intent(inout)
-    mu_x_1_n, mu_x_2_n, &                       ! Intent(out)
-    sigma_x_1_n, sigma_x_2_n, &                 ! Intent(out)
-    corr_array_1_n, corr_array_2_n, &           ! Intent(out)
-    corr_cholesky_mtx_1, corr_cholesky_mtx_2, & ! Intent(out)
-    precip_fracs, &                             ! Intent(out)
-    hydromet_pdf_params )                       ! Intent(out)
-
-    use setup_clubb_pdf_params, only : setup_pdf_parameters
-
-    use parameter_indices, only: &
-        nparams    ! Variable(s)
-
-    implicit none
-
-    ! Input Variables
-    integer, intent(in) :: &
-      nzm,          & ! Number of model momentum vertical grid levels
-      nzt,          & ! Number of model thermodynamic vertical grid levels
-      pdf_dim,      & ! Number of variables in the correlation array
-      ngrdcol,      & ! Number of grid columns
-      hydromet_dim    ! Number of hydrometeor species
-
-    type (grid), intent(in) :: gr
-
-    real( kind = core_rknd ), intent(in) ::  &
-      dt    ! Model timestep                                           [s]
-
-    real( kind = core_rknd ), dimension(ngrdcol,nzt), intent(in) :: &
-      Nc_in_cloud,       & ! Mean (in-cloud) cloud droplet conc.       [num/kg]
-      cloud_frac,        & ! Cloud fraction                            [-]
-      ice_supersat_frac    ! Ice supersaturation fraction              [-]
-
-    real( kind = core_rknd ), dimension(ngrdcol,nzm), intent(in) :: &
-      Kh_zm                ! Eddy diffusivity coef. on momentum levels [m^2/s]
-
-    real( kind = core_rknd ), dimension(ngrdcol,nzt,hydromet_dim), intent(in) :: &
-      hydromet       ! Mean of hydrometeor, hm (overall) (t-levs.) [units]
-
-    real( kind = core_rknd ), dimension(ngrdcol,nzm,hydromet_dim), intent(in) :: &
-      wphydrometp    ! Covariance < w'h_m' > (momentum levels)     [(m/s)units]
-
-    real( kind = core_rknd ), dimension(pdf_dim,pdf_dim), &
-      intent(in) :: &
-      corr_array_n_cloud, & ! Prescribed norm. space corr. array in cloud    [-]
-      corr_array_n_below    ! Prescribed norm. space corr. array below cloud [-]
-
-    type (hm_metadata_type), intent(in) :: &
-      hm_metadata
-
-    type(pdf_parameter), intent(in) :: &
-      pdf_params    ! PDF parameters                               [units vary]
-
-    real( kind = core_rknd ), dimension(nparams), intent(in) :: &
-      clubb_params    ! Array of CLUBB's tunable parameters    [units vary]
-
-    integer, intent(in) :: &
-      iiPDF_type    ! Selected option for the two-component normal (double
-                    ! Gaussian) PDF type to use for the w, rt, and theta-l (or
-                    ! w, chi, and eta) portion of CLUBB's multivariate,
-                    ! two-component PDF.
-
-    logical, intent(in) :: &
-      l_use_precip_frac,            & ! Flag to use precipitation fraction in KK microphysics. The
-                                      ! precipitation fraction is automatically set to 1 when this
-                                      ! flag is turned off.
-      l_predict_upwp_vpwp,          & ! Flag to predict <u'w'> and <v'w'> along with <u> and <v>
-                                      ! alongside the advancement of <rt>, <w'rt'>, <thl>,
-                                      ! <wpthlp>, <sclr>, and <w'sclr'> in subroutine
-                                      ! advance_xm_wpxp.  Otherwise, <u'w'> and <v'w'> are still
-                                      ! approximated by eddy diffusivity when <u> and <v> are
-                                      ! advanced in subroutine advance_windm_edsclrm.
-      l_diagnose_correlations,      & ! Diagnose correlations instead of using fixed ones
-      l_calc_w_corr,                & ! Calculate the correlations between w and the hydrometeors
-      l_const_Nc_in_cloud,          & ! Use a constant cloud droplet conc. within cloud (K&K)
-      l_fix_w_chi_eta_correlations    ! Use a fixed correlation for s and t Mellor(chi/eta)
-
-    type (stats_metadata_type), intent(in) :: &
-      stats_metadata
-
-    ! Input/Output Variables
-    real( kind = core_rknd ), dimension(ngrdcol,nzm,hydromet_dim), intent(inout) :: &
-      hydrometp2    ! Variance of a hydrometeor (overall) (m-levs.)   [units^2]
-
-    type(stats), dimension(ngrdcol), intent(inout) :: &
-      stats_zt, &
-      stats_zm, &
-      stats_sfc
-
-    ! This is only an output, but it contains allocated arrays, so we need to treat it as inout
-    type(precipitation_fractions), intent(inout) :: &
-      precip_fracs           ! Precipitation fractions      [-]
-
-    type(err_info_type), intent(inout) :: &
-      err_info_api          ! err_info struct containing err_code and err_header
-
-    ! Output Variables
-    real( kind = core_rknd ), dimension(ngrdcol,nzt,pdf_dim), intent(out) :: &
-      mu_x_1_n,    & ! Mean array (normal space): PDF vars. (comp. 1) [un. vary]
-      mu_x_2_n,    & ! Mean array (normal space): PDF vars. (comp. 2) [un. vary]
-      sigma_x_1_n, & ! Std. dev. array (normal space): PDF vars (comp. 1) [u.v.]
-      sigma_x_2_n    ! Std. dev. array (normal space): PDF vars (comp. 2) [u.v.]
-
-    real( kind = core_rknd ), dimension(ngrdcol,nzt,pdf_dim,pdf_dim), &
-      intent(out) :: &
-      corr_array_1_n, & ! Corr. array (normal space):  PDF vars. (comp. 1)   [-]
-      corr_array_2_n    ! Corr. array (normal space):  PDF vars. (comp. 2)   [-]
-
-    real( kind = core_rknd ), dimension(ngrdcol,nzt,pdf_dim,pdf_dim), &
-      intent(out) :: &
-      corr_cholesky_mtx_1, & ! Transposed corr. cholesky matrix, 1st comp. [-]
-      corr_cholesky_mtx_2    ! Transposed corr. cholesky matrix, 2nd comp. [-]
-
-    type(hydromet_pdf_parameter), dimension(ngrdcol,nzt), optional, intent(out) :: &
-      hydromet_pdf_params    ! Hydrometeor PDF parameters        [units vary]
-
-    ! ------------------- Begin Code -------------------
-
-    call setup_pdf_parameters( gr, &                  ! intent(in)
-      nzm, nzt, ngrdcol, pdf_dim, hydromet_dim, dt, & ! Intent(in)
-      Nc_in_cloud, cloud_frac, Kh_zm, &               ! Intent(in)
-      ice_supersat_frac, hydromet, wphydrometp, &     ! Intent(in)
-      corr_array_n_cloud, corr_array_n_below, &       ! Intent(in)
-      hm_metadata, &                                  ! Intent(in)
-      pdf_params, &                                   ! Intent(in)
-      clubb_params, &                                 ! Intent(in)
-      iiPDF_type, &                                   ! Intent(in)
-      l_use_precip_frac, &                            ! Intent(in)
-      l_predict_upwp_vpwp, &                          ! Intent(in)
-      l_diagnose_correlations, &                      ! Intent(in)
-      l_calc_w_corr, &                                ! Intent(in)
-      l_const_Nc_in_cloud, &                          ! Intent(in)
-      l_fix_w_chi_eta_correlations, &                 ! Intent(in)
-      stats_metadata, &                               ! Intent(in)
-      stats_zt, stats_zm, stats_sfc, err_info_api, &  ! intent(inout)
-      hydrometp2, &                                   ! Intent(out)
-      mu_x_1_n, mu_x_2_n, &                           ! Intent(out)
-      sigma_x_1_n, sigma_x_2_n, &                     ! Intent(out)
-      corr_array_1_n, corr_array_2_n, &               ! Intent(out)
-      corr_cholesky_mtx_1, corr_cholesky_mtx_2, &     ! Intent(out)
-      precip_fracs, &                                 ! Intent(inout)
-      hydromet_pdf_params )                           ! Optional(out)
-
-    if ( any(err_info_api%err_code == clubb_fatal_error) ) then
-      write(fstderr, *) err_info_api%err_header_global
-      write(fstderr, *) "Error in CLUBB calling setup_pdf_parameters"
-    endif
-
-  end subroutine setup_pdf_parameters_api_multi_col
 
   !================================================================================================
   ! calculate_spurious_source - Checks whether there is conservation within the column.

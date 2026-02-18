@@ -3,6 +3,14 @@
 !===============================================================================
 module advance_wp2_wp3_module
 
+  use stats_netcdf, only: &
+      stats_type, &
+      stats_update, &
+      stats_begin_budget, &
+      stats_update_budget, &
+      stats_finalize_budget, &
+      var_on_stats_list
+
   implicit none
 
   private ! Default Scope
@@ -85,8 +93,7 @@ module advance_wp2_wp3_module
                               l_use_wp3_lim_with_smth_Heaviside,             & ! intent(in)
                               l_wp2_fill_holes_tke,                          & ! intent(in)
                               l_ho_nontrad_coriolis,                         & ! intent(in)
-                              stats_metadata,                                & ! intent(in)
-                              stats_zt, stats_zm, stats_sfc,                 & ! intent(inout)
+                              stats,                                         & ! intent(inout)
                               up2, vp2, wp2, wp3, wp3_zm, wp2_zt, err_info )   ! intent(inout)
 
     ! Description:
@@ -150,13 +157,6 @@ module advance_wp2_wp3_module
         sponge_damp_xp2, & ! Procedure(s)
         sponge_damp_xp3
 
-    use stats_type_utilities, only: &
-        stat_begin_update, & ! Procedure(s)
-        stat_end_update, &
-        stat_update_var, &
-        stat_update_var_pt, &
-        stat_end_update_pt
-        
     use diffusion, only: &
         diffusion_zm_lhs,  & ! Procedures
         diffusion_zt_lhs
@@ -164,9 +164,6 @@ module advance_wp2_wp3_module
     use mean_adv, only: &  
         term_ma_zm_lhs, & ! Procedures
         term_ma_zt_lhs
-
-    use stats_variables, only: &
-        stats_metadata_type
 
     use constants_clubb, only: &
         fstderr,   & ! Variables
@@ -187,8 +184,6 @@ module advance_wp2_wp3_module
     use error_code, only: &
         clubb_at_least_debug_level_api,  & ! Procedure
         clubb_fatal_error              ! Constant
-
-    use stats_type, only: stats ! Type
 
     use err_info_type_module, only: &
       err_info_type     ! Type
@@ -307,15 +302,11 @@ module advance_wp2_wp3_module
       l_ho_nontrad_coriolis         ! Flag to implement the nontraditional Coriolis terms in the
                                     ! prognostic equations of <w'w'>, <u'w'>, and <u'u'>.
 
-    type (stats_metadata_type), intent(in) :: &
-      stats_metadata
+    ! --------------------- intent(inout) Variable ---------------------
+    type(stats_type), intent(inout) :: &
+      stats
 
     ! --------------------------- Input/Output ---------------------------
-    type (stats), dimension(ngrdcol), intent(inout) :: &
-      stats_zt, &
-      stats_zm, &
-      stats_sfc
-
     real( kind = core_rknd ), dimension(ngrdcol,nzm), intent(inout) :: &
       up2,  & ! u'^2 (momentum levels)                    [m^2/s^2]
       vp2,  & ! v'^2 (momentum levels)                    [m^2/s^2]
@@ -593,17 +584,11 @@ module advance_wp2_wp3_module
 
     end if
 
-    if ( stats_metadata%l_stats_samp ) then
-
+    if ( stats%l_sample ) then
       !$acc update host( C11_Skw_fnc, C1_Skw_fnc )
-
-      do i = 1, ngrdcol
-        call stat_update_var( stats_metadata%iC11_Skw_fnc, C11_Skw_fnc(i,:), & ! intent(in)
-                              stats_zt(i) )                     ! intent(inout)
-        call stat_update_var( stats_metadata%iC1_Skw_fnc, C1_Skw_fnc(i,:), &   ! intent(in)
-                              stats_zm(i) )                     ! intent(inout)
-      end do
-    endif
+      call stats_update( "C11_Skw_fnc", C11_Skw_fnc, stats )
+      call stats_update( "C1_Skw_fnc", C1_Skw_fnc, stats )
+    end if
 
     ! Define the Coefficent of Eddy Diffusivity for the wp2 and wp3.
     !$acc parallel loop gang vector collapse(2) default(present)
@@ -658,12 +643,9 @@ module advance_wp2_wp3_module
         coef_wp4_implicit(:,1) = zero
         coef_wp4_implicit(:,nzm) = zero
 
-        if ( stats_metadata%l_stats_samp ) then
-          do i = 1, ngrdcol
-            call stat_update_var( stats_metadata%icoef_wp4_implicit, coef_wp4_implicit(i,:), & ! In
-                                  stats_zm(i) )                                 ! In/Out
-          end do
-        endif ! stats_metadata%l_stats_samp
+        if ( stats%l_sample ) then
+          call stats_update( "coef_wp4_implicit", coef_wp4_implicit, stats )
+        end if
 
       elseif ( iiPDF_type == iiPDF_ADG1 ) then
 
@@ -711,6 +693,7 @@ module advance_wp2_wp3_module
     Kw1_zm(:,:) = zt2zm_api( nzm, nzt, ngrdcol, gr, Kw1(:,:), zero )
     Kw8_zt(:,:) = zm2zt_api( nzm, nzt, ngrdcol, gr, Kw8(:,:), zero )
     
+    ! Experimental bouyancy term
     ! Experimental term from CLUBB TRAC ticket #411
 
     ! Compute the vertical derivative of the u and v winds
@@ -887,6 +870,7 @@ module advance_wp2_wp3_module
 
     else
 
+      ! The turbulent advection term is being solved implicitly.
       ! The turbulent advection term is being solved implicitly. See note above
 
       if ( iiPDF_type == iiPDF_ADG1 ) then
@@ -941,8 +925,7 @@ module advance_wp2_wp3_module
                    l_tke_aniso,                                                     & ! intent(in)
                    l_use_tke_in_wp2_wp3_K_dfsn,                                     & ! intent(in)
                    l_ho_nontrad_coriolis,                                           & ! intent(in)
-                   stats_metadata,                                                  & ! intent(in)
-                   stats_zt, stats_zm,                                              & ! intent(in)
+                   stats,                                                           & ! intent(inout)
                    rhs )                                                              ! intent(out)
     
     ! Calculated mean advection term for w'2
@@ -1053,8 +1036,7 @@ module advance_wp2_wp3_module
                      l_use_tke_in_wp2_wp3_K_dfsn,                 & ! intent(in)
                      l_use_wp3_lim_with_smth_Heaviside,           & ! intent(in)
                      l_wp2_fill_holes_tke,                        & ! intent(in)
-                     stats_metadata,                              & ! intent(in)
-                     stats_zt, stats_zm, stats_sfc,               & ! intent(inout)
+                     stats,                                       & ! intent(inout)
                      up2, vp2, wp2, wp3, wp3_zm, wp2_zt, err_info ) ! intent(inout)
 
     if ( l_lmm_stepping ) then
@@ -1073,17 +1055,14 @@ module advance_wp2_wp3_module
       end do
       !$acc end parallel loop
     endif ! l_lmm_stepping
-
     ! When selected, apply sponge damping after wp2 and wp3 have been advanced.
+
     if ( wp2_sponge_damp_settings%l_sponge_damping ) then
 
       !$acc update host( wp2 )
 
-      if ( stats_metadata%l_stats_samp ) then
-        do i = 1, ngrdcol
-          call stat_begin_update( nzm, stats_metadata%iwp2_sdmp, wp2(i,:) / dt, & ! intent(in)
-                                  stats_zm(i) )                   ! intent(inout)
-        end do
+      if ( stats%l_sample ) then
+          call stats_begin_budget( "wp2_sdmp", wp2 / dt, stats )
       end if
 
       do i = 1, ngrdcol
@@ -1091,11 +1070,8 @@ module advance_wp2_wp3_module
                                     wp2_sponge_damp_profile )
       end do
 
-      if ( stats_metadata%l_stats_samp ) then
-        do i = 1, ngrdcol
-          call stat_end_update( nzm, stats_metadata%iwp2_sdmp, wp2(i,:) / dt, & ! intent(in)
-                                stats_zm(i) )                   ! intent(inout)
-        end do
+      if ( stats%l_sample ) then
+          call stats_finalize_budget( "wp2_sdmp", wp2 / dt, stats )
       end if
 
       !$acc update device( wp2 )
@@ -1106,11 +1082,8 @@ module advance_wp2_wp3_module
 
       !$acc update host( wp3 )
 
-      if ( stats_metadata%l_stats_samp ) then
-        do i = 1, ngrdcol
-          call stat_begin_update( nzm, stats_metadata%iwp3_sdmp, wp3(i,:) / dt, & ! intent(in)
-                                  stats_zt(i) )                   ! intent(inout)
-        end do
+      if ( stats%l_sample ) then
+          call stats_begin_budget( "wp3_sdmp", wp3 / dt, stats )
       end if
 
       do i = 1, ngrdcol
@@ -1118,11 +1091,8 @@ module advance_wp2_wp3_module
                                     wp3_sponge_damp_profile )
       end do
 
-      if ( stats_metadata%l_stats_samp ) then
-        do i = 1, ngrdcol
-          call stat_end_update( nzm, stats_metadata%iwp3_sdmp, wp3(i,:) / dt, & ! intent(in)
-                                stats_zt(i) )                   ! intent(inout)
-        end do
+      if ( stats%l_sample ) then
+          call stats_finalize_budget( "wp3_sdmp", wp3 / dt, stats )
       end if
 
       !$acc update device( wp3 )
@@ -1247,8 +1217,7 @@ module advance_wp2_wp3_module
                          l_use_tke_in_wp2_wp3_K_dfsn, &
                          l_use_wp3_lim_with_smth_Heaviside, &
                          l_wp2_fill_holes_tke, &
-                         stats_metadata, &
-                         stats_zt, stats_zm, stats_sfc, &
+                         stats,         &
                          up2, vp2, wp2, wp3, wp3_zm, wp2_zt, err_info )
 
     ! Description:
@@ -1302,19 +1271,6 @@ module advance_wp2_wp3_module
     use pdf_parameter_module, only: &
         implicit_coefs_terms    ! Variable Type
 
-    use stats_type_utilities, only: &
-        stat_begin_update, & ! Procedure(s)
-        stat_update_var, &
-        stat_update_var_pt, &
-        stat_end_update, &
-        stat_end_update_pt, &
-        stat_modify
-
-    use stats_variables, only: &
-        stats_metadata_type
-
-    use stats_type, only: stats ! Type
-
     use model_flags, only: &
         penta_bicgstab,             & ! Variable(s)
         l_force_descending_solves
@@ -1349,6 +1305,7 @@ module advance_wp2_wp3_module
       lhs_dp1_wp2, & ! wp2 "over-implicit" dissipation term
       lhs_pr1_wp2    ! wp2 "over-implicit" pressure term 1
 
+    ! ----------------------- Input/Output Variables -----------------------
     real( kind = core_rknd ), intent(in), dimension(ngrdcol,nzt) :: &
       lhs_pr1_wp3    ! wp3 "over-implicit" pressure term 1
       
@@ -1410,14 +1367,8 @@ module advance_wp2_wp3_module
       l_wp2_fill_holes_tke          ! Turn on additional hole-filling for wp2
                                     ! that takes TKE from up2 and vp2, if necessary
     
-    type (stats_metadata_type), intent(in) :: &
-      stats_metadata
-
-    ! ----------------------- Input/Output Variables -----------------------
-    type (stats), dimension(ngrdcol), intent(inout) :: &
-      stats_zt, &
-      stats_zm, &
-      stats_sfc
+    type(stats_type), intent(inout) :: &
+      stats
 
     real( kind = core_rknd ), dimension(ngrdcol,nzm), intent(inout) :: &
       up2, &    ! u'^2 (momentum levels)                          [m^2/s^2]
@@ -1453,6 +1404,12 @@ module advance_wp2_wp3_module
       lhs_wp3_pr2_term, & ! w'^3 term pr2, used for stats
       C11_Skw_fnc_zeros, &
       C11_Skw_fnc_plus_one
+
+    real( kind = core_rknd ), dimension(ngrdcol,nzm) :: &
+      stats_tmp_zm
+
+    real( kind = core_rknd ), dimension(ngrdcol,nzt) :: &
+      stats_tmp_zt
 
     real( kind = core_rknd ), dimension(ngrdcol) :: &
       C_uu_shr_zeros, &
@@ -1510,11 +1467,10 @@ module advance_wp2_wp3_module
       if ( penta_solve_method == penta_bicgstab ) then
         old_solut(:,:) = old_solut(:,2*nzm-1:1:-1)
       end if
-
     endif
-
     ! Solve the system with LAPACK
-    if ( stats_metadata%l_stats_samp .and. stats_metadata%iwp23_matrix_condt_num > 0 ) then
+
+    if ( stats%l_sample .and. var_on_stats_list( stats, "wp23_matrix_condt_num" ) ) then
 
       ! Solve the system and return condition number
       ! Note: When using lapack this can change the answer slightly
@@ -1524,13 +1480,11 @@ module advance_wp2_wp3_module
                         solut, &
                         rcond = rcond )                   ! intent(out)
 
-      ! Est. of the condition number of the w'^2/w^3 LHS matrix
-      do i = 1, ngrdcol
+      if ( stats%l_sample ) then
         !$acc update host( rcond )
-        call stat_update_var_pt( stats_metadata%iwp23_matrix_condt_num, 1, & ! intent(in)
-                                 one / rcond(i), & ! intent(in)
-                                 stats_sfc(i) )    ! intent(inout)
-      end do
+        ! Est. of the condition number of the w'^2/w^3 LHS matrix
+        call stats_update( "wp23_matrix_condt_num", one / rcond, stats )
+      end if
 
     else
 
@@ -1609,7 +1563,7 @@ module advance_wp2_wp3_module
     end do
     !$acc end parallel loop
 
-    if ( stats_metadata%l_stats_samp ) then
+    if ( stats%l_sample ) then
 
       !$acc update host( wm_zt, lhs_dp1_wp2, wp2, lhs_diff_zm, lhs_ta_wp2, &
       !$acc              wp3, lhs_ma_zm, lhs_pr1_wp2, lhs_pr1_wp3, lhs_diff_zt, &
@@ -1649,192 +1603,242 @@ module advance_wp2_wp3_module
                                  lhs_wp3_pr2_term )               ! intent(out)
 
       !$acc end data
+    end if
 
-      do i = 1, ngrdcol
-
-        ! Finalize implicit contributions for wp2
-        do k = 2, nzm-1
-
-          km1 = max( k-gr%grid_dir_indx, 1 )
-          kp1 = min( k+gr%grid_dir_indx, nzm )
+      if ( stats%l_sample ) then
+          ! Finalize implicit contributions for wp2
+          ! Finalize the implicit pieces of wp2/wp3 budgets after the solve.
+          ! The companion explicit pieces were opened earlier with begin_budget.
+          stats_tmp_zm = zero
+          do k = 2, nzm-1
+            do i = 1, ngrdcol
+              stats_tmp_zm(i,k) = (- gamma_over_implicit_ts  * lhs_dp1_wp2(i,k)) * wp2(i,k)
+            end do
+          end do
 
           ! w'^2 term dp1 has both implicit and explicit components;
-          ! Note:  An "over-implicit" weighted time step is applied to this term.
-          !        A weighting factor of greater than 1 may be used to make the
-          !        term more numerically stable (see note below for w'^3 LHS
-          !        turbulent advection (ta) term).
-          call stat_end_update_pt( stats_metadata%iwp2_dp1, k,          & ! intent(in)
-             (- gamma_over_implicit_ts  * lhs_dp1_wp2(i,k)) * wp2(i,k), & ! intent(in)
-             stats_zm(i) )                                                ! intent(inout)
-
-          ! w'^2 term dp2 has both implicit and explicit components (if the
-          ! Crank-Nicholson scheme is selected or if l_use_tke_in_wp2_wp3_K_dfsn is true);
-          ! call stat_end_update_pt.  
-          ! If neither of these flags is true, then w'^2 term dp2 is 
-          ! completely implicit; call stat_update_var_pt.
+          ! call stat_end_update_pt.
+          ! w'^2 term dp1 has both implicit and explicit components.
+          call stats_finalize_budget( "wp2_dp1", stats_tmp_zm, stats )
+          stats_tmp_zm = zero
+          do k = 2, nzm-1
+            km1 = max( k-gr%grid_dir_indx, 1 )
+            kp1 = min( k+gr%grid_dir_indx, nzm )
+            do i = 1, ngrdcol
+              stats_tmp_zm(i,k) = - lhs_diff_zm(2+gr%grid_dir_indx,i,k) * wp2(i,km1)  &
+                                  - lhs_diff_zm(2,i,k) * wp2(i,k)     &
+                                  - lhs_diff_zm(2-gr%grid_dir_indx,i,k) * wp2(i,kp1)
+            end do
+          end do
           if ( l_crank_nich_diff .or. l_use_tke_in_wp2_wp3_K_dfsn ) then
-             call stat_end_update_pt( stats_metadata%iwp2_dp2, k,  & ! intent(in)
-                - lhs_diff_zm(2+gr%grid_dir_indx,i,k) * wp2(i,km1)   & 
-                - lhs_diff_zm(2,i,k) * wp2(i,k)     & 
-                - lhs_diff_zm(2-gr%grid_dir_indx,i,k) * wp2(i,kp1),  & ! intent(in)
-                  stats_zm(i) )                       ! intent(inout)
+            ! dp2 has explicit and implicit pieces for CN/tke diffusion.
+            ! w'^2 term dp2 has both implicit and explicit components (if the
+            ! Crank-Nicholson scheme is selected or if l_use_tke_in_wp2_wp3_K_dfsn is true);
+            ! w'^2 term dp2 has both implicit and explicit components.
+            call stats_finalize_budget( "wp2_dp2", stats_tmp_zm, stats )
           else
-             call stat_update_var_pt( stats_metadata%iwp2_dp2, k,  & ! intent(in)
-                - lhs_diff_zm(2+gr%grid_dir_indx,i,k) * wp2(i,km1)   & 
-                - lhs_diff_zm(2,i,k) * wp2(i,k)     & 
-                - lhs_diff_zm(2-gr%grid_dir_indx,i,k) * wp2(i,kp1),  & ! intent(in)
-                  stats_zm(i) )                       ! intent(inout)
-          endif
+            ! Otherwise dp2 is fully implicit.
+            ! If neither of these flags is true, then w'^2 term dp2 is
+            ! completely implicit; call stat_update_var_pt.
+            ! w'^2 term dp2 is completely implicit; call stat_update_var_pt.
+            call stats_update( "wp2_dp2", stats_tmp_zm, stats )
+          end if
+          stats_tmp_zm = zero
+          do k = 2, nzm-1
+            do i = 1, ngrdcol
+              stats_tmp_zm(i,k) = (- lhs_ta_wp2(2,i,k)) * wp3(i,k-1) &
+                                  + (- lhs_ta_wp2(1,i,k)) * wp3(i,k)
+            end do
+          end do
 
           ! w'^2 term ta is completely implicit; call stat_update_var_pt.
-          call stat_update_var_pt( stats_metadata%iwp2_ta, k,      & ! intent(in)
-               (- lhs_ta_wp2(2,i,k)) * wp3(i,k-1)     & 
-             + (- lhs_ta_wp2(1,i,k)) * wp3(i,k),      & ! intent(in)
-             stats_zm(i) )                              ! intent(inout)
+          call stats_update( "wp2_ta", stats_tmp_zm, stats )
+          stats_tmp_zm = zero
+          do k = 2, nzm-1
+            km1 = max( k-gr%grid_dir_indx, 1 )
+            kp1 = min( k+gr%grid_dir_indx, nzm )
+            do i = 1, ngrdcol
+              stats_tmp_zm(i,k) = - lhs_ma_zm(2+gr%grid_dir_indx,i,k) * wp2(i,km1) &
+                                  - lhs_ma_zm(2,i,k) * wp2(i,k) &
+                                  - lhs_ma_zm(2-gr%grid_dir_indx,i,k) * wp2(i,kp1)
+            end do
+          end do
 
           ! w'^2 term ma is completely implicit; call stat_update_var_pt.
-          call stat_update_var_pt( stats_metadata%iwp2_ma, k,  & ! intent(in)
-             - lhs_ma_zm(2+gr%grid_dir_indx,i,k) * wp2(i,km1)  & 
-             - lhs_ma_zm(2,i,k) * wp2(i,k)      & 
-             - lhs_ma_zm(2-gr%grid_dir_indx,i,k) * wp2(i,kp1), & ! intent(in)
-              stats_zm(i) )                       ! intent(inout)
-              
-          ! w'^2 term ac is completely implicit; call stat_update_var_pt.
-          call stat_update_var_pt( stats_metadata%iwp2_ac, k,  & ! intent(in)
-             -lhs_wp2_ac_term(i,k) * wp2(i,k),  & ! intent(in)
-             stats_zm(i) )                        ! intent(inout)
+          call stats_update( "wp2_ma", stats_tmp_zm, stats )
+          stats_tmp_zm = zero
+          do k = 2, nzm-1
+            do i = 1, ngrdcol
+              stats_tmp_zm(i,k) = -lhs_wp2_ac_term(i,k) * wp2(i,k)
+            end do
+          end do
 
-          ! w'^2 term pr1 has both implicit and explicit components;
-          ! Note:  An "over-implicit" weighted time step is applied to this term.
-          !        A weighting factor of greater than 1 may be used to make the
-          !        term more numerically stable (see note below for w'^3 LHS
-          !        turbulent advection (ta) term).
-          if ( l_tke_aniso ) then
-            call stat_end_update_pt( stats_metadata%iwp2_pr1, k,        & ! intent(in)
-               - gamma_over_implicit_ts * lhs_pr1_wp2(i,k) * wp2(i,k),  & ! intent(in)
-               stats_zm(i) )                                              ! intent(inout)
-          endif
+          ! w'^2 term ac is completely implicit; call stat_update_var_pt.
+          call stats_update( "wp2_ac", stats_tmp_zm, stats )
+
+        if ( l_tke_aniso ) then
+            stats_tmp_zm = zero
+            do k = 2, nzm-1
+              do i = 1, ngrdcol
+                stats_tmp_zm(i,k) = - gamma_over_implicit_ts * lhs_pr1_wp2(i,k) * wp2(i,k)
+              end do
+            end do
+
+            ! w'^2 term pr1 has both implicit and explicit components;
+            ! call stat_end_update_pt.
+            ! w'^2 term pr1 has both implicit and explicit components.
+            call stats_finalize_budget( "wp2_pr1", stats_tmp_zm, stats )
+        end if
+          stats_tmp_zm = zero
+          do k = 2, nzm-1
+            do i = 1, ngrdcol
+              stats_tmp_zm(i,k) = -lhs_wp2_pr2_term(i,k) * wp2(i,k)
+            end do
+          end do
 
           ! w'^2 term pr2 has both implicit and explicit components;
           ! call stat_end_update_pt.
-          call stat_end_update_pt( stats_metadata%iwp2_pr2, k, & ! intent(in)
-             -lhs_wp2_pr2_term(i,k) * wp2(i,k), & ! intent(in)
-             stats_zm(i) )                        ! intent(inout)
+          ! w'^2 term pr2 has both implicit and explicit components.
+          call stats_finalize_budget( "wp2_pr2", stats_tmp_zm, stats )
+          ! Finalize implicit contributions for wp3
+          stats_tmp_zt = zero
+          do k = 2, nzt-1
+            do i = 1, ngrdcol
+              stats_tmp_zt(i,k) = - gamma_over_implicit_ts * lhs_pr1_wp3(i,k) * wp3(i,k)
+            end do
+          end do
 
-        enddo
-      end do
-
-      ! Finalize implicit contributions for wp3
-
-      do i = 1, ngrdcol
-        do k = 2, nzt-1, 1
-
-          km1 = max( k-gr%grid_dir_indx, 1 )
-          kp1 = min( k+gr%grid_dir_indx, nzt )
-
-          ! w'^3 term pr1 has both implicit and explicit components; 
-          ! Note:  An "over-implicit" weighted time step is applied to this term.
-          !        A weighting factor of greater than 1 may be used to make the
+          ! w'^3 term pr1 has both implicit and explicit components;
+          ! call stat_end_update_pt
+          ! w'^3 term pr1 has both implicit and explicit components;
           !        term more numerically stable (see note above for LHS turbulent
-          !        advection (ta) term).
-          call stat_end_update_pt( stats_metadata%iwp3_pr1, k,        & ! intent(in)
-             - gamma_over_implicit_ts  * lhs_pr1_wp3(i,k) * wp3(i,k), & ! intent(in)
-             stats_zt(i) )                                              ! intent(inout)
-
-          ! w'^3 term dp1 has both implicit and explicit components (if the
-          ! Crank-Nicholson scheme is selected or l_use_tke_in_wp2_wp3_K_dfsn is true);
-          ! call stat_end_update_pt.  
-          ! If neither of these flags is true, then w'^3 term dp1 is 
-          ! completely implicit; call stat_update_var_pt.
+          ! w'^3 term pr1 has both implicit and explicit components.
+          call stats_finalize_budget( "wp3_pr1", stats_tmp_zt, stats )
+          stats_tmp_zt = zero
+          do k = 2, nzt-1
+            km1 = max( k-gr%grid_dir_indx, 1 )
+            kp1 = min( k+gr%grid_dir_indx, nzt )
+            do i = 1, ngrdcol
+              stats_tmp_zt(i,k) = - lhs_diff_zt(2+gr%grid_dir_indx,i,k) * wp3(i,km1) &
+                                  - lhs_diff_zt(2,i,k) * wp3(i,k) &
+                                  - lhs_diff_zt(2-gr%grid_dir_indx,i,k) * wp3(i,kp1)
+            end do
+          end do
           if ( l_crank_nich_diff .or. l_use_tke_in_wp2_wp3_K_dfsn ) then
-             call stat_end_update_pt( stats_metadata%iwp3_dp1, k,  & ! intent(in)
-                - lhs_diff_zt(2+gr%grid_dir_indx,i,k) * wp3(i,km1)   & 
-                - lhs_diff_zt(2,i,k) * wp3(i,k)     & 
-                - lhs_diff_zt(2-gr%grid_dir_indx,i,k) * wp3(i,kp1),  & ! intent(in)
-                stats_zt(i) )                         ! intent(inout)
+            ! dp1 has explicit and implicit pieces for CN/tke diffusion.
+            ! w'^3 term dp1 has both implicit and explicit components (if the
+            ! Crank-Nicholson scheme is selected or l_use_tke_in_wp2_wp3_K_dfsn is true);
+            ! w'^3 term dp1 has both implicit and explicit components.
+            call stats_finalize_budget( "wp3_dp1", stats_tmp_zt, stats )
           else
-             call stat_update_var_pt( stats_metadata%iwp3_dp1, k,  & ! intent(in)
-                - lhs_diff_zt(2+gr%grid_dir_indx,i,k) * wp3(i,km1)   & 
-                - lhs_diff_zt(2,i,k) * wp3(i,k)     & 
-                - lhs_diff_zt(2-gr%grid_dir_indx,i,k) * wp3(i,kp1),  & ! intent(in)
-                stats_zt(i) )                         ! intent(inout)
-          endif
+            ! Otherwise dp1 is fully implicit.
+            ! If neither of these flags is true, then w'^3 term dp1 is
+            ! w'^3 term dp1 is completely implicit; call stat_update_var_pt.
+            call stats_update( "wp3_dp1", stats_tmp_zt, stats )
+          end if
+          stats_tmp_zt = zero
+          do k = 2, nzt-1
+            do i = 1, ngrdcol
+              stats_tmp_zt(i,k) = - gamma_over_implicit_ts * wp3_term_ta_lhs_result(5,i,k) * wp3(i,k-1) &
+                                  - gamma_over_implicit_ts * wp3_term_ta_lhs_result(4,i,k) * wp2(i,k) &
+                                  - gamma_over_implicit_ts * wp3_term_ta_lhs_result(3,i,k) * wp3(i,k) &
+                                  - gamma_over_implicit_ts * wp3_term_ta_lhs_result(2,i,k) * wp2(i,k+1) &
+                                  - gamma_over_implicit_ts * wp3_term_ta_lhs_result(1,i,k) * wp3(i,k+1)
+            end do
+          end do
 
-          ! w'^3 term ta has both implicit and explicit components; 
-          ! call stat_end_update_pt.
-          call stat_end_update_pt( stats_metadata%iwp3_ta, k,                     & ! intent(in)
-           - gamma_over_implicit_ts * wp3_term_ta_lhs_result(5,i,k) * wp3(i,k-1)  & 
-           - gamma_over_implicit_ts * wp3_term_ta_lhs_result(4,i,k) * wp2(i,k)    & 
-           - gamma_over_implicit_ts * wp3_term_ta_lhs_result(3,i,k) * wp3(i,k)    & 
-           - gamma_over_implicit_ts * wp3_term_ta_lhs_result(2,i,k) * wp2(i,k+1)  & 
-           - gamma_over_implicit_ts * wp3_term_ta_lhs_result(1,i,k) * wp3(i,k+1), & ! intent(in)
-           stats_zt(i) )                                                            ! intent(inout)
+          ! w'^3 term ta has both implicit and explicit components;
+          !        make the term more numerically stable (see note above for
+          !        RHS turbulent advection (ta) term).
+          !        Call stat_begin_update_pt.  Since stat_begin_update_pt
+          !        automatically subtracts the value sent in, reverse the sign
+          !        on the input value.
+          ! w'^3 term ta has both implicit and explicit components.
+          call stats_finalize_budget( "wp3_ta", stats_tmp_zt, stats )
+          stats_tmp_zt = zero
+          do k = 2, nzt-1
+            do i = 1, ngrdcol
+              stats_tmp_zt(i,k) = - gamma_over_implicit_ts * lhs_adv_tp_wp3(2,i,k) * wp2(i,k) &
+                                  - gamma_over_implicit_ts * lhs_adv_tp_wp3(1,i,k) * wp2(i,k+1)
+            end do
+          end do
 
-          ! w'^3 term tp has both implicit and explicit components; 
-          ! Note:  An "over-implicit" weighted time step is applied to this term.
-          !        A weighting factor of greater than 1 may be used to make the
-          !        term more numerically stable (see note above for LHS turbulent
-          !        advection (ta) term).
-          call stat_end_update_pt( stats_metadata%iwp3_tp, k,               & ! intent(in)
-             - gamma_over_implicit_ts * lhs_adv_tp_wp3(2,i,k) * wp2(i,k)    & 
-             - gamma_over_implicit_ts * lhs_adv_tp_wp3(1,i,k) * wp2(i,k+1), & ! intent(in)
-             stats_zt(i) )                                                    ! intent(inout)
+          !        term more numerically stable (see note above for RHS turbulent
+          !        production (tp) term).  Call stat_begin_update_pt.  Since
+          ! w'^3 term tp has both implicit and explicit components;
+          ! w'^3 term tp has both implicit and explicit components.
+          call stats_finalize_budget( "wp3_tp", stats_tmp_zt, stats )
+          stats_tmp_zt = zero
+          do k = 2, nzt-1
+            do i = 1, ngrdcol
+              stats_tmp_zt(i,k) = - gamma_over_implicit_ts * lhs_pr_tp_wp3(2,i,k) * wp2(i,k) &
+                                  - gamma_over_implicit_ts * lhs_pr_tp_wp3(1,i,k) * wp2(i,k+1)
+            end do
+          end do
 
           ! w'^3 term pr_tp same as above tp term but opposite sign.
-          call stat_end_update_pt( stats_metadata%iwp3_pr_tp, k,           & ! intent(in)
-             - gamma_over_implicit_ts * lhs_pr_tp_wp3(2,i,k) * wp2(i,k)    &
-             - gamma_over_implicit_ts * lhs_pr_tp_wp3(1,i,k) * wp2(i,k+1), & ! intent(in)
-             stats_zt(i) )                                                   ! intent(inout)
+          call stats_finalize_budget( "wp3_pr_tp", stats_tmp_zt, stats )
+          stats_tmp_zt = zero
+          do k = 2, nzt-1
+            do i = 1, ngrdcol
+              stats_tmp_zt(i,k) = - wp3_pr3_lhs(5,i,k) * wp3(i,k-1) &
+                                  - wp3_pr3_lhs(4,i,k) * wp2(i,k) &
+                                  - wp3_pr3_lhs(3,i,k) * wp3(i,k) &
+                                  - wp3_pr3_lhs(2,i,k) * wp2(i,k+1) &
+                                  - wp3_pr3_lhs(1,i,k) * wp3(i,k+1)
+            end do
+          end do
 
+          ! w'^3 pressure term 3 (pr3) explicit (rhs) contribution
           ! w'^3 pressure term 3 (pr3) has both implicit and explicit components;
-          ! call stat_end_update_pt
-          call stat_end_update_pt( stats_metadata%iwp3_pr3, k, & ! intent(in)
-           - wp3_pr3_lhs(5,i,k) * wp3(i,k-1)    &
-           - wp3_pr3_lhs(4,i,k) * wp2(i,k)      &
-           - wp3_pr3_lhs(3,i,k) * wp3(i,k)      &
-           - wp3_pr3_lhs(2,i,k) * wp2(i,k+1)    &
-           - wp3_pr3_lhs(1,i,k) * wp3(i,k+1),   & ! intent(in)
-             stats_zt(i) )                        ! intent(inout)
+          ! w'^3 pressure term 3 (pr3) has both implicit and explicit components.
+          call stats_finalize_budget( "wp3_pr3", stats_tmp_zt, stats )
+          stats_tmp_zt = zero
+          do k = 2, nzt-1
+            km1 = max( k-gr%grid_dir_indx, 1 )
+            kp1 = min( k+gr%grid_dir_indx, nzt )
+            do i = 1, ngrdcol
+              stats_tmp_zt(i,k) = - lhs_ma_zt(2+gr%grid_dir_indx,i,k) * wp3(i,km1) &
+                                  - lhs_ma_zt(2,i,k) * wp3(i,k) &
+                                  - lhs_ma_zt(2-gr%grid_dir_indx,i,k) * wp3(i,kp1)
+            end do
+          end do
 
           ! w'^3 term ma is completely implicit; call stat_update_var_pt.
-          call stat_update_var_pt( stats_metadata%iwp3_ma, k,  & ! intent(in)
-             - lhs_ma_zt(2+gr%grid_dir_indx,i,k) * wp3(i,km1)  & 
-             - lhs_ma_zt(2,i,k) * wp3(i,k)      & 
-             - lhs_ma_zt(2-gr%grid_dir_indx,i,k) * wp3(i,kp1), & ! intent(in)
-             stats_zt(i) )                        ! intent(inout)
+          call stats_update( "wp3_ma", stats_tmp_zt, stats )
+          stats_tmp_zt = zero
+          do k = 2, nzt-1
+            do i = 1, ngrdcol
+              stats_tmp_zt(i,k) = -lhs_wp3_ac_term(i,k) * wp3(i,k)
+            end do
+          end do
 
           ! w'^3 term ac is completely implicit; call stat_update_var_pt.
-          call stat_update_var_pt( stats_metadata%iwp3_ac, k,  & ! intent(in)
-             -lhs_wp3_ac_term(i,k) * wp3(i,k),  & ! intent(in)
-             stats_zt(i) )                        ! intent(inout)
+          call stats_update( "wp3_ac", stats_tmp_zt, stats )
+          stats_tmp_zt = zero
+          do k = 2, nzt-1
+            do i = 1, ngrdcol
+              stats_tmp_zt(i,k) = -lhs_wp3_pr2_term(i,k) * wp3(i,k)
+            end do
+          end do
 
-          ! w'^3 term pr2 has both implicit and explicit components; 
-          ! call stat_end_update_pt.
-          call stat_end_update_pt( stats_metadata%iwp3_pr2, k, & ! intent(in)
-             -lhs_wp3_pr2_term(i,k) * wp3(i,k), & ! intent(in)
-             stats_zt(i) )                        ! intent(inout)
-
-        end do
-      end do
-
-    end if ! stats_metadata%l_stats_samp
+          ! w'^3 term pr2 has both implicit and explicit components;
+          ! call stat_end_update_pt
+          ! w'^3 term pr2 has both implicit and explicit components.
+          call stats_finalize_budget( "wp3_pr2", stats_tmp_zt, stats )
+      end if
     
 
-    if ( stats_metadata%l_stats_samp ) then
-
-      !$acc update host( wp2, up2, vp2 )
-
+    if ( stats%l_sample ) then
       ! Store previous value for effect of the positive definite scheme
-      do i = 1, ngrdcol
-        call stat_begin_update( nzm, stats_metadata%iwp2_pd, wp2(i,:) / dt,  & ! intent(in)
-                                stats_zm(i) )                                  ! intent(inout)
-        ! up2_pd and vp2_pd are also modified in a call to pos_definite_variances
-        ! in advance_xp2_xpyp, so we need to use stat_modify here instead of stat_begin_update
-        call stat_modify( nzm, stats_metadata%iup2_pd, -up2(i,:) / dt, &       ! intent(in)
-                          stats_zm(i) )                                        ! intent(inout)
-        call stat_modify( nzm, stats_metadata%ivp2_pd, -vp2(i,:) / dt, &       ! intent(in)
-                          stats_zm(i) )                                        ! intent(inout)
-      end do
+      ! Bracket the positive-definite/hole-filling adjustments so the pd
+      ! budget terms report only the limiter-induced change.
+      !$acc update host( wp2, up2, vp2 )
+      call stats_begin_budget( "wp2_pd", wp2 / dt, stats )
+      ! up2_pd and vp2_pd are also modified in a call to pos_definite_variances
+      ! in advance_xp2_xpyp, so we need to use stat_modify here instead of stat_begin_update
+      call stats_begin_budget( "up2_pd", up2 / dt, stats )
+      call stats_begin_budget( "vp2_pd", vp2 / dt, stats )
     end if
 
     if ( fill_holes_type /= 0 ) then
@@ -1870,19 +1874,12 @@ module advance_wp2_wp3_module
 
     end if ! wp2 hole filling check
 
-    if ( stats_metadata%l_stats_samp ) then
-
+    if ( stats%l_sample ) then
       !$acc update host( wp2, up2, vp2 )
-
       ! Store updated value for effect of the positive definite scheme
-      do i = 1, ngrdcol
-        call stat_end_update( nzm, stats_metadata%iwp2_pd, wp2(i,:) / dt, & ! intent(in)
-                              stats_zm(i) )                                 ! intent(inout)
-        call stat_modify( nzm, stats_metadata%iup2_pd, up2(i,:) / dt, &     ! intent(in)
-                          stats_zm(i) )                                     ! intent(inout)
-        call stat_modify( nzm, stats_metadata%ivp2_pd, vp2(i,:) / dt, &     ! intent(in)
-                          stats_zm(i) )                                     ! intent(inout)
-      end do
+      call stats_finalize_budget( "wp2_pd", wp2 / dt, stats )
+      call stats_finalize_budget( "up2_pd", up2 / dt, stats, l_count_sample=.false. )
+      call stats_finalize_budget( "vp2_pd", vp2 / dt, stats, l_count_sample=.false. )
     end if
 
 
@@ -1965,8 +1962,7 @@ module advance_wp2_wp3_module
     end if ! l_min_wp2_from_corr_wx
 
     call clip_variance( nzm, ngrdcol, gr, clip_wp2, dt, wp2_min_array, & ! intent(in)
-                        stats_metadata,                                & ! intent(in)
-                        stats_zm,                                      & ! intent(inout)
+                        stats,                                        & ! intent(in)
                         wp2,                                           & ! intent(inout)
                         wp2_max )                                        ! intent(optional, in)
   
@@ -1979,8 +1975,7 @@ module advance_wp2_wp3_module
     call clip_skewness( nzt, ngrdcol, gr, dt, sfc_elevation,  & ! intent(in)
                         clubb_params(:,iSkw_max_mag), wp2_zt, & ! intent(in)
                         l_use_wp3_lim_with_smth_Heaviside,    & ! intent(in)
-                        stats_metadata,                       & ! intent(in)
-                        stats_zt,                             & ! intent(inout)
+                        stats,                                & ! intent(in)
                         wp3 )                                   ! intent(inout)
 
     ! Compute wp3_zm for output purposes
@@ -2338,8 +2333,7 @@ module advance_wp2_wp3_module
                        l_tke_aniso, &
                        l_use_tke_in_wp2_wp3_K_dfsn, &
                        l_ho_nontrad_coriolis, &
-                       stats_metadata, &
-                       stats_zt, stats_zm, &
+                       stats,         &
                        rhs )
 
     ! Description:
@@ -2392,16 +2386,6 @@ module advance_wp2_wp3_module
 
     use clubb_precision, only: &
         core_rknd ! Variable
-
-    use stats_variables, only: &
-        stats_metadata_type
-        
-    use stats_type_utilities, only: &
-        stat_update_var_pt,  & ! Procedure(s)
-        stat_begin_update_pt,  &
-        stat_modify_pt
-
-    use stats_type, only: stats ! Type
 
     implicit none
 
@@ -2490,13 +2474,8 @@ module advance_wp2_wp3_module
       l_ho_nontrad_coriolis          ! Flag to implement the nontraditional Coriolis terms in the
                                      ! prognostic equations of <w'w'>, <u'w'>, and <u'u'>.
 
-    type (stats_metadata_type), intent(in) :: &
-      stats_metadata
-
-    ! --------------------- intent(inout) Variable ---------------------
-    type (stats), dimension(ngrdcol), intent(inout) :: &
-      stats_zt, &
-      stats_zm
+    type(stats_type), intent(inout) :: &
+      stats
 
     ! --------------------- Output Variable ---------------------
     real( kind = core_rknd ), dimension(ngrdcol,2*nzm-1), intent(out) :: &
@@ -2516,6 +2495,12 @@ module advance_wp2_wp3_module
       rhs_pr2_wp2, & ! wp2 pressure term 2 (stats only)
       rhs_bp1_wp3, & ! wp3 bouyancy production 1 (stats only)
       rhs_pr2_wp3    ! wp3 pressure term 2 (stats only)
+
+    real( kind = core_rknd ), dimension(ngrdcol,nzm) :: &
+      stats_tmp_zm
+
+    real( kind = core_rknd ), dimension(ngrdcol,nzt) :: &
+      stats_tmp_zt
     
     real( kind = core_rknd ) :: &
       invrs_dt        ! Inverse of dt, 1/dt, used for computational efficiency
@@ -2542,6 +2527,7 @@ module advance_wp2_wp3_module
     end do
     !$acc end parallel loop
 
+    ! Experimental bouyancy term
     ! Experimental term from CLUBB TRAC ticket #411
     !$acc parallel loop gang vector collapse(2) default(present)
     do k = 2, nzt-1
@@ -2860,7 +2846,8 @@ module advance_wp2_wp3_module
     !$acc end parallel loop
 
     ! --------- Statistics output ---------
-    if ( stats_metadata%l_stats_samp ) then
+
+    if ( stats%l_sample ) then
 
       !$acc update host( wp2, lhs_diff_zm_crank, up2, vp2, lhs_diff_zm, &
       !$acc              rhs_pr_dfsn_wp2, lhs_splat_wp2, rhs_pr1_wp2, &
@@ -2915,278 +2902,310 @@ module advance_wp2_wp3_module
                                   rhs_pr2_wp3 )                             ! intent(out)
 
       !$acc end data
-      do i = 1, ngrdcol
-        do k = 2, nzm-1
- 
+    end if
+
+      if ( stats%l_sample ) then
           ! ----------- w'2 -----------
+          stats_tmp_zm = zero
+          do k = 2, nzm-1
+            do i = 1, ngrdcol
+              stats_tmp_zm(i,k) = rhs_bp_wp2(i,k)
+            end do
+          end do
 
-          ! w'^2 term dp2 has both implicit and explicit components (if the
-          ! Crank-Nicholson scheme is selected); call stat_begin_update_pt.  
-          ! Since stat_begin_update_pt automatically subtracts the value sent in, 
-          ! reverse the sign on right-hand side diffusion component.  If 
-          ! Crank-Nicholson diffusion is not selected, the stat_begin_update_pt 
-          ! will not be called.
-          if ( l_crank_nich_diff ) then
-            call stat_begin_update_pt( stats_metadata%iwp2_dp2, k,   & ! intent(in)
-              lhs_diff_zm_crank(2+gr%grid_dir_indx,i,k) * wp2(i,k-gr%grid_dir_indx)  &  
-            + lhs_diff_zm_crank(2,i,k) * wp2(i,k)     & 
-            + lhs_diff_zm_crank(2-gr%grid_dir_indx,i,k) * wp2(i,k+gr%grid_dir_indx), & ! intent(in)
-                                       stats_zm(i) )                   ! intent(out)
-          endif
+          call stats_update( "wp2_bp", stats_tmp_zm, stats )
 
-          ! w'^2 term dp2 and w'^3 term dp1 have both implicit and explicit 
-          ! components (if the l_use_tke_in_wp2_wp3_K_dfsn flag is true;
-          ! call stat_begin_update_pt.
-          if ( l_use_tke_in_wp2_wp3_K_dfsn ) then
-            call stat_begin_update_pt( stats_metadata%iwp2_dp2, k, &
-            + lhs_diff_zm(2+gr%grid_dir_indx,i,k) &
-              * ( up2(i,k-gr%grid_dir_indx) + vp2(i,k-gr%grid_dir_indx) ) &
-            + lhs_diff_zm(2,i,k) * ( up2(i,k)   + vp2(i,k)   )  &
-            + lhs_diff_zm(2-gr%grid_dir_indx,i,k) &
-              * ( up2(i,k+gr%grid_dir_indx) + vp2(i,k+gr%grid_dir_indx) ), &
-                                       stats_zm(i) )
-          endif
+        if ( l_ho_nontrad_coriolis ) then
+            stats_tmp_zm = zero
+            do k = 2, nzm-1
+              do i = 1, ngrdcol
+                stats_tmp_zm(i,k) = two * fcor_y(i) * upwp(i,k)
+              end do
+            end do
 
-          ! w'^2 term bp is completely explicit; call stat_update_var_pt.
-          ! Note:  To find the contribution of w'^2 term bp, substitute 0 for the
-          !        C_uu_buoy input to function wp2_terms_bp_pr2_rhs.
-          call stat_update_var_pt( stats_metadata%iwp2_bp, k, & ! intent(in)
-                                   rhs_bp_wp2(i,k), & ! intent(in)
-                                   stats_zm(i) )      ! intent(out)
+            ! w'^2 term nct is completely explicit; call stat_update_var_pt.
+            ! Hing Ong, 22 July 2025
+            ! Include effect of vertical compression of eddies in wp2 budget
+            call stats_update( "wp2_nct", stats_tmp_zm, stats )
+        end if
+          stats_tmp_zm = zero
+          do k = 2, nzm-1
+            do i = 1, ngrdcol
+              stats_tmp_zm(i,k) = rhs_pr_dfsn_wp2(i,k)
+            end do
+          end do
 
-          ! w'^2 term nct is completely explicit; call stat_update_var_pt.
-          ! Hing Ong, 22 July 2025
-          if ( l_ho_nontrad_coriolis ) then
-            call stat_update_var_pt( stats_metadata%iwp2_nct, k,  & ! intent(in)
-                                     two * fcor_y(i) * upwp(i,k), & ! intent(in)
-                                     stats_zm(i) )                  ! intent(out)
-          end if ! l_ho_nontrad_coriolis
+          call stats_update( "wp2_pr_dfsn", stats_tmp_zm, stats )
+          stats_tmp_zm = zero
+          do k = 2, nzm-1
+            do i = 1, ngrdcol
+              stats_tmp_zm(i,k) = -lhs_splat_wp2(i,k) * wp2(i,k)
+            end do
+          end do
 
-          call stat_update_var_pt( stats_metadata%iwp2_pr_dfsn, k, & ! intent(in)
-                                   rhs_pr_dfsn_wp2(i,k), &           ! intent(in)
-                                   stats_zm(i) )                     ! intent(out)
+          call stats_update( "wp2_splat", stats_tmp_zm, stats )
+          stats_tmp_zm = zero
+          do k = 2, nzm-1
+            do i = 1, ngrdcol
+              stats_tmp_zm(i,k) = rhs_pr3_wp2(i,k)
+            end do
+          end do
 
+          ! w'^2 term pr3 is completely explicit; call stat_update_var_pt.
+          call stats_update( "wp2_pr3", stats_tmp_zm, stats )
+          stats_tmp_zm = zero
+          do k = 2, nzm-1
+            do i = 1, ngrdcol
+              stats_tmp_zm(i,k) = -rhs_pr2_wp2(i,k)
+            end do
+          end do
 
-          ! Include effect of vertical compression of eddies in wp2 budget
-          call stat_update_var_pt( stats_metadata%iwp2_splat, k, &    ! intent(in)
-                                   - lhs_splat_wp2(i,k) * wp2(i,k), & ! intent(in)
-                                   stats_zm(i) )                      ! intent(out)
-
-
-          if ( l_tke_aniso ) then
-
-            ! w'^2 term pr1 has both implicit and explicit components; call
-            ! stat_begin_update_pt.  Since stat_begin_update_pt automatically
-            ! subtracts the value sent in, reverse the sign on wp2_term_pr1_rhs.
-            call stat_begin_update_pt( stats_metadata%iwp2_pr1, k, & ! intent(in)
-                                       -rhs_pr1_wp2(i,k), &          ! intent(in)
-                                       stats_zm(i) )                 ! intent(out)
-
-            ! Note:  An "over-implicit" weighted time step is applied to this
-            !        term.  A weighting factor of greater than 1 may be used to
-            !        make the term more numerically stable (see note below for
-            !        w'^3 RHS turbulent advection (ta) term).
-            call stat_modify_pt( stats_metadata%iwp2_pr1, k,        & ! intent(in)
-                               + ( one - gamma_over_implicit_ts )   &
-                               * ( - lhs_pr1_wp2(i,k) * wp2(i,k) ), & ! intent(in)
-                                 stats_zm(i) )                        ! intent(out)
-          endif
-
-          ! w'^2 term pr2 has both implicit and explicit components; call
-          ! stat_begin_update_pt.  Since stat_begin_update_pt automatically
-          ! subtracts the value sent in, reverse the sign on wp2_terms_bp_pr2_rhs.
-          ! Note:  To find the contribution of w'^2 term pr2, add 1 to the
-          !        C_uu_buoy input to function wp2_terms_bp_pr2_rhs.
-          call stat_begin_update_pt( stats_metadata%iwp2_pr2, k, -rhs_pr2_wp2(i,k), & ! intent(in)
-                                     stats_zm(i) )                     ! intent(out)
+          call stats_begin_budget( "wp2_pr2", stats_tmp_zm, stats )
+          stats_tmp_zm = zero
+          do k = 2, nzm-1
+            do i = 1, ngrdcol
+              stats_tmp_zm(i,k) = -rhs_dp1_wp2(i,k)
+            end do
+          end do
 
           ! w'^2 term dp1 has both implicit and explicit components; call
           ! stat_begin_update_pt.  Since stat_begin_update_pt automatically
           ! subtracts the value sent in, reverse the sign on wp2_term_dp1_rhs.
-          call stat_begin_update_pt( stats_metadata%iwp2_dp1, k, -rhs_dp1_wp2(i,k), & ! intent(in)
-                                     stats_zm(i) )                     ! intent(out)
+          call stats_begin_budget( "wp2_dp1", stats_tmp_zm, stats )
+          stats_tmp_zm = zero
+          do k = 2, nzm-1
+            do i = 1, ngrdcol
+              stats_tmp_zm(i,k) = ( one - gamma_over_implicit_ts ) &
+                                  * ( - lhs_dp1_wp2(i,k) * wp2(i,k) )
+            end do
+          end do
 
+          call stats_update_budget( "wp2_dp1", stats_tmp_zm, stats )
 
-          ! Note:  An "over-implicit" weighted time step is applied to this term.
-          !        A weighting factor of greater than 1 may be used to make the
-          !        term more numerically stable (see note below for w'^3 RHS
-          !        turbulent advection (ta) term).
-          call stat_modify_pt( stats_metadata%iwp2_dp1, k,                         & ! intent(in)
-                               + ( one - gamma_over_implicit_ts )   &
-                               * ( - lhs_dp1_wp2(i,k) * wp2(i,k) ), & ! intent(in)
-                               stats_zm(i) )                          ! intent(out)
+          if ( l_crank_nich_diff .or. l_use_tke_in_wp2_wp3_K_dfsn ) then
+            ! w'^2 term dp2 and w'^3 term dp1 have both implicit and explicit
+            ! components (if the l_use_tke_in_wp2_wp3_K_dfsn flag is true;
+            ! call stat_begin_update_pt.
+            ! Crank-Nicholson scheme is selected); call stat_begin_update_pt.
+            ! Since stat_begin_update_pt automatically subtracts the value sent in,
+            ! reverse the sign on right-hand side diffusion component.  If
+            ! Crank-Nicholson diffusion is not selected, the stat_begin_update_pt
+            ! will not be called.
+            stats_tmp_zm = zero
+            if ( l_crank_nich_diff ) then
+              do k = 2, nzm-1
+                do i = 1, ngrdcol
+                  stats_tmp_zm(i,k) = stats_tmp_zm(i,k) &
+                    + lhs_diff_zm_crank(2+gr%grid_dir_indx,i,k) * wp2(i,k-gr%grid_dir_indx)  &
+                    + lhs_diff_zm_crank(2,i,k) * wp2(i,k)     &
+                    + lhs_diff_zm_crank(2-gr%grid_dir_indx,i,k) * wp2(i,k+gr%grid_dir_indx)
+                end do
+              end do
+            end if
+            if ( l_use_tke_in_wp2_wp3_K_dfsn ) then
+              do k = 2, nzm-1
+                do i = 1, ngrdcol
+                  stats_tmp_zm(i,k) = stats_tmp_zm(i,k) &
+                    + lhs_diff_zm(2+gr%grid_dir_indx,i,k) &
+                      * ( up2(i,k-gr%grid_dir_indx) + vp2(i,k-gr%grid_dir_indx) ) &
+                    + lhs_diff_zm(2,i,k) * ( up2(i,k)   + vp2(i,k)   )  &
+                    + lhs_diff_zm(2-gr%grid_dir_indx,i,k) &
+                      * ( up2(i,k+gr%grid_dir_indx) + vp2(i,k+gr%grid_dir_indx) )
+                end do
+              end do
+            end if
 
-          ! w'^2 term pr3 is completely explicit; call stat_update_var_pt.
-          call stat_update_var_pt( stats_metadata%iwp2_pr3, k, & ! intent(in)
-                                   rhs_pr3_wp2(i,k), &           ! intent(in)
-                                   stats_zm(i) )                 ! intent(out)
+            call stats_begin_budget( "wp2_dp2", stats_tmp_zm, stats )
+          end if
+        if ( l_tke_aniso ) then
+            stats_tmp_zm = zero
+            do k = 2, nzm-1
+              do i = 1, ngrdcol
+                stats_tmp_zm(i,k) = -rhs_pr1_wp2(i,k)
+              end do
+            end do
 
-        end do
-      end do
+            call stats_begin_budget( "wp2_pr1", stats_tmp_zm, stats )
+            stats_tmp_zm = zero
+            do k = 2, nzm-1
+              do i = 1, ngrdcol
+                stats_tmp_zm(i,k) = ( one - gamma_over_implicit_ts ) &
+                                    * ( - lhs_pr1_wp2(i,k) * wp2(i,k) )
+              end do
+            end do
 
-      do i = 1, ngrdcol
-        do k = 2, nzt-1
- 
-          ! ----------- w'3 -----------
-
-          if ( l_explicit_turbulent_adv_wp3 ) then
-
-            ! The turbulent advection term is being solved explicitly.
-            ! 
-            ! The turbulent advection stats code is still set up in two parts,
-            ! so call stat_begin_update_pt.  The implicit portion of the stat,
-            ! which has a value of 0, will still be called later.  Since
-            ! stat_begin_update_pt automatically subtracts the value sent in,
-            ! reverse the sign on the input value.
-            call stat_begin_update_pt( stats_metadata%iwp3_ta, k, -rhs_ta_wp3(i,k), & ! intent(in)
-                                       stats_zt(i) )                   ! intent(out)
-          else
-
-            ! The turbulent advection term is being solved implicitly.
-            ! 
+            ! w'^2 term pr1 has both implicit and explicit components; call
+            ! stat_begin_update_pt.  Since stat_begin_update_pt automatically
+            ! subtracts the value sent in, reverse the sign on wp2_term_pr1_rhs.
             ! Note:  An "over-implicit" weighted time step is applied to this
             !        term.  A weighting factor of greater than 1 may be used to
-            !        make the term more numerically stable (see note above for
-            !        RHS turbulent advection (ta) term).
-            !        Call stat_begin_update_pt.  Since stat_begin_update_pt
-            !        automatically subtracts the value sent in, reverse the sign
-            !        on the input value.
+            !        term more numerically stable (see note below for w'^3 LHS
+            !        make the term more numerically stable (see note below for
+            !        w'^3 RHS turbulent advection (ta) term).
+            call stats_update_budget( "wp2_pr1", stats_tmp_zm, stats )
+        end if
+          ! ----------- w'3 -----------
+          stats_tmp_zt = zero
+          do k = 2, nzt-1
+            do i = 1, ngrdcol
+              stats_tmp_zt(i,k) = rhs_bp1_wp3(i,k)
+            end do
+          end do
 
+          call stats_update( "wp3_bp1", stats_tmp_zt, stats )
+
+        if ( l_ho_nontrad_coriolis ) then
+            stats_tmp_zt = zero
+            do k = 2, nzt-1
+              do i = 1, ngrdcol
+                stats_tmp_zt(i,k) = three * fcor_y(i) * wp2up(i,k)
+              end do
+            end do
+
+            ! w'^3 term nct is completely explicit; call stat_update_var_pt.
+            ! Hing Ong, 1 September 2025
+            call stats_update( "wp3_nct", stats_tmp_zt, stats )
+        end if
+          stats_tmp_zt = zero
+          do k = 2, nzt-1
+            do i = 1, ngrdcol
+              stats_tmp_zt(i,k) = rhs_pr_turb_wp3(i,k)
+            end do
+          end do
+
+          call stats_update( "wp3_pr_turb", stats_tmp_zt, stats )
+          stats_tmp_zt = zero
+          do k = 2, nzt-1
+            do i = 1, ngrdcol
+              stats_tmp_zt(i,k) = rhs_pr_dfsn_wp3(i,k)
+            end do
+          end do
+
+          call stats_update( "wp3_pr_dfsn", stats_tmp_zt, stats )
+          stats_tmp_zt = zero
+          do k = 2, nzt-1
+            do i = 1, ngrdcol
+              stats_tmp_zt(i,k) = -lhs_splat_wp3(i,k) * wp3(i,k)
+            end do
+          end do
+
+          call stats_update( "wp3_splat", stats_tmp_zt, stats )
+          stats_tmp_zt = zero
+          do k = 2, nzt-1
+            do i = 1, ngrdcol
+              stats_tmp_zt(i,k) = -rhs_pr2_wp3(i,k)
+            end do
+          end do
+
+          call stats_begin_budget( "wp3_pr2", stats_tmp_zt, stats )
+          stats_tmp_zt = zero
+          do k = 2, nzt-1
+            do i = 1, ngrdcol
+              stats_tmp_zt(i,k) = -rhs_pr1_wp3(i,k)
+            end do
+          end do
+
+          ! w'^3 term pr1 has both implicit and explicit components; call
+          ! stat_begin_update_pt.  Since stat_begin_update_pt automatically
+          ! subtracts the value sent in, reverse the sign on wp3_term_pr1_rhs.
+          call stats_begin_budget( "wp3_pr1", stats_tmp_zt, stats )
+          stats_tmp_zt = zero
+          do k = 2, nzt-1
+            do i = 1, ngrdcol
+              stats_tmp_zt(i,k) = ( one - gamma_over_implicit_ts ) &
+                                  * ( - lhs_pr1_wp3(i,k) * wp3(i,k) )
+            end do
+          end do
+
+          call stats_update_budget( "wp3_pr1", stats_tmp_zt, stats )
+          stats_tmp_zt = zero
+          if ( l_explicit_turbulent_adv_wp3 ) then
+            do k = 2, nzt-1
+              do i = 1, ngrdcol
+                stats_tmp_zt(i,k) = -rhs_ta_wp3(i,k)
+              end do
+            end do
+          else
             if ( iiPDF_type == iiPDF_ADG1 ) then
-
-              ! The ADG1 PDF is used.
-
-              call stat_begin_update_pt( stats_metadata%iwp3_ta, k, & ! intent(in)
-                                          - ( one - gamma_over_implicit_ts ) & ! intent(in)
-                                          * ( - wp3_term_ta_lhs_result(1,i,k) * wp3(i,k+1) &
-                                              - wp3_term_ta_lhs_result(2,i,k) * wp2(i,k+1) &
-                                              - wp3_term_ta_lhs_result(3,i,k) * wp3(i,k) &
-                                              - wp3_term_ta_lhs_result(4,i,k) * wp2(i,k) &
-                                              - wp3_term_ta_lhs_result(5,i,k) * wp3(i,k-1) ), &
-                                         stats_zt(i) ) ! intent(out)
-
-            elseif ( iiPDF_type == iiPDF_new &
-                     .or. iiPDF_type == iiPDF_new_hybrid ) then
-
-              ! The new PDF or the new hybrid PDF is used.
-
-              call stat_begin_update_pt( stats_metadata%iwp3_ta, k,               & ! intent(in)
-                                         - ( one - gamma_over_implicit_ts )       &
-                                           * ( - lhs_ta_wp3(1,i,k) * wp2(i,k+1)   &
-                                               - lhs_ta_wp3(2,i,k) * wp2(i,k) ),  & ! intent(in)
-                                         stats_zt(i) )                              ! intent(out)
-            endif
-
-          endif
-
-          ! Note:  An "over-implicit" weighted time step is applied to this term.
-          !        A weighting factor of greater than 1 may be used to make the
-          !        term more numerically stable (see note above for RHS turbulent
-          !        production (tp) term).  Call stat_begin_update_pt.  Since
-          !        stat_begin_update_pt automatically subtracts the value sent in,
-          !        reverse the sign on the input value.
-          call stat_begin_update_pt( stats_metadata%iwp3_tp, k,                   & ! intent(in)
-                                     - ( one - gamma_over_implicit_ts )           &
-                                       * ( - lhs_adv_tp_wp3(1,i,k) * wp2(i,k+1)   &
-                                           - lhs_adv_tp_wp3(2,i,k) * wp2(i,k) ),  & ! intent(in)
-                                     stats_zt(i) )                                    ! intent(out)
-
-          call stat_begin_update_pt( stats_metadata%iwp3_pr_tp, k,                & ! intent(in)
-                                     - ( one - gamma_over_implicit_ts )           &
-                                       * ( - lhs_pr_tp_wp3(1,i,k) * wp2(i,k+1)    &
-                                           - lhs_pr_tp_wp3(2,i,k) * wp2(i,k) ),   & ! intent(in)
-                                     stats_zt(i) )                                  ! intent(out)
-
-
-          ! w'^3 pressure term 3 (pr3) explicit (rhs) contribution
-          call stat_begin_update_pt( stats_metadata%iwp3_pr3, k, rhs_pr3_wp3(i,k), & ! intent(in)
-                                     stats_zt(i) )                    ! intent(out)
-
-
-          ! w'^3 term bp is completely explicit; call stat_update_var_pt.
-          ! Note:  To find the contribution of w'^3 term bp, substitute 0 for the
-          !        C_11 skewness function input to function wp3_terms_bp1_pr2_rhs.
-          call stat_update_var_pt( stats_metadata%iwp3_bp1, k, & ! intent(in)
-                                   rhs_bp1_wp3(i,k), &           ! intent(in)
-                                   stats_zt(i) )                 ! intent(out)
-
-          ! w'^3 term nct is completely explicit; call stat_update_var_pt.
-          ! Hing Ong, 1 September 2025
-          if ( l_ho_nontrad_coriolis ) then
-            call stat_update_var_pt( stats_metadata%iwp3_nct, k,     & ! intent(in)
-                                     three * fcor_y(i) * wp2up(i,k), & ! intent(in)
-                                     stats_zt(i) )                     ! intent(out)
+              do k = 2, nzt-1
+                do i = 1, ngrdcol
+                  stats_tmp_zt(i,k) = - ( one - gamma_over_implicit_ts ) &
+                                      * ( - wp3_term_ta_lhs_result(1,i,k) * wp3(i,k+1) &
+                                          - wp3_term_ta_lhs_result(2,i,k) * wp2(i,k+1) &
+                                          - wp3_term_ta_lhs_result(3,i,k) * wp3(i,k) &
+                                          - wp3_term_ta_lhs_result(4,i,k) * wp2(i,k) &
+                                          - wp3_term_ta_lhs_result(5,i,k) * wp3(i,k-1) )
+                end do
+              end do
+            elseif ( iiPDF_type == iiPDF_new .or. iiPDF_type == iiPDF_new_hybrid ) then
+              do k = 2, nzt-1
+                do i = 1, ngrdcol
+                  stats_tmp_zt(i,k) = - ( one - gamma_over_implicit_ts ) &
+                                      * ( - lhs_ta_wp3(1,i,k) * wp2(i,k+1) &
+                                          - lhs_ta_wp3(2,i,k) * wp2(i,k) )
+                end do
+              end do
+            end if
           end if
 
-          ! w'^3 term pr2 has both implicit and explicit components; call
-          ! stat_begin_update_pt.  Since stat_begin_update_pt automatically
-          ! subtracts the value sent in, reverse the sign on wp3_terms_bp1_pr2_rhs.
-          ! Note:  To find the contribution of w'^3 term pr2, add 1 to the
-          !        C_11 skewness function input to function wp3_terms_bp1_pr2_rhs.
-          call stat_begin_update_pt( stats_metadata%iwp3_pr2, k, -rhs_pr2_wp3(i,k), & ! intent(in)
-                                     stats_zt(i) )                     ! intent(out)
+          call stats_begin_budget( "wp3_ta", stats_tmp_zt, stats )
+          stats_tmp_zt = zero
+          do k = 2, nzt-1
+            do i = 1, ngrdcol
+              stats_tmp_zt(i,k) = - ( one - gamma_over_implicit_ts ) &
+                                  * ( - lhs_adv_tp_wp3(1,i,k) * wp2(i,k+1) &
+                                      - lhs_adv_tp_wp3(2,i,k) * wp2(i,k) )
+            end do
+          end do
 
-          ! w'^3 term pr1 has both implicit and explicit components; call 
-          ! stat_begin_update_pt.  Since stat_begin_update_pt automatically 
-          ! subtracts the value sent in, reverse the sign on wp3_term_pr1_rhs.
-          call stat_begin_update_pt( stats_metadata%iwp3_pr1, k, -rhs_pr1_wp3(i,k), & ! intent(in)
-                                     stats_zt(i) )                     ! intent(out)
+          call stats_begin_budget( "wp3_tp", stats_tmp_zt, stats )
+          stats_tmp_zt = zero
+          do k = 2, nzt-1
+            do i = 1, ngrdcol
+              stats_tmp_zt(i,k) = - ( one - gamma_over_implicit_ts ) &
+                                  * ( - lhs_pr_tp_wp3(1,i,k) * wp2(i,k+1) &
+                                      - lhs_pr_tp_wp3(2,i,k) * wp2(i,k) )
+            end do
+          end do
 
+          call stats_begin_budget( "wp3_pr_tp", stats_tmp_zt, stats )
+          stats_tmp_zt = zero
+          do k = 2, nzt-1
+            do i = 1, ngrdcol
+              stats_tmp_zt(i,k) = rhs_pr3_wp3(i,k)
+            end do
+          end do
 
-          ! Note:  An "over-implicit" weighted time step is applied to this term.
-          !        A weighting factor of greater than 1 may be used to make the
-          !        term more numerically stable (see note above for RHS turbulent
-          !        advection (ta) term).
-          call stat_modify_pt( stats_metadata%iwp3_pr1, k,                         & ! intent(in)
-                               + ( one - gamma_over_implicit_ts )   &
-                               * ( - lhs_pr1_wp3(i,k) * wp3(i,k) ), & ! intent(in)
-                               stats_zt(i) )                          ! intent(out)
+          call stats_begin_budget( "wp3_pr3", stats_tmp_zt, stats )
 
-          ! Include effect of vertical compression of eddies in wp2 budget
-          call stat_update_var_pt( stats_metadata%iwp3_splat, k,    & ! intent(in)
-                                   - lhs_splat_wp3(i,k) * wp3(i,k), & ! intent(in)
-                                   stats_zt(i) )                      ! intent(out)
+          if ( l_crank_nich_diff .or. l_use_tke_in_wp2_wp3_K_dfsn ) then
+            stats_tmp_zt = zero
+            if ( l_crank_nich_diff ) then
+              do k = 2, nzt-1
+                do i = 1, ngrdcol
+                  stats_tmp_zt(i,k) = stats_tmp_zt(i,k) &
+                    + lhs_diff_zt(2+gr%grid_dir_indx,i,k) * wp3(i,k-gr%grid_dir_indx)  &
+                    + lhs_diff_zt(2,i,k) * wp3(i,k)    &
+                    + lhs_diff_zt(2-gr%grid_dir_indx,i,k) * wp3(i,k+gr%grid_dir_indx)
+                end do
+              end do
+            end if
+            if ( l_use_tke_in_wp2_wp3_K_dfsn ) then
+              do k = 2, nzt-1
+                do i = 1, ngrdcol
+                  stats_tmp_zt(i,k) = stats_tmp_zt(i,k) &
+                    + lhs_diff_zt(2+gr%grid_dir_indx,i,k) &
+                      * ( wpup2(i,k-gr%grid_dir_indx) + wpvp2(i,k-gr%grid_dir_indx) ) &
+                    + lhs_diff_zt(2,i,k) * ( wpup2(i,k) + wpvp2(i,k) ) &
+                    + lhs_diff_zt(2-gr%grid_dir_indx,i,k) &
+                      * ( wpup2(i,k+gr%grid_dir_indx) + wpvp2(i,k+gr%grid_dir_indx) )
+                end do
+              end do
+            end if
 
-          if ( l_crank_nich_diff ) then
-
-            ! w'^3 term dp1 has both implicit and explicit components (if the
-            ! Crank-Nicholson scheme is selected); call stat_begin_update_pt.  
-            ! Since stat_begin_update_pt automatically subtracts the value sent in, 
-            ! reverse the sign on right-hand side diffusion component.  If 
-            ! Crank-Nicholson diffusion is not selected, the stat_begin_update_pt 
-            ! will not be called.
-            call stat_begin_update_pt( stats_metadata%iwp3_dp1, k,      & ! intent(in)
-                 lhs_diff_zt(2+gr%grid_dir_indx,i,k) * wp3(i,k-gr%grid_dir_indx)  & 
-               + lhs_diff_zt(2,i,k) * wp3(i,k)    & 
-               + lhs_diff_zt(2-gr%grid_dir_indx,i,k) * wp3(i,k+gr%grid_dir_indx), & ! intent(in)
-                                       stats_zt(i) )                      ! intent(out)
-          endif
-
-          ! w'^2 term dp2 and w'^3 term dp1 have both implicit and explicit 
-          ! components (if the l_use_tke_in_wp2_wp3_K_dfsn flag is true;
-          ! call stat_begin_update_pt.
-          if ( l_use_tke_in_wp2_wp3_K_dfsn ) then
-            call stat_begin_update_pt( stats_metadata%iwp3_dp1, k, &
-               + lhs_diff_zt(2+gr%grid_dir_indx,i,k) &
-                 * ( wpup2(i,k-gr%grid_dir_indx) + wpvp2(i,k-gr%grid_dir_indx) ) &
-               + lhs_diff_zt(2,i,k) * ( wpup2(i,k) + wpvp2(i,k) ) &
-               + lhs_diff_zt(2-gr%grid_dir_indx,i,k) &
-                 * ( wpup2(i,k+gr%grid_dir_indx) + wpvp2(i,k+gr%grid_dir_indx) ), &
-                                       stats_zt(i) )
-          endif
-                    
-          ! Experimental bouyancy term
-          call stat_update_var_pt( stats_metadata%iwp3_pr_turb, k, & ! intent(in)
-                                   rhs_pr_turb_wp3(i,k),           & ! intent(in)
-                                   stats_zt(i) )                     ! intent(out)
-          call stat_update_var_pt( stats_metadata%iwp3_pr_dfsn, k, & ! intent(in)
-                                   rhs_pr_dfsn_wp3(i,k),           & ! intent(in)
-                                   stats_zt(i) )                     ! intent(out)
-                                   
-        end do
-      end do
-
-    endif
+            call stats_begin_budget( "wp3_dp1", stats_tmp_zt, stats )
+          end if
+      end if
 
     return
 

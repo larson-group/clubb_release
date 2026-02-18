@@ -199,8 +199,7 @@ module generalized_grid_test
                mixt_frac_max_mag, T0, ts_nudge, &                         ! Intent(in)
                rtm_min, rtm_nudge_max_altitude, &                         ! Intent(in)
                clubb_config_flags, &                                      ! Intent(in)
-               stats_metadata, &                                          ! Intent(in)
-               stats_zt, stats_zm, stats_sfc, &                           ! intent(inout)
+               stats,         &                                           ! intent(inout)
                um, vm, upwp, vpwp, up2, vp2, up3, vp3, &                  ! Intent(inout)
                thlm, rtm, wprtp, wpthlp, &                                ! Intent(inout)
                wp2, wp3, rtp2, rtp3, thlp2, thlp3, rtpthlp, &             ! Intent(inout)
@@ -253,11 +252,8 @@ module generalized_grid_test
         iiPDF_new, &
         iiPDF_new_hybrid
 
-    use stats_type, only: &
-        stats ! Type
-
-    use stats_variables, only: &
-        stats_metadata_type
+    use stats_netcdf, only: &
+        stats_type
 
     use error_code, only: &
         clubb_generalized_grd_test_err, &
@@ -399,14 +395,8 @@ module generalized_grid_test
     type( clubb_config_flags_type ), intent(in) :: &
       clubb_config_flags ! Derived type holding all configurable CLUBB flags
 
-    type (stats_metadata_type), intent(in) :: &
-      stats_metadata
-
-    !------------------------ Input/Output Variables ------------------------
-    type(stats), intent(inout), dimension(ngrdcol) :: &
-      stats_zt, &
-      stats_zm, &
-      stats_sfc
+    type(stats_type), intent(inout) :: &
+      stats
 
     ! These are prognostic or are planned to be in the future
     real( kind = core_rknd ), intent(inout), dimension(ngrdcol,nzt) ::  &
@@ -591,9 +581,6 @@ module generalized_grid_test
       ug_flip,       & ! u geostrophic wind                           [m/s]
       vg_flip          ! v geostrophic wind                           [m/s]
 
-    type (stats_metadata_type) :: &
-      stats_metadata_flip
-
     real( kind = core_rknd ), dimension(ngrdcol,nzt) ::  &
       um_flip,      & ! u mean wind component (thermodynamic levels)   [m/s]
       vm_flip,      & ! v mean wind component (thermodynamic levels)   [m/s]
@@ -709,6 +696,8 @@ module generalized_grid_test
 
     integer :: &
       i, sclr, edsclr, hm_idx
+
+    logical :: l_stats_sample_save
 
     logical :: l_differences = .false.
 
@@ -989,11 +978,6 @@ module generalized_grid_test
       Lscale_flip(:,:) = Lscale(:,nzt:1:-1)
 
 
-      ! Set statistical sampling to false for descending grid to avoid
-      ! the error from having too many statistical samples.
-      stats_metadata_flip%l_stats_samp = .false.
-
-
       ! Call advance_clubb_core_api for the ascending grid direction
       call advance_clubb_core_api( &
               gr, nzm, nzt, ngrdcol, &                             ! Intent(in)
@@ -1019,8 +1003,7 @@ module generalized_grid_test
               mixt_frac_max_mag, T0, ts_nudge, &                   ! Intent(in)
               rtm_min, rtm_nudge_max_altitude, &                   ! Intent(in)
               clubb_config_flags, &                                ! Intent(in)
-              stats_metadata, &                                    ! Intent(in)
-              stats_zt, stats_zm, stats_sfc, &                     ! intent(inout)
+              stats,         &                                     ! intent(inout)
               um, vm, upwp, vpwp, up2, vp2, up3, vp3, &            ! Intent(inout)
               thlm, rtm, wprtp, wpthlp, &                          ! Intent(inout)
               wp2, wp3, rtp2, rtp3, thlp2, thlp3, rtpthlp, &       ! Intent(inout)
@@ -1038,7 +1021,7 @@ module generalized_grid_test
               thlprcp, wprcp, w_up_in_cloud, w_down_in_cloud, &    ! Intent(out)
               cloudy_updraft_frac, cloudy_downdraft_frac, &        ! Intent(out)
               rcm_in_layer, cloud_cover, invrs_tau_zm, &           ! Intent(out)
-              Lscale )                                             ! Intent(out)
+              Lscale )
 
 
       ! In the case of a fatal error during the 1st call (ascending grid) to 
@@ -1065,6 +1048,10 @@ module generalized_grid_test
          err_info%err_code = clubb_no_error
       endif
 
+      ! Set statistical sampling to false for descending grid to avoid
+      ! too many samples and mismatched stats buffering during the paired call.
+      l_stats_sample_save = stats%l_sample
+      stats%l_sample = .false.
 
       ! Call advance_clubb_core_api for the descending grid direction
       ! All variables with a vertical dimension should be "flip" variables
@@ -1093,8 +1080,7 @@ module generalized_grid_test
               mixt_frac_max_mag, T0, ts_nudge, &                                    ! Intent(in)
               rtm_min, rtm_nudge_max_altitude, &                                    ! Intent(in)
               clubb_config_flags, &                                                 ! Intent(in)
-              stats_metadata_flip, &                                                ! Intent(in)
-              stats_zt, stats_zm, stats_sfc, &                                      ! intent(inout)
+              stats, &                                                              ! intent(inout)
               um_flip, vm_flip, upwp_flip, vpwp_flip, up2_flip, vp2_flip, up3_flip, vp3_flip, & ! Intent(inout)
               thlm_flip, rtm_flip, wprtp_flip, wpthlp_flip, &                       ! Intent(inout)
               wp2_flip, wp3_flip, rtp2_flip, rtp3_flip, thlp2_flip, thlp3_flip, rtpthlp_flip, & ! Intent(inout)
@@ -1112,8 +1098,10 @@ module generalized_grid_test
               thlprcp_flip, wprcp_flip, w_up_in_cloud_flip, w_down_in_cloud_flip, & ! Intent(out)
               cloudy_updraft_frac_flip, cloudy_downdraft_frac_flip, &               ! Intent(out)
               rcm_in_layer_flip, cloud_cover_flip, invrs_tau_zm_flip, &             ! Intent(out)
-              Lscale_flip )                                                         ! Intent(out)
+              Lscale_flip )
 
+      ! Restore stats l_sample state
+      stats%l_sample = l_stats_sample_save
 
       ! Compare the ascending grid variables to the descending grid variables
       ! rtm
@@ -1748,9 +1736,8 @@ module generalized_grid_test
                corr_array_n_cloud, corr_array_n_below,          & ! In
                hm_metadata, pdf_params, clubb_params,           & ! In
                clubb_config_flags, silhs_config_flags,          & ! In
-               l_rad_itime, stats_metadata,                     & ! In
-               stats_zt, stats_zm, stats_sfc,                   & ! In/Out
-               stats_lh_zt, stats_lh_sfc, err_info,             & ! In/Out
+               l_rad_itime, stats,                              & ! In
+               err_info,                                         & ! In/Out
                time_clubb_pdf, time_stop, time_start,           & ! In/Out
                hydrometp2,                                      & ! Out
                mu_x_1_n, mu_x_2_n,                              & ! Out
@@ -1791,11 +1778,8 @@ module generalized_grid_test
     use parameters_silhs, only: &
         silhs_config_flags_type    ! Types(s)
 
-    use stats_type, only: &
-        stats ! Type(s)
-
-    use stats_variables, only: &
-        stats_metadata_type    ! Type(s)
+    use stats_netcdf, only: &
+        stats_type
 
 #ifdef SILHS
     use parameters_microphys, only: &
@@ -1884,17 +1868,10 @@ module generalized_grid_test
     logical, intent(in) :: &
       l_rad_itime
 
-    type (stats_metadata_type), intent(in) :: &
-      stats_metadata
+    type(stats_type), intent(inout) :: &
+      stats
 
     ! Input/Output Variables
-    type (stats), dimension(ngrdcol), intent(inout) :: &
-      stats_zt, &
-      stats_zm, &
-      stats_sfc, &
-      stats_lh_zt, &
-      stats_lh_sfc
-
     type(err_info_type), intent(inout) :: &
       err_info        ! err_info struct containing err_code and err_header
 
@@ -1968,9 +1945,6 @@ module generalized_grid_test
 
     type(pdf_parameter) :: &
       pdf_params_flip    ! PDF parameters                               [units vary]
-
-    type (stats_metadata_type) :: &
-      stats_metadata_flip
 
     real( kind = core_rknd ), dimension(ngrdcol,gr%nzm,hydromet_dim) :: &
       hydrometp2_flip    ! Variance of a hydrometeor (overall) (m-levs.)   [units^2]
@@ -2100,11 +2074,6 @@ module generalized_grid_test
       pdf_params_flip%ice_supersat_frac_1(:,:) = pdf_params%ice_supersat_frac_1(:,gr%nzt:1:-1)
       pdf_params_flip%ice_supersat_frac_2(:,:) = pdf_params%ice_supersat_frac_2(:,gr%nzt:1:-1)
 
-      ! Set statistical sampling to false for descending grid to avoid
-      ! the error from having too many statistical samples.
-      stats_metadata_flip%l_stats_samp = .false.
-
-
       ! Call pdf_hydromet_microphys_prep for the ascending grid direction
       call pdf_hydromet_microphys_prep &
            ( gr, ngrdcol, pdf_dim, hydromet_dim,              & ! In
@@ -2114,9 +2083,8 @@ module generalized_grid_test
              corr_array_n_cloud, corr_array_n_below,          & ! In
              hm_metadata, pdf_params, clubb_params,           & ! In
              clubb_config_flags, silhs_config_flags,          & ! In
-             l_rad_itime, stats_metadata,                     & ! In
-             stats_zt, stats_zm, stats_sfc,                   & ! In/Out
-             stats_lh_zt, stats_lh_sfc, err_info,             & ! In/Out
+             l_rad_itime, stats,                              & ! In
+             err_info,                                         & ! In/Out
              time_clubb_pdf, time_stop, time_start,           & ! In/Out
              hydrometp2,                                      & ! Out
              mu_x_1_n, mu_x_2_n,                              & ! Out
@@ -2166,9 +2134,8 @@ module generalized_grid_test
              corr_array_n_cloud, corr_array_n_below,          & ! In
              hm_metadata, pdf_params_flip, clubb_params,      & ! In
              clubb_config_flags, silhs_config_flags,          & ! In
-             l_rad_itime, stats_metadata_flip,                & ! In
-             stats_zt, stats_zm, stats_sfc,                   & ! In/Out
-             stats_lh_zt, stats_lh_sfc, err_info,             & ! In/Out
+             l_rad_itime, stats,                              & ! In
+             err_info,                                         & ! In/Out
              time_clubb_pdf, time_stop, time_start,           & ! In/Out
              hydrometp2_flip,                                 & ! Out
              mu_x_1_n_flip, mu_x_2_n_flip,                    & ! Out

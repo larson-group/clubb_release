@@ -47,9 +47,8 @@ module microphys_driver
                                 l_lh_importance_sampling, &               ! In
                                 l_lh_instant_var_covar_src, &             ! In
                                 saturation_formula, &                     ! In
-                                stats_metadata, &                         ! In
-                                stats_zt, stats_zm, &                     ! Inout
-                                stats_sfc, stats_lh_zt, &                 ! Inout
+                                stats,         &                          ! Inout
+                                icol, &                                   ! In
                                 Nccnm, &                                  ! Inout
                                 hydromet_mc, Ncm_mc, rcm_mc, rvm_mc, &    ! Out
                                 thlm_mc, hydromet_vel_zt, &               ! Out
@@ -137,16 +136,8 @@ module microphys_driver
         hydromet_pdf_parameter, &  ! Type
         precipitation_fractions
 
-    use stats_type_utilities, only: & 
-        stat_update_var,   & ! Procedure(s)
-        stat_begin_update, &
-        stat_end_update
-
     use corr_varnce_module, only: &
         hm_metadata_type
-
-    use stats_variables, only: &
-        stats_metadata_type
 
     use stats_clubb_utilities, only: & 
         stats_accumulate_lh_tend ! Procedure(s)
@@ -163,10 +154,14 @@ module microphys_driver
     use microphys_stats_vars_module, only: &
         microphys_stats_vars_type,  & ! Type
         microphys_stats_accumulate, & ! Procedure(s)
-        microphys_get_var,          &
+        microphys_get_var_by_name,  &
         microphys_stats_cleanup
 
-    use stats_type, only: stats ! Type
+    use stats_netcdf, only: &
+        stats_type, &
+        stats_update, &
+        stats_begin_budget, &
+        stats_finalize_budget
 
     implicit none
 
@@ -254,16 +249,13 @@ module microphys_driver
     integer, intent(in) :: &
       saturation_formula ! Integer that stores the saturation formula to be used
 
-    type (stats_metadata_type), intent(in) :: &
-      stats_metadata
+    type(stats_type), intent(inout) :: &
+      stats
 
-    ! Input/Output Variables
-    type(stats), intent(inout) :: &
-      stats_zt, &
-      stats_zm, &
-      stats_sfc, &
-      stats_lh_zt
+    integer, intent(in) :: &
+      icol
 
+    !------------------------ Input/Output Variables ------------------------
     ! Note:
     ! For COAMPS Nccnm is initialized and Nim & Ncm are computed within
     ! subroutine adjtg.
@@ -447,8 +439,7 @@ module microphys_driver
              hydromet(:,iirg), hydromet(:,iirs), & ! In
              rcm, Ncm_microphys, hydromet(:,iiNr), hydromet(:,iiNi), & !In
              saturation_formula, &
-             stats_metadata, &
-             stats_zt, &
+             stats, icol,         &
              Nccnm, cond, & ! Inout
              hydromet_vel_zt(:,iirs), hydromet_vel_zt(:,iiri), & ! Out
              hydromet_vel_zt(:,iirr), hydromet_vel_zt(:,iiNr),  &  ! Out
@@ -464,28 +455,18 @@ module microphys_driver
       if ( cond(1,1,1) /= cond(1,1,1) ) error stop
 #endif
 
-      if ( stats_metadata%l_stats_samp ) then
-
+      if ( stats%l_sample ) then
         ! Sedimentation velocity for rrm
-        call stat_update_var(stats_metadata%iVrr, &
-                             zt2zm_api( gr, hydromet_vel_zt(:,iirr) ), stats_zm)
-
+        call stats_update( "Vrr", zt2zm_api( gr, hydromet_vel_zt(:,iirr) ), stats, icol )
         ! Sedimentation velocity for Nrm
-        call stat_update_var(stats_metadata%iVNr, &
-                             zt2zm_api( gr, hydromet_vel_zt(:,iiNr) ), stats_zm )
-
+        call stats_update( "VNr", zt2zm_api( gr, hydromet_vel_zt(:,iiNr) ), stats, icol )
         ! Sedimentation velocity for snow
-        call stat_update_var(stats_metadata%iVrs, &
-                             zt2zm_api( gr, hydromet_vel_zt(:,iirs) ), stats_zm )
-
+        call stats_update( "Vrs", zt2zm_api( gr, hydromet_vel_zt(:,iirs) ), stats, icol )
         ! Sedimentation velocity for pristine ice
-        call stat_update_var( stats_metadata%iVri, &
-                              zt2zm_api( gr, hydromet_vel_zt(:,iiri) ), stats_zm )
-
+        call stats_update( "Vri", zt2zm_api( gr, hydromet_vel_zt(:,iiri) ), stats, icol )
         ! Sedimentation velocity for graupel
-        call stat_update_var( stats_metadata%iVrg, &
-                              zt2zm_api( gr, hydromet_vel_zt(:,iirg) ), stats_zm )
-      endif ! stats_metadata%l_stats_samp
+        call stats_update( "Vrg", zt2zm_api( gr, hydromet_vel_zt(:,iirg) ), stats, icol )
+      end if
 
     case ( "morrison" )
 
@@ -504,9 +485,7 @@ module microphys_driver
                l_lh_importance_sampling, & ! In
                l_lh_instant_var_covar_src, & ! In
                saturation_formula, & ! In
-               stats_metadata, & ! In
-               stats_zt, stats_zm, & ! InOut
-               stats_sfc, stats_lh_zt, & ! InOut
+               stats, icol,         & ! InOut
                hydromet_mc, hydromet_vel_zt, Ncm_mc, & ! Out
                rcm_mc, rvm_mc, thlm_mc,  & ! Out
                rtp2_mc, thlp2_mc, wprtp_mc, & ! Out
@@ -527,8 +506,7 @@ module microphys_driver
                                        thlm_mc, rvm_mc, rcm_mc, &
                                        lh_AKm, AKm, AKstd, AKstd_cld, &
                                        lh_rcm_avg, AKm_rcm, AKm_rcc, &
-                                       stats_metadata, &
-                                       stats_lh_zt ) ! intent(inout)
+                                       stats, icol )         ! intent(inout)
 
       endif ! LH isn't disabled
 
@@ -563,14 +541,14 @@ module microphys_driver
                exner, rho, cloud_frac, wtmp, &
                delta_zt, rcm, Ncm_microphys, chi, rvm, hydromet, &
                saturation_formula, &
-               stats_metadata, &
+               stats, icol,         &
                hydromet_mc, hydromet_vel_zt, Ncm_mc, &
                rcm_mc, rvm_mc, thlm_mc, &
                microphys_stats_zt, microphys_stats_sfc )
 
         if ( l_morr_xp2_mc) then
 
-          rrm_evap = microphys_get_var( stats_metadata%irrm_evap, microphys_stats_zt )
+          rrm_evap = microphys_get_var_by_name( "rrm_evap", microphys_stats_zt )
 
           call update_xp2_mc_api( gr, gr%nzm, gr%nzt, dt, &
                                   cloud_frac, rcm, rvm, thlm_morr,            & ! Intent(in)  
@@ -591,11 +569,10 @@ module microphys_driver
 
       endif ! lh_microphys_type /= interactive
 
-      ! Output rain sedimentation velocity
-      if ( stats_metadata%l_stats_samp ) then
-        call stat_update_var(stats_metadata%iVrr, &
-                             zt2zm_api( gr, hydromet_vel_zt(:,iirr) ), stats_zm)
-      endif
+      if ( stats%l_sample ) then
+        ! Output rain sedimentation velocity
+        call stats_update( "Vrr", zt2zm_api( gr, hydromet_vel_zt(:,iirr) ), stats, icol )
+      end if
 
     case ( "khairoutdinov_kogan" )
 
@@ -615,9 +592,7 @@ module microphys_driver
                l_lh_importance_sampling, & ! In
                l_lh_instant_var_covar_src, & ! In
                saturation_formula, & ! In
-               stats_metadata, & ! In
-               stats_zt, stats_zm, & ! InOut
-               stats_sfc, stats_lh_zt, & ! InOut
+               stats, icol,         & ! InOut
                hydromet_mc, hydromet_vel_zt, Ncm_mc, & ! Out
                rcm_mc, rvm_mc, thlm_mc,  & ! Out
                rtp2_mc, thlp2_mc, wprtp_mc, & ! Out
@@ -634,16 +609,12 @@ module microphys_driver
                                        thlm_mc, rvm_mc, rcm_mc, &
                                        lh_AKm, AKm, AKstd, AKstd_cld, &
                                        lh_rcm_avg, AKm_rcm, AKm_rcc, &
-                                       stats_metadata, &
-                                       stats_lh_zt ) ! intent(inout)
+                                       stats, icol )         ! intent(inout)
 
-        if ( stats_metadata%l_stats_samp ) then
-          ! Latin hypercube estimate for sedimentation velocities
-          call stat_update_var( stats_metadata%ilh_Vrr, hydromet_vel_zt(:,iirr), stats_lh_zt )
-
-          call stat_update_var( stats_metadata%ilh_VNr, hydromet_vel_zt(:,iiNr), stats_lh_zt )
-
-        endif
+        if ( stats%l_sample ) then
+          call stats_update( "lh_Vrr", hydromet_vel_zt(:,iirr), stats, icol )
+          call stats_update( "lh_VNr", hydromet_vel_zt(:,iiNr), stats, icol )
+        end if
 
       endif ! LH isn't disabled
 
@@ -663,7 +634,7 @@ module microphys_driver
                                    cloud_frac, wtmp, delta_zt, rcm,        & ! In
                                    Ncm_microphys, chi, rvm, hydromet,      & ! In
                                    saturation_formula,                     & ! In
-                                   stats_metadata,                         & ! In
+                                   stats, icol,                            & ! In
                                    hydromet_mc, hydromet_vel_zt,           & ! Out
                                    Ncm_mc, rcm_mc, rvm_mc, thlm_mc,        & ! Out
                                    microphys_stats_zt,                     & ! Out
@@ -682,8 +653,7 @@ module microphys_driver
                                       sigma_x_1_n, sigma_x_2_n,               & ! In
                                       corr_array_1_n, corr_array_2_n,         & ! In
                                       saturation_formula,                     & ! In
-                                      stats_metadata,                         & ! In
-                                      stats_zt, stats_zm,                     & ! InOut
+                                      stats, icol,                            & ! In
                                       hydromet_mc, hydromet_vel_zt,           & ! Out
                                       rcm_mc, rvm_mc, thlm_mc,                & ! Out
                                       hydromet_vel_covar_zt_impc,             & ! Out
@@ -702,44 +672,36 @@ module microphys_driver
 
       endif ! lh_microphys_type /= interactive
 
-      if ( stats_metadata%l_stats_samp ) then
-
-        ! Sedimentation velocity for rrm
-        call stat_update_var( stats_metadata%iVrr, &
-                              zt2zm_api( gr, hydromet_vel_zt(:,iirr) ), stats_zm )
-
-        ! Sedimentation velocity for Nrm
-        call stat_update_var( stats_metadata%iVNr, &
-                              zt2zm_api( gr, hydromet_vel_zt(:,iiNr) ), stats_zm )
-
-      endif ! stats_metadata%l_stats_samp
+      if ( stats%l_sample ) then
+        ! Output rain sedimentation velocity
+        call stats_update( "Vrr", zt2zm_api( gr, hydromet_vel_zt(:,iirr) ), stats, icol )
+        ! Latin hypercube estimate for sedimentation velocities
+        call stats_update( "VNr", zt2zm_api( gr, hydromet_vel_zt(:,iiNr) ), stats, icol )
+      end if
 
     case ( "simplified_ice" )
 
       ! Call the simplified ice diffusion scheme
       call ice_dfsn( gr, dt, thlm, rcm, exner, p_in_Pa, rho, &
                      saturation_formula, &
-                     stats_metadata, &
-                     stats_zt, &
+                     stats, icol,         &
                      rcm_mc, thlm_mc )
 
     case default
       ! Do nothing
     end select ! microphys_scheme
 
-    if ( stats_metadata%l_stats_samp ) then
-      call stat_update_var( stats_metadata%iNccnm, Nccnm, stats_zt )
-    endif ! stats_metadata%l_stats_samp
+    if ( stats%l_sample ) then
+      call stats_update( "Nccnm", Nccnm, stats, icol )
+    end if
 
     ! Call GFDL activation code
     if ( l_gfdl_activation ) then
       ! Ensure a microphysics that has Ncm is being used
       if ( l_predict_Nc ) then
 
-        ! Save the initial Ncm mc value for the Ncm_act term
-        if ( stats_metadata%l_stats_samp ) then
-          call stat_begin_update( gr%nzt, stats_metadata%iNcm_act, Ncm_mc, stats_zt )
-        endif
+        ! Save the initial Ncm_mc value for the Ncm_act term.
+        call stats_begin_budget( "Ncm_act", Ncm_mc, stats )
 
         call aer_act_clubb_quadrature_Gauss( gr, pdf_params, p_in_Pa, &
                                              aeromass, T_in_K, &
@@ -748,9 +710,9 @@ module microphys_driver
         ! Convert to #/kg
         Ndrop_max = Ndrop_max * cm3_per_m3 / rho
 
-        if( stats_metadata%l_stats_samp ) then
-          call stat_update_var( stats_metadata%iNc_activated, Ndrop_max, stats_zt)
-        endif
+        if ( stats%l_sample ) then
+          call stats_update( "Nc_activated", Ndrop_max, stats, icol )
+        end if
 
         ! Clip Ncm values that are outside of cloud by CLUBB standards
         do k = 1, gr%nzt
@@ -775,10 +737,8 @@ module microphys_driver
 
         enddo
 
-        ! Update the Ncm_act term
-        if( stats_metadata%l_stats_samp ) then
-          call stat_end_update( gr%nzt, stats_metadata%iNcm_act, Ncm_mc, stats_zt )
-        endif
+        ! Update the Ncm_act term.
+        call stats_finalize_budget( "Ncm_act", Ncm_mc, stats )
 
       else
 
@@ -795,19 +755,18 @@ module microphys_driver
 
       call cloud_drop_sed( gr, rcm, Ncm_microphys,      & ! Intent(in)
                            rho_zm, rho, exner, sigma_g, & ! Intent(in)
-                           stats_metadata,              & ! Intent(in)
-                           stats_zt, stats_zm,          & ! Intent(inout)
+                           stats, icol,                 & ! Intent(inout)
                            rcm_mc, thlm_mc )              ! Intent(inout)
 
     endif ! l_cloud_sed
 
     ! Sample microphysics variables if necessary
     if ( microphys_stats_zt%l_allocated ) then
-      call microphys_stats_accumulate( microphys_stats_zt, stats_metadata, stats_zt )
+      call microphys_stats_accumulate( microphys_stats_zt, stats, icol )
       call microphys_stats_cleanup( microphys_stats_zt )
     endif
     if ( microphys_stats_sfc%l_allocated ) then
-      call microphys_stats_accumulate( microphys_stats_sfc, stats_metadata, stats_sfc )
+      call microphys_stats_accumulate( microphys_stats_sfc, stats, icol )
       call microphys_stats_cleanup( microphys_stats_sfc )
     endif
 

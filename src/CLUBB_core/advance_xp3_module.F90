@@ -8,6 +8,12 @@ module advance_xp3_module
   ! References:
   !-------------------------------------------------------------------------
 
+  use stats_netcdf, only: &
+      stats_type, &
+      stats_update, &
+      stats_begin_budget, &
+      stats_finalize_budget
+
   implicit none
 
   public :: advance_xp3    ! Procedure(s)
@@ -32,8 +38,7 @@ module advance_xp3_module
                           invrs_rho_ds_zt, invrs_tau_zt, tau_max_zt,     & ! Intent(in)
                           sclrm, sclrp2, wpsclrp, wpsclrp2,              & ! Intent(in)
                           l_lmm_stepping,                                & ! Intent(in)
-                          stats_metadata,                                & ! Intent(in)
-                          stats_zt,                                      & ! intent(inout)
+                          stats,                                         & ! Intent(inout)
                           rtp3, thlp3, sclrp3 )                            ! Intent(inout)
 
     ! Description:
@@ -54,12 +59,6 @@ module advance_xp3_module
 
     use clubb_precision, only: &
         core_rknd    ! Variable(s)
-
-    use stats_type, only: &
-        stats ! Type
-
-    use stats_variables, only: &  
-        stats_metadata_type
 
     implicit none
 
@@ -106,13 +105,9 @@ module advance_xp3_module
     logical, intent(in) :: &
       l_lmm_stepping    ! Apply Linear Multistep Method (LMM) Stepping
 
-    type (stats_metadata_type), intent(in) :: &
-      stats_metadata
+    type(stats_type), intent(inout) :: &
+      stats
 
-    ! --------------------- Input/Output Variables ---------------------
-    type (stats), dimension(ngrdcol), intent(inout) :: &
-      stats_zt
-      
     real( kind = core_rknd ), dimension(ngrdcol,nzt), intent(inout) :: &
       rtp3,  & ! <rt'^3> (thermodynamic levels)     [kg^3/kg^3]
       thlp3    ! <thl'^3> (thermodynamic levels)    [K^3]
@@ -132,8 +127,7 @@ module advance_xp3_module
                                  invrs_rho_ds_zt,                     & ! Intent(in)
                                  invrs_tau_zt, tau_max_zt,            & ! Intent(in) 
                                  rt_tol, l_lmm_stepping,              & ! Intent(in)
-                                 stats_metadata,                      & ! Intent(in)
-                                 stats_zt,                            & ! intent(inout)
+                                 stats,                               & ! Intent(in)
                                  rtp3 )                                 ! Intent(inout)
 
     ! Advance <thl'^3> one model timestep or calculate <thl'^3> using a
@@ -144,8 +138,7 @@ module advance_xp3_module
                                  invrs_rho_ds_zt,                      & ! Intent(in)
                                  invrs_tau_zt, tau_max_zt,             & ! Intent(in) 
                                  thl_tol, l_lmm_stepping,              & ! Intent(in)
-                                 stats_metadata,                       & ! Intent(in)
-                                 stats_zt,                             & ! intent(inout)
+                                 stats,                                & ! Intent(in)
                                  thlp3 )                                 ! Intent(inout)
 
     ! Advance <sclr'^3> one model timestep or calculate <sclr'^3> using a
@@ -157,8 +150,7 @@ module advance_xp3_module
                                    invrs_rho_ds_zt,                                      & ! In
                                    invrs_tau_zt, tau_max_zt,                             & ! In 
                                    sclr_tol(sclr), l_lmm_stepping,                       & ! In
-                                   stats_metadata,                                       & ! In
-                                   stats_zt,                                             & ! In/Out
+                                   stats,                                                & ! In
                                    sclrp3(:,:,sclr) )                                      ! In/Out
     end do ! sclr = 1, sclr_dim
 
@@ -173,8 +165,7 @@ module advance_xp3_module
                                      invrs_rho_ds_zt,                       & ! Intent(in)
                                      invrs_tau_zt, tau_max_zt,              & ! Intent(in) 
                                      x_tol, l_lmm_stepping,                 & ! Intent(in)
-                                     stats_metadata,                        & ! Intent(in)
-                                     stats_zt,                              & ! Intent(inout)
+                                     stats,                                 & ! Intent(in)
                                      xp3 )                                    ! Intent(inout)
 
     ! Description:
@@ -287,18 +278,8 @@ module advance_xp3_module
         zero, &
         zero_threshold
 
-    use stats_type_utilities, only: &
-        stat_begin_update, & ! Procedure(s)
-        stat_end_update,   &
-        stat_update_var
-
-    use stats_variables, only: &
-        stats_metadata_type
-
     use clubb_precision, only: &
         core_rknd    ! Variable(s)
-
-    use stats_type, only: stats ! Type
 
     implicit none
  
@@ -334,12 +315,10 @@ module advance_xp3_module
     logical, intent(in) :: &
       l_lmm_stepping    ! Apply Linear Multistep Method (LMM) Stepping
 
-    type (stats_metadata_type), intent(in) :: &
-      stats_metadata
-
+    ! --------------------- Input/Output Variables ---------------------
     ! ----------------------- Input/Output Variable -----------------------
-    type (stats), dimension(ngrdcol), intent(inout) :: &
-      stats_zt
+    type(stats_type), intent(inout) :: &
+      stats
       
     real( kind = core_rknd ), dimension(ngrdcol,nzt), intent(inout) :: &
       xp3    ! <x'^3> (thermodynamic levels)    [(x units)^3]
@@ -359,11 +338,11 @@ module advance_xp3_module
     integer :: &
       i, k, kp1     ! Grid indices
 
-    integer :: &
-      ixp3_bt, & ! Budget statistics index for <x'^3> time tendency
-      ixp3_tp, & ! Budget statistics index for <x'^3> turbulent production
-      ixp3_ac, & ! Budget statistics index for <x'^3> accumulation
-      ixp3_dp    ! Budget statistics index for <x'^3> dissipation
+    character(len=32) :: &
+      name_bt, &
+      name_tp, &
+      name_ac, &
+      name_dp
 
     ! Coefficient in the <x'^3> turbulent dissipation term    [-]
     real( kind = core_rknd ), parameter :: &
@@ -375,37 +354,32 @@ module advance_xp3_module
 
     ! ----------------------- Begin Code -----------------------
 
-    if ( stats_metadata%l_stats_samp ) then
+    select case ( solve_type )
+    case( xp3_rtp3 )
+      ! Budget stats for rtp3
+      name_bt = "rtp3_bt"
+      name_tp = "rtp3_tp"
+      name_ac = "rtp3_ac"
+      name_dp = "rtp3_dp"
+    case( xp3_thlp3 )
+      ! Budget stats for thlp3
+      name_bt = "thlp3_bt"
+      name_tp = "thlp3_tp"
+      name_ac = "thlp3_ac"
+      name_dp = "thlp3_dp"
+    case default
+      ! Budgets aren't setup for the passive scalars
+      name_bt = ""
+      name_tp = ""
+      name_ac = ""
+      name_dp = ""
+    end select ! solve_type
 
-      select case ( solve_type )
-      case( xp3_rtp3 )
-        ! Budget stats for rtp3
-        ixp3_bt = stats_metadata%irtp3_bt
-        ixp3_tp = stats_metadata%irtp3_tp
-        ixp3_ac = stats_metadata%irtp3_ac
-        ixp3_dp = stats_metadata%irtp3_dp
-      case( xp3_thlp3 )
-        ! Budget stats for thlp3
-        ixp3_bt = stats_metadata%ithlp3_bt
-        ixp3_tp = stats_metadata%ithlp3_tp
-        ixp3_ac = stats_metadata%ithlp3_ac
-        ixp3_dp = stats_metadata%ithlp3_dp
-      case default
-        ! Budgets aren't setup for the passive scalars
-        ixp3_bt = 0
-        ixp3_tp = 0
-        ixp3_ac = 0
-        ixp3_dp = 0
-      end select ! solve_type
-
-      if ( l_predict_xp3 ) then
-        do i = 1, ngrdcol
-          call stat_begin_update( nzt, ixp3_bt, xp3(i,:) / dt, & ! Intent(in)
-                                  stats_zt(i) )                 ! Intent(inout)
-        end do
-      end if ! l_predict_xp3
-
-    end if ! stats_metadata%l_stats_samp
+    if ( l_predict_xp3 ) then
+      if ( stats%l_sample ) then
+        call stats_begin_budget( name_bt, xp3 / dt, stats )
+      end if
+    end if ! l_predict_xp3
 
     ! Initialize variables
     term_tp = zero
@@ -461,21 +435,14 @@ module advance_xp3_module
     ! Set Upper Boundary Condition
     xp3(:,nzt) = zero
 
-    if ( stats_metadata%l_stats_samp ) then
-      do i = 1, ngrdcol
-        call stat_update_var( ixp3_tp, term_tp(i,:),  & ! In
-                              stats_zt(i) )             ! In/Out
-        call stat_update_var( ixp3_ac, term_ac(i,:),  & ! In
-                              stats_zt(i) )             ! In/Out
-        call stat_update_var( ixp3_dp, -(C_xp3_dissipation * invrs_tau_zt(i,:))*xp3(i,:), & ! In
-                              stats_zt(i) ) ! In/Out
-
-        if ( l_predict_xp3 ) then
-          call stat_end_update( nzt, ixp3_bt, xp3(i,:) / dt, & ! In
-                                stats_zt(i) )                  ! In/Out
-        end if ! l_predict_xp3
-      end do
-    end if ! stats_metadata%l_stats_samp
+    if ( stats%l_sample ) then
+      call stats_update( name_tp, term_tp, stats )
+      call stats_update( name_ac, term_ac, stats )
+      call stats_update( name_dp, -(C_xp3_dissipation * invrs_tau_zt) * xp3, stats )
+      if ( l_predict_xp3 ) then
+        call stats_finalize_budget( name_bt, xp3 / dt, stats )
+      end if
+    end if
 
     return
 

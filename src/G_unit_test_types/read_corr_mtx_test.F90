@@ -12,14 +12,18 @@ module read_corr_mtx_test
   function read_corr_mtx_unit_test(show_corr_arrays_input)
   ! Description:
   ! Tests the read_correlation_matrix subroutine in corr_varnce_module.F90
+  ! (current implementation is in corr_varnce_input_reader.F90).
+  ! Tests the read_correlation_matrix subroutine in corr_varnce_input_reader.F90
   !-----------------------------------------------------------------------
 
   ! Included Modules
   use corr_varnce_module, &
-    only: read_correlation_matrix, & !Subroutine(s)
-      init_pdf_hydromet_arrays_api, &
+    only: init_pdf_hydromet_arrays_api, &
       print_corr_matrix, &
       hm_metadata_type
+
+  use corr_varnce_input_reader, only: &
+    read_correlation_matrix
 
   use clubb_precision, only: core_rknd
 

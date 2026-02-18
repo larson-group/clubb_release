@@ -80,7 +80,7 @@ def checkGradsBudgets(fileName, iteration):
         
     # Find number of z levels (ZDEF)
     try:
-        numLevels = re.search("ZDEF\s+[0-9]+", text).group()
+        numLevels = re.search(r"ZDEF\s+[0-9]+", text).group()
         numLevels = int( re.search("[0-9]+", numLevels).group() )
     except AttributeError:
         sys.stderr.write("Error parsing number of z levels from *.ctl file\n")
@@ -88,7 +88,7 @@ def checkGradsBudgets(fileName, iteration):
         
     # Find the number of iterations (TDEF)
     try:
-        numIterations = re.search("TDEF\s+[0-9]+", text).group()
+        numIterations = re.search(r"TDEF\s+[0-9]+", text).group()
         numIterations = int( re.search("[0-9]+", numIterations).group() )
     except AttributeError:
         sys.stderr.write("Error parsing number of iterations from *.ctl file\n")
@@ -104,7 +104,7 @@ def checkGradsBudgets(fileName, iteration):
     
     # Find number of variables (VARS)
     try:
-        numVarsIndx = re.search("VARS\s+[0-9]+", text)
+        numVarsIndx = re.search(r"VARS\s+[0-9]+", text)
         numVars = int( re.search("[0-9]+", numVarsIndx.group()).group() )
     except AttributeError:
         sys.stderr.write("Error parsing number of variables from *.ctl file\n")
@@ -256,7 +256,7 @@ def findGradsErrorsAtTimestep(iteration, ctlFile, fileName, numVarsIndx, numVars
         if findingBudget == True:
         
             # See if line contains same variable prefix as budget term
-            componentTerm = re.match("\w+?_", line).group()
+            componentTerm = re.match(r"\w+?_", line).group()
             if componentTerm == termName:
             
                 # Vars in the budget have descriptions that include "budget:"
@@ -287,8 +287,8 @@ def findGradsErrorsAtTimestep(iteration, ctlFile, fileName, numVarsIndx, numVars
                 findingBudget = False
                 
         # Find budget term of the form [variablePrefix]_bt
-        if findingBudget == False and re.match("\w+_bt", line) != None:
-            termName = re.match("\w+_bt", line).group()[0:-2]
+        if findingBudget == False and re.match(r"\w+_bt", line) != None:
+            termName = re.match(r"\w+_bt", line).group()[0:-2]
             termUnits = re.search("[[].+[]]", line).group()[1:-1]
             leftHandValue = array(readBinaryData.readGradsData \
                 (FILEPATH + datFileName, numLevels, iteration, iteration, varNum, numVars))
@@ -327,9 +327,10 @@ def findNetcdfErrorsAtTimestep(iteration, ncFile, numVars, varList, numLevels, t
     for varName in varList:
         try:
             # If varName is not budget var, exception will be thrown and next var checked
-            budgetVarName = re.match("\w+_bt", varName).group()
+            budgetVarName = re.match(r"\w+_bt", varName).group()
             
-            budgetVar = ncFile.variables[varName]           
+            budgetVar = ncFile.variables[varName]
+            budgetUnits = inferBudgetUnits(ncFile, varList, budgetVarName, budgetVar.units)
             leftHandValue = budgetVar[iteration-1:iteration] # First index of list is 0 
             
             # Can't do completeness check when iteration is 1
@@ -337,12 +338,12 @@ def findNetcdfErrorsAtTimestep(iteration, ncFile, numVars, varList, numLevels, t
                 if budgetVarName[:-3] == "rtm" or budgetVarName[:-3] == "thlm": #TODO Ignore completeness test failures except for rtm and thlm. See ticket 153
                     # Check that the budget is consistent with previous and next time iterations
                     testSuccess = checkNetcdfCompleteness(ncFile, numLevels, iteration, numVars, \
-                                  budgetVarName[:-3], varList, budgetVar.units, timestep, leftHandValue, testSuccess)
+                                  budgetVarName[:-3], varList, budgetUnits, timestep, leftHandValue, testSuccess)
             
             # Find components of the budget variable
             for variableName in varList:
                 try:
-                    varPrefix = re.match("\w+?_", variableName).group()
+                    varPrefix = re.match(r"\w+?_", variableName).group()
                     if varPrefix == budgetVarName[:-2] and variableName[-2:] != "bt":
                             var = ncFile.variables[variableName]
                             
@@ -356,7 +357,7 @@ def findNetcdfErrorsAtTimestep(iteration, ncFile, numVars, varList, numLevels, t
                     
             # All component terms have been summed up
             errorDifference = [a - b for a,b in zip(leftHandValue, rightHandValue)]
-            allowedTolerance = calcTolerance(budgetVar.units, TIME_SCALE_DENOMINATOR, budgetVarName[0:-3])
+            allowedTolerance = calcTolerance(budgetUnits, TIME_SCALE_DENOMINATOR, budgetVarName[0:-3])
 
             # Ignore zt(1) since it is below ground. Still use zm(1) however
             if ncFile.filepath().find("_zt") != -1:
@@ -366,7 +367,7 @@ def findNetcdfErrorsAtTimestep(iteration, ncFile, numVars, varList, numLevels, t
                 zLevel = 0
 
             testSuccess = dispError(leftHandValue, rightHandValue, errorDifference, allowedTolerance, iteration, zLevel, budgetVarName[:-3], \
-                budgetVar.units, testSuccess)
+                budgetUnits, testSuccess)
             #print(varName)
             #set_printoptions(threshold=sys.maxsize)
             #print(errorDifference)
@@ -379,6 +380,25 @@ def findNetcdfErrorsAtTimestep(iteration, ncFile, numVars, varList, numLevels, t
             pass
         
     return testSuccess
+
+#--------------------------------------------------------------------------------------------------
+def inferBudgetUnits(ncFile, varList, budgetVarName, budgetUnits):
+    """
+    Resolve units for budget variables.
+    New stats output may leave *_bt units blank, but component terms usually
+    retain units. In that case, infer units from the first matching component.
+    """
+    if budgetUnits is not None and str(budgetUnits).strip() != "":
+        return budgetUnits
+
+    prefix = budgetVarName[:-3]
+    for variableName in varList:
+        if variableName.startswith(prefix + "_") and not variableName.endswith("_bt"):
+            componentUnits = getattr(ncFile.variables[variableName], "units", "")
+            if componentUnits is not None and str(componentUnits).strip() != "":
+                return componentUnits
+
+    return budgetUnits
 
 #--------------------------------------------------------------------------------------------------
 def checkGradsCompleteness(fileName, numLevels, iteration, numVars, \
@@ -537,11 +557,46 @@ def calcTolerance(termUnits, timestep, termName):
     rt_tol = 1e-8 # kg/kg
     Nr_tol = 1e-5 # num/kg
     
+    if termUnits is None:
+        termUnits = ""
+    termUnits = termUnits.strip()
+
     # Special Cases for tolerance
     if termName == "Ncm":
         tol = 2e2
     elif termName == "Nrm":
         tol = 5e3
+    # New stats files may omit units; fall back to known budget term names.
+    elif termUnits == "":
+        if termName in ("Nsm", "Nim", "Ngm"):
+            tol = Nr_tol
+        elif termName in ("rtm", "rrm", "rsm", "rim", "rgm"):
+            tol = rt_tol
+        elif termName == "rtp2":
+            tol = rt_tol * rt_tol * 100
+        elif termName == "rtp3":
+            tol = rt_tol * rt_tol * rt_tol
+        elif termName == "thlm":
+            tol = thl_tol
+        elif termName == "thlp2":
+            tol = thl_tol * thl_tol
+        elif termName == "thlp3":
+            tol = thl_tol * thl_tol * thl_tol
+        elif termName in ("um", "vm"):
+            tol = w_tol
+        elif termName in ("wp2", "up2", "vp2", "upwp", "vpwp"):
+            tol = w_tol * w_tol
+        elif termName == "wp3":
+            tol = w_tol * w_tol * w_tol
+        elif termName == "wprtp":
+            tol = w_tol * rt_tol
+        elif termName == "wpthlp":
+            tol = thl_tol * w_tol
+        elif termName == "rtpthlp":
+            tol = thl_tol * rt_tol
+        else:
+            sys.stderr.write("Error parsing units: " + termUnits + "\nCheck this script's calcTolerance method")
+            sys.exit(1)
     # Get error tolerance based on variable units
     elif termUnits == "(num/kg)/s":                                    # num/kg
         tol = Nr_tol

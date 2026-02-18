@@ -1,0 +1,6 @@
+&clubb_stats_nl
+  ! entry(i) format: "name | grid | units | long_name"
+  ! grid options: zt, zm, sfc, lh_zt, lh_sfc, rad_zt, rad_zm
+  entry(1) = "cloud_frac | zt | -     | Cloud fraction (between 0 and 1)"
+  entry(2) = "rcm        | zt | kg/kg | Cloud water mixing ratio"
+/

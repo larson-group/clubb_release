@@ -167,6 +167,9 @@ module microphys_init_cleanup
         hm_metadata_type,                   &
         setup_corr_varnce_array_api           ! Procedure(s)
 
+    use corr_varnce_input_reader, only: &
+        read_correlation_matrix ! Procedure(s)
+
     use pdf_utilities, only: &
         stdev_L2N    ! Procedure(s)
 
@@ -283,6 +286,10 @@ module microphys_init_cleanup
       corr_array_cloud, & ! Correlation array of PDF vars. (in cloud)        [-]
       corr_array_below    ! Correlation array of PDF vars. (below cloud)     [-]
 
+    real( kind = core_rknd ), dimension(:,:), allocatable :: &
+      corr_array_n_cloud_in, &
+      corr_array_n_below_in
+
     integer :: ivar       ! Loop index
 
     integer :: &
@@ -312,7 +319,9 @@ module microphys_init_cleanup
       l_lh_instant_var_covar_src, &
       l_lh_limit_weights, &
       l_lh_var_frac, &
-      l_lh_normalize_weights
+      l_lh_normalize_weights, &
+      l_corr_file_1_exist, &
+      l_corr_file_2_exist
 
     real( kind = core_rknd ) :: &
       Ncnp2_on_Ncnm2 = 1.0_core_rknd
@@ -916,17 +925,50 @@ module microphys_init_cleanup
        error stop
     endif
 
+    ! Allocate and set the arrays containing the correlations.
     allocate(corr_array_n_cloud(pdf_dim,pdf_dim))
     allocate(corr_array_n_below(pdf_dim,pdf_dim))
 
     corr_file_path_cloud = corr_input_path//trim( runtype )//cloud_file_ext
     corr_file_path_below = corr_input_path//trim( runtype )//below_file_ext
 
-    ! Allocate and set the arrays containing the correlations
-    call setup_corr_varnce_array_api( corr_file_path_cloud, corr_file_path_below, & ! In
-                                      pdf_dim, hm_metadata, iunit,                & ! In
-                                      l_fix_w_chi_eta_correlations,               & ! In
-                                      corr_array_n_cloud, corr_array_n_below )      ! Out
+    inquire( file = corr_file_path_cloud, exist = l_corr_file_1_exist )
+    inquire( file = corr_file_path_below, exist = l_corr_file_2_exist )
+
+    if ( l_corr_file_1_exist .and. l_corr_file_2_exist ) then
+
+      allocate( corr_array_n_cloud_in(pdf_dim,pdf_dim) )
+      allocate( corr_array_n_below_in(pdf_dim,pdf_dim) )
+
+      call read_correlation_matrix( iunit, trim( corr_file_path_cloud ), & ! In
+                                    pdf_dim, hm_metadata,                & ! In
+                                    corr_array_n_cloud_in )                ! Out
+
+      call read_correlation_matrix( iunit, trim( corr_file_path_below ), & ! In
+                                    pdf_dim, hm_metadata,                & ! In
+                                    corr_array_n_below_in )                ! Out
+
+      call setup_corr_varnce_array_api( pdf_dim, hm_metadata,                  & ! In
+                                        l_fix_w_chi_eta_correlations,           & ! In
+                                        corr_array_n_cloud, corr_array_n_below, & ! Out
+                                        corr_array_n_cloud_in,                  & ! Optional In
+                                        corr_array_n_below_in )                  ! Optional In
+
+      deallocate( corr_array_n_cloud_in, corr_array_n_below_in )
+
+    else
+
+      if ( clubb_at_least_debug_level_api( 1 ) ) then
+        write(fstderr,*) "Warning: missing correlation input file(s): " // &
+                         trim( corr_file_path_cloud ) // " and/or " // trim( corr_file_path_below )
+        write(fstderr,*) "The default correlation arrays will be used."
+      end if
+
+      call setup_corr_varnce_array_api( pdf_dim, hm_metadata,                  & ! In
+                                        l_fix_w_chi_eta_correlations,           & ! In
+                                        corr_array_n_cloud, corr_array_n_below ) ! Out
+
+    end if
 
     ! Print the in-cloud and below-cloud actual (real-space) correlation arrays.
     ! This should only be done when zeta_vrnce_rat = 0.  Even when this is true,

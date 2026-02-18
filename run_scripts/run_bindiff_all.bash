@@ -239,6 +239,34 @@ for (( x=0; x < "${#RUN_CASE[@]}"; x++ )); do
         dataFoundnetCDF=true
     fi
 
+    if [ -e $dir1/"${RUN_CASE[$x]}"'_rad_zt.nc' -a -e $dir2/"${RUN_CASE[$x]}"'_rad_zt.nc' ] ; then
+        # Compare the rad_zt netCDF (*_rad_zt.nc) files
+        diffRadZtNc=$(python diff_netcdf_outputs.py $dir1/"${RUN_CASE[$x]}"'_rad_zt.nc' $dir2/"${RUN_CASE[$x]}"'_rad_zt.nc')
+
+        if [ -n "$diffRadZtNc" ] ; then
+            differences=true
+            differencesNc=true
+            DIFF_LIST[${#DIFF_LIST[@]}]="${RUN_CASE[$x]}_rad_zt.nc"
+        fi
+
+        dataFound=true
+        dataFoundnetCDF=true
+    fi
+
+    if [ -e $dir1/"${RUN_CASE[$x]}"'_rad_zm.nc' -a -e $dir2/"${RUN_CASE[$x]}"'_rad_zm.nc' ] ; then
+        # Compare the rad_zm netCDF (*_rad_zm.nc) files
+        diffRadZmNc=$(python diff_netcdf_outputs.py $dir1/"${RUN_CASE[$x]}"'_rad_zm.nc' $dir2/"${RUN_CASE[$x]}"'_rad_zm.nc')
+
+        if [ -n "$diffRadZmNc" ] ; then
+            differences=true
+            differencesNc=true
+            DIFF_LIST[${#DIFF_LIST[@]}]="${RUN_CASE[$x]}_rad_zm.nc"
+        fi
+
+        dataFound=true
+        dataFoundnetCDF=true
+    fi
+
     if [ $dataFound == "true" ] ; then
         if [ $dataFoundGrADS == "true" ] ; then
             echo 'Diffing '"${RUN_CASE[$x]}"' GrADS control (*.ctl) and binary data (*.dat) files'

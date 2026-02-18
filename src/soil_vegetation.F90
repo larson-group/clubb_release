@@ -21,8 +21,7 @@ module soil_vegetation
                                Frad_SW_up_sfc, Frad_SW_down_sfc, &
                                Frad_LW_down_sfc, &
                                wpthlp_sfc, wprtp_sfc, p_sfc, &
-                               stats_metadata, &
-                               stats_sfc, &
+                               stats,         &
                                deep_soil_T_in_K, sfc_soil_T_in_K, &
                                veg_T_in_K )
     !
@@ -76,9 +75,6 @@ module soil_vegetation
     use clubb_precision, only: &
       core_rknd ! Constant
 
-    use stats_type_utilities, only: &
-      stat_update_var_pt ! Procedure(s)
-
     use constants_clubb, only: &
       pi, &
       Cp, &
@@ -87,11 +83,9 @@ module soil_vegetation
       p0, &
       stefan_boltzmann ! Variable(s)
 
-    use stats_type, only: &
-      stats ! Type
-
-    use stats_variables, only: &
-      stats_metadata_type
+    use stats_netcdf, only: &
+      stats_type, &
+      stats_update
 
     implicit none
 
@@ -122,11 +116,8 @@ module soil_vegetation
       wprtp_sfc, &
       p_sfc
 
-    type (stats_metadata_type), intent(in) :: &
-      stats_metadata
-
-    type(stats), dimension(ngrdcol), intent(inout) :: &
-      stats_sfc
+    type(stats_type), intent(inout) :: &
+      stats
     
     real( kind = core_rknd ), dimension(ngrdcol), intent(inout) :: &
       deep_soil_T_in_K, &
@@ -168,12 +159,10 @@ module soil_vegetation
                      sqrt( ks*3600.e0_core_rknd*24.e0_core_rknd* &
                      365.e0_core_rknd )) ! Known magic number
 
-    if ( stats_metadata%l_stats_samp ) then
-      do i = 1, ngrdcol 
-        call stat_update_var_pt( stats_metadata%iveg_T_in_K, 1, veg_T_in_K(i), stats_sfc(i) )
-        call stat_update_var_pt( stats_metadata%isfc_soil_T_in_K, 1, sfc_soil_T_in_K(i), stats_sfc(i) )
-        call stat_update_var_pt( stats_metadata%ideep_soil_T_in_K, 1, deep_soil_T_in_K(i), stats_sfc(i) )
-      end do
+    if ( stats%l_sample ) then
+      call stats_update( "veg_T_in_K", veg_T_in_K, stats )
+      call stats_update( "sfc_soil_T_in_K", sfc_soil_T_in_K, stats )
+      call stats_update( "deep_soil_T_in_K", deep_soil_T_in_K, stats )
     end if
 
     do i = 1, ngrdcol 
@@ -207,10 +196,9 @@ module soil_vegetation
       deep_soil_T_in_K(i) = deep_soil_T_in_K(i) + dt * c3 * soil_heat_flux(i)
     end do
 
-    if ( stats_metadata%l_stats_samp ) then
+    if ( stats%l_sample ) then
       do i = 1, ngrdcol
-        call stat_update_var_pt( stats_metadata%isoil_heat_flux, 1, soil_heat_flux(i), & ! intent(in)
-                                 stats_sfc(i) )                                          ! intent(inout)
+          call stats_update( "soil_heat_flux", soil_heat_flux(i), stats, i )
       end do
     end if
 
