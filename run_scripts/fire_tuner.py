@@ -11,8 +11,8 @@ from pathlib import Path
 
 
 FIRE_STATS_ENTRIES = [
-    'entry(1) = "cloud_frac | zt | Cloud fraction (between 0 and 1) | -"',
-    'entry(2) = "rcm | zt | Cloud water mixing ratio | kg/kg"',
+    'entry(1) = "cloud_frac | zt | - | Cloud fraction (between 0 and 1)"',
+    'entry(2) = "rcm | zt | kg/kg | Cloud water mixing ratio"',
 ]
 
 

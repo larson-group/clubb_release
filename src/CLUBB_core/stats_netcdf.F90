@@ -535,6 +535,10 @@ contains
 
     if ( allocated( stats%lookup%cache ) ) deallocate( stats%lookup%cache )
     if ( allocated( stats%lookup%reject_cache ) ) deallocate( stats%lookup%reject_cache )
+    stats%lookup%head = 1
+    stats%lookup%cache_len = 0
+    stats%lookup%reject_head = 1
+    stats%lookup%reject_cache_len = 0
 
     stats%enabled = .false.
     stats%l_sample = .false.
@@ -622,6 +626,10 @@ contains
     if ( allocated( stats%lookup%reject_cache ) ) deallocate( stats%lookup%reject_cache )
     allocate( stats%lookup%reject_cache(max( 16,stats%nvars )) )
     stats%lookup%reject_cache = ''
+    stats%lookup%head = 1
+    stats%lookup%cache_len = 0
+    stats%lookup%reject_head = 1
+    stats%lookup%reject_cache_len = 0
 
     ! Collect active vertical sizes for each supported grid family.
     nzt = size( zt )
