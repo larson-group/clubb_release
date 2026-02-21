@@ -1,0 +1,224 @@
+commit b622e32ad405141f1bb36bd9ef41b5e066c95061
+Author: Gunther Huebler <huebler@uwm.edu>
+Date:   Tue Feb 17 22:23:17 2026 -0600
+
+    Fixing fire tuner
+
+commit 3d4d74a0d0295936253484c54693f9eac230f604
+Author: Gunther Huebler <37674341+huebleruwm@users.noreply.github.com>
+Date:   Tue Feb 17 21:54:40 2026 -0600
+
+    New stats system  (#1270)
+    
+    * Initial commit for the new stats system
+    
+    * Adding helper scripts
+    
+    * Fixes and another script
+    
+    * Updates
+    
+    * Improvements
+    
+    * Fixed bug in all_stats.in
+    
+    * Updates
+    
+    * Adding dash app
+    
+    * Updates, also including new dash app since I'm finding it quite useful
+    
+    * Improvements/fixes and adding missing variable to all_stats.in
+    
+    * Updates
+    
+    * Moving wp2sclrp, wpsclrp2, wpsclrprtp, and wpsclrpthlp to the zt netcdf output file, since those are zt variables. Also adding a missing variable, rcm_in_cloud, to all_stats.in and correcting a missing comma bug. This is technically BIT_CHANGING because the variables are moving files, but the stored data is identical from 1:nzt - the nzm level just had garbage for those variables and is now gone.
+    
+    * Updates
+    
+    * Updates
+    
+    * The big stats pull, only new stats remains now
+    
+    * Some cleanup
+    
+    * Lot's of core rework, new index caching system speeds things up
+    
+    * Missed files
+    
+    * Small improvements a bug fix to the grid remapped output
+    
+    * Fixing up logic and ordering things a bit better
+    
+    * Little improvements
+    
+    * Cleanup and simplications to new stats core
+    
+    * Little improvements, mostly to dash app
+    
+    * Mostly cleanup
+    
+    * Making GPU code work
+    
+    * Making more scripts work
+    
+    * Fixing line lengths
+    
+    * Bug fixes
+    
+    * Bug fixes
+    
+    * Bug fixes
+    
+    * Bug fixes
+    
+    * Bug fixes and script updates
+    
+    * Jenkins script update
+    
+    * Jenkins script update
+    
+    * Jenkins script update
+    
+    * Jenkins script update
+    
+    * Jenkins script update
+    
+    * Jenkins script update
+    
+    * Script update
+    
+    * Script update
+    
+    * Script update
+    
+    * Script update
+    
+    * Script update
+    
+    * Script update
+    
+    * Script update
+    
+    * Test update
+    
+    * Jenkins script update
+    
+    * Test update
+    
+    * Fixing bug
+    
+    * Fixing bug
+    
+    * Fixing up comments
+    
+    * Small fixes
+    
+    * Jenkins script update
+    
+    * CMake update
+    
+    * Little fix for cmake
+    
+    * Jenkins script update
+    
+    * Jenkins script updateS
+    
+    * Cmake update
+    
+    * Jenkins script update
+    
+    * Jenkins script update
+    
+    * Jenkins script updates
+    
+    * Adding new stats input
+    
+    * Small fixes
+    
+    * Fixing old compile scripts
+    
+    * Jenkins script updates
+    
+    * Jenkins script updates
+    
+    * Jenkins script updates
+    
+    * Little fixes
+    
+    * Little cmake fix
+    
+    * Little jenkins fix
+    
+    * Mono flux test update and _api renamings
+    
+    * Small Jenkins fix
+    
+    * Adding missing comments back
+    
+    * Even more comments
+    
+    * stats updates
+    
+    * Even more comments
+    
+    * Various small improvements
+    
+    * Removing test statsd
+    
+    * Adding some things back to _api and adding structure explaining comment in stats files.
+    
+    * Many more comments
+    
+    * Removing plan file
+    
+    * Spelling fix
+
+commit 40c5d0b7724ed353d1cca476ade7b6f8569e263c
+Merge: 92dfde364 5a252b6ba
+Author: pickett <larsongroupgithub@gmail.com>
+Date:   Wed Feb 11 19:07:08 2026 -0600
+
+    Autoupdated clubb's morrison using sam's morrison
+
+commit 5a252b6bad0b47ba5418cb6475a2ee5ab104328d
+Author: Trevor Hancock <hancoct@uwm.edu>
+Date:   Wed Feb 11 19:04:27 2026 -0600
+
+    Fixed double space to test updateClubbMorrison.py python script
+
+commit 92dfde364177231829c86e739a48ac23bef83696
+Author: Trevor Hancock <hancoct@uwm.edu>
+Date:   Wed Feb 11 16:43:05 2026 -0600
+
+    Removed blank line to test python update scripts
+
+commit ff3d91fcabb2248cc86aabf4b585f489281db237
+Author: Trevor Hancock <hancoct@uwm.edu>
+Date:   Mon Feb 9 19:42:19 2026 -0600
+
+    Added empty line to test update scripts
+
+commit 678d409e86486e7b6b7f241893c3d325e2310a55
+Author: Gunther Huebler <37674341+huebleruwm@users.noreply.github.com>
+Date:   Thu Feb 5 14:09:52 2026 -0600
+
+    Moving wp2sclrp, wpsclrp2, wpsclrprtp, and wpsclrpthlp to the zt netcdf output file, since those are zt variables. Also adding a missing variable, rcm_in_cloud, to all_stats.in and correcting a missing comma bug. This is technically BIT_CHANGING because the variables are moving files, but the stored data is identical from 1:nzt - the nzm level just had garbage for those variables and is now gone. (#1271)
+
+commit f1b6cfe91fd5c120333991b2386dd7e7845ae2e3
+Author: Gunther Huebler <huebler@uwm.edu>
+Date:   Fri Jan 9 15:11:54 2026 -0600
+
+    Removing extra acc end statement
+
+commit ba5dd963b14b0238fc5e8b358390af68a66aa3a0
+Author: Gunther Huebler <huebler@uwm.edu>
+Date:   Fri Jan 9 13:10:40 2026 -0600
+
+    Another small gpu bug fix
+
+commit ba709f78476c6e1868009855327c1d42cbb90410
+Author: Gunther Huebler <huebler@uwm.edu>
+Date:   Fri Jan 9 12:01:53 2026 -0600
+
+    More small bug fixes
