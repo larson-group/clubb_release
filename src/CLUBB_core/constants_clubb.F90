@@ -14,6 +14,7 @@ module constants_clubb
       dp, & ! Variable(s)
       core_rknd
 
+
 #ifdef CLUBB_CAM /* Set constants as they're set in CAM */
   use shr_const_mod, only: shr_const_rdair, shr_const_cpdair, shr_const_latvap, &
                            shr_const_latice, shr_const_latsub, shr_const_rgas, &
