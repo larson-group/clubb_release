@@ -1,4 +1,4 @@
-Changes (bloss, Apr 09):
+Changes (bloss, Apr 09): 
 
  + Modified scheme to use total water (vapor + cloud liquid) as a
 prognostic variable in place of separate vapor and cloud liquid
