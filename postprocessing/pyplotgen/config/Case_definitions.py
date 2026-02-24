@@ -144,9 +144,9 @@ ARM = {'name': 'arm',
        'e3sm_file': { 'e3sm': e3sm_output_root + "/arm.nc"},
        'cam_file': None,
        'sam_file': {'sam': sam_output_root + "/GCSSARM_96x96x110_67m_40m_1s.nc"},
-       'wrf_file': {'zm': wrf_output_root + "/arm_zm_wrf.nc",
-                    'zt': wrf_output_root + "/arm_zt_wrf.nc",
-                    'sfc': wrf_output_root + "/arm_sfc_wrf.nc"
+       'wrf_file': {'zm': wrf_output_root + "/arm_stats_wrf.nc",
+                    'zt': wrf_output_root + "/arm_stats_wrf.nc",
+                    'sfc': wrf_output_root + "/arm_stats_wrf.nc"
                     },
        'var_groups': [VariableGroupBase, VariableGroupWs]}
 
@@ -215,9 +215,9 @@ ATEX = {'name': 'atex',
         'e3sm_file': None,
         'cam_file': {'cam': cam_output_root + "/atex_cam.nc"},
         'sam_file': None,
-        'wrf_file': {'zm': wrf_output_root + "/atex_zm_wrf.nc",
-                     'zt': wrf_output_root + "/atex_zt_wrf.nc",
-                     'sfc': wrf_output_root + "/atex_sfc_wrf.nc"
+        'wrf_file': {'zm': wrf_output_root + "/atex_stats_wrf.nc",
+                     'zt': wrf_output_root + "/atex_stats_wrf.nc",
+                     'sfc': wrf_output_root + "/atex_stats_wrf.nc"
                      },
         'var_groups': [VariableGroupBase, VariableGroupWs, VariableGroupLiquidMP, VariableGroupIceMP]}
 
@@ -238,9 +238,9 @@ ATEX_LONG = {'name': 'atex_long',
         'e3sm_file': None,
         'cam_file': {'cam': cam_output_root + "/atex_long_cam.nc"},
         'sam_file': None,
-        'wrf_file': {'zm': wrf_output_root + "/atex_long_zm_wrf.nc",
-                     'zt': wrf_output_root + "/atex_long_zt_wrf.nc",
-                     'sfc': wrf_output_root + "/atex_long_sfc_wrf.nc"
+        'wrf_file': {'zm': wrf_output_root + "/atex_long_stats_wrf.nc",
+                     'zt': wrf_output_root + "/atex_long_stats_wrf.nc",
+                     'sfc': wrf_output_root + "/atex_long_stats_wrf.nc"
                      },
         'var_groups': [VariableGroupBase, VariableGroupWs, VariableGroupLiquidMP, VariableGroupIceMP]}
 
@@ -267,9 +267,9 @@ BOMEX = {'name': 'bomex',
          'e3sm_file': { 'e3sm': e3sm_output_root + '/bomex.nc'},
          'cam_file': None,
          'sam_file': {'sam': sam_output_root + "/BOMEX_SAM_CLUBB.nc"},
-         'wrf_file': {'zm': wrf_output_root + '/bomex_zm_wrf.nc',
-                      'zt': wrf_output_root + '/bomex_zt_wrf.nc',
-                      'sfc': wrf_output_root + '/bomex_sfc_wrf.nc'},
+         'wrf_file': {'zm': wrf_output_root + '/bomex_stats_wrf.nc',
+                      'zt': wrf_output_root + '/bomex_stats_wrf.nc',
+                      'sfc': wrf_output_root + '/bomex_stats_wrf.nc'},
          'var_groups': [VariableGroupBase, VariableGroupWs]}
 
 CGILS_S6 = {'name': 'cgils_s6',
@@ -574,9 +574,9 @@ FIRE = {'name': 'fire',
         'e3sm_file': None,
         'cam_file': None,
         'sam_file': None,
-        'wrf_file': {'zm': wrf_output_root + "/fire_zm_wrf.nc",
-                     'zt': wrf_output_root + "/fire_zt_wrf.nc",
-                     'sfc': wrf_output_root + "/fire_sfc_wrf.nc"
+        'wrf_file': {'zm': wrf_output_root + "/fire_stats_wrf.nc",
+                     'zt': wrf_output_root + "/fire_stats_wrf.nc",
+                     'sfc': wrf_output_root + "/fire_stats_wrf.nc"
                      },
         'var_groups': [VariableGroupBase, VariableGroupWs]}
 
@@ -974,9 +974,9 @@ WANGARA = {'name': 'wangara',
            'e3sm_file': None,
            'cam_file': None,
            'sam_file': None,
-           'wrf_file': {'zm': wrf_output_root + "/wangara_zm_wrf.nc",
-                        'zt': wrf_output_root + "/wangara_zt_wrf.nc",
-                        'sfc': wrf_output_root + "/wangara_sfc_wrf.nc"
+           'wrf_file': {'zm': wrf_output_root + "/wangara_stats_wrf.nc",
+                        'zt': wrf_output_root + "/wangara_stats_wrf.nc",
+                        'sfc': wrf_output_root + "/wangara_stats_wrf.nc"
                         },
            'var_groups': [VariableGroupBase, VariableGroupWs]}
 
@@ -998,7 +998,7 @@ LASSO_20170627 = {'name': 'lasso_20170627',
            'wrf_file': {'zm': clubb_output_root + '/lasso_2017-06-27_zm_wrf.nc',
                           'zt': clubb_output_root + '/lasso_2017-06-27_zt_wrf.nc',
                           'sfc': clubb_output_root + '/lasso_2017-06-27_sfc_wrf.nc',
-                          'subcolumns': clubb_output_root + '/lasso_2017-06-27_stats.nc'},
+                          'subcolumns': clubb_output_root + '/lasso_2017-06-27_nl_lh_sample_points_2D.nc'},
            'var_groups': [VariableGroupBase, VariableGroupWs]}
 
 LASSO_20170717 = {'name': 'lasso_20170717',
@@ -1019,7 +1019,7 @@ LASSO_20170717 = {'name': 'lasso_20170717',
            'wrf_file': {'zm': clubb_output_root + '/lasso_2017-07-17_zm_wrf.nc',
                           'zt': clubb_output_root + '/lasso_2017-07-17_zt_wrf.nc',
                           'sfc': clubb_output_root + '/lasso_2017-07-17_sfc_wrf.nc',
-                          'subcolumns': clubb_output_root + '/lasso_2017-07-17_stats.nc'},
+                          'subcolumns': clubb_output_root + '/lasso_2017-07-17_nl_lh_sample_points_2D.nc'},
            'var_groups': [VariableGroupBase, VariableGroupWs]}
 
 LASSO_20170728 = {'name': 'lasso_20170728',
@@ -1040,7 +1040,7 @@ LASSO_20170728 = {'name': 'lasso_20170728',
            'wrf_file': {'zm': clubb_output_root + '/lasso_2017-07-28_zm_wrf.nc',
                           'zt': clubb_output_root + '/lasso_2017-07-28_zt_wrf.nc',
                           'sfc': clubb_output_root + '/lasso_2017-07-28_sfc_wrf.nc',
-                          'subcolumns': clubb_output_root + '/lasso_2017-07-28_stats.nc'},
+                          'subcolumns': clubb_output_root + '/lasso_2017-07-28_nl_lh_sample_points_2D.nc'},
            'var_groups': [VariableGroupBase, VariableGroupWs]}
 
 LASSO_20170923 = {'name': 'lasso_20170923',
@@ -1061,7 +1061,7 @@ LASSO_20170923 = {'name': 'lasso_20170923',
            'wrf_file': {'zm': clubb_output_root + '/lasso_2017-09-23_zm_wrf.nc',
                           'zt': clubb_output_root + '/lasso_2017-09-23_zt_wrf.nc',
                           'sfc': clubb_output_root + '/lasso_2017-09-23_sfc_wrf.nc',
-                          'subcolumns': clubb_output_root + '/lasso_2017-09-23_stats.nc'},
+                          'subcolumns': clubb_output_root + '/lasso_2017-09-23_nl_lh_sample_points_2D.nc'},
            'var_groups': [VariableGroupBase, VariableGroupWs]}
 
 LASSO_20180911 = {'name': 'lasso_20180911',
@@ -1082,7 +1082,7 @@ LASSO_20180911 = {'name': 'lasso_20180911',
            'wrf_file': {'zm': clubb_output_root + '/lasso_2018-09-11_zm_wrf.nc',
                           'zt': clubb_output_root + '/lasso_2018-09-11_zt_wrf.nc',
                           'sfc': clubb_output_root + '/lasso_2018-09-11_sfc_wrf.nc',
-                          'subcolumns': clubb_output_root + '/lasso_2018-09-11_stats.nc'},
+                          'subcolumns': clubb_output_root + '/lasso_2018-09-11_nl_lh_sample_points_2D.nc'},
            'var_groups': [VariableGroupBase, VariableGroupWs]}
 
 LASSO_20180917 = {'name': 'lasso_20180917',
@@ -1103,7 +1103,7 @@ LASSO_20180917 = {'name': 'lasso_20180917',
            'wrf_file': {'zm': clubb_output_root + '/lasso_2018-09-17_zm_wrf.nc',
                           'zt': clubb_output_root + '/lasso_2018-09-17_zt_wrf.nc',
                           'sfc': clubb_output_root + '/lasso_2018-09-17_sfc_wrf.nc',
-                          'subcolumns': clubb_output_root + '/lasso_2018-09-17_stats.nc'},
+                          'subcolumns': clubb_output_root + '/lasso_2018-09-17_nl_lh_sample_points_2D.nc'},
            'var_groups': [VariableGroupBase, VariableGroupWs]}
 
 LASSO_20180918 = {'name': 'lasso_20180918',
@@ -1124,7 +1124,7 @@ LASSO_20180918 = {'name': 'lasso_20180918',
            'wrf_file': {'zm': clubb_output_root + '/lasso_2018-09-18_zm_wrf.nc',
                           'zt': clubb_output_root + '/lasso_2018-09-18_zt_wrf.nc',
                           'sfc': clubb_output_root + '/lasso_2018-09-18_sfc_wrf.nc',
-                          'subcolumns': clubb_output_root + '/lasso_2018-09-18_stats.nc'},
+                          'subcolumns': clubb_output_root + '/lasso_2018-09-18_nl_lh_sample_points_2D.nc'},
            'var_groups': [VariableGroupBase, VariableGroupWs]}
 
 LASSO_20181002 = {'name': 'lasso_20181002',
@@ -1145,7 +1145,7 @@ LASSO_20181002 = {'name': 'lasso_20181002',
            'wrf_file': {'zm': clubb_output_root + '/lasso_2018-10-02_zm_wrf.nc',
                           'zt': clubb_output_root + '/lasso_2018-10-02_zt_wrf.nc',
                           'sfc': clubb_output_root + '/lasso_2018-10-02_sfc_wrf.nc',
-                          'subcolumns': clubb_output_root + '/lasso_2018-10-02_stats.nc'},
+                          'subcolumns': clubb_output_root + '/lasso_2018-10-02_nl_lh_sample_points_2D.nc'},
            'var_groups': [VariableGroupBase, VariableGroupWs]}
 
 # DO NOT EDIT THIS LIST UNLESS YOU ARE ADDING A NEW CASE. NEVER REMOVE CASES FROM THIS LIST.
