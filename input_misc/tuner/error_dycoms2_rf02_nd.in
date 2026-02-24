@@ -30,7 +30,7 @@ prescribed_rand_seed        = 1
 
 &cases
 ! DYCOMS II RF02 No Drizzle
-hoc_stats_file_nl(1)    = "../output/dycoms2_rf02_nd_zm.nc"
+hoc_stats_file_nl(1)    = "../output/dycoms2_rf02_nd_stats.nc"
 les_stats_file_nl(1)    = "/home/pub/les_and_clubb_benchmark_runs/sam_benchmark_runs/JULY_2017/DYCOMS_RF02_128x128x96_nodr_nosed/DYCOMS_RF02_128x128x96_nodr_nosed.nc"
 run_file_nl(1)          = "dycoms2_rf02_nd_hoc.in"
 z_i_nl(1)               = 2

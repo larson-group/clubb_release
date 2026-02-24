@@ -886,8 +886,8 @@ module error
         underscore_idx = index( trim(run_file(c_run)) , "_" , .true. )
         read( run_file(c_run)(1:underscore_idx-1), * ) case_name
         ! now copy the file with iteration number
-        call execute_command_line( 'cp ../output/'//trim(case_name)//'_zt.nc ../output/' &
-                           //trim(case_name)//'_zt_iter'//trim(str(iter))//'.nc' )
+        call execute_command_line( 'cp ../output/'//trim(case_name)//'_stats.nc ../output/' &
+                           //trim(case_name)//'_stats_iter'//trim(str(iter))//'.nc' )
       end do
     end if
 

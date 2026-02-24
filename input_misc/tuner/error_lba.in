@@ -29,7 +29,7 @@ prescribed_rand_seed        = 1
 
 &cases
 ! LBA
-hoc_stats_file_nl(1)    = "../output/lba_zt.nc"
+hoc_stats_file_nl(1)    = "../output/lba_stats.nc"
 les_stats_file_nl(1)    = "/home/pub/les_and_clubb_benchmark_runs/sam_benchmark_runs/JULY_2017/LBA_128kmx128kmx128_1km_Morrison/LBA_128kmx128kmx128_1km_Morrison.nc"
 run_file_nl(1)          = "lba_hoc.in"
 z_i_nl(1)               = 2

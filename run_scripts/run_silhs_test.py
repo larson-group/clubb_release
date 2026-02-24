@@ -126,20 +126,25 @@ def load_2d_var(dataset: netCDF4.Dataset, var_name: str) -> np.ndarray:
         raise RuntimeError(f"Variable '{var_name}' not found in {dataset.filepath()}.")
 
     data = np.asarray(dataset.variables[var_name][:])
-    data = np.squeeze(data)
+
+    if data.ndim == 3:
+        # Assume stats ordering (time, height, col) and use first column.
+        data = data[:, :, 0]
+    elif data.ndim > 3:
+        data = np.squeeze(data)
 
     if data.ndim != 2 or data.shape[0] == 0 or data.shape[1] == 0:
         raise RuntimeError(
-            f"Variable '{var_name}' must be 2D and non-empty after squeeze; got shape {data.shape}."
+            f"Variable '{var_name}' must be 2D (time,height) and non-empty; got shape {data.shape}."
         )
     return data
 
 
-def compute_rmse(lh_zt_file: Path) -> tuple[float, tuple[int, int]]:
-    if not lh_zt_file.exists():
-        raise RuntimeError(f"Required file not found: {lh_zt_file}")
+def compute_rmse(stats_file: Path) -> tuple[float, tuple[int, int]]:
+    if not stats_file.exists():
+        raise RuntimeError(f"Required file not found: {stats_file}")
 
-    with netCDF4.Dataset(lh_zt_file, mode="r") as ds:
+    with netCDF4.Dataset(stats_file, mode="r") as ds:
         akm = load_2d_var(ds, "AKm")
         lh_akm = load_2d_var(ds, "lh_AKm")
 
@@ -197,8 +202,8 @@ def main() -> int:
         copy_case_outputs(args.case, output_large)
         print("Done!")
 
-        small_file = output_small / f"{args.case}_lh_zt.nc"
-        large_file = output_large / f"{args.case}_lh_zt.nc"
+        small_file = output_small / f"{args.case}_stats.nc"
+        large_file = output_large / f"{args.case}_stats.nc"
 
         rmse_small, shape_small = compute_rmse(small_file)
         rmse_large, shape_large = compute_rmse(large_file)

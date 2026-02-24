@@ -75,8 +75,8 @@ def _cleanup_case_outputs(case_name: str) -> None:
 
 
 def _compare_final_timestep(case_name: str, var_name: str) -> bool:
-    restart_file = RESTART_DIR / f"{case_name}_zt.nc"
-    output_file = OUTPUT_DIR / f"{case_name}_zt.nc"
+    restart_file = RESTART_DIR / f"{case_name}_stats.nc"
+    output_file = OUTPUT_DIR / f"{case_name}_stats.nc"
     if not restart_file.is_file() or not output_file.is_file():
         return False
 
@@ -90,8 +90,17 @@ def _compare_final_timestep(case_name: str, var_name: str) -> bool:
         if var_restart.ndim < 1 or var_output.ndim < 1:
             return False
 
-        var_restart = var_restart[-1, ...]
-        var_output = var_output[-1, ...]
+        if var_restart.ndim == 3:
+            # Assume stats ordering (time, height, col); compare first column.
+            var_restart = var_restart[-1, :, 0]
+        else:
+            var_restart = var_restart[-1, ...]
+
+        if var_output.ndim == 3:
+            # Assume stats ordering (time, height, col); compare first column.
+            var_output = var_output[-1, :, 0]
+        else:
+            var_output = var_output[-1, ...]
 
         if var_restart.shape != var_output.shape:
             return False

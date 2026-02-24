@@ -29,7 +29,7 @@ prescribed_rand_seed        = 1
 
 &cases
 ! GCSS ATEX
-hoc_stats_file_nl(1)    = "../output/atex_zt.nc" 
+hoc_stats_file_nl(1)    = "../output/atex_stats.nc" 
 les_stats_file_nl(1)    = "/home/pub/les_and_clubb_benchmark_runs/les_runs/atex_coamps_sm.nc" 
 run_file_nl(1)          = "atex_hoc.in"
 z_i_nl(1)               = 1

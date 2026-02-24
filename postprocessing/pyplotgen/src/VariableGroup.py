@@ -97,16 +97,27 @@ class VariableGroup:
 
         if self.bkgrnd_rcm_flag:
             if self.clubb_datasets is not None and len(self.clubb_datasets) != 0:
-                # Extract rcm from the zt NetCDF file. Also extract the time and height values to which the
-                # rcm data points correspond.
-                bkgrnd_rcm = np.squeeze( self.clubb_datasets[self.bkgrnd_rcm_folder]['zt'].variables['rcm'] )
-                self.altitude_bkgrnd_rcm = np.squeeze( self.clubb_datasets[self.bkgrnd_rcm_folder]['zt'].variables['altitude'] )
-                self.time_bkgrnd_rcm = np.squeeze( self.clubb_datasets[self.bkgrnd_rcm_folder]['zt'].variables['time'] )
+                clubb_folder_data = self.clubb_datasets[self.bkgrnd_rcm_folder]
+                rcm_dataset = clubb_folder_data['zt']
+
+                # Extract rcm and always use the first column if multi-column output is present.
+                rcm_var = rcm_dataset.variables['rcm']
+                bkgrnd_rcm = np.asarray(rcm_var[:])
+                dims = rcm_var.dimensions
+                if len(dims) > 0 and dims[-1] == 'col':
+                    if bkgrnd_rcm.shape[-1] > 0:
+                        bkgrnd_rcm = bkgrnd_rcm[..., 0]
+                elif 'col' in dims:
+                    raise ValueError("Expected 'col' as the last dimension for rcm, got dims {}".format(dims))
+                bkgrnd_rcm = np.squeeze(bkgrnd_rcm)
+
+                self.altitude_bkgrnd_rcm = np.squeeze(np.asarray(rcm_dataset.variables['zt'][:]))
+                self.time_bkgrnd_rcm = np.squeeze(np.asarray(rcm_dataset.variables['time'][:]))
                 # Find the indices in the rcm data that correspond to the start time and end time requested as the
                 # time-averaging interval for the case, as well as the minimum height and maximum height requested
                 # for the plots.
-                start_time_seconds = 60.0 * self.start_time # self.start_time is in minutes, while time_bkgrnd_rcm is in seconds.
-                end_time_seconds = 60.0 * self.end_time # self.end_time is in minutes, while time_bkgrnd_rcm is in seconds.
+                start_time_seconds = 60.0 * self.start_time
+                end_time_seconds = 60.0 * self.end_time
                 start_time_idx, end_time_idx = DataReader.__getStartEndIndex__(self.time_bkgrnd_rcm, start_time_seconds, end_time_seconds)
                 self.start_alt_idx, self.end_alt_idx = DataReader.__getStartEndIndex__(self.altitude_bkgrnd_rcm, self.height_min_value, self.height_max_value)
                 if self.animation:
@@ -473,15 +484,31 @@ class VariableGroup:
             logToFile(str(e))
             return title, axis_title
 
+        all_var_names = []
+        for model_var_names in var_names.values():
+            all_var_names.extend(model_var_names)
+        subcolumn_display_name = plotted_models_varname
+        if panel_type == Panel.TYPE_SUBCOLUMN:
+            all_var_names = self.__getSubcolumnNames__(all_var_names)
+            # Use the first subcolumn candidate that actually exists in the datasets
+            # so panel labels match variable names in the netCDF file.
+            for dataset in first_input_datasets:
+                dataset_keys = dataset.variables.keys()
+                for varname in all_var_names:
+                    if isinstance(varname, str) and varname in dataset_keys:
+                        subcolumn_display_name = varname
+                        break
+                if subcolumn_display_name != plotted_models_varname:
+                    break
+
         if 'title' not in variable_def_dict.keys():
             # No title given so it must be generated from given information
             if panel_type == Panel.TYPE_BUDGET:
                 source_folder = os.path.basename(Path(first_input_datasets[0].filepath()).parent)
                 title = source_folder + ' ' + plotted_models_varname
+            elif panel_type == Panel.TYPE_SUBCOLUMN:
+                title = subcolumn_display_name
             else:
-                all_var_names = []
-                for model_var_names in var_names.values():
-                    all_var_names.extend(model_var_names)
                 # Get long name for any of the var_names given in variable_def_dict
                 imported_title = data_reader.getLongName(first_input_datasets, all_var_names)
                 title = imported_title
@@ -494,10 +521,10 @@ class VariableGroup:
             if panel_type == Panel.TYPE_BUDGET and len(all_lines) > 0:
                 any_varname_with_budget_units = [var.label for var in all_lines]
                 axis_title = "[" + data_reader.__getUnits__(first_input_datasets, any_varname_with_budget_units) + "]"
+            elif panel_type == Panel.TYPE_SUBCOLUMN:
+                units = data_reader.__getUnits__(first_input_datasets, all_var_names)
+                axis_title = subcolumn_display_name + " [" + units + "]"
             else:
-                all_var_names = []
-                for model_var_names in var_names.values():
-                    all_var_names.extend(model_var_names)
                 # Get axis title for any of the var_names given in variable_def_dict
                 imported_axis_title = data_reader.getAxisTitle(first_input_datasets, all_var_names)
                 axis_title = imported_axis_title
@@ -754,7 +781,8 @@ class VariableGroup:
         :return: Line objects representing the given variable for a subcolumn plot
         """
         output_lines = []
-        variable = NetCdfVariable(varnames, dataset["subcolumns"], independent_var_names=Case_definitions.HEIGHT_VAR_NAMES,
+        subcolumn_varnames = self.__getSubcolumnNames__(varnames)
+        variable = NetCdfVariable(subcolumn_varnames, dataset["subcolumns"], independent_var_names=Case_definitions.HEIGHT_VAR_NAMES,
                                   start_time=self.start_time, end_time=self.end_time, min_height=self.height_min_value,
                                   max_height=self.height_max_value, avg_axis=avg_axis,
                                   conversion_factor=conversion_factor, model_name=model_name)
@@ -780,7 +808,8 @@ class VariableGroup:
         Same as __getSubcolumnLines__() but retains 2D data for animations.
         """
         output_lines = []
-        variable = NetCdfVariable(varnames, dataset["subcolumns"],
+        subcolumn_varnames = self.__getSubcolumnNames__(varnames)
+        variable = NetCdfVariable(subcolumn_varnames, dataset["subcolumns"],
                                   independent_var_names={'time': Case_definitions.TIME_VAR_NAMES,
                                                          'height': Case_definitions.HEIGHT_VAR_NAMES},
                                   start_time=self.start_time, end_time=self.end_time, avg_axis=2,
@@ -803,6 +832,31 @@ class VariableGroup:
             output_lines.extend(additional_lines)
 
         return output_lines
+
+    @staticmethod
+    def __getSubcolumnNames__(varnames):
+        """
+        Find the list of variables that store subcolumn data,
+        all begin with lh_nl_* or lh_u_*.
+        """
+        if isinstance(varnames, list):
+            requested_varnames = varnames
+        else:
+            requested_varnames = [varnames]
+
+        candidate_varnames = []
+        for varname in requested_varnames:
+            if not isinstance(varname, str):
+                candidate_varnames.append(varname)
+                continue
+
+            if varname.startswith(('lh_nl_', 'lh_u_')):
+                candidate_varnames.append(varname)
+            else:
+                candidate_varnames.extend((f'lh_nl_{varname}', f'lh_u_{varname}', varname))
+
+        # Keep first-seen order while removing duplicates.
+        return list(dict.fromkeys(candidate_varnames))
 
     def __getTimeseriesLine__(self, varname, dataset, end_time, conversion_factor, label, line_format):
         """

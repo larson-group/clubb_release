@@ -12,11 +12,10 @@ from builtins import str
 from builtins import range
 import sys  # Handles command line arguments
 import re   # Regular expressions
-import futurizedReadBinaryData  # Reads GrADS .dat files
+import builtins
 from netCDF4 import Dataset
 from numpy import * # External library for handling large data sets
 from time import strftime
-import random
 import pdb
 # NOTE: This script contains some kludges to hide budget errors we don't have time to fix, marked with TODO
 
@@ -148,24 +147,26 @@ def checkNetcdfBudgets(fileName, iteration):
 
     # Open File
     try:
-        ncFile = Dataset(FILEPATH + fileName, 'r+', format="NETCDF3")
+        ncFile = Dataset(FILEPATH + fileName, 'r')
     except IOError:
         sys.stderr.write("\nCannot find file " + FILEPATH + fileName + "\n\n")
         sys.exit(1)
 
     # Find number of z levels
     try:
-        numLevels = len(ncFile.dimensions['altitude'])
-        
+        if "zt" in ncFile.dimensions:
+            numLevels = len(ncFile.dimensions["zt"])
+        elif "zm" in ncFile.dimensions:
+            numLevels = len(ncFile.dimensions["zm"])
+        else:
+            raise KeyError("Expected zt or zm dimension")
     except Exception:
         sys.stderr.write("Error parsing number of z levels\n")
         sys.exit(1)
     
     # Find the number of iterations
     try:
-        # Pick a random variable and see how many timesteps it has
-        varName = random.choice(list(ncFile.variables.keys()))
-        numIterations = ncFile.variables[varName].shape[0]
+        numIterations = len(ncFile.dimensions['time'])
     except Exception:
         sys.stderr.write("Error parsing number of iterations\n")
         sys.exit(1)
@@ -187,10 +188,7 @@ def checkNetcdfBudgets(fileName, iteration):
 
     # Find number of variables (VARS)
     try:
-        numVars = list(ncFile.variables.keys())
-        #print(numVars)
-        # List includes the 4 dimensions. We don't want these
-        numVars = len(numVars) - 4
+        numVars = len(list(ncFile.variables.keys()))
     except Exception:
         sys.stderr.write("Error parsing number of variables\n")
         sys.exit(1)
@@ -322,7 +320,7 @@ def findNetcdfErrorsAtTimestep(iteration, ncFile, numVars, varList, numLevels, t
            testSuccess: Whether the test is succeeding or failing
     """
     
-    rightHandValue = array( [0]*numLevels ) # RHS of budget equation. Each z level is treated separately
+    rightHandValue = None # RHS of budget equation. Each z level is treated separately
     # Find a budget variable (_bt)
     for varName in varList:
         try:
@@ -331,7 +329,7 @@ def findNetcdfErrorsAtTimestep(iteration, ncFile, numVars, varList, numLevels, t
             
             budgetVar = ncFile.variables[varName]
             budgetUnits = inferBudgetUnits(ncFile, varList, budgetVarName, budgetVar.units)
-            leftHandValue = budgetVar[iteration-1:iteration] # First index of list is 0 
+            leftHandValue = extractNetcdfProfileAtIteration(budgetVar, iteration)
             
             # Can't do completeness check when iteration is 1
             if iteration != 1 and COMPLETENESS_TEST == True:
@@ -349,18 +347,20 @@ def findNetcdfErrorsAtTimestep(iteration, ncFile, numVars, varList, numLevels, t
                             
                             # Vars in the budget have descriptions that include eg. "thlm budget:"
                             if var.long_name.find("budget:") != -1:
-                                componentValue = array(var[iteration-1:iteration] )
+                                componentValue = extractNetcdfProfileAtIteration(var, iteration)
+                                if rightHandValue is None:
+                                    rightHandValue = zeros_like(leftHandValue)
                                 rightHandValue = rightHandValue + componentValue
                         
                 except AttributeError:
                     pass
                     
             # All component terms have been summed up
-            errorDifference = [a - b for a,b in zip(leftHandValue, rightHandValue)]
+            errorDifference = leftHandValue - rightHandValue
             allowedTolerance = calcTolerance(budgetUnits, TIME_SCALE_DENOMINATOR, budgetVarName[0:-3])
 
             # Ignore zt(1) since it is below ground. Still use zm(1) however
-            if ncFile.filepath().find("_zt") != -1:
+            if "zt" in budgetVar.dimensions:
                 zLevel = 1
                 errorDifference = errorDifference[1:]
             else:
@@ -374,7 +374,7 @@ def findNetcdfErrorsAtTimestep(iteration, ncFile, numVars, varList, numLevels, t
             
     
             # Clear old data
-            rightHandValue = [0]*numLevels 
+            rightHandValue = None
            
         except AttributeError:
             pass
@@ -473,8 +473,8 @@ def checkNetcdfCompleteness(ncFile, numLevels, iteration, numVars, \
         if termName == varName:
         
             statVar = ncFile.variables[varName]
-            varAfter = statVar[iteration-1:iteration].flatten()  # First index in python list is 0
-            varBefore = statVar[iteration-2:iteration-1].flatten() # while iteration starts at t = 1
+            varAfter = extractNetcdfProfileAtIteration(statVar, iteration)
+            varBefore = extractNetcdfProfileAtIteration(statVar, iteration-1)
 
             rightHandValue = (varAfter - varBefore) / timestep
 
@@ -491,6 +491,18 @@ def checkNetcdfCompleteness(ncFile, numLevels, iteration, numVars, \
             testSuccess = dispError(leftHandValue, rightHandValue, errorDifference, allowedTolerance, iteration, zLevel, varName, termUnits, testSuccess)
                     
     return testSuccess
+
+#--------------------------------------------------------------------------------------------------
+def extractNetcdfProfileAtIteration(variable, iteration):
+    """
+    Extract a 1D profile from stats output using the first column.
+    Assumes stats output uses (time, z, col) for profile variables.
+    """
+    if len(variable.shape) == 3:
+        return array(variable[iteration-1, :, 0]).flatten()
+    if len(variable.shape) == 2:
+        return array(variable[iteration-1, :]).flatten()
+    raise ValueError("Expected 2D or 3D stats variable, got shape {}".format(variable.shape))
     
 #--------------------------------------------------------------------------------------------------
 def dispError(leftHandValue, rightHandValue, errorDifference, allowedTolerance, iteration, zLevel, termName, termUnits, testSuccess):
@@ -513,7 +525,7 @@ def dispError(leftHandValue, rightHandValue, errorDifference, allowedTolerance, 
             # Check to make sure tolerance is not smaller than a values precision   
 
             valuePrecision = calcPrecision(leftHandValue[zLevel-1], rightHandValue[zLevel-1])
-            allowedTolerance = max( abs(allowedTolerance), abs(valuePrecision) )
+            allowedTolerance = builtins.max( abs(allowedTolerance), abs(valuePrecision) )
             
             percentError = calcPercentError(leftHandValue, rightHandValue, allowedTolerance)
             
@@ -656,7 +668,7 @@ def calcPrecision(value1, value2):
     valueStr2 = '%e' %(value2)
     valuePrecision2 = int(valueStr2[-3:])
     
-    retVal = min(valuePrecision1, valuePrecision2)
+    retVal = builtins.min(valuePrecision1, valuePrecision2)
     
     return 10**(retVal)
     
@@ -672,7 +684,7 @@ if __name__ == "__main__":
         print("Program Help:")
         print("Arguments must be: filename iteration")
         print("")
-        print("Filename can be either a NetCDF file (.nc or .cdf) or grads files (.ctl/.dat)")
+        print("Filename must be a NetCDF stats file (.nc or .cdf)")
         print("Set filename to 'all' for all files in the directory specified by the FILEPATH variable")
         print("Set iteration to '0' for all iterations")
         print("")
@@ -698,8 +710,9 @@ if __name__ == "__main__":
                 if dataFile.find(case) > -1:
                     skipCase = True
             
-            # Only keep files ending with zt or zm not including .dat or rad files
-            if (dataFile.find("zt.") > -1 or dataFile.find("zm.") > -1) and dataFile.find(".dat") == -1 and dataFile.find("rad") == -1 and skipCase == False:
+            # In stats-only mode we only test unified stats output files.
+            is_testable_nc = dataFile.endswith("_stats.nc")
+            if is_testable_nc and skipCase == False:
                 testableFiles.append(dataFile)
                 
             skipCase = False
@@ -715,25 +728,18 @@ if __name__ == "__main__":
         for dataFile in testableFiles:
             print("".join(["\n", strftime("%H:%M:%S"), " - Testing ", dataFile]))
             
-            # Check if file is NetCDF, otherwise assume GrADS
-            if dataFile.find(".nc") != -1 or dataFile.find(".cdf") != -1:
-                if checkNetcdfBudgets( dataFile, int(sys.argv[2]) ) == False:
-                    testSuccess = False
-            else:
-                if checkGradsBudgets( dataFile, int(sys.argv[2]) ) == False:
-                    testSuccess = False
+            if checkNetcdfBudgets( dataFile, int(sys.argv[2]) ) == False:
+                testSuccess = False
                     
     # Only check 1 file
     else:
         print("\nTesting " +  sys.argv[1])
         
-        # Check if file is NetCDF, otherwise assume GrADS
-        if sys.argv[1].find(".nc") != -1 or sys.argv[1].find(".cdf") != -1:
-            if checkNetcdfBudgets( sys.argv[1], int(sys.argv[2]) ) == False:
-                testSuccess = False
-        else:
-            if checkGradsBudgets( sys.argv[1], int(sys.argv[2]) ) == False:
-                testSuccess = False
+        if sys.argv[1].find(".nc") == -1 and sys.argv[1].find(".cdf") == -1:
+            print("Error: filename must be a NetCDF file (.nc or .cdf).")
+            testSuccess = False
+        elif checkNetcdfBudgets( sys.argv[1], int(sys.argv[2]) ) == False:
+            testSuccess = False
             
     # Print resolution to the screen
     if testSuccess == True:

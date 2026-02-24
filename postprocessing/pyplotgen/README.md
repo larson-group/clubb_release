@@ -318,7 +318,7 @@ Adding a new case is similar to adding a variable in that the process is general
 
 | **Parameter** | **Description** |
 |---|---|
-|*name*| must be the same as the filename without the extention. Eg. to use lba_zt.nc and lba_zm.nc the case's name must be 'lba'. Extensions are determined by the last instance of `_`|
+|*name*| must be the same as the filename without the extension. Eg. to use `lba_stats.nc` the case's name must be `lba`.|
 | *description* | A textual descritption of the case. This appears under the case's name in the pyplotgen output. |
 |*start_time*| An integer value representing which timestep to begin the time-averaging interval. Valid options are from 1 -> list minute value. Give in terms of clubb minutes.|
 |*end_time*| An integer value representing which timestep to end the time-averaging interval. Valid options are from 1 -> list minute value. Give in terms of clubb minutes. Also used to determine where to stop timeseries plots|
@@ -338,17 +338,17 @@ BOMEX = {'name': 'bomex',
          'blacklisted_vars': [],
          'sam_benchmark_file': {'sam_benchmark': SAM_BENCHMARK_OUTPUT_ROOT +
                                                  "/JULY_2017/BOMEX_64x64x75/BOMEX_64x64x75_100m_40m_1s.nc"},
-         'clubb_file': {'zm': clubb_output_root + '/bomex_zm.nc',
-                        'zt': clubb_output_root + '/bomex_zt.nc',
-                        'sfc': clubb_output_root + '/bomex_sfc.nc'},
+         'clubb_file': {'zm': clubb_output_root + '/bomex_stats.nc',
+                        'zt': clubb_output_root + '/bomex_stats.nc',
+                        'sfc': clubb_output_root + '/bomex_stats.nc'},
          'coamps_benchmark_file': {'sm': COAMPS_BENCHMARK_OUTPUT_ROOT + "/bomex_coamps_sm.nc",
                                    'sw': COAMPS_BENCHMARK_OUTPUT_ROOT + "/bomex_coamps_sw.nc"},
-         'clubb_r408_benchmark_file': {'zm': R408_OUTPUT_ROOT + '/Chris_Golaz_best_ever/bomex_zm.nc',
-                             'zt': R408_OUTPUT_ROOT + '/Chris_Golaz_best_ever/bomex_zt.nc',
-                             'sfc': R408_OUTPUT_ROOT + '/Chris_Golaz_best_ever/bomex_sfc.nc'},
-         'clubb_hoc_benchmark_file': {'zm': HOC_OUTPUT_ROOT + '/bomex_zm.nc',
-                            'zt': HOC_OUTPUT_ROOT + '/bomex_zt.nc',
-                            'sfc': HOC_OUTPUT_ROOT + '/bomex_sfc.nc'},
+         'clubb_r408_benchmark_file': {'zm': R408_OUTPUT_ROOT + '/Chris_Golaz_best_ever/bomex_stats.nc',
+                             'zt': R408_OUTPUT_ROOT + '/Chris_Golaz_best_ever/bomex_stats.nc',
+                             'sfc': R408_OUTPUT_ROOT + '/Chris_Golaz_best_ever/bomex_stats.nc'},
+         'clubb_hoc_benchmark_file': {'zm': HOC_OUTPUT_ROOT + '/bomex_stats.nc',
+                            'zt': HOC_OUTPUT_ROOT + '/bomex_stats.nc',
+                            'sfc': HOC_OUTPUT_ROOT + '/bomex_stats.nc'},
          'e3sm_file': { 'e3sm': e3sm_output_root + '/bomex.nc'},
          'cam_file': None,
          'sam_file': {'sam': sam_output_root + "/BOMEX_SAM_CLUBB.nc"},
@@ -392,12 +392,12 @@ BOMEX = {'name': 'bomex', 'start_time': 181, 'end_time': 360, 'height_min_value'
          'blacklisted_vars': [],
          'sam_file': "bomex.nc", # Specify SAM NetCDF file here!
          'coamps_file': None,
-         'r408_file': {'zm': R408_OUTPUT_ROOT + '/Chris_Golaz_best_ever/bomex_zm.nc',
-                       'zt': R408_OUTPUT_ROOT + '/Chris_Golaz_best_ever/bomex_zt.nc',
-                       'sfc': R408_OUTPUT_ROOT + '/Chris_Golaz_best_ever/bomex_sfc.nc'},
-         'hoc_file': {'zm': HOC_OUTPUT_ROOT + '/bomex_zm.nc',
-                      'zt': HOC_OUTPUT_ROOT + '/bomex_zt.nc',
-                      'sfc': HOC_OUTPUT_ROOT + '/bomex_sfc.nc'},
+         'r408_file': {'zm': R408_OUTPUT_ROOT + '/Chris_Golaz_best_ever/bomex_stats.nc',
+                       'zt': R408_OUTPUT_ROOT + '/Chris_Golaz_best_ever/bomex_stats.nc',
+                       'sfc': R408_OUTPUT_ROOT + '/Chris_Golaz_best_ever/bomex_stats.nc'},
+         'hoc_file': {'zm': HOC_OUTPUT_ROOT + '/bomex_stats.nc',
+                      'zt': HOC_OUTPUT_ROOT + '/bomex_stats.nc',
+                      'sfc': HOC_OUTPUT_ROOT + '/bomex_stats.nc'},
          'e3sm_file': e3sm_output_root + '/bomex.nc',
          'var_groups': [#VariableGroupBase, VariableGroupWs,
 				VariableGroupSamProfiles]} # New VariableGroup added and rest commented out

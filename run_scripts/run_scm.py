@@ -60,23 +60,9 @@ def run_case(executable, case_name, namelist_file):
     if process.returncode not in (0, 6):
         return 1
 
-    split_script = os.path.join(CLUBB_ROOT, "utilities", "split_stats_to_legacy.py")
     stats_file = os.path.join(OUTPUT_DIR, f"{case_name}_stats.nc")
-    if os.path.isfile(stats_file):
-        split_cmd = [
-            sys.executable,
-            split_script,
-            "--input",
-            stats_file,
-            "--output-dir",
-            OUTPUT_DIR,
-            "--overwrite",
-        ]
-        split_result = subprocess.run(split_cmd, cwd=CLUBB_ROOT)
-        if split_result.returncode != 0:
-            return 1
-    else:
-        print(f"WARNING: stats output not found for split: {stats_file}")
+    if not os.path.isfile(stats_file):
+        print(f"WARNING: stats output not found: {stats_file}")
 
     return 0
 

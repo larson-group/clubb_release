@@ -64,7 +64,6 @@ def main():
                         "2: Add tables with detailed numerical differences in common variables for each file.")
     parser.add_argument("-t", "--threshold", dest="threshold", type=float, action="store", help="(float) Define the maximum absolute difference for an individual variable to be treated as different.")
     parser.add_argument("-s", "--scale", action="store_true", help="Scale absolute differences by the average field value, using the same approach as check_multi_col_error.py.")
-    parser.add_argument("-g", "--ghostbuster", action="store_true", help="Perform a comparison that omits the 'ghost' level in '_zt.nc' output files.")
     parser.add_argument("dirs", nargs=2, help="Need 2 clubb output directories containing netCDF files with the same name to diff. Usage: python run_bindiff_all.py dir_path1 dir_path2")
     args = parser.parse_args()
 
@@ -104,7 +103,9 @@ def main():
         if not os.path.exists(outFilePath):
             os.makedirs(outFilePath)
 
-    linux_diff, diff_in_files, file_skipped = find_diffs_in_all_files(args.dirs[0], args.dirs[1], args.fileout, args.verbose, abs_error_threshold, args.ghostbuster, args.scale)
+    linux_diff, diff_in_files, file_skipped = find_diffs_in_all_files(
+        args.dirs[0], args.dirs[1], args.fileout, args.verbose, abs_error_threshold, args.scale
+    )
 
     if DEBUG:
         print(linux_diff, diff_in_files, file_skipped)
@@ -136,9 +137,9 @@ def get_cases(dir1, dir2, verbose):
     # Generate and return a dict of all cases that have files present in the diff folders
     # This dict will have the following structure:
     # cases = {<case> : [file1, file2, ...]}
-    # Example: cases = {'arm': ['arm_zm.nc'] },
-    #                   'bomex': ['bomex_zm.nc', 'bomex_zt.nc', 'bomex_sfc.nc']} },
-    #                   'wangara': ['wangara_zt.nc'] } }
+    # Example: cases = {'arm': ['arm_stats.nc'],
+    #                   'bomex': ['bomex_stats.nc'],
+    #                   'wangara': ['wangara_stats.nc']}
     #
     # Warnings will be printed for each missing file both on the console and in the output files.
     #####################################################################################
@@ -216,7 +217,7 @@ def get_cases(dir1, dir2, verbose):
 
     return cases
 
-def find_diffs_in_all_files(dir1, dir2, save_to_file, verbose, thresh, l_ghostbuster, l_scale):
+def find_diffs_in_all_files(dir1, dir2, save_to_file, verbose, thresh, l_scale):
     # For each case with existing netCDF files in the diff folders:
     # 1. Create an output file if those are requested
     # 2. Loop through the netCDF files and call `find_diffs_in_common_vars` on each pair
@@ -244,7 +245,7 @@ def find_diffs_in_all_files(dir1, dir2, save_to_file, verbose, thresh, l_ghostbu
     nproc = min(nproc, max(1, len(case_order)))
 
     args_list = [
-        (case, cases[case], dir1, dir2, save_to_file, verbose, thresh, l_ghostbuster, l_scale)
+        (case, cases[case], dir1, dir2, save_to_file, verbose, thresh, l_scale)
         for case in case_order
     ]
 
@@ -271,7 +272,7 @@ def find_diffs_in_all_files(dir1, dir2, save_to_file, verbose, thresh, l_ghostbu
 
 
 def _diff_case(args):
-    case, files, dir1, dir2, save_to_file, verbose, thresh, l_ghostbuster, l_scale = args
+    case, files, dir1, dir2, save_to_file, verbose, thresh, l_scale = args
     linux_diff_in_case = False
     diff_in_case = False
     file_skipped = False
@@ -303,7 +304,7 @@ def _diff_case(args):
                     content += ">The linux diff detected differences in " + ncfname + "<\n"
 
                 case_diff, new_content = find_diffs_in_common_vars(
-                    ncfname, dir1, dir2, save_to_file, verbose, thresh, l_ghostbuster, l_scale
+                    ncfname, dir1, dir2, save_to_file, verbose, thresh, l_scale
                 )
                 diff_in_case = case_diff or diff_in_case
 
@@ -358,7 +359,7 @@ def _diff_case(args):
         "stdout": stdout.getvalue(),
     }
 
-def find_diffs_in_common_vars( test_file, dir1, dir2, save_to_file, verbose, abs_error_threshold, l_ghostbuster, l_scale ):
+def find_diffs_in_common_vars( test_file, dir1, dir2, save_to_file, verbose, abs_error_threshold, l_scale ):
     # This is the integral function of this script!
     # Compare content of one specific pair of files with the same name in each folder:
     # 1. Find the variables that are present in only one of the files
@@ -421,34 +422,24 @@ def find_diffs_in_common_vars( test_file, dir1, dir2, save_to_file, verbose, abs
     # These are the variables we can and want to compare the other variables are printed above
     vars_in_common = set(dset1.variables.keys()).intersection(dset2.variables.keys())
     for var in sorted(vars_in_common):
-        # The CLUBB netcdf variables we are interested in are all
-        # 4 dimensional (time, altitude, latitude, longitude),
-        # but currently we don't actually have latitude or longitude in clubb, so those
-        # dimensions are hardcoded to be 1. If in the future we remove those useless
-        # dimensions (unlikely), then the variables of interested would be 2D. So
-        # for futureproofing, we will just check all variables with more than 1 dimension.
+        # Compare multidimensional fields only. Scalar/1D values are ignored.
         if( dset1[var].ndim > 1 and dset2[var].ndim > 1 ):
+            data_1 = np.asarray(dset1[var][...])
+            data_2 = np.asarray(dset2[var][...])
 
-            if l_ghostbuster and "_zt.nc" in test_file:
-              z_levs_1=dset1[var].shape[1]
-              z_levs_2=dset2[var].shape[1]
-              if z_levs_1 == z_levs_2:
-                abs_diff = abs( dset1[var][:,1:z_levs_1-1,:,:] - dset2[var][:,1:z_levs_2-1,:,:] )
-              else:
-                if z_levs_1 > z_levs_2:
-                  abs_diff = abs( dset1[var][:,1:z_levs_1-1,:,:] - dset2[var][:,0:z_levs_2-1,:,:] )
-                else:
-                  abs_diff = abs( dset1[var][:,0:z_levs_1-1,:,:] - dset2[var][:,1:z_levs_2-1,:,:] )
-            elif "_multi_col_zt.nc" in test_file or "_multi_col_zm.nc" in test_file:
-              # The multi_col outputs currently use (time,nz,ngrdcol)
-              abs_diff = abs( dset1[var][:,:,:] - dset2[var][:,:,:] )
-            else:
-              abs_diff = abs( dset1[var][...] - dset2[var][...] )
+            try:
+                abs_diff = abs(data_1 - data_2)
+            except ValueError:
+                if verbose >= 1:
+                    print("Skipping variable {} because shapes are incompatible: {} vs {}".format(
+                        var, data_1.shape, data_2.shape
+                    ))
+                continue
 
             # Match check_multi_col_error.py behavior:
             # scale absolute differences by average field magnitude.
             if l_scale:
-              field_avg = ( np.average( dset1[var] ) + np.average( dset2[var] ) ) / 2.0
+              field_avg = ( np.average( data_1 ) + np.average( data_2 ) ) / 2.0
               abs_diff = abs_diff / np.ceil( np.abs( field_avg ) )
 
             # If the average absolute differences is less than the threshold, then ignore this var
@@ -458,25 +449,8 @@ def find_diffs_in_common_vars( test_file, dir1, dir2, save_to_file, verbose, abs
               diff_in_common_vars = True
 
             # Clip fields to ignore tiny values for the % diff
-            if l_ghostbuster and "_zt.nc" in test_file:
-              if z_levs_1 == z_levs_2:
-                field_1_clipped = np.clip( dset1[var][:,1:z_levs_1-1,:,:], a_min = field_threshold, a_max = 9999999.0  )
-#yippee confetti field_2_clipped = np.clip( dset2[var][:,1:z_levs_2-1,:], a_min = field_threshold, a_max = 9999999.0 )
-                field_2_clipped = np.clip( dset2[var][:,1:z_levs_2-1,:,:], a_min = field_threshold, a_max = 9999999.0 )
-              else:
-                if z_levs_1 > z_levs_2:
-                  field_1_clipped = np.clip( dset1[var][:,1:z_levs_1-1,:,:], a_min = field_threshold, a_max = 9999999.0  )
-                  field_2_clipped = np.clip( dset2[var][:,0:z_levs_2-1,:,:], a_min = field_threshold, a_max = 9999999.0 )
-                else:
-                  field_1_clipped = np.clip( dset1[var][:,0:z_levs_1-1,:,:], a_min = field_threshold, a_max = 9999999.0  )
-                  field_2_clipped = np.clip( dset2[var][:,1:z_levs_2-1,:,:], a_min = field_threshold, a_max = 9999999.0 )
-            elif "_multi_col_zt.nc" in test_file or "_multi_col_zm.nc" in test_file:
-              # The multi_col outputs currently use (time,nz,ngrdcol)
-              field_1_clipped = np.clip( dset1[var][:,:,:], a_min = field_threshold, a_max = 9999999.0  )
-              field_2_clipped = np.clip( dset2[var][:,:,:], a_min = field_threshold, a_max = 9999999.0 )
-            else:
-              field_1_clipped = np.clip( dset1[var][...], a_min = field_threshold, a_max = 9999999.0  )
-              field_2_clipped = np.clip( dset2[var][...], a_min = field_threshold, a_max = 9999999.0 )
+            field_1_clipped = np.clip( data_1, a_min = field_threshold, a_max = 9999999.0  )
+            field_2_clipped = np.clip( data_2, a_min = field_threshold, a_max = 9999999.0 )
 
             # Calculate the percent difference, 100 * (a-b) / ((a+b)/2)
             percent_diff = 200.0 * ( field_1_clipped-field_2_clipped ) \

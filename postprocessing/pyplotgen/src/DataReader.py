@@ -60,9 +60,10 @@ class NetCdfVariable:
             if any([key not in independent_var_names.keys() for key in independent_keys]):
                 raise KeyError('Error in parameter independent_var_names: Dict keys must include "time" and "height".')
         elif isinstance(independent_var_names, Iterable):
-                # If independent_var_names is iterable, split it up into time and height varnames
-                time_vars = list(set(independent_var_names).intersection(set(Case_definitions.TIME_VAR_NAMES)))
-                height_vars = list(set(independent_var_names).intersection(set(Case_definitions.HEIGHT_VAR_NAMES)))
+                # Preserve candidate priority from Case_definitions when splitting iterable names.
+                candidate_names = list(independent_var_names)
+                time_vars = [name for name in Case_definitions.TIME_VAR_NAMES if name in candidate_names]
+                height_vars = [name for name in Case_definitions.HEIGHT_VAR_NAMES if name in candidate_names]
                 independent_var_names = {'time': time_vars, 'height': height_vars}
         else:
             # Asssume passed value is a string and either a valid time or height varname
@@ -97,14 +98,26 @@ class NetCdfVariable:
             logToFile("None of the values " + str(names) + " were found in the dataset " + str(dataset_with_var.filepath()))
             dependent_varname = names[0]
 
+        preferred_height_dim = None
+        if var_found_in_dataset and dependent_varname in dataset_with_var.variables:
+            dependent_dims = dataset_with_var.variables[dependent_varname].dimensions
+            for dim_name in dependent_dims:
+                if dim_name in independent_var_names['height']:
+                    preferred_height_dim = dim_name
+                    break
+
         # If not already found, find a (set of) matching independent variable(s)
         # in the same dataset in which the dependent variable was found
         # TODO: Accomodate finding time AND height variables
         if not independent_var_name_in_dataset: # Check if independent_var_name_in_dataset is still empty
             # If empty, try and find independent variable(s) in dataset_with_var
             for independent_key in independent_var_names:
-                varnames = independent_var_names[independent_key]
-                for tempname in varnames:
+                # For stats files that contain both zt and zm, match the dependent
+                # variable's height dimension directly when possible.
+                if independent_key == "height" and preferred_height_dim in dataset_with_var.variables.keys():
+                    independent_var_name_in_dataset[independent_key] = preferred_height_dim
+                    continue
+                for tempname in independent_var_names[independent_key]:
                     if tempname in dataset_with_var.variables.keys():
                         # Attempt to determine whether or not the height var is actually a height var (e.g. cam "lev"
                         # var is not)
@@ -321,13 +334,20 @@ class DataReader():
         # 2. folder
         # 3. filetype
         # So in order to close the Dataset objects we need to cycle through all three levels
+        closed_datasets = set()
         for case in self.nc_datasets:
             casedict = self.nc_datasets[case]
             for folder in casedict:
                 folderdict = casedict[folder]
                 for filetype in folderdict:
                     dataset = folderdict[filetype]
+                    if dataset is None:
+                        continue
+                    dataset_id = id(dataset)
+                    if dataset_id in closed_datasets:
+                        continue
                     dataset.close()
+                    closed_datasets.add(dataset_id)
 
     def loadFolder(self, folder_path, ignore_git=True):
         """
@@ -351,25 +371,23 @@ class DataReader():
                     # Only process nc files (not containing '.git')
                     if ignore_git and '.git' in abs_filename or file_ext != '.nc':
                         continue
-                    # Find offset to eliminate trailing chars like "_zt.nc", "_zm.nc", and "_sfc.nc
-                    ext_offset = filename.rindex('_')
-                    # Get type of current file (zm, zt, or sfc)
-                    file_type = filename[ext_offset + 1:-3]
-                    # Remaining prefix of filename is the case's name to which the file data belongs
-                    case_key = filename[:ext_offset]
+                    if not filename.endswith('_stats.nc'):
+                        continue
 
-                    if case_key in self.nc_filenames.keys() and sub_folder in self.nc_filenames[case_key].keys():
-                        # Another file from the same folder for the same case was loaded before
+                    case_key = filename[:-len('_stats.nc')]
+                    file_types = ['stats', 'zt', 'zm', 'sfc', 'subcolumns']
+                    dataset = self.__loadNcFile__(abs_filename)
+
+                    if case_key not in self.nc_filenames:
+                        self.nc_filenames[case_key] = {}
+                        self.nc_datasets[case_key] = {}
+                    if sub_folder not in self.nc_filenames[case_key]:
+                        self.nc_filenames[case_key][sub_folder] = {}
+                        self.nc_datasets[case_key][sub_folder] = {}
+
+                    for file_type in file_types:
                         self.nc_filenames[case_key][sub_folder][file_type] = abs_filename
-                        self.nc_datasets[case_key][sub_folder][file_type] = self.__loadNcFile__(abs_filename)
-                    elif case_key in self.nc_filenames.keys() and sub_folder not in self.nc_filenames[case_key].keys():
-                        # Another file for the same case but from a different folder was loaded before
-                        self.nc_filenames[case_key][sub_folder] = {file_type: abs_filename}
-                        self.nc_datasets[case_key][sub_folder] = {file_type: self.__loadNcFile__(abs_filename)}
-                    else:
-                        # This is the first file for this specific case
-                        self.nc_filenames[case_key] = {sub_folder: {file_type: abs_filename}}
-                        self.nc_datasets[case_key] = {sub_folder: {file_type: self.__loadNcFile__(abs_filename)}}
+                        self.nc_datasets[case_key][sub_folder][file_type] = dataset
         return self.nc_datasets
 
     def getVarData(self, netcdf_dataset, ncdf_variable):
@@ -646,7 +664,14 @@ class DataReader():
         var_values = None
         keys = ncdf_data.variables.keys()
         if varname in keys:
-            var_values = ncdf_data.variables[varname]
+            nc_variable = ncdf_data.variables[varname]
+            var_values = np.asarray(nc_variable[:])
+            dims = nc_variable.dimensions
+            if len(dims) > 0 and dims[-1] == 'col':
+                if var_values.shape[-1] > 0:
+                    var_values = var_values[..., 0]
+            elif 'col' in dims:
+                raise ValueError("Expected 'col' as the last dimension for {}, got dims {}".format(varname, dims))
             var_values = np.squeeze(var_values)
             # Check if data comes from SAM and convert -9999 values to NaN
             if 'SAM version' in ncdf_data.ncattrs():
@@ -654,8 +679,8 @@ class DataReader():
             var_values = var_values * conversion
             # Variables with 0-1 dependent_data points/values return a float after being 'squeeze()'ed,
             # this converts it back to an array
-            if isinstance(var_values, float):
-                var_values = np.array([var_values])
+            if np.isscalar(var_values) or (isinstance(var_values, np.ndarray) and var_values.ndim == 0):
+                var_values = np.array([var_values], dtype=float)
             # break
         if var_values is None:
             raise ValueError("Variable " + str(varname) +

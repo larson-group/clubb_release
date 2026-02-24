@@ -160,7 +160,7 @@ module inputfields
       file_prefix
 
     ! Local Variables
-    logical :: l_grads
+    logical :: l_grads, l_stats_netcdf
 
     ! ---- Begin Code ----
 
@@ -191,9 +191,14 @@ module inputfields
 
       if ( .not. l_grads ) then
         write(fstdout,*) "inputfields: Cannot find GrADS ctl file, assuming netCDF input"
-        stat_files(clubb_zt) = trim( file_prefix )// "_zt.nc"
-        stat_files(clubb_zm) = trim( file_prefix )// "_zm.nc"
-        stat_files(clubb_sfc) = trim( file_prefix )// "_sfc.nc"
+        inquire(file=trim(file_prefix)//"_stats.nc", exist=l_stats_netcdf)
+        if ( .not. l_stats_netcdf ) then
+          write(fstderr,*) "inputfields: Expected netCDF stats file not found: ", &
+                           trim(file_prefix)//"_stats.nc"
+        end if
+        stat_files(clubb_zt) = trim( file_prefix )// "_stats.nc"
+        stat_files(clubb_zm) = trim( file_prefix )// "_stats.nc"
+        stat_files(clubb_sfc) = trim( file_prefix )// "_stats.nc"
       end if
 
     case ( "SAM", "sam" )

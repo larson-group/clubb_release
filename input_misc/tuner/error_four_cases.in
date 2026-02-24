@@ -28,7 +28,7 @@ prescribed_rand_seed        = 1
 
 &cases
 !  GCSS ARM
-hoc_stats_file_nl(1)    = "../output/arm_zt.nc"
+hoc_stats_file_nl(1)    = "../output/arm_stats.nc"
 les_stats_file_nl(1)    = "/home/pub/les_and_clubb_benchmark_runs/sam_benchmark_runs/JULY_2017/ARM_96x96x110/GCSSARM_96x96x110_67m_40m_1s.nc"
 run_file_nl(1)          = "arm_hoc.in"
 z_i_nl(1)               = 1
@@ -37,7 +37,7 @@ timestep_intvls_nl(1,:) = 481, 540
 weight_case_nl(1)       = 0.25
 !
 !  GCSS BOMEX
-hoc_stats_file_nl(2)    = "../output/bomex_zt.nc",
+hoc_stats_file_nl(2)    = "../output/bomex_stats.nc",
 les_stats_file_nl(2)    = "/home/pub/les_and_clubb_benchmark_runs/sam_benchmark_runs/JULY_2017/BOMEX_64x64x75/BOMEX_64x64x75_100m_40m_1s.nc",
 run_file_nl(2)          = "bomex_hoc.in",
 z_i_nl(2)               = 1,
@@ -46,7 +46,7 @@ timestep_intvls_nl(2,:) = 180, 360
 weight_case_nl(2)       = 0.25
 !
 ! GCSS DYCOMS II RF 1
-hoc_stats_file_nl(3)    = "../output/dycoms2_rf01_zt.nc"
+hoc_stats_file_nl(3)    = "../output/dycoms2_rf01_stats.nc"
 les_stats_file_nl(3)    = "/home/pub/les_and_clubb_benchmark_runs/sam_benchmark_runs/JULY_2017/DYCOMS_RF01_96x96x320/DYCOMS_RF01_96x96x320.nc"
 run_file_nl(3)          = "dycoms2_rf01_hoc.in"
 z_i_nl(3)               = 1,
@@ -55,7 +55,7 @@ timestep_intvls_nl(3,:) = 61, 120, 121, 180, 181, 240
 weight_case_nl(3)       = 0.25
 !
 ! WANGARA
-hoc_stats_file_nl(4)    = "../output/wangara_zt.nc"
+hoc_stats_file_nl(4)    = "../output/wangara_stats.nc"
 les_stats_file_nl(4)    = "/home/pub/les_and_clubb_benchmark_runs/sam_benchmark_runs/WANGARA/WANGARA_64x64x80_100m_40m_LES.nc"
 run_file_nl(4)          = "wangara_hoc.in"
 z_i_nl(4)               = 1,

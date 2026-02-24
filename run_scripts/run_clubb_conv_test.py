@@ -41,7 +41,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--var",
         default="rcm",
-        help="Variable to test from <case>_zt.nc (default: rcm).",
+        help="Variable to test from <case>_stats.nc (default: rcm).",
     )
     return parser.parse_args()
 
@@ -116,25 +116,30 @@ def run_scm(case_name: str, dt: int, time_initial: float, time_final: float, l_r
         raise RuntimeError(f"run_scm.py failed for case '{case_name}' (exit {result.returncode}).")
 
 
-def extract_profile(zt_file: Path, var_name: str) -> np.ndarray:
-    if not zt_file.exists():
-        raise RuntimeError(f"Missing expected file: {zt_file}")
+def extract_profile(stats_file: Path, var_name: str) -> np.ndarray:
+    if not stats_file.exists():
+        raise RuntimeError(f"Missing expected file: {stats_file}")
 
-    with netCDF4.Dataset(zt_file) as ds:
+    with netCDF4.Dataset(stats_file) as ds:
         if var_name not in ds.variables:
-            raise RuntimeError(f"Variable '{var_name}' not found in {zt_file}")
+            raise RuntimeError(f"Variable '{var_name}' not found in {stats_file}")
         data = np.asarray(ds.variables[var_name][:])
 
     if data.ndim < 2:
-        raise RuntimeError(f"Variable '{var_name}' has invalid shape {data.shape} in {zt_file}")
+        raise RuntimeError(
+            f"Variable '{var_name}' has invalid shape {data.shape} in {stats_file}"
+        )
 
-    # Legacy CLUBB zt output shape is typically (time, z, 1, 1).
+    # Assume stats dimensions are time-first and repeatedly pick first index on
+    # remaining non-profile axes (e.g. first column).
     last_timestep = data[-1]
     while last_timestep.ndim > 1:
         last_timestep = last_timestep[..., 0]
 
     if last_timestep.ndim != 1:
-        raise RuntimeError(f"Failed to reduce '{var_name}' to a 1D profile; shape={last_timestep.shape}")
+        raise RuntimeError(
+            f"Failed to reduce '{var_name}' from {stats_file} to a 1D profile; shape={last_timestep.shape}"
+        )
 
     return np.asarray(last_timestep)
 
@@ -213,8 +218,8 @@ def main() -> int:
             curr_out = OUTPUT_DIR / f"timestep_{dt}"
             move_case_outputs(case_name, curr_out)
 
-            zt_file = curr_out / f"{case_name}_zt.nc"
-            profile = extract_profile(zt_file, var_name)
+            stats_file = curr_out / f"{case_name}_stats.nc"
+            profile = extract_profile(stats_file, var_name)
             profiles.append(profile)
             print("Done!")
 

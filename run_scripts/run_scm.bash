@@ -381,47 +381,24 @@ then
 			;;
 		esac
 
-	# Move the ZT and ZM files out of the way
-	if [ "$RESULT" != 0 ]; then
-		rm "../output/$run_case"_zt.
-		rm "../output/$run_case"_zt.dat
-		rm "../output/$run_case"_zt.nc
-
-		rm "../output/$run_case"_zm.ctl
-		rm "../output/$run_case"_zm.dat
-		rm "../output/$run_case"_zm.nc
-
-		rm "../output/$run_case"_sfc.ctl
-		rm "../output/$run_case"_sfc.dat
-		rm "../output/$run_case"_sfc.nc
-
-	else
-		mv "../output/$run_case"_zt.ctl "$OUTPUT_DIR"/CLUBB_current/
-		mv "../output/$run_case"_zt.dat "$OUTPUT_DIR"/CLUBB_current/
-		mv "../output/$run_case"_zt.nc "$OUTPUT_DIR"/CLUBB_current/
-
-		mv "../output/$run_case"_zm.ctl "$OUTPUT_DIR"/CLUBB_current/
-		mv "../output/$run_case"_zm.dat "$OUTPUT_DIR"/CLUBB_current/
-		mv "../output/$run_case"_zm.nc "$OUTPUT_DIR"/CLUBB_current/
-
-		mv "../output/$run_case"_setup.txt "$OUTPUT_DIR"/CLUBB_current/
-		case $run_case in
-			# We only run TWP_ICE, Cloud Feedback, and Dycoms2_rf01_fixed_sst once so we
-			# want to keep the SFC files.
-			# The other cases are rerun with stats_tout = 1 minute (or 5 minutes for RICO),
-			# and sfc files from the second run are used in the nightly plots for these cases.
-			twp_ice | cloud_feedback* | dycoms2_rf01_fixed_sst )
-				mv "../output/$run_case"_sfc.ctl "$OUTPUT_DIR"/CLUBB_current/
-				mv "../output/$run_case"_sfc.dat "$OUTPUT_DIR"/CLUBB_current/
-				mv "../output/$run_case"_sfc.nc "$OUTPUT_DIR"/CLUBB_current/
-				;;
-			* )
-				rm "../output/$run_case"_sfc.ctl
-				rm "../output/$run_case"_sfc.dat
-				rm "../output/$run_case"_sfc.nc
-				;;
-		esac
-	fi
+		# In stats-only mode, keep/move only the unified stats file.
+		if [ "$RESULT" != 0 ]; then
+			rm -f "../output/$run_case"_stats.nc
+			rm -f "../output/$run_case"_setup.txt
+		else
+			case $run_case in
+				# These long/expensive cases are only run once.
+				twp_ice | cloud_feedback* | dycoms2_rf01_fixed_sst )
+					mv "../output/$run_case"_stats.nc "$OUTPUT_DIR"/CLUBB_current/
+					mv "../output/$run_case"_setup.txt "$OUTPUT_DIR"/CLUBB_current/
+					;;
+				* )
+					# Other cases will be rerun below with a finer stats_tout.
+					rm -f "../output/$run_case"_stats.nc
+					rm -f "../output/$run_case"_setup.txt
+					;;
+			esac
+		fi
 
 	# Run again with a finer output time interval for the sfc.  Even though
 	# running the cases twice takes longer, we do this to save disk space
@@ -452,34 +429,14 @@ then
 
 			run_case
 
-			#Now move the SFC file
-			if [ "$RESULT" != 0 ]; then
-				rm "../output/$run_case"_zt.ctl
-				rm "../output/$run_case"_zt.dat
-				rm "../output/$run_case"_zt.nc
-
-				rm "../output/$run_case"_zm.ctl
-				rm "../output/$run_case"_zm.dat
-				rm "../output/$run_case"_zm.nc
-
-				rm "../output/$run_case"_sfc.ctl
-				rm "../output/$run_case"_sfc.dat
-				rm "../output/$run_case"_sfc.nc
-			else
-				rm "../output/$run_case"_zt.ctl
-				rm "../output/$run_case"_zt.dat
-				rm "../output/$run_case"_zt.nc
-
-				rm "../output/$run_case"_zm.ctl
-				rm "../output/$run_case"_zm.dat
-				rm "../output/$run_case"_zm.nc
-
-				mv "../output/$run_case"_sfc.ctl "$OUTPUT_DIR"/CLUBB_current/
-				mv "../output/$run_case"_sfc.dat "$OUTPUT_DIR"/CLUBB_current/
-				mv "../output/$run_case"_sfc.nc "$OUTPUT_DIR"/CLUBB_current/
-
-				mv "../output/$run_case"_setup.txt "$OUTPUT_DIR"/CLUBB_current/
-			fi
+				# Save final stats-only output from the rerun.
+				if [ "$RESULT" != 0 ]; then
+					rm -f "../output/$run_case"_stats.nc
+					rm -f "../output/$run_case"_setup.txt
+				else
+					mv "../output/$run_case"_stats.nc "$OUTPUT_DIR"/CLUBB_current/
+					mv "../output/$run_case"_setup.txt "$OUTPUT_DIR"/CLUBB_current/
+				fi
 			;;
 	esac
 else

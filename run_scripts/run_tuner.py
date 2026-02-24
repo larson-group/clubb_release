@@ -37,25 +37,6 @@ def concat_stripped_files(sources: list[Path], destination: Path) -> None:
     destination.write_text(text, encoding="utf-8")
 
 
-def rewrite_hoc_stats_to_stats(error_namelist_text: str) -> str:
-    """Rewrite hoc_stats_file_nl paths from legacy suffixes to *_stats.nc."""
-
-    def _rewrite(match: re.Match[str]) -> str:
-        path = match.group("path")
-        rewritten = re.sub(
-            r"_(zt|zm|sfc|lh_zt|lh_sfc|rad_zt|rad_zm)\.nc$",
-            "_stats.nc",
-            path,
-        )
-        return f'{match.group("prefix")}{rewritten}{match.group("suffix")}'
-
-    pattern = re.compile(
-        r'(?P<prefix>^\s*hoc_stats_file_nl\(\d+\)\s*=\s*")(?P<path>[^"]+)(?P<suffix>"\s*$)',
-        flags=re.MULTILINE,
-    )
-    return pattern.sub(_rewrite, error_namelist_text)
-
-
 def require_file(path: Path) -> None:
     if not path.is_file():
         raise FileNotFoundError(f"{path} does not exist")
@@ -126,6 +107,7 @@ def run_case_with_run_scm(
 def move_case_outputs(case_name: str, destination: Path) -> None:
     destination.mkdir(parents=True, exist_ok=True)
     patterns = [
+        f"{case_name}_stats*",
         f"{case_name}_zt*",
         f"{case_name}_zm*",
         f"{case_name}_sfc*",
@@ -248,7 +230,6 @@ def main() -> int:
             hoc_files.append(hoc_path)
 
         error_text = strip_fortran_comments(error_in_file.read_text(encoding="utf-8"))
-        error_text = rewrite_hoc_stats_to_stats(error_text)
         params_text = strip_fortran_comments(params_file.read_text(encoding="utf-8"))
         error_tmp.write_text(error_text + params_text, encoding="utf-8")
         shutil.copy2(rand_seed_file, rand_seed_tmp)

@@ -56,8 +56,8 @@ class PyPlotGen:
         :param clubb_folders: List of foldernames containing CLUBB netcdf files to be plotted.
             Pass a list of folders in with this option.
             These folders must contain the CLUBB nc files in the root directory,
-            where each filename is the name of the case to be plotted with the CLUBB-specific suffixes: _zm, _zt
-            E.g. name files dycoms2_rfo2_ds_zm.nc and dycoms2_rfo2_ds_zt.nc
+            where each filename is the case name with a `_stats.nc` suffix.
+            E.g. `dycoms2_rfo2_ds_stats.nc`.
             to plot the file's data with that case's setup.
         :param replace: If False, an already existing outout folder will not be overwritten.
         :param les: If True, plot LES dependent_data for comparison.

@@ -137,7 +137,7 @@ l_restart | logical
 
 restart_path_case | character 
   Path (from ../run_scripts/) and filename of GrADS/netCDF files 
-  sans '_zt.ctl', '_zm.ctl', or '_zt.nc', '_zm.nc'.
+  sans '_zt.ctl', '_zm.ctl', or '_stats.nc'.
 
 time_restart | real, minimum of 12 digits of precision
   Time of model restart.  [seconds since start time in stat file]
@@ -572,4 +572,3 @@ latin hypercube sample points fed into the microphysics.
 <Case Name>_corr_array_below.in
 The out of cloud (where rcm < rc_tol) correlation values for computing the 
 latin hypercube sample points fed into the microphysics.
-

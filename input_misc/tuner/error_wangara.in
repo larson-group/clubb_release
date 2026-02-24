@@ -29,7 +29,7 @@ prescribed_rand_seed        = 1
 
 &cases
 ! Wangara Day 33
-hoc_stats_file_nl(1)    = "../output/wangara_zt.nc"
+hoc_stats_file_nl(1)    = "../output/wangara_stats.nc"
 les_stats_file_nl(1)    = "/home/pub/les_and_clubb_benchmark_runs/les_runs/wangara_rams.ctl"
 run_file_nl(1)          = "wangara_hoc.in"
 z_i_nl(1)               = 1

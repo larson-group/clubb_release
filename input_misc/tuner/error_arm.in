@@ -29,7 +29,7 @@ prescribed_rand_seed        = 1
 
 &cases
 ! GCSS ARM
-hoc_stats_file_nl(1)    = "../output/arm_zt.nc"
+hoc_stats_file_nl(1)    = "../output/arm_stats.nc"
 les_stats_file_nl(1)    = "/home/pub/les_and_clubb_benchmark_runs/sam_benchmark_runs/JULY_2017/ARM_96x96x110/GCSSARM_96x96x110_67m_40m_1s.nc"
 run_file_nl(1)          = "arm_hoc.in"
 z_i_nl(1)               = 1
