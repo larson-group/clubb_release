@@ -1,0 +1,257 @@
+commit 1d2996e43e6b32cb4cbc77931302a225c442888e
+Author: Gunther Huebler <huebler@uwm.edu>
+Date:   Tue Feb 24 01:42:49 2026 -0600
+
+    Missed some wrf changes
+
+commit 52de37f932acbfdda066610e31a8eacff0e4eb72
+Author: Gunther Huebler <37674341+huebleruwm@users.noreply.github.com>
+Date:   Mon Feb 23 21:35:24 2026 -0600
+
+    Legacy stats removal (#1273)
+    
+    * First commit in removing legacy stats
+    
+    * Removing accidentally added plots
+    
+    * Updates to fix and improve various things. Removing grads handling from lots of test scripts
+    
+    * Reverting old scripts to leave untouched
+    
+    * More reversions
+    
+    * More reversions
+    
+    * Simplifications
+    
+    * More reversions
+    
+    * Simplifications
+    
+    * Simplifications
+    
+    * Simplification
+    
+    * Simplification
+    
+    * Simplification
+    
+    * Simplification
+    
+    * Small pyplotgen improvement
+    
+    * Reverting case defs to use old scripts, removing need to unify old ones
+
+commit 3031280ec54f8f86ac2603f8948447348f98a457
+Author: Gunther Huebler <huebler@uwm.edu>
+Date:   Mon Feb 23 17:20:23 2026 -0600
+
+    Reverting accidental changes
+
+commit 23403fb811f630616adaa902c14afe3b247a902a
+Merge: 041bb93ad d803a85c7
+Author: root <larsongroupgithub@gmail.com>
+Date:   Mon Feb 23 16:34:26 2026 -0600
+
+    Autoupdated clubb's morrison using sam's morrison
+
+commit d803a85c7b95b15d1a2236266152af312c1826c0
+Author: Trevor Hancock <hancoct@uwm.edu>
+Date:   Mon Feb 23 16:26:50 2026 -0600
+
+    Fixed space to match Clubb spacing
+
+commit 041bb93ad4082d0bfe0809299601f06823c308e3
+Merge: 3974c73f3 cee956751
+Author: root <larsongroupgithub@gmail.com>
+Date:   Mon Feb 23 15:31:08 2026 -0600
+
+    Autoupdated clubb's morrison using sam's morrison
+
+commit cee95675184d206d7d48d6b1dada20c49d5257e4
+Author: Trevor Hancock <hancoct@uwm.edu>
+Date:   Mon Feb 23 15:22:00 2026 -0600
+
+    Added a space to test new python update scripts
+
+commit 3974c73f38f6bccf2aa96966d86f7832a990cd89
+Author: Trevor Hancock <hancoct@uwm.edu>
+Date:   Mon Feb 23 15:18:43 2026 -0600
+
+    Added blank line to test new python scripts
+
+commit b622e32ad405141f1bb36bd9ef41b5e066c95061
+Author: Gunther Huebler <huebler@uwm.edu>
+Date:   Tue Feb 17 22:23:17 2026 -0600
+
+    Fixing fire tuner
+
+commit 3d4d74a0d0295936253484c54693f9eac230f604
+Author: Gunther Huebler <37674341+huebleruwm@users.noreply.github.com>
+Date:   Tue Feb 17 21:54:40 2026 -0600
+
+    New stats system  (#1270)
+    
+    * Initial commit for the new stats system
+    
+    * Adding helper scripts
+    
+    * Fixes and another script
+    
+    * Updates
+    
+    * Improvements
+    
+    * Fixed bug in all_stats.in
+    
+    * Updates
+    
+    * Adding dash app
+    
+    * Updates, also including new dash app since I'm finding it quite useful
+    
+    * Improvements/fixes and adding missing variable to all_stats.in
+    
+    * Updates
+    
+    * Moving wp2sclrp, wpsclrp2, wpsclrprtp, and wpsclrpthlp to the zt netcdf output file, since those are zt variables. Also adding a missing variable, rcm_in_cloud, to all_stats.in and correcting a missing comma bug. This is technically BIT_CHANGING because the variables are moving files, but the stored data is identical from 1:nzt - the nzm level just had garbage for those variables and is now gone.
+    
+    * Updates
+    
+    * Updates
+    
+    * The big stats pull, only new stats remains now
+    
+    * Some cleanup
+    
+    * Lot's of core rework, new index caching system speeds things up
+    
+    * Missed files
+    
+    * Small improvements a bug fix to the grid remapped output
+    
+    * Fixing up logic and ordering things a bit better
+    
+    * Little improvements
+    
+    * Cleanup and simplications to new stats core
+    
+    * Little improvements, mostly to dash app
+    
+    * Mostly cleanup
+    
+    * Making GPU code work
+    
+    * Making more scripts work
+    
+    * Fixing line lengths
+    
+    * Bug fixes
+    
+    * Bug fixes
+    
+    * Bug fixes
+    
+    * Bug fixes
+    
+    * Bug fixes and script updates
+    
+    * Jenkins script update
+    
+    * Jenkins script update
+    
+    * Jenkins script update
+    
+    * Jenkins script update
+    
+    * Jenkins script update
+    
+    * Jenkins script update
+    
+    * Script update
+    
+    * Script update
+    
+    * Script update
+    
+    * Script update
+    
+    * Script update
+    
+    * Script update
+    
+    * Script update
+    
+    * Test update
+    
+    * Jenkins script update
+    
+    * Test update
+    
+    * Fixing bug
+    
+    * Fixing bug
+    
+    * Fixing up comments
+    
+    * Small fixes
+    
+    * Jenkins script update
+    
+    * CMake update
+    
+    * Little fix for cmake
+    
+    * Jenkins script update
+    
+    * Jenkins script updateS
+    
+    * Cmake update
+    
+    * Jenkins script update
+    
+    * Jenkins script update
+    
+    * Jenkins script updates
+    
+    * Adding new stats input
+    
+    * Small fixes
+    
+    * Fixing old compile scripts
+    
+    * Jenkins script updates
+    
+    * Jenkins script updates
+    
+    * Jenkins script updates
+    
+    * Little fixes
+    
+    * Little cmake fix
+    
+    * Little jenkins fix
+    
+    * Mono flux test update and _api renamings
+    
+    * Small Jenkins fix
+    
+    * Adding missing comments back
+    
+    * Even more comments
+    
+    * stats updates
+    
+    * Even more comments
+    
+    * Various small improvements
+    
+    * Removing test statsd
+    
+    * Adding some things back to _api and adding structure explaining comment in stats files.
+    
+    * Many more comments
+    
+    * Removing plan file
+    
+    * Spelling fix
