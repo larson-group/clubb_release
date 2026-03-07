@@ -1,0 +1,98 @@
+commit 68adfe0015a87cb6ccd8938f9b742117d971feaa
+Merge: 6340e0a54 8cb40c6a0
+Author: root <larsongroupgithub@gmail.com>
+Date:   Mon Mar 2 23:01:35 2026 -0600
+
+    Autoupdated clubb's morrison using sam's morrison
+
+commit 8cb40c6a054a81383415a640c91d5effcc187d28
+Author: Trevor-Hancock5 <hancoct@uwm.edu>
+Date:   Mon Mar 2 19:41:36 2026 -0600
+
+    Added blank line to test python update scripts
+    
+    Testing python update scripts from crontab
+
+commit 6340e0a542105e3612b9709f3192cdf3b88a55ec
+Author: Trevor-Hancock5 <hancoct@uwm.edu>
+Date:   Mon Mar 2 19:40:18 2026 -0600
+
+    Add blank line to test python scripts
+    
+    Testing python scripts from crontab
+
+commit 967e4c00c3609874bf0c9eecbd93781724252ce9
+Author: root <larsongroupgithub@gmail.com>
+Date:   Mon Mar 2 14:38:56 2026 -0600
+
+    Force-sync README to match SAM
+
+commit 1d2996e43e6b32cb4cbc77931302a225c442888e
+Author: Gunther Huebler <huebler@uwm.edu>
+Date:   Tue Feb 24 01:42:49 2026 -0600
+
+    Missed some wrf changes
+
+commit 52de37f932acbfdda066610e31a8eacff0e4eb72
+Author: Gunther Huebler <37674341+huebleruwm@users.noreply.github.com>
+Date:   Mon Feb 23 21:35:24 2026 -0600
+
+    Legacy stats removal (#1273)
+    
+    * First commit in removing legacy stats
+    
+    * Removing accidentally added plots
+    
+    * Updates to fix and improve various things. Removing grads handling from lots of test scripts
+    
+    * Reverting old scripts to leave untouched
+    
+    * More reversions
+    
+    * More reversions
+    
+    * Simplifications
+    
+    * More reversions
+    
+    * Simplifications
+    
+    * Simplifications
+    
+    * Simplification
+    
+    * Simplification
+    
+    * Simplification
+    
+    * Simplification
+    
+    * Small pyplotgen improvement
+    
+    * Reverting case defs to use old scripts, removing need to unify old ones
+
+commit 3031280ec54f8f86ac2603f8948447348f98a457
+Author: Gunther Huebler <huebler@uwm.edu>
+Date:   Mon Feb 23 17:20:23 2026 -0600
+
+    Reverting accidental changes
+
+commit 23403fb811f630616adaa902c14afe3b247a902a
+Merge: 041bb93ad d803a85c7
+Author: root <larsongroupgithub@gmail.com>
+Date:   Mon Feb 23 16:34:26 2026 -0600
+
+    Autoupdated clubb's morrison using sam's morrison
+
+commit d803a85c7b95b15d1a2236266152af312c1826c0
+Author: Trevor Hancock <hancoct@uwm.edu>
+Date:   Mon Feb 23 16:26:50 2026 -0600
+
+    Fixed space to match Clubb spacing
+
+commit 041bb93ad4082d0bfe0809299601f06823c308e3
+Merge: 3974c73f3 cee956751
+Author: root <larsongroupgithub@gmail.com>
+Date:   Mon Feb 23 15:31:08 2026 -0600
+
+    Autoupdated clubb's morrison using sam's morrison
