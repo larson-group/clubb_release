@@ -1,8 +1,8 @@
 &configurable_clubb_flags_nl
 iiPDF_type                      = 1
 ipdf_call_placement             = 2
-penta_solve_method              = 1
-tridiag_solve_method            = 1
+penta_solve_method              = 2
+tridiag_solve_method            = 2
 saturation_formula              = 3
 grid_remap_method               = 1
 grid_adapt_in_time_method       = 0

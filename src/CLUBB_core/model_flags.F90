@@ -575,8 +575,8 @@ module model_flags
 
     iiPDF_type = iiPDF_ADG1
     ipdf_call_placement = ipdf_post_advance_fields
-    penta_solve_method = lapack
-    tridiag_solve_method = lapack
+    penta_solve_method = penta_lu
+    tridiag_solve_method = tridiag_lu
     saturation_formula = saturation_flatau
     grid_remap_method = ppm_remap
     grid_adapt_in_time_method = no_grid_adaptation
