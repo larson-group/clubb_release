@@ -24,6 +24,7 @@ module calendar
                        31, 31, 30, 31, 30, 31/)
 
   contains
+
 !-----------------------------------------------------------------------
   integer function gregorian2julian_date( day, month, year )
 !
