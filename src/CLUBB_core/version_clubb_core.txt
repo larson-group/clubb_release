@@ -1,0 +1,72 @@
+commit 02e8b46e176338e0beae7ab6fe3bb4ab2c11a7f2
+Author: Vincent Larson <vlarson@users.noreply.github.com>
+Date:   Fri Mar 13 21:00:55 2026 -0500
+
+    Remove unnecessary comments from est_kessler_microphys_module
+    
+    in order to trigger git update scripts.  larson-group/sys_admin#848
+
+commit a1dd370ac9a7d03023289b7025c7e30eca0184d1
+Author: Vincent Larson <vlarson@users.noreply.github.com>
+Date:   Fri Mar 13 20:58:37 2026 -0500
+
+    Remove Id tag from LY93_pdf.F90 in order to trigger git update scripts
+    
+    larson-group/sys_admin#848
+
+commit e589c52f0d3f735c8a1f4206fce09e7e4b0f7578
+Author: Trevor Hancock <hancoct@uwm.edu>
+Date:   Fri Mar 13 18:47:34 2026 -0500
+
+    Added blank line
+
+commit 9c1d5ca661f3fc39810d025db84985e8a5bd0c0e
+Author: Vincent Larson <vlarson@users.noreply.github.com>
+Date:   Thu Mar 12 07:05:00 2026 -0500
+
+    Add blank line in order to trigger git updates (issue #848)
+
+commit 983e04d547b71018dee5ec635ceb7e166b7ce8f8
+Author: Gunther Huebler <37674341+huebleruwm@users.noreply.github.com>
+Date:   Tue Mar 10 21:50:06 2026 -0500
+
+    New solvers by default (#1275) - BIT_CHANGING
+    
+    * Setting our solvers to use the new LU solvers by default instead of Lapack. This is BIT_CHANGING, but not answer changing.
+    
+    * Also changing default in code
+
+commit 68adfe0015a87cb6ccd8938f9b742117d971feaa
+Merge: 6340e0a54 8cb40c6a0
+Author: root <larsongroupgithub@gmail.com>
+Date:   Mon Mar 2 23:01:35 2026 -0600
+
+    Autoupdated clubb's morrison using sam's morrison
+
+commit 8cb40c6a054a81383415a640c91d5effcc187d28
+Author: Trevor-Hancock5 <hancoct@uwm.edu>
+Date:   Mon Mar 2 19:41:36 2026 -0600
+
+    Added blank line to test python update scripts
+    
+    Testing python update scripts from crontab
+
+commit 6340e0a542105e3612b9709f3192cdf3b88a55ec
+Author: Trevor-Hancock5 <hancoct@uwm.edu>
+Date:   Mon Mar 2 19:40:18 2026 -0600
+
+    Add blank line to test python scripts
+    
+    Testing python scripts from crontab
+
+commit 967e4c00c3609874bf0c9eecbd93781724252ce9
+Author: root <larsongroupgithub@gmail.com>
+Date:   Mon Mar 2 14:38:56 2026 -0600
+
+    Force-sync README to match SAM
+
+commit 1d2996e43e6b32cb4cbc77931302a225c442888e
+Author: Gunther Huebler <huebler@uwm.edu>
+Date:   Tue Feb 24 01:42:49 2026 -0600
+
+    Missed some wrf changes
