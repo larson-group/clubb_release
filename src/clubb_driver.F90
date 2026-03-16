@@ -183,9 +183,6 @@ module clubb_driver
     nlon = 1, & ! Number of points in the X/Y [-]
     nlat = 1 
 
-  character(len=100), parameter :: &
-    output_dir = "../output/"   ! Output directory
-
   real( kind = core_rknd ) , parameter ::  &
     timing_tol = 0.01_core_rknd   ! allowed tolerance for the timing budget check
 
@@ -302,6 +299,9 @@ module clubb_driver
   ! 'public' only to fix compiler error for nvhpc versions <24.9, please remove in future
   character(len=100), public :: &
     fname_prefix           ! Prefix of stats filenames, to be followed by, for example "_zt"
+
+  character(len=256), public :: &
+    output_dir             ! Output directory for setup/log/stats files
 
   character(len=150) :: &
     case_info_file, &     ! The filename for case info
@@ -915,6 +915,7 @@ module clubb_driver
 
     character(len=256) :: stats_registry
     character(len=256) :: stats_output
+    integer :: noutdir
 
 
     logical :: &
@@ -1101,7 +1102,7 @@ module clubb_driver
 
   namelist /stats_setting/ &
     l_stats, fname_prefix, stats_tsamp, stats_tout, stats_fmt, &
-    l_allow_small_stats_tout
+    l_allow_small_stats_tout, output_dir
 
   namelist /configurable_clubb_flags_nl/ &
     iiPDF_type, ipdf_call_placement, penta_solve_method, tridiag_solve_method, &
@@ -1239,6 +1240,7 @@ module clubb_driver
     ! module stats_variables
     fname_prefix = ''
     stats_fmt    = ''
+    output_dir   = "../output/"
 
     ngrdcol = 1
 
@@ -1380,6 +1382,11 @@ module clubb_driver
     read(unit=iunit, nml=model_setting)
     read(unit=iunit, nml=stats_setting)
     close(unit=iunit)
+
+    ! Ensure output directory has a trailing slash.
+    if ( len_trim(output_dir) <= 0 ) output_dir = "../output/"
+    noutdir = len_trim(output_dir)
+    if ( output_dir(noutdir:noutdir) /= "/" ) output_dir = trim(output_dir) // "/"
 
     sclr_idx%iisclr_thl = iisclr_thl
     sclr_idx%iisclr_rt  = iisclr_rt
@@ -1720,6 +1727,7 @@ module clubb_driver
       call write_text( "--------------------------------------------------", &
         l_write_to_file, iunit )
       call write_text( "l_stats = ", l_stats, l_write_to_file, iunit )
+      call write_text( "output_dir = " // output_dir, l_write_to_file, iunit )
       call write_text( "fname_prefix = " // fname_prefix, l_write_to_file, iunit )
       call write_text( "stats_fmt = " // stats_fmt, l_write_to_file, iunit)
       call write_text( "stats_tsamp = ", real( stats_tsamp, kind = core_rknd ),&
@@ -1741,7 +1749,7 @@ module clubb_driver
       if ( l_write_to_file ) close(unit=iunit)
 
       iunit_grid_adaptation = iunit + 10
-      fname_grid_adaptation = '../output/'//trim( runtype )//'_grid_adapt.txt'
+      fname_grid_adaptation = trim( output_dir ) // trim( runtype ) // '_grid_adapt.txt'
       if ( clubb_config_flags%grid_adapt_in_time_method > no_grid_adaptation ) then
         open(unit=iunit_grid_adaptation, file=fname_grid_adaptation, status='replace', action='write')
       end if
@@ -2913,7 +2921,7 @@ module clubb_driver
     if ( clubb_config_flags%grid_adapt_in_time_method > no_grid_adaptation .and. l_stats ) then
       write(iunit_grid_adaptation, *) 'g', 0, gr%zm
 
-      open( unit=iunit_grid_adaptation+10, file='../output/'//trim( runtype )//'_grid.txt', &
+      open( unit=iunit_grid_adaptation+10, file=trim( output_dir ) // trim( runtype ) // '_grid.txt', &
             status='replace', action='write' )
       do b = 1, size(gr%zm(1,:))
           write(iunit_grid_adaptation+10, *) gr%zm(1,b)

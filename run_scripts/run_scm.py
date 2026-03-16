@@ -2,7 +2,6 @@
 import argparse
 import os
 import re
-import shutil
 import subprocess
 import sys
 
@@ -10,7 +9,7 @@ import sys
 # since this is used to find CLUBB_ROOT
 RUN_SCRIPTS = os.path.dirname(os.path.abspath(__file__))
 CLUBB_ROOT  = os.path.join(RUN_SCRIPTS, "..") 
-OUTPUT_DIR  = os.path.join(CLUBB_ROOT, "output") 
+DEFAULT_OUTPUT_DIR  = os.path.join(CLUBB_ROOT, "output")
 
 multi_col_params_script = os.path.join(RUN_SCRIPTS, "create_multi_col_params.py") 
 
@@ -27,16 +26,16 @@ def strip_comments_and_remove_keys(content: str, keys_to_remove=None) -> str:
         lines.append(line)
     return "\n".join(lines)
 
-def run_case(executable, case_name, namelist_file):
+def run_case(executable, case_name, namelist_file, output_dir):
 
     if not os.path.isfile(executable):
         print(f"{executable} not found (did you re-compile?)")
         return 1
 
     # clubb requires the output directory to exist prior to running
-    os.makedirs(OUTPUT_DIR, exist_ok=True)
+    os.makedirs(output_dir, exist_ok=True)
 
-    log_path = os.path.join(OUTPUT_DIR, f"{case_name}_log")
+    log_path = os.path.join(output_dir, f"{case_name}_log")
     with open(log_path, "w", encoding="utf-8") as log_file:
         process = subprocess.Popen(
             [executable, namelist_file],
@@ -60,7 +59,7 @@ def run_case(executable, case_name, namelist_file):
     if process.returncode not in (0, 6):
         return 1
 
-    stats_file = os.path.join(OUTPUT_DIR, f"{case_name}_stats.nc")
+    stats_file = os.path.join(output_dir, f"{case_name}_stats.nc")
     if not os.path.isfile(stats_file):
         print(f"WARNING: stats output not found: {stats_file}")
 
@@ -84,17 +83,17 @@ def read_model_times(model_file):
     return values
 
 
-def convert_to_multi_col(params_file: str, ngrdcol: int | None) -> str:
+def convert_to_multi_col(params_file: str, case_name: str, output_dir: str, ngrdcol: int | None) -> str:
     """
     If ngrdcol is provided, run:
-      'python create_multi_col_params.py -mod duplicate -n NGRDCOL PARAMS_FILE -out_file tmp_dup_params.in'
+      'python create_multi_col_params.py -mod duplicate -n NGRDCOL PARAMS_FILE -out_file CASE_multicol_params.in'
     and return the path to the new params file. Otherwise, return params_file unchanged.
     """
 
     if not os.path.isfile(multi_col_params_script):
         sys.exit(f"Missing helper script: {multi_col_params_script}")
 
-    out_file = os.path.join(os.getcwd(), "tmp_dup_params.in")  # write result in CWD
+    out_file = os.path.join(output_dir, f"{case_name}_multicol_params.in")
 
     cmd = [sys.executable, multi_col_params_script, "-mode", "duplicate", "-n", str(ngrdcol), "-param_file", params_file, "-out_file", out_file]
 
@@ -127,7 +126,7 @@ def override_value(override_string, clubb_in_text):
     return clubb_in_text
 
 
-def setup_files_and_aggregate(args):
+def setup_files_and_aggregate(args, output_dir):
     """Resolve file paths, validate, and create the aggregate namelist."""
 
     # Model file
@@ -171,7 +170,7 @@ def setup_files_and_aggregate(args):
 
     # Expand multi-column params if requested
     if args.ngrdcol is not None:
-        params_file = convert_to_multi_col(params_file, args.ngrdcol)
+        params_file = convert_to_multi_col(params_file, args.case_name, output_dir, args.ngrdcol)
 
     # Validate files
     files_to_validate = [
@@ -187,9 +186,9 @@ def setup_files_and_aggregate(args):
         if not os.path.isfile(f):
             sys.exit(f"Required file for {opt} not found: {f}")
 
-    # Aggregate into output/CASE.in
-    os.makedirs(OUTPUT_DIR, exist_ok=True)
-    clubb_input_namelist = os.path.join(OUTPUT_DIR, f"{args.case_name}.in")
+    # Aggregate into output_dir/CASE.in
+    os.makedirs(output_dir, exist_ok=True)
+    clubb_input_namelist = os.path.join(output_dir, f"{args.case_name}.in")
     with open(clubb_input_namelist, "w") as out:
         files_to_aggregate = [params_file, silhs_params_file, flags_file, model_file]
         if not disable_stats:
@@ -202,7 +201,34 @@ def setup_files_and_aggregate(args):
     return clubb_input_namelist, model_file, executable
 
 
-def edit_namelist(args, clubb_input_namelist, model_file):
+def _set_stats_output_dir(clubb_in: str, output_dir: str) -> str:
+    """Ensure &stats_setting contains output_dir."""
+    out_norm = output_dir.replace("\\", "/")
+    stats_match = re.search(r"(?is)(&\s*stats_setting\b)(.*?)(/)", clubb_in)
+    if not stats_match:
+        clubb_in += (
+            "\n&stats_setting\n"
+            f"output_dir = '{out_norm}',\n"
+            "/\n"
+        )
+        return clubb_in
+
+    header = stats_match.group(1)
+    body = stats_match.group(2)
+    end = stats_match.group(3)
+    if re.search(r"(?im)^\s*output_dir\s*=", body):
+        body = re.sub(
+            r"(?im)^\s*output_dir\s*=.*$",
+            f"output_dir = '{out_norm}',",
+            body,
+        )
+    else:
+        body = body.rstrip() + f"\noutput_dir = '{out_norm}',\n"
+
+    return clubb_in[:stats_match.start()] + header + body + end + clubb_in[stats_match.end():]
+
+
+def edit_namelist(args, clubb_input_namelist, model_file, output_dir):
     """Apply modifications to the aggregate namelist."""
 
     with open(clubb_input_namelist) as f:
@@ -254,6 +280,9 @@ def edit_namelist(args, clubb_input_namelist, model_file):
     # Overrides
     if args.override:
         clubb_in = override_value(args.override, clubb_in)
+
+    # Route CLUBB outputs directly into the selected directory.
+    clubb_in = _set_stats_output_dir(clubb_in, output_dir)
 
     # Save back
     with open(clubb_input_namelist, "w") as f:
@@ -316,7 +345,7 @@ def main():
         help="Runs the legacy compiled version of clubb_standalone (with compile.bash)"
     )
 
-    # Allow a custom output directory to be used, which all output files will be copied to at the end
+    # Allow a custom output directory to be used for all generated files.
     parser.add_argument("-out_dir", metavar="[DIR]",
         help="Output directory for results.\nDefault: output")
 
@@ -361,22 +390,18 @@ def main():
     if args.nzmax and not (args.zt_grid or args.zm_grid):
         print("\n\033[93mWARNING: Specifying --nzmax will have no effect without specifying a --zm_grid or --zt_grid\033[0m")
 
-    # Step 1: setup and aggregate namelist files into output/CASE.in
-    clubb_input_namelist, model_file, executable = setup_files_and_aggregate(args)
+    output_dir = os.path.abspath(args.out_dir) if args.out_dir else os.path.abspath(DEFAULT_OUTPUT_DIR)
+    os.makedirs(output_dir, exist_ok=True)
+
+    # Step 1: setup and aggregate namelist files into output_dir/CASE.in
+    clubb_input_namelist, model_file, executable = setup_files_and_aggregate(args, output_dir)
 
     # Step 2: edit clubb_input_namelist based on input specifications
-    edit_namelist(args, clubb_input_namelist, model_file)
+    edit_namelist(args, clubb_input_namelist, model_file, output_dir)
 
     # Step 3: run model
     print(f"=================== Running {args.case_name} ===================")
-    result = run_case(executable, args.case_name, clubb_input_namelist)
-
-    # Move output to specified output directory
-    if args.out_dir:
-        os.makedirs(args.out_dir, exist_ok=True)
-        if result == 0 and os.path.isdir(OUTPUT_DIR):
-            for f in os.listdir(OUTPUT_DIR):
-                shutil.move(os.path.join(OUTPUT_DIR, f), args.out_dir)
+    result = run_case(executable, args.case_name, clubb_input_namelist, output_dir)
 
     sys.exit(result)
 
