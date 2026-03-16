@@ -180,6 +180,11 @@ module pdf_parameter_tests
         islope_coef_spread_DG_means_w, &
         ipdf_component_stdev_factor_w
 
+    use err_info_type_module, only: &
+        err_info_type,             & ! Type
+        init_default_err_info_api, & ! Procedure(s)
+        cleanup_err_info_api
+
     implicit none
 
     type (grid), intent(inout) :: gr
@@ -195,6 +200,9 @@ module pdf_parameter_tests
     ! Local Variables
     integer, parameter :: &
       nz = 1
+
+    type(err_info_type) :: &
+      err_info
 
     integer, parameter :: &
       sclr_dim = 0 ! Number of passive scalars
@@ -693,6 +701,8 @@ module pdf_parameter_tests
     endif
 
     ! Initialize number of failed parameter sets.
+    call init_default_err_info_api( 1, err_info )
+
     num_failed_sets = 0
     l_failed_sets = .false.
     total_num_failed_sets = 0
@@ -1593,6 +1603,7 @@ module pdf_parameter_tests
                                 Skw, wprtp, wpthlp, upwp, vpwp, sqrt_wp2,& ! In 
                                 sigma_sqd_w, clubb_params(:,ibeta), mixt_frac_max_mag,    & ! In 
                                 sclrm, sclrp2, wpsclrp, l_scalar_calc,   & ! In 
+                                err_info,                                & ! In/Out
                                 mu_w_1, mu_w_2, mu_rt_1, mu_rt_2, mu_thl_1, mu_thl_2,& ! Out
                                 mu_u_1, mu_u_2, mu_v_1, mu_v_2,          & ! Out
                                 sigma_w_1_sqd, sigma_w_2_sqd, sigma_rt_1_sqd, & ! Out
@@ -2045,6 +2056,7 @@ module pdf_parameter_tests
        pdf_parameter_unit_tests = 1 ! Exit Code = 1, Fail
     endif ! total_num_failed_sets = 0
 
+    call cleanup_err_info_api( err_info )
 
     return
 

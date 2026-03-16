@@ -23,7 +23,7 @@ pipeline {
       steps {
         lock( "GPU_${env.NODE_NAME}" ) {
           sh '''ulimit -s 8388608
-                run_scripts/run_scm_all.py -debug 0 -params clubb_params_multi_col.in -max_iters 200'''
+                run_scripts/run_scm_all.py -nproc 1 -debug 0 -params clubb_params_multi_col.in -max_iters 200'''
         }
       }
     }

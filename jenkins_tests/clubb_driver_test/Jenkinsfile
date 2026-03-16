@@ -23,8 +23,8 @@ pipeline {
               module load nvhpc netcdf-fortran
               ./compile.py -gpu openacc
               ulimit -s 8388608
-              run_scripts/run_scm_all.py -min_cases -ngrdcol 8 -max_iters 200 -out_dir standalone_output_nvhpc
-              run_scripts/run_scm_all.py -min_cases -ngrdcol 8 -max_iters 200 -out_dir driver_test_output_nvhpc -driver_test
+              run_scripts/run_scm_all.py -nproc 1 -min_cases -ngrdcol 8 -max_iters 200 -out_dir standalone_output_nvhpc
+              run_scripts/run_scm_all.py -nproc 1 -min_cases -ngrdcol 8 -max_iters 200 -out_dir driver_test_output_nvhpc -driver_test
               run_scripts/run_bindiff_all.py standalone_output_nvhpc driver_test_output_nvhpc'''
       }
     }

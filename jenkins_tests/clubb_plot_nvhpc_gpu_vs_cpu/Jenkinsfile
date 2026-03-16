@@ -38,7 +38,7 @@ pipeline {
     stage('Run GPU_ACC') {
       steps {
         lock( "GPU_${env.NODE_NAME}" ) {
-          sh '''run_scripts/run_scm_all.py -priority_cases
+          sh '''run_scripts/run_scm_all.py -nproc 1 -priority_cases
                 mv output gpu_${commit}; mkdir output'''
         }
       }

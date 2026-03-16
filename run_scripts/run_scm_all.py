@@ -1,10 +1,12 @@
 #!/usr/bin/env python3
 
 import argparse
+from concurrent.futures import ProcessPoolExecutor, as_completed
+import os
 import subprocess
 import sys
+import tempfile
 from pathlib import Path
-import os
 
 # Directory where this script lives, assumes clubb/run_scripts, which is important
 # since this is used to find CLUBB_ROOT
@@ -47,86 +49,133 @@ SHORT_CASES = [
     "cloud_feedback_s11", "cloud_feedback_s12", "twp_ice"
 ]
 
-def run_case(case, options, verbose=False):
-    """Run one SCM case with run_scm.py, handle output and errors."""
+def positive_int(value):
+    """Argparse type checker for strictly positive integers."""
+    parsed = int(value)
+    if parsed < 1:
+        raise argparse.ArgumentTypeError("must be >= 1")
+    return parsed
 
-    tmp_out = "tmp_out.log"
+
+def run_case(case, options, verbose=False):
+    """Run one SCM case with run_scm.py and return (case, code, error_output)."""
     cmd = [run_scm_script] + options + [case]
 
     try:
         if verbose:
             print(f"\n[VERBOSE] Running {case}: {' '.join(cmd)}\n")
             result = subprocess.run(cmd)
-        else:
+            return case, result.returncode, ""
+
+        fd, tmp_out = tempfile.mkstemp(prefix=f"run_scm_{case}_", suffix=".log")
+        os.close(fd)
+        try:
             with open(tmp_out, "w") as log:
                 result = subprocess.run(cmd, stdout=log, stderr=subprocess.STDOUT)
 
+            error_output = ""
             if result.returncode != 0:
-                print(f"\nError in case {case}:")
                 with open(tmp_out) as f:
-                    print(f.read())
+                    error_output = f.read()
 
-        # Always clean up after run
-        Path(tmp_out).unlink(missing_ok=True)
-        return result.returncode
+            return case, result.returncode, error_output
+        finally:
+            Path(tmp_out).unlink(missing_ok=True)
 
     except Exception as e:
-        print(f"Error running {case}: {e}")
-        return 1
+        return case, 1, f"Error running {case}: {e}"
 
 
-#=================== Argument parsing ===================
+def main():
+    #=================== Argument parsing ===================
 
-parser = argparse.ArgumentParser(
-    description="Simplified CLUBB SCM runner (no nightly mode, predefined case lists)"
-)
-parser.add_argument("-all", action="store_true", help="Run ALL cases, even unmaintained ones")
-parser.add_argument("-short_cases", action="store_true", help="Run short cases only")
-parser.add_argument("-priority_cases", action="store_true", help="Run priority cases only")
-parser.add_argument("-min_cases", action="store_true", help="Run minimal case set")
-parser.add_argument("-v", "--verbose", action="store_true", help="Show output from each run_scm.py call")
+    parser = argparse.ArgumentParser(
+        description="Simplified CLUBB SCM runner (no nightly mode, predefined case lists)"
+    )
+    parser.add_argument("-all", action="store_true", help="Run ALL cases, even unmaintained ones")
+    parser.add_argument("-short_cases", action="store_true", help="Run short cases only")
+    parser.add_argument("-priority_cases", action="store_true", help="Run priority cases only")
+    parser.add_argument("-min_cases", action="store_true", help="Run minimal case set")
+    parser.add_argument(
+        "-nproc",
+        type=positive_int,
+        default=8,
+        metavar="N",
+        help="Number of processes to use (default: 8)",
+    )
+    parser.add_argument("-v", "--verbose", action="store_true", help="Show output from each run_scm.py call")
 
-args, extra_opts = parser.parse_known_args()
+    args, extra_opts = parser.parse_known_args()
 
-#=================== Determine case list ===================
+    #=================== Determine case list ===================
 
-if args.short_cases:
-    run_cases = SHORT_CASES
-    print("Performing short-cases run")
-elif args.all:
-    run_cases = ALL_CASES
-    print("Running all cases run")
-    print("WARNING: this runs unsupported cases")
-elif args.priority_cases:
-    run_cases = PRIORITY_CASES
-    print("Performing priority-cases run")
-elif args.min_cases:
-    run_cases = MIN_CASES
-    print("Performing min-cases run")
-else:
-    run_cases = STANDARD_CASES
-    print("Performing standard run")
+    if args.short_cases:
+        run_cases = SHORT_CASES
+        print("Performing short-cases run")
+    elif args.all:
+        run_cases = ALL_CASES
+        print("Running all cases run")
+        print("WARNING: this runs unsupported cases")
+    elif args.priority_cases:
+        run_cases = PRIORITY_CASES
+        print("Performing priority-cases run")
+    elif args.min_cases:
+        run_cases = MIN_CASES
+        print("Performing min-cases run")
+    else:
+        run_cases = STANDARD_CASES
+        print("Performing standard run")
 
-#=================== Run all cases ===================
+    #=================== Run all cases ===================
 
-exit_codes = []
+    max_workers = min(args.nproc, len(run_cases))
+    print(f"Using {max_workers} process(es)")
+    print("Cases to run: " + ", ".join(run_cases))
+    exit_codes = {}
 
-for case in run_cases:
-    print(f"Running {case}")
-    code = run_case(case, extra_opts, verbose=args.verbose)
-    exit_codes.append(code)
+    # Use a process pool so multiple independent SCM cases can run in parallel.
+    # max_workers limits how many case processes are active at the same time.
+    with ProcessPoolExecutor(max_workers=max_workers) as executor:
+        futures = {}
 
-#=================== Print summary ===================
+        # Submit every requested case to the worker pool and keep a mapping from
+        # each Future back to its case name so completion messages stay readable.
+        for case in run_cases:
+            futures[executor.submit(run_case, case, extra_opts, args.verbose)] = case
 
-exit_status = 0
+        # Handle results as workers finish rather than in submission order. This
+        # lets fast cases report completion immediately while slower cases continue.
+        for future in as_completed(futures):
+            case = futures[future]
+            try:
+                _, code, error_output = future.result()
+            except Exception as exc:
+                code = 1
+                error_output = f"Error running {case}: {exc}"
 
-print("\n=================== Runs Complete ===================")
-for case, code in zip(run_cases, exit_codes):
-    if code != 0:
-        print(f"{case} failure")
-        exit_status = 1
+            exit_codes[case] = code
+            if code == 0:
+                print(f"COMPLETE -- {case}")
+            else:
+                print(f"ERROR -- {case}")
+                if error_output:
+                    print(error_output)
 
-if exit_status == 0:
-    print("All cases ran to completion.")
+    #=================== Print summary ===================
 
-sys.exit(exit_status)
+    exit_status = 0
+    print("\n=================== Runs Complete ===================")
+    for case in run_cases:
+        code = exit_codes.get(case, 1)
+        if code != 0:
+            print(f"{case} failure")
+            exit_status = 1
+
+    if exit_status == 0:
+        print("All cases ran to completion.")
+
+    return exit_status
+
+
+if __name__ == "__main__":
+    sys.exit(main())

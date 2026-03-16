@@ -517,6 +517,7 @@ module pdf_closure_module
                             Skw, wprtp, wpthlp, upwp, vpwp, sqrt_wp2,               & ! In
                             sigma_sqd_w, clubb_params(:,ibeta), mixt_frac_max_mag,  & ! In
                             sclrm, sclrp2, wpsclrp, l_scalar_calc,                  & ! In
+                            err_info,                                               & ! In/Out
                             pdf_params%w_1, pdf_params%w_2,                         & ! Out
                             pdf_params%rt_1, pdf_params%rt_2,                       & ! Out
                             pdf_params%thl_1, pdf_params%thl_2,                     & ! Out
@@ -538,6 +539,7 @@ module pdf_closure_module
                             wm, rtm, thlm, wp2, rtp2, thlp2,                      & ! In
                             Skw, wprtp, wpthlp, sqrt_wp2, clubb_params(:,ibeta),  & ! In
                             sclrm, sclrp2, wpsclrp, l_scalar_calc,                & ! In
+                            err_info,                                             & ! In/Out
                             pdf_params%w_1, pdf_params%w_2,                       & ! Out
                             pdf_params%rt_1, pdf_params%rt_2,                     & ! Out
                             pdf_params%thl_1, pdf_params%thl_2,                   & ! Out
