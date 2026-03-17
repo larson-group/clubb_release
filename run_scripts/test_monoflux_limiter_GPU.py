@@ -44,7 +44,7 @@ SCRIPT_DIR = Path(__file__).resolve().parent
 REPO_ROOT = SCRIPT_DIR.parent
 
 # File paths (cmake workflow version)
-TOOLCHAIN_FILE = REPO_ROOT / "cmake" / "toolchains" / "linux_x86_64_nvfortran.cmake"
+TOOLCHAIN_FILE = REPO_ROOT / "cmake" / "toolchains" / "linux_x86_64_nvhpc.cmake"
 SOURCE_FILE = REPO_ROOT / "src" / "CLUBB_core" / "mono_flux_limiter.F90"
 PARAMS_FILE = REPO_ROOT / "input" / "tunable_parameters" / "tunable_parameters.in"
 MULTICOL_PARAMS = SCRIPT_DIR / "clubb_params_multi_col.in"
