@@ -19,6 +19,28 @@ Benchmark_cases_dir   = os.path.join(CLUBB_ROOT, "src/Benchmark_cases/")
 KK_microphys_dir      = os.path.join(CLUBB_ROOT, "src/KK_microphys/")
 G_unit_test_types_dir = os.path.join(CLUBB_ROOT, "src/G_unit_test_types/")
 
+# Maps compiler/family names (from FC or LMOD_FAMILY_COMPILER) to canonical toolchain names.
+# This lets multiple names (e.g. ifx, ifort, intel-oneapi) resolve to the same toolchain file
+COMPILER_NAME_MAP = {
+    "intel":          "intel",
+    "intel-oneapi":   "intel",
+    "intel-classic":  "intel",
+    "ifx":            "intel",
+    "ifort":          "intel",
+    "nvhpc":          "nvhpc",
+    "nvfortran":      "nvhpc",
+    "gcc":            "gcc",
+    "gnu":            "gcc",
+    "gfortran":       "gcc",
+    "ftn":            "cce", # this is uncomfortably generic, but that's what cce sets $FC to
+    "cce":            "cce",
+    "crayftn":        "cce",
+}
+
+def canonical_compiler(name):
+    """Map a compiler or family name to its canonical toolchain name."""
+    return COMPILER_NAME_MAP.get(name.lower(), name.lower())
+
 def run_and_log(cmd, logfile, term_out=True):
     """Run a subprocess command, log output, optionally print to terminal, return exit code."""
 
@@ -49,18 +71,63 @@ def to_on_off(flag: bool) -> str:
     """Convert Python bool to CMake ON/OFF string."""
     return "ON" if flag else "OFF"
 
-def configure_cmake(args, compiler, inst_dir, build_type):
+def resolve_compiler_and_toolchain(args):
+    """Identify the canonical compiler name and toolchain file to use.
 
-    """Set up toolchain file and run cmake configure step."""
+    If -toolchain is given by the user, it is used directly and no file lookup occurs.
+    Otherwise, LMOD_FAMILY_COMPILER is tried first, then FC, using the canonical name
+    from COMPILER_NAME_MAP to locate a matching toolchain file.
+    Exits with an error if no toolchain file can be found.
 
-    # Set toolchain file
-    if args.toolchain:
-        toolchain_file = args.toolchain
+    Returns (compiler_name, toolchain_file).
+    """
+    kernel = os.uname().sysname.lower()
+    arch   = os.uname().machine
+
+    lmod_family = os.environ.get("LMOD_FAMILY_COMPILER")
+    fc          = os.environ.get("FC")
+
+    # Derive canonical compiler name for build/install directory naming
+    if lmod_family:
+        compiler = canonical_compiler(lmod_family)
+    elif fc and shutil.which(fc):
+        compiler = canonical_compiler(os.path.basename(shutil.which(fc)))
     else:
-        kernel = os.uname().sysname.lower()
-        arch = os.uname().machine
-        toolchain_file = os.path.join(CLUBB_ROOT, f"cmake/toolchains/{kernel}_{arch}_{compiler}.cmake") 
-        print(f"Using inferred toolchain file: {toolchain_file}")
+        compiler = "unknown"
+
+    # User-specified toolchain: use it directly, skip file lookup
+    if args.toolchain:
+        return compiler, args.toolchain
+
+    # Build a list of canonical names to try, in preference order
+    candidates = []
+    if lmod_family:
+        candidates.append(canonical_compiler(lmod_family))
+    if fc and shutil.which(fc):
+        fc_canonical = canonical_compiler(os.path.basename(shutil.which(fc)))
+        if fc_canonical not in candidates:
+            candidates.append(fc_canonical)
+
+    if not candidates:
+        print(f"ERROR: No compiler detected (FC or LMOD_FAMILY_COMPILER) and no -toolchain specified")
+        sys.exit(1)
+
+    for name in candidates:
+        toolchain_file = os.path.join(CLUBB_ROOT, f"cmake/toolchains/{kernel}_{arch}_{name}.cmake")
+        if os.path.isfile(toolchain_file):
+            print(f"Using inferred toolchain file: {toolchain_file}")
+            return compiler, toolchain_file
+
+    print(f"ERROR: No toolchain file found for detected compilers/kernel/arch combination:")
+    for name in candidates:
+        print(f"  cmake/toolchains/{kernel}_{arch}_{name}.cmake")
+    print(f"  Use -toolchain to specify one explicitly.")
+    sys.exit(1)
+
+
+def configure_cmake(args, toolchain_file, inst_dir, build_type):
+
+    """Run the cmake configure step."""
 
     print(f"about to cmnake {os.getcwd()}")
 
@@ -72,7 +139,7 @@ def configure_cmake(args, compiler, inst_dir, build_type):
         f"-DSILHS={to_on_off(not args.disable_silhs)}",        # default ON
         f"-DENABLE_OMP={to_on_off(args.openmp)}",              # default OFF
         f"-DTUNING={to_on_off(args.tuning)}",                  # default OFF
-        f"-DUSE_GPTL={to_on_off(args.gptl)}",                      # default OFF
+        f"-DUSE_GPTL={to_on_off(args.gptl)}",                  # default OFF
         f"-DCMAKE_TOOLCHAIN_FILE={toolchain_file}",
         f"-DCMAKE_INSTALL_PREFIX={inst_dir}",
         f"-DPRECISION={args.precision}",
@@ -206,22 +273,8 @@ def main():
     # Our CMake files distinguish between "Debug" and "Release" for CMAKE_BUILD_TYPE
     build_type = "Debug" if args.debug else "Release"
 
-
-    # Determine compiler using "FC" (fortran compiler) environment variable.
-    # This is set on larson-group computers through the use of lmod (module system).
-    # FC is not required for cmake
-    if "FC" in os.environ:
-      fc = os.environ.get("FC")
-      compiler = os.path.basename(shutil.which(fc))
-    else:
-
-      if args.toolchain:
-        print(f"WARNING: No Fortran compiler (FC) set in user environment. Setting compiler name to 'unknown'")
-        print(f"         Relying on specified toolchain for cmake {args.toolchain}")
-      else:
-        # If we can't find a compiler, and no toolchain is specified, this is an error
-        print(f"ERROR: No Fortran compiler (FC) detected and no entry specified for -toolchain")
-        sys.exit(1)
+    # Determine compiler and toolchain file to use based on environment and arguments
+    compiler, toolchain_file = resolve_compiler_and_toolchain(args)
 
     subdir_suffix =  ""
     subdir_suffix += f"_DEBUG" if args.debug else ""
@@ -242,7 +295,7 @@ def main():
     print(f"Setting CLUBB installation dir: {inst_dir}")
 
     # Run configure step and save installation directory
-    configure_cmake(args, compiler, inst_dir, build_type)
+    configure_cmake(args, toolchain_file, inst_dir, build_type)
 
     # Compile with cmake command
     run_cmake_build(build_log)
