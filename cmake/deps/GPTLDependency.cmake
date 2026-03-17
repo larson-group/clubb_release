@@ -11,6 +11,20 @@ cmake_minimum_required(VERSION 3.14)
 
 include(ExternalProject)
 
+# Only link in openmp if ENABLE_OMP has been set to TRUE, otherwise
+# we assume it's unavailable and disable it in the GPTL build
+if(ENABLE_OMP)
+  set(GPTL_CONFIGURE_OPENMP_ARG "")
+  if(TARGET openmp-fortran)
+    list(APPEND OPENMP_LIB openmp-fortran)
+  else()
+    message(FATAL_ERROR "ENABLE_OMP is ON but target 'openmp-fortran' is unavailable")
+  endif()
+else()
+  set(GPTL_CONFIGURE_OPENMP_ARG "--disable-openmp")
+  set(OPENMP_LIB "")
+endif()
+
 # -----------------------------------------------------------------------------
 # 1. Try to find GPTL in environment or provided root
 # -----------------------------------------------------------------------------
@@ -49,6 +63,7 @@ if(GPTL_LIBRARIES AND GPTL_INCLUDE_DIR)
   if(UNWIND_LIBRARY)
     list(APPEND GPTL_ALL_LIBS ${UNWIND_LIBRARY})
   endif()
+  list(APPEND GPTL_ALL_LIBS ${OPENMP_LIB})
 
   set_target_properties(gptl PROPERTIES
     INTERFACE_INCLUDE_DIRECTORIES "${GPTL_INCLUDE_DIR}"
@@ -83,7 +98,7 @@ ExternalProject_Add(GPTL_project
     touch aclocal.m4 configure Makefile.in fortran/Makefile.in config.h.in &&
     LC_ALL=C.UTF-8 LANG=C.UTF-8 \
     CC=${CMAKE_C_COMPILER} FC=${CMAKE_Fortran_COMPILER} \
-    ./configure --prefix=${GPTL_PREFIX} --enable-fortran"
+    ./configure --prefix=${GPTL_PREFIX} --enable-fortran --disable-shared --enable-static ${GPTL_CONFIGURE_OPENMP_ARG}"
   BUILD_COMMAND /bin/sh -c "
     # Remove problematic instrumentation flag and build
     find . -name Makefile | xargs sed -i 's/-finstrument-functions//g';
@@ -118,6 +133,7 @@ set(GPTL_LIBRARIES
   ${GPTL_PREFIX}/lib/libgptlf.a
   ${GPTL_PREFIX}/lib/libgptl.a
 )
+list(APPEND GPTL_LIBRARIES ${OPENMP_LIB})
 
 set_target_properties(gptl PROPERTIES
   INTERFACE_INCLUDE_DIRECTORIES "${GPTL_INCLUDE_DIR}"
