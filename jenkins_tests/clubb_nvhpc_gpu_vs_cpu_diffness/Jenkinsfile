@@ -9,7 +9,7 @@ pipeline {
         sh '''sed -i "s:penta_solve_method.*:penta_solve_method = 2:g" input/tunable_parameters/configurable_model_flags.in'''
         sh '''sed -i "s:tridiag_solve_method.*:tridiag_solve_method = 2:g" input/tunable_parameters/configurable_model_flags.in'''
         sh '''sed -i "s:lh_straight_mc.*:lh_straight_mc = true:g" input/tunable_parameters/configurable_model_flags.in'''
-        sh '''sed -i "s:set(GPU_DEFINITIONS CLUBB_GPU CUDA):set(GPU_DEFINITIONS CLUBB_GPU):g" cmake/toolchains/linux_x86_64_nvfortran.cmake'''
+        sh '''sed -i "s:set(GPU_DEFINITIONS CLUBB_GPU CUDA):set(GPU_DEFINITIONS CLUBB_GPU):g" cmake/toolchains/linux_x86_64_nvhpc.cmake'''
         sh '''run_scripts/create_multi_col_params.py -n 32 -param_file input/tunable_parameters/tunable_parameters.in -mode dup_tweak'''
       }
     }
