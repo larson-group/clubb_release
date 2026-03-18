@@ -56,8 +56,7 @@ module lapack_wrap
         clubb_fatal_error                 ! Constants
 
     use lapack_interfaces, only: &
-        lapack_gtsvx, &      ! Procedure
-        lapack_isnan
+        lapack_gtsvx         ! Procedure
 
     use err_info_type_module, only: &
         err_info_type        ! Type
@@ -163,18 +162,6 @@ module lapack_wrap
 
     case( 0 )
       ! Success
-      do i = 1, ngrdcol
-        if ( clubb_at_least_debug_level_api( 0 ) ) then
-          if ( lapack_isnan( ndim, nrhs, soln(i,:,:) ) ) then
-            write(fstderr, *) err_info%err_header(i)
-            write(fstderr, *) "lapack_tridiag_solvex"
-            write(fstderr, *) trim( solve_type )// &
-              "NaNs in solution", info
-            ! Error in grid column i -> set ith entry to clubb_fatal_error
-            err_info%err_code(i) = clubb_fatal_error
-          end if
-        end if
-      end do
 
     case( 1: )
       if ( info == ndim+1 ) then
@@ -221,12 +208,10 @@ module lapack_wrap
 #endif /*E3SM*/
 
     use error_code, only: &
-        clubb_at_least_debug_level_api, & ! Procedure
         clubb_fatal_error                 ! Constants
 
     use lapack_interfaces, only: &
-        lapack_gtsv, &       ! Procedure
-        lapack_isnan
+        lapack_gtsv          ! Procedure
 
     use err_info_type_module, only: &
         err_info_type        ! Type
@@ -309,19 +294,6 @@ module lapack_wrap
 
     case( 0 )
       ! Success
-      do i = 1, ngrdcol
-        if ( clubb_at_least_debug_level_api( 0 ) ) then
-          if ( lapack_isnan( ndim, nrhs, rhs(i,:,:) ) ) then
-            write(fstderr, *) err_info%err_header(i)
-            write(fstderr, *) "lapack_tridiag_solve"
-            write(fstderr, *) trim( solve_type )// &
-              "NaNs in solution", info
-            ! Error in grid column i -> set ith entry to clubb_fatal_error
-            err_info%err_code(i) = clubb_fatal_error
-          end if
-        end if
-      end do
-
       soln = rhs
 
     case( 1: )
@@ -369,8 +341,7 @@ module lapack_wrap
         clubb_fatal_error                 ! Constants
 
     use lapack_interfaces, only: &
-        lapack_gbsvx, &      ! Procedures
-        lapack_isnan
+        lapack_gbsvx         ! Procedures
 
     use err_info_type_module, only: &
         err_info_type        ! Type
@@ -537,18 +508,6 @@ module lapack_wrap
 
     case( 0 )
       ! Success!
-      do i = 1, ngrdcol
-        if ( clubb_at_least_debug_level_api( 0 ) ) then
-          if ( lapack_isnan( ndim, nrhs, soln(i,:,:) ) ) then
-            write(fstderr, *) err_info%err_header(i)
-            write(fstderr, *) "lapack_band_solvex"
-            write(fstderr, *) trim( solve_type )// &
-              "NaNs in solution", info
-            ! Error in grid column i -> set ith entry to clubb_fatal_error
-            err_info%err_code(i) = clubb_fatal_error
-          end if
-        end if
-      end do
 
     case( 1: )
       if ( info == ndim+1 ) then
@@ -588,12 +547,10 @@ module lapack_wrap
         core_rknd ! Variable(s)
 
     use error_code, only: &
-        clubb_at_least_debug_level_api, & ! Procedure
         clubb_fatal_error                 ! Constants
 
     use lapack_interfaces, only: &
-        lapack_gbsv, &       ! Procedures
-        lapack_isnan
+        lapack_gbsv          ! Procedures
 
     use err_info_type_module, only: &
         err_info_type        ! Type
@@ -795,19 +752,6 @@ module lapack_wrap
           err_info%err_code = clubb_fatal_error
     case( 0 )
           ! Success!
-          if ( clubb_at_least_debug_level_api( 0 ) ) then
-            do i = 1, ngrdcol
-              if ( lapack_isnan( ndim, nrhs, rhs(i,:,:) ) ) then
-                write(fstderr, *) err_info%err_header(i)
-                write(fstderr, *) "lapack_band_solve"
-                write(fstderr, *) trim( solve_type )// &
-                "NaNs in solution", info
-                ! Error in grid column i -> set ith entry to clubb_fatal_error
-                err_info%err_code(i) = clubb_fatal_error
-              end if
-            end do
-          end if
-
           soln = rhs
 
     case( 1: )

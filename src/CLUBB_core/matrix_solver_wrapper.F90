@@ -3,12 +3,14 @@
 !===============================================================================
 module matrix_solver_wrapper
 
+  use, intrinsic :: ieee_arithmetic, only: &
+    ieee_is_nan
+
   use clubb_precision, only: &
     core_rknd ! Variable(s)
 
   use error_code, only: &
     clubb_at_least_debug_level_api, & ! Procedure
-    clubb_no_error,             & ! Constant
     clubb_fatal_error
 
   use constants_clubb, only: &
@@ -37,7 +39,13 @@ module matrix_solver_wrapper
       module procedure tridiag_solve_single_rhs_multiple_lhs
       module procedure tridiag_solve_multiple_rhs_lhs
   end interface
-            
+
+  interface check_nan_soln
+      module procedure check_nan_soln_1d
+      module procedure check_nan_soln_2d
+      module procedure check_nan_soln_3d
+  end interface
+
   contains
 
 
@@ -115,7 +123,7 @@ module matrix_solver_wrapper
     real( kind = core_rknd ), dimension(ngrdcol,ndim) :: &
       dummy_soln
 
-    integer :: i, k, its
+    integer :: its
 
     ! ----------------------- Begin Code -----------------------
 
@@ -177,7 +185,14 @@ module matrix_solver_wrapper
         ! General error -> set all entries to clubb_fatal_error
         err_info%err_code = clubb_fatal_error
       end if
+      return
 
+    end if
+
+    if ( clubb_at_least_debug_level_api( 1 ) ) then
+      !$acc update host( soln )
+      call check_nan_soln( solve_name, penta_solve_method, ngrdcol, ndim, soln, &
+                           err_info )
     end if
 
     return
@@ -255,7 +270,7 @@ module matrix_solver_wrapper
     real( kind = core_rknd ), dimension(ngrdcol,ndim,nrhs) :: &
       dummy_soln
 
-    integer :: i, k, j, its
+    integer :: j, its
 
     ! ----------------------- Begin Code -----------------------
 
@@ -324,7 +339,14 @@ module matrix_solver_wrapper
         ! General error -> set all entries to clubb_fatal_error
         err_info%err_code = clubb_fatal_error
       end if
+      return
 
+    end if
+
+    if ( clubb_at_least_debug_level_api( 1 ) ) then
+      !$acc update host( soln )
+      call check_nan_soln( solve_name, penta_solve_method, ngrdcol, ndim, nrhs, soln, &
+                           err_info )
     end if
 
     return
@@ -434,7 +456,13 @@ module matrix_solver_wrapper
         ! General error -> set all entries to clubb_fatal_error
         err_info%err_code = clubb_fatal_error
       end if
+      return
 
+    end if
+
+    if ( clubb_at_least_debug_level_api( 1 ) ) then
+      call check_nan_soln( solve_name, tridiag_solve_method, ndim, soln, &
+                           err_info )
     end if
 
     return
@@ -548,7 +576,14 @@ module matrix_solver_wrapper
         ! General error -> set all entries to clubb_fatal_error
         err_info%err_code = clubb_fatal_error
       end if
+      return
 
+    end if
+
+    if ( clubb_at_least_debug_level_api( 1 ) ) then
+      !$acc update host( soln )
+      call check_nan_soln( solve_name, tridiag_solve_method, ngrdcol, ndim, soln, &
+                           err_info )
     end if
 
     return
@@ -662,11 +697,119 @@ module matrix_solver_wrapper
         ! General error -> set all entries to clubb_fatal_error
         err_info%err_code = clubb_fatal_error
       end if
+      return
 
+    end if
+
+    if ( clubb_at_least_debug_level_api( 1 ) ) then
+      !$acc update host( soln )
+      call check_nan_soln( solve_name, tridiag_solve_method, ngrdcol, ndim, nrhs, soln, &
+                           err_info )
     end if
 
     return
 
   end subroutine tridiag_solve_multiple_rhs_lhs
+
+  subroutine check_nan_soln_1d( solve_name, solve_method, ndim, soln, &
+                                err_info )
+
+    use err_info_type_module, only: &
+      err_info_type
+
+    implicit none
+
+    character(len=*), intent(in) :: &
+      solve_name
+
+    integer, intent(in) :: &
+      solve_method, ndim
+
+    real( kind = core_rknd ), intent(in), dimension(ndim) :: &
+      soln
+
+    type(err_info_type), intent(inout) :: &
+      err_info
+
+    if ( any( ieee_is_nan( soln ) ) ) then
+      write(fstderr, *) err_info%err_header_global
+      write(fstderr, *) "solve_method =", solve_method
+      write(fstderr, *) trim( solve_name )//" NaNs in solution"
+      err_info%err_code = clubb_fatal_error
+    end if
+
+    return
+
+  end subroutine check_nan_soln_1d
+
+  subroutine check_nan_soln_2d( solve_name, solve_method, ngrdcol, ndim, soln, &
+                                err_info )
+
+    use err_info_type_module, only: &
+      err_info_type
+
+    implicit none
+
+    character(len=*), intent(in) :: &
+      solve_name
+
+    integer, intent(in) :: &
+      solve_method, ngrdcol, ndim
+
+    real( kind = core_rknd ), intent(in), dimension(ngrdcol,ndim) :: &
+      soln
+
+    type(err_info_type), intent(inout) :: &
+      err_info
+
+    integer :: i
+
+    do i = 1, ngrdcol
+      if ( any( ieee_is_nan( soln(i,:) ) ) ) then
+        write(fstderr, *) err_info%err_header(i)
+        write(fstderr, *) "solve_method =", solve_method
+        write(fstderr, *) trim( solve_name )//" NaNs in solution"
+        err_info%err_code(i) = clubb_fatal_error
+      end if
+    end do
+
+    return
+
+  end subroutine check_nan_soln_2d
+
+  subroutine check_nan_soln_3d( solve_name, solve_method, ngrdcol, ndim, nrhs, soln, &
+                                err_info )
+
+    use err_info_type_module, only: &
+      err_info_type
+
+    implicit none
+
+    character(len=*), intent(in) :: &
+      solve_name
+
+    integer, intent(in) :: &
+      solve_method, ngrdcol, ndim, nrhs
+
+    real( kind = core_rknd ), intent(in), dimension(ngrdcol,ndim,nrhs) :: &
+      soln
+
+    type(err_info_type), intent(inout) :: &
+      err_info
+
+    integer :: i
+
+    do i = 1, ngrdcol
+      if ( any( ieee_is_nan( soln(i,:,:) ) ) ) then
+        write(fstderr, *) err_info%err_header(i)
+        write(fstderr, *) "solve_method =", solve_method
+        write(fstderr, *) trim( solve_name )//" NaNs in solution"
+        err_info%err_code(i) = clubb_fatal_error
+      end if
+    end do
+
+    return
+
+  end subroutine check_nan_soln_3d
 
 end module matrix_solver_wrapper
