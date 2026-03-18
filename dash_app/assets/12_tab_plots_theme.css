@@ -1,0 +1,262 @@
+#app-root.theme-dark .plots-tab-layout {
+  color: #e5e7eb;
+}
+
+#app-root.theme-light .plots-tab-layout {
+  color: #0f172a;
+}
+
+.plots-tab-layout {
+  align-items: stretch;
+}
+
+.plots-pane-divider {
+  width: 8px;
+  box-sizing: border-box;
+  min-height: 100%;
+  align-self: stretch;
+  cursor: col-resize;
+  border-radius: 8px;
+  pointer-events: auto;
+  position: relative;
+  z-index: 5;
+}
+
+#app-root.theme-dark .plots-pane-divider {
+  background: #1e293b;
+  border-left: 1px solid #334155;
+  border-right: 1px solid #334155;
+}
+
+#app-root.theme-light .plots-pane-divider {
+  background: #cbd5e1;
+  border-left: 1px solid #94a3b8;
+  border-right: 1px solid #94a3b8;
+}
+
+body.plots-ui-dragging,
+body.plots-ui-dragging * {
+  user-select: none !important;
+  cursor: col-resize !important;
+}
+
+#app-root .plots-card {
+  border: 1px solid #c9c9c9;
+  border-radius: 6px;
+  align-self: start;
+}
+
+#plots-plot-container {
+  align-items: start;
+}
+
+#app-root .plots-card-size-large {
+  grid-column: span 2;
+}
+
+#app-root .plots-graph-shell {
+  border: 1px solid #bdbdbd;
+  border-radius: 6px;
+  padding: 6px;
+  position: relative;
+}
+
+#app-root .plots-card-size-toggle {
+  border: 1px solid;
+  border-radius: 999px;
+  width: 28px;
+  height: 28px;
+  cursor: pointer;
+  font-weight: 700;
+  line-height: 1;
+  padding: 0;
+  flex: 0 0 auto;
+}
+
+#app-root.theme-dark .plots-card-size-toggle-normal {
+  background: #166534;
+  color: #dcfce7;
+  border-color: #22c55e;
+}
+
+#app-root.theme-light .plots-card-size-toggle-normal {
+  background: #22c55e;
+  color: #0f172a;
+  border-color: #15803d;
+}
+
+#app-root.theme-dark .plots-card-size-toggle-large {
+  background: #a16207;
+  color: #fef3c7;
+  border-color: #f59e0b;
+}
+
+#app-root.theme-light .plots-card-size-toggle-large {
+  background: #f59e0b;
+  color: #0f172a;
+  border-color: #b45309;
+}
+
+#app-root .plots-card .dash-dropdown .Select-input > input {
+  caret-color: transparent;
+  background: transparent !important;
+  border: none !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  box-shadow: none !important;
+  outline: none !important;
+}
+
+#app-root .plots-card .dash-dropdown .Select-input > input:focus {
+  outline: none !important;
+  box-shadow: none !important;
+  border: none !important;
+  background: transparent !important;
+}
+
+#app-root .plots-card .dash-dropdown .Select--single > .Select-control .Select-value,
+#app-root .plots-card .dash-dropdown .Select-placeholder {
+  padding-left: 10px;
+}
+
+#app-root .plots-graph-shell .js-plotly-plot .plotly .modebar,
+#app-root .plots-graph-shell .js-plotly-plot .plotly .modebar-container {
+  top: 30px !important;
+  right: 50px !important;
+}
+
+#app-root.theme-dark .plots-card {
+  background: #111827;
+  border-color: #334155;
+}
+
+#app-root.theme-light .plots-card {
+  background: #f8fafc;
+  border-color: #cbd5e1;
+}
+
+#app-root.theme-dark .plots-graph-shell {
+  background: #0f172a;
+  border-color: #334155;
+}
+
+#app-root.theme-light .plots-graph-shell {
+  background: #ffffff;
+  border-color: #cbd5e1;
+}
+
+#app-root .plots-card-info {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  border-radius: 999px;
+  border: 1px solid;
+  font-size: 11px;
+  font-weight: 700;
+  cursor: help;
+  line-height: 1;
+  user-select: none;
+}
+
+#app-root.theme-dark .plots-card-info {
+  color: #ffffff;
+  border-color: #64748b;
+  background: #334155;
+}
+
+#app-root.theme-light .plots-card-info {
+  color: #ffffff;
+  border-color: #64748b;
+  background: #475569;
+}
+
+#app-root .plots-card-close {
+  border: 1px solid #64748b;
+  border-radius: 999px;
+  width: 28px;
+  height: 28px;
+  cursor: pointer;
+  font-weight: 700;
+  line-height: 1;
+  padding: 0;
+  flex: 0 0 auto;
+}
+
+#app-root.theme-dark .plots-card-close {
+  background: #7f1d1d;
+  color: #fee2e2;
+  border-color: #b91c1c;
+}
+
+#app-root.theme-light .plots-card-close {
+  background: #ef4444;
+  color: #ffffff;
+  border-color: #b91c1c;
+}
+
+#app-root .plots-slider-block {
+  padding-top: 12px;
+  padding-bottom: 0px;
+  min-height: 60px;
+}
+
+#app-root .plots-slider-block .rc-slider,
+#app-root .plots-slider-block .rc-slider-with-marks {
+  margin-top: 6px;
+}
+
+#app-root .plots-slider-block .rc-slider-mark-text,
+#app-root .plots-slider-block .rc-slider-tooltip-inner {
+  font-size: 11pt;
+}
+
+#app-root .plots-constant-param-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 6px 50px;
+  margin-top: 4px;
+}
+
+#app-root .plots-constant-param-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 6px;
+  align-items: baseline;
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+#app-root .plots-constant-param-name {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+#app-root .plots-constant-param-value {
+  justify-self: end;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+@media (max-width: 1100px) {
+  #app-root .plots-card-size-large {
+    grid-column: span 1;
+  }
+}
+
+#app-root.theme-dark .plots-constant-param-row:nth-child(odd) {
+  background: rgba(148, 163, 184, 0.08);
+}
+
+#app-root.theme-dark .plots-constant-param-row:nth-child(even) {
+  background: rgba(148, 163, 184, 0.03);
+}
+
+#app-root.theme-light .plots-constant-param-row:nth-child(odd) {
+  background: rgba(148, 163, 184, 0.14);
+}
+
+#app-root.theme-light .plots-constant-param-row:nth-child(even) {
+  background: rgba(148, 163, 184, 0.06);
+}

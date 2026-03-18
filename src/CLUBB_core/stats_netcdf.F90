@@ -845,12 +845,12 @@ contains
       nparam_strlen = len( param_names(1) )
       ret_code = nf90_def_dim( stats%ncid, "param_strlen", nparam_strlen, stats%param_strlen_dimid )
 
-      ret_code = nf90_def_var( stats%ncid, "param_name", NF90_CHAR, &
-                          (/ stats%param_strlen_dimid, stats%param_dimid /), stats%param_name_varid )
-
       ret_code = nf90_def_dim( stats%ncid, "param", nparams, stats%param_dimid )
       ret_code = nf90_def_var( stats%ncid, "param", NF90_DOUBLE, (/ stats%param_dimid /), stats%param_varid )
       ret_code = nf90_put_att( stats%ncid, stats%param_varid, "units", "index" )
+
+      ret_code = nf90_def_var( stats%ncid, "param_name", NF90_CHAR, &
+                          (/ stats%param_strlen_dimid, stats%param_dimid /), stats%param_name_varid )
 
       ret_code = nf90_def_var( stats%ncid, "clubb_params", NF90_DOUBLE, &
                           (/ stats%col_dimid, stats%param_dimid /), stats%clubb_params_varid )
@@ -1109,7 +1109,7 @@ contains
 
   end subroutine stats_update_scalar
 
-  subroutine stats_update_1d( name, values, stats, icol, level )
+  subroutine stats_update_1d( name, values, stats, icol )
 
     ! Description:
     !   Add sampled 1D values to the accumulation buffer for a named variable.
@@ -1130,8 +1130,7 @@ contains
 
     ! ------------------------ Optional Ins ------------------------
     integer, intent(in), optional :: &
-      icol, &             ! Column index when values represents one-column profile [-]
-      level               ! Level index when values represents all columns at one level [-]
+      icol                ! Column index when values represents one-column profile [-]
 
     ! ------------------------- Locals ------------------------
     integer :: id
@@ -1169,7 +1168,7 @@ contains
 
   end subroutine stats_update_1d
 
-  subroutine stats_update_2d( name, values, stats, icol, level )
+  subroutine stats_update_2d( name, values, stats )
 
     ! Description:
     !   Add sampled full-field 2D values to the accumulation buffer for a named
@@ -1186,11 +1185,6 @@ contains
     ! ---------------------- Input/Output ---------------------
     type(stats_type), intent(inout) :: &
       stats           ! Stats runtime context and accumulation buffers [-]
-
-    ! ------------------------ Optional Ins ------------------------
-    integer, intent(in), optional :: &
-      icol, &         ! Optional single-column selector (unused in 2D path) [-]
-      level           ! Optional single-level selector (unused in 2D path) [-]
 
     ! ------------------------- Locals ------------------------
     integer :: id
@@ -1331,7 +1325,7 @@ contains
 
   end subroutine stats_begin_budget_1d
 
-  subroutine stats_begin_budget_2d( name, values, stats, icol )
+  subroutine stats_begin_budget_2d( name, values, stats )
 
     ! Description:
     !   Begin budget accumulation for full-field 2D payloads by subtracting the
@@ -1348,10 +1342,6 @@ contains
     ! ---------------------- Input/Output ---------------------
     type(stats_type), intent(inout) :: &
       stats                 ! Stats runtime context and budget buffer state [-]
-
-    ! ------------------------ Optional Ins ------------------------
-    integer, intent(in), optional :: &
-      icol                  ! Optional column selector (unused in 2D path) [-]
 
     ! ------------------------- Locals ------------------------
     integer :: id
@@ -1426,7 +1416,7 @@ contains
 
   end subroutine stats_update_budget_scalar
 
-  subroutine stats_update_budget_1d( name, values, stats, icol, level )
+  subroutine stats_update_budget_1d( name, values, stats, icol )
 
     ! Description:
     !   Add intermediate budget contributions from 1D payloads during an active
@@ -1446,8 +1436,7 @@ contains
 
     ! ------------------------ Optional Ins ------------------------
     integer, intent(in), optional :: &
-      icol, &             ! Optional column index for one-column profile update [-]
-      level               ! Optional level index for all-column single-level update [-]
+      icol                ! Optional column index for one-column profile update [-]
 
     ! ------------------------- Locals ------------------------
     integer :: id
@@ -1476,7 +1465,7 @@ contains
 
   end subroutine stats_update_budget_1d
 
-  subroutine stats_update_budget_2d( name, values, stats, icol, level )
+  subroutine stats_update_budget_2d( name, values, stats )
 
     ! Description:
     !   Add intermediate budget contributions from full-field 2D payloads during
@@ -1493,11 +1482,6 @@ contains
     ! ---------------------- Input/Output ---------------------
     type(stats_type), intent(inout) :: &
       stats               ! Stats runtime context and budget buffer state [-]
-
-    ! ------------------------ Optional Ins ------------------------
-    integer, intent(in), optional :: &
-      icol, &             ! Optional column selector (unused in 2D path) [-]
-      level               ! Optional level selector (unused in 2D path) [-]
 
     ! ------------------------- Locals ------------------------
     integer :: &
@@ -1660,7 +1644,7 @@ contains
 
   end subroutine stats_finalize_budget_1d
 
-  subroutine stats_finalize_budget_2d( name, values, stats, icol, l_count_sample )
+  subroutine stats_finalize_budget_2d( name, values, stats, l_count_sample )
 
     ! Description:
     !   Close an active budget window using full-field 2D payloads, and
@@ -1679,9 +1663,6 @@ contains
       stats               ! Stats runtime context and budget/sample state [-]
 
     ! ------------------------ Optional Ins ------------------------
-    integer, intent(in), optional :: &
-      icol                ! Optional column selector (unused in 2D path) [-]
-
     logical, intent(in), optional :: &
       l_count_sample      ! If true, increment sample counters for averaging [-]
 

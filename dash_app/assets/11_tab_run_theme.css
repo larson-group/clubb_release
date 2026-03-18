@@ -37,7 +37,36 @@
 .run-param-list {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
-  gap: 6px 12px;
+  gap: 6px 50px;
+}
+
+#app-root .run-multicol-row .dash-dropdown .Select-input > input {
+  caret-color: transparent;
+  background: transparent !important;
+  border: none !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  box-shadow: none !important;
+  outline: none !important;
+}
+
+#app-root .run-multicol-row .dash-dropdown .Select-input > input:focus {
+  outline: none !important;
+  box-shadow: none !important;
+  border: none !important;
+  background: transparent !important;
+}
+
+#app-root .run-multicol-row .dash-dropdown .Select--single > .Select-control .Select-value,
+#app-root .run-multicol-row .dash-dropdown .Select-placeholder {
+  padding-left: 10px;
+}
+
+#app-root .run-right-pane .rc-slider-mark-text,
+#app-root .run-right-pane .rc-slider-tooltip-inner,
+#app-root .run-left-pane .rc-slider-mark-text,
+#app-root .run-left-pane .rc-slider-tooltip-inner {
+  font-size: 11pt;
 }
 
 .run-settings-heading {
@@ -65,6 +94,24 @@
 .run-param-container {
   min-width: 0;
   width: 100%;
+}
+
+.run-param-row--default {
+  outline: none;
+  opacity: 1;
+  filter: none;
+}
+
+.run-param-row--changed {
+  outline: 2px solid #f59e0b;
+  opacity: 1;
+  filter: none;
+}
+
+.run-param-row--changed-disabled {
+  outline: 2px solid #f59e0b;
+  opacity: 0.5;
+  filter: grayscale(0.25);
 }
 
 .run-flag-container {

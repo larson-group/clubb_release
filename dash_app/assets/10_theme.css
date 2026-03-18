@@ -38,6 +38,7 @@ body,
   background: #1f2937 !important;
   color: #cbd5e1 !important;
   border-color: #334155 !important;
+  font-size: 16pt !important;
 }
 
 #app-root.theme-dark .tab--selected {
@@ -50,6 +51,7 @@ body,
   background: #e2e8f0 !important;
   color: #334155 !important;
   border-color: #cbd5e1 !important;
+  font-size: 16pt !important;
 }
 
 #app-root.theme-light .tab--selected {

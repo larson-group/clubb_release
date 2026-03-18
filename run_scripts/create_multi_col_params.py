@@ -5,6 +5,10 @@ import os
 import numpy as np
 import argparse
 
+
+def _parse_float(text):
+    return float(text.replace("D", "E").replace("d", "e"))
+
 # detect any &multicol* namelist (e.g., &multicol_def)
 def is_single_col_list(path: str) -> bool:
     """Return False if a &multicol* namelist is present (case-insensitive)."""
@@ -112,6 +116,72 @@ def hypergrid(samples_per_param, parsed_params, tweak_list):
     return clubb_params, ngrdcol
 
 
+def parse_hypergrid_range_spec(spec_text):
+    """
+    Parse a custom hypergrid specification of the form:
+      PARAM1/MIN:MAX/NPOINTS,PARAM2/MIN:MAX/NPOINTS,...
+    """
+    specs = []
+    for raw_item in (spec_text or "").split(","):
+        item = raw_item.strip()
+        if not item:
+            continue
+        parts = item.split("/")
+        if len(parts) != 3:
+            raise ValueError(
+                f"Invalid -hr entry '{item}'. Expected PARAM/MIN:MAX/NPOINTS."
+            )
+        param_name = parts[0].strip()
+        if not param_name:
+            raise ValueError(f"Invalid -hr entry '{item}': missing parameter name.")
+        try:
+            min_text, max_text = parts[1].split(":", 1)
+        except ValueError as exc:
+            raise ValueError(
+                f"Invalid -hr entry '{item}'. Range must look like MIN:MAX."
+            ) from exc
+        min_value = _parse_float(min_text.strip())
+        max_value = _parse_float(max_text.strip())
+        npoints = int(parts[2].strip())
+        if npoints < 1:
+            raise ValueError(
+                f"Invalid -hr entry '{item}'. NPOINTS must be >= 1."
+            )
+        specs.append(
+            {
+                "name": param_name,
+                "min": min_value,
+                "max": max_value,
+                "npoints": npoints,
+            }
+        )
+    if not specs:
+        raise ValueError("The -hr specification did not contain any parameter ranges.")
+    return specs
+
+
+def custom_hypergrid(parsed_params, range_specs):
+    """Create a hypergrid using explicit per-parameter ranges and point counts."""
+    ngrdcol = 1
+    param_grids = []
+    tweak_list = []
+    for spec in range_specs:
+        param_name = spec["name"]
+        if param_name not in parsed_params:
+            raise KeyError(f"Parameter '{param_name}' was not found in the input params file.")
+        tweak_list.append(param_name)
+        npoints = spec["npoints"]
+        ngrdcol *= npoints
+        param_grids.append(np.linspace(spec["min"], spec["max"], npoints))
+
+    mesh = np.meshgrid(*param_grids, indexing='ij')
+    clubb_params = duplicate_params(ngrdcol, parsed_params)
+    for i, param_name in enumerate(tweak_list):
+        clubb_params[param_name][:] = mesh[i].ravel()
+
+    return clubb_params, ngrdcol
+
+
 if __name__ == "__main__":
 
     # Get the directory of the current script
@@ -120,7 +190,7 @@ if __name__ == "__main__":
     # Set up argument parser
     parser = argparse.ArgumentParser(description="Process CLUBB parameters.")
 
-    parser.add_argument( "-n", type=int, required=True, help="Number of grid columns (ngrdcol)")
+    parser.add_argument( "-n", type=int, help="Number of grid columns (ngrdcol)")
 
     tunable_parameters_default_path = os.path.join(script_dir, "../input/tunable_parameters/tunable_parameters.in")
     parser.add_argument( "-param_file", type=str, help="Path to the CLUBB parameters file",
@@ -129,8 +199,7 @@ if __name__ == "__main__":
     parser.add_argument( "-out_file", type=str, help="Output namelist file",
                          default = "clubb_params_multi_col.in" )
 
-    parser.add_argument( "-mode", type=str, help="Parameter generation mode",
-                         default = "dup_tweak" )
+    parser.add_argument( "-mode", type=str, help="Parameter generation mode" )
 
     parser.add_argument( "-mirror", type=str, help="mirror param lists",
                          default = "false" )
@@ -141,6 +210,12 @@ if __name__ == "__main__":
         help="Comma-separated list of tweaks (e.g., C1,C2,C3)"
     )
 
+    parser.add_argument(
+        "-hr",
+        type=str,
+        help="Custom hypergrid spec: PARAM/MIN:MAX/NPOINTS,PARAM/MIN:MAX/NPOINTS,...",
+    )
+
     # Parse the arguments
     args = parser.parse_args()
 
@@ -148,14 +223,25 @@ if __name__ == "__main__":
     ngrdcol                 = args.n
     clubb_params_file       = args.param_file
     output_file_name        = args.out_file
-    param_creation_mode     = args.mode
+    param_creation_mode     = args.mode or "dup_tweak"
     mirror                  = args.mirror == "true"
+    hr_mode_requested       = args.hr is not None
 
-    if ngrdcol < 1:
-        sys.exit("-n (ngrdcol) must be >= 1")
+    if hr_mode_requested and any(arg == "-mode" for arg in sys.argv[1:]):
+        sys.exit("Do not specify -mode when using -hr.")
+
+    if hr_mode_requested:
+        try:
+            hr_specs = parse_hypergrid_range_spec(args.hr)
+        except ValueError as exc:
+            sys.exit(str(exc))
+    else:
+        hr_specs = None
+        if ngrdcol is None or ngrdcol < 1:
+            sys.exit("-n (ngrdcol) must be >= 1 unless -hr is used.")
 
     if args.tweak_list is None:
-        tweak_list = ['C7','C11']
+        tweak_list = ['C11']
     else:
         tweak_list = args.tweak_list
 
@@ -172,7 +258,18 @@ if __name__ == "__main__":
     parsed_params = parse_clubb_params(clubb_params_file)
     
     # Create new parameter set dependin on selected creation mode
-    if param_creation_mode == "duplicate":
+    if hr_mode_requested:
+
+        print("Creating a custom hypergrid of parameters")
+        print(f" - Initial values file: '{clubb_params_file}'")
+        print(f" - Spec: {args.hr}")
+
+        try:
+            clubb_params, ngrdcol = custom_hypergrid(parsed_params, hr_specs)
+        except (KeyError, ValueError) as exc:
+            sys.exit(str(exc))
+
+    elif param_creation_mode == "duplicate":
 
         print(f"Duplicating params")
         print(f" - Initial values file: '{clubb_params_file}'")

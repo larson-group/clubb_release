@@ -26,10 +26,10 @@ def strip_comments_and_remove_keys(content: str, keys_to_remove=None) -> str:
         lines.append(line)
     return "\n".join(lines)
 
-def run_case(executable, case_name, namelist_file, output_dir):
+def run_case(run_cmd, run_cwd, case_name, namelist_file, output_dir):
 
-    if not os.path.isfile(executable):
-        print(f"{executable} not found (did you re-compile?)")
+    if not run_cmd:
+        print("No run command was provided.")
         return 1
 
     # clubb requires the output directory to exist prior to running
@@ -38,8 +38,8 @@ def run_case(executable, case_name, namelist_file, output_dir):
     log_path = os.path.join(output_dir, f"{case_name}_log")
     with open(log_path, "w", encoding="utf-8") as log_file:
         process = subprocess.Popen(
-            [executable, namelist_file],
-            cwd=RUN_SCRIPTS,
+            run_cmd + [namelist_file],
+            cwd=run_cwd,
             stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT,
             text=True,
@@ -83,11 +83,19 @@ def read_model_times(model_file):
     return values
 
 
-def convert_to_multi_col(params_file: str, case_name: str, output_dir: str, ngrdcol: int | None) -> str:
+def convert_to_multi_col(
+    params_file: str,
+    case_name: str,
+    output_dir: str,
+    ngrdcol: int | None,
+    hr_spec: str | None = None,
+) -> str:
     """
-    If ngrdcol is provided, run:
-      'python create_multi_col_params.py -mod duplicate -n NGRDCOL PARAMS_FILE -out_file CASE_multicol_params.in'
-    and return the path to the new params file. Otherwise, return params_file unchanged.
+    Create a temporary multi-column params file and return its path.
+
+    If ``hr_spec`` is provided, it is forwarded directly to
+    ``create_multi_col_params.py -hr``. Otherwise ``ngrdcol`` uses the legacy
+    dup_tweak path.
     """
 
     if not os.path.isfile(multi_col_params_script):
@@ -95,7 +103,11 @@ def convert_to_multi_col(params_file: str, case_name: str, output_dir: str, ngrd
 
     out_file = os.path.join(output_dir, f"{case_name}_multicol_params.in")
 
-    cmd = [sys.executable, multi_col_params_script, "-mode", "duplicate", "-n", str(ngrdcol), "-param_file", params_file, "-out_file", out_file]
+    cmd = [sys.executable, multi_col_params_script, "-param_file", params_file, "-out_file", out_file]
+    if hr_spec:
+        cmd.extend(["-hr", hr_spec])
+    else:
+        cmd.extend(["-mode", "dup_tweak", "-n", str(ngrdcol)])
 
     try:
         subprocess.run(cmd, check=True)
@@ -148,14 +160,23 @@ def setup_files_and_aggregate(args, output_dir):
     disable_stats = stats_arg.lower() == "none"
     stats_file = None if disable_stats else (args.stats or os.path.join(CLUBB_ROOT, "input/stats/standard_stats.in"))
 
+    run_cwd = RUN_SCRIPTS
+    run_cmd = None
+
     if args.exe:
         # Use the users input from -exe to determine which executable to use
         if args.legacy:
             print(f"-legacy overriden by -exe entry: {args.exe}")
         executable  = args.exe
+        if not os.path.isfile(executable):
+            sys.exit(f"{executable} not found (did you re-compile?)")
+        run_cmd = [executable]
     elif args.legacy:
         # The legacy install location is /bin/clubb_standalone
         executable  = os.path.join(CLUBB_ROOT, f"bin/clubb_standalone")
+        if not os.path.isfile(executable):
+            sys.exit(f"{executable} not found (did you re-compile?)")
+        run_cmd = [executable]
     else:
         # Find the executable based on compiler by default (install/COMPILER/clubb_standalone), otherwise
         # default to (install/lastest/clubb_standalone) which points to the last one compiled
@@ -165,20 +186,36 @@ def setup_files_and_aggregate(args, output_dir):
             executable  = os.path.join(CLUBB_ROOT, f"install/latest/clubb_driver_test")
         else:
             executable  = os.path.join(CLUBB_ROOT, f"install/latest/clubb_standalone")
+        if not os.path.isfile(executable):
+            sys.exit(f"{executable} not found (did you re-compile?)")
+        run_cmd = [executable]
 
     print(f" - using executable: {executable}")
 
     # Expand multi-column params if requested
-    if args.ngrdcol is not None:
-        params_file = convert_to_multi_col(params_file, args.case_name, output_dir, args.ngrdcol)
+    if args.hr:
+        params_file = convert_to_multi_col(
+            params_file,
+            args.case_name,
+            output_dir,
+            None,
+            args.hr,
+        )
+    elif args.ngrdcol is not None:
+        params_file = convert_to_multi_col(
+            params_file,
+            args.case_name,
+            output_dir,
+            args.ngrdcol,
+        )
 
     # Validate files
     files_to_validate = [
         ("-params", params_file),
         ("-flags", flags_file),
         ("-silhs_params", silhs_params_file),
-        ("-exe", executable),
     ]
+    files_to_validate.append(("-exe", executable))
     if not disable_stats:
         files_to_validate.append(("-stats", stats_file))
 
@@ -186,7 +223,7 @@ def setup_files_and_aggregate(args, output_dir):
         if not os.path.isfile(f):
             sys.exit(f"Required file for {opt} not found: {f}")
 
-    # Aggregate into output_dir/CASE.in
+    # Aggregate into <output_dir>/CASE.in
     os.makedirs(output_dir, exist_ok=True)
     clubb_input_namelist = os.path.join(output_dir, f"{args.case_name}.in")
     with open(clubb_input_namelist, "w") as out:
@@ -198,7 +235,7 @@ def setup_files_and_aggregate(args, output_dir):
                 out.write(strip_comments_and_remove_keys(src.read()))
                 out.write("\n")
 
-    return clubb_input_namelist, model_file, executable
+    return clubb_input_namelist, model_file, run_cmd, run_cwd
 
 
 def _set_stats_output_dir(clubb_in: str, output_dir: str) -> str:
@@ -281,7 +318,7 @@ def edit_namelist(args, clubb_input_namelist, model_file, output_dir):
     if args.override:
         clubb_in = override_value(args.override, clubb_in)
 
-    # Route CLUBB outputs directly into the selected directory.
+    # Route all CLUBB output files into the selected directory.
     clubb_in = _set_stats_output_dir(clubb_in, output_dir)
 
     # Save back
@@ -370,6 +407,10 @@ def main():
              "To define a multi_col parameter set differently, use the create_multi_col_params.py script, then "
              "pass in using --params. Default: 0")
 
+    parser.add_argument("-hr", metavar="[SPEC]",
+        help=("Custom hypergrid specification forwarded to create_multi_col_params.py.\n"
+              "Format: PARAM1/MIN:MAX/NPOINTS,PARAM2/MIN:MAX/NPOINTS,..."))
+
     # This can be used to override pretty much any settings in the aggregate namelist
     parser.add_argument(
         "-override",
@@ -383,6 +424,8 @@ def main():
     ndefined = sum(bool(x) for x in [args.exe, args.legacy, args.driver_test])
     if ndefined > 1:
         parser.error("Only one of -exe, -legacy, or -driver_test may be specified.")
+    if args.ngrdcol is not None and args.hr:
+        parser.error("Only one of -ngrdcol or -hr may be specified.")
 
     # Validate grid options
     if args.zt_grid and args.zm_grid:
@@ -393,15 +436,15 @@ def main():
     output_dir = os.path.abspath(args.out_dir) if args.out_dir else os.path.abspath(DEFAULT_OUTPUT_DIR)
     os.makedirs(output_dir, exist_ok=True)
 
-    # Step 1: setup and aggregate namelist files into output_dir/CASE.in
-    clubb_input_namelist, model_file, executable = setup_files_and_aggregate(args, output_dir)
+    # Step 1: setup and aggregate namelist files into <output_dir>/CASE.in
+    clubb_input_namelist, model_file, run_cmd, run_cwd = setup_files_and_aggregate(args, output_dir)
 
     # Step 2: edit clubb_input_namelist based on input specifications
     edit_namelist(args, clubb_input_namelist, model_file, output_dir)
 
     # Step 3: run model
     print(f"=================== Running {args.case_name} ===================")
-    result = run_case(executable, args.case_name, clubb_input_namelist, output_dir)
+    result = run_case(run_cmd, run_cwd, args.case_name, clubb_input_namelist, output_dir)
 
     sys.exit(result)
 
