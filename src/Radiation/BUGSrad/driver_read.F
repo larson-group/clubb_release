@@ -69,13 +69,17 @@
       real (kind=dbl_kind), dimension(:,:), allocatable::
      &  pl2        !Level pressure                                (hPa). ! Kurt changed to (mb)
 
-      real (kind=dbl_kind), dimension(:,:), allocatable::
+     real (kind=dbl_kind), dimension(:,:), allocatable::
      &  atl        !All-sky LW radiative heating rate             (K/s).
      &, asl        !All-sky SW radiative heating rate             (K/s).
      &, fulw       !All-sky LW upwelling flux                   (W/m^2).
+     &, fulwcl     !Clear-sky LW upwelling flux                 (W/m^2).
      &, fdlw       !All-sky LW downwelling flux                 (W/m^2).
+     &, fdlwcl     !Clear-sky LW downwelling flux               (W/m^2).
      &, fusw       !All-sky SW upwelling flux                   (W/m^2).
+     &, fuswcl     !Clear-sky SW upwelling flux                 (W/m^2).
      &, fdsw       !All-sky SW downwelling flux                 (W/m^2).
+     &, fdswcl     !Clear-sky SW downwelling flux               (W/m^2).
       !For timing
 !      real, dimension(2) :: tarray
 !      real :: dtime, elapsed
@@ -101,7 +105,9 @@
        allocate(pl2(nlen,nlm+1))
 
        allocate(atl(nlen,nlm), asl(nlen,nlm), fulw(nlen,nlm+1)
-     &, fdlw(nlen,nlm+1), fusw(nlen,nlm+1), fdsw(nlen,nlm+1))
+     &, fulwcl(nlen,nlm+1), fdlw(nlen,nlm+1), fdlwcl(nlen,nlm+1)
+     &, fusw(nlen,nlm+1), fuswcl(nlen,nlm+1), fdsw(nlen,nlm+1)
+     &, fdswcl(nlen,nlm+1))
 !----
       do l=1,nlm
 
@@ -240,7 +246,7 @@
       call bugs_rad(nlen,len,nlm,pl2,pl,dpl,tl,ql,qcwl,qcil,qril
      +,              o3l,ts,amu0,slr,alvdf,alndf,alvdr,alndr,sol_const
      +,              gravity,cp_dry_air,asl,atl,fdsw,fusw,fdlw,fulw,
-     +               acld)
+     +              fdswcl,fuswcl,fdlwcl,fulwcl,acld)
 !      elapsed = dtime(tarray)
 
 !---- 5. OUTPUT RESULTS:

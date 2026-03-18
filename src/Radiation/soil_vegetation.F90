@@ -27,8 +27,8 @@ module soil_vegetation
     !
     !     Description:
     !
-    !     This subroutine updates the surface and soil temp, soil heat flux, 
-    !     while assuming that net radiation and turbulent heat fluxes are 
+    !     This subroutine updates the surface and soil temp, soil heat flux,
+    !     while assuming that net radiation and turbulent heat fluxes are
     !     already available from another subroutine.
     !
     !     The surface temperature (sfc_soil_T_in_K) is calculated  from
@@ -63,12 +63,12 @@ module soil_vegetation
     !
     !     The equations given above are analogous to those used by
     !     Deardorff  (1978).
-    ! 
+    !
     !     Reference:
-    !     Duynkerke, Peter G.  "Radiation Fog: A Comparison of Model 
+    !     Duynkerke, Peter G.  "Radiation Fog: A Comparison of Model
     !     Simulation with Detailed Observations"
     !     (February 1991) _Monthly Weather Review_ Vol 119, p. 324-341.
-    !     
+    !
     !
     !-----------------------------------------------------------------------
 
@@ -118,7 +118,7 @@ module soil_vegetation
 
     type(stats_type), intent(inout) :: &
       stats
-    
+
     real( kind = core_rknd ), dimension(ngrdcol), intent(inout) :: &
       deep_soil_T_in_K, &
       sfc_soil_T_in_K, &
@@ -134,7 +134,7 @@ module soil_vegetation
       c2, &  ! coefficient in force restore 2
       c3, &  ! coefficient in force restore 3
       d1, &
-      veg_heat_flux, &                         
+      veg_heat_flux, &
       Frad_LW_up_sfc, & ! LW upwelling flux [W/m2]
       wpthep            ! Turbulent Flux of equivalent potential temperature   [K]
 
@@ -150,10 +150,10 @@ module soil_vegetation
     !---------------------------
 
     cs = 2.00e3_core_rknd  ! cs
-    rs = 1.00e3_core_rknd  ! ps 
+    rs = 1.00e3_core_rknd  ! ps
     ks = 2.00e-7_core_rknd ! as
     d1 = sqrt( ks*3600.e0_core_rknd*24.e0_core_rknd ) ! Known magic number
-    c1 = 2.e0_core_rknd*sqrt( pi )/(rs*cs*d1) 
+    c1 = 2.e0_core_rknd*sqrt( pi )/(rs*cs*d1)
     c2 = 2.e0_core_rknd*pi/(3600.e0_core_rknd*24.e0_core_rknd) ! Omega - known magic number
     c3 = sqrt(pi*2.e0_core_rknd)/(exp( pi/4.e0_core_rknd )*rs*cs* &
                      sqrt( ks*3600.e0_core_rknd*24.e0_core_rknd* &
@@ -165,8 +165,8 @@ module soil_vegetation
       call stats_update( "deep_soil_T_in_K", deep_soil_T_in_K, stats )
     end if
 
-    do i = 1, ngrdcol 
-    
+    do i = 1, ngrdcol
+
       Frad_LW_up_sfc = stefan_boltzmann * (veg_T_in_K(i)**4)
 
       wpthep = wpthlp_sfc(i) + (Lv/Cp) * ((p0/p_sfc(i))**kappa) * wprtp_sfc(i)
@@ -179,7 +179,7 @@ module soil_vegetation
       ! Duynkerke (1991) used a coefficient of 3.0 W/m^2*K, not 10.0 W/m^2*K
       !
       ! Equation 19 p.328
-      
+
       soil_heat_flux(i) = 10.0_core_rknd * ( veg_T_in_K(i) - sfc_soil_T_in_K(i) ) &
                           + 0.05_core_rknd * Frad_SW_down_sfc(i) ! Known magic number
 
@@ -225,7 +225,7 @@ module soil_vegetation
     real( kind = core_rknd ), dimension(ngrdcol), intent(out) :: &
       deep_soil_T_in_K, &
       sfc_soil_T_in_K, &
-      veg_T_in_K       
+      veg_T_in_K
 
     ! ---- Begin Code ----
 

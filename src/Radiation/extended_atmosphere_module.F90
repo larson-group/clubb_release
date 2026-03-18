@@ -94,8 +94,7 @@ module extended_atmosphere_module
 
   !------------------------------------------------------------------------------------------------
   subroutine determine_extended_atmos_bounds( grid_size, zt_grid, &
-                                            zm_grid, zm_grid_spacing, p_in_Pa_zm, & 
-                                            radiation_top, &
+                                            zm_grid, zm_grid_spacing, p_in_Pa_zm, &
                                             extended_atmos_bottom_level, &
                                             extended_atmos_top_level, &
                                             extended_atmos_range_size, &
@@ -119,6 +118,9 @@ module extended_atmosphere_module
       fstderr, & ! Variable(s)
       pascal_per_mb
 
+    use parameters_radiation, only: &
+      radiation_top
+
     use clubb_precision, only: &
       core_rknd
 
@@ -137,8 +139,6 @@ module extended_atmosphere_module
     real( kind = core_rknd ), dimension(grid_size), intent(in) :: &
       zm_grid,         & ! Momentum grid             [m]
       p_in_Pa_zm         ! Pressure                  [Pa]
-
-    real( kind = core_rknd ), intent(in) :: radiation_top ! Maximum height to extended to [m]
 
     ! Output Variable(s)
     integer, intent(out) :: &

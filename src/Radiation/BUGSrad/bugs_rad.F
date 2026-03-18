@@ -18,7 +18,8 @@
      +,                 pcos2 ,    psin2 ,      asl ,      atl
      +,                 LWtoa ,  LWdnsfc , LWnetsfc , SWnettoa
      +,               SWdnsfc , SWnetsfc ,    SWinc ,   radvbc
-     +,                radvdc ,   radnbc ,   radndc ,   cldt2d
+     +,                radvdc ,   radnbc ,   radndc ,     fdswcl
+     +,                fuswcl ,    fdlwcl ,    fulwcl ,   cldt2d
      +               )
 #else
       subroutine bugs_rad
@@ -29,12 +30,11 @@
      +,                 alndf ,    alvdr ,    alndr ,       s0
      +,                  grav ,       cp ,      asl ,      atl
      +,                  fdsw ,     fusw ,     fdlw ,     fulw
+     +,                fdswcl ,   fuswcl ,   fdlwcl ,   fulwcl
      +,                  acld )
 #endif
       
       use kinds
-      use variables_radiation_module, only: fdswcl, fuswcl 
-     +,                                     fdlwcl, fulwcl
 
 #ifdef USE_BUGSrad_ocast_random
       use bugs_cloud_correlate
@@ -165,9 +165,13 @@
       real (kind=dbl_kind), dimension(len,nlm+1):: 
 #endif
      &  fdsw       !Downward SW flux                           (W/m^-2).
+     &, fdswcl     !Downward clear-sky SW flux                 (W/m^-2).
      &, fusw       !Upward SW flux                             (W/m^-2).
+     &, fuswcl     !Upward clear-sky SW flux                   (W/m^-2).
      &, fdlw       !Downward LW flux                           (W/m^-2).
+     &, fdlwcl     !Downward clear-sky LW flux                 (W/m^-2).
      &, fulw       !Upward LW flux                             (W/m^-2).
+     &, fulwcl     !Upward clear-sky LW flux                   (W/m^-2).
       real (kind=dbl_kind), dimension(nlen,nlm)::
      &  atl        !All-sky LW radiative heating rate             (K/s).
      &, asl        !All-sky SW radiative heating rate             (K/s).      

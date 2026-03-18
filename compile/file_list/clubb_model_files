@@ -37,6 +37,7 @@
 ../src/Radiation/simple_rad_module.F90
 ../src/Radiation/extended_atmosphere_module.F90
 ../src/Radiation/parameters_radiation.F90
+../src/Radiation/radiation_variables_module.F90
 ../src/Radiation/radiation_module.F90
 ../src/Microphys/cloud_sed_module.F90
 ../src/Microphys/advance_microphys_module.F90
@@ -68,7 +69,7 @@
 ../src/Input_fields/corr_varnce_input_reader.F90
 ../src/Input_fields/sounding.F90
 ../src/Input_fields/hydrostatic_module.F90
-../src/soil_vegetation.F90
+../src/Radiation/soil_vegetation.F90
 ../src/generalized_grid_test.F90
 ../src/error.F90
 ../src/clubb_driver.F90

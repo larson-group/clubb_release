@@ -238,20 +238,9 @@ module clubb_driver
                   !       halfway between momentum levels (style
                   !       of WRF stretched grid).
 
-  ! Radiation variables
-  integer :: &
-    extended_atmos_bottom_level, & ! Bottom level of the extended atmosphere
-    extended_atmos_top_level,    & ! Top level of the extended atmosphere
-    extended_atmos_range_size      ! The number of levels in the extended atmosphere
-
   ! 'public' only to fix compiler error for nvhpc versions <24.9, please remove in future
   integer, public ::  &
     day, month, year ! Start time the of simulation
-
-  ! The number of interpolated levels between the computational grid
-  ! and the extended atmosphere
-  integer :: &
-    lin_int_buffer
 
   ! 'public' only to fix compiler error for nvhpc versions <24.9, please remove in future
   integer, public :: &
@@ -385,6 +374,7 @@ module clubb_driver
     exner_init, &
     thvm_init, &
     p_in_Pa_init, &
+    p_in_Pa_zm_init, &
     rho_init, &
     rho_zm_init, &
     rho_ds_zm_init, &
@@ -652,12 +642,7 @@ module clubb_driver
     wpNcp           ! Covariance of w and N_c, <w'N_c'> (momentum levels)   [(m/s)(num/kg)]
 
   real( kind = core_rknd ), dimension(:,:), allocatable :: &
-    radht,        & ! SW + LW heating rate               [K/s]
-    Frad,         & ! Radiative flux (momentum levels)   [W/m^2]
-    Frad_SW_up,   & ! SW radiative upwelling flux        [W/m^2]
-    Frad_LW_up,   & ! LW radiative upwelling flux        [W/m^2]
-    Frad_SW_down, & ! SW radiative downwelling flux      [W/m^2]
-    Frad_LW_down    ! LW radiative downwelling flux      [W/m^2]
+    radht        ! SW + LW heating rate               [K/s]
 
   real( kind = core_rknd ), dimension(:,:), allocatable :: &
     wpsclrp_sfc,    & ! Passive scalar flux at surface                [{units vary} m/s]
@@ -716,8 +701,7 @@ module clubb_driver
   !$omp  l_allow_small_stats_tout, &
   !$omp  l_restart_input, l_last_timestep, ifinal, stats_nsamp, stats_nout, ngrdcol, iunit, &
   !$omp  iunit_grid_adaptation, hydromet_dim, sclr_dim, edsclr_dim, pdf_dim, clubb_params, nzmax, &
-  !$omp  grid_type, extended_atmos_bottom_level, extended_atmos_top_level, &
-  !$omp  extended_atmos_range_size, day, month, year, lin_int_buffer, sfctype, &
+  !$omp  grid_type, day, month, year, sfctype, &
   !$omp  stats,         &
   !$omp  sclr_idx, hm_metadata, clubb_config_flags, silhs_config_flags, stats_tsamp, stats_tout, &
   !$omp  time_restart, restart_path_case, forcings_file_path, stats_fmt, fname_prefix, &
@@ -727,7 +711,7 @@ module clubb_driver
   !$omp  rtm_nudge_max_altitude, rad_dummy, deep_soil_T_in_K_init, sfc_soil_T_in_K_init, &
   !$omp  veg_T_in_K_init, dummy_dx, dummy_dy, sclr_tol, thlm_init, rtm_init, um_init, &
   !$omp  vm_init, ug_init, vg_init, wp2_init, up2_init, vp2_init, upwp_init, rcm_init, wm_zt_init, &
-  !$omp  wm_zm_init, em_init, exner_init, thvm_init, p_in_Pa_init, rho_init, rho_zm_init, &
+  !$omp  wm_zm_init, em_init, exner_init, thvm_init, p_in_Pa_init, p_in_Pa_zm_init, rho_init, rho_zm_init, &
   !$omp  rho_ds_zm_init, rho_ds_zt_init, invrs_rho_ds_zm_init, invrs_rho_ds_zt_init, &
   !$omp  thv_ds_zm_init, thv_ds_zt_init, rtm_ref_init, thlm_ref_init, um_ref_init, &
   !$omp  vm_ref_init, Ncm_init, Nc_in_cloud_init, Nccnm_init, rho_ds_zm_dycore_init, &
@@ -752,7 +736,7 @@ module clubb_driver
   !$omp  cloudy_downdraft_frac, ice_supersat_frac, rcm_in_layer, cloud_cover, invrs_tau_zm, &
   !$omp  ug, vg, rtm_ref, thlm_ref, um_ref, vm_ref, rcm_mc, rvm_mc, thlm_mc, wprtp_mc, wpthlp_mc, &
   !$omp  rtp2_mc, thlp2_mc, rtpthlp_mc, Ncm_mc, Ncm, Nccnm, em, tau_zm, tau_zt, Kh_zt, Kh_zm, rfrzm, &
-  !$omp  rrm, Nrm, Nc_in_cloud, wpNcp, radht, Frad, Frad_SW_up, Frad_LW_up, Frad_SW_down, Frad_LW_down, &
+  !$omp  rrm, Nrm, Nc_in_cloud, wpNcp, radht, &
   !$omp  wpsclrp_sfc, wpedsclrp_sfc, sclrm, wpsclrp, sclrp2, sclrp3, sclrprtp, sclrpthlp, sclrpthvp, &
   !$omp  sclrm_forcing, edsclrm, edsclrm_forcing, lh_rt_clipped, lh_thl_clipped, lh_rc_clipped, &
   !$omp  lh_rv_clipped, lh_Nc_clipped, lh_sample_point_weights, K_hm, wp2hmp, rtphmp_zt, &
@@ -833,8 +817,9 @@ module clubb_driver
     use silhs_api_module, only: &
       latin_hypercube_2D_output_api
 
-    use variables_radiation_module, only: &
-      setup_radiation_variables    !---------------------------------------- Procedure(s)
+    use radiation_variables_module, only: &
+      setup_radiation_variables, &
+      setup_bugsrad_variables
 
     use soil_vegetation, only: &
       initialize_soil_veg      !--------------------------------------------- Procedure(s)
@@ -1147,12 +1132,6 @@ module clubb_driver
 
     nzmax     = 75
     grid_type = 1
-
-    extended_atmos_bottom_level = 0
-    extended_atmos_top_level    = 0
-    extended_atmos_range_size   = 0
-
-    lin_int_buffer = 0
 
     deltaz_nl  = 40._core_rknd
     zm_init_nl = 0._core_rknd
@@ -2073,11 +2052,6 @@ module clubb_driver
     allocate( rtm_ref(ngrdcol, gr%nzt) )        ! Reference total water mixing ratio for nudging
     allocate( thvm(ngrdcol, gr%nzt) )           ! Virtual potential temperature
     allocate( radht(ngrdcol, gr%nzt) )          ! SW + LW heating rate
-    allocate( Frad(ngrdcol, gr%nzm) )           ! radiative flux (momentum point)
-    allocate( Frad_SW_up(ngrdcol, gr%nzm) )
-    allocate( Frad_LW_up(ngrdcol, gr%nzm) )
-    allocate( Frad_SW_down(ngrdcol, gr%nzm) )
-    allocate( Frad_LW_down(ngrdcol, gr%nzm) )
     allocate( thlprcp(ngrdcol, gr%nzm) )   ! thl'rc'
     allocate( thlp3(ngrdcol, gr%nzt) )     ! thl'^3
     allocate( rtp3(ngrdcol, gr%nzt) )      ! rt'^3
@@ -2200,6 +2174,7 @@ module clubb_driver
               exner_init(gr%nzt), &
               thvm_init(gr%nzt), &
               p_in_Pa_init(gr%nzt), &
+              p_in_Pa_zm_init(gr%nzm), &
               rho_init(gr%nzt), &
               rho_zm_init(gr%nzm), &
               rho_ds_zm_init(gr%nzm), &
@@ -2354,6 +2329,13 @@ module clubb_driver
       return
     end if
 
+    if ( l_soil_veg .and. trim( rad_scheme ) == "none" ) then
+      write(fstderr, *) err_info%err_header_global
+      write(fstderr, *) "The options l_soil_veg and rad_scheme == none are incompatible."
+      err_info%err_code = clubb_fatal_error
+      return
+    end if
+
     ! Currently initialize_clubb does more than just read in the initial sounding.
     ! It also includes other important initializations such as um_ref and vm_ref.
     ! Therefore it should be executed prior to a restart. The restart should overwrite
@@ -2375,7 +2357,7 @@ module clubb_driver
           thlm_init, rtm_init, um_init, vm_init, ug_init, vg_init,        & ! Intent(out)
           wp2_init, up2_init, vp2_init, upwp_init, rcm_init,              & ! Intent(out)
           wm_zt_init, wm_zm_init, em_init, exner_init,                    & ! Intent(out)
-          thvm_init, p_in_Pa_init,                                        & ! Intent(out)
+          thvm_init, p_in_Pa_init, p_in_Pa_zm_init,                       & ! Intent(out)
           rho_init, rho_zm_init, rho_ds_zm_init, rho_ds_zt_init,          & ! Intent(out)
           invrs_rho_ds_zm_init, invrs_rho_ds_zt_init,                     & ! Intent(out)
           thv_ds_zm_init, thv_ds_zt_init,                                 & ! Intent(out)
@@ -2390,6 +2372,17 @@ module clubb_driver
         write(fstderr, *) err_info%err_header_global
         write(fstderr,*) "FATAL ERROR calling initialize_clubb in run_clubb"
         return
+      end if
+    end if
+
+    if ( trim( rad_scheme ) /= "none" ) then
+      call setup_radiation_variables( ngrdcol, gr%nzm, gr%nzt )
+
+      if ( trim( rad_scheme ) == "bugsrad" ) then
+        ! Currently clubb does not support different grid heights, use only the first
+        ! column when sizing the extended atmosphere.
+        call setup_bugsrad_variables( ngrdcol, gr%nzm, gr%zt(1,:), gr%zm(1,:), gr%dzt(1,:), &
+                                      p_in_Pa_zm_init(:) )
       end if
     end if
 
@@ -2481,9 +2474,6 @@ module clubb_driver
 
 #endif /* SILHS */
 
-    call setup_radiation_variables( gr%nzm, lin_int_buffer, &
-                                    extended_atmos_range_size )
-
     if( l_stats ) then
 
       if ( .not. (( abs(dt_rad/stats_tout &
@@ -2566,7 +2556,7 @@ module clubb_driver
     !$acc              pdf_params_zm%varnce_w_2, pdf_params_zm%mixt_frac, &
     !$acc              thlm_init, rtm_init, um_init, vm_init, ug_init, vg_init, &
     !$acc              wp2_init, up2_init, vp2_init, upwp_init, rcm_init, wm_zt_init, &
-    !$acc              wm_zm_init, em_init, exner_init, thvm_init, p_in_Pa_init, &
+    !$acc              wm_zm_init, em_init, exner_init, thvm_init, p_in_Pa_init, p_in_Pa_zm_init, &
     !$acc              rho_init, rho_zm_init, rho_ds_zm_init, rho_ds_zt_init, &
     !$acc              invrs_rho_ds_zm_init, invrs_rho_ds_zt_init, thv_ds_zm_init, &
     !$acc              thv_ds_zt_init, rtm_ref_init, thlm_ref_init, um_ref_init, &
@@ -2664,6 +2654,10 @@ module clubb_driver
       iiPDF_new, &      ! Constants
       iiPDF_new_hybrid
 
+    use radiation_variables_module, only: &
+      reset_radiation_variables, &
+      reset_bugsrad_variables
+
     implicit none
 
     !----------------------------------- Input/Output Variables -----------------------------------
@@ -2679,6 +2673,14 @@ module clubb_driver
 
     !----------------------------------- Begin Code -----------------------------------
 
+    if ( trim( rad_scheme ) /= "none" ) then
+      call reset_radiation_variables()
+
+      if ( trim( rad_scheme ) == "bugsrad" ) then
+        call reset_bugsrad_variables()
+      end if
+    end if
+
     ! These variables are not used on the GPU and the commented out ones
     ! are not used at all beyond being initialized
     !sigma_sqd_w_zt         = zero        ! PDF width parameter interp. to t-levs.
@@ -2686,11 +2688,6 @@ module clubb_driver
     !tau_zt                 = zero        ! Eddy dissipation time scale: thermo. levels
     !tau_zm                 = zero          ! Eddy dissipation time scale: momentum levels
     Ncm_mc                 = zero
-    Frad                   = zero          ! Radiative flux
-    Frad_SW_up             = zero
-    Frad_LW_up             = zero
-    Frad_SW_down           = zero
-    Frad_LW_down           = zero
     wpNcp                  = zero
     do k = 1, gr%nzt
       do i = 1, ngrdcol
@@ -3043,9 +3040,7 @@ module clubb_driver
   !---------------------------------------------------------------------------------------------
 
     use radiation_module, only: &
-      advance_clubb_radiation, &
-      update_radiation_variables, &
-      silhs_radiation_driver
+      advance_clubb_radiation
 
     use microphys_driver, only: &
       calc_microphys_scheme_tendcies  !------------------------------------ Procedure(s)
@@ -3073,9 +3068,6 @@ module clubb_driver
     use advance_microphys_module, only: &
       advance_microphys  !------------------------------------------------- Procedure(s)
 
-    use soil_vegetation, only: &
-      advance_soil_veg    !--------------------------------------------- Procedure(s)
-      
     use generalized_grid_test, only: &
       clubb_generalized_grid_testing, & ! Procedure(s)
       silhs_generalized_grid_testing
@@ -3296,9 +3288,6 @@ module clubb_driver
         end do
       end if
 
-      ! Calculate radiation only once in a while
-      l_rad_itime = (mod( itime, floor(dt_rad/dt_main) ) == 0 .or. itime == 1)
-
       ! Calculate thvm for use in prescribe_forcings.
       call calculate_thvm( gr%nzt, ngrdcol, &
                            thlm, rtm, rcm, exner, thv_ds_zt, &
@@ -3335,26 +3324,6 @@ module clubb_driver
           write(fstderr,*) "Fatal error in prescribe_forcings:"
           exit mainloop
         end if
-      end if
-
-      !---------------------------------------------------------------
-      ! Compute Surface
-      !---------------------------------------------------------------
-      if ( l_soil_veg ) then
-
-        !$acc update host( rho_zm, wpthlp_sfc, wprtp_sfc, p_sfc, &
-        !$acc              deep_soil_T_in_K, sfc_soil_T_in_K, veg_T_in_K )
-
-        call advance_soil_veg( ngrdcol, dt_main, rho_zm(:,1), &
-                                Frad_SW_up(:,1), Frad_SW_down(:,1), &
-                                Frad_LW_down(:,1), &
-                                wpthlp_sfc, wprtp_sfc, p_sfc, &
-                                stats,         &
-                                deep_soil_T_in_K, sfc_soil_T_in_K, &
-                                veg_T_in_K )
-
-        !$acc update device( deep_soil_T_in_K, sfc_soil_T_in_K, veg_T_in_K )
-
       end if
 
       !$acc parallel loop gang vector collapse(2) default(present)
@@ -3535,6 +3504,11 @@ module clubb_driver
       call cpu_time(time_stop)
       time_clubb_advance = time_clubb_advance + time_stop - time_start
       call cpu_time(time_start) ! initialize timer for setup_pdf_parameters
+
+      ! Radiation is always called on the first timestep in order to ensure
+      ! that the simulation is subject to radiative heating and cooling from
+      ! the first timestep.
+      l_rad_itime = (mod( itime, floor(dt_rad/dt_main) ) == 0 .or. itime == 1)
 
       if ( .not. l_test_grid_generalization ) then
 
@@ -3772,93 +3746,36 @@ module clubb_driver
         call stats_update( "rtpthlp_mc", rtpthlp_mc, stats )
       end if
 
-      ! Radiation is always called on the first timestep in order to ensure
-      ! that the simulation is subject to radiative heating and cooling from
-      ! the first timestep.
-      if ( l_rad_itime .and. trim( rad_scheme ) /= "none" ) then
+      if ( trim( rad_scheme ) /= "none" ) then
 
-        ! Advance a radiation scheme
-        ! With this call ordering, snow and ice water mixing ratio will be
-        ! updated by the microphysics, but thlm and rtm will not.  This
-        ! somewhat inconsistent, but we would need to move the call to
-        ! radiation before the call the microphysics to change this.
-        ! -dschanen 17 Aug 2009
-        if ( l_silhs_rad ) then
+        !$acc update host( rho, rho_zm, p_in_Pa, exner, wpthlp_sfc, wprtp_sfc, p_sfc, &
+        !$acc              cloud_frac, ice_supersat_frac, thlm, rtm, rcm, &
+        !$acc              X_nl_all_levs, lh_rt_clipped, lh_thl_clipped, lh_rc_clipped, &
+        !$acc              lh_sample_point_weights, &
+        !$acc              deep_soil_T_in_K, sfc_soil_T_in_K, veg_T_in_K )
+        
+        call advance_clubb_radiation( &
+              gr, ngrdcol, hydromet_dim, pdf_dim, lh_num_samples,          & ! In
+              l_rad_itime, dt_main, day, month, year,                      & ! In
+              lat_vals, lon_vals, time_current, time_initial,              & ! In
+              rho, rho_zm, p_in_Pa, exner,                                 & ! In
+              wpthlp_sfc, wprtp_sfc, p_sfc,                                & ! In
+              cloud_frac, ice_supersat_frac,                               & ! In
+              thlm, rtm, rcm,                                              & ! In
+              X_nl_all_levs, lh_rt_clipped, lh_thl_clipped, lh_rc_clipped, & ! In
+              lh_sample_point_weights, hydromet, hm_metadata,              & ! In
+              stats, err_info,                                             & ! Inout
+              deep_soil_T_in_K, sfc_soil_T_in_K, veg_T_in_K,               & ! Inout
+              radht )                                                        ! Out
 
-          !$acc update host( rho, rho_zm, p_in_Pa, exner, cloud_frac, ice_supersat_frac, X_nl_all_levs, &
-          !$acc              lh_rt_clipped, lh_thl_clipped, lh_rc_clipped, lh_sample_point_weights )
-
-          do i = 1, ngrdcol
-            call silhs_radiation_driver( &
-                  gr, gr%nzm, gr%nzt, lh_num_samples, pdf_dim, hydromet_dim, hm_metadata, & ! In
-                  day, month, year,                                                       & ! In
-                  lin_int_buffer,                                                         & ! In
-                  extended_atmos_bottom_level,                                            & ! In
-                  extended_atmos_top_level,                                               & ! In
-                  extended_atmos_range_size,                                              & ! In
-                  lat_vals, lon_vals, &
-                  time_current, time_initial, rho(i,:), rho_zm(i,:),                      & ! In
-                  p_in_Pa(i,:), exner(i,:), cloud_frac(i,:), ice_supersat_frac(i,:),      & ! In
-                  X_nl_all_levs(i,:,:,:),lh_rt_clipped(i,:,:), lh_thl_clipped(i,:,:),     & ! In
-                  lh_rc_clipped(i,:,:), lh_sample_point_weights(i,:,:), hydromet(i,:,:),  & ! In
-                  stats, i,                                                               & ! InOut
-                  err_info,                                                               & ! InOut
-                  radht(i,:), Frad(i,:), Frad_SW_up(i,:), Frad_LW_up(i,:),                & ! Out
-                  Frad_SW_down(i,:), Frad_LW_down(i,:) )                                    ! Out
-          end do
-
-          !$acc update device( radht )
-
-        else
-
-          !$acc update host( rho, rho_zm, p_in_Pa, exner, cloud_frac, ice_supersat_frac, thlm, rtm, rcm )
-
-          do i = 1, ngrdcol
-            call advance_clubb_radiation( &
-                  gr, time_current, time_initial, hydromet_dim,            & ! In
-                  day, month, year,                                        & ! In
-                  lin_int_buffer,                                          & ! In
-                  extended_atmos_bottom_level,                             & ! In
-                  extended_atmos_top_level,                                & ! In
-                  extended_atmos_range_size,                               & ! In
-                  lat_vals, lon_vals, &
-                  rho(i,:), rho_zm(i,:), p_in_Pa(i,:),                     & ! In
-                  exner(i,:), cloud_frac(i,:), ice_supersat_frac(i,:),     & ! In
-                  thlm(i,:), rtm(i,:), rcm(i,:), hydromet(i,:,:),          & ! In
-                  hm_metadata, stats, i,                                   & ! InOut
-                  err_info,                                                & ! InOut
-                  radht(i,:), Frad(i,:), Frad_SW_up(i,:), Frad_LW_up(i,:), & ! Out
-                  Frad_SW_down(i,:), Frad_LW_down(i,:) )                     ! Out
-
-          end do
-
-          !$acc update device( radht )
-
-        end if ! l_silhs_rad
+        !$acc update device( deep_soil_T_in_K, sfc_soil_T_in_K, veg_T_in_K, radht )
 
         if ( clubb_at_least_debug_level_api( 0 ) ) then
           if ( any(err_info%err_code == clubb_fatal_error) ) then
-            write(fstderr, *) err_info%err_header_global
-            write(fstderr, *) "Fatal error in radiation, " &
-                              // "check your parameter values and timestep"
             exit mainloop
           end if
         end if
 
-      end if ! mod( itime, floor(dt_rad/dt_main) ) == 0 .or. itime == 1
-
-      if ( stats%l_sample ) then
-
-        !$acc update host( cloud_frac )
-        !$acc update host( radht )
-
-        call stats_update( "Frad", Frad, stats )
-
-        ! Update the radiation variables here so they are updated every timestep
-        call update_radiation_variables( ngrdcol, gr%nzm, gr%nzt, radht, Frad_SW_up, Frad_LW_up, &
-                                         Frad_SW_down, Frad_LW_down, &
-                                         extended_atmos_range_size, lin_int_buffer, &
-                                         stats )
       end if
 
       if ( clubb_config_flags%grid_adapt_in_time_method > no_grid_adaptation ) then
@@ -4123,8 +4040,9 @@ module clubb_driver
     use extended_atmosphere_module, only: &
       finalize_extended_atm
 
-    use variables_radiation_module, only: &
-      cleanup_radiation_variables
+    use radiation_variables_module, only: &
+      cleanup_radiation_variables, &
+      cleanup_bugsrad_variables
 
     use microphys_init_cleanup, only: &
       cleanup_microphys
@@ -4164,7 +4082,7 @@ module clubb_driver
     !$acc              pdf_params_zm%varnce_w_2, pdf_params_zm%mixt_frac, &
     !$acc              thlm_init, rtm_init, um_init, vm_init, ug_init, vg_init, &
     !$acc              wp2_init, up2_init, vp2_init, upwp_init, rcm_init, wm_zt_init, &
-    !$acc              wm_zm_init, em_init, exner_init, thvm_init, p_in_Pa_init, &
+    !$acc              wm_zm_init, em_init, exner_init, thvm_init, p_in_Pa_init, p_in_Pa_zm_init, &
     !$acc              rho_init, rho_zm_init, rho_ds_zm_init, rho_ds_zt_init, &
     !$acc              invrs_rho_ds_zm_init, invrs_rho_ds_zt_init, thv_ds_zm_init, &
     !$acc              thv_ds_zt_init, rtm_ref_init, thlm_ref_init, um_ref_init, &
@@ -4256,7 +4174,13 @@ module clubb_driver
     ! De-allocate the arrays for the grid
     call cleanup_grid_api( gr )
 
-    call cleanup_radiation_variables( )
+    if ( trim( rad_scheme ) /= "none" ) then
+      call cleanup_radiation_variables( )
+
+      if ( trim( rad_scheme ) == "bugsrad" ) then
+        call cleanup_bugsrad_variables( )
+      end if
+    end if
 
     call cleanup_microphys( )
     
@@ -4366,11 +4290,6 @@ module clubb_driver
     deallocate( rtm_ref )        ! Reference total water mixing ratio for nudging
     deallocate( thvm )           ! Virtual potential temperature
     deallocate( radht )          ! SW + LW heating rate
-    deallocate( Frad )           ! radiative flux (momentum point)
-    deallocate( Frad_SW_up )
-    deallocate( Frad_LW_up )
-    deallocate( Frad_SW_down )
-    deallocate( Frad_LW_down )
     deallocate( thlprcp )   ! thl'rc'
     deallocate( thlp3 )     ! thl'^3
     deallocate( rtp3 )      ! rt'^3
@@ -4499,6 +4418,7 @@ module clubb_driver
               exner_init, &
               thvm_init, &
               p_in_Pa_init, &
+              p_in_Pa_zm_init, &
               rho_init, &
               rho_zm_init, &
               rho_ds_zm_init, &
@@ -4534,6 +4454,7 @@ module clubb_driver
                 thlm, rtm, um, vm, ug, vg, wp2, up2, vp2, upwp, rcm, &
                 wm_zt, wm_zm, em, exner, &
                 thvm, p_in_Pa, &
+                p_in_Pa_zm_init, &
                 rho, rho_zm, rho_ds_zm, rho_ds_zt, &
                 invrs_rho_ds_zm, invrs_rho_ds_zt, &
                 thv_ds_zm, thv_ds_zt, &
@@ -4566,8 +4487,6 @@ module clubb_driver
         Nc0_in_cloud, & !----------------------------------------------- Variable(s)
         microphys_scheme
 
-    use parameters_radiation, only: radiation_top, rad_scheme !--------- Variable(s)
-
     use grid_class, only: &
       zm2zt_api, &   !----------------------------------------------------- Procedure(s)
       zt2zm_api
@@ -4577,9 +4496,6 @@ module clubb_driver
     use time_dependent_input, only: &
       initialize_t_dependent_input, & !-------------------------------- Procedure(s)
       l_t_dependent !-------------------------------------------------- Variable(s)
-
-    use extended_atmosphere_module, only: &
-      determine_extended_atmos_bounds !-------------------------------- Procedure(s)
 
     use mpace_a, only: mpace_a_init !---------------------------------- Procedure(s)
 
@@ -4713,6 +4629,9 @@ module clubb_driver
       invrs_rho_ds_zm, & ! Inv. dry, static density (m-levs.)                [m^3/kg]
       thv_ds_zm          ! Dry, base-state theta_v (m-levs.)                 [K]
 
+    real( kind = core_rknd ), dimension(gr%nzm), intent(out) :: &
+      p_in_Pa_zm_init ! Pressure on momentum levels for initialization [Pa]
+
     real( kind = core_rknd ), dimension(ngrdcol,gr%nzt), intent(inout) :: &
       Ncm,         & ! Mean cloud droplet conc., <N_c> (thermo. levs.)  [num/kg]
       Nc_in_cloud    ! Mean (in-cloud) cloud droplet concentration      [num/kg]
@@ -4786,20 +4705,7 @@ module clubb_driver
                                     invrs_rho_ds_zt, thv_ds_zm,               & ! Intent(out)
                                     thv_ds_zt, sclrm, edsclrm )                 ! Intent(out)
 
-    if ( trim( rad_scheme ) == "bugsrad" ) then
-      ! Currently clubb does not support different grid heights, use only the first column to
-      ! determine the size of the extended atmosphere
-      call determine_extended_atmos_bounds( gr%nzm, gr%zt(1,:),              & ! Intent(in)
-                                          gr%zm(1,:), gr%dzt(1,:), p_in_Pa_zm(1,:), &   ! Intent(in)
-                                          radiation_top,             &   ! Intent(in)
-                                          extended_atmos_bottom_level, & ! Intent(out)
-                                          extended_atmos_top_level,    & ! Intent(out)
-                                          extended_atmos_range_size,   & ! Intent(out)
-                                          lin_int_buffer )               ! Intent(out)
-
-    else
-      ! lin_int_buffer et al. are set to zero in clubb_model_settings.
-    end if
+    p_in_Pa_zm_init(:) = p_in_Pa_zm(1,:)
     
     ! Determine initial value cloud droplet number concentration when Nc
     ! is predicted.

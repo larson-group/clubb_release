@@ -16,7 +16,6 @@ target_link_libraries(text_writer_lib PRIVATE clubb_core_lib)
 # Establish libraries from this directory
 set(CLUBB_DRIVER_SOURCES
         clubb_driver.F90
-        soil_vegetation.F90
         generalized_grid_test.F90  
 )
 

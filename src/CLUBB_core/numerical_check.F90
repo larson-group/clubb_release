@@ -38,6 +38,10 @@ module numerical_check
     module procedure check_negative_index!, check_negative_total
   end interface
 
+  interface is_nan_2d
+    module procedure is_nan_1d, is_nan_2d
+  end interface
+
 
   contains
 !---------------------------------------------------------------------------------
@@ -763,7 +767,7 @@ module numerical_check
   end subroutine sfc_varnce_check
 
 !-----------------------------------------------------------------------
-  subroutine rad_check( nzm, nzt, thlm, rcm, rtm, rim, &
+  subroutine rad_check( ngrdcol, nzm, nzt, thlm, rcm, rtm, rim, &
                         cloud_frac, p_in_Pa, exner, rho_zm, &
                         err_info )
 ! Description:
@@ -780,6 +784,7 @@ module numerical_check
     implicit none
 
     integer, intent(in) :: &
+      ngrdcol, &
       nzm, &
       nzt
 
@@ -788,7 +793,7 @@ module numerical_check
       proc_name = "Before BUGSrad."
 
     ! Input/Output variables
-    real( kind = core_rknd ), dimension(nzt), intent(in) :: &
+    real( kind = core_rknd ), dimension(ngrdcol,nzt), intent(in) :: &
       thlm,           & ! Liquid Water Potential Temperature   [K/s]
       rcm,            & ! Liquid Water Mixing Ratio            [kg/kg]
       rtm,            & ! Total Water Mixing Ratio             [kg/kg]
@@ -797,7 +802,7 @@ module numerical_check
       p_in_Pa,        & ! Pressure                             [Pa]
       exner             ! Exner Function                       [-]
 
-    real( kind = core_rknd ), dimension(nzm), intent(in) :: &
+    real( kind = core_rknd ), dimension(ngrdcol,nzm), intent(in) :: &
       rho_zm            ! Air Density                          [kg/m^3]
 
     ! Input/Output variables
@@ -807,28 +812,32 @@ module numerical_check
     ! Local variables
     real( kind = core_rknd ), dimension(nzt) :: rvm
 
+    integer :: i
+
 !-------------------------------------------------------------------------
 
-    rvm = rtm - rcm
+    do i = 1, ngrdcol
+      rvm = rtm(i,:) - rcm(i,:)
 
-    call check_negative( thlm, 1, nzt, "thlm", proc_name, & ! intent(in)
-                         err_info ) ! intent(inout)
-    call check_negative( rcm, 1, nzt, "rcm", proc_name, & ! intent(in)
-                         err_info ) ! intent(inout)
-    call check_negative( rtm, 1, nzt, "rtm", proc_name, & ! intent(in)
-                         err_info ) ! intent(inout)
-    call check_negative( rvm, 1, nzt, "rvm", proc_name, & ! intent(in)
-                         err_info ) ! intent(inout)
-    call check_negative( rim, 1, nzt, "rim", proc_name, & ! intent(in)
-                         err_info ) ! intent(inout)
-    call check_negative( cloud_frac, 1, nzt,"cloud_frac", proc_name, & ! intent(in)
-                         err_info ) ! intent(inout)
-    call check_negative( p_in_Pa, 1, nzt, "p_in_Pa", proc_name, & ! intent(in)
-                         err_info ) ! intent(inout)
-    call check_negative( exner, 1, nzt, "exner", proc_name, & ! intent(in)
-                         err_info ) ! intent(inout)
-    call check_negative( rho_zm, 1, nzm, "rho_zm", proc_name, & ! intent(in)
-                         err_info ) ! intent(inout)
+      call check_negative( thlm(i,:), 1, nzt, "thlm", proc_name, & ! intent(in)
+                           err_info ) ! intent(inout)
+      call check_negative( rcm(i,:), 1, nzt, "rcm", proc_name, & ! intent(in)
+                           err_info ) ! intent(inout)
+      call check_negative( rtm(i,:), 1, nzt, "rtm", proc_name, & ! intent(in)
+                           err_info ) ! intent(inout)
+      call check_negative( rvm, 1, nzt, "rvm", proc_name, & ! intent(in)
+                           err_info ) ! intent(inout)
+      call check_negative( rim(i,:), 1, nzt, "rim", proc_name, & ! intent(in)
+                           err_info ) ! intent(inout)
+      call check_negative( cloud_frac(i,:), 1, nzt, "cloud_frac", proc_name, & ! intent(in)
+                           err_info ) ! intent(inout)
+      call check_negative( p_in_Pa(i,:), 1, nzt, "p_in_Pa", proc_name, & ! intent(in)
+                           err_info ) ! intent(inout)
+      call check_negative( exner(i,:), 1, nzt, "exner", proc_name, & ! intent(in)
+                           err_info ) ! intent(inout)
+      call check_negative( rho_zm(i,:), 1, nzm, "rho_zm", proc_name, & ! intent(in)
+                           err_info ) ! intent(inout)
+    end do
 
     return
 
@@ -1086,7 +1095,7 @@ module numerical_check
 !------------------------------------------------------------------------
 
 !------------------------------------------------------------------------
-  pure logical function is_nan_2d( x2d )
+  pure logical function is_nan_1d( x1d )
 
 ! Description:
 !   Checks if a given real vector is a NaN, +inf or -inf.
@@ -1096,27 +1105,44 @@ module numerical_check
     use clubb_precision, only: &
         core_rknd ! Variable(s)
 
+    use, intrinsic :: ieee_arithmetic, only: &
+      ieee_is_finite
+
     implicit none
 
-    ! External
-    intrinsic :: any
-
     ! Input Variables
-    real( kind = core_rknd ), dimension(:), intent(in) :: x2d
-
-    ! Local Variables
-    integer :: k
+    real( kind = core_rknd ), dimension(:), intent(in) :: x1d
 
     ! ---- Begin Code ----
 
-    is_nan_2d = .false.
+    is_nan_1d = any( .not. ieee_is_finite( x1d ) )
 
-    do k = 1, size( x2d )
-      if ( is_nan_sclr( x2d(k) ) ) then
-        is_nan_2d = .true.
-        exit
-      end if
-    end do
+    return
+
+  end function is_nan_1d
+
+!------------------------------------------------------------------------
+  pure logical function is_nan_2d( x2d )
+
+! Description:
+!   Checks if any element of a given real 2D array is a NaN, +inf or -inf.
+
+!------------------------------------------------------------------------
+
+    use clubb_precision, only: &
+        core_rknd ! Variable(s)
+
+    use, intrinsic :: ieee_arithmetic, only: &
+      ieee_is_finite
+
+    implicit none
+
+    intrinsic :: any
+
+    ! Input Variables
+    real( kind = core_rknd ), dimension(:,:), intent(in) :: x2d
+
+    is_nan_2d = any( .not. ieee_is_finite( x2d ) )
 
     return
 

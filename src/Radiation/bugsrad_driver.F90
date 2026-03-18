@@ -11,16 +11,12 @@ module bugsrad_driver
   contains
 
   subroutine compute_bugsrad_radiation &
-             ( alt, nzm, nzt, lin_int_buffer,         &
-               extended_atmos_range_size,             &
-               extended_atmos_bottom_level,           &
-               extended_atmos_top_level,              &
-               amu0, &
-               thlm, rcm, rtm, rsm, rim,& 
-               cloud_frac, ice_supersat_frac,       &
-               p_in_Pa, p_in_Pam, exner, rho_zm,    &
-               radht, Frad,                         &
-               Frad_SW_up, Frad_LW_up,              &
+             ( alt, ngrdcol, nzm, nzt, amu0, &
+               thlm, rcm, rtm, rsm, rim, &
+               cloud_frac, ice_supersat_frac, &
+               p_in_Pa, p_in_Pam, exner, rho_zm, &
+               radht, Frad, &
+               Frad_SW_up, Frad_LW_up, &
                Frad_SW_down, Frad_LW_down )
 
 ! Description:
@@ -47,8 +43,6 @@ module bugsrad_driver
 
     use error_code, only: clubb_at_least_debug_level_api ! Procedure(s)
 
-    use grid_class, only: flip  ! Procedure(s)
-
     use extended_atmosphere_module, only: &
       extended_atmos_dim, extended_alt, extended_p_in_mb, & ! Variable(s)
       extended_T_in_K, extended_sp_hmdty, extended_o3l
@@ -61,14 +55,14 @@ module bugsrad_driver
       alndf, &
       slr
 
-    use variables_radiation_module, only: &
-      slen, nlen ! Constats
-
-    use variables_radiation_module, only: &
-      radht_LW, radht_SW, Frad_SW, Frad_LW, & ! Variable(s)
-      T_in_K, rcil, o3l, rsm_2d, rcm_in_cloud_2d, cloud_frac_2d, ice_supersat_frac_2d, &
-      radht_SW_2d, radht_LW_2d, Frad_uLW, Frad_dLW, Frad_uSW, Frad_dSW, &
-      p_in_mb, sp_humidity
+    use radiation_variables_module, only: &
+      lin_int_buffer, extended_atmos_range_size, &
+      extended_atmos_bottom_level, extended_atmos_top_level, &
+      radht_LW, radht_SW, Frad_SW, Frad_LW, &
+      T_in_K, rcil, o3l, rsm_rad, rcm_in_cloud_rad, cloud_frac_rad, ice_supersat_frac_rad, &
+      radht_SW_rad, radht_LW_rad, Frad_uLW, Frad_dLW, Frad_uSW, Frad_dSW, &
+      p_in_mb, sp_humidity, &
+      fdswcl, fuswcl, fdlwcl, fulwcl
 
     implicit none
 
@@ -82,14 +76,11 @@ module bugsrad_driver
       amu0  ! Cosine of the solar zenith angle  [-]
 
     integer, intent(in) :: &
+      ngrdcol, &
       nzm, & ! Vertical extent;  i.e. nz in the grid class
       nzt
 
-    ! Number of levels to interpolate from the bottom of extended_atmos to the top
-    ! of the CLUBB profile, hopefully enough to eliminate cooling spikes, etc.
-    integer, intent(in) :: lin_int_buffer, extended_atmos_range_size
-
-    real( kind = core_rknd ), intent(in), dimension(nzt) :: &
+    real( kind = core_rknd ), intent(in), dimension(ngrdcol,nzt) :: &
       thlm,             & ! Liquid potential temp.              [K]
       rcm,              & ! Liquid water mixing ratio           [kg/kg]
       rsm,              & ! Snow water mixing ratio             [kg/kg]
@@ -101,45 +92,41 @@ module bugsrad_driver
       exner               ! Exner function                      [-]
 
     real( kind = core_rknd ), intent(in), dimension(nzm) :: &
-      alt,              & ! Altitudes of the model              [m]
+      alt                ! Altitudes of the model              [m]
+
+    ! Altitude is still one shared grid for all columns.
+
+    real( kind = core_rknd ), intent(in), dimension(ngrdcol,nzm) :: &
       rho_zm,           & ! Density                             [kg/m^3]
       p_in_Pam            ! Pressure on the m grid              [Pa]
 
-    integer,intent(in) ::&
-      extended_atmos_bottom_level, &
-      extended_atmos_top_level
-
     ! Output Variables
-    real( kind = core_rknd ), intent(out), dimension(nzm) :: &
+    real( kind = core_rknd ), intent(out), dimension(ngrdcol,nzm) :: &
       Frad,         & ! Total radiative flux          [W/m^2]
       Frad_SW_up,   & ! SW radiative upwelling flux   [W/m^2]
       Frad_LW_up,   & ! LW radiative upwelling flux   [W/m^2]
       Frad_SW_down, & ! SW radiative downwelling flux [W/m^2]
       Frad_LW_down    ! LW radiative downwelling flux [W/m^2]
 
-    real( kind = core_rknd ), intent(out), dimension(nzt) :: &
+    real( kind = core_rknd ), intent(out), dimension(ngrdcol,nzt) :: &
       radht           ! Total heating rate            [K/s]
 
     ! Local Variables
 
-    real( kind = core_rknd ), dimension(nzt) :: &
+    real( kind = core_rknd ), dimension(ngrdcol,nzt) :: &
       rcm_in_cloud  ! Liquid water mixing ratio in cloud  [kg/kg]
 
-!   real( kind = dp ), dimension(nlen,nzt+lin_int_buffer+extended_atmos_range_size) :: &
-!     sp_humidity, & ! Specific humidity      [kg/kg]
-!     p_in_mb          ! Pressure in millibars  [hPa]
-
     ! Pressure in millibars for layers (calculated as an average of p_in_mb)
-    real( kind = dp ), dimension(nlen,(nzm-1)+lin_int_buffer+extended_atmos_range_size+1) :: &
+    real( kind = dp ), dimension(ngrdcol,(nzm-1)+lin_int_buffer+extended_atmos_range_size+1) :: &
       playerinmb ! [hPa]
 
-    real( kind = dp ), dimension(nlen,(nzm-1)+lin_int_buffer+extended_atmos_range_size) :: &
+    real( kind = dp ), dimension(ngrdcol,(nzm-1)+lin_int_buffer+extended_atmos_range_size) :: &
       diff_pres_lvls  ! Difference in pressure levels       [hPa]
 
-    real( kind = dp ), dimension(nlen) :: &
+    real( kind = dp ), dimension(ngrdcol) :: &
       ts  ! Surface temperature [K]
 
-    real( kind = dp ) :: z1_fact, z2_fact, tmp ! Temp storage
+    real( kind = dp ) :: z1_fact, z2_fact ! Temp storage
 
     integer :: i, z, z1, z2  ! Loop indices
 
@@ -150,71 +137,6 @@ module bugsrad_driver
     !-------------------------------------------------------------------------------
 
     buffer = lin_int_buffer + extended_atmos_range_size
-
-    ! Convert to millibars
-    p_in_mb(1,1:nzt)  = real( p_in_Pa(1:nzt) / pascal_per_mb, kind=dp ) ! t grid in CLUBB
-
-    playerinmb(1,1:nzm) = real( p_in_Pam / pascal_per_mb, kind=dp ) ! m grid in CLUBB
-
-    ! Determine rcm in cloud
-    rcm_in_cloud = rcm / max( cloud_frac, cloud_frac_min )
-
-    ! Convert theta_l to temperature
-
-    T_in_K(1,1:nzt) = real( thlm2T_in_K_api( nzt, thlm(1:nzt), exner(1:nzt), rcm(1:nzt) ),kind=dp )
-
-    ! Derive Specific humidity from rc & rt.
-    do z = 1, nzt
-      if ( rtm(z) < rcm(z) ) then
-        sp_humidity(1,z) = 0.0_dp
-        if ( clubb_at_least_debug_level_api( 1 ) ) then
-          write(fstderr,*) "rvm < 0 at ", z, " before BUGSrad, specific humidity set to 0"
-        endif
-      else
-        sp_humidity(1,z) &
-          = real( rtm(z) - rcm(z),kind=dp ) / real( 1.0_core_rknd+rtm(z),kind=dp )
-      end if
-    end do
-
-    ! Setup miscellaneous variables
-
-    ! Ozone at < 1 km = 5.4e-5 g/m^3 from U.S. Standard Atmosphere, 1976.
-    !   Convert from g to kg.
-    o3l(1,1:nzt) = real( ( 5.4e-5_core_rknd / rho_zm(1:(nzm-1)) ) / &
-       g_per_kg, kind=dp ) !Known magic number
-
-    ! Convert and transpose as needed
-    rcil(1,buffer+1:nzt+buffer)            = real( flip( rim(1:nzt), nzt ), kind = dp )
-    rsm_2d(1,buffer+1:nzt+buffer)          = real( flip( rsm(1:nzt), nzt ), kind = dp )
-    rcm_in_cloud_2d(1,buffer+1:nzt+buffer) = real( flip( rcm_in_cloud(1:nzt), nzt ), kind = dp )
-    cloud_frac_2d(1,buffer+1:nzt+buffer)   = real( flip( cloud_frac(1:nzt), nzt ), kind = dp )
-    ice_supersat_frac_2d(1,buffer+1:nzt+buffer) = real( flip( ice_supersat_frac(1:nzt), nzt ), &
-                                                        kind = dp )
-
-    T_in_K(1,buffer+1:nzt+buffer) = real( flip( real( T_in_K(1,1:nzt), kind = core_rknd ), &
-                                                nzt ), kind = dp )
-
-    sp_humidity(1,buffer+1:nzt+buffer) = real( flip( real( sp_humidity(1,1:nzt), &
-                                                           kind = core_rknd ), &
-                                                     nzt ), kind = dp )
-
-    p_in_mb(1,(buffer+1):(nzt+buffer)) = real( flip( real( p_in_mb(1,1:nzt), kind = core_rknd ), &
-                                                     nzt ), kind = dp )
-                                          
-    playerinmb(1,(buffer+1):(nzm+buffer)) = real( flip( real( playerinmb(1,1:nzm), &
-                                                              kind = core_rknd ), &
-                                                        nzm ), kind = dp )
-
-    o3l(1,buffer+1:nzt+buffer) = real( flip( real( o3l(1,1:nzt), kind = core_rknd ), nzt ), &
-                                             kind = dp )
-
-    ! Assume these are all zero above the CLUBB profile
-    rsm_2d(1,1:buffer)                = 0.0_dp
-    rcil(1,1:buffer)                  = 0.0_dp
-    rcm_in_cloud_2d(1,1:buffer)       = 0.0_dp
-    cloud_frac_2d(1,1:buffer)         = 0.0_dp
-    ice_supersat_frac_2d(1,1:buffer)  = 0.0_dp
-
     if ( alt(nzm) > extended_alt(extended_atmos_dim) ) then
 
       write(fstderr,*) "The CLUBB model grid (for zm levels) contains an ",  &
@@ -231,121 +153,155 @@ module bugsrad_driver
       ! Continue
     end if
 
-    ! Add the extended atmospheric profile above the linear interpolation
-    T_in_K(1,1:extended_atmos_range_size) = &
-               real( flip( extended_T_in_K( extended_atmos_bottom_level: &
-                      extended_atmos_top_level ), extended_atmos_range_size ), kind = dp )
+    T_in_K = 0._dp
+    rcil = 0._dp
+    o3l = 0._dp
+    rsm_rad = 0._dp
+    rcm_in_cloud_rad = 0._dp
+    cloud_frac_rad = 0._dp
+    ice_supersat_frac_rad = 0._dp
+    p_in_mb = 0._dp
+    sp_humidity = 0._dp
+    radht_SW = 0._core_rknd
+    radht_LW = 0._core_rknd
+    radht_SW_rad = 0._dp
+    radht_LW_rad = 0._dp
+    Frad_dSW = 0._dp
+    Frad_uSW = 0._dp
+    Frad_dLW = 0._dp
+    Frad_uLW = 0._dp
+    fdswcl = 0._dp
+    fuswcl = 0._dp
+    fdlwcl = 0._dp
+    fulwcl = 0._dp
+    playerinmb = 0._dp
+    diff_pres_lvls = 0._dp
+    ts = 0._dp
 
-    sp_humidity(1,1:extended_atmos_range_size) = &
-               real( flip( extended_sp_hmdty( extended_atmos_bottom_level: &
-                      extended_atmos_top_level ), extended_atmos_range_size ), kind = dp )
+    rcm_in_cloud = rcm / max( cloud_frac, cloud_frac_min )
+    T_in_K(:,1:nzt) = thlm2T_in_K_api( nzt, ngrdcol, thlm, exner, rcm )
+    p_in_mb(:,1:nzt) = p_in_Pa(:,1:nzt) / pascal_per_mb
+    o3l(:,1:nzt) = ( 5.4e-5_core_rknd / rho_zm(:,1:nzt) ) / g_per_kg
 
-    o3l(1,1:extended_atmos_range_size) = &
-               real( flip( extended_o3l( extended_atmos_bottom_level: &
-                      extended_atmos_top_level ), extended_atmos_range_size ), kind = dp )
+    where ( rtm(:,1:nzt) < rcm(:,1:nzt) )
+      sp_humidity(:,1:nzt) = 0.0_dp
+    elsewhere
+      sp_humidity(:,1:nzt) = real( rtm(:,1:nzt) - rcm(:,1:nzt), kind=dp ) &
+                             / real( 1.0_core_rknd + rtm(:,1:nzt), kind=dp )
+    end where
 
-    p_in_mb(1,1:extended_atmos_range_size) = &
-               real( flip( extended_p_in_mb( extended_atmos_bottom_level: &
-                      extended_atmos_top_level ), extended_atmos_range_size ), kind = dp )
+    if ( clubb_at_least_debug_level_api( 1 ) ) then
+      do i = 1, ngrdcol
+        do z = 1, nzt
+          if ( rtm(i,z) < rcm(i,z) ) then
+            write(fstderr,*) "rvm < 0 at ", z, " before BUGSrad, specific humidity set to 0"
+          end if
+        end do
+      end do
+    end if
 
-    ! Do a linear interpolation to produce the levels between the extended
-    ! atmospheric levels and the CLUBB levels;
-    ! These levels should number the lin_int_buffer parameter
+    playerinmb(:,1:nzm) = p_in_Pam(:,1:nzm) / pascal_per_mb
+
+    rcil(:,buffer+1:nzt+buffer) = rim(:,nzt:1:-1)
+    rsm_rad(:,buffer+1:nzt+buffer) = rsm(:,nzt:1:-1)
+    rcm_in_cloud_rad(:,buffer+1:nzt+buffer) = rcm_in_cloud(:,nzt:1:-1)
+    cloud_frac_rad(:,buffer+1:nzt+buffer) = cloud_frac(:,nzt:1:-1)
+    ice_supersat_frac_rad(:,buffer+1:nzt+buffer) = ice_supersat_frac(:,nzt:1:-1)
+
+    T_in_K(:,buffer+1:nzt+buffer) = T_in_K(:,nzt:1:-1)
+    sp_humidity(:,buffer+1:nzt+buffer) = sp_humidity(:,nzt:1:-1)
+    p_in_mb(:,buffer+1:nzt+buffer) = p_in_mb(:,nzt:1:-1)
+    playerinmb(:,buffer+1:nzm+buffer) = playerinmb(:,nzm:1:-1)
+    o3l(:,buffer+1:nzt+buffer) = o3l(:,nzt:1:-1)
+
+    if ( extended_atmos_range_size > 0 ) then
+      do i = 1, ngrdcol
+        T_in_K(i,1:extended_atmos_range_size) = &
+          extended_T_in_K( extended_atmos_top_level:extended_atmos_bottom_level:-1 )
+
+        sp_humidity(i,1:extended_atmos_range_size) = &
+          extended_sp_hmdty( extended_atmos_top_level:extended_atmos_bottom_level:-1 )
+
+        o3l(i,1:extended_atmos_range_size) = &
+          extended_o3l( extended_atmos_top_level:extended_atmos_bottom_level:-1 )
+
+        p_in_mb(i,1:extended_atmos_range_size) = &
+          extended_p_in_mb( extended_atmos_top_level:extended_atmos_bottom_level:-1 )
+      end do
+    end if
+
     z1 = buffer + 1
     z2 = extended_atmos_range_size
     do z = buffer, extended_atmos_range_size+1, -1
       z1_fact = real( z2 - z, kind=dp ) / real( z2 - z1,kind=dp )
       z2_fact = real( z - z1,kind=dp ) / real( z2 - z1, kind=dp )
 
-      T_in_K(1,z) = z1_fact * T_in_K(1,z1) + z2_fact * T_in_K(1,z2)
-
-      sp_humidity(1,z) = z1_fact * sp_humidity(1,z1) + z2_fact * sp_humidity(1,z2)
-      o3l(1,z) = z1_fact * o3l(1,z1) + z2_fact * o3l(1,z2)
-
-      p_in_mb(1,z) = z1_fact * p_in_mb(1,z1) + z2_fact * p_in_mb(1,z2)
+      T_in_K(:,z) = z1_fact * T_in_K(:,z1) + z2_fact * T_in_K(:,z2)
+      sp_humidity(:,z) = z1_fact * sp_humidity(:,z1) + z2_fact * sp_humidity(:,z2)
+      o3l(:,z) = z1_fact * o3l(:,z1) + z2_fact * o3l(:,z2)
+      p_in_mb(:,z) = z1_fact * p_in_mb(:,z1) + z2_fact * p_in_mb(:,z2)
     end do
 
-    ! Do a linear interpolation to find playerinmb.  Since this interpolation
-    ! occurs at levels above the top of the CLUBB model, the CLUBB zt2zm_api function
-    ! or CLUBB weighted averages do not apply.  The variable playerinmb is being
-    ! defined on momentum levels above the top of the CLUBB model, which are
-    ! being defined here at points half-way inbetween the thermodynamic levels
-    ! above the top of the CLUBB model.  Brian Griffin; May 13, 2008.
-    playerinmb(1,2:buffer+1) = ( p_in_mb(1,1:buffer) + p_in_mb(1,2:buffer+1) ) / 2._dp
+    playerinmb(:,2:buffer+1) = ( p_in_mb(:,1:buffer) + p_in_mb(:,2:buffer+1) ) / 2._dp
 
-    ! Do a linear extension to find playerinmb at the uppermost standard
-    ! atmosphere momentum level.  The grid is evenly-spaced at these points.
-    ! Brian Griffin; May 13, 2008.
-    tmp = 2._dp * playerinmb(1,2) - playerinmb(1,3)
-    if ( tmp > 0._dp ) then
-      playerinmb(1,1) = tmp
-    else ! Assuming a linear extension didn't work
-      playerinmb(1,1) = 0.5_dp * playerinmb(1,2)
-    end if
+    where ( 2._dp * playerinmb(:,2) - playerinmb(:,3) > 0._dp )
+      playerinmb(:,1) = 2._dp * playerinmb(:,2) - playerinmb(:,3)
+    elsewhere
+      playerinmb(:,1) = 0.5_dp * playerinmb(:,2)
+    end where
 
-    ! Calculate the difference in pressure layers (including buffer levels)
-    do i = 1, (nzm-1)+buffer
-      diff_pres_lvls(1,i) = playerinmb(1,i+1) - playerinmb(1,i)
+    diff_pres_lvls(:,1:(nzm-1)+buffer) = playerinmb(:,2:(nzm-1)+buffer+1) - &
+                                         playerinmb(:,1:(nzm-1)+buffer)
+
+    ts(:) = T_in_K(:,nzt+buffer)
+
+    do i = 1, ngrdcol
+      do z = 2, nzt + buffer
+        if ( p_in_mb(i,z-1) > p_in_mb(i,z) ) then
+          write(0,*) "Column = ", i
+          write(0,*) "Pressure (z)   [mb] = ", p_in_mb(i,z)
+          write(0,*) "Pressure (z-1) [mb] = ", p_in_mb(i,z-1)
+          write(0,*) "z level = ", z
+          error stop "Fatal error: assertion check for pressure in BUGSrad_driver failed"
+        end if
+      end do
     end do
 
-    ts(1) = T_in_K(1,nzt+buffer)
-!  Write a profile for Kurt's driver program for debugging purposes
-!  write(time_char ,*) time
-!  time_char =adjustl(time_char)
-    !open(10, file="profile"//trim(time_char)//"dat")
-    !write(10,'(2i4,a10)') nlen, (nz-1)+buffer, "TROPICAL"
-    !do i=1, (nz-1)+buffer
-    ! write(10,'(i4,9f12.6)') i, p_in_mb(1,i), playerinmb(1,i),T_in_K(1,i), &
-    !sp_humidity(1,i), 100000.0*o3l(1,i), rcm_in_cloud_2d(1,i), &
-    !rcil(1,i), cloud_frac_2d(1,i), diff_pres_lvls(1,i)
-    !end do
-    !write(10,'(a4,a12,3f12.6)') "","", playerinmb(1,nz+buffer), ts(1), amu0
-    !close(10)
+    radht_SW_rad(:,:) = 0._dp
+    radht_LW_rad(:,:) = 0._dp
+    Frad_dSW(:,:) = 0._dp
+    Frad_uSW(:,:) = 0._dp
+    Frad_dLW(:,:) = 0._dp
+    Frad_uLW(:,:) = 0._dp
+    fdswcl(:,:) = 0._dp
+    fuswcl(:,:) = 0._dp
+    fdlwcl(:,:) = 0._dp
+    fulwcl(:,:) = 0._dp
 
-    ! Assertion check for unrealistic pressure
-    do i = 2, size( p_in_mb(1,:) )
-      if ( p_in_mb(1,i-1) > p_in_mb(1,i) ) then
-        write(0,*) "Pressure (i)  [mb] = ", p_in_mb(1,i)
-        write(0,*) "Pressure (i-1) [mb] = ", p_in_mb(1,i-1)
-        write(0,*) "i level = ", i
-        error stop "Fatal error: assertion check for pressure in BUGSrad_driver failed"
-      end if
+    do i = 1, ngrdcol
+      call bugs_rad( 1, 1, nzt+buffer, playerinmb(i:i,:), p_in_mb(i:i,:), &
+                     diff_pres_lvls(i:i,:), T_in_K(i:i,:), sp_humidity(i:i,:), &
+                     rcm_in_cloud_rad(i:i,:), rcil(i:i,:), rsm_rad(i:i,:), o3l(i:i,:), &
+                     ts(i:i), amu0, slr, alvdf, alndf, alvdr, alndr, sol_const, &
+                     real( grav, kind=dp ), real( Cp, kind=dp ), radht_SW_rad(i:i,:), &
+                     radht_LW_rad(i:i,:), Frad_dSW(i:i,:), Frad_uSW(i:i,:), &
+                     Frad_dLW(i:i,:), Frad_uLW(i:i,:), fdswcl(i:i,:), fuswcl(i:i,:), &
+                     fdlwcl(i:i,:), fulwcl(i:i,:), cloud_frac_rad(i:i,:) )
     end do
 
-    call bugs_rad( nlen, slen, nzt+buffer, playerinmb,              &
-                   p_in_mb, diff_pres_lvls, T_in_K, sp_humidity,         &
-                   rcm_in_cloud_2d, rcil, rsm_2d, o3l,              &
-                   ts, amu0, slr, alvdf,                               &
-                   alndf, alvdr, alndr, sol_const,                     &
-                   real( grav, kind=dp ), real( Cp, kind=dp ), radht_SW_2d, radht_LW_2d, &
-                   Frad_dSW, Frad_uSW, Frad_dLW, Frad_uLW,             &
-                   cloud_frac_2d )
+    radht_SW(:,1:nzt) = real( radht_SW_rad(:,nzt+buffer:buffer+1:-1), kind = core_rknd ) &
+                        * ( 1.0_core_rknd / exner(:,1:nzt) )
+    radht_LW(:,1:nzt) = real( radht_LW_rad(:,nzt+buffer:buffer+1:-1), kind = core_rknd ) &
+                        * ( 1.0_core_rknd / exner(:,1:nzt) )
+    radht(:,1:nzt) = radht_SW(:,1:nzt) + radht_LW(:,1:nzt)
 
-    ! Michael pointed out that this was a temperature tendency, not a theta_l
-    ! tendency.  The 2nd line should fix both.  -dschanen 28 July 2006
-    radht_SW(1:nzt) = flip( real( radht_SW_2d(1,buffer+1:nzt+buffer), &
-                                  kind = core_rknd ), nzt ) &
-                      * ( 1.0_core_rknd / exner(1:nzt) )
-
-    radht_LW(1:nzt) = flip( real( radht_LW_2d(1,buffer+1:nzt+buffer), &
-                                  kind = core_rknd ), nzt ) &
-                      * ( 1.0_core_rknd / exner(1:nzt) )
-
-    radht = radht_SW + radht_LW
-
-    Frad_SW_up = flip( real( Frad_uSW(1,buffer+1:nzm+buffer), kind = core_rknd ), nzm )
-
-    Frad_LW_up = flip( real( Frad_uLW(1,buffer+1:nzm+buffer), kind = core_rknd ), nzm )
-
-    Frad_SW_down = flip( real( Frad_dSW(1,buffer+1:nzm+buffer), kind = core_rknd ), nzm )
-
-    Frad_LW_down = flip( real( Frad_dLW(1,buffer+1:nzm+buffer), kind = core_rknd ), nzm )
-
-    Frad_SW(1:nzm) = Frad_SW_up - Frad_SW_down
-
-    Frad_LW(1:nzm) = Frad_LW_up - Frad_LW_down
-
-    Frad(1:nzm) = Frad_SW(1:nzm) + Frad_LW(1:nzm)
+    Frad_SW_up(:,:) = Frad_uSW(:,nzm+buffer:buffer+1:-1)
+    Frad_LW_up(:,:) = Frad_uLW(:,nzm+buffer:buffer+1:-1)
+    Frad_SW_down(:,:) = Frad_dSW(:,nzm+buffer:buffer+1:-1)
+    Frad_LW_down(:,:) = Frad_dLW(:,nzm+buffer:buffer+1:-1)
+    Frad_SW(:,:) = Frad_SW_up(:,:) - Frad_SW_down(:,:)
+    Frad_LW(:,:) = Frad_LW_up(:,:) - Frad_LW_down(:,:)
+    Frad(:,:) = Frad_SW(:,:) + Frad_LW(:,:)
 
     return
   end subroutine compute_bugsrad_radiation
