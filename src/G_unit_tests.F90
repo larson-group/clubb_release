@@ -172,6 +172,9 @@ program G_unit_tests
 
   use grid_class, only: grid ! Type
 
+  use error_code, only: &
+      set_clubb_debug_level_api ! Procedure(s)
+
   implicit none
 
   type(grid), target :: gr
@@ -216,6 +219,7 @@ program G_unit_tests
   read(unit=iunit, nml=G_unit_namelist)
   close(unit=iunit)
 
+  call set_clubb_debug_level_api( 2 )
 
   write(fstdout,'(A)') "Running G_unit_tests"
   write(fstdout,'(A)') " "

@@ -67,6 +67,9 @@ module adg1_adg2_3d_luhar_pdf
     use err_info_type_module, only: &
         err_info_type ! Type
 
+    use error_code, only: &
+        clubb_fatal_error
+
     implicit none
 
     integer, intent(in) :: &
@@ -162,8 +165,13 @@ module adg1_adg2_3d_luhar_pdf
     ! of w.
     call ADG1_w_closure( nz, ngrdcol, wm, wp2, Skw, sigma_sqd_w,  & ! In
                          sqrt_wp2, mixt_frac_max_mag,             & ! In
+                         err_info,                                & ! In/Out
                          w_1, w_2, w_1_n, w_2_n,                  & ! Out
                          varnce_w_1, varnce_w_2, mixt_frac )        ! Out
+
+    if ( any(err_info%err_code == clubb_fatal_error) ) then
+      return
+    end if
 
     ! Calculate the PDF component means and variances of rt.
     call ADG1_ADG2_responder_params( nz, ngrdcol,                     & ! In
@@ -616,6 +624,7 @@ module adg1_adg2_3d_luhar_pdf
   !======================================================================
   subroutine ADG1_w_closure( nz, ngrdcol, wm, wp2, Skw, sigma_sqd_w, & !In
                              sqrt_wp2, mixt_frac_max_mag, &            !In
+                             err_info, &                                !In/Out
                              w_1, w_2, w_1_n, w_2_n, &                 !Out
                              varnce_w_1, varnce_w_2, mixt_frac )       !Out
 
@@ -648,10 +657,18 @@ module adg1_adg2_3d_luhar_pdf
         one,       &
         one_half,  &
         zero,      &
-        w_tol_sqd
+        w_tol_sqd, &
+        fstderr
 
     use clubb_precision, only: &
         core_rknd     ! Precision
+
+    use err_info_type_module, only: &
+        err_info_type ! Type
+
+    use error_code, only: &
+        clubb_at_least_debug_level_api, &
+        clubb_fatal_error
 
     implicit none
 
@@ -670,6 +687,9 @@ module adg1_adg2_3d_luhar_pdf
     real( kind = core_rknd ),  intent(in) :: &
       mixt_frac_max_mag    ! Maximum allowable mag. of mixt_frac   [-]
 
+    type(err_info_type), intent(inout) :: &
+      err_info
+
     ! Output Variables
     real( kind = core_rknd ), dimension(ngrdcol,nz), intent(out) :: &
       w_1,        & ! Mean of w (1st PDF component)                [m/s]
@@ -685,81 +705,77 @@ module adg1_adg2_3d_luhar_pdf
 
     !----- Begin Code -----
 
+    if ( clubb_at_least_debug_level_api( 2 ) ) then
+      !$acc update host( wp2 )
+      if ( any( wp2 < w_tol_sqd ) ) then
+        write(fstderr,*) err_info%err_header_global
+        write(fstderr,*) "Error in ADG1_w_closure: wp2 must not be less than " // &
+                         "the w tolerance value."
+        err_info%err_code = clubb_fatal_error
+        return
+      end if
+    end if
+
     !$acc parallel loop gang vector collapse(2) default(present)
     do k = 1, nz
-       do i = 1, ngrdcol
+      do i = 1, ngrdcol
 
-          if ( wp2(i,k) > w_tol_sqd ) then
+        ! Width (standard deviation) parameters are non-zero
 
-             ! Width (standard deviation) parameters are non-zero
+        ! The variable "mixt_frac" is the weight of the 1st PDF component.  The
+        ! weight of the 2nd PDF component is "1-mixt_frac".  If there isn't any
+        ! skewness of w (Sk_w = 0 because w'^3 = 0), mixt_frac = 0.5, and both
+        ! PDF components are equally weighted.  If there is positive skewness of
+        ! w (Sk_w > 0 because w'^3 > 0), 0 < mixt_frac < 0.5, and the 2nd PDF
+        ! component has greater weight than does the 1st PDF component.  If there
+        ! is negative skewness of w (Sk_w < 0 because w'^3 < 0),
+        ! 0.5 < mixt_frac < 1, and the 1st PDF component has greater weight than
+        ! does the 2nd PDF component.
+        if ( abs( Skw(i,k) ) <= 1.0e-5_core_rknd ) then
+          mixt_frac(i,k) = one_half
+        else
+          mixt_frac(i,k) &
+            = one_half &
+                * ( one - Skw(i,k) / sqrt( four * ( one - sigma_sqd_w(i,k) )**3 &
+                                        + Skw(i,k)**2 ) )
+        endif
 
-             ! The variable "mixt_frac" is the weight of the 1st PDF component.  The
-             ! weight of the 2nd PDF component is "1-mixt_frac".  If there isn't any
-             ! skewness of w (Sk_w = 0 because w'^3 = 0), mixt_frac = 0.5, and both
-             ! PDF components are equally weighted.  If there is positive skewness of
-             ! w (Sk_w > 0 because w'^3 > 0), 0 < mixt_frac < 0.5, and the 2nd PDF
-             ! component has greater weight than does the 1st PDF component.  If there
-             ! is negative skewness of w (Sk_w < 0 because w'^3 < 0),
-             ! 0.5 < mixt_frac < 1, and the 1st PDF component has greater weight than
-             ! does the 2nd PDF component.
-             if ( abs( Skw(i,k) ) <= 1.0e-5_core_rknd ) then
-                mixt_frac(i,k) = one_half
-             else
-                mixt_frac(i,k) &
-                 = one_half &
-                     * ( one - Skw(i,k) / sqrt( four * ( one - sigma_sqd_w(i,k) )**3 &
-                                              + Skw(i,k)**2 ) )
-             endif
+        ! Clip mixt_frac, and 1 - mixt_frac, to avoid dividing by a small number.
+        ! Formula for mixt_frac_max_mag =
+        ! 1 - ( 1/2 * ( 1 - Skw_max
+        !                   / sqrt( 4*( 1 - sigma_sqd_w )^3 + Skw_max^2 ) ) ),
+        ! where sigma_sqd_w is fixed at 0.4 for this calculation.
+        mixt_frac(i,k) = min( max( mixt_frac(i,k), one - mixt_frac_max_mag ), &
+                              mixt_frac_max_mag )
 
-             ! Clip mixt_frac, and 1 - mixt_frac, to avoid dividing by a small number.
-             ! Formula for mixt_frac_max_mag =
-             ! 1 - ( 1/2 * ( 1 - Skw_max
-             !                   / sqrt( 4*( 1 - sigma_sqd_w )^3 + Skw_max^2 ) ) ),
-             ! where sigma_sqd_w is fixed at 0.4 for this calculation.
-             mixt_frac(i,k) = min( max( mixt_frac(i,k), one - mixt_frac_max_mag ), &
-                                   mixt_frac_max_mag )
+        ! The normalized mean of w for Gaussian "plume" 1 is w_1_n.  It's value
+        ! will always be greater than 0.  As an example, a value of 1.0 would
+        ! indicate that the actual mean of w for Gaussian "plume" 1 is found 1.0
+        ! standard deviation above the overall mean for w.
+        w_1_n(i,k) &
+        = sqrt( ( ( one - mixt_frac(i,k) ) / mixt_frac(i,k) ) * ( one - sigma_sqd_w(i,k) ) )
+        ! The normalized mean of w for Gaussian "plume" 2 is w_2_n.  It's value
+        ! will always be less than 0.  As an example, a value of -0.5 would
+        ! indicate that the actual mean of w for Gaussian "plume" 2 is found 0.5
+        ! standard deviations below the overall mean for w.
+        w_2_n(i,k) &
+        = -sqrt( ( mixt_frac(i,k) / ( one - mixt_frac(i,k) ) ) * ( one - sigma_sqd_w(i,k) ) )
+        ! The mean of w for Gaussian "plume" 1 is w_1.
+        w_1(i,k) = wm(i,k) + sqrt_wp2(i,k) * w_1_n(i,k)
+        ! The mean of w for Gaussian "plume" 2 is w_2.
+        w_2(i,k) = wm(i,k) + sqrt_wp2(i,k) * w_2_n(i,k)
 
-             ! The normalized mean of w for Gaussian "plume" 1 is w_1_n.  It's value
-             ! will always be greater than 0.  As an example, a value of 1.0 would
-             ! indicate that the actual mean of w for Gaussian "plume" 1 is found 1.0
-             ! standard deviation above the overall mean for w.
-             w_1_n(i,k) &
-              = sqrt( ( ( one - mixt_frac(i,k) ) / mixt_frac(i,k) ) * ( one - sigma_sqd_w(i,k) ) )
-             ! The normalized mean of w for Gaussian "plume" 2 is w_2_n.  It's value
-             ! will always be less than 0.  As an example, a value of -0.5 would
-             ! indicate that the actual mean of w for Gaussian "plume" 2 is found 0.5
-             ! standard deviations below the overall mean for w.
-             w_2_n(i,k) &
-              = -sqrt( ( mixt_frac(i,k) / ( one - mixt_frac(i,k) ) ) * ( one - sigma_sqd_w(i,k) ) )
-             ! The mean of w for Gaussian "plume" 1 is w_1.
-             w_1(i,k) = wm(i,k) + sqrt_wp2(i,k) * w_1_n(i,k)
-             ! The mean of w for Gaussian "plume" 2 is w_2.
-             w_2(i,k) = wm(i,k) + sqrt_wp2(i,k) * w_2_n(i,k)
+        ! The variance of w for Gaussian "plume" 1 for varnce_w_1.
+        varnce_w_1(i,k) = sigma_sqd_w(i,k) * wp2(i,k)
+        ! The variance of w for Gaussian "plume" 2 for varnce_w_2.
+        ! The variance in both Gaussian "plumes" is defined to be the same.
+        varnce_w_2(i,k) = sigma_sqd_w(i,k) * wp2(i,k)
 
-             ! The variance of w for Gaussian "plume" 1 for varnce_w_1.
-             varnce_w_1(i,k) = sigma_sqd_w(i,k) * wp2(i,k)
-             ! The variance of w for Gaussian "plume" 2 for varnce_w_2.
-             ! The variance in both Gaussian "plumes" is defined to be the same.
-             varnce_w_2(i,k) = sigma_sqd_w(i,k) * wp2(i,k)
-
-          else
-
-             ! Vertical velocity doesn't vary.
-             mixt_frac(i,k)  = one_half
-             w_1_n(i,k)      = sqrt( one - sigma_sqd_w(i,k) )
-             w_2_n(i,k)      = -sqrt( one - sigma_sqd_w(i,k) )
-             w_1(i,k)        = wm(i,k)
-             w_2(i,k)        = wm(i,k)
-             varnce_w_1(i,k) = zero
-             varnce_w_2(i,k) = zero
-
-          endif  ! Widths non-zero
-       end do
+      end do
     end do
     !$acc end parallel loop
+
     return
-
-
 
   end subroutine ADG1_w_closure
 
@@ -1096,7 +1112,6 @@ module adg1_adg2_3d_luhar_pdf
         two_thirds,     &
         one_half,       &
         zero_threshold, &
-        w_tol_sqd,      &
         fstderr
 
     use clubb_precision, only: &
@@ -1157,11 +1172,11 @@ module adg1_adg2_3d_luhar_pdf
     !-------------------------- Begin Code --------------------------
 
     if ( clubb_at_least_debug_level_api( 2 ) ) then
-      !$acc update host( wp2, xp2 )
-      if ( any( wp2 < w_tol_sqd .or. xp2 < x_tol**2 ) ) then
+      !$acc update host( xp2 )
+      if ( any( xp2 < x_tol**2 ) ) then
         write(fstderr,*) err_info%err_header_global
-        write(fstderr,*) "Error in ADG1_ADG2_responder_params: wp2 and xp2 must not be less" // &
-                         "than their respective tolerance values."
+        write(fstderr,*) "Error in ADG1_ADG2_responder_params: xp2 must not be less " // &
+                         "than its tolerance value."
         err_info%err_code = clubb_fatal_error
         return
       end if

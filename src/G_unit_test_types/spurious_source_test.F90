@@ -943,6 +943,7 @@ module spurious_source_test
        ! varnce_w_1_zm, varnce_w_2_zm, and mixt_frac).
        call ADG1_w_closure( gr%nzm, 1, wm_zm, wp2, Skw_zm, sigma_sqd_w,  & ! In
                             sqrt( wp2 ), 0.999_core_rknd,               & ! In
+                            err_info_dummy,                             & ! In/Out
                             w_1_zm, w_2_zm, w_1_n_zm, w_2_n_zm,         & ! Out
                             varnce_w_1_zm, varnce_w_2_zm, mixt_frac_zm )  ! Out
 

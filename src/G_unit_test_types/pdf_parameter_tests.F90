@@ -7,7 +7,8 @@ module pdf_parameter_tests
   public :: pdf_parameter_unit_tests    ! Procedure(s)
 
   private :: setter_var_tests,  & ! Procedure(s)
-             recalc_single_var
+             recalc_single_var, &
+             adg1_expected_failure_tests
 
   private  ! default scope
 
@@ -185,6 +186,10 @@ module pdf_parameter_tests
         init_default_err_info_api, & ! Procedure(s)
         cleanup_err_info_api
 
+    use error_code, only: &
+        clubb_fatal_error, & ! Constant(s)
+        clubb_no_error
+
     implicit none
 
     type (grid), intent(inout) :: gr
@@ -311,6 +316,9 @@ module pdf_parameter_tests
 
     integer :: &
       total_num_failed_sets    ! Records total number of failed parameter sets
+
+    integer :: &
+      num_failed_error_tests   ! Records the number of failed ADG1 error tests
 
     integer, dimension(nz) :: &
       num_failed_sets    ! Records the number of failed parameter sets
@@ -706,6 +714,7 @@ module pdf_parameter_tests
     num_failed_sets = 0
     l_failed_sets = .false.
     total_num_failed_sets = 0
+    num_failed_error_tests = 0
 
     ! The sign of the variance of vertical velocity is always positive.
     sgn_wp2 = one
@@ -728,6 +737,8 @@ module pdf_parameter_tests
 
     ! Perform unit tests.
     do iter_param_sets = 1, num_param_sets, 1
+
+       err_info%err_code = clubb_no_error
 
        if ( iter_param_sets == 1 ) then
           write(fstdout,*) "PDF parameter set 1:"
@@ -852,26 +863,26 @@ module pdf_parameter_tests
           wpthlp(1,:) = -5.0e-3_core_rknd
        elseif ( iter_param_sets == 8 ) then
           write(fstdout,*) "PDF parameter set 8:"
-          ! w, rt, and theta-l are all constant.
+          ! w, rt, and theta-l are all at their tolerance floors.
           wm = -0.002_core_rknd
-          wp2(1,:) = 0.0_core_rknd
+          wp2(1,:) = w_tol_sqd
           Skw = 0.0_core_rknd
           wp3 = Skw * wp2(1,:)**1.5
           rtm = 1.0e-2_core_rknd
-          rtp2(1,:) = 0.0_core_rknd
+          rtp2(1,:) = rt_tol**2
           Skrt = 0.0_core_rknd
           rtp3 = Skrt * rtp2(1,:)**1.5
           thlm = 305.0_core_rknd
-          thlp2(1,:) = 0.0_core_rknd
+          thlp2(1,:) = thl_tol**2
           Skthl = 0.0_core_rknd
           thlp3 = Skthl * thlp2(1,:)**1.5
           wprtp(1,:) = 0.0e-5_core_rknd
           wpthlp(1,:) = 0.0e-3_core_rknd
        elseif ( iter_param_sets == 9 ) then
           write(fstdout,*) "PDF parameter set 9:"
-          ! w is constant.
+          ! w is at its tolerance floor.
           wm = 0.001_core_rknd
-          wp2(1,:) = 0.0_core_rknd
+          wp2(1,:) = w_tol_sqd
           Skw = 0.0_core_rknd
           wp3 = Skw * wp2(1,:)**1.5
           rtm = 1.0e-2_core_rknd
@@ -909,12 +920,10 @@ module pdf_parameter_tests
           rtm = 2.0e-2_core_rknd * rand2 + 1.0e-3_core_rknd
           ! The value of thlm can range from 290 K to 310 K.
           thlm = 20.0_core_rknd * rand3 + 290.0_core_rknd
-          ! The value of wp2 can range from 0 m^2/s^2 to 1.0 m^2/s^2.
-          wp2(1,:) = 1.0_core_rknd * rand4
-          ! The value of rtp2 can range from 0 kg^2/kg^2 to 0.25 * rtm^2
-          rtp2(1,:) = 0.25_core_rknd * rtm**2 * rand5
-          ! The value of thlp2 can range from 0 K^2 to 3.0 K^2.
-          thlp2(1,:) = 3.0_core_rknd * rand6
+          ! The variance values must remain at or above their tolerance floors.
+          wp2(1,:) = max( w_tol_sqd, 1.0_core_rknd * rand4 )
+          rtp2(1,:) = max( rt_tol**2, 0.25_core_rknd * rtm**2 * rand5 )
+          thlp2(1,:) = max( thl_tol**2, 3.0_core_rknd * rand6 )
           ! The value of Skw can range from -4.5 to 4.5.
           Skw = 9.0_core_rknd * rand7 - 4.5_core_rknd
           ! Calculate wp3.
@@ -1315,8 +1324,20 @@ module pdf_parameter_tests
  
              call ADG1_w_closure( nz, 1, wm, wp2, Skw, sigma_sqd_w,       &! In
                                   sqrt_wp2, mixt_frac_max_mag,            &! In
+                                  err_info,                               &! In/Out
                                   mu_w_1, mu_w_2, w_1_n, w_2_n,           &! Out
                                   sigma_w_1_sqd, sigma_w_2_sqd, mixt_frac )! Out
+
+             if ( any(err_info%err_code == clubb_fatal_error) ) then
+                write(fstderr,*) "Fatal error returned from ADG1_w_closure"
+                write(fstderr,*) "PDF parameter set = ", iter_param_sets
+                write(fstderr,*) "sigma_sqd_w = ", sigma_sqd_w(1,1)
+                write(fstderr,*) ""
+                num_failed_sets = num_failed_sets + 1
+                l_failed_sets = .true.
+                err_info%err_code = clubb_no_error
+                cycle
+             endif
 
              sigma_w_1 = sqrt( max( sigma_w_1_sqd(1,:), zero ) )
              sigma_w_2 = sqrt( max( sigma_w_2_sqd(1,:), zero ) )
@@ -1614,6 +1635,16 @@ module pdf_parameter_tests
                                 alpha_u, alpha_v,                        & ! Out
                                 mu_sclr_1, mu_sclr_2, sigma_sclr_1_sqd,  & ! Out
                                 sigma_sclr_2_sqd, alpha_sclr )             ! Out
+
+          if ( any(err_info%err_code == clubb_fatal_error) ) then
+             write(fstderr,*) "Fatal error returned from ADG1_pdf_driver"
+             write(fstderr,*) "PDF parameter set = ", iter_param_sets
+             write(fstderr,*) ""
+             num_failed_sets = num_failed_sets + 1
+             l_failed_sets = .true.
+             err_info%err_code = clubb_no_error
+             cycle
+          endif
 
        elseif ( test_PDF_type == iiPDF_TSDADG ) then
 
@@ -2041,8 +2072,13 @@ module pdf_parameter_tests
 
     enddo ! iter_param_sets = 1, num_param_sets, 1
 
+    if ( test_PDF_type == iiPDF_ADG1 ) then
+      ! These tests check that adg1 routines correctly return an error codes
+      call adg1_expected_failure_tests( clubb_params(1,ibeta), &
+                                       num_failed_error_tests )
+    endif
 
-    total_num_failed_sets = sum( num_failed_sets )
+    total_num_failed_sets = sum( num_failed_sets ) + num_failed_error_tests
 
     ! Print results and return exit code.
     if ( total_num_failed_sets == 0 ) then
@@ -2051,7 +2087,7 @@ module pdf_parameter_tests
        pdf_parameter_unit_tests = 0 ! Exit Code = 0, Success!
     else ! total_num_failed_sets > 0
        write(fstdout,'(1x,A,I4,A)') "There were ", total_num_failed_sets, &
-                                    " failed parameter sets."
+                                    " failed PDF parameter checks."
        write(fstdout,*) ""
        pdf_parameter_unit_tests = 1 ! Exit Code = 1, Fail
     endif ! total_num_failed_sets = 0
@@ -2061,6 +2097,212 @@ module pdf_parameter_tests
     return
 
   end function pdf_parameter_unit_tests
+
+  !=============================================================================
+  subroutine adg1_expected_failure_tests( beta_in, num_failed_error_tests )
+
+    use constants_clubb, only: &
+        one,     &
+        zero,    &
+        fstdout, &
+        fstderr
+
+    use adg1_adg2_3d_luhar_pdf, only: &
+        ADG1_w_closure, &
+        ADG1_pdf_driver
+
+    use err_info_type_module, only: &
+        err_info_type,             &
+        init_default_err_info_api, &
+        cleanup_err_info_api
+
+    use error_code, only: &
+        clubb_fatal_error, &
+        clubb_no_error
+
+    use clubb_precision, only: &
+        core_rknd
+
+    implicit none
+
+    real( kind = core_rknd ), intent(in) :: &
+      beta_in
+
+    integer, intent(out) :: &
+      num_failed_error_tests
+
+    integer, parameter :: &
+      nz = 1,       &
+      ngrdcol = 1,  &
+      sclr_dim = 1
+
+    real( kind = core_rknd ), dimension(sclr_dim) :: &
+      sclr_tol
+
+    real( kind = core_rknd ), dimension(ngrdcol,nz) :: &
+      wm,          &
+      rtm,         &
+      thlm,        &
+      um,          &
+      vm,          &
+      wp2,         &
+      rtp2,        &
+      thlp2,       &
+      up2,         &
+      vp2,         &
+      Skw,         &
+      wprtp,       &
+      wpthlp,      &
+      upwp,        &
+      vpwp,        &
+      sqrt_wp2,    &
+      sigma_sqd_w, &
+      w_1,         &
+      w_2,         &
+      w_1_n,       &
+      w_2_n,       &
+      rt_1,        &
+      rt_2,        &
+      thl_1,       &
+      thl_2,       &
+      u_1,         &
+      u_2,         &
+      v_1,         &
+      v_2,         &
+      varnce_w_1,  &
+      varnce_w_2,  &
+      varnce_rt_1, &
+      varnce_rt_2, &
+      varnce_thl_1,&
+      varnce_thl_2,&
+      varnce_u_1,  &
+      varnce_u_2,  &
+      varnce_v_1,  &
+      varnce_v_2,  &
+      mixt_frac,   &
+      alpha_rt,    &
+      alpha_thl,   &
+      alpha_u,     &
+      alpha_v
+
+    real( kind = core_rknd ), dimension(ngrdcol,nz,sclr_dim) :: &
+      sclrm,          &
+      sclrp2,         &
+      wpsclrp,        &
+      sclr_1,         &
+      sclr_2,         &
+      varnce_sclr_1,  &
+      varnce_sclr_2,  &
+      alpha_sclr
+
+    real( kind = core_rknd ), dimension(ngrdcol) :: &
+      beta
+
+    real( kind = core_rknd ) :: &
+      mixt_frac_max_mag
+
+    logical :: &
+      l_scalar_calc
+
+    type(err_info_type) :: &
+      err_info
+
+    num_failed_error_tests = 0
+
+    call init_default_err_info_api( ngrdcol, err_info )
+
+    write(fstdout,*) "Running ADG1 expected-failure tests."
+    write(fstdout,*) ""
+
+    sclr_tol = zero
+    beta = beta_in
+    mixt_frac_max_mag = one
+    l_scalar_calc = .false.
+
+    ! Test: ADG1_w_closure should reject wp2 below tolerance.
+    err_info%err_code = clubb_no_error
+    wm = zero
+    wp2 = zero
+    Skw = 0.75_core_rknd
+    sigma_sqd_w = 0.4_core_rknd
+    sqrt_wp2 = zero
+
+    call ADG1_w_closure( nz, ngrdcol, wm, wp2, Skw, sigma_sqd_w,  & ! In
+                         sqrt_wp2, mixt_frac_max_mag,              & ! In
+                         err_info,                                 & ! In/Out
+                         w_1, w_2, w_1_n, w_2_n,                   & ! Out
+                         varnce_w_1, varnce_w_2, mixt_frac )         ! Out
+
+    if ( .not. any(err_info%err_code == clubb_fatal_error) ) then
+       num_failed_error_tests = num_failed_error_tests + 1
+       write(fstderr,*) "ADG1 expected-failure test failed: ADG1_w_closure " // &
+                        "accepted wp2 = 0."
+       write(fstderr,*) ""
+    else
+       write(fstdout,*) "ADG1_w_closure correctly failed when given wp2 = 0."
+    endif
+
+    ! Test: ADG1_pdf_driver should reject thlp2 below tolerance when wp2 is valid.
+    err_info%err_code = clubb_no_error
+    wm = 0.1_core_rknd
+    rtm = 1.0e-2_core_rknd
+    thlm = 300.0_core_rknd
+    um = zero
+    vm = zero
+    wp2 = one
+    rtp2 = 1.0e-6_core_rknd
+    thlp2 = zero
+    up2 = one
+    vp2 = one
+    Skw = 0.5_core_rknd
+    wprtp = zero
+    wpthlp = zero
+    upwp = zero
+    vpwp = zero
+    sqrt_wp2 = sqrt( wp2 )
+    sigma_sqd_w = 0.4_core_rknd
+    sclrm = zero
+    sclrp2 = zero
+    wpsclrp = zero
+
+    call ADG1_pdf_driver( nz, ngrdcol, sclr_dim, sclr_tol,     & ! In
+                          wm, rtm, thlm, um, vm,               & ! In
+                          wp2, rtp2, thlp2, up2, vp2,          & ! In
+                          Skw, wprtp, wpthlp, upwp, vpwp,      & ! In
+                          sqrt_wp2, sigma_sqd_w, beta,         & ! In
+                          mixt_frac_max_mag,                   & ! In
+                          sclrm, sclrp2, wpsclrp, l_scalar_calc,& ! In
+                          err_info,                            & ! In/Out
+                          w_1, w_2,                            & ! Out
+                          rt_1, rt_2,                          & ! Out
+                          thl_1, thl_2,                        & ! Out
+                          u_1, u_2, v_1, v_2,                  & ! Out
+                          varnce_w_1, varnce_w_2,              & ! Out
+                          varnce_rt_1, varnce_rt_2,            & ! Out
+                          varnce_thl_1, varnce_thl_2,          & ! Out
+                          varnce_u_1, varnce_u_2,              & ! Out
+                          varnce_v_1, varnce_v_2,              & ! Out
+                          mixt_frac,                           & ! Out
+                          alpha_rt, alpha_thl,                 & ! Out
+                          alpha_u, alpha_v,                    & ! Out
+                          sclr_1, sclr_2,                      & ! Out
+                          varnce_sclr_1, varnce_sclr_2,        & ! Out
+                          alpha_sclr )                           ! Out
+
+    if ( .not. any(err_info%err_code == clubb_fatal_error) ) then
+       num_failed_error_tests = num_failed_error_tests + 1
+       write(fstderr,*) "ADG1 expected-failure test failed: ADG1_pdf_driver " // &
+                        "accepted thlp2 = 0."
+       write(fstderr,*) ""
+    else
+       write(fstdout,*) "ADG1_pdf_driver correctly failed when given thlp2 = 0."
+    endif
+
+    call cleanup_err_info_api( err_info )
+
+    return
+
+  end subroutine adg1_expected_failure_tests
 
   !=============================================================================
   subroutine setter_var_tests( nz, wm, wp2, wp3, Skw,        & ! In
