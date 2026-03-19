@@ -60,6 +60,8 @@ module spurious_source_test
         Cp,        &
         ep1,       &
         ep2,       &
+        rt_tol,    &
+        thl_tol,   &
         w_tol_sqd
 
     use advance_xm_wpxp_module, only: &
@@ -670,8 +672,8 @@ module spurious_source_test
                                3.5e-4_core_rknd, 0.0_core_rknd /)
        rho_ds_zm_snd = (/ 1.0_core_rknd, 0.92_core_rknd, 0.84_core_rknd, &
                           0.76_core_rknd /)
-       rtp2_snd = (/ zero, 2.5e-7_core_rknd, 2.5e-7_core_rknd, zero /)
-       thlp2_snd = (/ zero, 0.1_core_rknd, 0.1_core_rknd, zero /)
+       rtp2_snd = (/ rt_tol**2, 2.5e-7_core_rknd, 2.5e-7_core_rknd, rt_tol**2 /)
+       thlp2_snd = (/ thl_tol**2, 0.1_core_rknd, 0.1_core_rknd, thl_tol**2 /)
        ! The value of Cx_fnc_Richardson should be between 0 and 1, as
        ! the C7_Skw_fnc might be set to the value of Cx_fnc_Richardson.
        Cx_fnc_Richardson_snd = (/ 0.1_core_rknd, 0.5_core_rknd, &
@@ -698,7 +700,7 @@ module spurious_source_test
           call random_number( rand1 )
           sigma_sqd_w_snd = 2.0_core_rknd * rand1 * sigma_sqd_w_snd
           wm_zm_snd = 5.0_core_rknd * ( rand1 - one_half ) * wm_zm_snd
-          wp2_snd = 2.0_core_rknd * rand1 * wp2_snd
+          wp2_snd = max( w_tol_sqd, 2.0_core_rknd * rand1 * wp2_snd )
           wp3_on_wp2_snd = 5.0_core_rknd * ( rand1 - one_half ) * wp3_on_wp2_snd
           Kh_zm_snd = 2.0_core_rknd * rand1 * Kh_zm_snd
           invrs_tau_C6_zm_snd = 2.0_core_rknd * rand1 * invrs_tau_C6_zm_snd
@@ -709,8 +711,8 @@ module spurious_source_test
           thlpthvp_snd = 2.0_core_rknd * rand1 * thlpthvp_snd
           thlm_forcing_snd = 2.0_core_rknd * rand1 * thlm_forcing_snd
           wpthlp_forcing_snd = 2.0_core_rknd * rand1 * wpthlp_forcing_snd
-          rtp2_snd = 2.0_core_rknd * rand1 * rtp2_snd
-          thlp2_snd = 2.0_core_rknd * rand1 * thlp2_snd
+          rtp2_snd = max( rt_tol**2, 2.0_core_rknd * rand1 * rtp2_snd )
+          thlp2_snd = max( thl_tol**2, 2.0_core_rknd * rand1 * thlp2_snd )
           Lscale_snd = 2.0_core_rknd * rand1 * Lscale_snd
           wp2rtp_snd = 2.0_core_rknd * rand1 * wp2rtp_snd
           wp2thlp_snd = 2.0_core_rknd * rand1 * wp2thlp_snd
