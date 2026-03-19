@@ -422,10 +422,20 @@ def find_diffs_in_common_vars( test_file, dir1, dir2, save_to_file, verbose, abs
     # These are the variables we can and want to compare the other variables are printed above
     vars_in_common = set(dset1.variables.keys()).intersection(dset2.variables.keys())
     for var in sorted(vars_in_common):
+        
         # Compare multidimensional fields only. Scalar/1D values are ignored.
         if( dset1[var].ndim > 1 and dset2[var].ndim > 1 ):
             data_1 = np.asarray(dset1[var][...])
             data_2 = np.asarray(dset2[var][...])
+
+            # Skip non-numeric variables
+            if ( not np.issubdtype(data_1.dtype, np.number)
+                 or not np.issubdtype(data_2.dtype, np.number) ):
+                if verbose >= 2:
+                    print("Skipping variable {} because it is not numeric: {} vs {}".format(
+                        var, data_1.dtype, data_2.dtype
+                    ))
+                continue
 
             try:
                 abs_diff = abs(data_1 - data_2)
