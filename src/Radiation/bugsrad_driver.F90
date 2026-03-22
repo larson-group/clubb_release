@@ -11,10 +11,11 @@ module bugsrad_driver
   contains
 
   subroutine compute_bugsrad_radiation &
-             ( alt, ngrdcol, nzm, nzt, amu0, &
+             ( gr, ngrdcol, nzm, nzt, amu0, &
                thlm, rcm, rtm, rsm, rim, &
                cloud_frac, ice_supersat_frac, &
-               p_in_Pa, p_in_Pam, exner, rho_zm, &
+               p_in_Pa, exner, rho_zm, &
+               err_info, &
                radht, Frad, &
                Frad_SW_up, Frad_LW_up, &
                Frad_SW_down, Frad_LW_down )
@@ -39,9 +40,19 @@ module bugsrad_driver
 
     use clubb_precision, only: dp, core_rknd ! Variable(s)
 
+    use grid_class, only: &
+      grid, &
+      zt2zm_api
+
     use T_in_K_module, only: thlm2T_in_K_api ! Procedure(s)
 
-    use error_code, only: clubb_at_least_debug_level_api ! Procedure(s)
+    use error_code, only: &
+      clubb_at_least_debug_level_api, &
+      clubb_fatal_error
+
+    use numerical_check, only: &
+      is_nan_2d, &
+      rad_check
 
     use extended_atmosphere_module, only: &
       extended_atmos_dim, extended_alt, extended_p_in_mb, & ! Variable(s)
@@ -63,6 +74,9 @@ module bugsrad_driver
       radht_SW_rad, radht_LW_rad, Frad_uLW, Frad_dLW, Frad_uSW, Frad_dSW, &
       p_in_mb, sp_humidity, &
       fdswcl, fuswcl, fdlwcl, fulwcl
+
+    use err_info_type_module, only: &
+      err_info_type
 
     implicit none
 
@@ -91,14 +105,14 @@ module bugsrad_driver
       p_in_Pa,          & ! Pressure on the t grid              [Pa]
       exner               ! Exner function                      [-]
 
-    real( kind = core_rknd ), intent(in), dimension(nzm) :: &
-      alt                ! Altitudes of the model              [m]
-
-    ! Altitude is still one shared grid for all columns.
+    type(grid), intent(in) :: &
+      gr
 
     real( kind = core_rknd ), intent(in), dimension(ngrdcol,nzm) :: &
-      rho_zm,           & ! Density                             [kg/m^3]
-      p_in_Pam            ! Pressure on the m grid              [Pa]
+      rho_zm              ! Density                             [kg/m^3]
+
+    type(err_info_type), intent(inout) :: &
+      err_info
 
     ! Output Variables
     real( kind = core_rknd ), intent(out), dimension(ngrdcol,nzm) :: &
@@ -112,6 +126,9 @@ module bugsrad_driver
       radht           ! Total heating rate            [K/s]
 
     ! Local Variables
+
+    real( kind = core_rknd ), dimension(ngrdcol,nzm) :: &
+      p_in_Pam ! Pressure on the m grid [Pa]
 
     real( kind = core_rknd ), dimension(ngrdcol,nzt) :: &
       rcm_in_cloud  ! Liquid water mixing ratio in cloud  [kg/kg]
@@ -137,12 +154,12 @@ module bugsrad_driver
     !-------------------------------------------------------------------------------
 
     buffer = lin_int_buffer + extended_atmos_range_size
-    if ( alt(nzm) > extended_alt(extended_atmos_dim) ) then
+    if ( gr%zm(1,nzm) > extended_alt(extended_atmos_dim) ) then
 
       write(fstderr,*) "The CLUBB model grid (for zm levels) contains an ",  &
                        "altitude above the top of the extended atmosphere ",  &
                        "profile."
-      write(fstderr,*) "Top of CLUBB model zm grid =", alt(nzm), "m."
+      write(fstderr,*) "Top of CLUBB model zm grid =", gr%zm(1,nzm), "m."
       write(fstderr,*) "Top of extended atmosphere profile =",  &
                        extended_alt(extended_atmos_dim), "m."
       write(fstderr,*) "Reduce the vertical extent of the CLUBB model grid."
@@ -177,6 +194,58 @@ module bugsrad_driver
     playerinmb = 0._dp
     diff_pres_lvls = 0._dp
     ts = 0._dp
+
+    if ( clubb_at_least_debug_level_api( 0 ) ) then
+      if ( is_nan_2d( thlm ) ) then
+        write(fstderr,*) "thlm before BUGSrad is NaN"
+        err_info%err_code = clubb_fatal_error
+      end if
+
+      if ( is_nan_2d( rcm ) ) then
+        write(fstderr,*) "rcm before BUGSrad is NaN"
+        err_info%err_code = clubb_fatal_error
+      end if
+
+      if ( is_nan_2d( rtm ) ) then
+        write(fstderr,*) "rtm before BUGSrad is NaN"
+        err_info%err_code = clubb_fatal_error
+      end if
+
+      if ( is_nan_2d( rsm ) ) then
+        write(fstderr,*) "rsm before BUGSrad is NaN"
+        err_info%err_code = clubb_fatal_error
+      end if
+
+      if ( is_nan_2d( rim ) ) then
+        write(fstderr,*) "rim before BUGSrad is NaN"
+        err_info%err_code = clubb_fatal_error
+      end if
+
+      if ( is_nan_2d( cloud_frac ) ) then
+        write(fstderr,*) "cloud_frac before BUGSrad is NaN"
+        err_info%err_code = clubb_fatal_error
+      end if
+
+      if ( is_nan_2d( p_in_Pa ) ) then
+        write(fstderr,*) "p_in_Pa before BUGSrad is NaN"
+        err_info%err_code = clubb_fatal_error
+      end if
+
+      if ( is_nan_2d( exner ) ) then
+        write(fstderr,*) "exner before BUGSrad is NaN"
+        err_info%err_code = clubb_fatal_error
+      end if
+
+      if ( is_nan_2d( rho_zm ) ) then
+        write(fstderr,*) "rho_zm before BUGSrad is NaN"
+        err_info%err_code = clubb_fatal_error
+      end if
+
+      call rad_check( ngrdcol, gr%nzm, gr%nzt, thlm, rcm, rtm, rim, &
+                      cloud_frac, p_in_Pa, exner, rho_zm, err_info )
+    end if
+
+    p_in_Pam = zt2zm_api( gr%nzm, gr%nzt, ngrdcol, gr, p_in_Pa )
 
     rcm_in_cloud = rcm / max( cloud_frac, cloud_frac_min )
     T_in_K(:,1:nzt) = thlm2T_in_K_api( nzt, ngrdcol, thlm, exner, rcm )
@@ -302,6 +371,18 @@ module bugsrad_driver
     Frad_SW(:,:) = Frad_SW_up(:,:) - Frad_SW_down(:,:)
     Frad_LW(:,:) = Frad_LW_up(:,:) - Frad_LW_down(:,:)
     Frad(:,:) = Frad_SW(:,:) + Frad_LW(:,:)
+
+    if ( clubb_at_least_debug_level_api( 0 ) ) then
+      if ( is_nan_2d( Frad ) ) then
+        write(fstderr,*) "Frad after BUGSrad is NaN"
+        err_info%err_code = clubb_fatal_error
+      end if
+
+      if ( is_nan_2d( radht ) ) then
+        write(fstderr,*) "radht after BUGSrad is NaN"
+        err_info%err_code = clubb_fatal_error
+      end if
+    end if
 
     return
   end subroutine compute_bugsrad_radiation

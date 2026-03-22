@@ -99,6 +99,10 @@ contains
       nzm, &
       nzt
 
+    integer :: &
+      i, &
+      k
+
     allocate( Frad(ngrdcol, nzm) )
     allocate( Frad_SW_up(ngrdcol, nzm) )
     allocate( Frad_LW_up(ngrdcol, nzm) )
@@ -110,16 +114,31 @@ contains
     allocate( Frad_SW(ngrdcol, nzm) )
     allocate( Frad_LW(ngrdcol, nzm) )
 
-    Frad = 0._core_rknd
-    Frad_SW_up = 0._core_rknd
-    Frad_LW_up = 0._core_rknd
-    Frad_SW_down = 0._core_rknd
-    Frad_LW_down = 0._core_rknd
+    !$acc enter data create( Frad, Frad_SW_up, Frad_LW_up, Frad_SW_down, Frad_LW_down, &
+    !$acc                    radht_LW, radht_SW, Frad_SW, Frad_LW )
 
-    radht_LW = 0._core_rknd
-    radht_SW = 0._core_rknd
-    Frad_SW = 0._core_rknd
-    Frad_LW = 0._core_rknd
+    !$acc parallel loop gang vector collapse(2) default(present)
+    do k = 1, nzm
+      do i = 1, ngrdcol
+        Frad(i,k) = 0._core_rknd
+        Frad_SW_up(i,k) = 0._core_rknd
+        Frad_LW_up(i,k) = 0._core_rknd
+        Frad_SW_down(i,k) = 0._core_rknd
+        Frad_LW_down(i,k) = 0._core_rknd
+        Frad_SW(i,k) = 0._core_rknd
+        Frad_LW(i,k) = 0._core_rknd
+      end do
+    end do
+    !$acc end parallel loop
+
+    !$acc parallel loop gang vector collapse(2) default(present)
+    do k = 1, nzt
+      do i = 1, ngrdcol
+        radht_LW(i,k) = 0._core_rknd
+        radht_SW(i,k) = 0._core_rknd
+      end do
+    end do
+    !$acc end parallel loop
 
   end subroutine setup_radiation_variables
 
@@ -127,16 +146,32 @@ contains
 
     implicit none
 
-    if ( allocated( Frad ) ) Frad = 0._core_rknd
-    if ( allocated( Frad_SW_up ) ) Frad_SW_up = 0._core_rknd
-    if ( allocated( Frad_LW_up ) ) Frad_LW_up = 0._core_rknd
-    if ( allocated( Frad_SW_down ) ) Frad_SW_down = 0._core_rknd
-    if ( allocated( Frad_LW_down ) ) Frad_LW_down = 0._core_rknd
+    integer :: i, k
 
-    if ( allocated( radht_LW ) ) radht_LW = 0._core_rknd
-    if ( allocated( radht_SW ) ) radht_SW = 0._core_rknd
-    if ( allocated( Frad_SW ) ) Frad_SW = 0._core_rknd
-    if ( allocated( Frad_LW ) ) Frad_LW = 0._core_rknd
+    if ( .not. allocated( Frad ) ) return
+
+    !$acc parallel loop gang vector collapse(2) default(present)
+    do k = 1, size( Frad, 2 )
+      do i = 1, size( Frad, 1 )
+        Frad(i,k) = 0._core_rknd
+        Frad_SW_up(i,k) = 0._core_rknd
+        Frad_LW_up(i,k) = 0._core_rknd
+        Frad_SW_down(i,k) = 0._core_rknd
+        Frad_LW_down(i,k) = 0._core_rknd
+        Frad_SW(i,k) = 0._core_rknd
+        Frad_LW(i,k) = 0._core_rknd
+      end do
+    end do
+    !$acc end parallel loop
+
+    !$acc parallel loop gang vector collapse(2) default(present)
+    do k = 1, size( radht_LW, 2 )
+      do i = 1, size( radht_LW, 1 )
+        radht_LW(i,k) = 0._core_rknd
+        radht_SW(i,k) = 0._core_rknd
+      end do
+    end do
+    !$acc end parallel loop
 
   end subroutine reset_radiation_variables
 
@@ -162,7 +197,9 @@ contains
       extended_atmos_range_size_local, &
       lin_int_buffer_local, &
       rad_zt_dim, &
-      rad_zm_dim
+      rad_zm_dim, &
+      i, &
+      k
 
     call determine_extended_atmos_bounds( nzmax, zt_grid, zm_grid, zm_grid_spacing, p_in_Pa_zm, &
                                           extended_atmos_bottom_level_local, &
@@ -203,25 +240,33 @@ contains
     allocate( fdlwcl(ngrdcol, rad_zm_dim) )
     allocate( fulwcl(ngrdcol, rad_zm_dim) )
 
-    T_in_K = 0._dp
-    rcil = 0._dp
-    o3l = 0._dp
-    rsm_rad = 0._dp
-    rcm_in_cloud_rad = 0._dp
-    cloud_frac_rad = 0._dp
-    ice_supersat_frac_rad = 0._dp
-    radht_SW_rad = 0._dp
-    radht_LW_rad = 0._dp
-    p_in_mb = 0._dp
-    sp_humidity = 0._dp
-    Frad_uLW = 0._dp
-    Frad_dLW = 0._dp
-    Frad_uSW = 0._dp
-    Frad_dSW = 0._dp
-    fdswcl = 0._dp
-    fuswcl = 0._dp
-    fdlwcl = 0._dp
-    fulwcl = 0._dp
+    do k = 1, rad_zt_dim
+      do i = 1, ngrdcol
+        T_in_K(i,k) = 0._dp
+        rcil(i,k) = 0._dp
+        o3l(i,k) = 0._dp
+        rsm_rad(i,k) = 0._dp
+        rcm_in_cloud_rad(i,k) = 0._dp
+        cloud_frac_rad(i,k) = 0._dp
+        ice_supersat_frac_rad(i,k) = 0._dp
+        radht_SW_rad(i,k) = 0._dp
+        radht_LW_rad(i,k) = 0._dp
+        p_in_mb(i,k) = 0._dp
+        sp_humidity(i,k) = 0._dp
+      end do
+    end do
+    do k = 1, rad_zm_dim
+      do i = 1, ngrdcol
+        Frad_uLW(i,k) = 0._dp
+        Frad_dLW(i,k) = 0._dp
+        Frad_uSW(i,k) = 0._dp
+        Frad_dSW(i,k) = 0._dp
+        fdswcl(i,k) = 0._dp
+        fuswcl(i,k) = 0._dp
+        fdlwcl(i,k) = 0._dp
+        fulwcl(i,k) = 0._dp
+      end do
+    end do
 
   end subroutine setup_bugsrad_variables
 
@@ -229,30 +274,40 @@ contains
 
     implicit none
 
-    if ( allocated( T_in_K ) ) T_in_K = 0._dp
-    if ( allocated( rcil ) ) rcil = 0._dp
-    if ( allocated( o3l ) ) o3l = 0._dp
+    integer :: &
+      i, &
+      k
 
-    if ( allocated( rsm_rad ) ) rsm_rad = 0._dp
-    if ( allocated( rcm_in_cloud_rad ) ) rcm_in_cloud_rad = 0._dp
-    if ( allocated( cloud_frac_rad ) ) cloud_frac_rad = 0._dp
-    if ( allocated( ice_supersat_frac_rad ) ) ice_supersat_frac_rad = 0._dp
+    if ( .not. allocated( T_in_K ) ) return
 
-    if ( allocated( p_in_mb ) ) p_in_mb = 0._dp
-    if ( allocated( sp_humidity ) ) sp_humidity = 0._dp
+    do k = 1, size( T_in_K, 2 )
+      do i = 1, size( T_in_K, 1 )
+        T_in_K(i,k) = 0._dp
+        rcil(i,k) = 0._dp
+        o3l(i,k) = 0._dp
+        rsm_rad(i,k) = 0._dp
+        rcm_in_cloud_rad(i,k) = 0._dp
+        cloud_frac_rad(i,k) = 0._dp
+        ice_supersat_frac_rad(i,k) = 0._dp
+        p_in_mb(i,k) = 0._dp
+        sp_humidity(i,k) = 0._dp
+        radht_SW_rad(i,k) = 0._dp
+        radht_LW_rad(i,k) = 0._dp
+      end do
+    end do
 
-    if ( allocated( radht_SW_rad ) ) radht_SW_rad = 0._dp
-    if ( allocated( radht_LW_rad ) ) radht_LW_rad = 0._dp
-
-    if ( allocated( Frad_uLW ) ) Frad_uLW = 0._dp
-    if ( allocated( Frad_dLW ) ) Frad_dLW = 0._dp
-    if ( allocated( Frad_uSW ) ) Frad_uSW = 0._dp
-    if ( allocated( Frad_dSW ) ) Frad_dSW = 0._dp
-
-    if ( allocated( fdswcl ) ) fdswcl = 0._dp
-    if ( allocated( fuswcl ) ) fuswcl = 0._dp
-    if ( allocated( fdlwcl ) ) fdlwcl = 0._dp
-    if ( allocated( fulwcl ) ) fulwcl = 0._dp
+    do k = 1, size( Frad_uLW, 2 )
+      do i = 1, size( Frad_uLW, 1 )
+        Frad_uLW(i,k) = 0._dp
+        Frad_dLW(i,k) = 0._dp
+        Frad_uSW(i,k) = 0._dp
+        Frad_dSW(i,k) = 0._dp
+        fdswcl(i,k) = 0._dp
+        fuswcl(i,k) = 0._dp
+        fdlwcl(i,k) = 0._dp
+        fulwcl(i,k) = 0._dp
+      end do
+    end do
 
   end subroutine reset_bugsrad_variables
 
@@ -260,16 +315,19 @@ contains
 
     implicit none
 
-    if ( allocated( Frad ) ) deallocate( Frad )
-    if ( allocated( Frad_SW_up ) ) deallocate( Frad_SW_up )
-    if ( allocated( Frad_LW_up ) ) deallocate( Frad_LW_up )
-    if ( allocated( Frad_SW_down ) ) deallocate( Frad_SW_down )
-    if ( allocated( Frad_LW_down ) ) deallocate( Frad_LW_down )
-
-    if ( allocated( radht_LW ) ) deallocate( radht_LW )
-    if ( allocated( radht_SW ) ) deallocate( radht_SW )
-    if ( allocated( Frad_SW ) ) deallocate( Frad_SW )
-    if ( allocated( Frad_LW ) ) deallocate( Frad_LW )
+    if ( allocated( Frad ) ) then
+      !$acc exit data delete( Frad, Frad_SW_up, Frad_LW_up, Frad_SW_down, Frad_LW_down, &
+      !$acc                       radht_LW, radht_SW, Frad_SW, Frad_LW )
+      deallocate( Frad )
+      deallocate( Frad_SW_up )
+      deallocate( Frad_LW_up )
+      deallocate( Frad_SW_down )
+      deallocate( Frad_LW_down )
+      deallocate( radht_LW )
+      deallocate( radht_SW )
+      deallocate( Frad_SW )
+      deallocate( Frad_LW )
+    end if
 
   end subroutine cleanup_radiation_variables
 
@@ -282,30 +340,27 @@ contains
     extended_atmos_range_size = 0
     lin_int_buffer = 0
 
-    if ( allocated( T_in_K ) ) deallocate( T_in_K )
-    if ( allocated( rcil ) ) deallocate( rcil )
-    if ( allocated( o3l ) ) deallocate( o3l )
-
-    if ( allocated( rsm_rad ) ) deallocate( rsm_rad )
-    if ( allocated( rcm_in_cloud_rad ) ) deallocate( rcm_in_cloud_rad )
-    if ( allocated( cloud_frac_rad ) ) deallocate( cloud_frac_rad )
-    if ( allocated( ice_supersat_frac_rad ) ) deallocate( ice_supersat_frac_rad )
-
-    if ( allocated( p_in_mb ) ) deallocate( p_in_mb )
-    if ( allocated( sp_humidity ) ) deallocate( sp_humidity )
-
-    if ( allocated( radht_SW_rad ) ) deallocate( radht_SW_rad )
-    if ( allocated( radht_LW_rad ) ) deallocate( radht_LW_rad )
-
-    if ( allocated( Frad_uLW ) ) deallocate( Frad_uLW )
-    if ( allocated( Frad_dLW ) ) deallocate( Frad_dLW )
-    if ( allocated( Frad_uSW ) ) deallocate( Frad_uSW )
-    if ( allocated( Frad_dSW ) ) deallocate( Frad_dSW )
-
-    if ( allocated( fdswcl ) ) deallocate( fdswcl )
-    if ( allocated( fuswcl ) ) deallocate( fuswcl )
-    if ( allocated( fdlwcl ) ) deallocate( fdlwcl )
-    if ( allocated( fulwcl ) ) deallocate( fulwcl )
+    if ( allocated( T_in_K ) ) then
+      deallocate( T_in_K )
+      deallocate( rcil )
+      deallocate( o3l )
+      deallocate( rsm_rad )
+      deallocate( rcm_in_cloud_rad )
+      deallocate( cloud_frac_rad )
+      deallocate( ice_supersat_frac_rad )
+      deallocate( p_in_mb )
+      deallocate( sp_humidity )
+      deallocate( radht_SW_rad )
+      deallocate( radht_LW_rad )
+      deallocate( Frad_uLW )
+      deallocate( Frad_dLW )
+      deallocate( Frad_uSW )
+      deallocate( Frad_dSW )
+      deallocate( fdswcl )
+      deallocate( fuswcl )
+      deallocate( fdlwcl )
+      deallocate( fulwcl )
+    end if
 
   end subroutine cleanup_bugsrad_variables
 

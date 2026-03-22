@@ -165,6 +165,11 @@ module radiation_module
       ! -dschanen 17 Aug 2009
       if ( l_silhs_rad ) then
 
+        !$acc update host( rho, rho_zm, p_in_Pa, exner, wpthlp_sfc, wprtp_sfc, p_sfc, &
+        !$acc              cloud_frac, ice_supersat_frac, thlm, rtm, rcm, &
+        !$acc              X_nl_all_levs, lh_rt_clipped, lh_thl_clipped, lh_rc_clipped, &
+        !$acc              lh_sample_point_weights )
+
         call silhs_radiation_driver( &
               gr, ngrdcol, gr%nzm, gr%nzt, lh_num_samples, pdf_dim, hydromet_dim, hm_metadata, & ! In
               day, month, year,                                                       & ! In
@@ -177,6 +182,8 @@ module radiation_module
               err_info,                                                               & ! InOut
               radht, Frad, Frad_SW_up, Frad_LW_up,                                   & ! Out
               Frad_SW_down, Frad_LW_down )                                            ! Out
+
+        !$acc update device( radht, Frad, Frad_SW_up, Frad_LW_up, Frad_SW_down, Frad_LW_down  )
 
       else
 
@@ -240,8 +247,6 @@ module radiation_module
 
     use grid_class, only: grid
 
-    use numerical_check, only: is_nan_2d, rad_check !-------------------- Procedure(s)
-
     use parameters_radiation, only: &
       rad_scheme, & !---------------------------------------------------- Variable(s)
       nparam, &
@@ -254,7 +259,19 @@ module radiation_module
     use cos_solar_zen_module, only: cos_solar_zen !--------------------- Procedure(s)
 
     use simple_rad_module, only: &
-      simple_rad, simple_rad_bomex, simple_rad_lba, sunray_sw_wrap
+      simple_rad, simple_rad_bomex, simple_rad_lba
+
+    use rad_lwsw_module, only: sunray_sw
+
+    use parameters_radiation, only: &
+      eff_drop_radius, & ! Variable(s)
+      omega, &
+      alvdr, &
+      gc
+
+    use grid_class, only: ddzm ! Procedure(s)
+
+    use constants_clubb, only: Cp ! Variable(s)
 
     use grid_class, only: zt2zm_api !--------------------------------------- Procedure
 
@@ -288,10 +305,7 @@ module radiation_module
 
     implicit none
 
-    ! External
-    intrinsic :: trim
-
-    ! Input Variables
+    !------------------------ Input Variables ------------------------
     type (grid), intent(in) :: &
       gr
 
@@ -329,7 +343,7 @@ module radiation_module
     type (hm_metadata_type), intent(in) :: &
       hm_metadata
 
-    ! Input/Output Variables
+    !------------------------ Input/Output Variables ------------------------
     type(stats_type), intent(inout) :: &
       stats
 
@@ -339,7 +353,7 @@ module radiation_module
     real( kind = core_rknd ), dimension(ngrdcol,gr%nzt), intent(out) :: &
       radht ! Radiative heating rate                                         [K/s]
 
-    ! Output Variables
+    !------------------------ Output Variables ------------------------
     real( kind = core_rknd ), dimension(ngrdcol,gr%nzm), intent(out) :: &
       Frad,         & ! Total radiative flux                   [W/m^2]
       Frad_SW_up,   & ! Short-wave upwelling radiative flux    [W/m^2]
@@ -347,34 +361,46 @@ module radiation_module
       Frad_SW_down, & ! Short-wave upwelling radiative flux    [W/m^2]
       Frad_LW_down    ! Long-wave upwelling radiative flux     [W/m^2]
 
-    ! Local Variables
+    !------------------------ Local Variables ------------------------
     real( kind = core_rknd ), dimension(ngrdcol,gr%nzt) :: &
       rsm,   & ! Snow mixing ratio                             [kg/kg]
       rim       ! Prisitine ice water mixing ratio             [kg/kg]
-
-    real( kind = core_rknd ), dimension(ngrdcol,gr%nzm) :: &
-      p_in_Pam
 
     real( kind = core_rknd ) :: Fs0, amu0_core_rknd
 
     real( kind = dp ) :: amu0 ! Cosine of the solar zenith angle [-]
 
-    integer :: i, amu0_index
+    integer :: i, k, amu0_index
 
     real( kind = core_rknd ), dimension(ngrdcol,gr%nzt) :: &
-      radht_bomex, &
-      radht_lba
+      radht_SW_ddzm   ! Vertical derivative of the shortwave heating rate [K/s/m]
 
-    ! ---- Begin Code ----
+    ! Toggle for centered/forward differencing (in sunray_sw interpolations)
+    ! To use centered differencing, set the toggle to .true.
+    ! To use forward differencing, set the toggle to  .false.
+    logical, parameter :: &
+      l_center = .true.
+
+    !------------------------ Begin Code ------------------------
 
     ! Initialize all outputs to 0.
-    Frad = 0._core_rknd   ! The addition is to prevent an Intel compiler warning of an unused
-    Frad_SW_up = 0._core_rknd       ! variable.  May be removed if rho is used below.  -meyern
-    Frad_LW_up = 0._core_rknd
-    Frad_SW_down = 0._core_rknd
-    Frad_LW_down = 0._core_rknd
+    !$acc parallel loop gang vector collapse(2) default(present)
+    do k = 1, gr%nzm
+      do i = 1, ngrdcol
+        Frad(i,k) = 0._core_rknd
+        Frad_SW_up(i,k) = 0._core_rknd
+        Frad_LW_up(i,k) = 0._core_rknd
+        Frad_SW_down(i,k) = 0._core_rknd
+        Frad_LW_down(i,k) = 0._core_rknd
+      end do
+    end do
 
-    radht = 0._core_rknd ! Initialize the radiative heating rate to 0.
+    !$acc parallel loop gang vector collapse(2) default(present)
+    do k = 1, gr%nzt
+      do i = 1, ngrdcol
+        radht(i,k) = 0._core_rknd ! Initialize the radiative heating rate to 0.
+      end do
+    end do
 
     ! If l_fix_cos_solar_zen is not set in the model.in, calculate amu0
     ! Otherwise, it was defined in cos_solar_zen_list file
@@ -410,6 +436,11 @@ module radiation_module
       !----------------------------------------------------------------
 #ifdef radoffline /*This directive is needed for BUGSrad to work with CLUBB.*/
 
+      !$acc update host( rho, rho_zm, p_in_Pa, exner, &
+      !$acc              cloud_frac, ice_supersat_frac, thlm, rtm, rcm,&
+      !$acc              Frad, Frad_SW_up, Frad_LW_up, Frad_SW_down, Frad_LW_down, &
+      !$acc              radht_LW, radht_SW, Frad_SW, Frad_LW )
+
       ! Copy snow and ice
       rsm = 0.0_core_rknd
       rim = 0.0_core_rknd
@@ -422,81 +453,18 @@ module radiation_module
         rim = hydromet(:,:, hm_metadata%iiri)
       end if
 
-      ! NaN checks added to detect possible errors with BUGSrad
-      ! Joshua Fasching November 2007
-      if ( clubb_at_least_debug_level_api( 0 ) ) then
-        if ( is_nan_2d( thlm ) ) then
-          write(fstderr,*) "thlm before BUGSrad is NaN"
-          err_info%err_code = clubb_fatal_error
-        end if
-
-        if ( is_nan_2d( rcm ) ) then
-          write(fstderr,*) "rcm before BUGSrad is NaN"
-          err_info%err_code = clubb_fatal_error
-        end if
-
-        if ( is_nan_2d( rtm ) ) then
-          write(fstderr,*) "rtm before BUGSrad is NaN"
-          err_info%err_code = clubb_fatal_error
-        end if
-
-        if ( is_nan_2d( rsm ) ) then
-          write(fstderr,*) "rsm before BUGSrad is NaN"
-          err_info%err_code = clubb_fatal_error
-        end if
-
-        if ( is_nan_2d( rim ) ) then
-          write(fstderr,*) "rim before BUGSrad is NaN"
-          err_info%err_code = clubb_fatal_error
-        end if
-
-        if ( is_nan_2d( cloud_frac ) ) then
-          write(fstderr,*) "cloud_frac before BUGSrad is NaN"
-          err_info%err_code = clubb_fatal_error
-        end if
-
-        if ( is_nan_2d( p_in_Pa ) ) then
-          write(fstderr,*) "p_in_Pa before BUGSrad is NaN"
-          err_info%err_code = clubb_fatal_error
-        end if
-
-        if ( is_nan_2d( exner ) ) then
-          write(fstderr,*) "exner before BUGSrad is NaN"
-          err_info%err_code = clubb_fatal_error
-        end if
-
-        if ( is_nan_2d( rho_zm ) ) then
-          write(fstderr,*) "rho_zm before BUGSrad is NaN"
-          err_info%err_code = clubb_fatal_error
-        end if
-
-        call rad_check( ngrdcol, gr%nzm, gr%nzt, thlm, rcm, rtm, rim, &
-                        cloud_frac, p_in_Pa, exner, rho_zm, err_info )
-      end if  ! clubb_at_least_debug_level_api( 0 )
-
-      p_in_Pam = zt2zm_api( gr%nzm, gr%nzt, ngrdcol, gr, p_in_Pa )
-
       call compute_bugsrad_radiation &
-           ( gr%zm(1,:), ngrdcol, gr%nzm, gr%nzt, amu0,            & ! Intent(in)
+           ( gr, ngrdcol, gr%nzm, gr%nzt, amu0,                    & ! Intent(in)
              thlm, rcm, rtm, rsm, rim,                             & ! Intent(in)
              cloud_frac, ice_supersat_frac,                        & ! Intent(in)
-             p_in_Pa, p_in_Pam, exner, rho_zm,                     & ! Intent(in)
+             p_in_Pa, exner, rho_zm,                               & ! Intent(in)
+             err_info,                                             & ! Intent(inout)
              radht, Frad,                                          & ! Intent(out)
              Frad_SW_up, Frad_LW_up,                               & ! Intent(out)
              Frad_SW_down, Frad_LW_down )                          ! Intent(out)
 
-      if ( clubb_at_least_debug_level_api( 0 ) ) then
-        if ( is_nan_2d( Frad ) ) then
-          write(fstderr,*) "Frad after BUGSrad is NaN"
-          err_info%err_code = clubb_fatal_error
-        end if
-
-        if ( is_nan_2d( radht ) ) then
-          write(fstderr,*) "radht after BUGSrad is NaN"
-          err_info%err_code = clubb_fatal_error
-        end if
-      end if  ! clubb_at_least_debug_level_api( 2 )
-
+      !$acc update device( radht, Frad, Frad_SW_up, Frad_LW_up, Frad_SW_down, Frad_LW_down, &
+      !$acc                radht_LW, radht_SW, Frad_SW, Frad_LW )
 #else
 
       error stop "Cannot call BUGSrad with these compile options."
@@ -504,57 +472,100 @@ module radiation_module
 #endif /*radoffline*/
 
     case ( "simplified" )
+      
       !----------------------------------------------------------------
       ! Simplified radiation
       !----------------------------------------------------------------
-      Frad_SW  = 0._core_rknd
-      radht_SW = 0._core_rknd
-      Frad_LW  = 0._core_rknd
-      radht_LW = 0._core_rknd
+      !$acc parallel loop gang vector collapse(2) default(present)
+      do k = 1, gr%nzm
+        do i = 1, ngrdcol
+          Frad_SW(i,k) = 0._core_rknd
+          Frad_LW(i,k) = 0._core_rknd
+        end do
+      end do
+
+      !$acc parallel loop gang vector collapse(2) default(present)
+      do k = 1, gr%nzt
+        do i = 1, ngrdcol
+          radht_SW(i,k) = 0._core_rknd
+          radht_LW(i,k) = 0._core_rknd
+        end do
+      end do
 
       if ( l_sw_radiation .and. amu0 > 0._dp ) then
+
         amu0_core_rknd = real( amu0, kind = core_rknd )
+        
         if ( nparam > 1 ) then
           call lin_interpolate_on_grid_api( nparam, cos_solar_zen_values(1:nparam), &
                                             Fs_values(1:nparam), amu0_core_rknd, Fs0 )
         else
           Fs0 = Fs_values(1)
         end if
-        call sunray_sw_wrap( gr, ngrdcol, Fs0, amu0_core_rknd, rho, rcm, & ! In
-                             Frad_SW, radht_SW )          ! Out
+
+        call sunray_sw( ngrdcol, gr%nzt, rcm, rho, amu0_core_rknd, &
+                        gr%dzt, gr%zm, gr%zt, &
+                        eff_drop_radius, real( alvdr, kind = core_rknd ), &
+                        gc, Fs0, omega, l_center, &
+                        Frad_SW )
+
+        !$acc data create( radht_SW_ddzm )
+        radht_SW_ddzm = ddzm( gr%nzm, gr%nzt, ngrdcol, gr, Frad_SW )
+
+        !$acc parallel loop gang vector collapse(2) default(present)
+        do k = 1, gr%nzt
+          do i = 1, ngrdcol
+            radht_SW(i,k) = - radht_SW_ddzm(i,k) / (rho(i,k) * Cp)
+          end do
+        end do
+        !$acc end data
       end if
 
       call simple_rad( gr, ngrdcol, rho, rho_zm, rtm, rcm, exner,  & ! In
                        stats, err_info,                   & ! Inout
                        Frad_LW, radht_LW )          ! Out
 
-      Frad  = Frad_SW  + Frad_LW
-      radht = radht_SW + radht_LW
+      !$acc parallel loop gang vector collapse(2) default(present)
+      do k = 1, gr%nzm
+        do i = 1, ngrdcol
+          Frad(i,k)  = Frad_SW(i,k)  + Frad_LW(i,k)
+        end do
+      end do
+
+      !$acc parallel loop gang vector collapse(2) default(present)
+      do k = 1, gr%nzt
+        do i = 1, ngrdcol
+          radht(i,k) = radht_SW(i,k) + radht_LW(i,k)
+        end do
+      end do
       
     case ( "simplified_bomex" )
       !----------------------------------------------------------------
       ! GCSS BOMEX specifiction radiation
       !----------------------------------------------------------------
 
-      call simple_rad_bomex( gr, ngrdcol, radht_bomex ) ! Out
-      radht = radht_bomex
-      Frad = 0._core_rknd
+      call simple_rad_bomex( gr, ngrdcol, radht ) ! Out
+
+      !$acc parallel loop gang vector collapse(2) default(present)
+      do k = 1, gr%nzm
+        do i = 1, ngrdcol
+          Frad(i,k) = 0._core_rknd
+        end do
+      end do 
 
     case ( "lba"  )
 
       call simple_rad_lba( gr, ngrdcol, time_current, time_initial, & ! In
-                           radht_lba )   ! Out
-      radht = radht_lba
-      Frad = 0._core_rknd
+                           radht )   ! Out
 
-    case ( "none" )
+      !$acc update device( radht )
 
-      radht = 0._core_rknd
-      Frad = 0._core_rknd
-      Frad_SW_up = 0._core_rknd
-      Frad_LW_up = 0._core_rknd
-      Frad_SW_down = 0._core_rknd
-      Frad_LW_down = 0._core_rknd
+      !$acc parallel loop gang vector collapse(2) default(present)
+      do k = 1, gr%nzm
+        do i = 1, ngrdcol
+          Frad(i,k) = 0._core_rknd
+        end do
+      end do 
 
     case default
       write(fstderr,*) "Undefined value for namelist variable rad_scheme: "//trim( rad_scheme )
@@ -634,6 +645,7 @@ module radiation_module
 
     if (.not. stats%l_sample) return
 
+    !$acc update host( Frad, radht, Frad_SW_up, Frad_LW_up, Frad_SW_down, Frad_LW_down )
     call stats_update( "Frad", Frad, stats )
     call stats_update( "radht", radht, stats )
     call stats_update( "Frad_SW_up", Frad_SW_up, stats )
@@ -643,6 +655,7 @@ module radiation_module
 
     select case ( trim( rad_scheme ) )
     case ( "simplified", "bugsrad" )
+      !$acc update host( radht_LW, radht_SW, Frad_SW, Frad_LW )
       ! Copy all the last column to all columns in stats - this is a legacy bug artifact
       ! from when clubb was single column, just being temporarily preserved.
       do i = 1, ngrdcol

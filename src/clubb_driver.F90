@@ -3747,12 +3747,6 @@ module clubb_driver
       end if
 
       if ( trim( rad_scheme ) /= "none" ) then
-
-        !$acc update host( rho, rho_zm, p_in_Pa, exner, wpthlp_sfc, wprtp_sfc, p_sfc, &
-        !$acc              cloud_frac, ice_supersat_frac, thlm, rtm, rcm, &
-        !$acc              X_nl_all_levs, lh_rt_clipped, lh_thl_clipped, lh_rc_clipped, &
-        !$acc              lh_sample_point_weights, &
-        !$acc              deep_soil_T_in_K, sfc_soil_T_in_K, veg_T_in_K )
         
         call advance_clubb_radiation( &
               gr, ngrdcol, hydromet_dim, pdf_dim, lh_num_samples,          & ! In
@@ -3767,8 +3761,6 @@ module clubb_driver
               stats, err_info,                                             & ! Inout
               deep_soil_T_in_K, sfc_soil_T_in_K, veg_T_in_K,               & ! Inout
               radht )                                                        ! Out
-
-        !$acc update device( deep_soil_T_in_K, sfc_soil_T_in_K, veg_T_in_K, radht )
 
         if ( clubb_at_least_debug_level_api( 0 ) ) then
           if ( any(err_info%err_code == clubb_fatal_error) ) then

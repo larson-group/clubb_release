@@ -6,7 +6,7 @@ module simple_rad_module
 
   implicit none
 
-  public :: simple_rad, simple_rad_bomex, sunray_sw_wrap, &
+  public :: simple_rad, simple_rad_bomex, &
     simple_rad_lba, simple_rad_lba_init
 
   private :: liq_water_path
@@ -251,10 +251,13 @@ module simple_rad_module
 
     ! ---- Begin Code ----
 
+    !$acc enter data create( LWP, Heaviside, z_i )
+
     LWP(:,:) = liq_water_path( ngrdcol, gr%nzm, gr%nzt, rho(:,:), rcm(:,:), gr%invrs_dzt(:,:) )
 
     if ( F1 > eps ) then
 
+      !$acc parallel loop gang vector collapse(2) default(present)
       do k = 1, gr%nzm
         do i = 1, ngrdcol
           Frad_LW(i,k) = F0 * exp( -kappa * LWP(i,k) ) &
@@ -264,6 +267,7 @@ module simple_rad_module
 
     else ! Mathematically equivalent to the above, but computationally cheaper
 
+      !$acc parallel loop gang vector collapse(2) default(present)
       do k = 1, gr%nzm
         do i = 1, ngrdcol
           Frad_LW(i,k) = F0 * exp( -kappa * LWP(i,k) )
@@ -276,32 +280,36 @@ module simple_rad_module
 
       ! Find the height of the isotherm rtm = 8.0 g/kg.
 
+      !$acc parallel loop default(present)
       do i = 1, ngrdcol
+
         k_iso = 1
+
         do while ( k_iso <= gr%nzt .and. rtm(i,k_iso) > 8.0e-3_core_rknd )
           k_iso = k_iso + 1
         end do
 
-        if ( clubb_at_least_debug_level_api( 0 ) ) then
-          if ( k_iso == gr%nzt+1 .or. k_iso == 1 ) then
-            write(fstderr,*) err_info%err_header_global
-            write(fstderr,*) "Identification of 8.0 g/kg level failed"
-            write(fstderr,*) "Subroutine: simple_rad. " &
-              // "File: simple_rad_module.F90"
-            write(fstderr,*) "k = ", k_iso
-            k_rtm = max( 1, min( k_iso, gr%nzt ) )
-            write(fstderr,*) "rtm(k) = ", rtm(i,k_rtm)
-            ! General error -> set all entries to clubb_fatal_error
-            if ( allocated(err_info%err_code) ) err_info%err_code(i) = clubb_fatal_error
-            return
-          end if
-        end if
+        ! if ( clubb_at_least_debug_level_api( 0 ) ) then
+        !   if ( k_iso == gr%nzt+1 .or. k_iso == 1 ) then
+        !     write(fstderr,*) err_info%err_header_global
+        !     write(fstderr,*) "Identification of 8.0 g/kg level failed"
+        !     write(fstderr,*) "Subroutine: simple_rad. " &
+        !       // "File: simple_rad_module.F90"
+        !     write(fstderr,*) "k = ", k_iso
+        !     k_rtm = max( 1, min( k_iso, gr%nzt ) )
+        !     write(fstderr,*) "rtm(k) = ", rtm(i,k_rtm)
+        !     ! General error -> set all entries to clubb_fatal_error
+        !     if ( allocated(err_info%err_code) ) err_info%err_code(i) = clubb_fatal_error
+        !     return
+        !   end if
+        ! end if
 
         z_i(i) = lin_interpolate_two_points( 8.0e-3_core_rknd, rtm(i,k_iso), rtm(i,k_iso-1), gr%zt(i,k_iso), &
                                              gr%zt(i,k_iso-1) )
       end do ! i=1..ngrdcol
 
       ! Compute the Heaviside step function for z - z_i.
+      !$acc parallel loop gang vector collapse(2) default(present)
       do k = 1, gr%nzm, 1
         do i = 1, ngrdcol
           ! if gr%zm(i,k) > z_i
@@ -316,6 +324,7 @@ module simple_rad_module
         end do
       end do
 
+      !$acc parallel loop gang vector collapse(2) default(present)
       do k = 1, gr%nzm, 1
         do i = 1, ngrdcol
           if ( Heaviside(i,k) > 0.0_core_rknd ) then
@@ -329,6 +338,7 @@ module simple_rad_module
 
       ! Update inversion-height statistics used by surface-radiation diagnostics.
       if ( stats%l_sample ) then
+        !$acc update host( z_i )
         call stats_update( "z_inversion", z_i, stats )
       end if
 
@@ -337,6 +347,7 @@ module simple_rad_module
     ! Compute the radiative heating rate.
     ! The radiative heating rate is defined on thermodynamic levels.
 
+    !$acc parallel loop gang vector collapse(2) default(present)
     do k = 1, gr%nzt, 1
       do i = 1, ngrdcol
         radht_LW(i,k) = ( one / exner(i,k) ) * ( -one / (Cp*rho(i,k)) ) &
@@ -344,8 +355,10 @@ module simple_rad_module
       end do
     end do
 
+    !$acc exit data delete( LWP, Heaviside, z_i )
 
     return
+
   end subroutine simple_rad
 
 !-------------------------------------------------------------------------------
@@ -376,7 +389,8 @@ module simple_rad_module
 
     ! ---- Begin Code ----
 
-    ! Radiative theta-l tendency
+    ! Radiative theta-l tendencysimple_rad_bomex
+    !$acc parallel loop gang vector collapse(2) default(present)
     do k = 1, gr%nzt
       do i = 1, ngrdcol
 
@@ -545,117 +559,17 @@ module simple_rad_module
 
     ! ---- Begin Code ----
 
-    liq_water_path(:,nzm) = 0.0_core_rknd
-
     ! Liquid water path is defined on the intermediate model levels between the
     ! rcm and rho levels (i.e. the momentum levels in CLUBB).
-    do k = nzm-1, 1, -1
-      do i = 1, ngrdcol
+    !$acc parallel loop default(present)
+    do i = 1, ngrdcol
+      liq_water_path(i,nzm) = 0.0_core_rknd
+      do k = nzm-1, 1, -1
         liq_water_path(i,k) = liq_water_path(i,k+1) + rcm(i,k) * rho(i,k) / invrs_dzt(i,k)
       end do
     end do ! k = nzm..1
 
     return
   end function liq_water_path
-
-!-------------------------------------------------------------------------------
-  subroutine sunray_sw_wrap( gr, ngrdcol, Fs0, amu0, rho, rcm, &
-                             Frad_SW, radht_SW )
-! Description:
-!   Wrapper for the Geert Lenderink code over multiple columns.
-
-! References:
-!  See subroutine sunray_sw
-!-------------------------------------------------------------------------------
-
-    use grid_class, only: grid ! Type
-
-    use grid_class, only: ddzm ! Procedure(s)
-
-    use constants_clubb, only: Cp ! Variable(s)
-
-    use parameters_radiation, only: &
-      eff_drop_radius, & ! Variable(s)
-      omega, &
-      alvdr, &
-      gc
-
-    use rad_lwsw_module, only: &
-      sunray_sw ! Procedure
-
-    use clubb_precision, only: &
-      core_rknd ! Variable(s)
-
-    implicit none
-
-    type (grid), intent(in) :: gr
-
-    ! Constant parameters
-    ! Toggle for centered/forward differencing (in interpolations)
-    ! To use centered differencing, set the toggle to .true.
-    ! To use forward differencing, set the toggle to  .false.
-    logical, parameter :: &
-      l_center = .true.
-
-    ! Input Variables
-    real( kind = core_rknd ), intent(in) :: &
-      Fs0, & ! [W/m^2]
-      amu0   ! Cosine of the solar zenith angle [-]
-
-    integer, intent(in) :: ngrdcol
-
-    real( kind = core_rknd ), intent(in), dimension(ngrdcol,gr%nzt) :: &
-      rho,    & ! Density on thermodynamic grid  [kg/m^3]
-      rcm       ! Cloud water mixing ratio       [kg/kg]
-
-    ! Output Variables
-    real( kind = core_rknd ), intent(out), dimension(ngrdcol,gr%nzm) ::  &
-      Frad_SW     ! SW Radiative flux                 [W/m^2]
-
-    real( kind = core_rknd ), intent(out), dimension(ngrdcol,gr%nzt) ::  &
-      radht_SW    ! SW Radiative heating rate         [K/s]
-
-    ! Local Variables
-    real( kind = core_rknd ), dimension(ngrdcol,gr%nzt) ::  &
-      rcm_flipped, &
-      rho_flipped, &
-      dzt_flipped
-
-    real( kind = core_rknd ), dimension(ngrdcol,gr%nzm) ::  &
-      zt_flipped, &
-      zm_flipped, &
-      Frad_SW_flipped
-
-    integer :: i
-
-    dzt_flipped = 1.0_core_rknd / gr%invrs_dzt(:,gr%nzt:1:-1)
-    zm_flipped = gr%zm(:,gr%nzm:1:-1)
-    ! The zt array in sunray_sw has a ghost point, but it looks like it's not
-    ! referenced within the sunray_sw code.  We set it anyway just in case.
-    zt_flipped(:,1:gr%nzt) = gr%zt(:,gr%nzt:1:-1)
-    ! The sunray_sw function uses a descending (with altitude) grid, so the
-    ! highest grid index is at the bottom on the grid.
-    zt_flipped(:,gr%nzt+1) = zt_flipped(:,gr%nzt) &
-                             - ( zt_flipped(:,gr%nzt-1) - zt_flipped(:,gr%nzt) )
-
-    rcm_flipped = rcm(:,gr%nzt:1:-1)
-    rho_flipped = rho(:,gr%nzt:1:-1)
-
-    ! Call the old sunray_sw code
-    do i = 1, ngrdcol
-      call sunray_sw( rcm_flipped(i,:), rho_flipped(i,:), amu0, dzt_flipped(i,:), gr%nzt, &
-                      zm_flipped(i,:), zt_flipped(i,:), &
-                      eff_drop_radius, real( alvdr, kind = core_rknd ), gc, Fs0, omega, l_center, &
-                      Frad_SW_flipped(i,:) )
-    end do
-
-    ! Return the radiation flux to the CLUBB grid.
-    Frad_SW = Frad_SW_flipped(:,gr%nzm:1:-1)
-
-    ! Take the derivative of the flux to compute radht_SW (see comment above).
-    radht_SW = (-1.0_core_rknd / (rho * Cp)) * ddzm( gr%nzm, gr%nzt, ngrdcol, gr, Frad_SW )
-
-    return
-  end subroutine sunray_sw_wrap
 
 end module simple_rad_module

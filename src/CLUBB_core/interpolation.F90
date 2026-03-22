@@ -19,6 +19,7 @@ module interpolation
 !-------------------------------------------------------------------------------
   function lin_interpolate_two_points( height_int, height_high, height_low, &
     var_high, var_low )
+  !$acc routine seq
 
 ! Description:
 ! This function computes a linear interpolation of the value of variable.
@@ -91,6 +92,7 @@ module interpolation
 
   !-------------------------------------------------------------------------------------------------
   elemental real( kind = core_rknd ) function linear_interp_factor( factor, var_high, var_low )
+  !$acc routine seq
   ! Description:
   !   Determines the coefficient for a linear interpolation
   ! 
@@ -356,10 +358,7 @@ module interpolation
 
     enddo 
 
-    ! Code should not get to this point, but return -1 to be safe
-    if ( clubb_at_least_debug_level_api( 0 ) ) then
-        write(fstderr,*) "Logic error in function binary_search."
-    end if
+    write(fstderr,*) "Logic error in function binary_search."
 
     i = -1
     return
@@ -410,6 +409,7 @@ module interpolation
   function zlinterp_fnc( dim_out, dim_src, grid_out,  & 
                        grid_src, var_src )  & 
   result( var_out )
+  !$acc routine seq
 ! Description:
 !   Do a linear interpolation in the vertical.  Assumes values that
 !   are less than lowest source point are zero and above the highest

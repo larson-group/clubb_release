@@ -145,6 +145,8 @@ module soil_vegetation
 
     !--------------------------------- Begin Code ---------------------------------
 
+    !$acc enter data create( soil_heat_flux )
+
     !----------------------------
     !  Soil parameters
     !---------------------------
@@ -160,11 +162,13 @@ module soil_vegetation
                      365.e0_core_rknd )) ! Known magic number
 
     if ( stats%l_sample ) then
+      !$acc update host( veg_T_in_K, sfc_soil_T_in_K, deep_soil_T_in_K )
       call stats_update( "veg_T_in_K", veg_T_in_K, stats )
       call stats_update( "sfc_soil_T_in_K", sfc_soil_T_in_K, stats )
       call stats_update( "deep_soil_T_in_K", deep_soil_T_in_K, stats )
     end if
 
+    !$acc parallel loop default(present)
     do i = 1, ngrdcol
 
       Frad_LW_up_sfc = stefan_boltzmann * (veg_T_in_K(i)**4)
@@ -197,10 +201,13 @@ module soil_vegetation
     end do
 
     if ( stats%l_sample ) then
+      !$acc update host( soil_heat_flux )
       do i = 1, ngrdcol
           call stats_update( "soil_heat_flux", soil_heat_flux(i), stats, i )
       end do
     end if
+
+    !$acc exit data delete( soil_heat_flux )
 
     return
 
