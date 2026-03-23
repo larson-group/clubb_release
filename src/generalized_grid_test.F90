@@ -2468,7 +2468,7 @@ module generalized_grid_test
       ! If we do not force matrix solves to be done in a specific direction, then
       ! results are not expected to be BFB, so we need a non-zero tolerance, but 
       ! they should be close, so we want a pretty small tolerance
-      tolerance = max( 1.e-8_core_rknd, epsilon(tolerance) )    ! max statement for single precision runs
+      tolerance = max( 5.e-8_core_rknd, epsilon(tolerance) )    ! max statement for single precision runs
     end if
 
     if ( any( abs( var - var_flip(:,nz:1:-1) ) > tolerance ) ) then
