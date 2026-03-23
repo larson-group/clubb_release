@@ -13,6 +13,7 @@ from .runtime import (
     clear_case_status,
     format_runtime,
     get_cached_status,
+    normalize_task_limit,
     get_proc,
     launch_from_queue,
     read_log_increment,
@@ -142,6 +143,7 @@ def register_run_callbacks(app):
         Output("run-interval", "n_intervals"),
         Output("run-case-runtimes", "data", allow_duplicate=True),
         Output("run-case-commands", "data", allow_duplicate=True),
+        Output("run-max-tasks-active", "data", allow_duplicate=True),
         Input("run-button", "n_clicks"),
         State("run-selected-cases", "data"),
         State("run-running-cases", "data"),
@@ -156,6 +158,7 @@ def register_run_callbacks(app):
         State("run-opt-dt-rad", "value"),
         State("run-opt-tout", "value"),
         State("run-opt-out-dir", "value"),
+        State("run-max-tasks", "value"),
         State("run-case-runtimes", "data"),
         State("run-case-commands", "data"),
         State({"type": "run-hr-param", "index": ALL}, "value"),
@@ -184,6 +187,7 @@ def register_run_callbacks(app):
         opt_dt_rad,
         opt_tout,
         opt_out_dir,
+        max_tasks_value,
         case_runtimes,
         case_commands,
         multicol_param_values,
@@ -198,10 +202,10 @@ def register_run_callbacks(app):
     ):
         """Queue selected cases, start as many as allowed, and enable interval polling."""
         if callback_context.triggered_id != "run-button":
-            return (no_update,) * 9
+            return (no_update,) * 10
         cases_to_run = list(selected_cases or [])
         if not cases_to_run:
-            return (no_update,) * 9
+            return (no_update,) * 10
 
         running = dict(running_cases or {})
         queued = list(queued_cases or [])
@@ -212,6 +216,7 @@ def register_run_callbacks(app):
         runtimes = dict(case_runtimes or {})
         commands = dict(case_commands or {})
         stats_name = selected_stats or DEFAULT_STATS_NAME
+        max_tasks = normalize_task_limit(max_tasks_value)
 
         overrides = build_override_updates(flag_values, param_values, defaults_data, flag_names_data, param_meta)
         cli_options = {}
@@ -251,10 +256,10 @@ def register_run_callbacks(app):
             logs[case_name] = f"--- Queued {case_name} ({stats_name}) ---\n"
             commands[case_name] = build_case_command(case_name, stats_name, cli_options_copy)
 
-        queued, started_any = launch_from_queue(running, queued, logs)
+        queued, started_any = launch_from_queue(running, queued, logs, max_tasks)
         interval_disabled = not bool(running or queued)
         n_intervals = 0 if (started_any or queued) else no_update
-        return logs, running, queued, completed, failed, interval_disabled, n_intervals, runtimes, commands
+        return logs, running, queued, completed, failed, interval_disabled, n_intervals, runtimes, commands, max_tasks
 
     @app.callback(
         Output("run-running-cases", "data", allow_duplicate=True),
@@ -335,6 +340,7 @@ def register_run_callbacks(app):
         Input("run-interval", "n_intervals"),
         State("run-running-cases", "data"),
         State("run-queued-cases", "data"),
+        State("run-max-tasks-active", "data"),
         State("run-case-logs", "data"),
         State("run-completed-cases", "data"),
         State("run-failed-cases", "data"),
@@ -343,7 +349,7 @@ def register_run_callbacks(app):
         State("run-log-offsets", "data"),
         prevent_initial_call=True,
     )
-    def stream_output(_tick, running_cases, queued_cases, case_logs, completed_cases, failed_cases, selected_cases, case_runtimes, log_offsets):
+    def stream_output(_tick, running_cases, queued_cases, max_tasks_active, case_logs, completed_cases, failed_cases, selected_cases, case_runtimes, log_offsets):
         """Poll running processes, stream log output, and advance the queued run list."""
         if not RUN_STREAM_LOCK.acquire(blocking=False):
             return (no_update,) * 9
@@ -449,7 +455,7 @@ def register_run_callbacks(app):
 
             running_before = dict(running)
             queued_before = list(queued)
-            queued, _ = launch_from_queue(running, queued, logs)
+            queued, _ = launch_from_queue(running, queued, logs, max_tasks_active)
             if running != running_before or queued != queued_before:
                 logs_changed = True
 

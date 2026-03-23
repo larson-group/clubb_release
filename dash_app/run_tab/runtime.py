@@ -206,6 +206,17 @@ def clean_cli_option(value):
     return str(value).strip()
 
 
+def normalize_task_limit(value):
+    """Parse a user-specified task limit, falling back to the dashboard default."""
+    cleaned = clean_cli_option(value)
+    if not cleaned:
+        return MAX_RUN_PROCS
+    try:
+        return max(1, int(cleaned))
+    except (TypeError, ValueError):
+        return MAX_RUN_PROCS
+
+
 def build_case_command(case_name, stats_name, cli_options=None):
     """Build the exact run_scm.py command shown in the UI copy button."""
     stats_value = str(stats_name).strip() if stats_name is not None else DEFAULT_STATS_NAME
@@ -273,11 +284,12 @@ def start_case_process(case_name, stats_name, overrides, cli_options=None):
     return proc_data
 
 
-def launch_from_queue(running, queued, logs):
+def launch_from_queue(running, queued, logs, max_run_procs=None):
     """Launch queued cases until the run concurrency limit is reached."""
     queue = list(queued or [])
     launched = False
-    while queue and len(running) < MAX_RUN_PROCS:
+    limit = normalize_task_limit(max_run_procs)
+    while queue and len(running) < limit:
         item = queue.pop(0)
         case_name = item.get("case")
         stats_name = item.get("stats") or DEFAULT_STATS_NAME

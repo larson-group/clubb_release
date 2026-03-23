@@ -2,6 +2,8 @@
 
 from dash import dcc, html
 
+from .state import MAX_RUN_PROCS
+
 
 def field_style(changed, disabled=False):
     """Return the field row style, highlighting modified or disabled values when needed."""
@@ -230,6 +232,22 @@ def build_run_action_section():
             html.Button("Run selected", id="run-button", n_clicks=0, className="run-button-run-selected", style=run_action_button_style("#111827")),
             html.Button("Cancel runs", id="run-cancel", n_clicks=0, style=run_action_button_style("#b91c1c")),
             html.Button("Clear", id="run-clear", n_clicks=0, style=run_action_button_style("#374151")),
+            dcc.Input(
+                id="run-max-tasks",
+                type="number",
+                min=1,
+                step=1,
+                debounce=True,
+                placeholder=str(MAX_RUN_PROCS),
+                style={
+                    "width": "130px",
+                    "padding": "10px 12px",
+                    "margin": "4px",
+                    "borderRadius": "6px",
+                    "border": "1px solid #9ca3af",
+                    "fontSize": "14px",
+                },
+            ),
         ],
         className="run-action-buttons",
         style={"display": "flex", "flexWrap": "wrap", "gap": "8px", "marginTop": "6px"},
@@ -355,6 +373,7 @@ def build_layout(initial_data):
             dcc.Store(id="run-failed-cases", data=[]),
             dcc.Store(id="run-running-cases", data={}),
             dcc.Store(id="run-queued-cases", data=[]),
+            dcc.Store(id="run-max-tasks-active", data=MAX_RUN_PROCS),
             dcc.Store(id="run-case-logs", data={}),
             dcc.Store(id="run-case-commands", data={}),
             dcc.Store(id="run-case-runtimes", data={}),
