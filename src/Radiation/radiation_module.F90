@@ -637,10 +637,6 @@ module radiation_module
     type(stats_type), intent(inout) :: &
       stats
 
-    ! Local Variables
-
-    integer :: rad_zt_dim, rad_zm_dim, i ! Dimensions of the radiation grid
-
     ! ---- Begin Code ----
 
     if (.not. stats%l_sample) return
@@ -656,53 +652,42 @@ module radiation_module
     select case ( trim( rad_scheme ) )
     case ( "simplified", "bugsrad" )
       !$acc update host( radht_LW, radht_SW, Frad_SW, Frad_LW )
-      ! Copy all the last column to all columns in stats - this is a legacy bug artifact
-      ! from when clubb was single column, just being temporarily preserved.
-      do i = 1, ngrdcol
-        call stats_update( "radht_LW", radht_LW(ngrdcol,:), stats, i )
-        call stats_update( "radht_SW", radht_SW(ngrdcol,:), stats, i )
-        call stats_update( "Frad_SW", Frad_SW(ngrdcol,:), stats, i )
-        call stats_update( "Frad_LW", Frad_LW(ngrdcol,:), stats, i )
-      end do
+      call stats_update( "radht_LW", radht_LW, stats )
+      call stats_update( "radht_SW", radht_SW, stats )
+      call stats_update( "Frad_SW", Frad_SW, stats )
+      call stats_update( "Frad_LW", Frad_LW, stats )
     end select
 
     if ( stats%l_output_rad_files .and. trim( rad_scheme ) == "bugsrad" ) then
-      rad_zt_dim = nzt + lin_int_buffer+extended_atmos_range_size
-      rad_zm_dim = nzm + lin_int_buffer+extended_atmos_range_size
+      call stats_update( "T_in_K_rad", real( T_in_K, kind=core_rknd ), stats )
+      call stats_update( "rcil_rad", real( rcil, kind=core_rknd ), stats )
+      call stats_update( "o3l_rad", real( o3l, kind=core_rknd ), stats )
+      call stats_update( "rsm_rad", real( rsm_rad, kind=core_rknd ), stats )
+      call stats_update( "rcm_in_cloud_rad", real( rcm_in_cloud_rad, &
+                                                    kind=core_rknd ), stats )
+      call stats_update( "cloud_frac_rad", real( cloud_frac_rad, &
+                                                    kind=core_rknd ), stats )
+      call stats_update( "ice_supersat_frac_rad", real( ice_supersat_frac_rad, &
+                                                          kind=core_rknd ), stats )
+      call stats_update( "radht_rad", real( radht_SW_rad + &
+                                            radht_LW_rad, kind=core_rknd ), stats )
+      call stats_update( "radht_LW_rad", real( radht_LW_rad, kind=core_rknd ), stats )
+      call stats_update( "p_in_mb_rad", real( p_in_mb, kind=core_rknd ), stats )
+      call stats_update( "sp_humidity_rad", real( sp_humidity, kind=core_rknd ), stats )
 
-      ! Copy all the last column to all columns in stats - this is a legacy bug artifact
-      ! from when clubb was single column, just being temporarily preserved.
-      do i = 1, ngrdcol
-        call stats_update( "T_in_K_rad", real( T_in_K(ngrdcol,rad_zt_dim:1:-1), kind=core_rknd ), stats, i )
-        call stats_update( "rcil_rad", real( rcil(ngrdcol,rad_zt_dim:1:-1), kind=core_rknd ), stats, i )
-        call stats_update( "o3l_rad", real( o3l(ngrdcol,rad_zt_dim:1:-1), kind=core_rknd ), stats, i )
-        call stats_update( "rsm_rad", real( rsm_rad(ngrdcol,rad_zt_dim:1:-1), kind=core_rknd ), stats, i )
-        call stats_update( "rcm_in_cloud_rad", real( rcm_in_cloud_rad(ngrdcol,rad_zt_dim:1:-1), &
-                                                     kind=core_rknd ), stats, i )
-        call stats_update( "cloud_frac_rad", real( cloud_frac_rad(ngrdcol,rad_zt_dim:1:-1), &
-                                                     kind=core_rknd ), stats, i )
-        call stats_update( "ice_supersat_frac_rad", real( ice_supersat_frac_rad(ngrdcol,rad_zt_dim:1:-1), &
-                                                            kind=core_rknd ), stats, i )
-        call stats_update( "radht_rad", real( radht_SW_rad(ngrdcol,rad_zt_dim:1:-1) + &
-                                              radht_LW_rad(ngrdcol,rad_zt_dim:1:-1), kind=core_rknd ), stats, i )
-        call stats_update( "radht_LW_rad", real( radht_LW_rad(ngrdcol,rad_zt_dim:1:-1), kind=core_rknd ), stats, i )
-        call stats_update( "p_in_mb_rad", real( p_in_mb(ngrdcol,rad_zt_dim:1:-1), kind=core_rknd ), stats, i )
-        call stats_update( "sp_humidity_rad", real( sp_humidity(ngrdcol,rad_zt_dim:1:-1), kind=core_rknd ), stats, i )
+      call stats_update( "Frad_SW_rad", real( Frad_uSW - &
+                                              Frad_dSW, kind=core_rknd ), stats )
+      call stats_update( "Frad_LW_rad", real( Frad_uLW - &
+                                              Frad_dLW, kind=core_rknd ), stats )
+      call stats_update( "Frad_SW_up_rad", real( Frad_uSW, kind=core_rknd ), stats )
+      call stats_update( "Frad_LW_up_rad", real( Frad_uLW, kind=core_rknd ), stats )
+      call stats_update( "Frad_SW_down_rad", real( Frad_dSW, kind=core_rknd ), stats )
+      call stats_update( "Frad_LW_down_rad", real( Frad_dLW, kind=core_rknd ), stats )
 
-        call stats_update( "Frad_SW_rad", real( Frad_uSW(ngrdcol,rad_zm_dim:1:-1) - &
-                                                Frad_dSW(ngrdcol,rad_zm_dim:1:-1), kind=core_rknd ), stats, i )
-        call stats_update( "Frad_LW_rad", real( Frad_uLW(ngrdcol,rad_zm_dim:1:-1) - &
-                                                Frad_dLW(ngrdcol,rad_zm_dim:1:-1), kind=core_rknd ), stats, i )
-        call stats_update( "Frad_SW_up_rad", real( Frad_uSW(ngrdcol,rad_zm_dim:1:-1), kind=core_rknd ), stats, i )
-        call stats_update( "Frad_LW_up_rad", real( Frad_uLW(ngrdcol,rad_zm_dim:1:-1), kind=core_rknd ), stats, i )
-        call stats_update( "Frad_SW_down_rad", real( Frad_dSW(ngrdcol,rad_zm_dim:1:-1), kind=core_rknd ), stats, i )
-        call stats_update( "Frad_LW_down_rad", real( Frad_dLW(ngrdcol,rad_zm_dim:1:-1), kind=core_rknd ), stats, i )
-
-        call stats_update( "fdswcl", real( fdswcl(ngrdcol,rad_zm_dim:1:-1), kind=core_rknd ), stats, i )
-        call stats_update( "fuswcl", real( fuswcl(ngrdcol,rad_zm_dim:1:-1), kind=core_rknd ), stats, i )
-        call stats_update( "fdlwcl", real( fdlwcl(ngrdcol,rad_zm_dim:1:-1), kind=core_rknd ), stats, i )
-        call stats_update( "fulwcl", real( fulwcl(ngrdcol,rad_zm_dim:1:-1), kind=core_rknd ), stats, i )
-      end do
+      call stats_update( "fdswcl", real( fdswcl, kind=core_rknd ), stats )
+      call stats_update( "fuswcl", real( fuswcl, kind=core_rknd ), stats )
+      call stats_update( "fdlwcl", real( fdlwcl, kind=core_rknd ), stats )
+      call stats_update( "fulwcl", real( fulwcl, kind=core_rknd ), stats )
     end if
 
   end subroutine update_radiation_variables
