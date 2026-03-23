@@ -360,7 +360,7 @@ module mono_flux_limiter
       xm_tol             ! Lower limit of maxdev                    [units vary]
 
     logical, intent(in) :: &
-      l_implemented   ! Flag for CLUBB being implemented in a larger model.
+      l_implemented   ! True if CLUBB is being implemented and run in a host model
 
     integer, dimension(ngrdcol,nzt), intent(in) :: &
       low_lev_effect, & ! Index of lowest level that has an effect (for lev. k)
@@ -870,6 +870,7 @@ module mono_flux_limiter
 
         ! Solve the tridiagonal matrix equation.
         call mfl_xm_solve( nzt, ngrdcol, gr, solve_type, tridiag_solve_method, & ! intent(in)
+                           l_implemented,                                        & ! intent(in)
                            lhs_mfl_xm, rhs_mfl_xm, err_info,                   & ! intent(inout)
                            xm_mfl )                                              ! intent(out)
 
@@ -1087,7 +1088,7 @@ module mono_flux_limiter
       weights_zt2zm
 
     logical, intent(in) :: &
-      l_implemented   ! Flag for CLUBB being implemented in a larger model.
+      l_implemented   ! True if CLUBB is being implemented and run in a host model
 
     logical, intent(in) :: &
       l_upwind_xm_ma ! This flag determines whether we want to use an upwind differencing
@@ -1231,6 +1232,7 @@ module mono_flux_limiter
 
   !=============================================================================
   subroutine mfl_xm_solve( nzt, ngrdcol, gr, solve_type, tridiag_solve_method, &
+                           l_implemented, &
                            lhs, rhs, err_info, &
                            xm )
 
@@ -1286,6 +1288,9 @@ module mono_flux_limiter
     integer, intent(in) :: &
       tridiag_solve_method  ! Specifier for method to solve tridiagonal systems
 
+    logical, intent(in) :: &
+      l_implemented  ! True if CLUBB is being implemented and run in a host model
+
     !---------------------------- InOut Variables ----------------------------
     real( kind = core_rknd ), dimension(ndiags3,ngrdcol,nzt), intent(inout) :: &
       lhs  ! Left hand side of tridiagonal matrix
@@ -1332,6 +1337,7 @@ module mono_flux_limiter
     ! Solve for xm at timestep index (t+1) using the tridiagonal solver.
     call tridiag_solve( solve_type_str, tridiag_solve_method,   & ! Intent(in)
                         ngrdcol, nzt,                           & ! Intent(in)
+                        l_implemented,                          & ! Intent(in)
                         lhs, rhs, err_info,                     & ! Intent(inout)
                         xm )                                      ! Intent(out)
 

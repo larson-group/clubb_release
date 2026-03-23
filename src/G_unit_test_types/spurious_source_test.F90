@@ -137,8 +137,7 @@ module spurious_source_test
     real( kind = core_rknd ), parameter :: &
       sfc_elevation = zero  ! Elevation of ground level    [m AMSL]
 
-    ! Flag to see if CLUBB is running on it's own,
-    ! or if it's implemented as part of a host model.
+    ! True if CLUBB is being implemented and run in a host model
     logical, parameter :: &
       l_implemented = .false.
 

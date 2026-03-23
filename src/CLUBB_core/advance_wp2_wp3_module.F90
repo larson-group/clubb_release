@@ -93,6 +93,7 @@ module advance_wp2_wp3_module
                               l_use_wp3_lim_with_smth_Heaviside,             & ! intent(in)
                               l_wp2_fill_holes_tke,                          & ! intent(in)
                               l_ho_nontrad_coriolis,                         & ! intent(in)
+                              l_implemented,                                 & ! intent(in)
                               stats,                                         & ! intent(inout)
                               up2, vp2, wp2, wp3, wp3_zm, wp2_zt, err_info )   ! intent(inout)
 
@@ -299,8 +300,9 @@ module advance_wp2_wp3_module
       l_use_wp3_lim_with_smth_Heaviside, & ! Flag to activate mods on wp3 limiters for conv test
       l_wp2_fill_holes_tke,         & ! Turn on additional hole-filling for wp2
                                       ! that takes TKE from up2 and vp2, if necessary
-      l_ho_nontrad_coriolis         ! Flag to implement the nontraditional Coriolis terms in the
-                                    ! prognostic equations of <w'w'>, <u'w'>, and <u'u'>.
+      l_ho_nontrad_coriolis,        & ! Flag to implement the nontraditional Coriolis terms in the
+                                      ! prognostic equations of <w'w'>, <u'w'>, and <u'u'>.
+      l_implemented                   ! True if CLUBB is being implemented and run in a host model
 
     ! --------------------- intent(inout) Variable ---------------------
     type(stats_type), intent(inout) :: &
@@ -1036,6 +1038,7 @@ module advance_wp2_wp3_module
                      l_use_tke_in_wp2_wp3_K_dfsn,                 & ! intent(in)
                      l_use_wp3_lim_with_smth_Heaviside,           & ! intent(in)
                      l_wp2_fill_holes_tke,                        & ! intent(in)
+                     l_implemented,                               & ! intent(in)
                      stats,                                       & ! intent(inout)
                      up2, vp2, wp2, wp3, wp3_zm, wp2_zt, err_info ) ! intent(inout)
 
@@ -1217,6 +1220,7 @@ module advance_wp2_wp3_module
                          l_use_tke_in_wp2_wp3_K_dfsn, &
                          l_use_wp3_lim_with_smth_Heaviside, &
                          l_wp2_fill_holes_tke, &
+                         l_implemented, &
                          stats,         &
                          up2, vp2, wp2, wp3, wp3_zm, wp2_zt, err_info )
 
@@ -1364,9 +1368,10 @@ module advance_wp2_wp3_module
                                     ! (u'^2 + v'^2 + w'^2)
       l_use_tke_in_wp2_wp3_K_dfsn, & ! Use TKE in eddy diffusion for wp2 and wp3
       l_use_wp3_lim_with_smth_Heaviside, & ! Flag to activate mods on wp3 limiters for conv test
-      l_wp2_fill_holes_tke          ! Turn on additional hole-filling for wp2
-                                    ! that takes TKE from up2 and vp2, if necessary
-    
+      l_wp2_fill_holes_tke,         & ! Turn on additional hole-filling for wp2
+                                      ! that takes TKE from up2 and vp2, if necessary
+      l_implemented                   ! True if CLUBB is being implemented and run in a host model
+
     type(stats_type), intent(inout) :: &
       stats
 
@@ -1476,6 +1481,7 @@ module advance_wp2_wp3_module
       ! Note: When using lapack this can change the answer slightly
       call band_solve(  "wp2_wp3", penta_solve_method, & ! intent(in)
                         ngrdcol, 2, 2, 2*nzm-1,        & ! intent(in)
+                        l_implemented,                  & ! intent(in)
                         lhs, rhs, err_info,            & ! intent(inout)
                         solut, &
                         rcond = rcond )                   ! intent(out)
@@ -1491,6 +1497,7 @@ module advance_wp2_wp3_module
       ! Solve the system
       call band_solve( "wp2_wp3", penta_solve_method, & ! intent(in)
                        ngrdcol, 2, 2, 2*nzm-1,        & ! intent(in)
+                       l_implemented,                  & ! intent(in)
                        lhs, rhs, err_info,            & ! intent(inout)
                        solut, &
                        old_soln = old_solut )                          ! intent(out)

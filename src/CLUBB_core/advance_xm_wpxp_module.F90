@@ -247,7 +247,7 @@ module advance_xm_wpxp_module
       mixt_frac_zm            ! Weight of 1st PDF component (Sk_w dependent) [-]
 
     logical, intent(in) :: &
-      l_implemented      ! Flag for CLUBB being implemented in a larger model.
+      l_implemented      ! True if CLUBB is being implemented and run in a host model
 
     ! Additional variables for passive scalars
     real( kind = core_rknd ), intent(in), dimension(ngrdcol,nzt,sclr_dim) :: &
@@ -1244,7 +1244,7 @@ module advance_xm_wpxp_module
       dt    ! Timestep                                  [s]
 
     logical, intent(in) ::  & 
-      l_implemented, & ! Flag for CLUBB being implemented in a larger model.
+      l_implemented, & ! True if CLUBB is being implemented and run in a host model
       l_iter
       
     real( kind = core_rknd ), dimension(ndiags3,ngrdcol,nzm), intent(in) :: & 
@@ -1476,7 +1476,7 @@ module advance_xm_wpxp_module
       invrs_rho_ds_zt           ! Inv. dry, static density at t-levs.   [m^3/kg]
 
     logical, intent(in) :: &
-      l_implemented   ! Flag for CLUBB being implemented in a larger model.
+      l_implemented   ! True if CLUBB is being implemented and run in a host model
 
     type(nu_vertical_res_dep), intent(in) :: &
       nu_vert_res_dep    ! Vertical resolution dependent nu values
@@ -2664,7 +2664,7 @@ module advance_xm_wpxp_module
       thlp2              ! th_l'^2 (momentum levels)                [K^2]
 
     logical, intent(in) :: &
-      l_implemented, &      ! Flag for CLUBB being implemented in a larger model.
+      l_implemented, &      ! True if CLUBB is being implemented and run in a host model
       l_iter
 
     ! Additional variables for passive scalars
@@ -3366,13 +3366,15 @@ module advance_xm_wpxp_module
          var_on_stats_list( stats, "rtm_matrix_condt_num" ) ) ) then
        call xm_wpxp_solve( nzm, ngrdcol, nrhs, gr, & ! Intent(in)
                            penta_solve_method,     & ! Intent(in)
-                           old_solution,           & ! Intent(in) 
+                           l_implemented,           & ! Intent(in)
+                           old_solution,           & ! Intent(in)
                            lhs, rhs, err_info,     & ! Intent(inout)
                            solution, rcond )         ! Intent(out)
     else
       call xm_wpxp_solve( nzm, ngrdcol, nrhs, gr, & ! Intent(in)
                           penta_solve_method,     & ! Intent(in)
-                          old_solution,           & ! Intent(in) 
+                          l_implemented,           & ! Intent(in)
+                          old_solution,           & ! Intent(in)
                           lhs, rhs, err_info,     & ! Intent(inout)
                           solution )                ! Intent(out)
     end if
@@ -3812,7 +3814,7 @@ module advance_xm_wpxp_module
       thlp2              ! th_l'^2 (momentum levels)                [K^2]
 
     logical, intent(in) :: &
-      l_implemented, &      ! Flag for CLUBB being implemented in a larger model.
+      l_implemented, &      ! True if CLUBB is being implemented and run in a host model
       l_iter
 
     ! Additional variables for passive scalars
@@ -3993,13 +3995,15 @@ module advance_xm_wpxp_module
          var_on_stats_list( stats, "rtm_matrix_condt_num" ) ) then
       call xm_wpxp_solve( nzm, ngrdcol, nrhs, gr, & ! Intent(in)
                           penta_solve_method,     & ! Intent(in)
-                          old_solution,           & ! Intent(in) 
+                          l_implemented,           & ! Intent(in)
+                          old_solution,           & ! Intent(in)
                           lhs, rhs, err_info,     & ! Intent(inout)
                           solution, rcond )         ! Intent(out)
     else
       call xm_wpxp_solve( nzm, ngrdcol, nrhs, gr, & ! Intent(in)
                           penta_solve_method,     & ! Intent(in)
-                          old_solution,           & ! Intent(in) 
+                          l_implemented,           & ! Intent(in)
+                          old_solution,           & ! Intent(in)
                           lhs, rhs, err_info,     & ! Intent(inout)
                           solution )                ! Intent(out)
     end if
@@ -4105,13 +4109,15 @@ module advance_xm_wpxp_module
          var_on_stats_list( stats, "thlm_matrix_condt_num" ) ) then
       call xm_wpxp_solve( nzm, ngrdcol, nrhs, gr, & ! Intent(in)
                           penta_solve_method,     & ! Intent(in)
-                          old_solution,           & ! Intent(in) 
+                          l_implemented,           & ! Intent(in)
+                          old_solution,           & ! Intent(in)
                           lhs, rhs, err_info,     & ! Intent(inout)
                           solution, rcond )         ! Intent(out)
     else
       call xm_wpxp_solve( nzm, ngrdcol, nrhs, gr, & ! Intent(in)
                           penta_solve_method,     & ! Intent(in)
-                          old_solution,           & ! Intent(in) 
+                          l_implemented,           & ! Intent(in)
+                          old_solution,           & ! Intent(in)
                           lhs, rhs, err_info,     & ! Intent(inout)
                           solution )                ! Intent(out)
     end if
@@ -4232,7 +4238,8 @@ module advance_xm_wpxp_module
       ! Solve for sclrm / w'sclr'
       call xm_wpxp_solve( nzm, ngrdcol, nrhs, gr, & ! Intent(in)
                           penta_solve_method,     & ! Intent(in)
-                          old_solution,           & ! Intent(in) 
+                          l_implemented,           & ! Intent(in)
+                          old_solution,           & ! Intent(in)
                           lhs, rhs, err_info,     & ! Intent(inout)
                           solution )                ! Intent(out)
 
@@ -4308,6 +4315,7 @@ module advance_xm_wpxp_module
   !=============================================================================
   subroutine xm_wpxp_solve( nzm, ngrdcol, nrhs, gr, &
                             penta_solve_method, &
+                            l_implemented, &
                             old_solution, &
                             lhs, rhs, err_info, &
                             solution, rcond )
@@ -4359,6 +4367,9 @@ module advance_xm_wpxp_module
     integer, intent(in) :: &
       penta_solve_method ! Method to solve then penta-diagonal system
 
+    logical, intent(in) :: &
+      l_implemented ! True if CLUBB is being implemented and run in a host model
+
     !------------------------- Input/Output Variables -------------------------
     real( kind = core_rknd ), intent(inout), dimension(nsup+nsub+1,ngrdcol,2*nzm-1) :: &
       lhs  ! Implicit contributions to wpxp/xm (band diag. matrix in LAPACK storage)
@@ -4404,6 +4415,7 @@ module advance_xm_wpxp_module
     ! Solve the system
     call band_solve( "xm_wpxp", penta_solve_method,      & ! Intent(in)
                      ngrdcol, nsup, nsub, 2*nzm-1, nrhs, & ! Intent(in)
+                     l_implemented,                       & ! Intent(in)
                      lhs, rhs, err_info,                 & ! Intent(inout)
                      solution, &
                      rcond = rcond, &
@@ -4570,7 +4582,7 @@ module advance_xm_wpxp_module
       C7_Skw_fnc
       
     logical, intent(in) :: &
-      l_implemented   ! Flag for CLUBB being implemented in a larger model.
+      l_implemented   ! True if CLUBB is being implemented and run in a host model
 
     real( kind = core_rknd ), intent(in), dimension(ngrdcol,2*nzm-1) :: &
       solution ! The <t+1> value of xm and wpxp   [units vary]
@@ -6210,7 +6222,7 @@ module advance_xm_wpxp_module
       mixt_frac_zm       ! Weight of 1st PDF component (Sk_w dependent) [-]
 
     logical, intent(in) ::  & 
-      l_implemented      ! Flag for CLUBB being implemented in a larger model.
+      l_implemented      ! True if CLUBB is being implemented and run in a host model
 
     ! Additional variables for passive scalars
     real( kind = core_rknd ), intent(in), dimension(nzt,sclr_dim) :: & 

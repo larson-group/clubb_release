@@ -558,8 +558,7 @@ contains
     type (grid), intent(in) :: gr
 
     logical, intent(in) ::  &
-      l_implemented    ! True if CLUBB is being run within a large-scale host model,
-                       !   rather than a standalone single-column model.
+      l_implemented    ! True if CLUBB is being implemented and run in a host model
 
     real( kind = core_rknd ), intent(in) ::  &
       dt  ! Current timestep duration    [s]
@@ -1512,7 +1511,7 @@ contains
 
       !!! Input Variables
     logical, intent(in) :: &
-      l_implemented ! Is this part of a larger host model (T/F) ?
+      l_implemented ! True if CLUBB is being implemented and run in a host model
 
     real( kind = core_rknd ), intent(in) :: &
       dt  ! Current timestep duration    [s]
@@ -2094,8 +2093,7 @@ contains
 
     type(grid), intent(inout) :: gr
 
-    ! Flag to see if CLUBB is running on it's own,
-    ! or if it's implemented as part of a host model.
+    ! True if CLUBB is being implemented and run in a host model
     logical, intent(in) :: l_implemented
 
     ! Flag for having the model use its traditional ascending grid (where the
@@ -2198,8 +2196,7 @@ contains
 
     type (grid), intent(inout) :: gr
 
-    ! Flag to see if CLUBB is running on it's own,
-    ! or if it's implemented as part of a host model.
+    ! True if CLUBB is being implemented and run in a host model
     logical, intent(in) :: l_implemented
 
     ! Flag for having the model use its traditional ascending grid (where the

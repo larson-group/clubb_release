@@ -82,6 +82,7 @@ module advance_xp2_xpyp_module
                                l_upwind_xpyp_ta,                          & ! In
                                l_godunov_upwind_xpyp_ta,                  & ! In
                                l_lmm_stepping,                            & ! In
+                               l_implemented,                              & ! In
                                stats,                                     & ! InOut
                                rtp2, thlp2, rtpthlp, up2, vp2,            & ! Inout
                                sclrp2, sclrprtp, sclrpthlp, err_info )      ! Inout
@@ -301,7 +302,8 @@ module advance_xp2_xpyp_module
                                    ! centered differencing for turbulent or mean advection terms.
                                    ! It affects rtp2, thlp2, up2, vp2, sclrp2, rtpthlp, sclrprtp, 
                                    ! & sclrpthlp.
-      l_lmm_stepping               ! Apply Linear Multistep Method (LMM) Stepping
+      l_lmm_stepping, &            ! Apply Linear Multistep Method (LMM) Stepping
+      l_implemented                ! True if CLUBB is being implemented and run in a host model
 
     !------------------- InOut Variables -------------------
     type(stats_type), intent(inout) :: &
@@ -665,6 +667,7 @@ module advance_xp2_xpyp_module
                                            rhs_ta_wprtpthlp, rhs_ta_wpsclrp2,           & ! In
                                            rhs_ta_wprtpsclrp, rhs_ta_wpthlpsclrp,       & ! In
                                            dt, l_scalar_calc, l_lmm_stepping,           & ! In
+                                           l_implemented,                               & ! In
                                            tridiag_solve_method,                        & ! In
                                            stats,                                       & ! InOut
                                            rtp2, thlp2, rtpthlp,                        & ! InOut
@@ -687,6 +690,7 @@ module advance_xp2_xpyp_module
                                              rhs_ta_wprtpsclrp, rhs_ta_wpthlpsclrp,        & ! In
                                              dt, iiPDF_type, l_scalar_calc,                & ! In
                                              l_lmm_stepping,                               & ! In
+                                             l_implemented,                                & ! In
                                              tridiag_solve_method,                         & ! In
                                              stats,                                        & ! InOut
                                              rtp2, thlp2, rtpthlp,                         & ! InOut
@@ -784,6 +788,7 @@ module advance_xp2_xpyp_module
 
       ! Solve the tridiagonal system
        call xp2_xpyp_solve( nzm, ngrdcol, xp2_xpyp_up2_vp2, 1, & ! Intent(in)
+                            l_implemented,                     & ! Intent(in)
                             gr, tridiag_solve_method,          & ! Intent(in)
                             stats,                             & ! Intent(inout)
                             uv_rhs, lhs, err_info,             & ! Intent(inout)
@@ -822,6 +827,7 @@ module advance_xp2_xpyp_module
 
       ! Solve the tridiagonal system
       call xp2_xpyp_solve( nzm, ngrdcol, xp2_xpyp_up2_vp2, 1, & ! Intent(in)
+                           l_implemented,                     & ! Intent(in)
                            gr, tridiag_solve_method,          & ! Intent(in)
                            stats,                             & ! Intent(inout)
                            uv_rhs, lhs, err_info,             & ! Intent(inout)
@@ -905,6 +911,7 @@ module advance_xp2_xpyp_module
 
       ! Solve the tridiagonal system
       call xp2_xpyp_solve( nzm, ngrdcol, xp2_xpyp_up2_vp2, 2, & ! Intent(in)
+                           l_implemented,                     & ! Intent(in)
                            gr, tridiag_solve_method,          & ! Intent(in)
                            stats,                             & ! Intent(inout)
                            uv_rhs, lhs, err_info,             & ! Intent(inout)
@@ -1477,6 +1484,7 @@ module advance_xp2_xpyp_module
                                              rhs_ta_wprtpthlp, rhs_ta_wpsclrp2, &
                                              rhs_ta_wprtpsclrp, rhs_ta_wpthlpsclrp, &
                                              dt, l_scalar_calc, l_lmm_stepping, &
+                                             l_implemented, &
                                              tridiag_solve_method, &
                                              stats,         &
                                              rtp2, thlp2, rtpthlp, &
@@ -1552,7 +1560,8 @@ module advance_xp2_xpyp_module
 
     logical, intent(in) :: &
       l_scalar_calc, &
-      l_lmm_stepping
+      l_lmm_stepping, &
+      l_implemented  ! True if CLUBB is being implemented and run in a host model
 
     real( kind = core_rknd ), intent(in) :: &
       dt             ! Model timestep                                [s]
@@ -1775,6 +1784,7 @@ module advance_xp2_xpyp_module
 
     ! Solve multiple rhs with single lhs
     call xp2_xpyp_solve( nzm, ngrdcol, xp2_xpyp_single_lhs, 3+3*sclr_dim, & ! Intent(in)
+                         l_implemented,                                   & ! Intent(in)
                          gr, tridiag_solve_method,                        & ! Intent(in)
                          stats,                                           & ! Intent(inout)
                          rhs, lhs, err_info,                              & ! Intent(inout)
@@ -1884,6 +1894,7 @@ module advance_xp2_xpyp_module
                                                rhs_ta_wprtpsclrp, rhs_ta_wpthlpsclrp, &
                                                dt, iiPDF_type, l_scalar_calc, &
                                                l_lmm_stepping, &
+                                               l_implemented, &
                                                tridiag_solve_method, &
                                                stats,         &
                                                rtp2, thlp2, rtpthlp, &
@@ -1963,19 +1974,20 @@ module advance_xp2_xpyp_module
 
     logical, intent(in) :: &
       l_scalar_calc, &
-      l_lmm_stepping
+      l_lmm_stepping, &
+      l_implemented  ! True if CLUBB is being implemented and run in a host model
 
     real( kind = core_rknd ), intent(in) :: &
       dt             ! Model timestep                                [s]
-        
+
     ! Passive scalar input
-    real( kind = core_rknd ), intent(in), dimension(ngrdcol,nzt,sclr_dim) ::  & 
+    real( kind = core_rknd ), intent(in), dimension(ngrdcol,nzt,sclr_dim) ::  &
       sclrm          ! Mean value; pass. scalar (t-levs.) [{sclr units}]
 
-    real( kind = core_rknd ), intent(in), dimension(ngrdcol,nzm,sclr_dim) ::  & 
+    real( kind = core_rknd ), intent(in), dimension(ngrdcol,nzm,sclr_dim) ::  &
       wpsclrp        ! <w'sclr'> (momentum levels)        [m/s{sclr units}]
 
-    real( kind = core_rknd ), intent(in), dimension(ndiags3,ngrdcol,nzm) :: & 
+    real( kind = core_rknd ), intent(in), dimension(ndiags3,ngrdcol,nzm) :: &
       lhs_ta_wprtp2,    & ! Turbulent advection term for <w'rt'^2>
       lhs_ta_wpthlp2,   & ! Turbulent advection term for <w'thl'^2>
       lhs_ta_wprtpthlp, & ! Turbulent advection term for <w'rtp'thl'>
@@ -2095,6 +2107,7 @@ module advance_xp2_xpyp_module
 
     ! Solve the tridiagonal system
     call xp2_xpyp_solve( nzm, ngrdcol, xp2_xpyp_rtp2, 1, & ! Intent(in)
+                         l_implemented,                  & ! Intent(in)
                          gr, tridiag_solve_method,       & ! Intent(in)
                          stats,                          & ! Intent(inout)
                          rhs, lhs, err_info,             & ! Intent(inout)
@@ -2162,6 +2175,7 @@ module advance_xp2_xpyp_module
 
     ! Solve the tridiagonal system
     call xp2_xpyp_solve( nzm, ngrdcol, xp2_xpyp_thlp2, 1, & ! Intent(in)
+                         l_implemented,                   & ! Intent(in)
                          gr, tridiag_solve_method,        & ! Intent(in)
                          stats,                           & ! Intent(inout)
                          rhs, lhs, err_info,              & ! Intent(inout)
@@ -2229,6 +2243,7 @@ module advance_xp2_xpyp_module
 
     ! Solve the tridiagonal system
     call xp2_xpyp_solve( nzm, ngrdcol, xp2_xpyp_rtpthlp, 1, & ! Intent(in)
+                         l_implemented,                     & ! Intent(in)
                          gr, tridiag_solve_method,          & ! Intent(in)
                          stats,                             & ! Intent(inout)
                          rhs, lhs, err_info,                & ! Intent(inout)
@@ -2306,6 +2321,7 @@ module advance_xp2_xpyp_module
 
           ! Solve the tridiagonal system
           call xp2_xpyp_solve( nzm, ngrdcol, xp2_xpyp_scalars, 1, & ! Intent(in)
+                               l_implemented,                     & ! Intent(in)
                                gr, tridiag_solve_method,          & ! Intent(in)
                                stats,                             & ! Intent(inout)
                                rhs, lhs, err_info,                & ! intent(inout)
@@ -2353,6 +2369,7 @@ module advance_xp2_xpyp_module
 
           ! Solve the tridiagonal system
           call xp2_xpyp_solve( nzm, ngrdcol, xp2_xpyp_scalars, 1, & ! Intent(in)
+                               l_implemented,                     & ! Intent(in)
                                gr, tridiag_solve_method,          & ! Intent(in)
                                stats,                             & ! Intent(inout)
                                rhs, lhs, err_info,                & ! Intent(inout)
@@ -2400,6 +2417,7 @@ module advance_xp2_xpyp_module
 
           ! Solve the tridiagonal system
           call xp2_xpyp_solve( nzm, ngrdcol, xp2_xpyp_scalars, 1, & ! Intent(in)
+                               l_implemented,                     & ! Intent(in)
                                gr, tridiag_solve_method,          & ! Intent(in)
                                stats,                             & ! Intent(inout)
                                rhs, lhs, err_info,                & ! Intent(inout)
@@ -2532,6 +2550,7 @@ module advance_xp2_xpyp_module
 
         ! Solve the tridiagonal system
         call xp2_xpyp_solve( nzm, ngrdcol, xp2_xpyp_scalars, 3*sclr_dim, & ! Intent(in)
+                             l_implemented,                              & ! Intent(in)
                              gr, tridiag_solve_method,                   & ! Intent(in)
                              stats,                                      & ! Intent(inout)
                              sclr_rhs, lhs, err_info,                    & ! Intent(inout)
@@ -2714,6 +2733,7 @@ module advance_xp2_xpyp_module
 
   !=============================================================================
   subroutine xp2_xpyp_solve( nzm, ngrdcol, solve_type, nrhs, &
+                             l_implemented, &
                              gr, tridiag_solve_method, &
                              stats,         &
                              rhs, lhs, err_info, &
@@ -2761,6 +2781,9 @@ module advance_xp2_xpyp_module
 
     integer, intent(in) :: &
       nrhs  ! Number of right hand side vectors
+
+    logical, intent(in) :: &
+      l_implemented  ! True if CLUBB is being implemented and run in a host model
 
     integer, intent(in) :: &
       solve_type ! Variable(s) description
@@ -2857,6 +2880,7 @@ module advance_xp2_xpyp_module
 
       call tridiag_solve( solve_type_str, tridiag_solve_method, & ! Intent(in)
                           ngrdcol, nzm, nrhs,                   & ! Intent(in)
+                          l_implemented,                        & ! Intent(in)
                           lhs, rhs, err_info,                   & ! Intent(inout)
                           xapxbp, rcond )                         ! Intent(out)
 
@@ -2888,6 +2912,7 @@ module advance_xp2_xpyp_module
 
       call tridiag_solve( solve_type_str, tridiag_solve_method, & ! Intent(in)
                           ngrdcol, nzm, nrhs,                   & ! Intent(in)
+                          l_implemented,                        & ! Intent(in)
                           lhs, rhs, err_info,                   & ! Intent(inout)
                           xapxbp )                                ! Intent(out)
     end if

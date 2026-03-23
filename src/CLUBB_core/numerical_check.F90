@@ -1435,7 +1435,7 @@ module numerical_check
 
       ! Flags
       logical, intent(in) ::  &
-        l_implemented, & ! Flag for whether CLUBB is being run in a host model
+        l_implemented, & ! True if CLUBB is being implemented and run in a host model
         l_input_fields   ! Flag for whether LES input fields are being used
 
       type(clubb_config_flags_type), intent(in) :: &

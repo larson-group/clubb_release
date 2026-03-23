@@ -276,7 +276,7 @@ module generalized_grid_test
       ngrdcol
 
     logical, intent(in) ::  &
-      l_implemented ! Is this part of a larger host model (T/F) ?
+      l_implemented ! True if CLUBB is being implemented and run in a host model
 
     real( kind = core_rknd ), intent(in) ::  &
       dt  ! Current timestep duration    [s]

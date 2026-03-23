@@ -361,8 +361,7 @@ module advance_clubb_core_module
     type (grid), intent(in) :: gr
 
     logical, intent(in) ::  &
-      l_implemented    ! True if CLUBB is being run within a large-scale host model,
-                       !   rather than a standalone single-column model.
+      l_implemented    ! True if CLUBB is being implemented and run in a host model
 
     real( kind = core_rknd ), intent(in) ::  &
       dt  ! Current timestep duration    [s]
@@ -1948,6 +1947,7 @@ module advance_clubb_core_module
                              clubb_config_flags%l_upwind_xpyp_ta,                 & ! intent(in)
                              clubb_config_flags%l_godunov_upwind_xpyp_ta,         & ! intent(in)
                              clubb_config_flags%l_lmm_stepping,                   & ! intent(in)
+                             l_implemented,                                        & ! intent(in)
                              stats,                                               & ! intent(inout)
                              rtp2, thlp2, rtpthlp, up2, vp2,                      & ! intent(inout)
                              sclrp2, sclrprtp, sclrpthlp, err_info )                ! intent(inout)
@@ -2057,6 +2057,7 @@ module advance_clubb_core_module
                             clubb_config_flags%l_use_wp3_lim_with_smth_Heaviside, & ! intent(in)
                             clubb_config_flags%l_wp2_fill_holes_tke,              & ! intent(in)
                             clubb_config_flags%l_ho_nontrad_coriolis,             & ! intent(in)
+                            l_implemented,                                        & ! intent(in)
                             stats,                                                & ! intent(inout)
                             up2, vp2, wp2, wp3, wp3_zm, wp2_zt, err_info )          ! intent(inout)
 

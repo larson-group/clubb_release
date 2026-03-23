@@ -317,8 +317,7 @@ module grid_class
     real( kind = core_rknd ), dimension(ngrdcol), intent(in) ::  &
       sfc_elevation  ! Elevation of ground level    [m AMSL]
 
-    ! Flag to see if CLUBB is running on it's own,
-    ! or if it's implemented as part of a host model.
+    ! True if CLUBB is being implemented and run in a host model
     logical, intent(in) :: l_implemented
 
     ! Flag for having the model use its traditional ascending grid (where the
@@ -752,8 +751,7 @@ module grid_class
 
     type (grid), intent(inout) :: gr
 
-    ! Flag to see if CLUBB is running on it's own,
-    ! or if it's implemented as part of a host model.
+    ! True if CLUBB is being implemented and run in a host model
     logical, intent(in) :: l_implemented
 
     ! Flag for having the model use its traditional ascending grid (where the

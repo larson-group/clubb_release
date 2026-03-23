@@ -45,8 +45,7 @@ module mixing_length
       ngrdcol
     
     logical, intent(in) :: &
-      l_implemented     ! Flag to see if CLUBB is running on it's own,
-                        ! or if it's implemented as part of a host model.
+      l_implemented     ! True if CLUBB is being implemented and run in a host model
 
     real( kind = core_rknd ), dimension(ngrdcol), intent(in) :: &
       host_dx, & ! Host model's east-west horizontal grid spacing     [m]
@@ -251,7 +250,7 @@ module mixing_length
       saturation_formula ! Integer that stores the saturation formula to be used
 
     logical, intent(in) :: &
-      l_implemented ! Flag for CLUBB being implemented in a larger model
+      l_implemented ! True if CLUBB is being implemented and run in a host model
 
     !--------------------------------- InOut Variables ---------------------------------
     type(err_info_type), intent(inout) :: &
@@ -1185,8 +1184,7 @@ module mixing_length
       gr
 
     logical, intent(in) ::  &
-      l_implemented ! True if CLUBB is being run within a large-scale hostmodel,
-                    !   rather than a standalone single-column model.
+      l_implemented ! True if CLUBB is being implemented and run in a host model
 
     real( kind = core_rknd ), dimension(ngrdcol,nzt), intent(in) ::  &
       rtp2_zt,    &

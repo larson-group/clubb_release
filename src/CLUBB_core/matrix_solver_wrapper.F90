@@ -56,6 +56,7 @@ module matrix_solver_wrapper
   subroutine band_solve_single_rhs_multiple_lhs( &
                 solve_name, penta_solve_method, & ! Intent(in)
                 ngrdcol, nsup, nsub, ndim,      & ! Intent(in)
+                l_implemented,                  & ! Intent(in)
                 lhs, rhs, err_info,             & ! Intent(inout)
                 soln,                           & ! Intent(out)
                 old_soln,                       & ! Optional(in)
@@ -88,6 +89,9 @@ module matrix_solver_wrapper
       nsup,     & ! Number of superdiagonals
       nsub,     & ! Number of subdiagonals
       ndim        ! The order of the LHS Matrix, i.e. the # of linear equations
+
+    logical, intent(in) :: &
+      l_implemented ! True if CLUBB is being implemented and run in a host model
 
     real( kind = core_rknd ), dimension(nsup+nsub+1,ngrdcol,ndim), intent(inout) :: &
       lhs ! Left hand side
@@ -189,8 +193,7 @@ module matrix_solver_wrapper
 
     end if
 
-    if ( clubb_at_least_debug_level_api( 1 ) ) then
-      !$acc update host( soln )
+    if ( clubb_at_least_debug_level_api( 1 ) .or. l_implemented ) then
       call check_nan_soln( solve_name, penta_solve_method, ngrdcol, ndim, soln, &
                            err_info )
     end if
@@ -202,6 +205,7 @@ module matrix_solver_wrapper
   subroutine band_solve_multiple_rhs_lhs( &
                 solve_name, penta_solve_method,   & ! Intent(in)
                 ngrdcol, nsup, nsub, ndim, nrhs,  & ! Intent(in)
+                l_implemented,                    & ! Intent(in)
                 lhs, rhs, err_info,               & ! Intent(inout)
                 soln,                             & ! Intent(out)
                 old_soln,                         & ! Optional(in)
@@ -235,6 +239,9 @@ module matrix_solver_wrapper
       nsub,     & ! Number of subdiagonals
       ndim,     & ! The order of the LHS Matrix, i.e. the # of linear equations
       nrhs        ! Number of RHS's to back substitute for
+
+    logical, intent(in) :: &
+      l_implemented ! True if CLUBB is being implemented and run in a host model
 
     real( kind = core_rknd ), dimension(nsup+nsub+1,ngrdcol,ndim), intent(inout) :: &
       lhs ! Left hand side
@@ -343,8 +350,7 @@ module matrix_solver_wrapper
 
     end if
 
-    if ( clubb_at_least_debug_level_api( 1 ) ) then
-      !$acc update host( soln )
+    if ( clubb_at_least_debug_level_api( 1 ) .or. l_implemented ) then
       call check_nan_soln( solve_name, penta_solve_method, ngrdcol, ndim, nrhs, soln, &
                            err_info )
     end if
@@ -473,6 +479,7 @@ module matrix_solver_wrapper
   subroutine tridiag_solve_single_rhs_multiple_lhs( &
                 solve_name, tridiag_solve_method, & ! Intent(in)
                 ngrdcol, ndim,                    & ! Intent(in)
+                l_implemented,                    & ! Intent(in)
                 lhs, rhs, err_info,               & ! Intent(inout)
                 soln, rcond )                       ! Intent(out)
 
@@ -498,6 +505,9 @@ module matrix_solver_wrapper
     integer, intent(in) :: &
       ngrdcol,  & ! Number of grid columns
       ndim        ! The order of the LHS Matrix, i.e. the # of linear equations
+
+    logical, intent(in) :: &
+      l_implemented ! True if CLUBB is being implemented and run in a host model
 
     real( kind = core_rknd ), dimension(3,ngrdcol,ndim), intent(inout) :: &
       lhs ! Left hand side
@@ -580,8 +590,7 @@ module matrix_solver_wrapper
 
     end if
 
-    if ( clubb_at_least_debug_level_api( 1 ) ) then
-      !$acc update host( soln )
+    if ( clubb_at_least_debug_level_api( 1 ) .or. l_implemented ) then
       call check_nan_soln( solve_name, tridiag_solve_method, ngrdcol, ndim, soln, &
                            err_info )
     end if
@@ -593,6 +602,7 @@ module matrix_solver_wrapper
   subroutine tridiag_solve_multiple_rhs_lhs( &
                 solve_name, tridiag_solve_method, & ! Intent(in)
                 ngrdcol, ndim, nrhs,              & ! Intent(in)
+                l_implemented,                    & ! Intent(in)
                 lhs, rhs, err_info,               & ! Intent(inout)
                 soln, rcond )                       ! Intent(out)
 
@@ -619,6 +629,9 @@ module matrix_solver_wrapper
       ngrdcol,  & ! Number of grid columns
       ndim,     & ! The order of the LHS Matrix, i.e. the # of linear equations
       nrhs        ! Number of RHS's to back substitute for
+
+    logical, intent(in) :: &
+      l_implemented ! True if CLUBB is being implemented and run in a host model
 
     real( kind = core_rknd ), dimension(3,ngrdcol,ndim), intent(inout) :: &
       lhs ! Left hand side
@@ -701,8 +714,7 @@ module matrix_solver_wrapper
 
     end if
 
-    if ( clubb_at_least_debug_level_api( 1 ) ) then
-      !$acc update host( soln )
+    if ( clubb_at_least_debug_level_api( 1 ) .or. l_implemented ) then
       call check_nan_soln( solve_name, tridiag_solve_method, ngrdcol, ndim, nrhs, soln, &
                            err_info )
     end if
@@ -731,7 +743,19 @@ module matrix_solver_wrapper
     type(err_info_type), intent(inout) :: &
       err_info
 
-    if ( any( ieee_is_nan( soln ) ) ) then
+    integer :: k
+    logical :: l_has_nan
+
+    l_has_nan = .false.
+
+    do k = 1, ndim
+      if ( ieee_is_nan( soln(k) ) ) then
+        write(fstderr, *) "ERROR: NaN detected: soln(", k, ") = ", soln(k)
+        l_has_nan = .true.
+      end if
+    end do
+
+    if ( l_has_nan ) then
       write(fstderr, *) err_info%err_header_global
       write(fstderr, *) "solve_method =", solve_method
       write(fstderr, *) trim( solve_name )//" NaNs in solution"
@@ -762,16 +786,28 @@ module matrix_solver_wrapper
     type(err_info_type), intent(inout) :: &
       err_info
 
-    integer :: i
+    integer :: i, k
+    logical :: l_has_nan
 
-    do i = 1, ngrdcol
-      if ( any( ieee_is_nan( soln(i,:) ) ) ) then
-        write(fstderr, *) err_info%err_header(i)
-        write(fstderr, *) "solve_method =", solve_method
-        write(fstderr, *) trim( solve_name )//" NaNs in solution"
-        err_info%err_code(i) = clubb_fatal_error
-      end if
+    l_has_nan = .false.
+
+    !$acc parallel loop gang vector collapse(2) default(present) &
+    !$acc   reduction(.or.:l_has_nan)
+    do k = 1, ndim
+      do i = 1, ngrdcol
+        if ( ieee_is_nan( soln(i,k) ) ) then
+          write(fstderr, *) "ERROR: NaN detected: soln(", i, ",", k, ") = ", soln(i,k)
+          l_has_nan = .true.
+        end if
+      end do
     end do
+
+    if ( l_has_nan ) then
+      write(fstderr, *) err_info%err_header_global
+      write(fstderr, *) "solve_method =", solve_method
+      write(fstderr, *) trim( solve_name )//" NaNs in solution"
+      err_info%err_code = clubb_fatal_error
+    end if
 
     return
 
@@ -797,16 +833,30 @@ module matrix_solver_wrapper
     type(err_info_type), intent(inout) :: &
       err_info
 
-    integer :: i
+    integer :: i, k, j
+    logical :: l_has_nan
 
-    do i = 1, ngrdcol
-      if ( any( ieee_is_nan( soln(i,:,:) ) ) ) then
-        write(fstderr, *) err_info%err_header(i)
-        write(fstderr, *) "solve_method =", solve_method
-        write(fstderr, *) trim( solve_name )//" NaNs in solution"
-        err_info%err_code(i) = clubb_fatal_error
-      end if
+    l_has_nan = .false.
+
+    !$acc parallel loop gang vector collapse(2) default(present) &
+    !$acc   reduction(.or.:l_has_nan)
+    do j = 1, nrhs
+      do k = 1, ndim
+        do i = 1, ngrdcol
+          if ( ieee_is_nan( soln(i,k,j) ) ) then
+            write(fstderr, *) "ERROR: NaN detected: soln(", i, ",", k, ",", j, ") = ", soln(i,k,j)
+            l_has_nan = .true.
+          end if
+        end do
+      end do
     end do
+
+    if ( l_has_nan ) then
+      write(fstderr, *) err_info%err_header_global
+      write(fstderr, *) "solve_method =", solve_method
+      write(fstderr, *) trim( solve_name )//" NaNs in solution"
+      err_info%err_code = clubb_fatal_error
+    end if
 
     return
 

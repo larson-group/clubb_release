@@ -1675,7 +1675,7 @@ module grid_adaptation_module
       p_sfc              ! Pressure at the surface      [Pa]
 
     logical, intent(in) :: &
-      l_implemented ! Parameter for srtting up the grid
+      l_implemented ! True if CLUBB is being implemented and run in a host model
 
     real( kind = core_rknd ), dimension(ngrdcol, idx_thvm), intent(in) ::  &
       thvm  ! Virtual potential temperature             [K]

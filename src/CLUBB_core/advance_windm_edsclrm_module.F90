@@ -152,7 +152,7 @@ module advance_windm_edsclrm_module
       fcor           ! Coriolis parameter                            [s^-1]
 
     logical, intent(in) ::  &
-      l_implemented  ! Flag for CLUBB being implemented in a larger model.
+      l_implemented  ! True if CLUBB is being implemented and run in a host model
 
     type(nu_vertical_res_dep), intent(in) :: &
       nu_vert_res_dep    ! Vertical resolution dependent nu values
@@ -247,7 +247,8 @@ module advance_windm_edsclrm_module
       u_star_sqd_pert    ! perturbed u_star, squared                       [m/s]
 
     logical :: &
-      l_imp_sfc_momentum_flux  ! Flag for implicit momentum surface fluxes.
+      l_imp_sfc_momentum_flux, & ! Flag for implicit momentum surface fluxes.
+      l_need_rcond               ! Flag to request reciprocal condition number output.
 
     integer :: nrhs  ! Number of right hand side terms
 
@@ -442,9 +443,12 @@ module advance_windm_edsclrm_module
 
       ! Decompose and back substitute for um and vm
       nrhs = 2
+      l_need_rcond = stats%l_sample .and. &
+                     var_on_stats_list( stats, "windm_matrix_condt_num" )
       call windm_edsclrm_solve( nzt, ngrdcol, gr, nrhs,                         & ! intent(in)
                                 tridiag_solve_method,                           & ! intent(in)
-                                stats, .true.,                                  & ! intent(in)
+                                l_implemented,                                  & ! intent(in)
+                                stats, l_need_rcond,                            & ! intent(in)
                                 lhs, rhs, err_info,                             & ! intent(inout)
                                 solution )                                        ! intent(out)
 
@@ -788,9 +792,12 @@ module advance_windm_edsclrm_module
 
       ! Decompose and back substitute for um and vm
       nrhs = 2
+      l_need_rcond = stats%l_sample .and. &
+                     var_on_stats_list( stats, "windm_matrix_condt_num" )
       call windm_edsclrm_solve( nzt, ngrdcol, gr, nrhs,                         & ! intent(in)
                                 tridiag_solve_method,                           & ! intent(in)
-                                stats, .true.,                                  & ! intent(in)
+                                l_implemented,                                  & ! intent(in)
+                                stats, l_need_rcond,                            & ! intent(in)
                                 lhs, rhs, err_info,                             & ! intent(inout)
                                 solution )                                        ! intent(out)
 
@@ -1000,9 +1007,11 @@ module advance_windm_edsclrm_module
                               lhs )                                     ! intent(out)
                                     
       ! Decompose and back substitute for all eddy-scalar variables
+      l_need_rcond = .false.
       call windm_edsclrm_solve( nzt, ngrdcol, gr, edsclr_dim,    & ! intent(in)
                                 tridiag_solve_method,            & ! intent(in)
-                                stats, .false.,                  & ! intent(in)
+                                l_implemented,                   & ! intent(in)
+                                stats, l_need_rcond,             & ! intent(in)
                                 lhs, rhs, err_info,              & ! intent(inout)
                                 solution )                         ! intent(out)
 
@@ -1129,7 +1138,8 @@ module advance_windm_edsclrm_module
   !=============================================================================
   subroutine windm_edsclrm_solve( nzt, ngrdcol, gr, nrhs, &
                                   tridiag_solve_method, &
-                                  stats, l_track_matrix_condt_num,         &
+                                  l_implemented, &
+                                  stats, l_need_rcond,                     &
                                   lhs, rhs, err_info, &
                                   solution )
 
@@ -1644,11 +1654,14 @@ module advance_windm_edsclrm_module
     integer, intent(in) :: &
       tridiag_solve_method  ! Specifier for method to solve tridiagonal systems
 
+    logical, intent(in) :: &
+      l_implemented  ! True if CLUBB is being implemented and run in a host model
+
     type(stats_type), intent(inout) :: &
       stats
 
     logical, intent(in) :: &
-      l_track_matrix_condt_num
+      l_need_rcond
 
     ! ------------------------ Inout variables ------------------------
     real( kind = core_rknd ), dimension(3,ngrdcol,nzt), intent(inout) :: &
@@ -1670,7 +1683,6 @@ module advance_windm_edsclrm_module
       rcond ! Estimate of the reciprocal of the condition number on the LHS matrix
 
     integer :: i, j
-    logical :: l_need_rcond
     
     ! ------------------------ Begin Code ------------------------
 
@@ -1686,14 +1698,11 @@ module advance_windm_edsclrm_module
 
     endif
 
-    ! Solve tridiagonal system for xm.
-    l_need_rcond = l_track_matrix_condt_num .and. stats%l_sample .and.             &
-      var_on_stats_list( stats, "windm_matrix_condt_num" )
-
     if ( l_need_rcond ) then
 
       call tridiag_solve( "windm_edsclrm", tridiag_solve_method,  & ! Intent(in)
                           ngrdcol, nzt, nrhs,                     & ! Intent(in)
+                          l_implemented,                          & ! Intent(in)
                           lhs, rhs, err_info,                     & ! Intent(inout)
                           solution, rcond )                         ! Intent(out)
 
@@ -1702,6 +1711,7 @@ module advance_windm_edsclrm_module
 
       call tridiag_solve( "windm_edsclrm", tridiag_solve_method,  & ! Intent(in)
                           ngrdcol, nzt, nrhs,                     & ! Intent(in)
+                          l_implemented,                          & ! Intent(in)
                           lhs, rhs, err_info,                     & ! Intent(inout)
                           solution )                                ! Intent(out)
     end if
@@ -1964,7 +1974,7 @@ module advance_windm_edsclrm_module
       xm_forcing      ! Prescribed wind forcing                                          [m/s/s]
 
     logical, intent(in) :: & 
-      l_implemented   ! Flag for CLUBB being implemented in a larger model.
+      l_implemented   ! True if CLUBB is being implemented and run in a host model
 
     type(stats_type), intent(inout) :: &
       stats
@@ -2144,7 +2154,7 @@ module advance_windm_edsclrm_module
       u_star_sqd    ! Surface friction velocity, u_*, squared  [m/s]
 
     logical, intent(in) ::  & 
-      l_implemented, & ! Flag for CLUBB being implemented in a larger model.
+      l_implemented, & ! True if CLUBB is being implemented and run in a host model
       l_imp_sfc_momentum_flux  ! Flag for implicit momentum surface fluxes.
 
     ! ----------------------- Output Variable -----------------------
