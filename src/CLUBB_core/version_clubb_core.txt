@@ -1,0 +1,101 @@
+commit f5fb36fc103a46c7cd19ebbe151163da8ee91c42
+Author: Gunther Huebler <37674341+huebleruwm@users.noreply.github.com>
+Date:   Mon Mar 23 15:25:40 2026 -0500
+
+    Little Fix (#1287)
+    
+    * Making matrix solve checks also trigger if l_implemented is true so that they always are done in CAM, regardless of debug level
+    
+    * Reworking rcond flag in advance_windm
+    
+    * Updating l_implemented flag comments
+    
+    * Adding printouts to make clear where the NaN are (if any) in the soln vector.
+
+commit b0473687b9eb3489e6ce50f8c4ce66419719fc2d
+Author: Gunther Huebler <huebler@uwm.edu>
+Date:   Mon Mar 23 13:18:24 2026 -0500
+
+    A couple recent commits were missing their bit-changing messages because they were accidentally merged in early, see https://github.com/larson-group/clubb/pull/1286 - this commit is to add the resolve messages for the BFB test - RESOLVED:149e61f9bab26c5cb4518fd7bada9b1f4064482e RESOLVED:9f2b1e6c9370a897e1da1320521fbc27baf6ff31
+
+commit d9d887857da333c2c683aad09311ffcdb2d54440
+Author: Gunther Huebler <huebler@uwm.edu>
+Date:   Sun Mar 22 23:12:25 2026 -0500
+
+    Increasing tolerance for check_flipped_results - this is used in the generalized_grid_test when we allow the matrices to be solved in different vertical modes
+
+commit 0fc97f413d522aabb24db8c4a289aa5e5471256d
+Author: Gunther Huebler <huebler@uwm.edu>
+Date:   Sun Mar 22 22:52:29 2026 -0500
+
+    Adding max tasks option to dash app
+
+commit 149e61f9bab26c5cb4518fd7bada9b1f4064482e
+Author: Gunther Huebler <huebler@uwm.edu>
+Date:   Sun Mar 22 22:28:59 2026 -0500
+
+    Fixing multicol radiation stats bug.
+
+commit 9f2b1e6c9370a897e1da1320521fbc27baf6ff31
+Author: Gunther Huebler <huebler@uwm.edu>
+Date:   Sun Mar 22 00:56:32 2026 -0500
+
+    GPUizing most of radiation code
+
+commit d20fd1daad5e5d921607794e258bfde151fd3c89
+Author: Gunther Huebler <huebler@uwm.edu>
+Date:   Wed Mar 18 20:44:34 2026 -0500
+
+    Previous commit (49bd72c6b6ee57f27c7694b25facd1b0eb91bd09) fixed a stats bug that caused parameter names to not be stored in the netcdf file - so now run_bindiff_all.py has to ignore those. Fixed by ignoring all non-numeric variables.
+
+commit d3c5a22e8d71e7224d34ffe7c7d2276679df7492
+Author: Gunther Huebler <huebler@uwm.edu>
+Date:   Wed Mar 18 20:15:01 2026 -0500
+
+    Now that the adg1_ routines prevent below threshold wp2 and xp2 values, we also need these max statements in this unit test too
+
+commit 49bd72c6b6ee57f27c7694b25facd1b0eb91bd09
+Author: Gunther Huebler <37674341+huebleruwm@users.noreply.github.com>
+Date:   Wed Mar 18 17:15:29 2026 -0500
+
+    Dash app improvements (#1280)
+    
+    * Mainly dash app improvements, but also removing unused args from stats and improving run scripts
+    
+    * Small update to ui in run tab
+    
+    * Improvements to make plotting faster, fixing various bugs, making things more robust, and adding more run modification fields (out_dir/dt_main/etc)
+    
+    * Adding les plotting capabilities, lots of tiny improvements
+    
+    * Reverting run_bindiff_all.py
+    
+    * Tiny quality of life improvements - fixing port conflict, opening in browser automatically, and defaulting to the run_tab instead of requiring a first click
+
+commit cbaf3b7cad36f5843a53f7e5ce77943ca7cc64c9
+Author: Gunther Huebler <37674341+huebleruwm@users.noreply.github.com>
+Date:   Wed Mar 18 16:02:50 2026 -0500
+
+    Clubb radiation update (#1283)
+    
+    * Compartmentalizing radiation code a bit
+    
+    * More compartmentalizing
+    
+    * Pushing loop into bugsrad because it makes things cleaner
+    
+    * Small loop pushes
+    
+    * Little cleanup
+    
+    * Moving soil_veg code
+    
+    * GPU fix and a little cleanup
+    
+    * Missed a file to commit
+    
+    * Making work with old build system
+    
+    * Need zeroing routines for set_case_initial_conditions
+    
+    * Adding comment explaining why advance_soil_veg is being packaged with Radiation code now
