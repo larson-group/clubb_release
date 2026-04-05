@@ -40,6 +40,9 @@ restoreDir=`pwd`
 # Change directories to the one the script is located in
 cd $scriptPath
 
+# Make output/ in case it doesn't exist
+mkdir -p ../output
+
 run_case()
 {
 	# Enable G95 runtime option that sets uninitialized memory to a NaN value

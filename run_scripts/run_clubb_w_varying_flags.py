@@ -43,7 +43,7 @@ def get_cli_args():
         nargs="?",
         help=(
             "Name of the CLUBB case to run (optional).\n"
-            "If omitted, you must specify exactly one of:\n"
+            "If omitted, you may specify at most one of:\n"
             "  --all, --short-cases, --priority-cases, --min-cases."
         )
     )
@@ -107,8 +107,9 @@ def get_cli_args():
     ])
 
     if args.case_name is None:
-        # Multi-case mode: must have only one subset flag
-        if subset_flags_count != 1:
+        # Multi-case mode: allow the default standard-case run when no subset
+        # flag is provided, but still reject ambiguous combinations.
+        if subset_flags_count > 1:
             print("\nError: only one of the following may be specified:\n"
                   "  --all, --short-cases, --priority-cases, --min-cases\n")
             sys.exit(1)

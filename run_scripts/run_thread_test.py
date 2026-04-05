@@ -171,6 +171,8 @@ def main():
     # Helps on systems where OpenMP shared-memory segments are restricted.
     run_env["KMP_USE_SHM"] = run_env.get("KMP_USE_SHM", "FALSE")
 
+    OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
+
     try:
         clubb_standalone, clubb_thread_test = find_executable_pair()
     except FileNotFoundError as err:
