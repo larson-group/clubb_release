@@ -30,6 +30,7 @@ import json
 # CLI ARGUMENT PROCESSING
 # ------------------------------------------------------------------------------
 
+
 def get_cli_args():
     parser = argparse.ArgumentParser(
         formatter_class=argparse.RawTextHelpFormatter
@@ -73,6 +74,27 @@ def get_cli_args():
         "-f", "--flag-config-file", type=str, default="flag_config.json",
         help="JSON file describing alternate flag settings."
     )
+    parser.add_argument(
+        "--max-iters", "-max_iters",
+        dest="max_iters",
+        type=int,
+        default=None,
+        help="Maximum number of iterations to pass to the downstream runner.",
+    )
+    parser.add_argument(
+        "--tout", "-tout",
+        dest="tout",
+        type=int,
+        default=None,
+        help="Stats output interval in seconds to pass to the downstream runner.",
+    )
+    parser.add_argument(
+        "--nproc", "-nproc",
+        dest="nproc",
+        type=int,
+        default=None,
+        help="Number of processes to use in multi-case mode.",
+    )
 
     args = parser.parse_args()
 
@@ -86,7 +108,7 @@ def get_cli_args():
 
     if args.case_name is None:
         # Multi-case mode: must have only one subset flag
-        if subset_flags_count >= 1:
+        if subset_flags_count != 1:
             print("\nError: only one of the following may be specified:\n"
                   "  --all, --short-cases, --priority-cases, --min-cases\n")
             sys.exit(1)
@@ -95,6 +117,9 @@ def get_cli_args():
         if subset_flags_count > 0:
             print("\nError: When providing a case_name, you may not also use "
                   "--all, --short-cases, --priority-cases, or --min-cases.\n")
+            sys.exit(1)
+        if args.nproc is not None:
+            print("\nError: --nproc may only be used in multi-case mode.\n")
             sys.exit(1)
 
     return args
@@ -229,10 +254,18 @@ def run_clubb(root, flag_files, args):
 
         cmd += [
             "-out_dir", out_dir,
-            "-tout", "0",
             "-debug", "0",
             "-flags", flag_path,
         ]
+
+        if args.tout is not None:
+            cmd += ["-tout", str(args.tout)]
+
+        if args.max_iters is not None:
+            cmd += ["-max_iters", str(args.max_iters)]
+
+        if not is_single_case_mode and args.nproc is not None:
+            cmd += ["-nproc", str(args.nproc)]
 
         # In single-case mode, append the case name at the end
         if is_single_case_mode:
