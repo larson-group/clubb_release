@@ -42,6 +42,7 @@ subroutine f2py_advance_xp2_xpyp(nzm, nzt, ngrdcol, sclr_dim, sclr_dim_transport
   logical, intent(in) :: &
     l_predict_upwp_vpwp, l_ho_nontrad_coriolis, l_min_xp2_from_corr_wx, l_c2_cloud_frac, &
     l_upwind_xpyp_ta, l_godunov_upwind_xpyp_ta, l_lmm_stepping
+  logical, parameter :: l_implemented = .false.
 
   real(core_rknd), dimension(ngrdcol, nzm), intent(inout) :: rtp2, thlp2, rtpthlp, up2, vp2
   real(core_rknd), dimension(ngrdcol, nzm, sclr_dim_transport), intent(inout) :: &
@@ -59,7 +60,7 @@ subroutine f2py_advance_xp2_xpyp(nzm, nzt, ngrdcol, sclr_dim, sclr_dim_transport
     l_predict_upwp_vpwp, l_ho_nontrad_coriolis, &
     l_min_xp2_from_corr_wx, l_c2_cloud_frac, &
     l_upwind_xpyp_ta, l_godunov_upwind_xpyp_ta, l_lmm_stepping, &
-    stored_stats, rtp2, thlp2, rtpthlp, up2, vp2, sclrp2, sclrprtp, sclrpthlp, stored_err_info)
+    l_implemented, stored_stats, rtp2, thlp2, rtpthlp, up2, vp2, sclrp2, sclrprtp, sclrpthlp, stored_err_info)
 
 end subroutine f2py_advance_xp2_xpyp
 

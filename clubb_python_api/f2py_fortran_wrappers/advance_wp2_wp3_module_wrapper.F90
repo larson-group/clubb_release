@@ -46,6 +46,7 @@ subroutine f2py_advance_wp2_wp3(nzm, nzt, ngrdcol, dt, &
     l_partial_upwind_wp3, l_damp_wp2_using_em, l_use_c11_richardson, l_damp_wp3_skw_squared, &
     l_lmm_stepping, l_use_tke_in_wp3_pr_turb_term, l_use_tke_in_wp2_wp3_k_dfsn, &
     l_use_wp3_lim_with_smth_heaviside, l_wp2_fill_holes_tke, l_ho_nontrad_coriolis
+  logical, parameter :: l_implemented = .false.
 
   real(core_rknd), dimension(ngrdcol, nzm), intent(inout) :: up2, vp2, wp2, wp3_zm
   real(core_rknd), dimension(ngrdcol, nzt), intent(inout) :: wp3, wp2_zt
@@ -71,7 +72,6 @@ subroutine f2py_advance_wp2_wp3(nzm, nzt, ngrdcol, dt, &
     l_use_tke_in_wp2_wp3_k_dfsn, &
     l_use_wp3_lim_with_smth_heaviside, &
     l_wp2_fill_holes_tke, l_ho_nontrad_coriolis, &
-    stored_stats, up2, vp2, wp2, wp3, wp3_zm, wp2_zt, stored_err_info)
+    l_implemented, stored_stats, up2, vp2, wp2, wp3, wp3_zm, wp2_zt, stored_err_info)
 
 end subroutine f2py_advance_wp2_wp3
-

@@ -12,6 +12,7 @@ subroutine f2py_band_solve_multiple_rhs(solve_name, penta_solve_method, &
   character(len=*), intent(in) :: solve_name
   integer, intent(in) :: penta_solve_method, ngrdcol, nsup, nsub, ndim, nrhs
   logical, intent(in) :: use_rcond
+  logical, parameter :: l_implemented = .false.
   real(core_rknd), dimension(nsup+nsub+1, ngrdcol, ndim), intent(inout) :: lhs
   real(core_rknd), dimension(ngrdcol, ndim, nrhs), intent(inout) :: rhs
   real(core_rknd), dimension(ngrdcol, ndim, nrhs), intent(in) :: old_soln
@@ -20,10 +21,10 @@ subroutine f2py_band_solve_multiple_rhs(solve_name, penta_solve_method, &
 
   if (use_rcond) then
     call band_solve(solve_name, penta_solve_method, ngrdcol, nsup, nsub, ndim, nrhs, &
-                    lhs, rhs, stored_err_info, soln, old_soln=old_soln, rcond=rcond)
+                    l_implemented, lhs, rhs, stored_err_info, soln, old_soln=old_soln, rcond=rcond)
   else
     call band_solve(solve_name, penta_solve_method, ngrdcol, nsup, nsub, ndim, nrhs, &
-                    lhs, rhs, stored_err_info, soln, old_soln=old_soln)
+                    l_implemented, lhs, rhs, stored_err_info, soln, old_soln=old_soln)
     rcond = 0.0_core_rknd
   end if
 
@@ -41,6 +42,7 @@ subroutine f2py_tridiag_solve_single_rhs_multiple_lhs(solve_name, tridiag_solve_
   character(len=*), intent(in) :: solve_name
   integer, intent(in) :: tridiag_solve_method, ngrdcol, ndim
   logical, intent(in) :: use_rcond
+  logical, parameter :: l_implemented = .false.
   real(core_rknd), dimension(3, ngrdcol, ndim), intent(inout) :: lhs
   real(core_rknd), dimension(ngrdcol, ndim), intent(inout) :: rhs
   real(core_rknd), dimension(ngrdcol, ndim), intent(out) :: soln
@@ -48,10 +50,10 @@ subroutine f2py_tridiag_solve_single_rhs_multiple_lhs(solve_name, tridiag_solve_
 
   if (use_rcond) then
     call tridiag_solve(solve_name, tridiag_solve_method, ngrdcol, ndim, &
-                       lhs, rhs, stored_err_info, soln, rcond)
+                       l_implemented, lhs, rhs, stored_err_info, soln, rcond)
   else
     call tridiag_solve(solve_name, tridiag_solve_method, ngrdcol, ndim, &
-                       lhs, rhs, stored_err_info, soln)
+                       l_implemented, lhs, rhs, stored_err_info, soln)
     rcond = 0.0_core_rknd
   end if
 
@@ -69,6 +71,7 @@ subroutine f2py_tridiag_solve_multiple_rhs(solve_name, tridiag_solve_method, &
   character(len=*), intent(in) :: solve_name
   integer, intent(in) :: tridiag_solve_method, ngrdcol, ndim, nrhs
   logical, intent(in) :: use_rcond
+  logical, parameter :: l_implemented = .false.
   real(core_rknd), dimension(3, ngrdcol, ndim), intent(inout) :: lhs
   real(core_rknd), dimension(ngrdcol, ndim, nrhs), intent(inout) :: rhs
   real(core_rknd), dimension(ngrdcol, ndim, nrhs), intent(out) :: soln
@@ -76,10 +79,10 @@ subroutine f2py_tridiag_solve_multiple_rhs(solve_name, tridiag_solve_method, &
 
   if (use_rcond) then
     call tridiag_solve(solve_name, tridiag_solve_method, ngrdcol, ndim, nrhs, &
-                       lhs, rhs, stored_err_info, soln, rcond)
+                       l_implemented, lhs, rhs, stored_err_info, soln, rcond)
   else
     call tridiag_solve(solve_name, tridiag_solve_method, ngrdcol, ndim, nrhs, &
-                       lhs, rhs, stored_err_info, soln)
+                       l_implemented, lhs, rhs, stored_err_info, soln)
     rcond = 0.0_core_rknd
   end if
 

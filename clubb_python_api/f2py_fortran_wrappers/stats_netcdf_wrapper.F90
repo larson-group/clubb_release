@@ -144,7 +144,7 @@ end subroutine f2py_get_stats_var_meta
 !---------------------------------------------------------------------------
 subroutine f2py_get_stats_var_data(ivar, ncol, nz, buffer, nsamples)
 
-  use clubb_precision, only: core_rknd, stat_rknd
+  use clubb_precision, only: core_rknd
   use derived_type_storage, only: stored_stats
 
   implicit none
@@ -199,14 +199,14 @@ end subroutine f2py_stats_begin_timestep
 subroutine f2py_stats_end_timestep(time_value)
 
   use clubb_precision, only: core_rknd
-  use derived_type_storage, only: stored_stats, stored_err_info
+  use derived_type_storage, only: stored_stats
   use stats_netcdf, only: stats_end_timestep_api
 
   implicit none
 
   real(core_rknd), intent(in) :: time_value
 
-  call stats_end_timestep_api(time_value, stored_stats, stored_err_info)
+  call stats_end_timestep_api(time_value, stored_stats)
 
 end subroutine f2py_stats_end_timestep
 
