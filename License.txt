@@ -20,5 +20,5 @@ We hope that CLUBB will develop into a community resource.  We encourage users t
 
 Thanks so much and best wishes for your research!
 
-The CLUBB Development Group 
+The CLUBB Development Group
 (Present and past contributors to the source code include Vincent Larson, Chris Golaz, David Schanen, Brian Griffin, Joshua Fasching, Adam Smith, and Michael Falk).
