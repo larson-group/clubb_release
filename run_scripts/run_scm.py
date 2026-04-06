@@ -13,6 +13,11 @@ DEFAULT_OUTPUT_DIR  = os.path.join(CLUBB_ROOT, "output")
 
 multi_col_params_script = os.path.join(RUN_SCRIPTS, "create_multi_col_params.py") 
 
+HR_SPEC_RE = re.compile(
+    r"^[A-Za-z_]\w*/[-+]?\d*\.?\d+(?:[eEdD][-+]?\d+)?:[-+]?\d*\.?\d+(?:[eEdD][-+]?\d+)?/\d+"
+    r"(?:,[A-Za-z_]\w*/[-+]?\d*\.?\d+(?:[eEdD][-+]?\d+)?:[-+]?\d*\.?\d+(?:[eEdD][-+]?\d+)?/\d+)*$"
+)
+
 
 def strip_comments_and_remove_keys(content: str, keys_to_remove=None) -> str:
     """Remove Fortran namelist comments (!) and specified keys."""
@@ -26,7 +31,7 @@ def strip_comments_and_remove_keys(content: str, keys_to_remove=None) -> str:
         lines.append(line)
     return "\n".join(lines)
 
-def run_case(run_cmd, run_cwd, case_name, namelist_file, output_dir):
+def run_case(run_cmd, run_cwd, case_name, namelist_file, output_dir, run_env=None):
 
     if not run_cmd:
         print("No run command was provided.")
@@ -40,6 +45,7 @@ def run_case(run_cmd, run_cwd, case_name, namelist_file, output_dir):
         process = subprocess.Popen(
             run_cmd + [namelist_file],
             cwd=run_cwd,
+            env=run_env,
             stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT,
             text=True,
@@ -81,6 +87,27 @@ def read_model_times(model_file):
                 except ValueError:
                     pass
     return values
+
+
+def parse_multicol_arg(value: str):
+    """Parse -multicol as either an integer ngrdcol or an hr-style spec string."""
+    stripped = value.strip()
+    if not stripped:
+        raise argparse.ArgumentTypeError("must provide a non-empty -multicol value")
+
+    try:
+        ngrdcol = int(stripped)
+    except ValueError:
+        if HR_SPEC_RE.fullmatch(stripped):
+            return {"ngrdcol": None, "hr_spec": stripped}
+        raise argparse.ArgumentTypeError(
+            "must be either an integer column count or an hr spec like C8/0.2:0.8/4"
+        )
+
+    if ngrdcol < 1:
+        raise argparse.ArgumentTypeError("integer -multicol value must be >= 1")
+
+    return {"ngrdcol": ngrdcol, "hr_spec": None}
 
 
 def convert_to_multi_col(
@@ -168,13 +195,14 @@ def setup_files_and_aggregate(args, output_dir):
     stats_file = None if disable_stats else (args.stats or os.path.join(CLUBB_ROOT, "input/stats/standard_stats.in"))
 
     run_cwd = RUN_SCRIPTS
+    run_env = None
     run_cmd = None
 
     if args.exe:
         # Use the users input from -exe to determine which executable to use
         if args.legacy:
             print(f"-legacy overriden by -exe entry: {args.exe}")
-        executable  = args.exe
+        executable  = os.path.abspath(args.exe)
         if not os.path.isfile(executable):
             sys.exit(f"{executable} not found (did you re-compile?)")
         run_cmd = [executable]
@@ -184,6 +212,38 @@ def setup_files_and_aggregate(args, output_dir):
         if not os.path.isfile(executable):
             sys.exit(f"{executable} not found (did you re-compile?)")
         run_cmd = [executable]
+    elif args.python:
+        python_driver = os.path.join(CLUBB_ROOT, "clubb_python_driver", "clubb_standalone.py")
+        if not os.path.isfile(python_driver):
+            sys.exit(f"Python standalone driver not found: {python_driver}")
+        clubb_python_api_dir = os.path.join(CLUBB_ROOT, "clubb_python_api")
+        if not os.path.isdir(clubb_python_api_dir):
+            sys.exit(f"Python API directory not found: {clubb_python_api_dir}")
+        run_cwd = RUN_SCRIPTS
+        executable = f"{sys.executable} -m clubb_python_driver.clubb_standalone"
+        run_cmd = [sys.executable, "-m", "clubb_python_driver.clubb_standalone"]
+        run_env = os.environ.copy()
+        existing_pythonpath = run_env.get("PYTHONPATH", "")
+        pythonpath_entries = [CLUBB_ROOT, clubb_python_api_dir]
+        if existing_pythonpath:
+            pythonpath_entries.append(existing_pythonpath)
+        run_env["PYTHONPATH"] = os.pathsep.join(pythonpath_entries)
+    elif args.jax:
+        jax_driver = os.path.join(CLUBB_ROOT, "clubb_jax", "clubb_standalone.py")
+        if not os.path.isfile(jax_driver):
+            sys.exit(f"JAX standalone driver not found: {jax_driver}")
+        clubb_python_api_dir = os.path.join(CLUBB_ROOT, "clubb_python_api")
+        if not os.path.isdir(clubb_python_api_dir):
+            sys.exit(f"Python API directory not found: {clubb_python_api_dir}")
+        run_cwd = RUN_SCRIPTS
+        executable = f"{sys.executable} -m clubb_jax.clubb_standalone"
+        run_cmd = [sys.executable, "-m", "clubb_jax.clubb_standalone"]
+        run_env = os.environ.copy()
+        existing_pythonpath = run_env.get("PYTHONPATH", "")
+        pythonpath_entries = [CLUBB_ROOT, clubb_python_api_dir]
+        if existing_pythonpath:
+            pythonpath_entries.append(existing_pythonpath)
+        run_env["PYTHONPATH"] = os.pathsep.join(pythonpath_entries)
     else:
         # Find the executable based on compiler by default (install/COMPILER/clubb_standalone), otherwise
         # default to (install/lastest/clubb_standalone) which points to the last one compiled
@@ -200,20 +260,13 @@ def setup_files_and_aggregate(args, output_dir):
     print(f" - using executable: {executable}")
 
     # Expand multi-column params if requested
-    if args.hr:
+    if args.multicol is not None:
         params_file = convert_to_multi_col(
             params_file,
             args.case_name,
             output_dir,
-            None,
-            args.hr,
-        )
-    elif args.ngrdcol is not None:
-        params_file = convert_to_multi_col(
-            params_file,
-            args.case_name,
-            output_dir,
-            args.ngrdcol,
+            args.multicol["ngrdcol"],
+            args.multicol["hr_spec"],
         )
 
     # Validate files
@@ -222,7 +275,8 @@ def setup_files_and_aggregate(args, output_dir):
         ("-flags", flags_file),
         ("-silhs_params", silhs_params_file),
     ]
-    files_to_validate.append(("-exe", executable))
+    if not (args.python or args.jax):
+        files_to_validate.append(("-exe", executable))
     if not disable_stats:
         files_to_validate.append(("-stats", stats_file))
 
@@ -242,7 +296,7 @@ def setup_files_and_aggregate(args, output_dir):
                 out.write(strip_comments_and_remove_keys(src.read()))
                 out.write("\n")
 
-    return clubb_input_namelist, model_file, run_cmd, run_cwd
+    return clubb_input_namelist, model_file, run_cmd, run_cwd, run_env
 
 
 def _set_stats_output_dir(clubb_in: str, output_dir: str) -> str:
@@ -381,6 +435,12 @@ def main():
         help="Runs the clubb_driver_test executable instead of clubb_standalone"
     )
 
+    parser.add_argument("-python", action="store_true",
+        help="Run the Python standalone driver (python -m clubb_python_driver.clubb_standalone)")
+
+    parser.add_argument("-jax", action="store_true",
+        help="Run the JAX standalone driver (python -m clubb_jax.clubb_standalone)")
+
     # The old method of compile clubb resulted in the executable "clubb/bin/clubb_standalone"
     # this option causes that to be the prefered executable, unless -exe is specified
     parser.add_argument(
@@ -405,18 +465,13 @@ def main():
     parser.add_argument("-tout", metavar="[SECONDS]", type=int,
         help="Stats output interval (s). Use 0 to disable.\nDefault from model file.")
 
-    # Setting ngrdcol will call create_multi_col_params.py to generate a multi_col parameter file. 
-    # This will simply duplicate the parameters found in the file specified by -config or -params, but a more 
-    # custom one can be created by calling create_multi_col_params.py with additional options, then passing
-    # the resulting multi_col params file in via -params
-    parser.add_argument("-ngrdcol", metavar="[NUM]", type=int,
-        help="Defines number of columns to run. This will duplicate the parameters defined with --params. "
-             "To define a multi_col parameter set differently, use the create_multi_col_params.py script, then "
-             "pass in using --params. Default: 0")
-
-    parser.add_argument("-hr", metavar="[SPEC]",
-        help=("Custom hypergrid specification forwarded to create_multi_col_params.py.\n"
-              "Format: PARAM1/MIN:MAX/NPOINTS,PARAM2/MIN:MAX/NPOINTS,..."))
+    # Setting -multicol will call create_multi_col_params.py to generate a multi-column parameter file.
+    # Integer input uses the legacy dup_tweak path. A string matching the hr syntax is forwarded to
+    # create_multi_col_params.py -hr for hypergrid generation.
+    parser.add_argument("-multicol", metavar="[NUM|SPEC]", type=parse_multicol_arg,
+        help=("Generate a multi-column parameter file. "
+              "Use an integer for dup_tweak mode, e.g. -multicol 4, or an hr spec like "
+              "-multicol C8/0.2:0.8/4"))
 
     # This can be used to override pretty much any settings in the aggregate namelist
     parser.add_argument(
@@ -428,12 +483,9 @@ def main():
     args = parser.parse_args()
 
     # Error check
-    ndefined = sum(bool(x) for x in [args.exe, args.legacy, args.driver_test])
+    ndefined = sum(bool(x) for x in [args.exe, args.legacy, args.driver_test, args.python, args.jax])
     if ndefined > 1:
-        parser.error("Only one of -exe, -legacy, or -driver_test may be specified.")
-    if args.ngrdcol is not None and args.hr:
-        parser.error("Only one of -ngrdcol or -hr may be specified.")
-
+        parser.error("Only one of -exe, -legacy, -driver_test, -python, or -jax may be specified.")
     # Validate grid options
     if args.zt_grid and args.zm_grid:
         sys.exit(f"\n\033[91mERROR: Cannot specify both a ZT grid and a ZM grid\033[0m")
@@ -444,14 +496,14 @@ def main():
     os.makedirs(output_dir, exist_ok=True)
 
     # Step 1: setup and aggregate namelist files into <output_dir>/CASE.in
-    clubb_input_namelist, model_file, run_cmd, run_cwd = setup_files_and_aggregate(args, output_dir)
+    clubb_input_namelist, model_file, run_cmd, run_cwd, run_env = setup_files_and_aggregate(args, output_dir)
 
     # Step 2: edit clubb_input_namelist based on input specifications
     edit_namelist(args, clubb_input_namelist, model_file, output_dir)
 
     # Step 3: run model
     print(f"=================== Running {args.case_name} ===================")
-    result = run_case(run_cmd, run_cwd, args.case_name, clubb_input_namelist, output_dir)
+    result = run_case(run_cmd, run_cwd, args.case_name, clubb_input_namelist, output_dir, run_env)
 
     sys.exit(result)
 

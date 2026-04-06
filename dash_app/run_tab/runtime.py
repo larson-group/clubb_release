@@ -226,7 +226,7 @@ def build_case_command(case_name, stats_name, cli_options=None):
         stats_arg = os.path.join("input", "stats", stats_value)
     cmd = [sys.executable, "-u", "run_scripts/run_scm.py", "-stats", stats_arg]
     cli_options = cli_options or {}
-    for flag, key in (("-ngrdcol", "ngrdcol"), ("-hr", "hr"), ("-max_iters", "max_iters"), ("-debug", "debug"), ("-dt_main", "dt_main"), ("-dt_rad", "dt_rad"), ("-tout", "tout"), ("-out_dir", "out_dir")):
+    for flag, key in (("-multicol", "multicol"), ("-max_iters", "max_iters"), ("-debug", "debug"), ("-dt_main", "dt_main"), ("-dt_rad", "dt_rad"), ("-tout", "tout"), ("-out_dir", "out_dir")):
         value = clean_cli_option(cli_options.get(key))
         if value:
             cmd.extend([flag, value])
@@ -248,7 +248,7 @@ def start_case_process(case_name, stats_name, overrides, cli_options=None):
 
     cmd = [sys.executable, "-u", "run_scripts/run_scm.py", "-stats", stats_arg]
     cli_options = cli_options or {}
-    for flag, key in (("-ngrdcol", "ngrdcol"), ("-hr", "hr"), ("-max_iters", "max_iters"), ("-debug", "debug"), ("-dt_main", "dt_main"), ("-dt_rad", "dt_rad"), ("-tout", "tout"), ("-out_dir", "out_dir")):
+    for flag, key in (("-multicol", "multicol"), ("-max_iters", "max_iters"), ("-debug", "debug"), ("-dt_main", "dt_main"), ("-dt_rad", "dt_rad"), ("-tout", "tout"), ("-out_dir", "out_dir")):
         value = clean_cli_option(cli_options.get(key))
         if value:
             cmd.extend([flag, value])

@@ -1,0 +1,9 @@
+&clubb_stats_nl
+  ! Minimal registry for stats unit tests
+  ! entry(i) format: "name | grid | units | long_name"
+  entry(1) = "thlm                    | zt     | K                     | Liquid water potential temperature"
+  entry(2) = "wp2                     | zm     | m^2/s^2               | Variance of vertical velocity"
+  entry(3) = "lwp                     | sfc    | kg/m^2                | Liquid water path"
+  entry(4) = "rtm                     | zt     | kg/kg                 | Total water mixing ratio"
+  entry(5) = "wprtp                   | zm     | m/s kg/kg             | Turbulent flux of rt"
+/

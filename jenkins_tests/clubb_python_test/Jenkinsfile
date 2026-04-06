@@ -1,0 +1,46 @@
+pipeline {
+  agent any
+  stages {
+    stage('Compile') {
+      steps {
+        sh '''source /etc/profile.d/larson-group.sh
+              module load gcc netcdf-fortran
+              ./compile.py -debug -python'''
+      }
+    }
+    stage('Run F2PY pytests') {
+      steps {
+        sh '''source /etc/profile.d/larson-group.sh
+              module load gcc netcdf-fortran
+              bash clubb_python_api/run_pytests.sh -v'''
+      }
+    }
+    stage('Run Python vs Fortran cases') {
+      steps {
+        sh '''source /etc/profile.d/larson-group.sh
+              module load gcc netcdf-fortran
+              ulimit -s 8388608
+              python3 run_scripts/run_python_vs_fortran_cases.py'''
+      }
+    }
+  }
+  post {
+    always {
+      // Certain logical functions like IF statements or TRY-CATCH blocks can only operate while in a script{} block
+      script {
+      // This cleans out the test workspace so the next run has a fresh start
+      // However this only occurs when the test is named clubb_python_test
+      // This is to prevent the branch and copy tests from deleting thier workspaces so they are available for debugging
+      if ( "${env.JOB_NAME}" == "clubb_python_test" )
+      	cleanWs(cleanWhenFailure: true, cleanWhenSuccess: true, cleanWhenUnstable: true)
+      }
+    }
+    failure {
+      script {
+      if ( "${env.JOB_NAME}" == "clubb_python_test" )
+        // This command handles the email on failure feature of the jenkins test. This line is the same on every jenkins test.
+      	emailext(to: 'messnermet@uwm.edu', subject: "${env.JOB_NAME} build ${env.BUILD_NUMBER} has Failed", attachLog: true, body: "${env.JOB_NAME} build ${env.BUILD_NUMBER} has failed. See the attached build log and the build results (${env.BUILD_URL}) for help troubleshooting.")
+      }
+    }
+  }
+}

@@ -157,7 +157,13 @@ def _directory_case_selector():
                     html.Div(
                         [
                             html.Div(id="plots-dir-list"),
-                            html.Button("Add directory", id="plots-add-dir-row", n_clicks=0, style={"marginTop": "8px", "fontSize": "14pt", "alignSelf": "flex-start"}),
+                            html.Div(
+                                [
+                                    html.Button("Add directory", id="plots-add-dir-row", n_clicks=0, style={"fontSize": "14pt"}),
+                                    html.Button("Refresh", id="plots-refresh-cases", n_clicks=0, style={"fontSize": "14pt", "marginLeft": "8px"}),
+                                ],
+                                style={"marginTop": "8px", "display": "flex", "alignItems": "center"},
+                            ),
                         ],
                         style={"display": "flex", "flexDirection": "column", "alignItems": "flex-start", "flex": "1 1 auto"},
                     ),

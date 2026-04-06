@@ -13,11 +13,18 @@ option(SILHS        "Enable SILHS"                                      ON  )   
 option(ENABLE_OMP   "Enable CLUBB to run with OpenMP"                   OFF )   # enables openmp
 option(ENABLE_TESTS "Enable creation of ctests"                         ON  )   # enable quick run tests
 option(USE_GPTL     "Enables use of the gptl timing library"            OFF )   # a library with nice timing features
+option(ENABLE_F2PY  "Build F2PY Python extension module(s)"             OFF )   # CMake-native; requires USE_NetCDF=ON
 
 # Create the project
 project(CLUBB Fortran C CXX)
 set(CMAKE_MODULE_PATH ${CMAKE_CURRENT_LIST_DIR}/cmake/deps;${CMAKE_CURRENT_LIST_DIR}/cmake/utils;${CMAKE_MODULE_PATH})
 set(CLUBB_ROOT ${CMAKE_CURRENT_LIST_DIR})
+
+if(ENABLE_F2PY)
+    # F2PY builds a shared Python extension that links against CLUBB static libs.
+    # Those static libs therefore must be built as PIC.
+    set(CMAKE_POSITION_INDEPENDENT_CODE ON)
+endif()
 
 
 # Handle our CPPDefinitions such as CLUBB_REAL_TYPE
@@ -42,6 +49,10 @@ endif()
 
 # Add libraries/executables
 add_subdirectory(src)
+
+if(ENABLE_F2PY)
+    add_subdirectory(clubb_python_api)
+endif()
 
 
 # These define ctests, which as currenlty implemented are intended as a quick set of 
@@ -97,7 +108,7 @@ if(${ENABLE_TESTS})
     run_clubb_case( arm_r8029_100iter "-max_iters 100 -config ${R8029_CONFIG} arm" )
 
     # multicol test and disable normal stats output
-    run_clubb_case( arm_100iter_8col "-max_iters 100 -ngrdcol 8 -tout 0 arm" )
+    run_clubb_case( arm_100iter_8col "-max_iters 100 -multicol 8 -tout 0 arm" )
 
     # test with small timestep to check that it doesn't break anything
     run_clubb_case( arm_1000iter_5dt "-max_iters 1000 -dt_main 5 arm" )

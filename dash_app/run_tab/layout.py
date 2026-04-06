@@ -200,7 +200,7 @@ def build_multicol_section(tunable_names):
     return [
         html.H4("Multicol", className="run-settings-heading"),
         html.Div(
-            "Add parameter ranges to generate a custom hypergrid passed to run_scm.py with -hr.",
+            "Add parameter ranges to generate a custom hypergrid passed to run_scm.py with -multicol.",
             style={"marginBottom": "8px", "opacity": "0.85"},
         ),
         html.Div(

@@ -22,7 +22,7 @@ ALL_CASES = [
     "cloud_feedback_s12", "cloud_feedback_s12_p2k", "cobra", "dycoms2_rf01", "dycoms2_rf01_fixed_sst", 
     "dycoms2_rf02_do", "dycoms2_rf02_ds", "dycoms2_rf02_morr", "dycoms2_rf02_nd", "dycoms2_rf02_so", 
     "fire", "gabls2", "gabls3", "gabls3_night", "jun25_altocu", "lba", "mc3e", "mpace_a", "mpace_b", 
-    "mpace_b_silhs", "nov11_altocu", "rico", "rico_silhs", "twp_ice", "wangara"
+    "mpace_b_silhs", "nov11_altocu", "neutral","rico", "rico_silhs", "twp_ice", "wangara"
 ]
 
 STANDARD_CASES = [
@@ -55,6 +55,21 @@ def positive_int(value):
     if parsed < 1:
         raise argparse.ArgumentTypeError("must be >= 1")
     return parsed
+
+
+def parse_cases(value):
+    """Argparse type checker for comma-separated case names."""
+    cases = [case.strip() for case in value.split(",") if case.strip()]
+    if not cases:
+        raise argparse.ArgumentTypeError("must provide at least one case name")
+
+    unknown_cases = [case for case in cases if case not in ALL_CASES]
+    if unknown_cases:
+        raise argparse.ArgumentTypeError(
+            "unknown case(s): " + ", ".join(unknown_cases)
+        )
+
+    return cases
 
 
 def run_case(case, options, verbose=False):
@@ -97,6 +112,12 @@ def main():
     parser.add_argument("-priority_cases", action="store_true", help="Run priority cases only")
     parser.add_argument("-min_cases", action="store_true", help="Run minimal case set")
     parser.add_argument(
+        "-cases",
+        type=parse_cases,
+        metavar="CASE1,CASE2,...",
+        help="Run an explicit comma-separated case list (for example: arm,bomex,atex)",
+    )
+    parser.add_argument(
         "-nproc",
         type=positive_int,
         default=8,
@@ -109,7 +130,10 @@ def main():
 
     #=================== Determine case list ===================
 
-    if args.short_cases:
+    if args.cases:
+        run_cases = args.cases
+        print("Performing manual-cases run")
+    elif args.short_cases:
         run_cases = SHORT_CASES
         print("Performing short-cases run")
     elif args.all:

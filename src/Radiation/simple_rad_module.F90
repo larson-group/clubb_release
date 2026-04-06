@@ -346,7 +346,7 @@ module simple_rad_module
     do k = 1, gr%nzt, 1
       do i = 1, ngrdcol
         radht_LW(i,k) = ( one / exner(i,k) ) * ( -one / (Cp*rho(i,k)) ) &
-                        * ( Frad_LW(i,k+1) - Frad_LW(i,k) ) * gr%invrs_dzt(1,k)
+                        * ( Frad_LW(i,k+1) - Frad_LW(i,k) ) * gr%invrs_dzt(i,k)
       end do
     end do
 

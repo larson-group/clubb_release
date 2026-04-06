@@ -31,7 +31,7 @@ def normalize_multicol_text(value):
 
 
 def build_multicol_spec(param_values, min_values, max_values, npoint_values):
-    """Serialize valid live multicol inputs into the `-hr` CLI format."""
+    """Serialize valid live multicol inputs into the `-multicol` hypergrid format."""
     specs = []
     for row in zip(
         param_values or [],
@@ -220,7 +220,7 @@ def register_run_callbacks(app):
 
         overrides = build_override_updates(flag_values, param_values, defaults_data, flag_names_data, param_meta)
         cli_options = {}
-        hr_cleaned = clean_cli_option(
+        multicol_cleaned = clean_cli_option(
             build_multicol_spec(
                 multicol_param_values,
                 multicol_min_values,
@@ -228,8 +228,8 @@ def register_run_callbacks(app):
                 multicol_npoint_values,
             )
         )
-        if hr_cleaned:
-            cli_options["hr"] = hr_cleaned
+        if multicol_cleaned:
+            cli_options["multicol"] = multicol_cleaned
         for key, raw_value in (("max_iters", opt_max_iters), ("debug", opt_debug), ("dt_main", opt_dt_main), ("dt_rad", opt_dt_rad), ("tout", opt_tout)):
             cleaned = clean_cli_option(raw_value)
             if cleaned:

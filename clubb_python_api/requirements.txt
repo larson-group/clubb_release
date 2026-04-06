@@ -1,0 +1,6 @@
+# Runtime dependency for the Python wrappers and the F2PY extension interface.
+numpy
+
+# Test dependencies used by clubb_python_api/tests/.
+pytest
+netCDF4

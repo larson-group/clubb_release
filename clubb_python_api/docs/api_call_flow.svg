@@ -1,0 +1,99 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="1100" viewBox="0 0 1280 1100">
+  <defs>
+    <marker id="arrow-black" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto" markerUnits="strokeWidth">
+      <path d="M 0 0 L 8 4 L 0 8 z" fill="#111111"/>
+    </marker>
+    <marker id="arrow-blue" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto" markerUnits="strokeWidth">
+      <path d="M 0 0 L 8 4 L 0 8 z" fill="#2f6f9f"/>
+    </marker>
+  </defs>
+
+  <rect x="0" y="0" width="1280" height="1100" fill="#f3f3f1"/>
+
+  <rect x="40" y="40" width="730" height="1020" rx="28" ry="28" fill="#eef6ff"/>
+  <rect x="810" y="40" width="430" height="1020" rx="28" ry="28" fill="#fff5e7"/>
+  <line x1="790" y1="55" x2="790" y2="1045" stroke="#c8c8c8" stroke-width="3"/>
+
+  <text x="405" y="30" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="28" font-weight="bold" fill="#333333">Python</text>
+  <text x="1025" y="30" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="28" font-weight="bold" fill="#333333">Fortran</text>
+
+  <rect x="905" y="102" width="290" height="132" rx="16" ry="16" fill="#ffffff" stroke="#b8b8b8" stroke-width="2"/>
+  <text x="1050" y="130" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="18" font-weight="bold" fill="#111111">Legend</text>
+  <line x1="935" y1="156" x2="1010" y2="156" stroke="#111111" stroke-width="3" marker-end="url(#arrow-black)"/>
+  <text x="1030" y="161" text-anchor="start" font-family="Arial, Helvetica, sans-serif" font-size="15" fill="#222222">temporal flow</text>
+  <line x1="935" y1="184" x2="1010" y2="184" stroke="#111111" stroke-width="2.6" stroke-dasharray="10 8" marker-end="url(#arrow-black)"/>
+  <text x="1030" y="189" text-anchor="start" font-family="Arial, Helvetica, sans-serif" font-size="15" fill="#222222">function call</text>
+  <line x1="935" y1="212" x2="1010" y2="212" stroke="#2f6f9f" stroke-width="2.6" stroke-dasharray="2 9" marker-end="url(#arrow-blue)"/>
+  <text x="1030" y="217" text-anchor="start" font-family="Arial, Helvetica, sans-serif" font-size="15" fill="#222222">module-storage use</text>
+
+  <rect x="135" y="95" width="540" height="150" rx="18" ry="18" fill="#d9ecff" stroke="#4a78a8" stroke-width="3"/>
+  <text x="160" y="128" text-anchor="start" font-family="Arial, Helvetica, sans-serif" font-size="19" font-weight="bold" fill="#111111">Public API Layer</text>
+  <text x="160" y="152" text-anchor="start" font-family="Arial, Helvetica, sans-serif" font-size="15" fill="#555555">clubb_python/clubb_api.py</text>
+  <rect x="195" y="162" width="420" height="62" rx="12" ry="12" fill="#fff3dd" stroke="#d8c59a" stroke-width="2"/>
+  <text x="405" y="188" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="17" font-weight="bold" fill="#111111">clubb_api.advance_clubb_core(...)</text>
+  <text x="405" y="210" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="15" fill="#111111">user-facing API entry point</text>
+
+  <rect x="90" y="300" width="630" height="720" rx="18" ry="18" fill="#dff7df" stroke="#4c8c4c" stroke-width="3"/>
+  <text x="115" y="333" text-anchor="start" font-family="Arial, Helvetica, sans-serif" font-size="19" font-weight="bold" fill="#111111">Python Wrapper Layer</text>
+  <text x="115" y="357" text-anchor="start" font-family="Arial, Helvetica, sans-serif" font-size="15" fill="#555555">clubb_python</text>
+
+  <rect x="135" y="380" width="540" height="610" rx="16" ry="16" fill="#fff8ec" stroke="#d8c59a" stroke-width="2.5"/>
+  <text x="160" y="412" text-anchor="start" font-family="Arial, Helvetica, sans-serif" font-size="17" font-weight="bold" fill="#111111">function advance_clubb_core(...)</text>
+  <text x="160" y="434" text-anchor="start" font-family="Arial, Helvetica, sans-serif" font-size="15" fill="#555555">clubb_python/CLUBB_core/advance_clubb_core.py</text>
+
+  <rect x="155" y="455" width="500" height="95" rx="14" ry="14" fill="#fff3dd" stroke="#d8c59a" stroke-width="2"/>
+  <text x="405" y="484" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="17" font-weight="bold" fill="#111111">set_fortran_* converters</text>
+  <text x="405" y="511" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="16" fill="#111111">split Python objects into basic (non-derived-type) data</text>
+  <text x="405" y="536" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="16" fill="#111111">and write Fortran-derived-type data to module storage</text>
+
+  <rect x="155" y="592" width="500" height="92" rx="14" ry="14" fill="#fff3dd" stroke="#d8c59a" stroke-width="2"/>
+  <text x="405" y="621" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="17" font-weight="bold" fill="#111111">clubb_f2py.f2py_advance_clubb_core(...)</text>
+  <text x="405" y="648" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="16" fill="#111111">call compiled wrapper with only basic</text>
+  <text x="405" y="672" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="16" fill="#111111">(non-derived-type) values</text>
+
+  <rect x="155" y="732" width="500" height="95" rx="14" ry="14" fill="#fff3dd" stroke="#d8c59a" stroke-width="2"/>
+  <text x="405" y="761" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="17" font-weight="bold" fill="#111111">get_fortran_* converters</text>
+  <text x="405" y="788" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="16" fill="#111111">read updated Fortran-derived-type data</text>
+  <text x="405" y="813" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="16" fill="#111111">and rebuild Python objects</text>
+
+  <rect x="210" y="880" width="390" height="64" rx="14" ry="14" fill="#fff3dd" stroke="#d8c59a" stroke-width="2"/>
+  <text x="405" y="906" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="16" fill="#111111">return arrays/scalars plus updated</text>
+  <text x="405" y="930" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="16" fill="#111111">Python objects</text>
+
+  <rect x="855" y="340" width="340" height="124" rx="16" ry="16" fill="#f4f4f4" stroke="#8a8a8a" stroke-width="2.5"/>
+  <text x="1025" y="373" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="18" font-weight="bold" fill="#111111">derived_type_storage.F90</text>
+  <text x="1025" y="400" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="16" fill="#111111">stores Fortran-derived-type data</text>
+  <text x="1025" y="424" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="16" fill="#111111">in public module variables</text>
+  <text x="1025" y="448" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="16" fill="#111111">(not called directly)</text>
+
+  <rect x="835" y="600" width="380" height="118" rx="16" ry="16" fill="#fff3dd" stroke="#d8c59a" stroke-width="2.5"/>
+  <text x="1025" y="633" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="17" font-weight="bold" fill="#111111">advance_clubb_core_module_wrapper.F90</text>
+  <text x="1025" y="661" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="16" fill="#111111">uses module variables from derived_type_storage</text>
+  <text x="1025" y="685" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="16" fill="#111111">together with basic inputs to call the real routine</text>
+
+  <rect x="865" y="845" width="320" height="104" rx="16" ry="16" fill="#ffe0d6" stroke="#b85c38" stroke-width="2.5"/>
+  <text x="1025" y="880" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="17" font-weight="bold" fill="#111111">advance_clubb_core_module.F90</text>
+  <text x="1025" y="908" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="16" fill="#111111">real CLUBB routine</text>
+  <text x="1025" y="932" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="15" fill="#555555">src/CLUBB_core/</text>
+
+  <line x1="405" y1="224" x2="405" y2="380" stroke="#111111" stroke-width="3" stroke-dasharray="10 8" marker-end="url(#arrow-black)"/>
+  <line x1="405" y1="550" x2="405" y2="592" stroke="#111111" stroke-width="3" marker-end="url(#arrow-black)"/>
+  <line x1="405" y1="684" x2="405" y2="732" stroke="#111111" stroke-width="3" marker-end="url(#arrow-black)"/>
+  <line x1="405" y1="827" x2="405" y2="880" stroke="#111111" stroke-width="3" marker-end="url(#arrow-black)"/>
+
+  <path d="M 655 638 C 740 638, 835 650, 835 650" fill="none" stroke="#111111" stroke-width="2.6" stroke-dasharray="10 8" marker-end="url(#arrow-black)"/>
+
+  <line x1="1025" y1="718" x2="1025" y2="845" stroke="#111111" stroke-width="2.6" stroke-dasharray="10 8" marker-end="url(#arrow-black)"/>
+
+  <path d="M 655 505 C 760 510, 855 380, 855 380" fill="none" stroke="#2f6f9f" stroke-width="2.6" stroke-dasharray="2 9" marker-end="url(#arrow-blue)"/>
+  <rect x="670" y="460" width="164" height="26" rx="8" ry="8" fill="#eef6ff" stroke="none"/>
+  <text x="752" y="478" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="14" fill="#244f70">write derived-type data</text>
+
+  <line x1="1025" y1="464" x2="1025" y2="600" stroke="#2f6f9f" stroke-width="2.6" stroke-dasharray="2 9" marker-end="url(#arrow-blue)"/>
+  <rect x="918" y="515" width="214" height="26" rx="8" ry="8" fill="#eef6ff" stroke="none"/>
+  <text x="1025" y="533" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="14" fill="#244f70">`use` public module variables</text>
+
+  <path d="M 855 440 C 780 650, 740 765, 655 780" fill="none" stroke="#2f6f9f" stroke-width="2.6" stroke-dasharray="2 9" marker-end="url(#arrow-blue)"/>
+  <rect x="685" y="725" width="155" height="26" rx="8" ry="8" fill="#eef6ff" stroke="none"/>
+  <text x="765" y="743" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="14" fill="#244f70">read derived-type data</text>
+</svg>

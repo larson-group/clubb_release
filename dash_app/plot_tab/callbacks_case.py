@@ -96,8 +96,9 @@ def register_case_callbacks(app):
         Output("plots-case-button-container", "children"),
         Input("plots-output-dirs", "data"),
         Input("plots-case-data", "data"),
+        Input("plots-refresh-cases", "n_clicks"),
     )
-    def render_case_buttons(output_dirs, case_data):
+    def render_case_buttons(output_dirs, case_data, _refresh_clicks):
         """Render the case buttons for the active directory set and selection."""
         cases = scan_output_cases(output_dirs)
         selected_name = case_data.get("name") if case_data else None
@@ -129,6 +130,7 @@ def register_case_callbacks(app):
         Output("plots-global-height-range", "step"),
         Input({"type": "plots-case-button", "name": ALL}, "n_clicks"),
         Input("plots-output-dirs", "data"),
+        Input("plots-refresh-cases", "n_clicks"),
         State("plots-plot-order", "data"),
         State("plots-plot-state", "data"),
         State("plots-next-id", "data"),
@@ -136,10 +138,10 @@ def register_case_callbacks(app):
         State("plots-enabled-benchmarks", "data"),
         prevent_initial_call=True,
     )
-    def select_case(_clicks, output_dirs, plot_order, plot_state, next_id, current_case_data, current_enabled_benchmarks):
+    def select_case(_clicks, output_dirs, _refresh_clicks, plot_order, plot_state, next_id, current_case_data, current_enabled_benchmarks):
         """Select a case and reset the global controls for that case's dimensions."""
         trigger = callback_context.triggered_id
-        if trigger == "plots-output-dirs":
+        if trigger in ("plots-output-dirs", "plots-refresh-cases"):
             cases = scan_output_cases(output_dirs)
             available_names = ordered_case_names(cases.keys())
             if not available_names:

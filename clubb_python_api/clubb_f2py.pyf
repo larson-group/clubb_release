@@ -1,0 +1,2596 @@
+!  clubb_f2py.pyf - F2PY signature file for the CLUBB Python interface.
+!
+!  This file defines the Python-visible function signatures for all
+!  Fortran wrapper subroutines. F2PY uses this to generate the Python
+!  module without needing to parse the actual Fortran source (which
+!  contains UDTs that F2PY cannot handle).
+!
+!  Maintenance: when adding a new Fortran wrapper subroutine, add its
+!  signature here with matching argument names, types, intents, and shapes.
+
+python module clubb_f2py
+  interface
+
+    ! --- Grid setters/getters ---
+    subroutine set_grid(nzm, nzt, ngrdcol, &
+                        zm, zt, dzm, dzt, invrs_dzm, invrs_dzt, &
+                        weights_zt2zm, weights_zm2zt, &
+                        k_lb_zm, k_ub_zm, k_lb_zt, k_ub_zt, &
+                        grid_dir_indx, grid_dir)
+      integer, intent(in) :: nzm, nzt, ngrdcol
+      double precision, dimension(ngrdcol, nzm), intent(in) :: zm, dzm, invrs_dzm
+      double precision, dimension(ngrdcol, nzt), intent(in) :: zt, dzt, invrs_dzt
+      double precision, dimension(ngrdcol, nzm, 2), intent(in) :: weights_zt2zm
+      double precision, dimension(ngrdcol, nzt, 2), intent(in) :: weights_zm2zt
+      integer, intent(in) :: k_lb_zm, k_ub_zm, k_lb_zt, k_ub_zt, grid_dir_indx
+      double precision, intent(in) :: grid_dir
+    end subroutine
+
+    subroutine get_grid(ngrdcol, nzm, nzt, &
+                        zm, zt, dzm, dzt, invrs_dzm, invrs_dzt, &
+                        weights_zt2zm, weights_zm2zt, &
+                        k_lb_zm, k_ub_zm, k_lb_zt, k_ub_zt, &
+                        grid_dir_indx, grid_dir)
+      integer, intent(in)  :: ngrdcol, nzm, nzt
+      double precision, dimension(ngrdcol, nzm), intent(out) :: zm, dzm, invrs_dzm
+      double precision, dimension(ngrdcol, nzt), intent(out) :: zt, dzt, invrs_dzt
+      double precision, dimension(ngrdcol, nzm, 2), intent(out) :: weights_zt2zm
+      double precision, dimension(ngrdcol, nzt, 2), intent(out) :: weights_zm2zt
+      integer, intent(out) :: k_lb_zm, k_ub_zm, k_lb_zt, k_ub_zt, grid_dir_indx
+      double precision, intent(out) :: grid_dir
+    end subroutine
+
+    ! --- Scalar index setter/getter ---
+    subroutine set_sclr_idx(iisclr_rt, iisclr_thl, iisclr_co2, &
+                            iiedsclr_rt, iiedsclr_thl, iiedsclr_co2)
+      integer, intent(in) :: iisclr_rt, iisclr_thl, iisclr_co2
+      integer, intent(in) :: iiedsclr_rt, iiedsclr_thl, iiedsclr_co2
+    end subroutine
+
+    subroutine get_sclr_idx(iisclr_rt, iisclr_thl, iisclr_co2, &
+                            iiedsclr_rt, iiedsclr_thl, iiedsclr_co2)
+      integer, intent(out) :: iisclr_rt, iisclr_thl, iisclr_co2
+      integer, intent(out) :: iiedsclr_rt, iiedsclr_thl, iiedsclr_co2
+    end subroutine
+
+    ! --- nu_vertical_res_dep setter/getter ---
+    subroutine set_nu_vert_res_dep(nzm, nu1, nu2, nu6, nu8, nu9, nu10, nu_hm)
+      integer, intent(in) :: nzm
+      double precision, dimension(nzm), intent(in) :: nu1, nu2, nu6, nu8, nu9, nu10, nu_hm
+    end subroutine
+
+    subroutine get_nu_vert_res_dep(nzm, nu1, nu2, nu6, nu8, nu9, nu10, nu_hm)
+      integer, intent(in) :: nzm
+      double precision, dimension(nzm), intent(out) :: nu1, nu2, nu6, nu8, nu9, nu10, nu_hm
+    end subroutine
+
+    ! --- err_info getters ---
+    subroutine get_err_info_dims(ngrdcol)
+      integer, intent(out) :: ngrdcol
+    end subroutine
+
+    ! --- Error code getter ---
+    subroutine get_err_code(ngrdcol, err_code)
+      integer, intent(in)  :: ngrdcol
+      integer, intent(out) :: err_code(ngrdcol)
+    end subroutine
+
+    ! --- calc_pressure_wrapper: init_pressure ---
+    subroutine f2py_init_pressure(ngrdcol, nzt, nzm, thvm, p_sfc, &
+                                  p_in_Pa, exner, p_in_Pa_zm, exner_zm)
+      integer, intent(in) :: ngrdcol, nzt, nzm
+      double precision, dimension(ngrdcol, nzt), intent(in)  :: thvm
+      double precision, dimension(ngrdcol),      intent(in)  :: p_sfc
+      double precision, dimension(ngrdcol, nzt), intent(out) :: p_in_Pa, exner
+      double precision, dimension(ngrdcol, nzm), intent(out) :: p_in_Pa_zm, exner_zm
+    end subroutine
+
+    subroutine f2py_get_grid_dims(nzm_out, nzt_out)
+      integer, intent(out) :: nzm_out, nzt_out
+    end subroutine
+
+    subroutine f2py_get_grid_shape(ngrdcol_out, nzm_out, nzt_out)
+      integer, intent(out) :: ngrdcol_out, nzm_out, nzt_out
+    end subroutine
+
+    ! --- matrix_solver_wrapper: solver entry points ---
+    subroutine f2py_band_solve_multiple_rhs(solve_name, penta_solve_method, &
+                                            ngrdcol, nsup, nsub, ndim, nrhs, &
+                                            lhs, rhs, old_soln, use_rcond, soln, rcond)
+      character(len=*), intent(in) :: solve_name
+      integer, intent(in) :: penta_solve_method, ngrdcol, nsup, nsub, ndim, nrhs
+      double precision, dimension(nsup+nsub+1, ngrdcol, ndim), intent(in,out) :: lhs
+      double precision, dimension(ngrdcol, ndim, nrhs), intent(in,out) :: rhs
+      double precision, dimension(ngrdcol, ndim, nrhs), intent(in) :: old_soln
+      logical, intent(in) :: use_rcond
+      double precision, dimension(ngrdcol, ndim, nrhs), intent(out) :: soln
+      double precision, dimension(ngrdcol), intent(out) :: rcond
+    end subroutine
+
+    subroutine f2py_tridiag_solve_single_rhs_multiple_lhs(solve_name, tridiag_solve_method, &
+                                                           ngrdcol, ndim, lhs, rhs, use_rcond, &
+                                                           soln, rcond)
+      character(len=*), intent(in) :: solve_name
+      integer, intent(in) :: tridiag_solve_method, ngrdcol, ndim
+      double precision, dimension(3, ngrdcol, ndim), intent(in,out) :: lhs
+      double precision, dimension(ngrdcol, ndim), intent(in,out) :: rhs
+      logical, intent(in) :: use_rcond
+      double precision, dimension(ngrdcol, ndim), intent(out) :: soln
+      double precision, dimension(ngrdcol), intent(out) :: rcond
+    end subroutine
+
+    subroutine f2py_tridiag_solve_multiple_rhs(solve_name, tridiag_solve_method, &
+                                               ngrdcol, ndim, nrhs, lhs, rhs, use_rcond, &
+                                               soln, rcond)
+      character(len=*), intent(in) :: solve_name
+      integer, intent(in) :: tridiag_solve_method, ngrdcol, ndim, nrhs
+      double precision, dimension(3, ngrdcol, ndim), intent(in,out) :: lhs
+      double precision, dimension(ngrdcol, ndim, nrhs), intent(in,out) :: rhs
+      logical, intent(in) :: use_rcond
+      double precision, dimension(ngrdcol, ndim, nrhs), intent(out) :: soln
+      double precision, dimension(ngrdcol), intent(out) :: rcond
+    end subroutine
+
+    subroutine f2py_lapack_gtsv(n, nrhs, dl, d, du, b, soln, info)
+      integer, intent(in) :: n, nrhs
+      double precision, dimension(n-1), intent(in) :: dl, du
+      double precision, dimension(n), intent(in) :: d
+      double precision, dimension(n, nrhs), intent(in) :: b
+      double precision, dimension(n, nrhs), intent(out) :: soln
+      integer, intent(out) :: info
+    end subroutine
+
+    subroutine f2py_lapack_gtsvx(n, nrhs, dl, d, du, b, soln, rcond, ferr, berr, info)
+      integer, intent(in) :: n, nrhs
+      double precision, dimension(n-1), intent(in) :: dl, du
+      double precision, dimension(n), intent(in) :: d
+      double precision, dimension(n, nrhs), intent(in) :: b
+      double precision, dimension(n, nrhs), intent(out) :: soln
+      double precision, intent(out) :: rcond
+      double precision, dimension(nrhs), intent(out) :: ferr, berr
+      integer, intent(out) :: info
+    end subroutine
+
+    subroutine f2py_lapack_gbsv(n, kl, ku, nrhs, ab, b, soln, ipiv, info)
+      integer, intent(in) :: n, kl, ku, nrhs
+      double precision, dimension(2*kl+ku+1, n), intent(in) :: ab
+      double precision, dimension(n, nrhs), intent(in) :: b
+      double precision, dimension(n, nrhs), intent(out) :: soln
+      integer, dimension(n), intent(out) :: ipiv
+      integer, intent(out) :: info
+    end subroutine
+
+    subroutine f2py_lapack_gbsvx(n, kl, ku, nrhs, ab, b, soln, rcond, ferr, berr, equed, info)
+      integer, intent(in) :: n, kl, ku, nrhs
+      double precision, dimension(kl+ku+1, n), intent(in) :: ab
+      double precision, dimension(n, nrhs), intent(in) :: b
+      double precision, dimension(n, nrhs), intent(out) :: soln
+      double precision, intent(out) :: rcond
+      double precision, dimension(nrhs), intent(out) :: ferr, berr
+      character, intent(out) :: equed
+      integer, intent(out) :: info
+    end subroutine
+
+    subroutine f2py_lapack_potrf(uplo, n, a, a_factor, info)
+      character(len=*), intent(in) :: uplo
+      integer, intent(in) :: n
+      double precision, dimension(n, n), intent(in) :: a
+      double precision, dimension(n, n), intent(out) :: a_factor
+      integer, intent(out) :: info
+    end subroutine
+
+    subroutine f2py_lapack_poequ(n, a, s, scond, amax, info)
+      integer, intent(in) :: n
+      double precision, dimension(n, n), intent(in) :: a
+      double precision, dimension(n), intent(out) :: s
+      double precision, intent(out) :: scond, amax
+      integer, intent(out) :: info
+    end subroutine
+
+    subroutine f2py_lapack_laqsy(uplo, n, a, s, scond, amax, a_equed, equed)
+      character(len=*), intent(in) :: uplo
+      integer, intent(in) :: n
+      double precision, dimension(n, n), intent(in) :: a
+      double precision, dimension(n), intent(in) :: s
+      double precision, intent(in) :: scond, amax
+      double precision, dimension(n, n), intent(out) :: a_equed
+      character, intent(out) :: equed
+    end subroutine
+
+    subroutine f2py_lapack_syev(jobz, uplo, n, a, a_out, w, info)
+      character(len=*), intent(in) :: jobz, uplo
+      integer, intent(in) :: n
+      double precision, dimension(n, n), intent(in) :: a
+      double precision, dimension(n, n), intent(out) :: a_out
+      double precision, dimension(n), intent(out) :: w
+      integer, intent(out) :: info
+    end subroutine
+
+    subroutine f2py_lapack_tridiag_solve(solve_type, ndim, nrhs, ngrdcol, lhs, rhs, soln)
+      character(len=*), intent(in) :: solve_type
+      integer, intent(in) :: ndim, nrhs, ngrdcol
+      double precision, dimension(3, ngrdcol, ndim), intent(in) :: lhs
+      double precision, dimension(ngrdcol, ndim, nrhs), intent(in) :: rhs
+      double precision, dimension(ngrdcol, ndim, nrhs), intent(out) :: soln
+    end subroutine
+
+    subroutine f2py_lapack_tridiag_solvex(solve_type, ndim, nrhs, ngrdcol, lhs, rhs, soln, rcond)
+      character(len=*), intent(in) :: solve_type
+      integer, intent(in) :: ndim, nrhs, ngrdcol
+      double precision, dimension(3, ngrdcol, ndim), intent(in) :: lhs
+      double precision, dimension(ngrdcol, ndim, nrhs), intent(in) :: rhs
+      double precision, dimension(ngrdcol, ndim, nrhs), intent(out) :: soln
+      double precision, dimension(ngrdcol), intent(out) :: rcond
+    end subroutine
+
+    subroutine f2py_lapack_band_solve(solve_type, nsup, nsub, ndim, nrhs, ngrdcol, lhs, rhs, soln)
+      character(len=*), intent(in) :: solve_type
+      integer, intent(in) :: nsup, nsub, ndim, nrhs, ngrdcol
+      double precision, dimension(nsup+nsub+1, ngrdcol, ndim), intent(in) :: lhs
+      double precision, dimension(ngrdcol, ndim, nrhs), intent(in) :: rhs
+      double precision, dimension(ngrdcol, ndim, nrhs), intent(out) :: soln
+    end subroutine
+
+    subroutine f2py_lapack_band_solvex(solve_type, nsup, nsub, ndim, nrhs, ngrdcol, lhs, rhs, soln, rcond)
+      character(len=*), intent(in) :: solve_type
+      integer, intent(in) :: nsup, nsub, ndim, nrhs, ngrdcol
+      double precision, dimension(nsup+nsub+1, ngrdcol, ndim), intent(in) :: lhs
+      double precision, dimension(ngrdcol, ndim, nrhs), intent(in) :: rhs
+      double precision, dimension(ngrdcol, ndim, nrhs), intent(out) :: soln
+      double precision, dimension(ngrdcol), intent(out) :: rcond
+    end subroutine
+
+    subroutine f2py_penta_bicgstab_solve(ndim, ngrdcol, lhs, rhs, soln, iters)
+      integer, intent(in) :: ndim, ngrdcol
+      double precision, dimension(5, ngrdcol, ndim), intent(in) :: lhs
+      double precision, dimension(ngrdcol, ndim), intent(in) :: rhs
+      double precision, dimension(ngrdcol, ndim), intent(out) :: soln
+      integer, intent(out) :: iters
+    end subroutine
+
+    subroutine f2py_penta_lu_solve_single_rhs_multiple_lhs(ndim, ngrdcol, lhs, rhs, soln)
+      integer, intent(in) :: ndim, ngrdcol
+      double precision, dimension(5, ngrdcol, ndim), intent(in) :: lhs
+      double precision, dimension(ngrdcol, ndim), intent(in) :: rhs
+      double precision, dimension(ngrdcol, ndim), intent(out) :: soln
+    end subroutine
+
+    subroutine f2py_penta_lu_solve_multiple_rhs_lhs(ndim, nrhs, ngrdcol, lhs, rhs, soln)
+      integer, intent(in) :: ndim, nrhs, ngrdcol
+      double precision, dimension(5, ngrdcol, ndim), intent(in) :: lhs
+      double precision, dimension(ngrdcol, ndim, nrhs), intent(in) :: rhs
+      double precision, dimension(ngrdcol, ndim, nrhs), intent(out) :: soln
+    end subroutine
+
+    subroutine f2py_tridiag_lu_solve_single_rhs_lhs(ndim, lhs, rhs, soln)
+      integer, intent(in) :: ndim
+      double precision, dimension(3, ndim), intent(in) :: lhs
+      double precision, dimension(ndim), intent(in) :: rhs
+      double precision, dimension(ndim), intent(out) :: soln
+    end subroutine
+
+    subroutine f2py_tridiag_lu_solve_single_rhs_multiple_lhs(ndim, ngrdcol, lhs, rhs, soln)
+      integer, intent(in) :: ndim, ngrdcol
+      double precision, dimension(3, ngrdcol, ndim), intent(in) :: lhs
+      double precision, dimension(ngrdcol, ndim), intent(in) :: rhs
+      double precision, dimension(ngrdcol, ndim), intent(out) :: soln
+    end subroutine
+
+    subroutine f2py_tridiag_lu_solve_multiple_rhs_lhs(ndim, nrhs, ngrdcol, lhs, rhs, soln)
+      integer, intent(in) :: ndim, nrhs, ngrdcol
+      double precision, dimension(3, ngrdcol, ndim), intent(in) :: lhs
+      double precision, dimension(ngrdcol, ndim, nrhs), intent(in) :: rhs
+      double precision, dimension(ngrdcol, ndim, nrhs), intent(out) :: soln
+    end subroutine
+
+    ! --- T_in_K_wrapper: temperature conversion ---
+    subroutine f2py_thlm2t_in_k_1d(nz, thlm, exner, rcm, t_in_k)
+      integer, intent(in) :: nz
+      double precision, dimension(nz), intent(in) :: thlm, exner, rcm
+      double precision, dimension(nz), intent(out) :: t_in_k
+    end subroutine
+
+    ! --- init_wrappers: initialization routines ---
+
+    subroutine f2py_init_err_info(ngrdcol)
+      integer, intent(in) :: ngrdcol
+    end subroutine
+
+    subroutine f2py_set_default_config_flags( &
+        iiPDF_type, ipdf_call_placement, penta_solve_method, &
+        tridiag_solve_method, saturation_formula, grid_remap_method, &
+        grid_adapt_in_time_method, fill_holes_type, &
+        l_use_precip_frac, l_predict_upwp_vpwp, &
+        l_ho_nontrad_coriolis, l_ho_trad_coriolis, &
+        l_min_wp2_from_corr_wx, l_min_xp2_from_corr_wx, &
+        l_C2_cloud_frac, l_diffuse_rtm_and_thlm, &
+        l_stability_correct_Kh_N2_zm, l_calc_thlp2_rad, &
+        l_upwind_xpyp_ta, l_upwind_xm_ma, &
+        l_uv_nudge, l_rtm_nudge, l_tke_aniso, &
+        l_vert_avg_closure, l_trapezoidal_rule_zt, &
+        l_trapezoidal_rule_zm, l_call_pdf_closure_twice, &
+        l_standard_term_ta, l_partial_upwind_wp3, &
+        l_godunov_upwind_wpxp_ta, l_godunov_upwind_xpyp_ta, &
+        l_use_cloud_cover, l_diagnose_correlations, &
+        l_calc_w_corr, l_const_Nc_in_cloud, &
+        l_fix_w_chi_eta_correlations, l_stability_correct_tau_zm, &
+        l_damp_wp2_using_em, l_do_expldiff_rtm_thlm, &
+        l_Lscale_plume_centered, l_diag_Lscale_from_tau, &
+        l_use_C7_Richardson, l_use_C11_Richardson, &
+        l_use_shear_Richardson, l_brunt_vaisala_freq_moist, &
+        l_use_thvm_in_bv_freq, l_rcm_supersat_adj, &
+        l_damp_wp3_Skw_squared, l_prescribed_avg_deltaz, &
+        l_lmm_stepping, l_e3sm_config, l_vary_convect_depth, &
+        l_use_tke_in_wp3_pr_turb_term, l_use_tke_in_wp2_wp3_K_dfsn, &
+        l_use_wp3_lim_with_smth_Heaviside, &
+        l_smooth_Heaviside_tau_wpxp, &
+        l_modify_limiters_for_cnvg_test, &
+        l_enable_relaxed_clipping, l_linearize_pbl_winds, &
+        l_mono_flux_lim_thlm, l_mono_flux_lim_rtm, &
+        l_mono_flux_lim_um, l_mono_flux_lim_vm, &
+        l_mono_flux_lim_spikefix, l_host_applies_sfc_fluxes, &
+        l_wp2_fill_holes_tke, l_add_dycore_grid)
+      integer, intent(out) :: iiPDF_type, ipdf_call_placement
+      integer, intent(out) :: penta_solve_method, tridiag_solve_method
+      integer, intent(out) :: saturation_formula, grid_remap_method
+      integer, intent(out) :: grid_adapt_in_time_method, fill_holes_type
+      logical, intent(out) :: l_use_precip_frac, l_predict_upwp_vpwp
+      logical, intent(out) :: l_ho_nontrad_coriolis, l_ho_trad_coriolis
+      logical, intent(out) :: l_min_wp2_from_corr_wx, l_min_xp2_from_corr_wx
+      logical, intent(out) :: l_C2_cloud_frac, l_diffuse_rtm_and_thlm
+      logical, intent(out) :: l_stability_correct_Kh_N2_zm, l_calc_thlp2_rad
+      logical, intent(out) :: l_upwind_xpyp_ta, l_upwind_xm_ma
+      logical, intent(out) :: l_uv_nudge, l_rtm_nudge, l_tke_aniso
+      logical, intent(out) :: l_vert_avg_closure, l_trapezoidal_rule_zt
+      logical, intent(out) :: l_trapezoidal_rule_zm, l_call_pdf_closure_twice
+      logical, intent(out) :: l_standard_term_ta, l_partial_upwind_wp3
+      logical, intent(out) :: l_godunov_upwind_wpxp_ta, l_godunov_upwind_xpyp_ta
+      logical, intent(out) :: l_use_cloud_cover, l_diagnose_correlations
+      logical, intent(out) :: l_calc_w_corr, l_const_Nc_in_cloud
+      logical, intent(out) :: l_fix_w_chi_eta_correlations, l_stability_correct_tau_zm
+      logical, intent(out) :: l_damp_wp2_using_em, l_do_expldiff_rtm_thlm
+      logical, intent(out) :: l_Lscale_plume_centered, l_diag_Lscale_from_tau
+      logical, intent(out) :: l_use_C7_Richardson, l_use_C11_Richardson
+      logical, intent(out) :: l_use_shear_Richardson, l_brunt_vaisala_freq_moist
+      logical, intent(out) :: l_use_thvm_in_bv_freq, l_rcm_supersat_adj
+      logical, intent(out) :: l_damp_wp3_Skw_squared, l_prescribed_avg_deltaz
+      logical, intent(out) :: l_lmm_stepping, l_e3sm_config, l_vary_convect_depth
+      logical, intent(out) :: l_use_tke_in_wp3_pr_turb_term
+      logical, intent(out) :: l_use_tke_in_wp2_wp3_K_dfsn
+      logical, intent(out) :: l_use_wp3_lim_with_smth_Heaviside
+      logical, intent(out) :: l_smooth_Heaviside_tau_wpxp
+      logical, intent(out) :: l_modify_limiters_for_cnvg_test
+      logical, intent(out) :: l_enable_relaxed_clipping, l_linearize_pbl_winds
+      logical, intent(out) :: l_mono_flux_lim_thlm, l_mono_flux_lim_rtm
+      logical, intent(out) :: l_mono_flux_lim_um, l_mono_flux_lim_vm
+      logical, intent(out) :: l_mono_flux_lim_spikefix, l_host_applies_sfc_fluxes
+      logical, intent(out) :: l_wp2_fill_holes_tke, l_add_dycore_grid
+    end subroutine
+
+    subroutine f2py_init_config_flags( &
+        iiPDF_type, ipdf_call_placement, penta_solve_method, &
+        tridiag_solve_method, saturation_formula, grid_remap_method, &
+        grid_adapt_in_time_method, fill_holes_type, &
+        l_use_precip_frac, l_predict_upwp_vpwp, &
+        l_ho_nontrad_coriolis, l_ho_trad_coriolis, &
+        l_min_wp2_from_corr_wx, l_min_xp2_from_corr_wx, &
+        l_C2_cloud_frac, l_diffuse_rtm_and_thlm, &
+        l_stability_correct_Kh_N2_zm, l_calc_thlp2_rad, &
+        l_upwind_xpyp_ta, l_upwind_xm_ma, &
+        l_uv_nudge, l_rtm_nudge, l_tke_aniso, &
+        l_vert_avg_closure, l_trapezoidal_rule_zt, &
+        l_trapezoidal_rule_zm, l_call_pdf_closure_twice, &
+        l_standard_term_ta, l_partial_upwind_wp3, &
+        l_godunov_upwind_wpxp_ta, l_godunov_upwind_xpyp_ta, &
+        l_use_cloud_cover, l_diagnose_correlations, &
+        l_calc_w_corr, l_const_Nc_in_cloud, &
+        l_fix_w_chi_eta_correlations, l_stability_correct_tau_zm, &
+        l_damp_wp2_using_em, l_do_expldiff_rtm_thlm, &
+        l_Lscale_plume_centered, l_diag_Lscale_from_tau, &
+        l_use_C7_Richardson, l_use_C11_Richardson, &
+        l_use_shear_Richardson, l_brunt_vaisala_freq_moist, &
+        l_use_thvm_in_bv_freq, l_rcm_supersat_adj, &
+        l_damp_wp3_Skw_squared, l_prescribed_avg_deltaz, &
+        l_lmm_stepping, l_e3sm_config, l_vary_convect_depth, &
+        l_use_tke_in_wp3_pr_turb_term, l_use_tke_in_wp2_wp3_K_dfsn, &
+        l_use_wp3_lim_with_smth_Heaviside, &
+        l_smooth_Heaviside_tau_wpxp, &
+        l_modify_limiters_for_cnvg_test, &
+        l_enable_relaxed_clipping, l_linearize_pbl_winds, &
+        l_mono_flux_lim_thlm, l_mono_flux_lim_rtm, &
+        l_mono_flux_lim_um, l_mono_flux_lim_vm, &
+        l_mono_flux_lim_spikefix, l_host_applies_sfc_fluxes, &
+        l_wp2_fill_holes_tke, l_add_dycore_grid)
+      integer, intent(in) :: iiPDF_type, ipdf_call_placement
+      integer, intent(in) :: penta_solve_method, tridiag_solve_method
+      integer, intent(in) :: saturation_formula, grid_remap_method
+      integer, intent(in) :: grid_adapt_in_time_method, fill_holes_type
+      logical, intent(in) :: l_use_precip_frac, l_predict_upwp_vpwp
+      logical, intent(in) :: l_ho_nontrad_coriolis, l_ho_trad_coriolis
+      logical, intent(in) :: l_min_wp2_from_corr_wx, l_min_xp2_from_corr_wx
+      logical, intent(in) :: l_C2_cloud_frac, l_diffuse_rtm_and_thlm
+      logical, intent(in) :: l_stability_correct_Kh_N2_zm, l_calc_thlp2_rad
+      logical, intent(in) :: l_upwind_xpyp_ta, l_upwind_xm_ma
+      logical, intent(in) :: l_uv_nudge, l_rtm_nudge, l_tke_aniso
+      logical, intent(in) :: l_vert_avg_closure, l_trapezoidal_rule_zt
+      logical, intent(in) :: l_trapezoidal_rule_zm, l_call_pdf_closure_twice
+      logical, intent(in) :: l_standard_term_ta, l_partial_upwind_wp3
+      logical, intent(in) :: l_godunov_upwind_wpxp_ta, l_godunov_upwind_xpyp_ta
+      logical, intent(in) :: l_use_cloud_cover, l_diagnose_correlations
+      logical, intent(in) :: l_calc_w_corr, l_const_Nc_in_cloud
+      logical, intent(in) :: l_fix_w_chi_eta_correlations, l_stability_correct_tau_zm
+      logical, intent(in) :: l_damp_wp2_using_em, l_do_expldiff_rtm_thlm
+      logical, intent(in) :: l_Lscale_plume_centered, l_diag_Lscale_from_tau
+      logical, intent(in) :: l_use_C7_Richardson, l_use_C11_Richardson
+      logical, intent(in) :: l_use_shear_Richardson, l_brunt_vaisala_freq_moist
+      logical, intent(in) :: l_use_thvm_in_bv_freq, l_rcm_supersat_adj
+      logical, intent(in) :: l_damp_wp3_Skw_squared, l_prescribed_avg_deltaz
+      logical, intent(in) :: l_lmm_stepping, l_e3sm_config, l_vary_convect_depth
+      logical, intent(in) :: l_use_tke_in_wp3_pr_turb_term
+      logical, intent(in) :: l_use_tke_in_wp2_wp3_K_dfsn
+      logical, intent(in) :: l_use_wp3_lim_with_smth_Heaviside
+      logical, intent(in) :: l_smooth_Heaviside_tau_wpxp
+      logical, intent(in) :: l_modify_limiters_for_cnvg_test
+      logical, intent(in) :: l_enable_relaxed_clipping, l_linearize_pbl_winds
+      logical, intent(in) :: l_mono_flux_lim_thlm, l_mono_flux_lim_rtm
+      logical, intent(in) :: l_mono_flux_lim_um, l_mono_flux_lim_vm
+      logical, intent(in) :: l_mono_flux_lim_spikefix, l_host_applies_sfc_fluxes
+      logical, intent(in) :: l_wp2_fill_holes_tke, l_add_dycore_grid
+    end subroutine
+
+    subroutine f2py_setup_grid(nzmax, ngrdcol, sfc_elevation, &
+        l_implemented, l_ascending_grid, grid_type, &
+        deltaz, zm_init, zm_top, &
+        momentum_heights, thermodynamic_heights)
+      integer, intent(in) :: nzmax, ngrdcol
+      double precision, dimension(ngrdcol), intent(in) :: sfc_elevation
+      integer, intent(in) :: grid_type
+      logical, intent(in) :: l_implemented, l_ascending_grid
+      double precision, dimension(ngrdcol), intent(in) :: deltaz, zm_init, zm_top
+      double precision, dimension(ngrdcol, nzmax), intent(in) :: momentum_heights
+      double precision, dimension(ngrdcol, nzmax-1), intent(in) :: thermodynamic_heights
+    end subroutine
+
+    subroutine f2py_get_nparams(nparams_out)
+      integer, intent(out) :: nparams_out
+    end subroutine
+
+    subroutine f2py_init_clubb_params(ngrdcol, iunit, filename, nparams, clubb_params)
+      integer, intent(in) :: ngrdcol, iunit, nparams
+      character(len=256), intent(in) :: filename
+      double precision, dimension(ngrdcol, nparams), intent(out) :: clubb_params
+    end subroutine
+
+    subroutine f2py_get_param_names(nparams, param_names)
+      integer, intent(in) :: nparams
+      character(len=28), dimension(nparams), intent(out) :: param_names
+    end subroutine
+
+    subroutine f2py_init_clubb_params_file(ngrdcol, filename, flen, nparams, clubb_params)
+      integer, intent(in) :: ngrdcol, flen, nparams
+      character, dimension(flen), intent(in) :: filename
+      double precision, dimension(ngrdcol, nparams), intent(out) :: clubb_params
+    end subroutine
+
+    subroutine f2py_calc_derrived_params(ngrdcol, grid_type, deltaz, &
+        clubb_params, l_prescribed_avg_deltaz, lmin, mixt_frac_max_mag)
+      integer, intent(in) :: ngrdcol, grid_type
+      double precision, dimension(ngrdcol), intent(in) :: deltaz
+      double precision, dimension(ngrdcol, *), intent(in) :: clubb_params
+      logical, intent(in) :: l_prescribed_avg_deltaz
+      double precision, intent(out) :: lmin, mixt_frac_max_mag
+    end subroutine
+
+    subroutine f2py_init_pdf_params(nz, ngrdcol)
+      integer, intent(in) :: nz, ngrdcol
+    end subroutine
+
+    subroutine f2py_init_pdf_params_zm(nz, ngrdcol)
+      integer, intent(in) :: nz, ngrdcol
+    end subroutine
+
+    subroutine f2py_init_pdf_implicit(nz, ngrdcol, sclr_dim)
+      integer, intent(in) :: nz, ngrdcol, sclr_dim
+    end subroutine
+
+    subroutine f2py_cubic_solve(nz, a_coef, b_coef, c_coef, d_coef, roots_real, roots_imag)
+      integer, intent(in) :: nz
+      double precision, dimension(nz), intent(in) :: a_coef, b_coef, c_coef, d_coef
+      double precision, dimension(nz, 3), intent(out) :: roots_real, roots_imag
+    end subroutine
+
+    subroutine f2py_quadratic_solve(nz, a_coef, b_coef, c_coef, roots_real, roots_imag)
+      integer, intent(in) :: nz
+      double precision, dimension(nz), intent(in) :: a_coef, b_coef, c_coef
+      double precision, dimension(nz, 2), intent(out) :: roots_real, roots_imag
+    end subroutine
+
+    subroutine get_pdf_params_dims(ngrdcol, nz, ngrdcol_zm, nz_zm)
+      integer, intent(out) :: ngrdcol, nz, ngrdcol_zm, nz_zm
+    end subroutine
+
+    subroutine get_pdf_params_fields(ngrdcol, nz, which, &
+      w_1, w_2, varnce_w_1, varnce_w_2, rt_1, rt_2, varnce_rt_1, varnce_rt_2, &
+      thl_1, thl_2, varnce_thl_1, varnce_thl_2, corr_w_rt_1, corr_w_rt_2, &
+      corr_w_thl_1, corr_w_thl_2, corr_rt_thl_1, corr_rt_thl_2, alpha_thl, alpha_rt, &
+      crt_1, crt_2, cthl_1, cthl_2, chi_1, chi_2, stdev_chi_1, stdev_chi_2, &
+      stdev_eta_1, stdev_eta_2, covar_chi_eta_1, covar_chi_eta_2, corr_w_chi_1, &
+      corr_w_chi_2, corr_w_eta_1, corr_w_eta_2, corr_chi_eta_1, corr_chi_eta_2, &
+      rsatl_1, rsatl_2, rc_1, rc_2, cloud_frac_1, cloud_frac_2, mixt_frac, &
+      ice_supersat_frac_1, ice_supersat_frac_2)
+      integer, intent(in) :: ngrdcol, nz, which
+      double precision, dimension(ngrdcol, nz), intent(out) :: &
+      w_1, w_2, varnce_w_1, varnce_w_2, rt_1, rt_2, varnce_rt_1, varnce_rt_2, &
+      thl_1, thl_2, varnce_thl_1, varnce_thl_2, corr_w_rt_1, corr_w_rt_2, &
+      corr_w_thl_1, corr_w_thl_2, corr_rt_thl_1, corr_rt_thl_2, alpha_thl, alpha_rt, &
+      crt_1, crt_2, cthl_1, cthl_2, chi_1, chi_2, stdev_chi_1, stdev_chi_2, &
+      stdev_eta_1, stdev_eta_2, covar_chi_eta_1, covar_chi_eta_2, corr_w_chi_1, &
+      corr_w_chi_2, corr_w_eta_1, corr_w_eta_2, corr_chi_eta_1, corr_chi_eta_2, &
+      rsatl_1, rsatl_2, rc_1, rc_2, cloud_frac_1, cloud_frac_2, mixt_frac, &
+      ice_supersat_frac_1, ice_supersat_frac_2
+    end subroutine
+
+    subroutine set_pdf_params_fields(ngrdcol, nz, which, &
+      w_1, w_2, varnce_w_1, varnce_w_2, rt_1, rt_2, varnce_rt_1, varnce_rt_2, &
+      thl_1, thl_2, varnce_thl_1, varnce_thl_2, corr_w_rt_1, corr_w_rt_2, &
+      corr_w_thl_1, corr_w_thl_2, corr_rt_thl_1, corr_rt_thl_2, alpha_thl, alpha_rt, &
+      crt_1, crt_2, cthl_1, cthl_2, chi_1, chi_2, stdev_chi_1, stdev_chi_2, &
+      stdev_eta_1, stdev_eta_2, covar_chi_eta_1, covar_chi_eta_2, corr_w_chi_1, &
+      corr_w_chi_2, corr_w_eta_1, corr_w_eta_2, corr_chi_eta_1, corr_chi_eta_2, &
+      rsatl_1, rsatl_2, rc_1, rc_2, cloud_frac_1, cloud_frac_2, mixt_frac, &
+      ice_supersat_frac_1, ice_supersat_frac_2)
+      integer, intent(in) :: ngrdcol, nz, which
+      double precision, dimension(ngrdcol, nz), intent(in) :: &
+      w_1, w_2, varnce_w_1, varnce_w_2, rt_1, rt_2, varnce_rt_1, varnce_rt_2, &
+      thl_1, thl_2, varnce_thl_1, varnce_thl_2, corr_w_rt_1, corr_w_rt_2, &
+      corr_w_thl_1, corr_w_thl_2, corr_rt_thl_1, corr_rt_thl_2, alpha_thl, alpha_rt, &
+      crt_1, crt_2, cthl_1, cthl_2, chi_1, chi_2, stdev_chi_1, stdev_chi_2, &
+      stdev_eta_1, stdev_eta_2, covar_chi_eta_1, covar_chi_eta_2, corr_w_chi_1, &
+      corr_w_chi_2, corr_w_eta_1, corr_w_eta_2, corr_chi_eta_1, corr_chi_eta_2, &
+      rsatl_1, rsatl_2, rc_1, rc_2, cloud_frac_1, cloud_frac_2, mixt_frac, &
+      ice_supersat_frac_1, ice_supersat_frac_2
+    end subroutine
+
+    subroutine get_implicit_coefs_dims(ngrdcol, nz, sclr_dim)
+      integer, intent(out) :: ngrdcol, nz, sclr_dim
+    end subroutine
+
+    subroutine get_implicit_coefs_fields(ngrdcol, nz, sclr_dim, sclr_dim_transport, &
+      coef_wp4_implicit, coef_wp2rtp_implicit, term_wp2rtp_explicit, &
+      coef_wp2thlp_implicit, term_wp2thlp_explicit, coef_wp2up_implicit, &
+      term_wp2up_explicit, coef_wp2vp_implicit, term_wp2vp_explicit, &
+      coef_wprtp2_implicit, term_wprtp2_explicit, coef_wpthlp2_implicit, &
+      term_wpthlp2_explicit, coef_wprtpthlp_implicit, term_wprtpthlp_explicit, &
+      coef_wpup2_implicit, term_wpup2_explicit, coef_wpvp2_implicit, term_wpvp2_explicit, &
+      coef_wp2sclrp_implicit, term_wp2sclrp_explicit, coef_wpsclrp2_implicit, &
+      term_wpsclrp2_explicit, coef_wprtpsclrp_implicit, term_wprtpsclrp_explicit, &
+      coef_wpthlpsclrp_implicit, term_wpthlpsclrp_explicit)
+      integer, intent(in) :: ngrdcol, nz, sclr_dim
+      integer, intent(in), optional :: sclr_dim_transport
+      double precision, dimension(ngrdcol, nz), intent(out) :: &
+      coef_wp4_implicit, coef_wp2rtp_implicit, term_wp2rtp_explicit, &
+      coef_wp2thlp_implicit, term_wp2thlp_explicit, coef_wp2up_implicit, &
+      term_wp2up_explicit, coef_wp2vp_implicit, term_wp2vp_explicit, &
+      coef_wprtp2_implicit, term_wprtp2_explicit, coef_wpthlp2_implicit, &
+      term_wpthlp2_explicit, coef_wprtpthlp_implicit, term_wprtpthlp_explicit, &
+      coef_wpup2_implicit, term_wpup2_explicit, coef_wpvp2_implicit, term_wpvp2_explicit
+      double precision, dimension(ngrdcol, nz, sclr_dim_transport), intent(out) :: &
+      coef_wp2sclrp_implicit, term_wp2sclrp_explicit, coef_wpsclrp2_implicit, &
+      term_wpsclrp2_explicit, coef_wprtpsclrp_implicit, term_wprtpsclrp_explicit, &
+      coef_wpthlpsclrp_implicit, term_wpthlpsclrp_explicit
+    end subroutine
+
+    subroutine get_implicit_coefs_fields_2d(ngrdcol, nz, &
+      coef_wp4_implicit, coef_wp2rtp_implicit, term_wp2rtp_explicit, &
+      coef_wp2thlp_implicit, term_wp2thlp_explicit, coef_wp2up_implicit, &
+      term_wp2up_explicit, coef_wp2vp_implicit, term_wp2vp_explicit, &
+      coef_wprtp2_implicit, term_wprtp2_explicit, coef_wpthlp2_implicit, &
+      term_wpthlp2_explicit, coef_wprtpthlp_implicit, term_wprtpthlp_explicit, &
+      coef_wpup2_implicit, term_wpup2_explicit, coef_wpvp2_implicit, term_wpvp2_explicit)
+      integer, intent(in) :: ngrdcol, nz
+      double precision, dimension(ngrdcol, nz), intent(out) :: &
+      coef_wp4_implicit, coef_wp2rtp_implicit, term_wp2rtp_explicit, &
+      coef_wp2thlp_implicit, term_wp2thlp_explicit, coef_wp2up_implicit, &
+      term_wp2up_explicit, coef_wp2vp_implicit, term_wp2vp_explicit, &
+      coef_wprtp2_implicit, term_wprtp2_explicit, coef_wpthlp2_implicit, &
+      term_wpthlp2_explicit, coef_wprtpthlp_implicit, term_wprtpthlp_explicit, &
+      coef_wpup2_implicit, term_wpup2_explicit, coef_wpvp2_implicit, term_wpvp2_explicit
+    end subroutine
+
+    subroutine set_implicit_coefs_fields(ngrdcol, nz, sclr_dim, sclr_dim_transport, &
+      coef_wp4_implicit, coef_wp2rtp_implicit, term_wp2rtp_explicit, &
+      coef_wp2thlp_implicit, term_wp2thlp_explicit, coef_wp2up_implicit, &
+      term_wp2up_explicit, coef_wp2vp_implicit, term_wp2vp_explicit, &
+      coef_wprtp2_implicit, term_wprtp2_explicit, coef_wpthlp2_implicit, &
+      term_wpthlp2_explicit, coef_wprtpthlp_implicit, term_wprtpthlp_explicit, &
+      coef_wpup2_implicit, term_wpup2_explicit, coef_wpvp2_implicit, term_wpvp2_explicit, &
+      coef_wp2sclrp_implicit, term_wp2sclrp_explicit, coef_wpsclrp2_implicit, &
+      term_wpsclrp2_explicit, coef_wprtpsclrp_implicit, term_wprtpsclrp_explicit, &
+      coef_wpthlpsclrp_implicit, term_wpthlpsclrp_explicit)
+      integer, intent(in) :: ngrdcol, nz, sclr_dim
+      integer, intent(in), optional :: sclr_dim_transport
+      double precision, dimension(ngrdcol, nz), intent(in) :: &
+      coef_wp4_implicit, coef_wp2rtp_implicit, term_wp2rtp_explicit, &
+      coef_wp2thlp_implicit, term_wp2thlp_explicit, coef_wp2up_implicit, &
+      term_wp2up_explicit, coef_wp2vp_implicit, term_wp2vp_explicit, &
+      coef_wprtp2_implicit, term_wprtp2_explicit, coef_wpthlp2_implicit, &
+      term_wpthlp2_explicit, coef_wprtpthlp_implicit, term_wprtpthlp_explicit, &
+      coef_wpup2_implicit, term_wpup2_explicit, coef_wpvp2_implicit, term_wpvp2_explicit
+      double precision, dimension(ngrdcol, nz, sclr_dim_transport), intent(in) :: &
+      coef_wp2sclrp_implicit, term_wp2sclrp_explicit, coef_wpsclrp2_implicit, &
+      term_wpsclrp2_explicit, coef_wprtpsclrp_implicit, term_wprtpsclrp_explicit, &
+      coef_wpthlpsclrp_implicit, term_wpthlpsclrp_explicit
+    end subroutine
+
+    subroutine set_implicit_coefs_fields_2d(ngrdcol, nz, &
+      coef_wp4_implicit, coef_wp2rtp_implicit, term_wp2rtp_explicit, &
+      coef_wp2thlp_implicit, term_wp2thlp_explicit, coef_wp2up_implicit, &
+      term_wp2up_explicit, coef_wp2vp_implicit, term_wp2vp_explicit, &
+      coef_wprtp2_implicit, term_wprtp2_explicit, coef_wpthlp2_implicit, &
+      term_wpthlp2_explicit, coef_wprtpthlp_implicit, term_wprtpthlp_explicit, &
+      coef_wpup2_implicit, term_wpup2_explicit, coef_wpvp2_implicit, term_wpvp2_explicit)
+      integer, intent(in) :: ngrdcol, nz
+      double precision, dimension(ngrdcol, nz), intent(in) :: &
+      coef_wp4_implicit, coef_wp2rtp_implicit, term_wp2rtp_explicit, &
+      coef_wp2thlp_implicit, term_wp2thlp_explicit, coef_wp2up_implicit, &
+      term_wp2up_explicit, coef_wp2vp_implicit, term_wp2vp_explicit, &
+      coef_wprtp2_implicit, term_wprtp2_explicit, coef_wpthlp2_implicit, &
+      term_wpthlp2_explicit, coef_wprtpthlp_implicit, term_wprtpthlp_explicit, &
+      coef_wpup2_implicit, term_wpup2_explicit, coef_wpvp2_implicit, term_wpvp2_explicit
+    end subroutine
+
+    ! --- stats_wrapper: init/finalize/config ---
+
+    subroutine f2py_stats_init(registry_path, output_path, ncol, &
+        stats_tsamp, stats_tout, dt_main, &
+        day_in, month_in, year_in, time_initial, &
+        nzt, zt, nzm, zm, sclr_dim, edsclr_dim)
+      character(len=256), intent(in) :: registry_path, output_path
+      integer, intent(in) :: ncol, day_in, month_in, year_in
+      double precision, intent(in) :: stats_tsamp, stats_tout, dt_main
+      double precision, intent(in) :: time_initial
+      integer, intent(in) :: nzt, nzm, sclr_dim, edsclr_dim
+      double precision, dimension(nzt), intent(in) :: zt
+      double precision, dimension(nzm), intent(in) :: zm
+    end subroutine
+
+    subroutine f2py_stats_init_with_params(registry_path, output_path, ncol, &
+        stats_tsamp, stats_tout, dt_main, &
+        day_in, month_in, year_in, time_initial, &
+        nzt, zt, nzm, zm, sclr_dim, edsclr_dim, clubb_params, param_names)
+      character(len=256), intent(in) :: registry_path, output_path
+      integer, intent(in) :: ncol, day_in, month_in, year_in
+      double precision, intent(in) :: stats_tsamp, stats_tout, dt_main
+      double precision, intent(in) :: time_initial
+      integer, intent(in) :: nzt, nzm, sclr_dim, edsclr_dim
+      double precision, dimension(nzt), intent(in) :: zt
+      double precision, dimension(nzm), intent(in) :: zm
+      double precision, dimension(ncol, *), intent(in) :: clubb_params
+      character(len=28), dimension(*), intent(in) :: param_names
+    end subroutine
+
+    subroutine f2py_stats_finalize()
+    end subroutine
+
+    subroutine f2py_get_stats_config(l_enabled, ncol, nvars, &
+        stats_nsamp, stats_nout, samples_per_write, &
+        time_index, l_sample, l_last_sample)
+      integer, intent(out) :: ncol, nvars
+      logical, intent(out) :: l_enabled
+      integer, intent(out) :: stats_nsamp, stats_nout, samples_per_write
+      integer, intent(out) :: time_index
+      logical, intent(out) :: l_sample, l_last_sample
+    end subroutine
+
+    subroutine f2py_get_stats_var_meta(ivar, name, grid_name, units, &
+        long_name, grid_id, nz)
+      integer, intent(in) :: ivar
+      character(len=64), intent(out) :: name
+      character(len=16), intent(out) :: grid_name
+      character(len=32), intent(out) :: units
+      character(len=128), intent(out) :: long_name
+      integer, intent(out) :: grid_id, nz
+    end subroutine
+
+    subroutine f2py_get_stats_var_data(ivar, ncol, nz, buffer, nsamples)
+      integer, intent(in) :: ivar, ncol, nz
+      double precision, dimension(ncol, nz), intent(out) :: buffer
+      integer, dimension(ncol, nz), intent(out) :: nsamples
+    end subroutine
+
+    subroutine f2py_set_stats_var_data(ivar, ncol, nz, buffer, nsamples)
+      integer, intent(in) :: ivar, ncol, nz
+      double precision, dimension(ncol, nz), intent(in) :: buffer
+      integer, dimension(ncol, nz), intent(in) :: nsamples
+    end subroutine
+
+    ! --- stats_wrapper: per-timestep control ---
+
+    subroutine f2py_stats_begin_timestep(itime)
+      integer, intent(in) :: itime
+    end subroutine
+
+    subroutine f2py_stats_end_timestep(time_value)
+      double precision, intent(in) :: time_value
+    end subroutine
+
+    ! --- stats_wrapper: update routines ---
+
+    subroutine f2py_stats_update_scalar(name, values, icol, level)
+      character(len=64), intent(in) :: name
+      double precision, intent(in) :: values
+      integer, intent(in) :: icol, level
+    end subroutine
+
+    subroutine f2py_stats_update_1d(name, n, values, icol)
+      character(len=64), intent(in) :: name
+      integer, intent(in) :: n, icol
+      double precision, dimension(n), intent(in) :: values
+    end subroutine
+
+    subroutine f2py_stats_update_2d(name, ncol, nz, values)
+      character(len=64), intent(in) :: name
+      integer, intent(in) :: ncol, nz
+      double precision, dimension(ncol, nz), intent(in) :: values
+    end subroutine
+
+    ! --- stats_wrapper: budget routines ---
+
+    subroutine f2py_stats_begin_budget_scalar(name, values, icol)
+      character(len=64), intent(in) :: name
+      double precision, intent(in) :: values
+      integer, intent(in) :: icol
+    end subroutine
+
+    subroutine f2py_stats_begin_budget_1d(name, n, values, icol)
+      character(len=64), intent(in) :: name
+      integer, intent(in) :: n, icol
+      double precision, dimension(n), intent(in) :: values
+    end subroutine
+
+    subroutine f2py_stats_begin_budget_2d(name, ncol, nz, values)
+      character(len=64), intent(in) :: name
+      integer, intent(in) :: ncol, nz
+      double precision, dimension(ncol, nz), intent(in) :: values
+    end subroutine
+
+    subroutine f2py_stats_update_budget_scalar(name, values, icol, level)
+      character(len=64), intent(in) :: name
+      double precision, intent(in) :: values
+      integer, intent(in) :: icol, level
+    end subroutine
+
+    subroutine f2py_stats_update_budget_1d(name, n, values, icol)
+      character(len=64), intent(in) :: name
+      integer, intent(in) :: n, icol
+      double precision, dimension(n), intent(in) :: values
+    end subroutine
+
+    subroutine f2py_stats_update_budget_2d(name, ncol, nz, values)
+      character(len=64), intent(in) :: name
+      integer, intent(in) :: ncol, nz
+      double precision, dimension(ncol, nz), intent(in) :: values
+    end subroutine
+
+    subroutine f2py_stats_finalize_budget_scalar(name, values, icol, l_count_sample)
+      character(len=64), intent(in) :: name
+      double precision, intent(in) :: values
+      integer, intent(in) :: icol
+      logical, intent(in) :: l_count_sample
+    end subroutine
+
+    subroutine f2py_stats_finalize_budget_1d(name, n, values, icol, l_count)
+      character(len=64), intent(in) :: name
+      integer, intent(in) :: n, icol
+      logical, intent(in) :: l_count
+      double precision, dimension(n), intent(in) :: values
+    end subroutine
+
+    subroutine f2py_stats_finalize_budget_2d(name, ncol, nz, values, l_count)
+      character(len=64), intent(in) :: name
+      integer, intent(in) :: ncol, nz
+      logical, intent(in) :: l_count
+      double precision, dimension(ncol, nz), intent(in) :: values
+    end subroutine
+
+    ! --- stats_wrapper: query ---
+
+    subroutine f2py_var_on_stats_list(name, l_result)
+      character(len=64), intent(in) :: name
+      logical, intent(out) :: l_result
+    end subroutine
+
+    ! --- stats_wrapper: grid update ---
+
+    subroutine f2py_stats_update_grid(ncol, nzt, nzm, nrho, &
+        zt_src, zm_src, rho_vals, rho_levels, p_sfc)
+      integer, intent(in) :: ncol, nzt, nzm, nrho
+      double precision, dimension(ncol, nzt), intent(in) :: zt_src
+      double precision, dimension(ncol, nzm), intent(in) :: zm_src
+      double precision, dimension(ncol, nrho), intent(in) :: rho_vals, rho_levels
+      double precision, dimension(ncol), intent(in) :: p_sfc
+    end subroutine
+
+    ! --- stats_wrapper: SILHS ---
+
+    subroutine f2py_stats_lh_samples_init(num_samples, nzt, &
+        n_nl, n_u, nl_names, u_names, zt_vals)
+      integer, intent(in) :: num_samples, nzt, n_nl, n_u
+      character(len=64), dimension(n_nl), intent(in) :: nl_names
+      character(len=64), dimension(n_u), intent(in) :: u_names
+      double precision, dimension(nzt), intent(in) :: zt_vals
+    end subroutine
+
+    subroutine f2py_stats_lh_samples_write_ln(ncol, nsamp, nzt, nvars, samples)
+      integer, intent(in) :: ncol, nsamp, nzt, nvars
+      double precision, dimension(ncol, nsamp, nzt, nvars), intent(in) :: samples
+    end subroutine
+
+    subroutine f2py_stats_lh_samples_write_u(ncol, nsamp, nzt, nvars, &
+        uniform_vals, mixture_comp, sample_weights)
+      integer, intent(in) :: ncol, nsamp, nzt, nvars
+      double precision, dimension(ncol, nsamp, nzt, nvars), intent(in) :: uniform_vals
+      integer, dimension(ncol, nsamp, nzt), intent(in) :: mixture_comp
+      double precision, dimension(ncol, nsamp, nzt), intent(in) :: sample_weights
+    end subroutine
+
+    ! --- forcings_wrapper: prescribe_forcings ---
+
+    subroutine f2py_prescribe_forcings( &
+        nzm, nzt, ngrdcol, sclr_dim, edsclr_dim, sclr_dim_transport, edsclr_dim_transport, &
+        runtype, sfctype, time_current, time_initial, dt, &
+        um, vm, thlm, p_in_pa, exner, rho, rho_zm, thvm, zt_in, &
+        l_t_dependent, l_ignore_forcings, l_input_xpwp_sfc, &
+        l_modify_bc_for_cnvg_test, &
+        saturation_formula, l_add_dycore_grid, grid_remap_method, &
+        grid_adapt_in_time_method, &
+        rtm, wm_zm, wm_zt, ug, vg, um_ref, vm_ref, &
+        thlm_forcing, rtm_forcing, um_forcing, vm_forcing, &
+        wprtp_forcing, wpthlp_forcing, rtp2_forcing, thlp2_forcing, rtpthlp_forcing, &
+        wpsclrp, sclrm_forcing, edsclrm_forcing, &
+        wpthlp_sfc, wprtp_sfc, upwp_sfc, vpwp_sfc, &
+        t_sfc, p_sfc, sens_ht, latent_ht, &
+        wpsclrp_sfc, wpedsclrp_sfc)
+      integer, intent(in) :: nzm, nzt, ngrdcol, sclr_dim, edsclr_dim
+      integer, intent(in), optional :: sclr_dim_transport, edsclr_dim_transport
+      character(len=50), intent(in) :: runtype
+      integer, intent(in) :: sfctype
+      double precision, intent(in) :: time_current, time_initial, dt
+      logical, intent(in) :: l_t_dependent, l_ignore_forcings, l_input_xpwp_sfc
+      logical, intent(in) :: l_modify_bc_for_cnvg_test
+      integer, intent(in) :: saturation_formula
+      logical, intent(in) :: l_add_dycore_grid
+      integer, intent(in) :: grid_remap_method, grid_adapt_in_time_method
+      ! Input profiles
+      double precision, dimension(ngrdcol, nzt), intent(in) :: &
+        um, vm, thlm, p_in_pa, exner, rho, thvm, zt_in
+      double precision, dimension(ngrdcol, nzm), intent(in) :: rho_zm
+      ! In/out state updated by prescribe_forcings
+      double precision, dimension(ngrdcol, nzt), intent(in,out) :: &
+        rtm, wm_zt, ug, vg, um_ref, vm_ref, &
+        thlm_forcing, rtm_forcing, um_forcing, vm_forcing
+      double precision, dimension(ngrdcol, nzm), intent(in,out) :: &
+        wm_zm, wprtp_forcing, wpthlp_forcing, &
+        rtp2_forcing, thlp2_forcing, rtpthlp_forcing
+      double precision, dimension(ngrdcol, nzm, sclr_dim_transport), intent(in,out) :: wpsclrp
+      double precision, dimension(ngrdcol, nzt, sclr_dim_transport), intent(in,out) :: sclrm_forcing
+      double precision, dimension(ngrdcol, nzt, edsclr_dim_transport), intent(in,out) :: edsclrm_forcing
+      double precision, dimension(ngrdcol), intent(in,out) :: &
+        wpthlp_sfc, wprtp_sfc, upwp_sfc, vpwp_sfc, t_sfc, p_sfc
+      double precision, intent(in,out) :: sens_ht, latent_ht
+      double precision, dimension(ngrdcol, sclr_dim_transport), intent(in,out) :: wpsclrp_sfc
+      double precision, dimension(ngrdcol, edsclr_dim_transport), intent(in,out) :: wpedsclrp_sfc
+    end subroutine
+
+    ! --- advance_clubb_core_module_wrapper: advance_clubb_core ---
+
+    subroutine f2py_advance_clubb_core( &
+        nzm, nzt, ngrdcol, &
+        l_implemented, dt, &
+        fcor, fcor_y, sfc_elevation, &
+        hydromet_dim, sclr_dim, edsclr_dim, &
+        hydromet_dim_transport, sclr_dim_transport, edsclr_dim_transport, &
+        sclr_tol, &
+        thlm_forcing, rtm_forcing, um_forcing, vm_forcing, &
+        sclrm_forcing, edsclrm_forcing, &
+        wprtp_forcing, wpthlp_forcing, rtp2_forcing, thlp2_forcing, &
+        rtpthlp_forcing, wm_zm, wm_zt, &
+        wpthlp_sfc, wprtp_sfc, upwp_sfc, vpwp_sfc, p_sfc, &
+        wpsclrp_sfc, wpedsclrp_sfc, &
+        upwp_sfc_pert, vpwp_sfc_pert, &
+        rtm_ref, thlm_ref, um_ref, vm_ref, ug, vg, &
+        rho_zm, rho, rho_ds_zm, rho_ds_zt, invrs_rho_ds_zm, invrs_rho_ds_zt, thv_ds_zm, thv_ds_zt, &
+        l_mix_rat_hm, &
+        rfrzm, &
+        wphydrometp, wp2hmp, rtphmp_zt, thlphmp_zt, &
+        host_dx, host_dy, &
+        clubb_params, lmin, mixt_frac_max_mag, t0_val, ts_nudge, &
+        rtm_min, rtm_nudge_max_altitude, &
+        um, vm, up3, vp3, thlm, rtm, rtp3, thlp3, wp3, &
+        upwp, vpwp, up2, vp2, wprtp, wpthlp, rtp2, thlp2, rtpthlp, wp2, &
+        sclrm, sclrp3, &
+        wpsclrp, sclrp2, sclrprtp, sclrpthlp, &
+        p_in_pa, exner, rcm, cloud_frac, wp2thvp, wp2up, &
+        wpthvp, rtpthvp, thlpthvp, &
+        sclrpthvp, &
+        wp2rtp, wp2thlp, wpup2, wpvp2, ice_supersat_frac, &
+        uprcp, vprcp, rc_coef_zm, wp4, wp2up2, wp2vp2, &
+        um_pert, vm_pert, upwp_pert, vpwp_pert, &
+        edsclrm, &
+        rcm_in_layer, cloud_cover, w_up_in_cloud, w_down_in_cloud, &
+        cloudy_updraft_frac, cloudy_downdraft_frac, wprcp, invrs_tau_zm, &
+        kh_zt, kh_zm, thlprcp, lscale)
+      integer, intent(in) :: nzm, nzt, ngrdcol
+      logical, intent(in) :: l_implemented
+      double precision, intent(in) :: dt
+      double precision, dimension(ngrdcol), intent(in) :: fcor, fcor_y, sfc_elevation
+      integer, intent(in) :: hydromet_dim, sclr_dim, edsclr_dim
+      integer, intent(in), optional :: hydromet_dim_transport, sclr_dim_transport, edsclr_dim_transport
+      double precision, dimension(sclr_dim), intent(in) :: sclr_tol
+      ! 2D inputs on zt
+      double precision, dimension(ngrdcol, nzt), intent(in) :: &
+        thlm_forcing, rtm_forcing, um_forcing, vm_forcing
+      ! Scalar forcings
+      double precision, dimension(ngrdcol, nzt, sclr_dim_transport), intent(in) :: sclrm_forcing
+      double precision, dimension(ngrdcol, nzt, edsclr_dim_transport), intent(in) :: edsclrm_forcing
+      ! 2D inputs on zm / grid
+      double precision, dimension(ngrdcol, nzm), intent(in) :: &
+        wprtp_forcing, wpthlp_forcing, rtp2_forcing, thlp2_forcing, &
+        rtpthlp_forcing, wm_zm, rho_zm, rho_ds_zm, invrs_rho_ds_zm, thv_ds_zm
+      double precision, dimension(ngrdcol, nzt), intent(in) :: &
+        wm_zt, rtm_ref, thlm_ref, um_ref, vm_ref, ug, vg, rho, &
+        rho_ds_zt, invrs_rho_ds_zt, thv_ds_zt, rfrzm
+      ! Surface fluxes
+      double precision, dimension(ngrdcol), intent(in) :: &
+        wpthlp_sfc, wprtp_sfc, upwp_sfc, vpwp_sfc, p_sfc, &
+        upwp_sfc_pert, vpwp_sfc_pert, host_dx, host_dy
+      double precision, dimension(ngrdcol, sclr_dim_transport), intent(in) :: wpsclrp_sfc
+      double precision, dimension(ngrdcol, edsclr_dim_transport), intent(in) :: wpedsclrp_sfc
+      ! Tunable params
+      double precision, dimension(ngrdcol, *), intent(in) :: clubb_params
+      double precision, intent(in) :: lmin, mixt_frac_max_mag, t0_val, ts_nudge
+      double precision, intent(in) :: rtm_min, rtm_nudge_max_altitude
+      ! Hydromet
+      logical, dimension(hydromet_dim_transport), intent(in) :: l_mix_rat_hm
+      double precision, dimension(ngrdcol, nzm, hydromet_dim_transport), intent(in) :: wphydrometp
+      double precision, dimension(ngrdcol, nzt, hydromet_dim_transport), intent(in) :: &
+        wp2hmp, rtphmp_zt, thlphmp_zt
+      ! Prognostic inout - zt
+      double precision, dimension(ngrdcol, nzt), intent(in,out) :: &
+        um, vm, up3, vp3, thlm, rtm, rtp3, thlp3, wp3
+      ! Prognostic inout - zm
+      double precision, dimension(ngrdcol, nzm), intent(in,out) :: &
+        upwp, vpwp, up2, vp2, wprtp, wpthlp, rtp2, thlp2, rtpthlp, wp2
+      ! Scalar prognostics
+      double precision, dimension(ngrdcol, nzt, sclr_dim_transport), intent(in,out) :: sclrm, sclrp3
+      double precision, dimension(ngrdcol, nzm, sclr_dim_transport), intent(in,out) :: &
+        wpsclrp, sclrp2, sclrprtp, sclrpthlp
+      double precision, dimension(ngrdcol, nzt), intent(in,out) :: &
+        p_in_pa, exner, rcm, cloud_frac, wp2thvp, wp2up
+      double precision, dimension(ngrdcol, nzm), intent(in,out) :: &
+        wpthvp, rtpthvp, thlpthvp
+      double precision, dimension(ngrdcol, nzm, sclr_dim_transport), intent(in,out) :: sclrpthvp
+      double precision, dimension(ngrdcol, nzt), intent(in,out) :: &
+        wp2rtp, wp2thlp, wpup2, wpvp2, ice_supersat_frac
+      double precision, dimension(ngrdcol, nzm), intent(in,out) :: &
+        uprcp, vprcp, rc_coef_zm, wp4, wp2up2, wp2vp2
+      double precision, dimension(ngrdcol, nzt), intent(in,out) :: um_pert, vm_pert
+      double precision, dimension(ngrdcol, nzm), intent(in,out) :: upwp_pert, vpwp_pert
+      double precision, dimension(ngrdcol, nzt, edsclr_dim_transport), intent(in,out) :: edsclrm
+      ! Output - zt
+      double precision, dimension(ngrdcol, nzt), intent(out) :: &
+        rcm_in_layer, cloud_cover, w_up_in_cloud, w_down_in_cloud, cloudy_updraft_frac, &
+        cloudy_downdraft_frac, kh_zt, lscale
+      ! Output - zm
+      double precision, dimension(ngrdcol, nzm), intent(out) :: &
+        wprcp, invrs_tau_zm, kh_zm, thlprcp
+    end subroutine
+
+    ! --- physics_wrappers ---
+
+    subroutine f2py_calculate_thvm(nzt, ngrdcol, &
+        thlm, rtm, rcm, exner, thv_ds_zt, thvm)
+      integer, intent(in) :: nzt, ngrdcol
+      double precision, dimension(ngrdcol, nzt), intent(in) :: &
+        thlm, rtm, rcm, exner, thv_ds_zt
+      double precision, dimension(ngrdcol, nzt), intent(out) :: thvm
+    end subroutine
+
+    subroutine f2py_hydrostatic(ngrdcol, nzt, nzm, thvm, p_sfc, &
+        p_in_Pa, p_in_Pa_zm, exner, exner_zm, rho, rho_zm)
+      integer, intent(in) :: ngrdcol, nzt, nzm
+      double precision, dimension(ngrdcol, nzt), intent(in) :: thvm
+      double precision, dimension(ngrdcol), intent(in) :: p_sfc
+      double precision, dimension(ngrdcol, nzt), intent(out) :: p_in_Pa, exner, rho
+      double precision, dimension(ngrdcol, nzm), intent(out) :: p_in_Pa_zm, exner_zm, rho_zm
+    end subroutine
+
+    subroutine f2py_zt2zm_2d(nzm, nzt, ngrdcol, azt, azm)
+      integer, intent(in) :: nzm, nzt, ngrdcol
+      double precision, dimension(ngrdcol, nzt), intent(in) :: azt
+      double precision, dimension(ngrdcol, nzm), intent(out) :: azm
+    end subroutine
+
+    subroutine f2py_zm2zt_2d(nzm, nzt, ngrdcol, azm, azt)
+      integer, intent(in) :: nzm, nzt, ngrdcol
+      double precision, dimension(ngrdcol, nzm), intent(in) :: azm
+      double precision, dimension(ngrdcol, nzt), intent(out) :: azt
+    end subroutine
+
+    subroutine f2py_zt2zm2zt_2d(nzm, nzt, ngrdcol, azt, zt_min, azt_smoothed)
+      integer, intent(in) :: nzm, nzt, ngrdcol
+      double precision, dimension(ngrdcol, nzt), intent(in) :: azt
+      double precision, intent(in) :: zt_min
+      double precision, dimension(ngrdcol, nzt), intent(out) :: azt_smoothed
+    end subroutine
+
+    subroutine f2py_ddzm_2d(nzm, nzt, ngrdcol, azm, d_azm_dzt)
+      integer, intent(in) :: nzm, nzt, ngrdcol
+      double precision, dimension(ngrdcol, nzm), intent(in) :: azm
+      double precision, dimension(ngrdcol, nzt), intent(out) :: d_azm_dzt
+    end subroutine
+
+    subroutine f2py_ddzt_2d(nzm, nzt, ngrdcol, azt, d_azt_dzm)
+      integer, intent(in) :: nzm, nzt, ngrdcol
+      double precision, dimension(ngrdcol, nzt), intent(in) :: azt
+      double precision, dimension(ngrdcol, nzm), intent(out) :: d_azt_dzm
+    end subroutine
+
+    subroutine f2py_sat_mixrat_liq_2d(nz, ngrdcol, p_in_Pa, t_in_k, &
+        saturation_formula, rsat)
+      integer, intent(in) :: nz, ngrdcol, saturation_formula
+      double precision, dimension(ngrdcol, nz), intent(in) :: p_in_Pa, t_in_k
+      double precision, dimension(ngrdcol, nz), intent(out) :: rsat
+    end subroutine
+
+    subroutine f2py_sat_mixrat_ice_2d(nz, ngrdcol, p_in_Pa, t_in_k, &
+        saturation_formula, rsat)
+      integer, intent(in) :: nz, ngrdcol, saturation_formula
+      double precision, dimension(ngrdcol, nz), intent(in) :: p_in_Pa, t_in_k
+      double precision, dimension(ngrdcol, nz), intent(out) :: rsat
+    end subroutine
+
+    subroutine f2py_rcm_sat_adj(thlm, rtm, p_in_Pa, exner, &
+        saturation_formula, rcm_out)
+      double precision, intent(in) :: thlm, rtm, p_in_Pa, exner
+      integer, intent(in) :: saturation_formula
+      double precision, intent(out) :: rcm_out
+    end subroutine
+
+    subroutine f2py_calculate_thlp2_rad(ngrdcol, nzm, nzt, &
+        rcm, thlprcp, radht, clubb_params, thlp2_forcing)
+      integer, intent(in) :: ngrdcol, nzm, nzt
+      double precision, dimension(ngrdcol, nzt), intent(in) :: rcm, radht
+      double precision, dimension(ngrdcol, nzm), intent(in) :: thlprcp
+      double precision, dimension(ngrdcol, *), intent(in) :: clubb_params
+      double precision, dimension(ngrdcol, nzm), intent(in,out) :: thlp2_forcing
+    end subroutine
+
+    subroutine f2py_cos_solar_zen(day, month, year, current_time, &
+        lat_vals, lon_vals, cos_zen)
+      integer, intent(in) :: day, month, year
+      double precision, intent(in) :: current_time, lat_vals, lon_vals
+      double precision, intent(out) :: cos_zen
+    end subroutine
+
+    subroutine f2py_set_simplified_radiation_params( &
+        f0_in, f1_in, kappa_in, eff_drop_radius_in, alvdr_in, gc_in, omega_in, &
+        l_rad_above_cloud_in, l_sw_radiation_in, l_fix_cos_solar_zen_in, &
+        nparam_in, fs_values_in, cos_solar_zen_values_in, cos_solar_zen_times_in )
+      double precision, intent(in) :: f0_in, f1_in, kappa_in
+      double precision, intent(in) :: eff_drop_radius_in, alvdr_in, gc_in, omega_in
+      logical, intent(in) :: l_rad_above_cloud_in, l_sw_radiation_in, l_fix_cos_solar_zen_in
+      integer, intent(in) :: nparam_in
+      double precision, dimension(20), intent(in) :: fs_values_in, cos_solar_zen_values_in, cos_solar_zen_times_in
+    end subroutine
+
+    subroutine f2py_sunray_sw(ngrdcol, nzt, fs0, amu0, rho, rcm, frad_sw)
+      integer, intent(in) :: ngrdcol, nzt
+      double precision, intent(in) :: fs0, amu0
+      double precision, dimension(ngrdcol, nzt), intent(in) :: rho, rcm
+      double precision, dimension(ngrdcol, nzt+1), intent(out) :: frad_sw
+    end subroutine
+
+    ! --- util_wrappers ---
+
+    subroutine f2py_zero_pdf_params(which)
+      integer, intent(in) :: which
+    end subroutine
+
+    subroutine f2py_zero_pdf_implicit_coefs_terms()
+    end subroutine
+
+    subroutine f2py_check_clubb_settings(ngrdcol, params, &
+        l_implemented, l_input_fields)
+      integer, intent(in) :: ngrdcol
+      double precision, dimension(ngrdcol, *), intent(in) :: params
+      logical, intent(in) :: l_implemented, l_input_fields
+    end subroutine
+
+    subroutine f2py_check_parameters(ngrdcol, clubb_params, lmin)
+      integer, intent(in) :: ngrdcol
+      double precision, dimension(ngrdcol, *), intent(in) :: clubb_params
+      double precision, intent(in) :: lmin
+    end subroutine
+
+    subroutine f2py_set_clubb_debug_level(level)
+      integer, intent(in) :: level
+    end subroutine
+
+    subroutine f2py_cleanup_grid()
+    end subroutine
+
+    subroutine f2py_setup_grid_heights(nzm, nzt, ngrdcol, l_implemented, l_ascending_grid, &
+        grid_type, deltaz, zm_init, momentum_heights, thermodynamic_heights)
+      integer, intent(in) :: nzm, nzt, ngrdcol, grid_type
+      logical, intent(in) :: l_implemented, l_ascending_grid
+      double precision, dimension(ngrdcol), intent(in) :: deltaz, zm_init
+      double precision, dimension(ngrdcol, nzm), intent(in) :: momentum_heights
+      double precision, dimension(ngrdcol, nzt), intent(in) :: thermodynamic_heights
+    end subroutine
+
+    subroutine f2py_read_grid_heights(nzmax, grid_type, zm_grid_fname, zt_grid_fname, &
+        file_unit, momentum_heights, thermodynamic_heights)
+      integer, intent(in) :: nzmax, grid_type, file_unit
+      character(len=*), intent(in) :: zm_grid_fname, zt_grid_fname
+      double precision, dimension(nzmax), intent(out) :: momentum_heights
+      double precision, dimension(nzmax-1), intent(out) :: thermodynamic_heights
+    end subroutine
+
+    subroutine f2py_cleanup_err_info()
+    end subroutine
+
+    subroutine f2py_set_err_info_values(ngrdcol, chunk_idx, mpi_rank, lat, lon)
+      integer, intent(in) :: ngrdcol, chunk_idx, mpi_rank
+      double precision, dimension(ngrdcol), intent(in) :: lat, lon
+    end subroutine
+
+    subroutine f2py_get_err_info_values(ngrdcol, chunk_idx, mpi_rank, lat, lon)
+      integer, intent(in) :: ngrdcol
+      integer, intent(out) :: chunk_idx, mpi_rank
+      double precision, dimension(ngrdcol), intent(out) :: lat, lon
+    end subroutine
+
+    subroutine f2py_reset_err_code()
+    end subroutine
+
+    subroutine f2py_initialize_error_headers()
+    end subroutine
+
+    subroutine f2py_file_read_1d(file_unit, path_and_filename, num_datapts, entries_per_line, variable)
+      integer, intent(in) :: file_unit, num_datapts, entries_per_line
+      character(len=*), intent(in) :: path_and_filename
+      double precision, dimension(num_datapts), intent(out) :: variable
+    end subroutine
+
+    subroutine f2py_julian2gregorian_date(julian_date, day, month, year)
+      integer, intent(in) :: julian_date
+      integer, intent(out) :: day, month, year
+    end subroutine
+
+    subroutine f2py_gregorian2julian_day(day, month, year, julian_day)
+      integer, intent(in) :: day, month, year
+      integer, intent(out) :: julian_day
+    end subroutine
+
+    subroutine f2py_leap_year(year, is_leap_year)
+      integer, intent(in) :: year
+      logical, intent(out) :: is_leap_year
+    end subroutine
+
+    subroutine f2py_lin_interpolate_two_points(height_int, height_high, &
+        height_low, var_high, var_low, var_interp)
+      double precision, intent(in) :: height_int, height_high, height_low
+      double precision, intent(in) :: var_high, var_low
+      double precision, intent(out) :: var_interp
+    end subroutine
+
+    subroutine f2py_mono_cubic_interp(z_in, km1, k00, kp1, kp2, &
+        zm1, z00, zp1, zp2, fm1, f00, fp1, fp2, f_out)
+      double precision, intent(in) :: z_in
+      integer, intent(in) :: km1, k00, kp1, kp2
+      double precision, intent(in) :: zm1, z00, zp1, zp2
+      double precision, intent(in) :: fm1, f00, fp1, fp2
+      double precision, intent(out) :: f_out
+    end subroutine
+
+    subroutine f2py_zlinterp_fnc(dim_out, dim_src, grid_out, grid_src, var_src, var_out)
+      integer, intent(in) :: dim_out, dim_src
+      double precision, dimension(dim_out), intent(in) :: grid_out
+      double precision, dimension(dim_src), intent(in) :: grid_src, var_src
+      double precision, dimension(dim_out), intent(out) :: var_out
+    end subroutine
+
+    subroutine f2py_calc_ri_zm(nzm, ngrdcol, bv_freq_sqd, shear, &
+        lim_bv, lim_shear, ri_zm)
+      integer, intent(in) :: nzm, ngrdcol
+      double precision, dimension(ngrdcol, nzm), intent(in) :: bv_freq_sqd, shear
+      double precision, intent(in) :: lim_bv, lim_shear
+      double precision, dimension(ngrdcol, nzm), intent(out) :: ri_zm
+    end subroutine
+
+    subroutine f2py_vertical_avg(total_idx, rho_ds, field, dz, avg_out)
+      integer, intent(in) :: total_idx
+      double precision, dimension(total_idx), intent(in) :: rho_ds, field, dz
+      double precision, intent(out) :: avg_out
+    end subroutine
+
+    subroutine f2py_vertical_integral(total_idx, rho_ds, field, dz, integral_out)
+      integer, intent(in) :: total_idx
+      double precision, dimension(total_idx), intent(in) :: rho_ds, field, dz
+      double precision, intent(out) :: integral_out
+    end subroutine
+
+    subroutine f2py_zm2zt2zm_2d(nzm, nzt, ngrdcol, azm, zm_min, azm_smoothed)
+      integer, intent(in) :: nzm, nzt, ngrdcol
+      double precision, dimension(ngrdcol, nzm), intent(in) :: azm
+      double precision, intent(in) :: zm_min
+      double precision, dimension(ngrdcol, nzm), intent(out) :: azm_smoothed
+    end subroutine
+
+    subroutine f2py_pvertinterp(nzt, ngrdcol, p_mid, p_out, input_var, interp_var)
+      integer, intent(in) :: nzt, ngrdcol
+      double precision, dimension(ngrdcol, nzt), intent(in) :: p_mid, input_var
+      double precision, intent(in) :: p_out
+      double precision, dimension(ngrdcol), intent(out) :: interp_var
+    end subroutine
+
+    subroutine f2py_compute_current_date(previous_day, previous_month, &
+        previous_year, seconds_since_previous_date, &
+        current_day, current_month, current_year, &
+        seconds_since_current_date)
+      integer, intent(in) :: previous_day, previous_month, previous_year
+      double precision, intent(in) :: seconds_since_previous_date
+      integer, intent(out) :: current_day, current_month, current_year
+      double precision, intent(out) :: seconds_since_current_date
+    end subroutine
+
+    subroutine f2py_set_lscale_max(ngrdcol, l_implemented, host_dx, host_dy, lscale_max)
+      integer, intent(in) :: ngrdcol
+      logical, intent(in) :: l_implemented
+      double precision, dimension(ngrdcol), intent(in) :: host_dx, host_dy
+      double precision, dimension(ngrdcol), intent(out) :: lscale_max
+    end subroutine
+
+    subroutine f2py_term_ma_zt_lhs(nzm, nzt, ngrdcol, wm_zt, weights_zt2zm, &
+        invrs_dzt, invrs_dzm, l_upwind_xm_ma, grid_dir, lhs_ma)
+      integer, intent(in) :: nzm, nzt, ngrdcol
+      double precision, dimension(ngrdcol, nzt), intent(in) :: wm_zt
+      double precision, dimension(ngrdcol, nzm, 2), intent(in) :: weights_zt2zm
+      double precision, dimension(ngrdcol, nzt), intent(in) :: invrs_dzt
+      double precision, dimension(ngrdcol, nzm), intent(in) :: invrs_dzm
+      logical, intent(in) :: l_upwind_xm_ma
+      double precision, intent(in) :: grid_dir
+      double precision, dimension(3, ngrdcol, nzt), intent(out) :: lhs_ma
+    end subroutine
+
+    subroutine f2py_term_ma_zm_lhs(nzm, nzt, ngrdcol, wm_zm, invrs_dzm, &
+        weights_zm2zt, lhs_ma)
+      integer, intent(in) :: nzm, nzt, ngrdcol
+      double precision, dimension(ngrdcol, nzm), intent(in) :: wm_zm
+      double precision, dimension(ngrdcol, nzm), intent(in) :: invrs_dzm
+      double precision, dimension(ngrdcol, nzt, 2), intent(in) :: weights_zm2zt
+      double precision, dimension(3, ngrdcol, nzm), intent(out) :: lhs_ma
+    end subroutine
+
+    subroutine f2py_diffusion_zt_lhs(nzm, nzt, ngrdcol, k_zm, k_zt, nu, &
+        invrs_rho_ds_zt, rho_ds_zm, lhs)
+      integer, intent(in) :: nzm, nzt, ngrdcol
+      double precision, dimension(ngrdcol, nzm), intent(in) :: k_zm, rho_ds_zm
+      double precision, dimension(ngrdcol, nzt), intent(in) :: k_zt, invrs_rho_ds_zt
+      double precision, dimension(ngrdcol), intent(in) :: nu
+      double precision, dimension(3, ngrdcol, nzt), intent(out) :: lhs
+    end subroutine
+
+    subroutine f2py_diffusion_zm_lhs(nzm, nzt, ngrdcol, k_zt, k_zm, nu, &
+        invrs_rho_ds_zm, rho_ds_zt, lhs)
+      integer, intent(in) :: nzm, nzt, ngrdcol
+      double precision, dimension(ngrdcol, nzt), intent(in) :: k_zt, rho_ds_zt
+      double precision, dimension(ngrdcol, nzm), intent(in) :: k_zm, invrs_rho_ds_zm
+      double precision, dimension(ngrdcol), intent(in) :: nu
+      double precision, dimension(3, ngrdcol, nzm), intent(out) :: lhs
+    end subroutine
+
+    subroutine f2py_smooth_heaviside_peskin(nz, ngrdcol, input, smth_range, &
+        smth_output)
+      integer, intent(in) :: nz, ngrdcol
+      double precision, dimension(ngrdcol, nz), intent(in) :: input
+      double precision, intent(in) :: smth_range
+      double precision, dimension(ngrdcol, nz), intent(out) :: smth_output
+    end subroutine
+
+    subroutine f2py_smooth_max_scalar_array(nz, ngrdcol, input_var1, input_var2, &
+        smth_coef, output_var)
+      integer, intent(in) :: nz, ngrdcol
+      double precision, intent(in) :: input_var1, smth_coef
+      double precision, dimension(ngrdcol, nz), intent(in) :: input_var2
+      double precision, dimension(ngrdcol, nz), intent(out) :: output_var
+    end subroutine
+
+    subroutine f2py_smooth_max_array_scalar(nz, ngrdcol, input_var1, input_var2, &
+        smth_coef, output_var)
+      integer, intent(in) :: nz, ngrdcol
+      double precision, dimension(ngrdcol, nz), intent(in) :: input_var1
+      double precision, intent(in) :: input_var2, smth_coef
+      double precision, dimension(ngrdcol, nz), intent(out) :: output_var
+    end subroutine
+
+    subroutine f2py_smooth_min_scalar_array(nz, ngrdcol, input_var1, input_var2, &
+        smth_coef, output_var)
+      integer, intent(in) :: nz, ngrdcol
+      double precision, intent(in) :: input_var1, smth_coef
+      double precision, dimension(ngrdcol, nz), intent(in) :: input_var2
+      double precision, dimension(ngrdcol, nz), intent(out) :: output_var
+    end subroutine
+
+    subroutine f2py_smooth_min_array_scalar(nz, ngrdcol, input_var1, input_var2, &
+        smth_coef, output_var)
+      integer, intent(in) :: nz, ngrdcol
+      double precision, dimension(ngrdcol, nz), intent(in) :: input_var1
+      double precision, intent(in) :: input_var2, smth_coef
+      double precision, dimension(ngrdcol, nz), intent(out) :: output_var
+    end subroutine
+
+    subroutine f2py_calc_xpwp_2d(nzm, nzt, ngrdcol, km_zm, xm, xpwp)
+      integer, intent(in) :: nzm, nzt, ngrdcol
+      double precision, dimension(ngrdcol, nzm), intent(in) :: km_zm
+      double precision, dimension(ngrdcol, nzt), intent(in) :: xm
+      double precision, dimension(ngrdcol, nzm), intent(out) :: xpwp
+    end subroutine
+
+    subroutine f2py_lscale_width_vert_avg(nzm, ngrdcol, smth_type, var_profile, &
+        lscale_zm, rho_ds_zm, var_below_ground_value, avg_out)
+      integer, intent(in) :: nzm, ngrdcol, smth_type
+      double precision, dimension(ngrdcol, nzm), intent(in) :: &
+        var_profile, lscale_zm, rho_ds_zm
+      double precision, intent(in) :: var_below_ground_value
+      double precision, dimension(ngrdcol, nzm), intent(out) :: avg_out
+    end subroutine
+
+    subroutine f2py_wp2_term_splat_lhs(nzm, nzt, ngrdcol, c_wp2_splat, &
+        brunt_vaisala_freq_sqd_splat, lhs_splat_wp2)
+      integer, intent(in) :: nzm, nzt, ngrdcol
+      double precision, dimension(ngrdcol), intent(in) :: c_wp2_splat
+      double precision, dimension(ngrdcol, nzm), intent(in) :: brunt_vaisala_freq_sqd_splat
+      double precision, dimension(ngrdcol, nzm), intent(out) :: lhs_splat_wp2
+    end subroutine
+
+    subroutine f2py_wp3_term_splat_lhs(nzm, nzt, ngrdcol, c_wp2_splat, &
+        brunt_vaisala_freq_sqd_splat, lhs_splat_wp3)
+      integer, intent(in) :: nzm, nzt, ngrdcol
+      double precision, dimension(ngrdcol), intent(in) :: c_wp2_splat
+      double precision, dimension(ngrdcol, nzm), intent(in) :: brunt_vaisala_freq_sqd_splat
+      double precision, dimension(ngrdcol, nzt), intent(out) :: lhs_splat_wp3
+    end subroutine
+
+    subroutine f2py_smooth_corr_quotient(ngrdcol, nz, numerator, denominator, &
+        denom_thresh, quotient)
+      integer, intent(in) :: ngrdcol, nz
+      double precision, dimension(ngrdcol, nz), intent(in) :: numerator, denominator
+      double precision, intent(in) :: denom_thresh
+      double precision, dimension(ngrdcol, nz), intent(out) :: quotient
+    end subroutine
+
+    subroutine f2py_calc_comp_corrs_binormal(nz, ngrdcol, xpyp, xm, ym, &
+        mu_x_1, mu_x_2, mu_y_1, mu_y_2, sigma_x_1_sqd, sigma_x_2_sqd, &
+        sigma_y_1_sqd, sigma_y_2_sqd, mixt_frac, corr_x_y_1, corr_x_y_2)
+      integer, intent(in) :: nz, ngrdcol
+      double precision, dimension(ngrdcol, nz), intent(in) :: &
+        xpyp, xm, ym, mu_x_1, mu_x_2, mu_y_1, mu_y_2, &
+        sigma_x_1_sqd, sigma_x_2_sqd, sigma_y_1_sqd, sigma_y_2_sqd, mixt_frac
+      double precision, dimension(ngrdcol, nz), intent(out) :: corr_x_y_1, corr_x_y_2
+    end subroutine
+
+    subroutine f2py_mean_l2n(mu_x, sigma2_on_mu2, mu_x_n)
+      double precision, intent(in) :: mu_x, sigma2_on_mu2
+      double precision, intent(out) :: mu_x_n
+    end subroutine
+
+    subroutine f2py_stdev_l2n(sigma2_on_mu2, sigma_x_n)
+      double precision, intent(in) :: sigma2_on_mu2
+      double precision, intent(out) :: sigma_x_n
+    end subroutine
+
+    subroutine f2py_corr_nn2nl(nz, ngrdcol, corr_x_y_n, sigma_y_n, y_sigma2_on_mu2, corr_x_y)
+      integer, intent(in) :: nz, ngrdcol
+      double precision, dimension(ngrdcol, nz), intent(in) :: corr_x_y_n, sigma_y_n, y_sigma2_on_mu2
+      double precision, dimension(ngrdcol, nz), intent(out) :: corr_x_y
+    end subroutine
+
+    subroutine f2py_corr_nn2ll(nz, ngrdcol, corr_x_y_n, sigma_x_n, sigma_y_n, &
+        x_sigma2_on_mu2, y_sigma2_on_mu2, corr_x_y)
+      integer, intent(in) :: nz, ngrdcol
+      double precision, dimension(ngrdcol, nz), intent(in) :: &
+        corr_x_y_n, sigma_x_n, sigma_y_n, x_sigma2_on_mu2, y_sigma2_on_mu2
+      double precision, dimension(ngrdcol, nz), intent(out) :: corr_x_y
+    end subroutine
+
+    subroutine f2py_compute_mean_binormal(mu_x_1, mu_x_2, mixt_frac, xm)
+      double precision, intent(in) :: mu_x_1, mu_x_2, mixt_frac
+      double precision, intent(out) :: xm
+    end subroutine
+
+    subroutine f2py_compute_variance_binormal(xm, mu_x_1, mu_x_2, stdev_x_1, stdev_x_2, &
+        mixt_frac, xp2)
+      double precision, intent(in) :: xm, mu_x_1, mu_x_2, stdev_x_1, stdev_x_2, mixt_frac
+      double precision, intent(out) :: xp2
+    end subroutine
+
+    subroutine f2py_calc_corr_chi_x(crt_i, cthl_i, sigma_rt_i, sigma_thl_i, sigma_chi_i, &
+        corr_rt_x_i, corr_thl_x_i, corr_chi_x_i)
+      double precision, intent(in) :: &
+        crt_i, cthl_i, sigma_rt_i, sigma_thl_i, sigma_chi_i, corr_rt_x_i, corr_thl_x_i
+      double precision, intent(out) :: corr_chi_x_i
+    end subroutine
+
+    subroutine f2py_calc_corr_eta_x(crt_i, cthl_i, sigma_rt_i, sigma_thl_i, sigma_eta_i, &
+        corr_rt_x_i, corr_thl_x_i, corr_eta_x_i)
+      double precision, intent(in) :: &
+        crt_i, cthl_i, sigma_rt_i, sigma_thl_i, sigma_eta_i, corr_rt_x_i, corr_thl_x_i
+      double precision, intent(out) :: corr_eta_x_i
+    end subroutine
+
+    subroutine f2py_nc_in_cloud_to_ncnm(mu_chi_1, mu_chi_2, sigma_chi_1, sigma_chi_2, mixt_frac, &
+        nc_in_cloud, cloud_frac_1, cloud_frac_2, const_ncnp2_on_ncnm2, const_corr_chi_ncn, ncnm)
+      double precision, intent(in) :: &
+        mu_chi_1, mu_chi_2, sigma_chi_1, sigma_chi_2, mixt_frac, nc_in_cloud, &
+        cloud_frac_1, cloud_frac_2, const_ncnp2_on_ncnm2, const_corr_chi_ncn
+      double precision, intent(out) :: ncnm
+    end subroutine
+
+    subroutine f2py_cholesky_factor(ndim, a_input, a_scaling, a_cholesky, l_scaled)
+      integer, intent(in) :: ndim
+      double precision, dimension(ndim, ndim), intent(in) :: a_input
+      double precision, dimension(ndim), intent(out) :: a_scaling
+      double precision, dimension(ndim, ndim), intent(out) :: a_cholesky
+      logical, intent(out) :: l_scaled
+    end subroutine
+
+    subroutine f2py_mirror_lower_triangular_matrix(nvars, matrix)
+      integer, intent(in) :: nvars
+      double precision, dimension(nvars, nvars), intent(in,out) :: matrix
+    end subroutine
+
+    subroutine f2py_diagnose_correlations(pdf_dim, iipdf_w, corr_array_pre, l_calc_w_corr, corr_array)
+      integer, intent(in) :: pdf_dim, iipdf_w
+      double precision, dimension(pdf_dim, pdf_dim), intent(in) :: corr_array_pre
+      logical, intent(in) :: l_calc_w_corr
+      double precision, dimension(pdf_dim, pdf_dim), intent(out) :: corr_array
+    end subroutine
+
+    subroutine f2py_calc_cholesky_corr_mtx_approx(n_variables, iipdf_w, corr_matrix, &
+        corr_cholesky_mtx, corr_mtx_approx)
+      integer, intent(in) :: n_variables, iipdf_w
+      double precision, dimension(n_variables, n_variables), intent(in) :: corr_matrix
+      double precision, dimension(n_variables, n_variables), intent(out) :: corr_cholesky_mtx, corr_mtx_approx
+    end subroutine
+
+    subroutine f2py_skx_func(nz, ngrdcol, xp2, xp3, x_tol, clubb_params, skx)
+      integer, intent(in) :: nz, ngrdcol
+      double precision, dimension(ngrdcol, nz), intent(in) :: xp2, xp3
+      double precision, intent(in) :: x_tol
+      double precision, dimension(ngrdcol, *), intent(in) :: clubb_params
+      double precision, dimension(ngrdcol, nz), intent(out) :: skx
+    end subroutine
+
+    subroutine f2py_lg_2005_ansatz(nz, ngrdcol, skw, wpxp, wp2, xp2, beta, &
+        sigma_sqd_w, x_tol, skx)
+      integer, intent(in) :: nz, ngrdcol
+      double precision, dimension(ngrdcol, nz), intent(in) :: &
+        skw, wpxp, wp2, xp2, sigma_sqd_w
+      double precision, dimension(ngrdcol), intent(in) :: beta
+      double precision, intent(in) :: x_tol
+      double precision, dimension(ngrdcol, nz), intent(out) :: skx
+    end subroutine
+
+    subroutine f2py_xp3_lg_2005_ansatz(nzt, ngrdcol, skw_zt, wpxp_zt, wp2_zt, &
+        xp2_zt, sigma_sqd_w_zt, clubb_params, x_tol, xp3)
+      integer, intent(in) :: nzt, ngrdcol
+      double precision, dimension(ngrdcol, nzt), intent(in) :: &
+        skw_zt, wpxp_zt, wp2_zt, xp2_zt, sigma_sqd_w_zt
+      double precision, dimension(ngrdcol, *), intent(in) :: clubb_params
+      double precision, intent(in) :: x_tol
+      double precision, dimension(ngrdcol, nzt), intent(out) :: xp3
+    end subroutine
+
+    subroutine f2py_sponge_damp_xm(nzm, nzt, ngrdcol, dt, zt, zm, xm_ref, xm, &
+        tau_sponge_damp, sponge_layer_depth, xm_p)
+      integer, intent(in) :: nzm, nzt, ngrdcol
+      double precision, intent(in) :: dt
+      double precision, dimension(ngrdcol, nzt), intent(in) :: zt, xm_ref, xm, tau_sponge_damp
+      double precision, dimension(ngrdcol, nzm), intent(in) :: zm
+      double precision, dimension(ngrdcol), intent(in) :: sponge_layer_depth
+      double precision, dimension(ngrdcol, nzt), intent(out) :: xm_p
+    end subroutine
+
+    subroutine f2py_sponge_damp_xp2(nzm, ngrdcol, dt, zm, xp2, x_tol_sqd, &
+        tau_sponge_damp, sponge_layer_depth, xp2_damped)
+      integer, intent(in) :: nzm, ngrdcol
+      double precision, intent(in) :: dt
+      double precision, dimension(ngrdcol, nzm), intent(in) :: zm, xp2, tau_sponge_damp
+      double precision, dimension(ngrdcol), intent(in) :: x_tol_sqd, sponge_layer_depth
+      double precision, dimension(ngrdcol, nzm), intent(out) :: xp2_damped
+    end subroutine
+
+    subroutine f2py_sponge_damp_xp3(nzm, nzt, ngrdcol, dt, z, zm, xp3, &
+        tau_sponge_damp, sponge_layer_depth, xp3_damped)
+      integer, intent(in) :: nzm, nzt, ngrdcol
+      double precision, intent(in) :: dt
+      double precision, dimension(ngrdcol, nzt), intent(in) :: z, xp3, tau_sponge_damp
+      double precision, dimension(ngrdcol, nzm), intent(in) :: zm
+      double precision, dimension(ngrdcol), intent(in) :: sponge_layer_depth
+      double precision, dimension(ngrdcol, nzt), intent(out) :: xp3_damped
+    end subroutine
+
+    subroutine f2py_calculate_spurious_source(integral_after, integral_before, &
+        flux_top, flux_sfc, integral_forcing, dt, spurious_source)
+      double precision, intent(in) :: &
+        integral_after, integral_before, flux_top, flux_sfc, integral_forcing, dt
+      double precision, intent(out) :: spurious_source
+    end subroutine
+
+    subroutine f2py_remap_vals_to_target_same_grid(nzm, nzt, ngrdcol, source_values_idx, &
+        source_values, target_values_idx, total_idx_rho_lin_spline, &
+        rho_lin_spline_vals, rho_lin_spline_levels, iv, p_sfc, grid_remap_method, &
+        l_zt_variable, target_values)
+      integer, intent(in) :: nzm, nzt, ngrdcol, source_values_idx, target_values_idx, &
+        total_idx_rho_lin_spline
+      double precision, dimension(ngrdcol, source_values_idx), intent(in) :: source_values
+      double precision, dimension(ngrdcol, total_idx_rho_lin_spline), intent(in) :: &
+        rho_lin_spline_vals, rho_lin_spline_levels
+      integer, intent(in) :: iv, grid_remap_method
+      logical, intent(in) :: l_zt_variable
+      double precision, dimension(ngrdcol), intent(in) :: p_sfc
+      double precision, dimension(ngrdcol, target_values_idx), intent(out) :: target_values
+    end subroutine
+
+    subroutine f2py_sfc_varnce_check(sclr_dim, sclr_dim_transport, wp2_sfc, up2_sfc, vp2_sfc, thlp2_sfc, &
+        rtp2_sfc, rtpthlp_sfc, sclrp2_sfc, sclrprtp_sfc, sclrpthlp_sfc)
+      integer, intent(in) :: sclr_dim
+      integer, intent(in), optional :: sclr_dim_transport
+      double precision, intent(in) :: &
+        wp2_sfc, up2_sfc, vp2_sfc, thlp2_sfc, rtp2_sfc, rtpthlp_sfc
+      double precision, dimension(sclr_dim_transport), intent(in) :: &
+        sclrp2_sfc, sclrprtp_sfc, sclrpthlp_sfc
+    end subroutine
+
+    subroutine f2py_parameterization_check(nzm, nzt, sclr_dim, edsclr_dim, sclr_dim_transport, edsclr_dim_transport, &
+        thlm_forcing, rtm_forcing, um_forcing, vm_forcing, wm_zm, wm_zt, p_in_pa, &
+        rho_zm, rho, exner, rho_ds_zm, rho_ds_zt, invrs_rho_ds_zm, invrs_rho_ds_zt, &
+        thv_ds_zm, thv_ds_zt, wpthlp_sfc, wprtp_sfc, upwp_sfc, vpwp_sfc, p_sfc, &
+        um, upwp, vm, vpwp, up2, vp2, rtm, wprtp, thlm, wpthlp, wp2, wp3, &
+        rtp2, thlp2, rtpthlp, prefix, wpsclrp_sfc, wpedsclrp_sfc, sclrm, wpsclrp, &
+        sclrp2, sclrprtp, sclrpthlp, sclrm_forcing, edsclrm, edsclrm_forcing)
+      integer, intent(in) :: nzm, nzt, sclr_dim, edsclr_dim
+      integer, intent(in), optional :: sclr_dim_transport, edsclr_dim_transport
+      double precision, dimension(nzt), intent(in) :: &
+        thlm_forcing, rtm_forcing, um_forcing, vm_forcing, wm_zt, p_in_pa, rho, exner, &
+        rho_ds_zt, invrs_rho_ds_zt, thv_ds_zt, um, vm, rtm, thlm, wp3
+      double precision, dimension(nzm), intent(in) :: &
+        wm_zm, rho_zm, rho_ds_zm, invrs_rho_ds_zm, thv_ds_zm, upwp, vpwp, up2, vp2, &
+        wprtp, wpthlp, wp2, rtp2, thlp2, rtpthlp
+      double precision, intent(in) :: wpthlp_sfc, wprtp_sfc, upwp_sfc, vpwp_sfc, p_sfc
+      character(len=*), intent(in) :: prefix
+      double precision, dimension(sclr_dim_transport), intent(in) :: wpsclrp_sfc
+      double precision, dimension(edsclr_dim_transport), intent(in) :: wpedsclrp_sfc
+      double precision, dimension(nzt, sclr_dim_transport), intent(in) :: sclrm, sclrm_forcing
+      double precision, dimension(nzm, sclr_dim_transport), intent(in) :: &
+        wpsclrp, sclrp2, sclrprtp, sclrpthlp
+      double precision, dimension(nzt, edsclr_dim_transport), intent(in) :: edsclrm, edsclrm_forcing
+    end subroutine
+
+    subroutine f2py_calc_wp4_pdf(nz, ngrdcol, wm, w_1, w_2, varnce_w_1, varnce_w_2, mixt_frac, wp4)
+      integer, intent(in) :: nz, ngrdcol
+      double precision, dimension(ngrdcol, nz), intent(in) :: &
+        wm, w_1, w_2, varnce_w_1, varnce_w_2, mixt_frac
+      double precision, dimension(ngrdcol, nz), intent(out) :: wp4
+    end subroutine
+
+    subroutine f2py_calc_wp2xp_pdf(nz, ngrdcol, wm, xm, w_1, w_2, x_1, x_2, &
+        varnce_w_1, varnce_w_2, varnce_x_1, varnce_x_2, corr_w_x_1, corr_w_x_2, mixt_frac, wp2xp)
+      integer, intent(in) :: nz, ngrdcol
+      double precision, dimension(ngrdcol, nz), intent(in) :: &
+        wm, xm, w_1, w_2, x_1, x_2, varnce_w_1, varnce_w_2, varnce_x_1, varnce_x_2, &
+        corr_w_x_1, corr_w_x_2, mixt_frac
+      double precision, dimension(ngrdcol, nz), intent(out) :: wp2xp
+    end subroutine
+
+    subroutine f2py_calc_wpxp2_pdf(nz, ngrdcol, wm, xm, w_1, w_2, x_1, x_2, &
+        varnce_w_1, varnce_w_2, varnce_x_1, varnce_x_2, corr_w_x_1, corr_w_x_2, mixt_frac, wpxp2)
+      integer, intent(in) :: nz, ngrdcol
+      double precision, dimension(ngrdcol, nz), intent(in) :: &
+        wm, xm, w_1, w_2, x_1, x_2, varnce_w_1, varnce_w_2, varnce_x_1, varnce_x_2, &
+        corr_w_x_1, corr_w_x_2, mixt_frac
+      double precision, dimension(ngrdcol, nz), intent(out) :: wpxp2
+    end subroutine
+
+    subroutine f2py_calc_wpxpyp_pdf(nz, ngrdcol, wm, xm, ym, w_1, w_2, x_1, x_2, y_1, y_2, &
+        varnce_w_1, varnce_w_2, varnce_x_1, varnce_x_2, varnce_y_1, varnce_y_2, &
+        corr_w_x_1, corr_w_x_2, corr_w_y_1, corr_w_y_2, corr_x_y_1, corr_x_y_2, mixt_frac, wpxpyp)
+      integer, intent(in) :: nz, ngrdcol
+      double precision, dimension(ngrdcol, nz), intent(in) :: &
+        wm, xm, ym, w_1, w_2, x_1, x_2, y_1, y_2, varnce_w_1, varnce_w_2, &
+        varnce_x_1, varnce_x_2, varnce_y_1, varnce_y_2, corr_w_x_1, corr_w_x_2, &
+        corr_w_y_1, corr_w_y_2, corr_x_y_1, corr_x_y_2, mixt_frac
+      double precision, dimension(ngrdcol, nz), intent(out) :: wpxpyp
+    end subroutine
+
+    subroutine f2py_calc_w_up_in_cloud(nz, ngrdcol, mixt_frac, cloud_frac_1, cloud_frac_2, &
+        w_1, w_2, varnce_w_1, varnce_w_2, w_up_in_cloud, w_down_in_cloud, &
+        cloudy_updraft_frac, cloudy_downdraft_frac)
+      integer, intent(in) :: nz, ngrdcol
+      double precision, dimension(ngrdcol, nz), intent(in) :: &
+        mixt_frac, cloud_frac_1, cloud_frac_2, w_1, w_2, varnce_w_1, varnce_w_2
+      double precision, dimension(ngrdcol, nz), intent(out) :: &
+        w_up_in_cloud, w_down_in_cloud, cloudy_updraft_frac, cloudy_downdraft_frac
+    end subroutine
+
+    subroutine f2py_pdf_closure_check(nz, sclr_dim, sclr_dim_transport, &
+        wp4, wprtp2, wp2rtp, wpthlp2, wp2thlp, cloud_frac, rcm, wpthvp, wp2thvp, wp2up, &
+        rtpthvp, thlpthvp, wprcp, wp2rcp, rtprcp, thlprcp, rcp2, wprtpthlp, crt_1, crt_2, &
+        cthl_1, cthl_2, sclrpthvp, sclrprcp, wpsclrp2, wpsclrprtp, wpsclrpthlp, wp2sclrp)
+      integer, intent(in) :: nz, sclr_dim
+      integer, intent(in), optional :: sclr_dim_transport
+      double precision, dimension(nz), intent(in) :: &
+        wp4, wprtp2, wp2rtp, wpthlp2, wp2thlp, cloud_frac, rcm, wpthvp, wp2thvp, wp2up, &
+        rtpthvp, thlpthvp, wprcp, wp2rcp, rtprcp, thlprcp, rcp2, wprtpthlp, crt_1, crt_2, cthl_1, cthl_2
+      double precision, dimension(nz, sclr_dim_transport), intent(in) :: &
+        sclrpthvp, sclrprcp, wpsclrp2, wpsclrprtp, wpsclrpthlp, wp2sclrp
+    end subroutine
+
+    subroutine f2py_length_check(nzt, lscale, lscale_up, lscale_down)
+      integer, intent(in) :: nzt
+      double precision, dimension(nzt), intent(in) :: lscale, lscale_up, lscale_down
+    end subroutine
+
+    subroutine f2py_assert_corr_symmetric(pdf_dim, corr_array_n)
+      integer, intent(in) :: pdf_dim
+      double precision, dimension(pdf_dim, pdf_dim), intent(in) :: corr_array_n
+    end subroutine
+
+    subroutine f2py_xpyp_term_ta_pdf_lhs(nzm, nzt, ngrdcol, coef_wpxpyp_implicit, rho_ds_zt, &
+        rho_ds_zm, invrs_rho_ds_zm, l_upwind_xpyp_turbulent_adv, sgn_turbulent_vel, &
+        coef_wpxpyp_implicit_zm, lhs_ta)
+      integer, intent(in) :: nzm, nzt, ngrdcol
+      double precision, dimension(ngrdcol, nzt), intent(in) :: coef_wpxpyp_implicit, rho_ds_zt
+      double precision, dimension(ngrdcol, nzm), intent(in) :: &
+        rho_ds_zm, invrs_rho_ds_zm, sgn_turbulent_vel, coef_wpxpyp_implicit_zm
+      logical, intent(in) :: l_upwind_xpyp_turbulent_adv
+      double precision, dimension(3, ngrdcol, nzm), intent(out) :: lhs_ta
+    end subroutine
+
+    subroutine f2py_xpyp_term_ta_pdf_lhs_godunov(nzm, nzt, ngrdcol, coef_wpxpyp_implicit, &
+        invrs_rho_ds_zm, rho_ds_zm, lhs_ta)
+      integer, intent(in) :: nzm, nzt, ngrdcol
+      double precision, dimension(ngrdcol, nzt), intent(in) :: coef_wpxpyp_implicit
+      double precision, dimension(ngrdcol, nzm), intent(in) :: invrs_rho_ds_zm, rho_ds_zm
+      double precision, dimension(3, ngrdcol, nzm), intent(out) :: lhs_ta
+    end subroutine
+
+    subroutine f2py_xpyp_term_ta_pdf_rhs(nzm, nzt, ngrdcol, term_wpxpyp_explicit, rho_ds_zt, &
+        rho_ds_zm, invrs_rho_ds_zm, l_upwind_xpyp_turbulent_adv, sgn_turbulent_vel, &
+        term_wpxpyp_explicit_zm, rhs_ta)
+      integer, intent(in) :: nzm, nzt, ngrdcol
+      double precision, dimension(ngrdcol, nzt), intent(in) :: term_wpxpyp_explicit, rho_ds_zt
+      double precision, dimension(ngrdcol, nzm), intent(in) :: &
+        rho_ds_zm, invrs_rho_ds_zm, sgn_turbulent_vel, term_wpxpyp_explicit_zm
+      logical, intent(in) :: l_upwind_xpyp_turbulent_adv
+      double precision, dimension(ngrdcol, nzm), intent(out) :: rhs_ta
+    end subroutine
+
+    subroutine f2py_xpyp_term_ta_pdf_rhs_godunov(nzm, nzt, ngrdcol, term_wpxpyp_explicit_zm, &
+        invrs_rho_ds_zm, sgn_turbulent_vel, rho_ds_zm, rhs_ta)
+      integer, intent(in) :: nzm, nzt, ngrdcol
+      double precision, dimension(ngrdcol, nzm), intent(in) :: term_wpxpyp_explicit_zm, invrs_rho_ds_zm, rho_ds_zm
+      double precision, dimension(ngrdcol, nzt), intent(in) :: sgn_turbulent_vel
+      double precision, dimension(ngrdcol, nzm), intent(out) :: rhs_ta
+    end subroutine
+
+    subroutine f2py_calc_sfc_varnce(nzm, nzt, ngrdcol, sclr_dim, sclr_dim_transport, &
+        dt, sfc_elevation, upwp_sfc, vpwp_sfc, wpthlp, wprtp_sfc, um, vm, lscale_up, &
+        wpsclrp_sfc, lhs_splat_wp2, tau_zm, l_vary_convect_depth, t0, up2_sfc_coef, a_const, &
+        wp2, up2, vp2, thlp2, rtp2, rtpthlp, sclrp2, sclrprtp, sclrpthlp)
+      integer, intent(in) :: nzm, nzt, ngrdcol, sclr_dim
+      integer, intent(in), optional :: sclr_dim_transport
+      logical, intent(in) :: l_vary_convect_depth
+      double precision, intent(in) :: dt, t0
+      double precision, dimension(ngrdcol), intent(in) :: &
+        sfc_elevation, upwp_sfc, vpwp_sfc, wprtp_sfc, up2_sfc_coef, a_const
+      double precision, dimension(ngrdcol, nzm), intent(in) :: &
+        wpthlp, lhs_splat_wp2, tau_zm
+      double precision, dimension(ngrdcol, nzt), intent(in) :: um, vm, lscale_up
+      double precision, dimension(ngrdcol, sclr_dim_transport), intent(in) :: wpsclrp_sfc
+      double precision, dimension(ngrdcol, nzm), intent(in,out) :: &
+        wp2, up2, vp2, thlp2, rtp2, rtpthlp
+      double precision, dimension(ngrdcol, nzm, sclr_dim_transport), intent(in,out) :: &
+        sclrp2, sclrprtp, sclrpthlp
+    end subroutine
+
+    subroutine f2py_stats_accumulate(nzm, nzt, ngrdcol, sclr_dim, edsclr_dim, sclr_dim_transport, edsclr_dim_transport, &
+        invrs_dzm, zt, dzm, dzt, dt, &
+        um, vm, upwp, vpwp, up2, vp2, &
+        thlm, rtm, wprtp, wpthlp, &
+        wp2, wp3, rtp2, rtp3, thlp2, thlp3, &
+        rtpthlp, &
+        wpthvp, wp2thvp, wp2up, rtpthvp, thlpthvp, &
+        p_in_pa, exner, rho, rho_zm, &
+        rho_ds_zm, rho_ds_zt, thv_ds_zm, thv_ds_zt, &
+        wm_zt, wm_zm, rcm, wprcp, rc_coef, &
+        rc_coef_zm, &
+        rcm_zm, rtm_zm, thlm_zm, cloud_frac, &
+        ice_supersat_frac, &
+        cloud_frac_zm, ice_supersat_frac_zm, rcm_in_layer, &
+        cloud_cover, rcm_supersat_adj, sigma_sqd_w, &
+        thvm, ug, vg, lscale, wpthlp2, wp2thlp, &
+        wprtp2, wp2rtp, &
+        lscale_up, lscale_down, tau_zt, kh_zt, wp2rcp, &
+        wprtpthlp, sigma_sqd_w_zt, rsat, wp2_zt, &
+        thlp2_zt, &
+        wpthlp_zt, wprtp_zt, rtp2_zt, rtpthlp_zt, &
+        up2_zt, &
+        vp2_zt, upwp_zt, vpwp_zt, wpup2, wpvp2, &
+        wp2up2, wp2vp2, wp4, &
+        tau_zm, kh_zm, thlprcp, &
+        rtprcp, rcp2, em, a3_coef, a3_coef_zt, &
+        wp3_zm, wp3_on_wp2, wp3_on_wp2_zt, skw_velocity, &
+        w_up_in_cloud, w_down_in_cloud, &
+        cloudy_updraft_frac, cloudy_downdraft_frac, &
+        sclrm, sclrp2, &
+        sclrprtp, sclrpthlp, sclrm_forcing, sclrpthvp, &
+        wpsclrp, sclrprcp, wp2sclrp, wpsclrp2, &
+        wpsclrprtp, &
+        wpsclrpthlp, wpedsclrp, edsclrm, &
+        edsclrm_forcing, &
+        saturation_formula, &
+        l_call_pdf_closure_twice)
+      integer, intent(in) :: nzm, nzt, ngrdcol, sclr_dim, edsclr_dim
+      integer, intent(in), optional :: sclr_dim_transport, edsclr_dim_transport
+      double precision, dimension(ngrdcol, nzm), intent(in) :: invrs_dzm, dzm
+      double precision, dimension(ngrdcol, nzt), intent(in) :: zt, dzt
+      double precision, intent(in) :: dt
+      double precision, dimension(ngrdcol, nzt), intent(in) :: &
+        um, vm, thlm, rtm, wp3, rtp3, thlp3, wp2thvp, wp2up
+      double precision, dimension(ngrdcol, nzm), intent(in) :: &
+        upwp, vpwp, up2, vp2, wprtp, wpthlp, wp2, rtp2, thlp2, rtpthlp, &
+        wpthvp, rtpthvp, thlpthvp
+      double precision, dimension(ngrdcol, nzt), intent(in) :: &
+        p_in_pa, exner, rho, rho_ds_zt, thv_ds_zt, wm_zt
+      double precision, dimension(ngrdcol, nzm), intent(in) :: &
+        rho_zm, rho_ds_zm, thv_ds_zm, wm_zm
+      double precision, dimension(ngrdcol, nzt), intent(in) :: &
+        rcm, rc_coef, cloud_frac, ice_supersat_frac, rcm_in_layer, cloud_cover, rcm_supersat_adj
+      double precision, dimension(ngrdcol, nzm), intent(in) :: &
+        rcm_zm, rtm_zm, thlm_zm, wprcp, rc_coef_zm, cloud_frac_zm, ice_supersat_frac_zm
+      double precision, dimension(ngrdcol, nzm), intent(in) :: sigma_sqd_w
+      double precision, dimension(ngrdcol, nzt), intent(in) :: &
+        thvm, ug, vg, lscale, wpthlp2, wp2thlp, wprtp2, wp2rtp, lscale_up, lscale_down, tau_zt, &
+        kh_zt, wp2rcp, wprtpthlp, sigma_sqd_w_zt, rsat
+      double precision, dimension(ngrdcol, nzt), intent(in) :: &
+        wp2_zt, thlp2_zt, wpthlp_zt, wprtp_zt, rtp2_zt, rtpthlp_zt, up2_zt, vp2_zt, upwp_zt, vpwp_zt, &
+        wpup2, wpvp2, a3_coef_zt, wp3_on_wp2_zt, w_up_in_cloud, w_down_in_cloud, cloudy_updraft_frac, &
+        cloudy_downdraft_frac
+      double precision, dimension(ngrdcol, nzm), intent(in) :: &
+        wp2up2, wp2vp2, wp4, tau_zm, kh_zm, thlprcp, rtprcp, rcp2, em, a3_coef, wp3_zm, wp3_on_wp2, &
+        skw_velocity
+      double precision, dimension(ngrdcol, nzt, sclr_dim_transport), intent(in) :: &
+        sclrm, sclrm_forcing, wp2sclrp, wpsclrp2, wpsclrprtp, wpsclrpthlp
+      double precision, dimension(ngrdcol, nzm, sclr_dim_transport), intent(in) :: &
+        sclrprcp, sclrp2, sclrprtp, sclrpthlp, sclrpthvp, wpsclrp
+      double precision, dimension(ngrdcol, nzt, edsclr_dim_transport), intent(in) :: &
+        edsclrm, edsclrm_forcing
+      double precision, dimension(ngrdcol, nzm, edsclr_dim_transport), intent(in) :: wpedsclrp
+      integer, intent(in) :: saturation_formula
+      logical, intent(in) :: l_call_pdf_closure_twice
+    end subroutine
+
+    subroutine f2py_pdf_closure_driver(nzm, nzt, ngrdcol, dt, hydromet_dim, sclr_dim, hydromet_dim_transport, sclr_dim_transport, &
+        sclr_tol, wprtp, thlm, wpthlp, rtp2, rtp3, thlp2, thlp3, rtpthlp, wp2, wp3, &
+        wm_zm, wm_zt, um, up2, upwp, up3, vm, vp2, vpwp, vp3, p_in_pa, exner, thv_ds_zm, &
+        thv_ds_zt, rtm_ref, wphydrometp, wp2hmp, rtphmp_zt, thlphmp_zt, &
+        sclrm, wpsclrp, sclrp2, sclrprtp, sclrpthlp, sclrp3, p_sfc, &
+        l_samp_stats_in_pdf_call, mixt_frac_max_mag, ts_nudge, rtm_min, rtm_nudge_max_altitude, &
+        clubb_params, iipdf_type, saturation_formula, l_predict_upwp_vpwp, l_rtm_nudge, &
+        l_trapezoidal_rule_zt, l_trapezoidal_rule_zm, l_call_pdf_closure_twice, &
+        l_use_cloud_cover, l_rcm_supersat_adj, l_mix_rat_hm, rtm, &
+        rcm, cloud_frac, ice_supersat_frac, wprcp, sigma_sqd_w, wpthvp, wp2thvp, wp2up, rtpthvp, thlpthvp, &
+        rc_coef, rcm_in_layer, cloud_cover, rcp2_zt, thlprcp, rc_coef_zm, sclrpthvp, &
+        wpup2, wpvp2, wp2up2, wp2vp2, wp4, wp2rtp, wprtp2, wp2thlp, wpthlp2, wprtpthlp, wp2rcp, &
+        rtprcp, rcp2, uprcp, vprcp, w_up_in_cloud, w_down_in_cloud, &
+        cloudy_updraft_frac, cloudy_downdraft_frac, skw_velocity, cloud_frac_zm, &
+        ice_supersat_frac_zm, rtm_zm, thlm_zm, rcm_zm, rcm_supersat_adj, &
+        wp2sclrp, wpsclrp2, sclrprcp, wpsclrprtp, wpsclrpthlp)
+      integer, intent(in) :: nzm, nzt, ngrdcol, sclr_dim, hydromet_dim
+      integer, intent(in), optional :: hydromet_dim_transport, sclr_dim_transport
+      double precision, intent(in) :: dt
+      integer, intent(in) :: saturation_formula, iipdf_type
+      logical, intent(in) :: l_predict_upwp_vpwp, l_call_pdf_closure_twice
+      double precision, dimension(sclr_dim_transport), intent(in) :: sclr_tol
+      double precision, intent(in) :: mixt_frac_max_mag, ts_nudge, rtm_min, rtm_nudge_max_altitude
+      double precision, dimension(ngrdcol, *), intent(in) :: clubb_params
+      logical, intent(in) :: l_samp_stats_in_pdf_call, l_rtm_nudge
+      logical, intent(in) :: l_trapezoidal_rule_zt, l_trapezoidal_rule_zm
+      logical, intent(in) :: l_use_cloud_cover, l_rcm_supersat_adj
+      logical, dimension(hydromet_dim_transport), intent(in) :: l_mix_rat_hm
+      double precision, dimension(ngrdcol, nzm), intent(in) :: &
+        wprtp, wpthlp, rtp2, thlp2, rtpthlp, wp2, wm_zm, thv_ds_zm, &
+        up2, upwp, vp2, vpwp
+      double precision, dimension(ngrdcol, nzt), intent(in) :: &
+        thlm, rtp3, thlp3, wp3, wm_zt, p_in_pa, exner, thv_ds_zt, rtm_ref, &
+        um, up3, vm, vp3
+      double precision, dimension(ngrdcol, nzm, hydromet_dim_transport), intent(in) :: wphydrometp
+      double precision, dimension(ngrdcol, nzt, hydromet_dim_transport), intent(in) :: &
+        wp2hmp, rtphmp_zt, thlphmp_zt
+      double precision, dimension(ngrdcol, nzt, sclr_dim_transport), intent(in) :: sclrm, sclrp3
+      double precision, dimension(ngrdcol, nzm, sclr_dim_transport), intent(in) :: &
+        wpsclrp, sclrp2, sclrprtp, sclrpthlp
+      double precision, dimension(ngrdcol), intent(in) :: p_sfc
+      double precision, dimension(ngrdcol, nzt), intent(in,out) :: rtm
+      double precision, dimension(ngrdcol, nzt), intent(out) :: &
+        rcm, cloud_frac, ice_supersat_frac, wp2thvp, wp2up, rc_coef, rcm_in_layer, cloud_cover, &
+        rcp2_zt, wpup2, wpvp2, wp2rtp, wprtp2, wp2thlp, wpthlp2, wprtpthlp, wp2rcp, &
+        w_up_in_cloud, w_down_in_cloud, cloudy_updraft_frac, cloudy_downdraft_frac, rcm_supersat_adj
+      double precision, dimension(ngrdcol, nzm), intent(out) :: &
+        wprcp, sigma_sqd_w, wpthvp, rtpthvp, thlpthvp, thlprcp, rc_coef_zm, &
+        wp2up2, wp2vp2, wp4, rtprcp, rcp2, uprcp, vprcp, &
+        skw_velocity, cloud_frac_zm, ice_supersat_frac_zm, rtm_zm, thlm_zm, rcm_zm
+      double precision, dimension(ngrdcol, nzm, sclr_dim_transport), intent(out) :: sclrpthvp, sclrprcp
+      double precision, dimension(ngrdcol, nzt, sclr_dim_transport), intent(out) :: &
+        wp2sclrp, wpsclrp2, wpsclrprtp, wpsclrpthlp
+    end subroutine
+
+    subroutine f2py_calc_turb_adv_range(nzm, nzt, ngrdcol, dt, &
+        w_1_zm, w_2_zm, varnce_w_1_zm, varnce_w_2_zm, mixt_frac_zm, &
+        low_lev_effect, high_lev_effect)
+      integer, intent(in) :: nzm, nzt, ngrdcol
+      double precision, intent(in) :: dt
+      double precision, dimension(ngrdcol, nzm), intent(in) :: &
+        w_1_zm, w_2_zm, varnce_w_1_zm, varnce_w_2_zm, mixt_frac_zm
+      integer, dimension(ngrdcol, nzt), intent(out) :: low_lev_effect, high_lev_effect
+    end subroutine
+
+    subroutine f2py_monotonic_turbulent_flux_limit(nzm, nzt, ngrdcol, solve_type, dt, &
+        xm_old, xp2, wm_zt, xm_forcing, rho_ds_zm, rho_ds_zt, invrs_rho_ds_zm, invrs_rho_ds_zt, &
+        xp2_threshold, xm_tol, l_implemented, low_lev_effect, high_lev_effect, &
+        tridiag_solve_method, l_upwind_xm_ma, l_mono_flux_lim_spikefix, xm, wpxp)
+      integer, intent(in) :: nzm, nzt, ngrdcol, solve_type, tridiag_solve_method
+      double precision, intent(in) :: dt, xp2_threshold, xm_tol
+      logical, intent(in) :: l_implemented, l_upwind_xm_ma, l_mono_flux_lim_spikefix
+      double precision, dimension(ngrdcol, nzt), intent(in) :: &
+        xm_old, wm_zt, xm_forcing, rho_ds_zt, invrs_rho_ds_zt
+      double precision, dimension(ngrdcol, nzm), intent(in) :: &
+        xp2, rho_ds_zm, invrs_rho_ds_zm
+      integer, dimension(ngrdcol, nzt), intent(in) :: low_lev_effect, high_lev_effect
+      double precision, dimension(ngrdcol, nzt), intent(in,out) :: xm
+      double precision, dimension(ngrdcol, nzm), intent(in,out) :: wpxp
+    end subroutine
+
+    subroutine f2py_precip_fraction(nzt, ngrdcol, hydromet_dim, hydromet_dim_transport, &
+        hydromet, cloud_frac, cloud_frac_1, l_mix_rat_hm, l_frozen_hm, hydromet_tol, &
+        cloud_frac_2, ice_supersat_frac, ice_supersat_frac_1, ice_supersat_frac_2, &
+        mixt_frac, clubb_params, precip_frac, precip_frac_1, precip_frac_2, precip_frac_tol)
+      integer, intent(in) :: nzt, ngrdcol, hydromet_dim, hydromet_dim_transport
+      double precision, dimension(ngrdcol, nzt, hydromet_dim_transport), intent(in) :: hydromet
+      logical, dimension(hydromet_dim_transport), intent(in) :: l_mix_rat_hm
+      logical, dimension(hydromet_dim_transport), intent(in) :: l_frozen_hm
+      double precision, dimension(hydromet_dim_transport), intent(in) :: hydromet_tol
+      double precision, dimension(ngrdcol, nzt), intent(in) :: &
+        cloud_frac, cloud_frac_1, cloud_frac_2, ice_supersat_frac, &
+        ice_supersat_frac_1, ice_supersat_frac_2, mixt_frac
+      double precision, dimension(*), intent(in) :: clubb_params
+      double precision, dimension(ngrdcol, nzt), intent(out) :: precip_frac, precip_frac_1, precip_frac_2
+      double precision, dimension(ngrdcol), intent(out) :: precip_frac_tol
+    end subroutine
+
+    subroutine f2py_calc_params_ly93(nz, ngrdcol, xm, xp2, skx, mixt_frac, &
+        mu_x_1, mu_x_2, sigma_x_1_sqd, sigma_x_2_sqd)
+      integer, intent(in) :: nz, ngrdcol
+      double precision, dimension(ngrdcol, nz), intent(in) :: xm, xp2, skx, mixt_frac
+      double precision, dimension(ngrdcol, nz), intent(out) :: &
+        mu_x_1, mu_x_2, sigma_x_1_sqd, sigma_x_2_sqd
+    end subroutine
+
+    subroutine f2py_ly93_driver(nz, ngrdcol, wm, rtm, thlm, wp2, rtp2, thlp2, &
+        skw, skrt, skthl, mu_w_1, mu_w_2, mu_rt_1, mu_rt_2, mu_thl_1, mu_thl_2, &
+        sigma_w_1_sqd, sigma_w_2_sqd, sigma_rt_1_sqd, sigma_rt_2_sqd, &
+        sigma_thl_1_sqd, sigma_thl_2_sqd, mixt_frac)
+      integer, intent(in) :: nz, ngrdcol
+      double precision, dimension(ngrdcol, nz), intent(in) :: &
+        wm, rtm, thlm, wp2, rtp2, thlp2, skw, skrt, skthl
+      double precision, dimension(ngrdcol, nz), intent(out) :: &
+        mu_w_1, mu_w_2, mu_rt_1, mu_rt_2, mu_thl_1, mu_thl_2, &
+        sigma_w_1_sqd, sigma_w_2_sqd, sigma_rt_1_sqd, sigma_rt_2_sqd, &
+        sigma_thl_1_sqd, sigma_thl_2_sqd, mixt_frac
+    end subroutine
+
+    subroutine f2py_calc_setter_var_params(nz, ngrdcol, xm, xp2, skx, sgn_wpxp, &
+        f_x, zeta_x, mu_x_1, mu_x_2, sigma_x_1, sigma_x_2, mixt_frac, &
+        coef_sigma_x_1_sqd, coef_sigma_x_2_sqd)
+      integer, intent(in) :: nz, ngrdcol
+      double precision, dimension(ngrdcol, nz), intent(in) :: &
+        xm, xp2, skx, sgn_wpxp, f_x, zeta_x
+      double precision, dimension(ngrdcol, nz), intent(out) :: &
+        mu_x_1, mu_x_2, sigma_x_1, sigma_x_2, mixt_frac, &
+        coef_sigma_x_1_sqd, coef_sigma_x_2_sqd
+    end subroutine
+
+    subroutine f2py_calc_responder_params(nz, ngrdcol, xm, xp2, skx, sgn_wpxp, &
+        f_x, mixt_frac, mu_x_1, mu_x_2, sigma_x_1_sqd, sigma_x_2_sqd, &
+        coef_sigma_x_1_sqd, coef_sigma_x_2_sqd)
+      integer, intent(in) :: nz, ngrdcol
+      double precision, dimension(ngrdcol, nz), intent(in) :: &
+        xm, xp2, skx, sgn_wpxp, f_x, mixt_frac
+      double precision, dimension(ngrdcol, nz), intent(out) :: &
+        mu_x_1, mu_x_2, sigma_x_1_sqd, sigma_x_2_sqd, &
+        coef_sigma_x_1_sqd, coef_sigma_x_2_sqd
+    end subroutine
+
+    subroutine f2py_calc_limits_f_x_responder(nz, ngrdcol, mixt_frac, skx, sgn_wpxp, &
+        max_skx2_pos_skx_sgn_wpxp, max_skx2_neg_skx_sgn_wpxp, min_f_x, max_f_x)
+      integer, intent(in) :: nz, ngrdcol
+      double precision, dimension(ngrdcol, nz), intent(in) :: &
+        mixt_frac, skx, sgn_wpxp, max_skx2_pos_skx_sgn_wpxp, max_skx2_neg_skx_sgn_wpxp
+      double precision, dimension(ngrdcol, nz), intent(out) :: min_f_x, max_f_x
+    end subroutine
+
+    subroutine f2py_calc_l_x_skx_fnc(skx, sgn_wpxp, small_l_x_1, small_l_x_2, &
+        big_l_x_1, big_l_x_2)
+      double precision, intent(in) :: skx, sgn_wpxp, small_l_x_1, small_l_x_2
+      double precision, intent(out) :: big_l_x_1, big_l_x_2
+    end subroutine
+
+    subroutine f2py_calc_setter_parameters_tsdadg(xm, xp2, skx, sgn_wpxp, &
+        big_l_x_1, big_l_x_2, mu_x_1, mu_x_2, sigma_x_1_sqd, sigma_x_2_sqd, &
+        mixt_frac, coef_sigma_x_1_sqd, coef_sigma_x_2_sqd)
+      double precision, intent(in) :: xm, xp2, skx, sgn_wpxp, big_l_x_1, big_l_x_2
+      double precision, intent(out) :: &
+        mu_x_1, mu_x_2, sigma_x_1_sqd, sigma_x_2_sqd, mixt_frac, &
+        coef_sigma_x_1_sqd, coef_sigma_x_2_sqd
+    end subroutine
+
+    subroutine f2py_calc_coef_wp4_implicit(nz, ngrdcol, mixt_frac, f_w, &
+        coef_sigma_w_1_sqd, coef_sigma_w_2_sqd, coef_wp4_implicit)
+      integer, intent(in) :: nz, ngrdcol
+      double precision, dimension(ngrdcol, nz), intent(in) :: &
+        mixt_frac, f_w, coef_sigma_w_1_sqd, coef_sigma_w_2_sqd
+      double precision, dimension(ngrdcol, nz), intent(out) :: coef_wp4_implicit
+    end subroutine
+
+    subroutine f2py_calc_coef_wpxp2_implicit(nz, ngrdcol, wp2, xp2, wpxp, sgn_wpxp, &
+        mixt_frac, f_w, f_x, coef_sigma_w_1_sqd, coef_sigma_w_2_sqd, &
+        coef_sigma_x_1_sqd, coef_sigma_x_2_sqd, coef_wpxp2_implicit)
+      integer, intent(in) :: nz, ngrdcol
+      double precision, dimension(ngrdcol, nz), intent(in) :: &
+        wp2, xp2, wpxp, sgn_wpxp, mixt_frac, f_w, f_x, &
+        coef_sigma_w_1_sqd, coef_sigma_w_2_sqd, coef_sigma_x_1_sqd, coef_sigma_x_2_sqd
+      double precision, dimension(ngrdcol, nz), intent(out) :: coef_wpxp2_implicit
+    end subroutine
+
+    subroutine f2py_calc_coefs_wp2xp_semiimpl(nz, ngrdcol, wp2, xp2, sgn_wpxp, &
+        mixt_frac, f_w, f_x, coef_sigma_w_1_sqd, coef_sigma_w_2_sqd, &
+        coef_sigma_x_1_sqd, coef_sigma_x_2_sqd, coef_wp2xp_implicit, term_wp2xp_explicit)
+      integer, intent(in) :: nz, ngrdcol
+      double precision, dimension(ngrdcol, nz), intent(in) :: &
+        wp2, xp2, sgn_wpxp, mixt_frac, f_w, f_x, &
+        coef_sigma_w_1_sqd, coef_sigma_w_2_sqd, coef_sigma_x_1_sqd, coef_sigma_x_2_sqd
+      double precision, dimension(ngrdcol, nz), intent(out) :: &
+        coef_wp2xp_implicit, term_wp2xp_explicit
+    end subroutine
+
+    subroutine f2py_calc_coefs_wpxpyp_semiimpl(nz, ngrdcol, wp2, xp2, yp2, wpxp, &
+        wpyp, sgn_wpxp, sgn_wpyp, mixt_frac, f_w, f_x, f_y, coef_sigma_w_1_sqd, &
+        coef_sigma_w_2_sqd, coef_sigma_x_1_sqd, coef_sigma_x_2_sqd, &
+        coef_sigma_y_1_sqd, coef_sigma_y_2_sqd, coef_wpxpyp_implicit, term_wpxpyp_explicit)
+      integer, intent(in) :: nz, ngrdcol
+      double precision, dimension(ngrdcol, nz), intent(in) :: &
+        wp2, xp2, yp2, wpxp, wpyp, sgn_wpxp, sgn_wpyp, mixt_frac, f_w, f_x, f_y, &
+        coef_sigma_w_1_sqd, coef_sigma_w_2_sqd, coef_sigma_x_1_sqd, coef_sigma_x_2_sqd, &
+        coef_sigma_y_1_sqd, coef_sigma_y_2_sqd
+      double precision, dimension(ngrdcol, nz), intent(out) :: &
+        coef_wpxpyp_implicit, term_wpxpyp_explicit
+    end subroutine
+
+    subroutine f2py_calc_luhar_params(nz, ngrdcol, skx, wpxp, xp2, x_tol_sqd, &
+        mixt_frac, big_m, small_m)
+      integer, intent(in) :: nz, ngrdcol
+      double precision, dimension(ngrdcol, nz), intent(in) :: skx, wpxp, xp2
+      double precision, intent(in) :: x_tol_sqd
+      double precision, dimension(ngrdcol, nz), intent(out) :: mixt_frac, big_m, small_m
+    end subroutine
+
+    subroutine f2py_close_luhar_pdf(nz, ngrdcol, xm, xp2, mixt_frac, small_m, wpxp, &
+        x_tol_sqd, sigma_sqd_x_1, sigma_sqd_x_2, varnce_x_1, varnce_x_2, x_1_n, &
+        x_2_n, x_1, x_2)
+      integer, intent(in) :: nz, ngrdcol
+      double precision, dimension(ngrdcol, nz), intent(in) :: xm, xp2, mixt_frac, small_m, wpxp
+      double precision, intent(in) :: x_tol_sqd
+      double precision, dimension(ngrdcol, nz), intent(out) :: &
+        sigma_sqd_x_1, sigma_sqd_x_2, varnce_x_1, varnce_x_2, x_1_n, x_2_n, x_1, x_2
+    end subroutine
+
+    subroutine f2py_adg1_w_closure(nz, ngrdcol, wm, wp2, skw, sigma_sqd_w, sqrt_wp2, &
+        mixt_frac_max_mag, w_1, w_2, w_1_n, w_2_n, varnce_w_1, varnce_w_2, mixt_frac)
+      integer, intent(in) :: nz, ngrdcol
+      double precision, dimension(ngrdcol, nz), intent(in) :: wm, wp2, skw, sigma_sqd_w, sqrt_wp2
+      double precision, intent(in) :: mixt_frac_max_mag
+      double precision, dimension(ngrdcol, nz), intent(out) :: &
+        w_1, w_2, w_1_n, w_2_n, varnce_w_1, varnce_w_2, mixt_frac
+    end subroutine
+
+    subroutine f2py_tsdadg_pdf_driver(nz, ngrdcol, wm, rtm, thlm, wp2, rtp2, thlp2, &
+        skw, skrt, skthl, wprtp, wpthlp, mu_w_1, mu_w_2, mu_rt_1, mu_rt_2, mu_thl_1, &
+        mu_thl_2, sigma_w_1_sqd, sigma_w_2_sqd, sigma_rt_1_sqd, sigma_rt_2_sqd, &
+        sigma_thl_1_sqd, sigma_thl_2_sqd, mixt_frac)
+      integer, intent(in) :: nz, ngrdcol
+      double precision, dimension(ngrdcol, nz), intent(in) :: &
+        wm, rtm, thlm, wp2, rtp2, thlp2, skw, skrt, skthl, wprtp, wpthlp
+      double precision, dimension(ngrdcol, nz), intent(out) :: &
+        mu_w_1, mu_w_2, mu_rt_1, mu_rt_2, mu_thl_1, mu_thl_2, &
+        sigma_w_1_sqd, sigma_w_2_sqd, sigma_rt_1_sqd, sigma_rt_2_sqd, &
+        sigma_thl_1_sqd, sigma_thl_2_sqd, mixt_frac
+    end subroutine
+
+    subroutine f2py_adg2_pdf_driver(nz, ngrdcol, sclr_dim, sclr_dim_transport, sclr_tol, wm, rtm, thlm, &
+        wp2, rtp2, thlp2, skw, wprtp, wpthlp, sqrt_wp2, beta, sclrm, sclrp2, wpsclrp, &
+        l_scalar_calc, w_1, w_2, rt_1, rt_2, thl_1, thl_2, varnce_w_1, varnce_w_2, &
+        varnce_rt_1, varnce_rt_2, varnce_thl_1, varnce_thl_2, mixt_frac, alpha_rt, &
+        alpha_thl, sigma_sqd_w, sclr_1, sclr_2, varnce_sclr_1, varnce_sclr_2, alpha_sclr)
+      integer, intent(in) :: nz, ngrdcol, sclr_dim
+      integer, intent(in), optional :: sclr_dim_transport
+      logical, intent(in) :: l_scalar_calc
+      double precision, dimension(sclr_dim_transport), intent(in) :: sclr_tol
+      double precision, dimension(ngrdcol, nz), intent(in) :: &
+        wm, rtm, thlm, wp2, rtp2, thlp2, skw, wprtp, wpthlp, sqrt_wp2
+      double precision, dimension(ngrdcol), intent(in) :: beta
+      double precision, dimension(ngrdcol, nz, sclr_dim_transport), intent(in) :: sclrm, sclrp2, wpsclrp
+      double precision, dimension(ngrdcol, nz), intent(out) :: &
+        w_1, w_2, rt_1, rt_2, thl_1, thl_2, varnce_w_1, varnce_w_2, &
+        varnce_rt_1, varnce_rt_2, varnce_thl_1, varnce_thl_2, mixt_frac, alpha_rt, alpha_thl, sigma_sqd_w
+      double precision, dimension(ngrdcol, nz, sclr_dim_transport), intent(out) :: &
+        sclr_1, sclr_2, varnce_sclr_1, varnce_sclr_2, alpha_sclr
+    end subroutine
+
+    subroutine f2py_adg1_pdf_driver(nz, ngrdcol, sclr_dim, sclr_dim_transport, sclr_tol, wm, rtm, thlm, um, vm, &
+        wp2, rtp2, thlp2, up2, vp2, skw, wprtp, wpthlp, upwp, vpwp, sqrt_wp2, sigma_sqd_w, &
+        beta, mixt_frac_max_mag, sclrm, sclrp2, wpsclrp, l_scalar_calc, w_1, w_2, rt_1, rt_2, &
+        thl_1, thl_2, u_1, u_2, v_1, v_2, varnce_w_1, varnce_w_2, varnce_rt_1, varnce_rt_2, &
+        varnce_thl_1, varnce_thl_2, varnce_u_1, varnce_u_2, varnce_v_1, varnce_v_2, mixt_frac, &
+        alpha_rt, alpha_thl, alpha_u, alpha_v, sclr_1, sclr_2, varnce_sclr_1, varnce_sclr_2, alpha_sclr)
+      integer, intent(in) :: nz, ngrdcol, sclr_dim
+      integer, intent(in), optional :: sclr_dim_transport
+      logical, intent(in) :: l_scalar_calc
+      double precision, dimension(sclr_dim_transport), intent(in) :: sclr_tol
+      double precision, dimension(ngrdcol, nz), intent(in) :: &
+        wm, rtm, thlm, um, vm, wp2, rtp2, thlp2, up2, vp2, skw, wprtp, wpthlp, upwp, vpwp, sqrt_wp2, sigma_sqd_w
+      double precision, dimension(ngrdcol), intent(in) :: beta
+      double precision, intent(in) :: mixt_frac_max_mag
+      double precision, dimension(ngrdcol, nz, sclr_dim_transport), intent(in) :: sclrm, sclrp2, wpsclrp
+      double precision, dimension(ngrdcol, nz), intent(out) :: &
+        w_1, w_2, rt_1, rt_2, thl_1, thl_2, u_1, u_2, v_1, v_2, &
+        varnce_w_1, varnce_w_2, varnce_rt_1, varnce_rt_2, varnce_thl_1, varnce_thl_2, &
+        varnce_u_1, varnce_u_2, varnce_v_1, varnce_v_2, mixt_frac, alpha_rt, alpha_thl, alpha_u, alpha_v
+      double precision, dimension(ngrdcol, nz, sclr_dim_transport), intent(out) :: &
+        sclr_1, sclr_2, varnce_sclr_1, varnce_sclr_2, alpha_sclr
+    end subroutine
+
+    subroutine f2py_luhar_3d_pdf_driver(nz, ngrdcol, wm, rtm, thlm, wp2, rtp2, thlp2, skw, skrt, &
+        skthl, wprtp, wpthlp, w_1, w_2, rt_1, rt_2, thl_1, thl_2, varnce_w_1, varnce_w_2, &
+        varnce_rt_1, varnce_rt_2, varnce_thl_1, varnce_thl_2, mixt_frac)
+      integer, intent(in) :: nz, ngrdcol
+      double precision, dimension(ngrdcol, nz), intent(in) :: &
+        wm, rtm, thlm, wp2, rtp2, thlp2, skw, skrt, skthl, wprtp, wpthlp
+      double precision, dimension(ngrdcol, nz), intent(out) :: &
+        w_1, w_2, rt_1, rt_2, thl_1, thl_2, varnce_w_1, varnce_w_2, &
+        varnce_rt_1, varnce_rt_2, varnce_thl_1, varnce_thl_2, mixt_frac
+    end subroutine
+
+    subroutine f2py_calculate_w_params(nz, ngrdcol, wm, wp2, skw, f_w, zeta_w, &
+        mu_w_1, mu_w_2, sigma_w_1, sigma_w_2, mixt_frac, coef_sigma_w_1_sqd, &
+        coef_sigma_w_2_sqd)
+      integer, intent(in) :: nz, ngrdcol
+      double precision, dimension(ngrdcol, nz), intent(in) :: wm, wp2, skw, f_w, zeta_w
+      double precision, dimension(ngrdcol, nz), intent(out) :: &
+        mu_w_1, mu_w_2, sigma_w_1, sigma_w_2, mixt_frac, coef_sigma_w_1_sqd, &
+        coef_sigma_w_2_sqd
+    end subroutine
+
+    subroutine f2py_calculate_responder_params(nz, ngrdcol, xm, xp2, skx, wpxp, wp2, &
+        f_w, mixt_frac, mu_x_1, mu_x_2, sigma_x_1_sqd, sigma_x_2_sqd, &
+        coef_sigma_x_1_sqd, coef_sigma_x_2_sqd)
+      integer, intent(in) :: nz, ngrdcol
+      double precision, dimension(ngrdcol, nz), intent(in) :: &
+        xm, xp2, skx, wpxp, wp2, f_w, mixt_frac
+      double precision, dimension(ngrdcol, nz), intent(out) :: &
+        mu_x_1, mu_x_2, sigma_x_1_sqd, sigma_x_2_sqd, coef_sigma_x_1_sqd, &
+        coef_sigma_x_2_sqd
+    end subroutine
+
+    subroutine f2py_calculate_coef_wp4_implicit(nz, ngrdcol, mixt_frac, f_w, &
+        coef_sigma_w_1_sqd, coef_sigma_w_2_sqd, coef_wp4_implicit)
+      integer, intent(in) :: nz, ngrdcol
+      double precision, dimension(ngrdcol, nz), intent(in) :: &
+        mixt_frac, f_w, coef_sigma_w_1_sqd, coef_sigma_w_2_sqd
+      double precision, dimension(ngrdcol, nz), intent(out) :: coef_wp4_implicit
+    end subroutine
+
+    subroutine f2py_calc_coef_wp2xp_implicit(nz, ngrdcol, wp2, mixt_frac, f_w, &
+        coef_sigma_w_1_sqd, coef_sigma_w_2_sqd, coef_wp2xp_implicit)
+      integer, intent(in) :: nz, ngrdcol
+      double precision, dimension(ngrdcol, nz), intent(in) :: &
+        wp2, mixt_frac, f_w, coef_sigma_w_1_sqd, coef_sigma_w_2_sqd
+      double precision, dimension(ngrdcol, nz), intent(out) :: coef_wp2xp_implicit
+    end subroutine
+
+    subroutine f2py_calc_coefs_wpxp2_semiimpl(nz, ngrdcol, wp2, wpxp, mixt_frac, f_w, &
+        coef_sigma_x_1_sqd, coef_sigma_x_2_sqd, coef_wpxp2_implicit, term_wpxp2_explicit)
+      integer, intent(in) :: nz, ngrdcol
+      double precision, dimension(ngrdcol, nz), intent(in) :: &
+        wp2, wpxp, mixt_frac, f_w, coef_sigma_x_1_sqd, coef_sigma_x_2_sqd
+      double precision, dimension(ngrdcol, nz), intent(out) :: &
+        coef_wpxp2_implicit, term_wpxp2_explicit
+    end subroutine
+
+    subroutine f2py_new_pdf_driver(nz, ngrdcol, wm, rtm, thlm, wp2, rtp2, thlp2, skw, &
+        wprtp, wpthlp, rtpthlp, clubb_params, skrt, skthl, mu_w_1, mu_w_2, mu_rt_1, &
+        mu_rt_2, mu_thl_1, mu_thl_2, sigma_w_1_sqd, sigma_w_2_sqd, sigma_rt_1_sqd, &
+        sigma_rt_2_sqd, sigma_thl_1_sqd, sigma_thl_2_sqd, mixt_frac)
+      integer, intent(in) :: nz, ngrdcol
+      double precision, dimension(ngrdcol, nz), intent(in) :: &
+        wm, rtm, thlm, wp2, rtp2, thlp2, skw, wprtp, wpthlp, rtpthlp
+      double precision, dimension(ngrdcol, *), intent(in) :: clubb_params
+      double precision, dimension(ngrdcol, nz), intent(in,out) :: skrt, skthl
+      double precision, dimension(ngrdcol, nz), intent(out) :: &
+        mu_w_1, mu_w_2, mu_rt_1, mu_rt_2, mu_thl_1, mu_thl_2, &
+        sigma_w_1_sqd, sigma_w_2_sqd, sigma_rt_1_sqd, sigma_rt_2_sqd, &
+        sigma_thl_1_sqd, sigma_thl_2_sqd, mixt_frac
+    end subroutine
+
+    subroutine f2py_new_hybrid_pdf_driver(nz, ngrdcol, sclr_dim, sclr_dim_transport, wm, rtm, thlm, um, vm, wp2, &
+        rtp2, thlp2, up2, vp2, skw, wprtp, wpthlp, upwp, vpwp, sclrm, sclrp2, wpsclrp, &
+        gamma_skw_fnc, slope_coef_spread_dg_means_w, pdf_component_stdev_factor_w, skrt, &
+        skthl, sku, skv, sksclr, mu_w_1, mu_w_2, mu_rt_1, mu_rt_2, mu_thl_1, mu_thl_2, &
+        mu_u_1, mu_u_2, mu_v_1, mu_v_2, sigma_w_1_sqd, sigma_w_2_sqd, sigma_rt_1_sqd, &
+        sigma_rt_2_sqd, sigma_thl_1_sqd, sigma_thl_2_sqd, sigma_u_1_sqd, sigma_u_2_sqd, &
+        sigma_v_1_sqd, sigma_v_2_sqd, mu_sclr_1, mu_sclr_2, sigma_sclr_1_sqd, &
+        sigma_sclr_2_sqd, mixt_frac, sigma_sqd_w)
+      integer, intent(in) :: nz, ngrdcol, sclr_dim
+      integer, intent(in), optional :: sclr_dim_transport
+      double precision, dimension(ngrdcol, nz), intent(in) :: &
+        wm, rtm, thlm, um, vm, wp2, rtp2, thlp2, up2, vp2, skw, wprtp, wpthlp, upwp, vpwp, gamma_skw_fnc
+      double precision, dimension(ngrdcol, nz, sclr_dim_transport), intent(in) :: sclrm, sclrp2, wpsclrp
+      double precision, dimension(ngrdcol), intent(in) :: &
+        slope_coef_spread_dg_means_w, pdf_component_stdev_factor_w
+      double precision, dimension(ngrdcol, nz), intent(in,out) :: skrt, skthl, sku, skv
+      double precision, dimension(ngrdcol, nz, sclr_dim_transport), intent(in,out) :: sksclr
+      double precision, dimension(ngrdcol, nz), intent(out) :: &
+        mu_w_1, mu_w_2, mu_rt_1, mu_rt_2, mu_thl_1, mu_thl_2, mu_u_1, mu_u_2, mu_v_1, mu_v_2, &
+        sigma_w_1_sqd, sigma_w_2_sqd, sigma_rt_1_sqd, sigma_rt_2_sqd, sigma_thl_1_sqd, sigma_thl_2_sqd, &
+        sigma_u_1_sqd, sigma_u_2_sqd, sigma_v_1_sqd, sigma_v_2_sqd, mixt_frac, sigma_sqd_w
+      double precision, dimension(ngrdcol, nz, sclr_dim_transport), intent(out) :: &
+        mu_sclr_1, mu_sclr_2, sigma_sclr_1_sqd, sigma_sclr_2_sqd
+    end subroutine
+
+    ! --- advance_core_sub_wrappers ---
+
+    subroutine f2py_compute_sigma_sqd_w(nzm, ngrdcol, &
+        gamma_Skw_fnc, wp2, thlp2, rtp2, up2, vp2, &
+        wpthlp, wprtp, upwp, vpwp, &
+        l_predict_upwp_vpwp, sigma_sqd_w)
+      integer, intent(in) :: nzm, ngrdcol
+      double precision, dimension(ngrdcol, nzm), intent(in) :: &
+        gamma_Skw_fnc, wp2, thlp2, rtp2, up2, vp2, &
+        wpthlp, wprtp, upwp, vpwp
+      logical, intent(in) :: l_predict_upwp_vpwp
+      double precision, dimension(ngrdcol, nzm), intent(out) :: sigma_sqd_w
+    end subroutine
+
+    subroutine f2py_fill_holes_vertical(nz, ngrdcol, threshold, &
+        lower_hf_level, upper_hf_level, dz, rho_ds, &
+        grid_dir_indx, fill_holes_type, field)
+      integer, intent(in) :: nz, ngrdcol
+      double precision, intent(in) :: threshold
+      integer, intent(in) :: lower_hf_level, upper_hf_level
+      double precision, dimension(ngrdcol, nz), intent(in) :: dz, rho_ds
+      integer, intent(in) :: grid_dir_indx, fill_holes_type
+      double precision, dimension(ngrdcol, nz), intent(in,out) :: field
+    end subroutine
+
+    subroutine f2py_fill_holes_wp2_from_horz_tke(nz, ngrdcol, threshold, &
+        lower_hf_level, upper_hf_level, wp2, up2, vp2)
+      integer, intent(in) :: nz, ngrdcol
+      double precision, intent(in) :: threshold
+      integer, intent(in) :: lower_hf_level, upper_hf_level
+      double precision, dimension(ngrdcol, nz), intent(in,out) :: wp2, up2, vp2
+    end subroutine
+
+    subroutine f2py_clip_rcm(nzt, ngrdcol, rtm, message, rcm)
+      integer, intent(in) :: nzt, ngrdcol
+      double precision, dimension(ngrdcol, nzt), intent(in) :: rtm
+      character(len=*), intent(in) :: message
+      double precision, dimension(ngrdcol, nzt), intent(in,out) :: rcm
+    end subroutine
+
+    subroutine f2py_clip_covar(nzm, ngrdcol, solve_type, &
+        l_first_clip_ts, l_last_clip_ts, dt, xp2, yp2, &
+        l_predict_upwp_vpwp, xpyp, xpyp_chnge)
+      integer, intent(in) :: nzm, ngrdcol, solve_type
+      logical, intent(in) :: l_first_clip_ts, l_last_clip_ts
+      double precision, intent(in) :: dt
+      double precision, dimension(ngrdcol, nzm), intent(in) :: xp2, yp2
+      logical, intent(in) :: l_predict_upwp_vpwp
+      double precision, dimension(ngrdcol, nzm), intent(in,out) :: xpyp
+      double precision, dimension(ngrdcol, nzm), intent(out) :: xpyp_chnge
+    end subroutine
+
+    subroutine f2py_clip_variance(nzm, ngrdcol, solve_type, dt, &
+        threshold_lo, xp2)
+      integer, intent(in) :: nzm, ngrdcol, solve_type
+      double precision, intent(in) :: dt
+      double precision, dimension(ngrdcol, nzm), intent(in) :: threshold_lo
+      double precision, dimension(ngrdcol, nzm), intent(in,out) :: xp2
+    end subroutine
+
+    subroutine f2py_pos_definite_adj(nzm, nzt, ngrdcol, dt, field_np1, flux_np1, field_n, &
+        field_pd, flux_pd)
+      integer, intent(in) :: nzm, nzt, ngrdcol
+      double precision, intent(in) :: dt
+      double precision, dimension(ngrdcol, nzt), intent(in,out) :: field_np1
+      double precision, dimension(ngrdcol, nzm), intent(in,out) :: flux_np1
+      double precision, dimension(ngrdcol, nzt), intent(in) :: field_n
+      double precision, dimension(ngrdcol, nzt), intent(out) :: field_pd
+      double precision, dimension(ngrdcol, nzm), intent(out) :: flux_pd
+    end subroutine
+
+    subroutine f2py_clip_skewness(nzt, ngrdcol, dt, sfc_elevation, &
+        skw_max_mag, wp2_zt, l_use_wp3_lim_with_smth_heaviside, wp3)
+      integer, intent(in) :: nzt, ngrdcol
+      double precision, intent(in) :: dt
+      double precision, dimension(ngrdcol), intent(in) :: sfc_elevation, skw_max_mag
+      double precision, dimension(ngrdcol, nzt), intent(in) :: wp2_zt
+      logical, intent(in) :: l_use_wp3_lim_with_smth_heaviside
+      double precision, dimension(ngrdcol, nzt), intent(in,out) :: wp3
+    end subroutine
+
+    subroutine f2py_clip_covars_denom(nzm, ngrdcol, sclr_dim, sclr_dim_transport, dt, &
+        rtp2, thlp2, up2, vp2, wp2, sclrp2, &
+        wprtp_cl_num, wpthlp_cl_num, wpsclrp_cl_num, &
+        upwp_cl_num, vpwp_cl_num, &
+        l_predict_upwp_vpwp, l_tke_aniso, l_linearize_pbl_winds, &
+        wprtp, wpthlp, upwp, vpwp, wpsclrp, upwp_pert, vpwp_pert)
+      integer, intent(in) :: nzm, ngrdcol, sclr_dim
+      integer, intent(in), optional :: sclr_dim_transport
+      double precision, intent(in) :: dt
+      double precision, dimension(ngrdcol, nzm), intent(in) :: &
+        rtp2, thlp2, up2, vp2, wp2
+      double precision, dimension(ngrdcol, nzm, sclr_dim_transport), intent(in) :: sclrp2
+      integer, intent(in) :: wprtp_cl_num, wpthlp_cl_num, wpsclrp_cl_num
+      integer, intent(in) :: upwp_cl_num, vpwp_cl_num
+      logical, intent(in) :: l_predict_upwp_vpwp, l_tke_aniso
+      logical, intent(in) :: l_linearize_pbl_winds
+      double precision, dimension(ngrdcol, nzm), intent(in,out) :: &
+        wprtp, wpthlp, upwp, vpwp
+      double precision, dimension(ngrdcol, nzm, sclr_dim_transport), intent(in,out) :: wpsclrp
+      double precision, dimension(ngrdcol, nzm), intent(in,out) :: upwp_pert, vpwp_pert
+    end subroutine
+
+    subroutine f2py_calc_brunt_vaisala_freq_sqd(nzm, nzt, ngrdcol, &
+        thlm, exner, rtm, rcm, p_in_Pa, thvm, ice_supersat_frac, &
+        saturation_formula, &
+        l_brunt_vaisala_freq_moist, l_use_thvm_in_bv_freq, &
+        l_modify_limiters_for_cnvg_test, &
+        bv_efold, T0, &
+        brunt_vaisala_freq_sqd, brunt_vaisala_freq_sqd_mixed, &
+        brunt_vaisala_freq_sqd_dry, brunt_vaisala_freq_sqd_moist, &
+        brunt_vaisala_freq_sqd_smth)
+      integer, intent(in) :: nzm, nzt, ngrdcol
+      double precision, dimension(ngrdcol, nzt), intent(in) :: &
+        thlm, exner, rtm, rcm, p_in_Pa, thvm, ice_supersat_frac
+      integer, intent(in) :: saturation_formula
+      logical, intent(in) :: l_brunt_vaisala_freq_moist
+      logical, intent(in) :: l_use_thvm_in_bv_freq
+      logical, intent(in) :: l_modify_limiters_for_cnvg_test
+      double precision, dimension(ngrdcol), intent(in) :: bv_efold
+      double precision, intent(in) :: T0
+      double precision, dimension(ngrdcol, nzm), intent(out) :: &
+        brunt_vaisala_freq_sqd, brunt_vaisala_freq_sqd_mixed, &
+        brunt_vaisala_freq_sqd_dry, brunt_vaisala_freq_sqd_moist, &
+        brunt_vaisala_freq_sqd_smth
+    end subroutine
+
+    subroutine f2py_compute_cx_fnc_richardson(nzm, nzt, ngrdcol, &
+        Lscale_zm, ddzt_umvm_sqd, rho_ds_zm, &
+        brunt_vaisala_freq_sqd, brunt_vaisala_freq_sqd_mixed, &
+        clubb_params, &
+        l_use_shear_Richardson, l_modify_limiters_for_cnvg_test, &
+        Cx_fnc_Richardson)
+      integer, intent(in) :: nzm, nzt, ngrdcol
+      double precision, dimension(ngrdcol, nzm), intent(in) :: &
+        Lscale_zm, ddzt_umvm_sqd, rho_ds_zm, &
+        brunt_vaisala_freq_sqd, brunt_vaisala_freq_sqd_mixed
+      double precision, dimension(ngrdcol, *), intent(in) :: clubb_params
+      logical, intent(in) :: l_use_shear_Richardson
+      logical, intent(in) :: l_modify_limiters_for_cnvg_test
+      double precision, dimension(ngrdcol, nzm), intent(out) :: Cx_fnc_Richardson
+    end subroutine
+
+    subroutine f2py_calc_stability_correction(nzm, nzt, ngrdcol, &
+        thlm, Lscale_zm, em, exner, rtm, rcm, &
+        p_in_Pa, thvm, ice_supersat_frac, &
+        lambda0_stability_coef, bv_efold, T0, &
+        saturation_formula, &
+        l_brunt_vaisala_freq_moist, l_use_thvm_in_bv_freq, &
+        l_modify_limiters_for_cnvg_test, &
+        stability_correction)
+      integer, intent(in) :: nzm, nzt, ngrdcol
+      double precision, dimension(ngrdcol, nzt), intent(in) :: &
+        thlm, exner, rtm, rcm, p_in_Pa, thvm, ice_supersat_frac
+      double precision, dimension(ngrdcol, nzm), intent(in) :: Lscale_zm, em
+      double precision, dimension(ngrdcol), intent(in) :: lambda0_stability_coef, bv_efold
+      double precision, intent(in) :: T0
+      integer, intent(in) :: saturation_formula
+      logical, intent(in) :: l_brunt_vaisala_freq_moist
+      logical, intent(in) :: l_use_thvm_in_bv_freq
+      logical, intent(in) :: l_modify_limiters_for_cnvg_test
+      double precision, dimension(ngrdcol, nzm), intent(out) :: stability_correction
+    end subroutine
+
+    subroutine f2py_diagnose_lscale_from_tau(nzm, nzt, ngrdcol, &
+        upwp_sfc, vpwp_sfc, ddzt_umvm_sqd, &
+        ice_supersat_frac, em, sqrt_em_zt, &
+        ufmin, tau_const, sfc_elevation, lscale_max, clubb_params, &
+        l_e3sm_config, l_smooth_heaviside_tau_wpxp, &
+        brunt_vaisala_freq_sqd_smth, ri_zm, &
+        invrs_tau_zt, invrs_tau_zm, &
+        invrs_tau_sfc, invrs_tau_no_n2_zm, invrs_tau_bkgnd, &
+        invrs_tau_shear, invrs_tau_n2_iso, &
+        invrs_tau_wp2_zm, invrs_tau_xp2_zm, &
+        invrs_tau_wp3_zm, invrs_tau_wp3_zt, invrs_tau_wpxp_zm, &
+        tau_max_zm, tau_max_zt, tau_zm, tau_zt, &
+        lscale, lscale_up, lscale_down)
+      integer, intent(in) :: nzm, nzt, ngrdcol
+      double precision, dimension(ngrdcol), intent(in) :: upwp_sfc, vpwp_sfc
+      double precision, dimension(ngrdcol, nzt), intent(in) :: ice_supersat_frac, sqrt_em_zt
+      double precision, dimension(ngrdcol, nzm), intent(in) :: &
+        ddzt_umvm_sqd, em, brunt_vaisala_freq_sqd_smth, ri_zm
+      double precision, intent(in) :: ufmin, tau_const
+      double precision, dimension(ngrdcol), intent(in) :: sfc_elevation, lscale_max
+      double precision, dimension(ngrdcol, *), intent(in) :: clubb_params
+      logical, intent(in) :: l_e3sm_config, l_smooth_heaviside_tau_wpxp
+      double precision, dimension(ngrdcol, nzt), intent(out) :: &
+        invrs_tau_zt, invrs_tau_wp3_zt, tau_max_zt, tau_zt, lscale, lscale_up, lscale_down
+      double precision, dimension(ngrdcol, nzm), intent(out) :: &
+        invrs_tau_zm, invrs_tau_sfc, invrs_tau_no_n2_zm, invrs_tau_bkgnd, &
+        invrs_tau_shear, invrs_tau_n2_iso, invrs_tau_wp2_zm, invrs_tau_xp2_zm, &
+        invrs_tau_wp3_zm, invrs_tau_wpxp_zm, tau_max_zm, tau_zm
+    end subroutine
+
+    subroutine f2py_calc_lscale_directly(ngrdcol, nzm, nzt, &
+        l_implemented, p_in_pa, exner, rtm, thlm, thvm, newmu, &
+        rtp2_zt, thlp2_zt, rtpthlp_zt, em, thv_ds_zt, lscale_max, lmin, &
+        clubb_params, saturation_formula, l_lscale_plume_centered, &
+        lscale, lscale_up, lscale_down)
+      integer, intent(in) :: ngrdcol, nzm, nzt
+      integer, intent(in) :: saturation_formula
+      logical, intent(in) :: l_implemented, l_lscale_plume_centered
+      double precision, dimension(ngrdcol, nzt), intent(in) :: &
+        p_in_pa, exner, rtm, thlm, thvm, rtp2_zt, thlp2_zt, rtpthlp_zt, thv_ds_zt
+      double precision, dimension(ngrdcol, nzm), intent(in) :: em
+      double precision, dimension(ngrdcol), intent(in) :: newmu, lscale_max
+      double precision, intent(in) :: lmin
+      double precision, dimension(ngrdcol, *), intent(in) :: clubb_params
+      double precision, dimension(ngrdcol, nzt), intent(out) :: lscale, lscale_up, lscale_down
+    end subroutine
+
+    subroutine f2py_advance_xp3(nzm, nzt, ngrdcol, sclr_dim, sclr_dim_transport, &
+        sclr_tol, dt, &
+        rtm, thlm, rtp2, thlp2, wprtp, wpthlp, wprtp2, wpthlp2, &
+        rho_ds_zm, invrs_rho_ds_zt, invrs_tau_zt, tau_max_zt, &
+        sclrm, sclrp2, wpsclrp, wpsclrp2, &
+        l_lmm_stepping, &
+        rtp3, thlp3, sclrp3)
+      integer, intent(in) :: nzm, nzt, ngrdcol, sclr_dim
+      integer, intent(in), optional :: sclr_dim_transport
+      double precision, dimension(sclr_dim_transport), intent(in) :: sclr_tol
+      double precision, intent(in) :: dt
+      double precision, dimension(ngrdcol, nzt), intent(in) :: &
+        rtm, thlm, wprtp2, wpthlp2, invrs_rho_ds_zt, invrs_tau_zt, tau_max_zt
+      double precision, dimension(ngrdcol, nzm), intent(in) :: &
+        rtp2, thlp2, wprtp, wpthlp, rho_ds_zm
+      double precision, dimension(ngrdcol, nzt, sclr_dim_transport), intent(in) :: &
+        sclrm, wpsclrp2
+      double precision, dimension(ngrdcol, nzm, sclr_dim_transport), intent(in) :: &
+        sclrp2, wpsclrp
+      logical, intent(in) :: l_lmm_stepping
+      double precision, dimension(ngrdcol, nzt), intent(in,out) :: rtp3, thlp3
+      double precision, dimension(ngrdcol, nzt, sclr_dim_transport), intent(in,out) :: sclrp3
+    end subroutine
+
+    subroutine f2py_advance_wp2_wp3(nzm, nzt, ngrdcol, dt, &
+        sfc_elevation, fcor_y, sigma_sqd_w, wm_zm, wm_zt, &
+        a3_coef, a3_coef_zt, wp3_on_wp2, &
+        wpup2, wpvp2, wp2up2, wp2vp2, wp4, &
+        wpthvp, wp2thvp, wp2up, um, vm, upwp, vpwp, &
+        em, kh_zm, kh_zt, invrs_tau_c4_zm, invrs_tau_wp3_zt, invrs_tau_c1_zm, &
+        skw_zm, skw_zt, rho_ds_zm, rho_ds_zt, invrs_rho_ds_zm, invrs_rho_ds_zt, &
+        thv_ds_zm, thv_ds_zt, mixt_frac, cx_fnc_richardson, &
+        lhs_splat_wp2, lhs_splat_wp3, &
+        wprtp, wpthlp, rtp2, thlp2, clubb_params, &
+        iipdf_type, penta_solve_method, fill_holes_type, &
+        l_min_wp2_from_corr_wx, l_upwind_xm_ma, l_tke_aniso, l_standard_term_ta, &
+        l_partial_upwind_wp3, l_damp_wp2_using_em, l_use_c11_richardson, &
+        l_damp_wp3_skw_squared, l_lmm_stepping, &
+        l_use_tke_in_wp3_pr_turb_term, l_use_tke_in_wp2_wp3_k_dfsn, &
+        l_use_wp3_lim_with_smth_heaviside, l_wp2_fill_holes_tke, l_ho_nontrad_coriolis, &
+        up2, vp2, wp2, wp3, wp3_zm, wp2_zt)
+      integer, intent(in) :: nzm, nzt, ngrdcol
+      double precision, intent(in) :: dt
+      double precision, dimension(ngrdcol), intent(in) :: sfc_elevation, fcor_y
+      double precision, dimension(ngrdcol, nzm), intent(in) :: &
+        sigma_sqd_w, wm_zm, a3_coef, wp3_on_wp2, wp2up2, wp2vp2, wp4, &
+        wpthvp, upwp, vpwp, em, kh_zm, invrs_tau_c4_zm, invrs_tau_c1_zm, &
+        skw_zm, rho_ds_zm, invrs_rho_ds_zm, thv_ds_zm, cx_fnc_richardson, &
+        lhs_splat_wp2, wprtp, wpthlp, rtp2, thlp2
+      double precision, dimension(ngrdcol, nzt), intent(in) :: &
+        wm_zt, a3_coef_zt, wpup2, wpvp2, wp2thvp, wp2up, um, vm, kh_zt, &
+        invrs_tau_wp3_zt, skw_zt, rho_ds_zt, invrs_rho_ds_zt, thv_ds_zt, &
+        mixt_frac, lhs_splat_wp3
+      double precision, dimension(ngrdcol, *), intent(in) :: clubb_params
+      integer, intent(in) :: iipdf_type, penta_solve_method, fill_holes_type
+      logical, intent(in) :: &
+        l_min_wp2_from_corr_wx, l_upwind_xm_ma, l_tke_aniso, l_standard_term_ta, &
+        l_partial_upwind_wp3, l_damp_wp2_using_em, l_use_c11_richardson, l_damp_wp3_skw_squared, &
+        l_lmm_stepping, l_use_tke_in_wp3_pr_turb_term, l_use_tke_in_wp2_wp3_k_dfsn, &
+        l_use_wp3_lim_with_smth_heaviside, l_wp2_fill_holes_tke, l_ho_nontrad_coriolis
+      double precision, dimension(ngrdcol, nzm), intent(in,out) :: up2, vp2, wp2, wp3_zm
+      double precision, dimension(ngrdcol, nzt), intent(in,out) :: wp3, wp2_zt
+    end subroutine
+
+    subroutine f2py_advance_windm_edsclrm(nzm, nzt, ngrdcol, edsclr_dim, edsclr_dim_transport, dt, &
+        wm_zt, km_zm, kmh_zm, &
+        ug, vg, um_ref, vm_ref, &
+        wp2, up2, vp2, um_forcing, vm_forcing, &
+        edsclrm_forcing, &
+        rho_ds_zm, invrs_rho_ds_zt, &
+        fcor, l_implemented, ts_nudge, tridiag_solve_method, &
+        l_predict_upwp_vpwp, l_upwind_xm_ma, l_uv_nudge, l_tke_aniso, &
+        l_lmm_stepping, l_linearize_pbl_winds, &
+        order_xp2_xpyp, order_wp2_wp3, order_windm, &
+        um, vm, edsclrm, upwp, vpwp, wpedsclrp, &
+        um_pert, vm_pert, upwp_pert, vpwp_pert)
+      integer, intent(in) :: nzm, nzt, ngrdcol, edsclr_dim
+      integer, intent(in), optional :: edsclr_dim_transport
+      double precision, intent(in) :: dt
+      double precision, dimension(ngrdcol, nzt), intent(in) :: &
+        wm_zt, ug, vg, um_ref, vm_ref, um_forcing, vm_forcing, invrs_rho_ds_zt
+      double precision, dimension(ngrdcol, nzm), intent(in) :: &
+        km_zm, kmh_zm, wp2, up2, vp2, rho_ds_zm
+      double precision, dimension(ngrdcol, nzt, edsclr_dim_transport), intent(in) :: &
+        edsclrm_forcing
+      double precision, dimension(ngrdcol), intent(in) :: fcor
+      logical, intent(in) :: l_implemented
+      double precision, intent(in) :: ts_nudge
+      integer, intent(in) :: tridiag_solve_method
+      logical, intent(in) :: &
+        l_predict_upwp_vpwp, l_upwind_xm_ma, l_uv_nudge, l_tke_aniso, l_lmm_stepping, &
+        l_linearize_pbl_winds
+      integer, intent(in) :: order_xp2_xpyp, order_wp2_wp3, order_windm
+      double precision, dimension(ngrdcol, nzt), intent(in,out) :: um, vm, um_pert, vm_pert
+      double precision, dimension(ngrdcol, nzm), intent(in,out) :: upwp, vpwp, upwp_pert, vpwp_pert
+      double precision, dimension(ngrdcol, nzt, edsclr_dim_transport), intent(in,out) :: edsclrm
+      double precision, dimension(ngrdcol, nzm, edsclr_dim_transport), intent(in,out) :: wpedsclrp
+    end subroutine
+
+    subroutine f2py_advance_xp2_xpyp(nzm, nzt, ngrdcol, sclr_dim, sclr_dim_transport, sclr_tol, &
+        invrs_tau_xp2_zm, invrs_tau_c4_zm, invrs_tau_c14_zm, wm_zm, &
+        rtm, wprtp, thlm, wpthlp, wpthvp, um, vm, &
+        wp2, wp2_zt, wp3, upwp, vpwp, &
+        sigma_sqd_w, wprtp2, wpthlp2, wprtpthlp, kh_zt, &
+        rtp2_forcing, thlp2_forcing, rtpthlp_forcing, &
+        rho_ds_zm, rho_ds_zt, invrs_rho_ds_zm, thv_ds_zm, cloud_frac, &
+        wp3_on_wp2, wp3_on_wp2_zt, dt, fcor_y, &
+        sclrm, wpsclrp, wpsclrp2, wpsclrprtp, wpsclrpthlp, lhs_splat_wp2, &
+        clubb_params, iipdf_type, tridiag_solve_method, fill_holes_type, &
+        l_predict_upwp_vpwp, l_ho_nontrad_coriolis, l_min_xp2_from_corr_wx, &
+        l_c2_cloud_frac, l_upwind_xpyp_ta, l_godunov_upwind_xpyp_ta, l_lmm_stepping, &
+        rtp2, thlp2, rtpthlp, up2, vp2, sclrp2, sclrprtp, sclrpthlp)
+      integer, intent(in) :: nzm, nzt, ngrdcol, sclr_dim
+      integer, intent(in), optional :: sclr_dim_transport
+      double precision, dimension(sclr_dim_transport), intent(in) :: sclr_tol
+      double precision, dimension(ngrdcol, nzm), intent(in) :: &
+        invrs_tau_xp2_zm, invrs_tau_c4_zm, invrs_tau_c14_zm, wm_zm, wprtp, wpthlp, wpthvp, &
+        wp2, upwp, vpwp, sigma_sqd_w, rtp2_forcing, thlp2_forcing, rtpthlp_forcing, &
+        rho_ds_zm, invrs_rho_ds_zm, thv_ds_zm, wp3_on_wp2, lhs_splat_wp2
+      double precision, dimension(ngrdcol, nzt), intent(in) :: &
+        rtm, thlm, um, vm, wp2_zt, wp3, wprtp2, wpthlp2, wprtpthlp, kh_zt, &
+        rho_ds_zt, cloud_frac, wp3_on_wp2_zt
+      double precision, intent(in) :: dt
+      double precision, dimension(ngrdcol), intent(in) :: fcor_y
+      double precision, dimension(ngrdcol, nzt, sclr_dim_transport), intent(in) :: &
+        sclrm, wpsclrp2, wpsclrprtp, wpsclrpthlp
+      double precision, dimension(ngrdcol, nzm, sclr_dim_transport), intent(in) :: wpsclrp
+      double precision, dimension(ngrdcol, *), intent(in) :: clubb_params
+      integer, intent(in) :: iipdf_type, tridiag_solve_method, fill_holes_type
+      logical, intent(in) :: &
+        l_predict_upwp_vpwp, l_ho_nontrad_coriolis, l_min_xp2_from_corr_wx, l_c2_cloud_frac, &
+        l_upwind_xpyp_ta, l_godunov_upwind_xpyp_ta, l_lmm_stepping
+      double precision, dimension(ngrdcol, nzm), intent(in,out) :: rtp2, thlp2, rtpthlp, up2, vp2
+      double precision, dimension(ngrdcol, nzm, sclr_dim_transport), intent(in,out) :: &
+        sclrp2, sclrprtp, sclrpthlp
+    end subroutine
+
+    subroutine f2py_update_xp2_mc(nzm, nzt, ngrdcol, dt, cloud_frac, rcm, rvm, thlm, &
+        wm, exner, rrm_evap, rtp2_mc, thlp2_mc, wprtp_mc, wpthlp_mc, rtpthlp_mc)
+      integer, intent(in) :: nzm, nzt, ngrdcol
+      double precision, intent(in) :: dt
+      double precision, dimension(ngrdcol, nzt), intent(in) :: &
+        cloud_frac, rcm, rvm, thlm, wm, exner, rrm_evap
+      double precision, dimension(ngrdcol, nzm), intent(in,out) :: &
+        rtp2_mc, thlp2_mc, wprtp_mc, wpthlp_mc, rtpthlp_mc
+    end subroutine
+
+    subroutine f2py_advance_xm_wpxp(nzm, nzt, ngrdcol, sclr_dim, sclr_dim_transport, sclr_tol, dt, &
+        sigma_sqd_w, wm_zm, wm_zt, wp2, lscale_zm, &
+        wp3_on_wp2, wp3_on_wp2_zt, kh_zt, kh_zm, &
+        stability_correction, &
+        invrs_tau_c6_zm, tau_max_zm, skw_zm, wp2rtp, rtpthvp, &
+        rtm_forcing, wprtp_forcing, rtm_ref, wp2thlp, &
+        thlpthvp, thlm_forcing, wpthlp_forcing, thlm_ref, &
+        rho_ds_zm, rho_ds_zt, invrs_rho_ds_zm, &
+        invrs_rho_ds_zt, thv_ds_zm, rtp2, thlp2, &
+        w_1_zm, w_2_zm, varnce_w_1_zm, varnce_w_2_zm, &
+        mixt_frac_zm, l_implemented, em, wp2sclrp, &
+        sclrpthvp, sclrm_forcing, sclrp2, cx_fnc_richardson, &
+        um_forcing, vm_forcing, ug, vg, wpthvp, &
+        fcor, fcor_y, um_ref, vm_ref, up2, vp2, &
+        uprcp, vprcp, rc_coef_zm, &
+        clubb_params, ts_nudge, &
+        iipdf_type, penta_solve_method, tridiag_solve_method, fill_holes_type, &
+        l_predict_upwp_vpwp, l_ho_nontrad_coriolis, l_ho_trad_coriolis, &
+        l_diffuse_rtm_and_thlm, l_stability_correct_kh_n2_zm, &
+        l_godunov_upwind_wpxp_ta, l_upwind_xm_ma, l_uv_nudge, l_tke_aniso, &
+        l_diag_lscale_from_tau, l_use_c7_richardson, l_lmm_stepping, &
+        l_enable_relaxed_clipping, l_linearize_pbl_winds, &
+        l_mono_flux_lim_thlm, l_mono_flux_lim_rtm, l_mono_flux_lim_um, &
+        l_mono_flux_lim_vm, l_mono_flux_lim_spikefix, &
+        order_xm_wpxp, order_xp2_xpyp, order_wp2_wp3, &
+        rtm, wprtp, thlm, wpthlp, &
+        sclrm, wpsclrp, um, upwp, vm, vpwp, &
+        um_pert, vm_pert, upwp_pert, vpwp_pert)
+      integer, intent(in) :: nzm, nzt, ngrdcol, sclr_dim
+      integer, intent(in), optional :: sclr_dim_transport
+      double precision, dimension(sclr_dim_transport), intent(in) :: sclr_tol
+      double precision, intent(in) :: dt
+      double precision, dimension(ngrdcol, nzt), intent(in) :: &
+        wm_zt, wp3_on_wp2_zt, kh_zt, wp2rtp, rtm_forcing, rtm_ref, wp2thlp, &
+        thlm_forcing, thlm_ref, rho_ds_zt, invrs_rho_ds_zt, &
+        um_forcing, vm_forcing, ug, vg, um_ref, vm_ref
+      double precision, dimension(ngrdcol, nzm), intent(in) :: &
+        sigma_sqd_w, wm_zm, wp2, lscale_zm, wp3_on_wp2, kh_zm, stability_correction, &
+        invrs_tau_c6_zm, tau_max_zm, skw_zm, rtpthvp, wprtp_forcing, thlpthvp, &
+        wpthlp_forcing, rho_ds_zm, invrs_rho_ds_zm, thv_ds_zm, rtp2, thlp2, &
+        w_1_zm, w_2_zm, varnce_w_1_zm, varnce_w_2_zm, mixt_frac_zm, em, &
+        cx_fnc_richardson, wpthvp, up2, vp2, uprcp, vprcp, rc_coef_zm
+      double precision, dimension(ngrdcol, nzt, sclr_dim_transport), intent(in) :: &
+        wp2sclrp, sclrm_forcing
+      double precision, dimension(ngrdcol, nzm, sclr_dim_transport), intent(in) :: &
+        sclrpthvp, sclrp2
+      double precision, dimension(ngrdcol), intent(in) :: fcor, fcor_y
+      double precision, dimension(ngrdcol, *), intent(in) :: clubb_params
+      double precision, intent(in) :: ts_nudge
+      integer, intent(in) :: iipdf_type, penta_solve_method, tridiag_solve_method, fill_holes_type
+      logical, intent(in) :: &
+        l_implemented, l_predict_upwp_vpwp, l_ho_nontrad_coriolis, l_ho_trad_coriolis, &
+        l_diffuse_rtm_and_thlm, l_stability_correct_kh_n2_zm, l_godunov_upwind_wpxp_ta, &
+        l_upwind_xm_ma, l_uv_nudge, l_tke_aniso, l_diag_lscale_from_tau, l_use_c7_richardson, &
+        l_lmm_stepping, l_enable_relaxed_clipping, l_linearize_pbl_winds, l_mono_flux_lim_thlm, &
+        l_mono_flux_lim_rtm, l_mono_flux_lim_um, l_mono_flux_lim_vm, l_mono_flux_lim_spikefix
+      integer, intent(in) :: order_xm_wpxp, order_xp2_xpyp, order_wp2_wp3
+      double precision, dimension(ngrdcol, nzt), intent(in,out) :: &
+        rtm, thlm, um, vm, um_pert, vm_pert
+      double precision, dimension(ngrdcol, nzm), intent(in,out) :: &
+        wprtp, wpthlp, upwp, vpwp, upwp_pert, vpwp_pert
+      double precision, dimension(ngrdcol, nzt, sclr_dim_transport), intent(in,out) :: sclrm
+      double precision, dimension(ngrdcol, nzm, sclr_dim_transport), intent(in,out) :: wpsclrp
+    end subroutine
+
+  end interface
+end python module clubb_f2py

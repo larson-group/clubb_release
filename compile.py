@@ -138,6 +138,7 @@ def configure_cmake(args, toolchain_file, inst_dir, build_type):
         f"-S{CLUBB_ROOT}",
         f"-DUSE_NetCDF={to_on_off(not args.disable_netcdf)}",  # default ON
         f"-DSILHS={to_on_off(not args.disable_silhs)}",        # default ON
+        f"-DENABLE_F2PY={to_on_off(args.python)}",             # default OFF
         f"-DENABLE_OMP={to_on_off(args.openmp)}",              # default OFF
         f"-DTUNING={to_on_off(args.tuning)}",                  # default OFF
         f"-DUSE_GPTL={to_on_off(args.gptl)}",                  # default OFF
@@ -249,6 +250,7 @@ def main():
     parser.add_argument("-precision", choices=["single", "double", "quad"], default="double", help="Floating-point precision")
     parser.add_argument("-debug", action="store_true", help="Compile in debug mode")
     parser.add_argument("-run_tests", action="store_true", help="Run ctests after compilation")
+    parser.add_argument("-python", action="store_true", help="Enable F2PY Python extension build")
 
     # Feature toggles
     parser.add_argument("-disable_netcdf", action="store_true", help="Disable NetCDF output support (default: enabled)")
@@ -262,6 +264,10 @@ def main():
 
     args = parser.parse_args()
 
+    if args.python and args.disable_netcdf:
+        print("ERROR: -python requires NetCDF. Remove -disable_netcdf.")
+        sys.exit(1)
+
     # Our CMake files distinguish between "Debug" and "Release" for CMAKE_BUILD_TYPE
     build_type = "Debug" if args.debug else "Release"
 
@@ -272,6 +278,7 @@ def main():
     subdir_suffix += f"_DEBUG" if args.debug else ""
     subdir_suffix += f"_GPU{args.gpu}" if args.gpu != "none" else ""
     subdir_suffix += f"_PREC{args.precision}"
+    subdir_suffix += "_PYTHON" if args.python else ""
 
     # Create build directory and cd into it
     build_dir = os.path.join(CLUBB_ROOT, f"build/{compiler}{subdir_suffix}") 

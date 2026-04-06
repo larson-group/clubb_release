@@ -288,12 +288,12 @@ module clubb_driver
   character(len=256), public :: &
     output_dir             ! Output directory for setup/log/stats files
 
-  character(len=150) :: &
+  character(len=400) :: &
     case_info_file, &     ! The filename for case info
     fname_grid_adaptation ! The filename for the grid adaptation file which stores
                           ! how the grid is adapted
 
-  character(len=100) :: &
+  character(len=356) :: &
     output_file_prefix
 
   ! 'public' only to fix compiler error for nvhpc versions <24.9, please remove in future

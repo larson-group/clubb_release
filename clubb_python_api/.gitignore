@@ -1,0 +1,22 @@
+# Local Python caches
+__pycache__/
+*.py[cod]
+.pytest_cache/
+
+# F2PY extension artifacts
+clubb_f2py*.so
+libclubb_f2py_backend*.so
+
+# Local build output
+_build/
+*.o
+*.a
+*.mod
+
+# Logs
+log
+*.log
+
+# Coverage artifacts
+.coverage
+htmlcov/
