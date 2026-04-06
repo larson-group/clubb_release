@@ -2491,9 +2491,6 @@ module clubb_driver
     stats_nsamp = nint( stats_tsamp / dt_main )
     stats_nout = nint( stats_tout / dt_main )
 
-    print *, "stats_nsamp = ", stats_nsamp
-    print *, "stats_nout = ", stats_nout
-
     call init_pdf_params_api( gr%nzt, ngrdcol, pdf_params )
     call init_pdf_params_api( gr%nzm, ngrdcol, pdf_params_zm )
 

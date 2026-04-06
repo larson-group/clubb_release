@@ -122,18 +122,25 @@ def convert_to_multi_col(
 
 def override_value(override_string, clubb_in_text):
     """
-    Apply overrides from -flag FLAG1=val1,FLAG2=val2,... to the aggregate text.
+    Apply overrides from -override KEY1=val1,KEY2=val2,... to the aggregate text.
     """
     for pair in override_string.split(","):
         if "=" not in pair:
             continue
         key, val = pair.split("=", 1)
         key, val = key.strip(), val.strip()
-        pattern = rf"{key}\s*=.*"
         replacement = f"{key} = {val}"
-        if re.search(pattern, clubb_in_text):
-            clubb_in_text = re.sub(pattern, replacement, clubb_in_text)
-        else:
+
+        assignment_re = re.compile(
+            rf"(?im)^(\s*){re.escape(key)}\s*=.*$"
+        )
+
+        clubb_in_text, replacements = assignment_re.subn(
+            lambda match: f"{match.group(1)}{key} = {val}",
+            clubb_in_text,
+        )
+
+        if replacements == 0:
             clubb_in_text += f"\n{replacement}\n"
     return clubb_in_text
 

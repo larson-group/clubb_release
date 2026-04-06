@@ -343,7 +343,7 @@ contains
     type(stats_var), allocatable :: &
       defs(:)
 
-    character(len=64) :: &
+    character(len=35) :: &
       time_units
 
     integer :: &
@@ -2483,7 +2483,7 @@ contains
     real(kind=time_precision), intent(in) :: time_in ! Start time [s]
 
     ! Output Variables
-    character(len=35), intent(out) :: date ! UDUNITS time-units string ("seconds since ...") [-]
+    character(len=*), intent(out) :: date ! UDUNITS time-units string ("seconds since ...") [-]
 
     integer::  & 
       iday, imonth, iyear  ! Integer for day, month and year.
@@ -2499,7 +2499,8 @@ contains
                                    iyear, &  ! intent(out)
                                    st_time ) ! intent(out)
 
-    date = "seconds since YYYY-MM-DD HH:MM:00.0"
+    date = ""
+    date(1:35) = "seconds since YYYY-MM-DD HH:MM:00.0"
     write(date(15:18),'(i4.4)') iyear
     write(date(20:21),'(i2.2)') imonth
     write(date(23:24),'(i2.2)') iday

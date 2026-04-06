@@ -4,8 +4,8 @@ Run CLUBB with various flag configurations.
 
 This script:
   1. Reads a JSON configuration file describing flag sets to test.
-  2. Creates modified versions of configurable_model_flags.in.
-  3. Runs CLUBB for each flag configuration.
+  2. Expands the requested cases and flag sets into a list of run_scm.py tasks.
+  3. Runs those tasks with bounded parallelism.
   4. Reports failures immediately and exits with an aggregated code.
 
 Modes:
@@ -15,15 +15,28 @@ Modes:
 
   - Multi-case mode (no case name):
         ./run_clubb_flags.py --short-cases
-    → runs run_scm_all.py -short_cases for each flag configuration.
+    → runs run_scm.py once per (case, flag set) pair for the selected case list.
 """
 
-import sys
-import os
-import re
-import subprocess
 import argparse
 import json
+import os
+import subprocess
+import sys
+import tempfile
+from concurrent.futures import ThreadPoolExecutor, as_completed
+from pathlib import Path
+
+from run_scm_all import (
+    ALL_CASES,
+    MIN_CASES,
+    PRIORITY_CASES,
+    SHORT_CASES,
+    STANDARD_CASES,
+    positive_int,
+)
+
+DEFAULT_MAX_WORKERS = 8
 
 
 # ------------------------------------------------------------------------------
@@ -32,11 +45,11 @@ import json
 
 
 def get_cli_args():
+    """Parse wrapper arguments and validate single-case vs multi-case mode."""
     parser = argparse.ArgumentParser(
         formatter_class=argparse.RawTextHelpFormatter
     )
 
-    # case_name is now OPTIONAL
     parser.add_argument(
         "case_name",
         type=str,
@@ -52,7 +65,7 @@ def get_cli_args():
         "--all",
         action="store_true",
         default=False,
-        help="Run all cases (multi-case mode, via run_scm_all.py).",
+        help="Run all cases (multi-case mode).",
     )
     parser.add_argument(
         "--short-cases", action="store_true", default=False,
@@ -79,26 +92,28 @@ def get_cli_args():
         dest="max_iters",
         type=int,
         default=None,
-        help="Maximum number of iterations to pass to the downstream runner.",
+        help="Maximum number of iterations to pass to run_scm.py.",
     )
     parser.add_argument(
         "--tout", "-tout",
         dest="tout",
         type=int,
         default=None,
-        help="Stats output interval in seconds to pass to the downstream runner.",
+        help="Stats output interval in seconds to pass to run_scm.py.",
     )
     parser.add_argument(
         "--nproc", "-nproc",
         dest="nproc",
-        type=int,
-        default=None,
-        help="Number of processes to use in multi-case mode.",
+        type=positive_int,
+        default=DEFAULT_MAX_WORKERS,
+        help=(
+            "Maximum number of concurrent run_scm.py workers "
+            f"(default: {DEFAULT_MAX_WORKERS})."
+        ),
     )
 
     args = parser.parse_args()
 
-    # Count subset flags
     subset_flags_count = sum([
         args.all,
         args.short_cases,
@@ -107,30 +122,26 @@ def get_cli_args():
     ])
 
     if args.case_name is None:
-        # Multi-case mode: allow the default standard-case run when no subset
-        # flag is provided, but still reject ambiguous combinations.
         if subset_flags_count > 1:
             print("\nError: only one of the following may be specified:\n"
                   "  --all, --short-cases, --priority-cases, --min-cases\n")
             sys.exit(1)
     else:
-        # Single-case mode: subset flags are not allowed
         if subset_flags_count > 0:
             print("\nError: When providing a case_name, you may not also use "
                   "--all, --short-cases, --priority-cases, or --min-cases.\n")
-            sys.exit(1)
-        if args.nproc is not None:
-            print("\nError: --nproc may only be used in multi-case mode.\n")
             sys.exit(1)
 
     return args
 
 
 # ------------------------------------------------------------------------------
-# READ JSON FLAG SETTINGS
+# CONFIGURATION / TASK BUILDING
 # ------------------------------------------------------------------------------
 
+
 def read_flag_settings(path):
+    """Load the JSON mapping from flag-set name to override values."""
     if not path.endswith(".json"):
         print("Error: Flag config file must be a JSON file.")
         sys.exit(1)
@@ -140,178 +151,201 @@ def read_flag_settings(path):
         return json.load(f)
 
 
-# ------------------------------------------------------------------------------
-# DETERMINE FLAG FILE NAMES
-# ------------------------------------------------------------------------------
-
-def get_flag_file_names(skip_default, flag_dict):
-    names = {}
-    default_name = "default"
-
-    for case_name in flag_dict:
-        if case_name == default_name:
-            print(f"Error: '{default_name}' may not be used as a flag set name.")
-            sys.exit(1)
-        names[case_name] = f"{case_name}_tmp.in"
+def get_flag_sets(skip_default, flag_dict):
+    """Normalize JSON flag sets and optionally inject the unmodified default run."""
+    flag_sets = {}
 
     if not skip_default:
-        names[default_name] = "configurable_model_flags.in"
+        flag_sets["default"] = None
 
-    return names
+    for flag_set_name, overrides in flag_dict.items():
+        if flag_set_name == "default":
+            print("Error: 'default' may not be used as a flag set name.")
+            sys.exit(1)
+        flag_sets[flag_set_name] = overrides
 
-
-# ------------------------------------------------------------------------------
-# FLAG MODIFYING HELPER
-# ------------------------------------------------------------------------------
-
-def write_flag_change(output_file, line, case_flags):
-    """
-    Replace the value of a flag on a given line.
-    Boolean replacement is safe; integer replacement replaces RHS of '='.
-    """
-    for flag_name, flag_value in case_flags.items():
-        if re.search(rf"\b{re.escape(flag_name)}\b", line):
-            if isinstance(flag_value, bool):
-                value = ".true." if flag_value else ".false."
-                line = re.sub(r"=\s*\.\w+\.", f"= {value}", line)
-            elif isinstance(flag_value, int):
-                line = re.sub(r"=\s*.*", f"= {flag_value}", line)
-
-    output_file.write(line)
+    return flag_sets
 
 
-# ------------------------------------------------------------------------------
-# CREATE FLAG FILES
-# ------------------------------------------------------------------------------
-
-def create_flag_files(root, flag_dict, flag_file_names):
-    print("Creating input flag files...")
-
-    base_path = os.path.join(root, "input/tunable_parameters")
-    default_file = os.path.join(base_path, "configurable_model_flags.in")
-
-    with open(default_file, "r") as original:
-        for case_name, filename in flag_file_names.items():
-            if filename == "configurable_model_flags.in":
-                continue
-
-            out_path = os.path.join(base_path, filename)
-            with open(out_path, "w") as newf:
-                for line in original:
-                    write_flag_change(newf, line, flag_dict[case_name])
-                original.seek(0)   # rewind for next flag file
+def determine_run_cases(args):
+    """Resolve the requested case selection into a concrete list of case names."""
+    if args.case_name is not None:
+        return [args.case_name]
+    if args.short_cases:
+        return SHORT_CASES
+    if args.all:
+        return ALL_CASES
+    if args.priority_cases:
+        return PRIORITY_CASES
+    if args.min_cases:
+        return MIN_CASES
+    return STANDARD_CASES
 
 
-# ------------------------------------------------------------------------------
-# RUN CLUBB FOR EACH FLAG CONFIGURATION
-# ------------------------------------------------------------------------------
+def format_override_value(value):
+    """Render Python values into Fortran-friendly override strings."""
+    if isinstance(value, bool):
+        return ".true." if value else ".false."
+    if isinstance(value, (int, float)):
+        return str(value)
+    return str(value)
 
-def run_clubb(root, flag_files, args):
-    """
-    If args.case_name is set:
-        Runs run_scm.py <flags> <case_name> for each flag configuration.
 
-    If args.case_name is None:
-        Runs run_scm_all.py <subset-flag> <flags> for each flag configuration,
-        where <subset-flag> is one of: -all, -short_cases, -priority_cases, -min_cases.
-    """
-    is_single_case_mode = args.case_name is not None
+def build_override_arg(overrides):
+    """Serialize one flag set into the comma-delimited -override format."""
+    if not overrides:
+        return None
+    return ",".join(
+        f"{key}={format_override_value(value)}"
+        for key, value in overrides.items()
+    )
 
-    if is_single_case_mode:
-        script_path = os.path.join(root, "run_scripts", "run_scm.py")
-        case_name = args.case_name
-        print(f"\nRunning CLUBB case '{case_name}' for {len(flag_files)} flag configurations...")
-        subset_flag = None  # not used in this mode
-    else:
-        script_path = os.path.join(root, "run_scripts", "run_scm_all.py")
-        print(f"\nRunning CLUBB multi-case mode for {len(flag_files)} flag configurations...")
 
-        # Determine which subset flag to pass to run_scm_all.py
-        if args.all:
-            subset_flag = "-all"
-        elif args.short_cases:
-            subset_flag = "-short_cases"
-        elif args.priority_cases:
-            subset_flag = "-priority_cases"
-        elif args.min_cases:
-            subset_flag = "-min_cases"
-        else:
-            # use whatever default run_scm_all.py uses
-            subset_flag = None
+def build_tasks(root, flag_sets, run_cases, args):
+    """Expand flag sets and cases into independent run_scm.py task records."""
+    run_scm_script = os.path.join(root, "run_scripts", "run_scm.py")
+    tasks = []
 
-    exit_codes = []
+    # Each task is one case under one flag set. Keeping tasks independent lets
+    # the worker pool schedule the full case list (all cases and flag sets)
+    for flag_set_name, overrides in flag_sets.items():
+        override_arg = build_override_arg(overrides)
+        out_dir = os.path.join(root, "output", flag_set_name)
 
-    for case_label, flag_file in flag_files.items():
-        print(f"\n--- Running flag set: {case_label} ({flag_file}): ", end="")
+        for case_name in run_cases:
+            cmd = [
+                run_scm_script,
+                "-out_dir", out_dir,
+                "-debug", "0",
+            ]
 
-        out_dir = os.path.join(root, "output", case_label)
-        flag_path = os.path.join(root, "input/tunable_parameters", flag_file)
+            if args.tout is not None:
+                cmd += ["-tout", str(args.tout)]
 
-        cmd = [script_path]
+            if args.max_iters is not None:
+                cmd += ["-max_iters", str(args.max_iters)]
 
-        # In multi-case mode, pass the subset flag (-all, -short_cases, etc.)
-        if not is_single_case_mode and subset_flag is not None:
-            cmd.append(subset_flag)
+            if override_arg is not None:
+                cmd += ["-override", override_arg]
 
-        cmd += [
-            "-out_dir", out_dir,
-            "-debug", "0",
-            "-flags", flag_path,
-        ]
-
-        if args.tout is not None:
-            cmd += ["-tout", str(args.tout)]
-
-        if args.max_iters is not None:
-            cmd += ["-max_iters", str(args.max_iters)]
-
-        if not is_single_case_mode and args.nproc is not None:
-            cmd += ["-nproc", str(args.nproc)]
-
-        # In single-case mode, append the case name at the end
-        if is_single_case_mode:
             cmd.append(case_name)
 
-        result = subprocess.run(
-            cmd,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.STDOUT,
-            universal_newlines=True
-        )
+            tasks.append({
+                "flag_set": flag_set_name,
+                "case": case_name,
+                "cmd": cmd,
+            })
 
-        exit_codes.append(result.returncode)
+    return tasks
 
+
+# ------------------------------------------------------------------------------
+# TASK EXECUTION
+# ------------------------------------------------------------------------------
+
+
+def run_task(task):
+    """Execute one run_scm.py task and capture failure output for reporting."""
+    fd, tmp_out = tempfile.mkstemp(
+        prefix=f"run_scm_{task['flag_set']}_{task['case']}_",
+        suffix=".log",
+    )
+    os.close(fd)
+
+    try:
+        with open(tmp_out, "w") as log:
+            result = subprocess.run(
+                task["cmd"],
+                stdout=log,
+                stderr=subprocess.STDOUT,
+                universal_newlines=True,
+            )
+
+        error_output = ""
         if result.returncode != 0:
-            print(result.stdout)   # Print ONLY if failed
-            print(f"\n!===== FAILURE for flag set '{case_label}' (file: {flag_file})")
-        else:
-            print("PASS")
+            with open(tmp_out) as f:
+                error_output = f.read()
 
-    return max(exit_codes)
+        return task["flag_set"], task["case"], result.returncode, error_output
+    finally:
+        Path(tmp_out).unlink(missing_ok=True)
+
+
+def run_clubb_tasks(tasks, args):
+    """Run the tasks (all cases and flag sets) with bounded concurrency and summarize failures."""
+    if not tasks:
+        print("No tasks to run.")
+        return 0
+
+    max_workers = min(args.nproc, len(tasks))
+    print(f"Running {len(tasks)} run_scm.py task(s) with up to {max_workers} worker(s)...")
+
+    exit_status = 0
+    failures_by_flag_set = {}
+
+    # Use one global pool across all (flag set, case) tasks so workers stay
+    # busy even when some cases finish faster than others.
+    with ThreadPoolExecutor(max_workers=max_workers) as executor:
+        futures = {
+            executor.submit(run_task, task): (task["flag_set"], task["case"])
+            for task in tasks
+        }
+
+        # Consume completed tasks as they finish so errors are surfaced early
+        # and we can build a per-flag-set failure summary at the end.
+        for future in as_completed(futures):
+            flag_set_name, case_name = futures[future]
+            try:
+                _, _, code, error_output = future.result()
+            except Exception as exc:
+                code = 1
+                error_output = f"Error running {flag_set_name}/{case_name}: {exc}"
+
+            if code == 0:
+                print(f"COMPLETE -- {flag_set_name} / {case_name}")
+            else:
+                print(f"ERROR -- {flag_set_name} / {case_name}")
+                if error_output:
+                    print(error_output)
+                failures_by_flag_set.setdefault(flag_set_name, []).append(case_name)
+                exit_status = 1
+
+    print("\n=================== Runs Complete ===================")
+    if failures_by_flag_set:
+        for flag_set_name in sorted(failures_by_flag_set):
+            failed_cases = ", ".join(sorted(failures_by_flag_set[flag_set_name]))
+            print(f"{flag_set_name} failures: {failed_cases}")
+    else:
+        print("All flag sets ran to completion.")
+
+    return exit_status
 
 
 # ------------------------------------------------------------------------------
 # MAIN
 # ------------------------------------------------------------------------------
 
+
 def main():
+    """Wire together argument parsing, task expansion, execution, and exit code."""
     args = get_cli_args()
 
-    # Paths relative to script location
     script_dir = os.path.dirname(os.path.realpath(__file__))
     root = os.path.abspath(os.path.join(script_dir, ".."))
 
-    flags = read_flag_settings(args.flag_config_file)
-    flag_files = get_flag_file_names(args.skip_default_flags, flags)
+    # Build the full task matrix up front so the execution phase is only
+    # responsible for scheduling and reporting.
+    flag_dict = read_flag_settings(args.flag_config_file)
+    flag_sets = get_flag_sets(args.skip_default_flags, flag_dict)
+    run_cases = determine_run_cases(args)
+    tasks = build_tasks(root, flag_sets, run_cases, args)
 
-    create_flag_files(root, flags, flag_files)
-
-    exit_code = run_clubb(root, flag_files, args)
+    exit_code = run_clubb_tasks(tasks, args)
 
     if exit_code == 0:
-        print("\n🎉 All CLUBB runs succeeded.")
+        print("\nAll CLUBB runs succeeded.")
     else:
-        print("\n⚠️ Some CLUBB runs failed. See messages above.")
+        print("\nSome CLUBB runs failed. See messages above.")
 
     sys.exit(exit_code)
 
