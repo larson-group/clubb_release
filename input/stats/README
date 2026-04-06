@@ -19,3 +19,4 @@ condition number variables are:
 
 Some Fortran compilers don't deal well with comments in namelists.  Avoid 
 commenting out variable names within the stats namelist when possible.
+
