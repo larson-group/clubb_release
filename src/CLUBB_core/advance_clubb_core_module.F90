@@ -143,9 +143,6 @@ module advance_clubb_core_module
                thlm, rtm, wprtp, wpthlp, &                          ! intent(inout)
                wp2, wp3, rtp2, rtp3, thlp2, thlp3, rtpthlp, &       ! intent(inout)
                sclrm,   &                                           ! intent(inout)
-#ifdef GFDL
-               sclrm_trsport_only,  &  ! h1g, 2010-06-16            ! intent(inout)
-#endif
                sclrp2, sclrp3, sclrprtp, sclrpthlp, &               ! intent(inout)
                wpsclrp, edsclrm, &                                  ! intent(inout)
                rcm, cloud_frac, &                                   ! intent(inout)
@@ -157,10 +154,6 @@ module advance_clubb_core_module
                pdf_params, pdf_params_zm, &                         ! intent(inout)
                pdf_implicit_coefs_terms, &                          ! intent(inout)
                err_info, &                                          ! intent(inout)
-#ifdef GFDL
-               RH_crit, & !h1g, 2010-06-16                          ! intent(inout)
-               do_liquid_only_in_clubb, &                           ! intent(in)
-#endif
                Kh_zm, Kh_zt, &                                      ! intent(out)
 #ifdef CLUBB_CAM
                qclvar, &                                            ! intent(out)
@@ -248,13 +241,6 @@ module advance_clubb_core_module
         pdf_parameter, &
         implicit_coefs_terms
 
-#ifdef GFDL
-    use advance_sclrm_Nd_module, only: &  ! h1g, 2010-06-16 begin mod
-         advance_sclrm_Nd_diffusion_OG, &
-         advance_sclrm_Nd_upwind, &
-       advance_sclrm_Nd_semi_implicit     ! h1g, 2010-06-16 end mod
-#endif
-
     use advance_xm_wpxp_module, only: &
         advance_xm_wpxp          ! Compute mean/flux terms
 
@@ -323,7 +309,6 @@ module advance_clubb_core_module
         Lscale_width_vert_avg, &
         smooth_max, &
         calc_Ri_zm, &
-        calculate_thlp2_rad, &
         pvertinterp
 
     use stats_netcdf, only: &
@@ -576,11 +561,6 @@ module advance_clubb_core_module
     type(err_info_type), intent(inout) :: &
       err_info        ! err_info struct containing err_code and err_header
 
-#ifdef GFDL
-    real( kind = core_rknd ), intent(inout), dimension(ngrdcol,nzt,sclr_dim) :: &  ! h1g, 2010-06-16
-      sclrm_trsport_only  ! Passive scalar concentration due to pure transport [{units vary}/s]
-#endif
-
     ! Eddy passive scalar variable
     real( kind = core_rknd ), intent(inout), dimension(ngrdcol,nzt,edsclr_dim) :: &
       edsclrm   ! Eddy passive scalar grid-mean (thermo. levels)   [units vary]
@@ -619,15 +599,6 @@ module advance_clubb_core_module
 
     real( kind = core_rknd ), dimension(ngrdcol,nzt), intent(out) :: &
       Lscale          ! Length scale                          [m]
-
-#ifdef GFDL
-    ! hlg, 2010-06-16
-    real( kind = core_rknd ), intent(inout), dimension(ngrdcol,nzt, min(1,sclr_dim) , 2) :: &
-      RH_crit  ! critical relative humidity for droplet and ice nucleation
-! ---> h1g, 2012-06-14
-    logical, intent(in)                 ::  do_liquid_only_in_clubb
-! <--- h1g, 2012-06-14
-#endif
 
     !--------------------------- Local Variables ---------------------------
     integer :: i, k, edsclr, sclr
@@ -1161,10 +1132,6 @@ module advance_clubb_core_module
                                rtm,                                         & ! Intent(inout)
                                pdf_implicit_coefs_terms,                    & ! Intent(inout)
                                pdf_params, pdf_params_zm, err_info,         & ! Intent(inout)
-#ifdef GFDL
-                               RH_crit(k, : , :),                           & ! Intent(inout)
-                               do_liquid_only_in_clubb,                     & ! Intent(in)
-#endif
                                rcm, cloud_frac,                             & ! Intent(out)
                                ice_supersat_frac, wprcp,                    & ! Intent(out)
                                sigma_sqd_w, wpthvp, wp2thvp, wp2up,         & ! Intent(out)
@@ -1872,7 +1839,7 @@ module advance_clubb_core_module
                             clubb_config_flags%l_mono_flux_lim_vm,                 & ! intent(in)
                             clubb_config_flags%l_mono_flux_lim_spikefix,           & ! intent(in)
                             order_xm_wpxp, order_xp2_xpyp, order_wp2_wp3,          & ! intent(in)
-                            stats,                                                  & ! intent(inout)
+                            stats,                                             & ! intent(inout)
                             rtm, wprtp, thlm, wpthlp,                              & ! intent(i/o)
                             sclrm, wpsclrp, um, upwp, vm, vpwp,                    & ! intent(i/o)
                             um_pert, vm_pert, upwp_pert, vpwp_pert, err_info )       ! intent(i/o)
@@ -1892,14 +1859,6 @@ module advance_clubb_core_module
       call clip_rcm( nzt, ngrdcol, rtm,              & ! In
                      'rtm < rcm in advance_xm_wpxp', & ! In
                      rcm )                             ! In/Out
-
-#ifdef GFDL
-      do i = 1, ngrdcol
-        call advance_sclrm_Nd_diffusion_OG( dt, &  ! h1g, 2012-06-16     ! In
-                                            sclrm(i,:,:), sclrm_trsport_only(i,:,:), & ! In/Out
-                                            Kh_zm(i,:),  cloud_frac(i,:) )         ! In
-      end do
-#endif
 
      elseif ( advance_order_loop_iter == order_xp2_xpyp ) then
 
@@ -2498,10 +2457,6 @@ module advance_clubb_core_module
                                rtm,                                         & ! Intent(inout)
                                pdf_implicit_coefs_terms,                    & ! Intent(inout)
                                pdf_params, pdf_params_zm, err_info,         & ! Intent(inout)
-#ifdef GFDL
-                               RH_crit(k, : , :),                           & ! Intent(inout)
-                               do_liquid_only_in_clubb,                     & ! Intent(in)
-#endif
                                rcm, cloud_frac,                             & ! Intent(out)
                                ice_supersat_frac, wprcp,                    & ! Intent(out)
                                sigma_sqd_w, wpthvp, wp2thvp, wp2up,         & ! Intent(out)

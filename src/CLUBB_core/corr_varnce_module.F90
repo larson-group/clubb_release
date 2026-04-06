@@ -190,6 +190,7 @@ module corr_varnce_module
 
   private :: def_corr_idx
 
+  !$omp threadprivate( corr_array_n_cloud_def, corr_array_n_below_def )
 
   contains
 

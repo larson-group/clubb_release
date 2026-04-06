@@ -377,9 +377,6 @@ module parameters_tunable
         zero,    &
         fstderr
 
-    use grid_class, only: &
-        grid    ! Type(s)
-
     use clubb_precision, only: &
         core_rknd ! Variable(s)
 
@@ -717,9 +714,6 @@ module parameters_tunable
     !   implemented in WRF.  --ldgrant Jul 2010
     !----------------------------------------------------------------------
 
-    use constants_clubb, only: &
-        fstderr ! Constant(s)
-
     use grid_class, only: &
         grid    ! Type(s)
 
@@ -836,8 +830,10 @@ module parameters_tunable
     ! Using ngrdcol here as well for temporary backward compatibility, same as above
     mixt_frac_max_mag = 1.0_core_rknd &
       - ( 0.5_core_rknd * ( 1.0_core_rknd - clubb_params(ngrdcol,iSkw_max_mag) &
-                                            / sqrt( 4.0_core_rknd * ( 1.0_core_rknd - 0.4_core_rknd )**3 &
-                                                    + clubb_params(ngrdcol,iSkw_max_mag)**2 ) ) ) ! Known magic number
+                                            / sqrt( 4.0_core_rknd * &
+                                                    ( 1.0_core_rknd - 0.4_core_rknd )**3 &
+                                                    + clubb_params(ngrdcol,iSkw_max_mag)**2 ) ) )
+      ! Known magic number
     
     ! Flag for adjusting the values of the constant diffusivity coefficients
     ! based on the grid spacing.  If this flag is turned off, the values of the
@@ -899,7 +895,8 @@ module parameters_tunable
       ! Use a constant mult_factor so nu does not depend on grid spacing
       do i = 1, ngrdcol
         if( avg_deltaz(i) > grid_spacing_thresh ) then
-          mult_factor_zt(i) = 1.0_core_rknd + clubb_params(i,imult_coef) * log( avg_deltaz(i) / grid_spacing_thresh )
+          mult_factor_zt(i) = 1.0_core_rknd + clubb_params(i,imult_coef) * &
+                              log( avg_deltaz(i) / grid_spacing_thresh )
           mult_factor_zm(i) = mult_factor_zt(i)
         else
           mult_factor_zt(i) = 1.0_core_rknd
@@ -914,7 +911,8 @@ module parameters_tunable
         nu_vert_res_dep%nu6(i)   =  clubb_params(i,inu6)   * mult_factor_zm(i)
         nu_vert_res_dep%nu8(i)   =  clubb_params(i,inu8)   * mult_factor_zt(i)
         nu_vert_res_dep%nu9(i)   =  clubb_params(i,inu9)   * mult_factor_zm(i)
-        nu_vert_res_dep%nu10(i)  =  clubb_params(i,inu10)  * mult_factor_zt(i) !We're unsure of the grid
+        nu_vert_res_dep%nu10(i)  =  clubb_params(i,inu10)  * mult_factor_zt(i)
+        ! We're unsure of the grid
         nu_vert_res_dep%nu_hm(i) =  clubb_params(i,inu_hm) * mult_factor_zt(i)
       end do
 

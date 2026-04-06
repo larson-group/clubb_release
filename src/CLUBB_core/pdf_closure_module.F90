@@ -49,9 +49,6 @@ module pdf_closure_module
                           sclrm, wpsclrp, sclrp2,                     &
                           sclrprtp, sclrpthlp, Sksclr_in,             &
                           gamma_Skw_fnc,                              &
-#ifdef GFDL
-                          RH_crit, do_liquid_only_in_clubb,           & ! h1g, 2010-06-15
-#endif
                           wphydrometp, wp2hmp,                        &
                           rtphmp, thlphmp,                            &
                           clubb_params, mixt_frac_max_mag,            &
@@ -156,8 +153,7 @@ module pdf_closure_module
         pdf_closure_check ! Procedure(s)
 
     use saturation, only: &
-        sat_mixrat_liq_api, & ! Procedure(s)
-        sat_mixrat_ice
+        sat_mixrat_liq_api ! Procedure(s)
 
     use clubb_precision, only: &
         core_rknd ! Variable(s)
@@ -168,7 +164,6 @@ module pdf_closure_module
 
     use stats_netcdf, only: &
       stats_type, &
-      stats_update, &
       var_on_stats_list
 
     use err_info_type_module, only: &
@@ -227,16 +222,6 @@ module pdf_closure_module
 
     real( kind = core_rknd ), dimension(ngrdcol,nz), intent(in) :: &
       gamma_Skw_fnc    ! Gamma as a function of skewness            [-]
-
-#ifdef  GFDL
-    ! critial relative humidity for nucleation
-    real( kind = core_rknd ), dimension(ngrdcol, nz, min(1,sclr_dim), 2 ), & ! h1g, 2010-06-15
-       intent(in) :: & ! h1g, 2010-06-15
-       RH_crit     ! critical relative humidity for droplet and ice nucleation
-! ---> h1g, 2012-06-14
-    logical, intent(in) :: do_liquid_only_in_clubb
-! <--- h1g, 2012-06-14
-#endif
 
     real( kind = core_rknd ), dimension(ngrdcol,nz,hydromet_dim), intent(in) :: &
       wphydrometp, & ! Covariance of w and a hydrometeor    [(m/s) <hm units>]
@@ -424,12 +409,6 @@ module pdf_closure_module
       l_liq_ice_loading_test = .false. ! Temp. flag liq./ice water loading test
 
     integer :: k, i, sclr, hm_idx   ! Indices
-
-#ifdef GFDL
-    real ( kind = core_rknd ), parameter :: t1_combined = 273.16, &
-                                            t2_combined = 268.16, &
-                                            t3_combined = 238.16 
-#endif
 
     !----------------------------- Begin Code -----------------------------
 
@@ -933,61 +912,6 @@ module pdf_closure_module
     end do
     !$acc end parallel loop
 
-#ifdef GFDL
-    if ( sclr_dim > 0  .and.  (.not. do_liquid_only_in_clubb) ) then ! h1g, 2010-06-16 begin mod
-
-      do i = 1, ngrdcol
-        where ( tl1(i,:) > t1_combined )
-          pdf_params%rsatl_1(i,:) = sat_mixrat_liq_api( nz, p_in_Pa(i,:), tl1(i,:) )
-        elsewhere ( tl1(i,:) > t2_combined )
-          pdf_params%rsatl_1(i,:) = sat_mixrat_liq_api( nz, p_in_Pa(i,:), tl1(i,:) ) &
-                    * (tl1(i,:) - t2_combined)/(t1_combined - t2_combined) &
-                    + sat_mixrat_ice( nz, p_in_Pa(i,:), tl1(i,:) ) &
-                      * (t1_combined - tl1(i,:))/(t1_combined - t2_combined)
-        elsewhere ( tl1(i,:) > t3_combined )
-          pdf_params%rsatl_1(i,:) = sat_mixrat_ice( nz, p_in_Pa(i,:), tl1(i,:) ) &
-                    + sat_mixrat_ice( nz, p_in_Pa(i,:), tl1(i,:) ) * (RH_crit(i, :, 1, 1) -one ) &
-                      * ( t2_combined -tl1(i,:))/(t2_combined - t3_combined)
-        elsewhere
-          pdf_params%rsatl_1(i,:) = sat_mixrat_ice( nz, p_in_Pa(i,:), tl1(i,:) ) &
-                                    * RH_crit(i, :, 1, 1)
-        endwhere
-
-        where ( tl2(i,:) > t1_combined )
-          pdf_params%rsatl_2(i,:) = sat_mixrat_liq_api( nz, p_in_Pa(i,:), tl2(i,:) )
-        elsewhere ( tl2(i,:) > t2_combined )
-          pdf_params%rsatl_2(i,:) = sat_mixrat_liq_api( nz, p_in_Pa(i,:), tl2(i,:) ) &
-                    * (tl2(i,:) - t2_combined)/(t1_combined - t2_combined) &
-                    + sat_mixrat_ice( nz, p_in_Pa(i,:), tl2(i,:) ) &
-                      * (t1_combined - tl2(i,:))/(t1_combined - t2_combined)
-        elsewhere ( tl2(i,:) > t3_combined )
-          pdf_params%rsatl_2(i,:) = sat_mixrat_ice( nz, p_in_Pa(i,:), tl2(i,:) ) &
-                    + sat_mixrat_ice( nz, p_in_Pa(i,:), tl2(i,:) )* (RH_crit(i, :, 1, 2) -one) &
-                      * ( t2_combined -tl2(i,:))/(t2_combined - t3_combined)
-        elsewhere
-          pdf_params%rsatl_2(i,:) = sat_mixrat_ice( nz, p_in_Pa(i,:), tl2(i,:) ) &
-                                    * RH_crit(i, :, 1, 2)
-        endwhere
-
-      end do
-
-    else ! sclr_dim <= 0  or  do_liquid_only_in_clubb = .T.
-
-      pdf_params%rsatl_1 = sat_mixrat_liq_api( nz, ngrdcol, p_in_Pa, tl1, saturation_formula )
-      pdf_params%rsatl_2 = sat_mixrat_liq_api( nz, ngrdcol, p_in_Pa, tl2, saturation_formula )
-
-    end if !sclr_dim > 0
-
-    ! Determine whether to compute ice_supersat_frac. We do not compute
-    ! ice_supersat_frac for GFDL (unless do_liquid_only_in_clubb is true),
-    ! because liquid and ice are both fed into rtm, ruining the calculation.
-    if (do_liquid_only_in_clubb) then
-      l_calc_ice_supersat_frac = .true.
-    else
-      l_calc_ice_supersat_frac = .false.
-    end if
-
-#else
     rsatl_1 = sat_mixrat_liq_api( nz, ngrdcol, gr, p_in_Pa, tl1, saturation_formula  )
     rsatl_2 = sat_mixrat_liq_api( nz, ngrdcol, gr, p_in_Pa, tl2, &
                                   saturation_formula  ) ! h1g, 2010-06-16 end mod
@@ -1002,7 +926,6 @@ module pdf_closure_module
     !$acc end parallel loop
 
     l_calc_ice_supersat_frac = .true.
-#endif
 
     call transform_pdf_chi_eta_component( nz, ngrdcol, &
                                           tl1, pdf_params%rsatl_1, pdf_params%rt_1, exner,  & ! In
@@ -3700,10 +3623,6 @@ module pdf_closure_module
                                  rtm,                                     & ! Intent(inout)
                                  pdf_implicit_coefs_terms,                & ! Intent(inout)
                                  pdf_params, pdf_params_zm, err_info,     & ! Intent(inout)
-#ifdef GFDL
-                                 RH_crit(k, : , :),                       & ! Intent(inout)
-                                 do_liquid_only_in_clubb,                 & ! Intent(in)
-#endif
                                  rcm, cloud_frac,                         & ! Intent(out)
                                  ice_supersat_frac, wprcp,                & ! Intent(out)
                                  sigma_sqd_w, wpthvp, wp2thvp, wp2up,     & ! Intent(out)
@@ -3763,9 +3682,6 @@ module pdf_closure_module
 
     use sigma_sqd_w_module, only: &
         compute_sigma_sqd_w    ! Procedure(s)
-
-    use pdf_utilities, only: &
-        compute_mean_binormal    ! Procedure(s)
 
     use T_in_K_module, only: &
         thlm2T_in_K_api    ! Procedure(s)
@@ -3935,15 +3851,6 @@ module pdf_closure_module
 
     type(err_info_type), intent(inout) :: &
       err_info        ! err_info struct containing err_code and err_header
-
-#ifdef GFDL
-    ! hlg, 2010-06-16
-    real( kind = core_rknd ), dimension(ngrdcol,nz, min(1,sclr_dim) , 2), intent(inout) :: &
-      RH_crit  ! critical relative humidity for droplet and ice nucleation
-! ---> h1g, 2012-06-14
-    logical, intent(in)                 ::  do_liquid_only_in_clubb
-! <--- h1g, 2012-06-14
-#endif
 
     !------------------------------- Output Variables -------------------------------
     ! Variables being passed back to and out of advance_clubb_core.
@@ -4426,11 +4333,6 @@ module pdf_closure_module
            sclrm, wpsclrp_zt, sclrp2_zt,                    & ! intent(in)
            sclrprtp_zt, sclrpthlp_zt, Sksclr_zt,            & ! intent(in)
            gamma_Skw_fnc_zt,                                & ! intent(in)
-#ifdef GFDL
-           RH_crit,                                         & ! intent(inout)
-           do_liquid_only_in_clubb,                         & ! intent(in)
-#endif
-
            wphydrometp_zt, wp2hmp,                          & ! intent(in)
            rtphmp_zt, thlphmp_zt,                           & ! intent(in)
            clubb_params, mixt_frac_max_mag,                 & ! intent(in)
@@ -4551,10 +4453,6 @@ module pdf_closure_module
              sclrm_zm, wpsclrp, sclrp2,                            & ! intent(in)
              sclrprtp, sclrpthlp, Sksclr_zm,                       & ! intent(in)
              gamma_Skw_fnc,                                        & ! intent(in)
-#ifdef GFDL
-             RH_crit,                                              & ! intent(inout)
-             do_liquid_only_in_clubb,                              & ! intent(in)
-#endif
              wphydrometp, wp2hmp_zm,                               & ! intent(in)
              rtphmp, thlphmp,                                      & ! intent(in)
              clubb_params, mixt_frac_max_mag,                      & ! intent(in)
@@ -4875,9 +4773,6 @@ module pdf_closure_module
     use grid_class, only: &
         grid,     & ! Type
         zt2zm_api   ! Procedure
-
-    use pdf_parameter_module, only: &
-        pdf_parameter ! Derived data type
 
     use clubb_precision, only: &
         core_rknd ! Variable(s)

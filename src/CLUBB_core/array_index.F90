@@ -12,9 +12,6 @@ module array_index
   !   None
   !-------------------------------------------------------------------------
 
-  use clubb_precision, only: &
-    core_rknd      ! Precision
-
   implicit none
 
   private ! Default Scope

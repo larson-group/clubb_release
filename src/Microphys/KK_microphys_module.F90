@@ -47,7 +47,6 @@ module KK_microphys_module
                                  cloud_frac, w_std_dev, dzq, rcm,       & ! In
                                  Ncm, chi, rvm, hydromet,               & ! In
                                  saturation_formula,                    & ! In
-                                 stats, icol,                           & ! In
                                  hydromet_mc, hydromet_vel,             & ! Out
                                  Ncm_mc, rcm_mc, rvm_mc, thlm_mc,       & ! Out
                                  microphys_stats_zt,                    & ! Out
@@ -91,21 +90,13 @@ module KK_microphys_module
         microphys_stats_alloc, &
         microphys_put_var
 
-    use stats_netcdf, only: &
-        stats_type, &
-        var_on_stats_list
+    use corr_varnce_module, only: &
+      hm_metadata_type
 
     use grid_class, only: &
         grid ! Type
 
-    use corr_varnce_module, only: &
-      hm_metadata_type
-
     implicit none
-
-    integer :: &
-      num_stats_zt, &         ! Number of statistics variables sampled in this subroutine
-      num_stats_sfc           ! Number of sfc variables sampled in this routine
 
     ! Input Variables
     type(grid), intent(in) :: &
@@ -145,12 +136,6 @@ module KK_microphys_module
 
     integer, intent(in) :: &
       saturation_formula ! Integer that stores the saturation formula to be used
-
-    type(stats_type), intent(inout) :: &
-      stats
-
-    integer, intent(in) :: &
-      icol
 
     ! Output Variables
     real( kind = core_rknd ), dimension(nzt,hydromet_dim), intent(out) :: &
@@ -208,35 +193,10 @@ module KK_microphys_module
   !-----------------------------------------------------------------------
 
     !----- Begin Code -----
-    num_stats_sfc = 0
-    num_stats_zt = 0
-    ! Number of variables sampled in this subroutine.
-    if ( stats%l_sample ) then
-      if ( var_on_stats_list( stats, "rrm_evap" ) ) num_stats_zt = num_stats_zt + 1
-      if ( var_on_stats_list( stats, "rrm_auto" ) ) num_stats_zt = num_stats_zt + 1
-      if ( var_on_stats_list( stats, "rrm_accr" ) ) num_stats_zt = num_stats_zt + 1
-      if ( var_on_stats_list( stats, "mvrr" ) ) num_stats_zt = num_stats_zt + 1
-      if ( var_on_stats_list( stats, "Nrm_evap" ) ) num_stats_zt = num_stats_zt + 1
-      if ( var_on_stats_list( stats, "Nrm_auto" ) ) num_stats_zt = num_stats_zt + 1
-      if ( var_on_stats_list( stats, "rrm_src_adj" ) ) num_stats_zt = num_stats_zt + 1
-      if ( var_on_stats_list( stats, "Nrm_src_adj" ) ) num_stats_zt = num_stats_zt + 1
-      if ( var_on_stats_list( stats, "rrm_evap_adj" ) ) num_stats_zt = num_stats_zt + 1
-      if ( var_on_stats_list( stats, "Nrm_evap_adj" ) ) num_stats_zt = num_stats_zt + 1
-      if ( var_on_stats_list( stats, "rrm_mc_nonadj" ) ) num_stats_zt = num_stats_zt + 1
-    end if
-
-    ! Eliminate some compiler warnings
-    if ( .false. ) then
-      KK_mean_vol_rad = dzq
-      KK_mean_vol_rad = rvm
-      KK_mean_vol_rad = w_std_dev
-      KK_mean_vol_rad = wm_zt
-      KK_mean_vol_rad = cloud_frac
-    end if
     ! --------------------------- InOut ---------------------------
     ! Initialize microphys_stats_vars for statistics sampling
-    call microphys_stats_alloc( nzt, num_stats_zt, microphys_stats_zt )
-    call microphys_stats_alloc( 1, num_stats_sfc, microphys_stats_sfc )
+    call microphys_stats_alloc( nzt, 11, microphys_stats_zt )
+    call microphys_stats_alloc( 1, 0, microphys_stats_sfc )
 
     !!! Initialize microphysics fields.
     call KK_microphys_init( nzt, hydromet_dim, hydromet, hm_metadata, &
@@ -381,44 +341,18 @@ module KK_microphys_module
                               hydromet_mc, hydromet_vel )
 
     !!! Output values for statistics
-    if ( var_on_stats_list( stats, "rrm_evap" ) ) then
-      call microphys_put_var( "rrm_evap", KK_evap_tndcy, microphys_stats_zt )
-    end if
-    if ( var_on_stats_list( stats, "rrm_auto" ) ) then
-      call microphys_put_var( "rrm_auto", KK_auto_tndcy, microphys_stats_zt )
-    end if
-    if ( var_on_stats_list( stats, "rrm_accr" ) ) then
-      call microphys_put_var( "rrm_accr", KK_accr_tndcy, microphys_stats_zt )
-    end if
-    if ( var_on_stats_list( stats, "mvrr" ) ) then
-      call microphys_put_var( "mvrr", KK_mean_vol_rad, microphys_stats_zt )
-    end if
-    if ( var_on_stats_list( stats, "Nrm_evap" ) ) then
-      call microphys_put_var( "Nrm_evap", KK_Nrm_evap_tndcy, microphys_stats_zt )
-    end if
-    if ( var_on_stats_list( stats, "Nrm_auto" ) ) then
-      call microphys_put_var( "Nrm_auto", KK_Nrm_auto_tndcy, microphys_stats_zt )
-    end if
-    if ( l_src_adj_enabled ) then
-      if ( var_on_stats_list( stats, "rrm_src_adj" ) ) then
-        call microphys_put_var( "rrm_src_adj", adj_terms%rrm_src_adj, microphys_stats_zt )
-      end if
-      if ( var_on_stats_list( stats, "Nrm_src_adj" ) ) then
-        call microphys_put_var( "Nrm_src_adj", adj_terms%Nrm_src_adj, microphys_stats_zt )
-      end if
-    end if
-    if ( l_evap_adj_enabled ) then
-      if ( var_on_stats_list( stats, "rrm_evap_adj" ) ) then
-        call microphys_put_var( "rrm_evap_adj", adj_terms%rrm_evap_adj, microphys_stats_zt )
-      end if
-      if ( var_on_stats_list( stats, "Nrm_evap_adj" ) ) then
-        call microphys_put_var( "Nrm_evap_adj", adj_terms%Nrm_evap_adj, microphys_stats_zt )
-      end if
-    end if
-    if ( var_on_stats_list( stats, "rrm_mc_nonadj" ) ) then
-      call microphys_put_var( "rrm_mc_nonadj", &
-                              KK_auto_tndcy+KK_accr_tndcy+KK_evap_tndcy, microphys_stats_zt )
-    end if
+    call microphys_put_var( "rrm_evap", KK_evap_tndcy, microphys_stats_zt )
+    call microphys_put_var( "rrm_auto", KK_auto_tndcy, microphys_stats_zt )
+    call microphys_put_var( "rrm_accr", KK_accr_tndcy, microphys_stats_zt )
+    call microphys_put_var( "mvrr", KK_mean_vol_rad, microphys_stats_zt )
+    call microphys_put_var( "Nrm_evap", KK_Nrm_evap_tndcy, microphys_stats_zt )
+    call microphys_put_var( "Nrm_auto", KK_Nrm_auto_tndcy, microphys_stats_zt )
+    call microphys_put_var( "rrm_src_adj", adj_terms%rrm_src_adj, microphys_stats_zt )
+    call microphys_put_var( "Nrm_src_adj", adj_terms%Nrm_src_adj, microphys_stats_zt )
+    call microphys_put_var( "rrm_evap_adj", adj_terms%rrm_evap_adj, microphys_stats_zt )
+    call microphys_put_var( "Nrm_evap_adj", adj_terms%Nrm_evap_adj, microphys_stats_zt )
+    call microphys_put_var( "rrm_mc_nonadj", &
+                            KK_auto_tndcy+KK_accr_tndcy+KK_evap_tndcy, microphys_stats_zt )
 
     return
 

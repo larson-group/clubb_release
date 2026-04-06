@@ -65,7 +65,7 @@ contains
         thlm2T_in_K_api ! Procedure
 
     use constants_clubb, only: & 
-        rc_tol, fstderr    ! Constant(s)
+        rc_tol    ! Constant(s)
 
     use stats_netcdf, only: &
         stats_type, &
@@ -126,8 +126,9 @@ contains
       Kh_zt, wp2rcp, wprtpthlp, sigma_sqd_w_zt, rsat
 
     real( kind = core_rknd ), intent(in), dimension(ngrdcol,nzt) :: &
-      wp2_zt, thlp2_zt, wpthlp_zt, wprtp_zt, rtp2_zt, rtpthlp_zt, up2_zt, vp2_zt, upwp_zt, vpwp_zt, &
-      wpup2, wpvp2, a3_coef_zt, wp3_on_wp2_zt, w_up_in_cloud, w_down_in_cloud, cloudy_updraft_frac, &
+      wp2_zt, thlp2_zt, wpthlp_zt, wprtp_zt, rtp2_zt, rtpthlp_zt, &
+      up2_zt, vp2_zt, upwp_zt, vpwp_zt, wpup2, wpvp2, a3_coef_zt, &
+      wp3_on_wp2_zt, w_up_in_cloud, w_down_in_cloud, cloudy_updraft_frac, &
       cloudy_downdraft_frac
 
     real( kind = core_rknd ), intent(in), dimension(ngrdcol,nzm) :: &
@@ -662,8 +663,7 @@ contains
 
     use stats_netcdf, only: &
         stats_type, &
-        stats_update, &
-        var_on_stats_list
+        stats_update
 
     implicit none
 

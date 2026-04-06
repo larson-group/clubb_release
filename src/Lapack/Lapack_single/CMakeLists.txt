@@ -82,4 +82,5 @@ set(LAPACK_SINGLE_SOURCES
                             strsm.f
 )
 add_library(clubb_lapack_single OBJECT ${LAPACK_SINGLE_SOURCES})
+disable_compiler_warnings(clubb_lapack_single)
 add_compile_options(fpp)

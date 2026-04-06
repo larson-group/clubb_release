@@ -2,6 +2,9 @@ module rev_direction_grid_test
 
   implicit none
 
+  private
+  public :: rev_direction_grid_unit_test
+
   contains
 
   !=============================================================================
@@ -230,8 +233,10 @@ module rev_direction_grid_test
 
     call random_seed(size=seed_size)
     allocate(seed_output(seed_size))
-    !seed used =  -1102123834  1480475276  -248259584   525496705  1614213535 -1267052688     6290033   -78466652
-    !seed_output = (/ -1102123834,  1480475276,  -248259584,   525496705,  1614213535, -1267052688,     6290033,   -78466652 /)
+    !seed used =  -1102123834  1480475276  -248259584   525496705
+    !1614213535 -1267052688     6290033   -78466652
+    !seed_output = (/ -1102123834, 1480475276, -248259584, 525496705, &
+    !                 1614213535, -1267052688, 6290033, -78466652 /)
     !call random_seed(put=seed_output)
     call random_seed(get=seed_output)
 
@@ -747,11 +752,13 @@ module rev_direction_grid_test
                                   coef_wpxpyp_implicit_zm_flip, & ! In
                                   lhs_ta_upwind_descend ) ! Out
        ! lhs -- godunov type
-       call xpyp_term_ta_pdf_lhs_godunov( gr_ascending%nzm, gr_ascending%nzt, 1, gr_ascending, & ! In
+       call xpyp_term_ta_pdf_lhs_godunov( gr_ascending%nzm, gr_ascending%nzt, &
+                                          1, gr_ascending, & ! In
                                           coef_wpxpyp_implicit, & ! In
                                           invrs_rho_ds_zm, rho_ds_zm,  & ! In
                                           lhs_ta_godunov_ascend ) ! Out
-       call xpyp_term_ta_pdf_lhs_godunov( gr_descending%nzm, gr_descending%nzt, 1, gr_descending, & ! In
+       call xpyp_term_ta_pdf_lhs_godunov( gr_descending%nzm, gr_descending%nzt, &
+                                          1, gr_descending, & ! In
                                           coef_wpxpyp_implicit_flip, & ! In
                                           invrs_rho_ds_zm_flip, rho_ds_zm_flip,  & ! In
                                           lhs_ta_godunov_descend ) ! Out
@@ -792,13 +799,15 @@ module rev_direction_grid_test
                                   term_wpxpyp_explicit_zm_flip, & ! In
                                   rhs_ta_upwind_descend ) ! Out
        ! rhs -- godunov type
-       call xpyp_term_ta_pdf_rhs_godunov( gr_ascending%nzm, gr_ascending%nzt, 1, gr_ascending, & ! In
+       call xpyp_term_ta_pdf_rhs_godunov( gr_ascending%nzm, gr_ascending%nzt, &
+                                          1, gr_ascending, & ! In
                                           term_wpxpyp_explicit_zm, & ! In
                                           invrs_rho_ds_zm, & ! In
                                           sgn_turbulent_vel_zt, & ! In
                                           rho_ds_zm, & ! In
                                           rhs_ta_godunov_ascend ) ! Out
-       call xpyp_term_ta_pdf_rhs_godunov( gr_descending%nzm, gr_descending%nzt, 1, gr_descending, & ! In
+       call xpyp_term_ta_pdf_rhs_godunov( gr_descending%nzm, gr_descending%nzt, &
+                                          1, gr_descending, & ! In
                                           term_wpxpyp_explicit_zm_flip, & ! In
                                           invrs_rho_ds_zm_flip, & ! In
                                           sgn_turbulent_vel_zt_flip, & ! In

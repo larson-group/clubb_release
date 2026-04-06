@@ -1234,8 +1234,7 @@ module advance_wp2_wp3_module
     use grid_class, only: &
         grid,  & ! Type
         zm2zt_api, & ! Function(s)
-        zt2zm_api, &
-        flip
+        zt2zm_api
 
     use constants_clubb, only: &
         w_tol_sqd,                & ! Variables(s)
@@ -1261,9 +1260,6 @@ module advance_wp2_wp3_module
         iSkw_max_mag, &
         iC_uu_shr
 
-    use parameters_tunable, only: &
-        nu_vertical_res_dep    ! Type(s)
-
     use fill_holes, only: &
         fill_holes_vertical_api, &  ! Procedure(s)
         fill_holes_wp2_from_horz_tke
@@ -1271,9 +1267,6 @@ module advance_wp2_wp3_module
     use clip_explicit, only: &
         clip_variance, & ! Procedure(s)
         clip_skewness
-
-    use pdf_parameter_module, only: &
-        implicit_coefs_terms    ! Variable Type
 
     use model_flags, only: &
         penta_bicgstab,             & ! Variable(s)
@@ -1746,11 +1739,16 @@ module advance_wp2_wp3_module
           stats_tmp_zt = zero
           do k = 2, nzt-1
             do i = 1, ngrdcol
-              stats_tmp_zt(i,k) = - gamma_over_implicit_ts * wp3_term_ta_lhs_result(5,i,k) * wp3(i,k-1) &
-                                  - gamma_over_implicit_ts * wp3_term_ta_lhs_result(4,i,k) * wp2(i,k) &
-                                  - gamma_over_implicit_ts * wp3_term_ta_lhs_result(3,i,k) * wp3(i,k) &
-                                  - gamma_over_implicit_ts * wp3_term_ta_lhs_result(2,i,k) * wp2(i,k+1) &
-                                  - gamma_over_implicit_ts * wp3_term_ta_lhs_result(1,i,k) * wp3(i,k+1)
+              stats_tmp_zt(i,k) = -gamma_over_implicit_ts * &
+                                  wp3_term_ta_lhs_result(5,i,k) * wp3(i,k-1) &
+                                  - gamma_over_implicit_ts * &
+                                  wp3_term_ta_lhs_result(4,i,k) * wp2(i,k) &
+                                  - gamma_over_implicit_ts * &
+                                  wp3_term_ta_lhs_result(3,i,k) * wp3(i,k) &
+                                  - gamma_over_implicit_ts * &
+                                  wp3_term_ta_lhs_result(2,i,k) * wp2(i,k+1) &
+                                  - gamma_over_implicit_ts * &
+                                  wp3_term_ta_lhs_result(1,i,k) * wp3(i,k+1)
             end do
           end do
 
@@ -5310,8 +5308,7 @@ module advance_wp2_wp3_module
     !-----------------------------------------------------------------------
 
     use grid_class, only: &
-        grid, &
-        zm2zt_api    ! Variable type(s)
+        grid
 
     use constants_clubb, only: & ! Constant(s) 
         grav, & ! Gravitational acceleration [m/s^2]

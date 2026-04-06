@@ -47,6 +47,8 @@ module parameters_KK
   ! Khairoutdinov and Kogan (2000); p. 233
   real( kind = core_rknd ), public :: C_evap = 0.86_core_rknd
 
+  !$omp threadprivate( r_0, C_evap )
+
   private ! Default Scope
 
 end module parameters_KK

@@ -515,9 +515,6 @@ contains
     thlm, rtm, wprtp, wpthlp, &                             ! intent(inout)
     wp2, wp3, rtp2, rtp3, thlp2, thlp3, rtpthlp, &          ! intent(inout)
     sclrm,   &
-#ifdef GFDL
-               sclrm_trsport_only,  &  ! h1g, 2010-06-16    ! intent(inout)
-#endif
     sclrp2, sclrp3, sclrprtp, sclrpthlp, &                  ! intent(inout)
     wpsclrp, edsclrm, err_info_api, &                       ! intent(inout)
     rcm, cloud_frac, &                                      ! intent(inout)
@@ -528,10 +525,6 @@ contains
     um_pert, vm_pert, upwp_pert, vpwp_pert, &               ! intent(inout)
     pdf_params, pdf_params_zm, &                            ! intent(inout)
     pdf_implicit_coefs_terms, &                             ! intent(inout)
-#ifdef GFDL
-               RH_crit, & !h1g, 2010-06-16                  ! intent(inout)
-               do_liquid_only_in_clubb, &                   ! intent(in)
-#endif
     Kh_zm, Kh_zt, &                                         ! intent(out)
 #ifdef CLUBB_CAM
     qclvar, &                                               ! intent(out)
@@ -764,11 +757,6 @@ contains
     type(implicit_coefs_terms), intent(inout) :: &
       pdf_implicit_coefs_terms    ! Implicit coefs / explicit terms [units vary]
 
-#ifdef GFDL
-    real( kind = core_rknd ), intent(inout), dimension(gr%nzt,sclr_dim) :: &  ! h1g, 2010-06-16
-      sclrm_trsport_only  ! Passive scalar concentration due to pure transport [{units vary}/s]
-#endif
-
     ! Eddy passive scalar variable
     real( kind = core_rknd ), intent(inout), dimension(gr%nzt,edsclr_dim) :: &
       edsclrm   ! Eddy passive scalar grid-mean (thermo. levels)   [units vary]
@@ -811,15 +799,6 @@ contains
 
     real( kind = core_rknd ), dimension(gr%nzt), intent(out) :: &
       Lscale       ! Length scale                          [m]
-
-#ifdef GFDL
-    ! hlg, 2010-06-16
-    real( kind = core_rknd ), intent(inout), dimension(gr%nzt, min(1,sclr_dim) , 2) :: &
-      RH_crit  ! critical relative humidity for droplet and ice nucleation
-! ---> h1g, 2012-06-14
-    logical, intent(in)                 ::  do_liquid_only_in_clubb
-! <--- h1g, 2012-06-14
-#endif
 
     !------------------------- Local Variables -------------------------
     real( kind = core_rknd ), dimension(1) ::  &
@@ -986,11 +965,6 @@ contains
       upwp_pert_col, & ! perturbed <u'w'>    [m^2/s^2]
       vpwp_pert_col    ! perturbed <v'w'>    [m^2/s^2]
 
-#ifdef GFDL
-    real( kind = core_rknd ), dimension(1,gr%nzt,sclr_dim) :: &  ! h1g, 2010-06-16
-      sclrm_trsport_only_col  ! Passive scalar concentration due to pure transport [{units vary}/s]
-#endif
-
       real( kind = core_rknd ), dimension(1,gr%nzt,edsclr_dim) :: &
       edsclrm_col   ! Eddy passive scalar mean (thermo. levels)   [units vary]
 
@@ -1023,13 +997,6 @@ contains
     real( kind = core_rknd ), dimension(1,gr%nzm) :: &
       thlprcp_col    ! thl'rc'              [K kg/kg]
       
-#ifdef GFDL
-    ! hlg, 2010-06-16
-    real( kind = core_rknd ), dimension(1,gr%nzt, min(1,sclr_dim) , 2) :: &
-      RH_crit_col  ! critical relative humidity for droplet and ice nucleation
-    logical, intent(in)                 ::  do_liquid_only_in_clubb
-#endif
-
     real( kind = core_rknd ), dimension(1,gr%nzt) :: & ! 1 because ngrdcol is set to 1
                                                        ! in the subroutine call to
                                                        ! advance_clubb_core
@@ -1120,9 +1087,6 @@ contains
     rtpthlp_col(1,:) = rtpthlp
 
     sclrm_col(1,:,:) = sclrm
-#ifdef GFDL
-    sclrm_trsport_only_col(1,:,:) = sclrm_trsport_only
-#endif
     sclrp2_col(1,:,:) = sclrp2
     sclrp3_col(1,:,:) = sclrp3
     sclrprtp_col(1,:,:) = sclrprtp
@@ -1153,9 +1117,6 @@ contains
     vm_pert_col(1,:) = vm_pert
     upwp_pert_col(1,:) = upwp_pert
     vpwp_pert_col(1,:) = vpwp_pert
-#ifdef GFDL
-    RH_crit_col(1,:,:,:) = RH_crit
-#endif
     Kh_zm_col(1,:) = Kh_zm
     Kh_zt_col(1,:) = Kh_zt
 #ifdef CLUBB_CAM
@@ -1274,10 +1235,6 @@ contains
     !$acc data copyin( varmu_col )
 #endif
 
-#ifdef GFDL
-    !$acc data if( sclr_dim > 0 ) copy( sclrm_trsport_only )
-#endif
-
     call advance_clubb_core( gr, gr%nzm, gr%nzt, 1,             &             ! intent(in)
       l_implemented, dt, fcor_col, fcor_y_col, sfc_elevation_col, &           ! intent(in)
       hydromet_dim, &                                                         ! intent(in)
@@ -1309,9 +1266,6 @@ contains
       thlm_col, rtm_col, wprtp_col, wpthlp_col, &                                 ! intent(inout)
       wp2_col, wp3_col, rtp2_col, rtp3_col, thlp2_col, thlp3_col, rtpthlp_col, &  ! intent(inout)
       sclrm_col,   &
-#ifdef GFDL
-      sclrm_trsport_only_col,  &  ! h1g, 2010-06-16                               ! intent(inout)
-#endif
       sclrp2_col, sclrp3_col, sclrprtp_col, sclrpthlp_col, &                      ! intent(inout)
       wpsclrp_col, edsclrm_col, &                                                 ! intent(inout)
       rcm_col, cloud_frac_col, &                                                  ! intent(inout)
@@ -1323,10 +1277,6 @@ contains
       pdf_params, pdf_params_zm, &                                                ! intent(inout)
       pdf_implicit_coefs_terms, &                                                 ! intent(inout)
       err_info_api, &                                                             ! intent(inout)
-#ifdef GFDL
-               RH_crit_col, & !h1g, 2010-06-16                                    ! intent(inout)
-               do_liquid_only_in_clubb, &                                         ! intent(in)
-#endif
       Kh_zm_col, Kh_zt_col, &                                                     ! intent(out)
 #ifdef CLUBB_CAM
                qclvar_col, &                                                      ! intent(out)
@@ -1346,10 +1296,6 @@ contains
 #endif
 
 #ifdef CLUBBND_CAM
-    !$acc end data
-#endif
-
-#ifdef GFDL
     !$acc end data
 #endif
 
@@ -1405,9 +1351,6 @@ contains
     wp2vp2 = wp2vp2_col(1,:)
     wp2up2 = wp2up2_col(1,:)
     ice_supersat_frac = ice_supersat_frac_col(1,:)
-#ifdef GFDL
-    sclrm_trsport_only = sclrm_trsport_only_col(1,:,:)
-#endif
     edsclrm = edsclrm_col(1,:,:)
     rcm_in_layer = rcm_in_layer_col(1,:)
     cloud_cover  = cloud_cover_col(1,:)
@@ -1423,9 +1366,6 @@ contains
     qclvar = qclvar_col(1,:)
 #endif
     thlprcp = thlprcp_col(1,:)
-#ifdef GFDL
-    RH_crit = RH_crit_col(1,:,:,:)
-#endif
     Lscale = Lscale_col(1,:)
 
   end subroutine advance_clubb_core_api_single_col
@@ -1461,9 +1401,6 @@ contains
     thlm, rtm, wprtp, wpthlp, &                             ! intent(inout)
     wp2, wp3, rtp2, rtp3, thlp2, thlp3, rtpthlp, &          ! intent(inout)
     sclrm,   &
-#ifdef GFDL
-               sclrm_trsport_only,  &  ! h1g, 2010-06-16    ! intent(inout)
-#endif
     sclrp2, sclrp3, sclrprtp, sclrpthlp, &                  ! intent(inout)
     wpsclrp, edsclrm, err_info_api, &                       ! intent(inout)
     rcm, cloud_frac, &                                      ! intent(inout)
@@ -1474,10 +1411,6 @@ contains
     um_pert, vm_pert, upwp_pert, vpwp_pert, &               ! intent(inout)
     pdf_params, pdf_params_zm, &                            ! intent(inout)
     pdf_implicit_coefs_terms, &                             ! intent(inout)
-#ifdef GFDL
-               RH_crit, & !h1g, 2010-06-16                  ! intent(inout)
-               do_liquid_only_in_clubb, &                   ! intent(in)
-#endif
     Kh_zm, Kh_zt, &                                         ! intent(out)
 #ifdef CLUBB_CAM
     qclvar, &                                               ! intent(out)
@@ -1715,11 +1648,6 @@ contains
     type(implicit_coefs_terms), intent(inout) :: &
       pdf_implicit_coefs_terms    ! Implicit coefs / explicit terms [units vary]
 
-#ifdef GFDL
-    real( kind = core_rknd ), intent(inout), dimension(ngrdcol,nzt,sclr_dim) :: &  ! h1g, 2010-06-16
-      sclrm_trsport_only  ! Passive scalar concentration due to pure transport [{units vary}/s]
-#endif
-
     real( kind = core_rknd ), intent(inout), dimension(ngrdcol,nzt,edsclr_dim) :: &
     edsclrm   ! Eddy passive scalar mean (thermo. levels)   [units vary]
 
@@ -1758,13 +1686,6 @@ contains
 
     real( kind = core_rknd ), dimension(ngrdcol,nzt), intent(out) :: &
       Lscale     ! Length scale         [m]
-
-#ifdef GFDL
-    ! hlg, 2010-06-16
-    real( kind = core_rknd ), intent(inOUT), dimension(ngrdcol,nzt, min(1,sclr_dim) , 2) :: &
-      RH_crit  ! critical relative humidity for droplet and ice nucleation
-    logical, intent(in)                 ::  do_liquid_only_in_clubb
-#endif
 
     !$acc data copyin( gr, gr%zm, gr%zt, gr%dzm, gr%dzt, gr%invrs_dzt, gr%invrs_dzm, &
     !$acc              gr%weights_zt2zm, gr%weights_zm2zt, &
@@ -1857,10 +1778,6 @@ contains
     !$acc data copyin( varmu )
 #endif
 
-#ifdef GFDL
-    !$acc data if( sclr_dim > 0 ) copy( sclrm_trsport_only )
-#endif
-
     call advance_clubb_core( gr, nzm, nzt, ngrdcol, &         ! intent(in)
       l_implemented, dt, fcor, fcor_y, sfc_elevation, &       ! intent(in)
       hydromet_dim, &                                         ! intent(in)
@@ -1892,9 +1809,6 @@ contains
       thlm, rtm, wprtp, wpthlp, &                             ! intent(inout)
       wp2, wp3, rtp2, rtp3, thlp2, thlp3, rtpthlp, &          ! intent(inout)
       sclrm,   &
-#ifdef GFDL
-               sclrm_trsport_only,  &  ! h1g, 2010-06-16      ! intent(inout)
-#endif
       sclrp2, sclrp3, sclrprtp, sclrpthlp, &                  ! intent(inout)
       wpsclrp, edsclrm, &                                     ! intent(inout)
       rcm, cloud_frac, &                                      ! intent(inout)
@@ -1906,10 +1820,6 @@ contains
       pdf_params, pdf_params_zm, &                            ! intent(inout)
       pdf_implicit_coefs_terms, &                             ! intent(inout)
       err_info_api, &                                         ! intent(inout)
-#ifdef GFDL
-               RH_crit, & !h1g, 2010-06-16                    ! intent(inout)
-               do_liquid_only_in_clubb, &                     ! intent(in)
-#endif
       Kh_zm, Kh_zt, &                                         ! intent(out)
 #ifdef CLUBB_CAM
                qclvar, &                                      ! intent(out)
@@ -1929,10 +1839,6 @@ contains
 #endif
 
 #ifdef CLUBBND_CAM
-    !$acc end data
-#endif
-
-#ifdef GFDL
     !$acc end data
 #endif
 
@@ -2424,8 +2330,9 @@ contains
   end function lin_interpolate_two_points_api
 
   !================================================================================================
-  ! calc_derrived_params_api - Adjusts values of background eddy diffusivity based on vertical grid spacing
-  !                    and calculates 
+  ! calc_derrived_params_api
+  ! Adjusts background eddy diffusivity based on vertical grid spacing
+  ! and calculates
   !================================================================================================
 
   subroutine calc_derrived_params_api_single_col( gr, grid_type, deltaz,    & ! Intent(in)
@@ -2491,7 +2398,8 @@ contains
   end subroutine calc_derrived_params_api_single_col
   
   !================================================================================================
-  ! calc_derrived_params_api - Adjusts values of background eddy diffusivity based on vertical grid spacing
+  ! calc_derrived_params_api - Adjusts background eddy diffusivity based
+  ! on vertical grid spacing
   !                    and calculates 
   !================================================================================================
 

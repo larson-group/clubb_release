@@ -30,7 +30,6 @@ module error
   use parameter_indices, only: nparams ! Variable(s)
 
   use parameters_tunable, only:  &
-    set_default_parameters, & ! Procedure(s)
     init_clubb_params_api,  & ! Procedure(s)
     read_param_minmax,      &
     read_param_constraints
@@ -655,9 +654,6 @@ module error
 !-----------------------------------------------------------------------
 
     use clubb_driver, only: run_clubb ! Procedure(s)
-
-    use clubb_api_module, only: &
-      clubb_at_least_debug_level_api    ! Procedure
 
     use error_code, only: &
       clubb_no_error,       & ! Constant

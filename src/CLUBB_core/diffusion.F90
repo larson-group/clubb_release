@@ -31,7 +31,7 @@ module diffusion
 
   !=============================================================================
   subroutine diffusion_zt_lhs( nzm, nzt, ngrdcol, gr, K_zm, K_zt, nu,  & ! In
-                               invrs_rho_ds_zt, rho_ds_zm,            & ! In
+                               invrs_rho_ds_ztzxt, rho_ds_zm,            & ! In
                                lhs )                                    ! Out
 
     ! Description:
@@ -282,7 +282,7 @@ module diffusion
 
     real( kind = core_rknd ), dimension(ngrdcol,nzt), intent(in) ::  & 
       K_zt,            & ! Coef. of eddy diffusivity at thermo. levels    [m^2/s]
-      invrs_rho_ds_zt    ! Inverse dry statis density on thermo. levels   [m^3/kg]
+      invrs_rho_ds_ztzxt    ! Inverse dry statis density on thermo. levels   [m^3/kg]
 
     real( kind = core_rknd ), dimension(ngrdcol), intent(in) ::  & 
       nu                ! Background constant coef. of eddy diffusivity  [m^2/s]
@@ -333,7 +333,7 @@ module diffusion
       !$acc parallel loop gang vector collapse(2) default(present)
       do k = 1, nzt
         do i = 1, ngrdcol
-          drhoKdz_zt(i,k) = - invrs_rho_ds_zt(i,k) * ddzm_rho_K_zm_nu(i,k)
+          drhoKdz_zt(i,k) = - invrs_rho_ds_ztzxt(i,k) * ddzm_rho_K_zm_nu(i,k)
         end do
       end do
       !$acc end parallel loop
@@ -399,11 +399,11 @@ module diffusion
       do i = 1, ngrdcol
 
         ! Thermodynamic superdiagonal: [ x var_zt(k+1,<t+1>) ]
-        lhs(kp1_tdiag,i,1) = - gr%invrs_dzt(i,1) * invrs_rho_ds_zt(i,1) &
+        lhs(kp1_tdiag,i,1) = - gr%invrs_dzt(i,1) * invrs_rho_ds_ztzxt(i,1) &
                                * ( K_zm(i,2) + nu(i) ) * rho_ds_zm(i,2) * gr%invrs_dzm(i,2)
 
         ! Thermodynamic main diagonal: [ x var_zt(k,<t+1>) ]
-        lhs(k_tdiag,i,1)   = + gr%invrs_dzt(i,1) * invrs_rho_ds_zt(i,1) &
+        lhs(k_tdiag,i,1)   = + gr%invrs_dzt(i,1) * invrs_rho_ds_ztzxt(i,1) &
                                * ( K_zm(i,2) + nu(i) ) * rho_ds_zm(i,2) * gr%invrs_dzm(i,2)
 
         ! Thermodynamic subdiagonal: [ x var_zt(k-1,<t+1>) ]
@@ -442,18 +442,18 @@ module diffusion
 
           ! Thermodynamic superdiagonal: [ x var_zt(k+1,<t+1>) ]
           lhs(kp1_tdiag,i,k) &
-          = - gr%invrs_dzt(i,k) * invrs_rho_ds_zt(i,k) & 
+          = - gr%invrs_dzt(i,k) * invrs_rho_ds_ztzxt(i,k) &
               * K_zm_nu(i,k+1) * rho_ds_zm(i,k+1) * gr%invrs_dzm(i,k+1)
 
           ! Thermodynamic main diagonal: [ x var_zt(k,<t+1>) ]
           lhs(k_tdiag,i,k) &
-          = + gr%invrs_dzt(i,k) * invrs_rho_ds_zt(i,k) & 
+          = + gr%invrs_dzt(i,k) * invrs_rho_ds_ztzxt(i,k) &
               * ( K_zm_nu(i,k+1) * rho_ds_zm(i,k+1) * gr%invrs_dzm(i,k+1) &
                   + K_zm_nu(i,k) * rho_ds_zm(i,k) * gr%invrs_dzm(i,k) )
 
           ! Thermodynamic subdiagonal: [ x var_zt(k-1,<t+1>) ]
           lhs(km1_tdiag,i,k) &
-          = - gr%invrs_dzt(i,k) * invrs_rho_ds_zt(i,k) & 
+          = - gr%invrs_dzt(i,k) * invrs_rho_ds_ztzxt(i,k) &
               * K_zm_nu(i,k) * rho_ds_zm(i,k) * gr%invrs_dzm(i,k)
 
         end do
@@ -500,12 +500,12 @@ module diffusion
 
         ! Thermodynamic main diagonal: [ x var_zt(k,<t+1>) ]
         lhs(k_tdiag,i,nzt) &
-        = + gr%invrs_dzt(i,nzt) * invrs_rho_ds_zt(i,nzt) &
+        = + gr%invrs_dzt(i,nzt) * invrs_rho_ds_ztzxt(i,nzt) &
             * ( K_zm(i,nzm-1) + nu(i) ) * rho_ds_zm(i,nzm-1) * gr%invrs_dzm(i,nzm-1) 
 
         ! Thermodynamic subdiagonal: [ x var_zt(k-1,<t+1>) ]
         lhs(km1_tdiag,i,nzt) &
-        = - gr%invrs_dzt(i,nzt) * invrs_rho_ds_zt(i,nzt) &
+        = - gr%invrs_dzt(i,nzt) * invrs_rho_ds_ztzxt(i,nzt) &
             * ( K_zm(i,nzm-1) + nu(i) ) * rho_ds_zm(i,nzm-1) * gr%invrs_dzm(i,nzm-1)
 
       end do

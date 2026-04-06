@@ -102,9 +102,7 @@ module advance_microphys_module
 
     use stats_netcdf, only: &
         stats_type, &
-        stats_update, &
-        stats_begin_budget, &
-        stats_finalize_budget
+        stats_update
 
     use err_info_type_module, only: &
       err_info_type        ! Type
@@ -584,8 +582,7 @@ module advance_microphys_module
         nu_vertical_res_dep  ! Type(s)
 
     use parameters_microphys, only: &
-        l_hydromet_sed,    & ! Variable(s)
-        l_upwind_diff_sed
+        l_hydromet_sed       ! Variable(s)
 
     use error_code, only: &
         clubb_at_least_debug_level_api, & ! Procedure
@@ -725,7 +722,7 @@ module advance_microphys_module
       name_bt, name_hf, name_wvhf, name_cl, name_mc
 
     character(len=16) :: &
-      name_hmp2, name_wp, name_khm
+      name_hmp2, name_wp
 
     !---------------------------- Begin Code ----------------------------
 
@@ -990,9 +987,6 @@ module advance_microphys_module
     ! References:
     !-----------------------------------------------------------------------
 
-    use grid_class, only: & 
-        zt2zm_api    ! Procedure(s)
-
     use grid_class, only: grid ! Type
 
     use constants_clubb, only: &
@@ -1147,7 +1141,8 @@ module advance_microphys_module
        if ( l_in_cloud_Nc_diff ) then
           ! Save prior value of Ncm for determining total time tendency.
           call stats_begin_budget( "Ncm_bt", &
-                                  ( Nc_in_cloud * max(cloud_frac, cloud_frac_min) ) / dt,stats, icol)
+                                  ( Nc_in_cloud * max(cloud_frac, cloud_frac_min) ) / dt, &
+                                  stats, icol )
        else
           ! Save prior value of Ncm for determining total time tendency.
           call stats_begin_budget( "Ncm_bt", Ncm / dt, stats, icol )

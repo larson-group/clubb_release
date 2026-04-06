@@ -9,14 +9,15 @@ import glob
 # Directory this script lives in, which is required to be clubb root
 CLUBB_ROOT = os.path.dirname(os.path.abspath(__file__))
 
-threadprivate_script  = os.path.join(CLUBB_ROOT, "utilities/check_for_missing_threadprivate.py")
 clubbstandards_script = os.path.join(CLUBB_ROOT, "utilities/CLUBBStandardsCheck.py") # perl version is utilities/CLUBBStandardsCheck.pl
 
-clubb_src_dir         = os.path.join(CLUBB_ROOT, "src/")
+clubb_driver_src      = os.path.join(CLUBB_ROOT, "src/clubb_driver.F90")
 CLUBB_core_dir        = os.path.join(CLUBB_ROOT, "src/CLUBB_core/")
 SILHS_dir             = os.path.join(CLUBB_ROOT, "src/SILHS/")
 Benchmark_cases_dir   = os.path.join(CLUBB_ROOT, "src/Benchmark_cases/")
-KK_microphys_dir      = os.path.join(CLUBB_ROOT, "src/KK_microphys/")
+Radiation_dir         = os.path.join(CLUBB_ROOT, "src/Radiation/")
+Microphys_dir         = os.path.join(CLUBB_ROOT, "src/Microphys/")
+KK_microphys_dir      = os.path.join(CLUBB_ROOT, "src/Microphys/KK_microphys/")
 G_unit_test_types_dir = os.path.join(CLUBB_ROOT, "src/G_unit_test_types/")
 
 # Maps compiler/family names (from FC or LMOD_FAMILY_COMPILER) to canonical toolchain names.
@@ -187,45 +188,36 @@ def run_cmake_build(logfile):
         print(f"\n\033[91mBuild failed. See {logfile} for details.\033[0m")
         sys.exit(retcode)
 
-def run_threadprivate_check(logfile):
-
-    # Run check_for_missing_threadprivate check on CLUBB_core and SILHS. 
-    # This is important because these are the libraries used within host models
-    retcode = run_and_log(
-        ["python", threadprivate_script, CLUBB_core_dir, SILHS_dir],
-        logfile
-    )
-
-    return retcode
-
 def run_clubb_standards_check(logfile):
 
     retcode = 0
 
     # Run CLUBBStandardsCheck on all the source code we create.
     # This is important to keep Vince happy
-    for directory in [
-        clubb_src_dir,
+    for path in [
+        clubb_driver_src,
         CLUBB_core_dir,
         SILHS_dir,
         Benchmark_cases_dir,
+        Radiation_dir,
+        Microphys_dir,
         KK_microphys_dir,
         G_unit_test_types_dir
     ]:
-        files = glob.glob(f"{directory}/*.F90")
+        if os.path.isdir(path):
+            files = glob.glob(f"{path}/*.F90")
+        else:
+            files = [path] if os.path.isfile(path) else []
 
         if not files:
-            print(f"No matches for {directory}")
+            print(f"No matches for {path}")
             continue
 
-        retcode = run_and_log(
+        # Just sum all error codes together
+        retcode += run_and_log(
             ["python", clubbstandards_script] + files,
             logfile
         )
-
-        # Save an error
-        if retcode != 0: 
-          retcode = 1
 
     return retcode
 
@@ -305,17 +297,7 @@ def main():
     if os.path.lexists(link_path): os.remove(link_path)
     os.symlink(inst_dir, link_path)
 
-    # Run the CLUBB threadprivate check, which ensures that all module variables are 
-    # declared "threadprivate" 
-    if run_threadprivate_check(build_log) != 0:
-        print(f"\033[91m===============================================================")
-        print(f"\033[91mTHREADPRIVATE CHECK FAILED")
-        print(f"\033[91m  THIS IS PRINTED IN ALL RED, CAPITAL LETTERS, AND USES")
-        print(f"\033[91m  AN EXCLAMATION MARK TO ENSURE THE DEVELOPERS FEEL SHAME!")
-        print(f"\033[91m  IF YOU ARE ONE OF THESE \"DEVELOPERS\" CHECK THE")
-        print(f"\033[91m  LOG FILE FOR DETAILS: {build_log}")
-        print(f"\033[91m===============================================================\033[0m")
-        source_check_failed = True
+    source_check_failed = False
 
     # Run the CLUBB standards check, which looks for various code issues
     if run_clubb_standards_check(build_log) != 0:

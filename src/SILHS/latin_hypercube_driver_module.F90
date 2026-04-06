@@ -70,17 +70,13 @@ module latin_hypercube_driver_module
       rc_tol
 
     use clubb_precision, only: &
-      core_rknd, &
-      stat_rknd
+      core_rknd
 
     use parameters_silhs, only: &
       silhs_config_flags_type ! Type(s)
 
     use error_code, only: &
       clubb_at_least_debug_level_api  ! Procedure
-      
-    use advance_helper_module, only: &
-      vertical_avg  ! Procedure
       
     use stats_netcdf, only: &
       stats_type, &
@@ -110,7 +106,8 @@ module latin_hypercube_driver_module
       d_uniform_extra = 2   ! Number of variables that are included in the uniform sample but not in
                             ! the lognormal sample. Currently:
                             !
-                            ! The uniform distribution corresponds to all the same variables as X_nl,
+                            ! The uniform distribution uses the same variables
+                            ! as X_nl,
                             ! except the d+1 component is the mixture component.
                             ! pdf_dim+1: Mixture component, for choosing PDF component
                             ! pdf_dim+2: Precipitation fraction, for determining precipitation
@@ -407,7 +404,8 @@ module latin_hypercube_driver_module
     
     if ( present(stats) .and. stats%l_sample ) then
       ! Bring sampled uniform-space arrays back to host before accumulation.
-      !$acc update host(X_u_all_levs,l_in_precip,lh_sample_point_weights,X_mixt_comp_all_levs,k_lh_start)
+      !$acc update host( X_u_all_levs, l_in_precip, lh_sample_point_weights, &
+      !$acc                  X_mixt_comp_all_levs, k_lh_start )
       call stats_accumulate_uniform_lh( nzt, num_samples, ngrdcol, l_in_precip(:,:,:), &
                                         X_mixt_comp_all_levs(:,:,:), &
                                         X_u_all_levs(:,:,:,hm_metadata%iiPDF_chi), pdf_params, &
@@ -669,7 +667,6 @@ module latin_hypercube_driver_module
       precipitation_fractions      ! Type
 
     use generate_uniform_sample_module, only: &
-      rand_uniform_real, &        ! Procedure(s)
       generate_uniform_lh_sample
 
     use silhs_importance_sample_module, only: &
@@ -1180,8 +1177,6 @@ module latin_hypercube_driver_module
 
     use transform_to_pdf_module, only: &
         chi_eta_2_rtthl ! Awesome procedure
-
-    use grid_class, only: grid
 
     implicit none
 
@@ -1799,9 +1794,6 @@ module latin_hypercube_driver_module
 !   None
 !-------------------------------------------------------------------------------
 
-    use generate_uniform_sample_module, only: &
-      rand_uniform_real ! Procedure
-
     use clubb_precision, only: &
       core_rknd ! Precision
 
@@ -2025,7 +2017,7 @@ module latin_hypercube_driver_module
 
     real(kind=core_rknd) :: xtmp
 
-    integer :: sample, ivar, k
+    integer :: sample, ivar
 
     integer :: &
       iirr, & 

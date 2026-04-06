@@ -15,11 +15,7 @@ program clubb_driver_test
     clean_up_clubb
 
   use error_code, only: &
-    clubb_generalized_grd_test_err, & ! Constants
     clubb_fatal_error
-
-  use model_flags, only: &
-    l_test_grid_generalization
 
   use constants_clubb, only: &
     fstderr ! Constant
@@ -68,8 +64,9 @@ program clubb_driver_test
   !---------------------------------------- Test Sections ----------------------------------------
 
   write(fstderr, *) "======================== REINITIALIZATION TEST ========================"
-  write(fstderr, *) "This section ensures that everything allocated in init_clubb_case will be deallocated"
-  write(fstderr, *) "in clean_up_clubb. This may cause a runtime error if there is a mismatch between"
+  write(fstderr, *) "This section ensures that everything allocated in init_clubb_case"
+  write(fstderr, *) "will be deallocated in clean_up_clubb. This may cause a runtime"
+  write(fstderr, *) "error if there is a mismatch between"
   write(fstderr, *) "allocate/deallocate statements, but could "
 
   ! Read in model parameter values by initializing, cleaning up, and initializing again.
@@ -89,7 +86,7 @@ program clubb_driver_test
   call advance_clubb_to_end( l_stdout, err_info, l_suppress_stats=.true. )
 
   ! Reset model back to initial conditions
-  call set_case_initial_conditions(err_info)
+  call set_case_initial_conditions()
 
   ! Turn stats on and run. If this produces different output than what calling run_clubb
   ! does, then set_case_initial_conditions is not correctly reseting to initial conditions

@@ -20,8 +20,6 @@ module fill_holes
     l_debug               = .false., & ! Printouts to help track down errors
     l_print_before_after  = .false.    ! Printouts of field before and after
 
-  integer :: ret_code
-
   contains
 
   !=============================================================================
@@ -50,11 +48,7 @@ module fill_holes
         core_rknd ! Variable(s)
 
     use constants_clubb, only: &
-        fstderr, &
-        eps, &
-        one, &
-        num_hf_draw_points ! The number of points on either side of the hole;
-                           ! Mass is drawn from these points to fill the hole
+        fstderr
 
     use model_flags, only: &
         global_fill, &
@@ -231,13 +225,15 @@ module fill_holes
             ! List exactly which field values in each column haven't been filled
             do k = 1, nz
               if ( field(i,k) < threshold ) then
-                write(*,'(A6,I5,1X,I5,A4,E30.20,A3,E30.20)') "field(", i, k, ") = ", field(i,k), " < ", threshold
+                write(*,'(A6,I5,1X,I5,A4,E30.20,A3,E30.20)') &
+                    "field(", i, k, ") = ", field(i,k), " < ", threshold
               end if
             end do
 
             ! Print the field average, this can be compared to the threshold - if the field average
             ! is below threshold, then filling is not possible to gaurantee
-            write(fstderr, *) "column", i, " field average = ", sum(field(i,:) * rho_ds(i,:) * dz(i,:)) &
+            write(fstderr, *) "column", i, " field average = ", &
+                              sum(field(i,:) * rho_ds(i,:) * dz(i,:)) &
                                                                 / sum( rho_ds(i,:) * dz(i,:)) , &
                               " -- threshold = ", threshold
 
@@ -289,10 +285,7 @@ module fill_holes
         core_rknd ! Variable(s)
 
     use constants_clubb, only: &
-        eps, &
-        one, &
-        num_hf_draw_points ! The number of points on either side of the hole;
-                           ! Mass is drawn from these points to fill the hole
+        eps
 
     implicit none
     
@@ -581,7 +574,8 @@ module fill_holes
 
           ! This loop and division could be written more compactly as
           ! invrs_denom_integral(i,k) = one / sum(
-          !                                    rho_ds_dz(i,k-num_hf_draw_points:k+num_hf_draw_points))
+          !                                    rho_ds_dz(i, &
+          !                                      k-num_hf_draw_points:k+num_hf_draw_points))
           ! but has been manually written in loop form to improve performance 
           ! when using OpenMP target offloading
           ! See: https://github.com/larson-group/clubb/issues/1138#issuecomment-1974918151
@@ -717,11 +711,8 @@ module fill_holes
         core_rknd ! Variable(s)
 
     use constants_clubb, only: &
-        eps, &
         one, &
-        zero, &
-        num_hf_draw_points ! The number of points on either side of the hole;
-                           ! Mass is drawn from these points to fill the hole
+        zero
 
     implicit none
     
@@ -820,24 +811,28 @@ module fill_holes
             if ( field_avg < threshold ) then
         
               field_clipped_avg = sum( rho_ds_dz(i,k_start:k_end:grid_dir_indx) &
-                                      * min( threshold, field(i,k_start:k_end:grid_dir_indx) ) ) * invrs_denom
+                                      * min( threshold, &
+                                             field(i,k_start:k_end:grid_dir_indx) ) ) * invrs_denom
 
               mass_fraction = ( field_avg - threshold ) / ( field_clipped_avg - threshold )
 
               field(i,k_start:k_end:grid_dir_indx) = threshold &
-                  + mass_fraction * ( min( threshold, field(i,k_start:k_end:grid_dir_indx) ) - threshold )
+                  + mass_fraction * ( min( threshold, &
+                                           field(i,k_start:k_end:grid_dir_indx) ) - threshold )
 
             else
           
               field_clipped_avg = sum( rho_ds_dz(i,k_start:k_end:grid_dir_indx) &
-                                      * max( threshold, field(i,k_start:k_end:grid_dir_indx) ) ) * invrs_denom
+                                      * max( threshold, &
+                                             field(i,k_start:k_end:grid_dir_indx) ) ) * invrs_denom
     
               if ( abs(field_clipped_avg-threshold) > zero ) then
                 mass_fraction = ( field_avg - threshold ) / ( field_clipped_avg - threshold )
       
                   ! Calculate normalized, filled field
                 field(i,k_start:k_end:grid_dir_indx) = threshold &
-                    + mass_fraction * ( max( threshold, field(i,k_start:k_end:grid_dir_indx) ) - threshold )
+                    + mass_fraction * ( max( threshold, &
+                                             field(i,k_start:k_end:grid_dir_indx) ) - threshold )
               end if
             end if
 
@@ -883,8 +878,6 @@ module fill_holes
         core_rknd ! Variable(s)
 
     use constants_clubb, only: &
-        eps, &
-        one, &
         zero
 
     implicit none
@@ -1144,7 +1137,6 @@ module fill_holes
         core_rknd ! Variable(s)
 
     use constants_clubb, only: &
-        eps, &
         one, &
         zero
 
@@ -1410,7 +1402,6 @@ module fill_holes
         core_rknd ! Variable(s)
 
     use constants_clubb, only: &
-        eps, &
         one, &
         zero, &
         two
@@ -2545,9 +2536,6 @@ module fill_holes
 
     ! References:
     !-----------------------------------------------------------------------
-
-    use grid_class, only: &
-        grid ! Type
 
     use corr_varnce_module, only: &
         hm_metadata_type

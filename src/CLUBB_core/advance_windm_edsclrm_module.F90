@@ -252,7 +252,7 @@ module advance_windm_edsclrm_module
 
     integer :: nrhs  ! Number of right hand side terms
 
-    integer :: i, k, edsclr, j  ! Array index
+    integer :: i, j, k, edsclr  ! Array index
 
     logical :: l_first_clip_ts, l_last_clip_ts ! flags for clip_covar
     
@@ -488,21 +488,23 @@ module advance_windm_edsclrm_module
         !$acc              rho_ds_zm, wind_speed, vm )
 
         ! Implicit contributions to um and vm
-        call windm_edsclrm_implicit_stats( nzm, nzt, ngrdcol, windm_edsclrm_um, gr, & ! intent(in)
-                                           um, gr%invrs_dzt,                         & ! intent(in)
-                                           lhs_diff, lhs_ma_zt,                      & ! intent(in)
-                                           invrs_rho_ds_zt, u_star_sqd,              & ! intent(in)
-                                           rho_ds_zm, wind_speed,                    & ! intent(in)
-                                           l_imp_sfc_momentum_flux,                  & ! intent(in)
-                                           stats )                                     ! intent(inout)
+        call windm_edsclrm_implicit_stats( &
+                          nzm, nzt, ngrdcol, windm_edsclrm_um, gr,  & ! intent(in)
+                          um, gr%invrs_dzt,                         & ! intent(in)
+                          lhs_diff, lhs_ma_zt,                      & ! intent(in)
+                          invrs_rho_ds_zt, u_star_sqd,              & ! intent(in)
+                          rho_ds_zm, wind_speed,                    & ! intent(in)
+                          l_imp_sfc_momentum_flux,                  & ! intent(in)
+                          stats )                                     ! intent(inout)
 
-        call windm_edsclrm_implicit_stats( nzm, nzt, ngrdcol, windm_edsclrm_vm, gr, & ! intent(in)
-                                           vm, gr%invrs_dzt,                         & ! intent(in)
-                                           lhs_diff, lhs_ma_zt,                      & ! intent(in)
-                                           invrs_rho_ds_zt, u_star_sqd,              & ! intent(in)
-                                           rho_ds_zm, wind_speed,                    & ! intent(in)
-                                           l_imp_sfc_momentum_flux,                  & ! intent(in)
-                                           stats )                                     ! intent(inout)
+        call windm_edsclrm_implicit_stats( &
+                          nzm, nzt, ngrdcol, windm_edsclrm_vm, gr,  & ! intent(in)
+                          vm, gr%invrs_dzt,                         & ! intent(in)
+                          lhs_diff, lhs_ma_zt,                      & ! intent(in)
+                          invrs_rho_ds_zt, u_star_sqd,              & ! intent(in)
+                          rho_ds_zm, wind_speed,                    & ! intent(in)
+                          l_imp_sfc_momentum_flux,                  & ! intent(in)
+                          stats )                                     ! intent(inout)
       end if
   
       if ( l_lmm_stepping ) then
@@ -957,13 +959,15 @@ module advance_windm_edsclrm_module
       ! Because of statistics, we have to use a DO rather than a FORALL here
       ! -dschanen 7 Oct 2008
       do edsclr = 1, edsclr_dim
-        call windm_edsclrm_rhs( nzm, nzt, ngrdcol, gr, windm_edsclrm_scalar, dt,         & ! intent(in)
-                                lhs_diff, edsclrm(:,:,edsclr),                           & ! intent(in)
-                                edsclrm_forcing(:,:,edsclr),                             & ! intent(in)
-                                rho_ds_zm, invrs_rho_ds_zt,                              & ! intent(in)
-                                l_imp_sfc_momentum_flux, wpedsclrp(:,gr%k_lb_zm,edsclr), & ! intent(in)
-                                stats,                                                   & ! intent(inout)
-                                rhs(:,:,edsclr) )                                          ! intent(out)
+        call windm_edsclrm_rhs( nzm, nzt, ngrdcol, gr,                  & ! intent(in)
+                                windm_edsclrm_scalar, dt,               & ! intent(in)
+                                lhs_diff, edsclrm(:,:,edsclr),          & ! intent(in)
+                                edsclrm_forcing(:,:,edsclr),            & ! intent(in)
+                                rho_ds_zm, invrs_rho_ds_zt,             & ! intent(in)
+                                l_imp_sfc_momentum_flux,               & ! intent(in)
+                                wpedsclrp(:,gr%k_lb_zm,edsclr),       & ! intent(in)
+                                stats,                                  & ! intent(inout)
+                                rhs(:,:,edsclr) )                       ! intent(out)
       enddo
 
 
@@ -1616,8 +1620,7 @@ module advance_windm_edsclrm_module
     !-----------------------------------------------------------------------
 
     use grid_class, only: & 
-        grid, & ! Type
-        flip    ! Procedure(s)
+        grid ! Type
 
     use matrix_solver_wrapper, only:  & 
         tridiag_solve ! Procedure(s)
@@ -1682,8 +1685,6 @@ module advance_windm_edsclrm_module
       ! Est. of the condition number of the variance LHS matrix
       rcond ! Estimate of the reciprocal of the condition number on the LHS matrix
 
-    integer :: i, j
-    
     ! ------------------------ Begin Code ------------------------
 
     ! Matrix solves are bit-different between ascending and descending.
@@ -2241,9 +2242,6 @@ module advance_windm_edsclrm_module
 
     use clubb_precision, only:  & 
         core_rknd ! Variable(s)
-
-    use diffusion, only:  & 
-        diffusion_zt_lhs    ! Procedure(s)
 
     use grid_class, only:  & 
         grid ! Type

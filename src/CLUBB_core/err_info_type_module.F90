@@ -13,6 +13,8 @@ module err_info_type_module
 
   implicit none
 
+  private
+
   public :: err_info_type, init_err_info_api, init_default_err_info_api, &
             set_err_info_values_api, cleanup_err_info_api
 
@@ -262,7 +264,8 @@ module err_info_type_module
     ! to the error messages throughout CLUBB
 
     ! Global (column-independent) header
-    write(err_info%err_header_global,'(A38, I3, A15, I3, A, A28, A33, F6.2, A1, F6.2, A, A39, A40)') &
+    write(err_info%err_header_global, &
+          '(A38, I3, A15, I3, A, A28, A33, F6.2, A1, F6.2, A, A39, A40)') &
                                      "Fatal error in CLUBB - MPI Process ", err_info%mpi_rank, &
                                      " / Chunk index ", err_info%chunk_idx, &
                                      NEW_LINE('a'), "Column index not available. ", &
@@ -273,7 +276,8 @@ module err_info_type_module
 
     ! Populate column-specific headers
     do i = 1, ngrdcol
-      write(err_info%err_header(i),'(A38, I3, A15, I3, A, A22, I2, A11, F6.2, A13, F6.2, A, A39, A40)') &
+      write(err_info%err_header(i), &
+            '(A38, I3, A15, I3, A, A22, I2, A11, F6.2, A13, F6.2, A, A39, A40)') &
                                    "Fatal error in CLUBB in - MPI Process ", err_info%mpi_rank, &
                                    " / Chunk index ", err_info%chunk_idx, &
                                    NEW_LINE('a'), "Grid column index i = ", i, &

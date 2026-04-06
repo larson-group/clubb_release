@@ -189,9 +189,6 @@ module pdf_parameter_module
     ! References:
     !--------------------------------------------------------------------
 
-    use constants_clubb, only: &
-        zero    ! Constant(s)
-
     implicit none
 
     ! Input Variable(s)
@@ -271,7 +268,7 @@ module pdf_parameter_module
     !--------------------------------------------------------------------
 
     use constants_clubb, only: &
-        zero    ! Constant(s)
+      zero    ! Constant(s)
 
     implicit none
 
@@ -292,12 +289,15 @@ module pdf_parameter_module
     !$acc            pdf_params%thl_2, pdf_params%varnce_thl_1, pdf_params%varnce_thl_2, &
     !$acc            pdf_params%corr_w_rt_1, pdf_params%corr_w_rt_2, pdf_params%corr_w_thl_1, &
     !$acc            pdf_params%corr_w_thl_2, pdf_params%corr_rt_thl_1, pdf_params%corr_rt_thl_2, &
-    !$acc            pdf_params%alpha_thl, pdf_params%alpha_rt, pdf_params%crt_1, pdf_params%crt_2, &
+    !$acc            pdf_params%alpha_thl, pdf_params%alpha_rt, &
+    !$acc            pdf_params%crt_1, pdf_params%crt_2, &
     !$acc            pdf_params%cthl_1, pdf_params%cthl_2, pdf_params%chi_1, pdf_params%chi_2, &
     !$acc            pdf_params%stdev_chi_1, pdf_params%stdev_chi_2, pdf_params%stdev_eta_1, &
-    !$acc            pdf_params%stdev_eta_2, pdf_params%covar_chi_eta_1, pdf_params%covar_chi_eta_2, &
+    !$acc            pdf_params%stdev_eta_2, pdf_params%covar_chi_eta_1, &
+    !$acc            pdf_params%covar_chi_eta_2, &
     !$acc            pdf_params%corr_w_chi_1, pdf_params%corr_w_chi_2, pdf_params%corr_w_eta_1, &
-    !$acc            pdf_params%corr_w_eta_2, pdf_params%corr_chi_eta_1, pdf_params%corr_chi_eta_2, &
+    !$acc            pdf_params%corr_w_eta_2, pdf_params%corr_chi_eta_1, &
+    !$acc            pdf_params%corr_chi_eta_2, &
     !$acc            pdf_params%rsatl_1, pdf_params%rsatl_2, pdf_params%rc_1, pdf_params%rc_2, &
     !$acc            pdf_params%cloud_frac_1, pdf_params%cloud_frac_2, &
     !$acc            pdf_params%ice_supersat_frac_1, pdf_params%ice_supersat_frac_2 )
@@ -371,9 +371,6 @@ module pdf_parameter_module
 
     ! References:
     !--------------------------------------------------------------------
-
-    use constants_clubb, only: &
-        zero    ! Constant(s)
 
     implicit none
 

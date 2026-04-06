@@ -16,5 +16,6 @@ set(KK_MICROPHYS_SOURCES
 )
 
 add_library(KK_microphys_lib ${KK_MICROPHYS_SOURCES})
+disable_compiler_warnings(KK_microphys_lib)
 
 target_link_libraries(KK_microphys_lib PRIVATE clubb_core_lib microphys_utils_lib)

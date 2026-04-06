@@ -86,4 +86,5 @@ set(LAPACK_DOUBLE_SOURCES
 )
 
 add_library(clubb_lapack_double OBJECT ${LAPACK_DOUBLE_SOURCES})
+disable_compiler_warnings(clubb_lapack_double)
 add_compile_options(fpp)

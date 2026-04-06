@@ -282,9 +282,6 @@ module interpolation
     use constants_clubb, only: &
         fstderr                    ! Variable(s)
     
-    use error_code, only: &
-        clubb_at_least_debug_level_api ! Error indicator
-
     implicit none
 
     ! Input Variables

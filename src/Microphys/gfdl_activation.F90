@@ -42,6 +42,11 @@ module gfdl_activation
 
   real( kind = core_rknd ), public :: aeromass_value = 2.25e-12_core_rknd
 
+!$omp threadprivate( nooc, sul_concen, low_concen, high_concen, lowup, highup, &
+!$omp                lowup2, highup2, lowmass2, highmass2, lowmass3, highmass3, &
+!$omp                lowmass4, highmass4, lowmass5, highmass5, lowT2, highT2,   &
+!$omp                aeromass_value )
+
   ! Subroutines
   public :: aer_act_clubb_quadrature_Gauss, Loading
 
@@ -60,7 +65,7 @@ module gfdl_activation
         ! Description:
         ! The main subroutine used for the GFDL droplet activation.
         !=======================================================================
-    use aer_ccn_act_k_mod,   only: aer_ccn_act_k, aer_ccn_act_wpdf_k
+    use aer_ccn_act_k_mod,   only: aer_ccn_act_wpdf_k
     use grid_class, only: grid
     use pdf_parameter_module, only: pdf_parameter
     use clubb_precision, only: &

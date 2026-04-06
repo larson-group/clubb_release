@@ -18,7 +18,6 @@ module morrison_microphys_module
                exner, rho, cloud_frac, w_std_dev, &
                dzq, rcm, Ncm, chi, rvm, hydromet, &
                saturation_formula, &
-               stats, icol,         &
                hydromet_mc, hydromet_vel_zt, Ncm_mc, &
                rcm_mc, rvm_mc, thlm_mc, &
                microphys_stats_zt, microphys_stats_sfc )
@@ -72,10 +71,6 @@ module morrison_microphys_module
         microphys_stats_alloc, & ! Procedure
         microphys_put_var
 
-    use stats_netcdf, only: &
-        stats_type, &
-        var_on_stats_list
-
     use grid_class, only: &
         grid ! Type
 
@@ -100,8 +95,8 @@ module morrison_microphys_module
     real( kind = core_rknd ), intent(in) :: dt ! Model timestep        [s]
 
     integer, intent(in) :: &
-      nzt, &         ! Points in the Vertical        [-]
-      hydromet_dim
+      nzt,        & ! Points in the Vertical      [-]
+      hydromet_dim  ! Number of hydrometeor species [-]
 
     type (hm_metadata_type), intent(in) :: &
       hm_metadata
@@ -132,12 +127,6 @@ module morrison_microphys_module
 
     integer, intent(in) :: &
       saturation_formula ! Integer that stores the saturation formula to be used
-
-    type(stats_type), intent(inout) :: &
-      stats
-
-    integer, intent(in) :: &
-      icol
 
     ! Output Variables
     real( kind = core_rknd ), dimension(nzt,hydromet_dim), intent(out) :: &
@@ -401,11 +390,6 @@ module morrison_microphys_module
     iiNs = hm_metadata%iiNs
     iiNi = hm_metadata%iiNi
     iiNg = hm_metadata%iiNg
-
-    ! Get rid of compiler warnings
-    if ( .false. ) then
-       print *, "chi = ", chi
-    endif
 
     call microphys_stats_alloc( nzt, num_output_zt, microphys_stats_zt )
     call microphys_stats_alloc( 1, num_output_sfc, microphys_stats_sfc )

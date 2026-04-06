@@ -17,7 +17,7 @@ module ekman
   contains
 
 !----------------------------------------------------------------------
-  subroutine ekman_sfclyr( ngrdcol, z, &
+  subroutine ekman_sfclyr( ngrdcol, &
                            um_sfc, vm_sfc, ubar, &
                            upwp_sfc, vpwp_sfc, &
                            wpthlp_sfc, wprtp_sfc, ustar )
@@ -31,22 +31,15 @@ module ekman
 
     use sfc_flux, only: compute_momentum_flux
 
-    use diag_ustar_module, only: diag_ustar ! Variable(s)
-
     use clubb_precision, only: core_rknd ! Variable(s)
 
     implicit none
-
-    ! Constant
-    real( kind = core_rknd ), parameter ::  &
-      z0 = 0.0001_core_rknd ! Momentum roughness height
 
     ! Input Variables
     integer, intent(in) :: &
       ngrdcol
 
     real( kind = core_rknd ), dimension(ngrdcol), intent(in) ::  &
-      z,               & ! Height at zt(2)       [m]
       um_sfc,          & ! um at zt(2)           [m/s]
       vm_sfc,          & ! vm at zt(2)           [m/s]
       ubar
@@ -72,7 +65,7 @@ module ekman
       wprtp_sfc(i)  = 0.0_core_rknd 
 
       ! Set ustar
-      ustar(i) = 0.3_core_rknd ! diag_ustar( z(i), 0.0_core_rknd, ubar(i), z0 )
+      ustar(i) = 0.3_core_rknd
 
     end do
 

@@ -1710,9 +1710,6 @@ module grid_class
     use clubb_precision, only: &
         core_rknd  ! Variable(s)
 
-    use interpolation, only: &
-        linear_interp_factor  ! Procedure(s)
-
     implicit none
     
     integer, intent(in) :: &
@@ -2328,9 +2325,6 @@ module grid_class
 
     use clubb_precision, only: &
         core_rknd  ! Variable(s)
-
-    use interpolation, only: &
-        linear_interp_factor  ! Procedure(s)
 
     implicit none
     

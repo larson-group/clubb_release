@@ -13,7 +13,7 @@ program clubb_tuner
 !
 !----------------------------------------------------------------------
   use error, only:  & 
-    tuner_init, min_les_clubb_diff,                & ! Subroutines 
+    tuner_init,                                    & ! Subroutines 
     write_results,                                 & ! Subroutine
     output_nml_standalone, output_nml_tuner,       & ! Subroutines
     param_vals_matrix, anneal_temp,                & ! Variables
@@ -38,7 +38,7 @@ program clubb_tuner
 
   ! External
   external :: enhanced_simann_driver, amoeba_driver, amebsa_driver, &
-    logical_flags_driver
+    logical_flags_driver, param_loops_driver
 
   ! Variables
   character(len=10) :: current_time  ! Current time string (no seconds)
@@ -290,9 +290,6 @@ program clubb_tuner
 
   use nr, only:  & 
       amebsa ! Procedure(s)
-
-  use nrtype, only:  & 
-      SP ! Variable(s)
 
   use error, only: & 
       param_vals_matrix,  & ! Variable(s)
@@ -651,7 +648,7 @@ subroutine logical_flags_driver( current_date, current_time )
     l_use_thvm_in_bv_freq,        & ! Use thvm in the calculation of Brunt-Vaisala frequency
     l_rcm_supersat_adj,           & ! Add excess supersaturated vapor to cloud water
     l_damp_wp3_Skw_squared,       & ! Set damping on wp3 to use Skw^2 rather than Skw^4
-    l_prescribed_avg_deltaz,      & ! used in calc_derrived_params_api. If .true., avg_deltaz = deltaz
+    l_prescribed_avg_deltaz,      & ! If .true., avg_deltaz = deltaz
     l_lmm_stepping,               & ! Apply Linear Multistep Method (LMM) Stepping
     l_e3sm_config,                & ! Run model with E3SM settings
     l_vary_convect_depth,         & ! Flag used to calculate convective velocity using

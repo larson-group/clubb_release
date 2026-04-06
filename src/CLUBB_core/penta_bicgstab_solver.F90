@@ -124,7 +124,7 @@ module bicgstab_solvers
       norm_rhs,             & ! Norm of each rhs
       res_dot_res_hat_old     ! Old value of dot product of residual and res_hat, temporary value
 
-    integer :: iter, j, k, i    ! Loop Variables
+    integer :: iter, k, i    ! Loop Variables
 
     ! ----------------------- Begin Code -----------------------
 
@@ -289,7 +289,7 @@ module bicgstab_solvers
     real( kind = core_rknd ), intent(out), dimension(ngrdcol,ndim) ::  &
       y_vec
 
-    integer :: i, j, k
+    integer :: i, k
 
 
     do i = 1, ngrdcol
@@ -364,7 +364,7 @@ module bicgstab_solvers
     real( kind = core_rknd ), dimension(ngrdcol,ndim) ::  y_tmp
 
 
-    integer :: j, k, i, b    ! Loop Variables
+    integer :: k, i, b    ! Loop Variables
 
     ! ----------------------- Begin Code -----------------------
 
@@ -416,8 +416,9 @@ module bicgstab_solvers
 
     end if
 
-    ! It's interesting to see how close E_inv is to the lhs diagonal, it's usually (visually) very close, but 
-    ! using it instead of E_inv requires so many more iterations (use it would be jacobi preconditioner)
+    ! E_inv is usually visually close to the lhs diagonal, but
+    ! using it instead would need many more iterations.
+    ! That would amount to a Jacobi preconditioner.
     ! do k = 1, ndim
     !   print *, "E -(",k,")- D = ", 1.0_core_rknd / E_inv(1,k), " -- ", lhs(0,1,k)
     ! end do
@@ -522,4 +523,3 @@ module bicgstab_solvers
   end subroutine precond_psuedo_solve
 
 end module bicgstab_solvers
-

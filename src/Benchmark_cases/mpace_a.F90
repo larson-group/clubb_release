@@ -45,6 +45,10 @@ module mpace_a
   real( kind = core_rknd ), dimension(file_ntimes) :: file_latent_ht
   real( kind = core_rknd ), dimension(file_ntimes) :: file_sens_ht
 
+  !$omp threadprivate( file_pressure, file_heights, file_times, dTdt_forcing, dqdt_forcing, &
+  !$omp                 vertT_forcing, vertq_forcing, um_obs, vm_obs, file_latent_ht,         &
+  !$omp                 file_sens_ht )
+
   contains
 
 !----------------------------------------------------------------------
@@ -70,9 +74,6 @@ module mpace_a
 
     use grid_class, only: &
       grid ! Type
-
-    use grid_class, only: &
-      zt2zm_api ! Procedure(s)
 
     use interpolation, only: &
       zlinterp_fnc, &   ! Procedure(s)
@@ -269,8 +270,10 @@ module mpace_a
         if ( sclr_idx%iisclr_thl > 0 ) sclrm_forcing(i,k,sclr_idx%iisclr_thl) = thlm_forcing(i,k)
         if ( sclr_idx%iisclr_rt  > 0 ) sclrm_forcing(i,k,sclr_idx%iisclr_rt)  = rtm_forcing(i,k)
 
-        if ( sclr_idx%iiedsclr_thl > 0 ) edsclrm_forcing(i,k,sclr_idx%iiedsclr_thl) = thlm_forcing(i,k)
-        if ( sclr_idx%iiedsclr_rt  > 0 ) edsclrm_forcing(i,k,sclr_idx%iiedsclr_rt)  = rtm_forcing(i,k)
+        if ( sclr_idx%iiedsclr_thl > 0 ) &
+          edsclrm_forcing(i,k,sclr_idx%iiedsclr_thl) = thlm_forcing(i,k)
+        if ( sclr_idx%iiedsclr_rt  > 0 ) &
+          edsclrm_forcing(i,k,sclr_idx%iiedsclr_rt)  = rtm_forcing(i,k)
 
       end do
     end do  

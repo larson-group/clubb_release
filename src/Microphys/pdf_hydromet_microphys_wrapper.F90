@@ -3,6 +3,8 @@ module pdf_hydromet_microphys_wrapper
 
   implicit none
 
+  private
+
   public :: pdf_hydromet_microphys_prep    ! Procedure(s)
 
   contains

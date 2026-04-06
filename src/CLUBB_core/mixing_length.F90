@@ -1567,8 +1567,7 @@ module mixing_length
         zt2zm_api, &
         zm2zt_api, &
         zm2zt2zm, &
-        zt2zm2zt, &
-        ddzt
+        zm2zt2zm
 
     use clubb_precision, only: &
         core_rknd

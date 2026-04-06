@@ -292,7 +292,8 @@ module grid_adaptation_module
 
     if ( momentum_heights(1,nzmax) < grid_top(1) .or. momentum_heights(1,1) > grid_sfc(1) ) then
       write(fstderr, *) "Error in setup_gr_fixed_min in grid_adaptation_module."
-      write(fstderr, *) "The fixed minimum grid density momentum heights need to cover at least the domain of the physics grid."
+      write(fstderr, *) "The fixed minimum grid density momentum heights"
+      write(fstderr, *) "need to cover at least the physics-grid domain."
     end if
 
     do i = 1, ngrdcol

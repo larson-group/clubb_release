@@ -49,4 +49,5 @@ set(COAMPS_SOURCES
 )
 
 add_library(coamps_lib ${COAMPS_SOURCES})
+disable_compiler_warnings(coamps_lib)
 target_link_libraries(coamps_lib PRIVATE clubb_core_lib)

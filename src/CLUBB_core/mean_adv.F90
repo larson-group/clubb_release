@@ -429,9 +429,6 @@ module mean_adv
     ! References:
     !-----------------------------------------------------------------------
 
-    use grid_class, only: & 
-        grid ! Type
-
     use constants_clubb, only: &
         zero ! Constant(s)
 

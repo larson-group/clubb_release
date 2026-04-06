@@ -148,8 +148,7 @@ module advance_xm_wpxp_module
         eps
 
     use grid_class, only: & 
-        grid, & ! Type
-        ddzt    ! Procedure(s)
+        grid    ! Type
 
     use model_flags, only: &
         iiPDF_new,                     & ! Variable(s)
@@ -776,9 +775,11 @@ module advance_xm_wpxp_module
                               low_lev_effect, high_lev_effect               ) ! intent(out)
 
     ! Calculate 1st pressure terms for w'r_t', w'thl', and w'sclr'. 
-    call wpxp_term_pr1_lhs( nzm, ngrdcol, gr, C6rt_Skw_fnc, C6thl_Skw_fnc, C7_Skw_fnc, & ! Intent(in)
-                            invrs_tau_C6_zm, l_scalar_calc,                            & ! Intent(in)
-                            lhs_pr1_wprtp, lhs_pr1_wpthlp, lhs_pr1_wpsclrp )             ! Intent(out)
+    call wpxp_term_pr1_lhs( nzm, ngrdcol, gr, C6rt_Skw_fnc,           & ! Intent(in)
+                            C6thl_Skw_fnc, C7_Skw_fnc,                & ! Intent(in)
+                            invrs_tau_C6_zm, l_scalar_calc,           & ! Intent(in)
+                            lhs_pr1_wprtp, lhs_pr1_wpthlp,            & ! Intent(out)
+                            lhs_pr1_wpsclrp )                           ! Intent(out)
     
     !$acc parallel loop gang vector collapse(2) default(present)
     do k = 1, nzm
@@ -851,9 +852,9 @@ module advance_xm_wpxp_module
                                             l_mono_flux_lim_vm,                             & ! In
                                             l_mono_flux_lim_spikefix,                       & ! In
                                             order_xm_wpxp, order_xp2_xpyp, order_wp2_wp3,   & ! In
-                                            stats,                                           & ! InOut
-                                            rtm, wprtp, thlm, wpthlp, sclrm, wpsclrp,       & ! InOut
-                                            err_info )                                        ! InOut
+                                            stats,                                      & ! InOut
+                                            rtm, wprtp, thlm, wpthlp, sclrm, wpsclrp,  & ! InOut
+                                            err_info )                                  ! InOut
     else
         
       ! LHS matrices are equivalent, only one solve required
@@ -893,7 +894,7 @@ module advance_xm_wpxp_module
                                           l_mono_flux_lim_vm,                              & ! In
                                           l_mono_flux_lim_spikefix,                        & ! In
                                           order_xm_wpxp, order_xp2_xpyp, order_wp2_wp3,    & ! In
-                                          stats,                                            & ! InOut
+                                          stats,                                       & ! InOut
                                           rtm, wprtp, thlm, wpthlp,                        & ! InOut
                                           sclrm, wpsclrp, um, upwp, vm, vpwp,              & ! InOut
                                           um_pert, vm_pert, upwp_pert, vpwp_pert, err_info ) ! InOut
@@ -1432,15 +1433,9 @@ module advance_xm_wpxp_module
     use clubb_precision, only:  & 
         core_rknd ! Variable(s)
 
-    use advance_helper_module, only: &
-        calc_stability_correction
-      
     use mean_adv, only: & 
         term_ma_zt_lhs, &
         term_ma_zm_lhs
-
-    use turbulent_adv_pdf, only: &
-        xpyp_term_ta_pdf_lhs
 
     use diffusion, only:  & 
         diffusion_zt_lhs, &
@@ -1659,10 +1654,6 @@ module advance_xm_wpxp_module
         gamma_over_implicit_ts, & ! Constant(s)
         one, &
         zero
-
-    use turbulent_adv_pdf, only: &
-        xpyp_term_ta_pdf_lhs, & ! Procedure(s)
-        xpyp_term_ta_pdf_rhs
 
     use clubb_precision, only:  & 
         core_rknd ! Variable(s)
@@ -2000,7 +1991,6 @@ module advance_xm_wpxp_module
 
     use grid_class, only: &
         grid,   & ! Type
-        zt2zm_api,  & ! Procedure(s)
         zm2zt_api
 
     use clubb_precision, only: &
@@ -2949,11 +2939,7 @@ module advance_xm_wpxp_module
 ! ---> h1g, 2010-06-15
 ! scalar transport, e.g, droplet and ice number concentration
 ! are handled in  " advance_sclrm_Nd_module.F90 "
-#ifdef GFDL
-    do sclr = 1, 0, 1
-#else
     do sclr = 1, sclr_dim, 1
-#endif
 ! <--- h1g, 2010-06-15
 
       ! Set <w'sclr'> forcing to 0 unless unless testing the wpsclrp code
@@ -3514,11 +3500,7 @@ module advance_xm_wpxp_module
 ! ---> h1g, 2010-06-15
 ! scalar transport, e.g, droplet and ice number concentration
 ! are handled in  " advance_sclrm_Nd_module.F90 "
-#ifdef GFDL
-    do sclr = 1, 0, 1
-#else
     do sclr = 1, sclr_dim, 1
-#endif
 ! <--- h1g, 2010-06-15
       call xm_wpxp_clipping_and_stats( nzm, nzt, ngrdcol, &          ! Intent(in)
              gr, xm_wpxp_scalar, dt, wp2, sclrp2(:,:,sclr), wm_zt, & ! Intent(in)
@@ -3752,8 +3734,7 @@ module advance_xm_wpxp_module
     !----------------------------------------------------------------------------------------
 
     use grid_class, only: &
-        grid, & ! Type
-        ddzt    ! Procedure(s)
+        grid    ! Type
 
     use error_code, only: &
         clubb_at_least_debug_level_api,  & ! Procedure
@@ -4191,11 +4172,7 @@ module advance_xm_wpxp_module
 ! ---> h1g, 2010-06-15
 ! scalar transport, e.g, droplet and ice number concentration
 ! are handled in  " advance_sclrm_Nd_module.F90 "
-#ifdef GFDL
-    do sclr = 1, 0, 1
-#else
     do sclr = 1, sclr_dim, 1
-#endif
 ! <--- h1g, 2010-06-15
 
       ! Set <w'sclr'> forcing to 0 unless unless testing the wpsclrp code
@@ -4328,8 +4305,7 @@ module advance_xm_wpxp_module
     !------------------------------------------------------------------------
 
     use grid_class, only: & 
-        grid, & ! Type
-        flip    ! Procedure(s)
+        grid    ! Type
 
     use matrix_solver_wrapper, only: &
         band_solve ! Procedure(s)
@@ -4391,8 +4367,6 @@ module advance_xm_wpxp_module
       rcond ! Est. of the reciprocal of the condition #
 
     !------------------------- Local Variables --------------------
-
-    integer :: i, ivar
 
     !------------------------- Begin Code -------------------------
 
@@ -4686,9 +4660,6 @@ module advance_xm_wpxp_module
     real( kind = core_rknd ), dimension(ngrdcol,nzm) :: &
       tmp_zm_stats
 
-    real( kind = core_rknd ), dimension(ngrdcol) :: &
-      tmp_cols_stats
-
     ! --------------------------- Begin code ---------------------------
 
     !$acc enter data create( xm_old, wpxp_pd, xm_pd, wpxp_chnge, xp2_relaxed )
@@ -4890,9 +4861,11 @@ module advance_xm_wpxp_module
         km1 = max( k-gr%grid_dir_indx, 1 )
         kp1 = min( k+gr%grid_dir_indx, nzm )
         do i = 1, ngrdcol
-          tmp_zm_stats(i,k) = (-gamma_over_implicit_ts*lhs_ta_wpxp(2+gr%grid_dir_indx,i,k)) * wpxp(i,km1) & 
+          tmp_zm_stats(i,k) = (-gamma_over_implicit_ts * &
+                               lhs_ta_wpxp(2+gr%grid_dir_indx,i,k)) * wpxp(i,km1) &
                             + (-gamma_over_implicit_ts*lhs_ta_wpxp(2,i,k)) * wpxp(i,k) & 
-                            + (-gamma_over_implicit_ts*lhs_ta_wpxp(2-gr%grid_dir_indx,i,k)) * wpxp(i,kp1)
+                            + (-gamma_over_implicit_ts * &
+                               lhs_ta_wpxp(2-gr%grid_dir_indx,i,k)) * wpxp(i,kp1)
         end do
       end do
       ! w'x' term ta has implicit and explicit components.
@@ -5523,8 +5496,9 @@ module advance_xm_wpxp_module
   end subroutine wpxp_terms_ac_pr2_lhs
 
   !=============================================================================
-  subroutine wpxp_term_pr1_lhs( nzm, ngrdcol, gr, C6rt_Skw_fnc, C6thl_Skw_fnc, &
-                                C7_Skw_fnc, invrs_tau_C6_zm, l_scalar_calc, &
+  subroutine wpxp_term_pr1_lhs( nzm, ngrdcol, gr, C6rt_Skw_fnc, &
+                                C6thl_Skw_fnc, C7_Skw_fnc, &
+                                invrs_tau_C6_zm, l_scalar_calc, &
                                 lhs_pr1_wprtp, lhs_pr1_wpthlp, &
                                 lhs_pr1_wpsclrp )
 

@@ -43,7 +43,7 @@ module error_code
 
     character(len=35), public :: err_header
 
-    !$omp threadprivate(err_header)
+    !$omp threadprivate(clubb_debug_level, err_header)
 
     contains
 !-------------------------------------------------------------------------------
@@ -68,6 +68,8 @@ module error_code
 
     subroutine initialize_error_headers
 
+        use, intrinsic :: iso_c_binding, only: c_int
+
         implicit none
 
 #ifdef _OPENMP
@@ -78,8 +80,12 @@ module error_code
         ! This code cannot be used for CAM because
         ! it causes issues when tested with the
         ! NAG compiler.
-        integer :: getpid
-        write(err_header,'(A7,I7,A20)') "Process ", getpid(), " -- CLUBB -- ERROR: "
+        interface
+            integer(c_int) function c_getpid() bind(C, name="getpid")
+                import :: c_int
+            end function c_getpid
+        end interface
+        write(err_header,'(A7,I7,A20)') "Process ", c_getpid(), " -- CLUBB -- ERROR: "
 #else
         write(err_header,'(A20)') " -- CLUBB -- ERROR: "
 #endif /* CLUBB_CAM */

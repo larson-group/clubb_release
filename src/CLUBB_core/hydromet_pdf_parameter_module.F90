@@ -79,7 +79,7 @@ contains
     !-----------------------------------------------------------------------
 
     use constants_clubb, only: &
-        zero  ! Constant(s)
+      zero  ! Constant(s)
 
     implicit none
 
@@ -122,9 +122,6 @@ contains
 
     ! References:
     !-----------------------------------------------------------------------
-
-    use constants_clubb, only: &
-        zero  ! Constant(s)
 
     implicit none
     

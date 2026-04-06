@@ -38,8 +38,6 @@ module neutral_case
 
     use clubb_precision, only: time_precision, core_rknd ! Variable(s)
 
-    use diag_ustar_module, only: diag_ustar ! Variable(s)
-
     implicit none
 
     ! Input Variables

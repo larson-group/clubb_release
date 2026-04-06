@@ -31,8 +31,7 @@ module bomex
 
 
     use grid_class, only: &
-        zt2zm_api, & ! Procedure(s)
-        grid         ! Type
+        grid ! Type
 
     use spec_hum_to_mixing_ratio, only: &
         force_spec_hum_to_mixing_ratio ! Procedure(s)
@@ -124,8 +123,10 @@ module bomex
       !$acc parallel loop gang vector collapse(2) default(present)
       do k = 1, gr%nzt
         do i = 1, ngrdcol
-          if ( sclr_idx%iiedsclr_thl > 0 ) edsclrm_forcing(i,k,sclr_idx%iiedsclr_thl) = thlm_forcing(i,k)
-          if ( sclr_idx%iiedsclr_rt  > 0 ) edsclrm_forcing(i,k,sclr_idx%iiedsclr_rt)  = rtm_forcing(i,k)
+          if ( sclr_idx%iiedsclr_thl > 0 ) &
+            edsclrm_forcing(i,k,sclr_idx%iiedsclr_thl) = thlm_forcing(i,k)
+          if ( sclr_idx%iiedsclr_rt  > 0 ) &
+            edsclrm_forcing(i,k,sclr_idx%iiedsclr_rt)  = rtm_forcing(i,k)
         end do
       end do
     end if

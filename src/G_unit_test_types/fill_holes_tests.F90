@@ -23,12 +23,13 @@ module fill_holes_tests
 
     use constants_clubb, only: &
         one, &
-        zero, &
         two, &
         pi, &
         eps
     
     implicit none
+
+    private
 
     public :: fill_holes_tests_driver
 
@@ -159,7 +160,8 @@ module fill_holes_tests
             do k = lower_hf_level, upper_hf_level
                 do i = 1, ngrdcol
                     rho_ds(i,k) = 5_core_rknd * exp( - k / 120._core_rknd )
-                    field_initial(i,k)  =  10_core_rknd * ( sin( 8.0 * pi * ( k + i ) / nz ) + one ) &
+                    field_initial(i,k)  = 10_core_rknd * &
+                                          ( sin( 8.0 * pi * ( k + i ) / nz ) + one ) &
                                                         * exp(- k**2 / 2000.0_core_rknd )
                 end do
             end do
@@ -177,7 +179,10 @@ module fill_holes_tests
             end if
 
             ! Call the fill
-            if ( l_print_name ) print *, "filling holes of: easy_fill_test_"//trim(fill_type_names(fill_type))
+            if ( l_print_name ) then
+                print *, "filling holes of: easy_fill_test_" // &
+                         trim(fill_type_names(fill_type))
+            end if
             call fill_holes_vertical_api( nz, ngrdcol, threshold, &
                                         lower_hf_level, upper_hf_level, &
                                         dz, rho_ds, grid_dir_indx, &
@@ -192,7 +197,8 @@ module fill_holes_tests
                 do k = 1, nz
                     do i = 1, ngrdcol
                     if ( field(i,k) < threshold ) then
-                        write(*,'(A6,I5,1X,I5,A4,E30.20,A3,E30.20)') "field(", i, k, ") = ", field(i,k), " < ", threshold
+                        write(*,'(A6,I5,1X,I5,A4,E30.20,A3,E30.20)') &
+                            "field(", i, k, ") = ", field(i,k), " < ", threshold
                     end if
                     end do
                 end do
@@ -238,7 +244,10 @@ module fill_holes_tests
             end do
 
             ! Perform reverse fill
-            if ( l_print_name ) print *, "filling holes of: reverse_easy_fill_test_"//trim(fill_type_names(fill_type))
+            if ( l_print_name ) then
+                print *, "filling holes of: reverse_easy_fill_test_" // &
+                         trim(fill_type_names(fill_type))
+            end if
             call fill_holes_vertical_api( nz, ngrdcol, threshold, &
                                           lower_hf_level, upper_hf_level, &
                                           dz_rev, rho_ds_rev, grid_dir_indx, &
@@ -341,7 +350,8 @@ module fill_holes_tests
             do k = lower_hf_level, upper_hf_level
                 do i = 1, ngrdcol
                     rho_ds(i,k) = 5_core_rknd * exp( - k / 120._core_rknd )
-                    field_initial(i,k)  =  10_core_rknd * ( sin( 8.0 * pi * ( k + i ) / nz ) + one ) &
+                    field_initial(i,k)  = 10_core_rknd * &
+                                          ( sin( 8.0 * pi * ( k + i ) / nz ) + one ) &
                                                         * exp(- k**2 / 2000.0_core_rknd )
                 end do
             end do
@@ -360,7 +370,10 @@ module fill_holes_tests
             end if
 
             ! Call the fill
-            if ( l_print_name ) print *, "filling holes of: below_thresh_test_"//trim(fill_type_names(fill_type))
+            if ( l_print_name ) then
+                print *, "filling holes of: below_thresh_test_" // &
+                         trim(fill_type_names(fill_type))
+            end if
             call fill_holes_vertical_api( nz, ngrdcol, threshold, &
                                         lower_hf_level, upper_hf_level, &
                                         dz, rho_ds, grid_dir_indx, &
@@ -382,7 +395,8 @@ module fill_holes_tests
             if( two * abs( initial_mass - new_mass ) / ( initial_mass + new_mass ) > eps ) then
                 print *, "ERROR in below_thresh_test: method was not conservative"
                 print *, "-- initial mass vs after fill_holes: ", initial_mass, new_mass
-                print *, "-- error", two * abs( initial_mass - new_mass ) / ( initial_mass + new_mass )
+                print *, "-- error", &
+                         two * abs( initial_mass - new_mass ) / ( initial_mass + new_mass )
                 below_thresh_test = below_thresh_test + 1
             end if
 
@@ -416,7 +430,10 @@ module fill_holes_tests
             end do
 
             ! Perform reverse fill
-            if ( l_print_name ) print *, "filling holes of: reverse_below_thresh_test_"//trim(fill_type_names(fill_type))
+            if ( l_print_name ) then
+                print *, "filling holes of: reverse_below_thresh_test_" // &
+                         trim(fill_type_names(fill_type))
+            end if
             call fill_holes_vertical_api( nz, ngrdcol, threshold, &
                                           lower_hf_level, upper_hf_level, &
                                           dz_rev, rho_ds_rev, grid_dir_indx, &
@@ -427,7 +444,8 @@ module fill_holes_tests
             new_mass = sum( field_rev * rho_ds_rev * dz_rev ) 
 
             if( two * abs( initial_mass - new_mass ) / ( initial_mass + new_mass ) > eps ) then
-                print *, "ERROR in below_thresh_test REVERSE MODE: method was not conservative in grid reverse mode"
+                print *, "ERROR in below_thresh_test REVERSE MODE:"
+                print *, "method was not conservative in grid reverse mode"
                 print *, "-- initial mass vs after fill_holes: ", initial_mass, new_mass
                 below_thresh_test = below_thresh_test + 1
             end if

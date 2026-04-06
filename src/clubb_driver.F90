@@ -68,9 +68,7 @@ module clubb_driver
   use constants_clubb, only: &
     fstdout, & 
     fstderr, &
-    three_halves, &
     one, &
-    one_half, &
     zero, &
     two, &
     radians_per_deg, &
@@ -88,8 +86,7 @@ module clubb_driver
 
   use error_code, only: &
     clubb_fatal_error, & 
-    clubb_generalized_grd_test_err, &
-    clubb_no_error
+    clubb_generalized_grd_test_err
 
   use parameters_tunable, only: &
     params_list, &
@@ -106,7 +103,6 @@ module clubb_driver
 
   use parameter_indices, only: &
     nparams, &
-    ic_K, &
     iSkw_max_mag, &
     ibv_efold
 
@@ -194,13 +190,13 @@ module clubb_driver
   logical, public :: &
     l_restart,                  & ! Flag for restarting from GrADS file
     l_input_fields,             & ! Whether to set model variables from a file
-    l_modify_ic_with_cubic_int, & ! Flag for interpolating the sounding profile with Steffen's monotone cubic 
-                                  ! method to obtain smoother initial condition profile, which is found to be 
-                                  ! beneficial to achive a better numerical solution convergence. If this flag 
-                                  ! is turned off, the initial conditions will be generated with linear interpolation.
-                                  ! This is done on a case-by-case basis, since using the monotone cubic method
-                                  ! requires a special sounding.in file with many additional sounding levels.
-    l_modify_bc_for_cnvg_test, &  ! Flag to activate modifications on boundary condition for convergence test
+    l_modify_ic_with_cubic_int, & ! Interpolate sounding with Steffen's
+                                  ! monotone cubic method for smoother ICs.
+                                  ! This can improve numerical convergence.
+                                  ! If disabled, initialization uses linear
+                                  ! interpolation. It requires a special
+                                  ! `sounding.in` with extra levels.
+    l_modify_bc_for_cnvg_test, &  ! Modify boundary condition for convergence test
                                   ! (surface fluxes computed at fixed 25 m height).
     l_stats,                    & ! Whether statistics are computed and output to disk
     l_silhs_out,                & ! Whether to output SILHS files
@@ -340,9 +336,6 @@ module clubb_driver
     rtm_min, &              ! Value below which rtm will be nudged [kg/kg]
     rtm_nudge_max_altitude  ! Highest altitude at which to nudge rtm [m]
 
-  real( kind = core_rknd ), dimension(1) ::&
-    rad_dummy ! Dummy variable for radiation levels
-
   real( kind = core_rknd ), dimension(1) :: &
     deep_soil_T_in_K_init, &
     sfc_soil_T_in_K_init, &
@@ -389,8 +382,7 @@ module clubb_driver
     vm_ref_init, &
     Ncm_init, &
     Nc_in_cloud_init, &
-    Nccnm_init, &
-    rho_ds_zm_dycore_init
+    Nccnm_init
     
   real( kind = core_rknd ), dimension(:), allocatable :: &
     p_sfc,          & ! surface pressure              [Pa]
@@ -704,17 +696,17 @@ module clubb_driver
   !$omp  grid_type, day, month, year, sfctype, &
   !$omp  stats,         &
   !$omp  sclr_idx, hm_metadata, clubb_config_flags, silhs_config_flags, stats_tsamp, stats_tout, &
-  !$omp  time_restart, restart_path_case, forcings_file_path, stats_fmt, fname_prefix, &
+  !$omp  time_restart, restart_path_case, forcings_file_path, stats_fmt, fname_prefix, output_dir, &
   !$omp  case_info_file, fname_grid_adaptation, output_file_prefix, runtype, zt_grid_fname, &
   !$omp  zm_grid_fname, lat_vals, lon_vals, time_initial, time_final, time_current, dt_main, &
   !$omp  dt_rad, deltaz_nl, zm_init_nl, zm_top_nl, mixt_frac_max_mag, T0, ts_nudge, rtm_min, &
-  !$omp  rtm_nudge_max_altitude, rad_dummy, deep_soil_T_in_K_init, sfc_soil_T_in_K_init, &
+  !$omp  rtm_nudge_max_altitude, deep_soil_T_in_K_init, sfc_soil_T_in_K_init, &
   !$omp  veg_T_in_K_init, dummy_dx, dummy_dy, sclr_tol, thlm_init, rtm_init, um_init, &
   !$omp  vm_init, ug_init, vg_init, wp2_init, up2_init, vp2_init, upwp_init, rcm_init, wm_zt_init, &
   !$omp  wm_zm_init, em_init, exner_init, thvm_init, p_in_Pa_init, p_in_Pa_zm_init, rho_init, rho_zm_init, &
   !$omp  rho_ds_zm_init, rho_ds_zt_init, invrs_rho_ds_zm_init, invrs_rho_ds_zt_init, &
   !$omp  thv_ds_zm_init, thv_ds_zt_init, rtm_ref_init, thlm_ref_init, um_ref_init, &
-  !$omp  vm_ref_init, Ncm_init, Nc_in_cloud_init, Nccnm_init, rho_ds_zm_dycore_init, &
+  !$omp  vm_ref_init, Ncm_init, Nc_in_cloud_init, Nccnm_init, &
   !$omp  p_sfc, T_sfc, fcor, fcor_y, sfc_elevation, zm_init, zm_top, deltaz, sclrm_init, &
   !$omp  edsclrm_init, corr_array_n_cloud, corr_array_n_below, iinit, X_mixt_comp_all_levs, &
   !$omp  gr, gr_desc, gr_dycore, gr_output, gr_fixed_min, pdf_params, pdf_params_zm, &
@@ -999,7 +991,7 @@ module clubb_driver
       l_use_thvm_in_bv_freq,        & ! Use thvm in the calculation of Brunt-Vaisala frequency
       l_rcm_supersat_adj,           & ! Add excess supersaturated vapor to cloud water
       l_damp_wp3_Skw_squared,       & ! Set damping on wp3 to use Skw^2 rather than Skw^4
-      l_prescribed_avg_deltaz,      & ! used in calc_derrived_params_api. If .true., avg_deltaz = deltaz
+      l_prescribed_avg_deltaz,      & ! If .true., avg_deltaz = deltaz
       l_lmm_stepping,               & ! Apply Linear Multistep Method (LMM) Stepping
       l_e3sm_config,                & ! Run model with E3SM settings
       l_vary_convect_depth,         & ! Flag used to calculate convective velocity using
@@ -1730,7 +1722,8 @@ module clubb_driver
       iunit_grid_adaptation = iunit + 10
       fname_grid_adaptation = trim( output_dir ) // trim( runtype ) // '_grid_adapt.txt'
       if ( clubb_config_flags%grid_adapt_in_time_method > no_grid_adaptation ) then
-        open(unit=iunit_grid_adaptation, file=fname_grid_adaptation, status='replace', action='write')
+        open(unit=iunit_grid_adaptation, file=fname_grid_adaptation, &
+             status='replace', action='write')
       end if
 
     end if ! clubb_at_least_debug_level_api( 1 )
@@ -2046,8 +2039,8 @@ module clubb_driver
     allocate( wp2_zt(ngrdcol, gr%nzt) )         ! wp2 interpolated to thermo. levels
     allocate( ug(ngrdcol, gr%nzt) )             ! u geostrophic wind
     allocate( vg(ngrdcol, gr%nzt) )             ! v geostrophic wind
-    allocate( um_ref(ngrdcol, gr%nzt) )         ! Reference u wind for nudging; Michael Falk, 17 Oct 2007
-    allocate( vm_ref(ngrdcol, gr%nzt) )         ! Reference v wind for nudging; Michael Falk, 17 Oct 2007
+    allocate( um_ref(ngrdcol, gr%nzt) )         ! Reference u wind for nudging
+    allocate( vm_ref(ngrdcol, gr%nzt) )         ! Reference v wind for nudging
     allocate( thlm_ref(ngrdcol, gr%nzt) )       ! Reference liquid water potential for nudging
     allocate( rtm_ref(ngrdcol, gr%nzt) )        ! Reference total water mixing ratio for nudging
     allocate( thvm(ngrdcol, gr%nzt) )           ! Virtual potential temperature
@@ -2351,8 +2344,6 @@ module clubb_driver
           sclr_dim, edsclr_dim, sclr_idx,                                 & ! Intent(in)
           clubb_config_flags,                                             & ! Intent(in)
           l_modify_ic_with_cubic_int,                                     & ! Intent(in)
-          clubb_config_flags%l_add_dycore_grid,                           & ! Intent(in)
-          clubb_config_flags%grid_adapt_in_time_method,                   & ! Intent(in)
           l_ascending_grid, fcor_y,                                       & ! Intent(in)
           thlm_init, rtm_init, um_init, vm_init, ug_init, vg_init,        & ! Intent(out)
           wp2_init, up2_init, vp2_init, upwp_init, rcm_init,              & ! Intent(out)
@@ -2494,7 +2485,8 @@ module clubb_driver
     call init_pdf_params_api( gr%nzt, ngrdcol, pdf_params )
     call init_pdf_params_api( gr%nzm, ngrdcol, pdf_params_zm )
 
-    if ( clubb_config_flags%iiPDF_type == iiPDF_new .or. clubb_config_flags%iiPDF_type == iiPDF_new_hybrid ) then
+    if ( clubb_config_flags%iiPDF_type == iiPDF_new .or. &
+         clubb_config_flags%iiPDF_type == iiPDF_new_hybrid ) then
       call init_pdf_implicit_coefs_terms_api( gr%nzt, ngrdcol, sclr_dim, &   ! Intent(in)
                                               pdf_implicit_coefs_terms )     ! Intent(out)
     end if
@@ -2525,7 +2517,7 @@ module clubb_driver
                                    clubb_config_flags,  & ! intent(in)
                                    err_info )             ! Intent(inout)
 
-    ! Similar call to above, checking parameter values, but because we've placed this in "init_clubb_case"
+    ! Similar to the call above, but placed in "init_clubb_case"
     ! it will only be checked when initializing the case
     call check_parameters_api( ngrdcol, clubb_params, lmin, & ! Intent(in)
                                err_info )                     ! Intent(inout)
@@ -2533,7 +2525,8 @@ module clubb_driver
     if ( clubb_at_least_debug_level_api( 0 ) ) then
       if ( any(err_info%err_code == clubb_fatal_error) ) then
         write(fstderr, *) err_info%err_header_global
-        write(fstderr, *) "Fatal error calling check_clubb_settings_api and/or check_parameters_api in clubb_driver"
+        write(fstderr, *) "Fatal error calling check_clubb_settings_api"
+        write(fstderr, *) "and/or check_parameters_api in clubb_driver"
         return
       end if
     end if
@@ -2558,7 +2551,7 @@ module clubb_driver
     !$acc              invrs_rho_ds_zm_init, invrs_rho_ds_zt_init, thv_ds_zm_init, &
     !$acc              thv_ds_zt_init, rtm_ref_init, thlm_ref_init, um_ref_init, &
     !$acc              deep_soil_T_in_K_init, sfc_soil_T_in_K_init, veg_T_in_K_init, &
-    !$acc              vm_ref_init, rho_ds_zm_dycore_init, err_info, err_info%err_header ) &
+    !$acc              vm_ref_init, err_info, err_info%err_header ) &
     !$acc      create( rtm, wm_zt, ug, vg, um_ref, vm_ref, thlm_forcing, rtm_forcing, &
     !$acc              um_forcing, vm_forcing, wm_zm, wprtp_forcing, wpthlp_forcing, &
     !$acc              rtp2_forcing, thlp2_forcing, rtpthlp_forcing, wpthlp_sfc, &
@@ -2626,14 +2619,14 @@ module clubb_driver
     !$acc      copyin( hm_metadata%l_mix_rat_hm ) &
     !$acc      create( wphydrometp, wp2hmp, rtphmp_zt, thlphmp_zt )
     
-    call set_case_initial_conditions(err_info)
+    call set_case_initial_conditions()
 
   end subroutine init_clubb_case
 
   !=============================================================================================
   !                                  set_case_initial_conditions
   !=============================================================================================
-  subroutine set_case_initial_conditions(err_info)
+  subroutine set_case_initial_conditions()
   !
   ! Description:
   !   Calling 'init_clubb_case' defines up the settings and initial field values.
@@ -2658,9 +2651,6 @@ module clubb_driver
     implicit none
 
     !----------------------------------- Input/Output Variables -----------------------------------
-
-    type(err_info_type), intent(inout) :: &
-      err_info        ! err_info struct containing err_code and err_header
 
     !----------------------------------- Local Variables -----------------------------------
     integer :: &
@@ -2927,7 +2917,8 @@ module clubb_driver
     call zero_pdf_params_api( pdf_params )
     call zero_pdf_params_api( pdf_params_zm )
 
-    if ( clubb_config_flags%iiPDF_type == iiPDF_new .or. clubb_config_flags%iiPDF_type == iiPDF_new_hybrid ) then
+    if ( clubb_config_flags%iiPDF_type == iiPDF_new .or. &
+         clubb_config_flags%iiPDF_type == iiPDF_new_hybrid ) then
       call zero_pdf_implicit_coefs_terms_api( pdf_implicit_coefs_terms )
     end if
 
@@ -3100,10 +3091,6 @@ module clubb_driver
       chi_term_weight, &
       richardson_num_term_weight              ! Parameters
       
-#ifdef GPTL
-    use gptl
-#endif
-
     implicit none
 
     logical, intent(in) :: &
@@ -3119,8 +3106,7 @@ module clubb_driver
 
     !----------------------------------- Local Variables -----------------------------------
     logical :: &
-      l_stats, &
-      l_stats_last
+      l_stats
 
     ! coarse-grained timing budget of main time stepping loop
     real( kind = core_rknd ) :: &
@@ -3140,7 +3126,6 @@ module clubb_driver
       lambda
 
     integer :: &
-      ret_code, &
       itime,          & ! Iteration counters
       itime_nearest,  & ! Used for and inputfields run [s]       
       i, k              ! Local Loop Variables
@@ -3270,7 +3255,8 @@ module clubb_driver
           ! Check for NaN values in the model arrays
           if ( invalid_model_arrays( gr%nzm, gr%nzt, hydromet_dim, hm_metadata%hydromet_list, &
                                       sclr_dim, edsclr_dim, &
-                                      um(i,:), vm(i,:), rtm(i,:), wprtp(i,:), thlm(i,:), wpthlp(i,:), &
+                                      um(i,:), vm(i,:), rtm(i,:), wprtp(i,:), &
+                                      thlm(i,:), wpthlp(i,:), &
                                       rtp2(i,:), thlp2(i,:), rtpthlp(i,:), wp2(i,:), wp3(i,:), &
                                       wp2thvp(i,:), wp2up(i,:), rtpthvp(i,:), thlpthvp(i,:), &
                                       hydromet(i,:,:), sclrm(i,:,:), edsclrm(i,:,:) ) ) then
@@ -3614,7 +3600,8 @@ module clubb_driver
         do i = 1, ngrdcol
           call calc_microphys_scheme_tendcies( gr, dt_main, time_current, &               ! In
                                   pdf_dim, hydromet_dim, runtype, &                       ! In
-                                  thlm(i,:), p_in_Pa(i,:), exner(i,:), rho(i,:), rho_zm(i,:), rtm(i,:), &! In
+                                  thlm(i,:), p_in_Pa(i,:), exner(i,:), rho(i,:), &
+                                  rho_zm(i,:), rtm(i,:), & ! In
                                   rcm(i,:), cloud_frac(i,:), wm_zt(i,:), wm_zm(i,:), wp2_zt(i,:), &      ! In
                                   hydromet(i,:,:), Nc_in_cloud(i,:), &                                ! In
                                   hm_metadata, &                                       ! In
@@ -3923,7 +3910,7 @@ module clubb_driver
         stats_time = real(time_current, kind=core_rknd) + real(stats_tout, kind=core_rknd)
 
         ! End statistics timestep and flush sampled buffers to file.
-        call stats_end_timestep_api( stats_time, stats, err_info )
+        call stats_end_timestep_api( stats_time, stats )
         
         if ( any(err_info%err_code == clubb_fatal_error) ) then
           write(fstderr, *) err_info%err_header_global
@@ -3973,8 +3960,10 @@ module clubb_driver
     write(unit=fstdout, fmt='(a,f10.4)') 'CLUBB-TIMER time_clubb_advance =     ', time_clubb_advance
     write(unit=fstdout, fmt='(a,f10.4)') 'CLUBB-TIMER time_clubb_pdf =         ', time_clubb_pdf
     write(unit=fstdout, fmt='(a,f10.4)') 'CLUBB-TIMER time_SILHS =             ', time_SILHS
-    write(unit=fstdout, fmt='(a,f10.4)') 'CLUBB-TIMER time_microphys_scheme =  ', time_microphys_scheme
-    write(unit=fstdout, fmt='(a,f10.4)') 'CLUBB-TIMER time_microphys_advance = ', time_microphys_advance
+    write(unit=fstdout, fmt='(a,f10.4)') &
+      'CLUBB-TIMER time_microphys_scheme =  ', time_microphys_scheme
+    write(unit=fstdout, fmt='(a,f10.4)') &
+      'CLUBB-TIMER time_microphys_advance = ', time_microphys_advance
     write(unit=fstdout, fmt='(a,f10.4)') 'CLUBB-TIMER time_loop_end =          ', time_loop_end
     write(unit=fstdout, fmt='(a,f10.4)') 'CLUBB-TIMER time_adapt_grid =        ', time_adapt_grid
     write(unit=fstdout, fmt='(a,f10.4)') 'CLUBB-TIMER time_total =             ', time_total
@@ -3998,9 +3987,6 @@ module clubb_driver
   !---------------------------------------------------------------------------------------------
   
     
-    use grid_class, only: &
-      grid
-
     use inputfields, only: &
       cleanup_input_fields
 
@@ -4076,7 +4062,7 @@ module clubb_driver
     !$acc              invrs_rho_ds_zm_init, invrs_rho_ds_zt_init, thv_ds_zm_init, &
     !$acc              thv_ds_zt_init, rtm_ref_init, thlm_ref_init, um_ref_init, &
     !$acc              deep_soil_T_in_K_init, sfc_soil_T_in_K_init, veg_T_in_K_init, &
-    !$acc              vm_ref_init, rho_ds_zm_dycore_init, err_info, err_info%err_header, &
+    !$acc              vm_ref_init, err_info, err_info%err_header, &
     !$acc              rtm, wm_zt, ug, vg, um_ref, vm_ref, thlm_forcing, rtm_forcing, &
     !$acc              um_forcing, vm_forcing, wm_zm, wprtp_forcing, wpthlp_forcing, &
     !$acc              rtp2_forcing, thlp2_forcing, rtpthlp_forcing, wpthlp_sfc, &
@@ -4149,12 +4135,24 @@ module clubb_driver
     call stats_finalize_api( stats, err_info )
 
     ! Free memory
-    if ( thlm_sponge_damp_settings%l_sponge_damping )     call finalize_tau_sponge_damp_api( thlm_sponge_damp_profile )
-    if ( rtm_sponge_damp_settings%l_sponge_damping )      call finalize_tau_sponge_damp_api( rtm_sponge_damp_profile )
-    if ( uv_sponge_damp_settings%l_sponge_damping )       call finalize_tau_sponge_damp_api( uv_sponge_damp_profile )
-    if ( wp2_sponge_damp_settings%l_sponge_damping )      call finalize_tau_sponge_damp_api( wp2_sponge_damp_profile )
-    if ( wp3_sponge_damp_settings%l_sponge_damping )      call finalize_tau_sponge_damp_api( wp3_sponge_damp_profile )
-    if ( up2_vp2_sponge_damp_settings%l_sponge_damping )  call finalize_tau_sponge_damp_api( up2_vp2_sponge_damp_profile )
+    if ( thlm_sponge_damp_settings%l_sponge_damping ) then
+      call finalize_tau_sponge_damp_api( thlm_sponge_damp_profile )
+    end if
+    if ( rtm_sponge_damp_settings%l_sponge_damping ) then
+      call finalize_tau_sponge_damp_api( rtm_sponge_damp_profile )
+    end if
+    if ( uv_sponge_damp_settings%l_sponge_damping ) then
+      call finalize_tau_sponge_damp_api( uv_sponge_damp_profile )
+    end if
+    if ( wp2_sponge_damp_settings%l_sponge_damping ) then
+      call finalize_tau_sponge_damp_api( wp2_sponge_damp_profile )
+    end if
+    if ( wp3_sponge_damp_settings%l_sponge_damping ) then
+      call finalize_tau_sponge_damp_api( wp3_sponge_damp_profile )
+    end if
+    if ( up2_vp2_sponge_damp_settings%l_sponge_damping ) then
+      call finalize_tau_sponge_damp_api( up2_vp2_sponge_damp_profile )
+    end if
 
     if( l_t_dependent ) call finalize_t_dependent_input()
 
@@ -4437,8 +4435,6 @@ module clubb_driver
                 sclr_dim, edsclr_dim, sclr_idx, &
                 clubb_config_flags, &
                 l_modify_ic_with_cubic_int, &
-                l_add_dycore_grid, &
-                grid_adapt_in_time_method, &
                 l_ascending_grid, fcor_y, &
                 thlm, rtm, um, vm, ug, vg, wp2, up2, vp2, upwp, rcm, &
                 wm_zt, wm_zm, em, exner, &
@@ -4477,7 +4473,6 @@ module clubb_driver
         microphys_scheme
 
     use grid_class, only: &
-      zm2zt_api, &   !----------------------------------------------------- Procedure(s)
       zt2zm_api
 
     use sounding, only: read_sounding !--------------------------------- Procedure(s)
@@ -4570,14 +4565,6 @@ module clubb_driver
     ! requires a special sounding.in file with many additional sounding levels.
     logical, intent(in) :: &
       l_modify_ic_with_cubic_int
-
-    logical, intent(in) :: &
-      l_add_dycore_grid ! flag to set remapping from dycore to on or off
-
-    integer, intent(in) :: &
-      grid_adapt_in_time_method   ! Integer flag to see if grid should be adapted over time and if
-                                  ! so what parameters should be used to setup the grid
-                                  ! density function
 
     logical, intent(in) :: &
       l_ascending_grid
@@ -4829,7 +4816,8 @@ module clubb_driver
         ! in time_dependent_input
         call initialize_t_dependent_input &
                     ( iunit, runtype, gr_dycore%nzt, gr_dycore%zt(1,:), p_in_Pa_dycore(1,:), &
-                    clubb_config_flags%l_add_dycore_grid, clubb_config_flags%grid_adapt_in_time_method )
+                    clubb_config_flags%l_add_dycore_grid, &
+                    clubb_config_flags%grid_adapt_in_time_method )
 
         deallocate( p_in_Pa_dycore )
       else
@@ -4837,7 +4825,8 @@ module clubb_driver
         ! l_add_dycore_grid=.false.
         call initialize_t_dependent_input &
                       ( iunit, runtype, gr%nzt, gr%zt(1,:), p_in_Pa(1,:), &
-                      clubb_config_flags%l_add_dycore_grid, clubb_config_flags%grid_adapt_in_time_method )
+                      clubb_config_flags%l_add_dycore_grid, &
+                      clubb_config_flags%grid_adapt_in_time_method )
       end if
 
     else
@@ -5948,8 +5937,7 @@ module clubb_driver
 
 
     use grid_class, only: &
-        grid,   & !--------------------------------------------------- Type
-        zt2zm_api !--------------------------------------------------- Procedure(s)
+        grid !--------------------------------------------------- Type
 
     use constants_clubb, only: fstderr !-------------------------- Variables(s)
 

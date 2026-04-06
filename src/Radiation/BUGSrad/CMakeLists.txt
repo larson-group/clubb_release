@@ -25,6 +25,7 @@ set(BUGSrad_SOURCES
 )
 
 add_library(bugsrad_lib ${BUGSrad_SOURCES})
+disable_compiler_warnings(bugsrad_lib)
 
 target_link_libraries(bugsrad_lib PRIVATE clubb_core_lib lapack_lib)
 

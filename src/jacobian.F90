@@ -30,9 +30,7 @@ program jacobian
       fstderr
 
   use stat_file_utils, only:  & 
-      stat_file_average_interval,  & ! Procedure(s) 
-      stat_file_num_vertical_levels, &
-      stat_file_vertical_levels
+      stat_file_average_interval ! Procedure(s) 
 
   use error_code, only: &
       clubb_fatal_error,           & ! Constant

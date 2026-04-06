@@ -146,7 +146,6 @@ module advance_xp2_xpyp_module
 
     use grid_class, only: & 
         grid,       & ! Type
-        zm2zt_api,  & ! Procedure(s)
         zt2zm_api
 
     use pdf_parameter_module, only: &
@@ -175,7 +174,6 @@ module advance_xp2_xpyp_module
         stats_type, &
         stats_update, &
         stats_begin_budget, &
-        stats_update_budget, &
         stats_finalize_budget
 
     use array_index, only: &
@@ -1324,7 +1322,7 @@ module advance_xp2_xpyp_module
 
           call clip_variance( nzm, ngrdcol, gr, clip_sclrprtp, dt, threshold_array, & ! Intent(in)
                               stats,                                                & ! In
-                              sclrprtp(:,:,sclr) )                                    ! Intent(inout)
+                              sclrprtp(:,:,sclr) )                               ! Intent(inout)
         else
           l_first_clip_ts = .true.
           l_last_clip_ts = .true.
@@ -1357,7 +1355,7 @@ module advance_xp2_xpyp_module
 
           call clip_variance( nzm, ngrdcol, gr, clip_sclrpthlp, dt, threshold_array, & ! Intent(in)
                               stats,                                                 & ! In
-                              sclrpthlp(:,:,sclr) )                                    ! Intent(inout)
+                              sclrpthlp(:,:,sclr) )                              ! Intent(inout)
         else
           l_first_clip_ts = .true.
           l_last_clip_ts = .true.
@@ -1631,9 +1629,6 @@ module advance_xp2_xpyp_module
     ! https://arxiv.org/pdf/1711.03675v1.pdf#nameddest=url:xp2_dp
     real( kind = core_rknd ), dimension(ngrdcol,nzm) :: &
       lhs_dp1   ! LHS dissipation term 1
-
-    real( kind = core_rknd ), dimension(nzm) :: &
-      zeros
 
     integer :: sclr, k, i
 
@@ -2063,9 +2058,6 @@ module advance_xp2_xpyp_module
       sclrp2_solution, &
       sclrprtp_solution, &
       sclrpthlp_solution
-
-    real( kind = core_rknd ), dimension(ngrdcol,nzm) :: &
-      zeros
 
     integer :: sclr, k, i
 
@@ -2822,10 +2814,6 @@ module advance_xp2_xpyp_module
     character(len=20) :: &
       solve_type_str ! solve_type in string format for debug output purposes
 
-    integer :: i
-
-    integer :: j
-
     ! --- Begin Code ---
 
     l_single_lhs_solve = .false.
@@ -3064,7 +3052,8 @@ module advance_xp2_xpyp_module
       km1 = max( k-gr%grid_dir_indx, 1 )
       kp1 = min( k+gr%grid_dir_indx, nzm )
       do i = 1, ngrdcol
-        stats_tmp(i,k) = (-gamma_over_implicit_ts * lhs_ta(2+gr%grid_dir_indx,i,k)) * xapxbp(i,km1) &
+        stats_tmp(i,k) = (-gamma_over_implicit_ts * &
+                          lhs_ta(2+gr%grid_dir_indx,i,k)) * xapxbp(i,km1) &
                        + (-gamma_over_implicit_ts * lhs_ta(2,i,k)) * xapxbp(i,k) &
                        + (-gamma_over_implicit_ts * lhs_ta(2-gr%grid_dir_indx,i,k)) * xapxbp(i,kp1)
       end do
@@ -3157,8 +3146,7 @@ module advance_xp2_xpyp_module
         var_on_stats_list, &
         stats_update, &
         stats_begin_budget, &
-        stats_update_budget, &
-        stats_finalize_budget
+        stats_update_budget
 
     implicit none
 
@@ -3524,8 +3512,7 @@ module advance_xp2_xpyp_module
         var_on_stats_list, &
         stats_update, &
         stats_begin_budget, &
-        stats_update_budget, &
-        stats_finalize_budget
+        stats_update_budget
 
     implicit none
 
@@ -6104,8 +6091,7 @@ module advance_xp2_xpyp_module
 
     use stats_netcdf, only: &
         stats_type, &
-        stats_begin_budget, &
-        stats_finalize_budget
+        stats_begin_budget
 
     implicit none
 
@@ -6137,9 +6123,6 @@ module advance_xp2_xpyp_module
       xp2_np1   ! Variance for <n+1>          [units vary]
 
     !------------------- Local variables ------------------
-    integer :: &
-      i
-
     character(len=32) :: name_pd
 
     !------------------- Begin Code ------------------

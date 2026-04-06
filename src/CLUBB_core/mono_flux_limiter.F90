@@ -309,9 +309,6 @@ module mono_flux_limiter
     use clubb_precision, only: &
         core_rknd ! Variable(s)
 
-    use advance_helper_module, only: &
-        vertical_integral ! Procedure(s)
-
     use stats_netcdf, only: &
         stats_type, &
         stats_begin_budget, &
@@ -448,7 +445,6 @@ module mono_flux_limiter
     real( kind = core_rknd ) :: &
       max_tmp, &
       min_tmp, &
-      tmp, &
       invrs_dt
 
     real( kind = core_rknd ), dimension(ngrdcol,nzt) :: &
@@ -697,7 +693,8 @@ module mono_flux_limiter
     !       be parallelized, which is slow on GPUs. 
     !       This initial check CAN be done in parallel though, hence the "collapse(2), so 
     !       we run this quickly and only perform the slow version if we have to.
-    !$acc parallel loop gang vector collapse(2) default(present) reduction(.or.:l_any_adjustment_needed)
+    !$acc parallel loop gang vector collapse(2) default(present) &
+    !$acc             reduction(.or.:l_any_adjustment_needed)
     do i = 1, ngrdcol
       do k = gr%k_lb_zm+gr%grid_dir_indx, gr%k_ub_zm-gr%grid_dir_indx, gr%grid_dir_indx
 
@@ -848,7 +845,8 @@ module mono_flux_limiter
       !$acc end parallel loop
 
       ! MONOFLUX TEST COMMENT DO NOT REMOVE !$acc compare( wpxp ) 
-      ! MONOFLUX TEST COMMENT DO NOT REMOVE if( any(wpxp_net_adjust /= 0.0) ) write(fstderr,*) "MONOFLUX: wpxp adjusted "
+      ! MONOFLUX TEST COMMENT DO NOT REMOVE
+      ! if( any(wpxp_net_adjust /= 0.0) ) write(fstderr,*) "MONOFLUX: wpxp adjusted "
 
       ! Reset the value of xm to compensate for the change to w'x'.
 
@@ -1249,8 +1247,7 @@ module mono_flux_limiter
     ! timestep index (t+1).
 
     use grid_class, only: &
-        grid, & ! Type(s)
-        flip    ! Procedure(s)
+        grid ! Type(s)
 
     use matrix_solver_wrapper, only: &
         tridiag_solve ! Procedure(s)
@@ -1308,8 +1305,6 @@ module mono_flux_limiter
     !---------------------------- Local Variable ----------------------------
     character(len=10) :: &
       solve_type_str ! solve_type as a string for debug output purposes
-
-    integer :: i
 
     !---------------------------- Begin Code ----------------------------
 
@@ -2056,11 +2051,6 @@ module mono_flux_limiter
         sqrt_2pi, &  ! Constant(s)
         sqrt_2, &
         one
-#ifdef MKL
-    use constants_clubb, only: &
-        one_half  ! Constant(s)
-#endif
-
     use clubb_precision, only: &
       core_rknd ! Variable(s)
 

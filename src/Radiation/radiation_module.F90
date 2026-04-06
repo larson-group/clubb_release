@@ -6,6 +6,8 @@ module radiation_module
 
   implicit none
 
+  private
+
   public :: advance_clubb_radiation, &
             radiation_driver, &
             update_radiation_variables, &
@@ -178,7 +180,6 @@ module radiation_module
               cloud_frac, ice_supersat_frac, X_nl_all_levs,                           & ! In
               lh_rt_clipped, lh_thl_clipped, lh_rc_clipped,                           & ! In
               lh_sample_point_weights, hydromet,                                      & ! In
-              stats,                                                                  & ! InOut
               err_info,                                                               & ! InOut
               radht, Frad, Frad_SW_up, Frad_LW_up,                                   & ! Out
               Frad_SW_down, Frad_LW_down )                                            ! Out
@@ -216,9 +217,9 @@ module radiation_module
     ! We update stats here each sample timestep - even if radiation is not advanced
     if ( stats%l_sample ) then
 
-      call update_radiation_variables( ngrdcol, gr%nzm, gr%nzt, radht, Frad, Frad_SW_up, Frad_LW_up, &
-                                       Frad_SW_down, Frad_LW_down, &
-                                       stats )
+      call update_radiation_variables( &
+            ngrdcol, gr%nzm, gr%nzt, radht, Frad, Frad_SW_up, Frad_LW_up, &
+            Frad_SW_down, Frad_LW_down, stats )
     end if
 
   end subroutine advance_clubb_radiation
@@ -272,8 +273,6 @@ module radiation_module
     use grid_class, only: ddzm ! Procedure(s)
 
     use constants_clubb, only: Cp ! Variable(s)
-
-    use grid_class, only: zt2zm_api !--------------------------------------- Procedure
 
     use interpolation, only: binary_search !--- Procdure(s)
 
@@ -522,8 +521,8 @@ module radiation_module
       end if
 
       call simple_rad( gr, ngrdcol, rho, rho_zm, rtm, rcm, exner,  & ! In
-                       stats, err_info,                   & ! Inout
-                       Frad_LW, radht_LW )          ! Out
+                       stats,                              & ! Inout
+                       Frad_LW, radht_LW )                ! Out
 
       !$acc parallel loop gang vector collapse(2) default(present)
       do k = 1, gr%nzm
@@ -598,7 +597,6 @@ module radiation_module
 
     use radiation_variables_module, only: &
       radht_LW, radht_SW, Frad_SW, Frad_LW, &
-      extended_atmos_range_size, lin_int_buffer, &
       T_in_K, rcil, o3l, & !---------------------- Variables
       rsm_rad, rcm_in_cloud_rad, cloud_frac_rad, ice_supersat_frac_rad, radht_LW_rad, &
       radht_SW_rad, p_in_mb, sp_humidity, Frad_uLW, Frad_dLW, Frad_uSW, Frad_dSW, &
@@ -700,7 +698,7 @@ module radiation_module
                time_current, time_initial, rho, rho_zm, p_in_Pa, exner, &
                cloud_frac, ice_supersat_frac, X_nl_all_levs, &
                lh_rt_clipped, lh_thl_clipped, lh_rc_clipped, &
-               lh_sample_point_weights, hydromet, stats,            &
+               lh_sample_point_weights, hydromet, &
                err_info, &
                radht, Frad, Frad_SW_up, Frad_LW_up, Frad_SW_down, Frad_LW_down )
 
@@ -785,9 +783,6 @@ module radiation_module
 
     real( kind = core_rknd ), dimension(ngrdcol,nzt,hydromet_dim), intent(in) :: &
       hydromet             ! Hydrometeor mean fields
-
-    type(stats_type), intent(inout) :: &
-      stats
 
     type(err_info_type), intent(inout) :: &
       err_info        ! err_info struct containing err_code and err_header

@@ -30,7 +30,8 @@ module microphys_driver
   !=============================================================================
   subroutine calc_microphys_scheme_tendcies( gr, dt, time_current,      & ! In
                                 pdf_dim, hydromet_dim, runtype,         & ! In
-                                thlm, p_in_Pa, exner, rho, rho_zm, rtm, & ! In
+                                thlm, p_in_Pa, exner, rho,              & ! In
+                                rho_zm, rtm, &                            ! In
                                 rcm, cloud_frac, wm_zt, wm_zm, wp2_zt, &  ! In
                                 hydromet, Nc_in_cloud, &                  ! In
                                 hm_metadata, &                            ! In
@@ -541,7 +542,6 @@ module microphys_driver
                exner, rho, cloud_frac, wtmp, &
                delta_zt, rcm, Ncm_microphys, chi, rvm, hydromet, &
                saturation_formula, &
-               stats, icol,         &
                hydromet_mc, hydromet_vel_zt, Ncm_mc, &
                rcm_mc, rvm_mc, thlm_mc, &
                microphys_stats_zt, microphys_stats_sfc )
@@ -634,7 +634,6 @@ module microphys_driver
                                    cloud_frac, wtmp, delta_zt, rcm,        & ! In
                                    Ncm_microphys, chi, rvm, hydromet,      & ! In
                                    saturation_formula,                     & ! In
-                                   stats, icol,                            & ! In
                                    hydromet_mc, hydromet_vel_zt,           & ! Out
                                    Ncm_mc, rcm_mc, rvm_mc, thlm_mc,        & ! Out
                                    microphys_stats_zt,                     & ! Out

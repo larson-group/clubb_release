@@ -165,11 +165,13 @@ module simple_rad_module
   real( kind = core_rknd ), dimension(lba_nzrad,lba_ntimes), private :: & 
     lba_krad ! Radiative tendencies     [K/s]
 
+!$omp threadprivate( lba_zrad, lba_krad )
+
   contains
 
   !-------------------------------------------------------------------------------
   subroutine simple_rad( gr, ngrdcol, rho, rho_zm, rtm, rcm, exner,  &
-                         stats, err_info, Frad_LW, radht_LW )
+                         stats, Frad_LW, radht_LW )
 ! Description:
 !   A simplified radiation driver
 ! References:
@@ -177,13 +179,9 @@ module simple_rad_module
 !-------------------------------------------------------------------------------
 
 
-    use grid_class, only: zt2zm_api, grid ! Procedure(s)
+    use grid_class, only: grid ! Type(s)
 
-    use constants_clubb, only: fstderr, one, Cp, eps ! Variable(s)
-
-    use error_code, only: &
-        clubb_at_least_debug_level_api,  & ! Procedure
-        clubb_fatal_error                 ! Constant
+    use constants_clubb, only: one, Cp, eps ! Variable(s)
 
     use stats_netcdf, only: &
       stats_type, &
@@ -199,9 +197,6 @@ module simple_rad_module
 
     use clubb_precision, only: &
       core_rknd ! Variable(s)
-
-    use err_info_type_module, only: &
-      err_info_type        ! Type
 
     implicit none
 
@@ -230,9 +225,6 @@ module simple_rad_module
     type(stats_type), intent(inout) :: &
       stats
 
-    type(err_info_type), intent(inout) :: &
-      err_info        ! err_info struct containing err_code and err_header
-
     ! Output Variables
     real( kind = core_rknd ), intent(out), dimension(ngrdcol,gr%nzm) ::  &
       Frad_LW            ! Radiative flux                 [W/m^2]
@@ -247,7 +239,7 @@ module simple_rad_module
 
     real( kind = core_rknd ), dimension(ngrdcol) :: z_i
 
-    integer :: i, k, k_iso, k_rtm
+    integer :: i, k, k_iso
 
     ! ---- Begin Code ----
 
@@ -304,8 +296,9 @@ module simple_rad_module
         !   end if
         ! end if
 
-        z_i(i) = lin_interpolate_two_points( 8.0e-3_core_rknd, rtm(i,k_iso), rtm(i,k_iso-1), gr%zt(i,k_iso), &
-                                             gr%zt(i,k_iso-1) )
+        z_i(i) = lin_interpolate_two_points( &
+                   8.0e-3_core_rknd, rtm(i,k_iso), rtm(i,k_iso-1), &
+                   gr%zt(i,k_iso), gr%zt(i,k_iso-1) )
       end do ! i=1..ngrdcol
 
       ! Compute the Heaviside step function for z - z_i.
@@ -329,9 +322,11 @@ module simple_rad_module
         do i = 1, ngrdcol
           if ( Heaviside(i,k) > 0.0_core_rknd ) then
             Frad_LW(i,k) = Frad_LW(i,k) &
-                           + rho_zm(i,k) * Cp * ls_div * Heaviside(i,k) &
-                             * ( 0.25_core_rknd * ((gr%zm(i,k)-z_i(i))**(4.0_core_rknd/3.0_core_rknd)) &
-                                 + z_i(i) * ((gr%zm(i,k)-z_i(i))**(1.0_core_rknd/3.0_core_rknd)) )
+                           + rho_zm(i,k) * Cp * ls_div * Heaviside(i,k) * ( &
+                                 0.25_core_rknd * ( ( gr%zm(i,k) - z_i(i) ) ** &
+                                 ( 4.0_core_rknd / 3.0_core_rknd ) ) &
+                                 + z_i(i) * ( ( gr%zm(i,k) - z_i(i) ) ** &
+                                 ( 1.0_core_rknd / 3.0_core_rknd ) ) )
           end if
         end do ! k=1..gr%nzm
       end do

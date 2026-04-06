@@ -62,11 +62,6 @@ module tuner_tests
 
     private
 
-    logical :: &
-        l_esa_siarry = .false.,     & ! Turn on to use Siarry's ESA algorithm
-        l_print_outs = .false.        ! Print outs of results, useful for testing
-
-
     integer, parameter :: &
         rastrigin_vars = 5,     & ! Number of variables for the Rastrigin function
         samples = 10000           ! Number of times the functions are minimized
@@ -79,44 +74,47 @@ module tuner_tests
         implicit none
 
         integer :: tuner_tests_driver
+        logical :: l_esa_siarry, l_print_outs
             
         ! initial random number generator
         call init_random
 
         tuner_tests_driver = 0
+        l_esa_siarry = .false.
+        l_print_outs = .false.
 
         print *, "Running tuner tests"
         print *, "-------------------"
         
-        if ( goldstein_price_test() < 0.9 ) then
+        if ( goldstein_price_test( l_esa_siarry ) < 0.9 ) then
             print *, "goldstein_price fail"
             tuner_tests_driver = 1
         else 
             print *, "goldstein_price pass"
         end if
 
-        if ( rastrigin_test() < 0.9 ) then
+        if ( rastrigin_test( l_esa_siarry ) < 0.9 ) then
             print *, "rastrigin fail"
             tuner_tests_driver = 1
         else 
             print *, "rastrigin pass"
         end if
 
-        if ( himmelblau_test() < 0.95 ) then
+        if ( himmelblau_test( l_esa_siarry ) < 0.95 ) then
             print *, "himmelblau fail"
             tuner_tests_driver = 1
         else 
             print *, "himmelblau pass"
         end if
 
-        if ( eggholder_test() < 0.7 ) then
+        if ( eggholder_test( l_esa_siarry ) < 0.7 ) then
             print *, "eggholder fail"
             tuner_tests_driver = 1
         else 
             print *, "eggholder pass"
         end if
 
-        if ( schaffer_test() < 0.9 ) then
+        if ( schaffer_test( l_esa_siarry ) < 0.9 ) then
             print *, "schaffer fail"
             tuner_tests_driver = 1
         else 
@@ -128,21 +126,21 @@ module tuner_tests
             l_esa_siarry = .false.
 
             print *, "esa new"
-            print '(A5,F6.2)', "RA: ", rastrigin_test()*100.
-            print '(A4,F6.2)', "GP: ", goldstein_price_test()*100.
-            print '(A4,F6.2)', "HI: ", himmelblau_test()*100.
-            print '(A4,F6.2)', "EG: ", eggholder_test()*100.
-            print '(A4,F6.2)', "SC: ", schaffer_test()*100.
+            print '(A5,F6.2)', "RA: ", rastrigin_test( l_esa_siarry )*100.
+            print '(A4,F6.2)', "GP: ", goldstein_price_test( l_esa_siarry )*100.
+            print '(A4,F6.2)', "HI: ", himmelblau_test( l_esa_siarry )*100.
+            print '(A4,F6.2)', "EG: ", eggholder_test( l_esa_siarry )*100.
+            print '(A4,F6.2)', "SC: ", schaffer_test( l_esa_siarry )*100.
             print *,""
 
             l_esa_siarry = .true.
 
             print *, "esa siarry"
-            print '(A5,F6.2)', "RA: ", rastrigin_test()*100.
-            print '(A4,F6.2)', "GP: ", goldstein_price_test()*100.
-            print '(A4,F6.2)', "HI: ", himmelblau_test()*100.
-            print '(A4,F6.2)', "EG: ", eggholder_test()*100.
-            print '(A4,F6.2)', "SC: ", schaffer_test()*100.
+            print '(A5,F6.2)', "RA: ", rastrigin_test( l_esa_siarry )*100.
+            print '(A4,F6.2)', "GP: ", goldstein_price_test( l_esa_siarry )*100.
+            print '(A4,F6.2)', "HI: ", himmelblau_test( l_esa_siarry )*100.
+            print '(A4,F6.2)', "EG: ", eggholder_test( l_esa_siarry )*100.
+            print '(A4,F6.2)', "SC: ", schaffer_test( l_esa_siarry )*100.
             print *,""
         end if
 
@@ -150,9 +148,11 @@ module tuner_tests
     end function tuner_tests_driver
 
     !============================= Goldstein-Price =============================
-    function goldstein_price_test() 
+    function goldstein_price_test( l_esa_siarry ) 
 
         implicit none
+
+        logical, intent(in) :: l_esa_siarry
 
         real( kind = core_rknd ), dimension(2) :: &
                 xinit, xmin, xmax, xopt, xrand
@@ -237,9 +237,11 @@ module tuner_tests
 
 
     !============================= Rastrigin =============================
-    function rastrigin_test() 
+    function rastrigin_test( l_esa_siarry ) 
 
         implicit none
+
+        logical, intent(in) :: l_esa_siarry
 
         real( kind = core_rknd ), dimension(rastrigin_vars) :: &
                 xinit, xmin, xmax, xopt, xrand
@@ -317,9 +319,11 @@ module tuner_tests
 
 
     !============================= Himmelblau =============================
-    function himmelblau_test( ) 
+    function himmelblau_test( l_esa_siarry ) 
 
         implicit none
+
+        logical, intent(in) :: l_esa_siarry
 
         real( kind = core_rknd ), dimension(2) :: &
                 xinit, xmin, xmax, xopt, xrand
@@ -397,9 +401,11 @@ module tuner_tests
 
 
     !============================= Eggholder =============================
-    function eggholder_test() 
+    function eggholder_test( l_esa_siarry ) 
        
         implicit none
+
+        logical, intent(in) :: l_esa_siarry
 
         real( kind = core_rknd ), dimension(2) :: &
                 xinit, xmin, xmax, xopt, xrand
@@ -472,9 +478,11 @@ module tuner_tests
     
 
     !============================= Schaffer =============================
-    function schaffer_test() 
+    function schaffer_test( l_esa_siarry ) 
        
         implicit none
+
+        logical, intent(in) :: l_esa_siarry
 
         real( kind = core_rknd ), dimension(2) :: &
                 xinit, xmin, xmax, xopt, xrand

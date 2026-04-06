@@ -683,10 +683,14 @@ module numerical_check
   end subroutine parameterization_check
 
 !-----------------------------------------------------------------------
-  subroutine sfc_varnce_check( sclr_dim, wp2_sfc, up2_sfc, vp2_sfc, thlp2_sfc, &
-           rtp2_sfc, rtpthlp_sfc, &
-           sclrp2_sfc, sclrprtp_sfc, sclrpthlp_sfc, &
-           err_info )
+  subroutine sfc_varnce_check( sclr_dim, wp2_sfc, &
+                               up2_sfc, vp2_sfc, &
+                               thlp2_sfc, rtp2_sfc, & 
+                               rtpthlp_sfc, &
+                               sclrp2_sfc, &
+                               sclrprtp_sfc, &
+                               sclrpthlp_sfc, &
+                               err_info )
 !
 !       Description:This subroutine determines if any of the output
 !       variables for the calc_surface_varnce subroutine carry values that
@@ -1368,9 +1372,6 @@ module numerical_check
           iC6thlb,      &
           iC14
 
-      use parameters_tunable, only: &
-          nu_vertical_res_dep    ! Type(s)
-
       use constants_clubb, only:  &
           fstderr, &  ! Variable(s)
           one, &
@@ -1395,7 +1396,6 @@ module numerical_check
           saturation_flatau,  &
           saturation_lookup,  &
           ipdf_pre_advance_fields, &     
-          ipdf_post_advance_fields, &    
           ipdf_pre_post_advance_fields, &
           l_explicit_turbulent_adv_wpxp, &
           order_xm_wpxp, &

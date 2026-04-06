@@ -48,9 +48,6 @@ module spurious_source_test
 
     use grid_class, only: grid ! Type
 
-    use grid_class, only: &
-         setup_grid
-
     use constants_clubb, only: &
         one,       & ! Variable(s)
         one_half,  &
@@ -71,7 +68,6 @@ module spurious_source_test
         nparams
 
     use parameters_tunable, only: &
-        set_default_parameters, & ! Procedure(s)
         init_clubb_params_api,  &
         nu_vertical_res_dep       ! Type(s)
 
@@ -498,7 +494,7 @@ module spurious_source_test
       l_rcm_supersat_adj,           & ! Add excess supersaturated vapor to cloud water
                                       ! rtpthlp
       l_damp_wp3_Skw_squared,       & ! Set damping on wp3 to use Skw^2 rather than Skw^4
-      l_prescribed_avg_deltaz,      & ! used in calc_derrived_params_api. If .true., avg_deltaz = deltaz
+      l_prescribed_avg_deltaz,      & ! If .true., avg_deltaz = deltaz
       l_lmm_stepping,               & ! Apply Linear Multistep Method (LMM) Stepping
       l_e3sm_config,                & ! Run model with E3SM settings
       l_vary_convect_depth,         & ! Flag used to calculate convective velocity using

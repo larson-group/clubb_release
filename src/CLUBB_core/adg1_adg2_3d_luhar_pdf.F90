@@ -656,7 +656,6 @@ module adg1_adg2_3d_luhar_pdf
         four,      & ! Constant(s)
         one,       &
         one_half,  &
-        zero,      &
         w_tol_sqd, &
         fstderr
 

@@ -175,7 +175,8 @@ contains
 
   end subroutine reset_radiation_variables
 
-  subroutine setup_bugsrad_variables( ngrdcol, nzmax, zt_grid, zm_grid, zm_grid_spacing, p_in_Pa_zm )
+  subroutine setup_bugsrad_variables( &
+             ngrdcol, nzmax, zt_grid, zm_grid, zm_grid_spacing, p_in_Pa_zm )
 
     implicit none
 

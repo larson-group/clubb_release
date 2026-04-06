@@ -27,8 +27,6 @@ module read_corr_mtx_test
 
   use clubb_precision, only: core_rknd
 
-  use matrix_operations, only: print_lower_triangular_matrix ! Procedure
-
   use constants_clubb, only: &
         zero, &
         one

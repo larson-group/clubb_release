@@ -636,17 +636,12 @@ module advance_helper_module
 
     use grid_class, only: &
         grid,       & ! Type
-        ddzt,       & ! Procedure(s)
-        zt2zm_api,  & 
         zm2zt2zm
 
     use constants_clubb, only: &
         one,                &
         zero,               &
         min_max_smth_mag
-
-    use interpolation, only: &
-        linear_interp_factor ! Procedure
 
     use parameter_indices, only: &
         nparams,             & ! Variable(s)

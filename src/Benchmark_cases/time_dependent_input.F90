@@ -325,7 +325,7 @@ module time_dependent_input
     !
     !-------------------------------------------------------------------------------------
 
-    use input_reader, only: read_two_dim_file, two_dim_read_var, fill_blanks_two_dim_vars
+    use input_reader, only: read_two_dim_file, fill_blanks_two_dim_vars
 
     use input_names, only: &
       z_name, &
@@ -565,9 +565,6 @@ module time_dependent_input
       sec_per_hr, &
       pascal_per_mb, &
       fstderr
-
-    use interpolation, only: &
-      linear_interp_factor ! Procedure(s)
 
     use input_names, only: &
       temperature_f_name, &  ! Variable(s)

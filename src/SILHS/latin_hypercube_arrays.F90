@@ -3,9 +3,6 @@
 !===============================================================================
 module latin_hypercube_arrays
 
-  use clubb_precision, only: &
-    core_rknd
-
   implicit none
 
   public :: cleanup_latin_hypercube_arrays

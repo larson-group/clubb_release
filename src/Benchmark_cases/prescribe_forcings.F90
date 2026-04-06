@@ -12,6 +12,8 @@ module prescribe_forcings_module
 
   public :: prescribe_forcings
 
+  private
+
   contains 
   
   !----------------------------------------------------------------------
@@ -49,19 +51,17 @@ module prescribe_forcings_module
 
     use grid_class, only: grid ! Type
 
-    use grid_class, only: zt2zm_api, zm2zt_api !---------------------- Procedure(s)
-
     use stats_netcdf, only: &
       stats_type, &
       stats_update
 
     use constants_clubb, only: &
-      Cp, Lv, kappa, p0, & !---------------------------------- Variable(s)
+      Cp, Lv, & !---------------------------------- Variable(s)
       zero, fstderr
 
     use clubb_precision, only: &
-      core_rknd, &   !-------------------- Variable(s)
-      time_precision
+      core_rknd, &
+      time_precision !-------------------- Variable(s)
 
     use time_dependent_input, only: &
       apply_time_dependent_forcings, &
@@ -294,7 +294,8 @@ module prescribe_forcings_module
 
 !-----------------------------------------------------------------------
 
-    !$acc enter data create( um_bot, vm_bot, rtm_bot, thlm_bot, rho_bot, exner_bot, z_bot, ustar, ubar )
+    !$acc enter data create( um_bot, vm_bot, rtm_bot, thlm_bot, rho_bot, &
+    !$acc                   exner_bot, z_bot, ustar, ubar )
 
 !-----------------------------------------------------------------------
 !                    FIND ALL DIAGNOSTIC VARIABLES
@@ -468,7 +469,8 @@ module prescribe_forcings_module
                             wm_zt, wm_zm, thlm_forcing, rtm_forcing, & ! Intent(out)
                             um_ref, vm_ref, &                          ! Intent(out)
                             sclrm_forcing, edsclrm_forcing )           ! Intent(out)
-        !$acc update device( wm_zt, wm_zm, thlm_forcing, rtm_forcing, um_ref, vm_ref, sclrm_forcing, edsclrm_forcing )
+        !$acc update device( wm_zt, wm_zm, thlm_forcing, rtm_forcing, &
+        !$acc                     um_ref, vm_ref, sclrm_forcing, edsclrm_forcing )
 
       case ( "mpace_b" ) ! mpace_b arctic stratus case
 
@@ -811,7 +813,7 @@ module prescribe_forcings_module
 
         l_compute_momentum_flux = .true.
         l_set_sclr_sfc_rtm_thlm = .true.
-        call ekman_sfclyr( ngrdcol, z_bot,                & ! Intent(in)
+        call ekman_sfclyr( ngrdcol,                       & ! Intent(in)
                            um_bot, vm_bot, ubar,          & ! Intent(in)
                            upwp_sfc, vpwp_sfc,            & ! Intent(out)
                            wpthlp_sfc, wprtp_sfc, ustar )   ! Intent(out)
@@ -908,7 +910,8 @@ module prescribe_forcings_module
       call stats_update( "T_sfc", T_sfc(:), stats )
     end if
 
-    !$acc exit data delete( um_bot, vm_bot, rtm_bot, thlm_bot, rho_bot, exner_bot, z_bot, ustar, ubar )
+    !$acc exit data delete( um_bot, vm_bot, rtm_bot, thlm_bot, rho_bot, &
+    !$acc                   exner_bot, z_bot, ustar, ubar )
 
     return
 
@@ -935,8 +938,7 @@ module prescribe_forcings_module
     ! Author: Shixuan Zhang (Shixuan.Zhang@pnnl.gov).
 
     use clubb_precision, only: &
-        core_rknd,    & !------------------- Constants
-        time_precision
+        core_rknd      !------------------- Constants
 
     use interpolation, only: &
         mono_cubic_interp  ! Procedure(s)
@@ -945,8 +947,7 @@ module prescribe_forcings_module
         grid  ! Type
 
     use grid_class, only: &
-        zt2zm_api,  & ! Procedure(s)
-        zm2zt_api
+        zt2zm_api ! Procedure(s)
 
     use constants_clubb, only: &
         fstderr, & ! Constant
@@ -1111,24 +1112,32 @@ module prescribe_forcings_module
           rho_bot(i)   = rho_zm(i,k_min(i))
 
           um_bot(i)    = mono_cubic_interp( z_bot(i), km1, k00, kp1, kp2, &
-                                            gr%zm(i,km1), gr%zm(i,k00), gr%zm(i,kp1), gr%zm(i,kp2), &
+                                            gr%zm(i,km1), gr%zm(i,k00), &
+                                            gr%zm(i,kp1), gr%zm(i,kp2), &
                                             um_zm(i,km1), um_zm(i,k00), um_zm(i,kp1), um_zm(i,kp2) )
 
           vm_bot(i)    = mono_cubic_interp( z_bot(i), km1, k00, kp1, kp2, &
-                                            gr%zm(i,km1), gr%zm(i,k00), gr%zm(i,kp1), gr%zm(i,kp2), &
+                                            gr%zm(i,km1), gr%zm(i,k00), &
+                                            gr%zm(i,kp1), gr%zm(i,kp2), &
                                             vm_zm(i,km1), vm_zm(i,k00), vm_zm(i,kp1), vm_zm(i,kp2) )
 
           exner_bot(i) = mono_cubic_interp( z_bot(i), km1, k00, kp1, kp2, &
-                                            gr%zm(i,km1), gr%zm(i,k00), gr%zm(i,kp1), gr%zm(i,kp2), &
-                                            exner_zm(i,km1), exner_zm(i,k00), exner_zm(i,kp1), exner_zm(i,kp2) )
+                                            gr%zm(i,km1), gr%zm(i,k00), &
+                                            gr%zm(i,kp1), gr%zm(i,kp2), &
+                                            exner_zm(i,km1), exner_zm(i,k00), &
+                                            exner_zm(i,kp1), exner_zm(i,kp2) )
 
           thlm_bot(i)  = mono_cubic_interp( z_bot(i), km1, k00, kp1, kp2, &
-                                            gr%zm(i,km1), gr%zm(i,k00), gr%zm(i,kp1), gr%zm(i,kp2), &
-                                            thlm_zm(i,km1), thlm_zm(i,k00), thlm_zm(i,kp1), thlm_zm(i,kp2) )
+                                            gr%zm(i,km1), gr%zm(i,k00), &
+                                            gr%zm(i,kp1), gr%zm(i,kp2), &
+                                            thlm_zm(i,km1), thlm_zm(i,k00), &
+                                            thlm_zm(i,kp1), thlm_zm(i,kp2) )
 
           rtm_bot(i)   = mono_cubic_interp( z_bot(i), km1, k00, kp1, kp2, &
-                                            gr%zm(i,km1), gr%zm(i,k00), gr%zm(i,kp1), gr%zm(i,kp2), &
-                                            rtm_zm(i,km1), rtm_zm(i,k00), rtm_zm(i,kp1), rtm_zm(i,kp2) )
+                                            gr%zm(i,km1), gr%zm(i,k00), &
+                                            gr%zm(i,kp1), gr%zm(i,kp2), &
+                                            rtm_zm(i,km1), rtm_zm(i,k00), &
+                                            rtm_zm(i,kp1), rtm_zm(i,kp2) )
         end do
 
       end if

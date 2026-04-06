@@ -22,6 +22,7 @@ set(CLUBB_ROOT ${CMAKE_CURRENT_LIST_DIR})
 
 # Handle our CPPDefinitions such as CLUBB_REAL_TYPE
 include(CPPDefinitions)
+include(CompilerWarnings)
 
 if(${USE_NetCDF})
     # netCDF is an external library, cmake/deps/NetcdfFortranDependency.cmake handles making netcdf available
@@ -102,4 +103,3 @@ if(${ENABLE_TESTS})
     run_clubb_case( arm_1000iter_5dt "-max_iters 1000 -dt_main 5 arm" )
 
 endif()
-

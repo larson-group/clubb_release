@@ -839,9 +839,6 @@ module pdf_utilities
     use clubb_precision, only: &
         core_rknd    ! Variable(s)
 
-    use advance_helper_module, only: &
-        smooth_max
-
     implicit none
 
     ! ---------------- Input Variables ----------------
@@ -1396,8 +1393,6 @@ module pdf_utilities
     real ( kind = core_rknd ), dimension(ngrdcol,nz) :: &
       tmp_denom
 
-    real ( kind = core_rknd ) :: &
-      m
     !-------------------------------------- Begin Code --------------------------------------
 
     !$acc enter data create( tmp_denom )

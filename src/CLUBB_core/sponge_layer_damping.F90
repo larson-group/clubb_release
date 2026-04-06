@@ -66,6 +66,13 @@ module sponge_layer_damping
 
   private
 
+  !$omp threadprivate( thlm_sponge_damp_settings, rtm_sponge_damp_settings )
+  !$omp threadprivate( uv_sponge_damp_settings, wp2_sponge_damp_settings )
+  !$omp threadprivate( wp3_sponge_damp_settings, up2_vp2_sponge_damp_settings )
+  !$omp threadprivate( thlm_sponge_damp_profile, rtm_sponge_damp_profile )
+  !$omp threadprivate( uv_sponge_damp_profile, wp2_sponge_damp_profile )
+  !$omp threadprivate( wp3_sponge_damp_profile, up2_vp2_sponge_damp_profile )
+
   contains
 
   !=============================================================================

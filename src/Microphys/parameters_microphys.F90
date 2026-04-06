@@ -17,11 +17,6 @@ module parameters_microphys
   use mt95, only: &
     genrand_intg
 
-  use constants_clubb, only: &
-    one, &
-    one_third, &
-    two_thirds
-
   implicit none
 
   ! Constant Parameters
@@ -99,6 +94,8 @@ module parameters_microphys
 
 !$omp threadprivate( microphys_scheme )
 
+!$omp threadprivate( specify_aerosol )
+
   logical, dimension(:), allocatable, public :: &
     l_hydromet_sed    ! Flag to sediment mean hydrometeor fields
 
@@ -114,7 +111,7 @@ module parameters_microphys
 !$omp threadprivate( microphys_start_time )
 
   real( kind = core_rknd ), public :: &
-    Nc0_in_cloud = 100.e6_core_rknd    ! Initial cloud droplet concentration  [num/m^3]
+    Nc0_in_cloud = 1.0e8_core_rknd    ! Initial cloud droplet concentration    [num/m^3]
 
 !$omp threadprivate( Nc0_in_cloud )
 

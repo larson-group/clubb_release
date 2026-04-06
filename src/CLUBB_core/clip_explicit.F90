@@ -879,8 +879,6 @@ module clip_explicit
       wp3              ! w'^3 (thermodynamic levels)                [m^3/s^3]
       
     ! ----------------------- Local Variables -----------------------
-    integer :: i
-
     ! ----------------------- Begin Code -----------------------
 
     !$acc data copyin( gr, gr%zt, &

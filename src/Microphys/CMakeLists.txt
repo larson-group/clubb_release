@@ -24,6 +24,9 @@ set(MICROPHYS_SOURCES advance_microphys_module.F90
 
 add_library(microphys_lib ${MICROPHYS_SOURCES})
 
+# These files adhere to an interface and are expected to have warnings. Disable warnings for them.
+disable_compiler_warnings_for_sources(microphys_lib morrison_microphys_module.F90 KK_microphys_module.F90)
+
 target_link_libraries(microphys_lib PRIVATE clubb_core_lib
                                             input_fields_lib
                                             KK_microphys_lib

@@ -523,8 +523,10 @@ contains
     end if
 
     if ( stats%grid%is_initialized ) then
-      if ( allocated( stats%grid%rho_lin_spline_vals ) ) deallocate( stats%grid%rho_lin_spline_vals )
-      if ( allocated( stats%grid%rho_lin_spline_levels ) ) deallocate( stats%grid%rho_lin_spline_levels )
+      if ( allocated( stats%grid%rho_lin_spline_vals ) ) &
+        deallocate( stats%grid%rho_lin_spline_vals )
+      if ( allocated( stats%grid%rho_lin_spline_levels ) ) &
+        deallocate( stats%grid%rho_lin_spline_levels )
       if ( allocated( stats%grid%p_sfc ) ) deallocate( stats%grid%p_sfc )
       if ( allocated( stats%grid%gr_source%zm ) ) deallocate( stats%grid%gr_source%zm )
       if ( allocated( stats%grid%gr_source%zt ) ) deallocate( stats%grid%gr_source%zt )
@@ -825,18 +827,21 @@ contains
     if ( any( stats%vars(:)%grid_id == GRID_LH_ZT ) ) then
 
       ret_code = nf90_def_dim( stats%ncid, "lh_zt", lh_nzt, stats%lh_2d%lh_zt_dimid )
-      ret_code = nf90_def_var( stats%ncid, "lh_zt", NF90_DOUBLE, (/ stats%lh_2d%lh_zt_dimid /), stats%lh_2d%lh_zt_varid )
+      ret_code = nf90_def_var( stats%ncid, "lh_zt", NF90_DOUBLE, &
+                               (/ stats%lh_2d%lh_zt_dimid /), stats%lh_2d%lh_zt_varid )
       ret_code = nf90_put_att( stats%ncid, stats%lh_2d%lh_zt_varid, "units", "m" )
     end if
 
     ! Define rad_zt and rad_zm dimensions
     if ( nrad_zt > 0 .and. nrad_zm > 0 ) then
       ret_code = nf90_def_dim( stats%ncid, "rad_zt", nrad_zt, stats%rad_zt_dimid )
-      ret_code = nf90_def_var( stats%ncid, "rad_zt", NF90_DOUBLE, (/ stats%rad_zt_dimid /), stats%rad_zt_varid )
+      ret_code = nf90_def_var( stats%ncid, "rad_zt", NF90_DOUBLE, &
+                               (/ stats%rad_zt_dimid /), stats%rad_zt_varid )
       ret_code = nf90_put_att( stats%ncid, stats%rad_zt_varid, "units", "m" )
 
       ret_code = nf90_def_dim( stats%ncid, "rad_zm", nrad_zm, stats%rad_zm_dimid )
-      ret_code = nf90_def_var( stats%ncid, "rad_zm", NF90_DOUBLE, (/ stats%rad_zm_dimid /), stats%rad_zm_varid )
+      ret_code = nf90_def_var( stats%ncid, "rad_zm", NF90_DOUBLE, &
+                               (/ stats%rad_zm_dimid /), stats%rad_zm_varid )
       ret_code = nf90_put_att( stats%ncid, stats%rad_zm_varid, "units", "m" )
     end if
 
@@ -846,11 +851,13 @@ contains
       ret_code = nf90_def_dim( stats%ncid, "param_strlen", nparam_strlen, stats%param_strlen_dimid )
 
       ret_code = nf90_def_dim( stats%ncid, "param", nparams, stats%param_dimid )
-      ret_code = nf90_def_var( stats%ncid, "param", NF90_DOUBLE, (/ stats%param_dimid /), stats%param_varid )
+      ret_code = nf90_def_var( stats%ncid, "param", NF90_DOUBLE, &
+                               (/ stats%param_dimid /), stats%param_varid )
       ret_code = nf90_put_att( stats%ncid, stats%param_varid, "units", "index" )
 
       ret_code = nf90_def_var( stats%ncid, "param_name", NF90_CHAR, &
-                          (/ stats%param_strlen_dimid, stats%param_dimid /), stats%param_name_varid )
+                          (/ stats%param_strlen_dimid, stats%param_dimid /), &
+                          stats%param_name_varid )
 
       ret_code = nf90_def_var( stats%ncid, "clubb_params", NF90_DOUBLE, &
                           (/ stats%col_dimid, stats%param_dimid /), stats%clubb_params_varid )
@@ -917,7 +924,8 @@ contains
     ret_code = nf90_enddef( stats%ncid )
 
     ! Write our zm, zt, and column dimension values 
-    ret_code = nf90_put_var( stats%ncid, stats%col_varid, [( real( i, kind=core_rknd ), i=1, stats%ncol )] )
+    ret_code = nf90_put_var( stats%ncid, stats%col_varid, &
+                             [( real( i, kind=core_rknd ), i=1, stats%ncol )] )
     ret_code = nf90_put_var( stats%ncid, stats%zm_varid, zm )
     ret_code = nf90_put_var( stats%ncid, stats%zt_varid, zt )
 
@@ -937,7 +945,8 @@ contains
     ! Write clubb_params to file, this requires the param dimensions (just 1,2,3,...), and
     ! there parameter names, and the parameter values
     if ( nparams > 0 ) then
-      ret_code = nf90_put_var( stats%ncid, stats%param_varid, [( real( i, kind=core_rknd ), i=1, nparams )] )
+      ret_code = nf90_put_var( stats%ncid, stats%param_varid, &
+                               [( real( i, kind=core_rknd ), i=1, nparams )] )
       ret_code = nf90_put_var(stats%ncid,stats%param_name_varid,param_names(1:nparams))
       ret_code = nf90_put_var( stats%ncid, stats%clubb_params_varid, clubb_params )
     end if
@@ -998,7 +1007,7 @@ contains
 
   end subroutine stats_begin_timestep_api
 
-  subroutine stats_end_timestep_api( time_value, stats, err_info )
+  subroutine stats_end_timestep_api( time_value, stats )
 
     ! Description:
     !   End-of-timestep driver for stats output. If this is a write boundary,
@@ -1013,9 +1022,6 @@ contains
     ! ---------------------- Input/Output ---------------------
     type(stats_type), intent(inout) :: &
       stats                 ! Stats runtime context for end-of-step processing [-]
-
-    type(err_info_type), intent(inout) :: &
-      err_info              ! Shared CLUBB error state container [-]
 
     ! ------------------------- Locals ------------------------
     integer :: ierr, i
@@ -1793,9 +1799,12 @@ contains
             ret_code = nf90_put_var( &
                 stats%ncid, stats%vars(i)%varid, &
                 remap_vals_to_target( stats%ncol, &
-                                      stats%grid%gr_source, stats%grid%gr_output, stats%vars(i)%nz, &
-                                      real( stats%vars(i)%buffer, kind=core_rknd ), stats%vars(i)%out_nz, &
-                                      size( stats%grid%rho_lin_spline_vals, 2 ), stats%grid%rho_lin_spline_vals, &
+                                      stats%grid%gr_source, stats%grid%gr_output, &
+                                      stats%vars(i)%nz, &
+                                      real( stats%vars(i)%buffer, kind=core_rknd ), &
+                                      stats%vars(i)%out_nz, &
+                                      size( stats%grid%rho_lin_spline_vals, 2 ), &
+                                      stats%grid%rho_lin_spline_vals, &
                                       stats%grid%rho_lin_spline_levels, iv, stats%grid%p_sfc, &
                                       stats%grid%grid_remap_method, ( grid_id == GRID_ZT ) ), &
                 start=(/ 1, 1, stats%time_index /), &
@@ -1951,8 +1960,10 @@ contains
 
     if ( .not. allocated( stats%grid%rho_lin_spline_vals ) .or. &
         size( stats%grid%rho_lin_spline_vals, 2 ) /= nrho ) then
-      if ( allocated( stats%grid%rho_lin_spline_vals ) ) deallocate( stats%grid%rho_lin_spline_vals )
-      if ( allocated( stats%grid%rho_lin_spline_levels ) ) deallocate( stats%grid%rho_lin_spline_levels )
+      if ( allocated( stats%grid%rho_lin_spline_vals ) ) &
+        deallocate( stats%grid%rho_lin_spline_vals )
+      if ( allocated( stats%grid%rho_lin_spline_levels ) ) &
+        deallocate( stats%grid%rho_lin_spline_levels )
       allocate( stats%grid%rho_lin_spline_vals(stats%ncol,nrho) )
       allocate( stats%grid%rho_lin_spline_levels(stats%ncol,nrho) )
     end if
@@ -2394,7 +2405,8 @@ contains
       new_cap = max( 16, 2 * size( stats%lookup%cache ) )
       allocate( tmp(new_cap) )
       tmp = 0
-      if ( stats%lookup%cache_len > 0 ) tmp(1:stats%lookup%cache_len) = stats%lookup%cache(1:stats%lookup%cache_len)
+      if ( stats%lookup%cache_len > 0 ) &
+        tmp(1:stats%lookup%cache_len) = stats%lookup%cache(1:stats%lookup%cache_len)
       call move_alloc( tmp, stats%lookup%cache )
     end if
 
@@ -2439,7 +2451,8 @@ contains
       allocate( tmp(new_cap) )
       tmp = ''
       if ( stats%lookup%reject_cache_len > 0 ) then
-        tmp(1:stats%lookup%reject_cache_len) = stats%lookup%reject_cache(1:stats%lookup%reject_cache_len)
+        tmp(1:stats%lookup%reject_cache_len) = &
+          stats%lookup%reject_cache(1:stats%lookup%reject_cache_len)
       end if
       call move_alloc( tmp, stats%lookup%reject_cache )
     end if
@@ -2709,11 +2722,13 @@ contains
           do j2 = j + 1, nhm
             call add_expanded_def( base_def, &
                                    "corr_"//trim( hydromet_list(j)( 1:2 ) )//"_"// &
-                                   trim( hydromet_list(j2)( 1:min( 2,len_trim( hydromet_list(j2) ) ) ) )//"_1", &
+                                   trim( hydromet_list(j2)( 1:min( 2, &
+                                   len_trim( hydromet_list(j2) ) ) ) )//"_1", &
                                    out_defs, k )
             call add_expanded_def( base_def, &
                                    "corr_"//trim( hydromet_list(j)( 1:2 ) )//"_"// &
-                                   trim( hydromet_list(j2)( 1:min( 2,len_trim( hydromet_list(j2) ) ) ) )//"_2", &
+                                   trim( hydromet_list(j2)( 1:min( 2, &
+                                   len_trim( hydromet_list(j2) ) ) ) )//"_2", &
                                    out_defs, k )
           end do
         end do
@@ -2751,11 +2766,13 @@ contains
           do j2 = j + 1, nhm
             call add_expanded_def( base_def, &
                                    "corr_"//trim( hydromet_list(j)( 1:2 ) )//"_"// &
-                                   trim( hydromet_list(j2)( 1:min( 2,len_trim( hydromet_list(j2) ) ) ) )//"_1_n", &
+                                   trim( hydromet_list(j2)( 1:min( 2, &
+                                   len_trim( hydromet_list(j2) ) ) ) )//"_1_n", &
                                    out_defs, k )
             call add_expanded_def( base_def, &
                                    "corr_"//trim( hydromet_list(j)( 1:2 ) )//"_"// &
-                                   trim( hydromet_list(j2)( 1:min( 2,len_trim( hydromet_list(j2) ) ) ) )//"_2_n", &
+                                   trim( hydromet_list(j2)( 1:min( 2, &
+                                   len_trim( hydromet_list(j2) ) ) ) )//"_2_n", &
                                    out_defs, k )
           end do
         end do
@@ -2792,7 +2809,8 @@ contains
           do j2 = j + 1, nhm
             call add_expanded_def( base_def, &
                                    trim( hydromet_list(j)( 1:2 ) )//"p"// &
-                                   trim( hydromet_list(j2)( 1:min( 2,len_trim( hydromet_list(j2) ) ) ) )//"p", &
+                                   trim( hydromet_list(j2)( 1:min( 2, &
+                                   len_trim( hydromet_list(j2) ) ) ) )//"p", &
                                    out_defs, k )
           end do
         end do

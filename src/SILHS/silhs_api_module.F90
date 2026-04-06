@@ -538,8 +538,6 @@ contains
                                               lh_rc_clipped, lh_rv_clipped,       & ! Out
                                               lh_Nc_clipped                       ) ! Out
 
-    use grid_class, only: grid ! Type
-
     use latin_hypercube_driver_module, only : clip_transform_silhs_output
 
     use clubb_precision, only: &
@@ -637,8 +635,6 @@ contains
                                               lh_rt_clipped, lh_thl_clipped,          & ! Out
                                               lh_rc_clipped, lh_rv_clipped,           & ! Out
                                               lh_Nc_clipped                           ) ! Out
-
-    use grid_class, only: grid ! Type
 
     use latin_hypercube_driver_module, only : clip_transform_silhs_output
 

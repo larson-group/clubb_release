@@ -272,7 +272,6 @@ module estimate_scm_microphys_module
              chi_all_points(sample,:), lh_rv_clipped(sample,:), & ! In
              hydromet_all_points(sample,:,:), & ! In
              saturation_formula, &
-             stats, icol,         & ! InOut
              lh_hydromet_mc_all(sample,:,:), lh_hydromet_vel_all(sample,:,:), & ! Out
              lh_Ncm_mc_all(sample,:), & ! Out
              lh_rcm_mc_all(sample,:), lh_rvm_mc_all(sample,:), lh_thlm_mc_all(sample,:), & ! Out
@@ -369,7 +368,7 @@ module estimate_scm_microphys_module
         call silhs_category_variance_driver( &
                nzt, num_samples, pdf_dim, hydromet_dim, hm_metadata,      & ! Intent(in)
                X_nl_all_levs,                                             & ! Intent(in)
-               X_mixt_comp_all_levs, microphys_stats_zt_all,              & ! Intent(in)
+               X_mixt_comp_all_levs,                                      & ! Intent(in)
                lh_hydromet_mc_all, lh_sample_point_weights, pdf_params,   & ! Intent(in)
                precip_fracs,                                              & ! intent(in)
                stats, icol )                                                ! intent(inout)
@@ -400,9 +399,6 @@ module estimate_scm_microphys_module
   !-----------------------------------------------------------------------
 
     ! Included Modules
-    use constants_clubb, only: &
-      fstderr
-
     use clubb_precision, only: &
       core_rknd            ! Compile-time constant
 
@@ -560,9 +556,11 @@ module estimate_scm_microphys_module
       end do
 
       if ( l_use_first_level_weights ) then
-        stats_var_avg = compute_sample_mean( nz, num_samples, lh_sample_point_weights(:,1:1), stats_var_all )
+        stats_var_avg = compute_sample_mean( &
+                          nz, num_samples, lh_sample_point_weights(:,1:1), stats_var_all )
       else
-        stats_var_avg = compute_sample_mean( nz, num_samples, lh_sample_point_weights, stats_var_all )
+        stats_var_avg = compute_sample_mean( &
+                          nz, num_samples, lh_sample_point_weights, stats_var_all )
       end if
 
       call microphys_put_var( microphys_stats_all(1)%var_names(ivar), &
@@ -664,10 +662,6 @@ module estimate_scm_microphys_module
   ! References:
   !   clubb:ticket:558
   !-----------------------------------------------------------------------------
-
-    use KK_Nrm_tendencies, only: &
-        KK_Nrm_auto_mean, & ! Procedure(s)
-        KK_Nrm_evap_local_mean
 
     use KK_microphys_module, only: &
         KK_microphys_adjust, &      ! Procedure

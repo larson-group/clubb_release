@@ -15,7 +15,7 @@ module silhs_category_variance_module
   subroutine silhs_category_variance_driver( &
                nzt, num_samples, pdf_dim, hydromet_dim, hm_metadata, &
                X_nl_all_levs, &
-               X_mixt_comp_all_levs, microphys_stats_vars_all, &
+               X_mixt_comp_all_levs, &
                lh_hydromet_mc_all, lh_sample_point_weights, pdf_params, &
                precip_fracs, &
                stats, icol )
@@ -31,9 +31,6 @@ module silhs_category_variance_module
     ! Included Modules
     use clubb_precision, only: &
       core_rknd
-
-    use microphys_stats_vars_module, only: &
-      microphys_stats_vars_type       ! Type
 
     use corr_varnce_module, only: &
       hm_metadata_type
@@ -64,9 +61,6 @@ module silhs_category_variance_module
 
     integer, dimension(nzt,num_samples), intent(in) :: &
       X_mixt_comp_all_levs    ! Mixture component (1 or 2) of each sample point
-
-    type(microphys_stats_vars_type), dimension(num_samples), intent(in) :: &
-      microphys_stats_vars_all! The statistics objects to sample from, for each sample point
 
     real( kind = core_rknd ), dimension(num_samples,nzt,hydromet_dim), intent(in) :: &
       lh_hydromet_mc_all      ! Tendencies of hydometeors at all sample points

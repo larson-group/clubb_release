@@ -72,8 +72,7 @@ module KK_upscaled_turbulent_sed
 
     use stats_netcdf, only: &
         stats_type, &
-        stats_update, &
-        var_on_stats_list
+        stats_update
 
     implicit none
 

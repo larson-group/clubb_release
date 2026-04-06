@@ -167,6 +167,8 @@ module generalized_grid_test
  
   implicit none
 
+  private
+
   public :: clubb_generalized_grid_testing, &
             silhs_generalized_grid_testing
 
@@ -481,11 +483,6 @@ module generalized_grid_test
     type(implicit_coefs_terms), intent(inout) :: &
       pdf_implicit_coefs_terms    ! Implicit coefs / explicit terms [units vary]
 
-#ifdef GFDL
-    real( kind = core_rknd ), intent(inout), dimension(ngrdcol,nzt,sclr_dim) :: &  ! h1g, 2010-06-16
-      sclrm_trsport_only  ! Passive scalar concentration due to pure transport [{units vary}/s]
-#endif
-
     real( kind = core_rknd ), intent(inout), dimension(ngrdcol,nzt,edsclr_dim) :: &
     edsclrm   ! Eddy passive scalar mean (thermo. levels)   [units vary]
 
@@ -525,13 +522,6 @@ module generalized_grid_test
 
     type(err_info_type), intent(inout) :: &
       err_info        ! err_info struct containing err_code and err_header
-
-#ifdef GFDL
-    ! hlg, 2010-06-16
-    real( kind = core_rknd ), intent(inOUT), dimension(ngrdcol,nzt, min(1,sclr_dim) , 2) :: &
-      RH_crit  ! critical relative humidity for droplet and ice nucleation
-    logical, intent(in)                 ::  do_liquid_only_in_clubb
-#endif
 
     !------------------------ Local Variables ------------------------
 
@@ -654,11 +644,6 @@ module generalized_grid_test
     type(implicit_coefs_terms) :: &
       pdf_implicit_coefs_terms_flip    ! Implicit coefs / explicit terms [units vary]
 
-#ifdef GFDL
-    real( kind = core_rknd ), dimension(ngrdcol,nzt,sclr_dim) :: &  ! h1g, 2010-06-16
-      sclrm_trsport_only  ! Passive scalar concentration due to pure transport [{units vary}/s]
-#endif
-
     real( kind = core_rknd ), dimension(ngrdcol,nzt,edsclr_dim) :: &
       edsclrm_flip   ! Eddy passive scalar mean (thermo. levels)   [units vary]
 
@@ -695,7 +680,7 @@ module generalized_grid_test
       Lscale_flip     ! Length scale         [m]
 
     integer :: &
-      i, sclr, edsclr, hm_idx
+      i, sclr, edsclr
 
     logical :: l_stats_sample_save
 
@@ -900,7 +885,8 @@ module generalized_grid_test
       pdf_params_zm_flip%ice_supersat_frac_1(:,:) = pdf_params_zm%ice_supersat_frac_1(:,nzm:1:-1)
       pdf_params_zm_flip%ice_supersat_frac_2(:,:) = pdf_params_zm%ice_supersat_frac_2(:,nzm:1:-1)
 
-      if ( clubb_config_flags%iiPDF_type == iiPDF_new .or. clubb_config_flags%iiPDF_type == iiPDF_new_hybrid ) then
+      if ( clubb_config_flags%iiPDF_type == iiPDF_new .or. &
+           clubb_config_flags%iiPDF_type == iiPDF_new_hybrid ) then
         do i = 1, ngrdcol
           ! pdf_implicit_coefs_terms
           pdf_implicit_coefs_terms_flip%coef_wp4_implicit(i,:) &
@@ -1068,7 +1054,8 @@ module generalized_grid_test
               wpthlp_sfc, wprtp_sfc, upwp_sfc, vpwp_sfc, p_sfc, &                   ! Intent(in)
               wpsclrp_sfc, wpedsclrp_sfc,  &                                        ! Intent(in)
               upwp_sfc_pert, vpwp_sfc_pert, &                                       ! intent(in)
-              rtm_ref_flip, thlm_ref_flip, um_ref_flip, vm_ref_flip, ug_flip, vg_flip, & ! Intent(in)
+              rtm_ref_flip, thlm_ref_flip, um_ref_flip, vm_ref_flip,    &           ! Intent(in)
+              ug_flip, vg_flip,                                         &           ! Intent(in)
               p_in_Pa_flip, rho_zm_flip, rho_flip, exner_flip, &                    ! Intent(in)
               rho_ds_zm_flip, rho_ds_zt_flip, invrs_rho_ds_zm_flip, &               ! Intent(in)
               invrs_rho_ds_zt_flip, thv_ds_zm_flip, thv_ds_zt_flip, &               ! Intent(in) 
@@ -1081,16 +1068,20 @@ module generalized_grid_test
               rtm_min, rtm_nudge_max_altitude, &                                    ! Intent(in)
               clubb_config_flags, &                                                 ! Intent(in)
               stats, &                                                              ! intent(inout)
-              um_flip, vm_flip, upwp_flip, vpwp_flip, up2_flip, vp2_flip, up3_flip, vp3_flip, & ! Intent(inout)
+              um_flip, vm_flip, upwp_flip, vpwp_flip,                   &           ! Intent(inout)
+              up2_flip, vp2_flip, up3_flip, vp3_flip,                   &           ! Intent(inout)
               thlm_flip, rtm_flip, wprtp_flip, wpthlp_flip, &                       ! Intent(inout)
-              wp2_flip, wp3_flip, rtp2_flip, rtp3_flip, thlp2_flip, thlp3_flip, rtpthlp_flip, & ! Intent(inout)
-              sclrm_flip, sclrp2_flip, sclrp3_flip, sclrprtp_flip, sclrpthlp_flip, & ! Intent(inout)
+              wp2_flip, wp3_flip, rtp2_flip, rtp3_flip,                &            ! Intent(inout)
+              thlp2_flip, thlp3_flip, rtpthlp_flip,                    &            ! Intent(inout)
+              sclrm_flip, sclrp2_flip, sclrp3_flip, sclrprtp_flip, sclrpthlp_flip, &! Intent(inout)
               wpsclrp_flip, edsclrm_flip, err_info, &                               ! Intent(inout)
               rcm_flip, cloud_frac_flip, &                                          ! Intent(inout)
               wpthvp_flip, wp2thvp_flip, wp2up_flip, rtpthvp_flip, thlpthvp_flip, & ! Intent(inout)
               sclrpthvp_flip, &                                                     ! Intent(inout)
-              wp2rtp_flip, wp2thlp_flip, uprcp_flip, vprcp_flip, rc_coef_zm_flip, wp4_flip, & ! intent(inout)
-              wpup2_flip, wpvp2_flip, wp2up2_flip, wp2vp2_flip, ice_supersat_frac_flip, & ! intent(inout)
+              wp2rtp_flip, wp2thlp_flip, uprcp_flip, vprcp_flip,                  & ! intent(inout)
+              rc_coef_zm_flip, wp4_flip,                                          & ! intent(inout)
+              wpup2_flip, wpvp2_flip, wp2up2_flip, wp2vp2_flip,                   & ! intent(inout)
+              ice_supersat_frac_flip,                                             & ! intent(inout)
               um_pert, vm_pert, upwp_pert, vpwp_pert, &                             ! intent(inout)
               pdf_params_flip, pdf_params_zm_flip, &                                ! Intent(inout)
               pdf_implicit_coefs_terms_flip, &                                      ! intent(inout)
@@ -1579,7 +1570,8 @@ module generalized_grid_test
                                   pdf_params_zm_flip%ice_supersat_frac_2, nzm, ngrdcol, &
                                   l_differences )
       ! pdf_implicit_coefs_terms
-      if ( clubb_config_flags%iiPDF_type == iiPDF_new .or. clubb_config_flags%iiPDF_type == iiPDF_new_hybrid ) then
+      if ( clubb_config_flags%iiPDF_type == iiPDF_new .or. &
+           clubb_config_flags%iiPDF_type == iiPDF_new_hybrid ) then
         call check_flipped_results( "pdf_implicit_coefs_terms%coef_wp4_implicit", &
                                     pdf_implicit_coefs_terms%coef_wp4_implicit, &
                                     pdf_implicit_coefs_terms_flip%coef_wp4_implicit, nzt, ngrdcol, &
@@ -1606,19 +1598,23 @@ module generalized_grid_test
                                     l_differences )
         call check_flipped_results( "pdf_implicit_coefs_terms%coef_wp2up_implicit", &
                                     pdf_implicit_coefs_terms%coef_wp2up_implicit, &
-                                    pdf_implicit_coefs_terms_flip%coef_wp2up_implicit, nzt, ngrdcol, &
+                                    pdf_implicit_coefs_terms_flip%coef_wp2up_implicit, &
+                                    nzt, ngrdcol, &
                                     l_differences )
         call check_flipped_results( "pdf_implicit_coefs_terms%term_wp2up_explicit", &
                                     pdf_implicit_coefs_terms%term_wp2up_explicit, &
-                                    pdf_implicit_coefs_terms_flip%term_wp2up_explicit, nzt, ngrdcol, &
+                                    pdf_implicit_coefs_terms_flip%term_wp2up_explicit, &
+                                    nzt, ngrdcol, &
                                     l_differences )
         call check_flipped_results( "pdf_implicit_coefs_terms%coef_wp2vp_implicit", &
                                     pdf_implicit_coefs_terms%coef_wp2vp_implicit, &
-                                    pdf_implicit_coefs_terms_flip%coef_wp2vp_implicit, nzt, ngrdcol, &
+                                    pdf_implicit_coefs_terms_flip%coef_wp2vp_implicit, &
+                                    nzt, ngrdcol, &
                                     l_differences )
         call check_flipped_results( "pdf_implicit_coefs_terms%term_wp2vp_explicit", &
                                     pdf_implicit_coefs_terms%term_wp2vp_explicit, &
-                                    pdf_implicit_coefs_terms_flip%term_wp2vp_explicit, nzt, ngrdcol, &
+                                    pdf_implicit_coefs_terms_flip%term_wp2vp_explicit, &
+                                    nzt, ngrdcol, &
                                     l_differences )
         call check_flipped_results( "pdf_implicit_coefs_terms%coef_wprtp2_implicit", &
                                     pdf_implicit_coefs_terms%coef_wprtp2_implicit, &
@@ -1652,19 +1648,23 @@ module generalized_grid_test
                                     l_differences )
         call check_flipped_results( "pdf_implicit_coefs_terms%coef_wpup2_implicit", &
                                     pdf_implicit_coefs_terms%coef_wpup2_implicit, &
-                                    pdf_implicit_coefs_terms_flip%coef_wpup2_implicit, nzt, ngrdcol, &
+                                    pdf_implicit_coefs_terms_flip%coef_wpup2_implicit, &
+                                    nzt, ngrdcol, &
                                     l_differences )
         call check_flipped_results( "pdf_implicit_coefs_terms%term_wpup2_explicit", &
                                     pdf_implicit_coefs_terms%term_wpup2_explicit, &
-                                    pdf_implicit_coefs_terms_flip%term_wpup2_explicit, nzt, ngrdcol, &
+                                    pdf_implicit_coefs_terms_flip%term_wpup2_explicit, &
+                                    nzt, ngrdcol, &
                                     l_differences )
         call check_flipped_results( "pdf_implicit_coefs_terms%coef_wpvp2_implicit", &
                                     pdf_implicit_coefs_terms%coef_wpvp2_implicit, &
-                                    pdf_implicit_coefs_terms_flip%coef_wpvp2_implicit, nzt, ngrdcol, &
+                                    pdf_implicit_coefs_terms_flip%coef_wpvp2_implicit, &
+                                    nzt, ngrdcol, &
                                     l_differences )
         call check_flipped_results( "pdf_implicit_coefs_terms%term_wpvp2_explicit", &
                                     pdf_implicit_coefs_terms%term_wpvp2_explicit, &
-                                    pdf_implicit_coefs_terms_flip%term_wpvp2_explicit, nzt, ngrdcol, &
+                                    pdf_implicit_coefs_terms_flip%term_wpvp2_explicit, &
+                                    nzt, ngrdcol, &
                                     l_differences )
         if ( sclr_dim > 0 ) then
           do sclr = 1, sclr_dim
@@ -1753,8 +1753,7 @@ module generalized_grid_test
                hydromet_pdf_params )                              ! Optional(out)
 
     use grid_class, only: &
-        grid, & ! Type(s)
-        flip    ! Procedure(s)
+        grid ! Type(s)
 
     use pdf_hydromet_microphys_wrapper, only: &
         pdf_hydromet_microphys_prep    ! Procedure(s)
@@ -2422,11 +2421,7 @@ module generalized_grid_test
                                     l_differences )
 
     use constants_clubb, only: &
-        zero, &
-        eps
-
-    use grid_class, only: &
-        flip
+        zero
 
     use clubb_precision, only: &
         core_rknd
@@ -2468,7 +2463,8 @@ module generalized_grid_test
       ! If we do not force matrix solves to be done in a specific direction, then
       ! results are not expected to be BFB, so we need a non-zero tolerance, but 
       ! they should be close, so we want a pretty small tolerance
-      tolerance = max( 5.e-8_core_rknd, epsilon(tolerance) )    ! max statement for single precision runs
+      ! max statement for single precision runs
+      tolerance = max( 5.e-8_core_rknd, epsilon(tolerance) )
     end if
 
     if ( any( abs( var - var_flip(:,nz:1:-1) ) > tolerance ) ) then

@@ -93,8 +93,10 @@ module lba
       !$acc parallel loop gang vector collapse(2) default(present)
       do k = 1, gr%nzt
         do i = 1, ngrdcol
-          if ( sclr_idx%iiedsclr_thl > 0 ) edsclrm_forcing(i,k,sclr_idx%iiedsclr_thl) = thlm_forcing(i,k)
-          if ( sclr_idx%iiedsclr_rt  > 0 ) edsclrm_forcing(i,k,sclr_idx%iiedsclr_rt)  = rtm_forcing(i,k)
+          if ( sclr_idx%iiedsclr_thl > 0 ) &
+            edsclrm_forcing(i,k,sclr_idx%iiedsclr_thl) = thlm_forcing(i,k)
+          if ( sclr_idx%iiedsclr_rt  > 0 ) &
+            edsclrm_forcing(i,k,sclr_idx%iiedsclr_rt)  = rtm_forcing(i,k)
         end do
       end do
     end if
@@ -173,8 +175,10 @@ module lba
     do i = 1, ngrdcol
 
       ! Known magic numbers
-      wpthlp_sfc(i) =  convert_sens_ht_to_km_s( ( 270._core_rknd * ft**1.5_core_rknd ), rho_sfc(i) ) 
-      wprtp_sfc(i)  =  convert_latent_ht_to_m_s( ( 554._core_rknd * ft**1.3_core_rknd ), rho_sfc(i) )
+      wpthlp_sfc(i) = convert_sens_ht_to_km_s( &
+                      ( 270._core_rknd * ft**1.5_core_rknd ), rho_sfc(i) )
+      wprtp_sfc(i)  = convert_latent_ht_to_m_s( &
+                      ( 554._core_rknd * ft**1.3_core_rknd ), rho_sfc(i) )
 
       bflx = grav / thlm_sfc(i) * wpthlp_sfc(i)
 
@@ -189,4 +193,3 @@ module lba
 
 
 end module lba
-

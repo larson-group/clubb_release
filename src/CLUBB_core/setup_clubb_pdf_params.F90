@@ -52,7 +52,8 @@ module setup_clubb_pdf_params
   contains
 
   !=============================================================================
-  subroutine setup_pdf_parameters_api( gr, nzm, nzt, ngrdcol, pdf_dim, hydromet_dim, dt, &  ! Intent(in)
+  subroutine setup_pdf_parameters_api( gr, nzm, nzt, ngrdcol, pdf_dim, &
+                                       hydromet_dim, dt, &  ! Intent(in)
                                    Nc_in_cloud, cloud_frac, Kh_zm, &              ! Intent(in)
                                    ice_supersat_frac, hydromet, wphydrometp, &    ! Intent(in)
                                    corr_array_n_cloud, corr_array_n_below, &      ! Intent(in)
@@ -115,7 +116,6 @@ module setup_clubb_pdf_params
         izeta_vrnce_rat
 
     use pdf_utilities, only: &
-        calc_xp2,                  &  ! Procedure(s)
         compute_mean_binormal,     &
         compute_variance_binormal, &
         stdev_L2N,                 &
@@ -1119,9 +1119,6 @@ module setup_clubb_pdf_params
         iiPDF_ADG2,       &
         iiPDF_new_hybrid
 
-    use pdf_parameter_module, only: &
-        pdf_parameter  ! Variable(s)    
-        
     use matrix_operations, only: &
         Cholesky_factor ! Procedure(s)
 
@@ -1315,10 +1312,6 @@ module setup_clubb_pdf_params
         Ncn_tol,      &
         one,          &
         zero
-
-    use diagnose_correlations_module, only: &
-        calc_mean,        & ! Procedure(s)
-        calc_w_corr
 
     use index_mapping, only: &
         pdf2hydromet_idx  ! Procedure(s)
@@ -3820,11 +3813,13 @@ module setup_clubb_pdf_params
           hm_idx = pdf2hydromet_idx(ivar,hm_metadata)
           hm_type = hm_metadata%hydromet_list(hm_idx)
 
-          ! Correlation (in-precip) of chi (old s) and the precipitating hydrometeor in PDF component 1.
+          ! Correlation (in-precip) of chi (old s) and the precipitating
+          ! hydrometeor in PDF component 1.
           var_name = "corr_chi_"//trim( hm_type(1:2) )//"_1"
           call stats_update( var_name, corr_array_1(:,:,ivar,iiPDF_chi), stats )
 
-          ! Correlation (in-precip) of chi (old s) and the precipitating hydrometeor in PDF component 2.
+          ! Correlation (in-precip) of chi (old s) and the precipitating
+          ! hydrometeor in PDF component 2.
           var_name = "corr_chi_"//trim( hm_type(1:2) )//"_2"
           call stats_update( var_name, corr_array_2(:,:,ivar,iiPDF_chi), stats )
         end do ! ivar = iiPDF_Ncn+1, pdf_dim, 1
@@ -3838,11 +3833,13 @@ module setup_clubb_pdf_params
           hm_idx = pdf2hydromet_idx(ivar,hm_metadata)
           hm_type = hm_metadata%hydromet_list(hm_idx)
 
-          ! Correlation (in-precip) of eta (old t) and the precipitating hydrometeor in PDF component 1.
+          ! Correlation (in-precip) of eta (old t) and the precipitating
+          ! hydrometeor in PDF component 1.
           var_name = "corr_eta_"//trim( hm_type(1:2) )//"_1"
           call stats_update( var_name, corr_array_1(:,:,ivar,iiPDF_eta), stats )
 
-          ! Correlation (in-precip) of eta (old t) and the precipitating hydrometeor in PDF component 2.
+          ! Correlation (in-precip) of eta (old t) and the precipitating
+          ! hydrometeor in PDF component 2.
           var_name = "corr_eta_"//trim( hm_type(1:2) )//"_2"
           call stats_update( var_name, corr_array_2(:,:,ivar,iiPDF_eta), stats )
         end do ! ivar = iiPDF_Ncn+1, pdf_dim, 1
@@ -3949,7 +3946,7 @@ module setup_clubb_pdf_params
       mu_Ncn_1_n, & ! Mean of ln Ncn (1st PDF component)   [ln(num/kg)]
       mu_Ncn_2_n    ! Mean of ln Ncn (2nd PDF component)   [ln(num/kg)]
 
-    integer :: ivar, jvar, hm_idx, hm_idx_ivar, hm_idx_jvar, i  ! Indices
+    integer :: ivar, jvar, hm_idx, hm_idx_ivar, hm_idx_jvar  ! Indices
     character(len=64) :: hm_type
     character(len=64) :: hmx_type
     character(len=64) :: hmy_type

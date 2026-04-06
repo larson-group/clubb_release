@@ -52,7 +52,6 @@ module coamps_microphys_driver_module
       fstderr ! Constant(s)
     use saturation, only: sat_mixrat_liq_api, sat_mixrat_ice ! Procedure(s)
     use clubb_precision, only: time_precision, core_rknd ! Variable(s)
-    use grid_class, only: zt2zm_api ! Procedure(s)
 
     use grid_class, only: grid ! Type
 
