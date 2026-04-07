@@ -251,6 +251,7 @@ def main():
     parser.add_argument("-debug", action="store_true", help="Compile in debug mode")
     parser.add_argument("-run_tests", action="store_true", help="Run ctests after compilation")
     parser.add_argument("-python", action="store_true", help="Enable F2PY Python extension build")
+    parser.add_argument("-fresh", action="store_true", help="Delete the selected build directory before configuring")
 
     # Feature toggles
     parser.add_argument("-disable_netcdf", action="store_true", help="Disable NetCDF output support (default: enabled)")
@@ -280,8 +281,14 @@ def main():
     subdir_suffix += f"_PREC{args.precision}"
     subdir_suffix += "_PYTHON" if args.python else ""
 
-    # Create build directory and cd into it
     build_dir = os.path.join(CLUBB_ROOT, f"build/{compiler}{subdir_suffix}") 
+
+    # Remove the existing build tree when a completely fresh build is requested.
+    if args.fresh and os.path.isdir(build_dir):
+        print(f"Removing existing build directory for fresh build: {build_dir}")
+        shutil.rmtree(build_dir)
+
+    # Create build directory and cd into it
     os.makedirs(build_dir, exist_ok=True)
     os.chdir(build_dir)
     print(f"Setting CLUBB installation dir: {build_dir}")
