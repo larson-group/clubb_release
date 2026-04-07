@@ -91,7 +91,6 @@ module stats_netcdf
       err_info_type
 
   use error_code, only: &
-      clubb_no_error, &
       clubb_fatal_error
 
   use grid_class, only: &
