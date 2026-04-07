@@ -476,10 +476,10 @@ module mono_flux_limiter
 
     ! These lines synchonize the GPU argument values to the CPU argument values, allowing us 
     ! to test the divergence of this procedure only, rather than the divergence of the whole code
-    ! MONOFLUX TEST COMMENT DO NOT REMOVE !$acc update device( wpxp, xm, xm_old, wm_zt, &
-    ! MONOFLUX TEST COMMENT DO NOT REMOVE !$acc  xm_forcing, rho_ds_zt, invrs_rho_ds_zt, &
-    ! MONOFLUX TEST COMMENT DO NOT REMOVE !$acc  xp2, rho_ds_zm, invrs_rho_ds_zm, &
-    ! MONOFLUX TEST COMMENT DO NOT REMOVE !$acc  low_lev_effect, high_lev_effect )
+    ! MONOFLUX TEST !$acc update device( wpxp, xm, xm_old, wm_zt, &
+    ! MONOFLUX TEST !$acc  xm_forcing, rho_ds_zt, invrs_rho_ds_zt, &
+    ! MONOFLUX TEST !$acc  xp2, rho_ds_zm, invrs_rho_ds_zm, &
+    ! MONOFLUX TEST !$acc  low_lev_effect, high_lev_effect )
 
     !$acc enter data create( xp2_zt, xm_enter_mfl, xm_without_ta, wpxp_net_adjust, &
     !$acc                    min_x_allowable_lev, max_x_allowable_lev, min_x_allowable, &
@@ -844,9 +844,9 @@ module mono_flux_limiter
       end do
       !$acc end parallel loop
 
-      ! MONOFLUX TEST COMMENT DO NOT REMOVE !$acc compare( wpxp ) 
-      ! MONOFLUX TEST COMMENT DO NOT REMOVE
-      ! if( any(wpxp_net_adjust /= 0.0) ) write(fstderr,*) "MONOFLUX: wpxp adjusted "
+      ! DO NOT REMOVE COMMENTS - they may be uncommented for testing purposes
+      ! MONOFLUX TEST !$acc compare( wpxp ) 
+      ! MONOFLUX TEST if( any(wpxp_net_adjust /= 0.0) ) write(fstderr,*) "MONOFLUX: wpxp adjusted"
 
       ! Reset the value of xm to compensate for the change to w'x'.
 
@@ -991,8 +991,9 @@ module mono_flux_limiter
       end do
       !$acc end parallel loop
 
-      ! MONOFLUX TEST COMMENT DO NOT REMOVE !$acc compare( xm )
-      ! MONOFLUX TEST COMMENT DO NOT REMOVE write(fstderr,*) "MONOFLUX: xm adjusted"
+      ! DO NOT REMOVE COMMENTS - they may be uncommented for testing purposes
+      ! MONOFLUX TEST !$acc compare( xm )
+      ! MONOFLUX TEST write(fstderr,*) "MONOFLUX: xm adjusted"
 
     end if
 

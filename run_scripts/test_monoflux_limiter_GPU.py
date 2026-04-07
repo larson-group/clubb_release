@@ -116,7 +116,7 @@ def run_command(cmd: list[str], cwd: Path | None = None, env: dict[str, str] | N
 
 def patch_monoflux_source(text: str) -> str:
     # Remove the specific test comment
-    return text.replace("! MONOFLUX TEST COMMENT DO NOT REMOVE ", "")
+    return text.replace("! MONOFLUX TEST ", "")
 
 
 def patch_toolchain_for_pcast(text: str) -> str:
@@ -272,7 +272,7 @@ try:
     if fail_abs_found:
         print("\n\tTEST FAILED: 'FAIL ABS' found in the output.")
         print("\tGPU results differ too significantly from CPU results.\n")
-    elif not (monoflux_wpxp_found and monoflux_xm_found):
+    elif not (monoflux_wpxp_found or monoflux_xm_found):
         print("\n\tTEST FAILED: Neither 'MONOFLUX: wpxp adjusted' nor 'MONOFLUX: xm adjusted'")
         print("\twere found in the output. This means the flux limiter wasn't tested.\n")
     else:
