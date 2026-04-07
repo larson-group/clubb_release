@@ -3910,7 +3910,7 @@ module clubb_driver
         stats_time = real(time_current, kind=core_rknd) + real(stats_tout, kind=core_rknd)
 
         ! End statistics timestep and flush sampled buffers to file.
-        call stats_end_timestep_api( stats_time, stats )
+        call stats_end_timestep_api( stats_time, stats, err_info )
         
         if ( any(err_info%err_code == clubb_fatal_error) ) then
           write(fstderr, *) err_info%err_header_global

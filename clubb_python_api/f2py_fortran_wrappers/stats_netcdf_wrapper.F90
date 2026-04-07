@@ -199,14 +199,14 @@ end subroutine f2py_stats_begin_timestep
 subroutine f2py_stats_end_timestep(time_value)
 
   use clubb_precision, only: core_rknd
-  use derived_type_storage, only: stored_stats
+  use derived_type_storage, only: stored_stats, stored_err_info
   use stats_netcdf, only: stats_end_timestep_api
 
   implicit none
 
   real(core_rknd), intent(in) :: time_value
 
-  call stats_end_timestep_api(time_value, stored_stats)
+  call stats_end_timestep_api(time_value, stored_stats, stored_err_info)
 
 end subroutine f2py_stats_end_timestep
 

@@ -91,6 +91,7 @@ module stats_netcdf
       err_info_type
 
   use error_code, only: &
+      clubb_no_error, &
       clubb_fatal_error
 
   use grid_class, only: &
@@ -1007,7 +1008,7 @@ contains
 
   end subroutine stats_begin_timestep_api
 
-  subroutine stats_end_timestep_api( time_value, stats )
+  subroutine stats_end_timestep_api( time_value, stats, err_info )
 
     ! Description:
     !   End-of-timestep driver for stats output. If this is a write boundary,
@@ -1022,6 +1023,9 @@ contains
     ! ---------------------- Input/Output ---------------------
     type(stats_type), intent(inout) :: &
       stats                 ! Stats runtime context for end-of-step processing [-]
+
+    type(err_info_type), intent(inout) :: &
+      err_info              ! Shared CLUBB error state container [-]
 
     ! ------------------------- Locals ------------------------
     integer :: ierr, i
@@ -1044,6 +1048,8 @@ contains
     ! Divide the buffer storage by the number of samples, 
     ! and write to the netcdf file if stats%l_netcdf_output=.true.
     call stats_avg_and_write( time_value, stats, ierr )
+
+    if ( ierr /= 0 ) err_info%err_code = clubb_fatal_error
     
     ! Reset sample and write flags
     stats%l_sample = .false.
