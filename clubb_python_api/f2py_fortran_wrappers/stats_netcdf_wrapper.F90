@@ -58,14 +58,23 @@ subroutine f2py_stats_init_with_params(registry_path, output_path, ncol, &
   real(core_rknd), dimension(nzt), intent(in) :: zt
   real(core_rknd), dimension(nzm), intent(in) :: zm
   real(core_rknd), dimension(ncol, nparams), intent(in) :: clubb_params
-  character(len=28), dimension(nparams), intent(in) :: param_names
+  character(kind=1), dimension(nparams, 28), intent(in) :: param_names
+  character(len=28), dimension(nparams) :: param_names_fortran
+  integer :: i, j
+
+  do i = 1, nparams
+    param_names_fortran(i) = ' '
+    do j = 1, 28
+      param_names_fortran(i)(j:j) = param_names(i, j)
+    end do
+  end do
 
   call stats_init_api( &
     trim(registry_path), trim(output_path), ncol, &
     stats_tsamp, stats_tout, dt_main, &
     day_in, month_in, year_in, time_initial, &
     zt, zm, stored_stats, stored_err_info, &
-    clubb_params=clubb_params, param_names=param_names, &
+    clubb_params=clubb_params, param_names=param_names_fortran, &
     sclr_dim=sclr_dim, edsclr_dim=edsclr_dim)
 
 end subroutine f2py_stats_init_with_params
@@ -533,11 +542,28 @@ subroutine f2py_stats_lh_samples_init(num_samples, nzt, &
   implicit none
 
   integer, intent(in) :: num_samples, nzt, n_nl, n_u
-  character(len=64), dimension(n_nl), intent(in) :: nl_names
-  character(len=64), dimension(n_u), intent(in) :: u_names
+  character(kind=1), dimension(n_nl, 64), intent(in) :: nl_names
+  character(kind=1), dimension(n_u, 64), intent(in) :: u_names
   real(core_rknd), dimension(nzt), intent(in) :: zt_vals
+  character(len=64), dimension(n_nl) :: nl_names_fortran
+  character(len=64), dimension(n_u) :: u_names_fortran
+  integer :: i, j
 
-  call stats_lh_samples_init(num_samples, nzt, nl_names, u_names, &
+  do i = 1, n_nl
+    nl_names_fortran(i) = ' '
+    do j = 1, 64
+      nl_names_fortran(i)(j:j) = nl_names(i, j)
+    end do
+  end do
+
+  do i = 1, n_u
+    u_names_fortran(i) = ' '
+    do j = 1, 64
+      u_names_fortran(i)(j:j) = u_names(i, j)
+    end do
+  end do
+
+  call stats_lh_samples_init(num_samples, nzt, nl_names_fortran, u_names_fortran, &
                              zt_vals, stored_stats, stored_err_info)
 
 end subroutine f2py_stats_lh_samples_init

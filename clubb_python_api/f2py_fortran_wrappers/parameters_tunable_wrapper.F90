@@ -57,13 +57,20 @@ subroutine f2py_get_param_names(nparams_in, param_names)
   implicit none
 
   integer, intent(in) :: nparams_in
-  character(len=28), dimension(nparams_in), intent(out) :: param_names
+  character(kind=1), dimension(nparams_in, 28), intent(out) :: param_names
+  integer :: i, j
 
   if ( nparams_in /= nparams ) then
     error stop "f2py_get_param_names: nparams mismatch"
   end if
 
-  param_names = params_list
+  param_names = ' '
+
+  do i = 1, nparams_in
+    do j = 1, 28
+      param_names(i, j) = params_list(i)(j:j)
+    end do
+  end do
 
 end subroutine f2py_get_param_names
 
