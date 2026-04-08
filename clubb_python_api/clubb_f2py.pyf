@@ -463,7 +463,7 @@ python module clubb_f2py
 
     subroutine f2py_get_param_names(nparams, param_names)
       integer, intent(in) :: nparams
-      character(len=28), dimension(nparams), intent(out) :: param_names
+      character*28, dimension(nparams), intent(out) :: param_names
     end subroutine
 
     subroutine f2py_init_clubb_params_file(ngrdcol, filename, flen, nparams, clubb_params)
@@ -666,7 +666,7 @@ python module clubb_f2py
       double precision, dimension(nzt), intent(in) :: zt
       double precision, dimension(nzm), intent(in) :: zm
       double precision, dimension(ncol, *), intent(in) :: clubb_params
-      character(len=28), dimension(*), intent(in) :: param_names
+      character*28, dimension(*), intent(in) :: param_names
     end subroutine
 
     subroutine f2py_stats_finalize()
@@ -816,8 +816,8 @@ python module clubb_f2py
     subroutine f2py_stats_lh_samples_init(num_samples, nzt, &
         n_nl, n_u, nl_names, u_names, zt_vals)
       integer, intent(in) :: num_samples, nzt, n_nl, n_u
-      character(len=64), dimension(n_nl), intent(in) :: nl_names
-      character(len=64), dimension(n_u), intent(in) :: u_names
+      character*64, dimension(n_nl), intent(in) :: nl_names
+      character*64, dimension(n_u), intent(in) :: u_names
       double precision, dimension(nzt), intent(in) :: zt_vals
     end subroutine
 

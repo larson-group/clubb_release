@@ -14,6 +14,7 @@ from clubb_python.derived_types.nu_vert_res_dep_converter import (
     get_fortran_nu_vert_res_dep,
     set_fortran_nu_vert_res_dep,
 )
+from clubb_python.string_conversion import fortran_char_matrix_to_python_strings
 
 
 def _get_nparams() -> int:
@@ -28,11 +29,7 @@ def init_clubb_params(ngrdcol: int, iunit: int, filename: str) -> np.ndarray:
 
 def get_param_names() -> list[str]:
     """Return tunable parameter names in CLUBB's native ordering."""
-    raw_names = clubb_f2py.f2py_get_param_names(_get_nparams())
-    return [
-        name.decode("ascii", errors="replace").strip() if isinstance(name, bytes) else str(name).strip()
-        for name in raw_names
-    ]
+    return fortran_char_matrix_to_python_strings(clubb_f2py.f2py_get_param_names(_get_nparams()))
 
 
 def calc_derrived_params(

@@ -7,6 +7,7 @@ import clubb_f2py
 
 from clubb_python.derived_types.err_info import ErrInfo
 from clubb_python.derived_types.err_info_converter import get_fortran_err_info, set_fortran_err_info
+from clubb_python.string_conversion import python_strings_to_fortran_char_matrix
 
 
 def _as_stats_array(values) -> np.ndarray:
@@ -142,12 +143,9 @@ def init_stats(registry_path: str, output_path: str, ncol: int,
     """Initialize the stats system with a registry file."""
     set_fortran_err_info(err_info)
 
-    encoded_param_names = np.asarray(
-        [str(name).encode("ascii", errors="replace") for name in param_names],
-        dtype="S28",
-    )
-    if encoded_param_names.shape != (clubb_params.shape[1],):
+    if len(param_names) != clubb_params.shape[1]:
         raise ValueError("param_names length must match clubb_params.shape[1].")
+    encoded_param_names = python_strings_to_fortran_char_matrix(param_names, width=28)
     clubb_f2py.f2py_stats_init_with_params(
         registry_path, output_path,
         stats_tsamp, stats_tout, dt_main,
@@ -290,7 +288,13 @@ def stats_lh_samples_init(num_samples: int, nzt: int,
     """Initialize SILHS sample output variables."""
     set_fortran_err_info(err_info)
     clubb_f2py.f2py_stats_lh_samples_init(
-        num_samples, nl_names, u_names, zt_vals, nzt=nzt, n_nl=n_nl, n_u=n_u,
+        num_samples,
+        python_strings_to_fortran_char_matrix(nl_names, width=64),
+        python_strings_to_fortran_char_matrix(u_names, width=64),
+        zt_vals,
+        nzt=nzt,
+        n_nl=n_nl,
+        n_u=n_u,
     )
 
 
