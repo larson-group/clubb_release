@@ -1,0 +1,64 @@
+commit 2bac827cd3b91b3437ca62918583938237c9fd03
+Author: Trevor-Hancock5 <hancoct@uwm.edu>
+Date:   Wed Apr 8 19:58:59 2026 -0500
+
+    Add blank line to test python scripts
+
+commit 0ab371ba28cf647f279567c04786ddc925aa5a87
+Author: Trevor-Hancock5 <hancoct@uwm.edu>
+Date:   Wed Apr 8 16:06:21 2026 -0500
+
+    Remove line to test python scripts
+
+commit dc7d6ed92e27f14e4e64769a67a09a63b2783310
+Author: Gunther Huebler <37674341+huebleruwm@users.noreply.github.com>
+Date:   Wed Apr 8 15:46:04 2026 -0500
+
+    Python update (#1291)
+    
+    * Possibly better string fix for python API
+    
+    * Little test changes
+
+commit a142b32188f7388ce905ee833c55abff306fb812
+Author: huebler <huebler@uwm.edu>
+Date:   Wed Apr 8 14:35:53 2026 -0500
+
+    Small fix to python api string handling. There was an issue that crept up with this when running on mitch - this should make the string/char array handling more robust
+
+commit 475e7687de4f2ba141334ba0046a2175b611eb75
+Author: Gunther Huebler <huebler@uwm.edu>
+Date:   Tue Apr 7 15:47:50 2026 -0500
+
+    Adding -fresh flag to compile.py to remove the previous build before compiling
+
+commit 15adc8422c4d13004afb02c87d35a590361ead7e
+Author: Gunther Huebler <huebler@uwm.edu>
+Date:   Tue Apr 7 15:46:59 2026 -0500
+
+    Removing unused variable
+
+commit 3f405544d0d3692a822e9f58ae679938d62c6de1
+Author: Gunther Huebler <huebler@uwm.edu>
+Date:   Tue Apr 7 15:42:00 2026 -0500
+
+    Fixing monoflux limiter test - there was a comment that was split across lines, which broke the test
+
+commit 4f6fb3897c84478095520db9d61b33b888711b3d
+Author: Gunther Huebler <huebler@uwm.edu>
+Date:   Tue Apr 7 15:07:02 2026 -0500
+
+    Adding err_info back to stats_end_timestep_api
+
+commit adfc58ffc5ad4d9bef00fc5e766b6d5a52079d8e
+Merge: 8759dedaf 9d534983a
+Author: root <larsongroupgithub@gmail.com>
+Date:   Mon Apr 6 18:00:34 2026 -0500
+
+    Autoupdated clubb's morrison using sam's morrison
+
+commit 8759dedaf6cd411a4d4943c3d8525b022ca00986
+Author: Trevor-Hancock5 <hancoct@uwm.edu>
+Date:   Mon Apr 6 17:35:02 2026 -0500
+
+    Add blank line to trigger git update scripts
