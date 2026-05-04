@@ -96,7 +96,7 @@ module advance_xm_wpxp_module
                               l_mono_flux_lim_um, &
                               l_mono_flux_lim_vm, &
                               l_mono_flux_lim_spikefix, &
-                              order_xm_wpxp, order_xp2_xpyp, order_wp2_wp3, &
+                              wprtp_cl_num, wpthlp_cl_num, upwp_cl_num, vpwp_cl_num, &
                               stats,         &
                               rtm, wprtp, thlm, wpthlp, &
                               sclrm, wpsclrp, um, upwp, vm, vpwp, &
@@ -349,10 +349,11 @@ module advance_xm_wpxp_module
       l_mono_flux_lim_spikefix        ! Flag to implement monotonic flux limiter code that
                                       ! eliminates spurious drying tendencies at model top
 
-    integer, intent(in) :: &
-      order_xm_wpxp, &
-      order_xp2_xpyp, &
-      order_wp2_wp3
+    integer, intent(inout) :: &
+      wprtp_cl_num, &
+      wpthlp_cl_num, &
+      upwp_cl_num, &
+      vpwp_cl_num
 
     !------------------- InOut Variables -------------------
     type(stats_type), intent(inout) :: &
@@ -841,7 +842,6 @@ module advance_xm_wpxp_module
                                             penta_solve_method,                             & ! In
                                             tridiag_solve_method,                           & ! In
                                             fill_holes_type,                                & ! In
-                                            l_predict_upwp_vpwp,                            & ! In
                                             l_diffuse_rtm_and_thlm,                         & ! In
                                             l_upwind_xm_ma,                                 & ! In
                                             l_tke_aniso,                                    & ! In
@@ -851,10 +851,10 @@ module advance_xm_wpxp_module
                                             l_mono_flux_lim_um,                             & ! In
                                             l_mono_flux_lim_vm,                             & ! In
                                             l_mono_flux_lim_spikefix,                       & ! In
-                                            order_xm_wpxp, order_xp2_xpyp, order_wp2_wp3,   & ! In
-                                            stats,                                      & ! InOut
-                                            rtm, wprtp, thlm, wpthlp, sclrm, wpsclrp,  & ! InOut
-                                            err_info )                                  ! InOut
+                                            wprtp_cl_num, wpthlp_cl_num,                    & ! InOut
+                                            stats,                                           & ! InOut
+                                            rtm, wprtp, thlm, wpthlp, sclrm, wpsclrp,       & ! InOut
+                                            err_info )                                       ! InOut
     else
         
       ! LHS matrices are equivalent, only one solve required
@@ -893,10 +893,11 @@ module advance_xm_wpxp_module
                                           l_mono_flux_lim_um,                              & ! In
                                           l_mono_flux_lim_vm,                              & ! In
                                           l_mono_flux_lim_spikefix,                        & ! In
-                                          order_xm_wpxp, order_xp2_xpyp, order_wp2_wp3,    & ! In
-                                          stats,                                       & ! InOut
-                                          rtm, wprtp, thlm, wpthlp,                        & ! InOut
-                                          sclrm, wpsclrp, um, upwp, vm, vpwp,              & ! InOut
+                                          wprtp_cl_num, wpthlp_cl_num,                      & ! InOut
+                                          upwp_cl_num, vpwp_cl_num,                         & ! InOut
+                                          stats,                                            & ! InOut
+                                          rtm, wprtp, thlm, wpthlp,                         & ! InOut
+                                          sclrm, wpsclrp, um, upwp, vm, vpwp,               & ! InOut
                                           um_pert, vm_pert, upwp_pert, vpwp_pert, err_info ) ! InOut
     end if ! ( ( iiPDF_type == iiPDF_new ) .and. ( .not. l_explicit_turbulent_adv_wpxp ) )
 
@@ -2567,14 +2568,15 @@ module advance_xm_wpxp_module
                                             l_tke_aniso, &
                                             l_enable_relaxed_clipping, &
                                             l_perturbed_wind, &
-                                            l_mono_flux_lim_thlm, &
-                                            l_mono_flux_lim_rtm, &
-                                            l_mono_flux_lim_um, &
-                                            l_mono_flux_lim_vm, &
-                                            l_mono_flux_lim_spikefix, &
-                                            order_xm_wpxp, order_xp2_xpyp, order_wp2_wp3, &
-                                            stats,         &
-                                            rtm, wprtp, thlm, wpthlp, &
+                                              l_mono_flux_lim_thlm, &
+                                              l_mono_flux_lim_rtm, &
+                                              l_mono_flux_lim_um, &
+                                              l_mono_flux_lim_vm, &
+                                              l_mono_flux_lim_spikefix, &
+                                              wprtp_cl_num,                                        &
+                                              wpthlp_cl_num, upwp_cl_num, vpwp_cl_num,            &
+                                              stats,         &
+                                              rtm, wprtp, thlm, wpthlp, &
                                             sclrm, wpsclrp, um, upwp, vm, vpwp, &
                                             um_pert, vm_pert, upwp_pert, vpwp_pert, err_info )
     !
@@ -2775,10 +2777,11 @@ module advance_xm_wpxp_module
       l_mono_flux_lim_spikefix     ! Flag to implement monotonic flux limiter code that
                                    ! eliminates spurious drying tendencies at model top
 
-    integer, intent(in) :: &
-      order_xm_wpxp, &
-      order_xp2_xpyp, &
-      order_wp2_wp3
+    integer, intent(inout) :: &
+      wprtp_cl_num, &
+      wpthlp_cl_num, &
+      upwp_cl_num, &
+      vpwp_cl_num
 
     type(stats_type), intent(inout) :: &
       stats
@@ -3441,7 +3444,6 @@ module advance_xm_wpxp_module
            l_implemented, solution(:,:,1),  &             ! Intent(in)
            tridiag_solve_method, &                        ! Intent(in)
            fill_holes_type, &                             ! Intent(in)
-           l_predict_upwp_vpwp, &                         ! Intent(in)
            l_upwind_xm_ma, &                              ! Intent(in)
            l_tke_aniso, &                                 ! Intent(in)
            l_enable_relaxed_clipping, &                   ! Intent(in)
@@ -3450,10 +3452,9 @@ module advance_xm_wpxp_module
            l_mono_flux_lim_um, &                          ! Intent(in)
            l_mono_flux_lim_vm, &                          ! Intent(in)
            l_mono_flux_lim_spikefix, &                    ! Intent(in)
-           order_xm_wpxp, order_xp2_xpyp, &               ! Intent(in)
-           order_wp2_wp3, &                               ! Intent(in)
            stats,         &
-           rtm, rt_tol_mfl, wprtp, err_info )             ! Intent(inout)
+           rtm, rt_tol_mfl, wprtp, err_info,              & ! Intent(inout)
+           wpxp_cl_num = wprtp_cl_num )
 
     if ( clubb_at_least_debug_level_api( 0 ) ) then
        if ( any(err_info%err_code == clubb_fatal_error) ) then
@@ -3475,7 +3476,6 @@ module advance_xm_wpxp_module
            l_implemented, solution(:,:,2),  &             ! Intent(in)
            tridiag_solve_method, &                        ! Intent(in)
            fill_holes_type, &                             ! Intent(in)
-           l_predict_upwp_vpwp, &                         ! Intent(in)
            l_upwind_xm_ma, &                              ! Intent(in)
            l_tke_aniso, &                                 ! Intent(in)
            l_enable_relaxed_clipping, &                   ! Intent(in)
@@ -3484,10 +3484,9 @@ module advance_xm_wpxp_module
            l_mono_flux_lim_um, &                          ! Intent(in)
            l_mono_flux_lim_vm, &                          ! Intent(in)
            l_mono_flux_lim_spikefix, &                    ! Intent(in)
-           order_xm_wpxp, order_xp2_xpyp, &               ! Intent(in)
-           order_wp2_wp3, &                               ! Intent(in)
            stats,         &
-           thlm, thl_tol_mfl, wpthlp, err_info )          ! Intent(inout)
+           thlm, thl_tol_mfl, wpthlp, err_info,           & ! Intent(inout)
+           wpxp_cl_num = wpthlp_cl_num )
 
     if ( clubb_at_least_debug_level_api( 0 ) ) then
        if ( any(err_info%err_code == clubb_fatal_error) ) then
@@ -3515,7 +3514,6 @@ module advance_xm_wpxp_module
              l_implemented, solution(:,:,2+sclr),  &                 ! Intent(in)
              tridiag_solve_method, &                                 ! Intent(in)
              fill_holes_type, &                                      ! Intent(in)
-             l_predict_upwp_vpwp, &                                  ! Intent(in)
              l_upwind_xm_ma, &                                       ! Intent(in)
              l_tke_aniso, &                                          ! Intent(in)
              l_enable_relaxed_clipping, &                            ! Intent(in)
@@ -3524,8 +3522,6 @@ module advance_xm_wpxp_module
              l_mono_flux_lim_um, &                                   ! Intent(in)
              l_mono_flux_lim_vm, &                                   ! Intent(in)
              l_mono_flux_lim_spikefix, &                             ! Intent(in)
-             order_xm_wpxp, order_xp2_xpyp, &                        ! Intent(in)
-             order_wp2_wp3, &                                        ! Intent(in)
              stats,         &
              sclrm(:,:,sclr), sclr_tol(sclr), wpsclrp(:,:,sclr), err_info ) ! Intent(inout)
 
@@ -3554,7 +3550,6 @@ module advance_xm_wpxp_module
             l_implemented, solution(:,:,3+sclr_dim),      & ! Intent(in)
             tridiag_solve_method,                         & ! Intent(in)
             fill_holes_type,                              & ! Intent(in)
-            l_predict_upwp_vpwp,                          & ! Intent(in)
             l_upwind_xm_ma,                               & ! Intent(in)
             l_tke_aniso,                                  & ! Intent(in)
             l_enable_relaxed_clipping,                    & ! Intent(in)
@@ -3563,10 +3558,9 @@ module advance_xm_wpxp_module
             l_mono_flux_lim_um,                           & ! Intent(in)
             l_mono_flux_lim_vm,                           & ! Intent(in)
             l_mono_flux_lim_spikefix,                     & ! Intent(in)
-            order_xm_wpxp, order_xp2_xpyp,                & ! Intent(in)
-            order_wp2_wp3,                                & ! Intent(in)
             stats,         &
-            um, w_tol, upwp, err_info )                     ! Intent(inout)
+            um, w_tol, upwp, err_info,                    & ! Intent(inout)
+            wpxp_cl_num = upwp_cl_num )
 
       if ( clubb_at_least_debug_level_api( 0 ) ) then
         if ( any(err_info%err_code == clubb_fatal_error) ) then
@@ -3588,7 +3582,6 @@ module advance_xm_wpxp_module
             l_implemented, solution(:,:,4+sclr_dim),      & ! Intent(in)
             tridiag_solve_method,                         & ! Intent(in)
             fill_holes_type,                              & ! Intent(in)
-            l_predict_upwp_vpwp,                          & ! Intent(in)
             l_upwind_xm_ma,                               & ! Intent(in)
             l_tke_aniso,                                  & ! Intent(in)
             l_enable_relaxed_clipping,                    & ! Intent(in)
@@ -3597,10 +3590,9 @@ module advance_xm_wpxp_module
             l_mono_flux_lim_um,                           & ! Intent(in)
             l_mono_flux_lim_vm,                           & ! Intent(in)
             l_mono_flux_lim_spikefix,                     & ! Intent(in)
-            order_xm_wpxp, order_xp2_xpyp,                & ! Intent(in)
-            order_wp2_wp3,                                & ! Intent(in)
             stats,         &
-            vm, w_tol, vpwp, err_info )                     ! Intent(inout)
+            vm, w_tol, vpwp, err_info,                    & ! Intent(inout)
+            wpxp_cl_num = vpwp_cl_num )
 
       if ( clubb_at_least_debug_level_api( 0 ) ) then
         if ( any(err_info%err_code == clubb_fatal_error) ) then
@@ -3624,7 +3616,6 @@ module advance_xm_wpxp_module
                l_implemented, solution(:,:,5+sclr_dim),      & ! Intent(in)
                tridiag_solve_method,                         & ! Intent(in)
                fill_holes_type,                              & ! Intent(in)
-               l_predict_upwp_vpwp,                          & ! Intent(in)
                l_upwind_xm_ma,                               & ! Intent(in)
                l_tke_aniso,                                  & ! Intent(in)
                l_enable_relaxed_clipping,                    & ! Intent(in)
@@ -3633,8 +3624,6 @@ module advance_xm_wpxp_module
                l_mono_flux_lim_um,                           & ! Intent(in)
                l_mono_flux_lim_vm,                           & ! Intent(in)
                l_mono_flux_lim_spikefix,                     & ! Intent(in)
-               order_xm_wpxp, order_xp2_xpyp,                & ! Intent(in)
-               order_wp2_wp3,                                & ! Intent(in)
                stats,         &
                um_pert, w_tol, upwp_pert, err_info )           ! Intent(inout)
 
@@ -3658,7 +3647,6 @@ module advance_xm_wpxp_module
                l_implemented, solution(:,:,6+sclr_dim),      & ! Intent(in)
                tridiag_solve_method,                         & ! Intent(in)
                fill_holes_type,                              & ! Intent(in)
-               l_predict_upwp_vpwp,                          & ! Intent(in)
                l_upwind_xm_ma,                               & ! Intent(in)
                l_tke_aniso,                                  & ! Intent(in)
                l_enable_relaxed_clipping,                    & ! Intent(in)
@@ -3667,8 +3655,6 @@ module advance_xm_wpxp_module
                l_mono_flux_lim_um,                           & ! Intent(in)
                l_mono_flux_lim_vm,                           & ! Intent(in)
                l_mono_flux_lim_spikefix,                     & ! Intent(in)
-               order_xm_wpxp, order_xp2_xpyp,                & ! Intent(in)
-               order_wp2_wp3,                                & ! Intent(in)
                stats,         &
                vm_pert, w_tol, vpwp_pert, err_info )           ! Intent(inout)
 
@@ -3714,7 +3700,6 @@ module advance_xm_wpxp_module
                                               penta_solve_method, &
                                               tridiag_solve_method, &
                                               fill_holes_type, &
-                                              l_predict_upwp_vpwp, &
                                               l_diffuse_rtm_and_thlm, &
                                               l_upwind_xm_ma, &
                                               l_tke_aniso, &
@@ -3724,7 +3709,7 @@ module advance_xm_wpxp_module
                                               l_mono_flux_lim_um, &
                                               l_mono_flux_lim_vm, &
                                               l_mono_flux_lim_spikefix, &
-                                              order_xm_wpxp, order_xp2_xpyp, order_wp2_wp3, &
+                                              wprtp_cl_num, wpthlp_cl_num, &
                                               stats,         &
                                               rtm, wprtp, thlm, wpthlp, sclrm, wpsclrp, err_info )
     !
@@ -3860,14 +3845,6 @@ module advance_xm_wpxp_module
       fill_holes_type         ! Specifier for which hole filling method to use
 
     logical, intent(in) :: &
-      l_predict_upwp_vpwp,       & ! Flag to predict <u'w'> and <v'w'> along
-                                   ! with <u> and <v> alongside the advancement
-                                   ! of <rt>, <w'rt'>, <thl>, <wpthlp>, <sclr>,
-                                   ! and <w'sclr'> in subroutine advance_xm_wpxp.
-                                   ! Otherwise, <u'w'> and <v'w'> are still
-                                   ! approximated by eddy diffusivity when <u>
-                                   ! and <v> are advanced in subroutine
-                                   ! advance_windm_edsclrm.
       l_diffuse_rtm_and_thlm,    & ! This flag determines whether or not we want
                                    ! CLUBB to do diffusion on rtm and thlm
       l_upwind_xm_ma,            & ! This flag determines whether we want to use
@@ -3889,10 +3866,9 @@ module advance_xm_wpxp_module
     integer, intent(in) :: &
       penta_solve_method ! Method to solve then penta-diagonal system
 
-    integer, intent(in) :: &
-      order_xm_wpxp, &
-      order_xp2_xpyp, &
-      order_wp2_wp3
+    integer, intent(inout) :: &
+      wprtp_cl_num, &
+      wpthlp_cl_num
 
     type(stats_type), intent(inout) :: &
       stats
@@ -4031,7 +4007,6 @@ module advance_xm_wpxp_module
            l_implemented, solution(:,:,1), &              ! Intent(in)
            tridiag_solve_method, &                        ! Intent(in)
            fill_holes_type, &                             ! Intent(in)
-           l_predict_upwp_vpwp, &                         ! Intent(in)
            l_upwind_xm_ma, &                              ! Intent(in)
            l_tke_aniso, &                                 ! Intent(in)
            l_enable_relaxed_clipping, &                   ! Intent(in)
@@ -4040,10 +4015,9 @@ module advance_xm_wpxp_module
            l_mono_flux_lim_um, &                          ! Intent(in)
            l_mono_flux_lim_vm, &                          ! Intent(in)
            l_mono_flux_lim_spikefix, &                    ! Intent(in)
-           order_xm_wpxp, order_xp2_xpyp, &               ! Intent(in)
-           order_wp2_wp3, &                               ! Intent(in)
            stats,         &
-           rtm, rt_tol_mfl, wprtp, err_info )             ! Intent(inout)
+           rtm, rt_tol_mfl, wprtp, err_info,              & ! Intent(inout)
+           wpxp_cl_num = wprtp_cl_num )
 
     if ( clubb_at_least_debug_level_api( 0 ) ) then
       if ( any(err_info%err_code == clubb_fatal_error) ) then
@@ -4145,7 +4119,6 @@ module advance_xm_wpxp_module
            l_implemented, solution(:,:,1),  &             ! Intent(in)
            tridiag_solve_method, &                        ! Intent(in)
            fill_holes_type, &                             ! Intent(in)
-           l_predict_upwp_vpwp, &                         ! Intent(in)
            l_upwind_xm_ma, &                              ! Intent(in)
            l_tke_aniso, &                                 ! Intent(in)
            l_enable_relaxed_clipping, &                   ! Intent(in)
@@ -4154,10 +4127,9 @@ module advance_xm_wpxp_module
            l_mono_flux_lim_um, &                          ! Intent(in)
            l_mono_flux_lim_vm, &                          ! Intent(in)
            l_mono_flux_lim_spikefix, &                    ! Intent(in)
-           order_xm_wpxp, order_xp2_xpyp, &               ! Intent(in)
-           order_wp2_wp3, &                               ! Intent(in)
            stats,         &
-           thlm, thl_tol_mfl, wpthlp, err_info )          ! Intent(inout)
+           thlm, thl_tol_mfl, wpthlp, err_info,           & ! Intent(inout)
+           wpxp_cl_num = wpthlp_cl_num )
 
     if ( clubb_at_least_debug_level_api( 0 ) ) then
       if ( any(err_info%err_code == clubb_fatal_error) ) then
@@ -4263,7 +4235,6 @@ module advance_xm_wpxp_module
              l_implemented, solution(:,:,1),  &                      ! Intent(in)
              tridiag_solve_method, &                                 ! Intent(in)
              fill_holes_type, &                                      ! Intent(in)
-             l_predict_upwp_vpwp, &                                  ! Intent(in)
              l_upwind_xm_ma, &                                       ! Intent(in)
              l_tke_aniso, &                                          ! Intent(in)
              l_enable_relaxed_clipping, &                            ! Intent(in)
@@ -4272,8 +4243,6 @@ module advance_xm_wpxp_module
              l_mono_flux_lim_um, &                                   ! Intent(in)
              l_mono_flux_lim_vm, &                                   ! Intent(in)
              l_mono_flux_lim_spikefix, &                             ! Intent(in)
-             order_xm_wpxp, order_xp2_xpyp, &                        ! Intent(in)
-             order_wp2_wp3, &                                        ! Intent(in)
              stats,         &
              sclrm(:,:,sclr), sclr_tol(sclr), wpsclrp(:,:,sclr), err_info ) ! Intent(inout)
 
@@ -4426,7 +4395,6 @@ module advance_xm_wpxp_module
                l_implemented, solution, &
                tridiag_solve_method, &
                fill_holes_type, &
-               l_predict_upwp_vpwp, &
                l_upwind_xm_ma, &
                l_tke_aniso, &
                l_enable_relaxed_clipping, &
@@ -4435,10 +4403,9 @@ module advance_xm_wpxp_module
                l_mono_flux_lim_um, &
                l_mono_flux_lim_vm, &
                l_mono_flux_lim_spikefix, &
-               order_xm_wpxp, order_xp2_xpyp, &
-               order_wp2_wp3, &
                stats,         &
-               xm, xm_tol, wpxp, err_info )
+               xm, xm_tol, wpxp, err_info, &
+               wpxp_cl_num )
 
     ! Description:
     ! Clips and computes implicit stats for an artitrary xm and wpxp
@@ -4465,7 +4432,11 @@ module advance_xm_wpxp_module
         clip_wpthlp,  &
         clip_upwp,    &
         clip_vpwp,    &
-        clip_wpsclrp
+        clip_wpsclrp, &
+        wprtp_cl_max, &
+        wpthlp_cl_max, &
+        upwp_cl_max, &
+        vpwp_cl_max
 
     use model_flags, only: & 
         l_pos_def, &     ! Logical for whether to apply the positive definite scheme to rtm
@@ -4497,10 +4468,6 @@ module advance_xm_wpxp_module
 
     type (grid), intent(in) :: gr
 
-    logical :: &
-      l_first_clip_ts, &
-      l_last_clip_ts
-      
     integer, intent(in) ::  & 
       solve_type  ! Variables being solved for.
 
@@ -4566,14 +4533,6 @@ module advance_xm_wpxp_module
       fill_holes_type         ! Specifier for which hole filling method to use
 
     logical, intent(in) :: &
-      l_predict_upwp_vpwp,       & ! Flag to predict <u'w'> and <v'w'> along
-                                   ! with <u> and <v> alongside the advancement
-                                   ! of <rt>, <w'rt'>, <thl>, <wpthlp>, <sclr>,
-                                   ! and <w'sclr'> in subroutine advance_xm_wpxp.
-                                   ! Otherwise, <u'w'> and <v'w'> are still
-                                   ! approximated by eddy diffusivity when <u>
-                                   ! and <v> are advanced in subroutine
-                                   ! advance_windm_edsclrm.
       l_upwind_xm_ma,            & ! This flag determines whether we want to use
                                    ! an upwind differencing approximation rather
                                    ! than a centered differencing for turbulent
@@ -4590,10 +4549,8 @@ module advance_xm_wpxp_module
       l_mono_flux_lim_spikefix     ! Flag to implement monotonic flux limiter code that
                                    ! eliminates spurious drying tendencies at model top
 
-    integer, intent(in) :: &
-      order_xm_wpxp, &
-      order_xp2_xpyp, &
-      order_wp2_wp3
+    integer, intent(inout), optional :: &
+      wpxp_cl_num
 
     type(stats_type), intent(inout) :: &
       stats
@@ -4610,7 +4567,8 @@ module advance_xm_wpxp_module
 
     !--------------------------- Local Variables ---------------------------
     integer :: &
-      solve_type_cl ! solve_type used for clipping statistics.
+      solve_type_cl, & ! solve_type used for clipping statistics.
+      wpxp_cl_max     ! Number of clipping events in the timestep
 
     character(len=10) :: &
       solve_type_str ! solve_type as a string for debug output purposes
@@ -5095,52 +5053,119 @@ module advance_xm_wpxp_module
 
     end if
 
-    if ( order_xm_wpxp < order_wp2_wp3 .and. order_xm_wpxp < order_xp2_xpyp ) then
-       l_first_clip_ts = .true.
-       l_last_clip_ts = .false.
-    elseif ( order_xm_wpxp > order_wp2_wp3 .and. order_xm_wpxp > order_xp2_xpyp ) then
-       l_first_clip_ts = .false.
-       l_last_clip_ts = .true.
-    else
-       l_first_clip_ts = .false.
-       l_last_clip_ts = .false.
-    endif
-    
     ! Use solve_type to find solve_type_cl, which is used
     ! in subroutine clip_covar.
     select case ( solve_type )
     case ( xm_wpxp_rtm )
       solve_type_cl = clip_wprtp
+      wpxp_cl_max = wprtp_cl_max
     case ( xm_wpxp_thlm )
       solve_type_cl = clip_wpthlp
+      wpxp_cl_max = wpthlp_cl_max
     case ( xm_wpxp_um )
       solve_type_cl = clip_upwp
+      wpxp_cl_max = upwp_cl_max
     case ( xm_wpxp_vm )
       solve_type_cl = clip_vpwp
+      wpxp_cl_max = vpwp_cl_max
     case default
       solve_type_cl = clip_wpsclrp
+      wpxp_cl_max = 0
     end select
 
+    if ( present( wpxp_cl_num ) ) then
+      if ( stats%l_sample ) then
+        !$acc update host( wpxp )
+        if ( solve_type_cl == clip_wprtp ) then
+          if ( wpxp_cl_num == 0 ) then
+            call stats_begin_budget( "wprtp_cl", wpxp / dt, stats )
+          else
+            call stats_update_budget( "wprtp_cl", -wpxp / dt, stats )
+          end if
+        elseif ( solve_type_cl == clip_wpthlp ) then
+          if ( wpxp_cl_num == 0 ) then
+            call stats_begin_budget( "wpthlp_cl", wpxp / dt, stats )
+          else
+            call stats_update_budget( "wpthlp_cl", -wpxp / dt, stats )
+          end if
+        elseif ( solve_type_cl == clip_upwp ) then
+          if ( wpxp_cl_num == 0 ) then
+            call stats_begin_budget( "upwp_cl", wpxp / dt, stats )
+          else
+            call stats_update_budget( "upwp_cl", -wpxp / dt, stats )
+          end if
+        elseif ( solve_type_cl == clip_vpwp ) then
+          if ( wpxp_cl_num == 0 ) then
+            call stats_begin_budget( "vpwp_cl", wpxp / dt, stats )
+          else
+            call stats_update_budget( "vpwp_cl", -wpxp / dt, stats )
+          end if
+        end if
+      end if
+    end if
+
     if ( solve_type /= xm_wpxp_um .and. solve_type /= xm_wpxp_vm ) then
-      call clip_covar( nzm, ngrdcol, solve_type_cl, l_first_clip_ts, & ! In
-                       l_last_clip_ts, dt, wp2, xp2_relaxed,         & ! In
-                       l_predict_upwp_vpwp,                          & ! In
-                       stats,                                        & ! In
+      if ( present( wpxp_cl_num ) ) wpxp_cl_num = wpxp_cl_num + 1
+      call clip_covar( nzm, ngrdcol, solve_type_cl, wp2, xp2_relaxed, & ! In
                        wpxp, wpxp_chnge )                              ! In/Out
+      if ( present( wpxp_cl_num ) .and. stats%l_sample ) then
+        !$acc update host( wpxp )
+        if ( solve_type_cl == clip_wprtp ) then
+          if ( wpxp_cl_num == wpxp_cl_max ) then
+            call stats_finalize_budget( "wprtp_cl", wpxp / dt, stats )
+          else
+            call stats_update_budget( "wprtp_cl", wpxp / dt, stats )
+          end if
+        elseif ( solve_type_cl == clip_wpthlp ) then
+          if ( wpxp_cl_num == wpxp_cl_max ) then
+            call stats_finalize_budget( "wpthlp_cl", wpxp / dt, stats )
+          else
+            call stats_update_budget( "wpthlp_cl", wpxp / dt, stats )
+          end if
+        end if
+      end if
     else ! clipping for upwp or vpwp
 
       if ( l_tke_aniso ) then
-        call clip_covar( nzm, ngrdcol, solve_type_cl, l_first_clip_ts, & ! In
-                         l_last_clip_ts, dt, wp2, xp2,                 & ! In
-                         l_predict_upwp_vpwp,                          & ! In
-                         stats,                                        & ! In
+        if ( present( wpxp_cl_num ) ) wpxp_cl_num = wpxp_cl_num + 1
+        call clip_covar( nzm, ngrdcol, solve_type_cl, wp2, xp2,        & ! In
                          wpxp, wpxp_chnge )                              ! In/Out
+        if ( present( wpxp_cl_num ) .and. stats%l_sample ) then
+          !$acc update host( wpxp )
+          if ( solve_type_cl == clip_upwp ) then
+            if ( wpxp_cl_num == wpxp_cl_max ) then
+              call stats_finalize_budget( "upwp_cl", wpxp / dt, stats )
+            else
+              call stats_update_budget( "upwp_cl", wpxp / dt, stats )
+            end if
+          elseif ( solve_type_cl == clip_vpwp ) then
+            if ( wpxp_cl_num == wpxp_cl_max ) then
+              call stats_finalize_budget( "vpwp_cl", wpxp / dt, stats )
+            else
+              call stats_update_budget( "vpwp_cl", wpxp / dt, stats )
+            end if
+          end if
+        end if
       else
-        call clip_covar( nzm, ngrdcol, solve_type_cl, l_first_clip_ts, & ! In
-                         l_last_clip_ts, dt, wp2, wp2,                 & ! In
-                         l_predict_upwp_vpwp,                          & ! In
-                         stats,                                        & ! In
+        if ( present( wpxp_cl_num ) ) wpxp_cl_num = wpxp_cl_num + 1
+        call clip_covar( nzm, ngrdcol, solve_type_cl, wp2, wp2,        & ! In
                          wpxp, wpxp_chnge )                              ! In/Out
+        if ( present( wpxp_cl_num ) .and. stats%l_sample ) then
+          !$acc update host( wpxp )
+          if ( solve_type_cl == clip_upwp ) then
+            if ( wpxp_cl_num == wpxp_cl_max ) then
+              call stats_finalize_budget( "upwp_cl", wpxp / dt, stats )
+            else
+              call stats_update_budget( "upwp_cl", wpxp / dt, stats )
+            end if
+          elseif ( solve_type_cl == clip_vpwp ) then
+            if ( wpxp_cl_num == wpxp_cl_max ) then
+              call stats_finalize_budget( "vpwp_cl", wpxp / dt, stats )
+            else
+              call stats_update_budget( "vpwp_cl", wpxp / dt, stats )
+            end if
+          end if
+        end if
        end if ! l_tke_aniso
     end if ! solve_type /= xm_wpxp_um .and. solve_type /= xm_wpxp_vm
 

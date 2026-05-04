@@ -284,7 +284,11 @@ module advance_clubb_core_module
 
     use clip_explicit, only: &
         clip_covars_denom, & ! Procedure(s)
-        clip_rcm
+        clip_rcm, &
+        wprtp_cl_max, &
+        wpthlp_cl_max, &
+        upwp_cl_max, &
+        vpwp_cl_max
 
     use T_in_K_module, only: &
         ! Read values from namelist
@@ -315,6 +319,7 @@ module advance_clubb_core_module
         stats_type, &
         stats_update, &
         stats_begin_budget, &
+        stats_update_budget, &
         stats_finalize_budget, &
         var_on_stats_list
 
@@ -699,13 +704,6 @@ module advance_clubb_core_module
       varnce_w_2_zm, & ! Variance of w (2nd PDF component)            [m^2/s^2]
       mixt_frac_zm     ! Weight of 1st PDF component (Sk_w dependent) [-]
 
-    integer :: &
-      wprtp_cl_num,   & ! Instance of w'r_t' clipping (1st or 3rd).
-      wpthlp_cl_num,  & ! Instance of w'th_l' clipping (1st or 3rd).
-      wpsclrp_cl_num, & ! Instance of w'sclr' clipping (1st or 3rd).
-      upwp_cl_num,    & ! Instance of u'w' clipping (1st or 2nd).
-      vpwp_cl_num       ! Instance of v'w' clipping (1st or 2nd).
-
     real( kind = core_rknd ), dimension(ngrdcol,nzt) :: &
       rcp2_zt,              & ! r_c'^2 (on thermo. grid)             [kg^2/kg^2]
       wpsclrp_zt,           & ! Scalar flux on thermo. levels        [un. vary]
@@ -833,7 +831,12 @@ module advance_clubb_core_module
     !  Km_Skw_factor_efold = 0.5_core_rknd, & ! E-folding rate of exponential Skw correction
     !  Km_Skw_factor_min   = 0.2_core_rknd    ! Minimum value of Km_Skw_factor
 
-    integer :: advance_order_loop_iter
+    integer :: &
+      advance_order_loop_iter, &
+      wprtp_cl_num, &
+      wpthlp_cl_num, &
+      upwp_cl_num, &
+      vpwp_cl_num
 
     integer :: smth_type = 2  ! Used for Lscale_width_vert_avg
 
@@ -1785,6 +1788,11 @@ module advance_clubb_core_module
       !$acc end parallel loop
     end if
 
+    wprtp_cl_num = 0
+    wpthlp_cl_num = 0
+    upwp_cl_num = 0
+    vpwp_cl_num = 0
+
     ! Loop over the 4 main advance subroutines -- advance_xm_wpxp,
     ! advance_wp2_wp3, advance_xp2_xpyp, and advance_windm_edsclrm -- in the
     ! order determined by order_xm_wpxp, order_wp2_wp3, order_xp2_xpyp, and
@@ -1838,8 +1846,8 @@ module advance_clubb_core_module
                             clubb_config_flags%l_mono_flux_lim_um,                 & ! intent(in)
                             clubb_config_flags%l_mono_flux_lim_vm,                 & ! intent(in)
                             clubb_config_flags%l_mono_flux_lim_spikefix,           & ! intent(in)
-                            order_xm_wpxp, order_xp2_xpyp, order_wp2_wp3,          & ! intent(in)
-                            stats,                                             & ! intent(inout)
+                            wprtp_cl_num, wpthlp_cl_num, upwp_cl_num, vpwp_cl_num, & ! intent(inout)
+                            stats,                                                & ! intent(inout)
                             rtm, wprtp, thlm, wpthlp,                              & ! intent(i/o)
                             sclrm, wpsclrp, um, upwp, vm, vpwp,                    & ! intent(i/o)
                             um_pert, vm_pert, upwp_pert, vpwp_pert, err_info )       ! intent(i/o)
@@ -1899,7 +1907,6 @@ module advance_clubb_core_module
                              clubb_config_flags%iiPDF_type,                       & ! intent(in)
                              clubb_config_flags%tridiag_solve_method,             & ! intent(in)
                              clubb_config_flags%fill_holes_type,                  & ! intent(in)
-                             clubb_config_flags%l_predict_upwp_vpwp,              & ! intent(in)
                              clubb_config_flags%l_ho_nontrad_coriolis,            & ! intent(in)
                              clubb_config_flags%l_min_xp2_from_corr_wx,           & ! intent(in)
                              clubb_config_flags%l_C2_cloud_frac,                  & ! intent(in)
@@ -1923,59 +1930,77 @@ module advance_clubb_core_module
       ! Covariance clipping for wprtp, wpthlp, wpsclrp, upwp, and vpwp
       ! after subroutine advance_xp2_xpyp updated xp2.
       !----------------------------------------------------------------
-      if ( order_xp2_xpyp < order_xm_wpxp &
-           .and. order_xp2_xpyp < order_wp2_wp3 ) then
-         wprtp_cl_num   = 1 ! First instance of w'r_t' clipping.
-         wpthlp_cl_num  = 1 ! First instance of w'th_l' clipping.
-         wpsclrp_cl_num = 1 ! First instance of w'sclr' clipping.
-         if ( clubb_config_flags%l_predict_upwp_vpwp ) then
-            upwp_cl_num = 1 ! First instance of u'w' clipping.
-            vpwp_cl_num = 1 ! First instance of v'w' clipping.
-         endif
-      elseif ( order_xp2_xpyp > order_xm_wpxp &
-               .and. order_xp2_xpyp > order_wp2_wp3 ) then
-         wprtp_cl_num   = 3 ! Third instance of w'r_t' clipping.
-         wpthlp_cl_num  = 3 ! Third instance of w'th_l' clipping.
-         wpsclrp_cl_num = 3 ! Third instance of w'sclr' clipping.
-         if ( clubb_config_flags%l_predict_upwp_vpwp ) then
-            upwp_cl_num = 3 ! Third instance of u'w' clipping.
-            vpwp_cl_num = 3 ! Third instance of v'w' clipping.
-         endif
-      else
-         wprtp_cl_num   = 2 ! Second instance of w'r_t' clipping.
-         wpthlp_cl_num  = 2 ! Second instance of w'th_l' clipping.
-         wpsclrp_cl_num = 2 ! Second instance of w'sclr' clipping.
-         if ( clubb_config_flags%l_predict_upwp_vpwp ) then
-            upwp_cl_num = 2 ! Second instance of u'w' clipping.
-            vpwp_cl_num = 2 ! Second instance of v'w' clipping.
-         endif
-      endif
+      if ( stats%l_sample ) then
 
-      if ( .not. clubb_config_flags%l_predict_upwp_vpwp ) then
-         if ( order_xp2_xpyp < order_wp2_wp3 &
-              .and. order_xp2_xpyp < order_windm ) then
-            upwp_cl_num = 1 ! First instance of u'w' clipping.
-            vpwp_cl_num = 1 ! First instance of v'w' clipping.
-         elseif ( order_xp2_xpyp > order_wp2_wp3 &
-                  .and. order_xp2_xpyp > order_windm ) then
-            upwp_cl_num = 3 ! Third instance of u'w' clipping.
-            vpwp_cl_num = 3 ! Third instance of v'w' clipping.
-         else
-            upwp_cl_num = 2 ! Second instance of u'w' clipping.
-            vpwp_cl_num = 2 ! Second instance of v'w' clipping.
-         endif ! l_predict_upwp_vpwp
-      endif
+        !$acc update host( wprtp, wpthlp, upwp, vpwp )
 
-      call clip_covars_denom( nzm, ngrdcol, sclr_dim, dt,                   & ! intent(in)
+        if ( wprtp_cl_num == 0 ) then
+          call stats_begin_budget( "wprtp_cl", wprtp / dt, stats )
+        else
+          call stats_update_budget( "wprtp_cl", -wprtp / dt, stats )
+        end if
+
+        if ( wpthlp_cl_num == 0 ) then
+          call stats_begin_budget( "wpthlp_cl", wpthlp / dt, stats )
+        else
+          call stats_update_budget( "wpthlp_cl", -wpthlp / dt, stats )
+        end if
+
+        if ( upwp_cl_num == 0 ) then
+          call stats_begin_budget( "upwp_cl", upwp / dt, stats )
+        else
+          call stats_update_budget( "upwp_cl", -upwp / dt, stats )
+        end if
+
+        if ( vpwp_cl_num == 0 ) then
+          call stats_begin_budget( "vpwp_cl", vpwp / dt, stats )
+        else
+          call stats_update_budget( "vpwp_cl", -vpwp / dt, stats )
+        end if
+
+      end if
+
+      wprtp_cl_num = wprtp_cl_num + 1
+      wpthlp_cl_num = wpthlp_cl_num + 1
+      upwp_cl_num = upwp_cl_num + 1
+      vpwp_cl_num = vpwp_cl_num + 1
+
+      call clip_covars_denom( nzm, ngrdcol, sclr_dim,                        & ! intent(in)
                               rtp2, thlp2, up2, vp2, wp2,                   & ! intent(in)
-                              sclrp2, wprtp_cl_num, wpthlp_cl_num,          & ! intent(in)
-                              wpsclrp_cl_num, upwp_cl_num, vpwp_cl_num,     & ! intent(in)
-                              clubb_config_flags%l_predict_upwp_vpwp,       & ! intent(in)
-                              clubb_config_flags%l_tke_aniso,               & ! intent(in)
+                              sclrp2, clubb_config_flags%l_tke_aniso,       & ! intent(in)
                               clubb_config_flags%l_linearize_pbl_winds,     & ! intent(in)
-                              stats,                                        & ! intent(inout)
                               wprtp, wpthlp, upwp, vpwp, wpsclrp,           & ! intent(inout)
                               upwp_pert, vpwp_pert )                          ! intent(inout)
+
+      if ( stats%l_sample ) then
+
+        !$acc update host( wprtp, wpthlp, upwp, vpwp )
+
+        if ( wprtp_cl_num == wprtp_cl_max ) then
+          call stats_finalize_budget( "wprtp_cl", wprtp / dt, stats )
+        else
+          call stats_update_budget( "wprtp_cl", wprtp / dt, stats )
+        end if
+
+        if ( wpthlp_cl_num == wpthlp_cl_max ) then
+          call stats_finalize_budget( "wpthlp_cl", wpthlp / dt, stats )
+        else
+          call stats_update_budget( "wpthlp_cl", wpthlp / dt, stats )
+        end if
+
+        if ( upwp_cl_num == upwp_cl_max ) then
+          call stats_finalize_budget( "upwp_cl", upwp / dt, stats )
+        else
+          call stats_update_budget( "upwp_cl", upwp / dt, stats )
+        end if
+
+        if ( vpwp_cl_num == vpwp_cl_max ) then
+          call stats_finalize_budget( "vpwp_cl", vpwp / dt, stats )
+        else
+          call stats_update_budget( "vpwp_cl", vpwp / dt, stats )
+        end if
+
+      end if
       
      elseif ( advance_order_loop_iter == order_wp2_wp3 ) then
 
@@ -2032,60 +2057,71 @@ module advance_clubb_core_module
       ! Covariance clipping for wprtp, wpthlp, wpsclrp, upwp, and vpwp
       ! after subroutine advance_wp2_wp3 updated wp2.
       !----------------------------------------------------------------
+      if ( stats%l_sample ) then
 
-      if ( order_wp2_wp3 < order_xm_wpxp &
-           .and. order_wp2_wp3 < order_xp2_xpyp ) then
-         wprtp_cl_num   = 1 ! First instance of w'r_t' clipping.
-         wpthlp_cl_num  = 1 ! First instance of w'th_l' clipping.
-         wpsclrp_cl_num = 1 ! First instance of w'sclr' clipping.
-         if ( clubb_config_flags%l_predict_upwp_vpwp ) then
-            upwp_cl_num = 1 ! First instance of u'w' clipping.
-            vpwp_cl_num = 1 ! First instance of v'w' clipping.
-         endif
-      elseif ( order_wp2_wp3 > order_xm_wpxp &
-               .and. order_wp2_wp3 > order_xp2_xpyp ) then
-         wprtp_cl_num   = 3 ! Third instance of w'r_t' clipping.
-         wpthlp_cl_num  = 3 ! Third instance of w'th_l' clipping.
-         wpsclrp_cl_num = 3 ! Third instance of w'sclr' clipping.
-         if ( clubb_config_flags%l_predict_upwp_vpwp ) then
-            upwp_cl_num = 3 ! Third instance of u'w' clipping.
-            vpwp_cl_num = 3 ! Third instance of v'w' clipping.
-         endif
-      else
-         wprtp_cl_num   = 2 ! Second instance of w'r_t' clipping.
-         wpthlp_cl_num  = 2 ! Second instance of w'th_l' clipping.
-         wpsclrp_cl_num = 2 ! Second instance of w'sclr' clipping.
-         if ( clubb_config_flags%l_predict_upwp_vpwp ) then
-            upwp_cl_num = 2 ! Second instance of u'w' clipping.
-            vpwp_cl_num = 2 ! Second instance of v'w' clipping.
-         endif
-      endif
-    
-      if ( .not. clubb_config_flags%l_predict_upwp_vpwp ) then
-         if ( order_wp2_wp3 < order_xp2_xpyp &
-              .and. order_wp2_wp3 < order_windm ) then
-            upwp_cl_num = 1 ! First instance of u'w' clipping.
-            vpwp_cl_num = 1 ! First instance of v'w' clipping.
-         elseif ( order_wp2_wp3 > order_xp2_xpyp &
-                  .and. order_wp2_wp3 > order_windm ) then
-            upwp_cl_num = 3 ! Third instance of u'w' clipping.
-            vpwp_cl_num = 3 ! Third instance of v'w' clipping.
-         else
-            upwp_cl_num = 2 ! Second instance of u'w' clipping.
-            vpwp_cl_num = 2 ! Second instance of v'w' clipping.
-         endif ! l_predict_upwp_vpwp
-      endif
+        !$acc update host( wprtp, wpthlp, upwp, vpwp )
 
-      call clip_covars_denom( nzm, ngrdcol, sclr_dim, dt,                   & ! intent(in)
+        if ( wprtp_cl_num == 0 ) then
+          call stats_begin_budget( "wprtp_cl", wprtp / dt, stats )
+        else
+          call stats_update_budget( "wprtp_cl", -wprtp / dt, stats )
+        end if
+
+        if ( wpthlp_cl_num == 0 ) then
+          call stats_begin_budget( "wpthlp_cl", wpthlp / dt, stats )
+        else
+          call stats_update_budget( "wpthlp_cl", -wpthlp / dt, stats )
+        end if
+
+        if ( upwp_cl_num == 0 ) then
+          call stats_begin_budget( "upwp_cl", upwp / dt, stats )
+        else
+          call stats_update_budget( "upwp_cl", -upwp / dt, stats )
+        end if
+
+        if ( vpwp_cl_num == 0 ) then
+          call stats_begin_budget( "vpwp_cl", vpwp / dt, stats )
+        else
+          call stats_update_budget( "vpwp_cl", -vpwp / dt, stats )
+        end if
+
+      end if
+
+      wprtp_cl_num = wprtp_cl_num + 1
+      wpthlp_cl_num = wpthlp_cl_num + 1
+      upwp_cl_num = upwp_cl_num + 1
+      vpwp_cl_num = vpwp_cl_num + 1
+
+      call clip_covars_denom( nzm, ngrdcol, sclr_dim,                        & ! intent(in)
                               rtp2, thlp2, up2, vp2, wp2,                   & ! intent(in)
-                              sclrp2, wprtp_cl_num, wpthlp_cl_num,          & ! intent(in)
-                              wpsclrp_cl_num, upwp_cl_num, vpwp_cl_num,     & ! intent(in)
-                              clubb_config_flags%l_predict_upwp_vpwp,       & ! intent(in)
-                              clubb_config_flags%l_tke_aniso,               & ! intent(in)
+                              sclrp2, clubb_config_flags%l_tke_aniso,       & ! intent(in)
                               clubb_config_flags%l_linearize_pbl_winds,     & ! intent(in)
-                              stats,                                        & ! intent(inout)
                               wprtp, wpthlp, upwp, vpwp, wpsclrp,           & ! intent(inout)
                               upwp_pert, vpwp_pert )                          ! intent(inout)
+
+      if ( stats%l_sample ) then
+        !$acc update host( wprtp, wpthlp, upwp, vpwp )
+        if ( wprtp_cl_num == wprtp_cl_max ) then
+          call stats_finalize_budget( "wprtp_cl", wprtp / dt, stats )
+        else
+          call stats_update_budget( "wprtp_cl", wprtp / dt, stats )
+        end if
+        if ( wpthlp_cl_num == wpthlp_cl_max ) then
+          call stats_finalize_budget( "wpthlp_cl", wpthlp / dt, stats )
+        else
+          call stats_update_budget( "wpthlp_cl", wpthlp / dt, stats )
+        end if
+        if ( upwp_cl_num == upwp_cl_max ) then
+          call stats_finalize_budget( "upwp_cl", upwp / dt, stats )
+        else
+          call stats_update_budget( "upwp_cl", upwp / dt, stats )
+        end if
+        if ( vpwp_cl_num == vpwp_cl_max ) then
+          call stats_finalize_budget( "vpwp_cl", vpwp / dt, stats )
+        else
+          call stats_update_budget( "vpwp_cl", vpwp / dt, stats )
+        end if
+      end if
 
      elseif ( advance_order_loop_iter == order_windm ) then
 
@@ -2130,7 +2166,7 @@ module advance_clubb_core_module
                                   clubb_config_flags%l_tke_aniso,             & ! intent(in)
                                   clubb_config_flags%l_lmm_stepping,          & ! intent(in)
                                   clubb_config_flags%l_linearize_pbl_winds,   & ! intent(in)
-                                  order_xp2_xpyp, order_wp2_wp3, order_windm, & ! intent(in)
+                                  upwp_cl_num, vpwp_cl_num,                    & ! intent(inout)
                                   stats,                                       & ! intent(inout)
                                   um, vm, edsclrm,                            & ! intent(inout)
                                   upwp, vpwp, wpedsclrp,                      & ! intent(inout)

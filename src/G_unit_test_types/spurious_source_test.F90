@@ -363,7 +363,14 @@ module spurious_source_test
     real( kind = core_rknd ), parameter :: &
       tol = 1.0e-10_core_rknd    ! Tolerance to determine pass or fail
 
-    integer :: iter, k, i  ! Loop indices
+    integer :: &
+      iter, &
+      k, &
+      i, &
+      wprtp_cl_num, &
+      wpthlp_cl_num, &
+      upwp_cl_num, &
+      vpwp_cl_num
 
     real( kind = core_rknd ), dimension(1,nparams) :: &
       clubb_params    ! Array of CLUBB's tunable parameters    [units vary]
@@ -523,11 +530,6 @@ module spurious_source_test
       l_wp2_fill_holes_tke,         & ! Turn on additional hole-filling for wp2
                                       ! that takes TKE from up2 and vp2, if necessary
       l_add_dycore_grid               ! Turn on remapping from the dycore grid
-
-    integer, parameter :: &
-      order_xm_wpxp = 1, &
-      order_xp2_xpyp = 2, &
-      order_wp2_wp3 =3
 
     ! Read in model parameter values
     call init_clubb_params_api( 1, iunit, namelist_filename, &
@@ -966,6 +968,11 @@ module spurious_source_test
       stats%l_sample = .false.
       stats%l_last_sample = .false.
 
+      wprtp_cl_num = 0
+      wpthlp_cl_num = 0
+      upwp_cl_num = 0
+      vpwp_cl_num = 0
+
       call advance_xm_wpxp( nzm, nzt, 1, sclr_dim, sclr_tol, gr, dt, &
                             sigma_sqd_w, wm_zm, wm_zt, wp2, Lscale, &
                             wp3_on_wp2, wp3_on_wp2_zt, Kh_zt, Kh_zm, &
@@ -1006,7 +1013,7 @@ module spurious_source_test
                              l_mono_flux_lim_um, &
                              l_mono_flux_lim_vm, &
                              l_mono_flux_lim_spikefix, &
-                             order_xm_wpxp, order_xp2_xpyp, order_wp2_wp3, &
+                             wprtp_cl_num, wpthlp_cl_num, upwp_cl_num, vpwp_cl_num, &
                              stats,         &
                              rtm, wprtp, thlm, wpthlp, &
                              sclrm, wpsclrp, um, upwp, vm, vpwp, &

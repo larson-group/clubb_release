@@ -33,17 +33,19 @@ module clip_explicit
     clip_sclrpthlp = 16, &   ! Named constant for sclrpthlp clipping
     clip_wphydrometp = 17    ! Named constant for wphydrometp clipping
 
+  integer, parameter, public :: &
+    wprtp_cl_max = 3, &      ! Number of wprtp clipping events per timestep
+    wpthlp_cl_max = 3, &     ! Number of wpthlp clipping events per timestep
+    upwp_cl_max = 3, &       ! Number of upwp clipping events per timestep
+    vpwp_cl_max = 3          ! Number of vpwp clipping events per timestep
+
   contains
 
   !=============================================================================
-  subroutine clip_covars_denom( nzm, ngrdcol, sclr_dim, dt, &
+  subroutine clip_covars_denom( nzm, ngrdcol, sclr_dim, &
                                 rtp2, thlp2, up2, vp2, wp2, &
-                                sclrp2, wprtp_cl_num, wpthlp_cl_num, &
-                                wpsclrp_cl_num, upwp_cl_num, vpwp_cl_num, &
-                                l_predict_upwp_vpwp, &
-                                l_tke_aniso, &
+                                sclrp2, l_tke_aniso, &
                                 l_linearize_pbl_winds, &
-                                stats,         &
                                 wprtp, wpthlp, upwp, vpwp, wpsclrp, &
                                 upwp_pert, vpwp_pert )
 
@@ -69,9 +71,6 @@ module clip_explicit
     use clubb_precision, only: & 
         core_rknd ! Variable(s)
 
-     use stats_netcdf, only: &
-        stats_type
-
     implicit none
 
     ! --------------------- Input Variables ---------------------
@@ -79,9 +78,6 @@ module clip_explicit
       nzm, &
       ngrdcol, &
       sclr_dim
-
-    real( kind = core_rknd ), intent(in) :: &
-      dt ! Timestep [s]
 
     real( kind = core_rknd ), dimension(ngrdcol,nzm), intent(in) :: &
       rtp2,  & ! r_t'^2         [(kg/kg)^2]
@@ -93,25 +89,10 @@ module clip_explicit
     real( kind = core_rknd ), dimension(ngrdcol,nzm,sclr_dim), intent(in) :: &
       sclrp2 ! sclr'^2  [{units vary}^2]
 
-    integer, intent(in) :: &
-      wprtp_cl_num,   &
-      wpthlp_cl_num,  &
-      wpsclrp_cl_num, &
-      upwp_cl_num,    &
-      vpwp_cl_num
-
     logical, intent(in) :: &
-      l_predict_upwp_vpwp,   & ! Flag to predict <u'w'> and <v'w'> along with <u> and <v> alongside
-                               ! the advancement of <rt>, <w'rt'>, <thl>, <wpthlp>, <sclr>, and
-                               ! <w'sclr'> in subroutine advance_xm_wpxp.  Otherwise, <u'w'> and
-                               ! <v'w'> are still approximated by eddy diffusivity when <u> and <v>
-                               ! are advanced in subroutine advance_windm_edsclrm.
       l_tke_aniso,           & ! For anisotropic turbulent kinetic energy, i.e. TKE = 1/2
                                ! (u'^2 + v'^2 + w'^2)
       l_linearize_pbl_winds    ! Flag (used by E3SM) to linearize PBL winds
-
-    type(stats_type), intent(inout) :: &
-      stats
 
     ! --------------------- Input/Output Variables ---------------------
     real( kind = core_rknd ), dimension(ngrdcol,nzm), intent(inout) :: &
@@ -129,10 +110,6 @@ module clip_explicit
       vpwp_pert    ! perturbed <v'w'> [m^2/s^2]
 
     ! --------------------- Local Variables ---------------------
-    logical :: & 
-      l_first_clip_ts, & ! First instance of clipping in a timestep.
-      l_last_clip_ts     ! Last instance of clipping in a timestep.
-
     real( kind = core_rknd ), dimension(ngrdcol,nzm) :: &
       wprtp_chnge,  & ! Net change in w'r_t' due to clipping  [(kg/kg) m/s]
       wpthlp_chnge, & ! Net change in w'th_l' due to clipping [K m/s]
@@ -168,61 +145,12 @@ module clip_explicit
     ! The third instance of w'r_t' clipping takes place after
     ! w'^2 is updated in advance_wp2_wp3.
 
-    ! Used within subroutine clip_covar.
-    if ( wprtp_cl_num == 1 ) then
-      l_first_clip_ts = .true.
-      l_last_clip_ts  = .false.
-    elseif ( wprtp_cl_num == 2 ) then
-      l_first_clip_ts = .false.
-      l_last_clip_ts  = .false.
-    elseif ( wprtp_cl_num == 3 ) then
-      l_first_clip_ts = .false.
-      l_last_clip_ts  = .true.
-    endif
-
     ! Clip w'r_t'
-    call clip_covar( nzm, ngrdcol, clip_wprtp, l_first_clip_ts, & ! intent(in)
-                     l_last_clip_ts, dt, wp2, rtp2,             & ! intent(in)
-                     l_predict_upwp_vpwp,                       & ! intent(in)
-                     stats,                                     & ! intent(in)
+    call clip_covar( nzm, ngrdcol, clip_wprtp, wp2, rtp2,       & ! intent(in)
                      wprtp, wprtp_chnge )                         ! intent(inout)
 
-    !!! Clipping for w'th_l'
-    !
-    ! Clipping w'th_l' at each vertical level, based on the
-    ! correlation of w and th_l at each vertical level, such that:
-    ! corr_(w,th_l) = w'th_l' / [ sqrt(w'^2) * sqrt(th_l'^2) ];
-    ! -1 <= corr_(w,th_l) <= 1.
-    !
-    ! Since w'^2, th_l'^2, and w'th_l' are each advanced in different
-    ! subroutines from each other in advance_clubb_core, clipping for w'th_l'
-    ! is done three times during each timestep (once after each variable has
-    ! been updated).
-    !
-    ! This subroutine handles the first and third instances of
-    ! w'th_l' clipping.
-    ! The first instance of w'th_l' clipping takes place after
-    ! th_l'^2 is updated in advance_xp2_xpyp.
-    ! The third instance of w'th_l' clipping takes place after
-    ! w'^2 is updated in advance_wp2_wp3.
-
-    ! Used within subroutine clip_covar.
-    if ( wpthlp_cl_num == 1 ) then
-      l_first_clip_ts = .true.
-      l_last_clip_ts  = .false.
-    elseif ( wpthlp_cl_num == 2 ) then
-      l_first_clip_ts = .false.
-      l_last_clip_ts  = .false.
-    elseif ( wpthlp_cl_num == 3 ) then
-      l_first_clip_ts = .false.
-      l_last_clip_ts  = .true.
-    endif
-
     ! Clip w'th_l'
-    call clip_covar( nzm, ngrdcol, clip_wpthlp, l_first_clip_ts, & ! intent(in)
-                     l_last_clip_ts, dt, wp2, thlp2,             & ! intent(in)
-                     l_predict_upwp_vpwp,                        & ! intent(in)
-                     stats,                                      & ! intent(in)
+    call clip_covar( nzm, ngrdcol, clip_wpthlp, wp2, thlp2,      & ! intent(in)
                      wpthlp, wpthlp_chnge )                        ! intent(inout)
 
     !!! Clipping for w'sclr'
@@ -244,25 +172,10 @@ module clip_explicit
     ! The third instance of w'sclr' clipping takes place after
     ! w'^2 is updated in advance_wp2_wp3.
 
-    ! Used within subroutine clip_covar.
-    if ( wpsclrp_cl_num == 1 ) then
-      l_first_clip_ts = .true.
-      l_last_clip_ts  = .false.
-    elseif ( wpsclrp_cl_num == 2 ) then
-      l_first_clip_ts = .false.
-      l_last_clip_ts  = .false.
-    elseif ( wpsclrp_cl_num == 3 ) then
-      l_first_clip_ts = .false.
-      l_last_clip_ts  = .true.
-    endif
-
     ! Clip w'sclr'
     do sclr = 1, sclr_dim
-      call clip_covar( nzm, ngrdcol, clip_wpsclrp, l_first_clip_ts,    & ! intent(in)
-                       l_last_clip_ts, dt, wp2(:,:), sclrp2(:,:,sclr), & ! intent(in)
-                       l_predict_upwp_vpwp,                            & ! intent(in)
-                       stats,                                          & ! intent(in)
-                       wpsclrp(:,:,sclr), wpsclrp_chnge(:,:,sclr) )      ! intent(inout)
+      call clip_covar( nzm, ngrdcol, clip_wpsclrp, wp2(:,:), sclrp2(:,:,sclr), & ! intent(in)
+                       wpsclrp(:,:,sclr), wpsclrp_chnge(:,:,sclr) )       ! intent(inout)
     enddo
 
 
@@ -285,46 +198,22 @@ module clip_explicit
     ! The second instance of u'w' clipping takes place after
     ! w'^2 is updated in advance_wp2_wp3.
 
-    ! Used within subroutine clip_covar.
-    if ( upwp_cl_num == 1 ) then
-      l_first_clip_ts = .true.
-      l_last_clip_ts  = .false.
-    elseif ( upwp_cl_num == 2 ) then
-      l_first_clip_ts = .false.
-      l_last_clip_ts  = .false.
-    elseif ( upwp_cl_num == 3 ) then
-      l_first_clip_ts = .false.
-      l_last_clip_ts  = .true.
-    endif
-
     ! Clip u'w'
     if ( l_tke_aniso ) then
-      call clip_covar( nzm, ngrdcol, clip_upwp, l_first_clip_ts, & ! intent(in)
-                       l_last_clip_ts, dt, wp2, up2,             & ! intent(in)
-                       l_predict_upwp_vpwp,                      & ! intent(in)
-                       stats,                                    & ! intent(in)
+      call clip_covar( nzm, ngrdcol, clip_upwp, wp2, up2,        & ! intent(in)
                        upwp, upwp_chnge )                          ! intent(inout)
-                     
+
       if ( l_linearize_pbl_winds ) then
-        call clip_covar( nzm, ngrdcol, clip_upwp, l_first_clip_ts, & ! intent(in)
-                         l_last_clip_ts, dt, wp2, up2,             & ! intent(in)
-                         l_predict_upwp_vpwp,                      & ! intent(in)
-                         stats,                                    & ! intent(in)
+        call clip_covar( nzm, ngrdcol, clip_upwp, wp2, up2,        & ! intent(in)
                          upwp_pert, upwp_chnge )                     ! intent(inout)
       endif ! l_linearize_pbl_winds
     else
       ! In this case, up2 = wp2, and the variable `up2' does not interact
-      call clip_covar( nzm, ngrdcol, clip_upwp, l_first_clip_ts, & ! intent(in)
-                       l_last_clip_ts, dt, wp2, wp2,             & ! intent(in)
-                       l_predict_upwp_vpwp,                      & ! intent(in)
-                       stats,                                    & ! intent(in)
+      call clip_covar( nzm, ngrdcol, clip_upwp, wp2, wp2,        & ! intent(in)
                        upwp, upwp_chnge )                          ! intent(inout)
-                     
+
       if ( l_linearize_pbl_winds ) then
-          call clip_covar( nzm, ngrdcol, clip_upwp, l_first_clip_ts, & ! intent(in)
-                           l_last_clip_ts, dt, wp2, wp2,             & ! intent(in)
-                           l_predict_upwp_vpwp,                      & ! intent(in)
-                           stats,                                    & ! intent(in)
+          call clip_covar( nzm, ngrdcol, clip_upwp, wp2, wp2,        & ! intent(in)
                            upwp_pert, upwp_chnge )                     ! intent(inout)
       endif ! l_linearize_pbl_winds
     end if
@@ -350,45 +239,21 @@ module clip_explicit
     ! The second instance of v'w' clipping takes place after
     ! w'^2 is updated in advance_wp2_wp3.
 
-    ! Used within subroutine clip_covar.
-    if ( vpwp_cl_num == 1 ) then
-      l_first_clip_ts = .true.
-      l_last_clip_ts  = .false.
-    elseif ( vpwp_cl_num == 2 ) then
-      l_first_clip_ts = .false.
-      l_last_clip_ts  = .false.
-    elseif ( vpwp_cl_num == 3 ) then
-      l_first_clip_ts = .false.
-      l_last_clip_ts  = .true.
-    endif
-
     if ( l_tke_aniso ) then
-      call clip_covar( nzm, ngrdcol, clip_vpwp, l_first_clip_ts, & ! intent(in)
-                       l_last_clip_ts, dt, wp2, vp2,             & ! intent(in)
-                       l_predict_upwp_vpwp,                      & ! intent(in)
-                       stats,                                    & ! intent(in)
+      call clip_covar( nzm, ngrdcol, clip_vpwp, wp2, vp2,        & ! intent(in)
                        vpwp, vpwp_chnge )                          ! intent(inout)
-                     
+
       if ( l_linearize_pbl_winds ) then
-        call clip_covar( nzm, ngrdcol, clip_vpwp, l_first_clip_ts, & ! intent(in)
-                         l_last_clip_ts, dt, wp2, vp2,             & ! intent(in)
-                         l_predict_upwp_vpwp,                      & ! intent(in)
-                         stats,                                    & ! intent(in)
+        call clip_covar( nzm, ngrdcol, clip_vpwp, wp2, vp2,        & ! intent(in)
                          vpwp_pert, vpwp_chnge )                     ! intent(inout)
       endif ! l_linearize_pbl_winds
     else
       ! In this case, vp2 = wp2, and the variable `vp2' does not interact
-      call clip_covar( nzm, ngrdcol, clip_vpwp, l_first_clip_ts, & ! intent(in)
-                       l_last_clip_ts, dt, wp2, wp2,             & ! intent(in)
-                       l_predict_upwp_vpwp,                      & ! intent(in)
-                       stats,                                    & ! intent(in)
+      call clip_covar( nzm, ngrdcol, clip_vpwp, wp2, wp2,        & ! intent(in)
                        vpwp, vpwp_chnge )                          ! intent(inout)
-                     
+
       if ( l_linearize_pbl_winds ) then
-        call clip_covar( nzm, ngrdcol, clip_vpwp, l_first_clip_ts, & ! intent(in)
-                         l_last_clip_ts, dt, wp2, wp2,             & ! intent(in)
-                         l_predict_upwp_vpwp,                      & ! intent(in)
-                         stats,                                    & ! intent(in)
+        call clip_covar( nzm, ngrdcol, clip_vpwp, wp2, wp2,        & ! intent(in)
                          vpwp_pert, vpwp_chnge )                     ! intent(inout)
       endif ! l_linearize_pbl_winds
     end if
@@ -400,10 +265,7 @@ module clip_explicit
   end subroutine clip_covars_denom
 
   !=============================================================================
-  subroutine clip_covar( nzm, ngrdcol, solve_type, l_first_clip_ts,  & 
-                         l_last_clip_ts, dt, xp2, yp2,  &
-                         l_predict_upwp_vpwp, &
-                         stats,         &
+  subroutine clip_covar( nzm, ngrdcol, solve_type, xp2, yp2, &
                          xpyp, xpyp_chnge )
 
     ! Description:
@@ -454,12 +316,6 @@ module clip_explicit
     use clubb_precision, only: & 
         core_rknd ! Variable(s)
 
-    use stats_netcdf, only: &
-        stats_type, &
-        stats_begin_budget, &
-        stats_update_budget, &
-        stats_finalize_budget
-
     implicit none
 
     ! -------------------------- Input Variables --------------------------
@@ -470,27 +326,9 @@ module clip_explicit
     integer, intent(in) :: & 
       solve_type       ! Variable being solved; used for STATS.
 
-    logical, intent(in) :: & 
-      l_first_clip_ts, & ! First instance of clipping in a timestep.
-      l_last_clip_ts     ! Last instance of clipping in a timestep.
-
-    real( kind = core_rknd ), intent(in) ::  & 
-      dt     ! Model timestep; used here for STATS           [s]
-
     real( kind = core_rknd ), dimension(ngrdcol,nzm), intent(in) :: & 
       xp2, & ! Variance of x, x'^2 (momentum levels)         [{x units}^2]
       yp2    ! Variance of y, y'^2 (momentum levels)         [{y units}^2]
-
-    logical, intent(in) :: &
-      l_predict_upwp_vpwp ! Flag to predict <u'w'> and <v'w'> along with <u> and <v> alongside the
-                          ! advancement of <rt>, <w'rt'>, <thl>, <wpthlp>, <sclr>, and <w'sclr'> in
-                          ! subroutine advance_xm_wpxp.  Otherwise, <u'w'> and <v'w'> are still
-                          ! approximated by eddy diffusivity when <u> and <v> are advanced in
-                          ! subroutine advance_windm_edsclrm.
-                          
-    ! -------------------------- InOut Variables --------------------------
-    type(stats_type), intent(inout) :: &
-      stats
 
     ! ------------------------- InOut Variable -------------------------
     real( kind = core_rknd ), dimension(ngrdcol,nzm), intent(inout) :: & 
@@ -508,43 +346,7 @@ module clip_explicit
 
     integer :: i, k  ! Array index
 
-    character(len=32) :: &
-      name_xpyp_cl
-
     ! -------------------------- Begin Code --------------------------
-
-    name_xpyp_cl = ""
-    select case ( solve_type )
-    case ( clip_wprtp )   ! wprtp clipping budget term
-      name_xpyp_cl = "wprtp_cl"
-    case ( clip_wpthlp )   ! wpthlp clipping budget term
-      name_xpyp_cl = "wpthlp_cl"
-    case ( clip_rtpthlp )   ! rtpthlp clipping budget term
-      name_xpyp_cl = "rtpthlp_cl"
-    case ( clip_upwp )   ! upwp clipping budget term
-      if ( l_predict_upwp_vpwp ) then
-        name_xpyp_cl = "upwp_cl"
-      else
-        name_xpyp_cl = ""
-      endif ! l_predict_upwp_vpwp
-    case ( clip_vpwp )   ! vpwp clipping budget term
-      if ( l_predict_upwp_vpwp ) then
-        name_xpyp_cl = "vpwp_cl"
-      else
-        name_xpyp_cl = ""
-      endif ! l_predict_upwp_vpwp
-    case default   ! scalars (or upwp/vpwp) are involved
-      name_xpyp_cl = ""
-    end select
-    
-    if ( stats%l_sample ) then
-      !$acc update host( xpyp )
-      if ( l_first_clip_ts ) then
-        call stats_begin_budget( name_xpyp_cl, xpyp / dt , stats )
-      else
-        call stats_update_budget( name_xpyp_cl, -xpyp / dt , stats )
-      end if
-    end if
 
     ! When clipping for wprtp or wpthlp, use the special value for
     ! max_mag_correlation_flux.  For all other correlations, use
@@ -601,18 +403,10 @@ module clip_explicit
     end do
     !$acc end parallel loop
 
-    if ( stats%l_sample ) then
-      !$acc update host( xpyp )
-      if ( l_last_clip_ts ) then
-        call stats_finalize_budget( name_xpyp_cl, xpyp / dt , stats )
-      else
-        call stats_update_budget( name_xpyp_cl, xpyp / dt , stats )
-      end if
-    end if
-
     return
     
   end subroutine clip_covar
+
 
   !=============================================================================
   subroutine clip_variance( nzm, ngrdcol, gr, solve_type, dt, threshold_lo, &

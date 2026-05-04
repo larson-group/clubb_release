@@ -247,7 +247,7 @@ module pdf_hydromet_microphys_wrapper
 
       !!! Setup the PDF parameters.
       call setup_pdf_parameters_api( &
-              gr, gr%nzm, gr%nzt, ngrdcol, pdf_dim, hydromet_dim, dt_main, & ! In
+              gr, gr%nzm, gr%nzt, ngrdcol, pdf_dim, hydromet_dim,           & ! In
               Nc_in_cloud, cloud_frac, Kh_zm,                              & ! In
               ice_supersat_frac, hydromet, wphydrometp,                    & ! In
               corr_array_n_cloud, corr_array_n_below,                      & ! In
@@ -256,7 +256,6 @@ module pdf_hydromet_microphys_wrapper
               clubb_params,                                                & ! In
               clubb_config_flags%iiPDF_type,                               & ! In
               clubb_config_flags%l_use_precip_frac,                        & ! In
-              clubb_config_flags%l_predict_upwp_vpwp,                      & ! In
               clubb_config_flags%l_diagnose_correlations,                  & ! In
               clubb_config_flags%l_calc_w_corr,                            & ! In
               clubb_config_flags%l_const_Nc_in_cloud,                      & ! In

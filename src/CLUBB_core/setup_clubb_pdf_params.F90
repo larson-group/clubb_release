@@ -53,7 +53,7 @@ module setup_clubb_pdf_params
 
   !=============================================================================
   subroutine setup_pdf_parameters_api( gr, nzm, nzt, ngrdcol, pdf_dim, &
-                                       hydromet_dim, dt, &  ! Intent(in)
+                                       hydromet_dim, &  ! Intent(in)
                                    Nc_in_cloud, cloud_frac, Kh_zm, &              ! Intent(in)
                                    ice_supersat_frac, hydromet, wphydrometp, &    ! Intent(in)
                                    corr_array_n_cloud, corr_array_n_below, &      ! Intent(in)
@@ -62,7 +62,6 @@ module setup_clubb_pdf_params
                                    clubb_params, &                                ! Intent(in)
                                    iiPDF_type, &                                  ! Intent(in)
                                    l_use_precip_frac, &                           ! Intent(in)
-                                   l_predict_upwp_vpwp, &                         ! Intent(in)
                                    l_diagnose_correlations, &                     ! Intent(in)
                                    l_calc_w_corr, &                               ! Intent(in)
                                    l_const_Nc_in_cloud, &                         ! Intent(in)
@@ -166,9 +165,6 @@ module setup_clubb_pdf_params
 
     type (grid), intent(in) :: gr
 
-    real( kind = core_rknd ), intent(in) :: &
-      dt    ! Model timestep                                           [s]
-
     real( kind = core_rknd ), dimension(ngrdcol,nzt), intent(in) :: &
       Nc_in_cloud,       & ! Mean (in-cloud) cloud droplet conc.       [num/kg]
       cloud_frac,        & ! Cloud fraction                            [-]
@@ -206,12 +202,6 @@ module setup_clubb_pdf_params
       l_use_precip_frac,            & ! Flag to use precipitation fraction in KK microphysics. The
                                       ! precipitation fraction is automatically set to 1 when this
                                       ! flag is turned off.
-      l_predict_upwp_vpwp,          & ! Flag to predict <u'w'> and <v'w'> along with <u> and <v>
-                                      ! alongside the advancement of <rt>, <w'rt'>, <thl>,
-                                      ! <wpthlp>, <sclr>, and <w'sclr'> in subroutine
-                                      ! advance_xm_wpxp.  Otherwise, <u'w'> and <v'w'> are still
-                                      ! approximated by eddy diffusivity when <u> and <v> are
-                                      ! advanced in subroutine advance_windm_edsclrm.
       l_diagnose_correlations,      & ! Diagnose correlations instead of using fixed ones
       l_calc_w_corr,                & ! Calculate the correlations between w and the hydrometeors
       l_const_Nc_in_cloud,          & ! Use a constant cloud droplet conc. within cloud (K&K)
@@ -324,11 +314,6 @@ module setup_clubb_pdf_params
       zeta_vrnce_rat    ! Width parameter for sigma_hm_1^2 / mu_hm_1^2    [-]
 
     logical :: l_corr_array_scaling
-
-    ! Flags used for covariance clipping of <w'hm'>.
-    logical, parameter :: &
-      l_first_clip_ts = .true., & ! First instance of clipping in a timestep.
-      l_last_clip_ts  = .true.    ! Last instance of clipping in a timestep.
 
     character(len=10) :: &
       hydromet_name    ! Name of a hydrometeor
@@ -529,11 +514,8 @@ module setup_clubb_pdf_params
       do j = 1, hydromet_dim
 
         ! Clip the value of covariance <w'hm'> on thermodynamic levels.
-        call clip_covar( nzt, ngrdcol, clip_wphydrometp, l_first_clip_ts,   & ! In
-                         l_last_clip_ts, dt, wp2_zt,                        & ! In
+        call clip_covar( nzt, ngrdcol, clip_wphydrometp, wp2_zt,            & ! In
                          hydrometp2_zt(:,:,j),                              & ! In
-                         l_predict_upwp_vpwp,                               & ! In
-                         stats,                                             & ! Inout
                          wphydrometp_zt(:,:,j),                             & ! Inout
                          wphydrometp_chnge(:,:,j) )                           ! Inout
 

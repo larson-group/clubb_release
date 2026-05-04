@@ -75,7 +75,6 @@ module advance_xp2_xpyp_module
                                iiPDF_type,                                & ! In
                                tridiag_solve_method,                      & ! In
                                fill_holes_type,                           & ! In
-                               l_predict_upwp_vpwp,                       & ! In
                                l_ho_nontrad_coriolis,                     & ! In
                                l_min_xp2_from_corr_wx,                    & ! In
                                l_C2_cloud_frac,                           & ! In
@@ -279,11 +278,6 @@ module advance_xp2_xpyp_module
       fill_holes_type         ! Specifier for which hole filling method to use
 
     logical, intent(in) :: &
-      l_predict_upwp_vpwp,    & ! Flag to predict <u'w'> and <v'w'> along with <u> and <v>
-                                ! alongside the advancement of <rt>, <w'rt'>, <thl>, <wpthlp>,
-                                ! <sclr>, and <w'sclr'> in subroutine advance_xm_wpxp.  Otherwise,
-                                ! <u'w'> and <v'w'> are still approximated by eddy diffusivity when
-                                ! <u> and <v> are advanced in subroutine advance_windm_edsclrm.
       l_ho_nontrad_coriolis,  & ! Flag to implement the nontraditional Coriolis terms in the
                                 ! prognostic equations of <w'w'>, <u'w'>, and <u'u'>.
       l_min_xp2_from_corr_wx, & ! Flag to base the threshold minimum value of xp2 (rtp2 and thlp2)
@@ -410,7 +404,7 @@ module advance_xp2_xpyp_module
       lhs_diff_uv,  & ! Diffusion contributions to lhs for <w'u'^2> and <w'v'^2>
       lhs_ma          ! Mean advection contributions to lhs
 
-    logical :: l_scalar_calc, l_first_clip_ts, l_last_clip_ts
+    logical :: l_scalar_calc
 
     ! Constant parameters
     logical, parameter :: &
@@ -1241,13 +1235,16 @@ module advance_xp2_xpyp_module
     ! -1 <= corr_(r_t,th_l) <= 1.
     ! Since r_t'^2, th_l'^2, and r_t'th_l' are all computed in the
     ! same place, clipping for r_t'th_l' only has to be done once.
-    l_first_clip_ts = .true.
-    l_last_clip_ts = .true.
-    call clip_covar( nzm, ngrdcol, xp2_xpyp_rtpthlp, l_first_clip_ts, & ! Intent(in)
-                     l_last_clip_ts, dt, rtp2, thlp2,                 & ! Intent(in)
-                     l_predict_upwp_vpwp,                             & ! Intent(in)
-                     stats,                                           & ! Intent(in)
+    if ( stats%l_sample ) then
+      !$acc update host( rtpthlp )
+      call stats_begin_budget( "rtpthlp_cl", rtpthlp / dt, stats )
+    end if
+    call clip_covar( nzm, ngrdcol, xp2_xpyp_rtpthlp, rtp2, thlp2,     & ! Intent(in)
                      rtpthlp, rtpthlp_chnge )                           ! Intent(inout)
+    if ( stats%l_sample ) then
+      !$acc update host( rtpthlp )
+      call stats_finalize_budget( "rtpthlp_cl", rtpthlp / dt, stats )
+    end if
 
     if ( l_scalar_calc ) then
 
@@ -1324,12 +1321,7 @@ module advance_xp2_xpyp_module
                               stats,                                                & ! In
                               sclrprtp(:,:,sclr) )                               ! Intent(inout)
         else
-          l_first_clip_ts = .true.
-          l_last_clip_ts = .true.
-          call clip_covar( nzm, ngrdcol, clip_sclrprtp, l_first_clip_ts,  & ! Intent(in)
-                           l_last_clip_ts, dt, sclrp2(:,:,sclr), rtp2,    & ! Intent(in)
-                           l_predict_upwp_vpwp,                           & ! Intent(in)
-                           stats,                                         & ! Intent(in)
+          call clip_covar( nzm, ngrdcol, clip_sclrprtp, sclrp2(:,:,sclr), rtp2, & ! Intent(in)
                            sclrprtp(:,:,sclr), sclrprtp_chnge(:,:,sclr) )   ! Intent(inout)
         end if
       enddo
@@ -1357,12 +1349,7 @@ module advance_xp2_xpyp_module
                               stats,                                                 & ! In
                               sclrpthlp(:,:,sclr) )                              ! Intent(inout)
         else
-          l_first_clip_ts = .true.
-          l_last_clip_ts = .true.
-          call clip_covar( nzm, ngrdcol, clip_sclrpthlp, l_first_clip_ts,   & ! Intent(in)
-                           l_last_clip_ts, dt, sclrp2(:,:,sclr), thlp2,     & ! Intent(in)
-                           l_predict_upwp_vpwp,                             & ! Intent(in)
-                           stats,                                           & ! Intent(in)
+          call clip_covar( nzm, ngrdcol, clip_sclrpthlp, sclrp2(:,:,sclr), thlp2, & ! Intent(in)
                            sclrpthlp(:,:,sclr), sclrpthlp_chnge(:,:,sclr) )   ! Intent(inout)
         end if
       enddo
