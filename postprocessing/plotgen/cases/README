@@ -18,7 +18,7 @@ to <YOUR CASE NAME>_budget.case.
 2. Open your newly created case file. You can do a find and replace for
 all occurrences of case_name to whatever your case name is. For example, 
 for cloud_feedback_s12, you would replace all occurrences of case_name
-with cloud_feedback_s12 (or whatever you type after run_scm.bash).
+with cloud_feedback_s12 (or whatever you type after run_scm.py).
 
 3. Test your changes. If you have data, plotgen should automatically plot
 it for you. 

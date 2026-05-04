@@ -9,7 +9,7 @@ import glob
 # Directory this script lives in, which is required to be clubb root
 CLUBB_ROOT = os.path.dirname(os.path.abspath(__file__))
 
-clubbstandards_script = os.path.join(CLUBB_ROOT, "utilities/CLUBBStandardsCheck.py") # perl version is utilities/CLUBBStandardsCheck.pl
+clubbstandards_script = os.path.join(CLUBB_ROOT, "utilities/CLUBBStandardsCheck.py") 
 
 clubb_driver_src      = os.path.join(CLUBB_ROOT, "src/clubb_driver.F90")
 CLUBB_core_dir        = os.path.join(CLUBB_ROOT, "src/CLUBB_core/")
@@ -110,7 +110,8 @@ def resolve_compiler_and_toolchain(args):
             candidates.append(fc_canonical)
 
     if not candidates:
-        print(f"ERROR: No compiler detected (FC or LMOD_FAMILY_COMPILER) and no -toolchain specified")
+        print(f"ERROR: No compiler detected (FC or LMOD_FAMILY_COMPILER) and "
+                f"no -toolchain specified")
         sys.exit(1)
 
     for name in candidates:
@@ -130,25 +131,72 @@ def configure_cmake(args, toolchain_file, inst_dir, build_type):
 
     """Run the cmake configure step."""
 
+    # --- AUTOMATED TOOLCHAIN COUPLING ---
+    # If FC isn't set, default to gfortran
+    fc_env = os.environ.get("FC", "gfortran")
+
+    # This combines the fortran with the C compiler (as long as it exists - 'which')
+        # This is needed for the netcdf
+    if "nvfortran" in fc_env and shutil.which("nvc"):
+        os.environ["CC"] = "nvc"
+    elif "ifx" in fc_env and shutil.which("icx"):
+        os.environ["CC"] = "icx"
+    elif "ifort" in fc_env and shutil.which("icc"):
+        os.environ["CC"] = "icc"
+    # ------------------------------------
+
+    
     print(f"about to cmnake {os.getcwd()}")
 
     # Configure CMake
     cmake_cmd = [
         "cmake",
         f"-S{CLUBB_ROOT}",
+
+        # --- Base Configuration ---
+        f"-DCMAKE_TOOLCHAIN_FILE={toolchain_file}",
+        f"-DCMAKE_INSTALL_PREFIX={inst_dir}",
+        f"-DCMAKE_BUILD_TYPE={build_type}",
+        f"-DPRECISION={args.precision}",
+        f"-DGPU={args.gpu}",
+
+        # --- NetCDF & External Library Linker Fixes ---
+        "-DBUILD_SHARED_LIBS=OFF", # Shared libraries complicate the building of netcdf
         f"-DUSE_NetCDF={to_on_off(not args.disable_netcdf)}",  # default ON
+        
+        # RPath injection (Runtime path for external libraries)
+        f"-DCMAKE_INSTALL_RPATH={inst_dir}/lib;{inst_dir}/lib64",
+        "-DCMAKE_INSTALL_RPATH_USE_LINK_PATH=TRUE",
+        # ---------------
+        
+        # --- FIX INTEL/NVHPC SHARED LIBRARY LINKING ---
+        "-DCMAKE_POSITION_INDEPENDENT_CODE=ON", # This allows machine code that can be ran anywhere
+        # ----------------------------------------------
+
+        # --- Core Physics & Features ---
         f"-DSILHS={to_on_off(not args.disable_silhs)}",        # default ON
         f"-DENABLE_F2PY={to_on_off(args.python)}",             # default OFF
         f"-DENABLE_OMP={to_on_off(args.openmp)}",              # default OFF
         f"-DTUNING={to_on_off(args.tuning)}",                  # default OFF
         f"-DUSE_GPTL={to_on_off(args.gptl)}",                  # default OFF
-        f"-DCMAKE_TOOLCHAIN_FILE={toolchain_file}",
-        f"-DCMAKE_INSTALL_PREFIX={inst_dir}",
-        f"-DPRECISION={args.precision}",
-        f"-DCMAKE_BUILD_TYPE={build_type}",
-        f"-DGPU={args.gpu}",
+
+        # --- Python Environment ---
         f"-DPython_EXECUTABLE={shutil.which('python')}",
     ]
+
+    # --- SMARTER NETCDF DETECTION ---
+    # If we are NOT using gfortran, we should ignore the system NetCDF 
+    # because it's almost certainly built for gfortran and will crash the build.
+    if "gfortran" not in fc_env:
+        # Manually set the variables to not found to bypass the NetCDF search
+        cmake_cmd.extend([
+            "-DNetCDF_C_LIBRARY=NetCDF_C_LIBRARY-NOTFOUND",
+            "-DNetCDF_C_INCLUDE_DIR=NetCDF_C_INCLUDE_DIR-NOTFOUND",
+            "-DNetCDF_Fortran_LIBRARY=NetCDF_Fortran_LIBRARY-NOTFOUND",
+            "-DNetCDF_Fortran_INCLUDE_DIR=NetCDF_Fortran_INCLUDE_DIR-NOTFOUND"
+        ])
+    # --------------------------------
+
 
     if shutil.which("ninja"):
         cmake_cmd += ["-G", "Ninja"]
@@ -246,22 +294,31 @@ def main():
     # Core build options
     parser.add_argument("-install", metavar="DIR", help="Install directory for CLUBB")
     parser.add_argument("-toolchain", metavar="FILE", help="Path to CMake toolchain file")
-    parser.add_argument("-gpu", choices=["none", "openacc", "openmp"], default="none", help="GPU option for build")
-    parser.add_argument("-precision", choices=["single", "double", "quad"], default="double", help="Floating-point precision")
+    parser.add_argument("-gpu", choices=["none", "openacc", "openmp"], default="none", 
+                        help="GPU option for build")
+    parser.add_argument("-precision", choices=["single", "double", "quad"], default="double", 
+                        help="Floating-point precision")
     parser.add_argument("-debug", action="store_true", help="Compile in debug mode")
     parser.add_argument("-run_tests", action="store_true", help="Run ctests after compilation")
     parser.add_argument("-python", action="store_true", help="Enable F2PY Python extension build")
-    parser.add_argument("-fresh", action="store_true", help="Delete the selected build directory before configuring")
+    parser.add_argument("-fresh", action="store_true", 
+                        help="Delete the selected build directory before configuring")
 
     # Feature toggles
-    parser.add_argument("-disable_netcdf", action="store_true", help="Disable NetCDF output support (default: enabled)")
-    parser.add_argument("-disable_silhs", action="store_true", help="Disable SILHS (default: enabled)")
-    parser.add_argument("-openmp", action="store_true", help="Enable OpenMP threading (default: disabled)")
-    parser.add_argument("-tuning", action="store_true", help="Enable TUNING mode with extra runtime checks (default: disabled)")
-    parser.add_argument("-gptl", action="store_true", help="Enable GPTL timing library (default: disabled)")
+    parser.add_argument("-disable_netcdf", action="store_true", 
+                        help="Disable NetCDF output support (default: enabled)")
+    parser.add_argument("-disable_silhs", action="store_true", 
+                        help="Disable SILHS (default: enabled)")
+    parser.add_argument("-openmp", action="store_true", 
+                        help="Enable OpenMP threading (default: disabled)")
+    parser.add_argument("-tuning", action="store_true", 
+                        help="Enable TUNING mode with extra runtime checks (default: disabled)")
+    parser.add_argument("-gptl", action="store_true", 
+                        help="Enable GPTL timing library (default: disabled)")
 
     # Passthrough
-    parser.add_argument("extra_args", nargs=argparse.REMAINDER, help="Extra arguments passed to CMake")
+    parser.add_argument("extra_args", nargs=argparse.REMAINDER, 
+                        help="Extra arguments passed to CMake")
 
     args = parser.parse_args()
 
@@ -297,7 +354,8 @@ def main():
     build_log = os.path.join(build_dir, f"cmake_build_output.txt") 
     open(build_log, "w").close()
 
-    inst_dir = args.install if args.install else os.path.join(CLUBB_ROOT, f"install/{compiler}{subdir_suffix}") 
+    inst_dir = args.install if args.install else os.path.join(CLUBB_ROOT, 
+                                                            f"install/{compiler}{subdir_suffix}") 
     print(f"Setting CLUBB installation dir: {inst_dir}")
 
     # Run configure step and save installation directory
@@ -326,7 +384,8 @@ def main():
 
     if source_check_failed:
         # Build passed, but one of the checks failed
-        print("\n\033[93mBuild completed successfully, but some source code checks have failed.\033[0m")
+        print("\n\033[93mBuild completed successfully, but some source code "
+                "checks have failed.\033[0m")
     else:
         # Successful build and no failed checks 
         print("\n\033[92mBuild completed successfully, and all source code checks passed.\033[0m")

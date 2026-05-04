@@ -23,6 +23,18 @@ module clubb_driver
     omp_get_thread_num ! Function
 #endif
 
+#ifdef GPTL
+   use gptl, only: &
+     GPTLsetoption, &
+     GPTLprint_method, &
+     GPTLfull_tree, &
+     GPTLoverhead, &
+     GPTLabort_on_error, &
+     GPTLinitialize, &
+     GPTLpr, &
+     GPTLfinalize
+#endif
+
   !--------------------------------- Types ---------------------------------
 
   use grid_class, only: &
@@ -3107,6 +3119,11 @@ module clubb_driver
     !----------------------------------- Local Variables -----------------------------------
     logical :: &
       l_stats
+
+#ifdef GPTL
+    integer :: &
+      ret_code
+#endif
 
     ! coarse-grained timing budget of main time stepping loop
     real( kind = core_rknd ) :: &

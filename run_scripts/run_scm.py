@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+# Doesn't break when running run_scm.py using old version of python
+from __future__ import annotations # This means that | for strings doesn't break in old versions
 import argparse
 import os
 import re
@@ -88,7 +90,6 @@ def read_model_times(model_file):
                     pass
     return values
 
-
 def parse_multicol_arg(value: str):
     """Parse -multicol as either an integer ngrdcol or an hr-style spec string."""
     stripped = value.strip()
@@ -130,7 +131,9 @@ def convert_to_multi_col(
 
     out_file = os.path.join(output_dir, f"{case_name}_multicol_params.in")
 
-    cmd = [sys.executable, multi_col_params_script, "-param_file", params_file, "-out_file", out_file]
+    cmd = [sys.executable, multi_col_params_script,
+             "-param_file", params_file,
+             "-out_file", out_file]
     if hr_spec:
         cmd.extend(["-hr", hr_spec])
     else:
@@ -139,7 +142,8 @@ def convert_to_multi_col(
     try:
         subprocess.run(cmd, check=True)
     except subprocess.CalledProcessError as e:
-        sys.exit(f"create_multi_col_params failed (exit {e.returncode}). Command was:\n  {' '.join(cmd)}")
+        sys.exit(f"create_multi_col_params failed (exit {e.returncode}). "
+                    f"Command was:\n  {' '.join(cmd)}")
 
     if not os.path.isfile(out_file):
         sys.exit(f"Expected output file not created: {out_file}")
@@ -181,7 +185,8 @@ def setup_files_and_aggregate(args, output_dir):
         sys.exit(f"{model_file} does not exist")
 
     # Config dir, default is input/tunable_parameters
-    config_dir = os.path.abspath(args.config) if args.config else os.path.join(CLUBB_ROOT, "input/tunable_parameters")
+    config_dir = (os.path.abspath(args.config) if args.config 
+                    else os.path.join(CLUBB_ROOT, "input/tunable_parameters"))
 
     if not os.path.isdir(config_dir):
         sys.exit(f"--config directory does not exist: {config_dir}")
@@ -192,7 +197,8 @@ def setup_files_and_aggregate(args, output_dir):
     silhs_params_file = args.silhs_params or os.path.join(config_dir, "silhs_parameters.in")
     stats_arg = (args.stats or "").strip()
     disable_stats = stats_arg.lower() == "none"
-    stats_file = None if disable_stats else (args.stats or os.path.join(CLUBB_ROOT, "input/stats/standard_stats.in"))
+    stats_file = (None if disable_stats 
+                    else (args.stats or os.path.join(CLUBB_ROOT, "input/stats/standard_stats.in")))
 
     run_cwd = RUN_SCRIPTS
     run_env = None
@@ -245,7 +251,8 @@ def setup_files_and_aggregate(args, output_dir):
             pythonpath_entries.append(existing_pythonpath)
         run_env["PYTHONPATH"] = os.pathsep.join(pythonpath_entries)
     else:
-        # Find the executable based on compiler by default (install/COMPILER/clubb_standalone), otherwise
+        # Find the executable based on compiler by default 
+        # (install/COMPILER/clubb_standalone), otherwise
         # default to (install/lastest/clubb_standalone) which points to the last one compiled
         #compiler    = os.path.basename(os.environ["FC"]) if "FC" in os.environ else "latest"
 
@@ -391,8 +398,9 @@ def main():
 
     parser = argparse.ArgumentParser( description="Run the standalone CLUBB model")
 
-    # The "config" folder is assumed to contain the tunable parameters, silhs parameters, and config flags.
-    # This is meant to be a quick way to input all these files without having to specify them individually.
+    # The "config" folder is assumed to contain the tunable parameters, 
+    # silhs parameters, and config flags. This is meant to be a quick way to input all these 
+    # files without having to specify them individually.
     # Individually specificed files will overwrite the ones found from here
     parser.add_argument("-config", metavar="[DIR]",
         help=("Directory containing all three tunable files:\n"
@@ -412,7 +420,8 @@ def main():
         help=("SILHS parameters file.\n"
             "Used to override silhs_params file defined by --config"))
 
-    # Options to input grid files, and nzmax defines the maximum number of vertical levels when inputting grid files like this
+    # Options to input grid files, and nzmax defines the maximum number of vertical levels 
+    # when inputting grid files like this
     parser.add_argument("-zt_grid", metavar="[FILE]",
         help="Specify a zt grid file from input/grid.\nDefault: unused")
     parser.add_argument("-zm_grid", metavar="[FILE]",
@@ -426,8 +435,9 @@ def main():
               "Default: input/stats/standard_stats.in.\n"
               "Use 'none' to disable stats output."))
 
-    # This script will try to figure out the right executable to use based on the compiler in the environment
-    # but inputting a specific executable will override that with the specified one
+    # This script will try to figure out the right executable to use based on the 
+    # compiler in the environment but inputting a specific executable will 
+    # override that with the specified one
     parser.add_argument("-exe", metavar="[EXECUTABLE]",
         help="CLUBB executable to use.\nDefault: install/clubb_standalone")
         
@@ -455,7 +465,8 @@ def main():
 
     # Runtime options
     parser.add_argument("-debug", metavar="[NUM]",
-        help="Debug level (0–3) that controls CLUBB's runtime checks (0 is no checks).\nDefault specified in model file.")
+        help="Debug level (0–3) that controls CLUBB's runtime checks (0 is no checks)."
+                "\nDefault specified in model file.")
     parser.add_argument("-max_iters", metavar="[NUM]", type=int,
         help="Maximum number of iterations")
     parser.add_argument("-dt_main", metavar="[SECONDS]", type=int,
@@ -465,7 +476,8 @@ def main():
     parser.add_argument("-tout", metavar="[SECONDS]", type=int,
         help="Stats output interval (s). Use 0 to disable.\nDefault from model file.")
 
-    # Setting -multicol will call create_multi_col_params.py to generate a multi-column parameter file.
+    # Setting -multicol will call create_multi_col_params.py to
+        # generate a multi-column parameter file.
     # Integer input uses the legacy dup_tweak path. A string matching the hr syntax is forwarded to
     # create_multi_col_params.py -hr for hypergrid generation.
     parser.add_argument("-multicol", metavar="[NUM|SPEC]", type=parse_multicol_arg,
@@ -483,20 +495,24 @@ def main():
     args = parser.parse_args()
 
     # Error check
-    ndefined = sum(bool(x) for x in [args.exe, args.legacy, args.driver_test, args.python, args.jax])
+    ndefined = (sum(bool(x) for x in 
+                        [args.exe, args.legacy, args.driver_test, args.python, args.jax]))
     if ndefined > 1:
         parser.error("Only one of -exe, -legacy, -driver_test, -python, or -jax may be specified.")
     # Validate grid options
     if args.zt_grid and args.zm_grid:
         sys.exit(f"\n\033[91mERROR: Cannot specify both a ZT grid and a ZM grid\033[0m")
     if args.nzmax and not (args.zt_grid or args.zm_grid):
-        print("\n\033[93mWARNING: Specifying --nzmax will have no effect without specifying a --zm_grid or --zt_grid\033[0m")
+        print("\n\033[93mWARNING: Specifying --nzmax will have no effect without "
+                "specifying a --zm_grid or --zt_grid\033[0m")
 
-    output_dir = os.path.abspath(args.out_dir) if args.out_dir else os.path.abspath(DEFAULT_OUTPUT_DIR)
+    output_dir = (os.path.abspath(args.out_dir) if args.out_dir 
+                    else os.path.abspath(DEFAULT_OUTPUT_DIR))
     os.makedirs(output_dir, exist_ok=True)
 
     # Step 1: setup and aggregate namelist files into <output_dir>/CASE.in
-    clubb_input_namelist, model_file, run_cmd, run_cwd, run_env = setup_files_and_aggregate(args, output_dir)
+    (clubb_input_namelist, model_file, 
+            run_cmd, run_cwd, run_env) = setup_files_and_aggregate(args, output_dir)
 
     # Step 2: edit clubb_input_namelist based on input specifications
     edit_namelist(args, clubb_input_namelist, model_file, output_dir)

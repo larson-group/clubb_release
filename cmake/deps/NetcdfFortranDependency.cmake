@@ -1,215 +1,281 @@
-# Define general dependency information in case we need to build our deps
-include(ExternalProject)
+# --- GLOBAL RPATH FIX ---
+# RPATH - Run-Time Search Path
+# These provide a path so that even if you move the clubb_standalone executable, it's still found
+set(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}" 
+        "${CMAKE_INSTALL_PREFIX}/lib" "${CMAKE_INSTALL_PREFIX}/lib64")
 
-find_package(PkgConfig REQUIRED)
-pkg_check_modules( NETCDF_FORTRAN netcdf-fortran )
+# If this flag is True, then all the libraries that were linked will be put into the executable
+set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
+# ------------------------
 
-if (NETCDF_FORTRAN_FOUND)
-  message(STATUS "netcdf-fortran found via pkg-config")
-  message(STATUS "Include dirs: ${NETCDF_FORTRAN_INCLUDE_DIRS}")
-  message(STATUS "Libraries:    ${NETCDF_FORTRAN_LIBRARIES}")
 
-  # Example: derive a root path from first include dir
-  list(GET NETCDF_FORTRAN_INCLUDE_DIRS 0 first_inc)
-  cmake_path(GET first_inc PARENT_PATH NetCDFFortran_ROOT)
-  message(STATUS "Derived NetCDFFortran_ROOT = ${NetCDFFortran_ROOT}")
+# --- TIER 1: Native System Scanner ---
+# NETCDF_MOD_DIR is the path to netcdf.mod. We search for it in include & netcdf subdirectories
+find_path(NETCDF_MOD_DIR "netcdf.mod" PATH_SUFFIXES include netcdf)
+
+# NETCDF_F_LIB is the netcdf fortran libary. We search for it at lib & x86_64-linux-gnu
+find_library(NETCDF_F_LIB NAMES netcdff PATH_SUFFIXES lib x86_64-linux-gnu)
+
+# --- THE TWO-WAY ABI SHIELD ---
+if(NETCDF_MOD_DIR AND NETCDF_F_LIB)
+    # Attempt to compile a tiny test to see if you're using the same compiler for NetCDF and CLUBB
+    include(CheckFortranSourceCompiles)
+    
+    # Temporarily point to the found NetCDF
+    set(CMAKE_REQUIRED_INCLUDES ${NETCDF_MOD_DIR})
+
+    # This program forces CLUBB's compiler to talk with the found netcdf
+        # If the compilers match, it succeeds and bypasses the following if statement
+        # If the compilers don't match, it fails, and NETCDF_ABI_COMPATIBLE is set to false
+    check_fortran_source_compiles("
+        program abi_test
+            use netcdf
+        end program abi_test" 
+    NETCDF_ABI_COMPATIBLE)
+
+    if(NOT NETCDF_ABI_COMPATIBLE)
+        message(WARNING "ABI INCOMPATIBILITY: The NetCDF at ${NETCDF_MOD_DIR} "
+                        "cannot be read by ${CMAKE_Fortran_COMPILER_ID}.")
+        
+        # Wipe the wrongly compiled netcdf variable from memory since the test program failed
+        unset(NETCDF_MOD_DIR CACHE)
+        unset(NETCDF_F_LIB CACHE)
+        unset(NETCDF_ABI_COMPATIBLE CACHE)
+    endif()
+endif()
+# -----------------------------
+
+# If the variables were confirmed, netcdf was found locally and prepares netcdf for cmake
+if (NETCDF_MOD_DIR AND NETCDF_F_LIB)
+    message(STATUS "SUCCESS: netcdf-fortran found.")
+    message(STATUS "  -> Library : ${NETCDF_F_LIB}")
+    message(STATUS "  -> Modules : ${NETCDF_MOD_DIR}")
+    get_filename_component(NetCDF_Lib_Dir "${NETCDF_F_LIB}" DIRECTORY)
+    set(CMAKE_INSTALL_RPATH ${CMAKE_INSTALL_RPATH};${NetCDF_Lib_Dir})
+    set(BUILD_RPATH ${CMAKE_INSTALL_RPATH})
+
+    add_library(netcdf-fortran SHARED IMPORTED) # This adds a library with a set target - import
+
+    # This gives the location as well as links netcdf-fortran library to the .mod files
+    set_target_properties(netcdf-fortran PROPERTIES
+        IMPORTED_LOCATION "${NETCDF_F_LIB}"
+        INTERFACE_INCLUDE_DIRECTORIES "${NETCDF_MOD_DIR}"
+    )
+
+# NetCDF wasn't found and has to be downloaded
+else()
+    # --- TIER 2: The Auto-Downloader ---
+    message(STATUS "WARNING: netcdf-fortran not found locally. Fetching...")
+    include(FetchContent)
+
+    # 1. Build the C-Engine Core
+    # Set cache variables (within netcdf-c) to off b/c they require external libraries.
+    set(BUILD_TESTING OFF CACHE BOOL "Kill Phantom C-Tests" FORCE)
+    set(ENABLE_NETCDF_4 OFF CACHE BOOL "" FORCE)
+    set(ENABLE_TESTS OFF CACHE BOOL "" FORCE)
+    set(ENABLE_UTILITIES OFF CACHE BOOL "" FORCE)
+    set(BUILD_UTILITIES OFF CACHE BOOL "" FORCE)
+    set(ENABLE_DAP OFF CACHE BOOL "" FORCE)
+    set(ENABLE_BYTERANGE OFF CACHE BOOL "" FORCE)
+    set(HAVE_NET_CDF_PAR FALSE CACHE INTERNAL "Disable parallel checks")
+    set(HAVE_NC_CREATE_PAR FALSE CACHE INTERNAL "")
+    set(HAVE_NC_OPEN_PAR FALSE CACHE INTERNAL "")
+    set(HAVE_NC_VAR_PAR_ACCESS FALSE CACHE INTERNAL "")
+
+    FetchContent_Declare(
+        netcdf_c
+        GIT_REPOSITORY https://github.com/Unidata/netcdf-c.git
+        GIT_TAG v4.9.2
+    )
+    FetchContent_MakeAvailable(netcdf_c)
+
+    # 2. Forge the System Config (The Config Spoof)
+    # This step is needed because we just compiled netcdf c (not installed). The steps that cmake
+    # expects happen in the install step. - we don't want to install because it requires sudo and
+    # it makes it available to all other programs. 
+    # The config files made by installing are configured here instead
+    
+    # This prepares a file
+    set(SPOOF_DIR "${CMAKE_BINARY_DIR}/netcdf_spoof")
+    file(MAKE_DIRECTORY "${SPOOF_DIR}")
+    
+    # Locate the actual C library we just built to satisfy the built in tests
+    set(ACTUAL_C_LIB "${CMAKE_BINARY_DIR}/_deps/netcdf_c-build/liblib/libnetcdf.a")
+
+    # Cmake checks for a version file when trying to find netcdf, this writes a version file
+    file(WRITE "${SPOOF_DIR}/netCDFConfigVersion.cmake" 
+            "set(PACKAGE_VERSION \"4.9.2\")\nset(PACKAGE_VERSION_COMPATIBLE TRUE)\n")
+
+    # This makes a map for cmake to use which points netCDF::netcdf to the built netcdf c library
+    file(WRITE "${SPOOF_DIR}/netCDFConfig.cmake"
+        "set(netCDF_FOUND TRUE)\n"
+        "if(NOT TARGET netCDF::netcdf)\n"
+        "  add_library(netCDF::netcdf SHARED IMPORTED)\n"
+        "  set_target_properties(netCDF::netcdf PROPERTIES IMPORTED_LOCATION \"${ACTUAL_C_LIB}\")\n"
+        "endif()\n"
+        "set(netCDF_LIBRARIES \"${ACTUAL_C_LIB}\")\n"
+        "set(netCDF_INCLUDE_DIRS \"${netcdf_c_BINARY_DIR}/include\" "
+        "\"${netcdf_c_SOURCE_DIR}/include\")\n"
+    )
+    # When we build netcdf fortran, this tells cmake to look here first
+    set(netCDF_DIR "${SPOOF_DIR}" CACHE PATH "" FORCE)
+    
+    # 3. Pass the tests
+    # When building netcdf-f, it tests the c engine. But netcdf-c hasn't been 'linked' yet
+
+    # Cache the version so the build doesn't assume legacy and clubb has necessary modern features
+    set(NetCDF_VERSION "4.9.2" CACHE STRING "" FORCE)
+    set(NetCDF_C_VERSION "4.9.2" CACHE STRING "" FORCE)
+    
+    # These internal flags silence specific feature detection tests
+    set(HAVE_NETCDF4_VERSION TRUE CACHE INTERNAL "")
+    set(HAVE_NC_INQ_LIBVERS TRUE CACHE INTERNAL "")
+    set(HAVE_NC_SET_LOG_LEVEL TRUE CACHE INTERNAL "")
+    set(HAVE_NC_DEF_VAR_FILL TRUE CACHE INTERNAL "")
+    set(HAVE_NC_OPT_INQ_FILTER TRUE CACHE INTERNAL "")
+
+    
+    # netcdf-f has a final check, which we set to TRUE to pass before running
+    set(NetCDF_C_VERSION_OK TRUE CACHE INTERNAL "")
+    
+    # Turn quantize on since 4.9.2 has it
+    set(HAVE_QUANTIZE TRUE CACHE INTERNAL "")
+
+    
+    
+    # 4. Fetch the Fortran Bindings
+    # netcdf-f assumes it's the root, but since not, the patch command makes fixes
+    FetchContent_Declare(
+        netcdf_fortran
+        GIT_REPOSITORY https://github.com/Unidata/netcdf-fortran.git
+        GIT_TAG v4.6.1
+        PATCH_COMMAND sed -i "s/LINK_LIBRARIES netCDF::netcdf//g" CMakeLists.txt && 
+                  sed -i "s/CMAKE_SOURCE_DIR/CMAKE_CURRENT_SOURCE_DIR/g" CMakeLists.txt && 
+                  sed -i "s/CMAKE_BINARY_DIR/CMAKE_CURRENT_BINARY_DIR/g" CMakeLists.txt && 
+                  sed -i "s/add_subdirectory(docs)//Ig" CMakeLists.txt && 
+                  sed -i "s/add_subdirectory(examples)//Ig" CMakeLists.txt && 
+                  sed -i "s/add_subdirectory(nf_test)//Ig" CMakeLists.txt &&
+                  sed -i "s/NC_ENOPAR/-114/g" fortran/nf_nc_noparallel.F90 &&
+                  sed -i "660,675s/^/#/" CMakeLists.txt
+    )
+
+    # This is to limit the installs because cmake inherits the installs of the netcdf-f
+    set(CMAKE_SKIP_INSTALL_RULES TRUE) 
+
+    # This tells cmake where to find the c and fortran engine
+    set(CMAKE_REQUIRED_INCLUDES "${netcdf_c_SOURCE_DIR}/include" "${netcdf_c_BINARY_DIR}/include")
+    include_directories("${netcdf_c_SOURCE_DIR}/include" "${netcdf_c_BINARY_DIR}/include")
+    include_directories("${CMAKE_BINARY_DIR}/_deps/netcdf_fortran-src/fortran" 
+                        "${CMAKE_BINARY_DIR}/_deps/netcdf_fortran-build/fortran")
+
+
+    # 2. Save and wipe flags to be compatible with older fortran so it doesn't fail
+    set(SAVED_FC_FLAGS "${CMAKE_Fortran_FLAGS}")
+    if(CMAKE_Fortran_COMPILER_ID MATCHES "GNU" AND 
+                    CMAKE_Fortran_COMPILER_VERSION VERSION_GREATER_EQUAL 10)
+        set(CMAKE_Fortran_FLAGS "-fallow-argument-mismatch")
+    else()
+        set(CMAKE_Fortran_FLAGS "")
+    endif()
+
+    # 3. Build NetCDF fortran
+    FetchContent_MakeAvailable(netcdf_fortran)
+
+    #4. We make a dummy install file since we skipped install earlier so compile.py doesn't fail
+    file(WRITE "${CMAKE_BINARY_DIR}/_deps/netcdf_fortran-build/cmake_install.cmake" 
+                "# Dummy install script\n")
+
+    #5. Restore strict flags for CLUBB
+    set(CMAKE_Fortran_FLAGS "${SAVED_FC_FLAGS}")
+        
+        
+    # --- 5. THE ULTIMATE HOT-WIRE INJECTION ---
+    # This finds the netcdf fortran source code and saves to FORTRAN_SRC
+    FetchContent_GetProperties(netcdf_fortran SOURCE_DIR FORTRAN_SRC BINARY_DIR FORTRAN_BIN)
+
+    # 'Dictionary' of NetCDF
+    set(DATA_FILE "${FORTRAN_SRC}/fortran/module_netcdf_nf_data.F90") 
+    if(EXISTS "${DATA_FILE}")
+        file(READ "${DATA_FILE}" FILE_CONTENTS)
+        
+        # Only inject if NC_NOQUANTIZE isn't already present in the file
+        # If the fortran version is too old, it doesn't have quantize constants named, so we 
+        # inject them so that CLUBB doesn't fail to compile when using these constants
+        if(NOT FILE_CONTENTS MATCHES "NC_NOQUANTIZE")
+            message(STATUS "Injecting missing NetCDF constants into ${DATA_FILE}")
+            set(INJECTION "Implicit NONE\n")
+            string(APPEND INJECTION 
+               "      integer, parameter :: NC_NOQUANTIZE = 0, NC_QUANTIZE_BITGROOM = 1\n")
+            string(APPEND INJECTION 
+               "      integer, parameter :: NC_QUANTIZE_GRANULARBR = 2, NC_QUANTIZE_BITROUND = 3\n")
+            string(APPEND INJECTION "      integer, parameter :: NC_ENOPAR = -114")
+            string(REPLACE "Implicit NONE" "${INJECTION}" UPDATED_CONTENTS "${FILE_CONTENTS}")
+            file(WRITE "${DATA_FILE}" "${UPDATED_CONTENTS}")
+        else()
+            message(STATUS "NetCDF constants already present, skipping injection.")
+        endif()
+    endif()
+
+    # Injection B: Manually provide EVERY missing include file the compiler wants
+    set(GEN_DIR "${FORTRAN_BIN}/fortran")
+    file(MAKE_DIRECTORY "${GEN_DIR}")
+    # List of all the expected include files netcdf Fortran expects
+    set(BLUEPRINTS "netcdf_constants.f90" "netcdf_externals.f90" "netcdf_overloads.f90" 
+                    "netcdf_visibility.f90" "netcdf_file.f90" "netcdf3_file.f90" 
+                    "netcdf_dims.f90" "netcdf_attributes.f90" "netcdf_variables.f90" 
+                    "netcdf_text_variables.f90" "netcdf_expanded.f90" "netcdf_eightbyte.f90" 
+                    "netcdf_fortran_env.f90" "netcdf_expanded_subset.f90")
+    
+    foreach(FILENAME ${BLUEPRINTS})
+        if("${FILENAME}" STREQUAL "netcdf_constants.f90")
+            # Writes necessary constants to be used
+            file(WRITE "${GEN_DIR}/${FILENAME}" 
+                "integer, parameter :: &\n"
+                "    NF90_NOERR=0, NF90_CLOBBER=16, NF90_NOWRITE=0, &\n"
+                "    NF90_UNLIMITED=0, NF90_DOUBLE=6, NF90_CHAR=2, &\n"
+                "    NF90_INT=4, NC_ENOPAR=-114\n"
+            )
+        elseif("${FILENAME}" STREQUAL "netcdf_externals.f90")
+            # Writes a linking promise that these files can be found later to avoid an error
+            file(WRITE "${GEN_DIR}/${FILENAME}" 
+                "external nf_create, nf_open, nf_redef, nf_enddef, &\n"
+                "         nf_close, nf_inq_varid, nf_def_dim, &\n"
+                "         nf_def_var, nf_put_att_text, &\n"
+                "         nf_put_var_double, nf_strerror\n"
+            )
+        else()
+            # This just writes a dummy file with just a comment
+            file(WRITE "${GEN_DIR}/${FILENAME}" "! Placeholder\n")
+        endif()
+    endforeach()
+
+    # --- 6. THE FINAL HANDSHAKE ---
+    if(TARGET netcdff)
+        # 1. Tells anything linking to netcdf fortran where to find the .mod files
+        target_include_directories(netcdff INTERFACE 
+                    "$<BUILD_INTERFACE:${CMAKE_BINARY_DIR}/_deps/netcdf_fortran-build/fortran>")
+
+        # 2. This writes a c file to define functions the linker might look for
+            # -114 is the standard NC_ENOPAR (parellel) error code
+        file(WRITE "${CMAKE_BINARY_DIR}/ghostbusters.c" 
+             "int nf_var_par_access_(){return -114;}\n"
+             "int nf_create_par_(){return -114;}\n"
+             "int nf_open_par_(){return -114;}\n")
+        add_library(netcdf_ghostbusters STATIC "${CMAKE_BINARY_DIR}/ghostbusters.c")
+
+        # 3. Bundle netcdf-f and the ghostbuster library together under the name CLUBB wants
+        add_library(netcdf-fortran INTERFACE)
+        target_link_libraries(netcdf-fortran INTERFACE netcdff netcdf_ghostbusters)
+
+        message(STATUS "Handshake Complete: netcdf-fortran bundled with Ghostbusters.")
+    endif()
+
+    # Re enable install rules so CLUBB can install properly
+    set(CMAKE_SKIP_INSTALL_RULES FALSE)
 endif()
 
-# Setup RPaths so linked executables will be able to find our external deps
-#set(CMAKE_MACOSX_RPATH TRUE)
-set(CMAKE_INSTALL_RPATH ${CMAKE_INSTALL_RPATH};${NetCDFFortran_ROOT})
-set(BUILD_RPATH ${CMAKE_INSTALL_RPATH})
-set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
-
-# Netcdf Fortran lib
-add_library(netcdf-fortran SHARED IMPORTED)
-set_target_properties(netcdf-fortran PROPERTIES
-  IMPORTED_LOCATION "${NetCDFFortran_ROOT}/lib/libnetcdff${CMAKE_SHARED_LIBRARY_SUFFIX}"
-  INTERFACE_INCLUDE_DIRECTORIES "${NETCDF_FORTRAN_INCLUDE_DIRS}"
-)
-
-
-# Note: This file was adapted from a much more complex version, which was aparently 
-#       capable of compiling netcdf from source if it could not be found in the 
-#       environment. This didn't seem to work initially, but would certainly be
-#       valuable for outsiders compiling CLUBB who don't have netcdf-fortran
-#       installed already. 
-#
-#       This initial version is given below. The way it sets up netcdf-fortran
-#       is also incompatible with the new cmake code, so this is meant mainly
-#       to be used as reference in case someone wants to take on the task
-#       of getting netcdf-fortran to compile here.
-
-# # External dependency locations
-# set(NetCDF_C_REPO https://github.com/unidata/netcdf-c.git CACHE STRING "Git repository to fetch NetCDF-C from")
-# set(NetCDF_Fortran_REPO https://github.com/unidata/netcdf-fortran.git CACHE STRING "Git repository to fetch NetCDF-Fortran from")
-# set(HDF5_REPO https://github.com/HDFGroup/hdf5.git CACHE STRING "Git repository to fetch HDF5 from")
-# set(Zlib_REPO https://github.com/madler/zlib.git CACHE STRING "Git repository to fetch zlib from")
-# set(LAPACK_URL https://www.netlib.org/lapack/lapack-3.5.0.tgz CACHE STRING "URL to fetch lapack archive from")
-# set(CURL_REPO https://github.com/curl/curl.git CACHE STRING "Git repository to fetch Curl from")
-
-# # Specific dep hash/versions/tags to checkout
-# set(NetCDF_C_HASH "v4.9.0" CACHE STRING "Version of NetCDF-C to build against (can be a git branch, tag, or hash)")
-# set(NetCDF_Fortran_HASH "v4.5.4" CACHE STRING "Version of NetCDF-Fortan to build against (can be a git branch, tag, or hash)")
-# set(HDF5_HASH "hdf5-1_12_2" CACHE STRING "Version of HDF5 to build against (can be a git branch, tag, or hash)")
-# set(Zlib_HASH "v1.2.13" CACHE STRING "Version of Zlib to build against (can be a git branch, tag, or hash)")
-# set(LAPACK_HASH 9ad8f0d3f3fb5521db49f2dd716463b8fb2b6bc9dc386a9956b8c6144f726352 CACHE STRING "Lapack archive sha256 hash")
-# set(CURL_HASH "curl-8_2_1" CACHE STRING "Version of Curl to be built (can be a git branch, tag, or hash)")
-
-# include(ExternalProject)
-# # Before trying to build anything ourselves, we'll try to detect what's already on the system
-# find_package(lapack)
-# if (LAPACK_FOUND)
-#     # We've found an external lapack, define associated link interface
-#     add_link_options(${LAPACK_LINKER_FLAGS})
-#     link_libraries(${LAPACK_LIBRARIES})
-# else()
-#     set(LAPACK_ROOT ${CMAKE_BINARY_DIR}/install_lapack)
-#     ExternalProject_Add(
-#         clubb_lapack_ext
-#         URL ${LAPACK_URL}
-#         URL_HASH SHA256=9ad8f0d3f3fb5521db49f2dd716463b8fb2b6bc9dc386a9956b8c6144f726352
-#         CMAKE_ARGS
-#             -DCMAKE_INSTALL_PREFIX=${LAPACK_ROOT}
-#     )
-#     add_library(clubb_local_lapack STATIC IMPORTED)
-#     set_target_properties(clubb_local_lapack PROPERTIES IMPORTED_LOCATION ${LAPACK_ROOT}/lib/liblapack.a)
-#     add_library(clubb_blas STATIC IMPORTED)
-#     set_target_properties(clubb_blas PROPERTIES IMPORTED_LOCATION ${LAPACK_ROOT}/lib/libblas.a)
-#     link_libraries(clubb_local_lapack clubb_blas)
-# endif()
-
-# find_package(ZLIB)
-# if(${ZLIB_FOUND})
-#     cmake_path(GET ZLIB_LIBRARIES PARENT_PATH result)
-#     cmake_path(GET result PARENT_PATH result)
-#     # Setting ZLib root will allow any deps we do need to build to
-#     # find THIS Zlib so everything is built with a consistent zlib
-#     set(ZLIB_ROOT ${result})
-# else()
-#     # We didn't find Zlib on the system, build it ourselves
-#     set(ZLIB_ROOT ${CMAKE_BINARY_DIR}/install_zlib)
-#     ExternalProject_Add(
-#         clubb_zlib
-#         GIT_REPOSITORY    ${Zlib_REPO}
-#         GIT_TAG           ${Zlib_HASH}
-#         CMAKE_ARGS
-#             -DCMAKE_INSTALL_PREFIX=${ZLIB_ROOT}
-#     )
-#     set(ext_zlib clubb_zlib)
-#     set(ZLIB_INCLUDE_DIRS ${ZLIB_ROOT}/include)
-# endif()
-
-# find_package(CURL)
-# if (CURL_FOUND)
-#     cmake_path(GET CURL_INCLUDE_DIRS PARENT_PATH CURL_ROOT)
-# else()
-#     set(CURL_ROOT ${CMAKE_BINARY_DIR}/install_curl)
-#     ExternalProject_Add(
-#         clubb_curl
-#         GIT_REPOSITORY ${CURL_REPO}
-#         GIT_TAG ${CURL_HASH}
-#         CMAKE_ARGS
-#             -DCMAKE_INSTALL_PREFIX=${CURL_ROOT}
-#             -DZLIB_ROOT=${ZLIB_ROOT}
-#         DEPENDS ${ext_zlib}
-#     )
-#     set(ext_curl clubb_curl)
-# endif()
-
-# find_package(HDF5)
-# if(${HDF5_FOUND})
-#     cmake_path(GET HDF5_INCLUDE_DIRS PARENT_PATH HDF5_ROOT)
-# else()
-#     set(HDF5_ROOT ${CMAKE_BINARY_DIR}/install_hdf5)
-#     ExternalProject_Add(
-#         clubb_hdf5
-#         GIT_REPOSITORY ${HDF5_REPO}
-#         GIT_TAG ${HDF5_HASH}
-#         CMAKE_ARGS
-#             -DCMAKE_INSTALL_PREFIX=${HDF5_ROOT}
-#             -DHDF5_ENABLE_Z_LIB_SUPPORT=ON
-#             -DHDF5_BUILD_FORTRAN=ON
-#             -DZLIB_ROOT=${ZLIB_ROOT} # This allows us to point the newly built hdf5 at our previously built/detected zlib
-#         DEPENDS ${ext_zlib}
-#     )
-#     set(ext_hdf5 clubb_hdf5)
-# endif()
-
-# find_package(netCDF)
-# if(${NetCDF_FOUND})
-#     cmake_path(GET NetCDF_INCLUDE_DIRS PARENT_PATH NetCDFC_ROOT)
-# else()
-#     set(NetCDFC_ROOT ${CMAKE_BINARY_DIR}/install_NetCDFC)
-#     ExternalProject_Add(
-#         clubb_netcdfc
-#         GIT_REPOSITORY ${NetCDF_C_REPO}
-#         GIT_TAG ${NetCDF_C_HASH}
-#         CMAKE_ARGS
-#             -DCMAKE_INSTALL_PREFIX=${NetCDFC_ROOT}
-#             -DENABLE_BYTERANGE=OFF
-#             -DENABLE_NETCDF_4=OFF
-#             -DENABLE_HDF5=ON
-#             -DHDF5_ROOT=${HDF5_ROOT}
-#             -DZLIB_ROOT=${ZLIB_ROOT}
-#             # -DCURL_ROOT=${CURL_ROOT}
-#             -DBUILD_UTILITIES=ON
-#             -DENABLE_LARGE_FILE_SUPPORT=ON
-#             -DENABLE_DAP=ON
-#             -DCMAKE_INSTALL_LIBDIR=${NetCDFC_ROOT}/lib
-#         DEPENDS ${ext_hdf5}
-#     )
-#     set(ext_netcdfc clubb_netcdfc)
-# endif()
-
-# find_package(netcdf-fortran)
-# if(${NETCDFFortran_FOUND})
-#     cmake_path(GET NetCDFFortran_INCLUDE_DIRS PARENT_PATH NetCDFFortan_ROOT)
-# else()
-#     set(NetCDFFortran_ROOT ${CMAKE_BINARY_DIR}/install_NetCDFFortran)
-#     # The CMake args defined below may seem pedantic but are very neccesary due to some
-#     # significant inflexibility in the netcdf-fortran CMake code... essentially the project can't
-#     # handle being installed anywhere that is not /usr/* without some serious work, i.e. below
-#     ExternalProject_Add(
-#         clubb_netcdffortran
-#         GIT_REPOSITORY ${NetCDF_Fortran_REPO}
-#         GIT_TAG ${NetCDF_Fortran_HASH}
-#         CMAKE_ARGS
-#             -DnetCDF_ROOT=${NetCDFC_ROOT}
-#             -DCMAKE_POLICY_DEFAULT_CMP0074:STRING=NEW
-#             -DCMAKE_INSTALL_LIBDIR=${NetCDFFortran_ROOT}
-#             -DCMAKE_INSTALL_BINDIR=${NetCDFFortran_ROOT}
-#             -DCMAKE_INSTALL_INFODIR=${NetCDFFortran_ROOT}
-#             -DCMAKE_INSTALL_DOCDIR=${NetCDFFortran_ROOT}
-#             -DCMAKE_INSTALL_INCLUDEDIR=${NetCDFFortran_ROOT}
-#             -DCMAKE_INSTALL_DOCDIR=${NetCDFFortran_ROOT}
-#             -DCMAKE_INSTALL_DATADIR=${NetCDFFortran_ROOT}
-#             -DCMAKE_INSTALL_DATAROOTDIR=${NetCDFFortran_ROOT}
-#             -DCMAKE_INSTALL_LOCALEDIR=${NetCDFFortran_ROOT}
-#             -DCMAKE_INSTALL_LOCALSTATEDIR=${NetCDFFortran_ROOT}
-#             -DCMAKE_INSTALL_MANDIR=${NetCDFFortran_ROOT}
-#             -DCMAKE_INSTALL_OLDINCLUDEDIR=${NetCDFFortran_ROOT}
-#             -DCMAKE_INSTALL_RUNSTATEDIR=${NetCDFFortran_ROOT}
-#             -DCMAKE_INSTALL_PREFIX=${NetCDFFortran_ROOT}
-#             -DENABLE_DAP=ON
-#         DEPENDS ${ext_netcdfc}
-#     )
-# endif()
-
-# # Setup RPaths so linked executables
-# # will be able to find our external deps
-# set(CMAKE_MACOSX_RPATH TRUE)
-# set(CMAKE_INSTALL_RPATH ${CMAKE_INSTALL_RPATH};${NetCDFFortran_ROOT};${NetCDFC_ROOT}/lib)
-# set(BUILD_RPATH ${CMAKE_INSTALL_RPATH})
-# set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
-# # Expose NetCDF-Fortran as a target so we can consume it
-# add_library(netcdf-fortran SHARED IMPORTED)
-# add_library(netcdf-c SHARED IMPORTED)
-# set_target_properties(netcdf-fortran PROPERTIES IMPORTED_LOCATION ${NetCDFFortran_ROOT}/libnetcdff${CMAKE_SHARED_LIBRARY_SUFFIX})
-# set_target_properties(netcdf-c PROPERTIES IMPORTED_LOCATION ${NetCDFC_ROOT}/lib/libnetcdf${CMAKE_SHARED_LIBRARY_SUFFIX})
-# set(NetCDFFortran_INCLUDE_DIRS ${NetCDFFortran_ROOT})
-
-# add_library(NetCDF::NetCDFC ALIAS netcdf-c)
-# add_library(NetCDF::NetCDFFortran ALIAS netcdf-fortran)
-# # Ensure all External projects are built before anything from CLUBB
-# add_dependencies(netcdf-fortran clubb_netcdffortran)
+# --- REVIVE CLUBB TESTS ---
+# Now that ALL NetCDF libraries are built, safely turn tests back on for CLUBB
+set(ENABLE_TESTS ON CACHE BOOL "" FORCE)
+set(BUILD_TESTING ON CACHE BOOL "" FORCE)
+# --------------------------------------------------

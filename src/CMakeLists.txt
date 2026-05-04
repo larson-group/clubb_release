@@ -2,7 +2,8 @@
 add_subdirectory(Radiation)             # provides:  radiation_lib
 add_subdirectory(Microphys)             # provides:  microphys_lib
 add_subdirectory(SILHS)                 # provides:  silhs_lib
-add_subdirectory(Numerical_recipes)     # provides:  numerical_recipes_lib
+add_subdirectory(Numerical_recipes)     # provides:  numerical_recipes_lib clubb_core_lib silhs_lib 
+                                           #text_writer_lib clubb_core_lib silhs_lib text_writer_lib
 add_subdirectory(G_unit_test_types)     # provides:  G_unit_test_lib
 add_subdirectory(CLUBB_core)            # provides:  clubb_core_lib
 add_subdirectory(Lapack)                # provides:  lapack_lib
@@ -41,15 +42,16 @@ endif()
 
 if(${USE_GPTL})
     target_link_libraries(clubb_driver_lib PRIVATE gptl)
+    include_directories("${CMAKE_BINARY_DIR}/gptl_install/include")
 endif()
 
 # Create clubb_standalone executable
 add_executable(clubb_standalone clubb_standalone.F90)
-target_link_libraries(clubb_standalone PRIVATE clubb_driver_lib)
+target_link_libraries(clubb_standalone PRIVATE clubb_core_lib clubb_driver_lib)
 
 # Create clubb_thread_test exectuable
 add_executable(clubb_thread_test clubb_thread_test.F90)
-target_link_libraries(clubb_thread_test PRIVATE clubb_driver_lib)
+target_link_libraries(clubb_thread_test PRIVATE clubb_core_lib clubb_driver_lib)
 
 if(${ENABLE_OMP})
     target_link_libraries(clubb_thread_test PRIVATE openmp-fortran)
@@ -57,18 +59,22 @@ endif()
 
 # Create clubb_tuner executable
 add_executable(clubb_tuner clubb_tuner.F90 error.F90)
-target_link_libraries(clubb_tuner PRIVATE clubb_driver_lib 
-                                          input_fields_lib
-                                          numerical_recipes_lib
-                                        )
+target_link_libraries(clubb_tuner PRIVATE clubb_driver_lib input_fields_lib numerical_recipes_lib 
+                        clubb_core_lib silhs_lib text_writer_lib clubb_core_lib silhs_lib 
+                        text_writer_lib )
 
 # Create G_unit_tests executable
 add_executable(G_unit_tests G_unit_tests.F90)
-target_link_libraries(G_unit_tests PRIVATE G_unit_test_lib )
+
+# Dependency tree for linker, goes left to right and won't go back which is why there's duplicates
+target_link_libraries(G_unit_tests PRIVATE G_unit_test_lib KK_microphys_lib microphys_lib 
+                        numerical_recipes_lib clubb_core_lib KK_microphys_lib microphys_lib 
+                        numerical_recipes_lib clubb_core_lib silhs_lib text_writer_lib 
+                        clubb_core_lib )
 
 # Create clubb_driver_test executable
 add_executable(clubb_driver_test clubb_driver_test.F90)
-target_link_libraries(clubb_driver_test PRIVATE clubb_driver_lib )
+target_link_libraries(clubb_driver_test PRIVATE clubb_core_lib clubb_driver_lib )
 
 # Commented out, since this appears unused as of 2025
 # # Create jacobian executable

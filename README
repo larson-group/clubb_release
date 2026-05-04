@@ -39,7 +39,7 @@ The single column model executable ("clubb_standalone") runs a particular
 case (e.g. BOMEX shallow nonprecipitating cumulus case) 
 and outputs statistical data in either Network Common Data Form (netCDF)
 format or Grid Analysis and Display System (GrADS) format
-(if the --grads flag is used with the run script run_scm.bash).
+(if the --grads flag is used with the run script run_scm.py).
 GrADS is both a data file format and a plotting program.  See
 <http://www.iges.org/grads/> for a description of GrADS.  NetCDF is a self 
 describing data file format that can be read by the GrADS plotting program, 
@@ -156,13 +156,13 @@ To do this, change directories to the run_scripts directory inside the CLUBB
 checkout.
 
 Once in the run_scripts directory, CLUBB is generally run using the
-run_scm.bash script. This script will run the CLUBB model for a single case,
+run_scm.py script. This script will run the CLUBB model for a single case,
 which can be specified on the command line. For example, to run the BOMEX case:
-user@computer run_scripts$ ./run_scm.bash bomex
+user@computer run_scripts$ ./run_scm.py bomex
 
 To list various run-time options --- such as settings for grid spacing,
 time step, stats output, and grads format --- type
-user@computer run_scripts$ ./run_scm.bash --help
+user@computer run_scripts$ ./run_scm.py --help
 
 Other cases that you may run are listed in run_scripts/RUN_CASES.  The command
 line will output information relating to the case as it runs.  In addition,
@@ -245,7 +245,7 @@ follow the following steps:
      and compiler.  You may need to edit these for your pariticular computer
      setup if your paths are not the same as ours)
 - Run a benchmark case (e.g. BOMEX)
-  - ./run_scm.bash bomex
+  - ./run_scm.py bomex
     (in the clubb/run_scripts directory)
 - Run pyplotgen to create plots of the output from the benchmark case simulation
   - python3 ./pyplotgen.py -c ~/clubb/output -o ~/plots
@@ -604,14 +604,14 @@ also do make distclean without the need to change directories.
    if you are an expert and you want to try different options within CLUBB.
 
 6. $ cd <CLUBB BASE DIRECTORY>/run_scripts
-   $ ./run_scm.bash <CASE NAME> or
-   $ ./run_scm.bash <CASE NAME> -p <PARAMETER FILE> -s <STATS FILE>
+   $ ./run_scm.py <CASE NAME> or
+   $ ./run_scm.py <CASE NAME> -p <PARAMETER FILE> -s <STATS FILE>
 
    Where the parameter file and stats file are optional arguments. The default
    is standard_stats.in and tunable_parameters.in.
 
    For a complete list of options type:
-   $ ./run_scm.bash --help
+   $ ./run_scm.py --help
 
    The resulting data will be written in the directory clubb/output.
 
@@ -800,11 +800,11 @@ parameter set along with this extra namelist, here is an example use:
 
 Once you have the multicolumn parameter file, you can run clubb with the '-p'
 flag to pass in the new parameter set, like so:
-`./run_scm.bash -p clubb_params_multi_col.in arm`
+`./run_scm.py -p clubb_params_multi_col.in arm`
 - The multiple column data will be saved to `output/{casename}_multi_col_zm/zt.nc`
 - This data is written independently from the `l_stats` setting, so one can
   run CLUBB with `-e` to turn off stats and still get multicolumn output, e.g.
-`./run_scm.bash -p clubb_params_multi_col.in -e arm`
+`./run_scm.py -p clubb_params_multi_col.in -e arm`
 
 -----------------------------------------------------------------------
 - (3.1) Executing a restart run:
@@ -840,7 +840,7 @@ simulation at the restart time.
 
 4.  Execute the run as usual from /run_scripts using 
     
-    ./run_scm.bash <CASE NAME>
+    ./run_scm.py <CASE NAME>
 
 -----------------------------------------------------------------------
 - (3.2) Executing a single-column run with fields input from LES:
@@ -866,7 +866,7 @@ data and variables that are read in.  First, set the 'datafile' variable in the
 read in.  Finally, set 'l_input_<varname>' to .true. for those fields for which you 
 want to use a fixed value from the LES dataset at the beginning of each timestep.
 
-Then, change your directory to run_scripts and execute the run_scm.bash
+Then, change your directory to run_scripts and execute the run_scm.py
 as you would usually.
 
 Nota bene:  The GrADS data files cannot have a time increment less than 1mn.
