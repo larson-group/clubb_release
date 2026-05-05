@@ -1946,16 +1946,18 @@ module advance_clubb_core_module
           call stats_update_budget( "wpthlp_cl", -wpthlp / dt, stats )
         end if
 
-        if ( upwp_cl_num == 0 ) then
-          call stats_begin_budget( "upwp_cl", upwp / dt, stats )
-        else
-          call stats_update_budget( "upwp_cl", -upwp / dt, stats )
-        end if
+        if ( clubb_config_flags%l_predict_upwp_vpwp ) then
+          if ( upwp_cl_num == 0 ) then
+            call stats_begin_budget( "upwp_cl", upwp / dt, stats )
+          else
+            call stats_update_budget( "upwp_cl", -upwp / dt, stats )
+          end if
 
-        if ( vpwp_cl_num == 0 ) then
-          call stats_begin_budget( "vpwp_cl", vpwp / dt, stats )
-        else
-          call stats_update_budget( "vpwp_cl", -vpwp / dt, stats )
+          if ( vpwp_cl_num == 0 ) then
+            call stats_begin_budget( "vpwp_cl", vpwp / dt, stats )
+          else
+            call stats_update_budget( "vpwp_cl", -vpwp / dt, stats )
+          end if
         end if
 
       end if
@@ -1988,16 +1990,18 @@ module advance_clubb_core_module
           call stats_update_budget( "wpthlp_cl", wpthlp / dt, stats )
         end if
 
-        if ( upwp_cl_num == upwp_cl_max ) then
-          call stats_finalize_budget( "upwp_cl", upwp / dt, stats )
-        else
-          call stats_update_budget( "upwp_cl", upwp / dt, stats )
-        end if
+        if ( clubb_config_flags%l_predict_upwp_vpwp ) then
+          if ( upwp_cl_num == upwp_cl_max ) then
+            call stats_finalize_budget( "upwp_cl", upwp / dt, stats )
+          else
+            call stats_update_budget( "upwp_cl", upwp / dt, stats )
+          end if
 
-        if ( vpwp_cl_num == vpwp_cl_max ) then
-          call stats_finalize_budget( "vpwp_cl", vpwp / dt, stats )
-        else
-          call stats_update_budget( "vpwp_cl", vpwp / dt, stats )
+          if ( vpwp_cl_num == vpwp_cl_max ) then
+            call stats_finalize_budget( "vpwp_cl", vpwp / dt, stats )
+          else
+            call stats_update_budget( "vpwp_cl", vpwp / dt, stats )
+          end if
         end if
 
       end if
@@ -2073,16 +2077,18 @@ module advance_clubb_core_module
           call stats_update_budget( "wpthlp_cl", -wpthlp / dt, stats )
         end if
 
-        if ( upwp_cl_num == 0 ) then
-          call stats_begin_budget( "upwp_cl", upwp / dt, stats )
-        else
-          call stats_update_budget( "upwp_cl", -upwp / dt, stats )
-        end if
+        if ( clubb_config_flags%l_predict_upwp_vpwp ) then
+          if ( upwp_cl_num == 0 ) then
+            call stats_begin_budget( "upwp_cl", upwp / dt, stats )
+          else
+            call stats_update_budget( "upwp_cl", -upwp / dt, stats )
+          end if
 
-        if ( vpwp_cl_num == 0 ) then
-          call stats_begin_budget( "vpwp_cl", vpwp / dt, stats )
-        else
-          call stats_update_budget( "vpwp_cl", -vpwp / dt, stats )
+          if ( vpwp_cl_num == 0 ) then
+            call stats_begin_budget( "vpwp_cl", vpwp / dt, stats )
+          else
+            call stats_update_budget( "vpwp_cl", -vpwp / dt, stats )
+          end if
         end if
 
       end if
@@ -2111,15 +2117,17 @@ module advance_clubb_core_module
         else
           call stats_update_budget( "wpthlp_cl", wpthlp / dt, stats )
         end if
-        if ( upwp_cl_num == upwp_cl_max ) then
-          call stats_finalize_budget( "upwp_cl", upwp / dt, stats )
-        else
-          call stats_update_budget( "upwp_cl", upwp / dt, stats )
-        end if
-        if ( vpwp_cl_num == vpwp_cl_max ) then
-          call stats_finalize_budget( "vpwp_cl", vpwp / dt, stats )
-        else
-          call stats_update_budget( "vpwp_cl", vpwp / dt, stats )
+        if ( clubb_config_flags%l_predict_upwp_vpwp ) then
+          if ( upwp_cl_num == upwp_cl_max ) then
+            call stats_finalize_budget( "upwp_cl", upwp / dt, stats )
+          else
+            call stats_update_budget( "upwp_cl", upwp / dt, stats )
+          end if
+          if ( vpwp_cl_num == vpwp_cl_max ) then
+            call stats_finalize_budget( "vpwp_cl", vpwp / dt, stats )
+          else
+            call stats_update_budget( "vpwp_cl", vpwp / dt, stats )
+          end if
         end if
       end if
 

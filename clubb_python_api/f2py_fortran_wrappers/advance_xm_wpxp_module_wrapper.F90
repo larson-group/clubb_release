@@ -39,7 +39,7 @@ subroutine f2py_advance_xm_wpxp(nzm, nzt, ngrdcol, sclr_dim, sclr_dim_transport,
     l_mono_flux_lim_um, &
     l_mono_flux_lim_vm, &
     l_mono_flux_lim_spikefix, &
-    order_xm_wpxp, order_xp2_xpyp, order_wp2_wp3, &
+    wprtp_cl_num, wpthlp_cl_num, upwp_cl_num, vpwp_cl_num, &
     rtm, wprtp, thlm, wpthlp, &
     sclrm, wpsclrp, um, upwp, vm, vpwp, &
     um_pert, vm_pert, upwp_pert, vpwp_pert)
@@ -85,7 +85,7 @@ subroutine f2py_advance_xm_wpxp(nzm, nzt, ngrdcol, sclr_dim, sclr_dim_transport,
     l_upwind_xm_ma, l_uv_nudge, l_tke_aniso, l_diag_lscale_from_tau, l_use_c7_richardson, &
     l_lmm_stepping, l_enable_relaxed_clipping, l_linearize_pbl_winds, l_mono_flux_lim_thlm, &
     l_mono_flux_lim_rtm, l_mono_flux_lim_um, l_mono_flux_lim_vm, l_mono_flux_lim_spikefix
-  integer, intent(in) :: order_xm_wpxp, order_xp2_xpyp, order_wp2_wp3
+  integer, intent(inout) :: wprtp_cl_num, wpthlp_cl_num, upwp_cl_num, vpwp_cl_num
 
   real(core_rknd), dimension(ngrdcol, nzt), intent(inout) :: &
     rtm, thlm, um, vm, um_pert, vm_pert
@@ -134,7 +134,7 @@ subroutine f2py_advance_xm_wpxp(nzm, nzt, ngrdcol, sclr_dim, sclr_dim_transport,
     l_mono_flux_lim_um, &
     l_mono_flux_lim_vm, &
     l_mono_flux_lim_spikefix, &
-    order_xm_wpxp, order_xp2_xpyp, order_wp2_wp3, &
+    wprtp_cl_num, wpthlp_cl_num, upwp_cl_num, vpwp_cl_num, &
     stored_stats, &
     rtm, wprtp, thlm, wpthlp, &
     sclrm, wpsclrp, um, upwp, vm, vpwp, &

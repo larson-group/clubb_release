@@ -298,9 +298,7 @@ class TestClipCovar:
         result = clubb_api.clip_covar(
             nzm=nzm, ngrdcol=ngrdcol,
             solve_type=1,
-            l_first_clip_ts=True, l_last_clip_ts=True,
-            dt=300.0, xp2=xp2, yp2=yp2,
-            l_predict_upwp_vpwp=False, xpyp=xpyp.copy(),
+            xp2=xp2, yp2=yp2, xpyp=xpyp.copy(),
         )
         # Returns (xpyp, xpyp_chnge)
         assert len(result) == 2
@@ -320,9 +318,7 @@ class TestClipCovar:
         clipped, change = clubb_api.clip_covar(
             nzm=nzm, ngrdcol=ngrdcol,
             solve_type=1,
-            l_first_clip_ts=True, l_last_clip_ts=True,
-            dt=300.0, xp2=xp2, yp2=yp2,
-            l_predict_upwp_vpwp=False, xpyp=xpyp.copy(),
+            xp2=xp2, yp2=yp2, xpyp=xpyp.copy(),
         )
         # Clipped values should be finite
         assert np.all(np.isfinite(clipped))
@@ -569,16 +565,13 @@ class TestClipCovarsDenom:
 
         result = clubb_api.clip_covars_denom(
             nzm=nzm, ngrdcol=ngrdcol,
-            sclr_dim=sclr_dim, dt=300.0,
+            sclr_dim=sclr_dim,
             rtp2=np.full(shape, 1e-6),
             thlp2=np.full(shape, 0.1),
             up2=np.full(shape, 0.3),
             vp2=np.full(shape, 0.3),
             wp2=np.full(shape, 0.5),
             sclrp2=np.zeros((ngrdcol, nzm, 1)),
-            wprtp_cl_num=1, wpthlp_cl_num=2, wpsclrp_cl_num=3,
-            upwp_cl_num=4, vpwp_cl_num=5,
-            l_predict_upwp_vpwp=flags.l_predict_upwp_vpwp,
             l_tke_aniso=flags.l_tke_aniso,
             l_linearize_pbl_winds=False,
             wprtp=np.full(shape, 1e-4),

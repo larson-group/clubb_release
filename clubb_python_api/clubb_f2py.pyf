@@ -2210,13 +2210,9 @@ python module clubb_f2py
     end subroutine
 
     subroutine f2py_clip_covar(nzm, ngrdcol, solve_type, &
-        l_first_clip_ts, l_last_clip_ts, dt, xp2, yp2, &
-        l_predict_upwp_vpwp, xpyp, xpyp_chnge)
+        xp2, yp2, xpyp, xpyp_chnge)
       integer, intent(in) :: nzm, ngrdcol, solve_type
-      logical, intent(in) :: l_first_clip_ts, l_last_clip_ts
-      double precision, intent(in) :: dt
       double precision, dimension(ngrdcol, nzm), intent(in) :: xp2, yp2
-      logical, intent(in) :: l_predict_upwp_vpwp
       double precision, dimension(ngrdcol, nzm), intent(in,out) :: xpyp
       double precision, dimension(ngrdcol, nzm), intent(out) :: xpyp_chnge
     end subroutine
@@ -2250,22 +2246,16 @@ python module clubb_f2py
       double precision, dimension(ngrdcol, nzt), intent(in,out) :: wp3
     end subroutine
 
-    subroutine f2py_clip_covars_denom(nzm, ngrdcol, sclr_dim, sclr_dim_transport, dt, &
+    subroutine f2py_clip_covars_denom(nzm, ngrdcol, sclr_dim, sclr_dim_transport, &
         rtp2, thlp2, up2, vp2, wp2, sclrp2, &
-        wprtp_cl_num, wpthlp_cl_num, wpsclrp_cl_num, &
-        upwp_cl_num, vpwp_cl_num, &
-        l_predict_upwp_vpwp, l_tke_aniso, l_linearize_pbl_winds, &
+        l_tke_aniso, l_linearize_pbl_winds, &
         wprtp, wpthlp, upwp, vpwp, wpsclrp, upwp_pert, vpwp_pert)
       integer, intent(in) :: nzm, ngrdcol, sclr_dim
       integer, intent(in), optional :: sclr_dim_transport
-      double precision, intent(in) :: dt
       double precision, dimension(ngrdcol, nzm), intent(in) :: &
         rtp2, thlp2, up2, vp2, wp2
       double precision, dimension(ngrdcol, nzm, sclr_dim_transport), intent(in) :: sclrp2
-      integer, intent(in) :: wprtp_cl_num, wpthlp_cl_num, wpsclrp_cl_num
-      integer, intent(in) :: upwp_cl_num, vpwp_cl_num
-      logical, intent(in) :: l_predict_upwp_vpwp, l_tke_aniso
-      logical, intent(in) :: l_linearize_pbl_winds
+      logical, intent(in) :: l_tke_aniso, l_linearize_pbl_winds
       double precision, dimension(ngrdcol, nzm), intent(in,out) :: &
         wprtp, wpthlp, upwp, vpwp
       double precision, dimension(ngrdcol, nzm, sclr_dim_transport), intent(in,out) :: wpsclrp
@@ -2453,7 +2443,7 @@ python module clubb_f2py
         fcor, l_implemented, ts_nudge, tridiag_solve_method, &
         l_predict_upwp_vpwp, l_upwind_xm_ma, l_uv_nudge, l_tke_aniso, &
         l_lmm_stepping, l_linearize_pbl_winds, &
-        order_xp2_xpyp, order_wp2_wp3, order_windm, &
+        upwp_cl_num, vpwp_cl_num, &
         um, vm, edsclrm, upwp, vpwp, wpedsclrp, &
         um_pert, vm_pert, upwp_pert, vpwp_pert)
       integer, intent(in) :: nzm, nzt, ngrdcol, edsclr_dim
@@ -2472,7 +2462,7 @@ python module clubb_f2py
       logical, intent(in) :: &
         l_predict_upwp_vpwp, l_upwind_xm_ma, l_uv_nudge, l_tke_aniso, l_lmm_stepping, &
         l_linearize_pbl_winds
-      integer, intent(in) :: order_xp2_xpyp, order_wp2_wp3, order_windm
+      integer, intent(in,out) :: upwp_cl_num, vpwp_cl_num
       double precision, dimension(ngrdcol, nzt), intent(in,out) :: um, vm, um_pert, vm_pert
       double precision, dimension(ngrdcol, nzm), intent(in,out) :: upwp, vpwp, upwp_pert, vpwp_pert
       double precision, dimension(ngrdcol, nzt, edsclr_dim_transport), intent(in,out) :: edsclrm
@@ -2489,7 +2479,7 @@ python module clubb_f2py
         wp3_on_wp2, wp3_on_wp2_zt, dt, fcor_y, &
         sclrm, wpsclrp, wpsclrp2, wpsclrprtp, wpsclrpthlp, lhs_splat_wp2, &
         clubb_params, iipdf_type, tridiag_solve_method, fill_holes_type, &
-        l_predict_upwp_vpwp, l_ho_nontrad_coriolis, l_min_xp2_from_corr_wx, &
+        l_ho_nontrad_coriolis, l_min_xp2_from_corr_wx, &
         l_c2_cloud_frac, l_upwind_xpyp_ta, l_godunov_upwind_xpyp_ta, l_lmm_stepping, &
         rtp2, thlp2, rtpthlp, up2, vp2, sclrp2, sclrprtp, sclrpthlp)
       integer, intent(in) :: nzm, nzt, ngrdcol, sclr_dim
@@ -2510,7 +2500,7 @@ python module clubb_f2py
       double precision, dimension(ngrdcol, *), intent(in) :: clubb_params
       integer, intent(in) :: iipdf_type, tridiag_solve_method, fill_holes_type
       logical, intent(in) :: &
-        l_predict_upwp_vpwp, l_ho_nontrad_coriolis, l_min_xp2_from_corr_wx, l_c2_cloud_frac, &
+        l_ho_nontrad_coriolis, l_min_xp2_from_corr_wx, l_c2_cloud_frac, &
         l_upwind_xpyp_ta, l_godunov_upwind_xpyp_ta, l_lmm_stepping
       double precision, dimension(ngrdcol, nzm), intent(in,out) :: rtp2, thlp2, rtpthlp, up2, vp2
       double precision, dimension(ngrdcol, nzm, sclr_dim_transport), intent(in,out) :: &
@@ -2551,7 +2541,7 @@ python module clubb_f2py
         l_enable_relaxed_clipping, l_linearize_pbl_winds, &
         l_mono_flux_lim_thlm, l_mono_flux_lim_rtm, l_mono_flux_lim_um, &
         l_mono_flux_lim_vm, l_mono_flux_lim_spikefix, &
-        order_xm_wpxp, order_xp2_xpyp, order_wp2_wp3, &
+        wprtp_cl_num, wpthlp_cl_num, upwp_cl_num, vpwp_cl_num, &
         rtm, wprtp, thlm, wpthlp, &
         sclrm, wpsclrp, um, upwp, vm, vpwp, &
         um_pert, vm_pert, upwp_pert, vpwp_pert)
@@ -2583,7 +2573,7 @@ python module clubb_f2py
         l_upwind_xm_ma, l_uv_nudge, l_tke_aniso, l_diag_lscale_from_tau, l_use_c7_richardson, &
         l_lmm_stepping, l_enable_relaxed_clipping, l_linearize_pbl_winds, l_mono_flux_lim_thlm, &
         l_mono_flux_lim_rtm, l_mono_flux_lim_um, l_mono_flux_lim_vm, l_mono_flux_lim_spikefix
-      integer, intent(in) :: order_xm_wpxp, order_xp2_xpyp, order_wp2_wp3
+      integer, intent(in,out) :: wprtp_cl_num, wpthlp_cl_num, upwp_cl_num, vpwp_cl_num
       double precision, dimension(ngrdcol, nzt), intent(in,out) :: &
         rtm, thlm, um, vm, um_pert, vm_pert
       double precision, dimension(ngrdcol, nzm), intent(in,out) :: &

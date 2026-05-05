@@ -21,11 +21,13 @@ pipeline {
         sh '''sed -i "s:lh_straight_mc.*:lh_straight_mc = true:g" input/tunable_parameters/configurable_model_flags.in'''
         sh '''source /etc/profile.d/larson-group.sh
               module load nvhpc netcdf-fortran
-              ./compile.py -gpu openacc
-              ulimit -s 8388608
-              run_scripts/run_scm_all.py -nproc 1 -min_cases -multicol 8 -max_iters 200 -out_dir standalone_output_nvhpc
-              run_scripts/run_scm_all.py -nproc 1 -min_cases -multicol 8 -max_iters 200 -out_dir driver_test_output_nvhpc -driver_test
-              run_scripts/run_bindiff_all.py standalone_output_nvhpc driver_test_output_nvhpc'''
+              ./compile.py -gpu openacc'''
+        lock( "GPU_${env.NODE_NAME}" ) {
+          sh '''ulimit -s 8388608
+                run_scripts/run_scm_all.py -nproc 1 -min_cases -multicol 8 -max_iters 200 -out_dir standalone_output_nvhpc
+                run_scripts/run_scm_all.py -nproc 1 -min_cases -multicol 8 -max_iters 200 -out_dir driver_test_output_nvhpc -driver_test'''
+        }
+        sh '''run_scripts/run_bindiff_all.py standalone_output_nvhpc driver_test_output_nvhpc'''
       }
     }
   }

@@ -9,7 +9,7 @@ subroutine f2py_advance_windm_edsclrm(nzm, nzt, ngrdcol, edsclr_dim, edsclr_dim_
     fcor, l_implemented, ts_nudge, tridiag_solve_method, &
     l_predict_upwp_vpwp, l_upwind_xm_ma, l_uv_nudge, l_tke_aniso, &
     l_lmm_stepping, l_linearize_pbl_winds, &
-    order_xp2_xpyp, order_wp2_wp3, order_windm, &
+    upwp_cl_num, vpwp_cl_num, &
     um, vm, edsclrm, upwp, vpwp, wpedsclrp, &
     um_pert, vm_pert, upwp_pert, vpwp_pert)
 
@@ -35,7 +35,7 @@ subroutine f2py_advance_windm_edsclrm(nzm, nzt, ngrdcol, edsclr_dim, edsclr_dim_
   logical, intent(in) :: &
     l_predict_upwp_vpwp, l_upwind_xm_ma, l_uv_nudge, l_tke_aniso, l_lmm_stepping, &
     l_linearize_pbl_winds
-  integer, intent(in) :: order_xp2_xpyp, order_wp2_wp3, order_windm
+  integer, intent(inout) :: upwp_cl_num, vpwp_cl_num
 
   real(core_rknd), dimension(ngrdcol, nzt), intent(inout) :: um, vm, um_pert, vm_pert
   real(core_rknd), dimension(ngrdcol, nzm), intent(inout) :: upwp, vpwp, upwp_pert, vpwp_pert
@@ -49,7 +49,7 @@ subroutine f2py_advance_windm_edsclrm(nzm, nzt, ngrdcol, edsclr_dim, edsclr_dim_
     stored_nu_vert_res_dep, ts_nudge, tridiag_solve_method, &
     l_predict_upwp_vpwp, l_upwind_xm_ma, l_uv_nudge, &
     l_tke_aniso, l_lmm_stepping, l_linearize_pbl_winds, &
-    order_xp2_xpyp, order_wp2_wp3, order_windm, &
+    upwp_cl_num, vpwp_cl_num, &
     stored_stats, um, vm, edsclrm, upwp, vpwp, wpedsclrp, &
     um_pert, vm_pert, upwp_pert, vpwp_pert, stored_err_info)
 

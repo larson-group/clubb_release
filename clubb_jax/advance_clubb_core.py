@@ -907,6 +907,15 @@ def advance_clubb_core(
     wpsclrprtp = _wpsclrprtp
     wpsclrpthlp = _wpsclrpthlp
 
+    wprtp_cl_num = 0
+    wpthlp_cl_num = 0
+    upwp_cl_num = 0
+    vpwp_cl_num = 0
+    wprtp_cl_max = 3
+    wpthlp_cl_max = 3
+    upwp_cl_max = 3
+    vpwp_cl_max = 3
+
     for advance_iter in range(1, 5):
 
         if advance_iter == order_xm_wpxp_val:
@@ -953,16 +962,22 @@ def advance_clubb_core(
                 l_mono_flux_lim_um=flags.l_mono_flux_lim_um,
                 l_mono_flux_lim_vm=flags.l_mono_flux_lim_vm,
                 l_mono_flux_lim_spikefix=flags.l_mono_flux_lim_spikefix,
-                order_xm_wpxp=order_xm_wpxp_val, order_xp2_xpyp=order_xp2_xpyp_val,
-                order_wp2_wp3=order_wp2_wp3_val, rtm=rtm, wprtp=wprtp, thlm=thlm,
+                wprtp_cl_num=wprtp_cl_num, wpthlp_cl_num=wpthlp_cl_num,
+                upwp_cl_num=upwp_cl_num, vpwp_cl_num=vpwp_cl_num,
+                rtm=rtm, wprtp=wprtp, thlm=thlm,
                 wpthlp=wpthlp, sclrm=sclrm, wpsclrp=wpsclrp, um=um, upwp=upwp,
                 vm=vm, vpwp=vpwp, um_pert=um_pert, vm_pert=vm_pert,
                 upwp_pert=upwp_pert, vpwp_pert=vpwp_pert,
                 nu_vert_res_dep=nu_vert_res_dep,
                 pdf_implicit_coefs_terms=pdf_implicit_coefs_terms, err_info=err_info,
             )
-            (rtm, wprtp, thlm, wpthlp, sclrm, wpsclrp, um, upwp, vm, vpwp,
+            (wprtp_cl_num, wpthlp_cl_num, upwp_cl_num, vpwp_cl_num,
+             rtm, wprtp, thlm, wpthlp, sclrm, wpsclrp, um, upwp, vm, vpwp,
              um_pert, vm_pert, upwp_pert, vpwp_pert, err_info) = result
+            wprtp_cl_num = int(wprtp_cl_num)
+            wpthlp_cl_num = int(wpthlp_cl_num)
+            upwp_cl_num = int(upwp_cl_num)
+            vpwp_cl_num = int(vpwp_cl_num)
             rcm = clubb_api.clip_rcm(
                 nzt=nzt, ngrdcol=ngrdcol, rtm=rtm,
                 message='rtm < rcm in advance_xm_wpxp', rcm=rcm,
@@ -992,7 +1007,6 @@ def advance_clubb_core(
                 iipdf_type=flags.iiPDF_type,
                 tridiag_solve_method=flags.tridiag_solve_method,
                 fill_holes_type=flags.fill_holes_type,
-                l_predict_upwp_vpwp=flags.l_predict_upwp_vpwp,
                 l_ho_nontrad_coriolis=flags.l_ho_nontrad_coriolis,
                 l_min_xp2_from_corr_wx=flags.l_min_xp2_from_corr_wx,
                 l_c2_cloud_frac=flags.l_C2_cloud_frac,
@@ -1005,33 +1019,55 @@ def advance_clubb_core(
                 pdf_implicit_coefs_terms=pdf_implicit_coefs_terms, err_info=err_info,
             )
             rtp2, thlp2, rtpthlp, up2, vp2, sclrp2, sclrprtp, sclrpthlp, err_info = result
-            if order_xp2_xpyp_val < order_xm_wpxp_val and order_xp2_xpyp_val < order_wp2_wp3_val:
-                cl_num = 1
-            elif order_xp2_xpyp_val > order_xm_wpxp_val and order_xp2_xpyp_val > order_wp2_wp3_val:
-                cl_num = 3
-            else:
-                cl_num = 2
-            if not flags.l_predict_upwp_vpwp:
-                if order_xp2_xpyp_val < order_wp2_wp3_val and order_xp2_xpyp_val < order_windm_val:
-                    upwp_cl = 1
-                elif order_xp2_xpyp_val > order_wp2_wp3_val and order_xp2_xpyp_val > order_windm_val:
-                    upwp_cl = 3
+            if l_sample:
+                if wprtp_cl_num == 0:
+                    clubb_api.stats_begin_budget("wprtp_cl", wprtp / dt)
                 else:
-                    upwp_cl = 2
-            else:
-                upwp_cl = cl_num
+                    clubb_api.stats_update_budget("wprtp_cl", -wprtp / dt)
+                if wpthlp_cl_num == 0:
+                    clubb_api.stats_begin_budget("wpthlp_cl", wpthlp / dt)
+                else:
+                    clubb_api.stats_update_budget("wpthlp_cl", -wpthlp / dt)
+                if flags.l_predict_upwp_vpwp:
+                    if upwp_cl_num == 0:
+                        clubb_api.stats_begin_budget("upwp_cl", upwp / dt)
+                    else:
+                        clubb_api.stats_update_budget("upwp_cl", -upwp / dt)
+                    if vpwp_cl_num == 0:
+                        clubb_api.stats_begin_budget("vpwp_cl", vpwp / dt)
+                    else:
+                        clubb_api.stats_update_budget("vpwp_cl", -vpwp / dt)
+            wprtp_cl_num += 1
+            wpthlp_cl_num += 1
+            upwp_cl_num += 1
+            vpwp_cl_num += 1
             (wprtp, wpthlp, upwp, vpwp,
              wpsclrp, upwp_pert, vpwp_pert) = clubb_api.clip_covars_denom(
-                nzm=nzm, ngrdcol=ngrdcol, sclr_dim=sclr_dim, dt=dt_main,
+                nzm=nzm, ngrdcol=ngrdcol, sclr_dim=sclr_dim,
                 rtp2=rtp2, thlp2=thlp2, up2=up2, vp2=vp2, wp2=wp2, sclrp2=sclrp2,
-                wprtp_cl_num=cl_num, wpthlp_cl_num=cl_num, wpsclrp_cl_num=cl_num,
-                upwp_cl_num=upwp_cl, vpwp_cl_num=upwp_cl,
-                l_predict_upwp_vpwp=flags.l_predict_upwp_vpwp,
                 l_tke_aniso=flags.l_tke_aniso,
                 l_linearize_pbl_winds=flags.l_linearize_pbl_winds,
                 wprtp=wprtp, wpthlp=wpthlp, upwp=upwp, vpwp=vpwp,
                 wpsclrp=wpsclrp, upwp_pert=upwp_pert, vpwp_pert=vpwp_pert,
             )
+            if l_sample:
+                if wprtp_cl_num == wprtp_cl_max:
+                    clubb_api.stats_finalize_budget("wprtp_cl", wprtp / dt)
+                else:
+                    clubb_api.stats_update_budget("wprtp_cl", wprtp / dt)
+                if wpthlp_cl_num == wpthlp_cl_max:
+                    clubb_api.stats_finalize_budget("wpthlp_cl", wpthlp / dt)
+                else:
+                    clubb_api.stats_update_budget("wpthlp_cl", wpthlp / dt)
+                if flags.l_predict_upwp_vpwp:
+                    if upwp_cl_num == upwp_cl_max:
+                        clubb_api.stats_finalize_budget("upwp_cl", upwp / dt)
+                    else:
+                        clubb_api.stats_update_budget("upwp_cl", upwp / dt)
+                    if vpwp_cl_num == vpwp_cl_max:
+                        clubb_api.stats_finalize_budget("vpwp_cl", vpwp / dt)
+                    else:
+                        clubb_api.stats_update_budget("vpwp_cl", vpwp / dt)
             err_code = err_info.err_code
             if err_code is not None and np.any(np.asarray(err_code) == CLUBB_FATAL_ERROR):
                 return
@@ -1074,33 +1110,55 @@ def advance_clubb_core(
                 pdf_implicit_coefs_terms=pdf_implicit_coefs_terms, err_info=err_info,
             )
             up2, vp2, wp2, wp3, wp3_zm, wp2_zt, err_info = result
-            if order_wp2_wp3_val < order_xm_wpxp_val and order_wp2_wp3_val < order_xp2_xpyp_val:
-                cl_num = 1
-            elif order_wp2_wp3_val > order_xm_wpxp_val and order_wp2_wp3_val > order_xp2_xpyp_val:
-                cl_num = 3
-            else:
-                cl_num = 2
-            if not flags.l_predict_upwp_vpwp:
-                if order_wp2_wp3_val < order_xp2_xpyp_val and order_wp2_wp3_val < order_windm_val:
-                    upwp_cl = 1
-                elif order_wp2_wp3_val > order_xp2_xpyp_val and order_wp2_wp3_val > order_windm_val:
-                    upwp_cl = 3
+            if l_sample:
+                if wprtp_cl_num == 0:
+                    clubb_api.stats_begin_budget("wprtp_cl", wprtp / dt)
                 else:
-                    upwp_cl = 2
-            else:
-                upwp_cl = cl_num
+                    clubb_api.stats_update_budget("wprtp_cl", -wprtp / dt)
+                if wpthlp_cl_num == 0:
+                    clubb_api.stats_begin_budget("wpthlp_cl", wpthlp / dt)
+                else:
+                    clubb_api.stats_update_budget("wpthlp_cl", -wpthlp / dt)
+                if flags.l_predict_upwp_vpwp:
+                    if upwp_cl_num == 0:
+                        clubb_api.stats_begin_budget("upwp_cl", upwp / dt)
+                    else:
+                        clubb_api.stats_update_budget("upwp_cl", -upwp / dt)
+                    if vpwp_cl_num == 0:
+                        clubb_api.stats_begin_budget("vpwp_cl", vpwp / dt)
+                    else:
+                        clubb_api.stats_update_budget("vpwp_cl", -vpwp / dt)
+            wprtp_cl_num += 1
+            wpthlp_cl_num += 1
+            upwp_cl_num += 1
+            vpwp_cl_num += 1
             (wprtp, wpthlp, upwp, vpwp,
              wpsclrp, upwp_pert, vpwp_pert) = clubb_api.clip_covars_denom(
-                nzm=nzm, ngrdcol=ngrdcol, sclr_dim=sclr_dim, dt=dt_main,
+                nzm=nzm, ngrdcol=ngrdcol, sclr_dim=sclr_dim,
                 rtp2=rtp2, thlp2=thlp2, up2=up2, vp2=vp2, wp2=wp2, sclrp2=sclrp2,
-                wprtp_cl_num=cl_num, wpthlp_cl_num=cl_num, wpsclrp_cl_num=cl_num,
-                upwp_cl_num=upwp_cl, vpwp_cl_num=upwp_cl,
-                l_predict_upwp_vpwp=flags.l_predict_upwp_vpwp,
                 l_tke_aniso=flags.l_tke_aniso,
                 l_linearize_pbl_winds=flags.l_linearize_pbl_winds,
                 wprtp=wprtp, wpthlp=wpthlp, upwp=upwp, vpwp=vpwp,
                 wpsclrp=wpsclrp, upwp_pert=upwp_pert, vpwp_pert=vpwp_pert,
             )
+            if l_sample:
+                if wprtp_cl_num == wprtp_cl_max:
+                    clubb_api.stats_finalize_budget("wprtp_cl", wprtp / dt)
+                else:
+                    clubb_api.stats_update_budget("wprtp_cl", wprtp / dt)
+                if wpthlp_cl_num == wpthlp_cl_max:
+                    clubb_api.stats_finalize_budget("wpthlp_cl", wpthlp / dt)
+                else:
+                    clubb_api.stats_update_budget("wpthlp_cl", wpthlp / dt)
+                if flags.l_predict_upwp_vpwp:
+                    if upwp_cl_num == upwp_cl_max:
+                        clubb_api.stats_finalize_budget("upwp_cl", upwp / dt)
+                    else:
+                        clubb_api.stats_update_budget("upwp_cl", upwp / dt)
+                    if vpwp_cl_num == vpwp_cl_max:
+                        clubb_api.stats_finalize_budget("vpwp_cl", vpwp / dt)
+                    else:
+                        clubb_api.stats_update_budget("vpwp_cl", vpwp / dt)
             err_code = err_info.err_code
             if err_code is not None and np.any(np.asarray(err_code) == CLUBB_FATAL_ERROR):
                 return
@@ -1123,14 +1181,17 @@ def advance_clubb_core(
                 l_upwind_xm_ma=flags.l_upwind_xm_ma, l_uv_nudge=flags.l_uv_nudge,
                 l_tke_aniso=flags.l_tke_aniso, l_lmm_stepping=flags.l_lmm_stepping,
                 l_linearize_pbl_winds=flags.l_linearize_pbl_winds,
-                order_xp2_xpyp=order_xp2_xpyp_val, order_wp2_wp3=order_wp2_wp3_val,
-                order_windm=order_windm_val, um=um, vm=vm, edsclrm=edsclrm,
+                upwp_cl_num=upwp_cl_num, vpwp_cl_num=vpwp_cl_num,
+                um=um, vm=vm, edsclrm=edsclrm,
                 upwp=upwp, vpwp=vpwp, wpedsclrp=wpedsclrp, um_pert=um_pert,
                 vm_pert=vm_pert, upwp_pert=upwp_pert, vpwp_pert=vpwp_pert,
                 nu_vert_res_dep=nu_vert_res_dep, err_info=err_info,
             )
-            (um, vm, edsclrm, upwp, vpwp, _wpedsclrp_out,
+            (upwp_cl_num, vpwp_cl_num,
+             um, vm, edsclrm, upwp, vpwp, _wpedsclrp_out,
              um_pert, vm_pert, upwp_pert, vpwp_pert, err_info) = result
+            upwp_cl_num = int(upwp_cl_num)
+            vpwp_cl_num = int(vpwp_cl_num)
             wpedsclrp = _wpedsclrp_out
             if edsclr_dim > 1 and flags.l_do_expldiff_rtm_thlm:
                 thlm700 = clubb_api.pvertinterp(nzt=nzt, ngrdcol=ngrdcol, gr=gr, p_mid=p_in_Pa, p_out=70000.0, input_var=thlm)

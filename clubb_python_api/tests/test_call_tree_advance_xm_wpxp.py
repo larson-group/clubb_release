@@ -172,9 +172,10 @@ def _make_args(gr, flags, clubb_params, nu_vert_res_dep, pdf_implicit_coefs_term
         "l_mono_flux_lim_um": bool(flags.l_mono_flux_lim_um),
         "l_mono_flux_lim_vm": bool(flags.l_mono_flux_lim_vm),
         "l_mono_flux_lim_spikefix": bool(flags.l_mono_flux_lim_spikefix),
-        "order_xm_wpxp": 1,
-        "order_xp2_xpyp": 2,
-        "order_wp2_wp3": 3,
+        "wprtp_cl_num": 0,
+        "wpthlp_cl_num": 0,
+        "upwp_cl_num": 0,
+        "vpwp_cl_num": 0,
         "rtm": full((ngrdcol, nzt), 0.01),
         "wprtp": full((ngrdcol, nzm), 0.0),
         "thlm": full((ngrdcol, nzt), 300.0),
@@ -207,7 +208,7 @@ def test_advance_xm_wpxp_returns_finite_arrays(tmp_path):
         err_info = clubb_api.finalize_stats(err_info=err_info)
 
     assert isinstance(out, tuple)
-    assert len(out) == 15
+    assert len(out) == 19
     for arr in out[:-1]:
         assert np.all(np.isfinite(arr))
     assert isinstance(out[-1], ErrInfo)
@@ -235,6 +236,7 @@ def test_advance_xm_wpxp_updates_match_return_values(tmp_path):
 
     try:
         (
+            wprtp_cl_num_out, wpthlp_cl_num_out, upwp_cl_num_out, vpwp_cl_num_out,
             rtm_out, wprtp_out, thlm_out, wpthlp_out,
             sclrm_out, wpsclrp_out, um_out, upwp_out, vm_out, vpwp_out,
             um_pert_out, vm_pert_out, upwp_pert_out, vpwp_pert_out, err_info_out,
@@ -257,3 +259,7 @@ def test_advance_xm_wpxp_updates_match_return_values(tmp_path):
     np.testing.assert_allclose(upwp_pert_out, upwp_pert_in)
     np.testing.assert_allclose(vpwp_pert_out, vpwp_pert_in)
     assert isinstance(err_info_out, ErrInfo)
+    assert int(wprtp_cl_num_out) >= args["wprtp_cl_num"]
+    assert int(wpthlp_cl_num_out) >= args["wpthlp_cl_num"]
+    assert int(upwp_cl_num_out) >= args["upwp_cl_num"]
+    assert int(vpwp_cl_num_out) >= args["vpwp_cl_num"]

@@ -10,7 +10,7 @@ subroutine f2py_advance_xp2_xpyp(nzm, nzt, ngrdcol, sclr_dim, sclr_dim_transport
     wp3_on_wp2, wp3_on_wp2_zt, dt, fcor_y, &
     sclrm, wpsclrp, wpsclrp2, wpsclrprtp, wpsclrpthlp, lhs_splat_wp2, &
     clubb_params, iipdf_type, tridiag_solve_method, fill_holes_type, &
-    l_predict_upwp_vpwp, l_ho_nontrad_coriolis, l_min_xp2_from_corr_wx, &
+    l_ho_nontrad_coriolis, l_min_xp2_from_corr_wx, &
     l_c2_cloud_frac, l_upwind_xpyp_ta, l_godunov_upwind_xpyp_ta, l_lmm_stepping, &
     rtp2, thlp2, rtpthlp, up2, vp2, sclrp2, sclrprtp, sclrpthlp)
 
@@ -40,7 +40,7 @@ subroutine f2py_advance_xp2_xpyp(nzm, nzt, ngrdcol, sclr_dim, sclr_dim_transport
   real(core_rknd), dimension(ngrdcol, nparams), intent(in) :: clubb_params
   integer, intent(in) :: iipdf_type, tridiag_solve_method, fill_holes_type
   logical, intent(in) :: &
-    l_predict_upwp_vpwp, l_ho_nontrad_coriolis, l_min_xp2_from_corr_wx, l_c2_cloud_frac, &
+    l_ho_nontrad_coriolis, l_min_xp2_from_corr_wx, l_c2_cloud_frac, &
     l_upwind_xpyp_ta, l_godunov_upwind_xpyp_ta, l_lmm_stepping
   logical, parameter :: l_implemented = .false.
 
@@ -57,8 +57,7 @@ subroutine f2py_advance_xp2_xpyp(nzm, nzt, ngrdcol, sclr_dim, sclr_dim_transport
     wp3_on_wp2, wp3_on_wp2_zt, stored_pdf_implicit_coefs_terms, dt, fcor_y, &
     sclrm, wpsclrp, wpsclrp2, wpsclrprtp, wpsclrpthlp, lhs_splat_wp2, &
     clubb_params, stored_nu_vert_res_dep, iipdf_type, tridiag_solve_method, fill_holes_type, &
-    l_predict_upwp_vpwp, l_ho_nontrad_coriolis, &
-    l_min_xp2_from_corr_wx, l_c2_cloud_frac, &
+    l_ho_nontrad_coriolis, l_min_xp2_from_corr_wx, l_c2_cloud_frac, &
     l_upwind_xpyp_ta, l_godunov_upwind_xpyp_ta, l_lmm_stepping, &
     l_implemented, stored_stats, rtp2, thlp2, rtpthlp, up2, vp2, sclrp2, sclrprtp, sclrpthlp, stored_err_info)
 

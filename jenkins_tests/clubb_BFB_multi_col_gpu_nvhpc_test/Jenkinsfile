@@ -11,10 +11,13 @@ pipeline {
     }
     stage('Run Python Test') {
       steps {
-        // Here we run the run_test.py script with the correct config, both are found in the sys_admin repo
-        sh '''source /etc/profile.d/larson-group.sh
-              module load nvhpc netcdf-fortran
-              python3 /home/pub/jenkins_BFB_test_configs/sys_admin/python_nightly_test_suite/run_test.py -c /home/pub/jenkins_BFB_test_configs/clubb_BFB_multi_col_gpu_nvhpc_test_config'''
+        lock( "GPU_${env.NODE_NAME}" ) {
+          // Here we run the run_test.py script with the correct config, both are found in the sys_admin repo
+          sh '''ulimit -s 8388608
+                source /etc/profile.d/larson-group.sh
+                module load nvhpc netcdf-fortran
+                python3 /home/pub/jenkins_BFB_test_configs/sys_admin/python_nightly_test_suite/run_test.py -c /home/pub/jenkins_BFB_test_configs/clubb_BFB_multi_col_gpu_nvhpc_test_config'''
+        }
       }
     }
   }

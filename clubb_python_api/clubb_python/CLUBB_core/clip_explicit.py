@@ -17,14 +17,11 @@ def clip_rcm(nzt: int, ngrdcol: int, rtm, message: str, rcm):
 def clip_covar(
     nzm: int, ngrdcol: int,
     solve_type: int,
-    l_first_clip_ts: bool, l_last_clip_ts: bool,
-    dt: float, xp2, yp2,
-    l_predict_upwp_vpwp: bool, xpyp,
+    xp2, yp2, xpyp,
 ):
     """Clip covariance x'y' to satisfy Cauchy-Schwarz."""
     return clubb_f2py.f2py_clip_covar(
-        solve_type, l_first_clip_ts, l_last_clip_ts,
-        dt, f_arr(xp2), f_arr(yp2), l_predict_upwp_vpwp, f_arr(xpyp),
+        solve_type, f_arr(xp2), f_arr(yp2), f_arr(xpyp),
         nzm=int(nzm), ngrdcol=int(ngrdcol))
 
 
@@ -39,21 +36,17 @@ def clip_variance(
 
 
 def clip_covars_denom(
-    nzm: int, ngrdcol: int, sclr_dim: int, dt: float,
+    nzm: int, ngrdcol: int, sclr_dim: int,
     rtp2, thlp2, up2, vp2, wp2, sclrp2,
-    wprtp_cl_num: int, wpthlp_cl_num: int, wpsclrp_cl_num: int,
-    upwp_cl_num: int, vpwp_cl_num: int,
-    l_predict_upwp_vpwp: bool, l_tke_aniso: bool,
+    l_tke_aniso: bool,
     l_linearize_pbl_winds: bool,
     wprtp, wpthlp, upwp, vpwp, wpsclrp, upwp_pert, vpwp_pert,
 ):
     """Clip all covariances using denominator (variance) bounds."""
     return clubb_f2py.f2py_clip_covars_denom(
-        int(sclr_dim), float(dt),
+        int(sclr_dim),
         f_arr(rtp2), f_arr(thlp2), f_arr(up2), f_arr(vp2), f_arr(wp2), f_arr(sclrp2),
-        wprtp_cl_num, wpthlp_cl_num, wpsclrp_cl_num,
-        upwp_cl_num, vpwp_cl_num,
-        l_predict_upwp_vpwp, l_tke_aniso, l_linearize_pbl_winds,
+        l_tke_aniso, l_linearize_pbl_winds,
         f_arr(wprtp), f_arr(wpthlp), f_arr(upwp), f_arr(vpwp),
         f_arr(wpsclrp), f_arr(upwp_pert), f_arr(vpwp_pert),
         nzm=int(nzm), ngrdcol=int(ngrdcol))

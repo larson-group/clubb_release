@@ -46,7 +46,7 @@ pipeline {
     stage('Plot') {
       steps {
         sh 'scp -r carson:/home/pub/web_plots/clubb_nvhpc_gpu_plots/master/cur_out .'
-        sh 'python postprocessing/pyplotgen/pyplotgen.py -l -c cpu_* gpu_* cur_out/cpu_* cur_out/gpu_* -o ${commit}_vs_master_$(cat cur_out/commit)'
+        sh 'python postprocessing/pyplotgen/pyplotgen.py -l -c cpu_* cur_out/cpu_* gpu_* cur_out/gpu_* -o ${commit}_vs_master_$(cat cur_out/commit)'
         sh "ssh carson 'mkdir -p /home/pub/web_plots/clubb_nvhpc_gpu_plots/${branch_name}'"
         sh "scp -r *_vs_* carson:/home/pub/web_plots/clubb_nvhpc_gpu_plots/${branch_name}"
         sh "ssh carson '/home/pub/web_plots/generate_plot_directory_page.py /home/pub/web_plots/clubb_nvhpc_gpu_plots/'"

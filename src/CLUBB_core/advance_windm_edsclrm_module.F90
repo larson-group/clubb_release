@@ -632,7 +632,7 @@ module advance_windm_edsclrm_module
         ! variable has been updated).
         ! This clip can be the first, middle, or last budget contribution,
         ! depending on the relative advancement order in this timestep.
-        if ( stats%l_sample ) then
+        if ( stats%l_sample .and. l_predict_upwp_vpwp ) then
           !$acc update host( upwp )
           if ( upwp_cl_num == 0 ) then
             call stats_begin_budget( "upwp_cl", upwp / dt, stats )
@@ -643,7 +643,7 @@ module advance_windm_edsclrm_module
         upwp_cl_num = upwp_cl_num + 1
         call clip_covar( nzm, ngrdcol, clip_upwp, wp2, up2,        & ! intent(in)
                          upwp, upwp_chnge )                          ! intent(inout)
-        if ( stats%l_sample ) then
+        if ( stats%l_sample .and. l_predict_upwp_vpwp ) then
           !$acc update host( upwp )
           if ( upwp_cl_num == upwp_cl_max ) then
             call stats_finalize_budget( "upwp_cl", upwp / dt, stats )
@@ -665,7 +665,7 @@ module advance_windm_edsclrm_module
         ! variable has been updated).
         ! This clip can be the first, middle, or last budget contribution,
         ! depending on the relative advancement order in this timestep.
-        if ( stats%l_sample ) then
+        if ( stats%l_sample .and. l_predict_upwp_vpwp ) then
           !$acc update host( vpwp )
           if ( vpwp_cl_num == 0 ) then
             call stats_begin_budget( "vpwp_cl", vpwp / dt, stats )
@@ -676,7 +676,7 @@ module advance_windm_edsclrm_module
         vpwp_cl_num = vpwp_cl_num + 1
         call clip_covar( nzm, ngrdcol, clip_vpwp, wp2, vp2,        & ! intent(in)
                          vpwp, vpwp_chnge )                          ! intent(inout)
-        if ( stats%l_sample ) then
+        if ( stats%l_sample .and. l_predict_upwp_vpwp ) then
           !$acc update host( vpwp )
           if ( vpwp_cl_num == vpwp_cl_max ) then
             call stats_finalize_budget( "vpwp_cl", vpwp / dt, stats )
@@ -689,7 +689,7 @@ module advance_windm_edsclrm_module
         ! intent(in) this case, it is assumed that
         !   u'^2 == v'^2 == w'^2, and the variables `up2' and `vp2' do not
         ! interact with any other variables.
-        if ( stats%l_sample ) then
+        if ( stats%l_sample .and. l_predict_upwp_vpwp ) then
           !$acc update host( upwp )
           if ( upwp_cl_num == 0 ) then
             call stats_begin_budget( "upwp_cl", upwp / dt, stats )
@@ -700,7 +700,7 @@ module advance_windm_edsclrm_module
         upwp_cl_num = upwp_cl_num + 1
         call clip_covar( nzm, ngrdcol, clip_upwp, wp2, wp2,        & ! intent(in)
                          upwp, upwp_chnge )                          ! intent(inout)
-        if ( stats%l_sample ) then
+        if ( stats%l_sample .and. l_predict_upwp_vpwp ) then
           !$acc update host( upwp )
           if ( upwp_cl_num == upwp_cl_max ) then
             call stats_finalize_budget( "upwp_cl", upwp / dt, stats )
@@ -709,7 +709,7 @@ module advance_windm_edsclrm_module
           end if
         end if
 
-        if ( stats%l_sample ) then
+        if ( stats%l_sample .and. l_predict_upwp_vpwp ) then
           !$acc update host( vpwp )
           if ( vpwp_cl_num == 0 ) then
             call stats_begin_budget( "vpwp_cl", vpwp / dt, stats )
@@ -720,7 +720,7 @@ module advance_windm_edsclrm_module
         vpwp_cl_num = vpwp_cl_num + 1
         call clip_covar( nzm, ngrdcol, clip_vpwp, wp2, wp2,        & ! intent(in)
                          vpwp, vpwp_chnge )                          ! intent(inout)
-        if ( stats%l_sample ) then
+        if ( stats%l_sample .and. l_predict_upwp_vpwp ) then
           !$acc update host( vpwp )
           if ( vpwp_cl_num == vpwp_cl_max ) then
             call stats_finalize_budget( "vpwp_cl", vpwp / dt, stats )

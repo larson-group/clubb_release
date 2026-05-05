@@ -135,7 +135,6 @@ def _make_args(gr, flags, clubb_params, sclr_idx, nu_vert_res_dep, pdf_implicit_
         "iipdf_type": int(flags.iiPDF_type),
         "tridiag_solve_method": int(flags.tridiag_solve_method),
         "fill_holes_type": int(flags.fill_holes_type),
-        "l_predict_upwp_vpwp": bool(flags.l_predict_upwp_vpwp),
         "l_ho_nontrad_coriolis": bool(flags.l_ho_nontrad_coriolis),
         "l_min_xp2_from_corr_wx": bool(flags.l_min_xp2_from_corr_wx),
         "l_c2_cloud_frac": bool(flags.l_C2_cloud_frac),
