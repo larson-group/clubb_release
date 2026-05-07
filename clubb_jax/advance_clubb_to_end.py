@@ -115,7 +115,7 @@ def _calculate_thlp2_rad(state: dict):
 def _advance_clubb_core(state: dict):
     """Advance the CLUBB core using either the API wrapper or Python port."""
     # Default path: compiled Fortran core through the Python API adapter.
-    _advance_clubb_core_python(state)
+    _advance_clubb_core_api(state)
     # To switch back to the translated Python port instead, replace the line
     # above with: _advance_clubb_core_python(state)
 
