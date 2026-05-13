@@ -70,36 +70,47 @@ def test_lscale_width_vert_avg_constant_profile(gr):
     np.testing.assert_allclose(avg, var_profile)
 
 
-def test_wp2_term_splat_lhs_zero_bv(gr):
+def test_wp23_term_splat_lhs_zero_bv(gr):
     """Zero Brunt-Vaisala squared should yield zero wp2 splat lhs."""
     c_wp2_splat = np.full(gr.ngrdcol, 0.7, dtype=np.float64)
     bv_sqd = np.zeros((gr.ngrdcol, gr.nzm), dtype=np.float64)
-    lhs = clubb_api.wp2_term_splat_lhs(
+    lscale_zm = np.ones((gr.ngrdcol, gr.nzm), dtype=np.float64)
+    rho_ds_zm = np.ones((gr.ngrdcol, gr.nzm), dtype=np.float64)
+    lhs_wp2, lhs_wp3 = clubb_api.wp23_term_splat_lhs(
         gr=gr, nzm=gr.nzm, nzt=gr.nzt, ngrdcol=gr.ngrdcol,
-        c_wp2_splat=c_wp2_splat, brunt_vaisala_freq_sqd_splat=bv_sqd
+        c_wp2_splat=c_wp2_splat, brunt_vaisala_freq_sqd_mixed=bv_sqd,
+        lscale_zm=lscale_zm, rho_ds_zm=rho_ds_zm,
     )
-    assert lhs.shape == (gr.ngrdcol, gr.nzm)
-    np.testing.assert_allclose(lhs, 0.0)
+    assert lhs_wp2.shape == (gr.ngrdcol, gr.nzm)
+    assert lhs_wp3.shape == (gr.ngrdcol, gr.nzt)
+    np.testing.assert_allclose(lhs_wp2, 0.0)
+    np.testing.assert_allclose(lhs_wp3, 0.0)
 
 
-def test_wp2_term_splat_lhs_constant_bv(gr):
+def test_wp23_term_splat_lhs_constant_bv_wp2(gr):
     """Constant Brunt-Vaisala profile should preserve analytic constant result."""
     c_wp2_splat = np.full(gr.ngrdcol, 0.5, dtype=np.float64)
     bv_sqd = np.full((gr.ngrdcol, gr.nzm), 4.0, dtype=np.float64)
-    lhs = clubb_api.wp2_term_splat_lhs(
+    lscale_zm = np.ones((gr.ngrdcol, gr.nzm), dtype=np.float64)
+    rho_ds_zm = np.ones((gr.ngrdcol, gr.nzm), dtype=np.float64)
+    lhs, _ = clubb_api.wp23_term_splat_lhs(
         gr=gr, nzm=gr.nzm, nzt=gr.nzt, ngrdcol=gr.ngrdcol,
-        c_wp2_splat=c_wp2_splat, brunt_vaisala_freq_sqd_splat=bv_sqd
+        c_wp2_splat=c_wp2_splat, brunt_vaisala_freq_sqd_mixed=bv_sqd,
+        lscale_zm=lscale_zm, rho_ds_zm=rho_ds_zm,
     )
     np.testing.assert_allclose(lhs, 1.0)
 
 
-def test_wp3_term_splat_lhs_constant_bv(gr):
+def test_wp23_term_splat_lhs_constant_bv_wp3(gr):
     """wp3 splat lhs should match 1.5 * C_wp2_splat * sqrt(bv_sqd) for constants."""
     c_wp2_splat = np.full(gr.ngrdcol, 0.5, dtype=np.float64)
     bv_sqd = np.full((gr.ngrdcol, gr.nzm), 4.0, dtype=np.float64)
-    lhs = clubb_api.wp3_term_splat_lhs(
+    lscale_zm = np.ones((gr.ngrdcol, gr.nzm), dtype=np.float64)
+    rho_ds_zm = np.ones((gr.ngrdcol, gr.nzm), dtype=np.float64)
+    _, lhs = clubb_api.wp23_term_splat_lhs(
         gr=gr, nzm=gr.nzm, nzt=gr.nzt, ngrdcol=gr.ngrdcol,
-        c_wp2_splat=c_wp2_splat, brunt_vaisala_freq_sqd_splat=bv_sqd
+        c_wp2_splat=c_wp2_splat, brunt_vaisala_freq_sqd_mixed=bv_sqd,
+        lscale_zm=lscale_zm, rho_ds_zm=rho_ds_zm,
     )
     assert lhs.shape == (gr.ngrdcol, gr.nzt)
     np.testing.assert_allclose(lhs, 1.5)

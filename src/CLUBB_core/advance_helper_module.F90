@@ -14,8 +14,7 @@ module advance_helper_module
     calc_brunt_vaisala_freq_sqd, &
     compute_Cx_fnc_Richardson, &
     calc_Ri_zm, &
-    wp2_term_splat_lhs, &
-    wp3_term_splat_lhs, &
+    wp23_term_splat_lhs, &
     smooth_min, smooth_max, &
     smooth_heaviside_peskin, &
     calc_xpwp, &
@@ -35,10 +34,10 @@ module advance_helper_module
 !===============================================================================
   interface smooth_min
 
-    ! These functions smooth the output of the min function 
+    ! These functions smooth the output of the min function
     ! by introducing a varyingly steep path between the two input variables.
     ! The degree to which smoothing is applied depends on the value of 'smth_coef'.
-    ! If 'smth_coef' goes toward 0, the output of the min function will be 
+    ! If 'smth_coef' goes toward 0, the output of the min function will be
     !        0.5 * ((a+b) - abs(a-b))
     ! If a > b, then this comes out to be b. Likewise, if a < b, abs(a-b)=b-a so we get a.
     ! Increasing the smoothing coefficient will lead to a greater degree of smoothing
@@ -56,10 +55,10 @@ module advance_helper_module
 !===============================================================================
   interface smooth_max
 
-    ! These functions smooth the output of the max functions 
+    ! These functions smooth the output of the max functions
     ! by introducing a varyingly steep path between the two input variables.
     ! The degree to which smoothing is applied depends on the value of 'smth_coef'.
-    ! If 'smth_coef' goes toward 0, the output of the max function will be 
+    ! If 'smth_coef' goes toward 0, the output of the max function will be
     !        0.5 * ((a+b) + abs(a-b))
     ! If a > b, then this comes out to be a. Likewise, if a < b, abs(a-b)=b-a so we get b.
     ! Increasing the smoothing coefficient will lead to a greater degree of smoothing
@@ -92,13 +91,13 @@ module advance_helper_module
 
     use clubb_precision, only: &
         core_rknd ! Variable(s)
-        
+
     use constants_clubb, only: &
         one, zero
 
     implicit none
 
-    ! Exernal 
+    ! Exernal
     intrinsic :: present
 
     ! Input Variables
@@ -167,7 +166,7 @@ module advance_helper_module
 
     implicit none
 
-    ! Exernal 
+    ! Exernal
     intrinsic :: present
 
     ! Input Variables
@@ -220,16 +219,9 @@ module advance_helper_module
   end subroutine set_boundary_conditions_rhs
 
   !===============================================================================
-  subroutine calc_stability_correction( nzm, nzt, ngrdcol, gr, &
-                                        thlm, Lscale_zm, em, &
-                                        exner, rtm, rcm, &
-                                        p_in_Pa, thvm, ice_supersat_frac, &
+  subroutine calc_stability_correction( nzm, ngrdcol, &
+                                        brunt_vaisala_freq_sqd, Lscale_zm, em, &
                                         lambda0_stability_coef, &
-                                        bv_efold, T0, &
-                                        saturation_formula, &
-                                        l_brunt_vaisala_freq_moist, &
-                                        l_use_thvm_in_bv_freq, &
-                                        l_modify_limiters_for_cnvg_test, &
                                         stability_correction )
   !
   ! Description:
@@ -242,9 +234,6 @@ module advance_helper_module
     use constants_clubb, only: &
         zero, one, three    ! Constant(s)
 
-    use grid_class, only:  &
-        grid    ! Type
-
     use clubb_precision, only:  &
         core_rknd ! Variable(s)
 
@@ -253,107 +242,44 @@ module advance_helper_module
     ! ---------------- Input Variables ----------------
     integer, intent(in) :: &
       nzm, &
-      nzt, &
       ngrdcol
 
-    type (grid), intent(in) :: gr
-    
-    real( kind = core_rknd ), intent(in), dimension(ngrdcol,nzt) :: &
-      thlm,              & ! th_l (thermo. levels)                     [K]
-      exner,             & ! Exner function                            [-]
-      rtm,               & ! total water mixing ratio, r_t             [kg/kg]
-      rcm,               & ! cloud water mixing ratio, r_c             [kg/kg]
-      p_in_Pa,           & ! Air pressure                              [Pa]
-      thvm,              & ! Virtual potential temperature             [K]
-      ice_supersat_frac
-
     real( kind = core_rknd ), intent(in), dimension(ngrdcol,nzm) :: &
-      Lscale_zm, & ! Turbulent mixing length interp to m levs  [m]
-      em           ! Turbulent Kinetic Energy (TKE)            [m^2/s^2]
+      brunt_vaisala_freq_sqd, & ! Brunt-Vaisala frequency squared      [1/s^2]
+      Lscale_zm,              & ! Turbulent mixing length interp to m levs  [m]
+      em                        ! Turbulent Kinetic Energy (TKE)            [m^2/s^2]
 
     real( kind = core_rknd ), dimension(ngrdcol), intent(in) :: &
-      lambda0_stability_coef, &     ! CLUBB tunable parameter lambda0_stability_coef
-      bv_efold                      ! Control parameter for inverse e-folding of
-                                    ! cloud fraction in the mixed Brunt Vaisala frequency
-
-    real( kind = core_rknd ), intent(in) :: &
-      T0
-
-    integer, intent(in) :: &
-      saturation_formula ! Integer that stores the saturation formula to be used
-
-    logical, intent(in) :: &
-      l_brunt_vaisala_freq_moist, & ! Use a different formula for the Brunt-Vaisala frequency in
-                                    ! saturated atmospheres (from Durran and Klemp, 1982)
-      l_use_thvm_in_bv_freq         ! Use thvm in the calculation of Brunt-Vaisala frequency
-
-    ! Flag to activate modifications on limiters for convergence test
-    ! (smoothed max and min for Cx_fnc_Richardson in advance_helper_module.F90)
-    ! (remove the clippings on brunt_vaisala_freq_sqd_smth in mixing_length.F90)
-    ! (reduce threshold on limiters for sqrt_Ri_zm in mixing_length.F90)
-    logical, intent(in) :: &
-      l_modify_limiters_for_cnvg_test
+      lambda0_stability_coef        ! CLUBB tunable parameter lambda0_stability_coef
 
     ! ---------------- Output Variables ----------------
     real( kind = core_rknd ), intent(out), dimension(ngrdcol,nzm) :: &
       stability_correction
-      
+
     ! ---------------- Local Variables ----------------
-    real( kind = core_rknd ), dimension(ngrdcol,nzm) :: &
-      brunt_vaisala_freq_sqd, & !  []
-      brunt_vaisala_freq_sqd_mixed, &
-      brunt_vaisala_freq_sqd_dry, & !  []
-      brunt_vaisala_freq_sqd_moist, &
-      brunt_vaisala_freq_sqd_smth, &
+    real( kind = core_rknd ) :: &
       lambda0_stability
 
     integer :: i, k
 
     !------------ Begin Code --------------
 
-    !$acc enter data create( brunt_vaisala_freq_sqd, brunt_vaisala_freq_sqd_mixed, &
-    !$acc                    brunt_vaisala_freq_sqd_moist, brunt_vaisala_freq_sqd_dry, &
-    !$acc                    brunt_vaisala_freq_sqd_smth, lambda0_stability )
-
-    call calc_brunt_vaisala_freq_sqd( nzm, nzt, ngrdcol, gr, thlm, &    ! intent(in)
-                                      exner, rtm, rcm, p_in_Pa, thvm, & ! intent(in)
-                                      ice_supersat_frac, &              ! intent(in)
-                                      saturation_formula, &             ! intent(in)
-                                      l_brunt_vaisala_freq_moist, &     ! intent(in)
-                                      l_use_thvm_in_bv_freq, &          ! intent(in)
-                                      l_modify_limiters_for_cnvg_test, &! intent(in)
-                                      bv_efold, T0, &                   ! intent(in)
-                                      brunt_vaisala_freq_sqd, &         ! intent(out)
-                                      brunt_vaisala_freq_sqd_mixed,&    ! intent(out)
-                                      brunt_vaisala_freq_sqd_dry, &     ! intent(out)
-                                      brunt_vaisala_freq_sqd_moist, &   ! intent(out)
-                                      brunt_vaisala_freq_sqd_smth )    ! intent(out)
-
     !$acc parallel loop gang vector collapse(2) default(present)
     do k = 1, nzm
       do i = 1, ngrdcol
+
         if ( brunt_vaisala_freq_sqd(i,k) > zero  ) then
-          lambda0_stability(i,k) = lambda0_stability_coef(i)
+          lambda0_stability = lambda0_stability_coef(i)
         else
-          lambda0_stability(i,k) = zero
+          lambda0_stability = zero
         end if
-      end do
-    end do
-    !$acc end parallel loop
 
-    !$acc parallel loop gang vector collapse(2) default(present)
-    do k = 1, nzm
-      do i = 1, ngrdcol
-        stability_correction(i,k) = one + min( lambda0_stability(i,k) &
+        stability_correction(i,k) = one + min( lambda0_stability &
                                                * brunt_vaisala_freq_sqd(i,k) &
                                                * Lscale_zm(i,k)**2 / em(i,k), three )
       end do
     end do
     !$acc end parallel loop
-
-    !$acc exit data delete( brunt_vaisala_freq_sqd, brunt_vaisala_freq_sqd_mixed, &
-    !$acc                   brunt_vaisala_freq_sqd_moist, brunt_vaisala_freq_sqd_dry, &
-    !$acc                   brunt_vaisala_freq_sqd_smth, lambda0_stability )
 
     return
 
@@ -370,9 +296,8 @@ module advance_helper_module
                                            bv_efold, T0, &
                                            brunt_vaisala_freq_sqd, &
                                            brunt_vaisala_freq_sqd_mixed,&
-                                           brunt_vaisala_freq_sqd_dry, &
-                                           brunt_vaisala_freq_sqd_moist, &
-                                           brunt_vaisala_freq_sqd_smth )
+                                           brunt_vaisala_freq_sqd_smth, &
+                                           stats )
 
   ! Description:
   !   Calculate the Brunt-Vaisala frequency squared, N^2.
@@ -405,6 +330,10 @@ module advance_helper_module
 
     use saturation, only: &
         sat_mixrat_liq_api ! Procedure
+
+    use stats_netcdf, only: &
+        stats_type, &
+        stats_update
 
     implicit none
 
@@ -451,9 +380,10 @@ module advance_helper_module
     real( kind = core_rknd ), dimension(ngrdcol,nzm), intent(out) :: &
       brunt_vaisala_freq_sqd, & ! Brunt-Vaisala frequency squared, N^2 [1/s^2]
       brunt_vaisala_freq_sqd_mixed, &
-      brunt_vaisala_freq_sqd_dry,   &
-      brunt_vaisala_freq_sqd_moist, &
       brunt_vaisala_freq_sqd_smth
+
+    type(stats_type), intent(inout), optional :: &
+      stats
 
     !---------------------------- Local Variables ----------------------------
     real( kind = core_rknd ), dimension(ngrdcol,nzt) :: &
@@ -462,6 +392,7 @@ module advance_helper_module
     real( kind = core_rknd ), dimension(ngrdcol,nzm) :: &
       T_in_K_zm, rsat_zm, thm_zm, thvm_zm, ice_supersat_frac_zm, &
       ddzt_thlm, tmp_calc, ddzt_thm, ddzt_rsat, ddzt_rtm, ddzt_thvm, &
+      brunt_vaisala_freq_sqd_dry, brunt_vaisala_freq_sqd_moist, &
       brunt_vaisala_freq_clipped
 
     logical, parameter :: l_smooth_min_max = .false. ! whether to apply smooth min and max function
@@ -472,6 +403,7 @@ module advance_helper_module
 
     !$acc data create( T_in_K, T_in_K_zm, rsat, rsat_zm, thm, thm_zm, ddzt_thlm, &
     !$acc               ddzt_thm, ddzt_rsat, ddzt_rtm, thvm_zm, ddzt_thvm, ice_supersat_frac_zm, &
+    !$acc               brunt_vaisala_freq_sqd_dry, brunt_vaisala_freq_sqd_moist, &
     !$acc               brunt_vaisala_freq_clipped )
 
     !$acc enter data if( l_smooth_min_max ) &
@@ -603,6 +535,19 @@ module advance_helper_module
 
       brunt_vaisala_freq_sqd = brunt_vaisala_freq_sqd_moist
 
+    end if
+
+    if ( present( stats ) ) then
+      if ( stats%l_sample ) then
+        !$acc update host( brunt_vaisala_freq_sqd, brunt_vaisala_freq_sqd_mixed, &
+        !$acc              brunt_vaisala_freq_sqd_moist, brunt_vaisala_freq_sqd_dry, &
+        !$acc              brunt_vaisala_freq_sqd_smth )
+        call stats_update( "bv_freq_sqd", brunt_vaisala_freq_sqd, stats )
+        call stats_update( "bv_freq_sqd_mixed", brunt_vaisala_freq_sqd_mixed, stats )
+        call stats_update( "bv_freq_sqd_moist", brunt_vaisala_freq_sqd_moist, stats )
+        call stats_update( "bv_freq_sqd_dry", brunt_vaisala_freq_sqd_dry, stats )
+        call stats_update( "bv_freq_sqd_smth", brunt_vaisala_freq_sqd_smth, stats )
+      end if
     end if
 
     !$acc exit data if( l_smooth_min_max ) &
@@ -748,7 +693,7 @@ module advance_helper_module
     ! Cx_fnc_Richardson is interpolated based on the value of Richardson_num
     ! The min function ensures that Cx does not exceed Cx_max, regardless of the
     !     value of Richardson_num_max.
-    if ( l_modify_limiters_for_cnvg_test ) then 
+    if ( l_modify_limiters_for_cnvg_test ) then
 
       !$acc parallel loop gang vector collapse(2) default(present)
       do k = 1, nzm
@@ -771,7 +716,7 @@ module advance_helper_module
                                           fnc_Richardson_clipped, &
                                           min_max_smth_mag )
 
-      ! use smoothed max amd min to achive smoothed profile and avoid discontinuities 
+      ! use smoothed max amd min to achive smoothed profile and avoid discontinuities
       !$acc parallel loop gang vector collapse(2) default(present)
       do k = 1, nzm
         do i = 1, ngrdcol
@@ -785,11 +730,11 @@ module advance_helper_module
 
       Cx_fnc_Richardson = zm2zt2zm( nzm, nzt, ngrdcol, gr, Cx_fnc_interp )
 
-    else ! default method 
+    else ! default method
 
       !$acc parallel loop gang vector collapse(2) default(present)
       do k = 1, nzm
-        do i = 1, ngrdcol  
+        do i = 1, ngrdcol
 
           Richardson_num_max = clubb_params(i,iRichardson_num_max)
           Richardson_num_min = clubb_params(i,iRichardson_num_min)
@@ -805,7 +750,7 @@ module advance_helper_module
       end do
       !$acc end parallel loop
 
-    end if 
+    end if
 
     if ( l_Cx_fnc_Richardson_vert_avg ) then
       Cx_fnc_Richardson = Lscale_width_vert_avg( nzm, ngrdcol, gr, smth_type, &
@@ -903,7 +848,7 @@ module advance_helper_module
 
     use grid_class, only: &
         grid ! Type
-        
+
     use constants_clubb, only: &
         zero
 
@@ -914,9 +859,9 @@ module advance_helper_module
       nzm, &
       ngrdcol, &
       smth_type
-      
+
     type (grid), intent(in) :: gr
-    
+
     real( kind = core_rknd ), dimension(ngrdcol,nzm), intent(in) :: &
       var_profile, &      ! Profile on momentum levels
       Lscale_zm, &        ! Lscale on momentum levels
@@ -944,7 +889,7 @@ module advance_helper_module
     integer :: &
       n_below_ground_levels
 
-    real( kind = core_rknd ) :: & 
+    real( kind = core_rknd ) :: &
       numer_integral, & ! Integral in the numerator (see description)
       denom_integral    ! Integral in the denominator (see description)
 
@@ -985,17 +930,17 @@ module advance_helper_module
 
         !-----------------------------------------------------------------------
         ! Hunt down all vertical levels with one_half_avg_width(k) of gr%zm(k).
-        ! 
+        !
         ! Note: Outdated explanation of version that improves CPU performance
         !       below. Reworked due to it requiring a k dependency. Now we
-        !       begin looking for k_avg_upper and k_avg_lower starting at 
+        !       begin looking for k_avg_upper and k_avg_lower starting at
         !       the kth level.
-        ! 
+        !
         ! Outdated but potentially useful note:
-        !     k_avg_upper and k_avg_lower can be saved each loop iteration, this 
+        !     k_avg_upper and k_avg_lower can be saved each loop iteration, this
         !     reduces iterations beacuse the kth values are likely to be within
         !     one or two grid levels of the k-1th values. Less searching is required
-        !     by starting the search at the previous values and incrementing or 
+        !     by starting the search at the previous values and incrementing or
         !     decrement as needed.
         !-----------------------------------------------------------------------
 
@@ -1041,7 +986,7 @@ module advance_helper_module
           denom_integral = n_below_ground_levels * denom_terms(i,gr%k_lb_zm)
 
         end if
-            
+
         ! Add numerator and denominator terms for all above-ground levels
         do k_avg = k_avg_lower, k_avg_upper, gr%grid_dir_indx
 
@@ -1063,57 +1008,93 @@ module advance_helper_module
 
  !===============================================================================
 
-  subroutine wp2_term_splat_lhs( nzm, nzt, ngrdcol, gr, C_wp2_splat, &
-                                 brunt_vaisala_freq_sqd_splat, &
-                                 lhs_splat_wp2 )
+  subroutine wp23_term_splat_lhs( nzm, nzt, ngrdcol, gr, C_wp2_splat, &
+                                  brunt_vaisala_freq_sqd_mixed, Lscale_zm, rho_ds_zm, &
+                                  stats, &
+                                  lhs_splat_wp2, lhs_splat_wp3 )
 
     ! Description
-    ! DESCRIBE TERM
+    !   Calculate the LHS coefficients for the wp2 and wp3 splatting terms.
 
     ! References:
     !-----------------------------------------------------------------------
 
     use grid_class, only:  &
         grid, & ! Type
+        zm2zt_api, &
         zm2zt2zm
 
     use constants_clubb, only: &
+        one_half, &
+        three, &
         zero
 
     use clubb_precision, only: &
         core_rknd    ! Variable(s)
 
+    use stats_netcdf, only: &
+        stats_type, &
+        stats_update
+
     implicit none
 
     ! --------------------- Input Variables ---------------------
     integer, intent(in) :: &
-      nzm, &
-      nzt, &
-      ngrdcol
+      nzm,    & ! Number of momentum levels
+      nzt,    & ! Number of thermodynamic levels
+      ngrdcol   ! Number of grid columns
 
     type (grid), intent(in) :: &
-      gr
+      gr   ! Grid structure
 
     real( kind = core_rknd ), dimension(ngrdcol,nzm), intent(in) :: &
-      brunt_vaisala_freq_sqd_splat  ! Inverse time-scale tau at momentum levels  [1/s^2]
+      brunt_vaisala_freq_sqd_mixed, & ! Mixture of dry and moist Brunt-Vaisala frequency squared [s^-2]
+      Lscale_zm,                    & ! Turbulent mixing length on momentum levels [m]
+      rho_ds_zm                       ! Dry, static density on momentum levels [kg/m^3]
 
     real( kind = core_rknd ), dimension(ngrdcol), intent(in) :: &
       C_wp2_splat    ! Model parameter C_wp2_splat             [ -]
+
+    ! --------------------- Input/Output Variables ---------------------
+    type(stats_type), intent(inout) :: &
+      stats   ! Statistics accumulator
 
     ! --------------------- Output Variable ---------------------
     real( kind = core_rknd ), dimension(ngrdcol,nzm), intent(out) :: &
       lhs_splat_wp2    ! LHS coefficient of wp2 splatting term  [1/s]
 
+    real( kind = core_rknd ), dimension(ngrdcol,nzt), intent(out) :: &
+      lhs_splat_wp3    ! LHS coefficient of wp3 splatting term [1/s]
+
     ! --------------------- Local Variables ---------------------
     real( kind = core_rknd ), dimension(ngrdcol,nzm) :: &
-      brunt_vaisala_freq_splat_clipped, &
-      brunt_vaisala_freq_splat_smooth
+      brunt_vaisala_freq_sqd_splat,      & ! Vertically averaged Brunt-Vaisala frequency squared [s^-2]
+      brunt_vaisala_freq_splat_clipped,  & ! Nonnegative Brunt-Vaisala frequency [1/s]
+      brunt_vaisala_freq_splat_smooth      ! Smoothed nonnegative Brunt-Vaisala frequency [1/s]
 
-    integer :: i, k
+    real( kind = core_rknd ), dimension(ngrdcol,nzt) :: &
+      brunt_vaisala_freq_splat_clipped_zt  ! Nonnegative Brunt-Vaisala frequency on thermo. levels [1/s]
+
+    real( kind = core_rknd ), parameter :: &
+      below_grnd_val = 0.01_core_rknd  ! Below-ground value for vertical averaging [s^-2]
+
+    integer, parameter :: &
+      smth_type = 2  ! Lscale_width_vert_avg smoothing type
+
+    integer :: &
+      i,  & ! Grid-column loop index
+      k     ! Vertical-level loop index
 
     !----------------------------- Begin Code -----------------------------
 
-    !$acc enter data create( brunt_vaisala_freq_splat_clipped, brunt_vaisala_freq_splat_smooth )
+    !$acc enter data create( brunt_vaisala_freq_sqd_splat, brunt_vaisala_freq_splat_clipped, &
+    !$acc                    brunt_vaisala_freq_splat_smooth, brunt_vaisala_freq_splat_clipped_zt )
+
+    ! Calculate Brunt-Vaisala frequency used for splatting.
+    brunt_vaisala_freq_sqd_splat  &
+      = Lscale_width_vert_avg( nzm, ngrdcol, gr, smth_type, &
+                               brunt_vaisala_freq_sqd_mixed, Lscale_zm, rho_ds_zm, &
+                               below_grnd_val )
 
     !$acc parallel loop gang vector collapse(2) default(present)
     do k = 1, nzm
@@ -1123,10 +1104,14 @@ module advance_helper_module
       end do
     end do
     !$acc end parallel loop
-    
+
     brunt_vaisala_freq_splat_smooth = zm2zt2zm( nzm, nzt, ngrdcol, gr, &
                                                 brunt_vaisala_freq_splat_clipped )
 
+    brunt_vaisala_freq_splat_clipped_zt = zm2zt_api( nzm, nzt, ngrdcol, gr, &
+                                                     brunt_vaisala_freq_splat_clipped )
+
+    ! Vertical compression of eddies causes gustiness (increase in up2 and vp2).
     !$acc parallel loop gang vector collapse(2) default(present)
     do k = 1, nzm
       do i = 1, ngrdcol
@@ -1135,81 +1120,7 @@ module advance_helper_module
     end do
     !$acc end parallel loop
 
-    !$acc exit data delete( brunt_vaisala_freq_splat_clipped, brunt_vaisala_freq_splat_smooth )
-
-    return
-
-  end subroutine wp2_term_splat_lhs
-
- !===============================================================================
-  subroutine wp3_term_splat_lhs( nzm, nzt, ngrdcol, gr, C_wp2_splat, &
-                                 brunt_vaisala_freq_sqd_splat, &
-                                 lhs_splat_wp3 )
-
-    ! Description
-    ! DESCRIBE TERM
-
-    ! References:
-    !-----------------------------------------------------------------------
-
-    use grid_class, only:  &
-        grid, & ! Type
-        zm2zt_api
-
-    use constants_clubb, only: &
-        zero, &
-        one_half, &
-        three
-
-    use clubb_precision, only: &
-        core_rknd    ! Variable(s)
-
-    implicit none
-
-    ! --------------------- Input Variables ---------------------
-    integer, intent(in) :: &
-      nzm, &
-      nzt, &
-      ngrdcol
-
-    type (grid), intent(in) :: &
-      gr
-
-    real( kind = core_rknd ), dimension(ngrdcol,nzm), intent(in) :: &
-      brunt_vaisala_freq_sqd_splat  ! Inverse time-scale tau at momentum levels  [1/s^2]
-
-    real( kind = core_rknd ), dimension(ngrdcol), intent(in) :: &
-      C_wp2_splat    ! Model parameter C_wp2_splat              [-]
-
-    ! --------------------- Output Variable ---------------------
-    real( kind = core_rknd ), dimension(ngrdcol,nzt), intent(out) :: &
-      lhs_splat_wp3    ! LHS coefficient of wp3 splatting term [1/s]
-
-    ! --------------------- Local Variables ---------------------
-    real( kind = core_rknd ), dimension(ngrdcol,nzm) :: &
-      brunt_vaisala_freq_splat_clipped
-
-    real( kind = core_rknd ), dimension(ngrdcol,nzt) :: &
-      brunt_vaisala_freq_splat_clipped_zt
-
-    integer :: i, k
-
-    !----------------------------- Begin Code -----------------------------
-
-    !$acc enter data create( brunt_vaisala_freq_splat_clipped, brunt_vaisala_freq_splat_clipped_zt )
-
-    !$acc parallel loop gang vector collapse(2) default(present)
-    do k = 1, nzm
-      do i = 1, ngrdcol
-        brunt_vaisala_freq_splat_clipped(i,k) &
-                = sqrt( max( zero, brunt_vaisala_freq_sqd_splat(i,k) ) )
-      end do
-    end do
-    !$acc end parallel loop
-    
-    brunt_vaisala_freq_splat_clipped_zt = zm2zt_api( nzm, nzt, ngrdcol, gr, &
-                                                     brunt_vaisala_freq_splat_clipped )
-
+    ! Vertical compression of eddies also diminishes w'3.
     !$acc parallel loop gang vector collapse(2) default(present)
     do k = 1, nzt
       do i = 1, ngrdcol
@@ -1219,11 +1130,17 @@ module advance_helper_module
     end do
     !$acc end parallel loop
 
-    !$acc exit data delete( brunt_vaisala_freq_splat_clipped, brunt_vaisala_freq_splat_clipped_zt )
+    if ( stats%l_sample ) then
+      !$acc update host( brunt_vaisala_freq_sqd_splat )
+      call stats_update( "bv_freq_sqd_splat", brunt_vaisala_freq_sqd_splat, stats )
+    end if
+
+    !$acc exit data delete( brunt_vaisala_freq_sqd_splat, brunt_vaisala_freq_splat_clipped, &
+    !$acc                   brunt_vaisala_freq_splat_smooth, brunt_vaisala_freq_splat_clipped_zt )
 
     return
 
-  end subroutine wp3_term_splat_lhs
+  end subroutine wp23_term_splat_lhs
 
 !===============================================================================
   function smooth_min_sclr_idx( nz, ngrdcol, input_var1, input_var2, smth_coef ) &
@@ -1239,12 +1156,12 @@ module advance_helper_module
 
     use clubb_precision, only: &
         core_rknd                     ! Constant(s)
-        
+
     use constants_clubb, only: &
         one_half
 
     implicit none
-    
+
     integer, intent(in) :: &
       nz, &
       ngrdcol
@@ -1285,7 +1202,7 @@ module advance_helper_module
   result( output_var )
 
   ! Description:
-  !   Computes a smoothed version of the min function, using one scalar and 
+  !   Computes a smoothed version of the min function, using one scalar and
   !   one 1d array as inputs. For more details, see the interface in this file.
 
   ! References:
@@ -1349,7 +1266,7 @@ module advance_helper_module
 
     use clubb_precision, only: &
         core_rknd                     ! Constant(s)
-        
+
     use constants_clubb, only: &
         one_half
 
@@ -1363,7 +1280,7 @@ module advance_helper_module
     real ( kind = core_rknd ), dimension(ngrdcol, nz), intent(in) :: &
       input_var1, &       ! Units vary
       input_var2          ! Units vary
-      
+
     real ( kind = core_rknd ), intent(in) :: &
       smth_coef           ! "intensity" of the smoothing. Should be of a similar magnitude to
                           ! that of the data structures input_var1 and input_var2
@@ -1404,7 +1321,7 @@ module advance_helper_module
 
     use clubb_precision, only: &
         core_rknd                     ! Constant(s)
-        
+
     use constants_clubb, only: &
         one_half
 
@@ -1434,7 +1351,7 @@ module advance_helper_module
   result( output_var )
 
   ! Description:
-  !   Computes a smoothed version of the max function, using one scalar and 
+  !   Computes a smoothed version of the max function, using one scalar and
   !   one 1d array as inputs. For more details, see the interface in this file.
 
   ! References:
@@ -1443,7 +1360,7 @@ module advance_helper_module
 
     use clubb_precision, only: &
         core_rknd                     ! Constant(s)
-        
+
     use constants_clubb, only: &
         one_half
 
@@ -1489,7 +1406,7 @@ module advance_helper_module
   result( output_var )
 
   ! Description:
-  !   Computes a smoothed version of the max function, using one scalar and 
+  !   Computes a smoothed version of the max function, using one scalar and
   !   one 1d array as inputs. For more details, see the interface in this file.
 
   ! References:
@@ -1498,7 +1415,7 @@ module advance_helper_module
 
     use clubb_precision, only: &
         core_rknd                     ! Constant(s)
-        
+
     use constants_clubb, only: &
         one_half
 
@@ -1544,7 +1461,7 @@ module advance_helper_module
   result( output_var )
 
   ! Description:
-  !   Computes a smoothed version of the max function, using one scalar and 
+  !   Computes a smoothed version of the max function, using one scalar and
   !   one 1d array as inputs. For more details, see the interface in this file.
 
   ! References:
@@ -1553,7 +1470,7 @@ module advance_helper_module
 
     use clubb_precision, only: &
         core_rknd                     ! Constant(s)
-        
+
     use constants_clubb, only: &
         one_half
 
@@ -1605,7 +1522,7 @@ module advance_helper_module
 
     use clubb_precision, only: &
         core_rknd                     ! Constant(s)
-        
+
     use constants_clubb, only: &
         one_half
 
@@ -1619,7 +1536,7 @@ module advance_helper_module
     real ( kind = core_rknd ), dimension(ngrdcol, nz), intent(in) :: &
       input_var1, &       ! Units vary
       input_var2          ! Units vary
-      
+
     real( kind = core_rknd ), intent(in) :: &
       smth_coef           ! "intensity" of the smoothing. Should be of a similar magnitude to
                           ! that of the data structures input_var1 and input_var2
@@ -1662,7 +1579,7 @@ module advance_helper_module
 
     use clubb_precision, only: &
         core_rknd                     ! Constant(s)
-        
+
     use constants_clubb, only: &
         one_half
 
@@ -1690,19 +1607,19 @@ module advance_helper_module
   function smooth_heaviside_peskin( nz, ngrdcol, input, &
                                     smth_range ) &
     result( smth_output )
-    
+
   ! Description:
-  !   Computes a smoothed heaviside function as in 
-  !       [Lin, Lee et al., 2005, A level set characteristic Galerkin 
+  !   Computes a smoothed heaviside function as in
+  !       [Lin, Lee et al., 2005, A level set characteristic Galerkin
   !       finite element method for free surface flows], equation (2)
-  
+
   ! References:
   !   See clubb:ticket:965
   !----------------------------------------------------------------------
-  
+
     use clubb_precision, only: &
         core_rknd                     ! Constant(s)
-        
+
     use constants_clubb, only: &
         pi, invrs_pi, one, one_half, zero
 
@@ -1735,11 +1652,11 @@ module advance_helper_module
     do k = 1, nz
       do i = 1, ngrdcol
 
-        if ( input(i,k) < -smth_range ) then 
+        if ( input(i,k) < -smth_range ) then
            smth_output(i,k) = zero
         elseif ( input(i,k) > smth_range ) then
            smth_output(i,k) = one
-        else 
+        else
           ! Note that this case will only ever be reached if smth_range != 0,
           ! so this division is fine and should not cause any issues
           input_over_smth_range = input(i,k) / smth_range
@@ -1769,7 +1686,7 @@ module advance_helper_module
 
     use clubb_precision, only: &
         core_rknd ! Variable(s)
-        
+
     use grid_class, only: &
         grid
 
@@ -1777,17 +1694,17 @@ module advance_helper_module
 
     ! ----------------------- Input variables -----------------------
     type (grid), intent(in) :: gr
-      
+
     real( kind = core_rknd ), dimension(gr%nzm), intent(in) :: &
       Km_zm    ! Eddy diff. (k momentum level)                 [m^2/s]
 
     real( kind = core_rknd ), dimension(gr%nzt), intent(in) :: &
       xm       ! x (k thermo level)                            [units vary]
-      
+
     ! ----------------------- Output variable -----------------------
     real( kind = core_rknd ), dimension(gr%nzm), intent(out) :: &
       xpwp     ! x'w'   [(units vary)(m/s)]
-      
+
     integer :: k
 
     ! ----------------------- Begin Code -----------------------
@@ -1799,7 +1716,7 @@ module advance_helper_module
 
     return
   end subroutine calc_xpwp_1D
-  
+
   !===============================================================================
   subroutine calc_xpwp_2D( nzm, nzt, ngrdcol, gr, &
                            Km_zm, xm, &
@@ -1814,7 +1731,7 @@ module advance_helper_module
 
     use clubb_precision, only: &
         core_rknd ! Variable(s)
-        
+
     use grid_class, only: &
         grid
 
@@ -1825,19 +1742,19 @@ module advance_helper_module
       nzm, &
       nzt, &
       ngrdcol
-      
+
     type (grid), intent(in) :: gr
-      
+
     real( kind = core_rknd ), dimension(ngrdcol,nzm), intent(in) :: &
       Km_zm    ! Eddy diff. (k momentum level)                 [m^2/s]
 
       real( kind = core_rknd ), dimension(ngrdcol,nzt), intent(in) :: &
       xm       ! x (k thermo level)                            [units vary]
-      
+
     ! ----------------------- Output variable -----------------------
     real( kind = core_rknd ), dimension(ngrdcol,nzm), intent(out) :: &
       xpwp ! x'w'   [(units vary)(m/s)]
-      
+
     integer :: i, k
 
     ! ----------------------- Begin Code -----------------------
@@ -1880,7 +1797,7 @@ module advance_helper_module
     ! thermodynamic-level or a momentum-level variable.
     !
     ! Thermodynamic-level computation:
-    
+
     !
     ! For numerical purposes, INT(z_bot:z_top) x rho_ds dz, which is the
     ! numerator integral, is calculated as:
@@ -1959,7 +1876,7 @@ module advance_helper_module
     implicit none
 
     ! Input variables
-    integer, intent(in) :: & 
+    integer, intent(in) :: &
       total_idx ! The total numer of indices within the range of averaging
 
     real( kind = core_rknd ), dimension(total_idx), intent(in) ::  &
@@ -1972,19 +1889,19 @@ module advance_helper_module
     !        field(1) actually their respective values at level k = 1.
 
     ! Output variable
-    real( kind = core_rknd ) :: & 
+    real( kind = core_rknd ) :: &
       vertical_avg  ! Vertical average of field    [Units of field]
 
     ! Local variables
-    real( kind = core_rknd ) :: & 
+    real( kind = core_rknd ) :: &
       numer_integral, & ! Integral in the numerator (see description)
       denom_integral    ! Integral in the denominator (see description)
-      
+
 
     integer :: k
 
     !-----------------------------------------------------------------------
-    
+
     ! Initialize variable
     numer_integral = 0.0_core_rknd
     denom_integral = 0.0_core_rknd
@@ -2013,8 +1930,8 @@ module advance_helper_module
     ! Description:
     ! Computes the vertical integral. rho_ds, field, and dz must all be
     ! of size total_idx and should all start at the same index.
-    ! 
-    
+    !
+
     ! References:
     ! None
     !-----------------------------------------------------------------------
@@ -2025,7 +1942,7 @@ module advance_helper_module
     implicit none
 
     ! Input variables
-    integer, intent(in) :: & 
+    integer, intent(in) :: &
       total_idx  ! The total numer of indices within the range of averaging
 
     real( kind = core_rknd ), dimension(total_idx), intent(in) ::  &
@@ -2073,9 +1990,9 @@ module advance_helper_module
 
     use clubb_precision, only: &
         core_rknd
-     
+
     implicit none
-    
+
     !------------------------ Input Variables ------------------------
     integer , intent(in)  :: &
       nzt, &
@@ -2093,7 +2010,7 @@ module advance_helper_module
 
     !------------------------ Output Variables ------------------------
     real( kind = core_rknd ), dimension(ngrdcol), intent(out) :: &
-      interp_var    ! output array (interpolated)   
+      interp_var    ! output array (interpolated)
 
     !------------------------ Local Variables ------------------------
     integer :: &
@@ -2156,7 +2073,7 @@ module advance_helper_module
 
     end do
     !$acc end parallel loop
-     
+
     return
 
   end subroutine pvertinterp

@@ -27,8 +27,7 @@ from clubb_python.CLUBB_core.advance_helper import (
     smooth_min,
     calc_xpwp,
     lscale_width_vert_avg,
-    wp2_term_splat_lhs,
-    wp3_term_splat_lhs,
+    wp23_term_splat_lhs,
     calc_brunt_vaisala_freq_sqd,
     compute_cx_fnc_richardson,
     calc_stability_correction,
@@ -37,7 +36,7 @@ from clubb_python.CLUBB_core.advance_windm_edsclrm import advance_windm_edsclrm
 from clubb_python.CLUBB_core.advance_wp2_wp3 import advance_wp2_wp3
 from clubb_python.CLUBB_core.advance_xm_wpxp import advance_xm_wpxp
 from clubb_python.CLUBB_core.advance_xp2_xpyp import advance_xp2_xpyp, update_xp2_mc
-from clubb_python.CLUBB_core.advance_xp3 import advance_xp3
+from clubb_python.CLUBB_core.advance_xp3 import advance_xp3, compute_xp3
 from clubb_python.CLUBB_core.calendar import (
     julian2gregorian_date,
     compute_current_date,
@@ -190,7 +189,12 @@ from clubb_python.CLUBB_core.pos_definite_module import pos_definite_adj
 from clubb_python.CLUBB_core.penta_bicgstab_solver import penta_bicgstab_solve
 from clubb_python.CLUBB_core.penta_lu_solver import penta_lu_solve
 from clubb_python.CLUBB_core.remapping_module import remap_vals_to_target
-from clubb_python.CLUBB_core.skx_module import skx_func, lg_2005_ansatz, xp3_lg_2005_ansatz
+from clubb_python.CLUBB_core.skx_module import (
+    skx_func,
+    lg_2005_ansatz,
+    xp3_lg_2005_ansatz,
+    compute_gamma_skw,
+)
 from clubb_python.CLUBB_core.sigma_sqd_w_module import compute_sigma_sqd_w
 from clubb_python.CLUBB_core.sponge_layer_damping import sponge_damp_xm, sponge_damp_xp2, sponge_damp_xp3
 from clubb_python.CLUBB_core.sfc_varnce_module import calc_sfc_varnce

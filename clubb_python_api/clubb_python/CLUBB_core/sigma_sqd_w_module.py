@@ -5,15 +5,20 @@ from numpy import asfortranarray as f_arr
 
 import clubb_f2py
 
+from clubb_python.derived_types.grid_class import Grid
+from clubb_python.derived_types.grid_class_converter import set_fortran_grid
+
 
 def compute_sigma_sqd_w(
-    nzm: int, ngrdcol: int,
+    gr: Grid, nzm: int, nzt: int, ngrdcol: int,
     gamma_Skw_fnc, wp2, thlp2, rtp2, up2, vp2,
     wpthlp, wprtp, upwp, vpwp,
     l_predict_upwp_vpwp: bool,
 ):
     """Compute the PDF width parameter sigma_sqd_w."""
+    set_fortran_grid(gr)
     return clubb_f2py.f2py_compute_sigma_sqd_w(
+        int(nzt),
         f_arr(gamma_Skw_fnc), f_arr(wp2), f_arr(thlp2), f_arr(rtp2),
         f_arr(up2), f_arr(vp2), f_arr(wpthlp), f_arr(wprtp),
         f_arr(upwp), f_arr(vpwp), bool(l_predict_upwp_vpwp),

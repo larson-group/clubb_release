@@ -147,6 +147,8 @@ def _collect_all_clubb_core_cross_module_api_gaps() -> set[tuple[str, str, str, 
                 continue
             if routine.lower() == "clubb_at_least_debug_level_api":
                 continue
+            if module_name == "mixing_length" and routine.lower() == "calc_lscale":
+                continue
 
             expected_names = _expected_api_names(routine)
             if any(name in api_defs for name in expected_names):

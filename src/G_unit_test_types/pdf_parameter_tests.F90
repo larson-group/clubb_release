@@ -1611,7 +1611,7 @@ module pdf_parameter_tests
              gamma_Skw_fnc(1,:) = gamma_coef
           endif
 
-          call compute_sigma_sqd_w( nz, 1, &
+          call compute_sigma_sqd_w( nz, nz, 1, gr, &
                                     gamma_Skw_fnc, wp2, thlp2, rtp2, &
                                     up2, vp2, wpthlp, wprtp, upwp, vpwp, &
                                     l_predict_upwp_vpwp, &

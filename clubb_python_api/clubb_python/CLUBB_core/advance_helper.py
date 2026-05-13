@@ -93,23 +93,24 @@ def lscale_width_vert_avg(gr: Grid, nzm: int, ngrdcol: int, smth_type: int, var_
         float(var_below_ground_value), nzm=int(nzm), ngrdcol=int(ngrdcol))
 
 
-def wp2_term_splat_lhs(
-    gr: Grid, nzm: int, nzt: int, ngrdcol: int, c_wp2_splat, brunt_vaisala_freq_sqd_splat
+def wp23_term_splat_lhs(
+    gr: Grid,
+    nzm: int,
+    nzt: int,
+    ngrdcol: int,
+    c_wp2_splat,
+    brunt_vaisala_freq_sqd_mixed,
+    lscale_zm,
+    rho_ds_zm,
 ):
-    """Compute splatting lhs contribution for wp2 equation."""
+    """Compute splatting lhs contributions for wp2 and wp3 equations."""
     set_fortran_grid(gr)
-    return clubb_f2py.f2py_wp2_term_splat_lhs(
-        int(nzt), f_arr(c_wp2_splat), f_arr(brunt_vaisala_freq_sqd_splat),
-        nzm=int(nzm), ngrdcol=int(ngrdcol))
-
-
-def wp3_term_splat_lhs(
-    gr: Grid, nzm: int, nzt: int, ngrdcol: int, c_wp2_splat, brunt_vaisala_freq_sqd_splat
-):
-    """Compute splatting lhs contribution for wp3 equation."""
-    set_fortran_grid(gr)
-    return clubb_f2py.f2py_wp3_term_splat_lhs(
-        int(nzt), f_arr(c_wp2_splat), f_arr(brunt_vaisala_freq_sqd_splat),
+    return clubb_f2py.f2py_wp23_term_splat_lhs(
+        int(nzt),
+        f_arr(c_wp2_splat),
+        f_arr(brunt_vaisala_freq_sqd_mixed),
+        f_arr(lscale_zm),
+        f_arr(rho_ds_zm),
         nzm=int(nzm), ngrdcol=int(ngrdcol))
 
 
@@ -161,27 +162,17 @@ def compute_cx_fnc_richardson(
 
 
 def calc_stability_correction(
-    gr: Grid,
     nzm: int,
-    nzt: int,
     ngrdcol: int,
-    thlm, Lscale_zm, em, exner, rtm, rcm,
-    p_in_Pa, thvm, ice_supersat_frac,
-    lambda0_stability_coef, bv_efold, T0: float,
-    saturation_formula: int,
-    l_brunt_vaisala_freq_moist: bool,
-    l_use_thvm_in_bv_freq: bool,
-    l_modify_limiters_for_cnvg_test: bool,
+    brunt_vaisala_freq_sqd,
+    lscale_zm,
+    em,
+    lambda0_stability_coef,
 ):
     """Compute stability correction factor for turbulence."""
-    set_fortran_grid(gr)
     return clubb_f2py.f2py_calc_stability_correction(
-        f_arr(thlm), f_arr(Lscale_zm), f_arr(em), f_arr(exner),
-        f_arr(rtm), f_arr(rcm), f_arr(p_in_Pa), f_arr(thvm),
-        f_arr(ice_supersat_frac),
-        f_arr(lambda0_stability_coef), f_arr(bv_efold), T0,
-        saturation_formula,
-        l_brunt_vaisala_freq_moist,
-        l_use_thvm_in_bv_freq,
-        l_modify_limiters_for_cnvg_test,
-        nzm=int(nzm), nzt=int(nzt), ngrdcol=int(ngrdcol))
+        f_arr(brunt_vaisala_freq_sqd),
+        f_arr(lscale_zm),
+        f_arr(em),
+        f_arr(lambda0_stability_coef),
+        nzm=int(nzm), ngrdcol=int(ngrdcol))

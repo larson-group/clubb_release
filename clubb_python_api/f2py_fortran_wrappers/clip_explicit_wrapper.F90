@@ -53,29 +53,40 @@ subroutine f2py_clip_variance(nzm, ngrdcol, solve_type, dt, &
 end subroutine f2py_clip_variance
 
 subroutine f2py_clip_covars_denom(nzm, ngrdcol, sclr_dim, sclr_dim_transport, &
+    dt, &
     rtp2, thlp2, up2, vp2, wp2, sclrp2, &
     l_tke_aniso, l_linearize_pbl_winds, &
+    l_predict_upwp_vpwp, &
+    wprtp_cl_num, wpthlp_cl_num, upwp_cl_num, vpwp_cl_num, &
     wprtp, wpthlp, upwp, vpwp, wpsclrp, upwp_pert, vpwp_pert)
 
   use clubb_precision, only: core_rknd
+  use derived_type_storage, only: stored_stats
   use clip_explicit, only: clip_covars_denom
 
   implicit none
 
   integer, intent(in) :: nzm, ngrdcol, sclr_dim, sclr_dim_transport
+  real(core_rknd), intent(in) :: dt
   real(core_rknd), dimension(ngrdcol, nzm), intent(in) :: &
     rtp2, thlp2, up2, vp2, wp2
   real(core_rknd), dimension(ngrdcol, nzm, sclr_dim_transport), intent(in) :: sclrp2
   logical, intent(in) :: l_tke_aniso, l_linearize_pbl_winds
+  logical, intent(in) :: l_predict_upwp_vpwp
+  integer, intent(inout) :: wprtp_cl_num, wpthlp_cl_num, upwp_cl_num, vpwp_cl_num
   real(core_rknd), dimension(ngrdcol, nzm), intent(inout) :: &
     wprtp, wpthlp, upwp, vpwp
   real(core_rknd), dimension(ngrdcol, nzm, sclr_dim_transport), intent(inout) :: wpsclrp
   real(core_rknd), dimension(ngrdcol, nzm), intent(inout) :: upwp_pert, vpwp_pert
 
   call clip_covars_denom(nzm, ngrdcol, sclr_dim, &
+    dt, &
     rtp2, thlp2, up2, vp2, wp2, sclrp2, &
     l_tke_aniso, &
     l_linearize_pbl_winds, &
+    l_predict_upwp_vpwp, &
+    stored_stats, &
+    wprtp_cl_num, wpthlp_cl_num, upwp_cl_num, vpwp_cl_num, &
     wprtp, wpthlp, upwp, vpwp, wpsclrp, upwp_pert, vpwp_pert)
 
 end subroutine f2py_clip_covars_denom

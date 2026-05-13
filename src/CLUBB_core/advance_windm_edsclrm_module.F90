@@ -31,11 +31,11 @@ module advance_windm_edsclrm_module
 
   !=============================================================================
   subroutine advance_windm_edsclrm( nzm, nzt, ngrdcol, edsclr_dim, gr, dt, &
-                                    wm_zt, Km_zm, Kmh_zm, &
+                                    wm_zt, Kh_zm, clubb_params, &
                                     ug, vg, um_ref, vm_ref, &
                                     wp2, up2, vp2, um_forcing, vm_forcing, &
-                                    edsclrm_forcing, &
-                                    rho_ds_zm, invrs_rho_ds_zt, &
+                                    edsclrm_forcing, p_in_Pa, &
+                                    rho_ds_zm, rho_ds_zt, invrs_rho_ds_zt, &
                                     fcor, l_implemented, &
                                     nu_vert_res_dep, ts_nudge, &
                                     tridiag_solve_method, &
@@ -45,9 +45,12 @@ module advance_windm_edsclrm_module
                                     l_tke_aniso, &
                                     l_lmm_stepping, &
                                     l_linearize_pbl_winds, &
+                                    l_do_expldiff_rtm_thlm, &
+                                    fill_holes_type, &
+                                    order_xp2_xpyp, order_wp2_wp3, order_windm, &
                                     upwp_cl_num, vpwp_cl_num, &
                                     stats,         &
-                                    um, vm, edsclrm, &
+                                    um, vm, thlm, rtm, edsclrm, &
                                     upwp, vpwp, wpedsclrp, &
                                     um_pert, vm_pert, upwp_pert, vpwp_pert, err_info )
 
@@ -70,6 +73,11 @@ module advance_windm_edsclrm_module
         grid, &  ! Type
         zm2zt_api
 
+    use parameter_indices, only: &
+        nparams, &
+        ic_K10, &
+        ic_K10h
+
     use parameters_tunable, only: &
         nu_vertical_res_dep    ! Type(s)
 
@@ -90,6 +98,7 @@ module advance_windm_edsclrm_module
     use constants_clubb, only:  &
         one_half, & ! Constant(s)
         zero,     &
+        zero_threshold, &
         fstderr,  &
         eps
 
@@ -105,7 +114,11 @@ module advance_windm_edsclrm_module
         term_ma_zt_lhs    ! Procedures
         
     use advance_helper_module, only: &
-        calc_xpwp
+        calc_xpwp, &
+        pvertinterp
+
+    use fill_holes, only: &
+        fill_holes_vertical_api
 
     use err_info_type_module, only: &
       err_info_type     ! Type
@@ -133,15 +146,19 @@ module advance_windm_edsclrm_module
       vm_ref,          & ! Reference v wind component for nudging      [m/s]
       um_forcing,      & ! u forcing                                   [m/s/s]
       vm_forcing,      & ! v forcing                                   [m/s/s]
+      p_in_Pa,         & ! Air pressure (thermodynamic levels)          [Pa]
+      rho_ds_zt,       & ! Dry, static density on thermodynamic levels  [kg/m^3]
       invrs_rho_ds_zt    ! Inv. dry, static density at thermo. levels  [m^3/kg]
 
     real( kind = core_rknd ), dimension(ngrdcol,nzm), intent(in) ::  &
-      Km_zm,           & ! Eddy diffusivity of winds on momentum levs. [m^2/s]
-      Kmh_zm,          & ! Eddy diffusivity of themo on momentum levs. [m^s/s]
+      Kh_zm,           & ! Eddy diffusivity for scalars on momentum levs. [m^2/s]
       wp2,             & ! w'^2 (momentum levels)                      [m^2/s^2]
       up2,             & ! u'^2 (momentum levels)                      [m^2/s^2]
       vp2,             & ! v'^2 (momentum levels)                      [m^2/s^2]
       rho_ds_zm          ! Dry, static density on momentum levels      [kg/m^3]
+
+    real( kind = core_rknd ), dimension(ngrdcol,nparams), intent(in) ::  &
+      clubb_params     ! Array of CLUBB's tunable parameters            [units vary]
 
     real( kind = core_rknd ), dimension(ngrdcol,nzt,edsclr_dim), intent(in) ::  &
       edsclrm_forcing  ! Eddy scalar large-scale forcing        [{units vary}/s]
@@ -174,7 +191,14 @@ module advance_windm_edsclrm_module
       l_tke_aniso,           & ! For anisotropic turbulent kinetic energy, i.e. TKE = 1/2
                                ! (u'^2 + v'^2 + w'^2)
       l_lmm_stepping,        & ! Apply Linear Multistep Method (LMM) Stepping
-      l_linearize_pbl_winds    ! Flag (used by E3SM) to linearize PBL winds
+      l_linearize_pbl_winds,  & ! Flag (used by E3SM) to linearize PBL winds
+      l_do_expldiff_rtm_thlm   ! Explicitly diffuse rtm and thlm with eddy scalars
+
+    integer, intent(in) :: &
+      fill_holes_type, &
+      order_xp2_xpyp, &
+      order_wp2_wp3, &
+      order_windm
 
     integer, intent(inout) :: &
       upwp_cl_num, &
@@ -186,7 +210,9 @@ module advance_windm_edsclrm_module
 
     real( kind = core_rknd ), dimension(ngrdcol,nzt), intent(inout) ::  &
       um,   & ! Mean u (west-to-east) wind component         [m/s]
-      vm      ! Mean v (south-to-north) wind component       [m/s]
+      vm,   & ! Mean v (south-to-north) wind component       [m/s]
+      thlm, & ! Liquid potential temperature                 [K]
+      rtm     ! Total water mixing ratio                     [kg/kg]
 
     real( kind = core_rknd ), dimension(ngrdcol,nzm), intent(inout) ::  &
       upwp, & ! <u'w'> (momentum levels)                     [m^2/s^2]
@@ -216,6 +242,14 @@ module advance_windm_edsclrm_module
     real( kind = core_rknd ), dimension(ngrdcol,nzt) ::  &
       um_old, & ! Saved value of mean u (west-to-east) wind component    [m/s]
       vm_old    ! Saved value of Mean v (south-to-north) wind component  [m/s]
+
+    real( kind = core_rknd ), dimension(ngrdcol,nzt) ::  &
+      thlm_ed, & ! Explicit diffusion budget term for thlm
+      rtm_ed     ! Explicit diffusion budget term for rtm
+
+    real( kind = core_rknd ), dimension(ngrdcol) :: &
+      thlm1000, &
+      thlm700
 
     real( kind = core_rknd ), dimension(ngrdcol,nzt,edsclr_dim) ::  &
       edsclrm_old    ! Saved value of mean eddy scalar quantity   [units vary]
@@ -263,6 +297,8 @@ module advance_windm_edsclrm_module
       Kmh_zt            ! Eddy diffusivity of themo on momentum levs. [m^s/s]
 
     real( kind = core_rknd ), dimension(ngrdcol,nzm) ::  &
+      Km_zm,          & ! Eddy diffusivity of winds on momentum levs. [m^2/s]
+      Kmh_zm,         & ! Eddy diffusivity of themo on momentum levs. [m^s/s]
       Km_zm_p_nu10,   & ! Km_zm plus nu_vert_res_dep%nu10
       xpwp              ! x'w' for arbitrary x
 
@@ -272,10 +308,11 @@ module advance_windm_edsclrm_module
     ! ------------------------ Begin Code ------------------------
 
     !$acc enter data create( um_old, vm_old, um_tndcy, vm_tndcy, &
+    !$acc                    thlm_ed, rtm_ed, thlm1000, thlm700, &
     !$acc                    upwp_chnge, vpwp_chnge, lhs, rhs, solution, wind_speed, &
     !$acc                    wind_speed_pert, u_star_sqd, u_star_sqd_pert, &
     !$acc                    nu_zero, lhs_diff, lhs_ma_zt, Km_zt, Kmh_zt, &
-    !$acc                    Km_zm_p_nu10, xpwp )
+    !$acc                    Km_zm, Kmh_zm, Km_zm_p_nu10, xpwp )
 
     !$acc enter data if( edsclr_dim > 0) create( edsclrm_old )
 
@@ -288,10 +325,23 @@ module advance_windm_edsclrm_module
     !$acc parallel loop gang vector collapse(2) default(present)
     do k = 1, nzm
       do i = 1, ngrdcol
+        Km_zm(i,k) = Kh_zm(i,k) * clubb_params(i,ic_K10)   ! Coefficient for momentum
+        Kmh_zm(i,k) = Kh_zm(i,k) * clubb_params(i,ic_K10h) ! Coefficient for thermo
         Km_zm_p_nu10(i,k) = Km_zm(i,k) + nu_vert_res_dep%nu10(i)
       end do
     end do
     !$acc end parallel loop
+
+    if ( edsclr_dim > 1 .and. l_do_expldiff_rtm_thlm ) then
+      !$acc parallel loop gang vector collapse(2) default(present)
+      do k = 1, nzt
+        do i = 1, ngrdcol
+          edsclrm(i,k,edsclr_dim-1) = thlm(i,k)
+          edsclrm(i,k,edsclr_dim) = rtm(i,k)
+        end do
+      end do
+      !$acc end parallel loop
+    end if
 
     l_perturbed_wind = ( .not. l_predict_upwp_vpwp ) .and. l_linearize_pbl_winds
     
@@ -1143,11 +1193,73 @@ module advance_windm_edsclrm_module
         end if
     end if
 
+    if ( edsclr_dim > 1 .and. l_do_expldiff_rtm_thlm ) then
+
+      call pvertinterp( nzt, ngrdcol, gr,                 & ! intent(in)
+                        p_in_Pa, 70000.0_core_rknd, thlm, & ! intent(in)
+                        thlm700 )                           ! intent(out)
+
+      call pvertinterp( nzt, ngrdcol, gr,                   & ! intent(in)
+                        p_in_Pa, 100000.0_core_rknd, thlm,  & ! intent(in)
+                        thlm1000 )                            ! intent(out)
+
+      if ( stats%l_sample ) then
+
+        !$acc update host( edsclrm, thlm, rtm, thlm700, thlm1000 )
+
+        ! thlm_ed and rtm_ed are budget terms intended to track the effect of explicit diffusion
+        do k = 1, nzt
+          do i = 1, ngrdcol
+            if ( thlm700(i) - thlm1000(i) < 20.0_core_rknd ) then
+              thlm_ed(i,k) = ( edsclrm(i,k,edsclr_dim-1) - thlm(i,k) ) / dt
+              rtm_ed(i,k)  = ( edsclrm(i,k,edsclr_dim)   - rtm(i,k) )  / dt
+            else
+              thlm_ed(i,k) = zero
+              rtm_ed(i,k)  = zero
+            end if
+          end do
+        end do
+
+      end if
+
+      !$acc parallel loop gang vector collapse(2) default(present)
+      do k = 1, nzt
+        do i = 1, ngrdcol
+          if ( thlm700(i) - thlm1000(i) < 20.0_core_rknd ) then
+            thlm(i,k) = edsclrm(i,k,edsclr_dim-1)
+            rtm(i,k)  = edsclrm(i,k,edsclr_dim)
+          end if
+        end do
+      end do
+      !$acc end parallel loop
+
+    end if
+
+    if ( stats%l_sample ) then
+      if ( edsclr_dim <= 1 .or. .not. l_do_expldiff_rtm_thlm ) then
+        thlm_ed(:,:) = zero
+        rtm_ed(:,:)  = zero
+      end if
+      call stats_update( "thlm_ed", thlm_ed, stats )
+      call stats_update( "rtm_ed", rtm_ed, stats )
+    end if
+
+    if ( edsclr_dim > 0 .and. fill_holes_type /= 0 ) then
+      do edsclr = 1, edsclr_dim
+        call fill_holes_vertical_api( nzt, ngrdcol, zero_threshold,       & ! In
+                                      gr%k_lb_zt, gr%k_ub_zt,             & ! In
+                                      gr%dzt, rho_ds_zt, gr%grid_dir_indx, & ! In
+                                      fill_holes_type,                    & ! In
+                                      edsclrm(:,:,edsclr) )                 ! InOut
+      end do
+    end if
+
     !$acc exit data delete( um_old, vm_old, um_tndcy, vm_tndcy, &
+    !$acc                    thlm_ed, rtm_ed, thlm1000, thlm700, &
     !$acc                    upwp_chnge, vpwp_chnge, lhs, rhs, solution, wind_speed, &
     !$acc                    wind_speed_pert, u_star_sqd, u_star_sqd_pert, &
     !$acc                    nu_zero, lhs_diff, lhs_ma_zt, Km_zt, Kmh_zt, &
-    !$acc                    Km_zm_p_nu10, xpwp )
+    !$acc                    Km_zm, Kmh_zm, Km_zm_p_nu10, xpwp )
 
     !$acc exit data if( edsclr_dim > 0) delete( edsclrm_old )
 

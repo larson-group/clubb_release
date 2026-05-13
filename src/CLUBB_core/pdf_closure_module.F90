@@ -3650,34 +3650,26 @@ module pdf_closure_module
     use grid_class, only: &
         grid,       & ! Type
         zt2zm_api,  & ! Procedure(s)
-        zm2zt_api,  &
-        zm2zt2zm
+        zm2zt_api
 
     use constants_clubb, only: &
-        one_half,       & ! Variable(s)
         w_tol,          & 
         w_tol_sqd,      &
         rt_tol,         &
         thl_tol,        &
-        p0,             &
-        kappa,          &
         fstderr,        &
         zero,           &
-        zero_threshold, &
-        eps
+        zero_threshold
 
     use pdf_parameter_module, only: &
         pdf_parameter,        & ! Variable Type
-        implicit_coefs_terms, &  ! Variable Type
-        init_pdf_implicit_coefs_terms_api ! Procedure
+        implicit_coefs_terms    ! Variable Type
 
     use parameter_indices, only: &
-        nparams,         & ! Variable(s)
-        igamma_coef,     &
-        igamma_coefb,    &
-        igamma_coefc
+        nparams         ! Variable(s)
 
     use Skx_module, only: &
+        compute_gamma_Skw, & ! Procedure(s)
         Skx_func    ! Procedure(s)
 
     use sigma_sqd_w_module, only: &
@@ -3690,9 +3682,7 @@ module pdf_closure_module
         sat_mixrat_liq_api    ! Procedure(s)
 
     use model_flags, only: &
-        l_gamma_Skw,      & ! Variable(s)
-        iiPDF_new,        & ! new PDF
-        iiPDF_new_hybrid    ! new hybrid PDF
+        l_gamma_Skw        ! Variable(s)
 
     use error_code, only: &
         clubb_at_least_debug_level_api,  & ! Procedure
@@ -3951,33 +3941,13 @@ module pdf_closure_module
       wp3_zm,           & ! wp3 interpolated to momentum levels        [m^3/s^3]
       rtp3_zm,          & ! rtp3 interpolated to momentum levels       [kg^3/kg^3]
       thlp3_zm,         & ! thlp3 interpolated to momentum levels      [K^3]
-      up3_zm,           & ! up3 interpolated to momentum levels        [m^3/s^3]
-      vp3_zm,           & ! vp3 interpolated to momentum levels        [m^3/s^3]
       gamma_Skw_fnc,    & ! Gamma as a function of skewness            [-]
       Skw_zm,           & ! Skewness of w on momentum levels           [-]
       Skrt_zm,          & ! Skewness of rt on momentum levels          [-]
-      Skthl_zm,         & ! Skewness of thl on momentum levels         [-]
-      Sku_zm,           & ! Skewness of u on momentum levels           [-]
-      Skv_zm              ! Skewness of v on momentum levels           [-]
-
-    real( kind = core_rknd ), dimension(ngrdcol,nzm) :: &
-      w_up_in_cloud_zm,         & ! Avg. cloudy updraft velocity; m-levs   [m/s]
-      w_down_in_cloud_zm,       & ! Avg. cloudy downdraft velocity; m-levs [m/s]
-      cloudy_updraft_frac_zm,   & ! cloudy updraft fraction; m-levs        [-]
-      cloudy_downdraft_frac_zm    ! cloudy downdraft fraction; m-levs      [-]
-
-    ! Interpolated values for optional second call to PDF closure.
-    real( kind = core_rknd ), dimension(ngrdcol,nzm) :: &
-      p_in_Pa_zm, & ! Pressure interpolated to momentum levels  [Pa]
-      exner_zm      ! Exner interpolated to momentum levels     [-]
+      Skthl_zm            ! Skewness of thl on momentum levels         [-]
 
     real( kind = core_rknd ), dimension(ngrdcol,nzt,hydromet_dim) :: &
       wphydrometp_zt    ! Covariance of w and hm (on t-levs.) [(m/s) <hm units>]
-
-    real( kind = core_rknd ), dimension(ngrdcol,nzm,hydromet_dim) :: &
-      wp2hmp_zm,      & ! Moment <w'^2 hm'> (on m-levs.)    [(m/s)^2 <hm units>]
-      rtphmp,         & ! Covariance of rt and hm           [(kg/kg) <hm units>]
-      thlphmp           ! Covariance of thl and hm                [K <hm units>]
 
     real( kind = core_rknd ), dimension(ngrdcol,nzt,sclr_dim) :: &
       wpsclrp_zt,   & ! w' sclr' interpolated to thermo. levels
@@ -3985,17 +3955,6 @@ module pdf_closure_module
       sclrprtp_zt,  & ! sclr' r_t' interpolated to thermo. levels
       sclrpthlp_zt, & ! sclr' th_l' interpolated thermo. levels
       Sksclr_zt       ! Skewness of sclr on thermodynamic levels      [-]
-
-    real( kind = core_rknd ), dimension(ngrdcol,nzm,sclr_dim) :: &
-      sclrp3_zm,    & ! sclr'^3 interpolated to momentum levels
-      Sksclr_zm       ! Skewness of sclr on momentum levels           [-]
-
-    ! These local variables are declared because they originally belong on the
-    ! momentum grid levels, but pdf_closure outputs them on the thermodynamic
-    ! grid levels.
-    real( kind = core_rknd ), dimension(ngrdcol,nzm) :: &
-      wpup2_zm,    & ! w'u'^2 (on momentum grid)        [m^3/s^3]
-      wpvp2_zm       ! w'v'^2 (on momentum grid)        [m^3/s^3]
 
     real( kind = core_rknd ), dimension(ngrdcol,nzt) :: &
       wp2up2_zt,   & ! w'^2u'^2 (on thermo. grid)       [m^4/s^4]
@@ -4028,25 +3987,11 @@ module pdf_closure_module
       wpsclrprtp_zm,  & ! w'sclr'rt' on momentum grid
       wpsclrp2_zm,    & ! w'sclr'^2 on momentum grid
       wpsclrpthlp_zm, & ! w'sclr'thl' on momentum grid
-      wp2sclrp_zm,    & ! w'^2 sclr' on momentum grid
-      sclrm_zm          ! Passive scalar mean on momentum grid
-
-    type(implicit_coefs_terms) :: &
-      pdf_implicit_coefs_terms_zm
+      wp2sclrp_zm       ! w'^2 sclr' on momentum grid
 
     real( kind = core_rknd ), dimension(ngrdcol,nzt) :: &
       rsat,             & ! Saturation mixing ratio from mean rt and thl.
       rel_humidity        ! Relative humidity after PDF closure [-]
-
-    real( kind = core_rknd ) :: &
-      gamma_coef,     & ! CLUBB tunable parameter gamma_coef
-      gamma_coefb,    & ! CLUBB tunable parameter gamma_coefb
-      gamma_coefc       ! CLUBB tunable parameter gamma_coefc
-      
-    real( kind = core_rknd ), dimension(ngrdcol, nzm) :: &
-      um_zm, &
-      vm_zm, &
-      sigma_sqd_w_tmp
 
     real( kind = core_rknd ), dimension(ngrdcol, nzt) :: &
       T_in_K
@@ -4058,34 +4003,31 @@ module pdf_closure_module
     !-------------------------------------- Begin Code --------------------------------------
 
     !$acc enter data create( wp2_zt,wp3_zm, rtp2_zt,rtp3_zm, thlp2_zt,  thlp3_zm, &
-    !$acc                    wprtp_zt, wpthlp_zt, rtpthlp_zt, up2_zt, up3_zm, &
-    !$acc                    vp2_zt, vp3_zm, upwp_zt, vpwp_zt, gamma_Skw_fnc, &
+    !$acc                    wprtp_zt, wpthlp_zt, rtpthlp_zt, up2_zt, &
+    !$acc                    vp2_zt, upwp_zt, vpwp_zt, gamma_Skw_fnc, &
     !$acc                    gamma_Skw_fnc_zt,sigma_sqd_w_zt,  Skw_zt, Skw_zm, &
     !$acc                    Skrt_zt, Skrt_zm, Skthl_zt, Skthl_zm, Sku_zt, &
-    !$acc                    Sku_zm, Skv_zt, Skv_zm, wp2up2_zt, &
+    !$acc                    Skv_zt, wp2up2_zt, &
     !$acc                    wp2vp2_zt, wp4_zt, wpthvp_zt, rtpthvp_zt, thlpthvp_zt, &
     !$acc                    wprcp_zt, rtprcp_zt, thlprcp_zt, uprcp_zt, vprcp_zt, &
-    !$acc                    rsat, rel_humidity, um_zm, vm_zm, T_in_K, sigma_sqd_w_tmp )
+    !$acc                    rsat, rel_humidity, T_in_K )
 
     !$acc enter data if( l_call_pdf_closure_twice ) &
-    !$acc            create( w_up_in_cloud_zm, wpup2_zm, wpvp2_zm, &
-    !$acc                    w_down_in_cloud_zm, cloudy_updraft_frac_zm,  &
-    !$acc                    cloudy_downdraft_frac_zm, p_in_Pa_zm, exner_zm, &
-    !$acc                    wprtp2_zm, wp2rtp_zm, wpthlp2_zm, &
+    !$acc            create( wprtp2_zm, wp2rtp_zm, wpthlp2_zm, &
     !$acc                    wp2thlp_zm, wprtpthlp_zm, wp2thvp_zm, wp2rcp_zm, wp2up_zm )
 
     !$acc enter data if( sclr_dim > 0 ) &
-    !$acc            create( wpsclrp_zt, sclrp2_zt, sclrp3_zm, sclrprtp_zt, sclrpthlp_zt, &
-    !$acc                    Sksclr_zt, Sksclr_zm, sclrpthvp_zt, sclrprcp_zt, wpsclrprtp_zm, &
-    !$acc                    wpsclrp2_zm, wpsclrpthlp_zm, wp2sclrp_zm, sclrm_zm )
+    !$acc            create( wpsclrp_zt, sclrp2_zt, sclrprtp_zt, sclrpthlp_zt, &
+    !$acc                    Sksclr_zt, sclrpthvp_zt, sclrprcp_zt, wpsclrprtp_zm, &
+    !$acc                    wpsclrp2_zm, wpsclrpthlp_zm, wp2sclrp_zm )
 
-    !$acc enter data if( hydromet_dim > 0 ) create( wphydrometp_zt, wp2hmp_zm, rtphmp, thlphmp )
+    !$acc enter data if( hydromet_dim > 0 ) create( wphydrometp_zt )
 
     !---------------------------------------------------------------------------
-    ! Interpolate wp3, rtp3, thlp3, up3, vp3, and sclrp3 to momentum levels, and
+    ! Interpolate wp3, rtp3, and thlp3 to momentum levels, and
     ! wp2, rtp2, thlp2, up2, vp2, and sclrp2 to thermodynamic levels, and then
-    ! compute Skw, Skrt, Skthl, Sku, Skv, and Sksclr for both the momentum and
-    ! thermodynamic grid levels.
+    ! compute Skw, Skrt, and Skthl for both the momentum and thermodynamic grid
+    ! levels. Sku, Skv, and Sksclr are computed only for thermodynamic levels here.
     !---------------------------------------------------------------------------
 
     ! Positive definite quantity
@@ -4102,16 +4044,13 @@ module pdf_closure_module
 
     ! Positive definite quantity
     up2_zt(:,:)   = zm2zt_api( nzm, nzt, ngrdcol, gr, up2(:,:), w_tol_sqd )
-    up3_zm(:,:)   = zt2zm_api( nzm, nzt, ngrdcol, gr, up3(:,:) )
 
     ! Positive definite quantity
     vp2_zt(:,:)   = zm2zt_api( nzm, nzt, ngrdcol, gr, vp2(:,:), w_tol_sqd )
-    vp3_zm(:,:)   = zt2zm_api( nzm, nzt, ngrdcol, gr, vp3(:,:) )
 
     do sclr = 1, sclr_dim, 1
       sclrp2_zt(:,:,sclr) = zm2zt_api( nzm, nzt, ngrdcol, gr, sclrp2(:,:,sclr), &
                                        sclr_tol(sclr)**2 ) ! Pos. def. quantity
-      sclrp3_zm(:,:,sclr) = zt2zm_api( nzm, nzt, ngrdcol, gr, sclrp3(:,:,sclr) )
     end do ! sclr = 1, sclr_dim, 1
 
     call Skx_func( nzt, ngrdcol, wp2_zt, wp3, &
@@ -4142,17 +4081,9 @@ module pdf_closure_module
                    w_tol, clubb_params, &
                    Sku_zt )   
                                       
-    call Skx_func( nzm, ngrdcol, up2, up3_zm, &
-                   w_tol, clubb_params, &
-                   Sku_zm )   
-                   
     call Skx_func( nzt, ngrdcol, vp2_zt, vp3, &
                    w_tol, clubb_params, &
                    Skv_zt )   
-                   
-    call Skx_func( nzm, ngrdcol, vp2, vp3_zm, &
-                   w_tol, clubb_params, &
-                   Skv_zm )      
 
     do sclr = 1, sclr_dim
       
@@ -4160,10 +4091,6 @@ module pdf_closure_module
                      sclr_tol(sclr), clubb_params, &
                      Sksclr_zt(:,:,sclr) )   
                      
-      call Skx_func( nzm, ngrdcol, sclrp2(:,:,sclr), sclrp3_zm(:,:,sclr), &
-                     sclr_tol(sclr), clubb_params, &
-                     Sksclr_zm(:,:,sclr) )  
-                      
     end do ! sclr = 1, sclr_dim, 1
 
     if ( stats%l_sample .and. l_samp_stats_in_pdf_call ) then
@@ -4176,80 +4103,11 @@ module pdf_closure_module
       call stats_update( "Skrt_zm", Skrt_zm, stats )
     end if
 
-    ! The right hand side of this conjunction is only for reducing cpu time,
-    ! since the more complicated formula is mathematically equivalent
-    if ( l_gamma_Skw ) then
-
-      !----------------------------------------------------------------
-      ! Compute gamma as a function of Skw  - 14 April 06 dschanen
-      !----------------------------------------------------------------
-      !$acc parallel loop gang vector collapse(2) default(present)
-      do k = 1, nzm
-        do i = 1, ngrdcol
-
-          gamma_coef  = clubb_params(i,igamma_coef)
-          gamma_coefb = clubb_params(i,igamma_coefb)
-          gamma_coefc = clubb_params(i,igamma_coefc)
-
-          if ( abs( gamma_coef - gamma_coefb ) > abs( gamma_coef + gamma_coefb ) * eps/2 ) then
-
-            gamma_Skw_fnc(i,k) = gamma_coefb &
-                                 + ( gamma_coef - gamma_coefb ) &
-                                   * exp( -one_half * ( Skw_zm(i,k) / gamma_coefc )**2 )
-
-          else
-
-            gamma_Skw_fnc(i,k) = gamma_coef
-
-          end if
-
-        end do
-      end do
-      !$acc end parallel loop
-
-      !$acc parallel loop gang vector collapse(2) default(present)
-      do k = 1, nzt
-        do i = 1, ngrdcol
-
-          gamma_coef  = clubb_params(i,igamma_coef)
-          gamma_coefb = clubb_params(i,igamma_coefb)
-          gamma_coefc = clubb_params(i,igamma_coefc)
-
-          if ( abs( gamma_coef - gamma_coefb ) > abs( gamma_coef + gamma_coefb ) * eps/2 ) then
-
-            gamma_Skw_fnc_zt(i,k) = gamma_coefb &
-                                    + ( gamma_coef - gamma_coefb ) &
-                                      * exp( -one_half * ( Skw_zt(i,k) / gamma_coefc )**2 )
-
-          else
-
-            gamma_Skw_fnc_zt(i,k) = gamma_coef
-
-          end if
-
-        end do
-      end do
-      !$acc end parallel loop
-
-    else
-      
-      !$acc parallel loop gang vector collapse(2) default(present)
-      do k = 1, nzm
-        do i = 1, ngrdcol
-          gamma_Skw_fnc(i,k) = clubb_params(i,igamma_coef)
-        end do
-      end do
-      !$acc end parallel loop
-
-      !$acc parallel loop gang vector collapse(2) default(present)
-      do k = 1, nzt
-        do i = 1, ngrdcol
-          gamma_Skw_fnc_zt(i,k) = clubb_params(i,igamma_coef)
-        end do
-      end do
-      !$acc end parallel loop
-
-    end if
+    call compute_gamma_Skw( nzm, nzt, ngrdcol, l_gamma_Skw, & ! In
+                            Skw_zm, clubb_params,           & ! In
+                            gamma_Skw_fnc,                  & ! Out
+                            Skw_zt,                         & ! Optional In
+                            gamma_Skw_fnc_zt )                ! Optional Out
 
     if ( stats%l_sample .and. l_samp_stats_in_pdf_call ) then
       !$acc update host(gamma_Skw_fnc)
@@ -4257,15 +4115,11 @@ module pdf_closure_module
     end if
 
     ! Compute sigma_sqd_w (dimensionless PDF width parameter)
-    call compute_sigma_sqd_w( nzm, ngrdcol, &
+    call compute_sigma_sqd_w( nzm, nzt, ngrdcol, gr, &
                               gamma_Skw_fnc, wp2, thlp2, rtp2, &
                               up2, vp2, wpthlp, wprtp, upwp, vpwp, &
                               l_predict_upwp_vpwp, &
-                              sigma_sqd_w_tmp )
-
-    ! Smooth in the vertical using interpolation
-    sigma_sqd_w(:,:) = zm2zt2zm( nzm, nzt, ngrdcol, gr, sigma_sqd_w_tmp(:,:), &
-                                 zero_threshold ) ! Pos. def. quantity
+                              sigma_sqd_w )
 
 
     ! Interpolate the the stats_zt grid
@@ -4382,101 +4236,34 @@ module pdf_closure_module
 
     if ( l_call_pdf_closure_twice ) then
 
-      ! Call pdf_closure a second time on momentum levels, to
-      ! output (rather than interpolate) the variables which
-      ! belong on the momentum levels.
-
-      ! Interpolate sclrm to the momentum level for use in
-      ! the second call to pdf_closure
-      do sclr = 1, sclr_dim
-        ! Clip if extrap. causes sclrm_zm to be less than sclr_tol
-        sclrm_zm(:,:,sclr) = zt2zm_api( nzm, nzt, ngrdcol, gr, sclrm(:,:,sclr), sclr_tol(sclr) )
-      end do ! sclr = 1, sclr_dim
-
-      ! Interpolate pressure, p_in_Pa, to momentum levels.
-      ! Since the surface (or model lower boundary) is located at momentum level
-      ! k = 1, the pressure there is p_sfc.
-      p_in_Pa_zm(:,:) = zt2zm_api( nzm, nzt, ngrdcol, gr, p_in_Pa(:,:) )
-
-      !$acc parallel loop gang vector default(present)
-      do i = 1, ngrdcol
-        p_in_Pa_zm(i,gr%k_lb_zm) = p_sfc(i)
-
-        ! Clip pressure if the extrapolation leads to a negative value of pressure
-        p_in_Pa_zm(i,gr%k_ub_zm) &
-        = max( p_in_Pa_zm(i,gr%k_ub_zm), 0.5_core_rknd * p_in_Pa(i,gr%k_ub_zt) )
-      end do
-      !$acc end parallel loop
-
-      ! Set exner at momentum levels, exner_zm, based on p_in_Pa_zm.
-      !$acc parallel loop gang vector collapse(2) default(present)
-      do k = 1, nzm
-        do i = 1, ngrdcol
-          exner_zm(i,k) = (p_in_Pa_zm(i,k)/p0)**kappa
-        end do
-      end do
-      !$acc end parallel loop
-
-      ! Clip if extrapolation at the top level causes rtm_zm to be < rt_tol
-      rtm_zm(:,:) = zt2zm_api( nzm, nzt, ngrdcol, gr, rtm(:,:), rt_tol )
-
-      ! Clip if extrapolation at the top level causes thlm_zm to be < thl_tol
-      thlm_zm(:,:) = zt2zm_api( nzm, nzt, ngrdcol, gr, thlm(:,:), thl_tol )
-
-      ! Interpolate hydrometeor mixed moments to momentum levels.
-      do j = 1, hydromet_dim
-        rtphmp(:,:,j)    = zt2zm_api( nzm, nzt, ngrdcol, gr, rtphmp_zt(:,:,j) )
-        thlphmp(:,:,j)   = zt2zm_api( nzm, nzt, ngrdcol, gr, thlphmp_zt(:,:,j) )
-        wp2hmp_zm(:,:,j) = zt2zm_api( nzm, nzt, ngrdcol, gr, wp2hmp(:,:,j) )
-      end do ! i = 1, hydromet_dim, 1
-
-      um_zm(:,:) = zt2zm_api( nzm, nzt, ngrdcol, gr, um(:,:) )
-      vm_zm(:,:) = zt2zm_api( nzm, nzt, ngrdcol, gr, vm(:,:) )
-      
-      ! pdf_implicit_coefs_terms is only used in the iiPDF_new and iiPDF_new_hybrid closures.
-      ! So we only need to initialize our local _zm version if we're working with one of those.
-      if ( iiPDF_type == iiPDF_new .or. iiPDF_type == iiPDF_new_hybrid ) then
-        call init_pdf_implicit_coefs_terms_api( nzm, ngrdcol, sclr_dim, &     ! Intent(in)
-                                                pdf_implicit_coefs_terms_zm ) ! Intent(out)
-      end if
-
-      ! Call pdf_closure to output the variables which belong on the momentum grid.
-      call pdf_closure( nzm, ngrdcol, sclr_dim, sclr_tol, gr,      & ! intent(in)
-             hydromet_dim, p_in_Pa_zm, exner_zm, thv_ds_zm,        & ! intent(in)
-             wm_zm, wp2, wp3_zm,                                   & ! intent(in)
-             Skw_zm, Skthl_zm, Skrt_zm, Sku_zm, Skv_zm,            & ! intent(in)
-             rtm_zm, rtp2, wprtp,                                  & ! intent(in)
-             thlm_zm, thlp2, wpthlp,                               & ! intent(in)
-             um_zm, up2, upwp,                                     & ! intent(in)
-             vm_zm, vp2, vpwp,                                     & ! intent(in)
-             rtpthlp,                                              & ! intent(in)
-             sclrm_zm, wpsclrp, sclrp2,                            & ! intent(in)
-             sclrprtp, sclrpthlp, Sksclr_zm,                       & ! intent(in)
-             gamma_Skw_fnc,                                        & ! intent(in)
-             wphydrometp, wp2hmp_zm,                               & ! intent(in)
-             rtphmp, thlphmp,                                      & ! intent(in)
-             clubb_params, mixt_frac_max_mag,                      & ! intent(in)
-             saturation_formula,                                   & ! intent(in)
-             stats,                                                & ! intent(inout)
-             iiPDF_type,                                           & ! intent(in)
-             l_mix_rat_hm,                                         & ! intent(in)
-             sigma_sqd_w,                                          & ! intent(inout)
-             pdf_params_zm, pdf_implicit_coefs_terms_zm,           & ! intent(inout)
-             err_info,                                             & ! intent(inout)
-             wpup2_zm, wpvp2_zm,                                   & ! intent(out)
-             wp2up2, wp2vp2, wp4,                                  & ! intent(out)
-             wprtp2_zm, wp2rtp_zm,                                 & ! intent(out)
-             wpthlp2_zm, wp2thlp_zm, wprtpthlp_zm,                 & ! intent(out)
-             cloud_frac_zm, ice_supersat_frac_zm,                  & ! intent(out)
-             rcm_zm, wpthvp, wp2thvp_zm, wp2up_zm, rtpthvp,        & ! intent(out)
-             thlpthvp, wprcp, wp2rcp_zm, rtprcp,                   & ! intent(out)
-             thlprcp, rcp2,                                        & ! intent(out)
-             uprcp, vprcp,                                         & ! intent(out)
-             w_up_in_cloud_zm, w_down_in_cloud_zm,                 & ! intent(out)
-             cloudy_updraft_frac_zm, cloudy_downdraft_frac_zm,     & ! intent(out)
-             wpsclrprtp_zm, wpsclrp2_zm, sclrpthvp,                & ! intent(out)
-             wpsclrpthlp_zm, sclrprcp, wp2sclrp_zm,                & ! intent(out)
-             rc_coef_zm                                            ) ! intent(out)
+      call pdf_closure_driver_zm( gr, nzm, nzt, ngrdcol, hydromet_dim,       & ! intent(in)
+                                  sclr_dim, sclr_tol, p_sfc,                 & ! intent(in)
+                                  mixt_frac_max_mag, clubb_params,           & ! intent(in)
+                                  iiPDF_type, saturation_formula,            & ! intent(in)
+                                  l_mix_rat_hm, p_in_Pa, thv_ds_zm,          & ! intent(in)
+                                  wm_zm, wp2, wp3_zm,                        & ! intent(in)
+                                  Skw_zm, Skthl_zm, Skrt_zm,                 & ! intent(in)
+                                  rtm, rtp2, wprtp,                          & ! intent(in)
+                                  thlm, thlp2, wpthlp,                       & ! intent(in)
+                                  um, up2, upwp, up3,                        & ! intent(in)
+                                  vm, vp2, vpwp, vp3,                        & ! intent(in)
+                                  rtpthlp, sclrm, wpsclrp, sclrp2,           & ! intent(in)
+                                  sclrprtp, sclrpthlp, sclrp3,               & ! intent(in)
+                                  gamma_Skw_fnc, wphydrometp,                & ! intent(in)
+                                  wp2hmp, rtphmp_zt, thlphmp_zt,             & ! intent(in)
+                                  stats, sigma_sqd_w, pdf_params_zm,         & ! intent(inout)
+                                  err_info,                                  & ! intent(inout)
+                                  rtm_zm, thlm_zm,                           & ! intent(out)
+                                  wp2up2, wp2vp2, wp4,                       & ! intent(out)
+                                  wprtp2_zm, wp2rtp_zm,                      & ! intent(out)
+                                  wpthlp2_zm, wp2thlp_zm, wprtpthlp_zm,      & ! intent(out)
+                                  cloud_frac_zm, ice_supersat_frac_zm,       & ! intent(out)
+                                  rcm_zm, wpthvp, wp2thvp_zm, wp2up_zm,      & ! intent(out)
+                                  rtpthvp, thlpthvp, wprcp, wp2rcp_zm,       & ! intent(out)
+                                  rtprcp, thlprcp, rcp2, uprcp, vprcp,       & ! intent(out)
+                                  wpsclrprtp_zm, wpsclrp2_zm, sclrpthvp,     & ! intent(out)
+                                  wpsclrpthlp_zm, sclrprcp, wp2sclrp_zm,     & ! intent(out)
+                                  rc_coef_zm                                 ) ! intent(out)
 
       ! Subroutine may produce NaN values, and if so, return
       if ( clubb_at_least_debug_level_api( 0 ) ) then
@@ -4707,32 +4494,393 @@ module pdf_closure_module
     end if ! l_rcm_supersat_adj
 
     !$acc exit data delete( wp2_zt,wp3_zm, rtp2_zt,rtp3_zm, thlp2_zt,  thlp3_zm, &
-    !$acc                   wprtp_zt, wpthlp_zt, rtpthlp_zt, up2_zt, up3_zm, &
-    !$acc                   vp2_zt, vp3_zm, upwp_zt, vpwp_zt, gamma_Skw_fnc, &
+    !$acc                   wprtp_zt, wpthlp_zt, rtpthlp_zt, up2_zt, &
+    !$acc                   vp2_zt, upwp_zt, vpwp_zt, gamma_Skw_fnc, &
     !$acc                   gamma_Skw_fnc_zt,sigma_sqd_w_zt,  Skw_zt, Skw_zm, &
     !$acc                   Skrt_zt, Skrt_zm, Skthl_zt, Skthl_zm, Sku_zt, &
-    !$acc                   Sku_zm, Skv_zt, Skv_zm, wp2up2_zt, &
+    !$acc                   Skv_zt, wp2up2_zt, &
     !$acc                   wp2vp2_zt, wp4_zt, wpthvp_zt, rtpthvp_zt, thlpthvp_zt, &
     !$acc                   wprcp_zt, rtprcp_zt, thlprcp_zt, uprcp_zt, vprcp_zt, &
-    !$acc                   rsat, rel_humidity, um_zm, vm_zm, T_in_K, sigma_sqd_w_tmp )
+    !$acc                   rsat, rel_humidity, T_in_K )
 
     !$acc exit data if( l_call_pdf_closure_twice ) &
-    !$acc           delete( w_up_in_cloud_zm, wpup2_zm, wpvp2_zm, &
-    !$acc                   w_down_in_cloud_zm, cloudy_updraft_frac_zm,  &
-    !$acc                   cloudy_downdraft_frac_zm, p_in_Pa_zm, exner_zm, &
-    !$acc                   wprtp2_zm, wp2rtp_zm, wpthlp2_zm, &
+    !$acc           delete( wprtp2_zm, wp2rtp_zm, wpthlp2_zm, &
     !$acc                   wp2thlp_zm, wprtpthlp_zm, wp2thvp_zm, wp2rcp_zm, wp2up_zm )
 
     !$acc exit data if( sclr_dim > 0 ) &
-    !$acc           delete( wpsclrp_zt, sclrp2_zt, sclrp3_zm, sclrprtp_zt, sclrpthlp_zt, &
-    !$acc                   Sksclr_zt, Sksclr_zm, sclrpthvp_zt, sclrprcp_zt, wpsclrprtp_zm, &
-    !$acc                   wpsclrp2_zm, wpsclrpthlp_zm, wp2sclrp_zm, sclrm_zm )
+    !$acc           delete( wpsclrp_zt, sclrp2_zt, sclrprtp_zt, sclrpthlp_zt, &
+    !$acc                   Sksclr_zt, sclrpthvp_zt, sclrprcp_zt, wpsclrprtp_zm, &
+    !$acc                   wpsclrp2_zm, wpsclrpthlp_zm, wp2sclrp_zm )
 
-    !$acc exit data if( hydromet_dim > 0 ) delete( wphydrometp_zt, wp2hmp_zm, rtphmp, thlphmp )
+    !$acc exit data if( hydromet_dim > 0 ) delete( wphydrometp_zt )
 
     return
 
   end subroutine pdf_closure_driver
+
+  !-----------------------------------------------------------------------
+  subroutine pdf_closure_driver_zm( gr, nzm, nzt, ngrdcol, hydromet_dim,       & ! Intent(in)
+                                    sclr_dim, sclr_tol, p_sfc,                 & ! Intent(in)
+                                    mixt_frac_max_mag, clubb_params,           & ! Intent(in)
+                                    iiPDF_type, saturation_formula,            & ! Intent(in)
+                                    l_mix_rat_hm, p_in_Pa, thv_ds_zm,          & ! Intent(in)
+                                    wm_zm, wp2, wp3_zm,                        & ! Intent(in)
+                                    Skw_zm, Skthl_zm, Skrt_zm,                 & ! Intent(in)
+                                    rtm, rtp2, wprtp,                          & ! Intent(in)
+                                    thlm, thlp2, wpthlp,                       & ! Intent(in)
+                                    um, up2, upwp, up3,                        & ! Intent(in)
+                                    vm, vp2, vpwp, vp3,                        & ! Intent(in)
+                                    rtpthlp, sclrm, wpsclrp, sclrp2,           & ! Intent(in)
+                                    sclrprtp, sclrpthlp, sclrp3,               & ! Intent(in)
+                                    gamma_Skw_fnc, wphydrometp,                & ! Intent(in)
+                                    wp2hmp, rtphmp_zt, thlphmp_zt,             & ! Intent(in)
+                                    stats, sigma_sqd_w, pdf_params_zm,         & ! Intent(inout)
+                                    err_info,                                  & ! Intent(inout)
+                                    rtm_zm, thlm_zm,                           & ! Intent(out)
+                                    wp2up2, wp2vp2, wp4,                       & ! Intent(out)
+                                    wprtp2_zm, wp2rtp_zm,                      & ! Intent(out)
+                                    wpthlp2_zm, wp2thlp_zm, wprtpthlp_zm,      & ! Intent(out)
+                                    cloud_frac_zm, ice_supersat_frac_zm,       & ! Intent(out)
+                                    rcm_zm, wpthvp, wp2thvp_zm, wp2up_zm,      & ! Intent(out)
+                                    rtpthvp, thlpthvp, wprcp, wp2rcp_zm,       & ! Intent(out)
+                                    rtprcp, thlprcp, rcp2, uprcp, vprcp,       & ! Intent(out)
+                                    wpsclrprtp_zm, wpsclrp2_zm, sclrpthvp,     & ! Intent(out)
+                                    wpsclrpthlp_zm, sclrprcp, wp2sclrp_zm,     & ! Intent(out)
+                                    rc_coef_zm                                 ) ! Intent(out)
+
+    use grid_class, only: &
+        grid,       & ! Type
+        zt2zm_api     ! Procedure(s)
+
+    use constants_clubb, only: &
+        w_tol,    &
+        rt_tol,   &
+        thl_tol,  &
+        p0,       &
+        kappa
+
+    use Skx_module, only: &
+        Skx_func    ! Procedure(s)
+
+    use pdf_parameter_module, only: &
+        pdf_parameter,        & ! Variable Type
+        implicit_coefs_terms, & ! Variable Type
+        init_pdf_implicit_coefs_terms_api ! Procedure
+
+    use parameter_indices, only: &
+        nparams         ! Variable(s)
+
+    use model_flags, only: &
+        iiPDF_new,        & ! new PDF
+        iiPDF_new_hybrid    ! new hybrid PDF
+
+    use stats_netcdf, only: &
+        stats_type
+
+    use clubb_precision, only: &
+        core_rknd    ! Variable(s)
+
+    use err_info_type_module, only: &
+      err_info_type        ! Type
+
+    implicit none
+
+    !------------------------------- Input Variables -------------------------------
+    type (grid), intent(in) :: &
+      gr
+
+    integer, intent(in) :: &
+      nzm,          & ! Number of momentum levels
+      nzt,          & ! Number of thermodynamic levels
+      ngrdcol,      & ! Number of grid columns
+      hydromet_dim, & ! Total number of hydrometeor species [#]
+      sclr_dim        ! Number of passive scalars           [#]
+
+    real( kind = core_rknd ), intent(in), dimension(sclr_dim) :: &
+      sclr_tol        ! Threshold(s) on the passive scalars  [units vary]
+
+    real( kind = core_rknd ), dimension(ngrdcol), intent(in) :: &
+      p_sfc           ! Pressure at surface                  [Pa]
+
+    real( kind = core_rknd ), intent(in) :: &
+      mixt_frac_max_mag ! Maximum allowable magnitude of mixture fraction [-]
+
+    real( kind = core_rknd ), dimension(ngrdcol,nparams), intent(in) :: &
+      clubb_params    ! Array of CLUBB's tunable parameters  [units vary]
+
+    integer, intent(in) :: &
+      iiPDF_type,        & ! PDF type
+      saturation_formula   ! Saturation formula option
+
+    logical, dimension(hydromet_dim), intent(in) :: &
+      l_mix_rat_hm     ! True if the hydrometeor is a mixing ratio
+
+    real( kind = core_rknd ), dimension(ngrdcol,nzt), intent(in) :: &
+      p_in_Pa, & ! Air pressure on thermodynamic levels             [Pa]
+      rtm,     & ! Total water mixing ratio on thermodynamic levels [kg/kg]
+      thlm,    & ! Liquid water potential temperature               [K]
+      um,      & ! Grid-mean eastward wind                          [m/s]
+      vm,      & ! Grid-mean northward wind                         [m/s]
+      up3,     & ! u'^3 on thermodynamic levels                     [m^3/s^3]
+      vp3        ! v'^3 on thermodynamic levels                     [m^3/s^3]
+
+    real( kind = core_rknd ), dimension(ngrdcol,nzm), intent(in) :: &
+      thv_ds_zm,     & ! Dry, base-state theta_v on momentum levels       [K]
+      wm_zm,         & ! w mean wind component on momentum levels         [m/s]
+      wp2,           & ! w'^2 on momentum levels                         [m^2/s^2]
+      wp3_zm,        & ! w'^3 on momentum levels                         [m^3/s^3]
+      Skw_zm,        & ! Skewness of w on momentum levels                [-]
+      Skthl_zm,      & ! Skewness of thl on momentum levels              [-]
+      Skrt_zm,       & ! Skewness of rt on momentum levels               [-]
+      rtp2,          & ! r_t'^2 on momentum levels                       [(kg/kg)^2]
+      wprtp,         & ! w' r_t' on momentum levels                      [(kg/kg)m/s]
+      thlp2,         & ! th_l'^2 on momentum levels                      [K^2]
+      wpthlp,        & ! w' th_l' on momentum levels                     [(m/s) K]
+      up2,           & ! u'^2 on momentum levels                         [(m/s)^2]
+      upwp,          & ! u'w' on momentum levels                         [(m/s)^2]
+      vp2,           & ! v'^2 on momentum levels                         [(m/s)^2]
+      vpwp,          & ! v'w' on momentum levels                         [(m/s)^2]
+      rtpthlp,       & ! r_t' th_l' on momentum levels                   [(kg/kg) K]
+      gamma_Skw_fnc    ! Gamma as a function of skewness                 [-]
+
+    real( kind = core_rknd ), dimension(ngrdcol,nzt,sclr_dim), intent(in) :: &
+      sclrm,  & ! Passive scalar mean on thermodynamic levels [units vary]
+      sclrp3    ! sclr'^3 on thermodynamic levels            [{units vary}^3]
+
+    real( kind = core_rknd ), dimension(ngrdcol,nzm,sclr_dim), intent(in) :: &
+      wpsclrp,    & ! w'sclr' on momentum levels            [{units vary} m/s]
+      sclrp2,     & ! sclr'^2 on momentum levels            [{units vary}^2]
+      sclrprtp,   & ! sclr'rt' on momentum levels           [{units vary} (kg/kg)]
+      sclrpthlp     ! sclr'thl' on momentum levels          [{units vary} K]
+
+    real( kind = core_rknd ), dimension(ngrdcol,nzm,hydromet_dim), intent(in) :: &
+      wphydrometp    ! Covariance of w and a hydrometeor [(m/s) <hm units>]
+
+    real( kind = core_rknd ), dimension(ngrdcol,nzt,hydromet_dim), intent(in) :: &
+      wp2hmp,    & ! Third-order moment: < w'^2 hm' >    [(m/s)^2 <hm units>]
+      rtphmp_zt, & ! Covariance of rt and hm (on t-levs.)[(kg/kg) <hm units>]
+      thlphmp_zt   ! Covariance of thl and hm (on t-levs.)     [K <hm units>]
+
+    !------------------------------- Input/Output Variables -------------------------------
+    type(stats_type), intent(inout) :: &
+      stats
+
+    real( kind = core_rknd ), dimension(ngrdcol,nzm), intent(inout) :: &
+      sigma_sqd_w    ! PDF width parameter on momentum levels [-]
+
+    type(pdf_parameter), intent(inout) :: &
+      pdf_params_zm    ! PDF parameters for momentum levels [units vary]
+
+    type(err_info_type), intent(inout) :: &
+      err_info         ! err_info struct containing err_code and err_header
+
+    !------------------------------- Output Variables -------------------------------
+    real( kind = core_rknd ), dimension(ngrdcol,nzm), intent(out) :: &
+      rtm_zm,               & ! Total water mixing ratio at mom. levs. [kg/kg]
+      thlm_zm,              & ! Liquid water pot. temp. at mom. levs.  [K]
+      wp2up2,               & ! < w'^2u'^2 >                           [m^4/s^4]
+      wp2vp2,               & ! < w'^2v'^2 >                           [m^4/s^4]
+      wp4,                  & ! < w'^4 >                               [m^4/s^4]
+      wprtp2_zm,            & ! < w' r_t'^2 >                          [m/s kg^2/kg^2]
+      wp2rtp_zm,            & ! < w'^2 r_t' >                          [m^2/s^2 kg/kg]
+      wpthlp2_zm,           & ! < w' th_l'^2 >                         [m/s K^2]
+      wp2thlp_zm,           & ! < w'^2 th_l' >                         [m^2/s^2 K]
+      wprtpthlp_zm,         & ! < w' r_t' th_l' >                      [m/s kg/kg K]
+      cloud_frac_zm,        & ! Cloud fraction on momentum levels      [-]
+      ice_supersat_frac_zm, & ! Ice supersat. frac. on momentum levels [-]
+      rcm_zm,               & ! rcm at momentum levels                 [kg/kg]
+      wpthvp,               & ! < w' th_v' >                           [kg/kg K]
+      wp2thvp_zm,           & ! < w'^2 th_v' >                         [m^2/s^2 K]
+      wp2up_zm,             & ! < w'^2 u' >                            [m^3/s^3]
+      rtpthvp,              & ! < r_t' th_v' >                         [kg/kg K]
+      thlpthvp,             & ! < th_l' th_v' >                        [K^2]
+      wprcp,                & ! < w'r_c' >                             [m/s kg/kg]
+      wp2rcp_zm,            & ! < w'^2 r_c' >                          [m^2/s^2 kg/kg]
+      rtprcp,               & ! < r_t' r_c' >                          [kg^2/kg^2]
+      thlprcp,              & ! < th_l' r_c' >                         [K kg/kg]
+      rcp2,                 & ! Variance of r_c                        [kg^2/kg^2]
+      uprcp,                & ! < u' r_c' >                            [(m kg)/(s kg)]
+      vprcp,                & ! < v' r_c' >                            [(m kg)/(s kg)]
+      rc_coef_zm              ! Coefficient of X'r_c' on m-levs.       [K/(kg/kg)]
+
+    real( kind = core_rknd ), dimension(ngrdcol,nzm,sclr_dim), intent(out) :: &
+      wpsclrprtp_zm,  & ! w'sclr'rt' on momentum grid
+      wpsclrp2_zm,    & ! w'sclr'^2 on momentum grid
+      sclrpthvp,      & ! < sclr' th_v' > on momentum grid
+      wpsclrpthlp_zm, & ! w'sclr'thl' on momentum grid
+      sclrprcp,       & ! < sclr' r_c' > on momentum grid
+      wp2sclrp_zm       ! w'^2 sclr' on momentum grid
+
+    !------------------------------- Local Variables -------------------------------
+    real( kind = core_rknd ), dimension(ngrdcol,nzm) :: &
+      p_in_Pa_zm,              & ! Pressure interpolated to momentum levels [Pa]
+      exner_zm,                & ! Exner interpolated to momentum levels    [-]
+      um_zm,                   & ! Grid-mean eastward wind on m-levs.       [m/s]
+      vm_zm,                   & ! Grid-mean northward wind on m-levs.      [m/s]
+      up3_zm,                  & ! u'^3 interpolated to momentum levels     [m^3/s^3]
+      vp3_zm,                  & ! v'^3 interpolated to momentum levels     [m^3/s^3]
+      Sku_zm,                  & ! Skewness of u on momentum levels         [-]
+      Skv_zm,                  & ! Skewness of v on momentum levels         [-]
+      wpup2_zm,                & ! w'u'^2 on momentum grid                  [m^3/s^3]
+      wpvp2_zm,                & ! w'v'^2 on momentum grid                  [m^3/s^3]
+      w_up_in_cloud_zm,        & ! Avg. cloudy updraft velocity; m-levs     [m/s]
+      w_down_in_cloud_zm,      & ! Avg. cloudy downdraft velocity; m-levs   [m/s]
+      cloudy_updraft_frac_zm,  & ! Cloudy updraft fraction; m-levs          [-]
+      cloudy_downdraft_frac_zm   ! Cloudy downdraft fraction; m-levs        [-]
+
+    real( kind = core_rknd ), dimension(ngrdcol,nzm,hydromet_dim) :: &
+      wp2hmp_zm, & ! Moment <w'^2 hm'> on m-levs. [(m/s)^2 <hm units>]
+      rtphmp,    & ! Covariance of rt and hm          [(kg/kg) <hm units>]
+      thlphmp      ! Covariance of thl and hm               [K <hm units>]
+
+    real( kind = core_rknd ), dimension(ngrdcol,nzm,sclr_dim) :: &
+      sclrm_zm,   & ! Passive scalar mean on momentum grid [units vary]
+      sclrp3_zm,  & ! sclr'^3 interpolated to momentum levels [{units vary}^3]
+      Sksclr_zm     ! Skewness of sclr on momentum levels     [-]
+
+    type(implicit_coefs_terms) :: &
+      pdf_implicit_coefs_terms_zm
+
+    integer :: i, k, j, sclr
+
+    !-------------------------------------- Begin Code --------------------------------------
+
+    !$acc enter data create( p_in_Pa_zm, exner_zm, um_zm, vm_zm, &
+    !$acc                    up3_zm, vp3_zm, Sku_zm, Skv_zm, &
+    !$acc                    wpup2_zm, wpvp2_zm, w_up_in_cloud_zm, &
+    !$acc                    w_down_in_cloud_zm, cloudy_updraft_frac_zm, &
+    !$acc                    cloudy_downdraft_frac_zm )
+
+    !$acc enter data if( hydromet_dim > 0 ) create( wp2hmp_zm, rtphmp, thlphmp )
+
+    !$acc enter data if( sclr_dim > 0 ) create( sclrm_zm, sclrp3_zm, Sksclr_zm )
+
+    ! Call pdf_closure a second time on momentum levels, to output (rather than
+    ! interpolate) the variables which belong on the momentum levels.
+
+    ! Interpolate sclrm to the momentum level for use in the second call to
+    ! pdf_closure.
+    do sclr = 1, sclr_dim
+      ! Clip if extrap. causes sclrm_zm to be less than sclr_tol.
+      sclrm_zm(:,:,sclr) = zt2zm_api( nzm, nzt, ngrdcol, gr, sclrm(:,:,sclr), sclr_tol(sclr) )
+    end do ! sclr = 1, sclr_dim
+
+    ! Interpolate pressure, p_in_Pa, to momentum levels.  Since the surface
+    ! (or model lower boundary) is located at momentum level k = 1, the
+    ! pressure there is p_sfc.
+    p_in_Pa_zm(:,:) = zt2zm_api( nzm, nzt, ngrdcol, gr, p_in_Pa(:,:) )
+
+    !$acc parallel loop gang vector default(present)
+    do i = 1, ngrdcol
+      p_in_Pa_zm(i,gr%k_lb_zm) = p_sfc(i)
+
+      ! Clip pressure if the extrapolation leads to a negative value of pressure
+      p_in_Pa_zm(i,gr%k_ub_zm) &
+      = max( p_in_Pa_zm(i,gr%k_ub_zm), 0.5_core_rknd * p_in_Pa(i,gr%k_ub_zt) )
+    end do
+    !$acc end parallel loop
+
+    ! Set exner at momentum levels, exner_zm, based on p_in_Pa_zm.
+    !$acc parallel loop gang vector collapse(2) default(present)
+    do k = 1, nzm
+      do i = 1, ngrdcol
+        exner_zm(i,k) = (p_in_Pa_zm(i,k)/p0)**kappa
+      end do
+    end do
+    !$acc end parallel loop
+
+    ! Clip if extrapolation at the top level causes rtm_zm to be < rt_tol.
+    rtm_zm(:,:) = zt2zm_api( nzm, nzt, ngrdcol, gr, rtm(:,:), rt_tol )
+
+    ! Clip if extrapolation at the top level causes thlm_zm to be < thl_tol.
+    thlm_zm(:,:) = zt2zm_api( nzm, nzt, ngrdcol, gr, thlm(:,:), thl_tol )
+
+    ! Interpolate hydrometeor mixed moments to momentum levels.
+    do j = 1, hydromet_dim
+      rtphmp(:,:,j)    = zt2zm_api( nzm, nzt, ngrdcol, gr, rtphmp_zt(:,:,j) )
+      thlphmp(:,:,j)   = zt2zm_api( nzm, nzt, ngrdcol, gr, thlphmp_zt(:,:,j) )
+      wp2hmp_zm(:,:,j) = zt2zm_api( nzm, nzt, ngrdcol, gr, wp2hmp(:,:,j) )
+    end do ! i = 1, hydromet_dim, 1
+
+    um_zm(:,:) = zt2zm_api( nzm, nzt, ngrdcol, gr, um(:,:) )
+    vm_zm(:,:) = zt2zm_api( nzm, nzt, ngrdcol, gr, vm(:,:) )
+
+    up3_zm(:,:) = zt2zm_api( nzm, nzt, ngrdcol, gr, up3(:,:) )
+    vp3_zm(:,:) = zt2zm_api( nzm, nzt, ngrdcol, gr, vp3(:,:) )
+
+    call Skx_func( nzm, ngrdcol, up2, up3_zm, &
+                   w_tol, clubb_params, &
+                   Sku_zm )
+
+    call Skx_func( nzm, ngrdcol, vp2, vp3_zm, &
+                   w_tol, clubb_params, &
+                   Skv_zm )
+
+    do sclr = 1, sclr_dim
+      sclrp3_zm(:,:,sclr) = zt2zm_api( nzm, nzt, ngrdcol, gr, sclrp3(:,:,sclr) )
+
+      call Skx_func( nzm, ngrdcol, sclrp2(:,:,sclr), sclrp3_zm(:,:,sclr), &
+                     sclr_tol(sclr), clubb_params, &
+                     Sksclr_zm(:,:,sclr) )
+    end do ! sclr = 1, sclr_dim
+
+    ! pdf_implicit_coefs_terms is only used in the iiPDF_new and
+    ! iiPDF_new_hybrid closures. So we only need to initialize our local _zm
+    ! version if we're working with one of those.
+    if ( iiPDF_type == iiPDF_new .or. iiPDF_type == iiPDF_new_hybrid ) then
+      call init_pdf_implicit_coefs_terms_api( nzm, ngrdcol, sclr_dim, &     ! Intent(in)
+                                              pdf_implicit_coefs_terms_zm ) ! Intent(out)
+    end if
+
+    ! Call pdf_closure to output the variables which belong on the momentum grid.
+    call pdf_closure( nzm, ngrdcol, sclr_dim, sclr_tol, gr,      & ! intent(in)
+           hydromet_dim, p_in_Pa_zm, exner_zm, thv_ds_zm,        & ! intent(in)
+           wm_zm, wp2, wp3_zm,                                   & ! intent(in)
+           Skw_zm, Skthl_zm, Skrt_zm, Sku_zm, Skv_zm,            & ! intent(in)
+           rtm_zm, rtp2, wprtp,                                  & ! intent(in)
+           thlm_zm, thlp2, wpthlp,                               & ! intent(in)
+           um_zm, up2, upwp,                                     & ! intent(in)
+           vm_zm, vp2, vpwp,                                     & ! intent(in)
+           rtpthlp,                                              & ! intent(in)
+           sclrm_zm, wpsclrp, sclrp2,                            & ! intent(in)
+           sclrprtp, sclrpthlp, Sksclr_zm,                       & ! intent(in)
+           gamma_Skw_fnc,                                        & ! intent(in)
+           wphydrometp, wp2hmp_zm,                               & ! intent(in)
+           rtphmp, thlphmp,                                      & ! intent(in)
+           clubb_params, mixt_frac_max_mag,                      & ! intent(in)
+           saturation_formula,                                   & ! intent(in)
+           stats,                                                & ! intent(inout)
+           iiPDF_type,                                           & ! intent(in)
+           l_mix_rat_hm,                                         & ! intent(in)
+           sigma_sqd_w,                                          & ! intent(inout)
+           pdf_params_zm, pdf_implicit_coefs_terms_zm,           & ! intent(inout)
+           err_info,                                             & ! intent(inout)
+           wpup2_zm, wpvp2_zm,                                   & ! intent(out)
+           wp2up2, wp2vp2, wp4,                                  & ! intent(out)
+           wprtp2_zm, wp2rtp_zm,                                 & ! intent(out)
+           wpthlp2_zm, wp2thlp_zm, wprtpthlp_zm,                 & ! intent(out)
+           cloud_frac_zm, ice_supersat_frac_zm,                  & ! intent(out)
+           rcm_zm, wpthvp, wp2thvp_zm, wp2up_zm, rtpthvp,        & ! intent(out)
+           thlpthvp, wprcp, wp2rcp_zm, rtprcp,                   & ! intent(out)
+           thlprcp, rcp2,                                        & ! intent(out)
+           uprcp, vprcp,                                         & ! intent(out)
+           w_up_in_cloud_zm, w_down_in_cloud_zm,                 & ! intent(out)
+           cloudy_updraft_frac_zm, cloudy_downdraft_frac_zm,     & ! intent(out)
+           wpsclrprtp_zm, wpsclrp2_zm, sclrpthvp,                & ! intent(out)
+           wpsclrpthlp_zm, sclrprcp, wp2sclrp_zm,                & ! intent(out)
+           rc_coef_zm                                            ) ! intent(out)
+
+    !$acc exit data if( sclr_dim > 0 ) delete( sclrm_zm, sclrp3_zm, Sksclr_zm )
+
+    !$acc exit data if( hydromet_dim > 0 ) delete( wp2hmp_zm, rtphmp, thlphmp )
+
+    !$acc exit data delete( p_in_Pa_zm, exner_zm, um_zm, vm_zm, &
+    !$acc                   up3_zm, vp3_zm, Sku_zm, Skv_zm, &
+    !$acc                   wpup2_zm, wpvp2_zm, w_up_in_cloud_zm, &
+    !$acc                   w_down_in_cloud_zm, cloudy_updraft_frac_zm, &
+    !$acc                   cloudy_downdraft_frac_zm )
+
+  end subroutine pdf_closure_driver_zm
 
   !-----------------------------------------------------------------------
   subroutine trapezoidal_rule_zt( nzm, nzt, ngrdcol, sclr_dim, gr,             & ! intent(in)

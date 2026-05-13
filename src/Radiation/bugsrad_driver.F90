@@ -50,8 +50,10 @@ module bugsrad_driver
       clubb_at_least_debug_level_api, &
       clubb_fatal_error
 
+    use, intrinsic :: ieee_arithmetic, only: &
+      ieee_is_finite
+
     use numerical_check, only: &
-      is_nan_2d, &
       rad_check
 
     use extended_atmosphere_module, only: &
@@ -196,47 +198,47 @@ module bugsrad_driver
     ts = 0._dp
 
     if ( clubb_at_least_debug_level_api( 0 ) ) then
-      if ( is_nan_2d( thlm ) ) then
+      if ( any( .not. ieee_is_finite( thlm ) ) ) then
         write(fstderr,*) "thlm before BUGSrad is NaN"
         err_info%err_code = clubb_fatal_error
       end if
 
-      if ( is_nan_2d( rcm ) ) then
+      if ( any( .not. ieee_is_finite( rcm ) ) ) then
         write(fstderr,*) "rcm before BUGSrad is NaN"
         err_info%err_code = clubb_fatal_error
       end if
 
-      if ( is_nan_2d( rtm ) ) then
+      if ( any( .not. ieee_is_finite( rtm ) ) ) then
         write(fstderr,*) "rtm before BUGSrad is NaN"
         err_info%err_code = clubb_fatal_error
       end if
 
-      if ( is_nan_2d( rsm ) ) then
+      if ( any( .not. ieee_is_finite( rsm ) ) ) then
         write(fstderr,*) "rsm before BUGSrad is NaN"
         err_info%err_code = clubb_fatal_error
       end if
 
-      if ( is_nan_2d( rim ) ) then
+      if ( any( .not. ieee_is_finite( rim ) ) ) then
         write(fstderr,*) "rim before BUGSrad is NaN"
         err_info%err_code = clubb_fatal_error
       end if
 
-      if ( is_nan_2d( cloud_frac ) ) then
+      if ( any( .not. ieee_is_finite( cloud_frac ) ) ) then
         write(fstderr,*) "cloud_frac before BUGSrad is NaN"
         err_info%err_code = clubb_fatal_error
       end if
 
-      if ( is_nan_2d( p_in_Pa ) ) then
+      if ( any( .not. ieee_is_finite( p_in_Pa ) ) ) then
         write(fstderr,*) "p_in_Pa before BUGSrad is NaN"
         err_info%err_code = clubb_fatal_error
       end if
 
-      if ( is_nan_2d( exner ) ) then
+      if ( any( .not. ieee_is_finite( exner ) ) ) then
         write(fstderr,*) "exner before BUGSrad is NaN"
         err_info%err_code = clubb_fatal_error
       end if
 
-      if ( is_nan_2d( rho_zm ) ) then
+      if ( any( .not. ieee_is_finite( rho_zm ) ) ) then
         write(fstderr,*) "rho_zm before BUGSrad is NaN"
         err_info%err_code = clubb_fatal_error
       end if
@@ -373,12 +375,12 @@ module bugsrad_driver
     Frad(:,:) = Frad_SW(:,:) + Frad_LW(:,:)
 
     if ( clubb_at_least_debug_level_api( 0 ) ) then
-      if ( is_nan_2d( Frad ) ) then
+      if ( any( .not. ieee_is_finite( Frad ) ) ) then
         write(fstderr,*) "Frad after BUGSrad is NaN"
         err_info%err_code = clubb_fatal_error
       end if
 
-      if ( is_nan_2d( radht ) ) then
+      if ( any( .not. ieee_is_finite( radht ) ) ) then
         write(fstderr,*) "radht after BUGSrad is NaN"
         err_info%err_code = clubb_fatal_error
       end if

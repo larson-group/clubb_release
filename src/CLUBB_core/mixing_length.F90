@@ -7,11 +7,479 @@ module mixing_length
 
   private ! Default Scope
 
-  public :: calc_Lscale_directly,  &
+  public :: calc_Lscale, &
+            calc_Lscale_directly,  &
             diagnose_Lscale_from_tau, &
             set_Lscale_max
 
   contains
+
+!===============================================================================
+
+  subroutine calc_Lscale( nzm, nzt, ngrdcol, gr, l_implemented, host_dx, host_dy, &
+                          p_in_Pa, exner, rtm, thlm, thvm, thlp2, rtp2, rtpthlp, &
+                          pdf_params, em, sqrt_em_zt, thv_ds_zt, lmin, &
+#ifdef CLUBBND_CAM
+                          varmu, &
+#endif
+                          upwp_sfc, vpwp_sfc, ddzt_umvm_sqd, ice_supersat_frac, &
+                          ufmin, tau_const, sfc_elevation, clubb_params, &
+                          saturation_formula, l_Lscale_plume_centered, &
+                          l_diag_Lscale_from_tau, l_e3sm_config, &
+                          l_smooth_Heaviside_tau_wpxp, &
+                          l_modify_limiters_for_cnvg_test, &
+                          l_use_invrs_tau_N2_iso, &
+                          brunt_vaisala_freq_sqd_smth, &
+                          stats, err_info, &
+                          invrs_tau_zt, invrs_tau_zm, invrs_tau_xp2_zm, &
+                          invrs_tau_wp3_zt, &
+                          invrs_tau_C1_zm, invrs_tau_C4_zm, &
+                          invrs_tau_C6_zm, invrs_tau_C14_zm, &
+                          tau_max_zm, tau_max_zt, tau_zm, &
+                          Lscale, Lscale_zm, Lscale_up, Lscale_down )
+
+    ! Description:
+    !   Compute CLUBB's mixing length and dissipation time scales, including
+    !   Richardson-number-dependent damping terms and Lscale-related stats.
+    !
+    ! References:
+    !   Guo et al. (2021, JAMES) for the diagnosed Lscale-from-tau option.
+    !-----------------------------------------------------------------------
+
+    use advance_helper_module, only: &
+        calc_Ri_zm, &
+        smooth_max
+
+    use clubb_precision, only: &
+        core_rknd
+
+    use constants_clubb, only: &
+        em_min, &
+        fstderr, &
+        min_max_smth_mag, &
+        one, &
+        rt_tol, &
+        thl_tol, &
+        zero_threshold
+
+    use parameter_indices, only: &
+        nparams, &
+        imu, &
+        itaumax
+
+    use grid_class, only: &
+        grid, &
+        zm2zt_api, &
+        zm2zt2zm, &
+        zt2zm_api
+
+    use pdf_parameter_module, only: &
+        pdf_parameter
+
+    use stats_netcdf, only: &
+        stats_type, &
+        stats_update
+
+    use error_code, only: &
+        clubb_at_least_debug_level_api, &
+        clubb_fatal_error
+
+    use err_info_type_module, only: &
+        err_info_type
+
+    implicit none
+
+    !--------------------------- Input Variables ---------------------------
+    integer, intent(in) :: &
+      nzm,    & ! Number of momentum levels
+      nzt,    & ! Number of thermodynamic levels
+      ngrdcol   ! Number of grid columns
+
+    type(grid), intent(in) :: &
+      gr   ! Grid structure
+
+    logical, intent(in) :: &
+      l_implemented,                    & ! True when current configuration is implemented
+      l_Lscale_plume_centered,          & ! Whether to use plume-centered Lscale calculation
+      l_diag_Lscale_from_tau,           & ! Whether to diagnose Lscale from tau
+      l_e3sm_config,                    & ! Whether E3SM configuration options are active
+      l_smooth_Heaviside_tau_wpxp,      & ! Whether to smooth Heaviside functions in wpxp tau
+      l_modify_limiters_for_cnvg_test,  & ! Whether to modify limiters for convergence tests
+      l_use_invrs_tau_N2_iso              ! Whether to use isotropic N2 inverse tau
+
+    real( kind = core_rknd ), dimension(ngrdcol), intent(in) :: &
+      host_dx,        & ! Host-model grid spacing in x direction [m]
+      host_dy,        & ! Host-model grid spacing in y direction [m]
+      upwp_sfc,       & ! Surface value of u'w' [m^2/s^2]
+      vpwp_sfc,       & ! Surface value of v'w' [m^2/s^2]
+      sfc_elevation     ! Surface elevation [m]
+
+#ifdef CLUBBND_CAM
+    real( kind = core_rknd ), dimension(ngrdcol), intent(in) :: &
+      varmu   ! CLUBBND-CAM horizontal grid-size parameter [m]
+#endif
+
+    real( kind = core_rknd ), dimension(ngrdcol,nzt), intent(in) :: &
+      p_in_Pa,           & ! Pressure [Pa]
+      exner,             & ! Exner function [-]
+      rtm,               & ! Total water mixing ratio [kg/kg]
+      thlm,              & ! Liquid water potential temperature [K]
+      thvm,              & ! Virtual potential temperature [K]
+      thv_ds_zt,         & ! Reference-state virtual potential temperature [K]
+      sqrt_em_zt,        & ! Square root of TKE on thermodynamic levels [m/s]
+      ice_supersat_frac    ! Ice supersaturation fraction [-]
+
+    real( kind = core_rknd ), dimension(ngrdcol,nzm), intent(in) :: &
+      thlp2,                       & ! Variance of thl [K^2]
+      rtp2,                        & ! Variance of rt [(kg/kg)^2]
+      rtpthlp,                     & ! Covariance of rt and thl [K kg/kg]
+      em,                          & ! Turbulent kinetic energy [m^2/s^2]
+      ddzt_umvm_sqd,               & ! Squared vertical shear of horizontal wind [s^-2]
+      brunt_vaisala_freq_sqd_smth    ! Smoothed Brunt-Vaisala frequency squared [s^-2]
+
+    real( kind = core_rknd ), intent(in) :: &
+      lmin,      & ! Minimum mixing length [m]
+      ufmin,     & ! Minimum velocity scale [m/s]
+      tau_const    ! Constant eddy dissipation time scale [s]
+
+    real( kind = core_rknd ), dimension(ngrdcol,nparams), intent(in) :: &
+      clubb_params   ! Tunable CLUBB parameters
+
+    integer, intent(in) :: &
+      saturation_formula   ! Saturation vapor pressure formula selector
+
+    type(pdf_parameter), intent(in) :: &
+      pdf_params   ! PDF parameters
+
+    !----------------------- Input/Output Variables ------------------------
+    type(stats_type), intent(inout) :: &
+      stats   ! Statistics accumulator
+
+    type(err_info_type), intent(inout) :: &
+      err_info   ! Error information
+
+    !--------------------------- Output Variables --------------------------
+    real( kind = core_rknd ), dimension(ngrdcol,nzm), intent(out) :: &
+      invrs_tau_zm,      & ! Inverse time scale on momentum levels [1/s]
+      invrs_tau_xp2_zm,  & ! Inverse time scale for xp2 terms on momentum levels [1/s]
+      invrs_tau_C1_zm,   & ! Inverse time scale used for C1 term on momentum levels [1/s]
+      invrs_tau_C4_zm,   & ! Inverse time scale used for C4 terms on momentum levels [1/s]
+      invrs_tau_C6_zm,   & ! Inverse time scale used for C6 term on momentum levels [1/s]
+      invrs_tau_C14_zm,  & ! Inverse time scale used for C14 terms on momentum levels [1/s]
+      tau_max_zm,        & ! Maximum allowable eddy dissipation time scale on momentum levels [s]
+      tau_zm,            & ! Eddy dissipation time scale on momentum levels [s]
+      Lscale_zm            ! Turbulent mixing length on momentum levels [m]
+
+    real( kind = core_rknd ), dimension(ngrdcol,nzt), intent(out) :: &
+      invrs_tau_zt,      & ! Inverse time scale on thermodynamic levels [1/s]
+      invrs_tau_wp3_zt,  & ! Inverse time scale for wp3 terms on thermodynamic levels [1/s]
+      tau_max_zt,        & ! Maximum allowable eddy dissipation time scale on thermodynamic levels [s]
+      Lscale,            & ! Turbulent mixing length on thermodynamic levels [m]
+      Lscale_up,         & ! Upward component of turbulent mixing length [m]
+      Lscale_down          ! Downward component of turbulent mixing length [m]
+
+    !--------------------------- Local Variables ---------------------------
+    real( kind = core_rknd ), dimension(ngrdcol) :: &
+      Lscale_max,  & ! Maximum allowable mixing length [m]
+      newmu          ! Horizontal grid-length scale used by Lscale limiters [m]
+
+    logical, parameter :: l_smooth_min_max = .false.  ! whether to apply smooth min
+                                                      ! and max functions
+
+    real( kind = core_rknd ), dimension(ngrdcol,nzt) :: &
+      thlp2_zt,    & ! Variance of thl on thermodynamic levels [K^2]
+      rtp2_zt,     & ! Variance of rt on thermodynamic levels [(kg/kg)^2]
+      rtpthlp_zt,  & ! Covariance of rt and thl on thermodynamic levels [K kg/kg]
+      tau_zt         ! Eddy dissipation time scale on thermodynamic levels [s]
+
+    real( kind = core_rknd ), dimension(ngrdcol,nzm) :: &
+      invrs_tau_sfc,              & ! Surface contribution to inverse tau [1/s]
+      invrs_tau_no_N2_zm,         & ! Inverse tau without N2 contribution on momentum levels [1/s]
+      invrs_tau_bkgnd,            & ! Background inverse tau [1/s]
+      invrs_tau_N2_iso,           & ! Isotropic N2 contribution to inverse tau [1/s]
+      invrs_tau_wp2_zm,           & ! Inverse time scale for wp2 terms on momentum levels [1/s]
+      invrs_tau_wp3_zm,           & ! Inverse time scale for wp3 terms on momentum levels [1/s]
+      invrs_tau_wpxp_zm,          & ! Inverse time scale for wpxp terms on momentum levels [1/s]
+      invrs_tau_shear,            & ! Shear contribution to inverse tau [1/s]
+      Ri_zm,                      & ! Gradient Richardson number on momentum levels [-]
+      ddzt_umvm_sqd_clipped,      & ! Clipped squared vertical shear of horizontal wind [s^-2]
+      brunt_vaisala_freq_clipped    ! Clipped Brunt-Vaisala frequency [1/s]
+
+    integer :: &
+      i,  & ! Grid-column loop index
+      k     ! Vertical-level loop index
+
+    !----------------------------- Begin Code ------------------------------
+
+    !$acc enter data create( Lscale_max, newmu, thlp2_zt, rtp2_zt, rtpthlp_zt, &
+    !$acc                    tau_zt, &
+    !$acc                    invrs_tau_sfc, invrs_tau_no_N2_zm, invrs_tau_bkgnd, &
+    !$acc                    invrs_tau_N2_iso, invrs_tau_wp2_zm, &
+    !$acc                    invrs_tau_wp3_zm, invrs_tau_wpxp_zm, &
+    !$acc                    invrs_tau_shear, Ri_zm, &
+    !$acc                    ddzt_umvm_sqd_clipped, brunt_vaisala_freq_clipped )
+
+    ! Determine the maximum allowable value for Lscale (in meters).
+    call set_Lscale_max( ngrdcol, l_implemented, host_dx, host_dy, & ! In
+                         Lscale_max )                                ! Out
+
+    ! Interpolate rtpthlp here so the diagnostic stats value is generated at
+    ! the same point as the Lscale calculation that consumes it.
+    rtpthlp_zt(:,:) = zm2zt_api( nzm, nzt, ngrdcol, gr, rtpthlp(:,:) )
+
+    if ( stats%l_sample ) then
+      !$acc update host( rtpthlp_zt )
+      call stats_update( "rtpthlp_zt", rtpthlp_zt, stats )
+    end if
+
+    ! Calculate Richardson number Ri_zm.
+    if ( l_modify_limiters_for_cnvg_test ) then
+
+      call calc_Ri_zm( nzm, ngrdcol, brunt_vaisala_freq_sqd_smth, ddzt_umvm_sqd, &
+                       0.0_core_rknd, 1.0e-12_core_rknd, Ri_zm )
+
+      Ri_zm = zm2zt2zm( nzm, nzt, ngrdcol, gr, Ri_zm )
+
+    else
+
+      if ( l_smooth_min_max ) then
+
+        brunt_vaisala_freq_clipped = smooth_max( nzm, ngrdcol, 1.0e-7_core_rknd, &
+                                                 brunt_vaisala_freq_sqd_smth, &
+                                                 1.0e-4_core_rknd * min_max_smth_mag )
+
+        ddzt_umvm_sqd_clipped = smooth_max( nzm, ngrdcol, ddzt_umvm_sqd, &
+                                            1.0e-7_core_rknd, &
+                                            1.0e-6_core_rknd * min_max_smth_mag )
+
+        call calc_Ri_zm( nzm, ngrdcol, brunt_vaisala_freq_clipped, &
+                         ddzt_umvm_sqd_clipped, 0.0_core_rknd, 0.0_core_rknd, Ri_zm )
+
+      else
+
+        call calc_Ri_zm( nzm, ngrdcol, brunt_vaisala_freq_sqd_smth, ddzt_umvm_sqd, &
+                         1.0e-7_core_rknd, 1.0e-7_core_rknd, Ri_zm )
+
+      end if
+
+    end if
+
+    if ( stats%l_sample ) then
+      !$acc update host( Ri_zm )
+      call stats_update( "Ri_zm", Ri_zm, stats )
+    end if
+
+    if ( .not. l_diag_Lscale_from_tau ) then
+      ! Compute Lscale first using the buoyant parcel calculation.
+
+#ifdef CLUBBND_CAM
+      !$acc parallel loop gang vector default(present)
+      do i = 1, ngrdcol
+        newmu(i) = varmu(i)
+      end do
+      !$acc end parallel loop
+#else
+      !$acc parallel loop gang vector default(present)
+      do i = 1, ngrdcol
+        newmu(i) = clubb_params(i,imu)
+      end do
+      !$acc end parallel loop
+#endif
+
+      ! Interpolate thlp2 and rtp2 to thermodynamic levels.
+      thlp2_zt(:,:) = zm2zt_api( nzm, nzt, ngrdcol, gr, thlp2(:,:), &
+                                  thl_tol**2 )  ! Positive def. quantity
+      rtp2_zt(:,:)  = zm2zt_api( nzm, nzt, ngrdcol, gr, rtp2(:,:), &
+                                  rt_tol**2 )   ! Positive def. quantity
+
+      call calc_Lscale_directly ( ngrdcol, nzm, nzt, gr,                             & ! In
+                                  l_implemented, p_in_Pa,                            & ! In
+                                  exner, rtm, thlm, thvm,                            & ! In
+                                  newmu, rtp2_zt, thlp2_zt, rtpthlp_zt, pdf_params,  & ! In
+                                  em, thv_ds_zt, Lscale_max, lmin,                   & ! In
+                                  clubb_params,                                      & ! In
+                                  saturation_formula,                                & ! In
+                                  l_Lscale_plume_centered,                           & ! In
+                                  stats, err_info,                                   & ! InOut
+                                  Lscale, Lscale_up, Lscale_down )                     ! Out
+
+      if ( clubb_at_least_debug_level_api( 0 ) ) then
+        if ( any(err_info%err_code == clubb_fatal_error) ) then
+          write(fstderr,*) err_info%err_header_global
+          write(fstderr,*) "Error calling calc_Lscale_directly in calc_Lscale"
+          !$acc exit data delete( Lscale_max, newmu, thlp2_zt, rtp2_zt, rtpthlp_zt, &
+          !$acc                   tau_zt, &
+          !$acc                   invrs_tau_sfc, invrs_tau_no_N2_zm, invrs_tau_bkgnd, &
+          !$acc                   invrs_tau_N2_iso, invrs_tau_wp2_zm, &
+          !$acc                   invrs_tau_wp3_zm, invrs_tau_wpxp_zm, &
+          !$acc                   invrs_tau_shear, Ri_zm, &
+          !$acc                   ddzt_umvm_sqd_clipped, brunt_vaisala_freq_clipped )
+          return
+        end if
+      end if
+
+      ! Calculate CLUBB's turbulent eddy-turnover time scale as CLUBB's
+      ! length scale divided by a velocity scale.
+      !$acc parallel loop gang vector collapse(2) default(present)
+      do k = 1, nzt
+        do i = 1, ngrdcol
+          tau_zt(i,k) = min( Lscale(i,k) / sqrt_em_zt(i,k), clubb_params(i,itaumax) )
+        end do
+      end do
+      !$acc end parallel loop
+
+      Lscale_zm(:,:) = zt2zm_api( nzm, nzt, ngrdcol, gr, Lscale(:,:), zero_threshold )
+
+      !$acc parallel loop gang vector collapse(2) default(present)
+      do k = 1, nzm
+        do i = 1, ngrdcol
+          tau_zm(i,k) = min( Lscale_zm(i,k) / sqrt( max( em_min, em(i,k) ) ),  &
+                             clubb_params(i,itaumax) )
+        end do
+      end do
+      !$acc end parallel loop
+
+      !$acc parallel loop gang vector collapse(2) default(present)
+      do k = 1, nzm
+        do i = 1, ngrdcol
+          invrs_tau_zm(i,k)      = one / tau_zm(i,k)
+          invrs_tau_wp2_zm(i,k)  = invrs_tau_zm(i,k)
+          invrs_tau_xp2_zm(i,k)  = invrs_tau_zm(i,k)
+          invrs_tau_wpxp_zm(i,k) = invrs_tau_zm(i,k)
+          invrs_tau_wp3_zm(i,k)  = invrs_tau_zm(i,k)
+          tau_max_zm(i,k) = clubb_params(i,itaumax)
+        end do
+      end do
+      !$acc end parallel loop
+
+      !$acc parallel loop gang vector collapse(2) default(present)
+      do k = 1, nzt
+        do i = 1, ngrdcol
+          invrs_tau_zt(i,k)     = one / tau_zt(i,k)
+          invrs_tau_wp3_zt(i,k) = invrs_tau_zt(i,k)
+          tau_max_zt(i,k) = clubb_params(i,itaumax)
+        end do
+      end do
+      !$acc end parallel loop
+
+    else
+      ! Diagnose simple tau and Lscale.
+
+      call diagnose_Lscale_from_tau( nzm, nzt, ngrdcol, gr,                       & ! In
+                        upwp_sfc, vpwp_sfc, ddzt_umvm_sqd,                        & ! In
+                        ice_supersat_frac,                                        & ! In
+                        em, sqrt_em_zt,                                           & ! In
+                        ufmin, tau_const,                                         & ! In
+                        sfc_elevation, Lscale_max,                                & ! In
+                        clubb_params,                                             & ! In
+                        stats,                                                    & ! InOut
+                        l_e3sm_config,                                            & ! In
+                        l_smooth_Heaviside_tau_wpxp,                              & ! In
+                        brunt_vaisala_freq_sqd_smth, Ri_zm,                       & ! In
+                        err_info,                                                 & ! InOut
+                        invrs_tau_zt, invrs_tau_zm,                               & ! Out
+                        invrs_tau_sfc, invrs_tau_no_N2_zm, invrs_tau_bkgnd,       & ! Out
+                        invrs_tau_shear, invrs_tau_N2_iso,                        & ! Out
+                        invrs_tau_wp2_zm, invrs_tau_xp2_zm,                       & ! Out
+                        invrs_tau_wp3_zm, invrs_tau_wp3_zt, invrs_tau_wpxp_zm,    & ! Out
+                        tau_max_zm, tau_max_zt, tau_zm, tau_zt,                   & ! Out
+                        Lscale, Lscale_up, Lscale_down )                            ! Out
+
+      if ( clubb_at_least_debug_level_api( 0 ) ) then
+        if ( any(err_info%err_code == clubb_fatal_error) ) then
+          write(fstderr,*) err_info%err_header_global
+          write(fstderr,*) "Error calling diagnose_Lscale_from_tau in calc_Lscale"
+          !$acc exit data delete( Lscale_max, newmu, thlp2_zt, rtp2_zt, rtpthlp_zt, &
+          !$acc                   tau_zt, &
+          !$acc                   invrs_tau_sfc, invrs_tau_no_N2_zm, invrs_tau_bkgnd, &
+          !$acc                   invrs_tau_N2_iso, invrs_tau_wp2_zm, &
+          !$acc                   invrs_tau_wp3_zm, invrs_tau_wpxp_zm, &
+          !$acc                   invrs_tau_shear, Ri_zm, &
+          !$acc                   ddzt_umvm_sqd_clipped, brunt_vaisala_freq_clipped )
+          return
+        end if
+      end if
+
+    end if
+
+    Lscale_zm(:,:) = zt2zm_api( nzm, nzt, ngrdcol, gr, Lscale(:,:) )
+
+    !$acc parallel loop gang vector collapse(2) default(present)
+    do k = 1, nzm
+      do i = 1, ngrdcol
+        invrs_tau_C6_zm(i,k) = invrs_tau_wpxp_zm(i,k)
+        invrs_tau_C1_zm(i,k) = invrs_tau_wp2_zm(i,k)
+      end do
+    end do
+    !$acc end parallel loop
+
+    !$acc parallel loop gang vector collapse(2) default(present)
+    do k = 1, nzm
+      do i = 1, ngrdcol
+        invrs_tau_C14_zm(i,k) = invrs_tau_wp2_zm(i,k)
+      end do
+    end do
+    !$acc end parallel loop
+
+    if ( .not. l_diag_Lscale_from_tau .and. l_use_invrs_tau_N2_iso) then
+      write(fstderr,*) "Error! l_use_invrs_tau_N2_iso is not used when "// &
+                       "l_diag_Lscale_from_tau=false."// &
+                       "If you want to use Lscale code, go to file "// &
+                       "src/CLUBB_core/mixing_length.F90 and "// &
+                       "change l_use_invrs_tau_N2_iso to false"
+      error stop
+    end if
+
+    if ( .not. l_use_invrs_tau_N2_iso ) then
+      !$acc parallel loop gang vector collapse(2) default(present)
+      do k = 1, nzm
+        do i = 1, ngrdcol
+          invrs_tau_C4_zm(i,k) = invrs_tau_wp2_zm(i,k)
+        end do
+      end do
+      !$acc end parallel loop
+    else
+      !$acc parallel loop gang vector collapse(2) default(present)
+      do k = 1, nzm
+        do i = 1, ngrdcol
+          invrs_tau_C4_zm(i,k) = invrs_tau_N2_iso(i,k)
+        end do
+      end do
+      !$acc end parallel loop
+    end if
+
+    if ( stats%l_sample ) then
+      !$acc update host( invrs_tau_zm, invrs_tau_xp2_zm, invrs_tau_wp2_zm, &
+      !$acc              invrs_tau_wpxp_zm, invrs_tau_wp3_zm )
+      call stats_update( "invrs_tau_zm", invrs_tau_zm, stats )
+      call stats_update( "invrs_tau_xp2_zm", invrs_tau_xp2_zm, stats )
+      call stats_update( "invrs_tau_wp2_zm", invrs_tau_wp2_zm, stats )
+      call stats_update( "invrs_tau_wpxp_zm", invrs_tau_wpxp_zm, stats )
+      call stats_update( "invrs_tau_wp3_zm", invrs_tau_wp3_zm, stats )
+      !$acc update host( tau_zt )
+      call stats_update( "tau_zt", tau_zt, stats )
+
+      if ( l_diag_Lscale_from_tau ) then
+        !$acc update host( invrs_tau_no_N2_zm, invrs_tau_bkgnd, &
+        !$acc              invrs_tau_sfc, invrs_tau_shear )
+        call stats_update( "invrs_tau_no_N2_zm", invrs_tau_no_N2_zm, stats )
+        call stats_update( "invrs_tau_bkgnd", invrs_tau_bkgnd, stats )
+        call stats_update( "invrs_tau_sfc", invrs_tau_sfc, stats )
+        call stats_update( "invrs_tau_shear", invrs_tau_shear, stats )
+      end if
+    end if
+
+    !$acc exit data delete( Lscale_max, newmu, thlp2_zt, rtp2_zt, rtpthlp_zt, &
+    !$acc                   tau_zt, &
+    !$acc                   invrs_tau_sfc, invrs_tau_no_N2_zm, invrs_tau_bkgnd, &
+    !$acc                   invrs_tau_N2_iso, invrs_tau_wp2_zm, &
+    !$acc                   invrs_tau_wp3_zm, invrs_tau_wpxp_zm, &
+    !$acc                   invrs_tau_shear, Ri_zm, &
+    !$acc                   ddzt_umvm_sqd_clipped, brunt_vaisala_freq_clipped )
+
+    return
+
+  end subroutine calc_Lscale
 
   !=============================================================================
 
@@ -43,7 +511,7 @@ module mixing_length
     !----------------------- Input Variables -----------------------
     integer, intent(in) :: &
       ngrdcol
-    
+
     logical, intent(in) :: &
       l_implemented     ! True if CLUBB is being implemented and run in a host model
 
@@ -220,11 +688,11 @@ module mixing_length
     integer, intent(in) :: &
       nzm, &
       nzt, &
-      ngrdcol  
+      ngrdcol
 
     type (grid), intent(in) :: &
       gr
-    
+
     real( kind = core_rknd ), dimension(ngrdcol,nzt), intent(in) ::  &
       thvm,    & ! Virtual potential temp. on themodynamic level  [K]
       thlm,    & ! Liquid potential temp. on themodynamic level   [K]
@@ -242,7 +710,7 @@ module mixing_length
 
     real( kind = core_rknd ), dimension(ngrdcol), intent(in) :: &
       mu      ! mu Fractional extrainment rate per unit altitude  [1/m]
-      
+
     real( kind = core_rknd ), intent(in) :: &
       lmin    ! CLUBB tunable parameter lmin
 
@@ -319,7 +787,7 @@ module mixing_length
     !$acc                    entrain_coef, thl_par_j_precalc, rt_par_j_precalc, &
     !$acc                    tl_par_1, rt_par_1, rsatl_par_1, thl_par_1, dCAPE_dz_1, &
     !$acc                    s_par_1, rc_par_1, CAPE_incr_1, thv_par_1, tke_i )
- 
+
     !$acc parallel loop gang vector default(present)
     do i = 1, ngrdcol
       if ( abs(mu(i)) < eps ) then
@@ -340,7 +808,7 @@ module mixing_length
 
     ! Calculate initial turbulent kinetic energy for each grid level
     tke_i = zm2zt_api( nzm, nzt, ngrdcol, gr, em )
- 
+
     ! Initialize arrays and precalculate values for computational efficiency
     !$acc parallel loop gang vector collapse(2) default(present)
     do k = 1, nzt
@@ -384,7 +852,7 @@ module mixing_length
 
     !$acc parallel loop gang vector collapse(2) default(present)
     do j = gr%k_lb_zt+gr%grid_dir_indx, gr%k_ub_zt-gr%grid_dir_indx, gr%grid_dir_indx
-      do i = 1, ngrdcol  
+      do i = 1, ngrdcol
 
         if ( gr%grid_dir_indx > 0 ) then
           ! Ascending grid
@@ -445,16 +913,16 @@ module mixing_length
 
     ! Caclculate initial rsatl for parcels at each grid level
 
-    ! The entire pressure and temperature arrays are passed as 
-    ! argument and the sub-arrays are choosen using 
-    ! start_index. This workaround is used to solve 
+    ! The entire pressure and temperature arrays are passed as
+    ! argument and the sub-arrays are choosen using
+    ! start_index. This workaround is used to solve
     ! subarray issues with OpenACC.
     ! rsatl_par_1(i,3:) = sat_mixrat_liq_acc( nz-2, ngrdcol, p_in_Pa(i,3:), tl_par_1(i,3:) )
     ! since subarray 3:, the start_index is 3 and it is an optional argument
     start_index = gr%k_lb_zt+gr%grid_dir_indx
     rsatl_par_1 = sat_mixrat_liq_api( nzt, ngrdcol, gr, p_in_Pa, tl_par_1, saturation_formula, &
                                       start_index )
-    
+
     ! Calculate initial dCAPE_dz and CAPE_incr for parcels at each grid level
     !$acc parallel loop gang vector default(present)
     do i = 1, ngrdcol
@@ -718,7 +1186,7 @@ module mixing_length
     ! Precalculate values for downward Lscale, these are useful only if a parcel can descend
     ! more than one level. They are used in the equations that calculate thl and rt
     ! recursively for a parcel as it descends
-    !$acc parallel loop gang vector collapse(2) default(present)    
+    !$acc parallel loop gang vector collapse(2) default(present)
     do j = gr%k_lb_zt, gr%k_ub_zt-gr%grid_dir_indx, gr%grid_dir_indx
       do i = 1, ngrdcol
 
@@ -749,7 +1217,7 @@ module mixing_length
     ! and expensive calculations.
 
     ! Calculate initial thl, tl, and rt for parcels at each grid level
-    !$acc parallel loop gang vector collapse(2) default(present)    
+    !$acc parallel loop gang vector collapse(2) default(present)
     do j = gr%k_lb_zt, gr%k_ub_zt-gr%grid_dir_indx, gr%grid_dir_indx
       do i = 1, ngrdcol
 
@@ -777,9 +1245,9 @@ module mixing_length
 
     ! Caclculate initial rsatl for parcels at each grid level, this function is elemental
 
-    ! The entire pressure and temperature arrays are passed as 
-    ! argument and the sub-arrays are choosen using 
-    ! start_index. This workaround is used to solve 
+    ! The entire pressure and temperature arrays are passed as
+    ! argument and the sub-arrays are choosen using
+    ! start_index. This workaround is used to solve
     ! subarray issues with OpenACC.
     ! rsatl_par_1(i,2:) = sat_mixrat_liq_acc( nz-1, p_in_Pa(i,2:), tl_par_1(i,2:) )
     ! since subarray 2:, the start_index is 2 and it is an optional argument
@@ -1040,7 +1508,7 @@ module mixing_length
 
       ! ---------------- Final Lscale Calculation ----------------
 
-    !$acc parallel loop gang vector default(present) 
+    !$acc parallel loop gang vector default(present)
     do i = 1, ngrdcol
       do k = 1, nzt, 1
 
@@ -1076,7 +1544,7 @@ module mixing_length
       ! Vince Larson limited Lscale to allow host
       ! model to take over deep convection.  13 Feb 2008.
       Lscale(i,:) = min( Lscale(i,:), Lscale_max(i) )
-      
+
     end do
     !$acc end parallel loop
 
@@ -1125,7 +1593,8 @@ module mixing_length
 
   end subroutine compute_mixing_length
 
-!===============================================================================
+  !=============================================================================
+
   subroutine calc_Lscale_directly ( ngrdcol, nzm, nzt, gr, &
                                     l_implemented, p_in_Pa, exner, rtm,    &
                                     thlm, thvm, newmu, rtp2_zt, thlp2_zt, rtpthlp_zt, &
@@ -1203,7 +1672,7 @@ module mixing_length
     real( kind = core_rknd ), dimension(ngrdcol), intent(in) ::  &
       newmu, &
       Lscale_max
-      
+
     real( kind = core_rknd ), intent(in) ::  &
       lmin
 
@@ -1315,7 +1784,7 @@ module mixing_length
       !$acc parallel loop gang vector default(present)
       do  i = 1, ngrdcol
         mu_pert_1(i)   = newmu(i) / clubb_params(i,iLscale_mu_coef)
-      end do 
+      end do
       !$acc end parallel loop
 
       call compute_mixing_length( nzm, nzt, ngrdcol, gr, thvm, thlm_pert_1, & ! In
@@ -1334,7 +1803,7 @@ module mixing_length
         end do
       end do
       !$acc end parallel loop
-      
+
       !$acc parallel loop gang vector collapse(2) default(present)
       do k = 1, nzt, 1
         do  i = 1, ngrdcol
@@ -1343,12 +1812,12 @@ module mixing_length
         end do
       end do
       !$acc end parallel loop
-           
-      !$acc parallel loop gang vector default(present) 
+
+      !$acc parallel loop gang vector default(present)
       do  i = 1, ngrdcol
         mu_pert_2(i)   = newmu(i) * clubb_params(i,iLscale_mu_coef)
-      end do 
-      !$acc end parallel loop         
+      end do
+      !$acc end parallel loop
 
       call compute_mixing_length( nzm, nzt, ngrdcol, gr, thvm, thlm_pert_2, & ! In
                                   rtm_pert_2, em, Lscale_max, p_in_Pa,      & ! In
@@ -1414,7 +1883,7 @@ module mixing_length
       end do
       !$acc end parallel loop
 
-      !$acc parallel loop gang vector default(present) 
+      !$acc parallel loop gang vector default(present)
       do i = 1, ngrdcol
         mu_pert_pos_rt(i) = newmu(i) / clubb_params(i,iLscale_mu_coef)
         mu_pert_neg_rt(i) = newmu(i) * clubb_params(i,iLscale_mu_coef)
@@ -1513,7 +1982,7 @@ module mixing_length
 
  end subroutine calc_Lscale_directly
 
-!===============================================================================
+  !===============================================================================
 
  subroutine diagnose_Lscale_from_tau( nzm, nzt, ngrdcol, gr, & ! intent in
                         upwp_sfc, vpwp_sfc, ddzt_umvm_sqd, & !intent in
@@ -1609,7 +2078,7 @@ module mixing_length
     real( kind = core_rknd ), dimension(ngrdcol), intent(in) :: &
       upwp_sfc,      &
       vpwp_sfc
-    
+
     real( kind = core_rknd ), dimension(ngrdcol,nzt), intent(in) :: &
       ice_supersat_frac, &
       sqrt_em_zt
@@ -1623,14 +2092,14 @@ module mixing_length
     real(kind = core_rknd), intent(in) :: &
       ufmin,         &
       tau_const
-      
+
     real(kind = core_rknd), dimension(ngrdcol), intent(in) :: &
       sfc_elevation, &
       Lscale_max
 
     real( kind = core_rknd ), dimension(ngrdcol,nparams), intent(in) :: &
       clubb_params    ! Array of CLUBB's tunable parameters    [units vary]
- 
+
     type(stats_type), intent(inout) :: &
       stats
 
@@ -1676,7 +2145,7 @@ module mixing_length
 
     real( kind = core_rknd ), dimension(ngrdcol) :: &
       ustar
-      
+
     real( kind = core_rknd ) :: &
       C_invrs_tau_N2,             &
       C_invrs_tau_N2_wp2
@@ -1694,7 +2163,7 @@ module mixing_length
       invrs_tau_shear_smooth, &
       Ri_zm_smooth, &
       em_clipped, &
-      tau_zm_unclipped, & 
+      tau_zm_unclipped, &
       tmp_calc, &
       tmp_calc_max, &
       tmp_calc_min_max
@@ -1752,7 +2221,7 @@ module mixing_length
                           ufmin, &
                           min_max_smth_mag )
 
-    else 
+    else
 
       !$acc parallel loop gang vector default(present)
       do i = 1, ngrdcol
@@ -2089,7 +2558,7 @@ module mixing_length
                                           * Ri_zm_smooth(i,k) )
 
           end if
-        end do 
+        end do
       end do
       !$acc end parallel loop
 
@@ -2232,7 +2701,7 @@ module mixing_length
     !$acc                   tmp_calc, tmp_calc_max, tmp_calc_min_max )
 
     return
-    
+
   end subroutine diagnose_Lscale_from_tau
 
 end module mixing_length

@@ -37,6 +37,7 @@ def _setup_grid_and_stats(tmp_path: Path, ngrdcol: int = 1):
         err_info=err_info,
     )
 
+    clubb_params = clubb_api.init_clubb_params(ngrdcol, iunit=10, filename="")
     clubb_api.init_stats(
         registry_path="tests/test_stats_registry.in",
         output_path=str(tmp_path / "xp3_stats.nc"),
@@ -55,11 +56,11 @@ def _setup_grid_and_stats(tmp_path: Path, ngrdcol: int = 1):
         err_info=err_info,
         sclr_dim=1,
         edsclr_dim=0,
-        clubb_params=clubb_api.init_clubb_params(ngrdcol, iunit=10, filename=""),
+        clubb_params=clubb_params,
         param_names=clubb_api.get_param_names(),
     )
 
-    return gr, err_info
+    return gr, clubb_params, err_info
 
 
 def _make_xp3_args(gr):
@@ -93,18 +94,30 @@ def _make_xp3_args(gr):
         "sclrp2": full((ngrdcol, nzm, 1), 1.0e-6),
         "wpsclrp": full((ngrdcol, nzm, 1), 0.0),
         "wpsclrp2": full((ngrdcol, nzt, 1), 0.0),
+        "wp2": full((ngrdcol, nzm), 0.1),
+        "wp3": full((ngrdcol, nzt), 0.0),
+        "upwp": full((ngrdcol, nzm), 0.0),
+        "vpwp": full((ngrdcol, nzm), 0.0),
+        "up2": full((ngrdcol, nzm), 0.1),
+        "vp2": full((ngrdcol, nzm), 0.1),
+        "thvm": full((ngrdcol, nzt), 300.0),
+        "sigma_sqd_w": full((ngrdcol, nzm), 0.1),
+        "clubb_params": clubb_api.init_clubb_params(ngrdcol, iunit=10, filename=""),
         "l_lmm_stepping": False,
         "rtp3": full((ngrdcol, nzt), 0.0),
         "thlp3": full((ngrdcol, nzt), 0.0),
         "sclrp3": full((ngrdcol, nzt, 1), 0.0),
+        "up3": full((ngrdcol, nzt), 0.0),
+        "vp3": full((ngrdcol, nzt), 0.0),
     }
     return args
 
 
 def test_advance_xp3_returns_finite_arrays(tmp_path):
     """advance_xp3 should run and return finite outputs."""
-    gr, err_info = _setup_grid_and_stats(tmp_path, ngrdcol=1)
+    gr, clubb_params, err_info = _setup_grid_and_stats(tmp_path, ngrdcol=1)
     args = _make_xp3_args(gr)
+    args["clubb_params"] = clubb_params
 
     try:
         out = clubb_api.advance_xp3(**args)
@@ -112,25 +125,56 @@ def test_advance_xp3_returns_finite_arrays(tmp_path):
         clubb_api.finalize_stats(err_info=err_info)
 
     assert isinstance(out, tuple)
-    assert len(out) == 3
+    assert len(out) == 5
     for arr in out:
         assert np.all(np.isfinite(arr))
 
 
 def test_advance_xp3_updates_match_return_values(tmp_path):
     """Returned arrays should match the in-place updated input buffers."""
-    gr, err_info = _setup_grid_and_stats(tmp_path, ngrdcol=1)
+    gr, clubb_params, err_info = _setup_grid_and_stats(tmp_path, ngrdcol=1)
     args = _make_xp3_args(gr)
+    args["clubb_params"] = clubb_params
 
     rtp3_in = args["rtp3"]
     thlp3_in = args["thlp3"]
     sclrp3_in = args["sclrp3"]
+    up3_in = args["up3"]
+    vp3_in = args["vp3"]
 
     try:
-        rtp3_out, thlp3_out, sclrp3_out = clubb_api.advance_xp3(**args)
+        rtp3_out, thlp3_out, sclrp3_out, up3_out, vp3_out = clubb_api.advance_xp3(**args)
     finally:
         clubb_api.finalize_stats(err_info=err_info)
 
     np.testing.assert_allclose(rtp3_out, rtp3_in)
     np.testing.assert_allclose(thlp3_out, thlp3_in)
     np.testing.assert_allclose(sclrp3_out, sclrp3_in)
+    np.testing.assert_allclose(up3_out, up3_in)
+    np.testing.assert_allclose(vp3_out, vp3_in)
+
+
+def test_compute_xp3_returns_finite_arrays(tmp_path):
+    """compute_xp3 should run and return finite diagnosed outputs."""
+    gr, clubb_params, err_info = _setup_grid_and_stats(tmp_path, ngrdcol=1)
+    args = _make_xp3_args(gr)
+    args["clubb_params"] = clubb_params
+
+    try:
+        out = clubb_api.compute_xp3(
+            gr=args["gr"], nzm=args["nzm"], nzt=args["nzt"], ngrdcol=args["ngrdcol"],
+            sclr_dim=args["sclr_dim"], sclr_tol=args["sclr_tol"], iipdf_type=1,
+            clubb_params=args["clubb_params"], wp2=args["wp2"], wp3=args["wp3"],
+            thvm=args["thvm"], wprtp=args["wprtp"], wpthlp=args["wpthlp"],
+            rtp2=args["rtp2"], thlp2=args["thlp2"], upwp=args["upwp"], vpwp=args["vpwp"],
+            up2=args["up2"], vp2=args["vp2"], sigma_sqd_w=args["sigma_sqd_w"],
+            wpsclrp=args["wpsclrp"], sclrp2=args["sclrp2"], rtp3=args["rtp3"],
+            thlp3=args["thlp3"], up3=args["up3"], vp3=args["vp3"], sclrp3=args["sclrp3"],
+        )
+    finally:
+        clubb_api.finalize_stats(err_info=err_info)
+
+    assert isinstance(out, tuple)
+    assert len(out) == 5
+    for arr in out:
+        assert np.all(np.isfinite(arr))

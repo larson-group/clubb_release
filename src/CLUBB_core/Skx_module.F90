@@ -8,6 +8,7 @@ module Skx_module
   private ! Default Scope
 
   public :: Skx_func, &
+            compute_gamma_Skw, &
             LG_2005_ansatz, &
             xp3_LG_2005_ansatz
 
@@ -109,6 +110,152 @@ module Skx_module
     return
 
   end subroutine Skx_func
+
+  !-----------------------------------------------------------------------------
+  subroutine compute_gamma_Skw( nzm, nzt, ngrdcol, l_gamma_Skw, &
+                                Skw_zm, clubb_params, &
+                                gamma_Skw_fnc, &
+                                Skw_zt, gamma_Skw_fnc_zt )
+
+    ! Description:
+    !   Compute gamma as a function of Skw on momentum levels, and optionally
+    !   on thermodynamic levels.
+    !
+    ! References:
+    !   None
+    !-----------------------------------------------------------------------
+
+    use clubb_precision, only: &
+        core_rknd ! Variable(s)
+
+    use constants_clubb, only: &
+        eps,      &
+        one_half
+
+    use parameter_indices, only: &
+        nparams,      &
+        igamma_coef,  &
+        igamma_coefb, &
+        igamma_coefc
+
+    implicit none
+
+    !--------------------------- Input Variables ---------------------------
+    integer, intent(in) :: &
+      nzm,    & ! Number of momentum levels
+      nzt,    & ! Number of thermodynamic levels
+      ngrdcol   ! Number of grid columns
+
+    logical, intent(in) :: &
+      l_gamma_Skw   ! Whether gamma varies as a function of w skewness
+
+    real( kind = core_rknd ), dimension(ngrdcol,nzm), intent(in) :: &
+      Skw_zm   ! w skewness on momentum levels [-]
+
+    real( kind = core_rknd ), dimension(ngrdcol,nparams), intent(in) :: &
+      clubb_params   ! Array of CLUBB's tunable parameters [units vary]
+
+    !--------------------------- Output Variables --------------------------
+    real( kind = core_rknd ), dimension(ngrdcol,nzm), intent(out) :: &
+      gamma_Skw_fnc   ! Gamma as a function of w skewness on momentum levels [-]
+
+    !----------------------- Optional Input Variables ----------------------
+    real( kind = core_rknd ), dimension(ngrdcol,nzt), intent(in), optional :: &
+      Skw_zt   ! w skewness on thermodynamic levels [-]
+
+    !----------------------- Optional Output Variables ---------------------
+    real( kind = core_rknd ), dimension(ngrdcol,nzt), intent(out), optional :: &
+      gamma_Skw_fnc_zt   ! Gamma as a function of w skewness on thermodynamic levels [-]
+
+    !--------------------------- Local Variables ---------------------------
+    real( kind = core_rknd ) :: &
+      gamma_coef,   & ! First gamma(Skw) coefficient [-]
+      gamma_coefb,  & ! Second gamma(Skw) coefficient [-]
+      gamma_coefc     ! Third gamma(Skw) coefficient [-]
+
+    integer :: &
+      i,  & ! Grid-column loop index
+      k     ! Vertical-level loop index
+
+    !----------------------------- Begin Code ------------------------------
+
+    if ( l_gamma_Skw ) then
+
+      !$acc parallel loop gang vector collapse(2) default(present)
+      do k = 1, nzm
+        do i = 1, ngrdcol
+
+          gamma_coef  = clubb_params(i,igamma_coef)
+          gamma_coefb = clubb_params(i,igamma_coefb)
+          gamma_coefc = clubb_params(i,igamma_coefc)
+
+          if ( abs( gamma_coef - gamma_coefb ) > abs( gamma_coef + gamma_coefb ) * eps/2 ) then
+
+            gamma_Skw_fnc(i,k) = gamma_coefb &
+                                 + ( gamma_coef - gamma_coefb ) &
+                                   * exp( -one_half * ( Skw_zm(i,k) / gamma_coefc )**2 )
+
+          else
+
+            gamma_Skw_fnc(i,k) = gamma_coef
+
+          end if
+
+        end do
+      end do
+      !$acc end parallel loop
+
+      if ( present( gamma_Skw_fnc_zt ) .and. present( Skw_zt ) ) then
+        !$acc parallel loop gang vector collapse(2) default(present)
+        do k = 1, nzt
+          do i = 1, ngrdcol
+
+            gamma_coef  = clubb_params(i,igamma_coef)
+            gamma_coefb = clubb_params(i,igamma_coefb)
+            gamma_coefc = clubb_params(i,igamma_coefc)
+
+            if ( abs( gamma_coef - gamma_coefb ) > abs( gamma_coef + gamma_coefb ) * eps/2 ) then
+
+              gamma_Skw_fnc_zt(i,k) = gamma_coefb &
+                                      + ( gamma_coef - gamma_coefb ) &
+                                        * exp( -one_half * ( Skw_zt(i,k) / gamma_coefc )**2 )
+
+            else
+
+              gamma_Skw_fnc_zt(i,k) = gamma_coef
+
+            end if
+
+          end do
+        end do
+        !$acc end parallel loop
+      end if
+
+    else
+
+      !$acc parallel loop gang vector collapse(2) default(present)
+      do k = 1, nzm
+        do i = 1, ngrdcol
+          gamma_Skw_fnc(i,k) = clubb_params(i,igamma_coef)
+        end do
+      end do
+      !$acc end parallel loop
+
+      if ( present( gamma_Skw_fnc_zt ) ) then
+        !$acc parallel loop gang vector collapse(2) default(present)
+        do k = 1, nzt
+          do i = 1, ngrdcol
+            gamma_Skw_fnc_zt(i,k) = clubb_params(i,igamma_coef)
+          end do
+        end do
+        !$acc end parallel loop
+      end if
+
+    end if
+
+    return
+
+  end subroutine compute_gamma_Skw
 
   !-----------------------------------------------------------------------------
   subroutine LG_2005_ansatz( nz, ngrdcol, Skw, wpxp, wp2, &

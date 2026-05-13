@@ -16,7 +16,8 @@ module advance_xp3_module
 
   implicit none
 
-  public :: advance_xp3    ! Procedure(s)
+  public :: advance_xp3, & ! Procedure(s)
+            compute_xp3
 
   private :: advance_xp3_simplified, & ! Procedure(s)
              term_tp_rhs, &
@@ -32,14 +33,16 @@ module advance_xp3_module
   contains
 
   !=============================================================================
-  subroutine advance_xp3( nzm, nzt, ngrdcol, sclr_dim, sclr_tol, gr, dt, & ! Intent(in)
-                          rtm, thlm, rtp2, thlp2, wprtp,                 & ! Intent(in)
-                          wpthlp, wprtp2, wpthlp2, rho_ds_zm,            & ! Intent(in)
-                          invrs_rho_ds_zt, invrs_tau_zt, tau_max_zt,     & ! Intent(in)
-                          sclrm, sclrp2, wpsclrp, wpsclrp2,              & ! Intent(in)
-                          l_lmm_stepping,                                & ! Intent(in)
-                          stats,                                         & ! Intent(inout)
-                          rtp3, thlp3, sclrp3 )                            ! Intent(inout)
+  subroutine advance_xp3( nzm, nzt, ngrdcol, sclr_dim, sclr_tol, gr, dt,   & ! Intent(in)
+                          rtm, thlm, rtp2, thlp2, wprtp,                   & ! Intent(in)
+                          wpthlp, wprtp2, wpthlp2, rho_ds_zm,              & ! Intent(in)
+                          invrs_rho_ds_zt, invrs_tau_zt, tau_max_zt,       & ! Intent(in)
+                          sclrm, sclrp2, wpsclrp, wpsclrp2,                & ! Intent(in)
+                          wp2, wp3, upwp, vpwp, up2, vp2,                  & ! Intent(in)
+                          thvm, sigma_sqd_w, clubb_params,                 & ! Intent(in)
+                          l_lmm_stepping,                                  & ! Intent(in)
+                          stats,                                           & ! Intent(inout)
+                          rtp3, thlp3, sclrp3, up3, vp3 )                    ! Intent(inout)
 
     ! Description:
     ! Advance <rt'^3>, <thl'^3>, and <sclr'^3> one model timestep using a
@@ -51,11 +54,29 @@ module advance_xp3_module
     !-----------------------------------------------------------------------
 
     use grid_class, only: &
-        grid ! Type
+        grid,       & ! Type
+        zm2zt_api,  & ! Procedure(s)
+        zt2zm_api,  &
+        ddzm
 
     use constants_clubb, only: &
-        rt_tol,  & ! Variable(s)
-        thl_tol
+        rt_tol,         & ! Variable(s)
+        thl_tol,        &
+        w_tol,          &
+        w_tol_sqd,      &
+        zero_threshold, &
+        grav,           &
+        zero,           &
+        one
+
+    use parameter_indices, only: &
+        nparams,          &
+        ixp3_coef_base,   &
+        ixp3_coef_slope
+
+    use Skx_module, only: &
+        Skx_func,           & ! Procedure(s)
+        xp3_LG_2005_ansatz
 
     use clubb_precision, only: &
         core_rknd    ! Variable(s)
@@ -69,12 +90,12 @@ module advance_xp3_module
       ngrdcol,      & ! Number of grid columns
       sclr_dim        ! Number of passive scalars
 
-    real( kind = core_rknd ), intent(in), dimension(sclr_dim) :: & 
+    real( kind = core_rknd ), intent(in), dimension(sclr_dim) :: &
       sclr_tol          ! Threshold(s) on the passive scalars  [units vary]
-    
+
     type (grid), intent(in) :: &
       gr
-  
+
     real( kind = core_rknd ), intent(in) :: &
       dt                 ! Model timestep                            [s]
 
@@ -87,12 +108,25 @@ module advance_xp3_module
       invrs_tau_zt,    & ! Inverse time-scale tau on thermodynamic levels       [1/s]
       tau_max_zt         ! Max. allowable eddy dissipation time scale on t-levs [s]
 
+    real( kind = core_rknd ), dimension(ngrdcol,nzt), intent(in) :: &
+      wp3,    & ! w'^3 on thermo. grid     [m^3/s^3]
+      thvm      ! Virtual potential temperature on thermodynamic levels [K]
+
     real( kind = core_rknd ), dimension(ngrdcol,nzm), intent(in) :: &
       rtp2,            & ! Variance (overall) of rt (m-levs.)                   [kg^2/kg^2]
       thlp2,           & ! Variance (overall) of thl (m-levs.)                  [K^2]
       wprtp,           & ! Turbulent flux of rt (momentum levs.)                [m/s kg/kg]
       wpthlp,          & ! Turbulent flux of thl (momentum levs.)               [m/s K]
-      rho_ds_zm          ! Dry, static density on momentum levels               [kg/m^3]
+      rho_ds_zm,        & ! Dry, static density on momentum levels               [kg/m^3]
+      upwp,             & ! u'w' (momentum levels)                              [m^2/s^2]
+      vpwp,             & ! v'w' (momentum levels)                              [m^2/s^2]
+      wp2,              & ! w'^2 (momentum levels)                              [m^2/s^2]
+      up2,              & ! u'^2 (momentum levels)                              [m^2/s^2]
+      vp2,              & ! v'^2 (momentum levels)                              [m^2/s^2]
+      sigma_sqd_w         ! PDF width parameter (momentum levels)                [-]
+
+    real( kind = core_rknd ), dimension(ngrdcol,nparams), intent(in) :: &
+      clubb_params    ! Array of CLUBB's tunable parameters    [units vary]
 
     real( kind = core_rknd ), dimension(ngrdcol,nzt,sclr_dim), intent(in) :: &
       sclrm,    & ! Mean (overall) of sclr (thermo. levels) [sclr units]
@@ -110,14 +144,41 @@ module advance_xp3_module
 
     real( kind = core_rknd ), dimension(ngrdcol,nzt), intent(inout) :: &
       rtp3,  & ! <rt'^3> (thermodynamic levels)     [kg^3/kg^3]
-      thlp3    ! <thl'^3> (thermodynamic levels)    [K^3]
+      thlp3, & ! <thl'^3> (thermodynamic levels)    [K^3]
+      up3,   & ! u'^3 (thermodynamic levels)        [m^3/s^3]
+      vp3      ! v'^3 (thermodynamic levels)        [m^3/s^3]
+
+    real( kind = core_rknd ), dimension(ngrdcol,nzm) :: &
+      thvm_zm                           ! Virtual potential temperature on momentum levs. [K]
+
+    real( kind = core_rknd ), dimension(ngrdcol,nzt) :: &
+      ddzm_thvm_zm,                   & ! d(thvm_zm)/dz [K/m]
+      brunt_vaisala_freq_sqd_zt,      & ! Buoyancy frequency squared on t-levs. [s^-2]
+      Skw_zt,                         & ! w skewness on thermodynamic levels [-]
+      wp2_zt,                         & ! w'^2 on thermo. grid [m^2/s^2]
+      thlp2_zt,                       & ! thl'^2 on thermo. grid [K^2]
+      wpthlp_zt,                      & ! w'thl' on thermo. grid [m K/s]
+      wprtp_zt,                       & ! w'rt' on thermo. grid [m kg/(kg s)]
+      rtp2_zt,                        & ! rt'^2 on thermo. grid [(kg/kg)^2]
+      upwp_zt,                        & ! u'w' on thermo. grid [m^2/s^2]
+      vpwp_zt,                        & ! v'w' on thermo. grid [m^2/s^2]
+      up2_zt,                         & ! u'^2 on thermo. grid [m^2/s^2]
+      vp2_zt,                         & ! v'^2 on thermo. grid [m^2/s^2]
+      sigma_sqd_w_zt,                 & ! PDF width parameter (thermodynamic levels) [-]
+      xp3_coef_fnc                      ! Coefficient in simple xp3 equation [-]
 
     real( kind = core_rknd ), dimension(ngrdcol,nzt,sclr_dim), intent(inout) :: &
       sclrp3    ! <sclr'^3> (thermodynamic levels)    [(sclr units)^3]
 
     ! --------------------- Local Variable ---------------------
-    integer :: sclr    ! Loop index
+    integer :: i, k, sclr    ! Loop index
 
+    !$acc data create( thvm_zm, ddzm_thvm_zm, brunt_vaisala_freq_sqd_zt, &
+    !$acc              Skw_zt, wp2_zt, thlp2_zt, wpthlp_zt, wprtp_zt, rtp2_zt, &
+    !$acc              upwp_zt, vpwp_zt, up2_zt, vp2_zt, sigma_sqd_w_zt, &
+    !$acc              xp3_coef_fnc )
+
+    wp2_zt(:,:) = zm2zt_api( nzm, nzt, ngrdcol, gr, wp2(:,:), w_tol_sqd )
 
     ! Advance <rt'^3> one model timestep or calculate <rt'^3> using a
     ! steady-state approximation.
@@ -125,7 +186,7 @@ module advance_xp3_module
                                  rtm, rtp2, wprtp,                    & ! Intent(in)
                                  wprtp2, rho_ds_zm,                   & ! Intent(in)
                                  invrs_rho_ds_zt,                     & ! Intent(in)
-                                 invrs_tau_zt, tau_max_zt,            & ! Intent(in) 
+                                 invrs_tau_zt, tau_max_zt,            & ! Intent(in)
                                  rt_tol, l_lmm_stepping,              & ! Intent(in)
                                  stats,                               & ! Intent(in)
                                  rtp3 )                                 ! Intent(inout)
@@ -136,7 +197,7 @@ module advance_xp3_module
                                  thlm, thlp2, wpthlp,                  & ! Intent(in)
                                  wpthlp2, rho_ds_zm,                   & ! Intent(in)
                                  invrs_rho_ds_zt,                      & ! Intent(in)
-                                 invrs_tau_zt, tau_max_zt,             & ! Intent(in) 
+                                 invrs_tau_zt, tau_max_zt,             & ! Intent(in)
                                  thl_tol, l_lmm_stepping,              & ! Intent(in)
                                  stats,                                & ! Intent(in)
                                  thlp3 )                                 ! Intent(inout)
@@ -148,22 +209,372 @@ module advance_xp3_module
                                    sclrm(:,:,sclr), sclrp2(:,:,sclr), wpsclrp(:,:,sclr), & ! In
                                    wpsclrp2(:,:,sclr), rho_ds_zm,                        & ! In
                                    invrs_rho_ds_zt,                                      & ! In
-                                   invrs_tau_zt, tau_max_zt,                             & ! In 
+                                   invrs_tau_zt, tau_max_zt,                             & ! In
                                    sclr_tol(sclr), l_lmm_stepping,                       & ! In
                                    stats,                                                & ! In
                                    sclrp3(:,:,sclr) )                                      ! In/Out
-    end do ! sclr = 1, sclr_dim
+      end do ! sclr = 1, sclr_dim
+
+    ! Use a modified form of the Larson and Golaz (2005) ansatz for the
+    ! ADG1 PDF to calculate <u'^3> and <v'^3> for another type of PDF.
+    call Skx_func( nzt, ngrdcol, wp2_zt, wp3, &
+                   w_tol, clubb_params, &
+                   Skw_zt )
+
+    wpthlp_zt(:,:) = zm2zt_api( nzm, nzt, ngrdcol, gr, wpthlp(:,:) )
+    wprtp_zt(:,:)  = zm2zt_api( nzm, nzt, ngrdcol, gr, wprtp(:,:) )
+    ! Positive def. quantity
+    thlp2_zt(:,:)  = zm2zt_api( nzm, nzt, ngrdcol, gr, thlp2(:,:), thl_tol**2 )
+    ! Positive def. quantity
+    rtp2_zt(:,:)   = zm2zt_api( nzm, nzt, ngrdcol, gr, rtp2(:,:), rt_tol**2 )
+
+    upwp_zt(:,:) = zm2zt_api( nzm, nzt, ngrdcol, gr, upwp(:,:) )
+    vpwp_zt(:,:) = zm2zt_api( nzm, nzt, ngrdcol, gr, vpwp(:,:) )
+    ! Positive def. quantity
+    up2_zt(:,:)  = zm2zt_api( nzm, nzt, ngrdcol, gr, up2(:,:), w_tol_sqd )
+    ! Positive def. quantity
+    vp2_zt(:,:)  = zm2zt_api( nzm, nzt, ngrdcol, gr, vp2(:,:), w_tol_sqd )
+
+    thvm_zm(:,:)                   = zt2zm_api( nzm, nzt, ngrdcol, gr, thvm(:,:), &
+                                                zero_threshold )
+    ddzm_thvm_zm(:,:)              = ddzm( nzm, nzt, ngrdcol, gr, thvm_zm(:,:) )
+    brunt_vaisala_freq_sqd_zt(:,:) = max( ( grav / thvm(:,:) ) * ddzm_thvm_zm(:,:), zero )
+    sigma_sqd_w_zt(:,:)            = zm2zt_api( nzm, nzt, ngrdcol, gr, sigma_sqd_w(:,:), &
+                                                zero_threshold )
+
+    ! The xp3_coef_fnc is used in place of sigma_sqd_w_zt when the ADG1 PDF
+    ! is not being used.  The xp3_coef_fnc provides some extra tunability to
+    ! the simple xp3 equation.
+    ! When xp3_coef_fnc goes to 0, the value of Skx goes to the smallest
+    ! magnitude permitted by the function.  When xp3_coef_fnc goes to 1, the
+    ! magnitude of Skx becomes huge.
+    do k = 1, nzt
+      do i = 1, ngrdcol
+        xp3_coef_fnc(i,k) = clubb_params(i,ixp3_coef_base) &
+                            + ( one - clubb_params(i,ixp3_coef_slope) ) &
+                              * ( one - exp( brunt_vaisala_freq_sqd_zt(i,k) &
+                                             / clubb_params(i,ixp3_coef_slope) ) )
+      end do
+    end do
+
+    call xp3_LG_2005_ansatz( nzt, ngrdcol, Skw_zt, upwp_zt, wp2_zt, &
+                             up2_zt, xp3_coef_fnc, &
+                             clubb_params, w_tol, &
+                             up3 )
+
+    call xp3_LG_2005_ansatz( nzt, ngrdcol, Skw_zt, vpwp_zt, wp2_zt, &
+                             vp2_zt, xp3_coef_fnc, &
+                             clubb_params, w_tol, &
+                             vp3 )
+
+    if ( stats%l_sample ) then
+      !$acc update host( sigma_sqd_w_zt, thlp2_zt, wpthlp_zt, wprtp_zt, rtp2_zt, &
+      !$acc              up2_zt, vp2_zt, upwp_zt, vpwp_zt )
+
+      call stats_update( "sigma_sqd_w_zt", sigma_sqd_w_zt, stats )
+      call stats_update( "thlp2_zt", thlp2_zt, stats )
+      call stats_update( "wpthlp_zt", wpthlp_zt, stats )
+      call stats_update( "wprtp_zt", wprtp_zt, stats )
+      call stats_update( "rtp2_zt", rtp2_zt, stats )
+      call stats_update( "up2_zt", up2_zt, stats )
+      call stats_update( "vp2_zt", vp2_zt, stats )
+      call stats_update( "upwp_zt", upwp_zt, stats )
+      call stats_update( "vpwp_zt", vpwp_zt, stats )
+    end if
+
+    !$acc end data
 
     return
 
   end subroutine advance_xp3
 
   !=============================================================================
+  subroutine compute_xp3( nzm, nzt, ngrdcol, sclr_dim, sclr_tol, gr, &
+                          iiPDF_type, clubb_params, &
+                          wp2_zt, wp3, thvm, &
+                          wprtp, wpthlp, rtp2, thlp2, upwp, vpwp, up2, vp2, &
+                          sigma_sqd_w, wpsclrp, sclrp2, &
+                          stats, &
+                          rtp3, thlp3, up3, vp3, &
+                          sclrp3 )
+
+    ! Description:
+    !   Diagnose third-order scalar and horizontal-velocity moments from the
+    !   current second-order moments and PDF width information.
+    !
+    ! References:
+    !   Larson and Golaz (2005) for the diagnostic ansatz.
+    !-----------------------------------------------------------------------
+
+    use clubb_precision, only: &
+        core_rknd
+
+    use constants_clubb, only: &
+        thl_tol,        &
+        rt_tol,         &
+        w_tol,          &
+        w_tol_sqd,      &
+        zero_threshold, &
+        one,            &
+        zero,           &
+        grav
+
+    use grid_class, only: &
+        grid,       &
+        zm2zt_api,  &
+        zt2zm_api,  &
+        ddzm
+
+    use model_flags, only: &
+        iiPDF_ADG1
+
+    use parameter_indices, only: &
+        nparams,          &
+        ixp3_coef_base,   &
+        ixp3_coef_slope
+
+    use Skx_module, only: &
+        Skx_func,           &
+        xp3_LG_2005_ansatz
+
+    implicit none
+
+    !--------------------------- Input Variables ---------------------------
+    integer, intent(in) :: &
+      nzm,       & ! Number of momentum levels
+      nzt,       & ! Number of thermodynamic levels
+      ngrdcol,   & ! Number of grid columns
+      sclr_dim,  & ! Number of passive scalars
+      iiPDF_type   ! PDF type selector
+
+    real( kind = core_rknd ), dimension(sclr_dim), intent(in) :: &
+      sclr_tol   ! Thresholds for passive scalars [units vary]
+
+    type(grid), intent(in) :: &
+      gr   ! Grid structure
+
+    real( kind = core_rknd ), dimension(ngrdcol,nparams), intent(in) :: &
+      clubb_params   ! Array of CLUBB tunable parameters [units vary]
+
+    real( kind = core_rknd ), dimension(ngrdcol,nzt), intent(in) :: &
+      wp2_zt, & ! Variance of vertical velocity on thermodynamic levels [m^2/s^2]
+      wp3,  & ! Third moment of vertical velocity [m^3/s^3]
+      thvm    ! Virtual potential temperature [K]
+
+    real( kind = core_rknd ), dimension(ngrdcol,nzm), intent(in) :: &
+      wprtp,       & ! Turbulent flux of rt [m kg/(kg s)]
+      wpthlp,      & ! Turbulent flux of thl [m K/s]
+      rtp2,        & ! Variance of rt [(kg/kg)^2]
+      thlp2,       & ! Variance of thl [K^2]
+      upwp,        & ! Turbulent flux of u [m^2/s^2]
+      vpwp,        & ! Turbulent flux of v [m^2/s^2]
+      up2,         & ! Variance of u wind [m^2/s^2]
+      vp2,         & ! Variance of v wind [m^2/s^2]
+      sigma_sqd_w    ! PDF width parameter [-]
+
+    real( kind = core_rknd ), dimension(ngrdcol,nzm,sclr_dim), intent(in) :: &
+      wpsclrp, & ! Turbulent flux of passive scalars [m sclr/s]
+      sclrp2     ! Variance of passive scalars [units vary]
+
+    !----------------------- Input/Output Variables ------------------------
+    type(stats_type), intent(inout) :: &
+      stats   ! Statistics accumulator
+
+    real( kind = core_rknd ), dimension(ngrdcol,nzt), intent(inout) :: &
+      rtp3,  & ! Third moment of rt [(kg/kg)^3]
+      thlp3, & ! Third moment of thl [K^3]
+      up3,   & ! Third moment of u wind [m^3/s^3]
+      vp3      ! Third moment of v wind [m^3/s^3]
+
+    real( kind = core_rknd ), dimension(ngrdcol,nzt,sclr_dim), intent(inout) :: &
+      sclrp3   ! Third moments of passive scalars [units vary]
+
+    !--------------------------- Local Variables ---------------------------
+    real( kind = core_rknd ), dimension(ngrdcol,nzm) :: &
+      thvm_zm                           ! Virtual potential temperature on momentum levs. [K]
+
+    real( kind = core_rknd ), dimension(ngrdcol,nzt) :: &
+      ddzm_thvm_zm,                   & ! d(thvm_zm)/dz [K/m]
+      brunt_vaisala_freq_sqd_zt,      & ! Buoyancy frequency squared on t-levs. [s^-2]
+      Skw_zt,                         & ! w skewness on thermodynamic levels [-]
+      wpthlp_zt,                      & ! w'thl' on thermo. grid [m K/s]
+      wprtp_zt,                       & ! w'rt' on thermo. grid [m kg/(kg s)]
+      thlp2_zt,                       & ! thl'^2 on thermo. grid [K^2]
+      rtp2_zt,                        & ! rt'^2 on thermo. grid [(kg/kg)^2]
+      upwp_zt,                        & ! u'w' on thermo. grid [m^2/s^2]
+      vpwp_zt,                        & ! v'w' on thermo. grid [m^2/s^2]
+      up2_zt,                         & ! u'^2 on thermo. grid [m^2/s^2]
+      vp2_zt,                         & ! v'^2 on thermo. grid [m^2/s^2]
+      sigma_sqd_w_zt,                 & ! PDF width parameter (thermodynamic levels) [-]
+      xp3_coef_fnc,                   & ! Coefficient in simple xp3 equation [-]
+      wpsclrp_zt,                     & ! Scalar flux on thermo. levels [un. vary]
+      sclrp2_zt                         ! Scalar variance on thermo. levels [un. vary]
+
+    integer :: &
+      i,    & ! Grid-column loop index
+      k,    & ! Vertical-level loop index
+      sclr    ! Passive scalar loop index
+
+    !----------------------------- Begin Code ------------------------------
+
+    !$acc data create( thvm_zm, ddzm_thvm_zm, brunt_vaisala_freq_sqd_zt, &
+    !$acc              Skw_zt, wpthlp_zt, wprtp_zt, upwp_zt, vpwp_zt, &
+    !$acc              thlp2_zt, rtp2_zt, up2_zt, vp2_zt, sigma_sqd_w_zt, &
+    !$acc              xp3_coef_fnc, wpsclrp_zt, sclrp2_zt )
+
+    ! The ADG1 PDF must use this option.
+    call Skx_func( nzt, ngrdcol, wp2_zt, wp3, &
+                   w_tol, clubb_params, &
+                   Skw_zt )
+
+    wpthlp_zt(:,:) = zm2zt_api( nzm, nzt, ngrdcol, gr, wpthlp(:,:) )
+    wprtp_zt(:,:)  = zm2zt_api( nzm, nzt, ngrdcol, gr, wprtp(:,:) )
+    ! Positive def. quantity
+    thlp2_zt(:,:)  = zm2zt_api( nzm, nzt, ngrdcol, gr, thlp2(:,:), thl_tol**2 )
+    ! Positive def. quantity
+    rtp2_zt(:,:)   = zm2zt_api( nzm, nzt, ngrdcol, gr, rtp2(:,:), rt_tol**2 )
+
+    upwp_zt(:,:) = zm2zt_api( nzm, nzt, ngrdcol, gr, upwp(:,:) )
+    vpwp_zt(:,:) = zm2zt_api( nzm, nzt, ngrdcol, gr, vpwp(:,:) )
+    ! Positive def. quantity
+    up2_zt(:,:)  = zm2zt_api( nzm, nzt, ngrdcol, gr, up2(:,:), w_tol_sqd )
+    ! Positive def. quantity
+    vp2_zt(:,:)  = zm2zt_api( nzm, nzt, ngrdcol, gr, vp2(:,:), w_tol_sqd )
+
+    if ( iiPDF_type == iiPDF_ADG1 ) then
+
+      ! Use the Larson and Golaz (2005) ansatz for the ADG1 PDF to
+      ! calculate <rt'^3>, <thl'^3>, <u'^3>, <v'^3>, and <sclr'^3>.
+      sigma_sqd_w_zt(:,:) = zm2zt_api( nzm, nzt, ngrdcol, gr, sigma_sqd_w(:,:), &
+                                        zero_threshold )
+
+      call xp3_LG_2005_ansatz( nzt, ngrdcol, Skw_zt, wpthlp_zt, wp2_zt, &
+                                thlp2_zt, sigma_sqd_w_zt, &
+                                clubb_params, thl_tol, &
+                                thlp3 )
+
+      call xp3_LG_2005_ansatz( nzt, ngrdcol, Skw_zt, wprtp_zt, wp2_zt, &
+                                rtp2_zt, sigma_sqd_w_zt, &
+                                clubb_params, rt_tol, &
+                                rtp3 )
+
+      call xp3_LG_2005_ansatz( nzt, ngrdcol, Skw_zt, upwp_zt, wp2_zt, &
+                                up2_zt, sigma_sqd_w_zt, &
+                                clubb_params, w_tol, &
+                                up3 )
+
+      call xp3_LG_2005_ansatz( nzt, ngrdcol, Skw_zt, vpwp_zt, wp2_zt, &
+                                vp2_zt, sigma_sqd_w_zt, &
+                                clubb_params, w_tol, &
+                                vp3 )
+
+      do sclr = 1, sclr_dim, 1
+
+        wpsclrp_zt(:,:) = zm2zt_api( nzm, nzt, ngrdcol, gr, wpsclrp(:,:,sclr), &
+                                      sclr_tol(sclr)**2 )
+        sclrp2_zt(:,:)  = zm2zt_api( nzm, nzt, ngrdcol, gr, sclrp2(:,:,sclr), &
+                                      sclr_tol(sclr)**2 )
+
+        call xp3_LG_2005_ansatz( nzt, ngrdcol, Skw_zt, wpsclrp_zt, wp2_zt, &
+                                  sclrp2_zt, sigma_sqd_w_zt, &
+                                  clubb_params, sclr_tol(sclr), &
+                                  sclrp3(:,:,sclr) )
+
+      end do ! sclr = 1, sclr_dim
+
+    else ! iiPDF_type /= iiPDF_ADG1
+
+      ! Use a modified form of the Larson and Golaz (2005) ansatz for the
+      ! ADG1 PDF to calculate <u'^3> and <v'^3> for another type of PDF.
+      thvm_zm(:,:)                   = zt2zm_api( nzm, nzt, ngrdcol, gr, thvm(:,:), &
+                                                  zero_threshold )
+      ddzm_thvm_zm(:,:)              = ddzm( nzm, nzt, ngrdcol, gr, thvm_zm(:,:) )
+      brunt_vaisala_freq_sqd_zt(:,:) = max( ( grav / thvm(:,:) ) * ddzm_thvm_zm(:,:), zero )
+
+      ! Initialize sigma_sqd_w_zt to zero so we don't break output
+      do k = 1, nzt
+        do i = 1, ngrdcol
+          sigma_sqd_w_zt(i,k) = zero
+        end do
+      end do
+
+      ! The xp3_coef_fnc is used in place of sigma_sqd_w_zt when the
+      ! ADG1 PDF is not being used.  The xp3_coef_fnc provides some extra
+      ! tunability to the simple xp3 equation.
+      ! When xp3_coef_fnc goes to 0, the value of Skx goes to the smallest
+      ! magnitude permitted by the function.  When xp3_coef_fnc goes to 1,
+      ! the magnitude of Skx becomes huge.
+      ! The value of Skx becomes large near cloud top, where there is a
+      ! higher degree of static stability.  The exp{ } portion of the
+      ! xp3_coef_fnc allows the xp3_coef_fnc to become larger in regions
+      ! of high static stability, producing larger magnitude values of Skx.
+      do k = 1, nzt
+        do i = 1, ngrdcol
+          xp3_coef_fnc(i,k) = clubb_params(i,ixp3_coef_base) &
+            + ( one - clubb_params(i,ixp3_coef_slope) ) &
+              * ( one - exp( brunt_vaisala_freq_sqd_zt(i,k) / clubb_params(i,ixp3_coef_slope) ) )
+        end do
+      end do
+
+      call xp3_LG_2005_ansatz( nzt, ngrdcol, Skw_zt, wpthlp_zt, wp2_zt, &
+                                thlp2_zt, xp3_coef_fnc, &
+                                clubb_params, thl_tol, &
+                                thlp3 )
+
+      call xp3_LG_2005_ansatz( nzt, ngrdcol, Skw_zt, wprtp_zt, wp2_zt, &
+                                rtp2_zt, xp3_coef_fnc, &
+                                clubb_params, rt_tol, &
+                                rtp3 )
+
+      call xp3_LG_2005_ansatz( nzt, ngrdcol, Skw_zt, upwp_zt, wp2_zt, &
+                                up2_zt, xp3_coef_fnc, &
+                                clubb_params, w_tol, &
+                                up3 )
+
+      call xp3_LG_2005_ansatz( nzt, ngrdcol, Skw_zt, vpwp_zt, wp2_zt, &
+                                vp2_zt, xp3_coef_fnc, &
+                                clubb_params, w_tol, &
+                                vp3 )
+
+      do sclr = 1, sclr_dim, 1
+
+        wpsclrp_zt(:,:) = zm2zt_api( nzm, nzt, ngrdcol, gr, wpsclrp(:,:,sclr) )
+        sclrp2_zt(:,:)  = zm2zt_api( nzm, nzt, ngrdcol, gr, sclrp2(:,:,sclr), &
+                                      sclr_tol(sclr)**2 )
+
+        call xp3_LG_2005_ansatz( nzt, ngrdcol, Skw_zt(:,:), wpsclrp_zt(:,:), wp2_zt(:,:), &
+                                  sclrp2_zt(:,:), xp3_coef_fnc(:,:), &
+                                  clubb_params, sclr_tol(sclr), &
+                                  sclrp3(:,:,sclr) )
+      end do ! sclr = 1, sclr_dim
+
+    end if ! iiPDF_type == iiPDF_ADG1
+
+    if ( stats%l_sample ) then
+      !$acc update host( sigma_sqd_w_zt, thlp2_zt, wpthlp_zt, wprtp_zt, rtp2_zt, &
+      !$acc              up2_zt, vp2_zt, upwp_zt, vpwp_zt )
+
+      call stats_update( "sigma_sqd_w_zt", sigma_sqd_w_zt, stats )
+      call stats_update( "thlp2_zt", thlp2_zt, stats )
+      call stats_update( "wpthlp_zt", wpthlp_zt, stats )
+      call stats_update( "wprtp_zt", wprtp_zt, stats )
+      call stats_update( "rtp2_zt", rtp2_zt, stats )
+      call stats_update( "up2_zt", up2_zt, stats )
+      call stats_update( "vp2_zt", vp2_zt, stats )
+      call stats_update( "upwp_zt", upwp_zt, stats )
+      call stats_update( "vpwp_zt", vpwp_zt, stats )
+    end if
+
+    !$acc end data
+
+  end subroutine compute_xp3
+
+  !=============================================================================
   subroutine advance_xp3_simplified( nzm, nzt, ngrdcol, gr, solve_type, dt, & ! Intent(in)
                                      xm, xp2, wpxp,                         & ! Intent(in)
                                      wpxp2, rho_ds_zm,                      & ! Intent(in)
                                      invrs_rho_ds_zt,                       & ! Intent(in)
-                                     invrs_tau_zt, tau_max_zt,              & ! Intent(in) 
+                                     invrs_tau_zt, tau_max_zt,              & ! Intent(in)
                                      x_tol, l_lmm_stepping,                 & ! Intent(in)
                                      stats,                                 & ! Intent(in)
                                      xp3 )                                    ! Intent(inout)
@@ -215,7 +626,7 @@ module advance_xp3_module
     ! being neglected.
     !
     ! This leaves the following equation:
-    ! 
+    !
     ! d<x'^3>/dt = - 3 * <w'x'^2> * d<x>/dz
     !              + 3 * ( <x'^2> / rho_ds ) * d( rho_ds * <w'x'> )/dz
     !              - ( C_xp3_dissipation / tau ) * <x'^3>;
@@ -282,15 +693,15 @@ module advance_xp3_module
         core_rknd    ! Variable(s)
 
     implicit none
- 
+
     ! ----------------------- Input Variables -----------------------
     integer, intent(in) :: &
       nzm, &
       nzt, &
       ngrdcol
-    
+
     type (grid), intent(in) :: gr
-  
+
     integer, intent(in) :: &
       solve_type    ! Flag for solving for rtp3, thlp3, or sclrp3
 
@@ -319,7 +730,7 @@ module advance_xp3_module
     ! ----------------------- Input/Output Variable -----------------------
     type(stats_type), intent(inout) :: &
       stats
-      
+
     real( kind = core_rknd ), dimension(ngrdcol,nzt), intent(inout) :: &
       xp3    ! <x'^3> (thermodynamic levels)    [(x units)^3]
 
@@ -428,7 +839,7 @@ module advance_xp3_module
                       * ( term_tp(i,k) + term_ac(i,k) )
 
         endif ! l_predict_xp3
-        
+
       end do
     end do ! k = 2, gr%nzt-1, 1
 

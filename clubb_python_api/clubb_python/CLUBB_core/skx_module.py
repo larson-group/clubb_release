@@ -29,3 +29,13 @@ def xp3_lg_2005_ansatz(
         f_arr(skw_zt), f_arr(wpxp_zt), f_arr(wp2_zt), f_arr(xp2_zt),
         f_arr(sigma_sqd_w_zt), f_arr(clubb_params), float(x_tol),
         nzt=int(nzt), ngrdcol=int(ngrdcol))
+
+
+def compute_gamma_skw(
+    nzm: int, nzt: int, ngrdcol: int, l_gamma_skw: bool,
+    skw_zm, clubb_params, skw_zt,
+):
+    """Compute gamma as a function of w skewness on zm and zt grids."""
+    return clubb_f2py.f2py_compute_gamma_skw(
+        l_gamma_skw, f_arr(skw_zm), f_arr(clubb_params), f_arr(skw_zt),
+        nzm=int(nzm), nzt=int(nzt), ngrdcol=int(ngrdcol))

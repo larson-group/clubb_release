@@ -71,10 +71,10 @@ def _setup_env(tmp_path: Path, ngrdcol: int = 1):
         param_names=clubb_api.get_param_names(),
     )
 
-    return gr, flags, nu_vert_res_dep, err_info
+    return gr, flags, clubb_params, nu_vert_res_dep, err_info
 
 
-def _make_args(gr, flags, nu_vert_res_dep, err_info):
+def _make_args(gr, flags, clubb_params, nu_vert_res_dep, err_info):
     """Construct stable, finite test inputs for advance_windm_edsclrm."""
     ngrdcol, nzt, nzm = gr.ngrdcol, gr.nzt, gr.nzm
 
@@ -89,8 +89,8 @@ def _make_args(gr, flags, nu_vert_res_dep, err_info):
         "edsclr_dim": 1,
         "dt": 60.0,
         "wm_zt": full((ngrdcol, nzt), 0.0),
-        "km_zm": full((ngrdcol, nzm), 1.0),
-        "kmh_zm": full((ngrdcol, nzm), 1.0),
+        "kh_zm": full((ngrdcol, nzm), 1.0),
+        "clubb_params": clubb_params,
         "ug": full((ngrdcol, nzt), 1.0),
         "vg": full((ngrdcol, nzt), 0.0),
         "um_ref": full((ngrdcol, nzt), 1.0),
@@ -101,7 +101,9 @@ def _make_args(gr, flags, nu_vert_res_dep, err_info):
         "um_forcing": full((ngrdcol, nzt), 0.0),
         "vm_forcing": full((ngrdcol, nzt), 0.0),
         "edsclrm_forcing": full((ngrdcol, nzt, 1), 0.0),
+        "p_in_pa": full((ngrdcol, nzt), 90000.0),
         "rho_ds_zm": full((ngrdcol, nzm), 1.0),
+        "rho_ds_zt": full((ngrdcol, nzt), 1.0),
         "invrs_rho_ds_zt": full((ngrdcol, nzt), 1.0),
         "fcor": full((ngrdcol,), 1.0e-4),
         "l_implemented": True,
@@ -113,10 +115,17 @@ def _make_args(gr, flags, nu_vert_res_dep, err_info):
         "l_tke_aniso": bool(flags.l_tke_aniso),
         "l_lmm_stepping": bool(flags.l_lmm_stepping),
         "l_linearize_pbl_winds": bool(flags.l_linearize_pbl_winds),
+        "l_do_expldiff_rtm_thlm": True,
+        "fill_holes_type": int(flags.fill_holes_type),
+        "order_xp2_xpyp": 2,
+        "order_wp2_wp3": 2,
+        "order_windm": 2,
         "upwp_cl_num": 0,
         "vpwp_cl_num": 0,
         "um": full((ngrdcol, nzt), 1.0),
         "vm": full((ngrdcol, nzt), 0.0),
+        "thlm": full((ngrdcol, nzt), 300.0),
+        "rtm": full((ngrdcol, nzt), 0.01),
         "edsclrm": full((ngrdcol, nzt, 1), 0.0),
         "upwp": full((ngrdcol, nzm), 0.0),
         "vpwp": full((ngrdcol, nzm), 0.0),
@@ -133,8 +142,8 @@ def _make_args(gr, flags, nu_vert_res_dep, err_info):
 
 def test_advance_windm_edsclrm_returns_finite_arrays(tmp_path):
     """advance_windm_edsclrm should run and return finite output arrays."""
-    gr, flags, nu_vert_res_dep, err_info = _setup_env(tmp_path, ngrdcol=1)
-    args = _make_args(gr, flags, nu_vert_res_dep, err_info)
+    gr, flags, clubb_params, nu_vert_res_dep, err_info = _setup_env(tmp_path, ngrdcol=1)
+    args = _make_args(gr, flags, clubb_params, nu_vert_res_dep, err_info)
 
     try:
         out = clubb_api.advance_windm_edsclrm(**args)
@@ -142,7 +151,7 @@ def test_advance_windm_edsclrm_returns_finite_arrays(tmp_path):
         err_info = clubb_api.finalize_stats(err_info=err_info)
 
     assert isinstance(out, tuple)
-    assert len(out) == 13
+    assert len(out) == 15
     for arr in out[:-1]:
         assert np.all(np.isfinite(arr))
     assert isinstance(out[-1], ErrInfo)
@@ -150,11 +159,13 @@ def test_advance_windm_edsclrm_returns_finite_arrays(tmp_path):
 
 def test_advance_windm_edsclrm_updates_match_return_values(tmp_path):
     """Returned arrays should match in-place updated input buffers."""
-    gr, flags, nu_vert_res_dep, err_info = _setup_env(tmp_path, ngrdcol=1)
-    args = _make_args(gr, flags, nu_vert_res_dep, err_info)
+    gr, flags, clubb_params, nu_vert_res_dep, err_info = _setup_env(tmp_path, ngrdcol=1)
+    args = _make_args(gr, flags, clubb_params, nu_vert_res_dep, err_info)
 
     um_in = args["um"]
     vm_in = args["vm"]
+    thlm_in = args["thlm"]
+    rtm_in = args["rtm"]
     edsclrm_in = args["edsclrm"]
     upwp_in = args["upwp"]
     vpwp_in = args["vpwp"]
@@ -167,7 +178,7 @@ def test_advance_windm_edsclrm_updates_match_return_values(tmp_path):
     try:
         (
             upwp_cl_num_out, vpwp_cl_num_out,
-            um_out, vm_out, edsclrm_out, upwp_out, vpwp_out,
+            um_out, vm_out, thlm_out, rtm_out, edsclrm_out, upwp_out, vpwp_out,
             wpedsclrp_out, um_pert_out, vm_pert_out, upwp_pert_out, vpwp_pert_out, err_info_out,
         ) = clubb_api.advance_windm_edsclrm(**args)
     finally:
@@ -175,6 +186,8 @@ def test_advance_windm_edsclrm_updates_match_return_values(tmp_path):
 
     np.testing.assert_allclose(um_out, um_in)
     np.testing.assert_allclose(vm_out, vm_in)
+    np.testing.assert_allclose(thlm_out, thlm_in)
+    np.testing.assert_allclose(rtm_out, rtm_in)
     np.testing.assert_allclose(edsclrm_out, edsclrm_in)
     np.testing.assert_allclose(upwp_out, upwp_in)
     np.testing.assert_allclose(vpwp_out, vpwp_in)

@@ -1,394 +1,349 @@
+#!/usr/bin/env python3
 """
-Test whether two or more branches of CLUBB produce the same answer when various flags are toggled.
+Test whether two or more CLUBB refs produce the same answer when model flags
+are toggled.
 
-In order to run this script you need to install the dependencies with 
-    pip install -r run_bindiff_w_flags_requirements.txt
+This script clones each requested branch, tag, commit hash, or other git ref
+into a destination directory, compiles each clone, runs the selected SCM case
+set for each JSON flag configuration, and compares the resulting output trees.
+Comparison is run even if some cases fail. Failed runs are represented by the
+files that each run left in the output tree, and the comparison reports any
+missing files or differing NetCDF values.
 
-The simplest way to use this script would look like:
-  python3 ./run_bindiff_w_flags.py -b <branch1>,<branch2>
-                                   -f <flag_config_file> -d <destination directory>
-This would then clone both branches into the <destination directory>.
+The wrapper now uses the current Python run scripts rather than the old bash
+scripts:
+
+  1. run_clubb_w_varying_flags.py runs each selected case for each flag set.
+  2. run_bindiff_varying_flags_output.py compares matching flag-set output
+     directories.
+  3. run_bindiff_all.py performs the per-case netCDF comparisons.
+
 Inputs:
-  1. Two or more branches of CLUBB you want to compare
-  2. JSON configuration file, describing what flags you want to toggle
-  3. Path to directory where the clones should be stored
+  1. Two or more git refs to compare.
+  2. A JSON configuration file describing flag sets to test.
+  3. A destination directory where cloned repos and outputs are stored.
 
 Output:
-  1. Text summary of differences found in the output of the branches
+  1. Per-flag-set bindiff output from run_bindiff_all.py.
+  2. A final nonzero exit status when compared output trees differ.
 
-Takes two or more branches or commit hashes that are on github
-and clones each git repo into it's own directory.
-For each of those clones all different input flag configuration files get generated,
-depending on the input file passed with --flag-config-file.
-This input file defines what flags should be adjusted, taking the configurable_model_flags.in
-file in the corresponding clone as the default.
-An example for this file is the run_bindiff_w_flags_config_example.json found
-in the run_scripts directory.
-Then for each of those clones, the code gets compiled and executed, with all the different
-flag files.
-Finally all the different outputs for the different flag files are compared for all possible
-combinations of the passed branches and commit hashes.
-If a directory with a clone is already existent in the directory passed with --destination-dir,
-then the script will prompt the user, how it should continue.
-The user can either overwrite that clone with a new clone, meaning that also the compilation and
-cases will be run again, or the user can decide to skip the compilation and running of cases
-for that specific clone.
-For the latter case it is assumed that the output is already generated.
+The JSON flag config has the same shape used by run_clubb_w_varying_flags.py:
 
-To change a flag setting afterwards without running everything again, you can do the following:
-Suppose you ran the script like:
-  python3 ./run_bindiff_w_flags -b master,ticket_42 -f flag_config.json -d ~/clubb_bindiff
-1. Add the new flag configuration into flag_config.json
-   in the clone you are running the script from.
-2. Go into ~/clubb_bindiff/master and ~/clubb_bindiff/ticket_42
-   and add the new flag configuration file with the name '<flag_case_name>_tmp.json'
-   where the flag_case_name is the name of the case you entered in the flag_config.json.
-3. Run CLUBB again for each branch with the new flag file and define the output directory
-   in the run_scm script to be in the output directory in <flag_case_name>_tmp.
-4. Run the run_bindiff_w_flags.py script again like before and enter 'no' if the script is
-   prompting you with the question if this directory should be overwritten.
+  {
+    "flag_set_name": {
+      "l_some_flag": true,
+      "some_integer_option": 2
+    }
+  }
 
-So if you wanted to manually change the code, you would need to recompile and run the model
-again for all desired flag files.
+The unmodified default flag set is included unless --skip-default-flags is
+provided. Alternate flag sets are applied with run_scm.py -override; this
+script no longer creates temporary configurable_model_flags.in files.
+
+Only bindiff-specific options are consumed here. Case-selection options and
+run_scm.py options are forwarded to run_clubb_w_varying_flags.py, and unknown
+options are then forwarded to run_scm.py. For example:
+
+  ./run_bindiff_w_flags.py \\
+      -b master,my_branch \\
+      -f run_bindiff_w_flags_config_example.json \\
+      -d ~/clubb_bindiff \\
+      --priority-cases -nproc 4 -max_iters 3
+
+In that example, --priority-cases and -nproc are consumed by
+run_clubb_w_varying_flags.py, while -max_iters is forwarded to run_scm.py.
+
+If a clone directory already exists, the script prompts whether to overwrite
+it. Answering "no" reuses the existing directory and assumes the expected
+output has already been generated. Use --overwrite-existing for noninteractive
+test jobs such as Jenkins.
 """
 
-import shutil
+from __future__ import annotations
+
+import argparse
+import itertools
 import os
 import re
+import shutil
 import subprocess
-import argparse
-import json
-import git
+import sys
+from pathlib import Path
 
 
-# Define a custom argument type for a list of strings
+DEFAULT_REPO_URL = "https://github.com/larson-group/clubb.git"
+
+
 def list_of_strings(arg):
-    return arg.split(",")
+    """Parse a comma-separated list and reject empty entries."""
+    values = [item.strip() for item in arg.split(",") if item.strip()]
+    if not values:
+        raise argparse.ArgumentTypeError("must contain at least one value")
+    return values
+
+
+def safe_dir_name(git_ref):
+    """Make a filesystem-safe directory name for branch names like feature/foo."""
+    return re.sub(r"[^A-Za-z0-9_.-]+", "_", git_ref).strip("_") or "ref"
 
 
 def get_cli_args():
-    # Set up and parse command line arguments
-    parser = argparse.ArgumentParser(formatter_class=argparse.RawTextHelpFormatter)
-    parser.add_argument(
-        "--short-cases",
-        action="store_true",
-        default=False,
-        help="Run short cases. This will omit\n\t\tthe gabls2, cloud_feedback_s6, "
-           + "cloud_feedback_s11,\n\t\tcloud_feedback_s12, and twp_ice cases.",
+    parser = argparse.ArgumentParser(
+        formatter_class=argparse.RawTextHelpFormatter,
+        description=(
+            "Run CLUBB bindiffs across multiple git refs and multiple model-flag "
+            "configurations."
+        ),
+        epilog=(
+            "Any unrecognized options are forwarded to run_clubb_w_varying_flags.py. "
+            "That script consumes case-selection options such as --priority-cases "
+            "and forwards remaining options such as -max_iters to run_scm.py."
+        ),
     )
     parser.add_argument(
-        "--priority-cases",
-        action="store_true",
-        default=False,
-        help="Run priority cases. This will include\n\t\tonly the following cases if they are "
-           + "in RUN_CASES: arm, atex,\n\t\tbomex, dycoms2_rf01, dycoms2_rf01_fixed_sst, "
-           + "dycoms2_rf02_ds,\n\t\tdycoms2_rf02_nd, mpace_b, rico, wangara, arm_97,\n"
-           + "\t\tcloud_feedback_s6, cloud_feedback_s11, cloud_feedback_s12,\n"
-           + "\t\tgabls3_night, lba, and twp_ice.",
+        "-b",
+        "--branches",
+        required=True,
+        type=list_of_strings,
+        help=(
+            "Comma-separated list of two or more branches, commit hashes, tags, "
+            "or other git refs to compare."
+        ),
     )
     parser.add_argument(
-        "--min-cases",
-        action="store_true",
-        default=False,
-        help="Run a minimal set of cases (e.g. to\n\t\teconomize on output). "
-           + "This will include only the following\n\t\tcases if they are in RUN_CASES: "
-           + "arm, atex, bomex, dycoms2_rf01,\n\t\tdycoms2_rf02_ds, rico, wangara, arm_97, "
-           + "gabls3_night, lba,\n\t\tand twp_ice.",
+        "-f",
+        "--flag-config-file",
+        default="flag_config.json",
+        help="JSON flag-set config passed to run_clubb_w_varying_flags.py.",
+    )
+    parser.add_argument(
+        "-d",
+        "--destination-dir",
+        default="~/clubb_bindiff",
+        help="Directory where branch clones and outputs are stored.",
     )
     parser.add_argument(
         "--skip-default-flags",
         action="store_true",
         default=False,
-        help="Skip the default flag configurations.",
-    )
-    parser.add_argument(
-        "--central-run-script",
-        action="store_true",
-        default=False,
-        help="Use the run_scm_all.bash script from the repository you running this script from. "
-           + "Otherwise the script from the corresponding clones is taken.",
+        help="Do not run the unmodified default flag configuration.",
     )
     parser.add_argument(
         "-v",
         "--verbose",
-        action="store",
         type=int,
-        default=0,
-        help="Choose level of verbosity for outputs, i.e. what is printed to console.\n"
-           + "0: Output just a summary.\n"
-           + "1: Default. Add summarized results for each file.\n"
-           + "2: Add tables with detailed numerical differences in common variables for each file.",
+        default=1,
+        help=(
+            "Verbosity level passed to run_bindiff_varying_flags_output.py "
+            "and run_bindiff_all.py."
+        ),
     )
     parser.add_argument(
-        "-f",
-        "--flag-config-file",
-        action="store",
-        type=str,
-        default="flag_config.json",
-        help="Choose which file will be read to configure the different flag settings.\n",
+        "--repo-url",
+        default=DEFAULT_REPO_URL,
+        help=f"Git repository URL to clone. Default: {DEFAULT_REPO_URL}",
     )
     parser.add_argument(
-        "-d",
-        "--destination-dir",
-        action="store",
-        type=str,
-        default="~/clubb_bindiff",
-        help="Choose in which directory the .\n",
+        "--compile-arg",
+        action="append",
+        default=[],
+        help=(
+            "Extra argument passed to compile.py. May be repeated. "
+            "Use --compile-arg=-debug for values that begin with '-'."
+        ),
     )
     parser.add_argument(
-        "-b",
-        "--branches",
-        action="store",
-        type=list_of_strings,
-        help="Enter a comma seperated list of two or more branches, commit hashes or any sort "
-        + "of git reference from github, that you want to compare.",
+        "--no-compile",
+        action="store_true",
+        default=False,
+        help="Skip compilation for newly cloned or overwritten refs.",
     )
-    args = parser.parse_args()
-    if sum([args.short_cases, args.priority_cases, args.min_cases]) > 1:
-        print(
-            "Error: You can only enter one of --short-cases, --priority-cases or --min-cases."
-        )
-        exit(1)
+    parser.add_argument(
+        "--overwrite-existing",
+        action="store_true",
+        default=False,
+        help="Overwrite existing ref clone directories without prompting.",
+    )
+
+    args, run_args = parser.parse_known_args()
+
     if len(args.branches) < 2:
-        print(
-            "Error: You need to enter at least two branches or commits with -b or --branches."
-        )
-        exit(1)
+        parser.error("at least two branches or refs must be provided with -b/--branches")
+
+    args.run_args = run_args
+    args.flag_config_file = str(Path(args.flag_config_file).expanduser().resolve())
+    args.destination_dir = Path(args.destination_dir).expanduser().resolve()
     return args
 
 
-def read_in_flag_settings(flag_config_file_path):
-    print(f"Reading settings from {flag_config_file_path}...")
-    if not flag_config_file_path.endswith(".json"):
-        print(
-            "Config file for different flag settings (--flag-config-file) "
-            + "needs to be in the JSON format."
-        )
-        exit(1)
-    with open(flag_config_file_path) as json_file:
-        data = json.load(json_file)
-    return data
-
-
-def create_dir_for_branch_and_compile(branch, abs_path_to_dirs):
-    """
-    This function takes all the branches, clones them into the passed abs_path_to_dirs directory
-    and compiles the model for each of the clones.
-    """
-    skip_compilation_and_run = False
-    if not os.path.exists(abs_path_to_dirs + branch):
-        os.makedirs(abs_path_to_dirs + branch)
-    else:
-        print(f"{abs_path_to_dirs + branch} does already exist.")
-        ans = ""
-        while ans != "yes" and ans != "no":
-            ans = input(
-                "Should the directory be overwritten (if not the already existent directory "
-                + "will be taken, assuming it has the executable and all flag files) [yes/no]: "
-            )
-        if ans == "yes":
-            shutil.rmtree(abs_path_to_dirs + branch)
-            os.makedirs(abs_path_to_dirs + branch)
-        elif ans == "no":
-            print(f"Taking the already existent directory {branch}.")
-            skip_compilation_and_run = True
-
-    if not skip_compilation_and_run:
-        print(f"Cloning CLUBB into {abs_path_to_dirs + branch}...")
-        git.Git(abs_path_to_dirs + branch).clone(
-            "git@github.com:larson-group/clubb.git"
-        )
-        git_obj = git.Git(abs_path_to_dirs + branch + "/clubb")
-
-        git_obj.checkout(branch)
-
-        print(f"Compiling CLUBB in {abs_path_to_dirs + branch}...")
-        git_obj.execute([f"{abs_path_to_dirs + branch}/clubb/compile/compile.bash"])
-    else:
-        print(f"Skipping cloning and compilation for {branch}.")
-
-    return skip_compilation_and_run
-
-
-def get_flag_file_names(flag_config_file, skip_default_flag, flags_to_change):
-    """
-    This function takes the flag config JSON file and returns a list of the names of
-    all the flag .in files with the toggled flags from configurable_model_flags.in.
-    """
-    flag_file_names = {}
-    default_name = "default"
-    for run_name in flags_to_change:
-        if run_name == default_name:
-            print(
-                f"Error: You are not allowed to use the name {default_name} "
-                + "for one of the cases in your {flag_config_file}."
-            )
-            exit(1)
-        flag_file_names[run_name] = run_name + "_tmp.in"
-    if not skip_default_flag:
-        flag_file_names[default_name] = "configurable_model_flags.in"
-    return flag_file_names
-
-
-def write_flag_change(flags_file, text_line, flags):
-    for flag_name, flag_value in flags.items():
-        pattern = r"\b" + re.escape(flag_name) + r"\b"
-        flag_in_line = re.search(pattern, text_line)
-        if flag_in_line:
-            if isinstance(flag_value, bool):
-                if flag_value:
-                    text_line = re.sub(r"\..*\.", ".true.", text_line)
-                else:
-                    text_line = re.sub(r"\..*\.", ".false.", text_line)
-            elif isinstance(flag_value, int):
-                text_line = re.sub(r"= .*", f"= {flag_value}", text_line)
-    flags_file.write(text_line)
-
-
-def create_flag_files(branch, abs_path_to_dirs, flags_to_change, flag_file_names):
-    """
-    This function creates the different input flag files from the flag configuration
-    file content, given by flags_to_change.
-    """
-    print(
-        f"Creating all input flag files in {abs_path_to_dirs + branch}/clubb/"
-        + "input/tunable_parameters ..."
+def run_checked(cmd, cwd=None, stdout=None, env=None):
+    """Run a subprocess and raise on failure."""
+    printable_cwd = f" (cwd={cwd})" if cwd else ""
+    print(f"Running: {' '.join(map(str, cmd))}{printable_cwd}")
+    subprocess.run(
+        cmd,
+        cwd=cwd,
+        stdout=stdout,
+        stderr=subprocess.STDOUT,
+        env=env,
+        check=True,
     )
-    with open(
-        abs_path_to_dirs
-        + branch
-        + "/clubb/input/tunable_parameters/configurable_model_flags.in",
-        "r",
-    ) as flags_file_default:
-
-        for case_name, flag_file_name in flag_file_names.items():
-            if flag_file_name != "configurable_model_flags.in":
-                new_flags_file_path = (
-                    abs_path_to_dirs
-                    + branch
-                    + "/clubb/input/tunable_parameters/"
-                    + flag_file_name
-                )
-
-                # create and open new flag file
-                with open(new_flags_file_path, "w") as flags_file:
-                    for line in flags_file_default:
-                        write_flag_change(flags_file, line, flags_to_change[case_name])
-
-                # start again at beginning of file (set file pointer back to start)
-                flags_file_default.seek(0)
 
 
-def run_clubb_model_for_all_flag_settings(args, branch, abs_path_to_dirs, flag_files):
-    """
-    This function takes all the branches and names of the newly created flag .in files and
-    runs CLUBB for each of the branch clones for all different flag files.
-    """
-    flags_to_add = []
-    if args.priority_cases:
-        flags_to_add.append("--priority-cases")
-    elif args.min_cases:
-        flags_to_add.append("--min-cases")
-    elif args.short_cases:
-        flags_to_add.append("--short-cases")
+def compile_environment():
+    """Return an environment suitable for compile.py in a plain shell."""
+    env = os.environ.copy()
+    if "FC" not in env and "LMOD_FAMILY_COMPILER" not in env and shutil.which("gfortran"):
+        env["FC"] = "gfortran"
+    return env
 
-    for _, flag_file in flag_files.items():
-        if args.verbose == 0:
-            opt_kwargs = {"stdout": subprocess.DEVNULL}
+
+def prepare_clone(git_ref, args):
+    """Clone and compile one requested ref unless an existing checkout is reused."""
+    ref_dir = args.destination_dir / safe_dir_name(git_ref)
+    clone_dir = ref_dir / "clubb"
+    skip_run = False
+
+    if ref_dir.exists():
+        print(f"{ref_dir} already exists.")
+        if args.overwrite_existing:
+            print(f"Overwriting existing directory for {git_ref}.")
+            shutil.rmtree(ref_dir)
+        elif not clone_dir.is_dir():
+            print(f"{ref_dir} does not contain a clubb checkout. Overwriting it.")
+            shutil.rmtree(ref_dir)
         else:
-            opt_kwargs = {}
+            answer = ""
+            while answer not in {"yes", "no"}:
+                answer = input(
+                    "Overwrite it? If not, existing output is reused and runs are skipped "
+                    "[yes/no]: "
+                ).strip().lower()
 
-        print(f"\nRunning cases for {flag_file} for {branch}...")
-        abs_clubb_path = f"{abs_path_to_dirs}{branch}/clubb"
-        if args.central_run_script:
-            subprocess.call(
-                [
-                    f"./run_scm_all.bash",
-                    *flags_to_add,
-                    "--clubb_exec_file",
-                    f"{abs_clubb_path}/bin/clubb_standalone",
-                    "-o",
-                    f"{abs_clubb_path}/output/{flag_file.split('.')[0]}",
-                    "--flags_file",
-                    f"{abs_clubb_path}/input/tunable_parameters/{flag_file}",
-                ],
-                **opt_kwargs,
-            )
-        else:
-            subprocess.call(
-                [
-                    f"{abs_clubb_path}/run_scripts/run_scm_all.bash",
-                    *flags_to_add,
-                    "--clubb_exec_file",
-                    f"{abs_clubb_path}/bin/clubb_standalone",
-                    "-o",
-                    f"{abs_clubb_path}/output/{flag_file.split('.')[0]}",
-                    "--flags_file",
-                    f"{abs_clubb_path}/input/tunable_parameters/{flag_file}",
-                ],
-                **opt_kwargs,
-            )
+            if answer == "yes":
+                shutil.rmtree(ref_dir)
+            else:
+                print(f"Reusing existing directory for {git_ref}.")
+                skip_run = True
+
+    if skip_run:
+        return clone_dir, True
+
+    ref_dir.mkdir(parents=True, exist_ok=True)
+
+    print(f"Cloning {git_ref} into {clone_dir}...")
+    run_checked(["git", "clone", args.repo_url, str(clone_dir)])
+    run_checked(["git", "checkout", git_ref], cwd=clone_dir)
+
+    if args.no_compile:
+        print(f"Skipping compilation for {git_ref}.")
+        return clone_dir, False
+
+    compile_script = clone_dir / "compile.py"
+    if not compile_script.is_file():
+        raise FileNotFoundError(
+            f"{compile_script} was not found. This wrapper expects refs with "
+            "the Python compile script."
+        )
+
+    print(f"Compiling CLUBB for {git_ref}...")
+    run_checked(
+        [sys.executable, str(compile_script), *args.compile_arg],
+        cwd=clone_dir,
+        env=compile_environment(),
+    )
+    return clone_dir, False
 
 
-def compare_outputs(branches, abs_path_to_dirs, flag_files, verbose_level):
-    """
-    This function takes all the branches and names of the newly created flag configuration .in files
-    and compares the output for all those different flag files for all possible combinations
-    of branches.
-    """
-    branch_combinations = {
-        frozenset({branch1, branch2})
-        for branch1 in branches
-        for branch2 in branches
-        if branch1 != branch2
-    }
-    for branch1, branch2 in branch_combinations:
-        for _, flag_file in flag_files.items():
-            print(f"\nComparing {branch1} and {branch2} for {flag_file}...")
-            subprocess.call(
-                [
-                    "python3",
-                    "./run_bindiff_all.py",
-                    f"{abs_path_to_dirs}{branch1}/clubb/output/{flag_file.split('.')[0]}",
-                    f"{abs_path_to_dirs}{branch2}/clubb/output/{flag_file.split('.')[0]}",
-                    "--verbose",
-                    f"{verbose_level}",
-                ]
-            )
+def build_varying_flags_command(clone_dir, args):
+    """Build the run_clubb_w_varying_flags.py command for one clone."""
+    command = [
+        sys.executable,
+        str(clone_dir / "run_scripts" / "run_clubb_w_varying_flags.py"),
+        "-f",
+        args.flag_config_file,
+    ]
+
+    if args.skip_default_flags:
+        command.append("--skip-default-flags")
+
+    command.extend(args.run_args)
+    return command
+
+
+def run_clubb_model_for_all_flag_settings(git_ref, clone_dir, args):
+    """Run all requested cases and flag sets through the Python varying-flags runner."""
+    print(f"\nRunning varying-flag cases for {git_ref}...")
+    stdout = subprocess.DEVNULL if args.verbose == 0 else None
+    result = subprocess.run(
+        build_varying_flags_command(clone_dir, args),
+        stdout=stdout,
+        stderr=subprocess.STDOUT,
+        check=False,
+    )
+    if result.returncode != 0:
+        print(
+            f"Run phase for {git_ref} exited with code {result.returncode}; "
+            "continuing to output comparison."
+        )
+    return result.returncode
+
+
+def compare_outputs(ref_to_clone, args):
+    """Compare each pair of cloned refs across matching flag-set output directories."""
+    compare_script = Path(__file__).resolve().with_name(
+        "run_bindiff_varying_flags_output.py"
+    )
+    exit_status = 0
+
+    for ref1, ref2 in itertools.combinations(ref_to_clone, 2):
+        output1 = ref_to_clone[ref1] / "output"
+        output2 = ref_to_clone[ref2] / "output"
+        print(f"\nComparing {ref1} and {ref2}...")
+        result = subprocess.run(
+            [
+                sys.executable,
+                str(compare_script),
+                "-v",
+                str(args.verbose),
+                str(output1),
+                str(output2),
+            ],
+            check=False,
+        )
+        if result.returncode != 0:
+            exit_status = 1
+
+    return exit_status
 
 
 def main():
     args = get_cli_args()
 
-    dest_dir_path_expanded = os.path.expanduser(args.destination_dir)
-    abs_destination_dir_path = os.path.abspath(dest_dir_path_expanded) + "/"
+    if not Path(args.flag_config_file).is_file():
+        print(f"Flag config file does not exist: {args.flag_config_file}")
+        return 2
 
-    if not os.path.exists(abs_destination_dir_path):
-        print(f"Directory {abs_destination_dir_path} does not exist.")
-        print(f"Creating directory {abs_destination_dir_path}...")
-        os.makedirs(abs_destination_dir_path)
+    args.destination_dir.mkdir(parents=True, exist_ok=True)
 
-    flags_to_change = read_in_flag_settings(args.flag_config_file)
+    ref_to_clone = {}
+    for git_ref in args.branches:
+        try:
+            clone_dir, skip_run = prepare_clone(git_ref, args)
+            ref_to_clone[git_ref] = clone_dir
+            if skip_run:
+                print(f"Skipping run for {git_ref}.")
+            else:
+                run_clubb_model_for_all_flag_settings(git_ref, clone_dir, args)
+        except subprocess.CalledProcessError as exc:
+            print(f"Command failed for {git_ref} with exit code {exc.returncode}.")
+            return exc.returncode
+        except Exception as exc:
+            print(f"Error preparing {git_ref}: {exc}")
+            return 1
 
-    flag_file_names = get_flag_file_names(
-        args.flag_config_file, args.skip_default_flags, flags_to_change
-    )
-    for branch in args.branches:
-        skip_run = create_dir_for_branch_and_compile(branch, abs_destination_dir_path)
-        if not skip_run:
-            create_flag_files(
-                branch, abs_destination_dir_path, flags_to_change, flag_file_names
-            )
-            run_clubb_model_for_all_flag_settings(
-                args, branch, abs_destination_dir_path, flag_file_names
-            )
-        else:
-            print(f"Skipping run for {branch}.")
-
-    compare_outputs(
-        args.branches, abs_destination_dir_path, flag_file_names, args.verbose
-    )
+    return compare_outputs(ref_to_clone, args)
 
 
 if __name__ == "__main__":
-    main()
+    sys.exit(main())

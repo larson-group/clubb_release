@@ -10,11 +10,13 @@ module stats_clubb_utilities
 
 contains
 
-  subroutine stats_accumulate( &
-                     nzm, nzt, ngrdcol, sclr_dim, edsclr_dim, &
-                     invrs_dzm, zt, dzm, dzt, dt, &
+    subroutine stats_accumulate( &
+                       nzm, nzt, ngrdcol, sclr_dim, edsclr_dim, &
+                       invrs_dzm, zt, dzm, dzt, dt, &
+                     k_lb_zm, k_ub_zm, l_implemented, l_host_applies_sfc_fluxes, &
                      um, vm, upwp, vpwp, up2, vp2, &
-                     thlm, rtm, wprtp, wpthlp, &
+                     thlm, rtm, thlm_before, rtm_before, thlm_forcing, rtm_forcing, &
+                     wpthlp_sfc, wprtp_sfc, wprtp, wpthlp, &
                      wp2, wp3, rtp2, rtp3, thlp2, thlp3, &
                      rtpthlp, &
                      wpthvp, wp2thvp, wp2up, rtpthvp, thlpthvp, &
@@ -28,16 +30,11 @@ contains
                      cloud_cover, rcm_supersat_adj, sigma_sqd_w, &
                      thvm, ug, vg, Lscale, wpthlp2, wp2thlp, &
                      wprtp2, wp2rtp, &
-                     Lscale_up, Lscale_down, tau_zt, Kh_zt, wp2rcp, &
-                     wprtpthlp, sigma_sqd_w_zt, rsat, wp2_zt, &
-                     thlp2_zt, &
-                     wpthlp_zt, wprtp_zt, rtp2_zt, rtpthlp_zt, &
-                     up2_zt, &
-                     vp2_zt, upwp_zt, vpwp_zt, wpup2, wpvp2, &
+                     Lscale_up, Lscale_down, Kh_zt, wp2rcp, &
+                       wprtpthlp, rsat, wpup2, wpvp2, &
                      wp2up2, wp2vp2, wp4, &
                      tau_zm, Kh_zm, thlprcp, &
-                     rtprcp, rcp2, em, a3_coef, a3_coef_zt, &
-                     wp3_zm, wp3_on_wp2, wp3_on_wp2_zt, Skw_velocity, &
+                     rtprcp, rcp2, em, wp3_on_wp2, wp3_on_wp2_zt, Skw_velocity, &
                      w_up_in_cloud, w_down_in_cloud, &
                      cloudy_updraft_frac, cloudy_downdraft_frac, &
                      pdf_params, pdf_params_zm, &
@@ -51,9 +48,9 @@ contains
                      l_call_pdf_closure_twice, &
                      stats )
 
-    use constants_clubb, only: &
-        cloud_frac_min, &  ! Constant
-        eps
+      use constants_clubb, only: &
+          cloud_frac_min, &  ! Constant
+          eps
 
     use pdf_utilities, only: &
         compute_variance_binormal    ! Procedure
@@ -76,11 +73,14 @@ contains
         vertical_avg, &     ! Procedure(s)
         vertical_integral
 
-    use interpolation, only: & 
+    use interpolation, only: &
         lin_interpolate_two_points             ! Procedure
 
     use saturation, only: &
         sat_mixrat_ice ! Procedure
+
+    use numerical_check, only: &
+        calculate_spurious_source
 
     use clubb_precision, only: &
         core_rknd ! Variable(s)
@@ -88,23 +88,32 @@ contains
     implicit none
 
     integer, intent(in) :: &
-      nzm, nzt, ngrdcol, sclr_dim, edsclr_dim
+      nzm, nzt, ngrdcol, sclr_dim, edsclr_dim, k_lb_zm, k_ub_zm
 
-    real( kind = core_rknd ), intent(in), dimension(ngrdcol,nzm) :: &
-      invrs_dzm, dzm
+      real( kind = core_rknd ), intent(in), dimension(ngrdcol,nzm) :: &
+        invrs_dzm, dzm
 
-    real( kind = core_rknd ), intent(in), dimension(ngrdcol,nzt) :: &
-      zt, dzt
+      real( kind = core_rknd ), intent(in), dimension(ngrdcol,nzt) :: &
+        zt, dzt
 
     real( kind = core_rknd ), intent(in) :: &
       dt
 
+    logical, intent(in) :: &
+      l_implemented, &
+      l_host_applies_sfc_fluxes
+
     real( kind = core_rknd ), intent(in), dimension(ngrdcol,nzt) :: &
-      um, vm, thlm, rtm, wp3, rtp3, thlp3, wp2thvp, wp2up
+      um, vm, thlm, rtm, thlm_before, rtm_before, thlm_forcing, rtm_forcing, &
+      wp3, rtp3, thlp3, wp2thvp, wp2up
 
     real( kind = core_rknd ), intent(in), dimension(ngrdcol,nzm) :: &
       upwp, vpwp, up2, vp2, wprtp, wpthlp, wp2, rtp2, thlp2, rtpthlp, &
       wpthvp, rtpthvp, thlpthvp
+
+    real( kind = core_rknd ), intent(in), dimension(ngrdcol) :: &
+      wpthlp_sfc, &
+      wprtp_sfc
 
     real( kind = core_rknd ), intent(in), dimension(ngrdcol,nzt) :: &
       p_in_Pa, exner, rho, rho_ds_zt, thv_ds_zt, wm_zt
@@ -122,17 +131,16 @@ contains
       sigma_sqd_w
 
     real( kind = core_rknd ), intent(in), dimension(ngrdcol,nzt) :: &
-      thvm, ug, vg, Lscale, wpthlp2, wp2thlp, wprtp2, wp2rtp, Lscale_up, Lscale_down, tau_zt, &
-      Kh_zt, wp2rcp, wprtpthlp, sigma_sqd_w_zt, rsat
+      thvm, ug, vg, Lscale, wpthlp2, wp2thlp, wprtp2, wp2rtp, Lscale_up, Lscale_down, &
+      Kh_zt, wp2rcp, wprtpthlp, rsat
 
-    real( kind = core_rknd ), intent(in), dimension(ngrdcol,nzt) :: &
-      wp2_zt, thlp2_zt, wpthlp_zt, wprtp_zt, rtp2_zt, rtpthlp_zt, &
-      up2_zt, vp2_zt, upwp_zt, vpwp_zt, wpup2, wpvp2, a3_coef_zt, &
-      wp3_on_wp2_zt, w_up_in_cloud, w_down_in_cloud, cloudy_updraft_frac, &
-      cloudy_downdraft_frac
+      real( kind = core_rknd ), intent(in), dimension(ngrdcol,nzt) :: &
+        wpup2, wpvp2, &
+        wp3_on_wp2_zt, w_up_in_cloud, w_down_in_cloud, cloudy_updraft_frac, &
+        cloudy_downdraft_frac
 
     real( kind = core_rknd ), intent(in), dimension(ngrdcol,nzm) :: &
-      wp2up2, wp2vp2, wp4, tau_zm, Kh_zm, thlprcp, rtprcp, rcp2, em, a3_coef, wp3_zm, wp3_on_wp2, &
+      wp2up2, wp2vp2, wp4, tau_zm, Kh_zm, thlprcp, rtprcp, rcp2, em, wp3_on_wp2, &
       Skw_velocity
 
     type(pdf_parameter), intent(in) :: &
@@ -163,17 +171,31 @@ contains
 
     integer :: sclr, edsclr, k, i
       
-    real( kind = core_rknd ), dimension(ngrdcol,nzt) :: &
-      T_in_K,        &  ! Absolute temperature         [K]
-      rsati,         &  ! Saturation w.r.t ice         [kg/kg]
-      chi,           &  ! Mellor's 's'                 [kg/kg]
-      chip2,         &  ! Variance of Mellor's 's'     [kg/kg]
-      rcm_in_cloud      ! rcm in cloud                 [kg/kg]
+      real( kind = core_rknd ), dimension(ngrdcol,nzt) :: &
+        T_in_K,        &  ! Absolute temperature         [K]
+        rsati,         &  ! Saturation w.r.t ice         [kg/kg]
+        chi,           &  ! Mellor's 's'                 [kg/kg]
+        chip2,         &  ! Variance of Mellor's 's'     [kg/kg]
+        rcm_in_cloud     ! rcm in cloud                 [kg/kg]
 
     real( kind = core_rknd ), dimension(ngrdcol,nzm) :: &
       shear       ! Wind shear production term   [m^2/s^3]
 
     real( kind = core_rknd ), dimension(ngrdcol):: xtmp
+
+    real( kind = core_rknd ), dimension(ngrdcol) :: &
+      rtm_integral_before, &
+      rtm_integral_after, &
+      rtm_integral_forcing, &
+      rtm_flux_top, &
+      rtm_flux_sfc, &
+      rtm_spur_src, &
+      thlm_integral_before, &
+      thlm_integral_after, &
+      thlm_integral_forcing, &
+      thlm_flux_top, &
+      thlm_flux_sfc, &
+      thlm_spur_src
 
     character(len=50) :: sclr_idx
 
@@ -181,9 +203,86 @@ contains
 
     ! Sample fields
 
-    if ( stats%l_sample ) then
+      if ( stats%l_sample ) then
 
-      if ( var_on_stats_list( stats, "T_in_K" ) .or.       &
+        !$acc update host( wp2, vp2, up2, wprtp, wpthlp, upwp, vpwp, rtp2, thlp2, &
+        !$acc              rtpthlp, rtm, thlm, um, vm, wp3, &
+        !$acc              pdf_params%w_1, pdf_params%w_2, &
+        !$acc              pdf_params%varnce_w_1, pdf_params%varnce_w_2, &
+        !$acc              pdf_params%rt_1, pdf_params%rt_2, &
+        !$acc              pdf_params%varnce_rt_1, pdf_params%varnce_rt_2,  &
+        !$acc              pdf_params%thl_1, pdf_params%thl_2, &
+        !$acc              pdf_params%varnce_thl_1, pdf_params%varnce_thl_2, &
+        !$acc              pdf_params%corr_w_rt_1, pdf_params%corr_w_rt_2,  &
+        !$acc              pdf_params%corr_w_thl_1, pdf_params%corr_w_thl_2, &
+        !$acc              pdf_params%corr_rt_thl_1, pdf_params%corr_rt_thl_2,&
+        !$acc              pdf_params%alpha_thl, pdf_params%alpha_rt, &
+        !$acc              pdf_params%crt_1, pdf_params%crt_2, pdf_params%cthl_1, &
+        !$acc              pdf_params%cthl_2, pdf_params%chi_1, &
+        !$acc              pdf_params%chi_2, pdf_params%stdev_chi_1, &
+        !$acc              pdf_params%stdev_chi_2, pdf_params%stdev_eta_1, &
+        !$acc              pdf_params%stdev_eta_2, pdf_params%covar_chi_eta_1, &
+        !$acc              pdf_params%covar_chi_eta_2, pdf_params%corr_w_chi_1, &
+        !$acc              pdf_params%corr_w_chi_2, pdf_params%corr_w_eta_1, &
+        !$acc              pdf_params%corr_w_eta_2, pdf_params%corr_chi_eta_1, &
+        !$acc              pdf_params%corr_chi_eta_2, pdf_params%rsatl_1, &
+        !$acc              pdf_params%rsatl_2, pdf_params%rc_1, pdf_params%rc_2, &
+        !$acc              pdf_params%cloud_frac_1, pdf_params%cloud_frac_2,  &
+        !$acc              pdf_params%mixt_frac, pdf_params%ice_supersat_frac_1, &
+        !$acc              pdf_params%ice_supersat_frac_2, &
+        !$acc              um, vm, upwp, vpwp, up2, vp2, &
+        !$acc              thlm, rtm, thlm_before, rtm_before, thlm_forcing, rtm_forcing, &
+        !$acc              wpthlp_sfc, wprtp_sfc, wprtp, wpthlp, &
+        !$acc              wp2, wp3, rtp2, rtp3, thlp2, thlp3, rtpthlp, &
+        !$acc              wpthvp, wp2thvp, rtpthvp, thlpthvp, &
+        !$acc              p_in_Pa, exner, rho, rho_zm, &
+        !$acc              rho_ds_zm, rho_ds_zt, thv_ds_zm, thv_ds_zt, &
+        !$acc              wm_zt, wm_zm, rcm, wprcp, rc_coef_zm, rc_coef, &
+        !$acc              rcm_zm, rtm_zm, thlm_zm, cloud_frac, ice_supersat_frac, &
+        !$acc              cloud_frac_zm, ice_supersat_frac_zm, rcm_in_layer, &
+        !$acc              cloud_cover, rcm_supersat_adj, sigma_sqd_w, &
+        !$acc              thvm, ug, vg, Lscale, wpthlp2, wp2thlp, wprtp2, wp2rtp, &
+        !$acc              Lscale_up, Lscale_down, Kh_zt, wp2rcp, &
+        !$acc              wprtpthlp, &
+        !$acc              wpup2, wpvp2, wp2up2, wp2vp2, wp4, &
+        !$acc              tau_zm, Kh_zm, thlprcp, &
+        !$acc              rtprcp, rcp2, em, wp3_on_wp2, wp3_on_wp2_zt, Skw_velocity, &
+        !$acc              w_up_in_cloud, w_down_in_cloud, &
+        !$acc              cloudy_updraft_frac, cloudy_downdraft_frac )
+
+        !$acc if( l_call_pdf_closure_twice ) &
+        !$acc update host( pdf_params_zm%w_1, pdf_params_zm%w_2, &
+        !$acc              pdf_params_zm%varnce_w_1, pdf_params_zm%varnce_w_2, &
+        !$acc              pdf_params_zm%rt_1, pdf_params_zm%rt_2, &
+        !$acc              pdf_params_zm%varnce_rt_1, pdf_params_zm%varnce_rt_2,  &
+        !$acc              pdf_params_zm%thl_1, pdf_params_zm%thl_2, &
+        !$acc              pdf_params_zm%varnce_thl_1, pdf_params_zm%varnce_thl_2, &
+        !$acc              pdf_params_zm%corr_w_rt_1, pdf_params_zm%corr_w_rt_2,  &
+        !$acc              pdf_params_zm%corr_w_thl_1, pdf_params_zm%corr_w_thl_2, &
+        !$acc              pdf_params_zm%corr_rt_thl_1, pdf_params_zm%corr_rt_thl_2,&
+        !$acc              pdf_params_zm%alpha_thl, pdf_params_zm%alpha_rt, &
+        !$acc              pdf_params_zm%crt_1, pdf_params_zm%crt_2, pdf_params_zm%cthl_1, &
+        !$acc              pdf_params_zm%cthl_2, pdf_params_zm%chi_1, &
+        !$acc              pdf_params_zm%chi_2, pdf_params_zm%stdev_chi_1, &
+        !$acc              pdf_params_zm%stdev_chi_2, pdf_params_zm%stdev_eta_1, &
+        !$acc              pdf_params_zm%stdev_eta_2, pdf_params_zm%covar_chi_eta_1, &
+        !$acc              pdf_params_zm%covar_chi_eta_2, pdf_params_zm%corr_w_chi_1, &
+        !$acc              pdf_params_zm%corr_w_chi_2, pdf_params_zm%corr_w_eta_1, &
+        !$acc              pdf_params_zm%corr_w_eta_2, pdf_params_zm%corr_chi_eta_1, &
+        !$acc              pdf_params_zm%corr_chi_eta_2, pdf_params_zm%rsatl_1, &
+        !$acc              pdf_params_zm%rsatl_2, pdf_params_zm%rc_1, pdf_params_zm%rc_2, &
+        !$acc              pdf_params_zm%cloud_frac_1, pdf_params_zm%cloud_frac_2,  &
+        !$acc              pdf_params_zm%mixt_frac, pdf_params_zm%ice_supersat_frac_1, &
+        !$acc              pdf_params_zm%ice_supersat_frac_2 )
+
+        !$acc update host( sclrm, sclrp2, sclrprtp, sclrpthlp, sclrm_forcing, &
+        !$acc              sclrpthvp, wpsclrp, sclrprcp, wp2sclrp, wpsclrp2, &
+        !$acc              wpsclrprtp, wpsclrpthlp, wpedsclrp ) &
+        !$acc if ( sclr_dim > 0 )
+
+        !$acc update host( edsclrm, edsclrm_forcing  ) if ( edsclr_dim > 0 )
+
+        if ( var_on_stats_list( stats, "T_in_K" ) .or.       &
             var_on_stats_list( stats, "rsati" ) ) then
         T_in_K = thlm2T_in_K_api( nzt, ngrdcol, thlm, exner, rcm )
         call stats_update( "T_in_K", T_in_K, stats )
@@ -258,7 +357,6 @@ contains
       call stats_update( "wp2rtp", wp2rtp, stats )
       call stats_update( "Lscale_up", Lscale_up, stats )
       call stats_update( "Lscale_down", Lscale_down, stats )
-      call stats_update( "tau_zt", tau_zt, stats )
       call stats_update( "Kh_zt", Kh_zt, stats )
       call stats_update( "wp2thvp", wp2thvp, stats )
       call stats_update( "wp2up", wp2up, stats )
@@ -269,7 +367,6 @@ contains
       call stats_update( "cld_downdr_frac", cloudy_downdraft_frac, stats )
       call stats_update( "wprtpthlp", wprtpthlp, stats )
       call stats_update( "rc_coef", rc_coef, stats )
-      call stats_update( "sigma_sqd_w_zt", sigma_sqd_w_zt, stats )
       call stats_update( "rho", rho, stats )
       call stats_update( "rsat", rsat, stats )
       call stats_update( "mixt_frac", pdf_params%mixt_frac, stats )
@@ -315,19 +412,8 @@ contains
       call stats_update( "crt_2", pdf_params%crt_2, stats )
       call stats_update( "cthl_1", pdf_params%cthl_1, stats )
       call stats_update( "cthl_2", pdf_params%cthl_2, stats )
-      call stats_update( "wp2_zt", wp2_zt, stats )
-      call stats_update( "thlp2_zt", thlp2_zt, stats )
       call stats_update( "thlp3", thlp3, stats )
-      call stats_update( "wpthlp_zt", wpthlp_zt, stats )
-      call stats_update( "wprtp_zt", wprtp_zt, stats )
-      call stats_update( "rtp2_zt", rtp2_zt, stats )
       call stats_update( "rtp3", rtp3, stats )
-      call stats_update( "rtpthlp_zt", rtpthlp_zt, stats )
-      call stats_update( "up2_zt", up2_zt, stats )
-      call stats_update( "vp2_zt", vp2_zt, stats )
-      call stats_update( "upwp_zt", upwp_zt, stats )
-      call stats_update( "vpwp_zt", vpwp_zt, stats )
-      call stats_update( "a3_coef_zt", a3_coef_zt, stats )
       call stats_update( "wp3_on_wp2_zt", wp3_on_wp2_zt, stats )
 
       if ( sclr_dim > 0 ) then
@@ -351,7 +437,6 @@ contains
       ! stats_zm variables
       call stats_update( "wm_zm", wm_zm, stats )
       call stats_update( "wp2", wp2, stats )
-      call stats_update( "wp3_zm", wp3_zm, stats )
       call stats_update( "rtp2", rtp2, stats )
       call stats_update( "thlp2", thlp2, stats )
       call stats_update( "rtpthlp", rtpthlp, stats )
@@ -380,7 +465,6 @@ contains
       call stats_update( "thv_ds_zm", thv_ds_zm, stats )
       call stats_update( "em", em, stats )
       call stats_update( "Skw_velocity", Skw_velocity, stats )
-      call stats_update( "a3_coef", a3_coef, stats )
       call stats_update( "wp3_on_wp2", wp3_on_wp2, stats )
       call stats_update( "wp3_on_wp2_cfl_num", wp3_on_wp2 * dt / dzm, stats )
       call stats_update( "cloud_frac_zm", cloud_frac_zm, stats )
@@ -509,6 +593,72 @@ contains
         end do
         call stats_update( "tot_vartn_normlzd_wprtp", xtmp, stats )
       end if
+
+      ! Spurious source will only be calculated if rtm_ma and thlm_ma are zero.
+      ! Therefore, wm must be zero or l_implemented must be true.
+      do i = 1, ngrdcol
+        if ( l_implemented .or. &
+             (all( abs(wm_zt(i,:)) < eps ) .and. all( abs(wm_zm(i,:)) < eps ))) then
+          rtm_flux_top(i) = rho_ds_zm(i,k_ub_zm) * wprtp(i,k_ub_zm)
+
+          if ( .not. l_host_applies_sfc_fluxes ) then
+            rtm_flux_sfc(i) = rho_ds_zm(i,k_lb_zm) * wprtp_sfc(i)
+          else
+            rtm_flux_sfc(i) = 0.0_core_rknd
+          end if
+
+          ! Get the vertical integral of rtm before this function begins
+          ! so that spurious source can be calculated.
+          rtm_integral_before(i)  &
+          = vertical_integral( nzt, rho_ds_zt(i,:), rtm_before(i,:), dzt(i,:) )
+
+          rtm_integral_after(i)  &
+          = vertical_integral( nzt, rho_ds_zt(i,:), rtm(i,:), dzt(i,:) )
+
+          rtm_integral_forcing(i)  &
+          = vertical_integral( nzt, rho_ds_zt(i,:), rtm_forcing(i,:), dzt(i,:) )
+
+          ! Calculate the spurious source for rtm.
+          rtm_spur_src(i)  &
+          = calculate_spurious_source( rtm_integral_after(i), &
+                                       rtm_integral_before(i), &
+                                       rtm_flux_top(i), rtm_flux_sfc(i), &
+                                       rtm_integral_forcing(i), &
+                                       dt )
+
+          thlm_flux_top(i) = rho_ds_zm(i,k_ub_zm) * wpthlp(i,k_ub_zm)
+
+          if ( .not. l_host_applies_sfc_fluxes ) then
+            thlm_flux_sfc(i) = rho_ds_zm(i,k_lb_zm) * wpthlp_sfc(i)
+          else
+            thlm_flux_sfc(i) = 0.0_core_rknd
+          end if
+
+          ! Get the vertical integral of thlm before this function begins
+          ! so that spurious source can be calculated.
+          thlm_integral_before(i)  &
+          = vertical_integral( nzt, rho_ds_zt(i,:), thlm_before(i,:), dzt(i,:) )
+
+          thlm_integral_after(i)  &
+          = vertical_integral( nzt, rho_ds_zt(i,:), thlm(i,:), dzt(i,:) )
+
+          thlm_integral_forcing(i)  &
+          = vertical_integral( nzt, rho_ds_zt(i,:), thlm_forcing(i,:), dzt(i,:) )
+
+          ! Calculate the spurious source for thlm.
+          thlm_spur_src(i)  &
+          = calculate_spurious_source( thlm_integral_after(i), &
+                                       thlm_integral_before(i), &
+                                       thlm_flux_top(i), thlm_flux_sfc(i), &
+                                       thlm_integral_forcing(i), &
+                                       dt )
+        else ! If l_implemented is false, we don't want spurious source output
+          rtm_spur_src(i) = -9999.0_core_rknd
+          thlm_spur_src(i) = -9999.0_core_rknd
+        end if
+      end do
+      call stats_update( "rtm_spur_src", rtm_spur_src, stats )
+      call stats_update( "thlm_spur_src", thlm_spur_src, stats )
     end if
 
     return

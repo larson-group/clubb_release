@@ -43,9 +43,13 @@ module clip_explicit
 
   !=============================================================================
   subroutine clip_covars_denom( nzm, ngrdcol, sclr_dim, &
+                                dt, &
                                 rtp2, thlp2, up2, vp2, wp2, &
                                 sclrp2, l_tke_aniso, &
                                 l_linearize_pbl_winds, &
+                                l_predict_upwp_vpwp, &
+                                stats, &
+                                wprtp_cl_num, wpthlp_cl_num, upwp_cl_num, vpwp_cl_num, &
                                 wprtp, wpthlp, upwp, vpwp, wpsclrp, &
                                 upwp_pert, vpwp_pert )
 
@@ -71,6 +75,12 @@ module clip_explicit
     use clubb_precision, only: & 
         core_rknd ! Variable(s)
 
+    use stats_netcdf, only: &
+        stats_type, &
+        stats_begin_budget, &
+        stats_update_budget, &
+        stats_finalize_budget
+
     implicit none
 
     ! --------------------- Input Variables ---------------------
@@ -78,6 +88,9 @@ module clip_explicit
       nzm, &
       ngrdcol, &
       sclr_dim
+
+    real( kind = core_rknd ), intent(in) :: &
+      dt
 
     real( kind = core_rknd ), dimension(ngrdcol,nzm), intent(in) :: &
       rtp2,  & ! r_t'^2         [(kg/kg)^2]
@@ -92,9 +105,19 @@ module clip_explicit
     logical, intent(in) :: &
       l_tke_aniso,           & ! For anisotropic turbulent kinetic energy, i.e. TKE = 1/2
                                ! (u'^2 + v'^2 + w'^2)
-      l_linearize_pbl_winds    ! Flag (used by E3SM) to linearize PBL winds
+      l_linearize_pbl_winds, & ! Flag (used by E3SM) to linearize PBL winds
+      l_predict_upwp_vpwp      ! Prognose u'w' and v'w'
 
     ! --------------------- Input/Output Variables ---------------------
+    type(stats_type), intent(inout) :: &
+      stats
+
+    integer, intent(inout) :: &
+      wprtp_cl_num,  &
+      wpthlp_cl_num, &
+      upwp_cl_num,   &
+      vpwp_cl_num
+
     real( kind = core_rknd ), dimension(ngrdcol,nzm), intent(inout) :: &
       wprtp,  & ! w'r_t'        [(kg/kg) m/s]
       wpthlp, & ! w'theta_l'    [K m/s]
@@ -125,6 +148,43 @@ module clip_explicit
 
     !$acc enter data create( wprtp_chnge, wpthlp_chnge, upwp_chnge, vpwp_chnge )
     !$acc enter data if( sclr_dim > 0 ) create( wpsclrp_chnge )
+
+    if ( stats%l_sample ) then
+
+      !$acc update host( wprtp, wpthlp, upwp, vpwp )
+
+      if ( wprtp_cl_num == 0 ) then
+        call stats_begin_budget( "wprtp_cl", wprtp / dt, stats )
+      else
+        call stats_update_budget( "wprtp_cl", -wprtp / dt, stats )
+      end if
+
+      if ( wpthlp_cl_num == 0 ) then
+        call stats_begin_budget( "wpthlp_cl", wpthlp / dt, stats )
+      else
+        call stats_update_budget( "wpthlp_cl", -wpthlp / dt, stats )
+      end if
+
+      if ( l_predict_upwp_vpwp ) then
+        if ( upwp_cl_num == 0 ) then
+          call stats_begin_budget( "upwp_cl", upwp / dt, stats )
+        else
+          call stats_update_budget( "upwp_cl", -upwp / dt, stats )
+        end if
+
+        if ( vpwp_cl_num == 0 ) then
+          call stats_begin_budget( "vpwp_cl", vpwp / dt, stats )
+        else
+          call stats_update_budget( "vpwp_cl", -vpwp / dt, stats )
+        end if
+      end if
+
+    end if
+
+    wprtp_cl_num = wprtp_cl_num + 1
+    wpthlp_cl_num = wpthlp_cl_num + 1
+    upwp_cl_num = upwp_cl_num + 1
+    vpwp_cl_num = vpwp_cl_num + 1
 
     !!! Clipping for w'r_t'
     !
@@ -256,6 +316,38 @@ module clip_explicit
         call clip_covar( nzm, ngrdcol, clip_vpwp, wp2, wp2,        & ! intent(in)
                          vpwp_pert, vpwp_chnge )                     ! intent(inout)
       endif ! l_linearize_pbl_winds
+    end if
+
+    if ( stats%l_sample ) then
+
+      !$acc update host( wprtp, wpthlp, upwp, vpwp )
+
+      if ( wprtp_cl_num == wprtp_cl_max ) then
+        call stats_finalize_budget( "wprtp_cl", wprtp / dt, stats )
+      else
+        call stats_update_budget( "wprtp_cl", wprtp / dt, stats )
+      end if
+
+      if ( wpthlp_cl_num == wpthlp_cl_max ) then
+        call stats_finalize_budget( "wpthlp_cl", wpthlp / dt, stats )
+      else
+        call stats_update_budget( "wpthlp_cl", wpthlp / dt, stats )
+      end if
+
+      if ( l_predict_upwp_vpwp ) then
+        if ( upwp_cl_num == upwp_cl_max ) then
+          call stats_finalize_budget( "upwp_cl", upwp / dt, stats )
+        else
+          call stats_update_budget( "upwp_cl", upwp / dt, stats )
+        end if
+
+        if ( vpwp_cl_num == vpwp_cl_max ) then
+          call stats_finalize_budget( "vpwp_cl", vpwp / dt, stats )
+        else
+          call stats_update_budget( "vpwp_cl", vpwp / dt, stats )
+        end if
+      end if
+
     end if
 
     !$acc exit data delete( wprtp_chnge, wpthlp_chnge, upwp_chnge, vpwp_chnge )

@@ -6,6 +6,9 @@ import sys
 from pathlib import Path
 
 
+STATS_FILE_SUFFIX = "_stats.nc"
+
+
 def parse_args():
     parser = argparse.ArgumentParser(
         description=(
@@ -36,10 +39,42 @@ def get_nc_files(root):
     return {str(path.relative_to(root)) for path in root.rglob("*.nc")}
 
 
+def case_from_nc_file(path):
+    filename = Path(path).name
+    if filename.endswith(STATS_FILE_SUFFIX):
+        return filename[: -len(STATS_FILE_SUFFIX)]
+    return None
+
+
+def get_nc_cases(root):
+    return {
+        case
+        for case in (case_from_nc_file(path) for path in get_nc_files(root))
+        if case
+    }
+
+
 def print_name_diff(kind, names):
     print(f"{kind}:")
     for name in sorted(names):
         print(f"  {name}")
+
+
+def add_summary(summary, flag_set, case_name, reason):
+    summary.setdefault(flag_set, {}).setdefault(case_name, set()).add(reason)
+
+
+def summarize_differences(summary):
+    if not summary:
+        print("\nDIFFERENCE SUMMARY: no flag sets had differing cases.")
+        return
+
+    print("\nDIFFERENCE SUMMARY:")
+    for flag_set in sorted(summary):
+        print(f"  {flag_set}:")
+        for case_name in sorted(summary[flag_set]):
+            reasons = ", ".join(sorted(summary[flag_set][case_name]))
+            print(f"    {case_name}: {reasons}")
 
 
 def main():
@@ -66,6 +101,7 @@ def main():
     only_in_2 = set(flag_dirs_2) - set(flag_dirs_1)
     common = sorted(set(flag_dirs_1) & set(flag_dirs_2))
 
+    difference_summary = {}
     had_difference = False
 
     if only_in_1:
@@ -93,6 +129,10 @@ def main():
                 missing_in_2,
             )
             had_difference = True
+            for nc_file in missing_in_2:
+                case_name = case_from_nc_file(nc_file)
+                if case_name:
+                    add_summary(difference_summary, flag_name, case_name, f"NetCDF missing from {flag_dir_2}")
 
         if missing_in_1:
             print_name_diff(
@@ -100,6 +140,15 @@ def main():
                 missing_in_1,
             )
             had_difference = True
+            for nc_file in missing_in_1:
+                case_name = case_from_nc_file(nc_file)
+                if case_name:
+                    add_summary(difference_summary, flag_name, case_name, f"NetCDF missing from {flag_dir_1}")
+
+        common_cases = sorted(get_nc_cases(flag_dir_1) & get_nc_cases(flag_dir_2))
+        if not common_cases:
+            print(f"\nNo common successful cases to compare for flag set: {flag_name}")
+            continue
 
         print(f"\nComparing flag set: {flag_name}")
         result = subprocess.run(
@@ -116,6 +165,26 @@ def main():
 
         if result.returncode != 0:
             had_difference = True
+            for case_name in common_cases:
+                case_result = subprocess.run(
+                    [
+                        sys.executable,
+                        str(bindiff_script),
+                        "-v",
+                        "0",
+                        "-case",
+                        case_name,
+                        str(flag_dir_1),
+                        str(flag_dir_2),
+                    ],
+                    stdout=subprocess.DEVNULL,
+                    stderr=subprocess.STDOUT,
+                    check=False,
+                )
+                if case_result.returncode != 0:
+                    add_summary(difference_summary, flag_name, case_name, "NetCDF values differ")
+
+    summarize_differences(difference_summary)
 
     if had_difference:
         print("\nSUMMARY: differences were detected across varying-flags output.")

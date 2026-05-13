@@ -1272,8 +1272,6 @@ module grid_adaptation_module
                                       ! mean horizontal wind speed                   [s^-2]
       brunt_vaisala_freq_sqd,       & ! Buoyancy frequency squared, N^2              [s^-2]
       brunt_vaisala_freq_sqd_mixed, & ! A mixture of dry and moist N^2               [s^-2]
-      brunt_vaisala_freq_sqd_dry,   & ! dry N^2                                      [s^-2]
-      brunt_vaisala_freq_sqd_moist, & ! moist N^2                                    [s^-2]
       brunt_vaisala_freq_sqd_smth     ! Mix between dry and moist N^2 that is
                                       ! smoothed in the vertical                     [s^-2]
 
@@ -1314,8 +1312,6 @@ module grid_adaptation_module
                                       bv_efold, T0,                                       & ! In
                                       brunt_vaisala_freq_sqd,                             & ! Out
                                       brunt_vaisala_freq_sqd_mixed,                       & ! Out
-                                      brunt_vaisala_freq_sqd_dry,                         & ! Out
-                                      brunt_vaisala_freq_sqd_moist,                       & ! Out
                                       brunt_vaisala_freq_sqd_smth )                         ! Out
 
     ! Calculate the grid density from Lscale, chi, ddzt_umvm_sqd and brunt_vaisala_freq_sqd

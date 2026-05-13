@@ -83,7 +83,7 @@ def test_parameterization_check_sets_error_for_nan(run_quiet_python):
     edsclr_dim = 1
 
     args = dict(
-        nzm=nzm, nzt=nzt, sclr_dim=sclr_dim, edsclr_dim=edsclr_dim,
+        nzm=nzm, nzt=nzt, ngrdcol=ngrdcol, sclr_dim=sclr_dim, edsclr_dim=edsclr_dim,
         thlm_forcing=np.zeros(nzt, dtype=np.float64),
         rtm_forcing=np.zeros(nzt, dtype=np.float64),
         um_forcing=np.zeros(nzt, dtype=np.float64),
@@ -155,7 +155,7 @@ sclr_dim = 1
 edsclr_dim = 1
 
 args = dict(
-    nzm=nzm, nzt=nzt, sclr_dim=sclr_dim, edsclr_dim=edsclr_dim,
+    nzm=nzm, nzt=nzt, ngrdcol=ngrdcol, sclr_dim=sclr_dim, edsclr_dim=edsclr_dim,
     thlm_forcing=np.zeros(nzt, dtype=np.float64),
     rtm_forcing=np.zeros(nzt, dtype=np.float64),
     um_forcing=np.zeros(nzt, dtype=np.float64),

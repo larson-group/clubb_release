@@ -5,10 +5,6 @@ module numerical_check
 
   implicit none
 
-!       Made is_nan_2d public so it may be used
-!       for finding code that cause NaNs
-!       Joshua Fasching November 2007
-
 !       *_check subroutines were added to ensure that the
 !       subroutines they are checking perform correctly
 !       Joshua Fasching February 2008
@@ -19,10 +15,10 @@ module numerical_check
 
   private ! Default scope
 
-  public :: invalid_model_arrays, is_nan_2d,  &
+  public :: invalid_model_arrays, &
             rad_check, parameterization_check, &
             sfc_varnce_check, pdf_closure_check, &
-            length_check, is_nan_sclr, calculate_spurious_source, &
+            length_check, calculate_spurious_source, &
             check_clubb_settings_api
 
   private :: check_negative, check_nan
@@ -30,18 +26,8 @@ module numerical_check
 
   ! Abstraction of check_nan
   interface check_nan
-    module procedure check_nan_sclr, check_nan_2d
+    module procedure check_nan_sclr, check_nan_1d, check_nan_2d
   end interface
-
-  ! Abstraction of check_negative
-  interface check_negative
-    module procedure check_negative_index!, check_negative_total
-  end interface
-
-  interface is_nan_2d
-    module procedure is_nan_1d, is_nan_2d
-  end interface
-
 
   contains
 !---------------------------------------------------------------------------------
@@ -373,8 +359,8 @@ module numerical_check
   end subroutine pdf_closure_check
 
 !-------------------------------------------------------------------------------
-  subroutine parameterization_check(                                        & 
-               nzm, nzt, sclr_dim, edsclr_dim,                              & ! intent(in)
+  subroutine parameterization_check(                                        &
+               nzm, nzt, ngrdcol, sclr_dim, edsclr_dim,                     & ! intent(in)
                thlm_forcing, rtm_forcing, um_forcing,                       & ! intent(in)
                vm_forcing, wm_zm, wm_zt, p_in_Pa,                           & ! intent(in)
                rho_zm, rho, exner, rho_ds_zm,                               & ! intent(in)
@@ -383,7 +369,6 @@ module numerical_check
                vpwp_sfc, p_sfc, um, upwp, vm, vpwp, up2, vp2,               & ! intent(in)
                rtm, wprtp, thlm, wpthlp, wp2, wp3,                          & ! intent(in)
                rtp2, thlp2, rtpthlp,                                        & ! intent(in)
-!              rcm,                                                         &
                prefix,                                                      & ! intent(in)
                wpsclrp_sfc, wpedsclrp_sfc, sclrm, wpsclrp,                  & ! intent(in)
                sclrp2,                                                      & ! intent(in)
@@ -417,6 +402,7 @@ module numerical_check
     integer, intent(in) :: &
       nzm, &
       nzt, &
+      ngrdcol, &
       sclr_dim, &
       edsclr_dim
 
@@ -426,7 +412,7 @@ module numerical_check
       proc_name = "advance_clubb_core"
 
     ! Input variables
-    real( kind = core_rknd ), intent(in), dimension(nzt) :: &
+    real( kind = core_rknd ), intent(in), dimension(ngrdcol,nzt) :: &
       thlm_forcing,    & ! theta_l forcing (thermodynamic levels)    [K/s]
       rtm_forcing,     & ! r_t forcing (thermodynamic levels)        [(kg/kg)/s]
       um_forcing,      & ! u wind forcing (thermodynamic levels)     [m/s/s]
@@ -437,17 +423,16 @@ module numerical_check
       exner,           & ! Exner function (thermodynamic levels)     [-]
       rho_ds_zt,       & ! Dry, static density on thermo. levels     [kg/m^3]
       invrs_rho_ds_zt, & ! Inv. dry, static density @ thermo. levs.  [m^3/kg]
-      thv_ds_zt!,      & ! Dry, base-state theta_v on thermo. levs.  [K]
-!     rcm                ! Cloud water mixing ratio  [kg/kg] - Unused
+      thv_ds_zt        ! Dry, base-state theta_v on thermo. levs.  [K]
 
-    real( kind = core_rknd ), intent(in), dimension(nzm) :: &
+    real( kind = core_rknd ), intent(in), dimension(ngrdcol,nzm) :: &
       wm_zm,           & ! w mean wind component on momentum levels  [m/s]
       rho_zm,          & ! Air density on momentum levels            [kg/m^3]
       rho_ds_zm,       & ! Dry, static density on momentum levels    [kg/m^3]
       invrs_rho_ds_zm, & ! Inv. dry, static density @ momentum levs. [m^3/kg]
       thv_ds_zm          ! Dry, base-state theta_v on momentum levs. [K]
 
-    real( kind = core_rknd ), intent(in) :: &
+    real( kind = core_rknd ), intent(in), dimension(ngrdcol) :: &
       wpthlp_sfc,   & ! w' theta_l' at surface.   [(m K)/s]
       wprtp_sfc,    & ! w' r_t' at surface.       [(kg m)/( kg s)]
       upwp_sfc,     & ! u'w' at surface.          [m^2/s^2]
@@ -455,14 +440,14 @@ module numerical_check
       p_sfc           ! pressure at surface       [Pa]
 
     ! These are prognostic or are planned to be in the future
-    real( kind = core_rknd ), intent(in), dimension(nzt) :: &
+    real( kind = core_rknd ), intent(in), dimension(ngrdcol,nzt) :: &
       um,      & ! u mean wind component (thermodynamic levels)   [m/s]
       vm,      & ! v mean wind component (thermodynamic levels)   [m/s]
       rtm,     & ! total water mixing ratio, r_t (thermo. levels) [kg/kg]
       thlm,    & ! liq. water pot. temp., th_l (thermo. levels)   [K]
       wp3        ! w'^3 (thermodynamic levels)                    [m^3/s^3]
 
-    real( kind = core_rknd ), intent(in), dimension(nzm) :: &
+    real( kind = core_rknd ), intent(in), dimension(ngrdcol,nzm) :: &
       upwp,    & ! u'w' (momentum levels)                         [m^2/s^2]
       vpwp,    & ! v'w' (momentum levels)                         [m^2/s^2]
       up2,     & ! u'^2 (momentum levels)                         [m^2/s^2]
@@ -476,23 +461,23 @@ module numerical_check
 
     character(len=*), intent(in) :: prefix ! Location where subroutine is called
 
-    real( kind = core_rknd ), intent(in), dimension(sclr_dim) :: &
+    real( kind = core_rknd ), intent(in), dimension(ngrdcol,sclr_dim) :: &
       wpsclrp_sfc    ! Scalar flux at surface [units m/s]
 
-    real( kind = core_rknd ), intent(in), dimension(edsclr_dim) :: &
+    real( kind = core_rknd ), intent(in), dimension(ngrdcol,edsclr_dim) :: &
       wpedsclrp_sfc ! Eddy-Scalar flux at surface      [units m/s]
 
-    real( kind = core_rknd ), intent(in),dimension(nzt,sclr_dim) :: &
+    real( kind = core_rknd ), intent(in),dimension(ngrdcol,nzt,sclr_dim) :: &
       sclrm,         & ! Passive scalar mean      [units vary]
       sclrm_forcing    ! Passive scalar forcing   [units / s]
 
-    real( kind = core_rknd ), intent(in),dimension(nzm,sclr_dim) :: &
+    real( kind = core_rknd ), intent(in),dimension(ngrdcol,nzm,sclr_dim) :: &
       wpsclrp,       & ! w'sclr'                  [units vary]
       sclrp2,        & ! sclr'^2                  [units vary]
       sclrprtp,      & ! sclr'rt'                 [units vary]
       sclrpthlp        ! sclr'thl'                [units vary]
 
-    real( kind = core_rknd ), intent(in),dimension(nzt,edsclr_dim) :: &
+    real( kind = core_rknd ), intent(in),dimension(ngrdcol,nzt,edsclr_dim) :: &
       edsclrm,         & ! Eddy passive scalar mean    [units vary]
       edsclrm_forcing    ! Eddy passive scalar forcing [units / s]
 
@@ -501,183 +486,121 @@ module numerical_check
       err_info      ! err_info struct containing err_code and err_header
 
     ! Local Variables
-    integer :: sclr, edsclr ! Loop iterator for the scalars
+    integer :: i, sclr, edsclr ! Loop iterator for the columns and scalars
     integer :: k ! Vertical grid level
 
 !-------- Input Nan Check ----------------------------------------------
 
-    call check_nan( thlm_forcing, "thlm_forcing", prefix//proc_name, & ! intent(in)
-                    err_info ) ! intent(inout)
-    call check_nan( rtm_forcing,"rtm_forcing", prefix//proc_name, & ! intent(in)
-                    err_info ) ! intent(inout)
-    call check_nan( um_forcing,"um_forcing", prefix//proc_name, & ! intent(in)
-                    err_info ) ! intent(inout)
-    call check_nan( vm_forcing,"vm_forcing", prefix//proc_name, & ! intent(in)
-                    err_info ) ! intent(inout)
+    !$acc update host( thlm_forcing, rtm_forcing, um_forcing, vm_forcing, &
+    !$acc              wm_zm, wm_zt, p_in_Pa, rho_zm, rho, exner, rho_ds_zm, &
+    !$acc              rho_ds_zt, invrs_rho_ds_zm, invrs_rho_ds_zt, thv_ds_zm, &
+    !$acc              thv_ds_zt, wpthlp_sfc, wprtp_sfc, upwp_sfc, vpwp_sfc, p_sfc, &
+    !$acc              um, upwp, vm, vpwp, up2, vp2, rtm, wprtp, thlm, wpthlp, &
+    !$acc              wp2, wp3, rtp2, thlp2, rtpthlp )
 
-    call check_nan( wm_zm, "wm_zm", prefix//proc_name, & ! intent(in)
-                    err_info ) ! intent(inout)
-    call check_nan( wm_zt, "wm_zt", prefix//proc_name, & ! intent(in)
-                    err_info ) ! intent(inout)
-    call check_nan( p_in_Pa, "p_in_Pa", prefix//proc_name, & ! intent(in)
-                    err_info ) ! intent(inout)
-    call check_nan( rho_zm, "rho_zm", prefix//proc_name, & ! intent(in)
-                    err_info ) ! intent(inout)
-    call check_nan( rho, "rho", prefix//proc_name, & ! intent(in)
-                    err_info ) ! intent(inout)
-    call check_nan( exner, "exner", prefix//proc_name, & ! intent(in)
-                    err_info ) ! intent(inout)
-    call check_nan( rho_ds_zm, "rho_ds_zm", prefix//proc_name, & ! intent(in)
-                    err_info ) ! intent(inout)
-    call check_nan( rho_ds_zt, "rho_ds_zt", prefix//proc_name, & ! intent(in)
-                    err_info ) ! intent(inout)
-    call check_nan( invrs_rho_ds_zm, "invrs_rho_ds_zm", prefix//proc_name, & ! intent(in)
-                    err_info ) ! intent(inout)
-    call check_nan( invrs_rho_ds_zt, "invrs_rho_ds_zt", prefix//proc_name, & ! intent(in)
-                    err_info ) ! intent(inout)
-    call check_nan( thv_ds_zm, "thv_ds_zm", prefix//proc_name, & ! intent(in)
-                    err_info ) ! intent(inout)
-    call check_nan( thv_ds_zt, "thv_ds_zt", prefix//proc_name, & ! intent(in)
-                    err_info ) ! intent(inout)
+    !$acc update host( wpsclrp_sfc, wpedsclrp_sfc, sclrm, wpsclrp, &
+    !$acc              sclrp2, sclrprtp, sclrpthlp, sclrm_forcing ) &
+    !$acc if ( sclr_dim > 0 )
 
-    call check_nan( um, "um", prefix//proc_name, & ! intent(in)
-                    err_info ) ! intent(inout)
-    call check_nan( upwp, "upwp", prefix//proc_name, & ! intent(in)
-                    err_info ) ! intent(inout)
-    call check_nan( vm, "vm", prefix//proc_name, & ! intent(in)
-                    err_info ) ! intent(inout)
-    call check_nan( vpwp, "vpwp", prefix//proc_name, & ! intent(in)
-                    err_info ) ! intent(inout)
-    call check_nan( up2, "up2", prefix//proc_name, & ! intent(in)
-                    err_info ) ! intent(inout)
-    call check_nan( vp2, "vp2", prefix//proc_name, & ! intent(in)
-                    err_info ) ! intent(inout)
-    call check_nan( rtm, "rtm", prefix//proc_name, & ! intent(in)
-                    err_info ) ! intent(inout)
-    call check_nan( wprtp, "wprtp", prefix//proc_name, & ! intent(in)
-                    err_info ) ! intent(inout)
-    call check_nan( thlm, "thlm", prefix//proc_name, & ! intent(in)
-                    err_info ) ! intent(inout)
-    call check_nan( wpthlp, "wpthlp", prefix//proc_name, & ! intent(in)
-                    err_info ) ! intent(inout)
-    call check_nan( wp2, "wp2", prefix//proc_name, & ! intent(in)
-                    err_info ) ! intent(inout)
-    call check_nan( wp3, "wp3", prefix//proc_name, & ! intent(in)
-                    err_info ) ! intent(inout)
-    call check_nan( rtp2, "rtp2", prefix//proc_name, & ! intent(in)
-                    err_info ) ! intent(inout)
-    call check_nan( thlp2, "thlp2", prefix//proc_name, & ! intent(in)
-                    err_info ) ! intent(inout)
-    call check_nan( rtpthlp, "rtpthlp", prefix//proc_name, & ! intent(in)
-                    err_info ) ! intent(inout)
+    !$acc update host( edsclrm, edsclrm_forcing  ) if ( edsclr_dim > 0 )
 
-    call check_nan( wpthlp_sfc, "wpthlp_sfc", prefix//proc_name, & ! intent(in)
-                    err_info ) ! intent(inout)
-    call check_nan( wprtp_sfc, "wprtp_sfc", prefix//proc_name, & ! intent(in)
-                    err_info ) ! intent(inout)
-    call check_nan( upwp_sfc, "upwp_sfc", prefix//proc_name, & ! intent(in)
-                    err_info ) ! intent(inout)
-    call check_nan( vpwp_sfc, "vpwp_sfc", prefix//proc_name, & ! intent(in)
-                    err_info ) ! intent(inout)
-    call check_nan( p_sfc, "p_sfc", prefix//proc_name, & ! intent(in)
-                    err_info ) ! intent(inout)
+    call check_nan( thlm_forcing, "thlm_forcing", prefix//proc_name, err_info )
+    call check_nan( rtm_forcing, "rtm_forcing", prefix//proc_name, err_info )
+    call check_nan( um_forcing, "um_forcing", prefix//proc_name, err_info )
+    call check_nan( vm_forcing, "vm_forcing", prefix//proc_name, err_info )
+
+    call check_nan( wm_zm, "wm_zm", prefix//proc_name, err_info )
+    call check_nan( wm_zt, "wm_zt", prefix//proc_name, err_info )
+    call check_nan( p_in_Pa, "p_in_Pa", prefix//proc_name, err_info )
+    call check_nan( rho_zm, "rho_zm", prefix//proc_name, err_info )
+    call check_nan( rho, "rho", prefix//proc_name, err_info )
+    call check_nan( exner, "exner", prefix//proc_name, err_info )
+    call check_nan( rho_ds_zm, "rho_ds_zm", prefix//proc_name, err_info )
+    call check_nan( rho_ds_zt, "rho_ds_zt", prefix//proc_name, err_info )
+    call check_nan( invrs_rho_ds_zm, "invrs_rho_ds_zm", prefix//proc_name, err_info )
+    call check_nan( invrs_rho_ds_zt, "invrs_rho_ds_zt", prefix//proc_name, err_info )
+    call check_nan( thv_ds_zm, "thv_ds_zm", prefix//proc_name, err_info )
+    call check_nan( thv_ds_zt, "thv_ds_zt", prefix//proc_name, err_info )
+
+    call check_nan( um, "um", prefix//proc_name, err_info )
+    call check_nan( upwp, "upwp", prefix//proc_name, err_info )
+    call check_nan( vm, "vm", prefix//proc_name, err_info )
+    call check_nan( vpwp, "vpwp", prefix//proc_name, err_info )
+    call check_nan( up2, "up2", prefix//proc_name, err_info )
+    call check_nan( vp2, "vp2", prefix//proc_name, err_info )
+    call check_nan( rtm, "rtm", prefix//proc_name, err_info )
+    call check_nan( wprtp, "wprtp", prefix//proc_name, err_info )
+    call check_nan( thlm, "thlm", prefix//proc_name, err_info )
+    call check_nan( wpthlp, "wpthlp", prefix//proc_name, err_info )
+    call check_nan( wp2, "wp2", prefix//proc_name, err_info )
+    call check_nan( wp3, "wp3", prefix//proc_name, err_info )
+    call check_nan( rtp2, "rtp2", prefix//proc_name, err_info )
+    call check_nan( thlp2, "thlp2", prefix//proc_name, err_info )
+    call check_nan( rtpthlp, "rtpthlp", prefix//proc_name, err_info )
+
+    call check_nan( wpthlp_sfc, "wpthlp_sfc", prefix//proc_name, err_info )
+    call check_nan( wprtp_sfc, "wprtp_sfc", prefix//proc_name, err_info )
+    call check_nan( upwp_sfc, "upwp_sfc", prefix//proc_name, err_info )
+    call check_nan( vpwp_sfc, "vpwp_sfc", prefix//proc_name, err_info )
+    call check_nan( p_sfc, "p_sfc", prefix//proc_name, err_info )
 
     do sclr = 1, sclr_dim
-
-      call check_nan( sclrm_forcing(:,sclr),"sclrm_forcing", & ! intent(in)
-                      prefix//proc_name, & ! intent(in)
-                      err_info ) ! intent(inout) ) ! intent(in)
-
-      call check_nan( wpsclrp_sfc(sclr),"wpsclrp_sfc", & ! intent(in)
-                      prefix//proc_name, & ! intent(in)
-                      err_info ) ! intent(inout)
-
-      call check_nan( sclrm(:,sclr),"sclrm", prefix//proc_name, & ! intent(in)
-                      err_info ) ! intent(inout)
-      call check_nan( wpsclrp(:,sclr),"wpsclrp", prefix//proc_name, & ! intent(in)
-                      err_info ) ! intent(inout)
-      call check_nan( sclrp2(:,sclr),"sclrp2", prefix//proc_name, & ! intent(in)
-                      err_info ) ! intent(inout)
-      call check_nan( sclrprtp(:,sclr),"sclrprtp", prefix//proc_name, & ! intent(in)
-                      err_info ) ! intent(inout)
-      call check_nan( sclrpthlp(:,sclr),"sclrpthlp", prefix//proc_name, & ! intent(in)
-                      err_info ) ! intent(inout)
-
+      call check_nan( sclrm_forcing(:,:,sclr), "sclrm_forcing", prefix//proc_name, err_info )
+      call check_nan( wpsclrp_sfc(:,sclr), "wpsclrp_sfc", prefix//proc_name, err_info )
+      call check_nan( sclrm(:,:,sclr), "sclrm", prefix//proc_name, err_info )
+      call check_nan( wpsclrp(:,:,sclr), "wpsclrp", prefix//proc_name, err_info )
+      call check_nan( sclrp2(:,:,sclr), "sclrp2", prefix//proc_name, err_info )
+      call check_nan( sclrprtp(:,:,sclr), "sclrprtp", prefix//proc_name, err_info )
+      call check_nan( sclrpthlp(:,:,sclr), "sclrpthlp", prefix//proc_name, err_info )
     end do
 
-
     do edsclr = 1, edsclr_dim
-
-      call check_nan( edsclrm_forcing(:,edsclr),"edsclrm_forcing", prefix//proc_name, & ! intent(in)
-                      err_info ) ! intent(inout)
-
-      call check_nan( wpedsclrp_sfc(edsclr),"wpedsclrp_sfc", & ! intent(in)
-                      prefix//proc_name, & ! intent(in)
-                      err_info ) ! intent(inout)
-
-      call check_nan( edsclrm(:,edsclr),"edsclrm", prefix//proc_name, & ! intent(in)
-                      err_info ) ! intent(inout)
-
-    enddo
+      call check_nan( edsclrm_forcing(:,:,edsclr), "edsclrm_forcing", prefix//proc_name, err_info )
+      call check_nan( wpedsclrp_sfc(:,edsclr), "wpedsclrp_sfc", prefix//proc_name, err_info )
+      call check_nan( edsclrm(:,:,edsclr), "edsclrm", prefix//proc_name, err_info )
+    end do
 
 !---------------------------------------------------------------------
 
     if ( clubb_at_least_debug_level_api( 0 ) ) then
-        if ( any(err_info%err_code == clubb_fatal_error) ) then
-            return
-        end if
+      if ( any(err_info%err_code == clubb_fatal_error) ) then
+        return
+      end if
     end if
 
-    call check_negative( rtm, 1, nzt, "rtm", prefix//proc_name, & ! intent(in)
-                         err_info ) ! intent(inout)
-    call check_negative( p_in_Pa, 1, nzt, "p_in_Pa", prefix//proc_name, & ! intent(in)
-                         err_info ) ! intent(inout)
-    call check_negative( rho, 1, nzt, "rho", prefix//proc_name, & ! intent(in)
-                         err_info ) ! intent(inout)
-    call check_negative( rho_zm, 1, nzm, "rho_zm", prefix//proc_name, & ! intent(in)
-                         err_info ) ! intent(inout)
-    call check_negative( exner, 1, nzt, "exner", prefix//proc_name, & ! intent(in)
-                         err_info ) ! intent(inout)
-    call check_negative( rho_ds_zm, 1, nzm, "rho_ds_zm", prefix//proc_name, & ! intent(in)
-                         err_info ) ! intent(inout)
-    call check_negative( rho_ds_zt, 1, nzt, "rho_ds_zt", prefix//proc_name, & ! intent(in)
-                         err_info ) ! intent(inout)
-    call check_negative( invrs_rho_ds_zm, 1, nzm, "invrs_rho_ds_zm", & ! intent(in)
-                         prefix//proc_name, & ! intent(in)
-                         err_info ) ! intent(inout)
-    call check_negative( invrs_rho_ds_zt, 1, nzt, "invrs_rho_ds_zt", & ! intent(in)
-                         prefix//proc_name, & ! intent(in)
-                         err_info ) ! intent(inout)
-    call check_negative( thv_ds_zm, 1, nzm, "thv_ds_zm", prefix//proc_name, & ! intent(in)
-                         err_info ) ! intent(inout)
-    call check_negative( thv_ds_zt, 1, nzt, "thv_ds_zt", prefix//proc_name, & ! intent(in)
-                         err_info ) ! intent(inout)
-    call check_negative( up2, 1, nzm, "up2", prefix//proc_name, & ! intent(in)
-                         err_info ) ! intent(inout)
-    call check_negative( vp2, 1, nzm, "vp2", prefix//proc_name, & ! intent(in)
-                         err_info ) ! intent(inout)
-    call check_negative( wp2, 1, nzm, "wp2", prefix//proc_name, & ! intent(in)
-                         err_info ) ! intent(inout)
-    call check_negative( thlm, 1, nzt, "thlm", prefix//proc_name, & ! intent(in)
-                         err_info ) ! intent(inout)
-    call check_negative( rtp2, 1, nzm, "rtp2", prefix//proc_name, & ! intent(in)
-                         err_info ) ! intent(inout)
-    call check_negative( thlp2, 1, nzm, "thlp2", prefix//proc_name, & ! intent(in)
-                         err_info ) ! intent(inout)
+    call check_negative( rtm, "rtm", prefix//proc_name, err_info )
+    call check_negative( p_in_Pa, "p_in_Pa", prefix//proc_name, err_info )
+    call check_negative( rho, "rho", prefix//proc_name, err_info )
+    call check_negative( rho_zm, "rho_zm", prefix//proc_name, err_info )
+    call check_negative( exner, "exner", prefix//proc_name, err_info )
+    call check_negative( rho_ds_zm, "rho_ds_zm", prefix//proc_name, err_info )
+    call check_negative( rho_ds_zt, "rho_ds_zt", prefix//proc_name, err_info )
+    call check_negative( invrs_rho_ds_zm, "invrs_rho_ds_zm", prefix//proc_name, err_info )
+    call check_negative( invrs_rho_ds_zt, "invrs_rho_ds_zt", prefix//proc_name, err_info )
+    call check_negative( thv_ds_zm, "thv_ds_zm", prefix//proc_name, err_info )
+    call check_negative( thv_ds_zt, "thv_ds_zt", prefix//proc_name, err_info )
+    call check_negative( up2, "up2", prefix//proc_name, err_info )
+    call check_negative( vp2, "vp2", prefix//proc_name, err_info )
+    call check_negative( wp2, "wp2", prefix//proc_name, err_info )
+    call check_negative( thlm, "thlm", prefix//proc_name, err_info )
+    call check_negative( rtp2, "rtp2", prefix//proc_name, err_info )
+    call check_negative( thlp2, "thlp2", prefix//proc_name, err_info )
 
     if ( any(err_info%err_code == clubb_fatal_error) .and. prefix == "beginning of " ) then
-        ! Reset err_code (needs column nr!)
-        err_info%err_code = clubb_no_error   ! Negative value generated by host model,
-                                             ! hence ignore error
+      err_info%err_code = clubb_no_error   ! Negative value generated by host model,
+                                           ! hence ignore error
     end if
 
     ! Check the first levels for temperatures greater than 200K
-    do k=1, min( 10, size(thlm) )
-        if ( thlm(k) < 190. ) then
-            write(fstderr,*) "Liquid water potential temperature (thlm) < 190K ", &
-                             "at grid level k = ", k, ": thlm(",k,") = ", thlm(k)
+    do i = 1, ngrdcol
+      do k = 1, min( 10, nzt )
+        if ( thlm(i,k) < 190.0_core_rknd ) then
+          write(fstderr,*) "Liquid water potential temperature (thlm) < 190K ", &
+                           "at grid column i = ", i, " and grid level k = ", k, &
+                           ": thlm(",i,",",k,") = ", thlm(i,k)
         end if
-    end do 
+      end do
+    end do
 
     return
   end subroutine parameterization_check
@@ -814,34 +737,30 @@ module numerical_check
       err_info      ! err_info struct containing err_code and err_header
 
     ! Local variables
-    real( kind = core_rknd ), dimension(nzt) :: rvm
-
-    integer :: i
+    real( kind = core_rknd ), dimension(ngrdcol,nzt) :: rvm
 
 !-------------------------------------------------------------------------
 
-    do i = 1, ngrdcol
-      rvm = rtm(i,:) - rcm(i,:)
+    rvm = rtm - rcm
 
-      call check_negative( thlm(i,:), 1, nzt, "thlm", proc_name, & ! intent(in)
-                           err_info ) ! intent(inout)
-      call check_negative( rcm(i,:), 1, nzt, "rcm", proc_name, & ! intent(in)
-                           err_info ) ! intent(inout)
-      call check_negative( rtm(i,:), 1, nzt, "rtm", proc_name, & ! intent(in)
-                           err_info ) ! intent(inout)
-      call check_negative( rvm, 1, nzt, "rvm", proc_name, & ! intent(in)
-                           err_info ) ! intent(inout)
-      call check_negative( rim(i,:), 1, nzt, "rim", proc_name, & ! intent(in)
-                           err_info ) ! intent(inout)
-      call check_negative( cloud_frac(i,:), 1, nzt, "cloud_frac", proc_name, & ! intent(in)
-                           err_info ) ! intent(inout)
-      call check_negative( p_in_Pa(i,:), 1, nzt, "p_in_Pa", proc_name, & ! intent(in)
-                           err_info ) ! intent(inout)
-      call check_negative( exner(i,:), 1, nzt, "exner", proc_name, & ! intent(in)
-                           err_info ) ! intent(inout)
-      call check_negative( rho_zm(i,:), 1, nzm, "rho_zm", proc_name, & ! intent(in)
-                           err_info ) ! intent(inout)
-    end do
+    call check_negative( thlm, "thlm", proc_name, & ! intent(in)
+                         err_info )                  ! intent(inout)
+    call check_negative( rcm, "rcm", proc_name, & ! intent(in)
+                         err_info )                 ! intent(inout)
+    call check_negative( rtm, "rtm", proc_name, & ! intent(in)
+                         err_info )                 ! intent(inout)
+    call check_negative( rvm, "rvm", proc_name, & ! intent(in)
+                         err_info )                 ! intent(inout)
+    call check_negative( rim, "rim", proc_name, & ! intent(in)
+                         err_info )                 ! intent(inout)
+    call check_negative( cloud_frac, "cloud_frac", proc_name, & ! intent(in)
+                         err_info )                             ! intent(inout)
+    call check_negative( p_in_Pa, "p_in_Pa", proc_name, & ! intent(in)
+                         err_info )                       ! intent(inout)
+    call check_negative( exner, "exner", proc_name, & ! intent(in)
+                         err_info )                    ! intent(inout)
+    call check_negative( rho_zm, "rho_zm", proc_name, & ! intent(in)
+                         err_info )                     ! intent(inout)
 
     return
 
@@ -867,6 +786,9 @@ module numerical_check
 
     use clubb_precision, only: &
         core_rknd    ! Variable(s)
+
+    use, intrinsic :: ieee_arithmetic, only: &
+      ieee_is_finite
 
     implicit none
     
@@ -916,86 +838,75 @@ module numerical_check
     ! Check whether any variable array contains a NaN for
     ! um, vm, thlm, rtm, rtp2, thlp2, wprtp, wpthlp, rtpthlp,
     ! wp2, & wp3.
-    if ( is_nan_2d( um ) ) then
+    if ( any( .not. ieee_is_finite( um ) ) ) then
       write(fstderr,*) "NaN in um model array"
 !         write(fstderr,*) "um= ", um
       invalid_model_arrays = .true.
-!         return
     end if
 
-    if ( is_nan_2d( vm ) ) then
+    if ( any( .not. ieee_is_finite( vm ) ) ) then
       write(fstderr,*) "NaN in vm model array"
 !         write(fstderr,*) "vm= ", vm
       invalid_model_arrays = .true.
-!         return
     end if
 
-    if ( is_nan_2d( wp2 ) ) then
+    if ( any( .not. ieee_is_finite( wp2 ) ) ) then
       write(fstderr,*) "NaN in wp2 model array"
 !         write(fstderr,*) "wp2= ", wp2
       invalid_model_arrays = .true.
-!         return
     end if
 
-    if ( is_nan_2d( wp3 ) ) then
+    if ( any( .not. ieee_is_finite( wp3 ) ) ) then
       write(fstderr,*) "NaN in wp3 model array"
 !         write(fstderr,*) "wp3= ", wp3
       invalid_model_arrays = .true.
-!         return
     end if
 
-    if ( is_nan_2d( rtm ) ) then
+    if ( any( .not. ieee_is_finite( rtm ) ) ) then
       write(fstderr,*) "NaN in rtm model array"
 !         write(fstderr,*) "rtm= ", rtm
       invalid_model_arrays = .true.
-!         return
     end if
 
-    if ( is_nan_2d( thlm ) ) then
+    if ( any( .not. ieee_is_finite( thlm ) ) ) then
       write(fstderr,*) "NaN in thlm model array"
 !         write(fstderr,*) "thlm= ", thlm
       invalid_model_arrays = .true.
-!         return
     end if
 
-    if ( is_nan_2d( rtp2 ) ) then
+    if ( any( .not. ieee_is_finite( rtp2 ) ) ) then
       write(fstderr,*) "NaN in rtp2 model array"
 !         write(fstderr,*) "rtp2= ", rtp2
       invalid_model_arrays = .true.
-!         return
     end if
 
-    if ( is_nan_2d( thlp2 ) ) then
+    if ( any( .not. ieee_is_finite( thlp2 ) ) ) then
       write(fstderr,*) "NaN in thlp2 model array"
 !         write(fstderr,*) "thlp2= ", thlp2
       invalid_model_arrays = .true.
-!         return
     end if
 
-    if ( is_nan_2d( wprtp ) ) then
+    if ( any( .not. ieee_is_finite( wprtp ) ) ) then
       write(fstderr,*) "NaN in wprtp model array"
 !         write(fstderr,*) "wprtp= ", wprtp
       invalid_model_arrays = .true.
-!         return
     end if
 
-    if ( is_nan_2d( wpthlp ) ) then
+    if ( any( .not. ieee_is_finite( wpthlp ) ) ) then
       write(fstderr,*) "NaN in wpthlp model array"
 !         write(fstderr,*) "wpthlp= ", wpthlp
       invalid_model_arrays = .true.
-!         return
     end if
 
-    if ( is_nan_2d( rtpthlp ) ) then
+    if ( any( .not. ieee_is_finite( rtpthlp ) ) ) then
       write(fstderr,*) "NaN in rtpthlp model array"
 !         write(fstderr,*) "rtpthlp= ", rtpthlp
       invalid_model_arrays = .true.
-!         return
     end if
 
     if ( hydromet_dim > 0 ) then
       do i = 1, hydromet_dim, 1
-        if ( is_nan_2d( hydromet(:,i) ) ) then
+        if ( any( .not. ieee_is_finite( hydromet(:,i) ) ) ) then
           write(fstderr,*) "NaN in a hydrometeor model array "// &
             trim( hydromet_list(i) )
 !             write(fstderr,*) "hydromet= ", hydromet
@@ -1005,40 +916,38 @@ module numerical_check
       end do
     end if
 
-!       if ( is_nan_2d( wm_zt ) ) then
+!       if ( any( .not. ieee_is_finite( wm_zt ) ) ) then
 !         write(fstderr,*) "NaN in wm_zt model array"
 !         write(fstderr,*) "wm_zt= ", wm_zt
 !         invalid_model_arrays = .true.
-!         return
 !       end if
 
-    if ( is_nan_2d( wp2thvp ) ) then
+    if ( any( .not. ieee_is_finite( wp2thvp ) ) ) then
       write(fstderr,*) "NaN in wp2thvp model array"
 !         write(fstderr,*) "wp2thvp = ", wp2thvp
       invalid_model_arrays = .true.
-!         return
     end if
 
-    if ( is_nan_2d( wp2up ) ) then
+    if ( any( .not. ieee_is_finite( wp2up ) ) ) then
       write(fstderr,*) "NaN in wp2up model array"
 !         write(fstderr,*) "wp2up = ", wp2up
       invalid_model_arrays = .true.
     end if
 
-    if ( is_nan_2d( rtpthvp ) ) then
+    if ( any( .not. ieee_is_finite( rtpthvp ) ) ) then
       write(fstderr,*) "NaN in rtpthvp model array"
 !         write(fstderr,*) "rtpthvp = ", rtpthvp
       invalid_model_arrays = .true.
     end if
 
-    if ( is_nan_2d( thlpthvp ) ) then
+    if ( any( .not. ieee_is_finite( thlpthvp ) ) ) then
       write(fstderr,*) "NaN in thlpthvp model array"
 !         write(fstderr,*) "thlpthvp = ", thlpthvp
       invalid_model_arrays = .true.
     end if
 
     do sclr = 1, sclr_dim, 1
-      if ( is_nan_2d( sclrm(:,sclr) ) ) then
+      if ( any( .not. ieee_is_finite( sclrm(:,sclr) ) ) ) then
         write(fstderr,*) "NaN in sclrm", sclr, "model array"
 !           write(fstderr,'(a6,i2,a1)') "sclrm(", sclr, ")"
 !           write(fstderr,*) sclrm(:,sclr)
@@ -1047,7 +956,7 @@ module numerical_check
     end do
 
     do edsclr = 1, edsclr_dim, 1
-      if ( is_nan_2d( edsclrm(:,edsclr) ) ) then
+      if ( any( .not. ieee_is_finite( edsclrm(:,edsclr) ) ) ) then
         write(fstderr,*) "NaN in edsclrm", edsclr, "model array"
 !           write(fstderr,'(a8,i2,a1)') "edsclrm(", edsclr, ")"
 !           write(fstderr,*) edsclrm(:,edsclr)
@@ -1059,106 +968,11 @@ module numerical_check
   end function invalid_model_arrays
 
 !------------------------------------------------------------------------
-  pure logical function is_nan_sclr( xarg )
-
-! Description:
-!   Checks if a given scalar real is a NaN, +inf or -inf.
-
-! Notes:
-!   I was advised by Andy Vaught to use a data statement and the transfer( )
-!   intrinsic rather than using a hex number in a parameter for portability.
-
-!   Certain compiler optimizations may cause variables with invalid
-!   results to flush to zero.  Avoid these!
-!  -dschanen 16 Dec 2010
-
-!------------------------------------------------------------------------
-
-    use, intrinsic :: ieee_arithmetic
-
-    use clubb_precision, only: &
-        core_rknd ! Variable(s)
-
-    implicit none
-
-    ! Input Variables
-    real( kind = core_rknd ), intent(in) :: xarg
-
-    ! ---- Begin Code ---
-
-    if (.not. ieee_is_finite(xarg) .or. ieee_is_nan(xarg)) then
-      ! Try ieee_is_finite ieee_is_nan 
-      is_nan_sclr = .true.
-    else
-      is_nan_sclr = .false.
-    end if
-
-
-    return
-  end function is_nan_sclr
-!------------------------------------------------------------------------
-
-!------------------------------------------------------------------------
-  pure logical function is_nan_1d( x1d )
-
-! Description:
-!   Checks if a given real vector is a NaN, +inf or -inf.
-
-!------------------------------------------------------------------------
-
-    use clubb_precision, only: &
-        core_rknd ! Variable(s)
-
-    use, intrinsic :: ieee_arithmetic, only: &
-      ieee_is_finite
-
-    implicit none
-
-    ! Input Variables
-    real( kind = core_rknd ), dimension(:), intent(in) :: x1d
-
-    ! ---- Begin Code ----
-
-    is_nan_1d = any( .not. ieee_is_finite( x1d ) )
-
-    return
-
-  end function is_nan_1d
-
-!------------------------------------------------------------------------
-  pure logical function is_nan_2d( x2d )
-
-! Description:
-!   Checks if any element of a given real 2D array is a NaN, +inf or -inf.
-
-!------------------------------------------------------------------------
-
-    use clubb_precision, only: &
-        core_rknd ! Variable(s)
-
-    use, intrinsic :: ieee_arithmetic, only: &
-      ieee_is_finite
-
-    implicit none
-
-    intrinsic :: any
-
-    ! Input Variables
-    real( kind = core_rknd ), dimension(:,:), intent(in) :: x2d
-
-    is_nan_2d = any( .not. ieee_is_finite( x2d ) )
-
-    return
-
-  end function is_nan_2d
-
-
-!------------------------------------------------------------------------
-  subroutine check_negative_index( var, varstart, varend, varname, operation, err_info )
+  subroutine check_negative( var, varname, operation, err_info )
 !
 ! Description:
 !   Checks for negative values in the var array and reports
-!   the index in which the negative values occur.
+!   the column and vertical indices in which the negative values occur.
 !
 !-----------------------------------------------------------------------
     use constants_clubb, only: &
@@ -1175,41 +989,42 @@ module numerical_check
 
     implicit none
 
-    real( kind = core_rknd ), intent(in) :: var(:)
-
-    integer, intent(in) :: varstart, varend
+    real( kind = core_rknd ), intent(in) :: var(:,:)
 
     character(len=*), intent(in):: &
-    varname,     & ! Varible being examined
-    operation      ! Procedure calling check_zero
+      varname,   & ! Variable being examined
+      operation    ! Procedure calling check_zero
 
     ! Input/Output variables
     type(err_info_type), intent(inout) :: &
       err_info      ! err_info struct containing err_code and err_header
 
     ! Local Variable
-    integer :: k ! Loop iterator
+    integer :: &
+      i, & ! Horizontal index
+      k    ! Vertical index
 
-    do k = varstart, varend
+    do k = 1, size( var, dim = 2 )
+      do i = 1, size( var, dim = 1 )
 
-      if ( var(k) < 0.0_core_rknd ) then
-        write(fstderr,*) err_info%err_header_global
-        write(fstderr,*) varname, " < 0 in ", operation, &
-                         " at k = ", k
-        ! Set to clubb_fatal_error in single col (col index not available!!)
-        err_info%err_code = clubb_fatal_error
+        if ( var(i,k) < 0.0_core_rknd ) then
+          write(fstderr,*) err_info%err_header_global
+          write(fstderr,*) varname, " < 0 in ", operation, &
+                           " at i = ", i, " and k = ", k
+          err_info%err_code = clubb_fatal_error
 
-      end if
+        end if
 
+      end do
     end do
 
     return
 
-  end subroutine check_negative_index
+  end subroutine check_negative
 
 
 !------------------------------------------------------------------------
-  subroutine check_nan_2d( var, varname, operation, err_info )
+  subroutine check_nan_1d( var, varname, operation, err_info )
 !
 !  Description:
 !    Checks for a NaN in the var array and reports it.
@@ -1221,6 +1036,9 @@ module numerical_check
 
     use clubb_precision, only: &
         core_rknd ! Variable(s)
+
+    use, intrinsic :: ieee_arithmetic, only: &
+      ieee_is_finite
 
     use error_code, only: &
         clubb_fatal_error              ! Constant
@@ -1244,7 +1062,56 @@ module numerical_check
     type(err_info_type), intent(inout) :: &
       err_info      ! err_info struct containing err_code and err_header
 
-    if ( is_nan_2d( var ) ) then
+    if ( any( .not. ieee_is_finite( var ) ) ) then
+      write(fstderr,*) err_info%err_header_global
+      write(fstderr,*) varname, " is NaN in ",operation
+      ! Single col error, but col nr is not available
+      err_info%err_code = clubb_fatal_error
+    end if
+
+    return
+  end subroutine check_nan_1d
+
+!------------------------------------------------------------------------
+  subroutine check_nan_2d( var, varname, operation, err_info )
+!
+!  Description:
+!    Checks for a NaN in the var array and reports it.
+!
+!
+!------------------------------------------------------------------------
+    use constants_clubb, only: &
+        fstderr ! Variable(s)
+
+    use clubb_precision, only: &
+        core_rknd ! Variable(s)
+
+    use, intrinsic :: ieee_arithmetic, only: &
+      ieee_is_finite
+
+    use error_code, only: &
+        clubb_fatal_error              ! Constant
+
+    use err_info_type_module, only: &
+      err_info_type     ! Type
+
+    implicit none
+
+    ! External
+    intrinsic :: present
+
+    ! Input variables
+    real( kind = core_rknd ), intent(in), dimension(:,:) :: var ! Variable being examined
+
+    character(len=*), intent(in):: &
+      varname,  & ! Name of variable
+      operation   ! Procedure calling check_nan
+
+    ! Input/Output variables
+    type(err_info_type), intent(inout) :: &
+      err_info      ! err_info struct containing err_code and err_header
+
+    if ( any( .not. ieee_is_finite( var ) ) ) then
       write(fstderr,*) err_info%err_header_global
       write(fstderr,*) varname, " is NaN in ",operation
       ! Single col error, but col nr is not available
@@ -1266,6 +1133,9 @@ module numerical_check
 
     use clubb_precision, only: &
         core_rknd ! Variable(s)
+
+    use, intrinsic :: ieee_arithmetic, only: &
+      ieee_is_finite
 
     use error_code, only: &
         clubb_fatal_error              ! Constant
@@ -1290,7 +1160,7 @@ module numerical_check
       err_info      ! err_info struct containing err_code and err_header
 
 !--------------------------------------------------------------------
-    if ( is_nan_sclr( var ) ) then
+    if ( .not. ieee_is_finite( var ) ) then
       write(fstderr,*) err_info%err_header_global
       write(fstderr,*) varname, " is NaN in ",operation
       ! Single col error, but col nr is not available

@@ -112,7 +112,8 @@ def get_cli_args():
         ),
     )
 
-    args = parser.parse_args()
+    args, run_scm_extra_args = parser.parse_known_args()
+    args.run_scm_extra_args = run_scm_extra_args
 
     subset_flags_count = sum([
         args.all,
@@ -228,6 +229,7 @@ def build_tasks(root, flag_sets, run_cases, args):
             if override_arg is not None:
                 cmd += ["-override", override_arg]
 
+            cmd += args.run_scm_extra_args
             cmd.append(case_name)
 
             tasks.append({

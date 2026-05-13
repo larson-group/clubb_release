@@ -66,3 +66,21 @@ def test_xp3_lg_2005_ansatz_matches_two_step_reconstruction():
 
     assert xp3.shape == (ngrdcol, nzt)
     np.testing.assert_allclose(xp3, expected_xp3)
+
+
+def test_compute_gamma_skw_returns_finite_arrays():
+    """compute_gamma_skw should return zm and zt gamma arrays."""
+    ngrdcol, nzm, nzt = 1, 5, 4
+    skw_zm = np.zeros((ngrdcol, nzm), dtype=np.float64)
+    skw_zt = np.zeros((ngrdcol, nzt), dtype=np.float64)
+    clubb_params = np.ones_like(clubb_api.init_clubb_params(ngrdcol, iunit=10, filename=""))
+
+    gamma_zm, gamma_zt = clubb_api.compute_gamma_skw(
+        nzm=nzm, nzt=nzt, ngrdcol=ngrdcol, l_gamma_skw=True,
+        skw_zm=skw_zm, clubb_params=clubb_params, skw_zt=skw_zt,
+    )
+
+    assert gamma_zm.shape == (ngrdcol, nzm)
+    assert gamma_zt.shape == (ngrdcol, nzt)
+    assert np.all(np.isfinite(gamma_zm))
+    assert np.all(np.isfinite(gamma_zt))

@@ -94,11 +94,13 @@ class TestComputeSigmaSqdW:
     def test_basic_call(self, grid_env):
         """compute_sigma_sqd_w should return finite array of correct shape."""
         gr, params, lmin, flags = grid_env
-        nzm, ngrdcol = gr.nzm, gr.ngrdcol
+        nzm, nzt, ngrdcol = gr.nzm, gr.nzt, gr.ngrdcol
         shape = (ngrdcol, nzm)
 
         sigma = clubb_api.compute_sigma_sqd_w(
+            gr=gr,
             nzm=nzm,
+            nzt=nzt,
             ngrdcol=ngrdcol,
             gamma_Skw_fnc=np.ones(shape),
             wp2=np.full(shape, 0.5),
@@ -118,11 +120,13 @@ class TestComputeSigmaSqdW:
     def test_sigma_bounded(self, grid_env):
         """sigma_sqd_w should be between 0 and 1."""
         gr, params, lmin, flags = grid_env
-        nzm, ngrdcol = gr.nzm, gr.ngrdcol
+        nzm, nzt, ngrdcol = gr.nzm, gr.nzt, gr.ngrdcol
         shape = (ngrdcol, nzm)
 
         sigma = clubb_api.compute_sigma_sqd_w(
+            gr=gr,
             nzm=nzm,
+            nzt=nzt,
             ngrdcol=ngrdcol,
             gamma_Skw_fnc=np.ones(shape),
             wp2=np.full(shape, 1.0),
@@ -142,11 +146,13 @@ class TestComputeSigmaSqdW:
     def test_zero_variance(self, grid_env):
         """With zero variances, sigma_sqd_w should still be finite."""
         gr, params, lmin, flags = grid_env
-        nzm, ngrdcol = gr.nzm, gr.ngrdcol
+        nzm, nzt, ngrdcol = gr.nzm, gr.nzt, gr.ngrdcol
         shape = (ngrdcol, nzm)
 
         sigma = clubb_api.compute_sigma_sqd_w(
+            gr=gr,
             nzm=nzm,
+            nzt=nzt,
             ngrdcol=ngrdcol,
             gamma_Skw_fnc=np.ones(shape),
             wp2=np.full(shape, 1e-10),
@@ -403,7 +409,7 @@ class TestBruntVaisala:
     """Test Brunt-Vaisala frequency computation."""
 
     def test_basic_call(self, grid_env):
-        """calc_brunt_vaisala_freq_sqd returns 5 arrays of correct shape."""
+        """calc_brunt_vaisala_freq_sqd returns arrays of correct shape."""
         gr, params, lmin, flags = grid_env
         nzt, nzm, ngrdcol = gr.nzt, gr.nzm, gr.ngrdcol
         zt_shape = (ngrdcol, nzt)
@@ -428,7 +434,7 @@ class TestBruntVaisala:
             T0=300.0,
         )
 
-        assert len(result) == 5
+        assert len(result) == 3
         for arr in result:
             assert arr.shape == zm_shape
             assert np.all(np.isfinite(arr))
@@ -448,7 +454,7 @@ class TestBruntVaisala:
         thvm = thlm.copy()
         ice_supersat_frac = np.zeros(zt_shape)
 
-        bv2, bv2_mixed, bv2_dry, bv2_moist, bv2_smth = clubb_api.calc_brunt_vaisala_freq_sqd(
+        bv2, bv2_mixed, bv2_smth = clubb_api.calc_brunt_vaisala_freq_sqd(
             gr, nzm, nzt, ngrdcol, thlm, exner, rtm, rcm, p_in_Pa, thvm, ice_supersat_frac,
             saturation_formula=flags.saturation_formula,
             l_brunt_vaisala_freq_moist=False,
@@ -496,28 +502,16 @@ class TestStabilityCorrection:
     def test_basic_call(self, grid_env):
         """calc_stability_correction returns finite array."""
         gr, params, lmin, flags = grid_env
-        nzt, nzm, ngrdcol = gr.nzt, gr.nzm, gr.ngrdcol
-        zt_shape = (ngrdcol, nzt)
+        nzm, ngrdcol = gr.nzm, gr.ngrdcol
         zm_shape = (ngrdcol, nzm)
 
         result = clubb_api.calc_stability_correction(
-            gr, nzm, nzt, ngrdcol,
-            thlm=np.full(zt_shape, 300.0),
-            Lscale_zm=np.full(zm_shape, 100.0),
+            nzm=nzm,
+            ngrdcol=ngrdcol,
+            brunt_vaisala_freq_sqd=np.full(zm_shape, 1.0e-4),
+            lscale_zm=np.full(zm_shape, 100.0),
             em=np.full(zm_shape, 0.5),
-            exner=np.full(zt_shape, 1.0),
-            rtm=np.full(zt_shape, 0.01),
-            rcm=np.zeros(zt_shape),
-            p_in_Pa=np.full(zt_shape, 100000.0),
-            thvm=np.full(zt_shape, 300.0),
-            ice_supersat_frac=np.zeros(zt_shape),
             lambda0_stability_coef=np.full(ngrdcol, 0.04),
-            bv_efold=np.full(ngrdcol, 2000.0),
-            T0=300.0,
-            saturation_formula=flags.saturation_formula,
-            l_brunt_vaisala_freq_moist=flags.l_brunt_vaisala_freq_moist,
-            l_use_thvm_in_bv_freq=flags.l_use_thvm_in_bv_freq,
-            l_modify_limiters_for_cnvg_test=False,
         )
         assert result.shape == zm_shape
         assert np.all(np.isfinite(result))
@@ -525,28 +519,16 @@ class TestStabilityCorrection:
     def test_nonnegative(self, grid_env):
         """Stability correction should be non-negative."""
         gr, params, lmin, flags = grid_env
-        nzt, nzm, ngrdcol = gr.nzt, gr.nzm, gr.ngrdcol
-        zt_shape = (ngrdcol, nzt)
+        nzm, ngrdcol = gr.nzm, gr.ngrdcol
         zm_shape = (ngrdcol, nzm)
 
         result = clubb_api.calc_stability_correction(
-            gr, nzm, nzt, ngrdcol,
-            thlm=np.full(zt_shape, 300.0),
-            Lscale_zm=np.full(zm_shape, 100.0),
+            nzm=nzm,
+            ngrdcol=ngrdcol,
+            brunt_vaisala_freq_sqd=np.full(zm_shape, 1.0e-4),
+            lscale_zm=np.full(zm_shape, 100.0),
             em=np.full(zm_shape, 0.5),
-            exner=np.full(zt_shape, 1.0),
-            rtm=np.full(zt_shape, 0.01),
-            rcm=np.zeros(zt_shape),
-            p_in_Pa=np.full(zt_shape, 100000.0),
-            thvm=np.full(zt_shape, 300.0),
-            ice_supersat_frac=np.zeros(zt_shape),
             lambda0_stability_coef=np.full(ngrdcol, 0.04),
-            bv_efold=np.full(ngrdcol, 2000.0),
-            T0=300.0,
-            saturation_formula=flags.saturation_formula,
-            l_brunt_vaisala_freq_moist=False,
-            l_use_thvm_in_bv_freq=True,
-            l_modify_limiters_for_cnvg_test=False,
         )
         assert np.all(result >= -1e-15)
 
@@ -566,6 +548,7 @@ class TestClipCovarsDenom:
         result = clubb_api.clip_covars_denom(
             nzm=nzm, ngrdcol=ngrdcol,
             sclr_dim=sclr_dim,
+            dt=60.0,
             rtp2=np.full(shape, 1e-6),
             thlp2=np.full(shape, 0.1),
             up2=np.full(shape, 0.3),
@@ -574,6 +557,11 @@ class TestClipCovarsDenom:
             sclrp2=np.zeros((ngrdcol, nzm, 1)),
             l_tke_aniso=flags.l_tke_aniso,
             l_linearize_pbl_winds=False,
+            l_predict_upwp_vpwp=flags.l_predict_upwp_vpwp,
+            wprtp_cl_num=0,
+            wpthlp_cl_num=0,
+            upwp_cl_num=0,
+            vpwp_cl_num=0,
             wprtp=np.full(shape, 1e-4),
             wpthlp=np.full(shape, 0.01),
             upwp=np.full(shape, 0.01),

@@ -11,8 +11,7 @@ module sigma_sqd_w_module
 
   contains
 
-  !=============================================================================
-  subroutine compute_sigma_sqd_w( nzm, ngrdcol, &
+  subroutine compute_sigma_sqd_w( nzm, nzt, ngrdcol, gr, &
                                   gamma_Skw_fnc, wp2, thlp2, rtp2, &
                                   up2, vp2, wpthlp, wprtp, upwp, vpwp, &
                                   l_predict_upwp_vpwp, &
@@ -51,17 +50,26 @@ module sigma_sqd_w_module
         rt_tol,      &
         thl_tol,     &
         one_hundred, &
-        w_tol_sqd
+        w_tol_sqd,   &
+        zero_threshold
 
     use clubb_precision, only: &
         core_rknd ! Variable(s)
+
+    use grid_class, only: &
+        grid,       & ! Type
+        zm2zt2zm      ! Procedure(s)
 
     implicit none
 
     ! Input Variables
     integer, intent(in) :: &
       nzm, &
+      nzt, &
       ngrdcol
+
+    type(grid), intent(in) :: &
+      gr
     
     real( kind = core_rknd ), dimension(ngrdcol,nzm), intent(in) :: &
       gamma_Skw_fnc, & ! Gamma as a function of skewness             [-]
@@ -88,13 +96,16 @@ module sigma_sqd_w_module
 
     ! Local Variable
     real( kind = core_rknd ), dimension(ngrdcol,nzm) :: &
-      max_corr_w_x_sqd    ! Max. val. of wpxp^2/(wp2*xp2) for all vars. x  [-]
+      sigma_sqd_w_tmp    ! Unsmoothed PDF width parameter                  [-]
+
+    real( kind = core_rknd ) :: &
+      max_corr_w_x_sqd   ! Max. val. of wpxp^2/(wp2*xp2) for all vars. x  [-]
 
     integer :: i, k
 
     ! ---- Begin Code ----
 
-    !$acc enter data create( max_corr_w_x_sqd )
+    !$acc enter data create( sigma_sqd_w_tmp )
 
     !----------------------------------------------------------------
     ! Compute sigma_sqd_w with new formula from Vince
@@ -108,38 +119,31 @@ module sigma_sqd_w_module
     !$acc parallel loop gang vector collapse(2) default(present)
     do k = 1, nzm
       do i = 1, ngrdcol
-        max_corr_w_x_sqd(i,k) = max( ( wpthlp(i,k) / ( sqrt( wp2(i,k) * thlp2(i,k) ) &
-                                       + one_hundred * w_tol * thl_tol ) )**2, &
-                                       ( wprtp(i,k) / ( sqrt( wp2(i,k) * rtp2(i,k) )  &
-                                       + one_hundred * w_tol * rt_tol ) )**2 )
+
+        max_corr_w_x_sqd = max( ( wpthlp(i,k) / ( sqrt( wp2(i,k) * thlp2(i,k) ) &
+                                  + one_hundred * w_tol * thl_tol ) )**2, &
+                                  ( wprtp(i,k) / ( sqrt( wp2(i,k) * rtp2(i,k) )  &
+                                  + one_hundred * w_tol * rt_tol ) )**2 )
+
+        if ( l_predict_upwp_vpwp ) then
+          max_corr_w_x_sqd = max( max_corr_w_x_sqd, &
+                                  ( upwp(i,k) / ( sqrt( up2(i,k) * wp2(i,k) ) &
+                                  + one_hundred * w_tol_sqd ) )**2, &
+                                  ( vpwp(i,k) / ( sqrt( vp2(i,k) * wp2(i,k) ) &
+                                  + one_hundred * w_tol_sqd ) )**2 )
+        endif ! l_predict_upwp_vpwp
+
+        sigma_sqd_w_tmp(i,k) = gamma_Skw_fnc(i,k) * ( one - min( max_corr_w_x_sqd, one ) )
+
       end do
     end do
     !$acc end parallel loop
 
-    if ( l_predict_upwp_vpwp ) then
-      !$acc parallel loop gang vector collapse(2) default(present)
-      do k = 1, nzm
-        do i = 1, ngrdcol
-          max_corr_w_x_sqd(i,k) = max( max_corr_w_x_sqd(i,k), &
-                                       ( upwp(i,k) / ( sqrt( up2(i,k) * wp2(i,k) ) &
-                                       + one_hundred * w_tol_sqd ) )**2, &
-                                       ( vpwp(i,k) / ( sqrt( vp2(i,k) * wp2(i,k) ) &
-                                       + one_hundred * w_tol_sqd ) )**2 )
-        end do
-      end do
-      !$acc end parallel loop
-    endif ! l_predict_upwp_vpwp
+    ! Smooth in the vertical using interpolation.
+    sigma_sqd_w(:,:) = zm2zt2zm( nzm, nzt, ngrdcol, gr, sigma_sqd_w_tmp(:,:), &
+                                 zero_threshold )
 
-    ! Calculate the value of sigma_sqd_w
-    !$acc parallel loop gang vector collapse(2) default(present)
-    do k = 1, nzm
-      do i = 1, ngrdcol
-        sigma_sqd_w(i,k) = gamma_Skw_fnc(i,k) * ( one - min( max_corr_w_x_sqd(i,k), one ) )
-      end do
-    end do
-    !$acc end parallel loop
-
-    !$acc exit data delete( max_corr_w_x_sqd )
+    !$acc exit data delete( sigma_sqd_w_tmp )
 
     return
 

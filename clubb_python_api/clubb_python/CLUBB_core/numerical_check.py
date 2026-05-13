@@ -13,6 +13,22 @@ from clubb_python.derived_types.pdf_params import pdf_parameter
 from clubb_python.derived_types.pdf_params_converter import set_fortran_pdf_params
 
 
+def _parameterization_profile_arr(value, ngrdcol: int):
+    arr = np.asarray(value)
+    if arr.ndim == 1:
+        arr = arr.reshape((1, arr.shape[0]))
+    elif arr.ndim == 2 and arr.shape[0] != int(ngrdcol):
+        arr = arr.reshape((1, arr.shape[0], arr.shape[1]))
+    return f_arr(arr)
+
+
+def _parameterization_sfc_arr(value):
+    arr = np.asarray(value)
+    if arr.ndim == 0:
+        arr = arr.reshape((1,))
+    return f_arr(arr)
+
+
 def calculate_spurious_source(
     integral_after: float, integral_before: float,
     flux_top: float, flux_sfc: float, integral_forcing: float, dt: float,
@@ -54,7 +70,7 @@ def sfc_varnce_check(
 
 
 def parameterization_check(
-    nzm: int, nzt: int, sclr_dim: int, edsclr_dim: int,
+    nzm: int, nzt: int, ngrdcol: int, sclr_dim: int, edsclr_dim: int,
     thlm_forcing, rtm_forcing, um_forcing, vm_forcing, wm_zm, wm_zt, p_in_pa,
     rho_zm, rho, exner, rho_ds_zm, rho_ds_zt, invrs_rho_ds_zm, invrs_rho_ds_zt,
     thv_ds_zm, thv_ds_zt, wpthlp_sfc: float, wprtp_sfc: float, upwp_sfc: float,
@@ -65,25 +81,32 @@ def parameterization_check(
 ):
     """Run numerical parameterization checks."""
     set_fortran_err_info(err_info)
+    profile_arr = lambda value: _parameterization_profile_arr(value, ngrdcol)
+    sfc_arr = _parameterization_sfc_arr
+
     clubb_f2py.f2py_parameterization_check(
-        nzm=int(nzm), nzt=int(nzt), sclr_dim=int(sclr_dim), edsclr_dim=int(edsclr_dim),
-        thlm_forcing=f_arr(thlm_forcing), rtm_forcing=f_arr(rtm_forcing),
-        um_forcing=f_arr(um_forcing), vm_forcing=f_arr(vm_forcing),
-        wm_zm=f_arr(wm_zm), wm_zt=f_arr(wm_zt), p_in_pa=f_arr(p_in_pa),
-        rho_zm=f_arr(rho_zm), rho=f_arr(rho), exner=f_arr(exner),
-        rho_ds_zm=f_arr(rho_ds_zm), rho_ds_zt=f_arr(rho_ds_zt),
-        invrs_rho_ds_zm=f_arr(invrs_rho_ds_zm), invrs_rho_ds_zt=f_arr(invrs_rho_ds_zt),
-        thv_ds_zm=f_arr(thv_ds_zm), thv_ds_zt=f_arr(thv_ds_zt),
-        wpthlp_sfc=float(wpthlp_sfc), wprtp_sfc=float(wprtp_sfc),
-        upwp_sfc=float(upwp_sfc), vpwp_sfc=float(vpwp_sfc), p_sfc=float(p_sfc),
-        um=f_arr(um), upwp=f_arr(upwp), vm=f_arr(vm), vpwp=f_arr(vpwp), up2=f_arr(up2), vp2=f_arr(vp2),
-        rtm=f_arr(rtm), wprtp=f_arr(wprtp), thlm=f_arr(thlm), wpthlp=f_arr(wpthlp),
-        wp2=f_arr(wp2), wp3=f_arr(wp3), rtp2=f_arr(rtp2), thlp2=f_arr(thlp2), rtpthlp=f_arr(rtpthlp),
+        nzm=int(nzm), nzt=int(nzt), ngrdcol=int(ngrdcol),
+        sclr_dim=int(sclr_dim), edsclr_dim=int(edsclr_dim),
+        thlm_forcing=profile_arr(thlm_forcing), rtm_forcing=profile_arr(rtm_forcing),
+        um_forcing=profile_arr(um_forcing), vm_forcing=profile_arr(vm_forcing),
+        wm_zm=profile_arr(wm_zm), wm_zt=profile_arr(wm_zt), p_in_pa=profile_arr(p_in_pa),
+        rho_zm=profile_arr(rho_zm), rho=profile_arr(rho), exner=profile_arr(exner),
+        rho_ds_zm=profile_arr(rho_ds_zm), rho_ds_zt=profile_arr(rho_ds_zt),
+        invrs_rho_ds_zm=profile_arr(invrs_rho_ds_zm), invrs_rho_ds_zt=profile_arr(invrs_rho_ds_zt),
+        thv_ds_zm=profile_arr(thv_ds_zm), thv_ds_zt=profile_arr(thv_ds_zt),
+        wpthlp_sfc=sfc_arr(wpthlp_sfc), wprtp_sfc=sfc_arr(wprtp_sfc),
+        upwp_sfc=sfc_arr(upwp_sfc), vpwp_sfc=sfc_arr(vpwp_sfc), p_sfc=sfc_arr(p_sfc),
+        um=profile_arr(um), upwp=profile_arr(upwp), vm=profile_arr(vm), vpwp=profile_arr(vpwp),
+        up2=profile_arr(up2), vp2=profile_arr(vp2),
+        rtm=profile_arr(rtm), wprtp=profile_arr(wprtp), thlm=profile_arr(thlm), wpthlp=profile_arr(wpthlp),
+        wp2=profile_arr(wp2), wp3=profile_arr(wp3), rtp2=profile_arr(rtp2),
+        thlp2=profile_arr(thlp2), rtpthlp=profile_arr(rtpthlp),
         prefix=str(prefix),
-        wpsclrp_sfc=f_arr(wpsclrp_sfc), wpedsclrp_sfc=f_arr(wpedsclrp_sfc),
-        sclrm=f_arr(sclrm), wpsclrp=f_arr(wpsclrp), sclrp2=f_arr(sclrp2), sclrprtp=f_arr(sclrprtp),
-        sclrpthlp=f_arr(sclrpthlp), sclrm_forcing=f_arr(sclrm_forcing),
-        edsclrm=f_arr(edsclrm), edsclrm_forcing=f_arr(edsclrm_forcing),
+        wpsclrp_sfc=profile_arr(wpsclrp_sfc), wpedsclrp_sfc=profile_arr(wpedsclrp_sfc),
+        sclrm=profile_arr(sclrm), wpsclrp=profile_arr(wpsclrp), sclrp2=profile_arr(sclrp2),
+        sclrprtp=profile_arr(sclrprtp), sclrpthlp=profile_arr(sclrpthlp),
+        sclrm_forcing=profile_arr(sclrm_forcing),
+        edsclrm=profile_arr(edsclrm), edsclrm_forcing=profile_arr(edsclrm_forcing),
     )
     return get_fortran_err_info()
 

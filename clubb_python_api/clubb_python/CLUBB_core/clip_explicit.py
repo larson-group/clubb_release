@@ -36,17 +36,24 @@ def clip_variance(
 
 
 def clip_covars_denom(
-    nzm: int, ngrdcol: int, sclr_dim: int,
+    nzm: int, ngrdcol: int, sclr_dim: int, dt: float,
     rtp2, thlp2, up2, vp2, wp2, sclrp2,
     l_tke_aniso: bool,
     l_linearize_pbl_winds: bool,
+    l_predict_upwp_vpwp: bool,
+    wprtp_cl_num: int, wpthlp_cl_num: int, upwp_cl_num: int, vpwp_cl_num: int,
     wprtp, wpthlp, upwp, vpwp, wpsclrp, upwp_pert, vpwp_pert,
 ):
     """Clip all covariances using denominator (variance) bounds."""
     return clubb_f2py.f2py_clip_covars_denom(
-        int(sclr_dim),
+        int(sclr_dim), float(dt),
         f_arr(rtp2), f_arr(thlp2), f_arr(up2), f_arr(vp2), f_arr(wp2), f_arr(sclrp2),
         l_tke_aniso, l_linearize_pbl_winds,
+        l_predict_upwp_vpwp,
+        np.asarray(wprtp_cl_num, dtype=np.int32),
+        np.asarray(wpthlp_cl_num, dtype=np.int32),
+        np.asarray(upwp_cl_num, dtype=np.int32),
+        np.asarray(vpwp_cl_num, dtype=np.int32),
         f_arr(wprtp), f_arr(wpthlp), f_arr(upwp), f_arr(vpwp),
         f_arr(wpsclrp), f_arr(upwp_pert), f_arr(vpwp_pert),
         nzm=int(nzm), ngrdcol=int(ngrdcol))

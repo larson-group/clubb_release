@@ -93,8 +93,6 @@ def _make_args(gr, flags, clubb_params, nu_vert_res_dep, pdf_implicit_coefs_term
         "sigma_sqd_w": full((ngrdcol, nzm), 0.5),
         "wm_zm": full((ngrdcol, nzm), 0.0),
         "wm_zt": full((ngrdcol, nzt), 0.0),
-        "a3_coef": full((ngrdcol, nzm), 0.1),
-        "a3_coef_zt": full((ngrdcol, nzt), 0.1),
         "wp3_on_wp2": full((ngrdcol, nzm), 0.0),
         "wpup2": full((ngrdcol, nzt), 0.0),
         "wpvp2": full((ngrdcol, nzt), 0.0),
@@ -152,7 +150,6 @@ def _make_args(gr, flags, clubb_params, nu_vert_res_dep, pdf_implicit_coefs_term
         "vp2": full((ngrdcol, nzm), 0.01),
         "wp2": full((ngrdcol, nzm), 0.01),
         "wp3": full((ngrdcol, nzt), 0.0),
-        "wp3_zm": full((ngrdcol, nzm), 0.0),
         "wp2_zt": full((ngrdcol, nzt), 0.01),
         "nu_vert_res_dep": nu_vert_res_dep,
         "pdf_implicit_coefs_terms": pdf_implicit_coefs_terms,
@@ -172,7 +169,7 @@ def test_advance_wp2_wp3_returns_finite_arrays(tmp_path):
         err_info = clubb_api.finalize_stats(err_info=err_info)
 
     assert isinstance(out, tuple)
-    assert len(out) == 7
+    assert len(out) == 6
     for arr in out[:-1]:
         assert np.all(np.isfinite(arr))
     assert isinstance(out[-1], ErrInfo)
@@ -187,11 +184,9 @@ def test_advance_wp2_wp3_updates_match_return_values(tmp_path):
     vp2_in = args["vp2"]
     wp2_in = args["wp2"]
     wp3_in = args["wp3"]
-    wp3_zm_in = args["wp3_zm"]
     wp2_zt_in = args["wp2_zt"]
-
     try:
-        up2_out, vp2_out, wp2_out, wp3_out, wp3_zm_out, wp2_zt_out, err_info_out = clubb_api.advance_wp2_wp3(**args)
+        up2_out, vp2_out, wp2_out, wp3_out, wp2_zt_out, err_info_out = clubb_api.advance_wp2_wp3(**args)
     finally:
         err_info = clubb_api.finalize_stats(err_info=err_info)
 
@@ -199,6 +194,5 @@ def test_advance_wp2_wp3_updates_match_return_values(tmp_path):
     np.testing.assert_allclose(vp2_out, vp2_in)
     np.testing.assert_allclose(wp2_out, wp2_in)
     np.testing.assert_allclose(wp3_out, wp3_in)
-    np.testing.assert_allclose(wp3_zm_out, wp3_zm_in)
     np.testing.assert_allclose(wp2_zt_out, wp2_zt_in)
     assert isinstance(err_info_out, ErrInfo)

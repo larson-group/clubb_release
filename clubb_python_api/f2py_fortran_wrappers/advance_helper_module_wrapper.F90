@@ -208,43 +208,28 @@ subroutine f2py_lscale_width_vert_avg(nzm, ngrdcol, smth_type, var_profile, &
 
 end subroutine f2py_lscale_width_vert_avg
 
-subroutine f2py_wp2_term_splat_lhs(nzm, nzt, ngrdcol, c_wp2_splat, &
-    brunt_vaisala_freq_sqd_splat, lhs_splat_wp2)
+subroutine f2py_wp23_term_splat_lhs(nzm, nzt, ngrdcol, c_wp2_splat, &
+    brunt_vaisala_freq_sqd_mixed, lscale_zm, rho_ds_zm, &
+    lhs_splat_wp2, lhs_splat_wp3)
 
   use clubb_precision, only: core_rknd
-  use derived_type_storage, only: stored_grid
-  use advance_helper_module, only: wp2_term_splat_lhs
+  use derived_type_storage, only: stored_grid, stored_stats
+  use advance_helper_module, only: wp23_term_splat_lhs
 
   implicit none
 
   integer, intent(in) :: nzm, nzt, ngrdcol
   real(core_rknd), dimension(ngrdcol), intent(in) :: c_wp2_splat
-  real(core_rknd), dimension(ngrdcol, nzm), intent(in) :: brunt_vaisala_freq_sqd_splat
+  real(core_rknd), dimension(ngrdcol, nzm), intent(in) :: &
+    brunt_vaisala_freq_sqd_mixed, lscale_zm, rho_ds_zm
   real(core_rknd), dimension(ngrdcol, nzm), intent(out) :: lhs_splat_wp2
-
-  call wp2_term_splat_lhs(nzm, nzt, ngrdcol, stored_grid, c_wp2_splat, &
-    brunt_vaisala_freq_sqd_splat, lhs_splat_wp2)
-
-end subroutine f2py_wp2_term_splat_lhs
-
-subroutine f2py_wp3_term_splat_lhs(nzm, nzt, ngrdcol, c_wp2_splat, &
-    brunt_vaisala_freq_sqd_splat, lhs_splat_wp3)
-
-  use clubb_precision, only: core_rknd
-  use derived_type_storage, only: stored_grid
-  use advance_helper_module, only: wp3_term_splat_lhs
-
-  implicit none
-
-  integer, intent(in) :: nzm, nzt, ngrdcol
-  real(core_rknd), dimension(ngrdcol), intent(in) :: c_wp2_splat
-  real(core_rknd), dimension(ngrdcol, nzm), intent(in) :: brunt_vaisala_freq_sqd_splat
   real(core_rknd), dimension(ngrdcol, nzt), intent(out) :: lhs_splat_wp3
 
-  call wp3_term_splat_lhs(nzm, nzt, ngrdcol, stored_grid, c_wp2_splat, &
-    brunt_vaisala_freq_sqd_splat, lhs_splat_wp3)
+  call wp23_term_splat_lhs(nzm, nzt, ngrdcol, stored_grid, c_wp2_splat, &
+    brunt_vaisala_freq_sqd_mixed, lscale_zm, rho_ds_zm, &
+    stored_stats, lhs_splat_wp2, lhs_splat_wp3)
 
-end subroutine f2py_wp3_term_splat_lhs
+end subroutine f2py_wp23_term_splat_lhs
 
 subroutine f2py_calc_brunt_vaisala_freq_sqd(nzm, nzt, ngrdcol, &
     thlm, exner, rtm, rcm, p_in_Pa, thvm, ice_supersat_frac, &
@@ -253,11 +238,10 @@ subroutine f2py_calc_brunt_vaisala_freq_sqd(nzm, nzt, ngrdcol, &
     l_modify_limiters_for_cnvg_test, &
     bv_efold, T0, &
     brunt_vaisala_freq_sqd, brunt_vaisala_freq_sqd_mixed, &
-    brunt_vaisala_freq_sqd_dry, brunt_vaisala_freq_sqd_moist, &
     brunt_vaisala_freq_sqd_smth)
 
   use clubb_precision, only: core_rknd
-  use derived_type_storage, only: stored_grid
+  use derived_type_storage, only: stored_grid, stored_stats
   use advance_helper_module, only: calc_brunt_vaisala_freq_sqd
 
   implicit none
@@ -273,7 +257,6 @@ subroutine f2py_calc_brunt_vaisala_freq_sqd(nzm, nzt, ngrdcol, &
   real(core_rknd), intent(in) :: T0
   real(core_rknd), dimension(ngrdcol, nzm), intent(out) :: &
     brunt_vaisala_freq_sqd, brunt_vaisala_freq_sqd_mixed, &
-    brunt_vaisala_freq_sqd_dry, brunt_vaisala_freq_sqd_moist, &
     brunt_vaisala_freq_sqd_smth
 
   call calc_brunt_vaisala_freq_sqd(nzm, nzt, ngrdcol, stored_grid, &
@@ -284,8 +267,7 @@ subroutine f2py_calc_brunt_vaisala_freq_sqd(nzm, nzt, ngrdcol, &
     l_modify_limiters_for_cnvg_test, &
     bv_efold, T0, &
     brunt_vaisala_freq_sqd, brunt_vaisala_freq_sqd_mixed, &
-    brunt_vaisala_freq_sqd_dry, brunt_vaisala_freq_sqd_moist, &
-    brunt_vaisala_freq_sqd_smth)
+    brunt_vaisala_freq_sqd_smth, stored_stats)
 
 end subroutine f2py_calc_brunt_vaisala_freq_sqd
 
@@ -322,41 +304,25 @@ subroutine f2py_compute_cx_fnc_richardson(nzm, nzt, ngrdcol, &
 
 end subroutine f2py_compute_cx_fnc_richardson
 
-subroutine f2py_calc_stability_correction(nzm, nzt, ngrdcol, &
-    thlm, Lscale_zm, em, exner, rtm, rcm, &
-    p_in_Pa, thvm, ice_supersat_frac, &
-    lambda0_stability_coef, bv_efold, T0, &
-    saturation_formula, &
-    l_brunt_vaisala_freq_moist, l_use_thvm_in_bv_freq, &
-    l_modify_limiters_for_cnvg_test, &
+subroutine f2py_calc_stability_correction(nzm, ngrdcol, &
+    brunt_vaisala_freq_sqd, lscale_zm, em, &
+    lambda0_stability_coef, &
     stability_correction)
 
   use clubb_precision, only: core_rknd
-  use derived_type_storage, only: stored_grid
   use advance_helper_module, only: calc_stability_correction
 
   implicit none
 
-  integer, intent(in) :: nzm, nzt, ngrdcol
-  real(core_rknd), dimension(ngrdcol, nzt), intent(in) :: &
-    thlm, exner, rtm, rcm, p_in_Pa, thvm, ice_supersat_frac
-  real(core_rknd), dimension(ngrdcol, nzm), intent(in) :: Lscale_zm, em
-  real(core_rknd), dimension(ngrdcol), intent(in) :: lambda0_stability_coef, bv_efold
-  real(core_rknd), intent(in) :: T0
-  integer, intent(in) :: saturation_formula
-  logical, intent(in) :: l_brunt_vaisala_freq_moist
-  logical, intent(in) :: l_use_thvm_in_bv_freq
-  logical, intent(in) :: l_modify_limiters_for_cnvg_test
+  integer, intent(in) :: nzm, ngrdcol
+  real(core_rknd), dimension(ngrdcol, nzm), intent(in) :: &
+    brunt_vaisala_freq_sqd, lscale_zm, em
+  real(core_rknd), dimension(ngrdcol), intent(in) :: lambda0_stability_coef
   real(core_rknd), dimension(ngrdcol, nzm), intent(out) :: stability_correction
 
-  call calc_stability_correction(nzm, nzt, ngrdcol, stored_grid, &
-    thlm, Lscale_zm, em, exner, rtm, rcm, &
-    p_in_Pa, thvm, ice_supersat_frac, &
-    lambda0_stability_coef, bv_efold, T0, &
-    saturation_formula, &
-    l_brunt_vaisala_freq_moist, &
-    l_use_thvm_in_bv_freq, &
-    l_modify_limiters_for_cnvg_test, &
+  call calc_stability_correction(nzm, ngrdcol, &
+    brunt_vaisala_freq_sqd, lscale_zm, em, &
+    lambda0_stability_coef, &
     stability_correction)
 
 end subroutine f2py_calc_stability_correction

@@ -64,7 +64,7 @@ module advance_wp2_wp3_module
   !=============================================================================
   subroutine advance_wp2_wp3( nzm, nzt, ngrdcol, gr, dt,                     & ! intent(in)
                               sfc_elevation, fcor_y, sigma_sqd_w, wm_zm,     & ! intent(in)
-                              wm_zt, a3_coef, a3_coef_zt, wp3_on_wp2,        & ! intent(in)
+                              wm_zt, wp3_on_wp2,                             & ! intent(in)
                               wpup2, wpvp2, wp2up2, wp2vp2, wp4,             & ! intent(in)
                               wpthvp, wp2thvp, wp2up, um, vm, upwp, vpwp,    & ! intent(in)
                               em, Kh_zm, Kh_zt, invrs_tau_C4_zm,             & ! intent(in)
@@ -95,7 +95,7 @@ module advance_wp2_wp3_module
                               l_ho_nontrad_coriolis,                         & ! intent(in)
                               l_implemented,                                 & ! intent(in)
                               stats,                                         & ! intent(inout)
-                              up2, vp2, wp2, wp3, wp3_zm, wp2_zt, err_info )   ! intent(inout)
+                              up2, vp2, wp2, wp3, wp2_zt, err_info )           ! intent(inout)
 
     ! Description:
     ! Advance w'^2 and w'^3 one timestep.
@@ -139,7 +139,8 @@ module advance_wp2_wp3_module
         iC_wp2_pr_dfsn, &
         iC_wp3_pr_tp,   &
         iC_wp3_pr_turb, &
-        iC_wp3_pr_dfsn
+        iC_wp3_pr_dfsn, &
+        ia3_coef_min
 
     use model_flags, only: &
         iiPDF_ADG1,                   & ! Variable(s)
@@ -211,7 +212,6 @@ module advance_wp2_wp3_module
     real( kind = core_rknd ), intent(in), dimension(ngrdcol,nzm) :: &
       sigma_sqd_w,       & ! sigma_sqd_w (momentum levels)             [-]
       wm_zm,             & ! w wind component on momentum levels       [m/s]
-      a3_coef,           & ! a_3 (momentum levels); See eqn. 25 in `Equations for CLUBB' [-]
       wp3_on_wp2,        & ! Smoothed version of wp3 / wp2             [m/s]
       wp2up2,            & ! w'^2u'^2 (momentum levels)                [m^4/s^4]
       wp2vp2,            & ! w'^2v'^2 (momentum levels)                [m^4/s^4]
@@ -236,7 +236,6 @@ module advance_wp2_wp3_module
 
     real( kind = core_rknd ), intent(in), dimension(ngrdcol,nzt) :: &
       wm_zt,             & ! w wind component on thermodynamic levels  [m/s]
-      a3_coef_zt,        & ! a_3 interpolated to thermodynamic levels  [-]
       wpup2,             & ! w'u'^2 (thermodynamic levels)             [m^3/s^3]
       wpvp2,             & ! w'v'^2 (thermodynamic levels)             [m^3/s^3]
       wp2thvp,           & ! w'^2th_v' (thermodynamic levels)          [K m^2/s^2]
@@ -312,12 +311,11 @@ module advance_wp2_wp3_module
     real( kind = core_rknd ), dimension(ngrdcol,nzm), intent(inout) :: &
       up2,  & ! u'^2 (momentum levels)                    [m^2/s^2]
       vp2,  & ! v'^2 (momentum levels)                    [m^2/s^2]
-      wp2,  & ! w'^2 (momentum levels)                    [m^2/s^2]
-      wp3_zm  ! w'^3 interpolated to momentum levels      [m^3/s^3]
+      wp2     ! w'^2 (momentum levels)                    [m^2/s^2]
 
     real( kind = core_rknd ), dimension(ngrdcol,nzt), intent(inout) :: &
-      wp3,  & ! w'^3 (thermodynamic levels)               [m^3/s^3]
-      wp2_zt  ! w'^2 interpolated to thermodyamic levels  [m^2/s^2]
+      wp3,    & ! w'^3 (thermodynamic levels)               [m^3/s^3]
+      wp2_zt    ! w'^2 interpolated to thermodyamic levels  [m^2/s^2]
 
     type(err_info_type), intent(inout) :: &
       err_info      ! err_info struct containing err_code and err_header
@@ -325,11 +323,12 @@ module advance_wp2_wp3_module
     ! --------------------------- Local Variables ---------------------------
     real( kind = core_rknd ), dimension(ngrdcol,nzm) :: &
       wp2_old,  & ! w'^2 (momentum levels)                 [m^2/s^2]
+      wp3_zm,   & ! w'^3 interpolated to momentum levels   [m^3/s^3]
       wp2_smth, &
       em_smth
 
     real( kind = core_rknd ), dimension(ngrdcol,nzt) :: &
-      wp3_old    ! w'^3 (thermodynamic levels)            [m^3/s^3] 
+      wp3_old  ! w'^3 (thermodynamic levels)            [m^3/s^3]
 
     ! Eddy Diffusion for w'^2 and w'^3.
     real( kind = core_rknd ), dimension(ngrdcol,nzt) :: Kw1    ! w'^2 coef. eddy diff.  [m^2/s]
@@ -396,10 +395,12 @@ module advance_wp2_wp3_module
       coef_wp4_implicit       ! <w'^4> = coef_wp4_implicit * <w'^2>^2        [-]
 
     real( kind = core_rknd ), dimension(ngrdcol,nzm) :: &
-      a1_coef      ! a_1 (momentum levels); See eqn. 23 in `Equations for CLUBB' [-]
+      a1_coef, & ! a_1 (momentum levels); See eqn. 23 in `Equations for CLUBB' [-]
+      a3_coef    ! a_3 (momentum levels); See eqn. 25 in `Equations for CLUBB' [-]
 
     real( kind = core_rknd ), dimension(ngrdcol,nzt) :: &
-      a1_coef_zt   ! a_1 interpolated to thermodynamic levels                    [-]
+      a1_coef_zt, & ! a_1 interpolated to thermodynamic levels                    [-]
+      a3_coef_zt    ! a_3 interpolated to thermodynamic levels                    [-]
 
     real( kind = core_rknd ) :: &
       !c_K1, & ! CLUBB tunable parameter c_K1
@@ -431,7 +432,8 @@ module advance_wp2_wp3_module
 
     integer :: k, i, b
 
-    !$acc enter data create( wp2_old, wp3_old, C1_Skw_fnc, C11_Skw_fnc, C16_fnc, C_wp3_pr_tp, &
+    !$acc enter data create( wp2_old, wp3_old, wp3_zm, &
+    !$acc                    C1_Skw_fnc, C11_Skw_fnc, C16_fnc, C_wp3_pr_tp, &
     !$acc                    wp3_term_ta_lhs_result, wp3_pr3_lhs, lhs_ta_wp2, &
     !$acc                    lhs_tp_wp3, lhs_adv_tp_wp3, lhs_pr_tp_wp3, &
     !$acc                    lhs_ta_wp3, lhs_dp1_wp2, rhs_dp1_wp2, lhs_pr1_wp2, &
@@ -441,10 +443,46 @@ module advance_wp2_wp3_module
     !$acc                    lhs_diff_zm, lhs_diff_zt, lhs_diff_zm_crank, lhs_diff_zt_crank, &
     !$acc                    lhs_ma_zm, lhs_ma_zt, lhs_ac_pr2_wp2, lhs_ac_pr2_wp3, &
     !$acc                    coef_wp4_implicit_zt, coef_wp4_implicit, a1_coef, a1_coef_zt, &
+    !$acc                    a3_coef, a3_coef_zt, &
     !$acc                    dum_dz, dvm_dz, lhs, rhs, Kw1, Kw8, Kw1_zm, Kw8_zt, &
     !$acc                    wp2_smth, em_smth )
 
+    wp2_zt(:,:) = zm2zt_api( nzm, nzt, ngrdcol, gr, wp2(:,:), w_tol_sqd )
+    wp3_zm(:,:) = zt2zm_api( nzm, nzt, ngrdcol, gr, wp3(:,:) )
+
     !-----------------------------------------------------------------------
+
+    ! Compute the a3 coefficient (formula 25 in `Equations for CLUBB')
+    ! Note: a3 has been modified because the wp3 turbulent advection term is
+    !       now discretized on its own. This removes the "- 3" from the end.
+!   a3_coef = 3.0_core_rknd * sigma_sqd_w*sigma_sqd_w  &
+!      + 6.0_core_rknd*(1.0_core_rknd-sigma_sqd_w)*sigma_sqd_w  &
+!      + (1.0_core_rknd-sigma_sqd_w)*(1.0_core_rknd-sigma_sqd_w)
+
+    ! This is a simplified version of the formula above.
+    !$acc parallel loop gang vector collapse(2) default(present)
+    do k = 1, nzm
+      do i = 1, ngrdcol
+
+        a3_coef(i,k) = -2._core_rknd * ( 1._core_rknd - sigma_sqd_w(i,k) )**2 + 3.0_core_rknd
+
+        ! We found we obtain fewer spikes in wp3 when we clip a3 to be no greater
+        ! than -1.4 -dschanen 4 Jan 2011
+        !a3_coef = max( a3_coef, -1.4_core_rknd ) ! Known magic number
+        a3_coef(i,k) = max( a3_coef(i,k), clubb_params(i,ia3_coef_min) )
+
+      end do
+    end do
+    !$acc end parallel loop
+
+    a3_coef_zt(:,:) = zm2zt_api( nzm, nzt, ngrdcol, gr, a3_coef(:,:) )
+
+    if ( stats%l_sample ) then
+      !$acc update host( a3_coef, a3_coef_zt )
+
+      call stats_update( "a3_coef_zt", a3_coef_zt, stats )
+      call stats_update( "a3_coef", a3_coef, stats )
+    end if
 
     !  Define tauw
 
@@ -1184,7 +1222,14 @@ module advance_wp2_wp3_module
       end if ! fatal error
     end if
 
-    !$acc exit data delete( wp2_old, wp3_old, C1_Skw_fnc, C11_Skw_fnc, C16_fnc, C_wp3_pr_tp, &
+    if ( stats%l_sample ) then
+      !$acc update host( wp2_zt, wp3_zm )
+      call stats_update( "wp2_zt", wp2_zt, stats )
+      call stats_update( "wp3_zm", wp3_zm, stats )
+    end if
+
+    !$acc exit data delete( wp2_old, wp3_old, wp3_zm, &
+    !$acc                   C1_Skw_fnc, C11_Skw_fnc, C16_fnc, C_wp3_pr_tp, &
     !$acc                   wp3_term_ta_lhs_result, wp3_pr3_lhs, lhs_ta_wp2, &
     !$acc                   lhs_tp_wp3, lhs_adv_tp_wp3, lhs_pr_tp_wp3, &
     !$acc                   lhs_ta_wp3, lhs_dp1_wp2, rhs_dp1_wp2, lhs_pr1_wp2, &
@@ -1194,6 +1239,7 @@ module advance_wp2_wp3_module
     !$acc                   lhs_diff_zm, lhs_diff_zt, lhs_diff_zm_crank, lhs_diff_zt_crank, &
     !$acc                   lhs_ma_zm, lhs_ma_zt, lhs_ac_pr2_wp2, lhs_ac_pr2_wp3, &
     !$acc                   coef_wp4_implicit_zt, coef_wp4_implicit, a1_coef, a1_coef_zt, &
+    !$acc                   a3_coef, a3_coef_zt, &
     !$acc                   dum_dz, dvm_dz, lhs, rhs, Kw1, Kw8, Kw1_zm, Kw8_zt, &
     !$acc                   wp2_smth, em_smth )
 

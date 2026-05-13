@@ -1115,12 +1115,11 @@ module morrison_microphys_module
     use corr_varnce_module, only: &
         hm_metadata_type
 
-    use numerical_check, only: &
-        is_nan_2d,   & ! Procedure(s)
-        is_nan_sclr
-
     use clubb_precision, only: &
         core_rknd   ! Variable(s)
+
+    use, intrinsic :: ieee_arithmetic, only: &
+      ieee_is_finite
 
     implicit none
 
@@ -1321,77 +1320,77 @@ module morrison_microphys_module
 
     ! Check for a NaN value in any of the major microphysics tendency variables
     ! that are output from Morrison microphysics for use in the code.
-    if ( is_nan_2d( real( rcm_mc_r4, kind=core_rknd ) ) &
-         .or. is_nan_2d( real( rim_mc_r4, kind=core_rknd ) ) &
-         .or. is_nan_2d( real( rsm_mc_r4, kind=core_rknd ) ) &
-         .or. is_nan_2d( real( rrm_mc_r4, kind=core_rknd ) ) &
-         .or. is_nan_2d( real( rgm_mc_r4, kind=core_rknd ) ) &
-         .or. is_nan_2d( real( Ncm_mc_r4, kind=core_rknd ) ) &
-         .or. is_nan_2d( real( Nim_mc_r4, kind=core_rknd ) ) &
-         .or. is_nan_2d( real( Nsm_mc_r4, kind=core_rknd ) ) &
-         .or. is_nan_2d( real( Nrm_mc_r4, kind=core_rknd ) ) &
-         .or. is_nan_2d( real( Ngm_mc_r4, kind=core_rknd ) ) &
-         .or. is_nan_2d( real( rvm_mc_r4, kind=core_rknd ) ) &
-         .or. is_nan_2d( real( T_in_K_mc, kind=core_rknd ) ) ) then
+    if ( any( .not. ieee_is_finite( real( rcm_mc_r4, kind=core_rknd ) ) ) &
+         .or. any( .not. ieee_is_finite( real( rim_mc_r4, kind=core_rknd ) ) ) &
+         .or. any( .not. ieee_is_finite( real( rsm_mc_r4, kind=core_rknd ) ) ) &
+         .or. any( .not. ieee_is_finite( real( rrm_mc_r4, kind=core_rknd ) ) ) &
+         .or. any( .not. ieee_is_finite( real( rgm_mc_r4, kind=core_rknd ) ) ) &
+         .or. any( .not. ieee_is_finite( real( Ncm_mc_r4, kind=core_rknd ) ) ) &
+         .or. any( .not. ieee_is_finite( real( Nim_mc_r4, kind=core_rknd ) ) ) &
+         .or. any( .not. ieee_is_finite( real( Nsm_mc_r4, kind=core_rknd ) ) ) &
+         .or. any( .not. ieee_is_finite( real( Nrm_mc_r4, kind=core_rknd ) ) ) &
+         .or. any( .not. ieee_is_finite( real( Ngm_mc_r4, kind=core_rknd ) ) ) &
+         .or. any( .not. ieee_is_finite( real( rvm_mc_r4, kind=core_rknd ) ) ) &
+         .or. any( .not. ieee_is_finite( real( T_in_K_mc, kind=core_rknd ) ) ) ) then
        write(fstderr,*) "NaN detected in a Morrison microphysics tendency"
        do k = 1, nzt, 1
           nan_at_lev = .false.
-          if ( is_nan_sclr( real( rcm_mc_r4(k), kind=core_rknd ) ) ) then
+          if ( .not. ieee_is_finite( real( rcm_mc_r4(k), kind=core_rknd ) ) ) then
              write(fstderr,*) "NaN detected in rcm_mc_r4 at k = ", k, &
                               "altitude (m) = ", gr%zt(1,k)
              nan_at_lev = .true.
           endif
-          if ( is_nan_sclr( real( rim_mc_r4(k), kind=core_rknd ) ) ) then
+          if ( .not. ieee_is_finite( real( rim_mc_r4(k), kind=core_rknd ) ) ) then
              write(fstderr,*) "NaN detected in rim_mc_r4 at k = ", k, &
                               "altitude (m) = ", gr%zt(1,k) 
              nan_at_lev = .true.
           endif
-          if ( is_nan_sclr( real( rsm_mc_r4(k), kind=core_rknd ) ) ) then
+          if ( .not. ieee_is_finite( real( rsm_mc_r4(k), kind=core_rknd ) ) ) then
              write(fstderr,*) "NaN detected in rsm_mc_r4 at k = ", k, &
                               "altitude (m) = ", gr%zt(1,k) 
              nan_at_lev = .true.
           endif
-          if ( is_nan_sclr( real( rrm_mc_r4(k), kind=core_rknd ) ) ) then
+          if ( .not. ieee_is_finite( real( rrm_mc_r4(k), kind=core_rknd ) ) ) then
              write(fstderr,*) "NaN detected in rrm_mc_r4 at k = ", k, &
                               "altitude (m) = ", gr%zt(1,k) 
              nan_at_lev = .true.
           endif
-          if ( is_nan_sclr( real( rgm_mc_r4(k), kind=core_rknd ) ) ) then
+          if ( .not. ieee_is_finite( real( rgm_mc_r4(k), kind=core_rknd ) ) ) then
              write(fstderr,*) "NaN detected in rgm_mc_r4 at k = ", k, &
                               "altitude (m) = ", gr%zt(1,k) 
              nan_at_lev = .true.
           endif
-          if ( is_nan_sclr( real( Ncm_mc_r4(k), kind=core_rknd ) ) ) then
+          if ( .not. ieee_is_finite( real( Ncm_mc_r4(k), kind=core_rknd ) ) ) then
              write(fstderr,*) "NaN detected in Ncm_mc_r4 at k = ", k, &
                               "altitude (m) = ", gr%zt(1,k) 
              nan_at_lev = .true.
           endif
-          if ( is_nan_sclr( real( Nim_mc_r4(k), kind=core_rknd ) ) ) then
+          if ( .not. ieee_is_finite( real( Nim_mc_r4(k), kind=core_rknd ) ) ) then
              write(fstderr,*) "NaN detected in Nim_mc_r4 at k = ", k, &
                               "altitude (m) = ", gr%zt(1,k) 
              nan_at_lev = .true.
           endif
-          if ( is_nan_sclr( real( Nsm_mc_r4(k), kind=core_rknd ) ) ) then
+          if ( .not. ieee_is_finite( real( Nsm_mc_r4(k), kind=core_rknd ) ) ) then
              write(fstderr,*) "NaN detected in Nsm_mc_r4 at k = ", k, &
                               "altitude (m) = ", gr%zt(1,k) 
              nan_at_lev = .true.
           endif
-          if ( is_nan_sclr( real( Nrm_mc_r4(k), kind=core_rknd ) ) ) then
+          if ( .not. ieee_is_finite( real( Nrm_mc_r4(k), kind=core_rknd ) ) ) then
              write(fstderr,*) "NaN detected in Nrm_mc_r4 at k = ", k, &
                               "altitude (m) = ", gr%zt(1,k) 
              nan_at_lev = .true.
           endif
-          if ( is_nan_sclr( real( Ngm_mc_r4(k), kind=core_rknd ) ) ) then
+          if ( .not. ieee_is_finite( real( Ngm_mc_r4(k), kind=core_rknd ) ) ) then
              write(fstderr,*) "NaN detected in Ngm_mc_r4 at k = ", k, &
                               "altitude (m) = ", gr%zt(1,k) 
              nan_at_lev = .true.
           endif
-          if ( is_nan_sclr( real( rvm_mc_r4(k), kind=core_rknd ) ) ) then
+          if ( .not. ieee_is_finite( real( rvm_mc_r4(k), kind=core_rknd ) ) ) then
              write(fstderr,*) "NaN detected in rvm_mc_r4 at k = ", k, &
                               "altitude (m) = ", gr%zt(1,k) 
              nan_at_lev = .true.
           endif
-          if ( is_nan_sclr( real( T_in_K_mc(k), kind=core_rknd ) ) ) then
+          if ( .not. ieee_is_finite( real( T_in_K_mc(k), kind=core_rknd ) ) ) then
              write(fstderr,*) "NaN detected in T_in_K_mc at k = ", k, &
                               "altitude (m) = ", gr%zt(1,k) 
              nan_at_lev = .true.
