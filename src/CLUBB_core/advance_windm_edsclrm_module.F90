@@ -308,7 +308,7 @@ module advance_windm_edsclrm_module
     ! ------------------------ Begin Code ------------------------
 
     !$acc enter data create( um_old, vm_old, um_tndcy, vm_tndcy, &
-    !$acc                    thlm_ed, rtm_ed, thlm1000, thlm700, &
+    !$acc                    thlm1000, thlm700, &
     !$acc                    upwp_chnge, vpwp_chnge, lhs, rhs, solution, wind_speed, &
     !$acc                    wind_speed_pert, u_star_sqd, u_star_sqd_pert, &
     !$acc                    nu_zero, lhs_diff, lhs_ma_zt, Km_zt, Kmh_zt, &
@@ -1255,7 +1255,7 @@ module advance_windm_edsclrm_module
     end if
 
     !$acc exit data delete( um_old, vm_old, um_tndcy, vm_tndcy, &
-    !$acc                    thlm_ed, rtm_ed, thlm1000, thlm700, &
+    !$acc                    thlm1000, thlm700, &
     !$acc                    upwp_chnge, vpwp_chnge, lhs, rhs, solution, wind_speed, &
     !$acc                    wind_speed_pert, u_star_sqd, u_star_sqd_pert, &
     !$acc                    nu_zero, lhs_diff, lhs_ma_zt, Km_zt, Kmh_zt, &
