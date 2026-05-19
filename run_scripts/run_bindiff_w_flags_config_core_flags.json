@@ -100,5 +100,9 @@
         "l_standard_term_ta": true,
         "l_partial_upwind_wp3": true,
 	    "l_lh_normalize_weights": false
+    },
+    "flag18": {
+        "ipdf_call_placement": 3, 
+        "l_rtm_nudge": true
     }
 }

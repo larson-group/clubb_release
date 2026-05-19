@@ -3626,25 +3626,19 @@ module pdf_closure_module
                                  rcm, cloud_frac,                         & ! Intent(out)
                                  ice_supersat_frac, wprcp,                & ! Intent(out)
                                  sigma_sqd_w, wpthvp, wp2thvp, wp2up,     & ! Intent(out)
-                                 rtpthvp, thlpthvp, rc_coef,              & ! Intent(out)
+                                 rtpthvp, thlpthvp,                       & ! Intent(out)
                                  rcm_in_layer, cloud_cover,               & ! Intent(out)
                                  rcp2_zt, thlprcp,                        & ! Intent(out)
                                  rc_coef_zm, sclrpthvp,                   & ! Intent(out)
                                  wpup2, wpvp2,                            & ! Intent(out)
                                  wp2up2, wp2vp2, wp4,                     & ! Intent(out)
                                  wp2rtp, wprtp2, wp2thlp,                 & ! Intent(out)
-                                 wpthlp2, wprtpthlp, wp2rcp,              & ! Intent(out)
-                                 rtprcp, rcp2,                            & ! Intent(out)
+                                 wpthlp2, wprtpthlp,                      & ! Intent(out)
                                  uprcp, vprcp,                            & ! Intent(out)
                                  w_up_in_cloud, w_down_in_cloud,          & ! Intent(out)
                                  cloudy_updraft_frac,                     & ! Intent(out)
                                  cloudy_downdraft_frac,                   & ! intent(out)
-                                 Skw_velocity,                            & ! Intent(out)
-                                 cloud_frac_zm,                           & ! Intent(out)
-                                 ice_supersat_frac_zm,                    & ! Intent(out)
-                                 rtm_zm, thlm_zm, rcm_zm,                 & ! Intent(out)
-                                 rcm_supersat_adj,                        & ! Intent(out)
-                                 wp2sclrp, wpsclrp2, sclrprcp,            & ! Intent(out)
+                                 wp2sclrp, wpsclrp2,                      & ! Intent(out)
                                  wpsclrprtp, wpsclrpthlp )                  ! Intent(out)
 
     use grid_class, only: &
@@ -3671,6 +3665,9 @@ module pdf_closure_module
     use Skx_module, only: &
         compute_gamma_Skw, & ! Procedure(s)
         Skx_func    ! Procedure(s)
+
+    use pdf_utilities, only: &
+        compute_variance_binormal    ! Procedure(s)
 
     use sigma_sqd_w_module, only: &
         compute_sigma_sqd_w    ! Procedure(s)
@@ -3850,7 +3847,6 @@ module pdf_closure_module
       ice_supersat_frac, & ! ice supersat. frac. (thermo. levels)   [-]
       wp2thvp,           & ! < w'^2 th_v' > (thermodynamic levels)  [m^2/s^2 K]
       wp2up,             & ! < w'^2 u' > (thermodynamic levels)     [m^3/s^3]
-      rc_coef,           & ! Coefficient of X'r_c' (thermo. levs.)  [K/(kg/kg)]
       rcm_in_layer,      & ! rcm in cloud layer                     [kg/kg]
       cloud_cover,       & ! cloud cover                            [-]
       rcp2_zt              ! r_c'^2 (on thermo. grid)               [kg^2/kg^2]
@@ -3876,15 +3872,12 @@ module pdf_closure_module
       wprtp2,    & ! < w' r_t'^2 > (thermodynamic levels)     [m/s kg^2/kg^2]
       wp2thlp,   & ! < w'^2 th_l' > (thermodynamic levels)    [m^2/s^2 K]
       wpthlp2,   & ! < w' th_l'^2 > (thermodynamic levels)    [m/s K^2]
-      wprtpthlp, & ! < w' r_t' th_l' > (thermodynamic levels) [m/s kg/kg K]
-      wp2rcp       ! < w'^2 r_c' > (thermodynamic levels)     [m^2/s^2 kg/kg]
+      wprtpthlp    ! < w' r_t' th_l' > (thermodynamic levels) [m/s kg/kg K]
 
     real( kind = core_rknd ), dimension(ngrdcol,nzm), intent(out) ::  &
       wp2up2,    & ! < w'^2u'^2 > (momentum levels)           [m^4/s^4]
       wp2vp2,    & ! < w'^2v'^2 > (momentum levels)           [m^4/s^4]
-      wp4,       & ! < w'^4 > (momentum levels)               [m^4/s^4]
-      rtprcp,    & ! < r_t' r_c' > (momentum levels)          [kg^2/kg^2]
-      rcp2         ! Variance of r_c (momentum levels)        [kg^2/kg^2]
+      wp4          ! < w'^4 > (momentum levels)               [m^4/s^4]
 
     real( kind = core_rknd ), dimension(ngrdcol,nzm), intent(out) ::  &
       uprcp,                 & ! < u' r_c' >                [(m kg)/(s kg)]
@@ -3896,26 +3889,11 @@ module pdf_closure_module
       cloudy_updraft_frac,   & ! cloudy updraft fraction    [-]
       cloudy_downdraft_frac    ! cloudy downdraft fraction  [-]
 
-    ! Variables being passed back to only advance_clubb_core (for statistics).
-    real( kind = core_rknd ), dimension(ngrdcol,nzm), intent(out) ::  &
-      Skw_velocity,         & ! Skewness velocity                        [m/s]
-      cloud_frac_zm,        & ! Cloud Fraction on momentum levels        [-]
-      ice_supersat_frac_zm, & ! Ice supersat. frac. on momentum levels   [-]
-      rtm_zm,               & ! Total water mixing ratio at mom. levs.   [kg/kg]
-      thlm_zm,              & ! Liquid water pot. temp. at mom. levs.    [K]
-      rcm_zm                  ! rcm at momentum levels                   [kg/kg]
-
-    real( kind = core_rknd ), dimension(ngrdcol,nzt), intent(out) ::  &
-      rcm_supersat_adj        ! Adjust. to rcm due to spurious supersat. [kg/kg]
-
     real( kind = core_rknd ), dimension(ngrdcol,nzt,sclr_dim), intent(out) :: &
       wp2sclrp,    & ! < w'^2 sclr' > (thermodynamic levels)      [units vary]
       wpsclrp2,    & ! < w' sclr'^2 > (thermodynamic levels)      [units vary]
       wpsclrprtp,  & ! < w' sclr' r_t' > (thermodynamic levels)   [units vary]
       wpsclrpthlp    ! < w' sclr' th_l' > (thermodynamic levels)  [units vary]
-
-    real( kind = core_rknd ), dimension(ngrdcol,nzm,sclr_dim), intent(out) :: &
-      sclrprcp       ! < sclr' r_c' > (momentum levels)           [units vary]
 
     !------------------------------- Local Variables -------------------------------
     real( kind = core_rknd ), dimension(ngrdcol,nzt) :: &
@@ -3964,10 +3942,13 @@ module pdf_closure_module
       rtpthvp_zt,  & ! r_t' th_v' (on thermo. grid)     [(kg K)/kg]
       thlpthvp_zt, & ! th_l' th_v' (on thermo. grid)    [K^2]
       wprcp_zt,    & ! w' r_c' (on thermo. grid)        [(m kg)/(s kg)]
+      wp2rcp,       & ! w'^2 r_c' (on thermo. grid)     [(m^2 kg)/(s^2 kg)]
       rtprcp_zt,   & ! r_t' r_c' (on thermo. grid)      [(kg^2)/(kg^2)]
       thlprcp_zt,  & ! th_l' r_c' (on thermo. grid)     [(K kg)/kg]
       uprcp_zt,    & ! u' r_c' (on thermo. grid)        [(m kg)/(s kg)]
-      vprcp_zt       ! v' r_c' (on thermo. grid)        [(m kg)/(s kg)]
+      vprcp_zt,     & ! v' r_c' (on thermo. grid)        [(m kg)/(s kg)]
+      rc_coef,      & ! Coefficient of X'r_c' (thermo. levs.)  [K/(kg/kg)]
+      rcm_supersat_adj ! Adjust. to rcm due to spurious supersat. [kg/kg]
 
     real( kind = core_rknd ), dimension(ngrdcol,nzt,sclr_dim) :: &
       sclrpthvp_zt, & ! sclr'th_v' (on thermo. grid)
@@ -3983,22 +3964,37 @@ module pdf_closure_module
       wp2up_zm,     & ! < w'^2 u' > on momentum levels        [m^3/s^3]
       wp2rcp_zm       ! < w'^2 r_c' > on momentum levles      [m^2/s^2 kg/kg]
 
+    real( kind = core_rknd ), dimension(ngrdcol,nzm) :: &
+      Skw_velocity,         & ! Skewness velocity                        [m/s]
+      cloud_frac_zm,        & ! Cloud Fraction on momentum levels        [-]
+      ice_supersat_frac_zm, & ! Ice supersat. frac. on momentum levels   [-]
+      rtm_zm,               & ! Total water mixing ratio at mom. levs.   [kg/kg]
+      thlm_zm,              & ! Liquid water pot. temp. at mom. levs.    [K]
+      rcm_zm,               & ! rcm at momentum levels                   [kg/kg]
+      rtprcp,               & ! < r_t' r_c' > (momentum levels)          [kg^2/kg^2]
+      rcp2                    ! Variance of r_c (momentum levels)        [kg^2/kg^2]
+
     real( kind = core_rknd ), dimension(ngrdcol,nzm,sclr_dim) :: &
       wpsclrprtp_zm,  & ! w'sclr'rt' on momentum grid
       wpsclrp2_zm,    & ! w'sclr'^2 on momentum grid
       wpsclrpthlp_zm, & ! w'sclr'thl' on momentum grid
-      wp2sclrp_zm       ! w'^2 sclr' on momentum grid
+      wp2sclrp_zm,    & ! w'^2 sclr' on momentum grid
+      sclrprcp          ! < sclr' r_c' > on momentum grid
 
     real( kind = core_rknd ), dimension(ngrdcol,nzt) :: &
       rsat,             & ! Saturation mixing ratio from mean rt and thl.
       rel_humidity        ! Relative humidity after PDF closure [-]
 
     real( kind = core_rknd ), dimension(ngrdcol, nzt) :: &
-      T_in_K
+      T_in_K, & ! Absolute temperature [K]
+      chi,    & ! Mellor's 's'         [kg/kg]
+      chip2     ! Variance of Mellor's 's' [kg/kg]
 
     logical :: l_spur_supersat   ! Spurious supersaturation?
 
     integer :: i, k, j, sclr
+
+    character(len=50) :: sclr_idx
 
     !-------------------------------------- Begin Code --------------------------------------
 
@@ -4009,8 +4005,11 @@ module pdf_closure_module
     !$acc                    Skrt_zt, Skrt_zm, Skthl_zt, Skthl_zm, Sku_zt, &
     !$acc                    Skv_zt, wp2up2_zt, &
     !$acc                    wp2vp2_zt, wp4_zt, wpthvp_zt, rtpthvp_zt, thlpthvp_zt, &
-    !$acc                    wprcp_zt, rtprcp_zt, thlprcp_zt, uprcp_zt, vprcp_zt, &
-    !$acc                    rsat, rel_humidity, T_in_K )
+    !$acc                    wprcp_zt, wp2rcp, rtprcp_zt, thlprcp_zt, uprcp_zt, &
+    !$acc                    vprcp_zt, rc_coef, rcm_supersat_adj, Skw_velocity, &
+    !$acc                    cloud_frac_zm, ice_supersat_frac_zm, rtm_zm, thlm_zm, &
+    !$acc                    rcm_zm, rtprcp, rcp2, rsat, rel_humidity, T_in_K, &
+    !$acc                    chi, chip2 )
 
     !$acc enter data if( l_call_pdf_closure_twice ) &
     !$acc            create( wprtp2_zm, wp2rtp_zm, wpthlp2_zm, &
@@ -4019,88 +4018,62 @@ module pdf_closure_module
     !$acc enter data if( sclr_dim > 0 ) &
     !$acc            create( wpsclrp_zt, sclrp2_zt, sclrprtp_zt, sclrpthlp_zt, &
     !$acc                    Sksclr_zt, sclrpthvp_zt, sclrprcp_zt, wpsclrprtp_zm, &
-    !$acc                    wpsclrp2_zm, wpsclrpthlp_zm, wp2sclrp_zm )
+    !$acc                    wpsclrp2_zm, wpsclrpthlp_zm, wp2sclrp_zm, sclrprcp )
 
     !$acc enter data if( hydromet_dim > 0 ) create( wphydrometp_zt )
 
     !---------------------------------------------------------------------------
-    ! Interpolate wp3, rtp3, and thlp3 to momentum levels, and
+    ! Interpolate wp3 to momentum levels, rtp3 and thlp3 to momentum levels
+    ! as needed, and
     ! wp2, rtp2, thlp2, up2, vp2, and sclrp2 to thermodynamic levels, and then
-    ! compute Skw, Skrt, and Skthl for both the momentum and thermodynamic grid
-    ! levels. Sku, Skv, and Sksclr are computed only for thermodynamic levels here.
+    ! compute Skw for both the momentum and thermodynamic grid levels. Skrt and
+    ! Skthl are computed for thermodynamic grid levels and for momentum levels
+    ! as needed. Sku, Skv, and Sksclr are computed only for thermodynamic levels here.
     !---------------------------------------------------------------------------
 
-    ! Positive definite quantity
-    wp2_zt(:,:)   = zm2zt_api( nzm, nzt, ngrdcol, gr, wp2(:,:), w_tol_sqd )
-    wp3_zm(:,:)   = zt2zm_api( nzm, nzt, ngrdcol, gr, wp3(:,:) )
-    
-    ! Positive definite quantity
-    thlp2_zt(:,:) = zm2zt_api( nzm, nzt, ngrdcol, gr, thlp2(:,:), thl_tol**2 )
-    thlp3_zm(:,:) = zt2zm_api( nzm, nzt, ngrdcol, gr, thlp3(:,:) )
-
-    ! Positive definite quantity
-    rtp2_zt(:,:)  = zm2zt_api( nzm, nzt, ngrdcol, gr, rtp2(:,:), rt_tol**2 )
-    rtp3_zm(:,:)  = zt2zm_api( nzm, nzt, ngrdcol, gr, rtp3(:,:) )
-
-    ! Positive definite quantity
-    up2_zt(:,:)   = zm2zt_api( nzm, nzt, ngrdcol, gr, up2(:,:), w_tol_sqd )
-
-    ! Positive definite quantity
-    vp2_zt(:,:)   = zm2zt_api( nzm, nzt, ngrdcol, gr, vp2(:,:), w_tol_sqd )
-
-    do sclr = 1, sclr_dim, 1
-      sclrp2_zt(:,:,sclr) = zm2zt_api( nzm, nzt, ngrdcol, gr, sclrp2(:,:,sclr), &
-                                       sclr_tol(sclr)**2 ) ! Pos. def. quantity
-    end do ! sclr = 1, sclr_dim, 1
-
+    wp2_zt(:,:) = zm2zt_api( nzm, nzt, ngrdcol, gr, wp2(:,:), w_tol_sqd ) ! Positive definite
     call Skx_func( nzt, ngrdcol, wp2_zt, wp3, &
                    w_tol, clubb_params, &
                    Skw_zt )
                    
+    wp3_zm(:,:) = zt2zm_api( nzm, nzt, ngrdcol, gr, wp3(:,:) )
     call Skx_func( nzm, ngrdcol, wp2, wp3_zm, &
                    w_tol, clubb_params, &
                    Skw_zm )    
                    
+    thlp2_zt(:,:) = zm2zt_api( nzm, nzt, ngrdcol, gr, thlp2(:,:), thl_tol**2 ) ! Positive definite
     call Skx_func( nzt, ngrdcol, thlp2_zt, thlp3, &
                    thl_tol, clubb_params, &
                    Skthl_zt )  
                    
-    call Skx_func( nzm, ngrdcol, thlp2, thlp3_zm, &
-                   thl_tol, clubb_params, &
-                   Skthl_zm )  
-                   
+    rtp2_zt(:,:) = zm2zt_api( nzm, nzt, ngrdcol, gr, rtp2(:,:),  rt_tol**2 ) ! Positive definite
     call Skx_func( nzt, ngrdcol, rtp2_zt, rtp3, &
                    rt_tol, clubb_params, &
-                   Skrt_zt )   
+                   Skrt_zt )
                    
-    call Skx_func( nzm, ngrdcol, rtp2, rtp3_zm, &
-                   rt_tol, clubb_params, &
-                   Skrt_zm )   
-                   
+    up2_zt(:,:) = zm2zt_api( nzm, nzt, ngrdcol, gr, up2(:,:), w_tol_sqd ) ! Positive definite
     call Skx_func( nzt, ngrdcol, up2_zt, up3, &
                    w_tol, clubb_params, &
                    Sku_zt )   
-                                      
+                      
+    vp2_zt(:,:) = zm2zt_api( nzm, nzt, ngrdcol, gr, vp2(:,:), w_tol_sqd ) ! Positive definite                
     call Skx_func( nzt, ngrdcol, vp2_zt, vp3, &
                    w_tol, clubb_params, &
                    Skv_zt )   
 
-    do sclr = 1, sclr_dim
-      
-      call Skx_func( nzt, ngrdcol, sclrp2_zt(:,:,sclr), sclrp3(:,:,sclr), &
-                     sclr_tol(sclr), clubb_params, &
-                     Sksclr_zt(:,:,sclr) )   
-                     
-    end do ! sclr = 1, sclr_dim, 1
+    if ( l_call_pdf_closure_twice .or. ( stats%l_sample .and. l_samp_stats_in_pdf_call ) ) then
 
-    if ( stats%l_sample .and. l_samp_stats_in_pdf_call ) then
-      !$acc update host( Skw_zt, Skw_zm, Skthl_zt, Skrt_zt, Skrt_zm, Skthl_zm )
-      call stats_update( "Skw_zt", Skw_zt, stats )
-      call stats_update( "Skw_zm", Skw_zm, stats )
-      call stats_update( "Skthl_zt", Skthl_zt, stats )
-      call stats_update( "Skthl_zm", Skthl_zm, stats )
-      call stats_update( "Skrt_zt", Skrt_zt, stats )
-      call stats_update( "Skrt_zm", Skrt_zm, stats )
+
+      thlp3_zm(:,:) = zt2zm_api( nzm, nzt, ngrdcol, gr, thlp3(:,:) )
+      call Skx_func( nzm, ngrdcol, thlp2, thlp3_zm, &
+                     thl_tol, clubb_params, &
+                     Skthl_zm )
+
+      rtp3_zm(:,:)  = zt2zm_api( nzm, nzt, ngrdcol, gr,  rtp3(:,:) )
+      call Skx_func( nzm, ngrdcol, rtp2, rtp3_zm, &
+                     rt_tol, clubb_params, &
+                     Skrt_zm )
+
     end if
 
     call compute_gamma_Skw( nzm, nzt, ngrdcol, l_gamma_Skw, & ! In
@@ -4109,11 +4082,6 @@ module pdf_closure_module
                             Skw_zt,                         & ! Optional In
                             gamma_Skw_fnc_zt )                ! Optional Out
 
-    if ( stats%l_sample .and. l_samp_stats_in_pdf_call ) then
-      !$acc update host(gamma_Skw_fnc)
-      call stats_update( "gamma_Skw_fnc", gamma_Skw_fnc, stats )
-    end if
-
     ! Compute sigma_sqd_w (dimensionless PDF width parameter)
     call compute_sigma_sqd_w( nzm, nzt, ngrdcol, gr, &
                               gamma_Skw_fnc, wp2, thlp2, rtp2, &
@@ -4121,53 +4089,29 @@ module pdf_closure_module
                               l_predict_upwp_vpwp, &
                               sigma_sqd_w )
 
-
-    ! Interpolate the the stats_zt grid
-    ! Pos. def. quantity
     sigma_sqd_w_zt(:,:) = zm2zt_api( nzm, nzt, ngrdcol, gr, sigma_sqd_w(:,:), zero_threshold )
 
-    !---------------------------------------------------------------------------
-    ! Interpolate thlp2, rtp2, and rtpthlp to thermodynamic levels,
-    !---------------------------------------------------------------------------
-
-    ! Interpolate variances to the stats_zt grid (statistics and closure)
-    ! Positive def. quantity
-    rtp2_zt(:,:)    = zm2zt_api( nzm, nzt, ngrdcol, gr, rtp2(:,:), rt_tol**2 )
-    ! Positive def. quantity
-    thlp2_zt(:,:)   = zm2zt_api( nzm, nzt, ngrdcol, gr, thlp2(:,:), thl_tol**2 )
-    ! Positive def. quantity
-    up2_zt(:,:)     = zm2zt_api( nzm, nzt, ngrdcol, gr, up2(:,:), w_tol_sqd )
-    ! Positive def. quantity
-    vp2_zt(:,:)     = zm2zt_api( nzm, nzt, ngrdcol, gr, vp2(:,:), w_tol_sqd )
-    wprtp_zt(:,:)   = zm2zt_api( nzm, nzt, ngrdcol, gr, wprtp(:,:) )
-    wpthlp_zt(:,:)  = zm2zt_api( nzm, nzt, ngrdcol, gr, wpthlp(:,:) )
+    wprtp_zt(:,:)   = zm2zt_api( nzm, nzt, ngrdcol, gr,   wprtp(:,:) )
+    wpthlp_zt(:,:)  = zm2zt_api( nzm, nzt, ngrdcol, gr,  wpthlp(:,:) )
     rtpthlp_zt(:,:) = zm2zt_api( nzm, nzt, ngrdcol, gr, rtpthlp(:,:) )
-    upwp_zt(:,:)    = zm2zt_api( nzm, nzt, ngrdcol, gr, upwp(:,:) )
-    vpwp_zt(:,:)    = zm2zt_api( nzm, nzt, ngrdcol, gr, vpwp(:,:) )
-
-    ! Compute skewness velocity for stats output purposes
-    if ( var_on_stats_list( stats, "Skw_velocity" ) ) then
-      !$acc parallel loop gang vector collapse(2) default(present)
-      do k = 1, nzm
-        do i = 1, ngrdcol
-          Skw_velocity(i,k) = ( 1.0_core_rknd / ( 1.0_core_rknd - sigma_sqd_w(i,k) ) ) &
-                       * ( wp3_zm(i,k) / max( wp2(i,k), w_tol_sqd ) )
-        end do
-      end do
-      !$acc end parallel loop
-    end if
-
-    !----------------------------------------------------------------
-    ! Call closure scheme
-    !----------------------------------------------------------------
+    upwp_zt(:,:)    = zm2zt_api( nzm, nzt, ngrdcol, gr,    upwp(:,:) )
+    vpwp_zt(:,:)    = zm2zt_api( nzm, nzt, ngrdcol, gr,    vpwp(:,:) )
+    
+    do sclr = 1, sclr_dim
 
     ! Put passive scalar input on the t grid for the PDF
-    do sclr = 1, sclr_dim
-      wpsclrp_zt(:,:,sclr)   = zm2zt_api( nzm, nzt, ngrdcol, gr, wpsclrp(:,:,sclr) )
-      sclrp2_zt(:,:,sclr)    = zm2zt_api( nzm, nzt, ngrdcol, gr, sclrp2(:,:,sclr), &
-                                          sclr_tol(sclr)**2 ) ! Pos. def. quantity
-      sclrprtp_zt(:,:,sclr)  = zm2zt_api( nzm, nzt, ngrdcol, gr, sclrprtp(:,:,sclr) )
+      wpsclrp_zt(:,:,sclr)   = zm2zt_api( nzm, nzt, ngrdcol, gr,   wpsclrp(:,:,sclr) )
+      sclrprtp_zt(:,:,sclr)  = zm2zt_api( nzm, nzt, ngrdcol, gr,  sclrprtp(:,:,sclr) )
       sclrpthlp_zt(:,:,sclr) = zm2zt_api( nzm, nzt, ngrdcol, gr, sclrpthlp(:,:,sclr) )
+
+      ! Positive definite quantity
+      sclrp2_zt(:,:,sclr) = zm2zt_api( nzm, nzt, ngrdcol, gr, sclrp2(:,:,sclr), &
+                                       sclr_tol(sclr)**2 )
+      
+      call Skx_func( nzt, ngrdcol, sclrp2_zt(:,:,sclr), sclrp3(:,:,sclr), &
+                     sclr_tol(sclr), clubb_params, &
+                     Sksclr_zt(:,:,sclr) )   
+
     end do ! sclr = 1, sclr_dim, 1
 
     ! Interpolate hydrometeor mixed moments to momentum levels.
@@ -4175,6 +4119,9 @@ module pdf_closure_module
       wphydrometp_zt(:,:,j) = zm2zt_api( nzm, nzt, ngrdcol, gr, wphydrometp(:,:,j) )
     end do ! i = 1, hydromet_dim, 1
 
+    !----------------------------------------------------------------
+    ! Call closure scheme
+    !----------------------------------------------------------------
     call pdf_closure( nzt, ngrdcol, sclr_dim, sclr_tol, gr, & ! intent(in)
            hydromet_dim, p_in_Pa, exner, thv_ds_zt,         & ! intent(in)
            wm_zt, wp2_zt, wp3,                              & ! intent(in)
@@ -4275,36 +4222,11 @@ module pdf_closure_module
       endif
 
     else ! l_call_pdf_closure_twice is false
-      
+
       ! Interpolate momentum variables output from the first call to
       ! pdf_closure back to momentum grid.
-      ! Pos. def. quantity
-      wp4(:,:) = zt2zm_api( nzm, nzt, ngrdcol, gr, wp4_zt(:,:), zero_threshold )
-
-      !$acc parallel loop gang vector default(present)
-      do i = 1, ngrdcol
-        ! Since top momentum level is higher than top thermo level,
-        ! set variables at top momentum level to 0.
-        wp4(i,gr%k_ub_zm) = zero
-        ! Set wp4 to 0 at the lowest momentum level (momentum level 1).
-        wp4(i,gr%k_lb_zm) = zero
-      end do
-      !$acc end parallel loop
-
-#ifndef CLUBB_CAM
-      ! CAM-CLUBB needs cloud water variance thus always compute this
-      if ( var_on_stats_list( stats, "rcp2" ) ) then
-#endif
-        ! Pos. def. quantity
-        rcp2(:,:) = zt2zm_api( nzm, nzt, ngrdcol, gr, rcp2_zt(:,:), zero_threshold )
-#ifndef CLUBB_CAM
-        !$acc parallel loop gang vector default(present) 
-        do i = 1, ngrdcol
-          rcp2(i,gr%k_ub_zm) = zero
-        end do
-        !$acc end parallel loop
-      endif
-#endif
+      
+      wp4(:,:) = zt2zm_api( nzm, nzt, ngrdcol, gr, wp4_zt(:,:), zero_threshold ) ! Pos. def. 
 
       wpthvp(:,:)      = zt2zm_api( nzm, nzt, ngrdcol, gr, wpthvp_zt(:,:) )
       thlpthvp(:,:)    = zt2zm_api( nzm, nzt, ngrdcol, gr, thlpthvp_zt(:,:) )
@@ -4320,6 +4242,13 @@ module pdf_closure_module
 
       !$acc parallel loop gang vector default(present) 
       do i = 1, ngrdcol 
+
+        ! Since top momentum level is higher than top thermo level,
+        ! set variables at top momentum level to 0.
+        wp4(i,gr%k_ub_zm) = zero
+        ! Set wp4 to 0 at the lowest momentum level (momentum level 1).
+        wp4(i,gr%k_lb_zm) = zero
+
         wpthvp(i,gr%k_ub_zm)     = 0.0_core_rknd
         thlpthvp(i,gr%k_ub_zm)   = 0.0_core_rknd
         rtpthvp(i,gr%k_ub_zm)    = 0.0_core_rknd
@@ -4361,13 +4290,21 @@ module pdf_closure_module
 
       end do ! sclr=1, sclr_dim
 
+      if ( stats%l_sample .and. l_samp_stats_in_pdf_call ) then
+
+        ! Pos. def. quantity
+        rcp2(:,:) = zt2zm_api( nzm, nzt, ngrdcol, gr, rcp2_zt(:,:), zero_threshold )
+
+        !$acc parallel loop gang vector default(present) 
+        do i = 1, ngrdcol
+          rcp2(i,gr%k_ub_zm) = zero
+        end do
+        !$acc end parallel loop
+        
+      end if
+
     end if ! l_call_pdf_closure_twice
     
-    if ( stats%l_sample .and. l_samp_stats_in_pdf_call ) then
-      !$acc update host( uprcp, vprcp )
-      call stats_update( "uprcp", uprcp, stats )
-      call stats_update( "vprcp", vprcp, stats )
-    end if
     
     ! If l_trapezoidal_rule_zt is true, call trapezoidal_rule_zt for
     ! thermodynamic-level variables output from pdf_closure.
@@ -4441,7 +4378,7 @@ module pdf_closure_module
           rcm(i,k) = rcm_in_layer(i,k)
         end do
       end do
-    !$acc end parallel loop
+      !$acc end parallel loop
     end if
 
     !$acc parallel loop gang vector collapse(2) default(present)
@@ -4455,19 +4392,20 @@ module pdf_closure_module
     end do
     !$acc end parallel loop
 
-    T_in_K = thlm2T_in_K_api( nzt, ngrdcol, thlm, exner, rcm )
-    rsat = sat_mixrat_liq_api( nzt, ngrdcol, gr, p_in_Pa, T_in_K, saturation_formula )
-
-    !$acc parallel loop gang vector collapse(2) default(present)
-    do k = 1, nzt
-      do i = 1, ngrdcol
-        rel_humidity(i,k) = (rtm(i,k) - rcm(i,k)) / rsat(i,k)
-        rcm_supersat_adj(i,k) = zero
-      end do
-    end do
-    !$acc end parallel loop
-      
     if ( l_rcm_supersat_adj ) then
+
+      T_in_K = thlm2T_in_K_api( nzt, ngrdcol, thlm, exner, rcm )
+      rsat = sat_mixrat_liq_api( nzt, ngrdcol, gr, p_in_Pa, T_in_K, saturation_formula )
+
+      !$acc parallel loop gang vector collapse(2) default(present)
+      do k = 1, nzt
+        do i = 1, ngrdcol
+          rel_humidity(i,k) = (rtm(i,k) - rcm(i,k)) / rsat(i,k)
+          rcm_supersat_adj(i,k) = zero
+        end do
+      end do
+      !$acc end parallel loop
+
       ! +PAB mods, take remaining supersaturation that may exist
       !   after CLUBB PDF call and add it to rcm.  Supersaturation
       !   may exist after PDF call due to issues with calling PDF on the
@@ -4491,7 +4429,200 @@ module pdf_closure_module
         write(fstderr,*) 'Warning: spurious supersaturation was removed after pdf_closure!'
       end if
 
+    else if ( stats%l_sample .and. l_samp_stats_in_pdf_call ) then
+
+      !$acc parallel loop gang vector collapse(2) default(present)
+      do k = 1, nzt
+        do i = 1, ngrdcol
+          rcm_supersat_adj(i,k) = zero
+        end do
+      end do
+      !$acc end parallel loop
+
     end if ! l_rcm_supersat_adj
+
+    if ( stats%l_sample .and. l_samp_stats_in_pdf_call ) then
+
+      !$acc update host( Skw_zt, Skw_zm, Skthl_zt, Skrt_zt, Skrt_zm, Skthl_zm )
+      call stats_update( "Skw_zt", Skw_zt, stats )
+      call stats_update( "Skw_zm", Skw_zm, stats )
+      call stats_update( "Skthl_zt", Skthl_zt, stats )
+      call stats_update( "Skthl_zm", Skthl_zm, stats )
+      call stats_update( "Skrt_zt", Skrt_zt, stats )
+      call stats_update( "Skrt_zm", Skrt_zm, stats )
+
+      !$acc update host(gamma_Skw_fnc)
+      call stats_update( "gamma_Skw_fnc", gamma_Skw_fnc, stats )
+
+      !$acc update host( uprcp, vprcp )
+      call stats_update( "uprcp", uprcp, stats )
+      call stats_update( "vprcp", vprcp, stats )
+      
+      ! Compute skewness velocity for stats output purposes
+      if ( var_on_stats_list( stats, "Skw_velocity" ) ) then
+        !$acc parallel loop gang vector collapse(2) default(present)
+        do k = 1, nzm
+          do i = 1, ngrdcol
+            Skw_velocity(i,k) = ( 1.0_core_rknd / ( 1.0_core_rknd - sigma_sqd_w(i,k) ) ) &
+                        * ( wp3_zm(i,k) / max( wp2(i,k), w_tol_sqd ) )
+          end do
+        end do
+        !$acc end parallel loop
+      end if
+      
+      !$acc update host( rc_coef, wp2rcp, rtprcp, rcp2, Skw_velocity, &
+      !$acc              cloud_frac_zm, ice_supersat_frac_zm, rtm_zm, thlm_zm, &
+      !$acc              rcm_zm, rcm_supersat_adj, cloud_frac, ice_supersat_frac, &
+      !$acc              rcm_in_layer, cloud_cover, sigma_sqd_w, wpthvp, wp2thvp, &
+      !$acc              wp2up, rtpthvp, thlpthvp, wprcp, rc_coef_zm, thlprcp, &
+      !$acc              wpup2, wpvp2, wp2up2, wp2vp2, wp4, wp2rtp, wprtp2, &
+      !$acc              wp2thlp, wpthlp2, wprtpthlp, w_up_in_cloud, &
+      !$acc              w_down_in_cloud, cloudy_updraft_frac, cloudy_downdraft_frac, &
+      !$acc              pdf_params%w_1, pdf_params%w_2, &
+      !$acc              pdf_params%varnce_w_1, pdf_params%varnce_w_2, &
+      !$acc              pdf_params%rt_1, pdf_params%rt_2, &
+      !$acc              pdf_params%varnce_rt_1, pdf_params%varnce_rt_2, &
+      !$acc              pdf_params%thl_1, pdf_params%thl_2, &
+      !$acc              pdf_params%varnce_thl_1, pdf_params%varnce_thl_2, &
+      !$acc              pdf_params%corr_w_rt_1, pdf_params%corr_w_rt_2, &
+      !$acc              pdf_params%corr_w_thl_1, pdf_params%corr_w_thl_2, &
+      !$acc              pdf_params%corr_rt_thl_1, pdf_params%corr_rt_thl_2, &
+      !$acc              pdf_params%alpha_thl, pdf_params%alpha_rt, &
+      !$acc              pdf_params%crt_1, pdf_params%crt_2, pdf_params%cthl_1, &
+      !$acc              pdf_params%cthl_2, pdf_params%chi_1, pdf_params%chi_2, &
+      !$acc              pdf_params%stdev_chi_1, pdf_params%stdev_chi_2, &
+      !$acc              pdf_params%stdev_eta_1, pdf_params%stdev_eta_2, &
+      !$acc              pdf_params%covar_chi_eta_1, pdf_params%covar_chi_eta_2, &
+      !$acc              pdf_params%corr_w_chi_1, pdf_params%corr_w_chi_2, &
+      !$acc              pdf_params%corr_w_eta_1, pdf_params%corr_w_eta_2, &
+      !$acc              pdf_params%corr_chi_eta_1, pdf_params%corr_chi_eta_2, &
+      !$acc              pdf_params%rsatl_1, pdf_params%rsatl_2, &
+      !$acc              pdf_params%rc_1, pdf_params%rc_2, &
+      !$acc              pdf_params%cloud_frac_1, pdf_params%cloud_frac_2, &
+      !$acc              pdf_params%mixt_frac, pdf_params%ice_supersat_frac_1, &
+      !$acc              pdf_params%ice_supersat_frac_2 )
+      call stats_update( "rc_coef", rc_coef, stats )
+      call stats_update( "wp2rcp", wp2rcp, stats )
+      call stats_update( "rtprcp", rtprcp, stats )
+      call stats_update( "rcp2", rcp2, stats )
+      call stats_update( "Skw_velocity", Skw_velocity, stats )
+      call stats_update( "cloud_frac", cloud_frac, stats )
+      call stats_update( "ice_supersat_frac", ice_supersat_frac, stats )
+      call stats_update( "rcm_in_layer", rcm_in_layer, stats )
+      call stats_update( "cloud_cover", cloud_cover, stats )
+      call stats_update( "sigma_sqd_w", sigma_sqd_w, stats )
+      call stats_update( "wpthvp", wpthvp, stats )
+      call stats_update( "wp2thvp", wp2thvp, stats )
+      call stats_update( "wp2up", wp2up, stats )
+      call stats_update( "rtpthvp", rtpthvp, stats )
+      call stats_update( "thlpthvp", thlpthvp, stats )
+      call stats_update( "wprcp", wprcp, stats )
+      call stats_update( "rc_coef_zm", rc_coef_zm, stats )
+      call stats_update( "thlprcp", thlprcp, stats )
+      call stats_update( "wpup2", wpup2, stats )
+      call stats_update( "wpvp2", wpvp2, stats )
+      call stats_update( "wp2up2", wp2up2, stats )
+      call stats_update( "wp2vp2", wp2vp2, stats )
+      call stats_update( "wp4", wp4, stats )
+      call stats_update( "wp2rtp", wp2rtp, stats )
+      call stats_update( "wprtp2", wprtp2, stats )
+      call stats_update( "wp2thlp", wp2thlp, stats )
+      call stats_update( "wpthlp2", wpthlp2, stats )
+      call stats_update( "wprtpthlp", wprtpthlp, stats )
+      call stats_update( "w_up_in_cloud", w_up_in_cloud, stats )
+      call stats_update( "w_down_in_cloud", w_down_in_cloud, stats )
+      call stats_update( "cld_updr_frac", cloudy_updraft_frac, stats )
+      call stats_update( "cld_downdr_frac", cloudy_downdraft_frac, stats )
+      call stats_update( "cloud_frac_zm", cloud_frac_zm, stats )
+      call stats_update( "ice_supersat_frac_zm", ice_supersat_frac_zm, stats )
+      call stats_update( "rtm_zm", rtm_zm, stats )
+      call stats_update( "thlm_zm", thlm_zm, stats )
+      call stats_update( "rcm_zm", rcm_zm, stats )
+      call stats_update( "rcm_supersat_adj", rcm_supersat_adj, stats )
+      call stats_update( "mixt_frac", pdf_params%mixt_frac, stats )
+      call stats_update( "w_1", pdf_params%w_1, stats )
+      call stats_update( "w_2", pdf_params%w_2, stats )
+      call stats_update( "varnce_w_1", pdf_params%varnce_w_1, stats )
+      call stats_update( "varnce_w_2", pdf_params%varnce_w_2, stats )
+      call stats_update( "thl_1", pdf_params%thl_1, stats )
+      call stats_update( "thl_2", pdf_params%thl_2, stats )
+      call stats_update( "varnce_thl_1", pdf_params%varnce_thl_1, stats )
+      call stats_update( "varnce_thl_2", pdf_params%varnce_thl_2, stats )
+      call stats_update( "rt_1", pdf_params%rt_1, stats )
+      call stats_update( "rt_2", pdf_params%rt_2, stats )
+      call stats_update( "varnce_rt_1", pdf_params%varnce_rt_1, stats )
+      call stats_update( "varnce_rt_2", pdf_params%varnce_rt_2, stats )
+      call stats_update( "rc_1", pdf_params%rc_1, stats )
+      call stats_update( "rc_2", pdf_params%rc_2, stats )
+      call stats_update( "rsatl_1", pdf_params%rsatl_1, stats )
+      call stats_update( "rsatl_2", pdf_params%rsatl_2, stats )
+      call stats_update( "cloud_frac_1", pdf_params%cloud_frac_1, stats )
+      call stats_update( "cloud_frac_2", pdf_params%cloud_frac_2, stats )
+      call stats_update( "chi_1", pdf_params%chi_1, stats )
+      call stats_update( "chi_2", pdf_params%chi_2, stats )
+      call stats_update( "stdev_chi_1", pdf_params%stdev_chi_1, stats )
+      call stats_update( "stdev_chi_2", pdf_params%stdev_chi_2, stats )
+      call stats_update( "stdev_eta_1", pdf_params%stdev_eta_1, stats )
+      call stats_update( "stdev_eta_2", pdf_params%stdev_eta_2, stats )
+      call stats_update( "covar_chi_eta_1", pdf_params%covar_chi_eta_1, stats )
+      call stats_update( "covar_chi_eta_2", pdf_params%covar_chi_eta_2, stats )
+      call stats_update( "corr_w_chi_1", pdf_params%corr_w_chi_1, stats )
+      call stats_update( "corr_w_chi_2", pdf_params%corr_w_chi_2, stats )
+      call stats_update( "corr_w_eta_1", pdf_params%corr_w_eta_1, stats )
+      call stats_update( "corr_w_eta_2", pdf_params%corr_w_eta_2, stats )
+      call stats_update( "corr_chi_eta_1", pdf_params%corr_chi_eta_1, stats )
+      call stats_update( "corr_chi_eta_2", pdf_params%corr_chi_eta_2, stats )
+      call stats_update( "corr_w_rt_1", pdf_params%corr_w_rt_1, stats )
+      call stats_update( "corr_w_rt_2", pdf_params%corr_w_rt_2, stats )
+      call stats_update( "corr_w_thl_1", pdf_params%corr_w_thl_1, stats )
+      call stats_update( "corr_w_thl_2", pdf_params%corr_w_thl_2, stats )
+      call stats_update( "corr_rt_thl_1", pdf_params%corr_rt_thl_1, stats )
+      call stats_update( "corr_rt_thl_2", pdf_params%corr_rt_thl_2, stats )
+      call stats_update( "crt_1", pdf_params%crt_1, stats )
+      call stats_update( "crt_2", pdf_params%crt_2, stats )
+      call stats_update( "cthl_1", pdf_params%cthl_1, stats )
+      call stats_update( "cthl_2", pdf_params%cthl_2, stats )
+
+      if ( var_on_stats_list( stats, "chi" ) .or.       &
+           var_on_stats_list( stats, "chip2" ) ) then
+        chi = pdf_params%mixt_frac * pdf_params%chi_1 &
+              + ( 1.0_core_rknd - pdf_params%mixt_frac ) * pdf_params%chi_2
+        call stats_update( "chi", chi, stats )
+      end if
+
+      if ( var_on_stats_list( stats, "chip2" ) ) then
+        chip2 = compute_variance_binormal( chi, pdf_params%chi_1, pdf_params%chi_2, &
+                                           pdf_params%stdev_chi_1, pdf_params%stdev_chi_2, &
+                                           pdf_params%mixt_frac )
+        call stats_update( "chip2", chip2, stats )
+      end if
+
+      if ( l_call_pdf_closure_twice ) then
+        !$acc update host( pdf_params_zm%w_1, pdf_params_zm%w_2, &
+        !$acc              pdf_params_zm%varnce_w_1, pdf_params_zm%varnce_w_2, &
+        !$acc              pdf_params_zm%mixt_frac )
+        call stats_update( "w_1_zm", pdf_params_zm%w_1, stats )
+        call stats_update( "w_2_zm", pdf_params_zm%w_2, stats )
+        call stats_update( "varnce_w_1_zm", pdf_params_zm%varnce_w_1, stats )
+        call stats_update( "varnce_w_2_zm", pdf_params_zm%varnce_w_2, stats )
+        call stats_update( "mixt_frac_zm", pdf_params_zm%mixt_frac, stats )
+      end if
+
+      if ( sclr_dim > 0 ) then
+        !$acc update host( sclrpthvp, sclrprcp, wp2sclrp, wpsclrp2, &
+        !$acc              wpsclrprtp, wpsclrpthlp )
+        do sclr = 1, sclr_dim
+          write( sclr_idx, * ) sclr
+          sclr_idx = adjustl( sclr_idx )
+          call stats_update( "sclr"//trim(sclr_idx)//"pthvp", sclrpthvp(:,:,sclr), stats )
+          call stats_update( "sclr"//trim(sclr_idx)//"prcp", sclrprcp(:,:,sclr), stats )
+          call stats_update( "wp2sclr"//trim(sclr_idx)//"p", wp2sclrp(:,:,sclr), stats )
+          call stats_update( "wpsclr"//trim(sclr_idx)//"p2", wpsclrp2(:,:,sclr), stats )
+          call stats_update( "wpsclr"//trim(sclr_idx)//"prtp", wpsclrprtp(:,:,sclr), stats )
+          call stats_update( "wpsclr"//trim(sclr_idx)//"pthlp", wpsclrpthlp(:,:,sclr), stats )
+        end do
+      end if
+    end if
 
     !$acc exit data delete( wp2_zt,wp3_zm, rtp2_zt,rtp3_zm, thlp2_zt,  thlp3_zm, &
     !$acc                   wprtp_zt, wpthlp_zt, rtpthlp_zt, up2_zt, &
@@ -4500,8 +4631,11 @@ module pdf_closure_module
     !$acc                   Skrt_zt, Skrt_zm, Skthl_zt, Skthl_zm, Sku_zt, &
     !$acc                   Skv_zt, wp2up2_zt, &
     !$acc                   wp2vp2_zt, wp4_zt, wpthvp_zt, rtpthvp_zt, thlpthvp_zt, &
-    !$acc                   wprcp_zt, rtprcp_zt, thlprcp_zt, uprcp_zt, vprcp_zt, &
-    !$acc                   rsat, rel_humidity, T_in_K )
+    !$acc                   wprcp_zt, wp2rcp, rtprcp_zt, thlprcp_zt, uprcp_zt, &
+    !$acc                   vprcp_zt, rc_coef, rcm_supersat_adj, Skw_velocity, &
+    !$acc                   cloud_frac_zm, ice_supersat_frac_zm, rtm_zm, thlm_zm, &
+    !$acc                   rcm_zm, rtprcp, rcp2, rsat, rel_humidity, T_in_K, &
+    !$acc                   chi, chip2 )
 
     !$acc exit data if( l_call_pdf_closure_twice ) &
     !$acc           delete( wprtp2_zm, wp2rtp_zm, wpthlp2_zm, &
@@ -4510,7 +4644,7 @@ module pdf_closure_module
     !$acc exit data if( sclr_dim > 0 ) &
     !$acc           delete( wpsclrp_zt, sclrp2_zt, sclrprtp_zt, sclrpthlp_zt, &
     !$acc                   Sksclr_zt, sclrpthvp_zt, sclrprcp_zt, wpsclrprtp_zm, &
-    !$acc                   wpsclrp2_zm, wpsclrpthlp_zm, wp2sclrp_zm )
+    !$acc                   wpsclrp2_zm, wpsclrpthlp_zm, wp2sclrp_zm, sclrprcp )
 
     !$acc exit data if( hydromet_dim > 0 ) delete( wphydrometp_zt )
 

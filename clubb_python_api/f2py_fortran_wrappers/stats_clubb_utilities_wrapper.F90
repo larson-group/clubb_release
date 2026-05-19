@@ -1,64 +1,40 @@
 ! stats_clubb_utilities_wrapper.F90 — wrapper for module stats_clubb_utilities
 
 subroutine f2py_stats_accumulate( &
-    nzm, nzt, ngrdcol, sclr_dim, edsclr_dim, sclr_dim_transport, edsclr_dim_transport, &
-    invrs_dzm, zt, dzm, dzt, dt, &
-    k_lb_zm, k_ub_zm, l_implemented, l_host_applies_sfc_fluxes, &
+    nzm, nzt, ngrdcol, sclr_dim, edsclr_dim, dt, &
+    l_implemented, l_host_applies_sfc_fluxes, l_stability_correct_tau_zm, &
     um, vm, upwp, vpwp, up2, vp2, &
     thlm, rtm, thlm_before, rtm_before, thlm_forcing, rtm_forcing, &
     wpthlp_sfc, wprtp_sfc, wprtp, wpthlp, &
     wp2, wp3, rtp2, rtp3, thlp2, thlp3, &
     rtpthlp, &
-    wpthvp, wp2thvp, wp2up, rtpthvp, thlpthvp, &
     p_in_Pa, exner, rho, rho_zm, &
     rho_ds_zm, rho_ds_zt, thv_ds_zm, thv_ds_zt, &
-    wm_zt, wm_zm, rcm, wprcp, rc_coef, &
-    rc_coef_zm, &
-    rcm_zm, rtm_zm, thlm_zm, cloud_frac, &
-    ice_supersat_frac, &
-    cloud_frac_zm, ice_supersat_frac_zm, rcm_in_layer, &
-    cloud_cover, rcm_supersat_adj, sigma_sqd_w, &
-    thvm, ug, vg, Lscale, wpthlp2, wp2thlp, &
-    wprtp2, wp2rtp, &
-    Lscale_up, Lscale_down, Kh_zt, wp2rcp, &
-    wprtpthlp, rsat, wpup2, wpvp2, &
-    wp2up2, wp2vp2, wp4, &
-    tau_zm, Kh_zm, thlprcp, &
-    rtprcp, rcp2, em, wp3_on_wp2, wp3_on_wp2_zt, Skw_velocity, &
-    w_up_in_cloud, w_down_in_cloud, &
-    cloudy_updraft_frac, cloudy_downdraft_frac, &
+    wm_zt, wm_zm, rcm, cloud_frac, &
+    thvm, ug, vg, ddzt_umvm_sqd, stability_correction, &
+    Kh_zt, rsat, Kh_zm, em, wp3_on_wp2, wp3_on_wp2_zt, &
     sclrm, sclrp2, &
-    sclrprtp, sclrpthlp, sclrm_forcing, sclrpthvp, &
-    wpsclrp, sclrprcp, wp2sclrp, wpsclrp2, &
-    wpsclrprtp, &
-    wpsclrpthlp, wpedsclrp, edsclrm, &
+    sclrprtp, sclrpthlp, sclrm_forcing, &
+    wpsclrp, wpedsclrp, edsclrm, &
     edsclrm_forcing, &
-    saturation_formula, &
-    l_call_pdf_closure_twice)
+    saturation_formula)
 
   use clubb_precision, only: core_rknd
   use stats_clubb_utilities, only: stats_accumulate
-  use derived_type_storage, only: stored_pdf_params, stored_pdf_params_zm, stored_stats
+  use derived_type_storage, only: stored_grid, stored_stats
 
   implicit none
 
   integer, intent(in) :: nzm, nzt, ngrdcol, sclr_dim, edsclr_dim
-  integer, intent(in) :: sclr_dim_transport, edsclr_dim_transport
-  integer, intent(in) :: k_lb_zm, k_ub_zm
   integer, intent(in) :: saturation_formula
-  logical, intent(in) :: l_implemented, l_host_applies_sfc_fluxes, l_call_pdf_closure_twice
-
-  real(core_rknd), intent(in), dimension(ngrdcol, nzm) :: invrs_dzm, dzm
-  real(core_rknd), intent(in), dimension(ngrdcol, nzt) :: zt, dzt
+  logical, intent(in) :: l_implemented, l_host_applies_sfc_fluxes, l_stability_correct_tau_zm
   real(core_rknd), intent(in) :: dt
 
   real(core_rknd), intent(in), dimension(ngrdcol, nzt) :: &
-    um, vm, thlm, rtm, thlm_before, rtm_before, thlm_forcing, rtm_forcing, &
-    wp3, rtp3, thlp3, wp2thvp, wp2up
+    um, vm, thlm, rtm, thlm_before, rtm_before, thlm_forcing, rtm_forcing, wp3, rtp3, thlp3
 
   real(core_rknd), intent(in), dimension(ngrdcol, nzm) :: &
-    upwp, vpwp, up2, vp2, wprtp, wpthlp, wp2, rtp2, thlp2, rtpthlp, &
-    wpthvp, rtpthvp, thlpthvp
+    upwp, vpwp, up2, vp2, wprtp, wpthlp, wp2, rtp2, thlp2, rtpthlp
 
   real(core_rknd), intent(in), dimension(ngrdcol) :: wpthlp_sfc, wprtp_sfc
 
@@ -69,65 +45,42 @@ subroutine f2py_stats_accumulate( &
     rho_zm, rho_ds_zm, thv_ds_zm, wm_zm
 
   real(core_rknd), intent(in), dimension(ngrdcol, nzt) :: &
-    rcm, rc_coef, cloud_frac, ice_supersat_frac, rcm_in_layer, cloud_cover, &
-    rcm_supersat_adj, thvm, ug, vg, Lscale, wpthlp2, wp2thlp, wprtp2, wp2rtp, &
-    Lscale_up, Lscale_down, Kh_zt, wp2rcp, wprtpthlp, rsat, wpup2, wpvp2, &
-    wp3_on_wp2_zt, w_up_in_cloud, w_down_in_cloud, cloudy_updraft_frac, &
-    cloudy_downdraft_frac
+    rcm, cloud_frac, thvm, ug, vg, Kh_zt, rsat, wp3_on_wp2_zt
 
   real(core_rknd), intent(in), dimension(ngrdcol, nzm) :: &
-    rcm_zm, rtm_zm, thlm_zm, wprcp, rc_coef_zm, cloud_frac_zm, ice_supersat_frac_zm, &
-    sigma_sqd_w, wp2up2, wp2vp2, wp4, tau_zm, Kh_zm, thlprcp, rtprcp, rcp2, em, &
-    wp3_on_wp2, Skw_velocity
+    ddzt_umvm_sqd, stability_correction, Kh_zm, em, wp3_on_wp2
 
-  real(core_rknd), intent(in), dimension(ngrdcol, nzt, sclr_dim_transport) :: &
-    sclrm, sclrm_forcing, wp2sclrp, wpsclrp2, wpsclrprtp, wpsclrpthlp
+  real(core_rknd), intent(in), dimension(ngrdcol, nzt, sclr_dim) :: &
+    sclrm, sclrm_forcing
 
-  real(core_rknd), intent(in), dimension(ngrdcol, nzm, sclr_dim_transport) :: &
-    sclrprcp, sclrp2, sclrprtp, sclrpthlp, sclrpthvp, wpsclrp
+  real(core_rknd), intent(in), dimension(ngrdcol, nzm, sclr_dim) :: &
+    sclrp2, sclrprtp, sclrpthlp, wpsclrp
 
-  real(core_rknd), intent(in), dimension(ngrdcol, nzt, edsclr_dim_transport) :: &
+  real(core_rknd), intent(in), dimension(ngrdcol, nzt, edsclr_dim) :: &
     edsclrm, edsclrm_forcing
 
-  real(core_rknd), intent(in), dimension(ngrdcol, nzm, edsclr_dim_transport) :: &
+  real(core_rknd), intent(in), dimension(ngrdcol, nzm, edsclr_dim) :: &
     wpedsclrp
 
   call stats_accumulate( &
     nzm, nzt, ngrdcol, sclr_dim, edsclr_dim, &
-    invrs_dzm, zt, dzm, dzt, dt, &
-    k_lb_zm, k_ub_zm, l_implemented, l_host_applies_sfc_fluxes, &
+    stored_grid, dt, &
+    l_implemented, l_host_applies_sfc_fluxes, l_stability_correct_tau_zm, &
     um, vm, upwp, vpwp, up2, vp2, &
     thlm, rtm, thlm_before, rtm_before, thlm_forcing, rtm_forcing, &
     wpthlp_sfc, wprtp_sfc, wprtp, wpthlp, &
     wp2, wp3, rtp2, rtp3, thlp2, thlp3, &
     rtpthlp, &
-    wpthvp, wp2thvp, wp2up, rtpthvp, thlpthvp, &
     p_in_Pa, exner, rho, rho_zm, &
     rho_ds_zm, rho_ds_zt, thv_ds_zm, thv_ds_zt, &
-    wm_zt, wm_zm, rcm, wprcp, rc_coef, &
-    rc_coef_zm, &
-    rcm_zm, rtm_zm, thlm_zm, cloud_frac, &
-    ice_supersat_frac, &
-    cloud_frac_zm, ice_supersat_frac_zm, rcm_in_layer, &
-    cloud_cover, rcm_supersat_adj, sigma_sqd_w, &
-    thvm, ug, vg, Lscale, wpthlp2, wp2thlp, &
-    wprtp2, wp2rtp, &
-    Lscale_up, Lscale_down, Kh_zt, wp2rcp, &
-    wprtpthlp, rsat, wpup2, wpvp2, &
-    wp2up2, wp2vp2, wp4, &
-    tau_zm, Kh_zm, thlprcp, &
-    rtprcp, rcp2, em, wp3_on_wp2, wp3_on_wp2_zt, Skw_velocity, &
-    w_up_in_cloud, w_down_in_cloud, &
-    cloudy_updraft_frac, cloudy_downdraft_frac, &
-    stored_pdf_params, stored_pdf_params_zm, &
+    wm_zt, wm_zm, rcm, cloud_frac, &
+    thvm, ug, vg, ddzt_umvm_sqd, stability_correction, &
+    Kh_zt, rsat, Kh_zm, em, wp3_on_wp2, wp3_on_wp2_zt, &
     sclrm, sclrp2, &
-    sclrprtp, sclrpthlp, sclrm_forcing, sclrpthvp, &
-    wpsclrp, sclrprcp, wp2sclrp, wpsclrp2, &
-    wpsclrprtp, &
-    wpsclrpthlp, wpedsclrp, edsclrm, &
+    sclrprtp, sclrpthlp, sclrm_forcing, &
+    wpsclrp, wpedsclrp, edsclrm, &
     edsclrm_forcing, &
     saturation_formula, &
-    l_call_pdf_closure_twice, &
     stored_stats )
 
 end subroutine f2py_stats_accumulate

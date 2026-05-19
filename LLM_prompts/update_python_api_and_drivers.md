@@ -2,6 +2,8 @@ Update the Python API and Python/JAX drivers so they match the current Fortran C
 
 The broad goal is to make the Python API, Python driver, and JAX driver structurally match the current Fortran implementation after Fortran refactors. This usually means updating f2py-facing wrapper signatures, fixing changed cross-module public routine argument lists, moving Python-side calculations to match newly internalized Fortran helper behavior, and keeping the Python and JAX driver copies in sync.
 
+Do not automatically apply this prompt after every Fortran change that might affect Python. If you are doing other Fortran work and notice that argument lists for cross-module public routines have changed, remind the user that the Python API and Python/JAX drivers may need follow-up updates, then ask whether they want that fix-up done now. Apply this prompt only when the user has asked for Python API/driver work, has agreed to the follow-up, or the current task explicitly includes keeping Python wrappers and drivers in sync.
+
 Do the work in this order:
 
 1. Inspect the recent Fortran changes in `src/CLUBB_core`.
@@ -24,6 +26,7 @@ Do the work in this order:
    - Add wrappers for new public routines if needed.
    - Remove or update wrappers for routines that were deleted, renamed, moved, or had outputs made local.
    - Keep wrapper argument order aligned with the Fortran routine order.
+   - If a routine gains a Fortran derived-type argument or return value, add or update the corresponding Python-to-Fortran type conversion path. Check the existing `derived_types` converters and `derived_type_storage` patterns before creating anything new.
 
 3. Compile the Python API.
    - First make sure the compiler and NetCDF Fortran environment are available.

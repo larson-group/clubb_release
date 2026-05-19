@@ -118,6 +118,7 @@ subroutine f2py_pdf_closure_driver(nzm, nzt, ngrdcol, dt, hydromet_dim, sclr_dim
   use derived_type_storage, only: &
     stored_grid, stored_err_info, stored_pdf_params, stored_pdf_params_zm, &
     stored_pdf_implicit_coefs_terms, stored_stats
+  use grid_class, only: zm2zt_api, zt2zm_api
   use pdf_closure_module, only: pdf_closure_driver
   use parameter_indices, only: nparams
 
@@ -188,15 +189,26 @@ subroutine f2py_pdf_closure_driver(nzm, nzt, ngrdcol, dt, hydromet_dim, sclr_dim
     pdf_params=stored_pdf_params, pdf_params_zm=stored_pdf_params_zm, err_info=stored_err_info, &
     rcm=rcm, cloud_frac=cloud_frac, ice_supersat_frac=ice_supersat_frac, wprcp=wprcp, &
     sigma_sqd_w=sigma_sqd_w, wpthvp=wpthvp, wp2thvp=wp2thvp, wp2up=wp2up, &
-    rtpthvp=rtpthvp, thlpthvp=thlpthvp, rc_coef=rc_coef, rcm_in_layer=rcm_in_layer, cloud_cover=cloud_cover, &
+    rtpthvp=rtpthvp, thlpthvp=thlpthvp, rcm_in_layer=rcm_in_layer, cloud_cover=cloud_cover, &
     rcp2_zt=rcp2_zt, thlprcp=thlprcp, rc_coef_zm=rc_coef_zm, sclrpthvp=sclrpthvp, &
     wpup2=wpup2, wpvp2=wpvp2, wp2up2=wp2up2, wp2vp2=wp2vp2, wp4=wp4, wp2rtp=wp2rtp, &
-    wprtp2=wprtp2, wp2thlp=wp2thlp, wpthlp2=wpthlp2, wprtpthlp=wprtpthlp, wp2rcp=wp2rcp, &
-    rtprcp=rtprcp, rcp2=rcp2, uprcp=uprcp, vprcp=vprcp, &
+    wprtp2=wprtp2, wp2thlp=wp2thlp, wpthlp2=wpthlp2, wprtpthlp=wprtpthlp, &
+    uprcp=uprcp, vprcp=vprcp, &
     w_up_in_cloud=w_up_in_cloud, w_down_in_cloud=w_down_in_cloud, &
     cloudy_updraft_frac=cloudy_updraft_frac, cloudy_downdraft_frac=cloudy_downdraft_frac, &
-    skw_velocity=skw_velocity, cloud_frac_zm=cloud_frac_zm, ice_supersat_frac_zm=ice_supersat_frac_zm, &
-    rtm_zm=rtm_zm, thlm_zm=thlm_zm, rcm_zm=rcm_zm, rcm_supersat_adj=rcm_supersat_adj, &
-    wp2sclrp=wp2sclrp, wpsclrp2=wpsclrp2, sclrprcp=sclrprcp, wpsclrprtp=wpsclrprtp, wpsclrpthlp=wpsclrpthlp )
+    wp2sclrp=wp2sclrp, wpsclrp2=wpsclrp2, wpsclrprtp=wpsclrprtp, wpsclrpthlp=wpsclrpthlp )
+
+  rc_coef = zm2zt_api(nzm, nzt, ngrdcol, stored_grid, rc_coef_zm)
+  wp2rcp = 0.0_core_rknd
+  rtprcp = 0.0_core_rknd
+  rcp2 = 0.0_core_rknd
+  skw_velocity = 0.0_core_rknd
+  cloud_frac_zm = zt2zm_api(nzm, nzt, ngrdcol, stored_grid, cloud_frac)
+  ice_supersat_frac_zm = zt2zm_api(nzm, nzt, ngrdcol, stored_grid, ice_supersat_frac)
+  rtm_zm = zt2zm_api(nzm, nzt, ngrdcol, stored_grid, rtm)
+  thlm_zm = zt2zm_api(nzm, nzt, ngrdcol, stored_grid, thlm)
+  rcm_zm = zt2zm_api(nzm, nzt, ngrdcol, stored_grid, rcm)
+  rcm_supersat_adj = 0.0_core_rknd
+  sclrprcp = 0.0_core_rknd
 
 end subroutine f2py_pdf_closure_driver

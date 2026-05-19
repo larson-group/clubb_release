@@ -449,8 +449,13 @@ module mixing_length
     end if
 
     if ( stats%l_sample ) then
-      !$acc update host( invrs_tau_zm, invrs_tau_xp2_zm, invrs_tau_wp2_zm, &
+      !$acc update host( Lscale, Lscale_up, Lscale_down, tau_zm, &
+      !$acc              invrs_tau_zm, invrs_tau_xp2_zm, invrs_tau_wp2_zm, &
       !$acc              invrs_tau_wpxp_zm, invrs_tau_wp3_zm )
+      call stats_update( "Lscale", Lscale, stats )
+      call stats_update( "Lscale_up", Lscale_up, stats )
+      call stats_update( "Lscale_down", Lscale_down, stats )
+      call stats_update( "tau_zm", tau_zm, stats )
       call stats_update( "invrs_tau_zm", invrs_tau_zm, stats )
       call stats_update( "invrs_tau_xp2_zm", invrs_tau_xp2_zm, stats )
       call stats_update( "invrs_tau_wp2_zm", invrs_tau_wp2_zm, stats )

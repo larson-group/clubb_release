@@ -567,15 +567,10 @@ module advance_clubb_core_module
     real( kind = core_rknd ), dimension(ngrdcol,nzt) :: &
       rsat   ! Saturation mixing ratio  ! Brian
 
-    real( kind = core_rknd ), dimension(ngrdcol,nzm) :: &
-      rtprcp, & ! rt'rc'               [kg^2/kg^2]
-      rcp2      ! rc'^2                [kg^2/kg^2]
-
     real( kind = core_rknd ), dimension(ngrdcol,nzt) :: &
       wpthlp2,   & ! w'thl'^2    [m K^2/s]
       wprtp2,    & ! w'rt'^2     [m kg^2/kg^2]
-      wprtpthlp, & ! w'rt'thl'   [m kg K/kg s]
-      wp2rcp       ! w'^2 rc'    [m^2 kg/kg s^2]
+      wprtpthlp    ! w'rt'thl'   [m kg K/kg s]
 
     real( kind = core_rknd ), dimension(ngrdcol,nzt) :: &
       Lscale_up,   & ! Length scale (upwards component)      [m]
@@ -591,9 +586,6 @@ module advance_clubb_core_module
     real( kind = core_rknd ), dimension(ngrdcol,nzm,edsclr_dim) :: &
       wpedsclrp   ! w'edsclr'
 
-    real( kind = core_rknd ), dimension(ngrdcol,nzm,sclr_dim) :: &
-      sclrprcp       ! sclr'rc'
-
     real( kind = core_rknd ), dimension(ngrdcol,nzt,sclr_dim) :: &
       wp2sclrp,    & ! w'^2 sclr'
       wpsclrp2,    & ! w'sclr'^2
@@ -601,16 +593,11 @@ module advance_clubb_core_module
       wpsclrpthlp    ! w'sclr'thl'
 
     real( kind = core_rknd ), dimension(ngrdcol,nzm) :: &
-      wp3_on_wp2,   & ! w'^3 / w'^2 on the zm grid                     [m/s]
-      Skw_velocity    ! Skewness velocity                              [m/s]
+      wp3_on_wp2      ! w'^3 / w'^2 on the zm grid                     [m/s]
 
     real( kind = core_rknd ), dimension(ngrdcol,nzt) :: &
       wp2_zt,       & ! w'^2 on thermo. grid     [m^2/s^2]
       wp3_on_wp2_zt   ! w'^3 / w'^2 on the zt grid [m/s]
-
-    ! Eric Raut declared this variable solely for output to disk
-    real( kind = core_rknd ), dimension(ngrdcol,nzt) :: &
-      rc_coef    ! Coefficient of X'r_c' in Eq. (34) on t-levs.  [K/(kg/kg)]
 
     real( kind = core_rknd ), dimension(ngrdcol,nzm) :: &
       sigma_sqd_w        ! PDF width parameter (momentum levels)         [-]
@@ -628,17 +615,9 @@ module advance_clubb_core_module
     real( kind = core_rknd ), dimension(ngrdcol,nzt) :: &
       rcp2_zt              ! r_c'^2 (on thermo. grid)             [kg^2/kg^2]
 
-    real( kind = core_rknd ), dimension(ngrdcol,nzm) :: &
-      cloud_frac_zm,        & ! Cloud Fraction on momentum grid      [-]
-      ice_supersat_frac_zm, & ! Ice Cloud Fraction on momentum grid  [-]
-      rtm_zm,               & ! Total water mixing ratio             [kg/kg]
-      thlm_zm,              & ! Liquid potential temperature         [kg/kg]
-      rcm_zm                  ! Liquid water mixing ratio on m-levs. [kg/kg]
-
     real( kind = core_rknd ), dimension(ngrdcol,nzt) :: &
       rtm_before, &
       thlm_before, &
-      rcm_supersat_adj, & ! Adjustment to rcm due to spurious supersaturation
       rel_humidity        ! Relative humidity after PDF closure [-]
 
     real( kind = core_rknd ), dimension(ngrdcol,nzm) :: &
@@ -703,16 +682,13 @@ module advance_clubb_core_module
 
     !----- Begin Code -----
 
-    !$acc enter data create( Skw_zm, Skw_zt, thvm, rtprcp, rcp2, &
+    !$acc enter data create( Skw_zm, Skw_zt, thvm, &
     !$acc              ddzt_umvm_sqd, rtm_before, thlm_before, &
-    !$acc              wpthlp2, wprtp2, wprtpthlp, wp2rcp, Lscale_up, Lscale_zm, &
+    !$acc              wpthlp2, wprtp2, wprtpthlp, Lscale_up, Lscale_zm, &
     !$acc              Lscale_down, em, tau_zm, &
-    !$acc              Skw_velocity, wp3_on_wp2, wp3_on_wp2_zt, rc_coef, &
-    !$acc              sigma_sqd_w, &
+    !$acc              wp3_on_wp2, wp3_on_wp2_zt, sigma_sqd_w, &
     !$acc              sqrt_em_zt, w_1_zm, w_2_zm, varnce_w_1_zm, varnce_w_2_zm, &
-    !$acc              mixt_frac_zm, rcp2_zt, cloud_frac_zm, ice_supersat_frac_zm, rtm_zm, &
-    !$acc              thlm_zm, rcm_zm, &
-    !$acc              rcm_supersat_adj, stability_correction, &
+    !$acc              mixt_frac_zm, rcp2_zt, stability_correction, &
     !$acc              invrs_tau_C6_zm, invrs_tau_C1_zm, invrs_tau_xp2_zm, &
     !$acc              invrs_tau_C4_zm, invrs_tau_C14_zm, &
     !$acc              invrs_tau_zt, invrs_tau_wp3_zt, Cx_fnc_Richardson, &
@@ -722,7 +698,7 @@ module advance_clubb_core_module
     !$acc              wp2_zt )
 
     !$acc enter data if( sclr_dim > 0 ) &
-    !$acc            create( sclrprcp, wp2sclrp, &
+    !$acc            create( wp2sclrp, &
     !$acc                    wpsclrp2, wpsclrprtp, wpsclrpthlp )
 
     !$acc enter data if( edsclr_dim > 0 ) &
@@ -870,25 +846,19 @@ module advance_clubb_core_module
                                rcm, cloud_frac,                             & ! Out
                                ice_supersat_frac, wprcp,                    & ! Out
                                sigma_sqd_w, wpthvp, wp2thvp, wp2up,         & ! Out
-                               rtpthvp, thlpthvp, rc_coef,                  & ! Out
+                               rtpthvp, thlpthvp,                           & ! Out
                                rcm_in_layer, cloud_cover,                   & ! Out
                                rcp2_zt, thlprcp,                            & ! Out
                                rc_coef_zm, sclrpthvp,                       & ! Out
                                wpup2, wpvp2,                                & ! Out
                                wp2up2, wp2vp2, wp4,                         & ! Out
                                wp2rtp, wprtp2, wp2thlp,                     & ! Out
-                               wpthlp2, wprtpthlp, wp2rcp,                  & ! Out
-                               rtprcp, rcp2,                                & ! Out
+                               wpthlp2, wprtpthlp,                          & ! Out
                                uprcp, vprcp,                                & ! Out
                                w_up_in_cloud, w_down_in_cloud,              & ! Out
                                cloudy_updraft_frac,                         & ! Out
                                cloudy_downdraft_frac,                       & ! Out
-                               Skw_velocity,                                & ! Out
-                               cloud_frac_zm,                               & ! Out
-                               ice_supersat_frac_zm,                        & ! Out
-                               rtm_zm, thlm_zm, rcm_zm,                     & ! Out
-                               rcm_supersat_adj,                            & ! Out
-                               wp2sclrp, wpsclrp2, sclrprcp,                & ! Out
+                               wp2sclrp, wpsclrp2,                          & ! Out
                                wpsclrprtp, wpsclrpthlp )                      ! Out
 
       if ( clubb_at_least_debug_level_api( 0 ) ) then
@@ -1479,25 +1449,19 @@ module advance_clubb_core_module
                                rcm, cloud_frac,                             & ! Out
                                ice_supersat_frac, wprcp,                    & ! Out
                                sigma_sqd_w, wpthvp, wp2thvp, wp2up,         & ! Out
-                               rtpthvp, thlpthvp, rc_coef,                  & ! Out
+                               rtpthvp, thlpthvp,                           & ! Out
                                rcm_in_layer, cloud_cover,                   & ! Out
                                rcp2_zt, thlprcp,                            & ! Out
                                rc_coef_zm, sclrpthvp,                       & ! Out
                                wpup2, wpvp2,                                & ! Out
                                wp2up2, wp2vp2, wp4,                         & ! Out
                                wp2rtp, wprtp2, wp2thlp,                     & ! Out
-                               wpthlp2, wprtpthlp, wp2rcp,                  & ! Out
-                               rtprcp, rcp2,                                & ! Out
+                               wpthlp2, wprtpthlp,                          & ! Out
                                uprcp, vprcp,                                & ! Out
                                w_up_in_cloud, w_down_in_cloud,              & ! Out
                                cloudy_updraft_frac,                         & ! Out
                                cloudy_downdraft_frac,                       & ! Out
-                               Skw_velocity,                                & ! Out
-                               cloud_frac_zm,                               & ! Out
-                               ice_supersat_frac_zm,                        & ! Out
-                               rtm_zm, thlm_zm, rcm_zm,                     & ! Out
-                               rcm_supersat_adj,                            & ! Out
-                               wp2sclrp, wpsclrp2, sclrprcp,                & ! Out
+                               wp2sclrp, wpsclrp2,                          & ! Out
                                wpsclrprtp, wpsclrpthlp )                      ! Out
 
       if ( clubb_at_least_debug_level_api( 0 ) ) then
@@ -1529,68 +1493,40 @@ module advance_clubb_core_module
 
     if ( stats%l_sample ) then
 
-      !$acc update host( ddzt_umvm_sqd )
-      call stats_update( "ddzt_umvm_sqd", ddzt_umvm_sqd, stats )
-
-      if ( clubb_config_flags%l_stability_correct_tau_zm ) then
-        !$acc update host( stability_correction )
-        call stats_update( "stability_correction", stability_correction, stats )
-      end if
-
       call stats_accumulate( &
-             nzm, nzt, ngrdcol, sclr_dim, edsclr_dim, gr%invrs_dzm, gr%zt,                & ! In
-             gr%grid_dir * gr%dzm, gr%grid_dir * gr%dzt, dt,                              & ! In
-             gr%k_lb_zm, gr%k_ub_zm,                                                      & ! In
+             nzm, nzt, ngrdcol, sclr_dim, edsclr_dim, gr, dt,                             & ! In
              l_implemented, clubb_config_flags%l_host_applies_sfc_fluxes,                 & ! In
+             clubb_config_flags%l_stability_correct_tau_zm,                                & ! In
              um, vm, upwp, vpwp, up2, vp2,                                                 & ! In
              thlm, rtm, thlm_before, rtm_before, thlm_forcing, rtm_forcing,                & ! In
              wpthlp_sfc, wprtp_sfc, wprtp, wpthlp,                                        & ! In
              wp2, wp3, rtp2, rtp3, thlp2, thlp3,                                           & ! In
              rtpthlp,                                                                       & ! In
-             wpthvp, wp2thvp, wp2up, rtpthvp, thlpthvp,                                    & ! In
              p_in_Pa, exner, rho, rho_zm,                                                  & ! In
              rho_ds_zm, rho_ds_zt, thv_ds_zm, thv_ds_zt,                                   & ! In
-             wm_zt, wm_zm, rcm, wprcp, rc_coef,                                            & ! In
-             rc_coef_zm,                                                                    & ! In
-             rcm_zm, rtm_zm, thlm_zm, cloud_frac,                                          & ! In
-             ice_supersat_frac,                                                             & ! In
-             cloud_frac_zm, ice_supersat_frac_zm, rcm_in_layer,                            & ! In
-             cloud_cover, rcm_supersat_adj, sigma_sqd_w,                                   & ! In
-             thvm, ug, vg, Lscale, wpthlp2, wp2thlp,                                       & ! In
-             wprtp2, wp2rtp,                                                                & ! In
-             Lscale_up, Lscale_down, Kh_zt, wp2rcp,                                        & ! In
-             wprtpthlp, rsat, wpup2, wpvp2,                                                & ! In
-             wp2up2, wp2vp2, wp4,                                                          & ! In
-             tau_zm, Kh_zm, thlprcp,                                                       & ! In
-             rtprcp, rcp2, em, wp3_on_wp2, wp3_on_wp2_zt, Skw_velocity,                     & ! In
-             w_up_in_cloud, w_down_in_cloud,                                               & ! In
-             cloudy_updraft_frac, cloudy_downdraft_frac,                                   & ! In
-             pdf_params, pdf_params_zm,                                                    & ! In
+             wm_zt, wm_zm, rcm,                                                            & ! In
+             cloud_frac,                                                                    & ! In
+             thvm, ug, vg,                                                                  & ! In
+             ddzt_umvm_sqd, stability_correction,                                          & ! In
+             Kh_zt,                                                                         & ! In
+             rsat,                                                                          & ! In
+             Kh_zm,                                                                         & ! In
+             em, wp3_on_wp2, wp3_on_wp2_zt,                                                 & ! In
              sclrm, sclrp2,                                                                 & ! In
-             sclrprtp, sclrpthlp, sclrm_forcing, sclrpthvp,                                & ! In
-             wpsclrp, sclrprcp, wp2sclrp, wpsclrp2,                                        & ! In
-             wpsclrprtp,                                                                    & ! In
-             wpsclrpthlp, wpedsclrp, edsclrm,                                              & ! In
+             sclrprtp, sclrpthlp, sclrm_forcing,                                           & ! In
+             wpsclrp, wpedsclrp, edsclrm,                                                  & ! In
              edsclrm_forcing,                                                               & ! In
              clubb_config_flags%saturation_formula,                                         & ! In
-             clubb_config_flags%l_call_pdf_closure_twice,                                   & ! In
              stats )                                                                        ! InOut
 
       !$acc update host( wp2, vp2, up2, wprtp, wpthlp, rtp2, thlp2, rtpthlp, &
       !$acc              rtm, thlm, um, vm, wp3 )
-
-      !$acc update host( upwp, vpwp ) if ( clubb_config_flags%l_predict_upwp_vpwp )
 
       call stats_finalize_budget( "wp2_bt", wp2 / dt, stats )
       call stats_finalize_budget( "vp2_bt", vp2 / dt, stats )
       call stats_finalize_budget( "up2_bt", up2 / dt, stats )
       call stats_finalize_budget( "wprtp_bt", wprtp / dt, stats )
       call stats_finalize_budget( "wpthlp_bt", wpthlp / dt, stats )
-
-      if ( clubb_config_flags%l_predict_upwp_vpwp ) then
-        call stats_finalize_budget( "upwp_bt", upwp / dt, stats )
-        call stats_finalize_budget( "vpwp_bt", vpwp / dt, stats )
-      end if
 
       call stats_finalize_budget( "rtp2_bt", rtp2 / dt, stats )
       call stats_finalize_budget( "thlp2_bt", thlp2 / dt, stats )
@@ -1601,6 +1537,13 @@ module advance_clubb_core_module
       call stats_finalize_budget( "um_bt", um / dt, stats )
       call stats_finalize_budget( "vm_bt", vm / dt, stats )
       call stats_finalize_budget( "wp3_bt", wp3 / dt, stats )
+
+      if ( clubb_config_flags%l_predict_upwp_vpwp ) then
+        !$acc update host( upwp, vpwp )
+        call stats_finalize_budget( "upwp_bt", upwp / dt, stats )
+        call stats_finalize_budget( "vpwp_bt", vpwp / dt, stats )
+      end if
+
     end if
 
     if ( clubb_at_least_debug_level_api( 2 ) ) then
@@ -1631,23 +1574,20 @@ module advance_clubb_core_module
     end if
 
     !$acc exit data if( sclr_dim > 0 ) &
-    !$acc           delete( sclrprcp, wp2sclrp, &
+    !$acc           delete( wp2sclrp, &
     !$acc                   wpsclrp2, wpsclrprtp, wpsclrpthlp )
 
     !$acc exit data if( edsclr_dim > 0 ) &
     !$acc           delete( wpedsclrp )
 
-    !$acc exit data delete( Skw_zm, Skw_zt, thvm, rtprcp, rcp2, &
-    !$acc                   wpthlp2, wprtp2, wprtpthlp, wp2rcp, Lscale_up, &
+    !$acc exit data delete( Skw_zm, Skw_zt, thvm, &
+    !$acc                   wpthlp2, wprtp2, wprtpthlp, Lscale_up, &
     !$acc                   Lscale_zm, Lscale_down, em, tau_zm, &
     !$acc                   ddzt_umvm_sqd, rtm_before, thlm_before, &
-    !$acc                   Skw_velocity, wp3_on_wp2, wp3_on_wp2_zt, &
-    !$acc                   rc_coef, sigma_sqd_w, &
+    !$acc                   wp3_on_wp2, wp3_on_wp2_zt, sigma_sqd_w, &
     !$acc                   sqrt_em_zt, w_1_zm, w_2_zm, varnce_w_1_zm, &
     !$acc                   varnce_w_2_zm, &
-    !$acc                   mixt_frac_zm, rcp2_zt, cloud_frac_zm, ice_supersat_frac_zm, rtm_zm, &
-    !$acc                   thlm_zm, rcm_zm, &
-    !$acc                   rcm_supersat_adj, stability_correction, &
+    !$acc                   mixt_frac_zm, rcp2_zt, stability_correction, &
     !$acc                   invrs_tau_C6_zm, invrs_tau_C1_zm, invrs_tau_xp2_zm, &
     !$acc                   invrs_tau_C4_zm, invrs_tau_C14_zm, &
     !$acc                   invrs_tau_zt, invrs_tau_wp3_zt, Cx_fnc_Richardson, &
