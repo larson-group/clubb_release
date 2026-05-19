@@ -4008,8 +4008,7 @@ module pdf_closure_module
     !$acc                    wprcp_zt, wp2rcp, rtprcp_zt, thlprcp_zt, uprcp_zt, &
     !$acc                    vprcp_zt, rc_coef, rcm_supersat_adj, Skw_velocity, &
     !$acc                    cloud_frac_zm, ice_supersat_frac_zm, rtm_zm, thlm_zm, &
-    !$acc                    rcm_zm, rtprcp, rcp2, rsat, rel_humidity, T_in_K, &
-    !$acc                    chi, chip2 )
+    !$acc                    rcm_zm, rtprcp, rcp2, rsat, rel_humidity, T_in_K )
 
     !$acc enter data if( l_call_pdf_closure_twice ) &
     !$acc            create( wprtp2_zm, wp2rtp_zm, wpthlp2_zm, &
@@ -4634,8 +4633,7 @@ module pdf_closure_module
     !$acc                   wprcp_zt, wp2rcp, rtprcp_zt, thlprcp_zt, uprcp_zt, &
     !$acc                   vprcp_zt, rc_coef, rcm_supersat_adj, Skw_velocity, &
     !$acc                   cloud_frac_zm, ice_supersat_frac_zm, rtm_zm, thlm_zm, &
-    !$acc                   rcm_zm, rtprcp, rcp2, rsat, rel_humidity, T_in_K, &
-    !$acc                   chi, chip2 )
+    !$acc                   rcm_zm, rtprcp, rcp2, rsat, rel_humidity, T_in_K )
 
     !$acc exit data if( l_call_pdf_closure_twice ) &
     !$acc           delete( wprtp2_zm, wp2rtp_zm, wpthlp2_zm, &
