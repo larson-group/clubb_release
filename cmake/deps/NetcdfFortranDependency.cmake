@@ -149,14 +149,7 @@ else()
         netcdf_fortran
         GIT_REPOSITORY https://github.com/Unidata/netcdf-fortran.git
         GIT_TAG v4.6.1
-        PATCH_COMMAND sed -i "s/LINK_LIBRARIES netCDF::netcdf//g" CMakeLists.txt && 
-                  sed -i "s/CMAKE_SOURCE_DIR/CMAKE_CURRENT_SOURCE_DIR/g" CMakeLists.txt && 
-                  sed -i "s/CMAKE_BINARY_DIR/CMAKE_CURRENT_BINARY_DIR/g" CMakeLists.txt && 
-                  sed -i "s/add_subdirectory(docs)//Ig" CMakeLists.txt && 
-                  sed -i "s/add_subdirectory(examples)//Ig" CMakeLists.txt && 
-                  sed -i "s/add_subdirectory(nf_test)//Ig" CMakeLists.txt &&
-                  sed -i "s/NC_ENOPAR/-114/g" fortran/nf_nc_noparallel.F90 &&
-                  sed -i "660,675s/^/#/" CMakeLists.txt
+        PATCH_COMMAND /bin/sh "-c" "sed -i.bak 's/LINK_LIBRARIES netCDF::netcdf//g' CMakeLists.txt && sed -i.bak 's/CMAKE_SOURCE_DIR/CMAKE_CURRENT_SOURCE_DIR/g' CMakeLists.txt && sed -i.bak 's/CMAKE_BINARY_DIR/CMAKE_CURRENT_BINARY_DIR/g' CMakeLists.txt && sed -i.bak 's/add_subdirectory(docs)//Ig' CMakeLists.txt && sed -i.bak 's/add_subdirectory(examples)//Ig' CMakeLists.txt && sed -i.bak 's/add_subdirectory(nf_test)//Ig' CMakeLists.txt && sed -i.bak 's/NC_ENOPAR/-114/g' fortran/nf_nc_noparallel.F90 && sed -i.bak '660,675s/^/#/' CMakeLists.txt && rm -f CMakeLists.txt.bak fortran/nf_nc_noparallel.F90.bak"
     )
 
     # This is to limit the installs because cmake inherits the installs of the netcdf-f

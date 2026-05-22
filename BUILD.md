@@ -57,7 +57,8 @@ If you want a more nuanced CLUBB build or want more control over various facets 
 ### Specifying the compiler
 
 The compile script (compile.py) attempts to detect a compiler from the environment variable "FC", and tries to set the 
-toolchain appropriately. 
+toolchain appropriately. If neither `FC` nor `LMOD_FAMILY_COMPILER` is set, it will also try to find `gfortran` on `PATH`
+and use the corresponding default toolchain.
 If no compiler can be found, a specific toolchain will need to be specified. These can be found in <CLUBB_ROOT>/cmake/toolchains.
 This system works well when the environment is setup using lmod (module system), but more work may be needed to make compilation
 function correctly if the environment is not set properly.

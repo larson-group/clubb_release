@@ -42,6 +42,11 @@ def canonical_compiler(name):
     """Map a compiler or family name to its canonical toolchain name."""
     return COMPILER_NAME_MAP.get(name.lower(), name.lower())
 
+
+def canonical_compiler_from_path(path):
+    """Map a compiler executable path to its canonical toolchain name."""
+    return canonical_compiler(os.path.basename(path))
+
 def run_and_log(cmd, logfile, term_out=True):
     """Run a subprocess command, log output, optionally print to terminal, return exit code."""
 
@@ -77,7 +82,8 @@ def resolve_compiler_and_toolchain(args):
 
     If -toolchain is given by the user, it is used directly and no file lookup occurs.
     Otherwise, LMOD_FAMILY_COMPILER is tried first, then FC, using the canonical name
-    from COMPILER_NAME_MAP to locate a matching toolchain file.
+    from COMPILER_NAME_MAP to locate a matching toolchain file. If neither is set,
+    fall back to a gfortran executable found on PATH.
     Exits with an error if no toolchain file can be found.
 
     Returns (compiler_name, toolchain_file).
@@ -87,32 +93,55 @@ def resolve_compiler_and_toolchain(args):
 
     lmod_family = os.environ.get("LMOD_FAMILY_COMPILER")
     fc          = os.environ.get("FC")
+    resolved_fc = shutil.which(fc) if fc else None
+    fallback_gfortran = shutil.which("gfortran")
 
-    # Derive canonical compiler name for build/install directory naming
-    if lmod_family:
-        compiler = canonical_compiler(lmod_family)
-    elif fc and shutil.which(fc):
-        compiler = canonical_compiler(os.path.basename(shutil.which(fc)))
-    else:
-        compiler = "unknown"
+    compiler = "unknown"
 
     # User-specified toolchain: use it directly, skip file lookup
     if args.toolchain:
+        if lmod_family:
+            compiler = canonical_compiler(lmod_family)
+        elif resolved_fc:
+            compiler = canonical_compiler_from_path(resolved_fc)
+        elif fallback_gfortran:
+            compiler = canonical_compiler_from_path(fallback_gfortran)
         return compiler, args.toolchain
 
     # Build a list of canonical names to try, in preference order
     candidates = []
+    candidate_sources = {}
     if lmod_family:
-        candidates.append(canonical_compiler(lmod_family))
-    if fc and shutil.which(fc):
-        fc_canonical = canonical_compiler(os.path.basename(shutil.which(fc)))
+        canonical_name = canonical_compiler(lmod_family)
+        candidates.append(canonical_name)
+        candidate_sources[canonical_name] = f"LMOD_FAMILY_COMPILER={lmod_family}"
+    if resolved_fc:
+        fc_canonical = canonical_compiler_from_path(resolved_fc)
         if fc_canonical not in candidates:
             candidates.append(fc_canonical)
+            candidate_sources[fc_canonical] = f"FC={fc} -> {resolved_fc}"
+    if fallback_gfortran:
+        gfortran_canonical = canonical_compiler_from_path(fallback_gfortran)
+        if gfortran_canonical not in candidates:
+            candidates.append(gfortran_canonical)
+            candidate_sources[gfortran_canonical] = f"PATH lookup found gfortran at {fallback_gfortran}"
+            if not fc:
+                os.environ["FC"] = fallback_gfortran
 
     if not candidates:
-        print(f"ERROR: No compiler detected (FC or LMOD_FAMILY_COMPILER) and "
-                f"no -toolchain specified")
+        print("ERROR: No Fortran compiler was found for automatic toolchain selection.")
+        print("  Checked, in order:")
+        print(f"    LMOD_FAMILY_COMPILER: {lmod_family if lmod_family else 'not set'}")
+        if fc:
+            print(f"    FC: {fc} (not found on PATH)")
+        else:
+            print("    FC: not set")
+        print("    PATH lookup for gfortran: not found")
+        print("  Set FC to a working Fortran compiler executable or")
+        print("  provide -toolchain to bypass automatic toolchain selection.")
         sys.exit(1)
+
+    compiler = candidates[0]
 
     for name in candidates:
         toolchain_file = os.path.join(CLUBB_ROOT, f"cmake/toolchains/{kernel}_{arch}_{name}.cmake")
@@ -120,10 +149,15 @@ def resolve_compiler_and_toolchain(args):
             print(f"Using inferred toolchain file: {toolchain_file}")
             return compiler, toolchain_file
 
-    print(f"ERROR: No toolchain file found for detected compilers/kernel/arch combination:")
+    print("ERROR: A Fortran compiler was found, but no matching default toolchain file exists.")
+    print(f"  System: {kernel}_{arch}")
+    print("  Detected compiler candidates:")
+    for name in candidates:
+        print(f"    {name} ({candidate_sources.get(name, 'source unknown')})")
+    print("  Expected one of:")
     for name in candidates:
         print(f"  cmake/toolchains/{kernel}_{arch}_{name}.cmake")
-    print(f"  Use -toolchain to specify one explicitly.")
+    print("  Use -toolchain to override the default toolchain selection.")
     sys.exit(1)
 
 
