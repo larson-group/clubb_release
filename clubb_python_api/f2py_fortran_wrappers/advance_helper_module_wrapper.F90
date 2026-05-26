@@ -326,3 +326,21 @@ subroutine f2py_calc_stability_correction(nzm, ngrdcol, &
     stability_correction)
 
 end subroutine f2py_calc_stability_correction
+
+subroutine f2py_calc_wp3_on_wp2(nzm, nzt, ngrdcol, wp2, wp3, wp3_on_wp2, wp3_on_wp2_zt)
+
+  use clubb_precision, only: core_rknd
+  use derived_type_storage, only: stored_grid
+  use advance_helper_module, only: calc_wp3_on_wp2
+
+  implicit none
+
+  integer, intent(in) :: nzm, nzt, ngrdcol
+  real(core_rknd), dimension(ngrdcol, nzm), intent(in) :: wp2
+  real(core_rknd), dimension(ngrdcol, nzt), intent(in) :: wp3
+  real(core_rknd), dimension(ngrdcol, nzm), intent(out) :: wp3_on_wp2
+  real(core_rknd), dimension(ngrdcol, nzt), intent(out) :: wp3_on_wp2_zt
+
+  call calc_wp3_on_wp2(nzm, nzt, ngrdcol, stored_grid, wp2, wp3, wp3_on_wp2, wp3_on_wp2_zt)
+
+end subroutine f2py_calc_wp3_on_wp2

@@ -93,7 +93,6 @@ def _make_args(gr, flags, clubb_params, nu_vert_res_dep, pdf_implicit_coefs_term
         "sigma_sqd_w": full((ngrdcol, nzm), 0.5),
         "wm_zm": full((ngrdcol, nzm), 0.0),
         "wm_zt": full((ngrdcol, nzt), 0.0),
-        "wp3_on_wp2": full((ngrdcol, nzm), 0.0),
         "wpup2": full((ngrdcol, nzt), 0.0),
         "wpvp2": full((ngrdcol, nzt), 0.0),
         "wp2up2": full((ngrdcol, nzm), 0.0),
@@ -112,8 +111,6 @@ def _make_args(gr, flags, clubb_params, nu_vert_res_dep, pdf_implicit_coefs_term
         "invrs_tau_c4_zm": full((ngrdcol, nzm), 1.0 / 300.0),
         "invrs_tau_wp3_zt": full((ngrdcol, nzt), 1.0 / 300.0),
         "invrs_tau_c1_zm": full((ngrdcol, nzm), 1.0 / 300.0),
-        "skw_zm": full((ngrdcol, nzm), 0.0),
-        "skw_zt": full((ngrdcol, nzt), 0.0),
         "rho_ds_zm": full((ngrdcol, nzm), 1.0),
         "rho_ds_zt": full((ngrdcol, nzt), 1.0),
         "invrs_rho_ds_zm": full((ngrdcol, nzm), 1.0),
@@ -184,7 +181,6 @@ def test_advance_wp2_wp3_updates_match_return_values(tmp_path):
     vp2_in = args["vp2"]
     wp2_in = args["wp2"]
     wp3_in = args["wp3"]
-    wp2_zt_in = args["wp2_zt"]
     try:
         up2_out, vp2_out, wp2_out, wp3_out, wp2_zt_out, err_info_out = clubb_api.advance_wp2_wp3(**args)
     finally:
@@ -194,5 +190,9 @@ def test_advance_wp2_wp3_updates_match_return_values(tmp_path):
     np.testing.assert_allclose(vp2_out, vp2_in)
     np.testing.assert_allclose(wp2_out, wp2_in)
     np.testing.assert_allclose(wp3_out, wp3_in)
-    np.testing.assert_allclose(wp2_zt_out, wp2_zt_in)
+    expected_wp2_zt = np.maximum(
+        clubb_api.zm2zt(gr=gr, nzm=gr.nzm, nzt=gr.nzt, ngrdcol=gr.ngrdcol, azm=wp2_in),
+        np.finfo(np.float64).tiny,
+    )
+    np.testing.assert_allclose(wp2_zt_out, expected_wp2_zt)
     assert isinstance(err_info_out, ErrInfo)

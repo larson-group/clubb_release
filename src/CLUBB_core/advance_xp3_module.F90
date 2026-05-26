@@ -291,7 +291,7 @@ module advance_xp3_module
   !=============================================================================
   subroutine compute_xp3( nzm, nzt, ngrdcol, sclr_dim, sclr_tol, gr, &
                           iiPDF_type, clubb_params, &
-                          wp2_zt, wp3, thvm, &
+                          wp2, wp3, thvm, &
                           wprtp, wpthlp, rtp2, thlp2, upwp, vpwp, up2, vp2, &
                           sigma_sqd_w, wpsclrp, sclrp2, &
                           stats, &
@@ -357,11 +357,11 @@ module advance_xp3_module
       clubb_params   ! Array of CLUBB tunable parameters [units vary]
 
     real( kind = core_rknd ), dimension(ngrdcol,nzt), intent(in) :: &
-      wp2_zt, & ! Variance of vertical velocity on thermodynamic levels [m^2/s^2]
       wp3,  & ! Third moment of vertical velocity [m^3/s^3]
       thvm    ! Virtual potential temperature [K]
 
     real( kind = core_rknd ), dimension(ngrdcol,nzm), intent(in) :: &
+      wp2,         & ! Variance of vertical velocity [m^2/s^2]
       wprtp,       & ! Turbulent flux of rt [m kg/(kg s)]
       wpthlp,      & ! Turbulent flux of thl [m K/s]
       rtp2,        & ! Variance of rt [(kg/kg)^2]
@@ -396,6 +396,7 @@ module advance_xp3_module
     real( kind = core_rknd ), dimension(ngrdcol,nzt) :: &
       ddzm_thvm_zm,                   & ! d(thvm_zm)/dz [K/m]
       brunt_vaisala_freq_sqd_zt,      & ! Buoyancy frequency squared on t-levs. [s^-2]
+      wp2_zt,                         & ! Variance of vertical velocity on thermodynamic levels [m^2/s^2]
       Skw_zt,                         & ! w skewness on thermodynamic levels [-]
       wpthlp_zt,                      & ! w'thl' on thermo. grid [m K/s]
       wprtp_zt,                       & ! w'rt' on thermo. grid [m kg/(kg s)]
@@ -418,9 +419,11 @@ module advance_xp3_module
     !----------------------------- Begin Code ------------------------------
 
     !$acc data create( thvm_zm, ddzm_thvm_zm, brunt_vaisala_freq_sqd_zt, &
-    !$acc              Skw_zt, wpthlp_zt, wprtp_zt, upwp_zt, vpwp_zt, &
+    !$acc              wp2_zt, Skw_zt, wpthlp_zt, wprtp_zt, upwp_zt, vpwp_zt, &
     !$acc              thlp2_zt, rtp2_zt, up2_zt, vp2_zt, sigma_sqd_w_zt, &
     !$acc              xp3_coef_fnc, wpsclrp_zt, sclrp2_zt )
+
+    wp2_zt(:,:) = zm2zt_api( nzm, nzt, ngrdcol, gr, wp2(:,:), w_tol_sqd )
 
     ! The ADG1 PDF must use this option.
     call Skx_func( nzt, ngrdcol, wp2_zt, wp3, &

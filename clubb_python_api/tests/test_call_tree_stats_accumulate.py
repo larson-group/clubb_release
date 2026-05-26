@@ -98,7 +98,7 @@ def test_stats_accumulate_smoke():
             wm_zt=zt(0.0), wm_zm=zm(0.0), rcm=zt(0.0), cloud_frac=zt(0.0),
             thvm=zt(300.0), ug=zt(1.0), vg=zt(0.0), ddzt_umvm_sqd=zm(0.0),
             stability_correction=zm(0.0), kh_zt=zt(1.0), rsat=zt(0.01), kh_zm=zm(1.0),
-            em=zm(0.0), wp3_on_wp2=zm(0.0), wp3_on_wp2_zt=zt(0.0),
+            em=zm(0.0),
             sclrm=zts(0.0), sclrp2=zms(0.0),
             sclrprtp=zms(0.0), sclrpthlp=zms(0.0), sclrm_forcing=zts(0.0),
             wpsclrp=zms(0.0), wpedsclrp=zme(0.0), edsclrm=zte(0.0),

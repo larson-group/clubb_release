@@ -176,3 +176,11 @@ def calc_stability_correction(
         f_arr(em),
         f_arr(lambda0_stability_coef),
         nzm=int(nzm), ngrdcol=int(ngrdcol))
+
+
+def calc_wp3_on_wp2(gr: Grid, nzm: int, nzt: int, ngrdcol: int, wp2, wp3):
+    """Compute wp3/wp2 on momentum and thermodynamic levels."""
+    set_fortran_grid(gr)
+    return clubb_f2py.f2py_calc_wp3_on_wp2(
+        f_arr(wp2), f_arr(wp3), nzm=int(nzm), nzt=int(nzt), ngrdcol=int(ngrdcol)
+    )

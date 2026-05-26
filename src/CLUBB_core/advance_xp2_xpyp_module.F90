@@ -59,13 +59,12 @@ module advance_xp2_xpyp_module
                                invrs_tau_xp2_zm, invrs_tau_C4_zm,         & ! In
                                invrs_tau_C14_zm, wm_zm,                   & ! In
                                rtm, wprtp, thlm, wpthlp, wpthvp, um, vm,  & ! In
-                               wp2, wp2_zt, wp3, upwp, vpwp,              & ! In
+                               wp2, wp3, upwp, vpwp,                      & ! In
                                sigma_sqd_w, wprtp2, wpthlp2,              & ! In
                                wprtpthlp, Kh_zt, rtp2_forcing,            & ! In
                                thlp2_forcing, rtpthlp_forcing,            & ! In
                                rho_ds_zm, rho_ds_zt, invrs_rho_ds_zm,     & ! In
                                thv_ds_zm, cloud_frac,                     & ! In
-                               wp3_on_wp2, wp3_on_wp2_zt,                 & ! In
                                pdf_implicit_coefs_terms,                  & ! In
                                dt, fcor_y,                                & ! In
                                sclrm, wpsclrp,                            & ! In
@@ -145,6 +144,7 @@ module advance_xp2_xpyp_module
 
     use grid_class, only: & 
         grid,       & ! Type
+        zm2zt_api,  & ! Procedure
         zt2zm_api
 
     use pdf_parameter_module, only: &
@@ -187,6 +187,9 @@ module advance_xp2_xpyp_module
     use err_info_type_module, only: &
       err_info_type     ! Type
 
+    use advance_helper_module, only: &
+        calc_wp3_on_wp2    ! Procedure
+
     implicit none
 
     !------------------------------ Input Variables ------------------------------
@@ -222,23 +225,20 @@ module advance_xp2_xpyp_module
       rtpthlp_forcing,  & ! <r_t'th_l'> forcing (momentum levels) [(kg/kg)K/s]
       rho_ds_zm,        & ! Dry, static density on momentum levs. [kg/m^3]
       invrs_rho_ds_zm,  & ! Inv. dry, static density @ mom. levs. [m^3/kg]
-      thv_ds_zm,        & ! Dry, base-state theta_v on mom. levs. [K]
-      wp3_on_wp2          ! Smoothed version of <w'^3>/<w'^2> zm  [m/s]
+      thv_ds_zm           ! Dry, base-state theta_v on mom. levs. [K]
 
     real( kind = core_rknd ), intent(in), dimension(ngrdcol,nzt) :: &
       rtm,              & ! Total water mixing ratio (t-levs)     [kg/kg]
       thlm,             & ! Liquid potential temp. (t-levs)       [K]
       um,               & ! u wind (thermodynamic levels)         [m/s]
       vm,               & ! v wind (thermodynamic levels)         [m/s]
-      wp2_zt,           & ! <w'^2> interpolated to thermo. levels [m^2/s^2]
       wp3,              & ! <w'^3> (thermodynamic levels)         [m^3/s^3]
       wprtp2,           & ! <w'r_t'^2> (thermodynamic levels)     [m/s (kg/kg)^2]
       wpthlp2,          & ! <w'th_l'^2> (thermodynamic levels)    [m/s K^2]
       wprtpthlp,        & ! <w'r_t'th_l'> (thermodynamic levels)  [m/s (kg/kg) K]
       Kh_zt,            & ! Eddy diffusivity on thermo. levels    [m^2/s]
       rho_ds_zt,        & ! Dry, static density on thermo. levels [kg/m^3]
-      cloud_frac,       & ! Cloud fraction (thermodynamic levels) [-]
-      wp3_on_wp2_zt       ! Smoothed version of <w'^3>/<w'^2> zt  [m/s]
+      cloud_frac          ! Cloud fraction (thermodynamic levels) [-]
 
     type(implicit_coefs_terms), intent(in) :: &
       pdf_implicit_coefs_terms    ! Implicit coefs / explicit terms [units vary]
@@ -426,6 +426,13 @@ module advance_xp2_xpyp_module
     real( kind = core_rknd ), dimension(ngrdcol,nzm) :: &
       stats_tmp_zm
 
+    real( kind = core_rknd ), dimension(ngrdcol,nzm) :: &
+      wp3_on_wp2    ! Smoothed version of <w'^3>/<w'^2> zm [m/s]
+
+    real( kind = core_rknd ), dimension(ngrdcol,nzt) :: &
+      wp2_zt,          & ! <w'^2> interpolated to thermo. levels [m^2/s^2]
+      wp3_on_wp2_zt      ! Smoothed version of <w'^3>/<w'^2> zt [m/s]
+
     ! Loop indices
     integer :: sclr, k, i
 
@@ -441,13 +448,18 @@ module advance_xp2_xpyp_module
     !$acc                    lhs_ta_wprtpthlp, lhs_ta_wpup2, lhs_ta_wpvp2, rhs_ta_wprtp2, &
     !$acc                    rhs_ta_wpthlp2, rhs_ta_wprtpthlp, rhs_ta_wpup2, rhs_ta_wpvp2, &
     !$acc                    lhs_diff, lhs_diff_uv, lhs_ma, lhs_dp1, rtm_zm, &
-    !$acc                    lhs_dp1_C4, lhs_dp1_C14 )
+    !$acc                    lhs_dp1_C4, lhs_dp1_C14, wp3_on_wp2, wp2_zt, wp3_on_wp2_zt )
 
     !$acc enter data if( sclr_dim > 0 ) &
     !$acc      create( sclrp2_old, sclrprtp_old, sclrpthlp_old, sclrprtp_chnge, &
     !$acc              lhs_ta_wpsclrp2, lhs_ta_wprtpsclrp, lhs_ta_wpthlpsclrp, &
     !$acc              rhs_ta_wpsclrp2, rhs_ta_wprtpsclrp, rhs_ta_wpthlpsclrp, &
     !$acc              sclrpthlp_chnge ) 
+
+    call calc_wp3_on_wp2( nzm, nzt, ngrdcol, gr, wp2, wp3, &
+                          wp3_on_wp2, wp3_on_wp2_zt )
+
+    wp2_zt(:,:) = zm2zt_api( nzm, nzt, ngrdcol, gr, wp2(:,:), w_tol_sqd )
 
     if ( clubb_at_least_debug_level_api( 1 ) ) then
 
@@ -1446,7 +1458,7 @@ module advance_xp2_xpyp_module
     !$acc                    lhs_ta_wprtpthlp, lhs_ta_wpup2, lhs_ta_wpvp2, rhs_ta_wprtp2, &
     !$acc                    rhs_ta_wpthlp2, rhs_ta_wprtpthlp, rhs_ta_wpup2, rhs_ta_wpvp2, &
     !$acc                    lhs_diff, lhs_diff_uv, lhs_ma, lhs_dp1, rtm_zm, &
-    !$acc                    lhs_dp1_C4, lhs_dp1_C14 )
+    !$acc                    lhs_dp1_C4, lhs_dp1_C14, wp3_on_wp2, wp2_zt, wp3_on_wp2_zt )
 
     !$acc exit data if( sclr_dim > 0 ) &
     !$acc      delete( sclrp2_old, sclrprtp_old, sclrpthlp_old, sclrprtp_chnge, &

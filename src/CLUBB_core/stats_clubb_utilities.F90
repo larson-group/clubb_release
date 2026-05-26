@@ -29,7 +29,7 @@ contains
                      Kh_zt, &
                      rsat, &
                      Kh_zm, &
-                     em, wp3_on_wp2, wp3_on_wp2_zt, &
+                     em, &
                      sclrm, sclrp2, &
                      sclrprtp, sclrpthlp, sclrm_forcing, &
                      wpsclrp, wpedsclrp, edsclrm, &
@@ -56,6 +56,7 @@ contains
         var_on_stats_list
 
     use advance_helper_module, only: &
+        calc_wp3_on_wp2, &
         vertical_avg, &     ! Procedure(s)
         vertical_integral
 
@@ -108,10 +109,10 @@ contains
       rcm, cloud_frac
 
     real( kind = core_rknd ), intent(in), dimension(ngrdcol,nzt) :: &
-      thvm, ug, vg, Kh_zt, rsat, wp3_on_wp2_zt
+      thvm, ug, vg, Kh_zt, rsat
 
     real( kind = core_rknd ), intent(in), dimension(ngrdcol,nzm) :: &
-      ddzt_umvm_sqd, stability_correction, Kh_zm, em, wp3_on_wp2
+      ddzt_umvm_sqd, stability_correction, Kh_zm, em
 
     real( kind = core_rknd ), intent(in), dimension(ngrdcol,nzt,sclr_dim) :: &
       sclrm, sclrm_forcing
@@ -149,6 +150,12 @@ contains
     real( kind = core_rknd ), dimension(ngrdcol,nzt) :: &
       dzt         ! Signed thermodynamic-grid layer thickness [m]
 
+    real( kind = core_rknd ), dimension(ngrdcol,nzm) :: &
+      wp3_on_wp2    ! Ratio of wp3 to wp2 on momentum levels [m/s]
+
+    real( kind = core_rknd ), dimension(ngrdcol,nzt) :: &
+      wp3_on_wp2_zt    ! Ratio of wp3 to wp2 on thermodynamic levels [m/s]
+
     real( kind = core_rknd ), dimension(ngrdcol):: xtmp
 
     real( kind = core_rknd ), dimension(ngrdcol) :: &
@@ -175,6 +182,11 @@ contains
 
         dzm(:,:) = gr%grid_dir * gr%dzm(:,:)
         dzt(:,:) = gr%grid_dir * gr%dzt(:,:)
+
+        !$acc enter data create( wp3_on_wp2, wp3_on_wp2_zt )
+
+        call calc_wp3_on_wp2( nzm, nzt, ngrdcol, gr, wp2, wp3, &
+                              wp3_on_wp2, wp3_on_wp2_zt )
 
         !$acc update host( wp2, vp2, up2, wprtp, wpthlp, upwp, vpwp, rtp2, thlp2, &
         !$acc              rtpthlp, rtm, thlm, um, vm, wp3, &
@@ -467,6 +479,8 @@ contains
       end do
       call stats_update( "rtm_spur_src", rtm_spur_src, stats )
       call stats_update( "thlm_spur_src", thlm_spur_src, stats )
+
+      !$acc exit data delete( wp3_on_wp2, wp3_on_wp2_zt )
     end if
 
     return

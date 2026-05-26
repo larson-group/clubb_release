@@ -2,9 +2,9 @@
 
 subroutine f2py_advance_xm_wpxp(nzm, nzt, ngrdcol, sclr_dim, sclr_dim_transport, sclr_tol, dt, &
     sigma_sqd_w, wm_zm, wm_zt, wp2, lscale_zm, &
-    wp3_on_wp2, wp3_on_wp2_zt, kh_zt, kh_zm, &
+    wp3, kh_zt, kh_zm, &
     stability_correction, &
-    invrs_tau_c6_zm, tau_max_zm, skw_zm, wp2rtp, rtpthvp, &
+    invrs_tau_c6_zm, tau_max_zm, wp2rtp, rtpthvp, &
     rtm_forcing, wprtp_forcing, rtm_ref, wp2thlp, &
     thlpthvp, thlm_forcing, wpthlp_forcing, thlm_ref, &
     rho_ds_zm, rho_ds_zt, invrs_rho_ds_zm, &
@@ -58,13 +58,13 @@ subroutine f2py_advance_xm_wpxp(nzm, nzt, ngrdcol, sclr_dim, sclr_dim_transport,
   real(core_rknd), intent(in) :: dt
 
   real(core_rknd), dimension(ngrdcol, nzt), intent(in) :: &
-    wm_zt, wp3_on_wp2_zt, kh_zt, wp2rtp, rtm_forcing, rtm_ref, wp2thlp, &
+    wm_zt, wp3, kh_zt, wp2rtp, rtm_forcing, rtm_ref, wp2thlp, &
     thlm_forcing, thlm_ref, rho_ds_zt, invrs_rho_ds_zt, &
     um_forcing, vm_forcing, ug, vg, um_ref, vm_ref
 
   real(core_rknd), dimension(ngrdcol, nzm), intent(in) :: &
-    sigma_sqd_w, wm_zm, wp2, lscale_zm, wp3_on_wp2, kh_zm, stability_correction, &
-    invrs_tau_c6_zm, tau_max_zm, skw_zm, rtpthvp, wprtp_forcing, thlpthvp, &
+    sigma_sqd_w, wm_zm, wp2, lscale_zm, kh_zm, stability_correction, &
+    invrs_tau_c6_zm, tau_max_zm, rtpthvp, wprtp_forcing, thlpthvp, &
     wpthlp_forcing, rho_ds_zm, invrs_rho_ds_zm, thv_ds_zm, rtp2, thlp2, &
     w_1_zm, w_2_zm, varnce_w_1_zm, varnce_w_2_zm, mixt_frac_zm, em, &
     cx_fnc_richardson, wpthvp, up2, vp2, uprcp, vprcp, rc_coef_zm
@@ -96,9 +96,9 @@ subroutine f2py_advance_xm_wpxp(nzm, nzt, ngrdcol, sclr_dim, sclr_dim_transport,
 
   call advance_xm_wpxp(nzm, nzt, ngrdcol, sclr_dim, sclr_tol, stored_grid, dt, &
     sigma_sqd_w, wm_zm, wm_zt, wp2, lscale_zm, &
-    wp3_on_wp2, wp3_on_wp2_zt, kh_zt, kh_zm, &
+    wp3, kh_zt, kh_zm, &
     stability_correction, &
-    invrs_tau_c6_zm, tau_max_zm, skw_zm, wp2rtp, rtpthvp, &
+    invrs_tau_c6_zm, tau_max_zm, wp2rtp, rtpthvp, &
     rtm_forcing, wprtp_forcing, rtm_ref, wp2thlp, &
     thlpthvp, thlm_forcing, wpthlp_forcing, thlm_ref, &
     rho_ds_zm, rho_ds_zt, invrs_rho_ds_zm, &

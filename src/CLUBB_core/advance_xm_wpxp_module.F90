@@ -58,9 +58,9 @@ module advance_xm_wpxp_module
   !=============================================================================
   subroutine advance_xm_wpxp( nzm, nzt, ngrdcol, sclr_dim, sclr_tol, gr, dt, &
                               sigma_sqd_w, wm_zm, wm_zt, wp2, Lscale_zm, &
-                              wp3_on_wp2, wp3_on_wp2_zt, Kh_zt, Kh_zm, &
+                              wp3, Kh_zt, Kh_zm, &
                               stability_correction, &
-                              invrs_tau_C6_zm, tau_max_zm, Skw_zm, wp2rtp, rtpthvp, &
+                              invrs_tau_C6_zm, tau_max_zm, wp2rtp, rtpthvp, &
                               rtm_forcing, wprtp_forcing, rtm_ref, wp2thlp, &
                               thlpthvp, thlm_forcing, wpthlp_forcing, thlm_ref, &
                               rho_ds_zm, rho_ds_zt, invrs_rho_ds_zm, &
@@ -145,14 +145,19 @@ module advance_xm_wpxp_module
         one, &
         one_half, &
         zero, &
-        eps
+        eps, &
+        w_tol
 
     use grid_class, only: & 
-        grid    ! Type
+        grid, &
+        zt2zm_api
 
     use model_flags, only: &
         iiPDF_new,                     & ! Variable(s)
         l_explicit_turbulent_adv_wpxp
+
+    use Skx_module, only: &
+        Skx_func    ! Procedure
 
     use mono_flux_limiter, only: &
         calc_turb_adv_range ! Procedure(s)
@@ -185,6 +190,9 @@ module advance_xm_wpxp_module
     use err_info_type_module, only: &
       err_info_type     ! Type
 
+    use advance_helper_module, only: &
+        calc_wp3_on_wp2    ! Procedure
+
     implicit none
 
     ! -------------------- Input Variables --------------------
@@ -205,7 +213,7 @@ module advance_xm_wpxp_module
 
     real( kind = core_rknd ), intent(in), dimension(ngrdcol,nzt) :: &
       wm_zt,           & ! w wind component on thermodynamic levels [m/s]
-      wp3_on_wp2_zt,   & ! Smoothed wp3 / wp2 on thermo. levels     [m/s]
+      wp3,             & ! <w'^3> on thermodynamic levels           [m^3/s^3]
       Kh_zt,           & ! Eddy diffusivity on thermodynamic levels [m^2/s]
       wp2rtp,          & ! <w'^2 r_t'> (thermodynamic levels)    [m^2/s^2 kg/kg]
       rtm_forcing,     & ! r_t forcing (thermodynamic levels)       [(kg/kg)/s]
@@ -222,12 +230,10 @@ module advance_xm_wpxp_module
       wp2,                  & ! w'^2 (momentum levels)                   [m^2/s^2]
       Lscale_zm,            & ! Turbulent mixing length interp to m levs [m]
       em,                   & ! Turbulent Kinetic Energy (TKE)           [m^2/s^2]
-      wp3_on_wp2,           & ! Smoothed wp3 / wp2 on momentum levels    [m/s]
       Kh_zm,                & ! Eddy diffusivity on momentum levels
       stability_correction, & ! Stability correction factor
       invrs_tau_C6_zm,      & ! Inverse time-scale on mom. levels applied to C6 term [1/s]
       tau_max_zm,           & ! Max. allowable eddy dissipation time scale on m-levs  [s]
-      Skw_zm,               & ! Skewness of w on momentum levels         [-]
       rtpthvp,              & ! r_t'th_v' (momentum levels)              [(kg/kg) K]
       wprtp_forcing,        & ! <w'r_t'> forcing (momentum levels)       [(kg/kg)/s^2]
       thlpthvp,             & ! th_l'th_v' (momentum levels)             [K^2]
@@ -414,8 +420,16 @@ module advance_xm_wpxp_module
     real( kind = core_rknd ), dimension(ngrdcol,nzm) :: &
       C6rt_Skw_fnc, C6thl_Skw_fnc, C7_Skw_fnc, C6_term
 
+    real( kind = core_rknd ), dimension(ngrdcol,nzm) :: &
+      wp3_zm,     & ! w'^3 on momentum levels [m^3/s^3]
+      Skw_zm,     & ! Skewness of w on momentum levels [-]
+      wp3_on_wp2    ! Smoothed wp3 / wp2 on momentum levels [m/s]
+
     ! Eddy Diffusion for wpthlp and wprtp.
     real( kind = core_rknd ), dimension(ngrdcol,nzt) :: Kw6  ! wpxp eddy diff. [m^2/s]
+
+    real( kind = core_rknd ), dimension(ngrdcol,nzt) :: &
+      wp3_on_wp2_zt    ! Smoothed wp3 / wp2 on thermo. levels [m/s]
 
     ! Variables used as part of the monotonic turbulent advection scheme.
     ! Find the lowermost and uppermost grid levels that can have an effect
@@ -507,6 +521,7 @@ module advance_xm_wpxp_module
     ! -------------------- Begin Code --------------------
 
     !$acc enter data create( C6rt_Skw_fnc, C6thl_Skw_fnc, C7_Skw_fnc, C6_term, Kw6, &
+    !$acc                 wp3_zm, Skw_zm, wp3_on_wp2, wp3_on_wp2_zt, &
     !$acc                 low_lev_effect, high_lev_effect, rtm_old, wprtp_old, thlm_old, &
     !$acc                 wpthlp_old, um_old, upwp_old, vm_old, &
     !$acc                 vpwp_old, lhs_diff_zm, lhs_diff_zt, lhs_ma_zt, lhs_ma_zm, &
@@ -520,6 +535,14 @@ module advance_xm_wpxp_module
     !$acc                    rhs_ta_wpsclrp, lhs_pr1_wpsclrp )
 
     l_perturbed_wind = l_predict_upwp_vpwp .and. l_linearize_pbl_winds
+
+    wp3_zm(:,:) = zt2zm_api( nzm, nzt, ngrdcol, gr, wp3(:,:) )
+    call Skx_func( nzm, ngrdcol, wp2, wp3_zm, &
+                   w_tol, clubb_params, &
+                   Skw_zm )
+
+    call calc_wp3_on_wp2( nzm, nzt, ngrdcol, gr, wp2, wp3, &
+                          wp3_on_wp2, wp3_on_wp2_zt )
 
     ! Check whether monotonic flux limiter flags are set appropriately
     if ( clubb_at_least_debug_level_api( 0 ) ) then
@@ -1135,6 +1158,7 @@ module advance_xm_wpxp_module
     end if ! l_predict_upwp_vpwp
 
     !$acc exit data delete( C6rt_Skw_fnc, C6thl_Skw_fnc, C7_Skw_fnc, C6_term, Kw6, &
+    !$acc                   wp3_zm, Skw_zm, wp3_on_wp2, wp3_on_wp2_zt, &
     !$acc                   low_lev_effect, high_lev_effect, rtm_old, wprtp_old, thlm_old, &
     !$acc                   wpthlp_old, um_old, upwp_old, vm_old, &
     !$acc                   vpwp_old, lhs_diff_zm, lhs_diff_zt, lhs_ma_zt, lhs_ma_zm, &

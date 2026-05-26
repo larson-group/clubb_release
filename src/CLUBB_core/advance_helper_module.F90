@@ -14,6 +14,7 @@ module advance_helper_module
     calc_brunt_vaisala_freq_sqd, &
     compute_Cx_fnc_Richardson, &
     calc_Ri_zm, &
+    calc_wp3_on_wp2, &
     wp23_term_splat_lhs, &
     smooth_min, smooth_max, &
     smooth_heaviside_peskin, &
@@ -76,6 +77,93 @@ module advance_helper_module
 
 !===============================================================================
   contains
+
+  !---------------------------------------------------------------------------
+  subroutine calc_wp3_on_wp2( nzm, nzt, ngrdcol, gr, wp2, wp3, &
+                              wp3_on_wp2, wp3_on_wp2_zt )
+
+  ! Description:
+  !   Computes a smoothed ratio of w'^3 to w'^2 on thermodynamic and momentum
+  !   levels.
+  !
+  ! References:
+  !   None
+  !---------------------------------------------------------------------------
+
+    use clubb_precision, only: &
+        core_rknd
+
+    use constants_clubb, only: &
+        w_tol_sqd
+
+    use grid_class, only: &
+        grid, &
+        zm2zt_api, &
+        zt2zm_api
+
+    implicit none
+
+    !--------------------------- Input Variables ---------------------------
+    integer, intent(in) :: &
+      nzm,     & ! Number of momentum levels
+      nzt,     & ! Number of thermodynamic levels
+      ngrdcol    ! Number of grid columns
+
+    type(grid), intent(in) :: &
+      gr    ! Grid structure
+
+    real( kind = core_rknd ), dimension(ngrdcol,nzm), intent(in) :: &
+      wp2    ! Variance of vertical velocity on momentum levels [m^2/s^2]
+
+    real( kind = core_rknd ), dimension(ngrdcol,nzt), intent(in) :: &
+      wp3    ! Third moment of vertical velocity on thermodynamic levels [m^3/s^3]
+
+    !--------------------------- Output Variables --------------------------
+    real( kind = core_rknd ), dimension(ngrdcol,nzm), intent(out) :: &
+      wp3_on_wp2    ! Ratio of wp3 to wp2 on momentum levels [m/s]
+
+    real( kind = core_rknd ), dimension(ngrdcol,nzt), intent(out) :: &
+      wp3_on_wp2_zt    ! Ratio of wp3 to wp2 on thermodynamic levels [m/s]
+
+    !--------------------------- Local Variables ---------------------------
+    real( kind = core_rknd ), dimension(ngrdcol,nzt) :: &
+      wp2_zt    ! Variance of vertical velocity on thermodynamic levels [m^2/s^2]
+
+    integer :: &
+      i, & ! Grid-column loop index
+      k    ! Vertical-level loop index
+
+    !----------------------------- Begin Code ------------------------------
+
+    !$acc enter data create( wp2_zt )
+
+    wp2_zt(:,:) = zm2zt_api( nzm, nzt, ngrdcol, gr, wp2(:,:), w_tol_sqd )
+
+    ! Compute wp3 / wp2 on zt levels. Always use the interpolated value in the
+    ! denominator since it is less likely to create spikes.
+    !$acc parallel loop gang vector collapse(2) default(present)
+    do k = 1, nzt
+      do i = 1, ngrdcol
+
+        wp3_on_wp2_zt(i,k) = ( wp3(i,k) / max( wp2_zt(i,k), w_tol_sqd ) )
+
+        if( wp3_on_wp2_zt(i,k) < 0._core_rknd ) then
+          wp3_on_wp2_zt(i,k) = max( -1000._core_rknd, wp3_on_wp2_zt(i,k) )
+        else
+          wp3_on_wp2_zt(i,k) = min( 1000._core_rknd, wp3_on_wp2_zt(i,k) )
+        end if
+
+      end do
+    end do
+    !$acc end parallel loop
+
+    wp3_on_wp2(:,:) = zt2zm_api( nzm, nzt, ngrdcol, gr, wp3_on_wp2_zt(:,:) )
+    wp3_on_wp2_zt(:,:) = zm2zt_api( nzm, nzt, ngrdcol, gr, wp3_on_wp2(:,:) )
+
+    !$acc exit data delete( wp2_zt )
+
+    return
+  end subroutine calc_wp3_on_wp2
 
   !---------------------------------------------------------------------------
   subroutine set_boundary_conditions_lhs( diag_index, low_bound, high_bound, &

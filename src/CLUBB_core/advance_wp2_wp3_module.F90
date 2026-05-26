@@ -64,12 +64,12 @@ module advance_wp2_wp3_module
   !=============================================================================
   subroutine advance_wp2_wp3( nzm, nzt, ngrdcol, gr, dt,                     & ! intent(in)
                               sfc_elevation, fcor_y, sigma_sqd_w, wm_zm,     & ! intent(in)
-                              wm_zt, wp3_on_wp2,                             & ! intent(in)
+                              wm_zt,                                         & ! intent(in)
                               wpup2, wpvp2, wp2up2, wp2vp2, wp4,             & ! intent(in)
                               wpthvp, wp2thvp, wp2up, um, vm, upwp, vpwp,    & ! intent(in)
                               em, Kh_zm, Kh_zt, invrs_tau_C4_zm,             & ! intent(in)
-                              invrs_tau_wp3_zt, invrs_tau_C1_zm, Skw_zm,     & ! intent(in)
-                              Skw_zt, rho_ds_zm, rho_ds_zt, invrs_rho_ds_zm, & ! intent(in)
+                              invrs_tau_wp3_zt, invrs_tau_C1_zm,             & ! intent(in)
+                              rho_ds_zm, rho_ds_zt, invrs_rho_ds_zm,         & ! intent(in)
                               invrs_rho_ds_zt, thv_ds_zm,                    & ! intent(in)
                               thv_ds_zt, mixt_frac, Cx_fnc_Richardson,       & ! intent(in)
                               lhs_splat_wp2, lhs_splat_wp3,                  & ! intent(in)
@@ -95,7 +95,7 @@ module advance_wp2_wp3_module
                               l_ho_nontrad_coriolis,                         & ! intent(in)
                               l_implemented,                                 & ! intent(in)
                               stats,                                         & ! intent(inout)
-                              up2, vp2, wp2, wp3, wp2_zt, err_info )           ! intent(inout)
+                              up2, vp2, wp2, wp3, err_info )                    ! intent(inout)
 
     ! Description:
     ! Advance w'^2 and w'^3 one timestep.
@@ -172,6 +172,7 @@ module advance_wp2_wp3_module
         one,       &
         one_half,  &
         one_third, &
+        w_tol,     &
         w_tol_sqd, &
         eps, &
         zero, &
@@ -189,6 +190,12 @@ module advance_wp2_wp3_module
 
     use err_info_type_module, only: &
       err_info_type     ! Type
+
+    use advance_helper_module, only: &
+        calc_wp3_on_wp2    ! Procedure
+
+    use Skx_module, only: &
+        Skx_func    ! Procedure
 
     implicit none
 
@@ -212,7 +219,6 @@ module advance_wp2_wp3_module
     real( kind = core_rknd ), intent(in), dimension(ngrdcol,nzm) :: &
       sigma_sqd_w,       & ! sigma_sqd_w (momentum levels)             [-]
       wm_zm,             & ! w wind component on momentum levels       [m/s]
-      wp3_on_wp2,        & ! Smoothed version of wp3 / wp2             [m/s]
       wp2up2,            & ! w'^2u'^2 (momentum levels)                [m^4/s^4]
       wp2vp2,            & ! w'^2v'^2 (momentum levels)                [m^4/s^4]
       wp4,               & ! w'^4 (momentum levels)                    [m^4/s^4]
@@ -223,7 +229,6 @@ module advance_wp2_wp3_module
       Kh_zm,             & ! Eddy diffusivity on momentum levels       [m^2/s]
       invrs_tau_C4_zm,   & ! Inverse time-scale tau on momentum levels         [1/s]
       invrs_tau_C1_zm,   & ! Inverse tau values used for the C1 (dp1) term in wp2 [1/s]
-      Skw_zm,            & ! Skewness of w on momentum levels          [-]
       rho_ds_zm,         & ! Dry, static density on momentum levels    [kg/m^3]
       invrs_rho_ds_zm,   & ! Inv. dry, static density @ momentum levs. [m^3/kg]
       thv_ds_zm,         & ! Dry, base-state theta_v on momentum levs. [K]
@@ -244,7 +249,6 @@ module advance_wp2_wp3_module
       vm,                & ! v wind component (thermodynamic levels)   [m/s]
       Kh_zt,             & ! Eddy diffusivity on thermodynamic levels  [m^2/s]
       invrs_tau_wp3_zt,  & ! Inverse time-scale tau on thermodynamic levels    [1/s]
-      Skw_zt,            & ! Skewness of w on thermodynamic levels     [-]
       rho_ds_zt,         & ! Dry, static density on thermo. levels     [kg/m^3]
       invrs_rho_ds_zt,   & ! Inv. dry, static density @ thermo. levs.  [m^3/kg]
       thv_ds_zt,         & ! Dry, base-state theta_v on thermo. levs.  [K]
@@ -314,8 +318,7 @@ module advance_wp2_wp3_module
       wp2     ! w'^2 (momentum levels)                    [m^2/s^2]
 
     real( kind = core_rknd ), dimension(ngrdcol,nzt), intent(inout) :: &
-      wp3,    & ! w'^3 (thermodynamic levels)               [m^3/s^3]
-      wp2_zt    ! w'^2 interpolated to thermodyamic levels  [m^2/s^2]
+      wp3    ! w'^3 (thermodynamic levels) [m^3/s^3]
 
     type(err_info_type), intent(inout) :: &
       err_info      ! err_info struct containing err_code and err_header
@@ -324,11 +327,16 @@ module advance_wp2_wp3_module
     real( kind = core_rknd ), dimension(ngrdcol,nzm) :: &
       wp2_old,  & ! w'^2 (momentum levels)                 [m^2/s^2]
       wp3_zm,   & ! w'^3 interpolated to momentum levels   [m^3/s^3]
+      Skw_zm,   & ! Skewness of w on momentum levels       [-]
+      wp3_on_wp2, & ! Smoothed version of wp3 / wp2         [m/s]
       wp2_smth, &
       em_smth
 
     real( kind = core_rknd ), dimension(ngrdcol,nzt) :: &
-      wp3_old  ! w'^3 (thermodynamic levels)            [m^3/s^3]
+      wp3_old, & ! w'^3 (thermodynamic levels)           [m^3/s^3]
+      wp2_zt,  & ! w'^2 interpolated to thermodyamic levels [m^2/s^2]
+      Skw_zt,  & ! Skewness of w on thermodynamic levels [-]
+      wp3_on_wp2_zt ! Smoothed version of wp3 / wp2 on thermodynamic levels [m/s]
 
     ! Eddy Diffusion for w'^2 and w'^3.
     real( kind = core_rknd ), dimension(ngrdcol,nzt) :: Kw1    ! w'^2 coef. eddy diff.  [m^2/s]
@@ -432,7 +440,7 @@ module advance_wp2_wp3_module
 
     integer :: k, i, b
 
-    !$acc enter data create( wp2_old, wp3_old, wp3_zm, &
+    !$acc enter data create( wp2_old, wp3_old, wp3_zm, Skw_zm, wp3_on_wp2, &
     !$acc                    C1_Skw_fnc, C11_Skw_fnc, C16_fnc, C_wp3_pr_tp, &
     !$acc                    wp3_term_ta_lhs_result, wp3_pr3_lhs, lhs_ta_wp2, &
     !$acc                    lhs_tp_wp3, lhs_adv_tp_wp3, lhs_pr_tp_wp3, &
@@ -445,10 +453,18 @@ module advance_wp2_wp3_module
     !$acc                    coef_wp4_implicit_zt, coef_wp4_implicit, a1_coef, a1_coef_zt, &
     !$acc                    a3_coef, a3_coef_zt, &
     !$acc                    dum_dz, dvm_dz, lhs, rhs, Kw1, Kw8, Kw1_zm, Kw8_zt, &
-    !$acc                    wp2_smth, em_smth )
+    !$acc                    wp2_smth, em_smth, wp2_zt, Skw_zt, wp3_on_wp2_zt )
 
     wp2_zt(:,:) = zm2zt_api( nzm, nzt, ngrdcol, gr, wp2(:,:), w_tol_sqd )
     wp3_zm(:,:) = zt2zm_api( nzm, nzt, ngrdcol, gr, wp3(:,:) )
+    call Skx_func( nzt, ngrdcol, wp2_zt, wp3, &
+                   w_tol, clubb_params, &
+                   Skw_zt )
+    call Skx_func( nzm, ngrdcol, wp2, wp3_zm, &
+                   w_tol, clubb_params, &
+                   Skw_zm )
+    call calc_wp3_on_wp2( nzm, nzt, ngrdcol, gr, wp2, wp3, &
+                          wp3_on_wp2, wp3_on_wp2_zt )
 
     !-----------------------------------------------------------------------
 
@@ -1228,7 +1244,7 @@ module advance_wp2_wp3_module
       call stats_update( "wp3_zm", wp3_zm, stats )
     end if
 
-    !$acc exit data delete( wp2_old, wp3_old, wp3_zm, &
+    !$acc exit data delete( wp2_old, wp3_old, wp3_zm, Skw_zm, wp3_on_wp2, &
     !$acc                   C1_Skw_fnc, C11_Skw_fnc, C16_fnc, C_wp3_pr_tp, &
     !$acc                   wp3_term_ta_lhs_result, wp3_pr3_lhs, lhs_ta_wp2, &
     !$acc                   lhs_tp_wp3, lhs_adv_tp_wp3, lhs_pr_tp_wp3, &
@@ -1241,7 +1257,7 @@ module advance_wp2_wp3_module
     !$acc                   coef_wp4_implicit_zt, coef_wp4_implicit, a1_coef, a1_coef_zt, &
     !$acc                   a3_coef, a3_coef_zt, &
     !$acc                   dum_dz, dvm_dz, lhs, rhs, Kw1, Kw8, Kw1_zm, Kw8_zt, &
-    !$acc                   wp2_smth, em_smth )
+    !$acc                   wp2_smth, em_smth, wp2_zt, Skw_zt, wp3_on_wp2_zt )
 
     return
 

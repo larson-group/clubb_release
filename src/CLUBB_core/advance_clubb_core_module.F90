@@ -558,11 +558,7 @@ module advance_clubb_core_module
     integer :: i, k
 
     real( kind = core_rknd ), dimension(ngrdcol,nzt) :: &
-      Skw_zt,       & ! Skewness of w on thermodynamic levels            [-]
       thvm            ! Virtual potential temperature                    [K]
-
-    real( kind = core_rknd ), dimension(ngrdcol,nzm) :: &
-      Skw_zm          ! Skewness of w on momentum levels                 [-]
 
     real( kind = core_rknd ), dimension(ngrdcol,nzt) :: &
       rsat   ! Saturation mixing ratio  ! Brian
@@ -591,13 +587,6 @@ module advance_clubb_core_module
       wpsclrp2,    & ! w'sclr'^2
       wpsclrprtp,  & ! w'sclr'rt'
       wpsclrpthlp    ! w'sclr'thl'
-
-    real( kind = core_rknd ), dimension(ngrdcol,nzm) :: &
-      wp3_on_wp2      ! w'^3 / w'^2 on the zm grid                     [m/s]
-
-    real( kind = core_rknd ), dimension(ngrdcol,nzt) :: &
-      wp2_zt,       & ! w'^2 on thermo. grid     [m^2/s^2]
-      wp3_on_wp2_zt   ! w'^3 / w'^2 on the zt grid [m/s]
 
     real( kind = core_rknd ), dimension(ngrdcol,nzm) :: &
       sigma_sqd_w        ! PDF width parameter (momentum levels)         [-]
@@ -682,11 +671,11 @@ module advance_clubb_core_module
 
     !----- Begin Code -----
 
-    !$acc enter data create( Skw_zm, Skw_zt, thvm, &
+    !$acc enter data create( thvm, &
     !$acc              ddzt_umvm_sqd, rtm_before, thlm_before, &
     !$acc              wpthlp2, wprtp2, wprtpthlp, Lscale_up, Lscale_zm, &
     !$acc              Lscale_down, em, tau_zm, &
-    !$acc              wp3_on_wp2, wp3_on_wp2_zt, sigma_sqd_w, &
+    !$acc              sigma_sqd_w, &
     !$acc              sqrt_em_zt, w_1_zm, w_2_zm, varnce_w_1_zm, varnce_w_2_zm, &
     !$acc              mixt_frac_zm, rcp2_zt, stability_correction, &
     !$acc              invrs_tau_C6_zm, invrs_tau_C1_zm, invrs_tau_xp2_zm, &
@@ -694,8 +683,7 @@ module advance_clubb_core_module
     !$acc              invrs_tau_zt, invrs_tau_wp3_zt, Cx_fnc_Richardson, &
     !$acc              brunt_vaisala_freq_sqd, brunt_vaisala_freq_sqd_mixed, &
     !$acc              brunt_vaisala_freq_sqd_smth, &
-    !$acc              tau_max_zm, tau_max_zt, lhs_splat_wp2, lhs_splat_wp3, &
-    !$acc              wp2_zt )
+    !$acc              tau_max_zm, tau_max_zt, lhs_splat_wp2, lhs_splat_wp3 )
 
     !$acc enter data if( sclr_dim > 0 ) &
     !$acc            create( wp2sclrp, &
@@ -883,8 +871,6 @@ module advance_clubb_core_module
                                    wp2, up2, vp2, wp3, thlp2, rtp2, wpthlp, wprtp,  & ! In
                                    upwp, vpwp, clubb_params,                        & ! In
                                    sigma_sqd_w,                                     & ! InOut
-                                   wp2_zt, Skw_zt, Skw_zm,                          & ! Out
-                                   wp3_on_wp2, wp3_on_wp2_zt,                       & ! Out
                                    em, sqrt_em_zt, ddzt_umvm_sqd,                   & ! Out
                                    thvm )                                             ! Out
 
@@ -1112,9 +1098,9 @@ module advance_clubb_core_module
         ! advance_xm_wpxp_bad_wp2 ! Test error comment, DO NOT modify or move
         call advance_xm_wpxp( nzm, nzt, ngrdcol, sclr_dim, sclr_tol, gr, dt_advance, & ! In
                               sigma_sqd_w, wm_zm, wm_zt, wp2, Lscale_zm,             & ! In
-                              wp3_on_wp2, wp3_on_wp2_zt, Kh_zt, Kh_zm,               & ! In
+                              wp3, Kh_zt, Kh_zm,                                     & ! In
                               stability_correction,                                  & ! In
-                              invrs_tau_C6_zm, tau_max_zm, Skw_zm, wp2rtp, rtpthvp,  & ! In
+                              invrs_tau_C6_zm, tau_max_zm, wp2rtp, rtpthvp,          & ! In
                               rtm_forcing, wprtp_forcing, rtm_ref, wp2thlp,          & ! In
                               thlpthvp, thlm_forcing, wpthlp_forcing, thlm_ref,      & ! In
                               rho_ds_zm, rho_ds_zt, invrs_rho_ds_zm,                 & ! In
@@ -1195,13 +1181,12 @@ module advance_clubb_core_module
                               invrs_tau_xp2_zm, invrs_tau_C4_zm,                   & ! In
                               invrs_tau_C14_zm, wm_zm,                             & ! In
                               rtm, wprtp, thlm, wpthlp, wpthvp, um, vm,            & ! In
-                              wp2, wp2_zt, wp3, upwp, vpwp,                        & ! In
+                              wp2, wp3, upwp, vpwp,                                & ! In
                               sigma_sqd_w, wprtp2, wpthlp2,                        & ! In
                               wprtpthlp, Kh_zt, rtp2_forcing,                      & ! In
                               thlp2_forcing, rtpthlp_forcing,                      & ! In
                               rho_ds_zm, rho_ds_zt, invrs_rho_ds_zm,               & ! In
                               thv_ds_zm, cloud_frac,                               & ! In
-                              wp3_on_wp2, wp3_on_wp2_zt,                           & ! In
                               pdf_implicit_coefs_terms,                            & ! In
                               dt_advance, fcor_y,                                  & ! In
                               sclrm, wpsclrp,                                      & ! In
@@ -1256,12 +1241,12 @@ module advance_clubb_core_module
         ! advance_wp2_wp3_bad_wp2 ! Test error comment, DO NOT modify or move
         call advance_wp2_wp3( nzm, nzt, ngrdcol, gr, dt_advance,                    & ! In
                               sfc_elevation, fcor_y, sigma_sqd_w, wm_zm,            & ! In
-                              wm_zt, wp3_on_wp2,                                    & ! In
+                              wm_zt,                                                & ! In
                               wpup2, wpvp2, wp2up2, wp2vp2, wp4,                    & ! In
                               wpthvp, wp2thvp, wp2up, um, vm, upwp, vpwp,           & ! In
                               em, Kh_zm, Kh_zt, invrs_tau_C4_zm,                    & ! In
-                              invrs_tau_wp3_zt, invrs_tau_C1_zm, Skw_zm,            & ! In
-                              Skw_zt, rho_ds_zm, rho_ds_zt, invrs_rho_ds_zm,        & ! In
+                              invrs_tau_wp3_zt, invrs_tau_C1_zm,                    & ! In
+                              rho_ds_zm, rho_ds_zt, invrs_rho_ds_zm,                & ! In
                               invrs_rho_ds_zt, thv_ds_zm,                           & ! In
                               thv_ds_zt, pdf_params%mixt_frac, Cx_fnc_Richardson,   & ! In
                               lhs_splat_wp2, lhs_splat_wp3,                         & ! In
@@ -1287,10 +1272,7 @@ module advance_clubb_core_module
                               clubb_config_flags%l_ho_nontrad_coriolis,             & ! In
                               l_implemented,                                        & ! In
                               stats,                                                & ! InOut
-                              up2, vp2, wp2, wp3, wp2_zt, err_info )                 ! InOut
-                                                  ! note that wp2_zt is incorrect here
-                                                  ! when using l_lmm_stepping.
-                                                  ! this will be fixed shortly
+                              up2, vp2, wp2, wp3, err_info )                         ! InOut
 
 
         if ( clubb_at_least_debug_level_api( 0 ) ) then
@@ -1386,7 +1368,7 @@ module advance_clubb_core_module
 
       call compute_xp3( nzm, nzt, ngrdcol, sclr_dim, sclr_tol, gr,                  & ! In
                         clubb_config_flags%iiPDF_type, clubb_params,                & ! In
-                        wp2_zt, wp3, thvm,                                          & ! In
+                        wp2, wp3, thvm,                                             & ! In
                         wprtp, wpthlp, rtp2, thlp2, upwp, vpwp, up2, vp2,           & ! In
                         sigma_sqd_w, wpsclrp, sclrp2,                               & ! In
                         stats,                                                      & ! InOut
@@ -1511,7 +1493,7 @@ module advance_clubb_core_module
              Kh_zt,                                                                         & ! In
              rsat,                                                                          & ! In
              Kh_zm,                                                                         & ! In
-             em, wp3_on_wp2, wp3_on_wp2_zt,                                                 & ! In
+             em,                                                                             & ! In
              sclrm, sclrp2,                                                                 & ! In
              sclrprtp, sclrpthlp, sclrm_forcing,                                           & ! In
              wpsclrp, wpedsclrp, edsclrm,                                                  & ! In
@@ -1580,11 +1562,11 @@ module advance_clubb_core_module
     !$acc exit data if( edsclr_dim > 0 ) &
     !$acc           delete( wpedsclrp )
 
-    !$acc exit data delete( Skw_zm, Skw_zt, thvm, &
+    !$acc exit data delete( thvm, &
     !$acc                   wpthlp2, wprtp2, wprtpthlp, Lscale_up, &
     !$acc                   Lscale_zm, Lscale_down, em, tau_zm, &
     !$acc                   ddzt_umvm_sqd, rtm_before, thlm_before, &
-    !$acc                   wp3_on_wp2, wp3_on_wp2_zt, sigma_sqd_w, &
+    !$acc                   sigma_sqd_w, &
     !$acc                   sqrt_em_zt, w_1_zm, w_2_zm, varnce_w_1_zm, &
     !$acc                   varnce_w_2_zm, &
     !$acc                   mixt_frac_zm, rcp2_zt, stability_correction, &
@@ -1593,8 +1575,7 @@ module advance_clubb_core_module
     !$acc                   invrs_tau_zt, invrs_tau_wp3_zt, Cx_fnc_Richardson, &
     !$acc                   brunt_vaisala_freq_sqd, brunt_vaisala_freq_sqd_mixed, &
     !$acc                   brunt_vaisala_freq_sqd_smth, &
-    !$acc                   tau_max_zm, tau_max_zt, lhs_splat_wp2, lhs_splat_wp3, &
-    !$acc                   wp2_zt )
+    !$acc                   tau_max_zm, tau_max_zt, lhs_splat_wp2, lhs_splat_wp3 )
 
     return
 
@@ -1775,8 +1756,6 @@ module advance_clubb_core_module
                                        wp2, up2, vp2, wp3, thlp2, rtp2, wpthlp, wprtp, &
                                        upwp, vpwp, clubb_params, &
                                        sigma_sqd_w, &
-                                       wp2_zt, Skw_zt, Skw_zm, &
-                                       wp3_on_wp2, wp3_on_wp2_zt, &
                                        em, sqrt_em_zt, ddzt_umvm_sqd, &
                                        thvm )
 
@@ -1863,27 +1842,22 @@ module advance_clubb_core_module
 
     !--------------------------- Output Variables --------------------------
     real( kind = core_rknd ), dimension(ngrdcol,nzt), intent(out) :: &
-      wp2_zt, & ! Variance of vertical velocity on thermodynamic levels [m^2/s^2]
-      Skw_zt, & ! Skewness of vertical velocity on thermodynamic levels [-]
       thvm      ! Virtual potential temperature [K]
 
     real( kind = core_rknd ), dimension(ngrdcol,nzm), intent(out) :: &
-      Skw_zm    ! Skewness of vertical velocity on momentum levels [-]
-
-    real( kind = core_rknd ), dimension(ngrdcol,nzm), intent(out) :: &
-      wp3_on_wp2,     & ! Ratio of wp3 to wp2 on momentum levels [m/s]
       em,             & ! Turbulent kinetic energy [m^2/s^2]
       ddzt_umvm_sqd     ! Squared vertical shear of horizontal wind [s^-2]
 
     real( kind = core_rknd ), dimension(ngrdcol,nzt), intent(out) :: &
-      wp3_on_wp2_zt, & ! Ratio of wp3 to wp2 on thermodynamic levels [m/s]
       sqrt_em_zt       ! Square root of TKE on thermodynamic levels [m/s]
 
     !--------------------------- Local Variables ---------------------------
     real( kind = core_rknd ), dimension(ngrdcol,nzm) :: &
       ddzt_um,       & ! Vertical derivative of mean u wind [s^-1]
       ddzt_vm,       & ! Vertical derivative of mean v wind [s^-1]
+      wp2_zt,        & ! Variance of vertical velocity on thermodynamic levels [m^2/s^2]
       wp3_zm,        & ! Third moment of vertical velocity on momentum levels [m^3/s^3]
+      Skw_zm,        & ! Skewness of vertical velocity on momentum levels [-]
       gamma_Skw_fnc    ! Gamma as a function of w skewness [-]
 
     integer :: &
@@ -1892,7 +1866,7 @@ module advance_clubb_core_module
 
     !----------------------------- Begin Code ------------------------------
 
-    !$acc enter data create( ddzt_um, ddzt_vm, wp3_zm, gamma_Skw_fnc )
+    !$acc enter data create( ddzt_um, ddzt_vm, wp2_zt, wp3_zm, Skw_zm, gamma_Skw_fnc )
 
     ! Calculate the norm of the vertical derivative of the mean horizontal
     ! wind speed to feed into the Richardson number calculation.
@@ -1907,14 +1881,9 @@ module advance_clubb_core_module
     end do
     !$acc end parallel loop
 
-    ! Interpolate wp3 to momentum levels, and wp2 to thermodynamic levels
-    ! and then compute Skw for m & t grid.
+    ! Interpolate wp3 to momentum levels, and wp2 to thermodynamic levels.
     wp2_zt(:,:) = zm2zt_api( nzm, nzt, ngrdcol, gr, wp2(:,:), w_tol_sqd )
     wp3_zm(:,:) = zt2zm_api( nzm, nzt, ngrdcol, gr, wp3(:,:) )
-
-    call Skx_func( nzt, ngrdcol, wp2_zt, wp3, &
-                   w_tol, clubb_params, &
-                   Skw_zt )
 
     call Skx_func( nzm, ngrdcol, wp2, wp3_zm, &
                    w_tol, clubb_params, &
@@ -1939,27 +1908,6 @@ module advance_clubb_core_module
     call calculate_thvm( nzt, ngrdcol, &
                          thlm, rtm, rcm, exner, thv_ds_zt, &
                          thvm )
-
-    ! Compute wp3 / wp2 on zt levels. Always use the interpolated value in the
-    ! denominator since it is less likely to create spikes.
-    !$acc parallel loop gang vector collapse(2) default(present)
-    do k = 1, nzt
-      do i = 1, ngrdcol
-
-        wp3_on_wp2_zt(i,k) = ( wp3(i,k) / max( wp2_zt(i,k), w_tol_sqd ) )
-
-        if( wp3_on_wp2_zt(i,k) < 0._core_rknd ) then
-          wp3_on_wp2_zt(i,k) = max( -1000._core_rknd, wp3_on_wp2_zt(i,k) )
-        else
-          wp3_on_wp2_zt(i,k) = min( 1000._core_rknd, wp3_on_wp2_zt(i,k) )
-        end if
-
-      end do
-    end do
-    !$acc end parallel loop
-
-    wp3_on_wp2(:,:) = zt2zm_api( nzm, nzt, ngrdcol, gr, wp3_on_wp2_zt(:,:) )
-    wp3_on_wp2_zt(:,:) = zm2zt_api( nzm, nzt, ngrdcol, gr, wp3_on_wp2(:,:) )
 
     ! Compute tke (turbulent kinetic energy).
     if ( .not. l_tke_aniso ) then
@@ -1991,7 +1939,7 @@ module advance_clubb_core_module
     end do
     !$acc end parallel loop
 
-    !$acc exit data delete( ddzt_um, ddzt_vm, wp3_zm, gamma_Skw_fnc )
+    !$acc exit data delete( ddzt_um, ddzt_vm, wp2_zt, wp3_zm, Skw_zm, gamma_Skw_fnc )
 
   end subroutine compute_diagnostic_cache
 

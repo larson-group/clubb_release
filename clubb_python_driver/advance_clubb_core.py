@@ -471,6 +471,8 @@ def advance_clubb_core(
         # It should already be available from the pdf_closure unpack.
         sigma_sqd_w = np.zeros((ngrdcol, nzm))
 
+    a1_coef = one / (one - sigma_sqd_w)
+
     # a3 coefficient
     a3_coef = -two * (one - sigma_sqd_w) ** 2 + 3.0
     a3_min = clubb_params[:, ia3_coef_min - 1]
@@ -877,9 +879,9 @@ def advance_clubb_core(
                 gr=gr, nzm=nzm, nzt=nzt, ngrdcol=ngrdcol,
                 sclr_dim=sclr_dim, sclr_tol=sclr_tol, dt=dt_advance,
                 sigma_sqd_w=sigma_sqd_w, wm_zm=wm_zm, wm_zt=wm_zt, wp2=wp2,
-                lscale_zm=Lscale_zm, wp3_on_wp2=wp3_on_wp2, wp3_on_wp2_zt=wp3_on_wp2_zt,
-                kh_zt=Kh_zt, kh_zm=Kh_zm, stability_correction=stability_correction,
-                invrs_tau_c6_zm=invrs_tau_C6_zm, tau_max_zm=tau_max_zm, skw_zm=Skw_zm,
+                lscale_zm=Lscale_zm, wp3=wp3, kh_zt=Kh_zt, kh_zm=Kh_zm,
+                stability_correction=stability_correction,
+                invrs_tau_c6_zm=invrs_tau_C6_zm, tau_max_zm=tau_max_zm,
                 wp2rtp=wp2rtp, rtpthvp=rtpthvp, rtm_forcing=rtm_forcing,
                 wprtp_forcing=wprtp_forcing, rtm_ref=rtm_ref, wp2thlp=wp2thlp,
                 thlpthvp=thlpthvp, thlm_forcing=thlm_forcing,
@@ -947,14 +949,13 @@ def advance_clubb_core(
                 invrs_tau_xp2_zm=invrs_tau_xp2_zm, invrs_tau_c4_zm=invrs_tau_C4_zm,
                 invrs_tau_c14_zm=invrs_tau_C14_zm, wm_zm=wm_zm, rtm=rtm, wprtp=wprtp,
                 thlm=thlm, wpthlp=wpthlp, wpthvp=wpthvp, um=um, vm=vm,
-                wp2=wp2, wp2_zt=wp2_zt, wp3=wp3, upwp=upwp, vpwp=vpwp,
+                wp2=wp2, wp3=wp3, upwp=upwp, vpwp=vpwp,
                 sigma_sqd_w=sigma_sqd_w, wprtp2=wprtp2, wpthlp2=wpthlp2,
                 wprtpthlp=wprtpthlp, kh_zt=Kh_zt, rtp2_forcing=rtp2_forcing,
                 thlp2_forcing=thlp2_forcing, rtpthlp_forcing=rtpthlp_forcing,
                 rho_ds_zm=rho_ds_zm, rho_ds_zt=rho_ds_zt,
                 invrs_rho_ds_zm=invrs_rho_ds_zm, thv_ds_zm=thv_ds_zm,
-                cloud_frac=cloud_frac, wp3_on_wp2=wp3_on_wp2,
-                wp3_on_wp2_zt=wp3_on_wp2_zt, dt=dt_advance, fcor_y=fcor_y,
+                cloud_frac=cloud_frac, dt=dt_advance, fcor_y=fcor_y,
                 sclrm=sclrm, wpsclrp=wpsclrp, wpsclrp2=wpsclrp2,
                 wpsclrprtp=wpsclrprtp, wpsclrpthlp=wpsclrpthlp,
                 lhs_splat_wp2=lhs_splat_wp2, clubb_params=clubb_params,
@@ -995,11 +996,11 @@ def advance_clubb_core(
                 gr=gr, nzm=nzm, nzt=nzt, ngrdcol=ngrdcol, dt=dt_advance,
                 sfc_elevation=sfc_elevation, fcor_y=fcor_y, sigma_sqd_w=sigma_sqd_w,
                 wm_zm=wm_zm, wm_zt=wm_zt,
-                wp3_on_wp2=wp3_on_wp2, wpup2=wpup2, wpvp2=wpvp2, wp2up2=wp2up2,
+                wpup2=wpup2, wpvp2=wpvp2, wp2up2=wp2up2,
                 wp2vp2=wp2vp2, wp4=wp4, wpthvp=wpthvp, wp2thvp=wp2thvp, wp2up=wp2up,
                 um=um, vm=vm, upwp=upwp, vpwp=vpwp, em=em, kh_zm=Kh_zm, kh_zt=Kh_zt,
                 invrs_tau_c4_zm=invrs_tau_C4_zm, invrs_tau_wp3_zt=invrs_tau_wp3_zt,
-                invrs_tau_c1_zm=invrs_tau_C1_zm, skw_zm=Skw_zm, skw_zt=Skw_zt,
+                invrs_tau_c1_zm=invrs_tau_C1_zm,
                 rho_ds_zm=rho_ds_zm, rho_ds_zt=rho_ds_zt,
                 invrs_rho_ds_zm=invrs_rho_ds_zm, invrs_rho_ds_zt=invrs_rho_ds_zt,
                 thv_ds_zm=thv_ds_zm, thv_ds_zt=thv_ds_zt,
@@ -1022,7 +1023,7 @@ def advance_clubb_core(
                 l_use_wp3_lim_with_smth_heaviside=flags.l_use_wp3_lim_with_smth_Heaviside,
                 l_wp2_fill_holes_tke=flags.l_wp2_fill_holes_tke,
                 l_ho_nontrad_coriolis=flags.l_ho_nontrad_coriolis,
-                up2=up2, vp2=vp2, wp2=wp2, wp3=wp3, wp2_zt=wp2_zt,
+                up2=up2, vp2=vp2, wp2=wp2, wp3=wp3,
                 nu_vert_res_dep=nu_vert_res_dep,
                 pdf_implicit_coefs_terms=pdf_implicit_coefs_terms, err_info=err_info,
             )

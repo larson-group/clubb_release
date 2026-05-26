@@ -30,6 +30,7 @@ from clubb_python.CLUBB_core.advance_helper import (
     wp23_term_splat_lhs,
     calc_brunt_vaisala_freq_sqd,
     compute_cx_fnc_richardson,
+    calc_wp3_on_wp2,
     calc_stability_correction,
 )
 from clubb_python.CLUBB_core.advance_windm_edsclrm import advance_windm_edsclrm

@@ -12,7 +12,7 @@ subroutine f2py_stats_accumulate( &
     rho_ds_zm, rho_ds_zt, thv_ds_zm, thv_ds_zt, &
     wm_zt, wm_zm, rcm, cloud_frac, &
     thvm, ug, vg, ddzt_umvm_sqd, stability_correction, &
-    Kh_zt, rsat, Kh_zm, em, wp3_on_wp2, wp3_on_wp2_zt, &
+    Kh_zt, rsat, Kh_zm, em, &
     sclrm, sclrp2, &
     sclrprtp, sclrpthlp, sclrm_forcing, &
     wpsclrp, wpedsclrp, edsclrm, &
@@ -45,10 +45,10 @@ subroutine f2py_stats_accumulate( &
     rho_zm, rho_ds_zm, thv_ds_zm, wm_zm
 
   real(core_rknd), intent(in), dimension(ngrdcol, nzt) :: &
-    rcm, cloud_frac, thvm, ug, vg, Kh_zt, rsat, wp3_on_wp2_zt
+    rcm, cloud_frac, thvm, ug, vg, Kh_zt, rsat
 
   real(core_rknd), intent(in), dimension(ngrdcol, nzm) :: &
-    ddzt_umvm_sqd, stability_correction, Kh_zm, em, wp3_on_wp2
+    ddzt_umvm_sqd, stability_correction, Kh_zm, em
 
   real(core_rknd), intent(in), dimension(ngrdcol, nzt, sclr_dim) :: &
     sclrm, sclrm_forcing
@@ -75,7 +75,7 @@ subroutine f2py_stats_accumulate( &
     rho_ds_zm, rho_ds_zt, thv_ds_zm, thv_ds_zt, &
     wm_zt, wm_zm, rcm, cloud_frac, &
     thvm, ug, vg, ddzt_umvm_sqd, stability_correction, &
-    Kh_zt, rsat, Kh_zm, em, wp3_on_wp2, wp3_on_wp2_zt, &
+    Kh_zt, rsat, Kh_zm, em, &
     sclrm, sclrp2, &
     sclrprtp, sclrpthlp, sclrm_forcing, &
     wpsclrp, wpedsclrp, edsclrm, &

@@ -203,6 +203,7 @@ module spurious_source_test
     real( kind = core_rknd ), dimension(1,nzt) :: &
       wm_zt,           & ! w wind component on thermodynamic levels [m/s]
       Lscale,          & ! Turbulent mixing length                  [m]
+      wp3,             & ! w'^3 on thermodynamic levels             [m^3/s^3]
       wp3_on_wp2_zt,   & ! Smoothed wp3 / wp2 on thermo. levels     [m/s]
       Kh_zt,           & ! Eddy diffusivity on thermodynamic levels [m^2/s]
       wp2rtp,          & ! <w'^2 r_t'> (thermodynamic levels)    [m^2/s^2 kg/kg]
@@ -888,6 +889,7 @@ module spurious_source_test
        ! Interpolate fields set on momentum levels to thermodynamic levels.
        wm_zt(1,:) = zm2zt_api( gr, wm_zm(1,:) )
        wp3_on_wp2_zt(1,:) = zm2zt_api( gr, wp3_on_wp2(1,:) )
+       wp3(1,:) = wp3_on_wp2_zt(1,:) * zm2zt_api( gr, wp2(1,:) )
        Kh_zt(1,:) = zm2zt_api( gr, Kh_zm(1,:) )
        rho_ds_zt(1,:) = zm2zt_api( gr, rho_ds_zm(1,:) )
 
@@ -975,9 +977,9 @@ module spurious_source_test
 
       call advance_xm_wpxp( nzm, nzt, 1, sclr_dim, sclr_tol, gr, dt, &
                             sigma_sqd_w, wm_zm, wm_zt, wp2, Lscale, &
-                            wp3_on_wp2, wp3_on_wp2_zt, Kh_zt, Kh_zm, &
+                            wp3, Kh_zt, Kh_zm, &
                             stability_correction, &
-                            invrs_tau_C6_zm, tau_max_zm, Skw_zm, wp2rtp, rtpthvp, &
+                            invrs_tau_C6_zm, tau_max_zm, wp2rtp, rtpthvp, &
                              rtm_forcing, wprtp_forcing, rtm_ref, wp2thlp, &
                              thlpthvp, thlm_forcing, wpthlp_forcing, thlm_ref, &
                              rho_ds_zm, rho_ds_zt, invrs_rho_ds_zm, &

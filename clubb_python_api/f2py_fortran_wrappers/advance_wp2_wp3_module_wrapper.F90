@@ -2,11 +2,10 @@
 
 subroutine f2py_advance_wp2_wp3(nzm, nzt, ngrdcol, dt, &
     sfc_elevation, fcor_y, sigma_sqd_w, wm_zm, wm_zt, &
-    wp3_on_wp2, &
     wpup2, wpvp2, wp2up2, wp2vp2, wp4, &
     wpthvp, wp2thvp, wp2up, um, vm, upwp, vpwp, &
     em, kh_zm, kh_zt, invrs_tau_c4_zm, invrs_tau_wp3_zt, invrs_tau_c1_zm, &
-    skw_zm, skw_zt, rho_ds_zm, rho_ds_zt, invrs_rho_ds_zm, invrs_rho_ds_zt, &
+    rho_ds_zm, rho_ds_zt, invrs_rho_ds_zm, invrs_rho_ds_zt, &
     thv_ds_zm, thv_ds_zt, mixt_frac, cx_fnc_richardson, &
     lhs_splat_wp2, lhs_splat_wp3, &
     wprtp, wpthlp, rtp2, thlp2, clubb_params, &
@@ -20,9 +19,11 @@ subroutine f2py_advance_wp2_wp3(nzm, nzt, ngrdcol, dt, &
 
   use clubb_precision, only: core_rknd
   use parameter_indices, only: nparams
+  use constants_clubb, only: w_tol_sqd
   use derived_type_storage, only: &
     stored_grid, stored_stats, stored_pdf_implicit_coefs_terms, &
     stored_nu_vert_res_dep, stored_err_info
+  use grid_class, only: zm2zt_api
   use advance_wp2_wp3_module, only: advance_wp2_wp3
 
   implicit none
@@ -31,13 +32,13 @@ subroutine f2py_advance_wp2_wp3(nzm, nzt, ngrdcol, dt, &
   real(core_rknd), intent(in) :: dt
   real(core_rknd), dimension(ngrdcol), intent(in) :: sfc_elevation, fcor_y
   real(core_rknd), dimension(ngrdcol, nzm), intent(in) :: &
-    sigma_sqd_w, wm_zm, wp3_on_wp2, wp2up2, wp2vp2, wp4, &
+    sigma_sqd_w, wm_zm, wp2up2, wp2vp2, wp4, &
     wpthvp, upwp, vpwp, em, kh_zm, invrs_tau_c4_zm, invrs_tau_c1_zm, &
-    skw_zm, rho_ds_zm, invrs_rho_ds_zm, thv_ds_zm, cx_fnc_richardson, &
+    rho_ds_zm, invrs_rho_ds_zm, thv_ds_zm, cx_fnc_richardson, &
     lhs_splat_wp2, wprtp, wpthlp, rtp2, thlp2
   real(core_rknd), dimension(ngrdcol, nzt), intent(in) :: &
     wm_zt, wpup2, wpvp2, wp2thvp, wp2up, um, vm, kh_zt, &
-    invrs_tau_wp3_zt, skw_zt, rho_ds_zt, invrs_rho_ds_zt, thv_ds_zt, &
+    invrs_tau_wp3_zt, rho_ds_zt, invrs_rho_ds_zt, thv_ds_zt, &
     mixt_frac, lhs_splat_wp3
   real(core_rknd), dimension(ngrdcol, nparams), intent(in) :: clubb_params
   integer, intent(in) :: iipdf_type, penta_solve_method, fill_holes_type
@@ -49,15 +50,15 @@ subroutine f2py_advance_wp2_wp3(nzm, nzt, ngrdcol, dt, &
   logical, parameter :: l_implemented = .false.
 
   real(core_rknd), dimension(ngrdcol, nzm), intent(inout) :: up2, vp2, wp2
-  real(core_rknd), dimension(ngrdcol, nzt), intent(inout) :: wp3, wp2_zt
+  real(core_rknd), dimension(ngrdcol, nzt), intent(inout) :: wp3
+  real(core_rknd), dimension(ngrdcol, nzt), intent(out) :: wp2_zt
 
   call advance_wp2_wp3(nzm, nzt, ngrdcol, stored_grid, dt, &
     sfc_elevation, fcor_y, sigma_sqd_w, wm_zm, wm_zt, &
-    wp3_on_wp2, &
     wpup2, wpvp2, wp2up2, wp2vp2, wp4, &
     wpthvp, wp2thvp, wp2up, um, vm, upwp, vpwp, &
     em, kh_zm, kh_zt, invrs_tau_c4_zm, invrs_tau_wp3_zt, invrs_tau_c1_zm, &
-    skw_zm, skw_zt, rho_ds_zm, rho_ds_zt, invrs_rho_ds_zm, invrs_rho_ds_zt, &
+    rho_ds_zm, rho_ds_zt, invrs_rho_ds_zm, invrs_rho_ds_zt, &
     thv_ds_zm, thv_ds_zt, mixt_frac, cx_fnc_richardson, &
     lhs_splat_wp2, lhs_splat_wp3, &
     stored_pdf_implicit_coefs_terms, &
@@ -72,6 +73,8 @@ subroutine f2py_advance_wp2_wp3(nzm, nzt, ngrdcol, dt, &
     l_use_tke_in_wp2_wp3_k_dfsn, &
     l_use_wp3_lim_with_smth_heaviside, &
     l_wp2_fill_holes_tke, l_ho_nontrad_coriolis, &
-    l_implemented, stored_stats, up2, vp2, wp2, wp3, wp2_zt, stored_err_info)
+    l_implemented, stored_stats, up2, vp2, wp2, wp3, stored_err_info)
+
+  wp2_zt(:,:) = zm2zt_api( nzm, nzt, ngrdcol, stored_grid, wp2(:,:), w_tol_sqd )
 
 end subroutine f2py_advance_wp2_wp3

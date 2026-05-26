@@ -159,6 +159,7 @@ def test_compute_xp3_returns_finite_arrays(tmp_path):
     gr, clubb_params, err_info = _setup_grid_and_stats(tmp_path, ngrdcol=1)
     args = _make_xp3_args(gr)
     args["clubb_params"] = clubb_params
+    args["sigma_sqd_w"] = np.full((gr.ngrdcol, gr.nzm), 0.1, dtype=np.float64, order="F")
 
     try:
         out = clubb_api.compute_xp3(
