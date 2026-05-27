@@ -1855,7 +1855,6 @@ module advance_clubb_core_module
     real( kind = core_rknd ), dimension(ngrdcol,nzm) :: &
       ddzt_um,       & ! Vertical derivative of mean u wind [s^-1]
       ddzt_vm,       & ! Vertical derivative of mean v wind [s^-1]
-      wp2_zt,        & ! Variance of vertical velocity on thermodynamic levels [m^2/s^2]
       wp3_zm,        & ! Third moment of vertical velocity on momentum levels [m^3/s^3]
       Skw_zm,        & ! Skewness of vertical velocity on momentum levels [-]
       gamma_Skw_fnc    ! Gamma as a function of w skewness [-]
@@ -1866,7 +1865,7 @@ module advance_clubb_core_module
 
     !----------------------------- Begin Code ------------------------------
 
-    !$acc enter data create( ddzt_um, ddzt_vm, wp2_zt, wp3_zm, Skw_zm, gamma_Skw_fnc )
+    !$acc enter data create( ddzt_um, ddzt_vm, wp3_zm, Skw_zm, gamma_Skw_fnc )
 
     ! Calculate the norm of the vertical derivative of the mean horizontal
     ! wind speed to feed into the Richardson number calculation.
@@ -1882,7 +1881,6 @@ module advance_clubb_core_module
     !$acc end parallel loop
 
     ! Interpolate wp3 to momentum levels, and wp2 to thermodynamic levels.
-    wp2_zt(:,:) = zm2zt_api( nzm, nzt, ngrdcol, gr, wp2(:,:), w_tol_sqd )
     wp3_zm(:,:) = zt2zm_api( nzm, nzt, ngrdcol, gr, wp3(:,:) )
 
     call Skx_func( nzm, ngrdcol, wp2, wp3_zm, &
@@ -1939,7 +1937,7 @@ module advance_clubb_core_module
     end do
     !$acc end parallel loop
 
-    !$acc exit data delete( ddzt_um, ddzt_vm, wp2_zt, wp3_zm, Skw_zm, gamma_Skw_fnc )
+    !$acc exit data delete( ddzt_um, ddzt_vm, wp3_zm, Skw_zm, gamma_Skw_fnc )
 
   end subroutine compute_diagnostic_cache
 
