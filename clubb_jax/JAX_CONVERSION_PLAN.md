@@ -5,7 +5,7 @@
 This document describes the recommended workflow for converting
 [`src/CLUBB_core/`](../src/CLUBB_core/) from Fortran to JAX using the current
 [`clubb_jax/`](./) driver together with
-[`clubb_python_api/`](../clubb_python_api/) as a transitional scaffold.
+[`clubb_python_api/`](../clubb_python_api/) as a transitional Fortran-python interface.
 
 The current `clubb_jax/` path is a working staging environment, not yet a true
 JAX implementation. Its purpose is to make a top-down, incremental port
@@ -24,15 +24,17 @@ as the final design:
 - [`clubb_jax/`](./) provides a runnable SCM path through
   `./run_scripts/run_scm.py -jax ...`.
 - [`clubb_python_api/`](../clubb_python_api/) exposes the public cross-module
-  routine surface of `src/CLUBB_core`, which allows missing JAX pieces to stay
-  Fortran-backed while neighboring logic is ported.
+  routine surface of `src/CLUBB_core`, which allows us to replace missing JAX
+  pieces with their Fortran equivalents while neighboring logic is ported.
 - [`run_jax_vs_fortran_cases.py`](../run_scripts/run_jax_vs_fortran_cases.py)
-  provides an incremental comparison harness against the Fortran standalone.
-- This combination allows the driver to remain operational while individual
-  core files or routine families are replaced.
+  is a test harness that compares the pure Fortran standalone with an
+  incremental JAX-Fortran hybrid code.
+- This combination allows the clubb_jax driver to remain operational while
+  individual Fortran files are replaced one by one
+  by JAX equivalents.
 
 The intended end state is a JAX path with no
-`clubb_python_api` usage inside the timestep loop, and ideally no API
+`clubb_python_api` usage inside the timestep loop, and ideally no clubb_python_api
 dependency at all.
 
 ## Scope of the Port
