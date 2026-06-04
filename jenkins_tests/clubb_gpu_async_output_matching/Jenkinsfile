@@ -1,0 +1,75 @@
+// This test verifies that the OpenACC async conversion script does not change
+// GPU output. It first builds and runs the normal OpenACC GPU code, then runs
+// utilities/convert_to_async.py, rebuilds the OpenACC GPU code, and reruns the
+// same cases. The outputs are compared exactly with run_bindiff_all.py, without
+// numerical thresholds. The cases use multi-column statistics and run_scm.py's
+// -multicol flag to generate a 16-column C8 hypergrid, covering a broader
+// multi-column state space than a single default column. If this test breaks
+// while the other GPU tests still pass, the likely issue is that
+// convert_to_async.py needs to be updated to handle a new OpenACC directive
+// pattern or source-code situation. SILHS cases use l_lh_straight_mc=true
+// because GPU SILHS requires straight Monte Carlo sampling.
+pipeline {
+
+  agent any
+
+  stages {
+    stage('Compile Normal GPU') {
+      steps {
+        sh '''source /etc/profile.d/larson-group.sh
+              module load nvhpc netcdf-fortran
+              ./compile.py -gpu openacc'''
+      }
+    }
+    stage('Run Normal GPU') {
+      steps {
+        lock( "GPU_${env.NODE_NAME}" ) {
+          sh '''ulimit -s 8388608
+                run_scripts/run_scm.py -multicol C8/0.4:0.9/16 -stats input/stats/multi_col_stats.in -debug 0 -out_dir normal_gpu_output arm
+                run_scripts/run_scm.py -multicol C8/0.4:0.9/16 -stats input/stats/multi_col_stats.in -debug 0 -out_dir normal_gpu_output atex
+                run_scripts/run_scm.py -multicol C8/0.4:0.9/16 -stats input/stats/multi_col_stats.in -debug 0 -out_dir normal_gpu_output bomex
+                run_scripts/run_scm.py -multicol C8/0.4:0.9/16 -stats input/stats/multi_col_stats.in -debug 0 -out_dir normal_gpu_output -override l_lh_straight_mc=true rico_silhs
+                run_scripts/run_scm.py -multicol C8/0.4:0.9/16 -stats input/stats/multi_col_stats.in -debug 0 -out_dir normal_gpu_output -override l_lh_straight_mc=true mpace_b_silhs'''
+        }
+      }
+    }
+    stage('Convert To Async') {
+      steps {
+        sh '''python3 utilities/convert_to_async.py'''
+      }
+    }
+    stage('Compile Async GPU') {
+      steps {
+        sh '''source /etc/profile.d/larson-group.sh
+              module load nvhpc netcdf-fortran
+              ./compile.py -gpu openacc'''
+      }
+    }
+    stage('Run Async GPU') {
+      steps {
+        lock( "GPU_${env.NODE_NAME}" ) {
+          sh '''ulimit -s 8388608
+                run_scripts/run_scm.py -multicol C8/0.4:0.9/16 -stats input/stats/multi_col_stats.in -debug 0 -out_dir async_gpu_output arm
+                run_scripts/run_scm.py -multicol C8/0.4:0.9/16 -stats input/stats/multi_col_stats.in -debug 0 -out_dir async_gpu_output atex
+                run_scripts/run_scm.py -multicol C8/0.4:0.9/16 -stats input/stats/multi_col_stats.in -debug 0 -out_dir async_gpu_output bomex
+                run_scripts/run_scm.py -multicol C8/0.4:0.9/16 -stats input/stats/multi_col_stats.in -debug 0 -out_dir async_gpu_output -override l_lh_straight_mc=true rico_silhs
+                run_scripts/run_scm.py -multicol C8/0.4:0.9/16 -stats input/stats/multi_col_stats.in -debug 0 -out_dir async_gpu_output -override l_lh_straight_mc=true mpace_b_silhs'''
+        }
+      }
+    }
+    stage('Compare Outputs') {
+      steps {
+        sh '''run_scripts/run_bindiff_all.py normal_gpu_output async_gpu_output -v 2'''
+      }
+    }
+  }
+  post {
+    failure {
+      script {
+      if ( "${env.JOB_NAME}" == "clubb_gpu_async_output_matching" )
+        // This command handles the email on failure feature of the jenkins test. This line is the same on every jenkins test.
+      	emailext(to: 'messnermet@uwm.edu', subject: "${env.JOB_NAME} build ${env.BUILD_NUMBER} has Failed", attachLog: true, body: "${env.JOB_NAME} build ${env.BUILD_NUMBER} has failed. See the attached build log and the build results (${env.BUILD_URL}) for help troubleshooting.")
+      }
+    }
+  }
+}
