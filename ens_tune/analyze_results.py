@@ -3,10 +3,10 @@
 ###############################################################################
 # analyze_results.py
 #
-# This python script will take the tuned results and create a scatter plot,
-# a box plot, and a Plotgen plot making it visually easy to compare the tuned
+# This python script will take the tuned results and create a scatter plot and
+# a box plot making it visually easy to compare the tuned
 # results.  The scatter plot, plots all of the results, while the box plot only
-# plots the top 25% and Plotgen only plots the top 10 of each case.
+# plots the top 25%.
 #
 # File History:
 #  v1.0: Initial Release
@@ -136,7 +136,6 @@ def writeIndexHtml():
 	indexFile.write("<html>\n<head>\n<title>index</title>\n</head>\n<body>\n")
 	indexFile.write("<a href=\"scatter/scatter.html\">Scatter Plots</a><br>\n")
 	indexFile.write("<a href=\"box/box.html\">Box Plots</a><br>\n")
-	indexFile.write("<a href=\"plotgen/index.html\">Plotgen Plots</a><br>\n")
 	indexFile.write("</body>\n</html>")
 	indexFile.close()
 
@@ -268,18 +267,6 @@ def plotBoxPlots():
 			clf()
 				
 				
-##############################################################
-# plotPlotgen
-# Runs plotgen for all of the cases. 
-##############################################################	
-def plotPlotgen():
-	plotgenString = "plotgen -c -l -r -ensemble "
-	for k in range(0,numCases):
-		for i in range(0,10):
-			plotgenString += str(sys.argv[k+1]) + '/ens_tune_' + str(int(topResultsName[k][i])) + '/ '
-	plotgenString += "./plots/plotgen"
-	os.system(plotgenString)
-
 
 # Clear out the folders and make sure they exsist
 os.system("rm -rf plots && mkdir plots")
@@ -290,7 +277,6 @@ os.system("mkdir plots/box")
 fileReading()
 plotScatterPlots()
 plotBoxPlots()
-plotPlotgen()
 
 writeBoxHtml()
 writeScatterHtml()

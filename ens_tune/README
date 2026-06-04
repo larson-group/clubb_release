@@ -69,8 +69,8 @@ Creating and Running an Ensemble tuner job)
     Numerical Recipes suggest that we restart where we have found a minimum.
 
 5)  If you wish to analyze these results, you can run analyze_tuner.py, which is a
-    python script written to create a scatter plot, a box plot, and the Plotgen
-    plots to help you to easily analyze the data.  
+    python script written to create a scatter plot and a box plot to help you to 
+    easily analyze the data.  
 
 
 Doing a basic `at' job:
