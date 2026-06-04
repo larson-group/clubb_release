@@ -15,6 +15,7 @@ contains
                        gr, dt, &
                      l_implemented, l_host_applies_sfc_fluxes, &
                      l_stability_correct_tau_zm, &
+                     clubb_params, &
                      um, vm, upwp, vpwp, up2, vp2, &
                      thlm, rtm, thlm_before, rtm_before, thlm_forcing, rtm_forcing, &
                      wpthlp_sfc, wprtp_sfc, wprtp, wpthlp, &
@@ -37,18 +38,27 @@ contains
                      saturation_formula, &
                      stats )
 
-      use constants_clubb, only: &
+    use constants_clubb, only: &
           cloud_frac_min, &  ! Constant
-          eps
+          eps, &
+          w_tol
 
     use T_in_K_module, only: & 
         thlm2T_in_K_api ! Procedure
 
-    use constants_clubb, only: & 
+    use constants_clubb, only: &
         rc_tol    ! Constant(s)
 
     use grid_class, only: &
-        grid ! Type
+        grid, & ! Type
+        zt2zm_api
+
+    use parameter_indices, only: &
+        nparams
+
+    use Skx_module, only: &
+        Skx_func, &
+        compute_gamma_Skw
 
     use stats_netcdf, only: &
         stats_type, &
@@ -87,6 +97,9 @@ contains
       l_implemented, &
       l_host_applies_sfc_fluxes, &
       l_stability_correct_tau_zm
+
+    real( kind = core_rknd ), intent(in), dimension(ngrdcol,nparams) :: &
+      clubb_params
 
     real( kind = core_rknd ), intent(in), dimension(ngrdcol,nzt) :: &
       um, vm, thlm, rtm, thlm_before, rtm_before, thlm_forcing, rtm_forcing, &
@@ -152,6 +165,11 @@ contains
 
     real( kind = core_rknd ), dimension(ngrdcol,nzm) :: &
       wp3_on_wp2    ! Ratio of wp3 to wp2 on momentum levels [m/s]
+
+    real( kind = core_rknd ), dimension(ngrdcol,nzm) :: &
+      wp3_zm,         & ! Third moment of w on momentum levels [m^3/s^3]
+      Skw_zm,         & ! Skewness of w on momentum levels [-]
+      gamma_Skw_fnc     ! Gamma as a function of w skewness [-]
 
     real( kind = core_rknd ), dimension(ngrdcol,nzt) :: &
       wp3_on_wp2_zt    ! Ratio of wp3 to wp2 on thermodynamic levels [m/s]
@@ -304,6 +322,17 @@ contains
       call stats_update( "em", em, stats )
       call stats_update( "wp3_on_wp2", wp3_on_wp2, stats )
       call stats_update( "wp3_on_wp2_cfl_num", wp3_on_wp2 * dt / dzm, stats )
+      if ( var_on_stats_list( stats, "gamma_Skw_fnc" ) ) then
+        !$acc data create( Skw_zm, wp3_zm ) copyout( gamma_Skw_fnc )
+        wp3_zm(:,:) = zt2zm_api( nzm, nzt, ngrdcol, gr, wp3(:,:) )
+        call Skx_func( nzm, ngrdcol, wp2, wp3_zm, &
+                       w_tol, clubb_params, &
+                       Skw_zm )
+        call compute_gamma_Skw( nzm, ngrdcol, Skw_zm, clubb_params, & ! In
+                                gamma_Skw_fnc )                       ! Out
+        !$acc end data
+        call stats_update( "gamma_Skw_fnc", gamma_Skw_fnc, stats )
+      end if
       if ( sclr_dim > 0 ) then
         do sclr = 1, sclr_dim
           write( sclr_idx, * ) sclr

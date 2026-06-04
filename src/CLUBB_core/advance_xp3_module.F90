@@ -17,7 +17,7 @@ module advance_xp3_module
   implicit none
 
   public :: advance_xp3, & ! Procedure(s)
-            compute_xp3
+            diagnose_xp3
 
   private :: advance_xp3_simplified, & ! Procedure(s)
              term_tp_rhs, &
@@ -39,7 +39,7 @@ module advance_xp3_module
                           invrs_rho_ds_zt, invrs_tau_zt, tau_max_zt,       & ! Intent(in)
                           sclrm, sclrp2, wpsclrp, wpsclrp2,                & ! Intent(in)
                           wp2, wp3, upwp, vpwp, up2, vp2,                  & ! Intent(in)
-                          thvm, sigma_sqd_w, clubb_params,                 & ! Intent(in)
+                          thvm, clubb_params,                              & ! Intent(in)
                           l_lmm_stepping,                                  & ! Intent(in)
                           stats,                                           & ! Intent(inout)
                           rtp3, thlp3, sclrp3, up3, vp3 )                    ! Intent(inout)
@@ -122,8 +122,7 @@ module advance_xp3_module
       vpwp,             & ! v'w' (momentum levels)                              [m^2/s^2]
       wp2,              & ! w'^2 (momentum levels)                              [m^2/s^2]
       up2,              & ! u'^2 (momentum levels)                              [m^2/s^2]
-      vp2,              & ! v'^2 (momentum levels)                              [m^2/s^2]
-      sigma_sqd_w         ! PDF width parameter (momentum levels)                [-]
+      vp2                 ! v'^2 (momentum levels)                              [m^2/s^2]
 
     real( kind = core_rknd ), dimension(ngrdcol,nparams), intent(in) :: &
       clubb_params    ! Array of CLUBB's tunable parameters    [units vary]
@@ -164,7 +163,6 @@ module advance_xp3_module
       vpwp_zt,                        & ! v'w' on thermo. grid [m^2/s^2]
       up2_zt,                         & ! u'^2 on thermo. grid [m^2/s^2]
       vp2_zt,                         & ! v'^2 on thermo. grid [m^2/s^2]
-      sigma_sqd_w_zt,                 & ! PDF width parameter (thermodynamic levels) [-]
       xp3_coef_fnc                      ! Coefficient in simple xp3 equation [-]
 
     real( kind = core_rknd ), dimension(ngrdcol,nzt,sclr_dim), intent(inout) :: &
@@ -175,7 +173,7 @@ module advance_xp3_module
 
     !$acc data create( thvm_zm, ddzm_thvm_zm, brunt_vaisala_freq_sqd_zt, &
     !$acc              Skw_zt, wp2_zt, thlp2_zt, wpthlp_zt, wprtp_zt, rtp2_zt, &
-    !$acc              upwp_zt, vpwp_zt, up2_zt, vp2_zt, sigma_sqd_w_zt, &
+    !$acc              upwp_zt, vpwp_zt, up2_zt, vp2_zt, &
     !$acc              xp3_coef_fnc )
 
     wp2_zt(:,:) = zm2zt_api( nzm, nzt, ngrdcol, gr, wp2(:,:), w_tol_sqd )
@@ -239,12 +237,9 @@ module advance_xp3_module
                                                 zero_threshold )
     ddzm_thvm_zm(:,:)              = ddzm( nzm, nzt, ngrdcol, gr, thvm_zm(:,:) )
     brunt_vaisala_freq_sqd_zt(:,:) = max( ( grav / thvm(:,:) ) * ddzm_thvm_zm(:,:), zero )
-    sigma_sqd_w_zt(:,:)            = zm2zt_api( nzm, nzt, ngrdcol, gr, sigma_sqd_w(:,:), &
-                                                zero_threshold )
 
-    ! The xp3_coef_fnc is used in place of sigma_sqd_w_zt when the ADG1 PDF
-    ! is not being used.  The xp3_coef_fnc provides some extra tunability to
-    ! the simple xp3 equation.
+    ! The xp3_coef_fnc provides some extra tunability to the simple xp3
+    ! equation.
     ! When xp3_coef_fnc goes to 0, the value of Skx goes to the smallest
     ! magnitude permitted by the function.  When xp3_coef_fnc goes to 1, the
     ! magnitude of Skx becomes huge.
@@ -268,10 +263,9 @@ module advance_xp3_module
                              vp3 )
 
     if ( stats%l_sample ) then
-      !$acc update host( sigma_sqd_w_zt, thlp2_zt, wpthlp_zt, wprtp_zt, rtp2_zt, &
+      !$acc update host( thlp2_zt, wpthlp_zt, wprtp_zt, rtp2_zt, &
       !$acc              up2_zt, vp2_zt, upwp_zt, vpwp_zt )
 
-      call stats_update( "sigma_sqd_w_zt", sigma_sqd_w_zt, stats )
       call stats_update( "thlp2_zt", thlp2_zt, stats )
       call stats_update( "wpthlp_zt", wpthlp_zt, stats )
       call stats_update( "wprtp_zt", wprtp_zt, stats )
@@ -289,7 +283,7 @@ module advance_xp3_module
   end subroutine advance_xp3
 
   !=============================================================================
-  subroutine compute_xp3( nzm, nzt, ngrdcol, sclr_dim, sclr_tol, gr, &
+  subroutine diagnose_xp3( nzm, nzt, ngrdcol, sclr_dim, sclr_tol, gr, &
                           iiPDF_type, clubb_params, &
                           wp2, wp3, thvm, &
                           wprtp, wpthlp, rtp2, thlp2, upwp, vpwp, up2, vp2, &
@@ -554,10 +548,9 @@ module advance_xp3_module
     end if ! iiPDF_type == iiPDF_ADG1
 
     if ( stats%l_sample ) then
-      !$acc update host( sigma_sqd_w_zt, thlp2_zt, wpthlp_zt, wprtp_zt, rtp2_zt, &
+      !$acc update host( thlp2_zt, wpthlp_zt, wprtp_zt, rtp2_zt, &
       !$acc              up2_zt, vp2_zt, upwp_zt, vpwp_zt )
 
-      call stats_update( "sigma_sqd_w_zt", sigma_sqd_w_zt, stats )
       call stats_update( "thlp2_zt", thlp2_zt, stats )
       call stats_update( "wpthlp_zt", wpthlp_zt, stats )
       call stats_update( "wprtp_zt", wprtp_zt, stats )
@@ -570,7 +563,7 @@ module advance_xp3_module
 
     !$acc end data
 
-  end subroutine compute_xp3
+  end subroutine diagnose_xp3
 
   !=============================================================================
   subroutine advance_xp3_simplified( nzm, nzt, ngrdcol, gr, solve_type, dt, & ! Intent(in)

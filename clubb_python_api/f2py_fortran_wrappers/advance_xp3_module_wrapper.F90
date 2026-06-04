@@ -38,12 +38,12 @@ subroutine f2py_advance_xp3(nzm, nzt, ngrdcol, sclr_dim, sclr_dim_transport, &
     rtm, thlm, rtp2, thlp2, wprtp, wpthlp, wprtp2, wpthlp2, rho_ds_zm, &
     invrs_rho_ds_zt, invrs_tau_zt, tau_max_zt, &
     sclrm, sclrp2, wpsclrp, wpsclrp2, &
-    wp2, wp3, upwp, vpwp, up2, vp2, thvm, sigma_sqd_w, clubb_params, &
+    wp2, wp3, upwp, vpwp, up2, vp2, thvm, clubb_params, &
     l_lmm_stepping, stored_stats, rtp3, thlp3, sclrp3, up3, vp3)
 
 end subroutine f2py_advance_xp3
 
-subroutine f2py_compute_xp3(nzm, nzt, ngrdcol, sclr_dim, sclr_dim_transport, &
+subroutine f2py_diagnose_xp3(nzm, nzt, ngrdcol, sclr_dim, sclr_dim_transport, &
     sclr_tol, iipdf_type, clubb_params, &
     wp2, wp3, thvm, &
     wprtp, wpthlp, rtp2, thlp2, upwp, vpwp, up2, vp2, &
@@ -53,7 +53,7 @@ subroutine f2py_compute_xp3(nzm, nzt, ngrdcol, sclr_dim, sclr_dim_transport, &
   use clubb_precision, only: core_rknd
   use parameter_indices, only: nparams
   use derived_type_storage, only: stored_grid, stored_stats
-  use advance_xp3_module, only: compute_xp3
+  use advance_xp3_module, only: diagnose_xp3
 
   implicit none
 
@@ -69,10 +69,10 @@ subroutine f2py_compute_xp3(nzm, nzt, ngrdcol, sclr_dim, sclr_dim_transport, &
   real(core_rknd), dimension(ngrdcol, nzt), intent(inout) :: rtp3, thlp3, up3, vp3
   real(core_rknd), dimension(ngrdcol, nzt, sclr_dim_transport), intent(inout) :: sclrp3
 
-  call compute_xp3(nzm, nzt, ngrdcol, sclr_dim, sclr_tol, stored_grid, &
+  call diagnose_xp3(nzm, nzt, ngrdcol, sclr_dim, sclr_tol, stored_grid, &
     iipdf_type, clubb_params, wp2, wp3, thvm, &
     wprtp, wpthlp, rtp2, thlp2, upwp, vpwp, up2, vp2, &
     sigma_sqd_w, wpsclrp, sclrp2, stored_stats, &
     rtp3, thlp3, up3, vp3, sclrp3)
 
-end subroutine f2py_compute_xp3
+end subroutine f2py_diagnose_xp3

@@ -188,6 +188,42 @@ subroutine f2py_calc_xpwp_2d(nzm, nzt, ngrdcol, km_zm, xm, xpwp)
 
 end subroutine f2py_calc_xpwp_2d
 
+subroutine f2py_calc_ddzt_umvm_sqd(nzm, nzt, ngrdcol, um, vm, ddzt_umvm_sqd)
+
+  use clubb_precision, only: core_rknd
+  use derived_type_storage, only: stored_grid
+  use advance_helper_module, only: calc_ddzt_umvm_sqd
+
+  implicit none
+
+  integer, intent(in) :: nzm, nzt, ngrdcol
+  real(core_rknd), dimension(ngrdcol, nzt), intent(in) :: um, vm
+  real(core_rknd), dimension(ngrdcol, nzm), intent(out) :: ddzt_umvm_sqd
+
+  call calc_ddzt_umvm_sqd(nzm, nzt, ngrdcol, stored_grid, um, vm, ddzt_umvm_sqd)
+
+end subroutine f2py_calc_ddzt_umvm_sqd
+
+subroutine f2py_calc_wp3_on_wp2(nzm, nzt, ngrdcol, wp2, wp3, wp3_on_wp2, &
+    wp3_on_wp2_zt)
+
+  use clubb_precision, only: core_rknd
+  use derived_type_storage, only: stored_grid
+  use advance_helper_module, only: calc_wp3_on_wp2
+
+  implicit none
+
+  integer, intent(in) :: nzm, nzt, ngrdcol
+  real(core_rknd), dimension(ngrdcol, nzm), intent(in) :: wp2
+  real(core_rknd), dimension(ngrdcol, nzt), intent(in) :: wp3
+  real(core_rknd), dimension(ngrdcol, nzm), intent(out) :: wp3_on_wp2
+  real(core_rknd), dimension(ngrdcol, nzt), intent(out) :: wp3_on_wp2_zt
+
+  call calc_wp3_on_wp2(nzm, nzt, ngrdcol, stored_grid, wp2, wp3, &
+    wp3_on_wp2, wp3_on_wp2_zt)
+
+end subroutine f2py_calc_wp3_on_wp2
+
 subroutine f2py_lscale_width_vert_avg(nzm, ngrdcol, smth_type, var_profile, &
     lscale_zm, rho_ds_zm, var_below_ground_value, avg_out)
 
@@ -326,21 +362,3 @@ subroutine f2py_calc_stability_correction(nzm, ngrdcol, &
     stability_correction)
 
 end subroutine f2py_calc_stability_correction
-
-subroutine f2py_calc_wp3_on_wp2(nzm, nzt, ngrdcol, wp2, wp3, wp3_on_wp2, wp3_on_wp2_zt)
-
-  use clubb_precision, only: core_rknd
-  use derived_type_storage, only: stored_grid
-  use advance_helper_module, only: calc_wp3_on_wp2
-
-  implicit none
-
-  integer, intent(in) :: nzm, nzt, ngrdcol
-  real(core_rknd), dimension(ngrdcol, nzm), intent(in) :: wp2
-  real(core_rknd), dimension(ngrdcol, nzt), intent(in) :: wp3
-  real(core_rknd), dimension(ngrdcol, nzm), intent(out) :: wp3_on_wp2
-  real(core_rknd), dimension(ngrdcol, nzt), intent(out) :: wp3_on_wp2_zt
-
-  call calc_wp3_on_wp2(nzm, nzt, ngrdcol, stored_grid, wp2, wp3, wp3_on_wp2, wp3_on_wp2_zt)
-
-end subroutine f2py_calc_wp3_on_wp2

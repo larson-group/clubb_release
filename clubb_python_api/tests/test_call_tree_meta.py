@@ -19,7 +19,7 @@ ROUTINE_TO_API_NAMES = {
     "advance_xm_wpxp_module::advance_xm_wpxp": ("advance_xm_wpxp",),
     "advance_xp2_xpyp_module::advance_xp2_xpyp": ("advance_xp2_xpyp",),
     "advance_xp3_module::advance_xp3": ("advance_xp3",),
-    "advance_xp3_module::compute_xp3": ("compute_xp3",),
+    "advance_xp3_module::diagnose_xp3": ("diagnose_xp3",),
     "adg1_adg2_3d_luhar_pdf::adg1_w_closure": ("adg1_w_closure",),
     "adg1_adg2_3d_luhar_pdf::adg1_pdf_driver": ("adg1_pdf_driver",),
     "adg1_adg2_3d_luhar_pdf::adg2_pdf_driver": ("adg2_pdf_driver",),

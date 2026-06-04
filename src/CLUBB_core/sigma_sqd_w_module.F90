@@ -12,8 +12,9 @@ module sigma_sqd_w_module
   contains
 
   subroutine compute_sigma_sqd_w( nzm, nzt, ngrdcol, gr, &
-                                  gamma_Skw_fnc, wp2, thlp2, rtp2, &
+                                  wp3, wp2, thlp2, rtp2, &
                                   up2, vp2, wpthlp, wprtp, upwp, vpwp, &
+                                  clubb_params, &
                                   l_predict_upwp_vpwp, &
                                   sigma_sqd_w )
 
@@ -58,7 +59,15 @@ module sigma_sqd_w_module
 
     use grid_class, only: &
         grid,       & ! Type
+        zt2zm_api,  & ! Procedure(s)
         zm2zt2zm      ! Procedure(s)
+
+    use parameter_indices, only: &
+        nparams
+
+    use Skx_module, only: &
+        Skx_func, &
+        compute_gamma_Skw
 
     implicit none
 
@@ -70,9 +79,11 @@ module sigma_sqd_w_module
 
     type(grid), intent(in) :: &
       gr
-    
+
+    real( kind = core_rknd ), dimension(ngrdcol,nzt), intent(in) :: &
+      wp3             ! Third moment of vertical velocity            [m^3/s^3]
+
     real( kind = core_rknd ), dimension(ngrdcol,nzm), intent(in) :: &
-      gamma_Skw_fnc, & ! Gamma as a function of skewness             [-]
       wp2,           & ! Variance of vertical velocity               [m^2/s^2]
       thlp2,         & ! Variance of liquid water potential temp.    [K^2]
       rtp2,          & ! Variance of total water mixing ratio        [kg^2/kg^2]
@@ -82,6 +93,9 @@ module sigma_sqd_w_module
       wprtp,         & ! Flux of total water mixing ratio            [m/s kg/kg]
       upwp,          & ! Flux of west-east horizontal velocity       [m^2/s^2]
       vpwp             ! Flux of south-north horizontal velocity     [m^2/s^2]
+
+    real( kind = core_rknd ), dimension(ngrdcol,nparams), intent(in) :: &
+      clubb_params     ! Array of CLUBB tunable parameters           [units vary]
 
     logical, intent(in) :: &
       l_predict_upwp_vpwp ! Flag to predict <u'w'> and <v'w'> along with <u> and <v> alongside the
@@ -96,7 +110,10 @@ module sigma_sqd_w_module
 
     ! Local Variable
     real( kind = core_rknd ), dimension(ngrdcol,nzm) :: &
-      sigma_sqd_w_tmp    ! Unsmoothed PDF width parameter                  [-]
+      wp3_zm,         & ! Third moment of w on momentum levels            [m^3/s^3]
+      Skw_zm,         & ! Skewness of w on momentum levels                [-]
+      gamma_Skw_fnc,  & ! Gamma as a function of skewness                 [-]
+      sigma_sqd_w_tmp   ! Unsmoothed PDF width parameter                  [-]
 
     real( kind = core_rknd ) :: &
       max_corr_w_x_sqd   ! Max. val. of wpxp^2/(wp2*xp2) for all vars. x  [-]
@@ -105,7 +122,21 @@ module sigma_sqd_w_module
 
     ! ---- Begin Code ----
 
-    !$acc enter data create( sigma_sqd_w_tmp )
+    !$acc enter data create( wp3_zm, Skw_zm, gamma_Skw_fnc, sigma_sqd_w_tmp )
+
+    if ( nzm > 1 ) then
+      wp3_zm(:,:) = zt2zm_api( nzm, nzt, ngrdcol, gr, wp3(:,:) )
+    else
+      ! Skip interpolation if nzm == 1, this only occurs for testing purposes
+      wp3_zm(:,:) = wp3(:,:)
+    end if
+
+    call Skx_func( nzm, ngrdcol, wp2, wp3_zm, &
+                   w_tol, clubb_params, &
+                   Skw_zm )
+
+    call compute_gamma_Skw( nzm, ngrdcol, Skw_zm, clubb_params, & ! In
+                            gamma_Skw_fnc )                       ! Out
 
     !----------------------------------------------------------------
     ! Compute sigma_sqd_w with new formula from Vince
@@ -139,11 +170,16 @@ module sigma_sqd_w_module
     end do
     !$acc end parallel loop
 
-    ! Smooth in the vertical using interpolation.
-    sigma_sqd_w(:,:) = zm2zt2zm( nzm, nzt, ngrdcol, gr, sigma_sqd_w_tmp(:,:), &
-                                 zero_threshold )
+    if ( nzm > 1 ) then
+      ! Smooth in the vertical using interpolation.
+      sigma_sqd_w(:,:) = zm2zt2zm( nzm, nzt, ngrdcol, gr, sigma_sqd_w_tmp(:,:), &
+                                  zero_threshold )
+    else
+      ! Skip interpolation if nzm == 1, this only occurs for testing purposes
+      sigma_sqd_w(:,:) = sigma_sqd_w_tmp(:,:)
+    end if
 
-    !$acc exit data delete( sigma_sqd_w_tmp )
+    !$acc exit data delete( wp3_zm, Skw_zm, gamma_Skw_fnc, sigma_sqd_w_tmp )
 
     return
 

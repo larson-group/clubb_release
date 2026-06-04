@@ -20,9 +20,29 @@ def test_stats_accumulate_smoke():
 
     clubb_api.init_err_info(ngrdcol)
     clubb_api.reset_err_code()
+    pdf_params = clubb_api.init_pdf_params(nzt, ngrdcol)
+    pdf_params_zm = clubb_api.init_pdf_params_zm(nzm, ngrdcol)
     err_info = ErrInfo(ngrdcol=ngrdcol)
     registry = str(Path(__file__).resolve().parent / "test_stats_registry.in")
     clubb_params = clubb_api.init_clubb_params(ngrdcol, iunit=10, filename="")
+    flags = clubb_api.get_default_config_flags()
+
+    zm = np.linspace(0.0, 300.0, nzm + 1, dtype=np.float64)
+    zt_grid = 0.5 * (zm[:-1] + zm[1:])
+    gr, _ = clubb_api.setup_grid(
+        nzmax=nzm + 1,
+        ngrdcol=ngrdcol,
+        sfc_elevation=np.zeros(ngrdcol, dtype=np.float64),
+        l_implemented=True,
+        l_ascending_grid=True,
+        grid_type=1,
+        deltaz=np.full(ngrdcol, 100.0, dtype=np.float64),
+        zm_init=np.zeros(ngrdcol, dtype=np.float64),
+        zm_top=np.full(ngrdcol, zm[-1], dtype=np.float64),
+        momentum_heights=np.tile(zm, (ngrdcol, 1)),
+        thermodynamic_heights=np.tile(zt_grid, (ngrdcol, 1)),
+        err_info=err_info,
+    )
 
     zt_levels = np.linspace(50.0, 250.0, nzt, dtype=np.float64)
     zm_levels = np.linspace(0.0, 300.0, nzm, dtype=np.float64)
@@ -66,26 +86,12 @@ def test_stats_accumulate_smoke():
     def zme(val):
         return np.full((ngrdcol, nzm, edsclr_dim), val, dtype=np.float64, order="F")
 
-    clubb_api.setup_grid(
-        nzmax=nzm,
-        ngrdcol=ngrdcol,
-        sfc_elevation=np.zeros(ngrdcol, dtype=np.float64),
-        l_implemented=True,
-        l_ascending_grid=True,
-        grid_type=1,
-        deltaz=np.full(ngrdcol, 100.0, dtype=np.float64),
-        zm_init=np.zeros(ngrdcol, dtype=np.float64),
-        zm_top=np.full(ngrdcol, 300.0, dtype=np.float64),
-        momentum_heights=np.tile(zm_levels, (ngrdcol, 1)),
-        thermodynamic_heights=np.tile(zt_levels, (ngrdcol, 1)),
-        err_info=err_info,
-    )
-
     try:
         clubb_api.stats_accumulate(
-            nzm=nzm, nzt=nzt, ngrdcol=ngrdcol, sclr_dim=sclr_dim, edsclr_dim=edsclr_dim,
-            dt=60.0, l_implemented=True, l_host_applies_sfc_fluxes=False,
-            l_stability_correct_tau_zm=False,
+            gr=gr, nzm=nzm, nzt=nzt, ngrdcol=ngrdcol, sclr_dim=sclr_dim, edsclr_dim=edsclr_dim,
+            invrs_dzm=zm(1.0), zt=zt(100.0), dzm=zm(100.0), dzt=zt(100.0), dt=60.0,
+            k_lb_zm=1, k_ub_zm=nzm, l_implemented=True, l_host_applies_sfc_fluxes=False,
+            l_stability_correct_tau_zm=bool(flags.l_stability_correct_tau_zm), clubb_params=clubb_params,
             um=zt(1.0), vm=zt(0.0), upwp=zm(0.0), vpwp=zm(0.0), up2=zm(0.01), vp2=zm(0.01),
             thlm=zt(300.0), rtm=zt(0.01), thlm_before=zt(300.0), rtm_before=zt(0.01),
             thlm_forcing=zt(0.0), rtm_forcing=zt(0.0),
@@ -93,17 +99,36 @@ def test_stats_accumulate_smoke():
             wprtp=zm(0.0), wpthlp=zm(0.0),
             wp2=zm(0.01), wp3=zt(0.0), rtp2=zm(1.0e-6), rtp3=zt(0.0), thlp2=zm(0.01), thlp3=zt(0.0),
             rtpthlp=zm(0.0),
+            wpthvp=zm(0.0), wp2thvp=zt(0.0), wp2up=zt(0.0), rtpthvp=zm(0.0), thlpthvp=zm(0.0),
             p_in_pa=zt(90000.0), exner=zt(1.0), rho=zt(1.0), rho_zm=zm(1.0),
             rho_ds_zm=zm(1.0), rho_ds_zt=zt(1.0), thv_ds_zm=zm(300.0), thv_ds_zt=zt(300.0),
-            wm_zt=zt(0.0), wm_zm=zm(0.0), rcm=zt(0.0), cloud_frac=zt(0.0),
-            thvm=zt(300.0), ug=zt(1.0), vg=zt(0.0), ddzt_umvm_sqd=zm(0.0),
-            stability_correction=zm(0.0), kh_zt=zt(1.0), rsat=zt(0.01), kh_zm=zm(1.0),
-            em=zm(0.0),
+            wm_zt=zt(0.0), wm_zm=zm(0.0), rcm=zt(0.0), wprcp=zm(0.0), rc_coef=zt(0.0),
+            rc_coef_zm=zm(0.0),
+            rcm_zm=zm(0.0), rtm_zm=zm(0.01), thlm_zm=zm(300.0), cloud_frac=zt(0.0),
+            ice_supersat_frac=zt(0.0),
+            cloud_frac_zm=zm(0.0), ice_supersat_frac_zm=zm(0.0), rcm_in_layer=zt(0.0),
+            cloud_cover=zt(0.0), rcm_supersat_adj=zt(0.0), sigma_sqd_w=zm(0.01),
+            thvm=zt(300.0), ug=zt(1.0), vg=zt(0.0), lscale=zt(100.0), wpthlp2=zt(0.0), wp2thlp=zt(0.0),
+            wprtp2=zt(0.0), wp2rtp=zt(0.0),
+            lscale_up=zt(100.0), lscale_down=zt(100.0), kh_zt=zt(1.0), wp2rcp=zt(0.0),
+            wprtpthlp=zt(0.0), rsat=zt(0.01), wpup2=zt(0.0), wpvp2=zt(0.0),
+            wp2up2=zm(0.0), wp2vp2=zm(0.0), wp4=zm(0.0),
+            tau_zm=zm(60.0), kh_zm=zm(1.0), thlprcp=zm(0.0),
+            rtprcp=zm(0.0), rcp2=zm(0.0), em=zm(0.0),
+            wp3_on_wp2=zm(0.0), wp3_on_wp2_zt=zt(0.0), skw_velocity=zm(0.0),
+            ddzt_umvm_sqd=zm(0.0), stability_correction=zm(1.0), a3_coef=zm(1.0),
+            w_up_in_cloud=zt(0.0), w_down_in_cloud=zt(0.0),
+            cloudy_updraft_frac=zt(0.0), cloudy_downdraft_frac=zt(0.0),
+            pdf_params=pdf_params,
+            pdf_params_zm=pdf_params_zm,
             sclrm=zts(0.0), sclrp2=zms(0.0),
-            sclrprtp=zms(0.0), sclrpthlp=zms(0.0), sclrm_forcing=zts(0.0),
-            wpsclrp=zms(0.0), wpedsclrp=zme(0.0), edsclrm=zte(0.0),
+            sclrprtp=zms(0.0), sclrpthlp=zms(0.0), sclrm_forcing=zts(0.0), sclrpthvp=zms(0.0),
+            wpsclrp=zms(0.0), sclrprcp=zms(0.0), wp2sclrp=zts(0.0), wpsclrp2=zts(0.0),
+            wpsclrprtp=zts(0.0),
+            wpsclrpthlp=zts(0.0), wpedsclrp=zme(0.0), edsclrm=zte(0.0),
             edsclrm_forcing=zte(0.0),
             saturation_formula=1,
+            l_call_pdf_closure_twice=False,
         )
     finally:
         clubb_api.finalize_stats(err_info=err_info)

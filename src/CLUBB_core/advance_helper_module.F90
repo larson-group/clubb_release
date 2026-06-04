@@ -14,6 +14,7 @@ module advance_helper_module
     calc_brunt_vaisala_freq_sqd, &
     compute_Cx_fnc_Richardson, &
     calc_Ri_zm, &
+    calc_ddzt_umvm_sqd, &
     calc_wp3_on_wp2, &
     wp23_term_splat_lhs, &
     smooth_min, smooth_max, &
@@ -77,6 +78,73 @@ module advance_helper_module
 
 !===============================================================================
   contains
+
+  !---------------------------------------------------------------------------
+  subroutine calc_ddzt_umvm_sqd( nzm, nzt, ngrdcol, gr, um, vm, &
+                                 ddzt_umvm_sqd )
+
+  ! Description:
+  !   Computes the squared vertical norm of the derivative of the mean
+  !   horizontal wind.
+  !
+  ! References:
+  !   None
+  !---------------------------------------------------------------------------
+
+    use clubb_precision, only: &
+        core_rknd
+
+    use grid_class, only: &
+        grid, &
+        ddzt
+
+    implicit none
+
+    !--------------------------- Input Variables ---------------------------
+    integer, intent(in) :: &
+      nzm,     & ! Number of momentum levels
+      nzt,     & ! Number of thermodynamic levels
+      ngrdcol    ! Number of grid columns
+
+    type(grid), intent(in) :: &
+      gr    ! Grid structure
+
+    real( kind = core_rknd ), dimension(ngrdcol,nzt), intent(in) :: &
+      um, & ! Mean u wind on thermodynamic levels [m/s]
+      vm    ! Mean v wind on thermodynamic levels [m/s]
+
+    !--------------------------- Output Variables --------------------------
+    real( kind = core_rknd ), dimension(ngrdcol,nzm), intent(out) :: &
+      ddzt_umvm_sqd    ! Squared vertical shear of horizontal wind [s^-2]
+
+    !--------------------------- Local Variables ---------------------------
+    real( kind = core_rknd ), dimension(ngrdcol,nzm) :: &
+      ddzt_um, & ! Vertical derivative of mean u wind [s^-1]
+      ddzt_vm    ! Vertical derivative of mean v wind [s^-1]
+
+    integer :: &
+      i, & ! Grid-column loop index
+      k    ! Vertical-level loop index
+
+    !----------------------------- Begin Code ------------------------------
+
+    !$acc enter data create( ddzt_um, ddzt_vm )
+
+    ddzt_um = ddzt( nzm, nzt, ngrdcol, gr, um )
+    ddzt_vm = ddzt( nzm, nzt, ngrdcol, gr, vm )
+
+    !$acc parallel loop gang vector collapse(2) default(present)
+    do k = 1, nzm
+      do i = 1, ngrdcol
+        ddzt_umvm_sqd(i,k) = ddzt_um(i,k)**2 + ddzt_vm(i,k)**2
+      end do
+    end do
+    !$acc end parallel loop
+
+    !$acc exit data delete( ddzt_um, ddzt_vm )
+
+    return
+  end subroutine calc_ddzt_umvm_sqd
 
   !---------------------------------------------------------------------------
   subroutine calc_wp3_on_wp2( nzm, nzt, ngrdcol, gr, wp2, wp3, &

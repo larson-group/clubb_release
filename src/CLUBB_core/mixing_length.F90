@@ -18,7 +18,7 @@ module mixing_length
 
   subroutine calc_Lscale( nzm, nzt, ngrdcol, gr, l_implemented, host_dx, host_dy, &
                           p_in_Pa, exner, rtm, thlm, thvm, thlp2, rtp2, rtpthlp, &
-                          pdf_params, em, sqrt_em_zt, thv_ds_zt, lmin, &
+                          pdf_params, em, thv_ds_zt, lmin, &
 #ifdef CLUBBND_CAM
                           varmu, &
 #endif
@@ -126,7 +126,6 @@ module mixing_length
       thlm,              & ! Liquid water potential temperature [K]
       thvm,              & ! Virtual potential temperature [K]
       thv_ds_zt,         & ! Reference-state virtual potential temperature [K]
-      sqrt_em_zt,        & ! Square root of TKE on thermodynamic levels [m/s]
       ice_supersat_frac    ! Ice supersaturation fraction [-]
 
     real( kind = core_rknd ), dimension(ngrdcol,nzm), intent(in) :: &
@@ -187,6 +186,7 @@ module mixing_length
                                                       ! and max functions
 
     real( kind = core_rknd ), dimension(ngrdcol,nzt) :: &
+      em_zt,       & ! TKE interpolated to thermodynamic levels [m^2/s^2]
       thlp2_zt,    & ! Variance of thl on thermodynamic levels [K^2]
       rtp2_zt,     & ! Variance of rt on thermodynamic levels [(kg/kg)^2]
       rtpthlp_zt,  & ! Covariance of rt and thl on thermodynamic levels [K kg/kg]
@@ -211,7 +211,7 @@ module mixing_length
 
     !----------------------------- Begin Code ------------------------------
 
-    !$acc enter data create( Lscale_max, newmu, thlp2_zt, rtp2_zt, rtpthlp_zt, &
+    !$acc enter data create( Lscale_max, newmu, em_zt, thlp2_zt, rtp2_zt, rtpthlp_zt, &
     !$acc                    tau_zt, &
     !$acc                    invrs_tau_sfc, invrs_tau_no_N2_zm, invrs_tau_bkgnd, &
     !$acc                    invrs_tau_N2_iso, invrs_tau_wp2_zm, &
@@ -307,7 +307,7 @@ module mixing_length
         if ( any(err_info%err_code == clubb_fatal_error) ) then
           write(fstderr,*) err_info%err_header_global
           write(fstderr,*) "Error calling calc_Lscale_directly in calc_Lscale"
-          !$acc exit data delete( Lscale_max, newmu, thlp2_zt, rtp2_zt, rtpthlp_zt, &
+          !$acc exit data delete( Lscale_max, newmu, em_zt, thlp2_zt, rtp2_zt, rtpthlp_zt, &
           !$acc                   tau_zt, &
           !$acc                   invrs_tau_sfc, invrs_tau_no_N2_zm, invrs_tau_bkgnd, &
           !$acc                   invrs_tau_N2_iso, invrs_tau_wp2_zm, &
@@ -320,10 +320,12 @@ module mixing_length
 
       ! Calculate CLUBB's turbulent eddy-turnover time scale as CLUBB's
       ! length scale divided by a velocity scale.
+      em_zt(:,:) = zm2zt_api( nzm, nzt, ngrdcol, gr, em(:,:), em_min )
+
       !$acc parallel loop gang vector collapse(2) default(present)
       do k = 1, nzt
         do i = 1, ngrdcol
-          tau_zt(i,k) = min( Lscale(i,k) / sqrt_em_zt(i,k), clubb_params(i,itaumax) )
+          tau_zt(i,k) = min( Lscale(i,k) / sqrt( em_zt(i,k) ), clubb_params(i,itaumax) )
         end do
       end do
       !$acc end parallel loop
@@ -368,7 +370,7 @@ module mixing_length
       call diagnose_Lscale_from_tau( nzm, nzt, ngrdcol, gr,                       & ! In
                         upwp_sfc, vpwp_sfc, ddzt_umvm_sqd,                        & ! In
                         ice_supersat_frac,                                        & ! In
-                        em, sqrt_em_zt,                                           & ! In
+                        em,                                                       & ! In
                         ufmin, tau_const,                                         & ! In
                         sfc_elevation, Lscale_max,                                & ! In
                         clubb_params,                                             & ! In
@@ -389,7 +391,7 @@ module mixing_length
         if ( any(err_info%err_code == clubb_fatal_error) ) then
           write(fstderr,*) err_info%err_header_global
           write(fstderr,*) "Error calling diagnose_Lscale_from_tau in calc_Lscale"
-          !$acc exit data delete( Lscale_max, newmu, thlp2_zt, rtp2_zt, rtpthlp_zt, &
+          !$acc exit data delete( Lscale_max, newmu, em_zt, thlp2_zt, rtp2_zt, rtpthlp_zt, &
           !$acc                   tau_zt, &
           !$acc                   invrs_tau_sfc, invrs_tau_no_N2_zm, invrs_tau_bkgnd, &
           !$acc                   invrs_tau_N2_iso, invrs_tau_wp2_zm, &
@@ -474,7 +476,7 @@ module mixing_length
       end if
     end if
 
-    !$acc exit data delete( Lscale_max, newmu, thlp2_zt, rtp2_zt, rtpthlp_zt, &
+    !$acc exit data delete( Lscale_max, newmu, em_zt, thlp2_zt, rtp2_zt, rtpthlp_zt, &
     !$acc                   tau_zt, &
     !$acc                   invrs_tau_sfc, invrs_tau_no_N2_zm, invrs_tau_bkgnd, &
     !$acc                   invrs_tau_N2_iso, invrs_tau_wp2_zm, &
@@ -1992,7 +1994,7 @@ module mixing_length
  subroutine diagnose_Lscale_from_tau( nzm, nzt, ngrdcol, gr, & ! intent in
                         upwp_sfc, vpwp_sfc, ddzt_umvm_sqd, & !intent in
                         ice_supersat_frac, &! intent in
-                        em, sqrt_em_zt, & ! intent in
+                        em, & ! intent in
                         ufmin, tau_const, & ! intent in
                         sfc_elevation, Lscale_max, & ! intent in
                         clubb_params, & ! intent in
@@ -2085,8 +2087,7 @@ module mixing_length
       vpwp_sfc
 
     real( kind = core_rknd ), dimension(ngrdcol,nzt), intent(in) :: &
-      ice_supersat_frac, &
-      sqrt_em_zt
+      ice_supersat_frac
 
     real( kind = core_rknd ), dimension(ngrdcol,nzm), intent(in) :: &
       em,                           &
@@ -2174,6 +2175,7 @@ module mixing_length
       tmp_calc_min_max
 
     real( kind = core_rknd ), dimension(ngrdcol,nzt) :: &
+      em_zt, &
       tau_zt_unclipped
 
     real( kind = core_rknd ), dimension(ngrdcol) :: &
@@ -2188,11 +2190,13 @@ module mixing_length
     !$acc                    norm_ddzt_umvm, smooth_norm_ddzt_umvm, &
     !$acc                    brunt_vaisala_freq_clipped, &
     !$acc                    ice_supersat_frac_zm, invrs_tau_shear_smooth, &
-    !$acc                    tmp_calc_ngrdcol )
+    !$acc                    em_zt, tmp_calc_ngrdcol )
 
     !$acc enter data if( l_smooth_min_max ) &
     !$acc            create( tau_zm_unclipped, tau_zt_unclipped, Ri_zm_smooth, em_clipped, &
     !$acc                    tmp_calc, tmp_calc_max, tmp_calc_min_max )
+
+    em_zt(:,:) = zm2zt_api( nzm, nzt, ngrdcol, gr, em(:,:), em_min )
 
     !$acc parallel loop gang vector default(present)
     do i = 1, ngrdcol
@@ -2603,7 +2607,7 @@ module mixing_length
       !$acc parallel loop gang vector collapse(2) default(present)
       do k = 1, nzt
         do i = 1, ngrdcol
-          tau_max_zt(i,k) = Lscale_max(i) / sqrt_em_zt(i,k)
+          tau_max_zt(i,k) = Lscale_max(i) / sqrt( em_zt(i,k) )
         end do
       end do
       !$acc end parallel loop
@@ -2621,7 +2625,7 @@ module mixing_length
       !$acc parallel loop gang vector collapse(2) default(present)
       do k = 1, nzt
         do i = 1, ngrdcol
-          tau_max_zt(i,k) = Lscale_max(i) / sqrt_em_zt(i,k)
+          tau_max_zt(i,k) = Lscale_max(i) / sqrt( em_zt(i,k) )
         end do
       end do
       !$acc end parallel loop
@@ -2683,7 +2687,7 @@ module mixing_length
     do k = 1, nzt
       do i = 1, ngrdcol
 
-        Lscale(i,k) = tau_zt(i,k) * sqrt_em_zt(i,k)
+        Lscale(i,k) = tau_zt(i,k) * sqrt( em_zt(i,k) )
 
         ! Lscale_up and Lscale_down aren't calculated with this option.
         ! They are set to 0 for stats output.
@@ -2699,7 +2703,7 @@ module mixing_length
     !$acc                   norm_ddzt_umvm, smooth_norm_ddzt_umvm, &
     !$acc                   brunt_vaisala_freq_clipped, &
     !$acc                   ice_supersat_frac_zm, invrs_tau_shear_smooth, &
-    !$acc                   tmp_calc_ngrdcol )
+    !$acc                   em_zt, tmp_calc_ngrdcol )
 
     !$acc exit data if( l_smooth_min_max ) &
     !$acc           delete( tau_zm_unclipped, tau_zt_unclipped, Ri_zm_smooth, em_clipped, &

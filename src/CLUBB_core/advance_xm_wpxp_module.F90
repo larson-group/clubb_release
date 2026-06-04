@@ -149,15 +149,12 @@ module advance_xm_wpxp_module
         w_tol
 
     use grid_class, only: & 
-        grid, &
-        zt2zm_api
+        grid, & ! Type
+        zt2zm_api ! Procedure
 
     use model_flags, only: &
         iiPDF_new,                     & ! Variable(s)
         l_explicit_turbulent_adv_wpxp
-
-    use Skx_module, only: &
-        Skx_func    ! Procedure
 
     use mono_flux_limiter, only: &
         calc_turb_adv_range ! Procedure(s)
@@ -192,6 +189,9 @@ module advance_xm_wpxp_module
 
     use advance_helper_module, only: &
         calc_wp3_on_wp2    ! Procedure
+
+    use Skx_module, only: &
+        Skx_func    ! Procedure
 
     implicit none
 

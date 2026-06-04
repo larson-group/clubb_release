@@ -26,18 +26,19 @@ from clubb_python.CLUBB_core.advance_helper import (
     smooth_max,
     smooth_min,
     calc_xpwp,
+    calc_ddzt_umvm_sqd,
+    calc_wp3_on_wp2,
     lscale_width_vert_avg,
     wp23_term_splat_lhs,
     calc_brunt_vaisala_freq_sqd,
     compute_cx_fnc_richardson,
-    calc_wp3_on_wp2,
     calc_stability_correction,
 )
 from clubb_python.CLUBB_core.advance_windm_edsclrm import advance_windm_edsclrm
 from clubb_python.CLUBB_core.advance_wp2_wp3 import advance_wp2_wp3
 from clubb_python.CLUBB_core.advance_xm_wpxp import advance_xm_wpxp
 from clubb_python.CLUBB_core.advance_xp2_xpyp import advance_xp2_xpyp, update_xp2_mc
-from clubb_python.CLUBB_core.advance_xp3 import advance_xp3, compute_xp3
+from clubb_python.CLUBB_core.advance_xp3 import advance_xp3, diagnose_xp3
 from clubb_python.CLUBB_core.calendar import (
     julian2gregorian_date,
     compute_current_date,

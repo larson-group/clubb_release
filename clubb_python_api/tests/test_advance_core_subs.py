@@ -102,7 +102,7 @@ class TestComputeSigmaSqdW:
             nzm=nzm,
             nzt=nzt,
             ngrdcol=ngrdcol,
-            gamma_Skw_fnc=np.ones(shape),
+            wp3=np.zeros((ngrdcol, nzt)),
             wp2=np.full(shape, 0.5),
             thlp2=np.full(shape, 0.1),
             rtp2=np.full(shape, 1e-8),
@@ -112,6 +112,7 @@ class TestComputeSigmaSqdW:
             wprtp=np.full(shape, 1e-5),
             upwp=np.full(shape, 0.01),
             vpwp=np.full(shape, 0.01),
+            clubb_params=params,
             l_predict_upwp_vpwp=True,
         )
         assert sigma.shape == shape
@@ -128,7 +129,7 @@ class TestComputeSigmaSqdW:
             nzm=nzm,
             nzt=nzt,
             ngrdcol=ngrdcol,
-            gamma_Skw_fnc=np.ones(shape),
+            wp3=np.zeros((ngrdcol, nzt)),
             wp2=np.full(shape, 1.0),
             thlp2=np.full(shape, 0.1),
             rtp2=np.full(shape, 1e-8),
@@ -138,6 +139,7 @@ class TestComputeSigmaSqdW:
             wprtp=np.full(shape, 1e-5),
             upwp=np.zeros(shape),
             vpwp=np.zeros(shape),
+            clubb_params=params,
             l_predict_upwp_vpwp=False,
         )
         assert np.all(sigma >= 0.0)
@@ -154,7 +156,7 @@ class TestComputeSigmaSqdW:
             nzm=nzm,
             nzt=nzt,
             ngrdcol=ngrdcol,
-            gamma_Skw_fnc=np.ones(shape),
+            wp3=np.zeros((ngrdcol, nzt)),
             wp2=np.full(shape, 1e-10),
             thlp2=np.zeros(shape),
             rtp2=np.zeros(shape),
@@ -164,6 +166,7 @@ class TestComputeSigmaSqdW:
             wprtp=np.zeros(shape),
             upwp=np.zeros(shape),
             vpwp=np.zeros(shape),
+            clubb_params=params,
             l_predict_upwp_vpwp=False,
         )
         assert np.all(np.isfinite(sigma))

@@ -440,29 +440,14 @@ def advance_clubb_core(
 
     if flags.ipdf_call_placement == ipdf_post_advance_fields:
         # Calculate sigma_sqd_w here
-        if l_gamma_skw:
-            gamma_Skw_fnc = np.empty((ngrdcol, nzm))
-            gc = clubb_params[:, igamma_coef - 1]
-            gb = clubb_params[:, igamma_coefb - 1]
-            gcf = clubb_params[:, igamma_coefc - 1]
-            for k in range(nzm):
-                for i in range(ngrdcol):
-                    if abs(gc[i] - gb[i]) > abs(gc[i] + gb[i]) * eps / 2:
-                        gamma_Skw_fnc[i, k] = gb[i] + (gc[i] - gb[i]) * np.exp(
-                            -0.5 * (Skw_zm[i, k] / gcf[i]) ** 2)
-                    else:
-                        gamma_Skw_fnc[i, k] = gc[i]
-        else:
-            gamma_Skw_fnc = np.broadcast_to(
-                clubb_params[:, igamma_coef - 1:igamma_coef], (ngrdcol, nzm)).copy()
-
         sigma_sqd_w = clubb_api.compute_sigma_sqd_w(
             gr=gr, nzm=nzm, nzt=nzt, ngrdcol=ngrdcol,
-            gamma_Skw_fnc=gamma_Skw_fnc,
+            wp3=wp3,
             wp2=wp2, thlp2=thlp2, rtp2=rtp2,
             up2=up2, vp2=vp2,
             wpthlp=wpthlp, wprtp=wprtp,
             upwp=upwp, vpwp=vpwp,
+            clubb_params=clubb_params,
             l_predict_upwp_vpwp=flags.l_predict_upwp_vpwp,
         )
 
@@ -470,8 +455,6 @@ def advance_clubb_core(
         # If PDF closure was called pre-advance, sigma_sqd_w was set there
         # It should already be available from the pdf_closure unpack.
         sigma_sqd_w = np.zeros((ngrdcol, nzm))
-
-    a1_coef = one / (one - sigma_sqd_w)
 
     # a3 coefficient
     a3_coef = -two * (one - sigma_sqd_w) ** 2 + 3.0
@@ -879,9 +862,9 @@ def advance_clubb_core(
                 gr=gr, nzm=nzm, nzt=nzt, ngrdcol=ngrdcol,
                 sclr_dim=sclr_dim, sclr_tol=sclr_tol, dt=dt_advance,
                 sigma_sqd_w=sigma_sqd_w, wm_zm=wm_zm, wm_zt=wm_zt, wp2=wp2,
-                lscale_zm=Lscale_zm, wp3=wp3, kh_zt=Kh_zt, kh_zm=Kh_zm,
-                stability_correction=stability_correction,
-                invrs_tau_c6_zm=invrs_tau_C6_zm, tau_max_zm=tau_max_zm,
+                lscale_zm=Lscale_zm, wp3_on_wp2=wp3_on_wp2, wp3_on_wp2_zt=wp3_on_wp2_zt,
+                kh_zt=Kh_zt, kh_zm=Kh_zm, stability_correction=stability_correction,
+                invrs_tau_c6_zm=invrs_tau_C6_zm, tau_max_zm=tau_max_zm, skw_zm=Skw_zm,
                 wp2rtp=wp2rtp, rtpthvp=rtpthvp, rtm_forcing=rtm_forcing,
                 wprtp_forcing=wprtp_forcing, rtm_ref=rtm_ref, wp2thlp=wp2thlp,
                 thlpthvp=thlpthvp, thlm_forcing=thlm_forcing,
@@ -949,13 +932,14 @@ def advance_clubb_core(
                 invrs_tau_xp2_zm=invrs_tau_xp2_zm, invrs_tau_c4_zm=invrs_tau_C4_zm,
                 invrs_tau_c14_zm=invrs_tau_C14_zm, wm_zm=wm_zm, rtm=rtm, wprtp=wprtp,
                 thlm=thlm, wpthlp=wpthlp, wpthvp=wpthvp, um=um, vm=vm,
-                wp2=wp2, wp3=wp3, upwp=upwp, vpwp=vpwp,
+                wp2=wp2, wp2_zt=wp2_zt, wp3=wp3, upwp=upwp, vpwp=vpwp,
                 sigma_sqd_w=sigma_sqd_w, wprtp2=wprtp2, wpthlp2=wpthlp2,
                 wprtpthlp=wprtpthlp, kh_zt=Kh_zt, rtp2_forcing=rtp2_forcing,
                 thlp2_forcing=thlp2_forcing, rtpthlp_forcing=rtpthlp_forcing,
                 rho_ds_zm=rho_ds_zm, rho_ds_zt=rho_ds_zt,
                 invrs_rho_ds_zm=invrs_rho_ds_zm, thv_ds_zm=thv_ds_zm,
-                cloud_frac=cloud_frac, dt=dt_advance, fcor_y=fcor_y,
+                cloud_frac=cloud_frac, wp3_on_wp2=wp3_on_wp2,
+                wp3_on_wp2_zt=wp3_on_wp2_zt, dt=dt_advance, fcor_y=fcor_y,
                 sclrm=sclrm, wpsclrp=wpsclrp, wpsclrp2=wpsclrp2,
                 wpsclrprtp=wpsclrprtp, wpsclrpthlp=wpsclrpthlp,
                 lhs_splat_wp2=lhs_splat_wp2, clubb_params=clubb_params,
@@ -996,11 +980,11 @@ def advance_clubb_core(
                 gr=gr, nzm=nzm, nzt=nzt, ngrdcol=ngrdcol, dt=dt_advance,
                 sfc_elevation=sfc_elevation, fcor_y=fcor_y, sigma_sqd_w=sigma_sqd_w,
                 wm_zm=wm_zm, wm_zt=wm_zt,
-                wpup2=wpup2, wpvp2=wpvp2, wp2up2=wp2up2,
+                wp3_on_wp2=wp3_on_wp2, wpup2=wpup2, wpvp2=wpvp2, wp2up2=wp2up2,
                 wp2vp2=wp2vp2, wp4=wp4, wpthvp=wpthvp, wp2thvp=wp2thvp, wp2up=wp2up,
                 um=um, vm=vm, upwp=upwp, vpwp=vpwp, em=em, kh_zm=Kh_zm, kh_zt=Kh_zt,
                 invrs_tau_c4_zm=invrs_tau_C4_zm, invrs_tau_wp3_zt=invrs_tau_wp3_zt,
-                invrs_tau_c1_zm=invrs_tau_C1_zm,
+                invrs_tau_c1_zm=invrs_tau_C1_zm, skw_zm=Skw_zm, skw_zt=Skw_zt,
                 rho_ds_zm=rho_ds_zm, rho_ds_zt=rho_ds_zt,
                 invrs_rho_ds_zm=invrs_rho_ds_zm, invrs_rho_ds_zt=invrs_rho_ds_zt,
                 thv_ds_zm=thv_ds_zm, thv_ds_zt=thv_ds_zt,
@@ -1023,7 +1007,7 @@ def advance_clubb_core(
                 l_use_wp3_lim_with_smth_heaviside=flags.l_use_wp3_lim_with_smth_Heaviside,
                 l_wp2_fill_holes_tke=flags.l_wp2_fill_holes_tke,
                 l_ho_nontrad_coriolis=flags.l_ho_nontrad_coriolis,
-                up2=up2, vp2=vp2, wp2=wp2, wp3=wp3,
+                up2=up2, vp2=vp2, wp2=wp2, wp3=wp3, wp2_zt=wp2_zt,
                 nu_vert_res_dep=nu_vert_res_dep,
                 pdf_implicit_coefs_terms=pdf_implicit_coefs_terms, err_info=err_info,
             )
@@ -1105,7 +1089,7 @@ def advance_clubb_core(
             sclrp3=sclrp3, up3=up3, vp3=vp3,
         )
     else:
-        rtp3, thlp3, up3, vp3, sclrp3 = clubb_api.compute_xp3(
+        rtp3, thlp3, up3, vp3, sclrp3 = clubb_api.diagnose_xp3(
             gr=gr, nzm=nzm, nzt=nzt, ngrdcol=ngrdcol, sclr_dim=sclr_dim,
             sclr_tol=sclr_tol, iipdf_type=flags.iiPDF_type,
             clubb_params=clubb_params, wp2=wp2, wp3=wp3, thvm=thvm,
@@ -1216,12 +1200,16 @@ def advance_clubb_core(
         vpwp_zt = clubb_api.zm2zt(gr=gr, nzm=nzm, nzt=nzt, ngrdcol=ngrdcol, azm=vpwp)
 
         clubb_api.stats_accumulate(
-            nzm=nzm, nzt=nzt, ngrdcol=ngrdcol,
+            gr=gr, nzm=nzm, nzt=nzt, ngrdcol=ngrdcol,
             sclr_dim=sclr_dim, edsclr_dim=edsclr_dim,
+            invrs_dzm=gr.invrs_dzm, zt=gr.zt,
+            dzm=gr.grid_dir * gr.dzm, dzt=gr.grid_dir * gr.dzt,
             dt=dt,
+            k_lb_zm=gr.k_lb_zm + 1, k_ub_zm=gr.k_ub_zm + 1,
             l_implemented=l_implemented,
             l_host_applies_sfc_fluxes=flags.l_host_applies_sfc_fluxes,
             l_stability_correct_tau_zm=flags.l_stability_correct_tau_zm,
+            clubb_params=clubb_params,
             um=um, vm=vm,
             upwp=upwp, vpwp=vpwp,
             up2=up2, vp2=vp2,
@@ -1234,33 +1222,75 @@ def advance_clubb_core(
             rtp2=rtp2, rtp3=rtp3,
             thlp2=thlp2, thlp3=thlp3,
             rtpthlp=rtpthlp,
+            wpthvp=wpthvp, wp2thvp=wp2thvp,
+            wp2up=wp2up,
+            rtpthvp=rtpthvp, thlpthvp=thlpthvp,
             p_in_pa=p_in_Pa, exner=exner,
             rho=rho, rho_zm=rho_zm,
             rho_ds_zm=rho_ds_zm, rho_ds_zt=rho_ds_zt,
             thv_ds_zm=thv_ds_zm, thv_ds_zt=thv_ds_zt,
             wm_zt=wm_zt, wm_zm=wm_zm,
-            rcm=rcm,
+            rcm=rcm, wprcp=wprcp_out,
+            rc_coef=_rc_coef,
+            rc_coef_zm=rc_coef_zm,
+            rcm_zm=_rcm_zm,
+            rtm_zm=_rtm_zm,
+            thlm_zm=_thlm_zm,
             cloud_frac=cloud_frac,
+            ice_supersat_frac=ice_supersat_frac,
+            cloud_frac_zm=_cloud_frac_zm,
+            ice_supersat_frac_zm=_ice_supersat_frac_zm,
+            rcm_in_layer=rcm_in_layer,
+            cloud_cover=cloud_cover,
+            rcm_supersat_adj=_rcm_supersat_adj,
+            sigma_sqd_w=sigma_sqd_w,
             thvm=thvm,
             ug=ug, vg=vg,
-            ddzt_umvm_sqd=ddzt_umvm_sqd,
-            stability_correction=stability_correction,
+            lscale=Lscale,
+            wpthlp2=wpthlp2, wp2thlp=wp2thlp,
+            wprtp2=wprtp2, wp2rtp=wp2rtp,
+            lscale_up=Lscale_up, lscale_down=Lscale_down,
             kh_zt=Kh_zt,
+            wp2rcp=_wp2rcp,
+            wprtpthlp=wprtpthlp,
             rsat=rsat,
-            kh_zm=Kh_zm,
+            wpup2=wpup2, wpvp2=wpvp2,
+            wp2up2=wp2up2, wp2vp2=wp2vp2,
+            wp4=wp4,
+            tau_zm=tau_zm, kh_zm=Kh_zm,
+            thlprcp=thlprcp,
+            rtprcp=_rtprcp,
+            rcp2=_rcp2,
             em=em,
             wp3_on_wp2=wp3_on_wp2,
             wp3_on_wp2_zt=wp3_on_wp2_zt,
+            skw_velocity=_skw_velocity,
+            ddzt_umvm_sqd=ddzt_umvm_sqd,
+            stability_correction=stability_correction,
+            a3_coef=a3_coef,
+            w_up_in_cloud=w_up_in_cloud,
+            w_down_in_cloud=w_down_in_cloud,
+            cloudy_updraft_frac=cloudy_updraft_frac,
+            cloudy_downdraft_frac=cloudy_downdraft_frac,
+            pdf_params=pdf_params,
+            pdf_params_zm=pdf_params_zm,
             sclrm=sclrm,
             sclrp2=sclrp2,
             sclrprtp=sclrprtp,
             sclrpthlp=sclrpthlp,
             sclrm_forcing=sclrm_forcing,
+            sclrpthvp=sclrpthvp,
             wpsclrp=wpsclrp,
+            sclrprcp=_sclrprcp,
+            wp2sclrp=wp2sclrp,
+            wpsclrp2=wpsclrp2,
+            wpsclrprtp=wpsclrprtp,
+            wpsclrpthlp=wpsclrpthlp,
             wpedsclrp=wpedsclrp,
             edsclrm=edsclrm,
             edsclrm_forcing=edsclrm_forcing,
             saturation_formula=flags.saturation_formula,
+            l_call_pdf_closure_twice=flags.l_call_pdf_closure_twice,
         )
 
         clubb_api.stats_finalize_budget("wp2_bt", wp2 / dt)

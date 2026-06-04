@@ -157,8 +157,7 @@ module pdf_parameter_tests
         iiPDF_ADG1,       &
         iiPDF_TSDADG,     &
         iiPDF_LY93,       &
-        iiPDF_new_hybrid, &
-        l_gamma_Skw
+        iiPDF_new_hybrid
         
     use parameter_indices, only: &
         nparams, & ! Variable(s)
@@ -386,7 +385,6 @@ module pdf_parameter_tests
 
     ! Variables with dummy column dimension set to 1
     real( kind = core_rknd ), dimension(1,nz) :: &
-      gamma_Skw_fnc,  & ! Skewness function for tunable parameter gamma   [-]
       wp2,            & ! Variance of w (overall)             [m^2/s^2]
       rtp2,           & ! Variance of rt (overall)            [kg^2/kg^2]
       thlp2,          & ! Variance of thl (overall)           [K^2]
@@ -1560,20 +1558,12 @@ module pdf_parameter_tests
                            // "values is handled internally)."
           write(fstdout,*) ""
 
-          if ( l_gamma_Skw ) then
-             gamma_Skw_fnc(1,:) = gamma_coefb &
-                             + ( gamma_coef - gamma_coefb ) &
-                               * exp( -one_half * ( Skw / gamma_coefc )**2 )
-          else
-             gamma_Skw_fnc(1,:) = gamma_coef
-          endif
-
           call new_hybrid_pdf_driver( gr%nzt, 1, sclr_dim,                 & ! In
                                       wm, rtm, thlm, um, vm,          &! In
                                       wp2(1,:), rtp2(1,:), thlp2(1,:), up2(1,:), vp2(1,:),  &! In
                                       Skw, wprtp(1,:), wpthlp(1,:), upwp(1,:), vpwp(1,:),   &! In
                                       sclrm, sclrp2, wpsclrp,             &! In
-                                      gamma_Skw_fnc(1,:),                 &! In
+                                      clubb_params,                       &! In
                                       clubb_params(1,islope_coef_spread_DG_means_w),       &! In
                                       clubb_params(1,ipdf_component_stdev_factor_w),       &! In
                                       Skrt, Skthl, Sku, Skv, Sksclr,      &! I/O
@@ -1603,17 +1593,10 @@ module pdf_parameter_tests
                            // "handled the same way as in the model code)."
           write(fstdout,*) ""
 
-          if ( l_gamma_Skw ) then
-             gamma_Skw_fnc(1,:) = gamma_coefb &
-                             + ( gamma_coef - gamma_coefb ) &
-                               * exp( -one_half * ( Skw / gamma_coefc )**2 )
-          else
-             gamma_Skw_fnc(1,:) = gamma_coef
-          endif
-
           call compute_sigma_sqd_w( nz, nz, 1, gr, &
-                                    gamma_Skw_fnc, wp2, thlp2, rtp2, &
+                                    wp3, wp2, thlp2, rtp2, &
                                     up2, vp2, wpthlp, wprtp, upwp, vpwp, &
+                                    clubb_params, &
                                     l_predict_upwp_vpwp, &
                                     sigma_sqd_w )
 

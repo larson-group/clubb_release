@@ -84,6 +84,20 @@ def calc_xpwp(gr: Grid, nzm: int, nzt: int, ngrdcol: int, km_zm, xm):
         f_arr(km_zm), f_arr(xm), nzm=int(nzm), nzt=int(nzt), ngrdcol=int(ngrdcol))
 
 
+def calc_ddzt_umvm_sqd(gr: Grid, nzm: int, nzt: int, ngrdcol: int, um, vm):
+    """Compute squared vertical shear of the horizontal mean wind."""
+    set_fortran_grid(gr)
+    return clubb_f2py.f2py_calc_ddzt_umvm_sqd(
+        f_arr(um), f_arr(vm), nzm=int(nzm), nzt=int(nzt), ngrdcol=int(ngrdcol))
+
+
+def calc_wp3_on_wp2(gr: Grid, nzm: int, nzt: int, ngrdcol: int, wp2, wp3):
+    """Compute wp3/wp2 on momentum and thermo levels."""
+    set_fortran_grid(gr)
+    return clubb_f2py.f2py_calc_wp3_on_wp2(
+        f_arr(wp2), f_arr(wp3), nzm=int(nzm), nzt=int(nzt), ngrdcol=int(ngrdcol))
+
+
 def lscale_width_vert_avg(gr: Grid, nzm: int, ngrdcol: int, smth_type: int, var_profile, lscale_zm,
                           rho_ds_zm, var_below_ground_value: float):
     """Compute running vertical average over half-width Lscale_zm."""
@@ -176,11 +190,3 @@ def calc_stability_correction(
         f_arr(em),
         f_arr(lambda0_stability_coef),
         nzm=int(nzm), ngrdcol=int(ngrdcol))
-
-
-def calc_wp3_on_wp2(gr: Grid, nzm: int, nzt: int, ngrdcol: int, wp2, wp3):
-    """Compute wp3/wp2 on momentum and thermodynamic levels."""
-    set_fortran_grid(gr)
-    return clubb_f2py.f2py_calc_wp3_on_wp2(
-        f_arr(wp2), f_arr(wp3), nzm=int(nzm), nzt=int(nzt), ngrdcol=int(ngrdcol)
-    )

@@ -154,15 +154,14 @@ def test_advance_xp3_updates_match_return_values(tmp_path):
     np.testing.assert_allclose(vp3_out, vp3_in)
 
 
-def test_compute_xp3_returns_finite_arrays(tmp_path):
-    """compute_xp3 should run and return finite diagnosed outputs."""
+def test_diagnose_xp3_returns_finite_arrays(tmp_path):
+    """diagnose_xp3 should run and return finite diagnosed outputs."""
     gr, clubb_params, err_info = _setup_grid_and_stats(tmp_path, ngrdcol=1)
     args = _make_xp3_args(gr)
     args["clubb_params"] = clubb_params
-    args["sigma_sqd_w"] = np.full((gr.ngrdcol, gr.nzm), 0.1, dtype=np.float64, order="F")
 
     try:
-        out = clubb_api.compute_xp3(
+        out = clubb_api.diagnose_xp3(
             gr=args["gr"], nzm=args["nzm"], nzt=args["nzt"], ngrdcol=args["ngrdcol"],
             sclr_dim=args["sclr_dim"], sclr_tol=args["sclr_tol"], iipdf_type=1,
             clubb_params=args["clubb_params"], wp2=args["wp2"], wp3=args["wp3"],

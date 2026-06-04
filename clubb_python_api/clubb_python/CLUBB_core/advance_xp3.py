@@ -26,14 +26,15 @@ def advance_xp3(
         f_arr(invrs_tau_zt), f_arr(tau_max_zt),
         f_arr(sclrm), f_arr(sclrp2), f_arr(wpsclrp), f_arr(wpsclrp2),
         f_arr(wp2), f_arr(wp3), f_arr(upwp), f_arr(vpwp),
-        f_arr(up2), f_arr(vp2), f_arr(thvm), f_arr(sigma_sqd_w), f_arr(clubb_params),
+        f_arr(up2), f_arr(vp2), f_arr(thvm), f_arr(sigma_sqd_w),
+        f_arr(clubb_params),
         l_lmm_stepping,
         f_arr(rtp3), f_arr(thlp3), f_arr(sclrp3), f_arr(up3), f_arr(vp3),
         nzm=int(nzm), nzt=int(nzt), ngrdcol=int(ngrdcol),
     )
 
 
-def compute_xp3(
+def diagnose_xp3(
     gr: Grid, nzm: int, nzt: int, ngrdcol: int, sclr_dim: int, sclr_tol,
     iipdf_type: int, clubb_params,
     wp2, wp3, thvm,
@@ -43,7 +44,7 @@ def compute_xp3(
 ):
     """Diagnose third-order moments without the predictive xp3 solve."""
     set_fortran_grid(gr)
-    return clubb_f2py.f2py_compute_xp3(
+    return clubb_f2py.f2py_diagnose_xp3(
         int(sclr_dim), f_arr(sclr_tol), int(iipdf_type), f_arr(clubb_params),
         f_arr(wp2), f_arr(wp3), f_arr(thvm),
         f_arr(wprtp), f_arr(wpthlp), f_arr(rtp2), f_arr(thlp2),

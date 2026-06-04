@@ -29,7 +29,7 @@ module new_hybrid_pdf_main
                                     wp2, rtp2, thlp2, up2, vp2,         & ! In
                                     Skw, wprtp, wpthlp, upwp, vpwp,     & ! In
                                     sclrm, sclrp2, wpsclrp,             & ! In
-                                    gamma_Skw_fnc,                      & ! In
+                                    clubb_params,                       & ! In
                                     slope_coef_spread_DG_means_w,       & ! In
                                     pdf_component_stdev_factor_w,       & ! In
                                     Skrt, Skthl, Sku, Skv, Sksclr,      & ! I/O
@@ -67,8 +67,14 @@ module new_hybrid_pdf_main
         calc_coefs_wpxp2_semiimpl,   &
         calc_coefs_wpxpyp_semiimpl
 
+    use Skx_module, only: &
+        compute_gamma_Skw    ! Procedure(s)
+
     use pdf_parameter_module, only: &
         implicit_coefs_terms    ! Variable Type
+
+    use parameter_indices, only: &
+        nparams    ! Variable(s)
 
     use model_flags, only: &
         l_explicit_turbulent_adv_wp3,  & ! Variable(s)
@@ -108,15 +114,8 @@ module new_hybrid_pdf_main
       sclrp2,  & ! Variance of sclr (overall)            [(units vary)^2]
       wpsclrp    ! Covariance of w and sclr (overall)    [(m/s)(units vary)]
 
-    ! Tunable parameter gamma.
-    ! When gamma goes to 0, the standard deviations of w in each PDF component
-    ! become small, and the spread between the two PDF component means of w
-    ! becomes large.  F_w goes to min_F_w.
-    ! When gamma goes to 1, the standard deviations of w in each PDF component
-    ! become large, and the spread between the two PDF component means of w
-    ! becomes small.  F_w goes to max_F_w.
-    real( kind = core_rknd ), dimension(ngrdcol,nz), intent(in) :: &
-      gamma_Skw_fnc    ! Value of parameter gamma from tunable Skw function  [-]
+    real( kind = core_rknd ), dimension(ngrdcol,nparams), intent(in) :: &
+      clubb_params    ! Array of CLUBB tunable parameters [units vary]
 
     real( kind = core_rknd ), dimension(ngrdcol), intent(in) :: &
       ! Slope coefficient for the spread between the PDF component means of w.
@@ -208,6 +207,7 @@ module new_hybrid_pdf_main
 
     real( kind = core_rknd ), dimension(ngrdcol,nz) :: &
       ! Slope coefficient for the spread between the PDF component means of w.
+      gamma_Skw_fnc,                    & ! Value of parameter gamma from Skw [-]
       slope_coef_spread_DG_means_w_in, &
       ! Parameter to adjust the PDF component standard deviations of w.
       pdf_component_stdev_factor_w_in
@@ -312,7 +312,10 @@ module new_hybrid_pdf_main
       zero_array    ! Array of 0s (size nz x sclr_dim)    [-]
 
     integer :: i, k, sclr  ! Loop indices
-    
+
+    call compute_gamma_Skw( nz, ngrdcol, Skw, clubb_params, & ! In
+                            gamma_Skw_fnc )                   ! Out
+
     do i = 1, ngrdcol
 
       ! Calculate the maximum value of the square of the correlation of w and a

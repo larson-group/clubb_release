@@ -75,7 +75,7 @@ subroutine f2py_compute_gamma_skw(nzm, nzt, ngrdcol, l_gamma_skw, &
   real(core_rknd), dimension(ngrdcol, nzm), intent(out) :: gamma_skw_fnc
   real(core_rknd), dimension(ngrdcol, nzt), intent(out) :: gamma_skw_fnc_zt
 
-  call compute_gamma_Skw(nzm, nzt, ngrdcol, l_gamma_skw, &
-    skw_zm, clubb_params, gamma_skw_fnc, skw_zt, gamma_skw_fnc_zt)
+  call compute_gamma_Skw(nzm, ngrdcol, skw_zm, clubb_params, gamma_skw_fnc)
+  call compute_gamma_Skw(nzt, ngrdcol, skw_zt, clubb_params, gamma_skw_fnc_zt)
 
 end subroutine f2py_compute_gamma_skw

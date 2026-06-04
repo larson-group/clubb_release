@@ -56,7 +56,7 @@ subroutine f2py_diagnose_lscale_from_tau(nzm, nzt, ngrdcol, &
 
   call diagnose_lscale_from_tau(nzm, nzt, ngrdcol, stored_grid, &
     upwp_sfc, vpwp_sfc, ddzt_umvm_sqd, &
-    ice_supersat_frac, em, sqrt_em_zt, &
+    ice_supersat_frac, em, &
     ufmin, tau_const, sfc_elevation, lscale_max, clubb_params, &
     stored_stats, l_e3sm_config, l_smooth_heaviside_tau_wpxp, &
     brunt_vaisala_freq_sqd_smth, ri_zm, stored_err_info, &
@@ -102,4 +102,3 @@ subroutine f2py_calc_lscale_directly(ngrdcol, nzm, nzt, &
     stored_stats, stored_err_info, lscale, lscale_up, lscale_down)
 
 end subroutine f2py_calc_lscale_directly
-

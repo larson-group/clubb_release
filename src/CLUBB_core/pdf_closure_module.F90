@@ -48,7 +48,6 @@ module pdf_closure_module
                           rtpthlp,                                    &
                           sclrm, wpsclrp, sclrp2,                     &
                           sclrprtp, sclrpthlp, Sksclr_in,             &
-                          gamma_Skw_fnc,                              &
                           wphydrometp, wp2hmp,                        &
                           rtphmp, thlphmp,                            &
                           clubb_params, mixt_frac_max_mag,            &
@@ -219,9 +218,6 @@ module pdf_closure_module
       sclrprtp,    & ! sclr' r_t'                 [units vary]
       sclrpthlp,   & ! sclr' th_l'                [units vary]
       Sksclr_in      ! Skewness of sclr           [-]
-
-    real( kind = core_rknd ), dimension(ngrdcol,nz), intent(in) :: &
-      gamma_Skw_fnc    ! Gamma as a function of skewness            [-]
 
     real( kind = core_rknd ), dimension(ngrdcol,nz,hydromet_dim), intent(in) :: &
       wphydrometp, & ! Covariance of w and a hydrometeor    [(m/s) <hm units>]
@@ -588,7 +584,7 @@ module pdf_closure_module
                                   wp2, rtp2, thlp2, up2, vp2,                     & ! In
                                   Skw, wprtp, wpthlp, upwp, vpwp,                 & ! In
                                   sclrm, sclrp2, wpsclrp,                         & ! In
-                                  gamma_Skw_fnc,                                  & ! In
+                                  clubb_params,                                   & ! In
                                   clubb_params(:,islope_coef_spread_DG_means_w),  & ! In
                                   clubb_params(:,ipdf_component_stdev_factor_w),  & ! In
                                   Skrt, Skthl, Sku, Skv, Sksclr,                  & ! I/O
@@ -3620,12 +3616,12 @@ module pdf_closure_module
                                  l_rcm_supersat_adj,                      & ! Intent(in
                                  l_mix_rat_hm,                            & ! Intent(in)
                                  stats,                                   & ! Intent(inout)
-                                 rtm,                                     & ! Intent(inout)
+                                 rtm, sigma_sqd_w,                        & ! Intent(inout)
                                  pdf_implicit_coefs_terms,                & ! Intent(inout)
                                  pdf_params, pdf_params_zm, err_info,     & ! Intent(inout)
                                  rcm, cloud_frac,                         & ! Intent(out)
                                  ice_supersat_frac, wprcp,                & ! Intent(out)
-                                 sigma_sqd_w, wpthvp, wp2thvp, wp2up,     & ! Intent(out)
+                                 wpthvp, wp2thvp, wp2up,                  & ! Intent(out)
                                  rtpthvp, thlpthvp,                       & ! Intent(out)
                                  rcm_in_layer, cloud_cover,               & ! Intent(out)
                                  rcp2_zt, thlprcp,                        & ! Intent(out)
@@ -3663,23 +3659,16 @@ module pdf_closure_module
         nparams         ! Variable(s)
 
     use Skx_module, only: &
-        compute_gamma_Skw, & ! Procedure(s)
         Skx_func    ! Procedure(s)
 
     use pdf_utilities, only: &
         compute_variance_binormal    ! Procedure(s)
-
-    use sigma_sqd_w_module, only: &
-        compute_sigma_sqd_w    ! Procedure(s)
 
     use T_in_K_module, only: &
         thlm2T_in_K_api    ! Procedure(s)
 
     use saturation, only:  &
         sat_mixrat_liq_api    ! Procedure(s)
-
-    use model_flags, only: &
-        l_gamma_Skw        ! Variable(s)
 
     use error_code, only: &
         clubb_at_least_debug_level_api,  & ! Procedure
@@ -3828,6 +3817,9 @@ module pdf_closure_module
     real( kind = core_rknd ), dimension(ngrdcol,nzt), intent(inout) ::  &
       rtm    ! total water mixing ratio, r_t (thermo. levels) [kg/kg]
 
+    real( kind = core_rknd ), dimension(ngrdcol,nzm), intent(inout) ::  &
+      sigma_sqd_w    ! PDF width parameter on momentum levels [-]
+
     type(implicit_coefs_terms), intent(inout) :: &
       pdf_implicit_coefs_terms    ! Implicit coefs / explicit terms [units vary]
 
@@ -3853,7 +3845,6 @@ module pdf_closure_module
 
     real( kind = core_rknd ), dimension(ngrdcol,nzm), intent(out) ::  &
       wprcp,             & ! < w'r_c' > (momentum levels)           [m/s kg/kg]
-      sigma_sqd_w,       & ! PDF width parameter (momentum levels)  [-]
       wpthvp,            & ! < w' th_v' > (momentum levels)         [kg/kg K]
       rtpthvp,           & ! < r_t' th_v' > (momentum levels)       [kg/kg K]
       thlpthvp,          & ! < th_l' th_v' > (momentum levels)      [K^2]
@@ -3907,7 +3898,6 @@ module pdf_closure_module
       vp2_zt,           & ! vp2 interpolated to thermodynamic levels   [m^2/s^2]
       upwp_zt,          & ! upwp interpolated to thermodynamic levels  [m^2/s^2]
       vpwp_zt,          & ! vpwp interpolated to thermodynamic levels  [m^2/s^2]
-      gamma_Skw_fnc_zt, & ! Gamma as a function of skewness (t-levs.)  [-]
       sigma_sqd_w_zt,   & ! PDF width parameter (thermodynamic levels) [-]
       Skw_zt,           & ! Skewness of w on thermodynamic levels      [-]
       Skrt_zt,          & ! Skewness of rt on thermodynamic levels     [-]
@@ -3919,7 +3909,6 @@ module pdf_closure_module
       wp3_zm,           & ! wp3 interpolated to momentum levels        [m^3/s^3]
       rtp3_zm,          & ! rtp3 interpolated to momentum levels       [kg^3/kg^3]
       thlp3_zm,         & ! thlp3 interpolated to momentum levels      [K^3]
-      gamma_Skw_fnc,    & ! Gamma as a function of skewness            [-]
       Skw_zm,           & ! Skewness of w on momentum levels           [-]
       Skrt_zm,          & ! Skewness of rt on momentum levels          [-]
       Skthl_zm            ! Skewness of thl on momentum levels         [-]
@@ -4000,8 +3989,7 @@ module pdf_closure_module
 
     !$acc enter data create( wp2_zt,wp3_zm, rtp2_zt,rtp3_zm, thlp2_zt,  thlp3_zm, &
     !$acc                    wprtp_zt, wpthlp_zt, rtpthlp_zt, up2_zt, &
-    !$acc                    vp2_zt, upwp_zt, vpwp_zt, gamma_Skw_fnc, &
-    !$acc                    gamma_Skw_fnc_zt,sigma_sqd_w_zt,  Skw_zt, Skw_zm, &
+    !$acc                    vp2_zt, upwp_zt, vpwp_zt, sigma_sqd_w_zt, Skw_zt, Skw_zm, &
     !$acc                    Skrt_zt, Skrt_zm, Skthl_zt, Skthl_zm, Sku_zt, &
     !$acc                    Skv_zt, wp2up2_zt, &
     !$acc                    wp2vp2_zt, wp4_zt, wpthvp_zt, rtpthvp_zt, thlpthvp_zt, &
@@ -4075,19 +4063,6 @@ module pdf_closure_module
 
     end if
 
-    call compute_gamma_Skw( nzm, nzt, ngrdcol, l_gamma_Skw, & ! In
-                            Skw_zm, clubb_params,           & ! In
-                            gamma_Skw_fnc,                  & ! Out
-                            Skw_zt,                         & ! Optional In
-                            gamma_Skw_fnc_zt )                ! Optional Out
-
-    ! Compute sigma_sqd_w (dimensionless PDF width parameter)
-    call compute_sigma_sqd_w( nzm, nzt, ngrdcol, gr, &
-                              gamma_Skw_fnc, wp2, thlp2, rtp2, &
-                              up2, vp2, wpthlp, wprtp, upwp, vpwp, &
-                              l_predict_upwp_vpwp, &
-                              sigma_sqd_w )
-
     sigma_sqd_w_zt(:,:) = zm2zt_api( nzm, nzt, ngrdcol, gr, sigma_sqd_w(:,:), zero_threshold )
 
     wprtp_zt(:,:)   = zm2zt_api( nzm, nzt, ngrdcol, gr,   wprtp(:,:) )
@@ -4132,7 +4107,6 @@ module pdf_closure_module
            rtpthlp_zt,                                      & ! intent(in)
            sclrm, wpsclrp_zt, sclrp2_zt,                    & ! intent(in)
            sclrprtp_zt, sclrpthlp_zt, Sksclr_zt,            & ! intent(in)
-           gamma_Skw_fnc_zt,                                & ! intent(in)
            wphydrometp_zt, wp2hmp,                          & ! intent(in)
            rtphmp_zt, thlphmp_zt,                           & ! intent(in)
            clubb_params, mixt_frac_max_mag,                 & ! intent(in)
@@ -4195,7 +4169,7 @@ module pdf_closure_module
                                   vm, vp2, vpwp, vp3,                        & ! intent(in)
                                   rtpthlp, sclrm, wpsclrp, sclrp2,           & ! intent(in)
                                   sclrprtp, sclrpthlp, sclrp3,               & ! intent(in)
-                                  gamma_Skw_fnc, wphydrometp,                & ! intent(in)
+                                  wphydrometp,                               & ! intent(in)
                                   wp2hmp, rtphmp_zt, thlphmp_zt,             & ! intent(in)
                                   stats, sigma_sqd_w, pdf_params_zm,         & ! intent(inout)
                                   err_info,                                  & ! intent(inout)
@@ -4450,9 +4424,6 @@ module pdf_closure_module
       call stats_update( "Skrt_zt", Skrt_zt, stats )
       call stats_update( "Skrt_zm", Skrt_zm, stats )
 
-      !$acc update host(gamma_Skw_fnc)
-      call stats_update( "gamma_Skw_fnc", gamma_Skw_fnc, stats )
-
       !$acc update host( uprcp, vprcp )
       call stats_update( "uprcp", uprcp, stats )
       call stats_update( "vprcp", vprcp, stats )
@@ -4625,8 +4596,7 @@ module pdf_closure_module
 
     !$acc exit data delete( wp2_zt,wp3_zm, rtp2_zt,rtp3_zm, thlp2_zt,  thlp3_zm, &
     !$acc                   wprtp_zt, wpthlp_zt, rtpthlp_zt, up2_zt, &
-    !$acc                   vp2_zt, upwp_zt, vpwp_zt, gamma_Skw_fnc, &
-    !$acc                   gamma_Skw_fnc_zt,sigma_sqd_w_zt,  Skw_zt, Skw_zm, &
+    !$acc                   vp2_zt, upwp_zt, vpwp_zt, sigma_sqd_w_zt, Skw_zt, Skw_zm, &
     !$acc                   Skrt_zt, Skrt_zm, Skthl_zt, Skthl_zm, Sku_zt, &
     !$acc                   Skv_zt, wp2up2_zt, &
     !$acc                   wp2vp2_zt, wp4_zt, wpthvp_zt, rtpthvp_zt, thlpthvp_zt, &
@@ -4664,7 +4634,7 @@ module pdf_closure_module
                                     vm, vp2, vpwp, vp3,                        & ! Intent(in)
                                     rtpthlp, sclrm, wpsclrp, sclrp2,           & ! Intent(in)
                                     sclrprtp, sclrpthlp, sclrp3,               & ! Intent(in)
-                                    gamma_Skw_fnc, wphydrometp,                & ! Intent(in)
+                                    wphydrometp,                               & ! Intent(in)
                                     wp2hmp, rtphmp_zt, thlphmp_zt,             & ! Intent(in)
                                     stats, sigma_sqd_w, pdf_params_zm,         & ! Intent(inout)
                                     err_info,                                  & ! Intent(inout)
@@ -4772,8 +4742,7 @@ module pdf_closure_module
       upwp,          & ! u'w' on momentum levels                         [(m/s)^2]
       vp2,           & ! v'^2 on momentum levels                         [(m/s)^2]
       vpwp,          & ! v'w' on momentum levels                         [(m/s)^2]
-      rtpthlp,       & ! r_t' th_l' on momentum levels                   [(kg/kg) K]
-      gamma_Skw_fnc    ! Gamma as a function of skewness                 [-]
+      rtpthlp        ! r_t' th_l' on momentum levels                   [(kg/kg) K]
 
     real( kind = core_rknd ), dimension(ngrdcol,nzt,sclr_dim), intent(in) :: &
       sclrm,  & ! Passive scalar mean on thermodynamic levels [units vary]
@@ -4976,7 +4945,6 @@ module pdf_closure_module
            rtpthlp,                                              & ! intent(in)
            sclrm_zm, wpsclrp, sclrp2,                            & ! intent(in)
            sclrprtp, sclrpthlp, Sksclr_zm,                       & ! intent(in)
-           gamma_Skw_fnc,                                        & ! intent(in)
            wphydrometp, wp2hmp_zm,                               & ! intent(in)
            rtphmp, thlphmp,                                      & ! intent(in)
            clubb_params, mixt_frac_max_mag,                      & ! intent(in)
