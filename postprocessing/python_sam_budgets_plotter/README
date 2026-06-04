@@ -1,0 +1,3 @@
+This folder contains plotting code originally written by Cornelia Krome and updated by Steffen Domke.  
+Part of this code was used to create plots for Steffen's 2019 paper on momentum transport.
+It is a predecessor to pyplotgen.
