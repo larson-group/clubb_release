@@ -26,6 +26,9 @@ Do the work in this order:
    - Add wrappers for new public routines if needed.
    - Remove or update wrappers for routines that were deleted, renamed, moved, or had outputs made local.
    - Keep wrapper argument order aligned with the Fortran routine order.
+   - Treat the current Fortran public routine definition as the authority for the top-level Python API signature. For every wrapped public routine, the exported `clubb_api.<routine>` signature and the F2PY-facing wrapper must match the current Fortran argument set, order, and ownership unless a documented adapter exception is truly required.
+   - Do not expose stale adapter arguments in `clubb_api` merely because older wrappers or drivers still pass them. If Fortran now computes a value internally, such as a value that used to be supplied by Python, remove that value from the public Python API and from driver call sites unless another current Fortran argument still requires it.
+   - Be especially suspicious of wrapper-only arguments that are not passed through to the underlying Fortran routine. These are usually signature drift and should be removed or explicitly documented as adapter-only reconstruction inputs.
    - If a routine gains a Fortran derived-type argument or return value, add or update the corresponding Python-to-Fortran type conversion path. Check the existing `derived_types` converters and `derived_type_storage` patterns before creating anything new.
 
 3. Compile the Python API.
@@ -118,6 +121,8 @@ Debugging techniques and common failure modes:
 - Confirm index-base expectations when calling Fortran wrappers from Python. Python grid bounds may be zero-based, while Fortran routines or wrappers may expect one-based bounds.
 
 - If a Fortran output was made local inside a routine, remove it from Python call sites unless another downstream Python routine still needs the same value. If it is still needed, compute it at the same point in the workflow as Fortran does.
+
+- Passing tests are not enough to prove API correctness. Existing wrapper/order audits may only compare Python wrappers against the generated F2PY interface; they do not necessarily prove that either layer still matches the current Fortran source routine. When wrapper drift is suspected, compare directly against the Fortran subroutine definition.
 
 - If a Fortran stats call moved inside a helper, make sure the Python path either calls the helper that performs the stats update or performs an equivalent update at the same logical time.
 

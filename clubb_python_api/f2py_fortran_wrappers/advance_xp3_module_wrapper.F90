@@ -5,7 +5,7 @@ subroutine f2py_advance_xp3(nzm, nzt, ngrdcol, sclr_dim, sclr_dim_transport, &
     rtm, thlm, rtp2, thlp2, wprtp, wpthlp, wprtp2, wpthlp2, &
     rho_ds_zm, invrs_rho_ds_zt, invrs_tau_zt, tau_max_zt, &
     sclrm, sclrp2, wpsclrp, wpsclrp2, &
-    wp2, wp3, upwp, vpwp, up2, vp2, thvm, sigma_sqd_w, clubb_params, &
+    wp2, wp3, upwp, vpwp, up2, vp2, thvm, clubb_params, &
     l_lmm_stepping, &
     rtp3, thlp3, sclrp3, up3, vp3)
 
@@ -24,7 +24,7 @@ subroutine f2py_advance_xp3(nzm, nzt, ngrdcol, sclr_dim, sclr_dim_transport, &
     wp3, thvm
   real(core_rknd), dimension(ngrdcol, nzm), intent(in) :: &
     rtp2, thlp2, wprtp, wpthlp, rho_ds_zm, &
-    wp2, upwp, vpwp, up2, vp2, sigma_sqd_w
+    wp2, upwp, vpwp, up2, vp2
   real(core_rknd), dimension(ngrdcol, nparams), intent(in) :: clubb_params
   real(core_rknd), dimension(ngrdcol, nzt, sclr_dim_transport), intent(in) :: &
     sclrm, wpsclrp2

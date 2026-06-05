@@ -42,13 +42,13 @@ def calculate_spurious_source(
 def check_clubb_settings(
     ngrdcol: int,
     params,
-    config_flags: ConfigFlags,
+    clubb_config_flags: ConfigFlags,
     err_info: ErrInfo,
     l_implemented: bool,
     l_input_fields: bool,
 ):
     """Validate CLUBB configuration settings."""
-    set_fortran_config_flags(config_flags)
+    set_fortran_config_flags(clubb_config_flags)
     set_fortran_err_info(err_info)
     clubb_f2py.f2py_check_clubb_settings(
         f_arr(params), l_implemented, l_input_fields, ngrdcol=int(ngrdcol))

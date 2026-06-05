@@ -658,7 +658,7 @@ def init_clubb_case(namelist_path: str) -> dict:
     err_info = clubb_api.check_clubb_settings(
         ngrdcol=ngrdcol,
         params=clubb_params,
-        config_flags=flags,
+        clubb_config_flags=flags,
         err_info=err_info,
         l_implemented=False,
         l_input_fields=False,

@@ -184,7 +184,7 @@ def _make_advance_inputs(ngrdcol: int):
         "sclrpthvp": full(shzms, 0.0),
         "edsclrm": full(shzts, 0.0),
         "sclr_idx": sclr_idx,
-        "config_flags": config_flags,
+        "clubb_config_flags": config_flags,
         "nu_vert_res_dep": nu_vert_res_dep,
         "pdf_params": pdf_params,
         "pdf_params_zm": pdf_params_zm,

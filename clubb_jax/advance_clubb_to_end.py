@@ -532,7 +532,7 @@ def _advance_clubb_core_api(state: dict):
         sclrpthvp=state['sclrpthvp'],
         edsclrm=state['edsclrm'],
         sclr_idx=state['sclr_idx'],
-        config_flags=state['flags'],
+        clubb_config_flags=state['flags'],
         nu_vert_res_dep=state['nu_vert_res_dep'],
         pdf_params=state['pdf_params'],
         pdf_params_zm=state['pdf_params_zm'],

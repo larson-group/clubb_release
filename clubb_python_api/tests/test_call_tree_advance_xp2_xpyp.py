@@ -121,8 +121,6 @@ def _make_args(gr, flags, clubb_params, sclr_idx, nu_vert_res_dep, pdf_implicit_
         "invrs_rho_ds_zm": full((ngrdcol, nzm), 1.0),
         "thv_ds_zm": full((ngrdcol, nzm), 300.0),
         "cloud_frac": full((ngrdcol, nzt), 0.0),
-        "wp3_on_wp2": full((ngrdcol, nzm), 0.0),
-        "wp3_on_wp2_zt": full((ngrdcol, nzt), 0.0),
         "dt": 60.0,
         "fcor_y": full((ngrdcol,), 0.0),
         "sclrm": full((ngrdcol, nzt, 1), 0.0),

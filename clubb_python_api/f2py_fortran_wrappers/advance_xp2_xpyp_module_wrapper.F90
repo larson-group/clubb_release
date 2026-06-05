@@ -7,7 +7,7 @@ subroutine f2py_advance_xp2_xpyp(nzm, nzt, ngrdcol, sclr_dim, sclr_dim_transport
     sigma_sqd_w, wprtp2, wpthlp2, wprtpthlp, kh_zt, &
     rtp2_forcing, thlp2_forcing, rtpthlp_forcing, &
     rho_ds_zm, rho_ds_zt, invrs_rho_ds_zm, thv_ds_zm, cloud_frac, &
-    wp3_on_wp2, wp3_on_wp2_zt, dt, fcor_y, &
+    dt, fcor_y, &
     sclrm, wpsclrp, wpsclrp2, wpsclrprtp, wpsclrpthlp, lhs_splat_wp2, &
     clubb_params, iipdf_type, tridiag_solve_method, fill_holes_type, &
     l_ho_nontrad_coriolis, l_min_xp2_from_corr_wx, &
@@ -28,10 +28,10 @@ subroutine f2py_advance_xp2_xpyp(nzm, nzt, ngrdcol, sclr_dim, sclr_dim_transport
   real(core_rknd), dimension(ngrdcol, nzm), intent(in) :: &
     invrs_tau_xp2_zm, invrs_tau_c4_zm, invrs_tau_c14_zm, wm_zm, wprtp, wpthlp, wpthvp, &
     wp2, upwp, vpwp, sigma_sqd_w, rtp2_forcing, thlp2_forcing, rtpthlp_forcing, &
-    rho_ds_zm, invrs_rho_ds_zm, thv_ds_zm, wp3_on_wp2, lhs_splat_wp2
+    rho_ds_zm, invrs_rho_ds_zm, thv_ds_zm, lhs_splat_wp2
   real(core_rknd), dimension(ngrdcol, nzt), intent(in) :: &
     rtm, thlm, um, vm, wp2_zt, wp3, wprtp2, wpthlp2, wprtpthlp, kh_zt, &
-    rho_ds_zt, cloud_frac, wp3_on_wp2_zt
+    rho_ds_zt, cloud_frac
   real(core_rknd), intent(in) :: dt
   real(core_rknd), dimension(ngrdcol), intent(in) :: fcor_y
   real(core_rknd), dimension(ngrdcol, nzt, sclr_dim_transport), intent(in) :: &

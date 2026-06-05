@@ -13,7 +13,7 @@ def advance_xp3(
     rtm, thlm, rtp2, thlp2, wprtp, wpthlp, wprtp2, wpthlp2,
     rho_ds_zm, invrs_rho_ds_zt, invrs_tau_zt, tau_max_zt,
     sclrm, sclrp2, wpsclrp, wpsclrp2,
-    wp2, wp3, upwp, vpwp, up2, vp2, thvm, sigma_sqd_w, clubb_params,
+    wp2, wp3, upwp, vpwp, up2, vp2, thvm, clubb_params,
     l_lmm_stepping: bool,
     rtp3, thlp3, sclrp3, up3, vp3,
 ):
@@ -26,8 +26,7 @@ def advance_xp3(
         f_arr(invrs_tau_zt), f_arr(tau_max_zt),
         f_arr(sclrm), f_arr(sclrp2), f_arr(wpsclrp), f_arr(wpsclrp2),
         f_arr(wp2), f_arr(wp3), f_arr(upwp), f_arr(vpwp),
-        f_arr(up2), f_arr(vp2), f_arr(thvm), f_arr(sigma_sqd_w),
-        f_arr(clubb_params),
+        f_arr(up2), f_arr(vp2), f_arr(thvm), f_arr(clubb_params),
         l_lmm_stepping,
         f_arr(rtp3), f_arr(thlp3), f_arr(sclrp3), f_arr(up3), f_arr(vp3),
         nzm=int(nzm), nzt=int(nzt), ngrdcol=int(ngrdcol),

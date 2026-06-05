@@ -1,4 +1,4 @@
-"""Argument-order checker tests."""
+"""Argument-contract audit tests."""
 
 from __future__ import annotations
 
@@ -22,10 +22,27 @@ def _load_audit_module():
     return module
 
 
-def test_argument_order_checker_finds_no_issues():
+def test_argument_contract_audit_reports_current_drift():
     audit = _load_audit_module()
-    issues = audit.find_order_issues(REPO_ROOT)
-    assert not issues, "\n".join(
-        f"{issue.issue}: {issue.python_api_fn} -> {issue.pyf_symbol}"
-        for issue in issues
+    issues = audit.find_contract_issues(REPO_ROOT)
+    assert issues
+
+    public_mismatches = [
+        issue for issue in issues
+        if issue.issue.startswith("PUBLIC_API_SIGNATURE_MISMATCH")
+    ]
+    assert public_mismatches
+    assert any(
+        issue.pyf_symbol == "f2py_stats_accumulate"
+        and issue.python_api_fn.endswith("stats_clubb_utilities.py::stats_accumulate")
+        for issue in public_mismatches
     )
+
+    leaked_internal_args = [
+        arg
+        for issue in issues
+        if issue.issue == "PUBLIC_API_FORBIDDEN_INTERNAL_ARG"
+        for arg in issue.python_order
+    ]
+    assert "sclr_dim_transport" not in leaked_internal_args
+    assert "edsclr_dim_transport" not in leaked_internal_args

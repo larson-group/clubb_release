@@ -2,11 +2,10 @@
 
 subroutine f2py_advance_wp2_wp3(nzm, nzt, ngrdcol, dt, &
     sfc_elevation, fcor_y, sigma_sqd_w, wm_zm, wm_zt, &
-    wp3_on_wp2, &
     wpup2, wpvp2, wp2up2, wp2vp2, wp4, &
     wpthvp, wp2thvp, wp2up, um, vm, upwp, vpwp, &
     em, kh_zm, kh_zt, invrs_tau_c4_zm, invrs_tau_wp3_zt, invrs_tau_c1_zm, &
-    skw_zm, skw_zt, rho_ds_zm, rho_ds_zt, invrs_rho_ds_zm, invrs_rho_ds_zt, &
+    rho_ds_zm, rho_ds_zt, invrs_rho_ds_zm, invrs_rho_ds_zt, &
     thv_ds_zm, thv_ds_zt, mixt_frac, cx_fnc_richardson, &
     lhs_splat_wp2, lhs_splat_wp3, &
     wprtp, wpthlp, rtp2, thlp2, clubb_params, &
@@ -33,13 +32,13 @@ subroutine f2py_advance_wp2_wp3(nzm, nzt, ngrdcol, dt, &
   real(core_rknd), intent(in) :: dt
   real(core_rknd), dimension(ngrdcol), intent(in) :: sfc_elevation, fcor_y
   real(core_rknd), dimension(ngrdcol, nzm), intent(in) :: &
-    sigma_sqd_w, wm_zm, wp3_on_wp2, wp2up2, wp2vp2, wp4, &
+    sigma_sqd_w, wm_zm, wp2up2, wp2vp2, wp4, &
     wpthvp, upwp, vpwp, em, kh_zm, invrs_tau_c4_zm, invrs_tau_c1_zm, &
-    skw_zm, rho_ds_zm, invrs_rho_ds_zm, thv_ds_zm, cx_fnc_richardson, &
+    rho_ds_zm, invrs_rho_ds_zm, thv_ds_zm, cx_fnc_richardson, &
     lhs_splat_wp2, wprtp, wpthlp, rtp2, thlp2
   real(core_rknd), dimension(ngrdcol, nzt), intent(in) :: &
     wm_zt, wpup2, wpvp2, wp2thvp, wp2up, um, vm, kh_zt, &
-    invrs_tau_wp3_zt, skw_zt, rho_ds_zt, invrs_rho_ds_zt, thv_ds_zt, &
+    invrs_tau_wp3_zt, rho_ds_zt, invrs_rho_ds_zt, thv_ds_zt, &
     mixt_frac, lhs_splat_wp3
   real(core_rknd), dimension(ngrdcol, nparams), intent(in) :: clubb_params
   integer, intent(in) :: iipdf_type, penta_solve_method, fill_holes_type

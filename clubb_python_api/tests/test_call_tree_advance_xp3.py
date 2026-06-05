@@ -101,7 +101,6 @@ def _make_xp3_args(gr):
         "up2": full((ngrdcol, nzm), 0.1),
         "vp2": full((ngrdcol, nzm), 0.1),
         "thvm": full((ngrdcol, nzt), 300.0),
-        "sigma_sqd_w": full((ngrdcol, nzm), 0.1),
         "clubb_params": clubb_api.init_clubb_params(ngrdcol, iunit=10, filename=""),
         "l_lmm_stepping": False,
         "rtp3": full((ngrdcol, nzt), 0.0),
@@ -111,6 +110,10 @@ def _make_xp3_args(gr):
         "vp3": full((ngrdcol, nzt), 0.0),
     }
     return args
+
+
+def _sigma_sqd_w_arg(args):
+    return np.full((args["ngrdcol"], args["nzm"]), 0.1, dtype=np.float64, order="F")
 
 
 def test_advance_xp3_returns_finite_arrays(tmp_path):
@@ -167,7 +170,7 @@ def test_diagnose_xp3_returns_finite_arrays(tmp_path):
             clubb_params=args["clubb_params"], wp2=args["wp2"], wp3=args["wp3"],
             thvm=args["thvm"], wprtp=args["wprtp"], wpthlp=args["wpthlp"],
             rtp2=args["rtp2"], thlp2=args["thlp2"], upwp=args["upwp"], vpwp=args["vpwp"],
-            up2=args["up2"], vp2=args["vp2"], sigma_sqd_w=args["sigma_sqd_w"],
+            up2=args["up2"], vp2=args["vp2"], sigma_sqd_w=_sigma_sqd_w_arg(args),
             wpsclrp=args["wpsclrp"], sclrp2=args["sclrp2"], rtp3=args["rtp3"],
             thlp3=args["thlp3"], up3=args["up3"], vp3=args["vp3"], sclrp3=args["sclrp3"],
         )

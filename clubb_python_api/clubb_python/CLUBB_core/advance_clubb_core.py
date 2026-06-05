@@ -61,7 +61,7 @@ def advance_clubb_core(
     wpup2, wpvp2, wp2up2, wp2vp2, ice_supersat_frac,
     um_pert, vm_pert, upwp_pert, vpwp_pert,
     sclr_idx: SclrIdx,
-    config_flags: ConfigFlags,
+    clubb_config_flags: ConfigFlags,
     nu_vert_res_dep: NuVertResDep,
     pdf_params: pdf_parameter,
     pdf_params_zm: pdf_parameter,
@@ -77,7 +77,7 @@ def advance_clubb_core(
     """
     set_fortran_grid(gr)
     set_fortran_sclr_idx(sclr_idx)
-    set_fortran_config_flags(config_flags)
+    set_fortran_config_flags(clubb_config_flags)
     set_fortran_nu_vert_res_dep(nu_vert_res_dep)
     set_fortran_pdf_params(pdf_params)
     set_fortran_pdf_params_zm(pdf_params_zm)
