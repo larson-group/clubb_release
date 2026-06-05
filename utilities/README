@@ -1,4 +1,4 @@
-The CLUBBStandardsCheck.pl perl script can be used to check Fortran 
+The CLUBBStandardsCheck.py python script can be used to check Fortran 
 source files to determine if they follow certain good software engineering 
 practices which are meant to be enforced for CLUBB source files. This 
 script was written by Joshua Fasching.
