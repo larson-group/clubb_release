@@ -16,7 +16,7 @@ from clubb_python.derived_types.err_info_converter import get_fortran_err_info, 
 
 
 def advance_xm_wpxp(
-    gr: Grid, nzm: int, nzt: int, ngrdcol: int, sclr_dim: int, sclr_tol, dt: float,
+    nzm: int, nzt: int, ngrdcol: int, sclr_dim: int, sclr_tol, gr: Grid, dt: float,
     sigma_sqd_w, wm_zm, wm_zt, wp2, lscale_zm,
     wp3, kh_zt, kh_zm,
     stability_correction,
@@ -26,9 +26,10 @@ def advance_xm_wpxp(
     rho_ds_zm, rho_ds_zt, invrs_rho_ds_zm, invrs_rho_ds_zt, thv_ds_zm, rtp2, thlp2,
     w_1_zm, w_2_zm, varnce_w_1_zm, varnce_w_2_zm, mixt_frac_zm,
     l_implemented: bool, em, wp2sclrp, sclrpthvp, sclrm_forcing, sclrp2, cx_fnc_richardson,
+    pdf_implicit_coefs_terms: implicit_coefs_terms,
     um_forcing, vm_forcing, ug, vg, wpthvp,
     fcor, fcor_y, um_ref, vm_ref, up2, vp2, uprcp, vprcp, rc_coef_zm,
-    clubb_params, ts_nudge: float,
+    clubb_params, nu_vert_res_dep: NuVertResDep, ts_nudge: float,
     iipdf_type: int, penta_solve_method: int, tridiag_solve_method: int, fill_holes_type: int,
     l_predict_upwp_vpwp: bool, l_ho_nontrad_coriolis: bool, l_ho_trad_coriolis: bool,
     l_diffuse_rtm_and_thlm: bool, l_stability_correct_kh_n2_zm: bool,
@@ -40,8 +41,6 @@ def advance_xm_wpxp(
     wprtp_cl_num: int, wpthlp_cl_num: int, upwp_cl_num: int, vpwp_cl_num: int,
     rtm, wprtp, thlm, wpthlp, sclrm, wpsclrp, um, upwp, vm, vpwp,
     um_pert, vm_pert, upwp_pert, vpwp_pert,
-    nu_vert_res_dep: NuVertResDep,
-    pdf_implicit_coefs_terms: implicit_coefs_terms,
     err_info: ErrInfo,
 ):
     """Advance mean fields and turbulent fluxes one model timestep.

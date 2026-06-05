@@ -10,7 +10,7 @@ from clubb_python.derived_types.grid_class_converter import set_fortran_grid
 
 
 def calculate_thlp2_rad(
-    gr: Grid, ngrdcol: int, nzm: int, nzt: int, rcm, thlprcp, radht, clubb_params, thlp2_forcing
+    ngrdcol: int, nzm: int, nzt: int, gr: Grid, rcm, thlprcp, radht, clubb_params, thlp2_forcing
 ):
     """Calculate radiation contribution to thlp2 forcing."""
     set_fortran_grid(gr)
@@ -38,7 +38,7 @@ def vertical_integral(total_idx: int, rho_ds, field, dz) -> float:
         f_arr(rho_ds), f_arr(field), f_arr(dz), total_idx=int(total_idx)))
 
 
-def pvertinterp(gr: Grid, nzt: int, ngrdcol: int, p_mid, p_out: float, input_var):
+def pvertinterp(nzt: int, ngrdcol: int, gr: Grid, p_mid, p_out: float, input_var):
     """Interpolate a profile from model pressure levels to target pressure."""
     set_fortran_grid(gr)
     return clubb_f2py.f2py_pvertinterp(
@@ -77,28 +77,28 @@ def smooth_min(nz: int, ngrdcol: int, input_var1, input_var2, smth_coef: float):
     raise TypeError("smooth_min currently supports scalar/2D-array and 2D-array/scalar inputs only.")
 
 
-def calc_xpwp(gr: Grid, nzm: int, nzt: int, ngrdcol: int, km_zm, xm):
+def calc_xpwp(nzm: int, nzt: int, ngrdcol: int, gr: Grid, km_zm, xm):
     """Compute x'w' from grid spacing, diffusivity, and a thermo-level field."""
     set_fortran_grid(gr)
     return clubb_f2py.f2py_calc_xpwp_2d(
         f_arr(km_zm), f_arr(xm), nzm=int(nzm), nzt=int(nzt), ngrdcol=int(ngrdcol))
 
 
-def calc_ddzt_umvm_sqd(gr: Grid, nzm: int, nzt: int, ngrdcol: int, um, vm):
+def calc_ddzt_umvm_sqd(nzm: int, nzt: int, ngrdcol: int, gr: Grid, um, vm):
     """Compute squared vertical shear of the horizontal mean wind."""
     set_fortran_grid(gr)
     return clubb_f2py.f2py_calc_ddzt_umvm_sqd(
         f_arr(um), f_arr(vm), nzm=int(nzm), nzt=int(nzt), ngrdcol=int(ngrdcol))
 
 
-def calc_wp3_on_wp2(gr: Grid, nzm: int, nzt: int, ngrdcol: int, wp2, wp3):
+def calc_wp3_on_wp2(nzm: int, nzt: int, ngrdcol: int, gr: Grid, wp2, wp3):
     """Compute wp3/wp2 on momentum and thermo levels."""
     set_fortran_grid(gr)
     return clubb_f2py.f2py_calc_wp3_on_wp2(
         f_arr(wp2), f_arr(wp3), nzm=int(nzm), nzt=int(nzt), ngrdcol=int(ngrdcol))
 
 
-def lscale_width_vert_avg(gr: Grid, nzm: int, ngrdcol: int, smth_type: int, var_profile, lscale_zm,
+def lscale_width_vert_avg(nzm: int, ngrdcol: int, gr: Grid, smth_type: int, var_profile, lscale_zm,
                           rho_ds_zm, var_below_ground_value: float):
     """Compute running vertical average over half-width Lscale_zm."""
     set_fortran_grid(gr)
@@ -108,10 +108,10 @@ def lscale_width_vert_avg(gr: Grid, nzm: int, ngrdcol: int, smth_type: int, var_
 
 
 def wp23_term_splat_lhs(
-    gr: Grid,
     nzm: int,
     nzt: int,
     ngrdcol: int,
+    gr: Grid,
     c_wp2_splat,
     brunt_vaisala_freq_sqd_mixed,
     lscale_zm,
@@ -129,10 +129,10 @@ def wp23_term_splat_lhs(
 
 
 def calc_brunt_vaisala_freq_sqd(
-    gr: Grid,
     nzm: int,
     nzt: int,
     ngrdcol: int,
+    gr: Grid,
     thlm, exner, rtm, rcm, p_in_Pa, thvm, ice_supersat_frac,
     saturation_formula: int,
     l_brunt_vaisala_freq_moist: bool,
@@ -154,10 +154,10 @@ def calc_brunt_vaisala_freq_sqd(
 
 
 def compute_cx_fnc_richardson(
-    gr: Grid,
     nzm: int,
     nzt: int,
     ngrdcol: int,
+    gr: Grid,
     Lscale_zm, ddzt_umvm_sqd, rho_ds_zm,
     brunt_vaisala_freq_sqd, brunt_vaisala_freq_sqd_mixed,
     clubb_params,

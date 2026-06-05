@@ -15,24 +15,29 @@ from clubb_python.derived_types.err_info_converter import get_fortran_err_info, 
 
 def prescribe_forcings(
     gr: Grid, nzm: int, nzt: int, ngrdcol: int, sclr_dim: int, edsclr_dim: int,
-    runtype: str, sfctype: int,
+    sclr_idx: SclrIdx, runtype: str, sfctype: int,
     time_current: float, time_initial: float, dt: float,
-    um, vm, thlm, p_in_Pa, exner, rho, rho_zm, thvm, zt_in,
-    l_t_dependent: bool, l_ignore_forcings: bool, l_input_xpwp_sfc: bool,
-    l_modify_bc_for_cnvg_test: bool,
-    saturation_formula: int, l_add_dycore_grid: bool, grid_remap_method: int,
-    grid_adapt_in_time_method: int,
-    rtm, wm_zm, wm_zt, ug, vg, um_ref, vm_ref,
-    thlm_forcing, rtm_forcing, um_forcing, vm_forcing,
-    wprtp_forcing, wpthlp_forcing, rtp2_forcing, thlp2_forcing, rtpthlp_forcing,
-    wpsclrp, sclrm_forcing, edsclrm_forcing,
-    wpthlp_sfc, wprtp_sfc, upwp_sfc, vpwp_sfc,
-    T_sfc, p_sfc, sens_ht: float, latent_ht: float,
-    wpsclrp_sfc, wpedsclrp_sfc,
-    sclr_idx: SclrIdx,
-    err_info: ErrInfo,
+    um, vm, thlm, p_in_Pa, exner, rho, rho_zm, thvm, veg_t_in_k=None,
+    l_modify_bc_for_cnvg_test: bool = False,
+    saturation_formula: int = 0, stats=None, l_add_dycore_grid: bool = False, grid_remap_method: int = 0,
+    total_idx_rho_lin_spline: int = 0, rho_lin_spline_vals=None, rho_lin_spline_levels=None, gr_dycore: Grid | None = None,
+    rtm=None, wm_zm=None, wm_zt=None, ug=None, vg=None, um_ref=None, vm_ref=None,
+    thlm_forcing=None, rtm_forcing=None, um_forcing=None, vm_forcing=None,
+    wprtp_forcing=None, wpthlp_forcing=None, rtp2_forcing=None, thlp2_forcing=None, rtpthlp_forcing=None,
+    wpsclrp=None, sclrm_forcing=None, edsclrm_forcing=None,
+    wpthlp_sfc=None, wprtp_sfc=None, upwp_sfc=None, vpwp_sfc=None,
+    T_sfc=None, p_sfc=None, sens_ht: float = 0.0, latent_ht: float = 0.0,
+    wpsclrp_sfc=None, wpedsclrp_sfc=None,
+    err_info: ErrInfo | None = None, **compat_kwargs,
 ):
     """Call Fortran prescribe_forcings through the F2PY wrapper."""
+    if err_info is None:
+        raise ValueError("prescribe_forcings requires err_info.")
+    zt_in = compat_kwargs.pop("zt_in", gr.zt)
+    l_t_dependent = compat_kwargs.pop("l_t_dependent", False)
+    l_ignore_forcings = compat_kwargs.pop("l_ignore_forcings", False)
+    l_input_xpwp_sfc = compat_kwargs.pop("l_input_xpwp_sfc", False)
+    grid_adapt_in_time_method = compat_kwargs.pop("grid_adapt_in_time_method", 0)
     set_fortran_grid(gr)
     set_fortran_sclr_idx(sclr_idx)
     set_fortran_err_info(err_info)

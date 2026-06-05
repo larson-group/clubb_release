@@ -5,10 +5,6 @@ from numpy import asfortranarray as f_arr
 
 import clubb_f2py
 
-from clubb_python.derived_types.grid_class import Grid
-from clubb_python.derived_types.grid_class_converter import set_fortran_grid
-
-
 def _fa_2d(arr):
     """Convert an array to Fortran-contiguous 2D float64."""
     out = f_arr(arr, dtype=np.float64)
@@ -60,30 +56,37 @@ def set_simplified_radiation_params(
 
 
 def cos_solar_zen(day: int, month: int, year: int, current_time: float,
-                  lat_vals: float, lon_vals: float) -> float:
+                  lat_in_degrees: float, lon_in_degrees: float) -> float:
     """Compute cosine of solar zenith angle from date/time and lat/lon."""
     return float(clubb_f2py.f2py_cos_solar_zen(
         int(day), int(month), int(year),
-        float(current_time), float(lat_vals), float(lon_vals),
+        float(current_time), float(lat_in_degrees), float(lon_in_degrees),
     ))
 
 
-def sunray_sw(gr: Grid, nzt: int, fs0: float, amu0: float,
-              rho, rcm, ngrdcol: int | None = None):
+def sunray_sw(ngrdcol: int, nzt: int, rcm, rho, xi_abs: float, dzt, zm, zt,
+              radius: float, a: float, gc: float, fs0: float, omega: float, l_center: bool,
+              **compat_kwargs):
     """Compute shortwave radiative flux Frad_SW on momentum levels.
 
     Returns Frad_SW with shape (ngrdcol, nzt+1). The caller is responsible
     for computing radht_SW from the flux, matching the pattern in
     radiation_module.F90.
     """
-    set_fortran_grid(gr)
     rho_use = _fa_2d(rho)
     rcm_use = _fa_2d(rcm)
+    dzt_use = _fa_2d(dzt)
+    zt_use = _fa_2d(zt)
+    zm_use = f_arr(zm, dtype=np.float64)
+    xi_abs = float(compat_kwargs.pop("amu0", xi_abs))
     if rho_use.shape != rcm_use.shape:
         raise ValueError(f"rho/rcm shape mismatch: {rho_use.shape} vs {rcm_use.shape}")
-    ncol = int(rho_use.shape[0] if ngrdcol is None else ngrdcol)
+    if dzt_use.shape != rho_use.shape or zt_use.shape != rho_use.shape:
+        raise ValueError("dzt/zt must match rho/rcm shape.")
+    if zm_use.shape != (int(ngrdcol), int(nzt) + 1):
+        raise ValueError(f"zm shape mismatch: expected {(int(ngrdcol), int(nzt) + 1)}, got {zm_use.shape}")
     return clubb_f2py.f2py_sunray_sw(
-        fs0=float(fs0), amu0=float(amu0),
-        rho=rho_use, rcm=rcm_use,
-        ngrdcol=ncol, nzt=int(nzt),
+        rcm_use, rho_use, xi_abs, dzt_use, zm_use, zt_use,
+        float(radius), float(a), float(gc), float(fs0), float(omega), bool(l_center),
+        ngrdcol=int(ngrdcol), nzt=int(nzt),
     )

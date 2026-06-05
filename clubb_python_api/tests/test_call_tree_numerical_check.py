@@ -235,8 +235,10 @@ def test_pdf_closure_check_sets_error_for_nan(run_quiet_python):
         nz, sclr_dim,
         base, base, base, base, base, base, base, base, base, base,
         base, base, base, base, base, base, base, base, base, base,
-        base, base, sclr_base, sclr_base, sclr_base, sclr_base, sclr_base, sclr_base,
-        pdf_params=pdf_params, err_info=err_info,
+        cthl_1=base, cthl_2=base, pdf_params=pdf_params,
+        sclrpthvp=sclr_base, sclrprcp=sclr_base, wpsclrp2=sclr_base,
+        wpsclrprtp=sclr_base, wpsclrpthlp=sclr_base, wp2sclrp=sclr_base,
+        err_info=err_info,
     )
     assert int(clubb_api.get_err_code(ngrdcol)[0]) == 0
 
@@ -264,8 +266,10 @@ clubb_api.pdf_closure_check(
     nz, sclr_dim,
     base, base, bad_wp2rtp, base, base, base, base, base, base, base,
     base, base, base, base, base, base, base, base, base, base,
-    base, base, sclr_base, sclr_base, sclr_base, sclr_base, sclr_base, sclr_base,
-    pdf_params=pdf_params, err_info=err_info,
+    cthl_1=base, cthl_2=base, pdf_params=pdf_params,
+    sclrpthvp=sclr_base, sclrprcp=sclr_base, wpsclrp2=sclr_base,
+    wpsclrprtp=sclr_base, wpsclrpthlp=sclr_base, wp2sclrp=sclr_base,
+    err_info=err_info,
 )
 print(json.dumps({"err_code": int(clubb_api.get_err_code(ngrdcol)[0])}))
 """

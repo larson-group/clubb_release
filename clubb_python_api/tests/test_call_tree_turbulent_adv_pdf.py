@@ -54,14 +54,14 @@ def test_turbulent_adv_pdf_zero_inputs_return_zero_outputs():
     term_zm = np.zeros(shape_zm, dtype=np.float64)
 
     lhs = clubb_api.xpyp_term_ta_pdf_lhs(
-        gr, gr.nzm, gr.nzt, gr.ngrdcol, coef_zt, rho_ds_zt, rho_ds_zm, invrs_rho_ds_zm, False, sgn_zm, coef_zm
+        gr.nzm, gr.nzt, gr.ngrdcol, gr, coef_zt, rho_ds_zt, rho_ds_zm, invrs_rho_ds_zm, False, sgn_zm, coef_zm
     )
-    lhs_god = clubb_api.xpyp_term_ta_pdf_lhs_godunov(gr, gr.nzm, gr.nzt, gr.ngrdcol, coef_zt, invrs_rho_ds_zm, rho_ds_zm)
+    lhs_god = clubb_api.xpyp_term_ta_pdf_lhs_godunov(gr.nzm, gr.nzt, gr.ngrdcol, gr, coef_zt, invrs_rho_ds_zm, rho_ds_zm)
     rhs = clubb_api.xpyp_term_ta_pdf_rhs(
-        gr, gr.nzm, gr.nzt, gr.ngrdcol, term_zt, rho_ds_zt, rho_ds_zm, invrs_rho_ds_zm, False, sgn_zm, term_zm
+        gr.nzm, gr.nzt, gr.ngrdcol, gr, term_zt, rho_ds_zt, rho_ds_zm, invrs_rho_ds_zm, False, sgn_zm, term_zm
     )
     rhs_god = clubb_api.xpyp_term_ta_pdf_rhs_godunov(
-        gr, gr.nzm, gr.nzt, gr.ngrdcol, term_zm, invrs_rho_ds_zm, sgn_zt, rho_ds_zm
+        gr.nzm, gr.nzt, gr.ngrdcol, gr, term_zm, invrs_rho_ds_zm, sgn_zt, rho_ds_zm
     )
 
     np.testing.assert_allclose(lhs, 0.0)

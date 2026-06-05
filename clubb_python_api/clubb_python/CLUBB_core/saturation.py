@@ -9,17 +9,27 @@ from clubb_python.derived_types.grid_class import Grid
 from clubb_python.derived_types.grid_class_converter import set_fortran_grid
 
 
-def sat_mixrat_liq(gr: Grid, nz: int, ngrdcol: int, p_in_Pa, T_in_K,
-                   saturation_formula: int):
+def sat_mixrat_liq(nz: int, ngrdcol: int, gr: Grid, p_in_Pa, T_in_K,
+                   saturation_formula: int, start_index_in: int = 1):
     """Compute saturation mixing ratio for liquid water."""
     set_fortran_grid(gr)
-    return clubb_f2py.f2py_sat_mixrat_liq_2d(
-        p_in_Pa=f_arr(p_in_Pa),
-        t_in_k=f_arr(T_in_K),
-        saturation_formula=int(saturation_formula),
-        nz=int(nz),
-        ngrdcol=int(ngrdcol),
-    )
+    try:
+        return clubb_f2py.f2py_sat_mixrat_liq_2d(
+            p_in_Pa=f_arr(p_in_Pa),
+            t_in_k=f_arr(T_in_K),
+            saturation_formula=int(saturation_formula),
+            start_index_in=int(start_index_in),
+            nz=int(nz),
+            ngrdcol=int(ngrdcol),
+        )
+    except TypeError:
+        return clubb_f2py.f2py_sat_mixrat_liq_2d(
+            p_in_Pa=f_arr(p_in_Pa),
+            t_in_k=f_arr(T_in_K),
+            saturation_formula=int(saturation_formula),
+            nz=int(nz),
+            ngrdcol=int(ngrdcol),
+        )
 
 
 def sat_mixrat_ice(nz: int, ngrdcol: int, p_in_Pa, T_in_K,

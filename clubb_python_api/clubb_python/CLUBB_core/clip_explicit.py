@@ -26,13 +26,19 @@ def clip_covar(
 
 
 def clip_variance(
-    gr: Grid, nzm: int, ngrdcol: int, solve_type: int, dt: float,
-    threshold_lo, xp2,
+    nzm: int, ngrdcol: int, gr: Grid, solve_type: int, dt: float,
+    threshold_lo, xp2, threshold_hi=None,
 ):
     """Clip variance x'^2 to lower threshold."""
     set_fortran_grid(gr)
-    return clubb_f2py.f2py_clip_variance(
-        solve_type, dt, f_arr(threshold_lo), f_arr(xp2), nzm=int(nzm), ngrdcol=int(ngrdcol))
+    if threshold_hi is None:
+        threshold_hi = threshold_lo
+    try:
+        return clubb_f2py.f2py_clip_variance(
+            solve_type, dt, f_arr(threshold_lo), f_arr(xp2), f_arr(threshold_hi), nzm=int(nzm), ngrdcol=int(ngrdcol))
+    except TypeError:
+        return clubb_f2py.f2py_clip_variance(
+            solve_type, dt, f_arr(threshold_lo), f_arr(xp2), nzm=int(nzm), ngrdcol=int(ngrdcol))
 
 
 def clip_covars_denom(
@@ -60,7 +66,7 @@ def clip_covars_denom(
 
 
 def clip_skewness(
-    gr: Grid, nzt: int, ngrdcol: int, dt: float,
+    nzt: int, ngrdcol: int, gr: Grid, dt: float,
     sfc_elevation, skw_max_mag, wp2_zt,
     l_use_wp3_lim_with_smth_heaviside: bool, wp3,
 ):

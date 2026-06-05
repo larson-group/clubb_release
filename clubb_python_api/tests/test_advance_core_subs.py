@@ -384,7 +384,7 @@ class TestClipVariance:
         xp2 = np.full(shape, 0.001)  # below threshold
 
         result = clubb_api.clip_variance(
-            gr, nzm=nzm, ngrdcol=ngrdcol, solve_type=1, dt=300.0,
+            nzm=nzm, ngrdcol=ngrdcol, gr=gr, solve_type=1, dt=300.0,
             threshold_lo=threshold_lo, xp2=xp2.copy(),
         )
         # Interior levels should be clipped; boundary levels may differ
@@ -400,7 +400,7 @@ class TestClipVariance:
         xp2 = np.full(shape, 1.0)
 
         result = clubb_api.clip_variance(
-            gr, nzm=nzm, ngrdcol=ngrdcol, solve_type=1, dt=300.0,
+            nzm=nzm, ngrdcol=ngrdcol, gr=gr, solve_type=1, dt=300.0,
             threshold_lo=threshold_lo, xp2=xp2.copy(),
         )
         np.testing.assert_array_almost_equal(result, xp2)
@@ -428,7 +428,7 @@ class TestBruntVaisala:
         ice_supersat_frac = np.zeros(zt_shape)
 
         result = clubb_api.calc_brunt_vaisala_freq_sqd(
-            gr, nzm, nzt, ngrdcol, thlm, exner, rtm, rcm, p_in_Pa, thvm, ice_supersat_frac,
+            nzm, nzt, ngrdcol, gr, thlm, exner, rtm, rcm, p_in_Pa, thvm, ice_supersat_frac,
             saturation_formula=flags.saturation_formula,
             l_brunt_vaisala_freq_moist=False,
             l_use_thvm_in_bv_freq=True,
@@ -458,7 +458,7 @@ class TestBruntVaisala:
         ice_supersat_frac = np.zeros(zt_shape)
 
         bv2, bv2_mixed, bv2_smth = clubb_api.calc_brunt_vaisala_freq_sqd(
-            gr, nzm, nzt, ngrdcol, thlm, exner, rtm, rcm, p_in_Pa, thvm, ice_supersat_frac,
+            nzm, nzt, ngrdcol, gr, thlm, exner, rtm, rcm, p_in_Pa, thvm, ice_supersat_frac,
             saturation_formula=flags.saturation_formula,
             l_brunt_vaisala_freq_moist=False,
             l_use_thvm_in_bv_freq=True,
@@ -483,7 +483,7 @@ class TestCxFncRichardson:
         shape = (ngrdcol, nzm)
 
         result = clubb_api.compute_cx_fnc_richardson(
-            gr, nzm, gr.nzt, ngrdcol,
+            nzm, gr.nzt, ngrdcol, gr,
             Lscale_zm=np.full(shape, 100.0),
             ddzt_umvm_sqd=np.full(shape, 1e-4),
             rho_ds_zm=np.full(shape, 1.0),

@@ -35,7 +35,7 @@ subroutine f2py_calc_setter_parameters_tsdadg(xm, xp2, skx, sgn_wpxp, &
 
 end subroutine f2py_calc_setter_parameters_tsdadg
 
-subroutine f2py_tsdadg_pdf_driver(nz, ngrdcol, wm, rtm, thlm, wp2, rtp2, thlp2, &
+subroutine f2py_tsdadg_pdf_driver(nz, wm, rtm, thlm, wp2, rtp2, thlp2, &
     skw, skrt, skthl, wprtp, wpthlp, mu_w_1, mu_w_2, mu_rt_1, mu_rt_2, mu_thl_1, &
     mu_thl_2, sigma_w_1_sqd, sigma_w_2_sqd, sigma_rt_1_sqd, sigma_rt_2_sqd, &
     sigma_thl_1_sqd, sigma_thl_2_sqd, mixt_frac)
@@ -45,23 +45,17 @@ subroutine f2py_tsdadg_pdf_driver(nz, ngrdcol, wm, rtm, thlm, wp2, rtp2, thlp2, 
 
   implicit none
 
-  integer, intent(in) :: nz, ngrdcol
-  real(core_rknd), dimension(ngrdcol, nz), intent(in) :: &
+  integer, intent(in) :: nz
+  real(core_rknd), dimension(nz), intent(in) :: &
     wm, rtm, thlm, wp2, rtp2, thlp2, skw, skrt, skthl, wprtp, wpthlp
-  real(core_rknd), dimension(ngrdcol, nz), intent(out) :: &
+  real(core_rknd), dimension(nz), intent(out) :: &
     mu_w_1, mu_w_2, mu_rt_1, mu_rt_2, mu_thl_1, mu_thl_2, &
     sigma_w_1_sqd, sigma_w_2_sqd, sigma_rt_1_sqd, sigma_rt_2_sqd, &
     sigma_thl_1_sqd, sigma_thl_2_sqd, mixt_frac
 
-  integer :: i
-
-  do i = 1, ngrdcol
-    call tsdadg_pdf_driver(nz, wm(i,:), rtm(i,:), thlm(i,:), wp2(i,:), rtp2(i,:), thlp2(i,:), &
-      skw(i,:), skrt(i,:), skthl(i,:), wprtp(i,:), wpthlp(i,:), &
-      mu_w_1(i,:), mu_w_2(i,:), mu_rt_1(i,:), mu_rt_2(i,:), mu_thl_1(i,:), mu_thl_2(i,:), &
-      sigma_w_1_sqd(i,:), sigma_w_2_sqd(i,:), sigma_rt_1_sqd(i,:), sigma_rt_2_sqd(i,:), &
-      sigma_thl_1_sqd(i,:), sigma_thl_2_sqd(i,:), mixt_frac(i,:))
-  end do
+  call tsdadg_pdf_driver(nz, wm, rtm, thlm, wp2, rtp2, thlp2, skw, skrt, skthl, &
+    wprtp, wpthlp, mu_w_1, mu_w_2, mu_rt_1, mu_rt_2, mu_thl_1, mu_thl_2, &
+    sigma_w_1_sqd, sigma_w_2_sqd, sigma_rt_1_sqd, sigma_rt_2_sqd, &
+    sigma_thl_1_sqd, sigma_thl_2_sqd, mixt_frac)
 
 end subroutine f2py_tsdadg_pdf_driver
-

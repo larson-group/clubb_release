@@ -21,20 +21,21 @@ def set_lscale_max(ngrdcol: int, l_implemented: bool, host_dx, host_dy):
 
 
 def diagnose_lscale_from_tau(
-    gr: Grid,
     nzm: int,
     nzt: int,
     ngrdcol: int,
+    gr: Grid,
     upwp_sfc, vpwp_sfc, ddzt_umvm_sqd,
-    ice_supersat_frac, em, sqrt_em_zt,
+    ice_supersat_frac, em,
     ufmin: float, tau_const: float,
     sfc_elevation, lscale_max, clubb_params,
     l_e3sm_config: bool,
     l_smooth_heaviside_tau_wpxp: bool,
     brunt_vaisala_freq_sqd_smth, ri_zm,
-    err_info: ErrInfo,
+    err_info: ErrInfo, **compat_kwargs,
 ):
     """Diagnose tau and Lscale profiles from shear/buoyancy inputs."""
+    sqrt_em_zt = compat_kwargs.pop("sqrt_em_zt")
     set_fortran_grid(gr)
     set_fortran_err_info(err_info)
     result = clubb_f2py.f2py_diagnose_lscale_from_tau(
@@ -50,16 +51,15 @@ def diagnose_lscale_from_tau(
 
 
 def calc_lscale_directly(
-    gr: Grid,
     ngrdcol: int,
     nzm: int,
     nzt: int,
+    gr: Grid,
     l_implemented: bool,
     p_in_pa, exner, rtm, thlm, thvm, newmu,
-    rtp2_zt, thlp2_zt, rtpthlp_zt, em, thv_ds_zt, lscale_max, lmin: float,
+    rtp2_zt, thlp2_zt, rtpthlp_zt, pdf_params: pdf_parameter, em, thv_ds_zt, lscale_max, lmin: float,
     clubb_params, saturation_formula: int,
     l_lscale_plume_centered: bool,
-    pdf_params: pdf_parameter,
     err_info: ErrInfo,
 ):
     """Diagnose Lscale directly from thermodynamic profiles and PDF data."""

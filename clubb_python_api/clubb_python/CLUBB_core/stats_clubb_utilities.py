@@ -9,7 +9,7 @@ from clubb_python.derived_types.grid_class_converter import set_fortran_grid
 
 
 def stats_accumulate(
-    gr: Grid, nzm: int, nzt: int, ngrdcol: int, sclr_dim: int, edsclr_dim: int,
+    nzm: int, nzt: int, ngrdcol: int, sclr_dim: int, edsclr_dim: int, gr: Grid,
     dt: float,
     l_implemented: bool, l_host_applies_sfc_fluxes: bool,
     l_stability_correct_tau_zm: bool, clubb_params,

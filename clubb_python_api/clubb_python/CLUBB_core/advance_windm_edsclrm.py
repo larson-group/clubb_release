@@ -14,13 +14,13 @@ from clubb_python.derived_types.err_info_converter import get_fortran_err_info, 
 
 
 def advance_windm_edsclrm(
-    gr: Grid, nzm: int, nzt: int, ngrdcol: int, edsclr_dim: int, dt: float,
+    nzm: int, nzt: int, ngrdcol: int, edsclr_dim: int, gr: Grid, dt: float,
     wm_zt, kh_zm, clubb_params,
     ug, vg, um_ref, vm_ref,
     wp2, up2, vp2, um_forcing, vm_forcing,
     edsclrm_forcing, p_in_pa,
     rho_ds_zm, rho_ds_zt, invrs_rho_ds_zt,
-    fcor, l_implemented: bool, ts_nudge: float, tridiag_solve_method: int,
+    fcor, l_implemented: bool, nu_vert_res_dep: NuVertResDep, ts_nudge: float, tridiag_solve_method: int,
     l_predict_upwp_vpwp: bool, l_upwind_xm_ma: bool, l_uv_nudge: bool,
     l_tke_aniso: bool, l_lmm_stepping: bool, l_linearize_pbl_winds: bool,
     l_do_expldiff_rtm_thlm: bool,
@@ -28,7 +28,6 @@ def advance_windm_edsclrm(
     upwp_cl_num: int, vpwp_cl_num: int,
     um, vm, thlm, rtm, edsclrm, upwp, vpwp, wpedsclrp,
     um_pert, vm_pert, upwp_pert, vpwp_pert,
-    nu_vert_res_dep: NuVertResDep,
     err_info: ErrInfo,
 ):
     """Advance mean winds and eddy scalars one model timestep.

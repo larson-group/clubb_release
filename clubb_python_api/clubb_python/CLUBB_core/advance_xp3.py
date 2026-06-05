@@ -9,7 +9,7 @@ from clubb_python.derived_types.grid_class_converter import set_fortran_grid
 
 
 def advance_xp3(
-    gr: Grid, nzm: int, nzt: int, ngrdcol: int, sclr_dim: int, sclr_tol, dt: float,
+    nzm: int, nzt: int, ngrdcol: int, sclr_dim: int, sclr_tol, gr: Grid, dt: float,
     rtm, thlm, rtp2, thlp2, wprtp, wpthlp, wprtp2, wpthlp2,
     rho_ds_zm, invrs_rho_ds_zt, invrs_tau_zt, tau_max_zt,
     sclrm, sclrp2, wpsclrp, wpsclrp2,
@@ -34,7 +34,7 @@ def advance_xp3(
 
 
 def diagnose_xp3(
-    gr: Grid, nzm: int, nzt: int, ngrdcol: int, sclr_dim: int, sclr_tol,
+    nzm: int, nzt: int, ngrdcol: int, sclr_dim: int, sclr_tol, gr: Grid,
     iipdf_type: int, clubb_params,
     wp2, wp3, thvm,
     wprtp, wpthlp, rtp2, thlp2, upwp, vpwp, up2, vp2,

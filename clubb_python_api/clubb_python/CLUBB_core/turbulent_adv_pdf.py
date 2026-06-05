@@ -9,7 +9,7 @@ from clubb_python.derived_types.grid_class_converter import set_fortran_grid
 
 
 def xpyp_term_ta_pdf_lhs(
-    gr: Grid, nzm: int, nzt: int, ngrdcol: int, coef_wpxpyp_implicit, rho_ds_zt, rho_ds_zm,
+    nzm: int, nzt: int, ngrdcol: int, gr: Grid, coef_wpxpyp_implicit, rho_ds_zt, rho_ds_zm,
     invrs_rho_ds_zm, l_upwind_xpyp_turbulent_adv: bool, sgn_turbulent_vel, coef_wpxpyp_implicit_zm,
 ):
     """Compute the implicit turbulent-advection lhs coefficients for xpyp-family equations."""
@@ -22,7 +22,7 @@ def xpyp_term_ta_pdf_lhs(
 
 
 def xpyp_term_ta_pdf_lhs_godunov(
-    gr: Grid, nzm: int, nzt: int, ngrdcol: int, coef_wpxpyp_implicit, invrs_rho_ds_zm, rho_ds_zm
+    nzm: int, nzt: int, ngrdcol: int, gr: Grid, coef_wpxpyp_implicit, invrs_rho_ds_zm, rho_ds_zm
 ):
     """Compute the Godunov-form implicit turbulent-advection lhs coefficients."""
     set_fortran_grid(gr)
@@ -33,7 +33,7 @@ def xpyp_term_ta_pdf_lhs_godunov(
 
 
 def xpyp_term_ta_pdf_rhs(
-    gr: Grid, nzm: int, nzt: int, ngrdcol: int, term_wpxpyp_explicit, rho_ds_zt, rho_ds_zm,
+    nzm: int, nzt: int, ngrdcol: int, gr: Grid, term_wpxpyp_explicit, rho_ds_zt, rho_ds_zm,
     invrs_rho_ds_zm, l_upwind_xpyp_turbulent_adv: bool, sgn_turbulent_vel, term_wpxpyp_explicit_zm,
 ):
     """Compute the explicit turbulent-advection rhs term for xpyp-family equations."""
@@ -46,7 +46,7 @@ def xpyp_term_ta_pdf_rhs(
 
 
 def xpyp_term_ta_pdf_rhs_godunov(
-    gr: Grid, nzm: int, nzt: int, ngrdcol: int, term_wpxpyp_explicit_zm, invrs_rho_ds_zm,
+    nzm: int, nzt: int, ngrdcol: int, gr: Grid, term_wpxpyp_explicit_zm, invrs_rho_ds_zm,
     sgn_turbulent_vel, rho_ds_zm,
 ):
     """Compute the Godunov-form explicit turbulent-advection rhs term."""

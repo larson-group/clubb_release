@@ -16,7 +16,7 @@ from clubb_python.derived_types.err_info_converter import get_fortran_err_info, 
 
 
 def advance_wp2_wp3(
-    gr: Grid, nzm: int, nzt: int, ngrdcol: int, dt: float,
+    nzm: int, nzt: int, ngrdcol: int, gr: Grid, dt: float,
     sfc_elevation, fcor_y, sigma_sqd_w, wm_zm, wm_zt,
     wpup2, wpvp2, wp2up2, wp2vp2, wp4,
     wpthvp, wp2thvp, wp2up, um, vm, upwp, vpwp,
@@ -24,18 +24,20 @@ def advance_wp2_wp3(
     rho_ds_zm, rho_ds_zt, invrs_rho_ds_zm, invrs_rho_ds_zt,
     thv_ds_zm, thv_ds_zt, mixt_frac, cx_fnc_richardson,
     lhs_splat_wp2, lhs_splat_wp3,
+    pdf_implicit_coefs_terms: implicit_coefs_terms,
     wprtp, wpthlp, rtp2, thlp2, clubb_params,
+    nu_vert_res_dep: NuVertResDep,
     iipdf_type: int, penta_solve_method: int, fill_holes_type: int,
     l_min_wp2_from_corr_wx: bool, l_upwind_xm_ma: bool, l_tke_aniso: bool,
     l_standard_term_ta: bool, l_partial_upwind_wp3: bool, l_damp_wp2_using_em: bool,
     l_use_c11_richardson: bool, l_damp_wp3_skw_squared: bool, l_lmm_stepping: bool,
     l_use_tke_in_wp3_pr_turb_term: bool, l_use_tke_in_wp2_wp3_k_dfsn: bool,
     l_use_wp3_lim_with_smth_heaviside: bool, l_wp2_fill_holes_tke: bool,
-    l_ho_nontrad_coriolis: bool,
-    up2, vp2, wp2, wp3, wp2_zt,
-    nu_vert_res_dep: NuVertResDep,
-    pdf_implicit_coefs_terms: implicit_coefs_terms,
+    l_ho_nontrad_coriolis: bool, *,
+    l_implemented: bool = True,
+    up2, vp2, wp2, wp3,
     err_info: ErrInfo,
+    **compat_kwargs,
 ):
     """Advance w'^2 and w'^3 one model timestep.
 
@@ -46,6 +48,7 @@ def advance_wp2_wp3(
     set_fortran_nu_vert_res_dep(nu_vert_res_dep)
     set_fortran_implicit_coefs(pdf_implicit_coefs_terms)
     set_fortran_err_info(err_info)
+    wp2_zt = compat_kwargs.pop("wp2_zt", np.zeros((ngrdcol, nzt), dtype=np.float64, order="F"))
 
     result = clubb_f2py.f2py_advance_wp2_wp3(
         float(dt),

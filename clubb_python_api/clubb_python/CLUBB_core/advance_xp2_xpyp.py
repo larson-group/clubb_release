@@ -18,24 +18,23 @@ from clubb_python.derived_types.err_info_converter import get_fortran_err_info, 
 
 
 def advance_xp2_xpyp(
-    gr: Grid, nzm: int, nzt: int, ngrdcol: int, sclr_dim: int, sclr_tol,
+    nzm: int, nzt: int, ngrdcol: int, sclr_dim: int, sclr_tol, gr: Grid, sclr_idx: SclrIdx,
     invrs_tau_xp2_zm, invrs_tau_c4_zm, invrs_tau_c14_zm, wm_zm,
     rtm, wprtp, thlm, wpthlp, wpthvp, um, vm,
-    wp2, wp2_zt, wp3, upwp, vpwp,
+    wp2, wp3, upwp, vpwp,
     sigma_sqd_w, wprtp2, wpthlp2, wprtpthlp, kh_zt,
     rtp2_forcing, thlp2_forcing, rtpthlp_forcing,
     rho_ds_zm, rho_ds_zt, invrs_rho_ds_zm, thv_ds_zm, cloud_frac,
+    pdf_implicit_coefs_terms: implicit_coefs_terms,
     dt: float, fcor_y,
     sclrm, wpsclrp, wpsclrp2, wpsclrprtp, wpsclrpthlp, lhs_splat_wp2,
-    clubb_params, iipdf_type: int, tridiag_solve_method: int, fill_holes_type: int,
+    clubb_params, nu_vert_res_dep: NuVertResDep, iipdf_type: int, tridiag_solve_method: int, fill_holes_type: int,
     l_ho_nontrad_coriolis: bool, l_min_xp2_from_corr_wx: bool,
     l_c2_cloud_frac: bool, l_upwind_xpyp_ta: bool, l_godunov_upwind_xpyp_ta: bool,
-    l_lmm_stepping: bool,
+    l_lmm_stepping: bool, *,
+    l_implemented: bool = True,
     rtp2, thlp2, rtpthlp, up2, vp2, sclrp2, sclrprtp, sclrpthlp,
-    sclr_idx: SclrIdx,
-    nu_vert_res_dep: NuVertResDep,
-    pdf_implicit_coefs_terms: implicit_coefs_terms,
-    err_info: ErrInfo,
+    err_info: ErrInfo, **compat_kwargs,
 ):
     """Advance scalar variances/covariances and horizontal turbulence components.
 
@@ -47,6 +46,7 @@ def advance_xp2_xpyp(
     set_fortran_nu_vert_res_dep(nu_vert_res_dep)
     set_fortran_implicit_coefs(pdf_implicit_coefs_terms)
     set_fortran_err_info(err_info)
+    wp2_zt = compat_kwargs.pop("wp2_zt", np.zeros((ngrdcol, nzt), dtype=np.float64, order="F"))
 
     result = clubb_f2py.f2py_advance_xp2_xpyp(
         int(sclr_dim), f_arr(sclr_tol),

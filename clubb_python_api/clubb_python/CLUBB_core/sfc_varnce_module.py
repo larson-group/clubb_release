@@ -14,11 +14,10 @@ from clubb_python.derived_types.err_info_converter import get_fortran_err_info, 
 
 
 def calc_sfc_varnce(
-    gr: Grid, nzm: int, nzt: int, ngrdcol: int, sclr_dim: int, dt: float,
+    nzm: int, nzt: int, ngrdcol: int, sclr_dim: int, sclr_idx: SclrIdx, gr: Grid, dt: float,
     sfc_elevation, upwp_sfc, vpwp_sfc, wpthlp, wprtp_sfc, um, vm,
     lscale_up, wpsclrp_sfc, lhs_splat_wp2, tau_zm, l_vary_convect_depth: bool, t0: float,
     up2_sfc_coef, a_const, wp2, up2, vp2, thlp2, rtp2, rtpthlp, sclrp2, sclrprtp, sclrpthlp,
-    sclr_idx: SclrIdx,
     err_info: ErrInfo,
 ):
     """Compute/update surface variances using grid/sclr_idx/stats/err_info data in module storage."""

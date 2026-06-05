@@ -30,8 +30,7 @@ from clubb_python.derived_types.err_info_converter import get_fortran_err_info, 
 def advance_clubb_core(
     gr: Grid, nzm: int, nzt: int, ngrdcol: int, l_implemented: bool, dt: float,
     fcor, fcor_y, sfc_elevation,
-    hydromet_dim: int, sclr_dim: int, edsclr_dim: int,
-    sclr_tol,
+    hydromet_dim: int, sclr_dim: int, sclr_tol, edsclr_dim: int, sclr_idx: SclrIdx,
     thlm_forcing, rtm_forcing, um_forcing, vm_forcing,
     sclrm_forcing, edsclrm_forcing,
     wprtp_forcing, wpthlp_forcing, rtp2_forcing, thlp2_forcing, rtpthlp_forcing, wm_zm, wm_zt,
@@ -42,12 +41,14 @@ def advance_clubb_core(
     p_in_Pa, rho_zm, rho, exner,
     rho_ds_zm, rho_ds_zt, invrs_rho_ds_zm, invrs_rho_ds_zt, thv_ds_zm, thv_ds_zt,
     l_mix_rat_hm,
-    rfrzm,
+    rfrzm, *,
+    varmu=None,
     wphydrometp, wp2hmp, rtphmp_zt, thlphmp_zt,
     host_dx, host_dy,
-    clubb_params, lmin: float, mixt_frac_max_mag: float,
-    t0_val: float, ts_nudge: float,
+    clubb_params, nu_vert_res_dep: NuVertResDep, lmin: float, mixt_frac_max_mag: float,
+    t0: float | None = None, ts_nudge: float = 0.0,
     rtm_min: float, rtm_nudge_max_altitude: float,
+    clubb_config_flags: ConfigFlags,
     um, vm, upwp, vpwp, up2, vp2, up3, vp3,
     thlm, rtm, wprtp, wpthlp,
     wp2, wp3, rtp2, rtp3, thlp2, thlp3, rtpthlp,
@@ -60,13 +61,10 @@ def advance_clubb_core(
     wp2rtp, wp2thlp, uprcp, vprcp, rc_coef_zm, wp4,
     wpup2, wpvp2, wp2up2, wp2vp2, ice_supersat_frac,
     um_pert, vm_pert, upwp_pert, vpwp_pert,
-    sclr_idx: SclrIdx,
-    clubb_config_flags: ConfigFlags,
-    nu_vert_res_dep: NuVertResDep,
     pdf_params: pdf_parameter,
     pdf_params_zm: pdf_parameter,
     pdf_implicit_coefs_terms: implicit_coefs_terms,
-    err_info: ErrInfo,
+    err_info: ErrInfo, **compat_kwargs,
 ):
     """Advance CLUBB core one timestep.
 
@@ -83,6 +81,11 @@ def advance_clubb_core(
     set_fortran_pdf_params_zm(pdf_params_zm)
     set_fortran_implicit_coefs(pdf_implicit_coefs_terms)
     set_fortran_err_info(err_info)
+    t0_val = compat_kwargs.pop("t0_val", t0)
+    if t0_val is None:
+        raise ValueError("advance_clubb_core requires t0 or legacy t0_val.")
+    if varmu is None:
+        varmu = np.zeros((int(ngrdcol), int(nzt)), dtype=np.float64, order="F")
 
     result = clubb_f2py.f2py_advance_clubb_core(
         l_implemented=bool(l_implemented),

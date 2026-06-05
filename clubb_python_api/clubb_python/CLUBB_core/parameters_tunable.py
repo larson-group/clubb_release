@@ -36,8 +36,10 @@ def calc_derrived_params(
     gr: Grid, ngrdcol: int, grid_type: int,
     deltaz: np.ndarray,
     clubb_params: np.ndarray,
-    nu_vert_res_dep: NuVertResDep | None,
     l_prescribed_avg_deltaz: bool,
+    nu_vert_res_dep: NuVertResDep | None,
+    lmin: float | None = None,
+    mixt_frac_max_mag: float | None = None,
 ):
     """Calculate derived parameters and return updated nu coefficient data."""
     set_fortran_grid(gr)

@@ -14,6 +14,15 @@ def _as_stats_array(values) -> np.ndarray:
     return np.asarray(values, dtype=np.float64)
 
 
+def _as_level_axis(values) -> np.ndarray:
+    arr = np.asarray(values, dtype=np.float64)
+    if arr.ndim == 1:
+        return arr
+    if arr.ndim >= 2:
+        return np.asarray(arr[0, :], dtype=np.float64)
+    raise ValueError("Expected a 1D or 2D vertical coordinate array.")
+
+
 def stats_update(name: str, values, icol: int | None = None,
                  level: int | None = None):
     """Update a stats variable using scalar, 1D, or 2D payloads."""
@@ -135,15 +144,28 @@ def init_stats(registry_path: str, output_path: str, ncol: int,
                stats_tsamp: float, stats_tout: float, dt_main: float,
                day_in: int, month_in: int, year_in: int,
                time_initial: float,
-               nzt: int, zt: np.ndarray, nzm: int, zm: np.ndarray,
-               sclr_dim: int, edsclr_dim: int,
-               err_info: ErrInfo,
-               clubb_params: np.ndarray,
-               param_names: list[str] | np.ndarray,
-               *,
+               zt: np.ndarray, zm: np.ndarray,
+               stats=None,
+               err_info: ErrInfo | None = None,
+               clubb_params: np.ndarray | None = None,
+               param_names: list[str] | np.ndarray | None = None,
+               rad_zt=None, rad_zm=None, hydromet_list=None,
+               sclr_dim: int = 0, edsclr_dim: int = 0,
+               output_zt=None, output_zm=None, grid_remap_method=None,
                stats_tstart: float | None = None,
-               stats_tend: float | None = None):
+               stats_tend: float | None = None,
+               **compat_kwargs):
     """Initialize the stats system with a registry file."""
+    if err_info is None or clubb_params is None or param_names is None:
+        raise ValueError("init_stats requires err_info, clubb_params, and param_names.")
+    nzt_compat = compat_kwargs.pop("nzt", None)
+    nzm_compat = compat_kwargs.pop("nzm", None)
+    zt_levels = _as_level_axis(zt)
+    zm_levels = _as_level_axis(zm)
+    if nzt_compat is not None and int(nzt_compat) != zt_levels.shape[0]:
+        raise ValueError("Legacy nzt kwarg must match the vertical zt dimension.")
+    if nzm_compat is not None and int(nzm_compat) != zm_levels.shape[0]:
+        raise ValueError("Legacy nzm kwarg must match the vertical zm dimension.")
     set_fortran_err_info(err_info)
 
     missing_time = -1.0e30
@@ -153,13 +175,17 @@ def init_stats(registry_path: str, output_path: str, ncol: int,
     if len(param_names) != clubb_params.shape[1]:
         raise ValueError("param_names length must match clubb_params.shape[1].")
     encoded_param_names = python_strings_to_fortran_char_matrix(param_names, width=28)
+    # The compiled f2py wrapper currently exposes the legacy initializer
+    # surface and does not accept the newer optional remap/radiation args.
     clubb_f2py.f2py_stats_init_with_params(
         registry_path, output_path,
         stats_tsamp, stats_tout, dt_main,
         day_in, month_in, year_in, time_initial,
         stats_tstart_value, stats_tend_value,
-        zt, zm, sclr_dim, edsclr_dim, f_arr(clubb_params), encoded_param_names,
-        ncol=ncol, nzt=nzt, nzm=nzm,
+        zt_levels, zm_levels,
+        sclr_dim=int(sclr_dim), edsclr_dim=int(edsclr_dim),
+        clubb_params=f_arr(clubb_params), param_names=encoded_param_names,
+        ncol=ncol, nzt=zt_levels.shape[0], nzm=zm_levels.shape[0],
     )
     return get_fortran_err_info()
 
@@ -276,56 +302,58 @@ def var_on_stats_list(name: str) -> bool:
     return bool(clubb_f2py.f2py_var_on_stats_list(name))
 
 
-def stats_update_grid(ncol: int, nzt: int, nzm: int, nrho: int,
-                      zt_src: np.ndarray, zm_src: np.ndarray,
+def stats_update_grid(zt_src: np.ndarray, zm_src: np.ndarray,
                       rho_vals: np.ndarray, rho_levels: np.ndarray,
-                      p_sfc: np.ndarray):
+                      p_sfc: np.ndarray, stats=None):
     """Update adaptive grid remapping inputs."""
     clubb_f2py.f2py_stats_update_grid(
         f_arr(zt_src), f_arr(zm_src),
         f_arr(rho_vals), f_arr(rho_levels),
-        f_arr(p_sfc), ncol=ncol, nzt=nzt, nzm=nzm, nrho=nrho,
+        f_arr(p_sfc), ncol=zt_src.shape[0], nzt=zt_src.shape[1], nzm=zm_src.shape[1], nrho=rho_vals.shape[1],
     )
 
 
 def stats_lh_samples_init(num_samples: int, nzt: int,
-                          n_nl: int, n_u: int,
-                          nl_names: list, u_names: list,
+                          nl_var_names: list, u_var_names: list,
                           zt_vals: np.ndarray,
-                          err_info: ErrInfo):
+                          stats=None,
+                          err_info: ErrInfo | None = None):
     """Initialize SILHS sample output variables."""
+    if err_info is None:
+        raise ValueError("stats_lh_samples_init requires err_info.")
     set_fortran_err_info(err_info)
     clubb_f2py.f2py_stats_lh_samples_init(
         num_samples,
-        python_strings_to_fortran_char_matrix(nl_names, width=64),
-        python_strings_to_fortran_char_matrix(u_names, width=64),
+        python_strings_to_fortran_char_matrix(nl_var_names, width=64),
+        python_strings_to_fortran_char_matrix(u_var_names, width=64),
         zt_vals,
         nzt=nzt,
-        n_nl=n_nl,
-        n_u=n_u,
+        n_nl=len(nl_var_names),
+        n_u=len(u_var_names),
     )
 
 
-def stats_lh_samples_write_lognormal(
-    ncol: int, nsamp: int, nzt: int, nvars: int,
-    samples: np.ndarray,
-    err_info: ErrInfo,
-):
+def stats_lh_samples_write_lognormal(samples: np.ndarray, stats=None, err_info: ErrInfo = None):
     """Write lognormal SILHS sample data."""
+    if err_info is None:
+        raise ValueError("stats_lh_samples_write_lognormal requires err_info.")
     set_fortran_err_info(err_info)
     clubb_f2py.f2py_stats_lh_samples_write_ln(
-        f_arr(samples), ncol=ncol, nsamp=nsamp, nzt=nzt, nvars=nvars)
+        f_arr(samples), ncol=samples.shape[0], nsamp=samples.shape[1], nzt=samples.shape[2], nvars=samples.shape[3])
 
 
-def stats_lh_samples_write_uniform(ncol: int, nsamp: int, nzt: int, nvars: int,
-                                   uniform_vals: np.ndarray,
+def stats_lh_samples_write_uniform(uniform_vals: np.ndarray,
                                    mixture_comp: np.ndarray,
                                    sample_weights: np.ndarray,
-                                   err_info: ErrInfo):
+                                   stats=None,
+                                   err_info: ErrInfo = None):
     """Write uniform SILHS sample data."""
+    if err_info is None:
+        raise ValueError("stats_lh_samples_write_uniform requires err_info.")
     set_fortran_err_info(err_info)
     clubb_f2py.f2py_stats_lh_samples_write_u(
         f_arr(uniform_vals),
         f_arr(mixture_comp),
-        f_arr(sample_weights), ncol=ncol, nsamp=nsamp, nzt=nzt, nvars=nvars,
+        f_arr(sample_weights), ncol=uniform_vals.shape[0], nsamp=uniform_vals.shape[1],
+        nzt=uniform_vals.shape[2], nvars=uniform_vals.shape[3],
     )

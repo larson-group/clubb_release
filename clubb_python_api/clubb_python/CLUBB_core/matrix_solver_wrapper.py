@@ -15,9 +15,10 @@ def _fa64(arr):
 
 
 def band_solve(solve_name: str, penta_solve_method: int, ngrdcol: int, nsup: int,
-               nsub: int, ndim: int, nrhs: int, lhs, rhs, err_info: ErrInfo,
-               old_soln=None, use_rcond: bool = False):
+               nsub: int, ndim: int, nrhs: int, l_implemented: bool = True, lhs=None, rhs=None, err_info: ErrInfo | None = None,
+               old_soln=None, **compat_kwargs):
     """Solve a banded system with multiple right-hand sides."""
+    use_rcond = bool(compat_kwargs.pop("use_rcond", False))
     lhs_f = _fa64(lhs)
     rhs_f = _fa64(rhs)
     if old_soln is None:
@@ -29,13 +30,13 @@ def band_solve(solve_name: str, penta_solve_method: int, ngrdcol: int, nsup: int
     _, _, soln, rcond = clubb_f2py.f2py_band_solve_multiple_rhs(
         solve_name=str(solve_name),
         penta_solve_method=int(penta_solve_method),
+        nsup=int(nsup),
+        nsub=int(nsub),
         lhs=lhs_f,
         rhs=rhs_f,
         old_soln=old_soln_f,
         use_rcond=bool(use_rcond),
         ngrdcol=int(ngrdcol),
-        nsup=int(nsup),
-        nsub=int(nsub),
         ndim=int(ndim),
         nrhs=int(nrhs),
     )
@@ -43,8 +44,9 @@ def band_solve(solve_name: str, penta_solve_method: int, ngrdcol: int, nsup: int
 
 
 def tridiag_solve(solve_name: str, tridiag_solve_method: int, ngrdcol: int,
-                  ndim: int, lhs, rhs, err_info: ErrInfo, use_rcond: bool = False):
+                  ndim: int, lhs, rhs, err_info: ErrInfo, **compat_kwargs):
     """Solve a tridiagonal system for either single or multiple RHS inputs."""
+    use_rcond = bool(compat_kwargs.pop("use_rcond", False))
     lhs_f = _fa64(lhs)
     set_fortran_err_info(err_info)
 

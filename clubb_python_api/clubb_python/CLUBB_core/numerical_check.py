@@ -42,10 +42,10 @@ def calculate_spurious_source(
 def check_clubb_settings(
     ngrdcol: int,
     params,
-    clubb_config_flags: ConfigFlags,
-    err_info: ErrInfo,
     l_implemented: bool,
     l_input_fields: bool,
+    clubb_config_flags: ConfigFlags,
+    err_info: ErrInfo,
 ):
     """Validate CLUBB configuration settings."""
     set_fortran_config_flags(clubb_config_flags)
@@ -115,8 +115,7 @@ def pdf_closure_check(
     nz: int, sclr_dim: int,
     wp4, wprtp2, wp2rtp, wpthlp2, wp2thlp, cloud_frac, rcm, wpthvp, wp2thvp, wp2up,
     rtpthvp, thlpthvp, wprcp, wp2rcp, rtprcp, thlprcp, rcp2, wprtpthlp, crt_1, crt_2,
-    cthl_1, cthl_2, sclrpthvp, sclrprcp, wpsclrp2, wpsclrprtp, wpsclrpthlp, wp2sclrp,
-    pdf_params: pdf_parameter,
+    cthl_1, cthl_2, pdf_params: pdf_parameter, sclrpthvp, sclrprcp, wpsclrp2, wpsclrprtp, wpsclrpthlp, wp2sclrp,
     err_info: ErrInfo,
 ):
     """Run pdf_closure_check using pdf_params/stats/err_info data in module storage."""

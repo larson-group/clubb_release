@@ -10,7 +10,7 @@ from clubb_python.derived_types.grid_class_converter import set_fortran_grid
 
 
 def compute_sigma_sqd_w(
-    gr: Grid, nzm: int, nzt: int, ngrdcol: int,
+    nzm: int, nzt: int, ngrdcol: int, gr: Grid,
     wp3, wp2, thlp2, rtp2, up2, vp2,
     wpthlp, wprtp, upwp, vpwp, clubb_params,
     l_predict_upwp_vpwp: bool,

@@ -71,13 +71,20 @@ def _advance_simplified_radiation(state: dict, time_current: float, l_sample: bo
 
         # Call sunray_sw to get Frad_SW on momentum levels (ngrdcol, nzm).
         frad_sw = clubb_api.sunray_sw(
-            gr=gr,
             ngrdcol=ngrdcol,
             nzt=nzt,
-            fs0=fs0,
-            amu0=amu0,
-            rho=state['rho'],
             rcm=state['rcm'],
+            rho=state['rho'],
+            xi_abs=amu0,
+            dzt=gr.dzt,
+            zm=gr.zm,
+            zt=gr.zt,
+            radius=float(cfg.get('eff_drop_radius', 0.0)),
+            a=float(cfg.get('alvdr', 0.0)),
+            gc=float(cfg.get('gc', 0.0)),
+            fs0=fs0,
+            omega=float(cfg.get('omega', 0.0)),
+            l_center=True,
         )
 
         # Compute radht_SW from Frad_SW: ddzm(Frad_SW) / (rho * Cp)

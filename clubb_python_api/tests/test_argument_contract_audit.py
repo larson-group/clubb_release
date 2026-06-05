@@ -27,15 +27,43 @@ def test_argument_contract_audit_reports_current_drift():
     issues = audit.find_contract_issues(REPO_ROOT)
     assert issues
 
-    public_mismatches = [
+    blocking_issues = [
         issue for issue in issues
-        if issue.issue.startswith("PUBLIC_API_SIGNATURE_MISMATCH")
+        if issue.issue.split("::", 1)[0] != "GENERIC_DISPATCH_WRAPPER"
     ]
-    assert public_mismatches
+    generic_dispatch = [
+        issue for issue in issues
+        if issue.issue.startswith("GENERIC_DISPATCH_WRAPPER")
+    ]
+    assert generic_dispatch
     assert any(
-        issue.pyf_symbol == "f2py_stats_accumulate"
-        and issue.python_api_fn.endswith("stats_clubb_utilities.py::stats_accumulate")
-        for issue in public_mismatches
+        issue.issue.startswith("GENERIC_DISPATCH_WRAPPER")
+        and issue.python_api_fn.endswith("matrix_solver_wrapper.py::tridiag_solve")
+        for issue in issues
+    )
+    assert not any(
+        issue.pyf_symbol == "f2py_stats_finalize"
+        and issue.python_api_fn.endswith("stats_netcdf.py::finalize_stats")
+        and issue.issue.startswith("PUBLIC_API_SIGNATURE_")
+        for issue in issues
+    )
+    assert not any(
+        issue.pyf_symbol.startswith("f2py_lapack_")
+        for issue in issues
+    )
+    assert not any(
+        issue.issue == "MISSING_FORTRAN_SOURCE_MAPPING"
+        and issue.pyf_symbol in {
+            "get_err_code",
+            "f2py_get_param_names",
+            "f2py_get_stats_config",
+            "f2py_get_stats_var_meta",
+            "f2py_get_stats_var_data",
+            "f2py_set_simplified_radiation_params",
+            "f2py_reset_err_code",
+            "f2py_initialize_error_headers",
+        }
+        for issue in issues
     )
 
     leaked_internal_args = [
@@ -46,3 +74,7 @@ def test_argument_contract_audit_reports_current_drift():
     ]
     assert "sclr_dim_transport" not in leaked_internal_args
     assert "edsclr_dim_transport" not in leaked_internal_args
+    assert not blocking_issues, "\n".join(
+        f"{issue.issue}: {issue.python_api_fn} -> {issue.pyf_symbol}"
+        for issue in blocking_issues
+    )

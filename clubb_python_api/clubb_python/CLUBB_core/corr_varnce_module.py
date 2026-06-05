@@ -8,7 +8,7 @@ from clubb_python.derived_types.err_info import ErrInfo
 from clubb_python.derived_types.err_info_converter import get_fortran_err_info, set_fortran_err_info
 
 
-def assert_corr_symmetric(pdf_dim: int, corr_array_n, err_info: ErrInfo):
+def assert_corr_symmetric(corr_array_n, pdf_dim: int, err_info: ErrInfo):
     """Assert that a correlation matrix is symmetric with unit diagonal."""
     set_fortran_err_info(err_info)
     clubb_f2py.f2py_assert_corr_symmetric(f_arr(corr_array_n), pdf_dim=int(pdf_dim))

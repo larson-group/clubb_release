@@ -23,9 +23,14 @@ def setup_grid(
     zm_top: np.ndarray,
     momentum_heights: np.ndarray,
     thermodynamic_heights: np.ndarray,
-    err_info: ErrInfo,
+    gr: Grid | None = None,
+    err_info: ErrInfo | None = None,
 ):
     """Set up the CLUBB vertical grid."""
+    if err_info is None:
+        raise ValueError("setup_grid requires err_info.")
+    if gr is not None:
+        set_fortran_grid(gr)
     set_fortran_err_info(err_info)
     clubb_f2py.f2py_setup_grid(
         f_arr(sfc_elevation),
@@ -43,42 +48,42 @@ def setup_grid(
     return get_fortran_grid(), get_fortran_err_info()
 
 
-def zm2zt2zm(gr: Grid, nzm: int, nzt: int, ngrdcol: int, azm, zm_min: float = 0.0):
+def zm2zt2zm(nzm: int, nzt: int, ngrdcol: int, gr: Grid, azm, zm_min: float = 0.0):
     """Smooth a momentum-level field by mapping zm->zt->zm."""
     set_fortran_grid(gr)
     return clubb_f2py.f2py_zm2zt2zm_2d(
         int(nzt), f_arr(azm), zm_min, nzm=int(nzm), ngrdcol=int(ngrdcol))
 
 
-def zt2zm(gr: Grid, nzm: int, nzt: int, ngrdcol: int, azt):
+def zt2zm(nzm: int, nzt: int, ngrdcol: int, gr: Grid, azt):
     """Interpolate a 2D field from zt (thermo) to zm (momentum) levels."""
     set_fortran_grid(gr)
     return clubb_f2py.f2py_zt2zm_2d(
         int(nzm), f_arr(azt), nzt=int(nzt), ngrdcol=int(ngrdcol))
 
 
-def zm2zt(gr: Grid, nzm: int, nzt: int, ngrdcol: int, azm):
+def zm2zt(nzm: int, nzt: int, ngrdcol: int, gr: Grid, azm):
     """Interpolate a 2D field from zm (momentum) to zt (thermo) levels."""
     set_fortran_grid(gr)
     return clubb_f2py.f2py_zm2zt_2d(
         int(nzt), f_arr(azm), nzm=int(nzm), ngrdcol=int(ngrdcol))
 
 
-def zt2zm2zt(gr: Grid, nzm: int, nzt: int, ngrdcol: int, azt, zt_min: float = 0.0):
+def zt2zm2zt(nzm: int, nzt: int, ngrdcol: int, gr: Grid, azt, zt_min: float = 0.0):
     """Smooth a thermo-level field by mapping zt->zm->zt."""
     set_fortran_grid(gr)
     return clubb_f2py.f2py_zt2zm2zt_2d(
         int(nzm), f_arr(azt), zt_min, nzt=int(nzt), ngrdcol=int(ngrdcol))
 
 
-def ddzm(gr: Grid, nzm: int, nzt: int, ngrdcol: int, azm):
+def ddzm(nzm: int, nzt: int, ngrdcol: int, gr: Grid, azm):
     """Differentiate a zm-grid field across zt levels, returning a zt-grid field."""
     set_fortran_grid(gr)
     return clubb_f2py.f2py_ddzm_2d(
         int(nzt), f_arr(azm), nzm=int(nzm), ngrdcol=int(ngrdcol))
 
 
-def ddzt(gr: Grid, nzm: int, nzt: int, ngrdcol: int, azt):
+def ddzt(nzm: int, nzt: int, ngrdcol: int, gr: Grid, azt):
     """Differentiate a zt-grid field across zm levels, returning a zm-grid field."""
     set_fortran_grid(gr)
     return clubb_f2py.f2py_ddzt_2d(
@@ -92,9 +97,10 @@ def cleanup_grid(gr: Grid):
 
 
 def setup_grid_heights(
-    gr: Grid, nzm: int, nzt: int, ngrdcol: int,
+    nzm: int, nzt: int, ngrdcol: int,
     l_implemented: bool, l_ascending_grid: bool, grid_type: int,
     deltaz, zm_init, momentum_heights, thermodynamic_heights,
+    gr: Grid,
     err_info: ErrInfo,
 ):
     """Update a grid's height fields and interpolation weights."""

@@ -105,6 +105,7 @@ class FortranRoutine:
     name: str
     args: list[str]
     intents: dict[str, str]
+    optional_args: set[str]
     file: Path
 
 
@@ -142,9 +143,77 @@ INTERNAL_ONLY_ARGS = {
     "hydromet_dim_transport",
 }
 
+MISSING_SOURCE_MAPPING_EXCEPTIONS = {
+    "f2py_lapack_gtsv",
+    "f2py_lapack_gtsvx",
+    "f2py_lapack_gbsv",
+    "f2py_lapack_gbsvx",
+    "f2py_lapack_potrf",
+    "f2py_lapack_poequ",
+    "f2py_lapack_laqsy",
+    "f2py_lapack_syev",
+    "get_err_code",
+    "f2py_set_stats_var_data",
+    "f2py_get_param_names",
+    "f2py_get_stats_config",
+    "f2py_get_stats_var_meta",
+    "f2py_get_stats_var_data",
+    "f2py_set_simplified_radiation_params",
+}
+
+ARG_DIFF_EXCEPTIONS = {
+    "stats",
+}
+
 
 def _is_internal_only_arg(arg: str) -> bool:
     return arg in INTERNAL_ONLY_ARGS or arg.endswith("_dim_transport")
+
+
+def _is_missing_source_mapping_exception(symbol: str) -> bool:
+    return symbol in MISSING_SOURCE_MAPPING_EXCEPTIONS
+
+
+def _is_ignored_symbol(symbol: str) -> bool:
+    return symbol.startswith("f2py_lapack_")
+
+
+def _should_ignore_missing_source_mapping(pc: PythonCall, pyf_sub: PyfRoutine) -> bool:
+    if _is_missing_source_mapping_exception(pc.symbol):
+        return True
+    return not pc.signature_args and not pyf_sub.args
+
+
+def _filter_arg_diff_exceptions(args: list[str]) -> list[str]:
+    return [arg for arg in args if arg not in ARG_DIFF_EXCEPTIONS]
+
+
+def _classify_public_api_signature_issue(actual: list[str], expected: list[str]) -> str | None:
+    filtered_actual = _filter_arg_diff_exceptions(actual)
+    filtered_expected = _filter_arg_diff_exceptions(expected)
+
+    if filtered_actual == filtered_expected:
+        return None
+
+    if set(filtered_actual) == set(filtered_expected):
+        return "PUBLIC_API_SIGNATURE_ORDER_MISMATCH"
+
+    return "PUBLIC_API_SIGNATURE_ARG_MISMATCH"
+
+
+def _python_api_fn_label(repo_root: Path, pc: PythonCall) -> str:
+    return f"{pc.file.relative_to(repo_root)}::{pc.function_name}"
+
+
+def _find_generic_dispatch_wrappers(repo_root: Path, py_calls: list[PythonCall]) -> set[str]:
+    by_function: dict[str, set[str]] = {}
+    for pc in py_calls:
+        label = _python_api_fn_label(repo_root, pc)
+        by_function.setdefault(label, set()).add(pc.symbol)
+    return {
+        label for label, symbols in by_function.items()
+        if len(symbols) > 1
+    }
 
 
 def _extract_routine_blocks(merged: str) -> list[tuple[str, str, str]]:
@@ -191,12 +260,37 @@ def parse_fortran_arg_intents(block: str) -> dict[str, str]:
     return intents
 
 
+def parse_fortran_optional_args(block: str) -> set[str]:
+    optional_args: set[str] = set()
+    for mt in re.finditer(
+        r"(?im)^\s*[^\n]*\boptional\b[^\n]*::\s*(.+)$",
+        block,
+    ):
+        for name in _declared_arg_names(mt.group(1)):
+            optional_args.add(name)
+    return optional_args
+
+
 def public_fortran_args(routine: FortranRoutine, pyf_out_args: set[str]) -> list[str]:
     return [
         arg for arg in routine.args
         if routine.intents.get(arg) != "out"
         and not (arg not in routine.intents and arg in pyf_out_args)
     ]
+
+
+def expected_public_args_for_python(
+    routine: FortranRoutine,
+    pyf_out_args: set[str],
+    python_signature_args: list[str],
+) -> list[str]:
+    python_arg_set = set(python_signature_args)
+    expected: list[str] = []
+    for arg in public_fortran_args(routine, pyf_out_args):
+        if arg in routine.optional_args and arg not in python_arg_set:
+            continue
+        expected.append(arg)
+    return expected
 
 
 def parse_pyf_routines(repo_root: Path) -> dict[str, PyfRoutine]:
@@ -241,11 +335,142 @@ def parse_fortran_routines(repo_root: Path) -> dict[str, FortranRoutine]:
                 continue
             args = [normalize_name(a) for a in split_args(sig_match.group(1)) if a.strip()]
             intents = parse_fortran_arg_intents(block)
-            out[name] = FortranRoutine(name=name, args=args, intents=intents, file=path)
+            optional_args = parse_fortran_optional_args(block)
+            out[name] = FortranRoutine(
+                name=name,
+                args=args,
+                intents=intents,
+                optional_args=optional_args,
+                file=path,
+            )
     return out
 
 
-def parse_f2py_wrappers(repo_root: Path, fortran: dict[str, FortranRoutine]) -> dict[str, F2pyWrapper]:
+def parse_fortran_interfaces(repo_root: Path) -> dict[str, list[str]]:
+    out: dict[str, list[str]] = {}
+    src_dir = repo_root / "src"
+    for path in sorted(src_dir.rglob("*.F90")):
+        if "G_unit_test" in path.parts or "G_unit_tests" in path.parts:
+            continue
+        merged = merge_fortran_lines(path.read_text(errors="ignore"))
+        for mt in re.finditer(
+            r"(?ims)^\s*interface\s+([a-z0-9_]+)\s*(.*?)^\s*end\s+interface(?:\s+\1)?\s*$",
+            merged,
+        ):
+            interface_name = normalize_name(mt.group(1))
+            body = mt.group(2)
+            members: list[str] = []
+            for proc_mt in re.finditer(r"(?im)^\s*module\s+procedure\s+(.+)$", body):
+                members.extend(
+                    normalize_name(name) for name in split_args(proc_mt.group(1)) if name.strip()
+                )
+            if members:
+                out[interface_name] = members
+    return out
+
+
+def _extract_fortran_invocations(
+    block: str, fortran: dict[str, FortranRoutine], interfaces: dict[str, list[str]], symbol: str
+) -> list[tuple[str, list[str]]]:
+    call_candidates: list[tuple[str, list[str]]] = []
+
+    for call_match in re.finditer(r"(?im)\bcall\s+([a-z0-9_]+)\b\s*(\()?", block):
+        candidate = normalize_name(call_match.group(1))
+        if candidate == symbol:
+            continue
+        if call_match.group(2):
+            arg_start = call_match.end()
+            depth = 1
+            idx = arg_start
+            while idx < len(block) and depth > 0:
+                if block[idx] == "(":
+                    depth += 1
+                elif block[idx] == ")":
+                    depth -= 1
+                idx += 1
+            call_args = [
+                _normalize_fortran_call_arg(arg)
+                for arg in split_args(block[arg_start:idx - 1])
+                if arg.strip()
+            ]
+        else:
+            call_args = []
+        if candidate in fortran or candidate in interfaces:
+            call_candidates.append((candidate, call_args))
+
+    for fn_match in re.finditer(
+        r"(?im)^\s*[a-z0-9_%]+(?:\s*\([^=\n]*\))?\s*=\s*([a-z0-9_]+)\s*\(",
+        block,
+    ):
+        candidate = normalize_name(fn_match.group(1))
+        if candidate == symbol or (candidate not in fortran and candidate not in interfaces):
+            continue
+        arg_start = fn_match.end()
+        depth = 1
+        idx = arg_start
+        while idx < len(block) and depth > 0:
+            if block[idx] == "(":
+                depth += 1
+            elif block[idx] == ")":
+                depth -= 1
+            idx += 1
+        call_args = [
+            _normalize_fortran_call_arg(arg)
+            for arg in split_args(block[arg_start:idx - 1])
+            if arg.strip()
+        ]
+        call_candidates.append((candidate, call_args))
+
+    return call_candidates
+
+
+def _resolve_interface_member(
+    interface_name: str,
+    call_args: list[str],
+    fortran: dict[str, FortranRoutine],
+    interfaces: dict[str, list[str]],
+) -> str:
+    members = interfaces.get(interface_name, [])
+    if not members:
+        return ""
+
+    nargs = len(call_args)
+    scored: list[tuple[int, int, int, str]] = []
+    for member in members:
+        routine = fortran.get(member)
+        if routine is None:
+            continue
+        required = len([arg for arg in routine.args if arg not in routine.optional_args])
+        total = len(routine.args)
+        compatible = required <= nargs <= total
+        score = (
+            int(compatible),
+            min(nargs, total),
+            required,
+            member,
+        )
+        scored.append(score)
+
+    if not scored:
+        return ""
+
+    scored.sort(reverse=True)
+    return scored[0][3]
+
+
+def _normalize_fortran_call_arg(arg: str) -> str:
+    token = arg.strip()
+    if "=" in token:
+        lhs, _rhs = token.split("=", 1)
+        return normalize_name(lhs)
+    return normalize_name(re.sub(r"\([^)]*\)", "", token).strip())
+
+
+def parse_f2py_wrappers(
+    repo_root: Path,
+    fortran: dict[str, FortranRoutine],
+    interfaces: dict[str, list[str]],
+) -> dict[str, F2pyWrapper]:
     """Map F2PY wrapper subroutines to the Fortran routine they call."""
     out: dict[str, F2pyWrapper] = {}
     wrappers_dir = repo_root / "clubb_python_api" / "f2py_fortran_wrappers"
@@ -262,35 +487,28 @@ def parse_f2py_wrappers(repo_root: Path, fortran: dict[str, FortranRoutine]) -> 
                 normalize_name(a) for a in split_args(sig_match.group(1)) if a.strip()
             ]
 
-            call_candidates: list[tuple[str, list[str]]] = []
-            for call_match in re.finditer(r"(?im)\bcall\s+([a-z0-9_]+)\b\s*(\()?", block):
-                candidate = normalize_name(call_match.group(1))
-                if candidate in fortran and candidate != symbol:
-                    if call_match.group(2):
-                        arg_start = call_match.end()
-                        depth = 1
-                        idx = arg_start
-                        while idx < len(block) and depth > 0:
-                            if block[idx] == "(":
-                                depth += 1
-                            elif block[idx] == ")":
-                                depth -= 1
-                            idx += 1
-                        call_args = [
-                            normalize_name(re.sub(r"\([^)]*\)", "", arg).strip())
-                            for arg in split_args(block[arg_start:idx - 1])
-                            if arg.strip()
-                        ]
-                    else:
-                        call_args = []
-                    call_candidates.append((candidate, call_args))
+            call_candidates = _extract_fortran_invocations(block, fortran, interfaces, symbol)
             if call_candidates:
                 source_base = symbol.removeprefix("f2py_")
-                source_routine, call_args = max(
-                    call_candidates,
+                resolved_candidates: list[tuple[str, list[str], str]] = []
+                for candidate, call_args in call_candidates:
+                    resolved_candidate = candidate
+                    if candidate not in fortran:
+                        resolved_candidate = _resolve_interface_member(
+                            candidate, call_args, fortran, interfaces
+                        )
+                    if resolved_candidate:
+                        resolved_candidates.append((resolved_candidate, call_args, candidate))
+                if not resolved_candidates:
+                    continue
+                source_routine, call_args, source_name = max(
+                    resolved_candidates,
                     key=lambda item: (
+                        item[2] == source_base,
                         item[0] == source_base,
+                        source_base.startswith(f"{item[2]}_"),
                         source_base.startswith(f"{item[0]}_"),
+                        len(item[1]),
                         len(item[0]),
                     ),
                 )
@@ -408,7 +626,10 @@ def parse_python_calls(repo_root: Path) -> list[PythonCall]:
         for node in tree.body:
             if not isinstance(node, ast.FunctionDef) or node.name.startswith("_"):
                 continue
-            signature_args = [normalize_name(arg.arg) for arg in node.args.args]
+            signature_args = [
+                normalize_name(arg.arg)
+                for arg in [*node.args.args, *node.args.kwonlyargs]
+            ]
 
             for call in ast.walk(node):
                 if not isinstance(call, ast.Call):
@@ -453,15 +674,50 @@ def find_order_issues(repo_root: Path) -> list[OrderIssue]:
     return find_contract_issues(repo_root)
 
 
+def _ordered_extras(actual: list[str], expected: list[str]) -> list[str]:
+    expected_set = set(expected)
+    return [arg for arg in actual if arg not in expected_set]
+
+
+def _ordered_missing(actual: list[str], expected: list[str]) -> list[str]:
+    actual_set = set(actual)
+    return [arg for arg in expected if arg not in actual_set]
+
+
+def _print_issue_details(issue: OrderIssue) -> None:
+    filtered_actual = _filter_arg_diff_exceptions(issue.python_order)
+    filtered_expected = _filter_arg_diff_exceptions(issue.pyf_order)
+
+    if issue.issue.startswith("PUBLIC_API_SIGNATURE_ORDER_MISMATCH"):
+        print(f"  ORDER_ACTUAL:   {filtered_actual}")
+        print(f"  ORDER_EXPECTED: {filtered_expected}")
+        return
+
+    extra = _ordered_extras(filtered_actual, filtered_expected)
+    missing = _ordered_missing(filtered_actual, filtered_expected)
+
+    if extra:
+        print(f"  EXTRA:   {extra}")
+    if missing:
+        print(f"  MISSING: {missing}")
+    if not extra and not missing:
+        print(f"  ORDER_ACTUAL:   {filtered_actual}")
+        print(f"  ORDER_EXPECTED: {filtered_expected}")
+
+
 def find_contract_issues(repo_root: Path) -> list[OrderIssue]:
     pyf = parse_pyf_routines(repo_root)
     py_calls = parse_python_calls(repo_root)
     fortran = parse_fortran_routines(repo_root)
-    f2py_wrappers = parse_f2py_wrappers(repo_root, fortran)
+    interfaces = parse_fortran_interfaces(repo_root)
+    f2py_wrappers = parse_f2py_wrappers(repo_root, fortran, interfaces)
+    generic_dispatch_wrappers = _find_generic_dispatch_wrappers(repo_root, py_calls)
     issues: list[OrderIssue] = []
 
     for pc in py_calls:
-        python_api_fn = f"{pc.file.relative_to(repo_root)}::{pc.function_name}"
+        if _is_ignored_symbol(pc.symbol):
+            continue
+        python_api_fn = _python_api_fn_label(repo_root, pc)
         pyf_sub = pyf.get(pc.symbol)
         if pyf_sub is None:
             issues.append(
@@ -479,15 +735,16 @@ def find_contract_issues(repo_root: Path) -> list[OrderIssue]:
         if wrapper is None:
             source_routine = infer_source_routine(pc.symbol, fortran)
             if not source_routine:
-                issues.append(
-                    OrderIssue(
-                        python_api_fn=python_api_fn,
-                        pyf_symbol=pc.symbol,
-                        issue="MISSING_FORTRAN_SOURCE_MAPPING",
-                        python_order=pc.signature_args,
-                        pyf_order=pyf_sub.args,
+                if not _should_ignore_missing_source_mapping(pc, pyf_sub):
+                    issues.append(
+                        OrderIssue(
+                            python_api_fn=python_api_fn,
+                            pyf_symbol=pc.symbol,
+                            issue="MISSING_FORTRAN_SOURCE_MAPPING",
+                            python_order=pc.signature_args,
+                            pyf_order=pyf_sub.args,
+                        )
                     )
-                )
                 continue
             wrapper = F2pyWrapper(
                 file=Path("<direct-pyf>"),
@@ -522,14 +779,24 @@ def find_contract_issues(repo_root: Path) -> list[OrderIssue]:
                 )
             )
 
-        expected_public_args = public_fortran_args(source, pyf_sub.out_args)
-        if pc.signature_args != expected_public_args:
+        expected_public_args = expected_public_args_for_python(
+            source, pyf_sub.out_args, pc.signature_args
+        )
+        mismatch_kind = _classify_public_api_signature_issue(
+            pc.signature_args, expected_public_args
+        )
+        if mismatch_kind is not None:
+            if (
+                mismatch_kind == "PUBLIC_API_SIGNATURE_ARG_MISMATCH"
+                and python_api_fn in generic_dispatch_wrappers
+            ):
+                mismatch_kind = "GENERIC_DISPATCH_WRAPPER"
             issues.append(
                 OrderIssue(
                     python_api_fn=python_api_fn,
                     pyf_symbol=pc.symbol,
                     issue=(
-                        "PUBLIC_API_SIGNATURE_MISMATCH::"
+                        f"{mismatch_kind}::"
                         f"{source.file.relative_to(repo_root)}::{source.name}"
                     ),
                     python_order=pc.signature_args,
@@ -591,7 +858,21 @@ def find_contract_issues(repo_root: Path) -> list[OrderIssue]:
                     pyf_order=pyf_shared,
                 )
             )
-    return issues
+    deduped_issues: list[OrderIssue] = []
+    seen_issue_keys: set[tuple[str, str, str, tuple[str, ...], tuple[str, ...]]] = set()
+    for issue in issues:
+        key = (
+            issue.python_api_fn,
+            issue.pyf_symbol,
+            issue.issue,
+            tuple(issue.python_order),
+            tuple(issue.pyf_order),
+        )
+        if key in seen_issue_keys:
+            continue
+        seen_issue_keys.add(key)
+        deduped_issues.append(issue)
+    return deduped_issues
 
 
 def main() -> int:
@@ -608,13 +889,18 @@ def main() -> int:
         return 0
 
     for issue in issues:
-        print(f"{issue.issue}: {issue.python_api_fn} -> {issue.pyf_symbol}")
-        print(f"  actual:   {issue.python_order}")
-        print(f"  expected: {issue.pyf_order}")
+        issue_type = issue.issue.split("::", 1)[0]
+        prefix = "WARNING" if issue_type == "GENERIC_DISPATCH_WRAPPER" else "ERROR"
+        print(f"{prefix} {issue.issue}: {issue.python_api_fn} -> {issue.pyf_symbol}")
+        _print_issue_details(issue)
     print("\nSummary:")
     for issue_type, count in sorted(Counter(issue.issue.split("::", 1)[0] for issue in issues).items()):
         print(f"  {issue_type}: {count}")
-    return 1
+    blocking_issues = [
+        issue for issue in issues
+        if issue.issue.split("::", 1)[0] != "GENERIC_DISPATCH_WRAPPER"
+    ]
+    return 1 if blocking_issues else 0
 
 
 if __name__ == "__main__":

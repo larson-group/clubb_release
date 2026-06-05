@@ -61,26 +61,22 @@ subroutine f2py_set_simplified_radiation_params( &
 end subroutine f2py_set_simplified_radiation_params
 
 
-subroutine f2py_sunray_sw(ngrdcol, nzt, fs0, amu0, rho, rcm, frad_sw)
+subroutine f2py_sunray_sw(ngrdcol, nzt, rcm, rho, xi_abs, dzt, zm, zt, &
+    radius, a, gc, fs0, omega, l_center, frad_sw)
 
   use clubb_precision, only: core_rknd
   use rad_lwsw_module, only: sunray_sw
-  use parameters_radiation, only: eff_drop_radius, omega, alvdr, gc
-  use derived_type_storage, only: stored_grid
 
   implicit none
 
   integer, intent(in) :: ngrdcol, nzt
-  real(core_rknd), intent(in) :: fs0, amu0
-  real(core_rknd), dimension(ngrdcol, nzt), intent(in) :: rho, rcm
+  logical, intent(in) :: l_center
+  real(core_rknd), intent(in) :: xi_abs, radius, a, gc, fs0, omega
+  real(core_rknd), dimension(ngrdcol, nzt), intent(in) :: rcm, rho, dzt, zt
+  real(core_rknd), dimension(ngrdcol, nzt+1), intent(in) :: zm
   real(core_rknd), dimension(ngrdcol, nzt+1), intent(out) :: frad_sw
 
-  logical, parameter :: l_center = .true.
-
-  call sunray_sw(ngrdcol, nzt, rcm, rho, amu0, &
-                 stored_grid%dzt, stored_grid%zm, stored_grid%zt, &
-                 eff_drop_radius, real(alvdr, kind=core_rknd), &
-                 gc, fs0, omega, l_center, &
-                 frad_sw)
+  call sunray_sw(ngrdcol, nzt, rcm, rho, xi_abs, dzt, zm, zt, &
+                 radius, a, gc, fs0, omega, l_center, frad_sw)
 
 end subroutine f2py_sunray_sw

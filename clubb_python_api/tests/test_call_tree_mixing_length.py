@@ -76,10 +76,10 @@ def test_diagnose_lscale_from_tau_basic(gr):
     err_info = ErrInfo(ngrdcol=ngrdcol)
 
     out = clubb_api.diagnose_lscale_from_tau(
-        gr,
         nzm=nzm,
         nzt=nzt,
         ngrdcol=ngrdcol,
+        gr=gr,
         upwp_sfc=np.full(ngrdcol, 0.02, dtype=np.float64),
         vpwp_sfc=np.full(ngrdcol, 0.01, dtype=np.float64),
         ddzt_umvm_sqd=np.full((ngrdcol, nzm), 1.0e-6, dtype=np.float64),
@@ -123,10 +123,10 @@ def test_calc_lscale_directly_basic(gr):
     err_info = ErrInfo(ngrdcol=ngrdcol)
 
     err_info_out, lscale, lscale_up, lscale_down = clubb_api.calc_lscale_directly(
-        gr,
         ngrdcol=ngrdcol,
         nzm=nzm,
         nzt=nzt,
+        gr=gr,
         l_implemented=True,
         p_in_pa=np.full((ngrdcol, nzt), 100000.0, dtype=np.float64),
         exner=np.full((ngrdcol, nzt), 1.0, dtype=np.float64),
@@ -137,6 +137,7 @@ def test_calc_lscale_directly_basic(gr):
         rtp2_zt=np.full((ngrdcol, nzt), 1.0e-6, dtype=np.float64),
         thlp2_zt=np.full((ngrdcol, nzt), 1.0e-4, dtype=np.float64),
         rtpthlp_zt=np.zeros((ngrdcol, nzt), dtype=np.float64),
+        pdf_params=pdf_params,
         em=np.full((ngrdcol, nzm), 0.2, dtype=np.float64),
         thv_ds_zt=np.full((ngrdcol, nzt), 300.0, dtype=np.float64),
         lscale_max=np.full(ngrdcol, 1.0e5, dtype=np.float64),
@@ -144,7 +145,6 @@ def test_calc_lscale_directly_basic(gr):
         clubb_params=clubb_params,
         saturation_formula=int(flags.saturation_formula),
         l_lscale_plume_centered=False,
-        pdf_params=pdf_params,
         err_info=err_info,
     )
 

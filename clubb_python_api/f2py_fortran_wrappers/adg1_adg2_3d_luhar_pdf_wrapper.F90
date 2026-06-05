@@ -1,6 +1,6 @@
 ! adg1_adg2_3d_luhar_pdf_wrapper.F90 — wrappers extracted from util_wrappers.F90 for module adg1_adg2_3d_luhar_pdf
 
-subroutine f2py_calc_luhar_params(nz, ngrdcol, skx, wpxp, xp2, x_tol_sqd, &
+subroutine f2py_calc_luhar_params(nz, skx, wpxp, xp2, x_tol_sqd, &
     mixt_frac, big_m, small_m)
 
   use clubb_precision, only: core_rknd
@@ -8,21 +8,16 @@ subroutine f2py_calc_luhar_params(nz, ngrdcol, skx, wpxp, xp2, x_tol_sqd, &
 
   implicit none
 
-  integer, intent(in) :: nz, ngrdcol
-  real(core_rknd), dimension(ngrdcol, nz), intent(in) :: skx, wpxp, xp2
+  integer, intent(in) :: nz
+  real(core_rknd), dimension(nz), intent(in) :: skx, wpxp, xp2
   real(core_rknd), intent(in) :: x_tol_sqd
-  real(core_rknd), dimension(ngrdcol, nz), intent(out) :: mixt_frac, big_m, small_m
+  real(core_rknd), dimension(nz), intent(out) :: mixt_frac, big_m, small_m
 
-  integer :: i
-
-  do i = 1, ngrdcol
-    call calc_luhar_params(nz, skx(i,:), wpxp(i,:), xp2(i,:), x_tol_sqd, &
-      mixt_frac(i,:), big_m(i,:), small_m(i,:))
-  end do
+  call calc_luhar_params(nz, skx, wpxp, xp2, x_tol_sqd, mixt_frac, big_m, small_m)
 
 end subroutine f2py_calc_luhar_params
 
-subroutine f2py_close_luhar_pdf(nz, ngrdcol, xm, xp2, mixt_frac, small_m, wpxp, &
+subroutine f2py_close_luhar_pdf(nz, xm, xp2, mixt_frac, small_m, wpxp, &
     x_tol_sqd, sigma_sqd_x_1, sigma_sqd_x_2, varnce_x_1, varnce_x_2, x_1_n, &
     x_2_n, x_1, x_2)
 
@@ -31,19 +26,14 @@ subroutine f2py_close_luhar_pdf(nz, ngrdcol, xm, xp2, mixt_frac, small_m, wpxp, 
 
   implicit none
 
-  integer, intent(in) :: nz, ngrdcol
-  real(core_rknd), dimension(ngrdcol, nz), intent(in) :: xm, xp2, mixt_frac, small_m, wpxp
+  integer, intent(in) :: nz
+  real(core_rknd), dimension(nz), intent(in) :: xm, xp2, mixt_frac, small_m, wpxp
   real(core_rknd), intent(in) :: x_tol_sqd
-  real(core_rknd), dimension(ngrdcol, nz), intent(out) :: &
+  real(core_rknd), dimension(nz), intent(out) :: &
     sigma_sqd_x_1, sigma_sqd_x_2, varnce_x_1, varnce_x_2, x_1_n, x_2_n, x_1, x_2
 
-  integer :: i
-
-  do i = 1, ngrdcol
-    call close_luhar_pdf(nz, xm(i,:), xp2(i,:), mixt_frac(i,:), small_m(i,:), wpxp(i,:), &
-      x_tol_sqd, sigma_sqd_x_1(i,:), sigma_sqd_x_2(i,:), varnce_x_1(i,:), &
-      varnce_x_2(i,:), x_1_n(i,:), x_2_n(i,:), x_1(i,:), x_2(i,:))
-  end do
+  call close_luhar_pdf(nz, xm, xp2, mixt_frac, small_m, wpxp, x_tol_sqd, &
+    sigma_sqd_x_1, sigma_sqd_x_2, varnce_x_1, varnce_x_2, x_1_n, x_2_n, x_1, x_2)
 
 end subroutine f2py_close_luhar_pdf
 
@@ -141,7 +131,7 @@ subroutine f2py_adg1_pdf_driver(nz, ngrdcol, sclr_dim, sclr_dim_transport, sclr_
 
 end subroutine f2py_adg1_pdf_driver
 
-subroutine f2py_luhar_3d_pdf_driver(nz, ngrdcol, wm, rtm, thlm, wp2, rtp2, thlp2, skw, skrt, &
+subroutine f2py_luhar_3d_pdf_driver(nz, wm, rtm, thlm, wp2, rtp2, thlp2, skw, skrt, &
     skthl, wprtp, wpthlp, w_1, w_2, rt_1, rt_2, thl_1, thl_2, varnce_w_1, varnce_w_2, &
     varnce_rt_1, varnce_rt_2, varnce_thl_1, varnce_thl_2, mixt_frac)
 
@@ -150,21 +140,15 @@ subroutine f2py_luhar_3d_pdf_driver(nz, ngrdcol, wm, rtm, thlm, wp2, rtp2, thlp2
 
   implicit none
 
-  integer, intent(in) :: nz, ngrdcol
-  real(core_rknd), dimension(ngrdcol, nz), intent(in) :: &
+  integer, intent(in) :: nz
+  real(core_rknd), dimension(nz), intent(in) :: &
     wm, rtm, thlm, wp2, rtp2, thlp2, skw, skrt, skthl, wprtp, wpthlp
-  real(core_rknd), dimension(ngrdcol, nz), intent(out) :: &
+  real(core_rknd), dimension(nz), intent(out) :: &
     w_1, w_2, rt_1, rt_2, thl_1, thl_2, varnce_w_1, varnce_w_2, &
     varnce_rt_1, varnce_rt_2, varnce_thl_1, varnce_thl_2, mixt_frac
 
-  integer :: i
-
-  do i = 1, ngrdcol
-    call luhar_3d_pdf_driver(nz, wm(i,:), rtm(i,:), thlm(i,:), wp2(i,:), rtp2(i,:), thlp2(i,:), &
-      skw(i,:), skrt(i,:), skthl(i,:), wprtp(i,:), wpthlp(i,:), &
-      w_1(i,:), w_2(i,:), rt_1(i,:), rt_2(i,:), thl_1(i,:), thl_2(i,:), &
-      varnce_w_1(i,:), varnce_w_2(i,:), varnce_rt_1(i,:), varnce_rt_2(i,:), &
-      varnce_thl_1(i,:), varnce_thl_2(i,:), mixt_frac(i,:))
-  end do
+  call luhar_3d_pdf_driver(nz, wm, rtm, thlm, wp2, rtp2, thlp2, skw, skrt, skthl, &
+    wprtp, wpthlp, w_1, w_2, rt_1, rt_2, thl_1, thl_2, varnce_w_1, varnce_w_2, &
+    varnce_rt_1, varnce_rt_2, varnce_thl_1, varnce_thl_2, mixt_frac)
 
 end subroutine f2py_luhar_3d_pdf_driver

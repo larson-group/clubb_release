@@ -10,7 +10,7 @@ from clubb_python.derived_types.grid_class_converter import set_fortran_grid
 
 
 def calc_turb_adv_range(
-    gr: Grid, nzm: int, nzt: int, ngrdcol: int,
+    nzm: int, nzt: int, ngrdcol: int, gr: Grid,
     dt: float, w_1_zm, w_2_zm, varnce_w_1_zm, varnce_w_2_zm, mixt_frac_zm,
 ):
     set_fortran_grid(gr)
@@ -25,11 +25,11 @@ def calc_turb_adv_range(
 
 
 def monotonic_turbulent_flux_limit(
-    gr: Grid, nzm: int, nzt: int, ngrdcol: int, solve_type: int, dt: float,
+    nzm: int, nzt: int, ngrdcol: int, gr: Grid, solve_type: int, dt: float,
     xm_old, xp2, wm_zt, xm_forcing, rho_ds_zm, rho_ds_zt,
     invrs_rho_ds_zm, invrs_rho_ds_zt, xp2_threshold: float, xm_tol: float,
     l_implemented: bool, low_lev_effect, high_lev_effect, tridiag_solve_method: int,
-    l_upwind_xm_ma: bool, l_mono_flux_lim_spikefix: bool, xm, wpxp,
+    l_upwind_xm_ma: bool, l_mono_flux_lim_spikefix: bool, xm, wpxp, err_info=None,
 ):
     """Apply the monotonic turbulent flux limiter to xm and wpxp."""
     set_fortran_grid(gr)

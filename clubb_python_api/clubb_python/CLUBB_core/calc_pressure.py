@@ -9,12 +9,14 @@ from clubb_python.derived_types.grid_class import Grid
 from clubb_python.derived_types.grid_class_converter import set_fortran_grid
 
 
-def init_pressure(gr: Grid, ngrdcol: int, nzt: int, nzm: int, thvm: np.ndarray, p_sfc: np.ndarray):
+def init_pressure(ngrdcol: int, gr: Grid, thvm: np.ndarray, p_sfc: np.ndarray, **compat_kwargs):
     """Compute hydrostatic pressure profile."""
+    compat_kwargs.pop("nzt", None)
+    compat_kwargs.pop("nzm", None)
     set_fortran_grid(gr)
     return clubb_f2py.f2py_init_pressure(
-        int(nzm), f_arr(thvm), f_arr(p_sfc),
-        ngrdcol=int(ngrdcol), nzt=int(nzt))
+        int(gr.nzm), f_arr(thvm), f_arr(p_sfc),
+        ngrdcol=int(ngrdcol), nzt=int(gr.nzt))
 
 
 def calculate_thvm(nzt: int, ngrdcol: int, thlm, rtm, rcm, exner, thv_ds_zt):
@@ -24,8 +26,10 @@ def calculate_thvm(nzt: int, ngrdcol: int, thlm, rtm, rcm, exner, thv_ds_zt):
         nzt=int(nzt), ngrdcol=int(ngrdcol))
 
 
-def hydrostatic(gr: Grid, ngrdcol: int, nzt: int, nzm: int, thvm, p_sfc):
+def hydrostatic(ngrdcol: int, gr: Grid, thvm, p_sfc, **compat_kwargs):
     """Compute full hydrostatic pressure, exner, and density profiles."""
+    compat_kwargs.pop("nzt", None)
+    compat_kwargs.pop("nzm", None)
     set_fortran_grid(gr)
     return clubb_f2py.f2py_hydrostatic(
-        int(nzm), f_arr(thvm), f_arr(p_sfc), ngrdcol=int(ngrdcol), nzt=int(nzt))
+        int(gr.nzm), f_arr(thvm), f_arr(p_sfc), ngrdcol=int(ngrdcol), nzt=int(gr.nzt))

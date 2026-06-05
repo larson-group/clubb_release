@@ -62,7 +62,7 @@ def test_lscale_width_vert_avg_constant_profile(gr):
     rho_ds_zm = np.ones(shape, dtype=np.float64)
 
     avg = clubb_api.lscale_width_vert_avg(
-        gr, nzm=gr.nzm, ngrdcol=gr.ngrdcol, smth_type=1, var_profile=var_profile,
+        nzm=gr.nzm, ngrdcol=gr.ngrdcol, gr=gr, smth_type=1, var_profile=var_profile,
         lscale_zm=lscale_zm, rho_ds_zm=rho_ds_zm,
         var_below_ground_value=7.5,
     )

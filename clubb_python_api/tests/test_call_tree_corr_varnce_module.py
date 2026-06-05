@@ -19,7 +19,7 @@ def test_assert_corr_symmetric_accepts_identity_and_flags_bad_matrix(run_quiet_p
     err_info = ErrInfo(ngrdcol=ngrdcol)
 
     clubb_api.reset_err_code()
-    clubb_api.assert_corr_symmetric(3, np.eye(3, dtype=np.float64), err_info)
+    clubb_api.assert_corr_symmetric(np.eye(3, dtype=np.float64), 3, err_info)
     assert int(clubb_api.get_err_code(ngrdcol)[0]) == 0
 
     clubb_api.reset_err_code()
@@ -46,7 +46,7 @@ bad = np.array(
      [0.0, 0.0, 1.0]],
     dtype=np.float64,
 )
-clubb_api.assert_corr_symmetric(3, bad, err_info)
+clubb_api.assert_corr_symmetric(bad, 3, err_info)
 print(json.dumps({"err_code": int(clubb_api.get_err_code(ngrdcol)[0])}))
 """
     )

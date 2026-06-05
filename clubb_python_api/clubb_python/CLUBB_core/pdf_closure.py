@@ -50,14 +50,19 @@ def pdf_closure_driver(
     rtm_min: float, rtm_nudge_max_altitude: float, clubb_params,
     iiPDF_type: int, saturation_formula: int, l_rtm_nudge: bool,
     l_trapezoidal_rule_zt: bool, l_trapezoidal_rule_zm: bool, l_call_pdf_closure_twice: bool,
-    l_use_cloud_cover: bool, l_rcm_supersat_adj: bool, l_mix_rat_hm,
+    l_use_cloud_cover: bool, l_rcm_supersat_adj: bool, l_mix_rat_hm, *,
+    stats=None, rtm=None, sigma_sqd_w=None,
+    pdf_implicit_coefs_terms: implicit_coefs_terms,
     pdf_params: pdf_parameter,
     pdf_params_zm: pdf_parameter,
-    pdf_implicit_coefs_terms: implicit_coefs_terms,
     err_info: ErrInfo,
-    rtm,
+    **compat_kwargs,
 ):
     """Run pdf_closure_driver with strict direct argument mapping to Fortran."""
+    if rtm is None:
+        raise ValueError("pdf_closure_driver requires rtm.")
+    if sigma_sqd_w is None:
+        sigma_sqd_w = np.zeros((int(ngrdcol), int(nzm)), dtype=np.float64, order="F")
     set_fortran_grid(gr)
     set_fortran_pdf_params(pdf_params)
     set_fortran_pdf_params_zm(pdf_params_zm)
@@ -89,7 +94,7 @@ def pdf_closure_driver(
         int(saturation_formula), bool(l_rtm_nudge),
         bool(l_trapezoidal_rule_zt), bool(l_trapezoidal_rule_zm), bool(l_call_pdf_closure_twice),
         bool(l_use_cloud_cover), bool(l_rcm_supersat_adj),
-        _transport_1d(l_mix_rat_hm, hydromet_dim, dtype=np.bool_), f_arr(rtm),
+        _transport_1d(l_mix_rat_hm, hydromet_dim, dtype=np.int32), f_arr(rtm),
         nzm=int(nzm), nzt=int(nzt), ngrdcol=int(ngrdcol),
     )
     return (
