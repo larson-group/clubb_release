@@ -119,7 +119,7 @@ def _make_advance_inputs(ngrdcol: int):
         "clubb_params": clubb_params,
         "lmin": lmin,
         "mixt_frac_max_mag": mixt_frac_max_mag,
-        "t0_val": 300.0,
+        "t0": 300.0,
         "ts_nudge": 0.0,
         "rtm_min": 1.0e-8,
         "rtm_nudge_max_altitude": 5000.0,

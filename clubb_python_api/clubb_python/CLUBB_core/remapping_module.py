@@ -14,18 +14,12 @@ def remap_vals_to_target(
     source_values=None, target_values_idx: int | None = None, total_idx_rho_lin_spline: int | None = None,
     rho_lin_spline_vals=None, rho_lin_spline_levels=None,
     iv: int = 0, p_sfc=None, grid_remap_method: int = 1, l_zt_variable: bool = False,
-    **compat_kwargs,
 ):
     """Remap values using remapping_module with source and target set to the same grid."""
-    same_grid = compat_kwargs.pop("gr", None)
-    if gr_source is None:
-        gr_source = same_grid
-    if gr_target is None:
-        gr_target = same_grid if same_grid is not None else gr_source
     if gr_source is None or gr_target is None:
-        raise ValueError("remap_vals_to_target requires gr_source/gr_target or legacy gr.")
-    nzm = int(compat_kwargs.pop("nzm", gr_source.nzm))
-    nzt = int(compat_kwargs.pop("nzt", gr_source.nzt))
+        raise ValueError("remap_vals_to_target requires gr_source and gr_target.")
+    nzm = gr_source.nzm
+    nzt = gr_source.nzt
     set_fortran_grid(gr_source)
     kwargs = dict(
         source_values=f_arr(source_values),

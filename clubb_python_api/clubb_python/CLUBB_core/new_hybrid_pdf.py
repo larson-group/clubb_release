@@ -54,7 +54,7 @@ def calculate_responder_params(
     )
 
 
-def calculate_coef_wp4_implicit(mixt_frac, f_w, coef_sigma_w_1_sqd, coef_sigma_w_2_sqd, **compat_kwargs):
+def calculate_coef_wp4_implicit(mixt_frac, f_w, coef_sigma_w_1_sqd, coef_sigma_w_2_sqd):
     """Compute coefficient such that <w'^4> = coef_wp4_implicit * <w'^2>^2."""
     return _loop_scalar_array(
         mixt_frac, f_w, coef_sigma_w_1_sqd, coef_sigma_w_2_sqd,
@@ -62,7 +62,7 @@ def calculate_coef_wp4_implicit(mixt_frac, f_w, coef_sigma_w_1_sqd, coef_sigma_w
     )
 
 
-def calc_coef_wp2xp_implicit(wp2, mixt_frac, f_w, coef_sigma_w_1_sqd, coef_sigma_w_2_sqd, **compat_kwargs):
+def calc_coef_wp2xp_implicit(wp2, mixt_frac, f_w, coef_sigma_w_1_sqd, coef_sigma_w_2_sqd):
     """Compute coefficient such that <w'^2 x'> = coef_wp2xp_implicit * <w'x'>."""
     return _loop_scalar_array(
         wp2, mixt_frac, f_w, coef_sigma_w_1_sqd, coef_sigma_w_2_sqd,

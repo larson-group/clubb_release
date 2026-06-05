@@ -4,7 +4,13 @@ This module contains the timestep advancement logic that was split out from
 the previous monolithic Python driver file.
 """
 
+from numpy import asfortranarray as f_arr
+
+import clubb_f2py
 from clubb_python import clubb_api
+from clubb_python.derived_types.err_info_converter import get_fortran_err_info, set_fortran_err_info
+from clubb_python.derived_types.grid_class_converter import set_fortran_grid
+from clubb_python.derived_types.sclr_idx_converter import set_fortran_sclr_idx
 from clubb_python_driver.advance_clubb_core import advance_clubb_core as _advance_clubb_core_py
 
 
@@ -118,10 +124,10 @@ def _calculate_thlp2_rad(state: dict):
 def _advance_clubb_core(state: dict):
     """Advance the CLUBB core using either the API wrapper or Python port."""
     # Default path: compiled Fortran core through the Python API adapter.
-    _advance_clubb_core_api(state)
+    #_advance_clubb_core_api(state)
     # To switch back to the translated Python port instead, replace the line
     # above with: _advance_clubb_core_python(state)
-    #_advance_clubb_core_python(state)
+    _advance_clubb_core_python(state)
 
 
 def _advance_clubb_core_python(state: dict):
@@ -471,7 +477,7 @@ def _advance_clubb_core_api(state: dict):
         clubb_params=state['clubb_params'],
         lmin=state['lmin'],
         mixt_frac_max_mag=state['mixt_frac_max_mag'],
-        t0_val=state['T0'],
+        t0=state['T0'],
         ts_nudge=state['ts_nudge'],
         rtm_min=state['rtm_min'],
         rtm_nudge_max_altitude=state['rtm_nudge_max_altitude'],
@@ -549,6 +555,33 @@ def _prescribe_forcings(state: dict, itime: int, l_sample: bool = False):
     """Set forcings for the current timestep using Fortran prescribe_forcings."""
     del l_sample  # Sampling logic is handled internally by Fortran stats state.
 
+    set_fortran_grid(state['gr'])
+    set_fortran_sclr_idx(state['sclr_idx'])
+    set_fortran_err_info(state['err_info'])
+    result = clubb_f2py.f2py_prescribe_forcings(
+        int(state['sclr_dim']), int(state['edsclr_dim']), str(state['runtype']), int(state['sfctype']),
+        float(state['time_initial'] + (itime - 1) * state['dt_main']),
+        float(state['time_initial']), float(state['dt_main']),
+        f_arr(state['um']), f_arr(state['vm']), f_arr(state['thlm']), f_arr(state['p_in_Pa']),
+        f_arr(state['exner']), f_arr(state['rho']), f_arr(state['rho_zm']), f_arr(state['thvm']),
+        f_arr(state['gr'].zt),
+        bool(state['l_t_dependent']), bool(state['l_ignore_forcings']), bool(state['l_input_xpwp_sfc']),
+        bool(state['l_modify_bc_for_cnvg_test']),
+        int(state['flags'].saturation_formula), bool(state['flags'].l_add_dycore_grid),
+        int(state['flags'].grid_remap_method), int(state['flags'].grid_adapt_in_time_method),
+        f_arr(state['rtm']), f_arr(state['wm_zm']), f_arr(state['wm_zt']), f_arr(state['ug']),
+        f_arr(state['vg']), f_arr(state['um_ref']), f_arr(state['vm_ref']),
+        f_arr(state['thlm_forcing']), f_arr(state['rtm_forcing']), f_arr(state['um_forcing']),
+        f_arr(state['vm_forcing']), f_arr(state['wprtp_forcing']), f_arr(state['wpthlp_forcing']),
+        f_arr(state['rtp2_forcing']), f_arr(state['thlp2_forcing']), f_arr(state['rtpthlp_forcing']),
+        f_arr(state['wpsclrp']), f_arr(state['sclrm_forcing']), f_arr(state['edsclrm_forcing']),
+        f_arr(state['wpthlp_sfc']), f_arr(state['wprtp_sfc']), f_arr(state['upwp_sfc']),
+        f_arr(state['vpwp_sfc']), f_arr(state['T_sfc']), f_arr(state['p_sfc']),
+        float(state['sens_ht']), float(state['latent_ht']),
+        f_arr(state['wpsclrp_sfc']), f_arr(state['wpedsclrp_sfc']),
+        nzm=int(state['nzm']), nzt=int(state['nzt']), ngrdcol=int(state['ngrdcol']),
+    )
+
     (
         state['rtm'],
         state['wm_zm'],
@@ -580,67 +613,7 @@ def _prescribe_forcings(state: dict, itime: int, l_sample: bool = False):
         state['wpsclrp_sfc'],
         state['wpedsclrp_sfc'],
         state['err_info'],
-    ) = clubb_api.prescribe_forcings(
-        gr=state['gr'],
-        nzm=state['nzm'],
-        nzt=state['nzt'],
-        ngrdcol=state['ngrdcol'],
-        sclr_dim=state['sclr_dim'],
-        edsclr_dim=state['edsclr_dim'],
-        runtype=state['runtype'],
-        sfctype=state['sfctype'],
-        time_current=state['time_initial'] + (itime - 1) * state['dt_main'],
-        time_initial=state['time_initial'],
-        dt=state['dt_main'],
-        um=state['um'],
-        vm=state['vm'],
-        thlm=state['thlm'],
-        p_in_Pa=state['p_in_Pa'],
-        exner=state['exner'],
-        rho=state['rho'],
-        rho_zm=state['rho_zm'],
-        thvm=state['thvm'],
-        zt_in=state['gr'].zt,
-        l_t_dependent=state['l_t_dependent'],
-        l_ignore_forcings=state['l_ignore_forcings'],
-        l_input_xpwp_sfc=state['l_input_xpwp_sfc'],
-        l_modify_bc_for_cnvg_test=state['l_modify_bc_for_cnvg_test'],
-        saturation_formula=state['flags'].saturation_formula,
-        l_add_dycore_grid=state['flags'].l_add_dycore_grid,
-        grid_remap_method=state['flags'].grid_remap_method,
-        grid_adapt_in_time_method=state['flags'].grid_adapt_in_time_method,
-        rtm=state['rtm'],
-        wm_zm=state['wm_zm'],
-        wm_zt=state['wm_zt'],
-        ug=state['ug'],
-        vg=state['vg'],
-        um_ref=state['um_ref'],
-        vm_ref=state['vm_ref'],
-        thlm_forcing=state['thlm_forcing'],
-        rtm_forcing=state['rtm_forcing'],
-        um_forcing=state['um_forcing'],
-        vm_forcing=state['vm_forcing'],
-        wprtp_forcing=state['wprtp_forcing'],
-        wpthlp_forcing=state['wpthlp_forcing'],
-        rtp2_forcing=state['rtp2_forcing'],
-        thlp2_forcing=state['thlp2_forcing'],
-        rtpthlp_forcing=state['rtpthlp_forcing'],
-        wpsclrp=state['wpsclrp'],
-        sclrm_forcing=state['sclrm_forcing'],
-        edsclrm_forcing=state['edsclrm_forcing'],
-        wpthlp_sfc=state['wpthlp_sfc'],
-        wprtp_sfc=state['wprtp_sfc'],
-        upwp_sfc=state['upwp_sfc'],
-        vpwp_sfc=state['vpwp_sfc'],
-        T_sfc=state['T_sfc'],
-        p_sfc=state['p_sfc'],
-        sens_ht=state['sens_ht'],
-        latent_ht=state['latent_ht'],
-        wpsclrp_sfc=state['wpsclrp_sfc'],
-        wpedsclrp_sfc=state['wpedsclrp_sfc'],
-        sclr_idx=state['sclr_idx'],
-        err_info=state['err_info'],
-    )
+    ) = (*result, get_fortran_err_info())
 
 
 def _advance_radiation(

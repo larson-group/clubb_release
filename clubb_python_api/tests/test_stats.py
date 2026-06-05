@@ -62,7 +62,7 @@ def stats_env():
         dt_main=DT,
         day_in=1, month_in=1, year_in=2000,
         time_initial=0.0,
-        nzt=NZT, zt=zt, nzm=NZM, zm=zm, err_info=err_info,
+        zt=zt, zm=zm, err_info=err_info,
         sclr_dim=0, edsclr_dim=0,
         clubb_params=clubb_params,
         param_names=PARAM_NAMES,
@@ -112,7 +112,7 @@ class TestStatsConfig:
             registry_path=REGISTRY, output_path="", ncol=NCOL,
             stats_tsamp=TSAMP, stats_tout=TOUT, dt_main=DT,
             day_in=1, month_in=1, year_in=2000, time_initial=0.0,
-            nzt=NZT, zt=zt, nzm=NZM, zm=zm, sclr_dim=0, edsclr_dim=0, err_info=stats_env,
+            zt=zt, zm=zm, sclr_dim=0, edsclr_dim=0, err_info=stats_env,
             clubb_params=clubb_params, param_names=PARAM_NAMES,
         )
 
@@ -245,9 +245,7 @@ class TestNetcdfMetadata:
             month_in=1,
             year_in=2000,
             time_initial=0.0,
-            nzt=NZT,
             zt=zt,
-            nzm=NZM,
             zm=zm,
             sclr_dim=0,
             edsclr_dim=0,

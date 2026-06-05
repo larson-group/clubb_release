@@ -33,8 +33,9 @@ def advance_xp2_xpyp(
     l_c2_cloud_frac: bool, l_upwind_xpyp_ta: bool, l_godunov_upwind_xpyp_ta: bool,
     l_lmm_stepping: bool, *,
     l_implemented: bool = True,
+    stats=None,
     rtp2, thlp2, rtpthlp, up2, vp2, sclrp2, sclrprtp, sclrpthlp,
-    err_info: ErrInfo, **compat_kwargs,
+    err_info: ErrInfo,
 ):
     """Advance scalar variances/covariances and horizontal turbulence components.
 
@@ -46,7 +47,8 @@ def advance_xp2_xpyp(
     set_fortran_nu_vert_res_dep(nu_vert_res_dep)
     set_fortran_implicit_coefs(pdf_implicit_coefs_terms)
     set_fortran_err_info(err_info)
-    wp2_zt = compat_kwargs.pop("wp2_zt", np.zeros((ngrdcol, nzt), dtype=np.float64, order="F"))
+    wp2_zt = clubb_f2py.f2py_zm2zt_2d(
+        int(nzt), f_arr(wp2), nzm=int(nzm), ngrdcol=int(ngrdcol))
 
     result = clubb_f2py.f2py_advance_xp2_xpyp(
         int(sclr_dim), f_arr(sclr_tol),

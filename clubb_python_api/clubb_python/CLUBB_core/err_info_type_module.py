@@ -40,12 +40,14 @@ def cleanup_err_info(err_info: ErrInfo):
     clubb_f2py.f2py_cleanup_err_info()
 
 
-def set_err_info_values(ngrdcol: int, err_info: ErrInfo, chunk_idx_in: int, mpi_rank_in: int,
-                        lat_in, lon_in, **compat_kwargs):
+def set_err_info_values(
+    ngrdcol: int,
+    err_info: ErrInfo,
+    chunk_idx_in: int,
+    mpi_rank_in: int,
+    lat_in,
+    lon_in,
+):
     """Set error context info (chunk index, MPI rank, lat/lon)."""
-    chunk_idx_in = compat_kwargs.pop("chunk_idx", chunk_idx_in)
-    mpi_rank_in = compat_kwargs.pop("mpi_rank", mpi_rank_in)
-    lat_in = compat_kwargs.pop("lat", lat_in)
-    lon_in = compat_kwargs.pop("lon", lon_in)
     set_fortran_err_info(err_info)
     clubb_f2py.f2py_set_err_info_values(chunk_idx_in, mpi_rank_in, f_arr(lat_in), f_arr(lon_in))

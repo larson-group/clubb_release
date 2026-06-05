@@ -12,20 +12,14 @@ from clubb_python_driver.clubb_constants import (
     em_min,
     eps,
     grav,
-    l_smooth_min_max,
-    min_max_smth_mag,
     one,
-    rt_tol,
-    thl_tol,
     three_halves,
     two,
-    unused_var,
     w_tol,
     w_tol_sqd,
     zero,
     zero_threshold,
     # Parameter indices
-    ia3_coef_min,
     ia_const,
     ibv_efold,
     ic_K,
@@ -36,8 +30,6 @@ from clubb_python_driver.clubb_constants import (
     igamma_coefb,
     igamma_coefc,
     ilambda0_stability_coef,
-    imu,
-    itaumax,
     iup2_sfc_coef,
     ixp3_coef_base,
     ixp3_coef_slope,
@@ -53,6 +45,80 @@ from clubb_python_driver.clubb_constants import (
 )
 
 CLUBB_FATAL_ERROR = 99
+
+
+def set_sfc_value_of_flux_profiles(
+    nzm,
+    ngrdcol,
+    sclr_dim,
+    edsclr_dim,
+    gr,
+    l_host_applies_sfc_fluxes,
+    l_linearize_pbl_winds,
+    wpthlp_sfc,
+    wprtp_sfc,
+    upwp_sfc,
+    vpwp_sfc,
+    upwp_sfc_pert,
+    vpwp_sfc_pert,
+    wpsclrp_sfc,
+    wpedsclrp_sfc,
+    wpthlp,
+    wprtp,
+    upwp,
+    vpwp,
+    upwp_pert,
+    vpwp_pert,
+    wpsclrp,
+    wpedsclrp,
+):
+    k_lb = gr.k_lb_zm
+
+    # SET SURFACE VALUES OF FLUXES (BROUGHT IN)
+    # We only do this for host models that do not apply the flux
+    # elsewhere in the code (e.g. WRF).  In other cases the _sfc variables will
+    # only be used to compute the variance at the surface. -dschanen 8 Sept 2009
+    if not l_host_applies_sfc_fluxes:
+        wpthlp[:, k_lb] = wpthlp_sfc
+        wprtp[:, k_lb] = wprtp_sfc
+        upwp[:, k_lb] = upwp_sfc
+        vpwp[:, k_lb] = vpwp_sfc
+
+        if l_linearize_pbl_winds:
+            upwp_pert[:, k_lb] = upwp_sfc_pert
+            vpwp_pert[:, k_lb] = vpwp_sfc_pert
+
+        # Set fluxes for passive scalars (if enabled)
+        if sclr_dim > 0:
+            for sclr in range(sclr_dim):
+                wpsclrp[:, k_lb, sclr] = wpsclrp_sfc[:, sclr]
+
+        if edsclr_dim > 0:
+            # wpedsclrp is a local variable that is not saved from
+            # timestep to timestep. Set it to 0 and overwrite the surface.
+            wpedsclrp[:, :, :] = zero
+            for edsclr in range(edsclr_dim):
+                wpedsclrp[:, k_lb, edsclr] = wpedsclrp_sfc[:, edsclr]
+
+    else:
+        wpthlp[:, k_lb] = zero
+        wprtp[:, k_lb] = zero
+        upwp[:, k_lb] = zero
+        vpwp[:, k_lb] = zero
+
+        # Set fluxes for passive scalars (if enabled)
+        if sclr_dim > 0:
+            for sclr in range(sclr_dim):
+                wpsclrp[:, k_lb, sclr] = zero
+
+        if edsclr_dim > 0:
+            # wpedsclrp is a local variable that is not saved from
+            # timestep to timestep. Set it to 0 and overwrite the surface.
+            wpedsclrp[:, :, :] = zero
+            for edsclr in range(edsclr_dim):
+                wpedsclrp[:, k_lb, edsclr] = zero
+
+    return wpthlp, wprtp, upwp, vpwp, upwp_pert, vpwp_pert, wpsclrp, wpedsclrp
 
 
 def advance_clubb_core(
@@ -243,13 +309,6 @@ def advance_clubb_core(
     # ================================================================== #
     dt_advance = two * dt if flags.l_lmm_stepping else dt
 
-    Lscale_max = clubb_api.set_lscale_max(
-        ngrdcol=ngrdcol,
-        l_implemented=l_implemented,
-        host_dx=host_dx,
-        host_dy=host_dy,
-    )
-
     # ================================================================== #
     # Block B: Stats — spurious source pre-integration
     # ================================================================== #
@@ -307,49 +366,30 @@ def advance_clubb_core(
     # ================================================================== #
     # Block E: Set surface boundary conditions
     # ================================================================== #
-    k_lb = gr.k_lb_zm  # 0-based lower boundary for momentum levels
+    wpedsclrp = np.zeros((ngrdcol, nzm, max(edsclr_dim, 1)))
+    (wpthlp, wprtp, upwp, vpwp,
+     upwp_pert, vpwp_pert,
+     wpsclrp, wpedsclrp) = set_sfc_value_of_flux_profiles(
+        nzm, ngrdcol, sclr_dim, edsclr_dim, gr,
+        flags.l_host_applies_sfc_fluxes, flags.l_linearize_pbl_winds,
+        wpthlp_sfc, wprtp_sfc, upwp_sfc, vpwp_sfc,
+        upwp_sfc_pert, vpwp_sfc_pert,
+        wpsclrp_sfc, wpedsclrp_sfc,
+        wpthlp, wprtp, upwp, vpwp,
+        upwp_pert, vpwp_pert,
+        wpsclrp, wpedsclrp,
+    )
 
-    if not flags.l_host_applies_sfc_fluxes:
-        wpthlp[:, k_lb] = wpthlp_sfc
-        wprtp[:, k_lb] = wprtp_sfc
-        upwp[:, k_lb] = upwp_sfc
-        vpwp[:, k_lb] = vpwp_sfc
-
-        if flags.l_linearize_pbl_winds:
-            upwp_pert[:, k_lb] = upwp_sfc_pert
-            vpwp_pert[:, k_lb] = vpwp_sfc_pert
-
-        if sclr_dim > 0:
-            for sclr in range(sclr_dim):
-                wpsclrp[:, k_lb, sclr] = wpsclrp_sfc[:, sclr]
-
-        if edsclr_dim > 0:
-            wpedsclrp = np.zeros((ngrdcol, nzm, edsclr_dim))
-            for edsclr in range(edsclr_dim):
-                wpedsclrp[:, k_lb, edsclr] = wpedsclrp_sfc[:, edsclr]
-        else:
-            wpedsclrp = np.zeros((ngrdcol, nzm, max(edsclr_dim, 1)))
-    else:
-        wpthlp[:, k_lb] = 0.0
-        wprtp[:, k_lb] = 0.0
-        upwp[:, k_lb] = 0.0
-        vpwp[:, k_lb] = 0.0
-
-        if sclr_dim > 0:
-            for sclr in range(sclr_dim):
-                wpsclrp[:, k_lb, sclr] = 0.0
-
-        if edsclr_dim > 0:
-            wpedsclrp = np.zeros((ngrdcol, nzm, edsclr_dim))
-        else:
-            wpedsclrp = np.zeros((ngrdcol, nzm, max(edsclr_dim, 1)))
-
-    # ================================================================== #
-    # Block F: Set mu
-    # ================================================================== #
-    # Standalone mode: mu from tunable parameters (no CLUBBND_CAM)
-    # Parameter indices are 1-based into clubb_params(:, nparams)
-    mu = clubb_params[:, imu - 1].copy()
+    sigma_sqd_w = clubb_api.compute_sigma_sqd_w(
+        gr=gr, nzm=nzm, nzt=nzt, ngrdcol=ngrdcol,
+        wp3=wp3,
+        wp2=wp2, thlp2=thlp2, rtp2=rtp2,
+        up2=up2, vp2=vp2,
+        wpthlp=wpthlp, wprtp=wprtp,
+        upwp=upwp, vpwp=vpwp,
+        clubb_params=clubb_params,
+        l_predict_upwp_vpwp=flags.l_predict_upwp_vpwp,
+    )
 
     # ================================================================== #
     # Block G: Pre-advance PDF closure (conditional)
@@ -401,9 +441,10 @@ def advance_clubb_core(
             pdf_implicit_coefs_terms=pdf_implicit_coefs_terms,
             err_info=err_info,
             rtm=rtm,
+            sigma_sqd_w=sigma_sqd_w,
         )
         (rtm, pdf_implicit_coefs_terms, pdf_params, pdf_params_zm, err_info,
-         rcm, cloud_frac, ice_supersat_frac, wprcp_out, _sigma_sqd_w, wpthvp, wp2thvp,
+         rcm, cloud_frac, ice_supersat_frac, wprcp_out, sigma_sqd_w, wpthvp, wp2thvp,
          wp2up, rtpthvp, thlpthvp, _rc_coef, rcm_in_layer, cloud_cover,
          _rcp2_zt, thlprcp, rc_coef_zm, sclrpthvp, wpup2, wpvp2, wp2up2,
          wp2vp2, wp4, wp2rtp, _wprtp2, wp2thlp, _wpthlp2, _wprtpthlp, _wp2rcp,
@@ -417,69 +458,20 @@ def advance_clubb_core(
         err_code = err_info.err_code
         if err_code is not None and np.any(np.asarray(err_code) == CLUBB_FATAL_ERROR):
             return
+        _sigma_sqd_w = sigma_sqd_w
 
-    # ================================================================== #
-    # Block H: Interpolations — wp2_zt, sigma_sqd_w, a3_coef
-    # ================================================================== #
-    wp2 = wp2
-    wp3 = wp3
-
-    wp2_zt = np.maximum(
-        clubb_api.zm2zt(gr=gr, nzm=nzm, nzt=nzt, ngrdcol=ngrdcol, azm=wp2),
-        w_tol_sqd,
-    )
-
-    sigma_sqd_w = _sigma_sqd_w  # may be set by PDF closure above
-
-    if flags.ipdf_call_placement == ipdf_post_advance_fields:
-        # Calculate sigma_sqd_w here
-        sigma_sqd_w = clubb_api.compute_sigma_sqd_w(
-            gr=gr, nzm=nzm, nzt=nzt, ngrdcol=ngrdcol,
-            wp3=wp3,
-            wp2=wp2, thlp2=thlp2, rtp2=rtp2,
-            up2=up2, vp2=vp2,
-            wpthlp=wpthlp, wprtp=wprtp,
-            upwp=upwp, vpwp=vpwp,
-            clubb_params=clubb_params,
-            l_predict_upwp_vpwp=flags.l_predict_upwp_vpwp,
-        )
-
-    if sigma_sqd_w is None:
-        # If PDF closure was called pre-advance, sigma_sqd_w was set there
-        # It should already be available from the pdf_closure unpack.
-        sigma_sqd_w = np.zeros((ngrdcol, nzm))
-
-    # a3 coefficient
-    a3_coef = -two * (one - sigma_sqd_w) ** 2 + 3.0
-    a3_min = clubb_params[:, ia3_coef_min - 1]
-    for k in range(nzm):
-        a3_coef[:, k] = np.maximum(a3_coef[:, k], a3_min)
-
-    # Interpolate variances/covariances to thermodynamic levels
-    thlp2_zt = np.maximum(
-        clubb_api.zm2zt(gr=gr, nzm=nzm, nzt=nzt, ngrdcol=ngrdcol, azm=thlp2),
-        thl_tol ** 2,
-    )
-    rtp2_zt = np.maximum(
-        clubb_api.zm2zt(gr=gr, nzm=nzm, nzt=nzt, ngrdcol=ngrdcol, azm=rtp2),
-        rt_tol ** 2,
-    )
-    rtpthlp_zt = clubb_api.zm2zt(
-        gr=gr, nzm=nzm, nzt=nzt, ngrdcol=ngrdcol, azm=rtpthlp
-    )
     if l_sample:
-        clubb_api.stats_update("rtpthlp_zt", rtpthlp_zt)
+        if flags.iiPDF_type == iiPDF_ADG1:
+            sigma_sqd_w_zt = clubb_api.zm2zt(
+                gr=gr, nzm=nzm, nzt=nzt, ngrdcol=ngrdcol,
+                azm=sigma_sqd_w,
+            )
+            sigma_sqd_w_zt = np.maximum(sigma_sqd_w_zt, zero_threshold)
+        else:
+            sigma_sqd_w_zt = np.zeros(shzt)
+        clubb_api.stats_update("sigma_sqd_w_zt", sigma_sqd_w_zt)
 
-    # wp3_on_wp2 on zt levels
-    wp3_on_wp2_zt = wp3 / np.maximum(wp2_zt, w_tol_sqd)
-    wp3_on_wp2_zt = np.clip(wp3_on_wp2_zt, -1000.0, 1000.0)
-
-    wp3_on_wp2 = clubb_api.zt2zm(
-        gr=gr, nzm=nzm, nzt=nzt, ngrdcol=ngrdcol, azt=wp3_on_wp2_zt
-    )
-    wp3_on_wp2_zt = clubb_api.zm2zt(
-        gr=gr, nzm=nzm, nzt=nzt, ngrdcol=ngrdcol, azm=wp3_on_wp2
-    )
+    wp2_zt = np.zeros(shzt)
 
     # ================================================================== #
     # Block I: Compute thvm
@@ -504,9 +496,44 @@ def advance_clubb_core(
     )
     sqrt_em_zt = np.sqrt(sqrt_em_zt)
 
-    # ================================================================== #
-    # Block K: Brunt-Vaisala, wind shear, Richardson number
-    # ================================================================== #
+    if flags.l_call_pdf_closure_twice:
+        w_1_zm = pdf_params_zm.w_1.copy()
+        w_2_zm = pdf_params_zm.w_2.copy()
+        varnce_w_1_zm = pdf_params_zm.varnce_w_1.copy()
+        varnce_w_2_zm = pdf_params_zm.varnce_w_2.copy()
+        mixt_frac_zm = pdf_params_zm.mixt_frac.copy()
+    else:
+        w_1_zm = clubb_api.zt2zm(gr=gr, nzm=nzm, nzt=nzt, ngrdcol=ngrdcol, azt=pdf_params.w_1)
+        w_2_zm = clubb_api.zt2zm(gr=gr, nzm=nzm, nzt=nzt, ngrdcol=ngrdcol, azt=pdf_params.w_2)
+        varnce_w_1_zm = clubb_api.zt2zm(
+            gr=gr, nzm=nzm, nzt=nzt, ngrdcol=ngrdcol, azt=pdf_params.varnce_w_1
+        )
+        varnce_w_2_zm = clubb_api.zt2zm(
+            gr=gr, nzm=nzm, nzt=nzt, ngrdcol=ngrdcol, azt=pdf_params.varnce_w_2
+        )
+        mixt_frac_zm = clubb_api.zt2zm(
+            gr=gr, nzm=nzm, nzt=nzt, ngrdcol=ngrdcol, azt=pdf_params.mixt_frac
+        )
+
+    if l_sample:
+        clubb_api.stats_update("rvm", rtm - rcm)
+        if clubb_api.var_on_stats_list("rel_humidity") or clubb_api.var_on_stats_list("rsat"):
+            T_in_K = np.empty((ngrdcol, nzt))
+            for i in range(ngrdcol):
+                T_in_K[i, :] = clubb_api.thlm2t_in_k(
+                    nzt, thlm[i, :], exner[i, :], rcm[i, :]
+                )
+            rsat = clubb_api.sat_mixrat_liq(
+                gr=gr,
+                nz=nzt,
+                ngrdcol=ngrdcol,
+                p_in_Pa=p_in_Pa,
+                T_in_K=T_in_K,
+                saturation_formula=flags.saturation_formula,
+            )
+            rel_humidity = (rtm - rcm) / rsat
+            clubb_api.stats_update("rel_humidity", rel_humidity)
+
     bv_result = clubb_api.calc_brunt_vaisala_freq_sqd(
         gr=gr, nzm=nzm, nzt=nzt, ngrdcol=ngrdcol,
         thlm=thlm, exner=exner, rtm=rtm,
@@ -521,139 +548,54 @@ def advance_clubb_core(
     (brunt_vaisala_freq_sqd, brunt_vaisala_freq_sqd_mixed,
      brunt_vaisala_freq_sqd_smth) = bv_result
 
-    ddzt_um = clubb_api.ddzt(gr=gr, nzm=nzm, nzt=nzt, ngrdcol=ngrdcol, azt=um)
-    ddzt_vm = clubb_api.ddzt(gr=gr, nzm=nzm, nzt=nzt, ngrdcol=ngrdcol, azt=vm)
-    ddzt_umvm_sqd = ddzt_um ** 2 + ddzt_vm ** 2
+    ddzt_umvm_sqd = clubb_api.calc_ddzt_umvm_sqd(
+        gr=gr, nzm=nzm, nzt=nzt, ngrdcol=ngrdcol, um=um, vm=vm
+    )
 
-    if l_sample:
-        clubb_api.stats_update("ddzt_umvm_sqd", ddzt_umvm_sqd)
+    lscale_result = clubb_api.calc_lscale(
+        gr=gr, nzm=nzm, nzt=nzt, ngrdcol=ngrdcol,
+        l_implemented=l_implemented,
+        host_dx=host_dx, host_dy=host_dy,
+        p_in_pa=p_in_Pa, exner=exner, rtm=rtm, thlm=thlm, thvm=thvm,
+        thlp2=thlp2, rtp2=rtp2, rtpthlp=rtpthlp,
+        pdf_params=pdf_params,
+        em=em, thv_ds_zt=thv_ds_zt, lmin=lmin, varmu=None,
+        upwp_sfc=upwp_sfc, vpwp_sfc=vpwp_sfc,
+        ddzt_umvm_sqd=ddzt_umvm_sqd,
+        ice_supersat_frac=ice_supersat_frac,
+        ufmin=ufmin, tau_const=tau_const,
+        sfc_elevation=sfc_elevation,
+        clubb_params=clubb_params,
+        saturation_formula=flags.saturation_formula,
+        l_lscale_plume_centered=flags.l_Lscale_plume_centered,
+        l_diag_lscale_from_tau=flags.l_diag_Lscale_from_tau,
+        l_e3sm_config=flags.l_e3sm_config,
+        l_smooth_heaviside_tau_wpxp=flags.l_smooth_Heaviside_tau_wpxp,
+        l_modify_limiters_for_cnvg_test=flags.l_modify_limiters_for_cnvg_test,
+        l_use_invrs_tau_n2_iso=l_use_invrs_tau_n2_iso,
+        brunt_vaisala_freq_sqd_smth=brunt_vaisala_freq_sqd_smth,
+        err_info=err_info,
+    )
+    (err_info,
+     invrs_tau_zt, invrs_tau_zm, invrs_tau_xp2_zm, invrs_tau_wp3_zt,
+     invrs_tau_C1_zm, invrs_tau_C4_zm, invrs_tau_C6_zm, invrs_tau_C14_zm,
+     tau_max_zm, tau_max_zt, tau_zm,
+     Lscale, Lscale_zm, Lscale_up, Lscale_down) = lscale_result
+    err_code = err_info.err_code
+    if err_code is not None and np.any(np.asarray(err_code) == CLUBB_FATAL_ERROR):
+        return
 
-    # Richardson number
-    if flags.l_modify_limiters_for_cnvg_test:
-        Ri_zm = clubb_api.calc_ri_zm(
+    if flags.l_stability_correct_tau_zm:
+        stability_correction = clubb_api.calc_stability_correction(
             nzm=nzm, ngrdcol=ngrdcol,
-            bv_freq_sqd=brunt_vaisala_freq_sqd_smth,
-            shear=ddzt_umvm_sqd,
-            lim_bv=0.0, lim_shear=1.0e-12,
+            brunt_vaisala_freq_sqd=brunt_vaisala_freq_sqd,
+            lscale_zm=Lscale_zm, em=em,
+            lambda0_stability_coef=clubb_params[:, ilambda0_stability_coef - 1],
         )
-        Ri_zm = clubb_api.zm2zt2zm(
-            gr=gr, nzm=nzm, nzt=nzt, ngrdcol=ngrdcol, azm=Ri_zm, zm_min=0.0
-        )
+        invrs_tau_C6_zm = invrs_tau_zm * stability_correction
+        invrs_tau_C1_zm = invrs_tau_C6_zm.copy()
     else:
-        if l_smooth_min_max:
-            brunt_vaisala_freq_clipped = clubb_api.smooth_max(
-                nz=nzm, ngrdcol=ngrdcol,
-                input_var1=1.0e-7,
-                input_var2=brunt_vaisala_freq_sqd_smth,
-                smth_coef=1.0e-4 * min_max_smth_mag,
-            )
-            ddzt_umvm_sqd_clipped = clubb_api.smooth_max(
-                nz=nzm, ngrdcol=ngrdcol,
-                input_var1=ddzt_umvm_sqd,
-                input_var2=1.0e-7,
-                smth_coef=1.0e-6 * min_max_smth_mag,
-            )
-            Ri_zm = clubb_api.calc_ri_zm(
-                nzm=nzm, ngrdcol=ngrdcol,
-                bv_freq_sqd=brunt_vaisala_freq_clipped,
-                shear=ddzt_umvm_sqd_clipped,
-                lim_bv=0.0, lim_shear=0.0,
-            )
-        else:
-            Ri_zm = clubb_api.calc_ri_zm(
-                nzm=nzm, ngrdcol=ngrdcol,
-                bv_freq_sqd=brunt_vaisala_freq_sqd_smth,
-                shear=ddzt_umvm_sqd,
-                lim_bv=1.0e-7, lim_shear=1.0e-7,
-            )
-
-    # ================================================================== #
-    # Block L: Mixing length / dissipation time scale
-    # ================================================================== #
-    if not flags.l_diag_Lscale_from_tau:
-        lscale_result = clubb_api.calc_lscale_directly(
-            gr=gr, ngrdcol=ngrdcol, nzm=nzm, nzt=nzt,
-            l_implemented=l_implemented, p_in_pa=p_in_Pa,
-            exner=exner, rtm=rtm, thlm=thlm,
-            thvm=thvm, newmu=mu,
-            rtp2_zt=rtp2_zt, thlp2_zt=thlp2_zt, rtpthlp_zt=rtpthlp_zt,
-            em=em, thv_ds_zt=thv_ds_zt,
-            lscale_max=Lscale_max, lmin=lmin,
-            clubb_params=clubb_params,
-            saturation_formula=flags.saturation_formula,
-            l_lscale_plume_centered=flags.l_Lscale_plume_centered,
-            pdf_params=pdf_params,
-            err_info=err_info,
-        )
-        err_info, Lscale, Lscale_up, Lscale_down = lscale_result
-        err_code = err_info.err_code
-        if err_code is not None and np.any(np.asarray(err_code) == CLUBB_FATAL_ERROR):
-            return
-
-        # tau from Lscale
-        tau_zt = np.minimum(Lscale / sqrt_em_zt,
-                            clubb_params[:, itaumax - 1:itaumax])
-
-        Lscale_zm = np.maximum(
-            clubb_api.zt2zm(gr=gr, nzm=nzm, nzt=nzt, ngrdcol=ngrdcol, azt=Lscale),
-            zero_threshold,
-        )
-
-        tau_zm = np.minimum(
-            Lscale_zm / np.sqrt(np.maximum(em_min, em)),
-            clubb_params[:, itaumax - 1:itaumax],
-        )
-
-        invrs_tau_zm = one / tau_zm
-        invrs_tau_wp2_zm = invrs_tau_zm.copy()
-        invrs_tau_xp2_zm = invrs_tau_zm.copy()
-        invrs_tau_wpxp_zm = invrs_tau_zm.copy()
-        invrs_tau_wp3_zm = invrs_tau_zm.copy()
-        tau_max_zm = np.broadcast_to(
-            clubb_params[:, itaumax - 1:itaumax], (ngrdcol, nzm)).copy()
-
-        invrs_tau_zt = one / tau_zt
-        invrs_tau_wp3_zt = invrs_tau_zt.copy()
-        tau_max_zt = np.broadcast_to(
-            clubb_params[:, itaumax - 1:itaumax], (ngrdcol, nzt)).copy()
-
-        # Placeholder variables not computed in this branch
-        invrs_tau_no_N2_zm = np.zeros((ngrdcol, nzm))
-        invrs_tau_bkgnd = np.zeros((ngrdcol, nzm))
-        invrs_tau_shear = np.zeros((ngrdcol, nzm))
-        invrs_tau_sfc = np.zeros((ngrdcol, nzm))
-        invrs_tau_N2_iso = np.zeros((ngrdcol, nzm))
-    else:
-        lscale_result = clubb_api.diagnose_lscale_from_tau(
-            gr=gr, nzm=nzm, nzt=nzt, ngrdcol=ngrdcol,
-            upwp_sfc=upwp_sfc, vpwp_sfc=vpwp_sfc,
-            ddzt_umvm_sqd=ddzt_umvm_sqd,
-            ice_supersat_frac=ice_supersat_frac,
-            em=em, sqrt_em_zt=sqrt_em_zt,
-            ufmin=ufmin, tau_const=tau_const,
-            sfc_elevation=sfc_elevation,
-            lscale_max=Lscale_max,
-            clubb_params=clubb_params,
-            l_e3sm_config=flags.l_e3sm_config,
-            l_smooth_heaviside_tau_wpxp=flags.l_smooth_Heaviside_tau_wpxp,
-            brunt_vaisala_freq_sqd_smth=brunt_vaisala_freq_sqd_smth,
-            ri_zm=Ri_zm,
-            err_info=err_info,
-        )
-        (err_info,
-         invrs_tau_zt, invrs_tau_zm,
-         invrs_tau_sfc, invrs_tau_no_N2_zm, invrs_tau_bkgnd,
-         invrs_tau_shear, invrs_tau_N2_iso,
-         invrs_tau_wp2_zm, invrs_tau_xp2_zm,
-         invrs_tau_wp3_zm, invrs_tau_wp3_zt, invrs_tau_wpxp_zm,
-         tau_max_zm, tau_max_zt, tau_zm, tau_zt,
-         Lscale, Lscale_up, Lscale_down) = lscale_result
-        err_code = err_info.err_code
-        if err_code is not None and np.any(np.asarray(err_code) == CLUBB_FATAL_ERROR):
-            return
-
-    if l_sample:
-        clubb_api.stats_update("tau_zt", tau_zt)
+        stability_correction = np.zeros((ngrdcol, nzm))
 
     # ================================================================== #
     # Block M: Eddy diffusivity
@@ -710,104 +652,6 @@ def advance_clubb_core(
     # Update local aliases after sfc_varnce modified them
     wp2 = wp2
 
-    # ================================================================== #
-    # Block O: Stats — pre-advance outputs (rvm, rel_humidity)
-    # ================================================================== #
-    if l_sample:
-        clubb_api.stats_update("rvm", rtm - rcm)
-        if clubb_api.var_on_stats_list("rel_humidity") or clubb_api.var_on_stats_list("rsat"):
-            T_in_K = np.empty((ngrdcol, nzt))
-            for i in range(ngrdcol):
-                T_in_K[i, :] = clubb_api.thlm2t_in_k(
-                    nzt, thlm[i, :], exner[i, :], rcm[i, :]
-                )
-            rsat = clubb_api.sat_mixrat_liq(
-                gr=gr,
-                nz=nzt,
-                ngrdcol=ngrdcol,
-                p_in_Pa=p_in_Pa,
-                T_in_K=T_in_K,
-                saturation_formula=flags.saturation_formula,
-            )
-            rel_humidity = (rtm - rcm) / rsat
-            clubb_api.stats_update("rel_humidity", rel_humidity)
-
-    # ================================================================== #
-    # Block P: Extract PDF params for zm grid
-    # ================================================================== #
-    pdf_params = pdf_params
-
-    if flags.l_call_pdf_closure_twice:
-        pdf_params_zm = pdf_params_zm
-        w_1_zm = pdf_params_zm.w_1.copy()
-        w_2_zm = pdf_params_zm.w_2.copy()
-        varnce_w_1_zm = pdf_params_zm.varnce_w_1.copy()
-        varnce_w_2_zm = pdf_params_zm.varnce_w_2.copy()
-        mixt_frac_zm = pdf_params_zm.mixt_frac.copy()
-    else:
-        w_1_zm = clubb_api.zt2zm(gr=gr, nzm=nzm, nzt=nzt, ngrdcol=ngrdcol, azt=pdf_params.w_1)
-        w_2_zm = clubb_api.zt2zm(gr=gr, nzm=nzm, nzt=nzt, ngrdcol=ngrdcol, azt=pdf_params.w_2)
-        varnce_w_1_zm = clubb_api.zt2zm(
-            gr=gr, nzm=nzm, nzt=nzt, ngrdcol=ngrdcol, azt=pdf_params.varnce_w_1
-        )
-        varnce_w_2_zm = clubb_api.zt2zm(
-            gr=gr, nzm=nzm, nzt=nzt, ngrdcol=ngrdcol, azt=pdf_params.varnce_w_2
-        )
-        mixt_frac_zm = clubb_api.zt2zm(
-            gr=gr, nzm=nzm, nzt=nzt, ngrdcol=ngrdcol, azt=pdf_params.mixt_frac
-        )
-
-    # ================================================================== #
-    # Block Q: Stability correction, invrs_tau
-    # ================================================================== #
-    if flags.l_stability_correct_tau_zm:
-        stability_correction = clubb_api.calc_stability_correction(
-            nzm=nzm, ngrdcol=ngrdcol,
-            brunt_vaisala_freq_sqd=brunt_vaisala_freq_sqd,
-            lscale_zm=Lscale_zm, em=em,
-            lambda0_stability_coef=clubb_params[:, ilambda0_stability_coef - 1],
-        )
-        if l_sample:
-            clubb_api.stats_update("stability_correction", stability_correction)
-
-        invrs_tau_N2_zm = invrs_tau_zm * stability_correction
-        invrs_tau_C6_zm = invrs_tau_N2_zm.copy()
-        invrs_tau_C1_zm = invrs_tau_N2_zm.copy()
-    else:
-        stability_correction = np.zeros((ngrdcol, nzm))
-        invrs_tau_N2_zm = np.full((ngrdcol, nzm), unused_var)
-        invrs_tau_C6_zm = invrs_tau_wpxp_zm.copy()
-        invrs_tau_C1_zm = invrs_tau_wp2_zm.copy()
-
-    # C14 always uses wp2 tau
-    invrs_tau_C14_zm = invrs_tau_wp2_zm.copy()
-
-    # C4 tau
-    if (not flags.l_diag_Lscale_from_tau) and l_use_invrs_tau_n2_iso:
-        raise RuntimeError(
-            "Error! l_use_invrs_tau_N2_iso is not used when "
-            "l_diag_Lscale_from_tau=false."
-            "If you want to use Lscale code, go to file "
-            "src/CLUBB_core/advance_clubb_core_module.F90 and "
-            "change l_use_invrs_tau_N2_iso to false"
-        )
-    if not l_use_invrs_tau_n2_iso:
-        invrs_tau_C4_zm = invrs_tau_wp2_zm.copy()
-    else:
-        invrs_tau_C4_zm = invrs_tau_N2_iso.copy()
-
-    if l_sample:
-        clubb_api.stats_update("invrs_tau_zm", invrs_tau_zm)
-        clubb_api.stats_update("invrs_tau_xp2_zm", invrs_tau_xp2_zm)
-        clubb_api.stats_update("invrs_tau_wp2_zm", invrs_tau_wp2_zm)
-        clubb_api.stats_update("invrs_tau_wpxp_zm", invrs_tau_wpxp_zm)
-        clubb_api.stats_update("Ri_zm", Ri_zm)
-        clubb_api.stats_update("invrs_tau_wp3_zm", invrs_tau_wp3_zm)
-        if flags.l_diag_Lscale_from_tau:
-            clubb_api.stats_update("invrs_tau_no_N2_zm", invrs_tau_no_N2_zm)
-            clubb_api.stats_update("invrs_tau_bkgnd", invrs_tau_bkgnd)
-            clubb_api.stats_update("invrs_tau_sfc", invrs_tau_sfc)
-            clubb_api.stats_update("invrs_tau_shear", invrs_tau_shear)
     # ================================================================== #
     # Block R: Cx_fnc_Richardson
     # ================================================================== #
@@ -923,7 +767,7 @@ def advance_clubb_core(
                 invrs_tau_xp2_zm=invrs_tau_xp2_zm, invrs_tau_c4_zm=invrs_tau_C4_zm,
                 invrs_tau_c14_zm=invrs_tau_C14_zm, wm_zm=wm_zm, rtm=rtm, wprtp=wprtp,
                 thlm=thlm, wpthlp=wpthlp, wpthvp=wpthvp, um=um, vm=vm,
-                wp2=wp2, wp2_zt=wp2_zt, wp3=wp3, upwp=upwp, vpwp=vpwp,
+                wp2=wp2, wp3=wp3, upwp=upwp, vpwp=vpwp,
                 sigma_sqd_w=sigma_sqd_w, wprtp2=wprtp2, wpthlp2=wpthlp2,
                 wprtpthlp=wprtpthlp, kh_zt=Kh_zt, rtp2_forcing=rtp2_forcing,
                 thlp2_forcing=thlp2_forcing, rtpthlp_forcing=rtpthlp_forcing,
@@ -997,7 +841,7 @@ def advance_clubb_core(
                 l_use_wp3_lim_with_smth_heaviside=flags.l_use_wp3_lim_with_smth_Heaviside,
                 l_wp2_fill_holes_tke=flags.l_wp2_fill_holes_tke,
                 l_ho_nontrad_coriolis=flags.l_ho_nontrad_coriolis,
-                up2=up2, vp2=vp2, wp2=wp2, wp3=wp3, wp2_zt=wp2_zt,
+                up2=up2, vp2=vp2, wp2=wp2, wp3=wp3,
                 nu_vert_res_dep=nu_vert_res_dep,
                 pdf_implicit_coefs_terms=pdf_implicit_coefs_terms, err_info=err_info,
             )
@@ -1097,6 +941,17 @@ def advance_clubb_core(
         else:
             l_samp_stats = False  # already sampled in pre-advance call
 
+        sigma_sqd_w = clubb_api.compute_sigma_sqd_w(
+            gr=gr, nzm=nzm, nzt=nzt, ngrdcol=ngrdcol,
+            wp3=wp3,
+            wp2=wp2, thlp2=thlp2, rtp2=rtp2,
+            up2=up2, vp2=vp2,
+            wpthlp=wpthlp, wprtp=wprtp,
+            upwp=upwp, vpwp=vpwp,
+            clubb_params=clubb_params,
+            l_predict_upwp_vpwp=flags.l_predict_upwp_vpwp,
+        )
+
         pdf_result = clubb_api.pdf_closure_driver(
             gr=gr, nzm=nzm, nzt=nzt, ngrdcol=ngrdcol,
             dt=dt, hydromet_dim=hydromet_dim, sclr_dim=sclr_dim,
@@ -1139,9 +994,10 @@ def advance_clubb_core(
             pdf_implicit_coefs_terms=pdf_implicit_coefs_terms,
             err_info=err_info,
             rtm=rtm,
+            sigma_sqd_w=sigma_sqd_w,
         )
         (rtm, pdf_implicit_coefs_terms, pdf_params, pdf_params_zm, err_info,
-         rcm, cloud_frac, ice_supersat_frac, wprcp_out, _sigma_sqd_w, wpthvp, wp2thvp,
+         rcm, cloud_frac, ice_supersat_frac, wprcp_out, sigma_sqd_w, wpthvp, wp2thvp,
          wp2up, rtpthvp, thlpthvp, _rc_coef, rcm_in_layer, cloud_cover,
          _rcp2_zt, thlprcp, rc_coef_zm, sclrpthvp, wpup2, wpvp2, wp2up2,
          wp2vp2, wp4, wp2rtp, _wprtp2, wp2thlp, _wpthlp2, _wprtpthlp, _wp2rcp,
@@ -1155,9 +1011,7 @@ def advance_clubb_core(
         if err_code is not None and np.any(np.asarray(err_code) == CLUBB_FATAL_ERROR):
             return
 
-        # The post-advance PDF closure recomputes sigma_sqd_w and related
-        # moments. Stats and later diagnostics should use the updated value.
-        sigma_sqd_w = _sigma_sqd_w
+        _sigma_sqd_w = sigma_sqd_w
         wprtp2 = _wprtp2
         wpthlp2 = _wpthlp2
         wprtpthlp = _wprtpthlp
@@ -1274,6 +1128,8 @@ def advance_clubb_core(
         err_code = err_info.err_code
         if err_code is not None and np.any(np.asarray(err_code) == CLUBB_FATAL_ERROR):
             return
+
+    _sigma_sqd_w = sigma_sqd_w
 
     # ================================================================== #
     return (

@@ -128,11 +128,8 @@ def test_calculate_coef_wp4_implicit_matches_formula():
     f_w = np.array([[0.4, 0.3, 0.5]], dtype=np.float64)
     coef_sigma_w_1_sqd = np.array([[0.7, 0.4, 0.9]], dtype=np.float64)
     coef_sigma_w_2_sqd = np.array([[0.6, 0.8, 0.5]], dtype=np.float64)
-    nz = mixt_frac.shape[1]
-    ngrdcol = mixt_frac.shape[0]
-
     got = clubb_api.calculate_coef_wp4_implicit(
-        nz=nz, ngrdcol=ngrdcol, mixt_frac=mixt_frac, f_w=f_w,
+        mixt_frac=mixt_frac, f_w=f_w,
         coef_sigma_w_1_sqd=coef_sigma_w_1_sqd, coef_sigma_w_2_sqd=coef_sigma_w_2_sqd,
     )
 
@@ -155,11 +152,8 @@ def test_calc_coef_wp2xp_implicit_matches_formula_branches():
     f_w = np.array([[0.4, 0.3, 0.0, 0.0]], dtype=np.float64)
     coef_sigma_w_1_sqd = np.array([[0.6, 0.4, 0.0, 0.0]], dtype=np.float64)
     coef_sigma_w_2_sqd = np.array([[0.5, 0.3, 0.0, 0.0]], dtype=np.float64)
-    nz = wp2.shape[1]
-    ngrdcol = wp2.shape[0]
-
     got = clubb_api.calc_coef_wp2xp_implicit(
-        nz=nz, ngrdcol=ngrdcol, wp2=wp2, mixt_frac=mixt_frac, f_w=f_w,
+        wp2=wp2, mixt_frac=mixt_frac, f_w=f_w,
         coef_sigma_w_1_sqd=coef_sigma_w_1_sqd, coef_sigma_w_2_sqd=coef_sigma_w_2_sqd,
     )
 

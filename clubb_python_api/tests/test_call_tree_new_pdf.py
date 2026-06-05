@@ -88,13 +88,11 @@ def test_calc_setter_var_params_matches_formula():
     f_x = np.array([[0.4, 0.55, 0.3]], dtype=np.float64)
     zeta_x = np.array([[0.2, 0.5, 0.1]], dtype=np.float64)
     nz = xm.shape[1]
-    ngrdcol = xm.shape[0]
-
     (
         mu_x_1, mu_x_2, sigma_x_1, sigma_x_2, mixt_frac,
         coef_sigma_x_1_sqd, coef_sigma_x_2_sqd,
     ) = clubb_api.calc_setter_var_params(
-        nz=nz, ngrdcol=ngrdcol, xm=xm, xp2=xp2, skx=skx, sgn_wpxp=sgn_wpxp, f_x=f_x, zeta_x=zeta_x)
+        nz=nz, xm=xm, xp2=xp2, skx=skx, sgn_wpxp=sgn_wpxp, f_x=f_x, zeta_x=zeta_x)
 
     term_under_sqrt = (
         4.0 * f_x**3
@@ -137,13 +135,11 @@ def test_calc_responder_params_matches_formula_branches():
     f_x = np.array([[0.4, 0.55, 0.3, 0.0]], dtype=np.float64)
     mixt_frac = np.array([[0.3, 0.6, 0.45, 0.5]], dtype=np.float64)
     nz = xm.shape[1]
-    ngrdcol = xm.shape[0]
-
     (
         mu_x_1, mu_x_2, sigma_x_1_sqd, sigma_x_2_sqd,
         coef_sigma_x_1_sqd, coef_sigma_x_2_sqd,
     ) = clubb_api.calc_responder_params(
-        nz=nz, ngrdcol=ngrdcol, xm=xm, xp2=xp2, skx=skx, sgn_wpxp=sgn_wpxp, f_x=f_x, mixt_frac=mixt_frac)
+        nz=nz, xm=xm, xp2=xp2, skx=skx, sgn_wpxp=sgn_wpxp, f_x=f_x, mixt_frac=mixt_frac)
 
     expected_mu_x_1 = np.array(mu_x_1, copy=True)
     expected_mu_x_2 = np.array(mu_x_2, copy=True)
@@ -200,10 +196,8 @@ def test_calc_limits_f_x_responder_matches_root_selection_logic():
     max_skx2_pos_skx_sgn_wpxp = np.array([[0.20, 0.18, 0.16, 0.12]], dtype=np.float64)
     max_skx2_neg_skx_sgn_wpxp = np.array([[0.10, 0.08, 0.30, 0.25]], dtype=np.float64)
     nz = mixt_frac.shape[1]
-    ngrdcol = mixt_frac.shape[0]
-
     got_min_f_x, got_max_f_x = clubb_api.calc_limits_f_x_responder(
-        nz=nz, ngrdcol=ngrdcol, mixt_frac=mixt_frac, skx=skx, sgn_wpxp=sgn_wpxp,
+        nz=nz, mixt_frac=mixt_frac, skx=skx, sgn_wpxp=sgn_wpxp,
         max_skx2_pos_skx_sgn_wpxp=max_skx2_pos_skx_sgn_wpxp,
         max_skx2_neg_skx_sgn_wpxp=max_skx2_neg_skx_sgn_wpxp,
     )
@@ -222,10 +216,8 @@ def test_calc_coef_wp4_implicit_matches_formula():
     coef_sigma_w_1_sqd = np.array([[0.7, 0.4, 0.9]], dtype=np.float64)
     coef_sigma_w_2_sqd = np.array([[0.6, 0.8, 0.5]], dtype=np.float64)
     nz = mixt_frac.shape[1]
-    ngrdcol = mixt_frac.shape[0]
-
     got = clubb_api.calc_coef_wp4_implicit(
-        nz=nz, ngrdcol=ngrdcol, mixt_frac=mixt_frac, f_w=f_w,
+        nz=nz, mixt_frac=mixt_frac, f_w=f_w,
         coef_sigma_w_1_sqd=coef_sigma_w_1_sqd, coef_sigma_w_2_sqd=coef_sigma_w_2_sqd,
     )
 
@@ -255,10 +247,8 @@ def test_calc_coef_wpxp2_implicit_matches_formula_branches():
     coef_sigma_x_1_sqd = np.array([[0.7, 0.0, 0.5, 0.8]], dtype=np.float64)
     coef_sigma_x_2_sqd = np.array([[0.4, 0.0, 0.3, 0.6]], dtype=np.float64)
     nz = wp2.shape[1]
-    ngrdcol = wp2.shape[0]
-
     got = clubb_api.calc_coef_wpxp2_implicit(
-        nz=nz, ngrdcol=ngrdcol, wp2=wp2, xp2=xp2, wpxp=wpxp, sgn_wpxp=sgn_wpxp, mixt_frac=mixt_frac,
+        nz=nz, wp2=wp2, xp2=xp2, wpxp=wpxp, sgn_wpxp=sgn_wpxp, mixt_frac=mixt_frac,
         f_w=f_w, f_x=f_x, coef_sigma_w_1_sqd=coef_sigma_w_1_sqd, coef_sigma_w_2_sqd=coef_sigma_w_2_sqd,
         coef_sigma_x_1_sqd=coef_sigma_x_1_sqd, coef_sigma_x_2_sqd=coef_sigma_x_2_sqd,
     )
@@ -317,10 +307,8 @@ def test_calc_coefs_wp2xp_semiimpl_matches_formula_branches():
     coef_sigma_x_1_sqd = np.array([[0.7, 0.0, 0.5, 0.8]], dtype=np.float64)
     coef_sigma_x_2_sqd = np.array([[0.4, 0.0, 0.3, 0.6]], dtype=np.float64)
     nz = wp2.shape[1]
-    ngrdcol = wp2.shape[0]
-
     got_coef, got_term = clubb_api.calc_coefs_wp2xp_semiimpl(
-        nz=nz, ngrdcol=ngrdcol, wp2=wp2, xp2=xp2, sgn_wpxp=sgn_wpxp, mixt_frac=mixt_frac, f_w=f_w, f_x=f_x,
+        nz=nz, wp2=wp2, xp2=xp2, sgn_wpxp=sgn_wpxp, mixt_frac=mixt_frac, f_w=f_w, f_x=f_x,
         coef_sigma_w_1_sqd=coef_sigma_w_1_sqd, coef_sigma_w_2_sqd=coef_sigma_w_2_sqd,
         coef_sigma_x_1_sqd=coef_sigma_x_1_sqd, coef_sigma_x_2_sqd=coef_sigma_x_2_sqd,
     )
@@ -390,10 +378,8 @@ def test_calc_coefs_wpxpyp_semiimpl_matches_formula_branches():
     coef_sigma_y_1_sqd = np.array([[0.6, 0.0, 0.4, 0.7]], dtype=np.float64)
     coef_sigma_y_2_sqd = np.array([[0.3, 0.0, 0.2, 0.5]], dtype=np.float64)
     nz = wp2.shape[1]
-    ngrdcol = wp2.shape[0]
-
     got_coef, got_term = clubb_api.calc_coefs_wpxpyp_semiimpl(
-        nz=nz, ngrdcol=ngrdcol, wp2=wp2, xp2=xp2, yp2=yp2, wpxp=wpxp, wpyp=wpyp, sgn_wpxp=sgn_wpxp,
+        nz=nz, wp2=wp2, xp2=xp2, yp2=yp2, wpxp=wpxp, wpyp=wpyp, sgn_wpxp=sgn_wpxp,
         sgn_wpyp=sgn_wpyp, mixt_frac=mixt_frac, f_w=f_w, f_x=f_x, f_y=f_y,
         coef_sigma_w_1_sqd=coef_sigma_w_1_sqd, coef_sigma_w_2_sqd=coef_sigma_w_2_sqd,
         coef_sigma_x_1_sqd=coef_sigma_x_1_sqd, coef_sigma_x_2_sqd=coef_sigma_x_2_sqd,
@@ -537,7 +523,7 @@ def test_new_hybrid_pdf_driver_column_consistency():
     sclrm = np.full((ncol, nz, sclr_dim), 0.001, dtype=np.float64)
     sclrp2 = np.full((ncol, nz, sclr_dim), 1.0e-6, dtype=np.float64)
     wpsclrp = np.full((ncol, nz, sclr_dim), 1.0e-4, dtype=np.float64)
-    gamma_skw_fnc = np.array([[0.4, 0.45, 0.5], [0.35, 0.42, 0.47]], dtype=np.float64)
+    clubb_params = clubb_api.init_clubb_params(ncol, iunit=10, filename="")
     slope_coef_spread_dg_means_w = np.array([1.2, 1.1], dtype=np.float64)
     pdf_component_stdev_factor_w = np.array([1.0, 1.0], dtype=np.float64)
     skrt = np.array([[0.1, -0.05, 0.08], [0.02, -0.1, 0.04]], dtype=np.float64)
@@ -547,8 +533,9 @@ def test_new_hybrid_pdf_driver_column_consistency():
     sksclr = np.full((ncol, nz, sclr_dim), 0.02, dtype=np.float64)
 
     got = clubb_api.new_hybrid_pdf_driver(
+        nz, ncol, sclr_dim,
         wm, rtm, thlm, um, vm, wp2, rtp2, thlp2, up2, vp2, skw, wprtp, wpthlp, upwp, vpwp,
-        sclrm, sclrp2, wpsclrp, gamma_skw_fnc, slope_coef_spread_dg_means_w,
+        sclrm, sclrp2, wpsclrp, clubb_params, slope_coef_spread_dg_means_w,
         pdf_component_stdev_factor_w, skrt, skthl, sku, skv, sksclr,
         pdf_implicit_coefs_terms=implicit,
     )
@@ -556,10 +543,11 @@ def test_new_hybrid_pdf_driver_column_consistency():
     for i in range(ncol):
         implicit_i = clubb_api.init_pdf_implicit(nz, 1, sclr_dim)
         got_i = clubb_api.new_hybrid_pdf_driver(
+            nz, 1, sclr_dim,
             wm[i:i+1, :], rtm[i:i+1, :], thlm[i:i+1, :], um[i:i+1, :], vm[i:i+1, :],
             wp2[i:i+1, :], rtp2[i:i+1, :], thlp2[i:i+1, :], up2[i:i+1, :], vp2[i:i+1, :],
             skw[i:i+1, :], wprtp[i:i+1, :], wpthlp[i:i+1, :], upwp[i:i+1, :], vpwp[i:i+1, :],
-            sclrm[i:i+1, :, :], sclrp2[i:i+1, :, :], wpsclrp[i:i+1, :, :], gamma_skw_fnc[i:i+1, :],
+            sclrm[i:i+1, :, :], sclrp2[i:i+1, :, :], wpsclrp[i:i+1, :, :], clubb_params[i:i+1, :],
             slope_coef_spread_dg_means_w[i:i+1], pdf_component_stdev_factor_w[i:i+1],
             skrt[i:i+1, :], skthl[i:i+1, :], sku[i:i+1, :], skv[i:i+1, :], sksclr[i:i+1, :, :],
             pdf_implicit_coefs_terms=implicit_i,

@@ -98,11 +98,14 @@ class PyfRoutine:
     name: str
     args: list[str]
     out_args: set[str]
+    return_args: set[str]
+    intents: dict[str, str]
 
 
 @dataclass
 class FortranRoutine:
     name: str
+    kind: str
     args: list[str]
     intents: dict[str, str]
     optional_args: set[str]
@@ -165,6 +168,29 @@ ARG_DIFF_EXCEPTIONS = {
     "stats",
 }
 
+DERIVED_SOURCE_OUTPUT_EXCEPTIONS = {
+    # f2py_pdf_closure_driver exposes values derived from source outputs after
+    # pdf_closure_driver returns.
+    "f2py_pdf_closure_driver": {
+        "rc_coef",
+        "wp2rcp",
+        "rtprcp",
+        "rcp2",
+        "skw_velocity",
+        "cloud_frac_zm",
+        "ice_supersat_frac_zm",
+        "rtm_zm",
+        "thlm_zm",
+        "rcm_zm",
+        "rcm_supersat_adj",
+        "sclrprcp",
+    },
+    # f2py_compute_gamma_skw calls compute_gamma_skw on both vertical grids.
+    "f2py_compute_gamma_skw": {
+        "gamma_skw_fnc_zt",
+    },
+}
+
 
 def _is_internal_only_arg(arg: str) -> bool:
     return arg in INTERNAL_ONLY_ARGS or arg.endswith("_dim_transport")
@@ -186,6 +212,10 @@ def _should_ignore_missing_source_mapping(pc: PythonCall, pyf_sub: PyfRoutine) -
 
 def _filter_arg_diff_exceptions(args: list[str]) -> list[str]:
     return [arg for arg in args if arg not in ARG_DIFF_EXCEPTIONS]
+
+
+def _is_derived_source_output_exception(symbol: str, arg: str) -> bool:
+    return arg in DERIVED_SOURCE_OUTPUT_EXCEPTIONS.get(symbol, set())
 
 
 def _classify_public_api_signature_issue(actual: list[str], expected: list[str]) -> str | None:
@@ -256,7 +286,7 @@ def parse_fortran_arg_intents(block: str) -> dict[str, str]:
         if intent == "in,out":
             intent = "inout"
         for name in _declared_arg_names(mt.group(2)):
-            intents[name] = intent
+            intents.setdefault(name, intent)
     return intents
 
 
@@ -306,14 +336,20 @@ def parse_pyf_routines(repo_root: Path) -> dict[str, PyfRoutine]:
         if sig_match:
             args = [normalize_name(a) for a in split_args(sig_match.group(1)) if a.strip()]
 
-        out_args: set[str] = set()
-        for mt in re.finditer(r"(?im)^\s*[^\n]*\bintent\s*\(\s*out\s*\)[^\n]*::\s*(.+)$", block):
-            for raw in split_args(mt.group(1)):
-                token = re.sub(r"\([^)]*\)", "", raw.strip()).strip()
-                if re.match(r"^[a-z_][a-z0-9_]*$", token, flags=re.I):
-                    out_args.add(normalize_name(token))
+        intents = parse_fortran_arg_intents(block)
+        out_args = {arg for arg, intent in intents.items() if intent == "out"}
+        return_args = {
+            arg for arg, intent in intents.items()
+            if intent in {"out", "inout"}
+        }
 
-        out[name] = PyfRoutine(name=name, args=args, out_args=out_args)
+        out[name] = PyfRoutine(
+            name=name,
+            args=args,
+            out_args=out_args,
+            return_args=return_args,
+            intents=intents,
+        )
 
     return out
 
@@ -338,6 +374,7 @@ def parse_fortran_routines(repo_root: Path) -> dict[str, FortranRoutine]:
             optional_args = parse_fortran_optional_args(block)
             out[name] = FortranRoutine(
                 name=name,
+                kind=kind,
                 args=args,
                 intents=intents,
                 optional_args=optional_args,
@@ -684,6 +721,13 @@ def _ordered_missing(actual: list[str], expected: list[str]) -> list[str]:
     return [arg for arg in expected if arg not in actual_set]
 
 
+def _source_return_args(source: FortranRoutine) -> list[str]:
+    return [
+        arg for arg in source.args
+        if source.intents.get(arg) in {"out", "inout"}
+    ]
+
+
 def _print_issue_details(issue: OrderIssue) -> None:
     filtered_actual = _filter_arg_diff_exceptions(issue.python_order)
     filtered_expected = _filter_arg_diff_exceptions(issue.pyf_order)
@@ -766,6 +810,32 @@ def find_contract_issues(repo_root: Path) -> list[OrderIssue]:
                 )
             )
             continue
+
+        if source.kind == "subroutine":
+            source_return_args = _source_return_args(source)
+            source_return_arg_set = set(source_return_args)
+            wrapper_call_arg_set = set(wrapper.call_args)
+            extra_return_args = [
+                arg for arg in pyf_sub.args
+                if arg in pyf_sub.return_args
+                and arg not in source_return_arg_set
+                and arg not in wrapper_call_arg_set
+                and not _is_internal_only_arg(arg)
+                and not _is_derived_source_output_exception(pc.symbol, arg)
+            ]
+            if extra_return_args:
+                issues.append(
+                    OrderIssue(
+                        python_api_fn=python_api_fn,
+                        pyf_symbol=pc.symbol,
+                        issue=(
+                            "F2PY_EXTRA_SOURCE_OUTPUT_ARG::"
+                            f"{source.file.relative_to(repo_root)}::{source.name}"
+                        ),
+                        python_order=extra_return_args,
+                        pyf_order=source_return_args,
+                    )
+                )
 
         leaked_internal_args = [arg for arg in pc.signature_args if _is_internal_only_arg(arg)]
         if leaked_internal_args:

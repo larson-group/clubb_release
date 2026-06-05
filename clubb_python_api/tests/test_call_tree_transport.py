@@ -99,7 +99,7 @@ def test_diffusion_zt_lhs_zero_coeffs(gr):
 
     lhs = clubb_api.diffusion_zt_lhs(
         gr=gr, nzm=gr.nzm, nzt=gr.nzt, ngrdcol=gr.ngrdcol,
-        k_zm=k_zm, k_zt=k_zt, nu=nu, invrs_rho_ds_zt=invrs_rho_ds_zt, rho_ds_zm=rho_ds_zm
+        k_zm=k_zm, k_zt=k_zt, nu=nu, invrs_rho_ds_ztzxt=invrs_rho_ds_zt, rho_ds_zm=rho_ds_zm
     )
     assert lhs.shape == (3, gr.ngrdcol, gr.nzt)
     np.testing.assert_allclose(lhs, 0.0)

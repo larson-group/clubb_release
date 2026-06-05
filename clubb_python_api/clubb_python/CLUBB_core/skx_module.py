@@ -31,19 +31,9 @@ def xp3_lg_2005_ansatz(
         nzt=int(nzt), ngrdcol=int(ngrdcol))
 
 
-def compute_gamma_skw(nz: int | None = None, ngrdcol: int | None = None, skw=None, clubb_params=None, **compat_kwargs):
-    """Compute gamma as a function of w skewness on zm and zt grids."""
-    if skw is None:
-        skw = compat_kwargs.pop("skw_zm")
-    if clubb_params is None:
-        clubb_params = compat_kwargs.pop("clubb_params")
-    if nz is None:
-        nz = int(np.asarray(skw).shape[1])
-    if ngrdcol is None:
-        ngrdcol = int(np.asarray(skw).shape[0])
-    l_gamma_skw = compat_kwargs.pop("l_gamma_skw", True)
-    nzt = int(compat_kwargs.pop("nzt", nz))
-    skw_zt = compat_kwargs.pop("skw_zt", skw)
-    return clubb_f2py.f2py_compute_gamma_skw(
-        l_gamma_skw, f_arr(skw), f_arr(clubb_params), f_arr(skw_zt),
-        nzm=int(nz), nzt=int(nzt), ngrdcol=int(ngrdcol))
+def compute_gamma_skw(nz: int, ngrdcol: int, skw, clubb_params):
+    """Compute gamma as a function of skewness on one vertical grid."""
+    gamma_skw, _gamma_skw_zt = clubb_f2py.f2py_compute_gamma_skw(
+        True, f_arr(skw), f_arr(clubb_params), f_arr(skw),
+        nzm=int(nz), nzt=int(nz), ngrdcol=int(ngrdcol))
+    return gamma_skw

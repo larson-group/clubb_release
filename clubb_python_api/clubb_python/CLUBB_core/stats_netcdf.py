@@ -153,19 +153,12 @@ def init_stats(registry_path: str, output_path: str, ncol: int,
                sclr_dim: int = 0, edsclr_dim: int = 0,
                output_zt=None, output_zm=None, grid_remap_method=None,
                stats_tstart: float | None = None,
-               stats_tend: float | None = None,
-               **compat_kwargs):
+               stats_tend: float | None = None):
     """Initialize the stats system with a registry file."""
     if err_info is None or clubb_params is None or param_names is None:
         raise ValueError("init_stats requires err_info, clubb_params, and param_names.")
-    nzt_compat = compat_kwargs.pop("nzt", None)
-    nzm_compat = compat_kwargs.pop("nzm", None)
     zt_levels = _as_level_axis(zt)
     zm_levels = _as_level_axis(zm)
-    if nzt_compat is not None and int(nzt_compat) != zt_levels.shape[0]:
-        raise ValueError("Legacy nzt kwarg must match the vertical zt dimension.")
-    if nzm_compat is not None and int(nzm_compat) != zm_levels.shape[0]:
-        raise ValueError("Legacy nzm kwarg must match the vertical zm dimension.")
     set_fortran_err_info(err_info)
 
     missing_time = -1.0e30

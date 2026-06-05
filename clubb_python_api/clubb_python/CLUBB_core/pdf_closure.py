@@ -56,7 +56,6 @@ def pdf_closure_driver(
     pdf_params: pdf_parameter,
     pdf_params_zm: pdf_parameter,
     err_info: ErrInfo,
-    **compat_kwargs,
 ):
     """Run pdf_closure_driver with strict direct argument mapping to Fortran."""
     if rtm is None:
@@ -94,7 +93,7 @@ def pdf_closure_driver(
         int(saturation_formula), bool(l_rtm_nudge),
         bool(l_trapezoidal_rule_zt), bool(l_trapezoidal_rule_zm), bool(l_call_pdf_closure_twice),
         bool(l_use_cloud_cover), bool(l_rcm_supersat_adj),
-        _transport_1d(l_mix_rat_hm, hydromet_dim, dtype=np.int32), f_arr(rtm),
+        _transport_1d(l_mix_rat_hm, hydromet_dim, dtype=np.int32), f_arr(rtm), f_arr(sigma_sqd_w),
         nzm=int(nzm), nzt=int(nzt), ngrdcol=int(ngrdcol),
     )
     return (

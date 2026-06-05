@@ -65,8 +65,7 @@ def cos_solar_zen(day: int, month: int, year: int, current_time: float,
 
 
 def sunray_sw(ngrdcol: int, nzt: int, rcm, rho, xi_abs: float, dzt, zm, zt,
-              radius: float, a: float, gc: float, fs0: float, omega: float, l_center: bool,
-              **compat_kwargs):
+              radius: float, a: float, gc: float, fs0: float, omega: float, l_center: bool):
     """Compute shortwave radiative flux Frad_SW on momentum levels.
 
     Returns Frad_SW with shape (ngrdcol, nzt+1). The caller is responsible
@@ -78,7 +77,6 @@ def sunray_sw(ngrdcol: int, nzt: int, rcm, rho, xi_abs: float, dzt, zm, zt,
     dzt_use = _fa_2d(dzt)
     zt_use = _fa_2d(zt)
     zm_use = f_arr(zm, dtype=np.float64)
-    xi_abs = float(compat_kwargs.pop("amu0", xi_abs))
     if rho_use.shape != rcm_use.shape:
         raise ValueError(f"rho/rcm shape mismatch: {rho_use.shape} vs {rcm_use.shape}")
     if dzt_use.shape != rho_use.shape or zt_use.shape != rho_use.shape:

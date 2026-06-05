@@ -75,10 +75,10 @@ def test_compute_gamma_skw_returns_finite_arrays():
     skw_zt = np.zeros((ngrdcol, nzt), dtype=np.float64)
     clubb_params = np.ones_like(clubb_api.init_clubb_params(ngrdcol, iunit=10, filename=""))
 
-    gamma_zm, gamma_zt = clubb_api.compute_gamma_skw(
-        nzm=nzm, nzt=nzt, ngrdcol=ngrdcol, l_gamma_skw=True,
-        skw_zm=skw_zm, clubb_params=clubb_params, skw_zt=skw_zt,
-    )
+    gamma_zm = clubb_api.compute_gamma_skw(
+        nz=nzm, ngrdcol=ngrdcol, skw=skw_zm, clubb_params=clubb_params)
+    gamma_zt = clubb_api.compute_gamma_skw(
+        nz=nzt, ngrdcol=ngrdcol, skw=skw_zt, clubb_params=clubb_params)
 
     assert gamma_zm.shape == (ngrdcol, nzm)
     assert gamma_zt.shape == (ngrdcol, nzt)

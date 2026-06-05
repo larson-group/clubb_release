@@ -28,16 +28,16 @@ def prescribe_forcings(
     wpthlp_sfc=None, wprtp_sfc=None, upwp_sfc=None, vpwp_sfc=None,
     T_sfc=None, p_sfc=None, sens_ht: float = 0.0, latent_ht: float = 0.0,
     wpsclrp_sfc=None, wpedsclrp_sfc=None,
-    err_info: ErrInfo | None = None, **compat_kwargs,
+    err_info: ErrInfo | None = None,
 ):
     """Call Fortran prescribe_forcings through the F2PY wrapper."""
     if err_info is None:
         raise ValueError("prescribe_forcings requires err_info.")
-    zt_in = compat_kwargs.pop("zt_in", gr.zt)
-    l_t_dependent = compat_kwargs.pop("l_t_dependent", False)
-    l_ignore_forcings = compat_kwargs.pop("l_ignore_forcings", False)
-    l_input_xpwp_sfc = compat_kwargs.pop("l_input_xpwp_sfc", False)
-    grid_adapt_in_time_method = compat_kwargs.pop("grid_adapt_in_time_method", 0)
+    zt_in = gr.zt
+    l_t_dependent = False
+    l_ignore_forcings = False
+    l_input_xpwp_sfc = False
+    grid_adapt_in_time_method = 0
     set_fortran_grid(gr)
     set_fortran_sclr_idx(sclr_idx)
     set_fortran_err_info(err_info)

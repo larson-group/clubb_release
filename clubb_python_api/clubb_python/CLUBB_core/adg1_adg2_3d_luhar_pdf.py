@@ -28,7 +28,7 @@ def _ensure_err_info(ngrdcol: int, err_info):
     return err_info
 
 
-def calc_luhar_params(nz: int, skx, wpxp, xp2, x_tol_sqd: float, **compat_kwargs):
+def calc_luhar_params(nz: int, skx, wpxp, xp2, x_tol_sqd: float):
     """Compute Luhar closure mixture fraction and shape parameters (M, m)."""
     arrays = [_fa_2d(arg) for arg in (skx, wpxp, xp2)]
     ngrdcol = arrays[0].shape[0]
@@ -39,7 +39,7 @@ def calc_luhar_params(nz: int, skx, wpxp, xp2, x_tol_sqd: float, **compat_kwargs
     return _stack_tuple_outputs(column_outputs)
 
 
-def close_luhar_pdf(nz: int, xm, xp2, mixt_frac, small_m, wpxp, x_tol_sqd: float, **compat_kwargs):
+def close_luhar_pdf(nz: int, xm, xp2, mixt_frac, small_m, wpxp, x_tol_sqd: float):
     """Compute closed Luhar component moments and variances from (a, m)."""
     arrays = [_fa_2d(arg) for arg in (xm, xp2, mixt_frac, small_m, wpxp)]
     ngrdcol = arrays[0].shape[0]
@@ -91,9 +91,7 @@ def adg1_pdf_driver(
     )
 
 
-def luhar_3d_pdf_driver(
-    nz: int, wm, rtm, thlm, wp2, rtp2, thlp2, skw, skrt, skthl, wprtp, wpthlp, **compat_kwargs
-):
+def luhar_3d_pdf_driver(nz: int, wm, rtm, thlm, wp2, rtp2, thlp2, skw, skrt, skthl, wprtp, wpthlp):
     """Compute 3D Luhar PDF component means/variances for w/rt/thl."""
     arrays = [_fa_2d(arg) for arg in (wm, rtm, thlm, wp2, rtp2, thlp2, skw, skrt, skthl, wprtp, wpthlp)]
     ngrdcol = arrays[0].shape[0]

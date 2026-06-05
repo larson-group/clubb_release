@@ -15,14 +15,12 @@ subroutine f2py_advance_wp2_wp3(nzm, nzt, ngrdcol, dt, &
     l_damp_wp3_skw_squared, l_lmm_stepping, &
     l_use_tke_in_wp3_pr_turb_term, l_use_tke_in_wp2_wp3_k_dfsn, &
     l_use_wp3_lim_with_smth_heaviside, l_wp2_fill_holes_tke, l_ho_nontrad_coriolis, &
-    up2, vp2, wp2, wp3, wp2_zt)
+    up2, vp2, wp2, wp3)
 
   use clubb_precision, only: core_rknd
-  use constants_clubb, only: w_tol_sqd
   use derived_type_storage, only: &
     stored_grid, stored_stats, stored_pdf_implicit_coefs_terms, &
     stored_nu_vert_res_dep, stored_err_info
-  use grid_class, only: zm2zt_api
   use parameter_indices, only: nparams
   use advance_wp2_wp3_module, only: advance_wp2_wp3
 
@@ -50,7 +48,7 @@ subroutine f2py_advance_wp2_wp3(nzm, nzt, ngrdcol, dt, &
   logical, parameter :: l_implemented = .false.
 
   real(core_rknd), dimension(ngrdcol, nzm), intent(inout) :: up2, vp2, wp2
-  real(core_rknd), dimension(ngrdcol, nzt), intent(inout) :: wp3, wp2_zt
+  real(core_rknd), dimension(ngrdcol, nzt), intent(inout) :: wp3
 
   call advance_wp2_wp3(nzm, nzt, ngrdcol, stored_grid, dt, &
     sfc_elevation, fcor_y, sigma_sqd_w, wm_zm, wm_zt, &
@@ -67,7 +65,5 @@ subroutine f2py_advance_wp2_wp3(nzm, nzt, ngrdcol, dt, &
     l_lmm_stepping, l_use_tke_in_wp3_pr_turb_term, l_use_tke_in_wp2_wp3_k_dfsn, &
     l_use_wp3_lim_with_smth_heaviside, l_wp2_fill_holes_tke, l_ho_nontrad_coriolis, &
     l_implemented, stored_stats, up2, vp2, wp2, wp3, stored_err_info)
-
-  wp2_zt(:,:) = zm2zt_api(nzm, nzt, ngrdcol, stored_grid, wp2(:,:), w_tol_sqd)
 
 end subroutine f2py_advance_wp2_wp3

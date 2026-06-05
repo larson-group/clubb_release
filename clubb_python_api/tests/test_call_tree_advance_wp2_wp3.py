@@ -61,9 +61,7 @@ def _setup_env(tmp_path: Path, ngrdcol: int = 1):
         month_in=1,
         year_in=2000,
         time_initial=0.0,
-        nzt=gr.nzt,
         zt=np.asfortranarray(gr.zt),
-        nzm=gr.nzm,
         zm=np.asfortranarray(gr.zm),
         err_info=err_info,
         sclr_dim=0,
@@ -147,7 +145,6 @@ def _make_args(gr, flags, clubb_params, nu_vert_res_dep, pdf_implicit_coefs_term
         "vp2": full((ngrdcol, nzm), 0.01),
         "wp2": full((ngrdcol, nzm), 0.01),
         "wp3": full((ngrdcol, nzt), 0.0),
-        "wp2_zt": full((ngrdcol, nzt), 0.01),
         "nu_vert_res_dep": nu_vert_res_dep,
         "pdf_implicit_coefs_terms": pdf_implicit_coefs_terms,
         "err_info": err_info,
@@ -166,7 +163,7 @@ def test_advance_wp2_wp3_returns_finite_arrays(tmp_path):
         err_info = clubb_api.finalize_stats(err_info=err_info)
 
     assert isinstance(out, tuple)
-    assert len(out) == 6
+    assert len(out) == 5
     for arr in out[:-1]:
         assert np.all(np.isfinite(arr))
     assert isinstance(out[-1], ErrInfo)
@@ -181,9 +178,8 @@ def test_advance_wp2_wp3_updates_match_return_values(tmp_path):
     vp2_in = args["vp2"]
     wp2_in = args["wp2"]
     wp3_in = args["wp3"]
-    wp2_zt_in = args["wp2_zt"]
     try:
-        up2_out, vp2_out, wp2_out, wp3_out, wp2_zt_out, err_info_out = clubb_api.advance_wp2_wp3(**args)
+        up2_out, vp2_out, wp2_out, wp3_out, err_info_out = clubb_api.advance_wp2_wp3(**args)
     finally:
         err_info = clubb_api.finalize_stats(err_info=err_info)
 
@@ -191,5 +187,4 @@ def test_advance_wp2_wp3_updates_match_return_values(tmp_path):
     np.testing.assert_allclose(vp2_out, vp2_in)
     np.testing.assert_allclose(wp2_out, wp2_in)
     np.testing.assert_allclose(wp3_out, wp3_in)
-    np.testing.assert_allclose(wp2_zt_out, wp2_zt_in)
     assert isinstance(err_info_out, ErrInfo)

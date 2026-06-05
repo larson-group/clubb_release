@@ -129,7 +129,12 @@ from clubb_python.CLUBB_core.lapack_wrap import (
 from clubb_python.CLUBB_core.mean_adv import term_ma_zt_lhs, term_ma_zm_lhs
 from clubb_python.CLUBB_core.matrix_operations import cholesky_factor, mirror_lower_triangular_matrix
 from clubb_python.CLUBB_core.matrix_solver_wrapper import band_solve, tridiag_solve
-from clubb_python.CLUBB_core.mixing_length import set_lscale_max, diagnose_lscale_from_tau, calc_lscale_directly
+from clubb_python.CLUBB_core.mixing_length import (
+    set_lscale_max,
+    calc_lscale,
+    diagnose_lscale_from_tau,
+    calc_lscale_directly,
+)
 from clubb_python.CLUBB_core.adg1_adg2_3d_luhar_pdf import (
     calc_luhar_params,
     close_luhar_pdf,

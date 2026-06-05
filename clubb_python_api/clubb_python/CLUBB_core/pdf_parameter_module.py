@@ -45,20 +45,11 @@ def init_pdf_implicit_coefs_terms(
     return init_pdf_implicit(nz=nz, ngrdcol=ngrdcol, sclr_dim=sclr_dim)
 
 
-def zero_pdf_params(pdf_params: pdf_parameter, **compat_kwargs):
+def zero_pdf_params(pdf_params: pdf_parameter):
     """Zero out stored PDF params."""
-    which = int(compat_kwargs.pop("which", 1))
-    pdf_params_zm = compat_kwargs.pop("pdf_params_zm", None)
-    if which == 1:
-        set_fortran_pdf_params(pdf_params)
-    if which == 2 and pdf_params_zm is not None:
-        set_fortran_pdf_params_zm(pdf_params_zm)
-    clubb_f2py.f2py_zero_pdf_params(which)
-    if which == 1:
-        return get_fortran_pdf_params()
-    if which == 2:
-        return get_fortran_pdf_params_zm()
-    return get_fortran_pdf_params(), get_fortran_pdf_params_zm()
+    set_fortran_pdf_params(pdf_params)
+    clubb_f2py.f2py_zero_pdf_params(1)
+    return get_fortran_pdf_params()
 
 def zero_pdf_implicit_coefs_terms(pdf_implicit_coefs_terms: implicit_coefs_terms | None = None):
     """Zero out stored implicit coefficient/term arrays."""

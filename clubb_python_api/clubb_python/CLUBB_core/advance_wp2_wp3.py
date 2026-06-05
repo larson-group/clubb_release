@@ -1,6 +1,5 @@
 """User-facing wrappers for routines from CLUBB_core/advance_wp2_wp3_module.F90."""
 
-import numpy as np
 from numpy import asfortranarray as f_arr
 
 import clubb_f2py
@@ -35,9 +34,9 @@ def advance_wp2_wp3(
     l_use_wp3_lim_with_smth_heaviside: bool, l_wp2_fill_holes_tke: bool,
     l_ho_nontrad_coriolis: bool, *,
     l_implemented: bool = True,
+    stats=None,
     up2, vp2, wp2, wp3,
     err_info: ErrInfo,
-    **compat_kwargs,
 ):
     """Advance w'^2 and w'^3 one model timestep.
 
@@ -48,7 +47,6 @@ def advance_wp2_wp3(
     set_fortran_nu_vert_res_dep(nu_vert_res_dep)
     set_fortran_implicit_coefs(pdf_implicit_coefs_terms)
     set_fortran_err_info(err_info)
-    wp2_zt = compat_kwargs.pop("wp2_zt", np.zeros((ngrdcol, nzt), dtype=np.float64, order="F"))
 
     result = clubb_f2py.f2py_advance_wp2_wp3(
         float(dt),
@@ -68,7 +66,7 @@ def advance_wp2_wp3(
         l_use_tke_in_wp3_pr_turb_term, l_use_tke_in_wp2_wp3_k_dfsn,
         l_use_wp3_lim_with_smth_heaviside, l_wp2_fill_holes_tke,
         l_ho_nontrad_coriolis,
-        f_arr(up2), f_arr(vp2), f_arr(wp2), f_arr(wp3), f_arr(wp2_zt),
+        f_arr(up2), f_arr(vp2), f_arr(wp2), f_arr(wp3),
         nzm=int(nzm), nzt=int(nzt), ngrdcol=int(ngrdcol),
     )
     return *result, get_fortran_err_info()

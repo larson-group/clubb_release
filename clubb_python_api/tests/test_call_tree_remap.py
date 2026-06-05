@@ -55,7 +55,7 @@ def test_remap_vals_to_target_identity_zt(gr):
     p_sfc = np.array([100000.0], dtype=np.float64)
 
     target = clubb_api.remap_vals_to_target(
-        gr=gr, nzm=gr.nzm, nzt=gr.nzt, ngrdcol=gr.ngrdcol,
+        gr_source=gr, gr_target=gr, ngrdcol=gr.ngrdcol,
         source_values_idx=source.shape[1],
         target_values_idx=source.shape[1],
         total_idx_rho_lin_spline=rho_vals.shape[1],
@@ -73,7 +73,7 @@ def test_remap_vals_to_target_identity_zm(gr):
     p_sfc = np.array([100000.0], dtype=np.float64)
 
     target = clubb_api.remap_vals_to_target(
-        gr=gr, nzm=gr.nzm, nzt=gr.nzt, ngrdcol=gr.ngrdcol,
+        gr_source=gr, gr_target=gr, ngrdcol=gr.ngrdcol,
         source_values_idx=source.shape[1],
         target_values_idx=source.shape[1],
         total_idx_rho_lin_spline=rho_vals.shape[1],

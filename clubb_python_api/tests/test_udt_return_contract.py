@@ -53,6 +53,7 @@ UDT_ARG_RETURN_MANIFEST = {
     "lapack_wrap.lapack_tridiag_solvex": {("err_info",)},
     "matrix_solver_wrapper.band_solve": {("err_info",)},
     "matrix_solver_wrapper.tridiag_solve": {("err_info",)},
+    "mixing_length.calc_lscale": {("err_info",)},
     "mixing_length.calc_lscale_directly": {("err_info",)},
     "mixing_length.diagnose_lscale_from_tau": {("err_info",)},
     "numerical_check.check_clubb_settings": {("err_info",)},
@@ -63,11 +64,7 @@ UDT_ARG_RETURN_MANIFEST = {
     "parameters_tunable.calc_derrived_params": {("nu_vert_res_dep",)},
     "parameters_tunable.check_parameters": {("err_info",)},
     "pdf_closure.pdf_closure_driver": {("implicit_coefs_terms", "pdf_params", "pdf_params_zm", "err_info")},
-    "pdf_parameter_module.zero_pdf_params": {
-        ("pdf_params",),
-        ("pdf_params_zm",),
-        ("pdf_params", "pdf_params_zm"),
-    },
+    "pdf_parameter_module.zero_pdf_params": {("pdf_params",)},
     "precipitation_fraction.precip_fraction": {("err_info",)},
     "grid_class.setup_grid": {("grid", "err_info")},
     "sfc_varnce_module.calc_sfc_varnce": {("err_info",)},
@@ -124,6 +121,9 @@ FULL_RETURN_PATTERN_MANIFEST = {
     },
     "matrix_solver_wrapper.tridiag_solve": {
         ("err_info", "value", "value"),
+    },
+    "mixing_length.calc_lscale": {
+        ("err_info", "*"),
     },
     "mixing_length.calc_lscale_directly": {
         ("err_info", "*"),

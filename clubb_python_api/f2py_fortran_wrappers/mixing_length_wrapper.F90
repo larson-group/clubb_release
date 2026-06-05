@@ -16,6 +16,58 @@ subroutine f2py_set_lscale_max(ngrdcol, l_implemented, host_dx, host_dy, lscale_
 
 end subroutine f2py_set_lscale_max
 
+subroutine f2py_calc_lscale(nzm, nzt, ngrdcol, l_implemented, host_dx, host_dy, &
+    p_in_pa, exner, rtm, thlm, thvm, thlp2, rtp2, rtpthlp, em, thv_ds_zt, lmin, &
+    upwp_sfc, vpwp_sfc, ddzt_umvm_sqd, ice_supersat_frac, &
+    ufmin, tau_const, sfc_elevation, clubb_params, &
+    saturation_formula, l_lscale_plume_centered, l_diag_lscale_from_tau, l_e3sm_config, &
+    l_smooth_heaviside_tau_wpxp, l_modify_limiters_for_cnvg_test, l_use_invrs_tau_n2_iso, &
+    brunt_vaisala_freq_sqd_smth, &
+    invrs_tau_zt, invrs_tau_zm, invrs_tau_xp2_zm, invrs_tau_wp3_zt, &
+    invrs_tau_c1_zm, invrs_tau_c4_zm, invrs_tau_c6_zm, invrs_tau_c14_zm, &
+    tau_max_zm, tau_max_zt, tau_zm, lscale, lscale_zm, lscale_up, lscale_down)
+
+  use clubb_precision, only: core_rknd
+  use parameter_indices, only: nparams
+  use derived_type_storage, only: &
+    stored_grid, stored_pdf_params, stored_stats, stored_err_info
+  use mixing_length, only: calc_Lscale
+
+  implicit none
+
+  integer, intent(in) :: nzm, nzt, ngrdcol
+  integer, intent(in) :: saturation_formula
+  logical, intent(in) :: &
+    l_implemented, l_lscale_plume_centered, l_diag_lscale_from_tau, l_e3sm_config, &
+    l_smooth_heaviside_tau_wpxp, l_modify_limiters_for_cnvg_test, l_use_invrs_tau_n2_iso
+  real(core_rknd), intent(in) :: lmin, ufmin, tau_const
+  real(core_rknd), dimension(ngrdcol), intent(in) :: &
+    host_dx, host_dy, upwp_sfc, vpwp_sfc, sfc_elevation
+  real(core_rknd), dimension(ngrdcol, nzt), intent(in) :: &
+    p_in_pa, exner, rtm, thlm, thvm, thv_ds_zt, ice_supersat_frac
+  real(core_rknd), dimension(ngrdcol, nzm), intent(in) :: &
+    thlp2, rtp2, rtpthlp, em, ddzt_umvm_sqd, brunt_vaisala_freq_sqd_smth
+  real(core_rknd), dimension(ngrdcol, nparams), intent(in) :: clubb_params
+
+  real(core_rknd), dimension(ngrdcol, nzt), intent(out) :: &
+    invrs_tau_zt, invrs_tau_wp3_zt, tau_max_zt, lscale, lscale_up, lscale_down
+  real(core_rknd), dimension(ngrdcol, nzm), intent(out) :: &
+    invrs_tau_zm, invrs_tau_xp2_zm, invrs_tau_c1_zm, invrs_tau_c4_zm, &
+    invrs_tau_c6_zm, invrs_tau_c14_zm, tau_max_zm, tau_zm, lscale_zm
+
+  call calc_Lscale(nzm, nzt, ngrdcol, stored_grid, l_implemented, host_dx, host_dy, &
+    p_in_pa, exner, rtm, thlm, thvm, thlp2, rtp2, rtpthlp, stored_pdf_params, em, &
+    thv_ds_zt, lmin, upwp_sfc, vpwp_sfc, ddzt_umvm_sqd, ice_supersat_frac, &
+    ufmin, tau_const, sfc_elevation, clubb_params, saturation_formula, &
+    l_lscale_plume_centered, l_diag_lscale_from_tau, l_e3sm_config, &
+    l_smooth_heaviside_tau_wpxp, l_modify_limiters_for_cnvg_test, &
+    l_use_invrs_tau_n2_iso, brunt_vaisala_freq_sqd_smth, stored_stats, stored_err_info, &
+    invrs_tau_zt, invrs_tau_zm, invrs_tau_xp2_zm, invrs_tau_wp3_zt, &
+    invrs_tau_c1_zm, invrs_tau_c4_zm, invrs_tau_c6_zm, invrs_tau_c14_zm, &
+    tau_max_zm, tau_max_zt, tau_zm, lscale, lscale_zm, lscale_up, lscale_down)
+
+end subroutine f2py_calc_lscale
+
 subroutine f2py_diagnose_lscale_from_tau(nzm, nzt, ngrdcol, &
     upwp_sfc, vpwp_sfc, ddzt_umvm_sqd, &
     ice_supersat_frac, em, sqrt_em_zt, &

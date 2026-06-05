@@ -49,6 +49,7 @@ def advance_clubb_core(
     t0: float | None = None, ts_nudge: float = 0.0,
     rtm_min: float, rtm_nudge_max_altitude: float,
     clubb_config_flags: ConfigFlags,
+    stats=None,
     um, vm, upwp, vpwp, up2, vp2, up3, vp3,
     thlm, rtm, wprtp, wpthlp,
     wp2, wp3, rtp2, rtp3, thlp2, thlp3, rtpthlp,
@@ -64,7 +65,7 @@ def advance_clubb_core(
     pdf_params: pdf_parameter,
     pdf_params_zm: pdf_parameter,
     pdf_implicit_coefs_terms: implicit_coefs_terms,
-    err_info: ErrInfo, **compat_kwargs,
+    err_info: ErrInfo,
 ):
     """Advance CLUBB core one timestep.
 
@@ -81,9 +82,8 @@ def advance_clubb_core(
     set_fortran_pdf_params_zm(pdf_params_zm)
     set_fortran_implicit_coefs(pdf_implicit_coefs_terms)
     set_fortran_err_info(err_info)
-    t0_val = compat_kwargs.pop("t0_val", t0)
-    if t0_val is None:
-        raise ValueError("advance_clubb_core requires t0 or legacy t0_val.")
+    if t0 is None:
+        raise ValueError("advance_clubb_core requires t0.")
     if varmu is None:
         varmu = np.zeros((int(ngrdcol), int(nzt)), dtype=np.float64, order="F")
 
@@ -143,7 +143,7 @@ def advance_clubb_core(
         clubb_params=f_arr(clubb_params),
         lmin=lmin,
         mixt_frac_max_mag=mixt_frac_max_mag,
-        t0_val=t0_val,
+        t0_val=t0,
         ts_nudge=ts_nudge,
         rtm_min=rtm_min,
         rtm_nudge_max_altitude=rtm_nudge_max_altitude,

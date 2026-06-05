@@ -63,7 +63,7 @@ class TestInitPressure:
         p_sfc = np.array([101325.0], dtype=np.float64)
 
         p_zt, exner_zt, p_zm, exner_zm = init_pressure(
-            gr=gr, ngrdcol=gr.ngrdcol, nzt=gr.nzt, nzm=gr.nzm, thvm=thvm, p_sfc=p_sfc
+            gr=gr, ngrdcol=gr.ngrdcol, thvm=thvm, p_sfc=p_sfc
         )
 
         # zt-level pressure should decrease (ascending grid)
@@ -78,7 +78,7 @@ class TestInitPressure:
         p_sfc = np.array([101325.0], dtype=np.float64)
 
         p_zt, exner_zt, p_zm, exner_zm = init_pressure(
-            gr=gr, ngrdcol=gr.ngrdcol, nzt=gr.nzt, nzm=gr.nzm, thvm=thvm, p_sfc=p_sfc
+            gr=gr, ngrdcol=gr.ngrdcol, thvm=thvm, p_sfc=p_sfc
         )
 
         for col in range(gr.ngrdcol):
@@ -92,7 +92,7 @@ class TestInitPressure:
         p_sfc = np.array([101325.0], dtype=np.float64)
 
         p_zt, exner_zt, p_zm, exner_zm = init_pressure(
-            gr=gr, ngrdcol=gr.ngrdcol, nzt=gr.nzt, nzm=gr.nzm, thvm=thvm, p_sfc=p_sfc
+            gr=gr, ngrdcol=gr.ngrdcol, thvm=thvm, p_sfc=p_sfc
         )
 
         # Pressure: should be between ~40000 Pa (top ~5km) and ~105000 Pa
@@ -117,7 +117,7 @@ class TestInitPressure:
         p_sfc = np.full(ngrdcol, 101325.0, dtype=np.float64)
 
         p_zt, exner_zt, p_zm, exner_zm = init_pressure(
-            gr=gr, ngrdcol=gr.ngrdcol, nzt=gr.nzt, nzm=gr.nzm, thvm=thvm, p_sfc=p_sfc
+            gr=gr, ngrdcol=gr.ngrdcol, thvm=thvm, p_sfc=p_sfc
         )
 
         assert p_zt.shape == (ngrdcol, nzt)
@@ -134,10 +134,10 @@ class TestInitPressure:
         p_sfc_hi = np.array([105000.0], dtype=np.float64)
 
         p_lo, _, _, _ = init_pressure(
-            gr=gr, ngrdcol=gr.ngrdcol, nzt=gr.nzt, nzm=gr.nzm, thvm=thvm, p_sfc=p_sfc_lo
+            gr=gr, ngrdcol=gr.ngrdcol, thvm=thvm, p_sfc=p_sfc_lo
         )
         p_hi, _, _, _ = init_pressure(
-            gr=gr, ngrdcol=gr.ngrdcol, nzt=gr.nzt, nzm=gr.nzm, thvm=thvm, p_sfc=p_sfc_hi
+            gr=gr, ngrdcol=gr.ngrdcol, thvm=thvm, p_sfc=p_sfc_hi
         )
 
         assert np.all(p_hi > p_lo), \
@@ -151,7 +151,7 @@ class TestInitPressure:
         p_sfc = np.array([101325.0, 95000.0, 105000.0], dtype=np.float64)
 
         p_zt, exner_zt, p_zm, exner_zm = init_pressure(
-            gr=gr, ngrdcol=gr.ngrdcol, nzt=gr.nzt, nzm=gr.nzm, thvm=thvm, p_sfc=p_sfc
+            gr=gr, ngrdcol=gr.ngrdcol, thvm=thvm, p_sfc=p_sfc
         )
 
         # Column with highest surface pressure should have highest pressure

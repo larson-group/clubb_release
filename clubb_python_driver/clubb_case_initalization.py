@@ -527,9 +527,7 @@ def init_clubb_case(namelist_path: str) -> dict:
     thvm = thlm * (1.0 + ep1 * (rtm / (1.0 + rtm)))
 
     # Hydrostatic pressure
-    result = clubb_api.hydrostatic(
-        gr=gr, ngrdcol=ngrdcol, nzt=nzt, nzm=nzm, thvm=thvm, p_sfc=p_sfc
-    )
+    result = clubb_api.hydrostatic(gr=gr, ngrdcol=ngrdcol, thvm=thvm, p_sfc=p_sfc)
     p_in_Pa, p_in_Pa_zm, exner, exner_zm, rho, rho_zm = result
 
     # Convert temperature type
@@ -562,9 +560,7 @@ def init_clubb_case(namelist_path: str) -> dict:
         nzt=nzt, ngrdcol=ngrdcol, thlm=thlm, rtm=rtm, rcm=rcm, exner=exner,
         thv_ds_zt=thm * (1.0 + ep2 * (rtm - rcm))**kappa,
     )
-    result = clubb_api.hydrostatic(
-        gr=gr, ngrdcol=ngrdcol, nzt=nzt, nzm=nzm, thvm=thvm, p_sfc=p_sfc
-    )
+    result = clubb_api.hydrostatic(gr=gr, ngrdcol=ngrdcol, thvm=thvm, p_sfc=p_sfc)
     p_in_Pa, p_in_Pa_zm, exner, exner_zm, rho, rho_zm = result
 
     # Compute dry static density (anelastic base state)
@@ -804,9 +800,7 @@ def init_clubb_case(namelist_path: str) -> dict:
             time_initial=float(time_initial),
             stats_tstart=float(cfg.get('stats_tstart', time_initial)),
             stats_tend=float(cfg.get('stats_tend', time_final)),
-            nzt=nzt,
             zt=gr.zt[0, :],
-            nzm=nzm,
             zm=gr.zm[0, :],
             clubb_params=clubb_params,
             param_names=clubb_api.get_param_names(),

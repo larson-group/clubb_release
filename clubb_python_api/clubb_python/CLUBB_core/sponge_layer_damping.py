@@ -22,14 +22,15 @@ def _stack_column_outputs(column_outputs):
 
 def sponge_damp_xm(
     gr: Grid, nzm: int, nzt: int,
-    dt: float, zt, zm, xm_ref, xm, damping_profile=None, **compat_kwargs,
+    dt: float, zt, zm, xm_ref, xm, damping_profile=None,
 ):
     """Damp a mean-field profile toward a reference profile in sponge layer."""
-    ngrdcol = int(compat_kwargs.pop("ngrdcol", np.asarray(zt).shape[0]))
-    tau_sponge_damp = compat_kwargs.pop("tau_sponge_damp", getattr(damping_profile, "tau_sponge_damp", None))
-    sponge_layer_depth = compat_kwargs.pop("sponge_layer_depth", getattr(damping_profile, "sponge_layer_depth", None))
+    ngrdcol = np.asarray(zt).shape[0]
+    ngrdcol = int(ngrdcol)
+    tau_sponge_damp = getattr(damping_profile, "tau_sponge_damp", None)
+    sponge_layer_depth = getattr(damping_profile, "sponge_layer_depth", None)
     if tau_sponge_damp is None or sponge_layer_depth is None:
-        raise ValueError("sponge_damp_xm requires damping_profile or legacy tau/sponge kwargs.")
+        raise ValueError("sponge_damp_xm requires damping_profile.")
     set_fortran_grid(gr)
     zt_arr = _fa_2d(zt)
     zm_arr = _fa_2d(zm)
@@ -48,14 +49,15 @@ def sponge_damp_xm(
 
 def sponge_damp_xp2(
     gr: Grid, nzm: int,
-    dt: float, zm, xp2, x_tol_sqd, damping_profile=None, **compat_kwargs,
+    dt: float, zm, xp2, x_tol_sqd, damping_profile=None,
 ):
     """Damp variance profile in sponge layer with a lower floor."""
-    ngrdcol = int(compat_kwargs.pop("ngrdcol", np.asarray(zm).shape[0]))
-    tau_sponge_damp = compat_kwargs.pop("tau_sponge_damp", getattr(damping_profile, "tau_sponge_damp", None))
-    sponge_layer_depth = compat_kwargs.pop("sponge_layer_depth", getattr(damping_profile, "sponge_layer_depth", None))
+    ngrdcol = np.asarray(zm).shape[0]
+    ngrdcol = int(ngrdcol)
+    tau_sponge_damp = getattr(damping_profile, "tau_sponge_damp", None)
+    sponge_layer_depth = getattr(damping_profile, "sponge_layer_depth", None)
     if tau_sponge_damp is None or sponge_layer_depth is None:
-        raise ValueError("sponge_damp_xp2 requires damping_profile or legacy tau/sponge kwargs.")
+        raise ValueError("sponge_damp_xp2 requires damping_profile.")
     set_fortran_grid(gr)
     zm_arr = _fa_2d(zm)
     xp2_arr = _fa_2d(xp2)
@@ -73,14 +75,15 @@ def sponge_damp_xp2(
 
 def sponge_damp_xp3(
     gr: Grid, nzm: int, nzt: int,
-    dt: float, z, zm, xp3, damping_profile=None, **compat_kwargs,
+    dt: float, z, zm, xp3, damping_profile=None,
 ):
     """Damp third-moment profile in sponge layer."""
-    ngrdcol = int(compat_kwargs.pop("ngrdcol", np.asarray(z).shape[0]))
-    tau_sponge_damp = compat_kwargs.pop("tau_sponge_damp", getattr(damping_profile, "tau_sponge_damp", None))
-    sponge_layer_depth = compat_kwargs.pop("sponge_layer_depth", getattr(damping_profile, "sponge_layer_depth", None))
+    ngrdcol = np.asarray(z).shape[0]
+    ngrdcol = int(ngrdcol)
+    tau_sponge_damp = getattr(damping_profile, "tau_sponge_damp", None)
+    sponge_layer_depth = getattr(damping_profile, "sponge_layer_depth", None)
     if tau_sponge_damp is None or sponge_layer_depth is None:
-        raise ValueError("sponge_damp_xp3 requires damping_profile or legacy tau/sponge kwargs.")
+        raise ValueError("sponge_damp_xp3 requires damping_profile.")
     set_fortran_grid(gr)
     z_arr = _fa_2d(z)
     zm_arr = _fa_2d(zm)

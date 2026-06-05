@@ -101,16 +101,15 @@ def test_tsdadg_pdf_driver_column_consistency():
     wprtp = np.array([[0.001, -0.0008, 0.0009], [0.0006, -0.0007, 0.0005]], dtype=np.float64)
     wpthlp = np.array([[0.02, -0.015, 0.018], [0.012, -0.010, 0.011]], dtype=np.float64)
     nz = wm.shape[1]
-    ngrdcol = wm.shape[0]
 
     got = clubb_api.tsdadg_pdf_driver(
-        nz=nz, ngrdcol=ngrdcol, wm=wm, rtm=rtm, thlm=thlm, wp2=wp2, rtp2=rtp2, thlp2=thlp2, skw=skw,
+        nz=nz, wm=wm, rtm=rtm, thlm=thlm, wp2=wp2, rtp2=rtp2, thlp2=thlp2, skw=skw,
         skrt=skrt, skthl=skthl, wprtp=wprtp, wpthlp=wpthlp)
 
     ncols = wm.shape[0]
     for i in range(ncols):
         got_i = clubb_api.tsdadg_pdf_driver(
-            nz=nz, ngrdcol=1, wm=wm[i:i+1, :], rtm=rtm[i:i+1, :], thlm=thlm[i:i+1, :],
+            nz=nz, wm=wm[i:i+1, :], rtm=rtm[i:i+1, :], thlm=thlm[i:i+1, :],
             wp2=wp2[i:i+1, :], rtp2=rtp2[i:i+1, :], thlp2=thlp2[i:i+1, :], skw=skw[i:i+1, :],
             skrt=skrt[i:i+1, :], skthl=skthl[i:i+1, :], wprtp=wprtp[i:i+1, :], wpthlp=wpthlp[i:i+1, :],
         )

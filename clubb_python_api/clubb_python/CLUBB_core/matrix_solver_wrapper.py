@@ -16,9 +16,8 @@ def _fa64(arr):
 
 def band_solve(solve_name: str, penta_solve_method: int, ngrdcol: int, nsup: int,
                nsub: int, ndim: int, nrhs: int, l_implemented: bool = True, lhs=None, rhs=None, err_info: ErrInfo | None = None,
-               old_soln=None, **compat_kwargs):
+               old_soln=None):
     """Solve a banded system with multiple right-hand sides."""
-    use_rcond = bool(compat_kwargs.pop("use_rcond", False))
     lhs_f = _fa64(lhs)
     rhs_f = _fa64(rhs)
     if old_soln is None:
@@ -35,7 +34,7 @@ def band_solve(solve_name: str, penta_solve_method: int, ngrdcol: int, nsup: int
         lhs=lhs_f,
         rhs=rhs_f,
         old_soln=old_soln_f,
-        use_rcond=bool(use_rcond),
+        use_rcond=False,
         ngrdcol=int(ngrdcol),
         ndim=int(ndim),
         nrhs=int(nrhs),
@@ -44,9 +43,8 @@ def band_solve(solve_name: str, penta_solve_method: int, ngrdcol: int, nsup: int
 
 
 def tridiag_solve(solve_name: str, tridiag_solve_method: int, ngrdcol: int,
-                  ndim: int, lhs, rhs, err_info: ErrInfo, **compat_kwargs):
+                  ndim: int, lhs, rhs, err_info: ErrInfo):
     """Solve a tridiagonal system for either single or multiple RHS inputs."""
-    use_rcond = bool(compat_kwargs.pop("use_rcond", False))
     lhs_f = _fa64(lhs)
     set_fortran_err_info(err_info)
 
@@ -57,7 +55,7 @@ def tridiag_solve(solve_name: str, tridiag_solve_method: int, ngrdcol: int,
             tridiag_solve_method=int(tridiag_solve_method),
             lhs=lhs_f,
             rhs=_fa64(rhs_arr),
-            use_rcond=bool(use_rcond),
+            use_rcond=False,
             ngrdcol=int(ngrdcol),
             ndim=int(ndim),
         )
@@ -69,7 +67,7 @@ def tridiag_solve(solve_name: str, tridiag_solve_method: int, ngrdcol: int,
             tridiag_solve_method=int(tridiag_solve_method),
             lhs=lhs_f,
             rhs=_fa64(rhs_arr),
-            use_rcond=bool(use_rcond),
+            use_rcond=False,
             ngrdcol=int(ngrdcol),
             ndim=int(ndim),
             nrhs=int(rhs_arr.shape[2]),

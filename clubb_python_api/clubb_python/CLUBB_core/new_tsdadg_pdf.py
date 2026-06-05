@@ -31,7 +31,7 @@ def calc_setter_parameters_tsdadg(
         float(xm), float(xp2), float(skx), float(sgn_wpxp), float(big_l_x_1), float(big_l_x_2))
 
 
-def tsdadg_pdf_driver(nz: int, wm, rtm, thlm, wp2, rtp2, thlp2, skw, skrt, skthl, wprtp, wpthlp, **compat_kwargs):
+def tsdadg_pdf_driver(nz: int, wm, rtm, thlm, wp2, rtp2, thlp2, skw, skrt, skthl, wprtp, wpthlp):
     """Compute full tsdadg PDF moments for w/rt/thl."""
     arrays = [_fa_2d(arg) for arg in (wm, rtm, thlm, wp2, rtp2, thlp2, skw, skrt, skthl, wprtp, wpthlp)]
     ngrdcol = arrays[0].shape[0]

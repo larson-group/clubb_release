@@ -33,10 +33,9 @@ def test_calc_params_ly93_matches_formula():
     skx = np.array([[0.6, -0.3, 0.1]], dtype=np.float64)
     mixt_frac = np.array([[0.4, 0.7, 0.55]], dtype=np.float64)
     nz = xm.shape[1]
-    ngrdcol = xm.shape[0]
 
     mu_x_1, mu_x_2, sigma_x_1_sqd, sigma_x_2_sqd = clubb_api.calc_params_ly93(
-        nz=nz, ngrdcol=ngrdcol, xm=xm, xp2=xp2, skx=skx, mixt_frac=mixt_frac,
+        nz=nz, xm=xm, xp2=xp2, skx=skx, mixt_frac=mixt_frac,
     )
 
     expected_mu_x_1, expected_mu_x_2, expected_sigma_x_1_sqd, expected_sigma_x_2_sqd = (
@@ -61,14 +60,13 @@ def test_ly93_driver_matches_formula_for_low_skewness():
     skrt = np.array([[0.1, 0.2, -0.2]], dtype=np.float64)
     skthl = np.array([[0.05, -0.1, 0.15]], dtype=np.float64)
     nz = wm.shape[1]
-    ngrdcol = wm.shape[0]
 
     (
         mu_w_1, mu_w_2, mu_rt_1, mu_rt_2, mu_thl_1, mu_thl_2,
         sigma_w_1_sqd, sigma_w_2_sqd, sigma_rt_1_sqd, sigma_rt_2_sqd,
         sigma_thl_1_sqd, sigma_thl_2_sqd, mixt_frac,
     ) = clubb_api.ly93_driver(
-        nz=nz, ngrdcol=ngrdcol, wm=wm, rtm=rtm, thlm=thlm, wp2=wp2, rtp2=rtp2, thlp2=thlp2, skw=skw,
+        nz=nz, wm=wm, rtm=rtm, thlm=thlm, wp2=wp2, rtp2=rtp2, thlp2=thlp2, skw=skw,
         skrt=skrt, skthl=skthl)
 
     expected_mixt_frac = np.full_like(wm, 0.75)

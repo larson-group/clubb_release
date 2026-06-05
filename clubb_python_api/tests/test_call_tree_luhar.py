@@ -16,9 +16,8 @@ def test_calc_luhar_params_matches_formula():
     xp2 = np.array([[0.02, 0.3, 0.1, 0.06]], dtype=np.float64)
     x_tol_sqd = 0.05
     nz = skx.shape[1]
-    ngrdcol = skx.shape[0]
 
-    mixt_frac, big_m, small_m = clubb_api.calc_luhar_params(nz=nz, ngrdcol=ngrdcol, skx=skx, wpxp=wpxp, xp2=xp2, x_tol_sqd=x_tol_sqd)
+    mixt_frac, big_m, small_m = clubb_api.calc_luhar_params(nz=nz, skx=skx, wpxp=wpxp, xp2=xp2, x_tol_sqd=x_tol_sqd)
 
     mask = xp2 > x_tol_sqd
     sgn_wpxp = np.where(wpxp >= 0.0, 1.0, -1.0)
@@ -55,13 +54,12 @@ def test_close_luhar_pdf_matches_formula():
     wpxp = np.array([[0.07, -0.05, 0.0, 0.03]], dtype=np.float64)
     x_tol_sqd = 0.05
     nz = xm.shape[1]
-    ngrdcol = xm.shape[0]
 
     (
         sigma_sqd_x_1, sigma_sqd_x_2, varnce_x_1, varnce_x_2,
         x_1_n, x_2_n, x_1, x_2,
     ) = clubb_api.close_luhar_pdf(
-        nz=nz, ngrdcol=ngrdcol, xm=xm, xp2=xp2, mixt_frac=mixt_frac, small_m=small_m, wpxp=wpxp,
+        nz=nz, xm=xm, xp2=xp2, mixt_frac=mixt_frac, small_m=small_m, wpxp=wpxp,
         x_tol_sqd=x_tol_sqd)
 
     mask = xp2 > x_tol_sqd
@@ -233,12 +231,12 @@ def test_luhar_3d_pdf_driver_column_consistency():
     wpthlp = np.array([[0.02, -0.015, 0.018], [0.012, -0.010, 0.011]], dtype=np.float64)
 
     got = clubb_api.luhar_3d_pdf_driver(
-        nz=nz, ngrdcol=ncol, wm=wm, rtm=rtm, thlm=thlm, wp2=wp2, rtp2=rtp2, thlp2=thlp2, skw=skw, skrt=skrt,
+        nz=nz, wm=wm, rtm=rtm, thlm=thlm, wp2=wp2, rtp2=rtp2, thlp2=thlp2, skw=skw, skrt=skrt,
         skthl=skthl, wprtp=wprtp, wpthlp=wpthlp)
 
     for i in range(ncol):
         got_i = clubb_api.luhar_3d_pdf_driver(
-            nz=nz, ngrdcol=1, wm=wm[i:i+1, :], rtm=rtm[i:i+1, :], thlm=thlm[i:i+1, :], wp2=wp2[i:i+1, :],
+            nz=nz, wm=wm[i:i+1, :], rtm=rtm[i:i+1, :], thlm=thlm[i:i+1, :], wp2=wp2[i:i+1, :],
             rtp2=rtp2[i:i+1, :], thlp2=thlp2[i:i+1, :], skw=skw[i:i+1, :], skrt=skrt[i:i+1, :],
             skthl=skthl[i:i+1, :], wprtp=wprtp[i:i+1, :], wpthlp=wpthlp[i:i+1, :],
         )

@@ -88,7 +88,7 @@ def calc_ddzt_umvm_sqd(nzm: int, nzt: int, ngrdcol: int, gr: Grid, um, vm):
     """Compute squared vertical shear of the horizontal mean wind."""
     set_fortran_grid(gr)
     return clubb_f2py.f2py_calc_ddzt_umvm_sqd(
-        f_arr(um), f_arr(vm), nzm=int(nzm), nzt=int(nzt), ngrdcol=int(ngrdcol))
+        int(nzm), f_arr(um), f_arr(vm), nzt=int(nzt), ngrdcol=int(ngrdcol))
 
 
 def calc_wp3_on_wp2(nzm: int, nzt: int, ngrdcol: int, gr: Grid, wp2, wp3):

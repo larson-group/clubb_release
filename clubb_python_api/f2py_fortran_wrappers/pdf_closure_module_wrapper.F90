@@ -164,8 +164,10 @@ subroutine f2py_pdf_closure_driver(nzm, nzt, ngrdcol, dt, hydromet_dim, sclr_dim
     rcm, cloud_frac, ice_supersat_frac, wp2thvp, wp2up, rc_coef, rcm_in_layer, cloud_cover, &
     rcp2_zt, wpup2, wpvp2, wp2rtp, wprtp2, wp2thlp, wpthlp2, wprtpthlp, wp2rcp, &
     w_up_in_cloud, w_down_in_cloud, cloudy_updraft_frac, cloudy_downdraft_frac, rcm_supersat_adj
+  real(core_rknd), dimension(ngrdcol, nzm), intent(inout) :: &
+    sigma_sqd_w
   real(core_rknd), dimension(ngrdcol, nzm), intent(out) :: &
-    wprcp, sigma_sqd_w, wpthvp, rtpthvp, thlpthvp, thlprcp, rc_coef_zm, &
+    wprcp, wpthvp, rtpthvp, thlpthvp, thlprcp, rc_coef_zm, &
     wp2up2, wp2vp2, wp4, rtprcp, rcp2, uprcp, vprcp, &
     skw_velocity, cloud_frac_zm, ice_supersat_frac_zm, rtm_zm, thlm_zm, rcm_zm
   real(core_rknd), dimension(ngrdcol, nzm, sclr_dim_transport), intent(out) :: sclrpthvp, sclrprcp

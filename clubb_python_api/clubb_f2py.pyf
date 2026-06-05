@@ -1852,8 +1852,9 @@ python module clubb_f2py
         rcm, cloud_frac, ice_supersat_frac, wp2thvp, wp2up, rc_coef, rcm_in_layer, cloud_cover, &
         rcp2_zt, wpup2, wpvp2, wp2rtp, wprtp2, wp2thlp, wpthlp2, wprtpthlp, wp2rcp, &
         w_up_in_cloud, w_down_in_cloud, cloudy_updraft_frac, cloudy_downdraft_frac, rcm_supersat_adj
+      double precision, dimension(ngrdcol, nzm), intent(in,out) :: sigma_sqd_w
       double precision, dimension(ngrdcol, nzm), intent(out) :: &
-        wprcp, sigma_sqd_w, wpthvp, rtpthvp, thlpthvp, thlprcp, rc_coef_zm, &
+        wprcp, wpthvp, rtpthvp, thlpthvp, thlprcp, rc_coef_zm, &
         wp2up2, wp2vp2, wp4, rtprcp, rcp2, uprcp, vprcp, &
         skw_velocity, cloud_frac_zm, ice_supersat_frac_zm, rtm_zm, thlm_zm, rcm_zm
       double precision, dimension(ngrdcol, nzm, sclr_dim_transport), intent(out) :: sclrpthvp, sclrprcp
@@ -2164,7 +2165,7 @@ python module clubb_f2py
 
     subroutine f2py_new_hybrid_pdf_driver(nz, ngrdcol, sclr_dim, sclr_dim_transport, wm, rtm, thlm, um, vm, wp2, &
         rtp2, thlp2, up2, vp2, skw, wprtp, wpthlp, upwp, vpwp, sclrm, sclrp2, wpsclrp, &
-        gamma_skw_fnc, slope_coef_spread_dg_means_w, pdf_component_stdev_factor_w, skrt, &
+        clubb_params, slope_coef_spread_dg_means_w, pdf_component_stdev_factor_w, skrt, &
         skthl, sku, skv, sksclr, mu_w_1, mu_w_2, mu_rt_1, mu_rt_2, mu_thl_1, mu_thl_2, &
         mu_u_1, mu_u_2, mu_v_1, mu_v_2, sigma_w_1_sqd, sigma_w_2_sqd, sigma_rt_1_sqd, &
         sigma_rt_2_sqd, sigma_thl_1_sqd, sigma_thl_2_sqd, sigma_u_1_sqd, sigma_u_2_sqd, &
@@ -2173,8 +2174,9 @@ python module clubb_f2py
       integer, intent(in) :: nz, ngrdcol, sclr_dim
       integer, intent(in), optional :: sclr_dim_transport
       double precision, dimension(ngrdcol, nz), intent(in) :: &
-        wm, rtm, thlm, um, vm, wp2, rtp2, thlp2, up2, vp2, skw, wprtp, wpthlp, upwp, vpwp, gamma_skw_fnc
+        wm, rtm, thlm, um, vm, wp2, rtp2, thlp2, up2, vp2, skw, wprtp, wpthlp, upwp, vpwp
       double precision, dimension(ngrdcol, nz, sclr_dim_transport), intent(in) :: sclrm, sclrp2, wpsclrp
+      double precision, dimension(ngrdcol, *), intent(in) :: clubb_params
       double precision, dimension(ngrdcol), intent(in) :: &
         slope_coef_spread_dg_means_w, pdf_component_stdev_factor_w
       double precision, dimension(ngrdcol, nz), intent(in,out) :: skrt, skthl, sku, skv
@@ -2334,6 +2336,36 @@ python module clubb_f2py
       double precision, dimension(ngrdcol, nzm), intent(out) :: stability_correction
     end subroutine
 
+    subroutine f2py_calc_lscale(nzm, nzt, ngrdcol, l_implemented, host_dx, host_dy, &
+        p_in_pa, exner, rtm, thlm, thvm, thlp2, rtp2, rtpthlp, em, thv_ds_zt, lmin, &
+        upwp_sfc, vpwp_sfc, ddzt_umvm_sqd, ice_supersat_frac, &
+        ufmin, tau_const, sfc_elevation, clubb_params, &
+        saturation_formula, l_lscale_plume_centered, l_diag_lscale_from_tau, l_e3sm_config, &
+        l_smooth_heaviside_tau_wpxp, l_modify_limiters_for_cnvg_test, l_use_invrs_tau_n2_iso, &
+        brunt_vaisala_freq_sqd_smth, &
+        invrs_tau_zt, invrs_tau_zm, invrs_tau_xp2_zm, invrs_tau_wp3_zt, &
+        invrs_tau_c1_zm, invrs_tau_c4_zm, invrs_tau_c6_zm, invrs_tau_c14_zm, &
+        tau_max_zm, tau_max_zt, tau_zm, lscale, lscale_zm, lscale_up, lscale_down)
+      integer, intent(in) :: nzm, nzt, ngrdcol
+      integer, intent(in) :: saturation_formula
+      logical, intent(in) :: &
+        l_implemented, l_lscale_plume_centered, l_diag_lscale_from_tau, l_e3sm_config, &
+        l_smooth_heaviside_tau_wpxp, l_modify_limiters_for_cnvg_test, l_use_invrs_tau_n2_iso
+      double precision, intent(in) :: lmin, ufmin, tau_const
+      double precision, dimension(ngrdcol), intent(in) :: &
+        host_dx, host_dy, upwp_sfc, vpwp_sfc, sfc_elevation
+      double precision, dimension(ngrdcol, nzt), intent(in) :: &
+        p_in_pa, exner, rtm, thlm, thvm, thv_ds_zt, ice_supersat_frac
+      double precision, dimension(ngrdcol, nzm), intent(in) :: &
+        thlp2, rtp2, rtpthlp, em, ddzt_umvm_sqd, brunt_vaisala_freq_sqd_smth
+      double precision, dimension(ngrdcol, *), intent(in) :: clubb_params
+      double precision, dimension(ngrdcol, nzt), intent(out) :: &
+        invrs_tau_zt, invrs_tau_wp3_zt, tau_max_zt, lscale, lscale_up, lscale_down
+      double precision, dimension(ngrdcol, nzm), intent(out) :: &
+        invrs_tau_zm, invrs_tau_xp2_zm, invrs_tau_c1_zm, invrs_tau_c4_zm, &
+        invrs_tau_c6_zm, invrs_tau_c14_zm, tau_max_zm, tau_zm, lscale_zm
+    end subroutine
+
     subroutine f2py_diagnose_lscale_from_tau(nzm, nzt, ngrdcol, &
         upwp_sfc, vpwp_sfc, ddzt_umvm_sqd, &
         ice_supersat_frac, em, sqrt_em_zt, &
@@ -2444,7 +2476,7 @@ python module clubb_f2py
         l_damp_wp3_skw_squared, l_lmm_stepping, &
         l_use_tke_in_wp3_pr_turb_term, l_use_tke_in_wp2_wp3_k_dfsn, &
         l_use_wp3_lim_with_smth_heaviside, l_wp2_fill_holes_tke, l_ho_nontrad_coriolis, &
-        up2, vp2, wp2, wp3, wp2_zt)
+        up2, vp2, wp2, wp3)
       integer, intent(in) :: nzm, nzt, ngrdcol
       double precision, intent(in) :: dt
       double precision, dimension(ngrdcol), intent(in) :: sfc_elevation, fcor_y
@@ -2465,7 +2497,7 @@ python module clubb_f2py
         l_lmm_stepping, l_use_tke_in_wp3_pr_turb_term, l_use_tke_in_wp2_wp3_k_dfsn, &
         l_use_wp3_lim_with_smth_heaviside, l_wp2_fill_holes_tke, l_ho_nontrad_coriolis
       double precision, dimension(ngrdcol, nzm), intent(in,out) :: up2, vp2, wp2
-      double precision, dimension(ngrdcol, nzt), intent(in,out) :: wp3, wp2_zt
+      double precision, dimension(ngrdcol, nzt), intent(in,out) :: wp3
     end subroutine
 
     subroutine f2py_advance_windm_edsclrm(nzm, nzt, ngrdcol, edsclr_dim, edsclr_dim_transport, dt, &
