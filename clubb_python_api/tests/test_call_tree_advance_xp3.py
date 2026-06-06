@@ -41,7 +41,7 @@ def _setup_grid_and_stats(tmp_path: Path, ngrdcol: int = 1):
     clubb_api.init_stats(
         registry_path="tests/test_stats_registry.in",
         output_path=str(tmp_path / "xp3_stats.nc"),
-        ncol=ngrdcol,
+        ncol_batch=ngrdcol,
         stats_tsamp=60.0,
         stats_tout=60.0,
         dt_main=60.0,

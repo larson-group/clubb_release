@@ -56,7 +56,7 @@ def _setup_env(tmp_path: Path, ngrdcol: int = 1):
     err_info = clubb_api.init_stats(
         registry_path="tests/test_stats_registry.in",
         output_path=str(tmp_path / "xp2_xpyp_stats.nc"),
-        ncol=ngrdcol,
+        ncol_batch=ngrdcol,
         stats_tsamp=60.0,
         stats_tout=60.0,
         dt_main=60.0,
@@ -136,6 +136,7 @@ def _make_args(gr, flags, clubb_params, sclr_idx, nu_vert_res_dep, pdf_implicit_
         "l_upwind_xpyp_ta": bool(flags.l_upwind_xpyp_ta),
         "l_godunov_upwind_xpyp_ta": bool(flags.l_godunov_upwind_xpyp_ta),
         "l_lmm_stepping": bool(flags.l_lmm_stepping),
+        "l_implemented": True,
         "rtp2": full((ngrdcol, nzm), 1.0e-6),
         "thlp2": full((ngrdcol, nzm), 0.01),
         "rtpthlp": full((ngrdcol, nzm), 0.0),

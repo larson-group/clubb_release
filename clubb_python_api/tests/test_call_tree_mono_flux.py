@@ -75,7 +75,7 @@ def test_monotonic_turbulent_flux_limit_preserves_zero_flux_state(tmp_path):
     clubb_api.init_stats(
         registry_path=registry,
         output_path=str(tmp_path / "mono_flux_stats.nc"),
-        ncol=ngrdcol,
+        ncol_batch=ngrdcol,
         stats_tsamp=60.0,
         stats_tout=60.0,
         dt_main=60.0,
@@ -123,6 +123,7 @@ def test_monotonic_turbulent_flux_limit_preserves_zero_flux_state(tmp_path):
             l_mono_flux_lim_spikefix=flags.l_mono_flux_lim_spikefix,
             xm=xm.copy(order="F"),
             wpxp=wpxp.copy(order="F"),
+            err_info=err_info,
         )
     finally:
         clubb_api.finalize_stats(err_info=err_info)

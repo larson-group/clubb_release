@@ -32,9 +32,8 @@ def advance_wp2_wp3(
     l_use_c11_richardson: bool, l_damp_wp3_skw_squared: bool, l_lmm_stepping: bool,
     l_use_tke_in_wp3_pr_turb_term: bool, l_use_tke_in_wp2_wp3_k_dfsn: bool,
     l_use_wp3_lim_with_smth_heaviside: bool, l_wp2_fill_holes_tke: bool,
-    l_ho_nontrad_coriolis: bool, *,
-    l_implemented: bool = True,
-    stats=None,
+    l_ho_nontrad_coriolis: bool,
+    l_implemented: bool,
     up2, vp2, wp2, wp3,
     err_info: ErrInfo,
 ):

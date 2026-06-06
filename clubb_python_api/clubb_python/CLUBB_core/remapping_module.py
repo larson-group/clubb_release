@@ -10,10 +10,10 @@ from clubb_python.derived_types.grid_class_converter import set_fortran_grid
 
 
 def remap_vals_to_target(
-    ngrdcol: int, gr_source: Grid | None = None, gr_target: Grid | None = None, source_values_idx: int | None = None,
-    source_values=None, target_values_idx: int | None = None, total_idx_rho_lin_spline: int | None = None,
-    rho_lin_spline_vals=None, rho_lin_spline_levels=None,
-    iv: int = 0, p_sfc=None, grid_remap_method: int = 1, l_zt_variable: bool = False,
+    ngrdcol: int, gr_source: Grid | None, gr_target: Grid | None, source_values_idx: int | None,
+    source_values, target_values_idx: int | None, total_idx_rho_lin_spline: int | None,
+    rho_lin_spline_vals, rho_lin_spline_levels,
+    iv: int, p_sfc, grid_remap_method: int, l_zt_variable: bool,
 ):
     """Remap values using remapping_module with source and target set to the same grid."""
     if gr_source is None or gr_target is None:

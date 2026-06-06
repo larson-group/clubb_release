@@ -794,7 +794,7 @@ def init_clubb_case(namelist_path: str) -> dict:
         err_info = clubb_api.init_stats(
             registry_path=str(stats_registry_path),
             output_path=str(stats_output_path),
-            ncol=ngrdcol,
+            ncol_batch=ngrdcol,
             stats_tsamp=float(cfg['stats_tsamp']),
             stats_tout=float(cfg['stats_tout']),
             dt_main=float(dt_main),

@@ -15,7 +15,7 @@ def _fa64(arr):
 
 
 def band_solve(solve_name: str, penta_solve_method: int, ngrdcol: int, nsup: int,
-               nsub: int, ndim: int, nrhs: int, l_implemented: bool = True, lhs=None, rhs=None, err_info: ErrInfo | None = None,
+               nsub: int, ndim: int, nrhs: int, l_implemented: bool, lhs, rhs, err_info: ErrInfo,
                old_soln=None):
     """Solve a banded system with multiple right-hand sides."""
     lhs_f = _fa64(lhs)

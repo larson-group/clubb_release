@@ -487,16 +487,16 @@ python module clubb_f2py
       character, dimension(32, 64), intent(out) :: clubb_var_names
     end subroutine
 
-    subroutine f2py_get_clubb_params_all(total_param_sets, nparams, clubb_params)
-      integer, intent(in) :: total_param_sets, nparams
-      double precision, dimension(total_param_sets, nparams), intent(out) :: clubb_params
+    subroutine f2py_get_clubb_params_all(total_param_sets, nparams_in, clubb_params_all_out)
+      integer, intent(in) :: total_param_sets, nparams_in
+      double precision, dimension(total_param_sets, nparams_in), intent(out) :: clubb_params_all_out
     end subroutine
 
-    subroutine f2py_clubb_get_loss_for_params(total_param_sets, nparams, num_variables, &
+    subroutine f2py_clubb_get_loss_for_params(total_param_sets, nparams_in, num_variables, &
         num_time_windows, clubb_params_all, scaled_rmse, correlation, std_ratio, &
         centered_rmse_norm, bias_norm)
-      integer, intent(in) :: total_param_sets, nparams, num_variables, num_time_windows
-      double precision, dimension(total_param_sets, nparams), intent(in) :: clubb_params_all
+      integer, intent(in) :: total_param_sets, nparams_in, num_variables, num_time_windows
+      double precision, dimension(total_param_sets, nparams_in), intent(in) :: clubb_params_all
       double precision, dimension(num_time_windows, num_variables, total_param_sets), intent(out) :: scaled_rmse
       double precision, dimension(num_time_windows, num_variables, total_param_sets), intent(out) :: correlation
       double precision, dimension(num_time_windows, num_variables, total_param_sets), intent(out) :: std_ratio

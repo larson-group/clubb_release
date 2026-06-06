@@ -7,6 +7,11 @@ import numpy as np
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from clubb_python import clubb_api
+from clubb_python.derived_types.err_info import ErrInfo
+
+
+def _err_info(ngrdcol):
+    return clubb_api.init_err_info(ErrInfo(ngrdcol=ngrdcol))
 
 
 def test_calc_luhar_params_matches_formula():
@@ -102,7 +107,7 @@ def test_adg1_w_closure_matches_formula():
 
     w_1, w_2, w_1_n, w_2_n, varnce_w_1, varnce_w_2, mixt_frac = clubb_api.adg1_w_closure(
         nz=nz, ngrdcol=ngrdcol, wm=wm, wp2=wp2, skw=skw, sigma_sqd_w=sigma_sqd_w, sqrt_wp2=sqrt_wp2,
-        mixt_frac_max_mag=mixt_frac_max_mag
+        mixt_frac_max_mag=mixt_frac_max_mag, err_info=_err_info(ngrdcol),
     )
 
     base_mixt = np.where(
@@ -152,7 +157,7 @@ def test_adg2_pdf_driver_column_consistency():
     got = clubb_api.adg2_pdf_driver(
         nz=nz, ngrdcol=ncol, sclr_dim=sclr_dim, sclr_tol=sclr_tol, wm=wm, rtm=rtm, thlm=thlm, wp2=wp2,
         rtp2=rtp2, thlp2=thlp2, skw=skw, wprtp=wprtp, wpthlp=wpthlp, sqrt_wp2=sqrt_wp2, beta=beta,
-        sclrm=sclrm, sclrp2=sclrp2, wpsclrp=wpsclrp, l_scalar_calc=True,
+        sclrm=sclrm, sclrp2=sclrp2, wpsclrp=wpsclrp, l_scalar_calc=True, err_info=_err_info(ncol),
     )
 
     for i in range(ncol):
@@ -161,7 +166,7 @@ def test_adg2_pdf_driver_column_consistency():
             thlm=thlm[i:i+1, :], wp2=wp2[i:i+1, :], rtp2=rtp2[i:i+1, :], thlp2=thlp2[i:i+1, :],
             skw=skw[i:i+1, :], wprtp=wprtp[i:i+1, :], wpthlp=wpthlp[i:i+1, :], sqrt_wp2=sqrt_wp2[i:i+1, :],
             beta=beta[i:i+1], sclrm=sclrm[i:i+1, :, :], sclrp2=sclrp2[i:i+1, :, :],
-            wpsclrp=wpsclrp[i:i+1, :, :], l_scalar_calc=True,
+            wpsclrp=wpsclrp[i:i+1, :, :], l_scalar_calc=True, err_info=_err_info(1),
         )
         for arr_multi, arr_single in zip(got, got_i):
             np.testing.assert_allclose(arr_multi[i:i+1, ...], arr_single)
@@ -198,7 +203,7 @@ def test_adg1_pdf_driver_column_consistency():
         nz=nz, ngrdcol=ncol, sclr_dim=sclr_dim, sclr_tol=sclr_tol, wm=wm, rtm=rtm, thlm=thlm, um=um, vm=vm,
         wp2=wp2, rtp2=rtp2, thlp2=thlp2, up2=up2, vp2=vp2, skw=skw, wprtp=wprtp, wpthlp=wpthlp, upwp=upwp,
         vpwp=vpwp, sqrt_wp2=sqrt_wp2, sigma_sqd_w=sigma_sqd_w, beta=beta, mixt_frac_max_mag=mixt_frac_max_mag,
-        sclrm=sclrm, sclrp2=sclrp2, wpsclrp=wpsclrp, l_scalar_calc=True,
+        sclrm=sclrm, sclrp2=sclrp2, wpsclrp=wpsclrp, l_scalar_calc=True, err_info=_err_info(ncol),
     )
 
     for i in range(ncol):
@@ -209,7 +214,7 @@ def test_adg1_pdf_driver_column_consistency():
             wprtp=wprtp[i:i+1, :], wpthlp=wpthlp[i:i+1, :], upwp=upwp[i:i+1, :], vpwp=vpwp[i:i+1, :],
             sqrt_wp2=sqrt_wp2[i:i+1, :], sigma_sqd_w=sigma_sqd_w[i:i+1, :], beta=beta[i:i+1],
             mixt_frac_max_mag=mixt_frac_max_mag, sclrm=sclrm[i:i+1, :, :], sclrp2=sclrp2[i:i+1, :, :],
-            wpsclrp=wpsclrp[i:i+1, :, :], l_scalar_calc=True,
+            wpsclrp=wpsclrp[i:i+1, :, :], l_scalar_calc=True, err_info=_err_info(1),
         )
         for arr_multi, arr_single in zip(got, got_i):
             np.testing.assert_allclose(arr_multi[i:i+1, ...], arr_single)

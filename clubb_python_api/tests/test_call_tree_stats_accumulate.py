@@ -47,7 +47,7 @@ def test_stats_accumulate_smoke():
     clubb_api.init_stats(
         registry_path=registry,
         output_path="",
-        ncol=ngrdcol,
+        ncol_batch=ngrdcol,
         stats_tsamp=60.0,
         stats_tout=120.0,
         dt_main=60.0,

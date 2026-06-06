@@ -56,7 +56,7 @@ def stats_env():
     init_stats(
         registry_path=REGISTRY,
         output_path="",         # no NetCDF output
-        ncol=NCOL,
+        ncol_batch=NCOL,
         stats_tsamp=TSAMP,
         stats_tout=TOUT,
         dt_main=DT,
@@ -109,7 +109,7 @@ class TestStatsConfig:
         zm = np.linspace(0.0, 250.0, NZM)
         clubb_params = init_clubb_params(NCOL, iunit=10, filename="")
         init_stats(
-            registry_path=REGISTRY, output_path="", ncol=NCOL,
+            registry_path=REGISTRY, output_path="", ncol_batch=NCOL,
             stats_tsamp=TSAMP, stats_tout=TOUT, dt_main=DT,
             day_in=1, month_in=1, year_in=2000, time_initial=0.0,
             zt=zt, zm=zm, sclr_dim=0, edsclr_dim=0, err_info=stats_env,
@@ -237,7 +237,7 @@ class TestNetcdfMetadata:
         init_stats(
             registry_path=REGISTRY,
             output_path=str(output_path),
-            ncol=NCOL,
+            ncol_batch=NCOL,
             stats_tsamp=TSAMP,
             stats_tout=TOUT,
             dt_main=DT,

@@ -82,6 +82,7 @@ def _make_driver_inputs(gr, sclr_dim: int, hydromet_dim: int):
         "sclrp3": fill((ncol, nzt, sclr_dim), 1.0e-6),
         "p_sfc": fill((ncol,), 1.0e5),
         "rtm": fill((ncol, nzt), 1.0e-2),
+        "sigma_sqd_w": np.zeros((ncol, nzm), dtype=np.float64, order="F"),
     }
 
 

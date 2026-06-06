@@ -12,6 +12,79 @@ from dataclasses import dataclass
 from pathlib import Path
 
 
+def _active_preprocessor_definitions(repo_root: Path) -> set[str]:
+    definitions: set[str] = set()
+    search_roots = [
+        repo_root / "CMakeLists.txt",
+        repo_root / "cmake",
+        repo_root / "compile.py",
+        repo_root / "compile",
+    ]
+    paths: list[Path] = []
+    for root in search_roots:
+        if root.is_file():
+            paths.append(root)
+        elif root.is_dir():
+            paths.extend(
+                path for path in root.rglob("*")
+                if path.suffix in {".cmake", ".bash", ".sh", ".py"} or path.name == "CMakeLists.txt"
+            )
+
+    for path in paths:
+        text = path.read_text(errors="ignore")
+        for mt in re.finditer(r"add_compile_definitions\s*\(([^)]*)\)", text, flags=re.I | re.S):
+            for token in re.split(r"[\s;]+", mt.group(1).strip()):
+                if token and not token.startswith("$"):
+                    definitions.add(token.split("=", 1)[0])
+        for mt in re.finditer(r"(?<!\w)-D([A-Za-z_][A-Za-z0-9_]*)(?:=\S+)?", text):
+            definitions.add(mt.group(1))
+
+    return definitions
+
+
+def _filter_inactive_preprocessor_blocks(text: str, definitions: set[str]) -> str:
+    lines: list[str] = []
+    active = True
+    stack: list[tuple[bool, bool]] = []
+
+    for line in text.splitlines():
+        stripped = line.strip()
+        match = re.match(r"#\s*(ifdef|ifndef)\s+([A-Za-z_][A-Za-z0-9_]*)\b", stripped)
+        if match:
+            parent_active = active
+            macro_defined = match.group(2) in definitions
+            condition_active = macro_defined if match.group(1) == "ifdef" else not macro_defined
+            stack.append((parent_active, condition_active))
+            active = parent_active and condition_active
+            continue
+
+        if re.match(r"#\s*else\b", stripped):
+            if stack:
+                parent_active, condition_active = stack[-1]
+                condition_active = not condition_active
+                stack[-1] = (parent_active, condition_active)
+                active = parent_active and condition_active
+            continue
+
+        if re.match(r"#\s*endif\b", stripped):
+            if stack:
+                parent_active, _condition_active = stack.pop()
+                active = parent_active
+            continue
+
+        if re.match(r"#\s*elif\b", stripped):
+            if stack:
+                parent_active, _condition_active = stack[-1]
+                stack[-1] = (parent_active, False)
+                active = False
+            continue
+
+        if active:
+            lines.append(line)
+
+    return "\n".join(lines)
+
+
 def _strip_fortran_comments(line: str) -> str:
     if line.lstrip().startswith("#"):
         return ""
@@ -127,6 +200,7 @@ class PythonCall:
     function_name: str
     symbol: str
     signature_args: list[str]
+    signature_default_args: set[str]
     call_positional_args: list[str]
     call_keyword_args: list[str]
 
@@ -165,10 +239,38 @@ MISSING_SOURCE_MAPPING_EXCEPTIONS = {
 }
 
 ARG_DIFF_EXCEPTIONS = {
+    "return_default_params",
     "stats",
 }
 
+FALSE_OPTIONAL_ARG_EXCEPTIONS = {
+    "f2py_init_err_info": {
+        "err_info",
+    },
+    "f2py_setup_grid": {
+        "gr",
+        "err_info",
+    },
+}
+
+PUBLIC_API_OMITTED_ARG_EXCEPTIONS = {
+    "f2py_calc_derrived_params": {
+        "lmin",
+        "mixt_frac_max_mag",
+    },
+    "f2py_zero_pdf_implicit_coefs_terms": {
+        "pdf_implicit_coefs_terms",
+    },
+}
+
 DERIVED_SOURCE_OUTPUT_EXCEPTIONS = {
+    # f2py_init_clubb_loss derives these sizes from initialized CLUBB/loss state
+    # around init_clubb_loss rather than receiving them from init_clubb_loss.
+    "f2py_init_clubb_loss": {
+        "num_variables",
+        "total_param_sets",
+        "num_time_windows",
+    },
     # f2py_pdf_closure_driver exposes values derived from source outputs after
     # pdf_closure_driver returns.
     "f2py_pdf_closure_driver": {
@@ -212,6 +314,15 @@ def _should_ignore_missing_source_mapping(pc: PythonCall, pyf_sub: PyfRoutine) -
 
 def _filter_arg_diff_exceptions(args: list[str]) -> list[str]:
     return [arg for arg in args if arg not in ARG_DIFF_EXCEPTIONS]
+
+
+def _is_false_optional_arg_exception(symbol: str, arg: str) -> bool:
+    return arg in FALSE_OPTIONAL_ARG_EXCEPTIONS.get(symbol, set())
+
+
+def _filter_public_api_omitted_arg_exceptions(symbol: str, args: list[str]) -> list[str]:
+    omitted_args = PUBLIC_API_OMITTED_ARG_EXCEPTIONS.get(symbol, set())
+    return [arg for arg in args if arg not in omitted_args]
 
 
 def _is_derived_source_output_exception(symbol: str, arg: str) -> bool:
@@ -358,10 +469,12 @@ def parse_fortran_routines(repo_root: Path) -> dict[str, FortranRoutine]:
     """Parse current Fortran source routine signatures in src."""
     out: dict[str, FortranRoutine] = {}
     src_dir = repo_root / "src"
+    definitions = _active_preprocessor_definitions(repo_root)
     for path in sorted(src_dir.rglob("*.F90")):
         if "G_unit_test" in path.parts or "G_unit_tests" in path.parts:
             continue
-        merged = merge_fortran_lines(path.read_text(errors="ignore"))
+        text = _filter_inactive_preprocessor_blocks(path.read_text(errors="ignore"), definitions)
+        merged = merge_fortran_lines(text)
         for kind, name, block in _extract_routine_blocks(merged):
             sig_match = re.search(
                 rf"(?im)^\s*(?:subroutine|(?:[a-z0-9_(),=\s]+)?function)\s+{re.escape(name)}\s*\(([^)]*)\)",
@@ -386,10 +499,12 @@ def parse_fortran_routines(repo_root: Path) -> dict[str, FortranRoutine]:
 def parse_fortran_interfaces(repo_root: Path) -> dict[str, list[str]]:
     out: dict[str, list[str]] = {}
     src_dir = repo_root / "src"
+    definitions = _active_preprocessor_definitions(repo_root)
     for path in sorted(src_dir.rglob("*.F90")):
         if "G_unit_test" in path.parts or "G_unit_tests" in path.parts:
             continue
-        merged = merge_fortran_lines(path.read_text(errors="ignore"))
+        text = _filter_inactive_preprocessor_blocks(path.read_text(errors="ignore"), definitions)
+        merged = merge_fortran_lines(text)
         for mt in re.finditer(
             r"(?ims)^\s*interface\s+([a-z0-9_]+)\s*(.*?)^\s*end\s+interface(?:\s+\1)?\s*$",
             merged,
@@ -567,6 +682,9 @@ def parse_f2py_wrappers(
 
 def infer_source_routine(symbol: str, fortran: dict[str, FortranRoutine]) -> str:
     """Infer source routine for direct f2py bindings without an adapter wrapper."""
+    if _is_missing_source_mapping_exception(symbol):
+        return ""
+
     base = symbol.removeprefix("f2py_")
     suffixes = (
         "_same_grid",
@@ -663,10 +781,24 @@ def parse_python_calls(repo_root: Path) -> list[PythonCall]:
         for node in tree.body:
             if not isinstance(node, ast.FunctionDef) or node.name.startswith("_"):
                 continue
+            positional_defaults = (
+                [None] * (len(node.args.args) - len(node.args.defaults))
+                + list(node.args.defaults)
+            )
             signature_args = [
                 normalize_name(arg.arg)
                 for arg in [*node.args.args, *node.args.kwonlyargs]
             ]
+            signature_default_args = {
+                normalize_name(arg.arg)
+                for arg, default in zip(node.args.args, positional_defaults)
+                if default is not None
+            }
+            signature_default_args.update(
+                normalize_name(arg.arg)
+                for arg, default in zip(node.args.kwonlyargs, node.args.kw_defaults)
+                if default is not None
+            )
 
             for call in ast.walk(node):
                 if not isinstance(call, ast.Call):
@@ -682,6 +814,7 @@ def parse_python_calls(repo_root: Path) -> list[PythonCall]:
                         function_name=node.name,
                         symbol=call.func.attr.lower(),
                         signature_args=signature_args,
+                        signature_default_args=signature_default_args,
                         call_positional_args=[
                             ident
                             for arg in call.args
@@ -731,6 +864,10 @@ def _source_return_args(source: FortranRoutine) -> list[str]:
 def _print_issue_details(issue: OrderIssue) -> None:
     filtered_actual = _filter_arg_diff_exceptions(issue.python_order)
     filtered_expected = _filter_arg_diff_exceptions(issue.pyf_order)
+
+    if issue.issue.startswith("PUBLIC_API_FALSE_OPTIONAL_ARG"):
+        print(f"  FALSE_OPTIONAL_ARGS: {filtered_actual}")
+        return
 
     if issue.issue.startswith("PUBLIC_API_SIGNATURE_ORDER_MISMATCH"):
         print(f"  ORDER_ACTUAL:   {filtered_actual}")
@@ -852,6 +989,34 @@ def find_contract_issues(repo_root: Path) -> list[OrderIssue]:
         expected_public_args = expected_public_args_for_python(
             source, pyf_sub.out_args, pc.signature_args
         )
+        expected_public_args = _filter_public_api_omitted_arg_exceptions(
+            pc.symbol, expected_public_args
+        )
+        false_optional_args = [
+            arg for arg in pc.signature_args
+            if arg in pc.signature_default_args
+            and arg in source.args
+            and arg not in source.optional_args
+            and arg not in ARG_DIFF_EXCEPTIONS
+            and not _is_false_optional_arg_exception(pc.symbol, arg)
+        ]
+        if false_optional_args:
+            issues.append(
+                OrderIssue(
+                    python_api_fn=python_api_fn,
+                    pyf_symbol=pc.symbol,
+                    issue=(
+                        "PUBLIC_API_FALSE_OPTIONAL_ARG::"
+                        f"{source.file.relative_to(repo_root)}::{source.name}"
+                    ),
+                    python_order=false_optional_args,
+                    pyf_order=[
+                        arg for arg in source.args
+                        if arg in false_optional_args
+                    ],
+                )
+            )
+
         mismatch_kind = _classify_public_api_signature_issue(
             pc.signature_args, expected_public_args
         )
@@ -960,7 +1125,13 @@ def main() -> int:
 
     for issue in issues:
         issue_type = issue.issue.split("::", 1)[0]
-        prefix = "WARNING" if issue_type == "GENERIC_DISPATCH_WRAPPER" else "ERROR"
+        prefix = (
+            "WARNING"
+            if issue_type in {
+                "GENERIC_DISPATCH_WRAPPER",
+            }
+            else "ERROR"
+        )
         print(f"{prefix} {issue.issue}: {issue.python_api_fn} -> {issue.pyf_symbol}")
         _print_issue_details(issue)
     print("\nSummary:")
@@ -968,7 +1139,8 @@ def main() -> int:
         print(f"  {issue_type}: {count}")
     blocking_issues = [
         issue for issue in issues
-        if issue.issue.split("::", 1)[0] != "GENERIC_DISPATCH_WRAPPER"
+        if issue.issue.split("::", 1)[0]
+        not in {"GENERIC_DISPATCH_WRAPPER"}
     ]
     return 1 if blocking_issues else 0
 

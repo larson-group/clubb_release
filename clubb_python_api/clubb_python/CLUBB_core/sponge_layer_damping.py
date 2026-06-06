@@ -22,7 +22,7 @@ def _stack_column_outputs(column_outputs):
 
 def sponge_damp_xm(
     gr: Grid, nzm: int, nzt: int,
-    dt: float, zt, zm, xm_ref, xm, damping_profile=None,
+    dt: float, zt, zm, xm_ref, xm, damping_profile,
 ):
     """Damp a mean-field profile toward a reference profile in sponge layer."""
     ngrdcol = np.asarray(zt).shape[0]
@@ -49,7 +49,7 @@ def sponge_damp_xm(
 
 def sponge_damp_xp2(
     gr: Grid, nzm: int,
-    dt: float, zm, xp2, x_tol_sqd, damping_profile=None,
+    dt: float, zm, xp2, x_tol_sqd, damping_profile,
 ):
     """Damp variance profile in sponge layer with a lower floor."""
     ngrdcol = np.asarray(zm).shape[0]
@@ -75,7 +75,7 @@ def sponge_damp_xp2(
 
 def sponge_damp_xp3(
     gr: Grid, nzm: int, nzt: int,
-    dt: float, z, zm, xp3, damping_profile=None,
+    dt: float, z, zm, xp3, damping_profile,
 ):
     """Damp third-moment profile in sponge layer."""
     ngrdcol = np.asarray(z).shape[0]

@@ -100,7 +100,12 @@ from clubb_python.CLUBB_core.pdf_parameter_module import (
     zero_pdf_params,
     zero_pdf_implicit_coefs_terms,
 )
-from clubb_python.CLUBB_core.error_code import set_debug_level, reset_err_code, initialize_error_headers
+from clubb_python.CLUBB_core.error_code import (
+    set_debug_level,
+    clubb_at_least_debug_level,
+    reset_err_code,
+    initialize_error_headers,
+)
 from clubb_python.CLUBB_core.file_functions import file_read_1d
 from clubb_python.CLUBB_core.interpolation import lin_interpolate_two_points, mono_cubic_interp, zlinterp_fnc
 from clubb_python.CLUBB_core.index_mapping import (

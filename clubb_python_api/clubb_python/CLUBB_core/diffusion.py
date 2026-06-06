@@ -20,11 +20,9 @@ def _diffusion_zm_lhs_legacy_call(k_zm, k_zt, nu, invrs_rho_ds_zm, rho_ds_zt, nz
 
 def diffusion_zt_lhs(
     nzm: int, nzt: int, ngrdcol: int, gr: Grid, k_zm, k_zt, nu,
-    invrs_rho_ds_ztzxt=None, rho_ds_zm=None,
+    invrs_rho_ds_ztzxt, rho_ds_zm,
 ):
     """Eddy-diffusion lhs contribution for zt-grid variables."""
-    if invrs_rho_ds_ztzxt is None or rho_ds_zm is None:
-        raise ValueError("diffusion_zt_lhs requires invrs_rho_ds_ztzxt/rho_ds_zm.")
     set_fortran_grid(gr)
     return clubb_f2py.f2py_diffusion_zt_lhs(
         f_arr(k_zm), f_arr(k_zt), f_arr(nu),

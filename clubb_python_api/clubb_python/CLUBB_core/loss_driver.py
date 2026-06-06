@@ -44,14 +44,12 @@ def init_clubb_loss(runfile: str, return_default_params: bool = False):
     return list(_loss_var_names), clubb_params_all
 
 
-def get_clubb_params_all(total_param_sets: int | None = None) -> np.ndarray:
+def get_clubb_params_all() -> np.ndarray:
     """Return the initialized full default CLUBB parameter matrix."""
-    if total_param_sets is None:
-        if not _loss_initialized:
-            raise RuntimeError("get_clubb_params_all requires init_clubb_loss to be called first.")
-        total_param_sets = _loss_total_param_sets
+    if not _loss_initialized:
+        raise RuntimeError("get_clubb_params_all requires init_clubb_loss to be called first.")
 
-    return clubb_f2py.f2py_get_clubb_params_all(int(total_param_sets), _get_nparams())
+    return clubb_f2py.f2py_get_clubb_params_all(int(_loss_total_param_sets), _get_nparams())
 
 
 def clubb_get_loss_for_params(clubb_params_all: np.ndarray):

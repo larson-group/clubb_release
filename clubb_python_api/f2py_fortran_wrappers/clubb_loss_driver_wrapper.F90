@@ -30,7 +30,7 @@ subroutine f2py_init_clubb_loss(runfile, num_variables, total_param_sets, num_ti
 
 end subroutine f2py_init_clubb_loss
 
-subroutine f2py_get_clubb_params_all(total_param_sets, nparams_in, clubb_params)
+subroutine f2py_get_clubb_params_all(total_param_sets, nparams_in, clubb_params_all_out)
 
   use clubb_precision, only: core_rknd
   use clubb_driver, only: get_clubb_params_all
@@ -39,7 +39,7 @@ subroutine f2py_get_clubb_params_all(total_param_sets, nparams_in, clubb_params)
   implicit none
 
   integer, intent(in) :: total_param_sets, nparams_in
-  real(core_rknd), dimension(total_param_sets, nparams_in), intent(out) :: clubb_params
+  real(core_rknd), dimension(total_param_sets, nparams_in), intent(out) :: clubb_params_all_out
 
   real(core_rknd), allocatable, dimension(:,:) :: local_params
 
@@ -53,7 +53,7 @@ subroutine f2py_get_clubb_params_all(total_param_sets, nparams_in, clubb_params)
     error stop "f2py_get_clubb_params_all: total_param_sets mismatch"
   end if
 
-  clubb_params = local_params
+  clubb_params_all_out = local_params
 
 end subroutine f2py_get_clubb_params_all
 

@@ -2,10 +2,19 @@
 
 import clubb_f2py
 
+_debug_level = 0
+
 
 def set_debug_level(level: int):
     """Set CLUBB debug verbosity level."""
-    clubb_f2py.f2py_set_clubb_debug_level(int(level))
+    global _debug_level
+    _debug_level = int(level)
+    clubb_f2py.f2py_set_clubb_debug_level(_debug_level)
+
+
+def clubb_at_least_debug_level(level: int):
+    """Return whether CLUBB debug verbosity is at least level."""
+    return _debug_level >= int(level)
 
 
 def reset_err_code():

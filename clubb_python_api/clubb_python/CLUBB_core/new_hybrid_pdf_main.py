@@ -12,8 +12,8 @@ def new_hybrid_pdf_driver(
     nz: int, ngrdcol: int, sclr_dim: int,
     wm, rtm, thlm, um, vm, wp2, rtp2, thlp2, up2, vp2,
     skw, wprtp, wpthlp, upwp, vpwp, sclrm, sclrp2, wpsclrp, clubb_params,
-    slope_coef_spread_dg_means_w=None, pdf_component_stdev_factor_w=None, skrt=None, skthl=None, sku=None, skv=None,
-    sksclr=None, *,
+    slope_coef_spread_dg_means_w, pdf_component_stdev_factor_w, skrt, skthl, sku, skv,
+    sksclr, *,
     pdf_implicit_coefs_terms: implicit_coefs_terms,
 ):
     """Compute full hybrid-PDF moments/mixture fraction for w/rt/thl/u/v/(sclr)."""

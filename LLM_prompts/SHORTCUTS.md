@@ -34,6 +34,28 @@ Before using, confirm whether the user wants:
 - full comparison suite passing
 - just compile/tests/smoke tests
 
+### Port Underlying Fortran
+
+Likely use when the user asks for things like:
+
+- port underlying Fortran to another language
+- re-port a stale Python, JAX, or other file from Fortran
+- make a ported file match the underlying Fortran source file
+- similarize a target-language port against the Fortran source
+- remove target-only helpers, aliases, optionals, or reordered logic
+- make routine calls, comments, or argument lists match the Fortran file
+
+Prompt:
+
+- `LLM_prompts/port_underlying_fortran_to_other_languages.md`
+
+Before using, confirm whether the user wants:
+
+- investigation only, or source edits now
+- one target file only, or all language mirrors
+- exact structural matching, or an idiomatic target-language rewrite
+- validation only, focused tests, or full comparison suites
+
 ### Format Fortran Routines
 
 Likely use when the user asks for things like:

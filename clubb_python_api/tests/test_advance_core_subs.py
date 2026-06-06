@@ -59,7 +59,7 @@ def _init_test_stats(gr, tmp_path: Path):
     err_info = clubb_api.init_stats(
         registry_path=registry,
         output_path=str(tmp_path / "advance_core_subs_stats.nc"),
-        ncol=gr.ngrdcol,
+        ncol_batch=gr.ngrdcol,
         stats_tsamp=60.0,
         stats_tout=60.0,
         dt_main=60.0,

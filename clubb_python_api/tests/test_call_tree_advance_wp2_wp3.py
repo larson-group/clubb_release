@@ -53,7 +53,7 @@ def _setup_env(tmp_path: Path, ngrdcol: int = 1):
     err_info = clubb_api.init_stats(
         registry_path="tests/test_stats_registry.in",
         output_path=str(tmp_path / "wp2_wp3_stats.nc"),
-        ncol=ngrdcol,
+        ncol_batch=ngrdcol,
         stats_tsamp=60.0,
         stats_tout=60.0,
         dt_main=60.0,
@@ -141,6 +141,7 @@ def _make_args(gr, flags, clubb_params, nu_vert_res_dep, pdf_implicit_coefs_term
         "l_use_wp3_lim_with_smth_heaviside": bool(flags.l_use_wp3_lim_with_smth_Heaviside),
         "l_wp2_fill_holes_tke": bool(flags.l_wp2_fill_holes_tke),
         "l_ho_nontrad_coriolis": bool(flags.l_ho_nontrad_coriolis),
+        "l_implemented": True,
         "up2": full((ngrdcol, nzm), 0.01),
         "vp2": full((ngrdcol, nzm), 0.01),
         "wp2": full((ngrdcol, nzm), 0.01),

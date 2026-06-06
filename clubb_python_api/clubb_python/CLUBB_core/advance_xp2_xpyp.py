@@ -31,9 +31,8 @@ def advance_xp2_xpyp(
     clubb_params, nu_vert_res_dep: NuVertResDep, iipdf_type: int, tridiag_solve_method: int, fill_holes_type: int,
     l_ho_nontrad_coriolis: bool, l_min_xp2_from_corr_wx: bool,
     l_c2_cloud_frac: bool, l_upwind_xpyp_ta: bool, l_godunov_upwind_xpyp_ta: bool,
-    l_lmm_stepping: bool, *,
-    l_implemented: bool = True,
-    stats=None,
+    l_lmm_stepping: bool,
+    l_implemented: bool,
     rtp2, thlp2, rtpthlp, up2, vp2, sclrp2, sclrprtp, sclrpthlp,
     err_info: ErrInfo,
 ):

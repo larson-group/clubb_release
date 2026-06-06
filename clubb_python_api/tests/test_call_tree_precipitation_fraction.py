@@ -47,7 +47,7 @@ def test_precip_fraction_returns_zero_when_no_hydrometeors(tmp_path):
     clubb_api.init_stats(
         registry_path=registry,
         output_path=str(tmp_path / "precip_frac_stats.nc"),
-        ncol=ngrdcol,
+        ncol_batch=ngrdcol,
         stats_tsamp=60.0,
         stats_tout=60.0,
         dt_main=60.0,

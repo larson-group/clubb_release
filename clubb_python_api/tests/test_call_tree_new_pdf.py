@@ -482,6 +482,7 @@ def test_new_pdf_driver_column_consistency():
     skthl = np.array([[0.12, -0.08, 0.05], [0.03, -0.06, 0.02]], dtype=np.float64)
 
     got = clubb_api.new_pdf_driver(
+        nz, ncol,
         wm, rtm, thlm, wp2, rtp2, thlp2, skw, wprtp, wpthlp, rtpthlp, clubb_params, skrt, skthl,
         pdf_implicit_coefs_terms=implicit,
     )
@@ -489,6 +490,7 @@ def test_new_pdf_driver_column_consistency():
     for i in range(ncol):
         implicit_i = clubb_api.init_pdf_implicit(nz, 1, 0)
         got_i = clubb_api.new_pdf_driver(
+            nz, 1,
             wm[i:i+1, :], rtm[i:i+1, :], thlm[i:i+1, :], wp2[i:i+1, :],
             rtp2[i:i+1, :], thlp2[i:i+1, :], skw[i:i+1, :], wprtp[i:i+1, :],
             wpthlp[i:i+1, :], rtpthlp[i:i+1, :], clubb_params[i:i+1, :],

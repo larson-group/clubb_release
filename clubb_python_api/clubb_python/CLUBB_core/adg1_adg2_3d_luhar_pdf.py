@@ -52,7 +52,7 @@ def close_luhar_pdf(nz: int, xm, xp2, mixt_frac, small_m, wpxp, x_tol_sqd: float
 
 def adg1_w_closure(
     nz: int, ngrdcol: int, wm, wp2, skw, sigma_sqd_w, sqrt_wp2, mixt_frac_max_mag: float,
-    err_info=None,
+    err_info,
 ):
     """Compute ADG1 w-mixture fraction and component means/variances."""
     _ensure_err_info(ngrdcol, err_info)
@@ -64,7 +64,7 @@ def adg1_w_closure(
 def adg2_pdf_driver(
     nz: int, ngrdcol: int, sclr_dim: int,
     sclr_tol, wm, rtm, thlm, wp2, rtp2, thlp2, skw, wprtp, wpthlp, sqrt_wp2,
-    beta, sclrm, sclrp2, wpsclrp, l_scalar_calc: bool, err_info=None,
+    beta, sclrm, sclrp2, wpsclrp, l_scalar_calc: bool, err_info,
 ):
     """Compute ADG2 PDF component means/variances for w/rt/thl/(sclr)."""
     _ensure_err_info(ngrdcol, err_info)
@@ -79,7 +79,7 @@ def adg1_pdf_driver(
     nz: int, ngrdcol: int, sclr_dim: int,
     sclr_tol, wm, rtm, thlm, um, vm, wp2, rtp2, thlp2, up2, vp2, skw, wprtp, wpthlp,
     upwp, vpwp, sqrt_wp2, sigma_sqd_w, beta, mixt_frac_max_mag: float,
-    sclrm, sclrp2, wpsclrp, l_scalar_calc: bool, err_info=None,
+    sclrm, sclrp2, wpsclrp, l_scalar_calc: bool, err_info,
 ):
     """Compute ADG1 PDF component means/variances for w/rt/thl/u/v/(sclr)."""
     _ensure_err_info(ngrdcol, err_info)

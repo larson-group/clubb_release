@@ -90,7 +90,6 @@ def test_diagnose_lscale_from_tau_basic(gr):
         sfc_elevation=np.full(ngrdcol, -10.0, dtype=np.float64),
         lscale_max=np.full(ngrdcol, 1.0e5, dtype=np.float64),
         clubb_params=clubb_params,
-        stats=None,
         l_e3sm_config=False,
         l_smooth_heaviside_tau_wpxp=True,
         brunt_vaisala_freq_sqd_smth=np.full((ngrdcol, nzm), 1.0e-6, dtype=np.float64),

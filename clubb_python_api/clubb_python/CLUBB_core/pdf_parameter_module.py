@@ -51,6 +51,6 @@ def zero_pdf_params(pdf_params: pdf_parameter):
     clubb_f2py.f2py_zero_pdf_params(1)
     return get_fortran_pdf_params()
 
-def zero_pdf_implicit_coefs_terms(pdf_implicit_coefs_terms: implicit_coefs_terms | None = None):
+def zero_pdf_implicit_coefs_terms():
     """Zero out stored implicit coefficient/term arrays."""
     clubb_f2py.f2py_zero_pdf_implicit_coefs_terms()

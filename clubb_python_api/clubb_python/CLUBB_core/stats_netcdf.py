@@ -140,13 +140,13 @@ def stats_finalize_budget(name: str, values, icol: int | None = None,
     )
 
 
-def init_stats(registry_path: str, output_path: str, ncol: int,
+def init_stats(registry_path: str, output_path: str, ncol_batch: int,
                stats_tsamp: float, stats_tout: float, dt_main: float,
                day_in: int, month_in: int, year_in: int,
                time_initial: float,
                zt: np.ndarray, zm: np.ndarray,
-               stats=None,
-               err_info: ErrInfo | None = None,
+               *,
+               err_info: ErrInfo,
                clubb_params: np.ndarray | None = None,
                param_names: list[str] | np.ndarray | None = None,
                rad_zt=None, rad_zm=None, hydromet_list=None,
@@ -174,11 +174,13 @@ def init_stats(registry_path: str, output_path: str, ncol: int,
         registry_path, output_path,
         stats_tsamp, stats_tout, dt_main,
         day_in, month_in, year_in, time_initial,
-        stats_tstart_value, stats_tend_value,
-        zt_levels, zm_levels,
+        stats_tstart=stats_tstart_value,
+        stats_tend=stats_tend_value,
+        zt=zt_levels,
+        zm=zm_levels,
         sclr_dim=int(sclr_dim), edsclr_dim=int(edsclr_dim),
         clubb_params=f_arr(clubb_params), param_names=encoded_param_names,
-        ncol=ncol, nzt=zt_levels.shape[0], nzm=zm_levels.shape[0],
+        ncol=ncol_batch, nzt=zt_levels.shape[0], nzm=zm_levels.shape[0],
     )
     return get_fortran_err_info()
 
@@ -297,7 +299,7 @@ def var_on_stats_list(name: str) -> bool:
 
 def stats_update_grid(zt_src: np.ndarray, zm_src: np.ndarray,
                       rho_vals: np.ndarray, rho_levels: np.ndarray,
-                      p_sfc: np.ndarray, stats=None):
+                      p_sfc: np.ndarray):
     """Update adaptive grid remapping inputs."""
     clubb_f2py.f2py_stats_update_grid(
         f_arr(zt_src), f_arr(zm_src),
@@ -309,8 +311,7 @@ def stats_update_grid(zt_src: np.ndarray, zm_src: np.ndarray,
 def stats_lh_samples_init(num_samples: int, nzt: int,
                           nl_var_names: list, u_var_names: list,
                           zt_vals: np.ndarray,
-                          stats=None,
-                          err_info: ErrInfo | None = None):
+                          err_info: ErrInfo):
     """Initialize SILHS sample output variables."""
     if err_info is None:
         raise ValueError("stats_lh_samples_init requires err_info.")
@@ -326,7 +327,7 @@ def stats_lh_samples_init(num_samples: int, nzt: int,
     )
 
 
-def stats_lh_samples_write_lognormal(samples: np.ndarray, stats=None, err_info: ErrInfo = None):
+def stats_lh_samples_write_lognormal(samples: np.ndarray, err_info: ErrInfo):
     """Write lognormal SILHS sample data."""
     if err_info is None:
         raise ValueError("stats_lh_samples_write_lognormal requires err_info.")
@@ -338,8 +339,7 @@ def stats_lh_samples_write_lognormal(samples: np.ndarray, stats=None, err_info: 
 def stats_lh_samples_write_uniform(uniform_vals: np.ndarray,
                                    mixture_comp: np.ndarray,
                                    sample_weights: np.ndarray,
-                                   stats=None,
-                                   err_info: ErrInfo = None):
+                                   err_info: ErrInfo):
     """Write uniform SILHS sample data."""
     if err_info is None:
         raise ValueError("stats_lh_samples_write_uniform requires err_info.")

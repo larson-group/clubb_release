@@ -44,6 +44,7 @@ def test_band_solve_multiple_rhs_solves_diagonal_system():
         nsub=nsub,
         ndim=ndim,
         nrhs=nrhs,
+        l_implemented=True,
         lhs=lhs,
         rhs=rhs,
         err_info=err_info,
