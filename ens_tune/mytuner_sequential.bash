@@ -51,10 +51,8 @@ function tune ( ) {
 	mkdir -p $ARCHIVE/$CASE/ens_tune_$member
 	mv $CLUBB/input/tunable_parameters/tunable_parameters_*.in  $ARCHIVE/$CASE/ens_tune_$member
 	mv $ENSEMBLE_DIR/tune.log  $ARCHIVE/$CASE/ens_tune_$member
-	# for GrADS output
-	mv $CLUBB/output/*_*.???  $ARCHIVE/$CASE/ens_tune_$member
 	# for NetCDF output
-	#mv $CLUBB/output/*_*.nc  $CLUBB/ens_tune_$member
+	mv $CLUBB/output/*_*.nc  $ARCHIVE/$CASE/ens_tune_$member
 }
 
 ################################################################################

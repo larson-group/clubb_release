@@ -136,24 +136,17 @@ l_restart | logical
   an earlier run by reading in data saved to disk by the earlier run.
 
 restart_path_case | character 
-  Path (from ../run_scripts/) and filename of GrADS/netCDF files 
-  sans '_zt.ctl', '_zm.ctl', or '_stats.nc'.
+  Path (from ../run_scripts/) and filename of netCDF files 
+  sans '_stats.nc'.
 
 time_restart | real, minimum of 12 digits of precision
   Time of model restart.  [seconds since start time in stat file]
 
 l_input_fields | logical
   Flag for whether this is an inputfields simulation, i.e.  we will set the
-  certain fields at the beginning of each timestep based on netCDF or GrADS
+  certain fields at the beginning of each timestep based on netCDF 
   data in a stats file for the purposes of diagnosing structural problems
   within the clubb equations.
-
-  Nota bene:  The GrADS data files cannot have a time increment less than 1mn.
-  Therefore, when a file is output in CLUBB with a stats_tout of less than
-  60, the code will simply round up, which will not work for using the
-  resulting GrADS data file generated for an inputfields simulation.
-  Therefore, when l_input_fields is true, always use GrADS data output
-  at 1mn increments or greater.
 
 debug_level | integer
   0 => Print no debug messages to the screen
@@ -448,10 +441,6 @@ stats_tsamp | real, minimum 12 digits of precision
 
 stats_tout | real, minimum 12 digits of precision
   Frequency to output statistics [s]
-
-stats_fmt | character
-  Either "grads" or "netcdf".  Note that the GrADS viewer has trouble
-  comparing a netCDF file to a grads file.
 
 stats_file | character
   Name of the file listing all variables to output to disk.

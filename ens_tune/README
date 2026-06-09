@@ -48,13 +48,12 @@ Creating and Running an Ensemble tuner job)
 3)  For each case Create/copy the <CASE NAME>_stats_tune.in file.  A sample of this 
     file can be found in the ens_tune/ directory (and subsequently in the
     ens_tune_xyz/ directory if it was copied from the ens_tune/ directory).
-    This file is used in the tuning process itself.  In order for this
-    process to work, stats_fmt in this file must be set to 'grads'.  The
-    tuner code reads the LES GrADS files and compares the results with the
-    CLUBB GrADS files (which are written according the specifications
+    This file is used in the tuning process itself.  The tuner code reads the 
+    LES netCDF files and compares the results with the CLUBB netCDF 
+    files (which are written according the specifications
     stated in this file).  This file MUST also contain the names of the
     CLUBB variables that are being tuned for.  During the process of
-    tuning, small GrADS files will be written that contain the results for
+    tuning, small netCDF files will be written that contain the results for
     ONLY the variables that are listed here.  This makes the tuning go
     faster because it is not being slowed down by the writing of
     unnecessary variables.

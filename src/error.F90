@@ -12,7 +12,7 @@ module error
 !   for each of the model runs and each of the variables
 
 !   function min_les_clubb_diff:  A driver for the CLUBB program/module.
-!   Calls run_clubb, reads in les & CLUBB results from GRADS files, and
+!   Calls run_clubb, reads in les & CLUBB results from netCDF files, and
 !   calculates the average difference between the two over all z-levels.
 
 !   subroutine write_results :
@@ -110,8 +110,8 @@ module error
 
 
   character(len=20), dimension(:), allocatable, private ::  &
-    hoc_v,  & ! Variables in CLUBB GrADS files
-    les_v  ! Variables in LES GrADS files
+    hoc_v,  & ! Variables in CLUBB netCDF files
+    les_v  ! Variables in LES netCDF files
 
   integer, dimension(:,:), allocatable, private ::  & 
     timestep_intvls ! Time intervals
@@ -136,8 +136,8 @@ module error
 
   character(len=150), dimension(:), allocatable, private ::  & 
     run_file,        & ! Model run files
-    hoc_stats_file,  & ! Model GrADS files
-    les_stats_file  ! Model GrADS files
+    hoc_stats_file,  & ! Model netCDF files
+    les_stats_file  ! Model netCDF files
 
   ! Various Variables for returning results
   integer, public :: &
@@ -190,7 +190,7 @@ module error
 ! Description:
 !   Initializes param_vals_matrix with constants from error.in
 !   Allocates arrays for cases and tuning variables.
-!   Initializes grads file names to read in.
+!   Initializes netCDF file names to read in.
 
 ! References:
 !   None
@@ -261,7 +261,7 @@ module error
       les_stats_file_nl
 
     character(len=20), dimension(max_variables) :: &
-      t_variables ! List of variables to be read from the GrADS output
+      t_variables ! List of variables to be read from the netCDF output
 
     ! Variables for parameter loops (ploops) tuner
     integer :: &
@@ -716,7 +716,7 @@ module error
     real( kind = core_rknd ), dimension(nparams) :: &
       params_local ! Local copy of the CLUBB parameters fed into run_clubb
 
-    ! These are read after each run from the GrADS control files
+    ! These are read after each run from the netCDF files
     integer :: &
       clubb_nz   ! Extent of the CLUBB domain in the z dimension
 
@@ -773,7 +773,7 @@ module error
 
     integer :: &
 #ifdef NETCDF
-      len_file, & ! The length of the currently read in Grads or NetCDF file.
+      len_file, & ! The length of the currently read in NetCDF file.
                   ! Used in a NetCDF assertion check below.
 #endif /* NETCDF */
       i, j, c_run ! looping variables
@@ -914,10 +914,10 @@ module error
 
     do c_run=1, c_total, 1
 
-      ! Determine how large the GrADS input is
+      ! Determine how large the netCDF input is
       clubb_nz = stat_file_num_vertical_levels( hoc_v(1), hoc_stats_file(c_run) )
 
-      ! Allocate the arrays for reading in the GrADS plot data
+      ! Allocate the arrays for reading in the netCDF plot data
       allocate( clubb_zl(clubb_nz), clubb2_zl(clubb_nz),  & 
                 les_zl(clubb_nz), clubb_grid_heights(clubb_nz), stat=AllocateStatus )
 
@@ -925,13 +925,13 @@ module error
         error stop "Allocation of arrays in minimization function failed"
       end if
 
-      ! Determine the height of GrADS input
+      ! Determine the height of netCDF input
       clubb_grid_heights = stat_file_vertical_levels( hoc_v(1), hoc_stats_file(c_run), clubb_nz )
 
       ! Start with first CLUBB & LES variables, then loop through and
       ! calculate the mean squared difference for all the variables
       do i=1, v_total, 1  
-        ! Read in LES grads data for one variable, averaged
+        ! Read in LES netCDF data for one variable, averaged
         ! over specified time intervals
         les_zl =  & 
         stat_file_average_interval &
@@ -959,7 +959,6 @@ module error
         call close_netcdf_read(clubb_netcdf_file)
 
         if ( .not. l_file_error) then
-          ! If the file could not be read, then it is most likely that the file is a GrADS file.
           ! This assertion check only supports NetCDF files. The case that the file could not
           ! be found is handled elsewhere in the tuner.
           if ( &
@@ -996,12 +995,12 @@ module error
           if( l_save_tuning_run ) then
             open(unit=file_unit, file=tuning_filename, &
             action='write', position='append')
-            call write_text( "LES variable was invalid or the GrADS file does not exist", &
+            call write_text( "LES variable was invalid or the netCDF file does not exist", &
               l_save_tuning_run, file_unit )
             close(unit=file_unit)
           end if
           write(fstderr,*) "The specified LES variable "//trim( les_v(i) )//" was invalid, "// &
-            "or the GrADS file did not exist."
+            "or the netCDF file did not exist."
           error stop "Missing or improperly formatted file"
         end if
 
@@ -1016,7 +1015,7 @@ module error
           error stop "Fatal error"
         end if
 
-        ! Read in CLUBB grads data for one variable, averaged
+        ! Read in CLUBB netCDF data for one variable, averaged
         ! over specified time intervals
         clubb_zl =  & 
         stat_file_average_interval & 
@@ -1082,7 +1081,7 @@ module error
 
       end do ! i=1..v_total
 
-      ! De-allocate the arrays for reading in the GrADS plot data
+      ! De-allocate the arrays for reading in the netCDF plot data
       deallocate( clubb_zl, clubb2_zl, les_zl, clubb_grid_heights )
 
     end do     ! end of do c_run=1, c_total
@@ -1492,8 +1491,8 @@ module error
       z_final    ! Final point for the purpose of computign the sum
 
     real( kind = core_rknd ), intent(in), dimension(nz) ::  & 
-      scm_zl, &! CLUBB GrADS variable   [units vary]
-      les_zl   ! The LES GrADS variable [units vary]
+      scm_zl, &! CLUBB netCDF variable   [units vary]
+      les_zl   ! The LES netCDF variable [units vary]
 
     real( kind = core_rknd ), intent(in) ::  & 
       norm_term ! normalization term; typically maxval(les) - minval(les)
@@ -1556,9 +1555,9 @@ module error
       z_final    ! Final point for the purpose of computign the sum
 
     real( kind = core_rknd ), intent(in), dimension(nz) ::  & 
-      scm_zl,  & ! CLUBB GrADS variable [units vary]
-      scm2_zl, & ! CLUBB GrADS variable [units vary]
-      les_zl     ! The LES GrADS variable [units vary]
+      scm_zl,  & ! CLUBB netCDF variable [units vary]
+      scm2_zl, & ! CLUBB netCDF variable [units vary]
+      les_zl     ! The LES netCDF variable [units vary]
 
     real( kind = core_rknd ), intent(in) ::  & 
       norm_term ! normalization term. Typically maxval(les) - minval(les)

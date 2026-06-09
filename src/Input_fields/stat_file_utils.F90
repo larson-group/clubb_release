@@ -16,7 +16,7 @@ module stat_file_utils
                               t1, t2, out_heights, variable_name,  & 
                               npower, l_spec_bound_cond, l_error )
 ! Description:
-!   Average a GrADS or netCDF file variable over the interval t1 to t2
+!   Average a netCDF file variable over the interval t1 to t2
 
 ! References:
 !   None
@@ -25,10 +25,6 @@ module stat_file_utils
     use constants_clubb, only: fstderr, eps ! Variable(s)
 
     use stat_file_module, only: stat_file ! Type(s)
-
-    use input_grads, only: &
-      open_grads_read, get_grads_var,  & ! Procedures
-      close_grads_read
 
 #ifdef NETCDF
     use input_netcdf, only: &
@@ -51,16 +47,12 @@ module stat_file_utils
     ! External
     intrinsic :: transfer
 
-#ifdef _OPENMP
-    integer :: omp_get_thread_num ! Function
-#endif
-
     ! Input Variables
     character(len=*), intent(in) ::  & 
       filename ! Name of the file
 
     integer, intent(in) ::  & 
-      out_nz,  & ! Number of vertial levels in the GrADS file.
+      out_nz,  & ! Number of vertial levels in the netCDF file.
       t1,      & ! Beginning timestep to look at
       t2         ! Ending timestep to look at
 
@@ -103,10 +95,9 @@ module stat_file_utils
       k     ! Vertical loop index
 
     integer :: &
-      file_nz, & ! Number of vertical levels in the file
-      iunit      ! File I/O unit
+      file_nz ! Number of vertical levels in the file
 
-    logical :: l_interpolate, l_grads_file
+    logical :: l_interpolate
 
     logical, dimension(out_nz) :: l_lin_int
 
@@ -134,28 +125,13 @@ module stat_file_utils
     num_timesteps = ( t2 - t1 ) + 1
     stat_file_average = 0.0_core_rknd
 
-    ! Determine file type
-    l_grads_file = .not. l_netcdf_file( filename ) 
-    
-    ! Open GraDS file
-    if ( l_grads_file ) then
-#ifdef _OPENMP
-    iunit = omp_get_thread_num( ) + 10 ! Known magic number
-#else
-    iunit = 10
-#endif
-      call open_grads_read( iunit, filename, faverage, l_error )
-
-    else
-
+    ! Open netCDF file
 #ifdef NETCDF
-      call open_netcdf_read( variable_name, filename, faverage, l_error )
-
+    call open_netcdf_read( variable_name, filename, faverage, l_error )
 #else
-      write(fstderr,*) "This version of CLUBB was not compiled with netCDF support"
-      l_error = .true.
+    write(fstderr,*) "This version of CLUBB was not compiled with netCDF support"
+    l_error = .true.
 #endif
-    end if ! l_grads_file
 
     if ( l_error ) return
 
@@ -185,20 +161,14 @@ module stat_file_utils
                                    upper_lev_idx(k), l_lin_int(k) )
     end do
 
-    ! Read in variables from GrADS file
+    ! Read in variables from netCDF file
     do t = t1, t2
 
-      if ( l_grads_file ) then
-        call get_grads_var( faverage, variable_name, t,  & 
-                            file_variable(1:file_nz), l_error )
-      else
 #ifdef NETCDF
-        l_convert_to_MKS = .true.
-        call get_netcdf_var( faverage, variable_name, t, l_convert_to_MKS, &
-                             file_variable(1:file_nz), l_error )
+      l_convert_to_MKS = .true.
+      call get_netcdf_var( faverage, variable_name, t, l_convert_to_MKS, &
+                           file_variable(1:file_nz), l_error )
 #endif
-      end if
-
 
       if ( l_error ) then
         write(fstderr,*) "stat_file_average: get_var failed for "  & 
@@ -261,15 +231,10 @@ module stat_file_utils
 
     end do ! t = t1, t2
 
-    if ( l_grads_file ) then
-      ! Close the GrADS file
-      call close_grads_read( faverage )
-    else
 #ifdef NETCDF
-      ! Close the netCDF file
-      call close_netcdf_read( faverage )
+    ! Close the netCDF file
+    call close_netcdf_read( faverage )
 #endif
-    end if
 
     ! Take average over num_timesteps
     stat_file_average(1:out_nz) = stat_file_average(1:out_nz) / &
@@ -284,7 +249,7 @@ module stat_file_utils
              out_heights, npower, l_error )
 
 ! Description:
-!   Reads in GrADS data from a file and then takes several averages
+!   Reads in netCDF data from a file and then takes several averages
 !   over an interval.
 
 ! References:
@@ -392,15 +357,9 @@ module stat_file_utils
 
 !       References:
 !       None
-
-!       Notes:
-!       Somewhat inefficient, since it reads in the entire .ctl file to
-!       determine the number of levels
 !-------------------------------------------------------------------------
 
     use stat_file_module, only: stat_file ! Type(s)
-
-    use input_grads, only: open_grads_read, close_grads_read ! Procedure(s)
 
     use constants_clubb, only: fstderr
 
@@ -410,11 +369,6 @@ module stat_file_utils
 
     implicit none
 
-    ! External
-#ifdef _OPENMP
-    integer :: omp_get_thread_num ! Function
-#endif
-
     ! Input Variables
     character(len=*), intent(in) ::  & 
       filename, & ! File name
@@ -423,50 +377,28 @@ module stat_file_utils
     ! Local Variables
     type (stat_file) :: file_nz ! Data file
 
-    logical :: l_grads_file, l_error
-
-    integer :: iunit ! File unit number
+    logical :: l_error
 
     ! ---- Begin Code ----
 
-    l_grads_file = .not. l_netcdf_file( filename )  
-
-    if ( l_grads_file ) then
-
-#ifdef _OPENMP
-    iunit = omp_get_thread_num( ) + 10 ! Known magic number
-#else
-    iunit = 10
-#endif
-      ! Read in the control file
-      call open_grads_read( iunit, filename, file_nz, l_error )
-
-    else
-
 #ifdef NETCDF
-      call open_netcdf_read( varname, filename, file_nz, l_error )
+    call open_netcdf_read( varname, filename, file_nz, l_error )
 #else
-      write(fstderr,*) "This version of CLUBB was not compiled with netCDF support"
-      l_error = .true.
+    write(fstderr,*) "This version of CLUBB was not compiled with netCDF support"
+    l_error = .true.
 #endif
-      if ( l_error ) then
-        write(fstderr,*) "Error opening "// filename
-        error stop
-      end if
-
+    if ( l_error ) then
+      write(fstderr,*) "Error opening "// filename
+      error stop
     end if
 
     ! Set return variable
     stat_file_num_vertical_levels = file_nz%iz
 
     ! Close file
-    if ( l_grads_file ) then
-      call close_grads_read( file_nz )
-    else
 #ifdef NETCDF
-      call close_netcdf_read( file_nz )
+    call close_netcdf_read( file_nz )
 #endif
-    end if
 
     return
   end function stat_file_num_vertical_levels
@@ -475,8 +407,6 @@ module stat_file_utils
   function stat_file_vertical_levels( varname, filename, nz )
 
     use stat_file_module, only: stat_file ! Type(s)
-
-    use input_grads, only: open_grads_read, close_grads_read ! Procedure(s)
 
     use constants_clubb, only: fstderr
 
@@ -488,11 +418,6 @@ module stat_file_utils
 #endif
 
     implicit none
-
-    ! External
-#ifdef _OPENMP
-    integer :: omp_get_thread_num ! Function
-#endif
 
     ! Input Variables
     character(len=*), intent(in) ::  & 
@@ -509,49 +434,28 @@ module stat_file_utils
     ! Local Variables
     type (stat_file) :: file_levels  ! Data file
 
-    logical :: l_grads_file, l_error
-
-    integer :: iunit ! file unit number
+    logical :: l_error
 
     ! ---- Begin Code ----
 
-    l_grads_file = .not. l_netcdf_file( filename )  
-
-    if ( l_grads_file ) then
-#ifdef _OPENMP
-    iunit = omp_get_thread_num( ) + 10 ! Known magic number
-#else
-    iunit = 10
-#endif
-      ! Read in the control file
-      call open_grads_read( iunit, filename, file_levels, l_error )
-
-    else
-
 #ifdef NETCDF
-      call open_netcdf_read( varname, filename, file_levels, l_error )
+    call open_netcdf_read( varname, filename, file_levels, l_error )
 #else
-      write(fstderr,*) "This version of CLUBB was not compiled with netCDF support"
-      l_error = .true.
+    write(fstderr,*) "This version of CLUBB was not compiled with netCDF support"
+    l_error = .true.
 #endif
-      if ( l_error ) then
-        write(fstderr,*) "Error opening "// filename
-        error stop
-      end if
-
+    if ( l_error ) then
+      write(fstderr,*) "Error opening "// filename
+      error stop
     end if
 
     ! Set return variable
     stat_file_vertical_levels(1:nz) = file_levels%z(1:nz)
 
     ! Close file
-    if ( l_grads_file ) then
-      call close_grads_read( file_levels )
-    else
 #ifdef NETCDF
-      call close_netcdf_read( file_levels )
+    call close_netcdf_read( file_levels )
 #endif
-    end if
 
     return
   end function stat_file_vertical_levels
@@ -578,8 +482,6 @@ module stat_file_utils
 
     if ( filename(length-2:length) == ".nc" ) then
       l_netcdf_file = .true.
-    else if ( filename(length-3:length) == ".ctl" ) then
-      l_netcdf_file = .false.
     else
       l_netcdf_file = .false.
       write(fstderr,*) "Unrecognized file type: "//trim( filename )

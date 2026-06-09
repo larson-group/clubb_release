@@ -14,7 +14,7 @@ How to generate and verify data:
 --------------------------------
 These scripts were overhauled for ticket #300 to make them easier to use.  For detailed information on changes made, see this ticket.
 
-The only file that should need to be modified is create_output.bash (unless you wish to use these scripts for cases other than cloud_feedback, see notes for more information on this).  In create_output.bash, edit the path to the CLUBB output files (e.g. GrADS .ctl and .dat files), and then edit the paths to the desired directories for the netcdf files and verify PDF plots.  For the file paths, it is necessary to put the lst '/' character in the directory strings, otherwise Matlab will not be able to open the files.  Note that these directories do not need to exist; the script will create them and modify and change permissions to the folders if necessary.
+The only file that should need to be modified is create_output.bash (unless you wish to use these scripts for cases other than cloud_feedback, see notes for more information on this).  In create_output.bash, edit the path to the CLUBB output files (e.g. netCDF .nc files), and then edit the paths to the desired directories for the netcdf files and verify PDF plots.  For the file paths, it is necessary to put the last '/' character in the directory strings, otherwise Matlab will not be able to open the files.  Note that these directories do not need to exist; the script will create them and modify and change permissions to the folders if necessary.
 
 The current version requires only create_output.bash to be run in order to generate both the netcdf output and the verify PDFs. 
 	$ ./create_output.bash
@@ -40,7 +40,7 @@ IMPORTANT: Do not leave either of the matlab (.m) scripts open in an editor whil
 If you wish to only do this for certain cases, simply edit the array at the top on create_output.bash and remove the cases you do not wish to run.
 
 This script can also be generalized for other cases.  Replace the case names in the array at the top of create_output.bash with the case name to be
-run (e.g. the string before the .ctl or .dat in the GrADS files).  The filenames in the Matlab scripts will need to be changed if you don't want
+run (e.g. the string before the .nc in the netCDF files).  The filenames in the Matlab scripts will need to be changed if you don't want
 everything to be called cloud_feedback_***.  Otherwise this should be relatively easy to modify to create netcdf output for any case.
 
 If you desire to only generate netcdf files or create verify pdfs, simply comment out the corresponding line and then run the script as normal.

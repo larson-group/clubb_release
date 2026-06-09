@@ -8,7 +8,6 @@ set(INPUT_FIELDS_SOURCES
         input_netcdf.F90
         hydrostatic_module.F90
         input_interpret.F90
-        input_grads.F90
         extrapolation.F90
         corr_varnce_input_reader.F90
 )

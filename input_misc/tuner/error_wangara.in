@@ -21,7 +21,7 @@ prescribed_rand_seed        = 1
 
 ! clubb_stats_file is the name of clubb stats file;  This should be the same as 
 !   fname_zm  or fname_zm in the statsnl namelist.
-! les_stats_file is the name of LES grads data file
+! les_stats_file is the name of LES netCDF data file
 ! z_i and z_f are levels to look at when tuning. This does not need
 !   to be 1 to nzmax if you wish to optimize for particular altitudes.
 !   Note that the first and last z-levels in CLUBB are not prognosed.
@@ -30,7 +30,7 @@ prescribed_rand_seed        = 1
 &cases
 ! Wangara Day 33
 hoc_stats_file_nl(1)    = "../output/wangara_stats.nc"
-les_stats_file_nl(1)    = "/home/pub/les_and_clubb_benchmark_runs/les_runs/wangara_rams.ctl"
+les_stats_file_nl(1)    = "/home/pub/les_and_clubb_benchmark_runs/les_runs/wangara_rams.nc"
 run_file_nl(1)          = "wangara_hoc.in"
 z_i_nl(1)               = 1
 z_f_nl(1)               = 50

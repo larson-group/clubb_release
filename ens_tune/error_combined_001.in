@@ -15,7 +15,7 @@ tune_type         = 2
 
 ! clubb_stats_file is the name of clubb stats file;  This should be the same as 
 !   fname_zm  or fname_zm in the statsnl namelist.
-! les_stats_file is the name of LES grads data file
+! les_stats_file is the name of LES netCDF data file
 ! z_i and z_f are levels to look at when tuning. This does not need
 !   to be 1 to nzmax if you wish to optimize for particular altitudes.
 !   Note that the first and last z-levels in CLUBB are not prognosed.
@@ -23,8 +23,8 @@ tune_type         = 2
 
 &cases
 !  GCSS BOMEX
-hoc_stats_file_nl(1) = "../output/bomex_zt.ctl"
-les_stats_file_nl(1) = "../les_data/bomex_coamps_sm.ctl"
+hoc_stats_file_nl(1) = "../output/bomex_zt.nc"
+les_stats_file_nl(1) = "../les_data/bomex_coamps_sm.nc"
 run_file_nl(1)       = "bomex_hoc.in"
 z_i_nl(1)            = 2
 z_f_nl(1)            = 75
@@ -32,8 +32,8 @@ time_nl(1,:)         = 180, 240, 240, 300, 300, 360
 weight_case_nl(1)    = 0.5,
 
 ! GCSS DYCOMS II RF01
-hoc_stats_file_nl(2) = "../output/dycoms2_rf01_zt.ctl"
-les_stats_file_nl(2) = "../les_data/dycoms2_rf01_coamps_sm.ctl"
+hoc_stats_file_nl(2) = "../output/dycoms2_rf01_zt.nc"
+les_stats_file_nl(2) = "../les_data/dycoms2_rf01_coamps_sm.nc"
 run_file_nl(2)       = "dycoms2_rf01_hoc.in"
 z_i_nl(2)            = 3
 z_f_nl(2)            = 130

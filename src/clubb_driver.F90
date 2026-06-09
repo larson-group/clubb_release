@@ -108,7 +108,6 @@ module clubb_driver
     l_silhs_rad, &
     l_pos_def, &
     l_gamma_Skw, &
-    l_byteswap_io, &
     saturation_flatau, &
     l_test_grid_generalization, &
     no_grid_adaptation
@@ -200,7 +199,7 @@ module clubb_driver
 
   ! 'public' only to fix compiler error for nvhpc versions <24.9, please remove in future
   logical, public :: &
-    l_restart,                  & ! Flag for restarting from GrADS file
+    l_restart,                  & ! Flag for restarting from netCDF file
     l_input_fields,             & ! Whether to set model variables from a file
     l_modify_ic_with_cubic_int, & ! Interpolate sounding with Steffen's
                                   ! monotone cubic method for smoother ICs.
@@ -286,12 +285,8 @@ module clubb_driver
   
   ! 'public' only to fix compiler error for nvhpc versions <24.9, please remove in future
   character(len=128), public :: &
-    restart_path_case,  & ! GrADS file used in case of restart
+    restart_path_case,  & ! netCDF file used in case of restart
     forcings_file_path    ! Path to the forcing files
-
-  ! 'public' only to fix compiler error for nvhpc versions <24.9, please remove in future
-  character(len=10), public :: &
-    stats_fmt             ! File format for stats; typically GrADS.
 
   ! 'public' only to fix compiler error for nvhpc versions <24.9, please remove in future
   character(len=100), public :: &
@@ -708,7 +703,7 @@ module clubb_driver
   !$omp  grid_type, day, month, year, sfctype, &
   !$omp  stats,         &
   !$omp  sclr_idx, hm_metadata, clubb_config_flags, silhs_config_flags, stats_tsamp, stats_tout, &
-  !$omp  time_restart, restart_path_case, forcings_file_path, stats_fmt, fname_prefix, output_dir, &
+  !$omp  time_restart, restart_path_case, forcings_file_path, fname_prefix, output_dir, &
   !$omp  case_info_file, fname_grid_adaptation, output_file_prefix, runtype, zt_grid_fname, &
   !$omp  zm_grid_fname, lat_vals, lon_vals, time_initial, time_final, time_current, dt_main, &
   !$omp  dt_rad, deltaz_nl, zm_init_nl, zm_top_nl, mixt_frac_max_mag, T0, ts_nudge, rtm_min, &
@@ -1090,7 +1085,7 @@ module clubb_driver
     ngrdcol
 
   namelist /stats_setting/ &
-    l_stats, fname_prefix, stats_tsamp, stats_tout, stats_fmt, &
+    l_stats, fname_prefix, stats_tsamp, stats_tout, &
     l_allow_small_stats_tout, output_dir
 
   namelist /configurable_clubb_flags_nl/ &
@@ -1222,7 +1217,6 @@ module clubb_driver
     ! Pick some default values for stats_setting; other variables are set in
     ! module stats_variables
     fname_prefix = ''
-    stats_fmt    = ''
     output_dir   = "../output/"
 
     ngrdcol = 1
@@ -1552,11 +1546,6 @@ module clubb_driver
 #else
       call write_text( "-DUSE_BUGSrad_ocast_random disabled", l_write_to_file, iunit )
 #endif
-#ifdef BYTESWAP_IO
-      call write_text( "-DBYTESWAP_IO enabled", l_write_to_file, iunit )
-#else
-      call write_text( "-DBYTESWAP_IO disabled", l_write_to_file, iunit )
-#endif
 
       ! Pick some default values for model_setting
       call write_text( "--------------------------------------------------", &
@@ -1712,7 +1701,6 @@ module clubb_driver
       call write_text( "l_stats = ", l_stats, l_write_to_file, iunit )
       call write_text( "output_dir = " // output_dir, l_write_to_file, iunit )
       call write_text( "fname_prefix = " // fname_prefix, l_write_to_file, iunit )
-      call write_text( "stats_fmt = " // stats_fmt, l_write_to_file, iunit)
       call write_text( "stats_tsamp = ", real( stats_tsamp, kind = core_rknd ),&
               l_write_to_file, iunit )
       call write_text( "stats_tout = ", real( stats_tout, kind = core_rknd ), &
@@ -1722,7 +1710,6 @@ module clubb_driver
       call write_text( "Constant flags:", l_write_to_file, iunit )
       call write_text( "l_pos_def = ", l_pos_def, l_write_to_file, iunit )
       call write_text( "l_gamma_Skw = ", l_gamma_Skw, l_write_to_file, iunit)
-      call write_text( "l_byteswap_io = ", l_byteswap_io, l_write_to_file, iunit )
 
       call write_text( "Constant tolerances [units]", l_write_to_file, iunit )
       call write_text( "rt_tol [kg/kg] = ", rt_tol, l_write_to_file, iunit )
@@ -3201,7 +3188,7 @@ module clubb_driver
       if ( l_input_fields ) then
 
         ! If we're doing an inputfields run, get the values for our
-        ! model arrays from a netCDF or GrADS file.
+        ! model arrays from a netCDF.
         ! Note:  the time of the 1st LES statistical output is time_initial_LES
         !        plus the time of one LES statistical time step.  For example, a
         !        LES run that starts at 00:00Z and outputs stats every minute has
@@ -3211,7 +3198,7 @@ module clubb_driver
 
         l_restart_input = .false.
         call compute_timestep( &
-              iunit, stat_files(1), l_restart_input,            & ! Intent(in)
+              stat_files(1), l_restart_input,            & ! Intent(in)
               time_current + real(dt_main,kind=time_precision), & ! Intent(in)
               itime_nearest )                                     ! Intent(out)
 
@@ -5906,7 +5893,7 @@ module clubb_driver
 
     ! Description:
     !   Execute the necessary steps for the initialization of the
-    !   CLUBB model to a designated point in the submitted GrADS file.
+    !   CLUBB model to a designated point in the submitted netCDF file.
     !-----------------------------------------------------------------------
     use inputfields,only: &
         input_type, &  ! Variable(s)
@@ -5982,7 +5969,7 @@ module clubb_driver
     integer, intent(in) :: iunit
 
     character(len=*), intent(in) :: &
-      restart_path_case     ! Path to GrADS data for restart
+      restart_path_case     ! Path to netCDF data for restart
 
     integer, intent(in) :: &
       hydromet_dim
@@ -6283,12 +6270,12 @@ module clubb_driver
     l_input_rtpthlp_mc = .true.
 
     call set_filenames( "../"//trim( restart_path_case ) )
-    ! Determine the nearest timestep in the GRADS file to the
+    ! Determine the nearest timestep in the netCDF file to the
     ! restart time.
     l_restart = .true.
 
     call compute_timestep &
-      ( iunit, stat_files(1), l_restart, time_restart, &    ! Intent(in)
+      ( stat_files(1), l_restart, time_restart, &    ! Intent(in)
         timestep )                                          ! Intent(out)
 
     ! Sanity check for input time_restart

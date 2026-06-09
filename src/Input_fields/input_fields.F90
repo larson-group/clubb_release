@@ -142,7 +142,7 @@ module inputfields
 !-----------------------------------------------------------------------
   subroutine set_filenames( file_prefix )
 
-! Description: Set the names of the GrADS files to be used.
+! Description: Set the names of the netCDF files to be used.
 !   Used by clubb_inputfields and clubb_restart.
 ! References:
 !   None
@@ -160,7 +160,7 @@ module inputfields
       file_prefix
 
     ! Local Variables
-    logical :: l_grads, l_stats_netcdf
+    logical :: l_stats_netcdf
 
     ! ---- Begin Code ----
 
@@ -174,33 +174,30 @@ module inputfields
 
     case ( "coamps_les", "COAMPS_LES", "coamps" )
       allocate(stat_files(1:2))
-      stat_files(coamps_sm) = trim( file_prefix )//"_coamps_sm.ctl"
-      stat_files(coamps_sw) = trim( file_prefix )//"_coamps_sw.ctl"
+      stat_files(coamps_sm) = trim( file_prefix )//"_coamps_sm.nc"
+      stat_files(coamps_sw) = trim( file_prefix )//"_coamps_sw.nc"
 
       stats_input_type = coamps_input_type
 
     case ( "clubb_scm", "CLUBB_SCM", "clubb" )
       allocate(stat_files(1:3))
-      stat_files(clubb_zt) = trim( file_prefix )//"_zt.ctl"
-      stat_files(clubb_zm) = trim( file_prefix )//"_zm.ctl"
-      stat_files(clubb_sfc) = trim( file_prefix )//"_sfc.ctl"
+      stat_files(clubb_zt) = trim( file_prefix )//"_zt.nc"
+      stat_files(clubb_zm) = trim( file_prefix )//"_zm.nc"
+      stat_files(clubb_sfc) = trim( file_prefix )//"_sfc.nc"
 
       stats_input_type = clubb_input_type
 
-      inquire(file=stat_files(clubb_zt),exist=l_grads)
-
-      if ( .not. l_grads ) then
-        write(fstdout,*) "inputfields: Cannot find GrADS ctl file, assuming netCDF input"
-        inquire(file=trim(file_prefix)//"_stats.nc", exist=l_stats_netcdf)
-        if ( .not. l_stats_netcdf ) then
-          write(fstderr,*) "inputfields: Expected netCDF stats file not found: ", &
-                           trim(file_prefix)//"_stats.nc"
-        end if
+      inquire(file=stat_files(clubb_zt), exist=l_stats_netcdf)
+      
+      if ( .not. l_stats_netcdf ) then
+        write(fstderr,*) "inputfields: Expected netCDF stats file not found: ", &
+                         trim(file_prefix)//"_stats.nc"
+    
         stat_files(clubb_zt) = trim( file_prefix )// "_stats.nc"
         stat_files(clubb_zm) = trim( file_prefix )// "_stats.nc"
         stat_files(clubb_sfc) = trim( file_prefix )// "_stats.nc"
       end if
-
+      
     case ( "SAM", "sam" )
       allocate(stat_files(1:1))
       ! SAM uses one netCDF file for all of its output, so the entire filename
@@ -211,7 +208,7 @@ module inputfields
     case ( "rams_les", "RAMS_LES", "rams" )
       allocate(stat_files(1:1))
       ! RAMS uses one file for all of it's output.
-      stat_files(rams_file) = trim( file_prefix )//"_rams.ctl"
+      stat_files(rams_file) = trim( file_prefix )//"_rams.nc"
 
       stats_input_type = rams_input_type
 
@@ -2602,167 +2599,150 @@ module inputfields
     return
   end subroutine stat_fields_reader
 
-!===============================================================================
-  subroutine compute_timestep( iunit, filename, l_restart, & 
-                               time, nearest_timestep )
-
-    ! Description:
-    ! Given a time 'time', determines the closest output time in a GrADS (or
-    ! NetCDF) file.
-
-    !-----------------------------------------------------------------------
-
-    use stat_file_module, only: & 
-        stat_file     ! Type
-
+!===============================================================================                     
+  subroutine compute_timestep( filename, l_restart, &                                        
+                               time, nearest_timestep )                                            
+                                                                                                     
+    ! Description:                                                                                   
+    ! Given a time 'time', determines the closest output time in a NetCDF file.                      
+                                                                                                     
+    !-----------------------------------------------------------------------                         
+                                                                                                     
+    use stat_file_module, only: &                                                                    
+        stat_file     ! Type                                                                         
     use stat_file_utils, only: &
         l_netcdf_file
 
-    use input_grads, only: &
-        open_grads_read,  & ! Procedure(s)
-        close_grads_read
-
-    use constants_clubb, only:  & 
-        sec_per_min, & ! Variable(s)
-        fstderr ! Constant(s)
-
-    use clubb_precision, only:  & 
-        time_precision
-
-#ifdef NETCDF
-    use input_netcdf, only: open_netcdf_read, close_netcdf_read ! Procedure(s)
-#endif
-
-    implicit none
-
-    ! Input Variable(s)
-    integer, intent(in) :: iunit ! File I/O unit
-
-    character(len=*), intent(in) ::filename ! Path to the file and its name
-
-    logical, intent(in) :: l_restart     ! Whether this is a restart run
-
-    real( kind = time_precision ), intent(in) ::  & 
-      time ! Time near which we want to find GrADS output,
-    ! e.g. time_restart     [s]
-
-
-    ! Output Variable(s)
-    integer, intent(out) ::  & 
-      nearest_timestep ! Nearest integer output time to time [units vary]
-
-    ! Local Variables
-    type (stat_file) :: fread_var
-
-    real( kind = core_rknd ) :: delta_time   ! In seconds
-
-    logical :: l_grads_file, l_error
-
-    ! ---- Begin Code ----
-
-    l_grads_file = .not. l_netcdf_file( filename )
-
-    if ( l_grads_file ) then
-      ! Read in the control file
-      call open_grads_read( iunit, trim( filename ), & ! In
-                            fread_var,  & ! In/Out
-                            l_error ) ! Out
+    use constants_clubb, only:  &                                                                    
+        sec_per_min, & ! Variable(s)                                                                 
+        fstderr ! Constant(s)                                                                        
+                                                                                                     
+    use clubb_precision, only:  &                                                                    
+        time_precision                                                                               
+                                                                                                     
+#ifdef NETCDF                                                                                        
+    use input_netcdf, only: open_netcdf_read, close_netcdf_read ! Procedure(s)                       
+#endif                                                                                               
+                                                                                                     
+    implicit none                                                                                    
+                                                                                                     
+    ! Input Variable(s)                                                                              
+    character(len=*), intent(in) ::filename ! Path to the file and its name                          
+                                                                                                     
+    logical, intent(in) :: l_restart      ! Whether this is a restart run                            
+                                                                                                     
+    real( kind = time_precision ), intent(in) ::  &                                                  
+      time ! Time near which we want to find netCDF output,                                          
+    ! e.g. time_restart      [s]                                                                     
+                                                                                                     
+                                                                                                     
+    ! Output Variable(s)                                                                             
+    integer, intent(out) ::  &                                                                       
+      nearest_timestep ! Nearest integer output time to time [units vary]                            
+                                                                                                     
+    ! Local Variables                                                                                
+    type (stat_file) :: fread_var                                                                    
+                                                                                                     
+    real( kind = core_rknd ) :: delta_time   ! In seconds                                            
+                                                                                                     
+    logical :: l_error                                                                               
+                                                                                                     
+    ! ---- Begin Code ----                                                                           
     
-    else
-#ifdef NETCDF
-      if( stats_input_type == sam_input_type ) then
-        call open_netcdf_read( 'U', trim( filename ), & ! In
-                               fread_var, & ! In/Out
-                               l_error ) ! Out
-      else
-        call open_netcdf_read( 'thlm', trim( filename ), & ! In
-                               fread_var, & ! In/Out
-                               l_error ) ! Out
-      end if
-#else
-      write(fstderr,*) "This version of CLUBB was not compiled with netCDF support"
-#endif
+    ! Initialize error state
+    l_error = .false.
+
+    ! Explicitly reject non-netCDF files
+    if ( .not. l_netcdf_file( filename ) ) then
+      write(fstderr,*) "compute_timestep: Expected netCDF file, got: "//trim(filename)
+      error stop "Fatal error: Non-netCDF input."
     end if
-
-    if ( l_error ) then
-      write(fstderr,*) "Error reading file " // trim( filename )
-      error stop "Fatal error"
-    end if
-
-    if (l_grads_file) then
-      ! (restart time) - (initial time)
-      delta_time = real(time - (fread_var%time - &
-                   real(fread_var%dtwrite, kind=time_precision)), kind=core_rknd)
-    else
-      !  Eric   Raut     June  2013
-      delta_time = real(time - fread_var%time, kind=core_rknd)
-    !    Joshua Fasching March 2008
-!     .        time - fread_var%time
-    end if
-
-    ! Reporting
-    if ( l_restart ) then
-      print *, "Initial time of GrADS reference file ", & 
-               "[seconds since midnight]: ",  & 
-               fread_var%time
-      print *, "Model restart time [s]: ", time
-      print *, "Elapsed time between ", & 
-               "initial time of ref file and restart time [s]: ",  & 
-               delta_time
-      print *, "GrADS file output time interval [s]: ",  & 
-               fread_var%dtwrite
-
-      if ( ( mod( delta_time , fread_var%dtwrite )  > 1e-8_core_rknd) .or.  & 
-           ( mod( delta_time, fread_var%dtwrite ) < -1e-8_core_rknd) ) then
-        write(fstderr,*) "Error: Elapsed time is not a multiple ", & 
-                "of the reference GrADS output time interval."
-        write(fstderr,*) "Elapsed time [s] = ", delta_time
-        write(fstderr,*) "GrADS output time interval = ", fread_var%dtwrite
-        error stop
-      end if
-
-      if ( mod( delta_time , sec_per_min ) > 1e-8_core_rknd& 
-            .or. mod( delta_time, sec_per_min ) < -1e-8_core_rknd) then
-        write(fstderr,*) "Error: Elapsed time is not a multiple ", & 
-                "of one minute."
-        write(fstderr,*) "Elapsed time [s] = ", delta_time
-        error stop
-      end if
-
-    end if ! l_restart
-
-    ! Determines the closest recorded timestep to the restart
-    ! time.
-    nearest_timestep = nint( delta_time / fread_var%dtwrite )
-
-    if ( l_restart ) then
-      print *, "Elapsed time between ", & 
-               "initial time of ref file and restart time ", & 
-               "rounded to nearest minute: ",  & 
-               nearest_timestep
-
-      ! Print the actual record being recalled.
-      ! Joshua Fasching March 2008
-      print *, "Nearest GrADS output time iteration [ ]: ", & 
-               nint( real( nearest_timestep, kind=core_rknd) /  & 
-                     fread_var%dtwrite/sec_per_min ) - 1
-    end if ! l_restart
-
-    if ( l_grads_file ) then
-      call close_grads_read( fread_var )
-    else
-#ifdef NETCDF
-      call close_netcdf_read( fread_var )
-#endif
-    end if
-
+                                                                                                     
+#ifdef NETCDF                                                                                        
+    if( stats_input_type == sam_input_type ) then                                                  
+      call open_netcdf_read( 'U', trim( filename ), & ! In                                         
+                             fread_var, & ! In/Out                                                 
+                             l_error ) ! Out                                                       
+    else                                                                                           
+      call open_netcdf_read( 'thlm', trim( filename ), & ! In                                      
+                             fread_var, & ! In/Out                                                 
+                             l_error ) ! Out                                                       
+    end if                                                                                         
+#else                                                                                                
+    write(fstderr,*) "This version of CLUBB was not compiled with netCDF support"                  
+    l_error = .true.
+#endif                                                                                               
+                                                                                                     
+    if ( l_error ) then                                                                              
+      write(fstderr,*) "Error reading file " // trim( filename )                                     
+      error stop "Fatal error"                                                                       
+    end if                                                                                           
+                                                                                                     
+    !  Eric   Raut      June  2013                                                                   
+    delta_time = real(time - fread_var%time, kind=core_rknd)                                         
+    !   Joshua Fasching March 2008                                                                   
+!     .        time - fread_var%time                                                                 
+                                                                                                     
+    ! Reporting                                                                                      
+    if ( l_restart ) then                                                                            
+      print *, "Initial time of netCDF reference file ", &                                           
+               "[seconds since midnight]: ",  &                                                      
+               fread_var%time                                                                        
+      print *, "Model restart time [s]: ", time                                                      
+      print *, "Elapsed time between ", &                                                            
+               "initial time of ref file and restart time [s]: ",  &                                 
+               delta_time                                                                            
+      print *, "netCDF file output time interval [s]: ",  &                                          
+               fread_var%dtwrite                                                                     
+                                                                                                     
+      if ( ( mod( delta_time , fread_var%dtwrite )  > 1e-8_core_rknd) .or.  &                        
+           ( mod( delta_time, fread_var%dtwrite ) < -1e-8_core_rknd) ) then                          
+        write(fstderr,*) "Error: Elapsed time is not a multiple ", &                                 
+                "of the reference netCDF output time interval."                                      
+        write(fstderr,*) "Elapsed time [s] = ", delta_time                                           
+        write(fstderr,*) "netCDF output time interval = ", fread_var%dtwrite                         
+        error stop                                                                                   
+      end if                                                                                         
+                                                                                                     
+      if ( mod( delta_time , sec_per_min ) > 1e-8_core_rknd&                                         
+            .or. mod( delta_time, sec_per_min ) < -1e-8_core_rknd) then                              
+        write(fstderr,*) "Error: Elapsed time is not a multiple ", &                                 
+                "of one minute."                                                                     
+        write(fstderr,*) "Elapsed time [s] = ", delta_time                                           
+        error stop                                                                                   
+      end if                                                                                         
+                                                                                                     
+    end if ! l_restart                                                                               
+                                                                                                     
+    ! Determines the closest recorded timestep to the restart                                        
+    ! time.                                                                                          
+    nearest_timestep = nint( delta_time / fread_var%dtwrite )                                        
+                                                                                                     
+    if ( l_restart ) then                                                                            
+      print *, "Elapsed time between ", &                                                            
+               "initial time of ref file and restart time ", &                                       
+               "rounded to nearest minute: ",  &                                                     
+               nearest_timestep                                                                      
+                                                                                                     
+      ! Print the actual record being recalled.                                                      
+      ! Joshua Fasching March 2008                                                                   
+      print *, "Nearest netCDF output time iteration [ ]: ", &                                       
+               nint( real( nearest_timestep, kind=core_rknd) /  &                                    
+                     fread_var%dtwrite/sec_per_min ) - 1                                             
+    end if ! l_restart                                                                               
+                                                                                                     
+#ifdef NETCDF                                                                                        
+    call close_netcdf_read( fread_var )                                                              
+#endif                                                                                               
+                                                                                                     
   end subroutine compute_timestep
+
 !===============================================================================
   subroutine get_clubb_variable_interpolated &
            ( l_input_var, filename, varname, vardim, timestep, &
              clubb_heights, variable_interpolated, l_read_error )
 ! Description:
-!   Obtain a profile of a CLUBB variable from a GrADS file and interpolate if
+!   Obtain a profile of a CLUBB variable from a netCDF file and interpolate if
 !   needed.
 ! References:
 !   None
@@ -2828,18 +2808,13 @@ module inputfields
                                          k_lowest_zm, k_highest_zm, l_error )
 
   ! Description:
-  !   Obtains profiles for COAMPS or SAM variables from a GrADS or NetCDF file and
+  !   Obtains profiles for COAMPS or SAM variables from a NetCDF file and
   !   interpolates if needed.
   ! References:
   !   None
   !--------------------------------------------------------------------------------
 
     use stat_file_module, only: stat_file
-
-    use input_grads, only: &
-      open_grads_read, &
-      get_grads_var, &
-      close_grads_read
 
 #ifdef NETCDF
     use input_netcdf, only: &
@@ -2850,8 +2825,7 @@ module inputfields
 
     use stat_file_utils, only: & 
        LES_grid_to_CLUBB_grid, & ! Procedure(s)
-       CLUBB_levels_within_LES_domain, &
-       l_netcdf_file
+       CLUBB_levels_within_LES_domain
 
     use constants_clubb, only: &
       fstderr  ! Variable(s)
@@ -2891,8 +2865,7 @@ module inputfields
       min_ia, &     ! minimum ia value from all files
       max_iz        ! maximum iz value from all files
 
-    logical :: l_grads_file, & ! use grads or netcdf
-      l_internal_error
+    logical :: l_internal_error
 
     type (input_field) :: &
       current_var ! The current variable
@@ -2910,16 +2883,6 @@ module inputfields
 
     l_error = .false.
 
-    l_grads_file = .not. l_netcdf_file(stat_files(1))
-
-    if( l_grads_file ) then
-      do file_index=1, size(stat_files)
-        call open_grads_read( base_unit_number + (file_index-1), stat_files(file_index), &
-                              fread_vars(file_index), l_internal_error )
-        l_error = l_error .or. l_internal_error
-      end do ! file_index=1, size(stat_files)
-    else
-
 #ifdef NETCDF
       do file_index=1, size(stat_files)
         call open_netcdf_read( "U", stat_files(file_index),  &
@@ -2931,7 +2894,6 @@ module inputfields
       error stop "Fatal error"
 
 #endif
-    end if
 
     if (l_error) then
       write(fstderr,*) "A fatal error occured while reading the input file."
@@ -2977,11 +2939,6 @@ module inputfields
       if( current_var%l_input_var ) then
         file_index = current_var%input_file_index
 
-        if( l_grads_file ) then
-          call get_grads_var( fread_vars(file_index), current_var%input_name, timestep, &
-                      LES_tmp(file_index, fread_vars(file_index)%ia:fread_vars(file_index)%iz), &
-                      l_internal_error )
-        else
 #ifdef NETCDF
           l_convert_to_MKS = .false.
           call get_netcdf_var( fread_vars(file_index), current_var%input_name, timestep, &
@@ -2992,7 +2949,6 @@ module inputfields
           write(fstderr,*) "This version of CLUBB was not compiled with netCDF support"
           l_internal_error = .true.
 #endif
-        end if ! l_grads_file
 
         l_error = l_error .or. l_internal_error
 
@@ -3011,12 +2967,6 @@ module inputfields
       end if ! current_var%l_input_var
     end do ! i=1, nvars
 
-    if( l_grads_file ) then
-      do file_index=1, size(stat_files)
-        call close_grads_read( fread_vars(file_index) )
-      end do ! file_index=1, size(stat_files)
-    else
-
 #ifdef NETCDF
       do file_index=1, size(stat_files)
         call close_netcdf_read( fread_vars(file_index) )
@@ -3026,7 +2976,6 @@ module inputfields
       error stop "Fatal error"
 
 #endif
-    end if ! l_grads_file
 
     deallocate(LES_tmp)
 
@@ -3124,7 +3073,7 @@ module inputfields
                                    upper_lev_idx(k), l_lin_int(k) )
     enddo
 
-    !LES_tmp is the value of the variable from the LES GrADS file.
+    !LES_tmp is the value of the variable from the LES netCDF file.
     do k = k_lowest_input, k_highest_input, 1
       if( l_lin_int(k) ) then
         ! CLUBB level k is found at an altitude that is between two
@@ -3291,7 +3240,7 @@ module inputfields
 
     close(unit=iunit)
 
-    ! Setup the GrADS file reader
+    ! Setup the netCDF file reader
     call set_filenames( datafile )    
       
 

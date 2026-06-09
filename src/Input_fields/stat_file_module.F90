@@ -5,8 +5,7 @@ module stat_file_module
  
 
 ! Description:
-!   Contains two derived types for describing the contents and location of
-!   either NetCDF or GrADS files.
+!   Contains two derived types for describing the contents and location of NetCDF files.
 !-------------------------------------------------------------------------------
    use clubb_precision, only: & 
        stat_rknd,  & ! Variable
@@ -42,7 +41,7 @@ module stat_file_module
      character(len = 100) :: description ! Variable description
      character(len = 25) :: units       ! Variable units
 
-     integer :: indx ! NetCDF module Id for var / GrADS index
+     integer :: indx ! NetCDF module Id for var
 
      logical :: l_silhs ! If true, we sample this variable once for each SILHS
                         ! sample point per timestep, rather than just once per
@@ -57,7 +56,7 @@ module stat_file_module
      character(len = 100) :: description ! Variable description
      character(len = 25) :: units       ! Variable units
 
-     integer :: indx ! NetCDF module Id for var / GrADS index
+     integer :: indx ! NetCDF module Id for var
 
      logical :: l_silhs ! If true, we sample this variable once for each SILHS
                         ! sample point per timestep, rather than just once per
@@ -65,8 +64,6 @@ module stat_file_module
    end type samples_of_variable
 
   ! Structure to hold the description of a NetCDF output file
-  ! This makes the new code as compatible as possible with the
-  ! GrADS output code
 
    type stat_file
 
@@ -77,8 +74,7 @@ module stat_file_module
        fdir    ! Path where fname resides
 
      integer :: iounit  ! This number is used internally by the
-                        ! NetCDF module to track the data set, or by
-                        ! GrADS to track the actual file unit.
+                        ! NetCDF module to track the data set
      integer :: &
        nrecord, & ! Number of records written
        ntimes     ! Number of times written

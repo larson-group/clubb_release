@@ -96,16 +96,16 @@ program jacobian
 
   ! Local Variables
   integer, dimension(10) :: &
-    times ! Times to read in [GraDS output file units]
+    times ! Times to read in [netCDF output file units]
 
-  ! Types to hold GrADS variables and parameter constants
+  ! Types to hold netCDF variables and parameter constants
   type (param_array) :: clubb_params
 
   type (variable_array) :: &
-    var1zt,  & ! Thermo grid GrADS results   [units vary]
-    var2zt,  & ! Thermo grid GrADS results   [units vary]
-    var1zm,  & ! Momentum grid GrADS results [units vary]
-    var2zm     ! Momentum grid GrADS results [units vary]
+    var1zt,  & ! Thermo grid netCDF results   [units vary]
+    var2zt,  & ! Thermo grid netCDF results   [units vary]
+    var1zm,  & ! Momentum grid netCDF results [units vary]
+    var2zm     ! Momentum grid netCDF results [units vary]
 
 
   real( kind = core_rknd ), dimension(nparams, nvarzt+nvarzm) :: &
@@ -196,13 +196,6 @@ program jacobian
     end if
   end if
 
-  ! Obtain number of vertical levels from the generated GrADS files
-
-  ! nzt = stat_file_num_vertical_levels( "thlm", &
-  !                                      "../output/"//trim( stats_metadata%fname_zt )//".ctl" )
-  ! nzm = stat_file_num_vertical_levels( "thlm", &
-  !                                      "../output/"//trim( stats_metadata%fname_zm )//".ctl" )
-
   ! Initialize the structures holding the variables
 
   allocate( var1zt%value(nzt, nvarzt), &
@@ -220,11 +213,6 @@ program jacobian
   var2zt%entries = nvarzt
   var2zt%nz      = nzt
 
-  ! var1zt%z = stat_file_vertical_levels &
-  !   ( var1zt%name(1), "../output/"//trim( stats_metadata%fname_zt )//".ctl", nzt )
-  ! var2zt%z = stat_file_vertical_levels &
-  !   ( var1zt%name(1), "../output/"//trim( stats_metadata%fname_zt )//".ctl", nzt )
-
   allocate( var1zm%value(nzm, nvarzm), &
             var2zm%value(nzm, nvarzm), &
             var1zm%name(nvarzm), &
@@ -239,11 +227,6 @@ program jacobian
   var1zm%nz      = nzm
   var2zm%entries = nvarzm
   var2zm%nz      = nzm
-
-  ! var1zm%z = stat_file_vertical_levels &
-  !   ( var1zm%name(1), "../output/"//trim( stats_metadata%fname_zm )//".ctl", nzm )
-  ! var2zm%z = stat_file_vertical_levels &
-  !   ( var1zm%name(1), "../output/"//trim( stats_metadata%fname_zm )//".ctl", nzm )
 
   var1zt%name(1:nvarzt) =  & 
   (/"cloud_frac  ", "rcm         ", "rtm         ", & 
@@ -277,10 +260,6 @@ program jacobian
 
   ! Set var1 fields with initial run results
 
-  ! call getvariables( var1zt, trim( stats_metadata%fname_zt )//".ctl" )
-
-  ! call getvariables( var1zm, trim( stats_metadata%fname_zm )//".ctl" )
-
   do i = 1, clubb_params%entries
     tmp_param = clubb_params%value(1,i)
     clubb_params%value(1,i) = clubb_params%value(1,i) * delta_factor
@@ -300,9 +279,6 @@ program jacobian
     end if
 
     ! Set var2 results with results from altering the constants
-
-    ! call getvariables( var2zt, trim( stats_metadata%fname_zt )//".ctl" )
-    ! call getvariables( var2zm, trim( stats_metadata%fname_zm )//".ctl" )
 
     do j = 1, nvarzt
       impact_matrix(i, j) =  & 

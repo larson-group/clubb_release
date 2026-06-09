@@ -6,9 +6,6 @@
 !   netCDF output at all.
 
 ! Notes:
-!   New directives will need to be added to port CLUBB GrADS output
-!   to new compilers that do not use byte size record lengths.
-
 !   Early Alpha processors lacked the ability to work with anything
 !   smaller than a 32 bit word, so DEC Fortran and its successors
 !   (Compaq Visual Fortran, newer Intel Fortran, etc.) all use 4 

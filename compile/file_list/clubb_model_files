@@ -64,7 +64,6 @@
 ../src/Input_fields/input_netcdf.F90
 ../src/Input_fields/input_interpret.F90
 ../src/Input_fields/input_fields.F90
-../src/Input_fields/input_grads.F90
 ../src/Input_fields/extrapolation.F90
 ../src/Input_fields/corr_varnce_input_reader.F90
 ../src/Input_fields/sounding.F90

@@ -108,11 +108,6 @@ module model_flags
     l_clip_turb_adv      = .false.    ! Corrects thlm/rtm when w'th_l'/w'r_t' is clipped
 
   logical, parameter, public :: &
-#ifdef BYTESWAP_IO
-    l_byteswap_io = .true.,   & ! Don't use the native byte ordering in GrADS output
-#else
-    l_byteswap_io = .false.,  & ! Use the native byte ordering in GrADS output
-#endif
     l_gamma_Skw   = .true.      ! Use a Skw dependent gamma parameter
 
   logical, parameter, public :: &
