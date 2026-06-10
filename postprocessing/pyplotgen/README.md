@@ -20,6 +20,14 @@ If you'd like to overplot two CLUBB cases that have been output to two different
 `-c /home/USERNAME/clubb_issue_834/output/dir1 /home/USERNAME/clubb_issue_834/output/dir2` <br/>
 `-o /home/USERNAME/clubb/output/pyplots_default_run`
 
+To view the plots, use a web browser to view index.html in the plots directory.
+
+`firefox ~/plots/index.html`
+
+Alternatively, one can use the command "pwd" in order to find the directory path
+to the index.html file.  Then go to a web browser URL bar, type "file://" then the path, 
+and then "/index.html". 
+
 ### Make sure filenames match
 
 In order to correctly plot output, Pyplotgen needs to find the files it is looking for.  As shown in the example run commands above, the user specifies the path to the netcdf files containing the data to be plotted.  However the user must also ensure that the files in that directory are properly named so that pyplotgen can open them.  For example, if the user wants to plot BOMEX data from the SAM model, the pyplotgen command might look like this:

@@ -1,7 +1,9 @@
 ********************************************************************************
+*  CLUBB -- a single-column atmospheric parameterization for clouds and turbulence
+*
 *                           Copyright Notice
-*                       This code is (C) 2006-2024
-*                 Vincent E. Larson and Brian M. Griffin
+*                       This code is (C) 2006-2026
+*                           Vincent E. Larson
 *
 *         The distribution of this code and derived works thereof 
 *                      should include this notice. 
@@ -16,6 +18,12 @@
 ********************************************************************************
 *        Overview of the Cloud Layers Unified By Binormals (CLUBB) code        
 ********************************************************************************
+
+CLUBB is designed to be a single, unified parameterization that models many 
+cloud types plus clear convective and stable boundary layers. 
+
+CLUBB is based on the the Assumed PDF Method.
+
 For a detailed description of the model code see:  
 
 Larson, V. E., 2017: CLUBB-SILHS: A parameterization of subgrid variability
@@ -36,117 +44,91 @@ Larson, V. E. and J.-C. Golaz, 2005:  Using Probability Density Functions to
 model equations and finer details on how the discretization was done.
 
 The single column model executable ("clubb_standalone") runs a particular 
-case (e.g. BOMEX shallow nonprecipitating cumulus case) 
-and outputs statistical data in either Network Common Data Form (netCDF)
-format or Grid Analysis and Display System (GrADS) format
-(if the --grads flag is used with the run script run_scm.py).
-GrADS is both a data file format and a plotting program.  See
-<http://www.iges.org/grads/> for a description of GrADS.  NetCDF is a self 
-describing data file format that can be read by the GrADS plotting program, 
-MATLAB, and other scientific programs.  See
-<http://www.unidata.ucar.edu/software/netcdf/> for a description of netCDF.
+case (e.g. BOMEX shallow nonprecipitating cumulus case) and outputs statistical 
+data in Network Common Data Form (netCDF) format. NetCDF is a self describing 
+data file format that can be read by multiple scientific programs. See 
+<https://www.unidata.ucar.edu/software/netcdf> for a description of netCDF.
 A list of software packages that can be used to display netCDF data can be
-found at <http://www.unidata.ucar.edu/software/netcdf/software.html>.
-
+found at <https://archive.unidata.ucar.edu/software/netcdf/software.html>.
 
 The tuner code tunes certain parameters in a one-dimensional boundary layer 
 cloud parameterization (``CLUBB''), to best fit large-eddy simulation output.  
 It is not needed to run the single-column or for using CLUBB in a host model.
-The parameterization is called as a subroutine ( run_clubb() ) with 
-parameter values as input.
 
-The tuner code is highly flexible.  One can vary the cases (bomex, fire, arm, 
-or atex) to match; the variables to match (cloud fraction, liquid water, third
-moment of vertical velocity, etc.); the altitude and times over which to match
-these variables; and the parameters to tune (C1, beta, etc.).
+For more information about the tuner, see section 3.3 below and 
+in the tuner README: input_misc/tuner/README.  
 
-For more information about the tuner, see section 3.3 below and in input_misc/tuner/README.
 
 ***********************************************************************
 *                       CLUBB Quick Start Guide                       *
 ***********************************************************************
 CLUBB is a single-column atmospheric model written in ISO Fortran 2003, and
-executed using scripts written in the GNU Bash scripting language.
-A script to plot CLUBB output, pyplotgen, has been implemented in Python,
-and a script to compile CLUBB, mkmf, has been implemented in Perl.
+executed using Python scripting.
+A script to plot CLUBB output, pyplotgen.py, and a script to compile CLUBB, compile.py, 
+have both been implemented in Python.
 
 
-This quick start guide has instructions for checking CLUBB out from the UWM
-repositories, compiling CLUBB using the gfortran compiler, running one of the
-benchmark test cases, and creating plots.
+If you already have CLUBB cloned, you can follow this [Build Guide](BUILD.md) 
+for a super fast guide!
+
+
+However, otherwise the following has thorough instructions for checking CLUBB out 
+from the UWM repositories, compiling CLUBB, running one of the benchmark test 
+cases, and creating plots.
 
 -------------------------------------------------------
 - STEP 1: OBTAINING THE CODE FROM THE REPOSITORY
 -------------------------------------------------------
-Checking CLUBB out requires the user to be a collaborator on the clubb_release github repository.
-Sign up will require a github username.
-
-After entering the required information in the registration page, an invitation e-mail
-will be sent to the email associated with the github account entered.
-
-Please note that each user will only need to sign up once.
-
-With the valid permissions as a collaborator, the CLUBB code can be cloned from its
-repository using git.  If you have not already downloaded CLUBB,
-then at a bash prompt, type in the following command from the directory where
-you want the clubb folder to be placed, all on one line:
-user@computer ~$ git clone http://github.com/larson-group/clubb_release.git 
+The CLUBB code can be cloned from its repository using git.  If you have not 
+already downloaded CLUBB, then at a bash prompt, type in the following command 
+from the directory where you want the clubb folder to be placed, all on one line:  
+`git clone https://github.com/larson-group/clubb_release.git`
 
 After entering this command, git will prompt for a username and password. 
-Use your github credentials. After the authorized credentials are entered, 
-git will download the CLUBB source code into the directory specified as the
-last option in the git command; in the example
-above, it will be downloaded to the clubb/ directory.  On some computers,
-when entering the password, the cursor may remain in the same spot
-and the screen may remain blank.  Don't be confused; hit return, and 
-your password will be entered.  
+For the password, you must use a Personal Access Token (PAT). If you do not have one, 
+you can generate it in your GitHub settings under Developer Settings -> Personal Access Tokens.
+After the authorized credentials are entered, git will download the CLUBB 
+source code into the clubb/ directory. 
 
 -------------------------------------------------------
 - STEP 2: COMPILING THE CLUBB SOURCE CODE
 -------------------------------------------------------
 Before CLUBB can be run, the source code must first be compiled. CLUBB is known
-to compile properly with various Fortran compilers, including gfortran, 
-which is free.  The CLUBB code relies on a script called mkmf 
-which requires your system to have Perl installed.
+to compile properly with various Fortran compilers, including gfortran. 
+The CLUBB code relies on a script called compile.py which 
+requires your system to have Python installed.
 
-To compile, change directories to the CLUBB directory (e.g. "clubb"),
-and then to the compile directory within the CLUBB directory:
+To compile, change directories to the CLUBB directory:
+`
+cd clubb
+`
 
-user@computer ~$ cd clubb/compile
+Once in the clubb directory, run the compile.py script. FC is an environment variable 
+for the Fortran compiler. For instance, to compile with gfortran, use the following command:
+`
+FC=gfortran ./compile.py
+`
 
-Once in the compile directory, run the compile.bash script, using the config
-file corresponding to the target platform to run CLUBB on.
-For instance, on a Linux machine, to compile with gfortran, use the following
-command:
-user@computer compile$ ./compile.bash -c config/linux_x86_64_gfortran.bash
+We test that CLUBB compiles with the following four compilers whose aliases are: 
+- gfortran, gcc, gnu
+- ifx, ifort, intel, intel-oneapi, intel-classic
+- nvfortran, nvhpc
+- crayftn, cce, ftn
 
-To run this on a Mac OS X machine, you should use the following command:
+If you need to recompile the code and need to remove the old 
+executables and object files (assuming you start in the /clubb directory):
+`
+cd build
+rm -rf *
+cd ..
+`
 
-user@computer compile$ ./compile.bash -c config/macosx_x86_64_gfortran.bash
+Or the following command does the same:
+`
+./compile.py -fresh
+`
 
-Note: If clubb did not compile correctly (e.g. compiled with wrong config)
-and you are using a mac, try installing gnu-getopt as opposed to bsd-getopt (default on mac) - compile.bash expects gnu-getopt.
-Another work around for this is to change the default compile configuration in compile.bash.
-To do this comment out the config for linux gfortran and uncomment the config for macOS gfortran in compile.bash  
-
-The code should look like this:
-# Set using the default config flags
-#       CONFIG=./config/linux_x86_64_gfortran.bash # Linux (Redhat Enterprise 5 / GNU)
-#       CONFIG=./config/linux_x86_64_g95_optimize.bash # Linux (Redhat Enterprise 5 g95)
-        CONFIG=./config/macosx_x86_64_gfortran.bash # MacOS X / GNU
-#       CONFIG=./config/aix_powerpc_xlf90_bluefire.bash # IBM AIX on Bluefire / XL Fortran
-#       CONFIG=./config/solaris_generic_oracle.bash # Oracle/Sun Solaris / Oracle/Sun Fortran
-
-(If you want a primer on using the command line shell on Macs, see
-https://developer.apple.com/library/mac/documentation/OpenSource/Conceptual/ShellScripting/CommandLInePrimer/CommandLine.html .)
-
-The command line will output information relating to the compilation of CLUBB.
-
-If you change something in the configuration and need to remove the old 
-executables and object files you can type:
-user@computer compile$ ./clean_all.bash
-
-Then recompile the code.
+Run './compile.py -help' to view the different options you can use when compiling.
 
 -------------------------------------------------------
 - STEP 3: RUNNING A BENCHMARK TEST CASE
@@ -161,7 +143,7 @@ which can be specified on the command line. For example, to run the BOMEX case:
 user@computer run_scripts$ ./run_scm.py bomex
 
 To list various run-time options --- such as settings for grid spacing,
-time step, stats output, and grads format --- type
+time step, and stats output --- type
 user@computer run_scripts$ ./run_scm.py --help
 
 Other cases that you may run are listed in run_scripts/RUN_CASES.  The command
@@ -175,55 +157,13 @@ checkout.
 After a case has been run, the resulting output in netCDF format can be used 
 to create graphs.  One way is to use an included python3 script called pyplotgen.py. 
 Pyplotgen produces plots that allow CLUBB's output to be easily visualized.  
-Other options for plotting the output can be found at 
-http://www.unidata.ucar.edu/software/netcdf/software.html.
 
-**************************************************************************
-                                  NOTE:
 Required packages to run pyplotgen --- e.g. pillow, netcdf4, and matplotlib ---
 are contained in postprocessing/pyplotgen/requirements.txt.
-**************************************************************************
 
-The pyplotgen.py script is located in the postprocessing/pyplotgen directory
-inside the CLUBB checkout. Pyplotgen is run by running the pyplotgen.py script,
-after telling it where the CLUBB output directory is and specifying the desired
-plots output directory. pyplotgen.py can be called from the postprocessing/pyplotgen
-directory inside the CLUBB checkout.  For detailed instructions and options,
-please read postprocessing/pyplotgen/README.md in your CLUBB checkout.
-
-Then modify the ALL_CASES variable in pyplotgen/config/Case_definitions.py to
-include the CLUBB case(s) that you'd to plot (and only those cases).
-
-To generate a webpage containing plots, type (if your output 
-is in ~/clubb/output and you want the plots to go in directory ~/plots):
-
-user@computer$ cd  ~/clubb/postprocessing/pyplotgen
-
-user@computer$ python3 ./pyplotgen.py -c ~/clubb/output -o ~/plots
-
-(Here the tilde, ~, tells the OS to look in the user's home directory.)
-The above line will use pyplotgen to create plots from the simulation output
-in ~/clubb/output, and place the resulting plots in the ~/plots directory.  
-pyplotgen will create the ~/plots directory if it does not exist,
-and if it does exist, instead use 
-
-user@computer$ python3 ./pyplotgen.py -r -c ~/clubb/output -o ~/plots
-
-in order to overwrite what's in the ~\plots directory.
-If you want to overplot two simulations, move each set of output files to 
-its own directory, e.g. ~/clubb/output/sim1 and ~/clubb/output/sim2, and
-type the command
-
-user@computer$ cd  ~/clubb/postprocessing/pyplotgen
-user@computer pyplotgen$ python3 ./pyplotgen.py -c ~/clubb/output/sim1 ~/clubb/output/sim2 -o ~/plots
-
-To view the plots, use a web browser to view index.html in the plots directory.
-user@computer ~$ firefox ~/plots/index.html
-
-Alternatively, one can use the command "pwd" in order to find the directory path
-to the index.html file.  Then go to a web browser URL bar, type "file://" then the path,
-and then "/index.html".
-
+pyplotgen.py can be called from the directory where it resides in 
+the clubb/postprocessing/pyplotgen directory.  For detailed instructions and options,
+please read clubb/postprocessing/pyplotgen/README.md.
 
 -------------------------------------------------------
 - SUMMARY FOR LINUX
@@ -232,27 +172,22 @@ and then "/index.html".
 To check out, compile, and run CLUBB, and use pyplotgen to view the results,
 follow the following steps:
 
-- Become a CLUBB collaborator
-  - Sign up at: https://carson.math.uwm.edu/larson-group/clubb_site/signup
-  - This only needs to be performed once. 
-  - You must have a valid GitHub account.
 - Check out the CLUBB code with git
-  - git clone https://github.com/larson-group/clubb_release.git
+  - `git clone https://github.com/larson-group/clubb_release.git`
 - Compile the CLUBB source code with a Fortran compiler (e.g. gfortran)
-  - ./compile.bash config/linux_x86_64_gfortran.bash
-    (in the clubb/compile directory)
-    (Replace config/linux_x86_64_gfortran.bash to match the desired platform
-     and compiler.  You may need to edit these for your pariticular computer
-     setup if your paths are not the same as ours)
+  - `FC=gfortran ./compile.py`
+    (Replace FC=gfortran to match the desired compiler)
 - Run a benchmark case (e.g. BOMEX)
-  - ./run_scm.py bomex
+  - `./run_scm.py bomex`
     (in the clubb/run_scripts directory)
 - Run pyplotgen to create plots of the output from the benchmark case simulation
-  - python3 ./pyplotgen.py -c ~/clubb/output -o ~/plots
+  - `python3 ./pyplotgen.py -c ~/clubb/output -o ~/plots`
     (in the clubb/postprocessing/pyplotgen directory, assuming CLUBB is checked
      out to ~/clubb)
 - View the pyplotgen plots using a web browser
-  - firefox ~/plots/index.html
+  - `firefox ~/plots/index.html`
+
+
 
 ***********************************************************************
 *                        Using the CLUBB Model                        *
@@ -269,25 +204,21 @@ follow the following steps:
 -----------------------------------------------------------------------
 
 The CLUBB code is written in ISO Fortran 2003 and executed by scripts written in
-the GNU Bash scripting language. 
-The mkmf Makefile generating script and some other optional code checking
-scripts are written in the Perl scripting language.
+python scripting language. 
 On the Microsoft Windows platform the CLUBB parameterization could be configured
 and compiled using MSYS or Cygwin with G95, but we have not tested this sort 
 of configuration.
 
 When compiling CLUBB to a new platform there are sometimes portability 
-difficulties that arise, usually from different Fortran compilers.  When 
-possible it may be helpful to look at similar platforms in the compile/config 
-directory.  Another useful troubleshooting technique is to examine the 
-configuration of other Fortran projects (e.g. WRF) on the same platform.  If you
-manage to compile CLUBB on a new configuration and would like to share it with
-other users, feel free to send us an email with your configuration attached.
+difficulties that arise, usually from different Fortran compilers.  A useful 
+troubleshooting technique is to examine the configuration of other Fortran 
+projects (e.g. WRF) on the same platform.  If you manage to compile CLUBB on 
+a new configuration and would like to share it with other users, feel free to 
+send us an email with your configuration attached.
 
 We mainly use the GNU Fortran compiler on Intel and AMD x64 processors running 
 CentOS 6.5.  GNU Fortran <http://gcc.gnu.org/fortran/> has been tested 
-on x64 & x86 GNU/Linux and MacOS X systems. Other configurations that have been 
-used to compile CLUBB can be found in the compile/ config directory.
+on x64 & x86 GNU/Linux and MacOS X systems. 
 
 Older versions of the GNU Fortran compiler (GCC) may not work.  The default 
 version on Redhat Enterprise 5 does not. Install and use gfortran44 instead.
@@ -306,79 +237,47 @@ enabling SSE or SSE2 with a compiler flag is usually the best way to do this.
 
 Requirements for compiling and running CLUBB:
 A. A Fortran 2003 compiler with a complete implementation of the standard.
-   The compile/config directory contains several scripts for 
-   configurations we have tested.
 B. GNU make (we use v3.81).
-C. Perl 5 to run the mkmf script (called by compile.bash to create the makefiles).
-D. LAPACK & BLAS.  These provide the tri and band diagonal matrix solver
+C. LAPACK & BLAS.  These provide the tri and band diagonal matrix solver
    subroutines needed by CLUBB.  Many vendors provide optimized versions of
    these routines, which are typically much faster than the reference BLAS.  
    To be safe, we recommend you use a LAPACK and BLAS library compiled with the 
    same compiler you compile the CLUBB code with (e.g. don't compile LAPACK
    with GNU Fortran and CLUBB with Portland Group's Fortran).
-E. GNU bash, or an equivalent POSIX compliant shell to use the run scripts.
-   See <http://http://www.gnu.org/software/bash/>.
+D. GNU bash, or an equivalent POSIX compliant shell to use the run scripts.
+   See <http://www.gnu.org/software/bash/>.
+E. Python 3.x or higher version.
 
 Optionally:
-F. GrADS for viewing the GrADS output data.
-G. netCDF >= v3.5.1;  We have not tested our code with anything older.
-   If you do not use netCDF, you must remove -DNETCDF from the preprocessor
-   flags, found in the compile/config/<PLATFORM>.bash file, and
-   remove -lnetcdf from the LDFLAGS.
-H. MATLAB, GNU Octave or NCAR graphics for viewing the netCDF output data.
+F. netCDF >= v3.5.1;  We have not tested our code with anything older.
+   This has become optional because with cmake our system is able to download and compile netCDF if 
+   it cannot be found. 
+   If you do not want to use netCDF, you must add '-disable_netcdf' when running compile.py
 
 To compile the code, perform the following three steps:
-1. $ cd <CLUBB BASE DIRECTORY>/compile
+1. $ cd <CLUBB BASE DIRECTORY>
    (<CLUBB BASE DIRECTORY> is the directory to which you checked out CLUBB.  
     Usually it is called "clubb" or some variant.)
-2. Edit a ./config/<PLATFORM>.bash file and uncomment the corresponding 
-   line in the file compile.bash. Depending on your platform you may need 
-   to create a new file based on the existing configurations, and add a new
-   line to compile.bash.  Add or uncomment the "source" statement
-   for your <PLATFORM>.bash in the file ./compile.bash, and comment
-   out the other "source" statements with a # character.
+2. There are a few options here to compile the code:
+   a. $ module load [compiler] netcdf-fortran     # Compiler can be intel, nvhpc, or gfortran
+      $ ./compile.py
 
-   Alternatively, compile.bash can take in an argument specifying the
-   config file to use. In this case, the ./config/<PLATFORM>.bash file
-   would still need to be edited/created according to your platform, but
-   ./compile.bash would not need to be edited at all.
+        or
 
-   Note that the variables libdir and bindir determine where
-   your executables and libraries will end up, so make sure you set it
-   to the correct location (the default is one directory up).
-3. $ ./compile.bash
-   if you edited compile.bash, or
-   $ ./compile.bash ./config/<PLATFORM>.bash
-   if you wish to pass in the config file as a parameter
+   b. $ FC=[compiler] ./compile.py  # where compiler can be ifx, ifort, nvfortran, gfortran, or ftn
 
-                            *** Important Note ***
-   If you have a linking error related to a symbol with a name like _sisnan or
-   _disnan you have an older version of LAPACK. You will either need to 
-   upgrade LAPACK, or add -DNO_LAPACK_ISNAN to the CPPDEFS variable in your 
-   ./config/<PLATFORM>.bash;  note however that we haven't tested this 
-   alternate code with many compilers using high levels of optimization. Certain
-   assumptions made by high levels of optimization may disable checks in CLUBB 
-   that test for NaN/Undefined variables after solving a matrix if the flag
-   -DNO_LAPACK_ISNAN is added.
+The CMake build directory will appear in <CLUBB_BASE_DIRECTORY>/build/<COMPILER_NAME>
+Executables and libraries will appear in /install/<COMPILER_NAME>
 
-The executables and Makefile will appear in <CLUBB BASE DIRECTORY>/bin 
-and libraries in <CLUBB BASE DIRECTORY>/lib.  The object (.o) and 
-module (.mod) files will appear in <CLUBB BASE DIRECTORY>/obj.
-
-If you're using GNU make and have a fast parallel machine, parallel builds 
-should work as well.  E.g. for 3 threads, append gmake="gmake -j 3" to the
-file source'd from compile.bash.
-
-The mkmf script may or may not generate files that are compatible with
-non GNU versions of make.
-
-If you add a new source file to CLUBB, then in order for mkmf to be
+If you add a new source file to CLUBB, then in order for CMake to be
 able to find it, you will need to add the filename 
-to one of the file lists in directory compile/file_list.
+to one of the file lists in the appropriate 'CMakeLists.txt' file.
 
 When compiling for a tuning run, make sure to include the command-line option
--t/--tuner along with any other option:
-   $ ./compile.bash -t [other options]
+-tuning along with any other option:
+   $ ./compile.py -tuning [other options]
+
+Run './compile.py -help' to view the different options you can use when compiling.
 
 -----------------------------------------------------------------------
 - (1.1.1) Promoting real to double precision at compile time
@@ -393,13 +292,8 @@ It also fails to work with Morrison microphysics (clubb:ticket:585#comment:13).
 
 To do this:
 
-1. Do a clean_all.bash if have object files and programs from a prior compile.
-2. Edit compile.bash so that l_double_precision=true.
-3. ./compile.bash
-
-To set the precision of CLUBB's internal variables, in the 
-compile/config .bash file you wish to use, set -DCLUBB_REAL_TYPE=8 
-for double precision or -DCLUBB_REAL_TYPE=4 for single precision.
+1. ./compile.py -precision double # The default is double
+    a. use '-fresh' if you have object files and programs from a prior compile
 
 -----------------------------------------------------------------------
 - (1.2) Building (i.e. compiling) for use in a host model:
@@ -429,12 +323,7 @@ Optionally, you can safely remove everything but libclubb_param.a from the
 a host model.
 Then, do
 
-$ ./compile.bash
-
-This will build just the static library and the f90 modules.
-The static library will be in <CLUBB BASE DIRECTORY>/lib, while the modules will be 
-in the <CLUBB BASE DIRECTORY>/obj directory.  You will need at least the 
-clubb_core.mod and constants.mod file to interface with CLUBB.
+$ ./compile.py
 
 Addition by Brian:  
 In addition to the above, you will have to make a reference to the CLUBB 
@@ -445,7 +334,7 @@ to find them and then download them onto your own computer if they are not
 included with your operating system or compiler.  Once you have done this, you 
 can reference them in a line such as the following:
 
--L/home/griffinb/clubb/lib -lclubb_param -llapack -lblas
+-L/home/<username>/clubb -lclubb_param -llapack -lblas
 
 If the LAPACK and BLAS libraries were compiled with GNU Fortran, you may 
 need to link to the runtime libs for that with -lg2c or -lgfortran as well.
@@ -454,7 +343,7 @@ Don't forget that you will also have to make reference
 to the CLUBB modules.  You can reference that with a line
 such as the following:
 
--I/home/griffinb/clubb/obj
+-I/home/<username>/clubb/build/<compiler>/MOD/
 
 -----------------------------------------------------------------------
 - Method 2: Use a host model's make to compile CLUBB 
@@ -542,18 +431,9 @@ Occasionally, one needs to erase old executables or libraries and re-compile
 the code starting with nothing.  For instance, this may be required when 
 a library or compiler is updated.  
 
-To delete old object files (*.o), and mod (*.mod) files,
-go to <CLUBB BASE DIRECTORY>/bin (where Makefile resides) and type
+In order to do this, when you re-compile, build with the '-fresh' flag.
+`./compile.py -fresh`
 
-$ make clean
-
-If this doesn't help, then to additionally delete everything in the binary 
-and library directories, go to <CLUBB BASE DIRECTORY>/bin and type
-
-$ make distclean
-
-To save time we have a script clean_all.bash in the compile directory that will
-also do make distclean without the need to change directories.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %
@@ -567,7 +447,7 @@ also do make distclean without the need to change directories.
 
    Before you can execute CLUBB, you must compile it (see Build section 
    above.)
-   <CLUBB BASE DIRECTORY> refers the the directory where clubb is installed.
+   <CLUBB BASE DIRECTORY> refers to the directory where clubb is installed.
    <CASE NAME> refers to the cloud case, e.g. arm, atex, bomex, etc.
 
 1. cd <CLUBB BASE DIRECTORY>/input/case_setups
@@ -585,9 +465,7 @@ also do make distclean without the need to change directories.
 3. cd <CLUBB BASE DIRECTORY>/input/stats
    Edit a stats file you would like to use, if you would like to output to
    disk a variable that is not currently output.  A complete list of all 
-   computable statistics is found in all_stats.in.  Note that CLUBB now 
-   supports GrADS or netCDF output, but you can only use the clubb_tuner 
-   using GrADS, due to some issues with buffered I/O.
+   computable statistics is found in all_stats.in.
 
 4. $ cd <CLUBB BASE DIRECTORY>/input/tunable_parameters
    Edit tunable_parameters.in if you are an expert and wish to try to optimize 
@@ -604,8 +482,11 @@ also do make distclean without the need to change directories.
    if you are an expert and you want to try different options within CLUBB.
 
 6. $ cd <CLUBB BASE DIRECTORY>/run_scripts
-   $ ./run_scm.py <CASE NAME> or
-   $ ./run_scm.py <CASE NAME> -p <PARAMETER FILE> -s <STATS FILE>
+   $ ./run_scm.py <CASE NAME> 
+
+            or
+
+   $ ./run_scm.py <CASE NAME> -params <PARAMETER FILE> -stats <STATS FILE>
 
    Where the parameter file and stats file are optional arguments. The default
    is standard_stats.in and tunable_parameters.in.
@@ -619,30 +500,17 @@ also do make distclean without the need to change directories.
 - (2.2) Explanation of CLUBB's output and input files
 -----------------------------------------------------------------------
 
-Nota bene: Our numerical output is usually in GrADS format
-(http://www.iges.org/grads/).  Each output has a header, or control file 
-(.ctl), and a data file (.dat).  The .ctl file is a text file that 
-describes the file format, which variables are output in which order, etc.  
-CLUBB also can output in netCDF (.nc) format.
+Nota bene: Our numerical output is usually in NetCDF (.nc) format. 
 
 Output:
 ------
 
-Generated CLUBB GrADS files (in clubb/output):
-  bomex_zt.dat, fire_zt.dat, arm_zt.dat, atex_zt.dat, dycoms_zt.dat,
-    wangara_zt.dat, <case>_zm, <case>_sfc ...
-  These are the output files generated by CLUBB.  Every time CLUBB is run, 
-  these are overwritten, so if you want to prevent them
-  from being erased be sure to either copy the .ctl and .dat
-  files to another directory or rename them.
-
-LES GrADS files (available only to larson group members):
-  les_data/bomex_coamps_sw.ctl, les_data/wangara_rams.ctl
-  FIRE, BOMEX, ARM & ATEX are some basic benchmark ``datasets'', 
-  simulated by COAMPS, that we compare to CLUBB output.  BOMEX is trade-wind 
-  cumulus; FIRE is marine  stratocumulus; ARM is continental cumulus; and 
-  ATEX is cumulus under stratocumulus.  BOMEX, FIRE, and ATEX are statistically 
-  steady-state; ARM varies over the course of a day.
+Generated CLUBB NetCDF files (in clubb/output or 
+clubb/clubb/build/<COMPILER>/clubb_ctest/<CASE_NAME>_100iter/<CASE_NAME>_stats.nc):
+  - bomex_stats.nc, fire_stats.nc, arm_stats.nc, atex_stats.nc, <case>_stats.nc, ...
+  - These are the output files generated by CLUBB.  Every time CLUBB is run, these are overwritten, 
+    so if you want to prevent them from being erased be sure to either copy the .nc files to 
+    another directory or rename them.
 
 Input:
 -----
@@ -666,15 +534,15 @@ The namelist files:
 
 The surface files:
 
-  input/case_setups/<CASE NAME>_surface.in
+  input/case_setups/<CASE NAME>_sfc.in
   These files contain the time-dependent surface fluxes and conditions for a case. 
   The variables that can be included here are Time[s], thlm[k], rt[kg/kg],
   latent_ht[W/m^2], sens_ht[W/m^2], CO2[umol/m^2/s], upwp_sfc[(m/s)^2],
   vpwp_sfc[(m/s)^2], T_sfc[K], wpthlp_sfc[mK/s], and wpqtp_sfc[(kg/kg)m/s].
-  A surface.in file must contain the Time variable, but all others are
+  A <CASE NAME>_sfc.in file must contain the Time variable, but all others are
   optional. 
 
-  Not all cases have a _surface.in file. Some cases compute surface 
+  Not all cases have a <CASE NAME>_sfc.in file. Some cases compute surface 
   variables from an equation provided in the case specification. For
   these cases, the surface variables are computed within 
   src/Benchmark_cases/<CASE NAME>.F90, subroutine <CASE_NAME>_sfclyr().
@@ -695,8 +563,8 @@ The sounding files:
     <CASE NAME>_edsclr_sounding.in, <CASE NAME>_ozone_sounding.in
   These files contain the sounding data by level for a case.
 
-  All cases need a _surface.in file. _sclr_sounding.in, _edsclr_sounding.in,
-  and _ozone_sounding.in files are optional.
+  All cases need a _sfc.in file (unless computed within other files). 
+  The other files, _sclr_sounding.in, _edsclr_sounding.in, and _ozone_sounding.in, are optional.
 
 Some of best tested cases:
   arm
@@ -726,12 +594,12 @@ How to create a new case:
 
 The randomization files (only needed for the tuner described below):
 
-  run_scripts/generate_seed.bash, input_misc/tuner/rand_seed.dat, bin/int2txt
+  run_scripts/generate_seed.bash, input_misc/tuner/rand_seed.dat
   The script uses intrinsic functionality in the Linux kernel to generate
   a pseudo random seed (the .dat) used by the tuner for randomizing initial
   parameters.  This works on any operating system with a Linux style 
   /dev/urandom (Solaris, Tru64, etc.) as well.  The seed file is now plain text 
-  text and can be edited by hand.
+  and can be edited by hand.
 
 
 -----------------------------------------------------------------------
@@ -741,9 +609,8 @@ The randomization files (only needed for the tuner described below):
 A plotting script, pyplotgen.py, is contained in the directory postprocessing/pyplotgen.
 See postprocessing/pyplotgen/README.md for more information on pyplotgen.py.
 
-Otherwise, you can view the raw CLUBB output files in GrADS or netCDF
-format using a plotting program such as GrADS (http://www.iges.org/grads/).
-To open a GrADS session, type "grads" at a Linux prompt.
+However, you can view the raw CLUBB output files in netCDF
+format using other available plotting programs.
 
 --------------------------------------------------------------------------
 - (2.4) Determining whether two CLUBB simulations produce different output:
@@ -758,9 +625,9 @@ be covered briefly in this section.
 This script takes two output directories as arguments and will compare the
 contents of those directories to determine if the binary outputs differ.  
 Note that
-run_scm_all.bash must be run prior to this script to create the ouput to be
+run_scm_all.py must be run prior to this script to create the output to be
 compared.  The script will compare the .nc files for each
-case specified in run_scm_all.bash.  This is the most exact way to detect
+case specified in run_scm_all.py.  This is the most exact way to detect
 differences between two output directories.
 
 This script can be found in "clubb/run_scripts".
@@ -798,13 +665,13 @@ parameter set along with this extra namelist, here is an example use:
 - There are other options this script takes, including different parameter generation schemes,
   see the script for more details.
 
-Once you have the multicolumn parameter file, you can run clubb with the '-p'
+Once you have the multicolumn parameter file, you can run clubb with the '-params'
 flag to pass in the new parameter set, like so:
-`./run_scm.py -p clubb_params_multi_col.in arm`
+`./run_scm.py -params clubb_params_multi_col.in arm`
 - The multiple column data will be saved to `output/{casename}_multi_col_zm/zt.nc`
 - This data is written independently from the `l_stats` setting, so one can
   run CLUBB with `-e` to turn off stats and still get multicolumn output, e.g.
-`./run_scm.py -p clubb_params_multi_col.in -e arm`
+`./run_scm.py -params clubb_params_multi_col.in -e arm`
 
 -----------------------------------------------------------------------
 - (3.1) Executing a restart run:
@@ -817,8 +684,8 @@ The new simulation is then called a "restart" simulation.  The restart
 simulation is initialized using data saved to disk by the original
 simulation at the restart time.
 
-1.  Perform the original simulation of case <CASE NAME> and save the GrADS 
-    or netCDF output files in the <CLUBB BASE DIRECTORY>/output directory. 
+1.  Perform the original simulation of case <CASE NAME> and save the netCDF 
+    output files in the <CLUBB BASE DIRECTORY>/output directory. 
     These data files will be accessed to restart the simulation.  In order
     to reproduce the original simulation exactly, one must save
     non-time-averaged output from the original simulation.  That is, 
@@ -826,7 +693,7 @@ simulation at the restart time.
     as stats_tout for the original simulation.
 
 2.  Create a subdirectory in the <CLUBB BASE DIRECTORY> called "restart" and 
-    move the GrADS output files to that subdirectory.
+    move the netCDF output files to that subdirectory.
 
 3.  Edit the following three variables at the end of the &model_setting section of 
     the model.in file:
@@ -846,7 +713,7 @@ simulation at the restart time.
 - (3.2) Executing a single-column run with fields input from LES:
 -----------------------------------------------------------------------
 
-One supported mode of running clubb is to use GrADS or netCDF data from either a
+One supported mode of running clubb is to use netCDF data from either a
 prior CLUBB run or a horizontally averaged set of data from an LES to
 set some of the prognosed variables to the data set's values at each timestep.
 E.g. If desired, the horizontal winds (variables um and vm in the code)
@@ -858,23 +725,20 @@ from CLUBB also works, but should result in similar results to not
 using input_fields and so is less useful.
 
 The relevant namelist files are in the input/case_setups/<Model Case>_model.in files.
-To execute an input fields run, you first need to set the variable l_input_fields to
-.true., and then configure a separate namelist called &setfields, which controls the
-data and variables that are read in.  First, set the 'datafile' variable in the
-&setfields namelist to the location of the data files, and set 'input_type' to ether 
-"clubb", "coamps_les", "sam", or "rams_les" depending on the type of data you want to
-read in.  Finally, set 'l_input_<varname>' to .true. for those fields for which you 
-want to use a fixed value from the LES dataset at the beginning of each timestep.
+To execute an input fields run:
+1.  Set the variable 'l_input_fields' to .true.
+2.  Configure a separate namelist call '&setfields', which controls the data and variables
+    that are read in. 
+        a.  Set the 'datafile' variable in the '&setfields' namelist to the location of 
+            the data files
+        b.  Set 'input_type' to "clubb", "coamps_les", "sam", or "rams_les" depending on the 
+            type of data you want to read in. 
+        c.  Set 'l_input_<varname>' to .true. for those fields for which you want to use a 
+            fixed value from the LES dataset at the beginning of each timestep.  
+3.  Change your directory to run_scripts and execute the run_scm.py as you would usually.
 
-Then, change your directory to run_scripts and execute the run_scm.py
-as you would usually.
-
-Nota bene:  The GrADS data files cannot have a time increment less than 1mn.
-Therefore, when a file is output in CLUBB with a stats_tout of less than
-60, the code will simply round up, which will not work for using the
-resulting GrADS data file generated for an inputfields simulation.
-Therefore, when l_input_fields is true, always use GrADS data output
-at 1mn increments or greater.
+Nota bene:  When 'l_input_fields = .true.', it is critical that stats_tout (statistics output 
+frequency) is an integer multiple of the model time step (dt). 
 
 Note the input fields code will also work for tuning runs, if the tuner is
 configured to use a <Case Name>_model.in with the input fields options
@@ -885,7 +749,8 @@ enabled.
 -----------------------------------------------------------------------
 
 The "tuner" code is used to optimize CLUBB's parameters in order to better match
-output from a 3D large-eddy simulation (LES) model.  The default optimization 
+output from a 3D large-eddy simulation (LES) model.  The parameterization is called 
+as a subroutine ( run_clubb() ) with parameter values as input.  The default optimization 
 technique is the downhill-simplex method of Nelder and Mead, as implemented in 
 Numerical Recipes In Fortran 90, 3rd Ed. (amoeba.f90).  You will either need special
 access to the CLUBB repository, or your own license from Numerical Recipes to
@@ -894,12 +759,17 @@ the directory src/Numerical_recipes are:
 amebsa.f90  nr.f90      nrutil.f90  ran1_v.f90
 amoeba.f90  nrtype.f90  ran1_s.f90  ran_state.f90
 You may need to separate out any USE statements delimited by a semicolon in
-order to make the files work properly with the mkmf script.
+order to make the files work properly.
+
+The tuner code is highly flexible.  One can vary the cases (bomex, fire, arm, 
+or atex) to match; the variables to match (cloud fraction, liquid water, third
+moment of vertical velocity, etc.); the altitude and times over which to match
+these variables; and the parameters to tune (C1, beta, etc.).
 
 For a tuning run, CLUBB must be compiled as described in Chapter 1 with one exception:
-it is advised to use the command-line option -t/--tuner when calling the compile.bash script 
-in order to avoid crashed while tuning:
-   $ ./compile.bash -t [other options]
+it is advised to use the command-line option -tuning when calling the compile.py script 
+in order to avoid crashing while tuning:
+   $ ./compile.py -tuning [other options]
 Using this option will set a compiler flag that enables additional checks needed to avoid 
 floating-point issues when running CLUBB with unusual parameter sets.
 In general, this change will likely not be bit-changing since it will only affect the output 
@@ -908,9 +778,9 @@ Do steps 1, 2, & 3 as outlined in the description of a standalone run (Sec 2.1).
 
 4. Edit input_misc/tuner/error_<CASE NAME>.in or select an existing one. Note that
    there are two tuning subroutines, specified by tune_type in the 
-   error_<CASE NAME>.in /stats/ namelist.  
+   error_<CASE NAME>.in.
    If tune_type = 0, then the amoeba subroutine, which implements the downhill 
-   simplex algorithm, will be used.  If runtype is 1, then amebsa, 
+   simplex algorithm, will be used.  If tune_type is 1, then amebsa, 
    a variant of amoeba which uses simulated annealing instead, is used.  A complete 
    explanation of these minimization algorithms can be found 
    in "Numerical Recipes" by Press et al., .
@@ -929,11 +799,10 @@ Do steps 1, 2, & 3 as outlined in the description of a standalone run (Sec 2.1).
    Doing this will also help make the output match the nightly tuning run. 
    You may need to set stats_tout to 60.0 in order to match the
    time interval of LES output data.  The tuner also supports 
-   setting l_input_fields
-   to .true. for for the purposes of `fixing' variables such as um or vm for
-   the purposes of isolating model errors.
+   setting l_input_fields to .true. for the purposes of `fixing' 
+   variables such as um or vm for the purposes of isolating model errors.
 
-6. Edit run_scripts/run_tuner.bash to use your namelists.  Note that run_tuner.bash uses
+6. Edit run_scripts/run_tuner.py to use your namelists.  Note that run_tuner.py uses
    a customized stats file for tuning and a (possibly different) stats file 
    to run CLUBB with the optimized parameters.  The stats file used while 
    tuning is input/stats/tuning_stats.in and contains only the names of the 
@@ -947,64 +816,15 @@ Do steps 1, 2, & 3 as outlined in the description of a standalone run (Sec 2.1).
    to match.  Using this output, along with setting debug_level to 0, 
    will produce identical output to the nightly tests tuning run.
 
-8. Go to the run_scripts directory and execute ./run_tuner.bash
+8. Go to the run_scripts directory and execute ./run_tuner.py 
+   (You may have to do 'python3 run_tuner.py' if not executable)
 
-NOTE: In previous versions the run_tuner.bash script executed pre-tuning CLUBB standalone runs.
-Those runs are now by default disabled and can be re-enabled by adding the *-i/--initial-output* option when executing run_script.bash
-
------------------------------------------------------------------------
-- (3.3.1) Creating a RAM disk (optional)
------------------------------------------------------------------------
-
-One means of speeding up tuning runs is reducing the time spent writing
-to the hard disk.  Most operating systems support a virtual device called
-a ram disk, which is main memory that has been allocated to act as an emulated
-file system.  Note that you will need system privileges to make the ram disk, 
-and files copied to the ram disk are not preserved when the computer is 
-powered off.
-
-Generally:
-
-1. Create and mount RAM disk on "output"
-
-2. Run tuner
-
-Linux Example
-Note that you will need ram disk support compiled into your kernel, which is
-typically the default on most systems.  Linux appears to be less flexible 
-about when you are allowed to change the ramdisk size.
-
-1. In grub.conf
-   Append to 'kernel' line:
-   kernel /vmlinuz-2.4.21-40.EL ro root=LABEL=/ ramdisk_size=262144
-
-This sets ram disks to be 256 megabytes in size.  Note that your own system may
-already have other options besides the ramdisk_size on this line.
-
-2. $ mkfs.ext2 /dev/ram0
-
-3. $ mount /dev/ram0 /home/dschanen/clubb/output
-
-4. $ cd run_scripts
-
-(Run your job)
-
-Solaris Example
-Note that these instructions only apply to Solaris 9 & 10
-
-1. $ ramdiskadm -a clubb 256m 
-Creates a virtual disk clubb that is 256 megabytes in size.
-
-2. $ newfs /dev/ramdisk/clubb
-
-3. $ mount /dev/ramdisk/clubb /home/dschanen/clubb/output/
-
-4. $ cd run_scripts
-
-(Run your job)
+NOTE: In previous versions the run_tuner.py script executed pre-tuning CLUBB standalone runs.
+Those runs are now by default disabled and can be re-enabled by adding the *-i/--initial-output* 
+option when executing run_script.py.  
 
 -----------------------------------------------------------------------
-- (3.3.2) Executing an ensemble tuning run:
+- (3.3.1) Executing an ensemble tuning run:
 -----------------------------------------------------------------------
 
 An ensemble tuning run generates a set ("ensemble") of optimal parameter
@@ -1021,15 +841,15 @@ can be found in ens_tune/README.
 A Jacobian analysis determines how sensitive the model results are to a change
 in a parameter value.
 
-1. $ cd ../run_scripts
+1. $ cd run_scripts
 
-2. Edit ../input_misc/jacobian.in. 
+2. Edit input_misc/jacobian.in. 
 
    Note that choosing a high delta_factor may make the model
    crash, which will result in no data (results for that term will come
    back as NaN).
 
-3. $  ./run_jacobian.bash <CASE NAME> [PATH TO PARAMETER FILE] [PATH TO STATS FILE]
+3. $ ./run_jacobian.bash <CASE NAME> [PATH TO PARAMETER FILE] [PATH TO STATS FILE]
 
 -----------------------------------------------------------------------
 - (3.5) Running a convergence test:
@@ -1132,7 +952,7 @@ The initial sounding can be done at run time in <CASE NAME>_sclr_sounding
 file, but large scale forcing and surface fluxes for these passive scalars 
 must be configured in the clubb_driver code and handled at compile time.
 To output the scalar fields from a CLUBB simulation, be sure to include 
-sclr1m, sclr1p2, etc. your stats file. See input/stats/all_stats.in for a
+sclr1m, sclr1p2, etc. in your stats file. See input/stats/all_stats.in for a
 complete list (commented out by default).
 
 Currently the code contains eddy-diffusivity scalar code (edsclr1m, edsclr2m)
@@ -1329,13 +1149,7 @@ If you have changes that you'd like to see included in the repository version
 of CLUBB, please feel free to contribute them.  We'll gladly review your 
 changes and consider them for inclusion.  
 
-To contribute the changes, type 'git pull' to merge the latest repository
-version of CLUBB with your local version, and then create a file containing 
-the differences between the repository and your version:
-
-$ git diff > patchfile
-
-Then email us patchfile.  See https://git-scm.com/doc for more details about git.
+To contribute the changes, create a pull request on the clubb_release repo.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %
@@ -1490,9 +1304,7 @@ source file ../src/CLUBB_core/grid_class.F90 and doc/CLUBBeqns.pdf.
 1.  If you have trouble compiling, sometimes it helps to delete
 old object files and re-compile from scratch.  E.g., to delete 
 everything in the binary and library directories, 
-go to <CLUBB BASE DIRECTORY>/compile and type
-
-$ ./clean_all.bash
+go to <CLUBB BASE DIRECTORY>/ and when you run your next attempt, append: '-fresh'
 
 2. Several vendors provide command-line and graphical debuggers that work with 
 CLUBB.  The script run_scm_debug.bash is configured to use the PGI debugger

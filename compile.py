@@ -326,7 +326,7 @@ def main():
     parser = argparse.ArgumentParser(description="Compile CLUBB with CMake")
     
     # Core build options
-    parser.add_argument("-install", metavar="DIR", help="Install directory for CLUBB")
+    parser.add_argument("-install", metavar="DIR", help="Install directory for latest executables")
     parser.add_argument("-toolchain", metavar="FILE", help="Path to CMake toolchain file")
     parser.add_argument("-gpu", choices=["none", "openacc", "openmp"], default="none", 
                         help="GPU option for build")
