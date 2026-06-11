@@ -51,7 +51,7 @@ pipeline {
       steps {
         sh '''source /etc/profile.d/larson-group.sh
               module load nvhpc netcdf-fortran
-              compile/convert_acc_to_omp.bash
+              utilities/convert_acc_to_omp.bash
               ./compile.py -gpu openmp'''
       }
     }
