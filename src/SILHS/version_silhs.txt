@@ -1,0 +1,95 @@
+commit a38df744233769a1888462f2616bd9d8c007fcf5
+Author: Trevor-Hancock5 <hancoct@uwm.edu>
+Date:   Thu Jun 11 10:19:46 2026 -0500
+
+    Update Jenkinsfile to match moved file
+    
+    - utilities/convert_acc_to_omp.bash
+
+commit f6b2bf7d9b01b55a68c5101649d8a157ee17921f
+Author: Trevor-Hancock5 <hancoct@uwm.edu>
+Date:   Wed Jun 10 14:42:04 2026 -0500
+
+    Update README, BUILD.md, and pyplotgen README.md (#1309)
+
+commit beffd89a659bcbddc72da2c23fa57ff0bd34a424
+Author: Trevor-Hancock5 <hancoct@uwm.edu>
+Date:   Wed Jun 10 13:51:07 2026 -0500
+
+    Deleted the old compile directory and docs directory (#1315)
+    
+    - The old mkmf/make compile directory, the bash based compile scripts are no longer needed now that we have CMake
+    - Moved `convert_acc_to_omp.bash` to utilities/ directory
+    - The docs directory had an old copy of the website, but the website is backed up to a local drive on Carson
+
+commit 7945eaacac73eb9bbf7dc2b21dd6187c724a8fbf
+Author: Trevor-Hancock5 <hancoct@uwm.edu>
+Date:   Tue Jun 9 14:48:03 2026 -0500
+
+    Removed/Deleted GrADS (.ctl, .dat) file format and reference to it (#1310)
+    
+    - Made updates to Input Fields to remove GrADS. Master branch only worked for a small number of input variables, and after the changes when testing, worked just as well as the master branch.
+
+commit e969f3be4e23a0ed4932c6c7c34baa05cca9e136
+Author: Trevor-Hancock5 <hancoct@uwm.edu>
+Date:   Tue Jun 9 14:30:35 2026 -0500
+
+    Removed/deleted outdated Matlab files (#1313)
+    
+    - Removed plotting, utility, and post-processing Matlab scripts
+
+commit 039f9da10548eff43e3aa9c2d928cbed34689600
+Author: Trevor-Hancock5 <hancoct@uwm.edu>
+Date:   Fri Jun 5 16:00:46 2026 -0500
+
+    Removed perl and references to it (#1311)
+    
+    * Removed perl and references to it
+    
+    * Reverting changes to files/directories as requested
+
+commit 53893cabfda88eccc92204a3471b3855a4716aa6
+Author: Trevor-Hancock5 <hancoct@uwm.edu>
+Date:   Thu Jun 4 13:47:50 2026 -0500
+
+    Removed plotgen (#1312)
+    
+    * Removed entire plotgen directory
+
+commit 0d30e05f0411c43c5b0eecb8734433dd9a29deda
+Author: Vincent Larson <vlarson@users.noreply.github.com>
+Date:   Thu Jun 4 10:38:02 2026 -0500
+
+    Create README for python_sam_budgets_plotter folder
+
+commit 8164a32e6256c0d21d4ecc9506117d79a7aaf047
+Author: Gunther Huebler <37674341+huebleruwm@users.noreply.github.com>
+Date:   Wed Jun 3 22:52:41 2026 -0500
+
+    GPU async script (#1307)
+    
+    * Adding script that converts openacc directives to use async clauses and jenkins test to test that adding them does not change BFBness
+    
+    * Small cleanup - fixing typo and adding comments.
+
+commit 0be32f96d2f5c4ce974c17fbc82912d516b68baf
+Author: Gunther Huebler <37674341+huebleruwm@users.noreply.github.com>
+Date:   Wed Jun 3 22:52:27 2026 -0500
+
+    Clubb organization part3 (#1306)
+    
+    * More BFB movements
+    
+    * Reworking where sigma_sqd_w and gamma_Skw_fnc are computed - this should all be BFB. Also fixing the G_unit test that was failing due to sigma_sqd_w issues
+    
+    * Correcting arg list
+    
+    * Fixes after rebase
+    
+    * Making sigma_sqd_w_zt BFB vs master when using iiPDF_type=7 (new hybrid)
+    
+    * Fixing python API
+    
+    * Changing name of compute_xp3 to diagnose_xp3 and moving a1_coef and a3_coef calculation back into advance routines
+    
+    * Fixes for GPU code
