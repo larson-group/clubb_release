@@ -3911,7 +3911,8 @@ module clubb_driver
       ! ======================= STATS FINALIZING AND PRINTOUTS =======================
       if (stats%l_last_sample) then
 
-        stats_time = real(time_current, kind=core_rknd) + real(stats_tout, kind=core_rknd)
+        stats_time = real( time_initial + real( itime, kind=time_precision ) * &
+                           real( dt_main, kind=time_precision ), kind=core_rknd )
 
         ! End statistics timestep and flush sampled buffers to file.
         call stats_end_timestep_api( stats_time, stats, err_info )
