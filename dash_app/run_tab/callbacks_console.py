@@ -21,9 +21,10 @@ def register_console_callbacks(app, cases):
         Input("run-running-cases", "data"),
         Input("run-case-runtimes", "data"),
         Input("run-case-commands", "data"),
+        Input("run-open-cases", "data"),
         State("run-case-order", "data"),
     )
-    def render_consoles(case_logs, selected_cases, completed_cases, failed_cases, running_cases, case_runtimes, case_commands, case_order):
+    def render_consoles(case_logs, selected_cases, completed_cases, failed_cases, running_cases, case_runtimes, case_commands, open_cases, case_order):
         """Render log consoles in stable order, keeping active runs pinned to the top."""
         logs = case_logs or {}
         runtimes = case_runtimes or {}
@@ -34,6 +35,7 @@ def register_console_callbacks(app, cases):
         completed = set(completed_cases or [])
         failed = set(failed_cases or [])
         running = set(running_data.keys())
+        explicitly_open = set(open_cases or [])
         candidates = [
             case
             for case in cases
@@ -166,7 +168,10 @@ def register_console_callbacks(app, cases):
             panels.append(
                 html.Details(
                     panel_children,
-                    open=case_name in running,
+                    open=case_name in running or case_name in explicitly_open,
+                    **{"data-case-name": case_name},
+                    **{"data-case-running": "true" if case_name in running else "false"},
+                    key=f"run-console-panel-{case_dom_id(case_name)}",
                     className="run-console-panel",
                     style={"borderRadius": "6px", "padding": "8px 10px"},
                 )

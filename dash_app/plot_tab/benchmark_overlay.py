@@ -1,23 +1,39 @@
 import ast
+import hashlib
 import os
+import re
+import sys
+import tempfile
 from collections import OrderedDict
+from datetime import datetime
 
 import numpy as np
 from netCDF4 import Dataset
 
-
 REPO_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
+if REPO_ROOT not in sys.path:
+    sys.path.insert(0, REPO_ROOT)
+
+from utilities.benchmark_converter import (
+    CONVERTER_VERSION,
+    convert_benchmark_file,
+    supported_fields,
+)
+
+
 PYPLOTGEN_ROOT = os.path.join(REPO_ROOT, "postprocessing", "pyplotgen")
 
 Z_DIM_NAMES = {"z", "zm", "zt", "altitude", "height", "lev"}
 T_DIM_NAMES = {"t", "time"}
 BENCHMARK_SOURCES = ("sam", "coamps")
+_TIME_UNITS_RE = re.compile(r"^\s*([A-Za-z]+)\s+since\s+(.+?)\s*$")
 
 _CACHE_MAX_ENTRIES = 256
 _CATALOG_CACHE = OrderedDict()
 _DATA_CACHE = OrderedDict()
 _META_CACHE = OrderedDict()
 _SOURCE_CACHE = OrderedDict()
+_SUPPORTED_NORMALIZED_FIELDS = set(supported_fields())
 
 
 def clear_benchmark_caches():
@@ -128,8 +144,31 @@ def _time_units_factor(units):
     return 1.0
 
 
+def _parse_time_origin(origin_text):
+    text = str(origin_text or "").strip().replace("T", " ")
+    if text.endswith("Z"):
+        text = text[:-1].strip()
+    for fmt in (
+        "%Y-%m-%d %H:%M:%S.%f",
+        "%Y-%m-%d %H:%M:%S",
+        "%Y-%m-%d %H:%M",
+        "%Y-%m-%d",
+    ):
+        try:
+            return datetime.strptime(text, fmt)
+        except ValueError:
+            continue
+    return None
+
+
 def _time_values_seconds(values, units):
     arr = np.asarray(values, dtype=float)
+    match = _TIME_UNITS_RE.match(str(units or ""))
+    if match:
+        origin = _parse_time_origin(match.group(2))
+        if origin is not None:
+            midnight = origin.replace(hour=0, minute=0, second=0, microsecond=0)
+            return arr * float(_time_units_factor(match.group(1))) + (origin - midnight).total_seconds()
     return arr * float(_time_units_factor(units))
 
 
@@ -151,11 +190,38 @@ def _slider_range_to_indices(value, max_len):
     return [start, end]
 
 
-def _elapsed_seconds(values):
-    arr = np.asarray(values, dtype=float)
-    if arr.size == 0:
-        return arr
-    return arr - float(arr[0])
+def _selected_time_indices(case_data, time_range, time_point, time_mode=None, max_len=None):
+    time_len = max(int(max_len or (case_data or {}).get("time_len") or 1), 1)
+    if (case_data or {}).get("time_controls_physical"):
+        start_seconds = float(time_point if time_point is not None else (case_data or {}).get("default_time_start_seconds", 0.0))
+        min_average = float((case_data or {}).get("time_slider_duration_min_minutes") or 0.0)
+        average_minutes = max(min_average, float(time_range if time_range is not None else (case_data or {}).get("default_time_duration_minutes", min_average or 1.0)))
+        end_seconds = start_seconds + average_minutes * 60.0
+        bounds = np.asarray((case_data or {}).get("time_bounds_seconds") or [], dtype=float)
+        if bounds.ndim == 2 and bounds.shape[1] == 2 and len(bounds) > 0:
+            end_values = bounds[:, 1]
+            matching = np.where((end_values > start_seconds + 1.0e-6) & (end_values <= end_seconds + 1.0e-6))[0]
+            if matching.size > 0:
+                return [int(matching[0]), int(matching[-1])]
+        times = np.asarray((case_data or {}).get("time_seconds") or [], dtype=float)
+        if times.size > 0:
+            matching = np.where((times > start_seconds + 1.0e-6) & (times <= end_seconds + 1.0e-6))[0]
+            if matching.size > 0:
+                return [int(matching[0]), int(matching[-1])]
+            start_idx = int(np.argmin(np.abs(times - start_seconds)))
+            end_idx = int(np.argmin(np.abs(times - end_seconds)))
+            if end_idx < start_idx:
+                start_idx, end_idx = end_idx, start_idx
+            return [start_idx, end_idx]
+        return [0, max(time_len - 1, 0)]
+    if time_mode == "point":
+        idx = _slider_value_to_index(time_point, time_len)
+        return [idx, idx]
+    if isinstance(time_range, (list, tuple)) and len(time_range) == 2:
+        return _slider_range_to_indices(time_range, time_len)
+    start = _slider_value_to_index(time_point or (case_data or {}).get("default_time_start", 1), time_len)
+    duration = max(1, int(time_range or (case_data or {}).get("default_time_duration") or 1))
+    return [start, min(time_len - 1, start + duration - 1)]
 
 
 def _profile_label(source_name):
@@ -164,6 +230,21 @@ def _profile_label(source_name):
     if source_name == "coamps":
         return "COAMPS benchmark"
     return f"{source_name} benchmark"
+
+
+def benchmark_source_label(source_name):
+    if source_name == "sam":
+        return "SAM LES"
+    if source_name == "coamps":
+        return "COAMPS LES"
+    return f"{source_name} LES"
+
+
+def benchmark_source_display_label(source_name, source_label=None, source_count=1):
+    source_text = benchmark_source_label(source_name)
+    if int(source_count or 1) > 1 and source_label and source_label != "default":
+        return f"{source_text} ({source_label})"
+    return source_text
 
 
 def _benchmark_line_style(source_name):
@@ -404,6 +485,87 @@ def _source_paths(case_data, source_name):
     return dict(((case_data or {}).get("benchmarks") or {}).get(source_name) or {})
 
 
+def _normalized_cache_path(path, source_name):
+    signature = _file_signature(path)
+    digest = hashlib.sha256(repr((source_name, CONVERTER_VERSION, signature)).encode("utf-8")).hexdigest()[:20]
+    safe_name = os.path.basename(path).replace(os.sep, "_")
+    cache_dir = os.path.join(tempfile.gettempdir(), "clubb_dash_benchmark_converter")
+    return os.path.join(cache_dir, f"{source_name}_{digest}_{safe_name}")
+
+
+def _ensure_normalized_benchmark(path, source_name):
+    key = ("normalized_benchmark", source_name, CONVERTER_VERSION, _file_signature(path))
+
+    def _build():
+        cache_path = _normalized_cache_path(path, source_name)
+        if os.path.isfile(cache_path):
+            return {"path": cache_path, "status": {}}
+
+        os.makedirs(os.path.dirname(cache_path), exist_ok=True)
+        tmp_path = f"{cache_path}.{os.getpid()}.tmp"
+        try:
+            status = convert_benchmark_file(
+                path,
+                tmp_path,
+                source_type=source_name,
+                fields=sorted(_SUPPORTED_NORMALIZED_FIELDS),
+            )
+            os.replace(tmp_path, cache_path)
+            return {"path": cache_path, "status": status}
+        except Exception as exc:
+            try:
+                if os.path.exists(tmp_path):
+                    os.remove(tmp_path)
+            except OSError:
+                pass
+            return {"path": None, "status": {"error": str(exc)}}
+
+    return _cached_lru(_SOURCE_CACHE, _CACHE_MAX_ENTRIES, key, _build)
+
+
+def _normalized_source_paths(case_data, source_name):
+    normalized = {}
+    for label, path in _source_paths(case_data, source_name).items():
+        result = _ensure_normalized_benchmark(path, source_name)
+        normalized_path = (result or {}).get("path")
+        if normalized_path and os.path.isfile(normalized_path):
+            normalized[label] = normalized_path
+    return normalized
+
+
+def extract_benchmark_timeheight_panels(case_data, var_name, enabled_sources=None):
+    if not var_name:
+        return []
+    selected_sources = sanitize_enabled_sources(case_data, enabled_sources)
+    if not selected_sources:
+        return []
+    from .plot_types import shared
+
+    panels = []
+    for source_name in selected_sources:
+        source_paths = _normalized_source_paths(case_data, source_name)
+        source_count = len(source_paths)
+        for source_label, path in source_paths.items():
+            meta = _dataset_metadata(path)
+            info = meta["var_info"].get(var_name, {})
+            if info.get("t_dim") is None or info.get("z_dim") is None:
+                continue
+            result = shared.extract_time_height_for_path(path, var_name, col_index=0, column_mode="single")
+            if result is None:
+                continue
+            panels.append(
+                {
+                    "source": source_name,
+                    "source_label": source_label,
+                    "title": benchmark_source_display_label(source_name, source_label, source_count),
+                    "var": var_name,
+                    "path": path,
+                    "data": result,
+                }
+            )
+    return panels
+
+
 def _ensure_profile_data(path, var_name, conversion_factor):
     key = ("profile_data", _file_signature(path), var_name, float(conversion_factor))
 
@@ -521,16 +683,19 @@ def _required_same_grid(*datas):
 
 
 def _window_indices(data, clubb_window):
-    benchmark_elapsed = _elapsed_seconds(data["time_seconds"])
+    benchmark_time = np.asarray(data["time_seconds"], dtype=float)
     if clubb_window["mode"] == "point":
-        index = int(np.argmin(np.abs(benchmark_elapsed - clubb_window["start"])))
+        index = int(np.argmin(np.abs(benchmark_time - clubb_window["start"])))
         return np.array([index], dtype=int)
     low = min(clubb_window["start"], clubb_window["end"])
     high = max(clubb_window["start"], clubb_window["end"])
-    matching = np.where((benchmark_elapsed >= low) & (benchmark_elapsed <= high))[0]
+    if clubb_window.get("interval_semantics") == "(start, end]":
+        matching = np.where((benchmark_time > low) & (benchmark_time <= high))[0]
+    else:
+        matching = np.where((benchmark_time >= low) & (benchmark_time <= high))[0]
     if matching.size == 0:
-        start_idx = int(np.argmin(np.abs(benchmark_elapsed - low)))
-        end_idx = int(np.argmin(np.abs(benchmark_elapsed - high)))
+        start_idx = int(np.argmin(np.abs(benchmark_time - low)))
+        end_idx = int(np.argmin(np.abs(benchmark_time - high)))
         if end_idx < start_idx:
             start_idx, end_idx = end_idx, start_idx
         matching = np.arange(start_idx, end_idx + 1, dtype=int)
@@ -909,31 +1074,57 @@ def _extract_from_catalog_entry(case_data, source_name, catalog_entry, clubb_win
     return None
 
 
-def _resolve_clubb_elapsed(case_data, time_mode, time_range, time_point):
+def _extract_from_normalized_benchmark(case_data, source_name, clubb_var, clubb_window):
+    if clubb_var not in _SUPPORTED_NORMALIZED_FIELDS:
+        return None
+    source_paths = _normalized_source_paths(case_data, source_name)
+    if not source_paths:
+        return None
+    return _reduce_profile_data(_get_profile_data(source_paths, clubb_var), clubb_window)
+
+
+def _resolve_clubb_window(case_data, time_mode, time_range, time_point):
     time_seconds = np.asarray((case_data or {}).get("time_seconds") or [], dtype=float)
+    time_bounds = np.asarray((case_data or {}).get("time_bounds_seconds") or [], dtype=float)
+    interval_semantics = (case_data or {}).get("time_interval_semantics")
     time_len = max(int((case_data or {}).get("time_len") or 1), 1)
+    if time_bounds.ndim == 2 and time_bounds.shape[1] == 2 and len(time_bounds) > 0:
+        start_idx, end_idx = _selected_time_indices(case_data, time_range, time_point, time_mode, len(time_bounds))
+        start_val = float(np.min(time_bounds[start_idx : end_idx + 1, 0]))
+        end_val = float(np.max(time_bounds[start_idx : end_idx + 1, 1]))
+        return {
+            "mode": "range",
+            "start": start_val,
+            "end": end_val,
+            "interval_semantics": interval_semantics,
+        }
     if time_seconds.size > 0:
-        elapsed = _elapsed_seconds(time_seconds)
-        if time_mode == "point":
-            idx = _slider_value_to_index(time_point, len(elapsed))
-            return {"mode": "point", "start": float(elapsed[idx]), "end": float(elapsed[idx])}
-        start_idx, end_idx = _slider_range_to_indices(time_range, len(elapsed))
-        return {"mode": "range", "start": float(elapsed[start_idx]), "end": float(elapsed[end_idx])}
-    if time_mode == "point":
-        idx = _slider_value_to_index(time_point, time_len)
-        return {"mode": "point", "start": float(idx), "end": float(idx)}
-    start_idx, end_idx = _slider_range_to_indices(time_range, time_len)
+        start_idx, end_idx = _selected_time_indices(case_data, time_range, time_point, time_mode, len(time_seconds))
+        return {"mode": "range", "start": float(time_seconds[start_idx]), "end": float(time_seconds[end_idx])}
+    start_idx, end_idx = _selected_time_indices(case_data, time_range, time_point, time_mode, time_len)
     return {"mode": "range", "start": float(start_idx), "end": float(end_idx)}
 
 
 def extract_benchmark_profile(case_data, source_name, clubb_var, time_mode, time_range, time_point):
+    clubb_window = _resolve_clubb_window(case_data, time_mode, time_range, time_point)
+    data = _extract_from_normalized_benchmark(case_data, source_name, clubb_var, clubb_window)
+    if data is not None and "profile" in data:
+        return {
+            "z_values": np.asarray(data["z_values"], dtype=float),
+            "profile": np.asarray(data["profile"], dtype=float),
+            "label": _profile_label(source_name),
+            "line": _benchmark_line_style(source_name),
+            "units": data["units"],
+            "long_name": data["long_name"],
+            "z_units": data["z_units"],
+        }
+
     catalog = load_case_benchmark_catalog(case_data)
     source_catalog = (catalog.get(clubb_var) or {}).get(source_name)
     if not source_catalog:
         source_catalog = (load_global_benchmark_catalog().get(clubb_var) or {}).get(source_name)
     if not source_catalog:
         return None
-    clubb_window = _resolve_clubb_elapsed(case_data, time_mode, time_range, time_point)
     data = None
     for catalog_entry in source_catalog["entries"]:
         candidate = _extract_from_catalog_entry(case_data, source_name, catalog_entry, clubb_window)

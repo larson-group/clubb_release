@@ -481,6 +481,32 @@ python module clubb_f2py
       double precision, intent(out) :: lmin, mixt_frac_max_mag
     end subroutine
 
+    subroutine f2py_init_clubb_loss(runfile, num_variables, total_param_sets, num_time_windows, clubb_var_names)
+      character(len=*), intent(in) :: runfile
+      integer, intent(out) :: num_variables, total_param_sets, num_time_windows
+      character, dimension(32, 64), intent(out) :: clubb_var_names
+    end subroutine
+
+    subroutine f2py_get_clubb_params_all(total_param_sets, nparams, clubb_params)
+      integer, intent(in) :: total_param_sets, nparams
+      double precision, dimension(total_param_sets, nparams), intent(out) :: clubb_params
+    end subroutine
+
+    subroutine f2py_clubb_get_loss_for_params(total_param_sets, nparams, num_variables, &
+        num_time_windows, clubb_params_all, scaled_rmse, correlation, std_ratio, &
+        centered_rmse_norm, bias_norm)
+      integer, intent(in) :: total_param_sets, nparams, num_variables, num_time_windows
+      double precision, dimension(total_param_sets, nparams), intent(in) :: clubb_params_all
+      double precision, dimension(num_time_windows, num_variables, total_param_sets), intent(out) :: scaled_rmse
+      double precision, dimension(num_time_windows, num_variables, total_param_sets), intent(out) :: correlation
+      double precision, dimension(num_time_windows, num_variables, total_param_sets), intent(out) :: std_ratio
+      double precision, dimension(num_time_windows, num_variables, total_param_sets), intent(out) :: centered_rmse_norm
+      double precision, dimension(num_time_windows, num_variables, total_param_sets), intent(out) :: bias_norm
+    end subroutine
+
+    subroutine f2py_finalize_clubb_loss()
+    end subroutine
+
     subroutine f2py_init_pdf_params(nz, ngrdcol)
       integer, intent(in) :: nz, ngrdcol
     end subroutine
@@ -644,11 +670,12 @@ python module clubb_f2py
     subroutine f2py_stats_init(registry_path, output_path, ncol, &
         stats_tsamp, stats_tout, dt_main, &
         day_in, month_in, year_in, time_initial, &
-        nzt, zt, nzm, zm, sclr_dim, edsclr_dim)
+        stats_tstart, stats_tend, nzt, zt, nzm, zm, sclr_dim, edsclr_dim)
       character(len=256), intent(in) :: registry_path, output_path
       integer, intent(in) :: ncol, day_in, month_in, year_in
       double precision, intent(in) :: stats_tsamp, stats_tout, dt_main
       double precision, intent(in) :: time_initial
+      double precision, intent(in) :: stats_tstart, stats_tend
       integer, intent(in) :: nzt, nzm, sclr_dim, edsclr_dim
       double precision, dimension(nzt), intent(in) :: zt
       double precision, dimension(nzm), intent(in) :: zm
@@ -657,11 +684,13 @@ python module clubb_f2py
     subroutine f2py_stats_init_with_params(registry_path, output_path, ncol, &
         stats_tsamp, stats_tout, dt_main, &
         day_in, month_in, year_in, time_initial, &
-        nzt, zt, nzm, zm, sclr_dim, edsclr_dim, clubb_params, param_names)
+        stats_tstart, stats_tend, nzt, zt, nzm, zm, sclr_dim, edsclr_dim, &
+        clubb_params, param_names)
       character(len=256), intent(in) :: registry_path, output_path
       integer, intent(in) :: ncol, day_in, month_in, year_in
       double precision, intent(in) :: stats_tsamp, stats_tout, dt_main
       double precision, intent(in) :: time_initial
+      double precision, intent(in) :: stats_tstart, stats_tend
       integer, intent(in) :: nzt, nzm, sclr_dim, edsclr_dim
       double precision, dimension(nzt), intent(in) :: zt
       double precision, dimension(nzm), intent(in) :: zm

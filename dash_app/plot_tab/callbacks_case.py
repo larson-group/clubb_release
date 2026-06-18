@@ -11,6 +11,7 @@ from .plot_types.shared import (
     normalize_output_directory,
     ordered_case_names,
     scan_output_cases,
+    time_start_max_for_duration,
 )
 from .state import (
     empty_case_selection,
@@ -117,11 +118,15 @@ def register_case_callbacks(app):
         Output("plots-selected-column", "data"),
         Output("plots-column-mode", "value"),
         Output("plots-time-mode", "value"),
+        Output("plots-global-time-range", "min"),
         Output("plots-global-time-range", "max"),
         Output("plots-global-time-range", "value"),
+        Output("plots-global-time-range", "step"),
         Output("plots-global-time-range", "marks"),
+        Output("plots-global-time-point", "min"),
         Output("plots-global-time-point", "max"),
         Output("plots-global-time-point", "value"),
+        Output("plots-global-time-point", "step"),
         Output("plots-global-time-point", "marks"),
         Output("plots-global-height-range", "min"),
         Output("plots-global-height-range", "max"),
@@ -152,10 +157,10 @@ def register_case_callbacks(app):
         elif isinstance(trigger, dict):
             case_name = trigger.get("name")
         else:
-            return (no_update,) * 19
+            return (no_update,) * 23
         files = scan_output_cases(output_dirs).get(case_name, [])
         if not case_name or not files:
-            return (no_update,) * 19
+            return (no_update,) * 23
         current_name = (current_case_data or {}).get("name")
         current_files = list((current_case_data or {}).get("files") or [])
         current_dirs = list((current_case_data or {}).get("output_dirs") or [])
@@ -180,8 +185,10 @@ def register_case_callbacks(app):
             updated_order = [initial_id]
             updated_state[str(initial_id)] = default_plot_state(case_data, initial_id, existing_state=updated_state)
             updated_next_id = 1
-        slider_max = max(case_data.get("time_len") or 1, 1)
-        marks = {1: "1", slider_max: str(slider_max)} if slider_max > 1 else {1: "1"}
+        slider_min = max(1.0e-6, float(case_data.get("time_slider_duration_min_minutes") or 1))
+        slider_max = max(slider_min, float(case_data.get("time_slider_duration_max_minutes") or slider_min))
+        slider_step = max(1.0e-6, float(case_data.get("time_slider_duration_step_minutes") or slider_min))
+        default_duration = case_data.get("default_time_duration_minutes") or slider_min
         height_min = float(case_data.get("height_slider_min", 0.0))
         height_max = float(case_data.get("height_slider_max", 1.0))
         height_marks = {height_min: f"{height_min:g}", height_max: f"{height_max:g}"}
@@ -195,12 +202,16 @@ def register_case_callbacks(app):
             0,
             "single",
             "range",
+            slider_min,
             slider_max,
-            case_data.get("default_time_range") or [1, slider_max],
-            marks,
-            slider_max,
-            case_data.get("default_time_range", [1, slider_max])[0],
-            marks,
+            default_duration,
+            slider_step,
+            {},
+            case_data.get("time_slider_start_min_seconds", 0),
+            time_start_max_for_duration(case_data, default_duration),
+            case_data.get("default_time_start_seconds", 0),
+            max(1.0e-6, float(default_duration)) * 60.0,
+            {},
             height_min,
             height_max,
             case_data.get("default_height_range") or [height_min, height_max],
@@ -271,6 +282,6 @@ def register_case_callbacks(app):
             case_data.get("compare_mode") or not bool(case_data.get("budget_groups")),
             not bool(case_data.get("profile_vars")),
             not bool(case_data.get("timeseries_vars")),
-            case_data.get("compare_mode") or not bool(case_data.get("timeheight_vars")),
+            not PLOT_TYPES["timeheight"].supports_case_data(case_data),
             case_data.get("compare_mode") or not bool(case_data.get("subcolumn_vars")),
         )

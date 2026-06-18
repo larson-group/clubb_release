@@ -2,9 +2,10 @@ import threading
 
 import numpy as np
 import plotly.graph_objects as go
-from dash import Input, MATCH, Output, Patch, State, callback_context
+from dash import Input, MATCH, Output, Patch, State, callback_context, html
 
 from .. import benchmark_overlay
+from ..profile_loss import compute_profile_loss
 from . import shared
 from .base_plot import BasePlotType
 
@@ -32,13 +33,10 @@ class ProfilePlotType(BasePlotType):
     def _time_indices(self, global_context):
         case_data = global_context.get("case_data") or {}
         time_len = max(int(case_data.get("time_len") or 1), 1)
-        slider_range = global_context.get("time_range") or case_data.get("default_time_range") or [1, time_len]
+        slider_range = global_context.get("time_range")
         time_mode = global_context.get("time_mode") or "range"
-        time_point = global_context.get("time_point") or slider_range[0]
-        if time_mode == "point":
-            point_idx = shared.slider_value_to_index(time_point, time_len)
-            return [point_idx, point_idx], time_mode, time_point
-        return shared.slider_range_to_indices(slider_range, time_len), time_mode, time_point
+        time_point = global_context.get("time_point")
+        return shared.selected_time_indices(case_data, slider_range, time_point, time_mode), time_mode, time_point
 
     def _mark_full_render(self, plot_id):
         with self._render_state_lock:
@@ -60,6 +58,23 @@ class ProfilePlotType(BasePlotType):
         high = max(bounds[1] for bounds in finite_bounds)
         return shared.padded_range(low, high)
 
+    def error_id(self, plot_id):
+        return {"type": "profile-benchmark-error", "index": plot_id}
+
+    def auxiliary_components(self, plot_id):
+        return [
+            html.Div(
+                id=self.error_id(plot_id),
+                style={
+                    "marginBottom": "2px",
+                    "fontSize": "16px",
+                    "fontWeight": "600",
+                    "color": "#f8fafc",
+                    "lineHeight": "1.2",
+                },
+            )
+        ]
+
     def _single_trace_specs(self, files, var_name, case_data, global_context):
         path, _meta = shared.dataset_info_for_var(files, var_name)
         if path is None:
@@ -71,17 +86,19 @@ class ProfilePlotType(BasePlotType):
         x_values = []
         point_bounds = []
         enabled_sources = benchmark_overlay.sanitize_enabled_sources(case_data, global_context.get("enabled_benchmarks"))
+        benchmark_profiles = {}
         for source_name in enabled_sources:
             benchmark_profile = benchmark_overlay.extract_benchmark_profile(
                 case_data,
                 source_name,
                 var_name,
                 global_context.get("time_mode") or "range",
-                global_context.get("time_range") or case_data.get("default_time_range"),
+                global_context.get("time_range"),
                 global_context.get("time_point"),
             )
             if benchmark_profile is None:
                 continue
+            benchmark_profiles[source_name] = benchmark_profile
             trace_specs.append(
                 {
                     "x": benchmark_profile["profile"],
@@ -131,7 +148,70 @@ class ProfilePlotType(BasePlotType):
             "column_mode": column_mode,
             "showlegend": any(spec["showlegend"] for spec in trace_specs),
             "enabled_benchmarks": tuple(enabled_sources),
+            "benchmark_profiles": benchmark_profiles,
+            "clubb_profile": np.asarray(extracted["profiles"][0], dtype=float) if extracted["profiles"].size else None,
+            "clubb_z_values": np.asarray(extracted["z_values"], dtype=float),
         }
+
+    def _build_error_panel(self, trace_bundle, var_name, case_data, global_context):
+        if not trace_bundle:
+            return ""
+        if case_data.get("compare_mode"):
+            return ""
+        if trace_bundle.get("column_mode") != "single":
+            return ""
+        clubb_profile = trace_bundle.get("clubb_profile")
+        clubb_z_values = trace_bundle.get("clubb_z_values")
+        benchmark_profiles = trace_bundle.get("benchmark_profiles") or {}
+        if clubb_profile is None or clubb_z_values is None or not benchmark_profiles:
+            return ""
+
+        height_range = global_context.get("height_range") or case_data.get("default_height_range")
+        if not height_range or len(height_range) != 2:
+            finite_z = np.asarray(clubb_z_values, dtype=float)
+            finite_z = finite_z[np.isfinite(finite_z)]
+            if finite_z.size == 0:
+                return ""
+            height_range = [float(np.min(finite_z)), float(np.max(finite_z))]
+
+        items = []
+        for source_name in trace_bundle.get("enabled_benchmarks") or ():
+            benchmark_profile = benchmark_profiles.get(source_name)
+            if benchmark_profile is None:
+                continue
+            loss_value, error_message = compute_profile_loss(
+                var_name,
+                clubb_profile,
+                clubb_z_values,
+                benchmark_profile["profile"],
+                benchmark_profile["z_values"],
+                height_range,
+            )
+            label = f"{source_name} error:"
+            value = error_message if error_message is not None else f"{loss_value:.5g}"
+            items.append(
+                html.Span(
+                    [
+                        html.Span(label, style={"fontWeight": "700", "color": "#facc15"}),
+                        html.Span(f" {value}", style={"color": "#f8fafc"}),
+                    ]
+                )
+            )
+
+        if not items:
+            return ""
+        return html.Div(
+            items,
+            style={
+                "display": "flex",
+                "flexWrap": "wrap",
+                "gap": "20px",
+                "alignItems": "center",
+                "padding": "3px 8px",
+                "borderRadius": "6px",
+                "backgroundColor": "#0f172a",
+            },
+        )
 
     def _build_single_figure(self, files, var_name, case_data, global_context, theme_name):
         trace_bundle = self._single_trace_specs(files, var_name, case_data, global_context)
@@ -197,7 +277,7 @@ class ProfilePlotType(BasePlotType):
                 source_name,
                 var_name,
                 global_context.get("time_mode") or "range",
-                global_context.get("time_range") or case_data.get("default_time_range"),
+                global_context.get("time_range"),
                 global_context.get("time_point"),
             )
             if benchmark_profile is None:
@@ -354,6 +434,7 @@ class ProfilePlotType(BasePlotType):
         @app.callback(
             Output(self.graph_id(MATCH), "figure"),
             Output(self.render_signal_id(MATCH), "children"),
+            Output(self.error_id(MATCH), "children"),
             Input(self.var_input_id(MATCH), "value"),
             Input("plots-case-data", "data"),
             Input("plots-enabled-benchmarks", "data"),
@@ -370,43 +451,41 @@ class ProfilePlotType(BasePlotType):
         def _update_profile_graph(var_name, case_data, enabled_benchmarks, time_mode, time_range, time_point, height_range, selected_column, column_mode, theme_name, size_store_value, graph_id):
             plot_id = int((graph_id or {}).get("index", -1))
             size_value = shared.normalize_plot_size(size_store_value)
-            signal = int(time_point) if time_mode == "point" and time_point is not None else ""
+            signal = int(time_point) if time_point is not None else ""
+            global_context = {
+                "case_data": case_data,
+                "enabled_benchmarks": enabled_benchmarks,
+                "time_mode": time_mode,
+                "time_range": time_range,
+                "time_point": time_point,
+                "height_range": height_range,
+                "selected_column": selected_column,
+                "column_mode": column_mode,
+                "size": size_value,
+                "theme_name": theme_name,
+            }
             if callback_context.triggered_id == "plots-global-time-point" and plot_id >= 0 and self._has_full_render(plot_id):
+                error_children = ""
+                if not (case_data or {}).get("compare_mode"):
+                    trace_bundle = self._single_trace_specs(case_data.get("files") or [], var_name, case_data, global_context)
+                    error_children = self._build_error_panel(trace_bundle, var_name, case_data, global_context)
                 patch = self.build_patch(
                     {"var": var_name, "size": size_value},
-                    {
-                        "case_data": case_data,
-                        "enabled_benchmarks": enabled_benchmarks,
-                        "time_mode": time_mode,
-                        "time_range": time_range,
-                        "time_point": time_point,
-                        "height_range": height_range,
-                        "selected_column": selected_column,
-                        "column_mode": column_mode,
-                        "size": size_value,
-                        "theme_name": theme_name,
-                    },
+                    global_context,
                 )
                 if patch is not None:
-                    return patch, signal
+                    return patch, signal, error_children
             fig = self.build_figure(
                 {"var": var_name, "size": size_value},
-                {
-                    "case_data": case_data,
-                    "enabled_benchmarks": enabled_benchmarks,
-                    "time_mode": time_mode,
-                    "time_range": time_range,
-                    "time_point": time_point,
-                    "height_range": height_range,
-                    "selected_column": selected_column,
-                    "column_mode": column_mode,
-                    "size": size_value,
-                    "theme_name": theme_name,
-                },
+                global_context,
             )
+            error_children = ""
+            if not (case_data or {}).get("compare_mode"):
+                trace_bundle = self._single_trace_specs(case_data.get("files") or [], var_name, case_data, global_context)
+                error_children = self._build_error_panel(trace_bundle, var_name, case_data, global_context)
             if plot_id >= 0:
                 self._mark_full_render(plot_id)
-            return fig, signal
+            return fig, signal, error_children
 
 
 PLOT = ProfilePlotType()

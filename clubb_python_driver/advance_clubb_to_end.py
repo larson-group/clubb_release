@@ -67,7 +67,10 @@ def advance_clubb_to_end(state: dict, l_stdout: bool = True):
 
         # ── Stats: end timestep ─────────────────────────────────────────
         if l_stats and l_last_sample:
-            stats_time = float(time_current + state['cfg']['stats_tout'])
+            # Match the Fortran driver: write the stats record at the model
+            # time reached at the end of the current timestep, not one whole
+            # output window later.
+            stats_time = float(time_current + dt_main)
             state['err_info'] = clubb_api.stats_end_timestep(
                 stats_time,
                 err_info=state['err_info'],

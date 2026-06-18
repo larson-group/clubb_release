@@ -1,4 +1,6 @@
 from dash import ALL, Input, Output, State, dcc, html, no_update
+import itertools
+import math
 
 from .plot_types.shared import closest_column, load_compare_param_values, load_param_values
 from .state import format_column_values
@@ -39,6 +41,17 @@ def _constant_param_grid(constant_params):
     )
 
 
+def _column_param_values(params, col_idx, ncols):
+    """Return parameter values for the currently selected column."""
+    column_idx = min(max(int(col_idx), 0), max(int(ncols) - 1, 0))
+    values = []
+    for name in sorted(params or {}):
+        param_values = params.get(name, [])
+        if len(param_values) == ncols:
+            values.append((name, float(param_values[column_idx])))
+    return values
+
+
 def _param_error_grid(mismatched_params):
     """Render parameter rows whose values do not agree across compared outputs."""
     return html.Div(
@@ -54,6 +67,47 @@ def _param_error_grid(mismatched_params):
         ],
         className="plots-constant-param-grid",
     )
+
+
+def _regular_unique_values(values, *, atol=1.0e-10):
+    """Return sorted unique values when they are evenly spaced."""
+    unique_vals = sorted(set(float(value) for value in values))
+    if len(unique_vals) <= 2:
+        return unique_vals
+    step = unique_vals[1] - unique_vals[0]
+    scale = max(1.0, max(abs(value) for value in unique_vals))
+    tolerance = atol * scale
+    for left, right in zip(unique_vals[1:-1], unique_vals[2:]):
+        if abs((right - left) - step) > tolerance:
+            return None
+    return unique_vals
+
+
+def _is_regular_hypergrid(params, varied_names, ncols):
+    """Return whether varied column parameters form a complete regular hypergrid."""
+    if not params or not varied_names:
+        return False
+
+    unique_by_name = {}
+    for name in varied_names:
+        values = params.get(name, [])
+        if len(values) != ncols:
+            return False
+        unique_vals = _regular_unique_values(values)
+        if unique_vals is None or len(unique_vals) < 2:
+            return False
+        unique_by_name[name] = unique_vals
+
+    expected_count = math.prod(len(unique_by_name[name]) for name in varied_names)
+    if expected_count != ncols:
+        return False
+
+    actual_points = {
+        tuple(float(params[name][idx]) for name in varied_names)
+        for idx in range(ncols)
+    }
+    expected_points = set(itertools.product(*(unique_by_name[name] for name in varied_names)))
+    return actual_points == expected_points
 
 
 def _varying_param_slider(name, current_val, unique_vals):
@@ -102,6 +156,7 @@ def register_param_callbacks(app):
         if case_data.get("compare_mode"):
             params, has_clubb_params, has_param_names, mismatched_params, _per_file = load_compare_param_values(case_data.get("files") or [])
             varied = [name for name, values in params.items() if len(values) == ncols and len(set(values)) > 1]
+            allow_param_selection = _is_regular_hypergrid(params, varied, ncols)
             constant_params = [
                 (name, params[name][0])
                 for name in params.keys()
@@ -115,10 +170,11 @@ def register_param_callbacks(app):
                 "has_param_names": has_param_names,
                 "constant_params": constant_params,
                 "mismatched_params": mismatched_params,
-                "allow_column_param_selection": bool(params),
+                "allow_column_param_selection": allow_param_selection,
             }, varied
         params, has_clubb_params, has_param_names = load_param_values(case_data.get("files") or [])
         varied = [name for name, values in params.items() if len(values) == ncols and len(set(values)) > 1]
+        allow_param_selection = _is_regular_hypergrid(params, varied, ncols)
         constant_params = [
             (name, params[name][0])
             for name in params.keys()
@@ -132,7 +188,7 @@ def register_param_callbacks(app):
             "has_param_names": has_param_names,
             "constant_params": constant_params,
             "mismatched_params": [],
-            "allow_column_param_selection": True,
+            "allow_column_param_selection": allow_param_selection,
         }, varied
 
     @app.callback(
@@ -167,16 +223,22 @@ def register_param_callbacks(app):
         has_param_names = bool(param_data.get("has_param_names"))
         constant_params = param_data.get("constant_params") or []
         mismatched_params = param_data.get("mismatched_params") or []
+        allow_param_selection = bool(param_data.get("allow_column_param_selection"))
         children = []
         if compare_mode:
             children.append(html.Div("Compare mode uses a shared column index across matching outputs."))
         params = param_data["params"]
+        displayed_varying_count = 0
         show_column_slider = (not has_clubb_params) or (not param_names)
         if compare_mode:
             show_column_slider = column_mode != "all" and (show_column_slider or bool(params))
+        if column_mode != "all" and param_names and not allow_param_selection:
+            show_column_slider = True
         if show_column_slider and column_mode != "all" and ncols > 1:
             children.append(_column_slider(ncols, col_idx))
         for name in param_names or []:
+            if column_mode != "all" and not allow_param_selection:
+                break
             values = params.get(name, [])
             if len(values) != ncols:
                 continue
@@ -184,6 +246,7 @@ def register_param_callbacks(app):
             if len(unique_vals) < 2:
                 continue
             if column_mode == "all":
+                displayed_varying_count += 1
                 children.append(
                     html.Div(
                         [
@@ -196,12 +259,18 @@ def register_param_callbacks(app):
                 continue
             current_val = values[min(max(int(col_idx), 0), ncols - 1)]
             children.append(_varying_param_slider(name, current_val, unique_vals))
-        if column_mode == "all" and children:
+        if column_mode == "all" and displayed_varying_count:
             children.insert(0, html.Div("Displayed varying parameters", style={"fontWeight": "600", "marginTop": "6px", "marginBottom": "8px"}))
         if mismatched_params:
             children.append(html.Div("Mismatched parameters", style={"fontWeight": "600", "marginTop": "12px", "marginBottom": "8px"}))
             children.append(_param_error_grid(mismatched_params))
         if param_names:
+            if column_mode != "all" and not allow_param_selection:
+                column_params = _column_param_values(params, col_idx, ncols)
+                if column_params:
+                    children.append(html.Div("Constant parameters", style={"fontWeight": "600", "marginTop": "6px", "marginBottom": "8px"}))
+                    children.append(_constant_param_grid(column_params))
+                return children
             if constant_params:
                 children.append(html.Div("Constant parameters", style={"fontWeight": "600", "marginTop": "6px", "marginBottom": "8px"}))
                 children.append(_constant_param_grid(constant_params))

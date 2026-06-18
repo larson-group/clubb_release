@@ -1299,10 +1299,12 @@ contains
     !$acc end data
 #endif
 
-    if ( any(err_info_api%err_code == clubb_fatal_error) ) then
-      write(fstderr,*) err_info_api%err_header_global
-      write(fstderr,*) "Fatal error advance_clubb_core in API module"
-      return
+    if ( clubb_at_least_debug_level_api( 0 ) ) then
+      if ( any(err_info_api%err_code == clubb_fatal_error) ) then
+        write(fstderr,*) err_info_api%err_header_global
+        write(fstderr,*) "Fatal error advance_clubb_core in API module"
+        return
+      end if
     end if
 
     um = um_col(1,:)
@@ -1842,9 +1844,11 @@ contains
     !$acc end data
 #endif
 
-    if ( any(err_info_api%err_code == clubb_fatal_error) ) then
-      write(fstderr,*) err_info_api%err_header_global
-      write(fstderr,*) "Fatal error advance_clubb_core in API module"
+    if ( clubb_at_least_debug_level_api( 0 ) ) then
+      if ( any(err_info_api%err_code == clubb_fatal_error) ) then
+        write(fstderr,*) err_info_api%err_header_global
+        write(fstderr,*) "Fatal error advance_clubb_core in API module"
+      end if
     end if
 
   end subroutine advance_clubb_core_api_multi_col

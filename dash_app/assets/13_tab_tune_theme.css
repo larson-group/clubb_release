@@ -1,0 +1,280 @@
+#app-root.theme-dark .tune-tab-layout {
+  color: #e5e7eb;
+}
+
+#app-root.theme-light .tune-tab-layout {
+  color: #0f172a;
+}
+
+.tune-tab-layout {
+  align-items: stretch;
+}
+
+#app-root.theme-dark .tune-header-controls {
+  background: #111827;
+  border: 1px solid #334155;
+}
+
+#app-root.theme-light .tune-header-controls {
+  background: #f8fafc;
+  border: 1px solid #cbd5e1;
+}
+
+.tune-pane-divider {
+  width: 8px;
+  box-sizing: border-box;
+  min-height: 100%;
+  align-self: stretch;
+  cursor: col-resize;
+  border-radius: 8px;
+  pointer-events: auto;
+  position: relative;
+  z-index: 5;
+}
+
+#app-root.theme-dark .tune-pane-divider {
+  background: #1e293b;
+  border-left: 1px solid #334155;
+  border-right: 1px solid #334155;
+}
+
+#app-root.theme-light .tune-pane-divider {
+  background: #cbd5e1;
+  border-left: 1px solid #94a3b8;
+  border-right: 1px solid #94a3b8;
+}
+
+body.tune-ui-dragging,
+body.tune-ui-dragging * {
+  user-select: none !important;
+  cursor: col-resize !important;
+}
+
+.tune-settings-heading {
+  display: block;
+  width: 80%;
+  text-align: center;
+  padding: 6px 8px;
+  border-radius: 6px;
+  border: 1px solid;
+  margin: 10px auto 8px auto;
+}
+
+#app-root.theme-dark .tune-settings-heading {
+  background: #1e293b;
+  border-color: #334155;
+  color: #e2e8f0;
+}
+
+#app-root.theme-light .tune-settings-heading {
+  background: #e2e8f0;
+  border-color: #cbd5e1;
+  color: #0f172a;
+}
+
+#app-root.theme-dark .tune-section-title {
+  color: #cbd5e1;
+}
+
+#app-root.theme-light .tune-section-title {
+  color: #334155;
+}
+
+#app-root.theme-dark .tune-case-config-row {
+  background: #111827;
+  border-color: #334155 !important;
+}
+
+#app-root.theme-light .tune-case-config-row {
+  background: #f8fafc;
+  border-color: #cbd5e1 !important;
+}
+
+#app-root .tune-range-row .dash-dropdown .Select-input > input,
+#app-root .tune-case-config-row .dash-dropdown .Select-input > input {
+  caret-color: transparent;
+  background: transparent !important;
+  border: none !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  box-shadow: none !important;
+  outline: none !important;
+}
+
+#app-root .tune-range-row .dash-dropdown .Select-input > input:focus,
+#app-root .tune-case-config-row .dash-dropdown .Select-input > input:focus {
+  outline: none !important;
+  box-shadow: none !important;
+  border: none !important;
+  background: transparent !important;
+}
+
+#app-root .tune-range-row .dash-dropdown .Select--single > .Select-control .Select-value,
+#app-root .tune-range-row .Select-placeholder,
+#app-root .tune-case-config-row .dash-dropdown .Select--single > .Select-control .Select-value,
+#app-root .tune-case-config-row .Select-placeholder {
+  padding-left: 10px;
+}
+
+.tune-case-input-group {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.tune-case-input-label {
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.2;
+}
+
+#app-root.theme-dark .tune-right-pane input,
+#app-root.theme-dark .tune-right-pane textarea,
+#app-root.theme-dark .tune-right-pane select {
+  background-color: #0b1220 !important;
+  color: #e2e8f0 !important;
+  border: 1px solid #334155 !important;
+}
+
+#app-root.theme-light .tune-right-pane input,
+#app-root.theme-light .tune-right-pane textarea,
+#app-root.theme-light .tune-right-pane select {
+  background-color: #ffffff !important;
+  color: #0f172a !important;
+  border: 1px solid #cbd5e1 !important;
+}
+
+#app-root .tune-right-pane input.tune-average-time-input.invalid {
+  border: 2px solid #dc2626 !important;
+  box-shadow: 0 0 0 1px rgba(220, 38, 38, 0.35) !important;
+}
+
+.tune-status-card {
+  border: 1px solid;
+  border-radius: 6px;
+  padding: 10px 12px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+  font-size: 12px;
+}
+
+#app-root.theme-dark .tune-status-card {
+  background: #0f172a;
+  border-color: #334155;
+  color: #e2e8f0;
+}
+
+#app-root.theme-light .tune-status-card {
+  background: #f8fafc;
+  border-color: #cbd5e1;
+  color: #0f172a;
+}
+
+.tune-results-container {
+  margin-top: 12px;
+}
+
+.tune-taylor-container {
+  margin-top: 12px;
+}
+
+.tune-diagnostics-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 2fr);
+  gap: 12px;
+  align-items: stretch;
+  min-width: 960px;
+}
+
+.tune-diagnostics-taylor,
+.tune-diagnostics-params {
+  min-width: 0;
+}
+
+.tune-taylor-graph,
+.tune-parameter-box-graph {
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  overflow: hidden;
+  height: 430px;
+}
+
+.tune-results-table {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed;
+}
+
+.tune-results-table th,
+.tune-results-table td {
+  border: 1px solid;
+  padding: 8px 10px;
+  text-align: left;
+  font-size: 13px;
+  overflow-wrap: anywhere;
+}
+
+#app-root.theme-dark .tune-results-table th,
+#app-root.theme-dark .tune-results-table td {
+  border-color: #334155;
+}
+
+#app-root.theme-light .tune-results-table th,
+#app-root.theme-light .tune-results-table td {
+  border-color: #cbd5e1;
+}
+
+#app-root.theme-dark .tune-results-table thead th {
+  background: #1e293b;
+}
+
+#app-root.theme-light .tune-results-table thead th {
+  background: #e2e8f0;
+}
+
+#app-root.theme-dark .tune-results-table tbody tr:nth-child(odd) {
+  background: rgba(148, 163, 184, 0.08);
+}
+
+#app-root.theme-dark .tune-results-table tbody tr:nth-child(even) {
+  background: rgba(148, 163, 184, 0.03);
+}
+
+#app-root.theme-light .tune-results-table tbody tr:nth-child(odd) {
+  background: rgba(148, 163, 184, 0.14);
+}
+
+#app-root.theme-light .tune-results-table tbody tr:nth-child(even) {
+  background: rgba(148, 163, 184, 0.06);
+}
+
+#app-root.theme-dark .tune-empty-message {
+  color: #94a3b8;
+}
+
+#app-root.theme-light .tune-empty-message {
+  color: #475569;
+}
+
+.tune-validation-message {
+  white-space: pre-wrap;
+}
+
+.tune-info-message {
+  white-space: pre-wrap;
+}
+
+#app-root.theme-dark .tune-info-message {
+  color: #93c5fd;
+}
+
+#app-root.theme-light .tune-info-message {
+  color: #1d4ed8;
+}
+
+#app-root.theme-dark .tune-validation-message {
+  color: #fca5a5;
+}
+
+#app-root.theme-light .tune-validation-message {
+  color: #b91c1c;
+}

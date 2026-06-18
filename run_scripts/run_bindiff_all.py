@@ -576,6 +576,10 @@ def find_diffs_in_common_vars( test_file, dir1, dir2, save_to_file, verbose, abs
         except ValueError:
             print("The variable {} is not comparable because the shapes do not match: {}, {}".format(var, data_1.shape, data_2.shape))
             continue
+        if abs_diff.size == 0:
+            if verbose >= 2:
+                print("Skipping variable {} because it has no values to compare.".format(var))
+            continue
 
         if not np.all(abs_diff == 0):
             n_vars_with_nonzero_diff += 1

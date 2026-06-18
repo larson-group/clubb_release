@@ -139,9 +139,16 @@ def init_stats(registry_path: str, output_path: str, ncol: int,
                sclr_dim: int, edsclr_dim: int,
                err_info: ErrInfo,
                clubb_params: np.ndarray,
-               param_names: list[str] | np.ndarray):
+               param_names: list[str] | np.ndarray,
+               *,
+               stats_tstart: float | None = None,
+               stats_tend: float | None = None):
     """Initialize the stats system with a registry file."""
     set_fortran_err_info(err_info)
+
+    missing_time = -1.0e30
+    stats_tstart_value = missing_time if stats_tstart is None else float(stats_tstart)
+    stats_tend_value = missing_time if stats_tend is None else float(stats_tend)
 
     if len(param_names) != clubb_params.shape[1]:
         raise ValueError("param_names length must match clubb_params.shape[1].")
@@ -150,6 +157,7 @@ def init_stats(registry_path: str, output_path: str, ncol: int,
         registry_path, output_path,
         stats_tsamp, stats_tout, dt_main,
         day_in, month_in, year_in, time_initial,
+        stats_tstart_value, stats_tend_value,
         zt, zm, sclr_dim, edsclr_dim, f_arr(clubb_params), encoded_param_names,
         ncol=ncol, nzt=nzt, nzm=nzm,
     )

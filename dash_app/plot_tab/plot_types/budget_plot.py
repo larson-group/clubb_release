@@ -42,14 +42,10 @@ class BudgetPlotType(BasePlotType):
         if not group:
             return None
         time_len = max(int(case_data.get("time_len") or 1), 1)
-        slider_range = global_context.get("time_range") or case_data.get("default_time_range") or [1, time_len]
+        slider_range = global_context.get("time_range")
         time_mode = global_context.get("time_mode") or "range"
-        time_point = global_context.get("time_point") or slider_range[0]
-        if time_mode == "point":
-            point_idx = shared.slider_value_to_index(time_point, time_len)
-            time_indices = [point_idx, point_idx]
-        else:
-            time_indices = shared.slider_range_to_indices(slider_range, time_len)
+        time_point = global_context.get("time_point")
+        time_indices = shared.selected_time_indices(case_data, slider_range, time_point, time_mode)
 
         col_index = int(global_context.get("selected_column") or 0)
         trace_specs = []
@@ -194,7 +190,7 @@ class BudgetPlotType(BasePlotType):
         def _update_budget_graph(var_name, case_data, time_mode, time_range, time_point, height_range, selected_column, column_mode, theme_name, size_store_value, graph_id):
             plot_id = int((graph_id or {}).get("index", -1))
             size_value = shared.normalize_plot_size(size_store_value)
-            signal = int(time_point) if time_mode == "point" and time_point is not None else ""
+            signal = int(time_point) if time_point is not None else ""
             if callback_context.triggered_id == "plots-global-time-point" and plot_id >= 0 and self._has_full_render(plot_id):
                 patch = self.build_patch(
                     {"var": var_name, "size": size_value},

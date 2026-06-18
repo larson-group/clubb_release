@@ -212,6 +212,13 @@ body.plots-ui-dragging * {
   font-size: 11pt;
 }
 
+#app-root .plots-time-slider-block .rc-slider-mark,
+#app-root .plots-time-slider-block .rc-slider-mark-text,
+#app-root .plots-time-slider-block .rc-slider-dot,
+#app-root .plots-time-slider-block .rc-slider-tooltip {
+  display: none;
+}
+
 #app-root .plots-constant-param-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));

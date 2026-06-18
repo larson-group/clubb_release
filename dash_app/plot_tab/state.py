@@ -8,6 +8,7 @@ from .plot_types.shared import (
     normalize_output_directory,
     ordered_case_names,
     scan_output_cases,
+    time_start_max_for_duration,
 )
 
 DEFAULT_OUTPUT_DIR = normalize_output_directory(OUTPUT_DIR)
@@ -43,7 +44,7 @@ def live_dir_entries(stored_entries, live_values):
 def empty_case_selection():
     """Return the callback payload for a UI state with no selectable cases."""
     return (
-        None,
+        {},
         [],
         no_update,
         no_update,
@@ -52,11 +53,15 @@ def empty_case_selection():
         "single",
         "range",
         1,
-        [1, 1],
-        {1: "1"},
         1,
         1,
-        {1: "1"},
+        1,
+        {},
+        0,
+        1,
+        1,
+        1,
+        None,
         0.0,
         1.0,
         [0.0, 1.0],
@@ -67,15 +72,15 @@ def empty_case_selection():
 
 def format_column_values(values):
     """Summarize overplot parameter values as a compact range plus sample list."""
-    formatted = [f"{value:g}" for value in values]
+    formatted = [f"{value:.3g}" for value in values]
     if formatted:
         min_val = min(values)
         max_val = max(values)
-        range_text = f"{min_val:g}-{max_val:g}"
+        range_text = f"{min_val:.3g}-{max_val:.3g}"
     else:
         range_text = "[]"
-    if len(formatted) > 6:
-        shown = formatted[:2] + ["..."] + formatted[-2:]
+    if len(formatted) > 16:
+        shown = formatted[:4] + ["..."] + formatted[-4:]
     else:
         shown = formatted
     return f"{range_text} [{', '.join(shown)}]"
@@ -117,12 +122,16 @@ def initialize_case_state(output_dirs=None):
             "selected_column": 0,
             "column_mode": "single",
             "time_mode": "range",
+            "time_slider_min": 1,
             "time_slider_max": 1,
-            "time_range": [1, 1],
-            "time_marks": {1: "1"},
+            "time_slider_step": 1,
+            "time_range": 1,
+            "time_marks": {},
+            "time_point_min": 0,
             "time_point_max": 1,
             "time_point": 1,
-            "time_point_marks": {1: "1"},
+            "time_point_step": 1,
+            "time_point_marks": {},
             "height_min": 0.0,
             "height_max": 1.0,
             "height_range": [0.0, 1.0],
@@ -140,8 +149,9 @@ def initialize_case_state(output_dirs=None):
             plot_order.append(plot_id)
             plot_state[str(plot_id)] = default_plot_state(case_data, plot_id, existing_state=plot_state)
         next_id = max_initial
-    slider_max = max(case_data.get("time_len") or 1, 1)
-    marks = {1: "1", slider_max: str(slider_max)} if slider_max > 1 else {1: "1"}
+    slider_min = max(1.0e-6, float(case_data.get("time_slider_duration_min_minutes") or 1))
+    slider_max = max(slider_min, float(case_data.get("time_slider_duration_max_minutes") or slider_min))
+    slider_step = max(1.0e-6, float(case_data.get("time_slider_duration_step_minutes") or slider_min))
     height_min = float(case_data.get("height_slider_min", 0.0))
     height_max = float(case_data.get("height_slider_max", 1.0))
     return {
@@ -153,12 +163,16 @@ def initialize_case_state(output_dirs=None):
         "selected_column": 0,
         "column_mode": "single",
         "time_mode": "range",
+        "time_slider_min": slider_min,
         "time_slider_max": slider_max,
-        "time_range": case_data.get("default_time_range") or [1, slider_max],
-        "time_marks": marks,
-        "time_point_max": slider_max,
-        "time_point": case_data.get("default_time_range", [1, slider_max])[0],
-        "time_point_marks": marks,
+        "time_slider_step": slider_step,
+        "time_range": case_data.get("default_time_duration_minutes") or 1,
+        "time_marks": {},
+        "time_point_min": case_data.get("time_slider_start_min_seconds", 0),
+        "time_point_max": time_start_max_for_duration(case_data, case_data.get("default_time_duration_minutes") or slider_min),
+        "time_point": case_data.get("default_time_start_seconds", 0),
+        "time_point_step": max(1.0e-6, float(case_data.get("default_time_duration_minutes") or slider_min)) * 60.0,
+        "time_point_marks": {},
         "height_min": height_min,
         "height_max": height_max,
         "height_range": case_data.get("default_height_range") or [height_min, height_max],

@@ -93,7 +93,7 @@ def render_plot_card(plot_id, plot_state, case_data):
     card = module.render_card(plot_id, plot_state, {"case_data": case_data})
     aux = list(module.auxiliary_components(plot_id))
     if aux:
-        card.children[2:2] = aux
+        card.children.extend(aux)
     return card
 
 
@@ -239,54 +239,61 @@ def _time_section(initial_state):
         html.Div(id="plots-time-heading", className="run-settings-heading", children="Time", style=SECTION_HEADING_STYLE),
         dcc.RadioItems(
             id="plots-time-mode",
-            options=[{"label": "Average Range", "value": "range"}, {"label": "Single Time", "value": "point"}],
-            value=initial_state["time_mode"],
-            labelStyle=MODE_RADIO_LABEL_STYLE,
-            style={"marginBottom": "10px", "textAlign": "center"},
-        ),
-        html.Div(
-            dcc.RangeSlider(
-                id="plots-global-time-range",
-                min=1,
-                max=initial_state["time_slider_max"],
-                value=initial_state["time_range"],
-                step=1,
-                allowCross=False,
-                marks=initial_state["time_marks"],
-                tooltip={"always_visible": True, "placement": "bottom"},
-            ),
-            id="plots-global-time-range-wrapper",
-            className="plots-slider-block",
+            options=[{"label": "Average Range", "value": "range"}],
+            value="range",
+            style={"display": "none"},
         ),
         html.Div(
             [
-                html.Div(
-                    [
-                        html.Button("<<", id="plots-playback-slower", n_clicks=0, style={"minWidth": "42px", "fontSize": "16pt"}),
-                        html.Button("Play (1s)", id="plots-playback-toggle", n_clicks=0, style={"minWidth": "110px", "fontSize": "16pt"}),
-                        html.Button(">>", id="plots-playback-faster", n_clicks=0, style={"minWidth": "42px", "fontSize": "16pt"}),
-                    ],
-                    id="plots-playback-controls",
-                    style={"display": "flex", "justifyContent": "center", "alignItems": "center", "gap": "10px", "marginBottom": "16px"},
-                ),
+                html.Button("Loss window", id="plots-use-loss-window", n_clicks=0, style={**CASE_BUTTON_STYLE, "backgroundColor": "#2563eb", "color": "#ffffff"}),
+                html.Button("Pyplotgen window", id="plots-use-pyplotgen-window", n_clicks=0, style={**CASE_BUTTON_STYLE, "backgroundColor": "#334155", "color": "#ffffff"}),
+            ],
+            style={"display": "flex", "justifyContent": "center", "flexWrap": "wrap", "gap": "8px", "marginBottom": "10px"},
+        ),
+        html.Div(
+            [
+                html.Div(id="plots-time-start-label", children="Start time", style={"fontSize": "13pt", "fontWeight": "600", "marginBottom": "4px"}),
                 dcc.Slider(
                     id="plots-global-time-point",
-                    min=1,
+                    min=initial_state["time_point_min"],
                     max=initial_state["time_point_max"],
                     value=initial_state["time_point"],
-                    step=1,
-                    marks=initial_state["time_point_marks"],
-                    tooltip={"always_visible": True, "placement": "bottom"},
+                    step=initial_state["time_point_step"],
+                    marks={},
+                    tooltip=None,
                     included=False,
                 ),
             ],
             id="plots-global-time-point-wrapper",
-            className="plots-slider-block",
-            style={"display": "none"},
+            className="plots-slider-block plots-time-slider-block",
+        ),
+        html.Div(
+            [
+                html.Div(id="plots-time-average-label", children="Average Length", style={"fontSize": "13pt", "fontWeight": "600", "marginBottom": "4px"}),
+                dcc.Slider(
+                    id="plots-global-time-range",
+                    min=initial_state["time_slider_min"],
+                    max=initial_state["time_slider_max"],
+                    value=initial_state["time_range"],
+                    step=initial_state["time_slider_step"],
+                    marks={},
+                    tooltip=None,
+                    included=False,
+                ),
+            ],
+            id="plots-global-time-range-wrapper",
+            className="plots-slider-block plots-time-slider-block",
+        ),
+        html.Div(
+            [
+                html.Button("<<", id="plots-playback-slower", n_clicks=0, style={"minWidth": "42px", "fontSize": "16pt"}),
+                html.Button("Play (1s)", id="plots-playback-toggle", n_clicks=0, style={"minWidth": "110px", "fontSize": "16pt"}),
+                html.Button(">>", id="plots-playback-faster", n_clicks=0, style={"minWidth": "42px", "fontSize": "16pt"}),
+            ],
+            id="plots-playback-controls",
+            style={"display": "flex", "justifyContent": "center", "alignItems": "center", "gap": "10px", "marginBottom": "16px"},
         ),
     ]
-
-
 def _height_section(initial_state):
     """Build the global height controls section in the right-hand UI pane."""
     return [

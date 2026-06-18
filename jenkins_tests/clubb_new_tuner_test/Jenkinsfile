@@ -1,0 +1,68 @@
+pipeline {
+  agent any
+  stages {
+    stage('Compile') {
+      steps {
+        sh '''source /etc/profile.d/larson-group.sh
+              module load gcc netcdf-fortran
+              ./compile.py -debug -python'''
+      }
+    }
+    stage('Loss Driver Test') {
+      steps {
+        sh '''ulimit -s 8388608
+              python run_scripts/run_scm_loss.py \
+                -driver_test \
+                -out_dir output/new_tuner_test/loss_driver_fortran \
+                -cases bomex \
+                -fields cloud_frac,rcm'''
+        sh '''ulimit -s 8388608
+              python run_scripts/run_scm_loss.py \
+                -python \
+                -driver_test \
+                -out_dir output/new_tuner_test/loss_driver_python \
+                -cases bomex \
+                -fields cloud_frac,rcm'''
+      }
+    }
+    stage('Simple Tuner Command') {
+      steps {
+        sh '''ulimit -s 8388608
+              python run_scripts/run_tuner_job.py \
+                -cases bomex \
+                -fields cloud_frac \
+                -params C8:0.2:0.8 \
+                -run_top complete'''
+      }
+    }
+    stage('Complex Tuner Command') {
+      steps {
+        sh '''ulimit -s 8388608
+              python run_scripts/run_tuner_job.py \
+                -cases arm:68400:72000:3600 bomex:7200:18000:2700 \
+                -fields cloud_frac rcm \
+                -params C8:0.2:0.8 C11:0.1:1.0 \
+                -strategy resolve:0.9 \
+                -batch_size 4 \
+                -max_workers 2 \
+                -seed 1 \
+                -loss_mode centered_rmse_bias \
+                -aggregation_mode mean_max \
+                -poll_interval 1 \
+                -output_root output_tuner/new_tuner_test/complex \
+                -run_top both \
+                -top_n 1 \
+                -run_out_dir output/new_tuner_test/complex'''
+      }
+    }
+  }
+  post {
+    failure {
+      script {
+      if ( "${env.JOB_NAME}" == "clubb_new_tuner_test" )
+        // This command handles the email on failure feature of the jenkins test. This line is the same on every jenkins test.
+        emailext(to: 'messnermet@uwm.edu', subject: "${env.JOB_NAME} build ${env.BUILD_NUMBER} has Failed", attachLog: true, body: "${env.JOB_NAME} build ${env.BUILD_NUMBER} has failed. See the attached build log and the build results (${env.BUILD_URL}) for help troubleshooting.")
+      }
+    }
+  }
+}

@@ -232,6 +232,13 @@ from clubb_python.CLUBB_core.stats_netcdf import (
     stats_lh_samples_write_lognormal,
     stats_lh_samples_write_uniform,
 )
+from clubb_python.CLUBB_core.loss_driver import (
+    init_clubb_loss,
+    get_clubb_params_all,
+    clubb_get_loss_for_params,
+    finalize_clubb_loss,
+    clubb_get_loss,
+)
 from clubb_python.CLUBB_core.t_in_k_module import thlm2t_in_k
 from clubb_python.CLUBB_core.tridiag_lu_solver import tridiag_lu_solve
 from clubb_python.CLUBB_core.turbulent_adv_pdf import (

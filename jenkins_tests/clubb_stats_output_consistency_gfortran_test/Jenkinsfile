@@ -1,0 +1,35 @@
+pipeline {
+  agent any
+  stages {
+    stage('Compile') {
+      steps {
+        sh '''source /etc/profile.d/larson-group.sh
+              module load gcc netcdf-fortran
+              ./compile.py -debug'''
+      }
+    }
+    stage('Run stats output consistency tests') {
+      steps {
+        sh '''python run_scripts/run_stats_output_consistency.py -stats input/stats/standard_stats.in bomex'''
+        sh '''python run_scripts/run_stats_output_consistency.py -stats input/stats/standard_stats.in atex'''
+        sh '''python run_scripts/run_stats_output_consistency.py -stats input/stats/standard_stats.in wangara'''
+      }
+    }
+    stage('Run loss output consistency tests') {
+      steps {
+        sh '''python run_scripts/run_loss_output_consistency.py bomex'''
+        sh '''python run_scripts/run_loss_output_consistency.py atex'''
+        sh '''python run_scripts/run_loss_output_consistency.py wangara'''
+      }
+    }
+  }
+  post {
+    failure {
+      script {
+      if ( "${env.JOB_NAME}" == "clubb_stats_output_consistency_gfortran_test" )
+        // This command handles the email on failure feature of the jenkins test. This line is the same on every jenkins test.
+        emailext(to: 'messnermet@uwm.edu', subject: "${env.JOB_NAME} build ${env.BUILD_NUMBER} has Failed", attachLog: true, body: "${env.JOB_NAME} build ${env.BUILD_NUMBER} has failed. See the attached build log and the build results (${env.BUILD_URL}) for help troubleshooting.")
+      }
+    }
+  }
+}

@@ -17,6 +17,7 @@ target_link_libraries(text_writer_lib PRIVATE clubb_core_lib)
 # Establish libraries from this directory
 set(CLUBB_DRIVER_SOURCES
         clubb_driver.F90
+        clubb_loss_driver.F90
         generalized_grid_test.F90  
 )
 
@@ -76,6 +77,18 @@ target_link_libraries(G_unit_tests PRIVATE G_unit_test_lib KK_microphys_lib micr
 add_executable(clubb_driver_test clubb_driver_test.F90)
 target_link_libraries(clubb_driver_test PRIVATE clubb_core_lib clubb_driver_lib )
 
+# Create clubb_standalone_loss executable
+add_executable(clubb_standalone_loss clubb_standalone_loss.F90)
+target_link_libraries(clubb_standalone_loss PRIVATE clubb_driver_lib
+                                                  input_fields_lib
+                                                )
+
+# Create clubb_loss_driver_test executable
+add_executable(clubb_loss_driver_test clubb_loss_driver_test.F90)
+target_link_libraries(clubb_loss_driver_test PRIVATE clubb_driver_lib
+                                                    input_fields_lib
+                                                  )
+
 # Commented out, since this appears unused as of 2025
 # # Create jacobian executable
 # add_executable(jacobian jacobian.F90)
@@ -93,6 +106,8 @@ install(TARGETS clubb_driver_lib
                 clubb_thread_test
                 clubb_standalone
                 clubb_driver_test
+                clubb_standalone_loss
+                clubb_loss_driver_test
                 #jacobian
                 #int2txt
         DESTINATION ${CMAKE_INSTALL_PREFIX})

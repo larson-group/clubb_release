@@ -41,7 +41,9 @@ module clubb_driver
     grid
 
   use stats_netcdf, only: &
-    stats_type
+    stats_type, &
+    stats_reset_api, &
+    start_next_stats_batch_api
 
   use parameters_tunable, only: &
     nu_vertical_res_dep
@@ -175,7 +177,10 @@ module clubb_driver
     init_clubb_case, &
     set_case_initial_conditions, &
     advance_clubb_to_end, &
-    clean_up_clubb
+    clean_up_clubb, &
+    get_stats, &
+    get_runtime_batch_config, &
+    get_clubb_params_all
 
   private ! Default to private
 
@@ -251,6 +256,7 @@ module clubb_driver
 
   ! 'public' only to fix compiler error for nvhpc versions <24.9, please remove in future
   integer, public :: &
+    batch_size = 1, & ! Runtime column count used for one batch advance.
     sfctype ! 0: fixed sfc sensible and latent heat fluxes as
             !    given in namelist
             ! 1: bulk formula: uses given surface temperature
@@ -259,8 +265,16 @@ module clubb_driver
   type(stats_type) :: &
     stats
 
+  ! Batching advances only batch_size columns at a time, but stats output and
+  ! parameter sweeps may represent more columns.  Keep the full parameter matrix
+  ! in clubb_params_all, and copy the active batch slice into clubb_params for
+  ! the core advance and device data regions.
   real( kind = core_rknd ), dimension(:,:), allocatable :: &
-    clubb_params
+    clubb_params, &            ! Active runtime batch of CLUBB parameters.
+    clubb_params_all           ! Full parameter matrix across all requested sets.
+
+  integer :: &
+    total_param_sets = 1       ! Total number of requested parameter columns.
 
   type (sclr_idx_type) :: &
     sclr_idx
@@ -278,6 +292,10 @@ module clubb_driver
   real( kind = core_rknd ), public :: &
     stats_tsamp,   & ! Stats sampling interval [s]
     stats_tout       ! Stats output interval   [s]
+
+  real( kind = time_precision ), public :: &
+    stats_tstart,  & ! Stats sampling window start time [s]
+    stats_tend       ! Stats sampling window end time   [s]
 
   ! 'public' only to fix compiler error for nvhpc versions <24.9, please remove in future
   real( kind = time_precision ), public :: &
@@ -422,7 +440,7 @@ module clubb_driver
   integer, dimension(:,:,:), allocatable :: &
     X_mixt_comp_all_levs ! Which mixture component a sample is in
 
-  type(grid) :: &
+  type(grid), target :: &
     gr, &
     gr_desc, &
     gr_dycore, & ! only set and used, if l_add_dycore_grid is .true.
@@ -699,10 +717,12 @@ module clubb_driver
   !$omp  l_modify_bc_for_cnvg_test, l_stats, l_silhs_out, l_rad_itime, l_first_write_to_file, &
   !$omp  l_allow_small_stats_tout, &
   !$omp  l_restart_input, l_last_timestep, ifinal, stats_nsamp, stats_nout, ngrdcol, iunit, &
-  !$omp  iunit_grid_adaptation, hydromet_dim, sclr_dim, edsclr_dim, pdf_dim, clubb_params, nzmax, &
+  !$omp  iunit_grid_adaptation, hydromet_dim, sclr_dim, edsclr_dim, pdf_dim, clubb_params, &
+  !$omp  clubb_params_all, total_param_sets, batch_size, nzmax, &
   !$omp  grid_type, day, month, year, sfctype, &
   !$omp  stats,         &
   !$omp  sclr_idx, hm_metadata, clubb_config_flags, silhs_config_flags, stats_tsamp, stats_tout, &
+  !$omp  stats_tstart, stats_tend, &
   !$omp  time_restart, restart_path_case, forcings_file_path, fname_prefix, output_dir, &
   !$omp  case_info_file, fname_grid_adaptation, output_file_prefix, runtype, zt_grid_fname, &
   !$omp  zm_grid_fname, lat_vals, lon_vals, time_initial, time_final, time_current, dt_main, &
@@ -746,13 +766,41 @@ module clubb_driver
 
   contains
 
-  !=============================================================================================
   !                                       run_clubb
   !=============================================================================================
   subroutine run_clubb( namelist_filename, l_stdout, err_info, clubb_params_in, model_flags_array )
   !
   ! Description:
-  !   Perform a standard run of CLUBB, defined mainly by the contents of runfile
+  !   Top-level lifecycle routine for a standalone CLUBB run.  This is the
+  !   narrow public entry point that turns a namelist file plus optional runtime
+  !   overrides into one complete simulation and then releases the driver state.
+  !
+  !   The high-level flow is:
+  !
+  !   1. init_clubb_case() reads the namelists, resolves the runtime column count,
+  !      allocates module-level arrays, reads CLUBB tunable parameters, initializes
+  !      physics packages, creates stats output, and prepares initial field values.
+  !
+  !   2. then this routine advances one or more runtime batches.  A batch is the set
+  !      of columns advanced together in memory.  total_param_sets may be larger
+  !      than batch_size, in which case clubb_params_all stores every requested
+  !      parameter column and clubb_params stores only the active slice.  Stats is
+  !      configured once for total_param_sets columns, and each batch writes into
+  !      its corresponding output-column slice.
+  !
+  !   3. set_case_initial_conditions() resets prognostic fields, diagnostic caches,
+  !      physics package state, stats sampling state, and active batch parameters.
+  !      This lets each batch start from the same case initial condition when
+  !      switching to a different parameter slice.
+  !
+  !   4. advance_clubb_to_end() performs the actual timestep loop for the active
+  !      batch.  Most of CLUBB's work lives below that routine: forcings, the core
+  !      advance, PDF diagnostics, radiation, microphysics, stats, and restart
+  !      handling.
+  !
+  !   5. clean_up_clubb() deallocates module-level arrays and closes persistent
+  !      resources.  It is called even if a batch exits early with a fatal error,
+  !      so callers do not need a separate cleanup path.
   !
   !---------------------------------------------------------------------------------------------
             
@@ -760,35 +808,67 @@ module clubb_driver
 
     !----------------------------------- Input Variables -----------------------------------
     logical, intent(in) :: &
-      l_stdout ! Whether to print output per timestep
+      l_stdout ! True to print per-timestep progress from the advance loop. [-]
 
-    ! Subroutine Arguments (Model Setting)
     character(len=*), intent(in) :: &
-      namelist_filename ! Name of file containing model namelists
+      namelist_filename ! File containing model, stats, physics, and parameter namelists. [-]
 
     !----------------------------------- Output Variables -----------------------------------
     type(err_info_type), intent(out) :: &
-      err_info        ! err_info struct containing err_code and err_header
+      err_info        ! Shared error status populated during initialization/advance/cleanup. [-]
 
     real( kind = core_rknd ), dimension(:,:), optional, intent(in) :: &
-      clubb_params_in ! Optional model parameter override
+      clubb_params_in ! Optional parameter matrix override, one row per requested column. [-]
 
     logical, optional, dimension(:), intent(in) :: &
-      model_flags_array ! Optional model flag override (used by clubb_tuner)
+      model_flags_array ! Optional configurable model-flag override, used by tuner callers. [-]
+
+    integer :: &
+      num_batches, &     ! Number of runtime reruns needed to cover all parameter columns.
+      batch_idx          ! Current batch loop index.
       
     !----------------------------------- Begin code -----------------------------------
 
-    ! Read namelist, initialize all settings, and allocate all variables
+    ! Build the full model state from the namelist.  init_clubb_case owns the
+    ! expensive one-time setup: namelist reads, grid construction, allocation,
+    ! tunable-parameter loading, stats file creation, radiation/microphysics
+    ! initialization, and OpenACC data-region setup.
+    !
+    ! model_flags_array is optional because normal standalone runs use the flags
+    ! from the namelist/defaults, while tuner-style callers can inject a flag set
+    ! without editing input files.
     if ( present( model_flags_array ) ) then
       call init_clubb_case( namelist_filename, err_info, clubb_params_in, model_flags_array )
     else
       call init_clubb_case( namelist_filename, err_info, clubb_params_in )
     end if
+    if ( any( err_info%err_code == clubb_fatal_error ) ) return
 
-    ! Run the case to completion, advancing all fields to the time set in init_clubb_case
-    call advance_clubb_to_end( l_stdout, err_info )
+    ! init_clubb_case validates that total_param_sets is evenly divisible by
+    ! batch_size.  A no-batching run is therefore just one batch whose width is
+    ! total_param_sets.  A batched run reuses the same allocated runtime arrays
+    ! for each slice of clubb_params_all.
+    num_batches = total_param_sets / batch_size
 
-    ! Deallcoate and cleanup all memory
+    do batch_idx = 1, num_batches
+
+      ! Reset the model to the case initial condition for this logical batch.
+      ! This call also selects clubb_params_all(batch_start:batch_end,:) into
+      ! clubb_params and retargets stats output to the matching column slice.
+      call set_case_initial_conditions( err_info, batch_num=batch_idx )
+      if ( any( err_info%err_code == clubb_fatal_error ) ) exit
+
+      ! Run this batch to completion, advancing all fields from time_initial to
+      ! time_final.  advance_clubb_to_end contains the timestep loop and is where
+      ! the core model, diagnostics, physics packages, and stats output are called.
+      call advance_clubb_to_end( l_stdout, err_info )
+      if ( any( err_info%err_code == clubb_fatal_error ) ) exit
+
+    end do
+
+    ! Release arrays, stats handles, physics package state, and any other
+    ! persistent module-level resources.  This runs after successful completion
+    ! and after fatal batch exits.
     call clean_up_clubb( err_info )
 
     return
@@ -798,6 +878,56 @@ module clubb_driver
   !=============================================================================================
   !                                       init_clubb_case
   !=============================================================================================
+  subroutine get_stats( stats_out )
+  !
+  ! Description:
+  !   Return a snapshot copy of the module-local stats state.
+  !---------------------------------------------------------------------------------------------
+
+    implicit none
+
+    type(stats_type), intent(out) :: &
+      stats_out
+
+    stats_out = stats
+
+  end subroutine get_stats
+
+  subroutine get_runtime_batch_config( total_param_sets_out, batch_size_out )
+  !
+  ! Description:
+  !   Return the total number of parameter-set columns together with the
+  !   active runtime batch size.
+  !---------------------------------------------------------------------------------------------
+
+    implicit none
+
+    integer, intent(out) :: &
+      total_param_sets_out, &
+      batch_size_out
+
+    total_param_sets_out = total_param_sets
+    batch_size_out = batch_size
+
+  end subroutine get_runtime_batch_config
+
+  subroutine get_clubb_params_all( clubb_params_all_out )
+  !
+  ! Description:
+  !   Return a copy of the full configured parameter matrix across all requested
+  !   columns so external callers can rerun CLUBB with the same parameters.
+  !---------------------------------------------------------------------------------------------
+
+    implicit none
+
+    real( kind = core_rknd ), allocatable, dimension(:,:), intent(out) :: &
+      clubb_params_all_out
+
+    allocate( clubb_params_all_out( size( clubb_params_all, 1 ), size( clubb_params_all, 2 ) ) )
+    clubb_params_all_out = clubb_params_all
+
+  end subroutine get_clubb_params_all
+
   subroutine init_clubb_case(runfile, err_info, clubb_params_in, model_flags_array)
   !
   ! Description:
@@ -841,12 +971,10 @@ module clubb_driver
       setup_grid_api, &
       set_clubb_debug_level_api, &
       print_clubb_config_flags_api, &
-      check_clubb_settings_api, &
       clubb_at_least_debug_level_api, &
       set_default_clubb_config_flags_api, &  
       initialize_clubb_config_flags_type_api, &
       init_pdf_params_api, &
-      check_parameters_api, &
       calc_derrived_params_api, &
       iiPDF_new, &        ! Constants
       iiPDF_new_hybrid
@@ -897,8 +1025,13 @@ module clubb_driver
       fill_holes_type                 ! Option for which type of hole filler to use in the 
                                         ! fill_holes_vertical procedure
 
+    character(len=*), parameter :: &
+      default_stats_output_filename = "__CLUBB_DEFAULT_STATS_OUTPUT_FILENAME__"
+
     character(len=256) :: stats_registry
-    character(len=256) :: stats_output
+    character(len=256) :: stats_output_filename
+    character(len=512) :: stats_output_path
+
     integer :: noutdir
 
 
@@ -1082,10 +1215,11 @@ module clubb_driver
       l_diagnose_correlations, l_calc_w_corr
 
   namelist /multicol_def/ &
-    ngrdcol
+    ngrdcol, batch_size
 
   namelist /stats_setting/ &
-    l_stats, fname_prefix, stats_tsamp, stats_tout, &
+    l_stats, fname_prefix, stats_output_filename, stats_tsamp, stats_tout, &
+    stats_tstart, stats_tend, &
     l_allow_small_stats_tout, output_dir
 
   namelist /configurable_clubb_flags_nl/ &
@@ -1217,9 +1351,14 @@ module clubb_driver
     ! Pick some default values for stats_setting; other variables are set in
     ! module stats_variables
     fname_prefix = ''
+    stats_output_filename = default_stats_output_filename
+    stats_tstart = 0._time_precision
+    stats_tend = 21600._time_precision
     output_dir   = "../output/"
 
     ngrdcol = 1
+    total_param_sets = 1
+    batch_size = -1
 
 #ifdef _OPENMP
     iunit = omp_get_thread_num( ) + 10 ! Known magic number
@@ -1227,9 +1366,13 @@ module clubb_driver
     iunit = 10
 #endif
 
-    ! Resolve column count + tunable parameters in one place:
-    ! - If clubb_params_in is provided, it fully defines ngrdcol and parameter values.
-    ! - Otherwise, read ngrdcol from &multicol_def and read parameters from namelist.
+    ! Resolve total parameter count, runtime batch size, and the CLUBB parameter
+    ! matrices in one place:
+    ! - If clubb_params_in is provided, it defines both the total and runtime
+    !   column count, so batching is inactive.
+    ! - Otherwise, read total ngrdcol and optional batch_size from
+    !   &multicol_def, read the full parameter matrix, and select the first
+    !   runtime batch for initialization.
     if ( present( clubb_params_in ) ) then
       if ( size( clubb_params_in, 1 ) < 1 ) then
         call init_default_err_info_api( 1, err_info )
@@ -1245,21 +1388,65 @@ module clubb_driver
         return
       end if
 
-      ngrdcol = size( clubb_params_in, 1 )
+      total_param_sets = size( clubb_params_in, 1 )
+      batch_size = total_param_sets
+      ngrdcol = batch_size
+      if ( allocated( clubb_params_all ) ) deallocate( clubb_params_all )
+      allocate( clubb_params_all( total_param_sets, nparams ) )
+      clubb_params_all = clubb_params_in
       if ( allocated( clubb_params ) ) deallocate( clubb_params )
       allocate( clubb_params(ngrdcol,nparams) )
-      clubb_params = clubb_params_in
+      clubb_params = clubb_params_all(1:ngrdcol,:)
     else
       ! Optional backwards-compat read: if &multicol_def is absent, default to single column.
       open(unit=iunit, file=trim( runfile ), status='old', action='read')
       read(unit=iunit, iostat=iostat, nml=multicol_def)
       close(unit=iunit)
-      if ( iostat /= 0 ) ngrdcol = 1
+      if ( iostat /= 0 ) then
+        total_param_sets = 1
+        batch_size = 1
+      else
+        if ( batch_size == -1 ) batch_size = ngrdcol
+        total_param_sets = ngrdcol
+      end if
 
+      if ( total_param_sets < 1 ) then
+        call init_default_err_info_api( 1, err_info )
+        write(fstderr,*) "ngrdcol in &multicol_def must be >= 1"
+        err_info%err_code = clubb_fatal_error
+        return
+      end if
+
+      if ( batch_size < 1 ) then
+        call init_default_err_info_api( 1, err_info )
+        write(fstderr,*) "batch_size in &multicol_def must be >= 1"
+        err_info%err_code = clubb_fatal_error
+        return
+      end if
+
+      if ( batch_size > total_param_sets ) then
+        call init_default_err_info_api( 1, err_info )
+        write(fstderr,*) "batch_size in &multicol_def must be <= ngrdcol"
+        err_info%err_code = clubb_fatal_error
+        return
+      end if
+
+      if ( mod( total_param_sets, batch_size ) /= 0 ) then
+        call init_default_err_info_api( 1, err_info )
+        write(fstderr,*) "ngrdcol in &multicol_def must be evenly divisible by batch_size"
+        err_info%err_code = clubb_fatal_error
+        return
+      end if
+
+      if ( allocated( clubb_params_all ) ) deallocate( clubb_params_all )
+      allocate( clubb_params_all( total_param_sets, nparams ) )
+      ! This call reads the full parameter matrix from &clubb_params_nl.
+      call init_clubb_params_api( total_param_sets, iunit, trim(runfile), clubb_params_all )
+
+      ngrdcol = batch_size
       if ( allocated( clubb_params ) ) deallocate( clubb_params )
       allocate( clubb_params(ngrdcol,nparams) )
-      ! This call reads &clubb_params_nl for all columns using the resolved ngrdcol.
-      call init_clubb_params_api( ngrdcol, iunit, trim(runfile), clubb_params )
+      clubb_params = clubb_params_all(1:ngrdcol,:)
     end if
 
     ! Initialize err_info with default values for one column or more,
@@ -1357,8 +1544,13 @@ module clubb_driver
     ! Read namelist file
     open(unit=iunit, file=trim( runfile ), status='old')
     read(unit=iunit, nml=model_setting)
+    stats_tstart = time_initial
+    stats_tend = time_final
     read(unit=iunit, nml=stats_setting)
     close(unit=iunit)
+    if ( trim( stats_output_filename ) == default_stats_output_filename ) then
+      stats_output_filename = trim( fname_prefix ) // "_stats.nc"
+    end if
 
     ! Ensure output directory has a trailing slash.
     if ( len_trim(output_dir) <= 0 ) output_dir = "../output/"
@@ -1427,6 +1619,17 @@ module clubb_driver
 
     ! The case prefix including output di
     output_file_prefix  = trim( output_dir ) // trim( fname_prefix )        
+
+    ! Resolve stats output path from output_dir plus the namelist-provided filename.
+    if ( len_trim( stats_output_filename ) > 0 ) then
+      if ( stats_output_filename(1:1) == "/" ) then
+        stats_output_path = trim( stats_output_filename )
+      else
+        stats_output_path = trim( output_dir ) // trim( stats_output_filename )
+      end if
+    else
+      stats_output_path = ''
+    end if
 
     ! The filename for case setup
     case_info_file      = trim( output_dir ) // trim( fname_prefix ) // "_setup.txt"
@@ -1701,9 +1904,14 @@ module clubb_driver
       call write_text( "l_stats = ", l_stats, l_write_to_file, iunit )
       call write_text( "output_dir = " // output_dir, l_write_to_file, iunit )
       call write_text( "fname_prefix = " // fname_prefix, l_write_to_file, iunit )
+      call write_text( "stats_output_filename = " // stats_output_filename, l_write_to_file, iunit )
       call write_text( "stats_tsamp = ", real( stats_tsamp, kind = core_rknd ),&
               l_write_to_file, iunit )
       call write_text( "stats_tout = ", real( stats_tout, kind = core_rknd ), &
+              l_write_to_file, iunit )
+      call write_text( "stats_tstart = ", real( stats_tstart, kind = core_rknd ), &
+              l_write_to_file, iunit )
+      call write_text( "stats_tend = ", real( stats_tend, kind = core_rknd ), &
               l_write_to_file, iunit )
       call write_text( "l_allow_small_stats_tout = ", l_allow_small_stats_tout, &
               l_write_to_file, iunit)
@@ -2381,7 +2589,6 @@ module clubb_driver
       ! Initialize statistics output; this allocates/initializes stats metadata
       ! for all columns but writes to one shared stats file.
       stats_registry = trim(runfile)
-      stats_output = trim(output_file_prefix)//"_stats.nc"
 
       ! Only use the first column of gr%zt and gr%zm to define the vertical levels
       ! since we can't output different vertical grids in one netCDF file (yet)
@@ -2391,20 +2598,24 @@ module clubb_driver
         if ( clubb_config_flags%grid_adapt_in_time_method == no_grid_adaptation &
              .and. .not. clubb_config_flags%l_add_dycore_grid ) then
 
-          call stats_init_api( stats_registry, stats_output, ngrdcol, &
+          call stats_init_api( stats_registry, stats_output_path, ngrdcol, &
                               stats_tsamp, stats_tout, dt_main, day, month, year, time_initial, &
                               gr%zt(1,:), gr%zm(1,:), stats, err_info,         &
-                              clubb_params=clubb_params, param_names=params_list, &
+                              clubb_params=clubb_params_all, param_names=params_list, &
+                              ncol_total=total_param_sets, &
+                              stats_tstart=stats_tstart, stats_tend=stats_tend, &
                               rad_zt=complete_alt(1:total_atmos_dim-1), &
                               rad_zm=complete_momentum(1:total_atmos_dim), &
                               hydromet_list=hm_metadata%hydromet_list, sclr_dim=sclr_dim, &
                               edsclr_dim=edsclr_dim)
         else
 
-          call stats_init_api( stats_registry, stats_output, ngrdcol, &
+          call stats_init_api( stats_registry, stats_output_path, ngrdcol, &
                               stats_tsamp, stats_tout, dt_main, day, month, year, time_initial, &
                               gr%zt(1,:), gr%zm(1,:), stats, err_info,         &
-                              clubb_params=clubb_params, param_names=params_list, &
+                              clubb_params=clubb_params_all, param_names=params_list, &
+                              ncol_total=total_param_sets, &
+                              stats_tstart=stats_tstart, stats_tend=stats_tend, &
                               rad_zt=complete_alt(1:total_atmos_dim-1), &
                               rad_zm=complete_momentum(1:total_atmos_dim), &
                               hydromet_list=hm_metadata%hydromet_list, sclr_dim=sclr_dim, &
@@ -2418,18 +2629,22 @@ module clubb_driver
         if ( clubb_config_flags%grid_adapt_in_time_method == no_grid_adaptation &
              .and. .not. clubb_config_flags%l_add_dycore_grid ) then
 
-          call stats_init_api( stats_registry, stats_output, ngrdcol, &
+          call stats_init_api( stats_registry, stats_output_path, ngrdcol, &
                               stats_tsamp, stats_tout, dt_main, day, month, year, time_initial, &
                               gr%zt(1,:), gr%zm(1,:), stats, err_info,         &
-                              clubb_params=clubb_params, param_names=params_list, &
+                              clubb_params=clubb_params_all, param_names=params_list, &
+                              ncol_total=total_param_sets, &
+                              stats_tstart=stats_tstart, stats_tend=stats_tend, &
                               hydromet_list=hm_metadata%hydromet_list, sclr_dim=sclr_dim, &
                               edsclr_dim=edsclr_dim)
         else
 
-          call stats_init_api( stats_registry, stats_output, ngrdcol, &
+          call stats_init_api( stats_registry, stats_output_path, ngrdcol, &
                               stats_tsamp, stats_tout, dt_main, day, month, year, time_initial, &
                               gr%zt(1,:), gr%zm(1,:), stats, err_info,         &
-                              clubb_params=clubb_params, param_names=params_list, &
+                              clubb_params=clubb_params_all, param_names=params_list, &
+                              ncol_total=total_param_sets, &
+                              stats_tstart=stats_tstart, stats_tend=stats_tend, &
                               hydromet_list=hm_metadata%hydromet_list, sclr_dim=sclr_dim, &
                               edsclr_dim=edsclr_dim, output_zt=gr_output%zt(1,:), &
                               output_zm=gr_output%zm(1,:), &
@@ -2448,6 +2663,13 @@ module clubb_driver
     end if
 
 #ifdef SILHS
+    if ( total_param_sets > batch_size .and. stats%l_netcdf_output .and. l_silhs_out ) then
+      write(fstderr, *) err_info%err_header_global
+      write(fstderr, *) "Batch-mode stats NetCDF output does not yet support SILHS sample output."
+      err_info%err_code = clubb_fatal_error
+      return
+    end if
+
     if ( lh_microphys_type /= lh_microphys_disabled ) then
 
       ! Setup 2D output of all subcolumns (if enabled)
@@ -2503,32 +2725,6 @@ module clubb_driver
                                    clubb_config_flags%l_prescribed_avg_deltaz,  & ! Intent(in)
                                    nu_vert_res_dep, lmin,                       & ! intent(inout)
                                    mixt_frac_max_mag )                            ! intent(inout)
-
-    ! This checks many things to ensure that all flags and parameters are valid and 
-    ! any dependencies between them are handled correctly.
-    ! clubb_params might not remain constant throughout the model call, and in theory 
-    ! this should be called whenever they change, but in the spirit of performance
-    ! we only check these during the initial case setup
-    call check_clubb_settings_api( ngrdcol,             & ! Intent(in)
-                                   clubb_params,        & ! Intent(in)
-                                   l_implemented,       & ! Intent(in)
-                                   l_input_fields,      & ! Intent(in)
-                                   clubb_config_flags,  & ! intent(in)
-                                   err_info )             ! Intent(inout)
-
-    ! Similar to the call above, but placed in "init_clubb_case"
-    ! it will only be checked when initializing the case
-    call check_parameters_api( ngrdcol, clubb_params, lmin, & ! Intent(in)
-                               err_info )                     ! Intent(inout)
-
-    if ( clubb_at_least_debug_level_api( 0 ) ) then
-      if ( any(err_info%err_code == clubb_fatal_error) ) then
-        write(fstderr, *) err_info%err_header_global
-        write(fstderr, *) "Fatal error calling check_clubb_settings_api"
-        write(fstderr, *) "and/or check_parameters_api in clubb_driver"
-        return
-      end if
-    end if
 
     !$acc enter data copyin( gr, gr%zm, gr%zt, gr%dzm, gr%dzt, gr%invrs_dzt, gr%invrs_dzm, &
     !$acc              gr%weights_zt2zm, gr%weights_zm2zt, &
@@ -2618,19 +2814,22 @@ module clubb_driver
     !$acc      copyin( hm_metadata%l_mix_rat_hm ) &
     !$acc      create( wphydrometp, wp2hmp, rtphmp_zt, thlphmp_zt )
     
-    call set_case_initial_conditions()
+    call set_case_initial_conditions( err_info )
 
   end subroutine init_clubb_case
 
   !=============================================================================================
   !                                  set_case_initial_conditions
   !=============================================================================================
-  subroutine set_case_initial_conditions()
+  subroutine set_case_initial_conditions( err_info, clubb_params_in, batch_num )
   !
   ! Description:
   !   Calling 'init_clubb_case' defines up the settings and initial field values.
-  !   This subroutines sets the field variables that get advanced by 'advance_clubb_to_end' to
-  !   to those initial values. 
+  !   This subroutines sets the field variables that get advanced by
+  !   'advance_clubb_to_end' to those initial values. It also resets the stats
+  !   runtime so the next advance starts from a clean sampling window. Reruns
+  !   may either provide an explicit replacement parameter matrix or request one
+  !   of the internally stored runtime batches by number.
   !
   !---------------------------------------------------------------------------------------------
 
@@ -2638,6 +2837,9 @@ module clubb_driver
       zero_pdf_implicit_coefs_terms_api, & ! Procedure(s)
       zero_pdf_params_api, &
       calc_derrived_params_api, &
+      check_clubb_settings_api, &
+      check_parameters_api, &
+      clubb_at_least_debug_level_api, &
       zero_precip_fracs_api, &
       init_hydromet_pdf_params, & 
       iiPDF_new, &      ! Constants
@@ -2650,14 +2852,67 @@ module clubb_driver
     implicit none
 
     !----------------------------------- Input/Output Variables -----------------------------------
+    type(err_info_type), intent(inout) :: &
+      err_info      ! Shared CLUBB error state container for rerun-time validation.
+
+    real( kind = core_rknd ), dimension(:,:), optional, intent(in) :: &
+      clubb_params_in ! Optional replacement CLUBB parameter matrix for this reset.
+
+    integer, optional, intent(in) :: &
+      batch_num     ! Optional 1-based logical runtime batch selector.
 
     !----------------------------------- Local Variables -----------------------------------
     integer :: &
       i, b, k,      & ! Loop variables
       sclr, edsclr, &
-      sample, hm
+      sample, hm, &
+      batch_start, &  ! First column in the requested runtime batch.
+      batch_end, &    ! Last column in the requested runtime batch.
+      num_batches     ! Total number of runtime batches available.
 
     !----------------------------------- Begin Code -----------------------------------
+
+    ! Every case reset starts with fresh stats sampling state.  Batch-specific
+    ! logic below only changes which output column slice the run writes into.
+    call stats_reset_api( stats )
+
+    if ( present( batch_num ) ) then
+
+      num_batches = total_param_sets / batch_size
+      if ( batch_num < 1 .or. batch_num > num_batches ) then
+        err_info%err_code = clubb_fatal_error
+        write( fstderr, * ) "set_case_initial_conditions batch_num is outside the valid runtime batch range"
+        return
+      end if
+
+      if ( batch_num > 1 ) then
+        ! Set stats to output the next batch
+        call start_next_stats_batch_api( stats, err_info )
+        if ( any( err_info%err_code == clubb_fatal_error ) ) return
+      end if
+
+    end if
+
+    ! Allow reruns to swap in a new parameter matrix without reallocating the
+    ! broader CLUBB driver state. The initialized runtime column count must stay fixed.
+    if ( present( clubb_params_in ) ) then
+
+      if ( size( clubb_params_in, 1 ) /= ngrdcol .or. size( clubb_params_in, 2 ) /= nparams ) then
+        err_info%err_code = clubb_fatal_error
+        write( fstderr, * ) "set_case_initial_conditions requires clubb_params_in to match the initialized", &
+                            " (ngrdcol,nparams) shape"
+        return
+      end if
+
+      clubb_params = clubb_params_in
+
+    else if ( present( batch_num ) ) then
+
+      batch_start  = ( batch_num - 1 ) * batch_size + 1
+      batch_end    = batch_start + batch_size - 1
+      clubb_params = clubb_params_all(batch_start:batch_end,:)
+
+    end if
 
     if ( trim( rad_scheme ) /= "none" ) then
       call reset_radiation_variables()
@@ -3003,14 +3258,43 @@ module clubb_driver
 
     end if ! ~l_restart
 
-    ! This should be GPUized
-    !$acc update host(  deltaz, clubb_params, gr%zt, gr%zm )
+    ! This should be GPUized. Preserve any newly supplied host-side parameter
+    ! matrix instead of overwriting it from the device before recomputing the
+    ! parameter-dependent derived state for the next run.
+    if ( present( clubb_params_in ) ) then
+      !$acc update host( deltaz, gr%zt, gr%zm )
+    else
+      !$acc update host( deltaz, clubb_params, gr%zt, gr%zm )
+    end if
+
     call calc_derrived_params_api( gr, ngrdcol, grid_type, deltaz,              & ! Intent(in)
                                    clubb_params,                                & ! Intent(in)
                                    clubb_config_flags%l_prescribed_avg_deltaz,  & ! Intent(in)
                                    nu_vert_res_dep, lmin,                       & ! intent(inout)
                                    mixt_frac_max_mag )                            ! intent(inout)
-    !$acc update device( nu_vert_res_dep%nu1,nu_vert_res_dep%nu2, nu_vert_res_dep%nu6, &
+
+    ! Re-run the parameter sanity checks when debugging so reruns with updated
+    ! parameter sets are validated the same way as the initial setup.
+    if ( clubb_at_least_debug_level_api( 1 ) ) then
+      call check_clubb_settings_api( ngrdcol,             & ! Intent(in)
+                                     clubb_params,        & ! Intent(in)
+                                     l_implemented,       & ! Intent(in)
+                                     l_input_fields,      & ! Intent(in)
+                                     clubb_config_flags,  & ! intent(in)
+                                     err_info )             ! Intent(inout)
+
+      call check_parameters_api( ngrdcol, clubb_params, lmin, & ! Intent(in)
+                                 err_info )                     ! Intent(inout)
+
+      if ( any(err_info%err_code == clubb_fatal_error) ) then
+        write(fstderr, *) err_info%err_header_global
+        write(fstderr, *) "Fatal error calling check_clubb_settings_api"
+        write(fstderr, *) "and/or check_parameters_api in set_case_initial_conditions"
+        return
+      end if
+    end if
+
+    !$acc update device( clubb_params, nu_vert_res_dep%nu1,nu_vert_res_dep%nu2, nu_vert_res_dep%nu6, &
     !$acc                nu_vert_res_dep%nu8, nu_vert_res_dep%nu9, nu_vert_res_dep%nu10 )
 
   end subroutine set_case_initial_conditions
@@ -3018,7 +3302,7 @@ module clubb_driver
   !=============================================================================================
   !                                       advance_clubb_to_end
   !=============================================================================================
-  subroutine advance_clubb_to_end( l_stdout, err_info, l_suppress_stats )
+  subroutine advance_clubb_to_end( l_stdout, err_info, l_suppress_stats, itime_start, itime_end )
   !
   ! Description:
   !   Calling 'init_clubb_case', sets up the case settings and initial state of all fields.
@@ -3103,6 +3387,10 @@ module clubb_driver
     logical, optional, intent(in) :: &
       l_suppress_stats
 
+    integer, optional, intent(in) :: &
+      itime_start, &
+      itime_end
+
     !----------------------------------- Local Variables -----------------------------------
     logical :: &
       l_stats
@@ -3132,7 +3420,9 @@ module clubb_driver
     integer :: &
       itime,          & ! Iteration counters
       itime_nearest,  & ! Used for and inputfields run [s]       
-      i, k              ! Local Loop Variables
+      i, k, &           ! Local Loop Variables
+      loop_iinit, &
+      loop_ifinal
 
     real( kind = core_rknd ) :: stats_time
     !----------------------------------- Begin Code -----------------------------------
@@ -3175,13 +3465,16 @@ module clubb_driver
     !                         Main Time Stepping Loop
     !-------------------------------------------------------------------------------
 
-    mainloop: do itime = iinit, ifinal
+    loop_iinit = iinit
+    loop_ifinal = ifinal
+    if ( present( itime_start ) ) loop_iinit = itime_start
+    if ( present( itime_end ) ) loop_ifinal = itime_end
+
+    mainloop: do itime = loop_iinit, loop_ifinal
       
       call cpu_time( time_start ) ! start timer for initial part of main loop
       
       if ( l_stats ) then
-        ! When this time step is over, the model time will be time + dt_main.
-        ! Use integer timestep counters for stats_begin_timestep_api.
         call stats_begin_timestep_api( itime, stats )
       end if
 
@@ -3911,16 +4204,18 @@ module clubb_driver
       ! ======================= STATS FINALIZING AND PRINTOUTS =======================
       if (stats%l_last_sample) then
 
-        stats_time = real( time_initial + real( itime, kind=time_precision ) * &
-                           real( dt_main, kind=time_precision ), kind=core_rknd )
+        stats_time = real( time_initial + real( itime, kind = time_precision ) * &
+                           real( dt_main, kind = time_precision ), kind = core_rknd )
 
         ! End statistics timestep and flush sampled buffers to file.
         call stats_end_timestep_api( stats_time, stats, err_info )
-        
-        if ( any(err_info%err_code == clubb_fatal_error) ) then
-          write(fstderr, *) err_info%err_header_global
-          write(fstderr, *) "Fatal error calling stats_end_timestep_api in run_clubb"
-          exit mainloop
+
+        if ( clubb_at_least_debug_level_api( 0 ) ) then
+          if ( any(err_info%err_code == clubb_fatal_error) ) then
+            write(fstderr, *) err_info%err_header_global
+            write(fstderr, *) "Fatal error calling stats_end_timestep_api in run_clubb"
+            exit mainloop
+          end if
         end if
 
       end if
@@ -4430,7 +4725,10 @@ module clubb_driver
               edsclrm_init )
 
     if ( allocated( clubb_params ) ) deallocate( clubb_params )
+    if ( allocated( clubb_params_all ) ) deallocate( clubb_params_all )
     ngrdcol = 1
+    total_param_sets = 1
+    batch_size = 1
 
   end subroutine clean_up_clubb
 

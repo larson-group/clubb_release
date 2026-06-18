@@ -86,7 +86,7 @@ program clubb_driver_test
   call advance_clubb_to_end( l_stdout, err_info, l_suppress_stats=.true. )
 
   ! Reset model back to initial conditions
-  call set_case_initial_conditions()
+  call set_case_initial_conditions( err_info )
 
   ! Turn stats on and run. If this produces different output than what calling run_clubb
   ! does, then set_case_initial_conditions is not correctly reseting to initial conditions

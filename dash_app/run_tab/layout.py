@@ -256,7 +256,20 @@ def build_run_action_section():
 
 def build_console_shell():
     """Render the empty console container shell."""
-    return html.Div(id="run-console-container", className="run-console-container", style={"display": "flex", "flexDirection": "column", "gap": "10px"})
+    return html.Div(
+        id="run-console-container",
+        className="run-console-container",
+        style={
+            "display": "flex",
+            "flexDirection": "column",
+            "gap": "10px",
+            "maxHeight": "calc(100vh - 360px)",
+            "minHeight": "220px",
+            "overflowY": "auto",
+            "overflowAnchor": "none",
+            "paddingRight": "4px",
+        },
+    )
 
 
 def build_left_header(case_groups, case_buttons, stats_buttons):
@@ -379,6 +392,7 @@ def build_layout(initial_data):
             dcc.Store(id="run-case-runtimes", data={}),
             dcc.Store(id="run-log-offsets", data={}),
             dcc.Store(id="run-case-order", data=[]),
+            dcc.Store(id="run-open-cases", data=[]),
             dcc.Interval(id="run-interval", interval=500, disabled=True),
             html.Div([build_left_header(initial_data["case_groups"], initial_data["case_buttons"], initial_data["stats_buttons"]), build_console_shell()], className="run-left-pane"),
             html.Div(id="run-pane-divider", className="run-pane-divider"),

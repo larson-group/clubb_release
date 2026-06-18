@@ -13,7 +13,7 @@
 subroutine f2py_stats_init(registry_path, output_path, ncol, &
     stats_tsamp, stats_tout, dt_main, &
     day_in, month_in, year_in, time_initial, &
-    nzt, zt, nzm, zm, sclr_dim, edsclr_dim)
+    stats_tstart, stats_tend, nzt, zt, nzm, zm, sclr_dim, edsclr_dim)
 
   use clubb_precision, only: core_rknd, time_precision
   use derived_type_storage, only: stored_stats, stored_err_info
@@ -25,23 +25,52 @@ subroutine f2py_stats_init(registry_path, output_path, ncol, &
   integer, intent(in) :: ncol, day_in, month_in, year_in
   real(core_rknd), intent(in) :: stats_tsamp, stats_tout, dt_main
   real(time_precision), intent(in) :: time_initial
+  real(time_precision), intent(in) :: stats_tstart, stats_tend
   integer, intent(in) :: nzt, nzm, sclr_dim, edsclr_dim
   real(core_rknd), dimension(nzt), intent(in) :: zt
   real(core_rknd), dimension(nzm), intent(in) :: zm
+  real(time_precision), parameter :: missing_time = -1.0e30_time_precision
+  logical :: has_stats_tstart, has_stats_tend
 
-  call stats_init_api( &
-    trim(registry_path), trim(output_path), ncol, &
-    stats_tsamp, stats_tout, dt_main, &
-    day_in, month_in, year_in, time_initial, &
-    zt, zm, stored_stats, stored_err_info, &
-    sclr_dim=sclr_dim, edsclr_dim=edsclr_dim)
+  has_stats_tstart = stats_tstart > 0.5_time_precision * missing_time
+  has_stats_tend = stats_tend > 0.5_time_precision * missing_time
+
+  if ( has_stats_tstart .and. has_stats_tend ) then
+    call stats_init_api( &
+      trim(registry_path), trim(output_path), ncol, &
+      stats_tsamp, stats_tout, dt_main, &
+      day_in, month_in, year_in, time_initial, zt, zm, stored_stats, stored_err_info, &
+      sclr_dim=sclr_dim, edsclr_dim=edsclr_dim, &
+      stats_tstart=stats_tstart, stats_tend=stats_tend)
+  else if ( has_stats_tstart ) then
+    call stats_init_api( &
+      trim(registry_path), trim(output_path), ncol, &
+      stats_tsamp, stats_tout, dt_main, &
+      day_in, month_in, year_in, time_initial, zt, zm, stored_stats, stored_err_info, &
+      sclr_dim=sclr_dim, edsclr_dim=edsclr_dim, &
+      stats_tstart=stats_tstart)
+  else if ( has_stats_tend ) then
+    call stats_init_api( &
+      trim(registry_path), trim(output_path), ncol, &
+      stats_tsamp, stats_tout, dt_main, &
+      day_in, month_in, year_in, time_initial, zt, zm, stored_stats, stored_err_info, &
+      sclr_dim=sclr_dim, edsclr_dim=edsclr_dim, &
+      stats_tend=stats_tend)
+  else
+    call stats_init_api( &
+      trim(registry_path), trim(output_path), ncol, &
+      stats_tsamp, stats_tout, dt_main, &
+      day_in, month_in, year_in, time_initial, zt, zm, stored_stats, stored_err_info, &
+      sclr_dim=sclr_dim, edsclr_dim=edsclr_dim)
+  end if
 
 end subroutine f2py_stats_init
 
 subroutine f2py_stats_init_with_params(registry_path, output_path, ncol, &
     stats_tsamp, stats_tout, dt_main, &
     day_in, month_in, year_in, time_initial, &
-    nzt, zt, nzm, zm, sclr_dim, edsclr_dim, clubb_params, param_names)
+    stats_tstart, stats_tend, nzt, zt, nzm, zm, sclr_dim, edsclr_dim, &
+    clubb_params, param_names)
 
   use clubb_precision, only: core_rknd, time_precision
   use derived_type_storage, only: stored_stats, stored_err_info
@@ -54,13 +83,16 @@ subroutine f2py_stats_init_with_params(registry_path, output_path, ncol, &
   integer, intent(in) :: ncol, day_in, month_in, year_in
   real(core_rknd), intent(in) :: stats_tsamp, stats_tout, dt_main
   real(time_precision), intent(in) :: time_initial
+  real(time_precision), intent(in) :: stats_tstart, stats_tend
   integer, intent(in) :: nzt, nzm, sclr_dim, edsclr_dim
   real(core_rknd), dimension(nzt), intent(in) :: zt
   real(core_rknd), dimension(nzm), intent(in) :: zm
   real(core_rknd), dimension(ncol, nparams), intent(in) :: clubb_params
   character(kind=1), dimension(nparams, 28), intent(in) :: param_names
   character(len=28), dimension(nparams) :: param_names_fortran
+  real(time_precision), parameter :: missing_time = -1.0e30_time_precision
   integer :: i, j
+  logical :: has_stats_tstart, has_stats_tend
 
   do i = 1, nparams
     param_names_fortran(i) = ' '
@@ -69,13 +101,41 @@ subroutine f2py_stats_init_with_params(registry_path, output_path, ncol, &
     end do
   end do
 
-  call stats_init_api( &
-    trim(registry_path), trim(output_path), ncol, &
-    stats_tsamp, stats_tout, dt_main, &
-    day_in, month_in, year_in, time_initial, &
-    zt, zm, stored_stats, stored_err_info, &
-    clubb_params=clubb_params, param_names=param_names_fortran, &
-    sclr_dim=sclr_dim, edsclr_dim=edsclr_dim)
+  has_stats_tstart = stats_tstart > 0.5_time_precision * missing_time
+  has_stats_tend = stats_tend > 0.5_time_precision * missing_time
+
+  if ( has_stats_tstart .and. has_stats_tend ) then
+    call stats_init_api( &
+      trim(registry_path), trim(output_path), ncol, &
+      stats_tsamp, stats_tout, dt_main, &
+      day_in, month_in, year_in, time_initial, zt, zm, stored_stats, stored_err_info, &
+      clubb_params=clubb_params, param_names=param_names_fortran, &
+      sclr_dim=sclr_dim, edsclr_dim=edsclr_dim, &
+      stats_tstart=stats_tstart, stats_tend=stats_tend)
+  else if ( has_stats_tstart ) then
+    call stats_init_api( &
+      trim(registry_path), trim(output_path), ncol, &
+      stats_tsamp, stats_tout, dt_main, &
+      day_in, month_in, year_in, time_initial, zt, zm, stored_stats, stored_err_info, &
+      clubb_params=clubb_params, param_names=param_names_fortran, &
+      sclr_dim=sclr_dim, edsclr_dim=edsclr_dim, &
+      stats_tstart=stats_tstart)
+  else if ( has_stats_tend ) then
+    call stats_init_api( &
+      trim(registry_path), trim(output_path), ncol, &
+      stats_tsamp, stats_tout, dt_main, &
+      day_in, month_in, year_in, time_initial, zt, zm, stored_stats, stored_err_info, &
+      clubb_params=clubb_params, param_names=param_names_fortran, &
+      sclr_dim=sclr_dim, edsclr_dim=edsclr_dim, &
+      stats_tend=stats_tend)
+  else
+    call stats_init_api( &
+      trim(registry_path), trim(output_path), ncol, &
+      stats_tsamp, stats_tout, dt_main, &
+      day_in, month_in, year_in, time_initial, zt, zm, stored_stats, stored_err_info, &
+      clubb_params=clubb_params, param_names=param_names_fortran, &
+      sclr_dim=sclr_dim, edsclr_dim=edsclr_dim)
+  end if
 
 end subroutine f2py_stats_init_with_params
 
@@ -111,7 +171,7 @@ subroutine f2py_get_stats_config(l_enabled, ncol, nvars, &
   logical, intent(out) :: l_sample, l_last_sample
 
   l_enabled       = stored_stats%enabled
-  ncol             = stored_stats%ncol
+  ncol             = stored_stats%ncol_batch
   nvars            = stored_stats%nvars
   stats_nsamp      = stored_stats%stats_nsamp
   stats_nout       = stored_stats%stats_nout

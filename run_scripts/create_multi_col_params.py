@@ -201,6 +201,12 @@ if __name__ == "__main__":
 
     parser.add_argument( "-mode", type=str, help="Parameter generation mode" )
 
+    parser.add_argument(
+        "-batch_size",
+        type=int,
+        help="Runtime batch size written to &multicol_def. Defaults to ngrdcol when omitted.",
+    )
+
     parser.add_argument( "-mirror", type=str, help="mirror param lists",
                          default = "false" )
 
@@ -225,6 +231,7 @@ if __name__ == "__main__":
     output_file_name        = args.out_file
     param_creation_mode     = args.mode or "dup_tweak"
     mirror                  = args.mirror == "true"
+    batch_size              = args.batch_size
     hr_mode_requested       = args.hr is not None
 
     if hr_mode_requested and any(arg == "-mode" for arg in sys.argv[1:]):
@@ -239,6 +246,9 @@ if __name__ == "__main__":
         hr_specs = None
         if ngrdcol is None or ngrdcol < 1:
             sys.exit("-n (ngrdcol) must be >= 1 unless -hr is used.")
+
+    if batch_size is not None and batch_size < 1:
+        sys.exit("-batch_size must be >= 1")
 
     if args.tweak_list is None:
         tweak_list = ['C11']
@@ -306,6 +316,9 @@ if __name__ == "__main__":
 
         file.write(f"ngrdcol = {ngrdcol}\n")
         print(f" - ngrdcol = {ngrdcol}")
+        if batch_size is not None:
+            file.write(f"batch_size = {batch_size}\n")
+            print(f" - batch_size = {batch_size}")
         file.write(f"/\n")
 
         file.write(f"&clubb_params_nl\n")

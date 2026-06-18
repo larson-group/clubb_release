@@ -2057,7 +2057,7 @@ module latin_hypercube_driver_module
     if ( present(stats) ) l_stats = stats%l_sample
     col = 1
     if ( present(icol) ) col = icol
-    if ( l_stats .and. stats%ncol > 1 .and. .not. present(icol) ) l_stats = .false.
+    if ( l_stats .and. stats%ncol_batch > 1 .and. .not. present(icol) ) l_stats = .false.
     if ( .not. l_stats ) return
 
     if ( l_stats ) then

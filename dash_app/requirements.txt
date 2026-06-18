@@ -1,0 +1,5 @@
+# Runtime dependencies for dash_app/app.py and its run/plot/tune tabs.
+dash~=3.2
+plotly~=6.7
+numpy~=2.4
+netCDF4~=1.7

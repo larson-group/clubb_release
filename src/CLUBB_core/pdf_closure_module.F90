@@ -4263,7 +4263,8 @@ module pdf_closure_module
 
       end do ! sclr=1, sclr_dim
 
-      if ( stats%l_sample .and. l_samp_stats_in_pdf_call ) then
+      if ( stats%l_sample .and. l_samp_stats_in_pdf_call &
+           .and. var_on_stats_list( stats, "rcp2" ) ) then
 
         ! Pos. def. quantity
         rcp2(:,:) = zt2zm_api( nzm, nzt, ngrdcol, gr, rcp2_zt(:,:), zero_threshold )
@@ -5616,9 +5617,6 @@ module pdf_closure_module
           rcm_in_layer(i,k) = unused_var
           ! Error in column i -> set ith entry to clubb_fatal_error
           err_info%err_code(i) = clubb_fatal_error
-          write(fstderr, *) err_info%err_header(i)
-          write(fstderr, *) "in compute_cloud_cover"
-          write(fstderr, *) "invalid rcm values"
 
         end if ! rcm(k) < rc_tol
 

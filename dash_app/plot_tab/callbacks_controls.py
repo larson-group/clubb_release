@@ -2,7 +2,7 @@ from dash import ALL, Input, Output, State, callback_context, no_update
 
 from .plot_types.budget_plot import PLOT as budget_plot
 from .plot_types.profile_plot import PLOT as profile_plot
-from .plot_types.shared import time_label_for_point, time_label_for_range
+from .plot_types.shared import average_length_label, physical_time_window_label, start_time_label, time_start_max_for_duration
 from .plot_types.subcolumn_plot import PLOT as subcolumn_plot
 from .state import (
     DEFAULT_PLAYBACK_INTERVAL_S,
@@ -17,6 +17,8 @@ def register_control_callbacks(app):
     """Register time, height, and playback callbacks for the plots tab."""
     @app.callback(
         Output("plots-time-heading", "children"),
+        Output("plots-time-start-label", "children"),
+        Output("plots-time-average-label", "children"),
         Input("plots-case-data", "data"),
         Input("plots-time-mode", "value"),
         Input("plots-global-time-range", "value"),
@@ -25,11 +27,14 @@ def register_control_callbacks(app):
     def update_time_label(case_data, time_mode, time_range, time_point):
         """Show the active time window or point directly in the section header."""
         if not case_data:
-            return "Time"
-        time_seconds = case_data.get("time_seconds")
-        if time_mode == "point":
-            return time_label_for_point(time_seconds, time_point or 1)
-        return time_label_for_range(time_seconds, time_range or case_data.get("default_time_range"))
+            return "Time", "Start time", "Average Length"
+        start_value = time_point if time_point is not None else case_data.get("default_time_start_seconds")
+        average_value = time_range if time_range is not None else case_data.get("default_time_duration_minutes")
+        return (
+            physical_time_window_label(case_data, start_value, average_value),
+            start_time_label(start_value),
+            average_length_label(average_value),
+        )
 
     @app.callback(
         Output("plots-height-heading", "children"),
@@ -49,10 +54,52 @@ def register_control_callbacks(app):
         Input("plots-time-mode", "value"),
     )
     def toggle_time_mode(time_mode):
-        """Swap the visible time control between range and single-point modes."""
-        if time_mode == "point":
-            return {"display": "none"}, {"display": "block"}
-        return {"display": "block"}, {"display": "none"}
+        """Keep both time sliders visible; the hidden mode store preserves callback compatibility."""
+        return {"display": "block"}, {"display": "block"}
+
+    @app.callback(
+        Output("plots-global-time-point", "step", allow_duplicate=True),
+        Output("plots-global-time-point", "max", allow_duplicate=True),
+        Output("plots-global-time-point", "value", allow_duplicate=True),
+        Input("plots-global-time-range", "value"),
+        State("plots-case-data", "data"),
+        State("plots-global-time-point", "value"),
+        prevent_initial_call=True,
+    )
+    def sync_start_control_to_average_length(average_minutes, case_data, current_start):
+        """Move start time in chunks that match the selected averaging window."""
+        step = max(1.0e-6, float(average_minutes or 1.0)) * 60.0
+        if not case_data:
+            return step, no_update, no_update
+        start_min = float(case_data.get("time_slider_start_min_seconds") or 0.0)
+        start_max = time_start_max_for_duration(case_data, average_minutes)
+        active_start = float(current_start if current_start is not None else case_data.get("default_time_start_seconds", start_min))
+        return step, start_max, max(start_min, min(active_start, start_max))
+
+    @app.callback(
+        Output("plots-global-time-point", "value", allow_duplicate=True),
+        Output("plots-global-time-range", "value", allow_duplicate=True),
+        Input("plots-use-loss-window", "n_clicks"),
+        Input("plots-use-pyplotgen-window", "n_clicks"),
+        State("plots-case-data", "data"),
+        prevent_initial_call=True,
+    )
+    def apply_time_window_preset(_loss_clicks, _pyplotgen_clicks, case_data):
+        """Jump the time sliders to the loss or pyplotgen averaging window."""
+        if not case_data:
+            return no_update, no_update
+        trigger = callback_context.triggered_id
+        if trigger == "plots-use-loss-window":
+            start = case_data.get("loss_time_start_seconds")
+            duration = case_data.get("loss_time_duration_minutes")
+        elif trigger == "plots-use-pyplotgen-window":
+            start = case_data.get("pyplotgen_time_start_seconds")
+            duration = case_data.get("pyplotgen_time_duration_minutes")
+        else:
+            return no_update, no_update
+        if start is None or duration is None:
+            return no_update, no_update
+        return float(start), float(duration)
 
     @app.callback(
         Output("plots-playback", "data"),
@@ -70,12 +117,12 @@ def register_control_callbacks(app):
         current["interval_s"] = normalize_playback_interval(current.get("interval_s", DEFAULT_PLAYBACK_INTERVAL_S))
         trigger = callback_context.triggered_id
         if trigger in {"plots-time-mode", "plots-case-data"}:
-            if time_mode != "point" or not case_data:
+            if not case_data:
                 current["playing"] = False
                 current["inflight"] = False
                 current["target_point"] = None
             return current
-        if time_mode != "point" or not case_data:
+        if not case_data:
             current["playing"] = False
             current["inflight"] = False
             current["target_point"] = None
@@ -110,7 +157,7 @@ def register_control_callbacks(app):
         """Translate playback state into interval timing and button presentation."""
         state = dict(playback or {"playing": False, "interval_s": DEFAULT_PLAYBACK_INTERVAL_S, "inflight": False})
         interval_s = normalize_playback_interval(state.get("interval_s", DEFAULT_PLAYBACK_INTERVAL_S))
-        enabled = bool(case_data) and time_mode == "point"
+        enabled = bool(case_data)
         playing = enabled and bool(state.get("playing"))
         inflight = bool(state.get("inflight"))
         button_style = {
@@ -136,17 +183,22 @@ def register_control_callbacks(app):
         Input("plots-playback-interval", "n_intervals"),
         State("plots-playback", "data"),
         State("plots-time-mode", "value"),
+        State("plots-global-time-range", "value"),
         State("plots-global-time-point", "value"),
+        State("plots-global-time-point", "min"),
         State("plots-global-time-point", "max"),
+        State("plots-case-data", "data"),
         prevent_initial_call=True,
     )
-    def advance_time_point(_n_intervals, playback, time_mode, time_point, time_point_max):
+    def advance_time_point(_n_intervals, playback, time_mode, average_minutes, time_point, time_point_min, time_point_max, case_data):
         """Advance one playback frame when the current frame is not still rendering."""
-        if time_mode != "point" or not playback or not playback.get("playing") or playback.get("inflight"):
+        if not playback or not playback.get("playing") or playback.get("inflight"):
             return no_update, no_update
-        max_point = max(1, int(time_point_max or 1))
-        current_point = max(1, min(int(time_point or 1), max_point))
-        next_point = 1 if current_point >= max_point else current_point + 1
+        min_point = float(time_point_min if time_point_min is not None else 0.0)
+        max_point = max(min_point, float(time_point_max if time_point_max is not None else min_point))
+        step = max(1.0e-6, float(average_minutes or 1.0)) * 60.0
+        current_point = max(min_point, min(float(time_point if time_point is not None else min_point), max_point))
+        next_point = min_point if current_point >= max_point else min(current_point + step, max_point)
         updated_playback = dict(playback)
         updated_playback["inflight"] = True
         updated_playback["target_point"] = next_point
@@ -171,10 +223,6 @@ def register_control_callbacks(app):
         current = dict(playback or {})
         if not current.get("inflight"):
             return no_update
-        if time_mode != "point":
-            current["inflight"] = False
-            current["target_point"] = None
-            return current
         target_point = current.get("target_point")
         if target_point is None:
             current["inflight"] = False

@@ -802,6 +802,8 @@ def init_clubb_case(namelist_path: str) -> dict:
             month_in=int(cfg['month']),
             year_in=int(cfg['year']),
             time_initial=float(time_initial),
+            stats_tstart=float(cfg.get('stats_tstart', time_initial)),
+            stats_tend=float(cfg.get('stats_tend', time_final)),
             nzt=nzt,
             zt=gr.zt[0, :],
             nzm=nzm,

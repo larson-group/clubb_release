@@ -67,6 +67,98 @@
 !
 !     - stats_lh_samples_write_uniform(): write SILHS uniform sample fields
 !
+!
+! Understanding:
+!
+!   Timestep convention:
+!     - stats_begin_timestep_api() takes a 1-based model timestep index.  Stats
+!       converts that to the absolute model time at the end of the timestep using
+!       time_initial + itime*dt_main.  Sampling uses the open/closed stats window
+!       (stats_tstart, stats_tend], so the first possible sample is one dt_main
+!       after stats_tstart.
+!
+!     - stats_init_api() only requires time_initial.  If optional stats_tstart
+!       is omitted, the sampling window starts at time_initial.  If optional
+!       stats_tend is omitted, the window is open-ended and stats will keep
+!       sampling on cadence until the caller stops calling stats.
+!
+!     - stats_update() calls are no-ops unless stats_begin_timestep_api() set
+!       stats%l_sample.  Each variable carries pointwise sample counters, and
+!       stats_end_timestep_api() averages each output point by the number of
+!       samples actually contributed before writing.
+!
+!     - stats_tsamp and stats_tout must align to dt_main.  If stats_tend is
+!       supplied, it must also align to dt_main.  If stats_tend falls between
+!       regular output boundaries, the trailing partial output window is omitted.
+!
+!   Budget calls:
+!     - stats_begin_budget() subtracts the old state from the buffer,
+!       stats_update_budget() adds intermediate contributions, and
+!       stats_finalize_budget() adds the final state and normally increments
+!       the sample counter.  The optional l_count_sample=.false. argument to
+!       stats_finalize_budget() is for budget-style buffer changes that should
+!       not count as another sample.
+!
+!   NetCDF-disabled / memory-only use:
+!     - Passing an empty output_path to stats_init_api() disables NetCDF I/O but
+!       still builds the registry, buffers, lookup cache, and source-grid
+!       metadata.  This is useful for callers that want the stats bookkeeping or
+!       source-grid query behavior without actually writing to disk.
+!
+!   Batched output:
+!
+!     CLUBB runs multiple columns at a time, this group of running columns is
+!     a "batch". This section details how we can run all of clubb in batches
+!     one batch at a time, yet still produce a single netcdf file containing
+!     the data from all batches.
+!
+!     - stats_init_api() normally uses ncol_batch as the NetCDF col dimension.  If the
+!       optional ncol_total is present, the file is instead defined with
+!       ncol_total columns while runtime buffers remain sized to ncol_batch.
+!
+!     - stats_reset_api() clears the per-batch sampling state.  It leaves the
+!       active output column slice alone, except that it wraps back to the first
+!       slice after the last slice has been used.
+!
+!     - start_next_stats_batch_api() advances the output column offset by one
+!       runtime batch.  The slice width is the runtime ncol_batch; only the
+!       NetCDF write start index changes.  Call stats_reset_api() separately
+!       before each batch to clear sampling state.
+!
+!     - For multi-batch reruns, create the file once with ncol_total.  Call
+!       stats_reset_api() before each batch; for later batches, also call
+!       start_next_stats_batch_api() before advancing.  Each batch then
+!       overwrites the same time records for a different column slice.
+!
+!   Grid remapping:
+!
+!     This lets CLUBB sample stats on the runtime/source grid while writing zt
+!     and zm fields to a fixed NetCDF output grid.
+!
+!     - Enable it by passing output_zt, output_zm, and grid_remap_method
+!       together to stats_init_api().  Remapping is active only for NetCDF
+!       output; supplying only some of those arguments is an error.
+!
+!     - Runtime buffers are sized for the source grid, not the output grid.
+!       Callers should continue to pass normal model arrays to stats_update(),
+!       stats_begin_budget(), stats_update_budget(), and stats_finalize_budget().
+!
+!     - At a write boundary, stats first averages all samples on the source grid,
+!       then remaps registered zt/zm profile variables with remap_vals_to_target()
+!       and writes them on output_zt/output_zm.  Surface, radiation-grid, and
+!       lh_* variables are not transformed by this path.
+!
+!     - Adaptive-grid callers should call stats_update_grid() after the current
+!       source grid is known and before stats_end_timestep_api() reaches a write
+!       boundary.  If the source grid changes during an output window, samples
+!       are still averaged by vertical index and remapped using the latest source
+!       grid supplied by stats_update_grid().
+!
+!   Misc helpers:
+!     - stats_get_source_grid_api() is a query helper for consumers that need to
+!       know the current runtime/source zt and zm grids.  When remapping is
+!       active, this is not the fixed NetCDF output grid.
+!
 !-------------------------------------------------------------------------------
 module stats_netcdf
 
@@ -79,7 +171,7 @@ module stats_netcdf
       fstderr
 
   use netcdf, only: &
-      NF90_NOERR, NF90_CLOBBER, NF90_UNLIMITED, NF90_DOUBLE, NF90_CHAR, &
+      NF90_NOERR, NF90_CLOBBER, NF90_UNLIMITED, NF90_DOUBLE, NF90_CHAR, NF90_GLOBAL, &
       nf90_create, nf90_redef, nf90_def_dim, nf90_def_var, nf90_def_var_fill, &
       nf90_put_att, nf90_enddef, &
       nf90_put_var, nf90_close, nf90_strerror
@@ -102,6 +194,8 @@ module stats_netcdf
 
   public :: stats_type, &
             stats_init_api, stats_finalize_api, &
+            stats_reset_api, start_next_stats_batch_api, &
+            stats_get_source_grid_api, &
             stats_begin_timestep_api, stats_end_timestep_api, &
             stats_update, &
             stats_begin_budget, stats_update_budget, stats_finalize_budget, &
@@ -168,7 +262,7 @@ module stats_netcdf
 
     real(kind=stat_rknd), allocatable, dimension(:,:) :: &
       buffer                                  ! Buffers store data for columns and levels in a
-                                              ! sample dimension( ncol, nz )
+                                              ! sample dimension( ncol_batch, nz )
     integer, allocatable, dimension(:,:) :: &
       nsamples                                ! Number of samples, tracked pointwise
 
@@ -236,12 +330,24 @@ module stats_netcdf
     logical :: l_netcdf_output = .true.           ! True if netcdf file I/O is enabled
     logical :: l_different_output_grid = .false.  ! True if we need to remap the variables before output
     logical :: l_output_rad_files = .false.       ! True if we want to output radiation grid variables
+    logical :: l_open_ended_time_window = .false. ! True if stats has no configured end time
     integer :: time_index = 0                     ! Current time index
     integer :: nvars = 0                          ! Number of variables setup to be output
-    integer :: ncol = 0                           ! Number of columns tracked
+    integer :: ncol_batch = 0                     ! Runtime batch column count tracked in memory
+    integer :: ncol_total = 0                     ! Total number of columns represented in the output file
+    integer :: active_batch_offset = 0            ! Zero-based starting column for the active batch write
     integer :: stats_nsamp = 1                    ! Sampling interval in timesteps
     integer :: stats_nout = 1                     ! Output interval in timesteps
     integer :: samples_per_write = 1              ! Number of samples to take before writing to disk
+
+    real(kind=time_precision) :: &
+      dt_main = 0._time_precision                 ! Main timestep used for cadence math [s]
+    real(kind=time_precision) :: &
+      time_initial = 0._time_precision            ! Model start time [s]
+    real(kind=time_precision) :: &
+      tstart = 0._time_precision                  ! Absolute stats window start time [s]
+    real(kind=time_precision) :: &
+      tend = 0._time_precision                    ! Absolute stats window end time [s]
 
     type(stats_var), allocatable, dimension(:) :: &
       vars                                        ! Array of variable types
@@ -253,7 +359,9 @@ module stats_netcdf
     ! Various ids. might be nicer in its own type, but we've exhausted out percent-symbol budget
     integer :: ncid = -1                          ! NetCDF file id
     integer :: time_dimid = -1                    ! NetCDF dim id for time
+    integer :: bnds_dimid = -1                    ! NetCDF dim id for time bounds axis
     integer :: time_varid = -1                    ! NetCDF var id for time
+    integer :: time_bnds_varid = -1               ! NetCDF var id for time bounds
     integer :: col_dimid = -1                     ! NetCDF dim id for columns
     integer :: col_varid = -1                     ! NetCDF var id for columns
     integer :: zt_dimid = -1                      ! NetCDF dim id for zt
@@ -278,10 +386,13 @@ contains
   !                   Initialization/Finalize
   !----------------------------------------------------------------------------
 
-  subroutine stats_init_api( registry_path, output_path, ncol, stats_tsamp, stats_tout, dt_main, &
-                         day_in, month_in, year_in, time_initial, zt, zm, stats, err_info, &
-                         clubb_params, param_names, rad_zt, rad_zm, hydromet_list, &
-                         sclr_dim, edsclr_dim, output_zt, output_zm, grid_remap_method )
+  subroutine stats_init_api( registry_path, output_path, ncol_batch, &
+                             stats_tsamp, stats_tout, dt_main, &
+                             day_in, month_in, year_in, time_initial, &
+                             zt, zm, stats, err_info, &
+                             clubb_params, param_names, rad_zt, rad_zm, hydromet_list, &
+                             sclr_dim, edsclr_dim, output_zt, output_zm, grid_remap_method, &
+                             ncol_total, stats_tstart, stats_tend )
 
     ! Description:
     !   Initialize the stats context for one output file. This routine validates
@@ -292,7 +403,7 @@ contains
 
     ! ------------------------ Inputs ------------------------
     integer, intent(in) :: &
-      ncol, &               ! Number of horizontal columns [-]
+      ncol_batch, &         ! Number of runtime horizontal columns in this batch [-]
       day_in, &             ! Start day of month [day]
       month_in, &           ! Start month of year [month]
       year_in               ! Start calendar year [year]
@@ -337,7 +448,12 @@ contains
     integer, intent(in), optional :: &
       sclr_dim, &           ! Number of scalar species for expansions [-]
       edsclr_dim, &         ! Number of extra diagnostic scalar species [-]
-      grid_remap_method     ! Remapping-method selector enum [-]
+      grid_remap_method, &  ! Remapping-method selector enum [-]
+      ncol_total            ! Total number of columns represented in the output file [-]
+
+    real(kind=time_precision), intent(in), optional :: &
+      stats_tstart, &       ! Absolute stats window start time [s]
+      stats_tend            ! Absolute stats window end time [s]
 
     ! ------------------------ Locals ------------------------
     type(stats_var), allocatable :: &
@@ -348,6 +464,10 @@ contains
 
     integer :: &
       ndefs, grid_err, ierr
+
+    real(kind=time_precision) :: &
+      effective_stats_tstart, & ! Actual stats window start time [s]
+      effective_stats_tend      ! Actual stats window end time [s]
 
     ! ------------------------ Begin Code ------------------------
 
@@ -361,9 +481,91 @@ contains
 
     stats%l_different_output_grid = .false.
 
+    if ( dt_main <= 0._core_rknd ) then
+      write( fstderr,* ) "stats init: dt_main must be positive"
+      err_info%err_code = clubb_fatal_error
+      return
+    end if
+
+    if ( stats_tsamp <= 0._core_rknd .or. stats_tout <= 0._core_rknd ) then
+      write( fstderr,* ) "stats init: stats_tsamp and stats_tout must be positive"
+      err_info%err_code = clubb_fatal_error
+      return
+    end if
+
+    effective_stats_tstart = time_initial
+    if ( present( stats_tstart ) ) effective_stats_tstart = stats_tstart
+
+    effective_stats_tend = effective_stats_tstart
+    if ( present( stats_tend ) ) effective_stats_tend = stats_tend
+
+    if ( effective_stats_tstart < time_initial ) then
+      write( fstderr,* ) "stats init: stats_tstart must be >= time_initial"
+      err_info%err_code = clubb_fatal_error
+      return
+    end if
+
+    if ( present( stats_tend ) ) then
+      if ( effective_stats_tend <= effective_stats_tstart ) then
+        write( fstderr,* ) "stats init: invalid stats_tstart/stats_tend window"
+        err_info%err_code = clubb_fatal_error
+        return
+      end if
+    end if
+
+    if ( abs( ( real( effective_stats_tstart - time_initial, kind = core_rknd ) / dt_main ) - &
+              real( nint( real( effective_stats_tstart - time_initial, kind = core_rknd ) &
+                          / dt_main ), &
+                    kind = core_rknd ) ) &
+         > 1.e-8_core_rknd ) then
+      write( fstderr,* ) "stats init: stats_tstart must align to a dt_main boundary"
+      err_info%err_code = clubb_fatal_error
+      return
+    end if
+
+    if ( present( stats_tend ) ) then
+      if ( abs( ( real( effective_stats_tend - time_initial, kind = core_rknd ) / dt_main ) - &
+                real( nint( real( effective_stats_tend - time_initial, kind = core_rknd ) &
+                            / dt_main ), &
+                      kind = core_rknd ) ) &
+           > 1.e-8_core_rknd ) then
+        write( fstderr,* ) "stats init: stats_tend must align to a dt_main boundary"
+        err_info%err_code = clubb_fatal_error
+        return
+      end if
+    end if
+
+    if ( abs( ( stats_tsamp / dt_main ) - &
+              real( nint( stats_tsamp / dt_main ), kind = core_rknd ) ) > 1.e-8_core_rknd ) then
+      write( fstderr,* ) "stats init: stats_tsamp must be an integer multiple of dt_main"
+      err_info%err_code = clubb_fatal_error
+      return
+    end if
+
+    if ( abs( ( stats_tout / dt_main ) - &
+              real( nint( stats_tout / dt_main ), kind = core_rknd ) ) > 1.e-8_core_rknd ) then
+      write( fstderr,* ) "stats init: stats_tout must be an integer multiple of dt_main"
+      err_info%err_code = clubb_fatal_error
+      return
+    end if
+
     stats%stats_nsamp = max( 1, nint( stats_tsamp / dt_main ) )
     stats%stats_nout  = max( 1, nint( stats_tout / dt_main ) )
     stats%samples_per_write = max( 1, stats%stats_nout / stats%stats_nsamp )
+    stats%ncol_total = ncol_batch
+    if ( present( ncol_total ) ) stats%ncol_total = ncol_total
+    stats%active_batch_offset = 0
+    stats%dt_main = real( dt_main, kind = time_precision )
+    stats%time_initial = time_initial
+    stats%tstart = effective_stats_tstart
+    stats%tend = effective_stats_tend
+    stats%l_open_ended_time_window = .not. present( stats_tend )
+
+    if ( stats%ncol_total < ncol_batch ) then
+      write( fstderr,* ) "stats init: ncol_total must be >= runtime ncol_batch"
+      err_info%err_code = clubb_fatal_error
+      return
+    end if
     
     ! We need stats_nout/stats_nsamp to be an integer
     if ( mod( stats%stats_nout, stats%stats_nsamp ) /= 0 ) then
@@ -386,6 +588,14 @@ contains
       write( fstderr,* ) "stats error: clubb_params and param_names must be used together"
       err_info%err_code = clubb_fatal_error
       return
+    end if
+
+    if ( present( clubb_params ) ) then
+      if ( size( clubb_params, 1 ) /= stats%ncol_total ) then
+        write( fstderr,* ) "stats init: clubb_params metadata must have ncol_total rows"
+        err_info%err_code = clubb_fatal_error
+        return
+      end if
     end if
 
     ! If we're initializing with grid remapping, we need 
@@ -412,39 +622,43 @@ contains
     call stats_expand_registry( sclr_dim, edsclr_dim, &
                                 defs, ndefs, hydromet_list )
 
-    ! Get a nice string for the starting date
-    call format_date( day_in, month_in, year_in, time_initial, time_units )
+    ! Use midnight on the case start date as the NetCDF time origin so the
+    ! stored time values remain absolute model-clock seconds.
+    call format_date( day_in, month_in, year_in, 0._time_precision, time_units )
 
     ! Empty output path means collect stats only, without netcdf I/O.
     stats%l_netcdf_output = ( len_trim( output_path ) > 0 )
 
-    ! If using grid remapping, we need to initialize the stats%grid info
-    if ( stats%l_netcdf_output .and. &
-         present( grid_remap_method ) .and. present( output_zt ) .and. present( output_zm ) ) then
-      
-      stats%l_different_output_grid = .true.
+    ! Always initialize stats%grid so memory-only consumers can query the
+    ! source/runtime grid. Output remapping still only changes buffer sizing
+    ! when NetCDF output remapping is active.
+    stats%l_different_output_grid = stats%l_netcdf_output .and. &
+                                    present( grid_remap_method ) .and. &
+                                    present( output_zt ) .and. present( output_zm )
 
-      call stats_grid_init( ncol, zt, zm, output_zt, output_zm, &
+    if ( stats%l_different_output_grid ) then
+      call stats_grid_init( ncol_batch, zt, zm, output_zt, output_zm, &
                             grid_remap_method, stats%grid, grid_err )
+    else
+      call stats_grid_init( ncol_batch, zt, zm, zt, zm, 0, stats%grid, grid_err )
+    end if
 
-      if ( grid_err /= 0 ) then
-        write( fstderr,* ) err_info%err_header_global
-        write( fstderr,* ) "stats init: failed to initialize output grid remap"
-        err_info%err_code = clubb_fatal_error
-        return
-      end if
-
+    if ( grid_err /= 0 ) then
+      write( fstderr,* ) err_info%err_header_global
+      write( fstderr,* ) "stats init: failed to initialize grid metadata"
+      err_info%err_code = clubb_fatal_error
+      return
     end if
 
     ! Initialize runtime data with output_zm/zt if using adaptive gridding.
     if ( stats%l_different_output_grid .and. stats%l_netcdf_output ) then
-      call stats_type_initialize( ncol, defs, ndefs, output_zt, output_zm,  & ! Ins
-                                  stats, ierr,                              & ! Inouts
-                                  rad_zt, rad_zm )                            ! Optional Ins
+      call stats_type_initialize( ncol_batch, defs, ndefs, output_zt, output_zm, & ! Ins
+                                  stats, ierr,                                  & ! Inouts
+                                  rad_zt, rad_zm )                                ! Optional Ins
     else
-      call stats_type_initialize( ncol, defs, ndefs, zt, zm,  & ! Ins
-                                  stats, ierr,                & ! Inouts
-                                  rad_zt, rad_zm )              ! Optional Ins
+      call stats_type_initialize( ncol_batch, defs, ndefs, zt, zm, & ! Ins
+                                  stats, ierr,                     & ! Inouts
+                                  rad_zt, rad_zm )                   ! Optional Ins
     end if
 
     if ( ierr /= 0 ) then
@@ -546,8 +760,11 @@ contains
     stats%l_sample = .false.
     stats%l_last_sample = .false.
     stats%l_netcdf_output = .true.
+    stats%l_open_ended_time_window = .false.
     stats%nvars = 0
-    stats%ncol = 0
+    stats%ncol_batch = 0
+    stats%ncol_total = 0
+    stats%active_batch_offset = 0
     stats%time_index = 0
 
     if ( stats%ncid >= 0 ) then
@@ -564,7 +781,112 @@ contains
 
   end subroutine stats_finalize_api
 
-  subroutine stats_type_initialize( ncol, defs, ndefs, zt, zm, stats, ierr, rad_zt, rad_zm )
+  subroutine stats_reset_api( stats )
+
+    ! Description:
+    !   Reset per-run sampling state while keeping the configured stats registry
+    !   and optional NetCDF file open. This prepares the stats object for a new
+    !   CLUBB advance after set_case_initial_conditions resets the model state.
+    !   If the active batch is already the final output slice, reset the slice
+    !   offset too so a repeated batch sequence starts from the first column.
+    !-------------------------------------------------------------------------------
+
+    ! ---------------------- Input/Output ---------------------
+    type(stats_type), intent(inout) :: &
+      stats       ! Stats runtime context to reset for another run [-]
+
+    ! ------------------------ Locals ------------------------
+    integer :: &
+      i          ! Loop index over tracked stats variables [-]
+
+    ! ------------------------ Begin Code ------------------------
+
+    if ( .not. stats%enabled ) return
+
+    if ( stats%active_batch_offset + stats%ncol_batch >= stats%ncol_total ) &
+      stats%active_batch_offset = 0
+
+    stats%l_sample = .false.
+    stats%l_last_sample = .false.
+    stats%time_index = 0
+
+    stats%lookup%head = 1
+    stats%lookup%cache_len = 0
+    stats%lookup%reject_head = 1
+    stats%lookup%reject_cache_len = 0
+
+    if ( allocated( stats%vars ) ) then
+      do i = 1, size( stats%vars )
+        if ( allocated( stats%vars(i)%buffer ) ) stats%vars(i)%buffer = 0.0_stat_rknd
+        if ( allocated( stats%vars(i)%nsamples ) ) stats%vars(i)%nsamples = 0
+        stats%vars(i)%l_budget = .false.
+        stats%vars(i)%l_in_budget = .false.
+      end do
+    end if
+
+  end subroutine stats_reset_api
+
+  subroutine start_next_stats_batch_api( stats, err_info )
+
+    ! Description:
+    !   Advance the active NetCDF output column slice by one runtime batch.
+    !   Sampling buffers are not resized; they are already sized to ncol_batch.
+    !-------------------------------------------------------------------------------
+
+    type(stats_type), intent(inout) :: &
+      stats       ! Stats runtime context to advance to the next output slice [-]
+
+    type(err_info_type), intent(inout) :: &
+      err_info    ! Shared CLUBB error state container [-]
+
+    ! ------------------------ Locals ------------------------
+    integer :: &
+      new_offset  ! Candidate zero-based output column offset for the next batch [-]
+
+    ! ------------------------ Begin Code ------------------------
+
+    if ( .not. stats%enabled ) return
+
+    new_offset = stats%active_batch_offset + stats%ncol_batch
+
+    if ( new_offset + stats%ncol_batch > stats%ncol_total ) then
+      write( fstderr,* ) "stats start next batch: new batch exceeds total stats columns"
+      err_info%err_code = clubb_fatal_error
+      return
+    end if
+
+    stats%active_batch_offset = new_offset
+
+  end subroutine start_next_stats_batch_api
+
+  subroutine stats_get_source_grid_api( stats, zt, zm )
+
+    ! Description:
+    !   Return copies of the source/runtime thermodynamic and momentum grids
+    !   used by this stats context.
+    !-------------------------------------------------------------------------------
+
+    type(stats_type), intent(in) :: &
+      stats               ! Stats runtime context carrying source grid metadata [-]
+
+    real(kind=core_rknd), allocatable, dimension(:,:), intent(out) :: &
+      zt, &               ! Source thermodynamic heights [m]
+      zm                  ! Source momentum heights [m]
+
+    if ( .not. stats%grid%is_initialized ) then
+      allocate( zt(0,0) )
+      allocate( zm(0,0) )
+      return
+    end if
+
+    allocate( zt( size( stats%grid%gr_source%zt, 1 ), size( stats%grid%gr_source%zt, 2 ) ) )
+    allocate( zm( size( stats%grid%gr_source%zm, 1 ), size( stats%grid%gr_source%zm, 2 ) ) )
+    zt = stats%grid%gr_source%zt
+    zm = stats%grid%gr_source%zm
+
+  end subroutine stats_get_source_grid_api
+
+  subroutine stats_type_initialize( ncol_batch, defs, ndefs, zt, zm, stats, ierr, rad_zt, rad_zm )
 
     ! Description:
     !   Initialize the mutable members of stats_type from namelist
@@ -576,7 +898,7 @@ contains
     ! ------------------------ Inputs ------------------------
 
     integer, intent(in) :: &
-      ncol, &         ! Number of horizontal columns [-]
+      ncol_batch, &   ! Number of runtime horizontal columns in this batch [-]
       ndefs           ! Number of registry variable definitions [-]
 
     type(stats_var), dimension(:), intent(in) :: &
@@ -607,7 +929,7 @@ contains
 
     ! Refresh global runtime sizes for this stats context.
     stats%nvars = ndefs
-    stats%ncol = ncol
+    stats%ncol_batch = ncol_batch
 
     ! Drop stale per-variable buffers before rebuilding variable runtime state.
     if ( allocated( stats%vars ) ) then
@@ -706,8 +1028,8 @@ contains
       end select
 
       ! Allocate accumulation arrays and reset sample state.
-      allocate( stats%vars(i)%buffer(stats%ncol,stats%vars(i)%nz) )
-      allocate( stats%vars(i)%nsamples(stats%ncol,stats%vars(i)%nz) )
+      allocate( stats%vars(i)%buffer(stats%ncol_batch,stats%vars(i)%nz) )
+      allocate( stats%vars(i)%nsamples(stats%ncol_batch,stats%vars(i)%nz) )
       stats%vars(i)%buffer = 0.0_stat_rknd
       stats%vars(i)%nsamples = 0
 
@@ -800,13 +1122,36 @@ contains
       return
     end if
 
-    ! Define time dimension
+    ! Define time dimension and explicit time bounds metadata for averaged records.
     ret_code = nf90_def_dim( stats%ncid, "time", NF90_UNLIMITED, stats%time_dimid )
+    ret_code = nf90_def_dim( stats%ncid, "bnds", 2, stats%bnds_dimid )
     ret_code = nf90_def_var( stats%ncid, "time", NF90_DOUBLE, (/ stats%time_dimid /), stats%time_varid )
     ret_code = nf90_put_att( stats%ncid, stats%time_varid, "units", trim( time_units ) )
+    ret_code = nf90_put_att( stats%ncid, stats%time_varid, "bounds", "time_bnds" )
+    ret_code = nf90_def_var( stats%ncid, "time_bnds", NF90_DOUBLE, (/ stats%bnds_dimid, stats%time_dimid /), &
+                             stats%time_bnds_varid )
+    ret_code = nf90_put_att( stats%ncid, stats%time_bnds_varid, "units", trim( time_units ) )
+    ret_code = nf90_put_att( stats%ncid, stats%time_bnds_varid, "interval_semantics", "(start, end]" )
+    ret_code = nf90_put_att( stats%ncid, NF90_GLOBAL, "model_time_initial", &
+                             real( stats%time_initial, kind = core_rknd ) )
+    ret_code = nf90_put_att( stats%ncid, NF90_GLOBAL, "stats_tstart", &
+                             real( stats%tstart, kind = core_rknd ) )
+    if ( stats%l_open_ended_time_window ) then
+      ret_code = nf90_put_att( stats%ncid, NF90_GLOBAL, "stats_time_window_mode", "open_ended" )
+    else
+      ret_code = nf90_put_att( stats%ncid, NF90_GLOBAL, "stats_time_window_mode", "explicit" )
+      ret_code = nf90_put_att( stats%ncid, NF90_GLOBAL, "stats_tend", &
+                               real( stats%tend, kind = core_rknd ) )
+    end if
+    ret_code = nf90_put_att( stats%ncid, NF90_GLOBAL, "stats_tsamp", &
+                             real( stats%stats_nsamp, kind = core_rknd ) &
+                             * real( stats%dt_main, kind = core_rknd ) )
+    ret_code = nf90_put_att( stats%ncid, NF90_GLOBAL, "stats_tout", &
+                             real( stats%stats_nout, kind = core_rknd ) &
+                             * real( stats%dt_main, kind = core_rknd ) )
 
     ! Define columns dimensions
-    ret_code = nf90_def_dim( stats%ncid, "col", stats%ncol, stats%col_dimid )
+    ret_code = nf90_def_dim( stats%ncid, "col", stats%ncol_total, stats%col_dimid )
     ret_code = nf90_def_var( stats%ncid, "col", NF90_DOUBLE, (/ stats%col_dimid /), stats%col_varid )
     ret_code = nf90_put_att( stats%ncid, stats%col_varid, "units", "index" )
 
@@ -925,7 +1270,7 @@ contains
 
     ! Write our zm, zt, and column dimension values 
     ret_code = nf90_put_var( stats%ncid, stats%col_varid, &
-                             [( real( i, kind=core_rknd ), i=1, stats%ncol )] )
+                             [( real( i, kind=core_rknd ), i=1, stats%ncol_total )] )
     ret_code = nf90_put_var( stats%ncid, stats%zm_varid, zm )
     ret_code = nf90_put_var( stats%ncid, stats%zt_varid, zt )
 
@@ -975,7 +1320,12 @@ contains
       stats               ! Stats runtime context to update sample flags/caches [-]
 
     integer :: &
-      i
+      i, &
+      step_offset
+
+    real(kind=time_precision) :: &
+      sample_time, &
+      expected_time
 
     ! ------------------------ Begin Code ------------------------
 
@@ -985,21 +1335,41 @@ contains
       return
     end if
 
-    ! Sample only on stats_nsamp intervals.
-    stats%l_sample = ( mod( itime, stats%stats_nsamp ) == 0 )
+    stats%l_sample = .false.
+    stats%l_last_sample = .false.
 
-    ! Write only on stats_nout intervals.
-    stats%l_last_sample = ( mod( itime, stats%stats_nout ) == 0 )
+    sample_time = stats%time_initial + real( itime, kind = time_precision ) * stats%dt_main
 
-    ! Start each output window with clean accumulation buffers.
+    if ( sample_time <= stats%tstart .or. &
+         ( .not. stats%l_open_ended_time_window .and. sample_time > stats%tend ) ) then
+      stats%lookup%head = 1
+      stats%lookup%reject_head = 1
+      return
+    end if
+
+    step_offset = nint( real( sample_time - stats%tstart, kind = core_rknd ) / &
+                        real( stats%dt_main, kind = core_rknd ) )
+    expected_time = stats%tstart + real( step_offset, kind = time_precision ) * stats%dt_main
+    if ( abs( sample_time - expected_time ) > epsilon( sample_time ) * 10._time_precision ) then
+      stats%lookup%head = 1
+      stats%lookup%reject_head = 1
+      return
+    end if
+    ! Start each output window with clean accumulation buffers. Sampling is anchored to
+    ! stats%tstart and uses the open/closed interval (tstart, tend].
     if ( stats%stats_nout > 0 ) then
-      if ( mod( itime - 1, stats%stats_nout ) == 0 ) then
+      if ( step_offset == 1 .or. mod( step_offset - 1, stats%stats_nout ) == 0 ) then
         do i = 1, stats%nvars
           stats%vars(i)%buffer = 0.0_stat_rknd
           stats%vars(i)%nsamples = 0
         end do
       end if
     end if
+
+    ! Sample and write only on the configured cadence.  A final partial output
+    ! window is intentionally left unwritten.
+    stats%l_sample = mod( step_offset, stats%stats_nsamp ) == 0
+    stats%l_last_sample = mod( step_offset, stats%stats_nout ) == 0
 
     ! Replay cached expected lookup order from the beginning each timestep.
     stats%lookup%head = 1
@@ -1055,6 +1425,10 @@ contains
     stats%l_last_sample = .false.
 
   end subroutine stats_end_timestep_api
+
+  !----------------------------------------------------------------------------
+  !                         Sampling/Writing helpers
+  !----------------------------------------------------------------------------
 
   !----------------------------------------------------------------------------
   !                         Sampling/Writing subroutines
@@ -1740,15 +2114,22 @@ contains
       ierr                ! Nonzero on write/remap/NetCDF failure [-]
 
     ! ------------------------ Locals ------------------------
-    integer :: ret_code, i, iv, grid_id
+    integer :: ret_code, i, iv, grid_id, col_start, step_offset, window_start_step
 
     real(kind=core_rknd), dimension(1) :: &
       time_buf
+
+    real(kind=core_rknd), dimension(2,1) :: &
+      time_bnds_buf
+
+    real(kind=time_precision) :: &
+      window_start_time
 
     ! ------------------------ Begin Code ------------------------
 
     ierr = 0
     if ( .not. stats%enabled ) return
+    col_start = stats%active_batch_offset + 1
 
     ! Increment time record and write time coordinate.
     stats%time_index = stats%time_index + 1
@@ -1759,6 +2140,15 @@ contains
       time_buf(1) = time_value
       ret_code = nf90_put_var( stats%ncid, stats%time_varid, time_buf, &
                            start=(/ stats%time_index /), count=(/ 1 /) )
+      step_offset = nint( real( real( time_value, kind = time_precision ) - stats%tstart, &
+                                kind = core_rknd ) / real( stats%dt_main, kind = core_rknd ) )
+      window_start_step = ( ( step_offset - 1 ) / stats%stats_nout ) * stats%stats_nout
+      window_start_time = stats%tstart + real( window_start_step, kind = time_precision ) &
+                          * stats%dt_main
+      time_bnds_buf(1,1) = real( window_start_time, kind = core_rknd )
+      time_bnds_buf(2,1) = time_value
+      ret_code = nf90_put_var( stats%ncid, stats%time_bnds_varid, time_bnds_buf, &
+                               start=(/ 1, stats%time_index /), count=(/ 2, 1 /) )
     end if
 
     ! Loop through all variables
@@ -1783,7 +2173,8 @@ contains
         if ( stats%l_netcdf_output ) then
           ! netcdf write
           ret_code = nf90_put_var( stats%ncid, stats%vars(i)%varid, stats%vars(i)%buffer(:,1), &
-                              start=(/ 1, stats%time_index /), count=(/ stats%ncol, 1 /) )
+                              start=(/ col_start, stats%time_index /), &
+                              count=(/ stats%ncol_batch, 1 /) )
         end if
       else
 
@@ -1803,7 +2194,7 @@ contains
             ! netcdf write
             ret_code = nf90_put_var( &
                 stats%ncid, stats%vars(i)%varid, &
-                remap_vals_to_target( stats%ncol, &
+                remap_vals_to_target( stats%ncol_batch, &
                                       stats%grid%gr_source, stats%grid%gr_output, &
                                       stats%vars(i)%nz, &
                                       real( stats%vars(i)%buffer, kind=core_rknd ), &
@@ -1812,8 +2203,8 @@ contains
                                       stats%grid%rho_lin_spline_vals, &
                                       stats%grid%rho_lin_spline_levels, iv, stats%grid%p_sfc, &
                                       stats%grid%grid_remap_method, ( grid_id == GRID_ZT ) ), &
-                start=(/ 1, 1, stats%time_index /), &
-                count=(/ stats%ncol, stats%vars(i)%out_nz, 1 /) )
+                start=(/ col_start, 1, stats%time_index /), &
+                count=(/ stats%ncol_batch, stats%vars(i)%out_nz, 1 /) )
           end if
         else
 
@@ -1821,8 +2212,8 @@ contains
             ! netcdf write
             ret_code = nf90_put_var( stats%ncid, stats%vars(i)%varid, &
                                 stats%vars(i)%buffer, &
-                                start=(/ 1, 1, stats%time_index /), &
-                                count=(/ stats%ncol, stats%vars(i)%out_nz, 1 /) )
+                                start=(/ col_start, 1, stats%time_index /), &
+                                count=(/ stats%ncol_batch, stats%vars(i)%out_nz, 1 /) )
           end if
 
         end if
@@ -1832,7 +2223,7 @@ contains
         write( fstderr,* ) "stats write error for ", trim( stats%vars(i)%name ), &
                          " grid=", trim( stats%vars(i)%grid ), &
                          " nz=", stats%vars(i)%nz, " out_nz=", stats%vars(i)%out_nz, &
-                         " ncol=", stats%ncol, &
+                         " ncol_batch=", stats%ncol_batch, " ncol_total=", stats%ncol_total, &
                          " time_index=", stats%time_index
         write( fstderr,* ) "stats write error: ", trim( nf90_strerror( ret_code ) )
         ierr = ret_code
@@ -1847,7 +2238,7 @@ contains
   !                         Grid Remapping Helpers
   !----------------------------------------------------------------------------
 
-  subroutine stats_grid_init( ncol, zt_src, zm_src, zt_tgt, zm_tgt, &
+  subroutine stats_grid_init( ncol_batch, zt_src, zm_src, zt_tgt, zm_tgt, &
                               grid_remap_method, grid_ctx, ierr )
 
     ! Description:
@@ -1859,7 +2250,7 @@ contains
 
     ! ------------------------ Inputs ------------------------
     integer, intent(in) :: &
-      ncol, &             ! Number of horizontal columns [-]
+      ncol_batch, &       ! Number of runtime horizontal columns in this batch [-]
       grid_remap_method   ! Remapping-method selector enum [-]
 
     real(kind=core_rknd), dimension(:), intent(in) :: &
@@ -1891,19 +2282,24 @@ contains
 
     grid_ctx%grid_remap_method = grid_remap_method
 
+    if ( allocated( grid_ctx%gr_source%zm ) ) deallocate( grid_ctx%gr_source%zm )
+    if ( allocated( grid_ctx%gr_source%zt ) ) deallocate( grid_ctx%gr_source%zt )
+    if ( allocated( grid_ctx%gr_output%zm ) ) deallocate( grid_ctx%gr_output%zm )
+    if ( allocated( grid_ctx%gr_output%zt ) ) deallocate( grid_ctx%gr_output%zt )
+
     grid_ctx%gr_source%nzm = nzm_src
     grid_ctx%gr_source%nzt = nzt_src
-    allocate( grid_ctx%gr_source%zm(ncol,nzm_src) )
-    allocate( grid_ctx%gr_source%zt(ncol,nzt_src) )
-    grid_ctx%gr_source%zm = spread( zm_src, dim=1, ncopies=ncol )
-    grid_ctx%gr_source%zt = spread( zt_src, dim=1, ncopies=ncol )
+    allocate( grid_ctx%gr_source%zm(ncol_batch,nzm_src) )
+    allocate( grid_ctx%gr_source%zt(ncol_batch,nzt_src) )
+    grid_ctx%gr_source%zm = spread( zm_src, dim=1, ncopies=ncol_batch )
+    grid_ctx%gr_source%zt = spread( zt_src, dim=1, ncopies=ncol_batch )
 
     grid_ctx%gr_output%nzm = nzm_tgt
     grid_ctx%gr_output%nzt = nzt_tgt
-    allocate( grid_ctx%gr_output%zm(ncol,nzm_tgt) )
-    allocate( grid_ctx%gr_output%zt(ncol,nzt_tgt) )
-    grid_ctx%gr_output%zm = spread( zm_tgt, dim=1, ncopies=ncol )
-    grid_ctx%gr_output%zt = spread( zt_tgt, dim=1, ncopies=ncol )
+    allocate( grid_ctx%gr_output%zm(ncol_batch,nzm_tgt) )
+    allocate( grid_ctx%gr_output%zt(ncol_batch,nzt_tgt) )
+    grid_ctx%gr_output%zm = spread( zm_tgt, dim=1, ncopies=ncol_batch )
+    grid_ctx%gr_output%zt = spread( zt_tgt, dim=1, ncopies=ncol_batch )
 
     grid_ctx%is_initialized = .true.
 
@@ -1941,11 +2337,11 @@ contains
     if ( .not. stats%l_different_output_grid ) return
     if ( .not. stats%grid%is_initialized ) return
 
-    if ( size( zt_src, 1 ) /= stats%ncol ) return
-    if ( size( zm_src, 1 ) /= stats%ncol ) return
-    if ( size( rho_vals, 1 ) /= stats%ncol ) return
-    if ( size( rho_levels, 1 ) /= stats%ncol ) return
-    if ( size( p_sfc ) /= stats%ncol ) return
+    if ( size( zt_src, 1 ) /= stats%ncol_batch ) return
+    if ( size( zm_src, 1 ) /= stats%ncol_batch ) return
+    if ( size( rho_vals, 1 ) /= stats%ncol_batch ) return
+    if ( size( rho_levels, 1 ) /= stats%ncol_batch ) return
+    if ( size( p_sfc ) /= stats%ncol_batch ) return
 
     nzt = size( zt_src, 2 )
     nzm = size( zm_src, 2 )
@@ -1959,8 +2355,8 @@ contains
       if ( allocated( stats%grid%gr_source%zm ) ) deallocate( stats%grid%gr_source%zm )
       stats%grid%gr_source%nzt = nzt
       stats%grid%gr_source%nzm = nzm
-      allocate( stats%grid%gr_source%zt(stats%ncol,nzt) )
-      allocate( stats%grid%gr_source%zm(stats%ncol,nzm) )
+      allocate( stats%grid%gr_source%zt(stats%ncol_batch,nzt) )
+      allocate( stats%grid%gr_source%zm(stats%ncol_batch,nzm) )
     end if
 
     if ( .not. allocated( stats%grid%rho_lin_spline_vals ) .or. &
@@ -1969,12 +2365,12 @@ contains
         deallocate( stats%grid%rho_lin_spline_vals )
       if ( allocated( stats%grid%rho_lin_spline_levels ) ) &
         deallocate( stats%grid%rho_lin_spline_levels )
-      allocate( stats%grid%rho_lin_spline_vals(stats%ncol,nrho) )
-      allocate( stats%grid%rho_lin_spline_levels(stats%ncol,nrho) )
+      allocate( stats%grid%rho_lin_spline_vals(stats%ncol_batch,nrho) )
+      allocate( stats%grid%rho_lin_spline_levels(stats%ncol_batch,nrho) )
     end if
 
     if ( .not. allocated( stats%grid%p_sfc ) ) then
-      allocate( stats%grid%p_sfc(stats%ncol) )
+      allocate( stats%grid%p_sfc(stats%ncol_batch) )
     end if
 
     stats%grid%gr_source%zt = zt_src
@@ -2138,7 +2534,7 @@ contains
     if ( .not. stats%l_last_sample ) return
     if ( stats%lh_2d%n_nl_vars <= 0 ) return
 
-    if ( size( samples, 1 ) /= stats%ncol ) return
+    if ( size( samples, 1 ) /= stats%ncol_batch ) return
     if ( size( samples, 2 ) /= stats%lh_2d%num_samples ) return
     if ( size( samples, 3 ) /= stats%lh_2d%nzt ) return
     if ( size( samples, 4 ) /= stats%lh_2d%n_nl_vars ) return
@@ -2148,7 +2544,8 @@ contains
 
       ret_code = nf90_put_var( stats%ncid, stats%lh_2d%nl_varids(v), samples(:,:,:,v:v), &
                            start = (/ 1, 1, 1, t /), &
-                           count = (/ stats%ncol, stats%lh_2d%num_samples, stats%lh_2d%nzt, 1 /) )
+                           count = (/ stats%ncol_batch, stats%lh_2d%num_samples, &
+                                      stats%lh_2d%nzt, 1 /) )
 
       if ( ret_code /= NF90_NOERR ) then
         write( fstderr,* ) err_info%err_header_global
@@ -2199,13 +2596,13 @@ contains
     if ( stats%lh_2d%n_u_vars <= 0 ) return
 
     ! Sanity check for sizes
-    if ( size( uniform_vals, 1 ) /= stats%ncol ) return
+    if ( size( uniform_vals, 1 ) /= stats%ncol_batch ) return
     if ( size( uniform_vals, 2 ) /= stats%lh_2d%num_samples ) return
     if ( size( uniform_vals, 3 ) /= stats%lh_2d%nzt ) return
-    if ( size( mixture_comp, 1 ) /= stats%ncol ) return
+    if ( size( mixture_comp, 1 ) /= stats%ncol_batch ) return
     if ( size( mixture_comp, 2 ) /= stats%lh_2d%num_samples ) return
     if ( size( mixture_comp, 3 ) /= stats%lh_2d%nzt ) return
-    if ( size( sample_weights, 1 ) /= stats%ncol ) return
+    if ( size( sample_weights, 1 ) /= stats%ncol_batch ) return
     if ( size( sample_weights, 2 ) /= stats%lh_2d%num_samples ) return
     if ( size( sample_weights, 3 ) /= stats%lh_2d%nzt ) return
 
@@ -2218,7 +2615,8 @@ contains
       ! Write
       ret_code = nf90_put_var( stats%ncid, stats%lh_2d%u_varids(v), uniform_vals(:,:,:,v:v), &
                            start = (/ 1, 1, 1, t /), &
-                           count = (/ stats%ncol, stats%lh_2d%num_samples, stats%lh_2d%nzt, 1 /) )
+                           count = (/ stats%ncol_batch, stats%lh_2d%num_samples, &
+                                      stats%lh_2d%nzt, 1 /) )
       
       if ( ret_code /= NF90_NOERR ) then
         write( fstderr,* ) err_info%err_header_global
@@ -2233,7 +2631,8 @@ contains
     ret_code = nf90_put_var( stats%ncid, stats%lh_2d%u_varids(dp2+1), &
                          spread( real( mixture_comp, kind=core_rknd ), dim = 4, ncopies = 1 ), &
                          start = (/ 1, 1, 1, t /), &
-                         count = (/ stats%ncol, stats%lh_2d%num_samples, stats%lh_2d%nzt, 1 /) )
+                         count = (/ stats%ncol_batch, stats%lh_2d%num_samples, &
+                                    stats%lh_2d%nzt, 1 /) )
 
     if ( ret_code /= NF90_NOERR ) then
       write( fstderr,* ) err_info%err_header_global
@@ -2246,7 +2645,8 @@ contains
     ret_code = nf90_put_var( stats%ncid, stats%lh_2d%u_varids(dp2+2), &
                          spread( sample_weights, dim = 4, ncopies = 1 ), &
                          start = (/ 1, 1, 1, t /), &
-                         count = (/ stats%ncol, stats%lh_2d%num_samples, stats%lh_2d%nzt, 1 /) )
+                         count = (/ stats%ncol_batch, stats%lh_2d%num_samples, &
+                                    stats%lh_2d%nzt, 1 /) )
 
     if ( ret_code /= NF90_NOERR ) then
       write( fstderr,* ) err_info%err_header_global
@@ -2294,7 +2694,7 @@ contains
     var_on_stats_list = .false.
 
   end function var_on_stats_list
-  
+
   integer function stats_get_id(stats, name) result(id)
 
     ! Description:

@@ -131,6 +131,30 @@ Or the following command does the same:
 Run './compile.py -help' to view the different options you can use when compiling.
 
 -------------------------------------------------------
+- STEP 2.5: USING THE DASH APP
+-------------------------------------------------------
+The Dash app provides a browser interface for common CLUBB workflows.  It can
+launch specific case runs from the run tab and plot CLUBB NetCDF output from
+the plots tab.  Compile CLUBB first if you want to run cases through the app;
+plotting requires running first or using existing output files.
+
+To install the Python dependencies, run this from the CLUBB directory:
+`
+python -m pip install -r dash_app/requirements.txt
+`
+
+Then start the app with:
+`
+python dash_app/app.py
+`
+
+The app opens in a browser on port 8050, or the next available port.  Use
+`python dash_app/app.py --help` to see host, port, and debug options.
+
+For more detail on app workflows and LES benchmark overlays, see
+`dash_app/README.md`.
+
+-------------------------------------------------------
 - STEP 3: RUNNING A BENCHMARK TEST CASE
 -------------------------------------------------------
 Once CLUBB is compiled, the various benchmark test cases can be run.

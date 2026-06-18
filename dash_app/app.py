@@ -5,17 +5,25 @@ import logging
 import os
 import pkgutil
 import socket
+import sys
 import threading
 import webbrowser
 
 from dash import Dash, dcc, html, Input, Output, State
 
+DASH_APP_ROOT = os.path.dirname(os.path.abspath(__file__))
+REPO_ROOT = os.path.abspath(os.path.join(DASH_APP_ROOT, ".."))
+for import_root in (REPO_ROOT, DASH_APP_ROOT):
+    if import_root not in sys.path:
+        sys.path.insert(0, import_root)
+
 from run_tab.tab import build_tab as build_run_tab
+from tune_tab.tab import build_tab as build_tune_tab
 from plot_tab.tab import build_tab as build_plots_tab
 
 
 if not hasattr(pkgutil, "find_loader"):
-    # Dash 3.2.0 still calls pkgutil.find_loader in debug mode; Python 3.14 removed it.
+    # Dash 3.2.0 still calls pkgutil.find_loader in debug mode; Python 3.14 removed it
     def _find_loader(name):
         spec = importlib.util.find_spec(name)
         return None if spec is None else spec.loader
@@ -24,6 +32,8 @@ if not hasattr(pkgutil, "find_loader"):
 
 
 DEFAULT_PORT = 8050
+SELECTED_PORT_ENV = "CLUBB_DASH_SELECTED_PORT"
+BROWSER_OPENED_ENV = "CLUBB_DASH_BROWSER_OPENED"
 
 
 def _port_is_available(host: str, port: int) -> bool:
@@ -58,10 +68,35 @@ def _browser_host(host: str) -> str:
     return host
 
 
+def _app_title() -> str:
+    """Return the browser title for the current CLUBB checkout."""
+    return os.path.basename(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
+
+
 def _should_open_browser(debug: bool) -> bool:
+    if os.environ.get(BROWSER_OPENED_ENV) == "1":
+        return False
     if not debug:
         return True
-    return os.environ.get("WERKZEUG_RUN_MAIN") == "true"
+    return os.environ.get("WERKZEUG_RUN_MAIN") != "true"
+
+
+def _resolve_port(host: str, requested_port: int | None) -> tuple[int, bool, bool]:
+    """Resolve the Dash port once and preserve it across Werkzeug reloads."""
+    if requested_port is not None:
+        os.environ[SELECTED_PORT_ENV] = str(requested_port)
+        return requested_port, False, False
+
+    inherited_port = os.environ.get(SELECTED_PORT_ENV)
+    if inherited_port:
+        try:
+            return int(inherited_port), True, True
+        except ValueError:
+            pass
+
+    port = _find_available_port(host, DEFAULT_PORT)
+    os.environ[SELECTED_PORT_ENV] = str(port)
+    return port, True, False
 
 
 def _open_browser(url: str) -> None:
@@ -91,13 +126,13 @@ def main():
         help="Enable threaded request handling. Disabled by default because netCDF/HDF5 access is more stable without it.",
     )
     args = parser.parse_args()
-    auto_port = args.port is None
-    port = args.port if args.port is not None else _find_available_port(args.host, DEFAULT_PORT)
+    port, auto_port, inherited_port = _resolve_port(args.host, args.port)
 
-    app = Dash(__name__, suppress_callback_exceptions=True)
+    app = Dash(__name__, suppress_callback_exceptions=True, eager_loading=True, title=_app_title())
 
     tabs = [
         build_run_tab(app),
+        build_tune_tab(app),
         build_plots_tab(app),
     ]
 
@@ -139,9 +174,10 @@ def main():
 
     logging.getLogger("werkzeug").setLevel(logging.WARNING)
 
-    if auto_port and port != DEFAULT_PORT:
+    if auto_port and not inherited_port and port != DEFAULT_PORT:
         print(f"Port {DEFAULT_PORT} is in use; starting Dash app on port {port} instead.")
     if _should_open_browser(args.debug):
+        os.environ[BROWSER_OPENED_ENV] = "1"
         _open_browser(f"http://{_browser_host(args.host)}:{port}")
 
     app.run(

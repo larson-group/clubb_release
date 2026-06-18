@@ -1,5 +1,7 @@
 import glob
 import os
+import re
+import sys
 from collections import OrderedDict
 from dataclasses import dataclass
 
@@ -12,6 +14,11 @@ from ..case_definitions import load_case_definitions
 from .budget_groups import BUDGET_GROUPS
 
 REPO_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", ".."))
+if REPO_ROOT not in sys.path:
+    sys.path.insert(0, REPO_ROOT)
+
+from tuner.case_defaults import read_case_defaults  # noqa: E402
+
 OUTPUT_DIR = os.path.join(REPO_ROOT, "output")
 OUTPUT_FILE_SUFFIXES = ["_stats.nc"]
 
@@ -230,10 +237,20 @@ def _dataset_metadata(ds, path):
         time_len = len(ds.dimensions[time_dim]) if time_dim else 1
         time_values = None
         time_units = None
+        time_bounds_values = None
+        time_interval_semantics = None
+        model_time_initial = None
         if time_dim and time_dim in ds.variables:
             time_var = ds.variables[time_dim]
             time_values = _freeze_cached_value(as_array(time_var[:]))
             time_units = getattr(time_var, "units", None)
+            bounds_name = getattr(time_var, "bounds", None)
+            if bounds_name and bounds_name in ds.variables:
+                bounds_var = ds.variables[bounds_name]
+                time_bounds_values = _freeze_cached_value(as_array(bounds_var[:]))
+                time_interval_semantics = getattr(bounds_var, "interval_semantics", None)
+        if "model_time_initial" in ds.ncattrs():
+            model_time_initial = float(ds.getncattr("model_time_initial"))
         columns_dim = find_dim(dim_names, COL_DIM_NAMES)
         columns_len = len(ds.dimensions[columns_dim]) if columns_dim else 1
         return {
@@ -244,6 +261,9 @@ def _dataset_metadata(ds, path):
             "time_len": time_len,
             "time_values": time_values,
             "time_units": time_units,
+            "time_bounds_values": time_bounds_values,
+            "time_interval_semantics": time_interval_semantics,
+            "model_time_initial": model_time_initial,
             "columns_dim": columns_dim,
             "columns_len": columns_len,
             "dim_units": dim_units,
@@ -328,6 +348,9 @@ class DatasetInfo:
         self.time_len = meta["time_len"]
         self.time_values = meta["time_values"]
         self.time_units = meta["time_units"]
+        self.time_bounds_values = meta["time_bounds_values"]
+        self.time_interval_semantics = meta["time_interval_semantics"]
+        self.model_time_initial = meta["model_time_initial"]
         self.columns_dim = meta["columns_dim"]
         self.columns_len = meta["columns_len"]
         self.dim_units = meta["dim_units"]
@@ -452,24 +475,73 @@ def time_values_seconds(ds_info):
     return _cached_extract(key, lambda: np.asarray(ds_info.time_values * time_units_factor(ds_info.time_units), dtype=float))
 
 
+def model_time_initial_seconds(ds_info):
+    if ds_info is None:
+        return None
+    if ds_info.model_time_initial is not None:
+        return float(ds_info.model_time_initial)
+    bounds = time_bounds_seconds(ds_info)
+    if bounds is not None and len(bounds) > 0:
+        return float(np.asarray(bounds, dtype=float)[0, 0])
+    return 0.0
+
+
+def time_values_elapsed_seconds(ds_info):
+    time_seconds = time_values_seconds(ds_info)
+    if time_seconds is None:
+        return None
+    initial = model_time_initial_seconds(ds_info)
+    if initial is None:
+        initial = 0.0
+    return np.asarray(time_seconds, dtype=float) - float(initial)
+
+
 def time_values_pyplotgen_minutes(ds_info):
     if ds_info is None or ds_info.time_values is None:
         return None
     key = ("time_pyplotgen_minutes", _file_signature(ds_info.path), ds_info.time_dim, ds_info.time_units)
     def _build():
-        time_values = np.asarray(ds_info.time_values, dtype=float)
-        units = (ds_info.time_units or "").lower()
-        if "day" in units:
-            time_values = time_values * 24.0 * 60.0
-        elif "hour" in units:
-            time_values = time_values * 60.0
-        elif "sec" in units:
-            time_values = time_values / 60.0
-        if len(time_values) <= 1:
-            return np.array([1.0], dtype=float) if len(time_values) == 1 else np.array([], dtype=float)
-        delta_t = float(time_values[1] - time_values[0])
-        return np.array([delta_t * (idx + 1) for idx in range(len(time_values))], dtype=float)
+        time_seconds = time_values_elapsed_seconds(ds_info)
+        if time_seconds is None:
+            return np.array([], dtype=float)
+        return np.asarray(time_seconds, dtype=float) / 60.0
     return _cached_extract(key, _build)
+
+
+def time_bounds_seconds(ds_info):
+    if ds_info is None or ds_info.time_bounds_values is None:
+        return None
+    key = (
+        "time_bounds_seconds",
+        _file_signature(ds_info.path),
+        ds_info.time_dim,
+        ds_info.time_units,
+        ds_info.time_interval_semantics,
+    )
+
+    def _build():
+        bounds = np.asarray(ds_info.time_bounds_values, dtype=float)
+        if bounds.size == 0:
+            return np.empty((0, 2), dtype=float)
+        if bounds.ndim != 2:
+            return None
+        if bounds.shape[0] == 2 and bounds.shape[1] != 2:
+            bounds = np.moveaxis(bounds, 0, 1)
+        if bounds.shape[1] != 2:
+            return None
+        return np.asarray(bounds * time_units_factor(ds_info.time_units), dtype=float)
+
+    return _cached_extract(key, _build)
+
+
+def time_bounds_elapsed_seconds(ds_info):
+    bounds = time_bounds_seconds(ds_info)
+    if bounds is None:
+        return None
+    initial = model_time_initial_seconds(ds_info)
+    if initial is None:
+        initial = 0.0
+    return np.asarray(bounds, dtype=float) - float(initial)
 
 
 def slider_value_to_index(value, max_len):
@@ -498,6 +570,154 @@ def serialize_time_seconds(ds_info):
     return [float(value) for value in np.asarray(time_sec, dtype=float).tolist()]
 
 
+def serialize_time_elapsed_seconds(ds_info):
+    """Return the primary time axis as elapsed seconds from model start."""
+    time_sec = time_values_elapsed_seconds(ds_info)
+    if time_sec is None:
+        return []
+    return [float(value) for value in np.asarray(time_sec, dtype=float).tolist()]
+
+
+def serialize_time_bounds_seconds(ds_info):
+    """Return time bounds as a JSON-safe list of [start, end] pairs."""
+    bounds = time_bounds_seconds(ds_info)
+    if bounds is None:
+        return []
+    return [[float(row[0]), float(row[1])] for row in np.asarray(bounds, dtype=float).tolist()]
+
+
+def serialize_time_bounds_elapsed_seconds(ds_info):
+    """Return time bounds as elapsed [start, end] seconds from model start."""
+    bounds = time_bounds_elapsed_seconds(ds_info)
+    if bounds is None:
+        return []
+    return [[float(row[0]), float(row[1])] for row in np.asarray(bounds, dtype=float).tolist()]
+
+
+def selected_time_indices(case_data, time_range=None, time_point=None, time_mode=None):
+    """Return inclusive zero-based frame indices for the active time controls."""
+    case_data = case_data or {}
+    time_len = max(int(case_data.get("time_len") or 1), 1)
+    if case_data.get("time_controls_physical"):
+        start_seconds = float(time_point if time_point is not None else case_data.get("default_time_start_seconds", 0.0))
+        min_average = float(case_data.get("time_slider_duration_min_minutes") or 0.0)
+        average_minutes = max(min_average, float(time_range if time_range is not None else case_data.get("default_time_duration_minutes", min_average or 1.0)))
+        end_seconds = start_seconds + average_minutes * 60.0
+        time_bounds = np.asarray(case_data.get("time_bounds_seconds") or [], dtype=float)
+        if time_bounds.ndim == 2 and time_bounds.shape[1] == 2 and len(time_bounds) > 0:
+            end_values = time_bounds[:, 1]
+            matching = np.where((end_values > start_seconds + 1.0e-6) & (end_values <= end_seconds + 1.0e-6))[0]
+        else:
+            time_values = np.asarray(case_data.get("time_seconds") or [], dtype=float)
+            matching = np.where((time_values > start_seconds + 1.0e-6) & (time_values <= end_seconds + 1.0e-6))[0]
+        if matching.size > 0:
+            return [int(matching[0]), int(matching[-1])]
+        time_values = np.asarray(case_data.get("time_seconds") or [], dtype=float)
+        if time_values.size > 0:
+            start_idx = int(np.argmin(np.abs(time_values - start_seconds)))
+            end_idx = int(np.argmin(np.abs(time_values - end_seconds)))
+            if end_idx < start_idx:
+                start_idx, end_idx = end_idx, start_idx
+            return [start_idx, end_idx]
+        return [0, max(time_len - 1, 0)]
+    if time_mode == "point":
+        idx = slider_value_to_index(time_point, time_len)
+        return [idx, idx]
+    if isinstance(time_range, (list, tuple)) and len(time_range) == 2:
+        return slider_range_to_indices(time_range, time_len)
+    default_start = case_data.get("default_time_start", 1)
+    default_duration = case_data.get("default_time_duration", 1)
+    start_idx = slider_value_to_index(time_point or default_start, time_len)
+    duration = max(1, int(time_range or default_duration or 1))
+    end_idx = min(time_len - 1, start_idx + duration - 1)
+    return [start_idx, end_idx]
+
+
+def _selection_from_indices(start_idx, end_idx, slider_max):
+    slider_max = max(int(slider_max or 1), 1)
+    start_idx = max(0, min(int(start_idx), slider_max - 1))
+    end_idx = max(0, min(int(end_idx), slider_max - 1))
+    if end_idx < start_idx:
+        start_idx, end_idx = end_idx, start_idx
+    return {
+        "start": start_idx + 1,
+        "duration": max(1, end_idx - start_idx + 1),
+        "range": [start_idx + 1, end_idx + 1],
+    }
+
+
+def _seconds_window_selection(start_seconds, end_seconds):
+    start_seconds = float(start_seconds)
+    end_seconds = float(end_seconds)
+    if end_seconds < start_seconds:
+        start_seconds, end_seconds = end_seconds, start_seconds
+    duration_minutes = max(0.0, (end_seconds - start_seconds) / 60.0)
+    return {
+        "start_seconds": start_seconds,
+        "duration_minutes": duration_minutes,
+    }
+
+
+def stats_output_interval_seconds(time_source):
+    """Infer the nominal stats output interval from the primary time coordinate."""
+    bounds = time_bounds_seconds(time_source)
+    if bounds is not None and len(bounds) > 0:
+        durations = np.diff(np.asarray(bounds, dtype=float), axis=1).reshape(-1)
+        durations = durations[np.isfinite(durations) & (durations > 0.0)]
+        if durations.size > 0:
+            return float(np.median(durations))
+    times = time_values_seconds(time_source)
+    if times is not None and len(times) > 1:
+        diffs = np.diff(np.asarray(times, dtype=float))
+        diffs = diffs[np.isfinite(diffs) & (diffs > 0.0)]
+        if diffs.size > 0:
+            return float(np.median(diffs))
+    return 60.0
+
+
+def _selection_to_physical(selection, time_source):
+    bounds = time_bounds_seconds(time_source)
+    if bounds is not None and len(bounds) > 0:
+        bounds_arr = np.asarray(bounds, dtype=float)
+        start_idx = max(0, min(int(selection["start"]) - 1, len(bounds_arr) - 1))
+        end_idx = max(0, min(start_idx + int(selection["duration"]) - 1, len(bounds_arr) - 1))
+        return _seconds_window_selection(float(np.min(bounds_arr[start_idx : end_idx + 1, 0])), float(np.max(bounds_arr[start_idx : end_idx + 1, 1])))
+    times = time_values_seconds(time_source)
+    if times is not None and len(times) > 0:
+        times_arr = np.asarray(times, dtype=float)
+        start_idx = max(0, min(int(selection["start"]) - 1, len(times_arr) - 1))
+        end_idx = max(0, min(start_idx + int(selection["duration"]) - 1, len(times_arr) - 1))
+        return _seconds_window_selection(float(times_arr[start_idx]), float(times_arr[end_idx]))
+    return _seconds_window_selection(0.0, 60.0)
+
+
+def _time_window_to_slider_selection(ds_info, start_seconds, end_seconds, slider_max, lower_open=False):
+    slider_max = max(int(slider_max or 1), 1)
+    if start_seconds is None or end_seconds is None:
+        return _selection_from_indices(0, slider_max - 1, slider_max)
+    low = min(float(start_seconds), float(end_seconds))
+    high = max(float(start_seconds), float(end_seconds))
+    bounds = time_bounds_elapsed_seconds(ds_info)
+    if bounds is not None and len(bounds) > 0:
+        end_values = np.asarray(bounds, dtype=float)[:, 1]
+    else:
+        end_values = time_values_elapsed_seconds(ds_info)
+    if end_values is None or len(end_values) == 0:
+        return _selection_from_indices(0, slider_max - 1, slider_max)
+    end_values = np.asarray(end_values, dtype=float)
+    if lower_open:
+        matching = np.where((end_values > low + 1.0e-6) & (end_values <= high + 1.0e-6))[0]
+    else:
+        matching = np.where((end_values >= low - 1.0e-6) & (end_values <= high + 1.0e-6))[0]
+    if matching.size == 0:
+        start_idx = int(np.argmin(np.abs(end_values - low)))
+        end_idx = int(np.argmin(np.abs(end_values - high)))
+    else:
+        start_idx = int(matching[0])
+        end_idx = int(matching[-1])
+    return _selection_from_indices(start_idx, end_idx, slider_max)
+
+
 def minutes_to_slider_range(ds_info, start_min, end_min, slider_max):
     if slider_max <= 0:
         return [1, 1]
@@ -517,9 +737,164 @@ def minutes_to_slider_range(ds_info, start_min, end_min, slider_max):
     return [start_idx, end_idx]
 
 
-def time_label_for_range(time_seconds, slider_range):
+def minutes_to_slider_selection(ds_info, start_min, end_min, slider_max):
+    if start_min is None or end_min is None:
+        return _selection_from_indices(0, max(int(slider_max or 1), 1) - 1, slider_max)
+    return _time_window_to_slider_selection(
+        ds_info,
+        float(start_min) * 60.0,
+        float(end_min) * 60.0,
+        slider_max,
+        lower_open=False,
+    )
+
+
+def _read_loss_window_seconds(case_name):
+    if not case_name:
+        return None
+    try:
+        defaults = read_case_defaults(case_name)
+    except RuntimeError:
+        return None
+    start_seconds, end_seconds = defaults["time_average_range"]
+    if end_seconds <= start_seconds:
+        return None
+    return [start_seconds, end_seconds]
+
+
+def loss_window_to_slider_selection(ds_info, case_name, slider_max):
+    absolute_window = _read_loss_window_seconds(case_name)
+    if absolute_window is None:
+        return None, None
+    initial = model_time_initial_seconds(ds_info)
+    if initial is None:
+        initial = 0.0
+    elapsed_window = [float(absolute_window[0]) - float(initial), float(absolute_window[1]) - float(initial)]
+    return absolute_window, {
+        **_time_window_to_slider_selection(
+            ds_info,
+            elapsed_window[0],
+            elapsed_window[1],
+            slider_max,
+            lower_open=True,
+        ),
+        "elapsed_seconds": elapsed_window,
+    }
+
+
+def time_slider_physical_defaults(time_source, default_selection, loss_absolute_window=None, pyplotgen_elapsed_window=None):
+    bounds = time_bounds_seconds(time_source)
+    times = time_values_seconds(time_source)
+    output_interval = stats_output_interval_seconds(time_source)
+    if bounds is not None and len(bounds) > 0:
+        bounds_arr = np.asarray(bounds, dtype=float)
+        start_min = float(np.min(bounds_arr[:, 0]))
+        start_max = float(np.max(bounds_arr[:, 0]))
+        final_end = float(np.max(bounds_arr[:, 1]))
+        if len(bounds_arr) > 1:
+            step = float(np.median(np.diff(bounds_arr[:, 0])))
+        else:
+            step = max(final_end - start_min, 1.0)
+    elif times is not None and len(times) > 0:
+        times_arr = np.asarray(times, dtype=float)
+        start_min = float(np.min(times_arr))
+        start_max = float(np.max(times_arr))
+        final_end = start_max
+        if len(times_arr) > 1:
+            step = float(np.median(np.diff(times_arr)))
+        else:
+            step = 1.0
+    else:
+        start_min = 0.0
+        start_max = 0.0
+        final_end = 60.0
+        step = 1.0
+    default_physical = _selection_to_physical(default_selection, time_source)
+    if loss_absolute_window:
+        loss_physical = _seconds_window_selection(loss_absolute_window[0], loss_absolute_window[1])
+    else:
+        loss_physical = None
+    if pyplotgen_elapsed_window:
+        initial = model_time_initial_seconds(time_source) or 0.0
+        pyplotgen_physical = _seconds_window_selection(
+            initial + float(pyplotgen_elapsed_window[0]),
+            initial + float(pyplotgen_elapsed_window[1]),
+        )
+    else:
+        pyplotgen_physical = None
+    return {
+        "start_min": start_min,
+        "start_max": start_max,
+        "step_seconds": max(float(step), 1.0),
+        "final_end_seconds": final_end,
+        "output_interval_seconds": max(float(output_interval), 1.0e-6),
+        "duration_min_minutes": max(float(output_interval) / 60.0, 1.0e-6),
+        "duration_step_minutes": max(float(output_interval) / 60.0, 1.0e-6),
+        "duration_max_minutes": max(float(output_interval) / 60.0, (final_end - start_min) / 60.0),
+        "default": default_physical,
+        "loss": loss_physical,
+        "pyplotgen": pyplotgen_physical,
+    }
+
+
+def _format_time_window_label(start_sec, end_sec, interval_semantics=None):
+    start_min = start_sec / 60.0
+    end_min = end_sec / 60.0
+    if interval_semantics:
+        return (
+            f"Time: {interval_semantics} = {start_sec:g},{end_sec:g}s "
+            f"({start_min:g},{end_min:g}m)"
+        )
+    return f"Time: {start_sec:g}-{end_sec:g}s ({start_min:g}-{end_min:g}m)"
+
+
+def physical_time_window_label(case_data, start_seconds=None, average_minutes=None):
+    case_data = case_data or {}
+    start_seconds = float(start_seconds if start_seconds is not None else case_data.get("default_time_start_seconds", 0.0))
+    min_average = float(case_data.get("time_slider_duration_min_minutes") or 0.0)
+    average_minutes = max(min_average, float(average_minutes if average_minutes is not None else case_data.get("default_time_duration_minutes", min_average or 1.0)))
+    end_seconds = start_seconds + average_minutes * 60.0
+    initial = case_data.get("model_time_initial_seconds")
+    elapsed_start = start_seconds - float(initial if initial is not None else start_seconds)
+    elapsed_end = end_seconds - float(initial if initial is not None else start_seconds)
+    return f"Time: ({start_seconds:g}s,{end_seconds:g}s] / ({elapsed_start / 60.0:g},{elapsed_end / 60.0:g}m]"
+
+
+def start_time_label(start_seconds=None):
+    if start_seconds is None:
+        return "Start time"
+    return f"Start time: {float(start_seconds):g} (seconds)"
+
+
+def average_length_label(average_minutes=None):
+    if average_minutes is None:
+        return "Average Length"
+    return f"Average Length: {float(average_minutes):g} (minutes)"
+
+
+def time_start_max_for_duration(case_data, average_minutes=None):
+    """Return the last start time that leaves room for the selected averaging window."""
+    case_data = case_data or {}
+    start_min = float(case_data.get("time_slider_start_min_seconds") or 0.0)
+    default_max = float(case_data.get("time_slider_start_max_seconds") or start_min)
+    final_end = case_data.get("time_slider_final_end_seconds")
+    if final_end is None:
+        return default_max
+    min_average = float(case_data.get("time_slider_duration_min_minutes") or 0.0)
+    duration_minutes = max(min_average, float(average_minutes if average_minutes is not None else case_data.get("default_time_duration_minutes", min_average or 1.0)))
+    return max(start_min, min(default_max, float(final_end) - duration_minutes * 60.0))
+
+
+def time_label_for_range(time_seconds, time_bounds, slider_range, interval_semantics=None):
     if time_seconds is None:
         return "Time range"
+    if time_bounds:
+        bounds = np.asarray(time_bounds, dtype=float)
+        if bounds.ndim == 2 and bounds.shape[1] == 2 and len(bounds) > 0:
+            start_idx, end_idx = slider_range_to_indices(slider_range, len(bounds))
+            start_sec = float(np.min(bounds[start_idx : end_idx + 1, 0]))
+            end_sec = float(np.max(bounds[start_idx : end_idx + 1, 1]))
+            return _format_time_window_label(start_sec, end_sec, interval_semantics)
     time_sec = np.asarray(time_seconds, dtype=float)
     if len(time_sec) == 0:
         start_idx, end_idx = slider_range_to_indices(slider_range, 0)
@@ -532,9 +907,18 @@ def time_label_for_range(time_seconds, slider_range):
     return f"Time: {start_sec:g}-{end_sec:g}s ({start_min:g}-{end_min:g}m)"
 
 
-def time_label_for_point(time_seconds, slider_value):
+def time_label_for_point(time_seconds, time_bounds, slider_value, interval_semantics=None):
     if time_seconds is None:
         return "Time point"
+    if time_bounds:
+        bounds = np.asarray(time_bounds, dtype=float)
+        if bounds.ndim == 2 and bounds.shape[1] == 2 and len(bounds) > 0:
+            idx = slider_value_to_index(slider_value, len(bounds))
+            return _format_time_window_label(
+                float(bounds[idx, 0]),
+                float(bounds[idx, 1]),
+                interval_semantics,
+            )
     time_sec = np.asarray(time_seconds, dtype=float)
     if len(time_sec) == 0:
         idx = slider_value_to_index(slider_value, 1)
@@ -543,6 +927,54 @@ def time_label_for_point(time_seconds, slider_value):
     time_sec_value = float(time_sec[idx])
     time_min_value = time_sec_value / 60.0
     return f"Time: {time_sec_value:g}s ({time_min_value:g}m)"
+
+
+def time_label_for_selection(time_seconds, time_bounds, start_value, duration_value, interval_semantics=None):
+    """Format the active start-frame plus averaging-length selection."""
+    duration = max(1, int(duration_value or 1))
+    time_len = len(time_bounds or time_seconds or [None])
+    start_idx, end_idx = selected_time_indices(
+        {"time_len": time_len, "default_time_start": 1, "default_time_duration": duration},
+        duration,
+        start_value,
+    )
+    if time_bounds:
+        bounds = np.asarray(time_bounds, dtype=float)
+        if bounds.ndim == 2 and bounds.shape[1] == 2 and len(bounds) > 0:
+            start_sec = float(np.min(bounds[start_idx : end_idx + 1, 0]))
+            end_sec = float(np.max(bounds[start_idx : end_idx + 1, 1]))
+            return _format_time_window_label(start_sec, end_sec, interval_semantics)
+    if time_seconds:
+        time_sec = np.asarray(time_seconds, dtype=float)
+        start_sec = float(time_sec[start_idx])
+        end_sec = float(time_sec[end_idx])
+        return f"Time: {start_sec:g}-{end_sec:g}s ({start_sec / 60.0:g}-{end_sec / 60.0:g}m)"
+    return f"Time: frame {start_idx + 1}-{end_idx + 1}"
+
+
+def _format_elapsed_mark(seconds):
+    seconds = float(seconds)
+    if abs(seconds) >= 3600.0 and seconds % 3600.0 == 0:
+        return f"{seconds / 3600.0:g}h"
+    if abs(seconds) >= 60.0 and seconds % 60.0 == 0:
+        return f"{seconds / 60.0:g}m"
+    return f"{seconds:g}s"
+
+
+def time_slider_marks(max_len, elapsed_seconds=None):
+    max_len = max(int(max_len or 1), 1)
+    elapsed = list(elapsed_seconds or [])
+    label_stride = max(1, int(np.ceil(max_len / 6.0)))
+    marks = {}
+    for idx in range(1, max_len + 1):
+        label = ""
+        if idx == 1 or idx == max_len or max_len <= 12 or (idx - 1) % label_stride == 0:
+            if len(elapsed) >= idx:
+                label = _format_elapsed_mark(elapsed[idx - 1])
+            else:
+                label = str(idx)
+        marks[idx] = label
+    return marks
 
 
 def plot_theme_colors(theme_name):
@@ -910,13 +1342,30 @@ def build_case_data(case_name, files, directories=None):
             default_height_range.reverse()
         height_step = max((float(height_slider_max) - float(height_slider_min)) / 500.0, 1.0)
         time_source = collection.primary_time_source()
-        default_range = minutes_to_slider_range(
+        pyplotgen_selection = minutes_to_slider_selection(
             time_source,
             case_def.get("start_time"),
             case_def.get("end_time"),
             slider_max,
         )
+        loss_absolute_window, loss_selection = loss_window_to_slider_selection(time_source, case_name, slider_max)
+        default_selection = loss_selection or pyplotgen_selection
         time_seconds = serialize_time_seconds(time_source)
+        time_elapsed_seconds = serialize_time_elapsed_seconds(time_source)
+        time_bounds = serialize_time_bounds_seconds(time_source)
+        time_bounds_elapsed = serialize_time_bounds_elapsed_seconds(time_source)
+        pyplotgen_elapsed_window = [
+            float(case_def.get("start_time")) * 60.0,
+            float(case_def.get("end_time")) * 60.0,
+        ] if case_def.get("start_time") is not None and case_def.get("end_time") is not None else None
+        physical_time = time_slider_physical_defaults(
+            time_source,
+            default_selection,
+            loss_absolute_window=loss_absolute_window,
+            pyplotgen_elapsed_window=pyplotgen_elapsed_window,
+        )
+        default_physical_time = physical_time["loss"] if loss_selection and physical_time["loss"] else physical_time["default"]
+        default_duration_minutes = physical_time["duration_min_minutes"] if loss_selection else default_physical_time["duration_minutes"]
         benchmarks = build_case_benchmark_info(case_def)
         return {
             "name": case_name,
@@ -935,7 +1384,38 @@ def build_case_data(case_name, files, directories=None):
             "columns_len": max(collection.columns_len, 1),
             "time_len": slider_max,
             "time_seconds": time_seconds,
-            "default_time_range": default_range,
+            "time_elapsed_seconds": time_elapsed_seconds,
+            "time_bounds_seconds": time_bounds,
+            "time_bounds_elapsed_seconds": time_bounds_elapsed,
+            "time_interval_semantics": getattr(time_source, "time_interval_semantics", None) if time_source else None,
+            "model_time_initial_seconds": model_time_initial_seconds(time_source),
+            "time_controls_physical": True,
+            "time_slider_start_min_seconds": physical_time["start_min"],
+            "time_slider_start_max_seconds": physical_time["start_max"],
+            "time_slider_step_seconds": physical_time["step_seconds"],
+            "time_slider_final_end_seconds": physical_time["final_end_seconds"],
+            "stats_output_interval_seconds": physical_time["output_interval_seconds"],
+            "time_slider_duration_min_minutes": physical_time["duration_min_minutes"],
+            "time_slider_duration_step_minutes": physical_time["duration_step_minutes"],
+            "time_slider_duration_max_minutes": physical_time["duration_max_minutes"],
+            "default_time_range": default_selection["range"],
+            "default_time_start": default_selection["start"],
+            "default_time_duration": default_selection["duration"],
+            "default_time_start_seconds": default_physical_time["start_seconds"],
+            "default_time_duration_minutes": default_duration_minutes,
+            "pyplotgen_time_range": pyplotgen_selection["range"],
+            "pyplotgen_time_start": pyplotgen_selection["start"],
+            "pyplotgen_time_duration": pyplotgen_selection["duration"],
+            "pyplotgen_time_start_seconds": (physical_time["pyplotgen"] or {}).get("start_seconds"),
+            "pyplotgen_time_duration_minutes": (physical_time["pyplotgen"] or {}).get("duration_minutes"),
+            "pyplotgen_time_window_elapsed_seconds": pyplotgen_elapsed_window,
+            "loss_time_range": (loss_selection or {}).get("range"),
+            "loss_time_start": (loss_selection or {}).get("start"),
+            "loss_time_duration": (loss_selection or {}).get("duration"),
+            "loss_time_start_seconds": (physical_time["loss"] or {}).get("start_seconds"),
+            "loss_time_duration_minutes": (physical_time["loss"] or {}).get("duration_minutes"),
+            "loss_time_window_seconds": loss_absolute_window,
+            "loss_time_window_elapsed_seconds": (loss_selection or {}).get("elapsed_seconds"),
             "benchmarks": benchmarks,
             "profile_vars": profile_vars,
             "budget_groups": budget_groups,

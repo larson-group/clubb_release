@@ -114,7 +114,7 @@ module error_code
 
         ! ---- Begin Code ----
 
-        clubb_debug_level = max(level,0)
+        clubb_debug_level = level
 
         return
         end subroutine set_clubb_debug_level_api

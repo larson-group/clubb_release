@@ -157,22 +157,61 @@ def register_grid_callbacks(app):
         return "large" if size_value != "large" else "normal"
 
     @app.callback(
+        Output("plots-plot-state", "data", allow_duplicate=True),
+        Input({"type": "plots-size-store", "index": ALL}, "data"),
+        State({"type": "plots-size-store", "index": ALL}, "id"),
+        State("plots-plot-state", "data"),
+        prevent_initial_call=True,
+    )
+    def persist_plot_sizes(size_values, size_ids, plot_state):
+        """Persist local plot-card size stores back into the shared plot state."""
+        if not size_ids:
+            return no_update
+        updated_state = dict(plot_state or {})
+        changed = False
+        for meta, size_value in zip(size_ids or [], size_values or []):
+            if not isinstance(meta, dict):
+                continue
+            plot_id = str(meta.get("index"))
+            if plot_id not in updated_state:
+                continue
+            normalized_size = shared.normalize_plot_size(size_value)
+            entry = dict(updated_state[plot_id])
+            if entry.get("size") == normalized_size:
+                continue
+            entry["size"] = normalized_size
+            updated_state[plot_id] = entry
+            changed = True
+        return updated_state if changed else no_update
+
+    @app.callback(
         Output({"type": "plots-card", "index": MATCH}, "className"),
         Output({"type": "plots-graph-shell", "index": MATCH}, "style"),
         Output({"type": "plots-size-toggle", "index": MATCH}, "children"),
         Output({"type": "plots-size-toggle", "index": MATCH}, "className"),
+        Output({"type": "plots-size-toggle", "index": MATCH}, "disabled"),
         Input({"type": "plots-size-store", "index": MATCH}, "data"),
+        Input("plots-enabled-benchmarks", "data"),
+        State({"type": "plots-size-store", "index": MATCH}, "id"),
+        State("plots-plot-state", "data"),
         prevent_initial_call=False,
     )
-    def update_one_plot_size(size_value):
+    def update_one_plot_size(size_value, enabled_benchmarks, size_store_id, plot_state):
         """Mirror one plot's local size-store state into the card shell and toggle button."""
-        current_size = shared.normalize_plot_size(size_value)
+        plot_id = str((size_store_id or {}).get("index"))
+        plot_entry = (plot_state or {}).get(plot_id, {})
+        lock_large = (
+            plot_entry.get("plot_type") == "timeheight"
+            and bool(enabled_benchmarks)
+        )
+        current_size = "large" if lock_large else shared.normalize_plot_size(size_value)
         button_text, button_class = shared.plot_size_button_props(current_size)
         return (
             shared.plot_card_class_name(current_size),
             shared.plot_graph_shell_style(current_size),
             button_text,
             button_class,
+            lock_large,
         )
 
     @app.callback(
