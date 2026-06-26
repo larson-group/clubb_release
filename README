@@ -616,14 +616,10 @@ How to create a new case:
   src/Benchmark_cases.
   
 
-The randomization files (only needed for the tuner described below):
+The randomization file (only needed for the tuner described below):
 
-  run_scripts/generate_seed.bash, input_misc/tuner/rand_seed.dat
-  The script uses intrinsic functionality in the Linux kernel to generate
-  a pseudo random seed (the .dat) used by the tuner for randomizing initial
-  parameters.  This works on any operating system with a Linux style 
-  /dev/urandom (Solaris, Tru64, etc.) as well.  The seed file is now plain text 
-  and can be edited by hand.
+  input_misc/tuner/rand_seed.dat
+  The seed file is plain text and can be edited by hand.
 
 
 -----------------------------------------------------------------------
@@ -680,9 +676,9 @@ you need a file containing a list of the parameters you want to use
 for each colummn, along with an additional namelist containing the
 number of columns to run with (`ngrdcol`).
 
-There is a tool in run_scripts used to generate a multiple column
+There is a tool in utilities used to generate a multiple column
 parameter set along with this extra namelist, here is an example use:
-`create_multi_col_params.py -n 32 -param_file input/tunable_parameters/tunable_parameters.in`
+`utilities/create_multi_col_params.py -n 32 -param_file input/tunable_parameters/tunable_parameters.in`
 - This will create a new param file with the default name "clubb_params_multi_col.in"
 - This file will contain 32 copies of the parameter set passed into it
 - It will also contain the namelist setting `ngrdcol=32`

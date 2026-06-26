@@ -37,6 +37,9 @@ from run_scm_all import (
 )
 
 DEFAULT_MAX_WORKERS = 8
+SCRIPT_DIR = Path(__file__).resolve().parent
+REPO_ROOT = SCRIPT_DIR.parent
+DEFAULT_FLAG_CONFIG_FILE = REPO_ROOT / "input" / "flag_sets" / "run_bindiff_w_flags_config_core_flags.json"
 
 
 # ------------------------------------------------------------------------------
@@ -84,7 +87,7 @@ def get_cli_args():
         help="Do not run the default flag configuration."
     )
     parser.add_argument(
-        "-f", "--flag-config-file", type=str, default="flag_config.json",
+        "-f", "--flag-config-file", type=str, default=str(DEFAULT_FLAG_CONFIG_FILE),
         help="JSON file describing alternate flag settings."
     )
     parser.add_argument(

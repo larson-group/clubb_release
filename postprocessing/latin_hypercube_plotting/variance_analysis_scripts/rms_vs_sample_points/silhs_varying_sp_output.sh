@@ -54,11 +54,11 @@ done
 
 MODEL_FILE="$CLUBB_DIR/input/case_setups/""$CASE_NAME""_model.in"
 
-# We need to use absolute paths because of a bug in run_scm.bash.
+# Use absolute paths so this script can be run from any working directory.
 OUTPUT_DIR=`readlink -m "$OUTPUT_DIR"`
 
 # Sanity checks
-if [[ ! -f $CLUBB_DIR/run_scripts/run_scm.bash ]]
+if [[ ! -f $CLUBB_DIR/run_scripts/run_scm.py ]]
 then
   >&2 echo "The CLUBB run script was not found. Please check the CLUBB_DIR " \
            "variable in the script."
@@ -86,7 +86,7 @@ mkdir -p "$OUTPUT_DIR"
 STATS_CMD_STRING=""
 if [[ -n $STATS_FILE ]]
 then
-    STATS_CMD_STRING="-s $STATS_FILE"
+    STATS_CMD_STRING="-stats $STATS_FILE"
 fi
 
 seed=$STARTING_SEED
@@ -101,8 +101,8 @@ do
             sed 's/lh_seed\s*=\s*[0-9]*/lh_seed = '"$seed"'/g' -i $MODEL_FILE
         fi
         echo "Running with $num_samples samples, iteration $iseed"
-        $CLUBB_DIR/run_scripts/run_scm.bash $CASE_NAME $STATS_CMD_STRING \
-            -o $OUTPUT_DIR/silhs_"$num_samples"_"$iseed" --netcdf &>/dev/null
+        python3 $CLUBB_DIR/run_scripts/run_scm.py $STATS_CMD_STRING \
+            -out_dir $OUTPUT_DIR/silhs_"$num_samples"_"$iseed" $CASE_NAME &>/dev/null
         if [[ ! $? -eq 0 ]]
         then
             >&2 echo 'A run failed!'

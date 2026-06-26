@@ -1,158 +1,316 @@
-$Id$
-  
-This directory contains scripts for the various programs that can be used with
-the CLUBB parameterization. 
+# run_scripts
 
-generate_seed.bash: 
-  Generates a psuedo random seed that is used by the tuner.
+This directory contains scripts for running CLUBB, generating output, plotting
+output, and comparing output. Examples below assume they are run from the repo
+root unless the example explicitly changes directories.
 
-run_bin_diff_all.bash: 
-  Compares the output for all cases specified in run_scm_all.bash in 
-  two specified directories.
+Most model-running scripts expect CLUBB to have already been compiled with
+`./compile.py`, unless the script has its own compile step.
 
-run_bindiff_w_flags.py:
-run_bindiff_w_flags_config_example.json:
-  Test whether two or more branches of CLUBB produce the same answer when various flags are toggled.
+## Top-Level Scripts
 
-  The simplest way to use this script would look like:
-    python3 ./run_bindiff_w_flags.py -b <branch1>,<branch2>
-                                     -f <flag_config_file> -d <destination directory>
-  This would then clone both branches into the <destination directory>.
-  Inputs:
-    1. Two or more branches of CLUBB you want to compare
-    2. JSON configuration file, describing what flags you want to toggle
-    3. Path to directory where the clones should be stored
+### `run_scm.py`
 
-  Output:
-    1. Text summary of differences found in the output of the branches
+Runs one CLUBB single-column case. It builds the generated case namelist with
+`utilities/create_case_namelist.py`, then runs the selected standalone driver.
 
-run_inputfields.bash: 
-  Runs CLUBB with specified prognostic variables from a GrADS or netCDF 
-  stats file.
+Examples:
 
-run_jacobian.bash: 
-  Runs the CLUBB jacobian program.
+- `python3 run_scripts/run_scm.py bomex`
+  Runs the `bomex` case with the default compiled executable and default output
+  directory.
 
-run_scm_all.bash: 
-  Runs all of the cases CLUBB is set up to do.
+- `python3 run_scripts/run_scm.py -out_dir output/bomex_short -max_iters 10 bomex`
+  Runs `bomex` for only 10 iterations and writes output under
+  `output/bomex_short`.
 
-  NOTE: 
-  You can specify to run the cases in nightly mode using --nightly (or -n).
-  In nightly mode, the output is sent to $nightlyOut/CLUBB_current.
-  Whatever was in this directory before is copied to  $nightlyOut/CLUBB_previous
-  Both of these directories are created if they don't exist.
+- `python3 run_scripts/run_scm.py -stats none -debug 0 bomex`
+  Runs `bomex` without stats output and with debug checks disabled.
 
-  You can specify to run only the short cases using --short-cases (or -c).  This omits the 
-  gabls2, cloud_feedback_s6, cloud_feedback_s11, cloud_feedback_s12, and twp_ice cases.
+- `python3 run_scripts/run_scm.py -stats input/stats/nightly_stats.in arm`
+  Runs `arm` with a non-default stats field list.
 
-  You can specify to run the priority cases using --priority-cases (or -i). This will include
-  only the following cases if they are in RUN_CASES: arm, atex, bomex, dycoms2_rf01,
-  dycoms2_rf01_fixed_sst, dycoms2_rf02_ds,dycoms2_rf02_nd, mpace_b, rico, wangara, arm_97,
-  cloud_feedback_s6, cloud_feedback_s11, cloud_feedback_s12, gabls3_night, lba, and twp_ice.
+- `python3 run_scripts/run_scm.py -zm_grid input/grid/31_level_zm_grid.grd -nzmax 31 arm`
+  Runs `arm` on a specified `zm` grid with the matching vertical level count.
 
-  You can opt to run a minimal set of cases (e.g. for the purpose of minimizing output
-  size) using --min-cases (or -j). This will include only the following cases if they are
-  in RUN_CASES: arm, atex, bomex, dycoms2_rf01, dycoms2_rf02_ds, rico, wangara, arm_97,
-  gabls3_night, lba, and twp_ice.
+- `python3 run_scripts/run_scm.py -override l_call_pdf_closure_twice=.true. bomex`
+  Runs `bomex` with one namelist value overridden at runtime.
 
-  You can specify a manual grid for the runs. This is done
-  with the command line options --zt_grid (or -z) and --zm_grid (or -m).
-  These options are used by first specifying the desired grid file, then the
-  number of grid levels after the command line option -l (or --levels).
-  For example, to use a 30-level coarse grid specified on the zt points:
-  ./run_scm_all.bash --zt_grid ../input/grid/coarse_30lev_32km_zt_grid.grd --levels 30
-    OR
-  ./run_scm_all.bash -z ../input/grid/coarse_30lev_32km_zt_grid.grd -l 30
+- `python3 run_scripts/run_scm.py -gdb arm`
+  Launches the compiled `arm` run under `gdb`.
 
-  You can specify the timestep to run the cases at using --timestep_test (or -t) followed by a number.
-  For example, ./run_scm_all.bash -t 360.
+### `run_scm_all.py`
 
-  To specify a custom stats file, use the --stats (or -s) option. For example, to use
-  the nightly stats, ./run_scm_all.bash --stats ../input/stats/nightly_stats.in
+Runs a predefined set of SCM cases by launching `run_scm.py` in parallel.
+Unknown extra arguments are forwarded to each `run_scm.py` call.
 
-  To specify a custom parameter file, use the --parameter_file (or -p) option followed by a paramter
-  file.
+Examples:
 
-  To run a performance test, use the --performance_test (or -r) option.  This will disable
-  statistics output and set debug level to 0 for performance testing.
+- `python3 run_scripts/run_scm_all.py`
+  Runs the standard maintained case list with the default process count.
 
-  To specify a custom output directory, use the --output_directory (or -o).  For example,
-  to use the home directory, ./run_scm_all.bash -o $HOME.
+- `python3 run_scripts/run_scm_all.py -priority_cases -nproc 4`
+  Runs the priority case list using at most four concurrent workers.
 
-RUN_CASES:
-  The file RUN_CASES lists all the cases to be run with run_bindiff_all.bash 
-and run_scm_all.bash. This makes it easier for external users to run CLUBB 
-since they can comment out cases.  It also makes it easier for UWM to add a 
-new case.
+- `python3 run_scripts/run_scm_all.py -cases arm,bomex,atex -max_iters 5`
+  Runs only `arm`, `bomex`, and `atex`, forwarding `-max_iters 5` to each case.
 
-run_scm.py: 
-  Runs CLUBB for a specified case. The case is specified with the model name.
+- `python3 run_scripts/run_scm_all.py -short_cases -v`
+  Runs the short case list and prints each underlying `run_scm.py` log.
 
-  NOTE: Optionally, You can specify a manual grid for the runs. This is done
-  with the command line options --zt_grid (or -z) and --zm_grid (or -m).
-  These options are used by first specifying the desired grid file, then the
-  number of grid levels after the command line option -l (or --levels).
-  For example, to use a 30-level coarse grid specified on the zt points:
-  ./run_scm.py --zt_grid ../input/grid/coarse_30lev_32km_zt_grid.grd --levels 30
-    OR
-  ./run_scm.py -z ../input/grid/coarse_30lev_32km_zt_grid.grd -l 30
+### `run_clubb_w_varying_flags.py`
 
-  You can specify the timestep to run the cases at using --timestep_test (or -t) followed by a number.
-  For example, ./run_scm.py -t 360.
+Runs one case or a case set multiple times while applying flag sets from a JSON
+file. Each flag set is written to its own output subdirectory.
 
-  To specify a custom stats file, use the --stats (or -s) option. For example, to use
-  the nightly stats, ./run_scm.py --stats ../input/stats/nightly_stats.in
+Examples:
 
-  To specify a custom parameter file, use the --parameter_file (or -p) option followed by a parameter
-  file.
+- `python3 run_scripts/run_clubb_w_varying_flags.py bomex`
+  Runs `bomex` once for the default flags and once for each default JSON flag
+  set.
 
-  To run a performance test, use the --performance_test (or -r) option.  This will disable
-  statistics output and set debug level to 0 for performance testing.
+- `python3 run_scripts/run_clubb_w_varying_flags.py --priority-cases -nproc 4`
+  Runs the priority case list across all configured flag sets with four workers.
 
-  To specify a custom output directory, use the --output_directory (or -o).  For example,
-  to use the home directory, ./run_scm.py -o $HOME.
+- `python3 run_scripts/run_clubb_w_varying_flags.py -f input/flag_sets/run_bindiff_w_flags_config_host_flags.json --min-cases`
+  Runs the minimal case list using the host-flag JSON config.
 
-rum_scm_collect.bash: 
-  Runs a case in CLUBB while using the Sun Studio profiler to collect runtime 
-  statistics.  For best results, the CLUBB code should be compiled with the Sun
-  Studio compiler to use this script.  However, the Intel compiler has been
-  confirmed to work as well.  The name of the output directory and optionally
-  case name are arguments for the script.
+- `python3 run_scripts/run_clubb_w_varying_flags.py --skip-default-flags --max-iters 10 bomex`
+  Runs only the alternate flag sets for `bomex`, forwarding `-max_iters 10` to
+  `run_scm.py`.
 
-  NOTE: It is highly recommended that no other programs are running on the
-  computer that runs this script. If other programs are running, the results
-  may be inconsistent and possibly misleading.
+### `run_bindiff_all.py`
 
-run_scm_collect_suite.bash
-  Runs a selected set of cases in CLUBB while using the Sun Studio profiler to
-  collect runtime statistics for all of them. For best results, the CLUBB code
-  should be compiled with the Sun Studio compiler to use this script. However,
-  the Intel compiler has been confirmed to work as well. Each case will be run
-  a few times to allow for averaging of the runtime statistics. The name of the
-  output directory is an argument for the script.  
+Compares matching CLUBB NetCDF files in two output directories.
 
-  NOTE: The output requires about 25 GB of disk space.  Please make sure 
-  that enough space is available, and delete these output files when they
-  are no longer needed.
+Examples:
 
-  NOTE: It is highly recommended that no other programs are running on the
-  computer that runs this script. If other programs are running, the results
-  may be inconsistent and possibly misleading.
+- `python3 run_scripts/run_bindiff_all.py output_a output_b`
+  Compares every matching case in two output directories with default reporting.
 
-time_scm_all.bash
-  Best used to determine the overall runtime of CLUBB. time_scm_all.bash sets
-  the debug level to 0 and turns off the stats output, and runs only the cases
-  which do not use microphysics or non-simplified radiation schemes. The script
-  requires an argument for the number of runs to perform, and will aggregate
-  the overall CPU time taken for all of the runs performed.
+- `python3 run_scripts/run_bindiff_all.py -v 2 output_a output_b`
+  Prints detailed per-variable numerical differences.
 
-run_timestep_tests.bash: 
-  Runs all of the cases CLUBB is set up to do. CLUBB is ran several times for 
-  each case at different timestep settings.
+- `python3 run_scripts/run_bindiff_all.py -case bomex -t 1e-12 -pt 1e-12 output_a output_b`
+  Compares only `bomex` with strict absolute and percent thresholds.
 
-run_tuner.bash: 
-  Runs the CLUBB tuning program. More info can be found in input_misc/tuner/README.
+- `python3 run_scripts/run_bindiff_all.py -f replace -v 2 output_a output_b`
+  Writes per-case diff logs under `output/bindiffs`, replacing older logs.
 
-run_scm_debug.bash:
-  Runs CLUBB standalone using either the gfortran (gdb), Oracle (dbx), or PGI (pgdbg) compiler.
+### `run_clubb_and_pyplotgen.py`
 
+Compiles CLUBB, runs selected cases, and plots those outputs with pyplotgen.
+Existing output directories for the selected run name are removed before the
+run unless `--dry-run` is used.
+
+Examples:
+
+- `python3 run_scripts/run_clubb_and_pyplotgen.py`
+  Compiles CLUBB, runs the default case list, writes to `output/new`, and writes
+  plots to `output/pyplots_new`.
+
+- `python3 run_scripts/run_clubb_and_pyplotgen.py --name smoke --cases bomex arm --max-iters 10`
+  Runs and plots only `bomex` and `arm` for 10 iterations under
+  `output/smoke` and `output/pyplots_smoke`.
+
+- `python3 run_scripts/run_clubb_and_pyplotgen.py --skip-compile --name trial --compare baseline`
+  Uses the existing executable, writes a new `trial` output, and overlays the
+  existing `output/baseline` data in the plots.
+
+- `python3 run_scripts/run_clubb_and_pyplotgen.py --dry-run --name check --cases bomex`
+  Prints the compile, run, and plotting commands without creating output.
+
+### `run_scm_loss.py`
+
+Runs the in-memory CLUBB loss driver for one or more cases. It is used by the
+tuning workflow to compare selected CLUBB fields against configured benchmark
+data.
+
+Examples:
+
+- `python3 run_scripts/run_scm_loss.py bomex -fields cloud_frac,rcm`
+  Runs the loss driver for `bomex` using the case-default comparison settings.
+
+- `python3 run_scripts/run_scm_loss.py -cases bomex,arm -fields cloud_frac,rcm`
+  Runs the loss driver for two cases with the same requested fields.
+
+- `python3 run_scripts/run_scm_loss.py bomex -fields cloud_frac -num_time_windows 4`
+  Splits the case-default time range into four loss windows.
+
+- `python3 run_scripts/run_scm_loss.py bomex -fields cloud_frac -multicol C8/0.2:0.8/4 -batch_size 2`
+  Builds a multi-column parameter sweep and evaluates two columns at a time.
+
+- `python3 run_scripts/run_scm_loss.py -python bomex -fields cloud_frac`
+  Runs the Python loss-driver front end instead of the compiled executable.
+
+### `run_tuner.py`
+
+Runs the older CLUBB tuner executable with Python setup and cleanup around the
+input files it needs.
+
+Examples:
+
+- `python3 run_scripts/run_tuner.py`
+  Runs the tuner for the default single-case setup.
+
+- `python3 run_scripts/run_tuner.py -i --run-case fire`
+  Saves pre-tuning standalone output for `fire` before running the tuner.
+
+- `python3 run_scripts/run_tuner.py --run-type multiple --model-mult fire atex`
+  Sets up a multiple-case tuner run using `fire` and `atex`.
+
+- `python3 run_scripts/run_tuner.py -n --run-case fire`
+  Runs in nightly mode and copies tuner artifacts to `~/tuner_output`.
+
+### `run_tuner_job.py`
+
+Runs the newer Dash-style tuner workflow from the command line. It creates a
+job directory, writes request/control/status files, starts worker processes, and
+can optionally run the top parameter sets afterward.
+
+Examples:
+
+- `python3 run_scripts/run_tuner_job.py -cases bomex -fields cloud_frac -params C8:0.2:0.8`
+  Runs a small random tuner job for one case, one field, and one parameter.
+
+- `python3 run_scripts/run_tuner_job.py -cases arm:10800:21600:10800 bomex:7200:18000:2700 -fields cloud_frac rcm -params C8:0.2:0.8 C11:0.1:1.0 -strategy resolve:0.1`
+  Tunes two cases with explicit time windows, two fields, two parameters, and a
+  resolved grid strategy.
+
+- `python3 run_scripts/run_tuner_job.py -cases bomex -fields cloud_frac -params C8:0.2:0.8 -dry_run`
+  Writes the job files but does not launch the tuner.
+
+- `python3 run_scripts/run_tuner_job.py -cases bomex -fields cloud_frac -params C8:0.2:0.8 -run_top complete -top_n 3`
+  Runs the tuner, then runs standalone CLUBB output for the top three complete
+  parameter sets.
+
+### `run_jacobian.bash`
+
+Runs the CLUBB Jacobian executable using a generated `jacobian.in` namelist.
+This script expects the Jacobian executable at `bin/jacobian`.
+
+Examples:
+
+- `(cd run_scripts && ./run_jacobian.bash bomex)`
+  Runs the Jacobian program for `bomex` with default tunable parameters and
+  stats.
+
+- `(cd run_scripts && ./run_jacobian.bash bomex ../input/tunable_parameters/tunable_parameters.in ../input/stats/standard_stats.in)`
+  Runs the Jacobian program for `bomex` with explicit parameter and stats
+  files.
+
+## `convergence_run/` Scripts
+
+The `convergence_run/` directory contains an older convergence-test workflow.
+These scripts are more environment-specific than the top-level runners and may
+need local module paths, output paths, or compiler settings updated before use.
+
+### `convergence_run/convergence_config.py`
+
+Builds and runs one convergence-test configuration. It modifies generated input
+for a requested case, grid spacing/refinement, timestep, and convergence-study
+option set.
+
+Examples:
+
+- `(cd run_scripts && python3 convergence_run/convergence_config.py bomex -dt 60 -dz 20 -skip-check)`
+  Configures and runs a `bomex` convergence case with 60-second timesteps and a
+  20 m uniform grid.
+
+- `(cd run_scripts && python3 convergence_run/convergence_config.py rico -dt 30 -ref 2 -rad-off -micro-off -skip-check)`
+  Runs `rico` with a refined grid and radiation/microphysics disabled.
+
+- `(cd run_scripts && python3 convergence_run/convergence_config.py dycoms2_rf02_nd -dt 10 -ref 3 -new-ic -new-bc -skip-check)`
+  Runs a DYCOMS-II RF02 ND convergence setup with modified initial and boundary
+  conditions.
+
+### `convergence_run/convergence_function.py`
+
+Helper module imported by `convergence_config.py`, mainly for modifying initial
+condition profiles. It is not intended to be called directly.
+
+Example:
+
+- `python3 run_scripts/convergence_run/convergence_config.py ...`
+  Use `convergence_config.py`; it imports this helper as needed.
+
+### `convergence_run/plot_l2_convergence.py`
+
+Template-style plotting script for L2 convergence figures. The multi-case C
+shell scripts fill in placeholders such as case name, experiment name, timestep
+values, and refinement levels before plotting.
+
+Example:
+
+- `(cd run_scripts && python3 convergence_run/plot_l2_convergence.py)`
+  Runs the plot script after its placeholders have been replaced by the
+  convergence workflow.
+
+### `convergence_run/run_cnvg_test_multi_cases_default.csh`
+
+Runs the multi-case convergence workflow with the default convergence
+configuration.
+
+Examples:
+
+- `(cd run_scripts/convergence_run && csh run_cnvg_test_multi_cases_default.csh)`
+  Runs the default convergence workflow for all configured cases.
+
+- `(cd run_scripts/convergence_run && csh run_cnvg_test_multi_cases_default.csh dycoms)`
+  Runs only the DYCOMS-II subset in the default convergence workflow.
+
+### `convergence_run/run_cnvg_test_multi_cases_baseline.csh`
+
+Runs the multi-case convergence workflow with the baseline convergence
+configuration.
+
+Examples:
+
+- `(cd run_scripts/convergence_run && csh run_cnvg_test_multi_cases_baseline.csh)`
+  Runs the baseline convergence workflow for all configured cases.
+
+- `(cd run_scripts/convergence_run && csh run_cnvg_test_multi_cases_baseline.csh dycoms)`
+  Runs only the DYCOMS-II subset in the baseline convergence workflow.
+
+### `convergence_run/run_cnvg_test_multi_cases_revall.csh`
+
+Runs the multi-case convergence workflow with the full revised convergence
+configuration.
+
+Examples:
+
+- `(cd run_scripts/convergence_run && csh run_cnvg_test_multi_cases_revall.csh)`
+  Runs the revised-all convergence workflow for all configured cases.
+
+- `(cd run_scripts/convergence_run && csh run_cnvg_test_multi_cases_revall.csh dycoms)`
+  Runs only the DYCOMS-II subset in the revised-all convergence workflow.
+
+### `convergence_run/run_clubb_default`
+
+Small `at` wrapper for launching the default convergence workflow and writing
+`clubb_output_default.txt`.
+
+Example:
+
+- `(cd run_scripts/convergence_run && at now -f run_clubb_default)`
+  Submits the default convergence workflow through `at`.
+
+### `convergence_run/run_clubb_baseline`
+
+Small `at` wrapper for launching the baseline convergence workflow and writing
+`clubb_output_baseline.txt`.
+
+Example:
+
+- `(cd run_scripts/convergence_run && at now -f run_clubb_baseline)`
+  Submits the baseline convergence workflow through `at`.
+
+### `convergence_run/run_clubb_revall`
+
+Small `at` wrapper for launching the revised-all convergence workflow and
+writing `clubb_output_revall.txt`.
+
+Example:
+
+- `(cd run_scripts/convergence_run && at now -f run_clubb_revall)`
+  Submits the revised-all convergence workflow through `at`.

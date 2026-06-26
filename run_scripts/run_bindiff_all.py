@@ -112,7 +112,7 @@ def main():
                         "2: Add tables with detailed numerical differences in common variables for each file.")
     parser.add_argument("-t", "--threshold", dest="threshold", type=float, action="store", help="(float) Define the maximum absolute difference for an individual variable to be treated as different.")
     parser.add_argument("-pt", "--percent_thresh", dest="percent_thresh", type=float, action="store", help="(float) Define the maximum average absolute percent difference for an individual variable to be treated as different.")
-    parser.add_argument("-s", "--scale", action="store_true", help="Scale absolute differences by the average field value, using the same approach as check_multi_col_error.py.")
+    parser.add_argument("-s", "--scale", action="store_true", help="Scale absolute differences by the average field value.")
     parser.add_argument("-case", "--case", action="store", default=None, help="Compare only the specified case name (e.g. 'bomex'). When omitted, all cases found in both directories are compared.")
     parser.add_argument("dirs", nargs=2, help="Need 2 clubb output directories containing netCDF files with the same name to diff. Usage: python run_bindiff_all.py dir_path1 dir_path2")
     args = parser.parse_args()
@@ -587,7 +587,7 @@ def find_diffs_in_common_vars( test_file, dir1, dir2, save_to_file, verbose, abs
         sum_abs_diff = np.sum(abs_diff)
         avg_abs_diff = sum_abs_diff / abs_diff.size
 
-        # Match check_multi_col_error.py behavior:
+        # Scale differences down by the field average:
         # scale absolute differences by average field magnitude.
         if l_scale:
             field_avg = ( np.average( data_1 ) + np.average( data_2 ) ) / 2.0

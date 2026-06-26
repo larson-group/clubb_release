@@ -9,9 +9,9 @@ pipeline {
               ./compile.py'''
       }
     }
-    stage('Run fire_tuner') {
+    stage('Run test_fire_tuner') {
       steps {
-        sh '''python3 run_scripts/fire_tuner.py .'''
+        sh '''python3 tests/test_fire_tuner.py .'''
       }
     }
   }

@@ -1,0 +1,281 @@
+# tests
+
+This directory contains repo-level test harnesses and test-specific validators.
+General run helpers live in `run_scripts/`; scripts here should be used when the
+goal is to verify a specific behavior or regression.
+
+Examples below assume they are run from the repo root. Most tests require CLUBB
+to have already been compiled with the executable or Python API variant they
+exercise.
+
+## Test Scripts
+
+### `check_budget_balance.py`
+
+Runs a fixed list of SCM cases and then checks CLUBB budget closure with
+`postprocessing/check_budgets_balance/checkBudget.py`.
+
+Examples:
+
+- `python3 tests/check_budget_balance.py`
+  Runs the budget-balance suite for the current checkout.
+
+- `python3 tests/check_budget_balance.py /path/to/clubb`
+  Runs the same suite against an explicit CLUBB source tree.
+
+### `check_mirrored_multi_col_output.py`
+
+Checks that mirrored columns in multi-column `*_stats.nc` output match. This is
+intended for output generated from mirrored multi-column parameter files.
+
+Examples:
+
+- `python3 tests/check_mirrored_multi_col_output.py output/multicol`
+  Checks every `*_stats.nc` file in `output/multicol` with exact matching.
+
+- `python3 tests/check_mirrored_multi_col_output.py -t 1e-14 output/multicol`
+  Allows small average absolute differences between mirrored columns.
+
+- `python3 tests/check_mirrored_multi_col_output.py -v output/multicol`
+  Prints each variable checked in addition to the summary.
+
+### `run_G_unit_tests.py`
+
+Writes a temporary `G_unit_tests.in` namelist and runs the compiled
+`install/latest/G_unit_tests` executable.
+
+Examples:
+
+- `python3 tests/run_G_unit_tests.py`
+  Runs the built-in default G-unit test set.
+
+- `python3 tests/run_G_unit_tests.py --all`
+  Enables every G-unit test flag.
+
+- `python3 tests/run_G_unit_tests.py --KK_unit_tests`
+  Runs only the KK unit tests.
+
+- `python3 tests/run_G_unit_tests.py --smooth_heaviside_test --smooth_min_max_test`
+  Runs only the selected smooth-function tests.
+
+### `run_benchmark_converter_test.py`
+
+Smoke-tests the benchmark normalizer by creating a tiny SAM-like NetCDF file,
+converting it, and checking aliases and formulas.
+
+Example:
+
+- `python3 tests/run_benchmark_converter_test.py`
+  Runs the self-contained benchmark-converter smoke test.
+
+### `run_bindiff_w_flags.py`
+
+Clones two or more git refs, compiles each clone, runs
+`run_scripts/run_clubb_w_varying_flags.py` in each clone, and compares the
+resulting output trees with `run_scripts/run_bindiff_all.py`.
+
+Examples:
+
+- `python3 tests/run_bindiff_w_flags.py -b master,my_branch -d /tmp/clubb_bindiff`
+  Compares `master` and `my_branch` using the default core flag set.
+
+- `python3 tests/run_bindiff_w_flags.py --overwrite-existing -b master,my_branch -d /tmp/clubb_bindiff -max_iters 360`
+  Recreates existing clone directories without prompting and forwards
+  `-max_iters 360` to the case runs.
+
+- `python3 tests/run_bindiff_w_flags.py -b master,my_branch -f input/flag_sets/run_bindiff_w_flags_config_example.json --priority-cases -nproc 4`
+  Uses an explicit flag config and forwards case-selection and worker-count
+  options to `run_clubb_w_varying_flags.py`.
+
+- `python3 tests/run_bindiff_w_flags.py -b old_ref,new_ref --no-compile --skip-default-flags`
+  Reuses existing builds and compares only alternate flag sets.
+
+### `run_clubb_conv_test.py`
+
+Runs one case at several timesteps and checks convergence for a selected output
+variable.
+
+Examples:
+
+- `python3 tests/run_clubb_conv_test.py`
+  Runs the default BOMEX convergence check for `rcm`.
+
+- `python3 tests/run_clubb_conv_test.py --case rico --var cloud_frac`
+  Checks convergence of `cloud_frac` for `rico`.
+
+- `python3 tests/run_clubb_conv_test.py -p --case bomex --var rcm`
+  Runs the check and writes a convergence plot under `output/`.
+
+### `run_jax_vs_fortran_cases.py`
+
+Runs selected cases with both the JAX driver and the Fortran standalone driver,
+then compares outputs with `run_bindiff_all.py`.
+
+Examples:
+
+- `python3 tests/run_jax_vs_fortran_cases.py --cases bomex --jobs 1`
+  Runs a single serial JAX-vs-Fortran comparison for easier debugging.
+
+- `python3 tests/run_jax_vs_fortran_cases.py --cases bomex atex --max-iters 3`
+  Runs two cases with a short iteration limit.
+
+- `python3 tests/run_jax_vs_fortran_cases.py --bindiff-verbose 2 --bindiff-threshold 1e-12`
+  Runs the default case set and prints detailed strict bindiff output.
+
+- `python3 tests/run_jax_vs_fortran_cases.py --keep-existing`
+  Reuses existing output directories instead of deleting them before the run.
+
+### `run_loss_output_consistency.py`
+
+Runs normal CLUBB and the loss driver for one case, then checks that loss-driver
+stats output and printed metrics are consistent.
+
+Examples:
+
+- `python3 tests/run_loss_output_consistency.py bomex`
+  Runs the default consistency check for `bomex`.
+
+- `python3 tests/run_loss_output_consistency.py arm -fields cloud_frac rcm`
+  Checks selected fields for `arm`.
+
+- `python3 tests/run_loss_output_consistency.py bomex -out_root output/loss_check`
+  Writes all generated output under a custom root directory.
+
+- `python3 tests/run_loss_output_consistency.py bomex -params input/tunable_parameters/tunable_parameters.in -flags input/tunable_parameters/configurable_model_flags.in`
+  Runs with explicit tunable parameter and model flag files.
+
+### `run_python_vs_fortran_cases.py`
+
+Runs selected cases with both the Python standalone driver and the Fortran
+standalone driver, then compares outputs with `run_bindiff_all.py`.
+
+Examples:
+
+- `python3 tests/run_python_vs_fortran_cases.py --cases bomex --jobs 1`
+  Runs one serial Python-vs-Fortran comparison for debugging.
+
+- `python3 tests/run_python_vs_fortran_cases.py --cases bomex atex --max-iters 3`
+  Runs two cases with a short iteration limit.
+
+- `python3 tests/run_python_vs_fortran_cases.py --bindiff-verbose 2 --bindiff-threshold 1e-12`
+  Runs the default case set with detailed strict bindiff output.
+
+- `python3 tests/run_python_vs_fortran_cases.py --keep-existing`
+  Reuses existing comparison output directories.
+
+### `run_restart_test.py`
+
+Runs a full case, moves its output into `restart/`, reruns from a restart time,
+and compares the final timestep of a selected variable bit-for-bit.
+
+Examples:
+
+- `python3 tests/run_restart_test.py bomex`
+  Runs the restart test for `bomex`, comparing `thlm`.
+
+- `python3 tests/run_restart_test.py rico_silhs -v rcm`
+  Runs the restart test for `rico_silhs`, comparing `rcm`.
+
+- `python3 tests/run_restart_test.py bomex --keep_artifacts`
+  Keeps generated `output/` and `restart/` files after the test.
+
+### `run_silhs_test.py`
+
+Checks SILHS convergence by comparing a small-sample run against a large-sample
+run for one case.
+
+Examples:
+
+- `python3 tests/run_silhs_test.py`
+  Runs the default SILHS convergence check.
+
+- `python3 tests/run_silhs_test.py --case rico_silhs --n-small 8 --n-large 1000`
+  Runs an explicit case and sample-count pair.
+
+- `python3 tests/run_silhs_test.py --stats input/stats/all_stats.in --verbose`
+  Uses an explicit stats file and prints the underlying `run_scm.py` output.
+
+- `python3 tests/run_silhs_test.py --keep-outputs`
+  Leaves the small and large output directories in place for inspection.
+
+### `run_stats_output_consistency.py`
+
+Runs one case several ways and verifies unified stats output is consistent
+across batch sizes, output intervals, and stats windows.
+
+Examples:
+
+- `python3 tests/run_stats_output_consistency.py`
+  Runs the default BOMEX stats-output consistency suite.
+
+- `python3 tests/run_stats_output_consistency.py arm -stats input/stats/standard_stats.in`
+  Runs the suite for `arm` with an explicit stats registry.
+
+- `python3 tests/run_stats_output_consistency.py bomex -batch_sizes 4,2,1 -coarse_touts 300,600`
+  Checks the default multicol setup with explicit batch sizes and coarse output
+  intervals.
+
+- `python3 tests/run_stats_output_consistency.py bomex -window_start 7200 -window_end 14400`
+  Uses an explicit stats window for the windowing checks.
+
+- `python3 tests/run_stats_output_consistency.py bomex -config input/tunable_parameters -debug 0`
+  Forwards a config directory and debug level to `run_scm.py`.
+
+### `run_thread_test.py`
+
+Runs the thread-safety regression test using the compiled standalone and thread
+test executables.
+
+Examples:
+
+- `python3 tests/run_thread_test.py`
+  Runs with the default OpenMP thread count.
+
+- `python3 tests/run_thread_test.py --threads 4`
+  Runs with four OpenMP threads.
+
+### `run_timestep_tests.py`
+
+Runs the standard SCM case list repeatedly with increasing `dt_main` and
+`dt_rad` values while stats output is disabled.
+
+Example:
+
+- `python3 tests/run_timestep_tests.py`
+  Runs the timestep sweep for the built-in case list.
+
+### `test_fatal_error_handling.py`
+
+Temporarily patches tagged lines in CLUBB source to inject NaNs, recompiles, and
+checks that CLUBB reports the expected fatal errors. The script restores edited
+files on normal exit and signal handling.
+
+Example:
+
+- `python3 tests/test_fatal_error_handling.py`
+  Runs all configured fatal-error injection tests.
+
+### `test_fire_tuner.py`
+
+Configures the FIRE case for tuning, writes a focused FIRE stats file, and runs
+`run_scripts/run_tuner.py`.
+
+Examples:
+
+- `python3 tests/test_fire_tuner.py`
+  Runs the FIRE tuner test against the current checkout.
+
+- `python3 tests/test_fire_tuner.py /path/to/clubb`
+  Runs the FIRE tuner test against an explicit CLUBB source tree.
+
+### `test_monoflux_limiter_GPU.py`
+
+Runs the monotonic turbulent flux limiter GPU-vs-CPU PCAST test. It temporarily
+patches the NVHPC toolchain and source marker, compiles with OpenACC PCAST
+settings, runs a multi-column `mc3e` case, checks for PCAST differences, and
+restores edited files.
+
+Example:
+
+- `python3 tests/test_monoflux_limiter_GPU.py`
+  Runs the full GPU PCAST regression test.

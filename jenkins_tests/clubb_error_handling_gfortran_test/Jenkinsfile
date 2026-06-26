@@ -3,12 +3,9 @@ pipeline {
   stages {
     stage('Run test_fatal_error_handling') {
       steps {
-        // This dir{} block is used to run the enclosed commands in a specific directory, in this case run_scripts
-        dir('run_scripts') {
-          sh '''source /etc/profile.d/larson-group.sh
-                module load gcc netcdf-fortran
-                python ./test_fatal_error_handling.py'''
-        }
+        sh '''source /etc/profile.d/larson-group.sh
+              module load gcc netcdf-fortran
+              python tests/test_fatal_error_handling.py'''
       }
     }
   }

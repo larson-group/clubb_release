@@ -10,7 +10,7 @@ pipeline {
     }
     stage('Run the restart test script with rico_silhs') {
       steps {
-        sh '''python3 run_scripts/run_restart_test.py rico_silhs'''
+        sh '''python3 tests/run_restart_test.py rico_silhs'''
       }
     }
   }

@@ -19,7 +19,7 @@ from tuner.taylor_metrics import (
 from tuner.request import load_request
 from tuner.job_runtime import TunerJob
 from tuner.status import renew_keepalive, should_stop, stop_reason, write_control
-from run_scripts.create_case_namelist import build_tuner_namelist
+from utilities.create_case_namelist import build_tuner_namelist
 from tuner.tuning_strategy import (
     RandomUniformStrategy,
     ResolveGridStrategy,

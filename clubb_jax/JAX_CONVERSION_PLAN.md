@@ -26,7 +26,7 @@ as the final design:
 - [`clubb_python_api/`](../clubb_python_api/) exposes the public cross-module
   routine surface of `src/CLUBB_core`, which allows us to replace missing JAX
   pieces with their Fortran equivalents while neighboring logic is ported.
-- [`run_jax_vs_fortran_cases.py`](../run_scripts/run_jax_vs_fortran_cases.py)
+- [`run_jax_vs_fortran_cases.py`](../tests/run_jax_vs_fortran_cases.py)
   is a test harness that compares the pure Fortran standalone with an
   incremental JAX-Fortran hybrid code.
 - This combination allows the clubb_jax driver to remain operational while
@@ -164,7 +164,7 @@ work should follow confirmation that the computational path is already correct.
 
 The recurring regression workflow should be:
 
-- Run [`run_jax_vs_fortran_cases.py`](../run_scripts/run_jax_vs_fortran_cases.py)
+- Run [`run_jax_vs_fortran_cases.py`](../tests/run_jax_vs_fortran_cases.py)
   after each meaningful incremental conversion.
 - Use `./run_scripts/run_scm.py -jax <case>` for targeted case-level debugging.
 - Treat any new mismatch as a likely bug first, even if only one or two cases

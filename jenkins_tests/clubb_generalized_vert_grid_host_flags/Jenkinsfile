@@ -29,7 +29,7 @@ pipeline {
     }
     stage('Run') {
       steps {
-        sh '''python3 run_scripts/run_clubb_w_varying_flags.py -f run_scripts/run_bindiff_w_flags_config_host_flags.json'''
+        sh '''python3 run_scripts/run_clubb_w_varying_flags.py -f input/flag_sets/run_bindiff_w_flags_config_host_flags.json'''
       }
     }
   }

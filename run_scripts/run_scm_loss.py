@@ -8,7 +8,7 @@ from pathlib import Path
 if os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), "..")) not in sys.path:
     sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), "..")))
 
-from create_case_namelist import (
+from utilities.create_case_namelist import (
     create_loss_case_namelist,
     validate_multicol,
 )

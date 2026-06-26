@@ -196,6 +196,7 @@ class PyPlotGen:
         cases_plotted_bools = []
 
         # initialize counter and progress display
+        global total_progress_counter
         total_progress_counter = Array('i',[0,0])
         initializeProgress(self.image_extension, self.animation)
 

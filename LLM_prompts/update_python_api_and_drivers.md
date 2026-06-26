@@ -89,10 +89,10 @@ Do the work in this order:
    - Use serial jobs first:
 
      ```bash
-     ./run_scripts/run_python_vs_fortran_cases.py --cases bomex --jobs 1
-     ./run_scripts/run_python_vs_fortran_cases.py --cases atex --jobs 1
-     ./run_scripts/run_jax_vs_fortran_cases.py --cases bomex --jobs 1
-     ./run_scripts/run_jax_vs_fortran_cases.py --cases atex --jobs 1
+     ./tests/run_python_vs_fortran_cases.py --cases bomex --jobs 1
+     ./tests/run_python_vs_fortran_cases.py --cases atex --jobs 1
+     ./tests/run_jax_vs_fortran_cases.py --cases bomex --jobs 1
+     ./tests/run_jax_vs_fortran_cases.py --cases atex --jobs 1
      ```
 
    - `--jobs 1` makes logs easier to inspect and avoids multiprocessing-related noise.
@@ -101,8 +101,8 @@ Do the work in this order:
    - The work is complete only when these pass, or any remaining differences are understood, documented, and explicitly accepted:
 
      ```bash
-     ./run_scripts/run_python_vs_fortran_cases.py --jobs 1
-     ./run_scripts/run_jax_vs_fortran_cases.py --jobs 1
+     ./tests/run_python_vs_fortran_cases.py --jobs 1
+     ./tests/run_jax_vs_fortran_cases.py --jobs 1
      ```
 
 Debugging techniques and common failure modes:
@@ -132,5 +132,5 @@ Expected final state:
 - `./compile.py -python` succeeds.
 - `python -m pytest clubb_python_api/tests` passes.
 - Short `run_scm.py` Python-vs-Fortran bindiffs pass for representative cases.
-- `./run_scripts/run_python_vs_fortran_cases.py --jobs 1` passes.
-- `./run_scripts/run_jax_vs_fortran_cases.py --jobs 1` passes.
+- `./tests/run_python_vs_fortran_cases.py --jobs 1` passes.
+- `./tests/run_jax_vs_fortran_cases.py --jobs 1` passes.

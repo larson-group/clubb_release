@@ -20,7 +20,7 @@ pipeline {
         sh '''source /etc/profile.d/larson-group.sh
               module load gcc netcdf-fortran
               ulimit -s 8388608
-              python3 run_scripts/run_python_vs_fortran_cases.py'''
+              python3 tests/run_python_vs_fortran_cases.py'''
       }
     }
   }

@@ -78,7 +78,7 @@ python -m clubb_jax.clubb_standalone output/arm.in
 The main comparison harness for this directory is:
 
 ```bash
-./run_scripts/run_jax_vs_fortran_cases.py
+./tests/run_jax_vs_fortran_cases.py
 ```
 
 That script runs a curated set of SCM cases through both:

@@ -6,12 +6,9 @@ pipeline {
     stage('Run test_monoflux_limiter_GPU.py') {
       steps {
         lock( "GPU_${env.NODE_NAME}" ) {
-          // This dir{} block is used to run the enclosed commands in a specific directory, in this case run_scripts
-          dir('run_scripts') {
-            sh '''source /etc/profile.d/larson-group.sh
-                  module load nvhpc netcdf-fortran
-                  python test_monoflux_limiter_GPU.py'''
-          }
+          sh '''source /etc/profile.d/larson-group.sh
+                module load nvhpc netcdf-fortran
+                python tests/test_monoflux_limiter_GPU.py'''
         }
       }
     }

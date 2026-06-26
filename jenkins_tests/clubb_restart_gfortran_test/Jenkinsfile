@@ -10,7 +10,7 @@ pipeline {
     }
     stage('Run the CLUBB restart test script') {
       steps {
-        sh '''python3 run_scripts/run_restart_test.py bomex'''
+        sh '''python3 tests/run_restart_test.py bomex'''
       }
     }
   }

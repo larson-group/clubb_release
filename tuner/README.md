@@ -38,7 +38,7 @@ The normal Dash tuning path is:
 4. `tuner.tune_clubb` validates the request with `tuner.request.load_request`.
 5. `tuner.tuning_scheduler.run_scheduler` starts one worker process per case for
    initialization, then dispatches parameter batches to available workers.
-6. Each worker uses `run_scripts/create_case_namelist.py` to build the
+6. Each worker uses `utilities/create_case_namelist.py` to build the
    case-specific loss namelist and normalized LES benchmark file in its worker
    directory.
 7. Workers initialize the reusable Fortran loss driver through `clubb_python`,

@@ -1707,6 +1707,13 @@ module clubb_driver
       call write_text( "--------------------------------------------------", &
         l_write_to_file, iunit )
 
+      ! Print the list of parameters that are being used before the run.
+      call write_text( "Parameter          Value", l_write_to_file, iunit, '(4x,A24)')
+      call write_text( "---------          -----", l_write_to_file, iunit, '(4x,A24)')
+      do j = 1, nparams, 1
+        call write_text(params_list(j) // " = ", clubb_params(1,j), &
+          l_write_to_file, iunit, '(A31,F27.20)')
+      end do
 
       call write_text( "--------------------------------------------------", &
         l_write_to_file, iunit )
@@ -1934,18 +1941,6 @@ module clubb_driver
       end if
 
     end if ! clubb_at_least_debug_level_api( 1 )
-
-    if ( clubb_at_least_debug_level_api( 1 ) ) then
-
-      ! Print the list of parameters that are being used before the run.
-      call write_text( "Parameter          Value", l_write_to_file, iunit, '(4x,A24)')
-      call write_text( "---------          -----", l_write_to_file, iunit, '(4x,A24)')
-      do j = 1, nparams, 1
-        call write_text(params_list(j) // " = ", clubb_params(1,j), &
-          l_write_to_file, iunit, '(A31,F27.20)')
-      end do
-
-    end if
 
     ! Allocate stretched grid altitude arrays.
     allocate( momentum_heights(ngrdcol,nzmax), &

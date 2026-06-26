@@ -9,13 +9,13 @@ import traceback
 
 import numpy as np
 
-from tuner.paths import RUN_SCRIPTS
+from tuner.paths import REPO_ROOT, RUN_SCRIPTS
 from tuner.taylor_metrics import LOSS_METRIC_NAMES
 
-if str(RUN_SCRIPTS) not in sys.path:
-    sys.path.insert(0, str(RUN_SCRIPTS))
+if str(REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(REPO_ROOT))
 
-from create_case_namelist import create_loss_case_namelist  # noqa: E402
+from utilities.create_case_namelist import create_loss_case_namelist  # noqa: E402
 
 
 def _actionable_error_message(exc: BaseException) -> str:

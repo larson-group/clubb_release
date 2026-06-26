@@ -1,5 +1,5 @@
 // This Jenkins test compares the current branch against master while varying
-// the core model flags listed in run_bindiff_w_flags_config_core_flags.json.
+// the core model flags listed in input/flag_sets/run_bindiff_w_flags_config_core_flags.json.
 // Use it for BFB-sensitive changes to verify that they remain BFB across all
 // flag sets covered by this test, not just the default model configuration.
 // This is intended to be used in the branch_clubb_tests, not as a production test.
@@ -15,11 +15,11 @@ pipeline {
               TEST_BRANCH="${BRANCH:-${GIT_BRANCH#origin/}}"
               TEST_BRANCH="${TEST_BRANCH:-${GIT_BRANCH##*/}}"
 
-              python3 run_scripts/run_bindiff_w_flags.py \
+              python3 tests/run_bindiff_w_flags.py \
                 --overwrite-existing \
                 -b master,${TEST_BRANCH} \
                 -d "${WORKSPACE}/bindiff_against_master" \
-                -f run_scripts/run_bindiff_w_flags_config_core_flags.json \
+                -f input/flag_sets/run_bindiff_w_flags_config_core_flags.json \
                 -max_iters 360'''
       }
     }

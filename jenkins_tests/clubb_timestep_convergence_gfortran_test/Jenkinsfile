@@ -10,7 +10,7 @@ pipeline {
     }
     stage('Run the CLUBB convergence test script') {
       steps {
-        sh '''python run_scripts/run_clubb_conv_test.py'''
+        sh '''python tests/run_clubb_conv_test.py'''
       }
     }
   }

@@ -12,7 +12,7 @@ pipeline {
       steps {
         sh '''source /etc/profile.d/larson-group.sh
               module load gcc netcdf-fortran
-              python run_scripts/run_G_unit_tests.py'''
+              python tests/run_G_unit_tests.py'''
       }
     }
   }

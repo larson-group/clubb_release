@@ -55,7 +55,7 @@ for (( x=0; x < "${#TEST_TIMESTEP[@]}"; x++ )); do
    sed -i -r 's/fname_prefix\s*=\s*"(.*?)"/fname_prefix = "'${!#}'_'$integer_timestep'" /g' \
           $model_file
 
-   ../run_scripts/run_scm.bash --netcdf ${!#} 2>&1 >/dev/null
+   python3 ../run_scripts/run_scm.py ${!#} 2>&1 >/dev/null
 done
 
 cd $restoreDir

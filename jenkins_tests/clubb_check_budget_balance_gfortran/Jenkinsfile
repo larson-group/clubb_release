@@ -10,7 +10,7 @@ pipeline {
     }
     stage('Run check_budget_balance') {
       steps {
-        sh '''python3 run_scripts/check_budget_balance.py .'''
+        sh '''python3 tests/check_budget_balance.py .'''
       }
     }
   }

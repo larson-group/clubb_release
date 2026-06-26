@@ -10,16 +10,16 @@ pipeline {
     }
     stage('Run stats output consistency tests') {
       steps {
-        sh '''python run_scripts/run_stats_output_consistency.py -stats input/stats/standard_stats.in bomex'''
-        sh '''python run_scripts/run_stats_output_consistency.py -stats input/stats/standard_stats.in atex'''
-        sh '''python run_scripts/run_stats_output_consistency.py -stats input/stats/standard_stats.in wangara'''
+        sh '''python tests/run_stats_output_consistency.py -stats input/stats/standard_stats.in bomex'''
+        sh '''python tests/run_stats_output_consistency.py -stats input/stats/standard_stats.in atex'''
+        sh '''python tests/run_stats_output_consistency.py -stats input/stats/standard_stats.in wangara'''
       }
     }
     stage('Run loss output consistency tests') {
       steps {
-        sh '''python run_scripts/run_loss_output_consistency.py bomex'''
-        sh '''python run_scripts/run_loss_output_consistency.py atex'''
-        sh '''python run_scripts/run_loss_output_consistency.py wangara'''
+        sh '''python tests/run_loss_output_consistency.py bomex'''
+        sh '''python tests/run_loss_output_consistency.py atex'''
+        sh '''python tests/run_loss_output_consistency.py wangara'''
       }
     }
   }

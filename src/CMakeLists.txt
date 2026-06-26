@@ -95,11 +95,6 @@ target_link_libraries(clubb_loss_driver_test PRIVATE clubb_driver_lib
 # target_link_libraries(jacobian PRIVATE clubb_driver_lib)
 
 
-# Commented out, since this appears unused as of 2025
-# Create int2txt executable
-# add_executable(int2txt int2txt.F90)
-# target_link_libraries(int2txt PRIVATE clubb_driver_lib)
-
 install(TARGETS clubb_driver_lib
                 clubb_tuner
                 G_unit_tests
@@ -109,5 +104,4 @@ install(TARGETS clubb_driver_lib
                 clubb_standalone_loss
                 clubb_loss_driver_test
                 #jacobian
-                #int2txt
         DESTINATION ${CMAKE_INSTALL_PREFIX})

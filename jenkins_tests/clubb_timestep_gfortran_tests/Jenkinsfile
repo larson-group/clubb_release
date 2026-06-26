@@ -10,7 +10,7 @@ pipeline {
     }
     stage('Run Timesteps Test') {
       steps {
-        sh '''run_scripts/run_timestep_tests.py'''
+        sh '''tests/run_timestep_tests.py'''
       }
     }
   }

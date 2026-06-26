@@ -20,7 +20,7 @@ pipeline {
     }
     stage('Run') {
       steps {
-        sh '''python run_scripts/run_G_unit_tests.py'''
+        sh '''python tests/run_G_unit_tests.py'''
       }
     }
   }

@@ -1,26 +1,48 @@
 #!/usr/bin/env python3
 import argparse
 import os
+import shutil
 import subprocess
 import sys
-
-from create_case_namelist import validate_multicol
 
 # Directory where this script lives, assumes clubb/run_scripts, which is important
 # since this is used to find CLUBB_ROOT
 RUN_SCRIPTS = os.path.dirname(os.path.abspath(__file__))
 CLUBB_ROOT = os.path.join(RUN_SCRIPTS, "..")
+if CLUBB_ROOT not in sys.path:
+    sys.path.insert(0, CLUBB_ROOT)
+
+from utilities.create_case_namelist import validate_multicol  # noqa: E402
+
 DEFAULT_OUTPUT_DIR = os.path.join(CLUBB_ROOT, "output")
-CREATE_CASE_NAMELIST = os.path.join(RUN_SCRIPTS, "create_case_namelist.py")
+CREATE_CASE_NAMELIST = os.path.join(CLUBB_ROOT, "utilities", "create_case_namelist.py")
 
 
-def run_case(run_cmd, run_cwd, case_name, namelist_file, output_dir, run_env=None, expect_stats_output=True):
+def run_case(
+    run_cmd,
+    run_cwd,
+    case_name,
+    namelist_file,
+    output_dir,
+    run_env=None,
+    expect_stats_output=True,
+    passthrough_output=False,
+):
 
     if not run_cmd:
         print("No run command was provided.")
         return 1
 
     os.makedirs(output_dir, exist_ok=True)
+
+    if passthrough_output:
+        result = subprocess.run(
+            run_cmd + [namelist_file],
+            cwd=run_cwd,
+            env=run_env,
+            check=False,
+        )
+        return 0 if result.returncode in (0, 6) else 1
 
     log_path = os.path.join(output_dir, f"{case_name}_log")
     with open(log_path, "w", encoding="utf-8") as log_file:
@@ -58,14 +80,7 @@ def choose_run_command(args):
     run_env = None
 
     if args.exe:
-        if args.legacy:
-            print(f"-legacy overriden by -exe entry: {args.exe}")
         executable = os.path.abspath(args.exe)
-        if not os.path.isfile(executable):
-            sys.exit(f"{executable} not found (did you re-compile?)")
-        run_cmd = [executable]
-    elif args.legacy:
-        executable = os.path.join(CLUBB_ROOT, "bin/clubb_standalone")
         if not os.path.isfile(executable):
             sys.exit(f"{executable} not found (did you re-compile?)")
         run_cmd = [executable]
@@ -108,7 +123,15 @@ def choose_run_command(args):
             sys.exit(f"{executable} not found (did you re-compile?)")
         run_cmd = [executable]
 
+    if args.gdb:
+        gdb_path = shutil.which("gdb")
+        if gdb_path is None:
+            sys.exit("gdb not found on PATH")
+        run_cmd = [gdb_path, "--args", *run_cmd]
+
     print(f" - using executable: {executable}")
+    if args.gdb:
+        print(f" - launching with debugger: {gdb_path}")
     return run_cmd, run_cwd, run_env
 
 
@@ -201,9 +224,9 @@ def main():
         help="Run the JAX standalone driver (python -m clubb_jax.clubb_standalone)")
 
     run_group.add_argument(
-        "-legacy",
+        "-gdb",
         action="store_true",
-        help="Runs the legacy compiled version of clubb_standalone (with compile.bash)"
+        help="Launch the selected compiled executable with gdb."
     )
 
     run_group.add_argument("-out_dir", metavar="[DIR]",
@@ -239,9 +262,11 @@ def main():
     parser.add_argument("case_name", help="Name of the case to run")
     args = parser.parse_args()
 
-    ndefined = sum(bool(x) for x in [args.exe, args.legacy, args.driver_test, args.python, args.jax])
+    ndefined = sum(bool(x) for x in [args.exe, args.driver_test, args.python, args.jax])
     if ndefined > 1:
-        parser.error("Only one of -exe, -legacy, -driver_test, -python, or -jax may be specified.")
+        parser.error("Only one of -exe, -driver_test, -python, or -jax may be specified.")
+    if args.gdb and (args.python or args.jax):
+        parser.error("-gdb can only be used with compiled executables, not -python or -jax.")
     if args.zt_grid and args.zm_grid:
         sys.exit("\n\033[91mERROR: Cannot specify both a ZT grid and a ZM grid\033[0m")
     if args.nzmax and not (args.zt_grid or args.zm_grid):
@@ -260,7 +285,7 @@ def main():
     print(f"=================== Running {args.case_name} ===================")
     expect_stats_output = ((args.stats or "").strip().lower() != "none") and args.tout != 0
     result = run_case(run_cmd, run_cwd, args.case_name, clubb_input_namelist, output_dir, run_env,
-                      expect_stats_output=expect_stats_output)
+                      expect_stats_output=expect_stats_output, passthrough_output=args.gdb)
 
     sys.exit(result)
 

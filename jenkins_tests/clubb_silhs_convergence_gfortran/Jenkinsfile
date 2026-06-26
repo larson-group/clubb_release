@@ -10,7 +10,7 @@ pipeline {
     }
     stage('Run SILHS test script') {
       steps {
-        sh '''python run_scripts/run_silhs_test.py'''
+        sh '''python tests/run_silhs_test.py'''
       }
     }
   }
