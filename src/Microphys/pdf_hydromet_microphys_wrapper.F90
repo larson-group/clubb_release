@@ -12,7 +12,7 @@ module pdf_hydromet_microphys_wrapper
   !=============================================================================
   subroutine pdf_hydromet_microphys_prep &
              ( gr, ngrdcol, pdf_dim, hydromet_dim,              & ! In
-               itime, dt_main, vert_decorr_coef,                & ! In
+               itime, vert_decorr_coef,                         & ! In
                Nc_in_cloud, cloud_frac, ice_supersat_frac,      & ! In
                rho_ds_zt, Lscale, Kh_zm, hydromet, wphydrometp, & ! In
                corr_array_n_cloud, corr_array_n_below,          & ! In
@@ -119,7 +119,6 @@ module pdf_hydromet_microphys_wrapper
       itime
 
     real( kind = core_rknd ), intent(in) :: &
-      dt_main,          & ! Model timestep                              [s]
       vert_decorr_coef    ! Empirically defined de-correlation constant [-]
 
     real( kind = core_rknd ), dimension(ngrdcol,gr%nzt), intent(in) :: &

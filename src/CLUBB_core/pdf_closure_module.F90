@@ -3607,7 +3607,6 @@ module pdf_closure_module
                                  clubb_params,                            & ! Intent(in)
                                  iiPDF_type,                              & ! Intent(in)
                                  saturation_formula,                      & ! Intent(in)
-                                 l_predict_upwp_vpwp,                     & ! Intent(in)
                                  l_rtm_nudge,                             & ! Intent(in)
                                  l_trapezoidal_rule_zt,                   & ! Intent(in)
                                  l_trapezoidal_rule_zm,                   & ! Intent(in)
@@ -3788,12 +3787,6 @@ module pdf_closure_module
       l_mix_rat_hm   ! if true, then the quantity is a hydrometeor mixing ratio
 
     logical, intent(in) :: &
-      l_predict_upwp_vpwp,      & ! Flag to predict <u'w'> and <v'w'> along with <u> and <v>
-                                  ! alongside the advancement of <rt>, <w'rt'>, <thl>, <wpthlp>,
-                                  ! <sclr>, and <w'sclr'> in subroutine advance_xm_wpxp.
-                                  ! Otherwise, <u'w'> and <v'w'> are still approximated by eddy
-                                  ! diffusivity when <u> and <v> are advanced in subroutine
-                                  ! advance_windm_edsclrm.
       l_rtm_nudge,              & ! For rtm nudging
       l_trapezoidal_rule_zt,    & ! If true, the trapezoidal rule is called for the
                                   ! thermodynamic-level variables output from pdf_closure.

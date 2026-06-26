@@ -103,7 +103,7 @@ subroutine f2py_pdf_closure_driver(nzm, nzt, ngrdcol, dt, hydromet_dim, sclr_dim
     thv_ds_zt, rtm_ref, wphydrometp, wp2hmp, rtphmp_zt, thlphmp_zt, &
     sclrm, wpsclrp, sclrp2, sclrprtp, sclrpthlp, sclrp3, p_sfc, &
     l_samp_stats_in_pdf_call, mixt_frac_max_mag, ts_nudge, rtm_min, rtm_nudge_max_altitude, &
-    clubb_params, iipdf_type, saturation_formula, l_predict_upwp_vpwp, l_rtm_nudge, &
+    clubb_params, iipdf_type, saturation_formula, l_rtm_nudge, &
     l_trapezoidal_rule_zt, l_trapezoidal_rule_zm, l_call_pdf_closure_twice, &
     l_use_cloud_cover, l_rcm_supersat_adj, l_mix_rat_hm, rtm, &
     rcm, cloud_frac, ice_supersat_frac, wprcp, sigma_sqd_w, wpthvp, wp2thvp, wp2up, rtpthvp, thlpthvp, &
@@ -131,7 +131,7 @@ subroutine f2py_pdf_closure_driver(nzm, nzt, ngrdcol, dt, hydromet_dim, sclr_dim
   integer, intent(in) :: hydromet_dim_transport, sclr_dim_transport
   real(core_rknd), intent(in) :: dt
   integer, intent(in) :: saturation_formula, iipdf_type
-  logical, intent(in) :: l_predict_upwp_vpwp, l_call_pdf_closure_twice
+  logical, intent(in) :: l_call_pdf_closure_twice
   logical, intent(in) :: l_samp_stats_in_pdf_call, l_rtm_nudge
   logical, intent(in) :: l_trapezoidal_rule_zt, l_trapezoidal_rule_zm
   logical, intent(in) :: l_use_cloud_cover, l_rcm_supersat_adj
@@ -184,7 +184,7 @@ subroutine f2py_pdf_closure_driver(nzm, nzt, ngrdcol, dt, hydromet_dim, sclr_dim
     p_sfc=p_sfc, l_samp_stats_in_pdf_call=l_samp_stats_in_pdf_call, mixt_frac_max_mag=mixt_frac_max_mag, &
     ts_nudge=ts_nudge, rtm_min=rtm_min, rtm_nudge_max_altitude=rtm_nudge_max_altitude, &
     clubb_params=clubb_params, iiPDF_type=iipdf_type, saturation_formula=saturation_formula, &
-    l_predict_upwp_vpwp=l_predict_upwp_vpwp, l_rtm_nudge=l_rtm_nudge, &
+    l_rtm_nudge=l_rtm_nudge, &
     l_trapezoidal_rule_zt=l_trapezoidal_rule_zt, l_trapezoidal_rule_zm=l_trapezoidal_rule_zm, &
     l_call_pdf_closure_twice=l_call_pdf_closure_twice, l_use_cloud_cover=l_use_cloud_cover, &
     l_rcm_supersat_adj=l_rcm_supersat_adj, l_mix_rat_hm=l_mix_rat_hm, &

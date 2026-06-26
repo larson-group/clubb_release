@@ -3217,7 +3217,7 @@ module clubb_driver
 
       do i = 1, ngrdcol
         call restart_clubb &
-            ( gr, iunit, hydromet_dim, hm_metadata,                                & ! Intent(in)
+            ( gr, hydromet_dim, hm_metadata,                                       & ! Intent(in)
               restart_path_case, time_restart,                                     & ! Intent(in)
               um(i,:), upwp(i,:), vm(i,:), vpwp(i,:), up2(i,:), vp2(i,:), rtm(i,:),& ! Intent(inout)
               wprtp(i,:), thlm(i,:), wpthlp(i,:), rtp2(i,:), rtp3(i,:),            & ! Intent(inout)
@@ -3791,7 +3791,7 @@ module clubb_driver
           ! for microphysics (either upscaled microphysics or SILHS).
           call pdf_hydromet_microphys_prep &
               ( gr, ngrdcol, pdf_dim, hydromet_dim,              & ! In
-                itime, dt_main, vert_decorr_coef,                & ! In
+                itime, vert_decorr_coef,                         & ! In
                 Nc_in_cloud, cloud_frac, ice_supersat_frac,      & ! In
                 rho_ds_zt, Lscale, Kh_zm, hydromet, wphydrometp, & ! In
                 corr_array_n_cloud, corr_array_n_below,          & ! In
@@ -3817,7 +3817,7 @@ module clubb_driver
 
           call silhs_generalized_grid_testing &
               ( gr, gr_desc, ngrdcol, pdf_dim, hydromet_dim,     & ! In
-                itime, dt_main, vert_decorr_coef,                & ! In
+                itime, vert_decorr_coef,                         & ! In
                 Nc_in_cloud, cloud_frac, ice_supersat_frac,      & ! In
                 rho_ds_zt, Lscale, Kh_zm, hydromet, wphydrometp, & ! In
                 corr_array_n_cloud, corr_array_n_below,          & ! In
@@ -6158,7 +6158,7 @@ module clubb_driver
 
   !-----------------------------------------------------------------------
   subroutine restart_clubb &
-              ( gr, iunit, hydromet_dim, hm_metadata, & ! In
+              ( gr, hydromet_dim, hm_metadata, & ! In
                 restart_path_case, time_restart, & ! In
                 um, upwp, vm, vpwp, up2, vp2, rtm, & ! Inout
                 wprtp, thlm, wpthlp, rtp2, rtp3, & ! Inout
@@ -6259,8 +6259,6 @@ module clubb_driver
 
     ! Input Variables
     type(grid), intent(in) :: gr
-
-    integer, intent(in) :: iunit
 
     character(len=*), intent(in) :: &
       restart_path_case     ! Path to netCDF data for restart

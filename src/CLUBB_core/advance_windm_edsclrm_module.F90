@@ -47,7 +47,6 @@ module advance_windm_edsclrm_module
                                     l_linearize_pbl_winds, &
                                     l_do_expldiff_rtm_thlm, &
                                     fill_holes_type, &
-                                    order_xp2_xpyp, order_wp2_wp3, order_windm, &
                                     upwp_cl_num, vpwp_cl_num, &
                                     stats,         &
                                     um, vm, thlm, rtm, edsclrm, &
@@ -195,10 +194,7 @@ module advance_windm_edsclrm_module
       l_do_expldiff_rtm_thlm   ! Explicitly diffuse rtm and thlm with eddy scalars
 
     integer, intent(in) :: &
-      fill_holes_type, &
-      order_xp2_xpyp, &
-      order_wp2_wp3, &
-      order_windm
+      fill_holes_type
 
     integer, intent(inout) :: &
       upwp_cl_num, &

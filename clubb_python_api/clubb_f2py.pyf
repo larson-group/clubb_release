@@ -1840,7 +1840,7 @@ python module clubb_f2py
         thv_ds_zt, rtm_ref, wphydrometp, wp2hmp, rtphmp_zt, thlphmp_zt, &
         sclrm, wpsclrp, sclrp2, sclrprtp, sclrpthlp, sclrp3, p_sfc, &
         l_samp_stats_in_pdf_call, mixt_frac_max_mag, ts_nudge, rtm_min, rtm_nudge_max_altitude, &
-        clubb_params, iipdf_type, saturation_formula, l_predict_upwp_vpwp, l_rtm_nudge, &
+        clubb_params, iipdf_type, saturation_formula, l_rtm_nudge, &
         l_trapezoidal_rule_zt, l_trapezoidal_rule_zm, l_call_pdf_closure_twice, &
         l_use_cloud_cover, l_rcm_supersat_adj, l_mix_rat_hm, rtm, &
         rcm, cloud_frac, ice_supersat_frac, wprcp, sigma_sqd_w, wpthvp, wp2thvp, wp2up, rtpthvp, thlpthvp, &
@@ -1854,7 +1854,7 @@ python module clubb_f2py
       integer, intent(in), optional :: hydromet_dim_transport, sclr_dim_transport
       double precision, intent(in) :: dt
       integer, intent(in) :: saturation_formula, iipdf_type
-      logical, intent(in) :: l_predict_upwp_vpwp, l_call_pdf_closure_twice
+      logical, intent(in) :: l_call_pdf_closure_twice
       double precision, dimension(sclr_dim_transport), intent(in) :: sclr_tol
       double precision, intent(in) :: mixt_frac_max_mag, ts_nudge, rtm_min, rtm_nudge_max_altitude
       double precision, dimension(ngrdcol, *), intent(in) :: clubb_params
@@ -2511,7 +2511,7 @@ python module clubb_f2py
         fcor, l_implemented, ts_nudge, tridiag_solve_method, &
         l_predict_upwp_vpwp, l_upwind_xm_ma, l_uv_nudge, l_tke_aniso, &
         l_lmm_stepping, l_linearize_pbl_winds, l_do_expldiff_rtm_thlm, &
-        fill_holes_type, order_xp2_xpyp, order_wp2_wp3, order_windm, &
+        fill_holes_type, &
         upwp_cl_num, vpwp_cl_num, &
         um, vm, thlm, rtm, edsclrm, upwp, vpwp, wpedsclrp, &
         um_pert, vm_pert, upwp_pert, vpwp_pert)
@@ -2533,7 +2533,7 @@ python module clubb_f2py
       logical, intent(in) :: &
         l_predict_upwp_vpwp, l_upwind_xm_ma, l_uv_nudge, l_tke_aniso, l_lmm_stepping, &
         l_linearize_pbl_winds, l_do_expldiff_rtm_thlm
-      integer, intent(in) :: fill_holes_type, order_xp2_xpyp, order_wp2_wp3, order_windm
+      integer, intent(in) :: fill_holes_type
       integer, intent(in,out) :: upwp_cl_num, vpwp_cl_num
       double precision, dimension(ngrdcol, nzt), intent(in,out) :: um, vm, thlm, rtm, um_pert, vm_pert
       double precision, dimension(ngrdcol, nzm), intent(in,out) :: upwp, vpwp, upwp_pert, vpwp_pert

@@ -831,7 +831,6 @@ module advance_clubb_core_module
                                clubb_params,                                & ! In
                                clubb_config_flags%iiPDF_type,               & ! In
                                clubb_config_flags%saturation_formula,       & ! In
-                               clubb_config_flags%l_predict_upwp_vpwp,      & ! In
                                clubb_config_flags%l_rtm_nudge,              & ! In
                                clubb_config_flags%l_trapezoidal_rule_zt,    & ! In
                                clubb_config_flags%l_trapezoidal_rule_zm,    & ! In
@@ -1371,7 +1370,6 @@ module advance_clubb_core_module
                                     clubb_config_flags%l_linearize_pbl_winds,   & ! In
                                     clubb_config_flags%l_do_expldiff_rtm_thlm,  & ! In
                                     clubb_config_flags%fill_holes_type,         & ! In
-                                    order_xp2_xpyp, order_wp2_wp3, order_windm, & ! In
                                     upwp_cl_num, vpwp_cl_num,                   & ! InOut
                                     stats,                                      & ! InOut
                                     um, vm, thlm, rtm, edsclrm,                & ! InOut
@@ -1471,7 +1469,6 @@ module advance_clubb_core_module
                                clubb_params,                                & ! In
                                clubb_config_flags%iiPDF_type,               & ! In
                                clubb_config_flags%saturation_formula,       & ! In
-                               clubb_config_flags%l_predict_upwp_vpwp,      & ! In
                                clubb_config_flags%l_rtm_nudge,              & ! In
                                clubb_config_flags%l_trapezoidal_rule_zt,    & ! In
                                clubb_config_flags%l_trapezoidal_rule_zm,    & ! In

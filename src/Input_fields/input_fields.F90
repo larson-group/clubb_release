@@ -148,7 +148,7 @@ module inputfields
 !   None
 !-----------------------------------------------------------------------
 
-    use constants_clubb, only: fstderr, fstdout ! Constants
+    use constants_clubb, only: fstderr ! Constants
 
     implicit none
 
@@ -2872,9 +2872,6 @@ module inputfields
 
     type (stat_file), dimension(1:size(stat_files)) :: &
       fread_vars
-
-    integer, parameter :: &
-      base_unit_number = 15
 
     logical :: &
       l_convert_to_MKS ! convert inputs to MKS units

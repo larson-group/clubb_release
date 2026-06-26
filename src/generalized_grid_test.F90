@@ -1725,7 +1725,7 @@ module generalized_grid_test
   !=============================================================================
   subroutine silhs_generalized_grid_testing &
              ( gr, gr_desc, ngrdcol, pdf_dim, hydromet_dim,     & ! In
-               itime, dt_main, vert_decorr_coef,                & ! In
+               itime, vert_decorr_coef,                         & ! In
                Nc_in_cloud, cloud_frac, ice_supersat_frac,      & ! In
                rho_ds_zt, Lscale, Kh_zm, hydromet, wphydrometp, & ! In
                corr_array_n_cloud, corr_array_n_below,          & ! In
@@ -1821,7 +1821,6 @@ module generalized_grid_test
       itime
 
     real( kind = core_rknd ), intent(in) :: &
-      dt_main,          & ! Model timestep                              [s]
       vert_decorr_coef    ! Empirically defined de-correlation constant [-]
 
     real( kind = core_rknd ), dimension(ngrdcol,gr%nzt), intent(in) :: &
@@ -2071,7 +2070,7 @@ module generalized_grid_test
       ! Call pdf_hydromet_microphys_prep for the ascending grid direction
       call pdf_hydromet_microphys_prep &
            ( gr, ngrdcol, pdf_dim, hydromet_dim,              & ! In
-             itime, dt_main, vert_decorr_coef,                & ! In
+             itime, vert_decorr_coef,                         & ! In
              Nc_in_cloud, cloud_frac, ice_supersat_frac,      & ! In
              rho_ds_zt, Lscale, Kh_zm, hydromet, wphydrometp, & ! In
              corr_array_n_cloud, corr_array_n_below,          & ! In
@@ -2122,7 +2121,7 @@ module generalized_grid_test
       ! in this call.
       call pdf_hydromet_microphys_prep &
            ( gr_desc, ngrdcol, pdf_dim, hydromet_dim,         & ! In
-             itime, dt_main, vert_decorr_coef,                & ! In
+             itime, vert_decorr_coef,                         & ! In
              Nc_in_cloud_flip, cloud_frac_flip, ice_supersat_frac_flip, & ! In
              rho_ds_zt_flip, Lscale_flip, Kh_zm_flip, hydromet_flip, wphydrometp_flip, & ! In
              corr_array_n_cloud, corr_array_n_below,          & ! In
