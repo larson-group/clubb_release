@@ -328,11 +328,6 @@ module generalized_grid_test
     logical, dimension(hydromet_dim), intent(in) :: &
       l_mix_rat_hm   ! if true, then the quantity is a hydrometeor mixing ratio
 
-#ifdef CLUBBND_CAM 
-    real( kind = core_rknd ), intent(in), dimension(ngrdcol) :: & 
-      varmu 
-#endif 
-
     real( kind = core_rknd ), dimension(ngrdcol,nzm,hydromet_dim), intent(in) :: &
       wphydrometp    ! Covariance of w and a hydrometeor   [(m/s) <hm units>]
 

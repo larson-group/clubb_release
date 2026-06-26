@@ -19,9 +19,6 @@ module mixing_length
   subroutine calc_Lscale( nzm, nzt, ngrdcol, gr, l_implemented, host_dx, host_dy, &
                           p_in_Pa, exner, rtm, thlm, thvm, thlp2, rtp2, rtpthlp, &
                           pdf_params, em, thv_ds_zt, lmin, &
-#ifdef CLUBBND_CAM
-                          varmu, &
-#endif
                           upwp_sfc, vpwp_sfc, ddzt_umvm_sqd, ice_supersat_frac, &
                           ufmin, tau_const, sfc_elevation, clubb_params, &
                           saturation_formula, l_Lscale_plume_centered, &
@@ -113,11 +110,6 @@ module mixing_length
       upwp_sfc,       & ! Surface value of u'w' [m^2/s^2]
       vpwp_sfc,       & ! Surface value of v'w' [m^2/s^2]
       sfc_elevation     ! Surface elevation [m]
-
-#ifdef CLUBBND_CAM
-    real( kind = core_rknd ), dimension(ngrdcol), intent(in) :: &
-      varmu   ! CLUBBND-CAM horizontal grid-size parameter [m]
-#endif
 
     real( kind = core_rknd ), dimension(ngrdcol,nzt), intent(in) :: &
       p_in_Pa,           & ! Pressure [Pa]
@@ -272,19 +264,11 @@ module mixing_length
     if ( .not. l_diag_Lscale_from_tau ) then
       ! Compute Lscale first using the buoyant parcel calculation.
 
-#ifdef CLUBBND_CAM
-      !$acc parallel loop gang vector default(present)
-      do i = 1, ngrdcol
-        newmu(i) = varmu(i)
-      end do
-      !$acc end parallel loop
-#else
       !$acc parallel loop gang vector default(present)
       do i = 1, ngrdcol
         newmu(i) = clubb_params(i,imu)
       end do
       !$acc end parallel loop
-#endif
 
       ! Interpolate thlp2 and rtp2 to thermodynamic levels.
       thlp2_zt(:,:) = zm2zt_api( nzm, nzt, ngrdcol, gr, thlp2(:,:), &

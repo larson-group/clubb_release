@@ -129,9 +129,6 @@ module advance_clubb_core_module
                invrs_rho_ds_zt, thv_ds_zm, thv_ds_zt, &             ! In
                l_mix_rat_hm, &                                      ! In
                rfrzm, &                                             ! In
-#ifdef CLUBBND_CAM
-               varmu, &                                             ! In
-#endif
                wphydrometp, wp2hmp, rtphmp_zt, thlphmp_zt, &        ! In
                host_dx, host_dy, &                                  ! In
                clubb_params, nu_vert_res_dep, lmin, &               ! In
@@ -363,11 +360,6 @@ module advance_clubb_core_module
 
     logical, dimension(hydromet_dim), intent(in) :: &
       l_mix_rat_hm   ! if true, then the quantity is a hydrometeor mixing ratio
-
-#ifdef CLUBBND_CAM
-    real( kind = core_rknd ), intent(in), dimension(ngrdcol) :: &
-      varmu
-#endif
 
     real( kind = core_rknd ), dimension(ngrdcol,nzm,hydromet_dim), intent(in) :: &
       wphydrometp    ! Covariance of w and a hydrometeor      [(m/s) <hm units>]
@@ -995,9 +987,6 @@ module advance_clubb_core_module
                       p_in_Pa, exner, rtm, thlm, thvm,                              & ! In
                       thlp2, rtp2, rtpthlp,                                         & ! In
                       pdf_params, em, thv_ds_zt, lmin,                              & ! In
-#ifdef CLUBBND_CAM
-                      varmu,                                                        & ! In
-#endif
                       upwp_sfc, vpwp_sfc, ddzt_umvm_sqd, ice_supersat_frac,         & ! In
                       ufmin, tau_const, sfc_elevation, clubb_params,                & ! In
                       clubb_config_flags%saturation_formula,                        & ! In

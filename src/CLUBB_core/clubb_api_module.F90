@@ -501,9 +501,6 @@ contains
     invrs_rho_ds_zt, thv_ds_zm, thv_ds_zt, &                ! intent(in) 
     l_mix_rat_hm, &                                         ! intent(in)
     rfrzm, &                                                ! intent(in)
-#ifdef CLUBBND_CAM
-    varmu, &                                                ! intent(in)
-#endif
     wphydrometp, wp2hmp, rtphmp_zt, thlphmp_zt, &           ! intent(in)
     host_dx, host_dy, &                                     ! intent(in)
     clubb_params, nu_vert_res_dep, lmin, &                  ! intent(in)
@@ -600,11 +597,6 @@ contains
 
     logical, dimension(hydromet_dim), intent(in) :: &
       l_mix_rat_hm   ! if true, then the quantity is a hydrometeor mixing ratio
-
-#ifdef CLUBBND_CAM
-    real( kind = core_rknd ), intent(in) :: &
-      varmu
-#endif
 
     real( kind = core_rknd ), dimension(gr%nzm,hydromet_dim), intent(in) :: &
       wphydrometp    ! Covariance of w and a hydrometeor      [(m/s) <hm units>]
@@ -833,11 +825,6 @@ contains
       invrs_rho_ds_zm_col, & ! Inverse dry, static density on momentum levs. [m^3/kg]
       thv_ds_zm_col          ! Dry, base-state theta_v on momentum levs. [K]
 
-#ifdef CLUBBND_CAM 
-    real( kind = core_rknd ), dimension(1) :: & 
-      varmu_col 
-#endif 
-
     real( kind = core_rknd ), dimension(1,gr%nzm,hydromet_dim) :: &
       wphydrometp_col    ! Covariance of w and a hydrometeor      [(m/s) <hm units>]
 
@@ -1053,9 +1040,6 @@ contains
     thv_ds_zt_col(1,:) = thv_ds_zt
     rfrzm_col(1,:) = rfrzm
 
-#ifdef CLUBBND_CAM
-    varmu_col(1) = varmu
-#endif
     wphydrometp_col(1,:,:) = wphydrometp
     wp2hmp_col(1,:,:) = wp2hmp
     rtphmp_zt_col(1,:,:) = rtphmp_zt
@@ -1231,10 +1215,6 @@ contains
     !$acc data copyout( qclvar_col )
 #endif
 
-#ifdef CLUBBND_CAM
-    !$acc data copyin( varmu_col )
-#endif
-
     call advance_clubb_core( gr, gr%nzm, gr%nzt, 1,             &             ! intent(in)
       l_implemented, dt, fcor_col, fcor_y_col, sfc_elevation_col, &           ! intent(in)
       hydromet_dim, &                                                         ! intent(in)
@@ -1252,9 +1232,6 @@ contains
       invrs_rho_ds_zt_col, thv_ds_zm_col, thv_ds_zt_col, &                    ! intent(in)
       l_mix_rat_hm, &                                                         ! intent(in)
       rfrzm_col, &                                                            ! intent(in)
-#ifdef CLUBBND_CAM
-      varmu_col, &
-#endif
       wphydrometp_col, wp2hmp_col, rtphmp_zt_col, thlphmp_zt_col, &               ! intent(in)
       host_dx_col, host_dy_col, &                                                 ! intent(in)
       clubb_params_col, nu_vert_res_dep, lmin, &                                  ! intent(in)
@@ -1292,10 +1269,6 @@ contains
     !$acc end data
 
 #ifdef CLUBB_CAM
-    !$acc end data
-#endif
-
-#ifdef CLUBBND_CAM
     !$acc end data
 #endif
 
@@ -1389,9 +1362,6 @@ contains
     invrs_rho_ds_zt, thv_ds_zm, thv_ds_zt, &                ! intent(in) 
     l_mix_rat_hm, &                                         ! intent(in)
     rfrzm, &                                                ! intent(in)
-#ifdef CLUBBND_CAM
-    varmu, &                                                ! intent(in)
-#endif
     wphydrometp, wp2hmp, rtphmp_zt, thlphmp_zt, &           ! intent(in)
     host_dx, host_dy, &                                     ! intent(in)
     clubb_params, nu_vert_res_dep, lmin, &                  ! intent(in)
@@ -1493,11 +1463,6 @@ contains
 
     logical, dimension(hydromet_dim), intent(in) :: &
       l_mix_rat_hm   ! if true, then the quantity is a hydrometeor mixing ratio
-
-#ifdef CLUBBND_CAM 
-    real( kind = core_rknd ), intent(in), dimension(ngrdcol) :: & 
-      varmu 
-#endif 
 
     real( kind = core_rknd ), dimension(ngrdcol,nzm, hydromet_dim), intent(in) :: &
       wphydrometp    ! Covariance of w and a hydrometeor   [(m/s) <hm units>]
@@ -1776,10 +1741,6 @@ contains
     !$acc data copyout( qclvar )
 #endif
 
-#ifdef CLUBBND_CAM
-    !$acc data copyin( varmu )
-#endif
-
     call advance_clubb_core( gr, nzm, nzt, ngrdcol, &         ! intent(in)
       l_implemented, dt, fcor, fcor_y, sfc_elevation, &       ! intent(in)
       hydromet_dim, &                                         ! intent(in)
@@ -1797,9 +1758,6 @@ contains
       invrs_rho_ds_zt, thv_ds_zm, thv_ds_zt, &                ! intent(in) 
       l_mix_rat_hm,&                                          ! intent(in)
       rfrzm, &                                                ! intent(in)
-#ifdef CLUBBND_CAM
-      varmu, &
-#endif 
       wphydrometp, wp2hmp, rtphmp_zt, thlphmp_zt, &           ! intent(in)
       host_dx, host_dy, &                                     ! intent(in)
       clubb_params, nu_vert_res_dep, lmin, &                  ! intent(in)
@@ -1837,10 +1795,6 @@ contains
     !$acc end data
 
 #ifdef CLUBB_CAM
-    !$acc end data
-#endif
-
-#ifdef CLUBBND_CAM
     !$acc end data
 #endif
 
