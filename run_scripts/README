@@ -184,21 +184,6 @@ Examples:
   Runs the tuner, then runs standalone CLUBB output for the top three complete
   parameter sets.
 
-### `run_jacobian.bash`
-
-Runs the CLUBB Jacobian executable using a generated `jacobian.in` namelist.
-This script expects the Jacobian executable at `bin/jacobian`.
-
-Examples:
-
-- `(cd run_scripts && ./run_jacobian.bash bomex)`
-  Runs the Jacobian program for `bomex` with default tunable parameters and
-  stats.
-
-- `(cd run_scripts && ./run_jacobian.bash bomex ../input/tunable_parameters/tunable_parameters.in ../input/stats/standard_stats.in)`
-  Runs the Jacobian program for `bomex` with explicit parameter and stats
-  files.
-
 ## `convergence_run/` Scripts
 
 The `convergence_run/` directory contains an older convergence-test workflow.

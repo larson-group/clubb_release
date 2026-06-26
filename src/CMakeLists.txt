@@ -89,12 +89,6 @@ target_link_libraries(clubb_loss_driver_test PRIVATE clubb_driver_lib
                                                     input_fields_lib
                                                   )
 
-# Commented out, since this appears unused as of 2025
-# # Create jacobian executable
-# add_executable(jacobian jacobian.F90)
-# target_link_libraries(jacobian PRIVATE clubb_driver_lib)
-
-
 install(TARGETS clubb_driver_lib
                 clubb_tuner
                 G_unit_tests
@@ -103,5 +97,4 @@ install(TARGETS clubb_driver_lib
                 clubb_driver_test
                 clubb_standalone_loss
                 clubb_loss_driver_test
-                #jacobian
         DESTINATION ${CMAKE_INSTALL_PREFIX})
