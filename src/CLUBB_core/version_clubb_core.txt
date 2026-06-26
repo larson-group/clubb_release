@@ -1,0 +1,188 @@
+commit f1b6cfe91fd5c120333991b2386dd7e7845ae2e3
+Author: Gunther Huebler <huebler@uwm.edu>
+Date:   Fri Jan 9 15:11:54 2026 -0600
+
+    Removing extra acc end statement
+
+commit ba5dd963b14b0238fc5e8b358390af68a66aa3a0
+Author: Gunther Huebler <huebler@uwm.edu>
+Date:   Fri Jan 9 13:10:40 2026 -0600
+
+    Another small gpu bug fix
+
+commit ba709f78476c6e1868009855327c1d42cbb90410
+Author: Gunther Huebler <huebler@uwm.edu>
+Date:   Fri Jan 9 12:01:53 2026 -0600
+
+    More small bug fixes
+
+commit d93dd4e58f75626f8b70b6e631d463aed4ed53fa
+Author: Gunther Huebler <huebler@uwm.edu>
+Date:   Fri Jan 9 04:20:31 2026 -0600
+
+    More small bug fixes
+
+commit 1c7c6ce6eaba598c7e10dc276e152a825a0642ac
+Author: Gunther Huebler <huebler@uwm.edu>
+Date:   Fri Jan 9 04:16:11 2026 -0600
+
+    Adding deallocation for fcor_y
+
+commit 8033a1492b3b2ce6c8d314942d2fba00669188c3
+Author: Gunther Huebler <huebler@uwm.edu>
+Date:   Fri Jan 9 03:40:30 2026 -0600
+
+    GPU fixed and cgils_s6 fix
+
+commit 4902a5ccf6c0da1bf588ea853aaadbc9a776dfa2
+Author: Gunther Huebler <37674341+huebleruwm@users.noreply.github.com>
+Date:   Thu Jan 8 14:23:44 2026 -0600
+
+    Non trad coriolis (#1267)
+    
+    * Updating the clubb core and silhs version files
+    
+    * Fixing bug. qclvar copying is handled by the api, but we were deleting it with an unstructured data statement. I added this due as a fix before thinking qclvar was a local variable, which happened because I mixed up the CLUBB_CAM and CLUBBND_CAM flags. https://github.com/larson-group/cam/issues/175
+    
+    * Fixing GPU bug. There is a vertical dependency with wpxp. This is what was breaking the ECT test, see larson-group/cam#175
+    
+    * Moving pdf_params copying to copyin. This is the data structure that contains pointers, and these pointers will be different on the host and device, so it is bad in theory to copy the structure back to the CPU as it might overwrite cpu memory pointers with gpu memory pointers. In practice though I've seen no problems caused by this, I'm just making this commit preemptively, and it has already been tested with the ECT test.
+    
+    * Moving PosInf to clubb_model_settings.F90
+    
+    * Updating the clubb core and silhs version files
+    
+    * Add flags for the Coriolis terms.
+    
+    * Pass fcory from api module into advance module
+    
+    * Implement the traditional Coriolis terms
+    
+    * Implement the nontraditional Coriolis terms
+    
+    * Add stats variables for the Coriolis terms
+    
+    * Compute Coriolis parameters from namelist latitude
+    
+    * Create the coriolis_test case
+    
+    * Tune the coriolis_test case. However, oscillation frequency is too slow
+    
+    * Correct a coefficient in Coriolis. "coriolis_test" matches analytical
+    
+    * Update advance_clubb_core_module.F90
+    
+    Rename fcory as fcor_y and add description
+    
+    * Update advance_wp2_wp3_module.F90
+    
+    Rename fcory as fcor_y and add description
+    
+    * Update advance_xm_wpxp_module.F90
+    
+    Rename fcory as fcor_y and add description
+    
+    * Update advance_xp2_xpyp_module.F90
+    
+    Rename fcory as fcor_y and add description
+    
+    * Update clubb_api_module.F90
+    
+    Rename fcory as fcor_y and add description
+    
+    * Update spurious_source_test.F90
+    
+    Rename fcory as fcor_y and add description
+    
+    * Update clubb_driver.F90
+    
+    Rename fcor as fcor_y and add description.
+    Also, add description for the coriolis_test
+    
+    * Update generalized_grid_test.F90
+    
+    Rename fcory as fcor_y and add description.
+    
+    * Update coriolis_test_model.in
+    
+    Add description for the Coriolis test case
+    
+    * Stablize the cgils_s6 case with smaller time step
+    
+    * Create the ekman case
+    
+    * Tune the ekman case to match LES
+    
+    * Compute wp2up with PDF and pass along with wp2thvp
+    
+    * Implement the nontraditional Coriolis term for wp3
+    
+    * Fine-tune parameters for the ekman case
+    
+    * Create the atex_long case
+    
+    * Retune ekman case with l_vary_convect_depth = .true.
+    
+    * Fine-tune the atex_long case
+    
+    * Add atex_long case to pyplotgen
+    
+    * Fine-tune atex_long case with less radical changes
+    
+    * Updating the clubb core and silhs version files
+    
+    * Small bug fix in the wp2up flip and adding new files to the cmakelist
+    
+    * Renmaing, moving some files, and reverting change to cgils_s6 timestep
+    
+    * Adding new flags to flag test file
+    
+    * Updating comment for fcor_y calculation explanation
+    
+    * Removing accidentally added file
+    
+    ---------
+    
+    Co-authored-by: pickett <larsongroupgithub@gmail.com>
+    Co-authored-by: Hing Ong <hing.ong@anl.gov>
+    Co-authored-by: Hing Ong <36782452+HingOng@users.noreply.github.com>
+
+commit 418c202a9b0512fc8c4f421918cc978164db852d
+Author: Gunther Huebler <37674341+huebleruwm@users.noreply.github.com>
+Date:   Wed Dec 17 14:58:28 2025 -0600
+
+    Fixes for fill_holes and edsclr code (#1266)
+    
+    * Fixing bugs in new hole fillers that caused error when ran in descending mode, the issue was that dz is negative in descending mode, so we need abs() around it when calculating the normalized mass. Also fixing a related bug in the way edsclr code calls the hole filler - it was not using the generalized bounds. Also removing the ifdef in favor of normal ifs
+    
+    * Copying the rtm and thm values from arm_97_sounding.in to the edsclr_sounding file. This still allows arm_97 to catch the bugs we want it to.
+
+commit 0959bb14d6f748501bee53902e484166d501923c
+Author: Gunther Huebler <37674341+huebleruwm@users.noreply.github.com>
+Date:   Wed Dec 10 16:34:31 2025 -0600
+
+    Grid reverse matrix test (#1265)
+    
+    * Making new flag l_force_descending_solves that forces us to use descending solves. Having it true keeps results BFB between ascending and descending when using -O0.
+    
+    * renaming test
+    
+    * Moving flag
+    
+    * test fix
+    
+    * test fix
+    
+    * test fix
+    
+    * Removing iteration limit on script and adding test error
+    
+    * Removing test error, it was correctly caught
+    
+    * Adding max statement to aid in single precision runs and removing accidentally commited file.
+
+commit 988ea0f2cc24e424e0a204b65bfd59bd4e9eee5b
+Author: Gunther Huebler <huebler@uwm.edu>
+Date:   Thu Dec 4 20:47:54 2025 -0600
+
+    Small bug fix to make gfortran+debug happy, without the _core_rknd this could be a potential type error

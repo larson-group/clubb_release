@@ -4,6 +4,10 @@
 ! The "ekman" case is a benchmark against an idealized large-eddy simulation where an Ekman spiral
 ! develops in a dry and statically neutral atmosphere with constant geostrophic wind.
 
+! Before running this case,
+! set "thl_tol = zero" and "rt_tol = zero" in "../../src/CLUBB_core/constants_clubb.F90"
+! and then compile.
+
 ! Hing Ong, 1 Sep 2025
 
 &model_setting
