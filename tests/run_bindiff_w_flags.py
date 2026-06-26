@@ -70,7 +70,6 @@ from pathlib import Path
 
 
 DEFAULT_REPO_URL = "https://github.com/larson-group/clubb.git"
-STATS_FILE_SUFFIX = "_stats.nc"
 REPO_ROOT = Path(__file__).resolve().parent.parent
 DEFAULT_FLAG_CONFIG_FILE = REPO_ROOT / "input" / "flag_sets" / "run_bindiff_w_flags_config_core_flags.json"
 RUN_BINDIFF_ALL = REPO_ROOT / "run_scripts" / "run_bindiff_all.py"
@@ -288,174 +287,6 @@ def run_clubb_model_for_all_flag_settings(git_ref, clone_dir, args):
     return result.returncode
 
 
-def get_flag_dirs(root):
-    """Return child directories keyed by flag-set name."""
-    return {path.name: path for path in root.iterdir() if path.is_dir()}
-
-
-def get_nc_files(root):
-    """Return relative NetCDF paths under a flag-set output directory."""
-    return {str(path.relative_to(root)) for path in root.rglob("*.nc")}
-
-
-def case_from_nc_file(path):
-    """Infer case name from a *_stats.nc relative path."""
-    filename = Path(path).name
-    if filename.endswith(STATS_FILE_SUFFIX):
-        return filename[: -len(STATS_FILE_SUFFIX)]
-    return None
-
-
-def get_nc_cases(root):
-    """Return case names with stats NetCDF files under a flag-set output directory."""
-    return {
-        case
-        for case in (case_from_nc_file(path) for path in get_nc_files(root))
-        if case
-    }
-
-
-def print_name_diff(kind, names):
-    """Print a sorted list of names for missing flag sets or files."""
-    print(f"{kind}:")
-    for name in sorted(names):
-        print(f"  {name}")
-
-
-def add_summary(summary, flag_set, case_name, reason):
-    """Record why one flag-set/case pair differed."""
-    summary.setdefault(flag_set, {}).setdefault(case_name, set()).add(reason)
-
-
-def summarize_differences(summary):
-    """Print the compact flag-set/case difference summary."""
-    if not summary:
-        print("\nDIFFERENCE SUMMARY: no flag sets had differing cases.")
-        return
-
-    print("\nDIFFERENCE SUMMARY:")
-    for flag_set in sorted(summary):
-        print(f"  {flag_set}:")
-        for case_name in sorted(summary[flag_set]):
-            reasons = ", ".join(sorted(summary[flag_set][case_name]))
-            print(f"    {case_name}: {reasons}")
-
-
-def compare_varying_flags_outputs(dir1, dir2, verbose):
-    """Compare two run_clubb_w_varying_flags.py output directories."""
-    dir1 = Path(dir1).resolve()
-    dir2 = Path(dir2).resolve()
-
-    if not dir1.is_dir() or not dir2.is_dir():
-        print("Both inputs must be existing directories.")
-        return 2
-
-    if dir1 == dir2:
-        print("Input paths resolve to the same directory.")
-        return 2
-
-    flag_dirs_1 = get_flag_dirs(dir1)
-    flag_dirs_2 = get_flag_dirs(dir2)
-
-    if not flag_dirs_1 or not flag_dirs_2:
-        print("Expected both inputs to contain per-flag output subdirectories.")
-        return 2
-
-    only_in_1 = set(flag_dirs_1) - set(flag_dirs_2)
-    only_in_2 = set(flag_dirs_2) - set(flag_dirs_1)
-    common = sorted(set(flag_dirs_1) & set(flag_dirs_2))
-
-    difference_summary = {}
-    had_difference = False
-
-    if only_in_1:
-        print_name_diff(f"Flag directories only in {dir1}", only_in_1)
-        had_difference = True
-
-    if only_in_2:
-        print_name_diff(f"Flag directories only in {dir2}", only_in_2)
-        had_difference = True
-
-    for flag_name in common:
-        flag_dir_1 = flag_dirs_1[flag_name]
-        flag_dir_2 = flag_dirs_2[flag_name]
-        nc_files_1 = get_nc_files(flag_dir_1)
-        nc_files_2 = get_nc_files(flag_dir_2)
-
-        missing_in_2 = nc_files_1 - nc_files_2
-        missing_in_1 = nc_files_2 - nc_files_1
-
-        if missing_in_2:
-            print_name_diff(
-                f"NetCDF files in {flag_dir_1} but not {flag_dir_2}",
-                missing_in_2,
-            )
-            had_difference = True
-            for nc_file in missing_in_2:
-                case_name = case_from_nc_file(nc_file)
-                if case_name:
-                    add_summary(difference_summary, flag_name, case_name, f"NetCDF missing from {flag_dir_2}")
-
-        if missing_in_1:
-            print_name_diff(
-                f"NetCDF files in {flag_dir_2} but not {flag_dir_1}",
-                missing_in_1,
-            )
-            had_difference = True
-            for nc_file in missing_in_1:
-                case_name = case_from_nc_file(nc_file)
-                if case_name:
-                    add_summary(difference_summary, flag_name, case_name, f"NetCDF missing from {flag_dir_1}")
-
-        common_cases = sorted(get_nc_cases(flag_dir_1) & get_nc_cases(flag_dir_2))
-        if not common_cases:
-            print(f"\nNo common successful cases to compare for flag set: {flag_name}")
-            continue
-
-        print(f"\nComparing flag set: {flag_name}")
-        result = subprocess.run(
-            [
-                sys.executable,
-                str(RUN_BINDIFF_ALL),
-                "-v",
-                str(verbose),
-                str(flag_dir_1),
-                str(flag_dir_2),
-            ],
-            check=False,
-        )
-
-        if result.returncode != 0:
-            had_difference = True
-            for case_name in common_cases:
-                case_result = subprocess.run(
-                    [
-                        sys.executable,
-                        str(RUN_BINDIFF_ALL),
-                        "-v",
-                        "0",
-                        "-case",
-                        case_name,
-                        str(flag_dir_1),
-                        str(flag_dir_2),
-                    ],
-                    stdout=subprocess.DEVNULL,
-                    stderr=subprocess.STDOUT,
-                    check=False,
-                )
-                if case_result.returncode != 0:
-                    add_summary(difference_summary, flag_name, case_name, "NetCDF values differ")
-
-    summarize_differences(difference_summary)
-
-    if had_difference:
-        print("\nSUMMARY: differences were detected across varying-flags output.")
-        return 1
-
-    print("\nSUMMARY: no differences detected across varying-flags output.")
-    return 0
-
-
 def compare_outputs(ref_to_clone, args):
     """Compare each pair of cloned refs across matching flag-set output directories."""
     exit_status = 0
@@ -464,8 +295,20 @@ def compare_outputs(ref_to_clone, args):
         output1 = ref_to_clone[ref1] / "output"
         output2 = ref_to_clone[ref2] / "output"
         print(f"\nComparing {ref1} and {ref2}...")
-        if compare_varying_flags_outputs(output1, output2, args.verbose) != 0:
-            exit_status = 1
+        result = subprocess.run(
+            [
+                sys.executable,
+                str(RUN_BINDIFF_ALL),
+                "--flag-sets",
+                "-v",
+                str(args.verbose),
+                str(output1),
+                str(output2),
+            ],
+            check=False,
+        )
+        if result.returncode != 0 and exit_status == 0:
+            exit_status = result.returncode
 
     return exit_status
 

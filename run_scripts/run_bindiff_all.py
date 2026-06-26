@@ -31,6 +31,7 @@ File format compatibility:
 
 Usage:
   python run_bindiff_all.py <dir1> <dir2> [options]
+  python run_bindiff_all.py --flag-sets <output_root1> <output_root2> [options]
 
   Options:
     -v {0,1,2}    Verbosity (0=summary, 1=per-file, 2=full diff tables)
@@ -51,6 +52,7 @@ import tabulate
 import multiprocessing as mp
 import io
 import contextlib
+from pathlib import Path
 
 scriptPath = os.path.dirname(os.path.realpath(__file__))+'/'
 outFilePath = os.path.normpath(scriptPath+"../output/bindiffs/")
@@ -114,6 +116,7 @@ def main():
     parser.add_argument("-pt", "--percent_thresh", dest="percent_thresh", type=float, action="store", help="(float) Define the maximum average absolute percent difference for an individual variable to be treated as different.")
     parser.add_argument("-s", "--scale", action="store_true", help="Scale absolute differences by the average field value.")
     parser.add_argument("-case", "--case", action="store", default=None, help="Compare only the specified case name (e.g. 'bomex'). When omitted, all cases found in both directories are compared.")
+    parser.add_argument("--flag-sets", action="store_true", help="Treat each immediate child directory as one flag-set output directory and compare matching flag sets.")
     parser.add_argument("dirs", nargs=2, help="Need 2 clubb output directories containing netCDF files with the same name to diff. Usage: python run_bindiff_all.py dir_path1 dir_path2")
     args = parser.parse_args()
 
@@ -153,6 +156,18 @@ def main():
     if args.fileout:
         if not os.path.exists(outFilePath):
             os.makedirs(outFilePath)
+
+    if args.flag_sets:
+        sys.exit(compare_flag_set_outputs(
+            args.dirs[0],
+            args.dirs[1],
+            args.fileout,
+            args.verbose,
+            abs_error_threshold,
+            percent_error_threshold,
+            args.scale,
+            case_filter=args.case,
+        ))
 
     linux_diff, diff_in_files, file_skipped, passed_cases, failed_cases = find_diffs_in_all_files(
         args.dirs[0], args.dirs[1], args.fileout, args.verbose, abs_error_threshold, percent_error_threshold, args.scale,
@@ -317,6 +332,194 @@ def get_cases(dir1, dir2, verbose, case_filter=None):
         print("\nThe following cases will be compared: {}\n".format(list(cases.keys())))
 
     return cases
+
+
+def _get_flag_dirs(root):
+    """Return immediate child directories keyed by flag-set name."""
+    root_path = Path(root)
+    return {path.name: path for path in root_path.iterdir() if path.is_dir()}
+
+
+def _get_nc_files(root):
+    """Return direct NetCDF filenames under a flag-set output directory."""
+    root_path = Path(root)
+    return {path.name for path in root_path.iterdir() if path.is_file() and path.suffix == ".nc"}
+
+
+def _case_from_nc_file(path):
+    """Infer case name from a recognized CLUBB NetCDF filename."""
+    filename = Path(path).name
+    for postfix in sorted(nc_data_formats, key=len, reverse=True):
+        if filename.endswith(postfix):
+            return filename[: -len(postfix)]
+    return None
+
+
+def _get_nc_cases(root, case_filter=None):
+    """Return case names with recognized NetCDF files under one output directory."""
+    cases = {
+        case
+        for case in (_case_from_nc_file(path) for path in _get_nc_files(root))
+        if case
+    }
+    if case_filter is not None:
+        cases = {case for case in cases if case == case_filter}
+    return cases
+
+
+def _filter_nc_files_by_case(files, case_filter):
+    """Keep only files belonging to the selected case, if one was requested."""
+    if case_filter is None:
+        return files
+    return {path for path in files if _case_from_nc_file(path) == case_filter}
+
+
+def _print_name_diff(kind, names):
+    """Print a sorted list of missing flag-set directories or NetCDF files."""
+    print(f"{kind}:")
+    for name in sorted(names):
+        print(f"  {name}")
+
+
+def _add_flag_diff_summary(summary, flag_set, case_name, reason):
+    """Record why one flag-set/case pair differed."""
+    summary.setdefault(flag_set, {}).setdefault(case_name, set()).add(reason)
+
+
+def _summarize_flag_differences(summary):
+    """Print the compact flag-set/case difference summary."""
+    if not summary:
+        print("\nDIFFERENCE SUMMARY: no per-case differences to summarize.")
+        return
+
+    print("\nDIFFERENCE SUMMARY:")
+    for flag_set in sorted(summary):
+        print(f"  {flag_set}:")
+        for case_name in sorted(summary[flag_set]):
+            reasons = ", ".join(sorted(summary[flag_set][case_name]))
+            print(f"    {case_name}: {reasons}")
+
+
+def compare_flag_set_outputs(dir1, dir2, save_to_file, verbose, thresh, percent_thresh, l_scale, case_filter=None):
+    """Compare two run_clubb_w_varying_flags.py output roots."""
+    global outFilePath
+
+    dir1 = Path(dir1).resolve()
+    dir2 = Path(dir2).resolve()
+
+    if not dir1.is_dir() or not dir2.is_dir():
+        print("Both inputs must be existing directories.")
+        return 2
+
+    if dir1 == dir2:
+        print("Input paths resolve to the same directory.")
+        return 2
+
+    flag_dirs_1 = _get_flag_dirs(dir1)
+    flag_dirs_2 = _get_flag_dirs(dir2)
+
+    if not flag_dirs_1 or not flag_dirs_2:
+        print("Expected both inputs to contain per-flag output subdirectories.")
+        return 2
+
+    only_in_1 = set(flag_dirs_1) - set(flag_dirs_2)
+    only_in_2 = set(flag_dirs_2) - set(flag_dirs_1)
+    common = sorted(set(flag_dirs_1) & set(flag_dirs_2))
+
+    difference_summary = {}
+    had_difference = False
+
+    if only_in_1:
+        _print_name_diff(f"Flag directories only in {dir1}", only_in_1)
+        had_difference = True
+
+    if only_in_2:
+        _print_name_diff(f"Flag directories only in {dir2}", only_in_2)
+        had_difference = True
+
+    original_out_file_path = outFilePath
+    for flag_name in common:
+        flag_dir_1 = flag_dirs_1[flag_name]
+        flag_dir_2 = flag_dirs_2[flag_name]
+        nc_files_1 = _filter_nc_files_by_case(_get_nc_files(flag_dir_1), case_filter)
+        nc_files_2 = _filter_nc_files_by_case(_get_nc_files(flag_dir_2), case_filter)
+
+        missing_in_2 = nc_files_1 - nc_files_2
+        missing_in_1 = nc_files_2 - nc_files_1
+
+        if missing_in_2:
+            _print_name_diff(
+                f"NetCDF files in {flag_dir_1} but not {flag_dir_2}",
+                missing_in_2,
+            )
+            had_difference = True
+            for nc_file in missing_in_2:
+                case_name = _case_from_nc_file(nc_file)
+                if case_name:
+                    _add_flag_diff_summary(
+                        difference_summary,
+                        flag_name,
+                        case_name,
+                        f"NetCDF missing from {flag_dir_2}",
+                    )
+
+        if missing_in_1:
+            _print_name_diff(
+                f"NetCDF files in {flag_dir_2} but not {flag_dir_1}",
+                missing_in_1,
+            )
+            had_difference = True
+            for nc_file in missing_in_1:
+                case_name = _case_from_nc_file(nc_file)
+                if case_name:
+                    _add_flag_diff_summary(
+                        difference_summary,
+                        flag_name,
+                        case_name,
+                        f"NetCDF missing from {flag_dir_1}",
+                    )
+
+        common_cases = sorted(
+            _get_nc_cases(flag_dir_1, case_filter=case_filter)
+            & _get_nc_cases(flag_dir_2, case_filter=case_filter)
+        )
+        if not common_cases:
+            print(f"\nNo common successful cases to compare for flag set: {flag_name}")
+            continue
+
+        print(f"\nComparing flag set: {flag_name}")
+        try:
+            if save_to_file:
+                outFilePath = os.path.join(original_out_file_path, flag_name)
+                os.makedirs(outFilePath, exist_ok=True)
+
+            _linux_diff, diff_in_files, _file_skipped, _passed_cases, failed_cases = find_diffs_in_all_files(
+                str(flag_dir_1),
+                str(flag_dir_2),
+                save_to_file,
+                verbose,
+                thresh,
+                percent_thresh,
+                l_scale,
+                case_filter=case_filter,
+            )
+        finally:
+            outFilePath = original_out_file_path
+
+        if diff_in_files:
+            had_difference = True
+            for case_name in failed_cases:
+                _add_flag_diff_summary(difference_summary, flag_name, case_name, "NetCDF values differ")
+
+    _summarize_flag_differences(difference_summary)
+
+    if had_difference:
+        print("\nSUMMARY: differences were detected across flag-set output.")
+        return 1
+
+    print("\nSUMMARY: no differences detected across flag-set output.")
+    return 0
+
 
 def find_diffs_in_all_files(dir1, dir2, save_to_file, verbose, thresh, percent_thresh, l_scale, case_filter=None):
     # For each case with existing netCDF files in the diff folders:

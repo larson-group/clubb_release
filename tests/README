@@ -72,7 +72,7 @@ Example:
 
 Clones two or more git refs, compiles each clone, runs
 `run_scripts/run_clubb_w_varying_flags.py` in each clone, and compares the
-resulting output trees with `run_scripts/run_bindiff_all.py`.
+resulting output trees with `run_scripts/run_bindiff_all.py --flag-sets`.
 
 Examples:
 

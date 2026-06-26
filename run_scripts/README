@@ -97,6 +97,10 @@ Examples:
 - `python3 run_scripts/run_bindiff_all.py -f replace -v 2 output_a output_b`
   Writes per-case diff logs under `output/bindiffs`, replacing older logs.
 
+- `python3 run_scripts/run_bindiff_all.py --flag-sets old_output new_output`
+  Treats each immediate child directory as a flag-set output directory and
+  compares matching flag sets.
+
 ### `run_clubb_and_pyplotgen.py`
 
 Compiles CLUBB, runs selected cases, and plots those outputs with pyplotgen.
