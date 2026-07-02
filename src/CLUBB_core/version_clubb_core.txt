@@ -1,0 +1,83 @@
+commit 31446891daef22d1f1ac63262df21583933565b9
+Author: Gunther Huebler <37674341+huebleruwm@users.noreply.github.com>
+Date:   Wed Jul 1 22:36:05 2026 -0500
+
+    Dash compile tab (#1323)
+    
+    * Fixing small UI issues and adding tab that currently only can compile, but the plan is to have to be compile + run tests
+    
+    * Improving compile tab - mainly implementing the ability to select existing builds to use as the version to run with.
+    
+    * Tiny fixes to run tab UI
+    
+    * Improvements to rebuilding - there were tiny bugs.
+    
+    * Updating method of installing python compiles - now we package the python .so libraries with the install build. This makes things simple to import and fixes compilation issues when switching between compilers
+    
+    * Cleanup - reverting various unneccesary things
+    
+    ---------
+    
+    Co-authored-by: Gunther Huebler <guntherhuebler@Gunthers-MacBook-Pro-2.local>
+
+commit 7c083496c42caa1b7d18c781134f0cc18ae94748
+Author: Gunther Huebler <huebler@uwm.edu>
+Date:   Fri Jun 26 12:14:31 2026 -0500
+
+    Building varying flags bindiff into run_bindiff_all.py, this just makes sense and helps fix the varying flags BFB test
+
+commit 1fa8fdebc019e2807e0031f7233ef85243f80ad6
+Author: Gunther Huebler <huebler@uwm.edu>
+Date:   Fri Jun 5 22:04:16 2026 -0500
+
+    Improving audit script even more, fixing issues it found. Also making advance_clubb_core.py nice and making an LLM shortcut for how to repeat the process
+    
+    (cherry picked from commit 25b41435d7bfbbe03f2736440bdcbf4330f863ab)
+
+commit e73f5d17f344ccfbf4741d978a7e0dd60a06fb25
+Author: Gunther Huebler <huebler@uwm.edu>
+Date:   Fri Jun 5 02:45:29 2026 -0500
+
+    advance_clubb_core.py cleanup and removing strange compat_kwargs usages that seem like artifacts of laziness
+    
+    (cherry picked from commit 9056400901e270333b80ee8f66af055d395b8020)
+
+commit 0da14a07a2ef02d9517c80c18d0a3a285dc08d04
+Author: Gunther Huebler <huebler@uwm.edu>
+Date:   Fri Jun 5 00:11:19 2026 -0500
+
+    Our argument_contract_audit.py script checks if the python_api matches the underlying fortran - this makes it more strict, and fixes many of the inconsistencies it found.
+    
+    (cherry picked from commit f5c3b99d56499acc2a706cf024dd802f73030dd2)
+
+commit 1ba1f81f6b41e649dfe497947dc4c22c69f38f6c
+Author: Gunther Huebler <huebler@uwm.edu>
+Date:   Thu Jun 4 19:03:39 2026 -0500
+
+    Updating python contract audit to better detect API arg list discrepancies from the underlying fortran arg lists. Also adding a temporary handoff file and improving the python api fix shortcut
+    
+    (cherry picked from commit 47106db56945d6d0c1f962cc77d205db99d60f4f)
+
+commit 955aa780e3a47b6accf7af68d85f76ad53baff39
+Author: Gunther Huebler <huebler@uwm.edu>
+Date:   Thu Jun 25 22:46:25 2026 -0500
+
+    Removing unused variables
+
+commit 86f7a6081cc525e6d953cebc42d4e5962d7e24f2
+Author: Gunther Huebler <huebler@uwm.edu>
+Date:   Thu Jun 25 22:10:28 2026 -0500
+
+    Removing the CLUBBND_CAM option, not sure what it was for, it's not defined in this repo or any of our host model repos
+
+commit 0ed15803474cd7d3d8228a642e9e2599a840707d
+Author: Gunther Huebler <huebler@uwm.edu>
+Date:   Thu Jun 25 21:49:39 2026 -0500
+
+    Removing ifdefs that are only for E3SM and only on a specific machine
+
+commit e1ca53920f7095d09c5dde5b9502f4056c481b48
+Author: Gunther Huebler <huebler@uwm.edu>
+Date:   Thu Jun 25 21:43:58 2026 -0500
+
+    Removing recl.inc, just dead code for an outdated issue
