@@ -12,7 +12,7 @@ from utilities.create_case_namelist import (
     create_loss_case_namelist,
     validate_multicol,
 )
-from run_scm import run_case
+from run_scm import choose_install_dir, python_runtime_dir_from_install, run_case
 from tuner.case_defaults import DEFAULT_LOSS_FIELDS, read_case_defaults
 
 RUN_SCRIPTS = os.path.dirname(os.path.abspath(__file__))
@@ -26,18 +26,18 @@ def choose_run_command(args):
         python_driver = os.path.join(CLUBB_ROOT, "tuner", f"{module_name.split('.')[-1]}.py")
         if not os.path.isfile(python_driver):
             sys.exit(f"Python loss driver not found: {python_driver}")
-        clubb_python_api_dir = os.path.join(CLUBB_ROOT, "clubb_python_api")
-        if not os.path.isdir(clubb_python_api_dir):
-            sys.exit(f"Python API directory not found: {clubb_python_api_dir}")
 
         executable = f"{sys.executable} -m {module_name}"
         run_cmd = [sys.executable, "-m", module_name]
         run_env = os.environ.copy()
         existing_pythonpath = run_env.get("PYTHONPATH", "")
-        pythonpath_entries = [CLUBB_ROOT, clubb_python_api_dir]
+        install_dir, install_source = choose_install_dir()
+        f2py_runtime_dir = python_runtime_dir_from_install(install_dir)
+        pythonpath_entries = [f2py_runtime_dir, CLUBB_ROOT]
         if existing_pythonpath:
             pythonpath_entries.append(existing_pythonpath)
         run_env["PYTHONPATH"] = os.pathsep.join(pythonpath_entries)
+        print(f" - using Python runtime dir ({install_source}): {os.path.realpath(f2py_runtime_dir)}")
         print(f" - using executable: {executable}")
         return run_cmd, RUN_SCRIPTS, run_env
 

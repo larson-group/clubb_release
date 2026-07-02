@@ -37,6 +37,24 @@
     }
   }
 
+  function maxRightWidth(layout) {
+    var layoutW = layout ? layout.getBoundingClientRect().width : window.innerWidth;
+    return Math.max(300, Math.min(Math.round(window.innerWidth * 0.8), Math.round(layoutW - 360)));
+  }
+
+  function clampRightWidth(layout, width) {
+    var minW = 300;
+    var maxW = maxRightWidth(layout);
+    var rightW = Number(width) || minW;
+    if (rightW < minW) rightW = minW;
+    if (rightW > maxW) rightW = maxW;
+    return rightW;
+  }
+
+  function applyRightWidth(layout, width) {
+    layout.style.gridTemplateColumns = "minmax(0,1fr) 8px " + Math.round(width) + "px";
+  }
+
   function bindDivider() {
     var divider = getDivider();
     var layout = getLayout();
@@ -44,12 +62,9 @@
     divider.dataset.bound = "1";
 
     var dragging = false;
-    var minW = 0;
-    var maxW = Math.max(400, Math.round(window.innerWidth * 0.8));
 
     function startDrag(ev) {
       if (ev.button !== 0) return;
-      maxW = Math.max(400, Math.round(window.innerWidth * 0.8));
       dragging = true;
       document.body.classList.add("run-ui-dragging");
       ev.preventDefault();
@@ -58,10 +73,8 @@
     function moveDrag(ev) {
       if (!dragging) return;
       var rect = layout.getBoundingClientRect();
-      var rightW = rect.right - ev.clientX;
-      if (rightW < minW) rightW = minW;
-      if (rightW > maxW) rightW = maxW;
-      layout.style.gridTemplateColumns = "minmax(0,1fr) 8px " + Math.round(rightW) + "px";
+      var rightW = clampRightWidth(layout, rect.right - ev.clientX);
+      applyRightWidth(layout, rightW);
     }
 
     function endDrag(ev) {
@@ -69,10 +82,8 @@
       dragging = false;
       document.body.classList.remove("run-ui-dragging");
       var rect = layout.getBoundingClientRect();
-      var rightW = rect.right - ev.clientX;
-      if (rightW < minW) rightW = minW;
-      if (rightW > maxW) rightW = maxW;
-      layout.style.gridTemplateColumns = "minmax(0,1fr) 8px " + Math.round(rightW) + "px";
+      var rightW = clampRightWidth(layout, rect.right - ev.clientX);
+      applyRightWidth(layout, rightW);
       saveWidth(rightW);
     }
 
@@ -87,12 +98,7 @@
     layout.dataset.widthHydrated = "1";
     var saved = loadWidth();
     if (saved === null) return;
-    var minW = 0;
-    var maxW = Math.max(400, Math.round(window.innerWidth * 0.8));
-    var rightW = saved;
-    if (rightW < minW) rightW = minW;
-    if (rightW > maxW) rightW = maxW;
-    layout.style.gridTemplateColumns = "minmax(0,1fr) 8px " + Math.round(rightW) + "px";
+    applyRightWidth(layout, clampRightWidth(layout, saved));
   }
 
   function tick() {

@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import argparse
+import glob
 import os
 import shutil
 import subprocess
@@ -16,6 +17,9 @@ from utilities.create_case_namelist import validate_multicol  # noqa: E402
 
 DEFAULT_OUTPUT_DIR = os.path.join(CLUBB_ROOT, "output")
 CREATE_CASE_NAMELIST = os.path.join(CLUBB_ROOT, "utilities", "create_case_namelist.py")
+INSTALL_DIR = os.path.join(CLUBB_ROOT, "install")
+SELECTED_INSTALL = os.path.join(INSTALL_DIR, "selected")
+LATEST_INSTALL = os.path.join(INSTALL_DIR, "latest")
 
 
 def run_case(
@@ -75,9 +79,46 @@ def run_case(
     return 0
 
 
+def choose_install_dir(args=None):
+    """Choose the install tree used by run commands."""
+    install_dir = getattr(args, "install_dir", None)
+    if install_dir:
+        return os.path.abspath(install_dir), "explicit"
+    if os.path.lexists(SELECTED_INSTALL):
+        return SELECTED_INSTALL, "selected"
+    return LATEST_INSTALL, "latest"
+
+
+def python_runtime_dir_from_install(install_dir):
+    """Return the self-contained Python runtime directory for an install tree."""
+    runtime_dir = os.path.join(install_dir, "python")
+    missing_reason = None
+
+    if not os.path.isdir(runtime_dir):
+        missing_reason = "directory is missing"
+    elif not glob.glob(os.path.join(runtime_dir, "clubb_f2py*.so")):
+        missing_reason = "clubb_f2py extension is missing"
+    elif not os.path.isfile(os.path.join(runtime_dir, "libclubb_f2py_backend.so")):
+        missing_reason = "libclubb_f2py_backend.so is missing"
+    elif not os.path.isdir(os.path.join(runtime_dir, "clubb_python")):
+        missing_reason = "clubb_python package is missing"
+
+    if missing_reason:
+        sys.exit(
+            f"{runtime_dir} is not a complete Python runtime ({missing_reason}). "
+            "Rebuild that install with ./compile.py -python or choose a Python-enabled install."
+        )
+
+    return runtime_dir
+
+
 def choose_run_command(args):
     run_cwd = RUN_SCRIPTS
     run_env = None
+    install_dir = None
+    install_source = None
+    show_install_dir = False
+    f2py_runtime_dir = None
 
     if args.exe:
         executable = os.path.abspath(args.exe)
@@ -88,14 +129,13 @@ def choose_run_command(args):
         python_driver = os.path.join(CLUBB_ROOT, "clubb_python_driver", "clubb_standalone.py")
         if not os.path.isfile(python_driver):
             sys.exit(f"Python standalone driver not found: {python_driver}")
-        clubb_python_api_dir = os.path.join(CLUBB_ROOT, "clubb_python_api")
-        if not os.path.isdir(clubb_python_api_dir):
-            sys.exit(f"Python API directory not found: {clubb_python_api_dir}")
+        install_dir, install_source = choose_install_dir(args)
         executable = f"{sys.executable} -m clubb_python_driver.clubb_standalone"
         run_cmd = [sys.executable, "-m", "clubb_python_driver.clubb_standalone"]
         run_env = os.environ.copy()
         existing_pythonpath = run_env.get("PYTHONPATH", "")
-        pythonpath_entries = [CLUBB_ROOT, clubb_python_api_dir]
+        f2py_runtime_dir = python_runtime_dir_from_install(install_dir)
+        pythonpath_entries = [f2py_runtime_dir, CLUBB_ROOT]
         if existing_pythonpath:
             pythonpath_entries.append(existing_pythonpath)
         run_env["PYTHONPATH"] = os.pathsep.join(pythonpath_entries)
@@ -103,22 +143,25 @@ def choose_run_command(args):
         jax_driver = os.path.join(CLUBB_ROOT, "clubb_jax", "clubb_standalone.py")
         if not os.path.isfile(jax_driver):
             sys.exit(f"JAX standalone driver not found: {jax_driver}")
-        clubb_python_api_dir = os.path.join(CLUBB_ROOT, "clubb_python_api")
-        if not os.path.isdir(clubb_python_api_dir):
-            sys.exit(f"Python API directory not found: {clubb_python_api_dir}")
+        install_dir, install_source = choose_install_dir(args)
         executable = f"{sys.executable} -m clubb_jax.clubb_standalone"
         run_cmd = [sys.executable, "-m", "clubb_jax.clubb_standalone"]
         run_env = os.environ.copy()
         existing_pythonpath = run_env.get("PYTHONPATH", "")
-        pythonpath_entries = [CLUBB_ROOT, clubb_python_api_dir]
+        f2py_runtime_dir = python_runtime_dir_from_install(install_dir)
+        pythonpath_entries = [f2py_runtime_dir, CLUBB_ROOT]
         if existing_pythonpath:
             pythonpath_entries.append(existing_pythonpath)
         run_env["PYTHONPATH"] = os.pathsep.join(pythonpath_entries)
     else:
-        if args.driver_test:
-            executable = os.path.join(CLUBB_ROOT, "install/latest/clubb_driver_test")
-        else:
-            executable = os.path.join(CLUBB_ROOT, "install/latest/clubb_standalone")
+        install_dir, install_source = choose_install_dir(args)
+        show_install_dir = True
+        if os.path.islink(install_dir) and not os.path.exists(install_dir):
+            sys.exit(f"{install_dir} points to a missing install directory.")
+        if not os.path.isdir(install_dir):
+            sys.exit(f"{install_dir} is not an install directory (did you re-compile?)")
+        executable_name = "clubb_driver_test" if args.driver_test else "clubb_standalone"
+        executable = os.path.join(install_dir, executable_name)
         if not os.path.isfile(executable):
             sys.exit(f"{executable} not found (did you re-compile?)")
         run_cmd = [executable]
@@ -129,6 +172,10 @@ def choose_run_command(args):
             sys.exit("gdb not found on PATH")
         run_cmd = [gdb_path, "--args", *run_cmd]
 
+    if install_dir and (show_install_dir or install_source == "explicit"):
+        print(f" - using install dir ({install_source}): {os.path.realpath(install_dir)}")
+    if f2py_runtime_dir:
+        print(f" - using Python runtime dir ({install_source}): {os.path.realpath(f2py_runtime_dir)}")
     print(f" - using executable: {executable}")
     if args.gdb:
         print(f" - launching with debugger: {gdb_path}")
@@ -212,7 +259,10 @@ def main():
               "Use 'none' to disable stats output."))
 
     run_group.add_argument("-exe", metavar="[EXECUTABLE]",
-        help="CLUBB executable to use.\nDefault: install/clubb_standalone")
+        help="CLUBB executable to use. Overrides -install_dir and selected/latest install dirs.")
+
+    run_group.add_argument("-install_dir", metavar="[DIR]",
+        help="Install directory containing CLUBB executables.\nDefault: install/selected if present, otherwise install/latest.")
 
     run_group.add_argument("-driver_test", action="store_true",
         help="Runs the clubb_driver_test executable instead of clubb_standalone")

@@ -13,6 +13,16 @@ body,
 #app-root.theme-dark {
   background: #0b1220;
   color: #e5e7eb;
+  --Dash-Fill-Inverse-Strong: #0f172a;
+  --Dash-Fill-Interactive-Strong: #64748b;
+  --Dash-Fill-Interactive-Weak: #1e293b;
+  --Dash-Fill-Disabled: #334155;
+  --Dash-Stroke-Strong: #334155;
+  --Dash-Text-Strong: #e2e8f0;
+  --Dash-Text-Weak: #cbd5e1;
+  --Dash-Text-Disabled: #94a3b8;
+  --Dash-Shading-Strong: rgba(2, 6, 23, 0.75);
+  --Dash-Shading-Weak: rgba(2, 6, 23, 0.45);
 }
 
 #app-root.theme-light {
@@ -73,8 +83,77 @@ body,
 #app-root.theme-dark textarea,
 #app-root.theme-dark select {
   background: #0f172a !important;
+  background-color: #0f172a !important;
   color: #e2e8f0 !important;
   border: 1px solid #334155 !important;
+  outline: none !important;
+  box-shadow: none !important;
+  color-scheme: dark;
+  caret-color: #e2e8f0;
+}
+
+#app-root.theme-dark input:focus,
+#app-root.theme-dark textarea:focus,
+#app-root.theme-dark select:focus {
+  border-color: #64748b !important;
+  outline: 1px solid #64748b !important;
+  box-shadow: 0 0 0 1px #1e293b !important;
+}
+
+#app-root.theme-dark input[type="number"] {
+  color-scheme: dark;
+}
+
+#app-root.theme-dark input[type="number"]::-webkit-inner-spin-button,
+#app-root.theme-dark input[type="number"]::-webkit-outer-spin-button {
+  background-color: #0f172a;
+  color: #e2e8f0;
+  filter: invert(1) brightness(1.15);
+  opacity: 0.75;
+}
+
+#app-root.theme-dark input[type="number"]:disabled::-webkit-inner-spin-button,
+#app-root.theme-dark input[type="number"]:disabled::-webkit-outer-spin-button {
+  opacity: 0.35;
+}
+
+#app-root.theme-dark .clubb-input,
+#app-root.theme-dark input.clubb-input {
+  appearance: none !important;
+  -webkit-appearance: none !important;
+  background: #0f172a !important;
+  background-color: #0f172a !important;
+  color: #e2e8f0 !important;
+  border: 1px solid #334155 !important;
+  outline: none !important;
+  box-shadow: none !important;
+  color-scheme: dark;
+  caret-color: #e2e8f0;
+}
+
+#app-root.theme-dark .clubb-input:focus,
+#app-root.theme-dark input.clubb-input:focus {
+  border-color: #64748b !important;
+  outline: none !important;
+  box-shadow: none !important;
+}
+
+#app-root.theme-dark #run-max-tasks,
+#app-root.theme-dark #compile-extra-args {
+  background: transparent !important;
+  background-color: transparent !important;
+  border: 0 !important;
+  outline: none !important;
+  box-shadow: none !important;
+  -webkit-box-shadow: none !important;
+}
+
+#app-root.theme-dark #run-max-tasks:focus,
+#app-root.theme-dark #compile-extra-args:focus {
+  border: 0 !important;
+  outline: none !important;
+  box-shadow: none !important;
+  -webkit-box-shadow: none !important;
 }
 
 #app-root.theme-dark label,
@@ -90,23 +169,320 @@ body,
   color: inherit;
 }
 
-#app-root.theme-dark .dash-dropdown .Select-control {
+#app-root.theme-dark .dash-dropdown .Select-control,
+#app-root.theme-dark .compile-dropdown .Select-control,
+#app-root.theme-dark .Select-control {
   background: #0f172a !important;
+  background-color: #0f172a !important;
   border-color: #334155 !important;
+  color: #e2e8f0 !important;
+  box-shadow: none !important;
 }
 
-#app-root.theme-dark .dash-dropdown .Select-menu-outer {
+#app-root.theme-dark .dash-dropdown,
+#app-root.theme-dark .dash-dropdown-content {
   background: #0f172a !important;
+  background-color: #0f172a !important;
   border-color: #334155 !important;
-}
-
-#app-root.theme-dark .dash-dropdown .Select-option {
-  background: #0f172a !important;
   color: #e2e8f0 !important;
 }
 
-#app-root.theme-dark .dash-dropdown .Select-option.is-focused {
+#app-root.theme-dark .dash-dropdown-content {
+  box-shadow: 0 12px 24px rgba(2, 6, 23, 0.55) !important;
+}
+
+#app-root.theme-dark .dash-dropdown-value,
+#app-root.theme-dark .dash-dropdown-value *,
+#app-root.theme-dark .dash-dropdown-trigger-icon,
+#app-root.theme-dark .dash-dropdown-clear,
+#app-root.theme-dark .dash-dropdown-search-icon,
+#app-root.theme-dark .dash-dropdown-action-button {
+  color: #e2e8f0 !important;
+  fill: #e2e8f0 !important;
+}
+
+#app-root.theme-dark .dash-dropdown-placeholder,
+#app-root.theme-dark .dash-dropdown-value-count {
+  color: #94a3b8 !important;
+}
+
+#app-root.theme-dark .dash-dropdown-search-container {
+  background: #0f172a !important;
+  background-color: #0f172a !important;
+  border-color: #334155 !important;
+  color: #e2e8f0 !important;
+}
+
+#app-root.theme-dark .dash-dropdown-search {
+  background: transparent !important;
+  background-color: transparent !important;
+  border: 0 !important;
+  color: #e2e8f0 !important;
+  outline: none !important;
+  box-shadow: none !important;
+}
+
+#app-root.theme-dark .dash-dropdown-actions {
+  background: #0f172a !important;
+  background-color: #0f172a !important;
+  border-color: #334155 !important;
+}
+
+#app-root.theme-dark .dash-dropdown-options {
+  background: #0f172a !important;
+  background-color: #0f172a !important;
+  color: #e2e8f0 !important;
+}
+
+#app-root.theme-dark .dash-dropdown-option {
+  background: #0f172a !important;
+  background-color: #0f172a !important;
+  box-shadow: 0 -1px 0 0 #1e293b inset !important;
+  color: #e2e8f0 !important;
+}
+
+#app-root.theme-dark .dash-dropdown-option,
+#app-root.theme-dark .dash-dropdown-option * {
+  color: #e2e8f0 !important;
+}
+
+#app-root.theme-dark .dash-dropdown-option:hover,
+#app-root.theme-dark .dash-dropdown-option:focus,
+#app-root.theme-dark .dash-dropdown-option:focus-within {
   background: #1e293b !important;
+  background-color: #1e293b !important;
+  color: #f8fafc !important;
+}
+
+#app-root.theme-dark .dash-dropdown-option input[type="radio"],
+#app-root.theme-dark .dash-dropdown-option input[type="checkbox"] {
+  accent-color: #64748b;
+}
+
+#app-root.theme-dark .dash-dropdown .Select-menu-outer,
+#app-root.theme-dark .compile-dropdown .Select-menu-outer,
+#app-root.theme-dark .Select-menu-outer {
+  background: #0f172a !important;
+  background-color: #0f172a !important;
+  border-color: #334155 !important;
+}
+
+#app-root.theme-dark .dash-dropdown .Select-option,
+#app-root.theme-dark .compile-dropdown .Select-option,
+#app-root.theme-dark .Select-option {
+  background: #0f172a !important;
+  background-color: #0f172a !important;
+  color: #e2e8f0 !important;
+}
+
+#app-root.theme-dark .dash-dropdown .Select-option.is-focused,
+#app-root.theme-dark .compile-dropdown .Select-option.is-focused,
+#app-root.theme-dark .Select-option.is-focused {
+  background: #1e293b !important;
+  background-color: #1e293b !important;
+}
+
+#app-root.theme-dark .dash-dropdown .Select-value,
+#app-root.theme-dark .dash-dropdown .Select-value-label,
+#app-root.theme-dark .dash-dropdown .Select-placeholder,
+#app-root.theme-dark .dash-dropdown .Select-input,
+#app-root.theme-dark .dash-dropdown .Select-input > input,
+#app-root.theme-dark .compile-dropdown .Select-value,
+#app-root.theme-dark .compile-dropdown .Select-value-label,
+#app-root.theme-dark .compile-dropdown .Select-placeholder,
+#app-root.theme-dark .compile-dropdown .Select-input,
+#app-root.theme-dark .compile-dropdown .Select-input > input,
+#app-root.theme-dark .Select-value,
+#app-root.theme-dark .Select-value-label,
+#app-root.theme-dark .Select-placeholder,
+#app-root.theme-dark .Select-input,
+#app-root.theme-dark .Select-input > input {
+  color: #e2e8f0 !important;
+}
+
+#app-root.theme-dark .dash-dropdown .Select-arrow,
+#app-root.theme-dark .compile-dropdown .Select-arrow,
+#app-root.theme-dark .Select-arrow {
+  border-top-color: #cbd5e1 !important;
+}
+
+#app-root.theme-dark .dash-dropdown [class$="-control"],
+#app-root.theme-dark .dash-dropdown [class*="-control "],
+#app-root.theme-dark .compile-dropdown [class$="-control"],
+#app-root.theme-dark .compile-dropdown [class*="-control "],
+#app-root.theme-dark [class$="-control"],
+#app-root.theme-dark [class*="-control "],
+#app-root.theme-dark [class$="-control"][class*="select"],
+#app-root.theme-dark [class*="-control "][class*="select"],
+#app-root.theme-dark [class$="-Control"],
+#app-root.theme-dark [class*="-Control "] {
+  background-color: #0f172a !important;
+  border-color: #334155 !important;
+  color: #e2e8f0 !important;
+  box-shadow: none !important;
+}
+
+#app-root.theme-dark .dash-dropdown [class$="-singleValue"],
+#app-root.theme-dark .dash-dropdown [class*="-singleValue "],
+#app-root.theme-dark .dash-dropdown [class$="-placeholder"],
+#app-root.theme-dark .dash-dropdown [class*="-placeholder "],
+#app-root.theme-dark .dash-dropdown [class$="-input"],
+#app-root.theme-dark .dash-dropdown [class*="-input "],
+#app-root.theme-dark .compile-dropdown [class$="-singleValue"],
+#app-root.theme-dark .compile-dropdown [class*="-singleValue "],
+#app-root.theme-dark .compile-dropdown [class$="-placeholder"],
+#app-root.theme-dark .compile-dropdown [class*="-placeholder "],
+#app-root.theme-dark .compile-dropdown [class$="-input"],
+#app-root.theme-dark .compile-dropdown [class*="-input "],
+#app-root.theme-dark [class$="-singleValue"],
+#app-root.theme-dark [class*="-singleValue "],
+#app-root.theme-dark [class$="-valueContainer"],
+#app-root.theme-dark [class*="-valueContainer "],
+#app-root.theme-dark [class$="-ValueContainer"],
+#app-root.theme-dark [class*="-ValueContainer "],
+#app-root.theme-dark [class$="-placeholder"],
+#app-root.theme-dark [class*="-placeholder "] {
+  color: #e2e8f0 !important;
+}
+
+#app-root.theme-dark .dash-dropdown [class$="-menu"],
+#app-root.theme-dark .dash-dropdown [class*="-menu "],
+#app-root.theme-dark .dash-dropdown [class$="-menuList"],
+#app-root.theme-dark .dash-dropdown [class*="-menuList "],
+#app-root.theme-dark .compile-dropdown [class$="-menu"],
+#app-root.theme-dark .compile-dropdown [class*="-menu "],
+#app-root.theme-dark .compile-dropdown [class$="-menuList"],
+#app-root.theme-dark .compile-dropdown [class*="-menuList "] {
+  background-color: #0f172a !important;
+  border-color: #334155 !important;
+  color: #e2e8f0 !important;
+}
+
+#app-root.theme-dark .dash-dropdown [class$="-option"],
+#app-root.theme-dark .dash-dropdown [class*="-option "],
+#app-root.theme-dark .compile-dropdown [class$="-option"],
+#app-root.theme-dark .compile-dropdown [class*="-option "] {
+  background-color: #0f172a !important;
+  color: #e2e8f0 !important;
+}
+
+#app-root.theme-dark .dash-dropdown [class$="-option"]:hover,
+#app-root.theme-dark .dash-dropdown [class*="-option "]:hover,
+#app-root.theme-dark .compile-dropdown [class$="-option"]:hover,
+#app-root.theme-dark .compile-dropdown [class*="-option "]:hover {
+  background-color: #1e293b !important;
+}
+
+#app-root.theme-dark .clubb-dropdown,
+#app-root.theme-dark .clubb-dropdown > div,
+#app-root.theme-dark .clubb-dropdown > div > div,
+#app-root.theme-dark .clubb-dropdown .Select,
+#app-root.theme-dark .clubb-dropdown .Select-control,
+#app-root.theme-dark .clubb-dropdown .Select-multi-value-wrapper,
+#app-root.theme-dark .clubb-dropdown .Select-value,
+#app-root.theme-dark .clubb-dropdown .Select-input,
+#app-root.theme-dark .clubb-dropdown [class$="-control"],
+#app-root.theme-dark .clubb-dropdown [class*="-control "],
+#app-root.theme-dark .clubb-dropdown [class$="-valueContainer"],
+#app-root.theme-dark .clubb-dropdown [class*="-valueContainer "],
+#app-root.theme-dark .clubb-dropdown [class$="-ValueContainer"],
+#app-root.theme-dark .clubb-dropdown [class*="-ValueContainer "] {
+  background: #0f172a !important;
+  background-color: #0f172a !important;
+  border-color: #334155 !important;
+  color: #e2e8f0 !important;
+  box-shadow: none !important;
+}
+
+#app-root.theme-dark .clubb-dropdown .Select-placeholder,
+#app-root.theme-dark .clubb-dropdown .Select-value-label,
+#app-root.theme-dark .clubb-dropdown .Select-input,
+#app-root.theme-dark .clubb-dropdown .Select-input > input,
+#app-root.theme-dark .clubb-dropdown [class$="-singleValue"],
+#app-root.theme-dark .clubb-dropdown [class*="-singleValue "],
+#app-root.theme-dark .clubb-dropdown [class$="-placeholder"],
+#app-root.theme-dark .clubb-dropdown [class*="-placeholder "],
+#app-root.theme-dark .clubb-dropdown [class$="-Input"],
+#app-root.theme-dark .clubb-dropdown [class*="-Input "] {
+  color: #e2e8f0 !important;
+}
+
+#app-root.theme-dark .clubb-dropdown .Select-menu-outer,
+#app-root.theme-dark .clubb-dropdown .Select-menu,
+#app-root.theme-dark .clubb-dropdown .Select-menu *,
+#app-root.theme-dark .clubb-dropdown .Select-menu-outer .VirtualizedSelectOption,
+#app-root.theme-dark .clubb-dropdown .Select-menu-outer .VirtualizedSelectFocusedOption,
+#app-root.theme-dark .clubb-dropdown .Select-menu-outer .VirtualizedSelectSelectedOption,
+#app-root.theme-dark .clubb-dropdown .VirtualizedSelectGrid,
+#app-root.theme-dark .clubb-dropdown .VirtualizedSelectGrid *,
+#app-root.theme-dark .clubb-dropdown [class$="-menu"],
+#app-root.theme-dark .clubb-dropdown [class*="-menu "],
+#app-root.theme-dark .clubb-dropdown [class$="-menuList"],
+#app-root.theme-dark .clubb-dropdown [class*="-menuList "] {
+  background: #0f172a !important;
+  background-color: #0f172a !important;
+  color: #e2e8f0 !important;
+}
+
+#app-root.theme-dark .clubb-dropdown .Select-option,
+#app-root.theme-dark .clubb-dropdown .VirtualizedSelectOption,
+#app-root.theme-dark .clubb-dropdown .VirtualizedSelectSelectedOption,
+#app-root.theme-dark .clubb-dropdown [class$="-option"],
+#app-root.theme-dark .clubb-dropdown [class*="-option "] {
+  background: #0f172a !important;
+  background-color: #0f172a !important;
+  color: #e2e8f0 !important;
+}
+
+#app-root.theme-dark .clubb-dropdown .Select-option.is-focused,
+#app-root.theme-dark .clubb-dropdown .Select-option:hover,
+#app-root.theme-dark .clubb-dropdown .VirtualizedSelectFocusedOption,
+#app-root.theme-dark .clubb-dropdown .VirtualizedSelectOption:hover,
+#app-root.theme-dark .clubb-dropdown [class$="-option"]:hover,
+#app-root.theme-dark .clubb-dropdown [class*="-option "]:hover {
+  background: #1e293b !important;
+  background-color: #1e293b !important;
+  color: #f8fafc !important;
+}
+
+#app-root.theme-dark .clubb-dropdown .Select-arrow {
+  border-top-color: #cbd5e1 !important;
+}
+
+.Select-menu-outer,
+.Select-menu,
+.Select-menu > div,
+.VirtualizedSelectGrid,
+.VirtualizedSelectGrid > div,
+.VirtualizedSelectOption,
+.VirtualizedSelectSelectedOption,
+.VirtualizedSelectFocusedOption,
+.Select-option,
+.Select-noresults {
+  background: #0f172a !important;
+  background-color: #0f172a !important;
+  color: #e2e8f0 !important;
+}
+
+.VirtualizedSelectFocusedOption,
+.VirtualizedSelectOption:hover,
+.Select-option.is-focused,
+.Select-option:hover {
+  background: #1e293b !important;
+  background-color: #1e293b !important;
+  color: #f8fafc !important;
+}
+
+.Select-menu-outer {
+  border-color: #334155 !important;
+  box-shadow: 0 12px 24px rgba(2, 6, 23, 0.45) !important;
+}
+
+.Select-menu-outer .Select-input,
+.Select-menu-outer .Select-input > input {
+  background: #0f172a !important;
+  background-color: #0f172a !important;
+  color: #e2e8f0 !important;
 }
 
 #app-root .theme-toggle-button {

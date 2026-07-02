@@ -86,6 +86,7 @@ class BasePlotType:
             options=options,
             value=value,
             clearable=False,
+            className="clubb-dropdown",
         )
         size_text, size_class = shared.plot_size_button_props(size_value)
         size_button = html.Button(size_text, id=self.size_toggle_id(plot_id), className=size_class, title="Toggle plot size")

@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+from __future__ import annotations
+
 import argparse
 import importlib.util
 import logging
@@ -18,6 +20,7 @@ for import_root in (REPO_ROOT, DASH_APP_ROOT):
         sys.path.insert(0, import_root)
 
 from run_tab.tab import build_tab as build_run_tab
+from compile_tab.tab import build_tab as build_compile_tab
 from tune_tab.tab import build_tab as build_tune_tab
 from plot_tab.tab import build_tab as build_plots_tab
 
@@ -131,6 +134,7 @@ def main():
     app = Dash(__name__, suppress_callback_exceptions=True, eager_loading=True, title=_app_title())
 
     tabs = [
+        build_compile_tab(app),
         build_run_tab(app),
         build_tune_tab(app),
         build_plots_tab(app),
@@ -139,7 +143,7 @@ def main():
     app.layout = html.Div(
         [
             dcc.Store(id="theme-store", data="dark"),
-            dcc.Tabs(tabs, value="run"),
+            dcc.Tabs(tabs, value="compile"),
             html.Button(
                 "Theme: Dark",
                 id="theme-toggle-button",

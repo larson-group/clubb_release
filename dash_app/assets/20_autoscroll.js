@@ -3,6 +3,7 @@
   var stickById = new Map();
   var rafPending = false;
   var NEAR_BOTTOM_PX = 32;
+  var AUTO_SCROLL_SELECTOR = ".run-console-active, #compile-console";
 
   function isNearBottom(el) {
     return el.scrollHeight - el.scrollTop - el.clientHeight <= NEAR_BOTTOM_PX;
@@ -50,7 +51,7 @@
 
   function tick() {
     rafPending = false;
-    var nodes = document.querySelectorAll(".run-console-active");
+    var nodes = document.querySelectorAll(AUTO_SCROLL_SELECTOR);
     for (var i = 0; i < nodes.length; i += 1) {
       var el = nodes[i];
       if (!el) {
@@ -69,8 +70,7 @@
   }
 
   function observe() {
-    var container =
-      document.getElementById("run-console-container") || document.body;
+    var container = document.body;
     if (!container) {
       setTimeout(observe, 500);
       return;

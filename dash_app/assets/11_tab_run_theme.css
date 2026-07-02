@@ -10,6 +10,12 @@
   align-items: stretch;
 }
 
+.run-left-pane,
+.run-right-pane {
+  box-sizing: border-box;
+  min-width: 0;
+}
+
 .run-pane-divider {
   width: 8px;
   box-sizing: border-box;
@@ -36,8 +42,8 @@
 
 .run-param-list {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
-  gap: 6px 50px;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 330px), 1fr));
+  gap: 6px clamp(16px, 3vw, 36px);
 }
 
 #app-root .run-multicol-row .dash-dropdown .Select-input > input {
@@ -92,7 +98,10 @@
 }
 
 .run-param-container {
+  box-sizing: border-box;
+  max-width: 100%;
   min-width: 0;
+  overflow: hidden;
   width: 100%;
 }
 
@@ -118,8 +127,19 @@
   justify-content: flex-start;
 }
 
+.run-flag-checklist {
+  max-width: 100%;
+  min-width: 0;
+  overflow: hidden;
+}
+
 .run-flag-checklist label {
+  max-width: 100%;
   margin: 0;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .run-flag-checklist input[type="checkbox"] {
@@ -209,6 +229,30 @@ body.run-ui-dragging * {
 #app-root.theme-dark .run-right-pane div,
 #app-root.theme-dark .run-left-pane div {
   color: inherit;
+}
+
+.run-workers-control {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin: 4px;
+  padding: 0;
+  background: transparent !important;
+  border: 0 !important;
+  border-radius: 0;
+  box-shadow: none !important;
+  font-weight: 600;
+}
+
+.run-workers-label {
+  display: inline-flex;
+  align-items: center;
+  margin: 0;
+  padding: 0;
+  background: transparent !important;
+  border: 0 !important;
+  box-shadow: none !important;
+  font-size: 14px;
 }
 
 /* Run selected stays green in both themes */

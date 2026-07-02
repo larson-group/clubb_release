@@ -160,6 +160,7 @@ def build_multicol_row(row, tunable_names):
                 placeholder="parameter",
                 clearable=True,
                 searchable=True,
+                className="clubb-dropdown",
                 style={"minWidth": "170px", "flex": "2 1 170px"},
             ),
             dcc.Input(
@@ -232,25 +233,28 @@ def build_run_action_section():
             html.Button("Run selected", id="run-button", n_clicks=0, className="run-button-run-selected", style=run_action_button_style("#111827")),
             html.Button("Cancel runs", id="run-cancel", n_clicks=0, style=run_action_button_style("#b91c1c")),
             html.Button("Clear", id="run-clear", n_clicks=0, style=run_action_button_style("#374151")),
-            dcc.Input(
-                id="run-max-tasks",
-                type="number",
-                min=1,
-                step=1,
-                debounce=True,
-                placeholder=str(MAX_RUN_PROCS),
-                style={
-                    "width": "130px",
-                    "padding": "10px 12px",
-                    "margin": "4px",
-                    "borderRadius": "6px",
-                    "border": "1px solid #9ca3af",
-                    "fontSize": "14px",
-                },
+            html.Div(
+                [
+                    html.Label("Workers", htmlFor="run-max-tasks", className="run-workers-label"),
+                    dcc.Input(
+                        id="run-max-tasks",
+                        type="text",
+                        debounce=True,
+                        placeholder=str(MAX_RUN_PROCS),
+                        className="clubb-input",
+                        style={
+                            "width": "86px",
+                            "padding": "10px 12px",
+                            "borderRadius": "6px",
+                            "fontSize": "14px",
+                        },
+                    ),
+                ],
+                className="run-workers-control",
             ),
         ],
         className="run-action-buttons",
-        style={"display": "flex", "flexWrap": "wrap", "gap": "8px", "marginTop": "6px"},
+        style={"display": "flex", "flexWrap": "wrap", "gap": "8px", "alignItems": "center", "marginTop": "6px"},
     )
 
 
@@ -288,12 +292,35 @@ def build_left_header(case_groups, case_buttons, stats_buttons):
     )
 
 
-def build_param_input(entry, label_width_px, display_value):
+def build_param_input(entry, label_width_px, value_width_px, display_value):
     """Render one editable numeric/text parameter row."""
     return html.Div(
         [
-            html.Label(entry["name"], style={"whiteSpace": "nowrap", "minWidth": f"{label_width_px}px"}),
-            dcc.Input(id={"type": "run-param", "file": entry["file"], "name": entry["name"]}, type="text", value=display_value, debounce=True, style={"flex": "1 1 auto", "minWidth": "0"}),
+            html.Label(
+                entry["name"],
+                title=entry["name"],
+                style={
+                    "whiteSpace": "nowrap",
+                    "flex": f"1 1 {label_width_px}px",
+                    "width": f"{label_width_px}px",
+                    "minWidth": "0",
+                    "overflow": "hidden",
+                    "textOverflow": "ellipsis",
+                },
+            ),
+            dcc.Input(
+                id={"type": "run-param", "file": entry["file"], "name": entry["name"]},
+                type="text",
+                value=display_value,
+                debounce=True,
+                className="run-param-value-input",
+                style={
+                    "flex": f"0 0 {value_width_px}px",
+                    "width": f"{value_width_px}px",
+                    "minWidth": f"{value_width_px}px",
+                    "boxSizing": "border-box",
+                },
+            ),
         ],
         id={"type": "run-param-container", "file": entry["file"], "name": entry["name"]},
         style=field_style(False),
@@ -324,13 +351,19 @@ def build_flag_controls(flag_bools, is_true_func):
     return controls
 
 
-def build_flag_value_section(flag_params, label_width_px, normalize_numeric_display):
+def build_flag_value_section(flag_params, label_width_px, value_width_px, normalize_numeric_display):
     """Render editable non-boolean flag values."""
     if not flag_params:
         return []
     return [
         html.H4("Flag vals", className="run-settings-heading"),
-        html.Div([build_param_input({"file": "flags", **entry}, label_width_px, normalize_numeric_display(entry["value"])) for entry in flag_params], className="run-param-list"),
+        html.Div(
+            [
+                build_param_input({"file": "flags", **entry}, label_width_px, value_width_px, normalize_numeric_display(entry["value"]))
+                for entry in flag_params
+            ],
+            className="run-param-list",
+        ),
     ]
 
 
@@ -339,33 +372,45 @@ def build_flags_section(flag_controls):
     return [html.H4("Flags", className="run-settings-heading"), html.Div(flag_controls, className="run-param-list")]
 
 
-def build_tunable_section(tunable_entries, label_width_px, normalize_numeric_display):
+def build_tunable_section(tunable_entries, label_width_px, value_width_px, normalize_numeric_display):
     """Render tunable parameter inputs."""
     if not tunable_entries:
         return []
     return [
         html.H4("Tunables", className="run-settings-heading"),
-        html.Div([build_param_input({"file": "tunable", **entry}, label_width_px, normalize_numeric_display(entry["value"])) for entry in tunable_entries], className="run-param-list"),
+        html.Div(
+            [
+                build_param_input({"file": "tunable", **entry}, label_width_px, value_width_px, normalize_numeric_display(entry["value"]))
+                for entry in tunable_entries
+            ],
+            className="run-param-list",
+        ),
     ]
 
 
-def build_silhs_section(silhs_entries, label_width_px, normalize_numeric_display):
+def build_silhs_section(silhs_entries, label_width_px, value_width_px, normalize_numeric_display):
     """Render SILHS parameter inputs."""
     if not silhs_entries:
         return []
     return [
         html.H4("SILHS", className="run-settings-heading"),
-        html.Div([build_param_input({"file": "silhs", **entry}, label_width_px, normalize_numeric_display(entry["value"])) for entry in silhs_entries], className="run-param-list"),
+        html.Div(
+            [
+                build_param_input({"file": "silhs", **entry}, label_width_px, value_width_px, normalize_numeric_display(entry["value"]))
+                for entry in silhs_entries
+            ],
+            className="run-param-list",
+        ),
     ]
 
 
-def build_param_sections(flag_params, flag_controls, tunable_entries, silhs_entries, label_width_px, normalize_numeric_display):
+def build_param_sections(flag_params, flag_controls, tunable_entries, silhs_entries, label_width_px, value_width_px, normalize_numeric_display):
     """Build the full right-pane parameter section list."""
     sections = []
-    sections.extend(build_flag_value_section(flag_params, label_width_px, normalize_numeric_display))
+    sections.extend(build_flag_value_section(flag_params, label_width_px, value_width_px, normalize_numeric_display))
     sections.extend(build_flags_section(flag_controls))
-    sections.extend(build_tunable_section(tunable_entries, label_width_px, normalize_numeric_display))
-    sections.extend(build_silhs_section(silhs_entries, label_width_px, normalize_numeric_display))
+    sections.extend(build_tunable_section(tunable_entries, label_width_px, value_width_px, normalize_numeric_display))
+    sections.extend(build_silhs_section(silhs_entries, label_width_px, value_width_px, normalize_numeric_display))
     return sections
 
 
@@ -396,7 +441,7 @@ def build_layout(initial_data):
             dcc.Interval(id="run-interval", interval=500, disabled=True),
             html.Div([build_left_header(initial_data["case_groups"], initial_data["case_buttons"], initial_data["stats_buttons"]), build_console_shell()], className="run-left-pane"),
             html.Div(id="run-pane-divider", className="run-pane-divider"),
-            html.Div(build_multicol_section(initial_data["tunable_names"]) + initial_data["param_sections"], id="run-right-pane", className="run-right-pane", style={"paddingLeft": "16px", "height": "calc(100vh - 96px)", "minHeight": 0, "overflowY": "auto", "overflowX": "auto"}),
+            html.Div(build_multicol_section(initial_data["tunable_names"]) + initial_data["param_sections"], id="run-right-pane", className="run-right-pane", style={"paddingLeft": "16px", "paddingRight": "16px", "height": "calc(100vh - 96px)", "minHeight": 0, "overflowY": "auto", "overflowX": "auto"}),
         ],
         id="run-tab-layout",
         className="run-tab-layout",

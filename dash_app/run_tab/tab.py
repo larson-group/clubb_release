@@ -44,7 +44,7 @@ def build_initial_run_state():
         + [entry["name"] for entry in tunable_entries]
         + [entry["name"] for entry in silhs_entries]
     )
-    label_width_px, _value_width_px, right_pane_width_px = compute_width_hints(all_config_names)
+    label_width_px, value_width_px, right_pane_width_px = compute_width_hints(all_config_names)
 
     param_entries = (
         [{"file": "flags", **entry} for entry in flag_params]
@@ -77,7 +77,7 @@ def build_initial_run_state():
         "right_pane_width_px": right_pane_width_px,
         "case_buttons": build_case_buttons(cases),
         "stats_buttons": build_stats_buttons(stats_files, default_stats_name, NO_STATS_NAME),
-        "param_sections": build_param_sections(flag_params, flag_controls, tunable_entries, silhs_entries, label_width_px, normalize_numeric_display),
+        "param_sections": build_param_sections(flag_params, flag_controls, tunable_entries, silhs_entries, label_width_px, value_width_px, normalize_numeric_display),
     }
 
 

@@ -38,10 +38,11 @@ Build the Python API from the repo root:
 ./compile.py [-debug] -python
 ```
 
-Make `clubb_python_api/` importable:
+Make the installed Python runtime importable. The runtime directory is
+build-specific; `./compile.py -python` updates `install/latest`:
 
 ```bash
-export PYTHONPATH="/path/to/clubb/clubb_python_api:${PYTHONPATH}"
+export PYTHONPATH="/path/to/clubb/install/latest/python:${PYTHONPATH}"
 ```
 
 Then import the API:
@@ -54,7 +55,7 @@ Or, in a separate Python project:
 
 ```python
 import sys
-sys.path.insert(0, "/path/to/clubb/clubb_python_api")
+sys.path.insert(0, "/path/to/clubb/install/latest/python")
 
 from clubb_python import clubb_api
 ```
@@ -298,8 +299,8 @@ Fortran `intent(inout/out)` contract.
 It does two small setup steps before calling `pytest`:
 
 - changes into `clubb_python_api/`
-- sets `PYTHONPATH` so both [clubb_python/](./clubb_python/) and the repo-root
-  code are importable during the test run
+- sets `PYTHONPATH` so the installed Python runtime, source-tree tests,
+  and repo-root code are importable during the test run
 
 After that it just runs:
 
@@ -316,6 +317,9 @@ Run the full API pytest suite from the repo root:
 ```bash
 bash clubb_python_api/run_pytests.sh
 ```
+
+By default, the script tests `install/latest/python`. Set
+`CLUBB_F2PY_DIR=/path/to/install/python` to test another installed runtime.
 
 You can still pass ordinary pytest flags through the script. For example:
 
