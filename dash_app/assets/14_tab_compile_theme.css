@@ -295,6 +295,12 @@
   opacity: 0.6;
 }
 
+.compile-build-delete-all-button {
+  background: #dc2626;
+  border-color: #dc2626;
+  color: #ffffff;
+}
+
 #app-root.theme-dark .compile-build-toolbar-button,
 #app-root.theme-dark .compile-build-confirm-button {
   background: #1e293b;
@@ -307,6 +313,13 @@
   background: #f8fafc;
   border-color: #cbd5e1;
   color: #0f172a;
+}
+
+#app-root.theme-dark .compile-build-delete-all-button,
+#app-root.theme-light .compile-build-delete-all-button {
+  background: #dc2626;
+  border-color: #dc2626;
+  color: #ffffff;
 }
 
 .compile-build-row {

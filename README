@@ -491,7 +491,7 @@ In order to do this, when you re-compile, build with the '-fresh' flag.
    disk a variable that is not currently output.  A complete list of all 
    computable statistics is found in all_stats.in.
 
-4. $ cd <CLUBB BASE DIRECTORY>/input/tunable_parameters
+4. $ cd <CLUBB BASE DIRECTORY>/input/parameter_and_flag_configs/default
    Edit tunable_parameters.in if you are an expert and wish to try to optimize 
    the solution accuracy.  The file tunable_parameters.in contains values of the
    physical parameters that are embedded in parameterized terms in CLUBB's
@@ -502,7 +502,7 @@ In order to do this, when you re-compile, build with the '-fresh' flag.
    parameter values in tunable_parameters.in have been tested extensively and
    will work with all the current cases.
 
-5. Within folder input/tunable_parameters, edit configurable_model_flags.in
+5. Within folder input/parameter_and_flag_configs/default, edit configurable_model_flags.in
    if you are an expert and you want to try different options within CLUBB.
 
 6. $ cd <CLUBB BASE DIRECTORY>/run_scripts
@@ -678,9 +678,9 @@ number of columns to run with (`ngrdcol`).
 
 There is a tool in utilities used to generate a multiple column
 parameter set along with this extra namelist, here is an example use:
-`utilities/create_multi_col_params.py -n 32 -param_file input/tunable_parameters/tunable_parameters.in`
+`utilities/create_multi_col_params.py -n 32`
 - This will create a new param file with the default name "clubb_params_multi_col.in"
-- This file will contain 32 copies of the parameter set passed into it
+- This file will contain 32 copies of the default parameter set
 - It will also contain the namelist setting `ngrdcol=32`
 - There are other options this script takes, including different parameter generation schemes,
   see the script for more details.
@@ -825,10 +825,10 @@ Do steps 1, 2, & 3 as outlined in the description of a standalone run (Sec 2.1).
 6. Edit run_scripts/run_tuner.py to use your namelists.  Note that run_tuner.py uses
    a customized stats file for tuning and a (possibly different) stats file 
    to run CLUBB with the optimized parameters.  The stats file used while 
-   tuning is input/stats/tuning_stats.in and contains only the names of the 
-   variables being tuned for; this speeds up the tuning process.  Therefore,
-   you must also edit tuning_stats.in to match the variables being tuned for
-   in the error_<CASE_NAME>.in file.
+   tuning is input/stats/all_tuning_stats.in and contains the CLUBB stats
+   variables that can be compared against normalized benchmark fields.
+   Therefore, if you add a new benchmark-converter field, you must also add a
+   matching CLUBB stats entry to all_tuning_stats.in.
 
 7. Ensure that the directory /home/pub/les_and_clubb_benchmark_runs exists on the
    machine you are using.  (All group computers at UWM should have this directory.)  

@@ -10,6 +10,7 @@ pipeline {
     }
     stage('Loss Driver Test') {
       steps {
+        sh '''python tests/run_loss_metrics_test.py'''
         sh '''ulimit -s 8388608
               python run_scripts/run_scm_loss.py \
                 -driver_test \
@@ -32,7 +33,9 @@ pipeline {
                 -cases bomex \
                 -fields cloud_frac \
                 -params C8:0.2:0.8 \
-                -run_top complete'''
+                -output_root output_tuner/new_tuner_test/simple \
+                -run_top complete \
+                -run_out_dir output/new_tuner_test/simple'''
       }
     }
     stage('Complex Tuner Command') {
@@ -53,6 +56,15 @@ pipeline {
                 -run_top both \
                 -top_n 1 \
                 -run_out_dir output/new_tuner_test/complex'''
+      }
+    }
+    stage('Sample History Analyzer') {
+      steps {
+        sh '''python tests/analyze_tuner_sample_history.py \
+                output_tuner/new_tuner_test \
+                -metric scaled_rmse \
+                -min_samples 2 \
+                --require_param_variation'''
       }
     }
   }

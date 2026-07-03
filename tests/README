@@ -141,8 +141,8 @@ Examples:
 - `python3 tests/run_loss_output_consistency.py bomex -out_root output/loss_check`
   Writes all generated output under a custom root directory.
 
-- `python3 tests/run_loss_output_consistency.py bomex -params input/tunable_parameters/tunable_parameters.in -flags input/tunable_parameters/configurable_model_flags.in`
-  Runs with explicit tunable parameter and model flag files.
+- `python3 tests/run_loss_output_consistency.py bomex -config default`
+  Runs with an explicit named tunable config.
 
 ### `run_python_vs_fortran_cases.py`
 
@@ -218,8 +218,8 @@ Examples:
 - `python3 tests/run_stats_output_consistency.py bomex -window_start 7200 -window_end 14400`
   Uses an explicit stats window for the windowing checks.
 
-- `python3 tests/run_stats_output_consistency.py bomex -config input/tunable_parameters -debug 0`
-  Forwards a config directory and debug level to `run_scm.py`.
+- `python3 tests/run_stats_output_consistency.py bomex -config default -debug 0`
+  Forwards a named config and debug level to `run_scm.py`.
 
 ### `run_thread_test.py`
 

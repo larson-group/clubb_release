@@ -1,4 +1,4 @@
- ! Parameter file ../input/tunable_parameters/tunable_parameters_20231025_1748.in            
+ ! Parameter file ../input/parameter_and_flag_configs/default/tunable_parameters_20231025_1748.in            
  &clubb_params_nl
                          C1 =      1.00000000000000000000
                         C1b =      1.00000000000000000000

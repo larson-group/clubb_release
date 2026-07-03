@@ -17,12 +17,46 @@ DEFAULT_PLAYBACK_INTERVAL_S = 1.0
 PLAYBACK_INTERVAL_STEP_S = 0.1
 MIN_PLAYBACK_INTERVAL_S = 0.1
 MAX_PLAYBACK_INTERVAL_S = 5.0
+DEFAULT_AVERAGE_LENGTH_MINUTES = 30.0
 
 
 def normalize_playback_interval(interval_s):
     """Clamp and snap playback speed to the supported 0.1 s interval grid."""
     snapped = round(float(interval_s) / PLAYBACK_INTERVAL_STEP_S) * PLAYBACK_INTERVAL_STEP_S
     return round(min(MAX_PLAYBACK_INTERVAL_S, max(MIN_PLAYBACK_INTERVAL_S, snapped)), 1)
+
+
+def clamp_float(value, low, high, fallback):
+    """Return a finite float clamped to [low, high], or fallback when invalid."""
+    try:
+        result = float(value)
+    except (TypeError, ValueError):
+        result = float(fallback)
+    low = float(low)
+    high = float(high)
+    if high < low:
+        low, high = high, low
+    return max(low, min(result, high))
+
+
+def default_average_length(slider_min, slider_max):
+    """Return the default averaging length in minutes, clamped to slider bounds."""
+    return clamp_float(DEFAULT_AVERAGE_LENGTH_MINUTES, slider_min, slider_max, slider_min)
+
+
+def clamp_height_range(value, height_min, height_max, fallback):
+    """Return a two-value height range clamped to the slider bounds."""
+    if isinstance(value, (list, tuple)) and len(value) == 2:
+        raw_low, raw_high = value
+    elif isinstance(fallback, (list, tuple)) and len(fallback) == 2:
+        raw_low, raw_high = fallback
+    else:
+        raw_low, raw_high = height_min, height_max
+    low = clamp_float(raw_low, height_min, height_max, height_min)
+    high = clamp_float(raw_high, height_min, height_max, height_max)
+    if high < low:
+        low, high = high, low
+    return [low, high]
 
 
 def entry_list_or_default(dir_entries):
@@ -51,7 +85,6 @@ def empty_case_selection():
         no_update,
         0,
         "single",
-        "range",
         1,
         1,
         1,
@@ -121,7 +154,6 @@ def initialize_case_state(output_dirs=None):
             "enabled_benchmarks": [],
             "selected_column": 0,
             "column_mode": "single",
-            "time_mode": "range",
             "time_slider_min": 1,
             "time_slider_max": 1,
             "time_slider_step": 1,
@@ -152,6 +184,7 @@ def initialize_case_state(output_dirs=None):
     slider_min = max(1.0e-6, float(case_data.get("time_slider_duration_min_minutes") or 1))
     slider_max = max(slider_min, float(case_data.get("time_slider_duration_max_minutes") or slider_min))
     slider_step = max(1.0e-6, float(case_data.get("time_slider_duration_step_minutes") or slider_min))
+    default_duration = default_average_length(slider_min, slider_max)
     height_min = float(case_data.get("height_slider_min", 0.0))
     height_max = float(case_data.get("height_slider_max", 1.0))
     return {
@@ -162,16 +195,20 @@ def initialize_case_state(output_dirs=None):
         "enabled_benchmarks": [],
         "selected_column": 0,
         "column_mode": "single",
-        "time_mode": "range",
         "time_slider_min": slider_min,
         "time_slider_max": slider_max,
         "time_slider_step": slider_step,
-        "time_range": case_data.get("default_time_duration_minutes") or 1,
+        "time_range": default_duration,
         "time_marks": {},
         "time_point_min": case_data.get("time_slider_start_min_seconds", 0),
-        "time_point_max": time_start_max_for_duration(case_data, case_data.get("default_time_duration_minutes") or slider_min),
-        "time_point": case_data.get("default_time_start_seconds", 0),
-        "time_point_step": max(1.0e-6, float(case_data.get("default_time_duration_minutes") or slider_min)) * 60.0,
+        "time_point_max": time_start_max_for_duration(case_data, default_duration),
+        "time_point": clamp_float(
+            case_data.get("default_time_start_seconds", 0),
+            case_data.get("time_slider_start_min_seconds", 0),
+            time_start_max_for_duration(case_data, default_duration),
+            case_data.get("time_slider_start_min_seconds", 0),
+        ),
+        "time_point_step": max(1.0e-6, float(default_duration)) * 60.0,
         "time_point_marks": {},
         "height_min": height_min,
         "height_max": height_max,

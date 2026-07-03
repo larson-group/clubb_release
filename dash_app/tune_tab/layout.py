@@ -7,6 +7,9 @@ from dash import dcc, html
 from tuner.taylor_metrics import DEFAULT_AGGREGATION_MODE, DEFAULT_LOSS_MODE
 
 
+DEFAULT_AVERAGE_TIME_SECONDS = 3600
+
+
 def action_button_style(color, disabled=False):
     """Return the shared style for tuning-tab action buttons."""
     style = {
@@ -32,6 +35,13 @@ def mode_button_style(selected=False, disabled=False):
         "border": "2px solid #f59e0b" if selected else "1px solid transparent",
         "minWidth": "96px",
     })
+    return style
+
+
+def config_button_style(selected=False, disabled=False):
+    """Return the style for tunable-config selector buttons."""
+    style = mode_button_style(selected=selected, disabled=disabled)
+    style.update({"minWidth": "116px"})
     return style
 
 
@@ -63,6 +73,12 @@ def build_top_controls(initial_data):
                                 id="tune-mode-resolve",
                                 n_clicks=0,
                                 style=mode_button_style(selected=selected_mode == "resolve"),
+                            ),
+                            html.Button(
+                                "SimAnn",
+                                id="tune-mode-simann",
+                                n_clicks=0,
+                                style=mode_button_style(selected=selected_mode == "simann"),
                             ),
                         ],
                         style={"display": "flex", "gap": "8px", "flexWrap": "wrap"},
@@ -105,6 +121,42 @@ def build_top_controls(initial_data):
                         ],
                         id="tune-resolve-options",
                         style={**mode_options_block_style(selected_mode == "resolve"), "marginTop": "10px"},
+                    ),
+                    html.Div(
+                        [
+                            html.Label("Max Iterations", htmlFor="tune-simann-max-iters"),
+                            dcc.Input(
+                                id="tune-simann-max-iters",
+                                type="number",
+                                min=1,
+                                step=1,
+                                value=initial_data["simann_max_iters"],
+                                debounce=True,
+                                style={"width": "120px", "marginLeft": "8px", "marginRight": "12px"},
+                            ),
+                            html.Label("Initial Temp", htmlFor="tune-simann-initial-temp"),
+                            dcc.Input(
+                                id="tune-simann-initial-temp",
+                                type="number",
+                                min=0,
+                                step="any",
+                                value=initial_data["simann_initial_temp"],
+                                debounce=True,
+                                style={"width": "100px", "marginLeft": "8px", "marginRight": "12px"},
+                            ),
+                            html.Label("Final Temp", htmlFor="tune-simann-final-temp"),
+                            dcc.Input(
+                                id="tune-simann-final-temp",
+                                type="number",
+                                min=0,
+                                step="any",
+                                value=initial_data["simann_final_temp"],
+                                debounce=True,
+                                style={"width": "110px", "marginLeft": "8px"},
+                            ),
+                        ],
+                        id="tune-simann-options",
+                        style={**mode_options_block_style(selected_mode == "simann"), "marginTop": "10px"},
                     ),
                 ],
                 style={"padding": "12px"},
@@ -200,19 +252,59 @@ def build_top_controls(initial_data):
             html.Div(
                 [
                     html.Div("Run Tuner", className="tune-section-title"),
-                    html.Button(
-                        "Start",
-                        id="tune-start-button",
-                        n_clicks=0,
-                        style=action_button_style("#16a34a", disabled=True),
-                        disabled=True,
+                    html.Div(
+                        [
+                            html.Div(
+                                [
+                                    html.Label("Batch Size", htmlFor="tune-batch-size"),
+                                    dcc.Input(
+                                        id="tune-batch-size",
+                                        type="number",
+                                        min=1,
+                                        step=1,
+                                        value=initial_data["batch_size"],
+                                        debounce=True,
+                                        style={"width": "96px"},
+                                    ),
+                                ],
+                                style={"display": "flex", "flexDirection": "column", "gap": "4px"},
+                            ),
+                            html.Div(
+                                [
+                                    html.Label("Max Workers", htmlFor="tune-max-workers"),
+                                    dcc.Input(
+                                        id="tune-max-workers",
+                                        type="number",
+                                        min=1,
+                                        step=1,
+                                        value=initial_data["max_workers"],
+                                        debounce=True,
+                                        style={"width": "96px"},
+                                    ),
+                                ],
+                                style={"display": "flex", "flexDirection": "column", "gap": "4px"},
+                            ),
+                        ],
+                        style={"display": "flex", "gap": "10px", "flexWrap": "wrap", "marginBottom": "8px"},
                     ),
-                    html.Button(
-                        "Stop",
-                        id="tune-stop-button",
-                        n_clicks=0,
-                        style=action_button_style("#b91c1c", disabled=True),
-                        disabled=True,
+                    html.Div(
+                        [
+                            html.Button(
+                                "Start",
+                                id="tune-start-button",
+                                n_clicks=0,
+                                style=action_button_style("#16a34a", disabled=True),
+                                disabled=True,
+                            ),
+                            html.Button(
+                                "Stop",
+                                id="tune-stop-button",
+                                n_clicks=0,
+                                style=action_button_style("#b91c1c", disabled=True),
+                                disabled=True,
+                            ),
+                        ],
+                        style={"display": "flex", "gap": "8px", "flexWrap": "wrap"},
                     ),
                 ],
                 style={"padding": "12px", "display": "flex", "flexDirection": "column", "alignItems": "flex-start"},
@@ -364,10 +456,40 @@ def build_case_config_row(row, case_names):
                             dcc.Input(
                                 id={"type": "tune-case-average-time", "index": row_id},
                                 type="text",
-                                value=row.get("average_time_seconds", ""),
+                                value=row.get("average_time_seconds", DEFAULT_AVERAGE_TIME_SECONDS),
                                 placeholder="seconds",
                                 debounce=True,
                                 className="clubb-input tune-average-time-input",
+                                style={"width": "112px"},
+                            ),
+                        ],
+                        className="tune-case-input-group",
+                    ),
+                    html.Div(
+                        [
+                            html.Label("Altitude min", className="tune-case-input-label"),
+                            dcc.Input(
+                                id={"type": "tune-case-altitude-min", "index": row_id},
+                                type="number",
+                                step="any",
+                                value=row.get("altitude_min", ""),
+                                placeholder="m",
+                                debounce=True,
+                                style={"width": "112px"},
+                            ),
+                        ],
+                        className="tune-case-input-group",
+                    ),
+                    html.Div(
+                        [
+                            html.Label("Altitude max", className="tune-case-input-label"),
+                            dcc.Input(
+                                id={"type": "tune-case-altitude-max", "index": row_id},
+                                type="number",
+                                step="any",
+                                value=row.get("altitude_max", ""),
+                                placeholder="m",
+                                debounce=True,
                                 style={"width": "112px"},
                             ),
                         ],
@@ -387,6 +509,28 @@ def build_case_config_row(row, case_names):
     )
 
 
+def build_config_buttons(configs, selected_config):
+    """Render selectable tunable config buttons."""
+    buttons = []
+    for config in configs or []:
+        value = str(config.get("value", "")).strip()
+        if not value:
+            continue
+        label = str(config.get("label") or value)
+        buttons.append(
+            html.Button(
+                label,
+                id={"type": "tune-config-button", "name": value},
+                n_clicks=0,
+                title=f"Use input/parameter_and_flag_configs/{value}",
+                style=config_button_style(selected=value == selected_config),
+            )
+        )
+    if buttons:
+        return html.Div(buttons, style={"display": "flex", "gap": "8px", "flexWrap": "wrap"})
+    return html.Div("No complete tunable configs found.", className="tune-empty-message")
+
+
 def build_results_placeholder():
     """Render the empty-state message shown before any tuning results exist."""
     return html.Div("No tuning results yet.", className="tune-empty-message", style={"fontStyle": "italic", "padding": "8px 0"})
@@ -400,6 +544,8 @@ def build_layout(initial_data):
         [
             build_top_controls(initial_data),
             dcc.Store(id="tune-case-data", data=initial_data["case_data"]),
+            dcc.Store(id="tune-tunable-configs", data=initial_data["tunable_configs"]),
+            dcc.Store(id="tune-selected-config", data=initial_data["selected_config"]),
             dcc.Store(id="tune-tunable-names", data=initial_data["tunable_names"]),
             dcc.Store(id="tune-tunable-default-ranges", data=initial_data["tunable_default_ranges"]),
             dcc.Store(id="tune-strategy-mode", data=initial_data["strategy_mode"]),
@@ -415,6 +561,7 @@ def build_layout(initial_data):
             dcc.Store(id="tune-best-results", data=[]),
             dcc.Store(id="tune-best-results-by-case", data={}),
             dcc.Store(id="tune-diagnostics-signature", data=""),
+            dcc.Store(id="tune-landscape-signature", data=""),
             dcc.Store(id="tune-loss-runs", data={}),
             dcc.Interval(id="tune-interval", interval=500, disabled=True),
             dcc.Interval(id="tune-loss-run-interval", interval=1000, disabled=True),
@@ -458,6 +605,135 @@ def build_layout(initial_data):
                                 id="tune-taylor-container",
                                 className="tune-taylor-container tune-diagnostics-row",
                             ),
+                            html.Div(
+                                [
+                                    html.Div(
+                                        [
+                                            html.Div("Landscape", className="tune-section-title"),
+                                            dcc.Dropdown(
+                                                id="tune-landscape-x-param",
+                                                options=[],
+                                                value=None,
+                                                clearable=False,
+                                                searchable=True,
+                                                placeholder="x parameter",
+                                                className="tune-landscape-control",
+                                            ),
+                                            dcc.Dropdown(
+                                                id="tune-landscape-y-param",
+                                                options=[],
+                                                value=None,
+                                                clearable=False,
+                                                searchable=True,
+                                                placeholder="y parameter",
+                                                className="tune-landscape-control",
+                                            ),
+                                            dcc.Dropdown(
+                                                id="tune-landscape-metric",
+                                                options=[],
+                                                value=None,
+                                                clearable=False,
+                                                searchable=True,
+                                                placeholder="metric",
+                                                className="tune-landscape-control",
+                                            ),
+                                            dcc.Dropdown(
+                                                id="tune-landscape-aggregation",
+                                                options=[
+                                                    {"label": "Mean", "value": "mean"},
+                                                    {"label": "Median", "value": "median"},
+                                                    {"label": "Min", "value": "min"},
+                                                    {"label": "P90", "value": "p90"},
+                                                    {"label": "Max", "value": "max"},
+                                                ],
+                                                value="mean",
+                                                clearable=False,
+                                                searchable=False,
+                                                className="tune-landscape-control",
+                                            ),
+                                            dcc.Dropdown(
+                                                id="tune-landscape-mode",
+                                                options=[
+                                                    {"label": "Samples", "value": "samples"},
+                                                    {"label": "Binned heatmap", "value": "binned"},
+                                                ],
+                                                value="samples",
+                                                clearable=False,
+                                                searchable=False,
+                                                className="tune-landscape-control",
+                                            ),
+                                            dcc.Dropdown(
+                                                id="tune-landscape-case",
+                                                options=[{"label": "All cases", "value": "__all__"}],
+                                                value="__all__",
+                                                clearable=False,
+                                                searchable=True,
+                                                className="tune-landscape-control",
+                                            ),
+                                            dcc.Dropdown(
+                                                id="tune-landscape-field",
+                                                options=[{"label": "All fields", "value": "__all__"}],
+                                                value="__all__",
+                                                clearable=False,
+                                                searchable=True,
+                                                className="tune-landscape-control",
+                                            ),
+                                            dcc.Dropdown(
+                                                id="tune-landscape-window",
+                                                options=[{"label": "All windows", "value": "__all__"}],
+                                                value="__all__",
+                                                clearable=False,
+                                                searchable=False,
+                                                className="tune-landscape-control",
+                                            ),
+                                        ],
+                                        className="tune-landscape-controls",
+                                    ),
+                                    html.Div(
+                                        [
+                                            dcc.Graph(
+                                                id="tune-landscape-plot",
+                                                className="tune-landscape-graph",
+                                                config={"responsive": True, "displaylogo": False},
+                                                style={"width": "100%", "minWidth": 0, "height": "430px"},
+                                            ),
+                                            dcc.Graph(
+                                                id="tune-parameter-correlation-plot",
+                                                className="tune-landscape-graph",
+                                                config={"responsive": True, "displaylogo": False},
+                                                style={"width": "100%", "minWidth": 0, "height": "430px"},
+                                            ),
+                                        ],
+                                        className="tune-landscape-row",
+                                    ),
+                                    html.Div(
+                                        [
+                                            dcc.Graph(
+                                                id="tune-field-sensitivity-plot",
+                                                className="tune-landscape-graph",
+                                                config={"responsive": True, "displaylogo": False},
+                                                style={"width": "100%", "minWidth": 0, "height": "430px"},
+                                            ),
+                                            dcc.Graph(
+                                                id="tune-field-interaction-plot",
+                                                className="tune-landscape-graph",
+                                                config={"responsive": True, "displaylogo": False},
+                                                style={"width": "100%", "minWidth": 0, "height": "430px"},
+                                            ),
+                                        ],
+                                        className="tune-field-sensitivity-row",
+                                        style={
+                                            "display": "grid",
+                                            "gridTemplateColumns": "minmax(0, 1fr) minmax(0, 1fr)",
+                                            "gap": "12px",
+                                            "alignItems": "stretch",
+                                            "marginTop": "12px",
+                                        },
+                                    ),
+                                ],
+                                id="tune-landscape-container",
+                                className="tune-landscape-container",
+                            ),
                             html.Div(id="tune-results-container", className="tune-results-container", children=build_results_placeholder()),
                         ],
                         id="tune-left-pane",
@@ -497,24 +773,6 @@ def build_layout(initial_data):
                                 searchable=True,
                                 className="clubb-dropdown",
                             ),
-                            html.Div("Batch Size", className="tune-section-title", style={"marginTop": "14px"}),
-                            dcc.Input(
-                                id="tune-batch-size",
-                                type="text",
-                                value=initial_data["batch_size"],
-                                debounce=True,
-                                className="clubb-input",
-                                style={"width": "120px"},
-                            ),
-                            html.Div("Max Workers", className="tune-section-title", style={"marginTop": "14px"}),
-                            dcc.Input(
-                                id="tune-max-workers",
-                                type="text",
-                                value=initial_data["max_workers"],
-                                debounce=True,
-                                className="clubb-input",
-                                style={"width": "120px"},
-                            ),
                             html.H4("Parameter Ranges", className="tune-settings-heading"),
                             html.Div(
                                 "Search modes vary only the parameters listed below across the supplied ranges.",
@@ -534,6 +792,15 @@ def build_layout(initial_data):
                                     )
                                 ],
                                 style={"display": "flex", "gap": "8px", "marginBottom": "8px"},
+                            ),
+                            html.H4("Config", className="tune-settings-heading"),
+                            html.Div(
+                                build_config_buttons(
+                                    initial_data["tunable_configs"],
+                                    initial_data["selected_config"],
+                                ),
+                                id="tune-config-buttons",
+                                style={"marginBottom": "8px"},
                             ),
                             html.Div(id="tune-loss-run-message", className="tune-info-message", style={"marginTop": "10px"}),
                             html.Div(id="tune-validation-message", className="tune-validation-message", style={"marginTop": "10px"}),

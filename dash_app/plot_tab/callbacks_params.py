@@ -83,6 +83,94 @@ def _regular_unique_values(values, *, atol=1.0e-10):
     return unique_vals
 
 
+def _param_value_groups(values, ncols):
+    """Return sorted unique parameter values with the columns that use each value."""
+    groups = {}
+    for col_idx, value in enumerate(values[:ncols]):
+        try:
+            numeric_value = float(value)
+        except (TypeError, ValueError):
+            continue
+        groups.setdefault(numeric_value, []).append(col_idx)
+    return [(value, groups[value]) for value in sorted(groups)]
+
+
+def _slider_marks_for_groups(groups, active_index=None):
+    """Return readable marks for a discrete parameter-value slider."""
+    if len(groups) <= 8:
+        return {idx: f"{value:g}" for idx, (value, _columns) in enumerate(groups)}
+    marks = {
+        0: f"{groups[0][0]:g}",
+        len(groups) - 1: f"{groups[-1][0]:g}",
+    }
+    if active_index is not None and 0 <= active_index < len(groups):
+        marks[int(active_index)] = f"{groups[int(active_index)][0]:g}"
+    return marks
+
+
+def _column_indices_for_filters(param_data, fixed_filters):
+    """Return the column indices that match all active parameter filters."""
+    if not param_data or not fixed_filters:
+        return None, {}
+    params = param_data.get("params") or {}
+    ncols = max(int(param_data.get("ngrdcol") or 1), 1)
+    selected = set(range(ncols))
+    normalized_filters = {}
+    for name, requested_index in fixed_filters.items():
+        groups = _param_value_groups(params.get(name, []), ncols)
+        if not groups:
+            continue
+        group_index = max(0, min(int(requested_index or 0), len(groups) - 1))
+        group_value, group_columns = groups[group_index]
+        selected &= set(group_columns)
+        normalized_filters[name] = {"index": group_index, "value": group_value}
+    if not normalized_filters:
+        return None, {}
+    return sorted(selected), normalized_filters
+
+
+def _overplot_filter_row(name, values, ncols, column_filters):
+    """Render one overplot parameter row with an optional fixed-value slider."""
+    groups = _param_value_groups(values, ncols)
+    filter_state = ((column_filters or {}).get("filters") or {}).get(name) or {}
+    fixed = bool(filter_state)
+    active_index = max(0, min(int(filter_state.get("index", 0) or 0), max(len(groups) - 1, 0)))
+    value_summary = format_column_values(values)
+    header = html.Div(
+        [
+            html.Div(name, className="plots-constant-param-name"),
+            dcc.Checklist(
+                id={"type": "plots-column-filter-enabled", "name": name},
+                options=[{"label": "Fix", "value": "fixed"}],
+                value=["fixed"] if fixed else [],
+                labelStyle={"display": "inline-flex", "alignItems": "center", "gap": "4px", "whiteSpace": "nowrap"},
+                inputStyle={"marginRight": "4px"},
+                className="plots-column-filter-check",
+            ),
+        ],
+        className="plots-column-filter-header",
+    )
+    children = [
+        header,
+        html.Div(value_summary, className="plots-constant-param-value"),
+    ]
+    if fixed and groups:
+        children.append(
+            html.Div(
+                dcc.Slider(
+                    id={"type": "plots-column-filter-slider", "name": name},
+                    min=0,
+                    max=len(groups) - 1,
+                    value=active_index,
+                    step=1,
+                    marks=_slider_marks_for_groups(groups, active_index),
+                ),
+                className="plots-slider-block plots-column-filter-slider",
+            )
+        )
+    return html.Div(children, className="plots-column-filter-row")
+
+
 def _is_regular_hypergrid(params, varied_names, ncols):
     """Return whether varied column parameters form a complete regular hypergrid."""
     if not params or not varied_names:
@@ -196,12 +284,16 @@ def register_param_callbacks(app):
         Input("plots-selected-column", "data"),
         Input("plots-param-data", "data"),
         Input("plots-column-mode", "value"),
+        Input("plots-column-filters", "data"),
         Input("plots-case-data", "data"),
     )
-    def update_column_label(col_idx, param_data, column_mode, _case_data):
+    def update_column_label(col_idx, param_data, column_mode, column_filters, _case_data):
         """Show the active column or overplot range in the column section header."""
         ncols = 1 if not param_data else param_data.get("ngrdcol", 1)
         if column_mode == "all":
+            active_count = (column_filters or {}).get("active_count")
+            if active_count is not None:
+                return f"Columns: {active_count} of {ncols}"
             return f"Columns: 1 - {ncols}"
         return f"Column: {int(col_idx) + 1}"
 
@@ -212,8 +304,9 @@ def register_param_callbacks(app):
         Input("plots-selected-column", "data"),
         Input("plots-column-mode", "value"),
         Input("plots-case-data", "data"),
+        Input("plots-column-filters", "data"),
     )
-    def render_param_panel(param_data, param_names, col_idx, column_mode, case_data):
+    def render_param_panel(param_data, param_names, col_idx, column_mode, case_data, column_filters):
         """Render the column-selection UI for the current case and plot mode."""
         if not param_data:
             return [html.Div("Select a case to enable column controls.")]
@@ -247,15 +340,7 @@ def register_param_callbacks(app):
                 continue
             if column_mode == "all":
                 displayed_varying_count += 1
-                children.append(
-                    html.Div(
-                        [
-                            html.Div(name, className="plots-constant-param-name"),
-                            html.Div(format_column_values(values), className="plots-constant-param-value"),
-                        ],
-                        className="plots-constant-param-row",
-                    )
-                )
+                children.append(_overplot_filter_row(name, values, ncols, column_filters))
                 continue
             current_val = values[min(max(int(col_idx), 0), ncols - 1)]
             children.append(_varying_param_slider(name, current_val, unique_vals))
@@ -284,6 +369,42 @@ def register_param_callbacks(app):
             if constant_params:
                 children.append(_constant_param_grid(constant_params))
         return children
+
+    @app.callback(
+        Output("plots-column-filters", "data"),
+        Input("plots-param-data", "data"),
+        Input("plots-column-mode", "value"),
+        Input({"type": "plots-column-filter-enabled", "name": ALL}, "value"),
+        Input({"type": "plots-column-filter-slider", "name": ALL}, "value"),
+        State({"type": "plots-column-filter-enabled", "name": ALL}, "id"),
+        State({"type": "plots-column-filter-slider", "name": ALL}, "id"),
+    )
+    def update_column_filters(param_data, column_mode, enabled_values, slider_values, enabled_ids, slider_ids):
+        """Compute the active overplot column subset from fixed-parameter controls."""
+        empty_filter = {"indices": None, "filters": {}, "active_count": None}
+        if column_mode != "all" or not param_data:
+            return empty_filter
+        slider_by_name = {
+            item.get("name"): value
+            for item, value in zip(slider_ids or [], slider_values or [])
+            if isinstance(item, dict) and item.get("name") is not None
+        }
+        requested_filters = {}
+        for item, values in zip(enabled_ids or [], enabled_values or []):
+            if not isinstance(item, dict):
+                continue
+            name = item.get("name")
+            if not name or "fixed" not in (values or []):
+                continue
+            requested_filters[name] = slider_by_name.get(name, 0)
+        indices, normalized_filters = _column_indices_for_filters(param_data, requested_filters)
+        if not normalized_filters:
+            return empty_filter
+        return {
+            "indices": indices,
+            "filters": normalized_filters,
+            "active_count": len(indices or []),
+        }
 
     @app.callback(
         Output("plots-selected-column", "data", allow_duplicate=True),

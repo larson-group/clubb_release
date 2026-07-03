@@ -24,6 +24,7 @@ TIME_DIM_NAMES = {"t", "time"}
 Z_DIM_NAMES = {"z", "zm", "zt", "altitude", "height", "lev"}
 SOURCE_TYPES = {"sam", "coamps"}
 CONVERTER_VERSION = "0.3"
+NORMALIZED_BENCHMARK_FORMAT = "NETCDF3_64BIT_OFFSET"
 _TIME_UNITS_RE = re.compile(r"^\s*([A-Za-z]+)\s+since\s+(.+?)\s*$")
 
 
@@ -1061,7 +1062,7 @@ def _create_coord(out_ds: Dataset, name: str, values: np.ndarray, units: str) ->
 
 
 def _write_field(out_ds: Dataset, field_name: str, field: FieldData) -> None:
-    var = out_ds.createVariable(field_name, "f8", ("time", "z", "y", "x"), zlib=True)
+    var = out_ds.createVariable(field_name, "f8", ("time", "z", "y", "x"))
     var[:, :, 0, 0] = field.data
     var.clubb_field_name = field_name
     var.benchmark_formula = field.formula
@@ -1097,7 +1098,9 @@ def convert_benchmark_file(
     mode = "w" if clobber else "x"
     status: dict[str, str] = {}
 
-    with Dataset(input_path, "r") as in_ds, Dataset(output_path, mode) as out_ds:
+    with Dataset(input_path, "r") as in_ds, Dataset(
+        output_path, mode, format=NORMALIZED_BENCHMARK_FORMAT
+    ) as out_ds:
         ctx = BenchmarkContext(in_ds, source_type=source_type, input_path=str(input_path))
         out_ds.createDimension("time", len(ctx.time))
         out_ds.createDimension("z", len(ctx.z))

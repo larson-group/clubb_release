@@ -350,21 +350,25 @@ contains
     centered_rmse = sqrt( centered_diff_sumsq / real( num_levels, kind = core_rknd ) )
     bias = model_mean - benchmark_mean
 
-    if ( model_stddev > 0.0_core_rknd .and. benchmark_stddev > 0.0_core_rknd ) then
+    if ( benchmark_stddev <= 0.0_core_rknd ) then
+      ! A flat benchmark has no vertical shape or variability amplitude to
+      ! compare.  Treat those Taylor components as neutral and let centered
+      ! RMSE and bias carry any actual mismatch.
+      correlation = 1.0_core_rknd
+      std_ratio = 1.0_core_rknd
+      centered_rmse_norm = centered_rmse
+      bias_norm = bias
+    else if ( model_stddev > 0.0_core_rknd ) then
       correlation = covariance_sum / sqrt( model_centered_sumsq * benchmark_centered_sumsq )
       correlation = max( -1.0_core_rknd, min( 1.0_core_rknd, correlation ) )
-    else
-      correlation = 0.0_core_rknd
-    end if
-
-    if ( benchmark_stddev > 0.0_core_rknd ) then
       std_ratio = model_stddev / benchmark_stddev
       centered_rmse_norm = centered_rmse / benchmark_stddev
       bias_norm = bias / benchmark_stddev
     else
+      correlation = 0.0_core_rknd
       std_ratio = 0.0_core_rknd
-      centered_rmse_norm = centered_rmse
-      bias_norm = bias
+      centered_rmse_norm = centered_rmse / benchmark_stddev
+      bias_norm = bias / benchmark_stddev
     end if
 
   end subroutine calculate_taylor_metrics

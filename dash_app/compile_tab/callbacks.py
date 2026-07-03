@@ -42,9 +42,9 @@ def options_from_flags(flag_values):
     flags = set(flag_values or [])
     return {
         "debug": "debug" in flags,
-        "run_tests": "run_tests" in flags,
+        "run_tests": False,
         "python": "python" in flags,
-        "fresh": "fresh" in flags,
+        "fresh": False,
         "openmp": "openmp" in flags,
         "tuning": "tuning" in flags,
         "gptl": "gptl" in flags,
@@ -254,6 +254,7 @@ def clicked_trigger_id():
 
 
 REBUILDABLE_BUILD_STATUSES = {"needs_configure", "needs_rebuild", "toolchain_dirty"}
+DELETE_ALL_BUILDS_TARGET = "__all__"
 
 
 def build_status_for(statuses, build_path):
@@ -376,6 +377,44 @@ def render_delete_confirmation(build):
     )
 
 
+def render_delete_all_confirmation(builds):
+    """Render the guarded delete confirmation row for all builds."""
+    build_count = len(builds or [])
+    return html.Div(
+        [
+            html.Div(f"Delete all {build_count} builds?", className="compile-delete-title"),
+            html.Div(
+                [
+                    html.Div("This removes every CMake build directory and its install directory.", className="compile-warning"),
+                    html.Div(f"Build root: {BUILD_DIR}", className="compile-path"),
+                    html.Div(f"Install root: {INSTALL_DIR}", className="compile-path"),
+                ],
+                className="compile-delete-body",
+            ),
+            html.Div(
+                [
+                    html.Button(
+                        "Cancel",
+                        id={"type": "compile-build-delete-all-cancel", "index": DELETE_ALL_BUILDS_TARGET},
+                        type="button",
+                        n_clicks=0,
+                        className="compile-build-confirm-button",
+                    ),
+                    html.Button(
+                        "Delete all",
+                        id={"type": "compile-build-delete-all-confirm", "index": DELETE_ALL_BUILDS_TARGET},
+                        type="button",
+                        n_clicks=0,
+                        className="compile-build-confirm-button compile-build-confirm-delete",
+                    ),
+                ],
+                className="compile-build-confirm-actions",
+            ),
+        ],
+        className="compile-build-delete-confirm",
+    )
+
+
 def render_build_list(discovery, statuses=None, failures=None, delete_target=None, job=None):
     """Render existing builds as selectable rows with maintenance actions."""
     builds = (discovery or {}).get("builds", [])
@@ -393,6 +432,8 @@ def render_build_list(discovery, statuses=None, failures=None, delete_target=Non
             if failed_path:
                 failed_rebuild_paths.add(failed_path)
     items = []
+    if delete_target == DELETE_ALL_BUILDS_TARGET:
+        items.append(render_delete_all_confirmation(builds))
     for build in builds:
         if delete_target == build.get("path"):
             items.append(render_delete_confirmation(build))
@@ -528,6 +569,25 @@ def set_selected_install(install_prefix):
     return selected_path
 
 
+def latest_install_target(updated_after=None):
+    """Return install/latest when it was updated recently and points at an install directory."""
+    latest_path = Path(INSTALL_DIR) / "latest"
+    try:
+        if latest_path.exists() or latest_path.is_symlink():
+            if updated_after is not None:
+                try:
+                    if latest_path.lstat().st_mtime < float(updated_after):
+                        return ""
+                except (TypeError, ValueError):
+                    pass
+            target = latest_path.resolve()
+            if target.is_dir():
+                return str(target)
+    except OSError:
+        return ""
+    return ""
+
+
 def find_build(discovery, build_path):
     """Return one discovered build by path."""
     return next(
@@ -606,6 +666,14 @@ def delete_existing_build(build):
     return removed
 
 
+def delete_all_existing_builds(builds):
+    """Delete all discovered builds using the same guards as single-build deletion."""
+    removed = []
+    for build in builds or []:
+        removed.extend(delete_existing_build(build))
+    return removed
+
+
 def register_compile_callbacks(app):
     """Register compile tab callbacks."""
 
@@ -653,14 +721,18 @@ def register_compile_callbacks(app):
 
     @app.callback(
         Output("compile-build-delete-target", "data"),
+        Input("compile-delete-all-request", "n_clicks"),
         Input({"type": "compile-build-delete-request", "index": ALL}, "n_clicks"),
         Input({"type": "compile-build-delete-cancel", "index": ALL}, "n_clicks"),
+        Input({"type": "compile-build-delete-all-cancel", "index": ALL}, "n_clicks"),
         prevent_initial_call=True,
     )
-    def set_delete_target(_request_clicks, _cancel_clicks):
+    def set_delete_target(_all_clicks, _request_clicks, _cancel_clicks, _all_cancel_clicks):
         triggered = clicked_trigger_id()
         if not triggered:
             return no_update
+        if triggered == "compile-delete-all-request":
+            return DELETE_ALL_BUILDS_TARGET
         if triggered.get("type") == "compile-build-delete-request":
             return triggered.get("index")
         return None
@@ -670,16 +742,26 @@ def register_compile_callbacks(app):
         Output("compile-build-delete-target", "data", allow_duplicate=True),
         Output("compile-build-select-message", "children", allow_duplicate=True),
         Input({"type": "compile-build-delete-confirm", "index": ALL}, "n_clicks"),
+        Input({"type": "compile-build-delete-all-confirm", "index": ALL}, "n_clicks"),
         State("compile-discovery", "data"),
         State("compile-job", "data"),
         prevent_initial_call=True,
     )
-    def confirm_delete_build(_confirm_clicks, discovery, job):
+    def confirm_delete_build(_confirm_clicks, _confirm_all_clicks, discovery, job):
         triggered = clicked_trigger_id()
         if not triggered:
             return no_update, no_update, no_update
         if job_process_is_live(job):
             return no_update, no_update, html.Div("Cannot delete a build while a compile job is running.", className="compile-warning")
+        if triggered.get("type") == "compile-build-delete-all-confirm":
+            builds = (discovery or {}).get("builds", [])
+            if not builds:
+                return no_update, None, html.Div("No build directories are available to delete.", className="compile-warning")
+            try:
+                delete_all_existing_builds(builds)
+            except RuntimeError as exc:
+                return no_update, no_update, html.Div(str(exc), className="compile-warning")
+            return discover_compile_state(), None, html.Div(f"Deleted {len(builds)} builds.", className="compile-muted")
         build = find_build(discovery, triggered.get("index"))
         if not build:
             return no_update, None, html.Div("Build no longer exists. Refresh and try again.", className="compile-warning")
@@ -796,12 +878,14 @@ def register_compile_callbacks(app):
 
     @app.callback(
         Output("compile-rebuild-all", "disabled"),
+        Output("compile-delete-all-request", "disabled"),
         Input("compile-job", "data"),
         Input("compile-discovery", "data"),
         Input("compile-interval", "n_intervals"),
     )
-    def update_rebuild_all_disabled(job, discovery, _compile_tick):
-        return job_process_is_live(job) or not bool((discovery or {}).get("builds"))
+    def update_build_toolbar_disabled(job, discovery, _compile_tick):
+        disabled = job_process_is_live(job) or not bool((discovery or {}).get("builds"))
+        return disabled, disabled
 
     @app.callback(
         Output("compile-lmod-netcdf", "options"),
@@ -880,6 +964,8 @@ def register_compile_callbacks(app):
         Output("compile-interval", "disabled", allow_duplicate=True),
         Output("compile-interval", "n_intervals"),
         Input("compile-start", "n_clicks"),
+        Input("compile-start-fresh", "n_clicks"),
+        Input("compile-start-tests", "n_clicks"),
         State("compile-discovery", "data"),
         State("compile-env-select", "value"),
         State("compile-toolchain-select", "value"),
@@ -892,9 +978,30 @@ def register_compile_callbacks(app):
         State("compile-lmod-extra", "value"),
         prevent_initial_call=True,
     )
-    def start_compile(_n_clicks, discovery, env_id, toolchain, precision, gpu, flags, extra_args, compiler_module, netcdf_module, extra_modules):
+    def start_compile(
+        _compile_clicks,
+        _fresh_clicks,
+        _test_clicks,
+        discovery,
+        env_id,
+        toolchain,
+        precision,
+        gpu,
+        flags,
+        extra_args,
+        compiler_module,
+        netcdf_module,
+        extra_modules,
+    ):
+        trigger_id = clicked_trigger_id()
+        if trigger_id not in {"compile-start", "compile-start-fresh", "compile-start-tests"}:
+            return (no_update,) * 5
         module_stack = selected_module_stack(discovery, compiler_module, netcdf_module, extra_modules)
         options = collect_options(precision, gpu, toolchain, flags, extra_args, module_stack)
+        if trigger_id == "compile-start-fresh":
+            options["fresh"] = True
+        elif trigger_id == "compile-start-tests":
+            options["run_tests"] = True
         warnings = build_warnings(discovery, env_id, options)
         if any(warning_is_blocking(warning) for warning in warnings):
             log = "Cannot start compile with the current selection:\n" + "\n".join(f"- {warning}" for warning in warnings) + "\n"
@@ -903,7 +1010,12 @@ def register_compile_callbacks(app):
             job = start_compile_job(discovery, env_id, options)
         except RuntimeError as exc:
             return no_update, append_log_tail("", f"{exc}\n"), no_update, no_update, no_update
-        header = f"--- Running compile job ---\n{job['command']}\n\n"
+        action_label = {
+            "compile-start": "compile job",
+            "compile-start-fresh": "fresh compile job",
+            "compile-start-tests": "CTest compile job",
+        }[trigger_id]
+        header = f"--- Running {action_label} ---\n{job['command']}\n\n"
         return job, header, 0, False, 0
 
     @app.callback(
@@ -991,7 +1103,16 @@ def register_compile_callbacks(app):
             return no_update
         if job.get("kind") not in {"compile", "rebuild"}:
             return no_update
-        return discover_compile_state()
+        updated_discovery = discover_compile_state()
+        if job.get("kind") == "compile" and job.get("status") != "cancelled":
+            install_prefix = latest_install_target(job.get("start_time"))
+            if install_prefix:
+                try:
+                    set_selected_install(install_prefix)
+                except RuntimeError:
+                    return updated_discovery
+                updated_discovery = discovery_with_selected_install(updated_discovery, install_prefix)
+        return updated_discovery
 
     @app.callback(
         Output("compile-job", "data", allow_duplicate=True),

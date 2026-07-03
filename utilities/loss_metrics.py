@@ -51,20 +51,22 @@ def calculate_taylor_metrics(model_profile: np.ndarray, benchmark_profile: np.nd
     centered_rmse = float(np.sqrt(centered_diff_sumsq / num_levels))
     bias = model_mean - benchmark_mean
 
-    if model_stddev > 0.0 and benchmark_stddev > 0.0:
+    if benchmark_stddev <= 0.0:
+        correlation = 1.0
+        std_ratio = 1.0
+        centered_rmse_norm = centered_rmse
+        bias_norm = bias
+    elif model_stddev > 0.0:
         correlation = covariance_sum / np.sqrt(model_centered_sumsq * benchmark_centered_sumsq)
         correlation = float(max(-1.0, min(1.0, correlation)))
-    else:
-        correlation = 0.0
-
-    if benchmark_stddev > 0.0:
         std_ratio = model_stddev / benchmark_stddev
         centered_rmse_norm = centered_rmse / benchmark_stddev
         bias_norm = bias / benchmark_stddev
     else:
+        correlation = 0.0
+        centered_rmse_norm = centered_rmse / benchmark_stddev
+        bias_norm = bias / benchmark_stddev
         std_ratio = 0.0
-        centered_rmse_norm = centered_rmse
-        bias_norm = bias
 
     return {
         "correlation": float(correlation),

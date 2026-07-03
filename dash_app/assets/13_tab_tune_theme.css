@@ -129,6 +129,7 @@ body.tune-ui-dragging * {
 }
 
 #app-root.theme-dark .tune-right-pane input,
+#app-root.theme-dark .tune-header-controls input,
 #app-root.theme-dark .tune-right-pane textarea,
 #app-root.theme-dark .tune-right-pane select {
   background-color: #0b1220 !important;
@@ -137,6 +138,7 @@ body.tune-ui-dragging * {
 }
 
 #app-root.theme-light .tune-right-pane input,
+#app-root.theme-light .tune-header-controls input,
 #app-root.theme-light .tune-right-pane textarea,
 #app-root.theme-light .tune-right-pane select {
   background-color: #ffffff !important;
@@ -177,6 +179,38 @@ body.tune-ui-dragging * {
   margin-top: 12px;
 }
 
+.tune-landscape-container {
+  margin-top: 12px;
+  min-width: 960px;
+}
+
+.tune-landscape-controls {
+  display: grid;
+  grid-template-columns: repeat(8, minmax(110px, 1fr));
+  gap: 8px;
+  align-items: end;
+  margin-bottom: 8px;
+}
+
+.tune-landscape-control {
+  min-width: 0;
+}
+
+.tune-landscape-row {
+  display: grid;
+  grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
+  gap: 12px;
+  align-items: stretch;
+}
+
+.tune-field-sensitivity-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 12px;
+  align-items: stretch;
+  margin-top: 12px;
+}
+
 .tune-diagnostics-row {
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(0, 2fr);
@@ -191,7 +225,8 @@ body.tune-ui-dragging * {
 }
 
 .tune-taylor-graph,
-.tune-parameter-box-graph {
+.tune-parameter-box-graph,
+.tune-landscape-graph {
   border: 1px solid #cbd5e1;
   border-radius: 6px;
   overflow: hidden;

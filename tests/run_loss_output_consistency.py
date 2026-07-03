@@ -48,12 +48,12 @@ if CLUBB_ROOT not in sys.path:
 
 from tuner.case_defaults import DEFAULT_LOSS_FIELDS, read_case_defaults  # noqa: E402
 from utilities.loss_metrics import calculate_column_loss_metrics  # noqa: E402
-from utilities.create_case_namelist import read_model_times  # noqa: E402
+from utilities.create_case_namelist import read_model_times, resolve_tunable_config_dir  # noqa: E402
 
 
 DEFAULT_OUT_ROOT = os.path.join(CLUBB_ROOT, "output", "loss_output_consistency")
-DEFAULT_CONFIG_DIR = os.path.join(CLUBB_ROOT, "input", "tunable_parameters")
-DEFAULT_STATS_FILE = os.path.join(CLUBB_ROOT, "input", "stats", "tuning_stats.in")
+DEFAULT_CONFIG_DIR = resolve_tunable_config_dir("default")
+DEFAULT_STATS_FILE = os.path.join(CLUBB_ROOT, "input", "stats", "all_tuning_stats.in")
 CREATE_MULTI_COL_PARAMS = os.path.join(CLUBB_ROOT, "utilities", "create_multi_col_params.py")
 RUN_SCM = os.path.join(RUN_SCRIPTS, "run_scm.py")
 RUN_SCM_LOSS = os.path.join(RUN_SCRIPTS, "run_scm_loss.py")
@@ -111,6 +111,15 @@ def abs_path(path: str | None) -> str | None:
     return os.path.abspath(path) if path else None
 
 
+def config_arg(value: str | None) -> str | None:
+    """Return a path config as absolute while preserving bare config names."""
+    if not value:
+        return None
+    if os.path.isabs(value) or os.sep in value or (os.altsep and os.altsep in value):
+        return os.path.abspath(value)
+    return value
+
+
 def run_subprocess(cmd: list[str], *, cwd: str | None = None) -> None:
     """Run a child process and fail if it exits nonzero."""
     print(f"+ {' '.join(cmd)}", flush=True)
@@ -132,9 +141,7 @@ def resolve_base_params(args: argparse.Namespace) -> str:
     """Choose the scalar tunable-parameter file used to seed the 4 columns."""
     if args.params:
         return args.params
-    if args.config:
-        return os.path.join(args.config, "tunable_parameters.in")
-    return os.path.join(DEFAULT_CONFIG_DIR, "tunable_parameters.in")
+    return os.path.join(args.config_dir, "tunable_parameters.in")
 
 
 def build_shared_multicol_params(args: argparse.Namespace, out_root: str) -> str:
@@ -746,7 +753,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "-config",
         help=(
-            "Optional config directory forwarded to run_scm.py/run_scm_loss.py. "
+            "Optional config name or directory forwarded to run_scm.py/run_scm_loss.py. "
             "Its tunable_parameters.in seeds the shared multicol params unless "
             "-params is also supplied."
         ),
@@ -769,11 +776,13 @@ def parse_args() -> argparse.Namespace:
     )
     args = parser.parse_args()
 
-    args.config = abs_path(args.config)
+    args.config = config_arg(args.config)
     args.params = abs_path(args.params)
     args.flags = abs_path(args.flags)
-    if args.config and not os.path.isdir(args.config):
-        parser.error(f"config directory not found: {args.config}")
+    try:
+        args.config_dir = resolve_tunable_config_dir(args.config)
+    except RuntimeError as exc:
+        parser.error(str(exc))
     if args.params and not os.path.isfile(args.params):
         parser.error(f"params file not found: {args.params}")
     if args.flags and not os.path.isfile(args.flags):

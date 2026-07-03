@@ -229,12 +229,12 @@ def main():
     run_group = parser.add_argument_group("Run options handled by run_scm.py")
     namelist_group = parser.add_argument_group("Namelist options passed to create_case_namelist.py")
 
-    namelist_group.add_argument("-config", metavar="[DIR]",
-        help=("Directory containing all three tunable files:\n"
+    namelist_group.add_argument("-config", metavar="[NAME|DIR]",
+        help=("Tunable config name under input/parameter_and_flag_configs, or a directory containing:\n"
               "  tunable_parameters.in\n"
               "  configurable_model_flags.in\n"
               "  silhs_parameters.in\n"
-              "Defaults to input/tunable_parameters if not given."))
+              "Defaults to default if not given."))
 
     namelist_group.add_argument("-params", metavar="[FILE]",
         help=("Define the tunable parameters.\n"
@@ -302,7 +302,10 @@ def main():
               "Use an integer for dup_tweak mode, e.g. -multicol 4, or an hr spec like "
               "-multicol C8/0.2:0.8/4"))
     namelist_group.add_argument("-batch_size", metavar="[NUM]", type=int,
-        help="Runtime batch size written to &multicol_def. Requires -multicol.")
+        help=(
+            "Runtime batch size written to &multicol_def. Requires -multicol. "
+            "Values larger than ngrdcol are clipped to ngrdcol."
+        ))
 
     namelist_group.add_argument(
         "-override",

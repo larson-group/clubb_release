@@ -14,7 +14,6 @@ from .state import (
     CUDA_MPS_PIPE_DIR,
     DEFAULT_STATS_NAME,
     ENABLE_CUDA_MPS,
-    FLAGS_FILE,
     ITERATION_RE,
     MAX_RUN_PROCS,
     MAX_UI_LOG_LINES,
@@ -27,11 +26,10 @@ from .state import (
     RUN_LOCK,
     RUN_PROCS,
     RUN_STATUS,
-    SILHS_FILE,
     STATS_DIR,
-    TUNABLE_FILE,
     set_child_stack_limit,
 )
+from tunable_configs import tunable_config_file
 
 
 def ensure_cuda_mps():
@@ -92,6 +90,9 @@ def ensure_cuda_mps():
 def run_child_env():
     """Build the environment inherited by dashboard-launched SCM children."""
     child_env = os.environ.copy()
+    preserve_ld_path = child_env.get("CLUBB_DASH_PRESERVE_LD_LIBRARY_PATH", "").strip().lower()
+    if preserve_ld_path not in {"1", "true", "yes", "on"}:
+        child_env.pop("LD_LIBRARY_PATH", None)
     child_env.update(ensure_cuda_mps())
     return child_env
 
@@ -217,16 +218,17 @@ def normalize_task_limit(value):
         return MAX_RUN_PROCS
 
 
-def build_case_command(case_name, stats_name, cli_options=None):
+def build_case_command(case_name, stats_name, cli_options=None, config_name=None):
     """Build the exact run_scm.py command shown in the UI copy button."""
     stats_value = str(stats_name).strip() if stats_name is not None else DEFAULT_STATS_NAME
     if stats_value.lower() == NO_STATS_NAME:
         stats_arg = NO_STATS_NAME
     else:
         stats_arg = os.path.join("input", "stats", stats_value)
-    cmd = [sys.executable, "-u", "run_scripts/run_scm.py", "-stats", stats_arg]
+    config_value = clean_cli_option(config_name) or "default"
+    cmd = [sys.executable, "-u", "run_scripts/run_scm.py", "-stats", stats_arg, "-config", config_value]
     cli_options = cli_options or {}
-    for flag, key in (("-multicol", "multicol"), ("-max_iters", "max_iters"), ("-debug", "debug"), ("-dt_main", "dt_main"), ("-dt_rad", "dt_rad"), ("-tout", "tout"), ("-out_dir", "out_dir")):
+    for flag, key in (("-multicol", "multicol"), ("-batch_size", "batch_size"), ("-max_iters", "max_iters"), ("-debug", "debug"), ("-dt_main", "dt_main"), ("-dt_rad", "dt_rad"), ("-tout", "tout"), ("-out_dir", "out_dir")):
         value = clean_cli_option(cli_options.get(key))
         if value:
             cmd.extend([flag, value])
@@ -234,7 +236,7 @@ def build_case_command(case_name, stats_name, cli_options=None):
     return " ".join(shlex.quote(str(part)) for part in cmd)
 
 
-def start_case_process(case_name, stats_name, overrides, cli_options=None):
+def start_case_process(case_name, stats_name, overrides, cli_options=None, config_name=None):
     """Launch one SCM case with temporary override files and return runtime metadata."""
     stats_value = str(stats_name).strip() if stats_name is not None else DEFAULT_STATS_NAME
     if stats_value.lower() == NO_STATS_NAME:
@@ -242,13 +244,26 @@ def start_case_process(case_name, stats_name, overrides, cli_options=None):
     else:
         stats_arg = os.path.join(STATS_DIR, stats_value)
 
-    params_path = write_temp_namelist(TUNABLE_FILE, overrides.get("tunable"), "clubb_params_")
-    flags_path = write_temp_namelist(FLAGS_FILE, overrides.get("flags"), "clubb_flags_")
-    silhs_path = write_temp_namelist(SILHS_FILE, overrides.get("silhs"), "clubb_silhs_")
+    config_value = clean_cli_option(config_name) or "default"
+    params_path = write_temp_namelist(
+        tunable_config_file(config_value, "tunable_parameters.in"),
+        overrides.get("tunable"),
+        "clubb_params_",
+    )
+    flags_path = write_temp_namelist(
+        tunable_config_file(config_value, "configurable_model_flags.in"),
+        overrides.get("flags"),
+        "clubb_flags_",
+    )
+    silhs_path = write_temp_namelist(
+        tunable_config_file(config_value, "silhs_parameters.in"),
+        overrides.get("silhs"),
+        "clubb_silhs_",
+    )
 
-    cmd = [sys.executable, "-u", "run_scripts/run_scm.py", "-stats", stats_arg]
+    cmd = [sys.executable, "-u", "run_scripts/run_scm.py", "-stats", stats_arg, "-config", config_value]
     cli_options = cli_options or {}
-    for flag, key in (("-multicol", "multicol"), ("-max_iters", "max_iters"), ("-debug", "debug"), ("-dt_main", "dt_main"), ("-dt_rad", "dt_rad"), ("-tout", "tout"), ("-out_dir", "out_dir")):
+    for flag, key in (("-multicol", "multicol"), ("-batch_size", "batch_size"), ("-max_iters", "max_iters"), ("-debug", "debug"), ("-dt_main", "dt_main"), ("-dt_rad", "dt_rad"), ("-tout", "tout"), ("-out_dir", "out_dir")):
         value = clean_cli_option(cli_options.get(key))
         if value:
             cmd.extend([flag, value])
@@ -279,6 +294,7 @@ def start_case_process(case_name, stats_name, overrides, cli_options=None):
         "log": log_path,
         "start_time": time.time(),
         "temp_files": temp_files,
+        "config": config_value,
     }
     mark_case_started(case_name, proc, proc_data)
     return proc_data
@@ -293,12 +309,13 @@ def launch_from_queue(running, queued, logs, max_run_procs=None):
         item = queue.pop(0)
         case_name = item.get("case")
         stats_name = item.get("stats") or DEFAULT_STATS_NAME
+        config_name = item.get("config") or "default"
         overrides = item.get("overrides") or {"flags": {}, "tunable": {}, "silhs": {}}
         cli_options = item.get("cli_options") or {}
         if not case_name or case_name in running or is_case_active(case_name) or get_cached_status(case_name) is not None:
             continue
-        running[case_name] = start_case_process(case_name, stats_name, overrides, cli_options)
-        logs[case_name] = f"--- Running {case_name} ({stats_name}) ---\n"
+        running[case_name] = start_case_process(case_name, stats_name, overrides, cli_options, config_name)
+        logs[case_name] = f"--- Running {case_name} ({stats_name}, config {config_name}) ---\n"
         launched = True
     return queue, launched
 

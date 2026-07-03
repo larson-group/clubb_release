@@ -45,7 +45,7 @@ function tune ( ) {
 	# Run standalone CLUBB with the new parameter values
 	for EXP in "${EXPERIMENTS[@]}"; do
 		cat $CLUBB/input/case_setups/${EXP}_model.in $CLUBB/input/stats/standard_stats.in > clubb.in
-		cat $CLUBB/input/tunable_parameters/tunable_parameters_*.in >> clubb.in
+		cat $CLUBB/input/parameter_and_flag_configs/default/tunable_parameters_*.in >> clubb.in
 		../bin/clubb_standalone >> $ENSEMBLE_DIR/tune.log
 	done
 
@@ -55,7 +55,7 @@ function tune ( ) {
 	# Move foot if current cost is less than previous cost
         currCost=$(grep -i '\$' tune.log | tr -d '$''[:blank:]')
         if [ `echo "$currCost < $prevCost" |bc ` == 1 ] ; then
-                PREVTUNER=`ls $CLUBB/input/tunable_parameters/tunable_parameters_*.in`
+                PREVTUNER=`ls $CLUBB/input/parameter_and_flag_configs/default/tunable_parameters_*.in`
                 cat "error_"$CASE".in" $PREVTUNER &> "error.in"
                 echo -en '\E[47;34m'"\033[1mRecreating error.in with new parameter values\033[0m\n"
                 prevCost=$currCost
@@ -65,12 +65,12 @@ function tune ( ) {
         if [ $counter -gt 15 ]; then
                 counter=0
                 prevCost=1
-                cat "error_"$CASE".in" $CLUBB/input/tunable_parameters/tunable_parameters.in &> "error.in"
+                cat "error_"$CASE".in" $CLUBB/input/parameter_and_flag_configs/default/tunable_parameters.in &> "error.in"
                 echo -en '\E[47;34m'"\033[1mReverting to original parameter values\033[0m\n"
 
         fi
 
-	mv $CLUBB/input/tunable_parameters/tunable_parameters_*.in  $ARCHIVE/$CASE/ens_tune_$member
+	mv $CLUBB/input/parameter_and_flag_configs/default/tunable_parameters_*.in  $ARCHIVE/$CASE/ens_tune_$member
 	mv $ENSEMBLE_DIR/tune.log  $ARCHIVE/$CASE/ens_tune_$member
 	# for NetCDF output
 	mv $CLUBB/output/*_*.nc  $ARCHIVE/$CASE/ens_tune_$member
@@ -90,7 +90,7 @@ if [ ! -e $ARCHIVE/$CASE ]; then
 fi
 
 # Create tuner namelist
-cat "error_"$CASE".in" $CLUBB/input/tunable_parameters/tunable_parameters.in > "error.in"
+cat "error_"$CASE".in" $CLUBB/input/parameter_and_flag_configs/default/tunable_parameters.in > "error.in"
 
 cd $ENSEMBLE_DIR
 

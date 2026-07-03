@@ -67,6 +67,21 @@ def stats_button_style(selected=False):
     }
 
 
+def run_config_button_style(selected=False, disabled=False):
+    """Return the style for one tunable-config selection button."""
+    style = run_action_button_style("#2563eb" if selected else "#374151", disabled=disabled)
+    style.update(
+        {
+            "border": "3px solid #f59e0b" if selected else "1px solid transparent",
+            "minWidth": "174px",
+            "padding": "15px 24px",
+            "fontSize": "16px",
+            "boxSizing": "border-box",
+        }
+    )
+    return style
+
+
 def case_dom_id(case_name):
     """Return a DOM-safe identifier suffix for a case name."""
     import re
@@ -120,6 +135,28 @@ def build_stats_buttons(stats_files, default_stats_name, no_stats_name):
     return buttons
 
 
+def build_run_config_buttons(configs, selected_config):
+    """Render selectable run-tab tunable config buttons."""
+    buttons = []
+    for config in configs or []:
+        value = str(config.get("value", "")).strip()
+        if not value:
+            continue
+        label = str(config.get("label") or value)
+        buttons.append(
+            html.Button(
+                label,
+                id={"type": "run-config-button", "name": value},
+                n_clicks=0,
+                title=f"Use input/parameter_and_flag_configs/{value}",
+                style=run_config_button_style(selected=value == selected_config),
+            )
+        )
+    if buttons:
+        return html.Div(buttons, style={"display": "flex", "gap": "12px", "flexWrap": "wrap"})
+    return html.Div("No complete tunable configs found.", className="run-empty-message")
+
+
 def build_optional_args_section():
     """Render the optional run_scm.py argument inputs."""
     return html.Div(
@@ -150,13 +187,22 @@ def build_optional_args_section():
 def build_multicol_row(row, tunable_names):
     """Render one multicol hypergrid specification row."""
     row_id = row.get("id")
+    selected_param = str(row.get("param", "") or "").strip()
     options = [{"label": name, "value": name} for name in tunable_names]
+    if selected_param and selected_param not in set(tunable_names or []):
+        options.insert(
+            0,
+            {
+                "label": f"{selected_param} (not in config)",
+                "value": selected_param,
+            },
+        )
     return html.Div(
         [
             dcc.Dropdown(
                 id={"type": "run-hr-param", "index": row_id},
                 options=options,
-                value=row.get("param", "") or None,
+                value=selected_param or None,
                 placeholder="parameter",
                 clearable=True,
                 searchable=True,
@@ -196,8 +242,9 @@ def build_multicol_row(row, tunable_names):
     )
 
 
-def build_multicol_section(tunable_names):
+def build_multicol_section(tunable_names, rows=None):
     """Render the multicol hypergrid controls shown above the parameter editors."""
+    row_data = list(rows or [{"id": 0, "param": "", "min": "", "max": "", "npoints": "4"}])
     return [
         html.H4("Multicol", className="run-settings-heading"),
         html.Div(
@@ -205,7 +252,7 @@ def build_multicol_section(tunable_names):
             style={"marginBottom": "8px", "opacity": "0.85"},
         ),
         html.Div(
-            [build_multicol_row({"id": 0, "param": "", "min": "", "max": "", "npoints": ""}, tunable_names)],
+            [build_multicol_row(row, tunable_names) for row in row_data],
             id="run-multicol-rows",
         ),
         html.Div(
@@ -226,35 +273,47 @@ def build_multicol_section(tunable_names):
     ]
 
 
+def build_run_limit_control(label, control_id, value, disabled=False, title=None):
+    """Render one compact numeric run-limit control."""
+    return html.Div(
+        [
+            html.Label(label, htmlFor=control_id, className="run-limit-label"),
+            dcc.Input(
+                id=control_id,
+                type="text",
+                value=str(value),
+                debounce=True,
+                disabled=disabled,
+                className="clubb-input run-limit-input",
+            ),
+        ],
+        className="run-limit-control",
+        title=title,
+    )
+
+
 def build_run_action_section():
     """Render the primary run/cancel/clear action buttons."""
     return html.Div(
         [
-            html.Button("Run selected", id="run-button", n_clicks=0, className="run-button-run-selected", style=run_action_button_style("#111827")),
-            html.Button("Cancel runs", id="run-cancel", n_clicks=0, style=run_action_button_style("#b91c1c")),
-            html.Button("Clear", id="run-clear", n_clicks=0, style=run_action_button_style("#374151")),
             html.Div(
                 [
-                    html.Label("Workers", htmlFor="run-max-tasks", className="run-workers-label"),
-                    dcc.Input(
-                        id="run-max-tasks",
-                        type="text",
-                        debounce=True,
-                        placeholder=str(MAX_RUN_PROCS),
-                        className="clubb-input",
-                        style={
-                            "width": "86px",
-                            "padding": "10px 12px",
-                            "borderRadius": "6px",
-                            "fontSize": "14px",
-                        },
-                    ),
+                    html.Button("Run selected", id="run-button", n_clicks=0, className="run-button-run-selected", style=run_action_button_style("#111827")),
+                    html.Button("Cancel runs", id="run-cancel", n_clicks=0, style=run_action_button_style("#b91c1c")),
+                    html.Button("Clear", id="run-clear", n_clicks=0, style=run_action_button_style("#374151")),
                 ],
-                className="run-workers-control",
+                className="run-primary-actions",
+            ),
+            html.Div(
+                [
+                    html.Div("Run limits", className="run-limit-title"),
+                    build_run_limit_control("Workers", "run-max-tasks", MAX_RUN_PROCS),
+                    build_run_limit_control("Batch", "run-batch-size", 8, disabled=True, title="Used only for multicol runs."),
+                ],
+                className="run-limit-panel",
             ),
         ],
-        className="run-action-buttons",
-        style={"display": "flex", "flexWrap": "wrap", "gap": "8px", "alignItems": "center", "marginTop": "6px"},
+        className="run-action-bar",
     )
 
 
@@ -414,6 +473,24 @@ def build_param_sections(flag_params, flag_controls, tunable_entries, silhs_entr
     return sections
 
 
+def build_right_pane(initial_data):
+    """Render the run-tab right pane for the selected tunable config."""
+    return [
+        html.H4("Config", className="run-settings-heading"),
+        html.Div(
+            build_run_config_buttons(
+                initial_data["tunable_configs"],
+                initial_data["selected_config"],
+            ),
+            id="run-config-buttons",
+            style={"marginBottom": "8px"},
+        ),
+    ] + build_multicol_section(
+        initial_data["tunable_names"],
+        initial_data.get("multicol_rows"),
+    ) + initial_data["param_sections"]
+
+
 def build_layout(initial_data):
     """Assemble the full static run-tab layout from precomputed initial metadata."""
     return html.Div(
@@ -423,6 +500,13 @@ def build_layout(initial_data):
             dcc.Store(id="run-flag-names", data=initial_data["flag_names"]),
             dcc.Store(id="run-param-meta", data=initial_data["param_meta"]),
             dcc.Store(id="run-tunable-names", data=initial_data["tunable_names"]),
+            dcc.Store(id="run-tunable-default-ranges", data=initial_data["tunable_default_ranges"]),
+            dcc.Store(id="run-tunable-configs", data=initial_data["tunable_configs"]),
+            dcc.Store(id="run-selected-config", data=initial_data["selected_config"]),
+            dcc.Store(
+                id="run-multicol-rows-state",
+                data=initial_data.get("multicol_rows") or [{"id": 0, "param": "", "min": "", "max": "", "npoints": "4"}],
+            ),
             dcc.Store(id="run-multicol-next-id", data=1),
             dcc.Store(id="run-multicol-row-order", data=[0]),
             dcc.Store(id="run-selected-cases", data=[]),
@@ -441,7 +525,7 @@ def build_layout(initial_data):
             dcc.Interval(id="run-interval", interval=500, disabled=True),
             html.Div([build_left_header(initial_data["case_groups"], initial_data["case_buttons"], initial_data["stats_buttons"]), build_console_shell()], className="run-left-pane"),
             html.Div(id="run-pane-divider", className="run-pane-divider"),
-            html.Div(build_multicol_section(initial_data["tunable_names"]) + initial_data["param_sections"], id="run-right-pane", className="run-right-pane", style={"paddingLeft": "16px", "paddingRight": "16px", "height": "calc(100vh - 96px)", "minHeight": 0, "overflowY": "auto", "overflowX": "auto"}),
+            html.Div(build_right_pane(initial_data), id="run-right-pane", className="run-right-pane", style={"paddingLeft": "16px", "paddingRight": "16px", "height": "calc(100vh - 96px)", "minHeight": 0, "overflowY": "auto", "overflowX": "auto"}),
         ],
         id="run-tab-layout",
         className="run-tab-layout",

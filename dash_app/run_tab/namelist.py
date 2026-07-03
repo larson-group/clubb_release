@@ -1,11 +1,13 @@
 """Namelist parsing and override-file helpers for the run tab."""
 
+import math
 import os
 import re
 import tempfile
 
 BOOL_TRUE = {".true.", "true", "t"}
 BOOL_FALSE = {".false.", "false", "f"}
+INT_LITERAL_RE = re.compile(r"^[+-]?\d+$")
 
 
 def parse_line(line):
@@ -83,6 +85,19 @@ def normalize_numeric_display(value):
     return trimmed
 
 
+def format_update_value(existing_value, new_value):
+    """Format a new value using the existing namelist literal as a type hint."""
+    text = str(new_value).strip()
+    if INT_LITERAL_RE.fullmatch(str(existing_value).strip()):
+        try:
+            numeric_value = float(text.replace("D", "E").replace("d", "e"))
+        except (TypeError, ValueError):
+            return text
+        if math.isfinite(numeric_value) and numeric_value.is_integer():
+            return str(int(numeric_value))
+    return text
+
+
 def apply_updates_to_lines(lines, updates):
     """Apply in-memory namelist updates to a list of source lines."""
     remaining = dict(updates or {})
@@ -93,7 +108,7 @@ def apply_updates_to_lines(lines, updates):
         name = parsed["name"]
         if name not in remaining:
             continue
-        new_value = remaining.pop(name)
+        new_value = format_update_value(parsed["value"], remaining.pop(name))
         comma = "," if parsed["comma"] else ""
         comment = parsed["comment"]
         sep = " " if comment else ""

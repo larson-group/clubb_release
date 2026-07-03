@@ -72,16 +72,15 @@ class SubcolumnPlotType(BasePlotType):
             time_indices,
             col_index=col_index,
             column_mode=column_mode,
+            column_filter_indices=global_context.get("column_filter_indices"),
         )
         if z_vals is None:
             return None
         info = meta["var_info"].get(resolved_name, {})
         units = info.get("units", "") if resolved_name else ""
         var_long_name = info.get("long_name", "") if resolved_name else ""
-        if time_mode == "point":
-            x_range = shared.subcolumn_x_range_for_path(path, base_name, col_index=col_index, column_mode=column_mode)
-        else:
-            x_range = shared.padded_data_range(profiles)
+        height_range = shared.active_height_range(global_context)
+        x_range = shared.padded_profile_x_range(profiles, z_vals, height_range, fallback_values=profiles)
         return {
             "z_units": meta["dim_units"].get(info.get("z_dim"), ""),
             "resolved_name": resolved_name,
@@ -168,31 +167,49 @@ class SubcolumnPlotType(BasePlotType):
             Output(self.render_signal_id(MATCH), "children"),
             Input(self.var_input_id(MATCH), "value"),
             Input("plots-case-data", "data"),
-            Input("plots-time-mode", "value"),
             Input("plots-global-time-range", "value"),
             Input("plots-global-time-point", "value"),
             Input("plots-global-height-range", "value"),
             Input("plots-selected-column", "data"),
             Input("plots-column-mode", "value"),
+            Input("plots-column-filters", "data"),
             Input("theme-store", "data"),
             Input(self.size_store_id(MATCH), "data"),
+            State(self.graph_id(MATCH), "relayoutData"),
             State(self.graph_id(MATCH), "id"),
         )
-        def _update_subcolumn_graph(var_name, case_data, time_mode, time_range, time_point, height_range, selected_column, column_mode, theme_name, size_store_value, graph_id):
+        def _update_subcolumn_graph(
+            var_name,
+            case_data,
+            time_range,
+            time_point,
+            height_range,
+            selected_column,
+            column_mode,
+            column_filters,
+            theme_name,
+            size_store_value,
+            relayout_data,
+            graph_id,
+        ):
             plot_id = int((graph_id or {}).get("index", -1))
             size_value = shared.normalize_plot_size(size_store_value)
             signal = int(time_point) if time_point is not None else ""
-            if callback_context.triggered_id == "plots-global-time-point" and plot_id >= 0 and self._has_full_render(plot_id):
+            triggered_id = callback_context.triggered_id
+            use_relayout_height_range = triggered_id != "plots-global-height-range"
+            if triggered_id == "plots-global-time-point" and plot_id >= 0 and self._has_full_render(plot_id):
                 patch, note = self.build_patch(
                     {"var": var_name, "size": size_value},
                     {
                         "case_data": case_data,
-                        "time_mode": time_mode,
                         "time_range": time_range,
                         "time_point": time_point,
                         "height_range": height_range,
+                        "relayout_data": relayout_data,
+                        "use_relayout_height_range": use_relayout_height_range,
                         "selected_column": selected_column,
                         "column_mode": column_mode,
+                        "column_filter_indices": shared.column_filter_indices(column_filters),
                         "size": size_value,
                         "theme_name": theme_name,
                     },
@@ -203,16 +220,20 @@ class SubcolumnPlotType(BasePlotType):
                 {"var": var_name, "size": size_value},
                 {
                     "case_data": case_data,
-                    "time_mode": time_mode,
                     "time_range": time_range,
                     "time_point": time_point,
                     "height_range": height_range,
+                    "relayout_data": relayout_data,
+                    "use_relayout_height_range": use_relayout_height_range,
                     "selected_column": selected_column,
                     "column_mode": column_mode,
+                    "column_filter_indices": shared.column_filter_indices(column_filters),
                     "size": size_value,
                     "theme_name": theme_name,
                 },
             )
+            if triggered_id == "plots-case-data" and (case_data or {}).get("preserve_plot_view"):
+                shared.apply_relayout_ranges(fig, relayout_data)
             if plot_id >= 0:
                 self._mark_full_render(plot_id)
             return fig, note, signal

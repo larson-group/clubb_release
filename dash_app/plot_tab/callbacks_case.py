@@ -14,6 +14,9 @@ from .plot_types.shared import (
     time_start_max_for_duration,
 )
 from .state import (
+    clamp_float,
+    clamp_height_range,
+    default_average_length,
     empty_case_selection,
     entry_list_or_default,
     live_dir_entries,
@@ -117,7 +120,6 @@ def register_case_callbacks(app):
         Output("plots-next-id", "data"),
         Output("plots-selected-column", "data"),
         Output("plots-column-mode", "value"),
-        Output("plots-time-mode", "value"),
         Output("plots-global-time-range", "min"),
         Output("plots-global-time-range", "max"),
         Output("plots-global-time-range", "value"),
@@ -141,10 +143,29 @@ def register_case_callbacks(app):
         State("plots-next-id", "data"),
         State("plots-case-data", "data"),
         State("plots-enabled-benchmarks", "data"),
+        State("plots-selected-column", "data"),
+        State("plots-column-mode", "value"),
+        State("plots-global-time-range", "value"),
+        State("plots-global-time-point", "value"),
+        State("plots-global-height-range", "value"),
         prevent_initial_call=True,
     )
-    def select_case(_clicks, output_dirs, _refresh_clicks, plot_order, plot_state, next_id, current_case_data, current_enabled_benchmarks):
-        """Select a case and reset the global controls for that case's dimensions."""
+    def select_case(
+        _clicks,
+        output_dirs,
+        _refresh_clicks,
+        plot_order,
+        plot_state,
+        next_id,
+        current_case_data,
+        current_enabled_benchmarks,
+        current_column,
+        current_column_mode,
+        current_average_minutes,
+        current_start_time,
+        current_height_range,
+    ):
+        """Select a case and refresh global controls without resetting same-case reloads."""
         trigger = callback_context.triggered_id
         if trigger in ("plots-output-dirs", "plots-refresh-cases"):
             cases = scan_output_cases(output_dirs)
@@ -157,15 +178,16 @@ def register_case_callbacks(app):
         elif isinstance(trigger, dict):
             case_name = trigger.get("name")
         else:
-            return (no_update,) * 23
+            return (no_update,) * 22
         files = scan_output_cases(output_dirs).get(case_name, [])
         if not case_name or not files:
-            return (no_update,) * 23
+            return (no_update,) * 22
         current_name = (current_case_data or {}).get("name")
         current_files = list((current_case_data or {}).get("files") or [])
         current_dirs = list((current_case_data or {}).get("output_dirs") or [])
         next_files = list(files)
         next_dirs = list(output_dirs or [])
+        same_case = current_name == case_name
         context_changed = (
             trigger == "plots-output-dirs"
             or current_name != case_name
@@ -175,6 +197,7 @@ def register_case_callbacks(app):
         if context_changed:
             _clear_plot_runtime_state()
         case_data = build_case_data(case_name, files, output_dirs)
+        case_data["preserve_plot_view"] = bool(same_case)
         updated_order = list(plot_order or [])
         updated_state = remap_plot_types_for_case_mode(plot_state, case_data)
         updated_next_id = int(next_id or 0)
@@ -188,10 +211,34 @@ def register_case_callbacks(app):
         slider_min = max(1.0e-6, float(case_data.get("time_slider_duration_min_minutes") or 1))
         slider_max = max(slider_min, float(case_data.get("time_slider_duration_max_minutes") or slider_min))
         slider_step = max(1.0e-6, float(case_data.get("time_slider_duration_step_minutes") or slider_min))
-        default_duration = case_data.get("default_time_duration_minutes") or slider_min
+        default_duration = default_average_length(slider_min, slider_max)
+        active_duration = clamp_float(
+            current_average_minutes if same_case else default_duration,
+            slider_min,
+            slider_max,
+            default_duration,
+        )
+        start_min = float(case_data.get("time_slider_start_min_seconds", 0))
+        start_max = time_start_max_for_duration(case_data, active_duration)
+        active_start = clamp_float(
+            current_start_time if same_case else case_data.get("default_time_start_seconds", start_min),
+            start_min,
+            start_max,
+            start_min,
+        )
         height_min = float(case_data.get("height_slider_min", 0.0))
         height_max = float(case_data.get("height_slider_max", 1.0))
+        default_height_range = case_data.get("default_height_range") or [height_min, height_max]
+        active_height_range = clamp_height_range(
+            current_height_range if same_case else default_height_range,
+            height_min,
+            height_max,
+            default_height_range,
+        )
         height_marks = {height_min: f"{height_min:g}", height_max: f"{height_max:g}"}
+        max_column = max(int(case_data.get("columns_len") or 1) - 1, 0)
+        active_column = int(clamp_float(current_column if same_case else 0, 0, max_column, 0))
+        active_column_mode = current_column_mode if same_case and current_column_mode in {"single", "all"} else "single"
         enabled_benchmarks = sanitize_enabled_sources(case_data, current_enabled_benchmarks)
         return (
             case_data,
@@ -199,22 +246,21 @@ def register_case_callbacks(app):
             updated_order,
             updated_state,
             updated_next_id,
-            0,
-            "single",
-            "range",
+            active_column,
+            active_column_mode,
             slider_min,
             slider_max,
-            default_duration,
+            active_duration,
             slider_step,
             {},
-            case_data.get("time_slider_start_min_seconds", 0),
-            time_start_max_for_duration(case_data, default_duration),
-            case_data.get("default_time_start_seconds", 0),
-            max(1.0e-6, float(default_duration)) * 60.0,
+            start_min,
+            start_max,
+            active_start,
+            max(1.0e-6, float(active_duration)) * 60.0,
             {},
             height_min,
             height_max,
-            case_data.get("default_height_range") or [height_min, height_max],
+            active_height_range,
             height_marks,
             float(case_data.get("height_step", 1.0)),
         )

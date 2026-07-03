@@ -7,7 +7,7 @@
   "arm": {
     "les_stats_file": "/home/pub/les_and_clubb_benchmark_runs/sam_benchmark_runs/JULY_2017/ARM_96x96x110/GCSSARM_96x96x110_67m_40m_1s.nc",
     "altitude_comparison_range": [20.0, 4300.0],
-    "time_average_range": [68400, 72000]
+    "time_average_range": [54000, 93600]
   },
   "atex": {
     "les_stats_file": "/home/pub/les_and_clubb_benchmark_runs/les_runs/atex_coamps_sm.nc",

@@ -105,28 +105,19 @@ ExternalProject_Add(GPTL_project
     make -j"
   INSTALL_COMMAND make install
   BUILD_IN_SOURCE 1
+  BUILD_BYPRODUCTS
+    ${GPTL_PREFIX}/lib/libgptl.a
+    ${GPTL_PREFIX}/lib/libgptlf.a
   LOG_CONFIGURE 1
   LOG_BUILD 1
   LOG_INSTALL 1
 )
 
 # -----------------------------------------------------------------------------
-# 4. Create a "stamp" target so Ninja knows these files are generated
-# -----------------------------------------------------------------------------
-add_custom_target(gptl_built
-  COMMAND ${CMAKE_COMMAND} -E echo "GPTL static libraries ready."
-  DEPENDS GPTL_project
-  BYPRODUCTS
-    ${GPTL_PREFIX}/lib/libgptl.a
-    ${GPTL_PREFIX}/lib/libgptlf.a
-  COMMENT "Waiting for GPTL static libraries to be built"
-)
-
-# -----------------------------------------------------------------------------
-# 5. Create imported GPTL target for CLUBB to link to
+# 4. Create imported GPTL target for CLUBB to link to
 # -----------------------------------------------------------------------------
 add_library(gptl INTERFACE IMPORTED)
-add_dependencies(gptl gptl_built)
+add_dependencies(gptl GPTL_project)
 
 set(GPTL_INCLUDE_DIR ${GPTL_PREFIX}/include)
 set(GPTL_LIBRARIES
@@ -141,7 +132,7 @@ set_target_properties(gptl PROPERTIES
 )
 
 # -----------------------------------------------------------------------------
-# 6. Link libunwind if available (used by GPTL for callstack tracking)
+# 5. Link libunwind if available (used by GPTL for callstack tracking)
 # -----------------------------------------------------------------------------
 find_package(PkgConfig QUIET)
 pkg_check_modules(UNWIND QUIET libunwind)

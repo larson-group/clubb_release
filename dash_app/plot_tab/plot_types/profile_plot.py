@@ -32,7 +32,6 @@ class ProfilePlotType(BasePlotType):
 
     def _time_indices(self, global_context):
         case_data = global_context.get("case_data") or {}
-        time_len = max(int(case_data.get("time_len") or 1), 1)
         slider_range = global_context.get("time_range")
         time_mode = global_context.get("time_mode") or "range"
         time_point = global_context.get("time_point")
@@ -49,14 +48,6 @@ class ProfilePlotType(BasePlotType):
     def clear_render_state(self):
         with self._render_state_lock:
             self._rendered_plot_ids.clear()
-
-    def _point_mode_x_range(self, bounds_list):
-        finite_bounds = [bounds for bounds in bounds_list if bounds is not None]
-        if not finite_bounds:
-            return None
-        low = min(bounds[0] for bounds in finite_bounds)
-        high = max(bounds[1] for bounds in finite_bounds)
-        return shared.padded_range(low, high)
 
     def error_id(self, plot_id):
         return {"type": "profile-benchmark-error", "index": plot_id}
@@ -79,12 +70,11 @@ class ProfilePlotType(BasePlotType):
         path, _meta = shared.dataset_info_for_var(files, var_name)
         if path is None:
             return None
-        time_indices, time_mode, _time_point = self._time_indices(global_context)
+        time_indices, _time_mode, _time_point = self._time_indices(global_context)
         col_index = int(global_context.get("selected_column") or 0)
         column_mode = global_context.get("column_mode") or "single"
         trace_specs = []
         x_values = []
-        point_bounds = []
         enabled_sources = benchmark_overlay.sanitize_enabled_sources(case_data, global_context.get("enabled_benchmarks"))
         benchmark_profiles = {}
         for source_name in enabled_sources:
@@ -110,17 +100,16 @@ class ProfilePlotType(BasePlotType):
                 }
             )
             x_values.extend([value for value in benchmark_profile["profile"] if value is not None])
-            point_bounds.append(shared._finite_bounds(benchmark_profile["profile"]))
         extracted = shared.extract_time_avg_profile_for_path(
             path,
             var_name,
             time_indices,
             col_index=col_index,
             column_mode=column_mode,
+            column_filter_indices=global_context.get("column_filter_indices"),
         )
         if extracted is None:
             return None
-        point_bounds.append(extracted["bounds"])
         for idx, profile in enumerate(extracted["profiles"]):
             line = {"width": 1.5 if column_mode == "all" else 2.0}
             if column_mode == "all":
@@ -138,7 +127,8 @@ class ProfilePlotType(BasePlotType):
                 }
             )
             x_values.extend([value for value in profile if value is not None])
-        x_range = self._point_mode_x_range(point_bounds) if time_mode == "point" else shared.padded_data_range(x_values)
+        height_range = shared.active_height_range(global_context)
+        x_range = shared.padded_trace_x_range(trace_specs, height_range, fallback_values=x_values)
         return {
             "trace_specs": trace_specs,
             "x_range": x_range,
@@ -259,7 +249,7 @@ class ProfilePlotType(BasePlotType):
         return fig
 
     def _compare_trace_specs(self, files, var_name, case_data, global_context):
-        time_indices, time_mode, _time_point = self._time_indices(global_context)
+        time_indices, _time_mode, _time_point = self._time_indices(global_context)
         col_index = int(global_context.get("selected_column") or 0)
         column_mode = global_context.get("column_mode") or "single"
         var_units = ""
@@ -268,7 +258,6 @@ class ProfilePlotType(BasePlotType):
         legend_labels = []
         trace_specs = []
         x_values = []
-        playback_bounds = []
         source_labels = case_data.get("source_labels") or [f"output {idx + 1}" for idx in range(len(files))]
         enabled_sources = benchmark_overlay.sanitize_enabled_sources(case_data, global_context.get("enabled_benchmarks"))
         for source_name in enabled_sources:
@@ -293,8 +282,6 @@ class ProfilePlotType(BasePlotType):
                 }
             )
             x_values.extend([value for value in benchmark_profile["profile"] if value is not None])
-            if time_mode == "point":
-                playback_bounds.append(shared._finite_bounds(benchmark_profile["profile"]))
         for source_idx, path in enumerate(files):
             extracted = shared.extract_time_avg_profile_for_path(
                 path,
@@ -302,6 +289,7 @@ class ProfilePlotType(BasePlotType):
                 time_indices,
                 col_index=col_index,
                 column_mode=column_mode,
+                column_filter_indices=global_context.get("column_filter_indices"),
             )
             if extracted is None:
                 continue
@@ -328,9 +316,8 @@ class ProfilePlotType(BasePlotType):
                     }
                 )
                 x_values.extend([value for value in profile if value is not None])
-            if time_mode == "point":
-                playback_bounds.append(extracted["bounds"])
-        x_range = self._point_mode_x_range(playback_bounds) if time_mode == "point" else shared.padded_data_range(x_values)
+        height_range = shared.active_height_range(global_context)
+        x_range = shared.padded_trace_x_range(trace_specs, height_range, fallback_values=x_values)
         return {
             "trace_specs": trace_specs,
             "x_range": x_range,
@@ -438,33 +425,51 @@ class ProfilePlotType(BasePlotType):
             Input(self.var_input_id(MATCH), "value"),
             Input("plots-case-data", "data"),
             Input("plots-enabled-benchmarks", "data"),
-            Input("plots-time-mode", "value"),
             Input("plots-global-time-range", "value"),
             Input("plots-global-time-point", "value"),
             Input("plots-global-height-range", "value"),
             Input("plots-selected-column", "data"),
             Input("plots-column-mode", "value"),
+            Input("plots-column-filters", "data"),
             Input("theme-store", "data"),
             Input(self.size_store_id(MATCH), "data"),
+            State(self.graph_id(MATCH), "relayoutData"),
             State(self.graph_id(MATCH), "id"),
         )
-        def _update_profile_graph(var_name, case_data, enabled_benchmarks, time_mode, time_range, time_point, height_range, selected_column, column_mode, theme_name, size_store_value, graph_id):
+        def _update_profile_graph(
+            var_name,
+            case_data,
+            enabled_benchmarks,
+            time_range,
+            time_point,
+            height_range,
+            selected_column,
+            column_mode,
+            column_filters,
+            theme_name,
+            size_store_value,
+            relayout_data,
+            graph_id,
+        ):
             plot_id = int((graph_id or {}).get("index", -1))
             size_value = shared.normalize_plot_size(size_store_value)
             signal = int(time_point) if time_point is not None else ""
+            triggered_id = callback_context.triggered_id
             global_context = {
                 "case_data": case_data,
                 "enabled_benchmarks": enabled_benchmarks,
-                "time_mode": time_mode,
                 "time_range": time_range,
                 "time_point": time_point,
                 "height_range": height_range,
+                "relayout_data": relayout_data,
+                "use_relayout_height_range": triggered_id != "plots-global-height-range",
                 "selected_column": selected_column,
                 "column_mode": column_mode,
+                "column_filter_indices": shared.column_filter_indices(column_filters),
                 "size": size_value,
                 "theme_name": theme_name,
             }
-            if callback_context.triggered_id == "plots-global-time-point" and plot_id >= 0 and self._has_full_render(plot_id):
+            if triggered_id == "plots-global-time-point" and plot_id >= 0 and self._has_full_render(plot_id):
                 error_children = ""
                 if not (case_data or {}).get("compare_mode"):
                     trace_bundle = self._single_trace_specs(case_data.get("files") or [], var_name, case_data, global_context)
@@ -483,6 +488,8 @@ class ProfilePlotType(BasePlotType):
             if not (case_data or {}).get("compare_mode"):
                 trace_bundle = self._single_trace_specs(case_data.get("files") or [], var_name, case_data, global_context)
                 error_children = self._build_error_panel(trace_bundle, var_name, case_data, global_context)
+            if triggered_id == "plots-case-data" and (case_data or {}).get("preserve_plot_view"):
+                shared.apply_relayout_ranges(fig, relayout_data)
             if plot_id >= 0:
                 self._mark_full_render(plot_id)
             return fig, signal, error_children

@@ -11,7 +11,7 @@
 !
 ! Before running this case,
 ! set "thl_tol = zero" and "rt_tol = zero" in "../../src/CLUBB_core/constants_clubb.F90" and
-! set "l_ho_nontrad_coriolis = .true." in "../tunable_parameters_coriolis_cases/configurable_model_flags.in"
+! set "l_ho_nontrad_coriolis = .true." in "../parameter_and_flag_configs/default/configurable_model_flags.in"
 ! and then compile.
 !
 ! If there is a need to modify the initial conditions, search for "coriolis_test" in
@@ -145,7 +145,7 @@ edsclr_dim  = 0
 iiedsclr_rt     = -1 ! Location in the edsclrm array to place total water
 iiedsclr_thl    = -2 ! Location in the edsclrm array to place a scalar like thetal
 
-parameter_file = "../input/tunable_parameters/coriolis_test_parameters.in"
+parameter_file = "../input/parameter_and_flag_configs/coriolis_cases/coriolis_test_parameters.in"
 
 /
 

@@ -48,7 +48,7 @@ UTILITIES = REPO_ROOT / "utilities"
 # File paths (cmake workflow version)
 TOOLCHAIN_FILE = REPO_ROOT / "cmake" / "toolchains" / "linux_x86_64_nvhpc.cmake"
 SOURCE_FILE = REPO_ROOT / "src" / "CLUBB_core" / "mono_flux_limiter.F90"
-PARAMS_FILE = REPO_ROOT / "input" / "tunable_parameters" / "tunable_parameters.in"
+PARAMS_FILE = REPO_ROOT / "input" / "parameter_and_flag_configs" / "default" / "tunable_parameters.in"
 MULTICOL_PARAMS = RUN_SCRIPTS / "clubb_params_multi_col.in"
 
 # Script paths

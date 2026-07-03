@@ -44,6 +44,8 @@ body.plots-ui-dragging * {
   border: 1px solid #c9c9c9;
   border-radius: 6px;
   align-self: start;
+  cursor: pointer;
+  transition: border-color 120ms ease, box-shadow 120ms ease, background-color 120ms ease;
 }
 
 #plots-plot-container {
@@ -133,6 +135,18 @@ body.plots-ui-dragging * {
 #app-root.theme-light .plots-card {
   background: #f8fafc;
   border-color: #cbd5e1;
+}
+
+#app-root.theme-dark .plots-card-selected {
+  border-color: #f59e0b;
+  box-shadow: 0 0 0 2px rgba(245, 158, 11, 0.58);
+  background: #172033;
+}
+
+#app-root.theme-light .plots-card-selected {
+  border-color: #d97706;
+  box-shadow: 0 0 0 2px rgba(217, 119, 6, 0.35);
+  background: #fff7ed;
 }
 
 #app-root.theme-dark .plots-graph-shell {
@@ -246,6 +260,33 @@ body.plots-ui-dragging * {
   white-space: nowrap;
 }
 
+#app-root .plots-column-filter-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 6px 12px;
+  align-items: start;
+  padding: 6px;
+  border-radius: 4px;
+}
+
+#app-root .plots-column-filter-header {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+#app-root .plots-column-filter-check label {
+  margin: 0;
+}
+
+#app-root .plots-column-filter-slider {
+  grid-column: 1 / -1;
+  min-height: 52px;
+  padding-top: 6px;
+}
+
 @media (max-width: 1100px) {
   #app-root .plots-card-size-large {
     grid-column: span 1;
@@ -260,10 +301,26 @@ body.plots-ui-dragging * {
   background: rgba(148, 163, 184, 0.03);
 }
 
+#app-root.theme-dark .plots-column-filter-row:nth-child(odd) {
+  background: rgba(148, 163, 184, 0.08);
+}
+
+#app-root.theme-dark .plots-column-filter-row:nth-child(even) {
+  background: rgba(148, 163, 184, 0.03);
+}
+
 #app-root.theme-light .plots-constant-param-row:nth-child(odd) {
   background: rgba(148, 163, 184, 0.14);
 }
 
 #app-root.theme-light .plots-constant-param-row:nth-child(even) {
+  background: rgba(148, 163, 184, 0.06);
+}
+
+#app-root.theme-light .plots-column-filter-row:nth-child(odd) {
+  background: rgba(148, 163, 184, 0.14);
+}
+
+#app-root.theme-light .plots-column-filter-row:nth-child(even) {
   background: rgba(148, 163, 184, 0.06);
 }

@@ -28,9 +28,7 @@ def build_option_checklist():
         id="compile-feature-flags",
         options=[
             {"label": "Debug", "value": "debug"},
-            {"label": "Run CTest", "value": "run_tests"},
-            {"label": "Python/F2PY", "value": "python"},
-            {"label": "Fresh build", "value": "fresh"},
+            {"label": "Python API", "value": "python"},
             {"label": "OpenMP", "value": "openmp"},
             {"label": "Tuning", "value": "tuning"},
             {"label": "GPTL", "value": "gptl"},
@@ -155,6 +153,8 @@ def build_controls():
             html.Div(
                 [
                     html.Button("Compile", id="compile-start", n_clicks=0, className="compile-button-start", style=action_button_style("#16a34a")),
+                    html.Button("Fresh Compile", id="compile-start-fresh", n_clicks=0, style=action_button_style("#2563eb")),
+                    html.Button("Run CTest", id="compile-start-tests", n_clicks=0, style=action_button_style("#7c3aed")),
                     html.Button("Cancel", id="compile-cancel", n_clicks=0, style=action_button_style("#b91c1c")),
                     html.Button("Clear", id="compile-clear", n_clicks=0, style=action_button_style("#374151")),
                 ],
@@ -183,6 +183,7 @@ def build_status_panel():
                 [
                     html.Button("Recompile All", id="compile-rebuild-all", n_clicks=0, className="compile-build-toolbar-button"),
                     html.Button("Refresh", id="compile-refresh", n_clicks=0, className="compile-build-toolbar-button"),
+                    html.Button("Delete all", id="compile-delete-all-request", n_clicks=0, className="compile-build-toolbar-button compile-build-delete-all-button"),
                     html.Span(id="compile-build-status-summary", className="compile-muted"),
                 ],
                 className="compile-build-toolbar",

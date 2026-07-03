@@ -212,6 +212,7 @@ def _plots_stores(initial_state):
         dcc.Store(id="plots-last-add-ts", data=0),
         dcc.Store(id="plots-param-data", data=None),
         dcc.Store(id="plots-param-names", data=None),
+        dcc.Store(id="plots-column-filters", data={"indices": None, "filters": {}}),
         dcc.Store(id="plots-selected-column", data=initial_state["selected_column"]),
         dcc.Store(id="plots-playback", data={"playing": False, "interval_s": DEFAULT_PLAYBACK_INTERVAL_S, "inflight": False, "target_point": None}),
         dcc.Interval(id="plots-playback-interval", interval=int(DEFAULT_PLAYBACK_INTERVAL_S * 1000), disabled=True, n_intervals=0),
@@ -237,12 +238,6 @@ def _time_section(initial_state):
     """Build the time controls section in the right-hand UI pane."""
     return [
         html.Div(id="plots-time-heading", className="run-settings-heading", children="Time", style=SECTION_HEADING_STYLE),
-        dcc.RadioItems(
-            id="plots-time-mode",
-            options=[{"label": "Average Range", "value": "range"}],
-            value="range",
-            style={"display": "none"},
-        ),
         html.Div(
             [
                 html.Button("Loss window", id="plots-use-loss-window", n_clicks=0, style={**CASE_BUTTON_STYLE, "backgroundColor": "#2563eb", "color": "#ffffff"}),

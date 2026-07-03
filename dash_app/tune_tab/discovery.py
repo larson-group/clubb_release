@@ -8,7 +8,12 @@ import sys
 
 from run_tab.discovery import load_available_cases
 from run_tab.namelist import read_namelist_entries
-from run_tab.state import TUNABLE_FILE
+from tunable_configs import (
+    available_tunable_configs,
+    default_tunable_config_name,
+    tunable_config_names,
+    tunable_params_file_for_config,
+)
 
 from .state import REPO_ROOT
 
@@ -23,7 +28,7 @@ from tuner.case_defaults import (  # noqa: E402
 from utilities.benchmark_converter import supported_fields  # noqa: E402
 
 
-TUNING_STATS_FILE = os.path.join(REPO_ROOT, "input", "stats", "tuning_stats.in")
+TUNING_STATS_FILE = os.path.join(REPO_ROOT, "input", "stats", "all_tuning_stats.in")
 
 
 def read_tuning_stats_fields():
@@ -69,9 +74,9 @@ def load_case_defaults():
     return case_defaults
 
 
-def load_tunable_names():
-    """Return tunable parameter names from the shared tunable namelist."""
-    return [entry["name"] for entry in read_namelist_entries(TUNABLE_FILE)]
+def load_tunable_names(config_name=None):
+    """Return tunable parameter names from the selected tunable namelist."""
+    return [entry["name"] for entry in read_namelist_entries(tunable_params_file_for_config(config_name))]
 
 
 def _parse_tunable_default(value):
@@ -87,10 +92,10 @@ def _format_tune_range_value(value):
     return f"{float(value):.6g}"
 
 
-def load_tunable_default_ranges():
-    """Return default min/max ranges derived from the shared tunable namelist."""
+def load_tunable_default_ranges(config_name=None):
+    """Return default min/max ranges derived from the selected tunable namelist."""
     ranges = {}
-    for entry in read_namelist_entries(TUNABLE_FILE):
+    for entry in read_namelist_entries(tunable_params_file_for_config(config_name)):
         default_value = _parse_tunable_default(entry.get("value"))
         if default_value is None:
             continue

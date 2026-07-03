@@ -159,6 +159,7 @@ def register_run_callbacks(app):
         State("run-opt-tout", "value"),
         State("run-opt-out-dir", "value"),
         State("run-max-tasks", "value"),
+        State("run-batch-size", "value"),
         State("run-case-runtimes", "data"),
         State("run-case-commands", "data"),
         State({"type": "run-hr-param", "index": ALL}, "value"),
@@ -170,6 +171,7 @@ def register_run_callbacks(app):
         State("run-defaults", "data"),
         State("run-flag-names", "data"),
         State("run-param-meta", "data"),
+        State("run-selected-config", "data"),
         prevent_initial_call=True,
     )
     def run_selected_cases(
@@ -188,6 +190,7 @@ def register_run_callbacks(app):
         opt_tout,
         opt_out_dir,
         max_tasks_value,
+        batch_size_value,
         case_runtimes,
         case_commands,
         multicol_param_values,
@@ -199,6 +202,7 @@ def register_run_callbacks(app):
         defaults_data,
         flag_names_data,
         param_meta,
+        selected_config,
     ):
         """Queue selected cases, start as many as allowed, and enable interval polling."""
         if callback_context.triggered_id != "run-button":
@@ -216,6 +220,7 @@ def register_run_callbacks(app):
         runtimes = dict(case_runtimes or {})
         commands = dict(case_commands or {})
         stats_name = selected_stats or DEFAULT_STATS_NAME
+        config_name = clean_cli_option(selected_config) or "default"
         max_tasks = normalize_task_limit(max_tasks_value)
 
         overrides = build_override_updates(flag_values, param_values, defaults_data, flag_names_data, param_meta)
@@ -230,6 +235,19 @@ def register_run_callbacks(app):
         )
         if multicol_cleaned:
             cli_options["multicol"] = multicol_cleaned
+            batch_size_cleaned = clean_cli_option(batch_size_value)
+            if batch_size_cleaned:
+                try:
+                    batch_size_float = float(batch_size_cleaned)
+                except (TypeError, ValueError):
+                    batch_size_float = None
+                if (
+                    batch_size_float is not None
+                    and int(batch_size_float) == batch_size_float
+                    and batch_size_float >= 1
+                ):
+                    batch_size_int = int(batch_size_float)
+                    cli_options["batch_size"] = str(batch_size_int)
         for key, raw_value in (("max_iters", opt_max_iters), ("debug", opt_debug), ("dt_main", opt_dt_main), ("dt_rad", opt_dt_rad), ("tout", opt_tout)):
             cleaned = clean_cli_option(raw_value)
             if cleaned:
@@ -251,10 +269,10 @@ def register_run_callbacks(app):
             runtimes.pop(case_name, None)
             overrides_copy = {key: dict(value) for key, value in overrides.items()}
             cli_options_copy = dict(cli_options)
-            queued.append({"case": case_name, "stats": stats_name, "overrides": overrides_copy, "cli_options": cli_options_copy})
+            queued.append({"case": case_name, "stats": stats_name, "config": config_name, "overrides": overrides_copy, "cli_options": cli_options_copy})
             queued_names.add(case_name)
-            logs[case_name] = f"--- Queued {case_name} ({stats_name}) ---\n"
-            commands[case_name] = build_case_command(case_name, stats_name, cli_options_copy)
+            logs[case_name] = f"--- Queued {case_name} ({stats_name}, config {config_name}) ---\n"
+            commands[case_name] = build_case_command(case_name, stats_name, cli_options_copy, config_name)
 
         queued, started_any = launch_from_queue(running, queued, logs, max_tasks)
         interval_disabled = not bool(running or queued)

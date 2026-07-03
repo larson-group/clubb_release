@@ -2,21 +2,31 @@
 
 from dash import dcc
 
+from tuner.system_defaults import default_max_workers
 from tuner.taylor_metrics import DEFAULT_AGGREGATION_MODE, DEFAULT_LOSS_MODE
 
 from .callbacks_display import register_display_callbacks
 from .callbacks_runs import register_run_callbacks
 from .callbacks_settings import register_settings_callbacks
-from .discovery import available_fields_for_cases, load_case_defaults, load_tunable_default_ranges, load_tunable_names
-from .layout import build_layout
+from .discovery import (
+    available_fields_for_cases,
+    available_tunable_configs,
+    default_tunable_config_name,
+    load_case_defaults,
+    load_tunable_default_ranges,
+    load_tunable_names,
+)
+from .layout import DEFAULT_AVERAGE_TIME_SECONDS, build_layout
 from .runtime import empty_status_payload
 
 
 def build_initial_tune_state():
     """Collect static metadata for the initial tuning-tab layout."""
     case_data = load_case_defaults()
-    tunable_names = load_tunable_names()
-    tunable_default_ranges = load_tunable_default_ranges()
+    tunable_configs = available_tunable_configs()
+    selected_config = default_tunable_config_name(tunable_configs)
+    tunable_names = load_tunable_names(selected_config)
+    tunable_default_ranges = load_tunable_default_ranges(selected_config)
     cases = sorted(case_data.keys())
     selected_cases = [cases[0]] if cases else []
     selected_case_defaults = case_data.get(selected_cases[0], {}) if selected_cases else {}
@@ -33,10 +43,10 @@ def build_initial_tune_state():
     initial_case_rows = []
     if selected_cases:
         time_range = selected_case_defaults.get("time_average_range", ["", ""])
-        num_windows = int(selected_case_defaults.get("num_time_windows", 1) or 1)
-        average_time_seconds = ""
-        if len(time_range) > 1 and num_windows > 0:
-            average_time_seconds = int((int(time_range[1]) - int(time_range[0])) / num_windows)
+        altitude_range = selected_case_defaults.get("altitude_comparison_range", ["", ""])
+        average_time_seconds = int(
+            selected_case_defaults.get("average_time_seconds") or DEFAULT_AVERAGE_TIME_SECONDS
+        )
         initial_case_rows.append(
             {
                 "id": 0,
@@ -44,12 +54,16 @@ def build_initial_tune_state():
                 "time_start": time_range[0],
                 "time_end": time_range[1],
                 "average_time_seconds": average_time_seconds,
+                "altitude_min": altitude_range[0] if len(altitude_range) > 0 else "",
+                "altitude_max": altitude_range[1] if len(altitude_range) > 1 else "",
             }
         )
 
     return {
         "cases": cases,
         "case_data": case_data,
+        "tunable_configs": tunable_configs,
+        "selected_config": selected_config,
         "tunable_names": tunable_names,
         "tunable_default_ranges": tunable_default_ranges,
         "selected_cases": selected_cases,
@@ -59,12 +73,15 @@ def build_initial_tune_state():
             if field_name in field_options
         ],
         "batch_size": 8,
-        "max_workers": 10,
+        "max_workers": default_max_workers(),
         "strategy_mode": None,
         "loss_mode": DEFAULT_LOSS_MODE,
         "aggregation_mode": DEFAULT_AGGREGATION_MODE,
         "random_max_samples": 100,
         "resolve_spacing": 0.1,
+        "simann_max_iters": 2000,
+        "simann_initial_temp": 1.0,
+        "simann_final_temp": 1.0e-12,
         "initial_case_rows": initial_case_rows,
         "initial_param_rows": initial_param_rows,
         "field_options": field_options,

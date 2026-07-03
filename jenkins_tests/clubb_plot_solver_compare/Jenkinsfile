@@ -17,26 +17,20 @@ pipeline {
     }
     stage('Run Lapack') {
       steps {
-        sh '''sed -i "s:penta_solve_method.*:penta_solve_method = 1:g" input/tunable_parameters/configurable_model_flags.in'''
-        sh '''sed -i "s:tridiag_solve_method.*:tridiag_solve_method = 1:g" input/tunable_parameters/configurable_model_flags.in'''
-        sh '''run_scripts/run_scm_all.py -priority_cases -out_dir lapack_output'''
+        sh '''run_scripts/run_scm_all.py -priority_cases -out_dir lapack_output -override penta_solve_method=1,tridiag_solve_method=1'''
       }
     }
     stage('Run custom_lu') {
       steps {
-        sh '''sed -i "s:penta_solve_method.*:penta_solve_method = 2:g" input/tunable_parameters/configurable_model_flags.in'''
-        sh '''sed -i "s:tridiag_solve_method.*:tridiag_solve_method = 2:g" input/tunable_parameters/configurable_model_flags.in'''
-        sh '''run_scripts/run_scm_all.py -priority_cases -out_dir custom_lu_output'''
+        sh '''run_scripts/run_scm_all.py -priority_cases -out_dir custom_lu_output -override penta_solve_method=2,tridiag_solve_method=2'''
       }
     }
     stage('Run bicgstab') {
       steps {
-        sh '''sed -i "s:penta_solve_method.*:penta_solve_method = 3:g" input/tunable_parameters/configurable_model_flags.in'''
         // there is no tridiag bicgstab method, just use the custom tridiag_lu tridiag method
-        sh '''sed -i "s:tridiag_solve_method.*:tridiag_solve_method = 2:g" input/tunable_parameters/configurable_model_flags.in'''
         // wrap in this catch since we currently expect dycoms2_rf02_ds to fail
         catchError(buildResult: 'SUCCESS', stageResult: 'SUCCESS') {
-          sh '''run_scripts/run_scm_all.py -priority_cases -out_dir bicgstab_output'''
+          sh '''run_scripts/run_scm_all.py -priority_cases -out_dir bicgstab_output -override penta_solve_method=3,tridiag_solve_method=2'''
         }
         sh '''rm bicgstab_output/dycoms2_rf02_ds_*'''
       }

@@ -9,6 +9,7 @@ from pathlib import Path
 import time
 import traceback
 
+from tuner.sample_history import SampleHistoryWriter
 from tuner.tuning_strategy import build_tuning_strategy
 from tuner.tuning_worker import worker_main
 from tuner.taylor_metrics import (
@@ -73,9 +74,33 @@ class TuningScheduler:
             for config in request.get("case_configs", [])
         }
         self.case_defaults = dict(request.get("case_defaults", {}))
+        self.config = str(request.get("config") or "default").strip() or "default"
         self.selected_fields = list(request["selected_fields"])
         self.batch_size = int(request["batch_size"])
         self.max_workers = int(request["max_workers"])
+        raw_strategy = request.get("strategy") or {}
+        self.strategy_name = (
+            str(raw_strategy.get("name", "")).strip().lower()
+            if isinstance(raw_strategy, dict)
+            else str(raw_strategy).strip().lower()
+        )
+        self.adaptive_strategy = self.strategy_name == "simann"
+        if self.adaptive_strategy:
+            if not isinstance(raw_strategy, dict):
+                raw_strategy = {"name": "simann", "options": {}}
+                self.request["strategy"] = raw_strategy
+            options = raw_strategy.setdefault("options", {})
+            if options.get("chain_count") is None:
+                options["chain_count"] = max(1, self.max_workers * self.batch_size)
+            try:
+                self.simann_chain_count = int(options["chain_count"])
+            except (TypeError, ValueError) as exc:
+                raise RuntimeError("simann chain_count must be an integer") from exc
+            if self.simann_chain_count < 1:
+                raise RuntimeError("simann chain_count must be >= 1")
+            options["chain_count"] = self.simann_chain_count
+        else:
+            self.simann_chain_count = 0
         self.case_weights = dict(request.get("case_weights", {}))
         self.field_weights = dict(request.get("field_weights", {}))
         self.loss_mode = request.get("loss_mode", DEFAULT_LOSS_MODE)
@@ -112,6 +137,7 @@ class TuningScheduler:
             "worst_quantile_fraction": WORST_QUANTILE_FRACTION,
         }
         self.request["loss_mode"] = self.loss_mode
+        self.request["config"] = self.config
         self.request["aggregation_mode"] = self.aggregation_mode
         self.request["case_configs"] = [
             {
@@ -134,8 +160,15 @@ class TuningScheduler:
         self.request["loss_policy_version"] = self.loss_policy_version
         self.request["loss_policy_constants"] = dict(self.loss_policy_constants)
         self.request["aggregation_options"] = dict(self.aggregation_options)
-        self.max_pending_batches = max(1, 2 * self.max_workers)
-        self.max_pending_samples = self.max_pending_batches * self.batch_size
+        if self.adaptive_strategy:
+            self.max_pending_samples = self.simann_chain_count
+            self.max_pending_batches = max(
+                1,
+                (self.simann_chain_count + self.batch_size - 1) // self.batch_size,
+            )
+        else:
+            self.max_pending_batches = max(1, 2 * self.max_workers)
+            self.max_pending_samples = self.max_pending_batches * self.batch_size
         self.worker_cap = max(self.max_workers, len(self.cases))
         self.results_file_limit = RESULTS_FILE_LIMIT
 
@@ -152,6 +185,7 @@ class TuningScheduler:
         self.batches: dict[int, dict] = {}
         self.case_jobs = deque()
         self.strategy = None
+        self.sample_history_writer: SampleHistoryWriter | None = None
         self.param_names: list[str] | None = None
         self.default_params_row: list[float] | None = None
         self.error_message = ""
@@ -165,6 +199,7 @@ class TuningScheduler:
 
         try:
             self._initialize_case_barrier(started_at)
+            self._initialize_sample_history_writer()
             seed = self.request.get("seed")
             self.strategy = build_tuning_strategy(
                 self.request["strategy"],
@@ -192,6 +227,7 @@ class TuningScheduler:
                 if stopping:
                     if self._active_evaluations() == 0:
                         finished_at = utc_now_iso()
+                        self._close_sample_history()
                         write_status(
                             self.status_path,
                             state="stopped",
@@ -225,6 +261,7 @@ class TuningScheduler:
                 if self._is_finished():
                     self._stop_all_workers()
                     finished_at = utc_now_iso()
+                    self._close_sample_history()
                     write_status(
                         self.status_path,
                         state="finished",
@@ -254,6 +291,7 @@ class TuningScheduler:
         except Exception as exc:
             self.error_message = f"{exc}\n{traceback.format_exc(limit=10)}"
             self._stop_all_workers()
+            self._close_sample_history(suppress_errors=True)
             finished_at = utc_now_iso()
             write_status(
                 self.status_path,
@@ -315,6 +353,7 @@ class TuningScheduler:
             "worker_dir": str(worker_dir),
             "num_time_windows": self.case_num_time_windows.get(case_name, 1),
             "case_defaults": self.case_defaults.get(case_name, {}),
+            "config": self.config,
         }
         process = self.ctx.Process(target=worker_main, args=(child_conn, payload))
         process.start()
@@ -403,6 +442,32 @@ class TuningScheduler:
             self.default_params_row = [float(value) for value in default_params[0]]
 
         worker.state = "idle"
+
+    def _initialize_sample_history_writer(self) -> None:
+        """Create the raw sample-history writer once canonical axes are known."""
+        if self.sample_history_writer is not None:
+            return
+        if self.param_names is None:
+            raise RuntimeError("Cannot initialize sample history before parameter names are known")
+        self.sample_history_writer = SampleHistoryWriter(
+            job_dir=self.job_dir,
+            param_names=self.param_names,
+            case_names=self.cases,
+            field_names=self.selected_fields,
+            metric_names=list(LOSS_METRIC_NAMES),
+            case_configs=list(self.request.get("case_configs", [])),
+            case_window_counts=dict(self.case_num_time_windows),
+        )
+
+    def _close_sample_history(self, *, suppress_errors: bool = False) -> None:
+        """Flush buffered raw sample-history records."""
+        if self.sample_history_writer is None:
+            return
+        try:
+            self.sample_history_writer.close()
+        except Exception:
+            if not suppress_errors:
+                raise
 
     def _handle_result(self, message: dict) -> None:
         batch_id = int(message["batch_id"])
@@ -556,6 +621,7 @@ class TuningScheduler:
                 "loss_mode": self.loss_mode,
                 "aggregation_mode": self.aggregation_mode,
                 "case_window_counts": dict(self.case_num_time_windows),
+                "config": self.config,
                 "case_configs": list(self.request.get("case_configs", [])),
                 "time_window_aggregation_mode": self.time_window_aggregation_mode,
                 "loss_policy_version": self.loss_policy_version,
@@ -595,6 +661,8 @@ class TuningScheduler:
             completed.append(entry)
 
         if completed:
+            if self.sample_history_writer is not None:
+                self.sample_history_writer.append(completed)
             self.samples_evaluated += len(completed)
             if self.strategy is not None:
                 self.strategy.tell(completed)
@@ -739,6 +807,7 @@ class TuningScheduler:
             "aggregation_mode": self.aggregation_mode,
             "case_window_counts": dict(self.case_num_time_windows),
             "case_configs": list(self.request.get("case_configs", [])),
+            "config": self.config,
             "time_window_aggregation_mode": self.time_window_aggregation_mode,
             "loss_policy_version": self.loss_policy_version,
             "loss_policy_constants": dict(self.loss_policy_constants),

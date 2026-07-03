@@ -3,6 +3,9 @@ import json
 import math
 from pathlib import Path
 
+import numpy as np
+
+from tuner.sample_history import SAMPLE_HISTORY_DIR, SampleHistoryWriter, sample_history_paths
 from tuner.tuning_scheduler import TuningScheduler
 from tuner.taylor_metrics import (
     DEFAULT_AGGREGATION_MODE,
@@ -20,6 +23,7 @@ from tuner.request import load_request
 from tuner.job_runtime import TunerJob
 from tuner.status import renew_keepalive, should_stop, stop_reason, write_control
 from utilities.create_case_namelist import build_tuner_namelist
+from tuner.enhanced_simann_strategy import EnhancedSimulatedAnnealingStrategy
 from tuner.tuning_strategy import (
     RandomUniformStrategy,
     ResolveGridStrategy,
@@ -152,6 +156,15 @@ def test_normalize_strategy_accepts_legacy_max_samples():
     assert strategy == {"name": "random", "options": {"max_samples": 12}}
 
 
+def test_normalize_strategy_accepts_simann_defaults():
+    strategy = normalize_strategy_config({"strategy": "simann"})
+
+    assert strategy["name"] == "simann"
+    assert strategy["options"]["max_iters"] == 2000
+    assert strategy["options"]["initial_temp"] == 1.0
+    assert strategy["options"]["max_final_temp"] == 1.0e-12
+
+
 def test_tuner_job_create_initializes_keepalive_control(tmp_path):
     job = TunerJob.create({"cases": ["bomex"]}, job_dir=tmp_path / "job")
 
@@ -218,6 +231,7 @@ def test_load_request_defaults_loss_policy_metadata(tmp_path, monkeypatch):
 
     assert request["loss_mode"] == DEFAULT_LOSS_MODE
     assert request["aggregation_mode"] == DEFAULT_AGGREGATION_MODE
+    assert request["config"] == "default"
     assert request["loss_policy_version"] == LOSS_POLICY_VERSION
     assert request["case_configs"] == [
         {
@@ -229,6 +243,38 @@ def test_load_request_defaults_loss_policy_metadata(tmp_path, monkeypatch):
     ]
     assert "time_window_mode" not in request
     assert "invalid_correlation_penalty" in request["loss_policy_constants"]
+
+
+def test_load_request_accepts_named_tunable_config(tmp_path, monkeypatch):
+    request_path = tmp_path / "request.json"
+    request_path.write_text(
+        json.dumps(
+            {
+                "config": "compatible_r8029",
+                "case_name": "atex",
+                "selected_fields": ["cloud_frac"],
+                "parameter_ranges": [{"name": "C8", "min": 0.1, "max": 0.2}],
+                "batch_size": 1,
+                "max_workers": 1,
+                "strategy": {"name": "random", "options": {"max_samples": 1}},
+            }
+        ),
+        encoding="utf-8",
+    )
+    monkeypatch.setattr(
+        "tuner.request.read_case_tuner_defaults",
+        lambda _case, overrides=None: {
+            "les_stats_file": "benchmark.nc",
+            "altitude_comparison_range": [0.0, 1000.0],
+            "time_average_range": [0, 3600],
+            "num_time_windows": 1,
+        },
+    )
+    monkeypatch.setattr("tuner.request.supported_fields", lambda: ["cloud_frac"])
+
+    request = load_request(request_path)
+
+    assert request["config"] == "compatible_r8029"
 
 
 def test_load_request_accepts_per_case_window_counts(tmp_path, monkeypatch):
@@ -279,6 +325,41 @@ def test_load_request_accepts_per_case_window_counts(tmp_path, monkeypatch):
     assert request["case_configs"][0]["num_time_windows"] == 1
     assert request["case_configs"][1]["num_time_windows"] == 4
     assert request["case_defaults"]["bomex"]["time_average_range"] == [1200, 4800]
+
+
+def test_load_request_normalizes_simann_strategy_and_chain_count(tmp_path, monkeypatch):
+    request_path = tmp_path / "request.json"
+    request_path.write_text(
+        json.dumps(
+            {
+                "case_name": "atex",
+                "selected_fields": ["cloud_frac"],
+                "parameter_ranges": [{"name": "C8", "min": 0.1, "max": 0.2}],
+                "batch_size": 8,
+                "max_workers": 1,
+                "strategy": {"name": "simann", "options": {"max_iters": 12}},
+            }
+        ),
+        encoding="utf-8",
+    )
+    monkeypatch.setattr(
+        "tuner.request.read_case_tuner_defaults",
+        lambda _case, overrides=None: {
+            "les_stats_file": "benchmark.nc",
+            "altitude_comparison_range": [0.0, 1000.0],
+            "time_average_range": [0, 3600],
+            "num_time_windows": 1,
+        },
+    )
+    monkeypatch.setattr("tuner.request.supported_fields", lambda: ["cloud_frac"])
+
+    request = load_request(request_path)
+
+    assert request["strategy"]["name"] == "simann"
+    assert request["strategy"]["options"]["max_iters"] == 12
+    assert request["strategy"]["options"]["chain_count"] == 8
+    assert request["batch_size"] == 8
+    assert request["total_samples"] == 96
 
 
 def test_load_request_rejects_les_stats_file_case_config_override(tmp_path, monkeypatch):
@@ -355,6 +436,86 @@ def test_resolve_grid_strategy_includes_endpoints_and_uses_smaller_even_spacing(
     assert strategy.estimated_sample_count() == 5
 
 
+def test_enhanced_simann_strategy_evaluates_initial_point_then_reacts_to_loss():
+    strategy = EnhancedSimulatedAnnealingStrategy(
+        param_names=["C1", "C8"],
+        default_params_row=[1.0, 2.0],
+        parameter_ranges=[{"name": "C8", "min": 10.0, "max": 11.0}],
+        max_iters=3,
+        chain_count=1,
+        seed=1,
+    )
+    pending = deque()
+
+    strategy.fill(pending, capacity=4)
+    strategy.fill(pending, capacity=4)
+
+    assert len(pending) == 1
+    initial = pending.popleft()
+    assert 10.0 <= initial["selected_params"]["C8"] <= 11.0
+    assert initial["param_row"] == [1.0, initial["selected_params"]["C8"]]
+    assert initial["chain_id"] == 0
+
+    strategy.tell([{"sample_id": initial["sample_id"], "total_loss": 4.0}])
+    strategy.fill(pending, capacity=4)
+
+    assert len(pending) == 1
+    moved = pending.popleft()
+    assert moved["sample_id"] == 1
+    assert 10.0 <= moved["selected_params"]["C8"] <= 11.0
+    strategy.tell([{"sample_id": moved["sample_id"], "total_loss": 3.0}])
+
+    assert strategy.nrgy_opt == 3.0
+    assert strategy.xopt == [moved["selected_params"]["C8"]]
+    assert strategy.is_exhausted() is False
+
+
+def test_enhanced_simann_strategy_starts_chains_with_latin_hypercube_points():
+    strategy = EnhancedSimulatedAnnealingStrategy(
+        param_names=["C8"],
+        default_params_row=[0.5],
+        parameter_ranges=[{"name": "C8", "min": 0.0, "max": 1.0}],
+        max_iters=3,
+        chain_count=4,
+        seed=3,
+    )
+    pending = deque()
+
+    strategy.fill(pending, capacity=4)
+    strategy.fill(pending, capacity=4)
+
+    assert len(pending) == 4
+    assert {sample["chain_id"] for sample in pending} == {0, 1, 2, 3}
+    values = sorted(sample["selected_params"]["C8"] for sample in pending)
+    for idx, value in enumerate(values):
+        assert idx / 4 <= value < (idx + 1) / 4
+
+
+def test_enhanced_simann_strategy_stops_at_max_iters():
+    strategy = EnhancedSimulatedAnnealingStrategy(
+        param_names=["C8"],
+        default_params_row=[0.5],
+        parameter_ranges=[{"name": "C8", "min": 0.0, "max": 1.0}],
+        max_iters=2,
+        chain_count=1,
+        seed=2,
+    )
+    pending = deque()
+
+    strategy.fill(pending, capacity=1)
+    initial = pending.popleft()
+    strategy.tell([{"sample_id": initial["sample_id"], "total_loss": 1.0}])
+    loss = 0.99
+    while not strategy.is_exhausted():
+        strategy.fill(pending, capacity=1)
+        moved = pending.popleft()
+        strategy.tell([{"sample_id": moved["sample_id"], "total_loss": loss}])
+        loss -= 0.01
+
+    assert strategy.is_exhausted() is True
+    assert strategy.iter >= strategy.max_iters
+
+
 def test_scheduler_packs_partial_pending_samples_with_default_rows(tmp_path):
     scheduler = TuningScheduler(
         request={
@@ -389,6 +550,29 @@ def test_scheduler_packs_partial_pending_samples_with_default_rows(tmp_path):
     assert len(batch["sample_ids"]) == 2
     assert len(batch["params_batch"]) == 4
     assert batch["params_batch"][2:] == [[1.0, 2.0], [1.0, 2.0]]
+
+
+def test_scheduler_defaults_simann_chain_count_from_parallel_capacity(tmp_path):
+    scheduler = TuningScheduler(
+        request={
+            "cases": ["atex"],
+            "selected_fields": ["cloud_frac"],
+            "batch_size": 8,
+            "max_workers": 4,
+            "strategy": {"name": "simann", "options": {"max_iters": 4}},
+            "parameter_ranges": [{"name": "C8", "min": 10.0, "max": 11.0}],
+        },
+        job_dir=tmp_path,
+        control_path=Path(tmp_path) / "control.json",
+        status_path=Path(tmp_path) / "status.json",
+        results_path=Path(tmp_path) / "results.json",
+    )
+
+    assert scheduler.batch_size == 8
+    assert scheduler.request["batch_size"] == 8
+    assert scheduler.request["strategy"]["options"]["chain_count"] == 32
+    assert scheduler.max_pending_batches == 4
+    assert scheduler.max_pending_samples == 32
 
 
 def test_scheduler_stores_selected_loss_and_aggregation_diagnostics(tmp_path):
@@ -520,3 +704,101 @@ def test_scheduler_handles_different_window_counts_by_case(tmp_path):
     assert result["field_metrics"]["atex"]["cloud_frac"]["num_time_windows"] == 1
     assert result["field_metrics"]["bomex"]["cloud_frac"]["num_time_windows"] == 2
     assert len(result["field_metrics"]["bomex"]["cloud_frac"]["subwindows"]) == 2
+
+
+def test_sample_history_writer_stores_observation_axis_without_window_padding(tmp_path):
+    writer = SampleHistoryWriter(
+        job_dir=tmp_path,
+        param_names=["C1", "C8"],
+        case_names=["atex", "bomex"],
+        field_names=["cloud_frac", "rcm"],
+        metric_names=list(LOSS_METRIC_NAMES),
+        case_configs=[
+            {
+                "case_name": "atex",
+                "time_average_range": [0, 3600],
+                "num_time_windows": 1,
+            },
+            {
+                "case_name": "bomex",
+                "time_average_range": [0, 3600],
+                "num_time_windows": 2,
+            },
+        ],
+        case_window_counts={"atex": 1, "bomex": 2},
+        chunk_size=2,
+    )
+
+    def field_entry(base):
+        return {
+            "subwindows": [
+                {
+                    "scaled_rmse": base,
+                    "correlation": base + 0.1,
+                    "std_ratio": base + 0.2,
+                    "centered_rmse_norm": base + 0.3,
+                    "bias_norm": base + 0.4,
+                },
+                {
+                    "scaled_rmse": base + 1.0,
+                    "correlation": base + 1.1,
+                    "std_ratio": base + 1.2,
+                    "centered_rmse_norm": base + 1.3,
+                    "bias_norm": base + 1.4,
+                },
+            ]
+        }
+
+    entries = [
+        {
+            "sample_id": 0,
+            "batch_id": 5,
+            "all_params": {"C1": 1.0, "C8": 0.5},
+            "field_metrics": {
+                "atex": {
+                    "cloud_frac": {"subwindows": field_entry(10.0)["subwindows"][:1]},
+                    "rcm": {"subwindows": field_entry(20.0)["subwindows"][:1]},
+                },
+                "bomex": {
+                    "cloud_frac": field_entry(30.0),
+                    "rcm": field_entry(40.0),
+                },
+            },
+        },
+        {
+            "sample_id": 1,
+            "batch_id": 6,
+            "all_params": {"C1": 2.0, "C8": 0.7},
+            "field_metrics": {
+                "atex": {
+                    "cloud_frac": {"subwindows": field_entry(50.0)["subwindows"][:1]},
+                    "rcm": {"subwindows": field_entry(60.0)["subwindows"][:1]},
+                },
+                "bomex": {
+                    "cloud_frac": field_entry(70.0),
+                    "rcm": field_entry(80.0),
+                },
+            },
+        },
+    ]
+
+    writer.append(entries)
+    writer.close()
+
+    paths = sample_history_paths(tmp_path)
+    assert len(paths) == 1
+    assert paths[0].parent == tmp_path / SAMPLE_HISTORY_DIR
+    history = np.load(paths[0])
+    assert history["all_params"].shape == (2, 2)
+    assert history["loss_metrics"].shape == (2, 6, len(LOSS_METRIC_NAMES))
+    assert list(history["param_names"]) == ["C1", "C8"]
+    assert list(history["case_names"]) == ["atex", "bomex"]
+    assert list(history["field_names"]) == ["cloud_frac", "rcm"]
+    assert list(history["metric_names"]) == list(LOSS_METRIC_NAMES)
+    assert list(history["obs_case"]) == [0, 0, 1, 1, 1, 1]
+    assert list(history["obs_field"]) == [0, 1, 0, 0, 1, 1]
+    assert list(history["obs_window"]) == [0, 0, 0, 1, 0, 1]
+    np.testing.assert_allclose(history["all_params"], [[1.0, 0.5], [2.0, 0.7]])
+    assert history["loss_metrics"][0, 0, list(LOSS_METRIC_NAMES).index("scaled_rmse")] == 10.0
+    assert history["loss_metrics"][0, 3, list(LOSS_METRIC_NAMES).index("bias_norm")] == 31.4
+    assert history["loss_metrics"][1, 5, list(LOSS_METRIC_NAMES).index("correlation")] == 81.1

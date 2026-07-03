@@ -188,10 +188,21 @@ contains
 
     call calculate_taylor_metrics( model_profile, benchmark_profile, correlation, std_ratio, &
                                    centered_rmse_norm, bias_norm )
-    call assert_close( "Taylor flat correlation", correlation, 0.0_core_rknd )
-    call assert_close( "Taylor flat std_ratio", std_ratio, 0.0_core_rknd )
+    call assert_close( "Taylor flat correlation", correlation, 1.0_core_rknd )
+    call assert_close( "Taylor flat std_ratio", std_ratio, 1.0_core_rknd )
     call assert_close( "Taylor flat centered_rmse_norm", centered_rmse_norm, 0.0_core_rknd )
     call assert_close( "Taylor flat bias_norm", bias_norm, 0.0_core_rknd )
+
+    model_profile = [ 1.0_core_rknd, 2.0_core_rknd, 3.0_core_rknd ]
+    benchmark_profile = [ 2.0_core_rknd, 2.0_core_rknd, 2.0_core_rknd ]
+
+    call calculate_taylor_metrics( model_profile, benchmark_profile, correlation, std_ratio, &
+                                   centered_rmse_norm, bias_norm )
+    call assert_close( "Taylor flat benchmark correlation", correlation, 1.0_core_rknd )
+    call assert_close( "Taylor flat benchmark std_ratio", std_ratio, 1.0_core_rknd )
+    call assert_close( "Taylor flat benchmark centered_rmse_norm", centered_rmse_norm, &
+                       sqrt( 2.0_core_rknd / 3.0_core_rknd ) )
+    call assert_close( "Taylor flat benchmark bias_norm", bias_norm, 0.0_core_rknd )
 
   end subroutine run_taylor_metric_known_profile_test
 

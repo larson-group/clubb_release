@@ -76,7 +76,7 @@ if(${ENABLE_TESTS})
         set(RUN_COMMAND
             "${CMAKE_COMMAND} -E make_directory ${TEST_OUT_DIR}/${TEST_NAME} && \
             ${Python_EXECUTABLE} ${CLUBB_ROOT}/run_scripts/run_scm.py \
-            -out_dir ${TEST_OUT_DIR}/${TEST_NAME} ${ARGN}"
+            -install_dir ${CMAKE_INSTALL_PREFIX} -out_dir ${TEST_OUT_DIR}/${TEST_NAME} ${ARGN}"
         )
 
         add_test(NAME ${TEST_NAME}
@@ -104,8 +104,7 @@ if(${ENABLE_TESTS})
     run_clubb_case( cobra_100iter "-max_iters 100 cobra" )
 
     # test for r8029 parameter/flag set
-    set(R8029_CONFIG ${CLUBB_ROOT}/input/tunable_parameters_compatible_r8029/)
-    run_clubb_case( arm_r8029_100iter "-max_iters 100 -config ${R8029_CONFIG} arm" )
+    run_clubb_case( arm_r8029_100iter "-max_iters 100 -config compatible_r8029 arm" )
 
     # multicol test and disable normal stats output
     run_clubb_case( arm_100iter_8col "-max_iters 100 -multicol 8 -tout 0 arm" )

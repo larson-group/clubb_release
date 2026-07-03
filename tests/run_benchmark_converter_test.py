@@ -125,6 +125,10 @@ def run_test() -> None:
                 raise AssertionError(f"{field} was not written: {status.get(field)}")
 
         with netCDF4.Dataset(out) as ds:
+            if ds.data_model != "NETCDF3_64BIT_OFFSET":
+                raise AssertionError(
+                    f"normalized benchmark should be NETCDF3_64BIT_OFFSET, got {ds.data_model}"
+                )
             if ds.variables["wp2"].dimensions != ("time", "z", "y", "x"):
                 raise AssertionError("normalized variables should use time,z,y,x dimensions")
             if getattr(ds.variables["cloud_frac"], "units", None) != "1":

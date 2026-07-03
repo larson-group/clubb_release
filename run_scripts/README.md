@@ -30,6 +30,10 @@ Examples:
 - `python3 run_scripts/run_scm.py -stats input/stats/nightly_stats.in arm`
   Runs `arm` with a non-default stats field list.
 
+- `python3 run_scripts/run_scm.py -config compatible_r8029 arm`
+  Runs `arm` with the `compatible_r8029` parameter and flag config from
+  `input/parameter_and_flag_configs/compatible_r8029`.
+
 - `python3 run_scripts/run_scm.py -zm_grid input/grid/31_level_zm_grid.grd -nzmax 31 arm`
   Runs `arm` on a specified `zm` grid with the matching vertical level count.
 

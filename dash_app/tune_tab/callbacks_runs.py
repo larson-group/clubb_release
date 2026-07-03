@@ -2,8 +2,11 @@
 
 from __future__ import annotations
 
+import math
+
 from dash import ALL, Input, Output, State, ctx, html, no_update
 
+from .discovery import tunable_config_names
 from .runtime import (
     active_tuning_job,
     active_job_exited,
@@ -38,18 +41,32 @@ def _integer_seconds(raw_value):
     return int(value)
 
 
+def _numeric_value(raw_value, label):
+    try:
+        value = float(raw_value)
+    except (TypeError, ValueError) as exc:
+        raise ValueError(f"{label} must be numeric") from exc
+    if not math.isfinite(value):
+        raise ValueError(f"{label} must be finite")
+    return value
+
+
 def _case_configs_from_rows(
     case_names,
     time_start_values,
     time_end_values,
     average_time_values,
+    altitude_min_values,
+    altitude_max_values,
 ):
     configs = []
-    for raw_name, raw_t0, raw_t1, raw_average in zip(
+    for raw_name, raw_t0, raw_t1, raw_average, raw_altitude_min, raw_altitude_max in zip(
         case_names or [],
         time_start_values or [],
         time_end_values or [],
         average_time_values or [],
+        altitude_min_values or [],
+        altitude_max_values or [],
     ):
         case_name = "" if raw_name is None else str(raw_name).strip()
         if not case_name:
@@ -57,12 +74,16 @@ def _case_configs_from_rows(
         time_start = _integer_seconds(raw_t0)
         time_end = _integer_seconds(raw_t1)
         average_time_seconds = _integer_seconds(raw_average)
+        altitude_min = _numeric_value(raw_altitude_min, "altitude min")
+        altitude_max = _numeric_value(raw_altitude_max, "altitude max")
         if time_end <= time_start:
             raise ValueError("time end must be after time start")
         if average_time_seconds < 1:
             raise ValueError("average_time_seconds must be >= 1")
         if (time_end - time_start) % average_time_seconds != 0:
             raise ValueError("average_time_seconds must divide the time range evenly")
+        if altitude_max < altitude_min:
+            raise ValueError("altitude max must be >= altitude min")
         num_time_windows = (time_end - time_start) // average_time_seconds
         configs.append(
             {
@@ -70,6 +91,7 @@ def _case_configs_from_rows(
                 "time_average_range": [time_start, time_end],
                 "average_time_seconds": average_time_seconds,
                 "num_time_windows": int(num_time_windows),
+                "altitude_comparison_range": [altitude_min, altitude_max],
             }
         )
     return configs
@@ -114,6 +136,8 @@ def build_validation_message(
     time_start_values,
     time_end_values,
     average_time_values,
+    altitude_min_values,
+    altitude_max_values,
     selected_fields,
     param_values,
     min_values,
@@ -125,9 +149,20 @@ def build_validation_message(
     aggregation_mode,
     random_max_samples,
     resolve_spacing,
+    simann_max_iters,
+    simann_initial_temp,
+    simann_final_temp,
     case_data,
+    selected_config,
+    tunable_configs,
+    tunable_names,
 ):
     """Validate the requested tuning configuration and return an error string if needed."""
+    selected_config = str(selected_config or "").strip()
+    if not selected_config:
+        return "Select a tunable config."
+    if selected_config not in tunable_config_names(tunable_configs):
+        return f"Unknown tunable config: {selected_config}"
     cases = _case_list(case_names)
     if not cases:
         return "Select at least one case."
@@ -142,26 +177,35 @@ def build_validation_message(
             time_start_values,
             time_end_values,
             average_time_values,
+            altitude_min_values,
+            altitude_max_values,
         )
     except TypeError:
-        return "Each case row needs numeric time and average-time values."
+        return "Each case row needs numeric time, average-time, and altitude values."
     except ValueError as exc:
         message = str(exc)
         if "divide" in message:
             return "Average time must divide the selected time range evenly."
+        if "altitude max" in message:
+            return "Altitude max must be >= altitude min."
+        if "altitude" in message:
+            return "Each case row needs numeric altitude min/max values."
         return "Each case row needs integer time and average-time values."
     if len(case_configs) != len(cases):
-        return "Each case row needs a case, time range, and average time."
+        return "Each case row needs a case, time range, average time, and altitude range."
     for config in case_configs:
         case_name = config["case_name"]
         time_start, time_end = config["time_average_range"]
         average_time_seconds = config["average_time_seconds"]
+        altitude_min, altitude_max = config["altitude_comparison_range"]
         if time_end <= time_start:
             return f"{case_name} requires time end > time start."
         if average_time_seconds < 1:
             return f"{case_name} requires average time >= 1 second."
         if (time_end - time_start) % average_time_seconds != 0:
             return f"{case_name} requires average time to divide the selected time range evenly."
+        if altitude_max < altitude_min:
+            return f"{case_name} requires altitude max >= altitude min."
     if not selected_fields:
         return "Select at least one CLUBB field to tune."
     for case_name in cases:
@@ -190,7 +234,7 @@ def build_validation_message(
         return "Max workers must be an integer."
     if int(max_workers_value) < 1:
         return "Max workers must be >= 1."
-    if strategy_mode not in {"random", "resolve"}:
+    if strategy_mode not in {"random", "resolve", "simann"}:
         return "Select a tuning mode."
     loss_mode = loss_mode or DEFAULT_LOSS_MODE
     aggregation_mode = aggregation_mode or DEFAULT_AGGREGATION_MODE
@@ -218,6 +262,29 @@ def build_validation_message(
             return "Resolve spacing must be numeric."
         if spacing_value <= 0.0:
             return "Resolve spacing must be > 0."
+    if strategy_mode == "simann":
+        if simann_max_iters in (None, ""):
+            return "Enter a SimAnn max iteration count."
+        try:
+            max_iters_value = float(simann_max_iters)
+        except (TypeError, ValueError):
+            return "SimAnn max iterations must be an integer."
+        if int(max_iters_value) != max_iters_value:
+            return "SimAnn max iterations must be an integer."
+        if int(max_iters_value) < 1:
+            return "SimAnn max iterations must be >= 1."
+        for label, raw_value in (
+            ("initial temperature", simann_initial_temp),
+            ("final temperature", simann_final_temp),
+        ):
+            if raw_value in (None, ""):
+                return f"Enter a SimAnn {label}."
+            try:
+                value = float(raw_value)
+            except (TypeError, ValueError):
+                return f"SimAnn {label} must be numeric."
+            if value <= 0.0:
+                return f"SimAnn {label} must be > 0."
 
     ranges = []
     seen_names = set()
@@ -231,6 +298,8 @@ def build_validation_message(
             return "Each parameter row must include parameter, min, and max."
         if param_name in seen_names:
             return f"Duplicate tuning parameter: {param_name}"
+        if param_name not in set(tunable_names or []):
+            return f"{param_name} is not available in config {selected_config}."
         seen_names.add(param_name)
         try:
             min_value = float(min_text.replace("D", "E").replace("d", "e"))
@@ -251,6 +320,8 @@ def build_request_payload(
     time_start_values,
     time_end_values,
     average_time_values,
+    altitude_min_values,
+    altitude_max_values,
     selected_fields,
     param_values,
     min_values,
@@ -262,6 +333,10 @@ def build_request_payload(
     aggregation_mode,
     random_max_samples,
     resolve_spacing,
+    simann_max_iters,
+    simann_initial_temp,
+    simann_final_temp,
+    selected_config,
 ):
     """Build the worker request payload from the live UI values."""
     batch_size = int(float(batch_size))
@@ -285,15 +360,23 @@ def build_request_payload(
         strategy_options["max_samples"] = int(float(random_max_samples))
     if strategy_mode == "resolve":
         strategy_options["spacing"] = float(resolve_spacing)
+    if strategy_mode == "simann":
+        strategy_options["max_iters"] = int(float(simann_max_iters))
+        strategy_options["initial_temp"] = float(simann_initial_temp)
+        strategy_options["max_final_temp"] = float(simann_final_temp)
+        strategy_options["chain_count"] = max(1, max_workers * batch_size)
 
     case_configs = _case_configs_from_rows(
         case_names,
         time_start_values,
         time_end_values,
         average_time_values,
+        altitude_min_values,
+        altitude_max_values,
     )
 
     return {
+        "config": str(selected_config or "default").strip() or "default",
         "cases": [config["case_name"] for config in case_configs],
         "case_configs": case_configs,
         "selected_fields": list(selected_fields or []),
@@ -327,6 +410,8 @@ def register_run_callbacks(app):
         State({"type": "tune-case-time-start", "index": ALL}, "value"),
         State({"type": "tune-case-time-end", "index": ALL}, "value"),
         State({"type": "tune-case-average-time", "index": ALL}, "value"),
+        State({"type": "tune-case-altitude-min", "index": ALL}, "value"),
+        State({"type": "tune-case-altitude-max", "index": ALL}, "value"),
         State("tune-field-selector", "value"),
         State({"type": "tune-range-param", "index": ALL}, "value"),
         State({"type": "tune-range-min", "index": ALL}, "value"),
@@ -338,7 +423,13 @@ def register_run_callbacks(app):
         State("tune-aggregation-mode", "data"),
         State("tune-random-max-samples", "value"),
         State("tune-resolve-spacing", "value"),
+        State("tune-simann-max-iters", "value"),
+        State("tune-simann-initial-temp", "value"),
+        State("tune-simann-final-temp", "value"),
         State("tune-case-data", "data"),
+        State("tune-selected-config", "data"),
+        State("tune-tunable-configs", "data"),
+        State("tune-tunable-names", "data"),
         State("tune-active-job", "data"),
         prevent_initial_call=True,
     )
@@ -348,6 +439,8 @@ def register_run_callbacks(app):
         time_start_values,
         time_end_values,
         average_time_values,
+        altitude_min_values,
+        altitude_max_values,
         selected_fields,
         param_values,
         min_values,
@@ -359,7 +452,13 @@ def register_run_callbacks(app):
         aggregation_mode,
         random_max_samples,
         resolve_spacing,
+        simann_max_iters,
+        simann_initial_temp,
+        simann_final_temp,
         case_data,
+        selected_config,
+        tunable_configs,
+        tunable_names,
         active_job,
     ):
         """Validate the tuning inputs, then launch the background worker."""
@@ -371,6 +470,8 @@ def register_run_callbacks(app):
             time_start_values,
             time_end_values,
             average_time_values,
+            altitude_min_values,
+            altitude_max_values,
             selected_fields,
             param_values,
             min_values,
@@ -382,7 +483,13 @@ def register_run_callbacks(app):
             aggregation_mode,
             random_max_samples,
             resolve_spacing,
+            simann_max_iters,
+            simann_initial_temp,
+            simann_final_temp,
             case_data,
+            selected_config,
+            tunable_configs,
+            tunable_names,
         )
         if validation_message:
             return no_update, no_update, no_update, no_update, no_update, no_update, no_update, validation_message
@@ -394,6 +501,8 @@ def register_run_callbacks(app):
                     time_start_values,
                     time_end_values,
                     average_time_values,
+                    altitude_min_values,
+                    altitude_max_values,
                     selected_fields,
                     param_values,
                     min_values,
@@ -405,6 +514,10 @@ def register_run_callbacks(app):
                     aggregation_mode,
                     random_max_samples,
                     resolve_spacing,
+                    simann_max_iters,
+                    simann_initial_temp,
+                    simann_final_temp,
+                    selected_config,
                 )
             )
         except Exception as exc:
@@ -476,7 +589,10 @@ def register_run_callbacks(app):
         State({"type": "tune-case-time-start", "index": ALL}, "value"),
         State({"type": "tune-case-time-end", "index": ALL}, "value"),
         State({"type": "tune-case-average-time", "index": ALL}, "value"),
+        State({"type": "tune-case-altitude-min", "index": ALL}, "value"),
+        State({"type": "tune-case-altitude-max", "index": ALL}, "value"),
         State("tune-field-selector", "value"),
+        State("tune-selected-config", "data"),
         State("tune-loss-runs", "data"),
         prevent_initial_call=True,
     )
@@ -487,7 +603,10 @@ def register_run_callbacks(app):
         time_start_values,
         time_end_values,
         average_time_values,
+        altitude_min_values,
+        altitude_max_values,
         selected_fields,
+        selected_config,
         loss_runs,
     ):
         """Run listed results through the window loss runner or normal SCM runner."""
@@ -527,6 +646,8 @@ def register_run_callbacks(app):
                     time_start_values,
                     time_end_values,
                     average_time_values,
+                    altitude_min_values,
+                    altitude_max_values,
                 )
                 selected_case_names = [config["case_name"] for config in case_configs]
                 run_case_configs = case_configs
@@ -544,6 +665,7 @@ def register_run_callbacks(app):
                 rank=action,
                 case_configs=run_case_configs,
                 run_mode=action,
+                config=selected_config,
             )
         except Exception as exc:
             return no_update, no_update, str(exc)

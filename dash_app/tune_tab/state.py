@@ -17,6 +17,7 @@ TUNE_STATUS_TEMPLATE = {
     "best_total_loss": None,
     "top_results": [],
     "error_message": "",
+    "config": "default",
     "active_evaluations": 0,
     "idle_workers": 0,
     "initialized_workers": 0,

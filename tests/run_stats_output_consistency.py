@@ -154,6 +154,15 @@ def abs_path(path: str | None) -> str | None:
     return os.path.abspath(path) if path else None
 
 
+def config_arg(value: str | None) -> str | None:
+    """Return a path config as absolute while preserving bare config names."""
+    if not value:
+        return None
+    if os.path.isabs(value) or os.sep in value or (os.altsep and os.altsep in value):
+        return os.path.abspath(value)
+    return value
+
+
 def model_file_path(case_name: str) -> str:
     """Return the default model file path for one SCM case."""
     return os.path.join(CLUBB_ROOT, "input", "case_setups", f"{case_name}_model.in")
@@ -939,7 +948,7 @@ def parse_args() -> argparse.Namespace:
             "Must be provided with -window_start."
         ),
     )
-    parser.add_argument("-config", help="Optional config directory forwarded to run_scm.py")
+    parser.add_argument("-config", help="Optional config name or directory forwarded to run_scm.py")
     parser.add_argument("-params", help="Optional params file forwarded to run_scm.py")
     parser.add_argument("-flags", help="Optional model flags file forwarded to run_scm.py")
     parser.add_argument(
@@ -957,7 +966,7 @@ def parse_args() -> argparse.Namespace:
     if args.fine_tout <= 0:
         parser.error("-fine_tout must be positive")
     args.stats = abs_path(args.stats)
-    args.config = abs_path(args.config)
+    args.config = config_arg(args.config)
     args.params = abs_path(args.params)
     args.flags = abs_path(args.flags)
     args.silhs_params = abs_path(args.silhs_params)

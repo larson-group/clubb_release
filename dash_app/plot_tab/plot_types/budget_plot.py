@@ -41,7 +41,6 @@ class BudgetPlotType(BasePlotType):
         group = BUDGET_GROUPS.get(group_name)
         if not group:
             return None
-        time_len = max(int(case_data.get("time_len") or 1), 1)
         slider_range = global_context.get("time_range")
         time_mode = global_context.get("time_mode") or "range"
         time_point = global_context.get("time_point")
@@ -52,7 +51,6 @@ class BudgetPlotType(BasePlotType):
         x_values = []
         x_units = []
         z_units = ""
-        playback_bounds = []
         for term in group["terms"]:
             path, _meta = shared.dataset_info_for_var(files, term)
             if path is None:
@@ -79,19 +77,8 @@ class BudgetPlotType(BasePlotType):
             if extracted["units"]:
                 x_units.append(extracted["units"])
             z_units = extracted["z_units"] or z_units
-            if time_mode == "point":
-                playback_bounds.append(extracted["bounds"])
-        if time_mode == "point":
-            finite_bounds = [bounds for bounds in playback_bounds if bounds is not None]
-            if finite_bounds:
-                x_range = shared.padded_range(
-                    min(bounds[0] for bounds in finite_bounds),
-                    max(bounds[1] for bounds in finite_bounds),
-                )
-            else:
-                x_range = None
-        else:
-            x_range = shared.padded_data_range(x_values)
+        height_range = shared.active_height_range(global_context)
+        x_range = shared.padded_trace_x_range(trace_specs, height_range, fallback_values=x_values)
         budget_units = x_units[0] if x_units and all(unit == x_units[0] for unit in x_units) else ""
         return {
             "group": group,
@@ -177,7 +164,6 @@ class BudgetPlotType(BasePlotType):
             Output(self.render_signal_id(MATCH), "children"),
             Input(self.var_input_id(MATCH), "value"),
             Input("plots-case-data", "data"),
-            Input("plots-time-mode", "value"),
             Input("plots-global-time-range", "value"),
             Input("plots-global-time-point", "value"),
             Input("plots-global-height-range", "value"),
@@ -185,21 +171,37 @@ class BudgetPlotType(BasePlotType):
             Input("plots-column-mode", "value"),
             Input("theme-store", "data"),
             Input(self.size_store_id(MATCH), "data"),
+            State(self.graph_id(MATCH), "relayoutData"),
             State(self.graph_id(MATCH), "id"),
         )
-        def _update_budget_graph(var_name, case_data, time_mode, time_range, time_point, height_range, selected_column, column_mode, theme_name, size_store_value, graph_id):
+        def _update_budget_graph(
+            var_name,
+            case_data,
+            time_range,
+            time_point,
+            height_range,
+            selected_column,
+            column_mode,
+            theme_name,
+            size_store_value,
+            relayout_data,
+            graph_id,
+        ):
             plot_id = int((graph_id or {}).get("index", -1))
             size_value = shared.normalize_plot_size(size_store_value)
             signal = int(time_point) if time_point is not None else ""
-            if callback_context.triggered_id == "plots-global-time-point" and plot_id >= 0 and self._has_full_render(plot_id):
+            triggered_id = callback_context.triggered_id
+            use_relayout_height_range = triggered_id != "plots-global-height-range"
+            if triggered_id == "plots-global-time-point" and plot_id >= 0 and self._has_full_render(plot_id):
                 patch = self.build_patch(
                     {"var": var_name, "size": size_value},
                     {
                         "case_data": case_data,
-                        "time_mode": time_mode,
                         "time_range": time_range,
                         "time_point": time_point,
                         "height_range": height_range,
+                        "relayout_data": relayout_data,
+                        "use_relayout_height_range": use_relayout_height_range,
                         "selected_column": selected_column,
                         "column_mode": column_mode,
                         "size": size_value,
@@ -212,16 +214,19 @@ class BudgetPlotType(BasePlotType):
                 {"var": var_name, "size": size_value},
                 {
                     "case_data": case_data,
-                    "time_mode": time_mode,
                     "time_range": time_range,
                     "time_point": time_point,
                     "height_range": height_range,
+                    "relayout_data": relayout_data,
+                    "use_relayout_height_range": use_relayout_height_range,
                     "selected_column": selected_column,
                     "column_mode": column_mode,
                     "size": size_value,
                     "theme_name": theme_name,
                 },
             )
+            if triggered_id == "plots-case-data" and (case_data or {}).get("preserve_plot_view"):
+                shared.apply_relayout_ranges(fig, relayout_data)
             if plot_id >= 0:
                 self._mark_full_render(plot_id)
             return fig, signal

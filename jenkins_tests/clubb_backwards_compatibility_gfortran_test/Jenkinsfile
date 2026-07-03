@@ -9,18 +9,11 @@ pipeline {
 
       }
     }
-    stage('Configure Clubb') {
-      steps {
-        // This changes the older input parameters into the default 
-        // for the run to check if the code is still backwards compatible
-        sh '''bash -c "cp input/tunable_parameters_compatible_r8029/* input/tunable_parameters"'''
-      }
-    }
     stage('Run Clubb') {
       steps {
         // Only run bomex and dycoms2_rf01
-        sh '''run_scripts/run_scm.py bomex
-              run_scripts/run_scm.py dycoms2_rf01'''
+        sh '''run_scripts/run_scm.py -config compatible_r8029 bomex
+              run_scripts/run_scm.py -config compatible_r8029 dycoms2_rf01'''
       }
     }
     stage('Check output against tolerance') {

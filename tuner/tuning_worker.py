@@ -46,6 +46,7 @@ def worker_main(conn, init_payload: dict) -> None:
     batch_size = int(init_payload.get("batch_size", 1))
     num_time_windows = int(init_payload.get("num_time_windows", 1))
     case_defaults = dict(init_payload.get("case_defaults") or {})
+    config = init_payload.get("config") or "default"
     worker_dir = Path(init_payload.get("worker_dir")).resolve()
     original_cwd = os.getcwd()
     initialized = False
@@ -59,6 +60,7 @@ def worker_main(conn, init_payload: dict) -> None:
             worker_dir,
             selected_fields,
             num_time_windows=num_time_windows,
+            config=config,
             case_defaults=case_defaults or None,
             batch_size=batch_size,
             duplicate_params_for_batch=True,

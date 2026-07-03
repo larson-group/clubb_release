@@ -16,7 +16,8 @@ RUN_SCRIPTS = Path(__file__).resolve().parent
 CLUBB_ROOT = RUN_SCRIPTS.parent
 INPUT_DIR = CLUBB_ROOT / "input"
 OUTPUT_DIR = CLUBB_ROOT / "output"
-TUNABLE_DIR = INPUT_DIR / "tunable_parameters"
+TUNABLE_CONFIG_ROOT = INPUT_DIR / "parameter_and_flag_configs"
+TUNABLE_DIR = TUNABLE_CONFIG_ROOT / "default"
 CASE_SETUP_DIR = INPUT_DIR / "case_setups"
 STATS_DIR = INPUT_DIR / "stats"
 TUNER_MISC_DIR = CLUBB_ROOT / "input_misc" / "tuner"
@@ -277,7 +278,7 @@ def main() -> int:
         tuned_params = newest_matching("tunable_parameters_*", TUNABLE_DIR)
         tuned_flags = newest_matching("configurable_model_flags*", TUNABLE_DIR)
         if tuned_params is None or tuned_flags is None:
-            print("Could not find tuned parameter/flag files in input/tunable_parameters")
+            print("Could not find tuned parameter/flag files in input/parameter_and_flag_configs/default")
             overall_fail = True
         else:
             for case in cases_for_runs:

@@ -138,7 +138,6 @@ body,
   box-shadow: none !important;
 }
 
-#app-root.theme-dark #run-max-tasks,
 #app-root.theme-dark #compile-extra-args {
   background: transparent !important;
   background-color: transparent !important;
@@ -148,7 +147,6 @@ body,
   -webkit-box-shadow: none !important;
 }
 
-#app-root.theme-dark #run-max-tasks:focus,
 #app-root.theme-dark #compile-extra-args:focus {
   border: 0 !important;
   outline: none !important;

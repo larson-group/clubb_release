@@ -140,9 +140,10 @@ def run_loss_case(args, case_name, fields, output_dir, run_cmd, run_cwd, run_env
 
 def main():
     parser = argparse.ArgumentParser(description="Run the in-memory CLUBB loss driver.")
-    parser.add_argument("-config", metavar="[DIR]",
-        help=("Directory containing tunable_parameters.in, configurable_model_flags.in, "
-              "and silhs_parameters.in. Defaults to input/tunable_parameters."))
+    parser.add_argument("-config", metavar="[NAME|DIR]",
+        help=("Tunable config name under input/parameter_and_flag_configs, or a directory containing "
+              "tunable_parameters.in, configurable_model_flags.in, and silhs_parameters.in. "
+              "Defaults to default."))
     parser.add_argument("-params", metavar="[FILE]",
         help="Define the tunable parameters. Used to override params file defined by --config")
     parser.add_argument("-flags", metavar="[FILE]",
@@ -154,7 +155,10 @@ def main():
               "Use an integer for dup_tweak mode, e.g. -multicol 4, or an hr spec like "
               "-multicol C8/0.2:0.8/4"))
     parser.add_argument("-batch_size", metavar="[NUM]", type=int,
-        help="Runtime batch size written to &multicol_def. Requires -multicol.")
+        help=(
+            "Runtime batch size written to &multicol_def. Requires -multicol. "
+            "Values larger than ngrdcol are clipped to ngrdcol."
+        ))
     parser.add_argument(
         "-disable_stats_storage",
         action="store_true",

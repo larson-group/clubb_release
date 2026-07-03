@@ -231,20 +231,59 @@ body.run-ui-dragging * {
   color: inherit;
 }
 
-.run-workers-control {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  margin: 4px;
-  padding: 0;
-  background: transparent !important;
-  border: 0 !important;
-  border-radius: 0;
-  box-shadow: none !important;
-  font-weight: 600;
+.run-action-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: stretch;
+  gap: 10px;
+  margin-top: 6px;
 }
 
-.run-workers-label {
+.run-primary-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.run-limit-panel {
+  display: grid;
+  grid-template-columns: auto repeat(2, 76px);
+  align-items: center;
+  gap: 8px 10px;
+  margin: 4px;
+  padding: 7px 10px;
+  border-radius: 6px;
+}
+
+#app-root.theme-dark .run-limit-panel {
+  background-color: #0b1220;
+  border: 1px solid #334155;
+}
+
+#app-root.theme-light .run-limit-panel {
+  background-color: #f8fafc;
+  border: 1px solid #cbd5e1;
+}
+
+.run-limit-title {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0;
+  opacity: 0.75;
+  white-space: nowrap;
+}
+
+.run-limit-control {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 3px;
+  margin: 0;
+  min-width: 0;
+}
+
+.run-limit-label {
   display: inline-flex;
   align-items: center;
   margin: 0;
@@ -252,7 +291,44 @@ body.run-ui-dragging * {
   background: transparent !important;
   border: 0 !important;
   box-shadow: none !important;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1;
+  opacity: 0.85;
+  white-space: nowrap;
+}
+
+#app-root .run-limit-input {
+  box-sizing: border-box;
+  width: 76px;
+  height: 30px;
+  padding: 5px 8px;
+  border-radius: 5px;
   font-size: 14px;
+  text-align: center;
+}
+
+#app-root.theme-dark .run-limit-input,
+#app-root.theme-dark #run-max-tasks.run-limit-input,
+#app-root.theme-dark #run-batch-size.run-limit-input {
+  background-color: #020617 !important;
+  color: #e2e8f0 !important;
+  border: 1px solid #475569 !important;
+  outline: none !important;
+  box-shadow: none !important;
+}
+
+#app-root.theme-light .run-limit-input,
+#app-root.theme-light #run-max-tasks.run-limit-input,
+#app-root.theme-light #run-batch-size.run-limit-input {
+  background-color: #ffffff !important;
+  color: #0f172a !important;
+  border: 1px solid #cbd5e1 !important;
+}
+
+#app-root .run-limit-input:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
 }
 
 /* Run selected stays green in both themes */

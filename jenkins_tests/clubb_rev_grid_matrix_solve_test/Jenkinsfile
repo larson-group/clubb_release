@@ -29,16 +29,12 @@ pipeline {
     }
     stage('Lapack') {
       steps {
-        sh '''sed -i "s:penta_solve_method.*:penta_solve_method = 1:g" input/tunable_parameters/configurable_model_flags.in'''
-        sh '''sed -i "s:tridiag_solve_method.*:tridiag_solve_method = 1:g" input/tunable_parameters/configurable_model_flags.in'''
-        sh '''python3 run_scripts/run_scm_all.py -stats none -max_iters 100'''
+        sh '''python3 run_scripts/run_scm_all.py -stats none -max_iters 100 -override penta_solve_method=1,tridiag_solve_method=1'''
       }
     }
     stage('Custom LU') {
       steps {
-        sh '''sed -i "s:penta_solve_method.*:penta_solve_method = 2:g" input/tunable_parameters/configurable_model_flags.in'''
-        sh '''sed -i "s:tridiag_solve_method.*:tridiag_solve_method = 2:g" input/tunable_parameters/configurable_model_flags.in'''
-        sh '''python3 run_scripts/run_scm_all.py -stats none -max_iters 100'''
+        sh '''python3 run_scripts/run_scm_all.py -stats none -max_iters 100 -override penta_solve_method=2,tridiag_solve_method=2'''
       }
     }
   }

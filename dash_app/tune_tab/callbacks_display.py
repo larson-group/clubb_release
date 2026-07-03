@@ -4,12 +4,27 @@ from __future__ import annotations
 
 import json
 import math
+from pathlib import Path
 
 from dash import ALL, Input, Output, State, dcc, html, no_update
+import numpy as np
 import plotly.graph_objects as go
 
-from .layout import action_button_style, build_results_placeholder, mode_button_style, mode_options_block_style
-from tuner.taylor_metrics import DEFAULT_AGGREGATION_MODE, DEFAULT_LOSS_MODE
+from .layout import (
+    action_button_style,
+    build_results_placeholder,
+    config_button_style,
+    mode_button_style,
+    mode_options_block_style,
+)
+from tuner.sample_history import sample_history_paths
+from tuner.taylor_metrics import (
+    DEFAULT_AGGREGATION_MODE,
+    DEFAULT_LOSS_MODE,
+    LOSS_METRIC_NAMES,
+    aggregate_losses,
+    compute_field_loss_diagnostics,
+)
 
 
 _CORRELATION_GRID = [-1.0, -0.75, -0.5, 0.0, 0.5, 0.75, 0.9, 0.95, 0.99, 1.0]
@@ -42,6 +57,24 @@ _PARAMETER_GROUP_COLORS = [
     "#be123c",
     "#4f46e5",
 ]
+_LANDSCAPE_ALL = "__all__"
+_LANDSCAPE_METADATA_NAMES = [
+    "schema_version",
+    "param_names",
+    "case_names",
+    "field_names",
+    "metric_names",
+    "case_window_counts",
+    "obs_case",
+    "obs_field",
+    "obs_window",
+    "obs_window_start_seconds",
+    "obs_window_end_seconds",
+]
+_LANDSCAPE_AGGREGATION_NAMES = {"mean", "median", "min", "p90", "max"}
+_LANDSCAPE_MODE_NAMES = {"samples", "binned"}
+_LANDSCAPE_BINS = 28
+_LANDSCAPE_LOSS_LIKE_METRICS = {"total_loss", "raw:scaled_rmse", "raw:centered_rmse_norm"}
 
 
 def _finite_float(value):
@@ -61,6 +94,12 @@ def _plot_diagnostic_float(value):
     if result is None or abs(result) >= _DIAGNOSTIC_PENALTY_THRESHOLD:
         return None
     return result
+
+
+def _plot_metric_mask(values):
+    """Return values finite enough to scale landscape plots."""
+    array = np.asarray(values, dtype=float)
+    return np.isfinite(array) & (np.abs(array) < _DIAGNOSTIC_PENALTY_THRESHOLD)
 
 
 def _level_step(max_value):
@@ -552,6 +591,1025 @@ def build_diagnostics_row(best_results):
     )
 
 
+def _job_dir_from_status(status):
+    """Return the current tuner job directory from a status payload."""
+    job_dir = (status or {}).get("job_dir")
+    if not job_dir:
+        return None
+    return Path(job_dir)
+
+
+def _sample_history_signature(job_dir):
+    """Return a cheap signature for all available sample-history chunks."""
+    if job_dir is None:
+        return ""
+    try:
+        paths = sample_history_paths(Path(job_dir))
+    except Exception:
+        return ""
+    parts = []
+    for path in paths:
+        try:
+            stat = path.stat()
+        except OSError:
+            continue
+        parts.append(f"{path.name}:{stat.st_size}:{stat.st_mtime_ns}")
+    return "|".join(parts)
+
+
+def _load_sample_history(job_dir):
+    """Load sample-history chunks from one job directory."""
+    if job_dir is None:
+        return None
+    paths = sample_history_paths(Path(job_dir))
+    if not paths:
+        return None
+
+    chunks = []
+    try:
+        chunks = [np.load(path) for path in paths]
+        first = chunks[0]
+        history = {
+            name: first[name].copy()
+            for name in _LANDSCAPE_METADATA_NAMES
+        }
+        history["all_params"] = np.concatenate([chunk["all_params"] for chunk in chunks], axis=0)
+        history["loss_metrics"] = np.concatenate([chunk["loss_metrics"] for chunk in chunks], axis=0)
+        history["sample_id"] = np.concatenate([chunk["sample_id"] for chunk in chunks], axis=0)
+        history["batch_id"] = np.concatenate([chunk["batch_id"] for chunk in chunks], axis=0)
+        history["chunk_paths"] = paths
+        return history
+    finally:
+        for chunk in chunks:
+            try:
+                chunk.close()
+            except Exception:
+                pass
+
+
+def _read_job_request(job_dir):
+    """Return the request.json payload for a tuner job, if available."""
+    if job_dir is None:
+        return {}
+    try:
+        with (Path(job_dir) / "request.json").open(encoding="utf-8") as handle:
+            payload = json.load(handle)
+    except Exception:
+        return {}
+    return payload if isinstance(payload, dict) else {}
+
+
+def _string_array_values(history, name):
+    """Return a metadata string array as plain Python strings."""
+    return [str(value) for value in list((history or {}).get(name, []))]
+
+
+def _clean_param_names(values):
+    """Return non-empty parameter names preserving order."""
+    names = []
+    seen = set()
+    for value in values or []:
+        if not isinstance(value, str):
+            continue
+        name = value.strip()
+        if not name or name in seen:
+            continue
+        names.append(name)
+        seen.add(name)
+    return names
+
+
+def _request_tuned_param_names(request):
+    """Return parameter names listed in the active tuning request."""
+    ranges = (request or {}).get("parameter_ranges", [])
+    names = []
+    seen = set()
+    for spec in ranges or []:
+        if not isinstance(spec, dict):
+            continue
+        name = str(spec.get("name", "")).strip()
+        if name and name not in seen:
+            names.append(name)
+            seen.add(name)
+    return names
+
+
+def _varying_param_names(history):
+    """Return parameters that actually vary across loaded samples."""
+    param_names = _string_array_values(history, "param_names")
+    params = np.asarray((history or {}).get("all_params", []), dtype=float)
+    if params.ndim != 2 or params.shape[0] == 0:
+        return param_names
+    varying = []
+    for idx, name in enumerate(param_names):
+        if idx >= params.shape[1]:
+            continue
+        column = params[:, idx]
+        finite = column[np.isfinite(column)]
+        if finite.size > 1 and float(np.max(finite) - np.min(finite)) > 0.0:
+            varying.append(name)
+    return varying or param_names[: min(2, len(param_names))]
+
+
+def _dropdown_options(values, all_label=None):
+    """Return Dash dropdown options for string values."""
+    options = []
+    if all_label is not None:
+        options.append({"label": all_label, "value": _LANDSCAPE_ALL})
+    options.extend({"label": value, "value": value} for value in values)
+    return options
+
+
+def _first_valid(current_value, valid_values, fallback=None):
+    """Return current_value if valid, otherwise a valid fallback."""
+    valid = list(valid_values or [])
+    if current_value in valid:
+        return current_value
+    if fallback in valid:
+        return fallback
+    return valid[0] if valid else None
+
+
+def _landscape_metric_options(history):
+    """Return metric selector options for loaded sample history."""
+    metric_names = _string_array_values(history, "metric_names")
+    options = [{"label": "Total selected loss", "value": "total_loss"}]
+    options.extend({"label": f"Raw {name}", "value": f"raw:{name}"} for name in metric_names)
+    return options
+
+
+def _landscape_window_options(history):
+    """Return time-window selector options from the observation axis."""
+    obs_window = np.asarray((history or {}).get("obs_window", []), dtype=int)
+    if obs_window.size == 0:
+        return [{"label": "All windows", "value": _LANDSCAPE_ALL}]
+    options = [{"label": "All windows", "value": _LANDSCAPE_ALL}]
+    for window_idx in range(int(np.max(obs_window)) + 1):
+        options.append({"label": f"Window {window_idx + 1}", "value": str(window_idx)})
+    return options
+
+
+def _aggregate_finite(values, mode):
+    """Aggregate finite values with the requested reduction."""
+    finite = np.asarray(values, dtype=float)
+    finite = finite[_plot_metric_mask(finite)]
+    if finite.size == 0:
+        return float("nan")
+    mode = mode if mode in _LANDSCAPE_AGGREGATION_NAMES else "mean"
+    if mode == "median":
+        return float(np.median(finite))
+    if mode == "min":
+        return float(np.min(finite))
+    if mode == "p90":
+        return float(np.percentile(finite, 90.0))
+    if mode == "max":
+        return float(np.max(finite))
+    return float(np.mean(finite))
+
+
+def _aggregate_sample_matrix(matrix, mode):
+    """Aggregate a sample x observation matrix to one value per sample."""
+    values = np.asarray(matrix, dtype=float)
+    if values.ndim == 1:
+        return values
+    if values.size == 0:
+        return np.full(values.shape[0], np.nan)
+    return np.asarray([_aggregate_finite(row, mode) for row in values], dtype=float)
+
+
+def _observation_mask(history, case_value, field_value, window_value):
+    """Return an observation-axis mask for the selected case/field/window."""
+    case_names = _string_array_values(history, "case_names")
+    field_names = _string_array_values(history, "field_names")
+    obs_case = np.asarray((history or {}).get("obs_case", []), dtype=int)
+    obs_field = np.asarray((history or {}).get("obs_field", []), dtype=int)
+    obs_window = np.asarray((history or {}).get("obs_window", []), dtype=int)
+    mask = np.ones(obs_case.shape, dtype=bool)
+
+    if case_value not in (None, _LANDSCAPE_ALL):
+        if case_value not in case_names:
+            return np.zeros(obs_case.shape, dtype=bool)
+        mask &= obs_case == case_names.index(case_value)
+
+    if field_value not in (None, _LANDSCAPE_ALL):
+        if field_value not in field_names:
+            return np.zeros(obs_case.shape, dtype=bool)
+        mask &= obs_field == field_names.index(field_value)
+
+    if window_value not in (None, _LANDSCAPE_ALL):
+        try:
+            window_idx = int(window_value)
+        except (TypeError, ValueError):
+            return np.zeros(obs_case.shape, dtype=bool)
+        mask &= obs_window == window_idx
+
+    return mask
+
+
+def _request_weight(mapping, name):
+    """Return a finite weight from a request mapping, defaulting to one."""
+    if not isinstance(mapping, dict):
+        return 1.0
+    value = _finite_float(mapping.get(name, 1.0))
+    return 1.0 if value is None else float(value)
+
+
+def _total_selected_loss_series(history, request):
+    """Compute scheduler-equivalent total selected loss for every history sample."""
+    case_names = _string_array_values(history, "case_names")
+    field_names = _string_array_values(history, "field_names")
+    metric_names = _string_array_values(history, "metric_names")
+    metric_index = {name: idx for idx, name in enumerate(metric_names)}
+    missing_metrics = [name for name in LOSS_METRIC_NAMES if name not in metric_index]
+    loss_metrics = np.asarray((history or {}).get("loss_metrics", []), dtype=float)
+    if missing_metrics or loss_metrics.ndim != 3:
+        return np.full(loss_metrics.shape[0] if loss_metrics.ndim else 0, np.nan)
+
+    request = request if isinstance(request, dict) else {}
+    loss_mode = request.get("loss_mode") or DEFAULT_LOSS_MODE
+    aggregation_mode = request.get("aggregation_mode") or DEFAULT_AGGREGATION_MODE
+    time_window_aggregation_mode = request.get("time_window_aggregation_mode") or aggregation_mode
+    case_weights = request.get("case_weights", {})
+    field_weights = request.get("field_weights", {})
+
+    obs_by_axis = {}
+    for obs_idx, (case_idx, field_idx, window_idx) in enumerate(
+        zip(history["obs_case"], history["obs_field"], history["obs_window"])
+    ):
+        obs_by_axis[(int(case_idx), int(field_idx), int(window_idx))] = obs_idx
+
+    case_window_counts = np.asarray(history.get("case_window_counts", []), dtype=int)
+    output = np.empty(loss_metrics.shape[0], dtype=float)
+    for sample_idx in range(loss_metrics.shape[0]):
+        smart_losses = []
+        smart_weights = []
+        for case_idx, case_name in enumerate(case_names):
+            if case_idx >= len(case_window_counts):
+                continue
+            window_count = int(case_window_counts[case_idx])
+            case_weight = _request_weight(case_weights, case_name)
+            for field_idx, field_name in enumerate(field_names):
+                subwindow_losses = []
+                for window_idx in range(window_count):
+                    obs_idx = obs_by_axis.get((case_idx, field_idx, window_idx))
+                    if obs_idx is None:
+                        continue
+                    metrics = {
+                        metric_name: float(loss_metrics[sample_idx, obs_idx, metric_index[metric_name]])
+                        for metric_name in LOSS_METRIC_NAMES
+                    }
+                    try:
+                        diagnostics = compute_field_loss_diagnostics(metrics)
+                        subwindow_losses.append(float(diagnostics["per_field_losses"][loss_mode]))
+                    except Exception:
+                        subwindow_losses.append(float("nan"))
+                if not subwindow_losses:
+                    continue
+                window_aggregation = aggregate_losses(
+                    subwindow_losses,
+                    [1.0] * len(subwindow_losses),
+                    time_window_aggregation_mode,
+                )
+                smart_losses.append(float(window_aggregation["loss"]))
+                smart_weights.append(case_weight * _request_weight(field_weights, field_name))
+        try:
+            output[sample_idx] = float(aggregate_losses(smart_losses, smart_weights, aggregation_mode)["loss"])
+        except Exception:
+            output[sample_idx] = float("nan")
+    return output
+
+
+def _landscape_metric_series(history, request, metric_key, case_value, field_value, window_value, aggregation):
+    """Return one plotted metric value per sample."""
+    metric_key = metric_key or "total_loss"
+    if metric_key == "total_loss":
+        return _total_selected_loss_series(history, request)
+    if not metric_key.startswith("raw:"):
+        return np.full(np.asarray((history or {}).get("all_params", [])).shape[0], np.nan)
+
+    metric_name = metric_key.split(":", 1)[1]
+    metric_names = _string_array_values(history, "metric_names")
+    if metric_name not in metric_names:
+        return np.full(np.asarray((history or {}).get("all_params", [])).shape[0], np.nan)
+    mask = _observation_mask(history, case_value, field_value, window_value)
+    if not np.any(mask):
+        return np.full(np.asarray((history or {}).get("all_params", [])).shape[0], np.nan)
+    values = np.asarray(history["loss_metrics"], dtype=float)[:, mask, metric_names.index(metric_name)]
+    return _aggregate_sample_matrix(values, aggregation)
+
+
+def _landscape_metric_label(metric_key, request):
+    """Return a readable label for a landscape metric selector value."""
+    if metric_key == "total_loss":
+        loss_mode = (request or {}).get("loss_mode") or DEFAULT_LOSS_MODE
+        return f"total selected loss ({loss_mode})"
+    if isinstance(metric_key, str) and metric_key.startswith("raw:"):
+        return metric_key.split(":", 1)[1]
+    return "metric"
+
+
+def _robust_percentile_limits(values, lower=2.0, upper=98.0):
+    """Return robust finite color limits, or ``(None, None)`` when unavailable."""
+    finite_values = np.asarray(values, dtype=float)
+    finite_values = finite_values[np.isfinite(finite_values)]
+    if finite_values.size < 2:
+        return None, None
+    cmin, cmax = np.percentile(finite_values, [lower, upper])
+    if np.isfinite(cmin) and np.isfinite(cmax) and cmin < cmax:
+        return float(cmin), float(cmax)
+    return None, None
+
+
+def _symmetric_robust_limit(values, percentile=98.0):
+    """Return a robust symmetric absolute color limit around zero."""
+    finite_values = np.asarray(values, dtype=float)
+    finite_values = finite_values[np.isfinite(finite_values)]
+    if finite_values.size < 2:
+        return None
+    limit = float(np.percentile(np.abs(finite_values), percentile))
+    if np.isfinite(limit) and limit > 0.0:
+        return limit
+    return None
+
+
+def _fill_invalid_color_values(values, color_settings):
+    """Keep plotted points visible even when their color transform is invalid."""
+    color_values = np.asarray(values, dtype=float)
+    if np.all(np.isfinite(color_values)):
+        return color_values
+    fallback = color_settings.get("cmin", 0.0)
+    if fallback is None or not np.isfinite(float(fallback)):
+        fallback = 0.0
+    color_values = color_values.copy()
+    color_values[~np.isfinite(color_values)] = float(fallback)
+    return color_values
+
+
+def _landscape_color_settings(metric_key, values, metric_label, *, fill_invalid=True):
+    """Return transformed Plotly color values and settings for one metric."""
+    raw_values = np.asarray(values, dtype=float)
+    if metric_key == "raw:correlation":
+        return {
+            "values": raw_values,
+            "colorscale": "RdBu",
+            "cmin": -1.0,
+            "cmax": 1.0,
+            "title": metric_label,
+        }
+
+    if metric_key == "raw:std_ratio":
+        with np.errstate(divide="ignore", invalid="ignore"):
+            color_values = np.where(raw_values > 0.0, np.log(raw_values), np.nan)
+        limit = _symmetric_robust_limit(color_values)
+        settings = {
+            "values": color_values,
+            "colorscale": "RdBu",
+            "title": f"log({metric_label})",
+        }
+        if limit is not None:
+            settings.update(
+                {
+                    "cmin": -limit,
+                    "cmax": limit,
+                    "title": f"log({metric_label}) (centered 0, clipped p2-p98)",
+                }
+            )
+        if fill_invalid:
+            settings["values"] = _fill_invalid_color_values(settings["values"], settings)
+        return settings
+
+    if metric_key == "raw:bias_norm":
+        color_values = raw_values
+        limit = _symmetric_robust_limit(color_values)
+        settings = {
+            "values": color_values,
+            "colorscale": "RdBu",
+            "title": metric_label,
+        }
+        if limit is not None:
+            settings.update(
+                {
+                    "cmin": -limit,
+                    "cmax": limit,
+                    "title": f"{metric_label} (centered 0, clipped p2-p98)",
+                }
+            )
+        if fill_invalid:
+            settings["values"] = _fill_invalid_color_values(settings["values"], settings)
+        return settings
+
+    if metric_key in _LANDSCAPE_LOSS_LIKE_METRICS:
+        with np.errstate(invalid="ignore"):
+            color_values = np.where(raw_values >= 0.0, np.log1p(raw_values), np.nan)
+        cmin, cmax = _robust_percentile_limits(color_values)
+        settings = {
+            "values": color_values,
+            "colorscale": "Viridis",
+            "title": f"log1p({metric_label})",
+        }
+        if cmin is not None and cmax is not None:
+            settings.update(
+                {
+                    "cmin": cmin,
+                    "cmax": cmax,
+                    "title": f"log1p({metric_label}) (clipped p2-p98)",
+                }
+            )
+        if fill_invalid:
+            settings["values"] = _fill_invalid_color_values(settings["values"], settings)
+        return settings
+
+    cmin, cmax = _robust_percentile_limits(raw_values)
+    settings = {"values": raw_values, "colorscale": "Viridis", "title": metric_label}
+    if cmin is not None and cmax is not None:
+        settings.update({"cmin": cmin, "cmax": cmax, "title": f"{metric_label} (clipped p2-p98)"})
+    if fill_invalid:
+        settings["values"] = _fill_invalid_color_values(settings["values"], settings)
+    return settings
+
+
+def _landscape_hover_text(sample_id, batch_id, x_name, x_value, y_name, y_value, metric_label, metric_value):
+    """Return hover text for one landscape sample."""
+    return "<br>".join(
+        [
+            f"sample {int(sample_id)}",
+            f"batch {int(batch_id)}",
+            f"{x_name} {_fmt_metric(x_value, 6)}",
+            f"{y_name} {_fmt_metric(y_value, 6)}",
+            f"{metric_label} {_fmt_metric(metric_value, 6)}",
+        ]
+    )
+
+
+def _empty_landscape_figure(title, message):
+    """Return a stable empty landscape figure."""
+    return _empty_diagnostics_figure(title, message)
+
+
+def _binned_landscape(x_values, y_values, z_values, aggregation):
+    """Return binned landscape heatmap arrays."""
+    if x_values.size < 1 or y_values.size < 1:
+        return None
+    x_min = float(np.min(x_values))
+    x_max = float(np.max(x_values))
+    y_min = float(np.min(y_values))
+    y_max = float(np.max(y_values))
+    if x_min == x_max or y_min == y_max:
+        return None
+
+    x_edges = np.linspace(x_min, x_max, _LANDSCAPE_BINS + 1)
+    y_edges = np.linspace(y_min, y_max, _LANDSCAPE_BINS + 1)
+    x_bins = np.searchsorted(x_edges, x_values, side="right") - 1
+    y_bins = np.searchsorted(y_edges, y_values, side="right") - 1
+    x_bins = np.clip(x_bins, 0, _LANDSCAPE_BINS - 1)
+    y_bins = np.clip(y_bins, 0, _LANDSCAPE_BINS - 1)
+
+    cells = [[[] for _ in range(_LANDSCAPE_BINS)] for _ in range(_LANDSCAPE_BINS)]
+    for x_bin, y_bin, z_value in zip(x_bins, y_bins, z_values):
+        cells[int(y_bin)][int(x_bin)].append(float(z_value))
+
+    grid = np.full((_LANDSCAPE_BINS, _LANDSCAPE_BINS), np.nan, dtype=float)
+    for y_bin in range(_LANDSCAPE_BINS):
+        for x_bin in range(_LANDSCAPE_BINS):
+            grid[y_bin, x_bin] = _aggregate_finite(cells[y_bin][x_bin], aggregation)
+
+    return {
+        "x": 0.5 * (x_edges[:-1] + x_edges[1:]),
+        "y": 0.5 * (y_edges[:-1] + y_edges[1:]),
+        "z": grid,
+    }
+
+
+def build_landscape_figure(
+    history,
+    request,
+    x_name,
+    y_name,
+    metric_key,
+    aggregation,
+    plot_mode,
+    case_value,
+    field_value,
+    window_value,
+    z_values=None,
+):
+    """Build the sample landscape scatter or binned heatmap."""
+    if history is None:
+        return _empty_landscape_figure(
+            "Parameter Landscape",
+            "Parameter landscapes will appear after sample-history chunks are available.",
+        )
+    param_names = _string_array_values(history, "param_names")
+    if x_name not in param_names or y_name not in param_names:
+        return _empty_landscape_figure("Parameter Landscape", "Choose two parameters to plot.")
+    if x_name == y_name:
+        return _empty_landscape_figure("Parameter Landscape", "Choose different X and Y parameters.")
+
+    metric_label = _landscape_metric_label(metric_key, request)
+    params = np.asarray(history["all_params"], dtype=float)
+    x_values = params[:, param_names.index(x_name)]
+    y_values = params[:, param_names.index(y_name)]
+    if z_values is None:
+        z_values = _landscape_metric_series(
+            history,
+            request,
+            metric_key,
+            case_value,
+            field_value,
+            window_value,
+            aggregation,
+        )
+    else:
+        z_values = np.asarray(z_values, dtype=float)
+    sample_id = np.asarray(history.get("sample_id", np.arange(len(z_values))), dtype=int)
+    batch_id = np.asarray(history.get("batch_id", np.zeros(len(z_values))), dtype=int)
+    finite = np.isfinite(x_values) & np.isfinite(y_values) & _plot_metric_mask(z_values)
+    if not np.any(finite):
+        return _empty_landscape_figure("Parameter Landscape", "No plottable samples match the selected metric filters.")
+
+    x_plot = x_values[finite]
+    y_plot = y_values[finite]
+    z_plot = z_values[finite]
+    sample_plot = sample_id[finite]
+    batch_plot = batch_id[finite]
+    aggregation = aggregation if aggregation in _LANDSCAPE_AGGREGATION_NAMES else "mean"
+    plot_mode = plot_mode if plot_mode in _LANDSCAPE_MODE_NAMES else "samples"
+    color_settings = _landscape_color_settings(metric_key, z_plot, metric_label)
+    color_plot = color_settings["values"]
+
+    fig = go.Figure()
+    if plot_mode == "binned":
+        binned = _binned_landscape(x_plot, y_plot, z_plot, aggregation)
+        if binned is None:
+            return _empty_landscape_figure("Parameter Landscape", "Binned heatmap needs variation in both parameters.")
+        binned_color_settings = _landscape_color_settings(
+            metric_key,
+            binned["z"],
+            metric_label,
+            fill_invalid=False,
+        )
+        fig.add_trace(
+            go.Heatmap(
+                x=binned["x"],
+                y=binned["y"],
+                z=binned_color_settings["values"],
+                customdata=binned["z"],
+                colorscale=color_settings["colorscale"],
+                zmin=color_settings.get("cmin"),
+                zmax=color_settings.get("cmax"),
+                colorbar={"title": color_settings["title"]},
+                hovertemplate=(
+                    f"{x_name} bin %{{x:.6g}}<br>"
+                    f"{y_name} bin %{{y:.6g}}<br>"
+                    f"{aggregation} {metric_label} %{{customdata:.6g}}<extra></extra>"
+                ),
+            )
+        )
+        fig.add_trace(
+            go.Scattergl(
+                x=x_plot,
+                y=y_plot,
+                mode="markers",
+                marker={"size": 5, "color": "rgba(15, 23, 42, 0.52)", "line": {"width": 0}},
+                name="samples",
+                hoverinfo="skip",
+                showlegend=False,
+            )
+        )
+    else:
+        fig.add_trace(
+            go.Scattergl(
+                x=x_plot,
+                y=y_plot,
+                mode="markers",
+                marker={
+                    "size": 9,
+                    "color": color_plot,
+                    "colorscale": color_settings["colorscale"],
+                    "cmin": color_settings.get("cmin"),
+                    "cmax": color_settings.get("cmax"),
+                    "colorbar": {"title": color_settings["title"]},
+                    "line": {"color": "#0f172a", "width": 0.6},
+                    "opacity": 0.86,
+                },
+                text=[
+                    _landscape_hover_text(sample, batch, x_name, x_value, y_name, y_value, metric_label, z_value)
+                    for sample, batch, x_value, y_value, z_value in zip(
+                        sample_plot,
+                        batch_plot,
+                        x_plot,
+                        y_plot,
+                        z_plot,
+                    )
+                ],
+                hovertemplate="%{text}<extra></extra>",
+                name=metric_label,
+            )
+        )
+
+    fig.update_layout(
+        title={"text": "Parameter Landscape", "x": 0.02, "xanchor": "left"},
+        paper_bgcolor="#f8fafc",
+        plot_bgcolor="#f8fafc",
+        font={"color": "#0f172a"},
+        margin={"l": 58, "r": 18, "t": 48, "b": 62},
+        height=430,
+        hovermode="closest",
+        uirevision="tune-parameter-landscape",
+    )
+    fig.update_xaxes(title=x_name, gridcolor="rgba(148, 163, 184, 0.24)")
+    fig.update_yaxes(title=y_name, gridcolor="rgba(148, 163, 184, 0.24)")
+    return fig
+
+
+def build_parameter_correlation_figure(
+    history,
+    request,
+    metric_key,
+    aggregation,
+    case_value,
+    field_value,
+    window_value,
+    z_values=None,
+):
+    """Build a parameter-to-selected-metric correlation bar chart."""
+    if history is None:
+        return _empty_landscape_figure(
+            "Parameter Correlations",
+            "Parameter correlations will appear after sample-history chunks are available.",
+        )
+    metric_label = _landscape_metric_label(metric_key, request)
+    if z_values is None:
+        z_values = _landscape_metric_series(
+            history,
+            request,
+            metric_key,
+            case_value,
+            field_value,
+            window_value,
+            aggregation,
+        )
+    else:
+        z_values = np.asarray(z_values, dtype=float)
+    params = np.asarray(history["all_params"], dtype=float)
+    finite_z = _plot_metric_mask(z_values)
+    if np.count_nonzero(finite_z) < 2 or float(np.std(z_values[finite_z])) == 0.0:
+        return _empty_landscape_figure("Parameter Correlations", "At least two non-constant metric values are required.")
+
+    param_names = _string_array_values(history, "param_names")
+    tuned_names = _request_tuned_param_names(request)
+    candidate_names = [name for name in tuned_names if name in param_names]
+    if tuned_names and not candidate_names:
+        return _empty_landscape_figure("Parameter Correlations", "No tuned parameters are present in sample history.")
+    if not candidate_names:
+        candidate_names = _varying_param_names(history)
+
+    correlations = []
+    for name in candidate_names:
+        idx = param_names.index(name)
+        if idx >= params.shape[1]:
+            continue
+        column = params[:, idx]
+        finite = finite_z & np.isfinite(column)
+        if np.count_nonzero(finite) < 2:
+            continue
+        column_values = column[finite]
+        if float(np.std(column_values)) == 0.0:
+            continue
+        z_subset = z_values[finite]
+        if float(np.std(z_subset)) == 0.0:
+            continue
+        correlation = float(
+            np.mean((column_values - np.mean(column_values)) * (z_subset - np.mean(z_subset)))
+            / (float(np.std(column_values)) * float(np.std(z_subset)))
+        )
+        if math.isfinite(correlation):
+            correlations.append((name, correlation))
+
+    if not correlations:
+        return _empty_landscape_figure("Parameter Correlations", "No tuned parameters vary enough for correlation.")
+
+    correlations = sorted(correlations, key=lambda item: item[1])
+    names = [name for name, _value in correlations]
+    values = [value for _name, value in correlations]
+
+    fig = go.Figure()
+    fig.add_trace(
+        go.Bar(
+            x=values,
+            y=names,
+            orientation="h",
+            marker={
+                "color": values,
+                "colorscale": "RdBu",
+                "cmin": -1.0,
+                "cmax": 1.0,
+                "line": {"color": "#0f172a", "width": 0.4},
+            },
+            hovertemplate="parameter %{y}<br>correlation %{x:.4f}<extra></extra>",
+        )
+    )
+    fig.update_layout(
+        title={"text": "Parameter Correlations", "x": 0.02, "xanchor": "left"},
+        paper_bgcolor="#f8fafc",
+        plot_bgcolor="#f8fafc",
+        font={"color": "#0f172a"},
+        margin={"l": 98, "r": 18, "t": 48, "b": 54},
+        height=430,
+        showlegend=False,
+        uirevision="tune-parameter-correlations",
+        annotations=[
+            {
+                "text": metric_label,
+                "xref": "paper",
+                "yref": "paper",
+                "x": 1.0,
+                "y": 1.08,
+                "showarrow": False,
+                "font": {"size": 11, "color": "#475569"},
+                "xanchor": "right",
+            }
+        ],
+    )
+    fig.update_xaxes(
+        title="Pearson correlation",
+        range=[-1.0, 1.0],
+        zeroline=True,
+        zerolinecolor="#0f172a",
+        gridcolor="rgba(148, 163, 184, 0.24)",
+    )
+    fig.update_yaxes(gridcolor="rgba(148, 163, 184, 0.12)")
+    return fig
+
+
+def _field_bias_target(history, aggregation, case_value, field_value, window_value):
+    """Return selected bias_norm values for field-response diagnostics."""
+    if field_value in (None, _LANDSCAPE_ALL):
+        return None
+    metric_names = _string_array_values(history, "metric_names")
+    if "bias_norm" not in metric_names:
+        return None
+    return _landscape_metric_series(
+        history,
+        {},
+        "raw:bias_norm",
+        case_value,
+        field_value,
+        window_value,
+        aggregation,
+    )
+
+
+def _field_bias_selection_label(case_value, field_value, window_value):
+    """Return a compact label for the selected field response."""
+    case_label = "all cases" if case_value in (None, _LANDSCAPE_ALL) else str(case_value)
+    window_label = "all windows"
+    if window_value not in (None, _LANDSCAPE_ALL):
+        try:
+            window_label = f"window {int(window_value) + 1}"
+        except (TypeError, ValueError):
+            window_label = str(window_value)
+    return f"{field_value}, {case_label}, {window_label}"
+
+
+def _sensitivity_param_matrix(history, request):
+    """Return candidate parameter names and values for sensitivity fits."""
+    param_names = _string_array_values(history, "param_names")
+    params = np.asarray(history.get("all_params", []), dtype=float)
+    if params.ndim != 2 or params.shape[0] == 0:
+        return [], np.empty((0, 0), dtype=float)
+
+    tuned_names = _request_tuned_param_names(request)
+    candidate_names = [name for name in tuned_names if name in param_names]
+    if not candidate_names:
+        candidate_names = _varying_param_names(history)
+
+    columns = []
+    names = []
+    for name in candidate_names:
+        idx = param_names.index(name)
+        if idx >= params.shape[1]:
+            continue
+        columns.append(params[:, idx])
+        names.append(name)
+    if not columns:
+        return [], np.empty((params.shape[0], 0), dtype=float)
+    return names, np.column_stack(columns)
+
+
+def _standardized_sensitivity_data(history, request, target_values):
+    """Return finite standardized parameter data and centered target values."""
+    names, values = _sensitivity_param_matrix(history, request)
+    target = np.asarray(target_values, dtype=float)
+    if not names or values.size == 0 or target.size == 0:
+        return [], np.empty((0, 0), dtype=float), np.empty(0, dtype=float), 0
+    if values.shape[0] != target.shape[0]:
+        return [], np.empty((0, 0), dtype=float), np.empty(0, dtype=float), 0
+
+    finite = _plot_metric_mask(target) & np.all(np.isfinite(values), axis=1)
+    sample_count = int(np.count_nonzero(finite))
+    if sample_count < 3:
+        return [], np.empty((0, 0), dtype=float), np.empty(0, dtype=float), sample_count
+
+    values = values[finite]
+    target = target[finite]
+    means = np.mean(values, axis=0)
+    stds = np.std(values, axis=0)
+    keep = np.isfinite(stds) & (stds > 0.0)
+    if not np.any(keep):
+        return [], np.empty((values.shape[0], 0), dtype=float), target - np.mean(target), sample_count
+
+    kept_names = [name for name, selected in zip(names, keep) if bool(selected)]
+    standardized = (values[:, keep] - means[keep]) / stds[keep]
+    centered_target = target - np.mean(target)
+    return kept_names, standardized, centered_target, sample_count
+
+
+def _ridge_fit(design, target):
+    """Return small-ridge least-squares coefficients for a centered design."""
+    x = np.asarray(design, dtype=float)
+    y = np.asarray(target, dtype=float)
+    if x.ndim != 2 or x.shape[0] == 0 or x.shape[1] == 0:
+        return np.empty(0, dtype=float)
+    xtx = x.T @ x
+    scale = float(np.trace(xtx) / max(1, xtx.shape[0]))
+    alpha = max(scale, 1.0) * 1.0e-8
+    try:
+        return np.linalg.solve(xtx + alpha * np.eye(xtx.shape[0]), x.T @ y)
+    except np.linalg.LinAlgError:
+        return np.linalg.lstsq(x, y, rcond=None)[0]
+
+
+def _r_squared(target, prediction):
+    """Return R^2 for centered target values."""
+    y = np.asarray(target, dtype=float)
+    pred = np.asarray(prediction, dtype=float)
+    denom = float(np.sum(y**2))
+    if denom <= 0.0 or y.shape != pred.shape:
+        return None
+    return max(0.0, min(1.0, 1.0 - float(np.sum((y - pred) ** 2)) / denom))
+
+
+def build_field_sensitivity_figure(history, request, aggregation, case_value, field_value, window_value):
+    """Build main-effect sensitivity of selected field bias to tuned parameters."""
+    if history is None:
+        return _empty_landscape_figure(
+            "Field Sensitivity",
+            "Field sensitivity will appear after sample-history chunks are available.",
+        )
+    if field_value in (None, _LANDSCAPE_ALL):
+        return _empty_landscape_figure("Field Sensitivity", "Choose one field to estimate field sensitivity.")
+
+    target_values = _field_bias_target(history, aggregation, case_value, field_value, window_value)
+    if target_values is None:
+        return _empty_landscape_figure("Field Sensitivity", "bias_norm is not available for this sample history.")
+
+    names, design, target, sample_count = _standardized_sensitivity_data(history, request, target_values)
+    if sample_count < 3:
+        return _empty_landscape_figure("Field Sensitivity", "At least three plottable samples are required.")
+    if not names or design.shape[1] == 0:
+        return _empty_landscape_figure("Field Sensitivity", "No tuned parameters vary enough for sensitivity fitting.")
+    if float(np.std(target)) == 0.0:
+        return _empty_landscape_figure("Field Sensitivity", "Selected field bias is constant across plottable samples.")
+
+    coefficients = _ridge_fit(design, target)
+    prediction = design @ coefficients
+    r2 = _r_squared(target, prediction)
+    order = np.argsort(coefficients)
+    ordered_names = [names[idx] for idx in order]
+    ordered_coefficients = [float(coefficients[idx]) for idx in order]
+    limit = max([abs(value) for value in ordered_coefficients] or [1.0])
+    if limit <= 0.0:
+        limit = 1.0
+
+    title = f"Field Sensitivity: {_field_bias_selection_label(case_value, field_value, window_value)}"
+    subtitle = f"n={sample_count}"
+    if r2 is not None:
+        subtitle += f", linear R2={r2:.2f}"
+
+    fig = go.Figure()
+    fig.add_trace(
+        go.Bar(
+            x=ordered_coefficients,
+            y=ordered_names,
+            orientation="h",
+            marker={
+                "color": ordered_coefficients,
+                "colorscale": "RdBu",
+                "cmin": -limit,
+                "cmax": limit,
+                "line": {"color": "#0f172a", "width": 0.4},
+            },
+            hovertemplate="parameter %{y}<br>effect %{x:.4g} bias_norm / parameter sigma<extra></extra>",
+        )
+    )
+    fig.update_layout(
+        title={"text": title, "x": 0.02, "xanchor": "left"},
+        paper_bgcolor="#f8fafc",
+        plot_bgcolor="#f8fafc",
+        font={"color": "#0f172a"},
+        margin={"l": 98, "r": 18, "t": 48, "b": 62},
+        height=430,
+        showlegend=False,
+        uirevision="tune-field-sensitivity",
+        annotations=[
+            {
+                "text": subtitle,
+                "xref": "paper",
+                "yref": "paper",
+                "x": 1.0,
+                "y": 1.08,
+                "showarrow": False,
+                "font": {"size": 11, "color": "#475569"},
+                "xanchor": "right",
+            }
+        ],
+    )
+    fig.update_xaxes(
+        title="bias_norm change per parameter sigma",
+        zeroline=True,
+        zerolinecolor="#0f172a",
+        gridcolor="rgba(148, 163, 184, 0.24)",
+    )
+    fig.update_yaxes(gridcolor="rgba(148, 163, 184, 0.12)")
+    return fig
+
+
+def build_field_interaction_figure(history, request, aggregation, case_value, field_value, window_value):
+    """Build pairwise parameter-interaction sensitivity for selected field bias."""
+    if history is None:
+        return _empty_landscape_figure(
+            "Field Interactions",
+            "Field interactions will appear after sample-history chunks are available.",
+        )
+    if field_value in (None, _LANDSCAPE_ALL):
+        return _empty_landscape_figure("Field Interactions", "Choose one field to estimate parameter interactions.")
+
+    target_values = _field_bias_target(history, aggregation, case_value, field_value, window_value)
+    if target_values is None:
+        return _empty_landscape_figure("Field Interactions", "bias_norm is not available for this sample history.")
+
+    names, design, target, sample_count = _standardized_sensitivity_data(history, request, target_values)
+    if sample_count < 5:
+        return _empty_landscape_figure("Field Interactions", "At least five plottable samples are required.")
+    if len(names) < 2 or design.shape[1] < 2:
+        return _empty_landscape_figure("Field Interactions", "At least two tuned parameters must vary.")
+    if float(np.std(target)) == 0.0:
+        return _empty_landscape_figure("Field Interactions", "Selected field bias is constant across plottable samples.")
+
+    interaction = np.full((len(names), len(names)), np.nan, dtype=float)
+    for i in range(len(names)):
+        for j in range(i + 1, len(names)):
+            pair_design = np.column_stack(
+                [
+                    design[:, i],
+                    design[:, j],
+                    design[:, i] * design[:, j],
+                ]
+            )
+            coefficients = _ridge_fit(pair_design, target)
+            if coefficients.size == 3 and math.isfinite(float(coefficients[2])):
+                interaction[i, j] = float(coefficients[2])
+                interaction[j, i] = float(coefficients[2])
+
+    finite = interaction[np.isfinite(interaction)]
+    if finite.size == 0:
+        return _empty_landscape_figure("Field Interactions", "No finite pairwise interactions could be estimated.")
+    limit = float(np.max(np.abs(finite)))
+    if limit <= 0.0:
+        limit = 1.0
+
+    fig = go.Figure()
+    fig.add_trace(
+        go.Heatmap(
+            x=names,
+            y=names,
+            z=interaction,
+            colorscale="RdBu",
+            zmin=-limit,
+            zmax=limit,
+            colorbar={"title": "interaction"},
+            hovertemplate="%{y} x %{x}<br>interaction %{z:.4g}<extra></extra>",
+        )
+    )
+    fig.update_layout(
+        title={
+            "text": f"Field Interactions: {_field_bias_selection_label(case_value, field_value, window_value)}",
+            "x": 0.02,
+            "xanchor": "left",
+        },
+        paper_bgcolor="#f8fafc",
+        plot_bgcolor="#f8fafc",
+        font={"color": "#0f172a"},
+        margin={"l": 88, "r": 18, "t": 48, "b": 82},
+        height=430,
+        uirevision="tune-field-interactions",
+    )
+    fig.update_xaxes(tickangle=-35, gridcolor="rgba(148, 163, 184, 0.12)")
+    fig.update_yaxes(gridcolor="rgba(148, 163, 184, 0.12)")
+    return fig
+
+
 def _diagnostics_signature(best_results, best_results_by_case=None, selected_groups=None):
     """Return a stable signature for the plotted top-result diagnostics."""
     try:
@@ -654,7 +1712,14 @@ def build_results_table(top_results, selected_param_names):
     )
 
 
-def mode_options_ready(strategy_mode, random_max_samples, resolve_spacing):
+def mode_options_ready(
+    strategy_mode,
+    random_max_samples,
+    resolve_spacing,
+    simann_max_iters,
+    simann_initial_temp,
+    simann_final_temp,
+):
     """Return whether the selected mode has the required options."""
     if strategy_mode == "random":
         if random_max_samples in (None, ""):
@@ -671,11 +1736,31 @@ def mode_options_ready(strategy_mode, random_max_samples, resolve_spacing):
             return float(resolve_spacing) > 0.0
         except (TypeError, ValueError):
             return False
+    if strategy_mode == "simann":
+        if simann_max_iters in (None, ""):
+            return False
+        try:
+            max_iters_value = float(simann_max_iters)
+        except (TypeError, ValueError):
+            return False
+        if int(max_iters_value) != max_iters_value or int(max_iters_value) < 1:
+            return False
+        try:
+            return float(simann_initial_temp) > 0.0 and float(simann_final_temp) > 0.0
+        except (TypeError, ValueError):
+            return False
     return False
 
 
-def case_window_setup_ready(case_names, time_start_values, time_end_values, average_time_values):
-    """Return whether every selected case has an integral average-time window setup."""
+def case_window_setup_ready(
+    case_names,
+    time_start_values,
+    time_end_values,
+    average_time_values,
+    altitude_min_values,
+    altitude_max_values,
+):
+    """Return whether every selected case has valid time and altitude window setup."""
     selected_cases = [
         value.strip()
         for value in (case_names or [])
@@ -684,11 +1769,13 @@ def case_window_setup_ready(case_names, time_start_values, time_end_values, aver
     if not selected_cases:
         return False
     valid_rows = 0
-    for raw_name, raw_start, raw_end, raw_average in zip(
+    for raw_name, raw_start, raw_end, raw_average, raw_altitude_min, raw_altitude_max in zip(
         case_names or [],
         time_start_values or [],
         time_end_values or [],
         average_time_values or [],
+        altitude_min_values or [],
+        altitude_max_values or [],
     ):
         case_name = raw_name.strip() if isinstance(raw_name, str) else ""
         if not case_name:
@@ -697,9 +1784,13 @@ def case_window_setup_ready(case_names, time_start_values, time_end_values, aver
             start_value = float(raw_start)
             end_value = float(raw_end)
             average_value = float(raw_average)
+            altitude_min = float(raw_altitude_min)
+            altitude_max = float(raw_altitude_max)
         except (TypeError, ValueError):
             return False
         if int(start_value) != start_value or int(end_value) != end_value or int(average_value) != average_value:
+            return False
+        if not math.isfinite(altitude_min) or not math.isfinite(altitude_max) or altitude_max < altitude_min:
             return False
         start = int(start_value)
         end = int(end_value)
@@ -750,6 +1841,240 @@ def register_display_callbacks(app):
     """Register result-table and status-display callbacks."""
 
     @app.callback(
+        Output("tune-landscape-x-param", "options"),
+        Output("tune-landscape-x-param", "value"),
+        Output("tune-landscape-y-param", "options"),
+        Output("tune-landscape-y-param", "value"),
+        Output("tune-landscape-metric", "options"),
+        Output("tune-landscape-metric", "value"),
+        Output("tune-landscape-case", "options"),
+        Output("tune-landscape-case", "value"),
+        Output("tune-landscape-field", "options"),
+        Output("tune-landscape-field", "value"),
+        Output("tune-landscape-window", "options"),
+        Output("tune-landscape-window", "value"),
+        Input("tune-status", "data"),
+        Input({"type": "tune-range-param", "index": ALL}, "value"),
+        State("tune-landscape-x-param", "value"),
+        State("tune-landscape-y-param", "value"),
+        State("tune-landscape-metric", "value"),
+        State("tune-landscape-case", "value"),
+        State("tune-landscape-field", "value"),
+        State("tune-landscape-window", "value"),
+    )
+    def sync_landscape_controls(
+        status,
+        selected_param_names,
+        current_x,
+        current_y,
+        current_metric,
+        current_case,
+        current_field,
+        current_window,
+    ):
+        """Keep landscape controls matched to available sample-history axes."""
+        job_dir = _job_dir_from_status(status)
+        history = None
+        if _sample_history_signature(job_dir):
+            try:
+                history = _load_sample_history(job_dir)
+            except Exception:
+                history = None
+
+        if history is None:
+            param_names = _clean_param_names(selected_param_names)
+            metric_options = _landscape_metric_options({"metric_names": list(LOSS_METRIC_NAMES)})
+            case_names = sorted(str(name) for name in ((status or {}).get("case_window_counts") or {}))
+            case_options = _dropdown_options(case_names, "All cases")
+            field_options = _dropdown_options([], "All fields")
+            max_window = max([int(value) for value in ((status or {}).get("case_window_counts") or {}).values()] or [1])
+            window_options = [{"label": "All windows", "value": _LANDSCAPE_ALL}]
+            window_options.extend({"label": f"Window {idx + 1}", "value": str(idx)} for idx in range(max_window))
+        else:
+            history_param_names = _string_array_values(history, "param_names")
+            preferred = [
+                name
+                for name in _clean_param_names(selected_param_names)
+                if name in history_param_names and name in _varying_param_names(history)
+            ]
+            preferred.extend(name for name in _varying_param_names(history) if name not in preferred)
+            param_names = preferred
+            metric_options = _landscape_metric_options(history)
+            case_options = _dropdown_options(_string_array_values(history, "case_names"), "All cases")
+            field_options = _dropdown_options(_string_array_values(history, "field_names"), "All fields")
+            window_options = _landscape_window_options(history)
+
+        param_options = _dropdown_options(param_names)
+        param_values = [option["value"] for option in param_options]
+        x_value = _first_valid(current_x, param_values, param_names[0] if param_names else None)
+        y_fallback = param_names[1] if len(param_names) > 1 else (param_names[0] if param_names else None)
+        y_value = _first_valid(current_y, param_values, y_fallback)
+        if x_value == y_value and len(param_names) > 1:
+            y_value = next((name for name in param_names if name != x_value), y_value)
+
+        metric_values = [option["value"] for option in metric_options]
+        case_values = [option["value"] for option in case_options]
+        field_values = [option["value"] for option in field_options]
+        window_values = [option["value"] for option in window_options]
+        return (
+            param_options,
+            x_value,
+            param_options,
+            y_value,
+            metric_options,
+            _first_valid(current_metric, metric_values, "total_loss"),
+            case_options,
+            _first_valid(current_case, case_values, _LANDSCAPE_ALL),
+            field_options,
+            _first_valid(current_field, field_values, _LANDSCAPE_ALL),
+            window_options,
+            _first_valid(current_window, window_values, _LANDSCAPE_ALL),
+        )
+
+    @app.callback(
+        Output("tune-landscape-plot", "figure"),
+        Output("tune-parameter-correlation-plot", "figure"),
+        Output("tune-field-sensitivity-plot", "figure"),
+        Output("tune-field-interaction-plot", "figure"),
+        Output("tune-landscape-signature", "data"),
+        Input("tune-status", "data"),
+        Input("tune-landscape-x-param", "value"),
+        Input("tune-landscape-y-param", "value"),
+        Input("tune-landscape-metric", "value"),
+        Input("tune-landscape-aggregation", "value"),
+        Input("tune-landscape-mode", "value"),
+        Input("tune-landscape-case", "value"),
+        Input("tune-landscape-field", "value"),
+        Input("tune-landscape-window", "value"),
+        State("tune-landscape-signature", "data"),
+    )
+    def render_landscape(
+        status,
+        x_name,
+        y_name,
+        metric_key,
+        aggregation,
+        plot_mode,
+        case_value,
+        field_value,
+        window_value,
+        previous_signature,
+    ):
+        """Render all-sample parameter landscape diagnostics."""
+        job_dir = _job_dir_from_status(status)
+        history_signature = _sample_history_signature(job_dir)
+        signature = json.dumps(
+            {
+                "job_dir": str(job_dir) if job_dir is not None else None,
+                "history": history_signature,
+                "x": x_name,
+                "y": y_name,
+                "metric": metric_key,
+                "aggregation": aggregation,
+                "plot_mode": plot_mode,
+                "case": case_value,
+                "field": field_value,
+                "window": window_value,
+                "loss_mode": (status or {}).get("loss_mode"),
+                "aggregation_mode": (status or {}).get("aggregation_mode"),
+            },
+            sort_keys=True,
+            separators=(",", ":"),
+        )
+        if signature == (previous_signature or ""):
+            return no_update, no_update, no_update, no_update, no_update
+        if not history_signature:
+            return (
+                _empty_landscape_figure(
+                    "Parameter Landscape",
+                    "Parameter landscapes will appear after sample-history chunks are available.",
+                ),
+                _empty_landscape_figure(
+                    "Parameter Correlations",
+                    "Parameter correlations will appear after sample-history chunks are available.",
+                ),
+                _empty_landscape_figure(
+                    "Field Sensitivity",
+                    "Field sensitivity will appear after sample-history chunks are available.",
+                ),
+                _empty_landscape_figure(
+                    "Field Interactions",
+                    "Field interactions will appear after sample-history chunks are available.",
+                ),
+                signature,
+            )
+
+        try:
+            history = _load_sample_history(job_dir)
+            request = _read_job_request(job_dir)
+            if (status or {}).get("loss_mode"):
+                request["loss_mode"] = (status or {}).get("loss_mode")
+            if (status or {}).get("aggregation_mode"):
+                request["aggregation_mode"] = (status or {}).get("aggregation_mode")
+            if (status or {}).get("time_window_aggregation_mode"):
+                request["time_window_aggregation_mode"] = (status or {}).get("time_window_aggregation_mode")
+        except Exception as exc:
+            return (
+                _empty_landscape_figure("Parameter Landscape", f"Unable to load sample history: {exc}"),
+                _empty_landscape_figure("Parameter Correlations", f"Unable to load sample history: {exc}"),
+                _empty_landscape_figure("Field Sensitivity", f"Unable to load sample history: {exc}"),
+                _empty_landscape_figure("Field Interactions", f"Unable to load sample history: {exc}"),
+                signature,
+            )
+
+        z_values = _landscape_metric_series(
+            history,
+            request,
+            metric_key,
+            case_value,
+            field_value,
+            window_value,
+            aggregation,
+        )
+        return (
+            build_landscape_figure(
+                history,
+                request,
+                x_name,
+                y_name,
+                metric_key,
+                aggregation,
+                plot_mode,
+                case_value,
+                field_value,
+                window_value,
+                z_values=z_values,
+            ),
+            build_parameter_correlation_figure(
+                history,
+                request,
+                metric_key,
+                aggregation,
+                case_value,
+                field_value,
+                window_value,
+                z_values=z_values,
+            ),
+            build_field_sensitivity_figure(
+                history,
+                request,
+                aggregation,
+                case_value,
+                field_value,
+                window_value,
+            ),
+            build_field_interaction_figure(
+                history,
+                request,
+                aggregation,
+                case_value,
+                field_value,
+                window_value,
+            ),
+            signature,
+        )
+
+    @app.callback(
         Output("tune-taylor-diagram", "figure"),
         Output("tune-parameter-box-plot", "figure"),
         Output("tune-diagnostics-signature", "data"),
@@ -792,8 +2117,10 @@ def register_display_callbacks(app):
         Output({"type": "tune-loss-run-button", "action": "complete"}, "disabled"),
         Output("tune-mode-random", "disabled"),
         Output("tune-mode-resolve", "disabled"),
+        Output("tune-mode-simann", "disabled"),
         Output("tune-mode-random", "style"),
         Output("tune-mode-resolve", "style"),
+        Output("tune-mode-simann", "style"),
         Output("tune-loss-mode-scaled-rmse", "disabled"),
         Output("tune-loss-mode-centered-rmse-bias", "disabled"),
         Output("tune-loss-mode-taylor-components", "disabled"),
@@ -814,15 +2141,21 @@ def register_display_callbacks(app):
         Output("tune-aggregation-mean-worst-quantile", "style"),
         Output("tune-random-options", "style"),
         Output("tune-resolve-options", "style"),
+        Output("tune-simann-options", "style"),
         Output("tune-no-mode-options", "style"),
         Output("tune-resolve-total-samples", "children"),
         Output("tune-random-max-samples", "disabled"),
         Output("tune-resolve-spacing", "disabled"),
+        Output("tune-simann-max-iters", "disabled"),
+        Output("tune-simann-initial-temp", "disabled"),
+        Output("tune-simann-final-temp", "disabled"),
         Output("tune-case-add", "disabled"),
         Output({"type": "tune-case-name", "index": ALL}, "disabled"),
         Output({"type": "tune-case-time-start", "index": ALL}, "disabled"),
         Output({"type": "tune-case-time-end", "index": ALL}, "disabled"),
         Output({"type": "tune-case-average-time", "index": ALL}, "disabled"),
+        Output({"type": "tune-case-altitude-min", "index": ALL}, "disabled"),
+        Output({"type": "tune-case-altitude-max", "index": ALL}, "disabled"),
         Output({"type": "tune-case-remove", "index": ALL}, "disabled"),
         Output("tune-field-selector", "disabled"),
         Output("tune-batch-size", "disabled"),
@@ -832,6 +2165,8 @@ def register_display_callbacks(app):
         Output({"type": "tune-range-min", "index": ALL}, "disabled"),
         Output({"type": "tune-range-max", "index": ALL}, "disabled"),
         Output({"type": "tune-range-remove", "index": ALL}, "disabled"),
+        Output({"type": "tune-config-button", "name": ALL}, "disabled"),
+        Output({"type": "tune-config-button", "name": ALL}, "style"),
         Input("tune-status", "data"),
         Input("tune-top-results", "data"),
         Input("tune-loss-runs", "data"),
@@ -839,13 +2174,20 @@ def register_display_callbacks(app):
         Input("tune-strategy-mode", "data"),
         Input("tune-loss-mode", "data"),
         Input("tune-aggregation-mode", "data"),
+        Input("tune-selected-config", "data"),
+        Input("tune-tunable-configs", "data"),
         Input("tune-random-max-samples", "value"),
         Input("tune-resolve-spacing", "value"),
+        Input("tune-simann-max-iters", "value"),
+        Input("tune-simann-initial-temp", "value"),
+        Input("tune-simann-final-temp", "value"),
         Input("tune-tunable-names", "data"),
         Input({"type": "tune-case-name", "index": ALL}, "value"),
         Input({"type": "tune-case-time-start", "index": ALL}, "value"),
         Input({"type": "tune-case-time-end", "index": ALL}, "value"),
         Input({"type": "tune-case-average-time", "index": ALL}, "value"),
+        Input({"type": "tune-case-altitude-min", "index": ALL}, "value"),
+        Input({"type": "tune-case-altitude-max", "index": ALL}, "value"),
         Input({"type": "tune-range-param", "index": ALL}, "value"),
         Input({"type": "tune-range-min", "index": ALL}, "value"),
         Input({"type": "tune-range-max", "index": ALL}, "value"),
@@ -858,13 +2200,20 @@ def register_display_callbacks(app):
         strategy_mode,
         loss_mode,
         aggregation_mode,
+        selected_config,
+        tunable_configs,
         random_max_samples,
         resolve_spacing,
+        simann_max_iters,
+        simann_initial_temp,
+        simann_final_temp,
         tunable_names,
         selected_case_names,
         time_start_values,
         time_end_values,
         average_time_values,
+        altitude_min_values,
+        altitude_max_values,
         selected_param_names,
         min_values,
         max_values,
@@ -883,10 +2232,19 @@ def register_display_callbacks(app):
             time_start_values,
             time_end_values,
             average_time_values,
+            altitude_min_values,
+            altitude_max_values,
         )
         start_disabled = (
             running
-            or not mode_options_ready(strategy_mode, random_max_samples, resolve_spacing)
+            or not mode_options_ready(
+                strategy_mode,
+                random_max_samples,
+                resolve_spacing,
+                simann_max_iters,
+                simann_initial_temp,
+                simann_final_temp,
+            )
             or not case_ready
         )
         has_results = bool(top_results)
@@ -915,6 +2273,16 @@ def register_display_callbacks(app):
         add_disabled = running or selected_count >= len(tunable_names or [])
         case_disabled = [running] * len(selected_case_names or [])
         range_disabled = [running] * len(selected_param_names or [])
+        config_values = [
+            str(config.get("value", "")).strip()
+            for config in (tunable_configs or [])
+            if str(config.get("value", "")).strip()
+        ]
+        config_disabled = [running] * len(config_values)
+        config_styles = [
+            config_button_style(selected=value == selected_config, disabled=running)
+            for value in config_values
+        ]
         resolve_total_text = resolve_total_samples_text(
             resolve_spacing,
             selected_param_names,
@@ -936,8 +2304,10 @@ def register_display_callbacks(app):
             complete_disabled,
             running,
             running,
+            running,
             mode_button_style(selected=strategy_mode == "random", disabled=running),
             mode_button_style(selected=strategy_mode == "resolve", disabled=running),
+            mode_button_style(selected=strategy_mode == "simann", disabled=running),
             running,
             running,
             running,
@@ -958,11 +2328,17 @@ def register_display_callbacks(app):
             mode_button_style(selected=aggregation_mode == "mean_worst_quantile", disabled=running),
             mode_options_block_style(strategy_mode == "random"),
             mode_options_block_style(strategy_mode == "resolve"),
-            mode_options_block_style(strategy_mode not in {"random", "resolve"}),
+            mode_options_block_style(strategy_mode == "simann"),
+            mode_options_block_style(strategy_mode not in {"random", "resolve", "simann"}),
             resolve_total_text,
             running,
             running,
             running,
+            running,
+            running,
+            running,
+            case_disabled,
+            case_disabled,
             case_disabled,
             case_disabled,
             case_disabled,
@@ -976,4 +2352,6 @@ def register_display_callbacks(app):
             range_disabled,
             range_disabled,
             range_disabled,
+            config_disabled,
+            config_styles,
         )

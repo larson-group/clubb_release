@@ -68,7 +68,6 @@ RUN_SCRIPTS = Path(__file__).resolve().parent
 CLUBB_ROOT = RUN_SCRIPTS.parent
 OUTPUT_TUNER_DIR = CLUBB_ROOT / "output_tuner"
 CLUBB_OUTPUT_DIR = CLUBB_ROOT / "output"
-DEFAULT_TUNABLE_PARAMS = CLUBB_ROOT / "input" / "tunable_parameters" / "tunable_parameters.in"
 RUN_SCM = RUN_SCRIPTS / "run_scm.py"
 RUN_SCM_LOSS = RUN_SCRIPTS / "run_scm_loss.py"
 
@@ -77,7 +76,12 @@ if str(CLUBB_ROOT) not in sys.path:
 
 from tuner.job_runtime import TERMINAL_STATES, TunerJob, tuner_worker_env  # noqa: E402
 from tuner.status import read_json_or_default  # noqa: E402
+from tuner.system_defaults import default_max_workers  # noqa: E402
 from tuner.taylor_metrics import DEFAULT_AGGREGATION_MODE, DEFAULT_LOSS_MODE  # noqa: E402
+from utilities.create_case_namelist import resolve_tunable_config_dir  # noqa: E402
+
+
+DEFAULT_MAX_WORKERS = default_max_workers()
 
 
 def _float_from_text(value: str, label: str) -> float:
@@ -147,7 +151,7 @@ def parse_param_spec(spec: str) -> dict:
 
 
 def parse_strategy_spec(spec: str) -> dict:
-    """Parse random:MAX_SAMPLES or resolve:SPACING."""
+    """Parse random:MAX_SAMPLES, resolve:SPACING, or simann[:MAX_ITERS[:INITIAL_TEMP[:FINAL_TEMP]]]."""
     parts = [part.strip() for part in str(spec).split(":")]
     name = parts[0].lower() if parts and parts[0] else ""
     if name == "random":
@@ -166,7 +170,30 @@ def parse_strategy_spec(spec: str) -> dict:
             raise argparse.ArgumentTypeError("resolve spacing must be > 0")
         return {"name": "resolve", "options": {"spacing": spacing}}
 
-    raise argparse.ArgumentTypeError("strategy must be random:MAX_SAMPLES or resolve:SPACING")
+    if name == "simann":
+        if len(parts) > 4:
+            raise argparse.ArgumentTypeError("simann strategy uses simann[:MAX_ITERS[:INITIAL_TEMP[:FINAL_TEMP]]]")
+        options = {}
+        if len(parts) > 1 and parts[1]:
+            max_iters = _int_from_text(parts[1], "simann max_iters")
+            if max_iters < 1:
+                raise argparse.ArgumentTypeError("simann max_iters must be >= 1")
+            options["max_iters"] = max_iters
+        if len(parts) > 2 and parts[2]:
+            initial_temp = _float_from_text(parts[2], "simann initial_temp")
+            if initial_temp <= 0.0:
+                raise argparse.ArgumentTypeError("simann initial_temp must be > 0")
+            options["initial_temp"] = initial_temp
+        if len(parts) > 3 and parts[3]:
+            max_final_temp = _float_from_text(parts[3], "simann max_final_temp")
+            if max_final_temp <= 0.0:
+                raise argparse.ArgumentTypeError("simann max_final_temp must be > 0")
+            options["max_final_temp"] = max_final_temp
+        return {"name": "simann", "options": options}
+
+    raise argparse.ArgumentTypeError(
+        "strategy must be random:MAX_SAMPLES, resolve:SPACING, or simann[:MAX_ITERS[:INITIAL_TEMP[:FINAL_TEMP]]]"
+    )
 
 
 def build_request(args: argparse.Namespace) -> dict:
@@ -182,14 +209,20 @@ def build_request(args: argparse.Namespace) -> dict:
     if not parameter_ranges:
         raise argparse.ArgumentTypeError("-params must include at least one PARAM:MIN:MAX range")
 
+    strategy = parse_strategy_spec(args.strategy)
+    batch_size = int(args.batch_size)
+    max_workers = int(args.max_workers)
+    if strategy["name"] == "simann":
+        strategy["options"].setdefault("chain_count", max(1, max_workers * batch_size))
     request = {
+        "config": str(args.config or "default").strip() or "default",
         "cases": [config["case_name"] for config in case_configs],
         "case_configs": case_configs,
         "selected_fields": selected_fields,
         "parameter_ranges": parameter_ranges,
-        "batch_size": int(args.batch_size),
-        "max_workers": int(args.max_workers),
-        "strategy": parse_strategy_spec(args.strategy),
+        "batch_size": batch_size,
+        "max_workers": max_workers,
+        "strategy": strategy,
         "loss_mode": args.loss_mode,
         "aggregation_mode": args.aggregation_mode,
         "time_window_aggregation_mode": args.aggregation_mode,
@@ -227,6 +260,13 @@ def format_strategy(strategy: dict) -> str:
         return f"random, max_samples={options.get('max_samples', 'unbounded')}"
     if name == "resolve":
         return f"resolve, spacing={options.get('spacing', '--')}"
+    if name == "simann":
+        return (
+            f"simann, max_iters={options.get('max_iters', 2000)}, "
+            f"chains={options.get('chain_count', 1)}, "
+            f"initial_temp={options.get('initial_temp', 1.0)}, "
+            f"max_final_temp={options.get('max_final_temp', 1.0e-12)}"
+        )
     return str(name)
 
 
@@ -244,6 +284,8 @@ def estimate_total_samples(request: dict) -> str:
             intervals = 1 if span == 0.0 else max(1, int(math.ceil(span / spacing)))
             total *= intervals + 1
         return str(total)
+    if strategy.get("name") == "simann":
+        return str(int(options.get("max_iters", 2000)) * int(options.get("chain_count", 1)))
     return "unknown"
 
 
@@ -330,6 +372,7 @@ def print_request_summary(
             ("estimated_samples", estimate_total_samples(request)),
             ("batch_size", str(request["batch_size"])),
             ("max_workers", str(request["max_workers"])),
+            ("config", str(request.get("config") or "default")),
             ("loss", request["loss_mode"]),
             ("aggregation", request["aggregation_mode"]),
             ("poll_interval", f"{args.poll_interval:g} s"),
@@ -406,9 +449,10 @@ def brief_error_message(message: str) -> str:
     return ""
 
 
-def read_default_tunable_params() -> list[tuple[str, float]]:
+def read_default_tunable_params(config: str = "default") -> list[tuple[str, float]]:
     params = []
-    for raw_line in DEFAULT_TUNABLE_PARAMS.read_text(encoding="utf-8").splitlines():
+    params_path = Path(resolve_tunable_config_dir(config or "default")) / "tunable_parameters.in"
+    for raw_line in params_path.read_text(encoding="utf-8").splitlines():
         line = raw_line.split("!", 1)[0].strip()
         if not line or line.startswith("&") or line.startswith("/"):
             continue
@@ -425,14 +469,14 @@ def read_default_tunable_params() -> list[tuple[str, float]]:
     return params
 
 
-def write_top_params_file(results: list[dict], top_n: int, output_dir: Path) -> Path:
+def write_top_params_file(results: list[dict], top_n: int, output_dir: Path, config: str = "default") -> Path:
     selected_results = list(results[:top_n])
     if not selected_results:
         raise RuntimeError("No top results are available")
     # all_params contains the full Fortran API vector; only selected_params
     # should become explicit overrides in the rerun namelist.
     param_sets = [dict(result.get("selected_params") or {}) for result in selected_results]
-    defaults = read_default_tunable_params()
+    defaults = read_default_tunable_params(config)
     default_names = {name for name, _value in defaults}
     unknown = sorted({name for param_set in param_sets for name in param_set} - default_names)
     if unknown:
@@ -497,10 +541,11 @@ def run_top_results(args: argparse.Namespace, request_path: Path, results_path: 
     top_n = min(int(args.top_n), len(best_results))
     base_output_dir = Path(args.run_out_dir).resolve()
     output_dirs = top_run_output_dirs(args, mode)
-    params_path = write_top_params_file(best_results, top_n, base_output_dir)
     request = results_payload.get("request") or {}
     cases = list(request.get("cases") or args.request_cases)
     fields = list(request.get("selected_fields") or args.request_fields)
+    config = str(request.get("config") or args.config or "default").strip() or "default"
+    params_path = write_top_params_file(best_results, top_n, base_output_dir, config=config)
 
     print(f"Running top {top_n} result(s) with params: {params_path}", flush=True)
     exit_code = 0
@@ -510,6 +555,8 @@ def run_top_results(args: argparse.Namespace, request_path: Path, results_path: 
             str(RUN_SCM_LOSS),
             "-out_dir",
             str(output_dirs["window"]),
+            "-config",
+            config,
             "-fields",
             ",".join(fields),
             "-cases",
@@ -528,6 +575,8 @@ def run_top_results(args: argparse.Namespace, request_path: Path, results_path: 
                 str(RUN_SCM),
                 "-out_dir",
                 str(output_dirs["complete"]),
+                "-config",
+                config,
                 "-params",
                 str(params_path),
                 str(case_name),
@@ -580,6 +629,8 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
             "-params C8:0.2:0.8 -strategy random:8\n"
             "  python run_scripts/run_tuner_job.py -cases arm:10800:21600:10800 bomex:7200:18000:2700 "
             "-fields cloud_frac rcm -params C8:0.2:0.8 C11:0.1:1.0 -strategy resolve:0.1\n"
+            "  python run_scripts/run_tuner_job.py -cases bomex -fields cloud_frac "
+            "-params C8:0.2:0.8 -strategy simann:2000:1.0:1e-12\n"
         ),
     )
     parser.add_argument(
@@ -591,12 +642,25 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser.add_argument("-fields", nargs="+", required=True, help="CLUBB-facing fields, comma-separated or space-separated.")
     parser.add_argument("-params", nargs="+", required=True, help="Parameter ranges as PARAM:MIN:MAX.")
     parser.add_argument(
+        "-config",
+        default="default",
+        help="Tunable config name under input/parameter_and_flag_configs, or a config directory. Default: default.",
+    )
+    parser.add_argument(
         "-strategy",
         default="random:8",
-        help="Strategy spec: random:MAX_SAMPLES or resolve:SPACING. Default: random:8.",
+        help=(
+            "Strategy spec: random:MAX_SAMPLES, resolve:SPACING, "
+            "or simann[:MAX_ITERS[:INITIAL_TEMP[:FINAL_TEMP]]]. Default: random:8."
+        ),
     )
     parser.add_argument("-batch_size", type=int, default=8, help="Parameter batch size. Default: 8.")
-    parser.add_argument("-max_workers", type=int, default=1, help="Maximum concurrent case workers. Default: 1.")
+    parser.add_argument(
+        "-max_workers",
+        type=int,
+        default=DEFAULT_MAX_WORKERS,
+        help=f"Maximum concurrent case workers. Default: {DEFAULT_MAX_WORKERS}.",
+    )
     parser.add_argument("-seed", type=int, help="Optional random seed.")
     parser.add_argument("-loss_mode", default=DEFAULT_LOSS_MODE, help=f"Loss mode. Default: {DEFAULT_LOSS_MODE}.")
     parser.add_argument(

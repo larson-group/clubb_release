@@ -9,7 +9,7 @@ import random
 from typing import Iterable
 
 
-VALID_STRATEGY_NAMES = {"random", "resolve"}
+VALID_STRATEGY_NAMES = {"random", "resolve", "simann"}
 
 
 def _float_from_raw(value, label: str) -> float:
@@ -77,6 +77,43 @@ def normalize_strategy_config(request: dict) -> dict:
         if spacing <= 0.0:
             raise ValueError("resolve spacing must be > 0")
         options["spacing"] = spacing
+
+    if name == "simann":
+        unknown = set(raw_options) - {
+            "initial_temp",
+            "max_final_temp",
+            "max_iters",
+            "stp_adjst_shift",
+            "stp_adjst_factor",
+            "f_tol",
+            "chain_count",
+        }
+        if unknown:
+            raise ValueError("Unknown simann strategy option(s): " + ", ".join(sorted(unknown)))
+        max_iters = _int_from_raw(raw_options.get("max_iters", 2000), "simann max_iters")
+        if max_iters < 1:
+            raise ValueError("simann max_iters must be >= 1")
+        options["max_iters"] = max_iters
+        if raw_options.get("chain_count") is not None:
+            chain_count = _int_from_raw(raw_options.get("chain_count"), "simann chain_count")
+            if chain_count < 1:
+                raise ValueError("simann chain_count must be >= 1")
+            options["chain_count"] = chain_count
+        for key, label, default, positive in (
+            ("initial_temp", "simann initial_temp", 1.0, True),
+            ("max_final_temp", "simann max_final_temp", 1.0e-12, True),
+            ("stp_adjst_shift", "simann stp_adjst_shift", 0.5, False),
+            ("stp_adjst_factor", "simann stp_adjst_factor", 1.0, False),
+            ("f_tol", "simann f_tol", 1.0e-4, False),
+        ):
+            value = _float_from_raw(raw_options.get(key, default), label)
+            if not math.isfinite(value):
+                raise ValueError(f"{label} must be finite")
+            if positive and value <= 0.0:
+                raise ValueError(f"{label} must be > 0")
+            if key == "f_tol" and value < 0.0:
+                raise ValueError("simann f_tol must be >= 0")
+            options[key] = value
 
     return {"name": name, "options": options}
 
@@ -264,6 +301,23 @@ def build_tuning_strategy(
             default_params_row=default_params_row,
             parameter_ranges=parameter_ranges,
             spacing=options["spacing"],
+        )
+
+    if name == "simann":
+        from tuner.enhanced_simann_strategy import EnhancedSimulatedAnnealingStrategy
+
+        return EnhancedSimulatedAnnealingStrategy(
+            param_names=param_names,
+            default_params_row=default_params_row,
+            parameter_ranges=parameter_ranges,
+            initial_temp=options["initial_temp"],
+            max_final_temp=options["max_final_temp"],
+            max_iters=options["max_iters"],
+            chain_count=options.get("chain_count", 1),
+            stp_adjst_shift=options["stp_adjst_shift"],
+            stp_adjst_factor=options["stp_adjst_factor"],
+            f_tol=options["f_tol"],
+            seed=seed,
         )
 
     raise ValueError(f"Unknown tuning strategy: {name}")

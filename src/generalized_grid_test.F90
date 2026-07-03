@@ -134,11 +134,10 @@ module generalized_grid_test
   !    following the steps listed in the Jenkins test recipe in
   !    jenkins_tests/clubb_generalized_vertical_grid_test/Jenkinsfile.
   !
-  ! 4) Locally, change the flag settings for the run located in
-  !    input/tunable_parameters/configurable_model_flags.in to match those
-  !    found in the guilty flag set. Then, run CLUBB for the single case
-  !    that you chose to test with. It is best to do multiple runs and change
-  !    flag settings one at a time until you find the guilty flag.
+  ! 4) Locally, use run_scm.py -override to match the flag settings found in
+  !    the guilty flag set. Then, run CLUBB for the single case that you chose
+  !    to test with. It is best to do multiple runs and change flag settings
+  !    one at a time until you find the guilty flag.
   !
   ! 5) The grid generalization test will exit and fail after the first timestep
   !    where output that is not bit-for-bit between ascending and descending

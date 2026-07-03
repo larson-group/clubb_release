@@ -1,6 +1,6 @@
 import numpy as np
 import plotly.graph_objects as go
-from dash import Input, Output, MATCH
+from dash import Input, Output, MATCH, State, callback_context
 from plotly.subplots import make_subplots
 
 from ..benchmark_overlay import extract_benchmark_timeheight_panels
@@ -43,6 +43,7 @@ class TimeHeightPlotType(BasePlotType):
             var_name,
             col_index=int(global_context.get("selected_column") or 0),
             column_mode=column_mode,
+            column_filter_indices=global_context.get("column_filter_indices"),
         )
         if result is None:
             return shared.make_empty_figure(f"{var_name} is not compatible with a time-height plot.", theme_name)
@@ -231,13 +232,27 @@ class TimeHeightPlotType(BasePlotType):
             Input("plots-global-time-range", "value"),
             Input("plots-selected-column", "data"),
             Input("plots-column-mode", "value"),
+            Input("plots-column-filters", "data"),
             Input("plots-enabled-benchmarks", "data"),
             Input("theme-store", "data"),
             Input(self.size_store_id(MATCH), "data"),
+            State(self.graph_id(MATCH), "relayoutData"),
         )
-        def _update_timeheight_graph(var_name, case_data, height_range, time_range, selected_column, column_mode, enabled_benchmarks, theme_name, size_store_value):
+        def _update_timeheight_graph(
+            var_name,
+            case_data,
+            height_range,
+            time_range,
+            selected_column,
+            column_mode,
+            column_filters,
+            enabled_benchmarks,
+            theme_name,
+            size_store_value,
+            relayout_data,
+        ):
             size_value = shared.normalize_plot_size(size_store_value)
-            return self.build_figure(
+            fig = self.build_figure(
                 {"var": var_name, "size": size_value},
                 {
                     "case_data": case_data,
@@ -245,11 +260,15 @@ class TimeHeightPlotType(BasePlotType):
                     "time_range": time_range,
                     "selected_column": selected_column,
                     "column_mode": column_mode,
+                    "column_filter_indices": shared.column_filter_indices(column_filters),
                     "enabled_benchmarks": enabled_benchmarks,
                     "size": size_value,
                     "theme_name": theme_name,
                 },
             )
+            if callback_context.triggered_id == "plots-case-data" and (case_data or {}).get("preserve_plot_view"):
+                shared.apply_relayout_ranges(fig, relayout_data)
+            return fig
 
 
 PLOT = TimeHeightPlotType()

@@ -371,6 +371,7 @@ def main():
     subdir_suffix += f"_GPU{args.gpu}" if args.gpu != "none" else ""
     subdir_suffix += f"_PREC{args.precision}"
     subdir_suffix += "_PYTHON" if args.python else ""
+    subdir_suffix += "_GPTL" if args.gptl else ""
 
     build_dir = os.path.join(CLUBB_ROOT, f"build/{compiler}{subdir_suffix}") 
 

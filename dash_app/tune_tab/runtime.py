@@ -20,9 +20,9 @@ from .state import (
     TUNE_STATUS_TEMPLATE,
 )
 from tuner.job_runtime import TunerJob, tuner_worker_env
+from utilities.create_case_namelist import resolve_tunable_config_dir
 
 
-DEFAULT_TUNABLE_PARAMS = Path(REPO_ROOT) / "input" / "tunable_parameters" / "tunable_parameters.in"
 CLUBB_OUTPUT_DIR = Path(REPO_ROOT) / "output"
 
 
@@ -84,11 +84,13 @@ def start_tuning_job(request_payload):
     return job_data
 
 
-def _read_default_tunable_params():
-    """Return scalar CLUBB tunable parameter defaults in file order."""
+def _read_default_tunable_params(config="default"):
+    """Return scalar CLUBB tunable parameter defaults in file order for a config."""
     params = []
     pattern = re.compile(r"^\s*([A-Za-z]\w*)\s*=\s*([^!,/]+)")
-    with open(DEFAULT_TUNABLE_PARAMS, encoding="utf-8") as src:
+    config_dir = Path(resolve_tunable_config_dir(config or "default"))
+    params_path = config_dir / "tunable_parameters.in"
+    with open(params_path, encoding="utf-8") as src:
         for raw_line in src:
             line = raw_line.split("!", 1)[0].strip()
             if not line or line.startswith("&") or line.startswith("/"):
@@ -105,9 +107,9 @@ def _read_default_tunable_params():
     return params
 
 
-def write_loss_params_file(work_dir, param_sets, filename="loss_params.in"):
+def write_loss_params_file(work_dir, param_sets, filename="loss_params.in", config="default"):
     """Write a params namelist whose only changes are the supplied tuned parameters."""
-    defaults = _read_default_tunable_params()
+    defaults = _read_default_tunable_params(config)
     default_names = {name for name, _value in defaults}
     override_names = sorted({name for params in param_sets for name in (params or {})})
     missing_names = [name for name in override_names if name not in default_names]
@@ -139,6 +141,7 @@ def start_loss_run(
     rank=None,
     case_configs=None,
     run_mode="window",
+    config="default",
 ):
     """Launch an ad-hoc run for one or more result-table parameter sets."""
     cases = [str(case).strip() for case in (case_names or []) if str(case).strip()]
@@ -164,9 +167,11 @@ def start_loss_run(
     rank_text = f"rank_{rank}_" if rank not in (None, "") else ""
     run_id = f"{rank_text}{timestamp}_{os.getpid()}"
     work_dir = CLUBB_OUTPUT_DIR
-    params_path = write_loss_params_file(work_dir, param_sets, f"{run_id}_loss_params.in")
+    config = str(config or "default").strip() or "default"
+    params_path = write_loss_params_file(work_dir, param_sets, f"{run_id}_loss_params.in", config=config)
 
     request_payload = {
+        "config": config,
         "cases": cases,
         "case_configs": list(case_configs or []),
         "fields": selected_fields,
@@ -188,6 +193,8 @@ def start_loss_run(
                 str(Path(REPO_ROOT) / "run_scripts" / "run_scm_loss.py"),
                 "-out_dir",
                 str(CLUBB_OUTPUT_DIR),
+                "-config",
+                config,
                 "-fields",
                 ",".join(selected_fields),
                 "-cases",
@@ -205,6 +212,8 @@ def start_loss_run(
                 str(Path(REPO_ROOT) / "run_scripts" / "run_scm.py"),
                 "-out_dir",
                 str(CLUBB_OUTPUT_DIR),
+                "-config",
+                config,
                 "-params",
                 str(params_path),
                 case_name,

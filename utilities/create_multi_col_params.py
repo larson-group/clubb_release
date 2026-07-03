@@ -182,6 +182,19 @@ def custom_hypergrid(parsed_params, range_specs):
     return clubb_params, ngrdcol
 
 
+def clamp_batch_size(batch_size, ngrdcol):
+    """Keep runtime batch size within the generated column count."""
+    if batch_size is None:
+        return None
+    if batch_size <= ngrdcol:
+        return batch_size
+    print(
+        f" - requested batch_size = {batch_size} exceeds ngrdcol = {ngrdcol}; "
+        f"using batch_size = {ngrdcol}"
+    )
+    return ngrdcol
+
+
 if __name__ == "__main__":
 
     # Get the directory of the current script
@@ -192,7 +205,7 @@ if __name__ == "__main__":
 
     parser.add_argument( "-n", type=int, help="Number of grid columns (ngrdcol)")
 
-    tunable_parameters_default_path = os.path.join(script_dir, "../input/tunable_parameters/tunable_parameters.in")
+    tunable_parameters_default_path = os.path.join(script_dir, "../input/parameter_and_flag_configs/default/tunable_parameters.in")
     parser.add_argument( "-param_file", type=str, help="Path to the CLUBB parameters file",
                          default = str(tunable_parameters_default_path) )
 
@@ -204,7 +217,10 @@ if __name__ == "__main__":
     parser.add_argument(
         "-batch_size",
         type=int,
-        help="Runtime batch size written to &multicol_def. Defaults to ngrdcol when omitted.",
+        help=(
+            "Runtime batch size written to &multicol_def. "
+            "Values larger than ngrdcol are clipped to ngrdcol."
+        ),
     )
 
     parser.add_argument( "-mirror", type=str, help="mirror param lists",
@@ -306,6 +322,8 @@ if __name__ == "__main__":
     else:
         print(f"Mode '{param_creation_mode}' not recognized")
         exit(1)
+
+    batch_size = clamp_batch_size(batch_size, ngrdcol)
     
     #--------------------  Write the clubb_params to output_file_name --------------------  
     print(f"Writing to '{output_file_name}':")

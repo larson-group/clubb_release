@@ -20,11 +20,10 @@ def register_control_callbacks(app):
         Output("plots-time-start-label", "children"),
         Output("plots-time-average-label", "children"),
         Input("plots-case-data", "data"),
-        Input("plots-time-mode", "value"),
         Input("plots-global-time-range", "value"),
         Input("plots-global-time-point", "value"),
     )
-    def update_time_label(case_data, time_mode, time_range, time_point):
+    def update_time_label(case_data, time_range, time_point):
         """Show the active time window or point directly in the section header."""
         if not case_data:
             return "Time", "Start time", "Average Length"
@@ -47,15 +46,6 @@ def register_control_callbacks(app):
             return "Height"
         active_range = height_range or case_data.get("default_height_range") or [0.0, 1.0]
         return f"Height: {float(active_range[0]):g} - {float(active_range[1]):g}"
-
-    @app.callback(
-        Output("plots-global-time-range-wrapper", "style"),
-        Output("plots-global-time-point-wrapper", "style"),
-        Input("plots-time-mode", "value"),
-    )
-    def toggle_time_mode(time_mode):
-        """Keep both time sliders visible; the hidden mode store preserves callback compatibility."""
-        return {"display": "block"}, {"display": "block"}
 
     @app.callback(
         Output("plots-global-time-point", "step", allow_duplicate=True),
@@ -106,17 +96,16 @@ def register_control_callbacks(app):
         Input("plots-playback-toggle", "n_clicks"),
         Input("plots-playback-slower", "n_clicks"),
         Input("plots-playback-faster", "n_clicks"),
-        Input("plots-time-mode", "value"),
         Input("plots-case-data", "data"),
         State("plots-playback", "data"),
         prevent_initial_call=True,
     )
-    def update_playback(_toggle_clicks, _slower_clicks, _faster_clicks, time_mode, case_data, playback):
+    def update_playback(_toggle_clicks, _slower_clicks, _faster_clicks, case_data, playback):
         """Update playback state in response to transport controls or mode changes."""
         current = dict(playback or {"playing": False, "interval_s": DEFAULT_PLAYBACK_INTERVAL_S, "inflight": False, "target_point": None})
         current["interval_s"] = normalize_playback_interval(current.get("interval_s", DEFAULT_PLAYBACK_INTERVAL_S))
         trigger = callback_context.triggered_id
-        if trigger in {"plots-time-mode", "plots-case-data"}:
+        if trigger == "plots-case-data":
             if not case_data:
                 current["playing"] = False
                 current["inflight"] = False
@@ -150,10 +139,9 @@ def register_control_callbacks(app):
         Output("plots-playback-slower", "disabled"),
         Output("plots-playback-faster", "disabled"),
         Input("plots-playback", "data"),
-        Input("plots-time-mode", "value"),
         Input("plots-case-data", "data"),
     )
-    def sync_playback_ui(playback, time_mode, case_data):
+    def sync_playback_ui(playback, case_data):
         """Translate playback state into interval timing and button presentation."""
         state = dict(playback or {"playing": False, "interval_s": DEFAULT_PLAYBACK_INTERVAL_S, "inflight": False})
         interval_s = normalize_playback_interval(state.get("interval_s", DEFAULT_PLAYBACK_INTERVAL_S))
@@ -182,7 +170,6 @@ def register_control_callbacks(app):
         Output("plots-global-time-point", "value", allow_duplicate=True),
         Input("plots-playback-interval", "n_intervals"),
         State("plots-playback", "data"),
-        State("plots-time-mode", "value"),
         State("plots-global-time-range", "value"),
         State("plots-global-time-point", "value"),
         State("plots-global-time-point", "min"),
@@ -190,7 +177,7 @@ def register_control_callbacks(app):
         State("plots-case-data", "data"),
         prevent_initial_call=True,
     )
-    def advance_time_point(_n_intervals, playback, time_mode, average_minutes, time_point, time_point_min, time_point_max, case_data):
+    def advance_time_point(_n_intervals, playback, average_minutes, time_point, time_point_min, time_point_max, case_data):
         """Advance one playback frame when the current frame is not still rendering."""
         if not playback or not playback.get("playing") or playback.get("inflight"):
             return no_update, no_update
@@ -209,7 +196,6 @@ def register_control_callbacks(app):
         Input({"type": "budget-render-signal", "index": ALL}, "children"),
         Input({"type": "profile-render-signal", "index": ALL}, "children"),
         Input({"type": "subcolumn-render-signal", "index": ALL}, "children"),
-        Input("plots-time-mode", "value"),
         State({"type": "budget-render-signal", "index": ALL}, "id"),
         State({"type": "profile-render-signal", "index": ALL}, "id"),
         State({"type": "subcolumn-render-signal", "index": ALL}, "id"),
@@ -218,7 +204,7 @@ def register_control_callbacks(app):
         State("plots-playback", "data"),
         prevent_initial_call=True,
     )
-    def unlock_playback(budget_signals, profile_signals, subcolumn_signals, time_mode, budget_ids, profile_ids, subcolumn_ids, plot_order, plot_state, playback):
+    def unlock_playback(budget_signals, profile_signals, subcolumn_signals, budget_ids, profile_ids, subcolumn_ids, plot_order, plot_state, playback):
         """Release the playback lock once all time-dependent plots finish a frame."""
         current = dict(playback or {})
         if not current.get("inflight"):

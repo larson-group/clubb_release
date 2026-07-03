@@ -1,5 +1,5 @@
 import plotly.graph_objects as go
-from dash import Input, Output, State, MATCH
+from dash import Input, Output, State, MATCH, callback_context
 
 from . import shared
 from .base_plot import BasePlotType
@@ -42,7 +42,13 @@ class TimeSeriesPlotType(BasePlotType):
         var_long_name = ""
         legend_labels = []
         for source_idx, path in enumerate(files):
-            result = shared.extract_timeseries_for_path(path, var_name, col_index=col_index, column_mode=column_mode)
+            result = shared.extract_timeseries_for_path(
+                path,
+                var_name,
+                col_index=col_index,
+                column_mode=column_mode,
+                column_filter_indices=global_context.get("column_filter_indices"),
+            )
             if result is None:
                 continue
             time_vals, lines, labels, units, long_name, time_units_raw = result
@@ -112,21 +118,27 @@ class TimeSeriesPlotType(BasePlotType):
             Input("plots-case-data", "data"),
             Input("plots-selected-column", "data"),
             Input("plots-column-mode", "value"),
+            Input("plots-column-filters", "data"),
             Input("theme-store", "data"),
             Input(self.size_store_id(MATCH), "data"),
+            State(self.graph_id(MATCH), "relayoutData"),
         )
-        def _update_timeseries_graph(var_name, case_data, selected_column, column_mode, theme_name, size_store_value):
+        def _update_timeseries_graph(var_name, case_data, selected_column, column_mode, column_filters, theme_name, size_store_value, relayout_data):
             size_value = shared.normalize_plot_size(size_store_value)
-            return self.build_figure(
+            fig = self.build_figure(
                 {"var": var_name, "size": size_value},
                 {
                     "case_data": case_data,
                     "selected_column": selected_column,
                     "column_mode": column_mode,
+                    "column_filter_indices": shared.column_filter_indices(column_filters),
                     "size": size_value,
                     "theme_name": theme_name,
                 },
             )
+            if callback_context.triggered_id == "plots-case-data" and (case_data or {}).get("preserve_plot_view"):
+                shared.apply_relayout_ranges(fig, relayout_data)
+            return fig
 
 
 PLOT = TimeSeriesPlotType()

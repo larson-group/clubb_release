@@ -41,6 +41,15 @@ TIMEHEIGHT_DEFAULT_VARS = ["corr_rt_thl_1", "corr_rt_thl_2", "corr_w_chi_1"]
 SUBCOLUMN_DEFAULT_VARS = ["w", "chi", "eta"]
 DEFAULT_TIMESERIES_VARS = ["lwp", "T_in_K", "lh_rrm_auto", "lh_rrm_mc_nonadj"]
 
+
+def reshape_with_flat_tail(data, leading_ndim):
+    """Reshape trailing dimensions explicitly so zero-length arrays are valid."""
+    arr = np.asarray(data)
+    leading_shape = tuple(arr.shape[:leading_ndim])
+    tail_shape = tuple(arr.shape[leading_ndim:])
+    tail_len = int(np.prod(tail_shape, dtype=np.int64)) if tail_shape else 1
+    return np.reshape(arr, leading_shape + (tail_len,))
+
 TIMEHEIGHT_CATALOG = [
     {"name": "corr_chi_eta_1", "title": "Correlation of chi and eta, 1st component", "axis_title": "corr_chi_eta_1 [$-$]"},
     {"name": "corr_chi_eta_2", "title": "Correlation of chi and eta, 2nd component", "axis_title": "corr_chi_eta_2 [$-$]"},
@@ -361,8 +370,21 @@ class DatasetInfo:
 
 class DatasetCollection:
     def __init__(self, paths):
-        self.paths = list(paths or [])
-        self.datasets = [DatasetInfo(path) for path in self.paths]
+        requested_paths = list(paths or [])
+        self.paths = []
+        self.path_indices = []
+        self.invalid_paths = []
+        self.datasets = []
+        for path_index, path in enumerate(requested_paths):
+            try:
+                dataset = DatasetInfo(path)
+            except Exception as exc:
+                self.invalid_paths.append({"path": path, "error": str(exc)})
+                print(f"[plot-tab] skipping unreadable NetCDF file: {path} ({exc})")
+                continue
+            self.paths.append(path)
+            self.path_indices.append(path_index)
+            self.datasets.append(dataset)
         meta = _collection_metadata(self.datasets)
         self.vars = meta["vars"]
         self.var_to_ds = {
@@ -1118,6 +1140,119 @@ def padded_data_range(values, fraction=0.03):
     return padded_range(np.min(finite), np.max(finite), fraction=fraction)
 
 
+def relayout_axis_range(relayout_data, axis_name):
+    """Return the current manual axis range from Plotly relayout data."""
+    if not isinstance(relayout_data, dict):
+        return None
+    if relayout_data.get(f"{axis_name}.autorange"):
+        return None
+    raw_range = relayout_data.get(f"{axis_name}.range")
+    if isinstance(raw_range, (list, tuple)) and len(raw_range) == 2:
+        low, high = raw_range
+    else:
+        low_key = f"{axis_name}.range[0]"
+        high_key = f"{axis_name}.range[1]"
+        if low_key not in relayout_data or high_key not in relayout_data:
+            return None
+        low = relayout_data[low_key]
+        high = relayout_data[high_key]
+    try:
+        low = float(low)
+        high = float(high)
+    except (TypeError, ValueError):
+        return None
+    if not np.isfinite(low) or not np.isfinite(high):
+        return None
+    if high < low:
+        low, high = high, low
+    return [low, high]
+
+
+def relayout_y_range(relayout_data):
+    """Return the current manual y-axis range from Plotly relayout data."""
+    return relayout_axis_range(relayout_data, "yaxis")
+
+
+def apply_relayout_ranges(fig, relayout_data):
+    """Preserve user x/y zoom ranges on a freshly rebuilt Plotly figure."""
+    if not isinstance(relayout_data, dict):
+        return fig
+    axis_names = set()
+    for key in relayout_data:
+        match = re.match(r"^([xy]axis\d*)\.range(?:\[\d\])?$", str(key))
+        if match:
+            axis_names.add(match.group(1))
+    for axis_name in sorted(axis_names):
+        axis_range = relayout_axis_range(relayout_data, axis_name)
+        if axis_range is not None:
+            fig.update_layout(**{axis_name: {"range": axis_range}})
+    return fig
+
+
+def active_height_range(global_context):
+    """Return the visible height range, preferring manual graph zoom."""
+    if (global_context or {}).get("use_relayout_height_range", True):
+        manual_range = relayout_y_range((global_context or {}).get("relayout_data"))
+        if manual_range is not None:
+            return manual_range
+    case_data = (global_context or {}).get("case_data") or {}
+    return (global_context or {}).get("height_range") or case_data.get("default_height_range")
+
+
+def padded_profile_x_range(x_values, z_values, height_range, fallback_values=None, fraction=0.03):
+    """Return x bounds using only profile levels inside the visible height range."""
+    if not height_range or len(height_range) != 2:
+        return padded_data_range(fallback_values if fallback_values is not None else x_values, fraction=fraction)
+    try:
+        low = float(height_range[0])
+        high = float(height_range[1])
+    except (TypeError, ValueError):
+        return padded_data_range(fallback_values if fallback_values is not None else x_values, fraction=fraction)
+    if high < low:
+        low, high = high, low
+    x_arr = np.asarray(x_values, dtype=float)
+    z_arr = np.asarray(z_values, dtype=float)
+    if x_arr.size == 0 or z_arr.size == 0:
+        return padded_data_range(fallback_values if fallback_values is not None else x_values, fraction=fraction)
+    if x_arr.ndim == 1:
+        if x_arr.shape[0] != z_arr.shape[0]:
+            return padded_data_range(fallback_values if fallback_values is not None else x_values, fraction=fraction)
+        mask = np.isfinite(x_arr) & np.isfinite(z_arr) & (z_arr >= low) & (z_arr <= high)
+        visible_values = x_arr[mask]
+    else:
+        if x_arr.shape[-1] == z_arr.shape[0]:
+            mask = np.isfinite(z_arr) & (z_arr >= low) & (z_arr <= high)
+            visible_values = x_arr[..., mask]
+        elif x_arr.shape[0] == z_arr.shape[0]:
+            mask = np.isfinite(z_arr) & (z_arr >= low) & (z_arr <= high)
+            visible_values = x_arr[mask, ...]
+        else:
+            return padded_data_range(fallback_values if fallback_values is not None else x_values, fraction=fraction)
+    x_range = padded_data_range(visible_values, fraction=fraction)
+    if x_range is not None:
+        return x_range
+    return padded_data_range(fallback_values if fallback_values is not None else x_values, fraction=fraction)
+
+
+def padded_trace_x_range(trace_specs, height_range, fallback_values=None, fraction=0.03):
+    """Return x bounds for profile traces using only currently visible heights."""
+    visible_values = []
+    for spec in trace_specs or []:
+        x_range = padded_profile_x_range(
+            spec.get("x"),
+            spec.get("y"),
+            height_range,
+            fallback_values=None,
+            fraction=fraction,
+        )
+        if x_range is None:
+            continue
+        visible_values.extend(x_range)
+    if visible_values:
+        return padded_data_range(visible_values, fraction=0.0)
+    return padded_data_range(fallback_values, fraction=fraction)
+
+
 def apply_axis_bounds(fig, axis_name, bounds):
     if not bounds or len(bounds) != 2:
         return fig
@@ -1226,6 +1361,16 @@ def source_labels_for_dirs(directories):
     return labels
 
 
+def has_netcdf_signature(path):
+    """Return whether a file starts with a classic NetCDF or NetCDF-4/HDF5 signature."""
+    try:
+        with open(path, "rb") as handle:
+            header = handle.read(8)
+    except OSError:
+        return False
+    return header.startswith(b"CDF") or header == b"\x89HDF\r\n\x1a\n"
+
+
 def _scan_cases_in_directory(directory):
     cases = {}
     directory = normalize_output_directory(directory)
@@ -1237,7 +1382,7 @@ def _scan_cases_in_directory(directory):
             if base.endswith(suffix):
                 case_name = base[: -len(suffix)]
                 break
-        if case_name:
+        if case_name and has_netcdf_signature(path):
             cases[case_name] = path
     return cases
 
@@ -1311,10 +1456,15 @@ def build_case_data(case_name, files, directories=None):
     case_def = case_definition_by_name().get(case_name, {})
     from ..benchmark_overlay import build_case_benchmark_info
 
-    collection = DatasetCollection(files)
+    requested_files = list(files or [])
+    collection = DatasetCollection(requested_files)
     try:
-        compare_mode = len(files) > 1
-        source_dirs = [normalize_output_directory(directory) for directory in (directories or [os.path.dirname(path) for path in files])]
+        compare_mode = len(collection.paths) > 1
+        requested_dirs = [normalize_output_directory(directory) for directory in (directories or [])]
+        if requested_dirs and len(requested_dirs) == len(requested_files):
+            source_dirs = [requested_dirs[index] for index in collection.path_indices]
+        else:
+            source_dirs = [os.path.dirname(path) for path in collection.paths]
         profile_vars = list_profile_vars(collection, require_all=compare_mode)
         budget_groups = [] if compare_mode else list_budget_groups(collection)
         timeheight_vars = [] if compare_mode else list_timeheight_vars(collection)
@@ -1369,7 +1519,7 @@ def build_case_data(case_name, files, directories=None):
         benchmarks = build_case_benchmark_info(case_def)
         return {
             "name": case_name,
-            "files": list(files),
+            "files": list(collection.paths),
             "compare_mode": compare_mode,
             "output_dirs": source_dirs,
             "source_labels": source_labels_for_dirs(source_dirs),
@@ -1640,7 +1790,7 @@ def ensure_tz_plot_data(path, var_name):
                 line_columns = (0,)
             else:
                 line_labels = tuple(_line_labels_from_dims(remaining_dims, data.shape[2:], col_dim=col_dim))
-                cube = np.reshape(data, (data.shape[0], data.shape[1], -1))
+                cube = reshape_with_flat_tail(data, 2)
                 if col_dim in remaining_dims:
                     col_axis = remaining_dims.index(col_dim)
                     line_columns = tuple(int(index_tuple[col_axis]) for index_tuple in np.ndindex(*data.shape[2:]))
@@ -1667,7 +1817,51 @@ def ensure_tz_plot_data(path, var_name):
     return _cached_plot_data(key, _build)
 
 
-def extract_time_avg_profile_for_path(path, var_name, time_range, col_index=0, column_mode="single"):
+def column_filter_indices(column_filters):
+    """Return a normalized list of filtered column indices from the plot store."""
+    if not isinstance(column_filters, dict):
+        return None
+    indices = column_filters.get("indices")
+    if indices is None:
+        return None
+    normalized = []
+    for value in indices:
+        try:
+            normalized.append(int(value))
+        except (TypeError, ValueError):
+            continue
+    return normalized
+
+
+def _line_columns_for_count(line_columns, line_count):
+    """Return a line-column tuple that is safe to index for every plotted line."""
+    normalized = tuple(int(value) for value in (line_columns or ()))
+    if len(normalized) >= line_count:
+        return normalized[:line_count]
+    return normalized + tuple(range(len(normalized), line_count))
+
+
+def _line_indices_for_columns(line_columns, line_count, col_index=0, column_mode="single", column_filter_indices=None):
+    """Map the active column selection onto flattened plot line indices."""
+    if line_count <= 0:
+        return []
+    normalized_columns = _line_columns_for_count(line_columns, line_count)
+    if column_mode == "all":
+        if column_filter_indices is None:
+            return list(range(line_count))
+        selected_columns = {int(value) for value in column_filter_indices}
+        return [
+            idx
+            for idx, line_col in enumerate(normalized_columns)
+            if int(line_col) in selected_columns
+        ]
+    matching = [idx for idx, line_col in enumerate(normalized_columns) if int(line_col) == int(col_index)]
+    if not matching:
+        matching = [max(0, min(int(col_index), line_count - 1))]
+    return matching
+
+
+def extract_time_avg_profile_for_path(path, var_name, time_range, col_index=0, column_mode="single", column_filter_indices=None):
     data = ensure_tz_plot_data(path, var_name)
     if data is None:
         return None
@@ -1684,17 +1878,23 @@ def extract_time_avg_profile_for_path(path, var_name, time_range, col_index=0, c
         start, end = end, start
     window = cube[start : end + 1, :, :]
     if column_mode == "all":
-        profiles = np.mean(window, axis=0).T
+        line_indices = _line_indices_for_columns(
+            data["line_columns"],
+            cube.shape[2],
+            col_index=col_index,
+            column_mode=column_mode,
+            column_filter_indices=column_filter_indices,
+        )
+        if not line_indices:
+            return None
+        profiles = np.mean(window[:, :, line_indices], axis=0).T
         labels = tuple(
-            f"col {idx + 1}"
-            for idx in range(profiles.shape[0])
+            data["line_labels"][idx]
+            for idx in line_indices
         )
         bounds = _finite_bounds(profiles)
     else:
-        line_columns = tuple(data["line_columns"])
-        matching = [idx for idx, line_col in enumerate(line_columns) if int(line_col) == int(col_index)]
-        if not matching:
-            matching = [max(0, min(int(col_index), cube.shape[2] - 1))]
+        matching = _line_indices_for_columns(data["line_columns"], cube.shape[2], col_index=col_index, column_mode=column_mode)
         profile = np.mean(window[:, :, matching], axis=(0, 2))
         profiles = np.asarray(profile, dtype=float)[np.newaxis, :]
         labels = (f"col {max(0, min(int(col_index), int(data['columns_len']) - 1)) + 1}",)
@@ -1710,21 +1910,23 @@ def extract_time_avg_profile_for_path(path, var_name, time_range, col_index=0, c
     }
 
 
-def extract_time_height_for_path(path, var_name, col_index=0, column_mode="single"):
+def extract_time_height_for_path(path, var_name, col_index=0, column_mode="single", column_filter_indices=None):
     data = ensure_tz_plot_data(path, var_name)
     if data is None:
         return None
     cube = np.asarray(data["cube"], dtype=float)
     if cube.ndim != 3:
         return None
-    if column_mode == "all":
-        image = np.mean(cube, axis=2)
-    else:
-        line_columns = tuple(data["line_columns"])
-        matching = [idx for idx, line_col in enumerate(line_columns) if int(line_col) == int(col_index)]
-        if not matching:
-            matching = [max(0, min(int(col_index), cube.shape[2] - 1))]
-        image = np.mean(cube[:, :, matching], axis=2)
+    matching = _line_indices_for_columns(
+        data["line_columns"],
+        cube.shape[2],
+        col_index=col_index,
+        column_mode=column_mode,
+        column_filter_indices=column_filter_indices,
+    )
+    if not matching:
+        return None
+    image = np.mean(cube[:, :, matching], axis=2)
     return (
         np.asarray(data["time_values"], dtype=float),
         np.asarray(data["z_values"], dtype=float),
@@ -1793,7 +1995,7 @@ def ensure_timeseries_plot_data(path, var_name):
                     line_columns = (0,)
                 else:
                     line_labels = tuple(_line_labels_from_dims(remaining_dims, data.shape[1:], col_dim=col_dim))
-                    lines = np.reshape(data, (data.shape[0], -1))
+                    lines = reshape_with_flat_tail(data, 1)
                     if col_dim in remaining_dims:
                         col_axis = remaining_dims.index(col_dim)
                         line_columns = tuple(int(index_tuple[col_axis]) for index_tuple in np.ndindex(*data.shape[1:]))
@@ -1818,21 +2020,22 @@ def ensure_timeseries_plot_data(path, var_name):
     return _cached_plot_data(key, _build)
 
 
-def extract_timeseries_for_path(path, var_name, col_index=0, column_mode="single"):
+def extract_timeseries_for_path(path, var_name, col_index=0, column_mode="single", column_filter_indices=None):
     data = ensure_timeseries_plot_data(path, var_name)
     if data is None:
         return None
     lines = np.asarray(data["lines"], dtype=float)
-    if column_mode == "all":
-        selected = lines
-        labels = tuple(data["line_labels"])
-    else:
-        line_columns = tuple(data["line_columns"])
-        matching = [idx for idx, line_col in enumerate(line_columns) if int(line_col) == int(col_index)]
-        if not matching:
-            matching = [max(0, min(int(col_index), lines.shape[1] - 1))]
-        selected = lines[:, matching]
-        labels = tuple(data["line_labels"][idx] for idx in matching)
+    matching = _line_indices_for_columns(
+        data["line_columns"],
+        lines.shape[1],
+        col_index=col_index,
+        column_mode=column_mode,
+        column_filter_indices=column_filter_indices,
+    )
+    if not matching:
+        return None
+    selected = lines[:, matching]
+    labels = tuple(data["line_labels"][idx] for idx in matching)
     return (
         np.asarray(data["time_values"], dtype=float),
         np.asarray(selected, dtype=float),
@@ -1893,7 +2096,8 @@ def ensure_profile_preload(ds_info, var_name, col_index=0):
                 data = np.moveaxis(data, z_axis, 1)
                 ordered_dims.insert(1, ordered_dims.pop(z_axis))
             if data.ndim > 2:
-                data = np.reshape(data, (data.shape[0], data.shape[1], -1))[:, :, 0]
+                flattened = reshape_with_flat_tail(data, 2)
+                data = flattened[:, :, 0] if flattened.shape[2] else np.empty(flattened.shape[:2], dtype=float)
         elif data.ndim == 1:
             data = np.asarray(data, dtype=float)[:, np.newaxis]
         bounds = _finite_bounds(data)
@@ -1983,7 +2187,7 @@ def ensure_subcolumn_plot_data(path, base_name):
                 has_true_subcolumns = False
             else:
                 labels = tuple(_line_labels_from_dims(remaining_dims, data.shape[2:], col_dim=col_dim, subcol_dim=subcol_dim))
-                profiles = np.reshape(data, (data.shape[0], data.shape[1], -1))
+                profiles = reshape_with_flat_tail(data, 2)
                 if col_dim in remaining_dims:
                     col_axis = remaining_dims.index(col_dim)
                     line_columns = tuple(int(index_tuple[col_axis]) for index_tuple in np.ndindex(*data.shape[2:]))
@@ -2008,18 +2212,24 @@ def ensure_subcolumn_plot_data(path, base_name):
     return _cached_plot_data(key, _build)
 
 
-def subcolumn_x_range_for_path(path, base_name, col_index=0, column_mode="single"):
+def subcolumn_x_range_for_path(path, base_name, col_index=0, column_mode="single", column_filter_indices=None):
     data = ensure_subcolumn_plot_data(path, base_name)
     if data is None:
         return None
-    if column_mode == "all":
+    full_profiles = np.asarray(data["profiles"], dtype=float)
+    matching = _line_indices_for_columns(
+        data["line_columns"],
+        full_profiles.shape[2],
+        col_index=col_index,
+        column_mode=column_mode,
+        column_filter_indices=column_filter_indices,
+    )
+    if not matching:
+        return None
+    if column_mode == "all" and column_filter_indices is None:
         bounds = data["bounds"]
     else:
-        line_columns = tuple(data["line_columns"])
-        matching = [idx for idx, line_col in enumerate(line_columns) if int(line_col) == int(col_index)]
-        if not matching:
-            matching = [max(0, min(int(col_index), len(line_columns) - 1))]
-        bounds = _finite_bounds(np.asarray(data["profiles"], dtype=float)[:, :, matching])
+        bounds = _finite_bounds(full_profiles[:, :, matching])
     if bounds is None:
         return None
     return padded_range(bounds[0], bounds[1])
@@ -2078,7 +2288,8 @@ def extract_time_avg_profile(ds_info, var_name, time_range, col_index=0):
         if data.ndim > 1:
             z_axis = kept_dims.index(z_dim) if z_dim in kept_dims else 0
             data = np.moveaxis(data, z_axis, 0)
-            data = np.reshape(data, (data.shape[0], -1))[:, 0]
+            flattened = reshape_with_flat_tail(data, 1)
+            data = flattened[:, 0] if flattened.shape[1] else np.empty(flattened.shape[0], dtype=float)
         return get_z_values(ds_info, z_dim), np.asarray(data)
 
     return _cached_extract(key, _build)
@@ -2184,7 +2395,7 @@ def extract_timeseries(ds_info, var_name, col_index=0, column_mode="single"):
             labels = (var_name,)
         else:
             labels = tuple(_line_labels_from_dims(remaining_dims, data.shape[1:], col_dim=col_dim))
-            lines = np.reshape(data, (data.shape[0], -1))
+            lines = reshape_with_flat_tail(data, 1)
         time_vals = time_values_seconds(ds_info)
         if time_vals is None:
             time_vals = np.arange(lines.shape[0])
@@ -2214,7 +2425,7 @@ def extract_subcolumn_profiles(ds_info, base_name, time_range, col_index=0, colu
     return extract_subcolumn_profiles_for_path(ds_info.path, base_name, time_range, col_index=col_index, column_mode=column_mode)
 
 
-def extract_subcolumn_profiles_for_path(path, base_name, time_range, col_index=0, column_mode="single"):
+def extract_subcolumn_profiles_for_path(path, base_name, time_range, col_index=0, column_mode="single", column_filter_indices=None):
     data = ensure_subcolumn_plot_data(path, base_name)
     if data is None:
         return None, None, None, False
@@ -2227,12 +2438,15 @@ def extract_subcolumn_profiles_for_path(path, base_name, time_range, col_index=0
     end = max(0, min(end_idx, tmax))
     if end < start:
         start, end = end, start
-    line_indices = list(range(full_profiles.shape[2]))
-    if column_mode != "all":
-        line_columns = tuple(data["line_columns"])
-        line_indices = [idx for idx, line_col in enumerate(line_columns) if int(line_col) == int(col_index)]
-        if not line_indices:
-            line_indices = [max(0, min(int(col_index), full_profiles.shape[2] - 1))]
+    line_indices = _line_indices_for_columns(
+        data["line_columns"],
+        full_profiles.shape[2],
+        col_index=col_index,
+        column_mode=column_mode,
+        column_filter_indices=column_filter_indices,
+    )
+    if not line_indices:
+        return None, None, None, False
     window = full_profiles[start : end + 1, :, line_indices]
     if window.ndim == 2:
         window = window[np.newaxis, :, :]

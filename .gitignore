@@ -22,4 +22,4 @@ run_scripts/tmp_dup_params.in
 
 *.pyc
 
-input/tunable_parameters/*_tmp.in
+input/parameter_and_flag_configs/**/*_tmp.in

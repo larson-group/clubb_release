@@ -4,8 +4,13 @@ from __future__ import annotations
 
 from dash import ALL, Input, Output, Patch, State, callback_context, no_update
 
-from .discovery import available_fields_for_cases
-from .layout import build_case_config_row, build_param_range_row
+from .discovery import (
+    available_fields_for_cases,
+    load_tunable_default_ranges,
+    load_tunable_names,
+    tunable_config_names,
+)
+from .layout import DEFAULT_AVERAGE_TIME_SECONDS, build_case_config_row, build_param_range_row
 from .runtime import empty_status_payload
 
 from tuner.taylor_metrics import AGGREGATION_MODE_NAMES, LOSS_MODE_NAMES
@@ -23,7 +28,9 @@ def blank_case_config_row(row_id):
         "case_name": "",
         "time_start": "",
         "time_end": "",
-        "average_time_seconds": "",
+        "average_time_seconds": DEFAULT_AVERAGE_TIME_SECONDS,
+        "altitude_min": "",
+        "altitude_max": "",
     }
 
 
@@ -31,16 +38,16 @@ def case_config_row_from_defaults(row_id, case_name, case_data):
     """Return a case-setup row initialized from discovered defaults."""
     defaults = (case_data or {}).get(case_name, {})
     time_range = defaults.get("time_average_range", ["", ""])
-    num_windows = int(defaults.get("num_time_windows", 1) or 1)
-    average_time_seconds = ""
-    if len(time_range) > 1 and num_windows > 0:
-        average_time_seconds = int((int(time_range[1]) - int(time_range[0])) / num_windows)
+    altitude_range = defaults.get("altitude_comparison_range", ["", ""])
+    average_time_seconds = int(defaults.get("average_time_seconds") or DEFAULT_AVERAGE_TIME_SECONDS)
     return {
         "id": row_id,
         "case_name": case_name,
         "time_start": time_range[0] if len(time_range) > 0 else "",
         "time_end": time_range[1] if len(time_range) > 1 else "",
         "average_time_seconds": average_time_seconds,
+        "altitude_min": altitude_range[0] if len(altitude_range) > 0 else "",
+        "altitude_max": altitude_range[1] if len(altitude_range) > 1 else "",
     }
 
 
@@ -121,6 +128,35 @@ def parameter_options_by_row(param_values, tunable_names):
     return options_by_row
 
 
+def sanitize_param_values_for_config(param_values, min_values, max_values, tunable_names, default_ranges):
+    """Clear parameter rows that are not available in the selected config."""
+    valid_names = set(tunable_names or [])
+    updated_params = list(param_values or [])
+    updated_min = list(min_values or [])
+    updated_max = list(max_values or [])
+    while len(updated_min) < len(updated_params):
+        updated_min.append("")
+    while len(updated_max) < len(updated_params):
+        updated_max.append("")
+
+    for idx, raw_name in enumerate(updated_params):
+        name = raw_name.strip() if isinstance(raw_name, str) else ""
+        if not name:
+            continue
+        if name not in valid_names:
+            updated_params[idx] = None
+            updated_min[idx] = ""
+            updated_max[idx] = ""
+            continue
+        derived = (default_ranges or {}).get(name, {})
+        if not str(updated_min[idx] or "").strip() and derived.get("min"):
+            updated_min[idx] = derived["min"]
+        if not str(updated_max[idx] or "").strip() and derived.get("max"):
+            updated_max[idx] = derived["max"]
+
+    return updated_params, updated_min, updated_max
+
+
 def register_settings_callbacks(app):
     """Register callbacks that manage case defaults and range-row state."""
 
@@ -128,10 +164,11 @@ def register_settings_callbacks(app):
         Output("tune-strategy-mode", "data"),
         Input("tune-mode-random", "n_clicks"),
         Input("tune-mode-resolve", "n_clicks"),
+        Input("tune-mode-simann", "n_clicks"),
         State("tune-active-job", "data"),
         prevent_initial_call=True,
     )
-    def select_strategy_mode(_random_clicks, _resolve_clicks, active_job):
+    def select_strategy_mode(_random_clicks, _resolve_clicks, _simann_clicks, active_job):
         """Persist the selected tuning strategy mode."""
         if active_job:
             return no_update
@@ -140,6 +177,8 @@ def register_settings_callbacks(app):
             return "random"
         if trigger_id == "tune-mode-resolve":
             return "resolve"
+        if trigger_id == "tune-mode-simann":
+            return "simann"
         return no_update
 
     @app.callback(
@@ -202,6 +241,56 @@ def register_settings_callbacks(app):
         return no_update
 
     @app.callback(
+        Output("tune-selected-config", "data"),
+        Output("tune-tunable-names", "data"),
+        Output("tune-tunable-default-ranges", "data"),
+        Output({"type": "tune-range-param", "index": ALL}, "value", allow_duplicate=True),
+        Output({"type": "tune-range-min", "index": ALL}, "value", allow_duplicate=True),
+        Output({"type": "tune-range-max", "index": ALL}, "value", allow_duplicate=True),
+        Input({"type": "tune-config-button", "name": ALL}, "n_clicks"),
+        State("tune-tunable-configs", "data"),
+        State("tune-selected-config", "data"),
+        State({"type": "tune-range-param", "index": ALL}, "value"),
+        State({"type": "tune-range-min", "index": ALL}, "value"),
+        State({"type": "tune-range-max", "index": ALL}, "value"),
+        State("tune-active-job", "data"),
+        prevent_initial_call=True,
+    )
+    def select_tunable_config(
+        _clicks,
+        configs,
+        current_config,
+        param_values,
+        min_values,
+        max_values,
+        active_job,
+    ):
+        """Persist the selected tunable config and refresh parameter metadata."""
+        if active_job:
+            return no_update, no_update, no_update, no_update, no_update, no_update
+
+        trigger_id = callback_context.triggered_id
+        if not isinstance(trigger_id, dict) or trigger_id.get("type") != "tune-config-button":
+            return no_update, no_update, no_update, no_update, no_update, no_update
+
+        config_name = str(trigger_id.get("name", "")).strip()
+        if not config_name or config_name not in tunable_config_names(configs):
+            return no_update, no_update, no_update, no_update, no_update, no_update
+        if config_name == current_config:
+            return no_update, no_update, no_update, no_update, no_update, no_update
+
+        tunable_names = load_tunable_names(config_name)
+        default_ranges = load_tunable_default_ranges(config_name)
+        updated_params, updated_min, updated_max = sanitize_param_values_for_config(
+            param_values,
+            min_values,
+            max_values,
+            tunable_names,
+            default_ranges,
+        )
+        return config_name, tunable_names, default_ranges, updated_params, updated_min, updated_max
+
+    @app.callback(
         Output("tune-case-rows", "children"),
         Output("tune-case-next-id", "data"),
         Output("tune-case-row-order", "data"),
@@ -257,10 +346,14 @@ def register_settings_callbacks(app):
         Output({"type": "tune-case-time-start", "index": ALL}, "value", allow_duplicate=True),
         Output({"type": "tune-case-time-end", "index": ALL}, "value", allow_duplicate=True),
         Output({"type": "tune-case-average-time", "index": ALL}, "value", allow_duplicate=True),
+        Output({"type": "tune-case-altitude-min", "index": ALL}, "value", allow_duplicate=True),
+        Output({"type": "tune-case-altitude-max", "index": ALL}, "value", allow_duplicate=True),
         Input({"type": "tune-case-name", "index": ALL}, "value"),
         State({"type": "tune-case-time-start", "index": ALL}, "value"),
         State({"type": "tune-case-time-end", "index": ALL}, "value"),
         State({"type": "tune-case-average-time", "index": ALL}, "value"),
+        State({"type": "tune-case-altitude-min", "index": ALL}, "value"),
+        State({"type": "tune-case-altitude-max", "index": ALL}, "value"),
         State("tune-case-row-order", "data"),
         State("tune-case-data", "data"),
         State("tune-active-job", "data"),
@@ -271,32 +364,36 @@ def register_settings_callbacks(app):
         time_start_values,
         time_end_values,
         average_time_values,
+        altitude_min_values,
+        altitude_max_values,
         row_order,
         case_data,
         active_job,
     ):
         """Fill editable case settings from case defaults when a case is selected."""
         if active_job:
-            return no_update, no_update, no_update
+            return no_update, no_update, no_update, no_update, no_update
 
         trigger_id = callback_context.triggered_id
         if not isinstance(trigger_id, dict) or trigger_id.get("type") != "tune-case-name":
-            return no_update, no_update, no_update
+            return no_update, no_update, no_update, no_update, no_update
 
         row_id = trigger_id.get("index")
         current_order = list(row_order or [])
         if row_id not in current_order:
-            return no_update, no_update, no_update
+            return no_update, no_update, no_update, no_update, no_update
         row_pos = current_order.index(row_id)
         case_name = (case_values or [None])[row_pos] if row_pos < len(case_values or []) else None
         if not case_name or case_name not in (case_data or {}):
-            return no_update, no_update, no_update
+            return no_update, no_update, no_update, no_update, no_update
 
         defaults = case_config_row_from_defaults(row_id, case_name, case_data)
         outputs = [
             list(time_start_values or []),
             list(time_end_values or []),
             list(average_time_values or []),
+            list(altitude_min_values or []),
+            list(altitude_max_values or []),
         ]
         while any(len(values) < len(case_values or []) for values in outputs):
             for values in outputs:
@@ -306,6 +403,8 @@ def register_settings_callbacks(app):
         outputs[0][row_pos] = defaults["time_start"]
         outputs[1][row_pos] = defaults["time_end"]
         outputs[2][row_pos] = defaults["average_time_seconds"]
+        outputs[3][row_pos] = defaults["altitude_min"]
+        outputs[4][row_pos] = defaults["altitude_max"]
         return tuple(outputs)
 
     @app.callback(
@@ -359,7 +458,7 @@ def register_settings_callbacks(app):
         Output({"type": "tune-range-param", "index": ALL}, "options"),
         Input({"type": "tune-range-param", "index": ALL}, "value"),
         Input("tune-range-row-order", "data"),
-        State("tune-tunable-names", "data"),
+        Input("tune-tunable-names", "data"),
     )
     def sync_parameter_options(param_values, _row_order, tunable_names):
         """Hide parameters already selected in other tuning rows."""
@@ -444,6 +543,8 @@ def register_settings_callbacks(app):
         Input({"type": "tune-case-time-start", "index": ALL}, "value"),
         Input({"type": "tune-case-time-end", "index": ALL}, "value"),
         Input({"type": "tune-case-average-time", "index": ALL}, "value"),
+        Input({"type": "tune-case-altitude-min", "index": ALL}, "value"),
+        Input({"type": "tune-case-altitude-max", "index": ALL}, "value"),
         Input("tune-field-selector", "value"),
         Input("tune-range-add", "n_clicks"),
         Input({"type": "tune-range-remove", "index": ALL}, "n_clicks"),
@@ -455,6 +556,7 @@ def register_settings_callbacks(app):
         Input("tune-strategy-mode", "data"),
         Input("tune-loss-mode", "data"),
         Input("tune-aggregation-mode", "data"),
+        Input("tune-selected-config", "data"),
         Input("tune-random-max-samples", "value"),
         Input("tune-resolve-spacing", "value"),
         State("tune-active-job", "data"),
@@ -467,6 +569,8 @@ def register_settings_callbacks(app):
         _case_time_start,
         _case_time_end,
         _case_average_time,
+        _case_altitude_min,
+        _case_altitude_max,
         _selected_fields,
         _add_clicks,
         _remove_clicks,
@@ -478,6 +582,7 @@ def register_settings_callbacks(app):
         _strategy_mode,
         _loss_mode,
         _aggregation_mode,
+        _selected_config,
         _random_max_samples,
         _resolve_spacing,
         active_job,

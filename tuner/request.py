@@ -18,6 +18,14 @@ from tuner.taylor_metrics import (
     WORST_QUANTILE_FRACTION,
 )
 from tuner.tuning_strategy import normalize_strategy_config
+from utilities.create_case_namelist import resolve_tunable_config_dir
+
+
+REQUIRED_TUNABLE_CONFIG_FILES = (
+    "tunable_parameters.in",
+    "configurable_model_flags.in",
+    "silhs_parameters.in",
+)
 
 
 def load_request(request_path: Path) -> dict:
@@ -58,6 +66,7 @@ def load_request(request_path: Path) -> dict:
     request["cases"] = cases
     request["case_configs"] = case_configs
     request["case_defaults"] = case_defaults
+    request["config"] = _normalize_config(request.get("config"))
     request["selected_fields"] = selected_fields
     request["parameter_ranges"] = parameter_ranges
     request["batch_size"] = _positive_int(request.get("batch_size"), "Tuning request batch_size")
@@ -100,7 +109,13 @@ def load_request(request_path: Path) -> dict:
         request["max_samples"] = request["strategy"]["options"].get("max_samples")
     else:
         request.pop("max_samples", None)
-    request["total_samples"] = request["strategy"]["options"].get("max_samples")
+    if request["strategy"]["name"] == "simann":
+        options = request["strategy"]["options"]
+        if options.get("chain_count") is None:
+            options["chain_count"] = max(1, request["max_workers"] * request["batch_size"])
+        request["total_samples"] = options.get("max_iters") * options.get("chain_count")
+    else:
+        request["total_samples"] = request["strategy"]["options"].get("max_samples")
 
     if request.get("seed") is not None:
         try:
@@ -108,6 +123,21 @@ def load_request(request_path: Path) -> dict:
         except (TypeError, ValueError):
             raise RuntimeError("Tuning request seed must be an integer")
     return request
+
+
+def _normalize_config(raw_config) -> str:
+    """Validate and normalize the tunable config name/path in a tuning request."""
+    config = str(raw_config or "default").strip() or "default"
+    try:
+        config_dir = Path(resolve_tunable_config_dir(config))
+    except RuntimeError as exc:
+        raise RuntimeError(str(exc)) from exc
+    missing = [filename for filename in REQUIRED_TUNABLE_CONFIG_FILES if not (config_dir / filename).is_file()]
+    if missing:
+        raise RuntimeError(
+            f"Tunable config '{config}' is missing required file(s): " + ", ".join(missing)
+        )
+    return config
 
 
 def read_case_tuner_defaults(case_name: str, overrides: dict | None = None) -> dict:

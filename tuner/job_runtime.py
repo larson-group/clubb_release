@@ -23,11 +23,34 @@ from tuner.status import (
 TERMINAL_STATES = {"finished", "stopped", "error"}
 
 
+def _complete_f2py_runtime_dir(path: Path) -> bool:
+    """Return whether a directory contains the compiled f2py runtime artifacts."""
+    return (
+        path.is_dir()
+        and any(path.glob("clubb_f2py*.so"))
+        and (path / "libclubb_f2py_backend.so").is_file()
+    )
+
+
+def _pythonpath_runtime_entries() -> list[str]:
+    """Return Python paths needed by standalone tuner worker subprocesses."""
+    entries = []
+    for install_name in ("selected", "latest"):
+        runtime_dir = REPO_ROOT / "install" / install_name / "python"
+        if _complete_f2py_runtime_dir(runtime_dir):
+            entries.append(str(runtime_dir))
+    api_root = REPO_ROOT / "clubb_python_api"
+    if api_root.is_dir():
+        entries.append(str(api_root))
+    entries.append(str(REPO_ROOT))
+    return list(dict.fromkeys(entries))
+
+
 def tuner_worker_env() -> dict:
     """Return the environment used by tuner subprocesses."""
     run_env = os.environ.copy()
     existing_pythonpath = run_env.get("PYTHONPATH", "")
-    pythonpath_entries = [str(REPO_ROOT), str(REPO_ROOT / "clubb_python_api")]
+    pythonpath_entries = _pythonpath_runtime_entries()
     if existing_pythonpath:
         pythonpath_entries.append(existing_pythonpath)
     run_env["PYTHONPATH"] = os.pathsep.join(pythonpath_entries)

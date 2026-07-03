@@ -56,8 +56,10 @@ UTILITIES = os.path.dirname(os.path.abspath(__file__))
 CLUBB_ROOT = os.path.join(UTILITIES, "..")
 DEFAULT_OUTPUT_DIR = os.path.join(CLUBB_ROOT, "output")
 DEFAULT_STANDARD_STATS = os.path.join(CLUBB_ROOT, "input/stats/standard_stats.in")
-DEFAULT_TUNER_STATS = os.path.join(CLUBB_ROOT, "input/stats/tuning_stats.in")
-DEFAULT_TUNABLE_PARAMS = os.path.join(CLUBB_ROOT, "input/tunable_parameters/tunable_parameters.in")
+DEFAULT_TUNER_STATS = os.path.join(CLUBB_ROOT, "input/stats/all_tuning_stats.in")
+TUNABLE_CONFIG_ROOT = os.path.join(CLUBB_ROOT, "input/parameter_and_flag_configs")
+DEFAULT_TUNABLE_CONFIG = os.path.join(TUNABLE_CONFIG_ROOT, "default")
+DEFAULT_TUNABLE_PARAMS = os.path.join(DEFAULT_TUNABLE_CONFIG, "tunable_parameters.in")
 MULTI_COL_PARAMS_SCRIPT = os.path.join(UTILITIES, "create_multi_col_params.py")
 
 HR_SPEC_RE = re.compile(
@@ -76,6 +78,49 @@ def strip_comments_and_remove_keys(content: str, keys_to_remove=None) -> str:
             continue
         lines.append(line)
     return "\n".join(lines)
+
+
+def _available_tunable_config_names() -> list[str]:
+    root = Path(TUNABLE_CONFIG_ROOT)
+    if not root.is_dir():
+        return []
+    return sorted(path.name for path in root.iterdir() if path.is_dir())
+
+
+def _is_bare_config_name(config_text: str) -> bool:
+    return (
+        not os.path.isabs(config_text)
+        and os.path.basename(config_text) == config_text
+        and config_text not in {".", ".."}
+    )
+
+
+def resolve_tunable_config_dir(config: str | os.PathLike | None = None) -> str:
+    """Resolve a config path or bare name to a tunable config directory."""
+    if config is None:
+        return os.path.abspath(DEFAULT_TUNABLE_CONFIG)
+
+    config_text = os.fspath(config).strip()
+    if not config_text:
+        return os.path.abspath(DEFAULT_TUNABLE_CONFIG)
+
+    if _is_bare_config_name(config_text):
+        named_config_dir = os.path.join(TUNABLE_CONFIG_ROOT, config_text)
+        if os.path.isdir(named_config_dir):
+            return os.path.abspath(named_config_dir)
+
+    config_dir = os.path.abspath(config_text)
+    if os.path.isdir(config_dir):
+        return config_dir
+
+    if _is_bare_config_name(config_text):
+        available = ", ".join(_available_tunable_config_names()) or "<none>"
+        raise RuntimeError(
+            f"--config '{config_text}' is not a directory or a known config name under "
+            f"input/parameter_and_flag_configs. Available configs: {available}"
+        )
+
+    raise RuntimeError(f"--config directory does not exist: {config_dir}")
 
 
 def validate_multicol(value: str) -> str:
@@ -347,9 +392,7 @@ def create_case_namelist_file(
     if not os.path.isfile(model_file):
         raise RuntimeError(f"{model_file} does not exist")
 
-    config_dir = os.path.abspath(config) if config else os.path.join(CLUBB_ROOT, "input/tunable_parameters")
-    if not os.path.isdir(config_dir):
-        raise RuntimeError(f"--config directory does not exist: {config_dir}")
+    config_dir = resolve_tunable_config_dir(config)
 
     params_file = params or os.path.join(config_dir, "tunable_parameters.in")
     flags_file = flags or os.path.join(config_dir, "configurable_model_flags.in")
@@ -485,7 +528,7 @@ def prune_clubb_stats_namelist(clubb_in: str, requested_vars: list[str]) -> str:
     missing_vars = [name for name in requested_vars if name not in found_names]
     if missing_vars:
         raise RuntimeError(
-            "Requested clubb_var_names missing from tuning_stats.in: " + ", ".join(missing_vars)
+            "Requested clubb_var_names missing from all_tuning_stats.in: " + ", ".join(missing_vars)
         )
 
     new_body_lines = ["\n"]
@@ -630,8 +673,12 @@ def create_loss_case_namelist(
     if duplicate_params_for_batch:
         if batch_size is None:
             raise RuntimeError("duplicate_params_for_batch requires batch_size")
+        base_params_file = params
+        if base_params_file is None:
+            config_dir = resolve_tunable_config_dir(config)
+            base_params_file = os.path.join(config_dir, "tunable_parameters.in")
         params_for_case = convert_to_multi_col(
-            params or DEFAULT_TUNABLE_PARAMS,
+            base_params_file,
             case_name,
             str(output_path),
             str(batch_size),
@@ -700,9 +747,10 @@ def create_loss_case_namelist(
 
 def main():
     parser = argparse.ArgumentParser(description="Create an aggregated CLUBB case namelist.")
-    parser.add_argument("-config", metavar="[DIR]",
-        help=("Directory containing tunable_parameters.in, configurable_model_flags.in, "
-              "and silhs_parameters.in. Defaults to input/tunable_parameters."))
+    parser.add_argument("-config", metavar="[NAME|DIR]",
+        help=("Tunable config name under input/parameter_and_flag_configs, or a directory containing "
+              "tunable_parameters.in, configurable_model_flags.in, and silhs_parameters.in. "
+              "Defaults to default."))
     parser.add_argument("-params", metavar="[FILE]",
         help="Define the tunable parameters. Used to override params file defined by --config")
     parser.add_argument("-flags", metavar="[FILE]",
@@ -721,7 +769,8 @@ def main():
               "-multicol C8/0.2:0.8/4"))
     parser.add_argument("-batch_size", metavar="[NUM]", type=int,
         help=("Runtime batch size written to &multicol_def. "
-              "Only meaningful together with -multicol."))
+              "Only meaningful together with -multicol. "
+              "Values larger than ngrdcol are clipped to ngrdcol."))
     parser.add_argument("-zt_grid", metavar="[FILE]",
         help="Specify a zt grid file from input/grid.\nDefault: unused")
     parser.add_argument("-zm_grid", metavar="[FILE]",

@@ -191,7 +191,7 @@ iiedsclr_CO2 | integer
 
 parameter_file | character
   Name of file containing tunable parameters.
-  e.g., "../input/tunable_parameters/tunable_parameters.in"
+  e.g., "../input/parameter_and_flag_configs/default/tunable_parameters.in"
 
 output_directory | character
   Filepath where output will be saved.
