@@ -3,6 +3,7 @@
 import ast
 import importlib
 import inspect
+import re
 import sys
 import textwrap
 from pathlib import Path
@@ -224,7 +225,7 @@ def _annotation_contains_udt(annotation) -> bool:
     if annotation is inspect._empty:
         return False
     if isinstance(annotation, str):
-        return annotation in {cls.__name__ for cls in UDT_TYPES}
+        return any(re.search(rf"\b{re.escape(cls.__name__)}\b", annotation) for cls in UDT_TYPES)
     if annotation in UDT_TYPES:
         return True
     args = getattr(annotation, "__args__", None)

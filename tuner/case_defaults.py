@@ -8,6 +8,7 @@ from typing import Mapping
 
 
 CASE_DEFAULTS_PATH = Path(__file__).with_name("case_defaults.json")
+REPO_ROOT = CASE_DEFAULTS_PATH.parent.parent
 OVERRIDABLE_KEYS = {
     "altitude_comparison_range",
     "time_average_range",
@@ -76,6 +77,7 @@ def _normalize_case_defaults(case_name: str, raw_value) -> dict:
     les_stats_file = str(raw_value.get("les_stats_file", "")).strip()
     if not les_stats_file:
         raise RuntimeError(f"Case defaults for {case_name} require les_stats_file")
+    les_stats_file = _resolve_case_path(les_stats_file)
 
     altitude_range = _normalize_float_pair(
         raw_value.get("altitude_comparison_range"),
@@ -118,6 +120,14 @@ def _normalize_case_defaults(case_name: str, raw_value) -> dict:
     if average_time_seconds is not None:
         normalized["average_time_seconds"] = average_time_seconds
     return normalized
+
+
+def _resolve_case_path(path_text: str) -> str:
+    """Resolve benchmark paths relative to the repo root after expanding ~."""
+    path = Path(path_text).expanduser()
+    if not path.is_absolute():
+        path = REPO_ROOT / path
+    return str(path)
 
 
 def _normalize_float_pair(raw_value, label: str) -> list[float]:

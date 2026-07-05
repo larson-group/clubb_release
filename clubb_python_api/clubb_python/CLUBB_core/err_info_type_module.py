@@ -1,5 +1,7 @@
 """User-facing wrappers for routines from CLUBB_core/err_info_type_module.F90."""
 
+from __future__ import annotations
+
 import numpy as np
 from numpy import asfortranarray as f_arr
 

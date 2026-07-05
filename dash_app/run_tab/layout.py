@@ -161,26 +161,26 @@ def build_optional_args_section():
     """Render the optional run_scm.py argument inputs."""
     return html.Div(
         [
-            html.Div("Optional run args:", className="run-section-title"),
             html.Div(
                 [
+                    html.Div("Optional run args:", className="run-section-title", style={"flex": "0 0 auto", "marginRight": "2px"}),
                     dcc.Input(id="run-opt-max-iters", type="text", value="", placeholder="max_iters", style={"width": "130px"}),
                     dcc.Input(id="run-opt-debug", type="text", value="", placeholder="debug", style={"width": "130px"}),
                     dcc.Input(id="run-opt-dt-main", type="text", value="", placeholder="dt_main", style={"width": "130px"}),
                     dcc.Input(id="run-opt-dt-rad", type="text", value="", placeholder="dt_rad", style={"width": "130px"}),
                     dcc.Input(id="run-opt-tout", type="text", value="", placeholder="tout", style={"width": "130px"}),
                 ],
-                style={"display": "flex", "flexWrap": "wrap", "gap": "8px", "marginTop": "4px"},
+                style={"display": "flex", "flexWrap": "wrap", "alignItems": "center", "gap": "8px"},
             ),
             html.Div(
                 [
                     html.Label("Output dir:", style={"whiteSpace": "nowrap", "alignSelf": "center"}),
                     dcc.Input(id="run-opt-out-dir", type="text", value="output", placeholder="output", style={"width": "200px"}),
                 ],
-                style={"display": "flex", "gap": "8px", "marginTop": "6px"},
+                style={"display": "flex", "alignItems": "center", "gap": "8px", "marginTop": "4px"},
             ),
         ],
-        style={"marginTop": "6px"},
+        style={"marginTop": "2px"},
     )
 
 
@@ -306,9 +306,8 @@ def build_run_action_section():
             ),
             html.Div(
                 [
-                    html.Div("Run limits", className="run-limit-title"),
                     build_run_limit_control("Workers", "run-max-tasks", MAX_RUN_PROCS),
-                    build_run_limit_control("Batch", "run-batch-size", 8, disabled=True, title="Used only for multicol runs."),
+                    build_run_limit_control("Batch size", "run-batch-size", 8, disabled=True, title="Used only for multicol runs."),
                 ],
                 className="run-limit-panel",
             ),

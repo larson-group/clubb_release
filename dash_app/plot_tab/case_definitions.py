@@ -11,6 +11,25 @@ CASE_DEFINITIONS_PATH = os.path.join(
 UNKNOWN = object()
 
 
+def _benchmark_env():
+    """Return benchmark root constants used by pyplotgen case definitions."""
+    benchmark_root = os.path.join(REPO_ROOT, "input", "les_and_clubb_benchmark_runs")
+    local_root = os.path.join(REPO_ROOT, "postprocessing", "pyplotgen", "les_and_clubb_benchmark_runs")
+    if not (os.path.isdir(benchmark_root) or os.path.islink(benchmark_root)):
+        benchmark_root = local_root
+    benchmark_root = os.path.abspath(benchmark_root) + os.sep
+    return {
+        "REPO_ROOT": REPO_ROOT,
+        "BENCHMARK_OUTPUT_ROOT": benchmark_root,
+        "SAM_BENCHMARK_OUTPUT_ROOT": benchmark_root + "sam_benchmark_runs",
+        "COAMPS_BENCHMARK_OUTPUT_ROOT": benchmark_root + "les_runs",
+        "WRF_LASSO_BENCHMARK_OUTPUT_ROOT": benchmark_root + "wrf_lasso_runs",
+        "ARCHIVED_CLUBB_OUTPUT_ROOT": benchmark_root + "archived_clubb_runs",
+        "R408_OUTPUT_ROOT": benchmark_root,
+        "HOC_OUTPUT_ROOT": benchmark_root + "HOC_20051217",
+    }
+
+
 def _legacy_literal_value(node):
     """Support Python versions where string/number literals predate ast.Constant."""
     legacy_str = getattr(ast, "Str", None)
@@ -87,7 +106,7 @@ def _parse_cases(case_path):
     with open(case_path, "r", encoding="utf-8") as handle:
         tree = ast.parse(handle.read(), filename=case_path)
 
-    env = {}
+    env = _benchmark_env()
     case_defs = {}
     case_order = []
     all_cases_node = None

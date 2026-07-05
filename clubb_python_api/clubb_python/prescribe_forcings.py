@@ -1,5 +1,7 @@
 """User-facing wrappers for forcings routines."""
 
+from __future__ import annotations
+
 import numpy as np
 from numpy import asfortranarray as f_arr
 

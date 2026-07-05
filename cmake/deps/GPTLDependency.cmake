@@ -25,6 +25,43 @@ else()
   set(OPENMP_LIB "")
 endif()
 
+set(GPTL_CONFIGURE_PIC_ARG "")
+if(ENABLE_F2PY)
+  # F2PY links GPTL's static archive into a shared backend library.
+  set(GPTL_CONFIGURE_PIC_ARG "--with-pic")
+endif()
+
+set(GPTL_CONFIGURE_CFLAGS "")
+if(CMAKE_C_COMPILER_ID MATCHES "GNU|Clang|AppleClang|IntelLLVM")
+  # GPTL 8.1.1 defines false/true itself, which C23 no longer allows.
+  set(GPTL_CONFIGURE_CFLAGS "-g -O2 -std=gnu99")
+endif()
+
+set(GPTL_CONFIGURE_ENV
+  "LC_ALL=C.UTF-8"
+  "LANG=C.UTF-8"
+  "CC=${CMAKE_C_COMPILER}"
+  "FC=${CMAKE_Fortran_COMPILER}"
+)
+
+if(APPLE AND CMAKE_OSX_SYSROOT)
+  set(GPTL_OSX_FLAGS "-isysroot ${CMAKE_OSX_SYSROOT}")
+  if(CMAKE_OSX_DEPLOYMENT_TARGET)
+    string(APPEND GPTL_OSX_FLAGS " -mmacosx-version-min=${CMAKE_OSX_DEPLOYMENT_TARGET}")
+  endif()
+  string(PREPEND GPTL_CONFIGURE_CFLAGS "${GPTL_OSX_FLAGS} ")
+  list(APPEND GPTL_CONFIGURE_ENV
+    "SDKROOT=${CMAKE_OSX_SYSROOT}"
+    "CPPFLAGS=${GPTL_OSX_FLAGS}"
+    "FFLAGS=${GPTL_OSX_FLAGS}"
+    "LDFLAGS=${GPTL_OSX_FLAGS}"
+  )
+endif()
+
+if(GPTL_CONFIGURE_CFLAGS)
+  list(APPEND GPTL_CONFIGURE_ENV "CFLAGS=${GPTL_CONFIGURE_CFLAGS}")
+endif()
+
 # -----------------------------------------------------------------------------
 # 1. Try to find GPTL in environment or provided root
 # -----------------------------------------------------------------------------
@@ -82,26 +119,18 @@ set(GPTL_SRC    ${CMAKE_BINARY_DIR}/gptl_src)
 file(MAKE_DIRECTORY ${GPTL_PREFIX}/include)
 file(MAKE_DIRECTORY ${GPTL_PREFIX}/lib)
 
-set(GPTL_ENV_VARS
-  "CC=${CMAKE_C_COMPILER}"
-  "FC=${CMAKE_Fortran_COMPILER}"
-  "CFLAGS=${CMAKE_C_FLAGS}"
-  "FFLAGS=${CMAKE_Fortran_FLAGS}"
-)
-
 ExternalProject_Add(GPTL_project
   URL https://github.com/jmrosinski/GPTL/releases/download/v8.1.1/gptl-8.1.1.tar.gz
   PREFIX ${CMAKE_BINARY_DIR}/gptl_build
   SOURCE_DIR ${GPTL_SRC}
-  CONFIGURE_COMMAND /bin/sh -c "
-    # Prevent autoheader/autoconf from running if timestamps confuse 'missing'
-    touch aclocal.m4 configure Makefile.in fortran/Makefile.in config.h.in &&
-    LC_ALL=C.UTF-8 LANG=C.UTF-8 \
-    CC=${CMAKE_C_COMPILER} FC=${CMAKE_Fortran_COMPILER} \
-    ./configure --prefix=${GPTL_PREFIX} --enable-fortran --disable-shared --enable-static ${GPTL_CONFIGURE_OPENMP_ARG}"
+  PATCH_COMMAND ${CMAKE_COMMAND} -E touch aclocal.m4 configure Makefile.in fortran/Makefile.in config.h.in
+  CONFIGURE_COMMAND ${CMAKE_COMMAND} -E env
+    ${GPTL_CONFIGURE_ENV}
+    ./configure --prefix=${GPTL_PREFIX} --enable-fortran --disable-shared --enable-static ${GPTL_CONFIGURE_OPENMP_ARG} ${GPTL_CONFIGURE_PIC_ARG}
   BUILD_COMMAND /bin/sh -c "
-    # Remove problematic instrumentation flag and build
-    find . -name Makefile | xargs sed -i 's/-finstrument-functions//g';
+    find . -name Makefile -exec sed -i.bak 's/-finstrument-functions//g' {} + &&
+    find . -name '*.bak' -delete &&
+    (make clean >/dev/null 2>&1 || true) &&
     make -j"
   INSTALL_COMMAND make install
   BUILD_IN_SOURCE 1

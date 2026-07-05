@@ -45,6 +45,8 @@ normal scripts, loss scripts, and tuner workers from each developing a slightly
 different idea of how parameters, flags, stats, multicolumn settings, and loss
 windows should be assembled.
 """
+from __future__ import annotations
+
 import argparse
 import os
 import re

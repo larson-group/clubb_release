@@ -58,14 +58,13 @@ COAMPS benchmark files in:
 postprocessing/pyplotgen/config/Case_definitions.py
 ```
 
-Currently those case definitions contain absolute paths for the shared CLUBB
-benchmark archive, typically under:
+Currently those case definitions use the repository benchmark symlink:
 
 ```text
-/home/pub/les_and_clubb_benchmark_runs/
+input/les_and_clubb_benchmark_runs/
 ```
 
-The app only shows LES overlay options when the configured files exist on the
-local machine. If the archive is mounted somewhere else, update the relevant
-`sam_benchmark_file` or `coamps_benchmark_file` entries in
-`Case_definitions.py`.
+`input/les_and_clubb_benchmark_runs` defaults to
+`/home/pub/les_and_clubb_benchmark_runs`. The app only shows LES overlay
+options when the configured files exist on the local machine. If the archive is
+mounted somewhere else, retarget that symlink locally.

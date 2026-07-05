@@ -1,5 +1,7 @@
 """User-facing wrappers for routines from CLUBB_core/lapack_interfaces.F90."""
 
+from __future__ import annotations
+
 from numpy import asfortranarray as f_arr
 
 import clubb_f2py

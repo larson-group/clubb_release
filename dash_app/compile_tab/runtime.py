@@ -6,17 +6,40 @@ import json
 import os
 from pathlib import Path
 import shlex
+import shutil
 import signal
 import subprocess
 import sys
 import tempfile
 import time
 
-from .discovery import command_in_env, compiler_from_env, resolve_lmod_stack
+from .discovery import command_in_env, compiler_from_env, parse_cmake_cache, resolve_lmod_stack
 from .state import BUILD_DIR, COMPILE_LOCK, COMPILE_PROC, MAX_UI_LOG_LINES, REPO_ROOT
 
 
 BUILD_STATUS_TIMEOUT = 8
+INSTALL_MTIME_TOLERANCE_NS = 1_000_000_000
+RUNTIME_BUILD_TARGETS = (
+    "clubb_driver_lib",
+    "clubb_standalone",
+    "clubb_thread_test",
+    "clubb_tuner",
+    "G_unit_tests",
+    "clubb_driver_test",
+    "clubb_standalone_loss",
+    "clubb_loss_driver_test",
+)
+PYTHON_BUILD_TARGETS = ("clubb_f2py",)
+RUNTIME_INSTALL_ARTIFACTS = {
+    "clubb_driver_lib": ("src/libclubb_driver_lib.a", "libclubb_driver_lib.a"),
+    "clubb_standalone": ("src/clubb_standalone", "clubb_standalone"),
+    "clubb_thread_test": ("src/clubb_thread_test", "clubb_thread_test"),
+    "clubb_tuner": ("src/clubb_tuner", "clubb_tuner"),
+    "G_unit_tests": ("src/G_unit_tests", "G_unit_tests"),
+    "clubb_driver_test": ("src/clubb_driver_test", "clubb_driver_test"),
+    "clubb_standalone_loss": ("src/clubb_standalone_loss", "clubb_standalone_loss"),
+    "clubb_loss_driver_test": ("src/clubb_loss_driver_test", "clubb_loss_driver_test"),
+}
 
 _REBUILD_HELPER = r"""
 import json
@@ -157,21 +180,97 @@ def validated_build_path(build_path):
     return str(path)
 
 
-def detect_build_status(build):
-    """Return whether the build system would do work for a build directory."""
-    build_path = build.get("path") if isinstance(build, dict) else build
-    try:
-        path = validated_build_path(build_path)
-    except RuntimeError as exc:
-        return {
-            "status": "unknown",
-            "label": "unknown",
-            "detail": str(exc),
-            "output": "",
-            "checked_at": time.time(),
-        }
+def _status(status, label=None, detail="", output="", command=None, returncode=None):
+    """Build one freshness status payload."""
+    return {
+        "status": status,
+        "label": label or status.replace("_", " "),
+        "detail": detail,
+        "output": (output or "")[-4000:],
+        "command": " ".join(shlex.quote(part) for part in command) if command else "",
+        "returncode": returncode,
+        "checked_at": time.time(),
+    }
 
-    command = ["cmake", "--build", path, "--", "-n"]
+
+def _last_output_line(output):
+    """Return the last non-empty line from command output."""
+    lines = [line.strip() for line in (output or "").splitlines() if line.strip()]
+    return lines[-1] if lines else ""
+
+
+def _build_cache_for(path, build):
+    """Return CMake cache metadata from discovery or CMakeCache.txt."""
+    cache = {
+        "CMAKE_GENERATOR": (build or {}).get("generator", ""),
+        "CMAKE_MAKE_PROGRAM": (build or {}).get("make_program", ""),
+        "CMAKE_INSTALL_PREFIX": (build or {}).get("install_prefix", ""),
+        "ENABLE_F2PY": (build or {}).get("python", ""),
+    }
+    if not all(cache.values()):
+        parsed = parse_cmake_cache(Path(path) / "CMakeCache.txt")
+        for key, value in parsed.items():
+            cache.setdefault(key, value)
+            if not cache[key]:
+                cache[key] = value
+    return cache
+
+
+def _runtime_targets(cache):
+    """Return CLUBB targets whose freshness determines runtime usability."""
+    targets = list(RUNTIME_BUILD_TARGETS)
+    if cache.get("ENABLE_F2PY") == "ON":
+        targets.extend(PYTHON_BUILD_TARGETS)
+    return targets
+
+
+def _tool_path(candidate, fallback_name):
+    """Return an executable build-tool path if one is available."""
+    if candidate and Path(candidate).is_file():
+        return candidate
+    return shutil.which(fallback_name) or ""
+
+
+def _planned_ninja_lines(output):
+    """Return dry-run lines that describe actual planned target work."""
+    planned = []
+    for line in (output or "").splitlines():
+        stripped = line.strip()
+        if not stripped or stripped.startswith("ninja:"):
+            continue
+        planned.append(stripped)
+    return planned
+
+
+def _detect_target_status(path, build, cache, targets):
+    """Ask the native build tool whether CLUBB runtime targets need work."""
+    generator = cache.get("CMAKE_GENERATOR", "")
+    make_program = cache.get("CMAKE_MAKE_PROGRAM", "")
+
+    if generator == "Ninja":
+        tool = _tool_path(make_program, "ninja")
+        if not tool:
+            return _status(
+                "unknown",
+                detail=f"Ninja build tool not found for {path}.",
+            )
+        command = [tool, "-C", path, "-n", *targets]
+        query_kind = "ninja dry-run"
+    elif generator == "Unix Makefiles":
+        tool = _tool_path(make_program, "make")
+        if not tool:
+            return _status(
+                "unknown",
+                detail=f"Make build tool not found for {path}.",
+            )
+        command = [tool, "-C", path, "-q", *targets]
+        query_kind = "make query"
+    else:
+        return _status(
+            "unknown",
+            detail=f"Unsupported CMake generator for freshness checks: {generator or 'unknown'}.",
+        )
+
     try:
         proc = subprocess.run(
             command,
@@ -184,52 +283,201 @@ def detect_build_status(build):
             check=False,
         )
     except subprocess.TimeoutExpired:
-        return {
-            "status": "unknown",
-            "label": "unknown",
-            "detail": f"Dry-run timed out after {BUILD_STATUS_TIMEOUT}s.",
-            "output": "",
-            "checked_at": time.time(),
-        }
+        return _status(
+            "unknown",
+            detail=f"{query_kind} timed out after {BUILD_STATUS_TIMEOUT}s.",
+            command=command,
+        )
     except OSError as exc:
-        return {
-            "status": "unknown",
-            "label": "unknown",
-            "detail": str(exc),
-            "output": "",
-            "checked_at": time.time(),
-        }
+        return _status("unknown", detail=str(exc), command=command)
 
     output = proc.stdout or ""
     lower_output = output.lower()
-    detail_lines = [line.strip() for line in output.splitlines() if line.strip()]
-    detail = detail_lines[-1] if detail_lines else ""
-    if proc.returncode != 0:
-        status = "unknown"
-        label = "unknown"
-        detail = detail or f"Dry-run failed with exit {proc.returncode}."
-    elif "no work to do" in lower_output or "nothing to be done" in lower_output:
-        status = "current"
-        label = "current"
-        detail = "No build work pending."
-    elif "re-running cmake" in lower_output:
-        status = "needs_configure"
-        label = "needs configure"
-    elif "pgcuda" in lower_output:
-        status = "toolchain_dirty"
-        label = "toolchain dirty"
-    else:
-        status = "needs_rebuild"
-        label = "needs rebuild"
+    detail = _last_output_line(output)
+    if "re-running cmake" in lower_output:
+        return _status(
+            "needs_configure",
+            "needs configure",
+            detail=detail or "CMake would reconfigure this build.",
+            output=output,
+            command=command,
+            returncode=proc.returncode,
+        )
+    if generator == "Ninja":
+        if proc.returncode != 0:
+            return _status(
+                "unknown",
+                detail=detail or f"Ninja dry-run failed with exit {proc.returncode}.",
+                output=output,
+                command=command,
+                returncode=proc.returncode,
+            )
+        if "no work to do" in lower_output:
+            return _status(
+                "current",
+                detail="CLUBB runtime targets are current.",
+                output=output,
+                command=command,
+                returncode=proc.returncode,
+            )
+        planned = _planned_ninja_lines(output)
+        if planned:
+            return _status(
+                "needs_rebuild",
+                "needs rebuild",
+                detail=planned[0],
+                output=output,
+                command=command,
+                returncode=proc.returncode,
+            )
+        return _status(
+            "current",
+            detail="CLUBB runtime targets are current.",
+            output=output,
+            command=command,
+            returncode=proc.returncode,
+        )
+
+    if proc.returncode == 0:
+        return _status(
+            "current",
+            detail="CLUBB runtime targets are current.",
+            output=output,
+            command=command,
+            returncode=proc.returncode,
+        )
+    if proc.returncode == 1:
+        return _status(
+            "needs_rebuild",
+            "needs rebuild",
+            detail=detail or "Make reports at least one CLUBB runtime target is out of date.",
+            output=output,
+            command=command,
+            returncode=proc.returncode,
+        )
+    return _status(
+        "unknown",
+        detail=detail or f"Make query failed with exit {proc.returncode}.",
+        output=output,
+        command=command,
+        returncode=proc.returncode,
+    )
+
+
+def _artifact_is_stale(build_artifact, install_artifact):
+    """Return whether an installed artifact is missing or older than its build artifact."""
+    if not build_artifact.is_file():
+        return None
+    if not install_artifact.is_file():
+        return True
+    try:
+        build_stat = build_artifact.stat()
+        install_stat = install_artifact.stat()
+    except OSError:
+        return True
+    if install_stat.st_size != build_stat.st_size:
+        return True
+    if install_stat.st_mtime_ns + INSTALL_MTIME_TOLERANCE_NS >= build_stat.st_mtime_ns:
+        return False
+    return not _files_have_same_contents(build_artifact, install_artifact)
+
+
+def _files_have_same_contents(left, right):
+    """Return whether two same-sized files have identical bytes."""
+    try:
+        with left.open("rb") as left_file, right.open("rb") as right_file:
+            while True:
+                left_chunk = left_file.read(1024 * 1024)
+                right_chunk = right_file.read(1024 * 1024)
+                if left_chunk != right_chunk:
+                    return False
+                if not left_chunk:
+                    return True
+    except OSError:
+        return False
+
+
+def _python_install_artifacts(path, install_prefix):
+    """Yield Python/F2PY build and install artifact pairs for comparison."""
+    runtime_dir = Path(path) / "clubb_python_api" / "f2py_runtime"
+    install_dir = Path(install_prefix) / "python"
+    for pattern in ("clubb_f2py*", "libclubb_f2py_backend*"):
+        for build_artifact in runtime_dir.glob(pattern):
+            yield build_artifact, install_dir / build_artifact.name
+
+
+def _detect_install_status(path, cache, targets):
+    """Verify installed CLUBB runtime artifacts are at least as fresh as build artifacts."""
+    install_prefix = cache.get("CMAKE_INSTALL_PREFIX", "")
+    if not install_prefix:
+        return _status("needs_install", "needs install", detail="CMAKE_INSTALL_PREFIX is not set.")
+    install_root = Path(install_prefix)
+    if not install_root.is_dir():
+        return _status("needs_install", "needs install", detail=f"Install directory is missing: {install_prefix}.")
+
+    stale = []
+    unknown = []
+    for target in targets:
+        artifact_pair = RUNTIME_INSTALL_ARTIFACTS.get(target)
+        if not artifact_pair:
+            continue
+        build_rel, install_rel = artifact_pair
+        build_artifact = Path(path) / build_rel
+        install_artifact = install_root / install_rel
+        artifact_stale = _artifact_is_stale(build_artifact, install_artifact)
+        if artifact_stale is None:
+            unknown.append(str(build_artifact))
+        elif artifact_stale:
+            stale.append(str(install_artifact))
+
+    if cache.get("ENABLE_F2PY") == "ON":
+        python_pairs = list(_python_install_artifacts(path, install_prefix))
+        if not python_pairs:
+            unknown.append(str(Path(path) / "clubb_python_api" / "f2py_runtime"))
+        for build_artifact, install_artifact in python_pairs:
+            if _artifact_is_stale(build_artifact, install_artifact):
+                stale.append(str(install_artifact))
+
+    if stale:
+        return _status(
+            "needs_install",
+            "needs install",
+            detail=f"Installed artifact is stale or missing: {stale[0]}",
+        )
+    if unknown:
+        return _status(
+            "unknown",
+            detail=f"Build artifact was not found for install freshness check: {unknown[0]}",
+        )
+    return _status("current", detail="Installed CLUBB runtime artifacts are current.")
+
+
+def detect_build_status(build):
+    """Return whether CLUBB runtime artifacts need rebuild or install work."""
+    build_path = build.get("path") if isinstance(build, dict) else build
+    try:
+        path = validated_build_path(build_path)
+    except RuntimeError as exc:
+        return _status("unknown", detail=str(exc))
+
+    cache = _build_cache_for(path, build if isinstance(build, dict) else {})
+    targets = _runtime_targets(cache)
+    target_status = _detect_target_status(path, build, cache, targets)
+    if target_status.get("status") != "current":
+        return target_status
+
+    install_status = _detect_install_status(path, cache, targets)
+    if install_status.get("status") != "current":
+        return {
+            **install_status,
+            "output": target_status.get("output", ""),
+            "command": target_status.get("command", ""),
+            "returncode": target_status.get("returncode"),
+        }
 
     return {
-        "status": status,
-        "label": label,
-        "detail": detail,
-        "output": output[-4000:],
-        "command": " ".join(shlex.quote(part) for part in command),
-        "returncode": proc.returncode,
-        "checked_at": time.time(),
+        **target_status,
+        "detail": "CLUBB runtime targets and installed artifacts are current.",
     }
 
 

@@ -25,10 +25,15 @@ TERMINAL_STATES = {"finished", "stopped", "error"}
 
 def _complete_f2py_runtime_dir(path: Path) -> bool:
     """Return whether a directory contains the compiled f2py runtime artifacts."""
+    backend_candidates = (
+        path / "libclubb_f2py_backend.so",
+        path / "libclubb_f2py_backend.dylib",
+        path / "clubb_f2py_backend.dll",
+    )
     return (
         path.is_dir()
         and any(path.glob("clubb_f2py*.so"))
-        and (path / "libclubb_f2py_backend.so").is_file()
+        and any(candidate.is_file() for candidate in backend_candidates)
     )
 
 

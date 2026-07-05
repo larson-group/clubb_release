@@ -19,7 +19,7 @@ l_use_prescribed_rand_seed  = .false.,
 prescribed_rand_seed        = 1
 /
 
-! clubb_stats_file is the name of clubb stats file;  This should be the same as 
+! clubb_stats_file is the name of clubb stats file;  This should be the same as
 !   fname_zm  or fname_zm in the statsnl namelist.
 ! les_stats_file is the name of LES netCDF data file
 ! z_i and z_f are levels to look at when tuning. This does not need
@@ -29,8 +29,8 @@ prescribed_rand_seed        = 1
 
 &cases
 ! GCSS ATEX
-hoc_stats_file_nl(1)    = "../output/atex_stats.nc" 
-les_stats_file_nl(1)    = "/home/pub/les_and_clubb_benchmark_runs/les_runs/atex_coamps_sm.nc" 
+hoc_stats_file_nl(1)    = "../output/atex_stats.nc"
+les_stats_file_nl(1)    = "../input/les_and_clubb_benchmark_runs/les_runs/atex_coamps_sm.nc"
 run_file_nl(1)          = "atex_hoc.in"
 z_i_nl(1)               = 1
 z_f_nl(1)               = 148

@@ -614,6 +614,8 @@ def discover_existing_builds():
                 "is_selected": bool(install_prefix and selected_target and str(Path(install_prefix).resolve()) == selected_target),
                 "has_log": build_log.exists(),
                 "build_type": cache.get("CMAKE_BUILD_TYPE", ""),
+                "generator": cache.get("CMAKE_GENERATOR", ""),
+                "make_program": cache.get("CMAKE_MAKE_PROGRAM", ""),
                 "toolchain": cache.get("CMAKE_TOOLCHAIN_FILE", ""),
                 "precision": cache.get("PRECISION", ""),
                 "gpu": cache.get("GPU", ""),

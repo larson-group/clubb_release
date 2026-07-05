@@ -93,13 +93,18 @@ def python_runtime_dir_from_install(install_dir):
     """Return the self-contained Python runtime directory for an install tree."""
     runtime_dir = os.path.join(install_dir, "python")
     missing_reason = None
+    backend_candidates = [
+        os.path.join(runtime_dir, "libclubb_f2py_backend.so"),
+        os.path.join(runtime_dir, "libclubb_f2py_backend.dylib"),
+        os.path.join(runtime_dir, "clubb_f2py_backend.dll"),
+    ]
 
     if not os.path.isdir(runtime_dir):
         missing_reason = "directory is missing"
     elif not glob.glob(os.path.join(runtime_dir, "clubb_f2py*.so")):
         missing_reason = "clubb_f2py extension is missing"
-    elif not os.path.isfile(os.path.join(runtime_dir, "libclubb_f2py_backend.so")):
-        missing_reason = "libclubb_f2py_backend.so is missing"
+    elif not any(os.path.isfile(candidate) for candidate in backend_candidates):
+        missing_reason = "libclubb_f2py_backend shared library is missing"
     elif not os.path.isdir(os.path.join(runtime_dir, "clubb_python")):
         missing_reason = "clubb_python package is missing"
 

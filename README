@@ -830,10 +830,13 @@ Do steps 1, 2, & 3 as outlined in the description of a standalone run (Sec 2.1).
    Therefore, if you add a new benchmark-converter field, you must also add a
    matching CLUBB stats entry to all_tuning_stats.in.
 
-7. Ensure that the directory /home/pub/les_and_clubb_benchmark_runs exists on the
-   machine you are using.  (All group computers at UWM should have this directory.)  
-   This directory should contain the benchmark LES output that CLUBB is trying
-   to match.  Using this output, along with setting debug_level to 0, 
+7. Ensure that `input/les_and_clubb_benchmark_runs` points to the benchmark
+   data directory. By default it is a symlink to
+   `/home/pub/les_and_clubb_benchmark_runs`, so UWM group computers should
+   resolve it without extra setup. If the archive is mounted somewhere else,
+   retarget `input/les_and_clubb_benchmark_runs` locally. This
+   directory should contain the benchmark LES output that CLUBB is trying
+   to match. Using this output, along with setting debug_level to 0,
    will produce identical output to the nightly tests tuning run.
 
 8. Go to the run_scripts directory and execute ./run_tuner.py 

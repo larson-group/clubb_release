@@ -1,5 +1,7 @@
 """User-facing wrappers for routines from CLUBB_core/stats_netcdf.F90."""
 
+from __future__ import annotations
+
 import numpy as np
 from numpy import asfortranarray as f_arr
 
@@ -194,7 +196,10 @@ def finalize_stats(err_info: ErrInfo):
 
 def get_stats_config():
     """Get stats config scalars."""
-    return clubb_f2py.f2py_get_stats_config()
+    config = list(clubb_f2py.f2py_get_stats_config())
+    for logical_idx in (0, 7, 8):
+        config[logical_idx] = 1 if config[logical_idx] else 0
+    return tuple(config)
 
 
 def get_stats_var_meta(ivar: int):

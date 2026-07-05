@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import errno
 import os
 from pathlib import Path
 import shutil
@@ -35,6 +36,10 @@ from .runtime import (
     update_active_job,
 )
 from .state import BUILD_DIR, INSTALL_DIR
+
+
+DELETE_RETRY_DELAYS = (0.05, 0.1, 0.2, 0.4, 0.8)
+RETRIABLE_DELETE_ERRNOS = {errno.EBUSY, errno.ENOTEMPTY}
 
 
 def options_from_flags(flag_values):
@@ -253,7 +258,7 @@ def clicked_trigger_id():
     return None
 
 
-REBUILDABLE_BUILD_STATUSES = {"needs_configure", "needs_rebuild", "toolchain_dirty"}
+REBUILDABLE_BUILD_STATUSES = {"needs_configure", "needs_rebuild", "needs_install", "toolchain_dirty"}
 DELETE_ALL_BUILDS_TARGET = "__all__"
 
 
@@ -641,6 +646,21 @@ def unlink_install_aliases(install_path):
     return removed
 
 
+def rmtree_with_retries(path, label):
+    """Recursively delete a directory, retrying macOS ENOTEMPTY/EBUSY races."""
+    for attempt, delay in enumerate((0, *DELETE_RETRY_DELAYS)):
+        if delay:
+            time.sleep(delay)
+        try:
+            shutil.rmtree(path)
+            return
+        except FileNotFoundError:
+            return
+        except OSError as exc:
+            if exc.errno not in RETRIABLE_DELETE_ERRNOS or attempt == len(DELETE_RETRY_DELAYS):
+                raise RuntimeError(f"Could not delete {label} {path}: {exc}") from exc
+
+
 def delete_existing_build(build):
     """Delete one discovered build and its install directory when safe."""
     build_path = safe_child_path(build.get("path"), BUILD_DIR, "Build directory")
@@ -653,7 +673,7 @@ def delete_existing_build(build):
         if install_path.is_symlink():
             install_path.unlink()
         elif install_path.is_dir():
-            shutil.rmtree(install_path)
+            rmtree_with_retries(install_path, "install directory")
         else:
             install_path.unlink()
         removed.append(str(install_path))
@@ -661,7 +681,7 @@ def delete_existing_build(build):
     if build_path.is_symlink():
         build_path.unlink()
     elif build_path.exists():
-        shutil.rmtree(build_path)
+        rmtree_with_retries(build_path, "build directory")
     removed.append(str(build_path))
     return removed
 

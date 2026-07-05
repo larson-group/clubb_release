@@ -12,7 +12,7 @@ module clubb_driver
   !--------------------------------- Procedures ---------------------------------
 
   use text_writer, only: &
-    write_text, &
+    write_text, & 
     write_date
 
 #ifdef _OPENMP

@@ -30,7 +30,7 @@ prescribed_rand_seed        = 1
 &cases
 !  GCSS BOMEX
 hoc_stats_file_nl(1)    = "../output/bomex_stats.nc"
-les_stats_file_nl(1)    = "/home/pub/les_and_clubb_benchmark_runs/les_runs/bomex_coamps_sm.nc"
+les_stats_file_nl(1)    = "../input/les_and_clubb_benchmark_runs/les_runs/bomex_coamps_sm.nc"
 run_file_nl(1)          = "bomex_hoc.in"
 z_i_nl(1)               = 2
 z_f_nl(1)               = 72
@@ -39,7 +39,7 @@ weight_case_nl(1)       = 1.0
 
 ! GCSS FIRE
 hoc_stats_file_nl(2)    = "../output/fire_stats.nc"
-les_stats_file_nl(2)    = "/home/pub/les_and_clubb_benchmark_runs/les_runs/fire_coamps_sm.nc"
+les_stats_file_nl(2)    = "../input/les_and_clubb_benchmark_runs/les_runs/fire_coamps_sm.nc"
 run_file_nl(2)          = "fire_hoc.in"
 z_i_nl(2)               = 1
 z_f_nl(2)               = 47
@@ -48,7 +48,7 @@ weight_case_nl(2)       = 1.0
 
 ! GCSS ARM
 hoc_stats_file_nl(3)    = "../output/arm_stats.nc"
-les_stats_file_nl(3)    = "/home/pub/les_and_clubb_benchmark_runs/les_runs/arm_coamps_sm.nc"
+les_stats_file_nl(3)    = "../input/les_and_clubb_benchmark_runs/les_runs/arm_coamps_sm.nc"
 run_file_nl(3)          = "arm_hoc.in"
 z_i_nl(3)               = 1
 z_f_nl(3)               = 108
@@ -57,7 +57,7 @@ weight_case_nl(3)       = 1.0
 
 ! GCSS ATEX
 hoc_stats_file_nl(4)    = "../output/atex_stats.nc"
-les_stats_file_nl(4)    = "/home/pub/les_and_clubb_benchmark_runs/les_runs/atex_coamps_sm.nc"
+les_stats_file_nl(4)    = "../input/les_and_clubb_benchmark_runs/les_runs/atex_coamps_sm.nc"
 run_file_nl(4)          = "atex_hoc.in"
 z_i_nl(4)               = 1
 z_f_nl(4)               = 148
@@ -66,7 +66,7 @@ weight_case_nl(4)       = 1.0
 
 ! GCSS DYCOMS2 RF01
 hoc_stats_file_nl(5)    = "../output/dycoms2_rf01_stats.nc"
-les_stats_file_nl(5)    = "/home/pub/les_and_clubb_benchmark_runs/les_runs/dycoms2_rf01_coamps_sm.nc"
+les_stats_file_nl(5)    = "../input/les_and_clubb_benchmark_runs/les_runs/dycoms2_rf01_coamps_sm.nc"
 run_file_nl(5)          = "dycoms2_rf01_hoc.in"
 z_i_nl(5)               = 2
 z_f_nl(5)               = 129
@@ -75,7 +75,7 @@ weight_case_nl(5)       = 1.0
 
 ! GCSS DYCOMS II RF02 DO
 hoc_stats_file_nl(6)    = "../output/dycoms2_rf02_do_stats.nc"
-les_stats_file_nl(6)    = "/home/pub/les_and_clubb_benchmark_runs/les_runs/dycoms2_rf02_do_coamps_sm.nc"
+les_stats_file_nl(6)    = "../input/les_and_clubb_benchmark_runs/les_runs/dycoms2_rf02_do_coamps_sm.nc"
 run_file_nl(6)          = "dycoms2_rf02_do_hoc.in"
 z_i_nl(6)               = 1
 z_f_nl(6)               = 146
@@ -84,7 +84,7 @@ weight_case_nl(6)       = 1.0
 
 ! GCSS DYCOMS II RF02 DS
 hoc_stats_file_nl(7)    = "../output/dycoms2_rf02_ds_stats.nc"
-les_stats_file_nl(7)    = "/home/pub/les_and_clubb_benchmark_runs/les_runs/dycoms2_rf02_ds_coamps_sm.nc"
+les_stats_file_nl(7)    = "../input/les_and_clubb_benchmark_runs/les_runs/dycoms2_rf02_ds_coamps_sm.nc"
 run_file_nl(7)          = "dycoms2_rf02_ds_hoc.in"
 z_i_nl(7)               = 1
 z_f_nl(7)               = 146
@@ -93,7 +93,7 @@ weight_case_nl(7)       = 1.0
 
 ! GCSS DYCOMS II RF02 ND
 hoc_stats_file_nl(8)    = "../output/dycoms2_rf02_nd_stats.nc"
-les_stats_file_nl(8)    = "/home/pub/les_and_clubb_benchmark_runs/les_runs/dycoms2_rf02_nd_coamps_sm.nc"
+les_stats_file_nl(8)    = "../input/les_and_clubb_benchmark_runs/les_runs/dycoms2_rf02_nd_coamps_sm.nc"
 run_file_nl(8)          = "dycoms2_rf02_nd_hoc.in"
 z_i_nl(8)               = 1
 z_f_nl(8)               = 36
@@ -102,7 +102,7 @@ weight_case_nl(8)       = 1.0
 
 ! Wangara Day 33      ! Throws an error when tuning cloud_frac (all 0s)
 hoc_stats_file_nl(9)    = "../output/wangara_stats.nc"
-les_stats_file_nl(9)    = "/home/pub/les_and_clubb_benchmark_runs/les_runs/wangara_rams.nc"
+les_stats_file_nl(9)    = "../input/les_and_clubb_benchmark_runs/les_runs/wangara_rams.nc"
 run_file_nl(9)          = "wangara_hoc.in"
 z_i_nl(9)               = 1
 z_f_nl(9)               = 50
@@ -111,7 +111,7 @@ weight_case_nl(9)       = 1.0
 
 ! Nov 11 Altocumulus
 !hoc_stats_file_nl(10)    = "../output/nov11_altocu_stats.nc"
-!les_stats_file_nl(10)    = "/home/pub/les_and_clubb_benchmark_runs/les_runs/nov11_altocu_coamps_sm.nc"
+!les_stats_file_nl(10)    = "../input/les_and_clubb_benchmark_runs/les_runs/nov11_altocu_coamps_sm.nc"
 !run_file_nl(10)          = "nov11_altocu_hoc.in"
 !z_i_nl(10)               = 47
 !z_f_nl(10)               = 142

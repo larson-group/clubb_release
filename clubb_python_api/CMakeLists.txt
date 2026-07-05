@@ -77,7 +77,13 @@ set_target_properties(clubb_f2py_backend PROPERTIES
     RUNTIME_OUTPUT_DIRECTORY "${F2PY_RUNTIME_DIR}"
 )
 
-set(F2PY_LDFLAG_LIST "-Wl,-rpath,\$ORIGIN")
+if(APPLE)
+    set(F2PY_ORIGIN_RPATH "@loader_path")
+else()
+    set(F2PY_ORIGIN_RPATH "\$ORIGIN")
+endif()
+
+set(F2PY_LDFLAG_LIST "-Wl,-rpath,${F2PY_ORIGIN_RPATH}")
 foreach(_f2py_link_dir IN LISTS CMAKE_Fortran_IMPLICIT_LINK_DIRECTORIES)
     if(_f2py_link_dir AND EXISTS "${_f2py_link_dir}")
         list(APPEND F2PY_LDFLAG_LIST
@@ -88,6 +94,22 @@ foreach(_f2py_link_dir IN LISTS CMAKE_Fortran_IMPLICIT_LINK_DIRECTORIES)
 endforeach()
 list(JOIN F2PY_LDFLAG_LIST " " F2PY_LDFLAGS)
 
+set(F2PY_ENV
+    "FC=${CMAKE_Fortran_COMPILER}"
+    "CC=${CMAKE_C_COMPILER}"
+    "CXX=${CMAKE_CXX_COMPILER}"
+    "LDFLAGS=${F2PY_LDFLAGS}"
+)
+
+if(APPLE AND CMAKE_OSX_SYSROOT)
+    list(APPEND F2PY_ENV
+        "SDKROOT=${CMAKE_OSX_SYSROOT}"
+        "CFLAGS=-isysroot ${CMAKE_OSX_SYSROOT}"
+        "CPPFLAGS=-isysroot ${CMAKE_OSX_SYSROOT}"
+        "CXXFLAGS=-isysroot ${CMAKE_OSX_SYSROOT}"
+    )
+endif()
+
 add_custom_command(
     OUTPUT "${F2PY_MODULE_IN_BUILD}"
     # Start from a clean transient f2py work directory to avoid stale artifacts.
@@ -97,14 +119,7 @@ add_custom_command(
     COMMAND "${CMAKE_COMMAND}" -E copy_if_different "${F2PY_PYF_FILE}" "${F2PY_PYF_IN_BUILD}"
     COMMAND "${CMAKE_COMMAND}" -E chdir "${F2PY_WORK_DIR}"
         "${CMAKE_COMMAND}" -E env
-            # Ensure meson/f2py uses the same Fortran compiler as the CMake build.
-            "FC=${CMAKE_Fortran_COMPILER}"
-            "CC=${CMAKE_C_COMPILER}"
-            "CXX=${CMAKE_CXX_COMPILER}"
-            # Ensure generated extension can locate libclubb_f2py_backend.so in
-            # the same directory at runtime. Also carry Fortran runtime link paths
-            # detected by CMake, since f2py/meson links the extension separately.
-            "LDFLAGS=${F2PY_LDFLAGS}"
+            ${F2PY_ENV}
             "${F2PY_PYTHON_EXECUTABLE}" -m numpy.f2py
             -c "clubb_f2py.pyf"
             # Link against the backend shared library we just built via CMake.

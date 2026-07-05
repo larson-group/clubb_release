@@ -143,8 +143,26 @@
   box-shadow: none !important;
 }
 
+.compile-checklist {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 14px;
+}
+
 .compile-checklist label {
+  display: inline-flex !important;
+  align-items: center;
+  gap: 6px;
+  width: auto !important;
+  margin: 0 !important;
   font-size: 14px;
+  white-space: nowrap;
+}
+
+.compile-checklist input[type="checkbox"] {
+  flex: 0 0 auto;
+  margin: 0;
 }
 
 .compile-action-row {

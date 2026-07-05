@@ -13,6 +13,8 @@ Header tokens determine what type of temperature and altitude are given:
 This module reads the raw columns and returns them as numpy arrays,
 along with the header metadata needed to interpret them.
 """
+from __future__ import annotations
+
 import numpy as np
 from pathlib import Path
 

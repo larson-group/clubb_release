@@ -81,7 +81,8 @@ from config.VariableGroupNondimMoments import VariableGroupNondimMoments
 from config.VariableGroupNormalizedVariations import VariableGroupNormalizedVariations
 
 # ---------------------------
-BENCHMARK_OUTPUT_ROOT = "/home/pub/les_and_clubb_benchmark_runs/"
+REPO_ROOT = os.path.abspath(os.path.join(os.path.dirname(os.path.realpath(__file__)), "../../.."))
+BENCHMARK_OUTPUT_ROOT = os.path.join(REPO_ROOT, "input", "les_and_clubb_benchmark_runs") + os.sep
 if not os.path.isdir(BENCHMARK_OUTPUT_ROOT) and \
         not os.path.islink(BENCHMARK_OUTPUT_ROOT):
     print("Benchmark output was not found in " + BENCHMARK_OUTPUT_ROOT + ".\n\tChecking local location: " +

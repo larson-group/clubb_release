@@ -2,15 +2,17 @@ import netCDF4
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
+from pathlib import Path
 
 gravity = 9.81
+BENCHMARK_ROOT = Path(__file__).resolve().parents[2] / "input" / "les_and_clubb_benchmark_runs"
 
 # Change netcdf_file path to the file you want to use.
-netcdf_file = "/home/pub/les_and_clubb_benchmark_runs/sam_benchmark_runs/JULY_2017/DYCOMS_RF01_96x96x320/DYCOMS_RF01_96x96x320.nc"
+netcdf_file = str(BENCHMARK_ROOT / "sam_benchmark_runs/JULY_2017/DYCOMS_RF01_96x96x320/DYCOMS_RF01_96x96x320.nc")
 
-# "/home/pub/les_and_clubb_benchmark_runs/sam_benchmark_runs/JULY_2017/DYCOMS_RF01_96x96x320/DYCOMS_RF01_96x96x320.nc"
+# BENCHMARK_ROOT / "sam_benchmark_runs/JULY_2017/DYCOMS_RF01_96x96x320/DYCOMS_RF01_96x96x320.nc"
 
-# "/home/pub/les_and_clubb_benchmark_runs/sam_benchmark_runs/BOMEX_64x64x75/BOMEX_64x64x75_100m_40m_1s.nc"
+# BENCHMARK_ROOT / "sam_benchmark_runs/BOMEX_64x64x75/BOMEX_64x64x75_100m_40m_1s.nc"
 
 
 def get_var_from_netcdf(nc_file, var_name, df):
