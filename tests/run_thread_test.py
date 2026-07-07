@@ -170,6 +170,7 @@ def main():
     args = parse_args()
     run_env = os.environ.copy()
     run_env["OMP_NUM_THREADS"] = str(args.threads)
+    run_env["PWD"] = str(SCRIPT_DIR.resolve())
     # Helps on systems where OpenMP shared-memory segments are restricted.
     run_env["KMP_USE_SHM"] = run_env.get("KMP_USE_SHM", "FALSE")
 

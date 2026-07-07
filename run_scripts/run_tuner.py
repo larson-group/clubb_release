@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import argparse
+import os
 import re
 import shutil
 import subprocess
@@ -58,11 +59,14 @@ def run_and_tee(
     cwd.mkdir(parents=True, exist_ok=True)
     if log_path is not None:
         log_path.parent.mkdir(parents=True, exist_ok=True)
+    run_env = os.environ.copy()
+    run_env["PWD"] = str(cwd.resolve())
 
     with (log_path.open("a", encoding="utf-8") if log_path is not None else open("/dev/null", "w", encoding="utf-8")) as log:
         proc = subprocess.Popen(
             cmd,
             cwd=str(cwd),
+            env=run_env,
             stdin=subprocess.PIPE if stdin_text is not None else None,
             stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT,
