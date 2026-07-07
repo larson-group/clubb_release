@@ -34,6 +34,10 @@ From the repository root:
 ```bash
 python dash_app/app.py
 ```
+or
+```bash
+python3 dash_app/app.py &
+```
 
 By default the app opens in a browser at port `8050`, or the next available
 port. Use `python dash_app/app.py --help` for host, port, debug, and threading
