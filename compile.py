@@ -215,7 +215,7 @@ def configure_cmake(args, toolchain_file, inst_dir, build_type):
         f"-DUSE_GPTL={to_on_off(args.gptl)}",                  # default OFF
 
         # --- Python Environment ---
-        f"-DPython_EXECUTABLE={shutil.which('python')}",
+        f"-DPython_EXECUTABLE={sys.executable}",
     ]
 
     # --- SMARTER NETCDF DETECTION ---
@@ -298,7 +298,7 @@ def run_clubb_standards_check(logfile):
 
         # Just sum all error codes together
         retcode += run_and_log(
-            ["python", clubbstandards_script] + files,
+            [sys.executable, clubbstandards_script] + files,
             logfile
         )
 
@@ -371,6 +371,8 @@ def main():
     subdir_suffix += f"_GPU{args.gpu}" if args.gpu != "none" else ""
     subdir_suffix += f"_PREC{args.precision}"
     subdir_suffix += "_PYTHON" if args.python else ""
+    subdir_suffix += "_OPENMP" if args.openmp else ""
+    subdir_suffix += "_TUNING" if args.tuning else ""
     subdir_suffix += "_GPTL" if args.gptl else ""
 
     build_dir = os.path.join(CLUBB_ROOT, f"build/{compiler}{subdir_suffix}") 

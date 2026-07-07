@@ -31,8 +31,8 @@ if ! compgen -G "$F2PY_DIR/clubb_f2py*.so" > /dev/null; then
   echo "Rebuild with ./compile.py -python, or set CLUBB_F2PY_DIR." >&2
   exit 1
 fi
-if [[ ! -f "$F2PY_DIR/libclubb_f2py_backend.so" ]]; then
-  echo "libclubb_f2py_backend.so not found in: $F2PY_DIR" >&2
+if ! compgen -G "$F2PY_DIR/libclubb_f2py_backend.*" > /dev/null; then
+  echo "libclubb_f2py_backend library not found in: $F2PY_DIR" >&2
   echo "Rebuild with ./compile.py -python, or set CLUBB_F2PY_DIR." >&2
   exit 1
 fi

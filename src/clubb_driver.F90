@@ -23,17 +23,12 @@ module clubb_driver
     omp_get_thread_num ! Function
 #endif
 
-#ifdef GPTL
-   use gptl, only: &
-     GPTLsetoption, &
-     GPTLprint_method, &
-     GPTLfull_tree, &
-     GPTLoverhead, &
-     GPTLabort_on_error, &
-     GPTLinitialize, &
-     GPTLpr, &
-     GPTLfinalize
-#endif
+  use code_timer_module, only: &
+    timer_initialize, &
+    timer_disable, &
+    timer_start, &
+    timer_stop, &
+    timer_finalize
 
   !--------------------------------- Types ---------------------------------
 
@@ -194,9 +189,6 @@ module clubb_driver
   integer, parameter :: &
     nlon = 1, & ! Number of points in the X/Y [-]
     nlat = 1 
-
-  real( kind = core_rknd ) , parameter ::  &
-    timing_tol = 0.01_core_rknd   ! allowed tolerance for the timing budget check
 
   
   !--------------------------------- Setup Variables ---------------------------------
@@ -1248,6 +1240,9 @@ module clubb_driver
     l_add_dycore_grid
 
     !----------------------------------- Begin Code -----------------------------------
+
+    call timer_initialize()
+    call timer_start( "init_clubb_case" )
     
     ! Pick some default values for model_setting.  Some variables are initialized
     ! at declaration in module clubb_model_settings.
@@ -1378,6 +1373,7 @@ module clubb_driver
         call init_default_err_info_api( 1, err_info )
         write(fstderr,*) "clubb_params_in must have at least one column"
         err_info%err_code = clubb_fatal_error
+        call timer_stop( "init_clubb_case" )
         return
       end if
 
@@ -1385,6 +1381,7 @@ module clubb_driver
         call init_default_err_info_api( max( size( clubb_params_in, 1 ), 1 ), err_info )
         write(fstderr,*) "clubb_params_in has invalid shape: size(2) must equal nparams"
         err_info%err_code = clubb_fatal_error
+        call timer_stop( "init_clubb_case" )
         return
       end if
 
@@ -1414,6 +1411,7 @@ module clubb_driver
         call init_default_err_info_api( 1, err_info )
         write(fstderr,*) "ngrdcol in &multicol_def must be >= 1"
         err_info%err_code = clubb_fatal_error
+        call timer_stop( "init_clubb_case" )
         return
       end if
 
@@ -1421,6 +1419,7 @@ module clubb_driver
         call init_default_err_info_api( 1, err_info )
         write(fstderr,*) "batch_size in &multicol_def must be >= 1"
         err_info%err_code = clubb_fatal_error
+        call timer_stop( "init_clubb_case" )
         return
       end if
 
@@ -1428,6 +1427,7 @@ module clubb_driver
         call init_default_err_info_api( 1, err_info )
         write(fstderr,*) "batch_size in &multicol_def must be <= ngrdcol"
         err_info%err_code = clubb_fatal_error
+        call timer_stop( "init_clubb_case" )
         return
       end if
 
@@ -1435,6 +1435,7 @@ module clubb_driver
         call init_default_err_info_api( 1, err_info )
         write(fstderr,*) "ngrdcol in &multicol_def must be evenly divisible by batch_size"
         err_info%err_code = clubb_fatal_error
+        call timer_stop( "init_clubb_case" )
         return
       end if
 
@@ -1542,6 +1543,7 @@ module clubb_driver
                                             l_add_dycore_grid ) ! Intent(out)
 
     ! Read namelist file
+    call timer_start( "read_namelists" )
     open(unit=iunit, file=trim( runfile ), status='old')
     read(unit=iunit, nml=model_setting)
     stats_tstart = time_initial
@@ -1551,6 +1553,11 @@ module clubb_driver
     if ( trim( stats_output_filename ) == default_stats_output_filename ) then
       stats_output_filename = trim( fname_prefix ) // "_stats.nc"
     end if
+
+    open(unit=iunit, file=runfile, status='old', action='read')
+    read(unit=iunit, nml=configurable_clubb_flags_nl)
+    close(unit=iunit)
+    call timer_stop( "read_namelists" )
 
     ! Ensure output directory has a trailing slash.
     if ( len_trim(output_dir) <= 0 ) output_dir = "../output/"
@@ -1607,17 +1614,13 @@ module clubb_driver
     ! Hing Ong, 25 November 2025
     !fcor   = two * omega_planet * sin ( lat_vals * radians_per_deg )
 
-    open(unit=iunit, file=runfile, status='old', action='read')
-    read(unit=iunit, nml=configurable_clubb_flags_nl)
-    close(unit=iunit)
-
     if ( l_vert_avg_closure ) then
       l_trapezoidal_rule_zt    = .true.
       l_trapezoidal_rule_zm    = .true.
       l_call_pdf_closure_twice = .true.
     end if
 
-    ! The case prefix including output di
+    ! The case prefix including output directory.
     output_file_prefix  = trim( output_dir ) // trim( fname_prefix )        
 
     ! Resolve stats output path from output_dir plus the namelist-provided filename.
@@ -1644,6 +1647,7 @@ module clubb_driver
 
       ! General error -> set all entries to clubb_fatal_error
       err_info%err_code = clubb_fatal_error
+      call timer_stop( "init_clubb_case" )
       return
 
     else if ( max( iiedsclr_CO2, iiedsclr_rt, iiedsclr_thl ) > edsclr_dim ) then
@@ -1654,6 +1658,7 @@ module clubb_driver
 
       ! General error -> set all entries to clubb_fatal_error
       err_info%err_code = clubb_fatal_error
+      call timer_stop( "init_clubb_case" )
       return
 
     end if
@@ -1664,9 +1669,15 @@ module clubb_driver
 
     ! Set debug level
     call set_clubb_debug_level_api( debug_level ) ! Intent(in)
+    if ( debug_level < 0 ) then
+      call timer_stop( "init_clubb_case" )
+      call timer_disable()
+    end if
 
     ! Printing Model Inputs
     if ( clubb_at_least_debug_level_api( 1 ) ) then
+
+      call timer_start( "write_case_info" )
 
       if ( l_write_to_file ) then
         open(unit=iunit, file=case_info_file, status='replace', action='write')
@@ -1940,6 +1951,8 @@ module clubb_driver
              status='replace', action='write')
       end if
 
+      call timer_stop( "write_case_info" )
+
     end if ! clubb_at_least_debug_level_api( 1 )
 
     ! Allocate stretched grid altitude arrays.
@@ -2080,6 +2093,8 @@ module clubb_driver
     ! Printing configurable CLUBB flags Inputs
     if ( clubb_at_least_debug_level_api( 1 ) ) then
 
+      call timer_start( "write_case_info" )
+
       if ( l_write_to_file ) then
         open(unit=iunit, file=case_info_file, status='old', action='write', position='append')
       end if
@@ -2108,6 +2123,8 @@ module clubb_driver
         call execute_command_line( 'git --no-pager diff >> '//case_info_file )
       end if
 
+      call timer_stop( "write_case_info" )
+
     end if ! clubb_at_least_debug_level_api( 1 )
 
     ! Allocate & initialize variables,
@@ -2124,6 +2141,7 @@ module clubb_driver
       if ( any(err_info%err_code == clubb_fatal_error) ) then
         write(fstderr, *) err_info%err_header_global
         write(fstderr, *) "Fatal error calling setup_grid_api in clubb_driver"
+        call timer_stop( "init_clubb_case" )
         return
       end if
     end if
@@ -2143,6 +2161,7 @@ module clubb_driver
         if ( any(err_info%err_code == clubb_fatal_error) ) then
           write(fstderr, *) err_info%err_header_global
           write(fstderr, *) "Fatal error calling setup_grid_api for gr_desc in clubb_driver"
+          call timer_stop( "init_clubb_case" )
           return
         end if
       end if
@@ -2512,6 +2531,7 @@ module clubb_driver
       write(fstderr, *) "The options l_silhs_rad and l_calc_thlp2_rad are incompatible."
       ! General error -> set all entries to clubb_fatal_error
       err_info%err_code = clubb_fatal_error
+      call timer_stop( "init_clubb_case" )
       return
 
     end if
@@ -2521,6 +2541,7 @@ module clubb_driver
       write(fstderr, *) "The options rad_scheme == none and l_calc_thlp2_rad are incompatible."
       ! General error -> set all entries to clubb_fatal_error
       err_info%err_code = clubb_fatal_error
+      call timer_stop( "init_clubb_case" )
       return
     end if
 
@@ -2528,6 +2549,7 @@ module clubb_driver
       write(fstderr, *) err_info%err_header_global
       write(fstderr, *) "The options l_soil_veg and rad_scheme == none are incompatible."
       err_info%err_code = clubb_fatal_error
+      call timer_stop( "init_clubb_case" )
       return
     end if
 
@@ -2564,6 +2586,7 @@ module clubb_driver
       if ( any(err_info%err_code == clubb_fatal_error) ) then
         write(fstderr, *) err_info%err_header_global
         write(fstderr,*) "FATAL ERROR calling initialize_clubb in run_clubb"
+        call timer_stop( "init_clubb_case" )
         return
       end if
     end if
@@ -2584,6 +2607,7 @@ module clubb_driver
       ! Initialize statistics output; this allocates/initializes stats metadata
       ! for all columns but writes to one shared stats file.
       stats_registry = trim(runfile)
+      call timer_start( "stats_init_api" )
 
       ! Only use the first column of gr%zt and gr%zm to define the vertical levels
       ! since we can't output different vertical grids in one netCDF file (yet)
@@ -2646,11 +2670,13 @@ module clubb_driver
                               grid_remap_method=clubb_config_flags%grid_remap_method)
         end if
       end if
+      call timer_stop( "stats_init_api" )
 
       if ( clubb_at_least_debug_level_api( 0 ) ) then
         if ( any(err_info%err_code == clubb_fatal_error) ) then
           write(fstderr, *) err_info%err_header_global
           write(fstderr,*) "FATAL ERROR in stats_init_api"
+          call timer_stop( "init_clubb_case" )
           return
         end if
       end if
@@ -2662,6 +2688,7 @@ module clubb_driver
       write(fstderr, *) err_info%err_header_global
       write(fstderr, *) "Batch-mode stats NetCDF output does not yet support SILHS sample output."
       err_info%err_code = clubb_fatal_error
+      call timer_stop( "init_clubb_case" )
       return
     end if
 
@@ -2676,6 +2703,7 @@ module clubb_driver
     if ( any(err_info%err_code == clubb_fatal_error) ) then
       write(fstderr, *) err_info%err_header_global
       write(fstderr, *) "Fatal error calling latin_hypercube_2D_output_api in run_clubb"
+      call timer_stop( "init_clubb_case" )
       return
     end if
 
@@ -2810,6 +2838,7 @@ module clubb_driver
     !$acc      create( wphydrometp, wp2hmp, rtphmp_zt, thlphmp_zt )
     
     call set_case_initial_conditions( err_info )
+    call timer_stop( "init_clubb_case" )
 
   end subroutine init_clubb_case
 
@@ -2867,6 +2896,8 @@ module clubb_driver
 
     !----------------------------------- Begin Code -----------------------------------
 
+    call timer_start( "set_case_initial_conditions" )
+
     ! Every case reset starts with fresh stats sampling state.  Batch-specific
     ! logic below only changes which output column slice the run writes into.
     call stats_reset_api( stats )
@@ -2877,13 +2908,17 @@ module clubb_driver
       if ( batch_num < 1 .or. batch_num > num_batches ) then
         err_info%err_code = clubb_fatal_error
         write( fstderr, * ) "set_case_initial_conditions batch_num is outside the valid runtime batch range"
+        call timer_stop( "set_case_initial_conditions" )
         return
       end if
 
       if ( batch_num > 1 ) then
         ! Set stats to output the next batch
         call start_next_stats_batch_api( stats, err_info )
-        if ( any( err_info%err_code == clubb_fatal_error ) ) return
+        if ( any( err_info%err_code == clubb_fatal_error ) ) then
+          call timer_stop( "set_case_initial_conditions" )
+          return
+        end if
       end if
 
     end if
@@ -2896,6 +2931,7 @@ module clubb_driver
         err_info%err_code = clubb_fatal_error
         write( fstderr, * ) "set_case_initial_conditions requires clubb_params_in to match the initialized", &
                             " (ngrdcol,nparams) shape"
+        call timer_stop( "set_case_initial_conditions" )
         return
       end if
 
@@ -3149,7 +3185,7 @@ module clubb_driver
       hydromet_vel_covar_zt_impc = zero
       hydromet_vel_covar_zt_expc = zero
 
-    end if
+    end if 
 
     if ( clubb_config_flags%grid_adapt_in_time_method > no_grid_adaptation .and. l_stats ) then
       write(iunit_grid_adaptation, *) 'g', 0, gr%zm
@@ -3285,12 +3321,15 @@ module clubb_driver
         write(fstderr, *) err_info%err_header_global
         write(fstderr, *) "Fatal error calling check_clubb_settings_api"
         write(fstderr, *) "and/or check_parameters_api in set_case_initial_conditions"
+        call timer_stop( "set_case_initial_conditions" )
         return
       end if
     end if
 
     !$acc update device( clubb_params, nu_vert_res_dep%nu1,nu_vert_res_dep%nu2, nu_vert_res_dep%nu6, &
     !$acc                nu_vert_res_dep%nu8, nu_vert_res_dep%nu9, nu_vert_res_dep%nu10 )
+
+    call timer_stop( "set_case_initial_conditions" )
 
   end subroutine set_case_initial_conditions
 
@@ -3390,25 +3429,6 @@ module clubb_driver
     logical :: &
       l_stats
 
-#ifdef GPTL
-    integer :: &
-      ret_code
-#endif
-
-    ! coarse-grained timing budget of main time stepping loop
-    real( kind = core_rknd ) :: &
-      time_loop_init,  &           ! time spent in the beginning part of the main loop [s]
-      time_loop_end, &             ! time spent in the end part of the main loop [s]
-      time_adapt_grid, &           ! Time spent adapting the grid and remapping all the values
-      time_clubb_advance, &        ! time spent in advance_clubb_core [s]
-      time_clubb_pdf, &            ! time spent in setup_pdf_parameters
-                                    !    and hydrometeor_mixed_moments [s]
-      time_SILHS,    &             ! time needed to compute subcolumns [s]q
-      time_microphys_scheme, &     ! time needed for calc_microphys_scheme_tendcies [s]
-      time_microphys_advance, &    ! time needed for advance_microphys [s]
-      time_stop, time_start,  &    ! help variables to measure the time [s]
-      time_total                   ! control timer for the overall time spent in the main loop [s]
-          
     real( kind = core_rknd ) :: &
       lambda
 
@@ -3429,28 +3449,7 @@ module clubb_driver
       l_stats = stats%enabled
     end if
 
-    !initialize timers    
-    time_loop_init = 0.0_core_rknd
-    time_clubb_advance = 0.0_core_rknd
-    time_clubb_pdf = 0.0_core_rknd
-    time_SILHS = 0.0_core_rknd
-    time_microphys_advance = 0.0_core_rknd
-    time_microphys_scheme = 0.0_core_rknd
-    time_loop_end = 0.0_core_rknd
-    time_adapt_grid = 0.0_core_rknd
-    time_total = 0.0_core_rknd
-    time_stop = 0.0_core_rknd
-    time_start = 0.0_core_rknd
-#ifdef GPTL
-    ret_code = GPTLsetoption(GPTLprint_method, GPTLfull_tree)
-    ret_code = GPTLsetoption(GPTLabort_on_error, 1) ! Abort on GPTL error
-    ret_code = GPTLsetoption(GPTLoverhead, 0)       ! Turn off overhead estimate
-    ret_code = GPTLinitialize()                     ! Initialize GPTL
-#endif
-
-    ! Save time before main loop starts
-    call cpu_time( time_start )
-    time_total = time_start
+    call timer_start( "advance_clubb_to_end" )
 
     if ( l_test_grid_generalization ) then
       write(fstdout,*) "Performing grid generalization test"
@@ -3466,11 +3465,11 @@ module clubb_driver
     if ( present( itime_end ) ) loop_ifinal = itime_end
 
     mainloop: do itime = loop_iinit, loop_ifinal
-      
-      call cpu_time( time_start ) ! start timer for initial part of main loop
-      
+
       if ( l_stats ) then
+        call timer_start( "stats_begin_timestep_api" )
         call stats_begin_timestep_api( itime, stats )
+        call timer_stop( "stats_begin_timestep_api" )
       end if
 
       if ( l_input_fields ) then
@@ -3483,6 +3482,8 @@ module clubb_driver
         !        its first statistical output at 00:01Z.  In order to match the
         !        LES stat output times to CLUBB timesteps, CLUBB's time_current
         !        + dt_main needs to be passed into subroutine compute_timestep.
+
+        call timer_start( "input_fields" )
 
         l_restart_input = .false.
         call compute_timestep( &
@@ -3532,9 +3533,12 @@ module clubb_driver
                                     clubb_config_flags%l_use_wp3_lim_with_smth_Heaviside, &
                                     wp3 )
         end if
+        call timer_stop( "input_fields" )
       end if
 
       if ( clubb_at_least_debug_level_api( 2 ) ) then
+
+        call timer_start( "invalid_model_arrays" )
 
         !$acc update host( um, vm, rtm, wprtp, thlm, wpthlp, rtp2, thlp2, rtpthlp, wp2, wp3, &
         !$acc              wp2thvp, rtpthvp, thlpthvp, wp2up )
@@ -3556,11 +3560,13 @@ module clubb_driver
             err_info%err_code(i) = clubb_fatal_error
             write(fstderr, *) err_info%err_header(i)
             write(fstderr,*) "Fatal error: a CLUBB variable is NaN in main time stepping loop."
+            call timer_stop( "invalid_model_arrays" )
             exit mainloop
 
           end if
 
         end do
+        call timer_stop( "invalid_model_arrays" )
       end if
 
       ! Calculate thvm for use in prescribe_forcings.
@@ -3569,6 +3575,7 @@ module clubb_driver
                            thvm )
       
       ! Set large-scale tendencies and subsidence profiles
+      call timer_start( "prescribe_forcings" )
       call prescribe_forcings( gr, gr%nzm, gr%nzt, ngrdcol, &
                                 sclr_dim, edsclr_dim, sclr_idx, & ! In
                                 runtype, sfctype, &
@@ -3592,6 +3599,7 @@ module clubb_driver
                                 wpthlp_sfc, wprtp_sfc, upwp_sfc, vpwp_sfc, & ! Inout
                                 T_sfc, p_sfc, sens_ht, latent_ht, & ! Inout
                                 wpsclrp_sfc, wpedsclrp_sfc, err_info ) ! Inout
+      call timer_stop( "prescribe_forcings" )
 
       if ( clubb_at_least_debug_level_api( 0 ) ) then
         if ( any(err_info%err_code == clubb_fatal_error) ) then
@@ -3649,21 +3657,19 @@ module clubb_driver
       ! Add effects of radiation on thlp2
       if ( clubb_config_flags%l_calc_thlp2_rad ) then
 
+        call timer_start( "calculate_thlp2_rad_api" )
         call calculate_thlp2_rad_api( ngrdcol, gr%nzm, gr%nzt, gr,        & ! intent(in)
                                       rcm, thlprcp, radht, clubb_params,  & ! intent(in)
                                       thlp2_forcing )                       ! intent(inout)
+        call timer_stop( "calculate_thlp2_rad_api" )
 
       end if
-      
-      ! Measure time in the beginning part of the main loop
-      call cpu_time(time_stop)      
-      time_loop_init = time_loop_init + time_stop - time_start      
-      call cpu_time(time_start) ! initialize timer for advance_clubb_core
 
       if ( .not. l_test_grid_generalization ) then
 
         ! Normal CLUBB run (with ascending grid)
         ! Call the clubb core api for all columns
+        call timer_start( "advance_clubb_core_api" )
         call advance_clubb_core_api( &
                 gr, gr%nzm, gr%nzt, ngrdcol, &
                 l_implemented, dt_main, fcor, fcor_y, sfc_elevation, &!Intent(in)
@@ -3704,15 +3710,17 @@ module clubb_driver
                 pdf_implicit_coefs_terms, &                          ! intent(inout)
                 Kh_zm, Kh_zt, &                                      ! intent(out)
                 thlprcp, wprcp, w_up_in_cloud, w_down_in_cloud, &    ! Intent(out)
-                cloudy_updraft_frac, cloudy_downdraft_frac, &        ! Intent(out)
-                rcm_in_layer, cloud_cover, invrs_tau_zm, &           ! Intent(out)
-                Lscale )
+              cloudy_updraft_frac, cloudy_downdraft_frac, &        ! Intent(out)
+              rcm_in_layer, cloud_cover, invrs_tau_zm, &           ! Intent(out)
+              Lscale )
+        call timer_stop( "advance_clubb_core_api" )
 
       else ! l_test_grid_generalization
 
         ! Generalized grid test
         ! This block of code is used when a generalized grid test
         ! (ascending vs. descending grid) is being performed.
+        call timer_start( "clubb_generalized_grid_testing" )
         call clubb_generalized_grid_testing &
             ( gr, gr_desc, gr%nzm, gr%nzt, ngrdcol, &              ! Intent(in)
               l_implemented, dt_main, fcor, fcor_y, sfc_elevation, &!Intent(in)
@@ -3756,6 +3764,7 @@ module clubb_driver
               cloudy_updraft_frac, cloudy_downdraft_frac, &        ! Intent(out)
               rcm_in_layer, cloud_cover, invrs_tau_zm, &           ! Intent(out)
               Lscale )
+        call timer_stop( "clubb_generalized_grid_testing" )
 
         if ( clubb_at_least_debug_level_api( 0 ) ) then
           if ( any(err_info%err_code == clubb_generalized_grd_test_err) ) then
@@ -3775,20 +3784,19 @@ module clubb_driver
         end if
       end if
 
-      ! Measure time in advance_clubb_core
-      call cpu_time(time_stop)
-      time_clubb_advance = time_clubb_advance + time_stop - time_start
-      call cpu_time(time_start) ! initialize timer for setup_pdf_parameters
-
       ! Radiation is always called on the first timestep in order to ensure
       ! that the simulation is subject to radiative heating and cooling from
       ! the first timestep.
       l_rad_itime = (mod( itime, floor(dt_rad/dt_main) ) == 0 .or. itime == 1)
 
-      if ( .not. l_test_grid_generalization ) then
+      if ( trim( microphys_scheme ) /= "none" .or. &
+           lh_microphys_type /= lh_microphys_disabled .or. l_silhs_rad ) then
+
+        if ( .not. l_test_grid_generalization ) then
 
           ! Call CLUBB's hydrometeor PDF subroutines for cases that use the PDF
           ! for microphysics (either upscaled microphysics or SILHS).
+          call timer_start( "pdf_hydromet_microphys_prep" )
           call pdf_hydromet_microphys_prep &
               ( gr, ngrdcol, pdf_dim, hydromet_dim,              & ! In
                 itime, vert_decorr_coef,                         & ! In
@@ -3799,7 +3807,6 @@ module clubb_driver
                 clubb_config_flags, silhs_config_flags,          & ! In
                 l_rad_itime, stats,                              & ! In
                 err_info,                                         & ! In/Out
-                time_clubb_pdf, time_stop, time_start,           & ! In/Out
                 hydrometp2,                                      & ! Out
                 mu_x_1_n, mu_x_2_n,                              & ! Out
                 sigma_x_1_n, sigma_x_2_n,                        & ! Out
@@ -3812,9 +3819,11 @@ module clubb_driver
                 lh_rt_clipped, lh_thl_clipped, lh_rc_clipped,    & ! Out
                 lh_rv_clipped, lh_Nc_clipped,                    & ! Out
                 hydromet_pdf_params )                              ! Optional(out)
+          call timer_stop( "pdf_hydromet_microphys_prep" )
 
-      else ! l_test_grid_generalization
+        else ! l_test_grid_generalization
 
+          call timer_start( "silhs_generalized_grid_testing" )
           call silhs_generalized_grid_testing &
               ( gr, gr_desc, ngrdcol, pdf_dim, hydromet_dim,     & ! In
                 itime, vert_decorr_coef,                         & ! In
@@ -3825,7 +3834,6 @@ module clubb_driver
                 clubb_config_flags, silhs_config_flags,          & ! In
                 l_rad_itime, stats,                              & ! In
                 err_info,                                         & ! In/Out
-                time_clubb_pdf, time_stop, time_start,           & ! In/Out
                 hydrometp2,                                      & ! Out
                 mu_x_1_n, mu_x_2_n,                              & ! Out
                 sigma_x_1_n, sigma_x_2_n,                        & ! Out
@@ -3838,8 +3846,11 @@ module clubb_driver
                 lh_rt_clipped, lh_thl_clipped, lh_rc_clipped,    & ! Out
                 lh_rv_clipped, lh_Nc_clipped,                    & ! Out
                 hydromet_pdf_params )                              ! Optional(out)
+          call timer_stop( "silhs_generalized_grid_testing" )
 
-      endif
+        endif
+
+      end if
 
       ! Error check after pdf_hydromet_microphys_prep
       if ( clubb_at_least_debug_level_api( 0 ) ) then
@@ -3850,16 +3861,13 @@ module clubb_driver
         end if
       end if
 
-      ! Measure time in SILHS
-      call cpu_time(time_stop)
-      time_SILHS = time_SILHS + time_stop - time_start
-      call cpu_time(time_start) ! initialize timer for calc_microphys_scheme_tendcies
-
       !----------------------------------------------------------------
       ! Compute Microphysics
       !----------------------------------------------------------------
 
       if ( .not. trim( microphys_scheme ) == "none" ) then
+
+        call timer_start( "calc_microphys_scheme_tendcies" )
 
         !$acc update host( thlm, p_in_Pa, exner, rho, rho_zm, rtm, rcm, cloud_frac, wm_zt, wm_zm, &
         !$acc              wp2, wp3, Kh_zm, rho_ds_zm, rho_ds_zt, invrs_rho_ds_zt, &
@@ -3922,10 +3930,8 @@ module clubb_driver
         end do
 
 
-        ! Measure time in calc_microphys_scheme_tendcies
-        call cpu_time(time_stop)
-        time_microphys_scheme = time_microphys_scheme + time_stop - time_start
-        call cpu_time(time_start) ! initialize timer for advance_microphys
+        call timer_stop( "calc_microphys_scheme_tendcies" )
+        call timer_start( "advance_microphys" )
 
         ! Advance predictive microphysics fields one model timestep.
         do i = 1, ngrdcol
@@ -3959,10 +3965,7 @@ module clubb_driver
 
         !$acc if( hydromet_dim > 0 ) update device( wphydrometp )
 
-        ! Measure time in calc_microphys_scheme_tendcies
-        call cpu_time(time_stop)
-        time_microphys_advance = time_microphys_advance + time_stop - time_start
-        call cpu_time(time_start) ! Measure time in the end part of the main loop
+        call timer_stop( "advance_microphys" )
 
         if ( clubb_at_least_debug_level_api( 0 ) ) then
           if ( any(err_info%err_code == clubb_fatal_error) ) then
@@ -3975,6 +3978,8 @@ module clubb_driver
 
         ! Cloud water sedimentation.
         if ( l_cloud_sed ) then
+
+          call timer_start( "cloud_drop_sed" )
 
           !$acc update host( cloud_frac, rcm, rho_zm, rho, exner )
         
@@ -3992,6 +3997,8 @@ module clubb_driver
           end do
 
           !$acc update device( rcm_mc, thlm_mc )
+
+          call timer_stop( "cloud_drop_sed" )
 
         endif ! l_cloud_sed
       
@@ -4024,6 +4031,7 @@ module clubb_driver
 
       if ( trim( rad_scheme ) /= "none" ) then
         
+        call timer_start( "advance_clubb_radiation" )
         call advance_clubb_radiation( &
               gr, ngrdcol, hydromet_dim, pdf_dim, lh_num_samples,          & ! In
               l_rad_itime, dt_main, day, month, year,                      & ! In
@@ -4037,6 +4045,7 @@ module clubb_driver
               stats, err_info,                                             & ! Inout
               deep_soil_T_in_K, sfc_soil_T_in_K, veg_T_in_K,               & ! Inout
               radht )                                                        ! Out
+        call timer_stop( "advance_clubb_radiation" )
 
         if ( clubb_at_least_debug_level_api( 0 ) ) then
           if ( any(err_info%err_code == clubb_fatal_error) ) then
@@ -4048,13 +4057,8 @@ module clubb_driver
 
       if ( clubb_config_flags%grid_adapt_in_time_method > no_grid_adaptation ) then
 
-        ! interrupt stopping time for time_loop_end if grid gets adapted to save time specific
-        ! for calculating the normalized grid density and updating the stats vars
-        call cpu_time(time_stop)
-        time_loop_end = time_loop_end + time_stop - time_start
-        call cpu_time(time_start)
-
         ! calculate the non-normalized grid density using the refinement criterion
+        call timer_start( "calc_grid_dens" )
         call calc_grid_dens( ngrdcol, gr, &
                              um, vm, &
                              Lscale, wp2, &
@@ -4077,10 +4081,12 @@ module clubb_driver
                              cumulative_Lscale, &
                              cumulative_chi, &
                              cumulative_richardson_num )
+        call timer_stop( "calc_grid_dens" )
 
         lambda = 0.5
 
         ! normalize the grid density
+        call timer_start( "normalize_grid_density" )
         call normalize_grid_density( ngrdcol, &
                                      gr%nzm, &
                                      gr_dens_z, gr_dens, &
@@ -4089,8 +4095,10 @@ module clubb_driver
                                      gr_fixed_min, &
                                      norm_min_grid_dens, &
                                      norm_grid_dens )
+        call timer_stop( "normalize_grid_density" )
 
         if ( stats%l_sample ) then
+          call timer_start( "stats_update_grid_adaptation" )
           do i = 1, ngrdcol
             call stats_update( "grid_density", gr_dens, stats, i )
             call stats_update( "alt_term", alt_term_weight*alt_term, stats, i )
@@ -4104,11 +4112,8 @@ module clubb_driver
             call stats_update( "chi_term", chi_term, stats, i )
             call stats_update( "brunt_term", richardson_num_term, stats, i )
           end do
+          call timer_stop( "stats_update_grid_adaptation" )
         end if
-
-        call cpu_time(time_stop)
-        time_adapt_grid = time_adapt_grid + time_stop - time_start
-        call cpu_time(time_start)
 
       endif
 
@@ -4117,8 +4122,10 @@ module clubb_driver
            .or. clubb_config_flags%l_add_dycore_grid .and. stats%l_sample ) then
         ! Update stats with the current grid information needed to correctly
         ! map the output to the netcdf file
+        call timer_start( "stats_update_grid" )
         call stats_update_grid( gr%zt, gr%zm, rho_ds_zm, gr%zm, p_sfc, & ! In
                                     stats )                                  ! Inout
+        call timer_stop( "stats_update_grid" )
       end if
 
       if ( ( clubb_config_flags%grid_adapt_in_time_method > no_grid_adaptation ) &
@@ -4129,10 +4136,9 @@ module clubb_driver
                                                       ! iterations that get averaged before written
                                                       ! to file 
 
-        call cpu_time(time_start)
-
         l_first_write_to_file = .false.
 
+        call timer_start( "adapt_grid" )
         call adapt_grid( ngrdcol, gr%nzm, &                                      ! Intent(in)
                          gr%zm, norm_grid_dens, &                                ! Intent(in)
                          gr%zm, norm_min_grid_dens, &                            ! Intent(in)
@@ -4174,6 +4180,7 @@ module clubb_driver
                          cloudy_updraft_frac, cloudy_downdraft_frac, &           ! Intent(inout)
                          rcm_in_layer, cloud_cover, invrs_tau_zm, &              ! Intent(inout)
                          Lscale, err_info )                                      ! Intent(inout)
+        call timer_stop( "adapt_grid" )
 
         if ( any(err_info%err_code == clubb_fatal_error) ) then
           write(fstderr, *) err_info%err_header_global
@@ -4186,14 +4193,14 @@ module clubb_driver
           ! getting forcings on the dycore grid, we need to adjust the forcings everytime for the
           ! newly created grid from the raw data in the forcings file
           ! TODO does this only work with 1D input?
+          call timer_start( "initialize_t_dependent_input" )
           call initialize_t_dependent_input &
                         ( iunit, runtype, gr%nzt, gr%zt(1,:), p_in_Pa, &
                           clubb_config_flags%l_add_dycore_grid, &
                           clubb_config_flags%grid_adapt_in_time_method )
+          call timer_stop( "initialize_t_dependent_input" )
         end if
 
-        call cpu_time(time_stop)
-        time_adapt_grid = time_adapt_grid + time_stop - time_start
       end if
 
       ! ======================= STATS FINALIZING AND PRINTOUTS =======================
@@ -4203,7 +4210,9 @@ module clubb_driver
                            real( dt_main, kind = time_precision ), kind = core_rknd )
 
         ! End statistics timestep and flush sampled buffers to file.
+        call timer_start( "stats_end_timestep_api" )
         call stats_end_timestep_api( stats_time, stats, err_info )
+        call timer_stop( "stats_end_timestep_api" )
 
         if ( clubb_at_least_debug_level_api( 0 ) ) then
           if ( any(err_info%err_code == clubb_fatal_error) ) then
@@ -4226,17 +4235,16 @@ module clubb_driver
       ! This was moved from above to be less confusing to the user,
       ! since before it would appear as though the last timestep
       ! was not executed. -dschanen 19 May 08
-      if ( l_stdout ) then
-        write(unit=fstdout,fmt='(a,i8,a,i8,a,f10.1,a,f10.1)') &
+      if ( l_stdout .and. clubb_at_least_debug_level_api( 0 ) ) then
+        write(unit=fstdout,fmt='(a,i8,a,i8,a,f10.1,a,f10.1,a)') &
           'iteration: ', itime, ' / ', ifinal, &
-          ' -- time = ', time_current, ' / ', time_final
+          ' -- time = ', time_current, 's / ', time_final, 's'
       end if
 
       if ( clubb_config_flags%grid_adapt_in_time_method > no_grid_adaptation .and. l_stats ) then
-        call cpu_time(time_start)
+        call timer_start( "write_grid_adaptation" )
         write(iunit_grid_adaptation, *) 'g', itime, gr%zm
-        call cpu_time(time_stop)
-        time_adapt_grid = time_adapt_grid + time_stop - time_start
+        call timer_stop( "write_grid_adaptation" )
       end if ! grid_adapt_in_time_method > 0 .and. modulo(itime, 1) == 0
 
     end do mainloop ! itime=1, ifinal
@@ -4246,27 +4254,7 @@ module clubb_driver
     !                       End Main Time Stepping Loop
     !-------------------------------------------------------------------------------
 
-    ! Measure overall time in the main loop
-    call cpu_time(time_stop)
-    time_total = time_stop - time_total ! subtract previously saved start time 
-
-    ! Print timers 
-    write(unit=fstdout, fmt='(a,f10.4)') 'CLUBB-TIMER time_loop_init =         ', time_loop_init
-    write(unit=fstdout, fmt='(a,f10.4)') 'CLUBB-TIMER time_clubb_advance =     ', time_clubb_advance
-    write(unit=fstdout, fmt='(a,f10.4)') 'CLUBB-TIMER time_clubb_pdf =         ', time_clubb_pdf
-    write(unit=fstdout, fmt='(a,f10.4)') 'CLUBB-TIMER time_SILHS =             ', time_SILHS
-    write(unit=fstdout, fmt='(a,f10.4)') &
-      'CLUBB-TIMER time_microphys_scheme =  ', time_microphys_scheme
-    write(unit=fstdout, fmt='(a,f10.4)') &
-      'CLUBB-TIMER time_microphys_advance = ', time_microphys_advance
-    write(unit=fstdout, fmt='(a,f10.4)') 'CLUBB-TIMER time_loop_end =          ', time_loop_end
-    write(unit=fstdout, fmt='(a,f10.4)') 'CLUBB-TIMER time_adapt_grid =        ', time_adapt_grid
-    write(unit=fstdout, fmt='(a,f10.4)') 'CLUBB-TIMER time_total =             ', time_total
-
-#ifdef GPTL
-    ret_code = GPTLpr(1)
-    ret_code = GPTLfinalize()
-#endif
+    call timer_stop( "advance_clubb_to_end" )
 
   end subroutine advance_clubb_to_end
 
@@ -4336,7 +4324,9 @@ module clubb_driver
       err_info        ! err_info struct containing err_code and err_header
 
     !--------------------------------- Begin Code ---------------------------------
-      
+
+    call timer_start( "clean_up_clubb" )
+
     !$acc exit data delete( gr, gr%zm, gr%zt, gr%dzm, gr%dzt, gr%invrs_dzt, gr%invrs_dzm, &
     !$acc              gr%weights_zt2zm, gr%weights_zm2zt, &
     !$acc              nu_vert_res_dep, nu_vert_res_dep%nu2, nu_vert_res_dep%nu9, &
@@ -4427,7 +4417,9 @@ module clubb_driver
     !$acc              wphydrometp, wp2hmp, rtphmp_zt, thlphmp_zt )
 
     ! Close stats files
+    call timer_start( "stats_finalize_api" )
     call stats_finalize_api( stats, err_info )
+    call timer_stop( "stats_finalize_api" )
 
     ! Free memory
     if ( thlm_sponge_damp_settings%l_sponge_damping ) then
@@ -4724,6 +4716,10 @@ module clubb_driver
     ngrdcol = 1
     total_param_sets = 1
     batch_size = 1
+
+    call timer_stop( "clean_up_clubb" )
+
+    call timer_finalize( trim( output_file_prefix ) // ".timing" )
 
   end subroutine clean_up_clubb
 

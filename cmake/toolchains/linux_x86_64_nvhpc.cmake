@@ -47,6 +47,9 @@ else()
         set(GPU_LINK_FLAGS      "-mp=gpu")
     endif()
 
+    # NVHPC GPU links can report temporary /tmp/pgcuda*.o files in linker depfiles.
+    set(CMAKE_LINK_DEPENDS_USE_LINKER FALSE)
+
     # Older versions of nvhpc use -Mcuda to link, but newer versions use -cuda
     # This bit extracts the version number and chooses between -Mcuda or -cuda
     execute_process(
@@ -63,6 +66,5 @@ else()
     endif()
 
 endif()
-
 
 

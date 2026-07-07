@@ -441,7 +441,6 @@ def register_run_callbacks(app):
             for case_name, status, runtime_secs in finished:
                 proc_data = running.pop(case_name, None) or {}
                 runtimes[case_name] = runtime_secs
-                runtime_txt = format_runtime(runtime_secs)
                 pid = proc_data.get("pid")
                 log_path = proc_data.get("log")
                 cleanup_temp_files(proc_data.get("temp_files"))
@@ -464,12 +463,6 @@ def register_run_callbacks(app):
                             failed.append(case_name)
                         if case_name in completed:
                             completed.remove(case_name)
-                    existing = logs.get(case_name, "")
-                    if existing and not existing.endswith("\n"):
-                        existing += "\n"
-                    result_txt = "completed" if status == 0 else f"failed (exit {status})"
-                    logs[case_name] = append_log_tail(existing, f"--- {result_txt}; runtime: {runtime_txt} ---\n")
-                    logs_changed = True
 
             running_before = dict(running)
             queued_before = list(queued)

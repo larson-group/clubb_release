@@ -1732,7 +1732,6 @@ module generalized_grid_test
                clubb_config_flags, silhs_config_flags,          & ! In
                l_rad_itime, stats,                              & ! In
                err_info,                                         & ! In/Out
-               time_clubb_pdf, time_stop, time_start,           & ! In/Out
                hydrometp2,                                      & ! Out
                mu_x_1_n, mu_x_2_n,                              & ! Out
                sigma_x_1_n, sigma_x_2_n,                        & ! Out
@@ -1866,11 +1865,6 @@ module generalized_grid_test
     ! Input/Output Variables
     type(err_info_type), intent(inout) :: &
       err_info        ! err_info struct containing err_code and err_header
-
-    real( kind = core_rknd ), intent(inout) :: &
-      time_clubb_pdf, & ! time spent in setup_pdf_parameters and hydrometeor_mixed_moments [s]
-      time_start,     & ! help variables to measure the time [s]
-      time_stop         ! help variables to measure the time [s]
 
     ! Output Variables
     real( kind = core_rknd ), dimension(ngrdcol,gr%nzm,hydromet_dim), intent(out) :: &
@@ -2077,7 +2071,6 @@ module generalized_grid_test
              clubb_config_flags, silhs_config_flags,          & ! In
              l_rad_itime, stats,                              & ! In
              err_info,                                         & ! In/Out
-             time_clubb_pdf, time_stop, time_start,           & ! In/Out
              hydrometp2,                                      & ! Out
              mu_x_1_n, mu_x_2_n,                              & ! Out
              sigma_x_1_n, sigma_x_2_n,                        & ! Out
@@ -2114,7 +2107,6 @@ module generalized_grid_test
          err_info%err_code = clubb_no_error
       endif
 
-
       ! Call pdf_hydromet_microphys_prep for the descending grid direction
       ! All variables with a vertical dimension should be "flip" variables
       ! in this call.
@@ -2128,7 +2120,6 @@ module generalized_grid_test
              clubb_config_flags, silhs_config_flags,          & ! In
              l_rad_itime, stats,                              & ! In
              err_info,                                         & ! In/Out
-             time_clubb_pdf, time_stop, time_start,           & ! In/Out
              hydrometp2_flip,                                 & ! Out
              mu_x_1_n_flip, mu_x_2_n_flip,                    & ! Out
              sigma_x_1_n_flip, sigma_x_2_n_flip,              & ! Out

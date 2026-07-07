@@ -2958,13 +2958,19 @@ contains
     ! ------------------------ Locals ------------------------
     integer :: iunit, ios, i, count
     logical :: l_parse_ok
-    character(len=REG_LINE_LEN) , dimension(NML_REG_MAX_ENTRIES) :: entry
+    character(len=REG_LINE_LEN), allocatable, dimension(:) :: entry
     namelist /clubb_stats_nl/ entry
 
     ! ------------------------ Begin Code ------------------------
 
     ierr = 0
     ndefs = 0
+
+    allocate( entry(NML_REG_MAX_ENTRIES), stat=ios )
+    if ( ios /= 0 ) then
+      ierr = ios
+      return
+    end if
     entry(:) = ''
 
     open( newunit=iunit, file=trim( path ), status='old', action='read', iostat=ios )

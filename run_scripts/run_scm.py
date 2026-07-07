@@ -5,6 +5,7 @@ import os
 import shutil
 import subprocess
 import sys
+import time
 
 # Directory where this script lives, assumes clubb/run_scripts, which is important
 # since this is used to find CLUBB_ROOT
@@ -345,8 +346,16 @@ def main():
     result = run_case(run_cmd, run_cwd, args.case_name, clubb_input_namelist, output_dir, run_env,
                       expect_stats_output=expect_stats_output, passthrough_output=args.gdb)
 
-    sys.exit(result)
+    return result
 
 
 if __name__ == "__main__":
-    main()
+    start_time = time.perf_counter()
+    try:
+        exit_code = main()
+    finally:
+        elapsed_time = time.perf_counter() - start_time
+        print("-" * 50)
+        print(f"run_scm.py total runtime: {elapsed_time:.2f} s")
+        print("-" * 50)
+    sys.exit(exit_code)

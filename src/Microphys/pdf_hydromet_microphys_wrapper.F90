@@ -20,7 +20,6 @@ module pdf_hydromet_microphys_wrapper
                clubb_config_flags, silhs_config_flags,          & ! In
                l_rad_itime, stats,                              & ! In
                err_info,                                        & ! In/Out
-               time_clubb_pdf, time_stop, time_start,           & ! In/Out
                hydrometp2,                                      & ! Out
                mu_x_1_n, mu_x_2_n,                              & ! Out
                sigma_x_1_n, sigma_x_2_n,                        & ! Out
@@ -40,6 +39,10 @@ module pdf_hydromet_microphys_wrapper
 
     use constants_clubb, only: &
         fstderr    ! Variable(s)
+
+    use code_timer_module, only: &
+        timer_start, &
+        timer_stop
 
     use grid_class, only: &
         grid    ! Type(s)
@@ -166,11 +169,6 @@ module pdf_hydromet_microphys_wrapper
     type(err_info_type), intent(inout) :: &
       err_info        ! err_info struct containing err_code and err_header
 
-    real( kind = core_rknd ), intent(inout) :: &
-      time_clubb_pdf, & ! time spent in setup_pdf_parameters and hydrometeor_mixed_moments [s]
-      time_start,     & ! help variables to measure the time [s]
-      time_stop         ! help variables to measure the time [s]
-
     ! Output Variables
     real( kind = core_rknd ), dimension(ngrdcol,gr%nzm,hydromet_dim), intent(out) :: &
       hydrometp2    ! Variance of a hydrometeor (overall) (m-levs.)   [units^2]
@@ -244,7 +242,8 @@ module pdf_hydromet_microphys_wrapper
 
       !$acc if( hydromet_dim > 0 ) update host( wphydrometp )
 
-      !!! Setup the PDF parameters.
+      !!! Setup the PDF parameters
+      call timer_start( "setup_pdf_parameters_api" )
       call setup_pdf_parameters_api( &
               gr, gr%nzm, gr%nzt, ngrdcol, pdf_dim, hydromet_dim,           & ! In
               Nc_in_cloud, cloud_frac, Kh_zm,                              & ! In
@@ -268,6 +267,7 @@ module pdf_hydromet_microphys_wrapper
               precip_fracs,                                                & ! In/Out
               hydromet_pdf_params,                                         & ! Optional(out)
               stats )                                                        ! Inout
+      call timer_stop( "setup_pdf_parameters_api" )
 
       ! Error check after setup_pdf_parameters
       if ( clubb_at_least_debug_level_api( 0 ) ) then
@@ -279,6 +279,7 @@ module pdf_hydromet_microphys_wrapper
       end if
 
       ! Calculate < rt'hm' >, < thl'hm' >, and < w'^2 hm' >.
+      call timer_start( "hydrometeor_mixed_moments" )
       do i = 1, ngrdcol
         call hydrometeor_mixed_moments( gr, gr%nzt, pdf_dim, hydromet_dim,                 & ! In
                                         hydromet(i,:,:), hm_metadata,                      & ! In
@@ -290,6 +291,7 @@ module pdf_hydromet_microphys_wrapper
                                         rtphmp_zt(i,:,:), thlphmp_zt(i,:,:), wp2hmp(i,:,:), & ! Out
                                         stats, icol=i )                                      ! Inout
        end do
+      call timer_stop( "hydrometeor_mixed_moments" )
 
       !$acc update device( mu_x_1_n, mu_x_2_n, sigma_x_1_n, sigma_x_2_n, corr_array_1_n, corr_array_2_n, &
       !$acc                corr_cholesky_mtx_1, corr_cholesky_mtx_2 )
@@ -297,11 +299,6 @@ module pdf_hydromet_microphys_wrapper
       !$acc if( hydromet_dim > 0 ) update device( wp2hmp, rtphmp_zt, thlphmp_zt )
 
     endif ! not microphys_scheme == "none"
-      
-    ! Measure time in setup_pdf_parameters and hydrometeor_mixed_moments
-    call cpu_time(time_stop)
-    time_clubb_pdf = time_clubb_pdf + time_stop - time_start
-    call cpu_time(time_start) ! initialize timer for SILHS
       
 #ifdef SILHS
     !----------------------------------------------------------------
@@ -357,6 +354,7 @@ module pdf_hydromet_microphys_wrapper
       ! upon restart - which is too much work to implement
       lh_seed_custom = int( lh_seed * itime, kind = genrand_intg )
 
+      call timer_start( "generate_silhs_sample_api" )
       call generate_silhs_sample_api( &
              itime, pdf_dim, lh_num_samples, lh_sequence_length, gr%nzt, ngrdcol, & ! In
              l_calc_weights_all_levs_itime,                                & ! In
@@ -371,6 +369,7 @@ module pdf_hydromet_microphys_wrapper
              X_nl_all_levs, X_mixt_comp_all_levs,                          & ! Out
              lh_sample_point_weights, &                                     ! Out
              stats )                                                          ! InOut
+      call timer_stop( "generate_silhs_sample_api" )
 
       ! Error check after setup_pdf_parameters
       if ( clubb_at_least_debug_level_api( 0 ) ) then
@@ -382,6 +381,7 @@ module pdf_hydromet_microphys_wrapper
         end if
       end if
 
+      call timer_start( "clip_transform_silhs_output_api" )
       call clip_transform_silhs_output_api( gr%nzt, ngrdcol, lh_num_samples,        & ! In
                                             pdf_dim, hydromet_dim, hm_metadata,     & ! In
                                             X_mixt_comp_all_levs,                   & ! In
@@ -390,11 +390,13 @@ module pdf_hydromet_microphys_wrapper
                                             lh_rt_clipped, lh_thl_clipped,          & ! Out
                                             lh_rc_clipped, lh_rv_clipped,           & ! Out
                                             lh_Nc_clipped                           ) ! Out
+      call timer_stop( "clip_transform_silhs_output_api" )
 
       if ( stats%l_sample ) then
         !$acc update host( rho_ds_zt, lh_sample_point_weights, X_nl_all_levs, &
         !$acc              lh_rt_clipped, lh_thl_clipped, lh_rc_clipped, lh_rv_clipped, lh_Nc_clipped )
 
+        call timer_start( "stats_accumulate_lh_api" )
         do i = 1, ngrdcol
           call stats_accumulate_lh_api( &
                 gr, gr%nzt, lh_num_samples, pdf_dim, rho_ds_zt(i,:),     & ! In
@@ -405,6 +407,7 @@ module pdf_hydromet_microphys_wrapper
                 lh_Nc_clipped(i,:,:),                                    & ! In
                 stats, icol=i )                                            ! InOut
         end do
+        call timer_stop( "stats_accumulate_lh_api" )
       end if
 
     end if ! lh_microphys_enabled

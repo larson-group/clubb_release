@@ -81,5 +81,5 @@ if(${ENABLE_OMP})
 endif()
 
 if(${USE_GPTL})
-    target_link_libraries(clubb_core_lib PRIVATE gptl)
+    target_link_libraries(clubb_core_lib PUBLIC gptl)
 endif()

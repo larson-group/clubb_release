@@ -42,8 +42,7 @@ if(${ENABLE_OMP})
 endif()
 
 if(${USE_GPTL})
-    target_link_libraries(clubb_driver_lib PRIVATE gptl)
-    include_directories("${CMAKE_BINARY_DIR}/gptl_install/include")
+    target_link_libraries(clubb_driver_lib PUBLIC gptl)
 endif()
 
 # Create clubb_standalone executable

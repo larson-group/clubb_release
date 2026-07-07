@@ -128,9 +128,9 @@ ExternalProject_Add(GPTL_project
     ${GPTL_CONFIGURE_ENV}
     ./configure --prefix=${GPTL_PREFIX} --enable-fortran --disable-shared --enable-static ${GPTL_CONFIGURE_OPENMP_ARG} ${GPTL_CONFIGURE_PIC_ARG}
   BUILD_COMMAND /bin/sh -c "
-    find . -name Makefile -exec sed -i.bak 's/-finstrument-functions//g' {} + &&
-    find . -name '*.bak' -delete &&
-    (make clean >/dev/null 2>&1 || true) &&
+    # Remove stale objects when configure flags change, then drop problematic instrumentation and build.
+    make clean || true &&
+    find . -name Makefile | xargs perl -pi -e 's/-finstrument-functions//g' &&
     make -j"
   INSTALL_COMMAND make install
   BUILD_IN_SOURCE 1

@@ -41,6 +41,8 @@ if(NOT F2PY_EXT_SUFFIX)
     set(F2PY_EXT_SUFFIX ".so")
 endif()
 
+get_filename_component(F2PY_PYTHON_BIN_DIR "${F2PY_PYTHON_EXECUTABLE}" DIRECTORY)
+
 message(STATUS "ENABLE_F2PY=ON with USE_NetCDF=ON: reusing CMake-built CLUBB libraries")
 
 # Wrapper layout:
@@ -98,6 +100,7 @@ set(F2PY_ENV
     "FC=${CMAKE_Fortran_COMPILER}"
     "CC=${CMAKE_C_COMPILER}"
     "CXX=${CMAKE_CXX_COMPILER}"
+    "PATH=${F2PY_PYTHON_BIN_DIR}:$ENV{PATH}"
     "LDFLAGS=${F2PY_LDFLAGS}"
 )
 

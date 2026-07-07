@@ -536,6 +536,15 @@ clubb/clubb/build/<COMPILER>/clubb_ctest/<CASE_NAME>_100iter/<CASE_NAME>_stats.n
     so if you want to prevent them from being erased be sure to either copy the .nc files to 
     another directory or rename them.
 
+Timing output:
+  - CLUBB writes timing results next to the rest of the case output using the
+    case file prefix with a ".timing" suffix.  For example, running the ARM
+    case normally writes clubb/output/arm.timing.
+  - When CLUBB is compiled without GPTL, this file contains the built-in
+    cpu_time timing summary, including call counts, inclusive time, exclusive
+    time, and average inclusive time.  When CLUBB is compiled with GPTL, the
+    same timing file is written using GPTL output format.
+
 Input:
 -----
 
