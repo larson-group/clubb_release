@@ -166,6 +166,7 @@ class BudgetPlotType(BasePlotType):
             Input("plots-case-data", "data"),
             Input("plots-global-time-range", "value"),
             Input("plots-global-time-point", "value"),
+            Input("plots-time-override", "data"),
             Input("plots-global-height-range", "value"),
             Input("plots-selected-column", "data"),
             Input("plots-column-mode", "value"),
@@ -179,6 +180,7 @@ class BudgetPlotType(BasePlotType):
             case_data,
             time_range,
             time_point,
+            time_override,
             height_range,
             selected_column,
             column_mode,
@@ -189,16 +191,19 @@ class BudgetPlotType(BasePlotType):
         ):
             plot_id = int((graph_id or {}).get("index", -1))
             size_value = shared.normalize_plot_size(size_store_value)
-            signal = int(time_point) if time_point is not None else ""
+            active_time = shared.resolve_active_time_values(case_data, time_range, time_point, time_override)
+            active_time_range = active_time["duration_minutes"]
+            active_time_point = active_time["start_seconds"]
+            signal = int(active_time_point) if active_time_point is not None else ""
             triggered_id = callback_context.triggered_id
             use_relayout_height_range = triggered_id != "plots-global-height-range"
-            if triggered_id == "plots-global-time-point" and plot_id >= 0 and self._has_full_render(plot_id):
+            if active_time["mode"] == "slider" and triggered_id == "plots-global-time-point" and plot_id >= 0 and self._has_full_render(plot_id):
                 patch = self.build_patch(
                     {"var": var_name, "size": size_value},
                     {
                         "case_data": case_data,
-                        "time_range": time_range,
-                        "time_point": time_point,
+                        "time_range": active_time_range,
+                        "time_point": active_time_point,
                         "height_range": height_range,
                         "relayout_data": relayout_data,
                         "use_relayout_height_range": use_relayout_height_range,
@@ -214,8 +219,8 @@ class BudgetPlotType(BasePlotType):
                 {"var": var_name, "size": size_value},
                 {
                     "case_data": case_data,
-                    "time_range": time_range,
-                    "time_point": time_point,
+                    "time_range": active_time_range,
+                    "time_point": active_time_point,
                     "height_range": height_range,
                     "relayout_data": relayout_data,
                     "use_relayout_height_range": use_relayout_height_range,

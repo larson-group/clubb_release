@@ -148,7 +148,17 @@ def child_id(child):
     return getattr(child, "id", None)
 
 
-def _directory_case_selector():
+def _initial_case_buttons(initial_state):
+    """Render initial case buttons before callback hydration."""
+    cases = shared.scan_output_cases([DEFAULT_OUTPUT_DIR])
+    selected_name = ((initial_state or {}).get("case_data") or {}).get("name")
+    available_names = shared.ordered_case_names(cases.keys())
+    if not available_names:
+        return [html.Div("No common cases found for single mode.")]
+    return [case_button(name, bool(cases.get(name)), selected=(name == selected_name)) for name in available_names]
+
+
+def _directory_case_selector(initial_state):
     """Build the combined directory/case selection header block."""
     return html.Div(
         [
@@ -182,7 +192,7 @@ def _directory_case_selector():
             html.Div(
                 [
                     html.Div("Cases", style={"fontWeight": "600", "marginBottom": "8px"}),
-                    html.Div(id="plots-case-button-container"),
+                    html.Div(id="plots-case-button-container", children=_initial_case_buttons(initial_state)),
                 ],
                 style={"padding": "12px", "minHeight": "100%"},
             ),
@@ -214,6 +224,7 @@ def _plots_stores(initial_state):
         dcc.Store(id="plots-param-names", data=None),
         dcc.Store(id="plots-column-filters", data={"indices": None, "filters": {}}),
         dcc.Store(id="plots-selected-column", data=initial_state["selected_column"]),
+        dcc.Store(id="plots-time-override", data=None),
         dcc.Store(id="plots-playback", data={"playing": False, "interval_s": DEFAULT_PLAYBACK_INTERVAL_S, "inflight": False, "target_point": None}),
         dcc.Interval(id="plots-playback-interval", interval=int(DEFAULT_PLAYBACK_INTERVAL_S * 1000), disabled=True, n_intervals=0),
     ]
@@ -254,9 +265,10 @@ def _time_section(initial_state):
                     max=initial_state["time_point_max"],
                     value=initial_state["time_point"],
                     step=initial_state["time_point_step"],
-                    marks={},
-                    tooltip=None,
+                    marks=initial_state["time_point_marks"],
+                    tooltip={"always_visible": True, "placement": "bottom", "transform": "formatPlotSeconds"},
                     included=False,
+                    dots=True,
                 ),
             ],
             id="plots-global-time-point-wrapper",
@@ -271,8 +283,8 @@ def _time_section(initial_state):
                     max=initial_state["time_slider_max"],
                     value=initial_state["time_range"],
                     step=initial_state["time_slider_step"],
-                    marks={},
-                    tooltip=None,
+                    marks=initial_state["time_marks"],
+                    tooltip={"always_visible": True, "placement": "bottom", "transform": "formatPlotMinutes"},
                     included=False,
                 ),
             ],
@@ -339,7 +351,7 @@ def build_layout(initial_state):
     """Assemble the full static plots-tab layout from the provided initial state."""
     return html.Div(
         [
-            html.Div([_directory_case_selector()], style={"marginBottom": "12px"}),
+            html.Div([_directory_case_selector(initial_state)], style={"marginBottom": "12px"}),
             *_plots_stores(initial_state),
             html.Div(
                 [_left_pane(initial_state), html.Div(id="plots-pane-divider", className="plots-pane-divider"), _right_pane(initial_state)],

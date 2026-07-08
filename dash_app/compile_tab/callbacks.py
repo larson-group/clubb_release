@@ -18,19 +18,24 @@ from .discovery import (
     module_is_compiler_like,
     netcdf_modules_after_stack,
     resolve_lmod_stack,
+    install_prefix_matches_build_name,
 )
 from .runtime import (
     append_log_tail,
     build_compile_spec,
     build_warnings,
     cancel_compile_job,
+    compile_settings_from_build,
     detect_build_statuses,
     finish_compile_job,
     format_runtime,
     job_process_is_live,
     poll_compile_job,
+    read_rebuild_progress,
     read_log_increment,
     rebuild_failed_path_from_log,
+    read_source_check_log,
+    run_clubb_standards_check,
     start_compile_job,
     start_rebuild_job,
     update_active_job,
@@ -53,8 +58,6 @@ def options_from_flags(flag_values):
         "openmp": "openmp" in flags,
         "tuning": "tuning" in flags,
         "gptl": "gptl" in flags,
-        "disable_netcdf": "disable_netcdf" in flags,
-        "disable_silhs": "disable_silhs" in flags,
     }
 
 
@@ -288,6 +291,8 @@ def build_card_status_class(build, status, failed_rebuild_paths=None):
     """Return the visual state class for one build card."""
     if build.get("path") in (failed_rebuild_paths or set()):
         return "compile-build-card-failed"
+    if build.get("install_prefix_mismatch"):
+        return "compile-build-card-stale"
     if not build.get("install_exists") or status == "unknown":
         return "compile-build-card-failed"
     if status == "current":
@@ -426,6 +431,9 @@ def render_build_list(discovery, statuses=None, failures=None, delete_target=Non
     if not builds:
         return html.Div("No CMake build directories found.", className="compile-muted")
     job_running = job_process_is_live(job)
+    rebuild_progress = read_rebuild_progress(job) if job_running else {}
+    active_rebuild_path = rebuild_progress.get("current_path")
+    queued_rebuild_paths = set(rebuild_progress.get("queued_paths") or [])
     rebuilding_paths = set((job or {}).get("build_paths") or []) if job_running else set()
     completed_rebuild_paths = completed_rebuild_paths_for_ui(job, statuses)
     failed_rebuild_paths = set((failures or {}).keys())
@@ -458,8 +466,14 @@ def render_build_list(discovery, statuses=None, failures=None, delete_target=Non
         if build.get("is_selected"):
             badges.append(html.Span("selected", className="compile-badge compile-badge-selected"))
         badges.append(render_build_status_badge(status_info))
-        if build.get("path") in rebuilding_paths:
-            badges.append(html.Span("building", className="compile-badge compile-badge-warn"))
+        if build.get("path") == active_rebuild_path:
+            badges.append(html.Span("rebuilding", className="compile-badge compile-badge-warn"))
+        elif build.get("path") in queued_rebuild_paths:
+            badges.append(html.Span("queued", className="compile-badge compile-badge-warn"))
+        elif build.get("path") in rebuilding_paths:
+            badges.append(html.Span("queued", className="compile-badge compile-badge-warn"))
+        if build.get("install_prefix_mismatch"):
+            badges.append(html.Span("prefix mismatch", className="compile-badge compile-badge-warn"))
         if build.get("install_exists"):
             badges.append(html.Span("installed", className="compile-badge"))
         meta = " | ".join(
@@ -478,10 +492,27 @@ def render_build_list(discovery, statuses=None, failures=None, delete_target=Non
                 "compile-build-card",
                 "compile-build-card-button",
                 build_card_status_class(build, status, failed_rebuild_paths),
+                "compile-build-card-rebuild-active" if build.get("path") == active_rebuild_path else "",
+                "compile-build-card-rebuild-queued" if build.get("path") in queued_rebuild_paths else "",
                 "compile-build-card-selected" if build.get("is_selected") else "",
             ]
         ).strip()
+        prefix_warning = []
+        if build.get("install_prefix_mismatch"):
+            prefix_warning.append(
+                html.Div(
+                    "Install prefix points at another build; rebuild this card to repair it.",
+                    className="compile-warning",
+                )
+            )
+        if build.get("install_prefix_mismatch"):
+            select_title = "Install prefix points at another build"
+        elif build.get("install_exists"):
+            select_title = "Use this build for run_scm.py"
+        else:
+            select_title = "Install directory not found"
         row_children = [
+            *prefix_warning,
             html.Button(
                 [
                     html.Div(
@@ -496,9 +527,9 @@ def render_build_list(discovery, statuses=None, failures=None, delete_target=Non
                 id={"type": "compile-build-select", "index": build["path"]},
                 type="button",
                 n_clicks=0,
-                disabled=bool(job_running or build.get("is_selected") or not build.get("install_exists")),
+                disabled=bool(job_running or build.get("is_selected") or not build.get("install_exists") or build.get("install_prefix_mismatch")),
                 className=card_class,
-                title="Use this build for run_scm.py" if build.get("install_exists") else "Install directory not found",
+                title=select_title,
             ),
             html.Div(
                 [
@@ -538,6 +569,67 @@ def render_warnings(warnings):
     if not warnings:
         return ""
     return [html.Div(warning, className="compile-warning") for warning in warnings]
+
+
+def render_source_check_warning(source_check):
+    """Render source-check failure text below the build list."""
+    warning = (source_check or {}).get("warning")
+    if not warning:
+        return ""
+    log_path = str((source_check or {}).get("log") or "")
+    children = []
+    for line in warning.splitlines():
+        if log_path and "LOG FILE FOR DETAILS:" in line and line.endswith(log_path):
+            children.append(line[: -len(log_path)])
+            children.append(
+                html.Button(
+                    log_path,
+                    id={"type": "compile-source-check-open-log", "index": "source-check"},
+                    type="button",
+                    n_clicks=0,
+                    className="compile-source-check-log-link",
+                    title="Open source-check log",
+                )
+            )
+            children.append("\n")
+        else:
+            children.append(line + "\n")
+    if children and children[-1] == "\n":
+        children.pop()
+    return html.Pre(children, className="compile-source-check-warning")
+
+
+def render_source_check_log_modal(log_payload=None, error=None):
+    """Render the source-check log overlay."""
+    path = (log_payload or {}).get("path", "")
+    content = (log_payload or {}).get("content", "")
+    title = "Source Check Log" if not error else "Source Check Log Error"
+    return html.Div(
+        [
+            html.Div(
+                [
+                    html.Div(
+                        [
+                            html.Div(title, className="compile-source-log-title"),
+                            html.Div(path or str(error), className="compile-source-log-path"),
+                        ],
+                        className="compile-source-log-header-text",
+                    ),
+                    html.Button(
+                        "Close",
+                        id={"type": "compile-source-check-log-close", "index": "source-check"},
+                        type="button",
+                        n_clicks=0,
+                        className="compile-source-log-close",
+                    ),
+                ],
+                className="compile-source-log-header",
+            ),
+            html.Pre(content if not error else str(error), className="compile-source-log-content"),
+        ],
+        className="compile-source-log-overlay",
+        role="dialog",
+    )
 
 
 def update_build_failures(failures, job, returncode, failed_path=None):
@@ -612,11 +704,12 @@ def discovery_with_selected_install(discovery, install_prefix):
     updated_builds = []
     for build in (discovery or {}).get("builds", []):
         item = dict(build)
+        prefix_matches = install_prefix_matches_build_name(item.get("name"), item.get("install_prefix") or "")
         try:
             item_target = str(Path(item.get("install_prefix") or "").resolve())
         except (OSError, TypeError):
             item_target = ""
-        item["is_selected"] = bool(selected_target and item_target == selected_target)
+        item["is_selected"] = bool(prefix_matches and selected_target and item_target == selected_target)
         updated_builds.append(item)
     updated["builds"] = updated_builds
     return updated
@@ -665,7 +758,9 @@ def delete_existing_build(build):
     """Delete one discovered build and its install directory when safe."""
     build_path = safe_child_path(build.get("path"), BUILD_DIR, "Build directory")
     install_prefix = build.get("install_prefix") or ""
-    install_path = safe_child_path(install_prefix, INSTALL_DIR, "Install directory") if install_prefix else None
+    install_path = None
+    if install_prefix and install_prefix_matches_build_name(build.get("name"), install_prefix):
+        install_path = safe_child_path(install_prefix, INSTALL_DIR, "Install directory")
     removed = []
 
     if install_path and install_path.exists():
@@ -705,10 +800,24 @@ def register_compile_callbacks(app):
         return discover_compile_state()
 
     @app.callback(
+        Output("compile-source-check", "data", allow_duplicate=True),
+        Input("compile-refresh", "n_clicks"),
+        prevent_initial_call=True,
+    )
+    def refresh_source_checks(_n_clicks):
+        return run_clubb_standards_check()
+
+    @app.callback(
         Output("compile-discovery", "data", allow_duplicate=True),
         Output("compile-build-list", "children", allow_duplicate=True),
         Output("compile-build-status-summary", "children", allow_duplicate=True),
         Output("compile-build-select-message", "children"),
+        Output("compile-toolchain-select", "value", allow_duplicate=True),
+        Output("compile-precision-select", "value"),
+        Output("compile-gpu-select", "value"),
+        Output("compile-feature-flags", "value"),
+        Output("compile-extra-args", "value"),
+        Output("compile-lmod-compiler", "value", allow_duplicate=True),
         Input({"type": "compile-build-select", "index": ALL}, "n_clicks"),
         State("compile-discovery", "data"),
         State("compile-build-statuses", "data"),
@@ -720,23 +829,64 @@ def register_compile_callbacks(app):
     def select_existing_build(_n_clicks, discovery, statuses, failures, delete_target, job):
         triggered = clicked_trigger_id()
         if not triggered:
-            return no_update, no_update, no_update, no_update
+            return (no_update,) * 10
         build_path = triggered.get("index")
         build = find_build(discovery, build_path)
         if not build:
-            return no_update, no_update, no_update, html.Div("Build no longer exists. Refresh and try again.", className="compile-warning")
+            return (
+                no_update,
+                no_update,
+                no_update,
+                html.Div("Build no longer exists. Refresh and try again.", className="compile-warning"),
+                no_update,
+                no_update,
+                no_update,
+                no_update,
+                no_update,
+                no_update,
+            )
         if not build.get("install_exists"):
-            return no_update, no_update, no_update, html.Div("This build does not have an install directory.", className="compile-warning")
+            return (
+                no_update,
+                no_update,
+                no_update,
+                html.Div("This build does not have an install directory.", className="compile-warning"),
+                no_update,
+                no_update,
+                no_update,
+                no_update,
+                no_update,
+                no_update,
+            )
         try:
             set_selected_install(build.get("install_prefix", ""))
         except RuntimeError as exc:
-            return no_update, no_update, no_update, html.Div(str(exc), className="compile-warning")
+            return (
+                no_update,
+                no_update,
+                no_update,
+                html.Div(str(exc), className="compile-warning"),
+                no_update,
+                no_update,
+                no_update,
+                no_update,
+                no_update,
+                no_update,
+            )
+        settings = compile_settings_from_build(build, discovery)
         updated_discovery = discovery_with_selected_install(discovery, build.get("install_prefix", ""))
+        updated_discovery["selected_build_settings"] = settings
         return (
             updated_discovery,
             render_build_list(updated_discovery, statuses, failures, delete_target, job),
             render_build_status_summary(updated_discovery, statuses),
-            "",
+            html.Div(f"Selected build and applied compile settings: {build.get('name')}", className="compile-muted"),
+            settings["toolchain"],
+            settings["precision"],
+            settings["gpu"],
+            settings["flags"],
+            settings["extra_args"],
+            settings["lmod_compiler"] or no_update,
         )
 
     @app.callback(
@@ -798,6 +948,7 @@ def register_compile_callbacks(app):
         Output("compile-interval", "disabled", allow_duplicate=True),
         Output("compile-interval", "n_intervals", allow_duplicate=True),
         Output("compile-build-select-message", "children", allow_duplicate=True),
+        Output("compile-source-check", "data", allow_duplicate=True),
         Input("compile-rebuild-all", "n_clicks"),
         Input({"type": "compile-build-rebuild", "index": ALL}, "n_clicks"),
         State("compile-discovery", "data"),
@@ -806,27 +957,27 @@ def register_compile_callbacks(app):
     def start_rebuild(_all_clicks, _rebuild_clicks, discovery):
         triggered = clicked_trigger_id()
         if not triggered:
-            return no_update, no_update, no_update, no_update, no_update, no_update
+            return (no_update,) * 7
         builds = (discovery or {}).get("builds", [])
         if triggered == "compile-rebuild-all":
-            build_paths = [build.get("path") for build in builds if build.get("path")]
+            selected_builds = [build for build in builds if build.get("path")]
             label = "all builds"
             name = "all builds"
         else:
             build = find_build(discovery, triggered.get("index"))
             if not build:
                 message = html.Div("Build no longer exists. Refresh and try again.", className="compile-warning")
-                return no_update, no_update, no_update, no_update, no_update, message
-            build_paths = [build.get("path")]
+                return no_update, no_update, no_update, no_update, no_update, message, no_update
+            selected_builds = [build]
             label = build.get("name") or "selected build"
             name = label
         try:
-            job = start_rebuild_job(build_paths, label)
+            job = start_rebuild_job(selected_builds, discovery, label)
         except RuntimeError as exc:
-            return no_update, append_log_tail("", f"{exc}\n"), no_update, no_update, no_update, html.Div(str(exc), className="compile-warning")
+            return no_update, append_log_tail("", f"{exc}\n"), no_update, no_update, no_update, html.Div(str(exc), className="compile-warning"), {}
         header = f"--- Running rebuild job ---\n{job['command']}\n\n"
         message = html.Div(f"Started rebuild: {name}", className="compile-muted")
-        return job, header, 0, False, 0, message
+        return job, header, 0, False, 0, message, {}
 
     @app.callback(
         Output("compile-env-select", "options"),
@@ -849,10 +1000,18 @@ def register_compile_callbacks(app):
         env_value = selected_env if selected_env in env_values else (env_values[0] if env_values else None)
         tc_options = toolchain_options(discovery)
         tc_values = [option["value"] for option in tc_options]
-        tc_value = selected_toolchain if selected_toolchain in tc_values else "auto"
+        selected_build_toolchain = ((discovery or {}).get("selected_build_settings") or {}).get("toolchain")
+        if selected_build_toolchain in tc_values:
+            tc_value = selected_build_toolchain
+        else:
+            tc_value = selected_toolchain if selected_toolchain in tc_values else "auto"
         compiler_options = lmod_compiler_options(discovery)
         compiler_values = [option["value"] for option in compiler_options if not option.get("disabled")]
-        compiler_value = selected_lmod_compiler if selected_lmod_compiler in compiler_values else first_enabled_value(compiler_options)
+        selected_build_lmod_compiler = ((discovery or {}).get("selected_build_settings") or {}).get("lmod_compiler")
+        if selected_build_lmod_compiler in compiler_values:
+            compiler_value = selected_build_lmod_compiler
+        else:
+            compiler_value = selected_lmod_compiler if selected_lmod_compiler in compiler_values else first_enabled_value(compiler_options)
         native_style = {"display": "none"} if lmod_available(discovery) else {}
         lmod_style = {} if lmod_available(discovery) else {"display": "none"}
         return (
@@ -895,6 +1054,34 @@ def register_compile_callbacks(app):
             render_build_list(discovery, statuses, failures, delete_target, job),
             render_build_status_summary(discovery, statuses),
         )
+
+    @app.callback(
+        Output("compile-source-check-warning", "children"),
+        Input("compile-source-check", "data"),
+    )
+    def update_source_check_warning(source_check):
+        return render_source_check_warning(source_check)
+
+    @app.callback(
+        Output("compile-source-check-log-modal", "children"),
+        Input({"type": "compile-source-check-open-log", "index": ALL}, "n_clicks"),
+        Input({"type": "compile-source-check-log-close", "index": ALL}, "n_clicks"),
+        State("compile-source-check", "data"),
+        prevent_initial_call=True,
+    )
+    def update_source_check_log_modal(open_clicks, close_clicks, source_check):
+        trigger_id = callback_context.triggered_id
+        if isinstance(trigger_id, dict) and trigger_id.get("type") == "compile-source-check-log-close":
+            return ""
+        if not (isinstance(trigger_id, dict) and trigger_id.get("type") == "compile-source-check-open-log"):
+            return no_update
+        if not any(open_clicks or []):
+            return no_update
+        try:
+            log_payload = read_source_check_log((source_check or {}).get("log"))
+        except RuntimeError as exc:
+            return render_source_check_log_modal(error=exc)
+        return render_source_check_log_modal(log_payload=log_payload)
 
     @app.callback(
         Output("compile-rebuild-all", "disabled"),
@@ -983,6 +1170,7 @@ def register_compile_callbacks(app):
         Output("compile-log-offset", "data", allow_duplicate=True),
         Output("compile-interval", "disabled", allow_duplicate=True),
         Output("compile-interval", "n_intervals"),
+        Output("compile-source-check", "data", allow_duplicate=True),
         Input("compile-start", "n_clicks"),
         Input("compile-start-fresh", "n_clicks"),
         Input("compile-start-tests", "n_clicks"),
@@ -1015,7 +1203,7 @@ def register_compile_callbacks(app):
     ):
         trigger_id = clicked_trigger_id()
         if trigger_id not in {"compile-start", "compile-start-fresh", "compile-start-tests"}:
-            return (no_update,) * 5
+            return (no_update,) * 6
         module_stack = selected_module_stack(discovery, compiler_module, netcdf_module, extra_modules)
         options = collect_options(precision, gpu, toolchain, flags, extra_args, module_stack)
         if trigger_id == "compile-start-fresh":
@@ -1025,18 +1213,18 @@ def register_compile_callbacks(app):
         warnings = build_warnings(discovery, env_id, options)
         if any(warning_is_blocking(warning) for warning in warnings):
             log = "Cannot start compile with the current selection:\n" + "\n".join(f"- {warning}" for warning in warnings) + "\n"
-            return {}, log, 0, True, no_update
+            return {}, log, 0, True, no_update, {}
         try:
             job = start_compile_job(discovery, env_id, options)
         except RuntimeError as exc:
-            return no_update, append_log_tail("", f"{exc}\n"), no_update, no_update, no_update
+            return no_update, append_log_tail("", f"{exc}\n"), no_update, no_update, no_update, {}
         action_label = {
             "compile-start": "compile job",
             "compile-start-fresh": "fresh compile job",
             "compile-start-tests": "CTest compile job",
         }[trigger_id]
         header = f"--- Running {action_label} ---\n{job['command']}\n\n"
-        return job, header, 0, False, 0
+        return job, header, 0, False, 0, {}
 
     @app.callback(
         Output("compile-job", "data", allow_duplicate=True),
@@ -1072,6 +1260,7 @@ def register_compile_callbacks(app):
         Output("compile-log-offset", "data", allow_duplicate=True),
         Output("compile-interval", "disabled", allow_duplicate=True),
         Output("compile-build-failures", "data"),
+        Output("compile-source-check", "data", allow_duplicate=True),
         Input("compile-interval", "n_intervals"),
         State("compile-job", "data"),
         State("compile-log", "data"),
@@ -1081,14 +1270,14 @@ def register_compile_callbacks(app):
     )
     def poll_compile(_tick, job, log_text, offset, build_failures):
         if not job:
-            return no_update, no_update, no_update, True, no_update
+            return no_update, no_update, no_update, True, no_update, no_update
         chunk, new_offset = read_log_increment(job.get("log"), int(offset or 0))
         updated_log = append_log_tail(log_text or "", chunk)
         if chunk:
             job = update_active_job(job, {"last_output_time": time.time()})
         status = poll_compile_job(job)
         if status is None:
-            return updated_log if chunk else no_update, job if chunk else no_update, new_offset, False, no_update
+            return updated_log if chunk else no_update, job if chunk else no_update, new_offset, False, no_update, no_update
         lost_job = status == "lost"
         returncode = 1 if lost_job else status
         chunk, new_offset = read_log_increment(job.get("log"), int(new_offset or 0))
@@ -1104,6 +1293,12 @@ def register_compile_callbacks(app):
                 updated_job = dict(updated_job)
                 updated_job["failed_build_path"] = failed_path
         updated_failures = update_build_failures(build_failures, job, returncode, failed_path)
+        source_check = no_update
+        build_completed = returncode == 0 or (
+            job.get("kind") == "compile" and "Build completed successfully" in updated_log
+        )
+        if build_completed and job.get("kind") in {"compile", "rebuild"}:
+            source_check = run_clubb_standards_check()
         job_label = "Rebuild" if job.get("kind") == "rebuild" else "Compile"
         label = "completed" if returncode == 0 else f"failed (exit {returncode})"
         if updated_log and not updated_log.endswith("\n"):
@@ -1111,7 +1306,7 @@ def register_compile_callbacks(app):
         if lost_job:
             updated_log = append_log_tail(updated_log, "--- Job process is no longer running; marking it failed. ---\n")
         updated_log = append_log_tail(updated_log, f"--- {job_label} {label}; runtime: {runtime_txt} ---\n")
-        return updated_log, updated_job, new_offset, True, updated_failures
+        return updated_log, updated_job, new_offset, True, updated_failures, source_check
 
     @app.callback(
         Output("compile-discovery", "data", allow_duplicate=True),
@@ -1139,14 +1334,15 @@ def register_compile_callbacks(app):
         Output("compile-log", "data", allow_duplicate=True),
         Output("compile-log-offset", "data", allow_duplicate=True),
         Output("compile-interval", "disabled", allow_duplicate=True),
+        Output("compile-source-check", "data", allow_duplicate=True),
         Input("compile-clear", "n_clicks"),
         State("compile-job", "data"),
         prevent_initial_call=True,
     )
     def clear_compile(_n_clicks, job):
         if job_process_is_live(job):
-            return no_update, no_update, no_update, no_update
-        return {}, "", 0, True
+            return no_update, no_update, no_update, no_update, no_update
+        return {}, "", 0, True, {}
 
     @app.callback(
         Output("compile-console", "children"),

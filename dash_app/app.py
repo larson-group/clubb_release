@@ -34,7 +34,7 @@ if not hasattr(pkgutil, "find_loader"):
     pkgutil.find_loader = _find_loader
 
 
-DEFAULT_PORT = 8050
+DEFAULT_PORT = 23404
 SELECTED_PORT_ENV = "CLUBB_DASH_SELECTED_PORT"
 BROWSER_OPENED_ENV = "CLUBB_DASH_BROWSER_OPENED"
 

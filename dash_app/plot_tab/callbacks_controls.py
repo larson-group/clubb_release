@@ -2,15 +2,63 @@ from dash import ALL, Input, Output, State, callback_context, no_update
 
 from .plot_types.budget_plot import PLOT as budget_plot
 from .plot_types.profile_plot import PLOT as profile_plot
-from .plot_types.shared import average_length_label, physical_time_window_label, start_time_label, time_start_max_for_duration
+from .plot_types.shared import (
+    average_length_label,
+    duration_slider_marks,
+    physical_time_window_label,
+    resolve_active_time_values,
+    snap_start_time_to_step,
+    start_time_label,
+    start_time_slider_marks,
+    time_preset_label,
+    time_start_max_for_duration,
+)
 from .plot_types.subcolumn_plot import PLOT as subcolumn_plot
 from .state import (
     DEFAULT_PLAYBACK_INTERVAL_S,
     MAX_PLAYBACK_INTERVAL_S,
     MIN_PLAYBACK_INTERVAL_S,
     PLAYBACK_INTERVAL_STEP_S,
+    clamp_float,
     normalize_playback_interval,
 )
+
+
+def _time_override(mode, start_seconds, duration_minutes, slider_start_seconds, slider_duration_minutes):
+    """Build the stored exact window plus its symbolic slider position."""
+    return {
+        "mode": mode,
+        "start_seconds": float(start_seconds),
+        "duration_minutes": float(duration_minutes),
+        "slider_start_seconds": float(slider_start_seconds),
+        "slider_duration_minutes": float(slider_duration_minutes),
+    }
+
+
+def _matches_symbolic_slider(time_override, time_range, time_point):
+    """Return whether slider values still match the preset's symbolic position."""
+    if not isinstance(time_override, dict):
+        return False
+    try:
+        symbolic_duration = float(time_override.get("slider_duration_minutes"))
+        symbolic_start = float(time_override.get("slider_start_seconds"))
+        current_duration = float(time_range)
+        current_start = float(time_point)
+    except (TypeError, ValueError):
+        return False
+    return abs(symbolic_duration - current_duration) <= 1.0e-6 and abs(symbolic_start - current_start) <= 1.0e-6
+
+
+def _matches_symbolic_duration(time_override, time_range):
+    """Return whether a duration equals the preset's symbolic slider duration."""
+    if not isinstance(time_override, dict):
+        return False
+    try:
+        symbolic_duration = float(time_override.get("slider_duration_minutes"))
+        current_duration = float(time_range)
+    except (TypeError, ValueError):
+        return False
+    return abs(symbolic_duration - current_duration) <= 1.0e-6
 
 
 def register_control_callbacks(app):
@@ -22,18 +70,19 @@ def register_control_callbacks(app):
         Input("plots-case-data", "data"),
         Input("plots-global-time-range", "value"),
         Input("plots-global-time-point", "value"),
+        Input("plots-time-override", "data"),
     )
-    def update_time_label(case_data, time_range, time_point):
+    def update_time_label(case_data, time_range, time_point, time_override):
         """Show the active time window or point directly in the section header."""
         if not case_data:
             return "Time", "Start time", "Average Length"
-        start_value = time_point if time_point is not None else case_data.get("default_time_start_seconds")
-        average_value = time_range if time_range is not None else case_data.get("default_time_duration_minutes")
-        return (
-            physical_time_window_label(case_data, start_value, average_value),
-            start_time_label(start_value),
-            average_length_label(average_value),
-        )
+        active_time = resolve_active_time_values(case_data, time_range, time_point, time_override)
+        start_value = active_time["start_seconds"]
+        average_value = active_time["duration_minutes"]
+        heading = physical_time_window_label(case_data, start_value, average_value)
+        if active_time["mode"] != "slider":
+            heading = f"{heading} [{time_preset_label(active_time['mode'])}]"
+        return heading, start_time_label(start_value), average_length_label(average_value)
 
     @app.callback(
         Output("plots-height-heading", "children"),
@@ -48,48 +97,102 @@ def register_control_callbacks(app):
         return f"Height: {float(active_range[0]):g} - {float(active_range[1]):g}"
 
     @app.callback(
+        Output("plots-global-time-range", "marks", allow_duplicate=True),
         Output("plots-global-time-point", "step", allow_duplicate=True),
         Output("plots-global-time-point", "max", allow_duplicate=True),
         Output("plots-global-time-point", "value", allow_duplicate=True),
+        Output("plots-global-time-point", "marks", allow_duplicate=True),
         Input("plots-global-time-range", "value"),
         State("plots-case-data", "data"),
         State("plots-global-time-point", "value"),
+        State("plots-global-time-range", "min"),
+        State("plots-global-time-range", "max"),
+        State("plots-time-override", "data"),
         prevent_initial_call=True,
     )
-    def sync_start_control_to_average_length(average_minutes, case_data, current_start):
+    def sync_start_control_to_average_length(average_minutes, case_data, current_start, duration_min, duration_max, time_override):
         """Move start time in chunks that match the selected averaging window."""
         step = max(1.0e-6, float(average_minutes or 1.0)) * 60.0
+        duration_marks = duration_slider_marks(duration_min or 1.0, duration_max or duration_min or 1.0, average_minutes)
         if not case_data:
-            return step, no_update, no_update
+            return duration_marks, step, no_update, no_update, no_update
         start_min = float(case_data.get("time_slider_start_min_seconds") or 0.0)
         start_max = time_start_max_for_duration(case_data, average_minutes)
-        active_start = float(current_start if current_start is not None else case_data.get("default_time_start_seconds", start_min))
-        return step, start_max, max(start_min, min(active_start, start_max))
+        if _matches_symbolic_duration(time_override, average_minutes):
+            active_start = float(time_override["slider_start_seconds"])
+        else:
+            active_start = float(current_start if current_start is not None else case_data.get("default_time_start_seconds", start_min))
+        active_start = snap_start_time_to_step(case_data, max(start_min, min(active_start, start_max)), average_minutes)
+        return duration_marks, step, start_max, active_start, start_time_slider_marks(case_data, active_start, average_minutes)
+
+    @app.callback(
+        Output("plots-playback", "data", allow_duplicate=True),
+        Input("plots-global-time-range", "value"),
+        State("plots-playback", "data"),
+        prevent_initial_call=True,
+    )
+    def release_playback_after_average_change(_average_minutes, playback):
+        """Clear a stale playback render lock after the averaging step changes."""
+        if not playback or not playback.get("inflight"):
+            return no_update
+        current = dict(playback)
+        current["inflight"] = False
+        current["target_point"] = None
+        return current
 
     @app.callback(
         Output("plots-global-time-point", "value", allow_duplicate=True),
         Output("plots-global-time-range", "value", allow_duplicate=True),
+        Output("plots-time-override", "data"),
         Input("plots-use-loss-window", "n_clicks"),
         Input("plots-use-pyplotgen-window", "n_clicks"),
         State("plots-case-data", "data"),
+        State("plots-global-time-range", "min"),
+        State("plots-global-time-range", "max"),
         prevent_initial_call=True,
     )
-    def apply_time_window_preset(_loss_clicks, _pyplotgen_clicks, case_data):
+    def apply_time_window_preset(_loss_clicks, _pyplotgen_clicks, case_data, duration_min, duration_max):
         """Jump the time sliders to the loss or pyplotgen averaging window."""
         if not case_data:
-            return no_update, no_update
+            return no_update, no_update, no_update
         trigger = callback_context.triggered_id
         if trigger == "plots-use-loss-window":
+            mode = "loss"
             start = case_data.get("loss_time_start_seconds")
             duration = case_data.get("loss_time_duration_minutes")
         elif trigger == "plots-use-pyplotgen-window":
+            mode = "pyplotgen"
             start = case_data.get("pyplotgen_time_start_seconds")
             duration = case_data.get("pyplotgen_time_duration_minutes")
         else:
-            return no_update, no_update
+            return no_update, no_update, no_update
         if start is None or duration is None:
-            return no_update, no_update
-        return float(start), float(duration)
+            return no_update, no_update, no_update
+        exact_start = float(start)
+        exact_duration = float(duration)
+        duration = clamp_float(exact_duration, duration_min or 1.0, duration_max or duration_min or 1.0, duration_min or 1.0)
+        start_min = float(case_data.get("time_slider_start_min_seconds") or 0.0)
+        start_max = time_start_max_for_duration(case_data, duration)
+        start = snap_start_time_to_step(case_data, clamp_float(exact_start, start_min, start_max, start_min), duration)
+        return float(start), float(duration), _time_override(mode, exact_start, exact_duration, start, duration)
+
+    @app.callback(
+        Output("plots-time-override", "data", allow_duplicate=True),
+        Input("plots-global-time-range", "value"),
+        Input("plots-global-time-point", "value"),
+        Input("plots-case-data", "data"),
+        State("plots-time-override", "data"),
+        prevent_initial_call=True,
+    )
+    def clear_time_override_on_manual_time_change(time_range, time_point, _case_data, time_override):
+        """Return to slider-driven plots when the user moves either time slider."""
+        if not time_override:
+            return no_update
+        if callback_context.triggered_id == "plots-case-data":
+            return None
+        if _matches_symbolic_slider(time_override, time_range, time_point):
+            return no_update
+        return None
 
     @app.callback(
         Output("plots-playback", "data"),

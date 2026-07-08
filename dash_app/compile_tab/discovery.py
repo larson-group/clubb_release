@@ -573,6 +573,14 @@ def parse_cmake_cache(cache_path):
     return values
 
 
+def install_prefix_matches_build_name(build_name, install_prefix):
+    """Return whether a CMake install prefix belongs to the given build name."""
+    try:
+        return bool(build_name and install_prefix and Path(install_prefix).resolve().name == str(build_name))
+    except (OSError, RuntimeError, TypeError):
+        return False
+
+
 def discover_existing_builds():
     """Discover existing CMake build directories and their important options."""
     build_root = Path(BUILD_DIR)
@@ -602,7 +610,12 @@ def discover_existing_builds():
             continue
         cache = parse_cmake_cache(cache_path)
         install_prefix = cache.get("CMAKE_INSTALL_PREFIX", "")
-        install_exists = bool(install_prefix and Path(install_prefix).exists())
+        try:
+            install_prefix_exists = bool(install_prefix and Path(install_prefix).exists())
+        except OSError:
+            install_prefix_exists = False
+        install_prefix_matches = install_prefix_matches_build_name(build_dir.name, install_prefix)
+        install_exists = bool(install_prefix_exists and install_prefix_matches)
         build_log = build_dir / "cmake_build_output.txt"
         builds.append(
             {
@@ -610,10 +623,14 @@ def discover_existing_builds():
                 "path": str(build_dir),
                 "install_prefix": install_prefix,
                 "install_exists": install_exists,
-                "is_latest": bool(install_prefix and latest_target and str(Path(install_prefix).resolve()) == latest_target),
-                "is_selected": bool(install_prefix and selected_target and str(Path(install_prefix).resolve()) == selected_target),
+                "install_prefix_exists": install_prefix_exists,
+                "install_prefix_matches_build": install_prefix_matches,
+                "install_prefix_mismatch": bool(install_prefix and not install_prefix_matches),
+                "is_latest": bool(install_prefix_matches and latest_target and str(Path(install_prefix).resolve()) == latest_target),
+                "is_selected": bool(install_prefix_matches and selected_target and str(Path(install_prefix).resolve()) == selected_target),
                 "has_log": build_log.exists(),
                 "build_type": cache.get("CMAKE_BUILD_TYPE", ""),
+                "fortran_compiler": cache.get("CMAKE_Fortran_COMPILER", ""),
                 "generator": cache.get("CMAKE_GENERATOR", ""),
                 "make_program": cache.get("CMAKE_MAKE_PROGRAM", ""),
                 "toolchain": cache.get("CMAKE_TOOLCHAIN_FILE", ""),
@@ -622,6 +639,8 @@ def discover_existing_builds():
                 "netcdf": cache.get("USE_NetCDF", ""),
                 "openmp": cache.get("ENABLE_OMP", ""),
                 "python": cache.get("ENABLE_F2PY", ""),
+                "gptl": cache.get("USE_GPTL", ""),
+                "tuning": cache.get("TUNING", ""),
                 "silhs": cache.get("SILHS", ""),
                 "modified": int(build_dir.stat().st_mtime),
             }

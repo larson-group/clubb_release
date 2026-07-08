@@ -70,7 +70,10 @@ class TimeHeightPlotType(BasePlotType):
     def _average_time_height(self, result, global_context):
         time_vals, z_vals, data, var_units, var_long_name, z_units = result
         case_data = global_context.get("case_data") or {}
-        start_seconds = float(case_data.get("time_slider_start_min_seconds", case_data.get("default_time_start_seconds", 0.0)))
+        if (global_context.get("time_source") or "slider") != "slider" and global_context.get("time_point") is not None:
+            start_seconds = float(global_context.get("time_point"))
+        else:
+            start_seconds = float(case_data.get("time_slider_start_min_seconds", case_data.get("default_time_start_seconds", 0.0)))
         min_average = float(case_data.get("time_slider_duration_min_minutes") or 0.0)
         average_minutes = max(min_average, float(global_context.get("time_range") if global_context.get("time_range") is not None else case_data.get("default_time_duration_minutes", min_average or 1.0)))
         window_seconds = average_minutes * 60.0
@@ -230,6 +233,8 @@ class TimeHeightPlotType(BasePlotType):
             Input("plots-case-data", "data"),
             Input("plots-global-height-range", "value"),
             Input("plots-global-time-range", "value"),
+            Input("plots-global-time-point", "value"),
+            Input("plots-time-override", "data"),
             Input("plots-selected-column", "data"),
             Input("plots-column-mode", "value"),
             Input("plots-column-filters", "data"),
@@ -243,6 +248,8 @@ class TimeHeightPlotType(BasePlotType):
             case_data,
             height_range,
             time_range,
+            time_point,
+            time_override,
             selected_column,
             column_mode,
             column_filters,
@@ -252,12 +259,15 @@ class TimeHeightPlotType(BasePlotType):
             relayout_data,
         ):
             size_value = shared.normalize_plot_size(size_store_value)
+            active_time = shared.resolve_active_time_values(case_data, time_range, time_point, time_override)
             fig = self.build_figure(
                 {"var": var_name, "size": size_value},
                 {
                     "case_data": case_data,
                     "height_range": height_range,
-                    "time_range": time_range,
+                    "time_range": active_time["duration_minutes"],
+                    "time_point": active_time["start_seconds"],
+                    "time_source": active_time["mode"],
                     "selected_column": selected_column,
                     "column_mode": column_mode,
                     "column_filter_indices": shared.column_filter_indices(column_filters),

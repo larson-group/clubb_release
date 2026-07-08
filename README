@@ -138,18 +138,27 @@ launch specific case runs from the run tab and plot CLUBB NetCDF output from
 the plots tab.  Compile CLUBB first if you want to run cases through the app;
 plotting requires running first or using existing output files.
 
-To install the Python dependencies, run this from the CLUBB directory:
+The recommended way to start the app is the top-level launcher.  It creates a
+local virtual environment if needed, installs the Dash dependencies, and starts
+the app:
 `
-python -m pip install -r dash_app/requirements.txt
-`
-
-Then start the app with:
-`
-python dash_app/app.py
+./launch_dashboard.sh
 `
 
-The app opens in a browser on port 8050, or the next available port.  Use
-`python dash_app/app.py --help` to see host, port, and debug options.
+Arguments are passed through to `dash_app/app.py`.  For example:
+`
+./launch_dashboard.sh --port 8060 -debug
+`
+
+For manual setup, run this from the CLUBB directory:
+`
+python3 -m pip install -r dash_app/requirements.txt
+python3 dash_app/app.py
+`
+
+The app opens in a browser on port 23404, or the next available port.  Use
+`./launch_dashboard.sh --help` or `python3 dash_app/app.py --help` to see host,
+port, debug, and threading options.
 
 For more detail on app workflows and LES benchmark overlays, see
 `dash_app/README.md`.

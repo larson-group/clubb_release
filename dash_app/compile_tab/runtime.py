@@ -13,7 +13,14 @@ import sys
 import tempfile
 import time
 
-from .discovery import command_in_env, compiler_from_env, parse_cmake_cache, resolve_lmod_stack
+from .discovery import (
+    canonical_compiler_from_path,
+    command_in_env,
+    compiler_from_env,
+    parse_cmake_cache,
+    resolve_lmod_stack,
+    install_prefix_matches_build_name,
+)
 from .state import BUILD_DIR, COMPILE_LOCK, COMPILE_PROC, MAX_UI_LOG_LINES, REPO_ROOT
 
 INSTALL_MTIME_TOLERANCE_NS = 1_000_000_000
@@ -38,6 +45,18 @@ RUNTIME_INSTALL_ARTIFACTS = {
     "clubb_standalone_loss": ("src/clubb_standalone_loss", "clubb_standalone_loss"),
     "clubb_loss_driver_test": ("src/clubb_loss_driver_test", "clubb_loss_driver_test"),
 }
+CLUBB_STANDARDS_SCRIPT = Path(REPO_ROOT) / "utilities" / "CLUBBStandardsCheck.py"
+MAX_SOURCE_CHECK_LOG_BYTES = 2_000_000
+CLUBB_STANDARDS_CHECK_TARGETS = (
+    Path(REPO_ROOT) / "src" / "clubb_driver.F90",
+    Path(REPO_ROOT) / "src" / "CLUBB_core",
+    Path(REPO_ROOT) / "src" / "SILHS",
+    Path(REPO_ROOT) / "src" / "Benchmark_cases",
+    Path(REPO_ROOT) / "src" / "Radiation",
+    Path(REPO_ROOT) / "src" / "Microphys",
+    Path(REPO_ROOT) / "src" / "Microphys" / "KK_microphys",
+    Path(REPO_ROOT) / "src" / "G_unit_test_types",
+)
 
 _REBUILD_HELPER = r"""
 import json
@@ -45,8 +64,26 @@ import os
 import subprocess
 import sys
 
-build_paths = json.loads(sys.argv[1])
-parallel_jobs = sys.argv[2]
+compile_specs = json.loads(sys.argv[1])
+progress_path = sys.argv[2]
+
+
+def write_progress(current_path, completed_paths, state):
+    payload = {
+        "current_path": current_path,
+        "completed_paths": completed_paths,
+        "queued_paths": [
+            spec["build_path"]
+            for spec in compile_specs
+            if spec["build_path"] != current_path and spec["build_path"] not in completed_paths
+        ],
+        "state": state,
+    }
+    try:
+        with open(progress_path, "w", encoding="utf-8") as progress_file:
+            json.dump(payload, progress_file)
+    except OSError:
+        pass
 
 
 def display_command(cmd):
@@ -59,11 +96,12 @@ def write_line(build_log, line):
     build_log.flush()
 
 
-def stream_command(cmd, build_log):
+def stream_command(cmd, build_log, env):
     write_line(build_log, display_command(cmd))
     proc = subprocess.Popen(
         cmd,
         cwd=os.getcwd(),
+        env=env,
         stdout=subprocess.PIPE,
         stderr=subprocess.STDOUT,
         text=True,
@@ -76,11 +114,17 @@ def stream_command(cmd, build_log):
     return proc.wait()
 
 
-for index, build_path in enumerate(build_paths, start=1):
-    cmd = ["cmake", "--build", build_path, "--target", "install", "--parallel", parallel_jobs]
-    build_log_path = os.path.join(build_path, "cmake_build_output.txt")
+completed_paths = []
+write_progress(None, completed_paths, "queued")
+
+for index, spec in enumerate(compile_specs, start=1):
+    cmd = spec["command"]
+    env = spec.get("env") or os.environ.copy()
+    build_path = spec["build_path"]
+    build_log_path = spec["build_log_path"]
+    write_progress(build_path, completed_paths, "running")
     header_lines = [
-        f"=== [{index}/{len(build_paths)}] Rebuilding {build_path} ===",
+        f"=== [{index}/{len(compile_specs)}] Reconfiguring and rebuilding {build_path} ===",
         f"=== Writing build log: {build_log_path} ===",
     ]
     returncode = 0
@@ -90,9 +134,11 @@ for index, build_path in enumerate(build_paths, start=1):
             build_log.flush()
             for line in header_lines:
                 print(line, flush=True)
-            returncode = stream_command(cmd, build_log)
+            returncode = stream_command(cmd, build_log, env)
             if returncode == 0:
                 write_line(build_log, f"=== Rebuild complete for {build_path} ===")
+                completed_paths.append(build_path)
+                write_progress(None, completed_paths, "queued")
     except OSError as exc:
         returncode = 1
         print(f"=== Rebuild failed for {build_path}: {exc} ===", flush=True)
@@ -107,12 +153,255 @@ for index, build_path in enumerate(build_paths, start=1):
             pass
         sys.exit(returncode)
 
+write_progress(None, completed_paths, "complete")
 print("=== Rebuild complete ===", flush=True)
 """
 
 
 def _bool_flag(options, key, flag):
     return [flag] if options.get(key) else []
+
+
+def clubb_standards_failed_message(log_path):
+    """Return the same source-check failure warning text that compile.py prints."""
+    return "\n".join(
+        [
+            "=============================================================",
+            "CLUBBStandardsCheck FAILED",
+            "  THIS IS PRINTED IN ALL RED, CAPITAL LETTERS, AND USES",
+            "  AN EXCLAMATION MARK TO ENSURE THE DEVELOPERS FEEL SHAME!",
+            "  IF YOU ARE ONE OF THESE \"DEVELOPERS\" CHECK THE",
+            f"  LOG FILE FOR DETAILS: {log_path}",
+            "=============================================================",
+        ]
+    )
+
+
+def run_clubb_standards_check(log_path=None):
+    """Run CLUBBStandardsCheck.py over the same sources as compile.py."""
+    if log_path is None:
+        log_file = tempfile.NamedTemporaryFile(delete=False, prefix="clubb_source_check_", suffix=".log", dir="/tmp")
+        log_path = log_file.name
+        log_file.close()
+    retcode = 0
+    with open(log_path, "a", encoding="utf-8", errors="replace") as log:
+        for target in CLUBB_STANDARDS_CHECK_TARGETS:
+            if target.is_dir():
+                files = [str(path) for path in target.glob("*.F90")]
+            elif target.is_file():
+                files = [str(target)]
+            else:
+                log.write(f"No matches for {target}\n")
+                continue
+            if not files:
+                log.write(f"No matches for {target}\n")
+                continue
+            cmd = [sys.executable, str(CLUBB_STANDARDS_SCRIPT), *files]
+            log.write("\n================= Running: " + " ".join(cmd) + " =================\n")
+            log.flush()
+            try:
+                process = subprocess.Popen(
+                    cmd,
+                    cwd=REPO_ROOT,
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.STDOUT,
+                    text=True,
+                )
+                for line in process.stdout or ():
+                    log.write(line)
+                    log.flush()
+                process.wait()
+                retcode += process.returncode
+            except OSError as exc:
+                log.write(f"Failed to run CLUBBStandardsCheck.py: {exc}\n")
+                retcode += 1
+            log.write("\n")
+            log.flush()
+    return {
+        "returncode": retcode,
+        "log": str(log_path),
+        "warning": clubb_standards_failed_message(log_path) if retcode != 0 else "",
+        "checked_at": time.time(),
+    }
+
+
+def validated_source_check_log_path(log_path):
+    """Return a source-check log path that is safe for the Dash app to open."""
+    if not log_path:
+        raise RuntimeError("No source-check log file is available.")
+    path = Path(log_path).expanduser().resolve()
+    # Source-check logs are written to /tmp; macOS resolves that directory as /private/tmp.
+    tmp_dirs = {Path(tempfile.gettempdir()).resolve(), Path("/tmp").resolve()}
+    if (
+        path.parent not in tmp_dirs
+        or not path.name.startswith("clubb_source_check_")
+        or path.suffix != ".log"
+    ):
+        raise RuntimeError(f"Refusing to open non-source-check log path: {path}")
+    if not path.is_file():
+        raise RuntimeError(f"Source-check log file does not exist: {path}")
+    return path
+
+
+def read_source_check_log(log_path):
+    """Read a source-check log file for display inside the Dash app."""
+    path = validated_source_check_log_path(log_path)
+    size = path.stat().st_size
+    try:
+        with path.open("rb") as log_file:
+            if size > MAX_SOURCE_CHECK_LOG_BYTES:
+                log_file.seek(size - MAX_SOURCE_CHECK_LOG_BYTES)
+                raw = log_file.read()
+                content = raw.decode("utf-8", errors="replace")
+                content = (
+                    f"[Showing final {MAX_SOURCE_CHECK_LOG_BYTES:,} bytes of "
+                    f"{size:,} total bytes.]\n\n{content}"
+                )
+            else:
+                content = log_file.read().decode("utf-8", errors="replace")
+    except OSError as exc:
+        raise RuntimeError(f"Could not read source-check log: {exc}") from exc
+    return {"path": str(path), "content": content}
+
+
+COMPILE_FEATURE_FLAG_ORDER = [
+    "debug",
+    "python",
+    "openmp",
+    "tuning",
+    "gptl",
+    "disable_netcdf",
+    "disable_silhs",
+]
+
+
+def cmake_enabled(value):
+    """Return whether a CMake cache value represents ON."""
+    return str(value or "").strip().upper() in {"1", "ON", "TRUE", "YES"}
+
+
+def cmake_disabled(value):
+    """Return whether a CMake cache value represents OFF."""
+    return str(value or "").strip().upper() in {"0", "OFF", "FALSE", "NO"}
+
+
+def _toolchain_compiler(toolchain_path):
+    """Return the compiler suffix from a CLUBB toolchain path."""
+    stem = Path(toolchain_path or "").stem
+    if "_" not in stem:
+        return ""
+    return stem.rsplit("_", 1)[-1]
+
+
+def _build_compiler_family(build):
+    """Infer the canonical compiler family for one discovered build."""
+    compiler = canonical_compiler_from_path((build or {}).get("fortran_compiler", ""))
+    if compiler:
+        return compiler
+    return _toolchain_compiler((build or {}).get("toolchain", ""))
+
+
+def lmod_compiler_from_build(build, discovery=None):
+    """Return an Lmod compiler module that safely matches a discovered build."""
+    modules = [
+        item
+        for item in (discovery or {}).get("lmod", {}).get("compiler_modules", [])
+        if item.get("enabled") is not False and item.get("module")
+    ]
+    compiler_path = str((build or {}).get("fortran_compiler") or "")
+    if compiler_path:
+        exact_matches = [
+            item
+            for item in modules
+            if item.get("diagnostics", {}).get("FC") == compiler_path
+        ]
+        if len(exact_matches) == 1:
+            return exact_matches[0]["module"]
+
+    family = _build_compiler_family(build)
+    if not family:
+        return None
+    family_matches = [item for item in modules if item.get("canonical") == family]
+    if len(family_matches) == 1:
+        return family_matches[0]["module"]
+    return None
+
+
+def compile_settings_from_build(build, discovery=None, lmod_compiler=None):
+    """Return compile.py option values recoverable from one discovered build."""
+    valid_precisions = {"single", "double", "quad"}
+    valid_gpus = {"none", "openacc", "openmp"}
+    precision = str((build or {}).get("precision") or "double").strip().lower()
+    gpu = str((build or {}).get("gpu") or "none").strip().lower()
+
+    if precision not in valid_precisions:
+        precision = "double"
+    if gpu not in valid_gpus:
+        gpu = "none"
+
+    flags = []
+    if str((build or {}).get("build_type") or "").strip().lower() == "debug":
+        flags.append("debug")
+    if cmake_enabled((build or {}).get("python")):
+        flags.append("python")
+    if cmake_enabled((build or {}).get("openmp")):
+        flags.append("openmp")
+    if cmake_enabled((build or {}).get("tuning")):
+        flags.append("tuning")
+    if cmake_enabled((build or {}).get("gptl")):
+        flags.append("gptl")
+    if cmake_disabled((build or {}).get("netcdf")):
+        flags.append("disable_netcdf")
+    if cmake_disabled((build or {}).get("silhs")):
+        flags.append("disable_silhs")
+
+    toolchain = (build or {}).get("toolchain") or "auto"
+    valid_toolchains = {"auto"}
+    valid_toolchains.update(
+        item.get("path")
+        for item in (discovery or {}).get("toolchains", [])
+        if item.get("path")
+    )
+    if toolchain not in valid_toolchains:
+        toolchain = "auto"
+
+    return {
+        "toolchain": toolchain,
+        "precision": precision,
+        "gpu": gpu,
+        "flags": [flag for flag in COMPILE_FEATURE_FLAG_ORDER if flag in flags],
+        "extra_args": "",
+        "lmod_compiler": lmod_compiler or lmod_compiler_from_build(build, discovery),
+    }
+
+
+def compile_options_from_build(build, discovery=None, module_stack=None):
+    """Return compile.py options for rerunning the build through compile.py."""
+    settings = compile_settings_from_build(build, discovery, None)
+    if module_stack is None:
+        lmod_compiler = settings.get("lmod_compiler")
+        module_stack = [lmod_compiler] if lmod_compiler else []
+    options = {
+        "precision": settings["precision"],
+        "gpu": settings["gpu"],
+        "toolchain": settings["toolchain"],
+        "extra_args": "",
+        "module_stack": module_stack,
+        "debug": "debug" in settings["flags"],
+        "run_tests": False,
+        "python": "python" in settings["flags"],
+        "fresh": False,
+        "openmp": "openmp" in settings["flags"],
+        "tuning": "tuning" in settings["flags"],
+        "gptl": "gptl" in settings["flags"],
+        "disable_netcdf": "disable_netcdf" in settings["flags"],
+        "disable_silhs": "disable_silhs" in settings["flags"],
+    }
+    install_prefix = (build or {}).get("install_prefix") or ""
+    build_name = (build or {}).get("name") or Path((build or {}).get("path") or "").name
+    if install_prefix and install_prefix_matches_build_name(build_name, install_prefix):
+        options["install"] = install_prefix
+    return options
 
 
 def selected_environment(discovery, env_id):
@@ -127,6 +416,7 @@ def selected_environment(discovery, env_id):
 def build_compile_argv(options):
     """Build the compile.py argument vector after the Python executable."""
     argv = [sys.executable, "-u", "compile.py"]
+    argv.append("-skip_source_checks")
     precision = options.get("precision") or "double"
     gpu = options.get("gpu") or "none"
     if precision != "double":
@@ -136,12 +426,13 @@ def build_compile_argv(options):
     toolchain = options.get("toolchain") or "auto"
     if toolchain != "auto":
         argv.extend(["-toolchain", toolchain])
+    install = (options.get("install") or "").strip()
+    if install:
+        argv.extend(["-install", install])
     argv.extend(_bool_flag(options, "debug", "-debug"))
     argv.extend(_bool_flag(options, "run_tests", "-run_tests"))
     argv.extend(_bool_flag(options, "python", "-python"))
     argv.extend(_bool_flag(options, "fresh", "-fresh"))
-    argv.extend(_bool_flag(options, "disable_netcdf", "-disable_netcdf"))
-    argv.extend(_bool_flag(options, "disable_silhs", "-disable_silhs"))
     argv.extend(_bool_flag(options, "openmp", "-openmp"))
     argv.extend(_bool_flag(options, "tuning", "-tuning"))
     argv.extend(_bool_flag(options, "gptl", "-gptl"))
@@ -216,6 +507,33 @@ def _runtime_targets(cache):
     return targets
 
 
+def _configure_marker_mtime(path):
+    """Return the newest CMake-generated marker for the last configure step."""
+    build_path = Path(path)
+    marker_paths = [
+        build_path / "CMakeFiles" / "cmake.check_cache",
+        build_path / "build.ninja",
+        build_path / "Makefile",
+        build_path / "CMakeFiles" / "Makefile.cmake",
+        build_path / "cmake_install.cmake",
+        build_path / "CMakeCache.txt",
+    ]
+    newest = (0.0, "")
+    for marker_path in marker_paths:
+        try:
+            mtime = marker_path.stat().st_mtime
+        except OSError:
+            continue
+        if mtime > newest[0]:
+            newest = (mtime, str(marker_path))
+    return newest
+
+
+def _is_cmake_config_file(path):
+    """Return whether a source-tree file should be treated as CMake config."""
+    return path.name == "CMakeLists.txt" or path.suffix == ".cmake"
+
+
 def _detect_target_status(path, build, cache, targets):
     """Ask whether CLUBB runtime targets need work using directory timestamp scanning."""
     # Get maximum modification time of the build artifacts (executables and libraries)
@@ -249,9 +567,10 @@ def _detect_target_status(path, build, cache, targets):
             p = repo_root / f_name
             if p.is_file():
                 mtime = p.stat().st_mtime
-                max_src_time = max(max_src_time, mtime)
-                if p.name == "CMakeLists.txt" or p.suffix == ".cmake":
+                if _is_cmake_config_file(p):
                     max_config_time = max(max_config_time, mtime)
+                else:
+                    max_src_time = max(max_src_time, mtime)
                     
         # 2. Check whitelisted directories recursively
         for d_name in whitelist_dirs:
@@ -262,21 +581,25 @@ def _detect_target_status(path, build, cache, targets):
                         mtime = p.stat().st_mtime
                         # Only track relevant source, header, config, or scripting files
                         if p.suffix in [".f90", ".F90", ".c", ".h", ".cpp", ".F", ".txt", ".cmake", ".py"]:
-                            max_src_time = max(max_src_time, mtime)
-                            if p.name == "CMakeLists.txt" or p.suffix == ".cmake":
+                            if _is_cmake_config_file(p):
                                 max_config_time = max(max_config_time, mtime)
+                            else:
+                                max_src_time = max(max_src_time, mtime)
     except OSError as exc:
         return _status("unknown", detail=f"Error scanning source directory: {exc}")
 
-    cache_path = Path(path) / "CMakeCache.txt"
-    cache_time = cache_path.stat().st_mtime if cache_path.is_file() else 0.0
+    configure_time, configure_marker = _configure_marker_mtime(path)
 
-    if max_config_time > cache_time:
+    if max_config_time > configure_time:
         return _status(
             "needs_configure",
             "needs configure",
             detail="CMake configuration files have changed.",
-            output=f"Max config modification time: {time.ctime(max_config_time)}\nCMakeCache modification time: {time.ctime(cache_time)}",
+            output=(
+                f"Max config modification time: {time.ctime(max_config_time)}\n"
+                f"Last configure marker: {configure_marker or 'not found'}\n"
+                f"Last configure marker modification time: {time.ctime(configure_time)}"
+            ),
         )
     elif max_build_time == 0.0:
         return _status(
@@ -298,7 +621,13 @@ def _detect_target_status(path, build, cache, targets):
     return _status(
         "current",
         detail="CLUBB runtime targets are current.",
-        output=f"Directory scan results:\n  Max source modification time: {time.ctime(max_src_time)}\n  Max build modification time: {time.ctime(max_build_time)}\n  CMakeCache modification time: {time.ctime(cache_time)}",
+        output=(
+            "Directory scan results:\n"
+            f"  Max source modification time: {time.ctime(max_src_time)}\n"
+            f"  Max build modification time: {time.ctime(max_build_time)}\n"
+            f"  Last configure marker: {configure_marker or 'not found'}\n"
+            f"  Last configure marker modification time: {time.ctime(configure_time)}"
+        ),
         command=[command_str],
         returncode=0,
     )
@@ -402,6 +731,18 @@ def detect_build_status(build):
 
     cache = _build_cache_for(path, build if isinstance(build, dict) else {})
     targets = _runtime_targets(cache)
+    install_prefix = cache.get("CMAKE_INSTALL_PREFIX", "")
+    build_name = (build.get("name") if isinstance(build, dict) else "") or Path(path).name
+    if install_prefix and not install_prefix_matches_build_name(build_name, install_prefix):
+        return _status(
+            "needs_configure",
+            "needs configure",
+            detail="CMake install prefix points at a different build directory.",
+            output=(
+                f"Build name: {build_name}\n"
+                f"CMAKE_INSTALL_PREFIX: {install_prefix}"
+            ),
+        )
     target_status = _detect_target_status(path, build, cache, targets)
     if target_status.get("status") != "current":
         return target_status
@@ -501,8 +842,6 @@ def build_warnings(discovery, env_id, options):
         warnings.append(f"Cannot load selected module stack: {spec['load_error']}")
     canonical = environment.get("canonical") or ""
     gpu = options.get("gpu") or "none"
-    if options.get("python") and options.get("disable_netcdf"):
-        warnings.append("-python requires NetCDF; compile.py will reject this combination.")
     if gpu != "none" and canonical in {"gcc", "intel"}:
         warnings.append(f"{canonical} toolchains currently reject GPU builds.")
     if environment.get("enabled") is False:
@@ -515,7 +854,7 @@ def build_warnings(discovery, env_id, options):
             warnings.append(f"No matching CLUBB toolchain was found for compiler family {canonical}.")
         if not diagnostics.get("cmake"):
             warnings.append("cmake was not found on PATH for the selected module stack.")
-        if not options.get("disable_netcdf") and not (diagnostics.get("nf-config") or diagnostics.get("nc-config")):
+        if not (diagnostics.get("nf-config") or diagnostics.get("nc-config")):
             warnings.append("NetCDF config tools were not found in the selected module stack.")
     elif not (discovery or {}).get("tools", {}).get("cmake"):
         warnings.append("cmake was not found on PATH.")
@@ -620,18 +959,39 @@ def start_compile_job(discovery, env_id, options):
         return dict(job)
 
 
-def start_rebuild_job(build_paths, label="selected builds"):
-    """Start a sequential rebuild/install job for existing CMake build dirs."""
-    safe_paths = [validated_build_path(path) for path in build_paths or []]
-    if not safe_paths:
+def _compile_specs_from_builds(builds, discovery):
+    """Build serialized compile.py specs for reconfiguring existing builds."""
+    specs = []
+    for build in builds or []:
+        build_path = validated_build_path(build.get("path"))
+        options = compile_options_from_build(build, discovery)
+        spec = build_compile_spec(discovery, "current", options)
+        if spec.get("load_error"):
+            raise RuntimeError(f"Cannot load selected module stack: {spec['load_error']}")
+        specs.append(
+            {
+                "build_path": build_path,
+                "build_log_path": str(Path(build_path) / "cmake_build_output.txt"),
+                "command": spec["command"],
+                "display": spec["display"],
+                "env": spec["env"],
+            }
+        )
+    return specs
+
+
+def start_rebuild_job(builds, discovery, label="selected builds"):
+    """Start a sequential compile.py job for existing build configurations."""
+    compile_specs = _compile_specs_from_builds(builds, discovery)
+    if not compile_specs:
         raise RuntimeError("No build directories were selected for rebuild.")
-    nproc = str(os.cpu_count() or 4)
-    command = [sys.executable, "-u", "-c", _REBUILD_HELPER, json.dumps(safe_paths), nproc]
-    build_count = len(safe_paths)
-    display_commands = [
-        " ".join(shlex.quote(part) for part in ["cmake", "--build", path, "--target", "install", "--parallel", nproc])
-        for path in safe_paths
-    ]
+    progress_file = tempfile.NamedTemporaryFile(delete=False, prefix="clubb_rebuild_progress_", suffix=".json", dir="/tmp")
+    progress_path = progress_file.name
+    progress_file.close()
+    command = [sys.executable, "-u", "-c", _REBUILD_HELPER, json.dumps(compile_specs), progress_path]
+    build_paths = [spec["build_path"] for spec in compile_specs]
+    build_count = len(compile_specs)
+    display_commands = [spec["display"] for spec in compile_specs]
     display = "\n".join(display_commands)
     log_file = tempfile.NamedTemporaryFile(delete=False, prefix="clubb_rebuild_", suffix=".log", dir="/tmp")
     log_path = log_file.name
@@ -659,7 +1019,8 @@ def start_rebuild_job(build_paths, label="selected builds"):
             "status": "running",
             "returncode": None,
             "kind": "rebuild",
-            "build_paths": safe_paths,
+            "build_paths": build_paths,
+            "progress": progress_path,
             "label": label,
             "build_count": build_count,
         }
@@ -737,6 +1098,30 @@ def rebuild_returncode_from_log(log_path):
         except ValueError:
             return 1
     return None
+
+
+def read_rebuild_progress(job):
+    """Return queued/current/completed paths for a running rebuild job."""
+    if not job or job.get("kind") != "rebuild":
+        return {"current_path": None, "queued_paths": [], "completed_paths": [], "state": ""}
+    progress_path = job.get("progress")
+    if progress_path:
+        try:
+            payload = json.loads(Path(progress_path).read_text(encoding="utf-8"))
+            return {
+                "current_path": payload.get("current_path"),
+                "queued_paths": list(payload.get("queued_paths") or []),
+                "completed_paths": list(payload.get("completed_paths") or []),
+                "state": payload.get("state", ""),
+            }
+        except (OSError, json.JSONDecodeError):
+            pass
+    return {
+        "current_path": None,
+        "queued_paths": list(job.get("build_paths") or []),
+        "completed_paths": [],
+        "state": "queued",
+    }
 
 
 def rebuild_failed_path_from_log(log_path):

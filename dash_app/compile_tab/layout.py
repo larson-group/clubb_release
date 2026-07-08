@@ -32,8 +32,6 @@ def build_option_checklist():
             {"label": "OpenMP", "value": "openmp"},
             {"label": "Tuning", "value": "tuning"},
             {"label": "GPTL", "value": "gptl"},
-            {"label": "Disable NetCDF", "value": "disable_netcdf"},
-            {"label": "Disable SILHS", "value": "disable_silhs"},
         ],
         value=[],
         className="compile-checklist",
@@ -190,6 +188,7 @@ def build_status_panel():
             ),
             html.Div(id="compile-build-select-message", className="compile-build-select-message"),
             html.Div(id="compile-build-list", className="compile-build-list"),
+            html.Div(id="compile-source-check-warning"),
         ],
         className="compile-status-panel",
     )
@@ -217,6 +216,7 @@ def build_layout(initial_data):
             dcc.Store(id="compile-job", data={}),
             dcc.Store(id="compile-log", data=""),
             dcc.Store(id="compile-log-offset", data=0),
+            dcc.Store(id="compile-source-check", data={}),
             dcc.Interval(id="compile-interval", interval=500, disabled=True),
             dcc.Interval(id="compile-build-status-interval", interval=30000),
             html.Div(
@@ -224,6 +224,7 @@ def build_layout(initial_data):
                 className="compile-left-pane",
             ),
             build_status_panel(),
+            html.Div(id="compile-source-check-log-modal"),
         ],
         id="compile-tab-layout",
         className="compile-tab-layout",

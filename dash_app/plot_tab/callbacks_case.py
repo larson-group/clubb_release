@@ -8,17 +8,22 @@ from .plot_types.registry import PLOT_TYPES
 from .plot_types.shared import (
     build_case_data,
     clear_all_caches,
+    duration_slider_marks,
     normalize_output_directory,
     ordered_case_names,
     scan_output_cases,
+    snap_start_time_to_step,
+    start_time_slider_marks,
     time_start_max_for_duration,
 )
 from .state import (
     clamp_float,
     clamp_height_range,
+    average_length_bounds,
     default_average_length,
     empty_case_selection,
     entry_list_or_default,
+    initial_plot_state_for_case,
     live_dir_entries,
     remap_plot_types_for_case_mode,
 )
@@ -201,16 +206,9 @@ def register_case_callbacks(app):
         updated_order = list(plot_order or [])
         updated_state = remap_plot_types_for_case_mode(plot_state, case_data)
         updated_next_id = int(next_id or 0)
-        if not updated_order and not updated_state and updated_next_id == 0 and case_data.get("profile_vars"):
-            from .state import default_plot_state
-
-            initial_id = 0
-            updated_order = [initial_id]
-            updated_state[str(initial_id)] = default_plot_state(case_data, initial_id, existing_state=updated_state)
-            updated_next_id = 1
-        slider_min = max(1.0e-6, float(case_data.get("time_slider_duration_min_minutes") or 1))
-        slider_max = max(slider_min, float(case_data.get("time_slider_duration_max_minutes") or slider_min))
-        slider_step = max(1.0e-6, float(case_data.get("time_slider_duration_step_minutes") or slider_min))
+        if not updated_order and not updated_state and updated_next_id == 0:
+            updated_order, updated_state, updated_next_id = initial_plot_state_for_case(case_data)
+        slider_min, slider_max, slider_step = average_length_bounds(case_data)
         default_duration = default_average_length(slider_min, slider_max)
         active_duration = clamp_float(
             current_average_minutes if same_case else default_duration,
@@ -220,11 +218,15 @@ def register_case_callbacks(app):
         )
         start_min = float(case_data.get("time_slider_start_min_seconds", 0))
         start_max = time_start_max_for_duration(case_data, active_duration)
-        active_start = clamp_float(
-            current_start_time if same_case else case_data.get("default_time_start_seconds", start_min),
-            start_min,
-            start_max,
-            start_min,
+        active_start = snap_start_time_to_step(
+            case_data,
+            clamp_float(
+                current_start_time if same_case else case_data.get("default_time_start_seconds", start_min),
+                start_min,
+                start_max,
+                start_min,
+            ),
+            active_duration,
         )
         height_min = float(case_data.get("height_slider_min", 0.0))
         height_max = float(case_data.get("height_slider_max", 1.0))
@@ -252,12 +254,12 @@ def register_case_callbacks(app):
             slider_max,
             active_duration,
             slider_step,
-            {},
+            duration_slider_marks(slider_min, slider_max, active_duration),
             start_min,
             start_max,
             active_start,
             max(1.0e-6, float(active_duration)) * 60.0,
-            {},
+            start_time_slider_marks(case_data, active_start, active_duration),
             height_min,
             height_max,
             active_height_range,

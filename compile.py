@@ -305,6 +305,18 @@ def run_clubb_standards_check(logfile):
     return retcode
 
 
+def clubb_standards_failed_message(logfile):
+    return "\n".join([
+        "===============================================================",
+        "CLUBBStandardsCheck FAILED",
+        "  THIS IS PRINTED IN ALL RED, CAPITAL LETTERS, AND USES",
+        "  AN EXCLAMATION MARK TO ENSURE THE DEVELOPERS FEEL SHAME!",
+        "  IF YOU ARE ONE OF THESE \"DEVELOPERS\" CHECK THE",
+        f"  LOG FILE FOR DETAILS: {logfile}",
+        "===============================================================",
+    ])
+
+
 def run_ctests(logfile):
     """
     Run ctest in the current working directory (assumed to be build dir).
@@ -337,6 +349,8 @@ def main():
     parser.add_argument("-python", action="store_true", help="Enable F2PY Python extension build")
     parser.add_argument("-fresh", action="store_true", 
                         help="Delete the selected build directory before configuring")
+    parser.add_argument("-skip_source_checks", action="store_true",
+                        help="Skip CLUBBStandardsCheck.py after a successful build")
 
     # Feature toggles
     parser.add_argument("-disable_netcdf", action="store_true", 
@@ -406,26 +420,23 @@ def main():
     if os.path.lexists(link_path): os.remove(link_path)
     os.symlink(inst_dir, link_path)
 
-    source_check_failed = False
-
-    # Run the CLUBB standards check, which looks for various code issues
-    if run_clubb_standards_check(build_log) != 0:
-        print(f"\033[91m===============================================================")
-        print(f"\033[91mCLUBBStandardsCheck FAILED")
-        print(f"\033[91m  THIS IS PRINTED IN ALL RED, CAPITAL LETTERS, AND USES")
-        print(f"\033[91m  AN EXCLAMATION MARK TO ENSURE THE DEVELOPERS FEEL SHAME!")
-        print(f"\033[91m  IF YOU ARE ONE OF THESE \"DEVELOPERS\" CHECK THE")
-        print(f"\033[91m  LOG FILE FOR DETAILS: {build_log}")
-        print(f"\033[91m===============================================================\033[0m")
-        source_check_failed = True
-
-    if source_check_failed:
-        # Build passed, but one of the checks failed
-        print("\n\033[93mBuild completed successfully, but some source code "
-                "checks have failed.\033[0m")
+    if args.skip_source_checks:
+        print("\n\033[92mBuild completed successfully.\033[0m")
     else:
-        # Successful build and no failed checks 
-        print("\n\033[92mBuild completed successfully, and all source code checks passed.\033[0m")
+        source_check_failed = False
+
+        # Run the CLUBB standards check, which looks for various code issues
+        if run_clubb_standards_check(build_log) != 0:
+            print("\033[91m" + clubb_standards_failed_message(build_log) + "\033[0m")
+            source_check_failed = True
+
+        if source_check_failed:
+            # Build passed, but one of the checks failed
+            print("\n\033[93mBuild completed successfully, but some source code "
+                    "checks have failed.\033[0m")
+        else:
+            # Successful build and no failed checks 
+            print("\n\033[92mBuild completed successfully, and all source code checks passed.\033[0m")
 
     if args.run_tests:
         # If we run the ctests, consider this the pass/fail criteria

@@ -21,6 +21,7 @@ from tuner.case_defaults import read_case_defaults  # noqa: E402
 
 OUTPUT_DIR = os.path.join(REPO_ROOT, "output")
 OUTPUT_FILE_SUFFIXES = ["_stats.nc"]
+DEFAULT_LOSS_AVERAGE_TIME_SECONDS = 3600.0
 
 Z_DIM_NAMES = {"z", "zm", "zt", "lh_zt", "altitude", "height", "lev"}
 T_DIM_NAMES = {"t", "time"}
@@ -771,7 +772,7 @@ def minutes_to_slider_selection(ds_info, start_min, end_min, slider_max):
     )
 
 
-def _read_loss_window_seconds(case_name):
+def _read_loss_defaults(case_name):
     if not case_name:
         return None
     try:
@@ -781,13 +782,18 @@ def _read_loss_window_seconds(case_name):
     start_seconds, end_seconds = defaults["time_average_range"]
     if end_seconds <= start_seconds:
         return None
-    return [start_seconds, end_seconds]
+    average_seconds = defaults.get("average_time_seconds") or DEFAULT_LOSS_AVERAGE_TIME_SECONDS
+    return {
+        "window_seconds": [start_seconds, end_seconds],
+        "average_time_seconds": float(average_seconds),
+    }
 
 
 def loss_window_to_slider_selection(ds_info, case_name, slider_max):
-    absolute_window = _read_loss_window_seconds(case_name)
-    if absolute_window is None:
-        return None, None
+    loss_defaults = _read_loss_defaults(case_name)
+    if loss_defaults is None:
+        return None, None, None
+    absolute_window = loss_defaults["window_seconds"]
     initial = model_time_initial_seconds(ds_info)
     if initial is None:
         initial = 0.0
@@ -801,7 +807,7 @@ def loss_window_to_slider_selection(ds_info, case_name, slider_max):
             lower_open=True,
         ),
         "elapsed_seconds": elapsed_window,
-    }
+    }, loss_defaults["average_time_seconds"]
 
 
 def time_slider_physical_defaults(time_source, default_selection, loss_absolute_window=None, pyplotgen_elapsed_window=None):
@@ -892,6 +898,41 @@ def average_length_label(average_minutes=None):
     if average_minutes is None:
         return "Average Length"
     return f"Average Length: {float(average_minutes):g} (minutes)"
+
+
+def resolve_active_time_values(case_data, time_range=None, time_point=None, time_override=None):
+    """Return the exact time controls that plots should use."""
+    if isinstance(time_override, dict):
+        start_seconds = time_override.get("start_seconds")
+        duration_minutes = time_override.get("duration_minutes")
+        try:
+            start_seconds = float(start_seconds)
+            duration_minutes = float(duration_minutes)
+        except (TypeError, ValueError):
+            start_seconds = None
+            duration_minutes = None
+        if start_seconds is not None and duration_minutes is not None and np.isfinite(start_seconds) and np.isfinite(duration_minutes) and duration_minutes > 0.0:
+            return {
+                "mode": time_override.get("mode") or "preset",
+                "start_seconds": start_seconds,
+                "duration_minutes": duration_minutes,
+            }
+    case_data = case_data or {}
+    start_seconds = time_point if time_point is not None else case_data.get("default_time_start_seconds", 0.0)
+    duration_minutes = time_range if time_range is not None else case_data.get("default_time_duration_minutes", 1.0)
+    return {
+        "mode": "slider",
+        "start_seconds": float(start_seconds),
+        "duration_minutes": float(duration_minutes),
+    }
+
+
+def time_preset_label(mode):
+    """Return a display label for an exact time-window preset mode."""
+    return {
+        "loss": "Loss window",
+        "pyplotgen": "Pyplotgen window",
+    }.get(mode or "", "Preset window")
 
 
 def time_start_max_for_duration(case_data, average_minutes=None):
@@ -997,6 +1038,99 @@ def time_slider_marks(max_len, elapsed_seconds=None):
                 label = str(idx)
         marks[idx] = label
     return marks
+
+
+def _format_slider_duration_seconds(seconds):
+    seconds = float(seconds)
+    abs_seconds = abs(seconds)
+    if abs_seconds >= 3600.0:
+        return f"{seconds / 3600.0:.3g}h"
+    if abs_seconds >= 60.0:
+        return f"{seconds / 60.0:.3g}m"
+    return f"{seconds:.3g}s"
+
+
+def _rounded_mark_key(value):
+    return round(float(value), 10)
+
+
+def _nice_label_stride_seconds(span_seconds, target_count=8):
+    span_seconds = abs(float(span_seconds))
+    for stride in (60.0, 120.0, 300.0, 600.0, 900.0, 1800.0, 3600.0, 7200.0, 10800.0, 21600.0, 43200.0):
+        if span_seconds / stride <= target_count:
+            return stride
+    return 86400.0
+
+
+def duration_slider_marks(min_minutes, max_minutes, active_minutes=None):
+    """Return compact labels for an averaging-duration slider."""
+    min_minutes = float(min_minutes)
+    max_minutes = float(max_minutes)
+    if max_minutes < min_minutes:
+        min_minutes, max_minutes = max_minutes, min_minutes
+    if max_minutes <= 10.0:
+        stride = 1.0
+    elif max_minutes <= 30.0:
+        stride = 5.0
+    else:
+        stride = 30.0
+    values = {min_minutes, max_minutes}
+    if active_minutes is not None and min_minutes <= float(active_minutes) <= max_minutes:
+        values.add(float(active_minutes))
+    mark = np.ceil(min_minutes / stride) * stride
+    while mark <= max_minutes + stride * 1.0e-9:
+        values.add(float(mark))
+        mark += stride
+    return {value: _format_slider_duration_seconds(value * 60.0) for value in sorted(values)}
+
+
+def snap_start_time_to_step(case_data, start_seconds=None, average_minutes=None):
+    """Return the nearest selectable start-time value for the active averaging length."""
+    case_data = case_data or {}
+    start_min = float(case_data.get("time_slider_start_min_seconds") or 0.0)
+    start_max = time_start_max_for_duration(case_data, average_minutes)
+    step = max(1.0e-6, float(average_minutes or case_data.get("default_time_duration_minutes") or 1.0)) * 60.0
+    requested = float(start_seconds if start_seconds is not None else case_data.get("default_time_start_seconds", start_min))
+    requested = max(start_min, min(requested, start_max))
+    step_index = round((requested - start_min) / step)
+    stepped = start_min + step_index * step
+    candidates = [max(start_min, min(stepped, start_max)), start_max]
+    return _rounded_mark_key(min(candidates, key=lambda value: abs(value - requested)))
+
+
+def start_time_slider_marks(case_data, active_start_seconds=None, average_minutes=None):
+    """Return compact labels for the valid start-time grid."""
+    case_data = case_data or {}
+    start_min = float(case_data.get("time_slider_start_min_seconds") or 0.0)
+    start_max = time_start_max_for_duration(case_data, average_minutes)
+    step = max(1.0e-6, float(average_minutes or case_data.get("default_time_duration_minutes") or 1.0)) * 60.0
+    initial = case_data.get("model_time_initial_seconds")
+    elapsed_origin = float(initial if initial is not None else start_min)
+    values = []
+    current = start_min
+    while current <= start_max + step * 1.0e-9:
+        values.append(_rounded_mark_key(current))
+        current += step
+    values.append(_rounded_mark_key(start_max))
+    if active_start_seconds is not None and start_min <= float(active_start_seconds) <= start_max:
+        values.append(_rounded_mark_key(active_start_seconds))
+    values = sorted(set(values))
+    active_key = _rounded_mark_key(active_start_seconds) if active_start_seconds is not None else None
+    label_values = {values[0], values[-1]}
+    if active_key is not None:
+        label_values.add(active_key)
+    elapsed_low = start_min - elapsed_origin
+    elapsed_high = start_max - elapsed_origin
+    label_stride = _nice_label_stride_seconds(elapsed_high - elapsed_low)
+    elapsed_mark = np.ceil(elapsed_low / label_stride) * label_stride
+    while elapsed_mark <= elapsed_high + label_stride * 1.0e-9:
+        target_value = elapsed_origin + elapsed_mark
+        label_values.add(min(values, key=lambda value: abs(value - target_value)))
+        elapsed_mark += label_stride
+    return {
+        value: _format_slider_duration_seconds(value - elapsed_origin)
+        for value in sorted(label_values)
+    }
 
 
 def plot_theme_colors(theme_name):
@@ -1342,10 +1476,10 @@ def normalize_output_directory(directory):
         return os.path.abspath(expanded)
     cwd_path = os.path.abspath(expanded)
     repo_path = os.path.abspath(os.path.join(REPO_ROOT, expanded))
-    if os.path.isdir(cwd_path):
-        return cwd_path
     if os.path.isdir(repo_path):
         return repo_path
+    if os.path.isdir(cwd_path):
+        return cwd_path
     return repo_path
 
 
@@ -1498,7 +1632,7 @@ def build_case_data(case_name, files, directories=None):
             case_def.get("end_time"),
             slider_max,
         )
-        loss_absolute_window, loss_selection = loss_window_to_slider_selection(time_source, case_name, slider_max)
+        loss_absolute_window, loss_selection, loss_average_time_seconds = loss_window_to_slider_selection(time_source, case_name, slider_max)
         default_selection = loss_selection or pyplotgen_selection
         time_seconds = serialize_time_seconds(time_source)
         time_elapsed_seconds = serialize_time_elapsed_seconds(time_source)
@@ -1563,7 +1697,7 @@ def build_case_data(case_name, files, directories=None):
             "loss_time_start": (loss_selection or {}).get("start"),
             "loss_time_duration": (loss_selection or {}).get("duration"),
             "loss_time_start_seconds": (physical_time["loss"] or {}).get("start_seconds"),
-            "loss_time_duration_minutes": (physical_time["loss"] or {}).get("duration_minutes"),
+            "loss_time_duration_minutes": (float(loss_average_time_seconds) / 60.0) if loss_average_time_seconds is not None else None,
             "loss_time_window_seconds": loss_absolute_window,
             "loss_time_window_elapsed_seconds": (loss_selection or {}).get("elapsed_seconds"),
             "benchmarks": benchmarks,

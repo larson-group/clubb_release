@@ -70,3 +70,55 @@ def test_install_artifact_older_than_tolerance_is_stale(tmp_path):
     runtime.os.utime(install_artifact, ns=(install_ns, install_ns))
 
     assert runtime._artifact_is_stale(build_artifact, install_artifact) is True
+
+
+def test_rebuild_command_preserves_discovered_tuning_flag():
+    options = runtime.compile_options_from_build(
+        {
+            "build_type": "Debug",
+            "name": "gcc_DEBUG_PRECdouble_PYTHON_OPENMP_TUNING_GPTL",
+            "precision": "double",
+            "gpu": "none",
+            "python": "ON",
+            "openmp": "ON",
+            "tuning": "ON",
+            "gptl": "ON",
+            "toolchain": "/tmp/toolchain.cmake",
+            "install_prefix": "/tmp/gcc_DEBUG_PRECdouble_PYTHON_OPENMP_TUNING_GPTL",
+        },
+        {"toolchains": [{"path": "/tmp/toolchain.cmake"}]},
+        module_stack=[],
+    )
+
+    argv = runtime.build_compile_argv(options)
+
+    assert "-tuning" in argv
+    assert "-gptl" in argv
+    assert "-disable_netcdf" not in argv
+    assert "-disable_silhs" not in argv
+    assert "-install" in argv
+
+
+def test_rebuild_command_drops_mismatched_install_prefix():
+    options = runtime.compile_options_from_build(
+        {
+            "build_type": "Debug",
+            "name": "gcc_DEBUG_PRECdouble_PYTHON_OPENMP_GPTL",
+            "precision": "double",
+            "gpu": "none",
+            "python": "ON",
+            "openmp": "ON",
+            "tuning": "OFF",
+            "gptl": "ON",
+            "toolchain": "/tmp/toolchain.cmake",
+            "install_prefix": "/tmp/gcc_DEBUG_PRECdouble_PYTHON_OPENMP_TUNING_GPTL",
+        },
+        {"toolchains": [{"path": "/tmp/toolchain.cmake"}]},
+        module_stack=[],
+    )
+
+    argv = runtime.build_compile_argv(options)
+
+    assert "-install" not in argv
+    assert "-tuning" not in argv
+    assert "-gptl" in argv

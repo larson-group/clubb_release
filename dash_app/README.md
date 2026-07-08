@@ -6,10 +6,23 @@ output. The app is intended to be run from an existing CLUBB checkout.
 
 ## Install
 
-From the repository root:
+The top-level launcher can create the local virtualenv, install dependencies,
+and start the app:
 
 ```bash
-python -m pip install -r dash_app/requirements.txt
+./launch_dashboard.sh
+```
+
+Arguments are passed through to `dash_app/app.py`, for example:
+
+```bash
+./launch_dashboard.sh --port 8060 -debug
+```
+
+For manual setup, run this from the repository root:
+
+```bash
+python3 -m pip install -r dash_app/requirements.txt
 ```
 
 Compile CLUBB before using the run tab:
@@ -32,15 +45,19 @@ before running tuner workflows:
 From the repository root:
 
 ```bash
-python dash_app/app.py
+python3 dash_app/app.py
+```
+or
+```bash
+python3 dash_app/app.py &
 ```
 or
 ```bash
 python3 dash_app/app.py &
 ```
 
-By default the app opens in a browser at port `8050`, or the next available
-port. Use `python dash_app/app.py --help` for host, port, debug, and threading
+By default the app opens in a browser at port `23404`, or the next available
+port. Use `python3 dash_app/app.py --help` for host, port, debug, and threading
 options.
 
 ## Basic Workflows
