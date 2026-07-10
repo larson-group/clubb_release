@@ -114,8 +114,7 @@ def build_controls():
                         value="double",
                         options=[
                             {"label": "double", "value": "double"},
-                            {"label": "single", "value": "single"},
-                            {"label": "quad", "value": "quad"},
+                            {"label": "single", "value": "single"}
                         ],
                         className="clubb-dropdown compile-dropdown",
                     ),

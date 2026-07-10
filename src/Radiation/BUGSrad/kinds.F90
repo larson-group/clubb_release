@@ -12,7 +12,7 @@ module kinds
 !
 !     Modifications:
 !     Modified by David Schanen for HOC to allow for compile time 
-!     promotion (e.g. to double and quad precision)
+!     promotion (e.g. to double precision)
 !-----------------------------------------------------------------------
 
 implicit none

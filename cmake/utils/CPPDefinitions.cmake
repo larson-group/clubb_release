@@ -37,8 +37,8 @@ add_compile_definitions(${GPU_DEFINITIONS})
 
 
 # Preprocessor definition for CLUBB_REAL_TYPE, which sets the floating-point precision
-set(PRECISION "double" CACHE STRING "Precision for CLUBB_REAL_TYPE (single,double,quad)")
-set_property(CACHE PRECISION PROPERTY STRINGS single double quad)
+set(PRECISION "double" CACHE STRING "Precision for CLUBB_REAL_TYPE (single,double)")
+set_property(CACHE PRECISION PROPERTY STRINGS single double)
 
 if (PRECISION STREQUAL "single")
   message(STATUS "Compiling with single precision")
@@ -48,10 +48,6 @@ elseif (PRECISION STREQUAL "double")
   message(STATUS "Compiling with double precision")
   add_compile_definitions(CLUBB_REAL_TYPE=8)
 
-elseif (PRECISION STREQUAL "quad")
-  message(STATUS "Compiling with quadruple precision")
-  add_compile_definitions(CLUBB_REAL_TYPE=16)
-
 else()
-  message(FATAL_ERROR "PRECISION must be one of: single, double, quad")
+  message(FATAL_ERROR "PRECISION must be one of: single, double")
 endif()

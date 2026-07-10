@@ -342,7 +342,7 @@ def main():
     parser.add_argument("-toolchain", metavar="FILE", help="Path to CMake toolchain file")
     parser.add_argument("-gpu", choices=["none", "openacc", "openmp"], default="none", 
                         help="GPU option for build")
-    parser.add_argument("-precision", choices=["single", "double", "quad"], default="double", 
+    parser.add_argument("-precision", choices=["single", "double"], default="double", 
                         help="Floating-point precision")
     parser.add_argument("-debug", action="store_true", help="Compile in debug mode")
     parser.add_argument("-run_tests", action="store_true", help="Run ctests after compilation")

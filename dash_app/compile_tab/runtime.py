@@ -329,7 +329,7 @@ def lmod_compiler_from_build(build, discovery=None):
 
 def compile_settings_from_build(build, discovery=None, lmod_compiler=None):
     """Return compile.py option values recoverable from one discovered build."""
-    valid_precisions = {"single", "double", "quad"}
+    valid_precisions = {"single", "double"}
     valid_gpus = {"none", "openacc", "openmp"}
     precision = str((build or {}).get("precision") or "double").strip().lower()
     gpu = str((build or {}).get("gpu") or "none").strip().lower()
