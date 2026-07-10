@@ -26,11 +26,9 @@ module stat_file_utils
 
     use stat_file_module, only: stat_file ! Type(s)
 
-#ifdef NETCDF
     use input_netcdf, only: &
       open_netcdf_read, get_netcdf_var, & ! Procedures
       close_netcdf_read
-#endif
 
 !   use extrapolation, only: &
 !     lin_ext_zt_bottom
@@ -126,12 +124,7 @@ module stat_file_utils
     stat_file_average = 0.0_core_rknd
 
     ! Open netCDF file
-#ifdef NETCDF
     call open_netcdf_read( variable_name, filename, faverage, l_error )
-#else
-    write(fstderr,*) "This version of CLUBB was not compiled with netCDF support"
-    l_error = .true.
-#endif
 
     if ( l_error ) return
 
@@ -164,11 +157,9 @@ module stat_file_utils
     ! Read in variables from netCDF file
     do t = t1, t2
 
-#ifdef NETCDF
       l_convert_to_MKS = .true.
       call get_netcdf_var( faverage, variable_name, t, l_convert_to_MKS, &
                            file_variable(1:file_nz), l_error )
-#endif
 
       if ( l_error ) then
         write(fstderr,*) "stat_file_average: get_var failed for "  & 
@@ -231,10 +222,8 @@ module stat_file_utils
 
     end do ! t = t1, t2
 
-#ifdef NETCDF
     ! Close the netCDF file
     call close_netcdf_read( faverage )
-#endif
 
     ! Take average over num_timesteps
     stat_file_average(1:out_nz) = stat_file_average(1:out_nz) / &
@@ -363,9 +352,7 @@ module stat_file_utils
 
     use constants_clubb, only: fstderr
 
-#ifdef NETCDF
     use input_netcdf, only: open_netcdf_read, close_netcdf_read ! Procedure(s)
-#endif
 
     implicit none
 
@@ -381,12 +368,8 @@ module stat_file_utils
 
     ! ---- Begin Code ----
 
-#ifdef NETCDF
     call open_netcdf_read( varname, filename, file_nz, l_error )
-#else
-    write(fstderr,*) "This version of CLUBB was not compiled with netCDF support"
-    l_error = .true.
-#endif
+
     if ( l_error ) then
       write(fstderr,*) "Error opening "// filename
       error stop
@@ -396,9 +379,7 @@ module stat_file_utils
     stat_file_num_vertical_levels = file_nz%iz
 
     ! Close file
-#ifdef NETCDF
     call close_netcdf_read( file_nz )
-#endif
 
     return
   end function stat_file_num_vertical_levels
@@ -413,9 +394,7 @@ module stat_file_utils
     use clubb_precision, only: &
       core_rknd ! Variable(s)
 
-#ifdef NETCDF
     use input_netcdf, only: open_netcdf_read, close_netcdf_read ! Procedure(s)
-#endif
 
     implicit none
 
@@ -438,12 +417,8 @@ module stat_file_utils
 
     ! ---- Begin Code ----
 
-#ifdef NETCDF
     call open_netcdf_read( varname, filename, file_levels, l_error )
-#else
-    write(fstderr,*) "This version of CLUBB was not compiled with netCDF support"
-    l_error = .true.
-#endif
+
     if ( l_error ) then
       write(fstderr,*) "Error opening "// filename
       error stop
@@ -453,9 +428,7 @@ module stat_file_utils
     stat_file_vertical_levels(1:nz) = file_levels%z(1:nz)
 
     ! Close file
-#ifdef NETCDF
     call close_netcdf_read( file_levels )
-#endif
 
     return
   end function stat_file_vertical_levels

@@ -80,7 +80,6 @@ to use compiler flags:
 
 | Compiler Flags          | Description                                   | Default Value         |
 |-------------------------|-----------------------------------------------|-----------------------|
-|  -disable_netcdf        |  Disable NetCDF output support                |  Disabled (NetCDF on) |
 |  -openmp                |  Enable OpenMP threading                      |  Disabled             |
 |  -tuning                |  Enable TUNING mode with extra runtime checks |  Disabled             |
 |  -disable_silhs         |  Disable SILHS                                |  Disabled (SILHS on)  |
@@ -91,7 +90,6 @@ However, you can also edit the top level CMakeLists.txt (clubb/CMakeLists.txt):
 
 | CMake Option            | Description                     |    Default Value  |
 |-------------------------|---------------------------------|-------------------|
-|   USE_NetCDF            | Use netcdf for model output     |       ON          |
 |   ENABLE_OMP            | Enable CLUBB to run with OpenMP |       OFF         |
 |   TUNING                | Compile CLUBB for tuning        |       OFF         |
 |   SILHS                 | Compile for SILHS capability    |       ON          |

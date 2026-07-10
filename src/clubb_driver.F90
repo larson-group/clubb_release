@@ -1732,11 +1732,6 @@ module clubb_driver
       call write_text( "--------------------------------------------------", &
         l_write_to_file, iunit )
 
-#ifdef NETCDF
-      call write_text( "-DNETCDF enabled", l_write_to_file, iunit )
-#else
-      call write_text( "-DNETCDF disabled", l_write_to_file, iunit )
-#endif
 #ifdef COAMPS_MICRO
       call write_text( "-DCOAMPS_MICRO enabled", l_write_to_file, iunit )
 #else

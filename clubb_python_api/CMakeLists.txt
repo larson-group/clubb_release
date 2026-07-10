@@ -1,15 +1,8 @@
 # Build integration for F2PY extension(s).
 #
-# This path is CMake-native and requires USE_NetCDF=ON.
+# This path is CMake-native and requires NetCDF.
 # It builds a wrapper backend library with CMake and then asks numpy.f2py
 # to generate the Python extension module that links against that backend.
-
-if(NOT USE_NetCDF)
-    message(FATAL_ERROR
-        "ENABLE_F2PY requires USE_NetCDF=ON. "
-        "Reconfigure without -disable_netcdf (or disable ENABLE_F2PY)."
-    )
-endif()
 
 # Interpreter selection:
 # Prefer the top-level Python_EXECUTABLE (passed from compile.py), so f2py uses
@@ -43,7 +36,7 @@ endif()
 
 get_filename_component(F2PY_PYTHON_BIN_DIR "${F2PY_PYTHON_EXECUTABLE}" DIRECTORY)
 
-message(STATUS "ENABLE_F2PY=ON with USE_NetCDF=ON: reusing CMake-built CLUBB libraries")
+message(STATUS "ENABLE_F2PY=ON: reusing CMake-built CLUBB libraries")
 
 # Wrapper layout:
 # - `derived_type_storage.F90` defines shared Fortran-derived-type storage.

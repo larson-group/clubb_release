@@ -2,7 +2,6 @@
 ! $Id$
 
 module input_netcdf
-#ifdef NETCDF
   use constants_clubb, only:  & 
     fstdout,    & ! Variable(s) 
     fstderr,    &
@@ -597,7 +596,5 @@ module input_netcdf
 
     return
   end subroutine close_netcdf_read
-
-#endif /* NETCDF */
 
 end module input_netcdf

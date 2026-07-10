@@ -7,13 +7,12 @@ cmake_minimum_required(VERSION 3.18)
 
 # Define Build system options
 include(CMakeDependentOption)
-option(USE_NetCDF   "Utilize netcdf for model output data format"       ON  )   # netcdf is required for output
 option(TUNING       "Compile additional code useful for TUNING runs"    OFF )   # enables some extra runtime checks
 option(SILHS        "Enable SILHS"                                      ON  )   # silhs is default in some cases
 option(ENABLE_OMP   "Enable CLUBB to run with OpenMP"                   OFF )   # enables openmp
 option(ENABLE_TESTS "Enable creation of ctests"                         ON  )   # enable quick run tests
 option(USE_GPTL     "Enables use of the gptl timing library"            OFF )   # a library with nice timing features
-option(ENABLE_F2PY  "Build F2PY Python extension module(s)"             OFF )   # CMake-native; requires USE_NetCDF=ON
+option(ENABLE_F2PY  "Build F2PY Python extension module(s)"             OFF )   # CMake-native; requires NetCDF
 
 # Create the project
 project(CLUBB Fortran C CXX)
@@ -31,11 +30,9 @@ endif()
 include(CPPDefinitions)
 include(CompilerWarnings)
 
-if(${USE_NetCDF})
-    # netCDF is an external library, cmake/deps/NetcdfFortranDependency.cmake handles making netcdf available
-    # and enables linking via 'netcdf-fortran'
-    include(NetcdfFortranDependency)
-endif()
+# netCDF is an external library, cmake/deps/NetcdfFortranDependency.cmake handles making netcdf available
+# and enables linking via 'netcdf-fortran'
+include(NetcdfFortranDependency)
 
 if(${ENABLE_OMP})
     # cmake/deps/OpenMPDependency.cmake finds openmp and makes it available via 'openmp-fortran'

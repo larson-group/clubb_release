@@ -196,7 +196,6 @@ def configure_cmake(args, toolchain_file, inst_dir, build_type):
 
         # --- NetCDF & External Library Linker Fixes ---
         "-DBUILD_SHARED_LIBS=OFF", # Shared libraries complicate the building of netcdf
-        f"-DUSE_NetCDF={to_on_off(not args.disable_netcdf)}",  # default ON
         
         # RPath injection (Runtime path for external libraries)
         f"-DCMAKE_INSTALL_RPATH={inst_dir}/lib;{inst_dir}/lib64",
@@ -215,7 +214,7 @@ def configure_cmake(args, toolchain_file, inst_dir, build_type):
         f"-DUSE_GPTL={to_on_off(args.gptl)}",                  # default OFF
 
         # --- Python Environment ---
-        f"-DPython_EXECUTABLE={sys.executable}",
+        f"-DPython_EXECUTABLE={sys.executable}"
     ]
 
     # --- SMARTER NETCDF DETECTION ---
@@ -353,8 +352,6 @@ def main():
                         help="Skip CLUBBStandardsCheck.py after a successful build")
 
     # Feature toggles
-    parser.add_argument("-disable_netcdf", action="store_true", 
-                        help="Disable NetCDF output support (default: enabled)")
     parser.add_argument("-disable_silhs", action="store_true", 
                         help="Disable SILHS (default: enabled)")
     parser.add_argument("-openmp", action="store_true", 
@@ -369,10 +366,6 @@ def main():
                         help="Extra arguments passed to CMake")
 
     args = parser.parse_args()
-
-    if args.python and args.disable_netcdf:
-        print("ERROR: -python requires NetCDF. Remove -disable_netcdf.")
-        sys.exit(1)
 
     # Our CMake files distinguish between "Debug" and "Release" for CMAKE_BUILD_TYPE
     build_type = "Debug" if args.debug else "Release"

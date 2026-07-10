@@ -681,11 +681,9 @@ module error
       err_info_type, &                  ! Type
       cleanup_err_info_api
 
-#ifdef NETCDF
     use input_netcdf, only: &
       open_netcdf_read, & ! Procedure(s)
       close_netcdf_read
-#endif /* NETCDF */
 
     implicit none
 
@@ -772,10 +770,8 @@ module error
       clubb_netcdf_file
 
     integer :: &
-#ifdef NETCDF
       len_file, & ! The length of the currently read in NetCDF file.
                   ! Used in a NetCDF assertion check below.
-#endif /* NETCDF */
       i, j, c_run ! looping variables
 
     !-----------------------------------------------------------------------
@@ -938,7 +934,6 @@ module error
         ( les_stats_file(c_run), clubb_nz,  & 
           timestep_intvls(c_run,:), les_v(i), clubb_grid_heights, 1, l_error )
 
-#ifdef NETCDF
         ! Verify that the CLUBB and LES runs start at the same time and
         ! have the same timestep length
 
@@ -989,7 +984,6 @@ module error
                 &have the same stat output interval." 
           end if
         end if
-#endif /* NETCDF */
 
         if ( l_error ) then
           if( l_save_tuning_run ) then

@@ -285,7 +285,6 @@ Optionally:
 F. netCDF >= v3.5.1;  We have not tested our code with anything older.
    This has become optional because with cmake our system is able to download and compile netCDF if 
    it cannot be found. 
-   If you do not want to use netCDF, you must add '-disable_netcdf' when running compile.py
 
 To compile the code, perform the following three steps:
 1. $ cd <CLUBB BASE DIRECTORY>
@@ -389,11 +388,11 @@ the search path used by mkSrcfiles and mkDepends. These will create the
 list of files to be used and then CLUBB should compile without a problem.
 This tends to be the less complicated solution and allows you to make
 changes to the CLUBB parameterization with just one compile step.
-There are 3 key caveats when this method however:
-1. The netCDF library still needs to be linked in if -DNETCDF is defined
-for compiling CLUBB's source files.  If the host model itself uses the 
-netCDF library, this shouldn't require any modifications to the linking
-(this is usually in the LDFLAGS variable for the host model).
+There are 3 key caveats with this method however:
+1. The netCDF library still needs to be linked in for compiling CLUBB's 
+source files.  If the host model itself uses the netCDF library, this 
+shouldn't require any modifications to the linking (this is usually in 
+the LDFLAGS variable for the host model).
 2. The LAPACK and BLAS libraries still need to be linked into the host
 model application.
 3. The CLUBB model has files with a .F90 extension in addition to .f90;

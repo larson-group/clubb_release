@@ -6,12 +6,6 @@ include_directories(${CMAKE_Fortran_MODULE_DIRECTORY})
 # enable "ifdef radoffline/nooverlap/COAMPS_MICRO" 
 add_compile_definitions(radoffline nooverlap CLUBB COAMPS_MICRO)
 
-
-if(${USE_NetCDF})
-    # enable "ifdef NETCDF"
-    add_compile_definitions(NETCDF)
-endif()
-
 if(${TUNING})
     # enable "ifdef TUNING"
     add_compile_definitions(TUNER)

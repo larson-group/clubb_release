@@ -33,9 +33,7 @@ target_link_libraries(clubb_driver_lib PRIVATE  clubb_core_lib
                                                 text_writer_lib
                                             )
 
-if(${USE_NetCDF})
-    target_link_libraries(clubb_driver_lib PUBLIC netcdf-fortran)
-endif()
+target_link_libraries(clubb_driver_lib PUBLIC netcdf-fortran)
 
 if(${ENABLE_OMP})
     target_link_libraries(clubb_driver_lib PRIVATE openmp-fortran)

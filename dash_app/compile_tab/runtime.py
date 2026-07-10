@@ -270,7 +270,6 @@ COMPILE_FEATURE_FLAG_ORDER = [
     "openmp",
     "tuning",
     "gptl",
-    "disable_netcdf",
     "disable_silhs",
 ]
 
@@ -350,8 +349,6 @@ def compile_settings_from_build(build, discovery=None, lmod_compiler=None):
         flags.append("tuning")
     if cmake_enabled((build or {}).get("gptl")):
         flags.append("gptl")
-    if cmake_disabled((build or {}).get("netcdf")):
-        flags.append("disable_netcdf")
     if cmake_disabled((build or {}).get("silhs")):
         flags.append("disable_silhs")
 
@@ -394,7 +391,6 @@ def compile_options_from_build(build, discovery=None, module_stack=None):
         "openmp": "openmp" in settings["flags"],
         "tuning": "tuning" in settings["flags"],
         "gptl": "gptl" in settings["flags"],
-        "disable_netcdf": "disable_netcdf" in settings["flags"],
         "disable_silhs": "disable_silhs" in settings["flags"],
     }
     install_prefix = (build or {}).get("install_prefix") or ""

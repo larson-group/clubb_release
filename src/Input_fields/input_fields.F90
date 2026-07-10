@@ -2620,9 +2620,7 @@ module inputfields
     use clubb_precision, only:  &                                                                    
         time_precision                                                                               
                                                                                                      
-#ifdef NETCDF                                                                                        
     use input_netcdf, only: open_netcdf_read, close_netcdf_read ! Procedure(s)                       
-#endif                                                                                               
                                                                                                      
     implicit none                                                                                    
                                                                                                      
@@ -2658,7 +2656,6 @@ module inputfields
       error stop "Fatal error: Non-netCDF input."
     end if
                                                                                                      
-#ifdef NETCDF                                                                                        
     if( stats_input_type == sam_input_type ) then                                                  
       call open_netcdf_read( 'U', trim( filename ), & ! In                                         
                              fread_var, & ! In/Out                                                 
@@ -2668,10 +2665,6 @@ module inputfields
                              fread_var, & ! In/Out                                                 
                              l_error ) ! Out                                                       
     end if                                                                                         
-#else                                                                                                
-    write(fstderr,*) "This version of CLUBB was not compiled with netCDF support"                  
-    l_error = .true.
-#endif                                                                                               
                                                                                                      
     if ( l_error ) then                                                                              
       write(fstderr,*) "Error reading file " // trim( filename )                                     
@@ -2731,9 +2724,7 @@ module inputfields
                      fread_var%dtwrite/sec_per_min ) - 1                                             
     end if ! l_restart                                                                               
                                                                                                      
-#ifdef NETCDF                                                                                        
     call close_netcdf_read( fread_var )                                                              
-#endif                                                                                               
                                                                                                      
   end subroutine compute_timestep
 
@@ -2816,12 +2807,10 @@ module inputfields
 
     use stat_file_module, only: stat_file
 
-#ifdef NETCDF
     use input_netcdf, only: &
       open_netcdf_read, &
       get_netcdf_var, &
       close_netcdf_read
-#endif
 
     use stat_file_utils, only: & 
        LES_grid_to_CLUBB_grid, & ! Procedure(s)
@@ -2880,17 +2869,11 @@ module inputfields
 
     l_error = .false.
 
-#ifdef NETCDF
       do file_index=1, size(stat_files)
         call open_netcdf_read( "U", stat_files(file_index),  &
                               fread_vars(file_index), l_internal_error )
         l_error = l_error .or. l_internal_error
       end do ! file_index=1, size(stat_files)
-#else
-      write(fstderr,*) "This version of CLUBB was not compiled with netCDF support"
-      error stop "Fatal error"
-
-#endif
 
     if (l_error) then
       write(fstderr,*) "A fatal error occured while reading the input file."
@@ -2936,16 +2919,11 @@ module inputfields
       if( current_var%l_input_var ) then
         file_index = current_var%input_file_index
 
-#ifdef NETCDF
           l_convert_to_MKS = .false.
           call get_netcdf_var( fread_vars(file_index), current_var%input_name, timestep, &
                       l_convert_to_MKS,&
                       LES_tmp(file_index, fread_vars(file_index)%ia:fread_vars(file_index)%iz), &
                       l_internal_error )
-#else
-          write(fstderr,*) "This version of CLUBB was not compiled with netCDF support"
-          l_internal_error = .true.
-#endif
 
         l_error = l_error .or. l_internal_error
 
@@ -2964,15 +2942,9 @@ module inputfields
       end if ! current_var%l_input_var
     end do ! i=1, nvars
 
-#ifdef NETCDF
       do file_index=1, size(stat_files)
         call close_netcdf_read( fread_vars(file_index) )
       end do ! file_index=1, size(stat_files)
-#else
-      write(fstderr,*) "This version of CLUBB was not compiled with netCDF support"
-      error stop "Fatal error"
-
-#endif
 
     deallocate(LES_tmp)
 

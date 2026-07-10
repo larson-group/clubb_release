@@ -72,9 +72,7 @@ add_library(clubb_core_lib ${CLUBB_CORE_SOURCES})
 
 target_link_libraries(clubb_core_lib PRIVATE lapack_lib)
 
-if(${USE_NetCDF})
-    target_link_libraries(clubb_core_lib PUBLIC netcdf-fortran)
-endif()
+target_link_libraries(clubb_core_lib PUBLIC netcdf-fortran)
 
 if(${ENABLE_OMP})
     target_link_libraries(clubb_core_lib PRIVATE openmp-fortran)

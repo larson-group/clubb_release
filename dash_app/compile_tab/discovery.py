@@ -636,7 +636,6 @@ def discover_existing_builds():
                 "toolchain": cache.get("CMAKE_TOOLCHAIN_FILE", ""),
                 "precision": cache.get("PRECISION", ""),
                 "gpu": cache.get("GPU", ""),
-                "netcdf": cache.get("USE_NetCDF", ""),
                 "openmp": cache.get("ENABLE_OMP", ""),
                 "python": cache.get("ENABLE_F2PY", ""),
                 "gptl": cache.get("USE_GPTL", ""),

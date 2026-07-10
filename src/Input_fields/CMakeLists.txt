@@ -21,6 +21,4 @@ if(${ENABLE_OMP})
     target_link_libraries(input_fields_lib PRIVATE openmp-fortran)
 endif()
 
-if(${USE_NetCDF})
-    target_link_libraries(input_fields_lib PRIVATE netcdf-fortran)
-endif()
+target_link_libraries(input_fields_lib PRIVATE netcdf-fortran)
