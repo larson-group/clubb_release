@@ -269,8 +269,7 @@ COMPILE_FEATURE_FLAG_ORDER = [
     "python",
     "openmp",
     "tuning",
-    "gptl",
-    "disable_silhs",
+    "gptl"
 ]
 
 
@@ -349,8 +348,6 @@ def compile_settings_from_build(build, discovery=None, lmod_compiler=None):
         flags.append("tuning")
     if cmake_enabled((build or {}).get("gptl")):
         flags.append("gptl")
-    if cmake_disabled((build or {}).get("silhs")):
-        flags.append("disable_silhs")
 
     toolchain = (build or {}).get("toolchain") or "auto"
     valid_toolchains = {"auto"}
@@ -391,7 +388,6 @@ def compile_options_from_build(build, discovery=None, module_stack=None):
         "openmp": "openmp" in settings["flags"],
         "tuning": "tuning" in settings["flags"],
         "gptl": "gptl" in settings["flags"],
-        "disable_silhs": "disable_silhs" in settings["flags"],
     }
     install_prefix = (build or {}).get("install_prefix") or ""
     build_name = (build or {}).get("name") or Path((build or {}).get("path") or "").name

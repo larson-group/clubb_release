@@ -15,7 +15,6 @@ module latin_hypercube_driver_module
 
   private ! Default scope
 
-#ifdef SILHS
   public :: latin_hypercube_2D_output_api, &
     stats_accumulate_lh_api, generate_silhs_sample, &
     copy_X_nl_into_hydromet_all_pts, clip_transform_silhs_output
@@ -2588,7 +2587,5 @@ module latin_hypercube_driver_module
     return
   end subroutine copy_X_nl_into_hydromet_all_pts
   !-----------------------------------------------------------------------------
-
-#endif /* SILHS */
 
 end module latin_hypercube_driver_module

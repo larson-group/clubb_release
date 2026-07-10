@@ -207,7 +207,6 @@ def configure_cmake(args, toolchain_file, inst_dir, build_type):
         # ----------------------------------------------
 
         # --- Core Physics & Features ---
-        f"-DSILHS={to_on_off(not args.disable_silhs)}",        # default ON
         f"-DENABLE_F2PY={to_on_off(args.python)}",             # default OFF
         f"-DENABLE_OMP={to_on_off(args.openmp)}",              # default OFF
         f"-DTUNING={to_on_off(args.tuning)}",                  # default OFF
@@ -352,8 +351,6 @@ def main():
                         help="Skip CLUBBStandardsCheck.py after a successful build")
 
     # Feature toggles
-    parser.add_argument("-disable_silhs", action="store_true", 
-                        help="Disable SILHS (default: enabled)")
     parser.add_argument("-openmp", action="store_true", 
                         help="Enable OpenMP threading (default: disabled)")
     parser.add_argument("-tuning", action="store_true", 

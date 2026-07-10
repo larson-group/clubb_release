@@ -98,10 +98,8 @@ module microphys_driver
         coamps_microphys_driver  ! Procedure(s)
 #endif
 
-#ifdef SILHS
     use lh_microphys_driver_module, only: &
         lh_microphys_driver  ! Procedure(s)
-#endif /* SILHS */
 
     use ice_dfsn_module, only: & 
         ice_dfsn  ! Procedure(s)
@@ -472,7 +470,6 @@ module microphys_driver
     case ( "morrison" )
 
       if ( lh_microphys_type /= lh_microphys_disabled ) then
-#ifdef SILHS
         call lh_microphys_driver( &
                gr, dt, gr%nzt, gr%nzm, lh_num_samples, & ! In
                pdf_dim, hydromet_dim, hm_metadata, & ! In
@@ -494,14 +491,7 @@ module microphys_driver
                lh_AKm, AKm, AKstd, AKstd_cld, &
                lh_rcm_avg, AKm_rcm, AKm_rcc, &
                morrison_microphys_driver )  ! Procedure
-#else
-        error stop "Latin hypercube was not enabled at compile time"
-        ! Get rid of compiler warnings
-        if ( .false. .and. size( X_nl_all_levs ) < 1 ) then
-          rcm_mc(1) = &
-            + lh_sample_point_weights(1,1) + real( X_mixt_comp_all_levs(1,1) )
-        endif
-#endif /* SILHS */
+
         call stats_accumulate_lh_tend( gr, hydromet_dim, hm_metadata, &
                                        hydromet_mc, Ncm_mc, &
                                        thlm_mc, rvm_mc, rcm_mc, &
@@ -578,7 +568,6 @@ module microphys_driver
 
       if ( lh_microphys_type /= lh_microphys_disabled ) then
 
-#ifdef SILHS
         call lh_microphys_driver( &
                gr, dt, gr%nzt, gr%nzm, lh_num_samples, & ! In
                pdf_dim, hydromet_dim, hm_metadata, & ! In
@@ -600,9 +589,6 @@ module microphys_driver
                lh_AKm, AKm, AKstd, AKstd_cld, &
                lh_rcm_avg, AKm_rcm, AKm_rcc, &
                KK_local_microphys ) ! Procedure
-#else
-        error stop "Subgrid Importance Latin Hypercube was not enabled at compile time"
-#endif /* SILHS */
 
         call stats_accumulate_lh_tend( gr, hydromet_dim, hm_metadata, &
                                        hydromet_mc, Ncm_mc, &

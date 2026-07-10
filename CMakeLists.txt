@@ -8,7 +8,6 @@ cmake_minimum_required(VERSION 3.18)
 # Define Build system options
 include(CMakeDependentOption)
 option(TUNING       "Compile additional code useful for TUNING runs"    OFF )   # enables some extra runtime checks
-option(SILHS        "Enable SILHS"                                      ON  )   # silhs is default in some cases
 option(ENABLE_OMP   "Enable CLUBB to run with OpenMP"                   OFF )   # enables openmp
 option(ENABLE_TESTS "Enable creation of ctests"                         ON  )   # enable quick run tests
 option(USE_GPTL     "Enables use of the gptl timing library"            OFF )   # a library with nice timing features

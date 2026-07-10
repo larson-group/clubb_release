@@ -77,8 +77,6 @@
 
 module silhs_api_module
 
-#ifdef SILHS
-
   use mt95, only : &
     assignment( = ), &
     genrand_state, & ! Internal representation of the RNG state.
@@ -110,13 +108,11 @@ module silhs_api_module
     initialize_silhs_config_flags_type_api, &
     print_silhs_config_flags_api
 
-#endif
 
   implicit none
 
   private
 
-#ifdef SILHS
 
   public  &
     generate_silhs_sample_api, & ! Procedure(s)
@@ -697,7 +693,5 @@ contains
    !$acc end data
 
   end subroutine clip_transform_silhs_output_api_multi_col
-
-#endif
 
 end module silhs_api_module

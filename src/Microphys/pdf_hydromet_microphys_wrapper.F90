@@ -53,14 +53,12 @@ module pdf_hydromet_microphys_wrapper
     use mixed_moment_PDF_integrals, only: &
         hydrometeor_mixed_moments    ! Procedure(s)
 
-#ifdef SILHS
     use silhs_api_module, only: &
         generate_silhs_sample_api, & ! Procedure(s)
         clip_transform_silhs_output_api
 
     use latin_hypercube_driver_module, only: &
         stats_accumulate_lh_api
-#endif /*SILHS*/
 
     use pdf_parameter_module, only: &
         pdf_parameter    ! Type(s)
@@ -85,14 +83,12 @@ module pdf_hydromet_microphys_wrapper
     use parameters_microphys, only: &
         microphys_scheme    ! Variable(s)
 
-#ifdef SILHS
     use parameters_microphys, only: &
         lh_microphys_type,     & ! Variable(s)
         lh_microphys_disabled, &
         lh_seed,               &
         lh_num_samples,        &
         lh_sequence_length
-#endif /*SILHS*/
 
     use parameter_indices, only: &
         nparams    ! Variable(s)
@@ -300,7 +296,6 @@ module pdf_hydromet_microphys_wrapper
 
     endif ! not microphys_scheme == "none"
       
-#ifdef SILHS
     !----------------------------------------------------------------
     ! Compute subcolumns if enabled
     !----------------------------------------------------------------
@@ -412,7 +407,6 @@ module pdf_hydromet_microphys_wrapper
 
     end if ! lh_microphys_enabled
 
-#endif /* SILHS */
 
     return
 

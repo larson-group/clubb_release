@@ -157,13 +157,11 @@ module clubb_driver
     complete_alt, &
     complete_momentum
 
-#ifdef SILHS
   use parameters_microphys, only: &
     lh_microphys_type,     &
     lh_microphys_disabled, &
     microphys_scheme,      &
     lh_num_samples
-#endif
 
   implicit none
 
@@ -948,10 +946,8 @@ module clubb_driver
     use microphys_init_cleanup, only: &
       init_microphys     !------------------------------------------------- Procedure
 
-#ifdef SILHS
     use simple_rad_module, only: &
       simple_rad_lba_init !---------------------- Procedure(s)
-#endif
 
     use err_info_type_module, only: &
       set_err_info_values_api, &
@@ -1742,11 +1738,6 @@ module clubb_driver
 #else
       call write_text( "-DTUNER disabled", l_write_to_file, iunit )
 #endif
-#ifdef SILHS
-      call write_text( "-DSILHS enabled", l_write_to_file, iunit )
-#else
-      call write_text( "-DSILHS disabled", l_write_to_file, iunit )
-#endif
 #ifdef nooverlap
       call write_text( "-Dnooverlap enabled", l_write_to_file, iunit )
 #else
@@ -2489,15 +2480,11 @@ module clubb_driver
       l_output_rad_files = .true.
     end if
 
-#ifdef SILHS
     if ( lh_microphys_type /= lh_microphys_disabled ) then
       l_silhs_out = .true.
     else
       l_silhs_out = .false.
     end if
-#else
-    l_silhs_out = .false.
-#endif
 
     if ( .not. l_restart ) then
       time_current = time_initial
@@ -2678,7 +2665,6 @@ module clubb_driver
       
     end if
 
-#ifdef SILHS
     if ( total_param_sets > batch_size .and. stats%l_netcdf_output .and. l_silhs_out ) then
       write(fstderr, *) err_info%err_header_global
       write(fstderr, *) "Batch-mode stats NetCDF output does not yet support SILHS sample output."
@@ -2702,7 +2688,6 @@ module clubb_driver
       return
     end if
 
-#endif /* SILHS */
 
     if( l_stats ) then
 
@@ -4303,14 +4288,12 @@ module clubb_driver
     use stats_netcdf, only: &
       stats_finalize_api
 
-#ifdef SILHS
     use parameters_microphys, only: &
         lh_microphys_type,     & !------------------------ Variable(s)
         lh_microphys_disabled
 
     use latin_hypercube_arrays, only: &
         cleanup_latin_hypercube_arrays !------------------ Procedure(s)
-#endif
 
     implicit none
 
@@ -4457,11 +4440,9 @@ module clubb_driver
       call cleanup_input_fields()
     end if
 
-#ifdef SILHS
     if ( lh_microphys_type /= lh_microphys_disabled ) then
       call cleanup_latin_hypercube_arrays( )
     end if
-#endif
 
     deallocate( um )        ! u wind
     deallocate( vm )        ! v wind

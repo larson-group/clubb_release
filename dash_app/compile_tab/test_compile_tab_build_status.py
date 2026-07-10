@@ -94,7 +94,6 @@ def test_rebuild_command_preserves_discovered_tuning_flag():
 
     assert "-tuning" in argv
     assert "-gptl" in argv
-    assert "-disable_silhs" not in argv
     assert "-install" in argv
 
 

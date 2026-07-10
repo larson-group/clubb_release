@@ -1773,10 +1773,8 @@ module generalized_grid_test
     use stats_netcdf, only: &
         stats_type
 
-#ifdef SILHS
     use parameters_microphys, only: &
         lh_num_samples    ! Variable(s)
-#endif /*SILHS*/
 
     use parameter_indices, only: &
         nparams    ! Variable(s)
@@ -1784,12 +1782,10 @@ module generalized_grid_test
     use parameters_microphys, only: &
         microphys_scheme    ! Variable(s)
 
-#ifdef SILHS
     use parameters_microphys, only: &
         lh_microphys_type,     & ! Variable(s)
         lh_microphys_disabled, &
         lh_num_samples
-#endif /*SILHS*/
 
     use clubb_api_module, only: &
         init_precip_fracs_api    ! Procedure(s)
@@ -2325,7 +2321,6 @@ module generalized_grid_test
 
       endif ! .not. trim( microphys_scheme ) == "none"
 
-#ifdef SILHS
       if ( lh_microphys_type /= lh_microphys_disabled .or. l_silhs_rad ) then
 
          ! The variables that are output from the calls to
@@ -2383,7 +2378,6 @@ module generalized_grid_test
          enddo ! sample = 1, lh_num_samples
 
       endif ! lh_microphys_type /= lh_microphys_disabled .or. l_silhs_rad
-#endif /*SILHS*/
       
 
       ! Print a message and stop the run if there are any discrepanices found

@@ -82,7 +82,6 @@ to use compiler flags:
 |-------------------------|-----------------------------------------------|-----------------------|
 |  -openmp                |  Enable OpenMP threading                      |  Disabled             |
 |  -tuning                |  Enable TUNING mode with extra runtime checks |  Disabled             |
-|  -disable_silhs         |  Disable SILHS                                |  Disabled (SILHS on)  |
 |  -run_tests             |  Run ctests after compilation                 |  Disabled             |
 
 
@@ -92,7 +91,6 @@ However, you can also edit the top level CMakeLists.txt (clubb/CMakeLists.txt):
 |-------------------------|---------------------------------|-------------------|
 |   ENABLE_OMP            | Enable CLUBB to run with OpenMP |       OFF         |
 |   TUNING                | Compile CLUBB for tuning        |       OFF         |
-|   SILHS                 | Compile for SILHS capability    |       ON          |
 |   ENABLE_TESTS          | Enable running tests            |       ON          |
 
 

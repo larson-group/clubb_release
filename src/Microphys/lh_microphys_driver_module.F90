@@ -7,7 +7,6 @@ module lh_microphys_driver_module
 
   private ! Default scope
 
-#ifdef SILHS
   public :: lh_microphys_driver
 
 contains
@@ -211,6 +210,5 @@ contains
 
     return
   end subroutine lh_microphys_driver
-#endif /* SILHS */
 
 end module lh_microphys_driver_module

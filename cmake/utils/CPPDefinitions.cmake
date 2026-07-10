@@ -11,12 +11,6 @@ if(${TUNING})
     add_compile_definitions(TUNER)
 endif()
 
-if(${SILHS})
-    # enable "ifdef SILHS"
-    add_compile_definitions(SILHS)
-endif()
-
-
 if(${USE_GPTL})
     # enable "ifdef GPTL"
     add_compile_definitions(GPTL)
