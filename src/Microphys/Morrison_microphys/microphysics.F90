@@ -247,7 +247,9 @@ subroutine micro_setparm()
    !       for a mising namelist.  This lets us differentiate between
    !       missing namelists and those with an error within the namelist.
    NAMELIST /BNCUIODSBJCB/ place_holder
+#ifdef SILHS
    integer :: k
+#endif
 
    ! define default values for namelist variables
    doicemicro = .true.        ! use ice
@@ -882,12 +884,13 @@ use module_mp_GRAUPEL, only: &
 
 
 #endif
-
+#ifdef SILHS
 use clubb_silhs_vars, only: &
   lh_microphys_type, & ! Variables
   lh_microphys_interactive, &
   lh_microphys_non_interactive, &
   lh_microphys_disabled
+#endif
 
 implicit none 
 
