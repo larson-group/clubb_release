@@ -12,6 +12,7 @@ option(ENABLE_OMP   "Enable CLUBB to run with OpenMP"                   OFF )   
 option(ENABLE_TESTS "Enable creation of ctests"                         ON  )   # enable quick run tests
 option(USE_GPTL     "Enables use of the gptl timing library"            OFF )   # a library with nice timing features
 option(ENABLE_F2PY  "Build F2PY Python extension module(s)"             OFF )   # CMake-native; requires NetCDF
+option(SILHS        "Enable SILHS"                                      ON  )   # MUST ALWAYS BE ON
 
 # Create the project
 project(CLUBB Fortran C CXX)
