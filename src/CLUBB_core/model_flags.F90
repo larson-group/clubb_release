@@ -608,7 +608,7 @@ module model_flags
     l_damp_wp2_using_em = .true.
     l_do_expldiff_rtm_thlm = .false.
     l_Lscale_plume_centered = .false.
-    l_diag_Lscale_from_tau = .true.
+    l_diag_Lscale_from_tau = .false.
     l_use_C7_Richardson = .true.
     l_use_C11_Richardson = .false.
     l_use_shear_Richardson = .false.

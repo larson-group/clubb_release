@@ -33,7 +33,7 @@
 	    "l_lh_straight_mc": true
     },
     "flag7": {
-        "l_diag_Lscale_from_tau": false,
+        "l_diag_Lscale_from_tau": true,
         "fill_holes_type": 3
     },
     "flag8": {
