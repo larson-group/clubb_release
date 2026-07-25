@@ -27,7 +27,8 @@ DEFAULT_CASES = {
     "bomex":                  None,
     "cobra":                  360,      # very stable, limited for speed
     "dycoms2_rf01":           None,
-    "dycoms2_rf01_fixed_sst": None,
+    "dycoms2_rf01_fixed_sst": 300,      # stablish, switching to l_diag_Lscale_from_tau=.false.
+                                        # starting causing diffs after ~360 timesteps
     "dycoms2_rf02_nd":        None,
     "fire":                   None,
     "gabls2":                 360,      # very stable, limited for speed
